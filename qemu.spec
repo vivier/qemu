@@ -1,12 +1,13 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.6.1
-Release: 1
-License: LGPL
+Release: 2
+License: GPL/LGPL
 Group: Development/Tools
 URL: http://fabrice.bellard.free.fr/qemu
 Source0: http://fabrice.bellard.free.fr/qemu/%{name}-%{version}.tar.gz
 Source1: qemu.init
+Patch0: qemu-0.6.1-build.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: SDL-devel
 PreReq: /sbin/chkconfig
@@ -31,6 +32,7 @@ As QEMU requires no host kernel patches to run, it is very safe and easy to use.
 
 %prep
 %setup -q
+%patch0 -p1
 
 %build
 ./configure --prefix=%{_prefix} --interp-prefix=%{_prefix}/qemu-%%M
@@ -43,7 +45,7 @@ make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
 	bindir="${RPM_BUILD_ROOT}%{_bindir}" \
 	sharedir="${RPM_BUILD_ROOT}%{_prefix}/share/qemu" \
 	mandir="${RPM_BUILD_ROOT}%{_mandir}" \
-	docdir="${RPM_BUILD_ROOT}%{_docdir}" \
+	docdir="${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}" \
 	datadir="${RPM_BUILD_ROOT}%{_prefix}/share/qemu" install
 	
 install -D $RPM_SOURCE_DIR/qemu.init $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/qemu 
@@ -58,19 +60,22 @@ rm -rf $RPM_BUILD_ROOT
 if [ $1 = 0 ]; then
         /sbin/service qemu stop > /dev/null 2>&1
 fi
+/sbin/chkconfig --del qemu
 
 %files
 %defattr(-,root,root)
 %doc Changelog README README.distrib TODO
 %doc qemu-tech.texi qemu-doc.texi 
-%doc linux-2.6-qemu-fast.patch
-%doc %{_docdir}
-%{_bindir}
+%doc linux-2.6-qemu-fast.patch *.html
+%{_bindir}/qemu*
 %{_prefix}/share/qemu
-%{_mandir}
-%{_sysconfdir}/rc.d/init.d/qemu
+%{_mandir}/man?/*
+%config %{_sysconfdir}/rc.d/init.d/qemu
 
 %changelog
+* Sun Feb 13 2005 David Woodhouse <dwmw2@infradead.org> 0.6.1-2
+- Package cleanup
+
 * Sun Nov 21 2004 David Woodhouse <dwmw2@redhat.com> 0.6.1-1
 - Update to 0.6.1
 
