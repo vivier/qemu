@@ -26,7 +26,7 @@ to port on new host CPUs. QEMU has two operating modes:
    a processor and various peripherials. Currently, it is only used to launch
    an x86 Linux kernel on an x86 Linux system. It enables easier testing and
    debugging of system code. It can also be used to provide virtual hosting
-   of several virtual PC on a single server. 
+   of several virtual PC on a single server.
 
 As QEMU requires no host kernel patches to run, it is very safe and easy to use.
 
@@ -47,8 +47,8 @@ make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
 	mandir="${RPM_BUILD_ROOT}%{_mandir}" \
 	docdir="${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}" \
 	datadir="${RPM_BUILD_ROOT}%{_prefix}/share/qemu" install
-	
-install -D $RPM_SOURCE_DIR/qemu.init $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/qemu 
+
+install -D $RPM_SOURCE_DIR/qemu.init $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/qemu
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -65,7 +65,7 @@ fi
 %files
 %defattr(-,root,root)
 %doc Changelog README README.distrib TODO
-%doc qemu-tech.texi qemu-doc.texi 
+%doc qemu-tech.texi qemu-doc.texi
 %doc linux-2.6-qemu-fast.patch *.html
 %{_bindir}/qemu*
 %{_prefix}/share/qemu
