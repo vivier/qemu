@@ -1,7 +1,8 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.6.1
-Release: 2
+Release: 3
+
 License: GPL/LGPL
 Group: Development/Tools
 URL: http://fabrice.bellard.free.fr/qemu
@@ -73,6 +74,9 @@ fi
 %config %{_sysconfdir}/rc.d/init.d/qemu
 
 %changelog
+* Fri Apr  7 2005 Michael Schwendt <mschwendt[AT]users.sf.net>
+- rebuilt
+
 * Sun Feb 13 2005 David Woodhouse <dwmw2@infradead.org> 0.6.1-2
 - Package cleanup
 
