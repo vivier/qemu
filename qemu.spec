@@ -1,14 +1,15 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
-Version: 0.6.1
-Release: 3
+Version: 0.7.0
+Release: 1
 
 License: GPL/LGPL
 Group: Development/Tools
 URL: http://fabrice.bellard.free.fr/qemu
 Source0: http://fabrice.bellard.free.fr/qemu/%{name}-%{version}.tar.gz
 Source1: qemu.init
-Patch0: qemu-0.6.1-build.patch
+Patch0: qemu-0.7.0-build.patch
+Patch1: qemu-0.7.0-ppc-functions-end-in-branch.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: SDL-devel
 PreReq: /sbin/chkconfig
@@ -24,7 +25,7 @@ to port on new host CPUs. QEMU has two operating modes:
    endianness and 32/64 bit mismatches. Wine (Windows emulation) and DOSEMU
    (DOS emulation) are the main targets for QEMU.
  * Full system emulation. In this mode, QEMU emulates a full system, including
-   a processor and various peripherials. Currently, it is only used to launch
+   a processor and various peripherals. Currently, it is only used to launch
    an x86 Linux kernel on an x86 Linux system. It enables easier testing and
    debugging of system code. It can also be used to provide virtual hosting
    of several virtual PC on a single server.
@@ -34,6 +35,7 @@ As QEMU requires no host kernel patches to run, it is very safe and easy to use.
 %prep
 %setup -q
 %patch0 -p1
+%patch1 -p1
 
 %build
 ./configure --prefix=%{_prefix} --interp-prefix=%{_prefix}/qemu-%%M
@@ -67,13 +69,17 @@ fi
 %defattr(-,root,root)
 %doc Changelog README README.distrib TODO
 %doc qemu-tech.texi qemu-doc.texi
-%doc linux-2.6-qemu-fast.patch *.html
+%doc *.html
 %{_bindir}/qemu*
 %{_prefix}/share/qemu
 %{_mandir}/man?/*
 %config %{_sysconfdir}/rc.d/init.d/qemu
 
 %changelog
+* Sat Apr 30 2005 David Woodhouse <dwmw2@infradead.org> .0.7.0-1
+- Update to 0.7.0
+- Fix dyngen for PPC functions which end in unconditional branch
+
 * Fri Apr  7 2005 Michael Schwendt <mschwendt[AT]users.sf.net>
 - rebuilt
 
