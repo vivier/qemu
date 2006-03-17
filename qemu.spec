@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
-Version: 0.7.0
-Release: 2
+Version: 0.8.0
+Release: 1%{?dist}
 
 License: GPL/LGPL
 Group: Development/Tools
@@ -9,10 +9,8 @@ URL: http://fabrice.bellard.free.fr/qemu
 Source0: http://fabrice.bellard.free.fr/qemu/%{name}-%{version}.tar.gz
 Source1: qemu.init
 Patch0: qemu-0.7.0-build.patch
-Patch1: qemu-0.7.0-gcc4-x86.patch
-Patch2: qemu-0.7.0-gcc4-ppc.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: SDL-devel
+BuildRequires: SDL-devel compat-gcc-32
 PreReq: /sbin/chkconfig
 PreReq: /sbin/service
 ExclusiveArch: %{ix86} ppc alpha sparc armv4l x86_64
@@ -36,11 +34,9 @@ As QEMU requires no host kernel patches to run, it is very safe and easy to use.
 %prep
 %setup -q
 %patch0 -p1
-%patch1 -p0
-%patch2 -p1
 
 %build
-./configure --prefix=%{_prefix} --interp-prefix=%{_prefix}/qemu-%%M
+./configure --prefix=%{_prefix} --interp-prefix=%{_prefix}/qemu-%%M --cc=gcc32 --enable-alsa
 make
 
 %install
@@ -78,11 +74,16 @@ fi
 %config %{_sysconfdir}/rc.d/init.d/qemu
 
 %changelog
-* Mon May 16 2005 David Woodhouse <dwmw2@infradead.org> .0.7.0-2
+* Fri Mar 17 2006 David Woodhouse <dwmw2@infradead.org> 0.8.0-1
+- Update to 0.8.0
+- Resort to using compat-gcc-32
+- Enable ALSA
+
+* Mon May 16 2005 David Woodhouse <dwmw2@infradead.org> 0.7.0-2
 - Proper fix for GCC 4 putting 'blr' or 'ret' in the middle of the function,
   for i386, x86_64 and PPC.
 
-* Sat Apr 30 2005 David Woodhouse <dwmw2@infradead.org> .0.7.0-1
+* Sat Apr 30 2005 David Woodhouse <dwmw2@infradead.org> 0.7.0-1
 - Update to 0.7.0
 - Fix dyngen for PPC functions which end in unconditional branch
 
