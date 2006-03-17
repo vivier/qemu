@@ -74,6 +74,9 @@ fi
 %config %{_sysconfdir}/rc.d/init.d/qemu
 
 %changelog
+* Fri Mar 17 2006 David Woodhouse <dwmw2@infradead.org> 0.8.0-2
+- Don't use -mtune=pentium4 on i386. GCC 3.2 doesn't like it
+
 * Fri Mar 17 2006 David Woodhouse <dwmw2@infradead.org> 0.8.0-1
 - Update to 0.8.0
 - Resort to using compat-gcc-32
