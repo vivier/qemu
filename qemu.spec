@@ -1,12 +1,12 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.8.0
-Release: 1%{?dist}
+Release: 3%{?dist}
 
 License: GPL/LGPL
 Group: Development/Tools
 URL: http://fabrice.bellard.free.fr/qemu
-Source0: http://fabrice.bellard.free.fr/qemu/%{name}-%{version}.tar.gz
+Source0: http://www.qemu.org/%{name}-%{version}.tar.gz
 Source1: qemu.init
 Patch0: qemu-0.7.0-build.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
@@ -36,7 +36,11 @@ As QEMU requires no host kernel patches to run, it is very safe and easy to use.
 %patch0 -p1
 
 %build
-./configure --prefix=%{_prefix} --interp-prefix=%{_prefix}/qemu-%%M --cc=gcc32 --enable-alsa
+./configure --prefix=%{_prefix} --interp-prefix=%{_prefix}/qemu-%%M \
+%ifarch x86_64
+   --target-list="i386-user arm-user armeb-user ppc-user mips-user mipsel-user i386-softmmu ppc-softmmu  x86_64-softmmu mips-softmmu arm-softmmu" \
+%endif
+   --cc=gcc32 --enable-alsa
 make
 
 %install
@@ -74,6 +78,10 @@ fi
 %config %{_sysconfdir}/rc.d/init.d/qemu
 
 %changelog
+* Fri Mar 17 2006 David Woodhouse <dwmw2@infradead.org> 0.8.0-3
+- Use -mcpu= instead of -mtune= on x86_64 too
+- Disable SPARC targets on x86_64, because dyngen doesn't like fnegs
+
 * Fri Mar 17 2006 David Woodhouse <dwmw2@infradead.org> 0.8.0-2
 - Don't use -mtune=pentium4 on i386. GCC 3.2 doesn't like it
 

@@ -4,7 +4,7 @@
  -include config-host.mak
  
 -CFLAGS=-Wall -O2 -g -fno-strict-aliasing 
-+CFLAGS=$(subst -mtune=pentium4,-mcpu=pentium4,$(RPM_OPT_FLAGS)) -Wall -fno-strict-aliasing 
++CFLAGS=$(subst -mtune=,-mcpu=,$(RPM_OPT_FLAGS)) -Wall -fno-strict-aliasing 
  ifdef CONFIG_DARWIN
  CFLAGS+= -mdynamic-no-pic
  endif
@@ -15,7 +15,7 @@
  DEFINES+=-I$(SRC_PATH)/linux-user -I$(SRC_PATH)/linux-user/$(TARGET_ARCH)
  endif
 -CFLAGS=-Wall -O2 -g -fno-strict-aliasing
-+CFLAGS=$(subst -mtune=pentium4,-mcpu=pentium4,$(RPM_OPT_FLAGS)) -Wall -fno-strict-aliasing 
++CFLAGS=$(subst -mtune=,-mcpu=,$(RPM_OPT_FLAGS)) -Wall -fno-strict-aliasing 
  #CFLAGS+=-Werror
  LDFLAGS=-g
  LIBS=
@@ -24,7 +24,7 @@
  # -msmall-data is not used because we want two-instruction relocations
  # for the constant constructions
 -OP_CFLAGS=-Wall -O2 -g
-+OP_CFLAGS=$(subst -mtune=pentium4,-mcpu=pentium4,$(RPM_OPT_FLAGS)) -Wall
++OP_CFLAGS=$(subst -mtune=,-mcpu=,$(RPM_OPT_FLAGS)) -Wall
  # Ensure there's only a single GP
  CFLAGS += -msmall-data
  LDFLAGS+=-Wl,-T,$(SRC_PATH)/alpha.ld
