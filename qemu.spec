@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.8.0
-Release: 3%{?dist}
+Release: 6%{?dist}
 
 License: GPL/LGPL
 Group: Development/Tools
@@ -9,8 +9,9 @@ URL: http://fabrice.bellard.free.fr/qemu
 Source0: http://www.qemu.org/%{name}-%{version}.tar.gz
 Source1: qemu.init
 Patch0: qemu-0.7.0-build.patch
+Patch1: qemu-0.8.0-sdata.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: SDL-devel compat-gcc-32
+BuildRequires: SDL-devel compat-gcc-32 zlib-devel
 PreReq: /sbin/chkconfig
 PreReq: /sbin/service
 ExclusiveArch: %{ix86} ppc alpha sparc armv4l x86_64
@@ -34,6 +35,7 @@ As QEMU requires no host kernel patches to run, it is very safe and easy to use.
 %prep
 %setup -q
 %patch0 -p1
+%patch1 -p1
 
 %build
 ./configure --prefix=%{_prefix} --interp-prefix=%{_prefix}/qemu-%%M \
@@ -78,6 +80,15 @@ fi
 %config %{_sysconfdir}/rc.d/init.d/qemu
 
 %changelog
+* Sat Mar 18 2006 David Woodhouse <dwmw2@infradead.org> 0.8.0-6
+- Update linker script for PPC
+
+* Sat Mar 18 2006 David Woodhouse <dwmw2@infradead.org> 0.8.0-5
+- Just drop $RPM_OPT_FLAGS. They're too much of a PITA
+
+* Sat Mar 18 2006 David Woodhouse <dwmw2@infradead.org> 0.8.0-4
+- Disable stack-protector options which gcc 3.2 doesn't like
+
 * Fri Mar 17 2006 David Woodhouse <dwmw2@infradead.org> 0.8.0-3
 - Use -mcpu= instead of -mtune= on x86_64 too
 - Disable SPARC targets on x86_64, because dyngen doesn't like fnegs
