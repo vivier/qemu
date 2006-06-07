@@ -12,7 +12,7 @@ Patch0: qemu-0.7.0-build.patch
 Patch1: qemu-0.8.0-sdata.patch
 Patch2: qemu-0.8.1-syscall-macros.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: SDL-devel compat-gcc-32 zlib-devel
+BuildRequires: SDL-devel compat-gcc-32 zlib-devel texi2html
 PreReq: /sbin/chkconfig
 PreReq: /sbin/service
 ExclusiveArch: %{ix86} ppc alpha sparc armv4l x86_64
