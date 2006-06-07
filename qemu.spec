@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.8.1
-Release: 1%{?dist}
+Release: 2%{?dist}
 
 License: GPL/LGPL
 Group: Development/Tools
@@ -10,6 +10,7 @@ Source0: http://www.qemu.org/%{name}-%{version}.tar.gz
 Source1: qemu.init
 Patch0: qemu-0.7.0-build.patch
 Patch1: qemu-0.8.0-sdata.patch
+Patch2: qemu-0.8.1-syscall-macros.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: SDL-devel compat-gcc-32 zlib-devel
 PreReq: /sbin/chkconfig
@@ -36,6 +37,7 @@ As QEMU requires no host kernel patches to run, it is very safe and easy to use.
 %setup -q
 %patch0 -p1
 %patch1 -p1
+%patch2 -p1
 
 %build
 ./configure --prefix=%{_prefix} --interp-prefix=%{_prefix}/qemu-%%M \
@@ -80,6 +82,9 @@ fi
 %config %{_sysconfdir}/rc.d/init.d/qemu
 
 %changelog
+* Wed Jun 7 2006 David Woodhouse <dwmw2@infradead.org> 0.8.1-2
+- Fix up kernel header abuse
+
 * Tue May 30 2006 David Woodhouse <dwmw2@infradead.org> 0.8.1-1
 - Update to 0.8.1
 
