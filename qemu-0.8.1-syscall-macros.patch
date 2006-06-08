@@ -173,3 +173,17 @@
  
  #define __NR_sys_uname __NR_uname
  #define __NR_sys_getcwd1 __NR_getcwd
+--- qemu-0.8.1/target-i386/helper2.c.orig	2006-06-08 11:09:41.000000000 +0100
++++ qemu-0.8.1/target-i386/helper2.c	2006-06-08 11:10:30.000000000 +0100
+@@ -35,7 +35,10 @@
+ #include <linux/unistd.h>
+ #include <linux/version.h>
+ 
+-_syscall3(int, modify_ldt, int, func, void *, ptr, unsigned long, bytecount)
++int modify_ldt(int func, void *ptr, unsigned long bytecount)
++{
++	return syscall(__NR_modify_ldt, func, ptr, bytecount);
++}
+ 
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 66)
+ #define modify_ldt_ldt_s user_desc

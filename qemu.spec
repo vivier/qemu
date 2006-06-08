@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.8.1
-Release: 2%{?dist}
+Release: 3%{?dist}
 
 License: GPL/LGPL
 Group: Development/Tools
@@ -11,7 +11,7 @@ Source1: qemu.init
 Patch0: qemu-0.7.0-build.patch
 Patch1: qemu-0.8.0-sdata.patch
 Patch2: qemu-0.8.1-syscall-macros.patch
-BuildRoot: %{_tmppath}/%{name}-%{version}-root
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel compat-gcc-32 zlib-devel texi2html
 PreReq: /sbin/chkconfig
 PreReq: /sbin/service
@@ -82,7 +82,10 @@ fi
 %config %{_sysconfdir}/rc.d/init.d/qemu
 
 %changelog
-* Wed Jun 7 2006 David Woodhouse <dwmw2@infradead.org> 0.8.1-2
+* Thu Jun  8 2006 David Woodhouse <dwmw2@infradead.org> 0.8.1-3
+- More header abuse in modify_ldt(), change BuildRoot:
+
+* Wed Jun  7 2006 David Woodhouse <dwmw2@infradead.org> 0.8.1-2
 - Fix up kernel header abuse
 
 * Tue May 30 2006 David Woodhouse <dwmw2@infradead.org> 0.8.1-1
