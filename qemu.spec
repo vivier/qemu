@@ -1,63 +1,58 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
-Version: 0.8.1
-Release: 3%{?dist}
-
+Version: 0.8.2
+Release: 1%{?dist}
 License: GPL/LGPL
 Group: Development/Tools
-URL: http://fabrice.bellard.free.fr/qemu
+URL: http://www.qemu.org/
 Source0: http://www.qemu.org/%{name}-%{version}.tar.gz
 Source1: qemu.init
 Patch0: qemu-0.7.0-build.patch
 Patch1: qemu-0.8.0-sdata.patch
-Patch2: qemu-0.8.1-syscall-macros.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-BuildRequires: SDL-devel compat-gcc-32 zlib-devel texi2html
-PreReq: /sbin/chkconfig
-PreReq: /sbin/service
-ExclusiveArch: %{ix86} ppc alpha sparc armv4l x86_64
+BuildRequires: SDL-devel compat-gcc-32 zlib-devel which texi2html
+Requires(post): /sbin/chkconfig
+Requires(preun): /sbin/service /sbin/chkconfig
+Requires(postun): /sbin/service
+ExclusiveArch: %{ix86} x86_64 ppc alpha sparc armv4l
 
 %description
-By using dynamic translation it achieves a reasonable speed while being easy
-to port on new host CPUs. QEMU has two operating modes:
+QEMU is a generic and open source processor emulator which achieves a good
+emulation speed by using dynamic translation. QEMU has two operating modes:
 
+ * Full system emulation. In this mode, QEMU emulates a full system (for
+   example a PC), including a processor and various peripherials. It can be
+   used to launch different Operating Systems without rebooting the PC or
+   to debug system code.
  * User mode emulation. In this mode, QEMU can launch Linux processes compiled
-   for one CPU on another CPU. Linux system calls are converted because of
-   endianness and 32/64 bit mismatches. Wine (Windows emulation) and DOSEMU
-   (DOS emulation) are the main targets for QEMU.
- * Full system emulation. In this mode, QEMU emulates a full system, including
-   a processor and various peripherals. Currently, it is only used to launch
-   an x86 Linux kernel on an x86 Linux system. It enables easier testing and
-   debugging of system code. It can also be used to provide virtual hosting
-   of several virtual PC on a single server.
+   for one CPU on another CPU.
 
-As QEMU requires no host kernel patches to run, it is very safe and easy to use.
+As QEMU requires no host kernel patches to run, it is safe and easy to use.
 
 %prep
 %setup -q
 %patch0 -p1
 %patch1 -p1
-%patch2 -p1
 
 %build
 ./configure --prefix=%{_prefix} --interp-prefix=%{_prefix}/qemu-%%M \
 %ifarch x86_64
-   --target-list="i386-user arm-user armeb-user ppc-user mips-user mipsel-user i386-softmmu ppc-softmmu  x86_64-softmmu mips-softmmu arm-softmmu" \
+    --target-list="i386-user arm-user armeb-user ppc-user mips-user mipsel-user i386-softmmu ppc-softmmu x86_64-softmmu mips-softmmu arm-softmmu" \
 %endif
-   --cc=gcc32 --enable-alsa
-make
+    --cc=gcc32 --enable-alsa
+make %{?_smp_mflags}
 
 %install
 rm -rf $RPM_BUILD_ROOT
 
 make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
-	bindir="${RPM_BUILD_ROOT}%{_bindir}" \
-	sharedir="${RPM_BUILD_ROOT}%{_prefix}/share/qemu" \
-	mandir="${RPM_BUILD_ROOT}%{_mandir}" \
-	docdir="${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}" \
-	datadir="${RPM_BUILD_ROOT}%{_prefix}/share/qemu" install
+     bindir="${RPM_BUILD_ROOT}%{_bindir}" \
+     sharedir="${RPM_BUILD_ROOT}%{_prefix}/share/qemu" \
+     mandir="${RPM_BUILD_ROOT}%{_mandir}" \
+     docdir="${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}" \
+     datadir="${RPM_BUILD_ROOT}%{_prefix}/share/qemu" install
 
-install -D $RPM_SOURCE_DIR/qemu.init $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/qemu
+install -D -p -m 0755 %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/qemu
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -66,22 +61,37 @@ rm -rf $RPM_BUILD_ROOT
 /sbin/chkconfig --add qemu
 
 %preun
-if [ $1 = 0 ]; then
-        /sbin/service qemu stop > /dev/null 2>&1
+if [ $1 -eq 0 ]; then
+    /sbin/service qemu stop &>/dev/null || :
+    /sbin/chkconfig --del qemu
 fi
-/sbin/chkconfig --del qemu
+
+%postun
+if [ $1 -ge 1 ]; then
+    /sbin/service qemu condrestart &>/dev/null || :
+fi
 
 %files
 %defattr(-,root,root)
 %doc Changelog README README.distrib TODO
-%doc qemu-tech.texi qemu-doc.texi
-%doc *.html
-%{_bindir}/qemu*
-%{_prefix}/share/qemu
-%{_mandir}/man?/*
+%doc qemu-doc.html qemu-tech.html
 %config %{_sysconfdir}/rc.d/init.d/qemu
+%{_bindir}/qemu*
+%{_prefix}/share/qemu/
+%{_mandir}/man1/*
 
 %changelog
+* Wed Aug 23 2006 Matthias Saou <http://freshrpms.net/> 0.8.2-1
+- Update to 0.8.2 (#200065).
+- Drop upstreamed syscall-macros patch2.
+- Put correct scriplet dependencies.
+- Force install mode for the init script to avoid umask problems.
+- Add %%postun condrestart for changes to the init script to be applied if any.
+- Update description with the latest "about" from the web page (more current).
+- Update URL to qemu.org one like the Source.
+- Add which build requirement.
+- Don't include texi files in %%doc since we ship them in html.
+
 * Thu Jun  8 2006 David Woodhouse <dwmw2@infradead.org> 0.8.1-3
 - More header abuse in modify_ldt(), change BuildRoot:
 
