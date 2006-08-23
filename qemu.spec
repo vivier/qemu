@@ -10,7 +10,7 @@ Source1: qemu.init
 Patch0: qemu-0.7.0-build.patch
 Patch1: qemu-0.8.0-sdata.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-BuildRequires: SDL-devel compat-gcc-32 zlib-devel which texi2html
+BuildRequires: SDL-devel compat-gcc-34 zlib-devel which texi2html
 Requires(post): /sbin/chkconfig
 Requires(preun): /sbin/service /sbin/chkconfig
 Requires(postun): /sbin/service
@@ -39,7 +39,7 @@ As QEMU requires no host kernel patches to run, it is safe and easy to use.
 %ifarch x86_64
     --target-list="i386-user arm-user armeb-user ppc-user mips-user mipsel-user i386-softmmu ppc-softmmu x86_64-softmmu mips-softmmu arm-softmmu" \
 %endif
-    --cc=gcc32 --enable-alsa
+    --cc=gcc34 --enable-alsa
 make %{?_smp_mflags}
 
 %install
@@ -91,6 +91,7 @@ fi
 - Update URL to qemu.org one like the Source.
 - Add which build requirement.
 - Don't include texi files in %%doc since we ship them in html.
+- Switch to using gcc34 on devel, FC5 still has gcc32.
 
 * Thu Jun  8 2006 David Woodhouse <dwmw2@infradead.org> 0.8.1-3
 - More header abuse in modify_ldt(), change BuildRoot:
