@@ -1,3 +1,10 @@
+# For FC >= 6 we have gcc 3.4, for FC <= 5 we have gcc 3.2
+%if %{!?fedora:6}%{?fedora} >= 6
+%define gccver 34
+%else
+%define gccver 32
+%endif
+
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.8.2
@@ -12,7 +19,7 @@ Patch1: qemu-0.8.0-sdata.patch
 Patch2: qemu-0.8.2-kernheaders.patch
 Patch3: qemu-0.8.2-target-sparc.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-BuildRequires: SDL-devel compat-gcc-34 zlib-devel which texi2html
+BuildRequires: SDL-devel compat-gcc-%{gccver} zlib-devel which texi2html
 Requires(post): /sbin/chkconfig
 Requires(preun): /sbin/service /sbin/chkconfig
 Requires(postun): /sbin/service
@@ -39,11 +46,11 @@ As QEMU requires no host kernel patches to run, it is safe and easy to use.
 %patch3 -p1
 
 %build
-./configure --prefix=%{_prefix} --interp-prefix=%{_prefix}/qemu-%%M \
-%ifarch x86_64
-    --target-list="i386-user arm-user armeb-user ppc-user mips-user mipsel-user i386-softmmu ppc-softmmu x86_64-softmmu mips-softmmu arm-softmmu" \
-%endif
-    --cc=gcc34 --enable-alsa
+./configure \
+    --prefix=%{_prefix} \
+    --interp-prefix=%{_prefix}/qemu-%%M \
+    --cc=gcc%{gccver} \
+    --enable-alsa
 make %{?_smp_mflags}
 
 %install
@@ -85,6 +92,11 @@ fi
 %{_mandir}/man1/*
 
 %changelog
+* Thu Aug 24 2006 Matthias Saou <http://freshrpms.net/> 0.8.2-2
+- Remove the target-list iteration for x86_64 since they all build again.
+- Make gcc32 vs. gcc34 conditional on %%{fedora} to share the same spec for
+  FC5 and FC6.
+
 * Wed Aug 23 2006 Matthias Saou <http://freshrpms.net/> 0.8.2-1
 - Update to 0.8.2 (#200065).
 - Drop upstreamed syscall-macros patch2.
