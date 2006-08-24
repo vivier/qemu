@@ -8,7 +8,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.8.2
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: GPL/LGPL
 Group: Development/Tools
 URL: http://www.qemu.org/
