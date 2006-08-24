@@ -10,6 +10,7 @@ Source1: qemu.init
 Patch0: qemu-0.7.0-build.patch
 Patch1: qemu-0.8.0-sdata.patch
 Patch2: qemu-0.8.2-kernheaders.patch
+Patch3: qemu-0.8.2-target-sparc.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel compat-gcc-34 zlib-devel which texi2html
 Requires(post): /sbin/chkconfig
@@ -35,6 +36,7 @@ As QEMU requires no host kernel patches to run, it is safe and easy to use.
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
+%patch3 -p1
 
 %build
 ./configure --prefix=%{_prefix} --interp-prefix=%{_prefix}/qemu-%%M \
@@ -95,6 +97,7 @@ fi
 - Don't include texi files in %%doc since we ship them in html.
 - Switch to using gcc34 on devel, FC5 still has gcc32.
 - Add kernheaders patch to fix linux/compiler.h inclusion.
+- Add target-sparc patch to fix compiling on ppc (some int32 to float).
 
 * Thu Jun  8 2006 David Woodhouse <dwmw2@infradead.org> 0.8.1-3
 - More header abuse in modify_ldt(), change BuildRoot:
