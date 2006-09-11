@@ -8,7 +8,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.8.2
-Release: 2%{?dist}
+Release: 3%{?dist}
 License: GPL/LGPL
 Group: Development/Tools
 URL: http://www.qemu.org/
@@ -92,6 +92,9 @@ fi
 %{_mandir}/man1/*
 
 %changelog
+* Mon Sep 11 2006 David Woodhouse <dwmw2@infradead.org> 0.8.2-3
+- Rebuild
+
 * Thu Aug 24 2006 Matthias Saou <http://freshrpms.net/> 0.8.2-2
 - Remove the target-list iteration for x86_64 since they all build again.
 - Make gcc32 vs. gcc34 conditional on %%{fedora} to share the same spec for
