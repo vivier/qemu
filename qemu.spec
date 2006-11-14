@@ -8,7 +8,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.8.2
-Release: 3%{?dist}
+Release: 4%{?dist}
 License: GPL/LGPL
 Group: Development/Tools
 URL: http://www.qemu.org/
@@ -18,6 +18,7 @@ Patch0: qemu-0.7.0-build.patch
 Patch1: qemu-0.8.0-sdata.patch
 Patch2: qemu-0.8.2-kernheaders.patch
 Patch3: qemu-0.8.2-target-sparc.patch
+Patch4: qemu-0.8.2-mb-nops.diff
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel compat-gcc-%{gccver} zlib-devel which texi2html
 Requires(post): /sbin/chkconfig
@@ -44,6 +45,7 @@ As QEMU requires no host kernel patches to run, it is safe and easy to use.
 %patch1 -p1
 %patch2 -p1
 %patch3 -p1
+%patch4 -p1
 
 %build
 ./configure \
@@ -92,6 +94,10 @@ fi
 %{_mandir}/man1/*
 
 %changelog
+* Mon Nov 13 2006 Hans de Goede <j.w.r.degoede@hhs.nl> 0.8.2-4
+- Backport patch to make FC6 guests work by Kevin Kofler
+  <Kevin@tigcc.ticalc.org> (bz 207843).
+
 * Mon Sep 11 2006 David Woodhouse <dwmw2@infradead.org> 0.8.2-3
 - Rebuild
 
