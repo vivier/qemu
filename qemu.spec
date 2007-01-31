@@ -8,7 +8,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.8.2
-Release: 4%{?dist}
+Release: 5%{?dist}
 License: GPL/LGPL
 Group: Development/Tools
 URL: http://www.qemu.org/
@@ -88,12 +88,16 @@ fi
 %defattr(-,root,root)
 %doc Changelog README README.distrib TODO
 %doc qemu-doc.html qemu-tech.html
+%doc COPYING COPYING.LIB LICENSE
 %config %{_sysconfdir}/rc.d/init.d/qemu
 %{_bindir}/qemu*
 %{_prefix}/share/qemu/
 %{_mandir}/man1/*
 
 %changelog
+* Wed Jan 31 2007 David Woodhouse <dwmw2@infradead.org> 0.8.2-5
+- Include licences
+
 * Mon Nov 13 2006 Hans de Goede <j.w.r.degoede@hhs.nl> 0.8.2-4
 - Backport patch to make FC6 guests work by Kevin Kofler
   <Kevin@tigcc.ticalc.org> (bz 207843).
