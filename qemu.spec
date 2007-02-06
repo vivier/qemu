@@ -7,8 +7,8 @@
 
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
-Version: 0.8.2
-Release: 5%{?dist}
+Version: 0.9.0
+Release: 1%{?dist}
 License: GPL/LGPL
 Group: Development/Tools
 URL: http://www.qemu.org/
@@ -16,9 +16,6 @@ Source0: http://www.qemu.org/%{name}-%{version}.tar.gz
 Source1: qemu.init
 Patch0: qemu-0.7.0-build.patch
 Patch1: qemu-0.8.0-sdata.patch
-Patch2: qemu-0.8.2-kernheaders.patch
-Patch3: qemu-0.8.2-target-sparc.patch
-Patch4: qemu-0.8.2-mb-nops.diff
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel compat-gcc-%{gccver} zlib-devel which texi2html
 Requires(post): /sbin/chkconfig
@@ -43,9 +40,6 @@ As QEMU requires no host kernel patches to run, it is safe and easy to use.
 %setup -q
 %patch0 -p1
 %patch1 -p1
-%patch2 -p1
-%patch3 -p1
-%patch4 -p1
 
 %build
 ./configure \
@@ -86,7 +80,7 @@ fi
 
 %files
 %defattr(-,root,root)
-%doc Changelog README README.distrib TODO
+%doc Changelog README TODO
 %doc qemu-doc.html qemu-tech.html
 %doc COPYING COPYING.LIB LICENSE
 %config %{_sysconfdir}/rc.d/init.d/qemu
@@ -95,6 +89,9 @@ fi
 %{_mandir}/man1/*
 
 %changelog
+* Tue Feb  6 2007 David Woodhouse <dwmw2@infradead.org> 0.9.0-1
+- Update to 0.9.0
+
 * Wed Jan 31 2007 David Woodhouse <dwmw2@infradead.org> 0.8.2-5
 - Include licences
 
