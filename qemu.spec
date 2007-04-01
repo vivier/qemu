@@ -8,7 +8,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.9.0
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: GPL/LGPL
 Group: Development/Tools
 URL: http://www.qemu.org/
@@ -16,6 +16,7 @@ Source0: http://www.qemu.org/%{name}-%{version}.tar.gz
 Source1: qemu.init
 Patch0: qemu-0.7.0-build.patch
 Patch1: qemu-0.8.0-sdata.patch
+Patch2: qemu-0.9.0-load-initrd.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel compat-gcc-%{gccver} zlib-devel which texi2html
 Requires(post): /sbin/chkconfig
@@ -40,6 +41,7 @@ As QEMU requires no host kernel patches to run, it is safe and easy to use.
 %setup -q
 %patch0 -p1
 %patch1 -p1
+%patch2 -p0
 
 %build
 ./configure \
@@ -58,6 +60,7 @@ make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
      mandir="${RPM_BUILD_ROOT}%{_mandir}" \
      docdir="${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}" \
      datadir="${RPM_BUILD_ROOT}%{_prefix}/share/qemu" install
+chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
 
 install -D -p -m 0755 %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/qemu
 
@@ -89,6 +92,10 @@ fi
 %{_mandir}/man1/*
 
 %changelog
+* Sun Apr  1 2007 Hans de Goede <j.w.r.degoede@hhs.nl> 0.9.0-2
+- Fix direct loading of a linux kernel with -kernel & -initrd (bz 234681)
+- Remove spurious execute bits from manpages (bz 222573)
+
 * Tue Feb  6 2007 David Woodhouse <dwmw2@infradead.org> 0.9.0-1
 - Update to 0.9.0
 
