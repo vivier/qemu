@@ -59,8 +59,9 @@ As QEMU requires no host kernel patches to run, it is safe and easy to use.
     --prefix=%{_prefix} \
     --interp-prefix=%{_prefix}/qemu-%%M \
     --cc=gcc%{gccver} \
-    --enable-alsa
-make %{?_smp_mflags}
+    --enable-alsa \
+    --extra-ldflags="-Wl,--build-id"
+make %{?_smp_mflags} VL_LDFLAGS="-Wl,--build-id"
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -103,6 +104,9 @@ fi
 %{_mandir}/man1/*
 
 %changelog
+* Tue Aug 28 2007 Daniel P. Berrange <berrange@redhat.com> - 0.9.0-4.fc8
+- Fix debuginfo by passing -Wl,--build-id to linker
+
 * Tue Aug 28 2007 David Woodhouse <dwmw2@infradead.org> 0.9.0-4
 - Update licence
 - Fix CDROM emulation (#253542)
