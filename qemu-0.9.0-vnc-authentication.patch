@@ -1,0 +1,1989 @@
+diff -rupN qemu-0.9.0.orig/configure qemu-0.9.0.new/configure
+--- qemu-0.9.0.orig/configure	2007-02-05 18:01:54.000000000 -0500
++++ qemu-0.9.0.new/configure	2007-08-27 13:35:29.000000000 -0400
+@@ -86,6 +86,7 @@ alsa="no"
+ fmod="no"
+ fmod_lib=""
+ fmod_inc=""
++vnc_tls="yes"
+ bsd="no"
+ linux="no"
+ kqemu="no"
+@@ -224,6 +225,8 @@ for opt do
+   ;;
+   --fmod-inc=*) fmod_inc="$optarg"
+   ;;
++  --disable-vnc-tls) vnc_tls="no"
++  ;;
+   --enable-mingw32) mingw32="yes" ; cross_prefix="i386-mingw32-" ; user="no"
+   ;;
+   --disable-slirp) slirp="no"
+@@ -293,6 +296,7 @@ echo "  --enable-coreaudio       enable 
+ echo "  --enable-alsa            enable ALSA audio driver"
+ echo "  --enable-fmod            enable FMOD audio driver"
+ echo "  --enabled-dsound         enable DirectSound audio driver"
++echo "  --disable-vnc-tls        disable TLS encryption for VNC server"
+ echo "  --enable-system          enable all system emulation targets"
+ echo "  --disable-system         disable all system emulation targets"
+ echo "  --enable-linux-user      enable all linux usermode emulation targets"
+@@ -538,6 +542,16 @@ else
+ fi # -z $sdl
+ 
+ ##########################################
++# VNC TLS detection
++if test "$vnc_tls" = "yes" ; then
++  `pkg-config gnutls` || vnc_tls="no"
++fi
++if test "$vnc_tls" = "yes" ; then
++  vnc_tls_cflags=`pkg-config --cflags gnutls`
++  vnc_tls_libs=`pkg-config --libs gnutls`
++fi
++
++##########################################
+ # alsa sound support libraries
+ 
+ if test "$alsa" = "yes" ; then
+@@ -622,6 +636,11 @@ else
+     fmod_support=""
+ fi
+ echo "FMOD support      $fmod $fmod_support"
++echo "VNC TLS support   $vnc_tls"
++if test "$vnc_tls" = "yes" ; then
++    echo "    TLS CFLAGS    $vnc_tls_cflags"
++    echo "    TLS LIBS      $vnc_tls_libs"
++fi
+ echo "kqemu support     $kqemu"
+ echo "Documentation     $build_docs"
+ [ ! -z "$uname_release" ] && \
+@@ -765,6 +784,12 @@ if test "$fmod" = "yes" ; then
+   echo "CONFIG_FMOD_INC=$fmod_inc" >> $config_mak
+   echo "#define CONFIG_FMOD 1" >> $config_h
+ fi
++if test "$vnc_tls" = "yes" ; then
++  echo "CONFIG_VNC_TLS=yes" >> $config_mak
++  echo "CONFIG_VNC_TLS_CFLAGS=$vnc_tls_cflags" >> $config_mak
++  echo "CONFIG_VNC_TLS_LIBS=$vnc_tls_libs" >> $config_mak
++  echo "#define CONFIG_VNC_TLS 1" >> $config_h
++fi
+ qemu_version=`head $source_path/VERSION`
+ echo "VERSION=$qemu_version" >>$config_mak
+ echo "#define QEMU_VERSION \"$qemu_version\"" >> $config_h
+diff -rupN qemu-0.9.0.orig/d3des.c qemu-0.9.0.new/d3des.c
+--- qemu-0.9.0.orig/d3des.c	1969-12-31 19:00:00.000000000 -0500
++++ qemu-0.9.0.new/d3des.c	2007-08-27 13:29:22.000000000 -0400
+@@ -0,0 +1,434 @@
++/*
++ * This is D3DES (V5.09) by Richard Outerbridge with the double and
++ * triple-length support removed for use in VNC.  Also the bytebit[] array
++ * has been reversed so that the most significant bit in each byte of the
++ * key is ignored, not the least significant.
++ *
++ * These changes are:
++ *  Copyright (C) 1999 AT&T Laboratories Cambridge.  All Rights Reserved.
++ *
++ * This software is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
++ */
++
++/* D3DES (V5.09) -
++ *
++ * A portable, public domain, version of the Data Encryption Standard.
++ *
++ * Written with Symantec's THINK (Lightspeed) C by Richard Outerbridge.
++ * Thanks to: Dan Hoey for his excellent Initial and Inverse permutation
++ * code;  Jim Gillogly & Phil Karn for the DES key schedule code; Dennis
++ * Ferguson, Eric Young and Dana How for comparing notes; and Ray Lau,
++ * for humouring me on.
++ *
++ * Copyright (c) 1988,1989,1990,1991,1992 by Richard Outerbridge.
++ * (GEnie : OUTER; CIS : [71755,204]) Graven Imagery, 1992.
++ */
++
++#include "d3des.h"
++
++static void scrunch(unsigned char *, unsigned long *);
++static void unscrun(unsigned long *, unsigned char *);
++static void desfunc(unsigned long *, unsigned long *);
++static void cookey(unsigned long *);
++
++static unsigned long KnL[32] = { 0L };
++
++static unsigned short bytebit[8]	= {
++	01, 02, 04, 010, 020, 040, 0100, 0200 };
++
++static unsigned long bigbyte[24] = {
++	0x800000L,	0x400000L,	0x200000L,	0x100000L,
++	0x80000L,	0x40000L,	0x20000L,	0x10000L,
++	0x8000L,	0x4000L,	0x2000L,	0x1000L,
++	0x800L, 	0x400L, 	0x200L, 	0x100L,
++	0x80L,		0x40L,		0x20L,		0x10L,
++	0x8L,		0x4L,		0x2L,		0x1L	};
++
++/* Use the key schedule specified in the Standard (ANSI X3.92-1981). */
++
++static unsigned char pc1[56] = {
++	56, 48, 40, 32, 24, 16,  8,	 0, 57, 49, 41, 33, 25, 17,
++	 9,  1, 58, 50, 42, 34, 26,	18, 10,  2, 59, 51, 43, 35,
++	62, 54, 46, 38, 30, 22, 14,	 6, 61, 53, 45, 37, 29, 21,
++	13,  5, 60, 52, 44, 36, 28,	20, 12,  4, 27, 19, 11,  3 };
++
++static unsigned char totrot[16] = {
++	1,2,4,6,8,10,12,14,15,17,19,21,23,25,27,28 };
++
++static unsigned char pc2[48] = {
++	13, 16, 10, 23,  0,  4,  2, 27, 14,  5, 20,  9,
++	22, 18, 11,  3, 25,  7, 15,  6, 26, 19, 12,  1,
++	40, 51, 30, 36, 46, 54, 29, 39, 50, 44, 32, 47,
++	43, 48, 38, 55, 33, 52, 45, 41, 49, 35, 28, 31 };
++
++void deskey(key, edf)	/* Thanks to James Gillogly & Phil Karn! */
++unsigned char *key;
++int edf;
++{
++	register int i, j, l, m, n;
++	unsigned char pc1m[56], pcr[56];
++	unsigned long kn[32];
++
++	for ( j = 0; j < 56; j++ ) {
++		l = pc1[j];
++		m = l & 07;
++		pc1m[j] = (key[l >> 3] & bytebit[m]) ? 1 : 0;
++		}
++	for( i = 0; i < 16; i++ ) {
++		if( edf == DE1 ) m = (15 - i) << 1;
++		else m = i << 1;
++		n = m + 1;
++		kn[m] = kn[n] = 0L;
++		for( j = 0; j < 28; j++ ) {
++			l = j + totrot[i];
++			if( l < 28 ) pcr[j] = pc1m[l];
++			else pcr[j] = pc1m[l - 28];
++			}
++		for( j = 28; j < 56; j++ ) {
++		    l = j + totrot[i];
++		    if( l < 56 ) pcr[j] = pc1m[l];
++		    else pcr[j] = pc1m[l - 28];
++		    }
++		for( j = 0; j < 24; j++ ) {
++			if( pcr[pc2[j]] ) kn[m] |= bigbyte[j];
++			if( pcr[pc2[j+24]] ) kn[n] |= bigbyte[j];
++			}
++		}
++	cookey(kn);
++	return;
++	}
++
++static void cookey(raw1)
++register unsigned long *raw1;
++{
++	register unsigned long *cook, *raw0;
++	unsigned long dough[32];
++	register int i;
++
++	cook = dough;
++	for( i = 0; i < 16; i++, raw1++ ) {
++		raw0 = raw1++;
++		*cook	 = (*raw0 & 0x00fc0000L) << 6;
++		*cook	|= (*raw0 & 0x00000fc0L) << 10;
++		*cook	|= (*raw1 & 0x00fc0000L) >> 10;
++		*cook++ |= (*raw1 & 0x00000fc0L) >> 6;
++		*cook	 = (*raw0 & 0x0003f000L) << 12;
++		*cook	|= (*raw0 & 0x0000003fL) << 16;
++		*cook	|= (*raw1 & 0x0003f000L) >> 4;
++		*cook++ |= (*raw1 & 0x0000003fL);
++		}
++	usekey(dough);
++	return;
++	}
++
++void cpkey(into)
++register unsigned long *into;
++{
++	register unsigned long *from, *endp;
++
++	from = KnL, endp = &KnL[32];
++	while( from < endp ) *into++ = *from++;
++	return;
++	}
++
++void usekey(from)
++register unsigned long *from;
++{
++	register unsigned long *to, *endp;
++
++	to = KnL, endp = &KnL[32];
++	while( to < endp ) *to++ = *from++;
++	return;
++	}
++
++void des(inblock, outblock)
++unsigned char *inblock, *outblock;
++{
++	unsigned long work[2];
++
++	scrunch(inblock, work);
++	desfunc(work, KnL);
++	unscrun(work, outblock);
++	return;
++	}
++
++static void scrunch(outof, into)
++register unsigned char *outof;
++register unsigned long *into;
++{
++	*into	 = (*outof++ & 0xffL) << 24;
++	*into	|= (*outof++ & 0xffL) << 16;
++	*into	|= (*outof++ & 0xffL) << 8;
++	*into++ |= (*outof++ & 0xffL);
++	*into	 = (*outof++ & 0xffL) << 24;
++	*into	|= (*outof++ & 0xffL) << 16;
++	*into	|= (*outof++ & 0xffL) << 8;
++	*into	|= (*outof   & 0xffL);
++	return;
++	}
++
++static void unscrun(outof, into)
++register unsigned long *outof;
++register unsigned char *into;
++{
++	*into++ = (unsigned char)((*outof >> 24) & 0xffL);
++	*into++ = (unsigned char)((*outof >> 16) & 0xffL);
++	*into++ = (unsigned char)((*outof >>  8) & 0xffL);
++	*into++ = (unsigned char)(*outof++	 & 0xffL);
++	*into++ = (unsigned char)((*outof >> 24) & 0xffL);
++	*into++ = (unsigned char)((*outof >> 16) & 0xffL);
++	*into++ = (unsigned char)((*outof >>  8) & 0xffL);
++	*into	=  (unsigned char)(*outof	 & 0xffL);
++	return;
++	}
++
++static unsigned long SP1[64] = {
++	0x01010400L, 0x00000000L, 0x00010000L, 0x01010404L,
++	0x01010004L, 0x00010404L, 0x00000004L, 0x00010000L,
++	0x00000400L, 0x01010400L, 0x01010404L, 0x00000400L,
++	0x01000404L, 0x01010004L, 0x01000000L, 0x00000004L,
++	0x00000404L, 0x01000400L, 0x01000400L, 0x00010400L,
++	0x00010400L, 0x01010000L, 0x01010000L, 0x01000404L,
++	0x00010004L, 0x01000004L, 0x01000004L, 0x00010004L,
++	0x00000000L, 0x00000404L, 0x00010404L, 0x01000000L,
++	0x00010000L, 0x01010404L, 0x00000004L, 0x01010000L,
++	0x01010400L, 0x01000000L, 0x01000000L, 0x00000400L,
++	0x01010004L, 0x00010000L, 0x00010400L, 0x01000004L,
++	0x00000400L, 0x00000004L, 0x01000404L, 0x00010404L,
++	0x01010404L, 0x00010004L, 0x01010000L, 0x01000404L,
++	0x01000004L, 0x00000404L, 0x00010404L, 0x01010400L,
++	0x00000404L, 0x01000400L, 0x01000400L, 0x00000000L,
++	0x00010004L, 0x00010400L, 0x00000000L, 0x01010004L };
++
++static unsigned long SP2[64] = {
++	0x80108020L, 0x80008000L, 0x00008000L, 0x00108020L,
++	0x00100000L, 0x00000020L, 0x80100020L, 0x80008020L,
++	0x80000020L, 0x80108020L, 0x80108000L, 0x80000000L,
++	0x80008000L, 0x00100000L, 0x00000020L, 0x80100020L,
++	0x00108000L, 0x00100020L, 0x80008020L, 0x00000000L,
++	0x80000000L, 0x00008000L, 0x00108020L, 0x80100000L,
++	0x00100020L, 0x80000020L, 0x00000000L, 0x00108000L,
++	0x00008020L, 0x80108000L, 0x80100000L, 0x00008020L,
++	0x00000000L, 0x00108020L, 0x80100020L, 0x00100000L,
++	0x80008020L, 0x80100000L, 0x80108000L, 0x00008000L,
++	0x80100000L, 0x80008000L, 0x00000020L, 0x80108020L,
++	0x00108020L, 0x00000020L, 0x00008000L, 0x80000000L,
++	0x00008020L, 0x80108000L, 0x00100000L, 0x80000020L,
++	0x00100020L, 0x80008020L, 0x80000020L, 0x00100020L,
++	0x00108000L, 0x00000000L, 0x80008000L, 0x00008020L,
++	0x80000000L, 0x80100020L, 0x80108020L, 0x00108000L };
++
++static unsigned long SP3[64] = {
++	0x00000208L, 0x08020200L, 0x00000000L, 0x08020008L,
++	0x08000200L, 0x00000000L, 0x00020208L, 0x08000200L,
++	0x00020008L, 0x08000008L, 0x08000008L, 0x00020000L,
++	0x08020208L, 0x00020008L, 0x08020000L, 0x00000208L,
++	0x08000000L, 0x00000008L, 0x08020200L, 0x00000200L,
++	0x00020200L, 0x08020000L, 0x08020008L, 0x00020208L,
++	0x08000208L, 0x00020200L, 0x00020000L, 0x08000208L,
++	0x00000008L, 0x08020208L, 0x00000200L, 0x08000000L,
++	0x08020200L, 0x08000000L, 0x00020008L, 0x00000208L,
++	0x00020000L, 0x08020200L, 0x08000200L, 0x00000000L,
++	0x00000200L, 0x00020008L, 0x08020208L, 0x08000200L,
++	0x08000008L, 0x00000200L, 0x00000000L, 0x08020008L,
++	0x08000208L, 0x00020000L, 0x08000000L, 0x08020208L,
++	0x00000008L, 0x00020208L, 0x00020200L, 0x08000008L,
++	0x08020000L, 0x08000208L, 0x00000208L, 0x08020000L,
++	0x00020208L, 0x00000008L, 0x08020008L, 0x00020200L };
++
++static unsigned long SP4[64] = {
++	0x00802001L, 0x00002081L, 0x00002081L, 0x00000080L,
++	0x00802080L, 0x00800081L, 0x00800001L, 0x00002001L,
++	0x00000000L, 0x00802000L, 0x00802000L, 0x00802081L,
++	0x00000081L, 0x00000000L, 0x00800080L, 0x00800001L,
++	0x00000001L, 0x00002000L, 0x00800000L, 0x00802001L,
++	0x00000080L, 0x00800000L, 0x00002001L, 0x00002080L,
++	0x00800081L, 0x00000001L, 0x00002080L, 0x00800080L,
++	0x00002000L, 0x00802080L, 0x00802081L, 0x00000081L,
++	0x00800080L, 0x00800001L, 0x00802000L, 0x00802081L,
++	0x00000081L, 0x00000000L, 0x00000000L, 0x00802000L,
++	0x00002080L, 0x00800080L, 0x00800081L, 0x00000001L,
++	0x00802001L, 0x00002081L, 0x00002081L, 0x00000080L,
++	0x00802081L, 0x00000081L, 0x00000001L, 0x00002000L,
++	0x00800001L, 0x00002001L, 0x00802080L, 0x00800081L,
++	0x00002001L, 0x00002080L, 0x00800000L, 0x00802001L,
++	0x00000080L, 0x00800000L, 0x00002000L, 0x00802080L };
++
++static unsigned long SP5[64] = {
++	0x00000100L, 0x02080100L, 0x02080000L, 0x42000100L,
++	0x00080000L, 0x00000100L, 0x40000000L, 0x02080000L,
++	0x40080100L, 0x00080000L, 0x02000100L, 0x40080100L,
++	0x42000100L, 0x42080000L, 0x00080100L, 0x40000000L,
++	0x02000000L, 0x40080000L, 0x40080000L, 0x00000000L,
++	0x40000100L, 0x42080100L, 0x42080100L, 0x02000100L,
++	0x42080000L, 0x40000100L, 0x00000000L, 0x42000000L,
++	0x02080100L, 0x02000000L, 0x42000000L, 0x00080100L,
++	0x00080000L, 0x42000100L, 0x00000100L, 0x02000000L,
++	0x40000000L, 0x02080000L, 0x42000100L, 0x40080100L,
++	0x02000100L, 0x40000000L, 0x42080000L, 0x02080100L,
++	0x40080100L, 0x00000100L, 0x02000000L, 0x42080000L,
++	0x42080100L, 0x00080100L, 0x42000000L, 0x42080100L,
++	0x02080000L, 0x00000000L, 0x40080000L, 0x42000000L,
++	0x00080100L, 0x02000100L, 0x40000100L, 0x00080000L,
++	0x00000000L, 0x40080000L, 0x02080100L, 0x40000100L };
++
++static unsigned long SP6[64] = {
++	0x20000010L, 0x20400000L, 0x00004000L, 0x20404010L,
++	0x20400000L, 0x00000010L, 0x20404010L, 0x00400000L,
++	0x20004000L, 0x00404010L, 0x00400000L, 0x20000010L,
++	0x00400010L, 0x20004000L, 0x20000000L, 0x00004010L,
++	0x00000000L, 0x00400010L, 0x20004010L, 0x00004000L,
++	0x00404000L, 0x20004010L, 0x00000010L, 0x20400010L,
++	0x20400010L, 0x00000000L, 0x00404010L, 0x20404000L,
++	0x00004010L, 0x00404000L, 0x20404000L, 0x20000000L,
++	0x20004000L, 0x00000010L, 0x20400010L, 0x00404000L,
++	0x20404010L, 0x00400000L, 0x00004010L, 0x20000010L,
++	0x00400000L, 0x20004000L, 0x20000000L, 0x00004010L,
++	0x20000010L, 0x20404010L, 0x00404000L, 0x20400000L,
++	0x00404010L, 0x20404000L, 0x00000000L, 0x20400010L,
++	0x00000010L, 0x00004000L, 0x20400000L, 0x00404010L,
++	0x00004000L, 0x00400010L, 0x20004010L, 0x00000000L,
++	0x20404000L, 0x20000000L, 0x00400010L, 0x20004010L };
++
++static unsigned long SP7[64] = {
++	0x00200000L, 0x04200002L, 0x04000802L, 0x00000000L,
++	0x00000800L, 0x04000802L, 0x00200802L, 0x04200800L,
++	0x04200802L, 0x00200000L, 0x00000000L, 0x04000002L,
++	0x00000002L, 0x04000000L, 0x04200002L, 0x00000802L,
++	0x04000800L, 0x00200802L, 0x00200002L, 0x04000800L,
++	0x04000002L, 0x04200000L, 0x04200800L, 0x00200002L,
++	0x04200000L, 0x00000800L, 0x00000802L, 0x04200802L,
++	0x00200800L, 0x00000002L, 0x04000000L, 0x00200800L,
++	0x04000000L, 0x00200800L, 0x00200000L, 0x04000802L,
++	0x04000802L, 0x04200002L, 0x04200002L, 0x00000002L,
++	0x00200002L, 0x04000000L, 0x04000800L, 0x00200000L,
++	0x04200800L, 0x00000802L, 0x00200802L, 0x04200800L,
++	0x00000802L, 0x04000002L, 0x04200802L, 0x04200000L,
++	0x00200800L, 0x00000000L, 0x00000002L, 0x04200802L,
++	0x00000000L, 0x00200802L, 0x04200000L, 0x00000800L,
++	0x04000002L, 0x04000800L, 0x00000800L, 0x00200002L };
++
++static unsigned long SP8[64] = {
++	0x10001040L, 0x00001000L, 0x00040000L, 0x10041040L,
++	0x10000000L, 0x10001040L, 0x00000040L, 0x10000000L,
++	0x00040040L, 0x10040000L, 0x10041040L, 0x00041000L,
++	0x10041000L, 0x00041040L, 0x00001000L, 0x00000040L,
++	0x10040000L, 0x10000040L, 0x10001000L, 0x00001040L,
++	0x00041000L, 0x00040040L, 0x10040040L, 0x10041000L,
++	0x00001040L, 0x00000000L, 0x00000000L, 0x10040040L,
++	0x10000040L, 0x10001000L, 0x00041040L, 0x00040000L,
++	0x00041040L, 0x00040000L, 0x10041000L, 0x00001000L,
++	0x00000040L, 0x10040040L, 0x00001000L, 0x00041040L,
++	0x10001000L, 0x00000040L, 0x10000040L, 0x10040000L,
++	0x10040040L, 0x10000000L, 0x00040000L, 0x10001040L,
++	0x00000000L, 0x10041040L, 0x00040040L, 0x10000040L,
++	0x10040000L, 0x10001000L, 0x10001040L, 0x00000000L,
++	0x10041040L, 0x00041000L, 0x00041000L, 0x00001040L,
++	0x00001040L, 0x00040040L, 0x10000000L, 0x10041000L };
++
++static void desfunc(block, keys)
++register unsigned long *block, *keys;
++{
++	register unsigned long fval, work, right, leftt;
++	register int round;
++
++	leftt = block[0];
++	right = block[1];
++	work = ((leftt >> 4) ^ right) & 0x0f0f0f0fL;
++	right ^= work;
++	leftt ^= (work << 4);
++	work = ((leftt >> 16) ^ right) & 0x0000ffffL;
++	right ^= work;
++	leftt ^= (work << 16);
++	work = ((right >> 2) ^ leftt) & 0x33333333L;
++	leftt ^= work;
++	right ^= (work << 2);
++	work = ((right >> 8) ^ leftt) & 0x00ff00ffL;
++	leftt ^= work;
++	right ^= (work << 8);
++	right = ((right << 1) | ((right >> 31) & 1L)) & 0xffffffffL;
++	work = (leftt ^ right) & 0xaaaaaaaaL;
++	leftt ^= work;
++	right ^= work;
++	leftt = ((leftt << 1) | ((leftt >> 31) & 1L)) & 0xffffffffL;
++
++	for( round = 0; round < 8; round++ ) {
++		work  = (right << 28) | (right >> 4);
++		work ^= *keys++;
++		fval  = SP7[ work		 & 0x3fL];
++		fval |= SP5[(work >>  8) & 0x3fL];
++		fval |= SP3[(work >> 16) & 0x3fL];
++		fval |= SP1[(work >> 24) & 0x3fL];
++		work  = right ^ *keys++;
++		fval |= SP8[ work		 & 0x3fL];
++		fval |= SP6[(work >>  8) & 0x3fL];
++		fval |= SP4[(work >> 16) & 0x3fL];
++		fval |= SP2[(work >> 24) & 0x3fL];
++		leftt ^= fval;
++		work  = (leftt << 28) | (leftt >> 4);
++		work ^= *keys++;
++		fval  = SP7[ work		 & 0x3fL];
++		fval |= SP5[(work >>  8) & 0x3fL];
++		fval |= SP3[(work >> 16) & 0x3fL];
++		fval |= SP1[(work >> 24) & 0x3fL];
++		work  = leftt ^ *keys++;
++		fval |= SP8[ work		 & 0x3fL];
++		fval |= SP6[(work >>  8) & 0x3fL];
++		fval |= SP4[(work >> 16) & 0x3fL];
++		fval |= SP2[(work >> 24) & 0x3fL];
++		right ^= fval;
++		}
++
++	right = (right << 31) | (right >> 1);
++	work = (leftt ^ right) & 0xaaaaaaaaL;
++	leftt ^= work;
++	right ^= work;
++	leftt = (leftt << 31) | (leftt >> 1);
++	work = ((leftt >> 8) ^ right) & 0x00ff00ffL;
++	right ^= work;
++	leftt ^= (work << 8);
++	work = ((leftt >> 2) ^ right) & 0x33333333L;
++	right ^= work;
++	leftt ^= (work << 2);
++	work = ((right >> 16) ^ leftt) & 0x0000ffffL;
++	leftt ^= work;
++	right ^= (work << 16);
++	work = ((right >> 4) ^ leftt) & 0x0f0f0f0fL;
++	leftt ^= work;
++	right ^= (work << 4);
++	*block++ = right;
++	*block = leftt;
++	return;
++	}
++
++/* Validation sets:
++ *
++ * Single-length key, single-length plaintext -
++ * Key	  : 0123 4567 89ab cdef
++ * Plain  : 0123 4567 89ab cde7
++ * Cipher : c957 4425 6a5e d31d
++ *
++ * Double-length key, single-length plaintext -
++ * Key	  : 0123 4567 89ab cdef fedc ba98 7654 3210
++ * Plain  : 0123 4567 89ab cde7
++ * Cipher : 7f1d 0a77 826b 8aff
++ *
++ * Double-length key, double-length plaintext -
++ * Key	  : 0123 4567 89ab cdef fedc ba98 7654 3210
++ * Plain  : 0123 4567 89ab cdef 0123 4567 89ab cdff
++ * Cipher : 27a0 8440 406a df60 278f 47cf 42d6 15d7
++ *
++ * Triple-length key, single-length plaintext -
++ * Key	  : 0123 4567 89ab cdef fedc ba98 7654 3210 89ab cdef 0123 4567
++ * Plain  : 0123 4567 89ab cde7
++ * Cipher : de0b 7c06 ae5e 0ed5
++ *
++ * Triple-length key, double-length plaintext -
++ * Key	  : 0123 4567 89ab cdef fedc ba98 7654 3210 89ab cdef 0123 4567
++ * Plain  : 0123 4567 89ab cdef 0123 4567 89ab cdff
++ * Cipher : ad0d 1b30 ac17 cf07 0ed1 1c63 81e4 4de5
++ *
++ * d3des V5.0a rwo 9208.07 18:44 Graven Imagery
++ **********************************************************************/
+diff -rupN qemu-0.9.0.orig/d3des.h qemu-0.9.0.new/d3des.h
+--- qemu-0.9.0.orig/d3des.h	1969-12-31 19:00:00.000000000 -0500
++++ qemu-0.9.0.new/d3des.h	2007-08-27 13:29:22.000000000 -0400
+@@ -0,0 +1,51 @@
++/*
++ * This is D3DES (V5.09) by Richard Outerbridge with the double and
++ * triple-length support removed for use in VNC.
++ *
++ * These changes are:
++ *  Copyright (C) 1999 AT&T Laboratories Cambridge.  All Rights Reserved.
++ *
++ * This software is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
++ */
++
++/* d3des.h -
++ *
++ *	Headers and defines for d3des.c
++ *	Graven Imagery, 1992.
++ *
++ * Copyright (c) 1988,1989,1990,1991,1992 by Richard Outerbridge
++ *	(GEnie : OUTER; CIS : [71755,204])
++ */
++
++#define EN0	0	/* MODE == encrypt */
++#define DE1	1	/* MODE == decrypt */
++
++extern void deskey(unsigned char *, int);
++/*		      hexkey[8]     MODE
++ * Sets the internal key register according to the hexadecimal
++ * key contained in the 8 bytes of hexkey, according to the DES,
++ * for encryption or decryption according to MODE.
++ */
++
++extern void usekey(unsigned long *);
++/*		    cookedkey[32]
++ * Loads the internal key register with the data in cookedkey.
++ */
++
++extern void cpkey(unsigned long *);
++/*		   cookedkey[32]
++ * Copies the contents of the internal key register into the storage
++ * located at &cookedkey[0].
++ */
++
++extern void des(unsigned char *, unsigned char *);
++/*		    from[8]	      to[8]
++ * Encrypts/Decrypts (according to the key currently loaded in the
++ * internal key register) one block of eight bytes at address 'from'
++ * into the block at address 'to'.  They can be the same.
++ */
++
++/* d3des.h V5.09 rwo 9208.04 15:06 Graven Imagery
++ ********************************************************************/
+diff -rupN qemu-0.9.0.orig/Makefile.target qemu-0.9.0.new/Makefile.target
+--- qemu-0.9.0.orig/Makefile.target	2007-08-27 12:44:06.000000000 -0400
++++ qemu-0.9.0.new/Makefile.target	2007-08-27 13:27:34.000000000 -0400
+@@ -356,6 +356,11 @@ SOUND_HW += fmopl.o adlib.o
+ endif
+ AUDIODRV+= wavcapture.o
+ 
++ifdef CONFIG_VNC_TLS
++CPPFLAGS += $(CONFIG_VNC_TLS_CFLAGS)
++LIBS += $(CONFIG_VNC_TLS_LIBS)
++endif
++
+ # SCSI layer
+ VL_OBJS+= scsi-disk.o cdrom.o lsi53c895a.o
+ 
+@@ -413,7 +418,7 @@ endif
+ ifdef CONFIG_SDL
+ VL_OBJS+=sdl.o x_keymap.o
+ endif
+-VL_OBJS+=vnc.o
++VL_OBJS+=vnc.o d3des.o
+ ifdef CONFIG_COCOA
+ VL_OBJS+=cocoa.o
+ COCOA_LIBS=-F/System/Library/Frameworks -framework Cocoa -framework IOKit
+@@ -471,7 +476,7 @@ cocoa.o: cocoa.m
+ sdl.o: sdl.c keymaps.c sdl_keysym.h
+ 	$(CC) $(CFLAGS) $(CPPFLAGS) $(SDL_CFLAGS) $(BASE_CFLAGS) -c -o $@ $<
+ 
+-vnc.o: vnc.c keymaps.c sdl_keysym.h vnchextile.h
++vnc.o: vnc.c keymaps.c sdl_keysym.h vnchextile.h d3des.c d3des.h
+ 	$(CC) $(CFLAGS) $(CPPFLAGS) $(BASE_CFLAGS) -c -o $@ $<
+ 
+ sdlaudio.o: sdlaudio.c
+diff -rupN qemu-0.9.0.orig/monitor.c qemu-0.9.0.new/monitor.c
+--- qemu-0.9.0.orig/monitor.c	2007-02-05 18:01:54.000000000 -0500
++++ qemu-0.9.0.new/monitor.c	2007-08-27 13:15:46.000000000 -0400
+@@ -362,7 +362,7 @@ static void do_eject(int force, const ch
+     eject_device(bs, force);
+ }
+ 
+-static void do_change(const char *device, const char *filename)
++static void do_change_block(const char *device, const char *filename)
+ {
+     BlockDriverState *bs;
+     int i;
+@@ -387,6 +387,30 @@ static void do_change(const char *device
+     }
+ }
+ 
++static void do_change_vnc(const char *target)
++{
++    if (strcmp(target, "passwd") == 0 ||
++	strcmp(target, "password") == 0) {
++	char password[9];
++	monitor_readline("Password: ", 1, password, sizeof(password)-1);
++	password[sizeof(password)-1] = '\0';
++	if (vnc_display_password(NULL, password) < 0)
++	    term_printf("could not set VNC server password\n");
++    } else {
++	if (vnc_display_open(NULL, target) < 0)
++	    term_printf("could not start VNC server on %s\n", target);
++    }
++}
++
++static void do_change(const char *device, const char *target)
++{
++    if (strcmp(device, "vnc") == 0) {
++	do_change_vnc(target);
++    } else {
++	do_change_block(device, target);
++    }
++}
++
+ static void do_screen_dump(const char *filename)
+ {
+     vga_hw_screen_dump(filename);
+diff -rupN qemu-0.9.0.orig/vl.c qemu-0.9.0.new/vl.c
+--- qemu-0.9.0.orig/vl.c	2007-02-05 18:01:54.000000000 -0500
++++ qemu-0.9.0.new/vl.c	2007-08-27 13:16:25.000000000 -0400
+@@ -173,6 +173,7 @@ const char *option_rom[MAX_OPTION_ROMS];
+ int nb_option_roms;
+ int semihosting_enabled = 0;
+ int autostart = 1;
++const char *qemu_name;
+ 
+ /***********************************************************/
+ /* x86 ISA bus support */
+@@ -4140,6 +4141,7 @@ typedef struct IOHandlerRecord {
+     IOCanRWHandler *fd_read_poll;
+     IOHandler *fd_read;
+     IOHandler *fd_write;
++    int deleted;
+     void *opaque;
+     /* temporary data */
+     struct pollfd *ufd;
+@@ -4165,8 +4167,7 @@ int qemu_set_fd_handler2(int fd, 
+             if (ioh == NULL)
+                 break;
+             if (ioh->fd == fd) {
+-                *pioh = ioh->next;
+-                qemu_free(ioh);
++                ioh->deleted = 1;
+                 break;
+             }
+             pioh = &ioh->next;
+@@ -4187,6 +4188,7 @@ int qemu_set_fd_handler2(int fd, 
+         ioh->fd_read = fd_read;
+         ioh->fd_write = fd_write;
+         ioh->opaque = opaque;
++        ioh->deleted = 0;
+     }
+     return 0;
+ }
+@@ -5835,7 +5837,7 @@ void qemu_system_powerdown_request(void)
+ 
+ void main_loop_wait(int timeout)
+ {
+-    IOHandlerRecord *ioh, *ioh_next;
++    IOHandlerRecord *ioh;
+     fd_set rfds, wfds, xfds;
+     int ret, nfds;
+     struct timeval tv;
+@@ -5870,6 +5872,8 @@ void main_loop_wait(int timeout)
+     FD_ZERO(&wfds);
+     FD_ZERO(&xfds);
+     for(ioh = first_io_handler; ioh != NULL; ioh = ioh->next) {
++        if (ioh->deleted)
++            continue;
+         if (ioh->fd_read &&
+             (!ioh->fd_read_poll ||
+              ioh->fd_read_poll(ioh->opaque) != 0)) {
+@@ -5897,16 +5901,27 @@ void main_loop_wait(int timeout)
+ #endif
+     ret = select(nfds + 1, &rfds, &wfds, &xfds, &tv);
+     if (ret > 0) {
+-        /* XXX: better handling of removal */
+-        for(ioh = first_io_handler; ioh != NULL; ioh = ioh_next) {
+-            ioh_next = ioh->next;
+-            if (FD_ISSET(ioh->fd, &rfds)) {
++        IOHandlerRecord **pioh;
++
++        for(ioh = first_io_handler; ioh != NULL; ioh = ioh->next) {
++            if (!ioh->deleted && ioh->fd_read && FD_ISSET(ioh->fd, &rfds)) {
+                 ioh->fd_read(ioh->opaque);
+             }
+-            if (FD_ISSET(ioh->fd, &wfds)) {
++            if (!ioh->deleted && ioh->fd_write && FD_ISSET(ioh->fd, &wfds)) {
+                 ioh->fd_write(ioh->opaque);
+             }
+         }
++
++	/* remove deleted IO handlers */
++	pioh = &first_io_handler;
++	while (*pioh) {
++            ioh = *pioh;
++            if (ioh->deleted) {
++                *pioh = ioh->next;
++                qemu_free(ioh);
++            } else 
++                pioh = &ioh->next;
++        }
+     }
+ #if defined(CONFIG_SLIRP)
+     if (slirp_inited) {
+@@ -6052,6 +6067,7 @@ void help(void)
+ #if defined(TARGET_PPC) || defined(TARGET_SPARC)
+            "-g WxH[xDEPTH]  Set the initial graphical resolution and depth\n"
+ #endif
++           "-name string    set the name of the guest\n"
+            "\n"
+            "Network options:\n"
+            "-net nic[,vlan=n][,macaddr=addr][,model=type]\n"
+@@ -6205,7 +6221,8 @@ enum {
+     QEMU_OPTION_no_reboot,
+     QEMU_OPTION_daemonize,
+     QEMU_OPTION_option_rom,
+-    QEMU_OPTION_semihosting
++    QEMU_OPTION_semihosting,
++    QEMU_OPTION_name,
+ };
+ 
+ typedef struct QEMUOption {
+@@ -6292,6 +6309,7 @@ const QEMUOption qemu_options[] = {
+ #if defined(TARGET_ARM)
+     { "semihosting", 0, QEMU_OPTION_semihosting },
+ #endif
++    { "name", HAS_ARG, QEMU_OPTION_name },
+     { NULL },
+ };
+ 
+@@ -6958,6 +6976,9 @@ int main(int argc, char **argv)
+             case QEMU_OPTION_semihosting:
+                 semihosting_enabled = 1;
+                 break;
++            case QEMU_OPTION_name:
++                qemu_name = optarg;
++                break;
+             }
+         }
+     }
+@@ -7154,7 +7175,9 @@ int main(int argc, char **argv)
+     if (nographic) {
+         dumb_display_init(ds);
+     } else if (vnc_display != NULL) {
+-	vnc_display_init(ds, vnc_display);
++        vnc_display_init(ds);
++        if (vnc_display_open(ds, vnc_display) < 0)
++            exit(1);
+     } else {
+ #if defined(CONFIG_SDL)
+         sdl_display_init(ds, full_screen);
+diff -rupN qemu-0.9.0.orig/vl.h qemu-0.9.0.new/vl.h
+--- qemu-0.9.0.orig/vl.h	2007-02-05 18:01:54.000000000 -0500
++++ qemu-0.9.0.new/vl.h	2007-08-27 13:15:46.000000000 -0400
+@@ -114,6 +114,7 @@ void hw_error(const char *fmt, ...);
+ extern const char *bios_dir;
+ 
+ extern int vm_running;
++extern const char *qemu_name;
+ 
+ typedef struct vm_change_state_entry VMChangeStateEntry;
+ typedef void VMChangeStateHandler(void *opaque, int running);
+@@ -908,7 +909,10 @@ void sdl_display_init(DisplayState *ds, 
+ void cocoa_display_init(DisplayState *ds, int full_screen);
+ 
+ /* vnc.c */
+-void vnc_display_init(DisplayState *ds, const char *display);
++void vnc_display_init(DisplayState *ds);
++void vnc_display_close(DisplayState *ds);
++int vnc_display_open(DisplayState *ds, const char *display);
++int vnc_display_password(DisplayState *ds, const char *password);
+ void do_info_vnc(void);
+ 
+ /* x_keymap.c */
+diff -rupN qemu-0.9.0.orig/vnc.c qemu-0.9.0.new/vnc.c
+--- qemu-0.9.0.orig/vnc.c	2007-02-05 18:01:54.000000000 -0500
++++ qemu-0.9.0.new/vnc.c	2007-08-27 13:15:46.000000000 -0400
+@@ -30,6 +30,28 @@
+ 
+ #include "vnc_keysym.h"
+ #include "keymaps.c"
++#include "d3des.h"
++
++#if CONFIG_VNC_TLS
++#include <gnutls/gnutls.h>
++#include <gnutls/x509.h>
++#endif /* CONFIG_VNC_TLS */
++
++// #define _VNC_DEBUG 1
++
++#if _VNC_DEBUG
++#define VNC_DEBUG(fmt, ...) do { fprintf(stderr, fmt, ## __VA_ARGS__); } while (0)
++
++#if CONFIG_VNC_TLS && _VNC_DEBUG >= 2
++/* Very verbose, so only enabled for _VNC_DEBUG >= 2 */
++static void vnc_debug_gnutls_log(int level, const char* str) {
++    VNC_DEBUG("%d %s", level, str);
++}
++#endif /* CONFIG_VNC_TLS && _VNC_DEBUG */
++#else
++#define VNC_DEBUG(fmt, ...) do { } while (0)
++#endif
++
+ 
+ typedef struct Buffer
+ {
+@@ -54,6 +76,45 @@ typedef void VncSendHextileTile(VncState
+ #define VNC_MAX_HEIGHT 2048
+ #define VNC_DIRTY_WORDS (VNC_MAX_WIDTH / (16 * 32))
+ 
++#define VNC_AUTH_CHALLENGE_SIZE 16
++
++enum {
++    VNC_AUTH_INVALID = 0,
++    VNC_AUTH_NONE = 1,
++    VNC_AUTH_VNC = 2,
++    VNC_AUTH_RA2 = 5,
++    VNC_AUTH_RA2NE = 6,
++    VNC_AUTH_TIGHT = 16,
++    VNC_AUTH_ULTRA = 17,
++    VNC_AUTH_TLS = 18,
++    VNC_AUTH_VENCRYPT = 19
++};
++
++#if CONFIG_VNC_TLS
++enum {
++    VNC_WIREMODE_CLEAR,
++    VNC_WIREMODE_TLS,
++};
++
++enum {
++    VNC_AUTH_VENCRYPT_PLAIN = 256,
++    VNC_AUTH_VENCRYPT_TLSNONE = 257,
++    VNC_AUTH_VENCRYPT_TLSVNC = 258,
++    VNC_AUTH_VENCRYPT_TLSPLAIN = 259,
++    VNC_AUTH_VENCRYPT_X509NONE = 260,
++    VNC_AUTH_VENCRYPT_X509VNC = 261,
++    VNC_AUTH_VENCRYPT_X509PLAIN = 262,
++};
++
++#if CONFIG_VNC_TLS
++#define X509_CA_CERT_FILE "ca-cert.pem"
++#define X509_CA_CRL_FILE "ca-crl.pem"
++#define X509_SERVER_KEY_FILE "server-key.pem"
++#define X509_SERVER_CERT_FILE "server-cert.pem"
++#endif
++
++#endif /* CONFIG_VNC_TLS */
++
+ struct VncState
+ {
+     QEMUTimer *timer;
+@@ -73,7 +134,27 @@ struct VncState
+     int last_x;
+     int last_y;
+ 
+-    const char *display;
++    int major;
++    int minor;
++
++    char *display;
++    char *password;
++    int auth;
++#if CONFIG_VNC_TLS
++    int subauth;
++    int x509verify;
++
++    char *x509cacert;
++    char *x509cacrl;
++    char *x509cert;
++    char *x509key;
++#endif
++    char challenge[VNC_AUTH_CHALLENGE_SIZE];
++
++#if CONFIG_VNC_TLS
++    int wiremode;
++    gnutls_session_t tls_session;
++#endif
+ 
+     Buffer output;
+     Buffer input;
+@@ -550,12 +631,20 @@ static int vnc_client_io_error(VncState 
+ 	if (ret == -1 && (last_errno == EINTR || last_errno == EAGAIN))
+ 	    return 0;
+ 
++	VNC_DEBUG("Closing down client sock %d %d\n", ret, ret < 0 ? last_errno : 0);
+ 	qemu_set_fd_handler2(vs->csock, NULL, NULL, NULL, NULL);
+ 	closesocket(vs->csock);
+ 	vs->csock = -1;
+ 	buffer_reset(&vs->input);
+ 	buffer_reset(&vs->output);
+ 	vs->need_update = 0;
++#if CONFIG_VNC_TLS
++	if (vs->tls_session) {
++	    gnutls_deinit(vs->tls_session);
++	    vs->tls_session = NULL;
++	}
++	vs->wiremode = VNC_WIREMODE_CLEAR;
++#endif /* CONFIG_VNC_TLS */
+ 	return 0;
+     }
+     return ret;
+@@ -571,7 +660,19 @@ static void vnc_client_write(void *opaqu
+     long ret;
+     VncState *vs = opaque;
+ 
+-    ret = send(vs->csock, vs->output.buffer, vs->output.offset, 0);
++#if CONFIG_VNC_TLS
++    if (vs->tls_session) {
++	ret = gnutls_write(vs->tls_session, vs->output.buffer, vs->output.offset);
++	if (ret < 0) {
++	    if (ret == GNUTLS_E_AGAIN)
++		errno = EAGAIN;
++	    else
++		errno = EIO;
++	    ret = -1;
++	}
++    } else
++#endif /* CONFIG_VNC_TLS */
++	ret = send(vs->csock, vs->output.buffer, vs->output.offset, 0);
+     ret = vnc_client_io_error(vs, ret, socket_error());
+     if (!ret)
+ 	return;
+@@ -597,7 +698,19 @@ static void vnc_client_read(void *opaque
+ 
+     buffer_reserve(&vs->input, 4096);
+ 
+-    ret = recv(vs->csock, buffer_end(&vs->input), 4096, 0);
++#if CONFIG_VNC_TLS
++    if (vs->tls_session) {
++	ret = gnutls_read(vs->tls_session, buffer_end(&vs->input), 4096);
++	if (ret < 0) {
++	    if (ret == GNUTLS_E_AGAIN)
++		errno = EAGAIN;
++	    else
++		errno = EIO;
++	    ret = -1;
++	}
++    } else
++#endif /* CONFIG_VNC_TLS */
++	ret = recv(vs->csock, buffer_end(&vs->input), 4096, 0);
+     ret = vnc_client_io_error(vs, ret, socket_error());
+     if (!ret)
+ 	return;
+@@ -692,6 +805,41 @@ static uint32_t read_u32(uint8_t *data, 
+ 	    (data[offset + 2] << 8) | data[offset + 3]);
+ }
+ 
++#if CONFIG_VNC_TLS
++ssize_t vnc_tls_push(gnutls_transport_ptr_t transport,
++		     const void *data,
++		     size_t len) {
++    struct VncState *vs = (struct VncState *)transport;
++    int ret;
++
++ retry:
++    ret = send(vs->csock, data, len, 0);
++    if (ret < 0) {
++	if (errno == EINTR)
++	    goto retry;
++	return -1;
++    }
++    return ret;
++}
++
++
++ssize_t vnc_tls_pull(gnutls_transport_ptr_t transport,
++		     void *data,
++		     size_t len) {
++    struct VncState *vs = (struct VncState *)transport;
++    int ret;
++
++ retry:
++    ret = recv(vs->csock, data, len, 0);
++    if (ret < 0) {
++	if (errno == EINTR)
++	    goto retry;
++	return -1;
++    }
++    return ret;
++}
++#endif /* CONFIG_VNC_TLS */
++
+ static void client_cut_text(VncState *vs, size_t len, char *text)
+ {
+ }
+@@ -852,6 +1000,15 @@ static void framebuffer_update_request(V
+ 				       int x_position, int y_position,
+ 				       int w, int h)
+ {
++    if (x_position > vs->ds->width)
++        x_position = vs->ds->width;
++    if (y_position > vs->ds->height)
++        y_position = vs->ds->height;
++    if (x_position + w >= vs->ds->width)
++        w = vs->ds->width  - x_position;
++    if (y_position + h >= vs->ds->height)
++        h = vs->ds->height - y_position;
++
+     int i;
+     vs->need_update = 1;
+     if (!incremental) {
+@@ -1056,6 +1213,8 @@ static int protocol_client_msg(VncState 
+ static int protocol_client_init(VncState *vs, char *data, size_t len)
+ {
+     char pad[3] = { 0, 0, 0 };
++    char buf[1024];
++    int size;
+ 
+     vs->width = vs->ds->width;
+     vs->height = vs->ds->height;
+@@ -1100,8 +1259,13 @@ static int protocol_client_init(VncState
+ 	
+     vnc_write(vs, pad, 3);           /* padding */
+ 
+-    vnc_write_u32(vs, 4);        
+-    vnc_write(vs, "QEMU", 4);
++    if (qemu_name)
++        size = snprintf(buf, sizeof(buf), "QEMU (%s)", qemu_name);
++    else
++        size = snprintf(buf, sizeof(buf), "QEMU");
++
++    vnc_write_u32(vs, size);
++    vnc_write(vs, buf, size);
+     vnc_flush(vs);
+ 
+     vnc_read_when(vs, protocol_client_msg, 1);
+@@ -1109,23 +1273,587 @@ static int protocol_client_init(VncState
+     return 0;
+ }
+ 
++static void make_challenge(VncState *vs)
++{
++    int i;
++
++    srand(time(NULL)+getpid()+getpid()*987654+rand());
++
++    for (i = 0 ; i < sizeof(vs->challenge) ; i++)
++        vs->challenge[i] = (int) (256.0*rand()/(RAND_MAX+1.0));
++}
++
++static int protocol_client_auth_vnc(VncState *vs, char *data, size_t len)
++{
++    char response[VNC_AUTH_CHALLENGE_SIZE];
++    int i, j, pwlen;
++    char key[8];
++
++    if (!vs->password || !vs->password[0]) {
++	VNC_DEBUG("No password configured on server");
++	vnc_write_u32(vs, 1); /* Reject auth */
++	if (vs->minor >= 8) {
++	    static const char err[] = "Authentication failed";
++	    vnc_write_u32(vs, sizeof(err));
++	    vnc_write(vs, err, sizeof(err));
++	}
++	vnc_flush(vs);
++	vnc_client_error(vs);
++	return 0;
++    }
++
++    memcpy(response, vs->challenge, VNC_AUTH_CHALLENGE_SIZE);
++
++    /* Calculate the expected challenge response */
++    pwlen = strlen(vs->password);
++    for (i=0; i<sizeof(key); i++)
++        key[i] = i<pwlen ? vs->password[i] : 0;
++    deskey(key, EN0);
++    for (j = 0; j < VNC_AUTH_CHALLENGE_SIZE; j += 8)
++        des(response+j, response+j);
++
++    /* Compare expected vs actual challenge response */
++    if (memcmp(response, data, VNC_AUTH_CHALLENGE_SIZE) != 0) {
++	VNC_DEBUG("Client challenge reponse did not match\n");
++	vnc_write_u32(vs, 1); /* Reject auth */
++	if (vs->minor >= 8) {
++	    static const char err[] = "Authentication failed";
++	    vnc_write_u32(vs, sizeof(err));
++	    vnc_write(vs, err, sizeof(err));
++	}
++	vnc_flush(vs);
++	vnc_client_error(vs);
++    } else {
++	VNC_DEBUG("Accepting VNC challenge response\n");
++	vnc_write_u32(vs, 0); /* Accept auth */
++	vnc_flush(vs);
++
++	vnc_read_when(vs, protocol_client_init, 1);
++    }
++    return 0;
++}
++
++static int start_auth_vnc(VncState *vs)
++{
++    make_challenge(vs);
++    /* Send client a 'random' challenge */
++    vnc_write(vs, vs->challenge, sizeof(vs->challenge));
++    vnc_flush(vs);
++
++    vnc_read_when(vs, protocol_client_auth_vnc, sizeof(vs->challenge));
++    return 0;
++}
++
++
++#if CONFIG_VNC_TLS
++#define DH_BITS 1024
++static gnutls_dh_params_t dh_params;
++
++static int vnc_tls_initialize(void)
++{
++    static int tlsinitialized = 0;
++
++    if (tlsinitialized)
++	return 1;
++
++    if (gnutls_global_init () < 0)
++	return 0;
++
++    /* XXX ought to re-generate diffie-hellmen params periodically */
++    if (gnutls_dh_params_init (&dh_params) < 0)
++	return 0;
++    if (gnutls_dh_params_generate2 (dh_params, DH_BITS) < 0)
++	return 0;
++
++#if _VNC_DEBUG == 2
++    gnutls_global_set_log_level(10);
++    gnutls_global_set_log_function(vnc_debug_gnutls_log);
++#endif
++
++    tlsinitialized = 1;
++
++    return 1;
++}
++
++static gnutls_anon_server_credentials vnc_tls_initialize_anon_cred(void)
++{
++    gnutls_anon_server_credentials anon_cred;
++    int ret;
++
++    if ((ret = gnutls_anon_allocate_server_credentials(&anon_cred)) < 0) {
++	VNC_DEBUG("Cannot allocate credentials %s\n", gnutls_strerror(ret));
++	return NULL;
++    }
++
++    gnutls_anon_set_server_dh_params(anon_cred, dh_params);
++
++    return anon_cred;
++}
++
++
++static gnutls_certificate_credentials_t vnc_tls_initialize_x509_cred(VncState *vs)
++{
++    gnutls_certificate_credentials_t x509_cred;
++    int ret;
++
++    if (!vs->x509cacert) {
++	VNC_DEBUG("No CA x509 certificate specified\n");
++	return NULL;
++    }
++    if (!vs->x509cert) {
++	VNC_DEBUG("No server x509 certificate specified\n");
++	return NULL;
++    }
++    if (!vs->x509key) {
++	VNC_DEBUG("No server private key specified\n");
++	return NULL;
++    }
++
++    if ((ret = gnutls_certificate_allocate_credentials(&x509_cred)) < 0) {
++	VNC_DEBUG("Cannot allocate credentials %s\n", gnutls_strerror(ret));
++	return NULL;
++    }
++    if ((ret = gnutls_certificate_set_x509_trust_file(x509_cred,
++						      vs->x509cacert,
++						      GNUTLS_X509_FMT_PEM)) < 0) {
++	VNC_DEBUG("Cannot load CA certificate %s\n", gnutls_strerror(ret));
++	gnutls_certificate_free_credentials(x509_cred);
++	return NULL;
++    }
++
++    if ((ret = gnutls_certificate_set_x509_key_file (x509_cred,
++						     vs->x509cert,
++						     vs->x509key,
++						     GNUTLS_X509_FMT_PEM)) < 0) {
++	VNC_DEBUG("Cannot load certificate & key %s\n", gnutls_strerror(ret));
++	gnutls_certificate_free_credentials(x509_cred);
++	return NULL;
++    }
++
++    if (vs->x509cacrl) {
++	if ((ret = gnutls_certificate_set_x509_crl_file(x509_cred,
++							vs->x509cacrl,
++							GNUTLS_X509_FMT_PEM)) < 0) {
++	    VNC_DEBUG("Cannot load CRL %s\n", gnutls_strerror(ret));
++	    gnutls_certificate_free_credentials(x509_cred);
++	    return NULL;
++	}
++    }
++
++    gnutls_certificate_set_dh_params (x509_cred, dh_params);
++
++    return x509_cred;
++}
++
++static int vnc_validate_certificate(struct VncState *vs)
++{
++    int ret;
++    unsigned int status;
++    const gnutls_datum_t *certs;
++    unsigned int nCerts, i;
++    time_t now;
++
++    VNC_DEBUG("Validating client certificate\n");
++    if ((ret = gnutls_certificate_verify_peers2 (vs->tls_session, &status)) < 0) {
++	VNC_DEBUG("Verify failed %s\n", gnutls_strerror(ret));
++	return -1;
++    }
++
++    if ((now = time(NULL)) == ((time_t)-1)) {
++	return -1;
++    }
++
++    if (status != 0) {
++	if (status & GNUTLS_CERT_INVALID)
++	    VNC_DEBUG("The certificate is not trusted.\n");
++
++	if (status & GNUTLS_CERT_SIGNER_NOT_FOUND)
++	    VNC_DEBUG("The certificate hasn't got a known issuer.\n");
++
++	if (status & GNUTLS_CERT_REVOKED)
++	    VNC_DEBUG("The certificate has been revoked.\n");
++
++	if (status & GNUTLS_CERT_INSECURE_ALGORITHM)
++	    VNC_DEBUG("The certificate uses an insecure algorithm\n");
++
++	return -1;
++    } else {
++	VNC_DEBUG("Certificate is valid!\n");
++    }
++
++    /* Only support x509 for now */
++    if (gnutls_certificate_type_get(vs->tls_session) != GNUTLS_CRT_X509)
++	return -1;
++
++    if (!(certs = gnutls_certificate_get_peers(vs->tls_session, &nCerts)))
++	return -1;
++
++    for (i = 0 ; i < nCerts ; i++) {
++	gnutls_x509_crt_t cert;
++	VNC_DEBUG ("Checking certificate chain %d\n", i);
++	if (gnutls_x509_crt_init (&cert) < 0)
++	    return -1;
++
++	if (gnutls_x509_crt_import(cert, &certs[i], GNUTLS_X509_FMT_DER) < 0) {
++	    gnutls_x509_crt_deinit (cert);
++	    return -1;
++	}
++
++	if (gnutls_x509_crt_get_expiration_time (cert) < now) {
++	    VNC_DEBUG("The certificate has expired\n");
++	    gnutls_x509_crt_deinit (cert);
++	    return -1;
++	}
++
++	if (gnutls_x509_crt_get_activation_time (cert) > now) {
++	    VNC_DEBUG("The certificate is not yet activated\n");
++	    gnutls_x509_crt_deinit (cert);
++	    return -1;
++	}
++
++	if (gnutls_x509_crt_get_activation_time (cert) > now) {
++	    VNC_DEBUG("The certificate is not yet activated\n");
++	    gnutls_x509_crt_deinit (cert);
++	    return -1;
++	}
++
++	gnutls_x509_crt_deinit (cert);
++    }
++
++    return 0;
++}
++
++
++static int start_auth_vencrypt_subauth(VncState *vs)
++{
++    switch (vs->subauth) {
++    case VNC_AUTH_VENCRYPT_TLSNONE:
++    case VNC_AUTH_VENCRYPT_X509NONE:
++       VNC_DEBUG("Accept TLS auth none\n");
++       vnc_write_u32(vs, 0); /* Accept auth completion */
++       vnc_read_when(vs, protocol_client_init, 1);
++       break;
++
++    case VNC_AUTH_VENCRYPT_TLSVNC:
++    case VNC_AUTH_VENCRYPT_X509VNC:
++       VNC_DEBUG("Start TLS auth VNC\n");
++       return start_auth_vnc(vs);
++
++    default: /* Should not be possible, but just in case */
++       VNC_DEBUG("Reject auth %d\n", vs->auth);
++       vnc_write_u8(vs, 1);
++       if (vs->minor >= 8) {
++           static const char err[] = "Unsupported authentication type";
++           vnc_write_u32(vs, sizeof(err));
++           vnc_write(vs, err, sizeof(err));
++       }
++       vnc_client_error(vs);
++    }
++
++    return 0;
++}
++
++static void vnc_handshake_io(void *opaque);
++
++static int vnc_continue_handshake(struct VncState *vs) {
++    int ret;
++
++    if ((ret = gnutls_handshake(vs->tls_session)) < 0) {
++       if (!gnutls_error_is_fatal(ret)) {
++           VNC_DEBUG("Handshake interrupted (blocking)\n");
++           if (!gnutls_record_get_direction(vs->tls_session))
++               qemu_set_fd_handler(vs->csock, vnc_handshake_io, NULL, vs);
++           else
++               qemu_set_fd_handler(vs->csock, NULL, vnc_handshake_io, vs);
++           return 0;
++       }
++       VNC_DEBUG("Handshake failed %s\n", gnutls_strerror(ret));
++       vnc_client_error(vs);
++       return -1;
++    }
++
++    if (vs->x509verify) {
++	if (vnc_validate_certificate(vs) < 0) {
++	    VNC_DEBUG("Client verification failed\n");
++	    vnc_client_error(vs);
++	    return -1;
++	} else {
++	    VNC_DEBUG("Client verification passed\n");
++	}
++    }
++
++    VNC_DEBUG("Handshake done, switching to TLS data mode\n");
++    vs->wiremode = VNC_WIREMODE_TLS;
++    qemu_set_fd_handler2(vs->csock, NULL, vnc_client_read, vnc_client_write, vs);
++
++    return start_auth_vencrypt_subauth(vs);
++}
++
++static void vnc_handshake_io(void *opaque) {
++    struct VncState *vs = (struct VncState *)opaque;
++
++    VNC_DEBUG("Handshake IO continue\n");
++    vnc_continue_handshake(vs);
++}
++
++#define NEED_X509_AUTH(vs)			      \
++    ((vs)->subauth == VNC_AUTH_VENCRYPT_X509NONE ||   \
++     (vs)->subauth == VNC_AUTH_VENCRYPT_X509VNC ||    \
++     (vs)->subauth == VNC_AUTH_VENCRYPT_X509PLAIN)
++
++
++static int vnc_start_tls(struct VncState *vs) {
++    static const int cert_type_priority[] = { GNUTLS_CRT_X509, 0 };
++    static const int protocol_priority[]= { GNUTLS_TLS1_1, GNUTLS_TLS1_0, GNUTLS_SSL3, 0 };
++    static const int kx_anon[] = {GNUTLS_KX_ANON_DH, 0};
++    static const int kx_x509[] = {GNUTLS_KX_DHE_DSS, GNUTLS_KX_RSA, GNUTLS_KX_DHE_RSA, GNUTLS_KX_SRP, 0};
++
++    VNC_DEBUG("Do TLS setup\n");
++    if (vnc_tls_initialize() < 0) {
++	VNC_DEBUG("Failed to init TLS\n");
++	vnc_client_error(vs);
++	return -1;
++    }
++    if (vs->tls_session == NULL) {
++	if (gnutls_init(&vs->tls_session, GNUTLS_SERVER) < 0) {
++	    vnc_client_error(vs);
++	    return -1;
++	}
++
++	if (gnutls_set_default_priority(vs->tls_session) < 0) {
++	    gnutls_deinit(vs->tls_session);
++	    vs->tls_session = NULL;
++	    vnc_client_error(vs);
++	    return -1;
++	}
++
++	if (gnutls_kx_set_priority(vs->tls_session, NEED_X509_AUTH(vs) ? kx_x509 : kx_anon) < 0) {
++	    gnutls_deinit(vs->tls_session);
++	    vs->tls_session = NULL;
++	    vnc_client_error(vs);
++	    return -1;
++	}
++
++	if (gnutls_certificate_type_set_priority(vs->tls_session, cert_type_priority) < 0) {
++	    gnutls_deinit(vs->tls_session);
++	    vs->tls_session = NULL;
++	    vnc_client_error(vs);
++	    return -1;
++	}
++
++	if (gnutls_protocol_set_priority(vs->tls_session, protocol_priority) < 0) {
++	    gnutls_deinit(vs->tls_session);
++	    vs->tls_session = NULL;
++	    vnc_client_error(vs);
++	    return -1;
++	}
++
++	if (NEED_X509_AUTH(vs)) {
++	    gnutls_certificate_server_credentials x509_cred = vnc_tls_initialize_x509_cred(vs);
++	    if (!x509_cred) {
++		gnutls_deinit(vs->tls_session);
++		vs->tls_session = NULL;
++		vnc_client_error(vs);
++		return -1;
++	    }
++	    if (gnutls_credentials_set(vs->tls_session, GNUTLS_CRD_CERTIFICATE, x509_cred) < 0) {
++		gnutls_deinit(vs->tls_session);
++		vs->tls_session = NULL;
++		gnutls_certificate_free_credentials(x509_cred);
++		vnc_client_error(vs);
++		return -1;
++	    }
++	    if (vs->x509verify) {
++		VNC_DEBUG("Requesting a client certificate\n");
++		gnutls_certificate_server_set_request (vs->tls_session, GNUTLS_CERT_REQUEST);
++	    }
++
++	} else {
++	    gnutls_anon_server_credentials anon_cred = vnc_tls_initialize_anon_cred();
++	    if (!anon_cred) {
++		gnutls_deinit(vs->tls_session);
++		vs->tls_session = NULL;
++		vnc_client_error(vs);
++		return -1;
++	    }
++	    if (gnutls_credentials_set(vs->tls_session, GNUTLS_CRD_ANON, anon_cred) < 0) {
++		gnutls_deinit(vs->tls_session);
++		vs->tls_session = NULL;
++		gnutls_anon_free_server_credentials(anon_cred);
++		vnc_client_error(vs);
++		return -1;
++	    }
++	}
++
++	gnutls_transport_set_ptr(vs->tls_session, (gnutls_transport_ptr_t)vs);
++	gnutls_transport_set_push_function(vs->tls_session, vnc_tls_push);
++	gnutls_transport_set_pull_function(vs->tls_session, vnc_tls_pull);
++    }
++
++    VNC_DEBUG("Start TLS handshake process\n");
++    return vnc_continue_handshake(vs);
++}
++
++static int protocol_client_vencrypt_auth(VncState *vs, char *data, size_t len)
++{
++    int auth = read_u32(data, 0);
++
++    if (auth != vs->subauth) {
++	VNC_DEBUG("Rejecting auth %d\n", auth);
++	vnc_write_u8(vs, 0); /* Reject auth */
++	vnc_flush(vs);
++	vnc_client_error(vs);
++    } else {
++	VNC_DEBUG("Accepting auth %d, starting handshake\n", auth);
++	vnc_write_u8(vs, 1); /* Accept auth */
++	vnc_flush(vs);
++
++	if (vnc_start_tls(vs) < 0) {
++	    VNC_DEBUG("Failed to complete TLS\n");
++	    return 0;
++	}
++
++	if (vs->wiremode == VNC_WIREMODE_TLS) {
++	    VNC_DEBUG("Starting VeNCrypt subauth\n");
++	    return start_auth_vencrypt_subauth(vs);
++	} else {
++	    VNC_DEBUG("TLS handshake blocked\n");
++	    return 0;
++	}
++    }
++    return 0;
++}
++
++static int protocol_client_vencrypt_init(VncState *vs, char *data, size_t len)
++{
++    if (data[0] != 0 ||
++	data[1] != 2) {
++	VNC_DEBUG("Unsupported VeNCrypt protocol %d.%d\n", (int)data[0], (int)data[1]);
++	vnc_write_u8(vs, 1); /* Reject version */
++	vnc_flush(vs);
++	vnc_client_error(vs);
++    } else {
++	VNC_DEBUG("Sending allowed auth %d\n", vs->subauth);
++	vnc_write_u8(vs, 0); /* Accept version */
++	vnc_write_u8(vs, 1); /* Number of sub-auths */
++	vnc_write_u32(vs, vs->subauth); /* The supported auth */
++	vnc_flush(vs);
++	vnc_read_when(vs, protocol_client_vencrypt_auth, 4);
++    }
++    return 0;
++}
++
++static int start_auth_vencrypt(VncState *vs)
++{
++    /* Send VeNCrypt version 0.2 */
++    vnc_write_u8(vs, 0);
++    vnc_write_u8(vs, 2);
++
++    vnc_read_when(vs, protocol_client_vencrypt_init, 2);
++    return 0;
++}
++#endif /* CONFIG_VNC_TLS */
++
++static int protocol_client_auth(VncState *vs, char *data, size_t len)
++{
++    /* We only advertise 1 auth scheme at a time, so client
++     * must pick the one we sent. Verify this */
++    if (data[0] != vs->auth) { /* Reject auth */
++       VNC_DEBUG("Reject auth %d\n", (int)data[0]);
++       vnc_write_u32(vs, 1);
++       if (vs->minor >= 8) {
++           static const char err[] = "Authentication failed";
++           vnc_write_u32(vs, sizeof(err));
++           vnc_write(vs, err, sizeof(err));
++       }
++       vnc_client_error(vs);
++    } else { /* Accept requested auth */
++       VNC_DEBUG("Client requested auth %d\n", (int)data[0]);
++       switch (vs->auth) {
++       case VNC_AUTH_NONE:
++           VNC_DEBUG("Accept auth none\n");
++           vnc_write_u32(vs, 0); /* Accept auth completion */
++           vnc_read_when(vs, protocol_client_init, 1);
++           break;
++
++       case VNC_AUTH_VNC:
++           VNC_DEBUG("Start VNC auth\n");
++           return start_auth_vnc(vs);
++
++#if CONFIG_VNC_TLS
++       case VNC_AUTH_VENCRYPT:
++           VNC_DEBUG("Accept VeNCrypt auth\n");;
++           return start_auth_vencrypt(vs);
++#endif /* CONFIG_VNC_TLS */
++
++       default: /* Should not be possible, but just in case */
++           VNC_DEBUG("Reject auth %d\n", vs->auth);
++           vnc_write_u8(vs, 1);
++           if (vs->minor >= 8) {
++               static const char err[] = "Authentication failed";
++               vnc_write_u32(vs, sizeof(err));
++               vnc_write(vs, err, sizeof(err));
++           }
++           vnc_client_error(vs);
++       }
++    }
++    return 0;
++}
++
+ static int protocol_version(VncState *vs, char *version, size_t len)
+ {
+     char local[13];
+-    int maj, min;
+ 
+     memcpy(local, version, 12);
+     local[12] = 0;
+ 
+-    if (sscanf(local, "RFB %03d.%03d\n", &maj, &min) != 2) {
++    if (sscanf(local, "RFB %03d.%03d\n", &vs->major, &vs->minor) != 2) {
++	VNC_DEBUG("Malformed protocol version %s\n", local);
+ 	vnc_client_error(vs);
+ 	return 0;
+     }
+-
+-    vnc_write_u32(vs, 1); /* None */
+-    vnc_flush(vs);
+-
+-    vnc_read_when(vs, protocol_client_init, 1);
++    VNC_DEBUG("Client request protocol version %d.%d\n", vs->major, vs->minor);
++    if (vs->major != 3 ||
++	(vs->minor != 3 &&
++	 vs->minor != 5 &&
++	 vs->minor != 7 &&
++	 vs->minor != 8)) {
++	VNC_DEBUG("Unsupported client version\n");
++	vnc_write_u32(vs, VNC_AUTH_INVALID);
++	vnc_flush(vs);
++	vnc_client_error(vs);
++	return 0;
++    }
++    /* Some broken client report v3.5 which spec requires to be treated
++     * as equivalent to v3.3 by servers
++     */
++    if (vs->minor == 5)
++	vs->minor = 3;
++
++    if (vs->minor == 3) {
++	if (vs->auth == VNC_AUTH_NONE) {
++            VNC_DEBUG("Tell client auth none\n");
++            vnc_write_u32(vs, vs->auth);
++            vnc_flush(vs);
++            vnc_read_when(vs, protocol_client_init, 1);
++       } else if (vs->auth == VNC_AUTH_VNC) {
++            VNC_DEBUG("Tell client VNC auth\n");
++            vnc_write_u32(vs, vs->auth);
++            vnc_flush(vs);
++            start_auth_vnc(vs);
++       } else {
++            VNC_DEBUG("Unsupported auth %d for protocol 3.3\n", vs->auth);
++            vnc_write_u32(vs, VNC_AUTH_INVALID);
++            vnc_flush(vs);
++            vnc_client_error(vs);
++       }
++    } else {
++	VNC_DEBUG("Telling client we support auth %d\n", vs->auth);
++	vnc_write_u8(vs, 1); /* num auth */
++	vnc_write_u8(vs, vs->auth);
++	vnc_read_when(vs, protocol_client_auth, 1);
++	vnc_flush(vs);
++    }
+ 
+     return 0;
+ }
+@@ -1138,9 +1866,10 @@ static void vnc_listen_read(void *opaque
+ 
+     vs->csock = accept(vs->lsock, (struct sockaddr *)&addr, &addrlen);
+     if (vs->csock != -1) {
++	VNC_DEBUG("New client on socket %d\n", vs->csock);
+         socket_set_nonblock(vs->csock);
+ 	qemu_set_fd_handler2(vs->csock, NULL, vnc_client_read, NULL, opaque);
+-	vnc_write(vs, "RFB 003.003\n", 12);
++	vnc_write(vs, "RFB 003.008\n", 12);
+ 	vnc_flush(vs);
+ 	vnc_read_when(vs, protocol_version, 12);
+ 	memset(vs->old_data, 0, vs->ds->linesize * vs->ds->height);
+@@ -1153,16 +1882,8 @@ static void vnc_listen_read(void *opaque
+ 
+ extern int parse_host_port(struct sockaddr_in *saddr, const char *str);
+ 
+-void vnc_display_init(DisplayState *ds, const char *arg)
++void vnc_display_init(DisplayState *ds)
+ {
+-    struct sockaddr *addr;
+-    struct sockaddr_in iaddr;
+-#ifndef _WIN32
+-    struct sockaddr_un uaddr;
+-#endif
+-    int reuse_addr, ret;
+-    socklen_t addrlen;
+-    const char *p;
+     VncState *vs;
+ 
+     vs = qemu_mallocz(sizeof(VncState));
+@@ -1171,7 +1892,8 @@ void vnc_display_init(DisplayState *ds, 
+ 
+     ds->opaque = vs;
+     vnc_state = vs;
+-    vs->display = arg;
++    vs->display = NULL;
++    vs->password = NULL;
+ 
+     vs->lsock = -1;
+     vs->csock = -1;
+@@ -1196,16 +1918,232 @@ void vnc_display_init(DisplayState *ds, 
+     memset(vs->dirty_row, 0xFF, sizeof(vs->dirty_row));
+ 
+     vnc_dpy_resize(vs->ds, 640, 400);
++}
+ 
++#if CONFIG_VNC_TLS
++static int vnc_set_x509_credential(VncState *vs,
++				   const char *certdir,
++				   const char *filename,
++				   char **cred,
++				   int ignoreMissing)
++{
++    struct stat sb;
++
++    if (*cred) {
++	qemu_free(*cred);
++	*cred = NULL;
++    }
++
++    if (!(*cred = qemu_malloc(strlen(certdir) + strlen(filename) + 2)))
++	return -1;
++
++    strcpy(*cred, certdir);
++    strcat(*cred, "/");
++    strcat(*cred, filename);
++
++    VNC_DEBUG("Check %s\n", *cred);
++    if (stat(*cred, &sb) < 0) {
++	qemu_free(*cred);
++	*cred = NULL;
++	if (ignoreMissing && errno == ENOENT)
++	    return 0;
++	return -1;
++    }
++
++    return 0;
++}
++
++static int vnc_set_x509_credential_dir(VncState *vs,
++				       const char *certdir)
++{
++    if (vnc_set_x509_credential(vs, certdir, X509_CA_CERT_FILE, &vs->x509cacert, 0) < 0)
++	goto cleanup;
++    if (vnc_set_x509_credential(vs, certdir, X509_CA_CRL_FILE, &vs->x509cacrl, 1) < 0)
++	goto cleanup;
++    if (vnc_set_x509_credential(vs, certdir, X509_SERVER_CERT_FILE, &vs->x509cert, 0) < 0)
++	goto cleanup;
++    if (vnc_set_x509_credential(vs, certdir, X509_SERVER_KEY_FILE, &vs->x509key, 0) < 0)
++	goto cleanup;
++
++    return 0;
++
++ cleanup:
++    qemu_free(vs->x509cacert);
++    qemu_free(vs->x509cacrl);
++    qemu_free(vs->x509cert);
++    qemu_free(vs->x509key);
++    vs->x509cacert = vs->x509cacrl = vs->x509cert = vs->x509key = NULL;
++    return -1;
++}
++#endif /* CONFIG_VNC_TLS */
++
++void vnc_display_close(DisplayState *ds)
++{
++    VncState *vs = ds ? (VncState *)ds->opaque : vnc_state;
++
++    if (vs->display) {
++	qemu_free(vs->display);
++	vs->display = NULL;
++    }
++    if (vs->lsock != -1) {
++	qemu_set_fd_handler2(vs->lsock, NULL, NULL, NULL, NULL);
++	close(vs->lsock);
++	vs->lsock = -1;
++    }
++    if (vs->csock != -1) {
++	qemu_set_fd_handler2(vs->csock, NULL, NULL, NULL, NULL);
++	closesocket(vs->csock);
++	vs->csock = -1;
++	buffer_reset(&vs->input);
++	buffer_reset(&vs->output);
++	vs->need_update = 0;
++#if CONFIG_VNC_TLS
++	if (vs->tls_session) {
++	    gnutls_deinit(vs->tls_session);
++	    vs->tls_session = NULL;
++	}
++	vs->wiremode = VNC_WIREMODE_CLEAR;
++#endif /* CONFIG_VNC_TLS */
++    }
++    vs->auth = VNC_AUTH_INVALID;
++#if CONFIG_VNC_TLS
++    vs->subauth = VNC_AUTH_INVALID;
++    vs->x509verify = 0;
++#endif
++}
++
++int vnc_display_password(DisplayState *ds, const char *password)
++{
++    VncState *vs = ds ? (VncState *)ds->opaque : vnc_state;
++
++    if (vs->password) {
++	qemu_free(vs->password);
++	vs->password = NULL;
++    }
++    if (password && password[0]) {
++	if (!(vs->password = qemu_strdup(password)))
++	    return -1;
++    }
++
++    return 0;
++}
++
++int vnc_display_open(DisplayState *ds, const char *display)
++{
++    struct sockaddr *addr;
++    struct sockaddr_in iaddr;
++#ifndef _WIN32
++    struct sockaddr_un uaddr;
++#endif
++    int reuse_addr, ret;
++    socklen_t addrlen;
++    const char *p;
++    VncState *vs = ds ? (VncState *)ds->opaque : vnc_state;
++    const char *options;
++    int password = 0;
++#if CONFIG_VNC_TLS
++    int tls = 0, x509 = 0;
++#endif
++
++    vnc_display_close(ds);
++    if (strcmp(display, "none") == 0)
++	return 0;
++
++    if (!(vs->display = strdup(display)))
++	return -1;
++
++    options = display;
++    while ((options = strchr(options, ','))) {
++	options++;
++	if (strncmp(options, "password", 8) == 0) {
++	    password = 1; /* Require password auth */
++#if CONFIG_VNC_TLS
++	} else if (strncmp(options, "tls", 3) == 0) {
++	    tls = 1; /* Require TLS */
++	} else if (strncmp(options, "x509", 4) == 0) {
++	    char *start, *end;
++	    x509 = 1; /* Require x509 certificates */
++	    if (strncmp(options, "x509verify", 10) == 0)
++	        vs->x509verify = 1; /* ...and verify client certs */
++
++	    /* Now check for 'x509=/some/path' postfix
++	     * and use that to setup x509 certificate/key paths */
++	    start = strchr(options, '=');
++	    end = strchr(options, ',');
++	    if (start && (!end || (start < end))) {
++		int len = end ? end-(start+1) : strlen(start+1);
++		char *path = qemu_malloc(len+1);
++		strncpy(path, start+1, len);
++		path[len] = '\0';
++		VNC_DEBUG("Trying certificate path '%s'\n", path);
++		if (vnc_set_x509_credential_dir(vs, path) < 0) {
++		    fprintf(stderr, "Failed to find x509 certificates/keys in %s\n", path);
++		    qemu_free(path);
++		    qemu_free(vs->display);
++		    vs->display = NULL;
++		    return -1;
++		}
++		qemu_free(path);
++	    } else {
++		fprintf(stderr, "No certificate path provided\n");
++		qemu_free(vs->display);
++		vs->display = NULL;
++		return -1;
++	    }
++#endif
++	}
++    }
++
++    if (password) {
++#if CONFIG_VNC_TLS
++	if (tls) {
++	    vs->auth = VNC_AUTH_VENCRYPT;
++	    if (x509) {
++		VNC_DEBUG("Initializing VNC server with x509 password auth\n");
++		vs->subauth = VNC_AUTH_VENCRYPT_X509VNC;
++	    } else {
++		VNC_DEBUG("Initializing VNC server with TLS password auth\n");
++		vs->subauth = VNC_AUTH_VENCRYPT_TLSVNC;
++	    }
++	} else {
++#endif
++	    VNC_DEBUG("Initializing VNC server with password auth\n");
++	    vs->auth = VNC_AUTH_VNC;
++#if CONFIG_VNC_TLS
++	    vs->subauth = VNC_AUTH_INVALID;
++	}
++#endif
++    } else {
++#if CONFIG_VNC_TLS
++	if (tls) {
++	    vs->auth = VNC_AUTH_VENCRYPT;
++	    if (x509) {
++		VNC_DEBUG("Initializing VNC server with x509 no auth\n");
++		vs->subauth = VNC_AUTH_VENCRYPT_X509NONE;
++	    } else {
++		VNC_DEBUG("Initializing VNC server with TLS no auth\n");
++		vs->subauth = VNC_AUTH_VENCRYPT_TLSNONE;
++	    }
++	} else {
++#endif
++	    VNC_DEBUG("Initializing VNC server with no auth\n");
++	    vs->auth = VNC_AUTH_NONE;
++#if CONFIG_VNC_TLS
++	    vs->subauth = VNC_AUTH_INVALID;
++	}
++#endif
++    }
+ #ifndef _WIN32
+-    if (strstart(arg, "unix:", &p)) {
++    if (strstart(display, "unix:", &p)) {
+ 	addr = (struct sockaddr *)&uaddr;
+ 	addrlen = sizeof(uaddr);
+ 
+ 	vs->lsock = socket(PF_UNIX, SOCK_STREAM, 0);
+ 	if (vs->lsock == -1) {
+ 	    fprintf(stderr, "Could not create socket\n");
+-	    exit(1);
++	    free(vs->display);
++	    vs->display = NULL;
++	    return -1;
+ 	}
+ 
+ 	uaddr.sun_family = AF_UNIX;
+@@ -1219,40 +2157,53 @@ void vnc_display_init(DisplayState *ds, 
+ 	addr = (struct sockaddr *)&iaddr;
+ 	addrlen = sizeof(iaddr);
+ 
++	if (parse_host_port(&iaddr, display) < 0) {
++	    fprintf(stderr, "Could not parse VNC address\n");
++	    free(vs->display);
++	    vs->display = NULL;
++	    return -1;
++	}
++
++	iaddr.sin_port = htons(ntohs(iaddr.sin_port) + 5900);
++
+ 	vs->lsock = socket(PF_INET, SOCK_STREAM, 0);
+ 	if (vs->lsock == -1) {
+ 	    fprintf(stderr, "Could not create socket\n");
+-	    exit(1);
++	    free(vs->display);
++	    vs->display = NULL;
++	    return -1;
+ 	}
+ 
+-	if (parse_host_port(&iaddr, arg) < 0) {
+-	    fprintf(stderr, "Could not parse VNC address\n");
+-	    exit(1);
+-	}
+-	    
+-	iaddr.sin_port = htons(ntohs(iaddr.sin_port) + 5900);
+-
+ 	reuse_addr = 1;
+ 	ret = setsockopt(vs->lsock, SOL_SOCKET, SO_REUSEADDR,
+ 			 (const char *)&reuse_addr, sizeof(reuse_addr));
+ 	if (ret == -1) {
+ 	    fprintf(stderr, "setsockopt() failed\n");
+-	    exit(1);
++	    close(vs->lsock);
++	    vs->lsock = -1;
++	    free(vs->display);
++	    vs->display = NULL;
++	    return -1;
+ 	}
+     }
+ 
+     if (bind(vs->lsock, addr, addrlen) == -1) {
+ 	fprintf(stderr, "bind() failed\n");
+-	exit(1);
++	close(vs->lsock);
++	vs->lsock = -1;
++	free(vs->display);
++	vs->display = NULL;
++	return -1;
+     }
+ 
+     if (listen(vs->lsock, 1) == -1) {
+ 	fprintf(stderr, "listen() failed\n");
+-	exit(1);
++	close(vs->lsock);
++	vs->lsock = -1;
++	free(vs->display);
++	vs->display = NULL;
++	return -1;
+     }
+ 
+-    ret = qemu_set_fd_handler2(vs->lsock, vnc_listen_poll, vnc_listen_read, NULL, vs);
+-    if (ret == -1) {
+-	exit(1);
+-    }
++    return qemu_set_fd_handler2(vs->lsock, vnc_listen_poll, vnc_listen_read, NULL, vs);
+ }

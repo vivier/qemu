@@ -8,7 +8,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.9.0
-Release: 2%{?dist}
+Release: 3%{?dist}
 License: GPL/LGPL
 Group: Development/Tools
 URL: http://www.qemu.org/
@@ -17,8 +17,14 @@ Source1: qemu.init
 Patch0: qemu-0.7.0-build.patch
 Patch1: qemu-0.8.0-sdata.patch
 Patch2: qemu-0.9.0-load-initrd.patch
+# Change default NIC to rtl8139 to get link-state detection
+Patch3: qemu-0.9.0-nic-defaults.patch
+# Add VNC auth. Upstream backport. Remove at next upgrade
+Patch4: qemu-0.9.0-vnc-authentication.patch
+# Fix RTL8139 MMIO regions. Remove at next upgrade
+Patch5: qemu-0.9.0-rtl8139-mmio-regions.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-BuildRequires: SDL-devel compat-gcc-%{gccver} zlib-devel which texi2html
+BuildRequires: SDL-devel compat-gcc-%{gccver} zlib-devel which texi2html gnutls-devel
 Requires(post): /sbin/chkconfig
 Requires(preun): /sbin/service /sbin/chkconfig
 Requires(postun): /sbin/service
@@ -42,6 +48,9 @@ As QEMU requires no host kernel patches to run, it is safe and easy to use.
 %patch0 -p1
 %patch1 -p1
 %patch2 -p0
+%patch3 -p1
+%patch4 -p1
+%patch5 -p1
 
 %build
 ./configure \
@@ -92,6 +101,11 @@ fi
 %{_mandir}/man1/*
 
 %changelog
+* Tue Aug 28 2007 Daniel P. Berrange <berrange@redhat.com> - 0.9.0-3.fc8
+- Added backport of VNC password auth, and TLS+x509 cert auth
+- Switch to rtl8139 NIC by default for linkstate reporting
+- Fix rtl8139 mmio region mappings with multiple NICs
+
 * Sun Apr  1 2007 Hans de Goede <j.w.r.degoede@hhs.nl> 0.9.0-2
 - Fix direct loading of a linux kernel with -kernel & -initrd (bz 234681)
 - Remove spurious execute bits from manpages (bz 222573)

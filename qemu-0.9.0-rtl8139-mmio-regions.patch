@@ -1,0 +1,25 @@
+diff -rup qemu-0.9.0.orig/hw/rtl8139.c qemu-0.9.0.new/hw/rtl8139.c
+--- qemu-0.9.0.orig/hw/rtl8139.c	2007-02-05 18:01:54.000000000 -0500
++++ qemu-0.9.0.new/hw/rtl8139.c	2007-08-28 11:37:29.000000000 -0400
+@@ -3325,7 +3325,7 @@ static void rtl8139_mmio_map(PCIDevice *
+     PCIRTL8139State *d = (PCIRTL8139State *)pci_dev;
+     RTL8139State *s = &d->rtl8139;
+ 
+-    cpu_register_physical_memory(addr + 0, 0x100, s->rtl8139_mmio_io_addr);
++    cpu_register_physical_memory(addr + 0, 0x1000, s->rtl8139_mmio_io_addr);
+ }
+ 
+ static void rtl8139_ioport_map(PCIDevice *pci_dev, int region_num, 
+@@ -3438,10 +3438,10 @@ void pci_rtl8139_init(PCIBus *bus, NICIn
+     s->rtl8139_mmio_io_addr =
+     cpu_register_io_memory(0, rtl8139_mmio_read, rtl8139_mmio_write, s);
+ 
+-    pci_register_io_region(&d->dev, 0, 0x100, 
++    pci_register_io_region(&d->dev, 0, 0x1000, 
+                            PCI_ADDRESS_SPACE_IO,  rtl8139_ioport_map);
+ 
+-    pci_register_io_region(&d->dev, 1, 0x100, 
++    pci_register_io_region(&d->dev, 1, 0x1000, 
+                            PCI_ADDRESS_SPACE_MEM, rtl8139_mmio_map);
+ 
+     s->irq = 16; /* PCI interrupt */
