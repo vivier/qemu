@@ -8,7 +8,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.9.0
-Release: 4%{?dist}
+Release: 5%{?dist}
 License: GPLv2+, LGPLv2+
 Group: Development/Tools
 URL: http://www.qemu.org/
@@ -23,7 +23,10 @@ Patch3: qemu-0.9.0-nic-defaults.patch
 Patch4: qemu-0.9.0-vnc-authentication.patch
 # Fix RTL8139 MMIO regions. Remove at next upgrade
 Patch5: qemu-0.9.0-rtl8139-mmio-regions.patch
+# Fix Atapi errors with latest kernel
 Patch6: qemu-0.9.0-atapi-hsm.patch
+# Fix RTL8139 checksum calculations for Vista
+Patch7: qemu-0.9.0-rtl8139-checksum.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel compat-gcc-%{gccver} zlib-devel which texi2html gnutls-devel
 Requires(post): /sbin/chkconfig
@@ -53,6 +56,7 @@ As QEMU requires no host kernel patches to run, it is safe and easy to use.
 %patch4 -p1
 %patch5 -p1
 %patch6 -p1
+%patch7 -p0
 
 %build
 ./configure \
@@ -104,6 +108,9 @@ fi
 %{_mandir}/man1/*
 
 %changelog
+* Wed Sep 26 2007 Daniel P. Berrange <berrange@redhat.com> - 0.9.0-5.fc8
+- Fix rtl8139 checksum calculation for Vista (rhbz #308201)
+
 * Tue Aug 28 2007 Daniel P. Berrange <berrange@redhat.com> - 0.9.0-4.fc8
 - Fix debuginfo by passing -Wl,--build-id to linker
 
