@@ -7,26 +7,16 @@
 
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
-Version: 0.9.0
-Release: 5%{?dist}
-License: GPLv2+, LGPLv2+
+Version: 0.9.1
+Release: 1%{?dist}
+License: GPLv2+ and LGPLv2+
 Group: Development/Tools
 URL: http://www.qemu.org/
 Source0: http://www.qemu.org/%{name}-%{version}.tar.gz
 Source1: qemu.init
 Patch0: qemu-0.7.0-build.patch
-Patch1: qemu-0.8.0-sdata.patch
-Patch2: qemu-0.9.0-load-initrd.patch
 # Change default NIC to rtl8139 to get link-state detection
-Patch3: qemu-0.9.0-nic-defaults.patch
-# Add VNC auth. Upstream backport. Remove at next upgrade
-Patch4: qemu-0.9.0-vnc-authentication.patch
-# Fix RTL8139 MMIO regions. Remove at next upgrade
-Patch5: qemu-0.9.0-rtl8139-mmio-regions.patch
-# Fix Atapi errors with latest kernel
-Patch6: qemu-0.9.0-atapi-hsm.patch
-# Fix RTL8139 checksum calculations for Vista
-Patch7: qemu-0.9.0-rtl8139-checksum.patch
+Patch3: qemu-0.9.1-nic-defaults.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel compat-gcc-%{gccver} zlib-devel which texi2html gnutls-devel
 Requires(post): /sbin/chkconfig
@@ -50,13 +40,7 @@ As QEMU requires no host kernel patches to run, it is safe and easy to use.
 %prep
 %setup -q
 %patch0 -p1
-%patch1 -p1
-%patch2 -p0
 %patch3 -p1
-%patch4 -p1
-%patch5 -p1
-%patch6 -p1
-%patch7 -p0
 
 %build
 ./configure \
@@ -102,12 +86,17 @@ fi
 %doc Changelog README TODO
 %doc qemu-doc.html qemu-tech.html
 %doc COPYING COPYING.LIB LICENSE
-%config %{_sysconfdir}/rc.d/init.d/qemu
+%{_sysconfdir}/rc.d/init.d/qemu
 %{_bindir}/qemu*
 %{_prefix}/share/qemu/
 %{_mandir}/man1/*
 
 %changelog
+* Tue Jan  8 2008 Daniel P. Berrange <berrange@redhat.com> - 0.9.1-1.fc9
+- Updated to 0.9.1 release
+- Fix license tag syntax
+- Don't mark init script as a config file
+
 * Wed Sep 26 2007 Daniel P. Berrange <berrange@redhat.com> - 0.9.0-5.fc8
 - Fix rtl8139 checksum calculation for Vista (rhbz #308201)
 

@@ -1,0 +1,24 @@
+diff -rup qemu-0.9.1.orig/hw/pc.c qemu-0.9.1.new/hw/pc.c
+--- qemu-0.9.1.orig/hw/pc.c	2008-01-06 14:38:42.000000000 -0500
++++ qemu-0.9.1.new/hw/pc.c	2008-01-08 17:06:27.000000000 -0500
+@@ -913,7 +913,7 @@ static void pc_init1(int ram_size, int v
+         nd = &nd_table[i];
+         if (!nd->model) {
+             if (pci_enabled) {
+-                nd->model = "ne2k_pci";
++                nd->model = "rtl8139";
+             } else {
+                 nd->model = "ne2k_isa";
+             }
+diff -rup qemu-0.9.1.orig/vl.c qemu-0.9.1.new/vl.c
+--- qemu-0.9.1.orig/vl.c	2008-01-06 14:38:42.000000000 -0500
++++ qemu-0.9.1.new/vl.c	2008-01-08 17:05:40.000000000 -0500
+@@ -8787,7 +8787,7 @@ int main(int argc, char **argv)
+ 	    char buf[1024];
+             if (net_boot & (1 << i)) {
+                 if (model == NULL)
+-                    model = "ne2k_pci";
++                    model = "rtl8139";
+                 snprintf(buf, sizeof(buf), "%s/pxe-%s.bin", bios_dir, model);
+                 if (get_image_size(buf) > 0) {
+                     if (nb_option_roms >= MAX_OPTION_ROMS) {
