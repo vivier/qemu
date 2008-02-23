@@ -8,7 +8,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.9.1
-Release: 2%{?dist}
+Release: 3%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: Development/Tools
 URL: http://www.qemu.org/
@@ -17,6 +17,7 @@ Source1: qemu.init
 Patch0: qemu-0.7.0-build.patch
 # Change default NIC to rtl8139 to get link-state detection
 Patch3: qemu-0.9.1-nic-defaults.patch
+Patch4: qemu-%{version}-block-rw-range-check.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel compat-gcc-%{gccver} zlib-devel which texi2html gnutls-devel
 Requires(post): /sbin/chkconfig
@@ -41,6 +42,7 @@ As QEMU requires no host kernel patches to run, it is safe and easy to use.
 %setup -q
 %patch0 -p1
 %patch3 -p1
+%patch4 -p1
 
 %build
 ./configure \
@@ -92,6 +94,9 @@ fi
 %{_mandir}/man1/*
 
 %changelog
+* Sat Feb 23 2008 Daniel Berrange <berrange@t60wlan.home.berrange.com> - 0.9.1-3.fc9
+- Fix block device extents check (rhbz #433560)
+
 * Mon Feb 18 2008 Fedora Release Engineering <rel-eng@fedoraproject.org> - 0.9.1-2
 - Autorebuild for GCC 4.3
 
