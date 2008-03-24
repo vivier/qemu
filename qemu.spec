@@ -23,6 +23,7 @@ BuildRequires: SDL-devel compat-gcc-%{gccver} zlib-devel which texi2html gnutls-
 Requires(post): /sbin/chkconfig
 Requires(preun): /sbin/service /sbin/chkconfig
 Requires(postun): /sbin/service
+Requires: %{name}-img = %{version}-%{release}
 ExclusiveArch: %{ix86} x86_64 ppc alpha sparc armv4l
 
 %description
@@ -37,6 +38,16 @@ emulation speed by using dynamic translation. QEMU has two operating modes:
    for one CPU on another CPU.
 
 As QEMU requires no host kernel patches to run, it is safe and easy to use.
+
+%package img
+Summary: QEMU is a FAST! processor emulator
+Group: Development/Tools
+
+%description img
+QEMU is a generic and open source processor emulator which achieves a good
+emulation speed by using dynamic translation.
+
+This package provides the command line tool for manipulating disk images
 
 %prep
 %setup -q
@@ -89,11 +100,34 @@ fi
 %doc qemu-doc.html qemu-tech.html
 %doc COPYING COPYING.LIB LICENSE
 %{_sysconfdir}/rc.d/init.d/qemu
+%{_bindir}/qemu
+%{_bindir}/qemu-arm
+%{_bindir}/qemu-armeb
+%{_bindir}/qemu-i386
+%{_bindir}/qemu-m68k
+%{_bindir}/qemu-mips
+%{_bindir}/qemu-mipsel
+%{_bindir}/qemu-ppc
+%{_bindir}/qemu-sparc
+%{_bindir}/qemu-system-arm
+%{_bindir}/qemu-system-mips
+%{_bindir}/qemu-system-mipsel
+%{_bindir}/qemu-system-ppc
+%{_bindir}/qemu-system-sparc
+%{_bindir}/qemu-system-x86_64
 %{_bindir}/qemu*
 %{_prefix}/share/qemu/
-%{_mandir}/man1/*
+%{_mandir}/man1/qemu.1*
+
+%files img
+%defattr(-,root,root)
+%{_bindir}/qemu-img
+%{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Mar 19 2008 Daniel P. Berrange <berrange@redhat.com> - 0.9.1-5.fc9
+- Split qemu-img tool into sub-package for smaller footprint installs
+
 * Wed Feb 27 2008 Daniel P. Berrange <berrange@redhat.com> - 0.9.1-4.fc9
 - Fix block device checks for extendable disk formats (rhbz #435139)
 
