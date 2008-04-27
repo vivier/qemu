@@ -8,7 +8,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.9.1
-Release: 5%{?dist}
+Release: 6%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: Development/Tools
 URL: http://www.qemu.org/
@@ -125,6 +125,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Sun Apr 27 2008 Lubomir Kundrak <lkundrak@redhat.com> - 0.9.1-6
+- Register binary handler for SuperH-4 CPU
+
 * Wed Mar 19 2008 Daniel P. Berrange <berrange@redhat.com> - 0.9.1-5.fc9
 - Split qemu-img tool into sub-package for smaller footprint installs
 

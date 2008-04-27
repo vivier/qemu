@@ -23,6 +23,9 @@ start() {
 	    armv4l|armv5l)
 		cpu="arm"
 		;;
+	    sh4)
+		cpu="sh4"
+		;;
 	esac
 
 	echo -n $"Registering binary handler for qemu applications"
@@ -41,12 +44,15 @@ start() {
 	if [ "$cpu" != sparc -a -x $QEMU/qemu-sparc -a -d /usr/qemu-sparc ] ; then
 	    echo   ":qemu-sparc:M::\x7fELF\x01\x02\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x02:\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xfb\xff\xff\xff:$QEMU/qemu-sparc:" > /proc/sys/fs/binfmt_misc/register
 	fi
+	if [ "$cpu" != sh4 -a -x $QEMU/qemu-sh4 -a -d /usr/qemu-sh4 ] ; then
+	    echo   ":qemu-sh4:M::\x7fELF\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x2a\x00:\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfb\xff\xff\xff:$QEMU/qemu-sh4:" > /proc/sys/fs/binfmt_misc/register
+	fi
 	echo
 }
 
 stop() {
 	echo -n $"Unregistering binary handler for qemu applications"
-	for a in i386 i486 ppc arm sparc ] ; do 
+	for a in i386 i486 ppc arm sparc sh4 ] ; do 
 	    [ -r /proc/sys/fs/binfmt_misc/qemu-$a ] && echo "-1" >/proc/sys/fs/binfmt_misc/qemu-$a
 	done
 	echo
