@@ -8,7 +8,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.9.1
-Release: 6%{?dist}
+Release: 7%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: Development/Tools
 URL: http://www.qemu.org/
@@ -18,6 +18,8 @@ Patch0: qemu-0.7.0-build.patch
 # Change default NIC to rtl8139 to get link-state detection
 Patch3: qemu-0.9.1-nic-defaults.patch
 Patch4: qemu-%{version}-block-rw-range-check.patch
+# Upstream SVN changeset #4338
+Patch5: qemu-%{version}-pty-rawmode.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel compat-gcc-%{gccver} zlib-devel which texi2html gnutls-devel
 Requires(post): /sbin/chkconfig
@@ -54,6 +56,7 @@ This package provides the command line tool for manipulating disk images
 %patch0 -p1
 %patch3 -p1
 %patch4 -p1
+%patch5 -p1
 
 %build
 ./configure \
@@ -125,6 +128,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon May  5 2008 Daniel P. Berrange <berrange@redhat.com> - 0.9.1-7.fc10
+- Fix text console PTYs to be in rawmode
+
 * Sun Apr 27 2008 Lubomir Kundrak <lkundrak@redhat.com> - 0.9.1-6
 - Register binary handler for SuperH-4 CPU
 
