@@ -128,6 +128,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Sat May 17 2008 Lubomir Rintel <lkundrak@v3.sk> - 0.9.1-8
+- Register binary handlers also for shared libraries
+
 * Mon May  5 2008 Daniel P. Berrange <berrange@redhat.com> - 0.9.1-7.fc10
 - Fix text console PTYs to be in rawmode
 
