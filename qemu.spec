@@ -8,7 +8,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.9.1
-Release: 8%{?dist}
+Release: 9%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: Development/Tools
 URL: http://www.qemu.org/
@@ -104,21 +104,37 @@ fi
 %doc COPYING COPYING.LIB LICENSE
 %{_sysconfdir}/rc.d/init.d/qemu
 %{_bindir}/qemu
+%{_bindir}/qemu-alpha
 %{_bindir}/qemu-arm
 %{_bindir}/qemu-armeb
+%{_bindir}/qemu-cris
 %{_bindir}/qemu-i386
 %{_bindir}/qemu-m68k
 %{_bindir}/qemu-mips
 %{_bindir}/qemu-mipsel
 %{_bindir}/qemu-ppc
+%{_bindir}/qemu-ppc64
+%{_bindir}/qemu-ppc64abi32
+%{_bindir}/qemu-sh4
+%{_bindir}/qemu-sh4eb
 %{_bindir}/qemu-sparc
+%{_bindir}/qemu-sparc32plus
+%{_bindir}/qemu-sparc64
 %{_bindir}/qemu-system-arm
 %{_bindir}/qemu-system-mips
 %{_bindir}/qemu-system-mipsel
 %{_bindir}/qemu-system-ppc
 %{_bindir}/qemu-system-sparc
 %{_bindir}/qemu-system-x86_64
-%{_bindir}/qemu*
+%{_bindir}/qemu-system-cris
+%{_bindir}/qemu-system-m68k
+%{_bindir}/qemu-system-mips64
+%{_bindir}/qemu-system-mips64el
+%{_bindir}/qemu-system-ppc64
+%{_bindir}/qemu-system-ppcemb
+%{_bindir}/qemu-system-sh4
+%{_bindir}/qemu-system-sh4eb
+%{_bindir}/qemu-x86_64
 %{_prefix}/share/qemu/
 %{_mandir}/man1/qemu.1*
 
@@ -128,6 +144,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Jun 11 2008 Daniel P. Berrange <berrange@redhat.com> - 0.9.1-9.fc10
+- Remove bogus wildcard from files list (rhbz #450701)
+
 * Sat May 17 2008 Lubomir Rintel <lkundrak@v3.sk> - 0.9.1-8
 - Register binary handlers also for shared libraries
 
