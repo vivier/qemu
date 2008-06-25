@@ -8,7 +8,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.9.1
-Release: 9%{?dist}
+Release: 10%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: Development/Tools
 URL: http://www.qemu.org/
@@ -144,6 +144,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Jun 25 2008 Daniel P. Berrange <berrange@redhat.com> - 0.9.1-10.fc10
+- Rebuild for GNU TLS ABI change
+
 * Wed Jun 11 2008 Daniel P. Berrange <berrange@redhat.com> - 0.9.1-9.fc10
 - Remove bogus wildcard from files list (rhbz #450701)
 
