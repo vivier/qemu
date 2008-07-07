@@ -59,6 +59,7 @@ This package provides the command line tool for manipulating disk images
 %patch5 -p1
 
 %build
+# FIXME: add --extra-cflags="$RPM_OPT_FLAGS" when we drop gcc34
 ./configure \
     --prefix=%{_prefix} \
     --interp-prefix=%{_prefix}/qemu-%%M \
