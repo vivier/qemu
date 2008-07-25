@@ -42,14 +42,14 @@ emulation speed by using dynamic translation. QEMU has two operating modes:
 As QEMU requires no host kernel patches to run, it is safe and easy to use.
 
 %package img
-Summary: QEMU is a FAST! processor emulator
+Summary: QEMU command line tool for disk image manipulation
 Group: Development/Tools
 
 %description img
 QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
 
-This package provides the command line tool for manipulating disk images
+This package provides the command line tool for manipulating disk images.
 
 %prep
 %setup -q
@@ -145,6 +145,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Jul 25 2008 Bill Nottingham <notting@redhat.com>
+- Fix qemu-img summary (#456344)
+
 * Wed Jun 25 2008 Daniel P. Berrange <berrange@redhat.com> - 0.9.1-10.fc10
 - Rebuild for GNU TLS ABI change
 
