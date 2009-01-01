@@ -1,0 +1,10 @@
+--- qemu-0.9.1/target-alpha/exec.h.BAD	2008-12-31 23:17:10.000000000 -0600
++++ qemu-0.9.1/target-alpha/exec.h	2008-12-31 23:17:48.000000000 -0600
+@@ -24,6 +24,7 @@
+ #include "config.h"
+ 
+ #include "dyngen-exec.h"
++#include <stdint.h>
+ 
+ #define TARGET_LONG_BITS 64
+ 

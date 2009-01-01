@@ -1,0 +1,25 @@
+--- qemu-0.9.1/configure.BAD	2008-12-31 20:49:19.000000000 -0600
++++ qemu-0.9.1/configure	2008-12-31 20:51:45.000000000 -0600
+@@ -307,6 +307,8 @@
+                  target_cpu="sparc"; cpu="sparc" ;;
+         v8plus|v8plusa) SP_CFLAGS="-m32 -mcpu=ultrasparc -D__sparc_${sparc_cpu}__"; SP_LDFLAGS="-m32"
+                  target_cpu="sparc"; cpu="sparc" ;;
++        v932)    SP_CFLAGS="-m32 -mcpu=ultrasparc -D__sparc_v9__"; SP_LDFLAGS="-m32"
++                 target_cpu="sparc"; cpu="sparc" ;;
+         v9)    SP_CFLAGS="-m64 -mcpu=ultrasparc -D__sparc_${sparc_cpu}__"; SP_LDFLAGS="-m64"
+                  target_cpu="sparc64"; cpu="sparc64" ;;
+         *)     echo "undefined SPARC architecture. Exiting";exit 1;;
+@@ -337,11 +339,11 @@
+ 
+ #
+ # If cpu ~= sparc and  sparc_cpu hasn't been defined, plug in the right
+-# ARCH_CFLAGS/ARCH_LDFLAGS (assume sparc_v8plus for 32-bit and sparc_v9 for 64-bit)
++# ARCH_CFLAGS/ARCH_LDFLAGS (assume sparc_v9 for 32-bit and sparc_v9 for 64-bit)
+ #
+ case $cpu in
+     sparc) if test -z "$sparc_cpu" ; then
+-               ARCH_CFLAGS="-m32 -mcpu=ultrasparc -D__sparc_v8plus__"
++               ARCH_CFLAGS="-m32 -mcpu=ultrasparc -D__sparc_v9__"
+                ARCH_LDFLAGS="-m32"
+            else
+                ARCH_CFLAGS="${SP_CFLAGS}"
