@@ -8,13 +8,13 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.9.1
-Release: 11%{?dist}
+Release: 12%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: Development/Tools
 URL: http://www.qemu.org/
 Source0: http://www.qemu.org/%{name}-%{version}.tar.gz
 Source1: qemu.init
-Patch0: qemu-0.7.0-build.patch
+Patch0: qemu-0.9.1-build.patch
 # Change default NIC to rtl8139 to get link-state detection
 Patch3: qemu-0.9.1-nic-defaults.patch
 Patch4: qemu-%{version}-block-rw-range-check.patch
@@ -159,6 +159,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Sun Jan 11 2009 Debarshi Ray <rishi@fedoraproject.org> - 0.9.1-12
+- Updated build patch. Closes Red Hat Bugzilla bug #465041.
+
 * Wed Dec 31 2008 Dennis Gilmore <dennis@ausil.us> - 0.9.1-11
 - add sparcv9 and sparc64 support
 
