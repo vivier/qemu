@@ -1,35 +1,55 @@
-# For FC >= 6 we have gcc 3.4, for FC <= 5 we have gcc 3.2
-%if %{!?fedora:6}%{?fedora} >= 6
-%define gccver 34
-%else
-%define gccver 32
-%endif
-
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
-Version: 0.9.1
-Release: 13%{?dist}
+Version: 1.0
+Release: 0.1.svn6666%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: Development/Tools
 URL: http://www.qemu.org/
 Source0: http://www.qemu.org/%{name}-%{version}.tar.gz
 Source1: qemu.init
-Patch0: qemu-0.9.1-build.patch
-# Change default NIC to rtl8139 to get link-state detection
-Patch3: qemu-0.9.1-nic-defaults.patch
-Patch4: qemu-%{version}-block-rw-range-check.patch
-# Upstream SVN changeset #4338
-Patch5: qemu-%{version}-pty-rawmode.patch
-Patch6: qemu-0.9.1-alpha-int.patch                                                                                
-Patch7: qemu-0.9.1-dirent.patch                                                                                   
-Patch8: qemu-0.9.1-sparc-configure.patch  
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-BuildRequires: SDL-devel compat-gcc-%{gccver} zlib-devel which texi2html gnutls-devel
-Requires(post): /sbin/chkconfig
-Requires(preun): /sbin/service /sbin/chkconfig
-Requires(postun): /sbin/service
+BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel
+Requires: %{name}-user = %{version}-%{release}
+Requires: %{name}-system-x86 = %{version}-%{release}
+Requires: %{name}-system-sparc = %{version}-%{release}
+Requires: %{name}-system-arm = %{version}-%{release}
+Requires: %{name}-system-cris = %{version}-%{release}
+Requires: %{name}-system-sh4 = %{version}-%{release}
+Requires: %{name}-system-m68k = %{version}-%{release}
+Requires: %{name}-system-mips = %{version}-%{release}
+Requires: %{name}-system-ppc = %{version}-%{release}
 Requires: %{name}-img = %{version}-%{release}
-ExclusiveArch: %{ix86} x86_64 ppc alpha sparcv9 sparc64 armv4l
+
+#ExclusiveArch: %{ix86} x86_64 ppc alpha sparcv9 sparc64 armv4l
+
+%define qemudocdir %{_docdir}/%{name}-%{version}
+
+%define qemupkg() \
+%package %1\
+Summary: QEMU %2\
+Group: Development/Tools \
+Requires: %{name}-common = %{version}-%{release}    \
+%{nil}
+
+%define qemudesc() \
+%description %1 \
+QEMU is a generic and open source processor emulator which achieves a good  \
+emulation speed by using dynamic translation.                               \
+                                                                            \
+This package provides the %2
+%{nil}
+
+%define qemupkgdesc() \
+%package %1\
+Summary: QEMU %2\
+Group: Development/Tools \
+Requires: %{name}-common = %{version}-%{release}    \
+%description %1 \
+QEMU is a generic and open source processor emulator which achieves a good  \
+emulation speed by using dynamic translation.                               \
+                                                                            \
+This package provides the %2
+%{nil}
 
 %description
 QEMU is a generic and open source processor emulator which achieves a good
@@ -44,43 +64,56 @@ emulation speed by using dynamic translation. QEMU has two operating modes:
 
 As QEMU requires no host kernel patches to run, it is safe and easy to use.
 
-%package img
-Summary: QEMU command line tool for disk image manipulation
-Group: Development/Tools
+%qemupkgdesc img {command line tool for manipulating disk images}
 
-%description img
-QEMU is a generic and open source processor emulator which achieves a good
-emulation speed by using dynamic translation.
+%qemupkgdesc common {common files needed by all QEMU targets}
 
-This package provides the command line tool for manipulating disk images.
+%qemupkg user {user mode emulation of qemu targets}
+Requires(post): /sbin/chkconfig
+Requires(preun): /sbin/service /sbin/chkconfig
+Requires(postun): /sbin/service
+Requires: %{name}-common = %{version}-%{release}
+%qemudesc user {user mode emulation of qemu targets}
+
+%qemupkg system-x86 {system emulator for x86}
+%qemudesc system-x86 {system emulator for x86}
+%qemupkgdesc system-ppc {system emulator for ppc}
+
+%qemupkg system-sparc {system emulator for sparc}
+%qemudesc  system-sparc {system emulator for sparc}
+
+%qemupkgdesc system-arm {system emulator for arm}
+%qemupkgdesc system-mips {system emulator for mips}
+%qemupkgdesc system-cris {system emulator for cris}
+%qemupkgdesc system-m68k {system emulator for m68k}
+%qemupkgdesc system-sh4 {system emulator for sh4}
 
 %prep
 %setup -q
-%patch0 -p1
-%patch3 -p1
-%patch4 -p1
-%patch5 -p1
-%patch6 -p1
-%patch7 -p1
-%patch8 -p1
 
 %build
-# FIXME: add --extra-cflags="$RPM_OPT_FLAGS" when we drop gcc34
+# systems like rhel build system does not have a recent enough linker so 
+# --build-id works. this option is used fedora 8 onwards for giving info
+# to the debug packages.
+
+build_id_available() {
+ echo "int main () { return 0; }" | gcc -x c -Wl,--build-id - 2>/dev/null
+}
+
+if build_id_available; then
+ extraldflags="--extra-ldflags=-Wl,--build-id"
+ buildldflags="VL_LDFLAGS=-Wl,--build-id"
+else
+ extraldflags=""
+ buildldflags=""
+fi
+
 ./configure \
     --prefix=%{_prefix} \
     --interp-prefix=%{_prefix}/qemu-%%M \
-    --cc=gcc%{gccver} \
-%ifnarch sparcv9
-     --enable-alsa \
-%endif
-%ifarch sparcv9
-    --sparc_cpu=v932 \
-%endif
-%ifarch sparc64
-    --sparc_cpu=v9 \
-%endif
-    --extra-ldflags="-Wl,--build-id"
-make %{?_smp_mflags} VL_LDFLAGS="-Wl,--build-id"
+    $extraldflags;
+make %{?_smp_mflags} $buildldflags
+
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -94,6 +127,7 @@ make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
 chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
 
 install -D -p -m 0755 %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/qemu
+install -D -p -m 0644 -t ${RPM_BUILD_ROOT}/%{qemudocdir} Changelog README TODO COPYING COPYING.LIB LICENSE
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -112,18 +146,33 @@ if [ $1 -ge 1 ]; then
     /sbin/service qemu condrestart &>/dev/null || :
 fi
 
-%files
+%files 
 %defattr(-,root,root)
-%doc Changelog README TODO
-%doc qemu-doc.html qemu-tech.html
-%doc COPYING COPYING.LIB LICENSE
+
+%files common
+%defattr(-,root,root)
+%doc %{qemudocdir}/Changelog
+%doc %{qemudocdir}/README
+%doc %{qemudocdir}/TODO
+%doc %{qemudocdir}/qemu-doc.html 
+%doc %{qemudocdir}/qemu-tech.html
+%doc %{qemudocdir}/COPYING 
+%doc %{qemudocdir}/COPYING.LIB 
+%doc %{qemudocdir}/LICENSE
+%{_prefix}/share/qemu/keymaps/
+%{_prefix}/share/qemu/*
+%{_mandir}/man1/qemu.1*
+%{_mandir}/man8/qemu-nbd.8*
+%{_bindir}/qemu-nbd
+%files user
+%defattr(-,root,root)
 %{_sysconfdir}/rc.d/init.d/qemu
-%{_bindir}/qemu
 %{_bindir}/qemu-alpha
 %{_bindir}/qemu-arm
 %{_bindir}/qemu-armeb
 %{_bindir}/qemu-cris
 %{_bindir}/qemu-i386
+%{_bindir}/qemu-x86_64
 %{_bindir}/qemu-m68k
 %{_bindir}/qemu-mips
 %{_bindir}/qemu-mipsel
@@ -133,25 +182,44 @@ fi
 %{_bindir}/qemu-sh4
 %{_bindir}/qemu-sh4eb
 %{_bindir}/qemu-sparc
-%{_bindir}/qemu-sparc32plus
 %{_bindir}/qemu-sparc64
+%{_bindir}/qemu-sparc32plus
+%files system-x86
+%defattr(-,root,root)
+%{_bindir}/qemu
+%{_bindir}/qemu-system-x86_64
+%{_prefix}/share/qemu/bios.bin
+%{_prefix}/share/qemu/vgabios.bin
+%{_prefix}/share/qemu/vgabios-cirrus.bin
+%files system-sparc
+%defattr(-,root,root)
+%{_bindir}/qemu-system-sparc
+%{_prefix}/share/qemu/openbios-sparc32
+%{_prefix}/share/qemu/openbios-sparc64
+%files system-arm
+%defattr(-,root,root)
 %{_bindir}/qemu-system-arm
+%files system-mips
+%defattr(-,root,root)
 %{_bindir}/qemu-system-mips
 %{_bindir}/qemu-system-mipsel
-%{_bindir}/qemu-system-ppc
-%{_bindir}/qemu-system-sparc
-%{_bindir}/qemu-system-x86_64
-%{_bindir}/qemu-system-cris
-%{_bindir}/qemu-system-m68k
 %{_bindir}/qemu-system-mips64
 %{_bindir}/qemu-system-mips64el
+%files system-ppc
+%defattr(-,root,root)
+%{_bindir}/qemu-system-ppc
 %{_bindir}/qemu-system-ppc64
 %{_bindir}/qemu-system-ppcemb
+%files system-cris
+%defattr(-,root,root)
+%{_bindir}/qemu-system-cris
+%files system-m68k
+%defattr(-,root,root)
+%{_bindir}/qemu-system-m68k
+%files system-sh4
+%defattr(-,root,root)
 %{_bindir}/qemu-system-sh4
 %{_bindir}/qemu-system-sh4eb
-%{_bindir}/qemu-x86_64
-%{_prefix}/share/qemu/
-%{_mandir}/man1/qemu.1*
 
 %files img
 %defattr(-,root,root)
@@ -159,6 +227,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Mar 02 2009 Glauber Costa <glommer@redhat.com> - 1.0-0.1.svn6666
+- Updated to tip svn (release 6666). Featuring split packages for qemu.
+  Unfortunately, still using binary blobs for the bioses.
+
 * Wed Feb 25 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.9.1-13
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_11_Mass_Rebuild
 
