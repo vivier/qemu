@@ -29,9 +29,10 @@ Auth can be stacked, so both username & x509 dname may be shown.
 
    Signed-off-by: Daniel P. Berrange <berrange@redhat.com>
 
-diff -r 440be37a35ea vnc-tls.c
---- a/vnc-tls.c	Fri Feb 20 11:46:26 2009 +0000
-+++ b/vnc-tls.c	Fri Feb 20 11:47:52 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/vnc-tls.c
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/vnc-tls.c
++++ kvm-84.git-snapshot-20090303/qemu/vnc-tls.c
 @@ -241,6 +241,22 @@ int vnc_tls_validate_certificate(struct 
  	    return -1;
  	}
@@ -63,9 +64,10 @@ diff -r 440be37a35ea vnc-tls.c
  }
  
  
-diff -r 440be37a35ea vnc-tls.h
---- a/vnc-tls.h	Fri Feb 20 11:46:26 2009 +0000
-+++ b/vnc-tls.h	Fri Feb 20 11:47:52 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/vnc-tls.h
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/vnc-tls.h
++++ kvm-84.git-snapshot-20090303/qemu/vnc-tls.h
 @@ -55,6 +55,9 @@ struct VncStateTLS {
      /* Whether data is being TLS encrypted yet */
      int wiremode;
@@ -76,9 +78,10 @@ diff -r 440be37a35ea vnc-tls.h
  };
  
  int vnc_tls_client_setup(VncState *vs, int x509Creds);
-diff -r 440be37a35ea vnc.c
---- a/vnc.c	Fri Feb 20 11:46:26 2009 +0000
-+++ b/vnc.c	Fri Feb 20 11:47:52 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/vnc.c
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/vnc.c
++++ kvm-84.git-snapshot-20090303/qemu/vnc.c
 @@ -156,6 +156,21 @@ static void do_info_vnc_client(VncState 
      term_puts("Client:\n");
      term_puts(clientAddr);

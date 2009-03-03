@@ -22,9 +22,10 @@ this patch.
 
    Signed-off-by: Daniel P. Berrange <berrange@redhat.com>
 
-diff -r ff004fb525e7 vnc.c
---- a/vnc.c	Thu Feb 19 11:26:55 2009 +0000
-+++ b/vnc.c	Thu Feb 19 11:27:44 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/vnc.c
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/vnc.c
++++ kvm-84.git-snapshot-20090303/qemu/vnc.c
 @@ -2096,14 +2096,6 @@ static int protocol_client_vencrypt_auth
  	    VNC_DEBUG("Failed to complete TLS\n");
  	    return 0;

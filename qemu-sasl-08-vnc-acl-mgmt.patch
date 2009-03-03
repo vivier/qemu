@@ -78,10 +78,11 @@ starting up
 
    Signed-off-by: Daniel P. Berrange <berrange@redhat.com>
 
-diff -r b1008c5c6c16 Makefile
---- a/Makefile	Mon Mar 02 11:13:40 2009 +0000
-+++ b/Makefile	Mon Mar 02 12:11:04 2009 +0000
-@@ -144,7 +144,7 @@ endif
+Index: kvm-84.git-snapshot-20090303/qemu/Makefile
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/Makefile
++++ kvm-84.git-snapshot-20090303/qemu/Makefile
+@@ -148,7 +148,7 @@ endif
  ifdef CONFIG_CURSES
  OBJS+=curses.o
  endif
@@ -90,7 +91,7 @@ diff -r b1008c5c6c16 Makefile
  ifdef CONFIG_VNC_TLS
  OBJS+=vnc-tls.o vnc-auth-vencrypt.o
  endif
-@@ -174,9 +174,11 @@ sdl.o: sdl.c keymaps.h sdl_keysym.h
+@@ -178,9 +178,11 @@ sdl.o: sdl.c keymaps.h sdl_keysym.h
  
  sdl.o audio/sdlaudio.o: CFLAGS += $(SDL_CFLAGS)
  
@@ -103,9 +104,10 @@ diff -r b1008c5c6c16 Makefile
  
  vnc.o: CFLAGS += $(CONFIG_VNC_TLS_CFLAGS)
  
-diff -r b1008c5c6c16 acl.c
---- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/acl.c	Mon Mar 02 12:11:04 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/acl.c
+===================================================================
+--- /dev/null
++++ kvm-84.git-snapshot-20090303/qemu/acl.c
 @@ -0,0 +1,185 @@
 +/*
 + * QEMU access control list management
@@ -292,9 +294,10 @@ diff -r b1008c5c6c16 acl.c
 + *  tab-width: 8
 + * End:
 + */
-diff -r b1008c5c6c16 acl.h
---- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/acl.h	Mon Mar 02 12:11:04 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/acl.h
+===================================================================
+--- /dev/null
++++ kvm-84.git-snapshot-20090303/qemu/acl.h
 @@ -0,0 +1,74 @@
 +/*
 + * QEMU access control list management
@@ -370,10 +373,11 @@ diff -r b1008c5c6c16 acl.h
 + *  tab-width: 8
 + * End:
 + */
-diff -r b1008c5c6c16 configure
---- a/configure	Mon Mar 02 11:13:40 2009 +0000
-+++ b/configure	Mon Mar 02 12:11:04 2009 +0000
-@@ -846,6 +846,21 @@ EOF
+Index: kvm-84.git-snapshot-20090303/qemu/configure
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/configure
++++ kvm-84.git-snapshot-20090303/qemu/configure
+@@ -897,6 +897,21 @@ EOF
  fi
  
  ##########################################
@@ -395,7 +399,7 @@ diff -r b1008c5c6c16 configure
  # vde libraries probe
  if test "$vde" = "yes" ; then
    cat > $TMPC << EOF
-@@ -1405,6 +1420,9 @@ if test "$vnc_sasl" = "yes" ; then
+@@ -1485,6 +1500,9 @@ if test "$vnc_sasl" = "yes" ; then
    echo "CONFIG_VNC_SASL_LIBS=$vnc_sasl_libs" >> $config_mak
    echo "#define CONFIG_VNC_SASL 1" >> $config_h
  fi
@@ -405,18 +409,19 @@ diff -r b1008c5c6c16 configure
  qemu_version=`head $source_path/VERSION`
  echo "VERSION=$qemu_version" >>$config_mak
  echo "#define QEMU_VERSION \"$qemu_version\"" >> $config_h
-diff -r b1008c5c6c16 monitor.c
---- a/monitor.c	Mon Mar 02 11:13:40 2009 +0000
-+++ b/monitor.c	Mon Mar 02 12:11:04 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/monitor.c
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/monitor.c
++++ kvm-84.git-snapshot-20090303/qemu/monitor.c
 @@ -39,6 +39,7 @@
  #include "qemu-timer.h"
  #include "migration.h"
  #include "kvm.h"
 +#include "acl.h"
  
- //#define DEBUG
- //#define DEBUG_COMPLETION
-@@ -1425,6 +1426,85 @@ static void do_info_balloon(void)
+ #include "qemu-kvm.h"
+ 
+@@ -1452,6 +1453,85 @@ static void do_info_balloon(void)
          term_printf("balloon: actual=%d\n", (int)(actual >> 20));
  }
  
@@ -502,20 +507,20 @@ diff -r b1008c5c6c16 monitor.c
  /* Please update qemu-doc.texi when adding or changing commands */
  static const term_cmd_t term_cmds[] = {
      { "help|?", "s?", do_help,
-@@ -1529,6 +1609,12 @@ static const term_cmd_t term_cmds[] = {
-       "target", "request VM to change it's memory allocation (in MB)" },
+@@ -1557,6 +1637,12 @@ static const term_cmd_t term_cmds[] = {
      { "set_link", "ss", do_set_link,
        "name [up|down]", "change the link status of a network adapter" },
+     { "set_link", "ss", do_set_link, "name [up|down]" },
 +    { "acl", "sss?i?", do_acl, "<command> <aclname> [<match>] [<index>]\n",
 +                               "acl show vnc.username\n"
 +                               "acl policy vnc.username deny\n"
 +                               "acl allow vnc.username fred\n"
 +                               "acl deny vnc.username bob\n"
 +                               "acl reset vnc.username\n" },
-     { NULL, NULL, },
- };
- 
-@@ -2891,3 +2977,12 @@ void monitor_readline(const char *prompt
+     { "cpu_set", "is", do_cpu_set_nr, "cpu [online|offline]", "change cpu state" },
+ #if defined(TARGET_I386) || defined(TARGET_X86_64)
+     { "drive_add", "iss", drive_hot_add, "pcibus pcidevfn [file=file][,if=type][,bus=n]\n"
+@@ -2927,3 +3013,12 @@ void monitor_readline(const char *prompt
                  monitor_hd[i]->focus = old_focus[i];
      }
  }
@@ -528,10 +533,11 @@ diff -r b1008c5c6c16 monitor.c
 + *  tab-width: 8
 + * End:
 + */
-diff -r b1008c5c6c16 qemu-doc.texi
---- a/qemu-doc.texi	Mon Mar 02 11:13:40 2009 +0000
-+++ b/qemu-doc.texi	Mon Mar 02 12:11:04 2009 +0000
-@@ -631,6 +631,19 @@ ensures a data encryption preventing com
+Index: kvm-84.git-snapshot-20090303/qemu/qemu-doc.texi
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/qemu-doc.texi
++++ kvm-84.git-snapshot-20090303/qemu/qemu-doc.texi
+@@ -639,6 +639,19 @@ ensures a data encryption preventing com
  credentials. See the @ref{vnc_security} section for details on using
  SASL authentication.
  
@@ -551,7 +557,7 @@ diff -r b1008c5c6c16 qemu-doc.texi
  @end table
  
  @end table
-@@ -1392,6 +1405,42 @@ Password: ********
+@@ -1389,6 +1402,42 @@ Password: ********
  
  @end table
  
@@ -594,9 +600,10 @@ diff -r b1008c5c6c16 qemu-doc.texi
  @item screendump @var{filename}
  Save screen into PPM image @var{filename}.
  
-diff -r b1008c5c6c16 vnc-auth-sasl.c
---- a/vnc-auth-sasl.c	Mon Mar 02 11:13:40 2009 +0000
-+++ b/vnc-auth-sasl.c	Mon Mar 02 12:11:04 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/vnc-auth-sasl.c
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/vnc-auth-sasl.c
++++ kvm-84.git-snapshot-20090303/qemu/vnc-auth-sasl.c
 @@ -120,22 +120,32 @@ static int vnc_auth_sasl_check_access(Vn
  {
      const void *val;
@@ -633,9 +640,10 @@ diff -r b1008c5c6c16 vnc-auth-sasl.c
  }
  
  static int vnc_auth_sasl_check_ssf(VncState *vs)
-diff -r b1008c5c6c16 vnc-auth-sasl.h
---- a/vnc-auth-sasl.h	Mon Mar 02 11:13:40 2009 +0000
-+++ b/vnc-auth-sasl.h	Mon Mar 02 12:11:04 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/vnc-auth-sasl.h
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/vnc-auth-sasl.h
++++ kvm-84.git-snapshot-20090303/qemu/vnc-auth-sasl.h
 @@ -30,6 +30,9 @@
  #include <sasl/sasl.h>
  
@@ -657,9 +665,10 @@ diff -r b1008c5c6c16 vnc-auth-sasl.h
  void vnc_sasl_client_cleanup(VncState *vs);
  
  long vnc_client_read_sasl(VncState *vs);
-diff -r b1008c5c6c16 vnc-tls.c
---- a/vnc-tls.c	Mon Mar 02 11:13:40 2009 +0000
-+++ b/vnc-tls.c	Mon Mar 02 12:11:04 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/vnc-tls.c
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/vnc-tls.c
++++ kvm-84.git-snapshot-20090303/qemu/vnc-tls.c
 @@ -255,6 +255,25 @@ int vnc_tls_validate_certificate(struct 
  			  gnutls_strerror (ret));
  		return -1;
@@ -686,9 +695,10 @@ diff -r b1008c5c6c16 vnc-tls.c
  	}
  
  	gnutls_x509_crt_deinit (cert);
-diff -r b1008c5c6c16 vnc-tls.h
---- a/vnc-tls.h	Mon Mar 02 11:13:40 2009 +0000
-+++ b/vnc-tls.h	Mon Mar 02 12:11:04 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/vnc-tls.h
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/vnc-tls.h
++++ kvm-84.git-snapshot-20090303/qemu/vnc-tls.h
 @@ -31,6 +31,8 @@
  #include <gnutls/gnutls.h>
  #include <gnutls/x509.h>
@@ -706,9 +716,10 @@ diff -r b1008c5c6c16 vnc-tls.h
  
      /* Paths to x509 certs/keys */
      char *x509cacert;
-diff -r b1008c5c6c16 vnc.c
---- a/vnc.c	Mon Mar 02 11:13:40 2009 +0000
-+++ b/vnc.c	Mon Mar 02 12:11:04 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/vnc.c
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/vnc.c
++++ kvm-84.git-snapshot-20090303/qemu/vnc.c
 @@ -28,6 +28,7 @@
  #include "sysemu.h"
  #include "qemu_socket.h"
@@ -754,9 +765,10 @@ diff -r b1008c5c6c16 vnc.c
      /*
       * Combinations we support here:
       *
-diff -r b1008c5c6c16 vnc.h
---- a/vnc.h	Mon Mar 02 11:13:40 2009 +0000
-+++ b/vnc.h	Mon Mar 02 12:11:04 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/vnc.h
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/vnc.h
++++ kvm-84.git-snapshot-20090303/qemu/vnc.h
 @@ -98,6 +98,9 @@ struct VncDisplay
      int subauth; /* Used by VeNCrypt */
      VncDisplayTLS tls;

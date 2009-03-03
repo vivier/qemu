@@ -38,9 +38,10 @@ important.
 
    Signed-off-by: Daniel P. Berrange <berrange@redhat.com>
 
-diff -r 4dbf24b567c4 vnc.c
---- a/vnc.c	Thu Feb 19 11:27:44 2009 +0000
-+++ b/vnc.c	Thu Feb 19 11:53:31 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/vnc.c
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/vnc.c
++++ kvm-84.git-snapshot-20090303/qemu/vnc.c
 @@ -166,19 +166,136 @@ struct VncState
  static VncDisplay *vnc_display; /* needed for info vnc */
  static DisplayChangeListener *dcl;
@@ -158,16 +159,17 @@ diff -r 4dbf24b567c4 vnc.c
 -	term_printf("VNC server active on: ");
 -	term_print_filename(vnc_display->display);
 -	term_printf("\n");
+-
+-	if (vnc_display->clients == NULL)
+-	    term_printf("No client connected\n");
+-	else
+-	    term_printf("Client connected\n");
 +    if (vnc_display == NULL || vnc_display->display == NULL) {
 +	term_printf("Server: disabled\n");
 +    } else {
 +	char *serverAddr = vnc_socket_local_addr("     address: %s:%s\n",
 +						 vnc_display->lsock);
- 
--	if (vnc_display->clients == NULL)
--	    term_printf("No client connected\n");
--	else
--	    term_printf("Client connected\n");
++
 +	if (!serverAddr)
 +	    return;
 +

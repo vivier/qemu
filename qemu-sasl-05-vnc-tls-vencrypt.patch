@@ -35,10 +35,11 @@ gnutls_send/recv.
 
    Signed-off-by: Daniel P. Berrange <berrange@redhat.com>
 
-diff -r dfa890dd7417 Makefile
---- a/Makefile	Mon Feb 23 13:05:49 2009 +0000
-+++ b/Makefile	Mon Feb 23 13:06:22 2009 +0000
-@@ -145,6 +145,9 @@ ifdef CONFIG_CURSES
+Index: kvm-84.git-snapshot-20090303/qemu/Makefile
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/Makefile
++++ kvm-84.git-snapshot-20090303/qemu/Makefile
+@@ -149,6 +149,9 @@ ifdef CONFIG_CURSES
  OBJS+=curses.o
  endif
  OBJS+=vnc.o d3des.o
@@ -48,7 +49,7 @@ diff -r dfa890dd7417 Makefile
  
  ifdef CONFIG_COCOA
  OBJS+=cocoa.o
-@@ -168,10 +171,16 @@ sdl.o: sdl.c keymaps.h sdl_keysym.h
+@@ -172,10 +175,16 @@ sdl.o: sdl.c keymaps.h sdl_keysym.h
  
  sdl.o audio/sdlaudio.o: CFLAGS += $(SDL_CFLAGS)
  
@@ -66,9 +67,10 @@ diff -r dfa890dd7417 Makefile
  curses.o: curses.c keymaps.h curses_keys.h
  
  bt-host.o: CFLAGS += $(CONFIG_BLUEZ_CFLAGS)
-diff -r dfa890dd7417 vnc-auth-vencrypt.c
---- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/vnc-auth-vencrypt.c	Mon Feb 23 13:06:22 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/vnc-auth-vencrypt.c
+===================================================================
+--- /dev/null
++++ kvm-84.git-snapshot-20090303/qemu/vnc-auth-vencrypt.c
 @@ -0,0 +1,167 @@
 +/*
 + * QEMU VNC display driver: VeNCrypt authentication setup
@@ -237,9 +239,10 @@ diff -r dfa890dd7417 vnc-auth-vencrypt.c
 +    vnc_read_when(vs, protocol_client_vencrypt_init, 2);
 +}
 +
-diff -r dfa890dd7417 vnc-auth-vencrypt.h
---- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/vnc-auth-vencrypt.h	Mon Feb 23 13:06:22 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/vnc-auth-vencrypt.h
+===================================================================
+--- /dev/null
++++ kvm-84.git-snapshot-20090303/qemu/vnc-auth-vencrypt.h
 @@ -0,0 +1,33 @@
 +/*
 + * QEMU VNC display driver
@@ -274,9 +277,10 @@ diff -r dfa890dd7417 vnc-auth-vencrypt.h
 +void start_auth_vencrypt(VncState *vs);
 +
 +#endif /* __QEMU_VNC_AUTH_VENCRYPT_H__ */
-diff -r dfa890dd7417 vnc-tls.c
---- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/vnc-tls.c	Mon Feb 23 13:06:22 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/vnc-tls.c
+===================================================================
+--- /dev/null
++++ kvm-84.git-snapshot-20090303/qemu/vnc-tls.c
 @@ -0,0 +1,414 @@
 +/*
 + * QEMU VNC display driver: TLS helpers
@@ -692,9 +696,10 @@ diff -r dfa890dd7417 vnc-tls.c
 +    return -1;
 +}
 +
-diff -r dfa890dd7417 vnc-tls.h
---- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/vnc-tls.h	Mon Feb 23 13:06:22 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/vnc-tls.h
+===================================================================
+--- /dev/null
++++ kvm-84.git-snapshot-20090303/qemu/vnc-tls.h
 @@ -0,0 +1,70 @@
 +/*
 + * QEMU VNC display driver. TLS helpers
@@ -766,9 +771,10 @@ diff -r dfa890dd7417 vnc-tls.h
 +
 +#endif /* __QEMU_VNC_TLS_H__ */
 +
-diff -r dfa890dd7417 vnc.c
---- a/vnc.c	Mon Feb 23 13:05:49 2009 +0000
-+++ b/vnc.c	Mon Feb 23 13:06:22 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/vnc.c
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/vnc.c
++++ kvm-84.git-snapshot-20090303/qemu/vnc.c
 @@ -34,21 +34,6 @@
  #include "vnc_keysym.h"
  #include "d3des.h"
@@ -1016,9 +1022,9 @@ diff -r dfa890dd7417 vnc.c
  
      vnc_read_when(vs, protocol_client_auth_vnc, sizeof(vs->challenge));
 -    return 0;
- }
- 
- 
+-}
+-
+-
 -#ifdef CONFIG_VNC_TLS
 -#define DH_BITS 1024
 -static gnutls_dh_params_t dh_params;
@@ -1062,9 +1068,9 @@ diff -r dfa890dd7417 vnc.c
 -    gnutls_anon_set_server_dh_params(anon_cred, dh_params);
 -
 -    return anon_cred;
--}
--
--
+ }
+ 
+ 
 -static gnutls_certificate_credentials_t vnc_tls_initialize_x509_cred(VncState *vs)
 -{
 -    gnutls_certificate_credentials_t x509_cred;
@@ -1544,10 +1550,11 @@ diff -r dfa890dd7417 vnc.c
  		    fprintf(stderr, "Failed to find x509 certificates/keys in %s\n", path);
  		    qemu_free(path);
  		    qemu_free(vs->display);
-diff -r dfa890dd7417 vnc.h
---- a/vnc.h	Mon Feb 23 13:05:49 2009 +0000
-+++ b/vnc.h	Mon Feb 23 13:06:22 2009 +0000
-@@ -32,12 +32,15 @@
+Index: kvm-84.git-snapshot-20090303/qemu/vnc.h
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/vnc.h
++++ kvm-84.git-snapshot-20090303/qemu/vnc.h
+@@ -32,13 +32,16 @@
  #include "audio/audio.h"
  #include <zlib.h>
  
@@ -1555,9 +1562,9 @@ diff -r dfa890dd7417 vnc.h
 -#include <gnutls/gnutls.h>
 -#include <gnutls/x509.h>
 -#endif /* CONFIG_VNC_TLS */
-+#include "keymaps.h"
+-
+ #include "keymaps.h"
  
--#include "keymaps.h"
 +// #define _VNC_DEBUG 1
 +
 +#ifdef _VNC_DEBUG
@@ -1565,9 +1572,10 @@ diff -r dfa890dd7417 vnc.h
 +#else
 +#define VNC_DEBUG(fmt, ...) do { } while (0)
 +#endif
- 
++
  /*****************************************************************************
   *
+  * Core data structures
 @@ -72,6 +75,11 @@ typedef void VncSendHextileTile(VncState
  
  typedef struct VncDisplay VncDisplay;

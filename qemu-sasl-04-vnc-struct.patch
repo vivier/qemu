@@ -9,9 +9,10 @@ and SASL auth mechanisms to be moved out of the main vnc.c file.
 
    Signed-off-by: Daniel P. Berrange <berrange@redhat.com>
 
-diff -r 216ec7d1e30f vnc.c
---- a/vnc.c	Thu Feb 19 13:15:19 2009 +0000
-+++ b/vnc.c	Thu Feb 19 13:25:09 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/vnc.c
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/vnc.c
++++ kvm-84.git-snapshot-20090303/qemu/vnc.c
 @@ -3,6 +3,7 @@
   *
   * Copyright (C) 2006 Anthony Liguori <anthony@codemonkey.ws>
@@ -151,9 +152,10 @@ diff -r 216ec7d1e30f vnc.c
  
  static VncDisplay *vnc_display; /* needed for info vnc */
  static DisplayChangeListener *dcl;
-diff -r 216ec7d1e30f vnc.h
---- a/vnc.h	Thu Feb 19 13:15:19 2009 +0000
-+++ b/vnc.h	Thu Feb 19 13:25:09 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/vnc.h
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/vnc.h
++++ kvm-84.git-snapshot-20090303/qemu/vnc.h
 @@ -1,5 +1,148 @@
 -#ifndef __VNCTIGHT_H
 -#define __VNCTIGHT_H

@@ -1,12 +1,18 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
-Version: 1.0
-Release: 0.5.svn6666%{?dist}
+Version: 0.10
+Release: 0.1.kvm20090303git%{?dist}
+# I have mistakenly thought the revision name would be 1.0.
+# So 0.10 series get Epoch = 1
+Epoch: 1
 License: GPLv2+ and LGPLv2+
 Group: Development/Tools
 URL: http://www.qemu.org/
-Source0: http://www.qemu.org/%{name}-%{version}.tar.gz
+#Source0: http://www.qemu.org/%{name}-%{version}.tar.gz
+# FIXME: Say how to get the sources
+Source0: kvm-84.git-snapshot-20090303.tar.gz
 Source1: qemu.init
+Source2: kvm.modules
 
 # VNC SASL authentication support
 # Not upstream yet, but approved for commit immediately
@@ -19,11 +25,14 @@ Patch5: qemu-sasl-05-vnc-tls-vencrypt.patch
 Patch6: qemu-sasl-06-vnc-sasl.patch
 Patch7: qemu-sasl-07-vnc-monitor-authinfo.patch
 Patch8: qemu-sasl-08-vnc-acl-mgmt.patch
+Patch9: kvm-upstream-ppc.patch
+Patch10: kvm-fix-strayR.patch
 # NB, delibrately not including patch 09 which is not
 # intended for commit
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
+BuildRequires: rsync
 Requires: %{name}-user = %{version}-%{release}
 Requires: %{name}-system-x86 = %{version}-%{release}
 Requires: %{name}-system-sparc = %{version}-%{release}
@@ -34,6 +43,9 @@ Requires: %{name}-system-m68k = %{version}-%{release}
 Requires: %{name}-system-mips = %{version}-%{release}
 Requires: %{name}-system-ppc = %{version}-%{release}
 Requires: %{name}-img = %{version}-%{release}
+
+# sorry dudes, one step at a time
+ExcludeArch: ppc ppc64
 
 #ExclusiveArch: %{ix86} x86_64 ppc alpha sparcv9 sparc64 armv4l
 
@@ -107,7 +119,7 @@ Requires: bochs-bios-data
 %qemupkgdesc system-sh4 {system emulator for sh4}
 
 %prep
-%setup -q
+%setup -q -n kvm-84.git-snapshot-20090303
 # 01-tls-handshake-fix
 %patch1 -p1
 # 02-vnc-monitor-info
@@ -124,6 +136,8 @@ Requires: bochs-bios-data
 %patch7 -p1
 # 08-vnc-acl-mgmt
 %patch8 -p1
+%patch9 -p1
+%patch10 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so 
@@ -135,19 +149,43 @@ build_id_available() {
 }
 
 if build_id_available; then
- extraldflags="--extra-ldflags=-Wl,--build-id"
+ extraldflags="-Wl,--build-id";
  buildldflags="VL_LDFLAGS=-Wl,--build-id"
 else
  extraldflags=""
  buildldflags=""
 fi
 
+%ifarch %{ix86} x86_64
+# build kvm
+echo "%{name}-%{version}" > $(pwd)/kernel/.kernelrelease
+./configure --with-patched-kernel --target-list=x86_64-softmmu \
+            --kerneldir=$(pwd)/kernel --prefix=%{_prefix} \
+            --qemu-ldflags=$extraldflags
+
+make %{?_smp_mflags} $buildldflags
+cp qemu/x86_64-softmmu/qemu-system-x86_64 qemu-kvm
+make clean
+%endif
+
+echo "%{name}-%{version}" > $(pwd)/kernel/.kernelrelease
+cd qemu
 ./configure \
+    --target-list="i386-softmmu x86_64-softmmu arm-softmmu cris-softmmu m68k-softmmu \
+                mips-softmmu mipsel-softmmu mips64-softmmu mips64el-softmmu ppc-softmmu \
+                ppcemb-softmmu ppc64-softmmu sh4-softmmu sh4eb-softmmu sparc-softmmu \
+                i386-linux-user x86_64-linux-user alpha-linux-user arm-linux-user \
+                armeb-linux-user cris-linux-user m68k-linux-user mips-linux-user \
+                mipsel-linux-user ppc-linux-user ppc64-linux-user ppc64abi32-linux-user \
+                sh4-linux-user sh4eb-linux-user sparc-linux-user sparc64-linux-user \
+                sparc32plus-linux-user" \
     --prefix=%{_prefix} \
     --interp-prefix=%{_prefix}/qemu-%%M \
-    $extraldflags;
-make %{?_smp_mflags} $buildldflags
+            --kerneldir=$(pwd)/../kernel --prefix=%{_prefix} \
+    --disable-kvm \
+    --extra-ldflags=$extraldflags
 
+make %{?_smp_mflags} $buildldflags
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -160,7 +198,14 @@ make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
      datadir="${RPM_BUILD_ROOT}%{_prefix}/share/qemu" install
 chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
 
+%ifarch %{ix86} x86_64
+mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/modules
+install -m 0755 %{SOURCE1} $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/modules/kvm.modules
+%endif
+
+cd qemu
 install -D -p -m 0755 %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/qemu
+install -D -p -m 0755 ../qemu-kvm $RPM_BUILD_ROOT%{_bindir}/
 install -D -p -m 0644 -t ${RPM_BUILD_ROOT}/%{qemudocdir} Changelog README TODO COPYING COPYING.LIB LICENSE
 
 install -D -p -m 0644 qemu.sasl $RPM_BUILD_ROOT%{_sysconfdir}/sasl2/qemu.conf
@@ -187,6 +232,13 @@ ln -s ../bochs/BIOS-bochs-latest %{buildroot}/usr/share/qemu/bios.bin
 
 %clean
 rm -rf $RPM_BUILD_ROOT
+
+%post system-x86
+%ifarch %{ix86}
+# load kvm modules now, so we can make sure no reboot is needed.
+# If there's already a kvm module installed, we don't mess with it
+sh /%{_sysconfdir}/sysconfig/modules/kvm.modules
+%endif
 
 %post
 /sbin/chkconfig --add qemu
@@ -245,6 +297,10 @@ fi
 %defattr(-,root,root)
 %{_bindir}/qemu
 %{_bindir}/qemu-system-x86_64
+%ifarch %{ix86} x86_64
+%{_bindir}/qemu-kvm
+%{_sysconfdir}/sysconfig/modules/kvm.modules
+%endif
 %{_prefix}/share/qemu/bios.bin
 %{_prefix}/share/qemu/vgabios.bin
 %{_prefix}/share/qemu/vgabios-cirrus.bin
@@ -284,6 +340,12 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Mar 03 2009 Glauber Costa <glommer@redhat.com> - 0.10-0.1.kvm20090303git
+- Set Epoch to 1
+- Build KVM (basic build, no tools yet)
+- Set ppc in ExcludeArch. This is temporary, just to fix one issue at a time.
+  ppc users (IBM ? ;-)) please wait a little bit.
+
 * Tue Mar  3 2009 Daniel P. Berrange <berrange@redhat.com> - 1.0-0.5.svn6666
 - Support VNC SASL authentication protocol
 - Fix dep on bochs-bios-data

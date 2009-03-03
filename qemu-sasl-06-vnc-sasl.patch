@@ -75,10 +75,11 @@ if found, unless --disable-vnc-sasl was given to override it.
 
    Signed-off-by: Daniel P. Berrange <berrange@redhat.com>
 
-diff -r 6981d4d832a9 Makefile
---- a/Makefile	Mon Mar 02 11:13:33 2009 +0000
-+++ b/Makefile	Mon Mar 02 11:13:38 2009 +0000
-@@ -148,6 +148,9 @@ OBJS+=vnc.o d3des.o
+Index: kvm-84.git-snapshot-20090303/qemu/Makefile
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/Makefile
++++ kvm-84.git-snapshot-20090303/qemu/Makefile
+@@ -152,6 +152,9 @@ OBJS+=vnc.o d3des.o
  ifdef CONFIG_VNC_TLS
  OBJS+=vnc-tls.o vnc-auth-vencrypt.o
  endif
@@ -88,7 +89,7 @@ diff -r 6981d4d832a9 Makefile
  
  ifdef CONFIG_COCOA
  OBJS+=cocoa.o
-@@ -171,7 +174,7 @@ sdl.o: sdl.c keymaps.h sdl_keysym.h
+@@ -175,7 +178,7 @@ sdl.o: sdl.c keymaps.h sdl_keysym.h
  
  sdl.o audio/sdlaudio.o: CFLAGS += $(SDL_CFLAGS)
  
@@ -97,7 +98,7 @@ diff -r 6981d4d832a9 Makefile
  
  vnc.o: vnc.c vnc.h vnc_keysym.h vnchextile.h d3des.c d3des.h
  
-@@ -181,6 +184,8 @@ vnc-tls.o: vnc-tls.c vnc.h
+@@ -185,6 +188,8 @@ vnc-tls.o: vnc-tls.c vnc.h
  
  vnc-auth-vencrypt.o: vnc-auth-vencrypt.c vnc.h
  
@@ -106,10 +107,11 @@ diff -r 6981d4d832a9 Makefile
  curses.o: curses.c keymaps.h curses_keys.h
  
  bt-host.o: CFLAGS += $(CONFIG_BLUEZ_CFLAGS)
-diff -r 6981d4d832a9 Makefile.target
---- a/Makefile.target	Mon Mar 02 11:13:33 2009 +0000
-+++ b/Makefile.target	Mon Mar 02 11:13:38 2009 +0000
-@@ -554,6 +554,11 @@ CPPFLAGS += $(CONFIG_VNC_TLS_CFLAGS)
+Index: kvm-84.git-snapshot-20090303/qemu/Makefile.target
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/Makefile.target
++++ kvm-84.git-snapshot-20090303/qemu/Makefile.target
+@@ -613,6 +613,11 @@ CPPFLAGS += $(CONFIG_VNC_TLS_CFLAGS)
  LIBS += $(CONFIG_VNC_TLS_LIBS)
  endif
  
@@ -121,9 +123,10 @@ diff -r 6981d4d832a9 Makefile.target
  ifdef CONFIG_BLUEZ
  LIBS += $(CONFIG_BLUEZ_LIBS)
  endif
-diff -r 6981d4d832a9 configure
---- a/configure	Mon Mar 02 11:13:33 2009 +0000
-+++ b/configure	Mon Mar 02 11:13:38 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/configure
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/configure
++++ kvm-84.git-snapshot-20090303/qemu/configure
 @@ -164,6 +164,7 @@ fmod_lib=""
  fmod_inc=""
  oss_lib=""
@@ -132,7 +135,7 @@ diff -r 6981d4d832a9 configure
  bsd="no"
  linux="no"
  solaris="no"
-@@ -387,6 +388,8 @@ for opt do
+@@ -403,6 +404,8 @@ for opt do
    ;;
    --disable-vnc-tls) vnc_tls="no"
    ;;
@@ -141,7 +144,7 @@ diff -r 6981d4d832a9 configure
    --disable-slirp) slirp="no"
    ;;
    --disable-vde) vde="no"
-@@ -544,6 +547,7 @@ echo "                           Availab
+@@ -562,6 +565,7 @@ echo "                           Availab
  echo "  --enable-mixemu          enable mixer emulation"
  echo "  --disable-brlapi         disable BrlAPI"
  echo "  --disable-vnc-tls        disable TLS encryption for VNC server"
@@ -149,7 +152,7 @@ diff -r 6981d4d832a9 configure
  echo "  --disable-curses         disable curses output"
  echo "  --disable-bluez          disable bluez stack connectivity"
  echo "  --disable-kvm            disable KVM acceleration support"
-@@ -823,6 +827,25 @@ EOF
+@@ -874,6 +878,25 @@ EOF
  fi
  
  ##########################################
@@ -175,7 +178,7 @@ diff -r 6981d4d832a9 configure
  # vde libraries probe
  if test "$vde" = "yes" ; then
    cat > $TMPC << EOF
-@@ -1130,6 +1153,11 @@ if test "$vnc_tls" = "yes" ; then
+@@ -1208,6 +1231,11 @@ if test "$vnc_tls" = "yes" ; then
      echo "    TLS CFLAGS    $vnc_tls_cflags"
      echo "    TLS LIBS      $vnc_tls_libs"
  fi
@@ -187,7 +190,7 @@ diff -r 6981d4d832a9 configure
  if test -n "$sparc_cpu"; then
      echo "Target Sparc Arch $sparc_cpu"
  fi
-@@ -1371,6 +1399,12 @@ if test "$vnc_tls" = "yes" ; then
+@@ -1451,6 +1479,12 @@ if test "$vnc_tls" = "yes" ; then
    echo "CONFIG_VNC_TLS_LIBS=$vnc_tls_libs" >> $config_mak
    echo "#define CONFIG_VNC_TLS 1" >> $config_h
  fi
@@ -200,10 +203,11 @@ diff -r 6981d4d832a9 configure
  qemu_version=`head $source_path/VERSION`
  echo "VERSION=$qemu_version" >>$config_mak
  echo "#define QEMU_VERSION \"$qemu_version\"" >> $config_h
-diff -r 6981d4d832a9 qemu-doc.texi
---- a/qemu-doc.texi	Mon Mar 02 11:13:33 2009 +0000
-+++ b/qemu-doc.texi	Mon Mar 02 11:13:38 2009 +0000
-@@ -616,6 +616,21 @@ path following this option specifies whe
+Index: kvm-84.git-snapshot-20090303/qemu/qemu-doc.texi
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/qemu-doc.texi
++++ kvm-84.git-snapshot-20090303/qemu/qemu-doc.texi
+@@ -624,6 +624,21 @@ path following this option specifies whe
  be loaded from. See the @ref{vnc_security} section for details on generating
  certificates.
  
@@ -225,7 +229,7 @@ diff -r 6981d4d832a9 qemu-doc.texi
  @end table
  
  @end table
-@@ -2061,7 +2076,10 @@ considerations depending on the deployme
+@@ -2058,7 +2073,10 @@ considerations depending on the deployme
  * vnc_sec_certificate::
  * vnc_sec_certificate_verify::
  * vnc_sec_certificate_pw::
@@ -236,7 +240,7 @@ diff -r 6981d4d832a9 qemu-doc.texi
  @end menu
  @node vnc_sec_none
  @subsection Without passwords
-@@ -2144,6 +2162,41 @@ Password: ********
+@@ -2141,6 +2159,41 @@ Password: ********
  (qemu)
  @end example
  
@@ -278,7 +282,7 @@ diff -r 6981d4d832a9 qemu-doc.texi
  @node vnc_generate_cert
  @subsection Generating certificates for VNC
  
-@@ -2255,6 +2308,50 @@ EOF
+@@ -2252,6 +2305,50 @@ EOF
  The @code{client-key.pem} and @code{client-cert.pem} files should now be securely
  copied to the client for which they were generated.
  
@@ -329,9 +333,10 @@ diff -r 6981d4d832a9 qemu-doc.texi
  @node gdb_usage
  @section GDB usage
  
-diff -r 6981d4d832a9 qemu.sasl
---- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/qemu.sasl	Mon Mar 02 11:13:38 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/qemu.sasl
+===================================================================
+--- /dev/null
++++ kvm-84.git-snapshot-20090303/qemu/qemu.sasl
 @@ -0,0 +1,34 @@
 +# If you want to use the non-TLS socket, then you *must* include
 +# the GSSAPI or DIGEST-MD5 mechanisms, because they are the only
@@ -367,9 +372,10 @@ diff -r 6981d4d832a9 qemu.sasl
 +
 +auxprop_plugin: sasldb
 +
-diff -r 6981d4d832a9 vnc-auth-sasl.c
---- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/vnc-auth-sasl.c	Mon Mar 02 11:13:38 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/vnc-auth-sasl.c
+===================================================================
+--- /dev/null
++++ kvm-84.git-snapshot-20090303/qemu/vnc-auth-sasl.c
 @@ -0,0 +1,626 @@
 +/*
 + * QEMU VNC display driver: SASL auth protocol
@@ -997,9 +1003,10 @@ diff -r 6981d4d832a9 vnc-auth-sasl.c
 +}
 +
 +
-diff -r 6981d4d832a9 vnc-auth-sasl.h
---- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-+++ b/vnc-auth-sasl.h	Mon Mar 02 11:13:38 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/vnc-auth-sasl.h
+===================================================================
+--- /dev/null
++++ kvm-84.git-snapshot-20090303/qemu/vnc-auth-sasl.h
 @@ -0,0 +1,67 @@
 +/*
 + * QEMU VNC display driver: SASL auth protocol
@@ -1068,9 +1075,10 @@ diff -r 6981d4d832a9 vnc-auth-sasl.h
 +
 +#endif /* __QEMU_VNC_AUTH_SASL_H__ */
 +
-diff -r 6981d4d832a9 vnc-auth-vencrypt.c
---- a/vnc-auth-vencrypt.c	Mon Mar 02 11:13:33 2009 +0000
-+++ b/vnc-auth-vencrypt.c	Mon Mar 02 11:13:38 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/vnc-auth-vencrypt.c
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/vnc-auth-vencrypt.c
++++ kvm-84.git-snapshot-20090303/qemu/vnc-auth-vencrypt.c
 @@ -43,8 +43,15 @@ static void start_auth_vencrypt_subauth(
         start_auth_vnc(vs);
         break;
@@ -1098,9 +1106,10 @@ diff -r 6981d4d832a9 vnc-auth-vencrypt.c
  
  
  static int protocol_client_vencrypt_auth(VncState *vs, uint8_t *data, size_t len)
-diff -r 6981d4d832a9 vnc.c
---- a/vnc.c	Mon Mar 02 11:13:33 2009 +0000
-+++ b/vnc.c	Mon Mar 02 11:13:38 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/vnc.c
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/vnc.c
++++ kvm-84.git-snapshot-20090303/qemu/vnc.c
 @@ -68,7 +68,8 @@ static char *addr_to_string(const char *
      return addr;
  }
@@ -1340,17 +1349,19 @@ diff -r 6981d4d832a9 vnc.c
  	if (ret < 0) {
  	    if (ret == GNUTLS_E_AGAIN)
  		errno = EAGAIN;
-@@ -932,13 +1025,53 @@ void vnc_client_read(void *opaque)
+@@ -932,12 +1025,52 @@ void vnc_client_read(void *opaque)
  	}
      } else
  #endif /* CONFIG_VNC_TLS */
 -	ret = recv(vs->csock, buffer_end(&vs->input), 4096, 0);
 -    ret = vnc_client_io_error(vs, ret, socket_error());
+-    if (!ret)
+-	return;
 +	ret = recv(vs->csock, data, datalen, 0);
 +    VNC_DEBUG("Read wire %p %d -> %ld\n", data, datalen, ret);
 +    return vnc_client_io_error(vs, ret, socket_error());
 +}
-+
+ 
 +
 +/*
 + * Called to read data from the client socket to the input buffer,
@@ -1369,7 +1380,7 @@ diff -r 6981d4d832a9 vnc.c
 +    ret = vnc_client_read_buf(vs, buffer_end(&vs->input), 4096);
 +    if (!ret)
 +        return 0;
-+    vs->input.offset += ret;
+     vs->input.offset += ret;
 +    return ret;
 +}
 +
@@ -1390,14 +1401,11 @@ diff -r 6981d4d832a9 vnc.c
 +    else
 +#endif /* CONFIG_VNC_SASL */
 +        ret = vnc_client_read_plain(vs);
-     if (!ret)
- 	return;
++    if (!ret)
++	return;
  
--    vs->input.offset += ret;
--
      while (vs->read_handler && vs->input.offset >= vs->read_handler_expect) {
  	size_t len = vs->read_handler_expect;
- 	int ret;
 @@ -1722,6 +1855,13 @@ static int protocol_client_auth(VncState
             break;
  #endif /* CONFIG_VNC_TLS */
@@ -1511,9 +1519,10 @@ diff -r 6981d4d832a9 vnc.c
      if (reverse) {
          /* connect to viewer */
          if (strncmp(display, "unix:", 5) == 0)
-diff -r 6981d4d832a9 vnc.h
---- a/vnc.h	Mon Mar 02 11:13:33 2009 +0000
-+++ b/vnc.h	Mon Mar 02 11:13:38 2009 +0000
+Index: kvm-84.git-snapshot-20090303/qemu/vnc.h
+===================================================================
+--- kvm-84.git-snapshot-20090303.orig/qemu/vnc.h
++++ kvm-84.git-snapshot-20090303/qemu/vnc.h
 @@ -79,6 +79,10 @@ typedef struct VncDisplay VncDisplay;
  #include "vnc-tls.h"
  #include "vnc-auth-vencrypt.h"
