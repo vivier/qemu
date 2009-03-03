@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.0
-Release: 0.2.svn6666%{?dist}
+Release: 0.3.svn6666%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: Development/Tools
 URL: http://www.qemu.org/
@@ -77,6 +77,7 @@ Requires: %{name}-common = %{version}-%{release}
 
 %qemupkg system-x86 {system emulator for x86}
 Requires: etherboot-zroms-kvm
+Requires: vgabios
 %qemudesc system-x86 {system emulator for x86}
 %qemupkgdesc system-ppc {system emulator for ppc}
 
@@ -131,6 +132,7 @@ install -D -p -m 0755 %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/qemu
 install -D -p -m 0644 -t ${RPM_BUILD_ROOT}/%{qemudocdir} Changelog README TODO COPYING COPYING.LIB LICENSE
 
 rm -rf ${RPM_BUILD_ROOT}/usr/share//qemu/pxe*bin
+rm -rf ${RPM_BUILD_ROOT}/usr/share//qemu/vgabios*bin
 
 # the pxe etherboot images will be symlinks to the images on
 # /usr/share/etherboot, as QEMU doesn't know how to look
@@ -144,6 +146,8 @@ pxe_link ne2k_pci ne
 pxe_link pcnet pcnet32
 pxe_link rtl8139 rtl8139
 pxe_link virtio virtio-net
+ln -s ../vgabios/VGABIOS-lgpl-latest.bin  %{buildroot}/usr/share/qemu/vgabios.bin
+ln -s ../vgabios/VGABIOS-lgpl-latest.cirrus.bin %{buildroot}/usr/share/qemu/vgabios-cirrus.bin
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -243,6 +247,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Mar 03 2009 Glauber Costa <glommer@redhat.com> - 1.0-0.3.svn6666
+- use vgabios from vgabios package.
+
 * Mon Mar 02 2009 Glauber Costa <glommer@redhat.com> - 1.0-0.2.svn6666
 - use pxe roms from etherboot package.
 
