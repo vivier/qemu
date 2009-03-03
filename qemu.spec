@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.0
-Release: 0.1.svn6666%{?dist}
+Release: 0.2.svn6666%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: Development/Tools
 URL: http://www.qemu.org/
@@ -76,6 +76,7 @@ Requires: %{name}-common = %{version}-%{release}
 %qemudesc user {user mode emulation of qemu targets}
 
 %qemupkg system-x86 {system emulator for x86}
+Requires: etherboot-zroms-kvm
 %qemudesc system-x86 {system emulator for x86}
 %qemupkgdesc system-ppc {system emulator for ppc}
 
@@ -128,6 +129,21 @@ chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
 
 install -D -p -m 0755 %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/qemu
 install -D -p -m 0644 -t ${RPM_BUILD_ROOT}/%{qemudocdir} Changelog README TODO COPYING COPYING.LIB LICENSE
+
+rm -rf ${RPM_BUILD_ROOT}/usr/share//qemu/pxe*bin
+
+# the pxe etherboot images will be symlinks to the images on
+# /usr/share/etherboot, as QEMU doesn't know how to look
+# for other paths, yet.
+pxe_link() {
+  ln -s ../etherboot/$2.zrom %{buildroot}/usr/share/qemu/pxe-$1.bin
+}
+
+pxe_link e1000 e1000-82542
+pxe_link ne2k_pci ne
+pxe_link pcnet pcnet32
+pxe_link rtl8139 rtl8139
+pxe_link virtio virtio-net
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -227,6 +243,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Mar 02 2009 Glauber Costa <glommer@redhat.com> - 1.0-0.2.svn6666
+- use pxe roms from etherboot package.
+
 * Mon Mar 02 2009 Glauber Costa <glommer@redhat.com> - 1.0-0.1.svn6666
 - Updated to tip svn (release 6666). Featuring split packages for qemu.
   Unfortunately, still using binary blobs for the bioses.
