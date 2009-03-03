@@ -1,0 +1,42 @@
+This patch was previously posted here:
+
+  http://lists.gnu.org/archive/html/qemu-devel/2009-02/msg00820.html
+
+In the case where the TLS handshake does *not* block on I/O, QEMU
+sends the next 'start sub-auth' message twice. This seriously confuses
+the VNC client :-) Fortunately the chances of the handshake not blocking
+are close to zero for a TCP socket, which is why it has not been noticed
+thus far. Even with both client & server on localhost, I can only hit the
+bug 1 time in 20.
+
+NB, the diff context here is not too informative. If you look at the
+full code you'll see that a few lines early we called vnc_start_tls()
+which called vnc_continue_handshake() which called the method
+start_auth_vencrypt_subauth(). Hence, fixing the bug, just involves
+removing the 2nd bogus call to start_auth_vencrypt_subauth() as per
+this patch.
+
+
+ vnc.c |    8 --------
+ 1 file changed, 8 deletions(-)
+
+   Signed-off-by: Daniel P. Berrange <berrange@redhat.com>
+
+diff -r ff004fb525e7 vnc.c
+--- a/vnc.c	Thu Feb 19 11:26:55 2009 +0000
++++ b/vnc.c	Thu Feb 19 11:27:44 2009 +0000
+@@ -2096,14 +2096,6 @@ static int protocol_client_vencrypt_auth
+ 	    VNC_DEBUG("Failed to complete TLS\n");
+ 	    return 0;
+ 	}
+-
+-	if (vs->wiremode == VNC_WIREMODE_TLS) {
+-	    VNC_DEBUG("Starting VeNCrypt subauth\n");
+-	    return start_auth_vencrypt_subauth(vs);
+-	} else {
+-	    VNC_DEBUG("TLS handshake blocked\n");
+-	    return 0;
+-	}
+     }
+     return 0;
+ }

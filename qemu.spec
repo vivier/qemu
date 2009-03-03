@@ -1,14 +1,29 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.0
-Release: 0.4.svn6666%{?dist}
+Release: 0.5.svn6666%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: Development/Tools
 URL: http://www.qemu.org/
 Source0: http://www.qemu.org/%{name}-%{version}.tar.gz
 Source1: qemu.init
+
+# VNC SASL authentication support
+# Not upstream yet, but approved for commit immediately
+# after this release
+Patch1: qemu-sasl-01-tls-handshake-fix.patch
+Patch2: qemu-sasl-02-vnc-monitor-info.patch
+Patch3: qemu-sasl-03-display-keymaps.patch
+Patch4: qemu-sasl-04-vnc-struct.patch
+Patch5: qemu-sasl-05-vnc-tls-vencrypt.patch
+Patch6: qemu-sasl-06-vnc-sasl.patch
+Patch7: qemu-sasl-07-vnc-monitor-authinfo.patch
+Patch8: qemu-sasl-08-vnc-acl-mgmt.patch
+# NB, delibrately not including patch 09 which is not
+# intended for commit
+
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel
+BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
 Requires: %{name}-user = %{version}-%{release}
 Requires: %{name}-system-x86 = %{version}-%{release}
 Requires: %{name}-system-sparc = %{version}-%{release}
@@ -78,7 +93,7 @@ Requires: %{name}-common = %{version}-%{release}
 %qemupkg system-x86 {system emulator for x86}
 Requires: etherboot-zroms-kvm
 Requires: vgabios
-Requires: bochs-bios
+Requires: bochs-bios-data
 %qemudesc system-x86 {system emulator for x86}
 %qemupkgdesc system-ppc {system emulator for ppc}
 
@@ -93,6 +108,22 @@ Requires: bochs-bios
 
 %prep
 %setup -q
+# 01-tls-handshake-fix
+%patch1 -p1
+# 02-vnc-monitor-info
+%patch2 -p1
+# 03-display-keymaps
+%patch3 -p1
+# 04-vnc-struct
+%patch4 -p1
+# 05-vnc-tls-vencrypt
+%patch5 -p1
+# 06-vnc-sasl
+%patch6 -p1
+# 07-vnc-monitor-authinfo
+%patch7 -p1
+# 08-vnc-acl-mgmt
+%patch8 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so 
@@ -131,6 +162,8 @@ chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
 
 install -D -p -m 0755 %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/qemu
 install -D -p -m 0644 -t ${RPM_BUILD_ROOT}/%{qemudocdir} Changelog README TODO COPYING COPYING.LIB LICENSE
+
+install -D -p -m 0644 qemu.sasl $RPM_BUILD_ROOT%{_sysconfdir}/sasl2/qemu.conf
 
 rm -rf ${RPM_BUILD_ROOT}/usr/share//qemu/pxe*bin
 rm -rf ${RPM_BUILD_ROOT}/usr/share//qemu/vgabios*bin
@@ -187,6 +220,7 @@ fi
 %{_mandir}/man1/qemu.1*
 %{_mandir}/man8/qemu-nbd.8*
 %{_bindir}/qemu-nbd
+%config(noreplace) %{_sysconfdir}/sasl2/qemu.conf
 %files user
 %defattr(-,root,root)
 %{_sysconfdir}/rc.d/init.d/qemu
@@ -250,6 +284,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Mar  3 2009 Daniel P. Berrange <berrange@redhat.com> - 1.0-0.5.svn6666
+- Support VNC SASL authentication protocol
+- Fix dep on bochs-bios-data
+
 * Tue Mar 03 2009 Glauber Costa <glommer@redhat.com> - 1.0-0.4.svn6666
 - use bios from bochs-bios package.
 
