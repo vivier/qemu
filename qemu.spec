@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.0
-Release: 0.3.svn6666%{?dist}
+Release: 0.4.svn6666%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: Development/Tools
 URL: http://www.qemu.org/
@@ -78,6 +78,7 @@ Requires: %{name}-common = %{version}-%{release}
 %qemupkg system-x86 {system emulator for x86}
 Requires: etherboot-zroms-kvm
 Requires: vgabios
+Requires: bochs-bios
 %qemudesc system-x86 {system emulator for x86}
 %qemupkgdesc system-ppc {system emulator for ppc}
 
@@ -133,6 +134,7 @@ install -D -p -m 0644 -t ${RPM_BUILD_ROOT}/%{qemudocdir} Changelog README TODO C
 
 rm -rf ${RPM_BUILD_ROOT}/usr/share//qemu/pxe*bin
 rm -rf ${RPM_BUILD_ROOT}/usr/share//qemu/vgabios*bin
+rm -rf ${RPM_BUILD_ROOT}/usr/share//qemu/bios.bin
 
 # the pxe etherboot images will be symlinks to the images on
 # /usr/share/etherboot, as QEMU doesn't know how to look
@@ -148,6 +150,7 @@ pxe_link rtl8139 rtl8139
 pxe_link virtio virtio-net
 ln -s ../vgabios/VGABIOS-lgpl-latest.bin  %{buildroot}/usr/share/qemu/vgabios.bin
 ln -s ../vgabios/VGABIOS-lgpl-latest.cirrus.bin %{buildroot}/usr/share/qemu/vgabios-cirrus.bin
+ln -s ../bochs/BIOS-bochs-latest %{buildroot}/usr/share/qemu/bios.bin
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -247,6 +250,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Mar 03 2009 Glauber Costa <glommer@redhat.com> - 1.0-0.4.svn6666
+- use bios from bochs-bios package.
+
 * Tue Mar 03 2009 Glauber Costa <glommer@redhat.com> - 1.0-0.3.svn6666
 - use vgabios from vgabios package.
 
