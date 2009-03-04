@@ -1,10 +1,10 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
-Version: 0.10
-Release: 0.3.kvm20090303git%{?dist}
-# I have mistakenly thought the revision name would be 1.0.
-# So 0.10 series get Epoch = 1
-Epoch: 1
+Version: 0.92
+Release: 0.1.kvm20090303git%{?dist}
+# I have mistakenly thought the revision name would be 1.0.                                                                                                                                                   
+# So 0.10 series get Epoch = 1                                                                                                                                                                               
+Epoch: 2
 License: GPLv2+ and LGPLv2+
 Group: Development/Tools
 URL: http://www.qemu.org/
@@ -33,50 +33,20 @@ Patch10: kvm-fix-strayR.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
 BuildRequires: rsync
-Requires: %{name}-user = %{version}-%{release}
-Requires: %{name}-system-x86 = %{version}-%{release}
-Requires: %{name}-system-sparc = %{version}-%{release}
-Requires: %{name}-system-arm = %{version}-%{release}
-Requires: %{name}-system-cris = %{version}-%{release}
-Requires: %{name}-system-sh4 = %{version}-%{release}
-Requires: %{name}-system-m68k = %{version}-%{release}
-Requires: %{name}-system-mips = %{version}-%{release}
-Requires: %{name}-system-ppc = %{version}-%{release}
-Requires: %{name}-img = %{version}-%{release}
-
-# sorry dudes, one step at a time
-ExcludeArch: ppc ppc64
+Requires: %{name}-user = %{epoch}:%{version}-%{release}
+Requires: %{name}-system-x86 = %{epoch}:%{version}-%{release}
+Requires: %{name}-system-sparc = %{epoch}:%{version}-%{release}
+Requires: %{name}-system-arm = %{epoch}:%{version}-%{release}
+Requires: %{name}-system-cris = %{epoch}:%{version}-%{release}
+Requires: %{name}-system-sh4 = %{epoch}:%{version}-%{release}
+Requires: %{name}-system-m68k = %{epoch}:%{version}-%{release}
+Requires: %{name}-system-mips = %{epoch}:%{version}-%{release}
+Requires: %{name}-system-ppc = %{epoch}:%{version}-%{release}
+Requires: %{name}-img = %{epoch}:%{version}-%{release}
 
 #ExclusiveArch: %{ix86} x86_64 ppc alpha sparcv9 sparc64 armv4l
 
 %define qemudocdir %{_docdir}/%{name}-%{version}
-
-%define qemupkg() \
-%package %1\
-Summary: QEMU %2\
-Group: Development/Tools \
-Requires: %{name}-common = %{version}-%{release}    \
-%{nil}
-
-%define qemudesc() \
-%description %1 \
-QEMU is a generic and open source processor emulator which achieves a good  \
-emulation speed by using dynamic translation.                               \
-                                                                            \
-This package provides the %2
-%{nil}
-
-%define qemupkgdesc() \
-%package %1\
-Summary: QEMU %2\
-Group: Development/Tools \
-Requires: %{name}-common = %{version}-%{release}    \
-%description %1 \
-QEMU is a generic and open source processor emulator which achieves a good  \
-emulation speed by using dynamic translation.                               \
-                                                                            \
-This package provides the %2
-%{nil}
 
 %description
 QEMU is a generic and open source processor emulator which achieves a good
@@ -91,32 +61,123 @@ emulation speed by using dynamic translation. QEMU has two operating modes:
 
 As QEMU requires no host kernel patches to run, it is safe and easy to use.
 
-%qemupkgdesc img {command line tool for manipulating disk images}
+%package  img
+Summary: QEMU command line tool for manipulating disk images
+Group: Development/Tools
+Requires: %{name}-common = %{epoch}:%{version}-%{release}
+%description img
+QEMU is a generic and open source processor emulator which achieves a good 
+emulation speed by using dynamic translation.
 
-%qemupkgdesc common {common files needed by all QEMU targets}
+This package provides the command line tool for manipulating disk images
 
-%qemupkg user {user mode emulation of qemu targets}
+%package  common
+Summary: QEMU common files needed by all QEMU targets
+Group: Development/Tools
+%description common
+QEMU is a generic and open source processor emulator which achieves a good 
+emulation speed by using dynamic translation.
+
+This package provides the common files needed by all QEMU targets
+
+%package user
+Summary: QEMU user mode emulation of qemu targets
+Group: Development/Tools
+Requires: %{name}-common = %{epoch}:%{version}-%{release}
 Requires(post): /sbin/chkconfig
 Requires(preun): /sbin/service /sbin/chkconfig
 Requires(postun): /sbin/service
-Requires: %{name}-common = %{version}-%{release}
-%qemudesc user {user mode emulation of qemu targets}
+%description user
+QEMU is a generic and open source processor emulator which achieves a good 
+emulation speed by using dynamic translation.
 
-%qemupkg system-x86 {system emulator for x86}
+This package provides the user mode emulation of qemu targets
+
+%package system-x86
+Summary: QEMU system emulator for x86
+Group: Development/Tools
+Requires: %{name}-common = %{epoch}:%{version}-%{release}
 Requires: etherboot-zroms-kvm
 Requires: vgabios
 Requires: bochs-bios-data
-%qemudesc system-x86 {system emulator for x86}
-%qemupkgdesc system-ppc {system emulator for ppc}
+Provides: kvm >= 84
+Obsoletes: kvm < 85
 
-%qemupkg system-sparc {system emulator for sparc}
-%qemudesc  system-sparc {system emulator for sparc}
+%description system-x86
+QEMU is a generic and open source processor emulator which achieves a good 
+emulation speed by using dynamic translation.
 
-%qemupkgdesc system-arm {system emulator for arm}
-%qemupkgdesc system-mips {system emulator for mips}
-%qemupkgdesc system-cris {system emulator for cris}
-%qemupkgdesc system-m68k {system emulator for m68k}
-%qemupkgdesc system-sh4 {system emulator for sh4}
+This package provides the system emulator for x86
+
+%package system-ppc
+Summary: QEMU system emulator for ppc
+Group: Development/Tools
+Requires: %{name}-common = %{epoch}:%{version}-%{release}
+%description system-ppc
+QEMU is a generic and open source processor emulator which achieves a good 
+emulation speed by using dynamic translation.
+
+This package provides the system emulator for ppc
+
+%package system-sparc
+Summary: QEMU system emulator for sparc
+Group: Development/Tools
+Requires: %{name}-common = %{epoch}:%{version}-%{release}
+%description system-sparc
+QEMU is a generic and open source processor emulator which achieves a good 
+emulation speed by using dynamic translation.
+
+This package provides the system emulator for sparc
+
+%package system-arm
+Summary: QEMU system emulator for arm
+Group: Development/Tools
+Requires: %{name}-common = %{epoch}:%{version}-%{release}
+%description system-arm
+QEMU is a generic and open source processor emulator which achieves a good 
+emulation speed by using dynamic translation.
+
+This package provides the system emulator for arm
+
+%package system-mips
+Summary: QEMU system emulator for mips
+Group: Development/Tools
+Requires: %{name}-common = %{epoch}:%{version}-%{release}
+%description system-mips
+QEMU is a generic and open source processor emulator which achieves a good 
+emulation speed by using dynamic translation.
+
+This package provides the system emulator for mips
+
+%package system-cris
+Summary: QEMU system emulator for cris
+Group: Development/Tools
+Requires: %{name}-common = %{epoch}:%{version}-%{release}
+%description system-cris
+QEMU is a generic and open source processor emulator which achieves a good 
+emulation speed by using dynamic translation.
+
+This package provides the system emulator for cris
+
+%package system-m68k
+Summary: QEMU system emulator for m68k
+Group: Development/Tools
+Requires: %{name}-common = %{epoch}:%{version}-%{release}
+%description system-m68k
+QEMU is a generic and open source processor emulator which achieves a good 
+emulation speed by using dynamic translation.
+
+This package provides the system emulator for m68k
+
+%package system-sh4
+Summary: QEMU system emulator for sh4
+Group: Development/Tools
+Requires: %{name}-common = %{epoch}:%{version}-%{release}
+%description system-sh4
+QEMU is a generic and open source processor emulator which achieves a good 
+emulation speed by using dynamic translation.
+
+This package provides the system emulator for sh4
 
 %ifarch %{ix86} x86_64
 %package kvm-tools
@@ -202,6 +263,18 @@ make %{?_smp_mflags} $buildldflags
 %install
 rm -rf $RPM_BUILD_ROOT
 
+%ifarch %{ix86} x86_64
+mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/modules
+mkdir -p $RPM_BUILD_ROOT%{_bindir}/
+
+install -m 0755 %{SOURCE1} $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/modules/kvm.modules
+install -m 0755 kvmtrace $RPM_BUILD_ROOT%{_bindir}/
+install -m 0755 kvmtrace_format $RPM_BUILD_ROOT%{_bindir}/
+install -m 0755 kvm_stat $RPM_BUILD_ROOT%{_bindir}/
+install -D -p -m 0755 qemu-kvm $RPM_BUILD_ROOT%{_bindir}/
+%endif
+
+cd qemu
 make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
      bindir="${RPM_BUILD_ROOT}%{_bindir}" \
      sharedir="${RPM_BUILD_ROOT}%{_prefix}/share/qemu" \
@@ -209,18 +282,7 @@ make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
      docdir="${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}" \
      datadir="${RPM_BUILD_ROOT}%{_prefix}/share/qemu" install
 chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
-
-%ifarch %{ix86} x86_64
-mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/modules
-install -m 0755 %{SOURCE1} $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/modules/kvm.modules
-install -m 0755 kvmtrace %{buildroot}/%{_bindir}/
-install -m 0755 kvmtrace_format %{buildroot}/%{_bindir}/
-install -m 0755 kvm_stat %{buildroot}/%{_bindir}/
-%endif
-
-cd qemu
 install -D -p -m 0755 %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/qemu
-install -D -p -m 0755 ../qemu-kvm $RPM_BUILD_ROOT%{_bindir}/
 install -D -p -m 0644 -t ${RPM_BUILD_ROOT}/%{qemudocdir} Changelog README TODO COPYING COPYING.LIB LICENSE
 
 install -D -p -m 0644 qemu.sasl $RPM_BUILD_ROOT%{_sysconfdir}/sasl2/qemu.conf
@@ -360,6 +422,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Mar 04 2009 Glauber Costa <glommer@redhat.com> - 0.92-0.1.kvm20090303git
+- Set Epoch to 2
+- Set version to 0.92. It seems upstream keep changing minds here, so pick the lowest
+- Provides KVM, Obsoletes KVM
+- Only install qemu-kvm in ix86 and x86_64
+- Remove pkgdesc macros, as they were generating bogus output for rpm -qi.
+- fix ppc and ppc64 builds
+
 * Tue Mar 03 2009 Glauber Costa <glommer@redhat.com> - 0.10-0.3.kvm20090303git
 - only execute post scripts for user package.
 - added kvm tools.
