@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10
-Release: 0.1.kvm20090303git%{?dist}
+Release: 0.2.kvm20090303git%{?dist}
 # I have mistakenly thought the revision name would be 1.0.
 # So 0.10 series get Epoch = 1
 Epoch: 1
@@ -340,6 +340,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Mar 03 2009 Glauber Costa <glommer@redhat.com> - 0.10-0.2.kvm20090303git
+- put kvm.modules into cvs
+
 * Tue Mar 03 2009 Glauber Costa <glommer@redhat.com> - 0.10-0.1.kvm20090303git
 - Set Epoch to 1
 - Build KVM (basic build, no tools yet)
