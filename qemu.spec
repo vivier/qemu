@@ -118,6 +118,16 @@ Requires: bochs-bios-data
 %qemupkgdesc system-m68k {system emulator for m68k}
 %qemupkgdesc system-sh4 {system emulator for sh4}
 
+%ifarch %{ix86} x86_64
+%package kvm-tools
+Summary: KVM debugging and diagnostics tools
+Group: Development/Tools
+
+%description kvm-tools
+This package contains some diagnostics and debugging tools for KVM,
+such as kvmtrace and kvm_stat.
+%endif
+
 %prep
 %setup -q -n kvm-84.git-snapshot-20090303
 # 01-tls-handshake-fix
@@ -165,6 +175,8 @@ echo "%{name}-%{version}" > $(pwd)/kernel/.kernelrelease
 
 make %{?_smp_mflags} $buildldflags
 cp qemu/x86_64-softmmu/qemu-system-x86_64 qemu-kvm
+cp user/kvmtrace  .
+cp user/kvmtrace_format  .
 make clean
 %endif
 
@@ -201,6 +213,9 @@ chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
 %ifarch %{ix86} x86_64
 mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/modules
 install -m 0755 %{SOURCE1} $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/modules/kvm.modules
+install -m 0755 kvmtrace %{buildroot}/%{_bindir}/
+install -m 0755 kvmtrace_format %{buildroot}/%{_bindir}/
+install -m 0755 kvm_stat %{buildroot}/%{_bindir}/
 %endif
 
 cd qemu
@@ -297,13 +312,18 @@ fi
 %defattr(-,root,root)
 %{_bindir}/qemu
 %{_bindir}/qemu-system-x86_64
-%ifarch %{ix86} x86_64
-%{_bindir}/qemu-kvm
-%{_sysconfdir}/sysconfig/modules/kvm.modules
-%endif
 %{_prefix}/share/qemu/bios.bin
 %{_prefix}/share/qemu/vgabios.bin
 %{_prefix}/share/qemu/vgabios-cirrus.bin
+%ifarch %{ix86} x86_64
+%{_bindir}/qemu-kvm
+%{_sysconfdir}/sysconfig/modules/kvm.modules
+%files kvm-tools
+%defattr(-,root,root,-)
+%{_bindir}/kvmtrace
+%{_bindir}/kvmtrace_format
+%{_bindir}/kvm_stat
+%endif
 %files system-sparc
 %defattr(-,root,root)
 %{_bindir}/qemu-system-sparc
@@ -342,6 +362,7 @@ fi
 %changelog
 * Tue Mar 03 2009 Glauber Costa <glommer@redhat.com> - 0.10-0.3.kvm20090303git
 - only execute post scripts for user package.
+- added kvm tools.
 
 * Tue Mar 03 2009 Glauber Costa <glommer@redhat.com> - 0.10-0.2.kvm20090303git
 - put kvm.modules into cvs
