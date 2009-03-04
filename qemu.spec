@@ -2,8 +2,8 @@ Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.92
 Release: 0.1.kvm20090303git%{?dist}
-# I have mistakenly thought the revision name would be 1.0.                                                                                                                                                   
-# So 0.10 series get Epoch = 1                                                                                                                                                                               
+# I have mistakenly thought the revision name would be 1.0.
+# So 0.10 series get Epoch = 1
 Epoch: 2
 License: GPLv2+ and LGPLv2+
 Group: Development/Tools
@@ -75,7 +75,7 @@ This package provides the command line tool for manipulating disk images
 Summary: QEMU common files needed by all QEMU targets
 Group: Development/Tools
 %description common
-QEMU is a generic and open source processor emulator which achieves a good 
+QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
 
 This package provides the common files needed by all QEMU targets
@@ -88,7 +88,7 @@ Requires(post): /sbin/chkconfig
 Requires(preun): /sbin/service /sbin/chkconfig
 Requires(postun): /sbin/service
 %description user
-QEMU is a generic and open source processor emulator which achieves a good 
+QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
 
 This package provides the user mode emulation of qemu targets
@@ -104,7 +104,7 @@ Provides: kvm >= 84
 Obsoletes: kvm < 85
 
 %description system-x86
-QEMU is a generic and open source processor emulator which achieves a good 
+QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
 
 This package provides the system emulator for x86
@@ -114,7 +114,7 @@ Summary: QEMU system emulator for ppc
 Group: Development/Tools
 Requires: %{name}-common = %{epoch}:%{version}-%{release}
 %description system-ppc
-QEMU is a generic and open source processor emulator which achieves a good 
+QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
 
 This package provides the system emulator for ppc
@@ -124,7 +124,7 @@ Summary: QEMU system emulator for sparc
 Group: Development/Tools
 Requires: %{name}-common = %{epoch}:%{version}-%{release}
 %description system-sparc
-QEMU is a generic and open source processor emulator which achieves a good 
+QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
 
 This package provides the system emulator for sparc
@@ -134,7 +134,7 @@ Summary: QEMU system emulator for arm
 Group: Development/Tools
 Requires: %{name}-common = %{epoch}:%{version}-%{release}
 %description system-arm
-QEMU is a generic and open source processor emulator which achieves a good 
+QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
 
 This package provides the system emulator for arm
@@ -144,7 +144,7 @@ Summary: QEMU system emulator for mips
 Group: Development/Tools
 Requires: %{name}-common = %{epoch}:%{version}-%{release}
 %description system-mips
-QEMU is a generic and open source processor emulator which achieves a good 
+QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
 
 This package provides the system emulator for mips
@@ -154,7 +154,7 @@ Summary: QEMU system emulator for cris
 Group: Development/Tools
 Requires: %{name}-common = %{epoch}:%{version}-%{release}
 %description system-cris
-QEMU is a generic and open source processor emulator which achieves a good 
+QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
 
 This package provides the system emulator for cris
@@ -164,7 +164,7 @@ Summary: QEMU system emulator for m68k
 Group: Development/Tools
 Requires: %{name}-common = %{epoch}:%{version}-%{release}
 %description system-m68k
-QEMU is a generic and open source processor emulator which achieves a good 
+QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
 
 This package provides the system emulator for m68k
@@ -174,7 +174,7 @@ Summary: QEMU system emulator for sh4
 Group: Development/Tools
 Requires: %{name}-common = %{epoch}:%{version}-%{release}
 %description system-sh4
-QEMU is a generic and open source processor emulator which achieves a good 
+QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
 
 This package provides the system emulator for sh4
@@ -211,7 +211,7 @@ such as kvmtrace and kvm_stat.
 %patch10 -p1
 
 %build
-# systems like rhel build system does not have a recent enough linker so 
+# systems like rhel build system does not have a recent enough linker so
 # --build-id works. this option is used fedora 8 onwards for giving info
 # to the debug packages.
 
