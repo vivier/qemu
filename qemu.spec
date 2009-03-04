@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10
-Release: 0.2.kvm20090303git%{?dist}
+Release: 0.3.kvm20090303git%{?dist}
 # I have mistakenly thought the revision name would be 1.0.
 # So 0.10 series get Epoch = 1
 Epoch: 1
@@ -240,16 +240,16 @@ rm -rf $RPM_BUILD_ROOT
 sh /%{_sysconfdir}/sysconfig/modules/kvm.modules
 %endif
 
-%post
+%post user
 /sbin/chkconfig --add qemu
 
-%preun
+%preun user
 if [ $1 -eq 0 ]; then
     /sbin/service qemu stop &>/dev/null || :
     /sbin/chkconfig --del qemu
 fi
 
-%postun
+%postun user
 if [ $1 -ge 1 ]; then
     /sbin/service qemu condrestart &>/dev/null || :
 fi
@@ -340,6 +340,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Mar 03 2009 Glauber Costa <glommer@redhat.com> - 0.10-0.3.kvm20090303git
+- only execute post scripts for user package.
+
 * Tue Mar 03 2009 Glauber Costa <glommer@redhat.com> - 0.10-0.2.kvm20090303git
 - put kvm.modules into cvs
 
