@@ -1,11 +1,11 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.9.2
-Release: 0.1.kvm20090303git%{?dist}
+Release: 0.2.kvm20090303git%{?dist}
 # I have mistakenly thought the revision name would be 1.0.
 # So 0.10 series get Epoch = 1
 Epoch: 2
-License: GPLv2+ and LGPLv2+
+License: GPLv2+ and LGPLv2+ and BSD
 Group: Development/Tools
 URL: http://www.qemu.org/
 #Source0: http://www.qemu.org/%{name}-%{version}.tar.gz
@@ -422,6 +422,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Mar  5 2009 Daniel P. Berrange <berrange@redhat.com> - 2:0.9.2-0.2.kvm20090303git
+- Added BSD to license list, since many files are covered by BSD
+
 * Wed Mar 04 2009 Glauber Costa <glommer@redhat.com> - 0.9.2-0.1.kvm20090303git
 - missing a dot. shame on me
 
