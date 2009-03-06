@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10
-Release: 0.4.kvm20090303git%{?dist}
+Release: 0.5.kvm20090303git%{?dist}
 # I have mistakenly thought the revision name would be 1.0.
 # So 0.10 series get Epoch = 1
 Epoch: 2
@@ -267,7 +267,7 @@ rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/modules
 mkdir -p $RPM_BUILD_ROOT%{_bindir}/
 
-install -m 0755 %{SOURCE1} $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/modules/kvm.modules
+install -m 0755 %{SOURCE2} $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/modules/kvm.modules
 install -m 0755 kvmtrace $RPM_BUILD_ROOT%{_bindir}/
 install -m 0755 kvmtrace_format $RPM_BUILD_ROOT%{_bindir}/
 install -m 0755 kvm_stat $RPM_BUILD_ROOT%{_bindir}/
@@ -422,6 +422,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Mar 06 2009 Glauber Costa <glommer@redhat.com> - 2:0.10-0.5.kvm20090303git
+- kvm.modules were being wrongly mentioned at %install.
+
 * Thu Mar 05 2009 Glauber Costa <glommer@redhat.com> - 2:0.10-0.4.kvm20090303git
 - seems Epoch does not go into the tags. So start back here.
 
