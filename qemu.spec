@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10
-Release: 0.5.kvm20090303git%{?dist}
+Release: 0.6.kvm20090310git%{?dist}
 # I have mistakenly thought the revision name would be 1.0.
 # So 0.10 series get Epoch = 1
 Epoch: 2
@@ -10,25 +10,12 @@ Group: Development/Tools
 URL: http://www.qemu.org/
 #Source0: http://www.qemu.org/%{name}-%{version}.tar.gz
 # FIXME: Say how to get the sources
-Source0: kvm-84.git-snapshot-20090303.tar.gz
+Source0: kvm-84.git-snapshot-20090310.tar.gz
 Source1: qemu.init
 Source2: kvm.modules
 
-# VNC SASL authentication support
-# Not upstream yet, but approved for commit immediately
-# after this release
-Patch1: qemu-sasl-01-tls-handshake-fix.patch
-Patch2: qemu-sasl-02-vnc-monitor-info.patch
-Patch3: qemu-sasl-03-display-keymaps.patch
-Patch4: qemu-sasl-04-vnc-struct.patch
-Patch5: qemu-sasl-05-vnc-tls-vencrypt.patch
-Patch6: qemu-sasl-06-vnc-sasl.patch
-Patch7: qemu-sasl-07-vnc-monitor-authinfo.patch
-Patch8: qemu-sasl-08-vnc-acl-mgmt.patch
-Patch9: kvm-upstream-ppc.patch
-Patch10: kvm-fix-strayR.patch
-# NB, delibrately not including patch 09 which is not
-# intended for commit
+Patch1: kvm-upstream-ppc.patch
+Patch2: kvm-fix-strayR.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -190,25 +177,9 @@ such as kvmtrace and kvm_stat.
 %endif
 
 %prep
-%setup -q -n kvm-84.git-snapshot-20090303
-# 01-tls-handshake-fix
+%setup -q -n kvm-84.git-snapshot-20090310
 %patch1 -p1
-# 02-vnc-monitor-info
 %patch2 -p1
-# 03-display-keymaps
-%patch3 -p1
-# 04-vnc-struct
-%patch4 -p1
-# 05-vnc-tls-vencrypt
-%patch5 -p1
-# 06-vnc-sasl
-%patch6 -p1
-# 07-vnc-monitor-authinfo
-%patch7 -p1
-# 08-vnc-acl-mgmt
-%patch8 -p1
-%patch9 -p1
-%patch10 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -258,7 +229,7 @@ cd qemu
                 sparc32plus-linux-user" \
     --prefix=%{_prefix} \
     --interp-prefix=%{_prefix}/qemu-%%M \
-            --kerneldir=$(pwd)/../kernel --prefix=%{_prefix} \
+    --kerneldir=$(pwd)/../kernel --prefix=%{_prefix} \
     --disable-kvm \
     --extra-ldflags=$extraldflags
 
@@ -438,6 +409,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Mar 10 2009 Glauber Costa <glommer@redhat.com> - 2:0.10-0.6.kvm20090310git
+- updated to kvm20090310git
+- removed sasl patches (already in this release)
+
 * Tue Mar 10 2009 Glauber Costa <glommer@redhat.com> - 2:0.10-0.5.kvm20090303git
 - kvm.modules were being wrongly mentioned at %%install.
 - update description for the x86 system package to include kvm support
