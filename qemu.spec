@@ -32,7 +32,7 @@ Patch10: kvm-fix-strayR.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
-BuildRequires: rsync
+BuildRequires: rsync dev86 iasl
 Requires: %{name}-user = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-x86 = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-sparc = %{epoch}:%{version}-%{release}
@@ -43,8 +43,6 @@ Requires: %{name}-system-m68k = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-mips = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-ppc = %{epoch}:%{version}-%{release}
 Requires: %{name}-img = %{epoch}:%{version}-%{release}
-
-#ExclusiveArch: %{ix86} x86_64 ppc alpha sparcv9 sparc64 armv4l
 
 %define qemudocdir %{_docdir}/%{name}-%{version}
 
@@ -107,7 +105,9 @@ Obsoletes: kvm < 85
 QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
 
-This package provides the system emulator for x86
+This package provides the system emulator for x86. When being run in a x86
+machine that supports it, this package also provides the KVM virtualization
+platform.
 
 %package system-ppc
 Summary: QEMU system emulator for ppc
@@ -229,6 +229,7 @@ fi
 
 %ifarch %{ix86} x86_64
 # build kvm
+sed -i 's/datasuffix=\"\/share\/qemu\"/datasuffix=\"\/share\/kvm\"/' qemu/configure
 echo "%{name}-%{version}" > $(pwd)/kernel/.kernelrelease
 ./configure --with-patched-kernel --target-list=x86_64-softmmu \
             --kerneldir=$(pwd)/kernel --prefix=%{_prefix} \
@@ -238,9 +239,12 @@ make %{?_smp_mflags} $buildldflags
 cp qemu/x86_64-softmmu/qemu-system-x86_64 qemu-kvm
 cp user/kvmtrace  .
 cp user/kvmtrace_format  .
+make bios
+make vgabios
 make clean
 %endif
 
+sed -i 's/datasuffix=\"\/share\/kvm\"/datasuffix=\"\/share\/qemu\"/' qemu/configure
 echo "%{name}-%{version}" > $(pwd)/kernel/.kernelrelease
 cd qemu
 ./configure \
@@ -266,12 +270,18 @@ rm -rf $RPM_BUILD_ROOT
 %ifarch %{ix86} x86_64
 mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/modules
 mkdir -p $RPM_BUILD_ROOT%{_bindir}/
+mkdir -p $RPM_BUILD_ROOT%{_prefix}/share/kvm
 
 install -m 0755 %{SOURCE2} $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/modules/kvm.modules
 install -m 0755 kvmtrace $RPM_BUILD_ROOT%{_bindir}/
 install -m 0755 kvmtrace_format $RPM_BUILD_ROOT%{_bindir}/
 install -m 0755 kvm_stat $RPM_BUILD_ROOT%{_bindir}/
-install -D -p -m 0755 qemu-kvm $RPM_BUILD_ROOT%{_bindir}/
+
+install -m 0755 qemu-kvm $RPM_BUILD_ROOT%{_bindir}/
+install -m 0644 bios/BIOS-bochs-latest $RPM_BUILD_ROOT%{_prefix}/share/kvm/bios.bin
+install -m 0644 vgabios/VGABIOS-lgpl-latest.bin $RPM_BUILD_ROOT%{_prefix}/share/kvm/vgabios.bin
+install -m 0644 vgabios/VGABIOS-lgpl-latest.cirrus.bin $RPM_BUILD_ROOT%{_prefix}/share/kvm/vgabios-cirrus.bin
+
 %endif
 
 cd qemu
@@ -295,7 +305,7 @@ rm -rf ${RPM_BUILD_ROOT}/usr/share//qemu/bios.bin
 # /usr/share/etherboot, as QEMU doesn't know how to look
 # for other paths, yet.
 pxe_link() {
-  ln -s ../etherboot/$2.zrom %{buildroot}/usr/share/qemu/pxe-$1.bin
+  ln -s ../etherboot/$2.zrom %{buildroot}%{_prefix}/share/qemu/pxe-$1.bin
 }
 
 pxe_link e1000 e1000-82542
@@ -303,9 +313,11 @@ pxe_link ne2k_pci ne
 pxe_link pcnet pcnet32
 pxe_link rtl8139 rtl8139
 pxe_link virtio virtio-net
-ln -s ../vgabios/VGABIOS-lgpl-latest.bin  %{buildroot}/usr/share/qemu/vgabios.bin
-ln -s ../vgabios/VGABIOS-lgpl-latest.cirrus.bin %{buildroot}/usr/share/qemu/vgabios-cirrus.bin
-ln -s ../bochs/BIOS-bochs-latest %{buildroot}/usr/share/qemu/bios.bin
+ln -s ../vgabios/VGABIOS-lgpl-latest.bin  %{buildroot}/%{_prefix}/share/qemu/vgabios.bin
+ln -s ../vgabios/VGABIOS-lgpl-latest.cirrus.bin %{buildroot}/%{_prefix}/share/qemu/vgabios-cirrus.bin
+ln -s ../bochs/BIOS-bochs-latest %{buildroot}/%{_prefix}/share/qemu/bios.bin
+
+
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -344,8 +356,8 @@ fi
 %doc %{qemudocdir}/COPYING 
 %doc %{qemudocdir}/COPYING.LIB 
 %doc %{qemudocdir}/LICENSE
+%{_prefix}/share/qemu/
 %{_prefix}/share/qemu/keymaps/
-%{_prefix}/share/qemu/*
 %{_mandir}/man1/qemu.1*
 %{_mandir}/man8/qemu-nbd.8*
 %{_bindir}/qemu-nbd
@@ -380,6 +392,10 @@ fi
 %ifarch %{ix86} x86_64
 %{_bindir}/qemu-kvm
 %{_sysconfdir}/sysconfig/modules/kvm.modules
+%{_prefix}/share/kvm/
+%{_prefix}/share/kvm/bios.bin
+%{_prefix}/share/kvm/vgabios.bin
+%{_prefix}/share/kvm/vgabios-cirrus.bin
 %files kvm-tools
 %defattr(-,root,root,-)
 %{_bindir}/kvmtrace
@@ -422,8 +438,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
-* Fri Mar 06 2009 Glauber Costa <glommer@redhat.com> - 2:0.10-0.5.kvm20090303git
-- kvm.modules were being wrongly mentioned at %install.
+* Tue Mar 10 2009 Glauber Costa <glommer@redhat.com> - 2:0.10-0.5.kvm20090303git
+- kvm.modules were being wrongly mentioned at %%install.
+- update description for the x86 system package to include kvm support
+- build kvm's own bios. It is still necessary while kvm uses a slightly different
+  irq routing mechanism
 
 * Thu Mar 05 2009 Glauber Costa <glommer@redhat.com> - 2:0.10-0.4.kvm20090303git
 - seems Epoch does not go into the tags. So start back here.
