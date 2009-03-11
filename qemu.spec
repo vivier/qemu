@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10
-Release: 0.7.kvm20090310git%{?dist}
+Release: 0.8.kvm20090310git%{?dist}
 # I have mistakenly thought the revision name would be 1.0.
 # So 0.10 series get Epoch = 1
 Epoch: 2
@@ -84,8 +84,8 @@ Group: Development/Tools
 Requires: %{name}-common = %{epoch}:%{version}-%{release}
 Requires: etherboot-zroms-kvm
 Requires: vgabios
-Requires: bochs-bios
-Provides: kvm >= 84
+Requires: bochs-bios >= 2.3.8.0.5
+Provides: kvm = 85
 Obsoletes: kvm < 85
 
 %description system-x86
@@ -200,22 +200,23 @@ fi
 
 %ifarch %{ix86} x86_64
 # build kvm
-sed -i 's/datasuffix=\"\/share\/qemu\"/datasuffix=\"\/share\/kvm\"/' qemu/configure
 echo "%{name}-%{version}" > $(pwd)/kernel/.kernelrelease
+# sdl outputs to alsa or pulseaudio directly depending on what the system has configured
+# alsa works, but causes huge CPU load due to bugs
+# oss works, but is very problematic because it grabs exclusive control of the device causing other apps to go haywire
 ./configure --with-patched-kernel --target-list=x86_64-softmmu \
             --kerneldir=$(pwd)/kernel --prefix=%{_prefix} \
-            --qemu-ldflags=$extraldflags
+            --audio-drv-list=sdl,alsa,oss \
+            --qemu-ldflags=$extraldflags \
+            --qemu-cflags="$RPM_OPT_FLAGS"
 
 make %{?_smp_mflags} $buildldflags
 cp qemu/x86_64-softmmu/qemu-system-x86_64 qemu-kvm
 cp user/kvmtrace  .
 cp user/kvmtrace_format  .
-make bios
-make vgabios
 make clean
 %endif
 
-sed -i 's/datasuffix=\"\/share\/kvm\"/datasuffix=\"\/share\/qemu\"/' qemu/configure
 echo "%{name}-%{version}" > $(pwd)/kernel/.kernelrelease
 cd qemu
 ./configure \
@@ -231,7 +232,10 @@ cd qemu
     --interp-prefix=%{_prefix}/qemu-%%M \
     --kerneldir=$(pwd)/../kernel --prefix=%{_prefix} \
     --disable-kvm \
-    --extra-ldflags=$extraldflags
+    --extra-ldflags=$extraldflags \
+    --audio-drv-list=sdl,alsa,oss \
+    --extra-cflags="$RPM_OPT_FLAGS"
+
 
 make %{?_smp_mflags} $buildldflags
 
@@ -241,7 +245,6 @@ rm -rf $RPM_BUILD_ROOT
 %ifarch %{ix86} x86_64
 mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/modules
 mkdir -p $RPM_BUILD_ROOT%{_bindir}/
-mkdir -p $RPM_BUILD_ROOT%{_prefix}/share/kvm
 
 install -m 0755 %{SOURCE2} $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/modules/kvm.modules
 install -m 0755 kvmtrace $RPM_BUILD_ROOT%{_bindir}/
@@ -249,10 +252,6 @@ install -m 0755 kvmtrace_format $RPM_BUILD_ROOT%{_bindir}/
 install -m 0755 kvm_stat $RPM_BUILD_ROOT%{_bindir}/
 
 install -m 0755 qemu-kvm $RPM_BUILD_ROOT%{_bindir}/
-install -m 0644 bios/BIOS-bochs-latest $RPM_BUILD_ROOT%{_prefix}/share/kvm/bios.bin
-install -m 0644 vgabios/VGABIOS-lgpl-latest.bin $RPM_BUILD_ROOT%{_prefix}/share/kvm/vgabios.bin
-install -m 0644 vgabios/VGABIOS-lgpl-latest.cirrus.bin $RPM_BUILD_ROOT%{_prefix}/share/kvm/vgabios-cirrus.bin
-
 %endif
 
 cd qemu
@@ -286,7 +285,7 @@ pxe_link rtl8139 rtl8139
 pxe_link virtio virtio-net
 ln -s ../vgabios/VGABIOS-lgpl-latest.bin  %{buildroot}/%{_prefix}/share/qemu/vgabios.bin
 ln -s ../vgabios/VGABIOS-lgpl-latest.cirrus.bin %{buildroot}/%{_prefix}/share/qemu/vgabios-cirrus.bin
-ln -s ../bochs/BIOS-bochs-latest %{buildroot}/%{_prefix}/share/qemu/bios.bin
+ln -s ../bochs/BIOS-bochs-kvm %{buildroot}/%{_prefix}/share/qemu/bios.bin
 
 
 
@@ -363,10 +362,6 @@ fi
 %ifarch %{ix86} x86_64
 %{_bindir}/qemu-kvm
 %{_sysconfdir}/sysconfig/modules/kvm.modules
-%{_prefix}/share/kvm/
-%{_prefix}/share/kvm/bios.bin
-%{_prefix}/share/kvm/vgabios.bin
-%{_prefix}/share/kvm/vgabios-cirrus.bin
 %files kvm-tools
 %defattr(-,root,root,-)
 %{_bindir}/kvmtrace
@@ -409,6 +404,12 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Mar 11 2009 Glauber Costa <glommer@redhat.com> - 2:0.10-0.8.kvm20090310git
+- fix Obsolete/Provides pair
+- Use kvm bios from bochs-bios package.
+- Using RPM_OPT_FLAGS in configure
+- Picked back audio-drv-list from kvm package
+
 * Tue Mar 10 2009 Glauber Costa <glommer@redhat.com> - 2:0.10-0.7.kvm20090310git
 - modify ppc patch
 
