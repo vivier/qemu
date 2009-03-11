@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10
-Release: 0.8.kvm20090310git%{?dist}
+Release: 0.9.kvm20090310git%{?dist}
 # I have mistakenly thought the revision name would be 1.0.
 # So 0.10 series get Epoch = 1
 Epoch: 2
@@ -84,7 +84,7 @@ Group: Development/Tools
 Requires: %{name}-common = %{epoch}:%{version}-%{release}
 Requires: etherboot-zroms-kvm
 Requires: vgabios
-Requires: bochs-bios >= 2.3.8.0.5
+Requires: bochs-bios >= 2.3.8-0.5
 Provides: kvm = 85
 Obsoletes: kvm < 85
 
@@ -404,6 +404,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Mar 11 2009 Glauber Costa <glommer@redhat.com> - 2:0.10-0.9.kvm20090310git
+- Fix wrong reference to bochs bios.
+
 * Wed Mar 11 2009 Glauber Costa <glommer@redhat.com> - 2:0.10-0.8.kvm20090310git
 - fix Obsolete/Provides pair
 - Use kvm bios from bochs-bios package.
