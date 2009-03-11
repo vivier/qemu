@@ -1,4 +1,4 @@
-From 1efd319579c8f34974d654b0a5ac5144424e693e Mon Sep 17 00:00:00 2001
+From 796d42657fb238cf23a78620051f533662557e2b Mon Sep 17 00:00:00 2001
 From: Glauber Costa <glommer@redhat.com>
 Date: Fri, 13 Feb 2009 13:00:31 -0500
 Subject: [PATCH] use KVM_UPSTREAM for ppc.
@@ -12,10 +12,11 @@ and would break compilation.
 
 Signed-off-by: Glauber Costa <glommer@redhat.com>
 ---
- qemu/hw/ppc440.c         |    1 +
- qemu/hw/ppc440_bamboo.c  |    1 +
- qemu/target-ppc/helper.c |    1 +
- 3 files changed, 3 insertions(+), 0 deletions(-)
+ hw/ppc440.c            |    1 +
+ hw/ppc440_bamboo.c     |    1 +
+ hw/ppce500_mpc8544ds.c |    1 +
+ target-ppc/helper.c    |    2 +-
+ 4 files changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/qemu/hw/ppc440.c b/qemu/hw/ppc440.c
 index 00d82e4..164c326 100644
@@ -41,8 +42,20 @@ index fbd447c..60ddaf4 100644
  #include "kvm.h"
  #include "kvm_ppc.h"
  #include "device_tree.h"
+diff --git a/qemu/hw/ppce500_mpc8544ds.c b/qemu/hw/ppce500_mpc8544ds.c
+index 3d73f8a..d8ea947 100644
+--- a/qemu/hw/ppce500_mpc8544ds.c
++++ b/qemu/hw/ppce500_mpc8544ds.c
+@@ -16,6 +16,7 @@
+ 
+ #include <dirent.h>
+ 
++#define KVM_UPSTREAM
+ #include "config.h"
+ #include "qemu-common.h"
+ #include "net.h"
 diff --git a/qemu/target-ppc/helper.c b/qemu/target-ppc/helper.c
-index fc62a63..d49acaf 100644
+index 80b53eb..e8dc384 100644
 --- a/qemu/target-ppc/helper.c
 +++ b/qemu/target-ppc/helper.c
 @@ -29,6 +29,7 @@
@@ -54,5 +67,5 @@ index fc62a63..d49acaf 100644
  
  //#define DEBUG_MMU
 -- 
-1.5.6.5
+1.6.1.2
 
