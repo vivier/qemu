@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10
-Release: 0.10.kvm20090310git%{?dist}
+Release: 0.11.kvm20090323git%{?dist}
 # I have mistakenly thought the revision name would be 1.0.
 # So 0.10 series get Epoch = 1
 Epoch: 2
@@ -9,13 +9,18 @@ License: GPLv2+ and LGPLv2+ and BSD
 Group: Development/Tools
 URL: http://www.qemu.org/
 #Source0: http://www.qemu.org/%{name}-%{version}.tar.gz
-# FIXME: Say how to get the sources
-Source0: kvm-84.git-snapshot-20090310.tar.gz
+# git clone git://git.kernel.org/pub/scm/linux/kernel/git/avi/kvm.git
+# git clone git://git.kernel.org/pub/scm/linux/kernel/git/avi/kvm-userspace.git
+# echo "kdir=$(pwd)/kvm" > ~/.kvm-release-config
+# cd kvm-userspace
+# mkdir $(HOME)/sf-releases
+# ./scripts/make-release kvm-85rc-1.git-snapshot-date +%Y%m%d HEAD HEAD
+
+Source0: qemu-kvm-devel-85rc1.git-snapshot-20090323.tar.gz
 Source1: qemu.init
 Source2: kvm.modules
 
 Patch1: kvm-upstream-ppc.patch
-Patch2: kvm-fix-strayR.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -177,9 +182,8 @@ such as kvmtrace and kvm_stat.
 %endif
 
 %prep
-%setup -q -n kvm-84.git-snapshot-20090310
+%setup -q -n qemu-kvm-devel-85rc1.git-snapshot-20090323
 %patch1 -p1
-%patch2 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -204,7 +208,7 @@ echo "%{name}-%{version}" > $(pwd)/kernel/.kernelrelease
 # sdl outputs to alsa or pulseaudio directly depending on what the system has configured
 # alsa works, but causes huge CPU load due to bugs
 # oss works, but is very problematic because it grabs exclusive control of the device causing other apps to go haywire
-./configure --with-patched-kernel --target-list=x86_64-softmmu \
+./configure --target-list=x86_64-softmmu \
             --kerneldir=$(pwd)/kernel --prefix=%{_prefix} \
             --audio-drv-list=sdl,alsa,oss \
             --qemu-ldflags=$extraldflags \
@@ -405,6 +409,13 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Mar 23 2009 Glauber Costa <glommer@redhat.com> - 2:0.10-0.11.kvm20090323git
+- Update to snapshot kvm20090323.
+- Removed patch2 (upstream).
+- use upstream's new split package.
+- --with-patched-kernel flag not needed anymore
+- Tell how to get the sources.
+
 * Wed Mar 18 2009 Glauber Costa <glommer@redhat.com> - 2:0.10-0.10.kvm20090310git
 - Added extboot to files list.
 
