@@ -1,0 +1,79 @@
+From 2ced1d80f01645885ac2e28107f724886eb1cd5a Mon Sep 17 00:00:00 2001
+From: Jochen Roth <jroth@linux.vnet.ibm.com>
+Date: Thu, 12 Mar 2009 14:19:19 +0100
+Subject: [PATCH] kvm: testsuite: compile fix - avoid raw string literal
+
+This patch fixes compilation problems of kvm-userspace on current gcc
+4.4 compilers which implement the following standard:
+http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2442.htm
+
+Signed-off-by: Jochen Roth <jroth@linux.vnet.ibm.com>
+Signed-off-by: Avi Kivity <avi@redhat.com>
+---
+ user/test/x86/apic.c   |   32 ++++++++++++++++----------------
+ user/test/x86/vmexit.c |    2 +-
+ 2 files changed, 17 insertions(+), 17 deletions(-)
+
+Index: qemu-kvm-0.10/user/test/x86/apic.c
+===================================================================
+--- qemu-kvm-0.10.orig/user/test/x86/apic.c
++++ qemu-kvm-0.10/user/test/x86/apic.c
+@@ -54,14 +54,14 @@ asm (
+     "push %r9  \n\t"
+     "push %r8  \n\t"
+ #endif
+-    "push %"R"di \n\t"
+-    "push %"R"si \n\t"
+-    "push %"R"bp \n\t"
+-    "push %"R"sp \n\t"
+-    "push %"R"bx \n\t"
+-    "push %"R"dx \n\t"
+-    "push %"R"cx \n\t"
+-    "push %"R"ax \n\t"
++    "push %"R "di \n\t"
++    "push %"R "si \n\t"
++    "push %"R "bp \n\t"
++    "push %"R "sp \n\t"
++    "push %"R "bx \n\t"
++    "push %"R "dx \n\t"
++    "push %"R "cx \n\t"
++    "push %"R "ax \n\t"
+ #ifdef __x86_64__
+     "mov %rsp, %rdi \n\t"
+     "callq *8*16(%rsp) \n\t"
+@@ -70,14 +70,14 @@ asm (
+     "calll *4+4*8(%esp) \n\t"
+     "add $4, %esp \n\t"
+ #endif
+-    "pop %"R"ax \n\t"
+-    "pop %"R"cx \n\t"
+-    "pop %"R"dx \n\t"
+-    "pop %"R"bx \n\t"
+-    "pop %"R"bp \n\t"
+-    "pop %"R"bp \n\t"
+-    "pop %"R"si \n\t"
+-    "pop %"R"di \n\t"
++    "pop %"R "ax \n\t"
++    "pop %"R "cx \n\t"
++    "pop %"R "dx \n\t"
++    "pop %"R "bx \n\t"
++    "pop %"R "bp \n\t"
++    "pop %"R "bp \n\t"
++    "pop %"R "si \n\t"
++    "pop %"R "di \n\t"
+ #ifdef __x86_64__
+     "pop %r8  \n\t"
+     "pop %r9  \n\t"
+Index: qemu-kvm-0.10/user/test/x86/vmexit.c
+===================================================================
+--- qemu-kvm-0.10.orig/user/test/x86/vmexit.c
++++ qemu-kvm-0.10/user/test/x86/vmexit.c
+@@ -31,7 +31,7 @@ int main()
+ 
+ 	t1 = rdtsc();
+ 	for (i = 0; i < N; ++i)
+-		asm volatile ("push %%"R"bx; cpuid; pop %%"R"bx"
++		asm volatile ("push %%"R "bx; cpuid; pop %%"R "bx"
+ 			      : : : "eax", "ecx", "edx");
+ 	t2 = rdtsc();
+ 	printf("vmexit latency: %d\n", (int)((t2 - t1) / N));
