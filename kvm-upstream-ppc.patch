@@ -18,10 +18,10 @@ Signed-off-by: Glauber Costa <glommer@redhat.com>
  target-ppc/helper.c    |    2 +-
  4 files changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/qemu/hw/ppc440.c b/qemu/hw/ppc440.c
-index 00d82e4..164c326 100644
---- a/qemu/hw/ppc440.c
-+++ b/qemu/hw/ppc440.c
+Index: qemu-kvm-0.10/qemu/hw/ppc440.c
+===================================================================
+--- qemu-kvm-0.10.orig/qemu/hw/ppc440.c
++++ qemu-kvm-0.10/qemu/hw/ppc440.c
 @@ -18,6 +18,7 @@
  #include "ppc440.h"
  #include "ppc405.h"
@@ -30,10 +30,10 @@ index 00d82e4..164c326 100644
  #include "kvm.h"
  
  #define PPC440EP_PCI_CONFIG     0xeec00000
-diff --git a/qemu/hw/ppc440_bamboo.c b/qemu/hw/ppc440_bamboo.c
-index fbd447c..60ddaf4 100644
---- a/qemu/hw/ppc440_bamboo.c
-+++ b/qemu/hw/ppc440_bamboo.c
+Index: qemu-kvm-0.10/qemu/hw/ppc440_bamboo.c
+===================================================================
+--- qemu-kvm-0.10.orig/qemu/hw/ppc440_bamboo.c
++++ qemu-kvm-0.10/qemu/hw/ppc440_bamboo.c
 @@ -21,6 +21,7 @@
  #include "boards.h"
  #include "sysemu.h"
@@ -42,10 +42,10 @@ index fbd447c..60ddaf4 100644
  #include "kvm.h"
  #include "kvm_ppc.h"
  #include "device_tree.h"
-diff --git a/qemu/hw/ppce500_mpc8544ds.c b/qemu/hw/ppce500_mpc8544ds.c
-index 3d73f8a..d8ea947 100644
---- a/qemu/hw/ppce500_mpc8544ds.c
-+++ b/qemu/hw/ppce500_mpc8544ds.c
+Index: qemu-kvm-0.10/qemu/hw/ppce500_mpc8544ds.c
+===================================================================
+--- qemu-kvm-0.10.orig/qemu/hw/ppce500_mpc8544ds.c
++++ qemu-kvm-0.10/qemu/hw/ppce500_mpc8544ds.c
 @@ -16,6 +16,7 @@
  
  #include <dirent.h>
@@ -54,10 +54,10 @@ index 3d73f8a..d8ea947 100644
  #include "config.h"
  #include "qemu-common.h"
  #include "net.h"
-diff --git a/qemu/target-ppc/helper.c b/qemu/target-ppc/helper.c
-index 80b53eb..e8dc384 100644
---- a/qemu/target-ppc/helper.c
-+++ b/qemu/target-ppc/helper.c
+Index: qemu-kvm-0.10/qemu/target-ppc/helper.c
+===================================================================
+--- qemu-kvm-0.10.orig/qemu/target-ppc/helper.c
++++ qemu-kvm-0.10/qemu/target-ppc/helper.c
 @@ -29,6 +29,7 @@
  #include "exec-all.h"
  #include "helper_regs.h"
@@ -66,6 +66,3 @@ index 80b53eb..e8dc384 100644
  #include "kvm.h"
  
  //#define DEBUG_MMU
--- 
-1.6.1.2
-

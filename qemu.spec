@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10
-Release: 0.12.kvm20090323git%{?dist}
+Release: 1%{?dist}
 # I have mistakenly thought the revision name would be 1.0.
 # So 0.10 series get Epoch = 1
 Epoch: 2
@@ -16,11 +16,23 @@ URL: http://www.qemu.org/
 # mkdir $(HOME)/sf-releases
 # ./scripts/make-release kvm-85rc-1.git-snapshot-date +%Y%m%d HEAD HEAD
 
-Source0: qemu-kvm-devel-85rc1.git-snapshot-20090323.tar.gz
+Source0: qemu-kvm-%{version}.tar.gz
 Source1: qemu.init
 Source2: kvm.modules
 
-Patch1: kvm-upstream-ppc.patch
+
+Patch1: 01-tls-handshake-fix.patch
+Patch2: 02-vnc-monitor-info.patch
+Patch3: 03-display-keymaps.patch
+Patch4: 04-vnc-struct.patch
+Patch5: 05-vnc-tls-vencrypt.patch
+Patch6: 06-vnc-sasl.patch
+Patch7: 07-vnc-monitor-authinfo.patch
+Patch8: 08-vnc-acl-mgmt.patch
+
+Patch9: kvm-upstream-ppc.patch
+Patch10: qemu-fix-debuginfo.patch
+Patch11: qemu-fix-gcc.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -55,7 +67,6 @@ As QEMU requires no host kernel patches to run, it is safe and easy to use.
 %package  img
 Summary: QEMU command line tool for manipulating disk images
 Group: Development/Tools
-Requires: %{name}-common = %{epoch}:%{version}-%{release}
 %description img
 QEMU is a generic and open source processor emulator which achieves a good 
 emulation speed by using dynamic translation.
@@ -106,6 +117,7 @@ platform.
 Summary: QEMU system emulator for ppc
 Group: Development/Tools
 Requires: %{name}-common = %{epoch}:%{version}-%{release}
+Requires: openbios-ppc
 %description system-ppc
 QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
@@ -183,8 +195,19 @@ such as kvmtrace and kvm_stat.
 %endif
 
 %prep
-%setup -q -n qemu-kvm-devel-85rc1.git-snapshot-20090323
+%setup -q -n qemu-kvm-%{version}
+
 %patch1 -p1
+%patch2 -p1
+%patch3 -p1
+%patch4 -p1
+%patch5 -p1
+%patch6 -p1
+%patch7 -p1
+%patch8 -p1
+%patch9 -p1
+%patch10 -p1
+%patch11 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -212,6 +235,8 @@ echo "%{name}-%{version}" > $(pwd)/kernel/.kernelrelease
 ./configure --target-list=x86_64-softmmu \
             --kerneldir=$(pwd)/kernel --prefix=%{_prefix} \
             --audio-drv-list=sdl,alsa,oss \
+            --with-patched-kernel \
+            --disable-strip \
             --qemu-ldflags=$extraldflags \
             --qemu-cflags="$RPM_OPT_FLAGS"
 
@@ -236,6 +261,7 @@ cd qemu
     --prefix=%{_prefix} \
     --interp-prefix=%{_prefix}/qemu-%%M \
     --kerneldir=$(pwd)/../kernel --prefix=%{_prefix} \
+    --disable-strip \
     --disable-kvm \
     --extra-ldflags=$extraldflags \
     --audio-drv-list=sdl,alsa,oss \
@@ -275,6 +301,9 @@ install -D -p -m 0644 qemu.sasl $RPM_BUILD_ROOT%{_sysconfdir}/sasl2/qemu.conf
 rm -rf ${RPM_BUILD_ROOT}/usr/share//qemu/pxe*bin
 rm -rf ${RPM_BUILD_ROOT}/usr/share//qemu/vgabios*bin
 rm -rf ${RPM_BUILD_ROOT}/usr/share//qemu/bios.bin
+rm -rf ${RPM_BUILD_ROOT}/usr/share//qemu/openbios-ppc
+rm -rf ${RPM_BUILD_ROOT}/usr/share//qemu/openbios-sparc32
+rm -rf ${RPM_BUILD_ROOT}/usr/share//qemu/openbios-sparc64
 
 # the pxe etherboot images will be symlinks to the images on
 # /usr/share/etherboot, as QEMU doesn't know how to look
@@ -291,6 +320,9 @@ pxe_link virtio virtio-net
 ln -s ../vgabios/VGABIOS-lgpl-latest.bin  %{buildroot}/%{_prefix}/share/qemu/vgabios.bin
 ln -s ../vgabios/VGABIOS-lgpl-latest.cirrus.bin %{buildroot}/%{_prefix}/share/qemu/vgabios-cirrus.bin
 ln -s ../bochs/BIOS-bochs-kvm %{buildroot}/%{_prefix}/share/qemu/bios.bin
+ln -s ../openbios/openbios-ppc %{buildroot}/%{_prefix}/share/qemu/openbios-ppc
+ln -s ../openbios/openbios-sparc32 %{buildroot}/%{_prefix}/share/qemu/openbios-sparc32
+ln -s ../openbios/openbios-sparc64 %{buildroot}/%{_prefix}/share/qemu/openbios-sparc64
 
 
 
@@ -331,7 +363,7 @@ fi
 %doc %{qemudocdir}/COPYING 
 %doc %{qemudocdir}/COPYING.LIB 
 %doc %{qemudocdir}/LICENSE
-%{_prefix}/share/qemu/
+%dir %{_prefix}/share/qemu/
 %{_prefix}/share/qemu/keymaps/
 %{_mandir}/man1/qemu.1*
 %{_mandir}/man8/qemu-nbd.8*
@@ -364,6 +396,11 @@ fi
 %{_prefix}/share/qemu/bios.bin
 %{_prefix}/share/qemu/vgabios.bin
 %{_prefix}/share/qemu/vgabios-cirrus.bin
+%{_prefix}/share/qemu/pxe-e1000.bin
+%{_prefix}/share/qemu/pxe-virtio.bin
+%{_prefix}/share/qemu/pxe-pcnet.bin
+%{_prefix}/share/qemu/pxe-rtl8139.bin
+%{_prefix}/share/qemu/pxe-ne2k_pci.bin
 %ifarch %{ix86} x86_64
 %{_prefix}/share/qemu/extboot.bin
 %{_bindir}/qemu-kvm
@@ -393,6 +430,10 @@ fi
 %{_bindir}/qemu-system-ppc
 %{_bindir}/qemu-system-ppc64
 %{_bindir}/qemu-system-ppcemb
+%{_prefix}/share/qemu/openbios-ppc
+%{_prefix}/share/qemu/video.x
+%{_prefix}/share/qemu/bamboo.dtb
+%{_prefix}/share/qemu/ppc_rom.bin
 %files system-cris
 %defattr(-,root,root)
 %{_bindir}/qemu-system-cris
@@ -410,6 +451,18 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Apr 01 2009 Glauber Costa <glommer@redhat.com> - 2:0.10-1
+- Include debuginfo for qemu-img
+- Do not require qemu-common for qemu-img
+- Explicitly own each of the firmware files
+- remove firmwares for ppc and sparc. They should be provided by an external package.
+  Not that the packages exists for sparc in the secondary arch repo as noarch, but they
+  don't automatically get into main repos. Unfortunately it's the best we can do right
+  now.
+- rollback a bit in time. Snapshot from avi's maint/2.6.30
+  - this requires the sasl patches to come back.
+  - with-patched-kernel comes back.
+
 * Wed Mar 25 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10-0.12.kvm20090323git
 - BuildRequires pciutils-devel for device assignment (#492076)
 

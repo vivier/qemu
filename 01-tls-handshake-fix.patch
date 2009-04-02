@@ -1,0 +1,19 @@
+Index: qemu-kvm-0.10/qemu/vnc.c
+===================================================================
+--- qemu-kvm-0.10.orig/qemu/vnc.c
++++ qemu-kvm-0.10/qemu/vnc.c
+@@ -2096,14 +2096,6 @@ static int protocol_client_vencrypt_auth
+ 	    VNC_DEBUG("Failed to complete TLS\n");
+ 	    return 0;
+ 	}
+-
+-	if (vs->wiremode == VNC_WIREMODE_TLS) {
+-	    VNC_DEBUG("Starting VeNCrypt subauth\n");
+-	    return start_auth_vencrypt_subauth(vs);
+-	} else {
+-	    VNC_DEBUG("TLS handshake blocked\n");
+-	    return 0;
+-	}
+     }
+     return 0;
+ }
