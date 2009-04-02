@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10
-Release: 3%{?dist}
+Release: 4%{?dist}
 # I have mistakenly thought the revision name would be 1.0.
 # So 0.10 series get Epoch = 1
 Epoch: 2
@@ -33,6 +33,8 @@ Patch8: 08-vnc-acl-mgmt.patch
 Patch9: kvm-upstream-ppc.patch
 Patch10: qemu-fix-debuginfo.patch
 Patch11: qemu-fix-gcc.patch
+Patch12: qemu-roms-more-room.patch
+Patch13: qemu-bios-bigger-roms.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -208,6 +210,8 @@ such as kvmtrace and kvm_stat.
 %patch9 -p1
 %patch10 -p1
 %patch11 -p1
+%patch12 -p1
+%patch13 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -451,6 +455,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Apr 02 2009 Glauber Costa <glommer@redhat.com> - 2:0.10-4
+- Support botting gpxe roms.
+
 * Wed Apr 01 2009 Glauber Costa <glommer@redhat.com> - 2:0.10-2
 - added missing patch. love for CVS.
 
