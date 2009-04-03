@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10
-Release: 4%{?dist}
+Release: 5%{?dist}
 # I have mistakenly thought the revision name would be 1.0.
 # So 0.10 series get Epoch = 1
 Epoch: 2
@@ -35,6 +35,7 @@ Patch10: qemu-fix-debuginfo.patch
 Patch11: qemu-fix-gcc.patch
 Patch12: qemu-roms-more-room.patch
 Patch13: qemu-bios-bigger-roms.patch
+Patch14: qemu-fix-display-breakage.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -212,6 +213,7 @@ such as kvmtrace and kvm_stat.
 %patch11 -p1
 %patch12 -p1
 %patch13 -p1
+%patch14 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -231,8 +233,6 @@ else
 fi
 
 %ifarch %{ix86} x86_64
-# build kvm
-echo "%{name}-%{version}" > $(pwd)/kernel/.kernelrelease
 # sdl outputs to alsa or pulseaudio directly depending on what the system has configured
 # alsa works, but causes huge CPU load due to bugs
 # oss works, but is very problematic because it grabs exclusive control of the device causing other apps to go haywire
@@ -244,7 +244,7 @@ echo "%{name}-%{version}" > $(pwd)/kernel/.kernelrelease
             --qemu-ldflags=$extraldflags \
             --qemu-cflags="$RPM_OPT_FLAGS"
 
-make %{?_smp_mflags} $buildldflags
+make V=1 %{?_smp_mflags} $buildldflags
 cp qemu/x86_64-softmmu/qemu-system-x86_64 qemu-kvm
 cp user/kvmtrace  .
 cp user/kvmtrace_format  .
@@ -455,6 +455,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Apr  3 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10-5
+- Fix vga segfault under kvm-autotest (#494002)
+- Kill kernelrelease hack; it's not needed
+- Build with "make V=1" for more verbose logs
+
 * Thu Apr 02 2009 Glauber Costa <glommer@redhat.com> - 2:0.10-4
 - Support botting gpxe roms.
 
