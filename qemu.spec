@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10
-Release: 5%{?dist}
+Release: 6%{?dist}
 # I have mistakenly thought the revision name would be 1.0.
 # So 0.10 series get Epoch = 1
 Epoch: 2
@@ -36,6 +36,7 @@ Patch11: qemu-fix-gcc.patch
 Patch12: qemu-roms-more-room.patch
 Patch13: qemu-bios-bigger-roms.patch
 Patch14: qemu-fix-display-breakage.patch
+Patch15: qemu-fix-qcow2-2TB.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -214,6 +215,7 @@ such as kvmtrace and kvm_stat.
 %patch12 -p1
 %patch13 -p1
 %patch14 -p1
+%patch15 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -455,6 +457,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Sun Apr  5 2009 Glauber Costa <glommer@redhat.com> - 2:0.10-6
+- Fixed qcow2 segfault creating disks over 2TB. #491943
+
 * Fri Apr  3 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10-5
 - Fix vga segfault under kvm-autotest (#494002)
 - Kill kernelrelease hack; it's not needed
