@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10
-Release: 6%{?dist}
+Release: 7%{?dist}
 # I have mistakenly thought the revision name would be 1.0.
 # So 0.10 series get Epoch = 1
 Epoch: 2
@@ -457,6 +457,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Apr  9 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10-7
+- Add a much cleaner fix for vga segfault (#494002)
+
 * Sun Apr  5 2009 Glauber Costa <glommer@redhat.com> - 2:0.10-6
 - Fixed qcow2 segfault creating disks over 2TB. #491943
 
