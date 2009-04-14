@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10
-Release: 7%{?dist}
+Release: 8%{?dist}
 # I have mistakenly thought the revision name would be 1.0.
 # So 0.10 series get Epoch = 1
 Epoch: 2
@@ -108,6 +108,9 @@ Requires: vgabios
 Requires: bochs-bios >= 2.3.8-0.5
 Provides: kvm = 85
 Obsoletes: kvm < 85
+%ifarch %{ix86} x86_64
+Provides: qemu-kvm = %{epoch}:%{version}-%{release}
+%endif
 
 %description system-x86
 QEMU is a generic and open source processor emulator which achieves a good
@@ -122,6 +125,9 @@ Summary: QEMU system emulator for ppc
 Group: Development/Tools
 Requires: %{name}-common = %{epoch}:%{version}-%{release}
 Requires: openbios-ppc
+%ifarch ppc ppc64
+Provides: qemu-kvm = %{epoch}:%{version}-%{release}
+%endif
 %description system-ppc
 QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
@@ -457,6 +463,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Apr  14 2009 Glauber Costa <glommer@redhat.com> - 2:0.10-8
+- Provide qemu-kvm conditional on the architecture.
+
 * Thu Apr  9 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10-7
 - Add a much cleaner fix for vga segfault (#494002)
 
