@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10
-Release: 9%{?dist}
+Release: 10%{?dist}
 # I have mistakenly thought the revision name would be 1.0.
 # So 0.10 series get Epoch = 1
 Epoch: 2
@@ -344,7 +344,7 @@ ln -s ../openbios/openbios-sparc64 %{buildroot}/%{_prefix}/share/qemu/openbios-s
 rm -rf $RPM_BUILD_ROOT
 
 %post system-x86
-%ifarch %{ix86}
+%ifarch %{ix86} x86_64
 # load kvm modules now, so we can make sure no reboot is needed.
 # If there's already a kvm module installed, we don't mess with it
 sh /%{_sysconfdir}/sysconfig/modules/kvm.modules
@@ -465,6 +465,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Sun Apr 19 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10-10
+- Run sysconfig.modules from %post on x86_64 too (#494739)
+
 * Sun Apr 19 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10-9
 - Align VGA ROM to 4k boundary - fixes 'qemu-kvm -std vga' (#494376)
 
