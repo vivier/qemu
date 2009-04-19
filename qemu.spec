@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10
-Release: 8%{?dist}
+Release: 9%{?dist}
 # I have mistakenly thought the revision name would be 1.0.
 # So 0.10 series get Epoch = 1
 Epoch: 2
@@ -34,9 +34,10 @@ Patch9: kvm-upstream-ppc.patch
 Patch10: qemu-fix-debuginfo.patch
 Patch11: qemu-fix-gcc.patch
 Patch12: qemu-roms-more-room.patch
-Patch13: qemu-bios-bigger-roms.patch
-Patch14: qemu-fix-display-breakage.patch
-Patch15: qemu-fix-qcow2-2TB.patch
+Patch13: qemu-roms-more-room-fix-vga-align.patch
+Patch14: qemu-bios-bigger-roms.patch
+Patch15: qemu-fix-display-breakage.patch
+Patch16: qemu-fix-qcow2-2TB.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -222,6 +223,7 @@ such as kvmtrace and kvm_stat.
 %patch13 -p1
 %patch14 -p1
 %patch15 -p1
+%patch16 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -463,6 +465,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Sun Apr 19 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10-9
+- Align VGA ROM to 4k boundary - fixes 'qemu-kvm -std vga' (#494376)
+
 * Tue Apr  14 2009 Glauber Costa <glommer@redhat.com> - 2:0.10-8
 - Provide qemu-kvm conditional on the architecture.
 

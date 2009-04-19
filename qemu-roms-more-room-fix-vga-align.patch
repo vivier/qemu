@@ -1,0 +1,35 @@
+From: Glauber Costa <glommer@redhat.com>
+Subject: [PATCH] align vga rom to 4k boundary.
+
+Instead of aligning to 2k boundary, as required by the bios,
+align to 4k boundary, as required by kvm memory functions. Without
+this patch, starting kvm with -vga std option fails with:
+
+create_userspace_phys_mem: Invalid argument
+kvm_cpu_register_physical_memory: failed
+
+as described by: https://bugzilla.redhat.com/494376
+
+It does not fail with cirrus vga, because it is naturally aligned.
+This problem does not seem to affect upstream qemu.
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ qemu/hw/pc.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/qemu/hw/pc.c b/qemu/hw/pc.c
+index cc84772..680d4a2 100644
+--- a/qemu/hw/pc.c
++++ b/qemu/hw/pc.c
+@@ -919,7 +919,7 @@ vga_bios_error:
+             exit(1);
+         }
+ 	/* Round up vga bios size to the next 2k boundary */
+-	vga_bios_size = (vga_bios_size + 2047) & ~2047;
++	vga_bios_size = (vga_bios_size + 4095) & ~4095;
+ 	option_rom_start = 0xc0000 + vga_bios_size;
+ 
+         /* setup basic memory access */
+-- 
+1.5.6.6
