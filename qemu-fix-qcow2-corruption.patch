@@ -1,0 +1,36 @@
+From: Kevin Wolf <kwolf@redhat.com>
+To: qemu-devel@nongnu.org
+Subject: [Qemu-devel] [PATCH] qcow2 corruption: Fix alloc_cluster_link_l2
+
+This patch fixes a qcow2 corruption bug introduced in SVN Rev 5861. L2 tables
+are big endian, so entries must be converted before being passed to functions.
+
+This bug is easy to trigger. The following script will create and destroy a
+qcow2 image (the header is gone after three loop iterations):
+
+    #!/bin/bash
+    qemu-img create -f qcow2 test.qcow 1M
+    for i in $(seq 1 10); do
+    qemu-system-x86_64 -hda test.qcow -monitor stdio > /dev/null 2>&1 <<EOF
+    savevm test-$i
+    quit
+    EOF
+    done
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block-qcow2.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff -up qemu-kvm-0.10/qemu/block-qcow2.c.qcow2-corruption qemu-kvm-0.10/qemu/block-qcow2.c
+--- qemu-kvm-0.10/qemu/block-qcow2.c.qcow2-corruption	2009-04-20 14:41:22.000000000 +0100
++++ qemu-kvm-0.10/qemu/block-qcow2.c	2009-04-20 14:41:54.000000000 +0100
+@@ -912,7 +912,7 @@ static int alloc_cluster_link_l2(BlockDr
+         goto err;
+ 
+     for (i = 0; i < j; i++)
+-        free_any_clusters(bs, old_cluster[i], 1);
++        free_any_clusters(bs, be64_to_cpu(old_cluster[i]), 1);
+ 
+     ret = 0;
+ err:

@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10
-Release: 10%{?dist}
+Release: 11%{?dist}
 # I have mistakenly thought the revision name would be 1.0.
 # So 0.10 series get Epoch = 1
 Epoch: 2
@@ -38,6 +38,7 @@ Patch13: qemu-roms-more-room-fix-vga-align.patch
 Patch14: qemu-bios-bigger-roms.patch
 Patch15: qemu-fix-display-breakage.patch
 Patch16: qemu-fix-qcow2-2TB.patch
+Patch17: qemu-fix-qcow2-corruption.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -224,6 +225,7 @@ such as kvmtrace and kvm_stat.
 %patch14 -p1
 %patch15 -p1
 %patch16 -p1
+%patch17 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -465,6 +467,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Apr 20 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10-11
+- Fix qcow2 image corruption (#496642)
+
 * Sun Apr 19 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10-10
 - Run sysconfig.modules from %post on x86_64 too (#494739)
 
