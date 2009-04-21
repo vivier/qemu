@@ -1,6 +1,28 @@
+From: Nolan Leake <nolan <at> sigbus.net>
+Subject: [PATCH] Fix (at least one cause of) qcow2 corruption.
+
+qcow2's get_cluster_offset() scans forward in the l2 table to find other
+clusters that have the same allocation status as the first cluster.
+This is used by (among others) qcow_is_allocated().
+
+Unfortunately, it was not checking to be sure that it didn't fall off
+the end of the l2 table.  This patch adds that check.
+
+The symptom that motivated me to look into this was that
+bdrv_is_allocated() was returning false when there was in fact data
+there.  This is one of many ways this bug could lead to data corruption.
+
+I checked the other place that scans for consecutive unallocated blocks
+(alloc_cluster_offset()) and it appears to be OK:
+    nb_clusters = MIN(nb_clusters, s->l2_size - l2_index);
+appears to prevent the same problem from occurring.
+
+Signed-off-by: Nolan Leake <nolan <at> sigbus.net>
+
+---
+
 From: Kevin Wolf <kwolf@redhat.com>
-To: qemu-devel@nongnu.org
-Subject: [Qemu-devel] [PATCH] qcow2 corruption: Fix alloc_cluster_link_l2
+Subject: [PATCH] qcow2 corruption: Fix alloc_cluster_link_l2
 
 This patch fixes a qcow2 corruption bug introduced in SVN Rev 5861. L2 tables
 are big endian, so entries must be converted before being passed to functions.
@@ -18,14 +40,23 @@ qcow2 image (the header is gone after three loop iterations):
     done
 
 Signed-off-by: Kevin Wolf <kwolf@redhat.com>
----
- block-qcow2.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
 
 diff -up qemu-kvm-0.10/qemu/block-qcow2.c.qcow2-corruption qemu-kvm-0.10/qemu/block-qcow2.c
---- qemu-kvm-0.10/qemu/block-qcow2.c.qcow2-corruption	2009-04-20 14:41:22.000000000 +0100
-+++ qemu-kvm-0.10/qemu/block-qcow2.c	2009-04-20 14:41:54.000000000 +0100
-@@ -912,7 +912,7 @@ static int alloc_cluster_link_l2(BlockDr
+diff -up qemu-kvm-0.10/qemu/block-qcow2.c.qcow2-corruption qemu-kvm-0.10/qemu/block-qcow2.c
+--- qemu-kvm-0.10/qemu/block-qcow2.c.qcow2-corruption	2009-04-21 09:57:21.000000000 +0100
++++ qemu-kvm-0.10/qemu/block-qcow2.c	2009-04-21 09:58:27.000000000 +0100
+@@ -670,6 +670,10 @@ static uint64_t get_cluster_offset(Block
+ 
+     nb_available = (nb_available >> 9) + index_in_cluster;
+ 
++    if (nb_needed > nb_available) {
++        nb_needed = nb_available;
++    }
++
+     cluster_offset = 0;
+ 
+     /* seek the the l2 offset in the l1 table */
+@@ -912,7 +916,7 @@ static int alloc_cluster_link_l2(BlockDr
          goto err;
  
      for (i = 0; i < j; i++)

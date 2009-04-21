@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10
-Release: 11%{?dist}
+Release: 12%{?dist}
 # I have mistakenly thought the revision name would be 1.0.
 # So 0.10 series get Epoch = 1
 Epoch: 2
@@ -467,6 +467,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Apr 21 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10-12
+- Another qcow2 image corruption fix (#496642)
+
 * Mon Apr 20 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10-11
 - Fix qcow2 image corruption (#496642)
 
