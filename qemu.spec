@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10
-Release: 12%{?dist}
+Release: 13%{?dist}
 # I have mistakenly thought the revision name would be 1.0.
 # So 0.10 series get Epoch = 1
 Epoch: 2
@@ -44,6 +44,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
 BuildRequires: rsync dev86 iasl
 BuildRequires: pciutils-devel
+BuildRequires: pulseaudio-libs-devel
 Requires: %{name}-user = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-x86 = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-sparc = %{epoch}:%{version}-%{release}
@@ -245,12 +246,12 @@ else
 fi
 
 %ifarch %{ix86} x86_64
-# sdl outputs to alsa or pulseaudio directly depending on what the system has configured
+# sdl outputs to alsa or pulseaudio depending on system config, but it's broken (#495964)
 # alsa works, but causes huge CPU load due to bugs
 # oss works, but is very problematic because it grabs exclusive control of the device causing other apps to go haywire
 ./configure --target-list=x86_64-softmmu \
             --kerneldir=$(pwd)/kernel --prefix=%{_prefix} \
-            --audio-drv-list=sdl,alsa,oss \
+            --audio-drv-list=pa,sdl,alsa,oss \
             --with-patched-kernel \
             --disable-strip \
             --qemu-ldflags=$extraldflags \
@@ -280,7 +281,7 @@ cd qemu
     --disable-strip \
     --disable-kvm \
     --extra-ldflags=$extraldflags \
-    --audio-drv-list=sdl,alsa,oss \
+    --audio-drv-list=pa,sdl,alsa,oss \
     --extra-cflags="$RPM_OPT_FLAGS"
 
 
@@ -467,6 +468,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Apr 21 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10-13
+- Enable pulseaudio driver to fix qemu lockup at shutdown (#495964)
+
 * Tue Apr 21 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10-12
 - Another qcow2 image corruption fix (#496642)
 
