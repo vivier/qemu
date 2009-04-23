@@ -15,9 +15,9 @@ URL: http://www.qemu.org/
 #   $> make-release qemu-kvm-%{version}.tar.gz $(pwd)/kvm v2.6.29-6998-g1d0cdf1 \
 #                                              $(pwd)/kvm-userspace kvm-84-196-ga01bd3f
 Source0: qemu-kvm-%{version}.tar.gz
-
-Source1: qemu.init
-Source2: kvm.modules
+Source1: make-release
+Source2: qemu.init
+Source3: kvm.modules
 
 Patch1: 01-tls-handshake-fix.patch
 Patch2: 02-vnc-monitor-info.patch
