@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10
-Release: 14%{?dist}
+Release: 15%{?dist}
 # I have mistakenly thought the revision name would be 1.0.
 # So 0.10 series get Epoch = 1
 Epoch: 2
@@ -292,7 +292,7 @@ rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/modules
 mkdir -p $RPM_BUILD_ROOT%{_bindir}/
 
-install -m 0755 %{SOURCE2} $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/modules/kvm.modules
+install -m 0755 %{SOURCE3} $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/modules/kvm.modules
 install -m 0755 kvmtrace $RPM_BUILD_ROOT%{_bindir}/
 install -m 0755 kvmtrace_format $RPM_BUILD_ROOT%{_bindir}/
 install -m 0755 kvm_stat $RPM_BUILD_ROOT%{_bindir}/
@@ -308,7 +308,7 @@ make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
      docdir="${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}" \
      datadir="${RPM_BUILD_ROOT}%{_prefix}/share/qemu" install
 chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
-install -D -p -m 0755 %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/qemu
+install -D -p -m 0755 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/qemu
 install -D -p -m 0644 -t ${RPM_BUILD_ROOT}/%{qemudocdir} Changelog README TODO COPYING COPYING.LIB LICENSE
 
 install -D -p -m 0644 qemu.sasl $RPM_BUILD_ROOT%{_sysconfdir}/sasl2/qemu.conf
@@ -466,6 +466,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Apr 24 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10-15
+- Fix source numbering typos caused by make-release addition
+
 * Thu Apr 23 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10-14
 - Improve instructions for generating the tarball
 
