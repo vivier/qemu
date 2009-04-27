@@ -1,42 +1,41 @@
+%define kvmvernum  85
+%define kvmvertag  kvm%{kvmvernum}
+%define kvmverfull kvm-devel-%{kvmvernum}
+
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
-Version: 0.10
-Release: 15%{?dist}
-# I have mistakenly thought the revision name would be 1.0.
-# So 0.10 series get Epoch = 1
+Version: 0.10.50
+Release: 1.%{kvmvertag}%{?dist}
+# Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
 Group: Development/Tools
 URL: http://www.qemu.org/
 
-# To re-create the tarball below:
-#   $> git clone git://git.kernel.org/pub/scm/linux/kernel/git/avi/kvm.git
-#   $> git clone git://git.kernel.org/pub/scm/linux/kernel/git/avi/kvm-userspace.git
-#   $> make-release qemu-kvm-%{version}.tar.gz $(pwd)/kvm v2.6.29-6998-g1d0cdf1 \
-#                                              $(pwd)/kvm-userspace kvm-84-196-ga01bd3f
-Source0: qemu-kvm-%{version}.tar.gz
-Source1: make-release
-Source2: qemu.init
-Source3: kvm.modules
+Source0: http://download.sourceforge.net/sourceforge/kvm/qemu-%{kvmverfull}.tar.gz
+Source1: qemu.init
+Source2: kvm.modules
 
-Patch1: 01-tls-handshake-fix.patch
-Patch2: 02-vnc-monitor-info.patch
-Patch3: 03-display-keymaps.patch
-Patch4: 04-vnc-struct.patch
-Patch5: 05-vnc-tls-vencrypt.patch
-Patch6: 06-vnc-sasl.patch
-Patch7: 07-vnc-monitor-authinfo.patch
-Patch8: 08-vnc-acl-mgmt.patch
+# Hack until merge happens upstream
+Patch01: kvm-upstream-ppc.patch
 
-Patch9: kvm-upstream-ppc.patch
-Patch10: qemu-fix-debuginfo.patch
-Patch11: qemu-fix-gcc.patch
-Patch12: qemu-roms-more-room.patch
-Patch13: qemu-roms-more-room-fix-vga-align.patch
-Patch14: qemu-bios-bigger-roms.patch
-Patch15: qemu-fix-display-breakage.patch
-Patch16: qemu-fix-qcow2-2TB.patch
-Patch17: qemu-fix-qcow2-corruption.patch
+# Not upstream, why?
+Patch02: qemu-bios-bigger-roms.patch
+
+# Fixed upstream by f753ff1638
+Patch03: qemu-roms-more-room-fix-vga-align.patch
+
+# Fixed upstream by 641636d19e
+Patch04: qemu-fix-qcow2-corruption.patch
+
+# Seen on kvm list
+Patch05: qemu-virtio-blk-boot-on.patch
+
+# kvm-85 build fix, submitted upstream
+Patch06: qemu-fix-arm-framebuffer-build.patch
+
+# Disable preadv()/pwritev() until bug #497429 is fixed
+Patch07: qemu-disable-preadv.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -206,25 +205,20 @@ such as kvmtrace and kvm_stat.
 %endif
 
 %prep
-%setup -q -n qemu-kvm-%{version}
+%setup -q -n qemu-%{kvmverfull}
 
-%patch1 -p1
-%patch2 -p1
-%patch3 -p1
-%patch4 -p1
-%patch5 -p1
-%patch6 -p1
-%patch7 -p1
-%patch8 -p1
-%patch9 -p1
-%patch10 -p1
-%patch11 -p1
-%patch12 -p1
-%patch13 -p1
-%patch14 -p1
-%patch15 -p1
-%patch16 -p1
-%patch17 -p1
+#
+# Hack - kvm-85 missing kernel/include/asm symlink
+#
+(cd kernel/include && ln -s asm-x86 asm)
+
+%patch01 -p1 -b .kvm-upstream-ppc
+%patch02 -p1 -b .bios-bigger-roms
+%patch03 -p1 -b .roms-more-room-fix-vga-align
+%patch04 -p1 -b .fix-qcow2-corruption
+%patch05 -p1 -b .virtio-blk-boot-on
+%patch06 -p1 -b .framebuffer-build-fix
+%patch07 -p1 -b .disable-preadv
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -262,7 +256,6 @@ cp user/kvmtrace_format  .
 make clean
 %endif
 
-echo "%{name}-%{version}" > $(pwd)/kernel/.kernelrelease
 cd qemu
 ./configure \
     --target-list="i386-softmmu x86_64-softmmu arm-softmmu cris-softmmu m68k-softmmu \
@@ -282,8 +275,7 @@ cd qemu
     --audio-drv-list=pa,sdl,alsa,oss \
     --extra-cflags="$RPM_OPT_FLAGS"
 
-
-make %{?_smp_mflags} $buildldflags
+make V=1 %{?_smp_mflags} $buildldflags
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -292,7 +284,7 @@ rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/modules
 mkdir -p $RPM_BUILD_ROOT%{_bindir}/
 
-install -m 0755 %{SOURCE3} $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/modules/kvm.modules
+install -m 0755 %{SOURCE2} $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/modules/kvm.modules
 install -m 0755 kvmtrace $RPM_BUILD_ROOT%{_bindir}/
 install -m 0755 kvmtrace_format $RPM_BUILD_ROOT%{_bindir}/
 install -m 0755 kvm_stat $RPM_BUILD_ROOT%{_bindir}/
@@ -308,7 +300,7 @@ make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
      docdir="${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}" \
      datadir="${RPM_BUILD_ROOT}%{_prefix}/share/qemu" install
 chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
-install -D -p -m 0755 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/qemu
+install -D -p -m 0755 %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/qemu
 install -D -p -m 0644 -t ${RPM_BUILD_ROOT}/%{qemudocdir} Changelog README TODO COPYING COPYING.LIB LICENSE
 
 install -D -p -m 0644 qemu.sasl $RPM_BUILD_ROOT%{_sysconfdir}/sasl2/qemu.conf
@@ -338,8 +330,6 @@ ln -s ../bochs/BIOS-bochs-kvm %{buildroot}/%{_prefix}/share/qemu/bios.bin
 ln -s ../openbios/openbios-ppc %{buildroot}/%{_prefix}/share/qemu/openbios-ppc
 ln -s ../openbios/openbios-sparc32 %{buildroot}/%{_prefix}/share/qemu/openbios-sparc32
 ln -s ../openbios/openbios-sparc64 %{buildroot}/%{_prefix}/share/qemu/openbios-sparc64
-
-
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -463,9 +453,22 @@ fi
 %files img
 %defattr(-,root,root)
 %{_bindir}/qemu-img
+%{_bindir}/qemu-io
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Apr 27 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-1.kvm85
+- Update to qemu-kvm-devel-85
+- kvm-85 is based on qemu development branch, currently version 0.10.50
+- Include new qemu-io utility in qemu-img package
+- Re-instate -help string for boot=on to fix virtio booting with libvirt
+- Drop upstreamed patches
+- Fix missing kernel/include/asm symlink in upstream tarball
+- Fix target-arm build
+- Disable preadv()/pwritev() until bug #497429 is fixed
+- Kill more .kernelrelease uselessness
+- Make non-kvm qemu build verbose
+
 * Fri Apr 24 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10-15
 - Fix source numbering typos caused by make-release addition
 
