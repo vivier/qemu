@@ -37,6 +37,9 @@ Patch06: qemu-fix-arm-framebuffer-build.patch
 # Disable preadv()/pwritev() until bug #497429 is fixed
 Patch07: qemu-disable-preadv.patch
 
+# Fix build on ppc; cutils.c needs cache-utils.c
+Patch08: qemu-add-cache-utils-to-block-objs.patch
+
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
 BuildRequires: rsync dev86 iasl
@@ -219,6 +222,7 @@ such as kvmtrace and kvm_stat.
 %patch05 -p1 -b .virtio-blk-boot-on
 %patch06 -p1 -b .framebuffer-build-fix
 %patch07 -p1 -b .disable-preadv
+%patch08 -p1 -b .add-cache-utils-to-block-objs
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -465,6 +469,7 @@ fi
 - Drop upstreamed patches
 - Fix missing kernel/include/asm symlink in upstream tarball
 - Fix target-arm build
+- Fix build on ppc
 - Disable preadv()/pwritev() until bug #497429 is fixed
 - Kill more .kernelrelease uselessness
 - Make non-kvm qemu build verbose
