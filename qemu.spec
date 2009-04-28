@@ -5,7 +5,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10.50
-Release: 1.%{kvmvertag}%{?dist}
+Release: 2.%{kvmvertag}%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -71,6 +71,22 @@ emulation speed by using dynamic translation. QEMU has two operating modes:
 
 As QEMU requires no host kernel patches to run, it is safe and easy to use.
 
+%package kvm
+Summary: QEMU metapackage for KVM support
+Group: Development/Tools
+%ifarch %{ix86} x86_64
+Requires: qemu-system-x86 = %{epoch}:%{version}-%{release}
+%endif
+%ifarch ppc ppc64
+Requires: qemu-system-ppc = %{epoch}:%{version}-%{release}
+%endif
+
+%description kvm
+This is a meta-package that provides a qemu-system-<arch> package for native
+architectures where kvm can be enabled. For example, in an x86 system, this
+will install qemu-system-x86
+
+
 %package  img
 Summary: QEMU command line tool for manipulating disk images
 Group: Development/Tools
@@ -111,9 +127,6 @@ Requires: vgabios
 Requires: bochs-bios >= 2.3.8-0.5
 Provides: kvm = 85
 Obsoletes: kvm < 85
-%ifarch %{ix86} x86_64
-Provides: qemu-kvm = %{epoch}:%{version}-%{release}
-%endif
 
 %description system-x86
 QEMU is a generic and open source processor emulator which achieves a good
@@ -128,9 +141,6 @@ Summary: QEMU system emulator for ppc
 Group: Development/Tools
 Requires: %{name}-common = %{epoch}:%{version}-%{release}
 Requires: openbios-ppc
-%ifarch ppc ppc64
-Provides: qemu-kvm = %{epoch}:%{version}-%{release}
-%endif
 %description system-ppc
 QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
@@ -461,6 +471,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Apr 28 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-2.kvm85
+- Provide qemu-kvm as a metapackage for comps
+
 * Mon Apr 27 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-1.kvm85
 - Update to qemu-kvm-devel-85
 - kvm-85 is based on qemu development branch, currently version 0.10.50
