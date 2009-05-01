@@ -5,7 +5,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10.50
-Release: 2.%{kvmvertag}%{?dist}
+Release: 3.%{kvmvertag}%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -372,6 +372,9 @@ fi
 %files 
 %defattr(-,root,root)
 
+%files kvm
+%defattr(-,root,root)
+
 %files common
 %defattr(-,root,root)
 %doc %{qemudocdir}/Changelog
@@ -471,6 +474,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri May  1 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-3.kvm85
+- Really provide qemu-kvm as a metapackage for comps
+
 * Tue Apr 28 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-2.kvm85
 - Provide qemu-kvm as a metapackage for comps
 
