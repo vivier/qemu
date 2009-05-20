@@ -302,6 +302,8 @@ make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
      datadir="${RPM_BUILD_ROOT}%{_datadir}/%{name}" install
 #chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
 install -D -p -m 0755 %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/qemu
+
+mkdir -p ${RPM_BUILD_ROOT}/%{qemudocdir}
 install -D -p -m 0644 -t ${RPM_BUILD_ROOT}/%{qemudocdir} Changelog README TODO COPYING COPYING.LIB LICENSE
 
 install -D -p -m 0644 qemu.sasl $RPM_BUILD_ROOT%{_sysconfdir}/sasl2/qemu.conf
