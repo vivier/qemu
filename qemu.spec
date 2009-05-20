@@ -29,7 +29,9 @@ Patch03: qemu-fix-arm-framebuffer-build.patch
 Patch04: qemu-disable-preadv.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
+# https://bugzilla.redhat.com/501651
+# BuildRequires: texi2html
+BuildRequires: SDL-devel zlib-devel which gnutls-devel cyrus-sasl-devel
 BuildRequires: rsync dev86 iasl
 BuildRequires: pciutils-devel
 BuildRequires: pulseaudio-libs-devel
@@ -457,6 +459,7 @@ fi
 * Wed May 20 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-4.kvm86
 - Update to kvm-86 release
 - ChangeLog here: http://marc.info/?l=kvm&m=124282885729710
+- Temporarily disable docs build until bug #501651 is fixed
 
 * Fri May  1 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-3.kvm85
 - Really provide qemu-kvm as a metapackage for comps
