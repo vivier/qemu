@@ -1,6 +1,6 @@
-diff -up qemu-kvm-devel-85/qemu/configure.disable-preadv qemu-kvm-devel-85/qemu/configure
---- qemu-kvm-devel-85/qemu/configure.disable-preadv	2009-04-27 16:09:05.000000000 +0100
-+++ qemu-kvm-devel-85/qemu/configure	2009-04-27 16:09:36.000000000 +0100
+diff -up qemu-kvm-devel-86/configure.disable-preadv qemu-kvm-devel-86/configure
+--- qemu-kvm-devel-86/configure.disable-preadv	2009-04-27 16:09:05.000000000 +0100
++++ qemu-kvm-devel-86/configure	2009-04-27 16:09:36.000000000 +0100
 @@ -1189,9 +1189,9 @@ cat > $TMPC <<EOF
  int main(void) { preadv; }
  EOF

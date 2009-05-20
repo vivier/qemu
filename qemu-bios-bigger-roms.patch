@@ -1,7 +1,7 @@
-diff --git a/bios/rombios.c b/bios/rombios.c
+diff --git a/kvm/bios/rombios.c b/kvm/bios/rombios.c
 index c4f6ccd..c4bfe60 100644
---- a/bios/rombios.c
-+++ b/bios/rombios.c
+--- a/kvm/bios/rombios.c
++++ b/kvm/bios/rombios.c
 @@ -10196,22 +10196,43 @@ no_serial:
    ret
  
