@@ -29,7 +29,7 @@ Patch03: qemu-fix-arm-framebuffer-build.patch
 Patch04: qemu-disable-preadv.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-BuildRequires: SDL-devel zlib-devel which gnutls-devel cyrus-sasl-devel
+BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
 BuildRequires: rsync dev86 iasl
 BuildRequires: pciutils-devel
 BuildRequires: pulseaudio-libs-devel
