@@ -28,13 +28,6 @@ Patch03: qemu-fix-arm-framebuffer-build.patch
 # Disable preadv()/pwritev() until bug #497429 is fixed
 Patch04: qemu-disable-preadv.patch
 
-# FIXME: docs build disabled for now, see:
-#   https://bugzilla.redhat.com/501651
-#
-# BuildRequires: texi2html
-#
-# See all the %{_mandir} bits commented out below too
-
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which gnutls-devel cyrus-sasl-devel
 BuildRequires: rsync dev86 iasl
@@ -300,10 +293,8 @@ make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
      mandir="${RPM_BUILD_ROOT}%{_mandir}" \
      docdir="${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}" \
      datadir="${RPM_BUILD_ROOT}%{_datadir}/%{name}" install
-#chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
+chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
 install -D -p -m 0755 %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/qemu
-
-mkdir -p ${RPM_BUILD_ROOT}/%{qemudocdir}
 install -D -p -m 0644 -t ${RPM_BUILD_ROOT}/%{qemudocdir} Changelog README TODO COPYING COPYING.LIB LICENSE
 
 install -D -p -m 0644 qemu.sasl $RPM_BUILD_ROOT%{_sysconfdir}/sasl2/qemu.conf
@@ -376,8 +367,8 @@ fi
 %doc %{qemudocdir}/LICENSE
 %dir %{_datadir}/%{name}/
 %{_datadir}/%{name}/keymaps/
-#%{_mandir}/man1/qemu.1*
-#%{_mandir}/man8/qemu-nbd.8*
+%{_mandir}/man1/qemu.1*
+%{_mandir}/man8/qemu-nbd.8*
 %{_bindir}/qemu-nbd
 %config(noreplace) %{_sysconfdir}/sasl2/qemu.conf
 %files user
@@ -460,13 +451,12 @@ fi
 %defattr(-,root,root)
 %{_bindir}/qemu-img
 %{_bindir}/qemu-io
-#%{_mandir}/man1/qemu-img.1*
+%{_mandir}/man1/qemu-img.1*
 
 %changelog
-* Wed May 20 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-4.kvm86
+* Thu May 21 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-4.kvm86
 - Update to kvm-86 release
 - ChangeLog here: http://marc.info/?l=kvm&m=124282885729710
-- Temporarily disable docs build until bug #501651 is fixed
 
 * Fri May  1 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-3.kvm85
 - Really provide qemu-kvm as a metapackage for comps
