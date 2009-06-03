@@ -5,7 +5,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10.50
-Release: 4.%{kvmvertag}%{?dist}
+Release: 5.%{kvmvertag}%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -27,6 +27,12 @@ Patch03: qemu-fix-arm-framebuffer-build.patch
 
 # Disable preadv()/pwritev() until bug #497429 is fixed
 Patch04: qemu-disable-preadv.patch
+
+# Fix hang at end of anaconda cd installs (#50142)
+Patch05: qemu-prevent-cdrom-media-eject-while-device-is-locked.patch
+
+# Avoid harmless "unhandled wrmsr" warnings (#499712)
+Patch06: qemu-avoid-harmless-msr-warnings.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -211,6 +217,8 @@ such as kvmtrace and kvm_stat.
 %patch02 -p1 -b .bios-bigger-roms
 %patch03 -p1 -b .framebuffer-build-fix
 %patch04 -p1 -b .disable-preadv
+%patch05 -p1 -b .prevent-cdrom-eject
+%patch06 -p1 -b .wrmsr-warnings
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -454,6 +462,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Jun  3 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-5.kvm86
+- Prevent locked cdrom eject - fixes hang at end of anaconda installs (#501412)
+- Avoid harmless 'unhandled wrmsr' warnings (#499712)
+
 * Thu May 21 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-4.kvm86
 - Update to kvm-86 release
 - ChangeLog here: http://marc.info/?l=kvm&m=124282885729710
