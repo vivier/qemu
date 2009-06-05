@@ -5,7 +5,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10.50
-Release: 5.%{kvmvertag}%{?dist}
+Release: 6.%{kvmvertag}%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -34,11 +34,15 @@ Patch05: qemu-prevent-cdrom-media-eject-while-device-is-locked.patch
 # Avoid harmless "unhandled wrmsr" warnings (#499712)
 Patch06: qemu-avoid-harmless-msr-warnings.patch
 
+# Fix from upstream for "kernel requires an x86-64 CPU" error
+Patch07: qemu-fix-cpuid-trimming.patch
+
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
 BuildRequires: rsync dev86 iasl
 BuildRequires: pciutils-devel
 BuildRequires: pulseaudio-libs-devel
+BuildRequires: ncurses-devel
 Requires: %{name}-user = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-x86 = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-sparc = %{epoch}:%{version}-%{release}
@@ -219,6 +223,7 @@ such as kvmtrace and kvm_stat.
 %patch04 -p1 -b .disable-preadv
 %patch05 -p1 -b .prevent-cdrom-eject
 %patch06 -p1 -b .wrmsr-warnings
+%patch07 -p1 -b .cpuid-trimming
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -462,6 +467,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Jun  5 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-6.kvm86
+- Fix 'kernel requires an x86-64 CPU' error
+- BuildRequires ncurses-devel to enable '-curses' option (#504226)
+
 * Wed Jun  3 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-5.kvm86
 - Prevent locked cdrom eject - fixes hang at end of anaconda installs (#501412)
 - Avoid harmless 'unhandled wrmsr' warnings (#499712)
