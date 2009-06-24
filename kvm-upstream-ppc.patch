@@ -1,7 +1,7 @@
-From 796d42657fb238cf23a78620051f533662557e2b Mon Sep 17 00:00:00 2001
+From b16ca7f06c09f46cc6dda7c49a31edc9a3325956 Mon Sep 17 00:00:00 2001
 From: Glauber Costa <glommer@redhat.com>
-Date: Fri, 13 Feb 2009 13:00:31 -0500
-Subject: [PATCH] use KVM_UPSTREAM for ppc.
+Date: Wed, 24 Jun 2009 14:22:57 +0100
+Subject: [PATCH 1/7] use KVM_UPSTREAM for ppc.
 
 ppc should compile with upstream qemu code, so, put these
 defines in ppc specific code that references kvm functions.
@@ -11,17 +11,18 @@ files (like vl.c) that includes both kvm.h and qemu-kvm.h,
 and would break compilation.
 
 Signed-off-by: Glauber Costa <glommer@redhat.com>
+Signed-off-by: Mark McLoughlin <markmc@redhat.com>
 ---
  hw/ppc440.c            |    1 +
  hw/ppc440_bamboo.c     |    1 +
  hw/ppce500_mpc8544ds.c |    1 +
- target-ppc/helper.c    |    2 +-
- 4 files changed, 4 insertions(+), 1 deletion(-)
+ target-ppc/helper.c    |    1 +
+ 4 files changed, 4 insertions(+), 0 deletions(-)
 
-Index: qemu-kvm-0.10.4/hw/ppc440.c
-===================================================================
---- qemu-kvm-0.10.orig/qemu/hw/ppc440.c
-+++ qemu-kvm-0.10.4/hw/ppc440.c
+diff --git a/hw/ppc440.c b/hw/ppc440.c
+index 00d82e4..164c326 100644
+--- a/hw/ppc440.c
++++ b/hw/ppc440.c
 @@ -18,6 +18,7 @@
  #include "ppc440.h"
  #include "ppc405.h"
@@ -30,10 +31,10 @@ Index: qemu-kvm-0.10.4/hw/ppc440.c
  #include "kvm.h"
  
  #define PPC440EP_PCI_CONFIG     0xeec00000
-Index: qemu-kvm-0.10.4/hw/ppc440_bamboo.c
-===================================================================
---- qemu-kvm-0.10.orig/qemu/hw/ppc440_bamboo.c
-+++ qemu-kvm-0.10.4/hw/ppc440_bamboo.c
+diff --git a/hw/ppc440_bamboo.c b/hw/ppc440_bamboo.c
+index 6963309..cf5b35b 100644
+--- a/hw/ppc440_bamboo.c
++++ b/hw/ppc440_bamboo.c
 @@ -21,6 +21,7 @@
  #include "boards.h"
  #include "sysemu.h"
@@ -42,10 +43,10 @@ Index: qemu-kvm-0.10.4/hw/ppc440_bamboo.c
  #include "kvm.h"
  #include "kvm_ppc.h"
  #include "device_tree.h"
-Index: qemu-kvm-0.10.4/hw/ppce500_mpc8544ds.c
-===================================================================
---- qemu-kvm-0.10.orig/qemu/hw/ppce500_mpc8544ds.c
-+++ qemu-kvm-0.10.4/hw/ppce500_mpc8544ds.c
+diff --git a/hw/ppce500_mpc8544ds.c b/hw/ppce500_mpc8544ds.c
+index d946f03..4692c96 100644
+--- a/hw/ppce500_mpc8544ds.c
++++ b/hw/ppce500_mpc8544ds.c
 @@ -16,6 +16,7 @@
  
  #include <dirent.h>
@@ -54,10 +55,10 @@ Index: qemu-kvm-0.10.4/hw/ppce500_mpc8544ds.c
  #include "config.h"
  #include "qemu-common.h"
  #include "net.h"
-Index: qemu-kvm-0.10.4/target-ppc/helper.c
-===================================================================
---- qemu-kvm-0.10.orig/qemu/target-ppc/helper.c
-+++ qemu-kvm-0.10.4/target-ppc/helper.c
+diff --git a/target-ppc/helper.c b/target-ppc/helper.c
+index db765e3..721d467 100644
+--- a/target-ppc/helper.c
++++ b/target-ppc/helper.c
 @@ -29,6 +29,7 @@
  #include "exec-all.h"
  #include "helper_regs.h"
@@ -66,3 +67,6 @@ Index: qemu-kvm-0.10.4/target-ppc/helper.c
  #include "kvm.h"
  
  //#define DEBUG_MMU
+-- 
+1.6.2.2
+

@@ -1,7 +1,7 @@
-From d283d5a65a2bdcc570065267be21848bd6fe3d78 Mon Sep 17 00:00:00 2001
+From 3084ee6394248dd27946acb609c758d0778d7b9a Mon Sep 17 00:00:00 2001
 From: Marcelo Tosatti <mtosatti@redhat.com>
-Date: Thu, 7 May 2009 15:48:48 -0300
-Subject: [PATCH 1/1] Avoid harmless unhandled wrmsr 0xc0010117 messages
+Date: Wed, 24 Jun 2009 14:38:34 +0100
+Subject: [PATCH 6/7] Avoid harmless unhandled wrmsr 0xc0010117 messages
 
 Olders kernel which don't contain kvm.git commit
 61a6bd672bda3b9468bf5895c1be085c4e481138 display the following message:
@@ -15,12 +15,13 @@ how MSR_STAR is handled.
 
 Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
 Signed-off-by: Avi Kivity <avi@redhat.com>
+Signed-off-by: Mark McLoughlin <markmc@redhat.com>
 ---
  qemu-kvm-x86.c |   15 +++++++++++----
  1 files changed, 11 insertions(+), 4 deletions(-)
 
 diff --git a/qemu-kvm-x86.c b/qemu-kvm-x86.c
-index 98aa530..1096e65 100644
+index 856b70c..505cc4c 100644
 --- a/qemu-kvm-x86.c
 +++ b/qemu-kvm-x86.c
 @@ -25,6 +25,7 @@
@@ -69,5 +70,5 @@ index 98aa530..1096e65 100644
      if (lm_capable_kernel) {
          msrs[n++].index = MSR_CSTAR;
 -- 
-1.6.0.6
+1.6.2.2
 

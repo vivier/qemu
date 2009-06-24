@@ -1,6 +1,7 @@
+From f23654c39f867d906239a6b773ea2997cd55fc46 Mon Sep 17 00:00:00 2001
 From: Mark McLoughlin <markmc@redhat.com>
 Date: Mon, 27 Apr 2009 10:18:14 +0100
-Subject: [PATCH] kvm: qemu: framebuffer: build fix for target-arm
+Subject: [PATCH 3/7] kvm: qemu: framebuffer: build fix for target-arm
 
 Include qemu-kvm.h for non-KVM_UPSTREAM building and surround the
 kvm code with USE_KVM guards.
@@ -41,5 +42,5 @@ index 1086ba9..e2d7604 100644
      pd2 = cpu_get_physical_page_desc(base + src_len - 1);
      /* We should reall check that this is a continuous ram region.
 -- 
-1.6.0.6
+1.6.2.2
 

@@ -1,8 +1,31 @@
+From 3a9288fab031a820afa7be96e355c28ded1546bf Mon Sep 17 00:00:00 2001
+From: Glauber Costa <glommer@redhat.com>
+Date: Wed, 24 Jun 2009 14:31:41 +0100
+Subject: [PATCH 2/7] compute checksum for roms bigger than a segment
+
+Some option roms (e1000 provided by gpxe project as an example)
+are bigger than a segment. The current algorithm to compute the
+checksum fails in such case. To proper compute the checksum, this
+patch deals with the possibility of the rom's size crossing a
+segment border.
+
+We don't need to worry about it crossing more than one segment
+border, since the option roms format only save one byte to store
+the image size (thus, maximum size = 0xff = 128k = 2 segments)
+
+[ including improvements suggested by malc ]
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+Signed-off-by: Mark McLoughlin <markmc@redhat.com>
+---
+ kvm/bios/rombios.c |   33 +++++++++++++++++++++++++++------
+ 1 files changed, 27 insertions(+), 6 deletions(-)
+
 diff --git a/kvm/bios/rombios.c b/kvm/bios/rombios.c
-index c4f6ccd..c4bfe60 100644
+index 6186199..fc289c0 100644
 --- a/kvm/bios/rombios.c
 +++ b/kvm/bios/rombios.c
-@@ -10196,22 +10196,43 @@ no_serial:
+@@ -10170,22 +10170,43 @@ no_serial:
    ret
  
  rom_checksum:
@@ -50,3 +73,8 @@ index c4f6ccd..c4bfe60 100644
 +  pop  ds
 +  popa 
    ret
+ 
+ 
+-- 
+1.6.2.2
+
