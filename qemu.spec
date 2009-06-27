@@ -1,11 +1,11 @@
-%define kvmvernum  86
+%define kvmvernum  87
 %define kvmvertag  kvm%{kvmvernum}
 %define kvmverfull kvm-devel-%{kvmvernum}
 
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10.50
-Release: 6.%{kvmvertag}%{?dist}
+Release: 7.%{kvmvertag}%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -21,21 +21,6 @@ Patch01: kvm-upstream-ppc.patch
 
 # Not upstream, why?
 Patch02: qemu-bios-bigger-roms.patch
-
-# kvm-85 build fix, submitted upstream
-Patch03: qemu-fix-arm-framebuffer-build.patch
-
-# Disable preadv()/pwritev() until bug #497429 is fixed
-Patch04: qemu-disable-preadv.patch
-
-# Fix hang at end of anaconda cd installs (#50142)
-Patch05: qemu-prevent-cdrom-media-eject-while-device-is-locked.patch
-
-# Avoid harmless "unhandled wrmsr" warnings (#499712)
-Patch06: qemu-avoid-harmless-msr-warnings.patch
-
-# Fix from upstream for "kernel requires an x86-64 CPU" error
-Patch07: qemu-fix-cpuid-trimming.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -219,11 +204,6 @@ such as kvmtrace and kvm_stat.
 
 %patch01 -p1 -b .kvm-upstream-ppc
 %patch02 -p1 -b .bios-bigger-roms
-%patch03 -p1 -b .framebuffer-build-fix
-%patch04 -p1 -b .disable-preadv
-%patch05 -p1 -b .prevent-cdrom-eject
-%patch06 -p1 -b .wrmsr-warnings
-%patch07 -p1 -b .cpuid-trimming
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -467,6 +447,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Sat Jun 27 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-7.kvm87
+- Update to kvm-87
+- Drop upstreamed patches
+- Re-enable preadv()/pwritev() since #497429 is long since fixed
+
 * Fri Jun  5 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-6.kvm86
 - Fix 'kernel requires an x86-64 CPU' error
 - BuildRequires ncurses-devel to enable '-curses' option (#504226)

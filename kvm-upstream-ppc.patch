@@ -1,7 +1,7 @@
-From b16ca7f06c09f46cc6dda7c49a31edc9a3325956 Mon Sep 17 00:00:00 2001
+From d1f92ec1f31fa25b447c8c54ccb36f33da97af69 Mon Sep 17 00:00:00 2001
 From: Glauber Costa <glommer@redhat.com>
 Date: Wed, 24 Jun 2009 14:22:57 +0100
-Subject: [PATCH 1/7] use KVM_UPSTREAM for ppc.
+Subject: [PATCH] use KVM_UPSTREAM for ppc.
 
 ppc should compile with upstream qemu code, so, put these
 defines in ppc specific code that references kvm functions.
@@ -32,10 +32,10 @@ index 00d82e4..164c326 100644
  
  #define PPC440EP_PCI_CONFIG     0xeec00000
 diff --git a/hw/ppc440_bamboo.c b/hw/ppc440_bamboo.c
-index 6963309..cf5b35b 100644
+index 00aa2c7..565571d 100644
 --- a/hw/ppc440_bamboo.c
 +++ b/hw/ppc440_bamboo.c
-@@ -21,6 +21,7 @@
+@@ -19,6 +19,7 @@
  #include "boards.h"
  #include "sysemu.h"
  #include "ppc440.h"
@@ -44,7 +44,7 @@ index 6963309..cf5b35b 100644
  #include "kvm_ppc.h"
  #include "device_tree.h"
 diff --git a/hw/ppce500_mpc8544ds.c b/hw/ppce500_mpc8544ds.c
-index d946f03..4692c96 100644
+index d9ed36c..49cc135 100644
 --- a/hw/ppce500_mpc8544ds.c
 +++ b/hw/ppce500_mpc8544ds.c
 @@ -16,6 +16,7 @@
@@ -56,10 +56,10 @@ index d946f03..4692c96 100644
  #include "qemu-common.h"
  #include "net.h"
 diff --git a/target-ppc/helper.c b/target-ppc/helper.c
-index db765e3..721d467 100644
+index 5a7a935..c150432 100644
 --- a/target-ppc/helper.c
 +++ b/target-ppc/helper.c
-@@ -29,6 +29,7 @@
+@@ -28,6 +28,7 @@
  #include "exec-all.h"
  #include "helper_regs.h"
  #include "qemu-common.h"
