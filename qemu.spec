@@ -25,6 +25,9 @@ Patch02: qemu-fix-ppc-softmmu-kvm-disabled-build.patch
 # Works around broken linux-user build on ppc
 Patch03: qemu-fix-broken-elf-coredump-build-on-ppc.patch
 
+# Fix for hw/pcspk.c errors with --disable-kvm
+Patch04: qemu-fix-pcspk-build-with-kvm-disabled.patch
+
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
 BuildRequires: rsync dev86 iasl
@@ -208,6 +211,7 @@ such as kvmtrace and kvm_stat.
 %patch01 -p1
 %patch02 -p1
 %patch03 -p1
+%patch04 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -456,6 +460,7 @@ fi
 - Drop upstreamed patches
 - Cherry-pick new ppc build fix from upstream
 - Work around broken linux-user build on ppc
+- Fix hw/pcspk.c build with --disable-kvm
 - Re-enable preadv()/pwritev() since #497429 is long since fixed
 
 * Fri Jun  5 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-6.kvm86
