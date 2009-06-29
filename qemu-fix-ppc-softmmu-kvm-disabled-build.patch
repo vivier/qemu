@@ -1,0 +1,97 @@
+From 398e45e57ee98e9d1a7387816b53d7038d1c3283 Mon Sep 17 00:00:00 2001
+From: Anthony Liguori <aliguori@us.ibm.com>
+Date: Wed, 24 Jun 2009 14:25:15 -0500
+Subject: [PATCH] Fix ppc-softmmu kvm-disabled build
+
+This gets ppc-softmmu building when KVM is not enabled.  It may be enough to get
+it working with KVM enabled but I haven't checked.
+
+(cherry picked from commit 9011bae8e2101095aae53f1f1553ca3e72919f9b)
+
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Avi Kivity <avi@redhat.com>
+Signed-off-by: Mark McLoughlin <markmc@redhat.com>
+---
+ hw/ppc440.c            |    1 +
+ hw/ppc440_bamboo.c     |    1 +
+ hw/ppce500_mpc8544ds.c |    1 +
+ qemu-kvm.h             |    1 +
+ target-ppc/helper.c    |    1 +
+ target-ppc/machine.c   |    1 +
+ 6 files changed, 6 insertions(+), 0 deletions(-)
+
+diff --git a/hw/ppc440.c b/hw/ppc440.c
+index 00d82e4..c2c9e65 100644
+--- a/hw/ppc440.c
++++ b/hw/ppc440.c
+@@ -19,6 +19,7 @@
+ #include "ppc405.h"
+ #include "sysemu.h"
+ #include "kvm.h"
++#include "qemu-kvm.h"
+ 
+ #define PPC440EP_PCI_CONFIG     0xeec00000
+ #define PPC440EP_PCI_INTACK     0xeed00000
+diff --git a/hw/ppc440_bamboo.c b/hw/ppc440_bamboo.c
+index 00aa2c7..e4aad39 100644
+--- a/hw/ppc440_bamboo.c
++++ b/hw/ppc440_bamboo.c
+@@ -22,6 +22,7 @@
+ #include "kvm.h"
+ #include "kvm_ppc.h"
+ #include "device_tree.h"
++#include "qemu-kvm.h"
+ 
+ #define BINARY_DEVICE_TREE_FILE "bamboo.dtb"
+ 
+diff --git a/hw/ppce500_mpc8544ds.c b/hw/ppce500_mpc8544ds.c
+index d9ed36c..1099b99 100644
+--- a/hw/ppce500_mpc8544ds.c
++++ b/hw/ppce500_mpc8544ds.c
+@@ -29,6 +29,7 @@
+ #include "device_tree.h"
+ #include "openpic.h"
+ #include "ppce500.h"
++#include "qemu-kvm.h"
+ 
+ #define BINARY_DEVICE_TREE_FILE    "mpc8544ds.dtb"
+ #define UIMAGE_LOAD_BASE           0
+diff --git a/qemu-kvm.h b/qemu-kvm.h
+index 68a5b40..9341d0c 100644
+--- a/qemu-kvm.h
++++ b/qemu-kvm.h
+@@ -169,6 +169,7 @@ int kvm_has_sync_mmu(void);
+ void kvm_init_vcpu(CPUState *env);
+ void kvm_load_tsc(CPUState *env);
+ #else
++#define kvm_has_sync_mmu() (0)
+ #define kvm_enabled() (0)
+ #define kvm_nested 0
+ #define qemu_kvm_irqchip_in_kernel() (0)
+diff --git a/target-ppc/helper.c b/target-ppc/helper.c
+index 5a7a935..3629c99 100644
+--- a/target-ppc/helper.c
++++ b/target-ppc/helper.c
+@@ -29,6 +29,7 @@
+ #include "helper_regs.h"
+ #include "qemu-common.h"
+ #include "kvm.h"
++#include "qemu-kvm.h"
+ 
+ //#define DEBUG_MMU
+ //#define DEBUG_BATS
+diff --git a/target-ppc/machine.c b/target-ppc/machine.c
+index 99ba3eb..ec8e197 100644
+--- a/target-ppc/machine.c
++++ b/target-ppc/machine.c
+@@ -1,6 +1,7 @@
+ #include "hw/hw.h"
+ #include "hw/boards.h"
+ #include "kvm.h"
++#include "qemu-kvm.h"
+ 
+ void cpu_save(QEMUFile *f, void *opaque)
+ {
+-- 
+1.6.2.5
+

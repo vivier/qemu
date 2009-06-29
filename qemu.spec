@@ -16,11 +16,11 @@ Source0: http://download.sourceforge.net/sourceforge/kvm/qemu-%{kvmverfull}.tar.
 Source1: qemu.init
 Source2: kvm.modules
 
-# Hack until merge happens upstream
-Patch01: kvm-upstream-ppc.patch
-
 # Not upstream, why?
-Patch02: qemu-bios-bigger-roms.patch
+Patch01: qemu-bios-bigger-roms.patch
+
+# Fixes ppc build, cherry-picked from upstream
+Patch02: qemu-fix-ppc-softmmu-kvm-disabled-build.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -202,8 +202,8 @@ such as kvmtrace and kvm_stat.
 %prep
 %setup -q -n qemu-%{kvmverfull}
 
-%patch01 -p1 -b .kvm-upstream-ppc
-%patch02 -p1 -b .bios-bigger-roms
+%patch01 -p1
+%patch02 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -450,6 +450,7 @@ fi
 * Sat Jun 27 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-7.kvm87
 - Update to kvm-87
 - Drop upstreamed patches
+- Cherry-pick new ppc build fix from upstream
 - Re-enable preadv()/pwritev() since #497429 is long since fixed
 
 * Fri Jun  5 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-6.kvm86
