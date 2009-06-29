@@ -1,4 +1,4 @@
-From 71f761fc6f6289c47fb31ed1ba192f813fb39c58 Mon Sep 17 00:00:00 2001
+From 85da3db92e4b25275426e252974db7eae18e2bb1 Mon Sep 17 00:00:00 2001
 From: Mark McLoughlin <markmc@redhat.com>
 Date: Mon, 29 Jun 2009 16:09:45 +0100
 Subject: [PATCH] Fix pcspk build with kvm disabled

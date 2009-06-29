@@ -19,8 +19,8 @@ Source2: kvm.modules
 # Not upstream, why?
 Patch01: qemu-bios-bigger-roms.patch
 
-# Fixes ppc-softmmu target build, cherry-picked from upstream
-Patch02: qemu-fix-ppc-softmmu-kvm-disabled-build.patch
+# Fixes linux-user build on ppc
+Patch02: qemu-fix-linux-user-build-on-ppc.patch
 
 # Works around broken linux-user build on ppc
 Patch03: qemu-fix-broken-elf-coredump-build-on-ppc.patch
