@@ -19,8 +19,11 @@ Source2: kvm.modules
 # Not upstream, why?
 Patch01: qemu-bios-bigger-roms.patch
 
-# Fixes ppc build, cherry-picked from upstream
+# Fixes ppc-softmmu target build, cherry-picked from upstream
 Patch02: qemu-fix-ppc-softmmu-kvm-disabled-build.patch
+
+# Works around broken linux-user build on ppc
+Patch03: qemu-fix-broken-elf-coredump-build-on-ppc.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -204,6 +207,7 @@ such as kvmtrace and kvm_stat.
 
 %patch01 -p1
 %patch02 -p1
+%patch03 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -451,6 +455,7 @@ fi
 - Update to kvm-87
 - Drop upstreamed patches
 - Cherry-pick new ppc build fix from upstream
+- Work around broken linux-user build on ppc
 - Re-enable preadv()/pwritev() since #497429 is long since fixed
 
 * Fri Jun  5 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-6.kvm86
