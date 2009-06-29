@@ -306,6 +306,7 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/bios.bin
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-ppc
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-sparc32
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-sparc64
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/petalogix-s3adsp1800.dtb
 
 # the pxe etherboot images will be symlinks to the images on
 # /usr/share/etherboot, as QEMU doesn't know how to look
@@ -462,6 +463,7 @@ fi
 - Work around broken linux-user build on ppc
 - Fix hw/pcspk.c build with --disable-kvm
 - Re-enable preadv()/pwritev() since #497429 is long since fixed
+- Kill petalogix-s3adsp1800.dtb, since we don't ship the microblaze target
 
 * Fri Jun  5 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-6.kvm86
 - Fix 'kernel requires an x86-64 CPU' error
