@@ -1,0 +1,62 @@
+From 9cf0574418cc7657618a738dd31337739c635875 Mon Sep 17 00:00:00 2001
+From: Mark McLoughlin <markmc@redhat.com>
+Date: Fri, 3 Jul 2009 09:17:20 +0100
+Subject: [PATCH] Prefer sysfs for USB host devices
+
+Scanning for devices via /sys/bus/usb/devices/ and using them via the
+/dev/bus/usb/<bus>/<device> character devices is the prefered method
+on modern kernels, so try that first.
+
+When using SELinux and libvirt, qemu will have access to /sys/bus/usb
+but not /proc/bus/usb, so although the current code will work just
+fine, it will generate SELinux AVC warnings.
+
+See also:
+
+  https://bugzilla.redhat.com/508326
+
+Reported-by: Daniel Berrange <berrange@redhat.com>
+Signed-off-by: Mark McLoughlin <markmc@redhat.com>
+---
+ usb-linux.c |   18 +++++++++---------
+ 1 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index 67e4acd..3c724ba 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -1265,6 +1265,15 @@ static int usb_host_scan(void *opaque, USBScanFunc *func)
+ 
+     /* only check the host once */
+     if (!usb_fs_type) {
++        dir = opendir(USBSYSBUS_PATH "/devices");
++        if (dir) {
++            /* devices found in /dev/bus/usb/ (yes - not a mistake!) */
++            strcpy(devpath, USBDEVBUS_PATH);
++            usb_fs_type = USB_FS_SYS;
++            closedir(dir);
++            dprintf(USBDBG_DEVOPENED, USBSYSBUS_PATH);
++            goto found_devices;
++        }
+         f = fopen(USBPROCBUS_PATH "/devices", "r");
+         if (f) {
+             /* devices found in /proc/bus/usb/ */
+@@ -1284,15 +1293,6 @@ static int usb_host_scan(void *opaque, USBScanFunc *func)
+             dprintf(USBDBG_DEVOPENED, USBDEVBUS_PATH);
+             goto found_devices;
+         }
+-        dir = opendir(USBSYSBUS_PATH "/devices");
+-        if (dir) {
+-            /* devices found in /dev/bus/usb/ (yes - not a mistake!) */
+-            strcpy(devpath, USBDEVBUS_PATH);
+-            usb_fs_type = USB_FS_SYS;
+-            closedir(dir);
+-            dprintf(USBDBG_DEVOPENED, USBSYSBUS_PATH);
+-            goto found_devices;
+-        }
+     found_devices:
+         if (!usb_fs_type) {
+             monitor_printf(mon, "husb: unable to access USB devices\n");
+-- 
+1.6.2.5
+

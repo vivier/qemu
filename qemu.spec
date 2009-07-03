@@ -5,7 +5,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10.50
-Release: 7.%{kvmvertag}%{?dist}
+Release: 8.%{kvmvertag}%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -27,6 +27,9 @@ Patch03: qemu-fix-linux-user-build-on-ppc.patch
 
 # Fix for hw/pcspk.c errors with --disable-kvm
 Patch04: qemu-fix-pcspk-build-with-kvm-disabled.patch
+
+# Prefer sysfs over usbfs for usb passthrough (#508326)
+Patch05: qemu-prefer-sysfs-for-usb-host-devices.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -212,6 +215,7 @@ such as kvmtrace and kvm_stat.
 %patch02 -p1
 %patch03 -p1
 %patch04 -p1
+%patch05 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -456,6 +460,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Jul  3 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-8.kvm87
+- Prefer sysfs over usbfs for usb passthrough (#508326)
+
 * Sat Jun 27 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-7.kvm87
 - Update to kvm-87
 - Drop upstreamed patches
