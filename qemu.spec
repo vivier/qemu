@@ -113,7 +113,7 @@ This package provides the user mode emulation of qemu targets
 Summary: QEMU system emulator for x86
 Group: Development/Tools
 Requires: %{name}-common = %{epoch}:%{version}-%{release}
-Requires: etherboot-zroms-kvm
+Requires: gpxe-roms-qemu
 Requires: vgabios
 Requires: bochs-bios >= 2.3.8-0.5
 Provides: kvm = 85
@@ -312,14 +312,14 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-sparc32
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-sparc64
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/petalogix-s3adsp1800.dtb
 
-# the pxe etherboot images will be symlinks to the images on
-# /usr/share/etherboot, as QEMU doesn't know how to look
+# the pxe gpxe images will be symlinks to the images on
+# /usr/share/gpxe, as QEMU doesn't know how to look
 # for other paths, yet.
 pxe_link() {
-  ln -s ../etherboot/$2.zrom %{buildroot}%{_datadir}/%{name}/pxe-$1.bin
+  ln -s ../gpxe/$2.rom %{buildroot}%{_datadir}/%{name}/pxe-$1.bin
 }
 
-pxe_link e1000 e1000-82542
+pxe_link e1000 e1000-0x100e
 pxe_link ne2k_pci ne
 pxe_link pcnet pcnet32
 pxe_link rtl8139 rtl8139
@@ -460,6 +460,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jul 07 2009 Glauber Costa <glommer@redhat.com> - 2:0.10.50-9.kvm87
+- use pxe roms from gpxe, instead of etherboot package.
+
 * Fri Jul  3 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-8.kvm87
 - Prefer sysfs over usbfs for usb passthrough (#508326)
 
