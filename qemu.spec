@@ -242,6 +242,11 @@ fi
             --extra-ldflags=$extraldflags \
             --extra-cflags="$RPM_OPT_FLAGS"
 
+echo "config-host.mak contents:"
+echo "==="
+cat config-host.mak
+echo "==="
+
 make V=1 %{?_smp_mflags} $buildldflags
 cp -a x86_64-softmmu/qemu-system-x86_64 qemu-kvm
 make clean
@@ -268,6 +273,11 @@ cd ../../
     --disable-strip \
     --extra-ldflags=$extraldflags \
     --extra-cflags="$RPM_OPT_FLAGS"
+
+echo "config-host.mak contents:"
+echo "==="
+cat config-host.mak
+echo "==="
 
 make V=1 %{?_smp_mflags} $buildldflags
 
@@ -400,6 +410,7 @@ fi
 %{_bindir}/qemu
 %{_bindir}/qemu-system-x86_64
 %{_datadir}/%{name}/bios.bin
+%{_datadir}/%{name}/multiboot.bin
 %{_datadir}/%{name}/vgabios.bin
 %{_datadir}/%{name}/vgabios-cirrus.bin
 %{_datadir}/%{name}/pxe-e1000.bin
@@ -409,7 +420,6 @@ fi
 %{_datadir}/%{name}/pxe-ne2k_pci.bin
 %ifarch %{ix86} x86_64
 %{_datadir}/%{name}/extboot.bin
-%{_datadir}/%{name}/multiboot.bin
 %{_bindir}/qemu-kvm
 %{_sysconfdir}/sysconfig/modules/kvm.modules
 %{_sysconfdir}/udev/rules.d/80-kvm.rules
