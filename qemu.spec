@@ -1,18 +1,18 @@
-%define kvmvernum  87
+%define kvmvernum  88
 %define kvmvertag  kvm%{kvmvernum}
 %define kvmverfull kvm-devel-%{kvmvernum}
 
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10.50
-Release: 10.%{kvmvertag}%{?dist}
+Release: 11.%{kvmvertag}%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
 Group: Development/Tools
 URL: http://www.qemu.org/
 
-Source0: http://download.sourceforge.net/sourceforge/kvm/qemu-%{kvmverfull}.tar.gz
+Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-%{kvmverfull}.tar.gz
 Source1: qemu.init
 Source2: kvm.modules
 Source3: 80-kvm.rules
@@ -20,17 +20,14 @@ Source3: 80-kvm.rules
 # Not upstream, why?
 Patch01: qemu-bios-bigger-roms.patch
 
-# Fixes ppc-softmmu target build, cherry-picked from upstream
-Patch02: qemu-fix-ppc-softmmu-kvm-disabled-build.patch
-
 # Works around broken linux-user build on ppc
-Patch03: qemu-fix-linux-user-build-on-ppc.patch
-
-# Fix for hw/pcspk.c errors with --disable-kvm
-Patch04: qemu-fix-pcspk-build-with-kvm-disabled.patch
+Patch02: qemu-fix-linux-user-build-on-ppc.patch
 
 # Prefer sysfs over usbfs for usb passthrough (#508326)
-Patch05: qemu-prefer-sysfs-for-usb-host-devices.patch
+Patch03: qemu-prefer-sysfs-for-usb-host-devices.patch
+
+# Fix build with esound audio enabled, cherry-picked from upstream
+Patch04: qemu-fix-build-for-esd-audio.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -216,7 +213,6 @@ such as kvmtrace and kvm_stat.
 %patch02 -p1
 %patch03 -p1
 %patch04 -p1
-%patch05 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -249,8 +245,6 @@ fi
 make V=1 %{?_smp_mflags} $buildldflags
 cp -a x86_64-softmmu/qemu-system-x86_64 qemu-kvm
 make clean
-
-make -C kvm/extboot extboot.bin
 
 cd kvm/user
 ./configure --prefix=%{_prefix} --kerneldir=$(pwd)/../kernel/
@@ -287,7 +281,6 @@ mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{name}
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
 
 install -m 0755 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules/kvm.modules
-install -m 0755 kvm/extboot/extboot.bin $RPM_BUILD_ROOT%{_datadir}/%{name}
 install -m 0755 kvm/user/kvmtrace $RPM_BUILD_ROOT%{_bindir}/
 install -m 0755 kvm/user/kvmtrace_format $RPM_BUILD_ROOT%{_bindir}/
 install -m 0755 kvm/kvm_stat $RPM_BUILD_ROOT%{_bindir}/
@@ -416,6 +409,7 @@ fi
 %{_datadir}/%{name}/pxe-ne2k_pci.bin
 %ifarch %{ix86} x86_64
 %{_datadir}/%{name}/extboot.bin
+%{_datadir}/%{name}/multiboot.bin
 %{_bindir}/qemu-kvm
 %{_sysconfdir}/sysconfig/modules/kvm.modules
 %{_sysconfdir}/udev/rules.d/80-kvm.rules
@@ -466,6 +460,15 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Jul 16 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-11.kvm88
+- Update to kvm-88, see http://www.linux-kvm.org/page/ChangeLog
+- Package mutiboot.bin
+- Update for how extboot is built
+- Fix sf.net source URL
+- Drop qemu-fix-ppc-softmmu-kvm-disabled-build.patch
+- Drop qemu-fix-pcspk-build-with-kvm-disabled.patch
+- Cherry-pick fix for esound support build failure
+
 * Wed Jul 15 2009 Daniel Berrange <berrange@lettuce.camlab.fab.redhat.com> - 2:0.10.50-10.kvm87
 - Add udev rules to make /dev/kvm world accessible & group=kvm (rhbz #497341)
 - Create a kvm group if it doesn't exist (rhbz #346151)

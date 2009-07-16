@@ -1,7 +1,7 @@
-From 8b08062b369c913c9b9a66c20618f9bd82a6b676 Mon Sep 17 00:00:00 2001
+From c9aea972de34bad96814301988df698063ccf608 Mon Sep 17 00:00:00 2001
 From: Glauber Costa <glommer@redhat.com>
 Date: Wed, 24 Jun 2009 14:31:41 +0100
-Subject: [PATCH] compute checksum for roms bigger than a segment
+Subject: [PATCH 1/4] compute checksum for roms bigger than a segment
 
 Some option roms (e1000 provided by gpxe project as an example)
 are bigger than a segment. The current algorithm to compute the
@@ -76,5 +76,5 @@ index 6186199..fc289c0 100644
  
  
 -- 
-1.6.2.5
+1.6.3.3
 

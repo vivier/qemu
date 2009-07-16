@@ -1,7 +1,7 @@
-From 9cf0574418cc7657618a738dd31337739c635875 Mon Sep 17 00:00:00 2001
+From da1377c5e28ea68a6492b627725e8dd5f7acbb0a Mon Sep 17 00:00:00 2001
 From: Mark McLoughlin <markmc@redhat.com>
 Date: Fri, 3 Jul 2009 09:17:20 +0100
-Subject: [PATCH] Prefer sysfs for USB host devices
+Subject: [PATCH 3/4] Prefer sysfs for USB host devices
 
 Scanning for devices via /sys/bus/usb/devices/ and using them via the
 /dev/bus/usb/<bus>/<device> character devices is the prefered method
@@ -58,5 +58,5 @@ index 67e4acd..3c724ba 100644
          if (!usb_fs_type) {
              monitor_printf(mon, "husb: unable to access USB devices\n");
 -- 
-1.6.2.5
+1.6.3.3
 
