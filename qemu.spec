@@ -5,7 +5,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10.50
-Release: 9.%{kvmvertag}%{?dist}
+Release: 10.%{kvmvertag}%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -15,6 +15,7 @@ URL: http://www.qemu.org/
 Source0: http://download.sourceforge.net/sourceforge/kvm/qemu-%{kvmverfull}.tar.gz
 Source1: qemu.init
 Source2: kvm.modules
+Source3: 80-kvm.rules
 
 # Not upstream, why?
 Patch01: qemu-bios-bigger-roms.patch
@@ -280,16 +281,18 @@ make V=1 %{?_smp_mflags} $buildldflags
 rm -rf $RPM_BUILD_ROOT
 
 %ifarch %{ix86} x86_64
-mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/modules
+mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules
 mkdir -p $RPM_BUILD_ROOT%{_bindir}/
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{name}
+mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
 
-install -m 0755 %{SOURCE2} $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig/modules/kvm.modules
+install -m 0755 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules/kvm.modules
 install -m 0755 kvm/extboot/extboot.bin $RPM_BUILD_ROOT%{_datadir}/%{name}
 install -m 0755 kvm/user/kvmtrace $RPM_BUILD_ROOT%{_bindir}/
 install -m 0755 kvm/user/kvmtrace_format $RPM_BUILD_ROOT%{_bindir}/
 install -m 0755 kvm/kvm_stat $RPM_BUILD_ROOT%{_bindir}/
 install -m 0755 qemu-kvm $RPM_BUILD_ROOT%{_bindir}/
+install -m 0755 %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
 %endif
 
 make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
@@ -300,7 +303,7 @@ make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
      datadir="${RPM_BUILD_ROOT}%{_datadir}/%{name}" install
 chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
 install -D -p -m 0755 %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/qemu
-install -D -p -m 0644 -t ${RPM_BUILD_ROOT}/%{qemudocdir} Changelog README TODO COPYING COPYING.LIB LICENSE
+install -D -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} Changelog README TODO COPYING COPYING.LIB LICENSE
 
 install -D -p -m 0644 qemu.sasl $RPM_BUILD_ROOT%{_sysconfdir}/sasl2/qemu.conf
 
@@ -336,9 +339,11 @@ rm -rf $RPM_BUILD_ROOT
 
 %post system-x86
 %ifarch %{ix86} x86_64
+# Create kvm group in case this is an upgrade with pre-existing /etc/group
+/usr/sbin/groupadd -r -g 36 kvm  2> /dev/null || :
 # load kvm modules now, so we can make sure no reboot is needed.
 # If there's already a kvm module installed, we don't mess with it
-sh /%{_sysconfdir}/sysconfig/modules/kvm.modules
+sh %{_sysconfdir}/sysconfig/modules/kvm.modules
 %endif
 
 %post user
@@ -413,6 +418,7 @@ fi
 %{_datadir}/%{name}/extboot.bin
 %{_bindir}/qemu-kvm
 %{_sysconfdir}/sysconfig/modules/kvm.modules
+%{_sysconfdir}/udev/rules.d/80-kvm.rules
 %files kvm-tools
 %defattr(-,root,root,-)
 %{_bindir}/kvmtrace
@@ -460,6 +466,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Jul 15 2009 Daniel Berrange <berrange@lettuce.camlab.fab.redhat.com> - 2:0.10.50-10.kvm87
+- Add udev rules to make /dev/kvm world accessible & group=kvm (rhbz #497341)
+- Create a kvm group if it doesn't exist (rhbz #346151)
+
 * Tue Jul 07 2009 Glauber Costa <glommer@redhat.com> - 2:0.10.50-9.kvm87
 - use pxe roms from gpxe, instead of etherboot package.
 
