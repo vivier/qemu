@@ -5,7 +5,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10.50
-Release: 11.%{kvmvertag}%{?dist}
+Release: 12.%{kvmvertag}%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -240,7 +240,8 @@ fi
             --audio-drv-list=pa,sdl,alsa,oss \
             --disable-strip \
             --extra-ldflags=$extraldflags \
-            --extra-cflags="$RPM_OPT_FLAGS"
+            --extra-cflags="$RPM_OPT_FLAGS" \
+            --disable-xen
 
 echo "config-host.mak contents:"
 echo "==="
@@ -272,7 +273,8 @@ cd ../../
     --disable-kvm \
     --disable-strip \
     --extra-ldflags=$extraldflags \
-    --extra-cflags="$RPM_OPT_FLAGS"
+    --extra-cflags="$RPM_OPT_FLAGS" \
+    --disable-xen
 
 echo "config-host.mak contents:"
 echo "==="
@@ -342,8 +344,6 @@ rm -rf $RPM_BUILD_ROOT
 
 %post system-x86
 %ifarch %{ix86} x86_64
-# Create kvm group in case this is an upgrade with pre-existing /etc/group
-/usr/sbin/groupadd -r -g 36 kvm  2> /dev/null || :
 # load kvm modules now, so we can make sure no reboot is needed.
 # If there's already a kvm module installed, we don't mess with it
 sh %{_sysconfdir}/sysconfig/modules/kvm.modules
@@ -362,6 +362,13 @@ fi
 if [ $1 -ge 1 ]; then
     /sbin/service qemu condrestart &>/dev/null || :
 fi
+
+%post common
+getent group kvm >/dev/null || groupadd -g 36 -r kvm
+getent group qemu >/dev/null || groupadd -g 107 -r qemu
+getent passwd qemu >/dev/null || \
+  useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
+    -c "qemu user" qemu
 
 %files 
 %defattr(-,root,root)
@@ -470,6 +477,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Jul 16 2009 Daniel P. Berrange <berrange@redhat.com> - 2:0.10.50-12.kvm88
+- Add 'qemu' user and group accounts
+- Force disable xen until it can be made to build
+
 * Thu Jul 16 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.50-11.kvm88
 - Update to kvm-88, see http://www.linux-kvm.org/page/ChangeLog
 - Package mutiboot.bin
