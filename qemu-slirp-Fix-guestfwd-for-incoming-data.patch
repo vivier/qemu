@@ -1,0 +1,99 @@
+From b0dc78730e54bd3ef96f56466890aa2509a328c3 Mon Sep 17 00:00:00 2001
+From: Jan Kiszka <jan.kiszka@siemens.com>
+Date: Wed, 22 Jul 2009 17:03:52 +0200
+Subject: [PATCH] slirp: Fix guestfwd for incoming data
+
+Unless a virtual server address was explicitly defined (which is
+impossible with the legacy -net channel format), guestfwd did not
+properly forwarded host->guest packets. This patch fixes it.
+
+Signed-off-by: Jan Kiszka <jan.kiszka@siemens.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+ net.c            |   11 ++++++-----
+ slirp/libslirp.h |    2 +-
+ slirp/slirp.c    |   14 +++++++-------
+ 3 files changed, 14 insertions(+), 13 deletions(-)
+
+diff --git a/net.c b/net.c
+index 90cf912..1c2c7d0 100644
+--- a/net.c
++++ b/net.c
+@@ -1150,7 +1150,7 @@ static void slirp_smb(SlirpState* s, Monitor *mon, const char *exported_dir,
+     snprintf(smb_cmdline, sizeof(smb_cmdline), "%s -s %s",
+              SMBD_COMMAND, smb_conf);
+ 
+-    if (slirp_add_exec(s->slirp, 0, smb_cmdline, vserver_addr, 139) < 0) {
++    if (slirp_add_exec(s->slirp, 0, smb_cmdline, &vserver_addr, 139) < 0) {
+         slirp_smb_cleanup(s);
+         config_error(mon, "conflicting/invalid smbserver address\n");
+     }
+@@ -1239,16 +1239,17 @@ static void slirp_guestfwd(SlirpState *s, Monitor *mon, const char *config_str,
+         qemu_free(fwd);
+         return;
+     }
+-    fwd->server = server;
+-    fwd->port = port;
+-    fwd->slirp = s->slirp;
+ 
+-    if (slirp_add_exec(s->slirp, 3, fwd->hd, server, port) < 0) {
++    if (slirp_add_exec(s->slirp, 3, fwd->hd, &server, port) < 0) {
+         config_error(mon, "conflicting/invalid host:port in guest forwarding "
+                      "rule '%s'\n", config_str);
+         qemu_free(fwd);
+         return;
+     }
++    fwd->server = server;
++    fwd->port = port;
++    fwd->slirp = s->slirp;
++
+     qemu_chr_add_handlers(fwd->hd, guestfwd_can_read, guestfwd_read,
+                           NULL, fwd);
+     return;
+diff --git a/slirp/libslirp.h b/slirp/libslirp.h
+index 3bcc392..93087ed 100644
+--- a/slirp/libslirp.h
++++ b/slirp/libslirp.h
+@@ -33,7 +33,7 @@ int slirp_add_hostfwd(Slirp *slirp, int is_udp,
+ int slirp_remove_hostfwd(Slirp *slirp, int is_udp,
+                          struct in_addr host_addr, int host_port);
+ int slirp_add_exec(Slirp *slirp, int do_pty, const void *args,
+-                   struct in_addr guest_addr, int guest_port);
++                   struct in_addr *guest_addr, int guest_port);
+ 
+ void slirp_connection_info(Slirp *slirp, Monitor *mon);
+ 
+diff --git a/slirp/slirp.c b/slirp/slirp.c
+index 0ce62a3..9be8553 100644
+--- a/slirp/slirp.c
++++ b/slirp/slirp.c
+@@ -794,19 +794,19 @@ int slirp_add_hostfwd(Slirp *slirp, int is_udp, struct in_addr host_addr,
+ }
+ 
+ int slirp_add_exec(Slirp *slirp, int do_pty, const void *args,
+-                   struct in_addr guest_addr, int guest_port)
++                   struct in_addr *guest_addr, int guest_port)
+ {
+-    if (!guest_addr.s_addr) {
+-        guest_addr.s_addr = slirp->vnetwork_addr.s_addr |
++    if (!guest_addr->s_addr) {
++        guest_addr->s_addr = slirp->vnetwork_addr.s_addr |
+             (htonl(0x0204) & ~slirp->vnetwork_mask.s_addr);
+     }
+-    if ((guest_addr.s_addr & slirp->vnetwork_mask.s_addr) !=
++    if ((guest_addr->s_addr & slirp->vnetwork_mask.s_addr) !=
+         slirp->vnetwork_addr.s_addr ||
+-        guest_addr.s_addr == slirp->vhost_addr.s_addr ||
+-        guest_addr.s_addr == slirp->vnameserver_addr.s_addr) {
++        guest_addr->s_addr == slirp->vhost_addr.s_addr ||
++        guest_addr->s_addr == slirp->vnameserver_addr.s_addr) {
+         return -1;
+     }
+-    return add_exec(&slirp->exec_list, do_pty, (char *)args, guest_addr,
++    return add_exec(&slirp->exec_list, do_pty, (char *)args, *guest_addr,
+                     htons(guest_port));
+ }
+ 
+-- 
+1.6.2.2
+

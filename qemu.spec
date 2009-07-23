@@ -5,7 +5,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10.50
-Release: 12.%{kvmvertag}%{?dist}
+Release: 13.%{kvmvertag}%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -28,6 +28,9 @@ Patch03: qemu-prefer-sysfs-for-usb-host-devices.patch
 
 # Fix build with esound audio enabled, cherry-picked from upstream
 Patch04: qemu-fix-build-for-esd-audio.patch
+
+# Fix guestfwd behaviour, cherrypicked from upstream (#513249)
+Patch05: qemu-slirp-Fix-guestfwd-for-incoming-data.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -213,6 +216,7 @@ such as kvmtrace and kvm_stat.
 %patch02 -p1
 %patch03 -p1
 %patch04 -p1
+%patch05 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -477,6 +481,9 @@ getent passwd qemu >/dev/null || \
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Jul 23 2009 Glauber Costa <glommer@redhat.com> - 2:0.10.50-13.kvm88
+- Fix bug 513249, -net channel option is broken
+
 * Thu Jul 16 2009 Daniel P. Berrange <berrange@redhat.com> - 2:0.10.50-12.kvm88
 - Add 'qemu' user and group accounts
 - Force disable xen until it can be made to build
