@@ -1,4 +1,4 @@
-From b0dc78730e54bd3ef96f56466890aa2509a328c3 Mon Sep 17 00:00:00 2001
+From ff933dfefb22e2ef115eb6035e23b0f64335b0db Mon Sep 17 00:00:00 2001
 From: Jan Kiszka <jan.kiszka@siemens.com>
 Date: Wed, 22 Jul 2009 17:03:52 +0200
 Subject: [PATCH] slirp: Fix guestfwd for incoming data
@@ -16,10 +16,10 @@ Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
  3 files changed, 14 insertions(+), 13 deletions(-)
 
 diff --git a/net.c b/net.c
-index 90cf912..1c2c7d0 100644
+index a34f1d3..7e1edf6 100644
 --- a/net.c
 +++ b/net.c
-@@ -1150,7 +1150,7 @@ static void slirp_smb(SlirpState* s, Monitor *mon, const char *exported_dir,
+@@ -1170,7 +1170,7 @@ static void slirp_smb(SlirpState* s, Monitor *mon, const char *exported_dir,
      snprintf(smb_cmdline, sizeof(smb_cmdline), "%s -s %s",
               SMBD_COMMAND, smb_conf);
  
@@ -28,7 +28,7 @@ index 90cf912..1c2c7d0 100644
          slirp_smb_cleanup(s);
          config_error(mon, "conflicting/invalid smbserver address\n");
      }
-@@ -1239,16 +1239,17 @@ static void slirp_guestfwd(SlirpState *s, Monitor *mon, const char *config_str,
+@@ -1259,16 +1259,17 @@ static void slirp_guestfwd(SlirpState *s, Monitor *mon, const char *config_str,
          qemu_free(fwd);
          return;
      }
@@ -95,5 +95,5 @@ index 0ce62a3..9be8553 100644
  }
  
 -- 
-1.6.2.2
+1.6.2.5
 

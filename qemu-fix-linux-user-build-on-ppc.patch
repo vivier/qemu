@@ -1,7 +1,7 @@
 From 978e305a8cb8533bef2c6238c88e96913f7d09d0 Mon Sep 17 00:00:00 2001
 From: Mark McLoughlin <markmc@redhat.com>
 Date: Mon, 29 Jun 2009 14:49:03 +0100
-Subject: [PATCH 2/4] Fix linux-user build on ppc
+Subject: [PATCH] Fix linux-user build on ppc
 
 kvm-87 build fails on ppc:
 
@@ -130,5 +130,5 @@ index d31cca7..3ccfdda 100644
  #define ELF_HWCAP get_elf_hwcap()
  
 -- 
-1.6.3.3
+1.6.2.5
 
