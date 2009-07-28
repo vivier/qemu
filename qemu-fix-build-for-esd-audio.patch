@@ -1,4 +1,4 @@
-From b37fb38b6043e319768fa92d5541fe20afb4741b Mon Sep 17 00:00:00 2001
+From 17588a0bbf311ad95c6d3ad84f5edb8f98353d58 Mon Sep 17 00:00:00 2001
 From: Anthony Liguori <aliguori@us.ibm.com>
 Date: Wed, 1 Jul 2009 10:07:16 -0500
 Subject: [PATCH] Fix build for ESD audio
@@ -7,6 +7,7 @@ Subject: [PATCH] Fix build for ESD audio
 
 Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
 Signed-off-by: Mark McLoughlin <markmc@redhat.com>
+Fedora-patch: qemu-fix-build-for-esd-audio.patch
 ---
  Makefile |   10 +++++-----
  1 files changed, 5 insertions(+), 5 deletions(-)

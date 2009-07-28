@@ -1,4 +1,4 @@
-From ff933dfefb22e2ef115eb6035e23b0f64335b0db Mon Sep 17 00:00:00 2001
+From 57ab33ece875e62e47d09e52bcd0d9d108594729 Mon Sep 17 00:00:00 2001
 From: Jan Kiszka <jan.kiszka@siemens.com>
 Date: Wed, 22 Jul 2009 17:03:52 +0200
 Subject: [PATCH] slirp: Fix guestfwd for incoming data
@@ -7,8 +7,12 @@ Unless a virtual server address was explicitly defined (which is
 impossible with the legacy -net channel format), guestfwd did not
 properly forwarded host->guest packets. This patch fixes it.
 
+(cherry picked from commit bb53fc5394201c0cbe3c89a1c9fa5fbd6a3b832c)
+
 Signed-off-by: Jan Kiszka <jan.kiszka@siemens.com>
 Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Mark McLoughlin <markmc@redhat.com>
+Fedora-patch: qemu-slirp-Fix-guestfwd-for-incoming-data.patch
 ---
  net.c            |   11 ++++++-----
  slirp/libslirp.h |    2 +-

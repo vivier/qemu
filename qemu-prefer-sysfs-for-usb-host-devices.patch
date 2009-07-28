@@ -1,4 +1,4 @@
-From da1377c5e28ea68a6492b627725e8dd5f7acbb0a Mon Sep 17 00:00:00 2001
+From dfeae76a9a941c12ffe828848476a4a31a358205 Mon Sep 17 00:00:00 2001
 From: Mark McLoughlin <markmc@redhat.com>
 Date: Fri, 3 Jul 2009 09:17:20 +0100
 Subject: [PATCH] Prefer sysfs for USB host devices
@@ -15,8 +15,11 @@ See also:
 
   https://bugzilla.redhat.com/508326
 
+(cherry picked from commit 554962405cb18a3e624edf05b6257eaf9273810c)
+
 Reported-by: Daniel Berrange <berrange@redhat.com>
 Signed-off-by: Mark McLoughlin <markmc@redhat.com>
+Fedora-patch: qemu-prefer-sysfs-for-usb-host-devices.patch
 ---
  usb-linux.c |   18 +++++++++---------
  1 files changed, 9 insertions(+), 9 deletions(-)

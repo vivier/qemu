@@ -1,4 +1,4 @@
-From c9aea972de34bad96814301988df698063ccf608 Mon Sep 17 00:00:00 2001
+From dd5a9dedba205ad51ef2fc70f0a1dddea7ff4a4f Mon Sep 17 00:00:00 2001
 From: Glauber Costa <glommer@redhat.com>
 Date: Wed, 24 Jun 2009 14:31:41 +0100
 Subject: [PATCH] compute checksum for roms bigger than a segment
@@ -17,6 +17,7 @@ the image size (thus, maximum size = 0xff = 128k = 2 segments)
 
 Signed-off-by: Glauber Costa <glommer@redhat.com>
 Signed-off-by: Mark McLoughlin <markmc@redhat.com>
+Fedora-patch: qemu-bios-bigger-roms.patch
 ---
  kvm/bios/rombios.c |   33 +++++++++++++++++++++++++++------
  1 files changed, 27 insertions(+), 6 deletions(-)
