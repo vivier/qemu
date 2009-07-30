@@ -1,18 +1,18 @@
-%define kvmvernum  88
-%define kvmvertag  kvm%{kvmvernum}
-%define kvmverfull kvm-devel-%{kvmvernum}
+%define kvmvertag  rc1.rc0
+%define kvmverfull kvm-0.11.0-rc1-rc0
 
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
-Version: 0.10.50
-Release: 14.%{kvmvertag}%{?dist}
+Version: 0.10.91
+Release: 0.1.%{kvmvertag}%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
 Group: Development/Tools
 URL: http://www.qemu.org/
 
-Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-%{kvmverfull}.tar.gz
+Source0: http://markmc.fedorapeople.org/kvm/qemu-%{kvmverfull}.tar.gz
+#Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-%{kvmverfull}.tar.gz
 Source1: qemu.init
 Source2: kvm.modules
 Source3: 80-kvm.rules
@@ -23,14 +23,8 @@ Patch01: qemu-bios-bigger-roms.patch
 # Works around broken linux-user build on ppc
 Patch02: qemu-fix-linux-user-build-on-ppc.patch
 
-# Prefer sysfs over usbfs for usb passthrough (#508326)
-Patch03: qemu-prefer-sysfs-for-usb-host-devices.patch
-
-# Fix build with esound audio enabled, cherry-picked from upstream
-Patch04: qemu-fix-build-for-esd-audio.patch
-
-# Fix guestfwd behaviour, cherrypicked from upstream (#513249)
-Patch05: qemu-slirp-Fix-guestfwd-for-incoming-data.patch
+# Make sure multiboot.bin/extboot.bin gets installed
+Patch03: qemu-fix-optionrom-install.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -215,8 +209,6 @@ such as kvmtrace and kvm_stat.
 %patch01 -p1
 %patch02 -p1
 %patch03 -p1
-%patch04 -p1
-%patch05 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -481,6 +473,15 @@ getent passwd qemu >/dev/null || \
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Jul 30 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.91-0.1.rc1.rc0
+- Update to qemu-kvm-0.11.0-rc1-rc0
+- This is a pre-release of the official -rc1
+- A vista installer regression is blocking the official -rc1 release
+- Drop qemu-prefer-sysfs-for-usb-host-devices.patch
+- Drop qemu-fix-build-for-esd-audio.patch
+- Drop qemu-slirp-Fix-guestfwd-for-incoming-data.patch
+- Add patch to ensure extboot.bin is installed
+
 * Sun Jul 26 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2:0.10.50-14.kvm88
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_12_Mass_Rebuild
 
