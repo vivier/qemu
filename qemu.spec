@@ -4,7 +4,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10.91
-Release: 0.1.%{kvmvertag}%{?dist}
+Release: 0.2.%{kvmvertag}%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -25,6 +25,9 @@ Patch02: qemu-fix-linux-user-build-on-ppc.patch
 
 # Make sure multiboot.bin/extboot.bin gets installed
 Patch03: qemu-fix-optionrom-install.patch
+
+# Add KSM support - see https://fedoraproject.org/wiki/Features/KSM
+Patch04: qemu-add-ksm-support.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -110,7 +113,7 @@ Group: Development/Tools
 Requires: %{name}-common = %{epoch}:%{version}-%{release}
 Requires: gpxe-roms-qemu
 Requires: vgabios
-Requires: bochs-bios >= 2.3.8-0.5
+Requires: bochs-bios >= 2.3.8-0.8
 Provides: kvm = 85
 Obsoletes: kvm < 85
 
@@ -209,6 +212,7 @@ such as kvmtrace and kvm_stat.
 %patch01 -p1
 %patch02 -p1
 %patch03 -p1
+%patch04 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -473,6 +477,10 @@ getent passwd qemu >/dev/null || \
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Jul 31 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.91-0.2.rc1.rc0
+- Add KSM support
+- Require bochs-bios >= 2.3.8-0.8 for latest kvm bios updates
+
 * Thu Jul 30 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.91-0.1.rc1.rc0
 - Update to qemu-kvm-0.11.0-rc1-rc0
 - This is a pre-release of the official -rc1
