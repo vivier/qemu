@@ -4,7 +4,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10.91
-Release: 0.2.%{kvmvertag}%{?dist}
+Release: 0.3.%{kvmvertag}%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -28,6 +28,9 @@ Patch03: qemu-fix-optionrom-install.patch
 
 # Add KSM support - see https://fedoraproject.org/wiki/Features/KSM
 Patch04: qemu-add-ksm-support.patch
+
+# Fix extboot checksum (bug #514899)
+Patch05: qemu-fix-extboot-signrom.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -213,6 +216,7 @@ such as kvmtrace and kvm_stat.
 %patch02 -p1
 %patch03 -p1
 %patch04 -p1
+%patch05 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -477,6 +481,9 @@ getent passwd qemu >/dev/null || \
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Aug  4 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.91-0.3.rc1.rc0
+- Fix extboot checksum (bug #514899)
+
 * Fri Jul 31 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.91-0.2.rc1.rc0
 - Add KSM support
 - Require bochs-bios >= 2.3.8-0.8 for latest kvm bios updates
