@@ -1,4 +1,4 @@
-From ad6bfcfe0292ac09aac0de729343dabf91c16f93 Mon Sep 17 00:00:00 2001
+From 7f871498235ac7591bd4398a745735081290c1a2 Mon Sep 17 00:00:00 2001
 From: Glauber Costa <glommer@redhat.com>
 Date: Wed, 24 Jun 2009 14:31:41 +0100
 Subject: [PATCH] compute checksum for roms bigger than a segment

@@ -1,4 +1,4 @@
-From e941daafed39ae5db507af42da8a35b60a8be363 Mon Sep 17 00:00:00 2001
+From b3f4aa7dc9fcee229a0f6943f9fae1a02daf3497 Mon Sep 17 00:00:00 2001
 From: Mark McLoughlin <markmc@redhat.com>
 Date: Thu, 30 Jul 2009 17:17:43 +0100
 Subject: [PATCH] Revert "Don't copy multiboot.bin into pc-bios after built"

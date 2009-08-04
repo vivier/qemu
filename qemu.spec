@@ -1,18 +1,17 @@
-%define kvmvertag  rc1.rc0
-%define kvmverfull kvm-0.11.0-rc1-rc0
+%define kvmvertag  rc1
+%define kvmverfull kvm-0.11.0-rc1
 
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10.91
-Release: 0.3.%{kvmvertag}%{?dist}
+Release: 0.4.%{kvmvertag}%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
 Group: Development/Tools
 URL: http://www.qemu.org/
 
-Source0: http://markmc.fedorapeople.org/kvm/qemu-%{kvmverfull}.tar.gz
-#Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-%{kvmverfull}.tar.gz
+Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-%{kvmverfull}.tar.gz
 Source1: qemu.init
 Source2: kvm.modules
 Source3: 80-kvm.rules
@@ -481,6 +480,9 @@ getent passwd qemu >/dev/null || \
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Aug  4 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.91-0.4.rc1
+- Update to qemu-kvm-0.11-rc1; no changes from rc1-rc0
+
 * Tue Aug  4 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.91-0.3.rc1.rc0
 - Fix extboot checksum (bug #514899)
 

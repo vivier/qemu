@@ -1,4 +1,4 @@
-From 6fb154d7d16b25d70615d33dc30927ded148dd32 Mon Sep 17 00:00:00 2001
+From ee595f99ba7ff80b46a736a06f7e53998d926563 Mon Sep 17 00:00:00 2001
 From: Alexander Graf <agraf@suse.de>
 Date: Sat, 1 Aug 2009 11:48:31 +0200
 Subject: [PATCH] Fix checksum writing in signboot.sh
