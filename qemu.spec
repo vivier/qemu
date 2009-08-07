@@ -4,7 +4,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10.91
-Release: 0.4.%{kvmvertag}%{?dist}
+Release: 0.5.%{kvmvertag}%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -30,6 +30,9 @@ Patch04: qemu-add-ksm-support.patch
 
 # Fix extboot checksum (bug #514899)
 Patch05: qemu-fix-extboot-signrom.patch
+
+# Fix virtio_net with -net user (bug #516022)
+Patch06: qemu-fix-vnet-hdr-slirp-bustage.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -216,6 +219,7 @@ such as kvmtrace and kvm_stat.
 %patch03 -p1
 %patch04 -p1
 %patch05 -p1
+%patch06 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -480,6 +484,9 @@ getent passwd qemu >/dev/null || \
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Aug  7 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.91-0.5.rc1
+- Fix virtio_net with -net user (#516022)
+
 * Tue Aug  4 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.91-0.4.rc1
 - Update to qemu-kvm-0.11-rc1; no changes from rc1-rc0
 
