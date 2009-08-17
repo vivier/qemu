@@ -4,7 +4,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10.91
-Release: 0.5.%{kvmvertag}%{?dist}
+Release: 0.6.%{kvmvertag}%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -484,6 +484,9 @@ getent passwd qemu >/dev/null || \
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Aug 17 2009 Lubomir Rintel <lkundrak@v3.sk> - 2:0.10.91-0.6.rc1
+- Allow blacklisting of kvm modules
+
 * Fri Aug  7 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.91-0.5.rc1
 - Fix virtio_net with -net user (#516022)
 

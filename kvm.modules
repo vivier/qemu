@@ -1,9 +1,9 @@
 #!/bin/sh
 
 if [ $(grep -c vmx /proc/cpuinfo) -ne 0 ]; then 
-    modprobe kvm-intel >/dev/null 2>&1
+    modprobe -b kvm-intel >/dev/null 2>&1
 fi
 
 if [ $(grep -c svm /proc/cpuinfo) -ne 0 ]; then 
-    modprobe kvm-amd >/dev/null 2>&1
+    modprobe -b kvm-amd >/dev/null 2>&1
 fi
