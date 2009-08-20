@@ -4,7 +4,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10.91
-Release: 0.7.%{kvmvertag}%{?dist}
+Release: 0.8.%{kvmvertag}%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
