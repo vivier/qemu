@@ -1,0 +1,34 @@
+From add286b6e753f14e4ae0ab6b831441aea0d35497 Mon Sep 17 00:00:00 2001
+From: Richard Jones <rjones@f12rawhidex64.home.annexia.org>
+Date: Thu, 20 Aug 2009 13:52:20 +0100
+Subject: [PATCH] Workaround segfault when qemu-kvm runs inside a VM (RHBZ#516543).
+
+Regression was introduced by this commit:
+http://git.kernel.org/?p=virt/kvm/qemu-kvm.git;a=commitdiff;h=b8083e930efc1ee85a7ad7e700dbd0f52ebb32dd
+
+Upstream discussion:
+http://www.mail-archive.com/kvm@vger.kernel.org/msg19890.html
+
+Note: NOT UPSTREAM and this is something of a hack.  Upstream are
+still debating how they really want to fix this.
+---
+ exec.c |    3 ---
+ 1 files changed, 0 insertions(+), 3 deletions(-)
+
+diff --git a/exec.c b/exec.c
+index 705bcf2..2091516 100644
+--- a/exec.c
++++ b/exec.c
+@@ -422,9 +422,6 @@ static uint8_t static_code_gen_buffer[DEFAULT_CODE_GEN_BUFFER_SIZE];
+ 
+ static void code_gen_alloc(unsigned long tb_size)
+ {
+-    if (kvm_enabled())
+-        return;
+-
+ #ifdef USE_STATIC_CODE_GEN_BUFFER
+     code_gen_buffer = static_code_gen_buffer;
+     code_gen_buffer_size = DEFAULT_CODE_GEN_BUFFER_SIZE;
+-- 
+1.6.4
+

@@ -34,6 +34,19 @@ Patch05: qemu-fix-extboot-signrom.patch
 # Fix virtio_net with -net user (bug #516022)
 Patch06: qemu-fix-vnet-hdr-slirp-bustage.patch
 
+# Fix segfault when qemu-kvm is invoked inside a VM (where HVM is not
+# available).  RHBZ#516543
+#
+# Regression was introduced by this commit:
+# http://git.kernel.org/?p=virt/kvm/qemu-kvm.git;a=commitdiff;h=b8083e930efc1ee85a7ad7e700dbd0f52ebb32dd
+#
+# Upstream discussion:
+# http://www.mail-archive.com/kvm@vger.kernel.org/msg19890.html
+#
+# Note: NOT UPSTREAM and this is something of a hack.  Upstream are
+# still debating how they really want to fix this.
+Patch07: qemu-fix-no-kvm-segfault.patch
+
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
 BuildRequires: rsync dev86 iasl
@@ -220,6 +233,7 @@ such as kvmtrace and kvm_stat.
 %patch04 -p1
 %patch05 -p1
 %patch06 -p1
+%patch07 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -484,6 +498,9 @@ getent passwd qemu >/dev/null || \
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Aug 20 2009 Richard W.M. Jones <rjones@redhat.com> - 2:0.10.91-0.8.rc1
+- Fix segfault when qemu-kvm is invoked inside a VM (#516543)
+
 * Tue Aug 18 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.91-0.7.rc1
 - Fix permissions on udev rules (#517571)
 
