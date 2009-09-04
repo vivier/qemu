@@ -1,5 +1,5 @@
-From add286b6e753f14e4ae0ab6b831441aea0d35497 Mon Sep 17 00:00:00 2001
-From: Richard Jones <rjones@f12rawhidex64.home.annexia.org>
+From aa1620047bb49079f4c114326d43fb9aa7a26065 Mon Sep 17 00:00:00 2001
+From: Richard Jones <rjones@redhat.com>
 Date: Thu, 20 Aug 2009 13:52:20 +0100
 Subject: [PATCH] Workaround segfault when qemu-kvm runs inside a VM (RHBZ#516543).
 
@@ -11,15 +11,18 @@ http://www.mail-archive.com/kvm@vger.kernel.org/msg19890.html
 
 Note: NOT UPSTREAM and this is something of a hack.  Upstream are
 still debating how they really want to fix this.
+
+Signed-off-by: Richard Jones <rjones@redhat.com>
+Fedora-patch: qemu-fix-no-kvm-segfault.patch
 ---
  exec.c |    3 ---
  1 files changed, 0 insertions(+), 3 deletions(-)
 
 diff --git a/exec.c b/exec.c
-index 705bcf2..2091516 100644
+index 88bcff5..721fcff 100644
 --- a/exec.c
 +++ b/exec.c
-@@ -422,9 +422,6 @@ static uint8_t static_code_gen_buffer[DEFAULT_CODE_GEN_BUFFER_SIZE];
+@@ -421,9 +421,6 @@ static uint8_t static_code_gen_buffer[DEFAULT_CODE_GEN_BUFFER_SIZE];
  
  static void code_gen_alloc(unsigned long tb_size)
  {
@@ -30,5 +33,5 @@ index 705bcf2..2091516 100644
      code_gen_buffer = static_code_gen_buffer;
      code_gen_buffer_size = DEFAULT_CODE_GEN_BUFFER_SIZE;
 -- 
-1.6.4
+1.6.2.5
 
