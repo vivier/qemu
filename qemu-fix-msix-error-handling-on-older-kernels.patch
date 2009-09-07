@@ -1,4 +1,4 @@
-From 057fb1b4b227bc49aa00b08da5f177b50c020693 Mon Sep 17 00:00:00 2001
+From 0b341eda83cd2f01134d5b13300d97c07a3abced Mon Sep 17 00:00:00 2001
 From: Michael S. Tsirkin <mst@redhat.com>
 Date: Thu, 23 Jul 2009 16:34:13 +0300
 Subject: [PATCH] Fix error handling in msix vector add

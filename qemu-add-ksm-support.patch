@@ -1,4 +1,4 @@
-From 729b681039015c718e476b8f294480b179ed726d Mon Sep 17 00:00:00 2001
+From 4d64a615f69458c202561fcc01e8e0505fa46ee9 Mon Sep 17 00:00:00 2001
 From: Izik Eidus <ieidus@redhat.com>
 Date: Tue, 28 Jul 2009 19:14:26 +0300
 Subject: [PATCH] kvm userspace: ksm support
@@ -13,10 +13,10 @@ Fedora-patch: qemu-add-ksm-support.patch
  1 files changed, 3 insertions(+), 0 deletions(-)
 
 diff --git a/exec.c b/exec.c
-index 2134697..88bcff5 100644
+index 0655b4b..b93f7b8 100644
 --- a/exec.c
 +++ b/exec.c
-@@ -2578,6 +2578,9 @@ ram_addr_t qemu_ram_alloc(ram_addr_t size)
+@@ -2579,6 +2579,9 @@ ram_addr_t qemu_ram_alloc(ram_addr_t size)
      new_block->host = file_ram_alloc(size, mem_path);
      if (!new_block->host) {
          new_block->host = qemu_vmalloc(size);

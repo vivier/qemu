@@ -1,10 +1,9 @@
-%define kvmvertag  rc1
-%define kvmverfull kvm-0.11.0-rc1
+%define kvmverfull kvm-0.11.0-rc2
 
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
-Version: 0.10.91
-Release: 0.10.%{kvmvertag}%{?dist}
+Version: 0.10.92
+Release: 1%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -22,26 +21,17 @@ Patch01: qemu-bios-bigger-roms.patch
 # Works around broken linux-user build on ppc
 Patch02: qemu-fix-linux-user-build-on-ppc.patch
 
-# Make sure multiboot.bin/extboot.bin gets installed
-Patch03: qemu-fix-optionrom-install.patch
+# Allow the pulseudio backend to be the default
+Patch03: qemu-allow-pulseaudio-to-be-the-default.patch
 
 # Add KSM support - see https://fedoraproject.org/wiki/Features/KSM
 Patch04: qemu-add-ksm-support.patch
 
-# Fix extboot checksum (bug #514899)
-Patch05: qemu-fix-extboot-signrom.patch
-
-# Fix virtio_net with -net user (bug #516022)
-Patch06: qemu-fix-vnet-hdr-slirp-bustage.patch
+# Fix MSI-X error handling on older kernels (#519787)
+Patch05: qemu-fix-msix-error-handling-on-older-kernels.patch
 
 # Fix segfault when qemu-kvm is invoked inside a VM (bug #516543)
-Patch07: qemu-fix-no-kvm-segfault.patch
-
-# Allow the pulseudio backend to be the default
-Patch08: qemu-allow-pulseaudio-to-be-the-default.patch
-
-# Fix MSI-X error handling on older kernels (#519787)
-Patch09: qemu-fix-msix-error-handling-on-older-kernels.patch
+Patch06: qemu-fix-no-kvm-segfault.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -229,9 +219,6 @@ such as kvmtrace and kvm_stat.
 %patch04 -p1
 %patch05 -p1
 %patch06 -p1
-%patch07 -p1
-%patch08 -p1
-%patch09 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -496,6 +483,12 @@ getent passwd qemu >/dev/null || \
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Sep  7 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.92-1
+- Update to qemu-kvm-0.11.0-rc2
+- Drop upstreamed patches
+- extboot install now fixed upstream
+- Re-place TCG init fix (#516543) with the one gone upstream
+
 * Mon Sep  7 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.91-0.10.rc1
 - Fix MSI-X error handling on older kernels (#519787)
 
