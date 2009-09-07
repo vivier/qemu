@@ -4,7 +4,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10.91
-Release: 0.9.%{kvmvertag}%{?dist}
+Release: 0.10.%{kvmvertag}%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -39,6 +39,9 @@ Patch07: qemu-fix-no-kvm-segfault.patch
 
 # Allow the pulseudio backend to be the default
 Patch08: qemu-allow-pulseaudio-to-be-the-default.patch
+
+# Fix MSI-X error handling on older kernels (#519787)
+Patch09: qemu-fix-msix-error-handling-on-older-kernels.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -228,6 +231,7 @@ such as kvmtrace and kvm_stat.
 %patch06 -p1
 %patch07 -p1
 %patch08 -p1
+%patch09 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -492,6 +496,9 @@ getent passwd qemu >/dev/null || \
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Sep  7 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.91-0.10.rc1
+- Fix MSI-X error handling on older kernels (#519787)
+
 * Fri Sep  4 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.91-0.9.rc1
 - Make pulseaudio the default audio backend (#519540, #495964, #496627)
 
