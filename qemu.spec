@@ -3,7 +3,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10.92
-Release: 2%{?dist}
+Release: 3%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -19,9 +19,12 @@ Source2: kvm.modules
 # Creates /dev/kvm
 Source3: 80-kvm.rules
 
-# KSM control script
+# KSM control scripts
 Source4: ksm.init
 Source5: ksm.sysconfig
+Source6: ksmtuned.init
+Source7: ksmtuned
+Source8: ksmtuned.conf
 
 # Not upstream, why?
 Patch01: qemu-bios-bigger-roms.patch
@@ -100,6 +103,9 @@ This package provides the command line tool for manipulating disk images
 %package  common
 Summary: QEMU common files needed by all QEMU targets
 Group: Development/Tools
+Requires(post): /sbin/chkconfig
+Requires(preun): /sbin/service /sbin/chkconfig
+Requires(postun): /sbin/service
 %description common
 QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
@@ -300,8 +306,12 @@ make V=1 %{?_smp_mflags} $buildldflags
 %install
 rm -rf $RPM_BUILD_ROOT
 
-install -D -p -m 0755 %{SOURCE4} $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/ksm
+install -D -p -m 0755 %{SOURCE4} $RPM_BUILD_ROOT%{_initddir}/ksm
 install -D -p -m 0644 %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/ksm
+
+install -D -p -m 0755 %{SOURCE6} $RPM_BUILD_ROOT%{_initddir}/rc.d/init.d/ksmtuned
+install -D -p -m 0755 %{SOURCE7} $RPM_BUILD_ROOT%{_sbindir}/ksmtuned
+install -D -p -m 0644 %{SOURCE8} $RPM_BUILD_ROOT%{_sysconfdir}/ksmtuned.conf
 
 %ifarch %{ix86} x86_64
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules
@@ -324,7 +334,7 @@ make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
      docdir="${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}" \
      datadir="${RPM_BUILD_ROOT}%{_datadir}/%{name}" install
 chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
-install -D -p -m 0755 %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/qemu
+install -D -p -m 0755 %{SOURCE1} $RPM_BUILD_ROOT%{_initddir}/qemu
 install -D -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} Changelog README TODO COPYING COPYING.LIB LICENSE
 
 install -D -p -m 0644 qemu.sasl $RPM_BUILD_ROOT%{_sysconfdir}/sasl2/qemu.conf
@@ -366,6 +376,30 @@ rm -rf $RPM_BUILD_ROOT
 sh %{_sysconfdir}/sysconfig/modules/kvm.modules
 %endif
 
+%post common
+getent group kvm >/dev/null || groupadd -g 36 -r kvm
+getent group qemu >/dev/null || groupadd -g 107 -r qemu
+getent passwd qemu >/dev/null || \
+  useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
+    -c "qemu user" qemu
+
+/sbin/chkconfig --add ksm
+/sbin/chkconfig --add ksmtuned
+
+%preun common
+if [ $1 -eq 0 ]; then
+    /sbin/service ksmtuned stop &>/dev/null || :
+    /sbin/chkconfig --del ksmtuned
+    /sbin/service ksm stop &>/dev/null || :
+    /sbin/chkconfig --del ksm
+fi
+
+%postun common
+if [ $1 -ge 1 ]; then
+    /sbin/service ksm condrestart &>/dev/null || :
+    /sbin/service ksmtuned condrestart &>/dev/null || :
+fi
+
 %post user
 /sbin/chkconfig --add qemu
 
@@ -379,13 +413,6 @@ fi
 if [ $1 -ge 1 ]; then
     /sbin/service qemu condrestart &>/dev/null || :
 fi
-
-%post common
-getent group kvm >/dev/null || groupadd -g 36 -r kvm
-getent group qemu >/dev/null || groupadd -g 107 -r qemu
-getent passwd qemu >/dev/null || \
-  useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
-    -c "qemu user" qemu
 
 %files 
 %defattr(-,root,root)
@@ -409,11 +436,14 @@ getent passwd qemu >/dev/null || \
 %{_mandir}/man8/qemu-nbd.8*
 %{_bindir}/qemu-nbd
 %config(noreplace) %{_sysconfdir}/sasl2/qemu.conf
-%{_sysconfdir}/rc.d/init.d/ksm
+%{_initddir}/ksm
 %config(noreplace) %{_sysconfdir}/sysconfig/ksm
+%{_initddir}/ksmtuned
+%{_sbindir}/ksmtuned
+%config(noreplace) %{_sysconfdir}/ksmtuned.conf
 %files user
 %defattr(-,root,root)
-%{_sysconfdir}/rc.d/init.d/qemu
+%{_initddir}/qemu
 %{_bindir}/qemu-alpha
 %{_bindir}/qemu-arm
 %{_bindir}/qemu-armeb
@@ -496,6 +526,10 @@ getent passwd qemu >/dev/null || \
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Sep 16 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.92-3
+- Add ksmtuned, also from Dan Kenigsberg
+- Use %_initddir macro
+
 * Wed Sep 16 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.92-2
 - Add ksm control script from Dan Kenigsberg
 

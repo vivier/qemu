@@ -76,11 +76,10 @@ case "$1" in
 	stop
 	start
 	;;
-  signal)
-	signal
-	;;
+  condrestart)
+        ;;
   *)
-	echo $"Usage: $prog {start|stop|restart|status|help}"
+	echo $"Usage: $prog {start|stop|restart|condrestart|status|help}"
 	RETVAL=3
 esac
 
