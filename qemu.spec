@@ -3,7 +3,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10.92
-Release: 3%{?dist}
+Release: 4%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -526,6 +526,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Sep 16 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.92-4
+- Fix for KSM patch from Justin Forbes
+
 * Wed Sep 16 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.92-3
 - Add ksmtuned, also from Dan Kenigsberg
 - Use %_initddir macro

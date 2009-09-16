@@ -1,4 +1,4 @@
-From 00782050707fbb999bfffe722794490d2211a0a9 Mon Sep 17 00:00:00 2001
+From 70415c7d31bf6420d1a2d685fe14661ce1cfd9cb Mon Sep 17 00:00:00 2001
 From: Dustin Kirkland <kirkland@canonical.com>
 Date: Fri, 4 Sep 2009 14:38:30 -0500
 Subject: [PATCH] qemu-kvm: fix segfault when running kvm without /dev/kvm
