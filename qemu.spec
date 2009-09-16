@@ -3,7 +3,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10.92
-Release: 1%{?dist}
+Release: 2%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -12,8 +12,16 @@ URL: http://www.qemu.org/
 
 Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-%{kvmverfull}.tar.gz
 Source1: qemu.init
+
+# Loads kvm kernel modules at boot
 Source2: kvm.modules
+
+# Creates /dev/kvm
 Source3: 80-kvm.rules
+
+# KSM control script
+Source4: ksm.init
+Source5: ksm.sysconfig
 
 # Not upstream, why?
 Patch01: qemu-bios-bigger-roms.patch
@@ -292,6 +300,9 @@ make V=1 %{?_smp_mflags} $buildldflags
 %install
 rm -rf $RPM_BUILD_ROOT
 
+install -D -p -m 0755 %{SOURCE4} $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/ksm
+install -D -p -m 0644 %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/ksm
+
 %ifarch %{ix86} x86_64
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules
 mkdir -p $RPM_BUILD_ROOT%{_bindir}/
@@ -398,6 +409,8 @@ getent passwd qemu >/dev/null || \
 %{_mandir}/man8/qemu-nbd.8*
 %{_bindir}/qemu-nbd
 %config(noreplace) %{_sysconfdir}/sasl2/qemu.conf
+%{_sysconfdir}/rc.d/init.d/ksm
+%config(noreplace) %{_sysconfdir}/sysconfig/ksm
 %files user
 %defattr(-,root,root)
 %{_sysconfdir}/rc.d/init.d/qemu
@@ -483,6 +496,9 @@ getent passwd qemu >/dev/null || \
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Sep 16 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.92-2
+- Add ksm control script from Dan Kenigsberg
+
 * Mon Sep  7 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.92-1
 - Update to qemu-kvm-0.11.0-rc2
 - Drop upstreamed patches
