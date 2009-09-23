@@ -3,7 +3,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.10.92
-Release: 4%{?dist}
+Release: 5%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -43,6 +43,9 @@ Patch05: qemu-fix-msix-error-handling-on-older-kernels.patch
 
 # Fix segfault when qemu-kvm is invoked inside a VM (bug #516543)
 Patch06: qemu-fix-no-kvm-segfault.patch
+
+# Fix issue causing NIC hotplug confusion when no model is specified (#524022)
+Patch07: qemu-correctly-free-nic-info-structure.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -233,6 +236,7 @@ such as kvmtrace and kvm_stat.
 %patch04 -p1
 %patch05 -p1
 %patch06 -p1
+%patch07 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -526,6 +530,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Sep 23 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.92-5
+- Fix issue causing NIC hotplug confusion when no model is specified (#524022)
+
 * Wed Sep 16 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.92-4
 - Fix for KSM patch from Justin Forbes
 
