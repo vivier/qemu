@@ -41,7 +41,7 @@ Patch05: qemu-correctly-free-nic-info-structure.patch
 
 # Do not exit during PCI hotplug when an invalid NIC model is passed (#524022)
 Patch06: qemu-do-not-exit-on-pci-hotplug-invalid-nic1.patch
-Patch07: qemu-do-not-exit-on-pci-hotplug-invalid-nic1.patch
+Patch07: qemu-do-not-exit-on-pci-hotplug-invalid-nic2.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
