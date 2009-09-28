@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.11.0
-Release: 1%{?dist}
+Release: 2%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -38,6 +38,10 @@ Patch04: qemu-add-ksm-support.patch
 
 # Fix issue causing NIC hotplug confusion when no model is specified (#524022)
 Patch05: qemu-correctly-free-nic-info-structure.patch
+
+# Do not exit during PCI hotplug when an invalid NIC model is passed (#524022)
+Patch06: qemu-do-not-exit-on-pci-hotplug-invalid-nic1.patch
+Patch07: qemu-do-not-exit-on-pci-hotplug-invalid-nic1.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -227,6 +231,8 @@ such as kvmtrace and kvm_stat.
 %patch03 -p1
 %patch04 -p1
 %patch05 -p1
+%patch06 -p1
+%patch07 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -520,6 +526,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Sep 28 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.11.0-2
+- Fix pci hotplug to not exit if supplied an invalid NIC model (#524022)
+
 * Mon Sep 28 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.11.0-1
 - Update to 0.11.0 release
 - Drop a couple of upstreamed patches
