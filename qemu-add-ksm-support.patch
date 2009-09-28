@@ -1,4 +1,4 @@
-From ef44e9475ab38ec73b30e83241279170fac06b22 Mon Sep 17 00:00:00 2001
+From c6c94b043e8b3593d0beb52966dce43069233840 Mon Sep 17 00:00:00 2001
 From: Izik Eidus <ieidus@redhat.com>
 Date: Tue, 28 Jul 2009 19:14:26 +0300
 Subject: [PATCH] kvm userspace: ksm support

@@ -1,4 +1,4 @@
-From 22c6c8c5dfe66a5e7f81dd4a296e1b2b245c5d28 Mon Sep 17 00:00:00 2001
+From 8f4d4cb4e4e73d0533aa2cb421c14210c75f6edc Mon Sep 17 00:00:00 2001
 From: Mark McLoughlin <markmc@redhat.com>
 Date: Mon, 29 Jun 2009 14:49:03 +0100
 Subject: [PATCH] Fix linux-user build on ppc

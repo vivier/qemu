@@ -1,16 +1,14 @@
-%define kvmverfull kvm-0.11.0-rc2
-
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
-Version: 0.10.92
-Release: 5%{?dist}
+Version: 0.11.0
+Release: 1%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
 Group: Development/Tools
 URL: http://www.qemu.org/
 
-Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-%{kvmverfull}.tar.gz
+Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-kvm-%{version}.tar.gz
 Source1: qemu.init
 
 # Loads kvm kernel modules at boot
@@ -38,14 +36,8 @@ Patch03: qemu-allow-pulseaudio-to-be-the-default.patch
 # Add KSM support - see https://fedoraproject.org/wiki/Features/KSM
 Patch04: qemu-add-ksm-support.patch
 
-# Fix MSI-X error handling on older kernels (#519787)
-Patch05: qemu-fix-msix-error-handling-on-older-kernels.patch
-
-# Fix segfault when qemu-kvm is invoked inside a VM (bug #516543)
-Patch06: qemu-fix-no-kvm-segfault.patch
-
 # Fix issue causing NIC hotplug confusion when no model is specified (#524022)
-Patch07: qemu-correctly-free-nic-info-structure.patch
+Patch05: qemu-correctly-free-nic-info-structure.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -235,8 +227,6 @@ such as kvmtrace and kvm_stat.
 %patch03 -p1
 %patch04 -p1
 %patch05 -p1
-%patch06 -p1
-%patch07 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -530,6 +520,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Sep 28 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.11.0-1
+- Update to 0.11.0 release
+- Drop a couple of upstreamed patches
+
 * Wed Sep 23 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.92-5
 - Fix issue causing NIC hotplug confusion when no model is specified (#524022)
 

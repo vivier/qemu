@@ -1,4 +1,4 @@
-From 4f5019c88e710be0aa597c81017b683d494c532d Mon Sep 17 00:00:00 2001
+From 8ab0d97572264051176ff45171484fa463d1287f Mon Sep 17 00:00:00 2001
 From: Mark McLoughlin <markmc@redhat.com>
 Date: Fri, 4 Sep 2009 11:24:03 +0100
 Subject: [PATCH] Allow pulseaudio backend to be the default
