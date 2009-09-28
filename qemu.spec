@@ -220,7 +220,7 @@ such as kvmtrace and kvm_stat.
 %endif
 
 %prep
-%setup -q -n qemu-%{kvmverfull}
+%setup -q -n qemu-kvm-%{version}
 
 %patch01 -p1
 %patch02 -p1
