@@ -43,6 +43,9 @@ Patch05: qemu-correctly-free-nic-info-structure.patch
 Patch06: qemu-do-not-exit-on-pci-hotplug-invalid-nic1.patch
 Patch07: qemu-do-not-exit-on-pci-hotplug-invalid-nic2.patch
 
+# Improve error reporting on file access
+Patch08: qemu-improve-error-reporting-on-file-access.patch
+
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
 BuildRequires: rsync dev86 iasl
@@ -233,6 +236,7 @@ such as kvmtrace and kvm_stat.
 %patch05 -p1
 %patch06 -p1
 %patch07 -p1
+%patch08 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -526,6 +530,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Oct  1 2009 Justin M. Forbes <jmforbes@redhat.com> - 2:0.11.0-3
+- Improve error reporting on file access (#524695)
+
 * Mon Sep 28 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.11.0-2
 - Fix pci hotplug to not exit if supplied an invalid NIC model (#524022)
 
