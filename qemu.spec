@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.11.0
-Release: 3%{?dist}
+Release: 4%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -131,11 +131,15 @@ This package provides the user mode emulation of qemu targets
 Summary: QEMU system emulator for x86
 Group: Development/Tools
 Requires: %{name}-common = %{epoch}:%{version}-%{release}
-Requires: gpxe-roms-qemu
-Requires: vgabios
-Requires: bochs-bios >= 2.3.8-0.8
 Provides: kvm = 85
 Obsoletes: kvm < 85
+Requires: vgabios
+Requires: bochs-bios >= 2.3.8-0.8
+Requires: /usr/share/gpxe/e1000-0x100e.rom
+Requires: /usr/share/gpxe/rtl8029.rom
+Requires: /usr/share/gpxe/pcnet32.rom
+Requires: /usr/share/gpxe/rtl8139.rom
+Requires: /usr/share/gpxe/virtio-net.rom
 
 %description system-x86
 QEMU is a generic and open source processor emulator which achieves a good
@@ -359,7 +363,7 @@ pxe_link() {
 }
 
 pxe_link e1000 e1000-0x100e
-pxe_link ne2k_pci ne
+pxe_link ne2k_pci rtl8029
 pxe_link pcnet pcnet32
 pxe_link rtl8139 rtl8139
 pxe_link virtio virtio-net
@@ -530,6 +534,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Oct  5 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.11.0-4
+- Use rtl8029 PXE rom for ne2k_pci, not ne (#526777)
+- Also, replace the gpxe-roms-qemu pkg requires with file-based requires
+
 * Thu Oct  1 2009 Justin M. Forbes <jmforbes@redhat.com> - 2:0.11.0-3
 - Improve error reporting on file access (#524695)
 
