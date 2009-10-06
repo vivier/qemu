@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.11.0
-Release: 4%{?dist}
+Release: 5%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -534,6 +534,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Oct  6 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.11.0-5
+- Add 'retune' verb to ksmtuned init script
+
 * Mon Oct  5 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.11.0-4
 - Use rtl8029 PXE rom for ne2k_pci, not ne (#526777)
 - Also, replace the gpxe-roms-qemu pkg requires with file-based requires

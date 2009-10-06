@@ -12,6 +12,9 @@
 # make ksm work harder and harder untill memory load falls below that
 # threshold.
 #
+# send SIGUSR1 to this process right after a new qemu process is started, or
+# following its death, to retune ksm accordingly
+#
 # needs testing and ironing. contact danken@redhat.com if something breaks.
 
 if [ -f /etc/ksmtuned.conf ]; then
@@ -105,10 +108,16 @@ adjust () {
     return 0
 }
 
+function nothing () {
+    :
+}
+
 loop () {
+    trap nothing SIGUSR1
     while true
     do
-        sleep $KSM_MONITOR_INTERVAL
+        sleep $KSM_MONITOR_INTERVAL &
+        wait $!
         adjust
     done
 }

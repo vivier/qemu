@@ -75,8 +75,11 @@ case "$1" in
   condrestart)
 	condrestart
 	;;
+  retune)
+        kill -SIGUSR1 `cat ${pidfile}`
+        RETVAL=$?
   *)
-	echo $"Usage: $prog {start|stop|restart|condrestart|status|help}"
+	echo $"Usage: $prog {start|stop|restart|condrestart|status|retune|help}"
 	RETVAL=3
 esac
 
