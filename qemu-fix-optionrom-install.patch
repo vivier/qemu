@@ -1,0 +1,35 @@
+From b3f4aa7dc9fcee229a0f6943f9fae1a02daf3497 Mon Sep 17 00:00:00 2001
+From: Mark McLoughlin <markmc@redhat.com>
+Date: Thu, 30 Jul 2009 17:17:43 +0100
+Subject: [PATCH] Revert "Don't copy multiboot.bin into pc-bios after built"
+
+This reverts commit 24d904eab3e806dc4d1ccdabbc3b4dcb64ddf497.
+
+This ensures:
+
+  a) extboot.bin is copied to pc-bios and installed
+
+  b) the built mutliboot.bin overwrites the multiboot.bin
+     shipped in the tarball
+
+Signed-of-by: Mark McLoughlin <markmc@redhat.com>
+Fedora-patch: qemu-fix-optionrom-install.patch
+---
+ pc-bios/optionrom/Makefile |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/pc-bios/optionrom/Makefile b/pc-bios/optionrom/Makefile
+index 4cc3dae..e06ca72 100644
+--- a/pc-bios/optionrom/Makefile
++++ b/pc-bios/optionrom/Makefile
+@@ -41,6 +41,7 @@ build-all: multiboot.bin extboot.bin
+ 
+ %.bin: %.raw
+ 	$(SRC_PATH)/pc-bios/optionrom/signrom.sh $< $@
++	cp $@ $(SRC_PATH)/pc-bios/
+ 
+ clean:
+ 	$(RM) *.o *.img *.bin *~
+-- 
+1.6.2.5
+

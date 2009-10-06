@@ -1,0 +1,31 @@
+From 729b681039015c718e476b8f294480b179ed726d Mon Sep 17 00:00:00 2001
+From: Izik Eidus <ieidus@redhat.com>
+Date: Tue, 28 Jul 2009 19:14:26 +0300
+Subject: [PATCH] kvm userspace: ksm support
+
+rfc for ksm support to kvm userpsace.
+
+Signed-off-by: Izik Eidus <ieidus@redhat.com>
+Signed-off-by: Mark McLoughlin <markmc@redhat.com>
+Fedora-patch: qemu-add-ksm-support.patch
+---
+ exec.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/exec.c b/exec.c
+index 2134697..88bcff5 100644
+--- a/exec.c
++++ b/exec.c
+@@ -2578,6 +2578,9 @@ ram_addr_t qemu_ram_alloc(ram_addr_t size)
+     new_block->host = file_ram_alloc(size, mem_path);
+     if (!new_block->host) {
+         new_block->host = qemu_vmalloc(size);
++#ifdef MADV_MERGEABLE
++        madvise(new_block->host, size, MADV_MERGEABLE);
++#endif
+     }
+     new_block->offset = last_ram_offset;
+     new_block->length = size;
+-- 
+1.6.2.5
+

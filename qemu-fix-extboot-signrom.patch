@@ -1,0 +1,44 @@
+From ee595f99ba7ff80b46a736a06f7e53998d926563 Mon Sep 17 00:00:00 2001
+From: Alexander Graf <agraf@suse.de>
+Date: Sat, 1 Aug 2009 11:48:31 +0200
+Subject: [PATCH] Fix checksum writing in signboot.sh
+
+The printf command takes an octal value after \, so we have to convert
+our decimal representation to octal first and then write it.
+
+This unbreaks extboot signing. Multiboot wasn't affected yet because
+the checksum was < 8.
+
+Spotted and first patch by Glauber Costa <glommer@redhat.com>.
+Printf idea by Paolo Bonzini <bonzini@gnu.org>.
+
+(cherry picked from commit d8b69b34761f7b3fb8f476712b631d1dd3f1b2a5)
+
+Signed-off-by: Alexander Graf <agraf@suse.de>
+CC: Glauber Costa <glommer@redhat.com>
+CC: Paolo Bonzini <bonzini@gnu.org>
+CC: Jan Ondrej <ondrejj@salstar.sk>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Mark McLoughlin <markmc@redhat.com>
+Fedora-patch: qemu-fix-extboot-signrom.patch
+---
+ pc-bios/optionrom/signrom.sh |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/pc-bios/optionrom/signrom.sh b/pc-bios/optionrom/signrom.sh
+index 4322811..975b27d 100755
+--- a/pc-bios/optionrom/signrom.sh
++++ b/pc-bios/optionrom/signrom.sh
+@@ -39,7 +39,8 @@ done
+ 
+ sum=$(( $sum % 256 ))
+ sum=$(( 256 - $sum ))
++sum_octal=$( printf "%o" $sum )
+ 
+ # and write the output file
+ cp "$1" "$2"
+-printf "\\$sum" | dd of="$2" bs=1 count=1 seek=$size conv=notrunc 2>/dev/null
++printf "\\$sum_octal" | dd of="$2" bs=1 count=1 seek=$size conv=notrunc 2>/dev/null
+-- 
+1.6.2.5
+
