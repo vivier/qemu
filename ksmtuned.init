@@ -78,6 +78,7 @@ case "$1" in
   retune)
         kill -SIGUSR1 `cat ${pidfile}`
         RETVAL=$?
+        ;;
   *)
 	echo $"Usage: $prog {start|stop|restart|condrestart|status|retune|help}"
 	RETVAL=3
