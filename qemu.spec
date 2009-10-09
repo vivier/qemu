@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.11.0
-Release: 5%{?dist}
+Release: 6%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -45,6 +45,9 @@ Patch07: qemu-do-not-exit-on-pci-hotplug-invalid-nic2.patch
 
 # Improve error reporting on file access
 Patch08: qemu-improve-error-reporting-on-file-access.patch
+
+# Fix fs errors with virtio and qcow2 backing file (#524734)
+Patch09: qemu-fix-qcow2-backing-file-with-virtio.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -105,6 +108,9 @@ This package provides the command line tool for manipulating disk images
 %package  common
 Summary: QEMU common files needed by all QEMU targets
 Group: Development/Tools
+Requires(post): /usr/bin/getent
+Requires(post): /usr/sbin/groupadd
+Requires(post): /usr/sbin/useradd
 Requires(post): /sbin/chkconfig
 Requires(preun): /sbin/service /sbin/chkconfig
 Requires(postun): /sbin/service
@@ -241,6 +247,7 @@ such as kvmtrace and kvm_stat.
 %patch06 -p1
 %patch07 -p1
 %patch08 -p1
+%patch09 -p1
 
 %build
 # systems like rhel build system does not have a recent enough linker so
@@ -534,6 +541,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Oct  9 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.11.0-6
+- Fix fs errors with virtio and qcow2 backing file (#524734)
+- Fix ksm initscript errors on kernel missing ksm (#527653)
+- Add missing Requires(post): getent, useradd, groupadd (#527087)
+
 * Tue Oct  6 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.11.0-5
 - Add 'retune' verb to ksmtuned init script
 

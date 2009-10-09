@@ -56,6 +56,19 @@ stop() {
     echo
 }
 
+status() {
+    if [ ! -f /sys/kernel/mm/ksm/run ] ; then
+        echo $"$prog not supported"
+        RETVAL=1
+    else if [ "$(cat /sys/kernel/mm/ksm/run 2>/dev/null)" != "1" ]; then
+        echo $"$prog is not running"
+        RETVAL=1
+    else
+        echo $"$prog is running"
+        RETVAL=0
+    fi; fi
+}
+
 case "$1" in
   start)
 	start
@@ -64,13 +77,7 @@ case "$1" in
 	stop
 	;;
   status)
-        is_run=`cat /sys/kernel/mm/ksm/run`
-	RETVAL=$?
-        if [ $is_run -eq 1 ]; then
-            echo $"$prog is running"
-        else
-            echo $"$prog is not running"
-        fi
+        status
 	;;
   restart)
 	stop

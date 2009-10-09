@@ -1,4 +1,4 @@
-From a40f520f7b94d2a5de04c7ca3a7513a99c84e9ef Mon Sep 17 00:00:00 2001
+From 565c62123258970d9254bc7b8eaa8f4c66ab2a21 Mon Sep 17 00:00:00 2001
 From: Justin M. Forbes <jforbes@redhat.com>
 Date: Thu, 1 Oct 2009 16:13:56 -0500
 Subject: [PATCH] Improve error reporting on file access
@@ -7,7 +7,10 @@ By making the error reporting include strerror(errno), it gives the user
 a bit more indication as to why qemu failed.  This is particularly
 important for people running qemu as a non root user.
 
+(cherry-picked from commit 850810d01b45e6ce99ac6696773e967890db2937)
+
 Signed-off-by: Justin M. Forbes <jforbes@redhat.com>
+Fedora-patch: qemu-improve-error-reporting-on-file-access.patch
 ---
  hw/pc.c |   12 ++++++------
  vl.c    |   20 ++++++++++----------
@@ -27,9 +30,9 @@ index 3b226f4..7a184cd 100644
 +		kernel_filename, strerror(errno));
  	exit(1);
      }
-
+ 
 @@ -947,8 +947,8 @@ static void load_linux(void *fw_cfg,
-
+ 
  	fi = fopen(initrd_filename, "rb");
  	if (!fi) {
 -	    fprintf(stderr, "qemu: could not load initial ram disk '%s'\n",
@@ -38,10 +41,10 @@ index 3b226f4..7a184cd 100644
 +		    initrd_filename, strerror(errno));
  	    exit(1);
  	}
-
+ 
 @@ -956,8 +956,8 @@ static void load_linux(void *fw_cfg,
  	initrd_addr = (initrd_max-initrd_size) & ~4095;
-
+ 
  	if (!fread_targphys_ok(initrd_addr, initrd_size, fi)) {
 -	    fprintf(stderr, "qemu: read error on initial ram disk '%s'\n",
 -		    initrd_filename);
