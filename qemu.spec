@@ -247,21 +247,9 @@ such as kvmtrace and kvm_stat.
 %patch09 -p1
 
 %build
-# systems like rhel build system does not have a recent enough linker so
-# --build-id works. this option is used fedora 8 onwards for giving info
-# to the debug packages.
-
-build_id_available() {
- echo "int main () { return 0; }" | gcc -x c -Wl,--build-id - 2>/dev/null
-}
-
-if build_id_available; then
- extraldflags="-Wl,--build-id";
- buildldflags="VL_LDFLAGS=-Wl,--build-id"
-else
- extraldflags=""
- buildldflags=""
-fi
+# --build-id option is used fedora 8 onwards for giving info to the debug packages.
+extraldflags="-Wl,--build-id";
+buildldflags="VL_LDFLAGS=-Wl,--build-id"
 
 %ifarch %{ix86} x86_64
 # sdl outputs to alsa or pulseaudio depending on system config, but it's broken (#495964)
