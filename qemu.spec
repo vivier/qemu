@@ -100,10 +100,7 @@ will install qemu-system-x86
 Summary: QEMU command line tool for manipulating disk images
 Group: Development/Tools
 %description img
-QEMU is a generic and open source processor emulator which achieves a good
-emulation speed by using dynamic translation.
-
-This package provides the command line tool for manipulating disk images
+This package provides a command line tool for manipulating disk images
 
 %package  common
 Summary: QEMU common files needed by all QEMU targets
