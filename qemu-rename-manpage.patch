@@ -1,0 +1,28 @@
+From 648462d340e805394e5376e2c8277a575e350adb Mon Sep 17 00:00:00 2001
+From: Mark McLoughlin <markmc@redhat.com>
+Date: Thu, 15 Oct 2009 08:40:29 +0100
+Subject: [PATCH] Install manpage as qemu-kvm(1)
+
+Signed-off-by: Mark McLoughlin <markmc@redhat.com>
+Fedora-patch: qemu-rename-manpage.patch
+---
+ Makefile |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index f2b8885..186fc97 100644
+--- a/Makefile
++++ b/Makefile
+@@ -289,7 +289,8 @@ install-doc: $(DOCS)
+ 	$(INSTALL_DATA) qemu-doc.html  qemu-tech.html "$(DESTDIR)$(docdir)"
+ ifndef CONFIG_WIN32
+ 	$(INSTALL_DIR) "$(DESTDIR)$(mandir)/man1"
+-	$(INSTALL_DATA) qemu.1 qemu-img.1 "$(DESTDIR)$(mandir)/man1"
++	$(INSTALL_DATA) qemu-img.1 "$(DESTDIR)$(mandir)/man1"
++	$(INSTALL_DATA) qemu.1 "$(DESTDIR)$(mandir)/man1/qemu-kvm.1"
+ 	$(INSTALL_DIR) "$(DESTDIR)$(mandir)/man8"
+ 	$(INSTALL_DATA) qemu-nbd.8 "$(DESTDIR)$(mandir)/man8"
+ endif
+-- 
+1.6.2.5
+

@@ -1,0 +1,27 @@
+From 5cdfa38c8eae7b37220c812051eed6251ef0b943 Mon Sep 17 00:00:00 2001
+From: Mark McLoughlin <markmc@redhat.com>
+Date: Mon, 12 Oct 2009 14:48:13 +0100
+Subject: [PATCH] Change SHARE_SUFFIX to share/qemu-kvm
+
+Signed-off-by: Mark McLoughlin <markmc@redhat.com>
+Fedora-patch: qemu-change-share-suffix.patch
+---
+ vl.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index 9182d89..dc6c30e 100644
+--- a/vl.c
++++ b/vl.c
+@@ -4792,7 +4792,7 @@ static char *find_datadir(const char *argv0)
+ /* Find a likely location for support files using the location of the binary.
+    For installed binaries this will be "$bindir/../share/qemu".  When
+    running from the build tree this will be "$bindir/../pc-bios".  */
+-#define SHARE_SUFFIX "/share/qemu"
++#define SHARE_SUFFIX "/share/qemu-kvm"
+ #define BUILD_SUFFIX "/pc-bios"
+ static char *find_datadir(const char *argv0)
+ {
+-- 
+1.6.2.5
+
