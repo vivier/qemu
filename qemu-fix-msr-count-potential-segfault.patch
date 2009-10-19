@@ -1,0 +1,67 @@
+From 7834349cfcc68b946c0d241ffd99c598857e489b Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Wed, 14 Oct 2009 15:02:27 -0300
+Subject: [PATCH] fix MSR_COUNT for kvm_arch_save_regs()
+
+A new register was added to the load/save list on commit
+d283d5a65a2bdcc570065267be21848bd6fe3d78, but MSR_COUNT was not updated, leading
+to potential stack corruption on kvm_arch_save_regs().
+
+The following registers are saved by kvm_arch_save_regs():
+
+ 1) MSR_IA32_SYSENTER_CS
+ 2) MSR_IA32_SYSENTER_ESP
+ 3) MSR_IA32_SYSENTER_EIP
+ 4) MSR_STAR
+ 5) MSR_IA32_TSC
+ 6) MSR_VM_HSAVE_PA
+ 7) MSR_CSTAR (x86_64 only)
+ 8) MSR_KERNELGSBASE (x86_64 only)
+ 9) MSR_FMASK (x86_64 only)
+10) MSR_LSTAR (x86_64 only)
+
+(cherry picked from commit e7e5448ba387adc20be1cf08411a5b526d684299)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+Signed-off-by: Mark McLoughlin <markmc@redhat.com>
+Fedora-patch: qemu-fix-msr-count-potential-segfault.patch
+---
+ qemu-kvm-x86.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/qemu-kvm-x86.c b/qemu-kvm-x86.c
+index 492dbc5..d5436b6 100644
+--- a/qemu-kvm-x86.c
++++ b/qemu-kvm-x86.c
+@@ -847,9 +847,9 @@ static int get_msr_entry(struct kvm_msr_entry *entry, CPUState *env)
+ }
+ 
+ #ifdef TARGET_X86_64
+-#define MSR_COUNT 9
++#define MSR_COUNT 10
+ #else
+-#define MSR_COUNT 5
++#define MSR_COUNT 6
+ #endif
+ 
+ static void set_v8086_seg(struct kvm_segment *lhs, const SegmentCache *rhs)
+@@ -991,6 +991,7 @@ void kvm_arch_load_regs(CPUState *env)
+ 
+     /* msrs */
+     n = 0;
++    /* Remember to increase MSR_COUNT if you add new registers below */
+     set_msr_entry(&msrs[n++], MSR_IA32_SYSENTER_CS,  env->sysenter_cs);
+     set_msr_entry(&msrs[n++], MSR_IA32_SYSENTER_ESP, env->sysenter_esp);
+     set_msr_entry(&msrs[n++], MSR_IA32_SYSENTER_EIP, env->sysenter_eip);
+@@ -1166,6 +1167,7 @@ void kvm_arch_save_regs(CPUState *env)
+ 
+     /* msrs */
+     n = 0;
++    /* Remember to increase MSR_COUNT if you add new registers below */
+     msrs[n++].index = MSR_IA32_SYSENTER_CS;
+     msrs[n++].index = MSR_IA32_SYSENTER_ESP;
+     msrs[n++].index = MSR_IA32_SYSENTER_EIP;
+-- 
+1.6.2.5
+

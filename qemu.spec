@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.11.0
-Release: 6%{?dist}
+Release: 7%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -48,6 +48,9 @@ Patch08: qemu-improve-error-reporting-on-file-access.patch
 
 # Fix fs errors with virtio and qcow2 backing file (#524734)
 Patch09: qemu-fix-qcow2-backing-file-with-virtio.patch
+
+# Fix potential segfault from too small MSR_COUNT (#528901)
+Patch10: qemu-fix-msr-count-potential-segfault.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -245,6 +248,7 @@ such as kvmtrace and kvm_stat.
 %patch07 -p1
 %patch08 -p1
 %patch09 -p1
+%patch10 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -526,6 +530,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Oct 19 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.11.0-7
+- Fix potential segfault from too small MSR_COUNT (#528901)
+
 * Fri Oct  9 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.11.0-6
 - Fix fs errors with virtio and qcow2 backing file (#524734)
 - Fix ksm initscript errors on kernel missing ksm (#527653)
