@@ -1,4 +1,4 @@
-From e670b85a691a6e39bce4b69f2175e0bfebc93f51 Mon Sep 17 00:00:00 2001
+From 2e7c7b6cb25603e2fa40990da86d03a57b2616bd Mon Sep 17 00:00:00 2001
 From: Mark McLoughlin <markmc@redhat.com>
 Date: Thu, 29 Oct 2009 11:34:17 +0000
 Subject: [PATCH] net: disable draining tap queue in one go
@@ -39,7 +39,7 @@ Fedora-patch: qemu-fix-dropped-packets-with-non-virtio-nics.patch
  1 files changed, 13 insertions(+), 16 deletions(-)
 
 diff --git a/net.c b/net.c
-index 3572c48..3abab95 100644
+index 3572c48..522e33c 100644
 --- a/net.c
 +++ b/net.c
 @@ -1453,27 +1453,24 @@ static void tap_send(void *opaque)
@@ -57,7 +57,7 @@ index 3572c48..3abab95 100644
 -        }
 +    size = tap_read_packet(s->fd, s->buf, sizeof(s->buf));
 +    if (size <= 0) {
-+        break;
++        return;
 +    }
  
  #ifdef IFF_VNET_HDR
