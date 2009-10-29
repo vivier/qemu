@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.11.0
-Release: 8%{?dist}
+Release: 9%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -54,6 +54,9 @@ Patch10: qemu-fix-msr-count-potential-segfault.patch
 
 # Properly save kvm time registers (#524229)
 Patch11: qemu-properly-save-kvm-system-time-registers.patch
+
+# Fix dropped packets with non-virtio NICs (#531419)
+Patch12: qemu-fix-dropped-packets-with-non-virtio-nics.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -253,6 +256,7 @@ such as kvmtrace and kvm_stat.
 %patch09 -p1
 %patch10 -p1
 %patch11 -p1
+%patch12 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -534,6 +538,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Oct 29 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.11.0-9
+- Fix dropped packets with non-virtio NICs (#531419)
+
 * Wed Oct 21 2009 Glauber Costa <gcosta@redhat.com> - 2:0.11.0-8
 - Properly save kvm time registers (#524229)
 

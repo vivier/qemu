@@ -1,0 +1,88 @@
+From e670b85a691a6e39bce4b69f2175e0bfebc93f51 Mon Sep 17 00:00:00 2001
+From: Mark McLoughlin <markmc@redhat.com>
+Date: Thu, 29 Oct 2009 11:34:17 +0000
+Subject: [PATCH] net: disable draining tap queue in one go
+
+If qemu_send_packet_async() returns zero, it means the packet has been
+queued and the sent callback will be invoked once it has been flushed.
+
+This is only possible where the NIC's receive() handler returns zero
+and promises to notify the networking core that room is available in its
+queue again.
+
+In the case where the receive handler does not have this capability
+(and its queue fills up) it returns -1 and the networking core does not
+queue up the packet. This condition is indicated by a -1 return from
+qemu_send_packet_async().
+
+Currently, tap handles this condition simply by dropping the packet. It
+should do its best to avoid getting into this situation by checking such
+NIC's have room for a packet before copying the packet from the tap
+interface.
+
+tap_send() used to achieve this by only reading a single packet before
+returning to the mainloop. That way, tap_can_send() is called before
+reading each packet.
+
+tap_send() was changed to completely drain the tap interface queue
+without taking into account the situation where the NIC returns an
+error and the packet is not queued. Let's start fixing this by
+reverting to the previous behaviour of reading one packet at a time.
+
+Reported-by: Scott Tsai <scottt.tw@gmail.com>
+Tested-by: Sven Rudolph <Sven_Rudolph@drewag.de>
+Signed-off-by: Mark McLoughlin <markmc@redhat.com>
+
+Fedora-patch: qemu-fix-dropped-packets-with-non-virtio-nics.patch
+---
+ net.c |   29 +++++++++++++----------------
+ 1 files changed, 13 insertions(+), 16 deletions(-)
+
+diff --git a/net.c b/net.c
+index 3572c48..3abab95 100644
+--- a/net.c
++++ b/net.c
+@@ -1453,27 +1453,24 @@ static void tap_send(void *opaque)
+ {
+     TAPState *s = opaque;
+     int size;
++    uint8_t *buf = s->buf;
+ 
+-    do {
+-        uint8_t *buf = s->buf;
+-
+-        size = tap_read_packet(s->fd, s->buf, sizeof(s->buf));
+-        if (size <= 0) {
+-            break;
+-        }
++    size = tap_read_packet(s->fd, s->buf, sizeof(s->buf));
++    if (size <= 0) {
++        break;
++    }
+ 
+ #ifdef IFF_VNET_HDR
+-        if (s->has_vnet_hdr && !s->using_vnet_hdr) {
+-            buf += sizeof(struct virtio_net_hdr);
+-            size -= sizeof(struct virtio_net_hdr);
+-        }
++    if (s->has_vnet_hdr && !s->using_vnet_hdr) {
++        buf += sizeof(struct virtio_net_hdr);
++        size -= sizeof(struct virtio_net_hdr);
++    }
+ #endif
+ 
+-        size = qemu_send_packet_async(s->vc, buf, size, tap_send_completed);
+-        if (size == 0) {
+-            tap_read_poll(s, 0);
+-        }
+-    } while (size > 0);
++    size = qemu_send_packet_async(s->vc, buf, size, tap_send_completed);
++    if (size == 0) {
++        tap_read_poll(s, 0);
++    }
+ }
+ 
+ #ifdef TUNSETSNDBUF
+-- 
+1.6.2.5
+
