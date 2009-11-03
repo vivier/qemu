@@ -7,7 +7,7 @@
 # Copyright 2009 Red Hat, Inc. and/or its affiliates.
 # Released under the GPL
 #
-# chkconfig: - 84 16
+# chkconfig: 345 84 16
 # description: The KSM init script starts and stops the ksm kernel thread.
 # config: /etc/sysconfig/ksm
 #
@@ -16,6 +16,7 @@
 # Required-Start:
 # Required-Stop:
 # Should-Start:
+# Default-Start: 3 4 5
 # Short-Description: start and stop ksm
 # Description: The KSM init script starts and stops the ksm kernel thread.
 ### END INIT INFO

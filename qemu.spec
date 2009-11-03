@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.11.0
-Release: 9%{?dist}
+Release: 10%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -538,6 +538,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Nov  3 2009 Justin M. Forbes <jforbes@redhat.com> - 2:0.11.0-10
+- Default ksm and ksmtuned services on.
+
 * Thu Oct 29 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.11.0-9
 - Fix dropped packets with non-virtio NICs (#531419)
 
