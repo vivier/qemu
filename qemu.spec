@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.11.0
-Release: 10%{?dist}
+Release: 11%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -57,6 +57,9 @@ Patch11: qemu-properly-save-kvm-system-time-registers.patch
 
 # Fix dropped packets with non-virtio NICs (#531419)
 Patch12: qemu-fix-dropped-packets-with-non-virtio-nics.patch
+
+# Temporarily disable preadv/pwritev support (#526549)
+Patch13: qemu-disable-preadv-support.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -257,6 +260,7 @@ such as kvmtrace and kvm_stat.
 %patch10 -p1
 %patch11 -p1
 %patch12 -p1
+%patch13 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -538,6 +542,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Nov  4 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.11.0-11
+- Temporarily disable preadv/pwritev support to fix data corruption (#526549)
+
 * Tue Nov  3 2009 Justin M. Forbes <jforbes@redhat.com> - 2:0.11.0-10
 - Default ksm and ksmtuned services on.
 

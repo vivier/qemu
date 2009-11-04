@@ -1,0 +1,31 @@
+From ef41d27fae62bbb71f3af60488b455582ee92625 Mon Sep 17 00:00:00 2001
+From: Mark McLoughlin <markmc@redhat.com>
+Date: Wed, 4 Nov 2009 12:29:35 -0500
+Subject: [PATCH] Disable preadv/pwritev support
+
+Workaround for a data corruptor issue on 32 bit hosts:
+
+  https://bugzilla.redhat.com/526549
+
+Signed-off-by: Mark McLoughlin <markmc@redhat.com>
+Fedora-patch: qemu-disable-preadv-support.patch
+---
+ posix-aio-compat.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/posix-aio-compat.c b/posix-aio-compat.c
+index e9fc9fa..b116933 100644
+--- a/posix-aio-compat.c
++++ b/posix-aio-compat.c
+@@ -34,7 +34,7 @@ static int idle_threads = 0;
+ static TAILQ_HEAD(, qemu_paiocb) request_list;
+ 
+ #ifdef HAVE_PREADV
+-static int preadv_present = 1;
++static int preadv_present = 0;
+ #else
+ static int preadv_present = 0;
+ #endif
+-- 
+1.6.2.5
+
