@@ -1,0 +1,31 @@
+From 56d370091cb01878c580f528011cd1717f8077fa Mon Sep 17 00:00:00 2001
+From: Mark McLoughlin <markmc@redhat.com>
+Date: Fri, 20 Nov 2009 18:07:15 +0000
+Subject: [PATCH] slirp: fix use-after-free
+
+460fec67ee introduced a use-after free in slirp.
+
+Cc: Jan Kiszka <jan.kiszka@siemens.com>
+Signed-off-by: Mark McLoughlin <markmc@redhat.com>
+Fedora-patch: qemu-slirp-use-after-free.patch
+---
+ slirp/mbuf.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/slirp/mbuf.c b/slirp/mbuf.c
+index 7652fea..87508ba 100644
+--- a/slirp/mbuf.c
++++ b/slirp/mbuf.c
+@@ -95,8 +95,8 @@ m_free(struct mbuf *m)
+ 	 * Either free() it or put it on the free list
+ 	 */
+ 	if (m->m_flags & M_DOFREE) {
+-		free(m);
+ 		m->slirp->mbuf_alloced--;
++		free(m);
+ 	} else if ((m->m_flags & M_FREELIST) == 0) {
+ 		insque(m,&m->slirp->m_freelist);
+ 		m->m_flags = M_FREELIST; /* Clobber other flags */
+-- 
+1.6.2.5
+

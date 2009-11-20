@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.11.0
-Release: 11%{?dist}
+Release: 12%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -60,6 +60,12 @@ Patch12: qemu-fix-dropped-packets-with-non-virtio-nics.patch
 
 # Temporarily disable preadv/pwritev support (#526549)
 Patch13: qemu-disable-preadv-support.patch
+
+# Fix a use-after-free crasher in the slirp code (#539583)
+Patch14: qemu-slirp-use-after-free.patch
+
+# Fix overflow in the parallels image format support (#533573)
+Patch15: qemu-parallels-image-format-overflow.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -261,6 +267,8 @@ such as kvmtrace and kvm_stat.
 %patch11 -p1
 %patch12 -p1
 %patch13 -p1
+%patch14 -p1
+%patch15 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -542,6 +550,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Nov 20 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.11.0-12
+- Fix a use-after-free crasher in the slirp code (#539583)
+- Fix overflow in the parallels image format support (#533573)
+
 * Wed Nov  4 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.11.0-11
 - Temporarily disable preadv/pwritev support to fix data corruption (#526549)
 
