@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.11.0
-Release: 7%{?dist}
+Release: 7.1%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -296,5 +296,8 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Dec 08 2009 Dennis Gregorovic <dgregor@redhat.com> - 2:0.11.0-7.1
+- Rebuilt for RHEL 6
+
 * Mon Oct 19 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.11.0-7.el6
 - Initial RHEL6 qemu-kvm package
