@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.12.1.2
-Release: 1%{?dist}
+Release: 2%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -23,9 +23,6 @@ Source5: ksm.sysconfig
 Source6: ksmtuned.init
 Source7: ksmtuned
 Source8: ksmtuned.conf
-
-# Fix fs errors with virtio and qcow2 backing file (#524734)
-Patch01: qemu-fix-qcow2-backing-file-with-virtio.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -213,8 +210,6 @@ such as kvmtrace and kvm_stat.
 
 %prep
 %setup -q -n qemu-kvm-%{version}
-
-# %patch01 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -498,6 +493,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Jan  4 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.1.2-2
+- Remove qcow2 virtio backing file patch
+
 * Mon Jan  4 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.1.2-1
 - Update to 0.12.1.2 upstream
 - Remove patches included in upstream
