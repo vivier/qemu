@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
-Version: 0.11.0
-Release: 12%{?dist}
+Version: 0.12.1.2
+Release: 1%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -24,48 +24,8 @@ Source6: ksmtuned.init
 Source7: ksmtuned
 Source8: ksmtuned.conf
 
-# Not upstream, why?
-Patch01: qemu-bios-bigger-roms.patch
-
-# Works around broken linux-user build on ppc
-Patch02: qemu-fix-linux-user-build-on-ppc.patch
-
-# Allow the pulseudio backend to be the default
-Patch03: qemu-allow-pulseaudio-to-be-the-default.patch
-
-# Add KSM support - see https://fedoraproject.org/wiki/Features/KSM
-Patch04: qemu-add-ksm-support.patch
-
-# Fix issue causing NIC hotplug confusion when no model is specified (#524022)
-Patch05: qemu-correctly-free-nic-info-structure.patch
-
-# Do not exit during PCI hotplug when an invalid NIC model is passed (#524022)
-Patch06: qemu-do-not-exit-on-pci-hotplug-invalid-nic1.patch
-Patch07: qemu-do-not-exit-on-pci-hotplug-invalid-nic2.patch
-
-# Improve error reporting on file access
-Patch08: qemu-improve-error-reporting-on-file-access.patch
-
 # Fix fs errors with virtio and qcow2 backing file (#524734)
-Patch09: qemu-fix-qcow2-backing-file-with-virtio.patch
-
-# Fix potential segfault from too small MSR_COUNT (#528901)
-Patch10: qemu-fix-msr-count-potential-segfault.patch
-
-# Properly save kvm time registers (#524229)
-Patch11: qemu-properly-save-kvm-system-time-registers.patch
-
-# Fix dropped packets with non-virtio NICs (#531419)
-Patch12: qemu-fix-dropped-packets-with-non-virtio-nics.patch
-
-# Temporarily disable preadv/pwritev support (#526549)
-Patch13: qemu-disable-preadv-support.patch
-
-# Fix a use-after-free crasher in the slirp code (#539583)
-Patch14: qemu-slirp-use-after-free.patch
-
-# Fix overflow in the parallels image format support (#533573)
-Patch15: qemu-parallels-image-format-overflow.patch
+Patch01: qemu-fix-qcow2-backing-file-with-virtio.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -254,21 +214,7 @@ such as kvmtrace and kvm_stat.
 %prep
 %setup -q -n qemu-kvm-%{version}
 
-%patch01 -p1
-%patch02 -p1
-%patch03 -p1
-%patch04 -p1
-%patch05 -p1
-%patch06 -p1
-%patch07 -p1
-%patch08 -p1
-%patch09 -p1
-%patch10 -p1
-%patch11 -p1
-%patch12 -p1
-%patch13 -p1
-%patch14 -p1
-%patch15 -p1
+# %patch01 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -490,7 +436,9 @@ fi
 %{_bindir}/qemu
 %{_bindir}/qemu-system-x86_64
 %{_datadir}/%{name}/bios.bin
+%{_datadir}/%{name}/linuxboot.bin
 %{_datadir}/%{name}/multiboot.bin
+%{_datadir}/%{name}/vapic.bin
 %{_datadir}/%{name}/vgabios.bin
 %{_datadir}/%{name}/vgabios-cirrus.bin
 %{_datadir}/%{name}/pxe-e1000.bin
@@ -550,6 +498,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Jan  4 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.1.2-1
+- Update to 0.12.1.2 upstream
+- Remove patches included in upstream
+
 * Fri Nov 20 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.11.0-12
 - Fix a use-after-free crasher in the slirp code (#539583)
 - Fix overflow in the parallels image format support (#533573)
