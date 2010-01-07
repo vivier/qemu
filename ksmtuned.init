@@ -7,7 +7,7 @@
 # Copyright 2009 Red Hat, Inc. and/or its affiliates.
 # Released under the GPL
 #
-# chkconfig: - 85 15
+# chkconfig: 345 85 15
 # description: The KSM tuning daemon controls whether (and with what vigor) \
 #              ksm should ksm search duplicated pages.
 # processname: ksmtuned
@@ -19,6 +19,7 @@
 # Required-Start:
 # Required-Stop:
 # Should-Start:
+# Default-Start: 3 4 5
 # Short-Description: tune the speed of ksm
 # Description: The Kernel Samepage Merging control Daemon is a simple script
 #   that controls whether (and with what vigor) should ksm search duplicated

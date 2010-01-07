@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
-Version: 0.11.0
-Release: 7.1%{?dist}
+Version: 0.12.1.2
+Release: 2.1%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -23,34 +23,6 @@ Source5: ksm.sysconfig
 Source6: ksmtuned.init
 Source7: ksmtuned
 Source8: ksmtuned.conf
-
-# Not upstream, why?
-Patch01: qemu-bios-bigger-roms.patch
-
-# Works around broken linux-user build on ppc
-Patch02: qemu-fix-linux-user-build-on-ppc.patch
-
-# Allow the pulseudio backend to be the default
-Patch03: qemu-allow-pulseaudio-to-be-the-default.patch
-
-# Add KSM support - see https://fedoraproject.org/wiki/Features/KSM
-Patch04: qemu-add-ksm-support.patch
-
-# Fix issue causing NIC hotplug confusion when no model is specified (#524022)
-Patch05: qemu-correctly-free-nic-info-structure.patch
-
-# Do not exit during PCI hotplug when an invalid NIC model is passed (#524022)
-Patch06: qemu-do-not-exit-on-pci-hotplug-invalid-nic1.patch
-Patch07: qemu-do-not-exit-on-pci-hotplug-invalid-nic2.patch
-
-# Improve error reporting on file access
-Patch08: qemu-improve-error-reporting-on-file-access.patch
-
-# Fix fs errors with virtio and qcow2 backing file (#524734)
-Patch09: qemu-fix-qcow2-backing-file-with-virtio.patch
-
-# Fix potential segfault from too small MSR_COUNT (#528901)
-Patch10: qemu-fix-msr-count-potential-segfault.patch
 
 # Change datadir to /usr/share/qemu-kvm
 Patch1000: qemu-change-share-suffix.patch
@@ -112,16 +84,6 @@ such as kvmtrace and kvm_stat.
 %prep
 %setup -q -n qemu-kvm-%{version}
 
-%patch01 -p1
-%patch02 -p1
-%patch03 -p1
-%patch04 -p1
-%patch05 -p1
-%patch06 -p1
-%patch07 -p1
-%patch08 -p1
-%patch09 -p1
-%patch10 -p1
 
 %patch1000 -p1
 %patch1001 -p1
@@ -271,7 +233,9 @@ fi
 %{_sbindir}/ksmtuned
 %config(noreplace) %{_sysconfdir}/ksmtuned.conf
 %{_datadir}/%{name}/bios.bin
+%{_datadir}/%{name}/linuxboot.bin
 %{_datadir}/%{name}/multiboot.bin
+%{_datadir}/%{name}/vapic.bin
 %{_datadir}/%{name}/vgabios.bin
 %{_datadir}/%{name}/vgabios-cirrus.bin
 %{_datadir}/%{name}/pxe-e1000.bin
@@ -296,6 +260,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Jan 07 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.1.el6
+- Rebasing to 0.12.1.2-2.fc13
+- Resolves: bz#553271
+
 * Tue Dec 08 2009 Dennis Gregorovic <dgregor@redhat.com> - 2:0.11.0-7.1
 - Rebuilt for RHEL 6
 

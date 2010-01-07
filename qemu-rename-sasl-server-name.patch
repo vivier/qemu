@@ -9,11 +9,11 @@ Fedora-patch: qemu-rename-sasl-server-name.patch
  vnc.c |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/vnc.c b/vnc.c
-index b09921a..6e37a71 100644
---- a/vnc.c
-+++ b/vnc.c
-@@ -2381,7 +2381,7 @@ int vnc_display_open(DisplayState *ds, const char *display)
+Index: qemu-kvm-0.12.1.2/vnc.c
+===================================================================
+--- qemu-kvm-0.12.1.2.orig/vnc.c	2009-12-29 18:46:34.000000000 -0200
++++ qemu-kvm-0.12.1.2/vnc.c	2010-01-07 11:27:47.000000000 -0200
+@@ -2641,7 +2641,7 @@
      }
  
  #ifdef CONFIG_VNC_SASL
@@ -22,6 +22,3 @@ index b09921a..6e37a71 100644
          fprintf(stderr, "Failed to initialize SASL auth %s",
                  sasl_errstring(saslErr, NULL, NULL));
          free(vs->display);
--- 
-1.6.2.5
-

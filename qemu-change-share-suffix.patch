@@ -9,11 +9,11 @@ Fedora-patch: qemu-change-share-suffix.patch
  vl.c |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/vl.c b/vl.c
-index 9182d89..dc6c30e 100644
---- a/vl.c
-+++ b/vl.c
-@@ -4792,7 +4792,7 @@ static char *find_datadir(const char *argv0)
+Index: qemu-kvm-0.12.1.2/vl.c
+===================================================================
+--- qemu-kvm-0.12.1.2.orig/vl.c	2009-12-29 18:46:34.000000000 -0200
++++ qemu-kvm-0.12.1.2/vl.c	2010-01-07 11:27:41.000000000 -0200
+@@ -4619,7 +4619,7 @@
  /* Find a likely location for support files using the location of the binary.
     For installed binaries this will be "$bindir/../share/qemu".  When
     running from the build tree this will be "$bindir/../pc-bios".  */
@@ -22,6 +22,3 @@ index 9182d89..dc6c30e 100644
  #define BUILD_SUFFIX "/pc-bios"
  static char *find_datadir(const char *argv0)
  {
--- 
-1.6.2.5
-
