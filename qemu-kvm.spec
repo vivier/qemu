@@ -1,13 +1,13 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.1%{?dist}
+Release: 2.2%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
 Group: Development/Tools
 URL: http://www.linux-kvm.org
-ExclusiveArch: %{ix86} x86_64
+ExclusiveArch: x86_64
 
 Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-kvm-%{version}.tar.gz
 
@@ -260,6 +260,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jan 12 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.2.el6
+- Build only on x86_64
+- Resolves: bz#538039
+
 * Thu Jan 07 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.1.el6
 - Rebasing to 0.12.1.2-2.fc13
 - Resolves: bz#553271
