@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.12.1.2
-Release: 2%{?dist}
+Release: 3%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -112,7 +112,7 @@ Requires: %{name}-common = %{epoch}:%{version}-%{release}
 Provides: kvm = 85
 Obsoletes: kvm < 85
 Requires: vgabios
-Requires: bochs-bios >= 2.3.8-0.8
+Requires: seabios
 Requires: /usr/share/gpxe/e1000-0x100e.rom
 Requires: /usr/share/gpxe/rtl8029.rom
 Requires: /usr/share/gpxe/pcnet32.rom
@@ -326,7 +326,7 @@ pxe_link rtl8139 rtl8139
 pxe_link virtio virtio-net
 ln -s ../vgabios/VGABIOS-lgpl-latest.bin  %{buildroot}/%{_datadir}/%{name}/vgabios.bin
 ln -s ../vgabios/VGABIOS-lgpl-latest.cirrus.bin %{buildroot}/%{_datadir}/%{name}/vgabios-cirrus.bin
-ln -s ../bochs/BIOS-bochs-kvm %{buildroot}/%{_datadir}/%{name}/bios.bin
+ln -s ../seabios/bios.bin %{buildroot}/%{_datadir}/%{name}/bios.bin
 ln -s ../openbios/openbios-ppc %{buildroot}/%{_datadir}/%{name}/openbios-ppc
 ln -s ../openbios/openbios-sparc32 %{buildroot}/%{_datadir}/%{name}/openbios-sparc32
 ln -s ../openbios/openbios-sparc64 %{buildroot}/%{_datadir}/%{name}/openbios-sparc64
@@ -493,6 +493,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Jan 10 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.1.2-3
+- Point to seabios instead of bochs, and add a requires for seabios
+
 * Mon Jan  4 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.1.2-2
 - Remove qcow2 virtio backing file patch
 
