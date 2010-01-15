@@ -1,4 +1,4 @@
-From 1891daba7610965fac8cdfb6efd50f5da6792387 Mon Sep 17 00:00:00 2001
+From f8ee2976fef1619f5614dbfaa0365ae4e639a3e1 Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Thu, 14 Jan 2010 09:38:01 -0200
 Subject: [PATCH 3/8] virtio-serial-bus: Maintain guest and host port open/close state
@@ -11,6 +11,7 @@ O-Subject: [RHEL 6 PATCH v4 3/8] virtio-serial-bus: Maintain guest and host port
 Bugzilla: 543825
 RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
 RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
 
 Via control channel messages, the guest can tell us whether a port got
 opened or closed. Similarly, we can also indicate to the guest of host

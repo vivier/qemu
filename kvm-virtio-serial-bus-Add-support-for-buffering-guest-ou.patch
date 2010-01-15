@@ -1,4 +1,4 @@
-From eb70e1744f35d865ead8e04e9d8b7607bbce88ac Mon Sep 17 00:00:00 2001
+From 686b1d682a38c819c7ae3f1bb960cf3ee2e2e8e6 Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Thu, 14 Jan 2010 09:38:03 -0200
 Subject: [PATCH 5/8] virtio-serial-bus: Add support for buffering guest output, throttling guests
@@ -11,6 +11,7 @@ O-Subject: [RHEL 6 PATCH v4 5/8] virtio-serial-bus: Add support for buffering
 Bugzilla: 543825
 RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
 RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
 
 We have to buffer data from guest as ports may not consume all the data
 in one go or the guest could be fast in sending data and the apps may

@@ -1,4 +1,4 @@
-From e4f90a68a7408d1a1cd44af06b36a8752949a215 Mon Sep 17 00:00:00 2001
+From 5df99a79c00b1431bb37246fda65868df0b6f4bc Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Thu, 14 Jan 2010 09:37:59 -0200
 Subject: [PATCH 1/8] virtio: Remove duplicate macro definition for max. virtqueues, bump up the max
@@ -11,6 +11,7 @@ O-Subject: [RHEL 6 PATCH v4 1/8] virtio: Remove duplicate macro definition for
 Bugzilla: 543825
 RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
 RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
 
 VIRTIO_PCI_QUEUE_MAX is redefined in hw/virtio.c. Let's just keep it in
 hw/virtio.h.

@@ -1,4 +1,4 @@
-From 593ad080a8ee5398e0b7a816972d3b40270c7347 Mon Sep 17 00:00:00 2001
+From 319015747753169ec6cbe8f020304c356c2ea3b3 Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Thu, 14 Jan 2010 09:38:02 -0200
 Subject: [PATCH 4/8] virtio-serial-bus: Add a port 'name' property for port discovery in guests
@@ -11,6 +11,7 @@ O-Subject: [RHEL 6 PATCH v4 4/8] virtio-serial-bus: Add a port 'name' property
 Bugzilla: 543825
 RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
 RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
 
 The port 'id' or number is internal state between the guest kernel and
 our bus implementation. This is invocation-dependent and isn't part of

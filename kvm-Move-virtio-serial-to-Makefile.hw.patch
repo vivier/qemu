@@ -1,4 +1,4 @@
-From c73b70a0dde6d524b0f0af4c416cab4fe804a963 Mon Sep 17 00:00:00 2001
+From e714b3d9e2847df4da6f5a786de3595b02a73689 Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Thu, 14 Jan 2010 09:38:06 -0200
 Subject: [PATCH 8/8] Move virtio-serial to Makefile.hw
@@ -10,6 +10,7 @@ O-Subject: [RHEL 6 PATCH v4 8/8] Move virtio-serial to Makefile.hw
 Bugzilla: 543825
 RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
 RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
 
 There's nothing target-dependent in the virtio-serial code so allow it
 to be compiled just once for all the targets.
