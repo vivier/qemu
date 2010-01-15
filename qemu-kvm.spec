@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.8%{?dist}
+Release: 2.9%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -133,7 +133,7 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
             --block-drv-whitelist=qcow2,raw,host_device,host_cdrom \
             --disable-debug-tcg \
             --disable-sparse \
-            --enable-werror \
+            --disable-werror \
             --disable-sdl \
             --disable-curses \
             --disable-curl \
@@ -304,6 +304,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Jan 15 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.9.el6
+- Disable -Werror again, as there are still warnings on the build
+- Related: bz#555336
+  (Remove unneeded features)
+
 * Fri Jan 15 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.8.el6
 - Require libaio-devel for build
 - Related: bz#555336
