@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.4%{?dist}
+Release: 2.5%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -123,11 +123,30 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
 # oss works, but is very problematic because it grabs exclusive control of the device causing other apps to go haywire
 ./configure --target-list=x86_64-softmmu \
             --prefix=%{_prefix} \
-            --audio-drv-list=pa,sdl,alsa,oss \
+            --audio-drv-list=pa,alsa \
+            --audio-card-list=ac97,es1370 \
             --disable-strip \
             --extra-ldflags=$extraldflags \
             --extra-cflags="$RPM_OPT_FLAGS" \
-            --disable-xen
+            --disable-xen \
+            --block-drv-whitelist=qcow2,raw,host_device,host_cdrom,vvfat \
+            --disable-debug-tcg \
+            --disable-sparse \
+            --enable-werror \
+            --disable-sdl \
+            --disable-curses \
+            --disable-curl \
+            --disable-check-utests \
+            --enable-vnc-tls \
+            --enable-vnc-sasl \
+            --disable-brlapi \
+            --disable-bluez \
+            --enable-docs \
+            --disable-vde \
+            --enable-linux-aio \
+            --enable-kvm \
+            --enable-kvm-cap-pit \
+            --enable-kvm-cap-device-assignment
 
 echo "config-host.mak contents:"
 echo "==="
@@ -284,6 +303,21 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Jan 15 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.5.el6
+- Remove unneeded/unsupported features: [bz#555336]
+  - make default options explicit
+  - remove sdl support
+  - remove sb16 emulation
+  - remove oss support
+  - remove curses support
+  - disable curl support
+  - disable bluez support
+  - enable -Werror
+  - limit block drivers support
+  - add host_cdrom block device
+- Resolves: bz#555336
+  (Remove unneeded features)
+
 * Fri Jan 15 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.4.el6
 - kvm-virtio-Remove-duplicate-macro-definition-for-max.-vi.patch [bz#543825]
 - kvm-virtio-console-qdev-conversion-new-virtio-serial-bus.patch [bz#543825]
