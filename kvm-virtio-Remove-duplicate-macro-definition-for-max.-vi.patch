@@ -1,0 +1,61 @@
+From e4f90a68a7408d1a1cd44af06b36a8752949a215 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Thu, 14 Jan 2010 09:37:59 -0200
+Subject: [PATCH 1/8] virtio: Remove duplicate macro definition for max. virtqueues, bump up the max
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1263461886-32077-2-git-send-email-amit.shah@redhat.com>
+Patchwork-id: 6351
+O-Subject: [RHEL 6 PATCH v4 1/8] virtio: Remove duplicate macro definition for
+	max. virtqueues, bump up the max
+Bugzilla: 543825
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+VIRTIO_PCI_QUEUE_MAX is redefined in hw/virtio.c. Let's just keep it in
+hw/virtio.h.
+
+Also, bump up the value of the maximum allowed virtqueues to 64. This is
+in preparation to allow multiple ports per virtio-console device.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio.c |    2 --
+ hw/virtio.h |    2 +-
+ 2 files changed, 1 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio.c |    2 --
+ hw/virtio.h |    2 +-
+ 2 files changed, 1 insertions(+), 3 deletions(-)
+
+diff --git a/hw/virtio.c b/hw/virtio.c
+index cecd0dc..88f4e78 100644
+--- a/hw/virtio.c
++++ b/hw/virtio.c
+@@ -75,8 +75,6 @@ struct VirtQueue
+     void (*handle_output)(VirtIODevice *vdev, VirtQueue *vq);
+ };
+ 
+-#define VIRTIO_PCI_QUEUE_MAX        16
+-
+ /* virt queue functions */
+ static void virtqueue_init(VirtQueue *vq)
+ {
+diff --git a/hw/virtio.h b/hw/virtio.h
+index 35532a6..051910a 100644
+--- a/hw/virtio.h
++++ b/hw/virtio.h
+@@ -90,7 +90,7 @@ typedef struct {
+     unsigned (*get_features)(void * opaque);
+ } VirtIOBindings;
+ 
+-#define VIRTIO_PCI_QUEUE_MAX 16
++#define VIRTIO_PCI_QUEUE_MAX 64
+ 
+ #define VIRTIO_NO_VECTOR 0xffff
+ 
+-- 
+1.6.3.rc4.29.g8146
+

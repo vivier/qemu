@@ -1,0 +1,251 @@
+From 1891daba7610965fac8cdfb6efd50f5da6792387 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Thu, 14 Jan 2010 09:38:01 -0200
+Subject: [PATCH 3/8] virtio-serial-bus: Maintain guest and host port open/close state
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1263461886-32077-4-git-send-email-amit.shah@redhat.com>
+Patchwork-id: 6349
+O-Subject: [RHEL 6 PATCH v4 3/8] virtio-serial-bus: Maintain guest and host port
+	open/close state
+Bugzilla: 543825
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Via control channel messages, the guest can tell us whether a port got
+opened or closed. Similarly, we can also indicate to the guest of host
+port open/close events.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-serial-bus.c |   87 ++++++++++++++++++++++++++++++++++++++++++++++++
+ hw/virtio-serial.c     |    6 +++
+ hw/virtio-serial.h     |    6 +++
+ 3 files changed, 99 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial-bus.c |   87 ++++++++++++++++++++++++++++++++++++++++++++++++
+ hw/virtio-serial.c     |    6 +++
+ hw/virtio-serial.h     |    6 +++
+ 3 files changed, 99 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index 7589d3b..1f5fed2 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -160,11 +160,22 @@ static size_t send_control_event(VirtIOSerialPort *port, uint16_t event,
+ /* Functions for use inside qemu to open and read from/write to ports */
+ int virtio_serial_open(VirtIOSerialPort *port)
+ {
++    /* Don't allow opening an already-open port */
++    if (port->host_connected) {
++        return 0;
++    }
++    /* Send port open notification to the guest */
++    port->host_connected = true;
++    send_control_event(port, VIRTIO_CONSOLE_PORT_OPEN, 1);
++
+     return 0;
+ }
+ 
+ int virtio_serial_close(VirtIOSerialPort *port)
+ {
++    port->host_connected = false;
++    send_control_event(port, VIRTIO_CONSOLE_PORT_OPEN, 0);
++
+     return 0;
+ }
+ 
+@@ -172,6 +183,9 @@ int virtio_serial_close(VirtIOSerialPort *port)
+ ssize_t virtio_serial_write(VirtIOSerialPort *port, const uint8_t *buf,
+                             size_t size)
+ {
++    if (!port || !port->host_connected || !port->guest_connected) {
++        return 0;
++    }
+     return write_to_port(port, buf, size);
+ }
+ 
+@@ -192,6 +206,9 @@ size_t virtio_serial_guest_ready(VirtIOSerialPort *port)
+         virtio_queue_empty(vq)) {
+         return 0;
+     }
++    if (use_multiport(port->vser) && !port->guest_connected) {
++        return 0;
++    }
+ 
+     size = 4096;
+     if (virtqueue_avail_bytes(vq, size, 0)) {
+@@ -230,6 +247,9 @@ static void handle_control_message(VirtIOSerial *vser, void *buf)
+         if (port->is_console) {
+             send_control_event(port, VIRTIO_CONSOLE_CONSOLE_PORT, 1);
+         }
++        if (port->host_connected) {
++            send_control_event(port, VIRTIO_CONSOLE_PORT_OPEN, 1);
++        }
+         /*
+          * When the guest has asked us for this information it means
+          * the guest is all setup and has its virtqueues
+@@ -240,6 +260,17 @@ static void handle_control_message(VirtIOSerial *vser, void *buf)
+             port->info->guest_ready(port);
+         }
+         break;
++    case VIRTIO_CONSOLE_PORT_OPEN:
++        port->guest_connected = cpkt.value;
++        if (cpkt.value && port->info->guest_open) {
++            /* Send the guest opened notification if an app is interested */
++            port->info->guest_open(port);
++        }
++        if (!cpkt.value && port->info->guest_close) {
++            /* Send the guest closed notification if an app is interested */
++            port->info->guest_close(port);
++        }
++        break;
+     }
+ }
+ 
+@@ -332,6 +363,8 @@ static void set_config(VirtIODevice *vdev, const uint8_t *config_data)
+ static void virtio_serial_save(QEMUFile *f, void *opaque)
+ {
+     VirtIOSerial *s = opaque;
++    VirtIOSerialPort *port;
++    uint32_t nr_active_ports;
+ 
+     /* The virtio device */
+     virtio_save(&s->vdev, f);
+@@ -340,15 +373,42 @@ static void virtio_serial_save(QEMUFile *f, void *opaque)
+     qemu_put_be16s(f, &s->config.cols);
+     qemu_put_be16s(f, &s->config.rows);
+     qemu_put_be32s(f, &s->config.nr_ports);
++
++    /* Items in struct VirtIOSerial */
++
++    /* Do this because we might have hot-unplugged some ports */
++    nr_active_ports = 0;
++    QTAILQ_FOREACH(port, &s->ports, next)
++        nr_active_ports++;
++
++    qemu_put_be32s(f, &nr_active_ports);
++
++    /*
++     * Items in struct VirtIOSerialPort.
++     */
++    QTAILQ_FOREACH(port, &s->ports, next) {
++        /*
++         * We put the port number because we may not have an active
++         * port at id 0 that's reserved for a console port, or in case
++         * of ports that might have gotten unplugged
++         */
++        qemu_put_be32s(f, &port->id);
++        qemu_put_byte(f, port->guest_connected);
++
++    }
+ }
+ 
+ static int virtio_serial_load(QEMUFile *f, void *opaque, int version_id)
+ {
+     VirtIOSerial *s = opaque;
++    VirtIOSerialPort *port;
++    uint32_t nr_active_ports;
++    unsigned int i;
+ 
+     if (version_id > 2) {
+         return -EINVAL;
+     }
++
+     /* The virtio device */
+     virtio_load(&s->vdev, f);
+ 
+@@ -361,6 +421,21 @@ static int virtio_serial_load(QEMUFile *f, void *opaque, int version_id)
+     qemu_get_be16s(f, &s->config.rows);
+     s->config.nr_ports = qemu_get_be32(f);
+ 
++    /* Items in struct VirtIOSerial */
++
++    qemu_get_be32s(f, &nr_active_ports);
++
++    /* Items in struct VirtIOSerialPort */
++    for (i = 0; i < nr_active_ports; i++) {
++        uint32_t id;
++
++        id = qemu_get_be32(f);
++        port = find_port_by_id(s, id);
++
++        port->guest_connected = qemu_get_byte(f);
++
++    }
++
+     return 0;
+ }
+ 
+@@ -390,6 +465,10 @@ static void virtser_bus_dev_print(Monitor *mon, DeviceState *qdev, int indent)
+ 
+     monitor_printf(mon, "%*s dev-prop-int: id: %u\n",
+                    indent, "", port->id);
++    monitor_printf(mon, "%*s dev-prop-int: guest_connected: %d\n",
++                   indent, "", port->guest_connected);
++    monitor_printf(mon, "%*s dev-prop-int: host_connected: %d\n",
++                   indent, "", port->host_connected);
+ }
+ 
+ static int virtser_port_qdev_init(DeviceState *qdev, DeviceInfo *base)
+@@ -423,6 +502,14 @@ static int virtser_port_qdev_init(DeviceState *qdev, DeviceInfo *base)
+ 
+     port->id = plugging_port0 ? 0 : port->vser->config.nr_ports++;
+ 
++    if (!use_multiport(port->vser)) {
++        /*
++         * Allow writes to guest in this case; we have no way of
++         * knowing if a guest port is connected.
++         */
++        port->guest_connected = true;
++    }
++
+     QTAILQ_INSERT_TAIL(&port->vser->ports, port, next);
+     port->ivq = port->vser->ivqs[port->id];
+     port->ovq = port->vser->ovqs[port->id];
+diff --git a/hw/virtio-serial.c b/hw/virtio-serial.c
+index 9d003f8..d9a6f32 100644
+--- a/hw/virtio-serial.c
++++ b/hw/virtio-serial.c
+@@ -68,6 +68,12 @@ static int virtconsole_initfn(VirtIOSerialDevice *dev)
+ 
+     port->is_console = true;
+ 
++    /*
++     * For console ports, just assume the guest is ready to accept our
++     * data.
++     */
++    port->guest_connected = true;
++
+     if (vcon->chr) {
+         qemu_chr_add_handlers(vcon->chr, chr_can_read, chr_read, chr_event,
+                               vcon);
+diff --git a/hw/virtio-serial.h b/hw/virtio-serial.h
+index 9aac856..1576eef 100644
+--- a/hw/virtio-serial.h
++++ b/hw/virtio-serial.h
+@@ -53,6 +53,7 @@ struct virtio_console_header {
+ #define VIRTIO_CONSOLE_PORT_READY	0
+ #define VIRTIO_CONSOLE_CONSOLE_PORT	1
+ #define VIRTIO_CONSOLE_RESIZE		2
++#define VIRTIO_CONSOLE_PORT_OPEN	3
+ 
+ /* == In-qemu interface == */
+ 
+@@ -96,6 +97,11 @@ struct VirtIOSerialPort {
+ 
+     /* Identify if this is a port that binds with hvc in the guest */
+     uint8_t is_console;
++
++    /* Is the corresponding guest device open? */
++    bool guest_connected;
++    /* Is this device open for IO on the host? */
++    bool host_connected;
+ };
+ 
+ struct VirtIOSerialPortInfo {
+-- 
+1.6.3.rc4.29.g8146
+

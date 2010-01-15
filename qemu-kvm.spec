@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.3%{?dist}
+Release: 2.4%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -30,6 +30,22 @@ Patch1000: qemu-change-share-suffix.patch
 Patch1001: qemu-rename-manpage.patch
 # Change SASL server name to qemu-kvm
 Patch1002: qemu-rename-sasl-server-name.patch
+# For bz#543825 - [RFE] Backport virtio-serial device to qemu
+Patch1003: kvm-virtio-Remove-duplicate-macro-definition-for-max.-vi.patch
+# For bz#543825 - [RFE] Backport virtio-serial device to qemu
+Patch1004: kvm-virtio-console-qdev-conversion-new-virtio-serial-bus.patch
+# For bz#543825 - [RFE] Backport virtio-serial device to qemu
+Patch1005: kvm-virtio-serial-bus-Maintain-guest-and-host-port-open-.patch
+# For bz#543825 - [RFE] Backport virtio-serial device to qemu
+Patch1006: kvm-virtio-serial-bus-Add-a-port-name-property-for-port-.patch
+# For bz#543825 - [RFE] Backport virtio-serial device to qemu
+Patch1007: kvm-virtio-serial-bus-Add-support-for-buffering-guest-ou.patch
+# For bz#543825 - [RFE] Backport virtio-serial device to qemu
+Patch1008: kvm-virtio-serial-bus-Add-ability-to-hot-unplug-ports.patch
+# For bz#543825 - [RFE] Backport virtio-serial device to qemu
+Patch1009: kvm-virtio-serial-Add-a-virtserialport-device-for-generi.patch
+# For bz#543825 - [RFE] Backport virtio-serial device to qemu
+Patch1010: kvm-Move-virtio-serial-to-Makefile.hw.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -88,6 +104,14 @@ such as kvmtrace and kvm_stat.
 %patch1000 -p1
 %patch1001 -p1
 %patch1002 -p1
+%patch1003 -p1
+%patch1004 -p1
+%patch1005 -p1
+%patch1006 -p1
+%patch1007 -p1
+%patch1008 -p1
+%patch1009 -p1
+%patch1010 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -260,6 +284,18 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Jan 15 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.4.el6
+- kvm-virtio-Remove-duplicate-macro-definition-for-max.-vi.patch [bz#543825]
+- kvm-virtio-console-qdev-conversion-new-virtio-serial-bus.patch [bz#543825]
+- kvm-virtio-serial-bus-Maintain-guest-and-host-port-open-.patch [bz#543825]
+- kvm-virtio-serial-bus-Add-a-port-name-property-for-port-.patch [bz#543825]
+- kvm-virtio-serial-bus-Add-support-for-buffering-guest-ou.patch [bz#543825]
+- kvm-virtio-serial-bus-Add-ability-to-hot-unplug-ports.patch [bz#543825]
+- kvm-virtio-serial-Add-a-virtserialport-device-for-generi.patch [bz#543825]
+- kvm-Move-virtio-serial-to-Makefile.hw.patch [bz#543825]
+- Resolves: bz#543825
+  ([RFE] Backport virtio-serial device to qemu)
+
 * Tue Jan 12 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.3.el6
 - Use seabios instead of bochs-bios
 - Resolves: bz#553732

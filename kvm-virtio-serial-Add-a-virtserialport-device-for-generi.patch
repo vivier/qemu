@@ -1,0 +1,79 @@
+From dadb4c7936925a5d15d7f4266994c412e504ed3a Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Thu, 14 Jan 2010 09:38:05 -0200
+Subject: [PATCH 7/8] virtio-serial: Add a 'virtserialport' device for generic serial port support
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1263461886-32077-8-git-send-email-amit.shah@redhat.com>
+Patchwork-id: 6354
+O-Subject: [RHEL 6 PATCH v4 7/8] virtio-serial: Add a 'virtserialport' device
+	for generic serial port support
+Bugzilla: 543825
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+This patch adds generic serial ports over the virtio serial bus.
+These ports have a few more options that are not relevant for
+virtio console ports.
+
+Sample uses for such a device can be obtaining info from the
+guest like the file systems used, apps installed, etc. for
+offline usage and logged-in users, clipboard copy-paste, etc.
+for online usage.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-serial.c |   35 +++++++++++++++++++++++++++++++++++
+ 1 files changed, 35 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial.c |   35 +++++++++++++++++++++++++++++++++++
+ 1 files changed, 35 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-serial.c b/hw/virtio-serial.c
+index 9bcf461..173154b 100644
+--- a/hw/virtio-serial.c
++++ b/hw/virtio-serial.c
+@@ -106,3 +106,38 @@ static void virtconsole_register(void)
+     virtio_serial_port_qdev_register(&virtconsole_info);
+ }
+ device_init(virtconsole_register)
++
++/* Generic Virtio Serial Ports */
++static int virtserialport_initfn(VirtIOSerialDevice *dev)
++{
++    VirtIOSerialPort *port = DO_UPCAST(VirtIOSerialPort, dev, &dev->qdev);
++    VirtConsole *vcon = DO_UPCAST(VirtConsole, port, port);
++
++    port->info = dev->info;
++
++    if (vcon->chr) {
++        qemu_chr_add_handlers(vcon->chr, chr_can_read, chr_read, chr_event,
++                              vcon);
++    }
++    return 0;
++}
++
++static VirtIOSerialPortInfo virtserialport_info = {
++    .qdev.name     = "virtserialport",
++    .qdev.size     = sizeof(VirtConsole),
++    .init          = virtserialport_initfn,
++    .exit          = virtconsole_exitfn,
++    .have_data     = flush_buf,
++    .qdev.props = (Property[]) {
++        DEFINE_PROP_CHR("chardev", VirtConsole, chr),
++        DEFINE_PROP_STRING("name", VirtConsole, port.name),
++        DEFINE_PROP_UINT64("byte_limit", VirtConsole, port.byte_limit, 0),
++        DEFINE_PROP_END_OF_LIST(),
++    },
++};
++
++static void virtserialport_register(void)
++{
++    virtio_serial_port_qdev_register(&virtserialport_info);
++}
++device_init(virtserialport_register)
+-- 
+1.6.3.rc4.29.g8146
+
