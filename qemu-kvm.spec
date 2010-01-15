@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.6%{?dist}
+Release: 2.7%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -129,7 +129,7 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
             --extra-ldflags=$extraldflags \
             --extra-cflags="$RPM_OPT_FLAGS" \
             --disable-xen \
-            --block-drv-whitelist=qcow2,raw,host_device,host_cdrom,vvfat \
+            --block-drv-whitelist=qcow2,raw,host_device,host_cdrom \
             --disable-debug-tcg \
             --disable-sparse \
             --enable-werror \
@@ -303,6 +303,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Jan 15 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.7.el6
+- Disable vvfat support
+- Resolves: bz#555336
+  (Remove unneeded features)
+
 * Fri Jan 15 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.6.el6
 - Fix misapply of virtio patches
 - Related: bz#543825
