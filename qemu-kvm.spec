@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.10%{?dist}
+Release: 2.11%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -46,6 +46,12 @@ Patch1008: kvm-virtio-serial-bus-Add-ability-to-hot-unplug-ports.patch
 Patch1009: kvm-virtio-serial-Add-a-virtserialport-device-for-generi.patch
 # For bz#543825 - [RFE] Backport virtio-serial device to qemu
 Patch1010: kvm-Move-virtio-serial-to-Makefile.hw.patch
+# For bz#556459 - RFE - In-place backing file format change
+Patch1011: kvm-block-Introduce-BDRV_O_NO_BACKING.patch
+# For bz#556459 - RFE - In-place backing file format change
+Patch1012: kvm-block-Add-bdrv_change_backing_file.patch
+# For bz#556459 - RFE - In-place backing file format change
+Patch1013: kvm-qemu-img-rebase.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -116,6 +122,9 @@ such as kvmtrace and kvm_stat.
 %patch1008 -p1
 %patch1009 -p1
 %patch1010 -p1
+%patch1011 -p1
+%patch1012 -p1
+%patch1013 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -307,6 +316,13 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Jan 18 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.11.el6
+- kvm-block-Introduce-BDRV_O_NO_BACKING.patch [bz#556459]
+- kvm-block-Add-bdrv_change_backing_file.patch [bz#556459]
+- kvm-qemu-img-rebase.patch [bz#556459]
+- Resolves: bz#556459
+  (RFE - In-place backing file format change)
+
 * Mon Jan 18 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.10.el6
 - Conflicts with older vdsm version, that needs vvfat support
 - Related: bz#555336

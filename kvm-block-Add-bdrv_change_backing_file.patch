@@ -1,0 +1,218 @@
+From 09112ed11a9ab53868c58ba8591c5f1524937d79 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Mon, 18 Jan 2010 14:41:15 -0200
+Subject: [PATCH 2/3] block: Add bdrv_change_backing_file
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1263825676-3325-3-git-send-email-kwolf@redhat.com>
+Patchwork-id: 6441
+O-Subject: [RHEL-6 KVM PATCH 2/3] block: Add bdrv_change_backing_file
+Bugzilla: 556459
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+
+Bugzilla: 556459
+Upstream commit: 756e6736a12a46330d9532d5f861ba15b38886d8
+
+Introduce the functions needed to change the backing file of an image. The
+function is implemented for qcow2.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block.c       |   20 +++++++++++
+ block.h       |    2 +
+ block/qcow2.c |  101 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ block_int.h   |    3 ++
+ 4 files changed, 126 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c       |   20 +++++++++++
+ block.h       |    2 +
+ block/qcow2.c |  101 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ block_int.h   |    3 ++
+ 4 files changed, 126 insertions(+), 0 deletions(-)
+
+diff --git a/block.c b/block.c
+index 20a0de2..faff40e 100644
+--- a/block.c
++++ b/block.c
+@@ -597,6 +597,26 @@ int bdrv_commit(BlockDriverState *bs)
+     return 0;
+ }
+ 
++/*
++ * Return values:
++ * 0        - success
++ * -EINVAL  - backing format specified, but no file
++ * -ENOSPC  - can't update the backing file because no space is left in the
++ *            image file header
++ * -ENOTSUP - format driver doesn't support changing the backing file
++ */
++int bdrv_change_backing_file(BlockDriverState *bs,
++    const char *backing_file, const char *backing_fmt)
++{
++    BlockDriver *drv = bs->drv;
++
++    if (drv->bdrv_change_backing_file != NULL) {
++        return drv->bdrv_change_backing_file(bs, backing_file, backing_fmt);
++    } else {
++        return -ENOTSUP;
++    }
++}
++
+ static int bdrv_check_byte_request(BlockDriverState *bs, int64_t offset,
+                                    size_t size)
+ {
+diff --git a/block.h b/block.h
+index f660d5f..bee9ec5 100644
+--- a/block.h
++++ b/block.h
+@@ -83,6 +83,8 @@ int64_t bdrv_getlength(BlockDriverState *bs);
+ void bdrv_get_geometry(BlockDriverState *bs, uint64_t *nb_sectors_ptr);
+ void bdrv_guess_geometry(BlockDriverState *bs, int *pcyls, int *pheads, int *psecs);
+ int bdrv_commit(BlockDriverState *bs);
++int bdrv_change_backing_file(BlockDriverState *bs,
++    const char *backing_file, const char *backing_fmt);
+ void bdrv_register(BlockDriver *bdrv);
+ 
+ /* async block I/O */
+diff --git a/block/qcow2.c b/block/qcow2.c
+index 984264b..4f9ef91 100644
+--- a/block/qcow2.c
++++ b/block/qcow2.c
+@@ -658,6 +658,105 @@ static void qcow_close(BlockDriverState *bs)
+     bdrv_delete(s->hd);
+ }
+ 
++/*
++ * Updates the variable length parts of the qcow2 header, i.e. the backing file
++ * name and all extensions. qcow2 was not designed to allow such changes, so if
++ * we run out of space (we can only use the first cluster) this function may
++ * fail.
++ *
++ * Returns 0 on success, -errno in error cases.
++ */
++static int qcow2_update_ext_header(BlockDriverState *bs,
++    const char *backing_file, const char *backing_fmt)
++{
++    size_t backing_file_len = 0;
++    size_t backing_fmt_len = 0;
++    BDRVQcowState *s = bs->opaque;
++    QCowExtension ext_backing_fmt = {0, 0};
++    int ret;
++
++    /* Backing file format doesn't make sense without a backing file */
++    if (backing_fmt && !backing_file) {
++        return -EINVAL;
++    }
++
++    /* Prepare the backing file format extension if needed */
++    if (backing_fmt) {
++        ext_backing_fmt.len = cpu_to_be32(strlen(backing_fmt));
++        ext_backing_fmt.magic = cpu_to_be32(QCOW_EXT_MAGIC_BACKING_FORMAT);
++        backing_fmt_len = ((sizeof(ext_backing_fmt)
++            + strlen(backing_fmt) + 7) & ~7);
++    }
++
++    /* Check if we can fit the new header into the first cluster */
++    if (backing_file) {
++        backing_file_len = strlen(backing_file);
++    }
++
++    size_t header_size = sizeof(QCowHeader) + backing_file_len
++        + backing_fmt_len;
++
++    if (header_size > s->cluster_size) {
++        return -ENOSPC;
++    }
++
++    /* Rewrite backing file name and qcow2 extensions */
++    size_t ext_size = header_size - sizeof(QCowHeader);
++    uint8_t buf[ext_size];
++    size_t offset = 0;
++    size_t backing_file_offset = 0;
++
++    if (backing_file) {
++        if (backing_fmt) {
++            int padding = backing_fmt_len -
++                (sizeof(ext_backing_fmt) + strlen(backing_fmt));
++
++            memcpy(buf + offset, &ext_backing_fmt, sizeof(ext_backing_fmt));
++            offset += sizeof(ext_backing_fmt);
++
++            memcpy(buf + offset, backing_fmt, strlen(backing_fmt));
++            offset += strlen(backing_fmt);
++
++            memset(buf + offset, 0, padding);
++            offset += padding;
++        }
++
++        memcpy(buf + offset, backing_file, backing_file_len);
++        backing_file_offset = sizeof(QCowHeader) + offset;
++    }
++
++    ret = bdrv_pwrite(s->hd, sizeof(QCowHeader), buf, ext_size);
++    if (ret < 0) {
++        goto fail;
++    }
++
++    /* Update header fields */
++    uint64_t be_backing_file_offset = cpu_to_be64(backing_file_offset);
++    uint32_t be_backing_file_size = cpu_to_be32(backing_file_len);
++
++    ret = bdrv_pwrite(s->hd, offsetof(QCowHeader, backing_file_offset),
++        &be_backing_file_offset, sizeof(uint64_t));
++    if (ret < 0) {
++        goto fail;
++    }
++
++    ret = bdrv_pwrite(s->hd, offsetof(QCowHeader, backing_file_size),
++        &be_backing_file_size, sizeof(uint32_t));
++    if (ret < 0) {
++        goto fail;
++    }
++
++    ret = 0;
++fail:
++    return ret;
++}
++
++static int qcow2_change_backing_file(BlockDriverState *bs,
++    const char *backing_file, const char *backing_fmt)
++{
++    return qcow2_update_ext_header(bs, backing_file, backing_fmt);
++}
++
+ static int get_bits_from_size(size_t size)
+ {
+     int res = 0;
+@@ -1137,6 +1236,8 @@ static BlockDriver bdrv_qcow2 = {
+     .bdrv_save_vmstate    = qcow_save_vmstate,
+     .bdrv_load_vmstate    = qcow_load_vmstate,
+ 
++    .bdrv_change_backing_file   = qcow2_change_backing_file,
++
+     .create_options = qcow_create_options,
+     .bdrv_check = qcow_check,
+ };
+diff --git a/block_int.h b/block_int.h
+index 9a3b2e0..a0ebd90 100644
+--- a/block_int.h
++++ b/block_int.h
+@@ -98,6 +98,9 @@ struct BlockDriver {
+     int (*bdrv_load_vmstate)(BlockDriverState *bs, uint8_t *buf,
+                              int64_t pos, int size);
+ 
++    int (*bdrv_change_backing_file)(BlockDriverState *bs,
++        const char *backing_file, const char *backing_fmt);
++
+     /* removable device specific */
+     int (*bdrv_is_inserted)(BlockDriverState *bs);
+     int (*bdrv_media_changed)(BlockDriverState *bs);
+-- 
+1.6.3.rc4.29.g8146
+

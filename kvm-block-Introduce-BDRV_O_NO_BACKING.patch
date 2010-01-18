@@ -1,0 +1,91 @@
+From 4f4e0242956c209f3c6fa1e86404dac126bcdc94 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Mon, 18 Jan 2010 14:41:14 -0200
+Subject: [PATCH 1/3] block: Introduce BDRV_O_NO_BACKING
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1263825676-3325-2-git-send-email-kwolf@redhat.com>
+Patchwork-id: 6440
+O-Subject: [RHEL-6 KVM PATCH 1/3] block: Introduce BDRV_O_NO_BACKING
+Bugzilla: 556459
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+
+Bugzilla: 556459
+Upstream commit:b783e409bf17b92f4af8dc5d6bd040d0092f33e0
+
+If an image references a backing file that doesn't exist, qemu-img info fails
+to open this image. Exactly in this case the info would be valuable, though:
+the user might want to find out which file is missing.
+
+This patch introduces a BDRV_O_NO_BACKING flag to ignore the backing file when
+opening the image. qemu-img info is the first user and provides info now even
+if the backing file is invalid.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block.c    |    4 ++--
+ block.h    |    1 +
+ qemu-img.c |    2 +-
+ 3 files changed, 4 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c    |    4 ++--
+ block.h    |    1 +
+ qemu-img.c |    2 +-
+ 3 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/block.c b/block.c
+index 3f3496e..20a0de2 100644
+--- a/block.c
++++ b/block.c
+@@ -477,7 +477,7 @@ int bdrv_open2(BlockDriverState *bs, const char *filename, int flags,
+         unlink(filename);
+     }
+ #endif
+-    if (bs->backing_file[0] != '\0') {
++    if ((flags & BDRV_O_NO_BACKING) == 0 && bs->backing_file[0] != '\0') {
+         /* if there is a backing file, use it */
+         BlockDriver *back_drv = NULL;
+         bs->backing_hd = bdrv_new("");
+@@ -1352,7 +1352,7 @@ const char *bdrv_get_encrypted_filename(BlockDriverState *bs)
+ void bdrv_get_backing_filename(BlockDriverState *bs,
+                                char *filename, int filename_size)
+ {
+-    if (!bs->backing_hd) {
++    if (!bs->backing_file) {
+         pstrcpy(filename, filename_size, "");
+     } else {
+         pstrcpy(filename, filename_size, bs->backing_file);
+diff --git a/block.h b/block.h
+index fa51ddf..f660d5f 100644
+--- a/block.h
++++ b/block.h
+@@ -39,6 +39,7 @@ typedef struct QEMUSnapshotInfo {
+ #define BDRV_O_NOCACHE     0x0020 /* do not use the host page cache */
+ #define BDRV_O_CACHE_WB    0x0040 /* use write-back caching */
+ #define BDRV_O_NATIVE_AIO  0x0080 /* use native AIO instead of the thread pool */
++#define BDRV_O_NO_BACKING  0x0100 /* don't open the backing file */
+ 
+ #define BDRV_O_CACHE_MASK  (BDRV_O_NOCACHE | BDRV_O_CACHE_WB)
+ 
+diff --git a/qemu-img.c b/qemu-img.c
+index 1d97f2e..5ad88bf 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -884,7 +884,7 @@ static int img_info(int argc, char **argv)
+     } else {
+         drv = NULL;
+     }
+-    if (bdrv_open2(bs, filename, BRDV_O_FLAGS, drv) < 0) {
++    if (bdrv_open2(bs, filename, BRDV_O_FLAGS | BDRV_O_NO_BACKING, drv) < 0) {
+         error("Could not open '%s'", filename);
+     }
+     bdrv_get_format(bs, fmt_name, sizeof(fmt_name));
+-- 
+1.6.3.rc4.29.g8146
+
