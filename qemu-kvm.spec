@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.9%{?dist}
+Release: 2.10%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -71,6 +71,9 @@ Requires: /usr/share/gpxe/rtl8029.rom
 Requires: /usr/share/gpxe/pcnet32.rom
 Requires: /usr/share/gpxe/rtl8139.rom
 Requires: /usr/share/gpxe/virtio-net.rom
+
+# We don't provide vvfat anymore, that is used by older VDSM versions.
+Conflicts: vdsm < 4.5
 
 Requires: qemu-img = %{epoch}:%{version}-%{release}
 
@@ -304,6 +307,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Jan 18 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.10.el6
+- Conflicts with older vdsm version, that needs vvfat support
+- Related: bz#555336
+
 * Fri Jan 15 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.9.el6
 - Disable -Werror again, as there are still warnings on the build
 - Related: bz#555336
