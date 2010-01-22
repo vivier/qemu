@@ -1,0 +1,72 @@
+From 915c9cd6771c69b2a67ead09614bff0a468585bb Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Wed, 20 Jan 2010 15:52:37 -0200
+Subject: [PATCH 4/4] virtio-serial-bus: Match upstream whitespace
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1264002757-5820-5-git-send-email-amit.shah@redhat.com>
+Patchwork-id: 6489
+O-Subject: [RHEL6 PATCH 4/4] virtio-serial-bus: Match upstream whitespace
+Bugzilla: 543825
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+
+The upstream code has a few linefeeds. Reflect that here as well.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-serial-bus.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial-bus.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index 507dcd6..3b9726a 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -227,6 +227,7 @@ static void handle_control_message(VirtIOSerial *vser, void *buf)
+         if (port->is_console) {
+             send_control_event(port, VIRTIO_CONSOLE_CONSOLE_PORT, 1);
+         }
++
+         if (port->name) {
+             stw_p(&cpkt.event, VIRTIO_CONSOLE_PORT_NAME);
+             stw_p(&cpkt.value, 1);
+@@ -245,6 +246,7 @@ static void handle_control_message(VirtIOSerial *vser, void *buf)
+         if (port->host_connected) {
+             send_control_event(port, VIRTIO_CONSOLE_PORT_OPEN, 1);
+         }
++
+         /*
+          * When the guest has asked us for this information it means
+          * the guest is all setup and has its virtqueues
+@@ -255,12 +257,14 @@ static void handle_control_message(VirtIOSerial *vser, void *buf)
+             port->info->guest_ready(port);
+         }
+         break;
++
+     case VIRTIO_CONSOLE_PORT_OPEN:
+         port->guest_connected = cpkt.value;
+         if (cpkt.value && port->info->guest_open) {
+             /* Send the guest opened notification if an app is interested */
+             port->info->guest_open(port);
+         }
++
+         if (!cpkt.value && port->info->guest_close) {
+             /* Send the guest closed notification if an app is interested */
+             port->info->guest_close(port);
+@@ -304,6 +308,7 @@ static void handle_output(VirtIODevice *vdev, VirtQueue *vq)
+             ret = 0;
+             goto next_buf;
+         }
++
+         /*
+          * A port may not have any handler registered for consuming the
+          * data that the guest sends or it may not have a chardev associated
+-- 
+1.6.3.rc4.29.g8146
+

@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.11%{?dist}
+Release: 2.12%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -52,6 +52,14 @@ Patch1011: kvm-block-Introduce-BDRV_O_NO_BACKING.patch
 Patch1012: kvm-block-Add-bdrv_change_backing_file.patch
 # For bz#556459 - RFE - In-place backing file format change
 Patch1013: kvm-qemu-img-rebase.patch
+# For bz#543825 - [RFE] Backport virtio-serial device to qemu
+Patch1014: kvm-virtio-serial-bus-Remove-guest-buffer-caching-and-th.patch
+# For bz#543825 - [RFE] Backport virtio-serial device to qemu
+Patch1015: kvm-virtio-serial-Make-sure-we-don-t-crash-when-host-por.patch
+# For bz#543825 - [RFE] Backport virtio-serial device to qemu
+Patch1016: kvm-virtio-serial-Use-MSI-vectors-for-port-virtqueues.patch
+# For bz#543825 - [RFE] Backport virtio-serial device to qemu
+Patch1017: kvm-virtio-serial-bus-Match-upstream-whitespace.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -125,6 +133,10 @@ such as kvmtrace and kvm_stat.
 %patch1011 -p1
 %patch1012 -p1
 %patch1013 -p1
+%patch1014 -p1
+%patch1015 -p1
+%patch1016 -p1
+%patch1017 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -316,6 +328,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Jan 22 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.12.el6
+- kvm-virtio-serial-bus-Remove-guest-buffer-caching-and-th.patch [bz#543825]
+- kvm-virtio-serial-Make-sure-we-don-t-crash-when-host-por.patch [bz#543825]
+- kvm-virtio-serial-Use-MSI-vectors-for-port-virtqueues.patch [bz#543825]
+- kvm-virtio-serial-bus-Match-upstream-whitespace.patch [bz#543825]
+- Resolves: bz#543825
+  ([RFE] Backport virtio-serial device to qemu)
+
 * Mon Jan 18 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.11.el6
 - kvm-block-Introduce-BDRV_O_NO_BACKING.patch [bz#556459]
 - kvm-block-Add-bdrv_change_backing_file.patch [bz#556459]

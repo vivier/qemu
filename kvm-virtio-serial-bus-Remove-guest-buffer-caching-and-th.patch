@@ -1,0 +1,438 @@
+From b20aeb378af2cda5bebba01ace6e7200da0bf417 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Wed, 20 Jan 2010 15:52:34 -0200
+Subject: [PATCH 1/4] virtio-serial-bus: Remove guest buffer caching and throttling.
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1264002757-5820-2-git-send-email-amit.shah@redhat.com>
+Patchwork-id: 6487
+O-Subject: [RHEL6 PATCH 1/4] virtio-serial-bus: Remove guest buffer caching and
+	throttling.
+Bugzilla: 543825
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+
+Upstream requested we make these changes before upstream acceptance.
+
+All the virtio-serial patches have now been accepted upstream and this
+patch gets us in sync with the code there.
+
+The reason for this change is that the buffering should be done inside
+the guest. We now ensure we tell the guest the number of bytes that were
+successfully consumed by a port. The guest app will then do the needful
+if that number was lesser than the data that it sent out.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-serial-bus.c |  181 ++----------------------------------------------
+ hw/virtio-serial.c     |    8 ++-
+ hw/virtio-serial.h     |   34 +--------
+ 3 files changed, 16 insertions(+), 207 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial-bus.c |  181 ++----------------------------------------------
+ hw/virtio-serial.c     |    8 ++-
+ hw/virtio-serial.h     |   34 +--------
+ 3 files changed, 16 insertions(+), 207 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index 7e69ffd..507dcd6 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -44,18 +44,6 @@ struct VirtIOSerial {
+     struct virtio_console_config config;
+ };
+ 
+-/* This struct holds individual buffers received for each port */
+-typedef struct VirtIOSerialPortBuffer {
+-    QTAILQ_ENTRY(VirtIOSerialPortBuffer) next;
+-
+-    uint8_t *buf;
+-
+-    size_t len; /* length of the buffer */
+-    size_t offset; /* offset from which to consume data in the buffer */
+-
+-    bool previous_failure; /* Did sending out this buffer fail previously? */
+-} VirtIOSerialPortBuffer;
+-
+ static VirtIOSerialPort *find_port_by_id(VirtIOSerial *vser, uint32_t id)
+ {
+     VirtIOSerialPort *port;
+@@ -153,96 +141,6 @@ static size_t send_control_event(VirtIOSerialPort *port, uint16_t event,
+     return send_control_msg(port, &cpkt, sizeof(cpkt));
+ }
+ 
+-static void init_buf(VirtIOSerialPortBuffer *buf, uint8_t *buffer, size_t len)
+-{
+-    buf->buf = buffer;
+-    buf->len = len;
+-    buf->offset = 0;
+-    buf->previous_failure = false;
+-}
+-
+-static VirtIOSerialPortBuffer *alloc_buf(size_t len)
+-{
+-    VirtIOSerialPortBuffer *buf;
+-
+-    buf = qemu_malloc(sizeof(*buf));
+-    buf->buf = qemu_malloc(len);
+-
+-    init_buf(buf, buf->buf, len);
+-
+-    return buf;
+-}
+-
+-static void free_buf(VirtIOSerialPortBuffer *buf)
+-{
+-    qemu_free(buf->buf);
+-    qemu_free(buf);
+-}
+-
+-static void flush_queue(VirtIOSerialPort *port)
+-{
+-    VirtIOSerialPortBuffer *buf;
+-    size_t out_size;
+-    ssize_t ret;
+-
+-    while ((buf = QTAILQ_FIRST(&port->unflushed_buffers))) {
+-        QTAILQ_REMOVE(&port->unflushed_buffers, buf, next);
+-
+-        out_size = buf->len - buf->offset;
+-        if (!port->host_connected) {
+-            port->nr_bytes -= buf->len + buf->offset;
+-            free_buf(buf);
+-            continue;
+-        }
+-
+-        ret = port->info->have_data(port, buf->buf + buf->offset, out_size);
+-        if (ret < out_size) {
+-            QTAILQ_INSERT_HEAD(&port->unflushed_buffers, buf, next);
+-        }
+-        if (ret <= 0) {
+-            /* We're not progressing at all */
+-            if (buf->previous_failure) {
+-                break;
+-            }
+-            buf->previous_failure = true;
+-        } else {
+-            buf->offset += ret;
+-            port->nr_bytes -= ret;
+-            buf->previous_failure = false;
+-        }
+-        if (!(buf->len - buf->offset)) {
+-            free_buf(buf);
+-        }
+-    }
+-
+-    if (port->host_throttled && port->nr_bytes < port->byte_limit) {
+-        port->host_throttled = false;
+-        send_control_event(port, VIRTIO_CONSOLE_THROTTLE_PORT, 0);
+-    }
+-}
+-
+-static void flush_all_ports(VirtIOSerial *vser)
+-{
+-    struct VirtIOSerialPort *port;
+-
+-    QTAILQ_FOREACH(port, &vser->ports, next) {
+-        if (port->has_activity) {
+-            port->has_activity = false;
+-            flush_queue(port);
+-        }
+-    }
+-}
+-
+-static void remove_port_buffers(VirtIOSerialPort *port)
+-{
+-    struct VirtIOSerialPortBuffer *buf, *buf2;
+-
+-    QTAILQ_FOREACH_SAFE(buf, &port->unflushed_buffers, next, buf2) {
+-        QTAILQ_REMOVE(&port->unflushed_buffers, buf, next);
+-        free_buf(buf);
+-    }
+-}
+-
+ /* Functions for use inside qemu to open and read from/write to ports */
+ int virtio_serial_open(VirtIOSerialPort *port)
+ {
+@@ -262,7 +160,6 @@ int virtio_serial_close(VirtIOSerialPort *port)
+     port->host_connected = false;
+     send_control_event(port, VIRTIO_CONSOLE_PORT_OPEN, 0);
+ 
+-    remove_port_buffers(port);
+     return 0;
+ }
+ 
+@@ -390,13 +287,7 @@ static void control_out(VirtIODevice *vdev, VirtQueue *vq)
+     virtio_notify(vdev, vq);
+ }
+ 
+-/*
+- * Guest wrote something to some port.
+- *
+- * Flush the data in the entire chunk that we received rather than
+- * splitting it into multiple buffers. VNC clients don't consume split
+- * buffers
+- */
++/* Guest wrote something to some port. */
+ static void handle_output(VirtIODevice *vdev, VirtQueue *vq)
+ {
+     VirtIOSerial *vser;
+@@ -406,10 +297,11 @@ static void handle_output(VirtIODevice *vdev, VirtQueue *vq)
+ 
+     while (virtqueue_pop(vq, &elem)) {
+         VirtIOSerialPort *port;
+-        VirtIOSerialPortBuffer *buf;
++        size_t ret;
+ 
+         port = find_port_by_vq(vser, vq);
+         if (!port) {
++            ret = 0;
+             goto next_buf;
+         }
+         /*
+@@ -418,28 +310,18 @@ static void handle_output(VirtIODevice *vdev, VirtQueue *vq)
+          * with it. Just ignore the data in that case.
+          */
+         if (!port->info->have_data) {
++            ret = 0;
+             goto next_buf;
+         }
+ 
+         /* The guest always sends only one sg */
+-        buf = alloc_buf(elem.out_sg[0].iov_len);
+-        memcpy(buf->buf, elem.out_sg[0].iov_base, buf->len);
+-
+-        QTAILQ_INSERT_TAIL(&port->unflushed_buffers, buf, next);
+-        port->nr_bytes += buf->len;
+-        port->has_activity = true;
++        ret = port->info->have_data(port, elem.out_sg[0].iov_base,
++                                    elem.out_sg[0].iov_len);
+ 
+-        if (!port->host_throttled && port->byte_limit &&
+-            port->nr_bytes >= port->byte_limit) {
+-
+-            port->host_throttled = true;
+-            send_control_event(port, VIRTIO_CONSOLE_THROTTLE_PORT, 1);
+-        }
+     next_buf:
+-        virtqueue_push(vq, &elem, elem.out_sg[0].iov_len);
++        virtqueue_push(vq, &elem, ret);
+     }
+     virtio_notify(vdev, vq);
+-    flush_all_ports(vser);
+ }
+ 
+ static void handle_input(VirtIODevice *vdev, VirtQueue *vq)
+@@ -472,7 +354,6 @@ static void virtio_serial_save(QEMUFile *f, void *opaque)
+     VirtIOSerial *s = opaque;
+     VirtIOSerialPort *port;
+     uint32_t nr_active_ports;
+-    unsigned int nr_bufs;
+ 
+     /* The virtio device */
+     virtio_save(&s->vdev, f);
+@@ -495,33 +376,13 @@ static void virtio_serial_save(QEMUFile *f, void *opaque)
+      * Items in struct VirtIOSerialPort.
+      */
+     QTAILQ_FOREACH(port, &s->ports, next) {
+-        VirtIOSerialPortBuffer *buf;
+-
+         /*
+          * We put the port number because we may not have an active
+          * port at id 0 that's reserved for a console port, or in case
+          * of ports that might have gotten unplugged
+          */
+         qemu_put_be32s(f, &port->id);
+-        qemu_put_be64s(f, &port->byte_limit);
+-        qemu_put_be64s(f, &port->nr_bytes);
+         qemu_put_byte(f, port->guest_connected);
+-        qemu_put_byte(f, port->host_throttled);
+-
+-        /* All the pending buffers from active ports */
+-        nr_bufs = 0;
+-        QTAILQ_FOREACH(buf, &port->unflushed_buffers, next) {
+-            nr_bufs++;
+-        }
+-        qemu_put_be32s(f, &nr_bufs);
+-        if (!nr_bufs) {
+-            continue;
+-        }
+-        QTAILQ_FOREACH(buf, &port->unflushed_buffers, next) {
+-            qemu_put_be64s(f, &buf->len);
+-            qemu_put_be64s(f, &buf->offset);
+-            qemu_put_buffer(f, buf->buf, buf->len);
+-        }
+     }
+ }
+ 
+@@ -554,33 +415,12 @@ static int virtio_serial_load(QEMUFile *f, void *opaque, int version_id)
+ 
+     /* Items in struct VirtIOSerialPort */
+     for (i = 0; i < nr_active_ports; i++) {
+-        VirtIOSerialPortBuffer *buf;
+         uint32_t id;
+-        unsigned int nr_bufs;
+ 
+         id = qemu_get_be32(f);
+         port = find_port_by_id(s, id);
+ 
+-        port->byte_limit = qemu_get_be64(f);
+-        port->nr_bytes   = qemu_get_be64(f);
+         port->guest_connected = qemu_get_byte(f);
+-        port->host_throttled = qemu_get_byte(f);
+-
+-        /* All the pending buffers from active ports */
+-        qemu_get_be32s(f, &nr_bufs);
+-        if (!nr_bufs) {
+-            continue;
+-        }
+-        for (; nr_bufs; nr_bufs--) {
+-            size_t len;
+-
+-            qemu_get_be64s(f, &len);
+-            buf = alloc_buf(len);
+-
+-            qemu_get_be64s(f, &buf->offset);
+-            qemu_get_buffer(f, buf->buf, buf->len);
+-            QTAILQ_INSERT_TAIL(&port->unflushed_buffers, buf, next);
+-        }
+     }
+ 
+     return 0;
+@@ -616,10 +456,6 @@ static void virtser_bus_dev_print(Monitor *mon, DeviceState *qdev, int indent)
+                    indent, "", port->guest_connected);
+     monitor_printf(mon, "%*s dev-prop-int: host_connected: %d\n",
+                    indent, "", port->host_connected);
+-    monitor_printf(mon, "%*s dev-prop-int: host_throttled: %d\n",
+-                   indent, "", port->host_throttled);
+-    monitor_printf(mon, "%*s dev-prop-int: nr_bytes: %zu\n",
+-                   indent, "", port->nr_bytes);
+ }
+ 
+ static int virtser_port_qdev_init(DeviceState *qdev, DeviceInfo *base)
+@@ -650,7 +486,6 @@ static int virtser_port_qdev_init(DeviceState *qdev, DeviceInfo *base)
+     if (ret) {
+         return ret;
+     }
+-    QTAILQ_INIT(&port->unflushed_buffers);
+ 
+     port->id = plugging_port0 ? 0 : port->vser->config.nr_ports++;
+ 
+@@ -703,8 +538,6 @@ static int virtser_port_qdev_exit(DeviceState *qdev)
+     if (port->info->exit)
+         port->info->exit(dev);
+ 
+-    remove_port_buffers(port);
+-
+     return 0;
+ }
+ 
+diff --git a/hw/virtio-serial.c b/hw/virtio-serial.c
+index 173154b..9153846 100644
+--- a/hw/virtio-serial.c
++++ b/hw/virtio-serial.c
+@@ -20,11 +20,14 @@ typedef struct VirtConsole {
+ 
+ 
+ /* Callback function that's called when the guest sends us data */
+-static ssize_t flush_buf(VirtIOSerialPort *port, const uint8_t *buf, size_t len)
++static size_t flush_buf(VirtIOSerialPort *port, const uint8_t *buf, size_t len)
+ {
+     VirtConsole *vcon = DO_UPCAST(VirtConsole, port, port);
++    ssize_t ret;
+ 
+-    return qemu_chr_write(vcon->chr, buf, len);
++    ret = qemu_chr_write(vcon->chr, buf, len);
++
++    return ret < 0 ? 0 : ret;
+ }
+ 
+ /* Readiness of the guest to accept data on a port */
+@@ -131,7 +134,6 @@ static VirtIOSerialPortInfo virtserialport_info = {
+     .qdev.props = (Property[]) {
+         DEFINE_PROP_CHR("chardev", VirtConsole, chr),
+         DEFINE_PROP_STRING("name", VirtConsole, port.name),
+-        DEFINE_PROP_UINT64("byte_limit", VirtConsole, port.byte_limit, 0),
+         DEFINE_PROP_END_OF_LIST(),
+     },
+ };
+diff --git a/hw/virtio-serial.h b/hw/virtio-serial.h
+index 987835d..f297b00 100644
+--- a/hw/virtio-serial.h
++++ b/hw/virtio-serial.h
+@@ -51,8 +51,7 @@ struct virtio_console_control {
+ #define VIRTIO_CONSOLE_RESIZE		2
+ #define VIRTIO_CONSOLE_PORT_OPEN	3
+ #define VIRTIO_CONSOLE_PORT_NAME	4
+-#define VIRTIO_CONSOLE_THROTTLE_PORT	5
+-#define VIRTIO_CONSOLE_PORT_REMOVE	6
++#define VIRTIO_CONSOLE_PORT_REMOVE	5
+ 
+ /* == In-qemu interface == */
+ 
+@@ -94,13 +93,6 @@ struct VirtIOSerialPort {
+     char *name;
+ 
+     /*
+-     * This list holds buffers pushed by the guest in case the guest
+-     * sent incomplete messages or the host connection was down and
+-     * the device requested to cache the data.
+-     */
+-    QTAILQ_HEAD(, VirtIOSerialPortBuffer) unflushed_buffers;
+-
+-    /*
+      * This id helps identify ports between the guest and the host.
+      * The guest sends a "header" with this id with each data packet
+      * that it sends and the host can then find out which associated
+@@ -108,19 +100,6 @@ struct VirtIOSerialPort {
+      */
+     uint32_t id;
+ 
+-    /*
+-     * Each port can specify the limit on number of bytes that can be
+-     * outstanding in the unread buffers. This is to prevent any OOM
+-     * situtation if a rogue process on the guest keeps injecting
+-     * data.
+-     */
+-    size_t byte_limit;
+-
+-    /*
+-     * The number of bytes we have queued up in our unread queue
+-     */
+-    size_t nr_bytes;
+-
+     /* Identify if this is a port that binds with hvc in the guest */
+     uint8_t is_console;
+ 
+@@ -128,11 +107,6 @@ struct VirtIOSerialPort {
+     bool guest_connected;
+     /* Is this device open for IO on the host? */
+     bool host_connected;
+-    /* Have we sent a throttle message to the guest? */
+-    bool host_throttled;
+-
+-    /* Did this port get data in the recent handle_output call? */
+-    bool has_activity;
+ };
+ 
+ struct VirtIOSerialPortInfo {
+@@ -159,10 +133,10 @@ struct VirtIOSerialPortInfo {
+ 
+     /*
+      * Guest wrote some data to the port. This data is handed over to
+-     * the app via this callback. The app returns the number of bytes
+-     * it successfully consumed or a negative number on error.
++     * the app via this callback. The app should return the number of
++     * bytes it successfully consumed.
+      */
+-    ssize_t (*have_data)(VirtIOSerialPort *port, const uint8_t *buf, size_t len);
++    size_t (*have_data)(VirtIOSerialPort *port, const uint8_t *buf, size_t len);
+ };
+ 
+ /* Interface to the virtio-serial bus */
+-- 
+1.6.3.rc4.29.g8146
+

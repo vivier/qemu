@@ -1,0 +1,74 @@
+From f4ae536f8742d12f7f997b9b508517cc9e5fddd5 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Wed, 20 Jan 2010 15:52:35 -0200
+Subject: [PATCH 2/4] virtio-serial: Make sure we don't crash when host ports aren't connected to chardevs
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1264002757-5820-3-git-send-email-amit.shah@redhat.com>
+Patchwork-id: 6488
+O-Subject: [RHEL6 PATCH 2/4] virtio-serial: Make sure we don't crash when host
+	ports aren't connected to chardevs
+Bugzilla: 543825
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+
+Ensure we accept data for ports only when we can output to some chardev.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-serial.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/hw/virtio-serial.c b/hw/virtio-serial.c
+index 9153846..bd44ec6 100644
+--- a/hw/virtio-serial.c
++++ b/hw/virtio-serial.c
+@@ -74,6 +74,7 @@ static int virtconsole_initfn(VirtIOSerialDevice *dev)
+     if (vcon->chr) {
+         qemu_chr_add_handlers(vcon->chr, chr_can_read, chr_read, chr_event,
+                               vcon);
++        port->info->have_data = flush_buf;
+     }
+     return 0;
+ }
+@@ -84,6 +85,7 @@ static int virtconsole_exitfn(VirtIOSerialDevice *dev)
+     VirtConsole *vcon = DO_UPCAST(VirtConsole, port, port);
+ 
+     if (vcon->chr) {
++        port->info->have_data = NULL;
+         qemu_chr_close(vcon->chr);
+     }
+ 
+@@ -95,7 +97,6 @@ static VirtIOSerialPortInfo virtconsole_info = {
+     .qdev.size     = sizeof(VirtConsole),
+     .init          = virtconsole_initfn,
+     .exit          = virtconsole_exitfn,
+-    .have_data     = flush_buf,
+     .qdev.props = (Property[]) {
+         DEFINE_PROP_UINT8("is_console", VirtConsole, port.is_console, 1),
+         DEFINE_PROP_CHR("chardev", VirtConsole, chr),
+@@ -121,6 +122,7 @@ static int virtserialport_initfn(VirtIOSerialDevice *dev)
+     if (vcon->chr) {
+         qemu_chr_add_handlers(vcon->chr, chr_can_read, chr_read, chr_event,
+                               vcon);
++        port->info->have_data = flush_buf;
+     }
+     return 0;
+ }
+@@ -130,7 +132,6 @@ static VirtIOSerialPortInfo virtserialport_info = {
+     .qdev.size     = sizeof(VirtConsole),
+     .init          = virtserialport_initfn,
+     .exit          = virtconsole_exitfn,
+-    .have_data     = flush_buf,
+     .qdev.props = (Property[]) {
+         DEFINE_PROP_CHR("chardev", VirtConsole, chr),
+         DEFINE_PROP_STRING("name", VirtConsole, port.name),
+-- 
+1.6.3.rc4.29.g8146
+
