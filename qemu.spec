@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.12.2
-Release: 2%{?dist}
+Release: 4%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -38,7 +38,7 @@ Patch09: qemu-virtio-console-Rename-virtio-serial.c-back-to-virti.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
-BuildRequires: rsync dev86 iasl
+BuildRequires: rsync
 BuildRequires: pciutils-devel
 BuildRequires: pulseaudio-libs-devel
 BuildRequires: ncurses-devel
@@ -515,6 +515,12 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Jan 27 2010 Amit Shah <amit.shah@redhat.com> - 2:0.12.2-4
+- Remove build dependency on iasl now that we have seabios
+
+* Wed Jan 27 2010 Amit Shah <amit.shah@redhat.com> - 2:0.12.2-3
+- Remove source target for 0.12.1.2
+
 * Wed Jan 27 2010 Amit Shah <amit.shah@redhat.com> - 2:0.12.2-2
 - Add virtio-console patches from upstream for the F13 VirtioSerial feature
 
