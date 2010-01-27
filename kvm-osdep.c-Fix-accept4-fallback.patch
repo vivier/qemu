@@ -1,0 +1,52 @@
+From b3e56f0f7eefa2eb1afb81c2288611dad20a13a0 Mon Sep 17 00:00:00 2001
+From: Avi Kivity <avi@redhat.com>
+Date: Mon, 25 Jan 2010 14:23:28 -0200
+Subject: [PATCH 09/11] osdep.c: Fix accept4 fallback
+
+RH-Author: Avi Kivity <avi@redhat.com>
+Message-id: <1264429408-32704-13-git-send-email-avi@redhat.com>
+Patchwork-id: 6611
+O-Subject: [PATCH RHEL6 qemu-kvm 12/12] osdep.c: Fix accept4 fallback
+Bugzilla: 558477
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+From: Kevin Wolf <kwolf@redhat.com>
+
+Bugzilla: 558477
+Upstream: a3441a43a
+
+Commit 3a03bfa5 added a fallback in case the Linux kernel running qemu is older
+than the kernel of the build system. Unfortunately, v1 was committed instead of
+v2, so the code has a bug that was revealed in the review (checking for the
+wrong error code).
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 347ed55cd109864b02dd29bb7e6cda1622e8019e)
+---
+ osdep.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ osdep.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/osdep.c b/osdep.c
+index b7b4411..d8efd0e 100644
+--- a/osdep.c
++++ b/osdep.c
+@@ -310,7 +310,7 @@ int qemu_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
+ 
+ #ifdef CONFIG_ACCEPT4
+     ret = accept4(s, addr, addrlen, SOCK_CLOEXEC);
+-    if (ret != -1 || errno != EINVAL) {
++    if (ret != -1 || errno != ENOSYS) {
+         return ret;
+     }
+ #endif
+-- 
+1.6.3.rc4.29.g8146
+

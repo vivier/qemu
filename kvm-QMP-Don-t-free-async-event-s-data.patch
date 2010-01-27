@@ -1,0 +1,54 @@
+From d23be855e646f3779942297d172851468f1cfd31 Mon Sep 17 00:00:00 2001
+From: Avi Kivity <avi@redhat.com>
+Date: Mon, 25 Jan 2010 14:23:24 -0200
+Subject: [PATCH 07/11] QMP: Don't free async event's 'data'
+
+RH-Author: Avi Kivity <avi@redhat.com>
+Message-id: <1264429408-32704-9-git-send-email-avi@redhat.com>
+Patchwork-id: 6608
+O-Subject: [PATCH RHEL6 qemu-kvm 08/12] QMP: Don't free async event's 'data'
+Bugzilla: 558465
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+From: Luiz Capitulino <lcapitulino@redhat.com>
+
+Bugzilla: 558465
+Upstream: eacad66dbe7
+
+The monitor_protocol_event() function will free the
+event's data, this is wrong as 'data' management is up
+to the caller.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 3d72f9a2be640f368229d579e80ce4ef2a823e49)
+---
+ monitor.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 6b0e2cf..8c36b10 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -368,8 +368,10 @@ void monitor_protocol_event(MonitorEvent event, QObject *data)
+     qmp = qdict_new();
+     timestamp_put(qmp);
+     qdict_put(qmp, "event", qstring_from_str(event_name));
+-    if (data)
++    if (data) {
++        qobject_incref(data);
+         qdict_put_obj(qmp, "data", data);
++    }
+ 
+     monitor_json_emitter(mon, QOBJECT(qmp));
+     QDECREF(qmp);
+-- 
+1.6.3.rc4.29.g8146
+

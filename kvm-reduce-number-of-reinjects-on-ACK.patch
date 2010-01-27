@@ -1,0 +1,78 @@
+From 1eb5044035254fa903d38fcc4a3058fc9732e88e Mon Sep 17 00:00:00 2001
+From: Gleb Natapov <gleb@redhat.com>
+Date: Thu, 21 Jan 2010 13:15:35 -0200
+Subject: [PATCH 01/11] reduce number of reinjects on ACK
+
+RH-Author: Gleb Natapov <gleb@redhat.com>
+Message-id: <patch-6505-clone-for-rhel6>
+Patchwork-id: 6530
+O-Subject: [PATCH kvm 5.5 5.4.z 6.0] reduce number of reinjects on ACK
+Bugzilla: 557435
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Dor Laor <dlaor@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+Windows 7 BSODs under load with HAL_RTC_IRQF_WILL_NOT_CLEAR error.
+
+It happens here:
+hal!HalpRtcUnmaskClock:
+8281b93a 8bff            mov     edi,edi
+8281b93c 56              push    esi
+8281b93d 33f6            xor     esi,esi
+8281b93f 6a0c            push    0Ch
+8281b941 e8b2ffffff      call    hal!CMOS_READ (8281b8f8)
+8281b946 84c0            test    al,al
+8281b948 7920            jns     hal!HalpRtcUnmaskClock+0x30 (8281b96a)
+8281b94a 6a0a            push    0Ah
+8281b94c 46              inc     esi
+8281b94d e854c8ffff      call    hal!KeStallExecutionProcessor
+(828181a6)
+8281b952 83fe64          cmp     esi,64h
+8281b955 72e8            jb      hal!HalpRtcUnmaskClock+0x5 (8281b93f)
+8281b957 6a00            push    0
+8281b959 6a00            push    0
+8281b95b 6a00            push    0
+8281b95d 680a010000      push    10Ah
+8281b962 6a5c            push    5Ch
+8281b964 ff1500c38082    call    dword ptr [hal!_imp__KeBugCheckEx
+(8280c300)]
+8281b96a 5e              pop     esi
+8281b96b c3              ret
+
+So it loops for 100(64h) times reading register C before BSOD. Lets
+reduce number of immediate reinjection well under this limit.
+
+Upstream status: dd17765b5
+BZ: 556455
+
+This is for Z stream and 5.5 and 6.0
+
+Signed-off-by: Gleb Natapov <gleb@redhat.com>
+---
+Tried to subscribe to new rhvirt-patches list, but got no response from
+moderators.
+
+--
+			Gleb.
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/mc146818rtc.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/hw/mc146818rtc.c b/hw/mc146818rtc.c
+index e4d55c7..2616d0d 100644
+--- a/hw/mc146818rtc.c
++++ b/hw/mc146818rtc.c
+@@ -30,7 +30,7 @@
+ 
+ //#define DEBUG_CMOS
+ 
+-#define RTC_REINJECT_ON_ACK_COUNT 1000
++#define RTC_REINJECT_ON_ACK_COUNT 20
+ 
+ #define RTC_SECONDS             0
+ #define RTC_SECONDS_ALARM       1
+-- 
+1.6.3.rc4.29.g8146
+

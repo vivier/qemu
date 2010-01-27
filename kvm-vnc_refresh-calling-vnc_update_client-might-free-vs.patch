@@ -1,0 +1,64 @@
+From ab5d4e41b90e96c598b9dc166eaee665c2d0631e Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 27 Jan 2010 14:11:30 -0200
+Subject: [PATCH 11/11] vnc_refresh: calling vnc_update_client might free vs
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1264601490-12718-1-git-send-email-kraxel@redhat.com>
+Patchwork-id: 6705
+O-Subject: [PATCH] vnc_refresh: calling vnc_update_client might free vs
+Bugzilla: 558846
+RH-Acked-by: Glauber Costa <glommer@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+From: Stefano Stabellini <stefano.stabellini@eu.citrix.com>
+
+bugzilla: #558846 - fix use-after-free in vnc code
+upstream: 6185c5783c50ab5bb4bcdc317772848278cb9bc1
+
+Hi all,
+this patch fixes another bug in vnc_refresh: calling vnc_update_client
+might cause vs to be free()ed, in this case we cannot access vs->next
+right after to examine the next item on the list.
+
+Signed-off-by: Stefano Stabellini <stefano.stabellini@eu.citrix.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ vnc.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vnc.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/vnc.c b/vnc.c
+index a5e28bc..f4b56fe 100644
+--- a/vnc.c
++++ b/vnc.c
+@@ -2293,7 +2293,7 @@ static int vnc_refresh_server_surface(VncDisplay *vd)
+ static void vnc_refresh(void *opaque)
+ {
+     VncDisplay *vd = opaque;
+-    VncState *vs = NULL;
++    VncState *vs = NULL, *vn = NULL;
+     int has_dirty = 0, rects = 0;
+ 
+     vga_hw_update();
+@@ -2302,8 +2302,10 @@ static void vnc_refresh(void *opaque)
+ 
+     vs = vd->clients;
+     while (vs != NULL) {
++        vn = vs->next;
+         rects += vnc_update_client(vs, has_dirty);
+-        vs = vs->next;
++        /* vs might be free()ed here */
++        vs = vn;
+     }
+     /* vd->timer could be NULL now if the last client disconnected,
+      * in this case don't update the timer */
+-- 
+1.6.3.rc4.29.g8146
+

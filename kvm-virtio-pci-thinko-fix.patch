@@ -1,0 +1,54 @@
+From dad8137743a55f793fe445e58324c4f93e28cf9d Mon Sep 17 00:00:00 2001
+From: Avi Kivity <avi@redhat.com>
+Date: Mon, 25 Jan 2010 14:23:23 -0200
+Subject: [PATCH 06/11] virtio-pci: thinko fix
+
+RH-Author: Avi Kivity <avi@redhat.com>
+Message-id: <1264429408-32704-8-git-send-email-avi@redhat.com>
+Patchwork-id: 6601
+O-Subject: [PATCH RHEL6 qemu-kvm 07/12] virtio-pci: thinko fix
+Bugzilla: 558438
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Michael S. Tsirkin <mst@redhat.com>
+
+Bugzilla: 558438
+Upstream: 348af56fae
+
+Since patch ed757e140c0ada220f213036e4497315d24ca8bct, virtio will
+sometimes clear all status registers on bus master disable, which loses
+information such as VIRTIO_CONFIG_S_FAILED bit.  This is a result of
+a patch being misapplied: code uses !  instead of ~ for bit
+operations as in Yan's original patch.  This obviously does not make
+sense.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 49e75cf38848e6da70c0e9ddb4d994e9d71a9625)
+---
+ hw/virtio-pci.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-pci.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index 5abcc4b..4451a63 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -374,7 +374,7 @@ static void virtio_write_config(PCIDevice *pci_dev, uint32_t address,
+ 
+     if (PCI_COMMAND == address) {
+         if (!(val & PCI_COMMAND_MASTER)) {
+-            proxy->vdev->status &= !VIRTIO_CONFIG_S_DRIVER_OK;
++            proxy->vdev->status &= ~VIRTIO_CONFIG_S_DRIVER_OK;
+         }
+     }
+ 
+-- 
+1.6.3.rc4.29.g8146
+

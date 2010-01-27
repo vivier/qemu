@@ -1,0 +1,52 @@
+From 0ea22458f5a6ea547ea95fc4f418384a25c761c2 Mon Sep 17 00:00:00 2001
+From: Avi Kivity <avi@redhat.com>
+Date: Mon, 25 Jan 2010 14:23:19 -0200
+Subject: [PATCH 04/11] QMP: Drop wrong assert()
+
+RH-Author: Avi Kivity <avi@redhat.com>
+Message-id: <1264429408-32704-4-git-send-email-avi@redhat.com>
+Patchwork-id: 6605
+O-Subject: [PATCH RHEL6 qemu-kvm 03/12] QMP: Drop wrong assert()
+Bugzilla: 558415
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+
+From: Luiz Capitulino <lcapitulino@redhat.com>
+
+Bugzilla: 558415
+Upstream: d68bf60838
+
+Some commands return a QList of QDicts, which is valid,
+but will trig the assert().
+
+Just drop it.
+
+Reported-by: Nathan Baum <nathan@parenthephobia.org.uk>
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 810f49b56a5d0cd6848856af51d3093ae9adc7b1)
+---
+ monitor.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 6ff6e1f..6b0e2cf 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -286,7 +286,6 @@ static void monitor_protocol_emitter(Monitor *mon, QObject *data)
+     if (!monitor_has_error(mon)) {
+         /* success response */
+         if (data) {
+-            assert(qobject_type(data) == QTYPE_QDICT);
+             qobject_incref(data);
+             qdict_put_obj(qmp, "return", data);
+         } else {
+-- 
+1.6.3.rc4.29.g8146
+

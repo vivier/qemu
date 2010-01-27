@@ -1,0 +1,58 @@
+From c84fbe32c3deef6fae954fec27668c33a0c16b21 Mon Sep 17 00:00:00 2001
+From: Avi Kivity <avi@redhat.com>
+Date: Mon, 25 Jan 2010 14:23:22 -0200
+Subject: [PATCH 05/11] vmware_vga: Check cursor dimensions passed from guest to avoid buffer overflow
+
+RH-Author: Avi Kivity <avi@redhat.com>
+Message-id: <1264429408-32704-7-git-send-email-avi@redhat.com>
+Patchwork-id: 6602
+O-Subject: [PATCH RHEL6 qemu-kvm 06/12] vmware_vga: Check cursor dimensions
+	passed from guest to avoid buffer overflow
+Bugzilla: 558435
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+From: Roland Dreier <rdreier@cisco.com>
+
+Bugzilla: 558435
+Upstream: e1daf40e3e
+
+Check that the cursor dimensions passed from the guest for the
+DEFINE_CURSOR command don't overflow the available space in the
+cursor.image[] or cursor.mask[] arrays before copying data from the
+guest into those arrays.
+
+Signed-off-by: Roland Dreier <rolandd@cisco.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit f2d928d44ebc918750c94f3605c1417f1f653ec9)
+---
+ hw/vmware_vga.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/vmware_vga.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/hw/vmware_vga.c b/hw/vmware_vga.c
+index 7ab1c79..5e969ae 100644
+--- a/hw/vmware_vga.c
++++ b/hw/vmware_vga.c
+@@ -562,6 +562,13 @@ static void vmsvga_fifo_run(struct vmsvga_state_s *s)
+             cursor.height = y = vmsvga_fifo_read(s);
+             vmsvga_fifo_read(s);
+             cursor.bpp = vmsvga_fifo_read(s);
++
++	    if (SVGA_BITMAP_SIZE(x, y) > sizeof cursor.mask ||
++		SVGA_PIXMAP_SIZE(x, y, cursor.bpp) > sizeof cursor.image) {
++		    args = SVGA_BITMAP_SIZE(x, y) + SVGA_PIXMAP_SIZE(x, y, cursor.bpp);
++		    goto badcmd;
++	    }
++
+             for (args = 0; args < SVGA_BITMAP_SIZE(x, y); args ++)
+                 cursor.mask[args] = vmsvga_fifo_read_raw(s);
+             for (args = 0; args < SVGA_PIXMAP_SIZE(x, y, cursor.bpp); args ++)
+-- 
+1.6.3.rc4.29.g8146
+

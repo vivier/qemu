@@ -1,0 +1,55 @@
+From 3c2537dc4255553ef1ee57bf71767bfaf3c753fa Mon Sep 17 00:00:00 2001
+From: Avi Kivity <avi@redhat.com>
+Date: Mon, 25 Jan 2010 14:23:25 -0200
+Subject: [PATCH 08/11] vnc_refresh: return if vd->timer is NULL
+
+RH-Author: Avi Kivity <avi@redhat.com>
+Message-id: <1264429408-32704-10-git-send-email-avi@redhat.com>
+Patchwork-id: 6600
+O-Subject: [PATCH RHEL6 qemu-kvm 09/12] vnc_refresh: return if vd->timer is NULL
+Bugzilla: 558466
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+From: Stefano Stabellini <stefano.stabellini@eu.citrix.com>
+
+Bugzilla: 558466
+Upstream: be59ce1f48
+
+Hi all,
+calling vnc_update_client in vnc_refresh might have the unlikely side
+effect of setting vd->timer = NULL, if the last vnc client disconnected.
+In this case we have to return from vnc_refresh without updating the
+timer, otherwise we cause a segfault.
+
+Signed-off-by: Stefano Stabellini <stefano.stabellini@eu.citrix.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 83755c173f4608764e3ee92428247d1c5e962e6a)
+---
+ vnc.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vnc.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/vnc.c b/vnc.c
+index 7d58e5e..a5e28bc 100644
+--- a/vnc.c
++++ b/vnc.c
+@@ -2305,6 +2305,10 @@ static void vnc_refresh(void *opaque)
+         rects += vnc_update_client(vs, has_dirty);
+         vs = vs->next;
+     }
++    /* vd->timer could be NULL now if the last client disconnected,
++     * in this case don't update the timer */
++    if (vd->timer == NULL)
++        return;
+ 
+     if (has_dirty && rects) {
+         vd->timer_interval /= 2;
+-- 
+1.6.3.rc4.29.g8146
+

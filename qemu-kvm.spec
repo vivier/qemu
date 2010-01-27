@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.12%{?dist}
+Release: 2.13%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -60,6 +60,28 @@ Patch1015: kvm-virtio-serial-Make-sure-we-don-t-crash-when-host-por.patch
 Patch1016: kvm-virtio-serial-Use-MSI-vectors-for-port-virtqueues.patch
 # For bz#543825 - [RFE] Backport virtio-serial device to qemu
 Patch1017: kvm-virtio-serial-bus-Match-upstream-whitespace.patch
+# For bz#557435 - KVM: WIN7-32bit blue screen (IMAGE_NAME:  ntkrnlmp.exe).
+Patch1018: kvm-reduce-number-of-reinjects-on-ACK.patch
+# For bz#558412 - -help output not terminated by newline
+Patch1019: kvm-Add-missing-newline-at-the-end-of-options-list.patch
+# For bz#558414 - Artifacts in hextile decoding
+Patch1020: kvm-vnc-Fix-artifacts-in-hextile-decoding.patch
+# For bz#558415 - Assert triggers on qmp commands returning lists
+Patch1021: kvm-QMP-Drop-wrong-assert.patch
+# For bz#558435 - vmware-svga buffer overflow copying cursor data
+Patch1022: kvm-vmware_vga-Check-cursor-dimensions-passed-from-guest.patch
+# For bz#558438 - virtio status bits corrupted if guest deasserts bus mastering bit
+Patch1023: kvm-virtio-pci-thinko-fix.patch
+# For bz#558465 - Double-free of qmp async messages
+Patch1024: kvm-QMP-Don-t-free-async-event-s-data.patch
+# For bz#558466 - Possible segfault on vnc client disconnect
+Patch1025: kvm-vnc_refresh-return-if-vd-timer-is-NULL.patch
+# For bz#558477 - Incorrect handling of EINVAL from accept4()
+Patch1026: kvm-osdep.c-Fix-accept4-fallback.patch
+# For bz#558619 - QMP: Emit asynchronous events on all QMP monitors
+Patch1027: kvm-QMP-Emit-asynchronous-events-on-all-QMP-monitors.patch
+# For bz#558846 - fix use-after-free in vnc code
+Patch1028: kvm-vnc_refresh-calling-vnc_update_client-might-free-vs.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -137,6 +159,17 @@ such as kvmtrace and kvm_stat.
 %patch1015 -p1
 %patch1016 -p1
 %patch1017 -p1
+%patch1018 -p1
+%patch1019 -p1
+%patch1020 -p1
+%patch1021 -p1
+%patch1022 -p1
+%patch1023 -p1
+%patch1024 -p1
+%patch1025 -p1
+%patch1026 -p1
+%patch1027 -p1
+%patch1028 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -328,6 +361,41 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Jan 27 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.13.el6
+- kvm-reduce-number-of-reinjects-on-ACK.patch [bz#557435]
+- kvm-Add-missing-newline-at-the-end-of-options-list.patch [bz#558412]
+- kvm-vnc-Fix-artifacts-in-hextile-decoding.patch [bz#558414]
+- kvm-QMP-Drop-wrong-assert.patch [bz#558415]
+- kvm-vmware_vga-Check-cursor-dimensions-passed-from-guest.patch [bz#558435]
+- kvm-virtio-pci-thinko-fix.patch [bz#558438]
+- kvm-QMP-Don-t-free-async-event-s-data.patch [bz#558465]
+- kvm-vnc_refresh-return-if-vd-timer-is-NULL.patch [bz#558466]
+- kvm-osdep.c-Fix-accept4-fallback.patch [bz#558477]
+- kvm-QMP-Emit-asynchronous-events-on-all-QMP-monitors.patch [bz#558619]
+- kvm-vnc_refresh-calling-vnc_update_client-might-free-vs.patch [bz#558846]
+- Resolves: bz#557435
+  (KVM: WIN7-32bit blue screen (IMAGE_NAME:  ntkrnlmp.exe).)
+- Resolves: bz#558412
+  (-help output not terminated by newline)
+- Resolves: bz#558414
+  (Artifacts in hextile decoding)
+- Resolves: bz#558415
+  (Assert triggers on qmp commands returning lists)
+- Resolves: bz#558435
+  (vmware-svga buffer overflow copying cursor data)
+- Resolves: bz#558438
+  (virtio status bits corrupted if guest deasserts bus mastering bit)
+- Resolves: bz#558465
+  (Double-free of qmp async messages)
+- Resolves: bz#558466
+  (Possible segfault on vnc client disconnect)
+- Resolves: bz#558477
+  (Incorrect handling of EINVAL from accept4())
+- Resolves: bz#558619
+  (QMP: Emit asynchronous events on all QMP monitors)
+- Resolves: bz#558846
+  (fix use-after-free in vnc code)
+
 * Fri Jan 22 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.12.el6
 - kvm-virtio-serial-bus-Remove-guest-buffer-caching-and-th.patch [bz#543825]
 - kvm-virtio-serial-Make-sure-we-don-t-crash-when-host-por.patch [bz#543825]

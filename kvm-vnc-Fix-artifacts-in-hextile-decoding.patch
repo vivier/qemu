@@ -1,0 +1,54 @@
+From ed60e219eb37529254ee5ebbe4d40ecd1637f949 Mon Sep 17 00:00:00 2001
+From: Avi Kivity <avi@redhat.com>
+Date: Mon, 25 Jan 2010 14:23:18 -0200
+Subject: [PATCH 03/11] vnc: Fix artifacts in hextile decoding
+
+RH-Author: Avi Kivity <avi@redhat.com>
+Message-id: <1264429408-32704-3-git-send-email-avi@redhat.com>
+Patchwork-id: 6599
+O-Subject: [PATCH RHEL6 qemu-kvm 02/12] vnc: Fix artifacts in hextile decoding
+Bugzilla: 558414
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+From: Anthony Liguori <aliguori@us.ibm.com>
+
+Bugzilla: 558414
+Upstream: 57fa5ca5514
+
+02c2b87 introduced a regression whereas the foreground color in a hextile
+update was not being properly invalidated leading to artifacts.
+
+It's still necessary to explicitly invalidate the foreground color with a
+SubrectColoured tile even though we no longer send a foreground color as
+part of the tile.
+
+Reported-by: Mark Cave-Ayland <mark.cave-ayland@siriusit.co.uk>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 18cb1d85578e03b16570d9380309cca673f9fff8)
+---
+ vnchextile.h |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vnchextile.h |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/vnchextile.h b/vnchextile.h
+index 432ed89..78ed8c4 100644
+--- a/vnchextile.h
++++ b/vnchextile.h
+@@ -165,6 +165,8 @@ static void CONCAT(send_hextile_tile_, NAME)(VncState *vs,
+ 	    irow += ds_get_linesize(vs->ds) / sizeof(pixel_t);
+ 	}
+ 
++	/* A SubrectsColoured subtile invalidates the foreground color */
++	*has_fg = 0;
+ 	if (n_data > (w * h * sizeof(pixel_t))) {
+ 	    n_colors = 4;
+ 	    flags = 0x01;
+-- 
+1.6.3.rc4.29.g8146
+

@@ -1,0 +1,57 @@
+From 4a35a597cc01ab22ca2a93e1d6cf5ff3c20593e9 Mon Sep 17 00:00:00 2001
+From: Avi Kivity <avi@redhat.com>
+Date: Mon, 25 Jan 2010 14:23:17 -0200
+Subject: [PATCH 02/11] Add missing newline at the end of options list
+
+RH-Author: Avi Kivity <avi@redhat.com>
+Message-id: <1264429408-32704-2-git-send-email-avi@redhat.com>
+Patchwork-id: 6610
+O-Subject: [PATCH RHEL6 qemu-kvm 01/12] Add missing newline at the end of
+	options list
+Bugzilla: 558412
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+From: Michael Tokarev <mjt@tls.msk.ru>
+
+Bugzilla: 558412
+Upstream: 644f5de21
+
+In qemu-kvm this place looks even more "interesting":
+
+ -runas user     Change to user id user just before starting the VM.
+ -readconfig <file>
+ -writeconfig <file>
+                read/write config file-no-kvm         disable KVM hardware virtualization
+ -no-kvm-irqchip disable KVM kernel mode PIC/IOAPIC/LAPIC
+ -no-kvm-pit     disable KVM kernel mode PIT
+
+Signed-off-by: Michael Tokarev <mjt@tls.msk.ru>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit 19e65b47f60c68d7e8c96aa0a36223c5a0d3422b)
+---
+ qemu-options.hx |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-options.hx |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-options.hx b/qemu-options.hx
+index c6a4618..173b1ec 100644
+--- a/qemu-options.hx
++++ b/qemu-options.hx
+@@ -1941,7 +1941,7 @@ DEF("readconfig", HAS_ARG, QEMU_OPTION_readconfig,
+     "-readconfig <file>\n")
+ DEF("writeconfig", HAS_ARG, QEMU_OPTION_writeconfig,
+     "-writeconfig <file>\n"
+-    "                read/write config file")
++    "                read/write config file\n")
+ 
+ DEF("no-kvm", 0, QEMU_OPTION_no_kvm,
+     "-no-kvm         disable KVM hardware virtualization\n")
+-- 
+1.6.3.rc4.29.g8146
+
