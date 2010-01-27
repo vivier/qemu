@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.12.2
-Release: 1%{?dist}
+Release: 2%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -23,6 +23,18 @@ Source5: ksm.sysconfig
 Source6: ksmtuned.init
 Source7: ksmtuned
 Source8: ksmtuned.conf
+
+# virtio-console changes for the F13 VirtioSerial feature
+Patch01: qemu-virtio-Remove-duplicate-macro-definition-for-max.-v.patch
+Patch02: qemu-virtio-console-qdev-conversion-new-virtio-serial-b.patch
+Patch03: qemu-virtio-serial-bus-Maintain-guest-and-host-port-open.patch
+Patch04: qemu-virtio-serial-bus-Add-a-port-name-property-for-po.patch
+Patch05: qemu-virtio-serial-bus-Add-ability-to-hot-unplug-ports.patch
+Patch06: qemu-virtio-serial-Add-a-virtserialport-device-for-gen.patch
+Patch07: qemu-Move-virtio-serial-to-Makefile.objs.patch
+Patch08: qemu-virtio-serial-Use-MSI-vectors-for-port-virtqueues.patch
+Patch09: qemu-virtio-console-Rename-virtio-serial.c-back-to-virti.patch
+
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -210,6 +222,16 @@ such as kvmtrace and kvm_stat.
 
 %prep
 %setup -q -n qemu-kvm-%{version}
+
+%patch01 -p1
+%patch02 -p1
+%patch03 -p1
+%patch04 -p1
+%patch05 -p1
+%patch06 -p1
+%patch07 -p1
+%patch08 -p1
+%patch09 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -493,6 +515,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Jan 27 2010 Amit Shah <amit.shah@redhat.com> - 2:0.12.2-2
+- Add virtio-console patches from upstream for the F13 VirtioSerial feature
+
 * Mon Jan 25 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.2-1
 - Update to 0.12.2 upstream
 
