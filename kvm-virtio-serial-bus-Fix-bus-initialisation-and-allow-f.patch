@@ -1,0 +1,52 @@
+From 4f2b6f6e87e9ceb2b250c594627cc5013d6a9b8a Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Thu, 28 Jan 2010 10:35:17 -0200
+Subject: [PATCH 6/6] virtio-serial-bus: Fix bus initialisation and allow for bus identification
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1264674917-7923-1-git-send-email-amit.shah@redhat.com>
+Patchwork-id: 6749
+O-Subject: [RHEL6 PATCH] virtio-serial-bus: Fix bus initialisation and allow for
+	bus identification
+Bugzilla: 559503
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+Bugzilla: 559503
+Upstream status: posted
+
+This commit enables one to use multiple virtio-serial devices and to
+assign ports to arbitrary devices like this:
+
+  -device virtio-serial,id=foo -device virtio-serial,id=bar \
+  -device virtserialport,bus=foo.0,name=foo \
+  -device virtserialport,bus=bar.0,name=bar
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-serial-bus.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ hw/virtio-serial-bus.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index 3b9726a..037864f 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -443,8 +443,7 @@ static VirtIOSerialBus *virtser_bus_new(DeviceState *dev)
+ {
+     VirtIOSerialBus *bus;
+ 
+-    bus = FROM_QBUS(VirtIOSerialBus, qbus_create(&virtser_bus_info, dev,
+-                                                 "virtio-serial-bus"));
++    bus = FROM_QBUS(VirtIOSerialBus, qbus_create(&virtser_bus_info, dev, NULL));
+     bus->qbus.allow_hotplug = 1;
+ 
+     return bus;
+-- 
+1.6.5.2
+

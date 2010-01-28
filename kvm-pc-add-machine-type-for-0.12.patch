@@ -1,0 +1,82 @@
+From 86d195caf23897b6eacf2988b7271acf551249cc Mon Sep 17 00:00:00 2001
+From: Avi Kivity <avi@redhat.com>
+Date: Mon, 25 Jan 2010 14:23:27 -0200
+Subject: [PATCH 4/6] pc: add machine type for 0.12
+
+RH-Author: Avi Kivity <avi@redhat.com>
+Message-id: <1264429408-32704-12-git-send-email-avi@redhat.com>
+Patchwork-id: 6606
+O-Subject: [PATCH RHEL6 qemu-kvm 11/12] pc: add machine type for 0.12
+Bugzilla: 558470
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+
+From: Gerd Hoffmann <kraxel@redhat.com>
+
+Bugzilla: 558470
+Upstream: 431c829f33
+
+Add a new machine type for qemu 0.12.
+
+Also fixup the 0.11 machine type: msi for virtio-blk-pci was enabled
+after the 0.11 release, so turn it off in the 0.11 machine type.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 2cae6f5e34d85fe44ec2329a7fbc22dc8cfb079f)
+---
+ hw/pc.c |   18 +++++++++++++++++-
+ 1 files changed, 17 insertions(+), 1 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ hw/pc.c |   18 +++++++++++++++++-
+ 1 files changed, 17 insertions(+), 1 deletions(-)
+
+diff --git a/hw/pc.c b/hw/pc.c
+index d521fb4..68c46f6 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -1327,7 +1327,7 @@ void cmos_set_s3_resume(void)
+ }
+ 
+ static QEMUMachine pc_machine = {
+-    .name = "pc-0.11",
++    .name = "pc-0.12",
+     .alias = "pc",
+     .desc = "Standard PC",
+     .init = pc_init_pci,
+@@ -1335,6 +1335,21 @@ static QEMUMachine pc_machine = {
+     .is_default = 1,
+ };
+ 
++static QEMUMachine pc_machine_v0_11 = {
++    .name = "pc-0.11",
++    .desc = "Standard PC, qemu 0.11",
++    .init = pc_init_pci,
++    .max_cpus = 255,
++    .compat_props = (GlobalProperty[]) {
++        {
++            .driver   = "virtio-blk-pci",
++            .property = "vectors",
++            .value    = stringify(0),
++        },
++        { /* end of list */ }
++    }
++};
++
+ static QEMUMachine pc_machine_v0_10 = {
+     .name = "pc-0.10",
+     .desc = "Standard PC, qemu 0.10",
+@@ -1372,6 +1387,7 @@ static QEMUMachine isapc_machine = {
+ static void pc_machine_init(void)
+ {
+     qemu_register_machine(&pc_machine);
++    qemu_register_machine(&pc_machine_v0_11);
+     qemu_register_machine(&pc_machine_v0_10);
+     qemu_register_machine(&isapc_machine);
+ }
+-- 
+1.6.5.2
+

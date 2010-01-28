@@ -1,0 +1,69 @@
+From c0bf64e29823bcee26355f16c3b1e84f428e6350 Mon Sep 17 00:00:00 2001
+From: Avi Kivity <avi@redhat.com>
+Date: Mon, 25 Jan 2010 14:23:21 -0200
+Subject: [PATCH 2/6] Fix CPU topology initialization
+
+RH-Author: Avi Kivity <avi@redhat.com>
+Message-id: <1264429408-32704-6-git-send-email-avi@redhat.com>
+Patchwork-id: 6603
+O-Subject: [PATCH RHEL6 qemu-kvm 05/12] Fix CPU topology initialization
+Bugzilla: 558432
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+
+From: Jiri Denemark <jdenemar@redhat.com>
+
+Bugzilla: 558432
+Upstream: fe46a160c
+
+Late initialization of CPU topology in CPUState prevents KVM guests to
+actually see the topology.
+
+Signed-off-by: Jiri Denemark <jdenemar@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 3f7638ec4093100a63b18cbacd45dcd847f7c06b)
+---
+ vl.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ vl.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index 98cc3ab..53162f9 100644
+--- a/vl.c
++++ b/vl.c
+@@ -3531,10 +3531,10 @@ void qemu_init_vcpu(void *_env)
+ {
+     CPUState *env = _env;
+ 
+-    if (kvm_enabled())
+-        kvm_init_vcpu(env);
+     env->nr_cores = smp_cores;
+     env->nr_threads = smp_threads;
++    if (kvm_enabled())
++        kvm_init_vcpu(env);
+     return;
+ }
+ 
+@@ -3866,12 +3866,12 @@ void qemu_init_vcpu(void *_env)
+ {
+     CPUState *env = _env;
+ 
++    env->nr_cores = smp_cores;
++    env->nr_threads = smp_threads;
+     if (kvm_enabled())
+         kvm_start_vcpu(env);
+     else
+         tcg_init_vcpu(env);
+-    env->nr_cores = smp_cores;
+-    env->nr_threads = smp_threads;
+ }
+ 
+ void qemu_notify_event(void)
+-- 
+1.6.5.2
+

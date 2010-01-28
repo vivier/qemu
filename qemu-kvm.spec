@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.13%{?dist}
+Release: 2.14%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -82,6 +82,18 @@ Patch1026: kvm-osdep.c-Fix-accept4-fallback.patch
 Patch1027: kvm-QMP-Emit-asynchronous-events-on-all-QMP-monitors.patch
 # For bz#558846 - fix use-after-free in vnc code
 Patch1028: kvm-vnc_refresh-calling-vnc_update_client-might-free-vs.patch
+# For bz#558416 - Machine check exception injected into qemu reinjected after every reset
+Patch1029: kvm-MCE-Fix-bug-of-IA32_MCG_STATUS-after-system-reset.patch
+# For bz#558432 - CPU topology not taking effect
+Patch1030: kvm-Fix-CPU-topology-initialization.patch
+# For bz#558467 - roms potentially loaded twice
+Patch1031: kvm-loader-more-ignores-for-rom-intended-to-be-loaded-by.patch
+# For bz#558470 - Incorrect machine types
+Patch1032: kvm-pc-add-machine-type-for-0.12.patch
+# For bz#559089 - Rename virtio-serial.c to virtio-console.c as is upstream.
+Patch1033: kvm-virtio-console-Rename-virtio-serial.c-back-to-virtio.patch
+# For bz#559503 - virtio-serial: fix multiple devices intialisation
+Patch1034: kvm-virtio-serial-bus-Fix-bus-initialisation-and-allow-f.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -170,6 +182,12 @@ such as kvmtrace and kvm_stat.
 %patch1026 -p1
 %patch1027 -p1
 %patch1028 -p1
+%patch1029 -p1
+%patch1030 -p1
+%patch1031 -p1
+%patch1032 -p1
+%patch1033 -p1
+%patch1034 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -361,6 +379,26 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Jan 28 2010 Glauber Costa <glommer@redhat.com> - qemu-kvm-0.12.1.2-2.14.el6
+- kvm-MCE-Fix-bug-of-IA32_MCG_STATUS-after-system-reset.patch [bz#558416]
+- kvm-Fix-CPU-topology-initialization.patch [bz#558432]
+- kvm-loader-more-ignores-for-rom-intended-to-be-loaded-by.patch [bz#558467]
+- kvm-pc-add-machine-type-for-0.12.patch [bz#558470]
+- kvm-virtio-console-Rename-virtio-serial.c-back-to-virtio.patch [bz#559089]
+- kvm-virtio-serial-bus-Fix-bus-initialisation-and-allow-f.patch [bz#559503]
+- Resolves: bz#558416
+  (Machine check exception injected into qemu reinjected after every reset)
+- Resolves: bz#558432
+  (CPU topology not taking effect)
+- Resolves: bz#558467
+  (roms potentially loaded twice)
+- Resolves: bz#558470
+  (Incorrect machine types)
+- Resolves: bz#559089
+  (Rename virtio-serial.c to virtio-console.c as is upstream.)
+- Resolves: bz#559503
+  (virtio-serial: fix multiple devices intialisation)
+
 * Wed Jan 27 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.13.el6
 - kvm-reduce-number-of-reinjects-on-ACK.patch [bz#557435]
 - kvm-Add-missing-newline-at-the-end-of-options-list.patch [bz#558412]

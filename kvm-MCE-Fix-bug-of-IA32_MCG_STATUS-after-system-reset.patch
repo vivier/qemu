@@ -1,0 +1,56 @@
+From 050ecb68762cda0eaab825c272a83266d468e9f3 Mon Sep 17 00:00:00 2001
+From: Avi Kivity <avi@redhat.com>
+Date: Mon, 25 Jan 2010 14:23:20 -0200
+Subject: [PATCH 1/6] MCE: Fix bug of IA32_MCG_STATUS after system reset
+
+RH-Author: Avi Kivity <avi@redhat.com>
+Message-id: <1264429408-32704-5-git-send-email-avi@redhat.com>
+Patchwork-id: 6609
+O-Subject: [PATCH RHEL6 qemu-kvm 04/12] MCE: Fix bug of IA32_MCG_STATUS after
+	system reset
+Bugzilla: 558416
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+
+From: Huang Ying <ying.huang@intel.com>
+
+Bugzilla: 558416
+Upstream: 8033c42a
+
+Now, if we inject a fatal MCE into guest OS, for example Linux, Linux
+will go panic and then reboot. But if we inject another MCE now,
+system will reset directly instead of go panic firstly, because
+MCG_STATUS.MCIP is set to 1 and not cleared after reboot. This is does
+not follow the behavior in real hardware.
+
+This patch fixes this via set env->mcg_status to 0 during system reset.
+
+Signed-off-by: Huang Ying <ying.huang@intel.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit af364b418cc57c53275c76ee5e0e0645908605b9)
+---
+ target-i386/helper.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ target-i386/helper.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/target-i386/helper.c b/target-i386/helper.c
+index b58fd82..fb22f88 100644
+--- a/target-i386/helper.c
++++ b/target-i386/helper.c
+@@ -619,6 +619,8 @@ void cpu_reset(CPUX86State *env)
+     env->dr[7] = DR7_FIXED_1;
+     cpu_breakpoint_remove_all(env, BP_CPU);
+     cpu_watchpoint_remove_all(env, BP_CPU);
++
++    env->mcg_status = 0;
+ }
+ 
+ void cpu_x86_close(CPUX86State *env)
+-- 
+1.6.5.2
+

@@ -1,0 +1,62 @@
+From d7c5976635be1bc9ea0a02f14351dc80a63cbaf5 Mon Sep 17 00:00:00 2001
+From: Avi Kivity <avi@redhat.com>
+Date: Mon, 25 Jan 2010 14:23:26 -0200
+Subject: [PATCH 3/6] loader: more ignores for rom intended to be loaded by the bios
+
+RH-Author: Avi Kivity <avi@redhat.com>
+Message-id: <1264429408-32704-11-git-send-email-avi@redhat.com>
+Patchwork-id: 6604
+O-Subject: [PATCH RHEL6 qemu-kvm 10/12] loader: more ignores for rom intended to
+	be loaded by the bios
+Bugzilla: 558467
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+From: Aurelien Jarno <aurelien@aurel32.net>
+
+Bugzilla: 558467
+Upstream: be7398ec
+
+Similarly to what has been done in e405a2ba91b68817cae2a428de55fe9616a4cf37,
+ignore rom intended to be loaded by the bios in find_rom() and rom_copy().
+
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit f21a59c224a6fdf7b30c3fe551fd93043e537f6c)
+---
+ hw/loader.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ hw/loader.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+diff --git a/hw/loader.c b/hw/loader.c
+index eef385e..3aba47c 100644
+--- a/hw/loader.c
++++ b/hw/loader.c
+@@ -695,6 +695,9 @@ static Rom *find_rom(target_phys_addr_t addr)
+     Rom *rom;
+ 
+     QTAILQ_FOREACH(rom, &roms, next) {
++        if (rom->fw_file) {
++            continue;
++        }
+         if (rom->addr > addr)
+             continue;
+         if (rom->addr + rom->romsize < addr)
+@@ -717,6 +720,9 @@ int rom_copy(uint8_t *dest, target_phys_addr_t addr, size_t size)
+     Rom *rom;
+ 
+     QTAILQ_FOREACH(rom, &roms, next) {
++        if (rom->fw_file) {
++            continue;
++        }
+         if (rom->addr + rom->romsize < addr)
+             continue;
+         if (rom->addr > end)
+-- 
+1.6.5.2
+
