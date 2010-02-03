@@ -1,0 +1,68 @@
+From 2f191c79c2ff1dd6da243e426e4df9998d5921d4 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Tue, 26 Jan 2010 18:53:41 -0200
+Subject: [PATCH 3/9] VNC: Rename client's 'username' key
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1264532026-7620-4-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 6629
+O-Subject: [PATCH RHEL6 qemu-kvm 3/8] VNC: Rename client's 'username' key
+Bugzilla: 549759
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+It's the SASL username, so it's better to call it 'sasl_username'
+to be consistent.
+
+Note that this change wouldn't be allowed if QMP were stable.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 76825067232d4dec710cd8b33ea94f029f7dd3a7)
+---
+ vnc.c |    9 +++++----
+ 1 files changed, 5 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vnc.c |    9 +++++----
+ 1 files changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/vnc.c b/vnc.c
+index 958fc1c..ca05b22 100644
+--- a/vnc.c
++++ b/vnc.c
+@@ -228,7 +228,8 @@ static QDict *do_info_vnc_client(Monitor *mon, VncState *client)
+ #ifdef CONFIG_VNC_SASL
+     if (client->sasl.conn &&
+         client->sasl.username) {
+-        qdict_put(qdict, "username", qstring_from_str(client->sasl.username));
++        qdict_put(qdict, "sasl_username",
++                  qstring_from_str(client->sasl.username));
+     }
+ #endif
+ 
+@@ -253,8 +254,8 @@ static void info_vnc_iter(QObject *obj, void *opaque)
+ #endif
+ #ifdef CONFIG_VNC_SASL
+     monitor_printf(mon, "    username: %s\n",
+-        qdict_haskey(client, "username") ?
+-        qdict_get_str(client, "username") : "none");
++        qdict_haskey(client, "sasl_username") ?
++        qdict_get_str(client, "sasl_username") : "none");
+ #endif
+ }
+ 
+@@ -302,7 +303,7 @@ void do_info_vnc_print(Monitor *mon, const QObject *data)
+  * - "host": client's IP address
+  * - "service": client's port number
+  * - "x509_dname": TLS dname (optional)
+- * - "username": SASL username (optional)
++ * - "sasl_username": SASL username (optional)
+  *
+  * Example:
+  *
+-- 
+1.6.3.rc4.29.g8146
+

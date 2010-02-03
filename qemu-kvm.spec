@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.14%{?dist}
+Release: 2.15%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -94,6 +94,24 @@ Patch1032: kvm-pc-add-machine-type-for-0.12.patch
 Patch1033: kvm-virtio-console-Rename-virtio-serial.c-back-to-virtio.patch
 # For bz#559503 - virtio-serial: fix multiple devices intialisation
 Patch1034: kvm-virtio-serial-bus-Fix-bus-initialisation-and-allow-f.patch
+# For bz#549759 - A QMP event notification on VNC client connect/disconnect events
+Patch1035: kvm-VNC-Use-enabled-key-instead-of-status.patch
+# For bz#549759 - A QMP event notification on VNC client connect/disconnect events
+Patch1036: kvm-VNC-Make-auth-key-mandatory.patch
+# For bz#549759 - A QMP event notification on VNC client connect/disconnect events
+Patch1037: kvm-VNC-Rename-client-s-username-key.patch
+# For bz#549759 - A QMP event notification on VNC client connect/disconnect events
+Patch1038: kvm-VNC-Add-family-key.patch
+# For bz#549759 - A QMP event notification on VNC client connect/disconnect events
+Patch1039: kvm-VNC-Cache-client-info-at-connection-time.patch
+# For bz#549759 - A QMP event notification on VNC client connect/disconnect events
+Patch1040: kvm-QMP-Introduce-VNC_CONNECTED-event.patch
+# For bz#549759 - A QMP event notification on VNC client connect/disconnect events
+Patch1041: kvm-QMP-Introduce-VNC_DISCONNECTED-event.patch
+# For bz#549759 - A QMP event notification on VNC client connect/disconnect events
+Patch1042: kvm-QMP-Introduce-VNC_INITIALIZED-event.patch
+# For bz#558730 - qemu may create too large iovecs for the kernel
+Patch1043: kvm-block-avoid-creating-too-large-iovecs-in-multiwrite_.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -188,6 +206,15 @@ such as kvmtrace and kvm_stat.
 %patch1032 -p1
 %patch1033 -p1
 %patch1034 -p1
+%patch1035 -p1
+%patch1036 -p1
+%patch1037 -p1
+%patch1038 -p1
+%patch1039 -p1
+%patch1040 -p1
+%patch1041 -p1
+%patch1042 -p1
+%patch1043 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -379,6 +406,21 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Feb 03 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.15.el6
+- kvm-VNC-Use-enabled-key-instead-of-status.patch [bz#549759]
+- kvm-VNC-Make-auth-key-mandatory.patch [bz#549759]
+- kvm-VNC-Rename-client-s-username-key.patch [bz#549759]
+- kvm-VNC-Add-family-key.patch [bz#549759]
+- kvm-VNC-Cache-client-info-at-connection-time.patch [bz#549759]
+- kvm-QMP-Introduce-VNC_CONNECTED-event.patch [bz#549759]
+- kvm-QMP-Introduce-VNC_DISCONNECTED-event.patch [bz#549759]
+- kvm-QMP-Introduce-VNC_INITIALIZED-event.patch [bz#549759]
+- kvm-block-avoid-creating-too-large-iovecs-in-multiwrite_.patch [bz#558730]
+- Resolves: bz#549759
+  (A QMP event notification on VNC client connect/disconnect events)
+- Resolves: bz#558730
+  (qemu may create too large iovecs for the kernel)
+
 * Thu Jan 28 2010 Glauber Costa <glommer@redhat.com> - qemu-kvm-0.12.1.2-2.14.el6
 - kvm-MCE-Fix-bug-of-IA32_MCG_STATUS-after-system-reset.patch [bz#558416]
 - kvm-Fix-CPU-topology-initialization.patch [bz#558432]

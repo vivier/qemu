@@ -1,0 +1,101 @@
+From 2e89d3dfdb095a8ca5baa9e0bc2388256af2bbb5 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Tue, 26 Jan 2010 18:53:45 -0200
+Subject: [PATCH 7/9] QMP: Introduce VNC_DISCONNECTED event
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1264532026-7620-8-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 6633
+O-Subject: [PATCH RHEL6 qemu-kvm 7/8] QMP: Introduce VNC_DISCONNECTED event
+Bugzilla: 549759
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+It's emitted when a VNC client disconnects from QEMU, client's
+information such as port and IP address are provided.
+
+Event example:
+
+{ "event": "VNC_DISCONNECTED",
+    "timestamp": { "seconds": 1262976601, "microseconds": 975795 },
+    "data": {
+        "server": { "auth": "sasl", "family": "ipv4",
+                    "service": "5901", "host": "0.0.0.0" },
+        "client": { "family": "ipv4", "service": "58425",
+                    "host": "127.0.0.1", "sasl_username": "foo" } } }
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 0d72f3d31b4bc320ac498f011129a646a12f9389)
+---
+ QMP/qmp-events.txt |    6 ++++++
+ monitor.c          |    3 +++
+ monitor.h          |    1 +
+ vnc.c              |    2 ++
+ 4 files changed, 12 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ QMP/qmp-events.txt |    6 ++++++
+ monitor.c          |    3 +++
+ monitor.h          |    1 +
+ vnc.c              |    2 ++
+ 4 files changed, 12 insertions(+), 0 deletions(-)
+
+diff --git a/QMP/qmp-events.txt b/QMP/qmp-events.txt
+index d36da46..1e87eb1 100644
+--- a/QMP/qmp-events.txt
++++ b/QMP/qmp-events.txt
+@@ -31,3 +31,9 @@ Data: None.
+ Description: Issued when a VNC client establishes a connection.
+ Data: 'server' and 'client' keys with the same keys as 'query-vnc',
+ except that authentication ID is not provided.
++
++5 VNC_DISCONNECTED
++------------------
++
++Description: Issued when the conection is closed.
++Data: 'server' and 'client' keys with the same keys as 'query-vnc'.
+diff --git a/monitor.c b/monitor.c
+index 93347e8..5ae6339 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -360,6 +360,9 @@ void monitor_protocol_event(MonitorEvent event, QObject *data)
+         case QEVENT_VNC_CONNECTED:
+             event_name = "VNC_CONNECTED";
+             break;
++        case QEVENT_VNC_DISCONNECTED:
++            event_name = "VNC_DISCONNECTED";
++            break;
+         default:
+             abort();
+             break;
+diff --git a/monitor.h b/monitor.h
+index 4d57679..42386de 100644
+--- a/monitor.h
++++ b/monitor.h
+@@ -21,6 +21,7 @@ typedef enum MonitorEvent {
+     QEVENT_POWERDOWN,
+     QEVENT_STOP,
+     QEVENT_VNC_CONNECTED,
++    QEVENT_VNC_DISCONNECTED,
+     QEVENT_MAX,
+ } MonitorEvent;
+ 
+diff --git a/vnc.c b/vnc.c
+index 4bd691a..1bf9694 100644
+--- a/vnc.c
++++ b/vnc.c
+@@ -1108,6 +1108,8 @@ static void vnc_disconnect_start(VncState *vs)
+ 
+ static void vnc_disconnect_finish(VncState *vs)
+ {
++    vnc_qmp_event(vs, QEVENT_VNC_DISCONNECTED);
++
+     if (vs->input.buffer) {
+         qemu_free(vs->input.buffer);
+         vs->input.buffer = NULL;
+-- 
+1.6.3.rc4.29.g8146
+

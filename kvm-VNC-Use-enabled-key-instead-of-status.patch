@@ -1,0 +1,83 @@
+From 739114d67cb695cd5aa2d82bef9398fd039042e0 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Tue, 26 Jan 2010 18:53:39 -0200
+Subject: [PATCH 1/9] VNC: Use 'enabled' key instead of 'status'
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1264532026-7620-2-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 6627
+O-Subject: [PATCH RHEL6 qemu-kvm 1/8] VNC: Use 'enabled' key instead of 'status'
+Bugzilla: 549759
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Currently the 'status' key is a string whose value can be
+"disabled" or "enabled", change it to the QMP's standard
+'enabled' key, which is a bool.
+
+Note that 'status' in being dropped and this wouldn't be
+allowed if QMP were stable.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 8950a950705021351c40bf8563a7e69daf0ff723)
+---
+ vnc.c |   10 +++++-----
+ 1 files changed, 5 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vnc.c |   10 +++++-----
+ 1 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/vnc.c b/vnc.c
+index f4b56fe..0def398 100644
+--- a/vnc.c
++++ b/vnc.c
+@@ -254,7 +254,7 @@ void do_info_vnc_print(Monitor *mon, const QObject *data)
+     QList *clients;
+ 
+     server = qobject_to_qdict(data);
+-    if (strcmp(qdict_get_str(server, "status"), "disabled") == 0) {
++    if (qdict_get_bool(server, "enabled") == 0) {
+         monitor_printf(mon, "Server: disabled\n");
+         return;
+     }
+@@ -282,7 +282,7 @@ void do_info_vnc_print(Monitor *mon, const QObject *data)
+  *
+  * The main QDict contains the following:
+  *
+- * - "status": "disabled" or "enabled"
++ * - "enabled": true or false
+  * - "host": server's IP address
+  * - "service": server's port number
+  * - "auth": authentication method (optional)
+@@ -297,13 +297,13 @@ void do_info_vnc_print(Monitor *mon, const QObject *data)
+  *
+  * Example:
+  *
+- * { "status": "enabled", "host": "0.0.0.0", "service": "50402", "auth": "vnc",
++ * { "enabled": true, "host": "0.0.0.0", "service": "50402", "auth": "vnc",
+  *   "clients": [ { "host": "127.0.0.1", "service": "50401" } ] }
+  */
+ void do_info_vnc(Monitor *mon, QObject **ret_data)
+ {
+     if (vnc_display == NULL || vnc_display->display == NULL) {
+-        *ret_data = qobject_from_jsonf("{ 'status': 'disabled' }");
++        *ret_data = qobject_from_jsonf("{ 'enabled': false }");
+     } else {
+         QDict *qdict;
+         QList *clist;
+@@ -319,7 +319,7 @@ void do_info_vnc(Monitor *mon, QObject **ret_data)
+             }
+         }
+ 
+-        *ret_data = qobject_from_jsonf("{ 'status': 'enabled', 'clients': %p }",
++        *ret_data = qobject_from_jsonf("{ 'enabled': true, 'clients': %p }",
+                                        QOBJECT(clist));
+         assert(*ret_data != NULL);
+ 
+-- 
+1.6.3.rc4.29.g8146
+

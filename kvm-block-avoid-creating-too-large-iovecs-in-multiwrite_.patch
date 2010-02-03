@@ -1,0 +1,65 @@
+From 36ac1b2b346c41910838f5d1b27d34a4ce68b616 Mon Sep 17 00:00:00 2001
+From: Christoph Hellwig <chellwig@redhat.com>
+Date: Wed, 27 Jan 2010 17:19:59 -0200
+Subject: [PATCH 9/9] block: avoid creating too large iovecs in multiwrite_merge
+
+RH-Author: Christoph Hellwig <chellwig@redhat.com>
+Message-id: <1264612799.20444.11.camel@brick.lst.de>
+Patchwork-id: 6722
+O-Subject: [RHEL6 PATCH] block: avoid creating too large iovecs in
+	multiwrite_merge
+Bugzilla: 558730
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Backport of upstream commit e2a305fb13ff0f5cf6ff805555aaa90a5ed5954c to
+fix bugzilla 558730.
+If we go over the maximum number of iovecs support by syscall we get
+back EINVAL from the kernel which translate to I/O errors for the guest.
+
+Add a MAX_IOV defintion for platforms that don't have it.  For now we use
+the same 1024 define that's used on Linux and various other platforms,
+but until the windows block backend implements some kind of vectored I/O
+it doesn't matter.
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c       |    4 ++++
+ qemu-common.h |    4 ++++
+ 2 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/block.c b/block.c
+index faff40e..a0d9c41 100644
+--- a/block.c
++++ b/block.c
+@@ -1687,6 +1687,10 @@ static int multiwrite_merge(BlockDriverState *bs, BlockRequest *reqs,
+             merge = bs->drv->bdrv_merge_requests(bs, &reqs[outidx], &reqs[i]);
+         }
+ 
++        if (reqs[outidx].qiov->niov + reqs[i].qiov->niov + 1 > IOV_MAX) {
++            merge = 0;
++        }
++
+         if (merge) {
+             size_t size;
+             QEMUIOVector *qiov = qemu_mallocz(sizeof(*qiov));
+diff --git a/qemu-common.h b/qemu-common.h
+index 5fbe0f9..8ba7ed6 100644
+--- a/qemu-common.h
++++ b/qemu-common.h
+@@ -53,6 +53,10 @@ struct iovec {
+     void *iov_base;
+     size_t iov_len;
+ };
++/*
++ * Use the same value as Linux for now.
++ */
++#define IOV_MAX		1024
+ #else
+ #include <sys/uio.h>
+ #endif
+-- 
+1.6.3.rc4.29.g8146
+
