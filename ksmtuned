@@ -21,6 +21,14 @@ if [ -f /etc/ksmtuned.conf ]; then
     . /etc/ksmtuned.conf
 fi
 
+debug() {
+    if [ -n "$DEBUG" ]; then
+        s="`/bin/date`: $*"
+        [ -n "$LOGFILE" ] && echo "$s" >> "$LOGFILE" || echo "$s"
+    fi
+}
+
+
 KSM_MONITOR_INTERVAL=${KSM_MONITOR_INTERVAL:-60}
 KSM_NPAGES_BOOST=${KSM_NPAGES_BOOST:-300}
 KSM_NPAGES_DECAY=${KSM_NPAGES_DECAY:--50}
@@ -35,17 +43,17 @@ KSM_THRES_COEF=${KSM_THRES_COEF:-20}
 KSM_THRES_CONST=${KSM_THRES_CONST:-2048}
 
 total=`awk '/^MemTotal:/ {print $2}' /proc/meminfo`
-[ -n "$DEBUG" ] && echo total $total
+debug total $total
 
 npages=0
 sleep=$[KSM_SLEEP_MSEC * 16 * 1024 * 1024 / total]
 [ $sleep -le 10 ] && sleep=10
-[ -n "$DEBUG" ] && echo sleep $sleep
+debug sleep $sleep
 thres=$[total * KSM_THRES_COEF / 100]
 if [ $KSM_THRES_CONST -gt $thres ]; then
     thres=$KSM_THRES_CONST
 fi
-[ -n "$DEBUG" ] && echo thres $thres
+debug thres $thres
 
 KSMCTL () {
     case x$1 in
@@ -89,22 +97,22 @@ adjust () {
     local free committed
     free=`free_memory`
     committed=`committed_memory`
-    [ -n "$DEBUG" ] && echo committed $committed free $free
+    debug committed $committed free $free
     if [ $[committed + thres] -lt $total -a $free -gt $thres ]; then
         KSMCTL stop
-        [ -n "$DEBUG" ] && echo "$[committed + thres] < $total and free > $thres, stop ksm"
+        debug "$[committed + thres] < $total and free > $thres, stop ksm"
         return 1
     fi
-    [ -n "$DEBUG" ] && echo "$[committed + thres] > $total, start ksm"
+    debug "$[committed + thres] > $total, start ksm"
     if [ $free -lt $thres ]; then
         npages=`increase_npages $KSM_NPAGES_BOOST`
-        [ -n "$DEBUG" ] && echo "$free < $thres, boost"
+        debug "$free < $thres, boost"
     else
         npages=`increase_npages $KSM_NPAGES_DECAY`
-        [ -n "$DEBUG" ] && echo "$free > $thres, decay"
+        debug "$free > $thres, decay"
     fi
     KSMCTL start $npages $sleep
-    [ -n "$DEBUG" ] && echo "KSMCTL start $npages $sleep"
+    debug "KSMCTL start $npages $sleep"
     return 0
 }
 

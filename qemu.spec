@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.12.2
-Release: 4%{?dist}
+Release: 5%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -34,6 +34,8 @@ Patch06: qemu-virtio-serial-Add-a-virtserialport-device-for-gen.patch
 Patch07: qemu-Move-virtio-serial-to-Makefile.objs.patch
 Patch08: qemu-virtio-serial-Use-MSI-vectors-for-port-virtqueues.patch
 Patch09: qemu-virtio-console-Rename-virtio-serial.c-back-to-virti.patch
+
+Patch10: qemu-v2-block-avoid-creating-too-large-iovecs-in-multiwrite_merge.patch
 
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -232,6 +234,7 @@ such as kvmtrace and kvm_stat.
 %patch07 -p1
 %patch08 -p1
 %patch09 -p1
+%patch10 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -515,6 +518,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Feb 04 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.2-5
+- Avoid creating too large iovecs in multiwrite merge (#559717)
+- Don't try to set max_kernel_pages during ksm init on newer kernels (#558281)
+- Add logfile options for ksmtuned debug.
+
 * Wed Jan 27 2010 Amit Shah <amit.shah@redhat.com> - 2:0.12.2-4
 - Remove build dependency on iasl now that we have seabios
 
