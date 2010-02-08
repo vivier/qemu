@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.15%{?dist}
+Release: 2.16%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -275,6 +275,7 @@ install -D -p -m 0644 %{SOURCE8} $RPM_BUILD_ROOT%{_sysconfdir}/ksmtuned.conf
 
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules
 mkdir -p $RPM_BUILD_ROOT%{_bindir}/
+mkdir -p $RPM_BUILD_ROOT%{_libexecdir}/
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{name}
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
 
@@ -291,7 +292,7 @@ make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
      docdir="${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}" \
      datadir="${RPM_BUILD_ROOT}%{_datadir}/%{name}" install
 
-mv ${RPM_BUILD_ROOT}%{_bindir}/qemu-system-x86_64 ${RPM_BUILD_ROOT}%{_bindir}/qemu-kvm
+mv ${RPM_BUILD_ROOT}%{_bindir}/qemu-system-x86_64 ${RPM_BUILD_ROOT}%{_libexecdir}/qemu-kvm
 
 rm -rf ${RPM_BUILD_ROOT}%{_bindir}/qemu-nbd
 rm -rf ${RPM_BUILD_ROOT}%{_mandir}/man8/qemu-nbd.8*
@@ -390,9 +391,10 @@ fi
 %{_datadir}/%{name}/pxe-rtl8139.bin
 %{_datadir}/%{name}/pxe-ne2k_pci.bin
 %{_datadir}/%{name}/extboot.bin
-%{_bindir}/qemu-kvm
+%{_libexecdir}/qemu-kvm
 %{_sysconfdir}/sysconfig/modules/kvm.modules
 %{_sysconfdir}/udev/rules.d/80-kvm.rules
+
 %files tools
 %defattr(-,root,root,-)
 %{_bindir}/kvmtrace
@@ -406,6 +408,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Feb 08 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.16.el6
+- Move /usr/bin/qemu-kvm to /usr/libexec/qemu-kvm
+- Resolves: bz#560651
+
 * Wed Feb 03 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.15.el6
 - kvm-VNC-Use-enabled-key-instead-of-status.patch [bz#549759]
 - kvm-VNC-Make-auth-key-mandatory.patch [bz#549759]
