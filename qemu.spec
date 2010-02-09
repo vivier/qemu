@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.12.2
-Release: 5%{?dist}
+Release: 6%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -36,6 +36,35 @@ Patch08: qemu-virtio-serial-Use-MSI-vectors-for-port-virtqueues.patch
 Patch09: qemu-virtio-console-Rename-virtio-serial.c-back-to-virti.patch
 
 Patch10: qemu-v2-block-avoid-creating-too-large-iovecs-in-multiwrite_merge.patch
+
+# VHostNet Patches
+Patch11: qemu-net-add-API-to-disable-enable-polling.patch
+Patch12: qemu-virtio-rename-features-guest_features.patch
+Patch13: qemu-qdev-add-bit-property-type.patch
+Patch14: qemu-qdev-fix-thinko-leading-to-guest-crashes.patch
+Patch15: qemu-virtio-add-features-as-qdev-properties.patch
+Patch16: qemu-virtio-net-mac-property-is-mandatory.patch
+Patch17: qemu-exec-memory-notifiers.patch
+Patch18: qemu-kvm-add-API-to-set-ioeventfd.patch
+Patch19: qemu-notifier-event-notifier-implementation.patch
+Patch20: qemu-virtio-add-notifier-support.patch
+Patch21: qemu-virtio-add-APIs-for-queue-fields.patch
+Patch22: qemu-virtio-add-status-change-callback.patch
+Patch23: qemu-virtio-move-typedef-to-qemu-common.patch
+Patch24: qemu-virtio-pci-fill-in-notifier-support.patch
+Patch25: qemu-tap-add-interface-to-get-device-fd.patch
+Patch26: qemu-vhost-vhost-net-support.patch
+Patch27: qemu-tap-add-vhost-vhostfd-options.patch
+Patch28: qemu-tap-add-API-to-retrieve-vhost-net-header.patch
+Patch29: qemu-virtio-net-vhost-net-support.patch
+Patch30: qemu-kvm-add-vhost.h-header.patch
+Patch31: qemu-kvm-irqfd-support.patch
+Patch32: qemu-msix-add-mask-unmask-notifiers.patch
+Patch33: qemu-virtio-pci-irqfd-support.patch
+Patch34: qemu-virtio-avoid-crash-with-non-tap-backends.patch
+Patch35: qemu-virtio-serial-features-build-fix.patch
+Patch36: qemu-virtio-pci-irqfd-fix-nonkvm-build.patch
+Patch37: qemu-vhost-add-configure-check.patch
 
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -235,6 +264,33 @@ such as kvmtrace and kvm_stat.
 %patch08 -p1
 %patch09 -p1
 %patch10 -p1
+%patch11 -p1
+%patch12 -p1
+%patch13 -p1
+%patch14 -p1
+%patch15 -p1
+%patch16 -p1
+%patch17 -p1
+%patch18 -p1
+%patch19 -p1
+%patch20 -p1
+%patch21 -p1
+%patch22 -p1
+%patch23 -p1
+%patch24 -p1
+%patch25 -p1
+%patch26 -p1
+%patch27 -p1
+%patch28 -p1
+%patch29 -p1
+%patch30 -p1
+%patch31 -p1
+%patch32 -p1
+%patch33 -p1
+%patch34 -p1
+%patch35 -p1
+%patch36 -p1
+%patch37 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -518,6 +574,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Feb 09 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.2-6
+- Add vhost net support.
+
 * Thu Feb 04 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.2-5
 - Avoid creating too large iovecs in multiwrite merge (#559717)
 - Don't try to set max_kernel_pages during ksm init on newer kernels (#558281)
