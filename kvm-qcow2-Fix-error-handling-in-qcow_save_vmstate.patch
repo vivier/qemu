@@ -1,0 +1,55 @@
+From 84beca6011d163c47ac59263d32a52084e5e2f59 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 2 Feb 2010 16:40:21 -0200
+Subject: [PATCH 03/14] qcow2: Fix error handling in qcow_save_vmstate
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1265128829-26978-4-git-send-email-kwolf@redhat.com>
+Patchwork-id: 6842
+O-Subject: [RHEL-6 KVM PATCH v2 03/11] qcow2: Fix error handling in
+	qcow_save_vmstate
+Bugzilla: 560623
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 560623
+Upstream commit: 1d36e3a
+
+Don't assume success but pass the bdrv_pwrite return value on.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block/qcow2.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/block/qcow2.c b/block/qcow2.c
+index 4f9ef91..1a6dfc0 100644
+--- a/block/qcow2.c
++++ b/block/qcow2.c
+@@ -1155,12 +1155,13 @@ static int qcow_save_vmstate(BlockDriverState *bs, const uint8_t *buf,
+ {
+     BDRVQcowState *s = bs->opaque;
+     int growable = bs->growable;
++    int ret;
+ 
+     bs->growable = 1;
+-    bdrv_pwrite(bs, qcow_vm_state_offset(s) + pos, buf, size);
++    ret = bdrv_pwrite(bs, qcow_vm_state_offset(s) + pos, buf, size);
+     bs->growable = growable;
+ 
+-    return size;
++    return ret;
+ }
+ 
+ static int qcow_load_vmstate(BlockDriverState *bs, uint8_t *buf,
+-- 
+1.6.3.rc4.29.g8146
+

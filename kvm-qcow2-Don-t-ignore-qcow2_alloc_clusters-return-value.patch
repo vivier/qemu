@@ -1,0 +1,184 @@
+From de6be1678ff56d41604f40e792e1c53abe302f53 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 2 Feb 2010 16:40:29 -0200
+Subject: [PATCH 11/14] qcow2: Don't ignore qcow2_alloc_clusters return value
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1265128829-26978-12-git-send-email-kwolf@redhat.com>
+Patchwork-id: 6850
+O-Subject: [RHEL-6 KVM PATCH v2 11/11] qcow2: Don't ignore qcow2_alloc_clusters
+	return value
+Bugzilla: 560623
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 560623
+Upstream commit: 5d757b5
+
+Now that qcow2_alloc_clusters can return error codes, we must handle them in
+the callers of qcow2_alloc_clusters.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block/qcow2-cluster.c  |   25 +++++++++++++++++++++----
+ block/qcow2-refcount.c |    6 ++++++
+ block/qcow2-snapshot.c |   11 ++++++++++-
+ 3 files changed, 37 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2-cluster.c  |   25 +++++++++++++++++++++----
+ block/qcow2-refcount.c |    6 ++++++
+ block/qcow2-snapshot.c |   11 ++++++++++-
+ 3 files changed, 37 insertions(+), 5 deletions(-)
+
+diff --git a/block/qcow2-cluster.c b/block/qcow2-cluster.c
+index ce8c87c..3501a94 100644
+--- a/block/qcow2-cluster.c
++++ b/block/qcow2-cluster.c
+@@ -33,7 +33,7 @@ int qcow2_grow_l1_table(BlockDriverState *bs, int min_size)
+     BDRVQcowState *s = bs->opaque;
+     int new_l1_size, new_l1_size2, ret, i;
+     uint64_t *new_l1_table;
+-    uint64_t new_l1_table_offset;
++    int64_t new_l1_table_offset;
+     uint8_t data[12];
+ 
+     new_l1_size = s->l1_size;
+@@ -55,6 +55,10 @@ int qcow2_grow_l1_table(BlockDriverState *bs, int min_size)
+ 
+     /* write new table (align to cluster) */
+     new_l1_table_offset = qcow2_alloc_clusters(bs, new_l1_size2);
++    if (new_l1_table_offset < 0) {
++        qemu_free(new_l1_table);
++        return new_l1_table_offset;
++    }
+ 
+     for(i = 0; i < s->l1_size; i++)
+         new_l1_table[i] = cpu_to_be64(new_l1_table[i]);
+@@ -215,13 +219,17 @@ static uint64_t *l2_allocate(BlockDriverState *bs, int l1_index)
+     BDRVQcowState *s = bs->opaque;
+     int min_index;
+     uint64_t old_l2_offset;
+-    uint64_t *l2_table, l2_offset;
++    uint64_t *l2_table;
++    int64_t l2_offset;
+ 
+     old_l2_offset = s->l1_table[l1_index];
+ 
+     /* allocate a new l2 entry */
+ 
+     l2_offset = qcow2_alloc_clusters(bs, s->l2_size * sizeof(uint64_t));
++    if (l2_offset < 0) {
++        return NULL;
++    }
+ 
+     /* update the L1 entry */
+ 
+@@ -553,7 +561,8 @@ uint64_t qcow2_alloc_compressed_cluster_offset(BlockDriverState *bs,
+ {
+     BDRVQcowState *s = bs->opaque;
+     int l2_index, ret;
+-    uint64_t l2_offset, *l2_table, cluster_offset;
++    uint64_t l2_offset, *l2_table;
++    int64_t cluster_offset;
+     int nb_csectors;
+ 
+     ret = get_cluster_table(bs, offset, &l2_table, &l2_offset, &l2_index);
+@@ -569,6 +578,10 @@ uint64_t qcow2_alloc_compressed_cluster_offset(BlockDriverState *bs,
+         qcow2_free_any_clusters(bs, cluster_offset, 1);
+ 
+     cluster_offset = qcow2_alloc_bytes(bs, compressed_size);
++    if (cluster_offset < 0) {
++        return 0;
++    }
++
+     nb_csectors = ((cluster_offset + compressed_size - 1) >> 9) -
+                   (cluster_offset >> 9);
+ 
+@@ -698,7 +711,8 @@ int qcow2_alloc_cluster_offset(BlockDriverState *bs, uint64_t offset,
+ {
+     BDRVQcowState *s = bs->opaque;
+     int l2_index, ret;
+-    uint64_t l2_offset, *l2_table, cluster_offset;
++    uint64_t l2_offset, *l2_table;
++    int64_t cluster_offset;
+     unsigned int nb_clusters, i = 0;
+     QCowL2Meta *old_alloc;
+ 
+@@ -792,6 +806,9 @@ int qcow2_alloc_cluster_offset(BlockDriverState *bs, uint64_t offset,
+     /* allocate a new cluster */
+ 
+     cluster_offset = qcow2_alloc_clusters(bs, nb_clusters * s->cluster_size);
++    if (cluster_offset < 0) {
++        return cluster_offset;
++    }
+ 
+     /* save info needed for meta data update */
+     m->offset = offset;
+diff --git a/block/qcow2-refcount.c b/block/qcow2-refcount.c
+index e343bfb..c2a5c04 100644
+--- a/block/qcow2-refcount.c
++++ b/block/qcow2-refcount.c
+@@ -435,6 +435,9 @@ int64_t qcow2_alloc_bytes(BlockDriverState *bs, int size)
+     assert(size > 0 && size <= s->cluster_size);
+     if (s->free_byte_offset == 0) {
+         s->free_byte_offset = qcow2_alloc_clusters(bs, s->cluster_size);
++        if (s->free_byte_offset < 0) {
++            return s->free_byte_offset;
++        }
+     }
+  redo:
+     free_in_cluster = s->cluster_size -
+@@ -450,6 +453,9 @@ int64_t qcow2_alloc_bytes(BlockDriverState *bs, int size)
+             update_cluster_refcount(bs, offset >> s->cluster_bits, 1);
+     } else {
+         offset = qcow2_alloc_clusters(bs, s->cluster_size);
++        if (offset < 0) {
++            return offset;
++        }
+         cluster_offset = s->free_byte_offset & ~(s->cluster_size - 1);
+         if ((cluster_offset + s->cluster_size) == offset) {
+             /* we are lucky: contiguous data */
+diff --git a/block/qcow2-snapshot.c b/block/qcow2-snapshot.c
+index d63c7e1..8ddaea2 100644
+--- a/block/qcow2-snapshot.c
++++ b/block/qcow2-snapshot.c
+@@ -139,6 +139,9 @@ static int qcow_write_snapshots(BlockDriverState *bs)
+ 
+     snapshots_offset = qcow2_alloc_clusters(bs, snapshots_size);
+     offset = snapshots_offset;
++    if (offset < 0) {
++        return offset;
++    }
+ 
+     for(i = 0; i < s->nb_snapshots; i++) {
+         sn = s->snapshots + i;
+@@ -235,6 +238,7 @@ int qcow2_snapshot_create(BlockDriverState *bs, QEMUSnapshotInfo *sn_info)
+     QCowSnapshot *snapshots1, sn1, *sn = &sn1;
+     int i, ret;
+     uint64_t *l1_table = NULL;
++    int64_t l1_table_offset;
+ 
+     memset(sn, 0, sizeof(*sn));
+ 
+@@ -263,7 +267,12 @@ int qcow2_snapshot_create(BlockDriverState *bs, QEMUSnapshotInfo *sn_info)
+         goto fail;
+ 
+     /* create the L1 table of the snapshot */
+-    sn->l1_table_offset = qcow2_alloc_clusters(bs, s->l1_size * sizeof(uint64_t));
++    l1_table_offset = qcow2_alloc_clusters(bs, s->l1_size * sizeof(uint64_t));
++    if (l1_table_offset < 0) {
++        goto fail;
++    }
++
++    sn->l1_table_offset = l1_table_offset;
+     sn->l1_size = s->l1_size;
+ 
+     if (s->l1_size != 0) {
+-- 
+1.6.3.rc4.29.g8146
+

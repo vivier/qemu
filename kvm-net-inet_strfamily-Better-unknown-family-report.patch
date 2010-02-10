@@ -1,0 +1,44 @@
+From 84cba09c79dd1b8419be38f3fc1ad9b7ca98e077 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Fri, 5 Feb 2010 17:31:29 -0200
+Subject: [PATCH 13/14] net: inet_strfamily(): Better unknown family report
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1265391090-21418-3-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 6936
+O-Subject: [PATCH 2/3] net: inet_strfamily(): Better unknown family report
+Bugzilla: 562181
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+Returning "????" is a bit meaningless, let's call it "unknown".
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit c445321e66facc440d7de64f39fa33cb0cc330b2)
+---
+ qemu-sockets.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-sockets.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-sockets.c b/qemu-sockets.c
+index 720de22..d912fed 100644
+--- a/qemu-sockets.c
++++ b/qemu-sockets.c
+@@ -98,7 +98,7 @@ const char *inet_strfamily(int family)
+     case PF_INET:  return "ipv4";
+     case PF_UNIX:  return "unix";
+     }
+-    return "????";
++    return "unknown";
+ }
+ 
+ static void inet_print_addrinfo(const char *tag, struct addrinfo *res)
+-- 
+1.6.3.rc4.29.g8146
+

@@ -1,0 +1,249 @@
+From 57480b16a07fd44c42e77d02ad366ea2ba19a1df Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 2 Feb 2010 16:40:23 -0200
+Subject: [PATCH 05/14] qcow2: Return 0/-errno in qcow2_alloc_cluster_offset
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1265128829-26978-6-git-send-email-kwolf@redhat.com>
+Patchwork-id: 6844
+O-Subject: [RHEL-6 KVM PATCH v2 05/11] qcow2: Return 0/-errno in
+	qcow2_alloc_cluster_offset
+Bugzilla: 560623
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+
+Bugzilla: 560623
+Upstream commit: 148da7e
+
+Returning 0/-errno allows it to distingush different errors classes. The
+cluster offset of newly allocated clusters is now returned in the QCowL2Meta
+struct.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block/qcow2-cluster.c |   34 ++++++++++++++++++++--------------
+ block/qcow2.c         |   36 +++++++++++++++++++-----------------
+ block/qcow2.h         |   10 ++++------
+ 3 files changed, 43 insertions(+), 37 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2-cluster.c |   34 ++++++++++++++++++++--------------
+ block/qcow2.c         |   36 +++++++++++++++++++-----------------
+ block/qcow2.h         |   10 ++++------
+ 3 files changed, 43 insertions(+), 37 deletions(-)
+
+diff --git a/block/qcow2-cluster.c b/block/qcow2-cluster.c
+index dec0af6..ce8c87c 100644
+--- a/block/qcow2-cluster.c
++++ b/block/qcow2-cluster.c
+@@ -611,12 +611,12 @@ static int write_l2_entries(BDRVQcowState *s, uint64_t *l2_table,
+     return 0;
+ }
+ 
+-int qcow2_alloc_cluster_link_l2(BlockDriverState *bs, uint64_t cluster_offset,
+-    QCowL2Meta *m)
++int qcow2_alloc_cluster_link_l2(BlockDriverState *bs, QCowL2Meta *m)
+ {
+     BDRVQcowState *s = bs->opaque;
+     int i, j = 0, l2_index, ret;
+     uint64_t *old_cluster, start_sect, l2_offset, *l2_table;
++    uint64_t cluster_offset = m->cluster_offset;
+ 
+     if (m->nb_clusters == 0)
+         return 0;
+@@ -677,20 +677,24 @@ err:
+ /*
+  * alloc_cluster_offset
+  *
+- * For a given offset of the disk image, return cluster offset in
+- * qcow2 file.
+- *
++ * For a given offset of the disk image, return cluster offset in qcow2 file.
+  * If the offset is not found, allocate a new cluster.
+  *
+- * Return the cluster offset if successful,
+- * Return 0, otherwise.
++ * If the cluster was already allocated, m->nb_clusters is set to 0,
++ * m->depends_on is set to NULL and the other fields in m are meaningless.
++ *
++ * If the cluster is newly allocated, m->nb_clusters is set to the number of
++ * contiguous clusters that have been allocated. This may be 0 if the request
++ * conflict with another write request in flight; in this case, m->depends_on
++ * is set and the remaining fields of m are meaningless.
+  *
++ * If m->nb_clusters is non-zero, the other fields of m are valid and contain
++ * information about the first allocated cluster.
++ *
++ * Return 0 on success and -errno in error cases
+  */
+-
+-uint64_t qcow2_alloc_cluster_offset(BlockDriverState *bs,
+-                                    uint64_t offset,
+-                                    int n_start, int n_end,
+-                                    int *num, QCowL2Meta *m)
++int qcow2_alloc_cluster_offset(BlockDriverState *bs, uint64_t offset,
++    int n_start, int n_end, int *num, QCowL2Meta *m)
+ {
+     BDRVQcowState *s = bs->opaque;
+     int l2_index, ret;
+@@ -700,7 +704,7 @@ uint64_t qcow2_alloc_cluster_offset(BlockDriverState *bs,
+ 
+     ret = get_cluster_table(bs, offset, &l2_table, &l2_offset, &l2_index);
+     if (ret < 0) {
+-        return 0;
++        return ret;
+     }
+ 
+     nb_clusters = size_to_clusters(s, n_end << 9);
+@@ -717,6 +721,7 @@ uint64_t qcow2_alloc_cluster_offset(BlockDriverState *bs,
+ 
+         cluster_offset &= ~QCOW_OFLAG_COPIED;
+         m->nb_clusters = 0;
++        m->depends_on = NULL;
+ 
+         goto out;
+     }
+@@ -795,10 +800,11 @@ uint64_t qcow2_alloc_cluster_offset(BlockDriverState *bs,
+ 
+ out:
+     m->nb_available = MIN(nb_clusters << (s->cluster_bits - 9), n_end);
++    m->cluster_offset = cluster_offset;
+ 
+     *num = m->nb_available - n_start;
+ 
+-    return cluster_offset;
++    return 0;
+ }
+ 
+ static int decompress_buffer(uint8_t *out_buf, int out_buf_size,
+diff --git a/block/qcow2.c b/block/qcow2.c
+index 1a6dfc0..07d54fe 100644
+--- a/block/qcow2.c
++++ b/block/qcow2.c
+@@ -561,7 +561,7 @@ static void qcow_aio_write_cb(void *opaque, int ret)
+     acb->hd_aiocb = NULL;
+ 
+     if (ret >= 0) {
+-        ret = qcow2_alloc_cluster_link_l2(bs, acb->cluster_offset, &acb->l2meta);
++        ret = qcow2_alloc_cluster_link_l2(bs, &acb->l2meta);
+     }
+ 
+     run_dependent_requests(&acb->l2meta);
+@@ -585,21 +585,23 @@ static void qcow_aio_write_cb(void *opaque, int ret)
+         n_end > QCOW_MAX_CRYPT_CLUSTERS * s->cluster_sectors)
+         n_end = QCOW_MAX_CRYPT_CLUSTERS * s->cluster_sectors;
+ 
+-    acb->cluster_offset = qcow2_alloc_cluster_offset(bs, acb->sector_num << 9,
+-                                          index_in_cluster,
+-                                          n_end, &acb->n, &acb->l2meta);
++    ret = qcow2_alloc_cluster_offset(bs, acb->sector_num << 9,
++        index_in_cluster, n_end, &acb->n, &acb->l2meta);
++    if (ret < 0) {
++        goto done;
++    }
++
++    acb->cluster_offset = acb->l2meta.cluster_offset;
+ 
+     /* Need to wait for another request? If so, we are done for now. */
+-    if (!acb->cluster_offset && acb->l2meta.depends_on != NULL) {
++    if (acb->l2meta.nb_clusters == 0 && acb->l2meta.depends_on != NULL) {
+         QLIST_INSERT_HEAD(&acb->l2meta.depends_on->dependent_requests,
+             acb, next_depend);
+         return;
+     }
+ 
+-    if (!acb->cluster_offset || (acb->cluster_offset & 511) != 0) {
+-        ret = -EIO;
+-        goto done;
+-    }
++    assert((acb->cluster_offset & 511) == 0);
++
+     if (s->crypt_method) {
+         if (!acb->cluster_data) {
+             acb->cluster_data = qemu_mallocz(QCOW_MAX_CRYPT_CLUSTERS *
+@@ -782,27 +784,27 @@ static int get_bits_from_size(size_t size)
+ static int preallocate(BlockDriverState *bs)
+ {
+     BDRVQcowState *s = bs->opaque;
+-    uint64_t cluster_offset = 0;
+     uint64_t nb_sectors;
+     uint64_t offset;
+     int num;
++    int ret;
+     QCowL2Meta meta;
+ 
+     nb_sectors = bdrv_getlength(bs) >> 9;
+     offset = 0;
+     QLIST_INIT(&meta.dependent_requests);
++    meta.cluster_offset = 0;
+ 
+     while (nb_sectors) {
+         num = MIN(nb_sectors, INT_MAX >> 9);
+-        cluster_offset = qcow2_alloc_cluster_offset(bs, offset, 0, num, &num,
+-            &meta);
++        ret = qcow2_alloc_cluster_offset(bs, offset, 0, num, &num, &meta);
+ 
+-        if (cluster_offset == 0) {
++        if (ret < 0) {
+             return -1;
+         }
+ 
+-        if (qcow2_alloc_cluster_link_l2(bs, cluster_offset, &meta) < 0) {
+-            qcow2_free_any_clusters(bs, cluster_offset, meta.nb_clusters);
++        if (qcow2_alloc_cluster_link_l2(bs, &meta) < 0) {
++            qcow2_free_any_clusters(bs, meta.cluster_offset, meta.nb_clusters);
+             return -1;
+         }
+ 
+@@ -821,10 +823,10 @@ static int preallocate(BlockDriverState *bs)
+      * all of the allocated clusters (otherwise we get failing reads after
+      * EOF). Extend the image to the last allocated sector.
+      */
+-    if (cluster_offset != 0) {
++    if (meta.cluster_offset != 0) {
+         uint8_t buf[512];
+         memset(buf, 0, 512);
+-        bdrv_write(s->hd, (cluster_offset >> 9) + num - 1, buf, 1);
++        bdrv_write(s->hd, (meta.cluster_offset >> 9) + num - 1, buf, 1);
+     }
+ 
+     return 0;
+diff --git a/block/qcow2.h b/block/qcow2.h
+index 26ab5d9..de9397a 100644
+--- a/block/qcow2.h
++++ b/block/qcow2.h
+@@ -135,6 +135,7 @@ struct QCowAIOCB;
+ typedef struct QCowL2Meta
+ {
+     uint64_t offset;
++    uint64_t cluster_offset;
+     int n_start;
+     int nb_available;
+     int nb_clusters;
+@@ -191,16 +192,13 @@ void qcow2_encrypt_sectors(BDRVQcowState *s, int64_t sector_num,
+ 
+ uint64_t qcow2_get_cluster_offset(BlockDriverState *bs, uint64_t offset,
+     int *num);
+-uint64_t qcow2_alloc_cluster_offset(BlockDriverState *bs,
+-                              uint64_t offset,
+-                              int n_start, int n_end,
+-                              int *num, QCowL2Meta *m);
++int qcow2_alloc_cluster_offset(BlockDriverState *bs, uint64_t offset,
++    int n_start, int n_end, int *num, QCowL2Meta *m);
+ uint64_t qcow2_alloc_compressed_cluster_offset(BlockDriverState *bs,
+                                          uint64_t offset,
+                                          int compressed_size);
+ 
+-int qcow2_alloc_cluster_link_l2(BlockDriverState *bs, uint64_t cluster_offset,
+-    QCowL2Meta *m);
++int qcow2_alloc_cluster_link_l2(BlockDriverState *bs, QCowL2Meta *m);
+ 
+ /* qcow2-snapshot.c functions */
+ int qcow2_snapshot_create(BlockDriverState *bs, QEMUSnapshotInfo *sn_info);
+-- 
+1.6.3.rc4.29.g8146
+

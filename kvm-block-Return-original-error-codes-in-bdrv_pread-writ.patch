@@ -1,0 +1,131 @@
+From 0a989487f00dac87b11a8d24f564b16a98305659 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 2 Feb 2010 16:40:24 -0200
+Subject: [PATCH 06/14] block: Return original error codes in bdrv_pread/write
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1265128829-26978-7-git-send-email-kwolf@redhat.com>
+Patchwork-id: 6845
+O-Subject: [RHEL-6 KVM PATCH v2 06/11] block: Return original error codes in
+	bdrv_pread/write
+Bugzilla: 560623
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 560623
+Upstream commit: 9a8c4cc
+
+Don't assume -EIO but return the real error.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block.c |   34 ++++++++++++++++++----------------
+ 1 files changed, 18 insertions(+), 16 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c |   34 ++++++++++++++++++----------------
+ 1 files changed, 18 insertions(+), 16 deletions(-)
+
+diff --git a/block.c b/block.c
+index a0d9c41..bc9dc7b 100644
+--- a/block.c
++++ b/block.c
+@@ -711,6 +711,7 @@ int bdrv_pread(BlockDriverState *bs, int64_t offset,
+     uint8_t tmp_buf[BDRV_SECTOR_SIZE];
+     int len, nb_sectors, count;
+     int64_t sector_num;
++    int ret;
+ 
+     count = count1;
+     /* first read to align to sector start */
+@@ -719,8 +720,8 @@ int bdrv_pread(BlockDriverState *bs, int64_t offset,
+         len = count;
+     sector_num = offset >> BDRV_SECTOR_BITS;
+     if (len > 0) {
+-        if (bdrv_read(bs, sector_num, tmp_buf, 1) < 0)
+-            return -EIO;
++        if ((ret = bdrv_read(bs, sector_num, tmp_buf, 1)) < 0)
++            return ret;
+         memcpy(buf, tmp_buf + (offset & (BDRV_SECTOR_SIZE - 1)), len);
+         count -= len;
+         if (count == 0)
+@@ -732,8 +733,8 @@ int bdrv_pread(BlockDriverState *bs, int64_t offset,
+     /* read the sectors "in place" */
+     nb_sectors = count >> BDRV_SECTOR_BITS;
+     if (nb_sectors > 0) {
+-        if (bdrv_read(bs, sector_num, buf, nb_sectors) < 0)
+-            return -EIO;
++        if ((ret = bdrv_read(bs, sector_num, buf, nb_sectors)) < 0)
++            return ret;
+         sector_num += nb_sectors;
+         len = nb_sectors << BDRV_SECTOR_BITS;
+         buf += len;
+@@ -742,8 +743,8 @@ int bdrv_pread(BlockDriverState *bs, int64_t offset,
+ 
+     /* add data from the last sector */
+     if (count > 0) {
+-        if (bdrv_read(bs, sector_num, tmp_buf, 1) < 0)
+-            return -EIO;
++        if ((ret = bdrv_read(bs, sector_num, tmp_buf, 1)) < 0)
++            return ret;
+         memcpy(buf, tmp_buf, count);
+     }
+     return count1;
+@@ -755,6 +756,7 @@ int bdrv_pwrite(BlockDriverState *bs, int64_t offset,
+     uint8_t tmp_buf[BDRV_SECTOR_SIZE];
+     int len, nb_sectors, count;
+     int64_t sector_num;
++    int ret;
+ 
+     count = count1;
+     /* first write to align to sector start */
+@@ -763,11 +765,11 @@ int bdrv_pwrite(BlockDriverState *bs, int64_t offset,
+         len = count;
+     sector_num = offset >> BDRV_SECTOR_BITS;
+     if (len > 0) {
+-        if (bdrv_read(bs, sector_num, tmp_buf, 1) < 0)
+-            return -EIO;
++        if ((ret = bdrv_read(bs, sector_num, tmp_buf, 1)) < 0)
++            return ret;
+         memcpy(tmp_buf + (offset & (BDRV_SECTOR_SIZE - 1)), buf, len);
+-        if (bdrv_write(bs, sector_num, tmp_buf, 1) < 0)
+-            return -EIO;
++        if ((ret = bdrv_write(bs, sector_num, tmp_buf, 1)) < 0)
++            return ret;
+         count -= len;
+         if (count == 0)
+             return count1;
+@@ -778,8 +780,8 @@ int bdrv_pwrite(BlockDriverState *bs, int64_t offset,
+     /* write the sectors "in place" */
+     nb_sectors = count >> BDRV_SECTOR_BITS;
+     if (nb_sectors > 0) {
+-        if (bdrv_write(bs, sector_num, buf, nb_sectors) < 0)
+-            return -EIO;
++        if ((ret = bdrv_write(bs, sector_num, buf, nb_sectors)) < 0)
++            return ret;
+         sector_num += nb_sectors;
+         len = nb_sectors << BDRV_SECTOR_BITS;
+         buf += len;
+@@ -788,11 +790,11 @@ int bdrv_pwrite(BlockDriverState *bs, int64_t offset,
+ 
+     /* add data from the last sector */
+     if (count > 0) {
+-        if (bdrv_read(bs, sector_num, tmp_buf, 1) < 0)
+-            return -EIO;
++        if ((ret = bdrv_read(bs, sector_num, tmp_buf, 1)) < 0)
++            return ret;
+         memcpy(tmp_buf, buf, count);
+-        if (bdrv_write(bs, sector_num, tmp_buf, 1) < 0)
+-            return -EIO;
++        if ((ret = bdrv_write(bs, sector_num, tmp_buf, 1)) < 0)
++            return ret;
+     }
+     return count1;
+ }
+-- 
+1.6.3.rc4.29.g8146
+

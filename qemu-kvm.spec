@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.16%{?dist}
+Release: 2.17%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -112,6 +112,34 @@ Patch1041: kvm-QMP-Introduce-VNC_DISCONNECTED-event.patch
 Patch1042: kvm-QMP-Introduce-VNC_INITIALIZED-event.patch
 # For bz#558730 - qemu may create too large iovecs for the kernel
 Patch1043: kvm-block-avoid-creating-too-large-iovecs-in-multiwrite_.patch
+# For bz#560623 - error codes aren't always propagated up through the block layer (e.g. -ENOSPC)
+Patch1044: kvm-Fix-QEMU_WARN_UNUSED_RESULT.patch
+# For bz#560623 - error codes aren't always propagated up through the block layer (e.g. -ENOSPC)
+Patch1045: kvm-qcow2-Fix-error-handling-in-qcow2_grow_l1_table.patch
+# For bz#560623 - error codes aren't always propagated up through the block layer (e.g. -ENOSPC)
+Patch1046: kvm-qcow2-Fix-error-handling-in-qcow_save_vmstate.patch
+# For bz#560623 - error codes aren't always propagated up through the block layer (e.g. -ENOSPC)
+Patch1047: kvm-qcow2-Return-0-errno-in-get_cluster_table.patch
+# For bz#560623 - error codes aren't always propagated up through the block layer (e.g. -ENOSPC)
+Patch1048: kvm-qcow2-Return-0-errno-in-qcow2_alloc_cluster_offset.patch
+# For bz#560623 - error codes aren't always propagated up through the block layer (e.g. -ENOSPC)
+Patch1049: kvm-block-Return-original-error-codes-in-bdrv_pread-writ.patch
+# For bz#560623 - error codes aren't always propagated up through the block layer (e.g. -ENOSPC)
+Patch1050: kvm-qcow2-Fix-error-handling-in-grow_refcount_table.patch
+# For bz#560623 - error codes aren't always propagated up through the block layer (e.g. -ENOSPC)
+Patch1051: kvm-qcow2-Improve-error-handling-in-update_refcount.patch
+# For bz#560623 - error codes aren't always propagated up through the block layer (e.g. -ENOSPC)
+Patch1052: kvm-qcow2-Allow-updating-no-refcounts.patch
+# For bz#560623 - error codes aren't always propagated up through the block layer (e.g. -ENOSPC)
+Patch1053: kvm-qcow2-Don-t-ignore-update_refcount-return-value.patch
+# For bz#560623 - error codes aren't always propagated up through the block layer (e.g. -ENOSPC)
+Patch1054: kvm-qcow2-Don-t-ignore-qcow2_alloc_clusters-return-value.patch
+# For bz#562181 - Small VNC related cleanup
+Patch1055: kvm-net-Make-inet_strfamily-public.patch
+# For bz#562181 - Small VNC related cleanup
+Patch1056: kvm-net-inet_strfamily-Better-unknown-family-report.patch
+# For bz#562181 - Small VNC related cleanup
+Patch1057: kvm-vnc-Use-inet_strfamily.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -215,6 +243,20 @@ such as kvmtrace and kvm_stat.
 %patch1041 -p1
 %patch1042 -p1
 %patch1043 -p1
+%patch1044 -p1
+%patch1045 -p1
+%patch1046 -p1
+%patch1047 -p1
+%patch1048 -p1
+%patch1049 -p1
+%patch1050 -p1
+%patch1051 -p1
+%patch1052 -p1
+%patch1053 -p1
+%patch1054 -p1
+%patch1055 -p1
+%patch1056 -p1
+%patch1057 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -408,6 +450,26 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Feb 10 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.17.el6
+- kvm-Fix-QEMU_WARN_UNUSED_RESULT.patch [bz#560623]
+- kvm-qcow2-Fix-error-handling-in-qcow2_grow_l1_table.patch [bz#560623]
+- kvm-qcow2-Fix-error-handling-in-qcow_save_vmstate.patch [bz#560623]
+- kvm-qcow2-Return-0-errno-in-get_cluster_table.patch [bz#560623]
+- kvm-qcow2-Return-0-errno-in-qcow2_alloc_cluster_offset.patch [bz#560623]
+- kvm-block-Return-original-error-codes-in-bdrv_pread-writ.patch [bz#560623]
+- kvm-qcow2-Fix-error-handling-in-grow_refcount_table.patch [bz#560623]
+- kvm-qcow2-Improve-error-handling-in-update_refcount.patch [bz#560623]
+- kvm-qcow2-Allow-updating-no-refcounts.patch [bz#560623]
+- kvm-qcow2-Don-t-ignore-update_refcount-return-value.patch [bz#560623]
+- kvm-qcow2-Don-t-ignore-qcow2_alloc_clusters-return-value.patch [bz#560623]
+- kvm-net-Make-inet_strfamily-public.patch [bz#562181]
+- kvm-net-inet_strfamily-Better-unknown-family-report.patch [bz#562181]
+- kvm-vnc-Use-inet_strfamily.patch [bz#562181]
+- Resolves: bz#560623
+  (error codes aren't always propagated up through the block layer (e.g. -ENOSPC))
+- Resolves: bz#562181
+  (Small VNC related cleanup)
+
 * Mon Feb 08 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.16.el6
 - Move /usr/bin/qemu-kvm to /usr/libexec/qemu-kvm
 - Resolves: bz#560651

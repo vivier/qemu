@@ -1,0 +1,100 @@
+From 58a8c5a6567498c9b6a2d3ac12e495a55705e429 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 2 Feb 2010 16:40:28 -0200
+Subject: [PATCH 10/14] qcow2: Don't ignore update_refcount return value
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1265128829-26978-11-git-send-email-kwolf@redhat.com>
+Patchwork-id: 6848
+O-Subject: [RHEL-6 KVM PATCH v2 10/11] qcow2: Don't ignore update_refcount
+	return value
+Bugzilla: 560623
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+
+Bugzilla: 560623
+Upstream commit: db3a964
+
+update_refcount can return errors that need to be handled by the callers.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block/qcow2-refcount.c |   31 +++++++++++++++++++++++--------
+ 1 files changed, 23 insertions(+), 8 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2-refcount.c |   31 +++++++++++++++++++++++--------
+ 1 files changed, 23 insertions(+), 8 deletions(-)
+
+diff --git a/block/qcow2-refcount.c b/block/qcow2-refcount.c
+index 08e6736..e343bfb 100644
+--- a/block/qcow2-refcount.c
++++ b/block/qcow2-refcount.c
+@@ -269,9 +269,8 @@ static int write_refcount_block_entries(BDRVQcowState *s,
+ }
+ 
+ /* XXX: cache several refcount block clusters ? */
+-static int update_refcount(BlockDriverState *bs,
+-                            int64_t offset, int64_t length,
+-                            int addend)
++static int QEMU_WARN_UNUSED_RESULT update_refcount(BlockDriverState *bs,
++    int64_t offset, int64_t length, int addend)
+ {
+     BDRVQcowState *s = bs->opaque;
+     int64_t start, last, cluster_offset;
+@@ -415,9 +414,13 @@ retry:
+ int64_t qcow2_alloc_clusters(BlockDriverState *bs, int64_t size)
+ {
+     int64_t offset;
++    int ret;
+ 
+     offset = alloc_clusters_noref(bs, size);
+-    update_refcount(bs, offset, size, 1);
++    ret = update_refcount(bs, offset, size, 1);
++    if (ret < 0) {
++        return ret;
++    }
+     return offset;
+ }
+ 
+@@ -464,7 +467,13 @@ int64_t qcow2_alloc_bytes(BlockDriverState *bs, int size)
+ void qcow2_free_clusters(BlockDriverState *bs,
+                           int64_t offset, int64_t size)
+ {
+-    update_refcount(bs, offset, size, -1);
++    int ret;
++
++    ret = update_refcount(bs, offset, size, -1);
++    if (ret < 0) {
++        fprintf(stderr, "qcow2_free_clusters failed: %s\n", strerror(-ret));
++        abort();
++    }
+ }
+ 
+ /*
+@@ -574,9 +583,15 @@ int qcow2_update_snapshot_refcount(BlockDriverState *bs,
+                     if (offset & QCOW_OFLAG_COMPRESSED) {
+                         nb_csectors = ((offset >> s->csize_shift) &
+                                        s->csize_mask) + 1;
+-                        if (addend != 0)
+-                            update_refcount(bs, (offset & s->cluster_offset_mask) & ~511,
+-                                            nb_csectors * 512, addend);
++                        if (addend != 0) {
++                            int ret;
++                            ret = update_refcount(bs,
++                                (offset & s->cluster_offset_mask) & ~511,
++                                nb_csectors * 512, addend);
++                            if (ret < 0) {
++                                goto fail;
++                            }
++                        }
+                         /* compressed clusters are never modified */
+                         refcount = 2;
+                     } else {
+-- 
+1.6.3.rc4.29.g8146
+

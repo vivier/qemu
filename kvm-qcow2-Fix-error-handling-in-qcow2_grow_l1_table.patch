@@ -1,0 +1,65 @@
+From c88ef984acb2c17ebd47f75e2c8ca8ca505e3ba3 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 2 Feb 2010 16:40:20 -0200
+Subject: [PATCH 02/14] qcow2: Fix error handling in qcow2_grow_l1_table
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1265128829-26978-3-git-send-email-kwolf@redhat.com>
+Patchwork-id: 6841
+O-Subject: [RHEL-6 KVM PATCH v2 02/11] qcow2: Fix error handling in
+	qcow2_grow_l1_table
+Bugzilla: 560623
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 560623
+Upstream commit: fb8fa77
+
+Return the appropriate error value instead of always using EIO. Don't free the
+L1 table on errors, we still need it.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block/qcow2-cluster.c |   10 ++++++----
+ 1 files changed, 6 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2-cluster.c |   10 ++++++----
+ 1 files changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/block/qcow2-cluster.c b/block/qcow2-cluster.c
+index f88118c..cb46376 100644
+--- a/block/qcow2-cluster.c
++++ b/block/qcow2-cluster.c
+@@ -67,9 +67,10 @@ int qcow2_grow_l1_table(BlockDriverState *bs, int min_size)
+     /* set new table */
+     cpu_to_be32w((uint32_t*)data, new_l1_size);
+     cpu_to_be64w((uint64_t*)(data + 4), new_l1_table_offset);
+-    if (bdrv_pwrite(s->hd, offsetof(QCowHeader, l1_size), data,
+-                sizeof(data)) != sizeof(data))
++    ret = bdrv_pwrite(s->hd, offsetof(QCowHeader, l1_size), data,sizeof(data));
++    if (ret != sizeof(data)) {
+         goto fail;
++    }
+     qemu_free(s->l1_table);
+     qcow2_free_clusters(bs, s->l1_table_offset, s->l1_size * sizeof(uint64_t));
+     s->l1_table_offset = new_l1_table_offset;
+@@ -77,8 +78,9 @@ int qcow2_grow_l1_table(BlockDriverState *bs, int min_size)
+     s->l1_size = new_l1_size;
+     return 0;
+  fail:
+-    qemu_free(s->l1_table);
+-    return -EIO;
++    qemu_free(new_l1_table);
++    qcow2_free_clusters(bs, new_l1_table_offset, new_l1_size2);
++    return ret < 0 ? ret : -EIO;
+ }
+ 
+ void qcow2_l2_cache_reset(BlockDriverState *bs)
+-- 
+1.6.3.rc4.29.g8146
+

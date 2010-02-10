@@ -1,0 +1,54 @@
+From 9d908689403dec9eddd7e5a6dd8f98cc1e349d9c Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 2 Feb 2010 16:40:27 -0200
+Subject: [PATCH 09/14] qcow2: Allow updating no refcounts
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1265128829-26978-10-git-send-email-kwolf@redhat.com>
+Patchwork-id: 6849
+O-Subject: [RHEL-6 KVM PATCH v2 09/11] qcow2: Allow updating no refcounts
+Bugzilla: 560623
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 560623
+Upstream commit: 7322afe
+
+There's absolutely no problem with updating the refcounts of 0 clusters.
+At least snapshot code is doing this and would fail once the result of
+update_refcount isn't ignored any more.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block/qcow2-refcount.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2-refcount.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+diff --git a/block/qcow2-refcount.c b/block/qcow2-refcount.c
+index a28acc0..08e6736 100644
+--- a/block/qcow2-refcount.c
++++ b/block/qcow2-refcount.c
+@@ -284,8 +284,12 @@ static int update_refcount(BlockDriverState *bs,
+     printf("update_refcount: offset=%" PRId64 " size=%" PRId64 " addend=%d\n",
+            offset, length, addend);
+ #endif
+-    if (length <= 0)
++    if (length < 0) {
+         return -EINVAL;
++    } else if (length == 0) {
++        return 0;
++    }
++
+     start = offset & ~(s->cluster_size - 1);
+     last = (offset + length - 1) & ~(s->cluster_size - 1);
+     for(cluster_offset = start; cluster_offset <= last;
+-- 
+1.6.3.rc4.29.g8146
+

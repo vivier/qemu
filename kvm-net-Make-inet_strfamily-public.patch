@@ -1,0 +1,58 @@
+From 8798aca21a940302e1e40e4f4cdf1643ffc6248f Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Fri, 5 Feb 2010 17:31:28 -0200
+Subject: [PATCH 12/14] net: Make inet_strfamily() public
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1265391090-21418-2-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 6935
+O-Subject: [PATCH 1/3] net: Make inet_strfamily() public
+Bugzilla: 562181
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+So that it can be used by other subsystems.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit c9c4b34ed55e1452de9051d22c0d591f1745d4ea)
+---
+ qemu-sockets.c |    2 +-
+ qemu_socket.h  |    1 +
+ 2 files changed, 2 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-sockets.c |    2 +-
+ qemu_socket.h  |    1 +
+ 2 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-sockets.c b/qemu-sockets.c
+index 8850516..720de22 100644
+--- a/qemu-sockets.c
++++ b/qemu-sockets.c
+@@ -91,7 +91,7 @@ static void inet_setport(struct addrinfo *e, int port)
+     }
+ }
+ 
+-static const char *inet_strfamily(int family)
++const char *inet_strfamily(int family)
+ {
+     switch (family) {
+     case PF_INET6: return "ipv6";
+diff --git a/qemu_socket.h b/qemu_socket.h
+index 86bdbf5..7ee46ac 100644
+--- a/qemu_socket.h
++++ b/qemu_socket.h
+@@ -44,6 +44,7 @@ int inet_listen(const char *str, char *ostr, int olen,
+ int inet_connect_opts(QemuOpts *opts);
+ int inet_connect(const char *str, int socktype);
+ int inet_dgram_opts(QemuOpts *opts);
++const char *inet_strfamily(int family);
+ 
+ int unix_listen_opts(QemuOpts *opts);
+ int unix_listen(const char *path, char *ostr, int olen);
+-- 
+1.6.3.rc4.29.g8146
+
