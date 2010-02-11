@@ -1,0 +1,59 @@
+From 7148ea4f9f13d3b01574007840290e17523865ea Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 27 Jan 2010 14:47:30 -0200
+Subject: [PATCH 5/5] pc: add rombar to compat properties for pc-0.10 and pc-0.11
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1264603650-15297-6-git-send-email-kraxel@redhat.com>
+Patchwork-id: 6716
+O-Subject: [RHEL-6 PATCH 5/5] pc: add rombar to compat properties for pc-0.10
+	and pc-0.11
+Bugzilla: 558818
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+So '-M pc-0.10' and '-M pc-0.11' will use the fw_cfg rom load method
+by default.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 20a86364c9e421c4f9ce457251fa8df031cd5078)
+---
+ hw/pc.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pc.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/hw/pc.c b/hw/pc.c
+index 761e515..acbfeba 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -1344,6 +1344,10 @@ static QEMUMachine pc_machine_v0_11 = {
+             .driver   = "virtio-blk-pci",
+             .property = "vectors",
+             .value    = stringify(0),
++        },{
++            .driver   = "PCI",
++            .property = "rombar",
++            .value    = stringify(0),
+         },
+         { /* end of list */ }
+     }
+@@ -1371,6 +1375,10 @@ static QEMUMachine pc_machine_v0_10 = {
+             .driver   = "virtio-blk-pci",
+             .property = "vectors",
+             .value    = stringify(0),
++        },{
++            .driver   = "PCI",
++            .property = "rombar",
++            .value    = stringify(0),
+         },
+         { /* end of list */ }
+     },
+-- 
+1.6.3.rc4.29.g8146
+

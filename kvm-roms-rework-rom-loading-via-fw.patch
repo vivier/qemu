@@ -1,0 +1,116 @@
+From 53dbafebe029d2fb17853105bf87dc70227dbd01 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 27 Jan 2010 14:47:28 -0200
+Subject: [PATCH 3/5] roms: rework rom loading via fw
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1264603650-15297-4-git-send-email-kraxel@redhat.com>
+Patchwork-id: 6714
+O-Subject: [RHEL-6 PATCH 3/5] roms: rework rom loading via fw
+Bugzilla: 558818
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+This patch changes the way rom loading via fw_cfg is handled.
+Instead of having pc_init1() call a function which passed all
+roms to the firmware config we simply pass a pointer to fw_cfg
+to the rom loader.
+
+Advantage: loading roms via firmware works also for devices which
+are initialized after pc_init1(), i.e. everyting added via -device.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 8832cb805dcb65009b979cd8e17d75ac4b03c7e4)
+---
+ hw/loader.c |   15 +++++----------
+ hw/loader.h |    2 +-
+ hw/pc.c     |    3 +--
+ 3 files changed, 7 insertions(+), 13 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/loader.c |   15 +++++----------
+ hw/loader.h |    2 +-
+ hw/pc.c     |    3 +--
+ 3 files changed, 7 insertions(+), 13 deletions(-)
+
+diff --git a/hw/loader.c b/hw/loader.c
+index 38ee2da..b3bbd77 100644
+--- a/hw/loader.c
++++ b/hw/loader.c
+@@ -535,6 +535,7 @@ struct Rom {
+     QTAILQ_ENTRY(Rom) next;
+ };
+ 
++static FWCfgState *fw_cfg;
+ static QTAILQ_HEAD(, Rom) roms = QTAILQ_HEAD_INITIALIZER(roms);
+ int rom_enable_driver_roms;
+ 
+@@ -592,6 +593,8 @@ int rom_add_file(const char *file, const char *fw_dir,
+     }
+     close(fd);
+     rom_insert(rom);
++    if (rom->fw_file && fw_cfg)
++        fw_cfg_add_file(fw_cfg, rom->fw_dir, rom->fw_file, rom->data, rom->romsize);
+     return 0;
+ 
+ err:
+@@ -681,17 +684,9 @@ int rom_load_all(void)
+     return 0;
+ }
+ 
+-int rom_load_fw(void *fw_cfg)
++void rom_set_fw(void *f)
+ {
+-    Rom *rom;
+-
+-    QTAILQ_FOREACH(rom, &roms, next) {
+-        if (!rom->fw_file) {
+-            continue;
+-        }
+-        fw_cfg_add_file(fw_cfg, rom->fw_dir, rom->fw_file, rom->data, rom->romsize);
+-    }
+-    return 0;
++    fw_cfg = f;
+ }
+ 
+ static Rom *find_rom(target_phys_addr_t addr)
+diff --git a/hw/loader.h b/hw/loader.h
+index 698160b..8ff3c94 100644
+--- a/hw/loader.h
++++ b/hw/loader.h
+@@ -25,7 +25,7 @@ int rom_add_file(const char *file, const char *fw_dir,
+ int rom_add_blob(const char *name, const void *blob, size_t len,
+                  target_phys_addr_t addr);
+ int rom_load_all(void);
+-int rom_load_fw(void *fw_cfg);
++void rom_set_fw(void *f);
+ int rom_copy(uint8_t *dest, target_phys_addr_t addr, size_t size);
+ void *rom_ptr(target_phys_addr_t addr);
+ void do_info_roms(Monitor *mon);
+diff --git a/hw/pc.c b/hw/pc.c
+index 68c46f6..761e515 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -1105,6 +1105,7 @@ static void pc_init1(ram_addr_t ram_size,
+                                  bios_size, bios_offset | IO_MEM_ROM);
+ 
+     fw_cfg = bochs_bios_init();
++    rom_set_fw(fw_cfg);
+ 
+     if (linux_boot) {
+         load_linux(fw_cfg, kernel_filename, initrd_filename, kernel_cmdline, below_4g_mem_size);
+@@ -1283,8 +1284,6 @@ static void pc_init1(ram_addr_t ram_size,
+ 	extboot_init(info->bdrv, 1);
+     }
+ 
+-    rom_load_fw(fw_cfg);
+-
+ #ifdef CONFIG_KVM_DEVICE_ASSIGNMENT
+     if (kvm_enabled()) {
+         add_assigned_devices(pci_bus, assigned_devices, assigned_devices_index);
+-- 
+1.6.3.rc4.29.g8146
+

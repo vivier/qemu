@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.17%{?dist}
+Release: 2.18%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -140,6 +140,16 @@ Patch1055: kvm-net-Make-inet_strfamily-public.patch
 Patch1056: kvm-net-inet_strfamily-Better-unknown-family-report.patch
 # For bz#562181 - Small VNC related cleanup
 Patch1057: kvm-vnc-Use-inet_strfamily.patch
+# For bz#558818 - rom loading
+Patch1058: kvm-roms-minor-fixes-and-cleanups.patch
+# For bz#558818 - rom loading
+Patch1059: kvm-fw_cfg-rom-loader-tweaks.patch
+# For bz#558818 - rom loading
+Patch1060: kvm-roms-rework-rom-loading-via-fw.patch
+# For bz#558818 - rom loading
+Patch1061: kvm-pci-allow-loading-roms-via-fw_cfg.patch
+# For bz#558818 - rom loading
+Patch1062: kvm-pc-add-rombar-to-compat-properties-for-pc-0.10-and-p.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -257,6 +267,11 @@ such as kvmtrace and kvm_stat.
 %patch1055 -p1
 %patch1056 -p1
 %patch1057 -p1
+%patch1058 -p1
+%patch1059 -p1
+%patch1060 -p1
+%patch1061 -p1
+%patch1062 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -450,6 +465,15 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Feb 11 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.18.el6
+- kvm-roms-minor-fixes-and-cleanups.patch [bz#558818]
+- kvm-fw_cfg-rom-loader-tweaks.patch [bz#558818]
+- kvm-roms-rework-rom-loading-via-fw.patch [bz#558818]
+- kvm-pci-allow-loading-roms-via-fw_cfg.patch [bz#558818]
+- kvm-pc-add-rombar-to-compat-properties-for-pc-0.10-and-p.patch [bz#558818]
+- Resolves: bz#558818
+  (rom loading)
+
 * Wed Feb 10 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.17.el6
 - kvm-Fix-QEMU_WARN_UNUSED_RESULT.patch [bz#560623]
 - kvm-qcow2-Fix-error-handling-in-qcow2_grow_l1_table.patch [bz#560623]

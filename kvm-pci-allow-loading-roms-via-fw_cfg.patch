@@ -1,0 +1,81 @@
+From c01d0b04769b8c420f29d89d25ebc12f07c67a70 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 27 Jan 2010 14:47:29 -0200
+Subject: [PATCH 4/5] pci: allow loading roms via fw_cfg.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1264603650-15297-5-git-send-email-kraxel@redhat.com>
+Patchwork-id: 6713
+O-Subject: [RHEL-6 PATCH 4/5] pci: allow loading roms via fw_cfg.
+Bugzilla: 558818
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+This patch adds a pci bus property 'rombar' which specifies whenever
+the pci rom should be loaded via pci rom bar (default) or via fw_cfg.
+The later can be used for compatibility with older qemu versions where
+no pci rom bar is present.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 88169ddf82853ca892ce7bee279579c8a0ac03e5)
+---
+ hw/pci.c |   15 +++++++++++++++
+ hw/pci.h |    1 +
+ 2 files changed, 16 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pci.c |   15 +++++++++++++++
+ hw/pci.h |    1 +
+ 2 files changed, 16 insertions(+), 0 deletions(-)
+
+diff --git a/hw/pci.c b/hw/pci.c
+index 637289b..861d427 100644
+--- a/hw/pci.c
++++ b/hw/pci.c
+@@ -67,6 +67,7 @@ static struct BusInfo pci_bus_info = {
+     .props      = (Property[]) {
+         DEFINE_PROP_PCI_DEVFN("addr", PCIDevice, devfn, -1),
+         DEFINE_PROP_STRING("romfile", PCIDevice, romfile),
++        DEFINE_PROP_UINT32("rombar",  PCIDevice, rom_bar, 1),
+         DEFINE_PROP_END_OF_LIST()
+     }
+ };
+@@ -1612,6 +1613,20 @@ static int pci_add_option_rom(PCIDevice *pdev)
+     if (strlen(pdev->romfile) == 0)
+         return 0;
+ 
++    if (!pdev->rom_bar) {
++        /*
++         * Load rom via fw_cfg instead of creating a rom bar,
++         * for 0.11 compatibility.
++         */
++        int class = pci_get_word(pdev->config + PCI_CLASS_DEVICE);
++        if (class == 0x0300) {
++            rom_add_vga(pdev->romfile);
++        } else {
++            rom_add_option(pdev->romfile);
++        }
++        return 0;
++    }
++
+     path = qemu_find_file(QEMU_FILE_TYPE_BIOS, pdev->romfile);
+     if (path == NULL) {
+         path = qemu_strdup(pdev->romfile);
+diff --git a/hw/pci.h b/hw/pci.h
+index 5d82cce..a225a6a 100644
+--- a/hw/pci.h
++++ b/hw/pci.h
+@@ -271,6 +271,7 @@ struct PCIDevice {
+     /* Location of option rom */
+     char *romfile;
+     ram_addr_t rom_offset;
++    uint32_t rom_bar;
+ 
+     /* How much space does an MSIX table need. */
+     /* The spec requires giving the table structure
+-- 
+1.6.3.rc4.29.g8146
+
