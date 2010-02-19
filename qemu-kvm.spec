@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.18%{?dist}
+Release: 2.19%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -150,6 +150,12 @@ Patch1060: kvm-roms-rework-rom-loading-via-fw.patch
 Patch1061: kvm-pci-allow-loading-roms-via-fw_cfg.patch
 # For bz#558818 - rom loading
 Patch1062: kvm-pc-add-rombar-to-compat-properties-for-pc-0.10-and-p.patch
+# For bz#560942 - virtio-blk error handling doesn't work reliably
+Patch1063: kvm-virtio_blk-Factor-virtio_blk_handle_request-out.patch
+# For bz#560942 - virtio-blk error handling doesn't work reliably
+Patch1064: kvm-virtio-blk-Fix-restart-after-read-error.patch
+# For bz#560942 - virtio-blk error handling doesn't work reliably
+Patch1065: kvm-virtio-blk-Fix-error-cases-which-ignored-rerror-werr.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -272,6 +278,9 @@ such as kvmtrace and kvm_stat.
 %patch1060 -p1
 %patch1061 -p1
 %patch1062 -p1
+%patch1063 -p1
+%patch1064 -p1
+%patch1065 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -465,6 +474,13 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Feb 19 2010 Glauber Costa <glommer@redhat.com> - qemu-kvm-0.12.1.2-2.19.el6
+- kvm-virtio_blk-Factor-virtio_blk_handle_request-out.patch [bz#560942]
+- kvm-virtio-blk-Fix-restart-after-read-error.patch [bz#560942]
+- kvm-virtio-blk-Fix-error-cases-which-ignored-rerror-werr.patch [bz#560942]
+- Resolves: bz#560942
+  (virtio-blk error handling doesn't work reliably)
+
 * Thu Feb 11 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.18.el6
 - kvm-roms-minor-fixes-and-cleanups.patch [bz#558818]
 - kvm-fw_cfg-rom-loader-tweaks.patch [bz#558818]

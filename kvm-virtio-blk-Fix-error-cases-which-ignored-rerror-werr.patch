@@ -1,0 +1,58 @@
+From c24008ed666dcbb4979fbecbc6b6943ac40e8246 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 2 Feb 2010 10:28:53 -0200
+Subject: [PATCH 3/3] virtio-blk: Fix error cases which ignored rerror/werror
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1265106533-6766-4-git-send-email-kwolf@redhat.com>
+Patchwork-id: 6836
+O-Subject: [RHEL-6 KVM PATCH 3/3] virtio-blk: Fix error cases which ignored
+	rerror/werror
+Bugzilla: 560942
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+Bugzilla: 560942
+Upstream commit: 6c510fb
+
+If an I/O request fails right away instead of getting an error only in the
+callback, we still need to consider rerror/werror.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ hw/virtio-blk.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ hw/virtio-blk.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index 136e460..2fd9b3f 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -272,7 +272,7 @@ static void do_multiwrite(BlockDriverState *bs, BlockRequest *blkreq,
+     if (ret != 0) {
+         for (i = 0; i < num_writes; i++) {
+             if (blkreq[i].error) {
+-                virtio_blk_req_complete(blkreq[i].opaque, VIRTIO_BLK_S_IOERR);
++                virtio_blk_rw_complete(blkreq[i].opaque, -EIO);
+             }
+         }
+     }
+@@ -316,7 +316,7 @@ static void virtio_blk_handle_read(VirtIOBlockReq *req)
+     acb = bdrv_aio_readv(req->dev->bs, req->out->sector, &req->qiov,
+                          req->qiov.size / 512, virtio_blk_rw_complete, req);
+     if (!acb) {
+-        virtio_blk_req_complete(req, VIRTIO_BLK_S_IOERR);
++        virtio_blk_rw_complete(req, -EIO);
+     }
+ }
+ 
+-- 
+1.6.6
+

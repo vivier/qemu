@@ -1,0 +1,133 @@
+From 3fb204a63b0ef06511e3709c271d0d6489baa87f Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 2 Feb 2010 10:28:51 -0200
+Subject: [PATCH 1/3] virtio_blk: Factor virtio_blk_handle_request out
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1265106533-6766-2-git-send-email-kwolf@redhat.com>
+Patchwork-id: 6834
+O-Subject: [RHEL-6 KVM PATCH 1/3] virtio_blk: Factor virtio_blk_handle_request
+	out
+Bugzilla: 560942
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+Bugzilla: 560942
+Upstream commit: bc6694d
+
+We need a function that handles a single request. Create one by splitting out
+code from virtio_blk_handle_output.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ hw/virtio-blk.c |   78 ++++++++++++++++++++++++++++++++----------------------
+ 1 files changed, 46 insertions(+), 32 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ hw/virtio-blk.c |   78 ++++++++++++++++++++++++++++++++----------------------
+ 1 files changed, 46 insertions(+), 32 deletions(-)
+
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index a2f0639..83248de 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -320,46 +320,60 @@ static void virtio_blk_handle_read(VirtIOBlockReq *req)
+     }
+ }
+ 
++typedef struct MultiReqBuffer {
++    BlockRequest        blkreq[32];
++    int                 num_writes;
++    BlockDriverState    *old_bs;
++} MultiReqBuffer;
++
++static void virtio_blk_handle_request(VirtIOBlockReq *req,
++    MultiReqBuffer *mrb)
++{
++    if (req->elem.out_num < 1 || req->elem.in_num < 1) {
++        fprintf(stderr, "virtio-blk missing headers\n");
++        exit(1);
++    }
++
++    if (req->elem.out_sg[0].iov_len < sizeof(*req->out) ||
++        req->elem.in_sg[req->elem.in_num - 1].iov_len < sizeof(*req->in)) {
++        fprintf(stderr, "virtio-blk header not in correct element\n");
++        exit(1);
++    }
++
++    req->out = (void *)req->elem.out_sg[0].iov_base;
++    req->in = (void *)req->elem.in_sg[req->elem.in_num - 1].iov_base;
++
++    if (req->out->type & VIRTIO_BLK_T_FLUSH) {
++        virtio_blk_handle_flush(req);
++    } else if (req->out->type & VIRTIO_BLK_T_SCSI_CMD) {
++        virtio_blk_handle_scsi(req);
++    } else if (req->out->type & VIRTIO_BLK_T_OUT) {
++        qemu_iovec_init_external(&req->qiov, &req->elem.out_sg[1],
++                                 req->elem.out_num - 1);
++        virtio_blk_handle_write(mrb->blkreq, &mrb->num_writes,
++            req, &mrb->old_bs);
++    } else {
++        qemu_iovec_init_external(&req->qiov, &req->elem.in_sg[0],
++                                 req->elem.in_num - 1);
++        virtio_blk_handle_read(req);
++    }
++}
++
+ static void virtio_blk_handle_output(VirtIODevice *vdev, VirtQueue *vq)
+ {
+     VirtIOBlock *s = to_virtio_blk(vdev);
+     VirtIOBlockReq *req;
+-    BlockRequest blkreq[32];
+-    int num_writes = 0;
+-    BlockDriverState *old_bs = NULL;
++    MultiReqBuffer mrb = {
++        .num_writes = 0,
++        .old_bs = NULL,
++    };
+ 
+     while ((req = virtio_blk_get_request(s))) {
+-        if (req->elem.out_num < 1 || req->elem.in_num < 1) {
+-            fprintf(stderr, "virtio-blk missing headers\n");
+-            exit(1);
+-        }
+-
+-        if (req->elem.out_sg[0].iov_len < sizeof(*req->out) ||
+-            req->elem.in_sg[req->elem.in_num - 1].iov_len < sizeof(*req->in)) {
+-            fprintf(stderr, "virtio-blk header not in correct element\n");
+-            exit(1);
+-        }
+-
+-        req->out = (void *)req->elem.out_sg[0].iov_base;
+-        req->in = (void *)req->elem.in_sg[req->elem.in_num - 1].iov_base;
+-
+-        if (req->out->type & VIRTIO_BLK_T_FLUSH) {
+-            virtio_blk_handle_flush(req);
+-        } else if (req->out->type & VIRTIO_BLK_T_SCSI_CMD) {
+-            virtio_blk_handle_scsi(req);
+-        } else if (req->out->type & VIRTIO_BLK_T_OUT) {
+-            qemu_iovec_init_external(&req->qiov, &req->elem.out_sg[1],
+-                                     req->elem.out_num - 1);
+-            virtio_blk_handle_write(blkreq, &num_writes, req, &old_bs);
+-        } else {
+-            qemu_iovec_init_external(&req->qiov, &req->elem.in_sg[0],
+-                                     req->elem.in_num - 1);
+-            virtio_blk_handle_read(req);
+-        }
++        virtio_blk_handle_request(req, &mrb);
+     }
+ 
+-    if (num_writes > 0) {
+-        do_multiwrite(old_bs, blkreq, num_writes);
++    if (mrb.num_writes > 0) {
++        do_multiwrite(mrb.old_bs, mrb.blkreq, mrb.num_writes);
+     }
+ 
+     /*
+-- 
+1.6.6
+

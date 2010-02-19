@@ -1,0 +1,67 @@
+From e98672173bfe60fda1b35c8b675aa165e381bf70 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 2 Feb 2010 10:28:52 -0200
+Subject: [PATCH 2/3] virtio-blk: Fix restart after read error
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1265106533-6766-3-git-send-email-kwolf@redhat.com>
+Patchwork-id: 6835
+O-Subject: [RHEL-6 KVM PATCH 2/3] virtio-blk: Fix restart after read error
+Bugzilla: 560942
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+Bugzilla: 560942
+Upstream commit: f1b5286
+
+Current code assumes that only write requests are ever going to be restarted.
+This is wrong since rerror=stop exists. Instead of directly starting writes,
+use the same request processing as used for new requests.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ hw/virtio-blk.c |   11 +++++++++--
+ 1 files changed, 9 insertions(+), 2 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ hw/virtio-blk.c |   11 +++++++++--
+ 1 files changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index 83248de..136e460 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -387,6 +387,10 @@ static void virtio_blk_dma_restart_bh(void *opaque)
+ {
+     VirtIOBlock *s = opaque;
+     VirtIOBlockReq *req = s->rq;
++    MultiReqBuffer mrb = {
++        .num_writes = 0,
++        .old_bs = NULL,
++    };
+ 
+     qemu_bh_delete(s->bh);
+     s->bh = NULL;
+@@ -394,10 +398,13 @@ static void virtio_blk_dma_restart_bh(void *opaque)
+     s->rq = NULL;
+ 
+     while (req) {
+-        bdrv_aio_writev(req->dev->bs, req->out->sector, &req->qiov,
+-            req->qiov.size / 512, virtio_blk_rw_complete, req);
++        virtio_blk_handle_request(req, &mrb);
+         req = req->next;
+     }
++
++    if (mrb.num_writes > 0) {
++        do_multiwrite(mrb.old_bs, mrb.blkreq, mrb.num_writes);
++    }
+ }
+ 
+ static void virtio_blk_dma_restart_cb(void *opaque, int running, int reason)
+-- 
+1.6.6
+
