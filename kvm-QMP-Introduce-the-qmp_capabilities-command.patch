@@ -1,0 +1,108 @@
+From 70e539e4a7e118b076870df26ed7abb5763ca399 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 11 Feb 2010 19:30:24 -0200
+Subject: [PATCH 02/11] QMP: Introduce the qmp_capabilities command
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1265916626-29934-3-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7054
+O-Subject: [PATCH RHEL6 qemu-kvm 2/4] QMP: Introduce the qmp_capabilities command
+Bugzilla: 557930
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+
+This command will be used to enable QMP capabilities advertised
+by the capabilities array.
+
+Note that it will be mandatory to issue this command in order
+to make QMP functional (although this behavior is not being
+enforced by this commit).
+
+Also, as we don't have any capabilities yet, the new command
+doesn't accept any arguments. I will postpone the decision for
+a format for this until we get our first capability.
+
+Finally, this command is visible from the user Monitor too, in
+the meaning that you can execute it but it won't do anything.
+Making it only visible in QMP is beyond this series' goal, as
+it requires changes in unrelated places.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 4a7e1190dfadf1154721125af8510347f8a3c56b)
+---
+ monitor.c       |   11 +++++++++++
+ qemu-monitor.hx |   14 ++++++++++++++
+ 2 files changed, 25 insertions(+), 0 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ monitor.c       |   11 +++++++++++
+ qemu-monitor.hx |   14 ++++++++++++++
+ 2 files changed, 25 insertions(+), 0 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 6662ebb..72d67dc 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -105,6 +105,7 @@ typedef struct MonitorControl {
+     QObject *id;
+     int print_enabled;
+     JSONMessageParser parser;
++    int command_mode;
+ } MonitorControl;
+ 
+ struct Monitor {
+@@ -387,6 +388,15 @@ void monitor_protocol_event(MonitorEvent event, QObject *data)
+     QDECREF(qmp);
+ }
+ 
++static void do_qmp_capabilities(Monitor *mon, const QDict *params,
++                                QObject **ret_data)
++{
++    /* Will setup QMP capabilities in the future */
++    if (monitor_ctrl_mode(mon)) {
++        mon->mc->command_mode = 1;
++    }
++}
++
+ static int compare_cmd(const char *name, const char *list)
+ {
+     const char *p, *pstart;
+@@ -4224,6 +4234,7 @@ static void monitor_control_event(void *opaque, int event)
+         QObject *data;
+         Monitor *mon = opaque;
+ 
++        mon->mc->command_mode = 0;
+         json_message_parser_init(&mon->mc->parser, handle_qmp_command);
+ 
+         data = get_qmp_greeting();
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 9e3ea3c..3fea9b1 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -1075,6 +1075,20 @@ STEXI
+ Set CPU @var{cpu} online or offline.
+ ETEXI
+ 
++    {
++        .name       = "qmp_capabilities",
++        .args_type  = "",
++        .params     = "",
++        .help       = "enable QMP capabilities",
++        .user_print = monitor_user_noop,
++        .mhandler.cmd_new = do_qmp_capabilities,
++    },
++
++STEXI
++@item qmp_capabilities
++Enable the specified QMP capabilities
++ETEXI
++
+ STEXI
+ @end table
+ ETEXI
+-- 
+1.6.6
+

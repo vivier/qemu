@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.19%{?dist}
+Release: 2.20%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -156,6 +156,28 @@ Patch1063: kvm-virtio_blk-Factor-virtio_blk_handle_request-out.patch
 Patch1064: kvm-virtio-blk-Fix-restart-after-read-error.patch
 # For bz#560942 - virtio-blk error handling doesn't work reliably
 Patch1065: kvm-virtio-blk-Fix-error-cases-which-ignored-rerror-werr.patch
+# For bz#557930 - QMP: Feature Negotiation support
+Patch1066: kvm-QMP-Add-QEMU-s-version-to-the-greeting-message.patch
+# For bz#557930 - QMP: Feature Negotiation support
+Patch1067: kvm-QMP-Introduce-the-qmp_capabilities-command.patch
+# For bz#557930 - QMP: Feature Negotiation support
+Patch1068: kvm-QMP-Enforce-capability-negotiation-rules.patch
+# For bz#557930 - QMP: Feature Negotiation support
+Patch1069: kvm-QMP-spec-Capability-negotiation-updates.patch
+# For bz#559667 - QMP: JSON parser doesn't escape some control chars
+Patch1070: kvm-json-escape-u0000-.-u001F-when-outputting-json.patch
+# For bz#563878 - QJSON: Fix PRId64 handling
+Patch1071: kvm-json-fix-PRId64-on-Win32.patch
+# For bz#563875 - QJSON: Improve debugging
+Patch1072: kvm-qjson-Improve-debugging.patch
+# For bz#563876 - Monitor: remove unneeded checks
+Patch1073: kvm-Monitor-remove-unneeded-checks.patch
+# For bz#559635 - QMP: assertion on multiple faults
+Patch1074: kvm-QError-Don-t-abort-on-multiple-faults.patch
+# For bz#559645 - QMP: leak when a QMP connection is closed
+Patch1075: kvm-QMP-Don-t-leak-on-connection-close.patch
+# For bz#558623 - QMP: Basic async events are not emitted
+Patch1076: kvm-QMP-Emit-Basic-events.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -281,6 +303,17 @@ such as kvmtrace and kvm_stat.
 %patch1063 -p1
 %patch1064 -p1
 %patch1065 -p1
+%patch1066 -p1
+%patch1067 -p1
+%patch1068 -p1
+%patch1069 -p1
+%patch1070 -p1
+%patch1071 -p1
+%patch1072 -p1
+%patch1073 -p1
+%patch1074 -p1
+%patch1075 -p1
+%patch1076 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -474,6 +507,35 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Feb 26 2010 Glauber Costa <glommer@redhat.com> - qemu-kvm-0.12.1.2-2.20.el6
+- kvm-QMP-Add-QEMU-s-version-to-the-greeting-message.patch [bz#557930]
+- kvm-QMP-Introduce-the-qmp_capabilities-command.patch [bz#557930]
+- kvm-QMP-Enforce-capability-negotiation-rules.patch [bz#557930]
+- kvm-QMP-spec-Capability-negotiation-updates.patch [bz#557930]
+- kvm-json-escape-u0000-.-u001F-when-outputting-json.patch [bz#559667]
+- kvm-json-fix-PRId64-on-Win32.patch [bz#563878]
+- kvm-qjson-Improve-debugging.patch [bz#563875]
+- kvm-Monitor-remove-unneeded-checks.patch [bz#563876]
+- kvm-QError-Don-t-abort-on-multiple-faults.patch [bz#559635]
+- kvm-QMP-Don-t-leak-on-connection-close.patch [bz#559645]
+- kvm-QMP-Emit-Basic-events.patch [bz#558623]
+- Resolves: bz#557930
+  (QMP: Feature Negotiation support)
+- Resolves: bz#558623
+  (QMP: Basic async events are not emitted)
+- Resolves: bz#559635
+  (QMP: assertion on multiple faults)
+- Resolves: bz#559645
+  (QMP: leak when a QMP connection is closed)
+- Resolves: bz#559667
+  (QMP: JSON parser doesn't escape some control chars)
+- Resolves: bz#563875
+  (QJSON: Improve debugging)
+- Resolves: bz#563876
+  (Monitor: remove unneeded checks)
+- Resolves: bz#563878
+  (QJSON: Fix PRId64 handling)
+
 * Fri Feb 19 2010 Glauber Costa <glommer@redhat.com> - qemu-kvm-0.12.1.2-2.19.el6
 - kvm-virtio_blk-Factor-virtio_blk_handle_request-out.patch [bz#560942]
 - kvm-virtio-blk-Fix-restart-after-read-error.patch [bz#560942]

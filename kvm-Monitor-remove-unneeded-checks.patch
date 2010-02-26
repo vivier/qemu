@@ -1,0 +1,131 @@
+From 76467f8b0ad2f8c947561961e01246bb1fbb9caa Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 11 Feb 2010 19:40:42 -0200
+Subject: [PATCH 08/11] Monitor: remove unneeded checks
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1265917245-30209-5-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7062
+O-Subject: [PATCH RHEL6 qemu-kvm 4/7] Monitor: remove unneeded checks
+Bugzilla: 563876
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Bugzilla: 563876
+
+It's not needed to check the return of qobject_from_jsonf()
+anymore, as an assert() has been added there.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit ba14414174b72fa231997243a9650feaa520d054)
+---
+ block.c          |    3 ---
+ hw/pci-hotplug.c |    1 -
+ migration.c      |    3 ---
+ monitor.c        |    5 -----
+ 4 files changed, 0 insertions(+), 12 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ block.c          |    3 ---
+ hw/pci-hotplug.c |    1 -
+ migration.c      |    3 ---
+ monitor.c        |    5 -----
+ 4 files changed, 0 insertions(+), 12 deletions(-)
+
+diff --git a/block.c b/block.c
+index bc9dc7b..ee37396 100644
+--- a/block.c
++++ b/block.c
+@@ -1257,7 +1257,6 @@ void bdrv_info(Monitor *mon, QObject **ret_data)
+                                     "'removable': %i, 'locked': %i }",
+                                     bs->device_name, type, bs->removable,
+                                     bs->locked);
+-        assert(bs_obj != NULL);
+ 
+         if (bs->drv) {
+             QObject *obj;
+@@ -1268,7 +1267,6 @@ void bdrv_info(Monitor *mon, QObject **ret_data)
+                                      bs->filename, bs->read_only,
+                                      bs->drv->format_name,
+                                      bdrv_is_encrypted(bs));
+-            assert(obj != NULL);
+             if (bs->backing_file[0] != '\0') {
+                 QDict *qdict = qobject_to_qdict(obj);
+                 qdict_put(qdict, "backing_file",
+@@ -1354,7 +1352,6 @@ void bdrv_info_stats(Monitor *mon, QObject **ret_data)
+                                  bs->device_name,
+                                  bs->rd_bytes, bs->wr_bytes,
+                                  bs->rd_ops, bs->wr_ops);
+-        assert(obj != NULL);
+         qlist_append_obj(devices, obj);
+     }
+ 
+diff --git a/hw/pci-hotplug.c b/hw/pci-hotplug.c
+index 41ce004..fb28254 100644
+--- a/hw/pci-hotplug.c
++++ b/hw/pci-hotplug.c
+@@ -308,7 +308,6 @@ void pci_device_hot_add(Monitor *mon, const QDict *qdict, QObject **ret_data)
+         qobject_from_jsonf("{ 'domain': 0, 'bus': %d, 'slot': %d, "
+                            "'function': %d }", pci_bus_num(dev->bus),
+                            PCI_SLOT(dev->devfn), PCI_FUNC(dev->devfn));
+-        assert(*ret_data != NULL);
+     } else
+         monitor_printf(mon, "failed to add %s\n", opts);
+ }
+diff --git a/migration.c b/migration.c
+index 598f8df..82ef1b0 100644
+--- a/migration.c
++++ b/migration.c
+@@ -205,8 +205,6 @@ static void migrate_put_status(QDict *qdict, const char *name,
+     obj = qobject_from_jsonf("{ 'transferred': %" PRId64 ", "
+                                "'remaining': %" PRId64 ", "
+                                "'total': %" PRId64 " }", trans, rem, total);
+-    assert(obj != NULL);
+-
+     qdict_put_obj(qdict, name, obj);
+ }
+ 
+@@ -280,7 +278,6 @@ void do_info_migrate(Monitor *mon, QObject **ret_data)
+             *ret_data = qobject_from_jsonf("{ 'status': 'cancelled' }");
+             break;
+         }
+-        assert(*ret_data != NULL);
+     }
+ }
+ 
+diff --git a/monitor.c b/monitor.c
+index 085c70d..ea7aef7 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -329,8 +329,6 @@ static void timestamp_put(QDict *qdict)
+     obj = qobject_from_jsonf("{ 'seconds': %" PRId64 ", "
+                                 "'microseconds': %" PRId64 " }",
+                                 (int64_t) tv.tv_sec, (int64_t) tv.tv_usec);
+-    assert(obj != NULL);
+-
+     qdict_put_obj(qdict, "timestamp", obj);
+ }
+ 
+@@ -809,7 +807,6 @@ static void do_info_cpus(Monitor *mon, QObject **ret_data)
+         obj = qobject_from_jsonf("{ 'CPU': %d, 'current': %i, 'halted': %i }",
+                                  env->cpu_index, env == mon->mon_cpu,
+                                  env->halted);
+-        assert(obj != NULL);
+ 
+         cpu = qobject_to_qdict(obj);
+ 
+@@ -4254,8 +4251,6 @@ static void monitor_control_event(void *opaque, int event)
+         json_message_parser_init(&mon->mc->parser, handle_qmp_command);
+ 
+         data = get_qmp_greeting();
+-        assert(data != NULL);
+-
+         monitor_json_emitter(mon, data);
+         qobject_decref(data);
+     }
+-- 
+1.6.6
+

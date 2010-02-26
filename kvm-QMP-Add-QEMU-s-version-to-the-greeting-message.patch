@@ -1,0 +1,119 @@
+From 186dd6a1780290c0f42bd58d60fd72d43e86c6a2 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 11 Feb 2010 19:30:23 -0200
+Subject: [PATCH 01/11] QMP: Add QEMU's version to the greeting message
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1265916626-29934-2-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7055
+O-Subject: [PATCH RHEL6 qemu-kvm 1/4] QMP: Add QEMU's version to the greeting
+	message
+Bugzilla: 557930
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+
+With capability negotiation support clients will only have a chance
+to check QEMU's version (ie. issue 'query-version') after the
+negotiation procedure is done.
+
+It might be useful to clients to check QEMU's version before
+negotiating features, though.
+
+To allow that, this commit adds the QEMU's version object to the
+greeting message.
+
+Not really sure this is needed, but doesn't hurt anyway.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit ca9567e23454ca94e3911710da4e953ad049b40f)
+---
+ QMP/README       |    6 ++++--
+ QMP/qmp-spec.txt |    6 ++++--
+ monitor.c        |   10 +++++++++-
+ 3 files changed, 17 insertions(+), 5 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ QMP/README       |    6 ++++--
+ QMP/qmp-spec.txt |    6 ++++--
+ monitor.c        |   10 +++++++++-
+ 3 files changed, 17 insertions(+), 5 deletions(-)
+
+diff --git a/QMP/README b/QMP/README
+index 09e7053..9334c25 100644
+--- a/QMP/README
++++ b/QMP/README
+@@ -52,9 +52,11 @@ $ telnet localhost 4444
+ Trying 127.0.0.1...
+ Connected to localhost.
+ Escape character is '^]'.
+-{"QMP": {"capabilities": []}}
++{"QMP": {"version": {"qemu": "0.12.50", "package": ""}, "capabilities": []}}
++{ "execute": "qmp_capabilities" }
++{"return": {}}
+ { "execute": "query-version" }
+-{"return": {"qemu": "0.11.50", "package": ""}}
++{"return": {"qemu": "0.12.50", "package": ""}}
+ 
+ Contact
+ -------
+diff --git a/QMP/qmp-spec.txt b/QMP/qmp-spec.txt
+index 56f388c..b2617bb 100644
+--- a/QMP/qmp-spec.txt
++++ b/QMP/qmp-spec.txt
+@@ -48,10 +48,12 @@ waiting for commands.
+ 
+ The format is:
+ 
+-{ "QMP": { "capabilities": json-array } }
++{ "QMP": { "version": json-object, "capabilities": json-array } }
+ 
+  Where,
+ 
++- The "version" member contains the Server's version information (the format
++  is the same of the 'query-version' command)
+ - The "capabilities" member specify the availability of features beyond the
+   baseline specification
+ 
+@@ -152,7 +154,7 @@ This section provides some examples of real QMP usage, in all of them
+ 3.1 Server greeting
+ -------------------
+ 
+-S: {"QMP": {"capabilities": []}}
++S: {"QMP": {"version": {"qemu": "0.12.50", "package": ""}, "capabilities": []}}
+ 
+ 3.2 Simple 'stop' execution
+ ---------------------------
+diff --git a/monitor.c b/monitor.c
+index 9e46bdf..6662ebb 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -4207,6 +4207,14 @@ void monitor_resume(Monitor *mon)
+         readline_show_prompt(mon->rs);
+ }
+ 
++static QObject *get_qmp_greeting(void)
++{
++    QObject *ver;
++
++    do_info_version(NULL, &ver);
++    return qobject_from_jsonf("{'QMP':{'version': %p,'capabilities': []}}",ver);
++}
++
+ /**
+  * monitor_control_event(): Print QMP gretting
+  */
+@@ -4218,7 +4226,7 @@ static void monitor_control_event(void *opaque, int event)
+ 
+         json_message_parser_init(&mon->mc->parser, handle_qmp_command);
+ 
+-        data = qobject_from_jsonf("{ 'QMP': { 'capabilities': [] } }");
++        data = get_qmp_greeting();
+         assert(data != NULL);
+ 
+         monitor_json_emitter(mon, data);
+-- 
+1.6.6
+

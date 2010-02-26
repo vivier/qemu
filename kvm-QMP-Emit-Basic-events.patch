@@ -1,0 +1,75 @@
+From 03a82edc30eb1fd5e816dfb2c1372b4c66174336 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 11 Feb 2010 19:40:45 -0200
+Subject: [PATCH 11/11] QMP: Emit Basic events
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1265917245-30209-8-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7065
+O-Subject: [PATCH RHEL6 qemu-kvm 7/7] QMP: Emit Basic events
+Bugzilla: 558623
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Bugzilla: 558623
+
+While testing QMP on qemu-kvm I found that it's not emitting basic
+events like RESET or POWERDOWN.
+
+The reason is that in QEMU upstream those events are triggered
+in QEMU's main loop (ie. vl.c:main_loop()), but control doesn't
+reach there in qemu-kvm as it has its own main loop in
+qemu-kvm.c:kvm_main_loop().
+
+This commit adds the same set of events there too.
+
+NOTE: The STOP event is not being added because it should be
+triggered in vm_stop() and not in the main loop, this will be
+fixed upstream.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+(cherry picked from commit a524864952978b2996a8ed7716fd5bfe8d687115)
+---
+ qemu-kvm.c |   10 +++++++---
+ 1 files changed, 7 insertions(+), 3 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ qemu-kvm.c |   10 +++++++---
+ 1 files changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/qemu-kvm.c b/qemu-kvm.c
+index 44e8b75..6ba519e 100644
+--- a/qemu-kvm.c
++++ b/qemu-kvm.c
+@@ -17,6 +17,7 @@
+ #include "block.h"
+ #include "compatfd.h"
+ #include "gdbstub.h"
++#include "monitor.h"
+ 
+ #include "qemu-kvm.h"
+ #include "libkvm.h"
+@@ -2124,11 +2125,14 @@ int kvm_main_loop(void)
+                 vm_stop(0);
+             } else
+                 break;
+-        } else if (qemu_powerdown_requested())
++        } else if (qemu_powerdown_requested()) {
++            monitor_protocol_event(QEVENT_POWERDOWN, NULL);
+             qemu_irq_raise(qemu_system_powerdown);
+-        else if (qemu_reset_requested())
++        } else if (qemu_reset_requested()) {
++            monitor_protocol_event(QEVENT_RESET, NULL);
+             qemu_kvm_system_reset();
+-        else if (kvm_debug_cpu_requested) {
++        } else if (kvm_debug_cpu_requested) {
++            monitor_protocol_event(QEVENT_DEBUG, NULL);
+             gdb_set_stop_cpu(kvm_debug_cpu_requested);
+             vm_stop(EXCP_DEBUG);
+             kvm_debug_cpu_requested = NULL;
+-- 
+1.6.6
+

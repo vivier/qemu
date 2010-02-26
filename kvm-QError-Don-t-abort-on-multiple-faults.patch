@@ -1,0 +1,69 @@
+From 121c15e08788a44954badc70d5f26812b883fa72 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 11 Feb 2010 19:40:43 -0200
+Subject: [PATCH 09/11] QError: Don't abort on multiple faults
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1265917245-30209-6-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7063
+O-Subject: [PATCH RHEL6 qemu-kvm 5/7] QError: Don't abort on multiple faults
+Bugzilla: 559635
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Bugzilla: 559635
+
+Ideally, Monitor code should report an error only once and
+return the error information up the call chain.
+
+To assure that this happens as expected and that no error is
+lost, we have an assert() in qemu_error_internal().
+
+However, we still have not fully converted handlers using
+monitor_printf() to report errors. As there can be multiple
+monitor_printf() calls on an error, the assertion is easily
+triggered when debugging is enabled; and we will get a memory
+leak if it's not.
+
+The solution to this problem is to allow multiple faults by only
+reporting the first one, and to release the additional error objects.
+
+A better mechanism to report multiple errors to programmers is
+underway.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 27a749fb733dc64b7a215998be7f228a09bb27a7)
+---
+ monitor.c |    9 +++++++--
+ 1 files changed, 7 insertions(+), 2 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ monitor.c |    9 +++++++--
+ 1 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index ea7aef7..f06555d 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -4467,8 +4467,13 @@ void qemu_error_internal(const char *file, int linenr, const char *func,
+         QDECREF(qerror);
+         break;
+     case ERR_SINK_MONITOR:
+-        assert(qemu_error_sink->mon->error == NULL);
+-        qemu_error_sink->mon->error = qerror;
++        /* report only the first error */
++        if (!qemu_error_sink->mon->error) {
++            qemu_error_sink->mon->error = qerror;
++        } else {
++            /* XXX: warn the programmer */
++            QDECREF(qerror);
++        }
+         break;
+     }
+ }
+-- 
+1.6.6
+

@@ -1,0 +1,67 @@
+From d776a9573f46a337368146d6fa76ccc3069407de Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 11 Feb 2010 19:40:39 -0200
+Subject: [PATCH 05/11] json: escape u0000 .. u001F when outputting json
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1265917245-30209-2-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7059
+O-Subject: [PATCH RHEL6 qemu-kvm 1/7] json: escape u0000 .. u001F when
+	outputting json
+Bugzilla: 559667
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Anthony Liguori <aliguori@us.ibm.com>
+
+Bugzilla: 559667
+
+Markus Armbruster pointed out:
+
+JSON requires control characters in strings to be escaped.  RFC 4627
+section 2.5:
+
+   A string begins and ends with quotation marks.  All Unicode
+   characters may be placed within the quotation marks except for the
+   characters that must be escaped: quotation mark, reverse solidus, and
+   the control characters (U+0000 through U+001F).
+
+We've been quoting the special escape sequences that JSON defines but we
+haven't been encoding the full control character range.  This patch fixes that.
+
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit ff06ea219763559bec2aab26dde1cec8608405e9)
+---
+ qjson.c |   10 ++++++++--
+ 1 files changed, 8 insertions(+), 2 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ qjson.c |   10 ++++++++--
+ 1 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/qjson.c b/qjson.c
+index 60c904d..9ad8a91 100644
+--- a/qjson.c
++++ b/qjson.c
+@@ -163,8 +163,14 @@ static void to_json(const QObject *obj, QString *str)
+                     qstring_append(str, "\\t");
+                     break;
+                 default: {
+-                    char buf[2] = { ptr[0], 0 };
+-                    qstring_append(str, buf);
++                    if (ptr[0] <= 0x1F) {
++                        char escape[7];
++                        snprintf(escape, sizeof(escape), "\\u%04X", ptr[0]);
++                        qstring_append(str, escape);
++                    } else {
++                        char buf[2] = { ptr[0], 0 };
++                        qstring_append(str, buf);
++                    }
+                     break;
+                 }
+                 }
+-- 
+1.6.6
+

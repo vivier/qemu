@@ -1,0 +1,68 @@
+From 4ece601f89dea0aa9a1a6d3da939afd92c8362f8 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 11 Feb 2010 19:40:44 -0200
+Subject: [PATCH 10/11] QMP: Don't leak on connection close
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1265917245-30209-7-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7064
+O-Subject: [PATCH RHEL6 qemu-kvm 6/7] QMP: Don't leak on connection close
+Bugzilla: 559645
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Bugzilla: 559645
+
+QMP's chardev event callback doesn't call
+json_message_parser_destroy() on CHR_EVENT_CLOSED. As the call
+to json_message_parser_init() on CHR_EVENT_OPENED allocates memory,
+we'are leaking on close.
+
+Fix that by just calling json_message_parser_destroy() on
+CHR_EVENT_CLOSED.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 47116d1c90cdac94cb9da270320dcf0d5ce1cfe2)
+---
+ monitor.c |   12 ++++++++----
+ 1 files changed, 8 insertions(+), 4 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ monitor.c |   12 ++++++++----
+ 1 files changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index f06555d..40acacf 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -4243,16 +4243,20 @@ static QObject *get_qmp_greeting(void)
+  */
+ static void monitor_control_event(void *opaque, int event)
+ {
+-    if (event == CHR_EVENT_OPENED) {
+-        QObject *data;
+-        Monitor *mon = opaque;
++    QObject *data;
++    Monitor *mon = opaque;
+ 
++    switch (event) {
++    case CHR_EVENT_OPENED:
+         mon->mc->command_mode = 0;
+         json_message_parser_init(&mon->mc->parser, handle_qmp_command);
+-
+         data = get_qmp_greeting();
+         monitor_json_emitter(mon, data);
+         qobject_decref(data);
++        break;
++    case CHR_EVENT_CLOSED:
++        json_message_parser_destroy(&mon->mc->parser);
++        break;
+     }
+ }
+ 
+-- 
+1.6.6
+

@@ -1,0 +1,89 @@
+From 73c1200ecbba2863d68cdf2870bded77d5931025 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 11 Feb 2010 19:30:25 -0200
+Subject: [PATCH 03/11] QMP: Enforce capability negotiation rules
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1265916626-29934-4-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7056
+O-Subject: [PATCH RHEL6 qemu-kvm 3/4] QMP: Enforce capability negotiation rules
+Bugzilla: 557930
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+
+With this commit QMP will be started in Capabilities Negotiation
+mode, where the only command allowed to run is 'qmp_capabilities'.
+
+All other commands will return CommandNotFound error. Asynchronous
+messages are not delivered either.
+
+When 'qmp_capabilities' is successfully executed QMP enters in
+Command mode, where all commands (except 'qmp_capabilities') are
+allowed to run and asynchronous messages are delivered.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 09069b19f49311c772e220b44edb19fdd446ba5f)
+---
+ monitor.c |   18 +++++++++++++++++-
+ 1 files changed, 17 insertions(+), 1 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ monitor.c |   18 +++++++++++++++++-
+ 1 files changed, 17 insertions(+), 1 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 72d67dc..085c70d 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -136,6 +136,11 @@ Monitor *cur_mon = NULL;
+ static void monitor_command_cb(Monitor *mon, const char *cmdline,
+                                void *opaque);
+ 
++static inline int qmp_cmd_mode(const Monitor *mon)
++{
++    return (mon->mc ? mon->mc->command_mode : 0);
++}
++
+ /* Return true if in control mode, false otherwise */
+ static inline int monitor_ctrl_mode(const Monitor *mon)
+ {
+@@ -381,7 +386,7 @@ void monitor_protocol_event(MonitorEvent event, QObject *data)
+     }
+ 
+     QLIST_FOREACH(mon, &mon_list, entry) {
+-        if (monitor_ctrl_mode(mon)) {
++        if (monitor_ctrl_mode(mon) && qmp_cmd_mode(mon)) {
+             monitor_json_emitter(mon, QOBJECT(qmp));
+         }
+     }
+@@ -4075,6 +4080,12 @@ static int monitor_check_qmp_args(const mon_cmd_t *cmd, QDict *args)
+     return err;
+ }
+ 
++static int invalid_qmp_mode(const Monitor *mon, const char *cmd_name)
++{
++    int is_cap = compare_cmd(cmd_name, "qmp_capabilities");
++    return (qmp_cmd_mode(mon) ? is_cap : !is_cap);
++}
++
+ static void handle_qmp_command(JSONMessageParser *parser, QList *tokens)
+ {
+     int err;
+@@ -4114,6 +4125,11 @@ static void handle_qmp_command(JSONMessageParser *parser, QList *tokens)
+ 
+     cmd_name = qstring_get_str(qobject_to_qstring(obj));
+ 
++    if (invalid_qmp_mode(mon, cmd_name)) {
++        qemu_error_new(QERR_COMMAND_NOT_FOUND, cmd_name);
++        goto err_input;
++    }
++
+     /*
+      * XXX: We need this special case until we get info handlers
+      * converted into 'query-' commands
+-- 
+1.6.6
+

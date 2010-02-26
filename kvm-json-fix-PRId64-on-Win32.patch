@@ -1,0 +1,95 @@
+From 7ea0d610685af7f9ba45ec53802f349ede81a40b Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 11 Feb 2010 19:40:40 -0200
+Subject: [PATCH 06/11] json: fix PRId64 on Win32
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1265917245-30209-3-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7060
+O-Subject: [PATCH RHEL6 qemu-kvm 2/7] json: fix PRId64 on Win32
+Bugzilla: 563878
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Roy Tam <roytam@gmail.com>
+
+Bugzilla: 563878
+
+OK we are fooled by the json lexer and parser. As we use %I64d to
+print 'long long' variables in Win32, but lexer and parser only deal
+with %lld but not %I64d, this patch add support for %I64d and solve
+'info pci', 'powser_reset' and 'power_powerdown' assert failure in
+Win32.
+
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 2c0d4b36e7fe28c569c5436f7724735e35d3c493)
+---
+ json-lexer.c  |   16 ++++++++++++++++
+ json-parser.c |    3 ++-
+ 2 files changed, 18 insertions(+), 1 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ json-lexer.c  |   16 ++++++++++++++++
+ json-parser.c |    3 ++-
+ 2 files changed, 18 insertions(+), 1 deletions(-)
+
+diff --git a/json-lexer.c b/json-lexer.c
+index 53697c5..9d64920 100644
+--- a/json-lexer.c
++++ b/json-lexer.c
+@@ -54,6 +54,9 @@ enum json_lexer_state {
+     IN_ESCAPE,
+     IN_ESCAPE_L,
+     IN_ESCAPE_LL,
++    IN_ESCAPE_I,
++    IN_ESCAPE_I6,
++    IN_ESCAPE_I64,
+     IN_ESCAPE_DONE,
+     IN_WHITESPACE,
+     IN_OPERATOR_DONE,
+@@ -223,6 +226,18 @@ static const uint8_t json_lexer[][256] =  {
+         ['l'] = IN_ESCAPE_LL,
+     },
+ 
++    [IN_ESCAPE_I64] = {
++        ['d'] = IN_ESCAPE_DONE,
++    },
++
++    [IN_ESCAPE_I6] = {
++        ['4'] = IN_ESCAPE_I64,
++    },
++
++    [IN_ESCAPE_I] = {
++        ['6'] = IN_ESCAPE_I6,
++    },
++
+     [IN_ESCAPE] = {
+         ['d'] = IN_ESCAPE_DONE,
+         ['i'] = IN_ESCAPE_DONE,
+@@ -230,6 +245,7 @@ static const uint8_t json_lexer[][256] =  {
+         ['s'] = IN_ESCAPE_DONE,
+         ['f'] = IN_ESCAPE_DONE,
+         ['l'] = IN_ESCAPE_L,
++        ['I'] = IN_ESCAPE_I,
+     },
+ 
+     /* top level rule */
+diff --git a/json-parser.c b/json-parser.c
+index 7624c0f..2ab6f6c 100644
+--- a/json-parser.c
++++ b/json-parser.c
+@@ -476,7 +476,8 @@ static QObject *parse_escape(JSONParserContext *ctxt, QList **tokens, va_list *a
+         obj = QOBJECT(qint_from_int(va_arg(*ap, int)));
+     } else if (token_is_escape(token, "%ld")) {
+         obj = QOBJECT(qint_from_int(va_arg(*ap, long)));
+-    } else if (token_is_escape(token, "%lld")) {
++    } else if (token_is_escape(token, "%lld") ||
++               token_is_escape(token, "%I64d")) {
+         obj = QOBJECT(qint_from_int(va_arg(*ap, long long)));
+     } else if (token_is_escape(token, "%s")) {
+         obj = QOBJECT(qstring_from_str(va_arg(*ap, const char *)));
+-- 
+1.6.6
+

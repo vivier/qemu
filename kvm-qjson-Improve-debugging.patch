@@ -1,0 +1,57 @@
+From ef3fee644a5c9a39343c6cfc532fdc7e32bf51b4 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 11 Feb 2010 19:40:41 -0200
+Subject: [PATCH 07/11] qjson: Improve debugging
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1265917245-30209-4-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7061
+O-Subject: [PATCH RHEL6 qemu-kvm 3/7] qjson: Improve debugging
+Bugzilla: 563875
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Bugzilla: 563875
+
+Add an assert() to qobject_from_jsonf() to assure that the returned
+QObject is not NULL. Currently this is duplicated in the callers.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 668e3cac4fdba1137798c4453e018070b099679e)
+---
+ qjson.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ qjson.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+diff --git a/qjson.c b/qjson.c
+index 9ad8a91..483c667 100644
+--- a/qjson.c
++++ b/qjson.c
+@@ -53,6 +53,10 @@ QObject *qobject_from_json(const char *string)
+     return qobject_from_jsonv(string, NULL);
+ }
+ 
++/*
++ * IMPORTANT: This function aborts on error, thus it must not
++ * be used with untrusted arguments.
++ */
+ QObject *qobject_from_jsonf(const char *string, ...)
+ {
+     QObject *obj;
+@@ -62,6 +66,7 @@ QObject *qobject_from_jsonf(const char *string, ...)
+     obj = qobject_from_jsonv(string, &ap);
+     va_end(ap);
+ 
++    assert(obj != NULL);
+     return obj;
+ }
+ 
+-- 
+1.6.6
+
