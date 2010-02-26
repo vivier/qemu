@@ -1,0 +1,491 @@
+From 040b73b8364f72202e8c6b095efacdb6145e11ba Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Mon, 15 Feb 2010 11:56:33 -0200
+Subject: [PATCH 5/5] virtio: add features as qdev properties+fixup
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <20100215115633.GF10581@redhat.com>
+Patchwork-id: 7109
+O-Subject: [PATCHv2 RHEL6.0 05/22] virtio: add features as qdev properties+fixup
+Bugzilla: 562958
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+This includes two patches from upstream, the second one is a fixup for
+the first one. Merged for bisectability.
+
+virtio: add features as qdev properties
+
+Add feature bits as properties to virtio. This makes it possible to e.g.  define
+machine without indirect buffer support, which is required for 0.10
+compatibility, or without hardware checksum support, which is required for 0.11
+compatibility.  Since default values for optional features are now set by qdev,
+get_features callback has been modified: it sets non-optional bits, and clears
+bits not supported by host.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 8172539d21a03e982aa7f139ddc1607dc1422045)
+
+virtio-net: mac property is mandatory
+
+Mac feature bit isn't going to work as all network cards already have a
+'mac' property to set the mac address.  Remove it from mask and add in
+get_features.
+
+Reported-by: Gerd Hoffmann <kraxel@redhat.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit c9f79a3f79a48de28b4575cb5644bcf45d3754d0)
+---
+ hw/s390-virtio-bus.c   |   12 +++++++++---
+ hw/s390-virtio-bus.h   |    1 +
+ hw/syborg_virtio.c     |   13 ++++++++-----
+ hw/virtio-balloon.c    |    4 ++--
+ hw/virtio-blk.c        |    6 +-----
+ hw/virtio-blk.h        |    8 ++++++++
+ hw/virtio-net.c        |   41 ++++++++++++++++++-----------------------
+ hw/virtio-net.h        |   19 +++++++++++++++++++
+ hw/virtio-pci.c        |   25 +++++++++++++++++--------
+ hw/virtio-serial-bus.c |    6 ++++--
+ hw/virtio.c            |    2 +-
+ hw/virtio.h            |    7 ++++++-
+ 12 files changed, 94 insertions(+), 50 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ hw/s390-virtio-bus.c   |   12 +++++++++---
+ hw/s390-virtio-bus.h   |    1 +
+ hw/syborg_virtio.c     |   13 ++++++++-----
+ hw/virtio-balloon.c    |    4 ++--
+ hw/virtio-blk.c        |    6 +-----
+ hw/virtio-blk.h        |    8 ++++++++
+ hw/virtio-net.c        |   41 ++++++++++++++++++-----------------------
+ hw/virtio-net.h        |   19 +++++++++++++++++++
+ hw/virtio-pci.c        |   25 +++++++++++++++++--------
+ hw/virtio-serial-bus.c |    6 ++++--
+ hw/virtio.c            |    2 +-
+ hw/virtio.h            |    7 ++++++-
+ 12 files changed, 94 insertions(+), 50 deletions(-)
+
+diff --git a/hw/s390-virtio-bus.c b/hw/s390-virtio-bus.c
+index 99684c5..6b6dafc 100644
+--- a/hw/s390-virtio-bus.c
++++ b/hw/s390-virtio-bus.c
+@@ -101,6 +101,7 @@ static int s390_virtio_device_init(VirtIOS390Device *dev, VirtIODevice *vdev)
+     bus->dev_offs += dev_len;
+ 
+     virtio_bind_device(vdev, &virtio_s390_bindings, dev);
++    dev->host_features = vdev->get_features(vdev, dev->host_features);
+     s390_virtio_device_sync(dev);
+ 
+     return 0;
+@@ -222,9 +223,7 @@ static void s390_virtio_device_sync(VirtIOS390Device *dev)
+     cur_offs += num_vq * VIRTIO_VQCONFIG_LEN;
+ 
+     /* Sync feature bitmap */
+-    if (dev->vdev->get_features) {
+-        stl_phys(cur_offs, dev->vdev->get_features(dev->vdev));
+-    }
++    stl_phys(cur_offs, dev->host_features);
+ 
+     dev->feat_offs = cur_offs + dev->feat_len;
+     cur_offs += dev->feat_len * 2;
+@@ -310,10 +309,17 @@ static void virtio_s390_notify(void *opaque, uint16_t vector)
+     kvm_s390_virtio_irq(s390_cpu_addr2state(0), 0, token);
+ }
+ 
++static unsigned virtio_s390_get_features(void *opaque)
++{
++    VirtIOS390Device *dev = (VirtIOS390Device*)opaque;
++    return dev->host_features;
++}
++
+ /**************** S390 Virtio Bus Device Descriptions *******************/
+ 
+ static const VirtIOBindings virtio_s390_bindings = {
+     .notify = virtio_s390_notify,
++    .get_features = virtio_s390_get_features,
+ };
+ 
+ static VirtIOS390DeviceInfo s390_virtio_net = {
+diff --git a/hw/s390-virtio-bus.h b/hw/s390-virtio-bus.h
+index ad85ed3..8e4763a 100644
+--- a/hw/s390-virtio-bus.h
++++ b/hw/s390-virtio-bus.h
+@@ -40,6 +40,7 @@ typedef struct VirtIOS390Device {
+     VirtIODevice *vdev;
+     DriveInfo *dinfo;
+     NICConf nic;
++    uint32_t host_features;
+     /* Max. number of ports we can have for a the virtio-serial device */
+     uint32_t max_virtserial_ports;
+ } VirtIOS390Device;
+diff --git a/hw/syborg_virtio.c b/hw/syborg_virtio.c
+index fe6fc23..65239a0 100644
+--- a/hw/syborg_virtio.c
++++ b/hw/syborg_virtio.c
+@@ -25,6 +25,7 @@
+ #include "syborg.h"
+ #include "sysbus.h"
+ #include "virtio.h"
++#include "virtio-net.h"
+ #include "sysemu.h"
+ 
+ //#define DEBUG_SYBORG_VIRTIO
+@@ -66,6 +67,7 @@ typedef struct {
+     uint32_t int_enable;
+     uint32_t id;
+     NICConf nic;
++    uint32_t host_features;
+ } SyborgVirtIOProxy;
+ 
+ static uint32_t syborg_virtio_readl(void *opaque, target_phys_addr_t offset)
+@@ -86,8 +88,7 @@ static uint32_t syborg_virtio_readl(void *opaque, target_phys_addr_t offset)
+         ret = s->id;
+         break;
+     case SYBORG_VIRTIO_HOST_FEATURES:
+-        ret = vdev->get_features(vdev);
+-        ret |= vdev->binding->get_features(s);
++        ret = s->host_features;
+         break;
+     case SYBORG_VIRTIO_GUEST_FEATURES:
+         ret = vdev->guest_features;
+@@ -244,9 +245,8 @@ static void syborg_virtio_update_irq(void *opaque, uint16_t vector)
+ 
+ static unsigned syborg_virtio_get_features(void *opaque)
+ {
+-    unsigned ret = 0;
+-    ret |= (1 << VIRTIO_F_NOTIFY_ON_EMPTY);
+-    return ret;
++    SyborgVirtIOProxy *proxy = opaque;
++    return proxy->host_features;
+ }
+ 
+ static VirtIOBindings syborg_virtio_bindings = {
+@@ -272,6 +272,8 @@ static int syborg_virtio_init(SyborgVirtIOProxy *proxy, VirtIODevice *vdev)
+     qemu_register_reset(virtio_reset, vdev);
+ 
+     virtio_bind_device(vdev, &syborg_virtio_bindings, proxy);
++    proxy->host_features |= (0x1 << VIRTIO_F_NOTIFY_ON_EMPTY);
++    proxy->host_features = vdev->get_features(vdev, proxy->host_features);
+     return 0;
+ }
+ 
+@@ -292,6 +294,7 @@ static SysBusDeviceInfo syborg_virtio_net_info = {
+     .qdev.size  = sizeof(SyborgVirtIOProxy),
+     .qdev.props = (Property[]) {
+         DEFINE_NIC_PROPERTIES(SyborgVirtIOProxy, nic),
++        DEFINE_VIRTIO_NET_FEATURES(SyborgVirtIOProxy, host_features),
+         DEFINE_PROP_END_OF_LIST(),
+     }
+ };
+diff --git a/hw/virtio-balloon.c b/hw/virtio-balloon.c
+index 7ca783e..242c6c8 100644
+--- a/hw/virtio-balloon.c
++++ b/hw/virtio-balloon.c
+@@ -125,9 +125,9 @@ static void virtio_balloon_set_config(VirtIODevice *vdev,
+     dev->actual = config.actual;
+ }
+ 
+-static uint32_t virtio_balloon_get_features(VirtIODevice *vdev)
++static uint32_t virtio_balloon_get_features(VirtIODevice *vdev, uint32_t f)
+ {
+-    return 0;
++    return f;
+ }
+ 
+ static ram_addr_t virtio_balloon_to_target(void *opaque, ram_addr_t target)
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index 2fd9b3f..b353c41 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -453,19 +453,15 @@ static void virtio_blk_update_config(VirtIODevice *vdev, uint8_t *config)
+     memcpy(config, &blkcfg, s->config_size);
+ }
+ 
+-static uint32_t virtio_blk_get_features(VirtIODevice *vdev)
++static uint32_t virtio_blk_get_features(VirtIODevice *vdev, uint32_t features)
+ {
+     VirtIOBlock *s = to_virtio_blk(vdev);
+-    uint32_t features = 0;
+ 
+     features |= (1 << VIRTIO_BLK_F_SEG_MAX);
+     features |= (1 << VIRTIO_BLK_F_GEOMETRY);
+ 
+     if (bdrv_enable_write_cache(s->bs))
+         features |= (1 << VIRTIO_BLK_F_WCACHE);
+-#ifdef __linux__
+-    features |= (1 << VIRTIO_BLK_F_SCSI);
+-#endif
+     if (strcmp(s->serial_str, "0"))
+         features |= 1 << VIRTIO_BLK_F_IDENTIFY;
+     
+diff --git a/hw/virtio-blk.h b/hw/virtio-blk.h
+index 23ad74c..c28f776 100644
+--- a/hw/virtio-blk.h
++++ b/hw/virtio-blk.h
+@@ -92,4 +92,12 @@ struct virtio_scsi_inhdr
+     uint32_t residual;
+ };
+ 
++#ifdef __linux__
++#define DEFINE_VIRTIO_BLK_FEATURES(_state, _field) \
++        DEFINE_VIRTIO_COMMON_FEATURES(_state, _field), \
++        DEFINE_PROP_BIT("scsi", _state, _field, VIRTIO_BLK_F_SCSI, true)
++#else
++#define DEFINE_VIRTIO_BLK_FEATURES(_state, _field) \
++        DEFINE_VIRTIO_COMMON_FEATURES(_state, _field)
++#endif
+ #endif
+diff --git a/hw/virtio-net.c b/hw/virtio-net.c
+index ab20a33..02d9180 100644
+--- a/hw/virtio-net.c
++++ b/hw/virtio-net.c
+@@ -147,34 +147,29 @@ static int peer_has_ufo(VirtIONet *n)
+     return n->has_ufo;
+ }
+ 
+-static uint32_t virtio_net_get_features(VirtIODevice *vdev)
++static uint32_t virtio_net_get_features(VirtIODevice *vdev, uint32_t features)
+ {
+     VirtIONet *n = to_virtio_net(vdev);
+-    uint32_t features = (1 << VIRTIO_NET_F_MAC) |
+-                        (1 << VIRTIO_NET_F_MRG_RXBUF) |
+-                        (1 << VIRTIO_NET_F_STATUS) |
+-                        (1 << VIRTIO_NET_F_CTRL_VQ) |
+-                        (1 << VIRTIO_NET_F_CTRL_RX) |
+-                        (1 << VIRTIO_NET_F_CTRL_VLAN) |
+-                        (1 << VIRTIO_NET_F_CTRL_RX_EXTRA);
++
++    features |= (1 << VIRTIO_NET_F_MAC);
+ 
+     if (peer_has_vnet_hdr(n)) {
+         tap_using_vnet_hdr(n->nic->nc.peer, 1);
++    } else {
++        features &= ~(0x1 << VIRTIO_NET_F_CSUM);
++        features &= ~(0x1 << VIRTIO_NET_F_HOST_TSO4);
++        features &= ~(0x1 << VIRTIO_NET_F_HOST_TSO6);
++        features &= ~(0x1 << VIRTIO_NET_F_HOST_ECN);
++
++        features &= ~(0x1 << VIRTIO_NET_F_GUEST_CSUM);
++        features &= ~(0x1 << VIRTIO_NET_F_GUEST_TSO4);
++        features &= ~(0x1 << VIRTIO_NET_F_GUEST_TSO6);
++        features &= ~(0x1 << VIRTIO_NET_F_GUEST_ECN);
++    }
+ 
+-        features |= (1 << VIRTIO_NET_F_CSUM);
+-        features |= (1 << VIRTIO_NET_F_HOST_TSO4);
+-        features |= (1 << VIRTIO_NET_F_HOST_TSO6);
+-        features |= (1 << VIRTIO_NET_F_HOST_ECN);
+-
+-        features |= (1 << VIRTIO_NET_F_GUEST_CSUM);
+-        features |= (1 << VIRTIO_NET_F_GUEST_TSO4);
+-        features |= (1 << VIRTIO_NET_F_GUEST_TSO6);
+-        features |= (1 << VIRTIO_NET_F_GUEST_ECN);
+-
+-        if (peer_has_ufo(n)) {
+-            features |= (1 << VIRTIO_NET_F_GUEST_UFO);
+-            features |= (1 << VIRTIO_NET_F_HOST_UFO);
+-        }
++    if (!peer_has_vnet_hdr(n) || !peer_has_ufo(n)) {
++        features &= ~(0x1 << VIRTIO_NET_F_GUEST_UFO);
++        features &= ~(0x1 << VIRTIO_NET_F_HOST_UFO);
+     }
+ 
+     return features;
+@@ -192,7 +187,7 @@ static uint32_t virtio_net_bad_features(VirtIODevice *vdev)
+     features |= (1 << VIRTIO_NET_F_HOST_TSO6);
+     features |= (1 << VIRTIO_NET_F_HOST_ECN);
+ 
+-    return features & virtio_net_get_features(vdev);
++    return features;
+ }
+ 
+ static void virtio_net_set_features(VirtIODevice *vdev, uint32_t features)
+diff --git a/hw/virtio-net.h b/hw/virtio-net.h
+index 2085181..e55119b 100644
+--- a/hw/virtio-net.h
++++ b/hw/virtio-net.h
+@@ -153,4 +153,23 @@ struct virtio_net_ctrl_mac {
+  #define VIRTIO_NET_CTRL_VLAN_ADD             0
+  #define VIRTIO_NET_CTRL_VLAN_DEL             1
+ 
++#define DEFINE_VIRTIO_NET_FEATURES(_state, _field) \
++        DEFINE_VIRTIO_COMMON_FEATURES(_state, _field), \
++        DEFINE_PROP_BIT("csum", _state, _field, VIRTIO_NET_F_CSUM, true), \
++        DEFINE_PROP_BIT("guest_csum", _state, _field, VIRTIO_NET_F_GUEST_CSUM, true), \
++        DEFINE_PROP_BIT("gso", _state, _field, VIRTIO_NET_F_GSO, true), \
++        DEFINE_PROP_BIT("guest_tso4", _state, _field, VIRTIO_NET_F_GUEST_TSO4, true), \
++        DEFINE_PROP_BIT("guest_tso6", _state, _field, VIRTIO_NET_F_GUEST_TSO6, true), \
++        DEFINE_PROP_BIT("guest_ecn", _state, _field, VIRTIO_NET_F_GUEST_ECN, true), \
++        DEFINE_PROP_BIT("guest_ufo", _state, _field, VIRTIO_NET_F_GUEST_UFO, true), \
++        DEFINE_PROP_BIT("host_tso4", _state, _field, VIRTIO_NET_F_HOST_TSO4, true), \
++        DEFINE_PROP_BIT("host_tso6", _state, _field, VIRTIO_NET_F_HOST_TSO6, true), \
++        DEFINE_PROP_BIT("host_ecn", _state, _field, VIRTIO_NET_F_HOST_ECN, true), \
++        DEFINE_PROP_BIT("host_ufo", _state, _field, VIRTIO_NET_F_HOST_UFO, true), \
++        DEFINE_PROP_BIT("mrg_rxbuf", _state, _field, VIRTIO_NET_F_MRG_RXBUF, true), \
++        DEFINE_PROP_BIT("status", _state, _field, VIRTIO_NET_F_STATUS, true), \
++        DEFINE_PROP_BIT("ctrl_vq", _state, _field, VIRTIO_NET_F_CTRL_VQ, true), \
++        DEFINE_PROP_BIT("ctrl_rx", _state, _field, VIRTIO_NET_F_CTRL_RX, true), \
++        DEFINE_PROP_BIT("ctrl_vlan", _state, _field, VIRTIO_NET_F_CTRL_VLAN, true), \
++        DEFINE_PROP_BIT("ctrl_rx_extra", _state, _field, VIRTIO_NET_F_CTRL_RX_EXTRA, true)
+ #endif
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index 444fd96..6ebcfe4 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -16,6 +16,8 @@
+ #include <inttypes.h>
+ 
+ #include "virtio.h"
++#include "virtio-blk.h"
++#include "virtio-net.h"
+ #include "pci.h"
+ #include "sysemu.h"
+ #include "msix.h"
+@@ -92,6 +94,7 @@ typedef struct {
+     uint32_t nvectors;
+     DriveInfo *dinfo;
+     NICConf nic;
++    uint32_t host_features;
+     /* Max. number of ports we can have for a the virtio-serial device */
+     uint32_t max_virtserial_ports;
+ } VirtIOPCIProxy;
+@@ -177,7 +180,7 @@ static void virtio_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+ 	/* Guest does not negotiate properly?  We have to assume nothing. */
+ 	if (val & (1 << VIRTIO_F_BAD_FEATURE)) {
+ 	    if (vdev->bad_features)
+-		val = vdev->bad_features(vdev);
++		val = proxy->host_features & vdev->bad_features(vdev);
+ 	    else
+ 		val = 0;
+ 	}
+@@ -237,8 +240,7 @@ static uint32_t virtio_ioport_read(VirtIOPCIProxy *proxy, uint32_t addr)
+ 
+     switch (addr) {
+     case VIRTIO_PCI_HOST_FEATURES:
+-        ret = vdev->get_features(vdev);
+-        ret |= vdev->binding->get_features(proxy);
++        ret = proxy->host_features;
+         break;
+     case VIRTIO_PCI_GUEST_FEATURES:
+         ret = vdev->guest_features;
+@@ -384,11 +386,8 @@ static void virtio_write_config(PCIDevice *pci_dev, uint32_t address,
+ 
+ static unsigned virtio_pci_get_features(void *opaque)
+ {
+-    unsigned ret = 0;
+-    ret |= (1 << VIRTIO_F_NOTIFY_ON_EMPTY);
+-    ret |= (1 << VIRTIO_RING_F_INDIRECT_DESC);
+-    ret |= (1 << VIRTIO_F_BAD_FEATURE);
+-    return ret;
++    VirtIOPCIProxy *proxy = opaque;
++    return proxy->host_features;
+ }
+ 
+ static const VirtIOBindings virtio_pci_bindings = {
+@@ -444,6 +443,9 @@ static void virtio_init_pci(VirtIOPCIProxy *proxy, VirtIODevice *vdev,
+                            virtio_map);
+ 
+     virtio_bind_device(vdev, &virtio_pci_bindings, proxy);
++    proxy->host_features |= 0x1 << VIRTIO_F_NOTIFY_ON_EMPTY;
++    proxy->host_features |= 0x1 << VIRTIO_F_BAD_FEATURE;
++    proxy->host_features = vdev->get_features(vdev, proxy->host_features);
+ }
+ 
+ static int virtio_blk_init_pci(PCIDevice *pci_dev)
+@@ -558,6 +560,7 @@ static PCIDeviceInfo virtio_info[] = {
+             DEFINE_PROP_HEX32("class", VirtIOPCIProxy, class_code, 0),
+             DEFINE_PROP_DRIVE("drive", VirtIOPCIProxy, dinfo),
+             DEFINE_PROP_UINT32("vectors", VirtIOPCIProxy, nvectors, 2),
++            DEFINE_VIRTIO_BLK_FEATURES(VirtIOPCIProxy, host_features),
+             DEFINE_PROP_END_OF_LIST(),
+         },
+         .qdev.reset = virtio_pci_reset,
+@@ -569,6 +572,7 @@ static PCIDeviceInfo virtio_info[] = {
+         .romfile    = "pxe-virtio.bin",
+         .qdev.props = (Property[]) {
+             DEFINE_PROP_UINT32("vectors", VirtIOPCIProxy, nvectors, 3),
++            DEFINE_VIRTIO_NET_FEATURES(VirtIOPCIProxy, host_features),
+             DEFINE_NIC_PROPERTIES(VirtIOPCIProxy, nic),
+             DEFINE_PROP_END_OF_LIST(),
+         },
+@@ -584,6 +588,7 @@ static PCIDeviceInfo virtio_info[] = {
+             DEFINE_PROP_HEX32("class", VirtIOPCIProxy, class_code, 0),
+             DEFINE_PROP_UINT32("max_ports", VirtIOPCIProxy, max_virtserial_ports,
+                                31),
++            DEFINE_VIRTIO_COMMON_FEATURES(VirtIOPCIProxy, host_features),
+             DEFINE_PROP_END_OF_LIST(),
+         },
+         .qdev.reset = virtio_pci_reset,
+@@ -592,6 +597,10 @@ static PCIDeviceInfo virtio_info[] = {
+         .qdev.size = sizeof(VirtIOPCIProxy),
+         .init      = virtio_balloon_init_pci,
+         .exit      = virtio_exit_pci,
++        .qdev.props = (Property[]) {
++            DEFINE_VIRTIO_COMMON_FEATURES(VirtIOPCIProxy, host_features),
++            DEFINE_PROP_END_OF_LIST(),
++        },
+         .qdev.reset = virtio_pci_reset,
+     },{
+         /* end of list */
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index 2a01e58..ab456ea 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -333,9 +333,11 @@ static void handle_input(VirtIODevice *vdev, VirtQueue *vq)
+ {
+ }
+ 
+-static uint32_t get_features(VirtIODevice *vdev)
++static uint32_t get_features(VirtIODevice *vdev, uint32_t features)
+ {
+-    return 1 << VIRTIO_CONSOLE_F_MULTIPORT;
++    features |= (1 << VIRTIO_CONSOLE_F_MULTIPORT);
++
++    return features;
+ }
+ 
+ /* Guest requested config info */
+diff --git a/hw/virtio.c b/hw/virtio.c
+index 1df494d..7c020a3 100644
+--- a/hw/virtio.c
++++ b/hw/virtio.c
+@@ -650,7 +650,7 @@ int virtio_load(VirtIODevice *vdev, QEMUFile *f)
+ {
+     int num, i, ret;
+     uint32_t features;
+-    uint32_t supported_features = vdev->get_features(vdev) |
++    uint32_t supported_features =
+         vdev->binding->get_features(vdev->binding_opaque);
+ 
+     if (vdev->binding->load_config) {
+diff --git a/hw/virtio.h b/hw/virtio.h
+index e046ab0..62e882b 100644
+--- a/hw/virtio.h
++++ b/hw/virtio.h
+@@ -105,7 +105,7 @@ struct VirtIODevice
+     void *config;
+     uint16_t config_vector;
+     int nvectors;
+-    uint32_t (*get_features)(VirtIODevice *vdev);
++    uint32_t (*get_features)(VirtIODevice *vdev, uint32_t requested_features);
+     uint32_t (*bad_features)(VirtIODevice *vdev);
+     void (*set_features)(VirtIODevice *vdev, uint32_t val);
+     void (*get_config)(VirtIODevice *vdev, uint8_t *config);
+@@ -176,4 +176,9 @@ VirtIODevice *virtio_balloon_init(DeviceState *dev);
+ 
+ void virtio_net_exit(VirtIODevice *vdev);
+ 
++#define DEFINE_VIRTIO_COMMON_FEATURES(_state, _field) \
++	DEFINE_PROP_BIT("indirect_desc", _state, _field, \
++			VIRTIO_RING_F_INDIRECT_DESC, true)
++
++
+ #endif
+-- 
+1.6.6
+

@@ -1,0 +1,44 @@
+From 65b005a7a8c74c7a42e1fd520b66c2f57a885fb6 Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Mon, 15 Feb 2010 11:56:26 -0200
+Subject: [PATCH 4/5] qdev: fix thinko leading to guest crashes
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <20100215115626.GE10581@redhat.com>
+Patchwork-id: 7108
+O-Subject: [PATCHv2 RHEL6.0 04/22] qdev: fix thinko leading to guest crashes
+Bugzilla: 562958
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Glauber Costa <glommer@redhat.com>
+
+Without this fix, guest crashes with drive=virtio.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit dbd483242c2e6dfaacb9fd3d20c333bbdad87243)
+---
+ hw/qdev-properties.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ hw/qdev-properties.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/hw/qdev-properties.c b/hw/qdev-properties.c
+index 9e123ae..277ff9e 100644
+--- a/hw/qdev-properties.c
++++ b/hw/qdev-properties.c
+@@ -20,7 +20,7 @@ static void bit_prop_set(DeviceState *dev, Property *props, bool val)
+     uint32_t *p = qdev_get_prop_ptr(dev, props);
+     uint32_t mask = qdev_get_prop_mask(props);
+     if (val)
+-        *p |= ~mask;
++        *p |= mask;
+     else
+         *p &= ~mask;
+ }
+-- 
+1.6.6
+

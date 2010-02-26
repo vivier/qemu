@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.20%{?dist}
+Release: 2.21%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -178,6 +178,16 @@ Patch1074: kvm-QError-Don-t-abort-on-multiple-faults.patch
 Patch1075: kvm-QMP-Don-t-leak-on-connection-close.patch
 # For bz#558623 - QMP: Basic async events are not emitted
 Patch1076: kvm-QMP-Emit-Basic-events.patch
+# For bz#562958 - RFE: Support vhost net mode
+Patch1077: kvm-net-add-API-to-disable-enable-polling.patch
+# For bz#562958 - RFE: Support vhost net mode
+Patch1078: kvm-virtio-rename-features-guest_features.patch
+# For bz#562958 - RFE: Support vhost net mode
+Patch1079: kvm-qdev-add-bit-property-type.patch
+# For bz#562958 - RFE: Support vhost net mode
+Patch1080: kvm-qdev-fix-thinko-leading-to-guest-crashes.patch
+# For bz#562958 - RFE: Support vhost net mode
+Patch1081: kvm-virtio-add-features-as-qdev-properties-fixup.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -314,6 +324,11 @@ such as kvmtrace and kvm_stat.
 %patch1074 -p1
 %patch1075 -p1
 %patch1076 -p1
+%patch1077 -p1
+%patch1078 -p1
+%patch1079 -p1
+%patch1080 -p1
+%patch1081 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -507,6 +522,15 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Feb 26 2010 Glauber Costa <glommer@redhat.com> - qemu-kvm-0.12.1.2-2.21.el6
+- kvm-net-add-API-to-disable-enable-polling.patch [bz#562958]
+- kvm-virtio-rename-features-guest_features.patch [bz#562958]
+- kvm-qdev-add-bit-property-type.patch [bz#562958]
+- kvm-qdev-fix-thinko-leading-to-guest-crashes.patch [bz#562958]
+- kvm-virtio-add-features-as-qdev-properties-fixup.patch [bz#562958]
+- Resolves: bz#562958
+  (RFE: Support vhost net mode)
+
 * Fri Feb 26 2010 Glauber Costa <glommer@redhat.com> - qemu-kvm-0.12.1.2-2.20.el6
 - kvm-QMP-Add-QEMU-s-version-to-the-greeting-message.patch [bz#557930]
 - kvm-QMP-Introduce-the-qmp_capabilities-command.patch [bz#557930]
