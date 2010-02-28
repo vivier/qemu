@@ -64,7 +64,7 @@ index 7e9ca79..d9f2e41 100644
      return s;
  }
  
-@@ -456,6 +464,27 @@ int net_init_tap(QemuOpts *opts, Monitor *mon, const char *name, VLANState *vlan
+@@ -456,5 +464,26 @@ int net_init_tap(QemuOpts *opts, Monitor *mon, const char *name, VLANState *vlan
          }
      }
  
@@ -89,9 +89,8 @@ index 7e9ca79..d9f2e41 100644
 +        return -1;
 +    }
 +
-     if (vlan) {
-         vlan->nb_host_devs++;
-     }
+     return 0;
+ }
 diff --git a/qemu-options.hx b/qemu-options.hx
 index ca73ba5..2b3d9b8 100644
 --- a/qemu-options.hx

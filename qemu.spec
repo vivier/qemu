@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
-Version: 0.12.2
-Release: 6%{?dist}
+Version: 0.12.3
+Release: 1%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -65,6 +65,19 @@ Patch34: qemu-virtio-avoid-crash-with-non-tap-backends.patch
 Patch35: qemu-virtio-serial-features-build-fix.patch
 Patch36: qemu-virtio-pci-irqfd-fix-nonkvm-build.patch
 Patch37: qemu-vhost-add-configure-check.patch
+
+# Fixes from upstream  
+Patch38: 0038-msix-migration-fix.patch
+Patch39: 0039-vhost-logging-thinko-fix.patch
+Patch40: 0040-vhost-move-vhost_set_vq_addr.patch
+Patch41: 0041-vhost-used-addr-migration-fix.patch
+Patch42: 0042-vhost-fix-used-logging-size-math.patch
+Patch43: 0043-vhost-logging-mistake-enable-not-disable-log.patch
+Patch44: 0044-vhost-fix-log-base.patch
+Patch45: 0045-pc-Add-a-Fedora-13-machine-type-that-contains-backpo.patch
+Patch46: 0046-pc-Add-backward-compatibility-options-for-virtio-ser.patch
+Patch47: 0047-virtio-serial-don-t-set-MULTIPORT-for-1-port-dev.patch
+Patch48: 0048-virtio-serial-pci-Allow-MSI-to-be-disabled.patch
 
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -291,6 +304,17 @@ such as kvmtrace and kvm_stat.
 %patch35 -p1
 %patch36 -p1
 %patch37 -p1
+%patch38 -p1
+%patch39 -p1
+%patch40 -p1
+%patch41 -p1
+%patch42 -p1
+%patch43 -p1
+%patch44 -p1
+%patch45 -p1
+%patch46 -p1
+%patch47 -p1
+%patch48 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -574,6 +598,12 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Feb 26 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.3-1
+- Update to 0.12.3 upstream
+- vhost-net migration/restart fixes
+- Add F-13 machine type
+- virtio-serial fixes
+
 * Tue Feb 09 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.2-6
 - Add vhost net support.
 
