@@ -1,0 +1,62 @@
+From f21162e401679f593fb8f3856bc76934f22497b7 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 11 Feb 2010 19:48:25 -0200
+Subject: [PATCH 3/7] ide: Generate BLOCK_IO_ERROR QMP event
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1265917707-30536-4-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7069
+O-Subject: [PATCH RHEL6 qemu-kvm 3/5] ide: Generate BLOCK_IO_ERROR QMP event
+Bugzilla: 547501
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+Just call bdrv_mon_event() in the right place.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 7ad7e3c3bf81a7c2bbd872430435db7a21f8f44f)
+---
+ hw/ide/core.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ hw/ide/core.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 76c3820..e9d95da 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -480,14 +480,17 @@ static int ide_handle_rw_error(IDEState *s, int error, int op)
+     int is_read = (op & BM_STATUS_RETRY_READ);
+     BlockInterfaceErrorAction action = drive_get_on_error(s->bs, is_read);
+ 
+-    if (action == BLOCK_ERR_IGNORE)
++    if (action == BLOCK_ERR_IGNORE) {
++        bdrv_mon_event(s->bs, BDRV_ACTION_IGNORE, is_read);
+         return 0;
++    }
+ 
+     if ((error == ENOSPC && action == BLOCK_ERR_STOP_ENOSPC)
+             || action == BLOCK_ERR_STOP_ANY) {
+         s->bus->bmdma->unit = s->unit;
+         s->bus->bmdma->status |= op;
+         vm_stop(0);
++        bdrv_mon_event(s->bs, BDRV_ACTION_STOP, is_read);
+     } else {
+         if (op & BM_STATUS_DMA_RETRY) {
+             dma_buf_commit(s, 0);
+@@ -495,6 +498,7 @@ static int ide_handle_rw_error(IDEState *s, int error, int op)
+         } else {
+             ide_rw_error(s);
+         }
++        bdrv_mon_event(s->bs, BDRV_ACTION_REPORT, is_read);
+     }
+ 
+     return 1;
+-- 
+1.6.6
+

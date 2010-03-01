@@ -1,0 +1,106 @@
+From ea6146e2cd5b722446d19cd95b662104bd3c3aed Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 11 Feb 2010 19:48:24 -0200
+Subject: [PATCH 2/7] block: BLOCK_IO_ERROR QMP event
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1265917707-30536-3-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7068
+O-Subject: [PATCH RHEL6 qemu-kvm 2/5] block: BLOCK_IO_ERROR QMP event
+Bugzilla: 547501
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+This commit introduces the bdrv_mon_event() function, which
+should be called by block subsystems (eg. IDE) when a I/O
+error occurs, so that an QMP event is emitted.
+
+The following information is currently provided in the event:
+
+- device name
+- operation (ie. "read" or "write")
+- action taken (eg. "stop")
+
+Event example:
+
+{ "event": "BLOCK_IO_ERROR",
+    "data": { "device": "ide0-hd1",
+              "operation": "write",
+              "action": "stop" },
+    "timestamp": { "seconds": 1265044230, "microseconds": 450486 } }
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 2582bfedd2049cefd3337dad69b047669133dacd)
+---
+ block.c |   29 +++++++++++++++++++++++++++++
+ block.h |    6 ++++++
+ 2 files changed, 35 insertions(+), 0 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ block.c |   29 +++++++++++++++++++++++++++++
+ block.h |    6 ++++++
+ 2 files changed, 35 insertions(+), 0 deletions(-)
+
+diff --git a/block.c b/block.c
+index ee37396..9d50e7a 100644
+--- a/block.c
++++ b/block.c
+@@ -1162,6 +1162,35 @@ int bdrv_is_allocated(BlockDriverState *bs, int64_t sector_num, int nb_sectors,
+     return bs->drv->bdrv_is_allocated(bs, sector_num, nb_sectors, pnum);
+ }
+ 
++void bdrv_mon_event(const BlockDriverState *bdrv,
++                    BlockMonEventAction action, int is_read)
++{
++    QObject *data;
++    const char *action_str;
++
++    switch (action) {
++    case BDRV_ACTION_REPORT:
++        action_str = "report";
++        break;
++    case BDRV_ACTION_IGNORE:
++        action_str = "ignore";
++        break;
++    case BDRV_ACTION_STOP:
++        action_str = "stop";
++        break;
++    default:
++        abort();
++    }
++
++    data = qobject_from_jsonf("{ 'device': %s, 'action': %s, 'operation': %s }",
++                              bdrv->device_name,
++                              action_str,
++                              is_read ? "read" : "write");
++    monitor_protocol_event(QEVENT_BLOCK_IO_ERROR, data);
++
++    qobject_decref(data);
++}
++
+ static void bdrv_print_dict(QObject *obj, void *opaque)
+ {
+     QDict *bs_dict;
+diff --git a/block.h b/block.h
+index bee9ec5..752a33e 100644
+--- a/block.h
++++ b/block.h
+@@ -47,6 +47,12 @@ typedef struct QEMUSnapshotInfo {
+ #define BDRV_SECTOR_SIZE   (1 << BDRV_SECTOR_BITS)
+ #define BDRV_SECTOR_MASK   ~(BDRV_SECTOR_SIZE - 1);
+ 
++typedef enum {
++    BDRV_ACTION_REPORT, BDRV_ACTION_IGNORE, BDRV_ACTION_STOP
++} BlockMonEventAction;
++
++void bdrv_mon_event(const BlockDriverState *bdrv,
++                    BlockMonEventAction action, int is_read);
+ void bdrv_info_print(Monitor *mon, const QObject *data);
+ void bdrv_info(Monitor *mon, QObject **ret_data);
+ void bdrv_stats_print(Monitor *mon, const QObject *data);
+-- 
+1.6.6
+

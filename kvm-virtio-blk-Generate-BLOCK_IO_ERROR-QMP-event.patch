@@ -1,0 +1,58 @@
+From 380797b710e946a21fd5bd4ed54f50806fa2229e Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 11 Feb 2010 19:48:27 -0200
+Subject: [PATCH 5/7] virtio-blk: Generate BLOCK_IO_ERROR QMP event
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1265917707-30536-6-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7071
+O-Subject: [PATCH RHEL6 qemu-kvm 5/5] virtio-blk: Generate BLOCK_IO_ERROR QMP
+	event
+Bugzilla: 547501
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+Just call bdrv_mon_event() in the right place.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit eaa6c85f5df022e65a3c5c14908cd191430cbff5)
+---
+ hw/virtio-blk.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ hw/virtio-blk.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index b353c41..d3162df 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -105,16 +105,20 @@ static int virtio_blk_handle_rw_error(VirtIOBlockReq *req, int error,
+         drive_get_on_error(req->dev->bs, is_read);
+     VirtIOBlock *s = req->dev;
+ 
+-    if (action == BLOCK_ERR_IGNORE)
++    if (action == BLOCK_ERR_IGNORE) {
++        bdrv_mon_event(req->dev->bs, BDRV_ACTION_IGNORE, is_read);
+         return 0;
++    }
+ 
+     if ((error == ENOSPC && action == BLOCK_ERR_STOP_ENOSPC)
+             || action == BLOCK_ERR_STOP_ANY) {
+         req->next = s->rq;
+         s->rq = req;
+         vm_stop(0);
++        bdrv_mon_event(req->dev->bs, BDRV_ACTION_STOP, is_read);
+     } else {
+         virtio_blk_req_complete(req, VIRTIO_BLK_S_IOERR);
++        bdrv_mon_event(req->dev->bs, BDRV_ACTION_REPORT, is_read);
+     }
+ 
+     return 1;
+-- 
+1.6.6
+

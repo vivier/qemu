@@ -1,0 +1,128 @@
+From 4046f618aef8b05ac11e0e41b92b9b9c7c3d98ec Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Tue, 16 Feb 2010 14:12:15 -0200
+Subject: [PATCH 6/7] add rhel machine types
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1266329535-14444-1-git-send-email-kraxel@redhat.com>
+Patchwork-id: 7137
+O-Subject: [RHEL-6 kvm PATCH] add rhel machine types
+Bugzilla: 558838
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+This patch adds 4 machine types to kvm: three compatibility types for
+rhel5.x and one for rhel 6.0.  The 5.x ones have some compatibility
+properties set to make the virtual machine behave more like the rhel 5.x
+versions did.
+
+upstream: never
+bugzilla: 558838
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/pc.c |   75 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 files changed, 73 insertions(+), 2 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ hw/pc.c |   75 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 files changed, 73 insertions(+), 2 deletions(-)
+
+diff --git a/hw/pc.c b/hw/pc.c
+index acbfeba..76e0823 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -1327,11 +1327,9 @@ void cmos_set_s3_resume(void)
+ 
+ static QEMUMachine pc_machine = {
+     .name = "pc-0.12",
+-    .alias = "pc",
+     .desc = "Standard PC",
+     .init = pc_init_pci,
+     .max_cpus = 255,
+-    .is_default = 1,
+ };
+ 
+ static QEMUMachine pc_machine_v0_11 = {
+@@ -1400,3 +1398,76 @@ static void pc_machine_init(void)
+ }
+ 
+ machine_init(pc_machine_init);
++
++/* RHEL machine types */
++
++static QEMUMachine pc_machine_rhel600 = {
++    .name = "rhel6.0.0",
++    .alias = "pc",
++    .desc = "RHEL 6.0.0 PC",
++    .init = pc_init_pci,
++    .max_cpus = 255,
++    .is_default = 1,
++};
++
++static GlobalProperty compat_rhel5[] = {
++        {
++            .driver   = "virtio-net-pci",
++            .property = "vectors",
++            .value    = stringify(0),
++        },{
++            .driver   = "virtio-blk-pci",
++            .property = "vectors",
++            .value    = stringify(0),
++        },{
++            .driver   = "PCI",
++            .property = "rombar",
++            .value    = stringify(0),
++        },
++#if 0 /* depends on "ide+scsi: device versions" patches */
++        {
++            .driver   = "ide-drive",
++            .property = "ver",
++            .value    = "0.9.1",
++        },{
++            .driver   = "scsi-disk",
++            .property = "ver",
++            .value    = "0.9.1",
++        },
++#endif
++        { /* end of list */ }
++};
++
++static QEMUMachine pc_machine_rhel550 = {
++    .name = "rhel5.5.0",
++    .desc = "RHEL 5.5.0 PC",
++    .init = pc_init_pci,
++    .max_cpus = 255,
++    .compat_props = compat_rhel5,
++};
++
++static QEMUMachine pc_machine_rhel544 = {
++    .name = "rhel5.4.4",
++    .desc = "RHEL 5.4.4 PC",
++    .init = pc_init_pci,
++    .max_cpus = 255,
++    .compat_props = compat_rhel5,
++};
++
++static QEMUMachine pc_machine_rhel540 = {
++    .name = "rhel5.4.0",
++    .desc = "RHEL 5.4.0 PC",
++    .init = pc_init_pci,
++    .max_cpus = 255,
++    .compat_props = compat_rhel5,
++};
++
++static void rhel_machine_init(void)
++{
++    qemu_register_machine(&pc_machine_rhel600);
++    qemu_register_machine(&pc_machine_rhel550);
++    qemu_register_machine(&pc_machine_rhel544);
++    qemu_register_machine(&pc_machine_rhel540);
++}
++
++machine_init(rhel_machine_init);
+-- 
+1.6.6
+

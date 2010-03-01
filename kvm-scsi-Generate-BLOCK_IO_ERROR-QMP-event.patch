@@ -1,0 +1,57 @@
+From 964f8248c28b5dcafbe693c67dcb162609d1f2f2 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 11 Feb 2010 19:48:26 -0200
+Subject: [PATCH 4/7] scsi: Generate BLOCK_IO_ERROR QMP event
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1265917707-30536-5-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7070
+O-Subject: [PATCH RHEL6 qemu-kvm 4/5] scsi: Generate BLOCK_IO_ERROR QMP event
+Bugzilla: 547501
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+Just call bdrv_mon_event() in the right place.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 380f640f96c8ae5b257bd4dec9b27cecd9d7e683)
+---
+ hw/scsi-disk.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ hw/scsi-disk.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index eb5b5a8..2cbb61d 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -181,16 +181,20 @@ static int scsi_handle_write_error(SCSIDiskReq *r, int error)
+     BlockInterfaceErrorAction action =
+         drive_get_on_error(s->qdev.dinfo->bdrv, 0);
+ 
+-    if (action == BLOCK_ERR_IGNORE)
++    if (action == BLOCK_ERR_IGNORE) {
++        bdrv_mon_event(s->qdev.dinfo->bdrv, BDRV_ACTION_IGNORE, 0);
+         return 0;
++    }
+ 
+     if ((error == ENOSPC && action == BLOCK_ERR_STOP_ENOSPC)
+             || action == BLOCK_ERR_STOP_ANY) {
+         r->status |= SCSI_REQ_STATUS_RETRY;
+         vm_stop(0);
++        bdrv_mon_event(s->qdev.dinfo->bdrv, BDRV_ACTION_STOP, 0);
+     } else {
+         scsi_command_complete(r, CHECK_CONDITION,
+                 HARDWARE_ERROR);
++        bdrv_mon_event(s->qdev.dinfo->bdrv, BDRV_ACTION_REPORT, 0);
+     }
+ 
+     return 1;
+-- 
+1.6.6
+

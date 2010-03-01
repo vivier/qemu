@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.21%{?dist}
+Release: 2.22%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -188,6 +188,20 @@ Patch1079: kvm-qdev-add-bit-property-type.patch
 Patch1080: kvm-qdev-fix-thinko-leading-to-guest-crashes.patch
 # For bz#562958 - RFE: Support vhost net mode
 Patch1081: kvm-virtio-add-features-as-qdev-properties-fixup.patch
+# For bz#547501 - RFE: a QMP event notification for disk  I/O errors with werror/rerror flags
+Patch1082: kvm-QMP-BLOCK_IO_ERROR-event-handling.patch
+# For bz#547501 - RFE: a QMP event notification for disk  I/O errors with werror/rerror flags
+Patch1083: kvm-block-BLOCK_IO_ERROR-QMP-event.patch
+# For bz#547501 - RFE: a QMP event notification for disk  I/O errors with werror/rerror flags
+Patch1084: kvm-ide-Generate-BLOCK_IO_ERROR-QMP-event.patch
+# For bz#547501 - RFE: a QMP event notification for disk  I/O errors with werror/rerror flags
+Patch1085: kvm-scsi-Generate-BLOCK_IO_ERROR-QMP-event.patch
+# For bz#547501 - RFE: a QMP event notification for disk  I/O errors with werror/rerror flags
+Patch1086: kvm-virtio-blk-Generate-BLOCK_IO_ERROR-QMP-event.patch
+# For bz#558838 - add rhel machine types
+Patch1087: kvm-add-rhel-machine-types.patch
+# For bz#568739 - QMP: Fix 'query-balloon' key
+Patch1088: kvm-QMP-Fix-query-balloon-key-change.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -329,6 +343,13 @@ such as kvmtrace and kvm_stat.
 %patch1079 -p1
 %patch1080 -p1
 %patch1081 -p1
+%patch1082 -p1
+%patch1083 -p1
+%patch1084 -p1
+%patch1085 -p1
+%patch1086 -p1
+%patch1087 -p1
+%patch1088 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -522,6 +543,21 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Mar 01 2010 Glauber Costa <glommer@redhat.com> - qemu-kvm-0.12.1.2-2.22.el6
+- kvm-QMP-BLOCK_IO_ERROR-event-handling.patch [bz#547501]
+- kvm-block-BLOCK_IO_ERROR-QMP-event.patch [bz#547501]
+- kvm-ide-Generate-BLOCK_IO_ERROR-QMP-event.patch [bz#547501]
+- kvm-scsi-Generate-BLOCK_IO_ERROR-QMP-event.patch [bz#547501]
+- kvm-virtio-blk-Generate-BLOCK_IO_ERROR-QMP-event.patch [bz#547501]
+- kvm-add-rhel-machine-types.patch [bz#558838]
+- kvm-QMP-Fix-query-balloon-key-change.patch [bz#568739]
+- Resolves: bz#547501
+  (RFE: a QMP event notification for disk  I/O errors with werror/rerror flags)
+- Resolves: bz#558838
+  (add rhel machine types)
+- Resolves: bz#568739
+  (QMP: Fix 'query-balloon' key)
+
 * Fri Feb 26 2010 Glauber Costa <glommer@redhat.com> - qemu-kvm-0.12.1.2-2.21.el6
 - kvm-net-add-API-to-disable-enable-polling.patch [bz#562958]
 - kvm-virtio-rename-features-guest_features.patch [bz#562958]
