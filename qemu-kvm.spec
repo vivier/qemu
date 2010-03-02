@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.22%{?dist}
+Release: 2.23%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -202,6 +202,12 @@ Patch1086: kvm-virtio-blk-Generate-BLOCK_IO_ERROR-QMP-event.patch
 Patch1087: kvm-add-rhel-machine-types.patch
 # For bz#568739 - QMP: Fix 'query-balloon' key
 Patch1088: kvm-QMP-Fix-query-balloon-key-change.patch
+# For bz#558835 - ide/scsi drive versions
+Patch1089: kvm-ide-device-version-property.patch
+# For bz#558835 - ide/scsi drive versions
+Patch1090: kvm-pc-add-driver-version-compat-properties.patch
+# For bz#567602 - qemu-img rebase subcommand got Segmentation fault
+Patch1091: kvm-qemu-img-Fix-segfault-during-rebase.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -350,6 +356,9 @@ such as kvmtrace and kvm_stat.
 %patch1086 -p1
 %patch1087 -p1
 %patch1088 -p1
+%patch1089 -p1
+%patch1090 -p1
+%patch1091 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -543,6 +552,15 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Mar 02 2010 Glauber Costa <glommer@redhat.com> - qemu-kvm-0.12.1.2-2.23.el6
+- kvm-ide-device-version-property.patch [bz#558835]
+- kvm-pc-add-driver-version-compat-properties.patch [bz#558835]
+- kvm-qemu-img-Fix-segfault-during-rebase.patch [bz#567602]
+- Resolves: bz#558835
+  (ide/scsi drive versions)
+- Resolves: bz#567602
+  (qemu-img rebase subcommand got Segmentation fault)
+
 * Mon Mar 01 2010 Glauber Costa <glommer@redhat.com> - qemu-kvm-0.12.1.2-2.22.el6
 - kvm-QMP-BLOCK_IO_ERROR-event-handling.patch [bz#547501]
 - kvm-block-BLOCK_IO_ERROR-QMP-event.patch [bz#547501]

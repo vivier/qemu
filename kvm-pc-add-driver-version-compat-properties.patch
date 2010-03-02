@@ -1,0 +1,68 @@
+From 8788795df87d504c8e7b8259bd04b08cbfd96137 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Tue, 16 Feb 2010 14:01:36 -0200
+Subject: [PATCH 2/3] pc: add driver version compat properties
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1266328896-14010-4-git-send-email-kraxel@redhat.com>
+Patchwork-id: 7136
+O-Subject: [RHEL-6 kvm PATCH 3/3] pc: add driver version compat properties
+Bugzilla: 558835
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+This patch adds compat property entries for ide-disk.ver and
+scsi-disk.ver to pc-0.10 and pc-0.11.  With this patch applied
+the scsi and ide disks report "0.10" and "0.11" as version when
+you start qemu with "-M pc-0.10" or "-M pc-0.11".
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 374ef70452452fb729c45dcf1a73a1bd1396cfda)
+---
+ hw/pc.c |   16 ++++++++++++++++
+ 1 files changed, 16 insertions(+), 0 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ hw/pc.c |   16 ++++++++++++++++
+ 1 files changed, 16 insertions(+), 0 deletions(-)
+
+diff --git a/hw/pc.c b/hw/pc.c
+index 76e0823..02c348c 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -1346,6 +1346,14 @@ static QEMUMachine pc_machine_v0_11 = {
+             .driver   = "PCI",
+             .property = "rombar",
+             .value    = stringify(0),
++        },{
++            .driver   = "ide-drive",
++            .property = "ver",
++            .value    = "0.11",
++        },{
++            .driver   = "scsi-disk",
++            .property = "ver",
++            .value    = "0.11",
+         },
+         { /* end of list */ }
+     }
+@@ -1377,6 +1385,14 @@ static QEMUMachine pc_machine_v0_10 = {
+             .driver   = "PCI",
+             .property = "rombar",
+             .value    = stringify(0),
++        },{
++            .driver   = "ide-drive",
++            .property = "ver",
++            .value    = "0.10",
++        },{
++            .driver   = "scsi-disk",
++            .property = "ver",
++            .value    = "0.10",
+         },
+         { /* end of list */ }
+     },
+-- 
+1.6.6
+

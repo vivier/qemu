@@ -1,0 +1,48 @@
+From d428da764e4838d3b7f44803bc7b1152e4927abf Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 23 Feb 2010 11:35:44 -0300
+Subject: [PATCH 3/3] qemu-img: Fix segfault during rebase
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1266924944-10953-1-git-send-email-kwolf@redhat.com>
+Patchwork-id: 7230
+O-Subject: [RHEL-6 KVM PATCH] qemu-img: Fix segfault during rebase
+Bugzilla: 567602
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Glauber Costa <glommer@redhat.com>
+
+Bugzilla: 567602
+Upstream commit: 60b1bd4fc5b2f5046b7b64fa5ce9c2930d482eac
+
+This fixes a possible read beyond the end of the temporary buffers used for
+comparing data in the old and the new backing file.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ qemu-img.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ qemu-img.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-img.c b/qemu-img.c
+index 48b9315..a766ae6 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -1211,7 +1211,7 @@ static int img_rebase(int argc, char **argv)
+                 int pnum;
+ 
+                 if (compare_sectors(buf_old + written * 512,
+-                    buf_new + written * 512, n, &pnum))
++                    buf_new + written * 512, n - written, &pnum))
+                 {
+                     ret = bdrv_write(bs, sector + written,
+                         buf_old + written * 512, pnum);
+-- 
+1.6.6
+
