@@ -1,12 +1,16 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.12.3
-Release: 1%{?dist}
+Release: 2%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
 Group: Development/Tools
 URL: http://www.qemu.org/
+
+# Allow one off builds to be minimalized without foreign
+# architecture support (--with x86only):
+%define with_x86only  %{?_with_x86only:     1} %{?!_with_x86only:     0}
 
 Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-kvm-%{version}.tar.gz
 Source1: qemu.init
@@ -82,6 +86,7 @@ Patch48: 0048-virtio-serial-pci-Allow-MSI-to-be-disabled.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
+BuildRequires: libaio-devel
 BuildRequires: rsync
 BuildRequires: pciutils-devel
 BuildRequires: pulseaudio-libs-devel
@@ -183,6 +188,7 @@ This package provides the system emulator for x86. When being run in a x86
 machine that supports it, this package also provides the KVM virtualization
 platform.
 
+%if !%{with_x86only}
 %package system-ppc
 Summary: QEMU system emulator for ppc
 Group: Development/Tools
@@ -253,6 +259,7 @@ QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
 
 This package provides the system emulator for sh4
+%endif
 
 %ifarch %{ix86} x86_64
 %package kvm-tools
@@ -317,6 +324,22 @@ such as kvmtrace and kvm_stat.
 %patch48 -p1
 
 %build
+# By default we build everything, but allow x86 to build a minimal version
+# with only similar arch target support
+%if %{with_x86only}
+    buildarch="i386-softmmu x86_64-softmmu i386-linux-user x86_64-linux-user"
+%else
+    buildarch="i386-softmmu x86_64-softmmu arm-softmmu cris-softmmu m68k-softmmu \
+           mips-softmmu mipsel-softmmu mips64-softmmu mips64el-softmmu ppc-softmmu \
+           ppcemb-softmmu ppc64-softmmu sh4-softmmu sh4eb-softmmu sparc-softmmu \
+           i386-linux-user x86_64-linux-user alpha-linux-user arm-linux-user \
+           armeb-linux-user cris-linux-user m68k-linux-user mips-linux-user \
+           mipsel-linux-user ppc-linux-user ppc64-linux-user ppc64abi32-linux-user \
+           sh4-linux-user sh4eb-linux-user sparc-linux-user sparc64-linux-user \
+           sparc32plus-linux-user" \
+%endif
+
+
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
 extraldflags="-Wl,--build-id";
 buildldflags="VL_LDFLAGS=-Wl,--build-id"
@@ -349,14 +372,7 @@ cd ../../
 %endif
 
 ./configure \
-    --target-list="i386-softmmu x86_64-softmmu arm-softmmu cris-softmmu m68k-softmmu \
-                mips-softmmu mipsel-softmmu mips64-softmmu mips64el-softmmu ppc-softmmu \
-                ppcemb-softmmu ppc64-softmmu sh4-softmmu sh4eb-softmmu sparc-softmmu \
-                i386-linux-user x86_64-linux-user alpha-linux-user arm-linux-user \
-                armeb-linux-user cris-linux-user m68k-linux-user mips-linux-user \
-                mipsel-linux-user ppc-linux-user ppc64-linux-user ppc64abi32-linux-user \
-                sh4-linux-user sh4eb-linux-user sparc-linux-user sparc64-linux-user \
-                sparc32plus-linux-user" \
+    --target-list="$buildarch" \
     --prefix=%{_prefix} \
     --interp-prefix=%{_prefix}/qemu-%%M \
     --audio-drv-list=pa,sdl,alsa,oss \
@@ -416,6 +432,11 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-ppc
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-sparc32
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-sparc64
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/petalogix-s3adsp1800.dtb
+%if %{with_x86only}
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/bamboo.dtb
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/ppc_rom.bin
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/video.x
+%endif
 
 # the pxe gpxe images will be symlinks to the images on
 # /usr/share/gpxe, as QEMU doesn't know how to look
@@ -432,10 +453,11 @@ pxe_link virtio virtio-net
 ln -s ../vgabios/VGABIOS-lgpl-latest.bin  %{buildroot}/%{_datadir}/%{name}/vgabios.bin
 ln -s ../vgabios/VGABIOS-lgpl-latest.cirrus.bin %{buildroot}/%{_datadir}/%{name}/vgabios-cirrus.bin
 ln -s ../seabios/bios.bin %{buildroot}/%{_datadir}/%{name}/bios.bin
+%if !%{with_x86only}
 ln -s ../openbios/openbios-ppc %{buildroot}/%{_datadir}/%{name}/openbios-ppc
 ln -s ../openbios/openbios-sparc32 %{buildroot}/%{_datadir}/%{name}/openbios-sparc32
 ln -s ../openbios/openbios-sparc64 %{buildroot}/%{_datadir}/%{name}/openbios-sparc64
-
+%endif
 %clean
 rm -rf $RPM_BUILD_ROOT
 
@@ -514,12 +536,13 @@ fi
 %files user
 %defattr(-,root,root)
 %{_initddir}/qemu
+%{_bindir}/qemu-i386
+%{_bindir}/qemu-x86_64
+%if !%{with_x86only}
 %{_bindir}/qemu-alpha
 %{_bindir}/qemu-arm
 %{_bindir}/qemu-armeb
 %{_bindir}/qemu-cris
-%{_bindir}/qemu-i386
-%{_bindir}/qemu-x86_64
 %{_bindir}/qemu-m68k
 %{_bindir}/qemu-mips
 %{_bindir}/qemu-mipsel
@@ -531,6 +554,7 @@ fi
 %{_bindir}/qemu-sparc
 %{_bindir}/qemu-sparc64
 %{_bindir}/qemu-sparc32plus
+%endif
 %files system-x86
 %defattr(-,root,root)
 %{_bindir}/qemu
@@ -557,6 +581,7 @@ fi
 %{_bindir}/kvmtrace_format
 %{_bindir}/kvm_stat
 %endif
+%if !%{with_x86only}
 %files system-sparc
 %defattr(-,root,root)
 %{_bindir}/qemu-system-sparc
@@ -590,6 +615,7 @@ fi
 %defattr(-,root,root)
 %{_bindir}/qemu-system-sh4
 %{_bindir}/qemu-system-sh4eb
+%endif
 
 %files img
 %defattr(-,root,root)
@@ -598,6 +624,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Mar 09 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.3-2
+- Allow builds --with x86only
+- Add libaio-devel buildreq for aio support
+
 * Fri Feb 26 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.3-1
 - Update to 0.12.3 upstream
 - vhost-net migration/restart fixes
