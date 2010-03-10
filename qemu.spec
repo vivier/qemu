@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.12.3
-Release: 2%{?dist}
+Release: 3%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -82,6 +82,7 @@ Patch45: 0045-pc-Add-a-Fedora-13-machine-type-that-contains-backpo.patch
 Patch46: 0046-pc-Add-backward-compatibility-options-for-virtio-ser.patch
 Patch47: 0047-virtio-serial-don-t-set-MULTIPORT-for-1-port-dev.patch
 Patch48: 0048-virtio-serial-pci-Allow-MSI-to-be-disabled.patch
+Patch49: 0049-migration-Clear-fd-also-in-error-cases.patch
 
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -322,6 +323,7 @@ such as kvmtrace and kvm_stat.
 %patch46 -p1
 %patch47 -p1
 %patch48 -p1
+%patch49 -p1
 
 %build
 # By default we build everything, but allow x86 to build a minimal version
@@ -624,6 +626,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Mar 10 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.3-3
+- Migration clear the fd in error cases (#518032)
+
 * Tue Mar 09 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.3-2
 - Allow builds --with x86only
 - Add libaio-devel buildreq for aio support
