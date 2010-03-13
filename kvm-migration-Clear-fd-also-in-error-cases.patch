@@ -1,0 +1,120 @@
+From f355244f934657a17071a6b1d69e7e320b669659 Mon Sep 17 00:00:00 2001
+From: Juan Quintela <quintela@redhat.com>
+Date: Tue, 9 Mar 2010 23:31:45 -0300
+Subject: [PATCH 42/42] migration: Clear fd also in error cases
+
+RH-Author: Juan Quintela <quintela@redhat.com>
+Message-id: <1268177505-18870-1-git-send-email-quintela@redhat.com>
+Patchwork-id: 7618
+O-Subject: [PATCH] migration: Clear fd also in error cases
+Bugzilla: 570174
+RH-Acked-by: Zachary Amsden <zamsden@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Not clearing the fd and closing the file makes qemu spin using 100%CPU
+after incoming migration error.
+
+See for instance bug:
+https://bugzilla.redhat.com/show_bug.cgi?id=518032
+bugzilla: 570174
+
+Signed-off-by: Juan Quintela <quintela@redhat.com>
+---
+ migration-exec.c |    4 ++--
+ migration-fd.c   |    4 ++--
+ migration-tcp.c  |    5 ++---
+ migration-unix.c |    5 ++---
+ 4 files changed, 8 insertions(+), 10 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ migration-exec.c |    4 ++--
+ migration-fd.c   |    4 ++--
+ migration-tcp.c  |    5 ++---
+ migration-unix.c |    5 ++---
+ 4 files changed, 8 insertions(+), 10 deletions(-)
+
+diff --git a/migration-exec.c b/migration-exec.c
+index 87f645b..c5d3c53 100644
+--- a/migration-exec.c
++++ b/migration-exec.c
+@@ -120,12 +120,12 @@ static void exec_accept_incoming_migration(void *opaque)
+     }
+     qemu_announce_self();
+     dprintf("successfully loaded vm state\n");
+-    /* we've successfully migrated, close the fd */
+-    qemu_set_fd_handler2(qemu_stdio_fd(f), NULL, NULL, NULL, NULL);
++
+     if (autostart)
+         vm_start();
+ 
+ err:
++    qemu_set_fd_handler2(qemu_stdio_fd(f), NULL, NULL, NULL, NULL);
+     qemu_fclose(f);
+ }
+ 
+diff --git a/migration-fd.c b/migration-fd.c
+index ef7edbc..d28c809 100644
+--- a/migration-fd.c
++++ b/migration-fd.c
+@@ -113,12 +113,12 @@ static void fd_accept_incoming_migration(void *opaque)
+     }
+     qemu_announce_self();
+     dprintf("successfully loaded vm state\n");
+-    /* we've successfully migrated, close the fd */
+-    qemu_set_fd_handler2(qemu_stdio_fd(f), NULL, NULL, NULL, NULL);
++
+     if (autostart)
+         vm_start();
+ 
+ err:
++    qemu_set_fd_handler2(qemu_stdio_fd(f), NULL, NULL, NULL, NULL);
+     qemu_fclose(f);
+ }
+ 
+diff --git a/migration-tcp.c b/migration-tcp.c
+index 2cfa8cb..c328e73 100644
+--- a/migration-tcp.c
++++ b/migration-tcp.c
+@@ -170,15 +170,14 @@ static void tcp_accept_incoming_migration(void *opaque)
+     qemu_announce_self();
+     dprintf("successfully loaded vm state\n");
+ 
+-    /* we've successfully migrated, close the server socket */
+-    qemu_set_fd_handler2(s, NULL, NULL, NULL, NULL);
+-    close(s);
+     if (autostart)
+         vm_start();
+ 
+ out_fopen:
+     qemu_fclose(f);
+ out:
++    qemu_set_fd_handler2(s, NULL, NULL, NULL, NULL);
++    close(s);
+     close(c);
+ }
+ 
+diff --git a/migration-unix.c b/migration-unix.c
+index a141dbb..9685c4b 100644
+--- a/migration-unix.c
++++ b/migration-unix.c
+@@ -176,13 +176,12 @@ static void unix_accept_incoming_migration(void *opaque)
+     qemu_announce_self();
+     dprintf("successfully loaded vm state\n");
+ 
+-    /* we've successfully migrated, close the server socket */
+-    qemu_set_fd_handler2(s, NULL, NULL, NULL, NULL);
+-    close(s);
+ 
+ out_fopen:
+     qemu_fclose(f);
+ out:
++    qemu_set_fd_handler2(s, NULL, NULL, NULL, NULL);
++    close(s);
+     close(c);
+ }
+ 
+-- 
+1.6.3.rc4.29.g8146
+

@@ -1,0 +1,55 @@
+From f60257d6debbc3e241c99b511c0fa3dcb6d99fcd Mon Sep 17 00:00:00 2001
+From: Juan Quintela <quintela@redhat.com>
+Date: Thu, 4 Mar 2010 23:11:28 -0300
+Subject: [PATCH 06/42] block.c: fix warning with _FORTIFY_SOURCE
+
+RH-Author: Juan Quintela <quintela@redhat.com>
+Message-id: <733691e6d52f0e4dccf5416f767412cf1af85b9b.1267743950.git.quintela@redhat.com>
+Patchwork-id: 7534
+O-Subject: [PATCH 06/32] block.c: fix warning with _FORTIFY_SOURCE
+Bugzilla: 567099
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+From: Kirill A. Shutemov <kirill@shutemov.name>
+
+CC    block.o
+cc1: warnings being treated as errors
+block.c: In function 'bdrv_open2':
+block.c:400: error: ignoring return value of 'realpath', declared with attribute warn_unused_result
+
+Signed-off-by: Kirill A. Shutemov <kirill@shutemov.name>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+(cherry picked from commit 114cdfa908520ccc624fc8e5409252dc6e980f8a)
+
+aio_signal_handler() don't exist anymore, dropping that chunk.
+
+Signed-off-by: Juan Quintela <quintela@redhat.com>
+---
+ block.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/block.c b/block.c
+index 9d50e7a..74a0e46 100644
+--- a/block.c
++++ b/block.c
+@@ -396,8 +396,8 @@ int bdrv_open2(BlockDriverState *bs, const char *filename, int flags,
+         if (is_protocol)
+             snprintf(backing_filename, sizeof(backing_filename),
+                      "%s", filename);
+-        else
+-            realpath(filename, backing_filename);
++        else if (!realpath(filename, backing_filename))
++            return -errno;
+ 
+         bdrv_qcow2 = bdrv_find_format("qcow2");
+         options = parse_option_parameters("", bdrv_qcow2->create_options, NULL);
+-- 
+1.6.3.rc4.29.g8146
+

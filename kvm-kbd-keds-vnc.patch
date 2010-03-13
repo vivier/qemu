@@ -1,0 +1,111 @@
+From fa5f2801c4eca5dd426ab72f1e5e7862f984b385 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Tue, 2 Mar 2010 11:53:37 -0300
+Subject: [PATCH 41/42] kbd keds: vnc
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1267530817-20015-5-git-send-email-kraxel@redhat.com>
+Patchwork-id: 7392
+O-Subject: [RHEL-6 kvm PATCH 4/4] kbd keds: vnc
+Bugzilla: 569767
+RH-Acked-by: Zachary Amsden <zamsden@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+Use led status notification support in vnc.
+
+The qemu vnc server keeps track of the capslock and numlock states based
+on the key presses it receives from the vnc client.  But this fails in
+case the guests idea of the capslock and numlock state changes for other
+reasons.  One case is guest reboot (+ keyboard reset).  Another case are
+more recent windows versions which reset capslock state before
+presenting the login screen.
+
+Usually guests use the keyboard leds to signal the capslock and numlock
+state to the user, so we can use this to better keep track of capslock
+and numlock state in the qemu vnc server.
+
+Also toggle the numlock and capslock states on keydown events (instead
+of keyup).  Guests do the same.
+
+upstream: submitted: http://patchwork.ozlabs.org/patch/46355/
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ vnc.c |   20 +++++++++++++++++++-
+ vnc.h |    1 +
+ 2 files changed, 20 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vnc.c |   20 +++++++++++++++++++-
+ vnc.h |    1 +
+ 2 files changed, 20 insertions(+), 1 deletions(-)
+
+diff --git a/vnc.c b/vnc.c
+index 2cc4b7c..94d0d3b 100644
+--- a/vnc.c
++++ b/vnc.c
+@@ -1124,6 +1124,7 @@ static void vnc_disconnect_finish(VncState *vs)
+         dcl->idle = 1;
+ 
+     vnc_remove_timer(vs->vd);
++    qemu_remove_led_event_handler(vs->led);
+     qemu_free(vs);
+ }
+ 
+@@ -1509,6 +1510,22 @@ static void press_key(VncState *vs, int keysym)
+     kbd_put_keycode(keysym2scancode(vs->vd->kbd_layout, keysym) | 0x80);
+ }
+ 
++static void kbd_leds(void *opaque, int ledstate)
++{
++    VncState *vs = opaque;
++    int caps, num;
++
++    caps = ledstate & QEMU_CAPS_LOCK_LED ? 1 : 0;
++    num  = ledstate & QEMU_NUM_LOCK_LED  ? 1 : 0;
++
++    if (vs->modifiers_state[0x3a] != caps) {
++        vs->modifiers_state[0x3a] = caps;
++    }
++    if (vs->modifiers_state[0x45] != num) {
++        vs->modifiers_state[0x45] = num;
++    }
++}
++
+ static void do_key_event(VncState *vs, int down, int keycode, int sym)
+ {
+     /* QEMU console switch */
+@@ -1534,7 +1551,7 @@ static void do_key_event(VncState *vs, int down, int keycode, int sym)
+         break;
+     case 0x3a:                        /* CapsLock */
+     case 0x45:                        /* NumLock */
+-        if (!down)
++        if (down)
+             vs->modifiers_state[keycode] ^= 1;
+         break;
+     }
+@@ -2426,6 +2443,7 @@ static void vnc_connect(VncDisplay *vd, int csock)
+     vnc_flush(vs);
+     vnc_read_when(vs, protocol_version, 12);
+     reset_keys(vs);
++    vs->led = qemu_add_led_event_handler(kbd_leds, vs);
+ 
+     vnc_init_timer(vd);
+ 
+diff --git a/vnc.h b/vnc.h
+index 1210824..5b8bd5c 100644
+--- a/vnc.h
++++ b/vnc.h
+@@ -160,6 +160,7 @@ struct VncState
+     size_t read_handler_expect;
+     /* input */
+     uint8_t modifiers_state[256];
++    QEMUPutLEDEntry *led;
+ 
+     Buffer zlib;
+     Buffer zlib_tmp;
+-- 
+1.6.3.rc4.29.g8146
+

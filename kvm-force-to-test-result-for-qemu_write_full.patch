@@ -1,0 +1,45 @@
+From 2cb0d237ce0cec9ae9d7f28c9ae36e9d40b55134 Mon Sep 17 00:00:00 2001
+From: Juan Quintela <quintela@redhat.com>
+Date: Thu, 4 Mar 2010 23:11:30 -0300
+Subject: [PATCH 08/42] force to test result for qemu_write_full()
+
+RH-Author: Juan Quintela <quintela@redhat.com>
+Message-id: <aa5ece9ade84d0480627999f86b6b9d6ad014890.1267743950.git.quintela@redhat.com>
+Patchwork-id: 7536
+O-Subject: [PATCH 08/32] force to test result for qemu_write_full()
+Bugzilla: 567099
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+Signed-off-by: Juan Quintela <quintela@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 7c7c0629a3391691e76cb2b488bb6d461edc9648)
+
+Signed-off-by: Juan Quintela <quintela@redhat.com>
+---
+ qemu-common.h |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-common.h |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-common.h b/qemu-common.h
+index 6519ff6..bf14a22 100644
+--- a/qemu-common.h
++++ b/qemu-common.h
+@@ -165,7 +165,8 @@ void qemu_mutex_lock_iothread(void);
+ void qemu_mutex_unlock_iothread(void);
+ 
+ int qemu_open(const char *name, int flags, ...);
+-ssize_t qemu_write_full(int fd, const void *buf, size_t count);
++ssize_t qemu_write_full(int fd, const void *buf, size_t count)
++    QEMU_WARN_UNUSED_RESULT;
+ void qemu_set_cloexec(int fd);
+ 
+ #ifndef _WIN32
+-- 
+1.6.3.rc4.29.g8146
+

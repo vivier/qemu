@@ -1,0 +1,133 @@
+From 4daa53d81549e65171cba6ba541c7484f2ad01c7 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Tue, 2 Mar 2010 11:53:34 -0300
+Subject: [PATCH 38/42] kbd leds: infrastructure
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1267530817-20015-2-git-send-email-kraxel@redhat.com>
+Patchwork-id: 7390
+O-Subject: [RHEL-6 kvm PATCH 1/4] kbd leds: infrastructure
+Bugzilla: 569767
+RH-Acked-by: Zachary Amsden <zamsden@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+Adds infrastructure for keyboard led status tracking to qemu.
+
+upstream: submitted: http://patchwork.ozlabs.org/patch/46357/
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ console.h |   15 +++++++++++++++
+ vl.c      |   31 +++++++++++++++++++++++++++++++
+ 2 files changed, 46 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ console.h |   15 +++++++++++++++
+ vl.c      |   31 +++++++++++++++++++++++++++++++
+ 2 files changed, 46 insertions(+), 0 deletions(-)
+
+diff --git a/console.h b/console.h
+index dfc8ae4..d9027f8 100644
+--- a/console.h
++++ b/console.h
+@@ -10,10 +10,16 @@
+ #define MOUSE_EVENT_RBUTTON 0x02
+ #define MOUSE_EVENT_MBUTTON 0x04
+ 
++/* identical to the ps/2 keyboard bits */
++#define QEMU_SCROLL_LOCK_LED (1 << 0)
++#define QEMU_NUM_LOCK_LED    (1 << 1)
++#define QEMU_CAPS_LOCK_LED   (1 << 2)
++
+ /* in ms */
+ #define GUI_REFRESH_INTERVAL 30
+ 
+ typedef void QEMUPutKBDEvent(void *opaque, int keycode);
++typedef void QEMUPutLEDEvent(void *opaque, int ledstate);
+ typedef void QEMUPutMouseEvent(void *opaque, int dx, int dy, int dz, int buttons_state);
+ 
+ typedef struct QEMUPutMouseEntry {
+@@ -26,13 +32,22 @@ typedef struct QEMUPutMouseEntry {
+     struct QEMUPutMouseEntry *next;
+ } QEMUPutMouseEntry;
+ 
++typedef struct QEMUPutLEDEntry {
++    QEMUPutLEDEvent *put_led;
++    void *opaque;
++    QTAILQ_ENTRY(QEMUPutLEDEntry) next;
++} QEMUPutLEDEntry;
++
+ void qemu_add_kbd_event_handler(QEMUPutKBDEvent *func, void *opaque);
+ QEMUPutMouseEntry *qemu_add_mouse_event_handler(QEMUPutMouseEvent *func,
+                                                 void *opaque, int absolute,
+                                                 const char *name);
+ void qemu_remove_mouse_event_handler(QEMUPutMouseEntry *entry);
++QEMUPutLEDEntry *qemu_add_led_event_handler(QEMUPutLEDEvent *func, void *opaque);
++void qemu_remove_led_event_handler(QEMUPutLEDEntry *entry);
+ 
+ void kbd_put_keycode(int keycode);
++void kbd_put_ledstate(int ledstate);
+ void kbd_mouse_event(int dx, int dy, int dz, int buttons_state);
+ int kbd_mouse_is_absolute(void);
+ 
+diff --git a/vl.c b/vl.c
+index a433f40..33c6563 100644
+--- a/vl.c
++++ b/vl.c
+@@ -399,6 +399,7 @@ static QEMUPutKBDEvent *qemu_put_kbd_event;
+ static void *qemu_put_kbd_event_opaque;
+ static QEMUPutMouseEntry *qemu_put_mouse_event_head;
+ static QEMUPutMouseEntry *qemu_put_mouse_event_current;
++static QTAILQ_HEAD(, QEMUPutLEDEntry) led_handlers = QTAILQ_HEAD_INITIALIZER(led_handlers);
+ 
+ void qemu_add_kbd_event_handler(QEMUPutKBDEvent *func, void *opaque)
+ {
+@@ -468,6 +469,27 @@ void qemu_remove_mouse_event_handler(QEMUPutMouseEntry *entry)
+     qemu_free(entry);
+ }
+ 
++QEMUPutLEDEntry *qemu_add_led_event_handler(QEMUPutLEDEvent *func,
++                                            void *opaque)
++{
++    QEMUPutLEDEntry *s;
++
++    s = qemu_mallocz(sizeof(QEMUPutLEDEntry));
++
++    s->put_led = func;
++    s->opaque = opaque;
++    QTAILQ_INSERT_TAIL(&led_handlers, s, next);
++    return s;
++}
++
++void qemu_remove_led_event_handler(QEMUPutLEDEntry *entry)
++{
++    if (entry == NULL)
++        return;
++    QTAILQ_REMOVE(&led_handlers, entry, next);
++    qemu_free(entry);
++}
++
+ void kbd_put_keycode(int keycode)
+ {
+     if (qemu_put_kbd_event) {
+@@ -475,6 +497,15 @@ void kbd_put_keycode(int keycode)
+     }
+ }
+ 
++void kbd_put_ledstate(int ledstate)
++{
++    QEMUPutLEDEntry *cursor;
++
++    QTAILQ_FOREACH(cursor, &led_handlers, next) {
++        cursor->put_led(cursor->opaque, ledstate);
++    }
++}
++
+ void kbd_mouse_event(int dx, int dy, int dz, int buttons_state)
+ {
+     QEMUPutMouseEvent *mouse_event;
+-- 
+1.6.3.rc4.29.g8146
+

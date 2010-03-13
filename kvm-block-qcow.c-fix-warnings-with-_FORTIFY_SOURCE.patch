@@ -1,0 +1,93 @@
+From a1314e98f0b2fdbcfd5f489b020da35ace815683 Mon Sep 17 00:00:00 2001
+From: Juan Quintela <quintela@redhat.com>
+Date: Thu, 4 Mar 2010 23:11:32 -0300
+Subject: [PATCH 10/42] block/qcow.c: fix warnings with _FORTIFY_SOURCE
+
+RH-Author: Juan Quintela <quintela@redhat.com>
+Message-id: <1776c7e6a832763ec190080ad765416dbac7003d.1267743950.git.quintela@redhat.com>
+Patchwork-id: 7538
+O-Subject: [PATCH 10/32] block/qcow.c: fix warnings with _FORTIFY_SOURCE
+Bugzilla: 567099
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+From: Kirill A. Shutemov <kirill@shutemov.name>
+
+CC    block/qcow.o
+cc1: warnings being treated as errors
+block/qcow.c: In function 'qcow_create':
+block/qcow.c:804: error: ignoring return value of 'write', declared with attribute warn_unused_result
+block/qcow.c:806: error: ignoring return value of 'write', declared with attribute warn_unused_result
+block/qcow.c:811: error: ignoring return value of 'write', declared with attribute warn_unused_result
+make: *** [block/qcow.o] Error 1
+
+Signed-off-by: Kirill A. Shutemov <kirill@shutemov.name>
+Signed-off-by: Juan Quintela <quintela@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 3e1a8134be5cd84793c4eef69227462bd6906117)
+
+Signed-off-by: Juan Quintela <quintela@redhat.com>
+---
+ block/qcow.c |   26 ++++++++++++++++++++++----
+ 1 files changed, 22 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow.c |   26 ++++++++++++++++++++++----
+ 1 files changed, 22 insertions(+), 4 deletions(-)
+
+diff --git a/block/qcow.c b/block/qcow.c
+index 7fc85ae..0ac83c8 100644
+--- a/block/qcow.c
++++ b/block/qcow.c
+@@ -750,6 +750,7 @@ static int qcow_create(const char *filename, QEMUOptionParameter *options)
+     int64_t total_size = 0;
+     const char *backing_file = NULL;
+     int flags = 0;
++    int ret;
+ 
+     /* Read out options */
+     while (options && options->name) {
+@@ -801,17 +802,34 @@ static int qcow_create(const char *filename, QEMUOptionParameter *options)
+     }
+ 
+     /* write all the data */
+-    write(fd, &header, sizeof(header));
++    ret = qemu_write_full(fd, &header, sizeof(header));
++    if (ret != sizeof(header)) {
++        ret = -1;
++        goto exit;
++    }
++
+     if (backing_file) {
+-        write(fd, backing_file, backing_filename_len);
++        ret = qemu_write_full(fd, backing_file, backing_filename_len);
++        if (ret != backing_filename_len) {
++            ret = -1;
++            goto exit;
++        }
++
+     }
+     lseek(fd, header_size, SEEK_SET);
+     tmp = 0;
+     for(i = 0;i < l1_size; i++) {
+-        write(fd, &tmp, sizeof(tmp));
++        ret = qemu_write_full(fd, &tmp, sizeof(tmp));
++        if (ret != sizeof(tmp)) {
++            ret = -1;
++            goto exit;
++        }
+     }
++
++    ret = 0;
++exit:
+     close(fd);
+-    return 0;
++    return ret;
+ }
+ 
+ static int qcow_make_empty(BlockDriverState *bs)
+-- 
+1.6.3.rc4.29.g8146
+

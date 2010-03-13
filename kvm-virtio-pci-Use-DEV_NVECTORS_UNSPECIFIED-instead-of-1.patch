@@ -1,0 +1,59 @@
+From 3c70c9486b6360c79c0f441825644cd762dfc036 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Mon, 8 Mar 2010 05:20:51 -0300
+Subject: [PATCH 37/42] virtio-pci: Use DEV_NVECTORS_UNSPECIFIED instead of -1 for virtio-serial
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1268025651-8316-6-git-send-email-amit.shah@redhat.com>
+Patchwork-id: 7590
+O-Subject: [RHEL6 PATCH v2 5/5] virtio-pci: Use DEV_NVECTORS_UNSPECIFIED instead
+	of -1 for virtio-serial
+Bugzilla: 567035
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+
+Use the named constant instead of -1.
+
+Upstream status: Submitted
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Reported-by: "Michael S. Tsirkin" <mst@redhat.com>
+---
+ hw/virtio-pci.c |    8 +++++---
+ 1 files changed, 5 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-pci.c |    8 +++++---
+ 1 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index 4edd8ab..753be1e 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -499,8 +499,9 @@ static int virtio_serial_init_pci(PCIDevice *pci_dev)
+     if (!vdev) {
+         return -1;
+     }
+-    vdev->nvectors = proxy->nvectors == -1 ? proxy->max_virtserial_ports + 1
+-                                           : proxy->nvectors;
++    vdev->nvectors = proxy->nvectors == DEV_NVECTORS_UNSPECIFIED
++                                        ? proxy->max_virtserial_ports + 1
++                                        : proxy->nvectors;
+     virtio_init_pci(proxy, vdev,
+                     PCI_VENDOR_ID_REDHAT_QUMRANET,
+                     PCI_DEVICE_ID_VIRTIO_CONSOLE,
+@@ -584,7 +585,8 @@ static PCIDeviceInfo virtio_info[] = {
+         .init      = virtio_serial_init_pci,
+         .exit      = virtio_exit_pci,
+         .qdev.props = (Property[]) {
+-            DEFINE_PROP_UINT32("vectors", VirtIOPCIProxy, nvectors, -1),
++            DEFINE_PROP_UINT32("vectors", VirtIOPCIProxy, nvectors,
++                               DEV_NVECTORS_UNSPECIFIED),
+             DEFINE_PROP_HEX32("class", VirtIOPCIProxy, class_code, 0),
+             DEFINE_PROP_UINT32("max_ports", VirtIOPCIProxy, max_virtserial_ports,
+                                31),
+-- 
+1.6.3.rc4.29.g8146
+

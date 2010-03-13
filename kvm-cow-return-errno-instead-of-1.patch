@@ -1,0 +1,59 @@
+From 069e50a24357ca8dacf6010933b8e29462efc815 Mon Sep 17 00:00:00 2001
+From: Juan Quintela <quintela@redhat.com>
+Date: Thu, 4 Mar 2010 23:11:45 -0300
+Subject: [PATCH 23/42] cow: return errno instead of -1
+
+RH-Author: Juan Quintela <quintela@redhat.com>
+Message-id: <b4ad50eb4deec485c11de5b111ba58c7f28faab4.1267743950.git.quintela@redhat.com>
+Patchwork-id: 7553
+O-Subject: [PATCH 23/32] cow: return errno instead of -1
+Bugzilla: 567099
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+Remove not needed ret = 0 assignment.
+
+Signed-off-by: Juan Quintela <quintela@redhat.com>
+---
+ block/cow.c |    5 ++---
+ 1 files changed, 2 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/cow.c |    5 ++---
+ 1 files changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/block/cow.c b/block/cow.c
+index 3733385..97e9745 100644
+--- a/block/cow.c
++++ b/block/cow.c
+@@ -224,7 +224,7 @@ static int cow_create(const char *filename, QEMUOptionParameter *options)
+     cow_fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY,
+               0644);
+     if (cow_fd < 0)
+-        return -1;
++        return -errno;
+     memset(&cow_header, 0, sizeof(cow_header));
+     cow_header.magic = cpu_to_be32(COW_MAGIC);
+     cow_header.version = cpu_to_be32(COW_VERSION);
+@@ -251,7 +251,7 @@ static int cow_create(const char *filename, QEMUOptionParameter *options)
+     cow_header.size = cpu_to_be64(image_sectors * 512);
+     ret = qemu_write_full(cow_fd, &cow_header, sizeof(cow_header));
+     if (ret != sizeof(cow_header)) {
+-        ret = -1;
++        ret = -errno;
+         goto exit;
+     }
+ 
+@@ -262,7 +262,6 @@ static int cow_create(const char *filename, QEMUOptionParameter *options)
+         goto exit;
+     }
+ 
+-    ret = 0;
+ exit:
+     close(cow_fd);
+     return ret;
+-- 
+1.6.3.rc4.29.g8146
+

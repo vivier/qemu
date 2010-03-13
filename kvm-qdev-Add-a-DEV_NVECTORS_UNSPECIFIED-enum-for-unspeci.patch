@@ -1,0 +1,106 @@
+From 6fa71e9e6c2e33fcd046408d880152e59e28dbae Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Mon, 8 Mar 2010 05:20:50 -0300
+Subject: [PATCH 36/42] qdev: Add a DEV_NVECTORS_UNSPECIFIED enum for unspecified nr of MSI vectors
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1268025651-8316-5-git-send-email-amit.shah@redhat.com>
+Patchwork-id: 7589
+O-Subject: [RHEL6 PATCH v2 4/5] qdev: Add a DEV_NVECTORS_UNSPECIFIED enum for
+	unspecified nr of MSI vectors
+Bugzilla: 567035
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+
+net.c used a constant to signify no MSI vectors were specified. Extend
+that to all qdev devices.
+
+Upstream status: Submitted
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Reported-by: "Michael S. Tsirkin" <mst@redhat.com>
+---
+ hw/qdev.c |    2 +-
+ hw/qdev.h |    4 ++++
+ net.c     |    6 ++++--
+ net.h     |    3 ---
+ 4 files changed, 9 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qdev.c |    2 +-
+ hw/qdev.h |    4 ++++
+ net.c     |    6 ++++--
+ net.h     |    3 ---
+ 4 files changed, 9 insertions(+), 6 deletions(-)
+
+diff --git a/hw/qdev.c b/hw/qdev.c
+index c643576..e035dfc 100644
+--- a/hw/qdev.c
++++ b/hw/qdev.c
+@@ -364,7 +364,7 @@ void qdev_set_nic_properties(DeviceState *dev, NICInfo *nd)
+         qdev_prop_set_vlan(dev, "vlan", nd->vlan);
+     if (nd->netdev)
+         qdev_prop_set_netdev(dev, "netdev", nd->netdev);
+-    if (nd->nvectors != NIC_NVECTORS_UNSPECIFIED &&
++    if (nd->nvectors != DEV_NVECTORS_UNSPECIFIED &&
+         qdev_prop_exists(dev, "vectors")) {
+         qdev_prop_set_uint32(dev, "vectors", nd->nvectors);
+     }
+diff --git a/hw/qdev.h b/hw/qdev.h
+index 07b9603..9277419 100644
+--- a/hw/qdev.h
++++ b/hw/qdev.h
+@@ -24,6 +24,10 @@ enum DevState {
+     DEV_STATE_INITIALIZED,
+ };
+ 
++enum {
++    DEV_NVECTORS_UNSPECIFIED = -1,
++};
++
+ /* This structure should not be accessed directly.  We declare it here
+    so that it can be embedded in individual device state structures.  */
+ struct DeviceState {
+diff --git a/net.c b/net.c
+index 6ef93e6..c50c5ff 100644
+--- a/net.c
++++ b/net.c
+@@ -35,6 +35,7 @@
+ #include "sysemu.h"
+ #include "qemu-common.h"
+ #include "qemu_socket.h"
++#include "hw/qdev.h"
+ 
+ static QTAILQ_HEAD(, VLANState) vlans;
+ static QTAILQ_HEAD(, VLANClientState) non_vlan_clients;
+@@ -804,8 +805,9 @@ static int net_init_nic(QemuOpts *opts,
+         return -1;
+     }
+ 
+-    nd->nvectors = qemu_opt_get_number(opts, "vectors", NIC_NVECTORS_UNSPECIFIED);
+-    if (nd->nvectors != NIC_NVECTORS_UNSPECIFIED &&
++    nd->nvectors = qemu_opt_get_number(opts, "vectors",
++                                       DEV_NVECTORS_UNSPECIFIED);
++    if (nd->nvectors != DEV_NVECTORS_UNSPECIFIED &&
+         (nd->nvectors < 0 || nd->nvectors > 0x7ffffff)) {
+         qemu_error("invalid # of vectors: %d\n", nd->nvectors);
+         return -1;
+diff --git a/net.h b/net.h
+index 116bb80..06364df 100644
+--- a/net.h
++++ b/net.h
+@@ -124,9 +124,6 @@ void do_set_link(Monitor *mon, const QDict *qdict);
+ /* NIC info */
+ 
+ #define MAX_NICS 8
+-enum {
+-	NIC_NVECTORS_UNSPECIFIED = -1
+-};
+ 
+ struct NICInfo {
+     uint8_t macaddr[6];
+-- 
+1.6.3.rc4.29.g8146
+

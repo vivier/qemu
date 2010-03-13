@@ -1,0 +1,56 @@
+From 601c9e539a5ff8d4a79bd80f5f7b014c3c76009e Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Tue, 2 Mar 2010 11:53:36 -0300
+Subject: [PATCH 40/42] kbd leds: usb kbd
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1267530817-20015-4-git-send-email-kraxel@redhat.com>
+Patchwork-id: 7388
+O-Subject: [RHEL-6 kvm PATCH 3/4] kbd leds: usb kbd
+Bugzilla: 569767
+RH-Acked-by: Zachary Amsden <zamsden@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+Add led status notification support to the usb kbd driver.
+
+upstream: submitted: http://patchwork.ozlabs.org/patch/46356/
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/usb-hid.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-hid.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/hw/usb-hid.c b/hw/usb-hid.c
+index 6abb629..e67dac9 100644
+--- a/hw/usb-hid.c
++++ b/hw/usb-hid.c
+@@ -599,12 +599,20 @@ static int usb_keyboard_poll(USBKeyboardState *s, uint8_t *buf, int len)
+ static int usb_keyboard_write(USBKeyboardState *s, uint8_t *buf, int len)
+ {
+     if (len > 0) {
++        int ledstate = 0;
+         /* 0x01: Num Lock LED
+          * 0x02: Caps Lock LED
+          * 0x04: Scroll Lock LED
+          * 0x08: Compose LED
+          * 0x10: Kana LED */
+         s->leds = buf[0];
++        if (s->leds & 0x04)
++            ledstate |= QEMU_SCROLL_LOCK_LED;
++        if (s->leds & 0x01)
++            ledstate |= QEMU_NUM_LOCK_LED;
++        if (s->leds & 0x02)
++            ledstate |= QEMU_CAPS_LOCK_LED;
++        kbd_put_ledstate(ledstate);
+     }
+     return 0;
+ }
+-- 
+1.6.3.rc4.29.g8146
+

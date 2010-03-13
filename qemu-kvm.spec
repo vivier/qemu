@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.23%{?dist}
+Release: 2.24%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -208,6 +208,90 @@ Patch1089: kvm-ide-device-version-property.patch
 Patch1090: kvm-pc-add-driver-version-compat-properties.patch
 # For bz#567602 - qemu-img rebase subcommand got Segmentation fault
 Patch1091: kvm-qemu-img-Fix-segfault-during-rebase.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1092: kvm-path.c-fix-warning-with-_FORTIFY_SOURCE.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1093: kvm-hw-pc.c-fix-warnings-with-_FORTIFY_SOURCE.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1094: kvm-slirp-misc.c-fix-warning-with-_FORTIFY_SOURCE.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1095: kvm-savevm.c-fix-warning-with-_FORTIFY_SOURCE.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1096: kvm-block-bochs.c-fix-warning-with-_FORTIFY_SOURCE.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1097: kvm-block.c-fix-warning-with-_FORTIFY_SOURCE.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1098: kvm-Introduce-qemu_write_full.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1099: kvm-force-to-test-result-for-qemu_write_full.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1100: kvm-block-cow.c-fix-warnings-with-_FORTIFY_SOURCE.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1101: kvm-block-qcow.c-fix-warnings-with-_FORTIFY_SOURCE.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1102: kvm-block-vmdk.o-fix-warnings-with-_FORTIFY_SOURCE.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1103: kvm-block-vvfat.c-fix-warnings-with-_FORTIFY_SOURCE.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1104: kvm-block-qcow2.c-fix-warnings-with-_FORTIFY_SOURCE.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1105: kvm-net-slirp.c-fix-warning-with-_FORTIFY_SOURCE.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1106: kvm-usb-linux.c-fix-warning-with-_FORTIFY_SOURCE.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1107: kvm-vl.c-fix-warning-with-_FORTIFY_SOURCE.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1108: kvm-monitor.c-fix-warnings-with-_FORTIFY_SOURCE.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1109: kvm-linux-user-mmap.c-fix-warnings-with-_FORTIFY_SOURCE.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1110: kvm-check-pipe-return-value.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1111: kvm-fix-qemu-kvm-_FORTIFY_SOURCE-compilation.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1112: kvm-Enable-_FORTIFY_SOURCE-2.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1113: kvm-qcow2-Fix-image-creation-regression.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1114: kvm-cow-return-errno-instead-of-1.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1115: kvm-slirp-check-system-success.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1116: kvm-qcow2-return-errno-instead-of-1.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1117: kvm-qcow-return-errno-instead-of-1.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1118: kvm-vmdk-return-errno-instead-of-1.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1119: kvm-vmdk-make-vmdk_snapshot_create-return-errno.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1120: kvm-vmdk-fix-double-free.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1121: kvm-vmdk-share-cleanup-code.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1122: kvm-block-print-errno-on-error.patch
+# For bz#567099 - Allow _FORTIFY_SOURCE=2 & --enable-warning
+Patch1123: kvm-documentation-qemu_write_full-don-t-work-with-non-bl.patch
+# For bz#567035 - Backport changes for virtio-serial from upstream: disabling MSI, backward compat.
+Patch1124: kvm-virtio-serial-pci-Allow-MSI-to-be-disabled.patch
+# For bz#567035 - Backport changes for virtio-serial from upstream: disabling MSI, backward compat.
+Patch1125: kvm-pc-Add-backward-compatibility-options-for-virtio-ser.patch
+# For bz#567035 - Backport changes for virtio-serial from upstream: disabling MSI, backward compat.
+Patch1126: kvm-virtio-serial-don-t-set-MULTIPORT-for-1-port-dev.patch
+# For bz#567035 - Backport changes for virtio-serial from upstream: disabling MSI, backward compat.
+Patch1127: kvm-qdev-Add-a-DEV_NVECTORS_UNSPECIFIED-enum-for-unspeci.patch
+# For bz#567035 - Backport changes for virtio-serial from upstream: disabling MSI, backward compat.
+Patch1128: kvm-virtio-pci-Use-DEV_NVECTORS_UNSPECIFIED-instead-of-1.patch
+# For bz#569767 - Caps Lock the key's appearance  of guest is not synchronous as host's --view kvm with vnc
+Patch1129: kvm-kbd-leds-infrastructure.patch
+# For bz#569767 - Caps Lock the key's appearance  of guest is not synchronous as host's --view kvm with vnc
+Patch1130: kvm-kbd-leds-ps-2-kbd.patch
+# For bz#569767 - Caps Lock the key's appearance  of guest is not synchronous as host's --view kvm with vnc
+Patch1131: kvm-kbd-leds-usb-kbd.patch
+# For bz#569767 - Caps Lock the key's appearance  of guest is not synchronous as host's --view kvm with vnc
+Patch1132: kvm-kbd-keds-vnc.patch
+# For bz#570174 - Restoring a qemu guest from a saved state file using -incoming sometimes fails and hangs
+Patch1133: kvm-migration-Clear-fd-also-in-error-cases.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -359,6 +443,48 @@ such as kvmtrace and kvm_stat.
 %patch1089 -p1
 %patch1090 -p1
 %patch1091 -p1
+%patch1092 -p1
+%patch1093 -p1
+%patch1094 -p1
+%patch1095 -p1
+%patch1096 -p1
+%patch1097 -p1
+%patch1098 -p1
+%patch1099 -p1
+%patch1100 -p1
+%patch1101 -p1
+%patch1102 -p1
+%patch1103 -p1
+%patch1104 -p1
+%patch1105 -p1
+%patch1106 -p1
+%patch1107 -p1
+%patch1108 -p1
+%patch1109 -p1
+%patch1110 -p1
+%patch1111 -p1
+%patch1112 -p1
+%patch1113 -p1
+%patch1114 -p1
+%patch1115 -p1
+%patch1116 -p1
+%patch1117 -p1
+%patch1118 -p1
+%patch1119 -p1
+%patch1120 -p1
+%patch1121 -p1
+%patch1122 -p1
+%patch1123 -p1
+%patch1124 -p1
+%patch1125 -p1
+%patch1126 -p1
+%patch1127 -p1
+%patch1128 -p1
+%patch1129 -p1
+%patch1130 -p1
+%patch1131 -p1
+%patch1132 -p1
+%patch1133 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -379,7 +505,7 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
             --block-drv-whitelist=qcow2,raw,host_device,host_cdrom \
             --disable-debug-tcg \
             --disable-sparse \
-            --disable-werror \
+            --enable-werror \
             --disable-sdl \
             --disable-curses \
             --disable-curl \
@@ -552,6 +678,58 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Mar 12 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.24.el6
+- kvm-path.c-fix-warning-with-_FORTIFY_SOURCE.patch [bz#567099]
+- kvm-hw-pc.c-fix-warnings-with-_FORTIFY_SOURCE.patch [bz#567099]
+- kvm-slirp-misc.c-fix-warning-with-_FORTIFY_SOURCE.patch [bz#567099]
+- kvm-savevm.c-fix-warning-with-_FORTIFY_SOURCE.patch [bz#567099]
+- kvm-block-bochs.c-fix-warning-with-_FORTIFY_SOURCE.patch [bz#567099]
+- kvm-block.c-fix-warning-with-_FORTIFY_SOURCE.patch [bz#567099]
+- kvm-Introduce-qemu_write_full.patch [bz#567099]
+- kvm-force-to-test-result-for-qemu_write_full.patch [bz#567099]
+- kvm-block-cow.c-fix-warnings-with-_FORTIFY_SOURCE.patch [bz#567099]
+- kvm-block-qcow.c-fix-warnings-with-_FORTIFY_SOURCE.patch [bz#567099]
+- kvm-block-vmdk.o-fix-warnings-with-_FORTIFY_SOURCE.patch [bz#567099]
+- kvm-block-vvfat.c-fix-warnings-with-_FORTIFY_SOURCE.patch [bz#567099]
+- kvm-block-qcow2.c-fix-warnings-with-_FORTIFY_SOURCE.patch [bz#567099]
+- kvm-net-slirp.c-fix-warning-with-_FORTIFY_SOURCE.patch [bz#567099]
+- kvm-usb-linux.c-fix-warning-with-_FORTIFY_SOURCE.patch [bz#567099]
+- kvm-vl.c-fix-warning-with-_FORTIFY_SOURCE.patch [bz#567099]
+- kvm-monitor.c-fix-warnings-with-_FORTIFY_SOURCE.patch [bz#567099]
+- kvm-linux-user-mmap.c-fix-warnings-with-_FORTIFY_SOURCE.patch [bz#567099]
+- kvm-check-pipe-return-value.patch [bz#567099]
+- kvm-fix-qemu-kvm-_FORTIFY_SOURCE-compilation.patch [bz#567099]
+- kvm-Enable-_FORTIFY_SOURCE-2.patch [bz#567099]
+- kvm-qcow2-Fix-image-creation-regression.patch [bz#567099]
+- kvm-cow-return-errno-instead-of-1.patch [bz#567099]
+- kvm-slirp-check-system-success.patch [bz#567099]
+- kvm-qcow2-return-errno-instead-of-1.patch [bz#567099]
+- kvm-qcow-return-errno-instead-of-1.patch [bz#567099]
+- kvm-vmdk-return-errno-instead-of-1.patch [bz#567099]
+- kvm-vmdk-make-vmdk_snapshot_create-return-errno.patch [bz#567099]
+- kvm-vmdk-fix-double-free.patch [bz#567099]
+- kvm-vmdk-share-cleanup-code.patch [bz#567099]
+- kvm-block-print-errno-on-error.patch [bz#567099]
+- kvm-documentation-qemu_write_full-don-t-work-with-non-bl.patch [bz#567099]
+- kvm-virtio-serial-pci-Allow-MSI-to-be-disabled.patch [bz#567035]
+- kvm-pc-Add-backward-compatibility-options-for-virtio-ser.patch [bz#567035]
+- kvm-virtio-serial-don-t-set-MULTIPORT-for-1-port-dev.patch [bz#567035]
+- kvm-qdev-Add-a-DEV_NVECTORS_UNSPECIFIED-enum-for-unspeci.patch [bz#567035]
+- kvm-virtio-pci-Use-DEV_NVECTORS_UNSPECIFIED-instead-of-1.patch [bz#567035]
+- kvm-kbd-leds-infrastructure.patch [bz#569767]
+- kvm-kbd-leds-ps-2-kbd.patch [bz#569767]
+- kvm-kbd-leds-usb-kbd.patch [bz#569767]
+- kvm-kbd-keds-vnc.patch [bz#569767]
+- kvm-migration-Clear-fd-also-in-error-cases.patch [bz#570174]
+- Resolves: bz#567035
+  (Backport changes for virtio-serial from upstream: disabling MSI, backward compat.)
+- Resolves: bz#567099
+  (Allow _FORTIFY_SOURCE=2 & --enable-warning)
+- Resolves: bz#569767
+  (Caps Lock the key's appearance  of guest is not synchronous as host's --view kvm with vnc)
+- Resolves: bz#570174
+  (Restoring a qemu guest from a saved state file using -incoming sometimes fails and hangs)
+
 * Tue Mar 02 2010 Glauber Costa <glommer@redhat.com> - qemu-kvm-0.12.1.2-2.23.el6
 - kvm-ide-device-version-property.patch [bz#558835]
 - kvm-pc-add-driver-version-compat-properties.patch [bz#558835]

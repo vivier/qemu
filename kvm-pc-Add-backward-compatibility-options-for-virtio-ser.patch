@@ -1,0 +1,104 @@
+From aad5614757e31c3b3b0852a87f4e26ca5f3b33f8 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Mon, 8 Mar 2010 05:20:48 -0300
+Subject: [PATCH 34/42] pc: Add backward compatibility options for virtio-serial
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1268025651-8316-3-git-send-email-amit.shah@redhat.com>
+Patchwork-id: 7587
+O-Subject: [RHEL6 PATCH v2 2/5] pc: Add backward compatibility options for
+	virtio-serial
+Bugzilla: 567035
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+
+virtio-serial-pci can support multiple ports in the current development
+version that will become 0.13. Add compatibility options for the 0.12
+and 0.11 pc machine types.
+
+(For Red Hat EL: Add compat options for older pc types)
+
+Based on upstream commit 8bfbde6d35c82cc376681289dae2de5e18a087a4
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/pc.c |   36 ++++++++++++++++++++++++++++++++++++
+ 1 files changed, 36 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pc.c |   36 ++++++++++++++++++++++++++++++++++++
+ 1 files changed, 36 insertions(+), 0 deletions(-)
+
+diff --git a/hw/pc.c b/hw/pc.c
+index a3bbb2d..4883ebc 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -1339,6 +1339,18 @@ static QEMUMachine pc_machine = {
+     .desc = "Standard PC",
+     .init = pc_init_pci,
+     .max_cpus = 255,
++    .compat_props = (GlobalProperty[]) {
++        {
++            .driver   = "virtio-serial-pci",
++            .property = "max_nr_ports",
++            .value    = stringify(1),
++        },{
++            .driver   = "virtio-serial-pci",
++            .property = "vectors",
++            .value    = stringify(0),
++        },
++        { /* end of list */ }
++    }
+ };
+ 
+ static QEMUMachine pc_machine_v0_11 = {
+@@ -1352,6 +1364,14 @@ static QEMUMachine pc_machine_v0_11 = {
+             .property = "vectors",
+             .value    = stringify(0),
+         },{
++            .driver   = "virtio-serial-pci",
++            .property = "max_nr_ports",
++            .value    = stringify(1),
++        },{
++            .driver   = "virtio-serial-pci",
++            .property = "vectors",
++            .value    = stringify(0),
++        },{
+             .driver   = "PCI",
+             .property = "rombar",
+             .value    = stringify(0),
+@@ -1383,6 +1403,14 @@ static QEMUMachine pc_machine_v0_10 = {
+             .property = "class",
+             .value    = stringify(PCI_CLASS_DISPLAY_OTHER),
+         },{
++            .driver   = "virtio-serial-pci",
++            .property = "max_nr_ports",
++            .value    = stringify(1),
++        },{
++            .driver   = "virtio-serial-pci",
++            .property = "vectors",
++            .value    = stringify(0),
++        },{
+             .driver   = "virtio-net-pci",
+             .property = "vectors",
+             .value    = stringify(0),
+@@ -1445,6 +1473,14 @@ static GlobalProperty compat_rhel5[] = {
+             .property = "vectors",
+             .value    = stringify(0),
+         },{
++            .driver   = "virtio-serial-pci",
++            .property = "max_nr_ports",
++            .value    = stringify(1),
++        },{
++            .driver   = "virtio-serial-pci",
++            .property = "vectors",
++            .value    = stringify(0),
++        },{
+             .driver   = "PCI",
+             .property = "rombar",
+             .value    = stringify(0),
+-- 
+1.6.3.rc4.29.g8146
+
