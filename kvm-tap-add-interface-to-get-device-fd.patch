@@ -1,0 +1,60 @@
+From c0def9e3f55c1c79a9c5d952979e5ec16895b35b Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Wed, 3 Mar 2010 19:57:58 -0300
+Subject: [PATCH 02/17] tap: add interface to get device fd
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <b98b1da4f0724ec810dbc6b8106232a043c50f6e.1267644824.git.mst@redhat.com>
+Patchwork-id: 7477
+O-Subject: [PATCHv3 02/17] tap: add interface to get device fd
+Bugzilla: 562958
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+
+Will be used by vhost to attach/detach to backend.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ net/tap.c |    7 +++++++
+ net/tap.h |    2 ++
+ 2 files changed, 9 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ net/tap.c |    7 +++++++
+ net/tap.h |    2 ++
+ 2 files changed, 9 insertions(+), 0 deletions(-)
+
+diff --git a/net/tap.c b/net/tap.c
+index d3492de..7e9ca79 100644
+--- a/net/tap.c
++++ b/net/tap.c
+@@ -269,6 +269,13 @@ static void tap_poll(VLANClientState *nc, bool enable)
+     tap_write_poll(s, enable);
+ }
+ 
++int tap_get_fd(VLANClientState *nc)
++{
++    TAPState *s = DO_UPCAST(TAPState, nc, nc);
++    assert(nc->info->type == NET_CLIENT_TYPE_TAP);
++    return s->fd;
++}
++
+ /* fd support */
+ 
+ static NetClientInfo net_tap_info = {
+diff --git a/net/tap.h b/net/tap.h
+index 538a562..a244b28 100644
+--- a/net/tap.h
++++ b/net/tap.h
+@@ -48,4 +48,6 @@ int tap_probe_vnet_hdr(int fd);
+ int tap_probe_has_ufo(int fd);
+ void tap_fd_set_offload(int fd, int csum, int tso4, int tso6, int ecn, int ufo);
+ 
++int tap_get_fd(VLANClientState *vc);
++
+ #endif /* QEMU_NET_TAP_H */
+-- 
+1.6.3.rc4.29.g8146
+

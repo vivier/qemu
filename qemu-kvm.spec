@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.24%{?dist}
+Release: 2.25%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -292,6 +292,40 @@ Patch1131: kvm-kbd-leds-usb-kbd.patch
 Patch1132: kvm-kbd-keds-vnc.patch
 # For bz#570174 - Restoring a qemu guest from a saved state file using -incoming sometimes fails and hangs
 Patch1133: kvm-migration-Clear-fd-also-in-error-cases.patch
+# For bz#562958 - RFE: Support vhost net mode
+Patch1134: kvm-qemu-memory-notifiers.patch
+# For bz#562958 - RFE: Support vhost net mode
+Patch1135: kvm-tap-add-interface-to-get-device-fd.patch
+# For bz#562958 - RFE: Support vhost net mode
+Patch1136: kvm-add-API-to-set-ioeventfd.patch
+# For bz#562958 - RFE: Support vhost net mode
+Patch1137: kvm-notifier-event-notifier-implementation.patch
+# For bz#562958 - RFE: Support vhost net mode
+Patch1138: kvm-virtio-add-notifier-support.patch
+# For bz#562958 - RFE: Support vhost net mode
+Patch1139: kvm-virtio-add-APIs-for-queue-fields.patch
+# For bz#562958 - RFE: Support vhost net mode
+Patch1140: kvm-virtio-add-set_status-callback.patch
+# For bz#562958 - RFE: Support vhost net mode
+Patch1141: kvm-virtio-move-typedef-to-qemu-common.patch
+# For bz#562958 - RFE: Support vhost net mode
+Patch1142: kvm-virtio-pci-fill-in-notifier-support.patch
+# For bz#562958 - RFE: Support vhost net mode
+Patch1143: kvm-vhost-vhost-net-support.patch
+# For bz#562958 - RFE: Support vhost net mode
+Patch1144: kvm-tap-add-vhost-vhostfd-options.patch
+# For bz#562958 - RFE: Support vhost net mode
+Patch1145: kvm-tap-add-API-to-retrieve-vhost-net-header.patch
+# For bz#562958 - RFE: Support vhost net mode
+Patch1146: kvm-virtio-net-vhost-net-support.patch
+# For bz#562958 - RFE: Support vhost net mode
+Patch1147: kvm-qemu-kvm-add-vhost.h-header.patch
+# For bz#562958 - RFE: Support vhost net mode
+Patch1148: kvm-irqfd-support.patch
+# For bz#562958 - RFE: Support vhost net mode
+Patch1149: kvm-msix-add-mask-unmask-notifiers.patch
+# For bz#562958 - RFE: Support vhost net mode
+Patch1150: kvm-virtio-pci-irqfd-support.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -485,6 +519,23 @@ such as kvmtrace and kvm_stat.
 %patch1131 -p1
 %patch1132 -p1
 %patch1133 -p1
+%patch1134 -p1
+%patch1135 -p1
+%patch1136 -p1
+%patch1137 -p1
+%patch1138 -p1
+%patch1139 -p1
+%patch1140 -p1
+%patch1141 -p1
+%patch1142 -p1
+%patch1143 -p1
+%patch1144 -p1
+%patch1145 -p1
+%patch1146 -p1
+%patch1147 -p1
+%patch1148 -p1
+%patch1149 -p1
+%patch1150 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -678,6 +729,27 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Mar 17 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.25.el6
+- kvm-qemu-memory-notifiers.patch [bz#562958]
+- kvm-tap-add-interface-to-get-device-fd.patch [bz#562958]
+- kvm-add-API-to-set-ioeventfd.patch [bz#562958]
+- kvm-notifier-event-notifier-implementation.patch [bz#562958]
+- kvm-virtio-add-notifier-support.patch [bz#562958]
+- kvm-virtio-add-APIs-for-queue-fields.patch [bz#562958]
+- kvm-virtio-add-set_status-callback.patch [bz#562958]
+- kvm-virtio-move-typedef-to-qemu-common.patch [bz#562958]
+- kvm-virtio-pci-fill-in-notifier-support.patch [bz#562958]
+- kvm-vhost-vhost-net-support.patch [bz#562958]
+- kvm-tap-add-vhost-vhostfd-options.patch [bz#562958]
+- kvm-tap-add-API-to-retrieve-vhost-net-header.patch [bz#562958]
+- kvm-virtio-net-vhost-net-support.patch [bz#562958]
+- kvm-qemu-kvm-add-vhost.h-header.patch [bz#562958]
+- kvm-irqfd-support.patch [bz#562958]
+- kvm-msix-add-mask-unmask-notifiers.patch [bz#562958]
+- kvm-virtio-pci-irqfd-support.patch [bz#562958]
+- Resolves: bz#562958
+  (RFE: Support vhost net mode)
+
 * Fri Mar 12 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.24.el6
 - kvm-path.c-fix-warning-with-_FORTIFY_SOURCE.patch [bz#567099]
 - kvm-hw-pc.c-fix-warnings-with-_FORTIFY_SOURCE.patch [bz#567099]

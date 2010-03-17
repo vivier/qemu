@@ -1,0 +1,123 @@
+From bc13f5ab98f760789c575feecb55b418b37f613c Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Wed, 3 Mar 2010 19:58:29 -0300
+Subject: [PATCH 09/17] virtio-pci: fill in notifier support
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <e6512bf7ae5f2969ea0a6b7a004e69c2f15a4558.1267644824.git.mst@redhat.com>
+Patchwork-id: 7484
+O-Subject: [PATCHv3 09/17] virtio-pci: fill in notifier support
+Bugzilla: 562958
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+
+Support host/guest notifiers in virtio-pci.
+The last one only with kvm, that's okay
+because vhost relies on kvm anyway.
+
+Note on kvm usage: kvm ioeventfd API
+is implemented on non-kvm systems as well,
+this is the reason we don't need if (kvm_enabled())
+around it.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ hw/virtio-pci.c |   62 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 62 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-pci.c |   62 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 62 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index 415bf1d..c12e6f3 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -23,6 +23,7 @@
+ #include "msix.h"
+ #include "net.h"
+ #include "loader.h"
++#include "kvm.h"
+ 
+ /* from Linux's linux/virtio_pci.h */
+ 
+@@ -391,6 +392,65 @@ static unsigned virtio_pci_get_features(void *opaque)
+     return proxy->host_features;
+ }
+ 
++static void virtio_pci_guest_notifier_read(void *opaque)
++{
++    VirtQueue *vq = opaque;
++    EventNotifier *n = virtio_queue_guest_notifier(vq);
++    if (event_notifier_test_and_clear(n)) {
++        virtio_irq(vq);
++    }
++}
++
++static int virtio_pci_guest_notifier(void *opaque, int n, bool assign)
++{
++    VirtIOPCIProxy *proxy = opaque;
++    VirtQueue *vq = virtio_queue(proxy->vdev, n);
++    EventNotifier *notifier = virtio_queue_guest_notifier(vq);
++
++    if (assign) {
++        int r = event_notifier_init(notifier, 0);
++	if (r < 0)
++		return r;
++        qemu_set_fd_handler(event_notifier_get_fd(notifier),
++                            virtio_pci_guest_notifier_read, NULL, vq);
++    } else {
++        qemu_set_fd_handler(event_notifier_get_fd(notifier),
++                            NULL, NULL, NULL);
++        event_notifier_cleanup(notifier);
++    }
++
++    return 0;
++}
++
++static int virtio_pci_host_notifier(void *opaque, int n, bool assign)
++{
++    VirtIOPCIProxy *proxy = opaque;
++    VirtQueue *vq = virtio_queue(proxy->vdev, n);
++    EventNotifier *notifier = virtio_queue_host_notifier(vq);
++    int r;
++    if (assign) {
++        r = event_notifier_init(notifier, 1);
++        if (r < 0) {
++            return r;
++        }
++        r = kvm_set_ioeventfd_pio_word(event_notifier_get_fd(notifier),
++                                       proxy->addr + VIRTIO_PCI_QUEUE_NOTIFY,
++                                       n, assign);
++        if (r < 0) {
++            event_notifier_cleanup(notifier);
++        }
++    } else {
++        r = kvm_set_ioeventfd_pio_word(event_notifier_get_fd(notifier),
++                                       proxy->addr + VIRTIO_PCI_QUEUE_NOTIFY,
++                                       n, assign);
++        if (r < 0) {
++            return r;
++        }
++        event_notifier_cleanup(notifier);
++    }
++    return r;
++}
++
+ static const VirtIOBindings virtio_pci_bindings = {
+     .notify = virtio_pci_notify,
+     .save_config = virtio_pci_save_config,
+@@ -398,6 +458,8 @@ static const VirtIOBindings virtio_pci_bindings = {
+     .save_queue = virtio_pci_save_queue,
+     .load_queue = virtio_pci_load_queue,
+     .get_features = virtio_pci_get_features,
++    .host_notifier = virtio_pci_host_notifier,
++    .guest_notifier = virtio_pci_guest_notifier,
+ };
+ 
+ static void virtio_init_pci(VirtIOPCIProxy *proxy, VirtIODevice *vdev,
+-- 
+1.6.3.rc4.29.g8146
+

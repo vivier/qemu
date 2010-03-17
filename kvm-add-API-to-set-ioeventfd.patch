@@ -1,0 +1,104 @@
+From 3e4a4563e55dc8281f8269ff630574a76d08053c Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Wed, 3 Mar 2010 19:58:03 -0300
+Subject: [PATCH 03/17] kvm: add API to set ioeventfd
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <10351875e20080f65daf75bb68c78eee8eefb0f4.1267644824.git.mst@redhat.com>
+Patchwork-id: 7478
+O-Subject: [PATCHv3 03/17] kvm: add API to set ioeventfd
+Bugzilla: 562958
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+
+This adds API to set ioeventfd to kvm,
+as well as stubs for non-eventfd case,
+making it possible for users to use this API
+without ifdefs.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ kvm-all.c |   22 ++++++++++++++++++++++
+ kvm.h     |   16 ++++++++++++++++
+ 2 files changed, 38 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ kvm-all.c |   22 ++++++++++++++++++++++
+ kvm.h     |   16 ++++++++++++++++
+ 2 files changed, 38 insertions(+), 0 deletions(-)
+
+diff --git a/kvm-all.c b/kvm-all.c
+index 0423fff..c344bd1 100644
+--- a/kvm-all.c
++++ b/kvm-all.c
+@@ -1102,4 +1102,26 @@ void kvm_remove_all_breakpoints(CPUState *current_env)
+ }
+ #endif /* !KVM_CAP_SET_GUEST_DEBUG */
+ 
++#ifdef KVM_IOEVENTFD
++int kvm_set_ioeventfd_pio_word(int fd, uint16_t addr, uint16_t val, bool assign)
++{
++    struct kvm_ioeventfd kick = {
++        .datamatch = val,
++        .addr = addr,
++        .len = 2,
++        .flags = KVM_IOEVENTFD_FLAG_DATAMATCH | KVM_IOEVENTFD_FLAG_PIO,
++        .fd = fd,
++    };
++    int r;
++    if (!kvm_enabled())
++        return -ENOSYS;
++    if (!assign)
++        kick.flags |= KVM_IOEVENTFD_FLAG_DEASSIGN;
++    r = kvm_vm_ioctl(kvm_state, KVM_IOEVENTFD, &kick);
++    if (r < 0)
++        return r;
++    return 0;
++}
++#endif
++
+ #include "qemu-kvm.c"
+diff --git a/kvm.h b/kvm.h
+index e2a945b..6ac54fe 100644
+--- a/kvm.h
++++ b/kvm.h
+@@ -14,6 +14,8 @@
+ #ifndef QEMU_KVM_H
+ #define QEMU_KVM_H
+ 
++#include <stdbool.h>
++#include <errno.h>
+ #include "config.h"
+ #include "qemu-queue.h"
+ #include "qemu-kvm.h"
+@@ -21,6 +23,10 @@
+ #ifdef KVM_UPSTREAM
+ 
+ #ifdef CONFIG_KVM
++#include <linux/kvm.h>
++#endif
++
++#ifdef CONFIG_KVM
+ extern int kvm_allowed;
+ 
+ #define kvm_enabled() (kvm_allowed)
+@@ -146,4 +152,14 @@ static inline void cpu_synchronize_state(CPUState *env)
+ 
+ #endif
+ 
++#if defined(KVM_IOEVENTFD) && defined(CONFIG_KVM)
++int kvm_set_ioeventfd_pio_word(int fd, uint16_t adr, uint16_t val, bool assign);
++#else
++static inline
++int kvm_set_ioeventfd_pio_word(int fd, uint16_t adr, uint16_t val, bool assign)
++{
++    return -ENOSYS;
++}
++#endif
++
+ #endif
+-- 
+1.6.3.rc4.29.g8146
+

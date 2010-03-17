@@ -1,0 +1,154 @@
+From b12cd5667d2d57d19118ce93134c7770f4750e2d Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Wed, 3 Mar 2010 19:58:16 -0300
+Subject: [PATCH 06/17] virtio: add APIs for queue fields
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <33f8f8069119a5bfa402d315a743d5906b3d4491.1267644824.git.mst@redhat.com>
+Patchwork-id: 7481
+O-Subject: [PATCHv3 06/17] virtio: add APIs for queue fields
+Bugzilla: 562958
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+
+vhost needs physical addresses for ring and other queue fields,
+so add APIs for these.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ hw/virtio.c |   76 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ hw/virtio.h |   15 +++++++++++-
+ 2 files changed, 90 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio.c |   76 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ hw/virtio.h |   15 +++++++++++-
+ 2 files changed, 90 insertions(+), 1 deletions(-)
+
+diff --git a/hw/virtio.c b/hw/virtio.c
+index 1f5e7be..e5787fa 100644
+--- a/hw/virtio.c
++++ b/hw/virtio.c
+@@ -74,6 +74,8 @@ struct VirtQueue
+     uint16_t vector;
+     void (*handle_output)(VirtIODevice *vdev, VirtQueue *vq);
+     VirtIODevice *vdev;
++    EventNotifier guest_notifier;
++    EventNotifier host_notifier;
+ };
+ 
+ /* virt queue functions */
+@@ -593,6 +595,12 @@ VirtQueue *virtio_add_queue(VirtIODevice *vdev, int queue_size,
+     return &vdev->vq[i];
+ }
+ 
++void virtio_irq(VirtQueue *vq)
++{
++    vq->vdev->isr |= 0x01;
++    virtio_notify_vector(vq->vdev, vq->vector);
++}
++
+ void virtio_notify(VirtIODevice *vdev, VirtQueue *vq)
+ {
+     /* Always notify when queue is empty (when feature acknowledge) */
+@@ -736,3 +744,71 @@ void virtio_bind_device(VirtIODevice *vdev, const VirtIOBindings *binding,
+     vdev->binding = binding;
+     vdev->binding_opaque = opaque;
+ }
++
++target_phys_addr_t virtio_queue_get_desc(VirtIODevice *vdev, int n)
++{
++    return vdev->vq[n].vring.desc;
++}
++
++target_phys_addr_t virtio_queue_get_avail(VirtIODevice *vdev, int n)
++{
++    return vdev->vq[n].vring.avail;
++}
++
++target_phys_addr_t virtio_queue_get_used(VirtIODevice *vdev, int n)
++{
++    return vdev->vq[n].vring.used;
++}
++
++target_phys_addr_t virtio_queue_get_ring(VirtIODevice *vdev, int n)
++{
++    return vdev->vq[n].vring.desc;
++}
++
++target_phys_addr_t virtio_queue_get_desc_size(VirtIODevice *vdev, int n)
++{
++    return sizeof(VRingDesc) * vdev->vq[n].vring.num;
++}
++
++target_phys_addr_t virtio_queue_get_avail_size(VirtIODevice *vdev, int n)
++{
++    return offsetof(VRingAvail, ring) +
++        sizeof(u_int64_t) * vdev->vq[n].vring.num;
++}
++
++target_phys_addr_t virtio_queue_get_used_size(VirtIODevice *vdev, int n)
++{
++    return offsetof(VRingUsed, ring) +
++        sizeof(VRingUsedElem) * vdev->vq[n].vring.num;
++}
++
++
++target_phys_addr_t virtio_queue_get_ring_size(VirtIODevice *vdev, int n)
++{
++    return vdev->vq[n].vring.used - vdev->vq[n].vring.desc +
++	    virtio_queue_get_used_size(vdev, n);
++}
++
++uint16_t virtio_queue_last_avail_idx(VirtIODevice *vdev, int n)
++{
++    return vdev->vq[n].last_avail_idx;
++}
++
++void virtio_queue_set_last_avail_idx(VirtIODevice *vdev, int n, uint16_t idx)
++{
++    vdev->vq[n].last_avail_idx = idx;
++}
++
++VirtQueue *virtio_queue(VirtIODevice *vdev, int n)
++{
++    return vdev->vq + n;
++}
++
++EventNotifier *virtio_queue_guest_notifier(VirtQueue *vq)
++{
++    return &vq->guest_notifier;
++}
++EventNotifier *virtio_queue_host_notifier(VirtQueue *vq)
++{
++    return &vq->host_notifier;
++}
+diff --git a/hw/virtio.h b/hw/virtio.h
+index e358135..c137717 100644
+--- a/hw/virtio.h
++++ b/hw/virtio.h
+@@ -183,5 +183,18 @@ void virtio_net_exit(VirtIODevice *vdev);
+ 	DEFINE_PROP_BIT("indirect_desc", _state, _field, \
+ 			VIRTIO_RING_F_INDIRECT_DESC, true)
+ 
+-
++target_phys_addr_t virtio_queue_get_desc(VirtIODevice *vdev, int n);
++target_phys_addr_t virtio_queue_get_avail(VirtIODevice *vdev, int n);
++target_phys_addr_t virtio_queue_get_used(VirtIODevice *vdev, int n);
++target_phys_addr_t virtio_queue_get_ring(VirtIODevice *vdev, int n);
++target_phys_addr_t virtio_queue_get_desc_size(VirtIODevice *vdev, int n);
++target_phys_addr_t virtio_queue_get_avail_size(VirtIODevice *vdev, int n);
++target_phys_addr_t virtio_queue_get_used_size(VirtIODevice *vdev, int n);
++target_phys_addr_t virtio_queue_get_ring_size(VirtIODevice *vdev, int n);
++uint16_t virtio_queue_last_avail_idx(VirtIODevice *vdev, int n);
++void virtio_queue_set_last_avail_idx(VirtIODevice *vdev, int n, uint16_t idx);
++VirtQueue *virtio_queue(VirtIODevice *vdev, int n);
++EventNotifier *virtio_queue_guest_notifier(VirtQueue *vq);
++EventNotifier *virtio_queue_host_notifier(VirtQueue *vq);
++void virtio_irq(VirtQueue *vq);
+ #endif
+-- 
+1.6.3.rc4.29.g8146
+
