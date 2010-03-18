@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.12.3
-Release: 3%{?dist}
+Release: 4%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -83,6 +83,8 @@ Patch46: 0046-pc-Add-backward-compatibility-options-for-virtio-ser.patch
 Patch47: 0047-virtio-serial-don-t-set-MULTIPORT-for-1-port-dev.patch
 Patch48: 0048-virtio-serial-pci-Allow-MSI-to-be-disabled.patch
 Patch49: 0049-migration-Clear-fd-also-in-error-cases.patch
+Patch50: 0050-raw-posix-Detect-CDROM-via-ioctl-on-linux.patch
+Patch51: 0051-usb-linux-increase-buffer-for-USB-control-requests.patch
 
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -324,6 +326,8 @@ such as kvmtrace and kvm_stat.
 %patch47 -p1
 %patch48 -p1
 %patch49 -p1
+%patch50 -p1
+%patch51 -p1
 
 %build
 # By default we build everything, but allow x86 to build a minimal version
@@ -626,6 +630,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Mar 11 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.3-4
+- Detect cdrom via ioctl (#473154)
+- re add increased buffer for USB control requests (#546483)
+
 * Wed Mar 10 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.3-3
 - Migration clear the fd in error cases (#518032)
 
