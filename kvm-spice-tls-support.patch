@@ -1,0 +1,179 @@
+From 0dd86d4ce54cdfca1b1c29296c4de28132307dc4 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 11 Mar 2010 11:13:32 -0300
+Subject: [PATCH 7/9] spice: tls support
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1268306015-11724-8-git-send-email-kraxel@redhat.com>
+Patchwork-id: 7659
+O-Subject: [RHEL-6 kvm PATCH v6 07/10] spice: tls support
+Bugzilla: 549757
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Izik Eidus <ieidus@redhat.com>
+RH-Acked-by: Yonit Halperin <yhalperi@redhat.com>
+
+Add options to the -spice command line switch to setup tls:
+
+tls-port
+	listening port
+
+x509-dir
+	x509 file directory.  Expects same filenames as
+	-vnc $display,x509=$dir
+
+x509-key-file
+x509-key-password
+x509-cert-file
+x509-cacert-file
+x509-dh-key-file
+	x509 files can also be set individually.
+
+tls-ciphers
+	which ciphers to use.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ spice.c |   90 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++---
+ 1 files changed, 86 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ spice.c |   90 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++---
+ 1 files changed, 86 insertions(+), 4 deletions(-)
+
+diff --git a/spice.c b/spice.c
+index 10418f6..0504ed2 100644
+--- a/spice.c
++++ b/spice.c
+@@ -8,6 +8,7 @@
+ #include "qemu-spice.h"
+ #include "qemu-timer.h"
+ #include "qemu-queue.h"
++#include "qemu-x509.h"
+ #include "monitor.h"
+ 
+ /* core bits */
+@@ -94,11 +95,35 @@ QemuOptsList qemu_spice_opts = {
+             .name = "port",
+             .type = QEMU_OPT_NUMBER,
+         },{
++            .name = "tls-port",           /* old: sport */
++            .type = QEMU_OPT_NUMBER,
++        },{
+             .name = "password",
+             .type = QEMU_OPT_STRING,
+         },{
+             .name = "disable-ticketing",
+             .type = QEMU_OPT_BOOL,
++        },{
++            .name = "x509-dir",
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "x509-key-file",      /* old: sslkey */
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "x509-key-password",  /* old: sslpassword */
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "x509-cert-file",     /* old: sslcert */
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "x509-cacert-file",   /* old: sslcafile */
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "x509-dh-key-file",   /* old: ssldhfile */
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "tls-ciphers",        /* old: sslciphersuite */
++            .type = QEMU_OPT_STRING,
+         },
+         { /* end if list */ }
+     },
+@@ -107,18 +132,71 @@ QemuOptsList qemu_spice_opts = {
+ void qemu_spice_init(void)
+ {
+     QemuOpts *opts = QTAILQ_FIRST(&qemu_spice_opts.head);
+-    const char *password;
+-    int port;
++    const char *password, *str, *x509_dir,
++        *x509_key_password = NULL,
++        *x509_dh_file = NULL,
++        *tls_ciphers = NULL;
++    char *x509_key_file = NULL,
++        *x509_cert_file = NULL,
++        *x509_cacert_file = NULL;
++    int port, tls_port, len;
+ 
+     if (!opts)
+         return;
+     port = qemu_opt_get_number(opts, "port", 0);
+-    if (!port)
++    tls_port = qemu_opt_get_number(opts, "tls-port", 0);
++    if (!port && !tls_port)
+         return;
+     password = qemu_opt_get(opts, "password");
+ 
++    if (tls_port) {
++        x509_dir = qemu_opt_get(opts, "x509-dir");
++        if (NULL == x509_dir)
++            x509_dir = ".";
++        len = strlen(x509_dir) + 32;
++
++        str = qemu_opt_get(opts, "x509-key-file");
++        if (str) {
++            x509_key_file = qemu_strdup(str);
++        } else {
++            x509_key_file = qemu_malloc(len);
++            snprintf(x509_key_file, len, "%s/%s", x509_dir, X509_SERVER_KEY_FILE);
++        }
++
++        str = qemu_opt_get(opts, "x509-cert-file");
++        if (str) {
++            x509_cert_file = qemu_strdup(str);
++        } else {
++            x509_cert_file = qemu_malloc(len);
++            snprintf(x509_cert_file, len, "%s/%s", x509_dir, X509_SERVER_CERT_FILE);
++        }
++
++        str = qemu_opt_get(opts, "x509-cacert-file");
++        if (str) {
++            x509_cacert_file = qemu_strdup(str);
++        } else {
++            x509_cacert_file = qemu_malloc(len);
++            snprintf(x509_cacert_file, len, "%s/%s", x509_dir, X509_CA_CERT_FILE);
++        }
++
++        x509_key_password = qemu_opt_get(opts, "x509-key-password");
++        x509_dh_file = qemu_opt_get(opts, "x509-dh-file");
++        tls_ciphers = qemu_opt_get(opts, "tls-ciphers");
++    }
++
+     s = spice_server_new();
+-    spice_server_set_port(s, port);
++    if (port) {
++        spice_server_set_port(s, port);
++    }
++    if (tls_port) {
++        spice_server_set_tls(s, tls_port,
++                             x509_cacert_file,
++                             x509_cert_file,
++                             x509_key_file,
++                             x509_key_password,
++                             x509_dh_file,
++                             tls_ciphers);
++    }
+     if (password)
+         spice_server_set_ticket(s, password, 0, 0, 0);
+     if (qemu_opt_get_bool(opts, "disable-ticketing", 0))
+@@ -131,4 +209,8 @@ void qemu_spice_init(void)
+     using_spice = 1;
+ 
+     qemu_spice_input_init(s);
++
++    qemu_free(x509_key_file);
++    qemu_free(x509_cert_file);
++    qemu_free(x509_cacert_file);
+ }
+-- 
+1.6.3.rc4.29.g8146
+

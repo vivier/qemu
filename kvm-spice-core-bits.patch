@@ -1,0 +1,315 @@
+From fa489a3788848e419b1c72e3f703d41af2a54dbe Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 11 Mar 2010 11:13:27 -0300
+Subject: [PATCH 2/9] spice: core bits
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1268306015-11724-3-git-send-email-kraxel@redhat.com>
+Patchwork-id: 7656
+O-Subject: [RHEL-6 kvm PATCH v6 02/10] spice: core bits
+Bugzilla: 549757
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Izik Eidus <ieidus@redhat.com>
+RH-Acked-by: Yonit Halperin <yhalperi@redhat.com>
+
+Add -spice command line switch.  Has support setting passwd and port for
+now.  With this patch applied the spice client can successfully connect
+to qemu.  You can't do anything useful yet though.
+
+[ v6: add ifdefs to fix build with CONFIG_SPICE=n ]
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ Makefile.target |    1 +
+ qemu-config.c   |    3 +
+ qemu-config.h   |    1 +
+ qemu-options.hx |    8 +++
+ qemu-spice.h    |   25 ++++++++++
+ spice.c         |  132 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ vl.c            |   15 ++++++
+ 7 files changed, 185 insertions(+), 0 deletions(-)
+ create mode 100644 qemu-spice.h
+ create mode 100644 spice.c
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile.target |    1 +
+ qemu-config.c   |    3 +
+ qemu-config.h   |    1 +
+ qemu-options.hx |    8 +++
+ qemu-spice.h    |   25 ++++++++++
+ spice.c         |  132 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ vl.c            |   15 ++++++
+ 7 files changed, 185 insertions(+), 0 deletions(-)
+ create mode 100644 qemu-spice.h
+ create mode 100644 spice.c
+
+diff --git a/Makefile.target b/Makefile.target
+index 547b7a2..f4dd9dc 100644
+--- a/Makefile.target
++++ b/Makefile.target
+@@ -217,6 +217,7 @@ obj-i386-y += testdev.o
+ 
+ obj-i386-$(CONFIG_KVM_PIT) += i8254-kvm.o
+ obj-i386-$(CONFIG_KVM_DEVICE_ASSIGNMENT) += device-assignment.o
++obj-i386-$(CONFIG_SPICE) += spice.o
+ 
+ # Hardware support
+ obj-ia64-y += ide.o pckbd.o vga.o $(SOUND_HW) dma.o $(AUDIODRV)
+diff --git a/qemu-config.c b/qemu-config.c
+index 2caf76c..a3b8fbc 100644
+--- a/qemu-config.c
++++ b/qemu-config.c
+@@ -255,6 +255,9 @@ static QemuOptsList *lists[] = {
+     &qemu_rtc_opts,
+     &qemu_global_opts,
+     &qemu_mon_opts,
++#ifdef CONFIG_SPICE
++    &qemu_spice_opts,
++#endif
+     NULL,
+ };
+ 
+diff --git a/qemu-config.h b/qemu-config.h
+index dd89ae4..dda8685 100644
+--- a/qemu-config.h
++++ b/qemu-config.h
+@@ -9,6 +9,7 @@ extern QemuOptsList qemu_net_opts;
+ extern QemuOptsList qemu_rtc_opts;
+ extern QemuOptsList qemu_global_opts;
+ extern QemuOptsList qemu_mon_opts;
++extern QemuOptsList qemu_spice_opts;
+ 
+ int qemu_set_option(const char *str);
+ int qemu_global_option(const char *str);
+diff --git a/qemu-options.hx b/qemu-options.hx
+index affbf24..1bc8f24 100644
+--- a/qemu-options.hx
++++ b/qemu-options.hx
+@@ -512,6 +512,14 @@ STEXI
+ Enable SDL.
+ ETEXI
+ 
++#ifdef CONFIG_SPICE
++DEF("spice", HAS_ARG, QEMU_OPTION_spice,
++    "-spice <args>   use spice\n")
++STEXI
++Use Spice.
++ETEXI
++#endif
++
+ DEF("portrait", 0, QEMU_OPTION_portrait,
+     "-portrait       rotate graphical output 90 deg left (only PXA LCD)\n")
+ STEXI
+diff --git a/qemu-spice.h b/qemu-spice.h
+new file mode 100644
+index 0000000..971e16f
+--- /dev/null
++++ b/qemu-spice.h
+@@ -0,0 +1,25 @@
++#ifndef QEMU_SPICE_H
++#define QEMU_SPICE_H
++
++#ifdef CONFIG_SPICE
++
++#include <spice.h>
++
++#include "qemu-option.h"
++#include "qemu-config.h"
++
++struct VDInterface;
++extern int using_spice;
++
++void qemu_spice_init(void);
++
++void qemu_spice_add_interface(struct VDInterface *interface);
++void qemu_spice_remove_interface(struct VDInterface *interface);
++
++#else  /* CONFIG_SPICE */
++
++#define using_spice 0
++
++#endif /* CONFIG_SPICE */
++
++#endif /* QEMU_SPICE_H */
+diff --git a/spice.c b/spice.c
+new file mode 100644
+index 0000000..1589371
+--- /dev/null
++++ b/spice.c
+@@ -0,0 +1,132 @@
++#include <stdlib.h>
++#include <stdio.h>
++#include <string.h>
++
++#include <spice.h>
++
++#include "qemu-common.h"
++#include "qemu-spice.h"
++#include "qemu-timer.h"
++#include "qemu-queue.h"
++#include "monitor.h"
++
++/* core bits */
++
++static SpiceServer *s;
++int using_spice = 0;
++
++void qemu_spice_add_interface(VDInterface *interface)
++{
++    if (!s)
++        return;
++    spice_server_add_interface(s, interface);
++}
++
++void qemu_spice_remove_interface(VDInterface *interface)
++{
++    if (!s)
++        return;
++    spice_server_remove_interface(s, interface);
++}
++
++static VDObjectRef core_create_timer(CoreInterface *core, timer_callback_t callback, void *opaue)
++{
++    return (VDObjectRef)qemu_new_timer(rt_clock, callback, opaue);
++}
++
++static void core_arm_timer(CoreInterface *core, VDObjectRef timer, uint32_t ms)
++{
++    qemu_mod_timer((QEMUTimer *)timer, qemu_get_clock(rt_clock) + ms);
++}
++
++static void core_disarm_timer(CoreInterface *core, VDObjectRef timer)
++{
++    qemu_del_timer((QEMUTimer *)timer);
++}
++
++static void core_destroy_timer(CoreInterface *core, VDObjectRef timer)
++{
++    qemu_del_timer((QEMUTimer *)timer);
++    qemu_free_timer((QEMUTimer *)timer);
++}
++
++static int core_set_file_handlers(CoreInterface *core, int fd,
++                              void (*on_read)(void *),
++                              void (*on_write)(void *),
++                              void *opaque)
++{
++    return qemu_set_fd_handler(fd, on_read, on_write, opaque);
++}
++
++static void core_term_printf(CoreInterface *core, const char* format, ...)
++{
++    /* ignore */
++}
++
++static void core_log(CoreInterface *core, LogLevel level, const char* componnent,
++                     const char* format, ...)
++{
++    /* ignore */
++}
++
++static CoreInterface core_interface = {
++    .base.base_version  = VM_INTERFACE_VERSION,
++    .base.type          = VD_INTERFACE_CORE,
++    .base.description   = "qemu core services",
++    .base.major_version = VD_INTERFACE_CORE_MAJOR,
++    .base.minor_version = VD_INTERFACE_CORE_MINOR,
++    .create_timer       = core_create_timer,
++    .arm_timer          = core_arm_timer,
++    .disarm_timer       = core_disarm_timer,
++    .destroy_timer      = core_destroy_timer,
++    .set_file_handlers  = core_set_file_handlers,
++    .term_printf        = core_term_printf,
++    .log                = core_log,
++};
++
++/* functions for the rest of qemu */
++
++QemuOptsList qemu_spice_opts = {
++    .name = "spice",
++    .head = QTAILQ_HEAD_INITIALIZER(qemu_spice_opts.head),
++    .desc = {
++        {
++            .name = "port",
++            .type = QEMU_OPT_NUMBER,
++        },{
++            .name = "password",
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "disable-ticketing",
++            .type = QEMU_OPT_BOOL,
++        },
++        { /* end if list */ }
++    },
++};
++
++void qemu_spice_init(void)
++{
++    QemuOpts *opts = QTAILQ_FIRST(&qemu_spice_opts.head);
++    const char *password;
++    int port;
++
++    if (!opts)
++        return;
++    port = qemu_opt_get_number(opts, "port", 0);
++    if (!port)
++        return;
++    password = qemu_opt_get(opts, "password");
++
++    s = spice_server_new();
++    spice_server_set_port(s, port);
++    if (password)
++        spice_server_set_ticket(s, password, 0, 0, 0);
++    if (qemu_opt_get_bool(opts, "disable-ticketing", 0))
++        spice_server_set_noauth(s);
++
++    /* TODO: make configurable via cmdline */
++    spice_server_set_image_compression(s, SPICE_IMAGE_COMPRESS_GLZ);
++
++    spice_server_init(s, &core_interface);
++    using_spice = 1;
++}
+diff --git a/vl.c b/vl.c
+index 33c6563..623116d 100644
+--- a/vl.c
++++ b/vl.c
+@@ -170,6 +170,8 @@ int main(int argc, char **argv)
+ 
+ #include "qemu-queue.h"
+ 
++#include "qemu-spice.h"
++
+ //#define DEBUG_NET
+ //#define DEBUG_SLIRP
+ 
+@@ -5784,6 +5786,15 @@ int main(int argc, char **argv, char **envp)
+                     fclose(fp);
+                     break;
+                 }
++#ifdef CONFIG_SPICE
++            case QEMU_OPTION_spice:
++                opts = qemu_opts_parse(&qemu_spice_opts, optarg, NULL);
++                if (!opts) {
++                    fprintf(stderr, "parse error: %s\n", optarg);
++                    exit(1);
++                }
++                break;
++#endif
+             case QEMU_OPTION_writeconfig:
+                 {
+                     FILE *fp;
+@@ -6104,6 +6115,10 @@ int main(int argc, char **argv, char **envp)
+     }
+     qemu_add_globals();
+ 
++#ifdef CONFIG_SPICE
++    qemu_spice_init();
++#endif
++
+     machine->init(ram_size, boot_devices,
+                   kernel_filename, kernel_cmdline, initrd_filename, cpu_model);
+ 
+-- 
+1.6.3.rc4.29.g8146
+

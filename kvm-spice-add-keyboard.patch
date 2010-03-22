@@ -1,0 +1,131 @@
+From 8bf64132c7b2cc76d9b192062e8c8a1e913386db Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 11 Mar 2010 11:13:28 -0300
+Subject: [PATCH 3/9] spice: add keyboard
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1268306015-11724-4-git-send-email-kraxel@redhat.com>
+Patchwork-id: 7657
+O-Subject: [RHEL-6 kvm PATCH v6 03/10] spice: add keyboard
+Bugzilla: 549757
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Izik Eidus <ieidus@redhat.com>
+RH-Acked-by: Yonit Halperin <yhalperi@redhat.com>
+
+Open keyboard channel.  Now you can type into the spice client and the
+keyboard events are sent to your guest.  You'll need some other display
+like vnc to actually see the guest responding to them though.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ Makefile.target |    2 +-
+ qemu-spice.h    |    1 +
+ spice-input.c   |   50 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ spice.c         |    2 ++
+ 4 files changed, 54 insertions(+), 1 deletions(-)
+ create mode 100644 spice-input.c
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile.target |    2 +-
+ qemu-spice.h    |    1 +
+ spice-input.c   |   50 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ spice.c         |    2 ++
+ 4 files changed, 54 insertions(+), 1 deletions(-)
+ create mode 100644 spice-input.c
+
+diff --git a/Makefile.target b/Makefile.target
+index f4dd9dc..117b847 100644
+--- a/Makefile.target
++++ b/Makefile.target
+@@ -217,7 +217,7 @@ obj-i386-y += testdev.o
+ 
+ obj-i386-$(CONFIG_KVM_PIT) += i8254-kvm.o
+ obj-i386-$(CONFIG_KVM_DEVICE_ASSIGNMENT) += device-assignment.o
+-obj-i386-$(CONFIG_SPICE) += spice.o
++obj-i386-$(CONFIG_SPICE) += spice.o spice-input.o
+ 
+ # Hardware support
+ obj-ia64-y += ide.o pckbd.o vga.o $(SOUND_HW) dma.o $(AUDIODRV)
+diff --git a/qemu-spice.h b/qemu-spice.h
+index 971e16f..8376ce5 100644
+--- a/qemu-spice.h
++++ b/qemu-spice.h
+@@ -12,6 +12,7 @@ struct VDInterface;
+ extern int using_spice;
+ 
+ void qemu_spice_init(void);
++void qemu_spice_input_init(SpiceServer *s);
+ 
+ void qemu_spice_add_interface(struct VDInterface *interface);
+ void qemu_spice_remove_interface(struct VDInterface *interface);
+diff --git a/spice-input.c b/spice-input.c
+new file mode 100644
+index 0000000..deb8689
+--- /dev/null
++++ b/spice-input.c
+@@ -0,0 +1,50 @@
++#include <stdlib.h>
++#include <stdio.h>
++#include <string.h>
++
++#include <spice.h>
++
++#include "qemu-common.h"
++#include "qemu-spice.h"
++#include "console.h"
++
++/* keyboard bits */
++
++static int ledstate;
++
++static void kbd_push_scan_freg(KeyboardInterface *keyboard, uint8_t frag);
++static uint8_t kbd_get_leds(KeyboardInterface *keyboard);
++static void kbd_leds(void *opaque, int l);
++
++static KeyboardInterface kbd_interface = {
++    .base.base_version = VM_INTERFACE_VERSION,
++    .base.type = VD_INTERFACE_KEYBOARD,
++    .base.description = "keyboard",
++    .base.major_version = VD_INTERFACE_KEYBOARD_MAJOR,
++    .base.minor_version = VD_INTERFACE_KEYBOARD_MINOR,
++    .push_scan_freg = kbd_push_scan_freg,
++    .get_leds = kbd_get_leds,
++};
++
++static void kbd_push_scan_freg(KeyboardInterface *keyboard, uint8_t frag)
++{
++    kbd_put_keycode(frag);
++}
++
++static uint8_t kbd_get_leds(KeyboardInterface *keyboard)
++{
++    return ledstate;
++}
++
++static void kbd_leds(void *opaque, int l)
++{
++    SpiceServer *s = opaque;
++    ledstate = l;
++    spice_server_kbd_leds(s, &kbd_interface, ledstate);
++}
++
++void qemu_spice_input_init(SpiceServer *s)
++{
++    qemu_add_led_event_handler(kbd_leds, s);
++    qemu_spice_add_interface(&kbd_interface.base);
++}
+diff --git a/spice.c b/spice.c
+index 1589371..10418f6 100644
+--- a/spice.c
++++ b/spice.c
+@@ -129,4 +129,6 @@ void qemu_spice_init(void)
+ 
+     spice_server_init(s, &core_interface);
+     using_spice = 1;
++
++    qemu_spice_input_init(s);
+ }
+-- 
+1.6.3.rc4.29.g8146
+

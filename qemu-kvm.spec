@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.25%{?dist}
+Release: 2.26%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -326,6 +326,24 @@ Patch1148: kvm-irqfd-support.patch
 Patch1149: kvm-msix-add-mask-unmask-notifiers.patch
 # For bz#562958 - RFE: Support vhost net mode
 Patch1150: kvm-virtio-pci-irqfd-support.patch
+# For bz#549757 - Provide SPICE support  / -spice command line argument
+Patch1151: kvm-add-spice-into-the-configure-file.patch
+# For bz#549757 - Provide SPICE support  / -spice command line argument
+Patch1152: kvm-spice-core-bits.patch
+# For bz#549757 - Provide SPICE support  / -spice command line argument
+Patch1153: kvm-spice-add-keyboard.patch
+# For bz#549757 - Provide SPICE support  / -spice command line argument
+Patch1154: kvm-spice-add-mouse.patch
+# For bz#549757 - Provide SPICE support  / -spice command line argument
+Patch1155: kvm-spice-simple-display.patch
+# For bz#549757 - Provide SPICE support  / -spice command line argument
+Patch1156: kvm-move-x509-file-name-defines-to-qemu-x509.h.patch
+# For bz#549757 - Provide SPICE support  / -spice command line argument
+Patch1157: kvm-spice-tls-support.patch
+# For bz#549757 - Provide SPICE support  / -spice command line argument
+Patch1158: kvm-spice-configure-listening-addr.patch
+# For bz#549757 - Provide SPICE support  / -spice command line argument
+Patch1159: kvm-spice-add-qxl-device.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -334,6 +352,7 @@ BuildRequires: pciutils-devel
 BuildRequires: pulseaudio-libs-devel
 BuildRequires: ncurses-devel
 BuildRequires: libaio-devel
+BuildRequires: spice-server-devel >= 0.4.2-4.el6
 
 Requires(post): /usr/bin/getent
 Requires(post): /usr/sbin/groupadd
@@ -345,6 +364,7 @@ Requires(postun): /sbin/service
 Provides: kvm = 85
 Obsoletes: kvm < 85
 Requires: vgabios
+Requires: vgabios-qxl
 Requires: seabios
 Requires: /usr/share/gpxe/e1000-0x100e.rom
 Requires: /usr/share/gpxe/rtl8029.rom
@@ -536,6 +556,15 @@ such as kvmtrace and kvm_stat.
 %patch1148 -p1
 %patch1149 -p1
 %patch1150 -p1
+%patch1151 -p1
+%patch1152 -p1
+%patch1153 -p1
+%patch1154 -p1
+%patch1155 -p1
+%patch1156 -p1
+%patch1157 -p1
+%patch1158 -p1
+%patch1159 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -648,6 +677,7 @@ pxe_link rtl8139 rtl8139
 pxe_link virtio virtio-net
 ln -s ../vgabios/VGABIOS-lgpl-latest.bin  %{buildroot}/%{_datadir}/%{name}/vgabios.bin
 ln -s ../vgabios/VGABIOS-lgpl-latest.cirrus.bin %{buildroot}/%{_datadir}/%{name}/vgabios-cirrus.bin
+ln -s ../vgabios/VGABIOS-lgpl-latest.qxl.bin %{buildroot}/%{_datadir}/%{name}/vgabios-qxl.bin
 ln -s ../seabios/bios.bin %{buildroot}/%{_datadir}/%{name}/bios.bin
 
 %clean
@@ -706,6 +736,7 @@ fi
 %{_datadir}/%{name}/vapic.bin
 %{_datadir}/%{name}/vgabios.bin
 %{_datadir}/%{name}/vgabios-cirrus.bin
+%{_datadir}/%{name}/vgabios-qxl.bin
 %{_datadir}/%{name}/pxe-e1000.bin
 %{_datadir}/%{name}/pxe-virtio.bin
 %{_datadir}/%{name}/pxe-pcnet.bin
@@ -729,6 +760,19 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Mar 18 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.26.el6
+- kvm-add-spice-into-the-configure-file.patch [bz#549757]
+- kvm-spice-core-bits.patch [bz#549757]
+- kvm-spice-add-keyboard.patch [bz#549757]
+- kvm-spice-add-mouse.patch [bz#549757]
+- kvm-spice-simple-display.patch [bz#549757]
+- kvm-move-x509-file-name-defines-to-qemu-x509.h.patch [bz#549757]
+- kvm-spice-tls-support.patch [bz#549757]
+- kvm-spice-configure-listening-addr.patch [bz#549757]
+- kvm-spice-add-qxl-device.patch [bz#549757]
+- Resolves: bz#549757
+  (Provide SPICE support  / -spice command line argument)
+
 * Wed Mar 17 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.25.el6
 - kvm-qemu-memory-notifiers.patch [bz#562958]
 - kvm-tap-add-interface-to-get-device-fd.patch [bz#562958]

@@ -1,0 +1,67 @@
+From 658dc37c24e977b949bb0aecc49916d881d92a41 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 11 Mar 2010 11:13:29 -0300
+Subject: [PATCH 4/9] spice: add mouse
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1268306015-11724-5-git-send-email-kraxel@redhat.com>
+Patchwork-id: 7655
+O-Subject: [RHEL-6 kvm PATCH v6 04/10] spice: add mouse
+Bugzilla: 549757
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Izik Eidus <ieidus@redhat.com>
+RH-Acked-by: Yonit Halperin <yhalperi@redhat.com>
+
+Open mouse channel.  Now you can move the guests mouse pointer.
+No tablet / absolute positioning (yet) though.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ spice-input.c |   24 ++++++++++++++++++++++++
+ 1 files changed, 24 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ spice-input.c |   24 ++++++++++++++++++++++++
+ 1 files changed, 24 insertions(+), 0 deletions(-)
+
+diff --git a/spice-input.c b/spice-input.c
+index deb8689..56a1c8c 100644
+--- a/spice-input.c
++++ b/spice-input.c
+@@ -43,8 +43,32 @@ static void kbd_leds(void *opaque, int l)
+     spice_server_kbd_leds(s, &kbd_interface, ledstate);
+ }
+ 
++/* mouse bits */
++
++static void mouse_motion(MouseInterface* mouse, int dx, int dy, int dz,
++                         uint32_t buttons_state)
++{
++    kbd_mouse_event(dx, dy, dz, buttons_state);
++}
++
++static void mouse_buttons(MouseInterface* mouse, uint32_t buttons_state)
++{
++    kbd_mouse_event(0, 0, 0, buttons_state);
++}
++
++static MouseInterface mouse_interface = {
++    .base.base_version = VM_INTERFACE_VERSION,
++    .base.type = VD_INTERFACE_MOUSE,
++    .base.description = "mouse",
++    .base.major_version = VD_INTERFACE_MOUSE_MAJOR,
++    .base.minor_version = VD_INTERFACE_MOUSE_MINOR,
++    .moution = mouse_motion,
++    .buttons = mouse_buttons,
++};
++
+ void qemu_spice_input_init(SpiceServer *s)
+ {
+     qemu_add_led_event_handler(kbd_leds, s);
+     qemu_spice_add_interface(&kbd_interface.base);
++    qemu_spice_add_interface(&mouse_interface.base);
+ }
+-- 
+1.6.3.rc4.29.g8146
+

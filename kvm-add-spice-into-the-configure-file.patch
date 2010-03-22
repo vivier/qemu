@@ -1,0 +1,113 @@
+From 155928777cae96d965f93336d3ebf1fa50700b10 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 11 Mar 2010 11:13:26 -0300
+Subject: [PATCH 1/9] add spice into the configure file
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1268306015-11724-2-git-send-email-kraxel@redhat.com>
+Patchwork-id: 7660
+O-Subject: [RHEL-6 kvm PATCH v6 01/10] add spice into the configure file
+Bugzilla: 549757
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Izik Eidus <ieidus@redhat.com>
+RH-Acked-by: Yonit Halperin <yhalperi@redhat.com>
+
+From: Izik Eidus <ieidus@redhat.com>
+
+Right now still dont do anything
+
+Signed-off-by: Izik Eidus <ieidus@redhat.com>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ configure |   35 +++++++++++++++++++++++++++++++++++
+ 1 files changed, 35 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ configure |   35 +++++++++++++++++++++++++++++++++++
+ 1 files changed, 35 insertions(+), 0 deletions(-)
+
+diff --git a/configure b/configure
+index 67d46d0..38ed9f2 100755
+--- a/configure
++++ b/configure
+@@ -274,6 +274,7 @@ kvm_kmod="no"
+ check_utests="no"
+ user_pie="no"
+ zero_malloc=""
++spice=""
+ 
+ # OS specific
+ if check_define __linux__ ; then
+@@ -550,6 +551,10 @@ for opt do
+   ;;
+   --enable-kvm-cap-device-assignment) kvm_cap_device_assignment="yes"
+   ;;
++  --enable-spice) spice="yes"
++  ;;
++  --disable-spice) spice="no"
++  ;;
+   --enable-profiler) profiler="yes"
+   ;;
+   --enable-cocoa)
+@@ -797,6 +802,8 @@ echo "  --enable-linux-aio       enable Linux AIO support"
+ echo "  --enable-io-thread       enable IO thread"
+ echo "  --disable-blobs          disable installing provided firmware blobs"
+ echo "  --kerneldir=PATH         look for kernel includes in PATH"
++echo "  --disable-spice          disable spice"
++echo "  --enable-spice           enable spice"
+ echo "  --with-kvm-trace         enable building the KVM module with the kvm trace option"
+ echo "  --disable-cpu-emulation  disables use of qemu cpu emulation code"
+ echo ""
+@@ -1942,6 +1949,29 @@ if compile_prog "" ""; then
+     gcc_attribute_warn_unused_result=yes
+ fi
+ 
++# spice probe
++if test "$spice" != "no" ; then
++  cat > $TMPC << EOF
++#include <spice.h>
++int main(void) { CoreInterface ci; spice_init(&ci); return 0; }
++EOF
++  spice_cflags=`pkg-config --cflags spice-server`
++  spice_libs=`pkg-config --libs spice-server`
++  spice_ver=`pkg-config --modversion spice-server`
++  if test "$spice_ver" = "0.4.2" && compile_prog "$spice_cflags" "$spice_libs" ; then
++    spice="yes"
++    libs_softmmu="$spice_libs $libs_softmmu"
++    QEMU_CFLAGS="$spice_cflags $QEMU_CFLAGS"
++  else
++    if test "$spice" = "yes" ; then
++      feature_not_found "spice"
++    fi
++    spice="no"
++  fi
++fi
++
++##########################################
++
+ ##########################################
+ # check if we have fdatasync
+ 
+@@ -2091,6 +2121,7 @@ echo "preadv support    $preadv"
+ echo "fdatasync         $fdatasync"
+ echo "uuid support      $uuid"
+ echo "vhost-net support $vhost_net"
++echo "Spice             $spice"
+ 
+ if test $sdl_too_old = "yes"; then
+ echo "-> Your SDL version is too old - please upgrade to have SDL support"
+@@ -2311,6 +2342,10 @@ else
+   echo "CONFIG_NO_CPU_EMULATION=y" >> $config_host_mak
+ fi
+ 
++if test "$spice" = "yes" ; then
++  echo "CONFIG_SPICE=y" >> $config_host_mak
++fi
++
+ # XXX: suppress that
+ if [ "$bsd" = "yes" ] ; then
+   echo "CONFIG_BSD=y" >> $config_host_mak
+-- 
+1.6.3.rc4.29.g8146
+
