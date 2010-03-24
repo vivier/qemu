@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.28%{?dist}
+Release: 2.29%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -380,6 +380,10 @@ Patch1175: kvm-qcow2-Rewrite-alloc_refcount_block-grow_refcount_tab.patch
 Patch1176: kvm-qcow2-More-checks-for-qemu-img-check.patch
 # For bz#576488 - Spice: virtio serial based device for guest-spice client communication
 Patch1177: kvm-spice-virtual-machine-channel-replacement-for-remove.patch
+# For bz#558835 - ide/scsi drive versions
+Patch1178: kvm-scsi-device-version-property.patch
+# For bz#558835 - ide/scsi drive versions
+Patch1179: kvm-scsi-disk-fix-buffer-overflow.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -619,6 +623,8 @@ such as kvmtrace and kvm_stat.
 %patch1175 -p1
 %patch1176 -p1
 %patch1177 -p1
+%patch1178 -p1
+%patch1179 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -814,6 +820,12 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Mar 24 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.29.el6
+- kvm-scsi-device-version-property.patch [bz#558835]
+- kvm-scsi-disk-fix-buffer-overflow.patch [bz#558835]
+- Resolves: bz#558835
+  (ide/scsi drive versions)
+
 * Wed Mar 24 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.28.el6
 - kvm-qcow2-Factor-next_refcount_table_size-out.patch [bz#567940]
 - kvm-qcow2-Rewrite-alloc_refcount_block-grow_refcount_tab.patch [bz#567940]
