@@ -1,0 +1,172 @@
+From 4933a461a0e9137b9c40d76d6a61a1c1f1f1d737 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 18 Mar 2010 17:25:37 -0300
+Subject: [PATCH 11/14] spice: send connect / disconnect monitor events
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1268933140-655-12-git-send-email-kraxel@redhat.com>
+Patchwork-id: 7905
+O-Subject: [RHEL-6 kvm PATCH v3 11/14] spice: send connect / disconnect monitor
+	events
+Bugzilla: 558957
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Yonit Halperin <yhalperi@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Send QEVENT_SPICE_INITIALIZED and QEVENT_SPICE_DISCONNECTED events
+for spice, being aequivalent to the VNC counterparts.  The events are
+sent on connects / disconnects of the main spice channel.
+
+[ v3: fix qobject allocation + refcounting  ]
+[ v3: drop service from client+server dicts ]
+
+bugzilla: #558957 -- A QMP event notification on SPICE client
+                     connect/disconnect events
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ monitor.c |    6 +++++
+ monitor.h |    2 +
+ spice.c   |   69 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 76 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c |    6 +++++
+ monitor.h |    2 +
+ spice.c   |   69 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 76 insertions(+), 1 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 6a46906..2ecb9e1 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -371,6 +371,12 @@ void monitor_protocol_event(MonitorEvent event, QObject *data)
+         case QEVENT_VNC_DISCONNECTED:
+             event_name = "VNC_DISCONNECTED";
+             break;
++        case QEVENT_SPICE_INITIALIZED:
++            event_name = "SPICE_INITIALIZED";
++            break;
++        case QEVENT_SPICE_DISCONNECTED:
++            event_name = "SPICE_DISCONNECTED";
++            break;
+         case QEVENT_BLOCK_IO_ERROR:
+             event_name = "BLOCK_IO_ERROR";
+             break;
+diff --git a/monitor.h b/monitor.h
+index 2dc6d60..394b077 100644
+--- a/monitor.h
++++ b/monitor.h
+@@ -23,6 +23,8 @@ typedef enum MonitorEvent {
+     QEVENT_VNC_CONNECTED,
+     QEVENT_VNC_INITIALIZED,
+     QEVENT_VNC_DISCONNECTED,
++    QEVENT_SPICE_INITIALIZED,
++    QEVENT_SPICE_DISCONNECTED,
+     QEVENT_BLOCK_IO_ERROR,
+     QEVENT_MAX,
+ } MonitorEvent;
+diff --git a/spice.c b/spice.c
+index b342460..d347713 100644
+--- a/spice.c
++++ b/spice.c
+@@ -1,16 +1,19 @@
+ #include <stdlib.h>
+ #include <stdio.h>
+ #include <string.h>
++#include <netdb.h>
+ 
+ #include <spice.h>
+ 
+ #include "qemu-common.h"
++#include "qemu_socket.h"
+ #include "qemu-spice.h"
+ #include "qemu-timer.h"
+ #include "qemu-queue.h"
+ #include "qemu-x509.h"
+ #include "monitor.h"
+ #include "qerror.h"
++#include "qjson.h"
+ #include "sysemu.h"
+ #include "vnc.h"
+ 
+@@ -67,10 +70,74 @@ static void core_term_printf(CoreInterface *core, const char* format, ...)
+     /* ignore */
+ }
+ 
++static QDict *server, *client;
++
++static void spice_qmp_event_initialized(void)
++{
++    struct sockaddr_storage sa;
++    char addr[NI_MAXHOST], port[NI_MAXSERV];
++    socklen_t salen;
++    QObject *data;
++
++    QDECREF(server);
++    server = qdict_new();
++    salen = sizeof(sa);
++    if (spice_server_get_sock_info(s, (struct sockaddr*)&sa, &salen) == 0) {
++        if (getnameinfo((struct sockaddr*)&sa, salen,
++                        addr, sizeof(addr), port, sizeof(port),
++                        NI_NUMERICHOST | NI_NUMERICSERV) == 0) {
++            qdict_put(server, "host", qstring_from_str(addr));
++            qdict_put(server, "family", qstring_from_str(inet_strfamily(sa.ss_family)));
++        }
++    }
++
++    QDECREF(client);
++    client = qdict_new();
++    salen = sizeof(sa);
++    if (spice_server_get_peer_info(s, (struct sockaddr*)&sa, &salen) == 0) {
++        if (getnameinfo((struct sockaddr*)&sa, salen,
++                        addr, sizeof(addr), port, sizeof(port),
++                        NI_NUMERICHOST | NI_NUMERICSERV) == 0) {
++            qdict_put(client, "host", qstring_from_str(addr));
++            qdict_put(client, "family", qstring_from_str(inet_strfamily(sa.ss_family)));
++        }
++    }
++
++    data = qobject_from_jsonf("{ 'client': %p, 'server': %p }",
++                              QOBJECT(client), QOBJECT(server));
++    monitor_protocol_event(QEVENT_SPICE_INITIALIZED, data);
++    QINCREF(client);
++    QINCREF(server);
++    qobject_decref(data);
++}
++
++static void spice_qmp_event_disconnect(void)
++{
++    QObject *data;
++
++    /*
++     * Right now spice does (a) support one connection at a time only
++     * and (b) allways sends disconnects for the old client before the
++     * connect for new client.  So we can simply reuse the server and
++     * client info collected on connect for the time being.
++     */
++    data = qobject_from_jsonf("{ 'client': %p, 'server': %p }",
++                              QOBJECT(client), QOBJECT(server));
++    monitor_protocol_event(QEVENT_SPICE_DISCONNECTED, data);
++    qobject_decref(data);
++    server = NULL;
++    client = NULL;
++}
++
+ static void core_log(CoreInterface *core, LogLevel level, const char* componnent,
+                      const char* format, ...)
+ {
+-    /* ignore */
++    if (strcmp(format, "new user connection") == 0) {
++        spice_qmp_event_initialized();
++    }
++    if (strcmp(format, "user disconnected") == 0) {
++        spice_qmp_event_disconnect();
++    }
+ }
+ 
+ static CoreInterface core_interface = {
+-- 
+1.6.3.rc4.29.g8146
+

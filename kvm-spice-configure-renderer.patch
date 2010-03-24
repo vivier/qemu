@@ -1,0 +1,69 @@
+From 36f664bcb04e69152b11ba0865555746272e5cc6 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 18 Mar 2010 17:25:36 -0300
+Subject: [PATCH 10/14] spice: configure renderer
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1268933140-655-11-git-send-email-kraxel@redhat.com>
+Patchwork-id: 7901
+O-Subject: [RHEL-6 kvm PATCH v3 10/14] spice: configure renderer
+Bugzilla: 574225
+RH-Acked-by: Alexander Larsson <alexl@redhat.com>
+RH-Acked-by: Yonit Halperin <yhalperi@redhat.com>
+RH-Acked-by: Izik Eidus <ieidus@redhat.com>
+
+Add option to configure the spice renderer.  Syntax is renderer=<name>.
+Multiple renderers can be specified by using the option multiple times.
+
+bugzilla: #574225 -- spice: add config options
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ spice.c |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ spice.c |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
+
+diff --git a/spice.c b/spice.c
+index 5b2bfee..b342460 100644
+--- a/spice.c
++++ b/spice.c
+@@ -159,6 +159,9 @@ QemuOptsList qemu_spice_opts = {
+             .name = "image-compression",  /* old: ic */
+             .type = QEMU_OPT_STRING,
+         },{
++            .name = "renderer",
++            .type = QEMU_OPT_STRING,
++        },{
+             .name = "tls-channel",
+             .type = QEMU_OPT_STRING,
+         },{
+@@ -241,6 +244,14 @@ void mon_set_password(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     }
+ }
+ 
++static int add_renderer(const char *name, const char *value, void *opaque)
++{
++    if (strcmp(name, "renderer") != 0)
++        return 0;
++    spice_server_add_renderer(s, value);
++    return 0;
++}
++
+ static int add_channel(const char *name, const char *value, void *opaque)
+ {
+     spice_channel_t channel;
+@@ -356,6 +367,7 @@ void qemu_spice_init(void)
+ 
+     spice_server_set_image_compression(s, compression);
+     qemu_opt_foreach(opts, add_channel, NULL, 0);
++    qemu_opt_foreach(opts, add_renderer, NULL, 0);
+ 
+     spice_server_init(s, &core_interface);
+     using_spice = 1;
+-- 
+1.6.3.rc4.29.g8146
+

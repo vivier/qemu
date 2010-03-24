@@ -1,0 +1,127 @@
+From 4524dfc9a779787a54f58ba80749116e9249de0b Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 18 Mar 2010 17:25:39 -0300
+Subject: [PATCH 13/14] spice: notifying spice when migration starts and ends.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1268933140-655-14-git-send-email-kraxel@redhat.com>
+Patchwork-id: 7907
+O-Subject: [RHEL-6 kvm PATCH v3 13/14] spice: notifying spice when migration
+	starts and ends.
+Bugzilla: 574849
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Alexander Larsson <alexl@redhat.com>
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+
+From: Yonit Halperin <yhalperi@redhat.com>
+
+[ new in v3 ]
+
+bugzilla: 574849 -- spice: client migration support
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ migration.c  |   17 ++++++++++++++++-
+ qemu-spice.h |    3 +++
+ spice.c      |   14 ++++++++++++++
+ 3 files changed, 33 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ migration.c  |   17 ++++++++++++++++-
+ qemu-spice.h |    3 +++
+ spice.c      |   14 ++++++++++++++
+ 3 files changed, 33 insertions(+), 1 deletions(-)
+
+diff --git a/migration.c b/migration.c
+index 82ef1b0..a12b381 100644
+--- a/migration.c
++++ b/migration.c
+@@ -21,6 +21,10 @@
+ #include "block-migration.h"
+ #include "qemu-objects.h"
+ 
++#ifdef CONFIG_SPICE
++#include "qemu-spice.h"
++#endif
++
+ //#define DEBUG_MIGRATION
+ 
+ #ifdef DEBUG_MIGRATION
+@@ -314,6 +318,13 @@ void migrate_fd_cleanup(FdMigrationState *s)
+     if (s->fd != -1)
+         close(s->fd);
+ 
++#ifdef CONFIG_SPICE
++    if (using_spice) {
++        assert(s->state != MIG_STATE_ACTIVE);
++        qemu_spice_migrate_end(s->state == MIG_STATE_COMPLETED);
++    }
++#endif
++
+     /* Don't resume monitor until we've flushed all of the buffers */
+     if (s->mon) {
+         monitor_resume(s->mon);
+@@ -352,6 +363,10 @@ void migrate_fd_connect(FdMigrationState *s)
+ {
+     int ret;
+ 
++#ifdef CONFIG_SPICE
++    if (using_spice)
++        qemu_spice_migrate_start();  
++#endif
+     s->file = qemu_fopen_ops_buffered(s,
+                                       s->bandwidth_limit,
+                                       migrate_fd_put_buffer,
+@@ -398,8 +413,8 @@ void migrate_fd_put_ready(void *opaque)
+         } else {
+             state = MIG_STATE_COMPLETED;
+         }
+-        migrate_fd_cleanup(s);
+         s->state = state;
++        migrate_fd_cleanup(s);
+     }
+ }
+ 
+diff --git a/qemu-spice.h b/qemu-spice.h
+index a49af38..c7dbf0d 100644
+--- a/qemu-spice.h
++++ b/qemu-spice.h
+@@ -23,6 +23,9 @@ void qxl_dev_init(PCIBus *bus);
+ void qemu_spice_add_interface(struct VDInterface *interface);
+ void qemu_spice_remove_interface(struct VDInterface *interface);
+ 
++void qemu_spice_migrate_start(void);
++void qemu_spice_migrate_end(int completed);
++
+ void mon_set_password(Monitor *mon, const QDict *qdict, QObject **ret_data);
+ 
+ #else  /* CONFIG_SPICE */
+diff --git a/spice.c b/spice.c
+index d347713..948ec45 100644
+--- a/spice.c
++++ b/spice.c
+@@ -22,6 +22,20 @@
+ static SpiceServer *s;
+ int using_spice = 0;
+ 
++void qemu_spice_migrate_start(void)
++{
++    if (!s)
++        return;
++    spice_server_migrate_start(s);
++}
++
++void qemu_spice_migrate_end(int completed)
++{
++    if (!s)
++        return;
++    spice_server_migrate_end(s, completed);
++}
++
+ void qemu_spice_add_interface(VDInterface *interface)
+ {
+     if (!s)
+-- 
+1.6.3.rc4.29.g8146
+

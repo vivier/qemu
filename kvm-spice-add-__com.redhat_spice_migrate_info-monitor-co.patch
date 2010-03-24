@@ -1,0 +1,112 @@
+From 9e4ff35ef599c4c70b9d7f9c872834cf8d06be6b Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 18 Mar 2010 17:25:40 -0300
+Subject: [PATCH 14/14] spice: add __com.redhat_spice_migrate_info monitor command
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1268933140-655-15-git-send-email-kraxel@redhat.com>
+Patchwork-id: 7903
+O-Subject: [RHEL-6 kvm PATCH v3 14/14] spice: add
+	__com.redhat_spice_migrate_info monitor command
+Bugzilla: 574849
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Yonit Halperin <yhalperi@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alexander Larsson <alexl@redhat.com>
+
+Add monitor command to send migration info for the spice client.
+This allows the spice client to re-connect to the migration target
+host.  libvirt will use this.
+
+Syntax:
+
+__com.redhat_spice_migrate_info hostname port tls-port cert-subject
+
+[ new in v3 ]
+
+bugzilla: 574849 -- spice: client migration support
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ qemu-monitor.hx |   16 ++++++++++++++++
+ qemu-spice.h    |    1 +
+ spice.c         |   16 ++++++++++++++++
+ 3 files changed, 33 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-monitor.hx |   16 ++++++++++++++++
+ qemu-spice.h    |    1 +
+ spice.c         |   16 ++++++++++++++++
+ 3 files changed, 33 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 0f9ab86..5a092f4 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -1105,6 +1105,22 @@ STEXI
+ change spice/vnc ticket
+ ETEXI
+ 
++#if defined(CONFIG_SPICE)
++    {
++        .name       = "__com.redhat_spice_migrate_info",
++        .args_type  = "hostname:s,port:i?,tls-port:i?,cert-subject:s?",
++        .params     = "hostname port tls-port cert-subject",
++        .help       = "send migration info to spice client",
++	.user_print = monitor_user_noop,
++        .mhandler.cmd_new = mon_spice_migrate,
++    },
++#endif
++
++STEXI
++@item __com.redhat_spice_migrate_info hostname port tls-port cert-subject
++send migration info to spice client
++ETEXI
++
+ STEXI
+ @end table
+ ETEXI
+diff --git a/qemu-spice.h b/qemu-spice.h
+index c7dbf0d..d55263a 100644
+--- a/qemu-spice.h
++++ b/qemu-spice.h
+@@ -27,6 +27,7 @@ void qemu_spice_migrate_start(void);
+ void qemu_spice_migrate_end(int completed);
+ 
+ void mon_set_password(Monitor *mon, const QDict *qdict, QObject **ret_data);
++void mon_spice_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data);
+ 
+ #else  /* CONFIG_SPICE */
+ 
+diff --git a/spice.c b/spice.c
+index 948ec45..410a8fb 100644
+--- a/spice.c
++++ b/spice.c
+@@ -325,6 +325,22 @@ void mon_set_password(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     }
+ }
+ 
++void mon_spice_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data)
++{
++    const char *hostname = qdict_get_str(qdict, "hostname");
++    const char *subject  = qdict_get_try_str(qdict, "cert-subject");
++    int port             = qdict_get_try_int(qdict, "port", -1);
++    int tls_port         = qdict_get_try_int(qdict, "tls-port", -1);
++
++    if (!s) {
++        qemu_error_new(QERR_DEVICE_NOT_ACTIVE, "spice");
++        return;
++    }
++
++    spice_server_migrate_info(s, hostname, port, tls_port, subject);
++    return;
++}
++
+ static int add_renderer(const char *name, const char *value, void *opaque)
+ {
+     if (strcmp(name, "renderer") != 0)
+-- 
+1.6.3.rc4.29.g8146
+

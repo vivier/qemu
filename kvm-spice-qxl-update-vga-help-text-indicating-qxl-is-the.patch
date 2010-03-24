@@ -1,0 +1,45 @@
+From 4b7da4cce4ffbab618e0da578ad04789fce2102c Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 18 Mar 2010 17:25:38 -0300
+Subject: [PATCH 12/14] spice/qxl: update -vga help text indicating qxl is there.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1268933140-655-13-git-send-email-kraxel@redhat.com>
+Patchwork-id: 7906
+O-Subject: [RHEL-6 kvm PATCH v3 12/14] spice/qxl: update -vga help text
+	indicating qxl is there.
+Bugzilla: 574853
+RH-Acked-by: Yonit Halperin <yhalperi@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alexander Larsson <alexl@redhat.com>
+
+libvirt needs this to detect qxl support being present.
+
+bugzilla: 574853 -- spice/qxl: add qxl to -vga help text
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ qemu-options.hx |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-options.hx |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-options.hx b/qemu-options.hx
+index 1bc8f24..b35e4ed 100644
+--- a/qemu-options.hx
++++ b/qemu-options.hx
+@@ -529,7 +529,7 @@ Rotate graphical output 90 deg left (only PXA LCD).
+ ETEXI
+ 
+ DEF("vga", HAS_ARG, QEMU_OPTION_vga,
+-    "-vga [std|cirrus|vmware|xenfb|none]\n"
++    "-vga [std|cirrus|vmware|xenfb|qxl|none]\n"
+     "                select video card type\n")
+ STEXI
+ @item -vga @var{type}
+-- 
+1.6.3.rc4.29.g8146
+

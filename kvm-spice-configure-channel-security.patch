@@ -1,0 +1,107 @@
+From 13101b428542f0234266443fe28130392366744b Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 18 Mar 2010 17:25:35 -0300
+Subject: [PATCH 09/14] spice: configure channel security
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1268933140-655-10-git-send-email-kraxel@redhat.com>
+Patchwork-id: 7899
+O-Subject: [RHEL-6 kvm PATCH v3 09/14] spice: configure channel security
+Bugzilla: 574225
+RH-Acked-by: Alexander Larsson <alexl@redhat.com>
+RH-Acked-by: Yonit Halperin <yhalperi@redhat.com>
+RH-Acked-by: Izik Eidus <ieidus@redhat.com>
+
+This patch adds tls-channel and plaintext-channel options to the qemu
+-spice command line argument.  The options can be specified multiple
+times to configure multiple channels, like this:
+
+  -spice port=1234,tls-port=5678,tls-channel=main,tls-channel=inputs
+
+bugzilla: #574225 -- spice: add config options
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ spice.c |   40 ++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 40 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ spice.c |   40 ++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 40 insertions(+), 0 deletions(-)
+
+diff --git a/spice.c b/spice.c
+index 256fa46..5b2bfee 100644
+--- a/spice.c
++++ b/spice.c
+@@ -115,6 +115,19 @@ static const char *compression_names[] = {
+ #define parse_compression(_name) \
+     name2enum(_name, compression_names, ARRAY_SIZE(compression_names))
+ 
++static const char *channel_names[] = {
++    [ SPICE_CHANNEL_MAIN ]      = "main",
++    [ SPICE_CHANNEL_DISPLAY ]   = "display",
++    [ SPICE_CHANNEL_INPUTS ]    = "inputs",
++    [ SPICE_CHANNEL_CURSOR ]    = "cursor",
++    [ SPICE_CHANNEL_PLAYBACK ]  = "playback",
++    [ SPICE_CHANNEL_RECORD ]    = "record",
++    [ SPICE_CHANNEL_TUNNEL ]    = "tunnel",
++    [ SPICE_CHANNEL_ALL ]       = "all",
++};
++#define parse_channel(_name) \
++    name2enum(_name, channel_names, ARRAY_SIZE(channel_names))
++
+ /* functions for the rest of qemu */
+ 
+ QemuOptsList qemu_spice_opts = {
+@@ -146,6 +159,12 @@ QemuOptsList qemu_spice_opts = {
+             .name = "image-compression",  /* old: ic */
+             .type = QEMU_OPT_STRING,
+         },{
++            .name = "tls-channel",
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "plaintext-channel",
++            .type = QEMU_OPT_STRING,
++        },{
+             .name = "x509-dir",
+             .type = QEMU_OPT_STRING,
+         },{
+@@ -222,6 +241,26 @@ void mon_set_password(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     }
+ }
+ 
++static int add_channel(const char *name, const char *value, void *opaque)
++{
++    spice_channel_t channel;
++    int security = 0;
++
++    if (strcmp(name, "tls-channel") == 0)
++        security = SPICE_CHANNEL_SECURITY_SSL;
++    if (strcmp(name, "plaintext-channel") == 0)
++        security = SPICE_CHANNEL_SECURITY_NON;
++    if (security == 0)
++        return 0;
++    channel = parse_channel(value);
++    if (channel == -1) {
++        fprintf(stderr, "spice: failed to parse channel: %s\n", value);
++        exit(1);
++    }
++    spice_server_set_channel_security(s, channel, security);
++    return 0;
++}
++
+ void qemu_spice_init(void)
+ {
+     QemuOpts *opts = QTAILQ_FIRST(&qemu_spice_opts.head);
+@@ -316,6 +355,7 @@ void qemu_spice_init(void)
+         spice_server_set_noauth(s);
+ 
+     spice_server_set_image_compression(s, compression);
++    qemu_opt_foreach(opts, add_channel, NULL, 0);
+ 
+     spice_server_init(s, &core_interface);
+     using_spice = 1;
+-- 
+1.6.3.rc4.29.g8146
+

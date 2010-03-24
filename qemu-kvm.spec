@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.26%{?dist}
+Release: 2.27%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -344,6 +344,34 @@ Patch1157: kvm-spice-tls-support.patch
 Patch1158: kvm-spice-configure-listening-addr.patch
 # For bz#549757 - Provide SPICE support  / -spice command line argument
 Patch1159: kvm-spice-add-qxl-device.patch
+# For bz#574211 - spice: add tablet support
+Patch1160: kvm-spice-add-tablet.patch
+# For bz#574212 - spice:wake spice server only when idle
+Patch1161: kvm-spice-simple-display-wake-spice-server-only-when-idl.patch
+# For bz#574214 - qxl: switch qxl from native into vga mode on vga register access
+Patch1162: kvm-spice-qxl-switch-back-to-vga-mode-on-register-access.patch
+# For bz#568820 - EMBARGOED CVE-2010-0431 qemu: Insufficient guest provided pointers validation [rhel-6.0]
+Patch1163: kvm-spice-qxl-ring-access-security-fix.patch
+# For bz#525935 - RFE: expire vnc password
+Patch1164: kvm-vnc-support-password-expire.patch
+# For bz#525935 - RFE: expire vnc password
+Patch1165: kvm-spice-vnc-add-__com.redhat_set_password-monitor-comm.patch
+# For bz#574222 - spice: add audio support
+Patch1166: kvm-spice-add-audio-support.patch
+# For bz#574225 - spice: add config options
+Patch1167: kvm-spice-make-image-compression-configurable.patch
+# For bz#574225 - spice: add config options
+Patch1168: kvm-spice-configure-channel-security.patch
+# For bz#574225 - spice: add config options
+Patch1169: kvm-spice-configure-renderer.patch
+# For bz#558957 - A QMP event notification on SPICE client connect/disconnect events
+Patch1170: kvm-spice-send-connect-disconnect-monitor-events.patch
+# For bz#574853 - spice/qxl: add qxl to -vga help text
+Patch1171: kvm-spice-qxl-update-vga-help-text-indicating-qxl-is-the.patch
+# For bz#574849 - spice: client migration support
+Patch1172: kvm-spice-notifying-spice-when-migration-starts-and-ends.patch
+# For bz#574849 - spice: client migration support
+Patch1173: kvm-spice-add-__com.redhat_spice_migrate_info-monitor-co.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -565,6 +593,20 @@ such as kvmtrace and kvm_stat.
 %patch1157 -p1
 %patch1158 -p1
 %patch1159 -p1
+%patch1160 -p1
+%patch1161 -p1
+%patch1162 -p1
+%patch1163 -p1
+%patch1164 -p1
+%patch1165 -p1
+%patch1166 -p1
+%patch1167 -p1
+%patch1168 -p1
+%patch1169 -p1
+%patch1170 -p1
+%patch1171 -p1
+%patch1172 -p1
+%patch1173 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -760,6 +802,42 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Mar 24 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.27.el6
+- kvm-spice-add-tablet.patch [bz#574211]
+- kvm-spice-simple-display-wake-spice-server-only-when-idl.patch [bz#574212]
+- kvm-spice-qxl-switch-back-to-vga-mode-on-register-access.patch [bz#574214]
+- kvm-spice-qxl-ring-access-security-fix.patch [bz#568820]
+- kvm-vnc-support-password-expire.patch [bz#525935]
+- kvm-spice-vnc-add-__com.redhat_set_password-monitor-comm.patch [bz#525935]
+- kvm-spice-add-audio-support.patch [bz#574222]
+- kvm-spice-make-image-compression-configurable.patch [bz#574225]
+- kvm-spice-configure-channel-security.patch [bz#574225]
+- kvm-spice-configure-renderer.patch [bz#574225]
+- kvm-spice-send-connect-disconnect-monitor-events.patch [bz#558957]
+- kvm-spice-qxl-update-vga-help-text-indicating-qxl-is-the.patch [bz#574853]
+- kvm-spice-notifying-spice-when-migration-starts-and-ends.patch [bz#574849]
+- kvm-spice-add-__com.redhat_spice_migrate_info-monitor-co.patch [bz#574849]
+- Resolves: bz#525935
+  (RFE: expire vnc password)
+- Resolves: bz#558957
+  (A QMP event notification on SPICE client connect/disconnect events)
+- Resolves: bz#568820
+  (EMBARGOED CVE-2010-0431 qemu: Insufficient guest provided pointers validation [rhel-6.0])
+- Resolves: bz#574211
+  (spice: add tablet support)
+- Resolves: bz#574212
+  (spice:wake spice server only when idle)
+- Resolves: bz#574214
+  (qxl: switch qxl from native into vga mode on vga register access)
+- Resolves: bz#574222
+  (spice: add audio support)
+- Resolves: bz#574225
+  (spice: add config options)
+- Resolves: bz#574849
+  (spice: client migration support)
+- Resolves: bz#574853
+  (spice/qxl: add qxl to -vga help text)
+
 * Thu Mar 18 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.26.el6
 - kvm-add-spice-into-the-configure-file.patch [bz#549757]
 - kvm-spice-core-bits.patch [bz#549757]

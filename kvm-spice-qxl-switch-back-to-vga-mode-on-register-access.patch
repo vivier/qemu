@@ -1,0 +1,70 @@
+From 2027476b932bdbfe346a808a037de6dee3b9d42f Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 18 Mar 2010 17:25:29 -0300
+Subject: [PATCH 03/14] spice/qxl: switch back to vga mode on register access
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1268933140-655-4-git-send-email-kraxel@redhat.com>
+Patchwork-id: 7895
+O-Subject: [RHEL-6 kvm PATCH v3 03/14] spice/qxl: switch back to vga mode on
+	register access
+Bugzilla: 574214
+RH-Acked-by: Alexander Larsson <alexl@redhat.com>
+RH-Acked-by: Yonit Halperin <yhalperi@redhat.com>
+RH-Acked-by: Izik Eidus <ieidus@redhat.com>
+
+Wrap vga register access, switch back from qxl native mode to vga mode
+on vga register access.  Without this you can't switch from X11 back to
+a vgacon text console.
+
+bugzilla: #574214 -- qxl: switch qxl from native into vga mode on
+                     vga register access
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/qxl.c |   17 +++++++++++++++++
+ 1 files changed, 17 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qxl.c |   17 +++++++++++++++++
+ 1 files changed, 17 insertions(+), 0 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index 233fb66..a0d7d75 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -1231,6 +1231,18 @@ static ram_addr_t qxl_rom_size(void)
+     return rom_size;
+ }
+ 
++static void qxl_vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
++{
++    VGACommonState *vga = opaque;
++    PCIQXLDevice *qxl = container_of(vga, PCIQXLDevice, vga);
++
++    if (qxl->mode != QXL_MODE_VGA) {
++        qxl_reset(qxl);
++        vga->invalidate(vga);
++    }
++    vga_ioport_write(opaque, addr, val);
++}
++
+ static int device_id = 0;
+ 
+ static int qxl_init(PCIDevice *dev)
+@@ -1248,6 +1260,11 @@ static int qxl_init(PCIDevice *dev)
+             ram_size = 32 * 1024 * 1024;
+         vga_common_init(vga, ram_size);
+         vga_init(vga);
++        register_ioport_write(0x3c0, 16, 1, qxl_vga_ioport_write, vga);
++        register_ioport_write(0x3b4,  2, 1, qxl_vga_ioport_write, vga);
++        register_ioport_write(0x3d4,  2, 1, qxl_vga_ioport_write, vga);
++        register_ioport_write(0x3ba,  1, 1, qxl_vga_ioport_write, vga);
++        register_ioport_write(0x3da,  1, 1, qxl_vga_ioport_write, vga);
+         vga->ds = graphic_console_init(vga->update, vga->invalidate,
+                                        vga->screen_dump, vga->text_update, vga);
+         qxl_init_modes();
+-- 
+1.6.3.rc4.29.g8146
+
