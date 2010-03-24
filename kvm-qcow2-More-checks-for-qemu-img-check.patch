@@ -1,0 +1,60 @@
+From a556b0d1c480778f75ad282b435257be1b3121ca Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Wed, 24 Feb 2010 12:20:16 -0300
+Subject: [PATCH 3/4] qcow2: More checks for qemu-img check
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1267014016-12519-4-git-send-email-kwolf@redhat.com>
+Patchwork-id: 7259
+O-Subject: [RHEL-6 KVM PATCH 3/3] qcow2: More checks for qemu-img check
+Bugzilla: 567940
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+Bugzilla: 567940
+Upstream commit: 746c3cb5d55a702ba6285e97d2a13671f09285d8
+
+Implement some more refcount block related checks
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block/qcow2-refcount.c |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2-refcount.c |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
+
+diff --git a/block/qcow2-refcount.c b/block/qcow2-refcount.c
+index 5ebbcb6..f5256cb 100644
+--- a/block/qcow2-refcount.c
++++ b/block/qcow2-refcount.c
+@@ -1066,9 +1066,21 @@ int qcow2_check_refcounts(BlockDriverState *bs)
+     for(i = 0; i < s->refcount_table_size; i++) {
+         int64_t offset;
+         offset = s->refcount_table[i];
++
++        /* Refcount blocks are cluster aligned */
++        if (offset & (s->cluster_size - 1)) {
++            fprintf(stderr, "ERROR refcount block %d is not "
++                "cluster aligned; refcount table entry corrupted\n", i);
++            errors++;
++        }
++
+         if (offset != 0) {
+             errors += inc_refcounts(bs, refcount_table, nb_clusters,
+                           offset, s->cluster_size);
++            if (refcount_table[offset / s->cluster_size] != 1) {
++                fprintf(stderr, "ERROR refcount block %d refcount=%d\n",
++                    i, refcount_table[offset / s->cluster_size]);
++            }
+         }
+     }
+ 
+-- 
+1.6.3.rc4.29.g8146
+

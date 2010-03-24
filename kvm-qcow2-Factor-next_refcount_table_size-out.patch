@@ -1,0 +1,87 @@
+From 76634bc0645e5c0bb4e6adb9aa84097f5abeb071 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Wed, 24 Feb 2010 12:20:14 -0300
+Subject: [PATCH 1/4] qcow2: Factor next_refcount_table_size out
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1267014016-12519-2-git-send-email-kwolf@redhat.com>
+Patchwork-id: 7258
+O-Subject: [RHEL-6 KVM PATCH 1/3] qcow2: Factor next_refcount_table_size out
+Bugzilla: 567940
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+Bugzilla: 567940
+Upstream commit: 05121aedc41f87e44e41e9cef55f2e49ce7ba94e
+
+When the refcount table grows, it doesn't only grow by one entry but reserves
+some space for future refcount blocks. The algorithm to calculate the number of
+entries stays the same with the fixes, so factor it out before replacing the
+rest.
+
+As Juan suggested take the opportunity to simplify the code a bit.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block/qcow2-refcount.c |   30 +++++++++++++++++++-----------
+ 1 files changed, 19 insertions(+), 11 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2-refcount.c |   30 +++++++++++++++++++-----------
+ 1 files changed, 19 insertions(+), 11 deletions(-)
+
+diff --git a/block/qcow2-refcount.c b/block/qcow2-refcount.c
+index c2a5c04..5dde80a 100644
+--- a/block/qcow2-refcount.c
++++ b/block/qcow2-refcount.c
+@@ -123,6 +123,24 @@ static int get_refcount(BlockDriverState *bs, int64_t cluster_index)
+     return be16_to_cpu(s->refcount_block_cache[block_index]);
+ }
+ 
++/*
++ * Rounds the refcount table size up to avoid growing the table for each single
++ * refcount block that is allocated.
++ */
++static unsigned int next_refcount_table_size(BDRVQcowState *s,
++    unsigned int min_size)
++{
++    unsigned int min_clusters = (min_size >> (s->cluster_bits - 3)) + 1;
++    unsigned int refcount_table_clusters =
++        MAX(1, s->refcount_table_size >> (s->cluster_bits - 3));
++
++    while (min_clusters > refcount_table_clusters) {
++        refcount_table_clusters = (refcount_table_clusters * 3 + 1) / 2;
++    }
++
++    return refcount_table_clusters << (s->cluster_bits - 3);
++}
++
+ static int grow_refcount_table(BlockDriverState *bs, int min_size)
+ {
+     BDRVQcowState *s = bs->opaque;
+@@ -136,17 +154,7 @@ static int grow_refcount_table(BlockDriverState *bs, int min_size)
+     if (min_size <= s->refcount_table_size)
+         return 0;
+     /* compute new table size */
+-    refcount_table_clusters = s->refcount_table_size >> (s->cluster_bits - 3);
+-    for(;;) {
+-        if (refcount_table_clusters == 0) {
+-            refcount_table_clusters = 1;
+-        } else {
+-            refcount_table_clusters = (refcount_table_clusters * 3 + 1) / 2;
+-        }
+-        new_table_size = refcount_table_clusters << (s->cluster_bits - 3);
+-        if (min_size <= new_table_size)
+-            break;
+-    }
++    new_table_size = next_refcount_table_size(s, min_size);
+ #ifdef DEBUG_ALLOC2
+     printf("grow_refcount_table from %d to %d\n",
+            s->refcount_table_size,
+-- 
+1.6.3.rc4.29.g8146
+

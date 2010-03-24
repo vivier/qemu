@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.27%{?dist}
+Release: 2.28%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -372,6 +372,14 @@ Patch1171: kvm-spice-qxl-update-vga-help-text-indicating-qxl-is-the.patch
 Patch1172: kvm-spice-notifying-spice-when-migration-starts-and-ends.patch
 # For bz#574849 - spice: client migration support
 Patch1173: kvm-spice-add-__com.redhat_spice_migrate_info-monitor-co.patch
+# For bz#567940 - qcow2 corruption with I/O error during refcount block allocation
+Patch1174: kvm-qcow2-Factor-next_refcount_table_size-out.patch
+# For bz#567940 - qcow2 corruption with I/O error during refcount block allocation
+Patch1175: kvm-qcow2-Rewrite-alloc_refcount_block-grow_refcount_tab.patch
+# For bz#567940 - qcow2 corruption with I/O error during refcount block allocation
+Patch1176: kvm-qcow2-More-checks-for-qemu-img-check.patch
+# For bz#576488 - Spice: virtio serial based device for guest-spice client communication
+Patch1177: kvm-spice-virtual-machine-channel-replacement-for-remove.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -607,6 +615,10 @@ such as kvmtrace and kvm_stat.
 %patch1171 -p1
 %patch1172 -p1
 %patch1173 -p1
+%patch1174 -p1
+%patch1175 -p1
+%patch1176 -p1
+%patch1177 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -802,6 +814,16 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Mar 24 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.28.el6
+- kvm-qcow2-Factor-next_refcount_table_size-out.patch [bz#567940]
+- kvm-qcow2-Rewrite-alloc_refcount_block-grow_refcount_tab.patch [bz#567940]
+- kvm-qcow2-More-checks-for-qemu-img-check.patch [bz#567940]
+- kvm-spice-virtual-machine-channel-replacement-for-remove.patch [bz#576488]
+- Resolves: bz#567940
+  (qcow2 corruption with I/O error during refcount block allocation)
+- Resolves: bz#576488
+  (Spice: virtio serial based device for guest-spice client communication)
+
 * Wed Mar 24 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.27.el6
 - kvm-spice-add-tablet.patch [bz#574211]
 - kvm-spice-simple-display-wake-spice-server-only-when-idl.patch [bz#574212]
