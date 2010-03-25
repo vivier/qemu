@@ -1,0 +1,71 @@
+From 593566f87b44330c55bc592a603069ff75d06bcd Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 18 Mar 2010 21:21:07 -0300
+Subject: [PATCH 2/3] Revert "QMP: Fix 'query-balloon' key change"
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1268947268-21943-3-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7917
+O-Subject: [PATCH 2/3] Revert "QMP: Fix 'query-balloon' key change"
+Bugzilla: 574939
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+This reverts commit 0e94f3f0163480d963a68870546847cb811889d8.
+
+The next commit contains the full change which introduces this bit,
+so let's revert it to avoid conflict.
+
+Note that at the time 0e94f3f was submitted, it wasn't clear if we
+would ever backport its full version. Now it is.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 0bf3552..94efcd4 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -2252,7 +2252,7 @@ static void monitor_print_balloon(Monitor *mon, const QObject *data)
+     qdict = qobject_to_qdict(data);
+ 
+     monitor_printf(mon, "balloon: actual=%" PRId64 "\n",
+-                        qdict_get_int(qdict, "actual") >> 20);
++                        qdict_get_int(qdict, "balloon") >> 20);
+ }
+ 
+ /**
+@@ -2260,11 +2260,11 @@ static void monitor_print_balloon(Monitor *mon, const QObject *data)
+  *
+  * Return a QDict with the following information:
+  *
+- * - "actual": current balloon value in bytes
++ * - "balloon": current balloon value in bytes
+  *
+  * Example:
+  *
+- * { "actual": 1073741824 }
++ * { "balloon": 1073741824 }
+  */
+ static void do_info_balloon(Monitor *mon, QObject **ret_data)
+ {
+@@ -2272,7 +2272,7 @@ static void do_info_balloon(Monitor *mon, QObject **ret_data)
+ 
+     actual = balloon_get_value();
+     if (actual != 0) {
+-        *ret_data = qobject_from_jsonf("{ 'actual': %" PRId64 "}",
++        *ret_data = qobject_from_jsonf("{ 'balloon': %" PRId64 "}",
+                                        (int64_t) actual);
+     }
+ }
+-- 
+1.6.3.rc4.29.g8146
+

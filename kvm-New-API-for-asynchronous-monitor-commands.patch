@@ -1,0 +1,259 @@
+From 223977fde16a9a30c80a17335fca8517c2bd4d4b Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 18 Mar 2010 21:21:06 -0300
+Subject: [PATCH 1/3] New API for asynchronous monitor commands
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1268947268-21943-2-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7916
+O-Subject: [PATCH 1/3] New API for asynchronous monitor commands
+Bugzilla: 574939
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+This is a merge of the original upstream commit plus a fix,
+the hashs are:
+
+940cc30d0d456781adcc48bf9f8c5582026d7983
+82617d7ce3bdeef6fa32f71f9976b2f4bf3589e9
+
+As this is an important API, the original commit log follows:
+
+Qemu has a number of commands that can operate asynchronously (savevm, migrate,
+etc) and it will be getting more.  For these commands, the user monitor needs
+to be suspended, but QMP monitors could continue to to accept other commands.
+This patch introduces a new command API that isolates the details of handling
+different monitor types from the actual command execution.
+
+A monitor command can use this API by implementing the mhandler.cmd_async
+handler (or info_async if appropriate).  This function is responsible for
+submitting the command and does not return any data although it may raise
+errors.  When the command completes, the QMPCompletion callback should be
+invoked with its opaque data and the command result.
+
+The process for submitting and completing an asynchronous command is different
+for QMP and user monitors.  A user monitor must be suspended at submit time and
+resumed at completion time.  The user_print() function must be passed to the
+QMPCompletion callback so the result can be displayed properly.  QMP monitors
+are simpler.  No submit time setup is required.  When the command completes,
+monitor_protocol_emitter() writes the result in JSON format.
+
+This API can also be used to implement synchronous commands.  In this case, the
+cmd_async handler should immediately call the QMPCompletion callback.  It is my
+hope that this new interface will work for all commands, leading to a
+drastically simplified monitor.c once all commands are ported.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c |  117 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ monitor.h |    2 +
+ 2 files changed, 115 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c |  117 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ monitor.h |    2 +
+ 2 files changed, 115 insertions(+), 4 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 2ecb9e1..0bf3552 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -80,6 +80,12 @@
+  *
+  */
+ 
++typedef struct MonitorCompletionData MonitorCompletionData;
++struct MonitorCompletionData {
++    Monitor *mon;
++    void (*user_print)(Monitor *mon, const QObject *data);
++};
++
+ typedef struct mon_cmd_t {
+     const char *name;
+     const char *args_type;
+@@ -89,9 +95,13 @@ typedef struct mon_cmd_t {
+     union {
+         void (*info)(Monitor *mon);
+         void (*info_new)(Monitor *mon, QObject **ret_data);
++        int  (*info_async)(Monitor *mon, MonitorCompletion *cb, void *opaque);
+         void (*cmd)(Monitor *mon, const QDict *qdict);
+         void (*cmd_new)(Monitor *mon, const QDict *params, QObject **ret_data);
++        int  (*cmd_async)(Monitor *mon, const QDict *params,
++                          MonitorCompletion *cb, void *opaque);
+     } mhandler;
++    int async;
+ } mon_cmd_t;
+ 
+ /* file descriptors passed via SCM_RIGHTS */
+@@ -265,6 +275,11 @@ static inline int monitor_handler_ported(const mon_cmd_t *cmd)
+     return cmd->user_print != NULL;
+ }
+ 
++static inline bool monitor_handler_is_async(const mon_cmd_t *cmd)
++{
++    return cmd->async != 0;
++}
++
+ static inline int monitor_has_error(const Monitor *mon)
+ {
+     return mon->error != NULL;
+@@ -479,6 +494,65 @@ static void do_commit(Monitor *mon, const QDict *qdict)
+     }
+ }
+ 
++static void user_monitor_complete(void *opaque, QObject *ret_data)
++{
++    MonitorCompletionData *data = (MonitorCompletionData *)opaque; 
++
++    if (ret_data) {
++        data->user_print(data->mon, ret_data);
++    }
++    monitor_resume(data->mon);
++    qemu_free(data);
++}
++
++static void qmp_monitor_complete(void *opaque, QObject *ret_data)
++{
++    monitor_protocol_emitter(opaque, ret_data);
++}
++
++static void qmp_async_cmd_handler(Monitor *mon, const mon_cmd_t *cmd,
++                                  const QDict *params)
++{
++    cmd->mhandler.cmd_async(mon, params, qmp_monitor_complete, mon);
++}
++
++static void qmp_async_info_handler(Monitor *mon, const mon_cmd_t *cmd)
++{
++    cmd->mhandler.info_async(mon, qmp_monitor_complete, mon);
++}
++
++static void user_async_cmd_handler(Monitor *mon, const mon_cmd_t *cmd,
++                                   const QDict *params)
++{
++    int ret;
++
++    MonitorCompletionData *cb_data = qemu_malloc(sizeof(*cb_data));
++    cb_data->mon = mon;
++    cb_data->user_print = cmd->user_print;
++    monitor_suspend(mon);
++    ret = cmd->mhandler.cmd_async(mon, params,
++                                  user_monitor_complete, cb_data);
++    if (ret < 0) {
++        monitor_resume(mon);
++        qemu_free(cb_data);
++    }
++}
++
++static void user_async_info_handler(Monitor *mon, const mon_cmd_t *cmd)
++{
++    int ret;
++
++    MonitorCompletionData *cb_data = qemu_malloc(sizeof(*cb_data));
++    cb_data->mon = mon;
++    cb_data->user_print = cmd->user_print;
++    monitor_suspend(mon);
++    ret = cmd->mhandler.info_async(mon, user_monitor_complete, cb_data);
++    if (ret < 0) {
++        monitor_resume(mon);
++        qemu_free(cb_data);
++    }
++}
++
+ static void do_info(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     const mon_cmd_t *cmd;
+@@ -502,7 +576,19 @@ static void do_info(Monitor *mon, const QDict *qdict, QObject **ret_data)
+         goto help;
+     }
+ 
+-    if (monitor_handler_ported(cmd)) {
++    if (monitor_handler_is_async(cmd)) {
++        if (monitor_ctrl_mode(mon)) {
++            qmp_async_info_handler(mon, cmd);
++        } else {
++            user_async_info_handler(mon, cmd);
++        }
++        /*
++         * Indicate that this command is asynchronous and will not return any
++         * data (not even empty).  Instead, the data will be returned via a
++         * completion callback.
++         */
++        *ret_data = qobject_from_jsonf("{ '__mon_async': 'return' }");
++    } else if (monitor_handler_ported(cmd)) {
+         cmd->mhandler.info_new(mon, ret_data);
+ 
+         if (!monitor_ctrl_mode(mon)) {
+@@ -3674,6 +3760,15 @@ static void monitor_print_error(Monitor *mon)
+     mon->error = NULL;
+ }
+ 
++static int is_async_return(const QObject *data)
++{
++    if (data && qobject_type(data) == QTYPE_QDICT) {
++        return qdict_haskey(qobject_to_qdict(data), "__mon_async");
++    }
++
++    return 0;
++}
++
+ static void monitor_call_handler(Monitor *mon, const mon_cmd_t *cmd,
+                                  const QDict *params)
+ {
+@@ -3681,7 +3776,15 @@ static void monitor_call_handler(Monitor *mon, const mon_cmd_t *cmd,
+ 
+     cmd->mhandler.cmd_new(mon, params, &data);
+ 
+-    if (monitor_ctrl_mode(mon)) {
++    if (is_async_return(data)) {
++        /*
++         * Asynchronous commands have no initial return data but they can
++         * generate errors.  Data is returned via the async completion handler.
++         */
++        if (monitor_ctrl_mode(mon) && monitor_has_error(mon)) {
++            monitor_protocol_emitter(mon, NULL);
++        }
++    } else if (monitor_ctrl_mode(mon)) {
+         /* Monitor Protocol */
+         monitor_protocol_emitter(mon, data);
+     } else {
+@@ -3706,7 +3809,9 @@ static void handle_user_command(Monitor *mon, const char *cmdline)
+ 
+     qemu_errors_to_mon(mon);
+ 
+-    if (monitor_handler_ported(cmd)) {
++    if (monitor_handler_is_async(cmd)) {
++        user_async_cmd_handler(mon, cmd, qdict);
++    } else if (monitor_handler_ported(cmd)) {
+         monitor_call_handler(mon, cmd, qdict);
+     } else {
+         cmd->mhandler.cmd(mon, qdict);
+@@ -4179,7 +4284,11 @@ static void handle_qmp_command(JSONMessageParser *parser, QList *tokens)
+         goto err_out;
+     }
+ 
+-    monitor_call_handler(mon, cmd, args);
++    if (monitor_handler_is_async(cmd)) {
++        qmp_async_cmd_handler(mon, cmd, args);
++    } else {
++        monitor_call_handler(mon, cmd, args);
++    }
+     goto out;
+ 
+ err_input:
+diff --git a/monitor.h b/monitor.h
+index 394b077..03cf105 100644
+--- a/monitor.h
++++ b/monitor.h
+@@ -47,4 +47,6 @@ void monitor_printf(Monitor *mon, const char *fmt, ...)
+ void monitor_print_filename(Monitor *mon, const char *filename);
+ void monitor_flush(Monitor *mon);
+ 
++typedef void (MonitorCompletion)(void *opaque, QObject *ret_data);
++
+ #endif /* !MONITOR_H */
+-- 
+1.6.3.rc4.29.g8146
+

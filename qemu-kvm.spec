@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.29%{?dist}
+Release: 2.30%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -384,6 +384,12 @@ Patch1177: kvm-spice-virtual-machine-channel-replacement-for-remove.patch
 Patch1178: kvm-scsi-device-version-property.patch
 # For bz#558835 - ide/scsi drive versions
 Patch1179: kvm-scsi-disk-fix-buffer-overflow.patch
+# For bz#574939 - Memory statistics support
+Patch1180: kvm-New-API-for-asynchronous-monitor-commands.patch
+# For bz#574939 - Memory statistics support
+Patch1181: kvm-Revert-QMP-Fix-query-balloon-key-change.patch
+# For bz#574939 - Memory statistics support
+Patch1182: kvm-virtio-Add-memory-statistics-reporting-to-the-balloo.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -625,6 +631,9 @@ such as kvmtrace and kvm_stat.
 %patch1177 -p1
 %patch1178 -p1
 %patch1179 -p1
+%patch1180 -p1
+%patch1181 -p1
+%patch1182 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -820,6 +829,13 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Mar 25 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.30.el6
+- kvm-New-API-for-asynchronous-monitor-commands.patch [bz#574939]
+- kvm-Revert-QMP-Fix-query-balloon-key-change.patch [bz#574939]
+- kvm-virtio-Add-memory-statistics-reporting-to-the-balloo.patch [bz#574939]
+- Resolves: bz#574939
+  (Memory statistics support)
+
 * Wed Mar 24 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.29.el6
 - kvm-scsi-device-version-property.patch [bz#558835]
 - kvm-scsi-disk-fix-buffer-overflow.patch [bz#558835]

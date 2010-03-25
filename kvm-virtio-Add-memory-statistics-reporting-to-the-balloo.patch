@@ -1,0 +1,495 @@
+From a6c46f1144eb564566c25285d5b0c3e8aa3e7cd8 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 18 Mar 2010 21:21:08 -0300
+Subject: [PATCH 3/3] virtio: Add memory statistics reporting to the balloon driver
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1268947268-21943-4-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7918
+O-Subject: [PATCH 3/3] virtio: Add memory statistics reporting to the balloon
+	driver
+Bugzilla: 574939
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+This is the backport of the original upstream commit:
+
+625a5befc2e3200b396594f002218d235e375da5
+
+Plus the following fixes:
+
+5c366a8a3d7ac71beda8499caa815cb3ea95eb58
+93d67ee69d6104976961fbc98654872de28a5c96
+6d0ee85040e4d238e2483191fe6e74aebbecd5d5
+
+As this is an important change with QMP effects, its original
+commit log follows:
+
+When using ballooning to manage overcommitted memory on a host, a system for
+guests to communicate their memory usage to the host can provide information
+that will minimize the impact of ballooning on the guests.  The current method
+employs a daemon running in each guest that communicates memory statistics to a
+host daemon at a specified time interval.  The host daemon aggregates this
+information and inflates and/or deflates balloons according to the level of
+host memory pressure.  This approach is effective but overly complex since a
+daemon must be installed inside each guest and coordinated to communicate with
+the host.  A simpler approach is to collect memory statistics in the virtio
+balloon driver and communicate them directly to the hypervisor.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ balloon.h           |    7 ++-
+ hw/virtio-balloon.c |  120 ++++++++++++++++++++++++++++++++++++++++++++++++--
+ hw/virtio-balloon.h |   15 ++++++
+ monitor.c           |   99 ++++++++++++++++++++++++++----------------
+ qemu-monitor.hx     |    3 +-
+ vl.c                |   21 ++++++---
+ 6 files changed, 212 insertions(+), 53 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ balloon.h           |    7 ++-
+ hw/virtio-balloon.c |  120 ++++++++++++++++++++++++++++++++++++++++++++++++--
+ hw/virtio-balloon.h |   15 ++++++
+ monitor.c           |   99 ++++++++++++++++++++++++++----------------
+ qemu-monitor.hx     |    3 +-
+ vl.c                |   21 ++++++---
+ 6 files changed, 212 insertions(+), 53 deletions(-)
+
+diff --git a/balloon.h b/balloon.h
+index 60b4a5d..c3a1ad3 100644
+--- a/balloon.h
++++ b/balloon.h
+@@ -16,12 +16,13 @@
+ 
+ #include "cpu-defs.h"
+ 
+-typedef ram_addr_t (QEMUBalloonEvent)(void *opaque, ram_addr_t target);
++typedef void (QEMUBalloonEvent)(void *opaque, ram_addr_t target,
++                                MonitorCompletion cb, void *cb_data);
+ 
+ void qemu_add_balloon_handler(QEMUBalloonEvent *func, void *opaque);
+ 
+-void qemu_balloon(ram_addr_t target);
++int qemu_balloon(ram_addr_t target, MonitorCompletion cb, void *opaque);
+ 
+-ram_addr_t qemu_balloon_status(void);
++int qemu_balloon_status(MonitorCompletion cb, void *opaque);
+ 
+ #endif
+diff --git a/hw/virtio-balloon.c b/hw/virtio-balloon.c
+index 242c6c8..ee72c64 100644
+--- a/hw/virtio-balloon.c
++++ b/hw/virtio-balloon.c
+@@ -16,10 +16,14 @@
+ #include "pc.h"
+ #include "sysemu.h"
+ #include "cpu.h"
++#include "monitor.h"
+ #include "balloon.h"
+ #include "virtio-balloon.h"
+ #include "kvm.h"
+ #include "qemu-kvm.h"
++#include "qlist.h"
++#include "qint.h"
++#include "qstring.h"
+ 
+ #if defined(__linux__)
+ #include <sys/mman.h>
+@@ -28,9 +32,14 @@
+ typedef struct VirtIOBalloon
+ {
+     VirtIODevice vdev;
+-    VirtQueue *ivq, *dvq;
++    VirtQueue *ivq, *dvq, *svq;
+     uint32_t num_pages;
+     uint32_t actual;
++    uint64_t stats[VIRTIO_BALLOON_S_NR];
++    VirtQueueElement stats_vq_elem;
++    size_t stats_vq_offset;
++    MonitorCompletion *stats_callback;
++    void *stats_opaque_callback_data;
+ } VirtIOBalloon;
+ 
+ static VirtIOBalloon *to_virtio_balloon(VirtIODevice *vdev)
+@@ -47,6 +56,42 @@ static void balloon_page(void *addr, int deflate)
+ #endif
+ }
+ 
++/*
++ * reset_stats - Mark all items in the stats array as unset
++ *
++ * This function needs to be called at device intialization and before
++ * before updating to a set of newly-generated stats.  This will ensure that no
++ * stale values stick around in case the guest reports a subset of the supported
++ * statistics.
++ */
++static inline void reset_stats(VirtIOBalloon *dev)
++{
++    int i;
++    for (i = 0; i < VIRTIO_BALLOON_S_NR; dev->stats[i++] = -1);
++}
++
++static void stat_put(QDict *dict, const char *label, uint64_t val)
++{
++    if (val != -1)
++        qdict_put(dict, label, qint_from_int(val));
++}
++
++static QObject *get_stats_qobject(VirtIOBalloon *dev)
++{
++    QDict *dict = qdict_new();
++    uint32_t actual = ram_size - (dev->actual << VIRTIO_BALLOON_PFN_SHIFT);
++
++    stat_put(dict, "actual", actual);
++    stat_put(dict, "mem_swapped_in", dev->stats[VIRTIO_BALLOON_S_SWAP_IN]);
++    stat_put(dict, "mem_swapped_out", dev->stats[VIRTIO_BALLOON_S_SWAP_OUT]);
++    stat_put(dict, "major_page_faults", dev->stats[VIRTIO_BALLOON_S_MAJFLT]);
++    stat_put(dict, "minor_page_faults", dev->stats[VIRTIO_BALLOON_S_MINFLT]);
++    stat_put(dict, "free_mem", dev->stats[VIRTIO_BALLOON_S_MEMFREE]);
++    stat_put(dict, "total_mem", dev->stats[VIRTIO_BALLOON_S_MEMTOT]);
++
++    return QOBJECT(dict);
++}
++
+ /* FIXME: once we do a virtio refactoring, this will get subsumed into common
+  * code */
+ static size_t memcpy_from_iovector(void *data, size_t offset, size_t size,
+@@ -105,6 +150,51 @@ static void virtio_balloon_handle_output(VirtIODevice *vdev, VirtQueue *vq)
+     }
+ }
+ 
++static void complete_stats_request(VirtIOBalloon *vb)
++{
++    QObject *stats;
++
++    if (!vb->stats_opaque_callback_data)
++        return;
++
++    stats = get_stats_qobject(vb);
++    vb->stats_callback(vb->stats_opaque_callback_data, stats);
++    qobject_decref(stats);
++    vb->stats_opaque_callback_data = NULL;
++    vb->stats_callback = NULL;
++}
++
++static void virtio_balloon_receive_stats(VirtIODevice *vdev, VirtQueue *vq)
++{
++    VirtIOBalloon *s = DO_UPCAST(VirtIOBalloon, vdev, vdev);
++    VirtQueueElement *elem = &s->stats_vq_elem;
++    VirtIOBalloonStat stat;
++    size_t offset = 0;
++
++    if (!virtqueue_pop(vq, elem)) {
++        return;
++    }
++
++    /* Initialize the stats to get rid of any stale values.  This is only
++     * needed to handle the case where a guest supports fewer stats than it
++     * used to (ie. it has booted into an old kernel).
++     */
++    reset_stats(s);
++
++    while (memcpy_from_iovector(&stat, offset, sizeof(stat), elem->out_sg,
++                                elem->out_num) == sizeof(stat)) {
++        uint16_t tag = tswap16(stat.tag);
++        uint64_t val = tswap64(stat.val);
++
++        offset += sizeof(stat);
++        if (tag < VIRTIO_BALLOON_S_NR)
++            s->stats[tag] = val;
++    }
++    s->stats_vq_offset = offset;
++
++    complete_stats_request(s);
++}
++
+ static void virtio_balloon_get_config(VirtIODevice *vdev, uint8_t *config_data)
+ {
+     VirtIOBalloon *dev = to_virtio_balloon(vdev);
+@@ -127,10 +217,12 @@ static void virtio_balloon_set_config(VirtIODevice *vdev,
+ 
+ static uint32_t virtio_balloon_get_features(VirtIODevice *vdev, uint32_t f)
+ {
++    f |= (1 << VIRTIO_BALLOON_F_STATS_VQ);
+     return f;
+ }
+ 
+-static ram_addr_t virtio_balloon_to_target(void *opaque, ram_addr_t target)
++static void virtio_balloon_to_target(void *opaque, ram_addr_t target,
++                                     MonitorCompletion cb, void *cb_data)
+ {
+     VirtIOBalloon *dev = opaque;
+ 
+@@ -140,9 +232,26 @@ static ram_addr_t virtio_balloon_to_target(void *opaque, ram_addr_t target)
+     if (target) {
+         dev->num_pages = (ram_size - target) >> VIRTIO_BALLOON_PFN_SHIFT;
+         virtio_notify_config(&dev->vdev);
++    } else {
++        /* For now, only allow one request at a time.  This restriction can be
++         * removed later by queueing callback and data pairs.
++         */
++        if (dev->stats_callback != NULL) {
++            return;
++        }
++        dev->stats_callback = cb;
++        dev->stats_opaque_callback_data = cb_data; 
++        if (dev->vdev.guest_features & (1 << VIRTIO_BALLOON_F_STATS_VQ)) {
++            virtqueue_push(dev->svq, &dev->stats_vq_elem, dev->stats_vq_offset);
++            virtio_notify(&dev->vdev, dev->svq);
++        } else {
++            /* Stats are not supported.  Clear out any stale values that might
++             * have been set by a more featureful guest kernel.
++             */
++            reset_stats(dev);
++            complete_stats_request(dev);
++        }
+     }
+-
+-    return ram_size - (dev->actual << VIRTIO_BALLOON_PFN_SHIFT);
+ }
+ 
+ static void virtio_balloon_save(QEMUFile *f, void *opaque)
+@@ -166,7 +275,6 @@ static int virtio_balloon_load(QEMUFile *f, void *opaque, int version_id)
+ 
+     s->num_pages = qemu_get_be32(f);
+     s->actual = qemu_get_be32(f);
+-
+     return 0;
+ }
+ 
+@@ -184,7 +292,9 @@ VirtIODevice *virtio_balloon_init(DeviceState *dev)
+ 
+     s->ivq = virtio_add_queue(&s->vdev, 128, virtio_balloon_handle_output);
+     s->dvq = virtio_add_queue(&s->vdev, 128, virtio_balloon_handle_output);
++    s->svq = virtio_add_queue(&s->vdev, 128, virtio_balloon_receive_stats);
+ 
++    reset_stats(s);
+     qemu_add_balloon_handler(virtio_balloon_to_target, s);
+ 
+     register_savevm("virtio-balloon", -1, 1, virtio_balloon_save, virtio_balloon_load, s);
+diff --git a/hw/virtio-balloon.h b/hw/virtio-balloon.h
+index 9a0d119..e20cf6b 100644
+--- a/hw/virtio-balloon.h
++++ b/hw/virtio-balloon.h
+@@ -25,6 +25,7 @@
+ 
+ /* The feature bitmap for virtio balloon */
+ #define VIRTIO_BALLOON_F_MUST_TELL_HOST 0 /* Tell before reclaiming pages */
++#define VIRTIO_BALLOON_F_STATS_VQ 1       /* Memory stats virtqueue */
+ 
+ /* Size of a PFN in the balloon interface. */
+ #define VIRTIO_BALLOON_PFN_SHIFT 12
+@@ -37,4 +38,18 @@ struct virtio_balloon_config
+     uint32_t actual;
+ };
+ 
++/* Memory Statistics */
++#define VIRTIO_BALLOON_S_SWAP_IN  0   /* Amount of memory swapped in */
++#define VIRTIO_BALLOON_S_SWAP_OUT 1   /* Amount of memory swapped out */
++#define VIRTIO_BALLOON_S_MAJFLT   2   /* Number of major faults */
++#define VIRTIO_BALLOON_S_MINFLT   3   /* Number of minor faults */
++#define VIRTIO_BALLOON_S_MEMFREE  4   /* Total amount of free memory */
++#define VIRTIO_BALLOON_S_MEMTOT   5   /* Total amount of memory */
++#define VIRTIO_BALLOON_S_NR       6
++
++typedef struct VirtIOBalloonStat {
++    uint16_t tag;
++    uint64_t val;
++} __attribute__((packed)) VirtIOBalloonStat;
++
+ #endif
+diff --git a/monitor.c b/monitor.c
+index 94efcd4..42a1303 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -2216,33 +2216,13 @@ static void do_info_status(Monitor *mon, QObject **ret_data)
+                                     vm_running, singlestep);
+ }
+ 
+-static ram_addr_t balloon_get_value(void)
++static void print_balloon_stat(const char *key, QObject *obj, void *opaque)
+ {
+-    ram_addr_t actual;
+-
+-    if (kvm_enabled() && !kvm_has_sync_mmu()) {
+-        qemu_error_new(QERR_KVM_MISSING_CAP, "synchronous MMU", "balloon");
+-        return 0;
+-    }
+-
+-    actual = qemu_balloon_status();
+-    if (actual == 0) {
+-        qemu_error_new(QERR_DEVICE_NOT_ACTIVE, "balloon");
+-        return 0;
+-    }
+-
+-    return actual;
+-}
++    Monitor *mon = opaque;
+ 
+-/**
+- * do_balloon(): Request VM to change its memory allocation
+- */
+-static void do_balloon(Monitor *mon, const QDict *qdict, QObject **ret_data)
+-{
+-    if (balloon_get_value()) {
+-        /* ballooning is active */
+-        qemu_balloon(qdict_get_int(qdict, "value"));
+-    }
++    if (strcmp(key, "actual"))
++        monitor_printf(mon, ",%s=%" PRId64, key,
++                       qint_get_int(qobject_to_qint(obj)));
+ }
+ 
+ static void monitor_print_balloon(Monitor *mon, const QObject *data)
+@@ -2250,31 +2230,75 @@ static void monitor_print_balloon(Monitor *mon, const QObject *data)
+     QDict *qdict;
+ 
+     qdict = qobject_to_qdict(data);
++    if (!qdict_haskey(qdict, "actual"))
++        return;
+ 
+-    monitor_printf(mon, "balloon: actual=%" PRId64 "\n",
+-                        qdict_get_int(qdict, "balloon") >> 20);
++    monitor_printf(mon, "balloon: actual=%" PRId64,
++                   qdict_get_int(qdict, "actual") >> 20);
++    qdict_iter(qdict, print_balloon_stat, mon);
++    monitor_printf(mon, "\n");
+ }
+ 
+ /**
+  * do_info_balloon(): Balloon information
+  *
+- * Return a QDict with the following information:
++ * Make an asynchronous request for balloon info.  When the request completes
++ * a QDict will be returned according to the following specification:
+  *
+- * - "balloon": current balloon value in bytes
++ * - "actual": current balloon value in bytes
++ * The following fields may or may not be present:
++ * - "mem_swapped_in": Amount of memory swapped in (bytes)
++ * - "mem_swapped_out": Amount of memory swapped out (bytes)
++ * - "major_page_faults": Number of major faults
++ * - "minor_page_faults": Number of minor faults
++ * - "free_mem": Total amount of free and unused memory (bytes)
++ * - "total_mem": Total amount of available memory (bytes)
+  *
+  * Example:
+  *
+- * { "balloon": 1073741824 }
++ * { "actual": 1073741824, "mem_swapped_in": 0, "mem_swapped_out": 0,
++ *   "major_page_faults": 142, "minor_page_faults": 239245,
++ *   "free_mem": 1014185984, "total_mem": 1044668416 }
++ */
++static int do_info_balloon(Monitor *mon, MonitorCompletion cb, void *opaque)
++{
++    int ret;
++
++    if (kvm_enabled() && !kvm_has_sync_mmu()) {
++        qemu_error_new(QERR_KVM_MISSING_CAP, "synchronous MMU", "balloon");
++        return -1;
++    }
++
++    ret = qemu_balloon_status(cb, opaque);
++    if (!ret) {
++        qemu_error_new(QERR_DEVICE_NOT_ACTIVE, "balloon");
++        return -1;
++    }
++
++    return 0;
++}
++
++/**
++ * do_balloon(): Request VM to change its memory allocation
+  */
+-static void do_info_balloon(Monitor *mon, QObject **ret_data)
++static int do_balloon(Monitor *mon, const QDict *params,
++                       MonitorCompletion cb, void *opaque)
+ {
+-    ram_addr_t actual;
++    int ret;
++
++    if (kvm_enabled() && !kvm_has_sync_mmu()) {
++        qemu_error_new(QERR_KVM_MISSING_CAP, "synchronous MMU", "balloon");
++        return -1;
++    }
+ 
+-    actual = balloon_get_value();
+-    if (actual != 0) {
+-        *ret_data = qobject_from_jsonf("{ 'balloon': %" PRId64 "}",
+-                                       (int64_t) actual);
++    ret = qemu_balloon(qdict_get_int(params, "value"), cb, opaque);
++    if (ret == 0) {
++        qemu_error_new(QERR_DEVICE_NOT_ACTIVE, "balloon");
++        return -1;
+     }
++
++    cb(opaque, NULL);
++    return 0;
+ }
+ 
+ static qemu_acl *find_acl(Monitor *mon, const char *name)
+@@ -2759,7 +2783,8 @@ static const mon_cmd_t info_cmds[] = {
+         .params     = "",
+         .help       = "show balloon information",
+         .user_print = monitor_print_balloon,
+-        .mhandler.info_new = do_info_balloon,
++        .mhandler.info_async = do_info_balloon,
++        .async      = 1,
+     },
+     {
+         .name       = "qtree",
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 5a092f4..b7878c0 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -890,7 +890,8 @@ ETEXI
+         .params     = "target",
+         .help       = "request VM to change it's memory allocation (in MB)",
+         .user_print = monitor_user_noop,
+-        .mhandler.cmd_new = do_balloon,
++        .mhandler.cmd_async = do_balloon,
++        .async      = 1,
+     },
+ 
+ STEXI
+diff --git a/vl.c b/vl.c
+index 6aab34f..53acf53 100644
+--- a/vl.c
++++ b/vl.c
+@@ -381,17 +381,24 @@ void qemu_add_balloon_handler(QEMUBalloonEvent *func, void *opaque)
+     qemu_balloon_event_opaque = opaque;
+ }
+ 
+-void qemu_balloon(ram_addr_t target)
++int qemu_balloon(ram_addr_t target, MonitorCompletion cb, void *opaque)
+ {
+-    if (qemu_balloon_event)
+-        qemu_balloon_event(qemu_balloon_event_opaque, target);
++    if (qemu_balloon_event) {
++        qemu_balloon_event(qemu_balloon_event_opaque, target, cb, opaque);
++        return 1;
++    } else {
++        return 0;
++    }
+ }
+ 
+-ram_addr_t qemu_balloon_status(void)
++int qemu_balloon_status(MonitorCompletion cb, void *opaque)
+ {
+-    if (qemu_balloon_event)
+-        return qemu_balloon_event(qemu_balloon_event_opaque, 0);
+-    return 0;
++    if (qemu_balloon_event) {
++        qemu_balloon_event(qemu_balloon_event_opaque, 0, cb, opaque);
++        return 1;
++    } else {
++        return 0;
++    }
+ }
+ 
+ /***********************************************************/
+-- 
+1.6.3.rc4.29.g8146
+
