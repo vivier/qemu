@@ -1,0 +1,62 @@
+From 14a58e9d393d554ce8352e3df47dd48d914ee86b Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 18 Mar 2010 14:43:22 -0300
+Subject: [PATCH 03/29] QError: New QERR_OPEN_FILE_FAILED
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1268923406-3785-3-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7885
+O-Subject: [PATCH 2/6] QError: New QERR_OPEN_FILE_FAILED
+Bugzilla: 574642
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 3da2c8081478ee11c7f3aebcbf42680c975b0712)
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/qerror.c b/qerror.c
+index 5f8fc5d..2f657f4 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -73,6 +73,10 @@ static const QErrorStringTable qerror_table[] = {
+         .desc      = "No file descriptor supplied via SCM_RIGHTS",
+     },
+     {
++        .error_fmt = QERR_OPEN_FILE_FAILED,
++        .desc      = "Could not open '%(filename)'",
++    },
++    {
+         .error_fmt = QERR_INVALID_BLOCK_FORMAT,
+         .desc      = "Invalid block format %(name)",
+     },
+diff --git a/qerror.h b/qerror.h
+index 9e220d6..ee59615 100644
+--- a/qerror.h
++++ b/qerror.h
+@@ -64,6 +64,9 @@ QError *qobject_to_qerror(const QObject *obj);
+ #define QERR_FD_NOT_SUPPLIED \
+     "{ 'class': 'FdNotSupplied', 'data': {} }"
+ 
++#define QERR_OPEN_FILE_FAILED \
++    "{ 'class': 'OpenFileFailed', 'data': { 'filename': %s } }"
++
+ #define QERR_INVALID_BLOCK_FORMAT \
+     "{ 'class': 'InvalidBlockFormat', 'data': { 'name': %s } }"
+ 
+-- 
+1.7.0.3
+

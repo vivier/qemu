@@ -1,0 +1,44 @@
+From 23569f39ba5580cd34289f0760b053c08600d532 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 18 Mar 2010 14:43:24 -0300
+Subject: [PATCH 05/29] monitor: convert do_physical_memory_save() to QError
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1268923406-3785-5-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7887
+O-Subject: [PATCH 4/6] monitor: convert do_physical_memory_save() to QError
+Bugzilla: 574642
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 95fada8c2cb2ef175b49a1db3e4e041d5a8ea46d)
+---
+ monitor.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 4a4990a..867f229 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -1484,7 +1484,7 @@ static void do_physical_memory_save(Monitor *mon, const QDict *qdict,
+ 
+     f = fopen(filename, "wb");
+     if (!f) {
+-        monitor_printf(mon, "could not open '%s'\n", filename);
++        qemu_error_new(QERR_OPEN_FILE_FAILED, filename);
+         return;
+     }
+     while (size != 0) {
+-- 
+1.7.0.3
+

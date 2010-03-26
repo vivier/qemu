@@ -1,0 +1,47 @@
+From 0e4403fd3ffa6e04009165e910bdb599cb194683 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 22 Mar 2010 13:29:08 -0300
+Subject: [PATCH 10/29] json-parser: Fix segfault on malformed input
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269264550-20228-4-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7962
+O-Subject: [PATCH 3/5] json-parser: Fix segfault on malformed input
+Bugzilla: 575800
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Kevin Wolf <kwolf@redhat.com>
+
+If the parser fails to parse the key in parse_pair, it will access a NULL
+pointer. A simple way to trigger this is sending {foo} via QMP. This patch
+turns the segfault into a syntax error reply.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+---
+ json-parser.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ json-parser.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/json-parser.c b/json-parser.c
+index 2ab6f6c..3497cd3 100644
+--- a/json-parser.c
++++ b/json-parser.c
+@@ -266,7 +266,7 @@ static int parse_pair(JSONParserContext *ctxt, QDict *dict, QList **tokens, va_l
+ 
+     peek = qlist_peek(working);
+     key = parse_value(ctxt, &working, ap);
+-    if (qobject_type(key) != QTYPE_QSTRING) {
++    if (!key || qobject_type(key) != QTYPE_QSTRING) {
+         parse_error(ctxt, peek, "key is not a string in object");
+         goto out;
+     }
+-- 
+1.7.0.3
+

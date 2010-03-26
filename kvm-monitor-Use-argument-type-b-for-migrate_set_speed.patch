@@ -1,0 +1,86 @@
+From 88dd2866fd18f082f6706672791a5b071eec64fa Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 22 Mar 2010 14:23:41 -0300
+Subject: [PATCH 16/29] monitor: Use argument type 'b' for migrate_set_speed
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269267825-8627-5-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7967
+O-Subject: [PATCH 4/8] monitor: Use argument type 'b' for migrate_set_speed
+Bugzilla: 575821
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+Before, it used type 's', which strips quotes and interprets escapes,
+and is quite inappropriate for QMP.
+
+Negative arguments are no flushed to zero.  Before, they were cast to
+uint32_t, which wrecked the sign.
+
+Ridiculously large arguments including infinities are now rejected.
+Before, they were interpreted as zero.  Same for NaN.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 5667c493c430256c99002b719383f0e911cb53a8)
+---
+ migration.c     |   18 +++---------------
+ qemu-monitor.hx |    2 +-
+ 2 files changed, 4 insertions(+), 16 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ migration.c     |   18 +++---------------
+ qemu-monitor.hx |    2 +-
+ 2 files changed, 4 insertions(+), 16 deletions(-)
+
+diff --git a/migration.c b/migration.c
+index a12b381..615fb24 100644
+--- a/migration.c
++++ b/migration.c
+@@ -113,23 +113,11 @@ void do_migrate_cancel(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ void do_migrate_set_speed(Monitor *mon, const QDict *qdict)
+ {
+     double d;
+-    char *ptr;
+     FdMigrationState *s;
+-    const char *value = qdict_get_str(qdict, "value");
+-
+-    d = strtod(value, &ptr);
+-    switch (*ptr) {
+-    case 'G': case 'g':
+-        d *= 1024;
+-    case 'M': case 'm':
+-        d *= 1024;
+-    case 'K': case 'k':
+-        d *= 1024;
+-    default:
+-        break;
+-    }
+ 
+-    max_throttle = (uint32_t)d;
++    d = qdict_get_double(qdict, "value");
++    d = MAX(0, MIN(UINT32_MAX, d));
++    max_throttle = d;
+ 
+     s = migrate_to_fms(current_migration);
+     if (s && s->file) {
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 099e2b3..997653c 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -761,7 +761,7 @@ ETEXI
+ 
+     {
+         .name       = "migrate_set_speed",
+-        .args_type  = "value:s",
++        .args_type  = "value:b",
+         .params     = "value",
+         .help       = "set maximum speed (in bytes) for migrations",
+         .mhandler.cmd = do_migrate_set_speed,
+-- 
+1.7.0.3
+

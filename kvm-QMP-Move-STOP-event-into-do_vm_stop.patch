@@ -1,0 +1,56 @@
+From 3ce5fd3e8a004ab81a35dc21831c7b47fa2faee6 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 22 Mar 2010 17:44:50 -0300
+Subject: [PATCH 22/29] QMP: Move STOP event into do_vm_stop()
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269279896-26330-3-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8013
+O-Subject: [PATCH 2/8] QMP: Move STOP event into do_vm_stop()
+Bugzilla: 575912
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 575912
+
+I've introduced the STOP event in the main loop, this is wrong
+as it will be only emitted if the io thread is enabled.
+
+This fixes that by moving the STOP event to do_vm_stop().
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 6b8f8fff78185cb260d1ca3c30352c0bf5601d36)
+---
+ vl.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vl.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index d723320..4776137 100644
+--- a/vl.c
++++ b/vl.c
+@@ -3403,6 +3403,7 @@ static void do_vm_stop(int reason)
+         vm_running = 0;
+         pause_all_vcpus();
+         vm_state_notify(0, reason);
++        monitor_protocol_event(QEVENT_STOP, NULL);
+     }
+ }
+ 
+@@ -4305,7 +4306,6 @@ static void main_loop(void)
+             qemu_irq_raise(qemu_system_powerdown);
+         }
+         if ((r = qemu_vmstop_requested())) {
+-            monitor_protocol_event(QEVENT_STOP, NULL);
+             vm_stop(r);
+         }
+     }
+-- 
+1.7.0.3
+

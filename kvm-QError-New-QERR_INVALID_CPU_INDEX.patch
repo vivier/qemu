@@ -1,0 +1,62 @@
+From 9115fdf41dd7f5fb93a47608efe95a0e6669122c Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 18 Mar 2010 14:43:25 -0300
+Subject: [PATCH 06/29] QError: New QERR_INVALID_CPU_INDEX
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1268923406-3785-6-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7888
+O-Subject: [PATCH 5/6] QError: New QERR_INVALID_CPU_INDEX
+Bugzilla: 574642
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 64a34bb14c0e358a6b2f14805e59ef25bf62d6d5)
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/qerror.c b/qerror.c
+index 2f657f4..6c2aba0 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -81,6 +81,10 @@ static const QErrorStringTable qerror_table[] = {
+         .desc      = "Invalid block format %(name)",
+     },
+     {
++        .error_fmt = QERR_INVALID_CPU_INDEX,
++        .desc      = "Invalid CPU index",
++    },
++    {
+         .error_fmt = QERR_INVALID_PARAMETER,
+         .desc      = "Invalid parameter %(name)",
+     },
+diff --git a/qerror.h b/qerror.h
+index ee59615..57c5b97 100644
+--- a/qerror.h
++++ b/qerror.h
+@@ -70,6 +70,9 @@ QError *qobject_to_qerror(const QObject *obj);
+ #define QERR_INVALID_BLOCK_FORMAT \
+     "{ 'class': 'InvalidBlockFormat', 'data': { 'name': %s } }"
+ 
++#define QERR_INVALID_CPU_INDEX \
++    "{ 'class': 'InvalidCPUIndex', 'data': {} }"
++
+ #define QERR_INVALID_PARAMETER \
+     "{ 'class': 'InvalidParameter', 'data': { 'name': %s } }"
+ 
+-- 
+1.7.0.3
+

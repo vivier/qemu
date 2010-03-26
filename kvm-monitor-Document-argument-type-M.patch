@@ -1,0 +1,46 @@
+From 816dff94559b5a52f8cd33426ee19f5707fe639c Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 22 Mar 2010 14:23:38 -0300
+Subject: [PATCH 13/29] monitor: Document argument type 'M'
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269267825-8627-2-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7965
+O-Subject: [PATCH 1/8] monitor: Document argument type 'M'
+Bugzilla: 575821
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+Was forgotten in commit b6e098d7.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 9fec543fa69b03b82b5ffe4d1bf280701efaad1e)
+---
+ monitor.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 939614e..140edc2 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -72,6 +72,8 @@
+  * 's'          string (accept optional quote)
+  * 'i'          32 bit integer
+  * 'l'          target long (32 or 64 bit)
++ * 'M'          just like 'l', except in user mode the value is
++ *              multiplied by 2^20 (think Mebibyte)
+  * '/'          optional gdb-like print format (like "/10x")
+  *
+  * '?'          optional type (for all types, except '/')
+-- 
+1.7.0.3
+

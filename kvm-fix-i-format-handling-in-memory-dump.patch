@@ -1,0 +1,46 @@
+From b2e9c2e61b5a0dd94d73fbc4c5c1afe3c162897c Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 22 Mar 2010 13:29:09 -0300
+Subject: [PATCH 11/29] fix 'i' format handling in memory dump
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269264550-20228-5-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7961
+O-Subject: [PATCH 4/5] fix 'i' format handling in memory dump
+Bugzilla: 575800
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Gleb Natapov <gleb@redhat.com>
+
+It was broken by 09b9418c6d0. (!env && !is_physical) != (!is_physical)
+when env is true.
+
+Signed-off-by: Gleb Natapov <gleb@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+ monitor.c |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index f899a97..939614e 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -1261,8 +1261,6 @@ static void memory_dump(Monitor *mon, int count, int format, int wsize,
+         int flags;
+         flags = 0;
+         env = mon_get_cpu();
+-        if (!is_physical)
+-            return;
+ #ifdef TARGET_I386
+         if (wsize == 2) {
+             flags = 1;
+-- 
+1.7.0.3
+

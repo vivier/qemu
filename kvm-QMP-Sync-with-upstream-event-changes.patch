@@ -1,0 +1,65 @@
+From 28bfc0f3c0f53e8c6b4575afcd00a6bc7e80f7ff Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 22 Mar 2010 17:44:52 -0300
+Subject: [PATCH 24/29] QMP: Sync with upstream event changes
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269279896-26330-5-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8015
+O-Subject: [PATCH 4/8] QMP: Sync with upstream event changes
+Bugzilla: 575912
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 575912
+
+This commit contains the following QMP event changes to sync
+kvm_main_loop() with upstream:
+
+- Add the SHUTDOWN event (it's currently missing here)
+- Drop the RESET event (it's now emitted in qemu_system_reset())
+- Drop the DEBUG event (it has been dropped upstream)
+
+RHEL6 NOTE: the DEBUG event is going to be removed in the next
+commit, to avoid breaking the build. For the same reason Marcelo
+merged this commit as part of tree merge:
+
+f3789c02b464c3fde2c203ff85137aa98ddcfdb4
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-kvm.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-kvm.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+diff --git a/qemu-kvm.c b/qemu-kvm.c
+index 6ba519e..84da9b5 100644
+--- a/qemu-kvm.c
++++ b/qemu-kvm.c
+@@ -2121,6 +2121,7 @@ int kvm_main_loop(void)
+     while (1) {
+         main_loop_wait(1000);
+         if (qemu_shutdown_requested()) {
++            monitor_protocol_event(QEVENT_SHUTDOWN, NULL);
+             if (qemu_no_shutdown()) {
+                 vm_stop(0);
+             } else
+@@ -2129,10 +2130,8 @@ int kvm_main_loop(void)
+             monitor_protocol_event(QEVENT_POWERDOWN, NULL);
+             qemu_irq_raise(qemu_system_powerdown);
+         } else if (qemu_reset_requested()) {
+-            monitor_protocol_event(QEVENT_RESET, NULL);
+             qemu_kvm_system_reset();
+         } else if (kvm_debug_cpu_requested) {
+-            monitor_protocol_event(QEVENT_DEBUG, NULL);
+             gdb_set_stop_cpu(kvm_debug_cpu_requested);
+             vm_stop(EXCP_DEBUG);
+             kvm_debug_cpu_requested = NULL;
+-- 
+1.7.0.3
+

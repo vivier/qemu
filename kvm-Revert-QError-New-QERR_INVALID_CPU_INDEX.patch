@@ -1,0 +1,64 @@
+From 7a2753a9e3bc20d8beb5118a25097918cb01edc1 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 22 Mar 2010 13:29:07 -0300
+Subject: [PATCH 09/29] Revert "QError: New QERR_INVALID_CPU_INDEX"
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269264550-20228-3-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7960
+O-Subject: [PATCH 2/5] Revert "QError: New QERR_INVALID_CPU_INDEX"
+Bugzilla: 575800
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+This reverts commit 64a34bb14c0e358a6b2f14805e59ef25bf62d6d5.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit f34e5688536839d9f43da36beb9f330d802ece09)
+---
+ qerror.c |    4 ----
+ qerror.h |    3 ---
+ 2 files changed, 0 insertions(+), 7 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qerror.c |    4 ----
+ qerror.h |    3 ---
+ 2 files changed, 0 insertions(+), 7 deletions(-)
+
+diff --git a/qerror.c b/qerror.c
+index 6c2aba0..2f657f4 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -81,10 +81,6 @@ static const QErrorStringTable qerror_table[] = {
+         .desc      = "Invalid block format %(name)",
+     },
+     {
+-        .error_fmt = QERR_INVALID_CPU_INDEX,
+-        .desc      = "Invalid CPU index",
+-    },
+-    {
+         .error_fmt = QERR_INVALID_PARAMETER,
+         .desc      = "Invalid parameter %(name)",
+     },
+diff --git a/qerror.h b/qerror.h
+index 57c5b97..ee59615 100644
+--- a/qerror.h
++++ b/qerror.h
+@@ -70,9 +70,6 @@ QError *qobject_to_qerror(const QObject *obj);
+ #define QERR_INVALID_BLOCK_FORMAT \
+     "{ 'class': 'InvalidBlockFormat', 'data': { 'name': %s } }"
+ 
+-#define QERR_INVALID_CPU_INDEX \
+-    "{ 'class': 'InvalidCPUIndex', 'data': {} }"
+-
+ #define QERR_INVALID_PARAMETER \
+     "{ 'class': 'InvalidParameter', 'data': { 'name': %s } }"
+ 
+-- 
+1.7.0.3
+

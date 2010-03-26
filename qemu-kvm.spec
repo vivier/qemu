@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.30%{?dist}
+Release: 2.31%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -390,6 +390,64 @@ Patch1180: kvm-New-API-for-asynchronous-monitor-commands.patch
 Patch1181: kvm-Revert-QMP-Fix-query-balloon-key-change.patch
 # For bz#574939 - Memory statistics support
 Patch1182: kvm-virtio-Add-memory-statistics-reporting-to-the-balloo.patch
+# For bz#574525 - Align qemu-kvm guest memory for transparent hugepage support
+Patch1183: kvm-Transparent-Hugepage-Support-3.patch
+# For bz#574642 - QMP: Convert do_cpu_set() to QObject
+Patch1184: kvm-monitor-Don-t-check-for-mon_get_cpu-failure.patch
+# For bz#574642 - QMP: Convert do_cpu_set() to QObject
+Patch1185: kvm-QError-New-QERR_OPEN_FILE_FAILED.patch
+# For bz#574642 - QMP: Convert do_cpu_set() to QObject
+Patch1186: kvm-monitor-convert-do_memory_save-to-QError.patch
+# For bz#574642 - QMP: Convert do_cpu_set() to QObject
+Patch1187: kvm-monitor-convert-do_physical_memory_save-to-QError.patch
+# For bz#574642 - QMP: Convert do_cpu_set() to QObject
+Patch1188: kvm-QError-New-QERR_INVALID_CPU_INDEX.patch
+# For bz#574642 - QMP: Convert do_cpu_set() to QObject
+Patch1189: kvm-monitor-convert-do_cpu_set-to-QObject-QError.patch
+# For bz#575800 - Monitor: Backport a collection of fixes
+Patch1190: kvm-monitor-Use-QERR_INVALID_PARAMETER-instead-of-QERR_I.patch
+# For bz#575800 - Monitor: Backport a collection of fixes
+Patch1191: kvm-Revert-QError-New-QERR_INVALID_CPU_INDEX.patch
+# For bz#575800 - Monitor: Backport a collection of fixes
+Patch1192: kvm-json-parser-Fix-segfault-on-malformed-input.patch
+# For bz#575800 - Monitor: Backport a collection of fixes
+Patch1193: kvm-fix-i-format-handling-in-memory-dump.patch
+# For bz#575800 - Monitor: Backport a collection of fixes
+Patch1194: kvm-Don-t-set-default-monitor-when-there-is-a-mux-ed-one.patch
+# For bz#575821 - QMP: Convert migrate_set_speed, migrate_set_downtime to QObject
+Patch1195: kvm-monitor-Document-argument-type-M.patch
+# For bz#575821 - QMP: Convert migrate_set_speed, migrate_set_downtime to QObject
+Patch1196: kvm-QDict-New-qdict_get_double.patch
+# For bz#575821 - QMP: Convert migrate_set_speed, migrate_set_downtime to QObject
+Patch1197: kvm-monitor-New-argument-type-b.patch
+# For bz#575821 - QMP: Convert migrate_set_speed, migrate_set_downtime to QObject
+Patch1198: kvm-monitor-Use-argument-type-b-for-migrate_set_speed.patch
+# For bz#575821 - QMP: Convert migrate_set_speed, migrate_set_downtime to QObject
+Patch1199: kvm-monitor-convert-do_migrate_set_speed-to-QObject.patch
+# For bz#575821 - QMP: Convert migrate_set_speed, migrate_set_downtime to QObject
+Patch1200: kvm-monitor-New-argument-type-T.patch
+# For bz#575821 - QMP: Convert migrate_set_speed, migrate_set_downtime to QObject
+Patch1201: kvm-monitor-Use-argument-type-T-for-migrate_set_downtime.patch
+# For bz#575821 - QMP: Convert migrate_set_speed, migrate_set_downtime to QObject
+Patch1202: kvm-monitor-convert-do_migrate_set_downtime-to-QObject.patch
+# For bz#575912 - QMP: Backport event related fixes
+Patch1203: kvm-block-Emit-BLOCK_IO_ERROR-before-vm_stop-call.patch
+# For bz#575912 - QMP: Backport event related fixes
+Patch1204: kvm-QMP-Move-STOP-event-into-do_vm_stop.patch
+# For bz#575912 - QMP: Backport event related fixes
+Patch1205: kvm-QMP-Move-RESET-event-into-qemu_system_reset.patch
+# For bz#575912 - QMP: Backport event related fixes
+Patch1206: kvm-QMP-Sync-with-upstream-event-changes.patch
+# For bz#575912 - QMP: Backport event related fixes
+Patch1207: kvm-QMP-Drop-DEBUG-event.patch
+# For bz#575912 - QMP: Backport event related fixes
+Patch1208: kvm-QMP-Revamp-the-qmp-events.txt-file.patch
+# For bz#547534 - RFE: a QMP event notification for RTC clock changes
+Patch1209: kvm-QMP-Introduce-RTC_CHANGE-event.patch
+# For bz#557083 - QMP events for watchdog events
+Patch1210: kvm-QMP-Introduce-WATCHDOG-event.patch
+# For bz#576561 - spice: add more config options
+Patch1211: kvm-spice-add-more-config-options.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -634,6 +692,35 @@ such as kvmtrace and kvm_stat.
 %patch1180 -p1
 %patch1181 -p1
 %patch1182 -p1
+%patch1183 -p1
+%patch1184 -p1
+%patch1185 -p1
+%patch1186 -p1
+%patch1187 -p1
+%patch1188 -p1
+%patch1189 -p1
+%patch1190 -p1
+%patch1191 -p1
+%patch1192 -p1
+%patch1193 -p1
+%patch1194 -p1
+%patch1195 -p1
+%patch1196 -p1
+%patch1197 -p1
+%patch1198 -p1
+%patch1199 -p1
+%patch1200 -p1
+%patch1201 -p1
+%patch1202 -p1
+%patch1203 -p1
+%patch1204 -p1
+%patch1205 -p1
+%patch1206 -p1
+%patch1207 -p1
+%patch1208 -p1
+%patch1209 -p1
+%patch1210 -p1
+%patch1211 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -829,6 +916,53 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Mar 26 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.31.el6
+- kvm-Transparent-Hugepage-Support-3.patch [bz#574525]
+- kvm-monitor-Don-t-check-for-mon_get_cpu-failure.patch [bz#574642]
+- kvm-QError-New-QERR_OPEN_FILE_FAILED.patch [bz#574642]
+- kvm-monitor-convert-do_memory_save-to-QError.patch [bz#574642]
+- kvm-monitor-convert-do_physical_memory_save-to-QError.patch [bz#574642]
+- kvm-QError-New-QERR_INVALID_CPU_INDEX.patch [bz#574642]
+- kvm-monitor-convert-do_cpu_set-to-QObject-QError.patch [bz#574642]
+- kvm-monitor-Use-QERR_INVALID_PARAMETER-instead-of-QERR_I.patch [bz#575800]
+- kvm-Revert-QError-New-QERR_INVALID_CPU_INDEX.patch [bz#575800]
+- kvm-json-parser-Fix-segfault-on-malformed-input.patch [bz#575800]
+- kvm-fix-i-format-handling-in-memory-dump.patch [bz#575800]
+- kvm-Don-t-set-default-monitor-when-there-is-a-mux-ed-one.patch [bz#575800]
+- kvm-monitor-Document-argument-type-M.patch [bz#575821]
+- kvm-QDict-New-qdict_get_double.patch [bz#575821]
+- kvm-monitor-New-argument-type-b.patch [bz#575821]
+- kvm-monitor-Use-argument-type-b-for-migrate_set_speed.patch [bz#575821]
+- kvm-monitor-convert-do_migrate_set_speed-to-QObject.patch [bz#575821]
+- kvm-monitor-New-argument-type-T.patch [bz#575821]
+- kvm-monitor-Use-argument-type-T-for-migrate_set_downtime.patch [bz#575821]
+- kvm-monitor-convert-do_migrate_set_downtime-to-QObject.patch [bz#575821]
+- kvm-block-Emit-BLOCK_IO_ERROR-before-vm_stop-call.patch [bz#575912]
+- kvm-QMP-Move-STOP-event-into-do_vm_stop.patch [bz#575912]
+- kvm-QMP-Move-RESET-event-into-qemu_system_reset.patch [bz#575912]
+- kvm-QMP-Sync-with-upstream-event-changes.patch [bz#575912]
+- kvm-QMP-Drop-DEBUG-event.patch [bz#575912]
+- kvm-QMP-Revamp-the-qmp-events.txt-file.patch [bz#575912]
+- kvm-QMP-Introduce-RTC_CHANGE-event.patch [bz#547534]
+- kvm-QMP-Introduce-WATCHDOG-event.patch [bz#557083]
+- kvm-spice-add-more-config-options.patch [bz#576561]
+- Resolves: bz#547534
+  (RFE: a QMP event notification for RTC clock changes)
+- Resolves: bz#557083
+  (QMP events for watchdog events)
+- Resolves: bz#574525
+  (Align qemu-kvm guest memory for transparent hugepage support)
+- Resolves: bz#574642
+  (QMP: Convert do_cpu_set() to QObject)
+- Resolves: bz#575800
+  (Monitor: Backport a collection of fixes)
+- Resolves: bz#575821
+  (QMP: Convert migrate_set_speed, migrate_set_downtime to QObject)
+- Resolves: bz#575912
+  (QMP: Backport event related fixes)
+- Resolves: bz#576561
+  (spice: add more config options)
+
 * Thu Mar 25 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.30.el6
 - kvm-New-API-for-asynchronous-monitor-commands.patch [bz#574939]
 - kvm-Revert-QMP-Fix-query-balloon-key-change.patch [bz#574939]

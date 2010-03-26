@@ -1,0 +1,86 @@
+From b96d9eda32356327968fcb8860eea22f00062894 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 22 Mar 2010 17:44:49 -0300
+Subject: [PATCH 21/29] block: Emit BLOCK_IO_ERROR before vm_stop() call
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269279896-26330-2-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8012
+O-Subject: [PATCH 1/8] block: Emit BLOCK_IO_ERROR before vm_stop() call
+Bugzilla: 575912
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 575912
+
+The next commit will move the STOP event into do_vm_stop(), to
+have the expected event sequence we need to emit the I/O error
+event before calling vm_stop().
+
+The expected sequence is:
+
+{ "event": "BLOCK_IO_ERROR" [...] }
+{ "event": "STOP" }
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 554a310bfe319a56de9d768efdb252115129d2a5)
+---
+ hw/ide/core.c   |    2 +-
+ hw/scsi-disk.c  |    2 +-
+ hw/virtio-blk.c |    2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/ide/core.c   |    2 +-
+ hw/scsi-disk.c  |    2 +-
+ hw/virtio-blk.c |    2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 603e537..ee8e03d 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -489,8 +489,8 @@ static int ide_handle_rw_error(IDEState *s, int error, int op)
+             || action == BLOCK_ERR_STOP_ANY) {
+         s->bus->bmdma->unit = s->unit;
+         s->bus->bmdma->status |= op;
+-        vm_stop(0);
+         bdrv_mon_event(s->bs, BDRV_ACTION_STOP, is_read);
++        vm_stop(0);
+     } else {
+         if (op & BM_STATUS_DMA_RETRY) {
+             dma_buf_commit(s, 0);
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index f45a078..61e30ac 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -190,8 +190,8 @@ static int scsi_handle_write_error(SCSIDiskReq *r, int error)
+     if ((error == ENOSPC && action == BLOCK_ERR_STOP_ENOSPC)
+             || action == BLOCK_ERR_STOP_ANY) {
+         r->status |= SCSI_REQ_STATUS_RETRY;
+-        vm_stop(0);
+         bdrv_mon_event(s->qdev.dinfo->bdrv, BDRV_ACTION_STOP, 0);
++        vm_stop(0);
+     } else {
+         scsi_command_complete(r, CHECK_CONDITION,
+                 HARDWARE_ERROR);
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index d3162df..d5d764f 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -114,8 +114,8 @@ static int virtio_blk_handle_rw_error(VirtIOBlockReq *req, int error,
+             || action == BLOCK_ERR_STOP_ANY) {
+         req->next = s->rq;
+         s->rq = req;
+-        vm_stop(0);
+         bdrv_mon_event(req->dev->bs, BDRV_ACTION_STOP, is_read);
++        vm_stop(0);
+     } else {
+         virtio_blk_req_complete(req, VIRTIO_BLK_S_IOERR);
+         bdrv_mon_event(req->dev->bs, BDRV_ACTION_REPORT, is_read);
+-- 
+1.7.0.3
+

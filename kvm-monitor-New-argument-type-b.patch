@@ -1,0 +1,137 @@
+From f99513e3888562efffc2432efcc3b8f59f9511ba Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 22 Mar 2010 14:23:40 -0300
+Subject: [PATCH 15/29] monitor: New argument type 'b'
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269267825-8627-4-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7966
+O-Subject: [PATCH 3/8] monitor: New argument type 'b'
+Bugzilla: 575821
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+This is a double value with optional suffixes G, g, M, m, K, k.  We'll
+need this to get migrate_set_speed() QMP-ready.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 3350a4dd07cf735c323655cd3c2119283ff9347e)
+---
+ monitor.c |   64 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 64 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c |   64 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 64 insertions(+), 0 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 140edc2..e3cc4b6 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -48,6 +48,7 @@
+ #include "kvm.h"
+ #include "acl.h"
+ #include "qint.h"
++#include "qfloat.h"
+ #include "qlist.h"
+ #include "qdict.h"
+ #include "qbool.h"
+@@ -74,6 +75,10 @@
+  * 'l'          target long (32 or 64 bit)
+  * 'M'          just like 'l', except in user mode the value is
+  *              multiplied by 2^20 (think Mebibyte)
++ * 'b'          double
++ *              user mode accepts an optional G, g, M, m, K, k suffix,
++ *              which multiplies the value by 2^30 for suffixes G and
++ *              g, 2^20 for M and m, 2^10 for K and k
+  * '/'          optional gdb-like print format (like "/10x")
+  *
+  * '?'          optional type (for all types, except '/')
+@@ -3351,6 +3356,27 @@ static int get_expr(Monitor *mon, int64_t *pval, const char **pp)
+     return 0;
+ }
+ 
++static int get_double(Monitor *mon, double *pval, const char **pp)
++{
++    const char *p = *pp;
++    char *tailp;
++    double d;
++
++    d = strtod(p, &tailp);
++    if (tailp == p) {
++        monitor_printf(mon, "Number expected\n");
++        return -1;
++    }
++    if (d != d || d - d != 0) {
++        /* NaN or infinity */
++        monitor_printf(mon, "Bad number\n");
++        return -1;
++    }
++    *pval = d;
++    *pp = tailp;
++    return 0;
++}
++
+ static int get_str(char *buf, int buf_size, const char **pp)
+ {
+     const char *p;
+@@ -3687,6 +3713,38 @@ static const mon_cmd_t *monitor_parse_command(Monitor *mon,
+                 qdict_put(qdict, key, qint_from_int(val));
+             }
+             break;
++        case 'b':
++            {
++                double val;
++
++                while (qemu_isspace(*p))
++                    p++;
++                if (*typestr == '?') {
++                    typestr++;
++                    if (*p == '\0') {
++                        break;
++                    }
++                }
++                if (get_double(mon, &val, &p) < 0) {
++                    goto fail;
++                }
++                if (*p) {
++                    switch (*p) {
++                    case 'K': case 'k':
++                        val *= 1 << 10; p++; break;
++                    case 'M': case 'm':
++                        val *= 1 << 20; p++; break;
++                    case 'G': case 'g':
++                        val *= 1 << 30; p++; break;
++                    }
++                }
++                if (*p && !qemu_isspace(*p)) {
++                    monitor_printf(mon, "Unknown unit suffix\n");
++                    goto fail;
++                }
++                qdict_put(qdict, key, qfloat_from_double(val));
++            }
++            break;
+         case '-':
+             {
+                 const char *tmp = p;
+@@ -4112,6 +4170,12 @@ static int check_arg(const CmdArgs *cmd_args, QDict *args)
+                 return -1;
+             }
+             break;
++        case 'b':
++            if (qobject_type(value) != QTYPE_QINT && qobject_type(value) != QTYPE_QFLOAT) {
++                qemu_error_new(QERR_INVALID_PARAMETER_TYPE, name, "number");
++                return -1;
++            }
++            break;
+         case '-':
+             if (qobject_type(value) != QTYPE_QINT &&
+                 qobject_type(value) != QTYPE_QBOOL) {
+-- 
+1.7.0.3
+

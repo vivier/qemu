@@ -1,0 +1,141 @@
+From 45cb780c81872eeaac80c5d345ee44503671b113 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 22 Mar 2010 17:44:55 -0300
+Subject: [PATCH 27/29] QMP: Introduce RTC_CHANGE event
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269279896-26330-8-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8018
+O-Subject: [PATCH 7/8] QMP: Introduce RTC_CHANGE event
+Bugzilla: 547534
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Buzilla: 547534
+
+Emitted whenever the RTC time changes.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 80cd34787fc0fc31b1a341c7b8d8e729c1b6ea58)
+---
+ QMP/qmp-events.txt |   15 +++++++++++++++
+ hw/mc146818rtc.c   |    2 ++
+ monitor.c          |    3 +++
+ monitor.h          |    1 +
+ sysemu.h           |    2 ++
+ vl.c               |    9 +++++++++
+ 6 files changed, 32 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ QMP/qmp-events.txt |   15 +++++++++++++++
+ hw/mc146818rtc.c   |    2 ++
+ monitor.c          |    3 +++
+ monitor.h          |    1 +
+ sysemu.h           |    2 ++
+ vl.c               |    9 +++++++++
+ 6 files changed, 32 insertions(+), 0 deletions(-)
+
+diff --git a/QMP/qmp-events.txt b/QMP/qmp-events.txt
+index 5ab5750..72920f6 100644
+--- a/QMP/qmp-events.txt
++++ b/QMP/qmp-events.txt
+@@ -38,6 +38,21 @@ Example:
+ { "event": "RESET",
+     "timestamp": { "seconds": 1267041653, "microseconds": 9518 } }
+ 
++RTC_CHANGE
++----------
++
++Emitted when the RTC time changes.
++
++Data:
++
++- "offset": delta against the host UTC in seconds (json-number)
++
++Example:
++
++{ "event": "RTC_CHANGE",
++    "data": { "offset": 78 },
++    "timestamp": { "seconds": 1267020223, "microseconds": 435656 } }
++
+ SHUTDOWN
+ --------
+ 
+diff --git a/hw/mc146818rtc.c b/hw/mc146818rtc.c
+index 2616d0d..a537855 100644
+--- a/hw/mc146818rtc.c
++++ b/hw/mc146818rtc.c
+@@ -297,6 +297,8 @@ static void rtc_set_time(RTCState *s)
+     tm->tm_mday = rtc_from_bcd(s, s->cmos_data[RTC_DAY_OF_MONTH]);
+     tm->tm_mon = rtc_from_bcd(s, s->cmos_data[RTC_MONTH]) - 1;
+     tm->tm_year = rtc_from_bcd(s, s->cmos_data[RTC_YEAR]) + s->base_year - 1900;
++
++    rtc_change_mon_event(tm);
+ }
+ 
+ static void rtc_copy_date(RTCState *s)
+diff --git a/monitor.c b/monitor.c
+index 3910201..3aec08f 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -402,6 +402,9 @@ void monitor_protocol_event(MonitorEvent event, QObject *data)
+         case QEVENT_BLOCK_IO_ERROR:
+             event_name = "BLOCK_IO_ERROR";
+             break;
++        case QEVENT_RTC_CHANGE:
++            event_name = "RTC_CHANGE";
++            break;
+         default:
+             abort();
+             break;
+diff --git a/monitor.h b/monitor.h
+index 4c7814c..ee412eb 100644
+--- a/monitor.h
++++ b/monitor.h
+@@ -25,6 +25,7 @@ typedef enum MonitorEvent {
+     QEVENT_SPICE_INITIALIZED,
+     QEVENT_SPICE_DISCONNECTED,
+     QEVENT_BLOCK_IO_ERROR,
++    QEVENT_RTC_CHANGE,
+     QEVENT_MAX,
+ } MonitorEvent;
+ 
+diff --git a/sysemu.h b/sysemu.h
+index 987d93b..e2ec29a 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -259,6 +259,8 @@ void do_usb_add(Monitor *mon, const QDict *qdict);
+ void do_usb_del(Monitor *mon, const QDict *qdict);
+ void usb_info(Monitor *mon);
+ 
++void rtc_change_mon_event(struct tm *tm);
++
+ void register_devices(void);
+ 
+ #endif
+diff --git a/vl.c b/vl.c
+index 783b967..0420f57 100644
+--- a/vl.c
++++ b/vl.c
+@@ -1723,6 +1723,15 @@ int qemu_timedate_diff(struct tm *tm)
+     return seconds - time(NULL);
+ }
+ 
++void rtc_change_mon_event(struct tm *tm)
++{
++    QObject *data;
++
++    data = qobject_from_jsonf("{ 'offset': %d }", qemu_timedate_diff(tm));
++    monitor_protocol_event(QEVENT_RTC_CHANGE, data);
++    qobject_decref(data);
++}
++
+ static void configure_rtc_date_offset(const char *startdate, int legacy)
+ {
+     time_t rtc_start_date;
+-- 
+1.7.0.3
+

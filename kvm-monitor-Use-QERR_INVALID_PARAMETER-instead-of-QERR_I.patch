@@ -1,0 +1,48 @@
+From 725b77a93c5c4918d460da43c817aa8a520cea1c Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 22 Mar 2010 13:29:06 -0300
+Subject: [PATCH 08/29] monitor: Use QERR_INVALID_PARAMETER instead of QERR_INVALID_CPU_INDEX
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269264550-20228-2-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7959
+O-Subject: [PATCH 1/5] monitor: Use QERR_INVALID_PARAMETER instead of
+	QERR_INVALID_CPU_INDEX
+Bugzilla: 575800
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+This changes the error message from "Invalid CPU index" to "Invalid
+parameter index" in the human monitor.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit cc0c4185e54867ef93c4b4dc0a8f3ecbc20ece42)
+---
+ monitor.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 49b02fc..f899a97 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -926,7 +926,7 @@ static void do_cpu_set(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     int index = qdict_get_int(qdict, "index");
+     if (mon_set_cpu(index) < 0)
+-        qemu_error_new(QERR_INVALID_CPU_INDEX);
++        qemu_error_new(QERR_INVALID_PARAMETER, "index");
+ }
+ 
+ static void do_cpu_set_nr(Monitor *mon, const QDict *qdict)
+-- 
+1.7.0.3
+

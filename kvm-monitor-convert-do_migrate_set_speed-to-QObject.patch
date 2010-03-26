@@ -1,0 +1,75 @@
+From 62638c5663fe444cda9708a9754c939d01fc2d2a Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 22 Mar 2010 14:23:42 -0300
+Subject: [PATCH 17/29] monitor: convert do_migrate_set_speed() to QObject
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269267825-8627-6-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7968
+O-Subject: [PATCH 5/8] monitor: convert do_migrate_set_speed() to QObject
+Bugzilla: 575821
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 5fd9083cd8753be3a0bb9d772efdf1d7aa71c59c)
+---
+ migration.c     |    2 +-
+ migration.h     |    2 +-
+ qemu-monitor.hx |    3 ++-
+ 3 files changed, 4 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ migration.c     |    2 +-
+ migration.h     |    2 +-
+ qemu-monitor.hx |    3 ++-
+ 3 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/migration.c b/migration.c
+index 615fb24..b5658f0 100644
+--- a/migration.c
++++ b/migration.c
+@@ -110,7 +110,7 @@ void do_migrate_cancel(Monitor *mon, const QDict *qdict, QObject **ret_data)
+         s->cancel(s);
+ }
+ 
+-void do_migrate_set_speed(Monitor *mon, const QDict *qdict)
++void do_migrate_set_speed(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     double d;
+     FdMigrationState *s;
+diff --git a/migration.h b/migration.h
+index cbd456b..3ac208b 100644
+--- a/migration.h
++++ b/migration.h
+@@ -56,7 +56,7 @@ void do_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data);
+ 
+ void do_migrate_cancel(Monitor *mon, const QDict *qdict, QObject **ret_data);
+ 
+-void do_migrate_set_speed(Monitor *mon, const QDict *qdict);
++void do_migrate_set_speed(Monitor *mon, const QDict *qdict, QObject **ret_data);
+ 
+ uint64_t migrate_max_downtime(void);
+ 
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 997653c..a2da46b 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -764,7 +764,8 @@ ETEXI
+         .args_type  = "value:b",
+         .params     = "value",
+         .help       = "set maximum speed (in bytes) for migrations",
+-        .mhandler.cmd = do_migrate_set_speed,
++        .user_print = monitor_user_noop,
++        .mhandler.cmd_new = do_migrate_set_speed,
+     },
+ 
+ STEXI
+-- 
+1.7.0.3
+

@@ -1,0 +1,98 @@
+From 420cfb6a89120fc3d88d1d311a2077b701b3af75 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 22 Mar 2010 17:44:53 -0300
+Subject: [PATCH 25/29] QMP: Drop DEBUG event
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269279896-26330-6-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8016
+O-Subject: [PATCH 5/8] QMP: Drop DEBUG event
+Bugzilla: 575912
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 575912
+
+This event has been introduced in the first round of QMP commits,
+turns out that it's based on the usage of the EXCP_DEBUG macro,
+which has discussable semantics when exposed through QMP.
+
+As libvirt doesn't use this, let's just drop it.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 51a3bd71b3f2fa7033a5a3db459449b4bb4cd5d7)
+---
+ QMP/qmp-events.txt |    6 ------
+ monitor.c          |    3 ---
+ monitor.h          |    1 -
+ vl.c               |    1 -
+ 4 files changed, 0 insertions(+), 11 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ QMP/qmp-events.txt |    6 ------
+ monitor.c          |    3 ---
+ monitor.h          |    1 -
+ vl.c               |    1 -
+ 4 files changed, 0 insertions(+), 11 deletions(-)
+
+diff --git a/QMP/qmp-events.txt b/QMP/qmp-events.txt
+index d585a8d..9bf14d0 100644
+--- a/QMP/qmp-events.txt
++++ b/QMP/qmp-events.txt
+@@ -19,12 +19,6 @@ Data: None.
+ Description: Issued when the Virtual Machine is stopped.
+ Data: None.
+ 
+-4 DEBUG
+--------
+-
+-Description: Issued when the Virtual Machine enters debug mode.
+-Data: None.
+-
+ 4 VNC_CONNECTED
+ ---------------
+ 
+diff --git a/monitor.c b/monitor.c
+index 6e45c09..3910201 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -372,9 +372,6 @@ void monitor_protocol_event(MonitorEvent event, QObject *data)
+     assert(event < QEVENT_MAX);
+ 
+     switch (event) {
+-        case QEVENT_DEBUG:
+-            event_name = "DEBUG";
+-            break;
+         case QEVENT_SHUTDOWN:
+             event_name = "SHUTDOWN";
+             break;
+diff --git a/monitor.h b/monitor.h
+index 03cf105..4c7814c 100644
+--- a/monitor.h
++++ b/monitor.h
+@@ -15,7 +15,6 @@ extern Monitor *cur_mon;
+ 
+ /* QMP events */
+ typedef enum MonitorEvent {
+-    QEVENT_DEBUG,
+     QEVENT_SHUTDOWN,
+     QEVENT_RESET,
+     QEVENT_POWERDOWN,
+diff --git a/vl.c b/vl.c
+index 7be8a01..783b967 100644
+--- a/vl.c
++++ b/vl.c
+@@ -4285,7 +4285,6 @@ static void main_loop(void)
+         } while (vm_can_run());
+ 
+         if (qemu_debug_requested()) {
+-            monitor_protocol_event(QEVENT_DEBUG, NULL);
+             vm_stop(EXCP_DEBUG);
+         }
+         if (qemu_shutdown_requested()) {
+-- 
+1.7.0.3
+

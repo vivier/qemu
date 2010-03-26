@@ -1,0 +1,63 @@
+From 56bcb5537922068ad1c1f0643a9783e67eaae9a3 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 22 Mar 2010 13:29:10 -0300
+Subject: [PATCH 12/29] Don't set default monitor when there is a mux'ed one
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269264550-20228-6-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7963
+O-Subject: [PATCH 5/5] Don't set default monitor when there is a mux'ed one
+Bugzilla: 575800
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Jan Kiszka <jan.kiszka@siemens.com>
+
+This fixes eg. "-nographic -serial mon:stdio [-serial ...]".
+
+Signed-off-by: Jan Kiszka <jan.kiszka@siemens.com>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+---
+ vl.c |    9 +++++++++
+ 1 files changed, 9 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vl.c |    9 +++++++++
+ 1 files changed, 9 insertions(+), 0 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index 53acf53..d723320 100644
+--- a/vl.c
++++ b/vl.c
+@@ -5488,6 +5488,9 @@ int main(int argc, char **argv, char **envp)
+             case QEMU_OPTION_serial:
+                 add_device_config(DEV_SERIAL, optarg);
+                 default_serial = 0;
++                if (strncmp(optarg, "mon:", 4) == 0) {
++                    default_monitor = 0;
++                }
+                 break;
+             case QEMU_OPTION_watchdog:
+                 if (watchdog) {
+@@ -5506,10 +5509,16 @@ int main(int argc, char **argv, char **envp)
+             case QEMU_OPTION_virtiocon:
+                 add_device_config(DEV_VIRTCON, optarg);
+                 default_virtcon = 0;
++                if (strncmp(optarg, "mon:", 4) == 0) {
++                    default_monitor = 0;
++                }
+                 break;
+             case QEMU_OPTION_parallel:
+                 add_device_config(DEV_PARALLEL, optarg);
+                 default_parallel = 0;
++                if (strncmp(optarg, "mon:", 4) == 0) {
++                    default_monitor = 0;
++                }
+                 break;
+ 	    case QEMU_OPTION_loadvm:
+ 		loadvm = optarg;
+-- 
+1.7.0.3
+

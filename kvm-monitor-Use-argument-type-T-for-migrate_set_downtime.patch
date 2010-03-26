@@ -1,0 +1,83 @@
+From d3a3c86d9baaa2d802a7f4c47f0ff3f5d5cd4ce2 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 22 Mar 2010 14:23:44 -0300
+Subject: [PATCH 19/29] monitor: Use argument type 'T' for migrate_set_downtime
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269267825-8627-8-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 7972
+O-Subject: [PATCH 7/8] monitor: Use argument type 'T' for migrate_set_downtime
+Bugzilla: 575821
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+Before, it used type 's', which strips quotes and interprets escapes,
+and is quite inappropriate for QMP.
+
+Negative arguments are no flushed to zero.  Before, they were cast to
+uint32_t, which wrecked the sign.
+
+Ridiculously large arguments including infinities are now rejected.
+Before, they were interpreted as zero.  Same for NaN.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit b0fbf7d3420f5f66be9728b1b070846bb054c872)
+---
+ migration.c     |   15 ++-------------
+ qemu-monitor.hx |    2 +-
+ 2 files changed, 3 insertions(+), 14 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ migration.c     |   15 ++-------------
+ qemu-monitor.hx |    2 +-
+ 2 files changed, 3 insertions(+), 14 deletions(-)
+
+diff --git a/migration.c b/migration.c
+index b5658f0..aae4b3f 100644
+--- a/migration.c
++++ b/migration.c
+@@ -138,21 +138,10 @@ uint64_t migrate_max_downtime(void)
+ 
+ void do_migrate_set_downtime(Monitor *mon, const QDict *qdict)
+ {
+-    char *ptr;
+     double d;
+-    const char *value = qdict_get_str(qdict, "value");
+-
+-    d = strtod(value, &ptr);
+-    if (!strcmp(ptr,"ms")) {
+-        d *= 1000000;
+-    } else if (!strcmp(ptr,"us")) {
+-        d *= 1000;
+-    } else if (!strcmp(ptr,"ns")) {
+-    } else {
+-        /* all else considered to be seconds */
+-        d *= 1000000000;
+-    }
+ 
++    d = qdict_get_double(qdict, "value") * 1e9;
++    d = MAX(0, MIN(UINT64_MAX, d));
+     max_downtime = (uint64_t)d;
+ }
+ 
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index a2da46b..ad6676e 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -775,7 +775,7 @@ ETEXI
+ 
+     {
+         .name       = "migrate_set_downtime",
+-        .args_type  = "value:s",
++        .args_type  = "value:T",
+         .params     = "value",
+         .help       = "set maximum tolerated downtime (in seconds) for migrations",
+         .mhandler.cmd = do_migrate_set_downtime,
+-- 
+1.7.0.3
+

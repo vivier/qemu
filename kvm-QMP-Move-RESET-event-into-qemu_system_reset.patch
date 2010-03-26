@@ -1,0 +1,58 @@
+From 0946c3c49a28a90cf12b681e93a5d260ac80b9c5 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 22 Mar 2010 17:44:51 -0300
+Subject: [PATCH 23/29] QMP: Move RESET event into qemu_system_reset()
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269279896-26330-4-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8014
+O-Subject: [PATCH 3/8] QMP: Move RESET event into qemu_system_reset()
+Bugzilla: 575912
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 575912
+
+Nothing will change as that function is currently only called by
+the main loop code, but it's the right place for the RESET event,
+as it's where the reset is actually performed.
+
+RHEL6 NOTE: this is the merge of the following upstream commits:
+
+0ee442502bc8af7fe1679ccf775e54fcf62dd8ac
+81d9b784df3276cb6fa92376e587c67b2f09537b
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ vl.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vl.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index 4776137..7be8a01 100644
+--- a/vl.c
++++ b/vl.c
+@@ -3437,6 +3437,7 @@ void qemu_system_reset(void)
+     QTAILQ_FOREACH_SAFE(re, &reset_handlers, entry, nre) {
+         re->func(re->opaque);
+     }
++    monitor_protocol_event(QEVENT_RESET, NULL);
+ }
+ 
+ void qemu_system_reset_request(void)
+@@ -4296,7 +4297,6 @@ static void main_loop(void)
+                 break;
+         }
+         if (qemu_reset_requested()) {
+-            monitor_protocol_event(QEVENT_RESET, NULL);
+             pause_all_vcpus();
+             qemu_system_reset();
+             resume_all_vcpus();
+-- 
+1.7.0.3
+
