@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.31%{?dist}
+Release: 2.32%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -448,6 +448,8 @@ Patch1209: kvm-QMP-Introduce-RTC_CHANGE-event.patch
 Patch1210: kvm-QMP-Introduce-WATCHDOG-event.patch
 # For bz#576561 - spice: add more config options
 Patch1211: kvm-spice-add-more-config-options.patch
+# For bz#576561 - spice: add more config options
+Patch1212: kvm-Revert-spice-add-more-config-options.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -721,6 +723,7 @@ such as kvmtrace and kvm_stat.
 %patch1209 -p1
 %patch1210 -p1
 %patch1211 -p1
+%patch1212 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -916,6 +919,12 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Mar 26 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.32.el6
+- kvm-Revert-spice-add-more-config-options.patch [bz#576561]
+  (need to wait for spice patches to be included on spice-server)
+- Related: bz#576561
+  (spice: add more config options)
+
 * Fri Mar 26 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.31.el6
 - kvm-Transparent-Hugepage-Support-3.patch [bz#574525]
 - kvm-monitor-Don-t-check-for-mon_get_cpu-failure.patch [bz#574642]
