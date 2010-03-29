@@ -1,0 +1,73 @@
+From 28f0bcf4a02524390d1d24408e8d8e8452368c71 Mon Sep 17 00:00:00 2001
+From: Marcelo Tosatti <mtosatti@redhat.com>
+Date: Mon, 1 Mar 2010 20:52:16 -0300
+Subject: [PATCH 13/20] net: Remove unused net_client_uninit()
+
+RH-Author: Marcelo Tosatti <mtosatti@redhat.com>
+Message-id: <daf5372b2c19e1feb74756666602f5c6a654a9c3.1267476474.git.mtosatti@redhat.com>
+Patchwork-id: 7350
+O-Subject: [PATCH 14/21] net: Remove unused net_client_uninit()
+Bugzilla: 569613
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+Unused since commit 9ad4531e.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 7f76abe1c9d880050ba31ff827b3ff5cbc8175a7)
+(cherry picked from commit b391493bc6e756be30cc405f58b68b84876418a7)
+---
+ net.c |   14 --------------
+ net.h |    1 -
+ 2 files changed, 0 insertions(+), 15 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ net.c |   14 --------------
+ net.h |    1 -
+ 2 files changed, 0 insertions(+), 15 deletions(-)
+
+diff --git a/net.c b/net.c
+index 48cbb75..109619a 100644
+--- a/net.c
++++ b/net.c
+@@ -1138,20 +1138,6 @@ int net_client_init(Monitor *mon, QemuOpts *opts, int is_netdev)
+     return -1;
+ }
+ 
+-void net_client_uninit(NICInfo *nd)
+-{
+-    if (nd->vlan) {
+-        nd->vlan->nb_guest_devs--;
+-    }
+-    nb_nics--;
+-
+-    qemu_free(nd->model);
+-    qemu_free(nd->name);
+-    qemu_free(nd->devaddr);
+-
+-    nd->used = 0;
+-}
+-
+ static int net_host_check_device(const char *device)
+ {
+     int i;
+diff --git a/net.h b/net.h
+index 06364df..53f45fb 100644
+--- a/net.h
++++ b/net.h
+@@ -160,7 +160,6 @@ extern const char *legacy_tftp_prefix;
+ extern const char *legacy_bootp_filename;
+ 
+ int net_client_init(Monitor *mon, QemuOpts *opts, int is_netdev);
+-void net_client_uninit(NICInfo *nd);
+ int net_client_parse(QemuOptsList *opts_list, const char *str);
+ int net_init_clients(void);
+ void net_cleanup(void);
+-- 
+1.7.0.3
+

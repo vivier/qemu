@@ -1,0 +1,44 @@
+From 1184649e1fdd8e84867f0235bc00812984f731f5 Mon Sep 17 00:00:00 2001
+From: Marcelo Tosatti <mtosatti@redhat.com>
+Date: Mon, 1 Mar 2010 20:52:09 -0300
+Subject: [PATCH 06/20] Do not allow vcpu stop with in progress PIO
+
+RH-Author: Marcelo Tosatti <mtosatti@redhat.com>
+Message-id: <dcacf4f34c97f143500477bace0d93ee0b5eeb85.1267476474.git.mtosatti@redhat.com>
+Patchwork-id: 7348
+O-Subject: [PATCH 07/21] Do not allow vcpu stop with in progress PIO
+Bugzilla: 569613
+RH-Acked-by: Glauber Costa <glommer@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Rik van Riel <riel@redhat.com>
+
+Re-enter the kernel to complete in progress PIO. Otherwise the
+operation can be lost during migration.
+
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+Signed-off-by: Avi Kivity <avi@redhat.com>
+(cherry picked from commit 64defc2b52571c5f891b018c8f2b70b10f3bb11c)
+---
+ qemu-kvm.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-kvm.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-kvm.c b/qemu-kvm.c
+index f0918b3..caa7249 100644
+--- a/qemu-kvm.c
++++ b/qemu-kvm.c
+@@ -967,6 +967,7 @@ int kvm_run(CPUState *env)
+                                 run->io.direction,
+                                 run->io.size,
+                                 run->io.count);
++            r = 0;
+             break;
+         case KVM_EXIT_DEBUG:
+             r = handle_debug(env);
+-- 
+1.7.0.3
+

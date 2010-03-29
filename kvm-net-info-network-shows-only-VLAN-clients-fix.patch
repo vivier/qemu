@@ -1,0 +1,64 @@
+From 601feea57030398e3a75595fe55c7096bd987d99 Mon Sep 17 00:00:00 2001
+From: Marcelo Tosatti <mtosatti@redhat.com>
+Date: Mon, 1 Mar 2010 20:52:20 -0300
+Subject: [PATCH 17/20] net: info network shows only VLAN clients, fix
+
+RH-Author: Marcelo Tosatti <mtosatti@redhat.com>
+Message-id: <3326301f79ca477ad448221302e55f18c81c0d08.1267476474.git.mtosatti@redhat.com>
+Patchwork-id: 7362
+O-Subject: [PATCH 18/21] net: info network shows only VLAN clients, fix
+Bugzilla: 569613
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Rik van Riel <riel@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+Clients not associated with a VLAN exist since commit d80b9fc6.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit a0104e0ec7939781d79ca4b54ebedd5fd3360151)
+(cherry picked from commit 88aa9056689a61900dfce73f5d29ce924467a70b)
+---
+ net.c |   11 +++++++++--
+ 1 files changed, 9 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ net.c |   11 +++++++++--
+ 1 files changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/net.c b/net.c
+index 529d4f1..ead3d42 100644
+--- a/net.c
++++ b/net.c
+@@ -1220,16 +1220,23 @@ void net_set_boot_mask(int net_boot_mask)
+ void do_info_network(Monitor *mon)
+ {
+     VLANState *vlan;
++    VLANClientState *vc;
+ 
+     QTAILQ_FOREACH(vlan, &vlans, next) {
+-        VLANClientState *vc;
+-
+         monitor_printf(mon, "VLAN %d devices:\n", vlan->id);
+ 
+         QTAILQ_FOREACH(vc, &vlan->clients, next) {
+             monitor_printf(mon, "  %s: %s\n", vc->name, vc->info_str);
+         }
+     }
++    monitor_printf(mon, "Devices not on any VLAN:\n");
++    QTAILQ_FOREACH(vc, &non_vlan_clients, next) {
++        monitor_printf(mon, "  %s: %s", vc->name, vc->info_str);
++        if (vc->peer) {
++            monitor_printf(mon, " peer=%s", vc->peer->name);
++        }
++        monitor_printf(mon, "\n");
++    }
+ }
+ 
+ void do_set_link(Monitor *mon, const QDict *qdict)
+-- 
+1.7.0.3
+

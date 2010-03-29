@@ -1,0 +1,52 @@
+From fc971c84325434725b2580a7e7397b007ce7a936 Mon Sep 17 00:00:00 2001
+From: Marcelo Tosatti <mtosatti@redhat.com>
+Date: Mon, 1 Mar 2010 20:52:11 -0300
+Subject: [PATCH 08/20] Do not ignore error, if open file failed (-serial /dev/tty)
+
+RH-Author: Marcelo Tosatti <mtosatti@redhat.com>
+Message-id: <39ce3091968908df84a120c94b84d77945b0f885.1267476474.git.mtosatti@redhat.com>
+Patchwork-id: 7355
+O-Subject: [PATCH 09/21] Do not ignore error,
+	if open file failed (-serial /dev/tty)
+Bugzilla: 569613
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Glauber Costa <glommer@redhat.com>
+
+From: Evgeniy Dushistov <dushistov@mail.ru>
+
+In case, when qemu is executed with option like
+-serial /dev/ttyS0, report if there are problems with
+opening of devices. At now errors are silently ignoring.
+
+Signed-off-by: Evgeniy Dushistov <dushistov@mail.ru>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit afc535acb579a7808d9ff170088c839a29c61dc9)
+(cherry picked from commit 02510b24368f76b5e8eb3edbca880d177869f265)
+---
+ qemu-char.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-char.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-char.c b/qemu-char.c
+index b13f8d4..5a1b535 100644
+--- a/qemu-char.c
++++ b/qemu-char.c
+@@ -1180,6 +1180,9 @@ static CharDriverState *qemu_chr_open_tty(QemuOpts *opts)
+     int fd;
+ 
+     TFR(fd = open(filename, O_RDWR | O_NONBLOCK));
++    if (fd < 0) {
++        return NULL;
++    }
+     tty_serial_init(fd, 115200, 'N', 8, 1);
+     chr = qemu_chr_open_fd(fd, fd);
+     if (!chr) {
+-- 
+1.7.0.3
+

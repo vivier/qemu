@@ -1,0 +1,54 @@
+From f212ae729e123829cb41b71a00d51fccaf0c04d8 Mon Sep 17 00:00:00 2001
+From: Marcelo Tosatti <mtosatti@redhat.com>
+Date: Mon, 1 Mar 2010 20:52:10 -0300
+Subject: [PATCH 07/20] fix savevm command without id or tag
+
+RH-Author: Marcelo Tosatti <mtosatti@redhat.com>
+Message-id: <81d0fa7c1dbe34d0ef1c4ec617517062e6843065.1267476474.git.mtosatti@redhat.com>
+Patchwork-id: 7352
+O-Subject: [PATCH 08/21] fix savevm command without id or tag
+Bugzilla: 569613
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+
+savevm without id or tag segfaults in:
+
+(gdb) bt
+#0  0x00007f600a83bf8a in __strcmp_sse42 () from /lib64/libc.so.6
+#1  0x00000000004745b6 in bdrv_snapshot_find (bs=<value optimized out>,
+    sn_info=0x7fff996be280, name=0x0) at savevm.c:1631
+#2  0x0000000000475c80 in del_existing_snapshots (name=<value optimized out>,
+    mon=<value optimized out>) at savevm.c:1654
+#3  do_savevm (name=<value optimized out>, mon=<value optimized out>)
+
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit f139a4125682ecd45d96c2d1523443d1be65405c)
+(cherry picked from commit dc88aa49b4af7a75ae448fe4c57248c2f1d6eb09)
+---
+ savevm.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ savevm.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/savevm.c b/savevm.c
+index b3bb909..2fd3de6 100644
+--- a/savevm.c
++++ b/savevm.c
+@@ -1718,7 +1718,7 @@ void do_savevm(Monitor *mon, const QDict *qdict)
+     sn->vm_clock_nsec = qemu_get_clock(vm_clock);
+ 
+     /* Delete old snapshots of the same name */
+-    if (del_existing_snapshots(mon, name) < 0) {
++    if (name && del_existing_snapshots(mon, name) < 0) {
+         goto the_end;
+     }
+ 
+-- 
+1.7.0.3
+

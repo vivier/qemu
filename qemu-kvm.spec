@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.32%{?dist}
+Release: 2.33%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -450,6 +450,46 @@ Patch1210: kvm-QMP-Introduce-WATCHDOG-event.patch
 Patch1211: kvm-spice-add-more-config-options.patch
 # For bz#576561 - spice: add more config options
 Patch1212: kvm-Revert-spice-add-more-config-options.patch
+# For bz#569613 - backport qemu-kvm-0.12.3 fixes to RHEL6
+Patch1213: kvm-Fix-kvm_load_mpstate-for-vcpu-hot-add.patch
+# For bz#569613 - backport qemu-kvm-0.12.3 fixes to RHEL6
+Patch1214: kvm-qemu-kvm-enable-get-set-vcpu-events-on-reset-and-mig.patch
+# For bz#569613 - backport qemu-kvm-0.12.3 fixes to RHEL6
+Patch1215: kvm-Synchronize-kvm-headers.patch
+# For bz#569613 - backport qemu-kvm-0.12.3 fixes to RHEL6
+Patch1216: kvm-Increase-VNC_MAX_WIDTH.patch
+# For bz#569613 - backport qemu-kvm-0.12.3 fixes to RHEL6
+Patch1217: kvm-device-assignment-default-requires-IOMMU.patch
+# For bz#569613 - backport qemu-kvm-0.12.3 fixes to RHEL6
+Patch1218: kvm-Do-not-allow-vcpu-stop-with-in-progress-PIO.patch
+# For bz#569613 - backport qemu-kvm-0.12.3 fixes to RHEL6
+Patch1219: kvm-fix-savevm-command-without-id-or-tag.patch
+# For bz#569613 - backport qemu-kvm-0.12.3 fixes to RHEL6
+Patch1220: kvm-Do-not-ignore-error-if-open-file-failed-serial-dev-t.patch
+# For bz#569613 - backport qemu-kvm-0.12.3 fixes to RHEL6
+Patch1221: kvm-segfault-due-to-buffer-overrun-in-usb-serial.patch
+# For bz#569613 - backport qemu-kvm-0.12.3 fixes to RHEL6
+Patch1222: kvm-fix-inet_parse-typo.patch
+# For bz#569613 - backport qemu-kvm-0.12.3 fixes to RHEL6
+Patch1223: kvm-virtio-net-fix-network-stall-under-load.patch
+# For bz#569613 - backport qemu-kvm-0.12.3 fixes to RHEL6
+Patch1224: kvm-don-t-dereference-NULL-after-failed-strdup.patch
+# For bz#569613 - backport qemu-kvm-0.12.3 fixes to RHEL6
+Patch1225: kvm-net-Remove-unused-net_client_uninit.patch
+# For bz#569613 - backport qemu-kvm-0.12.3 fixes to RHEL6
+Patch1226: kvm-net-net_check_clients-runs-too-early-to-see-device-f.patch
+# For bz#569613 - backport qemu-kvm-0.12.3 fixes to RHEL6
+Patch1227: kvm-net-Fix-bogus-Warning-vlan-0-with-no-nics-with-devic.patch
+# For bz#569613 - backport qemu-kvm-0.12.3 fixes to RHEL6
+Patch1228: kvm-net-net_check_clients-checks-only-VLAN-clients-fix.patch
+# For bz#569613 - backport qemu-kvm-0.12.3 fixes to RHEL6
+Patch1229: kvm-net-info-network-shows-only-VLAN-clients-fix.patch
+# For bz#569613 - backport qemu-kvm-0.12.3 fixes to RHEL6
+Patch1230: kvm-net-Monitor-command-set_link-finds-only-VLAN-clients.patch
+# For bz#569613 - backport qemu-kvm-0.12.3 fixes to RHEL6
+Patch1231: kvm-ide-save-restore-pio-atapi-cmd-transfer-fields-and-i.patch
+# For bz#569613 - backport qemu-kvm-0.12.3 fixes to RHEL6
+Patch1232: kvm-cirrus-Properly-re-register-cirrus_linear_io_addr-on.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -724,6 +764,26 @@ such as kvmtrace and kvm_stat.
 %patch1210 -p1
 %patch1211 -p1
 %patch1212 -p1
+%patch1213 -p1
+%patch1214 -p1
+%patch1215 -p1
+%patch1216 -p1
+%patch1217 -p1
+%patch1218 -p1
+%patch1219 -p1
+%patch1220 -p1
+%patch1221 -p1
+%patch1222 -p1
+%patch1223 -p1
+%patch1224 -p1
+%patch1225 -p1
+%patch1226 -p1
+%patch1227 -p1
+%patch1228 -p1
+%patch1229 -p1
+%patch1230 -p1
+%patch1231 -p1
+%patch1232 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -919,6 +979,30 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Mar 29 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.33.el6
+- kvm-Fix-kvm_load_mpstate-for-vcpu-hot-add.patch [bz#569613]
+- kvm-qemu-kvm-enable-get-set-vcpu-events-on-reset-and-mig.patch [bz#569613]
+- kvm-Synchronize-kvm-headers.patch [bz#569613]
+- kvm-Increase-VNC_MAX_WIDTH.patch [bz#569613]
+- kvm-device-assignment-default-requires-IOMMU.patch [bz#569613]
+- kvm-Do-not-allow-vcpu-stop-with-in-progress-PIO.patch [bz#569613]
+- kvm-fix-savevm-command-without-id-or-tag.patch [bz#569613]
+- kvm-Do-not-ignore-error-if-open-file-failed-serial-dev-t.patch [bz#569613]
+- kvm-segfault-due-to-buffer-overrun-in-usb-serial.patch [bz#569613]
+- kvm-fix-inet_parse-typo.patch [bz#569613]
+- kvm-virtio-net-fix-network-stall-under-load.patch [bz#569613]
+- kvm-don-t-dereference-NULL-after-failed-strdup.patch [bz#569613]
+- kvm-net-Remove-unused-net_client_uninit.patch [bz#569613]
+- kvm-net-net_check_clients-runs-too-early-to-see-device-f.patch [bz#569613]
+- kvm-net-Fix-bogus-Warning-vlan-0-with-no-nics-with-devic.patch [bz#569613]
+- kvm-net-net_check_clients-checks-only-VLAN-clients-fix.patch [bz#569613]
+- kvm-net-info-network-shows-only-VLAN-clients-fix.patch [bz#569613]
+- kvm-net-Monitor-command-set_link-finds-only-VLAN-clients.patch [bz#569613]
+- kvm-ide-save-restore-pio-atapi-cmd-transfer-fields-and-i.patch [bz#569613]
+- kvm-cirrus-Properly-re-register-cirrus_linear_io_addr-on.patch [bz#569613]
+- Related: bz#569613
+  (backport qemu-kvm-0.12.3 fixes to RHEL6)
+
 * Fri Mar 26 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.32.el6
 - kvm-Revert-spice-add-more-config-options.patch [bz#576561]
   (need to wait for spice patches to be included on spice-server)

@@ -1,0 +1,166 @@
+From a6f6012ef6272f843475a907bd21c434a0f09298 Mon Sep 17 00:00:00 2001
+From: Marcelo Tosatti <mtosatti@redhat.com>
+Date: Mon, 1 Mar 2010 20:52:15 -0300
+Subject: [PATCH 12/20] don't dereference NULL after failed strdup
+
+RH-Author: Marcelo Tosatti <mtosatti@redhat.com>
+Message-id: <3e43b32b1ed6646bd099ac89646d0fd4013d9593.1267476474.git.mtosatti@redhat.com>
+Patchwork-id: 7357
+O-Subject: [PATCH 13/21] don't dereference NULL after failed strdup
+Bugzilla: 569613
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Glauber Costa <glommer@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+
+From: Jim Meyering <jim@meyering.net>
+
+Most of these are obvious NULL-deref bug fixes, for example,
+the ones in these files:
+
+  block/curl.c
+  net.c
+  slirp/misc.c
+
+and the first one in block/vvfat.c.
+The others in block/vvfat.c may not lead to an immediate segfault, but I
+traced the two schedule_rename(..., strdup(path)) uses, and a failed
+strdup would appear to trigger this assertion in handle_renames_and_mkdirs:
+
+	    assert(commit->path);
+
+The conversion to use qemu_strdup in envlist_to_environ is not technically
+needed, but does avoid a theoretical leak in the caller when strdup fails
+for one value, but later succeeds in allocating another buffer(plausible,
+if one string length is much larger than the others).  The caller does
+not know the length of the returned list, and as such can only free
+pointers until it hits the first NULL.  If there are non-NULL pointers
+beyond the first, their buffers would be leaked.  This one is admittedly
+far-fetched.
+
+The two in linux-user/main.c are worth fixing to ensure that an
+OOM error is diagnosed up front, rather than letting it provoke some
+harder-to-diagnose secondary error, in case of exec failure, or worse, in
+case the exec succeeds but with an invalid list of command line options.
+However, considering how unlikely it is to encounter a failed strdup early
+in main, this isn't a big deal.  Note that adding the required uses of
+qemu_strdup here and in envlist.c induce link failures because qemu_strdup
+is not currently in any library they're linked with.  So for now, I've
+omitted those changes, as well as the fixes in target-i386/helper.c
+and target-sparc/helper.c.
+
+If you'd like to see the above discussion (or anything else)
+in the commit log, just let me know and I'll be happy to adjust.
+
+>From 9af42864fd1ea666bd25e2cecfdfae74c20aa8c7 Mon Sep 17 00:00:00 2001
+From: Jim Meyering <meyering@redhat.com>
+Date: Mon, 8 Feb 2010 18:29:29 +0100
+Subject: [PATCH] don't dereference NULL after failed strdup
+
+Handle failing strdup by replacing each use with qemu_strdup,
+so as not to dereference NULL or trigger a failing assertion.
+* block/curl.c (curl_open): s/\bstrdup\b/qemu_strdup/
+* block/vvfat.c (init_directories): Likewise.
+(get_cluster_count_for_direntry, check_directory_consistency): Likewise.
+* net.c (parse_host_src_port): Likewise.
+* slirp/misc.c (fork_exec): Likewise.
+
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 6265eb26a375179f193f792e4f0d49036d2cf052)
+(cherry picked from commit 57f9f4c9f5fca49c8bc7ee011e9100d4ae8c61a5)
+---
+ block/curl.c  |    2 +-
+ block/vvfat.c |   10 +++++-----
+ net.c         |    2 +-
+ slirp/misc.c  |    2 +-
+ 4 files changed, 8 insertions(+), 8 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/curl.c  |    2 +-
+ block/vvfat.c |   10 +++++-----
+ net.c         |    2 +-
+ slirp/misc.c  |    2 +-
+ 4 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/block/curl.c b/block/curl.c
+index 5223ce8..c9c4574 100644
+--- a/block/curl.c
++++ b/block/curl.c
+@@ -309,7 +309,7 @@ static int curl_open(BlockDriverState *bs, const char *filename, int flags)
+ 
+     static int inited = 0;
+ 
+-    file = strdup(filename);
++    file = qemu_strdup(filename);
+     s->readahead_size = READ_AHEAD_SIZE;
+ 
+     /* Parse a trailing ":readahead=#:" param, if present. */
+diff --git a/block/vvfat.c b/block/vvfat.c
+index df957e5..592d6e6 100644
+--- a/block/vvfat.c
++++ b/block/vvfat.c
+@@ -883,7 +883,7 @@ static int init_directories(BDRVVVFATState* s,
+     mapping->dir_index = 0;
+     mapping->info.dir.parent_mapping_index = -1;
+     mapping->first_mapping_index = -1;
+-    mapping->path = strdup(dirname);
++    mapping->path = qemu_strdup(dirname);
+     i = strlen(mapping->path);
+     if (i > 0 && mapping->path[i - 1] == '/')
+ 	mapping->path[i - 1] = '\0';
+@@ -1633,10 +1633,10 @@ static uint32_t get_cluster_count_for_direntry(BDRVVVFATState* s,
+ 
+ 	    /* rename */
+ 	    if (strcmp(basename, basename2))
+-		schedule_rename(s, cluster_num, strdup(path));
++		schedule_rename(s, cluster_num, qemu_strdup(path));
+ 	} else if (is_file(direntry))
+ 	    /* new file */
+-	    schedule_new_file(s, strdup(path), cluster_num);
++	    schedule_new_file(s, qemu_strdup(path), cluster_num);
+ 	else {
+ 	    assert(0);
+ 	    return 0;
+@@ -1753,10 +1753,10 @@ static int check_directory_consistency(BDRVVVFATState *s,
+ 	mapping->mode &= ~MODE_DELETED;
+ 
+ 	if (strcmp(basename, basename2))
+-	    schedule_rename(s, cluster_num, strdup(path));
++	    schedule_rename(s, cluster_num, qemu_strdup(path));
+     } else
+ 	/* new directory */
+-	schedule_mkdir(s, cluster_num, strdup(path));
++	schedule_mkdir(s, cluster_num, qemu_strdup(path));
+ 
+     lfn_init(&lfn);
+     do {
+diff --git a/net.c b/net.c
+index 5fc2262..48cbb75 100644
+--- a/net.c
++++ b/net.c
+@@ -97,7 +97,7 @@ int parse_host_src_port(struct sockaddr_in *haddr,
+                         struct sockaddr_in *saddr,
+                         const char *input_str)
+ {
+-    char *str = strdup(input_str);
++    char *str = qemu_strdup(input_str);
+     char *host_str = str;
+     char *src_str;
+     const char *src_str2;
+diff --git a/slirp/misc.c b/slirp/misc.c
+index 05f4fb3..dcb1dc1 100644
+--- a/slirp/misc.c
++++ b/slirp/misc.c
+@@ -179,7 +179,7 @@ fork_exec(struct socket *so, const char *ex, int do_pty)
+ 		   close(s);
+ 
+ 		i = 0;
+-		bptr = strdup(ex); /* No need to free() this */
++		bptr = qemu_strdup(ex); /* No need to free() this */
+ 		if (do_pty == 1) {
+ 			/* Setup "slirp.telnetd -x" */
+ 			argv[i++] = "slirp.telnetd";
+-- 
+1.7.0.3
+

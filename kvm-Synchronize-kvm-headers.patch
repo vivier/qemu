@@ -1,0 +1,79 @@
+From d42e5df9c26ef64d8ff6d39d2676e0ca2c7c4c7b Mon Sep 17 00:00:00 2001
+From: Marcelo Tosatti <mtosatti@redhat.com>
+Date: Mon, 1 Mar 2010 20:52:05 -0300
+Subject: [PATCH 03/20] Synchronize kvm headers
+
+RH-Author: Marcelo Tosatti <mtosatti@redhat.com>
+Message-id: <017a6a50381faf30a0b877348465c8ffc4859c75.1267476474.git.mtosatti@redhat.com>
+Patchwork-id: 7363
+O-Subject: [PATCH 03/21] Synchronize kvm headers
+Bugzilla: 569613
+RH-Acked-by: Glauber Costa <glommer@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Rik van Riel <riel@redhat.com>
+
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+(cherry picked from commit 0a7ffff6229134bdda87d9a8383980db28d90625)
+---
+ kvm/include/linux/kvm.h   |    9 +++++++--
+ kvm/include/x86/asm/kvm.h |    4 ++++
+ 2 files changed, 11 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ kvm/include/linux/kvm.h   |    9 +++++++--
+ kvm/include/x86/asm/kvm.h |    4 ++++
+ 2 files changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/kvm/include/linux/kvm.h b/kvm/include/linux/kvm.h
+index db10887..3fd3371 100644
+--- a/kvm/include/linux/kvm.h
++++ b/kvm/include/linux/kvm.h
+@@ -181,6 +181,11 @@ struct kvm_run {
+ 	__u64 cr8;
+ 	__u64 apic_base;
+ 
++#ifdef __KVM_S390
++	/* the processor status word for s390 */
++	__u64 psw_mask; /* psw upper half */
++	__u64 psw_addr; /* psw lower half */
++#endif
+ 	union {
+ 		/* KVM_EXIT_UNKNOWN */
+ 		struct {
+@@ -232,8 +237,6 @@ struct kvm_run {
+ 		/* KVM_EXIT_S390_SIEIC */
+ 		struct {
+ 			__u8 icptcode;
+-			__u64 mask; /* psw upper half */
+-			__u64 addr; /* psw lower half */
+ 			__u16 ipa;
+ 			__u32 ipb;
+ 		} s390_sieic;
+@@ -492,6 +495,8 @@ struct kvm_ioeventfd {
+ #ifdef __KVM_HAVE_VCPU_EVENTS
+ #define KVM_CAP_VCPU_EVENTS 41
+ #endif
++#define KVM_CAP_S390_PSW 42
++#define KVM_CAP_PPC_SEGSTATE 43
+ 
+ #ifdef KVM_CAP_IRQ_ROUTING
+ 
+diff --git a/kvm/include/x86/asm/kvm.h b/kvm/include/x86/asm/kvm.h
+index 950df43..f46b79f 100644
+--- a/kvm/include/x86/asm/kvm.h
++++ b/kvm/include/x86/asm/kvm.h
+@@ -254,6 +254,10 @@ struct kvm_reinject_control {
+ 	__u8 reserved[31];
+ };
+ 
++/* When set in flags, include corresponding fields on KVM_SET_VCPU_EVENTS */
++#define KVM_VCPUEVENT_VALID_NMI_PENDING	0x00000001
++#define KVM_VCPUEVENT_VALID_SIPI_VECTOR	0x00000002
++
+ /* for KVM_GET/SET_VCPU_EVENTS */
+ struct kvm_vcpu_events {
+ 	struct {
+-- 
+1.7.0.3
+

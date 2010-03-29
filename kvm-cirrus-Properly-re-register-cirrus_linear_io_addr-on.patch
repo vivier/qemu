@@ -1,0 +1,57 @@
+From ac5ff2d4ca757838db34f11694aaa3295249e6e2 Mon Sep 17 00:00:00 2001
+From: Marcelo Tosatti <mtosatti@redhat.com>
+Date: Mon, 1 Mar 2010 20:52:23 -0300
+Subject: [PATCH 20/20] cirrus: Properly re-register cirrus_linear_io_addr on vram unmap
+
+RH-Author: Marcelo Tosatti <mtosatti@redhat.com>
+Message-id: <3f96e815f57f6f1cdae8c61fe950357ac6fb284f.1267476474.git.mtosatti@redhat.com>
+Patchwork-id: 7347
+O-Subject: [PATCH 21/21] cirrus: Properly re-register cirrus_linear_io_addr on
+	vram unmap
+Bugzilla: 569613
+RH-Acked-by: Zachary Amsden <zamsden@redhat.com>
+RH-Acked-by: Glauber Costa <glommer@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+
+From: Jan Kiszka <jan.kiszka@siemens.com>
+
+This fixes CONFIG_FB_CIRRUS for Linux guests and probably much more:
+
+When switching away from linearly mapped vram, we also have to restore
+the I/O handlers for the LFB.
+
+This regression was once introduced by commit 2bec46dc97.
+
+Signed-off-by: Jan Kiszka <jan.kiszka@siemens.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 4516e45f82b7ee0cedce875477e785989a719b67)
+---
+ hw/cirrus_vga.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/cirrus_vga.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/hw/cirrus_vga.c b/hw/cirrus_vga.c
+index 25c68b1..571044f 100644
+--- a/hw/cirrus_vga.c
++++ b/hw/cirrus_vga.c
+@@ -2595,9 +2595,11 @@ static void map_linear_vram(CirrusVGAState *s)
+ static void unmap_linear_vram(CirrusVGAState *s)
+ {
+     vga_dirty_log_stop(&s->vga);
+-    if (s->vga.map_addr && s->vga.lfb_addr && s->vga.lfb_end)
++    if (s->vga.map_addr && s->vga.lfb_addr && s->vga.lfb_end) {
+         s->vga.map_addr = s->vga.map_end = 0;
+-
++         cpu_register_physical_memory(s->vga.lfb_addr, s->vga.vram_size,
++                                      s->cirrus_linear_io_addr);
++    }
+     cpu_register_physical_memory(isa_mem_base + 0xa0000, 0x20000,
+                                  s->vga.vga_io_memory);
+ 
+-- 
+1.7.0.3
+

@@ -1,0 +1,52 @@
+From 8e2ca21540d2c2dbc1aa5608a590baf8033b68f4 Mon Sep 17 00:00:00 2001
+From: Marcelo Tosatti <mtosatti@redhat.com>
+Date: Mon, 1 Mar 2010 20:52:19 -0300
+Subject: [PATCH 16/20] net: net_check_clients() checks only VLAN clients, fix
+
+RH-Author: Marcelo Tosatti <mtosatti@redhat.com>
+Message-id: <54cb15921c4db831d42fa272de8c1f662fed23e8.1267476474.git.mtosatti@redhat.com>
+Patchwork-id: 7361
+O-Subject: [PATCH 17/21] net: net_check_clients() checks only VLAN clients, fix
+Bugzilla: 569613
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Rik van Riel <riel@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+Clients not associated with a VLAN exist since commit d80b9fc6.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit efe32fdde15e5764cfbc68cb2d61737681b1e096)
+(cherry picked from commit b93c5c84c858f0372b4e457dec28c4a01a50466b)
+---
+ net.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ net.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/net.c b/net.c
+index 30c1953..529d4f1 100644
+--- a/net.c
++++ b/net.c
+@@ -1310,6 +1310,13 @@ void net_check_clients(void)
+                     "Warning: vlan %d is not connected to host network\n",
+                     vlan->id);
+     }
++    QTAILQ_FOREACH(vc, &non_vlan_clients, next) {
++        if (!vc->peer) {
++            fprintf(stderr, "Warning: %s %s has no peer\n",
++                    vc->info->type == NET_CLIENT_TYPE_NIC ? "nic" : "netdev",
++                    vc->name);
++        }
++    }
+ }
+ 
+ static int net_init_client(QemuOpts *opts, void *dummy)
+-- 
+1.7.0.3
+

@@ -1,0 +1,48 @@
+From 0427a2d638e1d733d844b14f11403390e478e37f Mon Sep 17 00:00:00 2001
+From: Marcelo Tosatti <mtosatti@redhat.com>
+Date: Mon, 1 Mar 2010 20:52:03 -0300
+Subject: [PATCH 01/20] Fix kvm_load_mpstate for vcpu hot add
+
+RH-Author: Marcelo Tosatti <mtosatti@redhat.com>
+Message-id: <72746bcf3c92e4d56ffdeaee4f364f9876d8f90c.1267476474.git.mtosatti@redhat.com>
+Patchwork-id: 7365
+O-Subject: [PATCH 01/21] Fix kvm_load_mpstate for vcpu hot add
+Bugzilla: 569613
+RH-Acked-by: Glauber Costa <glommer@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Rik van Riel <riel@redhat.com>
+
+From: Liu, Jinsong <jinsong.liu@intel.com>
+
+Add 'kvm_vcpu_inited' check so that when adding vcpu it will not
+cause segmentation fault. This is especially necessary when vpu
+hotadd after guestos ready.
+
+Signed-off-by: Liu, Jinsong <jinsong.liu@intel.com>
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+(cherry picked from commit dec2eb9d724b21581500aea911dd13f7bfbea59e)
+---
+ qemu-kvm.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-kvm.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-kvm.c b/qemu-kvm.c
+index 84da9b5..973695d 100644
+--- a/qemu-kvm.c
++++ b/qemu-kvm.c
+@@ -1619,7 +1619,7 @@ static void kvm_do_load_mpstate(void *_env)
+ 
+ void kvm_load_mpstate(CPUState *env)
+ {
+-    if (kvm_enabled() && qemu_system_ready)
++    if (kvm_enabled() && qemu_system_ready && kvm_vcpu_inited(env))
+         on_vcpu(env, kvm_do_load_mpstate, env);
+ }
+ 
+-- 
+1.7.0.3
+

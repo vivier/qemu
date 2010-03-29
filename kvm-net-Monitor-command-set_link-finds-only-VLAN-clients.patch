@@ -1,0 +1,47 @@
+From 0019c8d368a2468351d507f30c34f8118e3865b5 Mon Sep 17 00:00:00 2001
+From: Marcelo Tosatti <mtosatti@redhat.com>
+Date: Mon, 1 Mar 2010 20:52:21 -0300
+Subject: [PATCH 18/20] net: Monitor command set_link finds only VLAN clients, fix
+
+RH-Author: Marcelo Tosatti <mtosatti@redhat.com>
+Message-id: <368e791764710248ae0a83dc98140f8725487c27.1267476474.git.mtosatti@redhat.com>
+Patchwork-id: 7346
+O-Subject: [PATCH 19/21] net: Monitor command set_link finds only VLAN clients,
+	fix
+Bugzilla: 569613
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Rik van Riel <riel@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+Clients not associated with a VLAN exist since commit d80b9fc6.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 2583ba97ef1de6040b7d0afd2b66737515de5423)
+(cherry picked from commit 35924dbe8c3271e351a45905b612b2c259ebeb0d)
+---
+ net.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ net.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/net.c b/net.c
+index ead3d42..1e6abdd 100644
+--- a/net.c
++++ b/net.c
+@@ -1253,6 +1253,7 @@ void do_set_link(Monitor *mon, const QDict *qdict)
+             }
+         }
+     }
++    vc = qemu_find_netdev(name);
+ done:
+ 
+     if (!vc) {
+-- 
+1.7.0.3
+

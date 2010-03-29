@@ -1,0 +1,66 @@
+From b199d771850e501f1a1fa5c42f22f5ccb1df3bb3 Mon Sep 17 00:00:00 2001
+From: Marcelo Tosatti <mtosatti@redhat.com>
+Date: Mon, 1 Mar 2010 20:52:13 -0300
+Subject: [PATCH 10/20] fix inet_parse typo
+
+RH-Author: Marcelo Tosatti <mtosatti@redhat.com>
+Message-id: <d514694b90af17f8d55192248a2cd5db70e57db4.1267476474.git.mtosatti@redhat.com>
+Patchwork-id: 7366
+O-Subject: [PATCH 11/21] fix inet_parse typo
+Bugzilla: 569613
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Rik van Riel <riel@redhat.com>
+
+qemu_opt_set wants on/off, not yes/no.
+
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 2198a62eb2518b61c3fc7db26515f106e7498932)
+(cherry picked from commit e03dd1a6c24d96d6ba4b154f2266c44c314c6688)
+---
+ qemu-sockets.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-sockets.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/qemu-sockets.c b/qemu-sockets.c
+index d912fed..23c3def 100644
+--- a/qemu-sockets.c
++++ b/qemu-sockets.c
+@@ -424,7 +424,7 @@ static int inet_parse(QemuOpts *opts, const char *str)
+                     __FUNCTION__, str);
+             return -1;
+         }
+-        qemu_opt_set(opts, "ipv6", "yes");
++        qemu_opt_set(opts, "ipv6", "on");
+     } else if (qemu_isdigit(str[0])) {
+         /* IPv4 addr */
+         if (2 != sscanf(str,"%64[0-9.]:%32[^,]%n",addr,port,&pos)) {
+@@ -432,7 +432,7 @@ static int inet_parse(QemuOpts *opts, const char *str)
+                     __FUNCTION__, str);
+             return -1;
+         }
+-        qemu_opt_set(opts, "ipv4", "yes");
++        qemu_opt_set(opts, "ipv4", "on");
+     } else {
+         /* hostname */
+         if (2 != sscanf(str,"%64[^:]:%32[^,]%n",addr,port,&pos)) {
+@@ -450,9 +450,9 @@ static int inet_parse(QemuOpts *opts, const char *str)
+     if (h)
+         qemu_opt_set(opts, "to", h+4);
+     if (strstr(optstr, ",ipv4"))
+-        qemu_opt_set(opts, "ipv4", "yes");
++        qemu_opt_set(opts, "ipv4", "on");
+     if (strstr(optstr, ",ipv6"))
+-        qemu_opt_set(opts, "ipv6", "yes");
++        qemu_opt_set(opts, "ipv6", "on");
+     return 0;
+ }
+ 
+-- 
+1.7.0.3
+

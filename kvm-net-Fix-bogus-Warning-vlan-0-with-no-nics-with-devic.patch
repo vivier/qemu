@@ -1,0 +1,208 @@
+From 4ca5c19d3738bb718c7377ebc18c363d3a6f8825 Mon Sep 17 00:00:00 2001
+From: Marcelo Tosatti <mtosatti@redhat.com>
+Date: Tue, 23 Mar 2010 20:40:06 -0300
+Subject: [PATCH 15/20] net: Fix bogus "Warning: vlan 0 with no nics" with -device
+
+RH-Author: Marcelo Tosatti <mtosatti@redhat.com>
+Message-id: <20100323204006.GA25724@amt.cnet>
+Patchwork-id: 8070
+O-Subject: [KVM PATCH RHEL6] net: Fix bogus "Warning: vlan 0 with no nics" with
+	-device
+Bugzilla: 569613
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+This is a new version of the patch which Eduardo rebased (there was
+a conflict in tap.c due to vhost addition). It applies against
+rhel6/master.
+
+Please review and ACK again.
+
+----
+
+commit 7b4e4448fd2155b8d94b7a9c3554fcc7c639e509
+Author: Marcelo Tosatti <mtosatti@redhat.com>
+Date:   Mon Mar 1 20:52:18 2010 -0300
+
+    net: Fix bogus "Warning: vlan 0 with no nics" with -device
+
+    RH-Author: Marcelo Tosatti <mtosatti@redhat.com>
+    Message-id: <f6468dc8adcb1486a8de2a5c41ab98a29571083e.1267476474.git.mtosatti@redhat.com>
+    Patchwork-id: 7349
+    O-Subject: [PATCH 16/21] net: Fix bogus "Warning: vlan 0 with no nics" with
+    	-device
+    Bugzilla: 569613
+    RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+    RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+
+    From: Markus Armbruster <armbru@redhat.com>
+
+    net_check_clients() prints this when an VLAN has host devices, but no
+    guest devices.  It uses VLANState members nb_guest_devs and
+    nb_host_devs to keep track of these devices.  However, -device does
+    not update nb_guest_devs, only net_init_nic() does that, for -net nic.
+
+    Check the VLAN clients directly, and remove the counters.
+
+    Signed-off-by: Markus Armbruster <armbru@redhat.com>
+    Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+    (cherry picked from commit 62112d181ca33fea976100c4335dfc3e2f727e6c)
+    (cherry picked from commit f203baee5bd06e06278ec6b98e3a649ed5d8f20e)
+    ---
+     net.c           |   25 ++++++++++++++++++-------
+     net.h           |    1 -
+     net/slirp.c     |    4 ----
+     net/socket.c    |    4 ----
+     net/tap-win32.c |    4 ----
+     net/tap.c       |    4 ----
+     net/vde.c       |    4 ----
+     7 files changed, 18 insertions(+), 28 deletions(-)
+
+    Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ net.c           |   25 ++++++++++++++++++-------
+ net.h           |    1 -
+ net/slirp.c     |    4 ----
+ net/socket.c    |    4 ----
+ net/tap-win32.c |    4 ----
+ net/tap.c       |    4 ----
+ net/vde.c       |    4 ----
+ 7 files changed, 18 insertions(+), 28 deletions(-)
+
+diff --git a/net.c b/net.c
+index 67baaf8..30c1953 100644
+--- a/net.c
++++ b/net.c
+@@ -814,9 +814,6 @@ static int net_init_nic(QemuOpts *opts,
+     }
+ 
+     nd->used = 1;
+-    if (vlan) {
+-        nd->vlan->nb_guest_devs++;
+-    }
+     nb_nics++;
+ 
+     return idx;
+@@ -1288,13 +1285,27 @@ void net_cleanup(void)
+ void net_check_clients(void)
+ {
+     VLANState *vlan;
++    VLANClientState *vc;
++    int has_nic, has_host_dev;
+ 
+     QTAILQ_FOREACH(vlan, &vlans, next) {
+-        if (vlan->nb_guest_devs == 0 && vlan->nb_host_devs == 0)
+-            continue;
+-        if (vlan->nb_guest_devs == 0)
++        QTAILQ_FOREACH(vc, &vlan->clients, next) {
++            switch (vc->info->type) {
++            case NET_CLIENT_TYPE_NIC:
++                has_nic = 1;
++                break;
++            case NET_CLIENT_TYPE_SLIRP:
++            case NET_CLIENT_TYPE_TAP:
++            case NET_CLIENT_TYPE_SOCKET:
++            case NET_CLIENT_TYPE_VDE:
++                has_host_dev = 1;
++                break;
++            default: ;
++            }
++        }
++        if (has_host_dev && !has_nic)
+             fprintf(stderr, "Warning: vlan %d with no nics\n", vlan->id);
+-        if (vlan->nb_host_devs == 0)
++        if (has_nic && !has_host_dev)
+             fprintf(stderr,
+                     "Warning: vlan %d is not connected to host network\n",
+                     vlan->id);
+diff --git a/net.h b/net.h
+index 00dac96..16f19c5 100644
+--- a/net.h
++++ b/net.h
+@@ -79,7 +79,6 @@ struct VLANState {
+     int id;
+     QTAILQ_HEAD(, VLANClientState) clients;
+     QTAILQ_ENTRY(VLANState) next;
+-    unsigned int nb_guest_devs, nb_host_devs;
+     NetQueue *send_queue;
+ };
+ 
+diff --git a/net/slirp.c b/net/slirp.c
+index e19a664..7e35059 100644
+--- a/net/slirp.c
++++ b/net/slirp.c
+@@ -735,10 +735,6 @@ int net_init_slirp(QemuOpts *opts,
+         qemu_free(config);
+     }
+ 
+-    if (ret != -1 && vlan) {
+-        vlan->nb_host_devs++;
+-    }
+-
+     qemu_free(vnet);
+ 
+     return ret;
+diff --git a/net/socket.c b/net/socket.c
+index 5533737..442a9c7 100644
+--- a/net/socket.c
++++ b/net/socket.c
+@@ -569,9 +569,5 @@ int net_init_socket(QemuOpts *opts,
+         return -1;
+     }
+ 
+-    if (vlan) {
+-        vlan->nb_host_devs++;
+-    }
+-
+     return 0;
+ }
+diff --git a/net/tap-win32.c b/net/tap-win32.c
+index b717c17..8370c80 100644
+--- a/net/tap-win32.c
++++ b/net/tap-win32.c
+@@ -714,10 +714,6 @@ int net_init_tap(QemuOpts *opts, Monitor *mon, const char *name, VLANState *vlan
+         return -1;
+     }
+ 
+-    if (vlan) {
+-        vlan->nb_host_devs++;
+-    }
+-
+     return 0;
+ }
+ 
+diff --git a/net/tap.c b/net/tap.c
+index cc5b934..35c05d7 100644
+--- a/net/tap.c
++++ b/net/tap.c
+@@ -464,10 +464,6 @@ int net_init_tap(QemuOpts *opts, Monitor *mon, const char *name, VLANState *vlan
+         }
+     }
+ 
+-    if (vlan) {
+-        vlan->nb_host_devs++;
+-    }
+-
+     if (qemu_opt_get_bool(opts, "vhost", !!qemu_opt_get(opts, "vhostfd"))) {
+         int vhostfd, r;
+         if (qemu_opt_get(opts, "vhostfd")) {
+diff --git a/net/vde.c b/net/vde.c
+index 42b4633..0b46fa6 100644
+--- a/net/vde.c
++++ b/net/vde.c
+@@ -127,9 +127,5 @@ int net_init_vde(QemuOpts *opts, Monitor *mon, const char *name, VLANState *vlan
+         return -1;
+     }
+ 
+-    if (vlan) {
+-        vlan->nb_host_devs++;
+-    }
+-
+     return 0;
+ }
+-- 
+1.7.0.3
+
