@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.33%{?dist}
+Release: 2.34%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1048,7 +1048,7 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
-* Tue Mar 30 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.33.el6
+* Tue Mar 30 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.34.el6
 - kvm-Monitor-Introduce-cmd_new_ret.patch [bz#563491]
 - kvm-Monitor-Convert-simple-handlers-to-cmd_new_ret.patch [bz#563491]
 - kvm-Monitor-Convert-do_cont-to-cmd_new_ret.patch [bz#563491]
