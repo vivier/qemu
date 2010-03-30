@@ -1,0 +1,87 @@
+From 703794c85905ab5412860e0f0f9accb04ec02f13 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 29 Mar 2010 16:14:52 -0300
+Subject: [PATCH 17/23] Monitor: Convert mon_spice_migrate() to cmd_new_ret()
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269879298-30711-18-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8182
+O-Subject: [PATCH 17/23] Monitor: Convert mon_spice_migrate() to cmd_new_ret()
+Bugzilla: 563491
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Note that this command is a RHEL6 extension.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-monitor.hx |    2 +-
+ qemu-spice.h    |    2 +-
+ spice.c         |    8 ++++----
+ 3 files changed, 6 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-monitor.hx |    2 +-
+ qemu-spice.h    |    2 +-
+ spice.c         |    8 ++++----
+ 3 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index da6793e..86b6eaf 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -1116,7 +1116,7 @@ ETEXI
+         .params     = "hostname port tls-port cert-subject",
+         .help       = "send migration info to spice client",
+ 	.user_print = monitor_user_noop,
+-        .mhandler.cmd_new = mon_spice_migrate,
++        .cmd_new_ret = mon_spice_migrate,
+     },
+ #endif
+ 
+diff --git a/qemu-spice.h b/qemu-spice.h
+index 56e3d70..d81d0f8 100644
+--- a/qemu-spice.h
++++ b/qemu-spice.h
+@@ -27,7 +27,7 @@ void qemu_spice_migrate_start(void);
+ void qemu_spice_migrate_end(int completed);
+ 
+ int mon_set_password(Monitor *mon, const QDict *qdict, QObject **ret_data);
+-void mon_spice_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data);
++int mon_spice_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data);
+ 
+ #else  /* CONFIG_SPICE */
+ 
+diff --git a/spice.c b/spice.c
+index 8bc7e5b..3a49f5c 100644
+--- a/spice.c
++++ b/spice.c
+@@ -330,7 +330,7 @@ int mon_set_password(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     return 0;
+ }
+ 
+-void mon_spice_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data)
++int mon_spice_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     const char *hostname = qdict_get_str(qdict, "hostname");
+     const char *subject  = qdict_get_try_str(qdict, "cert-subject");
+@@ -339,11 +339,11 @@ void mon_spice_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ 
+     if (!s) {
+         qemu_error_new(QERR_DEVICE_NOT_ACTIVE, "spice");
+-        return;
++        return -1;
+     }
+ 
+-    spice_server_migrate_info(s, hostname, port, tls_port, subject);
+-    return;
++    /* TODO: Convert to QError */
++    return spice_server_migrate_info(s, hostname, port, tls_port, subject);
+ }
+ 
+ static int add_renderer(const char *name, const char *value, void *opaque)
+-- 
+1.7.0.3
+

@@ -1,0 +1,130 @@
+From b312557f264d2674ea96572dfbb159a7e73a7915 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 29 Mar 2010 16:14:57 -0300
+Subject: [PATCH 22/23] Monitor: Debug stray prints the right way
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269879298-30711-23-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8186
+O-Subject: [PATCH 22/23] Monitor: Debug stray prints the right way
+Bugzilla: 563491
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+QObject Monitor handlers should not call any Monitor print
+function: they should only build objects, printing is done
+by common code.
+
+Current QMP code will ignore such calls, as we can't send
+garbage to clients, additionally it will also emit an
+undefined error on the assumption that print calls usually
+report errors.
+
+However, the right way to deal with this is to rely on a
+return code. This has been fixed by other commit already.
+
+Now, this commit drops the error from monitor_vprintf() and
+adds a better debugging mechanism for those 'stray' prints:
+we count them if debug is enabled and let the developer know
+if a QObject handler is trying to print anything.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 10e4f606ec5584ea20234d2e12b66a702f8b5956)
+---
+ monitor.c |   42 +++++++++++++++++++++++++++++++++++++++++-
+ 1 files changed, 41 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c |   42 +++++++++++++++++++++++++++++++++++++++++-
+ 1 files changed, 41 insertions(+), 1 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 059c49c..ed1961e 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -141,6 +141,9 @@ struct Monitor {
+     CPUState *mon_cpu;
+     BlockDriverCompletionFunc *password_completion_cb;
+     void *password_opaque;
++#ifdef CONFIG_DEBUG_MONITOR
++    int print_calls_nr;
++#endif
+     QError *error;
+     QLIST_HEAD(,mon_fd_t) fds;
+     QLIST_ENTRY(Monitor) entry;
+@@ -150,8 +153,27 @@ struct Monitor {
+ #define MON_DEBUG(fmt, ...) do {    \
+     fprintf(stderr, "Monitor: ");       \
+     fprintf(stderr, fmt, ## __VA_ARGS__); } while (0)
++
++static inline void mon_print_count_inc(Monitor *mon)
++{
++    mon->print_calls_nr++;
++}
++
++static inline void mon_print_count_init(Monitor *mon)
++{
++    mon->print_calls_nr = 0;
++}
++
++static inline int mon_print_count_get(const Monitor *mon)
++{
++    return mon->print_calls_nr;
++}
++
+ #else /* !CONFIG_DEBUG_MONITOR */
+ #define MON_DEBUG(fmt, ...) do { } while (0)
++static inline void mon_print_count_inc(Monitor *mon) { }
++static inline void mon_print_count_init(Monitor *mon) { }
++static inline int mon_print_count_get(const Monitor *mon) { return 0; }
+ #endif /* CONFIG_DEBUG_MONITOR */
+ 
+ static QLIST_HEAD(mon_list, Monitor) mon_list;
+@@ -234,8 +256,9 @@ void monitor_vprintf(Monitor *mon, const char *fmt, va_list ap)
+     if (!mon)
+         return;
+ 
++    mon_print_count_inc(mon);
++
+     if (monitor_ctrl_mode(mon)) {
+-        qemu_error_new(QERR_UNDEFINED_ERROR);
+         return;
+     }
+ 
+@@ -3913,6 +3936,21 @@ static void handler_audit(Monitor *mon, const mon_cmd_t *cmd, int ret)
+         MON_DEBUG("command '%s' returned success but passed an error\n",
+                   cmd->name);
+     }
++
++    if (mon_print_count_get(mon) > 0 && strcmp(cmd->name, "info") != 0) {
++        /*
++         * Handlers should not call Monitor print functions.
++         *
++         * Action: Ignore them in QMP.
++         *
++         * (XXX: we don't check any 'info' or 'query' command here
++         * because the user print function _is_ called by do_info(), hence
++         * we will trigger this check. This problem will go away when we
++         * make 'query' commands real and kill do_info())
++         */
++        MON_DEBUG("command '%s' called print functions %d time(s)\n",
++                  cmd->name, mon_print_count_get(mon));
++    }
+ #endif
+ }
+ 
+@@ -3922,6 +3960,8 @@ static void monitor_call_handler(Monitor *mon, const mon_cmd_t *cmd,
+     int ret;
+     QObject *data = NULL;
+ 
++    mon_print_count_init(mon);
++
+     ret = cmd->mhandler.cmd_new(mon, params, &data);
+     handler_audit(mon, cmd, ret);
+ 
+-- 
+1.7.0.3
+

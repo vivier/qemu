@@ -1,0 +1,130 @@
+From 8adfb25cfc8f08ac6a70144d3667e9090a7eec48 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 29 Mar 2010 16:14:46 -0300
+Subject: [PATCH 11/23] Monitor: Convert do_migrate() to cmd_new_ret()
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269879298-30711-12-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8173
+O-Subject: [PATCH 11/23] Monitor: Convert do_migrate() to cmd_new_ret()
+Bugzilla: 563491
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+While there I'm also dropping a unneeded else clause (the last
+one in the function).
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit b5d17adb932b16226c8073c3411cf5c93df22cb8)
+---
+ migration.c     |   29 +++++++++++++++++------------
+ migration.h     |    2 +-
+ qemu-monitor.hx |    2 +-
+ 3 files changed, 19 insertions(+), 14 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ migration.c     |   29 +++++++++++++++++------------
+ migration.h     |    2 +-
+ qemu-monitor.hx |    2 +-
+ 3 files changed, 19 insertions(+), 14 deletions(-)
+
+diff --git a/migration.c b/migration.c
+index 9f69861..42a5ed7 100644
+--- a/migration.c
++++ b/migration.c
+@@ -58,7 +58,7 @@ void qemu_start_incoming_migration(const char *uri)
+         fprintf(stderr, "unknown migration protocol: %s\n", uri);
+ }
+ 
+-void do_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data)
++int do_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     MigrationState *s = NULL;
+     const char *p;
+@@ -68,38 +68,43 @@ void do_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     if (current_migration &&
+         current_migration->get_status(current_migration) == MIG_STATE_ACTIVE) {
+         monitor_printf(mon, "migration already in progress\n");
+-        return;
++        return -1;
+     }
+ 
+-    if (strstart(uri, "tcp:", &p))
++    if (strstart(uri, "tcp:", &p)) {
+         s = tcp_start_outgoing_migration(mon, p, max_throttle, detach,
+                                          (int)qdict_get_int(qdict, "blk"), 
+                                          (int)qdict_get_int(qdict, "inc"));
+ #if !defined(WIN32)
+-    else if (strstart(uri, "exec:", &p))
++    } else if (strstart(uri, "exec:", &p)) {
+         s = exec_start_outgoing_migration(mon, p, max_throttle, detach,
+                                           (int)qdict_get_int(qdict, "blk"), 
+                                           (int)qdict_get_int(qdict, "inc"));
+-    else if (strstart(uri, "unix:", &p))
++    } else if (strstart(uri, "unix:", &p)) {
+         s = unix_start_outgoing_migration(mon, p, max_throttle, detach,
+ 					  (int)qdict_get_int(qdict, "blk"), 
+                                           (int)qdict_get_int(qdict, "inc"));
+-    else if (strstart(uri, "fd:", &p))
++    } else if (strstart(uri, "fd:", &p)) {
+         s = fd_start_outgoing_migration(mon, p, max_throttle, detach, 
+                                         (int)qdict_get_int(qdict, "blk"), 
+                                         (int)qdict_get_int(qdict, "inc"));
+ #endif
+-    else
++    } else {
+         monitor_printf(mon, "unknown migration protocol: %s\n", uri);
++        return -1;
++    }
+ 
+-    if (s == NULL)
++    if (s == NULL) {
+         monitor_printf(mon, "migration failed\n");
+-    else {
+-        if (current_migration)
+-            current_migration->release(current_migration);
++        return -1;
++    }
+ 
+-        current_migration = s;
++    if (current_migration) {
++        current_migration->release(current_migration);
+     }
++
++    current_migration = s;
++    return 0;
+ }
+ 
+ int do_migrate_cancel(Monitor *mon, const QDict *qdict, QObject **ret_data)
+diff --git a/migration.h b/migration.h
+index 9345d97..385423f 100644
+--- a/migration.h
++++ b/migration.h
+@@ -52,7 +52,7 @@ struct FdMigrationState
+ 
+ void qemu_start_incoming_migration(const char *uri);
+ 
+-void do_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data);
++int do_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data);
+ 
+ int do_migrate_cancel(Monitor *mon, const QDict *qdict, QObject **ret_data);
+ 
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 45af766..0680fa5 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -734,7 +734,7 @@ ETEXI
+ 		      "shared storage with incremental copy of disk "
+ 		      "(base image shared between src and destination)",
+         .user_print = monitor_user_noop,	
+-	.mhandler.cmd_new = do_migrate,
++	.cmd_new_ret = do_migrate,
+     },
+ 
+ 
+-- 
+1.7.0.3
+

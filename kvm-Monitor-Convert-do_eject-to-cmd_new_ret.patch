@@ -1,0 +1,69 @@
+From c90219134834800625da59c8e5ceb5cee48aa6f5 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 29 Mar 2010 16:14:39 -0300
+Subject: [PATCH 04/23] Monitor: Convert do_eject() to cmd_new_ret()
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269879298-30711-5-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8166
+O-Subject: [PATCH 04/23] Monitor: Convert do_eject() to cmd_new_ret()
+Bugzilla: 563491
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 9b9d4d9c79ee7072629f36ea123a28a89ada8845)
+---
+ monitor.c       |    6 +++---
+ qemu-monitor.hx |    2 +-
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c       |    6 +++---
+ qemu-monitor.hx |    2 +-
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 0d5993d..267b80f 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -1027,7 +1027,7 @@ static int eject_device(Monitor *mon, BlockDriverState *bs, int force)
+     return 0;
+ }
+ 
+-static void do_eject(Monitor *mon, const QDict *qdict, QObject **ret_data)
++static int do_eject(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     BlockDriverState *bs;
+     int force = qdict_get_int(qdict, "force");
+@@ -1036,9 +1036,9 @@ static void do_eject(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     bs = bdrv_find(filename);
+     if (!bs) {
+         qemu_error_new(QERR_DEVICE_NOT_FOUND, filename);
+-        return;
++        return -1;
+     }
+-    eject_device(mon, bs, force);
++    return eject_device(mon, bs, force);
+ }
+ 
+ static void do_block_set_passwd(Monitor *mon, const QDict *qdict,
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index bbaf080..bc003c7 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -134,7 +134,7 @@ ETEXI
+         .params     = "[-f] device",
+         .help       = "eject a removable medium (use -f to force it)",
+         .user_print = monitor_user_noop,
+-        .mhandler.cmd_new = do_eject,
++        .cmd_new_ret = do_eject,
+     },
+ 
+ STEXI
+-- 
+1.7.0.3
+

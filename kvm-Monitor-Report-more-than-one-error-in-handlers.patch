@@ -1,0 +1,47 @@
+From 85d87862e567e31b7f6ed287ac66312d0dca4ae0 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 29 Mar 2010 16:14:58 -0300
+Subject: [PATCH 23/23] Monitor: Report more than one error in handlers
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269879298-30711-24-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8185
+O-Subject: [PATCH 23/23] Monitor: Report more than one error in handlers
+Bugzilla: 563491
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Handlers can generate only one error in a call, we let the
+programmer know if they brake this rule and clients will only
+get the first generated error.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 068b332a6517b082b67b50f62f38f1952329d201)
+---
+ monitor.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index ed1961e..5b92a80 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -4800,7 +4800,8 @@ void qemu_error_internal(const char *file, int linenr, const char *func,
+         if (!qemu_error_sink->mon->error) {
+             qemu_error_sink->mon->error = qerror;
+         } else {
+-            /* XXX: warn the programmer */
++            MON_DEBUG("Additional error report at %s:%d\n", qerror->file,
++                      qerror->linenr);
+             QDECREF(qerror);
+         }
+         break;
+-- 
+1.7.0.3
+

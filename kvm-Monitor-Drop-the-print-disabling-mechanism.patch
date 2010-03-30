@@ -1,0 +1,82 @@
+From 2b728fe5bac79c4fb26578a2c4aa95a8321256ec Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 29 Mar 2010 16:14:55 -0300
+Subject: [PATCH 20/23] Monitor: Drop the print disabling mechanism
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269879298-30711-21-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8184
+O-Subject: [PATCH 20/23] Monitor: Drop the print disabling mechanism
+Bugzilla: 563491
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+We can ignore calls to monitor_vprintf() in QMP mode and use
+monitor_puts() directly in monitor_json_emitter().
+
+This allows us to drop this ugly hack.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit b8b08266bd58d26e9c6b529ab4130c13eaed3406)
+---
+ monitor.c |   18 +++++++++---------
+ 1 files changed, 9 insertions(+), 9 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c |   18 +++++++++---------
+ 1 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index f5ba5bf..4e0c8ea 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -124,7 +124,6 @@ struct mon_fd_t {
+ 
+ typedef struct MonitorControl {
+     QObject *id;
+-    int print_enabled;
+     JSONMessageParser parser;
+     int command_mode;
+ } MonitorControl;
+@@ -230,16 +229,18 @@ static void monitor_puts(Monitor *mon, const char *str)
+ 
+ void monitor_vprintf(Monitor *mon, const char *fmt, va_list ap)
+ {
++    char buf[4096];
++
+     if (!mon)
+         return;
+ 
+-    if (mon->mc && !mon->mc->print_enabled) {
++    if (monitor_ctrl_mode(mon)) {
+         qemu_error_new(QERR_UNDEFINED_ERROR);
+-    } else {
+-        char buf[4096];
+-        vsnprintf(buf, sizeof(buf), fmt, ap);
+-        monitor_puts(mon, buf);
++        return;
+     }
++
++    vsnprintf(buf, sizeof(buf), fmt, ap);
++    monitor_puts(mon, buf);
+ }
+ 
+ void monitor_printf(Monitor *mon, const char *fmt, ...)
+@@ -310,9 +311,8 @@ static void monitor_json_emitter(Monitor *mon, const QObject *data)
+     json = qobject_to_json(data);
+     assert(json != NULL);
+ 
+-    mon->mc->print_enabled = 1;
+-    monitor_printf(mon, "%s\n", qstring_get_str(json));
+-    mon->mc->print_enabled = 0;
++    qstring_append_chr(json, '\n');
++    monitor_puts(mon, qstring_get_str(json));
+ 
+     QDECREF(json);
+ }
+-- 
+1.7.0.3
+

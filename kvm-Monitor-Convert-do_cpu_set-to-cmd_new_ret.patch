@@ -1,0 +1,65 @@
+From 4e4d45cc5b365face70943e19cc080a065d34632 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 29 Mar 2010 16:14:40 -0300
+Subject: [PATCH 05/23] Monitor: Convert do_cpu_set() to cmd_new_ret()
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269879298-30711-6-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8167
+O-Subject: [PATCH 05/23] Monitor: Convert do_cpu_set() to cmd_new_ret()
+Bugzilla: 563491
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 584cbdb59682db8f052167dd644083076d079890)
+---
+ monitor.c       |    7 +++++--
+ qemu-monitor.hx |    2 +-
+ 2 files changed, 6 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c       |    7 +++++--
+ qemu-monitor.hx |    2 +-
+ 2 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 267b80f..7776792 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -938,11 +938,14 @@ static void do_info_cpus(Monitor *mon, QObject **ret_data)
+     *ret_data = QOBJECT(cpu_list);
+ }
+ 
+-static void do_cpu_set(Monitor *mon, const QDict *qdict, QObject **ret_data)
++static int do_cpu_set(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     int index = qdict_get_int(qdict, "index");
+-    if (mon_set_cpu(index) < 0)
++    if (mon_set_cpu(index) < 0) {
+         qemu_error_new(QERR_INVALID_PARAMETER, "index");
++        return -1;
++    }
++    return 0;
+ }
+ 
+ static void do_cpu_set_nr(Monitor *mon, const QDict *qdict)
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index bc003c7..63c62fb 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -574,7 +574,7 @@ ETEXI
+         .params     = "index",
+         .help       = "set the default CPU",
+         .user_print = monitor_user_noop,
+-        .mhandler.cmd_new = do_cpu_set,
++        .cmd_new_ret = do_cpu_set,
+     },
+ 
+ STEXI
+-- 
+1.7.0.3
+

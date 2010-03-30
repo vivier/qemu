@@ -1,0 +1,279 @@
+From c2e53bb789465f131c0b5537a8096103de653c55 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 29 Mar 2010 16:14:53 -0300
+Subject: [PATCH 18/23] Monitor: Rename cmd_new_ret()
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269879298-30711-19-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8180
+O-Subject: [PATCH 18/23] Monitor: Rename cmd_new_ret()
+Bugzilla: 563491
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Now that all handlers are converted to cmd_new_ret(), we can rename
+it back to cmd_new(). But now it returns a value.
+
+Upstream commit is 261394dbffbc847df9332cbd16011002e8761479, this
+commit also includes the renaming of mon_set_password() entry in
+qemu-monitor.hx, which is a RHEL6 extension.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c       |    9 ++-------
+ qemu-monitor.hx |   46 +++++++++++++++++++++++-----------------------
+ 2 files changed, 25 insertions(+), 30 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c       |    9 ++-------
+ qemu-monitor.hx |   46 +++++++++++++++++++++++-----------------------
+ 2 files changed, 25 insertions(+), 30 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index ca526b4..6a4e96e 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -102,13 +102,12 @@ typedef struct mon_cmd_t {
+     const char *params;
+     const char *help;
+     void (*user_print)(Monitor *mon, const QObject *data);
+-    int (*cmd_new_ret)(Monitor *mon, const QDict *params, QObject **ret_data);
+     union {
+         void (*info)(Monitor *mon);
+         void (*info_new)(Monitor *mon, QObject **ret_data);
+         int  (*info_async)(Monitor *mon, MonitorCompletion *cb, void *opaque);
+         void (*cmd)(Monitor *mon, const QDict *qdict);
+-        void (*cmd_new)(Monitor *mon, const QDict *params, QObject **ret_data);
++        int  (*cmd_new)(Monitor *mon, const QDict *params, QObject **ret_data);
+         int  (*cmd_async)(Monitor *mon, const QDict *params,
+                           MonitorCompletion *cb, void *opaque);
+     } mhandler;
+@@ -3886,11 +3885,7 @@ static void monitor_call_handler(Monitor *mon, const mon_cmd_t *cmd,
+ {
+     QObject *data = NULL;
+ 
+-    if (cmd->cmd_new_ret) {
+-        cmd->cmd_new_ret(mon, params, &data);
+-    } else {
+-        cmd->mhandler.cmd_new(mon, params, &data);
+-    }
++    cmd->mhandler.cmd_new(mon, params, &data);
+ 
+     if (is_async_return(data)) {
+         /*
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 86b6eaf..825caaa 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -41,7 +41,7 @@ ETEXI
+         .params     = "[subcommand]",
+         .help       = "show various information about the system state",
+         .user_print = monitor_user_noop,
+-        .cmd_new_ret = do_info,
++        .mhandler.cmd_new = do_info,
+     },
+ 
+ STEXI
+@@ -120,7 +120,7 @@ ETEXI
+         .params     = "",
+         .help       = "quit the emulator",
+         .user_print = monitor_user_noop,
+-        .cmd_new_ret = do_quit,
++        .mhandler.cmd_new = do_quit,
+     },
+ 
+ STEXI
+@@ -134,7 +134,7 @@ ETEXI
+         .params     = "[-f] device",
+         .help       = "eject a removable medium (use -f to force it)",
+         .user_print = monitor_user_noop,
+-        .cmd_new_ret = do_eject,
++        .mhandler.cmd_new = do_eject,
+     },
+ 
+ STEXI
+@@ -148,7 +148,7 @@ ETEXI
+         .params     = "device filename [format]",
+         .help       = "change a removable medium, optional format",
+         .user_print = monitor_user_noop,
+-        .cmd_new_ret = do_change,
++        .mhandler.cmd_new = do_change,
+     },
+ 
+ STEXI
+@@ -290,7 +290,7 @@ ETEXI
+         .params     = "",
+         .help       = "stop emulation",
+         .user_print = monitor_user_noop,
+-        .cmd_new_ret = do_stop,
++        .mhandler.cmd_new = do_stop,
+     },
+ 
+ STEXI
+@@ -304,7 +304,7 @@ ETEXI
+         .params     = "",
+         .help       = "resume emulation",
+         .user_print = monitor_user_noop,
+-        .cmd_new_ret = do_cont,
++        .mhandler.cmd_new = do_cont,
+     },
+ 
+ STEXI
+@@ -471,7 +471,7 @@ ETEXI
+         .params     = "",
+         .help       = "reset the system",
+         .user_print = monitor_user_noop,
+-        .cmd_new_ret = do_system_reset,
++        .mhandler.cmd_new = do_system_reset,
+     },
+ 
+ STEXI
+@@ -486,7 +486,7 @@ ETEXI
+         .params     = "",
+         .help       = "send system power down event",
+         .user_print = monitor_user_noop,
+-        .cmd_new_ret = do_system_powerdown,
++        .mhandler.cmd_new = do_system_powerdown,
+     },
+ 
+ STEXI
+@@ -574,7 +574,7 @@ ETEXI
+         .params     = "index",
+         .help       = "set the default CPU",
+         .user_print = monitor_user_noop,
+-        .cmd_new_ret = do_cpu_set,
++        .mhandler.cmd_new = do_cpu_set,
+     },
+ 
+ STEXI
+@@ -670,7 +670,7 @@ ETEXI
+         .params     = "addr size file",
+         .help       = "save to disk virtual memory dump starting at 'addr' of size 'size'",
+         .user_print = monitor_user_noop,
+-        .cmd_new_ret = do_memory_save,
++        .mhandler.cmd_new = do_memory_save,
+     },
+ 
+ STEXI
+@@ -684,7 +684,7 @@ ETEXI
+         .params     = "addr size file",
+         .help       = "save to disk physical memory dump starting at 'addr' of size 'size'",
+         .user_print = monitor_user_noop,
+-        .cmd_new_ret = do_physical_memory_save,
++        .mhandler.cmd_new = do_physical_memory_save,
+     },
+ 
+ STEXI
+@@ -734,7 +734,7 @@ ETEXI
+ 		      "shared storage with incremental copy of disk "
+ 		      "(base image shared between src and destination)",
+         .user_print = monitor_user_noop,	
+-	.cmd_new_ret = do_migrate,
++	.mhandler.cmd_new = do_migrate,
+     },
+ 
+ 
+@@ -751,7 +751,7 @@ ETEXI
+         .params     = "",
+         .help       = "cancel the current VM migration",
+         .user_print = monitor_user_noop,
+-        .cmd_new_ret = do_migrate_cancel,
++        .mhandler.cmd_new = do_migrate_cancel,
+     },
+ 
+ STEXI
+@@ -765,7 +765,7 @@ ETEXI
+         .params     = "value",
+         .help       = "set maximum speed (in bytes) for migrations",
+         .user_print = monitor_user_noop,
+-        .cmd_new_ret = do_migrate_set_speed,
++        .mhandler.cmd_new = do_migrate_set_speed,
+     },
+ 
+ STEXI
+@@ -779,7 +779,7 @@ ETEXI
+         .params     = "value",
+         .help       = "set maximum tolerated downtime (in seconds) for migrations",
+         .user_print = monitor_user_noop,
+-        .cmd_new_ret = do_migrate_set_downtime,
++        .mhandler.cmd_new = do_migrate_set_downtime,
+     },
+ 
+ STEXI
+@@ -813,7 +813,7 @@ ETEXI
+         .params     = "auto|[[<domain>:]<bus>:]<slot> nic|storage|host [[vlan=n][,macaddr=addr][,model=type]] [file=file][,if=type][,bus=nr]... [host=02:00.0[,name=string][,dma=none]",
+         .help       = "hot-add PCI device",
+         .user_print = pci_device_hot_add_print,
+-        .cmd_new_ret = pci_device_hot_add,
++        .mhandler.cmd_new = pci_device_hot_add,
+     },
+ #endif
+ 
+@@ -829,7 +829,7 @@ ETEXI
+         .params     = "[[<domain>:]<bus>:]<slot>",
+         .help       = "hot remove PCI device",
+         .user_print = monitor_user_noop,
+-        .cmd_new_ret = do_pci_device_hot_remove,
++        .mhandler.cmd_new = do_pci_device_hot_remove,
+     },
+ #endif
+ 
+@@ -1026,7 +1026,7 @@ ETEXI
+         .params     = "getfd name",
+         .help       = "receive a file descriptor via SCM rights and assign it a name",
+         .user_print = monitor_user_noop,
+-        .cmd_new_ret = do_getfd,
++        .mhandler.cmd_new = do_getfd,
+     },
+ 
+ STEXI
+@@ -1042,7 +1042,7 @@ ETEXI
+         .params     = "closefd name",
+         .help       = "close a file descriptor previously passed via SCM rights",
+         .user_print = monitor_user_noop,
+-        .cmd_new_ret = do_closefd,
++        .mhandler.cmd_new = do_closefd,
+     },
+ 
+ STEXI
+@@ -1058,7 +1058,7 @@ ETEXI
+         .params     = "block_passwd device password",
+         .help       = "set the password of encrypted block devices",
+         .user_print = monitor_user_noop,
+-        .cmd_new_ret = do_block_set_passwd,
++        .mhandler.cmd_new = do_block_set_passwd,
+     },
+ 
+ STEXI
+@@ -1085,7 +1085,7 @@ ETEXI
+         .params     = "",
+         .help       = "enable QMP capabilities",
+         .user_print = monitor_user_noop,
+-        .cmd_new_ret = do_qmp_capabilities,
++        .mhandler.cmd_new = do_qmp_capabilities,
+     },
+ 
+ STEXI
+@@ -1100,7 +1100,7 @@ ETEXI
+         .params     = "protocol password expiration action-if-connected",
+         .help       = "set spice/vnc password",
+ 	.user_print = monitor_user_noop,
+-        .cmd_new_ret = mon_set_password,
++        .mhandler.cmd_new = mon_set_password,
+     },
+ #endif
+ 
+@@ -1116,7 +1116,7 @@ ETEXI
+         .params     = "hostname port tls-port cert-subject",
+         .help       = "send migration info to spice client",
+ 	.user_print = monitor_user_noop,
+-        .cmd_new_ret = mon_spice_migrate,
++        .mhandler.cmd_new = mon_spice_migrate,
+     },
+ #endif
+ 
+-- 
+1.7.0.3
+

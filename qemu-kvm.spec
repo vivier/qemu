@@ -490,6 +490,52 @@ Patch1230: kvm-net-Monitor-command-set_link-finds-only-VLAN-clients.patch
 Patch1231: kvm-ide-save-restore-pio-atapi-cmd-transfer-fields-and-i.patch
 # For bz#569613 - backport qemu-kvm-0.12.3 fixes to RHEL6
 Patch1232: kvm-cirrus-Properly-re-register-cirrus_linear_io_addr-on.patch
+# For bz#563491 - QMP: New internal error handling mechanism
+Patch1233: kvm-Monitor-Introduce-cmd_new_ret.patch
+# For bz#563491 - QMP: New internal error handling mechanism
+Patch1234: kvm-Monitor-Convert-simple-handlers-to-cmd_new_ret.patch
+# For bz#563491 - QMP: New internal error handling mechanism
+Patch1235: kvm-Monitor-Convert-do_cont-to-cmd_new_ret.patch
+# For bz#563491 - QMP: New internal error handling mechanism
+Patch1236: kvm-Monitor-Convert-do_eject-to-cmd_new_ret.patch
+# For bz#563491 - QMP: New internal error handling mechanism
+Patch1237: kvm-Monitor-Convert-do_cpu_set-to-cmd_new_ret.patch
+# For bz#563491 - QMP: New internal error handling mechanism
+Patch1238: kvm-Monitor-Convert-do_block_set_passwd-to-cmd_new_ret.patch
+# For bz#563491 - QMP: New internal error handling mechanism
+Patch1239: kvm-Monitor-Convert-do_getfd-to-cmd_new_ret.patch
+# For bz#563491 - QMP: New internal error handling mechanism
+Patch1240: kvm-Monitor-Convert-do_closefd-to-cmd_new_ret.patch
+# For bz#563491 - QMP: New internal error handling mechanism
+Patch1241: kvm-Monitor-Convert-pci_device_hot_add-to-cmd_new_ret.patch
+# For bz#563491 - QMP: New internal error handling mechanism
+Patch1242: kvm-Monitor-Convert-pci_device_hot_remove-to-cmd_new_ret.patch
+# For bz#563491 - QMP: New internal error handling mechanism
+Patch1243: kvm-Monitor-Convert-do_migrate-to-cmd_new_ret.patch
+# For bz#563491 - QMP: New internal error handling mechanism
+Patch1244: kvm-Monitor-Convert-do_memory_save-to-cmd_new_ret.patch
+# For bz#563491 - QMP: New internal error handling mechanism
+Patch1245: kvm-Monitor-Convert-do_physical_memory_save-to-cmd_new_r.patch
+# For bz#563491 - QMP: New internal error handling mechanism
+Patch1246: kvm-Monitor-Convert-do_info-to-cmd_new_ret.patch
+# For bz#563491 - QMP: New internal error handling mechanism
+Patch1247: kvm-Monitor-Convert-do_change-to-cmd_new_ret.patch
+# For bz#563491 - QMP: New internal error handling mechanism
+Patch1248: kvm-Monitor-Convert-to-mon_set_password-to-cmd_new_ret.patch
+# For bz#563491 - QMP: New internal error handling mechanism
+Patch1249: kvm-Monitor-Convert-mon_spice_migrate-to-cmd_new_ret.patch
+# For bz#563491 - QMP: New internal error handling mechanism
+Patch1250: kvm-Monitor-Rename-cmd_new_ret.patch
+# For bz#563491 - QMP: New internal error handling mechanism
+Patch1251: kvm-Monitor-Debugging-support.patch
+# For bz#563491 - QMP: New internal error handling mechanism
+Patch1252: kvm-Monitor-Drop-the-print-disabling-mechanism.patch
+# For bz#563491 - QMP: New internal error handling mechanism
+Patch1253: kvm-Monitor-Audit-handler-return.patch
+# For bz#563491 - QMP: New internal error handling mechanism
+Patch1254: kvm-Monitor-Debug-stray-prints-the-right-way.patch
+# For bz#563491 - QMP: New internal error handling mechanism
+Patch1255: kvm-Monitor-Report-more-than-one-error-in-handlers.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -784,6 +830,29 @@ such as kvmtrace and kvm_stat.
 %patch1230 -p1
 %patch1231 -p1
 %patch1232 -p1
+%patch1233 -p1
+%patch1234 -p1
+%patch1235 -p1
+%patch1236 -p1
+%patch1237 -p1
+%patch1238 -p1
+%patch1239 -p1
+%patch1240 -p1
+%patch1241 -p1
+%patch1242 -p1
+%patch1243 -p1
+%patch1244 -p1
+%patch1245 -p1
+%patch1246 -p1
+%patch1247 -p1
+%patch1248 -p1
+%patch1249 -p1
+%patch1250 -p1
+%patch1251 -p1
+%patch1252 -p1
+%patch1253 -p1
+%patch1254 -p1
+%patch1255 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -979,6 +1048,33 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Mar 30 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.33.el6
+- kvm-Monitor-Introduce-cmd_new_ret.patch [bz#563491]
+- kvm-Monitor-Convert-simple-handlers-to-cmd_new_ret.patch [bz#563491]
+- kvm-Monitor-Convert-do_cont-to-cmd_new_ret.patch [bz#563491]
+- kvm-Monitor-Convert-do_eject-to-cmd_new_ret.patch [bz#563491]
+- kvm-Monitor-Convert-do_cpu_set-to-cmd_new_ret.patch [bz#563491]
+- kvm-Monitor-Convert-do_block_set_passwd-to-cmd_new_ret.patch [bz#563491]
+- kvm-Monitor-Convert-do_getfd-to-cmd_new_ret.patch [bz#563491]
+- kvm-Monitor-Convert-do_closefd-to-cmd_new_ret.patch [bz#563491]
+- kvm-Monitor-Convert-pci_device_hot_add-to-cmd_new_ret.patch [bz#563491]
+- kvm-Monitor-Convert-pci_device_hot_remove-to-cmd_new_ret.patch [bz#563491]
+- kvm-Monitor-Convert-do_migrate-to-cmd_new_ret.patch [bz#563491]
+- kvm-Monitor-Convert-do_memory_save-to-cmd_new_ret.patch [bz#563491]
+- kvm-Monitor-Convert-do_physical_memory_save-to-cmd_new_r.patch [bz#563491]
+- kvm-Monitor-Convert-do_info-to-cmd_new_ret.patch [bz#563491]
+- kvm-Monitor-Convert-do_change-to-cmd_new_ret.patch [bz#563491]
+- kvm-Monitor-Convert-to-mon_set_password-to-cmd_new_ret.patch [bz#563491]
+- kvm-Monitor-Convert-mon_spice_migrate-to-cmd_new_ret.patch [bz#563491]
+- kvm-Monitor-Rename-cmd_new_ret.patch [bz#563491]
+- kvm-Monitor-Debugging-support.patch [bz#563491]
+- kvm-Monitor-Drop-the-print-disabling-mechanism.patch [bz#563491]
+- kvm-Monitor-Audit-handler-return.patch [bz#563491]
+- kvm-Monitor-Debug-stray-prints-the-right-way.patch [bz#563491]
+- kvm-Monitor-Report-more-than-one-error-in-handlers.patch [bz#563491]
+- Resolves: bz#563491
+  (QMP: New internal error handling mechanism)
+
 * Mon Mar 29 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.33.el6
 - kvm-Fix-kvm_load_mpstate-for-vcpu-hot-add.patch [bz#569613]
 - kvm-qemu-kvm-enable-get-set-vcpu-events-on-reset-and-mig.patch [bz#569613]

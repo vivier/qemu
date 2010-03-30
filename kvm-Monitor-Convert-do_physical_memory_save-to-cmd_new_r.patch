@@ -1,0 +1,85 @@
+From e37e3e1d73b376ad1ffefac922316ccb19fd5856 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 29 Mar 2010 16:14:48 -0300
+Subject: [PATCH 13/23] Monitor: Convert do_physical_memory_save() to cmd_new_ret()
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269879298-30711-14-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8175
+O-Subject: [PATCH 13/23] Monitor: Convert do_physical_memory_save() to
+	cmd_new_ret()
+Bugzilla: 563491
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit fe38a32acc6d1fb62ed74c351c1cc1d992aa8c50)
+---
+ monitor.c       |    9 +++++++--
+ qemu-monitor.hx |    2 +-
+ 2 files changed, 8 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c       |    9 +++++++--
+ qemu-monitor.hx |    2 +-
+ 2 files changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index dd82705..1f94bf8 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -1503,7 +1503,7 @@ exit:
+     return ret;
+ }
+ 
+-static void do_physical_memory_save(Monitor *mon, const QDict *qdict,
++static int do_physical_memory_save(Monitor *mon, const QDict *qdict,
+                                     QObject **ret_data)
+ {
+     FILE *f;
+@@ -1512,11 +1512,12 @@ static void do_physical_memory_save(Monitor *mon, const QDict *qdict,
+     uint32_t size = qdict_get_int(qdict, "size");
+     const char *filename = qdict_get_str(qdict, "filename");
+     target_phys_addr_t addr = qdict_get_int(qdict, "val");
++    int ret = -1;
+ 
+     f = fopen(filename, "wb");
+     if (!f) {
+         qemu_error_new(QERR_OPEN_FILE_FAILED, filename);
+-        return;
++        return -1;
+     }
+     while (size != 0) {
+         l = sizeof(buf);
+@@ -1531,8 +1532,12 @@ static void do_physical_memory_save(Monitor *mon, const QDict *qdict,
+         addr += l;
+         size -= l;
+     }
++
++    ret = 0;
++
+ exit:
+     fclose(f);
++    return ret;
+ }
+ 
+ static void do_sum(Monitor *mon, const QDict *qdict)
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 3044aa6..f21ddb9 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -684,7 +684,7 @@ ETEXI
+         .params     = "addr size file",
+         .help       = "save to disk physical memory dump starting at 'addr' of size 'size'",
+         .user_print = monitor_user_noop,
+-        .mhandler.cmd_new = do_physical_memory_save,
++        .cmd_new_ret = do_physical_memory_save,
+     },
+ 
+ STEXI
+-- 
+1.7.0.3
+

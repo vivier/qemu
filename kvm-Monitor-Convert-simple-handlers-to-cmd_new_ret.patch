@@ -1,0 +1,270 @@
+From c7aaa64582a336ea691c85d63794f0769e5d59a9 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 29 Mar 2010 16:14:37 -0300
+Subject: [PATCH 02/23] Monitor: Convert simple handlers to cmd_new_ret()
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269879298-30711-3-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8164
+O-Subject: [PATCH 02/23] Monitor: Convert simple handlers to cmd_new_ret()
+Bugzilla: 563491
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+The following handlers always succeed and hence can be converted
+to cmd_new_ret() in the same commit.
+
+- do_stop()
+- do_quit()
+- do_system_reset()
+- do_system_powerdown()
+- do_migrate_cancel()
+- do_qmp_capabilities()
+- do_migrate_set_speed()
+- do_migrate_set_downtime()
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit ef4b7eeec1dee272a590486bca1b53675cf30973)
+---
+ migration.c     |   14 ++++++++++----
+ migration.h     |    8 ++++----
+ monitor.c       |   22 ++++++++++++++--------
+ qemu-monitor.hx |   16 ++++++++--------
+ 4 files changed, 36 insertions(+), 24 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ migration.c     |   14 ++++++++++----
+ migration.h     |    8 ++++----
+ monitor.c       |   22 ++++++++++++++--------
+ qemu-monitor.hx |   16 ++++++++--------
+ 4 files changed, 36 insertions(+), 24 deletions(-)
+
+diff --git a/migration.c b/migration.c
+index de32ba7..9f69861 100644
+--- a/migration.c
++++ b/migration.c
+@@ -102,15 +102,17 @@ void do_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     }
+ }
+ 
+-void do_migrate_cancel(Monitor *mon, const QDict *qdict, QObject **ret_data)
++int do_migrate_cancel(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     MigrationState *s = current_migration;
+ 
+     if (s)
+         s->cancel(s);
++
++    return 0;
+ }
+ 
+-void do_migrate_set_speed(Monitor *mon, const QDict *qdict, QObject **ret_data)
++int do_migrate_set_speed(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     double d;
+     FdMigrationState *s;
+@@ -123,6 +125,8 @@ void do_migrate_set_speed(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     if (s && s->file) {
+         qemu_file_set_rate_limit(s->file, max_throttle);
+     }
++
++    return 0;
+ }
+ 
+ /* amount of nanoseconds we are willing to wait for migration to be down.
+@@ -136,14 +140,16 @@ uint64_t migrate_max_downtime(void)
+     return max_downtime;
+ }
+ 
+-void do_migrate_set_downtime(Monitor *mon, const QDict *qdict,
+-                             QObject **ret_data)
++int do_migrate_set_downtime(Monitor *mon, const QDict *qdict,
++                            QObject **ret_data)
+ {
+     double d;
+ 
+     d = qdict_get_double(qdict, "value") * 1e9;
+     d = MAX(0, MIN(UINT64_MAX, d));
+     max_downtime = (uint64_t)d;
++
++    return 0;
+ }
+ 
+ static void migrate_print_status(Monitor *mon, const char *name,
+diff --git a/migration.h b/migration.h
+index 65572c1..9345d97 100644
+--- a/migration.h
++++ b/migration.h
+@@ -54,14 +54,14 @@ void qemu_start_incoming_migration(const char *uri);
+ 
+ void do_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data);
+ 
+-void do_migrate_cancel(Monitor *mon, const QDict *qdict, QObject **ret_data);
++int do_migrate_cancel(Monitor *mon, const QDict *qdict, QObject **ret_data);
+ 
+-void do_migrate_set_speed(Monitor *mon, const QDict *qdict, QObject **ret_data);
++int do_migrate_set_speed(Monitor *mon, const QDict *qdict, QObject **ret_data);
+ 
+ uint64_t migrate_max_downtime(void);
+ 
+-void do_migrate_set_downtime(Monitor *mon, const QDict *qdict,
+-                             QObject **ret_data);
++int do_migrate_set_downtime(Monitor *mon, const QDict *qdict,
++                            QObject **ret_data);
+ 
+ void do_info_migrate_print(Monitor *mon, const QObject *data);
+ 
+diff --git a/monitor.c b/monitor.c
+index 5ad7ce2..595ad58 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -430,13 +430,15 @@ void monitor_protocol_event(MonitorEvent event, QObject *data)
+     QDECREF(qmp);
+ }
+ 
+-static void do_qmp_capabilities(Monitor *mon, const QDict *params,
+-                                QObject **ret_data)
++static int do_qmp_capabilities(Monitor *mon, const QDict *params,
++                               QObject **ret_data)
+ {
+     /* Will setup QMP capabilities in the future */
+     if (monitor_ctrl_mode(mon)) {
+         mon->mc->command_mode = 1;
+     }
++
++    return 0;
+ }
+ 
+ static int compare_cmd(const char *name, const char *list)
+@@ -1000,9 +1002,10 @@ static void do_info_cpu_stats(Monitor *mon)
+ /**
+  * do_quit(): Quit QEMU execution
+  */
+-static void do_quit(Monitor *mon, const QDict *qdict, QObject **ret_data)
++static int do_quit(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     exit(0);
++    return 0;
+ }
+ 
+ static int eject_device(Monitor *mon, BlockDriverState *bs, int force)
+@@ -1167,9 +1170,10 @@ static void do_singlestep(Monitor *mon, const QDict *qdict)
+ /**
+  * do_stop(): Stop VM execution
+  */
+-static void do_stop(Monitor *mon, const QDict *qdict, QObject **ret_data)
++static int do_stop(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     vm_stop(EXCP_INTERRUPT);
++    return 0;
+ }
+ 
+ static void encrypted_bdrv_it(void *opaque, BlockDriverState *bs);
+@@ -1866,19 +1870,21 @@ static void do_boot_set(Monitor *mon, const QDict *qdict)
+ /**
+  * do_system_reset(): Issue a machine reset
+  */
+-static void do_system_reset(Monitor *mon, const QDict *qdict,
+-                            QObject **ret_data)
++static int do_system_reset(Monitor *mon, const QDict *qdict,
++                           QObject **ret_data)
+ {
+     qemu_system_reset_request();
++    return 0;
+ }
+ 
+ /**
+  * do_system_powerdown(): Issue a machine powerdown
+  */
+-static void do_system_powerdown(Monitor *mon, const QDict *qdict,
+-                                QObject **ret_data)
++static int do_system_powerdown(Monitor *mon, const QDict *qdict,
++                               QObject **ret_data)
+ {
+     qemu_system_powerdown_request();
++    return 0;
+ }
+ 
+ #if defined(TARGET_I386)
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 825caaa..a8afb0b 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -120,7 +120,7 @@ ETEXI
+         .params     = "",
+         .help       = "quit the emulator",
+         .user_print = monitor_user_noop,
+-        .mhandler.cmd_new = do_quit,
++        .cmd_new_ret = do_quit,
+     },
+ 
+ STEXI
+@@ -290,7 +290,7 @@ ETEXI
+         .params     = "",
+         .help       = "stop emulation",
+         .user_print = monitor_user_noop,
+-        .mhandler.cmd_new = do_stop,
++        .cmd_new_ret = do_stop,
+     },
+ 
+ STEXI
+@@ -471,7 +471,7 @@ ETEXI
+         .params     = "",
+         .help       = "reset the system",
+         .user_print = monitor_user_noop,
+-        .mhandler.cmd_new = do_system_reset,
++        .cmd_new_ret = do_system_reset,
+     },
+ 
+ STEXI
+@@ -486,7 +486,7 @@ ETEXI
+         .params     = "",
+         .help       = "send system power down event",
+         .user_print = monitor_user_noop,
+-        .mhandler.cmd_new = do_system_powerdown,
++        .cmd_new_ret = do_system_powerdown,
+     },
+ 
+ STEXI
+@@ -751,7 +751,7 @@ ETEXI
+         .params     = "",
+         .help       = "cancel the current VM migration",
+         .user_print = monitor_user_noop,
+-        .mhandler.cmd_new = do_migrate_cancel,
++        .cmd_new_ret = do_migrate_cancel,
+     },
+ 
+ STEXI
+@@ -765,7 +765,7 @@ ETEXI
+         .params     = "value",
+         .help       = "set maximum speed (in bytes) for migrations",
+         .user_print = monitor_user_noop,
+-        .mhandler.cmd_new = do_migrate_set_speed,
++        .cmd_new_ret = do_migrate_set_speed,
+     },
+ 
+ STEXI
+@@ -779,7 +779,7 @@ ETEXI
+         .params     = "value",
+         .help       = "set maximum tolerated downtime (in seconds) for migrations",
+         .user_print = monitor_user_noop,
+-        .mhandler.cmd_new = do_migrate_set_downtime,
++        .cmd_new_ret = do_migrate_set_downtime,
+     },
+ 
+ STEXI
+@@ -1085,7 +1085,7 @@ ETEXI
+         .params     = "",
+         .help       = "enable QMP capabilities",
+         .user_print = monitor_user_noop,
+-        .mhandler.cmd_new = do_qmp_capabilities,
++        .cmd_new_ret = do_qmp_capabilities,
+     },
+ 
+ STEXI
+-- 
+1.7.0.3
+

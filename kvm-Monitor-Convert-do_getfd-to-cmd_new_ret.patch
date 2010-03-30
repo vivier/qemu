@@ -1,0 +1,98 @@
+From 9f54d16209c4b2361206689db3e55d630fed9466 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 29 Mar 2010 16:14:42 -0300
+Subject: [PATCH 07/23] Monitor: Convert do_getfd() to cmd_new_ret()
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269879298-30711-8-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8168
+O-Subject: [PATCH 07/23] Monitor: Convert do_getfd() to cmd_new_ret()
+Bugzilla: 563491
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 6ad3ebd28e7fe261b3a99d033d8c990b1d93b366)
+---
+ monitor.c       |   11 ++++++-----
+ qemu-monitor.hx |    2 +-
+ 2 files changed, 7 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c       |   11 ++++++-----
+ qemu-monitor.hx |    2 +-
+ 2 files changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 7d13ec6..0e65853 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -2444,7 +2444,7 @@ static void do_inject_mce(Monitor *mon, const QDict *qdict)
+ }
+ #endif
+ 
+-static void do_getfd(Monitor *mon, const QDict *qdict, QObject **ret_data)
++static int do_getfd(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     const char *fdname = qdict_get_str(qdict, "fdname");
+     mon_fd_t *monfd;
+@@ -2453,12 +2453,12 @@ static void do_getfd(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     fd = qemu_chr_get_msgfd(mon->chr);
+     if (fd == -1) {
+         qemu_error_new(QERR_FD_NOT_SUPPLIED);
+-        return;
++        return -1;
+     }
+ 
+     if (qemu_isdigit(fdname[0])) {
+         qemu_error_new(QERR_INVALID_PARAMETER, "fdname");
+-        return;
++        return -1;
+     }
+ 
+     fd = dup(fd);
+@@ -2467,7 +2467,7 @@ static void do_getfd(Monitor *mon, const QDict *qdict, QObject **ret_data)
+             qemu_error_new(QERR_TOO_MANY_FILES);
+         else
+             qemu_error_new(QERR_UNDEFINED_ERROR);
+-        return;
++        return -1;
+     }
+ 
+     QLIST_FOREACH(monfd, &mon->fds, next) {
+@@ -2477,7 +2477,7 @@ static void do_getfd(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ 
+         close(monfd->fd);
+         monfd->fd = fd;
+-        return;
++        return 0;
+     }
+ 
+     monfd = qemu_mallocz(sizeof(mon_fd_t));
+@@ -2485,6 +2485,7 @@ static void do_getfd(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     monfd->fd = fd;
+ 
+     QLIST_INSERT_HEAD(&mon->fds, monfd, next);
++    return 0;
+ }
+ 
+ static void do_closefd(Monitor *mon, const QDict *qdict, QObject **ret_data)
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 33ee661..8ba2425 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -1026,7 +1026,7 @@ ETEXI
+         .params     = "getfd name",
+         .help       = "receive a file descriptor via SCM rights and assign it a name",
+         .user_print = monitor_user_noop,
+-        .mhandler.cmd_new = do_getfd,
++        .cmd_new_ret = do_getfd,
+     },
+ 
+ STEXI
+-- 
+1.7.0.3
+

@@ -1,0 +1,98 @@
+From c1babaeb7a423ee6488b79b34f22f3455b7104e6 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 29 Mar 2010 16:14:54 -0300
+Subject: [PATCH 19/23] Monitor: Debugging support
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269879298-30711-20-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8181
+O-Subject: [PATCH 19/23] Monitor: Debugging support
+Bugzilla: 563491
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Add configure options (--enable-debug-mon and --disable-debug-mon)
+plus the MON_DEBUG() macro.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit b4475aa2b354fa67865c3bf768409386c0dff15b)
+---
+ configure |   10 ++++++++++
+ monitor.c |    8 ++++++++
+ 2 files changed, 18 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ configure |   10 ++++++++++
+ monitor.c |    8 ++++++++
+ 2 files changed, 18 insertions(+), 0 deletions(-)
+
+diff --git a/configure b/configure
+index 38ed9f2..e46f662 100755
+--- a/configure
++++ b/configure
+@@ -240,6 +240,7 @@ vhost_net=""
+ 
+ gprof="no"
+ debug_tcg="no"
++debug_mon="no"
+ debug="no"
+ strip_opt="yes"
+ bigendian="no"
+@@ -497,9 +498,14 @@ for opt do
+   ;;
+   --disable-debug-tcg) debug_tcg="no"
+   ;;
++  --enable-debug-mon) debug_mon="yes"
++  ;;
++  --disable-debug-mon) debug_mon="no"
++  ;;
+   --enable-debug)
+       # Enable debugging options that aren't excessively noisy
+       debug_tcg="yes"
++      debug_mon="yes"
+       debug="yes"
+       strip_opt="no"
+   ;;
+@@ -2075,6 +2081,7 @@ echo "host CPU          $cpu"
+ echo "host big endian   $bigendian"
+ echo "target list       $target_list"
+ echo "tcg debug enabled $debug_tcg"
++echo "Mon debug enabled $debug_mon"
+ echo "gprof enabled     $gprof"
+ echo "sparse enabled    $sparse"
+ echo "strip binaries    $strip_opt"
+@@ -2153,6 +2160,9 @@ echo "ARCH=$ARCH" >> $config_host_mak
+ if test "$debug_tcg" = "yes" ; then
+   echo "CONFIG_DEBUG_TCG=y" >> $config_host_mak
+ fi
++if test "$debug_mon" = "yes" ; then
++  echo "CONFIG_DEBUG_MONITOR=y" >> $config_host_mak
++fi
+ if test "$debug" = "yes" ; then
+   echo "CONFIG_DEBUG_EXEC=y" >> $config_host_mak
+ fi
+diff --git a/monitor.c b/monitor.c
+index 6a4e96e..f5ba5bf 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -147,6 +147,14 @@ struct Monitor {
+     QLIST_ENTRY(Monitor) entry;
+ };
+ 
++#ifdef CONFIG_DEBUG_MONITOR
++#define MON_DEBUG(fmt, ...) do {    \
++    fprintf(stderr, "Monitor: ");       \
++    fprintf(stderr, fmt, ## __VA_ARGS__); } while (0)
++#else /* !CONFIG_DEBUG_MONITOR */
++#define MON_DEBUG(fmt, ...) do { } while (0)
++#endif /* CONFIG_DEBUG_MONITOR */
++
+ static QLIST_HEAD(mon_list, Monitor) mon_list;
+ 
+ static const mon_cmd_t mon_cmds[];
+-- 
+1.7.0.3
+

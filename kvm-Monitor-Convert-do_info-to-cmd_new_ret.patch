@@ -1,0 +1,88 @@
+From baa9032acfebdea7f300d1bd6590daa938c2f954 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 29 Mar 2010 16:14:49 -0300
+Subject: [PATCH 14/23] Monitor: Convert do_info() to cmd_new_ret()
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1269879298-30711-15-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8176
+O-Subject: [PATCH 14/23] Monitor: Convert do_info() to cmd_new_ret()
+Bugzilla: 563491
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Note that this function only fails in QMP, in the user Monitor
+it prints the help text instead.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 4fdc94b4062cb51c000c718bbffea3ac8c242b51)
+---
+ monitor.c       |    8 +++++---
+ qemu-monitor.hx |    2 +-
+ 2 files changed, 6 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c       |    8 +++++---
+ qemu-monitor.hx |    2 +-
+ 2 files changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 1f94bf8..fc8c825 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -569,7 +569,7 @@ static void user_async_info_handler(Monitor *mon, const mon_cmd_t *cmd)
+     }
+ }
+ 
+-static void do_info(Monitor *mon, const QDict *qdict, QObject **ret_data)
++static int do_info(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     const mon_cmd_t *cmd;
+     const char *item = qdict_get_try_str(qdict, "item");
+@@ -587,7 +587,7 @@ static void do_info(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     if (cmd->name == NULL) {
+         if (monitor_ctrl_mode(mon)) {
+             qemu_error_new(QERR_COMMAND_NOT_FOUND, item);
+-            return;
++            return -1;
+         }
+         goto help;
+     }
+@@ -619,15 +619,17 @@ static void do_info(Monitor *mon, const QDict *qdict, QObject **ret_data)
+         if (monitor_ctrl_mode(mon)) {
+             /* handler not converted yet */
+             qemu_error_new(QERR_COMMAND_NOT_FOUND, item);
++            return -1;
+         } else {
+             cmd->mhandler.info(mon);
+         }
+     }
+ 
+-    return;
++    return 0;
+ 
+ help:
+     help_cmd(mon, "info");
++    return 0;
+ }
+ 
+ static void do_info_version_print(Monitor *mon, const QObject *data)
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index f21ddb9..0e368c2 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -41,7 +41,7 @@ ETEXI
+         .params     = "[subcommand]",
+         .help       = "show various information about the system state",
+         .user_print = monitor_user_noop,
+-        .mhandler.cmd_new = do_info,
++        .cmd_new_ret = do_info,
+     },
+ 
+ STEXI
+-- 
+1.7.0.3
+
