@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.34%{?dist}
+Release: 2.35%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -536,6 +536,14 @@ Patch1253: kvm-Monitor-Audit-handler-return.patch
 Patch1254: kvm-Monitor-Debug-stray-prints-the-right-way.patch
 # For bz#563491 - QMP: New internal error handling mechanism
 Patch1255: kvm-Monitor-Report-more-than-one-error-in-handlers.patch
+# For bz#563641 - QMP: Wrong error message in block_passwd command
+Patch1256: kvm-QError-New-QERR_DEVICE_NOT_ENCRYPTED.patch
+# For bz#563641 - QMP: Wrong error message in block_passwd command
+Patch1257: kvm-Wrong-error-message-in-block_passwd-command.patch
+# For bz#578493 - QMP: Fix spice event names
+Patch1258: kvm-Monitor-Introduce-RFQDN_REDHAT-and-use-it.patch
+# For bz#578493 - QMP: Fix spice event names
+Patch1259: kvm-QMP-Fix-Spice-event-names.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -853,6 +861,10 @@ such as kvmtrace and kvm_stat.
 %patch1253 -p1
 %patch1254 -p1
 %patch1255 -p1
+%patch1256 -p1
+%patch1257 -p1
+%patch1258 -p1
+%patch1259 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1048,6 +1060,20 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Apr 06 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.35.el6
+- kvm-QError-New-QERR_DEVICE_NOT_ENCRYPTED.patch [bz#563641]
+- kvm-Wrong-error-message-in-block_passwd-command.patch [bz#563641]
+- kvm-Monitor-Introduce-RFQDN_REDHAT-and-use-it.patch [bz#578493]
+- kvm-QMP-Fix-Spice-event-names.patch [bz#578493]
+- Resolves: bz#563641
+  (QMP: Wrong error message in block_passwd command)
+- Resolves: bz#578493
+  (QMP: Fix spice event names)
+- ksm.init: touch max_kernel_pages only if it exists [bz#561907]
+- Resolves: bz#561907
+- ksmtuned: add debug information [bz#576789]
+- Resolves: bz#576789
+
 * Tue Mar 30 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.34.el6
 - kvm-Monitor-Introduce-cmd_new_ret.patch [bz#563491]
 - kvm-Monitor-Convert-simple-handlers-to-cmd_new_ret.patch [bz#563491]

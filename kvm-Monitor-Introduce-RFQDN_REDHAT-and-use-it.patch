@@ -1,0 +1,67 @@
+From 9adf4e8aece255b2810bbf7e73ec7acfe46a2341 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Wed, 31 Mar 2010 13:37:42 -0300
+Subject: [PATCH 3/4] Monitor: Introduce RFQDN_REDHAT and use it
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1270042663-32131-2-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8269
+O-Subject: [PATCH 1/2] Monitor: Introduce RFQDN_REDHAT and use it
+Bugzilla: 578493
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+
+Just to avoid duplication, no functionality change.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c       |    3 +++
+ qemu-monitor.hx |    4 ++--
+ 2 files changed, 5 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c       |    3 +++
+ qemu-monitor.hx |    4 ++--
+ 2 files changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 3747466..967d565 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -149,6 +149,9 @@ struct Monitor {
+     QLIST_ENTRY(Monitor) entry;
+ };
+ 
++/* Red Hat Monitor's prefix (reversed fully qualified domain) */
++#define RFQDN_REDHAT "__com.redhat_"
++
+ #ifdef CONFIG_DEBUG_MONITOR
+ #define MON_DEBUG(fmt, ...) do {    \
+     fprintf(stderr, "Monitor: ");       \
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 825caaa..b7c7f64 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -1095,7 +1095,7 @@ ETEXI
+ 
+ #if defined(CONFIG_SPICE)
+     {
+-        .name       = "__com.redhat_set_password",
++        .name       = RFQDN_REDHAT "set_password",
+         .args_type  = "protocol:s,password:s,expiration:i,connected:s?",
+         .params     = "protocol password expiration action-if-connected",
+         .help       = "set spice/vnc password",
+@@ -1111,7 +1111,7 @@ ETEXI
+ 
+ #if defined(CONFIG_SPICE)
+     {
+-        .name       = "__com.redhat_spice_migrate_info",
++        .name       = RFQDN_REDHAT "spice_migrate_info",
+         .args_type  = "hostname:s,port:i?,tls-port:i?,cert-subject:s?",
+         .params     = "hostname port tls-port cert-subject",
+         .help       = "send migration info to spice client",
+-- 
+1.7.0.3
+

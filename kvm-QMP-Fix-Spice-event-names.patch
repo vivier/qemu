@@ -1,0 +1,49 @@
+From 426ccfcc41cba4d709f125811fbd66abd74653e9 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Wed, 31 Mar 2010 13:37:43 -0300
+Subject: [PATCH 4/4] QMP: Fix Spice event names
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1270042663-32131-3-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8270
+O-Subject: [PATCH 2/2] QMP: Fix Spice event names
+Bugzilla: 578493
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+
+We must use our vendor extension prefix for all protocol visible names
+(ie. commands and events), I missed this in the review of the spice
+events patches, so I'm fixing it now.
+
+Reported-by Daniel P. Berrange <berrange@redhat.com>
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 967d565..6eb26fd 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -428,10 +428,10 @@ void monitor_protocol_event(MonitorEvent event, QObject *data)
+             event_name = "VNC_DISCONNECTED";
+             break;
+         case QEVENT_SPICE_INITIALIZED:
+-            event_name = "SPICE_INITIALIZED";
++            event_name = RFQDN_REDHAT "SPICE_INITIALIZED";
+             break;
+         case QEVENT_SPICE_DISCONNECTED:
+-            event_name = "SPICE_DISCONNECTED";
++            event_name = RFQDN_REDHAT "SPICE_DISCONNECTED";
+             break;
+         case QEVENT_BLOCK_IO_ERROR:
+             event_name = "BLOCK_IO_ERROR";
+-- 
+1.7.0.3
+

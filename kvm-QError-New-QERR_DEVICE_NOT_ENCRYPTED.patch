@@ -1,0 +1,65 @@
+From bba97eec9e65c68c965d1485617e972af36a89a1 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Mon, 29 Mar 2010 08:54:47 -0300
+Subject: [PATCH 1/4] QError: New QERR_DEVICE_NOT_ENCRYPTED
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1269852888-20127-2-git-send-email-kwolf@redhat.com>
+Patchwork-id: 8158
+O-Subject: [PATCH 1/2] QError: New QERR_DEVICE_NOT_ENCRYPTED
+Bugzilla: 563641
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Shahar Havivi <shaharh@redhat.com>
+
+From: Shahar Havivi <shaharh@redhat.com>
+
+Bugzilla: 563641
+Upstream commit: 25b28f01d840c56c1323f2bb941da061a8003176
+
+Signed-off-by: Shahar Havivi <shaharh@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/qerror.c b/qerror.c
+index 2f657f4..4e63a54 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -49,6 +49,10 @@ static const QErrorStringTable qerror_table[] = {
+         .desc      = "The %(device) is encrypted",
+     },
+     {
++        .error_fmt = QERR_DEVICE_NOT_ENCRYPTED,
++        .desc      = "Device '%(device)' is not encrypted",
++    },
++    {
+         .error_fmt = QERR_DEVICE_LOCKED,
+         .desc      = "Device %(device) is locked",
+     },
+diff --git a/qerror.h b/qerror.h
+index ee59615..b93fff6 100644
+--- a/qerror.h
++++ b/qerror.h
+@@ -46,6 +46,9 @@ QError *qobject_to_qerror(const QObject *obj);
+ #define QERR_DEVICE_ENCRYPTED \
+     "{ 'class': 'DeviceEncrypted', 'data': { 'device': %s } }"
+ 
++#define QERR_DEVICE_NOT_ENCRYPTED \
++    "{ 'class': 'DeviceNotEncrypted', 'data': { 'device': %s } }"
++
+ #define QERR_DEVICE_LOCKED                                      \
+     "{ 'class': 'DeviceLocked', 'data': { 'device': %s } }"
+ 
+-- 
+1.7.0.3
+
