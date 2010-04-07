@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.35%{?dist}
+Release: 2.36%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -544,6 +544,14 @@ Patch1257: kvm-Wrong-error-message-in-block_passwd-command.patch
 Patch1258: kvm-Monitor-Introduce-RFQDN_REDHAT-and-use-it.patch
 # For bz#578493 - QMP: Fix spice event names
 Patch1259: kvm-QMP-Fix-Spice-event-names.patch
+# For bz#558236 - qemu-kvm monitor corrupts tty on exit
+Patch1260: kvm-char-Remove-redundant-qemu_chr_generic_open-call.patch
+# For bz#558236 - qemu-kvm monitor corrupts tty on exit
+Patch1261: kvm-add-close-callback-for-tty-based-char-device.patch
+# For bz#558236 - qemu-kvm monitor corrupts tty on exit
+Patch1262: kvm-Restore-terminal-attributes-for-tty-based-monitor.patch
+# For bz#558236 - qemu-kvm monitor corrupts tty on exit
+Patch1263: kvm-Restore-terminal-monitor-attributes-addition.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -865,6 +873,10 @@ such as kvmtrace and kvm_stat.
 %patch1257 -p1
 %patch1258 -p1
 %patch1259 -p1
+%patch1260 -p1
+%patch1261 -p1
+%patch1262 -p1
+%patch1263 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1060,6 +1072,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Apr 07 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.36.el6
+- kvm-char-Remove-redundant-qemu_chr_generic_open-call.patch [bz#558236]
+- kvm-add-close-callback-for-tty-based-char-device.patch [bz#558236]
+- kvm-Restore-terminal-attributes-for-tty-based-monitor.patch [bz#558236]
+- kvm-Restore-terminal-monitor-attributes-addition.patch [bz#558236]
+- Resolves: bz#558236
+  (qemu-kvm monitor corrupts tty on exit)
+
 * Tue Apr 06 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.35.el6
 - kvm-QError-New-QERR_DEVICE_NOT_ENCRYPTED.patch [bz#563641]
 - kvm-Wrong-error-message-in-block_passwd-command.patch [bz#563641]

@@ -1,0 +1,53 @@
+From f43c3dd3f2fe348ec1da24f78f10a588d81220e5 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 1 Apr 2010 20:48:12 -0300
+Subject: [PATCH 4/4] Restore terminal monitor attributes - addition
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1270154892-30554-5-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8337
+O-Subject: [PATCH 4/4] Restore terminal monitor attributes - addition
+Bugzilla: 558236
+RH-Acked-by: Shahar Havivi <shaharh@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Shahar Havivi <shaharh@redhat.com>
+
+Patch 2d753894c7553d6a05e8fdbed5f4704398919a35 was missing this check,
+when running monitor as /dev/tty and other serial device, i.e:
+  qemu -monitor /dev/tty -serial /dev/pts/1
+
+Without this patch any serial device will override the monitor stored
+attributes. (monitor is called in main() before any serial device).
+
+Signed-off-by: Shahar Havivi <shaharh@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit d3f822d241d673103046a07874f8a3f37d1cb41b)
+---
+ qemu-char.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-char.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-char.c b/qemu-char.c
+index 7aae21b..8a6112e 100644
+--- a/qemu-char.c
++++ b/qemu-char.c
+@@ -1002,7 +1002,9 @@ static void tty_serial_init(int fd, int speed,
+            speed, parity, data_bits, stop_bits);
+ #endif
+     tcgetattr (fd, &tty);
+-    oldtty = tty;
++    if (!term_atexit_done) {
++        oldtty = tty;
++    }
+ 
+ #define check_speed(val) if (speed <= val) { spd = B##val; break; }
+     speed = speed * 10 / 11;
+-- 
+1.7.0.3
+

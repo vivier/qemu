@@ -1,0 +1,81 @@
+From 3f1328cb0d326c95d587e1c799b8afad59087a83 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 1 Apr 2010 20:48:10 -0300
+Subject: [PATCH 2/4] add close callback for tty-based char device
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1270154892-30554-3-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8335
+O-Subject: [PATCH 2/4] add close callback for tty-based char device
+Bugzilla: 558236
+RH-Acked-by: Shahar Havivi <shaharh@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: David Ahern <daahern@cisco.com>
+
+v1 -> v2  coding style changes
+
+Add a tty close callback. Right now if a guest device that is connected
+to a tty-based chardev in the host is removed, the tty is not closed.
+With this patch it is closed.
+
+Example use case is connecting an emulated USB serial cable in the guest
+to ttyS0 of the host using the monitor command:
+
+usb_add serial::/dev/ttyS0
+
+and then removing the device with:
+
+usb_del serial::/dev/ttyS0
+
+Signed-off-by: David Ahern <daahern@cisco.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 4266a134715416d4602a89c21d29a1e4ee2aeee7)
+---
+ qemu-char.c |   17 +++++++++++++++++
+ 1 files changed, 17 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-char.c |   17 +++++++++++++++++
+ 1 files changed, 17 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-char.c b/qemu-char.c
+index 75dbf66..4169492 100644
+--- a/qemu-char.c
++++ b/qemu-char.c
+@@ -1173,6 +1173,22 @@ static int tty_serial_ioctl(CharDriverState *chr, int cmd, void *arg)
+     return 0;
+ }
+ 
++static void qemu_chr_close_tty(CharDriverState *chr)
++{
++    FDCharDriver *s = chr->opaque;
++    int fd = -1;
++
++    if (s) {
++        fd = s->fd_in;
++    }
++
++    fd_chr_close(chr);
++
++    if (fd >= 0) {
++        close(fd);
++    }
++}
++
+ static CharDriverState *qemu_chr_open_tty(QemuOpts *opts)
+ {
+     const char *filename = qemu_opt_get(opts, "path");
+@@ -1190,6 +1206,7 @@ static CharDriverState *qemu_chr_open_tty(QemuOpts *opts)
+         return NULL;
+     }
+     chr->chr_ioctl = tty_serial_ioctl;
++    chr->chr_close = qemu_chr_close_tty;
+     return chr;
+ }
+ #else  /* ! __linux__ && ! __sun__ */
+-- 
+1.7.0.3
+

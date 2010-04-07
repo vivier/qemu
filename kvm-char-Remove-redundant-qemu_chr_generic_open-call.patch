@@ -1,0 +1,46 @@
+From ba75bdb16d9e016f5fcdc15d1237c12f431d533d Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 1 Apr 2010 20:48:09 -0300
+Subject: [PATCH 1/4] char: Remove redundant qemu_chr_generic_open() call.
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1270154892-30554-2-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8334
+O-Subject: [PATCH 1/4] char: Remove redundant qemu_chr_generic_open() call.
+Bugzilla: 558236
+RH-Acked-by: Shahar Havivi <shaharh@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Kusanagi Kouichi <slash@ac.auone-net.jp>
+
+qemu_chr_open_fd() calls qemu_chr_generic_open(),
+so qemu_chr_open_tty() doesn't need to call it.
+
+Signed-off-by: Kusanagi Kouichi <slash@ac.auone-net.jp>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 3b9d7e662160bdc1381d190ce395a9a139a13117)
+---
+ qemu-char.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-char.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-char.c b/qemu-char.c
+index 5a1b535..75dbf66 100644
+--- a/qemu-char.c
++++ b/qemu-char.c
+@@ -1190,7 +1190,6 @@ static CharDriverState *qemu_chr_open_tty(QemuOpts *opts)
+         return NULL;
+     }
+     chr->chr_ioctl = tty_serial_ioctl;
+-    qemu_chr_generic_open(chr);
+     return chr;
+ }
+ #else  /* ! __linux__ && ! __sun__ */
+-- 
+1.7.0.3
+

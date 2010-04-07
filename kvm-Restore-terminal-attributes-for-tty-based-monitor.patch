@@ -1,0 +1,71 @@
+From aebff928978e9e688a1e115f8afc2240b15bdf1c Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 1 Apr 2010 20:48:11 -0300
+Subject: [PATCH 3/4] Restore terminal attributes for tty based monitor
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1270154892-30554-4-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8336
+O-Subject: [PATCH 3/4] Restore terminal attributes for tty based monitor
+Bugzilla: 558236
+RH-Acked-by: Shahar Havivi <shaharh@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Shahar Havivi <shaharh@redhat.com>
+
+Patch http://permalink.gmane.org/gmane.comp.emulators.qemu/63472 handle
+close when using tty devices (like /dev/ttyS0),
+yet tty based monitor are not restoring terminal attributes (as done
+with stdio based monitor), when closing qemu after that command:
+$ qemu -monitor /dev/tty
+the terminal is not responding until you write reset (blindly),
+this patch fix it
+
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 2d753894c7553d6a05e8fdbed5f4704398919a35)
+---
+ qemu-char.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-char.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-char.c b/qemu-char.c
+index 4169492..7aae21b 100644
+--- a/qemu-char.c
++++ b/qemu-char.c
+@@ -1002,6 +1002,7 @@ static void tty_serial_init(int fd, int speed,
+            speed, parity, data_bits, stop_bits);
+ #endif
+     tcgetattr (fd, &tty);
++    oldtty = tty;
+ 
+ #define check_speed(val) if (speed <= val) { spd = B##val; break; }
+     speed = speed * 10 / 11;
+@@ -1173,6 +1174,11 @@ static int tty_serial_ioctl(CharDriverState *chr, int cmd, void *arg)
+     return 0;
+ }
+ 
++static void tty_exit(void)
++{
++    tcsetattr(0, TCSANOW, &oldtty);
++}
++
+ static void qemu_chr_close_tty(CharDriverState *chr)
+ {
+     FDCharDriver *s = chr->opaque;
+@@ -1207,6 +1213,8 @@ static CharDriverState *qemu_chr_open_tty(QemuOpts *opts)
+     }
+     chr->chr_ioctl = tty_serial_ioctl;
+     chr->chr_close = qemu_chr_close_tty;
++    if (!term_atexit_done++)
++        atexit(tty_exit);
+     return chr;
+ }
+ #else  /* ! __linux__ && ! __sun__ */
+-- 
+1.7.0.3
+
