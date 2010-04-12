@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.36%{?dist}
+Release: 2.37%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -552,6 +552,10 @@ Patch1261: kvm-add-close-callback-for-tty-based-char-device.patch
 Patch1262: kvm-Restore-terminal-attributes-for-tty-based-monitor.patch
 # For bz#558236 - qemu-kvm monitor corrupts tty on exit
 Patch1263: kvm-Restore-terminal-monitor-attributes-addition.patch
+# For bz#578912 - Monitor: Overflow in 'info balloon'
+Patch1264: kvm-balloon-Fix-overflow-when-reporting-actual-memory-si.patch
+# For bz#576544 - Error message doesn't contain the content of invalid keyword
+Patch1265: kvm-json-parser-Output-the-content-of-invalid-keyword.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -877,6 +881,8 @@ such as kvmtrace and kvm_stat.
 %patch1261 -p1
 %patch1262 -p1
 %patch1263 -p1
+%patch1264 -p1
+%patch1265 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1072,6 +1078,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Apr 12 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.37.el6
+- kvm-balloon-Fix-overflow-when-reporting-actual-memory-si.patch [bz#578912]
+- kvm-json-parser-Output-the-content-of-invalid-keyword.patch [bz#576544]
+- Resolves: bz#576544
+  (Error message doesn't contain the content of invalid keyword)
+- Resolves: bz#578912
+  (Monitor: Overflow in 'info balloon')
+
 * Wed Apr 07 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.36.el6
 - kvm-char-Remove-redundant-qemu_chr_generic_open-call.patch [bz#558236]
 - kvm-add-close-callback-for-tty-based-char-device.patch [bz#558236]

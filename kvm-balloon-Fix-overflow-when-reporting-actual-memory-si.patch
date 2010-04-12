@@ -1,0 +1,72 @@
+From e23232ede4f791b06b657824e11ad6c0528a1b52 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 1 Apr 2010 20:26:11 -0300
+Subject: [PATCH 1/2] balloon: Fix overflow when reporting actual memory size
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1270153572-29543-2-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8326
+O-Subject: [PATCH 1/2] balloon: Fix overflow when reporting actual memory size
+Bugzilla: 578912
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+From: Adam Litke <agl@us.ibm.com>
+
+Bugzilla: 578912
+
+Beginning with its introduction, the virtio balloon has had an overflow error
+that causes 'info balloon' to misreport the actual memory size when the balloon
+itself becomes larger than 4G.  Use a cast when converting dev->actual from
+pages to kB to prevent overflows.
+
+Before:
+(qemu) info balloon
+balloon: actual=5120
+(qemu) balloon 1025
+(qemu) info balloon
+balloon: actual=1025
+(qemu) balloon 1024
+(qemu) info balloon
+balloon: actual=5120
+
+After:
+(qemu) info balloon
+balloon: actual=5120
+(qemu) balloon 1025
+(qemu) info balloon
+balloon: actual=1025
+(qemu) balloon 1024
+(qemu) info balloon
+balloon: actual=1024
+
+Signed-off-by: Adam Litke <agl@us.ibm.com>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit bd12ff9df78b0d04059a35c4a9d0a9337eb4999e)
+---
+ hw/virtio-balloon.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-balloon.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/hw/virtio-balloon.c b/hw/virtio-balloon.c
+index ee72c64..1abad1c 100644
+--- a/hw/virtio-balloon.c
++++ b/hw/virtio-balloon.c
+@@ -79,7 +79,8 @@ static void stat_put(QDict *dict, const char *label, uint64_t val)
+ static QObject *get_stats_qobject(VirtIOBalloon *dev)
+ {
+     QDict *dict = qdict_new();
+-    uint32_t actual = ram_size - (dev->actual << VIRTIO_BALLOON_PFN_SHIFT);
++    uint64_t actual = ram_size - ((uint64_t) dev->actual <<
++                                  VIRTIO_BALLOON_PFN_SHIFT);
+ 
+     stat_put(dict, "actual", actual);
+     stat_put(dict, "mem_swapped_in", dev->stats[VIRTIO_BALLOON_S_SWAP_IN]);
+-- 
+1.7.0.3
+

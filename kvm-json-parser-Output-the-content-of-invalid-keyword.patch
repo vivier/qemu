@@ -1,0 +1,68 @@
+From afd89952747c763ea47921b856a85005ba4ceef5 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 1 Apr 2010 20:26:12 -0300
+Subject: [PATCH 2/2] json-parser: Output the content of invalid keyword
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1270153572-29543-3-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 8327
+O-Subject: [PATCH 2/2] json-parser: Output the content of invalid keyword
+Bugzilla: 576544
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+From: Amos Kong <akong@redhat.com>
+
+Bugzilla: 576544
+
+When input some invalid word 'unknowcmd' through QMP port, qemu outputs
+this error message:
+  "parse error: invalid keyword `%s'"
+
+This patch makes qemu output the content of invalid keyword, like:
+
+  "parse error: invalid keyword `unknowcmd'"
+
+Signed-off-by: Amos Kong <akong@redhat.com>
+Acked-by: Richard Henderson <rth@redhat.com>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit c96c84a9ff4bc184cb1f6cc9771a550f3854ba59)
+---
+ json-parser.c |    8 +++++++-
+ 1 files changed, 7 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ json-parser.c |    8 +++++++-
+ 1 files changed, 7 insertions(+), 1 deletions(-)
+
+diff --git a/json-parser.c b/json-parser.c
+index 3497cd3..2c990a6 100644
+--- a/json-parser.c
++++ b/json-parser.c
+@@ -12,6 +12,7 @@
+  */
+ 
+ #include <stdbool.h>
++#include <stdarg.h>
+ 
+ #include "qemu-common.h"
+ #include "qstring.h"
+@@ -93,7 +94,12 @@ static int token_is_escape(QObject *obj, const char *value)
+  */
+ static void parse_error(JSONParserContext *ctxt, QObject *token, const char *msg, ...)
+ {
+-    fprintf(stderr, "parse error: %s\n", msg);
++    va_list ap;
++    va_start(ap, msg);
++    fprintf(stderr, "parse error: ");
++    vfprintf(stderr, msg, ap);
++    fprintf(stderr, "\n");
++    va_end(ap);
+ }
+ 
+ /**
+-- 
+1.7.0.3
+
