@@ -1,9 +1,12 @@
 #!/bin/sh
 
 if [ $(grep -c vmx /proc/cpuinfo) -ne 0 ]; then 
-    modprobe -b kvm-intel >/dev/null 2>&1
+    modprobe -q -b kvm-intel >/dev/null 2>&1
 fi
 
 if [ $(grep -c svm /proc/cpuinfo) -ne 0 ]; then 
-    modprobe -b kvm-amd >/dev/null 2>&1
+    modprobe -q -b kvm-amd >/dev/null 2>&1
 fi
+
+# never fail, to avoid RPM to complain about %post errors
+exit 0

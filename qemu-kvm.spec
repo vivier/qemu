@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.38%{?dist}
+Release: 2.38%{?dist}.postfix1
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -612,6 +612,8 @@ Requires(post): /usr/bin/getent
 Requires(post): /usr/sbin/groupadd
 Requires(post): /usr/sbin/useradd
 Requires(post): /sbin/chkconfig
+Requires(post): /sbin/modprobe
+Requires(post): kernel
 Requires(preun): /sbin/service /sbin/chkconfig
 Requires(postun): /sbin/service
 
