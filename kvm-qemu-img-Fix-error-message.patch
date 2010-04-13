@@ -1,0 +1,50 @@
+From 9e278c1b92d9fbf9db9e6a9557ccafdc595c1d47 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Wed, 7 Apr 2010 11:42:58 -0300
+Subject: [PATCH 20/21] qemu-img: Fix error message
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1270640579-13548-5-git-send-email-kwolf@redhat.com>
+Patchwork-id: 8417
+O-Subject: [RHEL-6 KVM PATCH 4/5] qemu-img: Fix error message
+Bugzilla: 579974
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 579974
+
+When qemu-img can't open the new backing file for a rebase, it prints an error
+message which contains the file name of the old backing file. This is wrong,
+obviously.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 584771e6b6cba9f1571264645e15272d0ce9fe8e)
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ qemu-img.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-img.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-img.c b/qemu-img.c
+index 6ad9210..3af8739 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -1177,7 +1177,7 @@ static int img_rebase(int argc, char **argv)
+         if (bdrv_open2(bs_new_backing, out_baseimg, BRDV_O_FLAGS | BDRV_O_RDWR,
+             new_backing_drv))
+         {
+-            error("Could not open new backing file '%s'", backing_name);
++            error("Could not open new backing file '%s'", out_baseimg);
+             return -1;
+         }
+     }
+-- 
+1.7.0.3
+

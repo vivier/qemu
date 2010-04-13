@@ -1,0 +1,108 @@
+From 5db820220e800e2be58ec1ccad44445eb1148315 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Wed, 7 Apr 2010 11:42:55 -0300
+Subject: [PATCH 17/21] qemu-img rebase: Add -f option
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1270640579-13548-2-git-send-email-kwolf@redhat.com>
+Patchwork-id: 8414
+O-Subject: [RHEL-6 KVM PATCH 1/5] qemu-img rebase: Add -f option
+Bugzilla: 580028
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 580028
+
+Upstream commits:
+e53dbee05dfabea5533f6bdf61547b2d3d59a965
+cb66ffcf9e298dc1bfc11682172ff9472bcd4495
+
+Allow the user to specify the format of the image to rebase.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ qemu-img-cmds.hx |    4 ++--
+ qemu-img.c       |   20 ++++++++++++++++----
+ 2 files changed, 18 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-img-cmds.hx |    4 ++--
+ qemu-img.c       |   20 ++++++++++++++++----
+ 2 files changed, 18 insertions(+), 6 deletions(-)
+
+diff --git a/qemu-img-cmds.hx b/qemu-img-cmds.hx
+index f28ef36..f96876a 100644
+--- a/qemu-img-cmds.hx
++++ b/qemu-img-cmds.hx
+@@ -46,8 +46,8 @@ STEXI
+ ETEXI
+ 
+ DEF("rebase", img_rebase,
+-    "rebase [-u] -b backing_file [-F backing_fmt] filename")
++    "rebase [-f fmt] [-u] -b backing_file [-F backing_fmt] filename")
+ STEXI
+-@item rebase [-u] -b @var{backing_file} [-F @var{backing_fmt}] @var{filename}
++@item rebase [-f @var{fmt}] [-u] -b @var{backing_file} [-F @var{backing_fmt}] @var{filename}
+ @end table
+ ETEXI
+diff --git a/qemu-img.c b/qemu-img.c
+index 6b2d7ae..6ad9210 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -1077,24 +1077,28 @@ static int img_snapshot(int argc, char **argv)
+ static int img_rebase(int argc, char **argv)
+ {
+     BlockDriverState *bs, *bs_old_backing, *bs_new_backing;
+-    BlockDriver *old_backing_drv, *new_backing_drv;
++    BlockDriver *drv, *old_backing_drv, *new_backing_drv;
+     char *filename;
+-    const char *out_basefmt, *out_baseimg;
++    const char *fmt, *out_basefmt, *out_baseimg;
+     int c, flags, ret;
+     int unsafe = 0;
+ 
+     /* Parse commandline parameters */
++    fmt = NULL;
+     out_baseimg = NULL;
+     out_basefmt = NULL;
+ 
+     for(;;) {
+-        c = getopt(argc, argv, "uhF:b:");
++        c = getopt(argc, argv, "uhf:F:b:");
+         if (c == -1)
+             break;
+         switch(c) {
+         case 'h':
+             help();
+             return 0;
++        case 'f':
++            fmt = optarg;
++            break;
+         case 'F':
+             out_basefmt = optarg;
+             break;
+@@ -1121,8 +1125,16 @@ static int img_rebase(int argc, char **argv)
+     if (!bs)
+         error("Not enough memory");
+ 
++    drv = NULL;
++    if (fmt) {
++        drv = bdrv_find_format(fmt);
++        if (drv == NULL) {
++            error("Invalid format name: '%s'", fmt);
++        }
++    }
++
+     flags = BRDV_O_FLAGS | BDRV_O_RDWR | (unsafe ? BDRV_O_NO_BACKING : 0);
+-    if (bdrv_open2(bs, filename, flags, NULL) < 0) {
++    if (bdrv_open2(bs, filename, flags, drv) < 0) {
+         error("Could not open '%s'", filename);
+     }
+ 
+-- 
+1.7.0.3
+

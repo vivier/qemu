@@ -1,0 +1,59 @@
+From f23c45c7a088cba6fac13f303a620cfcb253d925 Mon Sep 17 00:00:00 2001
+From: Naphtali Sprei <nsprei@redhat.com>
+Date: Wed, 7 Apr 2010 16:44:27 -0300
+Subject: [PATCH 16/21] read-only: allow read-only CDROM with any interface
+
+RH-Author: Naphtali Sprei <nsprei@redhat.com>
+Message-id: <1270658667-14294-17-git-send-email-nsprei@redhat.com>
+Patchwork-id: 8449
+O-Subject: [RHEL6 kvm PATCH v3 rebase 16/16] read-only: allow read-only CDROM
+	with any interface
+Bugzilla: 537164
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+BZ: https://bugzilla.redhat.com/show_bug.cgi?id=537164
+upstream commit: No such commit, just sent there
+
+Signed-off-by: Naphtali Sprei <nsprei@redhat.com>
+---
+ vl.c |   12 ++++--------
+ 1 files changed, 4 insertions(+), 8 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vl.c |   12 ++++--------
+ 1 files changed, 4 insertions(+), 8 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index cb1b1bc..f60a57e 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2512,19 +2512,15 @@ DriveInfo *drive_init(QemuOpts *opts, void *opaque,
+         bdrv_flags &= ~BDRV_O_NATIVE_AIO;
+     }
+ 
+-    if (ro == 1) {
++    if (media == MEDIA_CDROM) {
++        /* mark CDROM as read-only. CDROM is fine for any interface, don't check */
++        ro = 1;
++    } else if (ro == 1) {
+         if (type != IF_SCSI && type != IF_VIRTIO && type != IF_FLOPPY) {
+             fprintf(stderr, "qemu: readonly flag not supported for drive with this interface\n");
+             return NULL;
+         }
+     }
+-    /*
+-     * cdrom is read-only. Set it now, after above interface checking
+-     * since readonly attribute not explicitly required, so no error.
+-     */
+-    if (media == MEDIA_CDROM) {
+-        ro = 1;
+-    }
+     bdrv_flags |= ro ? 0 : BDRV_O_RDWR;
+ 
+     if (bdrv_open2(dinfo->bdrv, file, bdrv_flags, drv) < 0) {
+-- 
+1.7.0.3
+

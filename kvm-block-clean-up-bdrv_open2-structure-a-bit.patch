@@ -1,0 +1,102 @@
+From 80ee95f329b9cff8adc82a7c8b8f9e026837840e Mon Sep 17 00:00:00 2001
+From: Naphtali Sprei <nsprei@redhat.com>
+Date: Wed, 7 Apr 2010 16:44:20 -0300
+Subject: [PATCH 09/21] block: clean up bdrv_open2 structure a bit
+
+RH-Author: Naphtali Sprei <nsprei@redhat.com>
+Message-id: <1270658667-14294-10-git-send-email-nsprei@redhat.com>
+Patchwork-id: 8443
+O-Subject: [RHEL6 kvm PATCH v3 rebase 09/16] block: clean up bdrv_open2
+	structure a bit
+Bugzilla: 537164
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Christoph Hellwig <hch@lst.de>
+
+Check the whitelist as early as possible instead of continuing the
+setup, and move all the error handling code to the end of the
+function.
+
+BZ: https://bugzilla.redhat.com/show_bug.cgi?id=537164
+upstream commit: 6987307ca30aead67e8545934186c92f942710f6
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Naphtali Sprei <nsprei@redhat.com>
+---
+ block.c |   31 +++++++++++++++++++------------
+ 1 files changed, 19 insertions(+), 12 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c |   31 +++++++++++++++++++------------
+ 1 files changed, 19 insertions(+), 12 deletions(-)
+
+diff --git a/block.c b/block.c
+index 2956e4a..252b7a8 100644
+--- a/block.c
++++ b/block.c
+@@ -428,10 +428,16 @@ int bdrv_open2(BlockDriverState *bs, const char *filename, int flags,
+             drv = find_image_format(filename);
+         }
+     }
++
+     if (!drv) {
+         ret = -ENOENT;
+         goto unlink_and_fail;
+     }
++    if (use_bdrv_whitelist && !bdrv_is_whitelisted(drv)) {
++        ret = -ENOTSUP;
++        goto unlink_and_fail;
++    }
++
+     bs->drv = drv;
+     bs->opaque = qemu_mallocz(drv->instance_size);
+ 
+@@ -453,20 +459,12 @@ int bdrv_open2(BlockDriverState *bs, const char *filename, int flags,
+     } else {
+         open_flags = flags & ~(BDRV_O_FILE | BDRV_O_SNAPSHOT);
+     }
+-    if (use_bdrv_whitelist && !bdrv_is_whitelisted(drv)) {
+-        ret = -ENOTSUP;
+-    } else {
+-        ret = drv->bdrv_open(bs, filename, open_flags);
+-    }
++
++    ret = drv->bdrv_open(bs, filename, open_flags);
+     if (ret < 0) {
+-        qemu_free(bs->opaque);
+-        bs->opaque = NULL;
+-        bs->drv = NULL;
+-    unlink_and_fail:
+-        if (bs->is_temporary)
+-            unlink(filename);
+-        return ret;
++        goto free_and_fail;
+     }
++
+     if (drv->bdrv_getlength) {
+         bs->total_sectors = bdrv_getlength(bs) >> BDRV_SECTOR_BITS;
+     }
+@@ -499,6 +497,15 @@ int bdrv_open2(BlockDriverState *bs, const char *filename, int flags,
+             bs->change_cb(bs->change_opaque);
+     }
+     return 0;
++
++free_and_fail:
++    qemu_free(bs->opaque);
++    bs->opaque = NULL;
++    bs->drv = NULL;
++unlink_and_fail:
++    if (bs->is_temporary)
++        unlink(filename);
++    return ret;
+ }
+ 
+ void bdrv_close(BlockDriverState *bs)
+-- 
+1.7.0.3
+

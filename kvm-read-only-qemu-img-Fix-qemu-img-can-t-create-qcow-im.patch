@@ -1,0 +1,97 @@
+From 1be292e308cf8ecf812680076bc59ead00ae85a5 Mon Sep 17 00:00:00 2001
+From: Naphtali Sprei <nsprei@redhat.com>
+Date: Wed, 7 Apr 2010 16:44:19 -0300
+Subject: [PATCH 08/21] read-only: qemu-img: Fix qemu-img can't create qcow image based on read-only image
+
+RH-Author: Naphtali Sprei <nsprei@redhat.com>
+Message-id: <1270658667-14294-9-git-send-email-nsprei@redhat.com>
+Patchwork-id: 8442
+O-Subject: [RHEL6 kvm PATCH v3 rebase 08/16] read-only: qemu-img: Fix qemu-img
+	can't create qcow image based on read-only image
+Bugzilla: 537164
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Sheng Yang <sheng@linux.intel.com>
+
+BZ: https://bugzilla.redhat.com/show_bug.cgi?id=537164
+upstream commit: 9bc378c1430d0c227a8463501b6e0d03cf09adac
+
+Commit 03cbdac7 "Disable fall-back to read-only when cannot open drive's
+file for read-write" result in read-only image can't be used as backed
+image in qemu-img.
+
+Was Signed-off-by: Sheng Yang <sheng@linux.intel.com>
+Signed-off-by: Naphtali Sprei <nsprei@redhat.com>
+---
+ qemu-img.c |   15 ++++++++++-----
+ 1 files changed, 10 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-img.c |   15 ++++++++++-----
+ 1 files changed, 10 insertions(+), 5 deletions(-)
+
+diff --git a/qemu-img.c b/qemu-img.c
+index a5fcf2a..6b2d7ae 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -188,11 +188,13 @@ static int read_password(char *buf, int buf_size)
+ #endif
+ 
+ static BlockDriverState *bdrv_new_open(const char *filename,
+-                                       const char *fmt)
++                                       const char *fmt,
++                                       int readonly)
+ {
+     BlockDriverState *bs;
+     BlockDriver *drv;
+     char password[256];
++    int flags = BRDV_O_FLAGS;
+ 
+     bs = bdrv_new("");
+     if (!bs)
+@@ -204,7 +206,10 @@ static BlockDriverState *bdrv_new_open(const char *filename,
+     } else {
+         drv = NULL;
+     }
+-    if (bdrv_open2(bs, filename, BRDV_O_FLAGS | BDRV_O_RDWR, drv) < 0) {
++    if (!readonly) {
++        flags |= BDRV_O_RDWR;
++    }
++    if (bdrv_open2(bs, filename, flags, drv) < 0) {
+         error("Could not open '%s'", filename);
+     }
+     if (bdrv_is_encrypted(bs)) {
+@@ -343,7 +348,7 @@ static int img_create(int argc, char **argv)
+                 }
+             }
+ 
+-            bs = bdrv_new_open(backing_file->value.s, fmt);
++            bs = bdrv_new_open(backing_file->value.s, fmt, 1);
+             bdrv_get_geometry(bs, &size);
+             size *= 512;
+             bdrv_delete(bs);
+@@ -627,7 +632,7 @@ static int img_convert(int argc, char **argv)
+ 
+     total_sectors = 0;
+     for (bs_i = 0; bs_i < bs_n; bs_i++) {
+-        bs[bs_i] = bdrv_new_open(argv[optind + bs_i], fmt);
++        bs[bs_i] = bdrv_new_open(argv[optind + bs_i], fmt, 1);
+         if (!bs[bs_i])
+             error("Could not open '%s'", argv[optind + bs_i]);
+         bdrv_get_geometry(bs[bs_i], &bs_sectors);
+@@ -685,7 +690,7 @@ static int img_convert(int argc, char **argv)
+         }
+     }
+ 
+-    out_bs = bdrv_new_open(out_filename, out_fmt);
++    out_bs = bdrv_new_open(out_filename, out_fmt, 0);
+ 
+     bs_i = 0;
+     bs_offset = 0;
+-- 
+1.7.0.3
+

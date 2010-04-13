@@ -1,0 +1,51 @@
+From 86d88390055bab74f636b4cd4ed701b810253b53 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Wed, 7 Apr 2010 11:42:56 -0300
+Subject: [PATCH 18/21] qemu-io: Fix return value handling of bdrv_open
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1270640579-13548-3-git-send-email-kwolf@redhat.com>
+Patchwork-id: 8415
+O-Subject: [RHEL-6 KVM PATCH 2/5] qemu-io: Fix return value handling of bdrv_open
+Bugzilla: 579974
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Ryota Ozaki <ozaki.ryota@gmail.com>
+
+Bugzilla: 579974
+
+bdrv_open may return -errno so we have to check
+if the return value is '< 0', not '== -1'.
+
+Signed-off-by: Ryota Ozaki <ozaki.ryota@gmail.com>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit 06b611c48edb1bf0301c3e7fe49dec2b9feaaf89)
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ qemu-io.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-io.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-io.c b/qemu-io.c
+index 3609c66..9746950 100644
+--- a/qemu-io.c
++++ b/qemu-io.c
+@@ -1282,7 +1282,7 @@ static int openfile(char *name, int flags, int growable)
+ 		flags |= BDRV_O_FILE;
+ 	}
+ 
+-	if (bdrv_open(bs, name, flags) == -1) {
++	if (bdrv_open(bs, name, flags) < 0) {
+ 		fprintf(stderr, "%s: can't open device %s\n", progname, name);
+ 		bs = NULL;
+ 		return 1;
+-- 
+1.7.0.3
+

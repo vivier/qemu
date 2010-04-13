@@ -1,0 +1,83 @@
+From b0db2003f907e0dc62b0a13c6b3f3b0a1d681675 Mon Sep 17 00:00:00 2001
+From: Naphtali Sprei <nsprei@redhat.com>
+Date: Wed, 7 Apr 2010 16:44:22 -0300
+Subject: [PATCH 11/21] block: flush backing_hd in the right place
+
+RH-Author: Naphtali Sprei <nsprei@redhat.com>
+Message-id: <1270658667-14294-12-git-send-email-nsprei@redhat.com>
+Patchwork-id: 8445
+O-Subject: [RHEL6 kvm PATCH v3 rebase 11/16] block: flush backing_hd in the
+	right place
+Bugzilla: 537164
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Christoph Hellwig <hch@lst.de>
+
+The backing device is only modified from bdrv_commit.  So instead of
+flushing it every time bdrv_flush is called for the front-end device
+only flush it after we're written data to it in bdrv_commit.
+
+BZ: https://bugzilla.redhat.com/show_bug.cgi?id=537164
+upstream commit: 3f5075ae63b6dc1de9428d028a4d28fc98e7fdff
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Naphtali Sprei <nsprei@redhat.com>
+---
+ block.c |   17 +++++++----------
+ 1 files changed, 7 insertions(+), 10 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c |   17 +++++++----------
+ 1 files changed, 7 insertions(+), 10 deletions(-)
+
+diff --git a/block.c b/block.c
+index bed5b88..0675aef 100644
+--- a/block.c
++++ b/block.c
+@@ -605,6 +605,12 @@ int bdrv_commit(BlockDriverState *bs)
+     if (drv->bdrv_make_empty)
+ 	return drv->bdrv_make_empty(bs);
+ 
++    /*
++     * Make sure all data we wrote to the backing device is actually
++     * stable on disk.
++     */
++    if (bs->backing_hd)
++        bdrv_flush(bs->backing_hd);
+     return 0;
+ }
+ 
+@@ -1124,12 +1130,8 @@ const char *bdrv_get_device_name(BlockDriverState *bs)
+ 
+ void bdrv_flush(BlockDriverState *bs)
+ {
+-    if (!bs->drv)
+-        return;
+-    if (bs->drv->bdrv_flush)
++    if (bs->drv && bs->drv->bdrv_flush)
+         bs->drv->bdrv_flush(bs);
+-    if (bs->backing_hd)
+-        bdrv_flush(bs->backing_hd);
+ }
+ 
+ void bdrv_flush_all(void)
+@@ -1836,11 +1838,6 @@ BlockDriverAIOCB *bdrv_aio_flush(BlockDriverState *bs,
+ 
+     if (!drv)
+         return NULL;
+-
+-    /*
+-     * Note that unlike bdrv_flush the driver is reponsible for flushing a
+-     * backing image if it exists.
+-     */
+     return drv->bdrv_aio_flush(bs, cb, opaque);
+ }
+ 
+-- 
+1.7.0.3
+

@@ -1,0 +1,202 @@
+From ab2add35decbf3f5f0373f785a799ed879646c7c Mon Sep 17 00:00:00 2001
+From: Naphtali Sprei <nsprei@redhat.com>
+Date: Wed, 7 Apr 2010 16:44:24 -0300
+Subject: [PATCH 13/21] block: more read-only changes, related to backing files
+
+RH-Author: Naphtali Sprei <nsprei@redhat.com>
+Message-id: <1270658667-14294-14-git-send-email-nsprei@redhat.com>
+Patchwork-id: 8446
+O-Subject: [RHEL6 kvm PATCH v3 rebase 13/16] block: more read-only changes,
+	related to backing files
+Bugzilla: 537164
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Open backing file read-only where possible
+Upgrade backing file to read-write during commit, back to read-only after commit
+  If upgrade fail, back to read-only. If also fail, "disconnect" the drive.
+
+BZ: https://bugzilla.redhat.com/show_bug.cgi?id=537164
+upstream commit: 4dca4b639cb20fee38f6eec0a391aecc0ad8848d
+
+Signed-off-by: Naphtali Sprei <nsprei@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+ block.c     |   81 +++++++++++++++++++++++++++++++++++++++++++++++++++--------
+ block_int.h |    2 +
+ 2 files changed, 72 insertions(+), 11 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c     |   81 +++++++++++++++++++++++++++++++++++++++++++++++++++--------
+ block_int.h |    2 +
+ 2 files changed, 72 insertions(+), 11 deletions(-)
+
+diff --git a/block.c b/block.c
+index 9252184..9e76024 100644
+--- a/block.c
++++ b/block.c
+@@ -363,6 +363,7 @@ int bdrv_open2(BlockDriverState *bs, const char *filename, int flags,
+     bs->is_temporary = 0;
+     bs->encrypted = 0;
+     bs->valid_key = 0;
++    bs->open_flags = flags;
+     /* buffer_alignment defaulted to 512, drivers can change this value */
+     bs->buffer_alignment = 512;
+ 
+@@ -450,8 +451,6 @@ int bdrv_open2(BlockDriverState *bs, const char *filename, int flags,
+     if (flags & (BDRV_O_CACHE_WB|BDRV_O_NOCACHE))
+         bs->enable_write_cache = 1;
+ 
+-    bs->read_only = (flags & BDRV_O_RDWR) == 0;
+-
+     /*
+      * Clear flags that are internal to the block layer before opening the
+      * image.
+@@ -472,6 +471,7 @@ int bdrv_open2(BlockDriverState *bs, const char *filename, int flags,
+         goto free_and_fail;
+     }
+ 
++    bs->keep_read_only = bs->read_only = !(open_flags & BDRV_O_RDWR);
+     if (drv->bdrv_getlength) {
+         bs->total_sectors = bdrv_getlength(bs) >> BDRV_SECTOR_BITS;
+     }
+@@ -488,13 +488,22 @@ int bdrv_open2(BlockDriverState *bs, const char *filename, int flags,
+                      filename, bs->backing_file);
+         if (bs->backing_format[0] != '\0')
+             back_drv = bdrv_find_format(bs->backing_format);
++
++        /* backing files always opened read-only */
++        open_flags &= ~BDRV_O_RDWR;
++
+         ret = bdrv_open2(bs->backing_hd, backing_filename, open_flags,
+                          back_drv);
+-        bs->backing_hd->read_only =  (open_flags & BDRV_O_RDWR) == 0;
+         if (ret < 0) {
+             bdrv_close(bs);
+             return ret;
+         }
++        if (bs->is_temporary) {
++            bs->backing_hd->keep_read_only = !(flags & BDRV_O_RDWR);
++        } else {
++            /* base image inherits from "parent" */
++            bs->backing_hd->keep_read_only = bs->keep_read_only;
++        }
+     }
+ 
+     if (!bdrv_key_required(bs)) {
+@@ -570,19 +579,48 @@ int bdrv_commit(BlockDriverState *bs)
+ {
+     BlockDriver *drv = bs->drv;
+     int64_t i, total_sectors;
+-    int n, j;
+-    int ret = 0;
++    int n, j, ro, open_flags;
++    int ret = 0, rw_ret = 0;
+     unsigned char sector[512];
++    char filename[1024];
++    BlockDriverState *bs_rw, *bs_ro;
+ 
+     if (!drv)
+         return -ENOMEDIUM;
+ 
+-    if (bs->read_only) {
+-	return -EACCES;
++    if (!bs->backing_hd) {
++        return -ENOTSUP;
+     }
+ 
+-    if (!bs->backing_hd) {
+-	return -ENOTSUP;
++    if (bs->backing_hd->keep_read_only) {
++        return -EACCES;
++    }
++
++    ro = bs->backing_hd->read_only;
++    strncpy(filename, bs->backing_hd->filename, sizeof(filename));
++    open_flags =  bs->backing_hd->open_flags;
++
++    if (ro) {
++        /* re-open as RW */
++        bdrv_delete(bs->backing_hd);
++        bs->backing_hd = NULL;
++        bs_rw = bdrv_new("");
++        rw_ret = bdrv_open2(bs_rw, filename, open_flags | BDRV_O_RDWR, NULL);
++        if (rw_ret < 0) {
++            bdrv_delete(bs_rw);
++            /* try to re-open read-only */
++            bs_ro = bdrv_new("");
++            ret = bdrv_open2(bs_ro, filename, open_flags & ~BDRV_O_RDWR, NULL);
++            if (ret < 0) {
++                bdrv_delete(bs_ro);
++                /* drive not functional anymore */
++                bs->drv = NULL;
++                return ret;
++            }
++            bs->backing_hd = bs_ro;
++            return rw_ret;
++        }
++        bs->backing_hd = bs_rw;
+     }
+ 
+     total_sectors = bdrv_getlength(bs) >> BDRV_SECTOR_BITS;
+@@ -590,11 +628,13 @@ int bdrv_commit(BlockDriverState *bs)
+         if (drv->bdrv_is_allocated(bs, i, 65536, &n)) {
+             for(j = 0; j < n; j++) {
+                 if (bdrv_read(bs, i, sector, 1) != 0) {
+-                    return -EIO;
++                    ret = -EIO;
++                    goto ro_cleanup;
+                 }
+ 
+                 if (bdrv_write(bs->backing_hd, i, sector, 1) != 0) {
+-                    return -EIO;
++                    ret = -EIO;
++                    goto ro_cleanup;
+                 }
+                 i++;
+ 	    }
+@@ -614,6 +654,25 @@ int bdrv_commit(BlockDriverState *bs)
+      */
+     if (bs->backing_hd)
+         bdrv_flush(bs->backing_hd);
++
++ro_cleanup:
++
++    if (ro) {
++        /* re-open as RO */
++        bdrv_delete(bs->backing_hd);
++        bs->backing_hd = NULL;
++        bs_ro = bdrv_new("");
++        ret = bdrv_open2(bs_ro, filename, open_flags & ~BDRV_O_RDWR, NULL);
++        if (ret < 0) {
++            bdrv_delete(bs_ro);
++            /* drive not functional anymore */
++            bs->drv = NULL;
++            return ret;
++        }
++        bs->backing_hd = bs_ro;
++        bs->backing_hd->keep_read_only = 0;
++    }
++
+     return ret;
+ }
+ 
+diff --git a/block_int.h b/block_int.h
+index a0ebd90..93669da 100644
+--- a/block_int.h
++++ b/block_int.h
+@@ -130,6 +130,8 @@ struct BlockDriverState {
+     int64_t total_sectors; /* if we are reading a disk image, give its
+                               size in sectors */
+     int read_only; /* if true, the media is read only */
++    int keep_read_only; /* if true, the media was requested to stay read only */
++    int open_flags; /* flags used to open the file, re-used for re-open */
+     int removable; /* if true, the media can be removed */
+     int locked;    /* if true, the media cannot temporarily be ejected */
+     int encrypted; /* if true, the media is encrypted */
+-- 
+1.7.0.3
+

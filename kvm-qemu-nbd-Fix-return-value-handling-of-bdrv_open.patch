@@ -1,0 +1,52 @@
+From 6abc16f9af1c7bb827d9bee4694a61aeb52e5d46 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Wed, 7 Apr 2010 11:42:57 -0300
+Subject: [PATCH 19/21] qemu-nbd: Fix return value handling of bdrv_open
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1270640579-13548-4-git-send-email-kwolf@redhat.com>
+Patchwork-id: 8416
+O-Subject: [RHEL-6 KVM PATCH 3/5] qemu-nbd: Fix return value handling of
+	bdrv_open
+Bugzilla: 579974
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Ryota Ozaki <ozaki.ryota@gmail.com>
+
+Bugzilla: 579974
+
+bdrv_open may return -errno so we have to check
+if the return value is '< 0', not '== -1'.
+
+Signed-off-by: Ryota Ozaki <ozaki.ryota@gmail.com>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit a16c174c51e7cd896c701d5d0e8329e610e90ce1)
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ qemu-nbd.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-nbd.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-nbd.c b/qemu-nbd.c
+index 1870026..0e49706 100644
+--- a/qemu-nbd.c
++++ b/qemu-nbd.c
+@@ -332,7 +332,7 @@ int main(int argc, char **argv)
+     if (bs == NULL)
+         return 1;
+ 
+-    if (bdrv_open(bs, argv[optind], flags) == -1)
++    if (bdrv_open(bs, argv[optind], flags) < 0)
+         return 1;
+ 
+     fd_size = bs->total_sectors * 512;
+-- 
+1.7.0.3
+

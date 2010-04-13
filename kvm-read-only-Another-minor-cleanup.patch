@@ -1,0 +1,47 @@
+From f08be8c75470b10872c22c32452f3355343124f0 Mon Sep 17 00:00:00 2001
+From: Naphtali Sprei <nsprei@redhat.com>
+Date: Wed, 7 Apr 2010 16:44:26 -0300
+Subject: [PATCH 15/21] read-only: Another minor cleanup
+
+RH-Author: Naphtali Sprei <nsprei@redhat.com>
+Message-id: <1270658667-14294-16-git-send-email-nsprei@redhat.com>
+Patchwork-id: 8448
+O-Subject: [RHEL6 kvm PATCH v3 rebase 15/16] read-only: Another minor cleanup
+Bugzilla: 537164
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+BZ: https://bugzilla.redhat.com/show_bug.cgi?id=537164
+upstream commit: 0056dcc1146545e7c814db83b7b7b62e0c93ac68
+
+Don't rely on CDROM hint for read_only attribute
+
+Signed-off-by: Naphtali Sprei <nsprei@redhat.com>
+---
+ hw/scsi-disk.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/scsi-disk.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index 61e30ac..8c10061 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -590,8 +590,7 @@ static int scsi_disk_emulate_mode_sense(SCSIRequest *req, uint8_t *outbuf)
+ 
+     p[1] = 0; /* Default media type.  */
+     p[3] = 0; /* Block descriptor length.  */
+-    if (bdrv_get_type_hint(bdrv) == BDRV_TYPE_CDROM ||
+-        bdrv_is_read_only(bdrv)) {
++    if (bdrv_is_read_only(bdrv)) {
+         p[2] = 0x80; /* Readonly.  */
+     }
+     p += 4;
+-- 
+1.7.0.3
+

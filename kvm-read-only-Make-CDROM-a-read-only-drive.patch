@@ -1,0 +1,50 @@
+From 78533797abb430d12981c13d1137a674e99b004a Mon Sep 17 00:00:00 2001
+From: Naphtali Sprei <nsprei@redhat.com>
+Date: Wed, 7 Apr 2010 16:44:12 -0300
+Subject: [PATCH 01/21] read-only: Make CDROM a read-only drive
+
+RH-Author: Naphtali Sprei <nsprei@redhat.com>
+Message-id: <1270658667-14294-2-git-send-email-nsprei@redhat.com>
+Patchwork-id: 8435
+O-Subject: [RHEL6 kvm PATCH v3 rebase 01/16] read-only: Make CDROM a read-only
+	drive
+Bugzilla: 537164
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+BZ: https://bugzilla.redhat.com/show_bug.cgi?id=537164
+upstream commit: b196b1532f2981e9c811c96214a44ee9e7d12af3
+
+Signed-off-by: Naphtali Sprei <nsprei@redhat.com>
+---
+ vl.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vl.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index 0db6bf0..2c59082 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2519,6 +2519,13 @@ DriveInfo *drive_init(QemuOpts *opts, void *opaque,
+         }
+         (void)bdrv_set_read_only(dinfo->bdrv, 1);
+     }
++    /*
++     * cdrom is read-only. Set it now, after above interface checking
++     * since readonly attribute not explicitly required, so no error.
++     */
++    if (media == MEDIA_CDROM) {
++        (void)bdrv_set_read_only(dinfo->bdrv, 1);
++    }
+ 
+     if (bdrv_open2(dinfo->bdrv, file, bdrv_flags, drv) < 0) {
+         fprintf(stderr, "qemu: could not open disk image %s: %s\n",
+-- 
+1.7.0.3
+

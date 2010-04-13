@@ -1,0 +1,70 @@
+From 5691ef30745e490038efe463959d6d2358310f84 Mon Sep 17 00:00:00 2001
+From: Naphtali Sprei <nsprei@redhat.com>
+Date: Wed, 7 Apr 2010 16:44:18 -0300
+Subject: [PATCH 07/21] read-only: Read-only device changed to opens it's file for read-only.
+
+RH-Author: Naphtali Sprei <nsprei@redhat.com>
+Message-id: <1270658667-14294-8-git-send-email-nsprei@redhat.com>
+Patchwork-id: 8441
+O-Subject: [RHEL6 kvm PATCH v3 rebase 07/16] read-only: Read-only device changed
+	to opens it's file for read-only.
+Bugzilla: 537164
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+BZ: https://bugzilla.redhat.com/show_bug.cgi?id=537164
+upstream commit: 0a7fc983ceb21ee45a9ad4dbc9163394f8aa0fb6
+
+Signed-off-by: Naphtali Sprei <nsprei@redhat.com>
+---
+ block/bochs.c     |    6 ++----
+ block/parallels.c |    6 ++----
+ 2 files changed, 4 insertions(+), 8 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/bochs.c     |    6 ++----
+ block/parallels.c |    6 ++----
+ 2 files changed, 4 insertions(+), 8 deletions(-)
+
+diff --git a/block/bochs.c b/block/bochs.c
+index f6a18f2..53d4e21 100644
+--- a/block/bochs.c
++++ b/block/bochs.c
+@@ -116,11 +116,9 @@ static int bochs_open(BlockDriverState *bs, const char *filename, int flags)
+     struct bochs_header bochs;
+     struct bochs_header_v1 header_v1;
+ 
+-    fd = open(filename, O_RDWR | O_BINARY);
++    fd = open(filename, O_RDONLY | O_BINARY);
+     if (fd < 0) {
+-        fd = open(filename, O_RDONLY | O_BINARY);
+-        if (fd < 0)
+-            return -1;
++        return -1;
+     }
+ 
+     bs->read_only = 1; // no write support yet
+diff --git a/block/parallels.c b/block/parallels.c
+index 63b6738..41b3a7c 100644
+--- a/block/parallels.c
++++ b/block/parallels.c
+@@ -74,11 +74,9 @@ static int parallels_open(BlockDriverState *bs, const char *filename, int flags)
+     int fd, i;
+     struct parallels_header ph;
+ 
+-    fd = open(filename, O_RDWR | O_BINARY | O_LARGEFILE);
++    fd = open(filename, O_RDONLY | O_BINARY | O_LARGEFILE);
+     if (fd < 0) {
+-        fd = open(filename, O_RDONLY | O_BINARY | O_LARGEFILE);
+-        if (fd < 0)
+-            return -1;
++        return -1;
+     }
+ 
+     bs->read_only = 1; // no write support yet
+-- 
+1.7.0.3
+

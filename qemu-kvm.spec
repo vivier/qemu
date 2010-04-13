@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.37%{?dist}
+Release: 2.38%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -556,6 +556,48 @@ Patch1263: kvm-Restore-terminal-monitor-attributes-addition.patch
 Patch1264: kvm-balloon-Fix-overflow-when-reporting-actual-memory-si.patch
 # For bz#576544 - Error message doesn't contain the content of invalid keyword
 Patch1265: kvm-json-parser-Output-the-content-of-invalid-keyword.patch
+# For bz#537164 - -drive arg has no way to request a read only disk
+Patch1266: kvm-read-only-Make-CDROM-a-read-only-drive.patch
+# For bz#537164 - -drive arg has no way to request a read only disk
+Patch1267: kvm-read-only-BDRV_O_FLAGS-cleanup.patch
+# For bz#537164 - -drive arg has no way to request a read only disk
+Patch1268: kvm-read-only-Added-drives-readonly-option.patch
+# For bz#537164 - -drive arg has no way to request a read only disk
+Patch1269: kvm-read-only-Disable-fall-back-to-read-only.patch
+# For bz#537164 - -drive arg has no way to request a read only disk
+Patch1270: kvm-read-only-No-need-anymoe-for-bdrv_set_read_only.patch
+# For bz#537164 - -drive arg has no way to request a read only disk
+Patch1271: kvm-read_only-Ask-for-read-write-permissions-when-openin.patch
+# For bz#537164 - -drive arg has no way to request a read only disk
+Patch1272: kvm-read-only-Read-only-device-changed-to-opens-it-s-fil.patch
+# For bz#537164 - -drive arg has no way to request a read only disk
+Patch1273: kvm-read-only-qemu-img-Fix-qemu-img-can-t-create-qcow-im.patch
+# For bz#537164 - -drive arg has no way to request a read only disk
+Patch1274: kvm-block-clean-up-bdrv_open2-structure-a-bit.patch
+# For bz#537164 - -drive arg has no way to request a read only disk
+Patch1275: kvm-block-saner-flags-filtering-in-bdrv_open2.patch
+# For bz#537164 - -drive arg has no way to request a read only disk
+Patch1276: kvm-block-flush-backing_hd-in-the-right-place.patch
+# For bz#537164 - -drive arg has no way to request a read only disk
+Patch1277: kvm-block-fix-cache-flushing-in-bdrv_commit.patch
+# For bz#537164 - -drive arg has no way to request a read only disk
+Patch1278: kvm-block-more-read-only-changes-related-to-backing-file.patch
+# For bz#537164 - -drive arg has no way to request a read only disk
+Patch1279: kvm-read-only-minor-cleanup.patch
+# For bz#537164 - -drive arg has no way to request a read only disk
+Patch1280: kvm-read-only-Another-minor-cleanup.patch
+# For bz#537164 - -drive arg has no way to request a read only disk
+Patch1281: kvm-read-only-allow-read-only-CDROM-with-any-interface.patch
+# For bz#580028 - 'qemu-img re-base' broken on block devices
+Patch1282: kvm-qemu-img-rebase-Add-f-option.patch
+# For bz#579974 - Get segmentation fault when creating qcow2 format image on block device with "preallocation=metadata"
+Patch1283: kvm-qemu-io-Fix-return-value-handling-of-bdrv_open.patch
+# For bz#579974 - Get segmentation fault when creating qcow2 format image on block device with "preallocation=metadata"
+Patch1284: kvm-qemu-nbd-Fix-return-value-handling-of-bdrv_open.patch
+# For bz#579974 - Get segmentation fault when creating qcow2 format image on block device with "preallocation=metadata"
+Patch1285: kvm-qemu-img-Fix-error-message.patch
+# For bz#579974 - Get segmentation fault when creating qcow2 format image on block device with "preallocation=metadata"
+Patch1286: kvm-Replace-calls-of-old-bdrv_open.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -883,6 +925,27 @@ such as kvmtrace and kvm_stat.
 %patch1263 -p1
 %patch1264 -p1
 %patch1265 -p1
+%patch1266 -p1
+%patch1267 -p1
+%patch1268 -p1
+%patch1269 -p1
+%patch1270 -p1
+%patch1271 -p1
+%patch1272 -p1
+%patch1273 -p1
+%patch1274 -p1
+%patch1275 -p1
+%patch1276 -p1
+%patch1277 -p1
+%patch1278 -p1
+%patch1279 -p1
+%patch1280 -p1
+%patch1281 -p1
+%patch1282 -p1
+%patch1283 -p1
+%patch1284 -p1
+%patch1285 -p1
+%patch1286 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1078,6 +1141,35 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Apr 13 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.38.el6
+- kvm-read-only-Make-CDROM-a-read-only-drive.patch [bz#537164]
+- kvm-read-only-BDRV_O_FLAGS-cleanup.patch [bz#537164]
+- kvm-read-only-Added-drives-readonly-option.patch [bz#537164]
+- kvm-read-only-Disable-fall-back-to-read-only.patch [bz#537164]
+- kvm-read-only-No-need-anymoe-for-bdrv_set_read_only.patch [bz#537164]
+- kvm-read_only-Ask-for-read-write-permissions-when-openin.patch [bz#537164]
+- kvm-read-only-Read-only-device-changed-to-opens-it-s-fil.patch [bz#537164]
+- kvm-read-only-qemu-img-Fix-qemu-img-can-t-create-qcow-im.patch [bz#537164]
+- kvm-block-clean-up-bdrv_open2-structure-a-bit.patch [bz#537164]
+- kvm-block-saner-flags-filtering-in-bdrv_open2.patch [bz#537164]
+- kvm-block-flush-backing_hd-in-the-right-place.patch [bz#537164]
+- kvm-block-fix-cache-flushing-in-bdrv_commit.patch [bz#537164]
+- kvm-block-more-read-only-changes-related-to-backing-file.patch [bz#537164]
+- kvm-read-only-minor-cleanup.patch [bz#537164]
+- kvm-read-only-Another-minor-cleanup.patch [bz#537164]
+- kvm-read-only-allow-read-only-CDROM-with-any-interface.patch [bz#537164]
+- kvm-qemu-img-rebase-Add-f-option.patch [bz#580028]
+- kvm-qemu-io-Fix-return-value-handling-of-bdrv_open.patch [bz#579974]
+- kvm-qemu-nbd-Fix-return-value-handling-of-bdrv_open.patch [bz#579974]
+- kvm-qemu-img-Fix-error-message.patch [bz#579974]
+- kvm-Replace-calls-of-old-bdrv_open.patch [bz#579974]
+- Resolves: bz#537164
+  (-drive arg has no way to request a read only disk)
+- Resolves: bz#579974
+  (Get segmentation fault when creating qcow2 format image on block device with "preallocation=metadata")
+- Resolves: bz#580028
+  ('qemu-img re-base' broken on block devices)
+
 * Mon Apr 12 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.37.el6
 - kvm-balloon-Fix-overflow-when-reporting-actual-memory-si.patch [bz#578912]
 - kvm-json-parser-Output-the-content-of-invalid-keyword.patch [bz#576544]
