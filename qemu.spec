@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.12.3
-Release: 4%{?dist}
+Release: 5%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -85,6 +85,7 @@ Patch48: 0048-virtio-serial-pci-Allow-MSI-to-be-disabled.patch
 Patch49: 0049-migration-Clear-fd-also-in-error-cases.patch
 Patch50: 0050-raw-posix-Detect-CDROM-via-ioctl-on-linux.patch
 Patch51: 0051-usb-linux-increase-buffer-for-USB-control-requests.patch
+Patch52: 0052-virtio-console-patches.patch
 
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -328,6 +329,7 @@ such as kvmtrace and kvm_stat.
 %patch49 -p1
 %patch50 -p1
 %patch51 -p1
+%patch52 -p1
 
 %build
 # By default we build everything, but allow x86 to build a minimal version
@@ -630,6 +632,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Apr 15 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.3-5
+- Update virtio console patches from upstream
+
 * Mon Mar 11 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.3-4
 - Detect cdrom via ioctl (#473154)
 - re add increased buffer for USB control requests (#546483)
