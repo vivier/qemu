@@ -1,0 +1,105 @@
+From 1169cfc395ef9ef20dce19bf21dc312d68d42a54 Mon Sep 17 00:00:00 2001
+From: Christoph Hellwig <chellwig@redhat.com>
+Date: Mon, 22 Mar 2010 09:50:10 -0300
+Subject: [PATCH 4/6] scsi: add topology support
+
+RH-Author: Christoph Hellwig <chellwig@redhat.com>
+Message-id: <1269251411-23419-4-git-send-email-chellwig@redhat.com>
+Patchwork-id: 7952
+O-Subject: [RHEL6 qemu PATCH 4/5] scsi: add topology support
+Bugzilla: 564101
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Naphtali Sprei <nsprei@redhat.com>
+
+From: Christoph Hellwig <hch@lst.de>
+
+Export the physical block size in the READ CAPACITY (16) command,
+and add the new block limits VPD page to export the minimum and
+optiomal I/O sizes.
+
+Note that we also need to bump the scsi revision level to SPC-2
+as that is the minimum requirement by at least the Linux kernel
+to try READ CAPACITY (16) first and look at the block limits VPD
+page.
+
+upstream commit ee3659e38580c64f7df74984ef09a2742958c8ab
+BZ: https://bugzilla.redhat.com/show_bug.cgi?id=564101
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+ hw/scsi-disk.c |   28 ++++++++++++++++++++++++++--
+ 1 files changed, 26 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/scsi-disk.c |   28 ++++++++++++++++++++++++++--
+ 1 files changed, 26 insertions(+), 2 deletions(-)
+
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index bf8f796..da586dd 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -349,10 +349,11 @@ static int scsi_disk_emulate_inquiry(SCSIRequest *req, uint8_t *outbuf)
+         case 0x00: /* Supported page codes, mandatory */
+             DPRINTF("Inquiry EVPD[Supported pages] "
+                     "buffer size %zd\n", req->cmd.xfer);
+-            outbuf[buflen++] = 3;    // number of pages
++            outbuf[buflen++] = 4;    // number of pages
+             outbuf[buflen++] = 0x00; // list of supported pages (this page)
+             outbuf[buflen++] = 0x80; // unit serial number
+             outbuf[buflen++] = 0x83; // device identification
++            outbuf[buflen++] = 0xb0; // block device characteristics
+             break;
+ 
+         case 0x80: /* Device serial number, optional */
+@@ -394,6 +395,27 @@ static int scsi_disk_emulate_inquiry(SCSIRequest *req, uint8_t *outbuf)
+             buflen += id_len;
+             break;
+         }
++        case 0xb0: /* block device characteristics */
++        {
++            unsigned int min_io_size = s->qdev.conf.min_io_size >> 9;
++            unsigned int opt_io_size = s->qdev.conf.opt_io_size >> 9;
++
++            /* required VPD size with unmap support */
++            outbuf[3] = buflen = 0x3c;
++
++            memset(outbuf + 4, 0, buflen - 4);
++
++            /* optimal transfer length granularity */
++            outbuf[6] = (min_io_size >> 8) & 0xff;
++            outbuf[7] = min_io_size & 0xff;
++
++            /* optimal transfer length */
++            outbuf[12] = (opt_io_size >> 24) & 0xff;
++            outbuf[13] = (opt_io_size >> 16) & 0xff;
++            outbuf[14] = (opt_io_size >> 8) & 0xff;
++            outbuf[15] = opt_io_size & 0xff;
++            break;
++        }
+         default:
+             BADF("Error: unsupported Inquiry (EVPD[%02X]) "
+                  "buffer size %zd\n", page_code, req->cmd.xfer);
+@@ -442,7 +464,7 @@ static int scsi_disk_emulate_inquiry(SCSIRequest *req, uint8_t *outbuf)
+            MIN(4, strlen(s->version ? s->version : QEMU_VERSION)));
+     /* Identify device as SCSI-3 rev 1.
+        Some later commands are also implemented. */
+-    outbuf[2] = 3;
++    outbuf[2] = 5;
+     outbuf[3] = 2; /* Format 2 */
+ 
+     if (buflen > 36) {
+@@ -795,6 +817,8 @@ static int scsi_disk_emulate_command(SCSIRequest *req, uint8_t *outbuf)
+             outbuf[9] = 0;
+             outbuf[10] = s->cluster_size * 2;
+             outbuf[11] = 0;
++            outbuf[12] = 0;
++            outbuf[13] = get_physical_block_exp(&s->qdev.conf);
+             /* Protection, exponent and lowest lba field left blank. */
+             buflen = req->cmd.xfer;
+             break;
+-- 
+1.7.0.3
+

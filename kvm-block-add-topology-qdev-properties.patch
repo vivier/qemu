@@ -1,0 +1,841 @@
+From 3a5d3e026a72dc9cefa6e98908cb946fb29232d8 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Tue, 13 Apr 2010 20:20:54 -0300
+Subject: [PATCH 2/6] block: add topology qdev properties
+
+RH-Author: Eduardo Habkost <ehabkost@redhat.com>
+Message-id: <20100413202054.GN19640@blackpad.lan.raisama.net>
+Patchwork-id: 8597
+O-Subject: [RHEL6 qemu PATCH 2/5 v3] block: add topology qdev properties
+Bugzilla: 564101
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Naphtali Sprei <nsprei@redhat.com>
+
+On Tue, Apr 13, 2010 at 08:41:51PM +0200, Juan Quintela wrote:
+<snip>
+>
+> Acked-by: Juan Quintela <quintela@redhat.com>
+>
+> Just to make Eduardo scripts life easier :)  patch is identical to v1,
+> except that vm_stop(0) moved one line before and then fails the direct apply.
+
+Bad news: just to make things worse, the patch doesn't apply on
+rhel6/master anymore and needed to be rebased again.
+
+If you want to avoid rebasing your patch when new patches enter the
+master branch, I recommend you to use rhel6/next as base, instead of
+rhel6/master.
+
+Rebased patch is below. Please ACK.
+
+The only difference from the previous version is at hw/scsi-disk.c.
+'diff old.patch new.patch' below:
+
+   -@@ -590,13 +588,13 @@
+   +@@ -590,12 +588,12 @@
+
+         p[1] = 0; /* Default media type.  */
+         p[3] = 0; /* Block descriptor length.  */
+   --    if (bdrv_get_type_hint(bdrv) == BDRV_TYPE_CDROM ||
+   --        bdrv_is_read_only(bdrv)) {
+   -+    if (bdrv_get_type_hint(s->bs) == BDRV_TYPE_CDROM ||
+   -+        bdrv_is_read_only(s->bs)) {
+   +-    if (bdrv_is_read_only(bdrv)) {
+   ++    if (bdrv_is_read_only(s->bs)) {
+             p[2] = 0x80; /* Readonly.  */
+         }
+         p += 4;
+
+------------------
+From: Christoph Hellwig <hch@lst.de>
+
+Add three new qdev properties to export block topology information to
+the guest.  This is needed to get optimal I/O alignment for RAID arrays
+or SSDs.
+
+The options are:
+
+ - physical_block_size to specify the physical block size of the device,
+   this is going to increase from 512 bytes to 4096 kilobytes for many
+   modern storage devices
+ - min_io_size to specify the minimal I/O size without performance impact,
+   this is typically set to the RAID chunk size for arrays.
+ - opt_io_size to specify the optimal sustained I/O size, this is
+   typically the RAID stripe width for arrays.
+
+I decided to not auto-probe these values from blkid which might easily
+be possible as I don't know how to deal with these issues on migration.
+
+Note that we specificly only set the physical_block_size, and not the
+logial one which is the unit all I/O is described in.  The reason for
+that is that IDE does not support increasing the logical block size and
+at last for now I want to stick to one meachnisms in queue and allow
+for easy switching of transports for a given backing image which would
+not be possible if scsi and virtio use real 4k sectors, while ide only
+uses the physical block exponent.
+
+To make this more common for the different block drivers introduce a
+new BlockConf structure holding all common block properties and a
+DEFINE_BLOCK_PROPERTIES macro to add them all together, mirroring
+what is done for network drivers.  Also switch over all block drivers
+to use it, except for the floppy driver which has weird driveA/driveB
+properties and probably won't require any advanced block options ever.
+
+Example usage for a virtio device with 4k physical block size and
+8k optimal I/O size:
+
+  -drive file=scratch.img,media=disk,cache=none,id=scratch \
+  -device virtio-blk-pci,drive=scratch,physical_block_size=4096,opt_io_size=8192
+
+aliguori: updated patch to take into account BLOCK events
+
+upstream commit 428c149b0be790b440e1cbee185b152cdb22feec
+BZ: https://bugzilla.redhat.com/show_bug.cgi?id=564101
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block_int.h          |   27 ++++++++++++++++++++
+ hw/ide/core.c        |   10 +++++--
+ hw/ide/internal.h    |    7 +++-
+ hw/ide/qdev.c        |    7 +++--
+ hw/s390-virtio-bus.c |    4 +-
+ hw/s390-virtio-bus.h |    2 +-
+ hw/scsi-disk.c       |   67 ++++++++++++++++++++++++--------------------------
+ hw/scsi-generic.c    |   24 +++++++++--------
+ hw/scsi.h            |    3 +-
+ hw/usb-msd.c         |   12 ++++----
+ hw/virtio-blk.c      |    4 +-
+ hw/virtio-pci.c      |   11 ++++---
+ hw/virtio.h          |    3 +-
+ 13 files changed, 109 insertions(+), 72 deletions(-)
+
+diff --git a/block_int.h b/block_int.h
+index 93669da..7d3c78f 100644
+--- a/block_int.h
++++ b/block_int.h
+@@ -203,4 +203,31 @@ extern BlockDriverState *bdrv_first;
+ int is_windows_drive(const char *filename);
+ #endif
+ 
++struct DriveInfo;
++
++typedef struct BlockConf {
++    struct DriveInfo *dinfo;
++    uint16_t physical_block_size;
++    uint16_t min_io_size;
++    uint32_t opt_io_size;
++} BlockConf;
++
++static inline unsigned int get_physical_block_exp(BlockConf *conf)
++{
++    unsigned int exp = 0, size;
++
++    for (size = conf->physical_block_size; size > 512; size >>= 1) {
++        exp++;
++    }
++
++    return exp;
++}
++
++#define DEFINE_BLOCK_PROPERTIES(_state, _conf)                          \
++    DEFINE_PROP_DRIVE("drive", _state, _conf.dinfo),                    \
++    DEFINE_PROP_UINT16("physical_block_size", _state,                   \
++                       _conf.physical_block_size, 512),                 \
++    DEFINE_PROP_UINT16("min_io_size", _state, _conf.min_io_size, 512),  \
++    DEFINE_PROP_UINT32("opt_io_size", _state, _conf.opt_io_size, 512)
++
+ #endif /* BLOCK_INT_H */
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 8b9db81..15532aa 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -2594,7 +2594,8 @@ void ide_bus_reset(IDEBus *bus)
+     ide_clear_hob(bus);
+ }
+ 
+-void ide_init_drive(IDEState *s, DriveInfo *dinfo, const char *version)
++void ide_init_drive(IDEState *s, DriveInfo *dinfo, BlockConf *conf,
++        const char *version)
+ {
+     int cylinders, heads, secs;
+     uint64_t nb_sectors;
+@@ -2619,6 +2620,9 @@ void ide_init_drive(IDEState *s, DriveInfo *dinfo, const char *version)
+         }
+         strncpy(s->drive_serial_str, drive_get_serial(s->bs),
+                 sizeof(s->drive_serial_str));
++        if (conf) {
++            s->conf = conf;
++        }
+     }
+     if (strlen(s->drive_serial_str) == 0)
+         snprintf(s->drive_serial_str, sizeof(s->drive_serial_str),
+@@ -2649,9 +2653,9 @@ void ide_init2(IDEBus *bus, DriveInfo *hd0, DriveInfo *hd1,
+         s->sector_write_timer = qemu_new_timer(vm_clock,
+                                                ide_sector_write_timer_cb, s);
+         if (i == 0)
+-            ide_init_drive(s, hd0, NULL);
++            ide_init_drive(s, hd0, NULL, NULL);
+         if (i == 1)
+-            ide_init_drive(s, hd1, NULL);
++            ide_init_drive(s, hd1, NULL, NULL);
+     }
+     bus->irq = irq;
+ }
+diff --git a/hw/ide/internal.h b/hw/ide/internal.h
+index 8869a08..2efc784 100644
+--- a/hw/ide/internal.h
++++ b/hw/ide/internal.h
+@@ -7,6 +7,7 @@
+  * non-internal declarations are in hw/ide.h
+  */
+ #include <hw/ide.h>
++#include "block_int.h"
+ 
+ /* debug IDE devices */
+ //#define DEBUG_IDE
+@@ -397,6 +398,7 @@ struct IDEState {
+     /* set for lba48 access */
+     uint8_t lba48;
+     BlockDriverState *bs;
++    BlockConf *conf;
+     char version[9];
+     /* ATAPI specific */
+     uint8_t sense_key;
+@@ -454,7 +456,7 @@ struct IDEBus {
+ struct IDEDevice {
+     DeviceState qdev;
+     uint32_t unit;
+-    DriveInfo *dinfo;
++    BlockConf conf;
+     char *version;
+ };
+ 
+@@ -555,7 +557,8 @@ uint32_t ide_data_readw(void *opaque, uint32_t addr);
+ void ide_data_writel(void *opaque, uint32_t addr, uint32_t val);
+ uint32_t ide_data_readl(void *opaque, uint32_t addr);
+ 
+-void ide_init_drive(IDEState *s, DriveInfo *dinfo, const char *version);
++void ide_init_drive(IDEState *s, DriveInfo *dinfo, BlockConf *conf,
++    const char *version);
+ void ide_init2(IDEBus *bus, DriveInfo *hd0, DriveInfo *hd1,
+                qemu_irq irq);
+ void ide_init_ioport(IDEBus *bus, int iobase, int iobase2);
+diff --git a/hw/ide/qdev.c b/hw/ide/qdev.c
+index 0b84a4f..b18693d 100644
+--- a/hw/ide/qdev.c
++++ b/hw/ide/qdev.c
+@@ -40,7 +40,7 @@ static int ide_qdev_init(DeviceState *qdev, DeviceInfo *base)
+     IDEDeviceInfo *info = DO_UPCAST(IDEDeviceInfo, qdev, base);
+     IDEBus *bus = DO_UPCAST(IDEBus, qbus, qdev->parent_bus);
+ 
+-    if (!dev->dinfo) {
++    if (!dev->conf.dinfo) {
+         fprintf(stderr, "%s: no drive specified\n", qdev->info->name);
+         goto err;
+     }
+@@ -99,7 +99,8 @@ typedef struct IDEDrive {
+ static int ide_drive_initfn(IDEDevice *dev)
+ {
+     IDEBus *bus = DO_UPCAST(IDEBus, qbus, dev->qdev.parent_bus);
+-    ide_init_drive(bus->ifs + dev->unit, dev->dinfo, dev->version);
++    ide_init_drive(bus->ifs + dev->unit, dev->conf.dinfo, &dev->conf,
++                   dev->version);
+     return 0;
+ }
+ 
+@@ -109,7 +110,7 @@ static IDEDeviceInfo ide_drive_info = {
+     .init       = ide_drive_initfn,
+     .qdev.props = (Property[]) {
+         DEFINE_PROP_UINT32("unit", IDEDrive, dev.unit, -1),
+-        DEFINE_PROP_DRIVE("drive", IDEDrive, dev.dinfo),
++        DEFINE_BLOCK_PROPERTIES(IDEDrive, dev.conf),
+         DEFINE_PROP_STRING("ver",  IDEDrive, dev.version),
+         DEFINE_PROP_END_OF_LIST(),
+     }
+diff --git a/hw/s390-virtio-bus.c b/hw/s390-virtio-bus.c
+index 706c913..6f93d67 100644
+--- a/hw/s390-virtio-bus.c
++++ b/hw/s390-virtio-bus.c
+@@ -123,7 +123,7 @@ static int s390_virtio_blk_init(VirtIOS390Device *dev)
+ {
+     VirtIODevice *vdev;
+ 
+-    vdev = virtio_blk_init((DeviceState *)dev, dev->dinfo);
++    vdev = virtio_blk_init((DeviceState *)dev, dev->block.dinfo);
+     if (!vdev) {
+         return -1;
+     }
+@@ -337,7 +337,7 @@ static VirtIOS390DeviceInfo s390_virtio_blk = {
+     .qdev.name = "virtio-blk-s390",
+     .qdev.size = sizeof(VirtIOS390Device),
+     .qdev.props = (Property[]) {
+-        DEFINE_PROP_DRIVE("drive", VirtIOS390Device, dinfo),
++        DEFINE_BLOCK_PROPERTIES(VirtIOS390Device, block),
+         DEFINE_PROP_END_OF_LIST(),
+     },
+ };
+diff --git a/hw/s390-virtio-bus.h b/hw/s390-virtio-bus.h
+index 8e4763a..0ea8f54 100644
+--- a/hw/s390-virtio-bus.h
++++ b/hw/s390-virtio-bus.h
+@@ -38,7 +38,7 @@ typedef struct VirtIOS390Device {
+     ram_addr_t feat_offs;
+     uint8_t feat_len;
+     VirtIODevice *vdev;
+-    DriveInfo *dinfo;
++    BlockConf block;
+     NICConf nic;
+     uint32_t host_features;
+     /* Max. number of ports we can have for a the virtio-serial device */
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index 8c10061..bf8f796 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -60,6 +60,7 @@ typedef struct SCSIDiskReq {
+ struct SCSIDiskState
+ {
+     SCSIDevice qdev;
++    BlockDriverState *bs;
+     /* The qemu block layer uses a fixed 512 byte sector size.
+        This is the number of 512 byte blocks in a single scsi sector.  */
+     int cluster_size;
+@@ -168,7 +169,7 @@ static void scsi_read_data(SCSIDevice *d, uint32_t tag)
+ 
+     r->iov.iov_len = n * 512;
+     qemu_iovec_init_external(&r->qiov, &r->iov, 1);
+-    r->req.aiocb = bdrv_aio_readv(s->qdev.dinfo->bdrv, r->sector, &r->qiov, n,
++    r->req.aiocb = bdrv_aio_readv(s->bs, r->sector, &r->qiov, n,
+                               scsi_read_complete, r);
+     if (r->req.aiocb == NULL)
+         scsi_command_complete(r, CHECK_CONDITION, HARDWARE_ERROR);
+@@ -179,23 +180,22 @@ static void scsi_read_data(SCSIDevice *d, uint32_t tag)
+ static int scsi_handle_write_error(SCSIDiskReq *r, int error)
+ {
+     SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, r->req.dev);
+-    BlockInterfaceErrorAction action =
+-        drive_get_on_error(s->qdev.dinfo->bdrv, 0);
++    BlockInterfaceErrorAction action = drive_get_on_error(s->bs, 0);
+ 
+     if (action == BLOCK_ERR_IGNORE) {
+-        bdrv_mon_event(s->qdev.dinfo->bdrv, BDRV_ACTION_IGNORE, 0);
++        bdrv_mon_event(s->bs, BDRV_ACTION_IGNORE, 0);
+         return 0;
+     }
+ 
+     if ((error == ENOSPC && action == BLOCK_ERR_STOP_ENOSPC)
+             || action == BLOCK_ERR_STOP_ANY) {
+         r->status |= SCSI_REQ_STATUS_RETRY;
+-        bdrv_mon_event(s->qdev.dinfo->bdrv, BDRV_ACTION_STOP, 0);
++        bdrv_mon_event(s->bs, BDRV_ACTION_STOP, 0);
+         vm_stop(0);
+     } else {
+         scsi_command_complete(r, CHECK_CONDITION,
+                 HARDWARE_ERROR);
+-        bdrv_mon_event(s->qdev.dinfo->bdrv, BDRV_ACTION_REPORT, 0);
++        bdrv_mon_event(s->bs, BDRV_ACTION_REPORT, 0);
+     }
+ 
+     return 1;
+@@ -238,7 +238,7 @@ static void scsi_write_request(SCSIDiskReq *r)
+     n = r->iov.iov_len / 512;
+     if (n) {
+         qemu_iovec_init_external(&r->qiov, &r->iov, 1);
+-        r->req.aiocb = bdrv_aio_writev(s->qdev.dinfo->bdrv, r->sector, &r->qiov, n,
++        r->req.aiocb = bdrv_aio_writev(s->bs, r->sector, &r->qiov, n,
+                                    scsi_write_complete, r);
+         if (r->req.aiocb == NULL)
+             scsi_command_complete(r, CHECK_CONDITION,
+@@ -319,7 +319,6 @@ static uint8_t *scsi_get_buf(SCSIDevice *d, uint32_t tag)
+ 
+ static int scsi_disk_emulate_inquiry(SCSIRequest *req, uint8_t *outbuf)
+ {
+-    BlockDriverState *bdrv = req->dev->dinfo->bdrv;
+     SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, req->dev);
+     int buflen = 0;
+ 
+@@ -338,7 +337,7 @@ static int scsi_disk_emulate_inquiry(SCSIRequest *req, uint8_t *outbuf)
+             return -1;
+         }
+ 
+-        if (bdrv_get_type_hint(bdrv) == BDRV_TYPE_CDROM) {
++        if (bdrv_get_type_hint(s->bs) == BDRV_TYPE_CDROM) {
+             outbuf[buflen++] = 5;
+         } else {
+             outbuf[buflen++] = 0;
+@@ -358,8 +357,8 @@ static int scsi_disk_emulate_inquiry(SCSIRequest *req, uint8_t *outbuf)
+ 
+         case 0x80: /* Device serial number, optional */
+         {
+-            const char *serial = req->dev->dinfo->serial ?
+-                req->dev->dinfo->serial : "0";
++            const char *serial = req->dev->conf.dinfo->serial ?
++                req->dev->conf.dinfo->serial : "0";
+             int l = strlen(serial);
+ 
+             if (l > req->cmd.xfer)
+@@ -378,7 +377,7 @@ static int scsi_disk_emulate_inquiry(SCSIRequest *req, uint8_t *outbuf)
+         case 0x83: /* Device identification page, mandatory */
+         {
+             int max_len = 255 - 8;
+-            int id_len = strlen(bdrv_get_device_name(bdrv));
++            int id_len = strlen(bdrv_get_device_name(s->bs));
+ 
+             if (id_len > max_len)
+                 id_len = max_len;
+@@ -391,7 +390,7 @@ static int scsi_disk_emulate_inquiry(SCSIRequest *req, uint8_t *outbuf)
+             outbuf[buflen++] = 0;   // reserved
+             outbuf[buflen++] = id_len; // length of data following
+ 
+-            memcpy(outbuf+buflen, bdrv_get_device_name(bdrv), id_len);
++            memcpy(outbuf+buflen, bdrv_get_device_name(s->bs), id_len);
+             buflen += id_len;
+             break;
+         }
+@@ -429,7 +428,7 @@ static int scsi_disk_emulate_inquiry(SCSIRequest *req, uint8_t *outbuf)
+         return buflen;
+     }
+ 
+-    if (bdrv_get_type_hint(bdrv) == BDRV_TYPE_CDROM) {
++    if (bdrv_get_type_hint(s->bs) == BDRV_TYPE_CDROM) {
+         outbuf[0] = 5;
+         outbuf[1] = 0x80;
+         memcpy(&outbuf[16], "QEMU CD-ROM     ", 16);
+@@ -462,7 +461,7 @@ static int scsi_disk_emulate_inquiry(SCSIRequest *req, uint8_t *outbuf)
+ static int mode_sense_page(SCSIRequest *req, int page, uint8_t *p)
+ {
+     SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, req->dev);
+-    BlockDriverState *bdrv = req->dev->dinfo->bdrv;
++    BlockDriverState *bdrv = s->bs;
+     int cylinders, heads, secs;
+ 
+     switch (page) {
+@@ -534,7 +533,7 @@ static int mode_sense_page(SCSIRequest *req, int page, uint8_t *p)
+     case 8: /* Caching page.  */
+         p[0] = 8;
+         p[1] = 0x12;
+-        if (bdrv_enable_write_cache(s->qdev.dinfo->bdrv)) {
++        if (bdrv_enable_write_cache(s->bs)) {
+             p[2] = 4; /* WCE */
+         }
+         return 20;
+@@ -551,7 +550,7 @@ static int mode_sense_page(SCSIRequest *req, int page, uint8_t *p)
+         p[5] = 0xff; /* CD DA, DA accurate, RW supported,
+                         RW corrected, C2 errors, ISRC,
+                         UPC, Bar code */
+-        p[6] = 0x2d | (bdrv_is_locked(s->qdev.dinfo->bdrv)? 2 : 0);
++        p[6] = 0x2d | (bdrv_is_locked(s->bs)? 2 : 0);
+         /* Locking supported, jumper present, eject, tray */
+         p[7] = 0; /* no volume & mute control, no
+                      changer */
+@@ -577,7 +576,6 @@ static int mode_sense_page(SCSIRequest *req, int page, uint8_t *p)
+ static int scsi_disk_emulate_mode_sense(SCSIRequest *req, uint8_t *outbuf)
+ {
+     SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, req->dev);
+-    BlockDriverState *bdrv = req->dev->dinfo->bdrv;
+     uint64_t nb_sectors;
+     int page, dbd, buflen;
+     uint8_t *p;
+@@ -590,12 +588,12 @@ static int scsi_disk_emulate_mode_sense(SCSIRequest *req, uint8_t *outbuf)
+ 
+     p[1] = 0; /* Default media type.  */
+     p[3] = 0; /* Block descriptor length.  */
+-    if (bdrv_is_read_only(bdrv)) {
++    if (bdrv_is_read_only(s->bs)) {
+         p[2] = 0x80; /* Readonly.  */
+     }
+     p += 4;
+ 
+-    bdrv_get_geometry(bdrv, &nb_sectors);
++    bdrv_get_geometry(s->bs, &nb_sectors);
+     if ((~dbd) & nb_sectors) {
+         outbuf[3] = 8; /* Block descriptor length  */
+         nb_sectors /= s->cluster_size;
+@@ -636,14 +634,13 @@ static int scsi_disk_emulate_mode_sense(SCSIRequest *req, uint8_t *outbuf)
+ static int scsi_disk_emulate_read_toc(SCSIRequest *req, uint8_t *outbuf)
+ {
+     SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, req->dev);
+-    BlockDriverState *bdrv = req->dev->dinfo->bdrv;
+     int start_track, format, msf, toclen;
+     uint64_t nb_sectors;
+ 
+     msf = req->cmd.buf[1] & 2;
+     format = req->cmd.buf[2] & 0xf;
+     start_track = req->cmd.buf[6];
+-    bdrv_get_geometry(bdrv, &nb_sectors);
++    bdrv_get_geometry(s->bs, &nb_sectors);
+     DPRINTF("Read TOC (track %d format %d msf %d)\n", start_track, format, msf >> 1);
+     nb_sectors /= s->cluster_size;
+     switch (format) {
+@@ -672,13 +669,12 @@ static int scsi_disk_emulate_read_toc(SCSIRequest *req, uint8_t *outbuf)
+ static int scsi_disk_emulate_command(SCSIRequest *req, uint8_t *outbuf)
+ {
+     SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, req->dev);
+-    BlockDriverState *bdrv = req->dev->dinfo->bdrv;
+     uint64_t nb_sectors;
+     int buflen = 0;
+ 
+     switch (req->cmd.buf[0]) {
+     case TEST_UNIT_READY:
+-        if (!bdrv_is_inserted(bdrv))
++        if (!bdrv_is_inserted(s->bs))
+             goto not_ready;
+ 	break;
+     case REQUEST_SENSE:
+@@ -732,18 +728,18 @@ static int scsi_disk_emulate_command(SCSIRequest *req, uint8_t *outbuf)
+             goto illegal_request;
+         break;
+     case START_STOP:
+-        if (bdrv_get_type_hint(bdrv) == BDRV_TYPE_CDROM && (req->cmd.buf[4] & 2)) {
++        if (bdrv_get_type_hint(s->bs) == BDRV_TYPE_CDROM && (req->cmd.buf[4] & 2)) {
+             /* load/eject medium */
+-            bdrv_eject(bdrv, !(req->cmd.buf[4] & 1));
++            bdrv_eject(s->bs, !(req->cmd.buf[4] & 1));
+         }
+ 	break;
+     case ALLOW_MEDIUM_REMOVAL:
+-        bdrv_set_locked(bdrv, req->cmd.buf[4] & 1);
++        bdrv_set_locked(s->bs, req->cmd.buf[4] & 1);
+ 	break;
+     case READ_CAPACITY:
+         /* The normal LEN field for this command is zero.  */
+ 	memset(outbuf, 0, 8);
+-	bdrv_get_geometry(bdrv, &nb_sectors);
++	bdrv_get_geometry(s->bs, &nb_sectors);
+         if (!nb_sectors)
+             goto not_ready;
+         nb_sectors /= s->cluster_size;
+@@ -765,7 +761,7 @@ static int scsi_disk_emulate_command(SCSIRequest *req, uint8_t *outbuf)
+         buflen = 8;
+ 	break;
+     case SYNCHRONIZE_CACHE:
+-        bdrv_flush(bdrv);
++        bdrv_flush(s->bs);
+         break;
+     case GET_CONFIGURATION:
+         memset(outbuf, 0, 8);
+@@ -779,7 +775,7 @@ static int scsi_disk_emulate_command(SCSIRequest *req, uint8_t *outbuf)
+         if ((req->cmd.buf[1] & 31) == 0x10) {
+             DPRINTF("SAI READ CAPACITY(16)\n");
+             memset(outbuf, 0, req->cmd.xfer);
+-            bdrv_get_geometry(bdrv, &nb_sectors);
++            bdrv_get_geometry(s->bs, &nb_sectors);
+             if (!nb_sectors)
+                 goto not_ready;
+             nb_sectors /= s->cluster_size;
+@@ -994,7 +990,7 @@ static void scsi_destroy(SCSIDevice *dev)
+         r = DO_UPCAST(SCSIDiskReq, req, QTAILQ_FIRST(&s->qdev.requests));
+         scsi_remove_request(r);
+     }
+-    drive_uninit(s->qdev.dinfo);
++    drive_uninit(s->qdev.conf.dinfo);
+ }
+ 
+ static int scsi_disk_initfn(SCSIDevice *dev)
+@@ -1002,19 +998,20 @@ static int scsi_disk_initfn(SCSIDevice *dev)
+     SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, dev);
+     uint64_t nb_sectors;
+ 
+-    if (!s->qdev.dinfo || !s->qdev.dinfo->bdrv) {
++    if (!s->qdev.conf.dinfo || !s->qdev.conf.dinfo->bdrv) {
+         qemu_error("scsi-disk: drive property not set\n");
+         return -1;
+     }
++    s->bs = s->qdev.conf.dinfo->bdrv;
+ 
+-    if (bdrv_get_type_hint(s->qdev.dinfo->bdrv) == BDRV_TYPE_CDROM) {
++    if (bdrv_get_type_hint(s->bs) == BDRV_TYPE_CDROM) {
+         s->cluster_size = 4;
+     } else {
+         s->cluster_size = 1;
+     }
+     s->qdev.blocksize = 512 * s->cluster_size;
+     s->qdev.type = TYPE_DISK;
+-    bdrv_get_geometry(s->qdev.dinfo->bdrv, &nb_sectors);
++    bdrv_get_geometry(s->bs, &nb_sectors);
+     nb_sectors /= s->cluster_size;
+     if (nb_sectors)
+         nb_sectors--;
+@@ -1035,7 +1032,7 @@ static SCSIDeviceInfo scsi_disk_info = {
+     .cancel_io    = scsi_cancel_io,
+     .get_buf      = scsi_get_buf,
+     .qdev.props   = (Property[]) {
+-        DEFINE_PROP_DRIVE("drive", SCSIDiskState, qdev.dinfo),
++        DEFINE_BLOCK_PROPERTIES(SCSIDiskState, qdev.conf),
+         DEFINE_PROP_STRING("ver",  SCSIDiskState, version),
+         DEFINE_PROP_END_OF_LIST(),
+     },
+diff --git a/hw/scsi-generic.c b/hw/scsi-generic.c
+index f60ad96..de778ef 100644
+--- a/hw/scsi-generic.c
++++ b/hw/scsi-generic.c
+@@ -58,6 +58,7 @@ typedef struct SCSIGenericReq {
+ struct SCSIGenericState
+ {
+     SCSIDevice qdev;
++    BlockDriverState *bs;
+     int lun;
+     int driver_status;
+     uint8_t sensebuf[SCSI_SENSE_BUF_SIZE];
+@@ -212,7 +213,7 @@ static void scsi_read_data(SCSIDevice *d, uint32_t tag)
+         return;
+     }
+ 
+-    ret = execute_command(s->qdev.dinfo->bdrv, r, SG_DXFER_FROM_DEV, scsi_read_complete);
++    ret = execute_command(s->bs, r, SG_DXFER_FROM_DEV, scsi_read_complete);
+     if (ret == -1) {
+         scsi_command_complete(r, -EINVAL);
+         return;
+@@ -263,7 +264,7 @@ static int scsi_write_data(SCSIDevice *d, uint32_t tag)
+         return 0;
+     }
+ 
+-    ret = execute_command(s->qdev.dinfo->bdrv, r, SG_DXFER_TO_DEV, scsi_write_complete);
++    ret = execute_command(s->bs, r, SG_DXFER_TO_DEV, scsi_write_complete);
+     if (ret == -1) {
+         scsi_command_complete(r, -EINVAL);
+         return 1;
+@@ -357,7 +358,7 @@ static int32_t scsi_send_command(SCSIDevice *d, uint32_t tag,
+             qemu_free(r->buf);
+         r->buflen = 0;
+         r->buf = NULL;
+-        ret = execute_command(s->qdev.dinfo->bdrv, r, SG_DXFER_NONE, scsi_command_complete);
++        ret = execute_command(s->bs, r, SG_DXFER_NONE, scsi_command_complete);
+         if (ret == -1) {
+             scsi_command_complete(r, -EINVAL);
+             return 0;
+@@ -452,7 +453,7 @@ static void scsi_destroy(SCSIDevice *d)
+         r = DO_UPCAST(SCSIGenericReq, req, QTAILQ_FIRST(&s->qdev.requests));
+         scsi_remove_request(r);
+     }
+-    drive_uninit(s->qdev.dinfo);
++    drive_uninit(s->qdev.conf.dinfo);
+ }
+ 
+ static int scsi_generic_initfn(SCSIDevice *dev)
+@@ -461,26 +462,27 @@ static int scsi_generic_initfn(SCSIDevice *dev)
+     int sg_version;
+     struct sg_scsi_id scsiid;
+ 
+-    if (!s->qdev.dinfo || !s->qdev.dinfo->bdrv) {
++    if (!s->qdev.conf.dinfo || !s->qdev.conf.dinfo->bdrv) {
+         qemu_error("scsi-generic: drive property not set\n");
+         return -1;
+     }
++    s->bs = s->qdev.conf.dinfo->bdrv;
+ 
+     /* check we are really using a /dev/sg* file */
+-    if (!bdrv_is_sg(s->qdev.dinfo->bdrv)) {
++    if (!bdrv_is_sg(s->bs)) {
+         qemu_error("scsi-generic: not /dev/sg*\n");
+         return -1;
+     }
+ 
+     /* check we are using a driver managing SG_IO (version 3 and after */
+-    if (bdrv_ioctl(s->qdev.dinfo->bdrv, SG_GET_VERSION_NUM, &sg_version) < 0 ||
++    if (bdrv_ioctl(s->bs, SG_GET_VERSION_NUM, &sg_version) < 0 ||
+         sg_version < 30000) {
+         qemu_error("scsi-generic: scsi generic interface too old\n");
+         return -1;
+     }
+ 
+     /* get LUN of the /dev/sg? */
+-    if (bdrv_ioctl(s->qdev.dinfo->bdrv, SG_GET_SCSI_ID, &scsiid)) {
++    if (bdrv_ioctl(s->bs, SG_GET_SCSI_ID, &scsiid)) {
+         qemu_error("scsi-generic: SG_GET_SCSI_ID ioctl failed\n");
+         return -1;
+     }
+@@ -491,11 +493,11 @@ static int scsi_generic_initfn(SCSIDevice *dev)
+     s->qdev.type = scsiid.scsi_type;
+     DPRINTF("device type %d\n", s->qdev.type);
+     if (s->qdev.type == TYPE_TAPE) {
+-        s->qdev.blocksize = get_stream_blocksize(s->qdev.dinfo->bdrv);
++        s->qdev.blocksize = get_stream_blocksize(s->bs);
+         if (s->qdev.blocksize == -1)
+             s->qdev.blocksize = 0;
+     } else {
+-        s->qdev.blocksize = get_blocksize(s->qdev.dinfo->bdrv);
++        s->qdev.blocksize = get_blocksize(s->bs);
+         /* removable media returns 0 if not present */
+         if (s->qdev.blocksize <= 0) {
+             if (s->qdev.type == TYPE_ROM || s->qdev.type  == TYPE_WORM)
+@@ -522,7 +524,7 @@ static SCSIDeviceInfo scsi_generic_info = {
+     .cancel_io    = scsi_cancel_io,
+     .get_buf      = scsi_get_buf,
+     .qdev.props   = (Property[]) {
+-        DEFINE_PROP_DRIVE("drive", SCSIGenericState, qdev.dinfo),
++        DEFINE_BLOCK_PROPERTIES(SCSIGenericState, qdev.conf),
+         DEFINE_PROP_END_OF_LIST(),
+     },
+ };
+diff --git a/hw/scsi.h b/hw/scsi.h
+index 8f0200d..b668e27 100644
+--- a/hw/scsi.h
++++ b/hw/scsi.h
+@@ -3,6 +3,7 @@
+ 
+ #include "qdev.h"
+ #include "block.h"
++#include "block_int.h"
+ 
+ #define SCSI_CMD_BUF_SIZE     16
+ 
+@@ -49,7 +50,7 @@ struct SCSIDevice
+ {
+     DeviceState qdev;
+     uint32_t id;
+-    DriveInfo *dinfo;
++    BlockConf conf;
+     SCSIDeviceInfo *info;
+     QTAILQ_HEAD(, SCSIRequest) requests;
+     int blocksize;
+diff --git a/hw/usb-msd.c b/hw/usb-msd.c
+index 1fb62ad..36991f8 100644
+--- a/hw/usb-msd.c
++++ b/hw/usb-msd.c
+@@ -47,7 +47,7 @@ typedef struct {
+     uint32_t residue;
+     uint32_t tag;
+     SCSIBus bus;
+-    DriveInfo *dinfo;
++    BlockConf conf;
+     SCSIDevice *scsi_dev;
+     int result;
+     /* For async completion.  */
+@@ -523,20 +523,20 @@ static int usb_msd_initfn(USBDevice *dev)
+ {
+     MSDState *s = DO_UPCAST(MSDState, dev, dev);
+ 
+-    if (!s->dinfo || !s->dinfo->bdrv) {
++    if (!s->conf.dinfo || !s->conf.dinfo->bdrv) {
+         qemu_error("usb-msd: drive property not set\n");
+         return -1;
+     }
+ 
+     s->dev.speed = USB_SPEED_FULL;
+     scsi_bus_new(&s->bus, &s->dev.qdev, 0, 1, usb_msd_command_complete);
+-    s->scsi_dev = scsi_bus_legacy_add_drive(&s->bus, s->dinfo, 0);
++    s->scsi_dev = scsi_bus_legacy_add_drive(&s->bus, s->conf.dinfo, 0);
+     s->bus.qbus.allow_hotplug = 0;
+     usb_msd_handle_reset(dev);
+ 
+-    if (bdrv_key_required(s->dinfo->bdrv)) {
++    if (bdrv_key_required(s->conf.dinfo->bdrv)) {
+         if (s->dev.qdev.hotplugged) {
+-            monitor_read_bdrv_key_start(cur_mon, s->dinfo->bdrv,
++            monitor_read_bdrv_key_start(cur_mon, s->conf.dinfo->bdrv,
+                                         usb_msd_password_cb, s);
+             s->dev.auto_attach = 0;
+         } else {
+@@ -611,7 +611,7 @@ static struct USBDeviceInfo msd_info = {
+     .usbdevice_name = "disk",
+     .usbdevice_init = usb_msd_init,
+     .qdev.props     = (Property[]) {
+-        DEFINE_PROP_DRIVE("drive", MSDState, dinfo),
++        DEFINE_BLOCK_PROPERTIES(MSDState, conf),
+         DEFINE_PROP_END_OF_LIST(),
+     },
+ };
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index d025496..e513ab3 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -460,7 +460,7 @@ static int virtio_blk_load(QEMUFile *f, void *opaque, int version_id)
+     return 0;
+ }
+ 
+-VirtIODevice *virtio_blk_init(DeviceState *dev, DriveInfo *dinfo)
++VirtIODevice *virtio_blk_init(DeviceState *dev, BlockConf *conf)
+ {
+     VirtIOBlock *s;
+     int cylinders, heads, secs;
+@@ -473,7 +473,7 @@ VirtIODevice *virtio_blk_init(DeviceState *dev, DriveInfo *dinfo)
+     s->vdev.get_config = virtio_blk_update_config;
+     s->vdev.get_features = virtio_blk_get_features;
+     s->vdev.reset = virtio_blk_reset;
+-    s->bs = dinfo->bdrv;
++    s->bs = conf->dinfo->bdrv;
+     s->rq = NULL;
+     bdrv_guess_geometry(s->bs, &cylinders, &heads, &secs);
+     bdrv_set_geometry_hint(s->bs, cylinders, heads, secs);
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index cba188c..efe507a 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -22,6 +22,7 @@
+ #include "sysemu.h"
+ #include "msix.h"
+ #include "net.h"
++#include "block_int.h"
+ #include "loader.h"
+ #include "kvm.h"
+ 
+@@ -93,7 +94,7 @@ typedef struct {
+     uint32_t addr;
+     uint32_t class_code;
+     uint32_t nvectors;
+-    DriveInfo *dinfo;
++    BlockConf block;
+     NICConf nic;
+     uint32_t host_features;
+     /* Max. number of ports we can have for a the virtio-serial device */
+@@ -547,11 +548,11 @@ static int virtio_blk_init_pci(PCIDevice *pci_dev)
+         proxy->class_code != PCI_CLASS_STORAGE_OTHER)
+         proxy->class_code = PCI_CLASS_STORAGE_SCSI;
+ 
+-    if (!proxy->dinfo) {
++    if (!proxy->block.dinfo) {
+         qemu_error("virtio-blk-pci: drive property not set\n");
+         return -1;
+     }
+-    vdev = virtio_blk_init(&pci_dev->qdev, proxy->dinfo);
++    vdev = virtio_blk_init(&pci_dev->qdev, &proxy->block);
+     vdev->nvectors = proxy->nvectors;
+     virtio_init_pci(proxy, vdev,
+                     PCI_VENDOR_ID_REDHAT_QUMRANET,
+@@ -571,7 +572,7 @@ static int virtio_blk_exit_pci(PCIDevice *pci_dev)
+ {
+     VirtIOPCIProxy *proxy = DO_UPCAST(VirtIOPCIProxy, pci_dev, pci_dev);
+ 
+-    drive_uninit(proxy->dinfo);
++    drive_uninit(proxy->block.dinfo);
+     return virtio_exit_pci(pci_dev);
+ }
+ 
+@@ -649,7 +650,7 @@ static PCIDeviceInfo virtio_info[] = {
+         .exit      = virtio_blk_exit_pci,
+         .qdev.props = (Property[]) {
+             DEFINE_PROP_HEX32("class", VirtIOPCIProxy, class_code, 0),
+-            DEFINE_PROP_DRIVE("drive", VirtIOPCIProxy, dinfo),
++            DEFINE_BLOCK_PROPERTIES(VirtIOPCIProxy, block),
+             DEFINE_PROP_UINT32("vectors", VirtIOPCIProxy, nvectors, 2),
+             DEFINE_VIRTIO_BLK_FEATURES(VirtIOPCIProxy, host_features),
+             DEFINE_PROP_END_OF_LIST(),
+diff --git a/hw/virtio.h b/hw/virtio.h
+index 15371ca..6f2fab0 100644
+--- a/hw/virtio.h
++++ b/hw/virtio.h
+@@ -18,6 +18,7 @@
+ #include "net.h"
+ #include "qdev.h"
+ #include "sysemu.h"
++#include "block_int.h"
+ #include "notifier.h"
+ 
+ /* from Linux's linux/virtio_config.h */
+@@ -180,7 +181,7 @@ void virtio_bind_device(VirtIODevice *vdev, const VirtIOBindings *binding,
+                         void *opaque);
+ 
+ /* Base devices.  */
+-VirtIODevice *virtio_blk_init(DeviceState *dev, DriveInfo *dinfo);
++VirtIODevice *virtio_blk_init(DeviceState *dev, BlockConf *conf);
+ VirtIODevice *virtio_net_init(DeviceState *dev, NICConf *conf);
+ VirtIODevice *virtio_serial_init(DeviceState *dev, uint32_t max_nr_ports);
+ VirtIODevice *virtio_balloon_init(DeviceState *dev);
+-- 
+1.7.0.3
+

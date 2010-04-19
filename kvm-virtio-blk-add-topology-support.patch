@@ -1,0 +1,100 @@
+From 091ec7be415add3eb2315364d7994ec375192bea Mon Sep 17 00:00:00 2001
+From: Christoph Hellwig <chellwig@redhat.com>
+Date: Mon, 22 Mar 2010 09:50:09 -0300
+Subject: [PATCH 3/6] virtio-blk: add topology support
+
+RH-Author: Christoph Hellwig <chellwig@redhat.com>
+Message-id: <1269251411-23419-3-git-send-email-chellwig@redhat.com>
+Patchwork-id: 7954
+O-Subject: [RHEL6 qemu PATCH 3/5] virtio-blk: add topology support
+Bugzilla: 564101
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Naphtali Sprei <nsprei@redhat.com>
+
+From: Christoph Hellwig <hch@lst.de>
+
+Export all topology information in the block config structure,
+guarded by a new VIRTIO_BLK_F_TOPOLOGY feature flag.
+
+upstream commit 9752c371a2f82b4fcde248dc35597f4066cd756c
+BZ: https://bugzilla.redhat.com/show_bug.cgi?id=564101
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+ hw/virtio-blk.c |    7 +++++++
+ hw/virtio-blk.h |    5 +++++
+ 2 files changed, 12 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-blk.c |    7 +++++++
+ hw/virtio-blk.h |    5 +++++
+ 2 files changed, 12 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index e513ab3..8f4256d 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -26,6 +26,7 @@ typedef struct VirtIOBlock
+     VirtQueue *vq;
+     void *rq;
+     QEMUBH *bh;
++    BlockConf *conf;
+ } VirtIOBlock;
+ 
+ static VirtIOBlock *to_virtio_blk(VirtIODevice *vdev)
+@@ -408,6 +409,10 @@ static void virtio_blk_update_config(VirtIODevice *vdev, uint8_t *config)
+     blkcfg.heads = heads;
+     blkcfg.sectors = secs;
+     blkcfg.size_max = 0;
++    blkcfg.physical_block_exp = get_physical_block_exp(s->conf);
++    blkcfg.alignment_offset = 0;
++    blkcfg.min_io_size = s->conf->min_io_size / 512;
++    blkcfg.opt_io_size = s->conf->opt_io_size / 512;
+     memcpy(config, &blkcfg, sizeof(struct virtio_blk_config));
+ }
+ 
+@@ -417,6 +422,7 @@ static uint32_t virtio_blk_get_features(VirtIODevice *vdev, uint32_t features)
+ 
+     features |= (1 << VIRTIO_BLK_F_SEG_MAX);
+     features |= (1 << VIRTIO_BLK_F_GEOMETRY);
++    features |= (1 << VIRTIO_BLK_F_TOPOLOGY);
+ 
+     if (bdrv_enable_write_cache(s->bs))
+         features |= (1 << VIRTIO_BLK_F_WCACHE);
+@@ -474,6 +480,7 @@ VirtIODevice *virtio_blk_init(DeviceState *dev, BlockConf *conf)
+     s->vdev.get_features = virtio_blk_get_features;
+     s->vdev.reset = virtio_blk_reset;
+     s->bs = conf->dinfo->bdrv;
++    s->conf = conf;
+     s->rq = NULL;
+     bdrv_guess_geometry(s->bs, &cylinders, &heads, &secs);
+     bdrv_set_geometry_hint(s->bs, cylinders, heads, secs);
+diff --git a/hw/virtio-blk.h b/hw/virtio-blk.h
+index 5c281ad..f675375 100644
+--- a/hw/virtio-blk.h
++++ b/hw/virtio-blk.h
+@@ -32,6 +32,7 @@
+ #define VIRTIO_BLK_F_SCSI       7       /* Supports scsi command passthru */
+ /* #define VIRTIO_BLK_F_IDENTIFY   8       ATA IDENTIFY supported, DEPRECATED */
+ #define VIRTIO_BLK_F_WCACHE     9       /* write cache enabled */
++#define VIRTIO_BLK_F_TOPOLOGY   10      /* Topology information is available */
+ 
+ struct virtio_blk_config
+ {
+@@ -42,6 +43,10 @@ struct virtio_blk_config
+     uint8_t heads;
+     uint8_t sectors;
+     uint32_t _blk_size;    /* structure pad, currently unused */
++    uint8_t physical_block_exp;
++    uint8_t alignment_offset;
++    uint16_t min_io_size;
++    uint32_t opt_io_size;
+ } __attribute__((packed));
+ 
+ /* These two define direction. */
+-- 
+1.7.0.3
+

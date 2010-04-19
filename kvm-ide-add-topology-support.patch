@@ -1,0 +1,49 @@
+From f7dd879a01b552eb2561b8f76306c7f5412f1e8b Mon Sep 17 00:00:00 2001
+From: Christoph Hellwig <chellwig@redhat.com>
+Date: Mon, 22 Mar 2010 09:50:11 -0300
+Subject: [PATCH 5/6] ide: add topology support
+
+RH-Author: Christoph Hellwig <chellwig@redhat.com>
+Message-id: <1269251411-23419-5-git-send-email-chellwig@redhat.com>
+Patchwork-id: 7953
+O-Subject: [RHEL6 qemu PATCH 5/5] ide: add topology support
+Bugzilla: 564101
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Naphtali Sprei <nsprei@redhat.com>
+
+From: Christoph Hellwig <hch@lst.de>
+
+Export the physical block size in the ATA IDENTIFY command.  The
+other topology values are not supported in ATA so skip them.
+
+upstream commit 0009baf16c30f6a0ef4d9deadbabd53143ac3c93
+BZ: https://bugzilla.redhat.com/show_bug.cgi?id=564101
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+ hw/ide/core.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/ide/core.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 15532aa..ec55894 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -164,6 +164,8 @@ static void ide_identify(IDEState *s)
+     put_le16(p + 101, s->nb_sectors >> 16);
+     put_le16(p + 102, s->nb_sectors >> 32);
+     put_le16(p + 103, s->nb_sectors >> 48);
++    if (s->conf && s->conf->physical_block_size)
++        put_le16(p + 106, 0x6000 | get_physical_block_exp(s->conf));
+ 
+     memcpy(s->identify_data, p, sizeof(s->identify_data));
+     s->identify_set = 1;
+-- 
+1.7.0.3
+

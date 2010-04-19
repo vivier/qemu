@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.38%{?dist}
+Release: 2.39%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -598,6 +598,18 @@ Patch1284: kvm-qemu-nbd-Fix-return-value-handling-of-bdrv_open.patch
 Patch1285: kvm-qemu-img-Fix-error-message.patch
 # For bz#579974 - Get segmentation fault when creating qcow2 format image on block device with "preallocation=metadata"
 Patch1286: kvm-Replace-calls-of-old-bdrv_open.patch
+# For bz#564101 - [RFE] topology support in the virt block layer
+Patch1287: kvm-virtio-blk-revert-serial-number-support.patch
+# For bz#564101 - [RFE] topology support in the virt block layer
+Patch1288: kvm-block-add-topology-qdev-properties.patch
+# For bz#564101 - [RFE] topology support in the virt block layer
+Patch1289: kvm-virtio-blk-add-topology-support.patch
+# For bz#564101 - [RFE] topology support in the virt block layer
+Patch1290: kvm-scsi-add-topology-support.patch
+# For bz#564101 - [RFE] topology support in the virt block layer
+Patch1291: kvm-ide-add-topology-support.patch
+# For bz#580140 - emulated pcnet nic in qemu-kvm has wrong PCI subsystem ID for Windows XP driver
+Patch1292: kvm-pcnet-make-subsystem-vendor-id-match-hardware.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -946,6 +958,12 @@ such as kvmtrace and kvm_stat.
 %patch1284 -p1
 %patch1285 -p1
 %patch1286 -p1
+%patch1287 -p1
+%patch1288 -p1
+%patch1289 -p1
+%patch1290 -p1
+%patch1291 -p1
+%patch1292 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1141,6 +1159,18 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Apr 19 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.39.el6
+- kvm-virtio-blk-revert-serial-number-support.patch [bz#564101]
+- kvm-block-add-topology-qdev-properties.patch [bz#564101]
+- kvm-virtio-blk-add-topology-support.patch [bz#564101]
+- kvm-scsi-add-topology-support.patch [bz#564101]
+- kvm-ide-add-topology-support.patch [bz#564101]
+- kvm-pcnet-make-subsystem-vendor-id-match-hardware.patch [bz#580140]
+- Resolves: bz#564101
+  ([RFE] topology support in the virt block layer)
+- Resolves: bz#580140
+  (emulated pcnet nic in qemu-kvm has wrong PCI subsystem ID for Windows XP driver)
+
 * Tue Apr 13 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.38.el6
 - kvm-read-only-Make-CDROM-a-read-only-drive.patch [bz#537164]
 - kvm-read-only-BDRV_O_FLAGS-cleanup.patch [bz#537164]
