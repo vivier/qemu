@@ -1,0 +1,109 @@
+From 4a7005b52d62b969859e1de5e5906c4ec4d4a33d Mon Sep 17 00:00:00 2001
+From: john cooper <john.cooper@redhat.com>
+Date: Thu, 1 Apr 2010 20:18:42 -0300
+Subject: [PATCH 1/4] Add qemu cpu model configuration support v2 [BZ #569661]
+
+RH-Author: john cooper <john.cooper@redhat.com>
+Message-id: <4BB4FFA2.7060509@redhat.com>
+Patchwork-id: 8329
+O-Subject: [RHEL6 PATCH 1/4] Add qemu cpu model configuration support v2 [BZ
+	#569661]
+Bugzilla: 569661
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Apply upstream:
+
+commit 07381cc1b4513dfe114c97da7537637b740e9ebd
+Author: Anthony Liguori <aliguori@us.ibm.com>
+Date:   Thu Jan 21 10:30:29 2010 -0600
+
+    Support --sysconfdir in configure to specify path to configuration files
+
+    The default value is ${prefix}/etc/qemu.  --sysconfdir can be used to override
+    the default to an absolute path.  The expectation is that when installed to
+    /usr, --sysconfdir=/etc/qemu will be used.
+
+    Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ configure |   17 +++++++++++++++++
+ 1 files changed, 17 insertions(+), 0 deletions(-)
+
+diff --git a/configure b/configure
+index e46f662..5ce77e5 100755
+--- a/configure
++++ b/configure
+@@ -32,6 +32,7 @@ cpu=""
+ prefix=""
+ interp_prefix="/usr/gnemul/qemu-%M"
+ static="no"
++sysconfdir=""
+ sparc_cpu=""
+ cross_prefix=""
+ cc="gcc"
+@@ -478,6 +479,8 @@ for opt do
+   ;;
+   --static) static="yes"
+   ;;
++  --sysconfdir) sysconfdir="$optarg"
++  ;;
+   --disable-sdl) sdl="no"
+   ;;
+   --enable-sdl) sdl="yes"
+@@ -736,6 +739,7 @@ echo "  --extra-ldflags=LDFLAGS  append extra linker flags LDFLAGS"
+ echo "  --make=MAKE              use specified make [$make]"
+ echo "  --install=INSTALL        use specified install [$install]"
+ echo "  --static                 enable static build [$static]"
++echo "  --sysconfdir=PATH        install config in PATH"
+ echo "  --enable-debug-tcg       enable TCG debugging"
+ echo "  --disable-debug-tcg      disable TCG debugging (default)"
+ echo "  --enable-debug           enable common debug build options"
+@@ -2036,8 +2040,12 @@ if test "$mingw32" = "yes" ; then
+   fi
+   mansuffix=""
+   datasuffix=""
++  confsuffix=""
+   docsuffix=""
+   binsuffix=""
++  if test -z "$sysconfdir" ; then
++      sysconfdir="${prefix}"
++  fi
+ else
+   if test -z "$prefix" ; then
+       prefix="/usr/local"
+@@ -2046,6 +2054,9 @@ else
+   datasuffix="/share/qemu"
+   docsuffix="/share/doc/qemu"
+   binsuffix="/bin"
++  if test -z "$sysconfdir" ; then
++      sysconfdir="${prefix}/etc"
++  fi
+ fi
+ 
+ if test -f kvm/kernel/configure; then
+@@ -2143,6 +2154,11 @@ printf " '%s'" "$0" "$@" >> $config_host_mak
+ echo >> $config_host_mak
+ 
+ echo "CONFIG_QEMU_SHAREDIR=\"$prefix$datasuffix\"" >> $config_host_mak
++if test "$mingw32" = "yes" ; then
++  echo "CONFIG_QEMU_CONFDIR=\"$sysconfdir\"" >> $config_host_mak
++else
++  echo "CONFIG_QEMU_CONFDIR=\"${sysconfdir}/qemu\"" >> $config_host_mak
++fi
+ 
+ case "$cpu" in
+   i386|x86_64|alpha|cris|hppa|ia64|m68k|microblaze|mips|mips64|ppc|ppc64|s390|s390x|sparc|sparc64)
+@@ -2408,6 +2424,7 @@ echo "prefix=$prefix" >> $config_host_mak
+ echo "bindir=\${prefix}$binsuffix" >> $config_host_mak
+ echo "mandir=\${prefix}$mansuffix" >> $config_host_mak
+ echo "datadir=\${prefix}$datasuffix" >> $config_host_mak
++echo "sysconfdir=$sysconfdir" >> $config_host_mak
+ echo "docdir=\${prefix}$docsuffix" >> $config_host_mak
+ echo "MAKE=$make" >> $config_host_mak
+ echo "INSTALL=$install" >> $config_host_mak
+-- 
+1.7.0.3
+

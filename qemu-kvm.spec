@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.39%{?dist}
+Release: 2.40%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -610,6 +610,14 @@ Patch1290: kvm-scsi-add-topology-support.patch
 Patch1291: kvm-ide-add-topology-support.patch
 # For bz#580140 - emulated pcnet nic in qemu-kvm has wrong PCI subsystem ID for Windows XP driver
 Patch1292: kvm-pcnet-make-subsystem-vendor-id-match-hardware.patch
+# For bz#569661 - RHEL6.0 requires backport of upstream cpu model support..
+Patch1293: cpu-model-config-1.patch
+# For bz#569661 - RHEL6.0 requires backport of upstream cpu model support..
+Patch1294: cpu-model-config-2.patch
+# For bz#569661 - RHEL6.0 requires backport of upstream cpu model support..
+Patch1295: cpu-model-config-3.patch
+# For bz#569661 - RHEL6.0 requires backport of upstream cpu model support..
+Patch1296: cpu-model-config-4.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -964,6 +972,10 @@ such as kvmtrace and kvm_stat.
 %patch1290 -p1
 %patch1291 -p1
 %patch1292 -p1
+%patch1293 -p1
+%patch1294 -p1
+%patch1295 -p1
+%patch1296 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1159,6 +1171,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Apr 20 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.40.el6
+- cpu-model-config-1.patch [bz#569661]
+- cpu-model-config-2.patch [bz#569661]
+- cpu-model-config-3.patch [bz#569661]
+- cpu-model-config-4.patch [bz#569661]
+- Resolves: bz#569661
+  (RHEL6.0 requires backport of upstream cpu model support..)
+
 * Mon Apr 19 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.39.el6
 - kvm-virtio-blk-revert-serial-number-support.patch [bz#564101]
 - kvm-block-add-topology-qdev-properties.patch [bz#564101]

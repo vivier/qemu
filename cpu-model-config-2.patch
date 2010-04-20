@@ -1,0 +1,134 @@
+From 80f75f4ba9323ce0383128734d36347fb022c68b Mon Sep 17 00:00:00 2001
+From: john cooper <john.cooper@redhat.com>
+Date: Thu, 1 Apr 2010 20:19:00 -0300
+Subject: [PATCH 2/4] Add qemu cpu model configuration support v2 [BZ #569661]
+
+RH-Author: john cooper <john.cooper@redhat.com>
+Message-id: <4BB4FFB4.70704@redhat.com>
+Patchwork-id: 8330
+O-Subject: [RHEL6 PATCH 2/4] Add qemu cpu model configuration support v2 [BZ
+	#569661]
+Bugzilla: 569661
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Apply upstream:
+
+commit 6530a97bdde4504e6658e5017b5b0ab22e1e62d3
+Author: Anthony Liguori <aliguori@us.ibm.com>
+Date:   Fri Jan 22 09:18:06 2010 -0600
+
+    Move out option lookup into a separate function
+
+    Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vl.c |   72 +++++++++++++++++++++++++++++++++++++++--------------------------
+ 1 files changed, 43 insertions(+), 29 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index 1696948..29b6769 100644
+--- a/vl.c
++++ b/vl.c
+@@ -4975,6 +4975,46 @@ static int virtcon_parse(const char *devname)
+     return 0;
+ }
+ 
++static const QEMUOption *lookup_opt(int argc, char **argv,
++                                    const char **poptarg, int *poptind)
++{
++    const QEMUOption *popt;
++    int optind = *poptind;
++    char *r = argv[optind];
++    const char *optarg;
++
++    optind++;
++    /* Treat --foo the same as -foo.  */
++    if (r[1] == '-')
++        r++;
++    popt = qemu_options;
++    for(;;) {
++        if (!popt->name) {
++            fprintf(stderr, "%s: invalid option -- '%s'\n",
++                    argv[0], r);
++            exit(1);
++        }
++        if (!strcmp(popt->name, r + 1))
++            break;
++        popt++;
++    }
++    if (popt->flags & HAS_ARG) {
++        if (optind >= argc) {
++            fprintf(stderr, "%s: option '%s' requires an argument\n",
++                    argv[0], r);
++            exit(1);
++        }
++        optarg = argv[optind++];
++    } else {
++        optarg = NULL;
++    }
++
++    *poptarg = optarg;
++    *poptind = optind;
++
++    return popt;
++}
++
+ int main(int argc, char **argv, char **envp)
+ {
+     const char *gdbstub_dev = NULL;
+@@ -4989,7 +5029,7 @@ int main(int argc, char **argv, char **envp)
+     int cyls, heads, secs, translation;
+     QemuOpts *hda_opts = NULL, *opts;
+     int optind;
+-    const char *r, *optarg;
++    const char *optarg;
+     const char *loadvm = NULL;
+     QEMUMachine *machine;
+     const char *cpu_model;
+@@ -5072,38 +5112,12 @@ int main(int argc, char **argv, char **envp)
+     for(;;) {
+         if (optind >= argc)
+             break;
+-        r = argv[optind];
+-        if (r[0] != '-') {
++        if (argv[optind][0] != '-') {
+ 	    hda_opts = drive_add(argv[optind++], HD_ALIAS, 0);
+         } else {
+             const QEMUOption *popt;
+ 
+-            optind++;
+-            /* Treat --foo the same as -foo.  */
+-            if (r[1] == '-')
+-                r++;
+-            popt = qemu_options;
+-            for(;;) {
+-                if (!popt->name) {
+-                    fprintf(stderr, "%s: invalid option -- '%s'\n",
+-                            argv[0], r);
+-                    exit(1);
+-                }
+-                if (!strcmp(popt->name, r + 1))
+-                    break;
+-                popt++;
+-            }
+-            if (popt->flags & HAS_ARG) {
+-                if (optind >= argc) {
+-                    fprintf(stderr, "%s: option '%s' requires an argument\n",
+-                            argv[0], r);
+-                    exit(1);
+-                }
+-                optarg = argv[optind++];
+-            } else {
+-                optarg = NULL;
+-            }
+-
++            popt = lookup_opt(argc, argv, &optarg, &optind);
+             switch(popt->index) {
+             case QEMU_OPTION_M:
+                 machine = find_machine(optarg);
+-- 
+1.7.0.3
+
