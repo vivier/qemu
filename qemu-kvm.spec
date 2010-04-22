@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.40%{?dist}
+Release: 2.41%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1051,7 +1051,8 @@ make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
      sharedir="${RPM_BUILD_ROOT}%{_datadir}/%{name}" \
      mandir="${RPM_BUILD_ROOT}%{_mandir}" \
      docdir="${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}" \
-     datadir="${RPM_BUILD_ROOT}%{_datadir}/%{name}" install
+     datadir="${RPM_BUILD_ROOT}%{_datadir}/%{name}" \
+     sysconfdir="${RPM_BUILD_ROOT}%{_sysconfdir}" install
 
 mv ${RPM_BUILD_ROOT}%{_bindir}/qemu-system-x86_64 ${RPM_BUILD_ROOT}%{_libexecdir}/qemu-kvm
 
@@ -1157,6 +1158,7 @@ fi
 %{_libexecdir}/qemu-kvm
 %{_sysconfdir}/sysconfig/modules/kvm.modules
 %{_sysconfdir}/udev/rules.d/80-kvm.rules
+%{_sysconfdir}/qemu/target-x86_64.conf
 
 %files tools
 %defattr(-,root,root,-)
@@ -1171,6 +1173,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Apr 22 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.41.el6
+- Build fix: pass sysconfdir to 'make install'
+- Related: bz#569661
+
 * Tue Apr 20 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.40.el6
 - cpu-model-config-1.patch [bz#569661]
 - cpu-model-config-2.patch [bz#569661]

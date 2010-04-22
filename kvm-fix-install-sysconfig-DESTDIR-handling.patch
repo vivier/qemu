@@ -1,0 +1,30 @@
+From 7c5be5985f798ec02da81f6be47e56722f131975 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Thu, 22 Apr 2010 19:09:22 -0300
+Subject: [PATCH] fix install-sysconfig DESTDIR handling
+
+Fix for patch from Message-ID <4BBD5CCC.60307@redhat.com>.
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 6325085..fcfc91e 100644
+--- a/Makefile
++++ b/Makefile
+@@ -315,8 +315,8 @@ ifdef CONFIG_POSIX
+ endif
+ 
+ install-sysconfig:
+-	$(INSTALL_DIR) "$(sysconfdir)/qemu"
+-	$(INSTALL_DATA) sysconfigs/target/target-x86_64.conf "$(sysconfdir)/qemu"
++	$(INSTALL_DIR) "$(DESTDIR)$(sysconfdir)/qemu"
++	$(INSTALL_DATA) sysconfigs/target/target-x86_64.conf "$(DESTDIR)$(sysconfdir)/qemu"
+ 
+ install: all $(if $(BUILD_DOCS),install-doc) install-sysconfig
+ 	$(INSTALL_DIR) "$(DESTDIR)$(bindir)"
+-- 
+1.7.0.3
+
