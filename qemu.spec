@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.12.3
-Release: 5%{?dist}
+Release: 6%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -86,6 +86,9 @@ Patch49: 0049-migration-Clear-fd-also-in-error-cases.patch
 Patch50: 0050-raw-posix-Detect-CDROM-via-ioctl-on-linux.patch
 Patch51: 0051-usb-linux-increase-buffer-for-USB-control-requests.patch
 Patch52: 0052-virtio-console-patches.patch
+Patch53: 0053-net-remove-NICInfo.bootable-field.patch
+Patch54: 0054-net-remove-broken-net_set_boot_mask-boot-device-vali.patch
+Patch55: 0055-boot-remove-unused-boot_devices_bitmap-variable.patch
 
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -177,7 +180,7 @@ Requires: %{name}-common = %{epoch}:%{version}-%{release}
 Provides: kvm = 85
 Obsoletes: kvm < 85
 Requires: vgabios
-Requires: seabios
+Requires: seabios-bin
 Requires: /usr/share/gpxe/e1000-0x100e.rom
 Requires: /usr/share/gpxe/rtl8029.rom
 Requires: /usr/share/gpxe/pcnet32.rom
@@ -330,6 +333,9 @@ such as kvmtrace and kvm_stat.
 %patch50 -p1
 %patch51 -p1
 %patch52 -p1
+%patch53 -p1
+%patch54 -p1
+%patch55 -p1
 
 %build
 # By default we build everything, but allow x86 to build a minimal version
@@ -522,6 +528,7 @@ fi
 
 %files common
 %defattr(-,root,root)
+%dir %{qemudocdir}
 %doc %{qemudocdir}/Changelog
 %doc %{qemudocdir}/README
 %doc %{qemudocdir}/TODO
@@ -632,6 +639,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Apr 23 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.3-6
+- Change requires to the noarch seabios-bin
+- Add ownership of docdir to qemu-common (#572110)
+- Fix "Cannot boot from non-existent NIC" error when using virt-install (#577851)
+
 * Thu Apr 15 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.3-5
 - Update virtio console patches from upstream
 
