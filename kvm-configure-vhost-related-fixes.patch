@@ -1,0 +1,69 @@
+From 4ba90ec81b95df2b99d4afd1a30fed365b3448fe Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Wed, 7 Apr 2010 14:25:28 -0300
+Subject: [PATCH 10/12] configure: vhost related fixes
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <a9b801885b884602e63b0f68f2260fad6b91f507.1270649651.git.mst@redhat.com>
+Patchwork-id: 8429
+O-Subject: [PATCH RHEL6.0 7/9] configure: vhost related fixes
+Bugzilla: 580109
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+Remove dead code, fix test and add help lines to
+configure script, bringing vhost code in sync with upstream.
+
+Cerry-picked from commit d59700553ecbf052cce1e099e8f4dae2704fe424.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ configure |    7 ++++---
+ 1 files changed, 4 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ configure |    7 ++++---
+ 1 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/configure b/configure
+index 5ce77e5..dd6d447 100755
+--- a/configure
++++ b/configure
+@@ -51,7 +51,6 @@ libs_softmmu=""
+ libs_tools=""
+ audio_pt_int=""
+ audio_win_int=""
+-audio_win_int=""
+ 
+ # parse CC options first
+ for opt do
+@@ -816,6 +815,8 @@ echo "  --disable-spice          disable spice"
+ echo "  --enable-spice           enable spice"
+ echo "  --with-kvm-trace         enable building the KVM module with the kvm trace option"
+ echo "  --disable-cpu-emulation  disables use of qemu cpu emulation code"
++echo "  --disable-vhost-net      disable vhost-net acceleration support"
++echo "  --enable-vhost-net       enable vhost-net acceleration support"
+ echo ""
+ echo "NOTE: The object files are built at the place where configure is launched"
+ exit 1
+@@ -1565,13 +1566,13 @@ EOF
+             if compile_prog "$kvm_cflags" "" ; then
+                 vhost_net=yes
+             else
+-                if "$vhost_net" == "yes" ; then
++                if test "$vhost_net" = "yes" ; then
+                     feature_not_found "vhost-net"
+                 fi
+                 vhost_net=no
+             fi
+     else
+-            if "$vhost_net" == "yes" ; then
++            if test "$vhost_net" = "yes" ; then
+                 echo -e "NOTE: vhost-net feature requires KVM (--enable-kvm)."
+                 feature_not_found "vhost-net"
+             fi
+-- 
+1.7.0.3
+

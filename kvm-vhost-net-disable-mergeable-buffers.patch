@@ -1,0 +1,47 @@
+From 73765ede6613cf255ba5ba1b05dca565f852f84d Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Wed, 7 Apr 2010 14:26:14 -0300
+Subject: [PATCH 12/12] vhost-net: disable mergeable buffers
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <2b8edde3ca4a5c2f14f0ab1d0a9982a5797d53ff.1270649651.git.mst@redhat.com>
+Patchwork-id: 8431
+O-Subject: [PATCH RHEL6.0 9/9] vhost-net: disable mergeable buffers
+Bugzilla: 580109
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+vhost in current kernels doesn't support mergeable buffers.
+Disable this feature if vhost is enabled, until such
+support is implemented.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ hw/vhost_net.c |    5 ++---
+ 1 files changed, 2 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/vhost_net.c |    5 ++---
+ 1 files changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/hw/vhost_net.c b/hw/vhost_net.c
+index d84eed0..7d81cac 100644
+--- a/hw/vhost_net.c
++++ b/hw/vhost_net.c
+@@ -51,9 +51,8 @@ unsigned vhost_net_get_features(struct vhost_net *net, unsigned features)
+     if (!(net->dev.features & (1 << VIRTIO_RING_F_INDIRECT_DESC))) {
+         features &= ~(1 << VIRTIO_RING_F_INDIRECT_DESC);
+     }
+-    if (!(net->dev.features & (1 << VIRTIO_NET_F_MRG_RXBUF))) {
+-        features &= ~(1 << VIRTIO_NET_F_MRG_RXBUF);
+-    }
++    features &= ~(1 << VIRTIO_NET_F_MRG_RXBUF);
++
+     return features;
+ }
+ 
+-- 
+1.7.0.3
+

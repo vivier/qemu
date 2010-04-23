@@ -1,0 +1,54 @@
+From 5cddc8b088a286e9e0131633a0123b92412b6e08 Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Wed, 7 Apr 2010 14:26:08 -0300
+Subject: [PATCH 11/12] vhost: fix features ack
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <750587ddc2a75ed5d5f5862ee1cc44b0561b50a2.1270649651.git.mst@redhat.com>
+Patchwork-id: 8430
+O-Subject: [PATCH RHEL6.0 8/9] vhost: fix features ack
+Bugzilla: 580109
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+>From: David L Stevens <dlstevens@us.ibm.com>
+
+vhost driver in qemu didn't ack features, and this happens
+to work because we don't really require any features. However,
+it's better not to rely on this. This patch passes features to
+vhost as guest acks them.
+
+Signed-off-by: David L Stevens <dlstevens@us.ibm.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ hw/virtio-net.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-net.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-net.c b/hw/virtio-net.c
+index d57c616..e7b7fb4 100644
+--- a/hw/virtio-net.c
++++ b/hw/virtio-net.c
+@@ -218,6 +218,14 @@ static void virtio_net_set_features(VirtIODevice *vdev, uint32_t features)
+                         (features >> VIRTIO_NET_F_GUEST_ECN)  & 1,
+                         (features >> VIRTIO_NET_F_GUEST_UFO)  & 1);
+     }
++    if (!n->nic->nc.peer ||
++        n->nic->nc.peer->info->type != NET_CLIENT_TYPE_TAP) {
++        return;
++    }
++    if (!tap_get_vhost_net(n->nic->nc.peer)) {
++        return;
++    }
++    return vhost_net_ack_features(tap_get_vhost_net(n->nic->nc.peer), features);
+ }
+ 
+ static int virtio_net_handle_rx_mode(VirtIONet *n, uint8_t cmd,
+-- 
+1.7.0.3
+

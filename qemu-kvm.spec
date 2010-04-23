@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.41%{?dist}
+Release: 2.42%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -618,6 +618,30 @@ Patch1294: cpu-model-config-2.patch
 Patch1295: cpu-model-config-3.patch
 # For bz#569661 - RHEL6.0 requires backport of upstream cpu model support..
 Patch1296: cpu-model-config-4.patch
+# For bz#561078 - "Cannot boot from non-existent NIC" when using virt-install --pxe
+Patch1297: kvm-net-remove-NICInfo.bootable-field.patch
+# For bz#561078 - "Cannot boot from non-existent NIC" when using virt-install --pxe
+Patch1298: kvm-net-remove-broken-net_set_boot_mask-boot-device-vali.patch
+# For bz#561078 - "Cannot boot from non-existent NIC" when using virt-install --pxe
+Patch1299: kvm-boot-remove-unused-boot_devices_bitmap-variable.patch
+# For bz#580109 - vhost net lacks upstream fixes
+Patch1300: kvm-check-kvm-enabled.patch
+# For bz#580109 - vhost net lacks upstream fixes
+Patch1301: kvm-qemu-rename-notifier-event_notifier.patch
+# For bz#580109 - vhost net lacks upstream fixes
+Patch1302: kvm-virtio-API-name-cleanup.patch
+# For bz#580109 - vhost net lacks upstream fixes
+Patch1303: kvm-vhost-u_int64_t-uint64_t.patch
+# For bz#580109 - vhost net lacks upstream fixes
+Patch1304: kvm-virtio-pci-fix-coding-style.patch
+# For bz#580109 - vhost net lacks upstream fixes
+Patch1305: kvm-vhost-detect-lack-of-support-earlier-style.patch
+# For bz#580109 - vhost net lacks upstream fixes
+Patch1306: kvm-configure-vhost-related-fixes.patch
+# For bz#580109 - vhost net lacks upstream fixes
+Patch1307: kvm-vhost-fix-features-ack.patch
+# For bz#580109 - vhost net lacks upstream fixes
+Patch1308: kvm-vhost-net-disable-mergeable-buffers.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -976,6 +1000,18 @@ such as kvmtrace and kvm_stat.
 %patch1294 -p1
 %patch1295 -p1
 %patch1296 -p1
+%patch1297 -p1
+%patch1298 -p1
+%patch1299 -p1
+%patch1300 -p1
+%patch1301 -p1
+%patch1302 -p1
+%patch1303 -p1
+%patch1304 -p1
+%patch1305 -p1
+%patch1306 -p1
+%patch1307 -p1
+%patch1308 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1173,6 +1209,24 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Apr 23 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.42.el6
+- kvm-net-remove-NICInfo.bootable-field.patch [bz#561078]
+- kvm-net-remove-broken-net_set_boot_mask-boot-device-vali.patch [bz#561078]
+- kvm-boot-remove-unused-boot_devices_bitmap-variable.patch [bz#561078]
+- kvm-check-kvm-enabled.patch [bz#580109]
+- kvm-qemu-rename-notifier-event_notifier.patch [bz#580109]
+- kvm-virtio-API-name-cleanup.patch [bz#580109]
+- kvm-vhost-u_int64_t-uint64_t.patch [bz#580109]
+- kvm-virtio-pci-fix-coding-style.patch [bz#580109]
+- kvm-vhost-detect-lack-of-support-earlier-style.patch [bz#580109]
+- kvm-configure-vhost-related-fixes.patch [bz#580109]
+- kvm-vhost-fix-features-ack.patch [bz#580109]
+- kvm-vhost-net-disable-mergeable-buffers.patch [bz#580109]
+- Resolves: bz#561078
+  ("Cannot boot from non-existent NIC" when using virt-install --pxe)
+- Resolves: bz#580109
+  (vhost net lacks upstream fixes)
+
 * Thu Apr 22 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.41.el6
 - Build fix: pass sysconfdir to 'make install'
 - Related: bz#569661

@@ -1,0 +1,43 @@
+From 27d25794072173e2fcaa739e1e71a3f6fc3aaeae Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Wed, 7 Apr 2010 14:25:05 -0300
+Subject: [PATCH 04/12] kvm: check kvm enabled
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <b229e1da8a10748af9c8dd7c2ba45817e259f6dc.1270649651.git.mst@redhat.com>
+Patchwork-id: 8423
+O-Subject: [PATCH RHEL6.0 1/9] kvm: check kvm enabled
+Bugzilla: 580109
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+Avoid crash when kvm is disabled.
+Cherry-picked from commit cb8c9b2318df8846b5dfdc47061e6537000eafed
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ kvm-all.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ kvm-all.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/kvm-all.c b/kvm-all.c
+index 81dcc8f..6506e90 100644
+--- a/kvm-all.c
++++ b/kvm-all.c
+@@ -1133,7 +1133,7 @@ int kvm_set_irqfd(int gsi, int fd, bool assigned)
+         .flags = assigned ? 0 : KVM_IRQFD_FLAG_DEASSIGN,
+     };
+     int r;
+-    if (!kvm_irqchip_in_kernel())
++    if (!kvm_enabled() || !kvm_irqchip_in_kernel())
+         return -ENOSYS;
+ 
+     r = kvm_vm_ioctl(kvm_state, KVM_IRQFD, &irqfd);
+-- 
+1.7.0.3
+

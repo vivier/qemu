@@ -1,0 +1,78 @@
+From 27de87e99122c095c8f3016db077ea1cb7acbeb5 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Tue, 6 Apr 2010 22:38:53 -0300
+Subject: [PATCH 03/12] boot: remove unused boot_devices_bitmap variable
+
+RH-Author: Eduardo Habkost <ehabkost@redhat.com>
+Message-id: <1270593533-23946-4-git-send-email-ehabkost@redhat.com>
+Patchwork-id: 8380
+O-Subject: [PATCH RHEL6 qemu-kvm 3/3] boot: remove unused boot_devices_bitmap
+	variable
+Bugzilla: 561078
+RH-Acked-by: Justin M. Forbes <jforbes@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=561078
+
+In addition to removing the variable, this also renames the parse_bootdevices()
+function to validate_bootdevices(), as we don't need its return value anymore.
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vl.c |    8 +++-----
+ 1 files changed, 3 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vl.c |    8 +++-----
+ 1 files changed, 3 insertions(+), 5 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index 5f76987..ec17406 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2569,7 +2569,7 @@ int qemu_boot_set(const char *boot_devices)
+     return boot_set_handler(boot_set_opaque, boot_devices);
+ }
+ 
+-static int parse_bootdevices(char *devices)
++static void validate_bootdevices(char *devices)
+ {
+     /* We just do some generic consistency checks */
+     const char *p;
+@@ -2595,7 +2595,6 @@ static int parse_bootdevices(char *devices)
+         }
+         bitmap |= 1 << (*p - 'a');
+     }
+-    return bitmap;
+ }
+ 
+ static void restore_boot_devices(void *opaque)
+@@ -5018,7 +5017,6 @@ static const QEMUOption *lookup_opt(int argc, char **argv,
+ int main(int argc, char **argv, char **envp)
+ {
+     const char *gdbstub_dev = NULL;
+-    uint32_t boot_devices_bitmap = 0;
+     int i;
+     int snapshot, linux_boot;
+     const char *initrd_filename;
+@@ -5331,13 +5329,13 @@ int main(int argc, char **argv, char **envp)
+ 
+                     if (legacy ||
+                         get_param_value(buf, sizeof(buf), "order", optarg)) {
+-                        boot_devices_bitmap = parse_bootdevices(buf);
++                        validate_bootdevices(buf);
+                         pstrcpy(boot_devices, sizeof(boot_devices), buf);
+                     }
+                     if (!legacy) {
+                         if (get_param_value(buf, sizeof(buf),
+                                             "once", optarg)) {
+-                            boot_devices_bitmap |= parse_bootdevices(buf);
++                            validate_bootdevices(buf);
+                             standard_boot_devices = qemu_strdup(boot_devices);
+                             pstrcpy(boot_devices, sizeof(boot_devices), buf);
+                             qemu_register_reset(restore_boot_devices,
+-- 
+1.7.0.3
+

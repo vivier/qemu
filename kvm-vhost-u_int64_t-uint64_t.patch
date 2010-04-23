@@ -1,0 +1,64 @@
+From 65175ce0662d3a0314ed8e2705f65d88688792eb Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Wed, 7 Apr 2010 14:25:17 -0300
+Subject: [PATCH 07/12] vhost: u_int64_t -> uint64_t
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <1acb559b19a1bbad369044e774058607b475e267.1270649651.git.mst@redhat.com>
+Patchwork-id: 8426
+O-Subject: [PATCH RHEL6.0 4/9] vhost: u_int64_t -> uint64_t
+Bugzilla: 580109
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+upstream uses uint64_t (which is standard) instead
+of u_int64_t (which is not). Let's do it too.
+
+Cherry picked from commit 2b3af999845db4b5546e5d0d46eb615381cd9dc0.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ hw/vhost.c  |    6 +++---
+ hw/virtio.c |    2 +-
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/vhost.c  |    6 +++---
+ hw/virtio.c |    2 +-
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/hw/vhost.c b/hw/vhost.c
+index ddb85ba..531e48b 100644
+--- a/hw/vhost.c
++++ b/hw/vhost.c
+@@ -357,9 +357,9 @@ static int vhost_virtqueue_set_addr(struct vhost_dev *dev,
+ {
+     struct vhost_vring_addr addr = {
+         .index = idx,
+-        .desc_user_addr = (u_int64_t)(unsigned long)vq->desc,
+-        .avail_user_addr = (u_int64_t)(unsigned long)vq->avail,
+-        .used_user_addr = (u_int64_t)(unsigned long)vq->used,
++        .desc_user_addr = (uint64_t)(unsigned long)vq->desc,
++        .avail_user_addr = (uint64_t)(unsigned long)vq->avail,
++        .used_user_addr = (uint64_t)(unsigned long)vq->used,
+         .log_guest_addr = vq->used_phys,
+         .flags = enable_log ? (1 << VHOST_VRING_F_LOG) : 0,
+     };
+diff --git a/hw/virtio.c b/hw/virtio.c
+index f54129f..e7657ae 100644
+--- a/hw/virtio.c
++++ b/hw/virtio.c
+@@ -773,7 +773,7 @@ target_phys_addr_t virtio_queue_get_desc_size(VirtIODevice *vdev, int n)
+ target_phys_addr_t virtio_queue_get_avail_size(VirtIODevice *vdev, int n)
+ {
+     return offsetof(VRingAvail, ring) +
+-        sizeof(u_int64_t) * vdev->vq[n].vring.num;
++        sizeof(uint64_t) * vdev->vq[n].vring.num;
+ }
+ 
+ target_phys_addr_t virtio_queue_get_used_size(VirtIODevice *vdev, int n)
+-- 
+1.7.0.3
+

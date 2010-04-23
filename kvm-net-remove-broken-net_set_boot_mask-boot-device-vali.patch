@@ -1,0 +1,117 @@
+From 2d99e299702e53071217122fe899255858e4fb2b Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Tue, 6 Apr 2010 22:38:52 -0300
+Subject: [PATCH 02/12] net: remove broken net_set_boot_mask() boot device validation
+
+RH-Author: Eduardo Habkost <ehabkost@redhat.com>
+Message-id: <1270593533-23946-3-git-send-email-ehabkost@redhat.com>
+Patchwork-id: 8378
+O-Subject: [PATCH RHEL6 qemu-kvm 2/3] net: remove broken net_set_boot_mask()
+	boot device validation
+Bugzilla: 561078
+RH-Acked-by: Justin M. Forbes <jforbes@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=561078
+
+There are many problems with net_set_boot_mask():
+
+1) It is broken when using the device model instead of "-net nic". Example:
+   $ qemu-system-x86_64 -device rtl8139,vlan=0,id=net0,mac=52:54:00:82:41:fd,bus=pci.0,addr=0x4 -net user,vlan=0,name=hostnet0 -vnc 0.0.0.0:0 -boot n
+   Cannot boot from non-existent NIC
+   $
+2) The mask was previously used to set which boot ROMs were supposed to be
+   loaded, but this was changed long time ago. Now all ROM images are loaded,
+   and SeaBIOS takes care of jumping to the right boot entry point depending on
+   the boot settings.
+3) Interpretation and validation of the boot parameter letters is done on
+   the machine type code. Examples: PC accepts only a,b,c,d,n as valid boot
+   device letters. mac99 accepts only a,b,c,d,e,f.
+
+As a side-effect of this change, qemu-kvm won't abort anymore if using "-boot n"
+on a machine with no network devices. Checking if the requested boot device is
+valid is now a task for the BIOS or the machine-type code.
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ net.c |   19 -------------------
+ net.h |    1 -
+ vl.c  |    5 +----
+ 3 files changed, 1 insertions(+), 24 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ net.c |   19 -------------------
+ net.h |    1 -
+ vl.c  |    5 +----
+ 3 files changed, 1 insertions(+), 24 deletions(-)
+
+diff --git a/net.c b/net.c
+index 7b48225..7c782ca 100644
+--- a/net.c
++++ b/net.c
+@@ -1197,25 +1197,6 @@ void net_host_device_remove(Monitor *mon, const QDict *qdict)
+     qemu_del_vlan_client(vc);
+ }
+ 
+-void net_set_boot_mask(int net_boot_mask)
+-{
+-    int i;
+-
+-    /* Only the first four NICs may be bootable */
+-    net_boot_mask = net_boot_mask & 0xF;
+-
+-    for (i = 0; i < nb_nics; i++) {
+-        if (net_boot_mask & (1 << i)) {
+-            net_boot_mask &= ~(1 << i);
+-        }
+-    }
+-
+-    if (net_boot_mask) {
+-        fprintf(stderr, "Cannot boot from non-existent NIC\n");
+-        exit(1);
+-    }
+-}
+-
+ void do_info_network(Monitor *mon)
+ {
+     VLANState *vlan;
+diff --git a/net.h b/net.h
+index 991f0fa..20be8d7 100644
+--- a/net.h
++++ b/net.h
+@@ -162,7 +162,6 @@ int net_client_parse(QemuOptsList *opts_list, const char *str);
+ int net_init_clients(void);
+ void net_check_clients(void);
+ void net_cleanup(void);
+-void net_set_boot_mask(int boot_mask);
+ void net_host_device_add(Monitor *mon, const QDict *qdict);
+ void net_host_device_remove(Monitor *mon, const QDict *qdict);
+ 
+diff --git a/vl.c b/vl.c
+index df629f2..5f76987 100644
+--- a/vl.c
++++ b/vl.c
+@@ -5020,7 +5020,7 @@ int main(int argc, char **argv, char **envp)
+     const char *gdbstub_dev = NULL;
+     uint32_t boot_devices_bitmap = 0;
+     int i;
+-    int snapshot, linux_boot, net_boot;
++    int snapshot, linux_boot;
+     const char *initrd_filename;
+     const char *kernel_filename, *kernel_cmdline;
+     char boot_devices[33] = "cad"; /* default to HD->floppy->CD-ROM */
+@@ -6097,9 +6097,6 @@ int main(int argc, char **argv, char **envp)
+         exit(1);
+     }
+ 
+-    net_boot = (boot_devices_bitmap >> ('n' - 'a')) & 0xF;
+-    net_set_boot_mask(net_boot);
+-
+     /* init the bluetooth world */
+     if (foreach_device_config(DEV_BT, bt_parse))
+         exit(1);
+-- 
+1.7.0.3
+
