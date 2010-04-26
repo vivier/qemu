@@ -1,0 +1,58 @@
+From af773c701811a6ccdfa4da1ef121fc7d34cdb5ce Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:53 -0300
+Subject: [PATCH 38/66] error: New QERR_PROPERTY_NOT_FOUND
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-39-git-send-email-armbru@redhat.com>
+Patchwork-id: 8226
+O-Subject: [PATCH 38/66] error: New QERR_PROPERTY_NOT_FOUND
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+(cherry picked from commit c58a35f8e32af621fab2b4f9c868f47971f67e59)
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/qerror.c b/qerror.c
+index 1d9411b..321b623 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -109,6 +109,10 @@ static const QErrorStringTable qerror_table[] = {
+         .desc      = "Could not open '%(filename)'",
+     },
+     {
++        .error_fmt = QERR_PROPERTY_NOT_FOUND,
++        .desc      = "Property '%(device).%(property)' not found",
++    },
++    {
+         .error_fmt = QERR_QMP_BAD_INPUT_OBJECT,
+         .desc      = "Bad QMP input object",
+     },
+diff --git a/qerror.h b/qerror.h
+index 2b73302..80d6b4a 100644
+--- a/qerror.h
++++ b/qerror.h
+@@ -93,6 +93,9 @@ QError *qobject_to_qerror(const QObject *obj);
+ #define QERR_OPEN_FILE_FAILED \
+     "{ 'class': 'OpenFileFailed', 'data': { 'filename': %s } }"
+ 
++#define QERR_PROPERTY_NOT_FOUND \
++    "{ 'class': 'PropertyNotFound', 'data': { 'device': %s, 'property': %s } }"
++
+ #define QERR_QMP_BAD_INPUT_OBJECT \
+     "{ 'class': 'QMPBadInputObject', 'data': { 'expected': %s } }"
+ 
+-- 
+1.7.0.3
+

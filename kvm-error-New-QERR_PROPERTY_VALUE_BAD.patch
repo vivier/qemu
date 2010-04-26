@@ -1,0 +1,58 @@
+From f106032008aa717e4c99f5826d2f529d64705082 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:54 -0300
+Subject: [PATCH 39/66] error: New QERR_PROPERTY_VALUE_BAD
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-40-git-send-email-armbru@redhat.com>
+Patchwork-id: 8261
+O-Subject: [PATCH 39/66] error: New QERR_PROPERTY_VALUE_BAD
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+(cherry picked from commit 06b4a703e0e87034a8b122f6ffc50c732e7ceddd)
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/qerror.c b/qerror.c
+index 321b623..78598c0 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -113,6 +113,10 @@ static const QErrorStringTable qerror_table[] = {
+         .desc      = "Property '%(device).%(property)' not found",
+     },
+     {
++        .error_fmt = QERR_PROPERTY_VALUE_BAD,
++        .desc      = "Property '%(device).%(property)' doesn't take value '%(value)'",
++    },
++    {
+         .error_fmt = QERR_QMP_BAD_INPUT_OBJECT,
+         .desc      = "Bad QMP input object",
+     },
+diff --git a/qerror.h b/qerror.h
+index 80d6b4a..3ee46fa 100644
+--- a/qerror.h
++++ b/qerror.h
+@@ -96,6 +96,9 @@ QError *qobject_to_qerror(const QObject *obj);
+ #define QERR_PROPERTY_NOT_FOUND \
+     "{ 'class': 'PropertyNotFound', 'data': { 'device': %s, 'property': %s } }"
+ 
++#define QERR_PROPERTY_VALUE_BAD \
++    "{ 'class': 'PropertyValueBad', 'data': { 'device': %s, 'property': %s, 'value': %s } }"
++
+ #define QERR_QMP_BAD_INPUT_OBJECT \
+     "{ 'class': 'QMPBadInputObject', 'data': { 'expected': %s } }"
+ 
+-- 
+1.7.0.3
+

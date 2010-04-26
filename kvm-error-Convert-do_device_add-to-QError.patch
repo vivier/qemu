@@ -1,0 +1,87 @@
+From bcaf57b8322164745e4ede1cfffaf780634ef1a9 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:25:09 -0300
+Subject: [PATCH 54/66] error: Convert do_device_add() to QError
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-55-git-send-email-armbru@redhat.com>
+Patchwork-id: 8267
+O-Subject: [PATCH 54/66] error: Convert do_device_add() to QError
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+Conversion to QObject is still missing.
+(cherry picked from commit 0204276bc9108d6a927f4267b87338950a538671)
+---
+ hw/qdev.c |   19 +++++++++----------
+ 1 files changed, 9 insertions(+), 10 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qdev.c |   19 +++++++++----------
+ 1 files changed, 9 insertions(+), 10 deletions(-)
+
+diff --git a/hw/qdev.c b/hw/qdev.c
+index 43dff04..5d0990d 100644
+--- a/hw/qdev.c
++++ b/hw/qdev.c
+@@ -200,15 +200,15 @@ DeviceState *qdev_device_add(QemuOpts *opts)
+ 
+     driver = qemu_opt_get(opts, "driver");
+     if (!driver) {
+-        error_report("-device: no driver specified");
++        qerror_report(QERR_MISSING_PARAMETER, "driver");
+         return NULL;
+     }
+ 
+     /* find driver */
+     info = qdev_find_info(NULL, driver);
+     if (!info || info->no_user) {
+-        error_report("Device \"%s\" not found.  Try -device '?' for a list.",
+-                     driver);
++        qerror_report(QERR_INVALID_PARAMETER, "driver");
++        error_printf_unless_qmp("Try with argument '?' for a list.\n");
+         return NULL;
+     }
+ 
+@@ -220,21 +220,20 @@ DeviceState *qdev_device_add(QemuOpts *opts)
+             return NULL;
+         }
+         if (bus->info != info->bus_info) {
+-            error_report("Device '%s' can't go on a %s bus",
+-                         driver, bus->info->name);
++            qerror_report(QERR_BAD_BUS_FOR_DEVICE,
++                           driver, bus->info->name);
+             return NULL;
+         }
+     } else {
+         bus = qbus_find_recursive(main_system_bus, NULL, info->bus_info);
+         if (!bus) {
+-            error_report("Did not find %s bus for %s",
+-                         info->bus_info->name, info->name);
++            qerror_report(QERR_NO_BUS_FOR_DEVICE,
++                           info->name, info->bus_info->name);
+             return NULL;
+         }
+     }
+     if (qdev_hotplug && !bus->allow_hotplug) {
+-        error_report("Bus %s does not support hotplugging",
+-                     bus->name);
++        qerror_report(QERR_BUS_NO_HOTPLUG, bus->name);
+         return NULL;
+     }
+ 
+@@ -249,7 +248,7 @@ DeviceState *qdev_device_add(QemuOpts *opts)
+         return NULL;
+     }
+     if (qdev_init(qdev) < 0) {
+-        error_report("Error initializing device %s", driver);
++        qerror_report(QERR_DEVICE_INIT_FAILED, driver);
+         return NULL;
+     }
+     qdev->opts = opts;
+-- 
+1.7.0.3
+

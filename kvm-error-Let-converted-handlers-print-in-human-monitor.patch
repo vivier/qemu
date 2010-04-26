@@ -1,0 +1,174 @@
+From 484bfa38a363bb62219e099eedaaea1402c24f02 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:51 -0300
+Subject: [PATCH 36/66] error: Let converted handlers print in human monitor
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-37-git-send-email-armbru@redhat.com>
+Patchwork-id: 8229
+O-Subject: [PATCH 36/66] error: Let converted handlers print in human monitor
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+While fully converted handlers are not supposed to print anything when
+running in a QMP monitor, they are free to print in a human monitor.
+For instance, device_add (not yet converted) prints help, and will
+continue to do so after conversion.
+
+Moreover, utility functions converted to QError should remain usable
+from unconverted handlers.
+
+Two problems:
+
+* handler_audit() complains when a converted handler prints.  Limit
+  that to QMP monitors.
+
+* With QMP, handlers need to pass the error object by way of
+  monitor_set_error().  However, we do that both for QMP and for the
+  human monitor.  The human monitor prints the error object after the
+  handler returns.  If the handler prints anything else, that output
+  "overtakes" the error message.
+
+  Limit use of monitor_set_error() to QMP monitors.  Update
+  handler_audit() accordingly.
+(cherry picked from commit cde0fc7544ca590c83f349d4dcccf375d55d6042)
+---
+ monitor.c    |   80 ++++++++++++++++++++++++++-------------------------------
+ qemu-error.c |    2 +-
+ 2 files changed, 38 insertions(+), 44 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c    |   80 ++++++++++++++++++++++++++-------------------------------
+ qemu-error.c |    2 +-
+ 2 files changed, 38 insertions(+), 44 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index c8eb626..09f2211 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -3922,13 +3922,6 @@ void monitor_set_error(Monitor *mon, QError *qerror)
+     }
+ }
+ 
+-static void monitor_print_error(Monitor *mon)
+-{
+-    qerror_print(mon->error);
+-    QDECREF(mon->error);
+-    mon->error = NULL;
+-}
+-
+ static int is_async_return(const QObject *data)
+ {
+     if (data && qobject_type(data) == QTYPE_QDICT) {
+@@ -3940,45 +3933,49 @@ static int is_async_return(const QObject *data)
+ 
+ static void handler_audit(Monitor *mon, const mon_cmd_t *cmd, int ret)
+ {
+-    if (ret && !monitor_has_error(mon)) {
+-        /*
+-         * If it returns failure, it must have passed on error.
+-         *
+-         * Action: Report an internal error to the client if in QMP.
+-         */
+-        if (monitor_ctrl_mode(mon)) {
++    if (monitor_ctrl_mode(mon)) {
++        if (ret && !monitor_has_error(mon)) {
++            /*
++             * If it returns failure, it must have passed on error.
++             *
++             * Action: Report an internal error to the client if in QMP.
++             */
+             qerror_report(QERR_UNDEFINED_ERROR);
++            MON_DEBUG("command '%s' returned failure but did not pass an error\n",
++                      cmd->name);
+         }
+-        MON_DEBUG("command '%s' returned failure but did not pass an error\n",
+-                  cmd->name);
+-    }
+ 
+ #ifdef CONFIG_DEBUG_MONITOR
+-    if (!ret && monitor_has_error(mon)) {
+-        /*
+-         * If it returns success, it must not have passed an error.
+-         *
+-         * Action: Report the passed error to the client.
+-         */
+-        MON_DEBUG("command '%s' returned success but passed an error\n",
+-                  cmd->name);
+-    }
++        if (!ret && monitor_has_error(mon)) {
++            /*
++             * If it returns success, it must not have passed an error.
++             *
++             * Action: Report the passed error to the client.
++             */
++            MON_DEBUG("command '%s' returned success but passed an error\n",
++                      cmd->name);
++        }
+ 
+-    if (mon_print_count_get(mon) > 0 && strcmp(cmd->name, "info") != 0) {
+-        /*
+-         * Handlers should not call Monitor print functions.
+-         *
+-         * Action: Ignore them in QMP.
+-         *
+-         * (XXX: we don't check any 'info' or 'query' command here
+-         * because the user print function _is_ called by do_info(), hence
+-         * we will trigger this check. This problem will go away when we
+-         * make 'query' commands real and kill do_info())
+-         */
+-        MON_DEBUG("command '%s' called print functions %d time(s)\n",
+-                  cmd->name, mon_print_count_get(mon));
+-    }
++        if (mon_print_count_get(mon) > 0 && strcmp(cmd->name, "info") != 0) {
++            /*
++             * Handlers should not call Monitor print functions.
++             *
++             * Action: Ignore them in QMP.
++             *
++             * (XXX: we don't check any 'info' or 'query' command here
++             * because the user print function _is_ called by do_info(), hence
++             * we will trigger this check. This problem will go away when we
++             * make 'query' commands real and kill do_info())
++             */
++            MON_DEBUG("command '%s' called print functions %d time(s)\n",
++                      cmd->name, mon_print_count_get(mon));
++        }
+ #endif
++    } else {
++        assert(!monitor_has_error(mon));
++        QDECREF(mon->error);
++        mon->error = NULL;
++    }
+ }
+ 
+ static void monitor_call_handler(Monitor *mon, const mon_cmd_t *cmd,
+@@ -4031,9 +4028,6 @@ static void handle_user_command(Monitor *mon, const char *cmdline)
+         cmd->mhandler.cmd(mon, qdict);
+     }
+ 
+-    if (monitor_has_error(mon))
+-        monitor_print_error(mon);
+-
+ out:
+     QDECREF(qdict);
+ }
+diff --git a/qemu-error.c b/qemu-error.c
+index 5be6bea..a8c178b 100644
+--- a/qemu-error.c
++++ b/qemu-error.c
+@@ -207,7 +207,7 @@ void qerror_report_internal(const char *file, int linenr, const char *func,
+     qerror = qerror_from_info(file, linenr, func, fmt, &va);
+     va_end(va);
+ 
+-    if (cur_mon) {
++    if (monitor_cur_is_qmp()) {
+         monitor_set_error(cur_mon, qerror);
+     } else {
+         qerror_print(qerror);
+-- 
+1.7.0.3
+

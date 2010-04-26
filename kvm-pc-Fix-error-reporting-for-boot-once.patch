@@ -1,0 +1,68 @@
+From b490ffdcfaaa23a200839106daf1c3aab923f6bd Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:26 -0300
+Subject: [PATCH 11/66] pc: Fix error reporting for -boot once
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-12-git-send-email-armbru@redhat.com>
+Patchwork-id: 8213
+O-Subject: [PATCH 11/66] pc: Fix error reporting for -boot once
+Bugzilla: 579470
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+Commit 0ecdffbb created pc_boot_set() for use from monitor command
+"boot_set", via qemu_boot_set().  pc_boot_set() reports errors to
+cur_mon, which works fine for monitor code.
+
+Commit e0f084bf reused the function int reset handler
+restore_boot_devices().  Use of cur_mon is problematic in that
+context.  For instance, the "Too many boot devices for PC" error for
+"-boot order=abcdefgh,once=c" goes to the monitor instead of stderr.
+The monitor may not even exist.
+
+Fix by switching to qemu_error().
+(cherry picked from commit 8ad00f84251c7aefca26461faccfbb557e1dba47)
+---
+ hw/pc.c |    7 +++----
+ 1 files changed, 3 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pc.c |    7 +++----
+ 1 files changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/hw/pc.c b/hw/pc.c
+index 4fae21f..1b396a9 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -228,7 +228,6 @@ static int boot_device2nibble(char boot_device)
+  and used there as well */
+ static int pc_boot_set(void *opaque, const char *boot_device)
+ {
+-    Monitor *mon = cur_mon;
+ #define PC_MAX_BOOT_DEVICES 3
+     RTCState *s = (RTCState *)opaque;
+     int nbds, bds[3] = { 0, };
+@@ -236,14 +235,14 @@ static int pc_boot_set(void *opaque, const char *boot_device)
+ 
+     nbds = strlen(boot_device);
+     if (nbds > PC_MAX_BOOT_DEVICES) {
+-        monitor_printf(mon, "Too many boot devices for PC\n");
++        qemu_error("Too many boot devices for PC\n");
+         return(1);
+     }
+     for (i = 0; i < nbds; i++) {
+         bds[i] = boot_device2nibble(boot_device[i]);
+         if (bds[i] == 0) {
+-            monitor_printf(mon, "Invalid boot device for PC: '%c'\n",
+-                           boot_device[i]);
++            qemu_error("Invalid boot device for PC: '%c'\n",
++                       boot_device[i]);
+             return(1);
+         }
+     }
+-- 
+1.7.0.3
+

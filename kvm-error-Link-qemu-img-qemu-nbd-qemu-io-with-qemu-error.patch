@@ -1,0 +1,136 @@
+From fa878e029b151a5baf1f860b00c7b87c7ae2ff2e Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:25:20 -0300
+Subject: [PATCH 65/66] error: Link qemu-img, qemu-nbd, qemu-io with qemu-error.o
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-66-git-send-email-armbru@redhat.com>
+Patchwork-id: 8231
+O-Subject: [PATCH 65/66] error: Link qemu-img, qemu-nbd,
+	qemu-io with qemu-error.o
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+From: Markus Armbruster <armbru@pond.sub.org>
+
+The location tracking interface is used by code shared with qemi-img,
+qemu-nbd and qemu-io, so it needs to be available there.  Commit
+827b0813 provides it in a rather hamfisted way: it adds a dummy
+implementation to qemu-tool.c.
+
+It's cleaner to provide the real thing, and put a few more dummy
+monitor functions into qemu-tool.c.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit 526f0ac1538378a561b629cb2f99a0349d48bc2f)
+
+Conflicts:
+
+	Makefile
+---
+ Makefile    |    6 +++---
+ qemu-tool.c |   49 +++++++++++++++----------------------------------
+ 2 files changed, 18 insertions(+), 37 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile    |    6 +++---
+ qemu-tool.c |   49 +++++++++++++++----------------------------------
+ 2 files changed, 18 insertions(+), 37 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 6325085..e727e59 100644
+--- a/Makefile
++++ b/Makefile
+@@ -249,11 +249,11 @@ libqemu_common.a: $(obj-y)
+ 
+ qemu-img.o: qemu-img-cmds.h
+ 
+-qemu-img$(EXESUF): qemu-img.o qemu-tool.o $(block-obj-y) $(qobject-obj-y)
++qemu-img$(EXESUF): qemu-img.o qemu-tool.o qemu-error.o $(block-obj-y) $(qobject-obj-y)
+ 
+-qemu-nbd$(EXESUF):  qemu-nbd.o qemu-tool.o $(block-obj-y) $(qobject-obj-y)
++qemu-nbd$(EXESUF): qemu-nbd.o qemu-tool.o qemu-error.o $(block-obj-y) $(qobject-obj-y)
+ 
+-qemu-io$(EXESUF):  qemu-io.o qemu-tool.o cmd.o $(block-obj-y) $(qobject-obj-y)
++qemu-io$(EXESUF): qemu-io.o cmd.o qemu-tool.o qemu-error.o $(block-obj-y) $(qobject-obj-y)
+ 
+ qemu-img-cmds.h: $(SRC_PATH)/qemu-img-cmds.hx
+ 	$(call quiet-command,sh $(SRC_PATH)/hxtool -h < $< > $@,"  GEN   $@")
+diff --git a/qemu-tool.c b/qemu-tool.c
+index 97ca949..302bf5f 100644
+--- a/qemu-tool.c
++++ b/qemu-tool.c
+@@ -15,7 +15,6 @@
+ #include "monitor.h"
+ #include "qemu-timer.h"
+ #include "qemu-log.h"
+-#include "qemu-error.h"
+ 
+ #include <sys/time.h>
+ 
+@@ -33,6 +32,21 @@ void qemu_service_io(void)
+ {
+ }
+ 
++Monitor *cur_mon;
++
++int monitor_cur_is_qmp(void)
++{
++    return 0;
++}
++
++void monitor_set_error(Monitor *mon, QError *qerror)
++{
++}
++
++void monitor_vprintf(Monitor *mon, const char *fmt, va_list ap)
++{
++}
++
+ void monitor_printf(Monitor *mon, const char *fmt, ...)
+ {
+ }
+@@ -103,36 +117,3 @@ int64_t qemu_get_clock(QEMUClock *clock)
+     qemu_gettimeofday(&tv);
+     return (tv.tv_sec * 1000000000LL + (tv.tv_usec * 1000)) / 1000000;
+ }
+-
+-Location *loc_push_restore(Location *loc)
+-{
+-    return loc;
+-}
+-
+-Location *loc_push_none(Location *loc)
+-{
+-    return loc;
+-}
+-
+-Location *loc_pop(Location *loc)
+-{
+-    return loc;
+-}
+-
+-Location *loc_save(Location *loc)
+-{
+-    return loc;
+-}
+-
+-void loc_restore(Location *loc)
+-{
+-}
+-
+-void error_report(const char *fmt, ...)
+-{
+-    va_list args;
+-
+-    va_start(args, fmt);
+-    vfprintf(stderr, fmt, args);
+-    va_end(args);
+-}
+-- 
+1.7.0.3
+

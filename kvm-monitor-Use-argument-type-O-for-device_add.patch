@@ -1,0 +1,59 @@
+From 1c21c628016bd0b99d8ed844503305b54f2410b5 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:25:14 -0300
+Subject: [PATCH 59/66] monitor: Use argument type 'O' for device_add
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-60-git-send-email-armbru@redhat.com>
+Patchwork-id: 8264
+O-Subject: [PATCH 59/66] monitor: Use argument type 'O' for device_add
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+While there, improve the params help text.
+(cherry picked from commit c7e4e8ceb379e15c8cb79427f10169b2ccaa8de6)
+---
+ hw/qdev.c       |    3 +--
+ qemu-monitor.hx |    4 ++--
+ 2 files changed, 3 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qdev.c       |    3 +--
+ qemu-monitor.hx |    4 ++--
+ 2 files changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/hw/qdev.c b/hw/qdev.c
+index 64cabd5..a28e262 100644
+--- a/hw/qdev.c
++++ b/hw/qdev.c
+@@ -766,8 +766,7 @@ void do_device_add(Monitor *mon, const QDict *qdict)
+ {
+     QemuOpts *opts;
+ 
+-    opts = qemu_opts_parse(&qemu_device_opts,
+-                           qdict_get_str(qdict, "config"), 1);
++    opts = qemu_opts_from_qdict(&qemu_device_opts, qdict);
+     if (opts) {
+         if (qdev_device_help(opts) || qdev_device_add(opts) == NULL) {
+             qemu_opts_del(opts);
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index b7c7f64..9f4af98 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -542,8 +542,8 @@ ETEXI
+ 
+     {
+         .name       = "device_add",
+-        .args_type  = "config:s",
+-        .params     = "device",
++        .args_type  = "device:O",
++        .params     = "driver[,prop=value][,...]",
+         .help       = "add device, like -device on the command line",
+         .mhandler.cmd = do_device_add,
+     },
+-- 
+1.7.0.3
+

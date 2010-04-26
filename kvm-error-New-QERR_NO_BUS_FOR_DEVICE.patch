@@ -1,0 +1,58 @@
+From 609543ed01df2ca1645846798ea0c54a163e966a Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:25:07 -0300
+Subject: [PATCH 52/66] error: New QERR_NO_BUS_FOR_DEVICE
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-53-git-send-email-armbru@redhat.com>
+Patchwork-id: 8258
+O-Subject: [PATCH 52/66] error: New QERR_NO_BUS_FOR_DEVICE
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+(cherry picked from commit fab5767f90c96194f918d39af683fff3d9ea421a)
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/qerror.c b/qerror.c
+index 512a356..2faa638 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -129,6 +129,10 @@ static const QErrorStringTable qerror_table[] = {
+         .desc      = "Parameter '%(name)' is missing",
+     },
+     {
++        .error_fmt = QERR_NO_BUS_FOR_DEVICE,
++        .desc      = "No '%(bus)' bus found for device '%(device)'",
++    },
++    {
+         .error_fmt = QERR_OPEN_FILE_FAILED,
+         .desc      = "Could not open '%(filename)'",
+     },
+diff --git a/qerror.h b/qerror.h
+index e0ce99a..d96abe1 100644
+--- a/qerror.h
++++ b/qerror.h
+@@ -108,6 +108,9 @@ QError *qobject_to_qerror(const QObject *obj);
+ #define QERR_MISSING_PARAMETER \
+     "{ 'class': 'MissingParameter', 'data': { 'name': %s } }"
+ 
++#define QERR_NO_BUS_FOR_DEVICE \
++    "{ 'class': 'NoBusForDevice', 'data': { 'device': %s, 'bus': %s } }"
++
+ #define QERR_OPEN_FILE_FAILED \
+     "{ 'class': 'OpenFileFailed', 'data': { 'filename': %s } }"
+ 
+-- 
+1.7.0.3
+

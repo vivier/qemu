@@ -1,0 +1,43 @@
+From eb9eca5cac9062060fba5a6e0036c805d4d09912 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:44 -0300
+Subject: [PATCH 29/66] QemuOpts: Fix qemu_config_parse() to catch file read errors
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-30-git-send-email-armbru@redhat.com>
+Patchwork-id: 8211
+O-Subject: [PATCH 29/66] QemuOpts: Fix qemu_config_parse() to catch file read
+	errors
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+(cherry picked from commit ef82516d8fb41cbae9703d07516641f6bdf91a77)
+---
+ qemu-config.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-config.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-config.c b/qemu-config.c
+index 578479e..5f43f27 100644
+--- a/qemu-config.c
++++ b/qemu-config.c
+@@ -482,6 +482,10 @@ int qemu_config_parse(FILE *fp, const char *fname)
+         error_report("parse error");
+         goto out;
+     }
++    if (ferror(fp)) {
++        error_report("error reading file");
++        goto out;
++    }
+     res = 0;
+ out:
+     loc_pop(&loc);
+-- 
+1.7.0.3
+

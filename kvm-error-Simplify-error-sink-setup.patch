@@ -1,0 +1,212 @@
+From 60e72e8b54beedc90decea3baa6fef8da8f4705c Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:33 -0300
+Subject: [PATCH 18/66] error: Simplify error sink setup
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-19-git-send-email-armbru@redhat.com>
+Patchwork-id: 8234
+O-Subject: [PATCH 18/66] error: Simplify error sink setup
+Bugzilla: 579470
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+qemu_error_sink can either point to a monitor or a file.  In practice,
+it always points to the current monitor if we have one, else to
+stderr.  Simply route errors to the current monitor or else to stderr,
+and remove qemu_error_sink along with the functions to control it.
+
+Actually, the old code switches the sink slightly later, in
+handle_user_command() and handle_qmp_command(), than it gets switched
+now, implicitly, by setting the current monitor in monitor_read() and
+monitor_control_read().  Likewise, it switches back slightly earlier
+(same places).  Doesn't make a difference, because there are no calls
+of qemu_error() in between.
+(cherry picked from commit 6e4f984cb9474db99bf4e3998ff86cdb9ed02380)
+---
+ monitor.c    |    6 ----
+ qemu-error.c |   76 +++++++---------------------------------------------------
+ sysemu.h     |    3 --
+ vl.c         |    1 -
+ 4 files changed, 9 insertions(+), 77 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c    |    6 ----
+ qemu-error.c |   76 +++++++---------------------------------------------------
+ sysemu.h     |    3 --
+ vl.c         |    1 -
+ 4 files changed, 9 insertions(+), 77 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index bdeadf0..f35b968 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -4017,8 +4017,6 @@ static void handle_user_command(Monitor *mon, const char *cmdline)
+     if (!cmd)
+         goto out;
+ 
+-    qemu_errors_to_mon(mon);
+-
+     if (monitor_handler_is_async(cmd)) {
+         user_async_cmd_handler(mon, cmd, qdict);
+     } else if (monitor_handler_ported(cmd)) {
+@@ -4030,8 +4028,6 @@ static void handle_user_command(Monitor *mon, const char *cmdline)
+     if (monitor_has_error(mon))
+         monitor_print_error(mon);
+ 
+-    qemu_errors_to_previous();
+-
+ out:
+     QDECREF(qdict);
+ }
+@@ -4433,7 +4429,6 @@ static void handle_qmp_command(JSONMessageParser *parser, QList *tokens)
+     const char *cmd_name, *info_item;
+ 
+     args = NULL;
+-    qemu_errors_to_mon(mon);
+ 
+     obj = json_parser_parse(tokens, NULL);
+     if (!obj) {
+@@ -4514,7 +4509,6 @@ err_out:
+     monitor_protocol_emitter(mon, NULL);
+ out:
+     QDECREF(args);
+-    qemu_errors_to_previous();
+ }
+ 
+ /**
+diff --git a/qemu-error.c b/qemu-error.c
+index df381f6..63bcdcf 100644
+--- a/qemu-error.c
++++ b/qemu-error.c
+@@ -2,70 +2,17 @@
+ #include "monitor.h"
+ #include "sysemu.h"
+ 
+-typedef struct QemuErrorSink QemuErrorSink;
+-struct QemuErrorSink {
+-    enum {
+-        ERR_SINK_FILE,
+-        ERR_SINK_MONITOR,
+-    } dest;
+-    union {
+-        FILE    *fp;
+-        Monitor *mon;
+-    };
+-    QemuErrorSink *previous;
+-};
+-
+-static QemuErrorSink *qemu_error_sink;
+-
+-void qemu_errors_to_file(FILE *fp)
+-{
+-    QemuErrorSink *sink;
+-
+-    sink = qemu_mallocz(sizeof(*sink));
+-    sink->dest = ERR_SINK_FILE;
+-    sink->fp = fp;
+-    sink->previous = qemu_error_sink;
+-    qemu_error_sink = sink;
+-}
+-
+-void qemu_errors_to_mon(Monitor *mon)
+-{
+-    QemuErrorSink *sink;
+-
+-    sink = qemu_mallocz(sizeof(*sink));
+-    sink->dest = ERR_SINK_MONITOR;
+-    sink->mon = mon;
+-    sink->previous = qemu_error_sink;
+-    qemu_error_sink = sink;
+-}
+-
+-void qemu_errors_to_previous(void)
+-{
+-    QemuErrorSink *sink;
+-
+-    assert(qemu_error_sink != NULL);
+-    sink = qemu_error_sink;
+-    qemu_error_sink = sink->previous;
+-    qemu_free(sink);
+-}
+-
+ void qemu_error(const char *fmt, ...)
+ {
+     va_list args;
+ 
+-    assert(qemu_error_sink != NULL);
+-    switch (qemu_error_sink->dest) {
+-    case ERR_SINK_FILE:
+-        va_start(args, fmt);
+-        vfprintf(qemu_error_sink->fp, fmt, args);
+-        va_end(args);
+-        break;
+-    case ERR_SINK_MONITOR:
+-        va_start(args, fmt);
+-        monitor_vprintf(qemu_error_sink->mon, fmt, args);
+-        va_end(args);
+-        break;
++    va_start(args, fmt);
++    if (cur_mon) {
++        monitor_vprintf(cur_mon, fmt, args);
++    } else {
++        vfprintf(stderr, fmt, args);
+     }
++    va_end(args);
+ }
+ 
+ void qemu_error_internal(const char *file, int linenr, const char *func,
+@@ -74,19 +21,14 @@ void qemu_error_internal(const char *file, int linenr, const char *func,
+     va_list va;
+     QError *qerror;
+ 
+-    assert(qemu_error_sink != NULL);
+-
+     va_start(va, fmt);
+     qerror = qerror_from_info(file, linenr, func, fmt, &va);
+     va_end(va);
+ 
+-    switch (qemu_error_sink->dest) {
+-    case ERR_SINK_FILE:
++    if (cur_mon) {
++        monitor_set_error(cur_mon, qerror);
++    } else {
+         qerror_print(qerror);
+         QDECREF(qerror);
+-        break;
+-    case ERR_SINK_MONITOR:
+-        monitor_set_error(qemu_error_sink->mon, qerror);
+-        break;
+     }
+ }
+diff --git a/sysemu.h b/sysemu.h
+index 08008f4..08a9f49 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -70,9 +70,6 @@ int qemu_savevm_state_complete(Monitor *mon, QEMUFile *f);
+ void qemu_savevm_state_cancel(Monitor *mon, QEMUFile *f);
+ int qemu_loadvm_state(QEMUFile *f);
+ 
+-void qemu_errors_to_file(FILE *fp);
+-void qemu_errors_to_mon(Monitor *mon);
+-void qemu_errors_to_previous(void);
+ void qemu_error(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
+ void qemu_error_internal(const char *file, int linenr, const char *func,
+                          const char *fmt, ...)
+diff --git a/vl.c b/vl.c
+index 94db683..fda3368 100644
+--- a/vl.c
++++ b/vl.c
+@@ -5054,7 +5054,6 @@ int main(int argc, char **argv, char **envp)
+ 
+     init_clocks();
+ 
+-    qemu_errors_to_file(stderr);
+     qemu_cache_utils_init(envp);
+ 
+     QLIST_INIT (&vm_change_state_head);
+-- 
+1.7.0.3
+

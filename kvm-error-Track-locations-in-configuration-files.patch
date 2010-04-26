@@ -1,0 +1,229 @@
+From ac8bdbbf87a606bbb48ea955f5fc6da9cd465f3e Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:43 -0300
+Subject: [PATCH 28/66] error: Track locations in configuration files
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-29-git-send-email-armbru@redhat.com>
+Patchwork-id: 8233
+O-Subject: [PATCH 28/66] error: Track locations in configuration files
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+New LOC_FILE.  Use it for tracking file name and line number in
+qemu_config_parse().  We now report errors like
+
+    qemu:foo.conf:42: Did not find I2C bus for smbus-eeprom
+
+In particular, gems like this message:
+
+    -device: no driver specified
+
+become almost nice now:
+
+    qemu:foo.conf:44: -device: no driver specified
+
+(A later commit will get rid of the bogus -device:)
+(cherry picked from commit cf5a65aaaf3e9382e50df550ba049a1c8691a5dd)
+---
+ qemu-config.c |   28 +++++++++++++++++-----------
+ qemu-config.h |    2 +-
+ qemu-error.c  |   20 ++++++++++++++++++++
+ qemu-error.h  |    3 ++-
+ vl.c          |   14 +++++++++-----
+ 5 files changed, 49 insertions(+), 18 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-config.c |   28 +++++++++++++++++-----------
+ qemu-config.h |    2 +-
+ qemu-error.c  |   20 ++++++++++++++++++++
+ qemu-error.h  |    3 ++-
+ vl.c          |   14 +++++++++-----
+ 5 files changed, 49 insertions(+), 18 deletions(-)
+
+diff --git a/qemu-config.c b/qemu-config.c
+index 1042339..578479e 100644
+--- a/qemu-config.c
++++ b/qemu-config.c
+@@ -432,13 +432,17 @@ void qemu_config_write(FILE *fp)
+     }
+ }
+ 
+-int qemu_config_parse(FILE *fp)
++int qemu_config_parse(FILE *fp, const char *fname)
+ {
+     char line[1024], group[64], id[64], arg[64], value[1024];
++    Location loc;
+     QemuOptsList *list = NULL;
+     QemuOpts *opts = NULL;
++    int res = -1, lno = 0;
+ 
++    loc_push_none(&loc);
+     while (fgets(line, sizeof(line), fp) != NULL) {
++        loc_set_file(fname, ++lno);
+         if (line[0] == '\n') {
+             /* skip empty lines */
+             continue;
+@@ -451,7 +455,7 @@ int qemu_config_parse(FILE *fp)
+             /* group with id */
+             list = find_list(group);
+             if (list == NULL)
+-                return -1;
++                goto out;
+             opts = qemu_opts_create(list, id, 1);
+             continue;
+         }
+@@ -459,25 +463,27 @@ int qemu_config_parse(FILE *fp)
+             /* group without id */
+             list = find_list(group);
+             if (list == NULL)
+-                return -1;
++                goto out;
+             opts = qemu_opts_create(list, NULL, 0);
+             continue;
+         }
+         if (sscanf(line, " %63s = \"%1023[^\"]\"", arg, value) == 2) {
+             /* arg = value */
+             if (opts == NULL) {
+-                fprintf(stderr, "no group defined\n");
+-                return -1;
++                error_report("no group defined");
++                goto out;
+             }
+             if (qemu_opt_set(opts, arg, value) != 0) {
+-                fprintf(stderr, "failed to set \"%s\" for %s\n",
+-                        arg, group);
+-                return -1;
++                error_report("failed to set \"%s\" for %s", arg, group);
++                goto out;
+             }
+             continue;
+         }
+-        fprintf(stderr, "parse error: %s\n", line);
+-        return -1;
++        error_report("parse error");
++        goto out;
+     }
+-    return 0;
++    res = 0;
++out:
++    loc_pop(&loc);
++    return res;
+ }
+diff --git a/qemu-config.h b/qemu-config.h
+index 7a61619..709ca74 100644
+--- a/qemu-config.h
++++ b/qemu-config.h
+@@ -17,6 +17,6 @@ int qemu_global_option(const char *str);
+ void qemu_add_globals(void);
+ 
+ void qemu_config_write(FILE *fp);
+-int qemu_config_parse(FILE *fp);
++int qemu_config_parse(FILE *fp, const char *fname);
+ 
+ #endif /* QEMU_CONFIG_H */
+diff --git a/qemu-error.c b/qemu-error.c
+index 214e448..23176e1 100644
+--- a/qemu-error.c
++++ b/qemu-error.c
+@@ -113,6 +113,19 @@ void loc_set_none(void)
+     cur_loc->kind = LOC_NONE;
+ }
+ 
++/*
++ * Change the current location to file FNAME, line LNO.
++ */
++void loc_set_file(const char *fname, int lno)
++{
++    assert (fname || cur_loc->kind == LOC_FILE);
++    cur_loc->kind = LOC_FILE;
++    cur_loc->num = lno;
++    if (fname) {
++        cur_loc->ptr = fname;
++    }
++}
++
+ static const char *progname;
+ 
+ /*
+@@ -136,6 +149,13 @@ void error_print_loc(void)
+         sep = " ";
+     }
+     switch (cur_loc->kind) {
++    case LOC_FILE:
++        error_printf("%s:", (const char *)cur_loc->ptr);
++        if (cur_loc->num) {
++            error_printf("%d:", cur_loc->num);
++        }
++        error_printf(" ");
++        break;
+     default:
+         error_printf(sep);
+     }
+diff --git a/qemu-error.h b/qemu-error.h
+index 204dfb6..8f2a140 100644
+--- a/qemu-error.h
++++ b/qemu-error.h
+@@ -15,7 +15,7 @@
+ 
+ typedef struct Location {
+     /* all members are private to qemu-error.c */
+-    enum { LOC_NONE } kind;
++    enum { LOC_NONE, LOC_FILE } kind;
+     int num;
+     const void *ptr;
+     struct Location *prev;
+@@ -27,6 +27,7 @@ Location *loc_pop(Location *loc);
+ Location *loc_save(Location *loc);
+ void loc_restore(Location *loc);
+ void loc_set_none(void);
++void loc_set_file(const char *fname, int lno);
+ 
+ void error_vprintf(const char *fmt, va_list ap);
+ void error_printf(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
+diff --git a/vl.c b/vl.c
+index 964dd70..9042e2a 100644
+--- a/vl.c
++++ b/vl.c
+@@ -5132,18 +5132,22 @@ int main(int argc, char **argv, char **envp)
+     }
+ 
+     if (defconfig) {
++        const char *fname;
+         FILE *fp;
+-        fp = fopen(CONFIG_QEMU_CONFDIR "/qemu.conf", "r");
++
++        fname = CONFIG_QEMU_CONFDIR "/qemu.conf";
++        fp = fopen(fname, "r");
+         if (fp) {
+-            if (qemu_config_parse(fp) != 0) {
++            if (qemu_config_parse(fp, fname) != 0) {
+                 exit(1);
+             }
+             fclose(fp);
+         }
+ 
+-        fp = fopen(CONFIG_QEMU_CONFDIR "/target-" TARGET_ARCH ".conf", "r");
++        fname = CONFIG_QEMU_CONFDIR "/target-" TARGET_ARCH ".conf";
++        fp = fopen(fname, "r");
+         if (fp) {
+-            if (qemu_config_parse(fp) != 0) {
++            if (qemu_config_parse(fp, fname) != 0) {
+                 exit(1);
+             }
+             fclose(fp);
+@@ -5871,7 +5875,7 @@ int main(int argc, char **argv, char **envp)
+                         fprintf(stderr, "open %s: %s\n", optarg, strerror(errno));
+                         exit(1);
+                     }
+-                    if (qemu_config_parse(fp) != 0) {
++                    if (qemu_config_parse(fp, optarg) != 0) {
+                         exit(1);
+                     }
+                     fclose(fp);
+-- 
+1.7.0.3
+

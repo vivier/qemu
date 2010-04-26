@@ -1,0 +1,272 @@
+From 0e955893cdb81181faa3349ec97e8a8cd27096ef Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Fri, 23 Apr 2010 07:10:10 -0300
+Subject: [PATCH 56/66] qemu-option: Move the implied first name into QemuOptsList
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <m3hbn263vx.fsf_-_@blackfin.pond.sub.org>
+Patchwork-id: 8799
+O-Subject: [PATCH 56/66 v2] qemu-option: Move the implied first name into
+	QemuOptsList
+Bugzilla: 579470
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+We sometimes permit omitting the first option name, for example
+-device foo is short for -device driver=foo.  The name to use
+("driver" in the example) is passed as argument to qemu_opts_parse().
+For each QemuOptsList, we use at most one such name.
+
+Move the name into QemuOptsList, and pass whether to permit the
+abbreviation.  This ensures continued consistency, and simplifies the
+commit after next in this series.
+(cherry picked from commit 8212c64f0e1b32300b7ec4e79885a0caf6f521a6)
+
+vl.c manually fixed up for CONFIG_SPICE.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+v2: last patch hunk added for CONFIG_SPICE, trivially rediff the rest
+
+ hw/pci-hotplug.c |    2 +-
+ hw/qdev.c        |    2 +-
+ hw/usb-net.c     |    2 +-
+ net.c            |    4 ++--
+ qemu-config.c    |    5 +++++
+ qemu-option.c    |    7 ++++++-
+ qemu-option.h    |    3 ++-
+ vl.c             |   14 +++++++-------
+ 8 files changed, 25 insertions(+), 14 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pci-hotplug.c |    2 +-
+ hw/qdev.c        |    2 +-
+ hw/usb-net.c     |    2 +-
+ net.c            |    4 ++--
+ qemu-config.c    |    5 +++++
+ qemu-option.c    |    7 ++++++-
+ qemu-option.h    |    3 ++-
+ vl.c             |   14 +++++++-------
+ 8 files changed, 25 insertions(+), 14 deletions(-)
+
+diff --git a/hw/pci-hotplug.c b/hw/pci-hotplug.c
+index f3df5a3..de888fc 100644
+--- a/hw/pci-hotplug.c
++++ b/hw/pci-hotplug.c
+@@ -55,7 +55,7 @@ static PCIDevice *qemu_pci_hot_add_nic(Monitor *mon,
+         return NULL;
+     }
+ 
+-    opts = qemu_opts_parse(&qemu_net_opts, opts_str ? opts_str : "", NULL);
++    opts = qemu_opts_parse(&qemu_net_opts, opts_str ? opts_str : "", 0);
+     if (!opts) {
+         monitor_printf(mon, "parsing network options '%s' failed\n",
+                        opts_str ? opts_str : "");
+diff --git a/hw/qdev.c b/hw/qdev.c
+index 5d0990d..64cabd5 100644
+--- a/hw/qdev.c
++++ b/hw/qdev.c
+@@ -767,7 +767,7 @@ void do_device_add(Monitor *mon, const QDict *qdict)
+     QemuOpts *opts;
+ 
+     opts = qemu_opts_parse(&qemu_device_opts,
+-                           qdict_get_str(qdict, "config"), "driver");
++                           qdict_get_str(qdict, "config"), 1);
+     if (opts) {
+         if (qdev_device_help(opts) || qdev_device_add(opts) == NULL) {
+             qemu_opts_del(opts);
+diff --git a/hw/usb-net.c b/hw/usb-net.c
+index cfd2f62..56fdd9b 100644
+--- a/hw/usb-net.c
++++ b/hw/usb-net.c
+@@ -1478,7 +1478,7 @@ static USBDevice *usb_net_init(const char *cmdline)
+     QemuOpts *opts;
+     int idx;
+ 
+-    opts = qemu_opts_parse(&qemu_net_opts, cmdline, NULL);
++    opts = qemu_opts_parse(&qemu_net_opts, cmdline, 0);
+     if (!opts) {
+         return NULL;
+     }
+diff --git a/net.c b/net.c
+index 4c92f9f..5e3333f 100644
+--- a/net.c
++++ b/net.c
+@@ -1167,7 +1167,7 @@ void net_host_device_add(Monitor *mon, const QDict *qdict)
+         return;
+     }
+ 
+-    opts = qemu_opts_parse(&qemu_net_opts, opts_str ? opts_str : "", NULL);
++    opts = qemu_opts_parse(&qemu_net_opts, opts_str ? opts_str : "", 0);
+     if (!opts) {
+         monitor_printf(mon, "parsing network options '%s' failed\n",
+                        opts_str ? opts_str : "");
+@@ -1352,7 +1352,7 @@ int net_client_parse(QemuOptsList *opts_list, const char *optarg)
+     }
+ #endif
+ 
+-    if (!qemu_opts_parse(opts_list, optarg, "type")) {
++    if (!qemu_opts_parse(opts_list, optarg, 1)) {
+         return -1;
+     }
+ 
+diff --git a/qemu-config.c b/qemu-config.c
+index 5f43f27..3160682 100644
+--- a/qemu-config.c
++++ b/qemu-config.c
+@@ -90,6 +90,7 @@ QemuOptsList qemu_drive_opts = {
+ 
+ QemuOptsList qemu_chardev_opts = {
+     .name = "chardev",
++    .implied_opt_name = "backend",
+     .head = QTAILQ_HEAD_INITIALIZER(qemu_chardev_opts.head),
+     .desc = {
+         {
+@@ -156,6 +157,7 @@ QemuOptsList qemu_chardev_opts = {
+ 
+ QemuOptsList qemu_device_opts = {
+     .name = "device",
++    .implied_opt_name = "driver",
+     .head = QTAILQ_HEAD_INITIALIZER(qemu_device_opts.head),
+     .desc = {
+         /*
+@@ -169,6 +171,7 @@ QemuOptsList qemu_device_opts = {
+ 
+ QemuOptsList qemu_netdev_opts = {
+     .name = "netdev",
++    .implied_opt_name = "type",
+     .head = QTAILQ_HEAD_INITIALIZER(qemu_netdev_opts.head),
+     .desc = {
+         /*
+@@ -181,6 +184,7 @@ QemuOptsList qemu_netdev_opts = {
+ 
+ QemuOptsList qemu_net_opts = {
+     .name = "net",
++    .implied_opt_name = "type",
+     .head = QTAILQ_HEAD_INITIALIZER(qemu_net_opts.head),
+     .desc = {
+         /*
+@@ -231,6 +235,7 @@ QemuOptsList qemu_global_opts = {
+ 
+ QemuOptsList qemu_mon_opts = {
+     .name = "mon",
++    .implied_opt_name = "chardev",
+     .head = QTAILQ_HEAD_INITIALIZER(qemu_mon_opts.head),
+     .desc = {
+         {
+diff --git a/qemu-option.c b/qemu-option.c
+index e4880a8..6a6414a 100644
+--- a/qemu-option.c
++++ b/qemu-option.c
+@@ -753,12 +753,17 @@ int qemu_opts_do_parse(QemuOpts *opts, const char *params, const char *firstname
+     return 0;
+ }
+ 
+-QemuOpts *qemu_opts_parse(QemuOptsList *list, const char *params, const char *firstname)
++QemuOpts *qemu_opts_parse(QemuOptsList *list, const char *params,
++                          int permit_abbrev)
+ {
++    const char *firstname;
+     char value[1024], *id = NULL;
+     const char *p;
+     QemuOpts *opts;
+ 
++    assert(!permit_abbrev || list->implied_opt_name);
++    firstname = permit_abbrev ? list->implied_opt_name : NULL;
++
+     if (strncmp(params, "id=", 3) == 0) {
+         get_opt_value(value, sizeof(value), params+3);
+         id = qemu_strdup(value);
+diff --git a/qemu-option.h b/qemu-option.h
+index 9f0933c..a3bc061 100644
+--- a/qemu-option.h
++++ b/qemu-option.h
+@@ -97,6 +97,7 @@ typedef struct QemuOptDesc {
+ 
+ struct QemuOptsList {
+     const char *name;
++    const char *implied_opt_name;
+     QTAILQ_HEAD(, QemuOpts) head;
+     QemuOptDesc desc[];
+ };
+@@ -118,7 +119,7 @@ const char *qemu_opts_id(QemuOpts *opts);
+ void qemu_opts_del(QemuOpts *opts);
+ int qemu_opts_validate(QemuOpts *opts, QemuOptDesc *desc);
+ int qemu_opts_do_parse(QemuOpts *opts, const char *params, const char *firstname);
+-QemuOpts *qemu_opts_parse(QemuOptsList *list, const char *params, const char *firstname);
++QemuOpts *qemu_opts_parse(QemuOptsList *list, const char *params, int permit_abbrev);
+ QemuOpts *qemu_opts_from_qdict(QemuOptsList *list, const QDict *qdict);
+ QDict *qemu_opts_to_qdict(QemuOpts *opts, QDict *qdict);
+ 
+diff --git a/vl.c b/vl.c
+index 5408099..4014bde 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2044,7 +2044,7 @@ QemuOpts *drive_add(const char *file, const char *fmt, ...)
+     vsnprintf(optstr, sizeof(optstr), fmt, ap);
+     va_end(ap);
+ 
+-    opts = qemu_opts_parse(&qemu_drive_opts, optstr, NULL);
++    opts = qemu_opts_parse(&qemu_drive_opts, optstr, 0);
+     if (!opts) {
+         fprintf(stderr, "%s: huh? duplicate? (%s)\n",
+                 __FUNCTION__, optstr);
+@@ -4579,7 +4579,7 @@ static int balloon_parse(const char *arg)
+     if (!strncmp(arg, "virtio", 6)) {
+         if (arg[6] == ',') {
+             /* have params -> parse them */
+-            opts = qemu_opts_parse(&qemu_device_opts, arg+7, NULL);
++            opts = qemu_opts_parse(&qemu_device_opts, arg+7, 0);
+             if (!opts)
+                 return  -1;
+         } else {
+@@ -5548,7 +5548,7 @@ int main(int argc, char **argv, char **envp)
+                 default_monitor = 0;
+                 break;
+             case QEMU_OPTION_mon:
+-                opts = qemu_opts_parse(&qemu_mon_opts, optarg, "chardev");
++                opts = qemu_opts_parse(&qemu_mon_opts, optarg, 1);
+                 if (!opts) {
+                     fprintf(stderr, "parse error: %s\n", optarg);
+                     exit(1);
+@@ -5556,7 +5556,7 @@ int main(int argc, char **argv, char **envp)
+                 default_monitor = 0;
+                 break;
+             case QEMU_OPTION_chardev:
+-                opts = qemu_opts_parse(&qemu_chardev_opts, optarg, "backend");
++                opts = qemu_opts_parse(&qemu_chardev_opts, optarg, 1);
+                 if (!opts) {
+                     fprintf(stderr, "parse error: %s\n", optarg);
+                     exit(1);
+@@ -5688,7 +5688,7 @@ int main(int argc, char **argv, char **envp)
+                 add_device_config(DEV_USB, optarg);
+                 break;
+             case QEMU_OPTION_device:
+-                if (!qemu_opts_parse(&qemu_device_opts, optarg, "driver")) {
++                if (!qemu_opts_parse(&qemu_device_opts, optarg, 1)) {
+                     exit(1);
+                 }
+                 break;
+@@ -5811,7 +5811,7 @@ int main(int argc, char **argv, char **envp)
+                 configure_rtc_date_offset(optarg, 1);
+                 break;
+             case QEMU_OPTION_rtc:
+-                opts = qemu_opts_parse(&qemu_rtc_opts, optarg, NULL);
++                opts = qemu_opts_parse(&qemu_rtc_opts, optarg, 0);
+                 if (!opts) {
+                     fprintf(stderr, "parse error: %s\n", optarg);
+                     exit(1);
+@@ -5883,7 +5883,7 @@ int main(int argc, char **argv, char **envp)
+                 }
+ #ifdef CONFIG_SPICE
+             case QEMU_OPTION_spice:
+-                opts = qemu_opts_parse(&qemu_spice_opts, optarg, NULL);
++                opts = qemu_opts_parse(&qemu_spice_opts, optarg, 0);
+                 if (!opts) {
+                     fprintf(stderr, "parse error: %s\n", optarg);
+                     exit(1);
+-- 
+1.7.0.3
+

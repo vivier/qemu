@@ -1,0 +1,58 @@
+From 4d454be26821fd7c744aa24a5666687a1e2ca7c6 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:59 -0300
+Subject: [PATCH 44/66] error: New QERR_BUS_NOT_FOUND
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-45-git-send-email-armbru@redhat.com>
+Patchwork-id: 8212
+O-Subject: [PATCH 44/66] error: New QERR_BUS_NOT_FOUND
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+(cherry picked from commit 7bbd823701cf4447b5c23430f1ad78ce501793b4)
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/qerror.c b/qerror.c
+index 6666ab5..ce1abef 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -41,6 +41,10 @@ static const QType qerror_type = {
+  */
+ static const QErrorStringTable qerror_table[] = {
+     {
++        .error_fmt = QERR_BUS_NOT_FOUND,
++        .desc      = "Bus '%(bus)' not found",
++    },
++    {
+         .error_fmt = QERR_COMMAND_NOT_FOUND,
+         .desc      = "The command %(name) has not been found",
+     },
+diff --git a/qerror.h b/qerror.h
+index 98f28f9..d68b8a4 100644
+--- a/qerror.h
++++ b/qerror.h
+@@ -42,6 +42,9 @@ QError *qobject_to_qerror(const QObject *obj);
+ /*
+  * QError class list
+  */
++#define QERR_BUS_NOT_FOUND \
++    "{ 'class': 'BusNotFound', 'data': { 'bus': %s } }"
++
+ #define QERR_COMMAND_NOT_FOUND \
+     "{ 'class': 'CommandNotFound', 'data': { 'name': %s } }"
+ 
+-- 
+1.7.0.3
+

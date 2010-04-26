@@ -1,0 +1,298 @@
+From d9c90f07d1e54d91e554cff4029124903c07b25b Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:34 -0300
+Subject: [PATCH 19/66] error: Move qemu_error & friends into their own header
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-20-git-send-email-armbru@redhat.com>
+Patchwork-id: 8216
+O-Subject: [PATCH 19/66] error: Move qemu_error & friends into their own header
+Bugzilla: 579470
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+(cherry picked from commit 2f7920166d1aa402104d7b30d0225e71588f91f9)
+
+hw/device-assignment.c manually backported.
+---
+ hw/device-assignment.c |    2 +-
+ hw/scsi-bus.c          |    2 +-
+ hw/scsi-disk.c         |    3 +--
+ hw/scsi-generic.c      |    1 +
+ hw/usb-serial.c        |    1 +
+ hw/virtio-net.c        |    1 +
+ hw/virtio-pci.c        |    2 +-
+ monitor.h              |    1 +
+ net/dump.c             |    1 +
+ net/socket.c           |    2 +-
+ net/tap-linux.c        |    1 +
+ net/tap.c              |    1 +
+ qemu-config.c          |    1 +
+ qemu-error.h           |   12 ++++++++++++
+ qemu-tool.c            |    2 +-
+ qerror.c               |    2 +-
+ sysemu.h               |    8 --------
+ 17 files changed, 27 insertions(+), 16 deletions(-)
+ create mode 100644 qemu-error.h
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |    2 +-
+ hw/scsi-bus.c          |    2 +-
+ hw/scsi-disk.c         |    3 +--
+ hw/scsi-generic.c      |    1 +
+ hw/usb-serial.c        |    1 +
+ hw/virtio-net.c        |    1 +
+ hw/virtio-pci.c        |    2 +-
+ monitor.h              |    1 +
+ net/dump.c             |    1 +
+ net/socket.c           |    2 +-
+ net/tap-linux.c        |    1 +
+ net/tap.c              |    1 +
+ qemu-config.c          |    1 +
+ qemu-error.h           |   12 ++++++++++++
+ qemu-tool.c            |    2 +-
+ qerror.c               |    2 +-
+ sysemu.h               |    8 --------
+ 17 files changed, 27 insertions(+), 16 deletions(-)
+ create mode 100644 qemu-error.h
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index d1d050e..08396ef 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -31,9 +31,9 @@
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ #include "qemu-kvm.h"
++#include "qemu-error.h"
+ #include "hw.h"
+ #include "pc.h"
+-#include "sysemu.h"
+ #include "console.h"
+ #include "device-assignment.h"
+ #include "loader.h"
+diff --git a/hw/scsi-bus.c b/hw/scsi-bus.c
+index 736e91e..8adf5f0 100644
+--- a/hw/scsi-bus.c
++++ b/hw/scsi-bus.c
+@@ -1,5 +1,5 @@
+ #include "hw.h"
+-#include "sysemu.h"
++#include "qemu-error.h"
+ #include "scsi.h"
+ #include "scsi-defs.h"
+ #include "block.h"
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index da586dd..5f3c240 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -19,8 +19,6 @@
+  * the host adapter emulator.
+  */
+ 
+-#include <qemu-common.h>
+-#include <sysemu.h>
+ //#define DEBUG_SCSI
+ 
+ #ifdef DEBUG_SCSI
+@@ -34,6 +32,7 @@ do { printf("scsi-disk: " fmt , ## __VA_ARGS__); } while (0)
+ do { fprintf(stderr, "scsi-disk: " fmt , ## __VA_ARGS__); } while (0)
+ 
+ #include "qemu-common.h"
++#include "qemu-error.h"
+ #include "block.h"
+ #include "scsi.h"
+ #include "scsi-defs.h"
+diff --git a/hw/scsi-generic.c b/hw/scsi-generic.c
+index de778ef..cfd9903 100644
+--- a/hw/scsi-generic.c
++++ b/hw/scsi-generic.c
+@@ -12,6 +12,7 @@
+  */
+ 
+ #include "qemu-common.h"
++#include "qemu-error.h"
+ #include "block.h"
+ #include "scsi.h"
+ 
+diff --git a/hw/usb-serial.c b/hw/usb-serial.c
+index c3f3401..e78c6c0 100644
+--- a/hw/usb-serial.c
++++ b/hw/usb-serial.c
+@@ -9,6 +9,7 @@
+  */
+ 
+ #include "qemu-common.h"
++#include "qemu-error.h"
+ #include "usb.h"
+ #include "qemu-char.h"
+ 
+diff --git a/hw/virtio-net.c b/hw/virtio-net.c
+index e7b7fb4..491bf2d 100644
+--- a/hw/virtio-net.c
++++ b/hw/virtio-net.c
+@@ -15,6 +15,7 @@
+ #include "net.h"
+ #include "net/checksum.h"
+ #include "net/tap.h"
++#include "qemu-error.h"
+ #include "qemu-timer.h"
+ #include "virtio-net.h"
+ #include "vhost_net.h"
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index f55483d..fffd98e 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -19,7 +19,7 @@
+ #include "virtio-blk.h"
+ #include "virtio-net.h"
+ #include "pci.h"
+-#include "sysemu.h"
++#include "qemu-error.h"
+ #include "msix.h"
+ #include "net.h"
+ #include "block_int.h"
+diff --git a/monitor.h b/monitor.h
+index d185237..d8cfcb4 100644
+--- a/monitor.h
++++ b/monitor.h
+@@ -3,6 +3,7 @@
+ 
+ #include "qemu-common.h"
+ #include "qemu-char.h"
++#include "qemu-error.h"
+ #include "qerror.h"
+ #include "qdict.h"
+ #include "block.h"
+diff --git a/net/dump.c b/net/dump.c
+index d50b4ee..e702830 100644
+--- a/net/dump.c
++++ b/net/dump.c
+@@ -25,6 +25,7 @@
+ #include "dump.h"
+ #include "qemu-common.h"
+ #include "sysemu.h"
++#include "qemu-error.h"
+ #include "qemu-log.h"
+ 
+ typedef struct DumpState {
+diff --git a/net/socket.c b/net/socket.c
+index 442a9c7..474d573 100644
+--- a/net/socket.c
++++ b/net/socket.c
+@@ -28,9 +28,9 @@
+ #include "net.h"
+ #include "qemu-char.h"
+ #include "qemu-common.h"
++#include "qemu-error.h"
+ #include "qemu-option.h"
+ #include "qemu_socket.h"
+-#include "sysemu.h"
+ 
+ typedef struct NetSocketState {
+     VLANClientState nc;
+diff --git a/net/tap-linux.c b/net/tap-linux.c
+index 6af9e82..c5748e6 100644
+--- a/net/tap-linux.c
++++ b/net/tap-linux.c
+@@ -31,6 +31,7 @@
+ 
+ #include "sysemu.h"
+ #include "qemu-common.h"
++#include "qemu-error.h"
+ 
+ int tap_open(char *ifname, int ifname_size, int *vnet_hdr, int vnet_hdr_required)
+ {
+diff --git a/net/tap.c b/net/tap.c
+index 35c05d7..9a7959f 100644
+--- a/net/tap.c
++++ b/net/tap.c
+@@ -38,6 +38,7 @@
+ #include "sysemu.h"
+ #include "qemu-char.h"
+ #include "qemu-common.h"
++#include "qemu-error.h"
+ 
+ #include "net/tap-linux.h"
+ 
+diff --git a/qemu-config.c b/qemu-config.c
+index b3fe197..e590dd0 100644
+--- a/qemu-config.c
++++ b/qemu-config.c
+@@ -1,4 +1,5 @@
+ #include "qemu-common.h"
++#include "qemu-error.h"
+ #include "qemu-option.h"
+ #include "qemu-config.h"
+ #include "sysemu.h"
+diff --git a/qemu-error.h b/qemu-error.h
+new file mode 100644
+index 0000000..fa16113
+--- /dev/null
++++ b/qemu-error.h
+@@ -0,0 +1,12 @@
++#ifndef QEMU_ERROR_H
++#define QEMU_ERROR_H
++
++void qemu_error(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
++void qemu_error_internal(const char *file, int linenr, const char *func,
++                         const char *fmt, ...)
++                         __attribute__ ((format(printf, 4, 5)));
++
++#define qemu_error_new(fmt, ...) \
++    qemu_error_internal(__FILE__, __LINE__, __func__, fmt, ## __VA_ARGS__)
++
++#endif
+diff --git a/qemu-tool.c b/qemu-tool.c
+index bbce99f..26f46eb 100644
+--- a/qemu-tool.c
++++ b/qemu-tool.c
+@@ -13,9 +13,9 @@
+ 
+ #include "qemu-common.h"
+ #include "monitor.h"
+-#include "sysemu.h"
+ #include "qemu-timer.h"
+ #include "qemu-log.h"
++#include "qemu-error.h"
+ 
+ #include <sys/time.h>
+ 
+diff --git a/qerror.c b/qerror.c
+index 4e63a54..02da498 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -12,8 +12,8 @@
+ #include "qjson.h"
+ #include "qerror.h"
+ #include "qstring.h"
+-#include "sysemu.h"
+ #include "qemu-common.h"
++#include "qemu-error.h"
+ 
+ static void qerror_destroy_obj(QObject *obj);
+ 
+diff --git a/sysemu.h b/sysemu.h
+index 08a9f49..b1112bf 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -70,14 +70,6 @@ int qemu_savevm_state_complete(Monitor *mon, QEMUFile *f);
+ void qemu_savevm_state_cancel(Monitor *mon, QEMUFile *f);
+ int qemu_loadvm_state(QEMUFile *f);
+ 
+-void qemu_error(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
+-void qemu_error_internal(const char *file, int linenr, const char *func,
+-                         const char *fmt, ...)
+-                         __attribute__ ((format(printf, 4, 5)));
+-
+-#define qemu_error_new(fmt, ...) \
+-    qemu_error_internal(__FILE__, __LINE__, __func__, fmt, ## __VA_ARGS__)
+-
+ #ifdef _WIN32
+ /* Polling handling */
+ 
+-- 
+1.7.0.3
+

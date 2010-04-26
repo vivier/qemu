@@ -1,0 +1,42 @@
+From 6ee4c75905eb68a7c76c1cb4d892737767d8b3bd Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:25:19 -0300
+Subject: [PATCH 64/66] error: Make use of error_set_progname() optional
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-65-git-send-email-armbru@redhat.com>
+Patchwork-id: 8243
+O-Subject: [PATCH 64/66] error: Make use of error_set_progname() optional
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit 6627f64510b622912d35ced2771583e03b1f155f)
+---
+ qemu-error.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-error.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-error.c b/qemu-error.c
+index 5d5fe37..9b9c0a1 100644
+--- a/qemu-error.c
++++ b/qemu-error.c
+@@ -167,7 +167,7 @@ void error_print_loc(void)
+     int i;
+     const char *const *argp;
+ 
+-    if (!cur_mon) {
++    if (!cur_mon && progname) {
+         fprintf(stderr, "%s:", progname);
+         sep = " ";
+     }
+-- 
+1.7.0.3
+

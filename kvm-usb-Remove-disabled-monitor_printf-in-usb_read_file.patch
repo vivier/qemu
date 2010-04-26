@@ -1,0 +1,58 @@
+From 60d7580b3222d8b79974c81b0528dabd57b03cec Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:24 -0300
+Subject: [PATCH 09/66] usb: Remove disabled monitor_printf() in usb_read_file()
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-10-git-send-email-armbru@redhat.com>
+Patchwork-id: 8207
+O-Subject: [PATCH 09/66] usb: Remove disabled monitor_printf() in usb_read_file()
+Bugzilla: 579470
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+The monitor_printf() reports failure.  Printing is wrong, because the
+caller tries various arguments, and expects the function to fail for
+some or all.
+
+Disabled since commit 26a9e82a.  Remove it.
+(cherry picked from commit 4491e0f3984c81ebe12027de2f3d185953f09bde)
+---
+ usb-linux.c |    8 --------
+ 1 files changed, 0 insertions(+), 8 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ usb-linux.c |    8 --------
+ 1 files changed, 0 insertions(+), 8 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index 1aaa595..f17b485 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -1190,9 +1190,6 @@ static int usb_host_scan_dev(void *opaque, USBScanFunc *func)
+  */
+ static int usb_host_read_file(char *line, size_t line_size, const char *device_file, const char *device_name)
+ {
+-#if 0
+-    Monitor *mon = cur_mon;
+-#endif
+     FILE *f;
+     int ret = 0;
+     char filename[PATH_MAX];
+@@ -1203,11 +1200,6 @@ static int usb_host_read_file(char *line, size_t line_size, const char *device_f
+     if (f) {
+         ret = fgets(line, line_size, f) != NULL;
+         fclose(f);
+-#if 0
+-    } else {
+-        if (mon)
+-            monitor_printf(mon, "husb: could not open %s\n", filename);
+-#endif
+     }
+ 
+     return ret;
+-- 
+1.7.0.3
+

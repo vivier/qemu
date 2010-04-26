@@ -1,0 +1,43 @@
+From 89d0c6fa3e2d08ba170d2fdb5a68c05381d65b74 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:25:17 -0300
+Subject: [PATCH 62/66] error: Trim includes in qerror.c
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-63-git-send-email-armbru@redhat.com>
+Patchwork-id: 8255
+O-Subject: [PATCH 62/66] error: Trim includes in qerror.c
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit c8bfe7db2761c37136b550eb3bccd221dc7226cd)
+---
+ qerror.c |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qerror.c |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+diff --git a/qerror.c b/qerror.c
+index 2faa638..2fc4890 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -11,9 +11,7 @@
+  */
+ #include "qjson.h"
+ #include "qerror.h"
+-#include "qstring.h"
+ #include "qemu-common.h"
+-#include "qemu-error.h"
+ 
+ static void qerror_destroy_obj(QObject *obj);
+ 
+-- 
+1.7.0.3
+

@@ -1,0 +1,64 @@
+From 0c4daa209c6d0121f2da939182e8b2ba75a40c5c Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:25:03 -0300
+Subject: [PATCH 48/66] error: New error_printf_unless_qmp()
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-49-git-send-email-armbru@redhat.com>
+Patchwork-id: 8222
+O-Subject: [PATCH 48/66] error: New error_printf_unless_qmp()
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+(cherry picked from commit aa924ae7306f18f258c48f070c0d06215f157d0f)
+---
+ qemu-error.c |   11 +++++++++++
+ qemu-error.h |    2 ++
+ 2 files changed, 13 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-error.c |   11 +++++++++++
+ qemu-error.h |    2 ++
+ 2 files changed, 13 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-error.c b/qemu-error.c
+index a8c178b..5d5fe37 100644
+--- a/qemu-error.c
++++ b/qemu-error.c
+@@ -41,6 +41,17 @@ void error_printf(const char *fmt, ...)
+     va_end(ap);
+ }
+ 
++void error_printf_unless_qmp(const char *fmt, ...)
++{
++    va_list ap;
++
++    if (!monitor_cur_is_qmp()) {
++        va_start(ap, fmt);
++        error_vprintf(fmt, ap);
++        va_end(ap);
++    }
++}
++
+ static Location std_loc = {
+     .kind = LOC_NONE
+ };
+diff --git a/qemu-error.h b/qemu-error.h
+index 88e0b70..e63c6ab 100644
+--- a/qemu-error.h
++++ b/qemu-error.h
+@@ -32,6 +32,8 @@ void loc_set_file(const char *fname, int lno);
+ 
+ void error_vprintf(const char *fmt, va_list ap);
+ void error_printf(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
++void error_printf_unless_qmp(const char *fmt, ...)
++    __attribute__ ((format(printf, 1, 2)));
+ void error_print_loc(void);
+ void error_set_progname(const char *argv0);
+ void error_report(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
+-- 
+1.7.0.3
+

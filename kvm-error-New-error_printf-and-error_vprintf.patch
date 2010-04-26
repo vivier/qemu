@@ -1,0 +1,119 @@
+From b2c953d208fca97993b2556efe4c3b3a8a044eed Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:35 -0300
+Subject: [PATCH 20/66] error: New error_printf() and error_vprintf()
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-21-git-send-email-armbru@redhat.com>
+Patchwork-id: 8209
+O-Subject: [PATCH 20/66] error: New error_printf() and error_vprintf()
+Bugzilla: 579470
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+(cherry picked from commit ba0fe87acd8937d403f60da63290aadb0b84827e)
+---
+ qemu-error.c |   49 ++++++++++++++++++++++++++++++++++++++++++-------
+ qemu-error.h |   14 ++++++++++++++
+ 2 files changed, 56 insertions(+), 7 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-error.c |   49 ++++++++++++++++++++++++++++++++++++++++++-------
+ qemu-error.h |   14 ++++++++++++++
+ 2 files changed, 56 insertions(+), 7 deletions(-)
+
+diff --git a/qemu-error.c b/qemu-error.c
+index 63bcdcf..d20fd0f 100644
+--- a/qemu-error.c
++++ b/qemu-error.c
+@@ -1,18 +1,53 @@
++/*
++ * Error reporting
++ *
++ * Copyright (C) 2010 Red Hat Inc.
++ *
++ * Authors:
++ *  Markus Armbruster <armbru@redhat.com>,
++ *
++ * This work is licensed under the terms of the GNU GPL, version 2 or later.
++ * See the COPYING file in the top-level directory.
++ */
++
+ #include <stdio.h>
+ #include "monitor.h"
+ #include "sysemu.h"
+ 
+-void qemu_error(const char *fmt, ...)
++/*
++ * Print to current monitor if we have one, else to stderr.
++ * TODO should return int, so callers can calculate width, but that
++ * requires surgery to monitor_vprintf().  Left for another day.
++ */
++void error_vprintf(const char *fmt, va_list ap)
+ {
+-    va_list args;
+-
+-    va_start(args, fmt);
+     if (cur_mon) {
+-        monitor_vprintf(cur_mon, fmt, args);
++        monitor_vprintf(cur_mon, fmt, ap);
+     } else {
+-        vfprintf(stderr, fmt, args);
++        vfprintf(stderr, fmt, ap);
+     }
+-    va_end(args);
++}
++
++/*
++ * Print to current monitor if we have one, else to stderr.
++ * TODO just like error_vprintf()
++ */
++void error_printf(const char *fmt, ...)
++{
++    va_list ap;
++
++    va_start(ap, fmt);
++    error_vprintf(fmt, ap);
++    va_end(ap);
++}
++
++void qemu_error(const char *fmt, ...)
++{
++    va_list ap;
++
++    va_start(ap, fmt);
++    error_vprintf(fmt, ap);
++    va_end(ap);
+ }
+ 
+ void qemu_error_internal(const char *file, int linenr, const char *func,
+diff --git a/qemu-error.h b/qemu-error.h
+index fa16113..d90f1da 100644
+--- a/qemu-error.h
++++ b/qemu-error.h
+@@ -1,6 +1,20 @@
++/*
++ * Error reporting
++ *
++ * Copyright (C) 2010 Red Hat Inc.
++ *
++ * Authors:
++ *  Markus Armbruster <armbru@redhat.com>,
++ *
++ * This work is licensed under the terms of the GNU GPL, version 2 or later.
++ * See the COPYING file in the top-level directory.
++ */
++
+ #ifndef QEMU_ERROR_H
+ #define QEMU_ERROR_H
+ 
++void error_vprintf(const char *fmt, va_list ap);
++void error_printf(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
+ void qemu_error(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
+ void qemu_error_internal(const char *file, int linenr, const char *func,
+                          const char *fmt, ...)
+-- 
+1.7.0.3
+

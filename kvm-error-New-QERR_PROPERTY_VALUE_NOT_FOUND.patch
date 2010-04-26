@@ -1,0 +1,58 @@
+From 81a62cf9b50ac3116a4a4ee56dcd61977789307d Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:56 -0300
+Subject: [PATCH 41/66] error: New QERR_PROPERTY_VALUE_NOT_FOUND
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-42-git-send-email-armbru@redhat.com>
+Patchwork-id: 8240
+O-Subject: [PATCH 41/66] error: New QERR_PROPERTY_VALUE_NOT_FOUND
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+(cherry picked from commit 84745d68e7338271f0f7ec567ab52abf20a0ce9c)
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/qerror.c b/qerror.c
+index 7420e95..6666ab5 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -121,6 +121,10 @@ static const QErrorStringTable qerror_table[] = {
+         .desc      = "Property '%(device).%(property)' can't take value '%(value)', it's in use",
+     },
+     {
++        .error_fmt = QERR_PROPERTY_VALUE_NOT_FOUND,
++        .desc      = "Property '%(device).%(property)' can't find value '%(value)'",
++    },
++    {
+         .error_fmt = QERR_QMP_BAD_INPUT_OBJECT,
+         .desc      = "Bad QMP input object",
+     },
+diff --git a/qerror.h b/qerror.h
+index 810b851..98f28f9 100644
+--- a/qerror.h
++++ b/qerror.h
+@@ -102,6 +102,9 @@ QError *qobject_to_qerror(const QObject *obj);
+ #define QERR_PROPERTY_VALUE_IN_USE \
+     "{ 'class': 'PropertyValueInUse', 'data': { 'device': %s, 'property': %s, 'value': %s } }"
+ 
++#define QERR_PROPERTY_VALUE_NOT_FOUND \
++    "{ 'class': 'PropertyValueNotFound', 'data': { 'device': %s, 'property': %s, 'value': %s } }"
++
+ #define QERR_QMP_BAD_INPUT_OBJECT \
+     "{ 'class': 'QMPBadInputObject', 'data': { 'expected': %s } }"
+ 
+-- 
+1.7.0.3
+

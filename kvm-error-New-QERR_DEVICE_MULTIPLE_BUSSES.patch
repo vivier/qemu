@@ -1,0 +1,58 @@
+From 67d85201250383017b5810d0a6f03ca0f26aa76c Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:25:00 -0300
+Subject: [PATCH 45/66] error: New QERR_DEVICE_MULTIPLE_BUSSES
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-46-git-send-email-armbru@redhat.com>
+Patchwork-id: 8263
+O-Subject: [PATCH 45/66] error: New QERR_DEVICE_MULTIPLE_BUSSES
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+(cherry picked from commit 1ae787184025b7e890a666e0041024a3d92529ce)
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/qerror.c b/qerror.c
+index ce1abef..611b461 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -61,6 +61,10 @@ static const QErrorStringTable qerror_table[] = {
+         .desc      = "Device '%(device)' is locked",
+     },
+     {
++        .error_fmt = QERR_DEVICE_MULTIPLE_BUSSES,
++        .desc      = "Device '%(device)' has multiple child busses",
++    },
++    {
+         .error_fmt = QERR_DEVICE_NOT_ACTIVE,
+         .desc      = "Device '%(device)' has not been activated by the guest",
+     },
+diff --git a/qerror.h b/qerror.h
+index d68b8a4..657b5e3 100644
+--- a/qerror.h
++++ b/qerror.h
+@@ -57,6 +57,9 @@ QError *qobject_to_qerror(const QObject *obj);
+ #define QERR_DEVICE_LOCKED \
+     "{ 'class': 'DeviceLocked', 'data': { 'device': %s } }"
+ 
++#define QERR_DEVICE_MULTIPLE_BUSSES \
++    "{ 'class': 'DeviceMultipleBusses', 'data': { 'device': %s } }"
++
+ #define QERR_DEVICE_NOT_ACTIVE \
+     "{ 'class': 'DeviceNotActive', 'data': { 'device': %s } }"
+ 
+-- 
+1.7.0.3
+

@@ -1,0 +1,242 @@
+From c6d574fe45fd2cf8bd13564c45e88fd5bf9e7d07 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:32 -0300
+Subject: [PATCH 17/66] error: Move qemu_error() & friends from monitor.c to own file
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-18-git-send-email-armbru@redhat.com>
+Patchwork-id: 8253
+O-Subject: [PATCH 17/66] error: Move qemu_error() & friends from monitor.c to
+	own file
+Bugzilla: 579470
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+They're about reporting errors, not about the monitor.
+(cherry picked from commit b4a51f7f5d4855d1af7eb6ce6c6f79bd24d1d5a8)
+---
+ Makefile.target |    1 +
+ monitor.c       |   89 -----------------------------------------------------
+ qemu-error.c    |   92 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 93 insertions(+), 89 deletions(-)
+ create mode 100644 qemu-error.c
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile.target |    1 +
+ monitor.c       |   89 -----------------------------------------------------
+ qemu-error.c    |   92 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 93 insertions(+), 89 deletions(-)
+ create mode 100644 qemu-error.c
+
+diff --git a/Makefile.target b/Makefile.target
+index 97b35f5..c514883 100644
+--- a/Makefile.target
++++ b/Makefile.target
+@@ -164,6 +164,7 @@ endif #CONFIG_BSD_USER
+ ifdef CONFIG_SOFTMMU
+ 
+ obj-y = vl.o async.o monitor.o pci.o pci_host.o pcie_host.o machine.o gdbstub.o
++obj-y += qemu-error.o
+ # virtio has to be here due to weird dependency between PCI and virtio-net.
+ # need to fix this properly
+ obj-y += virtio-blk.o virtio-balloon.o virtio-net.o virtio-pci.o virtio-serial-bus.o
+diff --git a/monitor.c b/monitor.c
+index a2d485e..bdeadf0 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -4732,92 +4732,3 @@ int monitor_read_bdrv_key_start(Monitor *mon, BlockDriverState *bs,
+ 
+     return err;
+ }
+-
+-typedef struct QemuErrorSink QemuErrorSink;
+-struct QemuErrorSink {
+-    enum {
+-        ERR_SINK_FILE,
+-        ERR_SINK_MONITOR,
+-    } dest;
+-    union {
+-        FILE    *fp;
+-        Monitor *mon;
+-    };
+-    QemuErrorSink *previous;
+-};
+-
+-static QemuErrorSink *qemu_error_sink;
+-
+-void qemu_errors_to_file(FILE *fp)
+-{
+-    QemuErrorSink *sink;
+-
+-    sink = qemu_mallocz(sizeof(*sink));
+-    sink->dest = ERR_SINK_FILE;
+-    sink->fp = fp;
+-    sink->previous = qemu_error_sink;
+-    qemu_error_sink = sink;
+-}
+-
+-void qemu_errors_to_mon(Monitor *mon)
+-{
+-    QemuErrorSink *sink;
+-
+-    sink = qemu_mallocz(sizeof(*sink));
+-    sink->dest = ERR_SINK_MONITOR;
+-    sink->mon = mon;
+-    sink->previous = qemu_error_sink;
+-    qemu_error_sink = sink;
+-}
+-
+-void qemu_errors_to_previous(void)
+-{
+-    QemuErrorSink *sink;
+-
+-    assert(qemu_error_sink != NULL);
+-    sink = qemu_error_sink;
+-    qemu_error_sink = sink->previous;
+-    qemu_free(sink);
+-}
+-
+-void qemu_error(const char *fmt, ...)
+-{
+-    va_list args;
+-
+-    assert(qemu_error_sink != NULL);
+-    switch (qemu_error_sink->dest) {
+-    case ERR_SINK_FILE:
+-        va_start(args, fmt);
+-        vfprintf(qemu_error_sink->fp, fmt, args);
+-        va_end(args);
+-        break;
+-    case ERR_SINK_MONITOR:
+-        va_start(args, fmt);
+-        monitor_vprintf(qemu_error_sink->mon, fmt, args);
+-        va_end(args);
+-        break;
+-    }
+-}
+-
+-void qemu_error_internal(const char *file, int linenr, const char *func,
+-                         const char *fmt, ...)
+-{
+-    va_list va;
+-    QError *qerror;
+-
+-    assert(qemu_error_sink != NULL);
+-
+-    va_start(va, fmt);
+-    qerror = qerror_from_info(file, linenr, func, fmt, &va);
+-    va_end(va);
+-
+-    switch (qemu_error_sink->dest) {
+-    case ERR_SINK_FILE:
+-        qerror_print(qerror);
+-        QDECREF(qerror);
+-        break;
+-    case ERR_SINK_MONITOR:
+-        monitor_set_error(qemu_error_sink->mon, qerror);
+-        break;
+-    }
+-}
+diff --git a/qemu-error.c b/qemu-error.c
+new file mode 100644
+index 0000000..df381f6
+--- /dev/null
++++ b/qemu-error.c
+@@ -0,0 +1,92 @@
++#include <stdio.h>
++#include "monitor.h"
++#include "sysemu.h"
++
++typedef struct QemuErrorSink QemuErrorSink;
++struct QemuErrorSink {
++    enum {
++        ERR_SINK_FILE,
++        ERR_SINK_MONITOR,
++    } dest;
++    union {
++        FILE    *fp;
++        Monitor *mon;
++    };
++    QemuErrorSink *previous;
++};
++
++static QemuErrorSink *qemu_error_sink;
++
++void qemu_errors_to_file(FILE *fp)
++{
++    QemuErrorSink *sink;
++
++    sink = qemu_mallocz(sizeof(*sink));
++    sink->dest = ERR_SINK_FILE;
++    sink->fp = fp;
++    sink->previous = qemu_error_sink;
++    qemu_error_sink = sink;
++}
++
++void qemu_errors_to_mon(Monitor *mon)
++{
++    QemuErrorSink *sink;
++
++    sink = qemu_mallocz(sizeof(*sink));
++    sink->dest = ERR_SINK_MONITOR;
++    sink->mon = mon;
++    sink->previous = qemu_error_sink;
++    qemu_error_sink = sink;
++}
++
++void qemu_errors_to_previous(void)
++{
++    QemuErrorSink *sink;
++
++    assert(qemu_error_sink != NULL);
++    sink = qemu_error_sink;
++    qemu_error_sink = sink->previous;
++    qemu_free(sink);
++}
++
++void qemu_error(const char *fmt, ...)
++{
++    va_list args;
++
++    assert(qemu_error_sink != NULL);
++    switch (qemu_error_sink->dest) {
++    case ERR_SINK_FILE:
++        va_start(args, fmt);
++        vfprintf(qemu_error_sink->fp, fmt, args);
++        va_end(args);
++        break;
++    case ERR_SINK_MONITOR:
++        va_start(args, fmt);
++        monitor_vprintf(qemu_error_sink->mon, fmt, args);
++        va_end(args);
++        break;
++    }
++}
++
++void qemu_error_internal(const char *file, int linenr, const char *func,
++                         const char *fmt, ...)
++{
++    va_list va;
++    QError *qerror;
++
++    assert(qemu_error_sink != NULL);
++
++    va_start(va, fmt);
++    qerror = qerror_from_info(file, linenr, func, fmt, &va);
++    va_end(va);
++
++    switch (qemu_error_sink->dest) {
++    case ERR_SINK_FILE:
++        qerror_print(qerror);
++        QDECREF(qerror);
++        break;
++    case ERR_SINK_MONITOR:
++        monitor_set_error(qemu_error_sink->mon, qerror);
++        break;
++    }
++}
+-- 
+1.7.0.3
+

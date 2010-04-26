@@ -1,0 +1,45 @@
+From b599d32c877d66be9762fa7f36666c8708794630 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:46 -0300
+Subject: [PATCH 31/66] qdev: Fix -device and device_add to handle unsuitable bus gracefully
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-32-git-send-email-armbru@redhat.com>
+Patchwork-id: 8250
+O-Subject: [PATCH 31/66] qdev: Fix -device and device_add to handle unsuitable
+	bus gracefully
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+"device_add isa-serial,bus=pci.0" kills QEMU.  Not good.
+(cherry picked from commit 327867b62a121a93ab1e8e9278eba2cd44eee650)
+---
+ hw/qdev.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qdev.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+diff --git a/hw/qdev.c b/hw/qdev.c
+index 8bf86a5..3fe811f 100644
+--- a/hw/qdev.c
++++ b/hw/qdev.c
+@@ -204,6 +204,11 @@ DeviceState *qdev_device_add(QemuOpts *opts)
+     path = qemu_opt_get(opts, "bus");
+     if (path != NULL) {
+         bus = qbus_find(path);
++        if (bus && bus->info != info->bus_info) {
++            error_report("Device '%s' can't go on a %s bus",
++                         driver, bus->info->name);
++            return NULL;
++        }
+     } else {
+         bus = qbus_find_recursive(main_system_bus, NULL, info->bus_info);
+     }
+-- 
+1.7.0.3
+

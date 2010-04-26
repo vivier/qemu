@@ -1,0 +1,168 @@
+From 8cc41a7183bec82244efeefd062fdeb7d57b4eaa Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:52 -0300
+Subject: [PATCH 37/66] error: Polish human-readable error descriptions
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-38-git-send-email-armbru@redhat.com>
+Patchwork-id: 8252
+O-Subject: [PATCH 37/66] error: Polish human-readable error descriptions
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+From: Markus Armbruster <armbru@pond.sub.org>
+
+Also put error definitions in alphabetical order
+(cherry picked from commit fc5469d87b54bfbe06b76a9bb9da6589c326e0b2)
+
+Conflicts:
+
+	qerror.h
+
+Note: merge puts error definitions out of in alphabetical again.
+---
+ qerror.c |   28 ++++++++++++++--------------
+ qerror.h |   14 +++++++-------
+ 2 files changed, 21 insertions(+), 21 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qerror.c |   28 ++++++++++++++--------------
+ qerror.h |   14 +++++++-------
+ 2 files changed, 21 insertions(+), 21 deletions(-)
+
+diff --git a/qerror.c b/qerror.c
+index 90ee811..1d9411b 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -46,7 +46,7 @@ static const QErrorStringTable qerror_table[] = {
+     },
+     {
+         .error_fmt = QERR_DEVICE_ENCRYPTED,
+-        .desc      = "The %(device) is encrypted",
++        .desc      = "Device '%(device)' is encrypted",
+     },
+     {
+         .error_fmt = QERR_DEVICE_NOT_ENCRYPTED,
+@@ -54,39 +54,35 @@ static const QErrorStringTable qerror_table[] = {
+     },
+     {
+         .error_fmt = QERR_DEVICE_LOCKED,
+-        .desc      = "Device %(device) is locked",
++        .desc      = "Device '%(device)' is locked",
+     },
+     {
+         .error_fmt = QERR_DEVICE_NOT_ACTIVE,
+-        .desc      = "The %(device) device has not been activated by the guest",
++        .desc      = "Device '%(device)' has not been activated by the guest",
+     },
+     {
+         .error_fmt = QERR_DEVICE_NOT_FOUND,
+-        .desc      = "The %(device) device has not been found",
++        .desc      = "Device '%(device)' not found",
+     },
+     {
+         .error_fmt = QERR_DEVICE_NOT_REMOVABLE,
+-        .desc      = "Device %(device) is not removable",
++        .desc      = "Device '%(device)' is not removable",
+     },
+     {
+         .error_fmt = QERR_FD_NOT_FOUND,
+-        .desc      = "Failed to find file descriptor named %(name)",
++        .desc      = "File descriptor named '%(name)' not found",
+     },
+     {
+         .error_fmt = QERR_FD_NOT_SUPPLIED,
+         .desc      = "No file descriptor supplied via SCM_RIGHTS",
+     },
+     {
+-        .error_fmt = QERR_OPEN_FILE_FAILED,
+-        .desc      = "Could not open '%(filename)'",
+-    },
+-    {
+         .error_fmt = QERR_INVALID_BLOCK_FORMAT,
+-        .desc      = "Invalid block format %(name)",
++        .desc      = "Invalid block format '%(name)'",
+     },
+     {
+         .error_fmt = QERR_INVALID_PARAMETER,
+-        .desc      = "Invalid parameter %(name)",
++        .desc      = "Invalid parameter '%(name)'",
+     },
+     {
+         .error_fmt = QERR_INVALID_PARAMETER_TYPE,
+@@ -94,7 +90,7 @@ static const QErrorStringTable qerror_table[] = {
+     },
+     {
+         .error_fmt = QERR_INVALID_PASSWORD,
+-        .desc      = "The entered password is invalid",
++        .desc      = "Password incorrect",
+     },
+     {
+         .error_fmt = QERR_JSON_PARSING,
+@@ -106,7 +102,11 @@ static const QErrorStringTable qerror_table[] = {
+     },
+     {
+         .error_fmt = QERR_MISSING_PARAMETER,
+-        .desc      = "Parameter %(name) is missing",
++        .desc      = "Parameter '%(name)' is missing",
++    },
++    {
++        .error_fmt = QERR_OPEN_FILE_FAILED,
++        .desc      = "Could not open '%(filename)'",
+     },
+     {
+         .error_fmt = QERR_QMP_BAD_INPUT_OBJECT,
+diff --git a/qerror.h b/qerror.h
+index bcdbe60..2b73302 100644
+--- a/qerror.h
++++ b/qerror.h
+@@ -51,7 +51,7 @@ QError *qobject_to_qerror(const QObject *obj);
+ #define QERR_DEVICE_NOT_ENCRYPTED \
+     "{ 'class': 'DeviceNotEncrypted', 'data': { 'device': %s } }"
+ 
+-#define QERR_DEVICE_LOCKED                                      \
++#define QERR_DEVICE_LOCKED \
+     "{ 'class': 'DeviceLocked', 'data': { 'device': %s } }"
+ 
+ #define QERR_DEVICE_NOT_ACTIVE \
+@@ -69,9 +69,6 @@ QError *qobject_to_qerror(const QObject *obj);
+ #define QERR_FD_NOT_SUPPLIED \
+     "{ 'class': 'FdNotSupplied', 'data': {} }"
+ 
+-#define QERR_OPEN_FILE_FAILED \
+-    "{ 'class': 'OpenFileFailed', 'data': { 'filename': %s } }"
+-
+ #define QERR_INVALID_BLOCK_FORMAT \
+     "{ 'class': 'InvalidBlockFormat', 'data': { 'name': %s } }"
+ 
+@@ -93,18 +90,21 @@ QError *qobject_to_qerror(const QObject *obj);
+ #define QERR_MISSING_PARAMETER \
+     "{ 'class': 'MissingParameter', 'data': { 'name': %s } }"
+ 
++#define QERR_OPEN_FILE_FAILED \
++    "{ 'class': 'OpenFileFailed', 'data': { 'filename': %s } }"
++
+ #define QERR_QMP_BAD_INPUT_OBJECT \
+     "{ 'class': 'QMPBadInputObject', 'data': { 'expected': %s } }"
+ 
+ #define QERR_SET_PASSWD_FAILED \
+     "{ 'class': 'SetPasswdFailed', 'data': {} }"
+ 
+-#define QERR_UNDEFINED_ERROR \
+-    "{ 'class': 'UndefinedError', 'data': {} }"
+-
+ #define QERR_TOO_MANY_FILES \
+     "{ 'class': 'TooManyFiles', 'data': {} }"
+ 
++#define QERR_UNDEFINED_ERROR \
++    "{ 'class': 'UndefinedError', 'data': {} }"
++
+ #define QERR_VNC_SERVER_FAILED \
+     "{ 'class': 'VNCServerFailed', 'data': { 'target': %s } }"
+ 
+-- 
+1.7.0.3
+

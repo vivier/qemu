@@ -1,0 +1,58 @@
+From 0c8d8758b57c35aef3f65c60f2874bf2201f0a55 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:25:01 -0300
+Subject: [PATCH 46/66] error: New QERR_DEVICE_NO_BUS
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-47-git-send-email-armbru@redhat.com>
+Patchwork-id: 8256
+O-Subject: [PATCH 46/66] error: New QERR_DEVICE_NO_BUS
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+(cherry picked from commit 07574baf7b714a10e35b716b0eb6ede197adfca7)
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/qerror.c b/qerror.c
+index 611b461..8e8ff70 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -77,6 +77,10 @@ static const QErrorStringTable qerror_table[] = {
+         .desc      = "Device '%(device)' is not removable",
+     },
+     {
++        .error_fmt = QERR_DEVICE_NO_BUS,
++        .desc      = "Device '%(device)' has no child bus",
++    },
++    {
+         .error_fmt = QERR_FD_NOT_FOUND,
+         .desc      = "File descriptor named '%(name)' not found",
+     },
+diff --git a/qerror.h b/qerror.h
+index 657b5e3..7154402 100644
+--- a/qerror.h
++++ b/qerror.h
+@@ -69,6 +69,9 @@ QError *qobject_to_qerror(const QObject *obj);
+ #define QERR_DEVICE_NOT_REMOVABLE \
+     "{ 'class': 'DeviceNotRemovable', 'data': { 'device': %s } }"
+ 
++#define QERR_DEVICE_NO_BUS \
++    "{ 'class': 'DeviceNoBus', 'data': { 'device': %s } }"
++
+ #define QERR_FD_NOT_FOUND \
+     "{ 'class': 'FdNotFound', 'data': { 'name': %s } }"
+ 
+-- 
+1.7.0.3
+

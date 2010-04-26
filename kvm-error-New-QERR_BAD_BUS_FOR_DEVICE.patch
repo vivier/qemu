@@ -1,0 +1,58 @@
+From 4a0b998de8dac66bc075d2d4d1dce0bcf2e9a86a Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:25:04 -0300
+Subject: [PATCH 49/66] error: New QERR_BAD_BUS_FOR_DEVICE
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-50-git-send-email-armbru@redhat.com>
+Patchwork-id: 8224
+O-Subject: [PATCH 49/66] error: New QERR_BAD_BUS_FOR_DEVICE
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+(cherry picked from commit 56e9f56309b7c77dfb328dbf450d04fd54ce4542)
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/qerror.c b/qerror.c
+index 8e8ff70..c9b1645 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -41,6 +41,10 @@ static const QType qerror_type = {
+  */
+ static const QErrorStringTable qerror_table[] = {
+     {
++        .error_fmt = QERR_BAD_BUS_FOR_DEVICE,
++        .desc      = "Device '%(device)' can't go on a %(bad_bus_type) bus",
++    },
++    {
+         .error_fmt = QERR_BUS_NOT_FOUND,
+         .desc      = "Bus '%(bus)' not found",
+     },
+diff --git a/qerror.h b/qerror.h
+index 7154402..98bf764 100644
+--- a/qerror.h
++++ b/qerror.h
+@@ -42,6 +42,9 @@ QError *qobject_to_qerror(const QObject *obj);
+ /*
+  * QError class list
+  */
++#define QERR_BAD_BUS_FOR_DEVICE \
++    "{ 'class': 'BadBusForDevice', 'data': { 'device': %s, 'bad_bus_type': %s } }"
++
+ #define QERR_BUS_NOT_FOUND \
+     "{ 'class': 'BusNotFound', 'data': { 'bus': %s } }"
+ 
+-- 
+1.7.0.3
+

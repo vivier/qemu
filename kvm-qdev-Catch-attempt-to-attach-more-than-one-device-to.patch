@@ -1,0 +1,82 @@
+From d9bfb0ab8c9fa73e715223713f119efe47f11099 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:23 -0300
+Subject: [PATCH 08/66] qdev: Catch attempt to attach more than one device to a netdev
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-9-git-send-email-armbru@redhat.com>
+Patchwork-id: 8248
+O-Subject: [PATCH 08/66] qdev: Catch attempt to attach more than one device to a
+	netdev
+Bugzilla: 579470
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+Guest device and host netdev are peers, i.e. it's a 1:1 relation.
+However, we fail to enforce that:
+
+    $ qemu -nodefaults --nographic -netdev user,id=net0 -device e1000,netdev=net0 -device virtio-net-pci,netdev=net0 -monitor stdio
+    QEMU 0.12.50 monitor - type 'help' for more information
+    (qemu) info network
+    Devices not on any VLAN:
+      net0: net=10.0.2.0, restricted=n peer=virtio-net-pci.0
+      e1000.0: model=e1000,macaddr=52:54:00:12:34:56 peer=net0
+      virtio-net-pci.0: model=virtio-net-pci,macaddr=52:54:00:12:34:57 peer=net0
+
+It's all downhill from there.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 27f3f8a362570c5e9eb89b36b6c6d5db7b6e70e3)
+---
+ hw/qdev-properties.c |    7 +++++++
+ net.c                |    1 +
+ 2 files changed, 8 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qdev-properties.c |    7 +++++++
+ net.c                |    1 +
+ 2 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/hw/qdev-properties.c b/hw/qdev-properties.c
+index 438eaea..24671af 100644
+--- a/hw/qdev-properties.c
++++ b/hw/qdev-properties.c
+@@ -341,6 +341,9 @@ static int parse_netdev(DeviceState *dev, Property *prop, const char *str)
+     *ptr = qemu_find_netdev(str);
+     if (*ptr == NULL)
+         return -ENOENT;
++    if ((*ptr)->peer) {
++        return -EEXIST;
++    }
+     return 0;
+ }
+ 
+@@ -557,6 +560,10 @@ int qdev_prop_parse(DeviceState *dev, const char *name, const char *value)
+     ret = prop->info->parse(dev, prop, value);
+     if (ret < 0) {
+         switch (ret) {
++        case -EEXIST:
++            fprintf(stderr, "property \"%s.%s\": \"%s\" is already in use\n",
++                    dev->info->name, name, value);
++            break;
+         default:
+         case -EINVAL:
+             fprintf(stderr, "property \"%s.%s\": failed to parse \"%s\"\n",
+diff --git a/net.c b/net.c
+index 7c782ca..6441a18 100644
+--- a/net.c
++++ b/net.c
+@@ -246,6 +246,7 @@ VLANClientState *qemu_new_net_client(NetClientInfo *info,
+         QTAILQ_INSERT_TAIL(&vc->vlan->clients, vc, next);
+     } else {
+         if (peer) {
++            assert(!peer->peer);
+             vc->peer = peer;
+             peer->peer = vc;
+         }
+-- 
+1.7.0.3
+

@@ -1,0 +1,92 @@
+From 8120a607809dbdb19021f715197f8d5ed9cb0c93 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:58 -0300
+Subject: [PATCH 43/66] qdev: Relax parsing of bus option
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-44-git-send-email-armbru@redhat.com>
+Patchwork-id: 8217
+O-Subject: [PATCH 43/66] qdev: Relax parsing of bus option
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+Treat multiple successive slashes as a one slash.  Ignore trailing
+slashes.  This is how POSIX pathnames work.
+(cherry picked from commit fc98eb430e49077710b0a6f287fc685c78e12556)
+---
+ hw/qdev.c |   26 +++++++++++++++++---------
+ 1 files changed, 17 insertions(+), 9 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qdev.c |   26 +++++++++++++++++---------
+ 1 files changed, 17 insertions(+), 9 deletions(-)
+
+diff --git a/hw/qdev.c b/hw/qdev.c
+index 36f2bd6..790e90f 100644
+--- a/hw/qdev.c
++++ b/hw/qdev.c
+@@ -555,8 +555,8 @@ static BusState *qbus_find(const char *path)
+         pos = 0;
+     } else {
+         if (sscanf(path, "%127[^/]%n", elem, &len) != 1) {
+-            error_report("path parse error (\"%s\")", path);
+-            return NULL;
++            assert(!path[0]);
++            elem[0] = len = 0;
+         }
+         bus = qbus_find_recursive(main_system_bus, elem, NULL);
+         if (!bus) {
+@@ -567,15 +567,18 @@ static BusState *qbus_find(const char *path)
+     }
+ 
+     for (;;) {
++        assert(path[pos] == '/' || !path[pos]);
++        while (path[pos] == '/') {
++            pos++;
++        }
+         if (path[pos] == '\0') {
+-            /* we are done */
+             return bus;
+         }
+ 
+         /* find device */
+-        if (sscanf(path+pos, "/%127[^/]%n", elem, &len) != 1) {
+-            error_report("path parse error (\"%s\" pos %d)", path, pos);
+-            return NULL;
++        if (sscanf(path+pos, "%127[^/]%n", elem, &len) != 1) {
++            assert(0);
++            elem[0] = len = 0;
+         }
+         pos += len;
+         dev = qbus_find_dev(bus, elem);
+@@ -584,6 +587,11 @@ static BusState *qbus_find(const char *path)
+             qbus_list_dev(bus);
+             return NULL;
+         }
++
++        assert(path[pos] == '/' || !path[pos]);
++        while (path[pos] == '/') {
++            pos++;
++        }
+         if (path[pos] == '\0') {
+             /* last specified element is a device.  If it has exactly
+              * one child bus accept it nevertheless */
+@@ -601,9 +609,9 @@ static BusState *qbus_find(const char *path)
+         }
+ 
+         /* find bus */
+-        if (sscanf(path+pos, "/%127[^/]%n", elem, &len) != 1) {
+-            error_report("path parse error (\"%s\" pos %d)", path, pos);
+-            return NULL;
++        if (sscanf(path+pos, "%127[^/]%n", elem, &len) != 1) {
++            assert(0);
++            elem[0] = len = 0;
+         }
+         pos += len;
+         bus = qbus_find_bus(dev, elem);
+-- 
+1.7.0.3
+

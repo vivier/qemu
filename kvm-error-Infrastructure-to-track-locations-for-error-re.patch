@@ -1,0 +1,322 @@
+From b5f9eb3d25fca3983464aa15dd53bf8d86a0c775 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:41 -0300
+Subject: [PATCH 26/66] error: Infrastructure to track locations for error reporting
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-27-git-send-email-armbru@redhat.com>
+Patchwork-id: 8247
+O-Subject: [PATCH 26/66] error: Infrastructure to track locations for error
+	reporting
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+New struct Location holds a location.  So far, the only location is
+LOC_NONE, so this doesn't do anything useful yet.
+
+Passing the current location all over the place would be too
+cumbersome.  Hide it away in static cur_loc instead, and provide
+accessors.  Print it in error_report().
+
+Store it in QError, and print it in qerror_print().
+
+Store it in QemuOpt, for use by qemu_opts_foreach().  This makes
+error_report() do the right thing when it runs within
+qemu_opts_foreach().
+
+We may still have to store it in other data structures holding user
+input for better error messages.  Left for another day.
+(cherry picked from commit 827b08139c8ba97c18bda19e4893fdf26878b531)
+---
+ qemu-error.c  |   85 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ qemu-error.h  |   16 +++++++++++
+ qemu-option.c |    7 +++++
+ qemu-tool.c   |   24 ++++++++++++++++
+ qerror.c      |    5 +++-
+ qerror.h      |    4 ++-
+ 6 files changed, 138 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-error.c  |   85 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ qemu-error.h  |   16 +++++++++++
+ qemu-option.c |    7 +++++
+ qemu-tool.c   |   24 ++++++++++++++++
+ qerror.c      |    5 +++-
+ qerror.h      |    4 ++-
+ 6 files changed, 138 insertions(+), 3 deletions(-)
+
+diff --git a/qemu-error.c b/qemu-error.c
+index 0a175d8..0d673c5 100644
+--- a/qemu-error.c
++++ b/qemu-error.c
+@@ -41,15 +41,98 @@ void error_printf(const char *fmt, ...)
+     va_end(ap);
+ }
+ 
++static Location std_loc = {
++    .kind = LOC_NONE
++};
++static Location *cur_loc = &std_loc;
++
++/*
++ * Push location saved in LOC onto the location stack, return it.
++ * The top of that stack is the current location.
++ * Needs a matching loc_pop().
++ */
++Location *loc_push_restore(Location *loc)
++{
++    assert(!loc->prev);
++    loc->prev = cur_loc;
++    cur_loc = loc;
++    return loc;
++}
++
++/*
++ * Initialize *LOC to "nowhere", push it onto the location stack.
++ * The top of that stack is the current location.
++ * Needs a matching loc_pop().
++ * Return LOC.
++ */
++Location *loc_push_none(Location *loc)
++{
++    loc->kind = LOC_NONE;
++    loc->prev = NULL;
++    return loc_push_restore(loc);
++}
++
++/*
++ * Pop the location stack.
++ * LOC must be the current location, i.e. the top of the stack.
++ */
++Location *loc_pop(Location *loc)
++{
++    assert(cur_loc == loc && loc->prev);
++    cur_loc = loc->prev;
++    loc->prev = NULL;
++    return loc;
++}
++
++/*
++ * Save the current location in LOC, return LOC.
++ */
++Location *loc_save(Location *loc)
++{
++    *loc = *cur_loc;
++    loc->prev = NULL;
++    return loc;
++}
++
++/*
++ * Change the current location to the one saved in LOC.
++ */
++void loc_restore(Location *loc)
++{
++    Location *prev = cur_loc->prev;
++    assert(!loc->prev);
++    *cur_loc = *loc;
++    cur_loc->prev = prev;
++}
++
++/*
++ * Change the current location to "nowhere in particular".
++ */
++void loc_set_none(void)
++{
++    cur_loc->kind = LOC_NONE;
++}
++
++/*
++ * Print current location to current monitor if we have one, else to stderr.
++ */
++void error_print_loc(void)
++{
++    switch (cur_loc->kind) {
++    default: ;
++    }
++}
++
+ /*
+  * Print an error message to current monitor if we have one, else to stderr.
+- * Appends a newline to the message.
++ * Prepend the current location and append a newline.
+  * It's wrong to call this in a QMP monitor.  Use qerror_report() there.
+  */
+ void error_report(const char *fmt, ...)
+ {
+     va_list ap;
+ 
++    error_print_loc();
+     va_start(ap, fmt);
+     error_vprintf(fmt, ap);
+     va_end(ap);
+diff --git a/qemu-error.h b/qemu-error.h
+index 5b05371..a1562aa 100644
+--- a/qemu-error.h
++++ b/qemu-error.h
+@@ -13,8 +13,24 @@
+ #ifndef QEMU_ERROR_H
+ #define QEMU_ERROR_H
+ 
++typedef struct Location {
++    /* all members are private to qemu-error.c */
++    enum { LOC_NONE } kind;
++    int num;
++    const void *ptr;
++    struct Location *prev;
++} Location;
++
++Location *loc_push_restore(Location *loc);
++Location *loc_push_none(Location *loc);
++Location *loc_pop(Location *loc);
++Location *loc_save(Location *loc);
++void loc_restore(Location *loc);
++void loc_set_none(void);
++
+ void error_vprintf(const char *fmt, va_list ap);
+ void error_printf(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
++void error_print_loc(void);
+ void error_report(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
+ void qerror_report_internal(const char *file, int linenr, const char *func,
+                             const char *fmt, ...)
+diff --git a/qemu-option.c b/qemu-option.c
+index a52a4c4..d53acf9 100644
+--- a/qemu-option.c
++++ b/qemu-option.c
+@@ -27,6 +27,7 @@
+ #include <string.h>
+ 
+ #include "qemu-common.h"
++#include "qemu-error.h"
+ #include "qemu-option.h"
+ 
+ /*
+@@ -483,6 +484,7 @@ struct QemuOpt {
+ struct QemuOpts {
+     char *id;
+     QemuOptsList *list;
++    Location loc;
+     QTAILQ_HEAD(QemuOptHead, QemuOpt) head;
+     QTAILQ_ENTRY(QemuOpts) next;
+ };
+@@ -653,6 +655,7 @@ QemuOpts *qemu_opts_create(QemuOptsList *list, const char *id, int fail_if_exist
+         opts->id = qemu_strdup(id);
+     }
+     opts->list = list;
++    loc_save(&opts->loc);
+     QTAILQ_INIT(&opts->head);
+     QTAILQ_INSERT_TAIL(&list->head, opts, next);
+     return opts;
+@@ -810,13 +813,17 @@ int qemu_opts_validate(QemuOpts *opts, QemuOptDesc *desc)
+ int qemu_opts_foreach(QemuOptsList *list, qemu_opts_loopfunc func, void *opaque,
+                       int abort_on_failure)
+ {
++    Location loc;
+     QemuOpts *opts;
+     int rc = 0;
+ 
++    loc_push_none(&loc);
+     QTAILQ_FOREACH(opts, &list->head, next) {
++        loc_restore(&opts->loc);
+         rc |= func(opts, opaque);
+         if (abort_on_failure  &&  rc != 0)
+             break;
+     }
++    loc_pop(&loc);
+     return rc;
+ }
+diff --git a/qemu-tool.c b/qemu-tool.c
+index 939049a..97ca949 100644
+--- a/qemu-tool.c
++++ b/qemu-tool.c
+@@ -104,6 +104,30 @@ int64_t qemu_get_clock(QEMUClock *clock)
+     return (tv.tv_sec * 1000000000LL + (tv.tv_usec * 1000)) / 1000000;
+ }
+ 
++Location *loc_push_restore(Location *loc)
++{
++    return loc;
++}
++
++Location *loc_push_none(Location *loc)
++{
++    return loc;
++}
++
++Location *loc_pop(Location *loc)
++{
++    return loc;
++}
++
++Location *loc_save(Location *loc)
++{
++    return loc;
++}
++
++void loc_restore(Location *loc)
++{
++}
++
+ void error_report(const char *fmt, ...)
+ {
+     va_list args;
+diff --git a/qerror.c b/qerror.c
+index 978632b..90ee811 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -228,6 +228,7 @@ QError *qerror_from_info(const char *file, int linenr, const char *func,
+     QError *qerr;
+ 
+     qerr = qerror_new();
++    loc_save(&qerr->loc);
+     qerr->linenr = linenr;
+     qerr->file = file;
+     qerr->func = func;
+@@ -325,10 +326,12 @@ QString *qerror_human(const QError *qerror)
+  * it uses error_report() for this, so that the output is routed to the right
+  * place (ie. stderr or Monitor's device).
+  */
+-void qerror_print(const QError *qerror)
++void qerror_print(QError *qerror)
+ {
+     QString *qstring = qerror_human(qerror);
++    loc_push_restore(&qerror->loc);
+     error_report("%s", qstring_get_str(qstring));
++    loc_pop(&qerror->loc);
+     QDECREF(qstring);
+ }
+ 
+diff --git a/qerror.h b/qerror.h
+index b93fff6..bcdbe60 100644
+--- a/qerror.h
++++ b/qerror.h
+@@ -14,6 +14,7 @@
+ 
+ #include "qdict.h"
+ #include "qstring.h"
++#include "qemu-error.h"
+ #include <stdarg.h>
+ 
+ typedef struct QErrorStringTable {
+@@ -24,6 +25,7 @@ typedef struct QErrorStringTable {
+ typedef struct QError {
+     QObject_HEAD;
+     QDict *error;
++    Location loc;
+     int linenr;
+     const char *file;
+     const char *func;
+@@ -34,7 +36,7 @@ QError *qerror_new(void);
+ QError *qerror_from_info(const char *file, int linenr, const char *func,
+                          const char *fmt, va_list *va);
+ QString *qerror_human(const QError *qerror);
+-void qerror_print(const QError *qerror);
++void qerror_print(QError *qerror);
+ QError *qobject_to_qerror(const QObject *obj);
+ 
+ /*
+-- 
+1.7.0.3
+

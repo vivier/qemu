@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.42%{?dist}
+Release: 2.43%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -642,6 +642,138 @@ Patch1306: kvm-configure-vhost-related-fixes.patch
 Patch1307: kvm-vhost-fix-features-ack.patch
 # For bz#580109 - vhost net lacks upstream fixes
 Patch1308: kvm-vhost-net-disable-mergeable-buffers.patch
+# For bz#579470 - QMP: device_add support
+Patch1309: kvm-qemu-option-Make-qemu_opts_foreach-accumulate-return.patch
+# For bz#579470 - QMP: device_add support
+Patch1310: kvm-qdev-Fix-exit-code-for-device.patch
+# For bz#579470 - QMP: device_add support
+Patch1311: kvm-qdev-Add-help-for-device-properties.patch
+# For bz#579470 - QMP: device_add support
+Patch1312: kvm-qdev-update-help-on-device.patch
+# For bz#579470 - QMP: device_add support
+Patch1313: kvm-qdev-Add-rudimentary-help-for-property-value.patch
+# For bz#579470 - QMP: device_add support
+Patch1314: kvm-qdev-Free-opts-on-failed-do_device_add.patch
+# For bz#579470 - QMP: device_add support
+Patch1315: kvm-qdev-Improve-diagnostics-for-bad-property-values.patch
+# For bz#579470 - QMP: device_add support
+Patch1316: kvm-qdev-Catch-attempt-to-attach-more-than-one-device-to.patch
+# For bz#579470 - QMP: device_add support
+Patch1317: kvm-usb-Remove-disabled-monitor_printf-in-usb_read_file.patch
+# For bz#579470 - QMP: device_add support
+Patch1318: kvm-savevm-Fix-loadvm-to-report-errors-to-stderr-not-the.patch
+# For bz#579470 - QMP: device_add support
+Patch1319: kvm-pc-Fix-error-reporting-for-boot-once.patch
+# For bz#579470 - QMP: device_add support
+Patch1320: kvm-pc-Factor-common-code-out-of-pc_boot_set-and-cmos_in.patch
+# For bz#579470 - QMP: device_add support
+Patch1321: kvm-tools-Remove-unused-cur_mon-from-qemu-tool.c.patch
+# For bz#579470 - QMP: device_add support
+Patch1322: kvm-monitor-Separate-default-monitor-and-current-monitor.patch
+# For bz#579470 - QMP: device_add support
+Patch1323: kvm-block-Simplify-usb_msd_initfn-test-for-can-read-bdrv.patch
+# For bz#579470 - QMP: device_add support
+Patch1324: kvm-monitor-Factor-monitor_set_error-out-of-qemu_error_i.patch
+# For bz#579470 - QMP: device_add support
+Patch1325: kvm-error-Move-qemu_error-friends-from-monitor.c-to-own-.patch
+# For bz#579470 - QMP: device_add support
+Patch1326: kvm-error-Simplify-error-sink-setup.patch
+# For bz#579470 - QMP: device_add support
+Patch1327: kvm-error-Move-qemu_error-friends-into-their-own-header.patch
+# For bz#579470 - QMP: device_add support
+Patch1328: kvm-error-New-error_printf-and-error_vprintf.patch
+# For bz#579470 - QMP: device_add support
+Patch1329: kvm-error-Don-t-abuse-qemu_error-for-non-error-in-qdev_d.patch
+# For bz#579470 - QMP: device_add support
+Patch1330: kvm-error-Don-t-abuse-qemu_error-for-non-error-in-qbus_f.patch
+# For bz#579470 - QMP: device_add support
+Patch1331: kvm-error-Don-t-abuse-qemu_error-for-non-error-in-scsi_h.patch
+# For bz#579470 - QMP: device_add support
+Patch1332: kvm-error-Replace-qemu_error-by-error_report.patch
+# For bz#579470 - QMP: device_add support
+Patch1333: kvm-error-Rename-qemu_error_new-to-qerror_report.patch
+# For bz#579470 - QMP: device_add support
+Patch1334: kvm-error-Infrastructure-to-track-locations-for-error-re.patch
+# For bz#579470 - QMP: device_add support
+Patch1335: kvm-error-Include-the-program-name-in-error-messages-to-.patch
+# For bz#579470 - QMP: device_add support
+Patch1336: kvm-error-Track-locations-in-configuration-files.patch
+# For bz#579470 - QMP: device_add support
+Patch1337: kvm-QemuOpts-Fix-qemu_config_parse-to-catch-file-read-er.patch
+# For bz#579470 - QMP: device_add support
+Patch1338: kvm-error-Track-locations-on-command-line.patch
+# For bz#579470 - QMP: device_add support
+Patch1339: kvm-qdev-Fix-device-and-device_add-to-handle-unsuitable-.patch
+# For bz#579470 - QMP: device_add support
+Patch1340: kvm-qdev-Factor-qdev_create_from_info-out-of-qdev_create.patch
+# For bz#579470 - QMP: device_add support
+Patch1341: kvm-qdev-Hide-no_user-devices-from-users.patch
+# For bz#579470 - QMP: device_add support
+Patch1342: kvm-qdev-Hide-ptr-properties-from-users.patch
+# For bz#579470 - QMP: device_add support
+Patch1343: kvm-monitor-New-monitor_cur_is_qmp.patch
+# For bz#579470 - QMP: device_add support
+Patch1344: kvm-error-Let-converted-handlers-print-in-human-monitor.patch
+# For bz#579470 - QMP: device_add support
+Patch1345: kvm-error-Polish-human-readable-error-descriptions.patch
+# For bz#579470 - QMP: device_add support
+Patch1346: kvm-error-New-QERR_PROPERTY_NOT_FOUND.patch
+# For bz#579470 - QMP: device_add support
+Patch1347: kvm-error-New-QERR_PROPERTY_VALUE_BAD.patch
+# For bz#579470 - QMP: device_add support
+Patch1348: kvm-error-New-QERR_PROPERTY_VALUE_IN_USE.patch
+# For bz#579470 - QMP: device_add support
+Patch1349: kvm-error-New-QERR_PROPERTY_VALUE_NOT_FOUND.patch
+# For bz#579470 - QMP: device_add support
+Patch1350: kvm-qdev-convert-setting-device-properties-to-QError.patch
+# For bz#579470 - QMP: device_add support
+Patch1351: kvm-qdev-Relax-parsing-of-bus-option.patch
+# For bz#579470 - QMP: device_add support
+Patch1352: kvm-error-New-QERR_BUS_NOT_FOUND.patch
+# For bz#579470 - QMP: device_add support
+Patch1353: kvm-error-New-QERR_DEVICE_MULTIPLE_BUSSES.patch
+# For bz#579470 - QMP: device_add support
+Patch1354: kvm-error-New-QERR_DEVICE_NO_BUS.patch
+# For bz#579470 - QMP: device_add support
+Patch1355: kvm-qdev-Convert-qbus_find-to-QError.patch
+# For bz#579470 - QMP: device_add support
+Patch1356: kvm-error-New-error_printf_unless_qmp.patch
+# For bz#579470 - QMP: device_add support
+Patch1357: kvm-error-New-QERR_BAD_BUS_FOR_DEVICE.patch
+# For bz#579470 - QMP: device_add support
+Patch1358: kvm-error-New-QERR_BUS_NO_HOTPLUG.patch
+# For bz#579470 - QMP: device_add support
+Patch1359: kvm-error-New-QERR_DEVICE_INIT_FAILED.patch
+# For bz#579470 - QMP: device_add support
+Patch1360: kvm-error-New-QERR_NO_BUS_FOR_DEVICE.patch
+# For bz#579470 - QMP: device_add support
+Patch1361: kvm-Revert-qdev-Use-QError-for-device-not-found-error.patch
+# For bz#579470 - QMP: device_add support
+Patch1362: kvm-error-Convert-do_device_add-to-QError.patch
+# For bz#579470 - QMP: device_add support
+Patch1363: kvm-qemu-option-Functions-to-convert-to-from-QDict.patch
+# For bz#579470 - QMP: device_add support
+Patch1364: kvm-qemu-option-Move-the-implied-first-name-into-QemuOpt.patch
+# For bz#579470 - QMP: device_add support
+Patch1365: kvm-qemu-option-Rename-find_list-to-qemu_find_opts-exter.patch
+# For bz#579470 - QMP: device_add support
+Patch1366: kvm-monitor-New-argument-type-O.patch
+# For bz#579470 - QMP: device_add support
+Patch1367: kvm-monitor-Use-argument-type-O-for-device_add.patch
+# For bz#579470 - QMP: device_add support
+Patch1368: kvm-monitor-convert-do_device_add-to-QObject.patch
+# For bz#579470 - QMP: device_add support
+Patch1369: kvm-error-Trim-includes-after-Move-qemu_error-friends.patch
+# For bz#579470 - QMP: device_add support
+Patch1370: kvm-error-Trim-includes-in-qerror.c.patch
+# For bz#579470 - QMP: device_add support
+Patch1371: kvm-error-Trim-includes-after-Infrastructure-to-track-lo.patch
+# For bz#579470 - QMP: device_add support
+Patch1372: kvm-error-Make-use-of-error_set_progname-optional.patch
+# For bz#579470 - QMP: device_add support
+Patch1373: kvm-error-Link-qemu-img-qemu-nbd-qemu-io-with-qemu-error.patch
+# For bz#579470 - QMP: device_add support
+Patch1374: kvm-error-Move-qerror_report-from-qemu-error.-ch-to-qerr.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1012,6 +1144,72 @@ such as kvmtrace and kvm_stat.
 %patch1306 -p1
 %patch1307 -p1
 %patch1308 -p1
+%patch1309 -p1
+%patch1310 -p1
+%patch1311 -p1
+%patch1312 -p1
+%patch1313 -p1
+%patch1314 -p1
+%patch1315 -p1
+%patch1316 -p1
+%patch1317 -p1
+%patch1318 -p1
+%patch1319 -p1
+%patch1320 -p1
+%patch1321 -p1
+%patch1322 -p1
+%patch1323 -p1
+%patch1324 -p1
+%patch1325 -p1
+%patch1326 -p1
+%patch1327 -p1
+%patch1328 -p1
+%patch1329 -p1
+%patch1330 -p1
+%patch1331 -p1
+%patch1332 -p1
+%patch1333 -p1
+%patch1334 -p1
+%patch1335 -p1
+%patch1336 -p1
+%patch1337 -p1
+%patch1338 -p1
+%patch1339 -p1
+%patch1340 -p1
+%patch1341 -p1
+%patch1342 -p1
+%patch1343 -p1
+%patch1344 -p1
+%patch1345 -p1
+%patch1346 -p1
+%patch1347 -p1
+%patch1348 -p1
+%patch1349 -p1
+%patch1350 -p1
+%patch1351 -p1
+%patch1352 -p1
+%patch1353 -p1
+%patch1354 -p1
+%patch1355 -p1
+%patch1356 -p1
+%patch1357 -p1
+%patch1358 -p1
+%patch1359 -p1
+%patch1360 -p1
+%patch1361 -p1
+%patch1362 -p1
+%patch1363 -p1
+%patch1364 -p1
+%patch1365 -p1
+%patch1366 -p1
+%patch1367 -p1
+%patch1368 -p1
+%patch1369 -p1
+%patch1370 -p1
+%patch1371 -p1
+%patch1372 -p1
+%patch1373 -p1
+%patch1374 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1209,6 +1407,76 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Apr 26 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.43.el6
+- kvm-qemu-option-Make-qemu_opts_foreach-accumulate-return.patch [bz#579470]
+- kvm-qdev-Fix-exit-code-for-device.patch [bz#579470]
+- kvm-qdev-Add-help-for-device-properties.patch [bz#579470]
+- kvm-qdev-update-help-on-device.patch [bz#579470]
+- kvm-qdev-Add-rudimentary-help-for-property-value.patch [bz#579470]
+- kvm-qdev-Free-opts-on-failed-do_device_add.patch [bz#579470]
+- kvm-qdev-Improve-diagnostics-for-bad-property-values.patch [bz#579470]
+- kvm-qdev-Catch-attempt-to-attach-more-than-one-device-to.patch [bz#579470]
+- kvm-usb-Remove-disabled-monitor_printf-in-usb_read_file.patch [bz#579470]
+- kvm-savevm-Fix-loadvm-to-report-errors-to-stderr-not-the.patch [bz#579470]
+- kvm-pc-Fix-error-reporting-for-boot-once.patch [bz#579470]
+- kvm-pc-Factor-common-code-out-of-pc_boot_set-and-cmos_in.patch [bz#579470]
+- kvm-tools-Remove-unused-cur_mon-from-qemu-tool.c.patch [bz#579470]
+- kvm-monitor-Separate-default-monitor-and-current-monitor.patch [bz#579470]
+- kvm-block-Simplify-usb_msd_initfn-test-for-can-read-bdrv.patch [bz#579470]
+- kvm-monitor-Factor-monitor_set_error-out-of-qemu_error_i.patch [bz#579470]
+- kvm-error-Move-qemu_error-friends-from-monitor.c-to-own-.patch [bz#579470]
+- kvm-error-Simplify-error-sink-setup.patch [bz#579470]
+- kvm-error-Move-qemu_error-friends-into-their-own-header.patch [bz#579470]
+- kvm-error-New-error_printf-and-error_vprintf.patch [bz#579470]
+- kvm-error-Don-t-abuse-qemu_error-for-non-error-in-qdev_d.patch [bz#579470]
+- kvm-error-Don-t-abuse-qemu_error-for-non-error-in-qbus_f.patch [bz#579470]
+- kvm-error-Don-t-abuse-qemu_error-for-non-error-in-scsi_h.patch [bz#579470]
+- kvm-error-Replace-qemu_error-by-error_report.patch [bz#579470]
+- kvm-error-Rename-qemu_error_new-to-qerror_report.patch [bz#579470]
+- kvm-error-Infrastructure-to-track-locations-for-error-re.patch [bz#579470]
+- kvm-error-Include-the-program-name-in-error-messages-to-.patch [bz#579470]
+- kvm-error-Track-locations-in-configuration-files.patch [bz#579470]
+- kvm-QemuOpts-Fix-qemu_config_parse-to-catch-file-read-er.patch [bz#579470]
+- kvm-error-Track-locations-on-command-line.patch [bz#579470]
+- kvm-qdev-Fix-device-and-device_add-to-handle-unsuitable-.patch [bz#579470]
+- kvm-qdev-Factor-qdev_create_from_info-out-of-qdev_create.patch [bz#579470]
+- kvm-qdev-Hide-no_user-devices-from-users.patch [bz#579470]
+- kvm-qdev-Hide-ptr-properties-from-users.patch [bz#579470]
+- kvm-monitor-New-monitor_cur_is_qmp.patch [bz#579470]
+- kvm-error-Let-converted-handlers-print-in-human-monitor.patch [bz#579470]
+- kvm-error-Polish-human-readable-error-descriptions.patch [bz#579470]
+- kvm-error-New-QERR_PROPERTY_NOT_FOUND.patch [bz#579470]
+- kvm-error-New-QERR_PROPERTY_VALUE_BAD.patch [bz#579470]
+- kvm-error-New-QERR_PROPERTY_VALUE_IN_USE.patch [bz#579470]
+- kvm-error-New-QERR_PROPERTY_VALUE_NOT_FOUND.patch [bz#579470]
+- kvm-qdev-convert-setting-device-properties-to-QError.patch [bz#579470]
+- kvm-qdev-Relax-parsing-of-bus-option.patch [bz#579470]
+- kvm-error-New-QERR_BUS_NOT_FOUND.patch [bz#579470]
+- kvm-error-New-QERR_DEVICE_MULTIPLE_BUSSES.patch [bz#579470]
+- kvm-error-New-QERR_DEVICE_NO_BUS.patch [bz#579470]
+- kvm-qdev-Convert-qbus_find-to-QError.patch [bz#579470]
+- kvm-error-New-error_printf_unless_qmp.patch [bz#579470]
+- kvm-error-New-QERR_BAD_BUS_FOR_DEVICE.patch [bz#579470]
+- kvm-error-New-QERR_BUS_NO_HOTPLUG.patch [bz#579470]
+- kvm-error-New-QERR_DEVICE_INIT_FAILED.patch [bz#579470]
+- kvm-error-New-QERR_NO_BUS_FOR_DEVICE.patch [bz#579470]
+- kvm-Revert-qdev-Use-QError-for-device-not-found-error.patch [bz#579470]
+- kvm-error-Convert-do_device_add-to-QError.patch [bz#579470]
+- kvm-qemu-option-Functions-to-convert-to-from-QDict.patch [bz#579470]
+- kvm-qemu-option-Move-the-implied-first-name-into-QemuOpt.patch [bz#579470]
+- kvm-qemu-option-Rename-find_list-to-qemu_find_opts-exter.patch [bz#579470]
+- kvm-monitor-New-argument-type-O.patch [bz#579470]
+- kvm-monitor-Use-argument-type-O-for-device_add.patch [bz#579470]
+- kvm-monitor-convert-do_device_add-to-QObject.patch [bz#579470]
+- kvm-error-Trim-includes-after-Move-qemu_error-friends.patch [bz#579470]
+- kvm-error-Trim-includes-in-qerror.c.patch [bz#579470]
+- kvm-error-Trim-includes-after-Infrastructure-to-track-lo.patch [bz#579470]
+- kvm-error-Make-use-of-error_set_progname-optional.patch [bz#579470]
+- kvm-error-Link-qemu-img-qemu-nbd-qemu-io-with-qemu-error.patch [bz#579470]
+- kvm-error-Move-qerror_report-from-qemu-error.-ch-to-qerr.patch [bz#579470]
+- Resolves: bz#579470
+  (QMP: device_add support)
+
 * Fri Apr 23 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.42.el6
 - kvm-net-remove-NICInfo.bootable-field.patch [bz#561078]
 - kvm-net-remove-broken-net_set_boot_mask-boot-device-vali.patch [bz#561078]

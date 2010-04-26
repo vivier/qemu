@@ -1,0 +1,149 @@
+From c30b67153f9bf27789cf4998d4dca6013fbd1470 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:25:10 -0300
+Subject: [PATCH 55/66] qemu-option: Functions to convert to/from QDict
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-56-git-send-email-armbru@redhat.com>
+Patchwork-id: 8220
+O-Subject: [PATCH 55/66] qemu-option: Functions to convert to/from QDict
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+The functions are somewhat restricted.  Good enough for the job at
+hand.  We'll extend them when we need more.
+(cherry picked from commit 01e7f18869c9ee4c84793f4a39ec1f5f4128a0aa)
+---
+ qemu-option.c |   79 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ qemu-option.h |    3 ++
+ 2 files changed, 82 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-option.c |   79 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ qemu-option.h |    3 ++
+ 2 files changed, 82 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-option.c b/qemu-option.c
+index d53acf9..e4880a8 100644
+--- a/qemu-option.c
++++ b/qemu-option.c
+@@ -28,6 +28,7 @@
+ 
+ #include "qemu-common.h"
+ #include "qemu-error.h"
++#include "qemu-objects.h"
+ #include "qemu-option.h"
+ 
+ /*
+@@ -777,6 +778,84 @@ QemuOpts *qemu_opts_parse(QemuOptsList *list, const char *params, const char *fi
+     return opts;
+ }
+ 
++static void qemu_opts_from_qdict_1(const char *key, QObject *obj, void *opaque)
++{
++    char buf[32];
++    const char *value;
++    int n;
++
++    if (!strcmp(key, "id")) {
++        return;
++    }
++
++    switch (qobject_type(obj)) {
++    case QTYPE_QSTRING:
++        value = qstring_get_str(qobject_to_qstring(obj));
++        break;
++    case QTYPE_QINT:
++        n = snprintf(buf, sizeof(buf), "%" PRId64,
++                     qint_get_int(qobject_to_qint(obj)));
++        assert(n < sizeof(buf));
++        value = buf;
++        break;
++    case QTYPE_QFLOAT:
++        n = snprintf(buf, sizeof(buf), "%.17g",
++                     qfloat_get_double(qobject_to_qfloat(obj)));
++        assert(n < sizeof(buf));
++        value = buf;
++        break;
++    case QTYPE_QBOOL:
++        strcpy(buf, qbool_get_int(qobject_to_qbool(obj)) ? "on" : "off");
++        value = buf;
++        break;
++    default:
++        return;
++    }
++    qemu_opt_set(opaque, key, value);
++}
++
++/*
++ * Create QemuOpts from a QDict.
++ * Use value of key "id" as ID if it exists and is a QString.
++ * Only QStrings, QInts, QFloats and QBools are copied.  Entries with
++ * other types are silently ignored.
++ */
++QemuOpts *qemu_opts_from_qdict(QemuOptsList *list, const QDict *qdict)
++{
++    QemuOpts *opts;
++
++    opts = qemu_opts_create(list, qdict_get_try_str(qdict, "id"), 1);
++    if (opts == NULL)
++        return NULL;
++
++    qdict_iter(qdict, qemu_opts_from_qdict_1, opts);
++    return opts;
++}
++
++/*
++ * Convert from QemuOpts to QDict.
++ * The QDict values are of type QString.
++ * TODO We'll want to use types appropriate for opt->desc->type, but
++ * this is enough for now.
++ */
++QDict *qemu_opts_to_qdict(QemuOpts *opts, QDict *qdict)
++{
++    QemuOpt *opt;
++    QObject *val;
++
++    if (!qdict) {
++        qdict = qdict_new();
++    }
++    if (opts->id) {
++        qdict_put(qdict, "id", qstring_from_str(opts->id));
++    }
++    QTAILQ_FOREACH(opt, &opts->head, next) {
++        val = QOBJECT(qstring_from_str(opt->str));
++        qdict_put_obj(qdict, opt->name, val);
++    }
++    return qdict;
++}
++
+ /* Validate parsed opts against descriptions where no
+  * descriptions were provided in the QemuOptsList.
+  */
+diff --git a/qemu-option.h b/qemu-option.h
+index 666b666..9f0933c 100644
+--- a/qemu-option.h
++++ b/qemu-option.h
+@@ -28,6 +28,7 @@
+ 
+ #include <stdint.h>
+ #include "qemu-queue.h"
++#include "qdict.h"
+ 
+ enum QEMUOptionParType {
+     OPT_FLAG,
+@@ -118,6 +119,8 @@ void qemu_opts_del(QemuOpts *opts);
+ int qemu_opts_validate(QemuOpts *opts, QemuOptDesc *desc);
+ int qemu_opts_do_parse(QemuOpts *opts, const char *params, const char *firstname);
+ QemuOpts *qemu_opts_parse(QemuOptsList *list, const char *params, const char *firstname);
++QemuOpts *qemu_opts_from_qdict(QemuOptsList *list, const QDict *qdict);
++QDict *qemu_opts_to_qdict(QemuOpts *opts, QDict *qdict);
+ 
+ typedef int (*qemu_opts_loopfunc)(QemuOpts *opts, void *opaque);
+ int qemu_opts_print(QemuOpts *opts, void *dummy);
+-- 
+1.7.0.3
+

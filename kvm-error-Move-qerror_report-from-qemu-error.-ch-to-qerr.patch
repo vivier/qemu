@@ -1,0 +1,132 @@
+From f3747b7d53e0a834fc945adf85496d8b11f5fa12 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:25:21 -0300
+Subject: [PATCH 66/66] error: Move qerror_report() from qemu-error.[ch] to qerror.[ch]
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-67-git-send-email-armbru@redhat.com>
+Patchwork-id: 8254
+O-Subject: [PATCH 66/66] error: Move qerror_report() from qemu-error.[ch] to
+	qerror.[ch]
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit 0167f772d1505b79f2db2f1d3ccad54f2cbe5de1)
+---
+ qemu-error.c |   18 ------------------
+ qemu-error.h |    6 ------
+ qerror.c     |   20 ++++++++++++++++++++
+ qerror.h     |    5 +++++
+ 4 files changed, 25 insertions(+), 24 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-error.c |   18 ------------------
+ qemu-error.h |    6 ------
+ qerror.c     |   20 ++++++++++++++++++++
+ qerror.h     |    5 +++++
+ 4 files changed, 25 insertions(+), 24 deletions(-)
+
+diff --git a/qemu-error.c b/qemu-error.c
+index 9b9c0a1..57d7555 100644
+--- a/qemu-error.c
++++ b/qemu-error.c
+@@ -207,21 +207,3 @@ void error_report(const char *fmt, ...)
+     va_end(ap);
+     error_printf("\n");
+ }
+-
+-void qerror_report_internal(const char *file, int linenr, const char *func,
+-                            const char *fmt, ...)
+-{
+-    va_list va;
+-    QError *qerror;
+-
+-    va_start(va, fmt);
+-    qerror = qerror_from_info(file, linenr, func, fmt, &va);
+-    va_end(va);
+-
+-    if (monitor_cur_is_qmp()) {
+-        monitor_set_error(cur_mon, qerror);
+-    } else {
+-        qerror_print(qerror);
+-        QDECREF(qerror);
+-    }
+-}
+diff --git a/qemu-error.h b/qemu-error.h
+index e63c6ab..a45609f 100644
+--- a/qemu-error.h
++++ b/qemu-error.h
+@@ -37,11 +37,5 @@ void error_printf_unless_qmp(const char *fmt, ...)
+ void error_print_loc(void);
+ void error_set_progname(const char *argv0);
+ void error_report(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
+-void qerror_report_internal(const char *file, int linenr, const char *func,
+-                            const char *fmt, ...)
+-    __attribute__ ((format(printf, 4, 5)));
+-
+-#define qerror_report(fmt, ...) \
+-    qerror_report_internal(__FILE__, __LINE__, __func__, fmt, ## __VA_ARGS__)
+ 
+ #endif
+diff --git a/qerror.c b/qerror.c
+index 2fc4890..7322e43 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -9,6 +9,8 @@
+  * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
+  * See the COPYING.LIB file in the top-level directory.
+  */
++
++#include "monitor.h"
+ #include "qjson.h"
+ #include "qerror.h"
+ #include "qemu-common.h"
+@@ -377,6 +379,24 @@ void qerror_print(QError *qerror)
+     QDECREF(qstring);
+ }
+ 
++void qerror_report_internal(const char *file, int linenr, const char *func,
++                            const char *fmt, ...)
++{
++    va_list va;
++    QError *qerror;
++
++    va_start(va, fmt);
++    qerror = qerror_from_info(file, linenr, func, fmt, &va);
++    va_end(va);
++
++    if (monitor_cur_is_qmp()) {
++        monitor_set_error(cur_mon, qerror);
++    } else {
++        qerror_print(qerror);
++        QDECREF(qerror);
++    }
++}
++
+ /**
+  * qobject_to_qerror(): Convert a QObject into a QError
+  */
+diff --git a/qerror.h b/qerror.h
+index d96abe1..dd298d4 100644
+--- a/qerror.h
++++ b/qerror.h
+@@ -37,6 +37,11 @@ QError *qerror_from_info(const char *file, int linenr, const char *func,
+                          const char *fmt, va_list *va);
+ QString *qerror_human(const QError *qerror);
+ void qerror_print(QError *qerror);
++void qerror_report_internal(const char *file, int linenr, const char *func,
++                            const char *fmt, ...)
++    __attribute__ ((format(printf, 4, 5)));
++#define qerror_report(fmt, ...) \
++    qerror_report_internal(__FILE__, __LINE__, __func__, fmt, ## __VA_ARGS__)
+ QError *qobject_to_qerror(const QObject *obj);
+ 
+ /*
+-- 
+1.7.0.3
+

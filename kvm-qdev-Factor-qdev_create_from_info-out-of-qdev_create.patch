@@ -1,0 +1,98 @@
+From 6d7a98b8f8269846de89a9ab774b32b3f3c42e2c Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:47 -0300
+Subject: [PATCH 32/66] qdev: Factor qdev_create_from_info() out of qdev_create()
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-33-git-send-email-armbru@redhat.com>
+Patchwork-id: 8244
+O-Subject: [PATCH 32/66] qdev: Factor qdev_create_from_info() out of
+	qdev_create()
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+To make it obvious that -device and device_add can't die in
+hw_error().
+(cherry picked from commit 0c17542d90a3863048ad6daff5de31c5c4d367d4)
+---
+ hw/qdev.c |   37 ++++++++++++++++++++++---------------
+ 1 files changed, 22 insertions(+), 15 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qdev.c |   37 ++++++++++++++++++++++---------------
+ 1 files changed, 22 insertions(+), 15 deletions(-)
+
+diff --git a/hw/qdev.c b/hw/qdev.c
+index 3fe811f..de60108 100644
+--- a/hw/qdev.c
++++ b/hw/qdev.c
+@@ -78,13 +78,32 @@ static DeviceInfo *qdev_find_info(BusInfo *bus_info, const char *name)
+     return NULL;
+ }
+ 
++static DeviceState *qdev_create_from_info(BusState *bus, DeviceInfo *info)
++{
++    DeviceState *dev;
++
++    assert(bus->info == info->bus_info);
++    dev = qemu_mallocz(info->size);
++    dev->info = info;
++    dev->parent_bus = bus;
++    qdev_prop_set_defaults(dev, dev->info->props);
++    qdev_prop_set_defaults(dev, dev->parent_bus->info->props);
++    qdev_prop_set_globals(dev);
++    QLIST_INSERT_HEAD(&bus->children, dev, sibling);
++    if (qdev_hotplug) {
++        assert(bus->allow_hotplug);
++        dev->hotplugged = 1;
++    }
++    dev->state = DEV_STATE_CREATED;
++    return dev;
++}
++
+ /* Create a new device.  This only initializes the device state structure
+    and allows properties to be set.  qdev_init should be called to
+    initialize the actual device emulation.  */
+ DeviceState *qdev_create(BusState *bus, const char *name)
+ {
+     DeviceInfo *info;
+-    DeviceState *dev;
+ 
+     if (!bus) {
+         if (!main_system_bus) {
+@@ -98,19 +117,7 @@ DeviceState *qdev_create(BusState *bus, const char *name)
+         hw_error("Unknown device '%s' for bus '%s'\n", name, bus->info->name);
+     }
+ 
+-    dev = qemu_mallocz(info->size);
+-    dev->info = info;
+-    dev->parent_bus = bus;
+-    qdev_prop_set_defaults(dev, dev->info->props);
+-    qdev_prop_set_defaults(dev, dev->parent_bus->info->props);
+-    qdev_prop_set_globals(dev);
+-    QLIST_INSERT_HEAD(&bus->children, dev, sibling);
+-    if (qdev_hotplug) {
+-        assert(bus->allow_hotplug);
+-        dev->hotplugged = 1;
+-    }
+-    dev->state = DEV_STATE_CREATED;
+-    return dev;
++    return qdev_create_from_info(bus, info);
+ }
+ 
+ static void qdev_print_devinfo(DeviceInfo *info)
+@@ -224,7 +231,7 @@ DeviceState *qdev_device_add(QemuOpts *opts)
+     }
+ 
+     /* create device, set properties */
+-    qdev = qdev_create(bus, driver);
++    qdev = qdev_create_from_info(bus, info);
+     id = qemu_opts_id(opts);
+     if (id) {
+         qdev->id = id;
+-- 
+1.7.0.3
+

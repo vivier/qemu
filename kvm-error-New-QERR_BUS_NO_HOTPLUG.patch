@@ -1,0 +1,58 @@
+From 21c534f56c0302848ffce49151dd20500dd9ec78 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:25:05 -0300
+Subject: [PATCH 50/66] error: New QERR_BUS_NO_HOTPLUG
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-51-git-send-email-armbru@redhat.com>
+Patchwork-id: 8215
+O-Subject: [PATCH 50/66] error: New QERR_BUS_NO_HOTPLUG
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+(cherry picked from commit 8eae73b5d7085b0f9b087033c328fdbbbcc6271d)
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/qerror.c b/qerror.c
+index c9b1645..6dd5eab 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -49,6 +49,10 @@ static const QErrorStringTable qerror_table[] = {
+         .desc      = "Bus '%(bus)' not found",
+     },
+     {
++        .error_fmt = QERR_BUS_NO_HOTPLUG,
++        .desc      = "Bus '%(bus)' does not support hotplugging",
++    },
++    {
+         .error_fmt = QERR_COMMAND_NOT_FOUND,
+         .desc      = "The command %(name) has not been found",
+     },
+diff --git a/qerror.h b/qerror.h
+index 98bf764..4e68c08 100644
+--- a/qerror.h
++++ b/qerror.h
+@@ -48,6 +48,9 @@ QError *qobject_to_qerror(const QObject *obj);
+ #define QERR_BUS_NOT_FOUND \
+     "{ 'class': 'BusNotFound', 'data': { 'bus': %s } }"
+ 
++#define QERR_BUS_NO_HOTPLUG \
++    "{ 'class': 'BusNoHotplug', 'data': { 'bus': %s } }"
++
+ #define QERR_COMMAND_NOT_FOUND \
+     "{ 'class': 'CommandNotFound', 'data': { 'name': %s } }"
+ 
+-- 
+1.7.0.3
+

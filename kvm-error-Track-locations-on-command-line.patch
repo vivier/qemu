@@ -1,0 +1,144 @@
+From d7cad7a27ac923dd987c18b3eedaba876ae46e3a Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:45 -0300
+Subject: [PATCH 30/66] error: Track locations on command line
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-31-git-send-email-armbru@redhat.com>
+Patchwork-id: 8218
+O-Subject: [PATCH 30/66] error: Track locations on command line
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+New LOC_CMDLINE.  Use it for tracking option with argument in
+lookup_opt().  We now report errors like this
+
+    qemu: -device smbus-eeprom: Did not find I2C bus for smbus-eeprom
+(cherry picked from commit 0f0bc3f1d526924ef4a75ad25dd0ec3771a66496)
+---
+ qemu-error.c |   20 ++++++++++++++++++++
+ qemu-error.h |    3 ++-
+ vl.c         |    9 +++++----
+ 3 files changed, 27 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-error.c |   20 ++++++++++++++++++++
+ qemu-error.h |    3 ++-
+ vl.c         |    9 +++++----
+ 3 files changed, 27 insertions(+), 5 deletions(-)
+
+diff --git a/qemu-error.c b/qemu-error.c
+index 23176e1..5be6bea 100644
+--- a/qemu-error.c
++++ b/qemu-error.c
+@@ -114,6 +114,16 @@ void loc_set_none(void)
+ }
+ 
+ /*
++ * Change the current location to argument ARGV[IDX..IDX+CNT-1].
++ */
++void loc_set_cmdline(char **argv, int idx, int cnt)
++{
++    cur_loc->kind = LOC_CMDLINE;
++    cur_loc->num = cnt;
++    cur_loc->ptr = argv + idx;
++}
++
++/*
+  * Change the current location to file FNAME, line LNO.
+  */
+ void loc_set_file(const char *fname, int lno)
+@@ -143,12 +153,22 @@ void error_set_progname(const char *argv0)
+ void error_print_loc(void)
+ {
+     const char *sep = "";
++    int i;
++    const char *const *argp;
+ 
+     if (!cur_mon) {
+         fprintf(stderr, "%s:", progname);
+         sep = " ";
+     }
+     switch (cur_loc->kind) {
++    case LOC_CMDLINE:
++        argp = cur_loc->ptr;
++        for (i = 0; i < cur_loc->num; i++) {
++            error_printf("%s%s", sep, argp[i]);
++            sep = " ";
++        }
++        error_printf(": ");
++        break;
+     case LOC_FILE:
+         error_printf("%s:", (const char *)cur_loc->ptr);
+         if (cur_loc->num) {
+diff --git a/qemu-error.h b/qemu-error.h
+index 8f2a140..88e0b70 100644
+--- a/qemu-error.h
++++ b/qemu-error.h
+@@ -15,7 +15,7 @@
+ 
+ typedef struct Location {
+     /* all members are private to qemu-error.c */
+-    enum { LOC_NONE, LOC_FILE } kind;
++    enum { LOC_NONE, LOC_CMDLINE, LOC_FILE } kind;
+     int num;
+     const void *ptr;
+     struct Location *prev;
+@@ -27,6 +27,7 @@ Location *loc_pop(Location *loc);
+ Location *loc_save(Location *loc);
+ void loc_restore(Location *loc);
+ void loc_set_none(void);
++void loc_set_cmdline(char **argv, int idx, int cnt);
+ void loc_set_file(const char *fname, int lno);
+ 
+ void error_vprintf(const char *fmt, va_list ap);
+diff --git a/vl.c b/vl.c
+index 9042e2a..5408099 100644
+--- a/vl.c
++++ b/vl.c
+@@ -4987,6 +4987,7 @@ static const QEMUOption *lookup_opt(int argc, char **argv,
+     char *r = argv[optind];
+     const char *optarg;
+ 
++    loc_set_cmdline(argv, optind, 1);
+     optind++;
+     /* Treat --foo the same as -foo.  */
+     if (r[1] == '-')
+@@ -4994,8 +4995,7 @@ static const QEMUOption *lookup_opt(int argc, char **argv,
+     popt = qemu_options;
+     for(;;) {
+         if (!popt->name) {
+-            fprintf(stderr, "%s: invalid option -- '%s'\n",
+-                    argv[0], r);
++            error_report("invalid option");
+             exit(1);
+         }
+         if (!strcmp(popt->name, r + 1))
+@@ -5004,11 +5004,11 @@ static const QEMUOption *lookup_opt(int argc, char **argv,
+     }
+     if (popt->flags & HAS_ARG) {
+         if (optind >= argc) {
+-            fprintf(stderr, "%s: option '%s' requires an argument\n",
+-                    argv[0], r);
++            error_report("requires an argument");
+             exit(1);
+         }
+         optarg = argv[optind++];
++        loc_set_cmdline(argv, optind - 2, 2);
+     } else {
+         optarg = NULL;
+     }
+@@ -5909,6 +5909,7 @@ int main(int argc, char **argv, char **envp)
+             }
+         }
+     }
++    loc_set_none();
+ 
+     /* If no data_dir is specified then try to find it relative to the
+        executable path.  */
+-- 
+1.7.0.3
+

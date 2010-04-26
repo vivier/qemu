@@ -1,0 +1,160 @@
+From 5f6e1fd3373562f59e7ff7045307bb82498993c0 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:29 -0300
+Subject: [PATCH 14/66] monitor: Separate "default monitor" and "current monitor" cleanly
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-15-git-send-email-armbru@redhat.com>
+Patchwork-id: 8214
+O-Subject: [PATCH 14/66] monitor: Separate "default monitor" and "current
+	monitor" cleanly
+Bugzilla: 579470
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+Commits 376253ec..731b0364 introduced global variable cur_mon, which
+points to the "default monitor" (if any), except during execution of
+monitor_read() or monitor_control_read() it points to the monitor from
+which we're reading instead (the "current monitor").  Monitor command
+handlers run within monitor_read() or monitor_control_read().
+
+Default monitor and current monitor are really separate things, and
+squashing them together is confusing and error-prone.
+
+For instance, usb_host_scan() can run both in "info usbhost" and
+periodically via usb_host_auto_check().  It prints to cur_mon, which
+is what we want in the former case: the monitor executing "info
+usbhost".  But since that's the default monitor in the latter case, it
+periodically spams the default monitor there.
+
+A few places use cur_mon to log stuff to the default monitor.  If we
+ever log something while cur_mon points to current monitor instead of
+default monitor, the log temporarily "jumps" to another monitor.
+Whether that can or cannot happen isn't always obvious.
+
+Maybe logging to the default monitor (which may not even exist) is a
+bad idea, and we should log to stderr or a logfile instead.  But
+that's outside the scope of this commit.
+
+Change cur_mon to point to the current monitor.  Create new
+default_mon to point to the default monitor.  Update users of cur_mon
+accordingly.
+
+This fixes the periodical spamming of the default monitor by
+usb_host_scan().  It also stops "log jumping", should that problem
+exist.
+(cherry picked from commit 8631b6084a13e712ae8356d779077991aba010a5)
+---
+ audio/audio.c |    4 ++--
+ monitor.c     |    7 ++++---
+ monitor.h     |    1 +
+ slirp/misc.c  |    2 +-
+ vnc.c         |    5 ++---
+ 5 files changed, 10 insertions(+), 9 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ audio/audio.c |    4 ++--
+ monitor.c     |    7 ++++---
+ monitor.h     |    1 +
+ slirp/misc.c  |    2 +-
+ vnc.c         |    5 ++---
+ 5 files changed, 10 insertions(+), 9 deletions(-)
+
+diff --git a/audio/audio.c b/audio/audio.c
+index 1c28155..986b479 100644
+--- a/audio/audio.c
++++ b/audio/audio.c
+@@ -324,10 +324,10 @@ void AUD_vlog (const char *cap, const char *fmt, va_list ap)
+ {
+     if (conf.log_to_monitor) {
+         if (cap) {
+-            monitor_printf(cur_mon, "%s: ", cap);
++            monitor_printf(default_mon, "%s: ", cap);
+         }
+ 
+-        monitor_vprintf(cur_mon, fmt, ap);
++        monitor_vprintf(default_mon, fmt, ap);
+     }
+     else {
+         if (cap) {
+diff --git a/monitor.c b/monitor.c
+index ee63437..d945658 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -184,7 +184,8 @@ static QLIST_HEAD(mon_list, Monitor) mon_list;
+ static const mon_cmd_t mon_cmds[];
+ static const mon_cmd_t info_cmds[];
+ 
+-Monitor *cur_mon = NULL;
++Monitor *cur_mon;
++Monitor *default_mon;
+ 
+ static void monitor_command_cb(Monitor *mon, const char *cmdline,
+                                void *opaque);
+@@ -4670,8 +4671,8 @@ void monitor_init(CharDriverState *chr, int flags)
+     }
+ 
+     QLIST_INSERT_HEAD(&mon_list, mon, entry);
+-    if (!cur_mon || (flags & MONITOR_IS_DEFAULT))
+-        cur_mon = mon;
++    if (!default_mon || (flags & MONITOR_IS_DEFAULT))
++        default_mon = mon;
+ }
+ 
+ static void bdrv_password_cb(Monitor *mon, const char *password, void *opaque)
+diff --git a/monitor.h b/monitor.h
+index b1f51c9..aeb06ea 100644
+--- a/monitor.h
++++ b/monitor.h
+@@ -7,6 +7,7 @@
+ #include "block.h"
+ 
+ extern Monitor *cur_mon;
++extern Monitor *default_mon;
+ 
+ /* flags for monitor_init */
+ #define MONITOR_IS_DEFAULT    0x01
+diff --git a/slirp/misc.c b/slirp/misc.c
+index dcb1dc1..1aeb401 100644
+--- a/slirp/misc.c
++++ b/slirp/misc.c
+@@ -260,7 +260,7 @@ void lprint(const char *format, ...)
+     va_list args;
+ 
+     va_start(args, format);
+-    monitor_vprintf(cur_mon, format, args);
++    monitor_vprintf(default_mon, format, args);
+     va_end(args);
+ }
+ 
+diff --git a/vnc.c b/vnc.c
+index 012738d..584d298 100644
+--- a/vnc.c
++++ b/vnc.c
+@@ -1051,11 +1051,10 @@ static void audio_capture(void *opaque, void *buf, int size)
+ 
+ static void audio_add(VncState *vs)
+ {
+-    Monitor *mon = cur_mon;
+     struct audio_capture_ops ops;
+ 
+     if (vs->audio_cap) {
+-        monitor_printf(mon, "audio already running\n");
++        monitor_printf(default_mon, "audio already running\n");
+         return;
+     }
+ 
+@@ -1065,7 +1064,7 @@ static void audio_add(VncState *vs)
+ 
+     vs->audio_cap = AUD_add_capture(&vs->as, &ops, vs);
+     if (!vs->audio_cap) {
+-        monitor_printf(mon, "Failed to add audio capture\n");
++        monitor_printf(default_mon, "Failed to add audio capture\n");
+     }
+ }
+ 
+-- 
+1.7.0.3
+

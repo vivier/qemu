@@ -1,0 +1,50 @@
+From 966bfcfdad3f9a021e84de141502846d3c309469 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:30 -0300
+Subject: [PATCH 15/66] block: Simplify usb_msd_initfn() test for "can read bdrv key"
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-16-git-send-email-armbru@redhat.com>
+Patchwork-id: 8210
+O-Subject: [PATCH 15/66] block: Simplify usb_msd_initfn() test for "can read
+	bdrv key"
+Bugzilla: 579470
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+The old test assumes that "hotplugged" implies "we have a current
+monitor for reading the key".  This is in fact true, but it's not
+obviously true.
+
+Aside: if it were false, we could pass a null pointer to
+monitor_read_bdrv_key_start(), which would then crash.
+
+The previous commit permits us to check for "we have a current
+monitor" directly, so do that.
+(cherry picked from commit a44264880ef42254edb88f9ec5d6f35e3e84089b)
+---
+ hw/usb-msd.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-msd.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/hw/usb-msd.c b/hw/usb-msd.c
+index 36991f8..1e3e101 100644
+--- a/hw/usb-msd.c
++++ b/hw/usb-msd.c
+@@ -535,7 +535,7 @@ static int usb_msd_initfn(USBDevice *dev)
+     usb_msd_handle_reset(dev);
+ 
+     if (bdrv_key_required(s->conf.dinfo->bdrv)) {
+-        if (s->dev.qdev.hotplugged) {
++        if (cur_mon) {
+             monitor_read_bdrv_key_start(cur_mon, s->conf.dinfo->bdrv,
+                                         usb_msd_password_cb, s);
+             s->dev.auto_attach = 0;
+-- 
+1.7.0.3
+

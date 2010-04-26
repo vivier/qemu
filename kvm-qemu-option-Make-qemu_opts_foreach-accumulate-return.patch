@@ -1,0 +1,51 @@
+From 4837b66f0ab2b7ef4ef1d142af49617d0b3fe576 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:16 -0300
+Subject: [PATCH 01/66] qemu-option: Make qemu_opts_foreach() accumulate return values
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-2-git-send-email-armbru@redhat.com>
+Patchwork-id: 8202
+O-Subject: [PATCH 01/66] qemu-option: Make qemu_opts_foreach() accumulate return
+	values
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+Return the bitwise inclusive or of all return values instead of the
+last call's value.  This lets you find out whether any of the calls
+returned a non-zero value.
+
+No functional change, as existing users either don't care for the
+value, or pass non-zero abort_on_failure, which breaks the loop on the
+first non-zero return value.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 4a2594ddd35de7ae7c8cd9c6828cfe72245e6dc5)
+---
+ qemu-option.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-option.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-option.c b/qemu-option.c
+index 24392fc..a52a4c4 100644
+--- a/qemu-option.c
++++ b/qemu-option.c
+@@ -814,7 +814,7 @@ int qemu_opts_foreach(QemuOptsList *list, qemu_opts_loopfunc func, void *opaque,
+     int rc = 0;
+ 
+     QTAILQ_FOREACH(opts, &list->head, next) {
+-        rc = func(opts, opaque);
++        rc |= func(opts, opaque);
+         if (abort_on_failure  &&  rc != 0)
+             break;
+     }
+-- 
+1.7.0.3
+

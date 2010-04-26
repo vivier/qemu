@@ -1,0 +1,117 @@
+From 930ec5db1bc99cb1b0fa50ee16508a344cbdcbc2 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:49 -0300
+Subject: [PATCH 34/66] qdev: Hide "ptr" properties from users
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-35-git-send-email-armbru@redhat.com>
+Patchwork-id: 8238
+O-Subject: [PATCH 34/66] qdev: Hide "ptr" properties from users
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+Users can't set them, so qdev_device_help() shouldn't list them.  Fix
+that.  Also make qdev_prop_parse() hide them instead of printing a
+meaningless "has no parser" error message.
+
+Their value means nothing to users, so qdev_print_props() shouldn't
+print it.  Fix by removing their print method.
+
+Their only use is dirty hacks.  Document that.
+(cherry picked from commit 036f7166c73a9e0cc1b2f10c03763e61894a1033)
+---
+ hw/qdev-properties.c |   21 ++++++++-------------
+ hw/qdev.c            |   15 +++++++++++++++
+ 2 files changed, 23 insertions(+), 13 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qdev-properties.c |   21 ++++++++-------------
+ hw/qdev.c            |   15 +++++++++++++++
+ 2 files changed, 23 insertions(+), 13 deletions(-)
+
+diff --git a/hw/qdev-properties.c b/hw/qdev-properties.c
+index 24671af..6a524cc 100644
+--- a/hw/qdev-properties.c
++++ b/hw/qdev-properties.c
+@@ -402,17 +402,11 @@ PropertyInfo qdev_prop_vlan = {
+ 
+ /* --- pointer --- */
+ 
+-static int print_ptr(DeviceState *dev, Property *prop, char *dest, size_t len)
+-{
+-    void **ptr = qdev_get_prop_ptr(dev, prop);
+-    return snprintf(dest, len, "<%p>", *ptr);
+-}
+-
++/* Not a proper property, just for dirty hacks.  TODO Remove it!  */
+ PropertyInfo qdev_prop_ptr = {
+     .name  = "ptr",
+     .type  = PROP_TYPE_PTR,
+     .size  = sizeof(void*),
+-    .print = print_ptr,
+ };
+ 
+ /* --- mac address --- */
+@@ -547,16 +541,17 @@ int qdev_prop_parse(DeviceState *dev, const char *name, const char *value)
+     int ret;
+ 
+     prop = qdev_prop_find(dev, name);
+-    if (!prop) {
++    /*
++     * TODO Properties without a parse method are just for dirty
++     * hacks.  qdev_prop_ptr is the only such PropertyInfo.  It's
++     * marked for removal.  The test !prop->info->parse should be
++     * removed along with it.
++     */
++    if (!prop || !prop->info->parse) {
+         fprintf(stderr, "property \"%s.%s\" not found\n",
+                 dev->info->name, name);
+         return -1;
+     }
+-    if (!prop->info->parse) {
+-        fprintf(stderr, "property \"%s.%s\" has no parser\n",
+-                dev->info->name, name);
+-        return -1;
+-    }
+     ret = prop->info->parse(dev, prop, value);
+     if (ret < 0) {
+         switch (ret) {
+diff --git a/hw/qdev.c b/hw/qdev.c
+index 233480e..4608169 100644
+--- a/hw/qdev.c
++++ b/hw/qdev.c
+@@ -180,6 +180,15 @@ int qdev_device_help(QemuOpts *opts)
+     }
+ 
+     for (prop = info->props; prop && prop->name; prop++) {
++        /*
++         * TODO Properties without a parser are just for dirty hacks.
++         * qdev_prop_ptr is the only such PropertyInfo.  It's marked
++         * for removal.  This conditional should be removed along with
++         * it.
++         */
++        if (!prop->info->parse) {
++            continue;           /* no way to set it, don't show */
++        }
+         error_printf("%s.%s=%s\n", info->name, prop->name, prop->info->name);
+     }
+     return 1;
+@@ -682,6 +691,12 @@ static void qdev_print_props(Monitor *mon, DeviceState *dev, Property *props,
+     if (!props)
+         return;
+     while (props->name) {
++        /*
++         * TODO Properties without a print method are just for dirty
++         * hacks.  qdev_prop_ptr is the only such PropertyInfo.  It's
++         * marked for removal.  The test props->info->print should be
++         * removed along with it.
++         */
+         if (props->info->print) {
+             props->info->print(dev, props, buf, sizeof(buf));
+             qdev_printf("%s-prop: %s = %s\n", prefix, props->name, buf);
+-- 
+1.7.0.3
+

@@ -1,0 +1,44 @@
+From 56abe32bb5a3b8085e10299089f6fd2717c1a21a Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:25:18 -0300
+Subject: [PATCH 63/66] error: Trim includes after "Infrastructure to track locations..."
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-64-git-send-email-armbru@redhat.com>
+Patchwork-id: 8262
+O-Subject: [PATCH 63/66] error: Trim includes after "Infrastructure to track
+	locations..."
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+Missed in commit 827b0813.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit fc2377ea29d11eb7ccc881b60ced7782fbc60443)
+---
+ monitor.h |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.h |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+diff --git a/monitor.h b/monitor.h
+index 42664d0..ce2785c 100644
+--- a/monitor.h
++++ b/monitor.h
+@@ -3,7 +3,6 @@
+ 
+ #include "qemu-common.h"
+ #include "qemu-char.h"
+-#include "qemu-error.h"
+ #include "qerror.h"
+ #include "qdict.h"
+ #include "block.h"
+-- 
+1.7.0.3
+

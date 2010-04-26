@@ -1,0 +1,127 @@
+From f938470cdcb1166a12547dc14953269a02da1f30 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:37 -0300
+Subject: [PATCH 22/66] error: Don't abuse qemu_error() for non-error in qbus_find()
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-23-git-send-email-armbru@redhat.com>
+Patchwork-id: 8232
+O-Subject: [PATCH 22/66] error: Don't abuse qemu_error() for non-error in
+	qbus_find()
+Bugzilla: 579470
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+qbus_find() adds an informational line to error messages, and prints
+both lines with one qemu_error().  Use error_printf() for the
+informational line instead.
+
+While there, simplify: instead of printing buffers filled by
+qbus_list_bus() and qbus_list_dev() in one go, make them print it.
+(cherry picked from commit 53db16b5b056e7b38384014c1bce75116ed27044)
+---
+ hw/qdev.c |   37 +++++++++++++++++--------------------
+ 1 files changed, 17 insertions(+), 20 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qdev.c |   37 +++++++++++++++++--------------------
+ 1 files changed, 17 insertions(+), 20 deletions(-)
+
+diff --git a/hw/qdev.c b/hw/qdev.c
+index d7d5fb9..8dd995f 100644
+--- a/hw/qdev.c
++++ b/hw/qdev.c
+@@ -456,35 +456,33 @@ static DeviceState *qdev_find_recursive(BusState *bus, const char *id)
+     return NULL;
+ }
+ 
+-static void qbus_list_bus(DeviceState *dev, char *dest, int len)
++static void qbus_list_bus(DeviceState *dev)
+ {
+     BusState *child;
+     const char *sep = " ";
+-    int pos = 0;
+ 
+-    pos += snprintf(dest+pos, len-pos,"child busses at \"%s\":",
+-                    dev->id ? dev->id : dev->info->name);
++    error_printf("child busses at \"%s\":",
++                 dev->id ? dev->id : dev->info->name);
+     QLIST_FOREACH(child, &dev->child_bus, sibling) {
+-        pos += snprintf(dest+pos, len-pos, "%s\"%s\"", sep, child->name);
++        error_printf("%s\"%s\"", sep, child->name);
+         sep = ", ";
+     }
++    error_printf("\n");
+ }
+ 
+-static void qbus_list_dev(BusState *bus, char *dest, int len)
++static void qbus_list_dev(BusState *bus)
+ {
+     DeviceState *dev;
+     const char *sep = " ";
+-    int pos = 0;
+ 
+-    pos += snprintf(dest+pos, len-pos, "devices at \"%s\":",
+-                    bus->name);
++    error_printf("devices at \"%s\":", bus->name);
+     QLIST_FOREACH(dev, &bus->children, sibling) {
+-        pos += snprintf(dest+pos, len-pos, "%s\"%s\"",
+-                        sep, dev->info->name);
++        error_printf("%s\"%s\"", sep, dev->info->name);
+         if (dev->id)
+-            pos += snprintf(dest+pos, len-pos, "/\"%s\"", dev->id);
++            error_printf("/\"%s\"", dev->id);
+         sep = ", ";
+     }
++    error_printf("\n");
+ }
+ 
+ static BusState *qbus_find_bus(DeviceState *dev, char *elem)
+@@ -531,7 +529,7 @@ static BusState *qbus_find(const char *path)
+ {
+     DeviceState *dev;
+     BusState *bus;
+-    char elem[128], msg[256];
++    char elem[128];
+     int pos, len;
+ 
+     /* find start element */
+@@ -565,8 +563,8 @@ static BusState *qbus_find(const char *path)
+         pos += len;
+         dev = qbus_find_dev(bus, elem);
+         if (!dev) {
+-            qbus_list_dev(bus, msg, sizeof(msg));
+-            qemu_error("device \"%s\" not found\n%s\n", elem, msg);
++            qemu_error("device \"%s\" not found\n", elem);
++            qbus_list_dev(bus);
+             return NULL;
+         }
+         if (path[pos] == '\0') {
+@@ -579,9 +577,8 @@ static BusState *qbus_find(const char *path)
+             case 1:
+                 return QLIST_FIRST(&dev->child_bus);
+             default:
+-                qbus_list_bus(dev, msg, sizeof(msg));
+-                qemu_error("device has multiple child busses (%s)\n%s\n",
+-                           path, msg);
++                qemu_error("device has multiple child busses (%s)\n", path);
++                qbus_list_bus(dev);
+                 return NULL;
+             }
+         }
+@@ -594,8 +591,8 @@ static BusState *qbus_find(const char *path)
+         pos += len;
+         bus = qbus_find_bus(dev, elem);
+         if (!bus) {
+-            qbus_list_bus(dev, msg, sizeof(msg));
+-            qemu_error("child bus \"%s\" not found\n%s\n", elem, msg);
++            qemu_error("child bus \"%s\" not found\n", elem);
++            qbus_list_bus(dev);
+             return NULL;
+         }
+     }
+-- 
+1.7.0.3
+

@@ -1,0 +1,89 @@
+From 389e5e7c86685770ac8e7083c15fe551bd39d532 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:31 -0300
+Subject: [PATCH 16/66] monitor: Factor monitor_set_error() out of qemu_error_internal()
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-17-git-send-email-armbru@redhat.com>
+Patchwork-id: 8251
+O-Subject: [PATCH 16/66] monitor: Factor monitor_set_error() out of
+	qemu_error_internal()
+Bugzilla: 579470
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+This separates the monitor part from the QError part.
+(cherry picked from commit d6f468337aba7eeeab0c7a772eda7491eb432cca)
+---
+ monitor.c |   21 +++++++++++++--------
+ monitor.h |    3 +++
+ 2 files changed, 16 insertions(+), 8 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c |   21 +++++++++++++--------
+ monitor.h |    3 +++
+ 2 files changed, 16 insertions(+), 8 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index d945658..a2d485e 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -3904,6 +3904,18 @@ fail:
+     return NULL;
+ }
+ 
++void monitor_set_error(Monitor *mon, QError *qerror)
++{
++    /* report only the first error */
++    if (!mon->error) {
++        mon->error = qerror;
++    } else {
++        MON_DEBUG("Additional error report at %s:%d\n",
++                  qerror->file, qerror->linenr);
++        QDECREF(qerror);
++    }
++}
++
+ static void monitor_print_error(Monitor *mon)
+ {
+     qerror_print(mon->error);
+@@ -4805,14 +4817,7 @@ void qemu_error_internal(const char *file, int linenr, const char *func,
+         QDECREF(qerror);
+         break;
+     case ERR_SINK_MONITOR:
+-        /* report only the first error */
+-        if (!qemu_error_sink->mon->error) {
+-            qemu_error_sink->mon->error = qerror;
+-        } else {
+-            MON_DEBUG("Additional error report at %s:%d\n", qerror->file,
+-                      qerror->linenr);
+-            QDECREF(qerror);
+-        }
++        monitor_set_error(qemu_error_sink->mon, qerror);
+         break;
+     }
+ }
+diff --git a/monitor.h b/monitor.h
+index aeb06ea..d185237 100644
+--- a/monitor.h
++++ b/monitor.h
+@@ -3,6 +3,7 @@
+ 
+ #include "qemu-common.h"
+ #include "qemu-char.h"
++#include "qerror.h"
+ #include "qdict.h"
+ #include "block.h"
+ 
+@@ -51,4 +52,6 @@ void monitor_flush(Monitor *mon);
+ 
+ typedef void (MonitorCompletion)(void *opaque, QObject *ret_data);
+ 
++void monitor_set_error(Monitor *mon, QError *qerror);
++
+ #endif /* !MONITOR_H */
+-- 
+1.7.0.3
+

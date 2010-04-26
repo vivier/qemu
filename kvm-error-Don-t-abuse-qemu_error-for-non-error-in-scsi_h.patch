@@ -1,0 +1,75 @@
+From 13fd8e7f3acfaa1469971681324a0f51e982a64b Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:38 -0300
+Subject: [PATCH 23/66] error: Don't abuse qemu_error() for non-error in scsi_hot_add()
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-24-git-send-email-armbru@redhat.com>
+Patchwork-id: 8204
+O-Subject: [PATCH 23/66] error: Don't abuse qemu_error() for non-error in
+	scsi_hot_add()
+Bugzilla: 579470
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+Commit 30d335d6 converted an informational message from
+monitor_printf() to qemu_error(), probably because the latter doesn't
+need a mon argument.  A later commit will make qemu_error() print
+additional stuff that is only appropriate for proper errors, and then
+this will break.  Clean it up.
+(cherry picked from commit 6fdb03d58c614e0097d80ed130c19dcc393f7421)
+---
+ hw/pci-hotplug.c |   10 ++++++----
+ 1 files changed, 6 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pci-hotplug.c |   10 ++++++----
+ 1 files changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/hw/pci-hotplug.c b/hw/pci-hotplug.c
+index a587f31..e0653c9 100644
+--- a/hw/pci-hotplug.c
++++ b/hw/pci-hotplug.c
+@@ -74,7 +74,8 @@ static PCIDevice *qemu_pci_hot_add_nic(Monitor *mon,
+     return pci_nic_init(&nd_table[ret], "rtl8139", devaddr);
+ }
+ 
+-static int scsi_hot_add(DeviceState *adapter, DriveInfo *dinfo, int printinfo)
++static int scsi_hot_add(Monitor *mon, DeviceState *adapter,
++                        DriveInfo *dinfo, int printinfo)
+ {
+     SCSIBus *scsibus;
+     SCSIDevice *scsidev;
+@@ -98,7 +99,8 @@ static int scsi_hot_add(DeviceState *adapter, DriveInfo *dinfo, int printinfo)
+     dinfo->unit = scsidev->id;
+ 
+     if (printinfo)
+-        qemu_error("OK bus %d, unit %d\n", scsibus->busnr, scsidev->id);
++        monitor_printf(mon, "OK bus %d, unit %d\n",
++                       scsibus->busnr, scsidev->id);
+     return 0;
+ }
+ 
+@@ -132,7 +134,7 @@ void drive_hot_add(Monitor *mon, const QDict *qdict)
+             monitor_printf(mon, "no pci device with address %s\n", pci_addr);
+             goto err;
+         }
+-        if (scsi_hot_add(&dev->qdev, dinfo, 1) != 0) {
++        if (scsi_hot_add(mon, &dev->qdev, dinfo, 1) != 0) {
+             goto err;
+         }
+         break;
+@@ -204,7 +206,7 @@ static PCIDevice *qemu_pci_hot_add_storage(Monitor *mon,
+         if (qdev_init(&dev->qdev) < 0)
+             dev = NULL;
+         if (dev && dinfo) {
+-            if (scsi_hot_add(&dev->qdev, dinfo, 0) != 0) {
++            if (scsi_hot_add(mon, &dev->qdev, dinfo, 0) != 0) {
+                 qdev_unplug(&dev->qdev);
+                 dev = NULL;
+             }
+-- 
+1.7.0.3
+

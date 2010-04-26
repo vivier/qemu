@@ -1,0 +1,83 @@
+From 0bb9f181daec91a35a52c74c140892124f109824 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:25:12 -0300
+Subject: [PATCH 57/66] qemu-option: Rename find_list() to qemu_find_opts() & external linkage
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-58-git-send-email-armbru@redhat.com>
+Patchwork-id: 8242
+O-Subject: [PATCH 57/66] qemu-option: Rename find_list() to qemu_find_opts() &
+	external linkage
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+Next commit wants to use it.
+(cherry picked from commit 304329eea01f730733db3f0d6483c01d957378cb)
+---
+ qemu-config.c |    8 ++++----
+ qemu-config.h |    1 +
+ 2 files changed, 5 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-config.c |    8 ++++----
+ qemu-config.h |    1 +
+ 2 files changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/qemu-config.c b/qemu-config.c
+index 3160682..e630391 100644
+--- a/qemu-config.c
++++ b/qemu-config.c
+@@ -316,7 +316,7 @@ static QemuOptsList *lists[] = {
+     NULL,
+ };
+ 
+-static QemuOptsList *find_list(const char *group)
++QemuOptsList *qemu_find_opts(const char *group)
+ {
+     int i;
+ 
+@@ -343,7 +343,7 @@ int qemu_set_option(const char *str)
+         return -1;
+     }
+ 
+-    list = find_list(group);
++    list = qemu_find_opts(group);
+     if (list == NULL) {
+         return -1;
+     }
+@@ -458,7 +458,7 @@ int qemu_config_parse(FILE *fp, const char *fname)
+         }
+         if (sscanf(line, "[%63s \"%63[^\"]\"]", group, id) == 2) {
+             /* group with id */
+-            list = find_list(group);
++            list = qemu_find_opts(group);
+             if (list == NULL)
+                 goto out;
+             opts = qemu_opts_create(list, id, 1);
+@@ -466,7 +466,7 @@ int qemu_config_parse(FILE *fp, const char *fname)
+         }
+         if (sscanf(line, "[%63[^]]]", group) == 1) {
+             /* group without id */
+-            list = find_list(group);
++            list = qemu_find_opts(group);
+             if (list == NULL)
+                 goto out;
+             opts = qemu_opts_create(list, NULL, 0);
+diff --git a/qemu-config.h b/qemu-config.h
+index 709ca74..e743efa 100644
+--- a/qemu-config.h
++++ b/qemu-config.h
+@@ -12,6 +12,7 @@ extern QemuOptsList qemu_mon_opts;
+ extern QemuOptsList qemu_cpudef_opts;
+ extern QemuOptsList qemu_spice_opts;
+ 
++QemuOptsList *qemu_find_opts(const char *group);
+ int qemu_set_option(const char *str);
+ int qemu_global_option(const char *str);
+ void qemu_add_globals(void);
+-- 
+1.7.0.3
+

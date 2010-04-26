@@ -1,0 +1,45 @@
+From 1b1a8092852ca688042ec2e3789493d3791b871e Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:20 -0300
+Subject: [PATCH 05/66] qdev: Add rudimentary help for property value
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-6-git-send-email-armbru@redhat.com>
+Patchwork-id: 8208
+O-Subject: [PATCH 05/66] qdev: Add rudimentary help for property value
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+This provides the same information as reverted commit 2ba6edf0.  Not
+much, just better than nothing.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 117f8eb81dfdf51a0418fbf6d260cbb72bcd4a9d)
+---
+ hw/qdev.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qdev.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/hw/qdev.c b/hw/qdev.c
+index af16fb6..e4776c7 100644
+--- a/hw/qdev.c
++++ b/hw/qdev.c
+@@ -179,7 +179,7 @@ int qdev_device_help(QemuOpts *opts)
+     }
+ 
+     for (prop = info->props; prop && prop->name; prop++) {
+-        qemu_error("%s.%s\n", info->name, prop->name);
++        qemu_error("%s.%s=%s\n", info->name, prop->name, prop->info->name);
+     }
+     return 1;
+ }
+-- 
+1.7.0.3
+

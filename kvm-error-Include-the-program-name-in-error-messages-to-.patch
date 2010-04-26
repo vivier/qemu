@@ -1,0 +1,94 @@
+From 994e0f7a0d918d2048e6863fc836d922897b9cf7 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:42 -0300
+Subject: [PATCH 27/66] error: Include the program name in error messages to stderr
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-28-git-send-email-armbru@redhat.com>
+Patchwork-id: 8257
+O-Subject: [PATCH 27/66] error: Include the program name in error messages to
+	stderr
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+(cherry picked from commit 65abca0a3441fb47024553e7676f6f3eef685a32)
+---
+ qemu-error.c |   20 +++++++++++++++++++-
+ qemu-error.h |    1 +
+ vl.c         |    2 ++
+ 3 files changed, 22 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-error.c |   20 +++++++++++++++++++-
+ qemu-error.h |    1 +
+ vl.c         |    2 ++
+ 3 files changed, 22 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-error.c b/qemu-error.c
+index 0d673c5..214e448 100644
+--- a/qemu-error.c
++++ b/qemu-error.c
+@@ -113,13 +113,31 @@ void loc_set_none(void)
+     cur_loc->kind = LOC_NONE;
+ }
+ 
++static const char *progname;
++
++/*
++ * Set the program name for error_print_loc().
++ */
++void error_set_progname(const char *argv0)
++{
++    const char *p = strrchr(argv0, '/');
++    progname = p ? p + 1 : argv0;
++}
++
+ /*
+  * Print current location to current monitor if we have one, else to stderr.
+  */
+ void error_print_loc(void)
+ {
++    const char *sep = "";
++
++    if (!cur_mon) {
++        fprintf(stderr, "%s:", progname);
++        sep = " ";
++    }
+     switch (cur_loc->kind) {
+-    default: ;
++    default:
++        error_printf(sep);
+     }
+ }
+ 
+diff --git a/qemu-error.h b/qemu-error.h
+index a1562aa..204dfb6 100644
+--- a/qemu-error.h
++++ b/qemu-error.h
+@@ -31,6 +31,7 @@ void loc_set_none(void);
+ void error_vprintf(const char *fmt, va_list ap);
+ void error_printf(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
+ void error_print_loc(void);
++void error_set_progname(const char *argv0);
+ void error_report(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
+ void qerror_report_internal(const char *file, int linenr, const char *func,
+                             const char *fmt, ...)
+diff --git a/vl.c b/vl.c
+index 11cacfa..964dd70 100644
+--- a/vl.c
++++ b/vl.c
+@@ -5052,6 +5052,8 @@ int main(int argc, char **argv, char **envp)
+     int show_vnc_port = 0;
+     int defconfig = 1;
+ 
++    error_set_progname(argv[0]);
++
+     init_clocks();
+ 
+     qemu_cache_utils_init(envp);
+-- 
+1.7.0.3
+

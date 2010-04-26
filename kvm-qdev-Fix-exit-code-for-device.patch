@@ -1,0 +1,131 @@
+From 059aac51451c58d8e808f0c909950d9c242c3274 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:17 -0300
+Subject: [PATCH 02/66] qdev: Fix exit code for -device ?
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-3-git-send-email-armbru@redhat.com>
+Patchwork-id: 8206
+O-Subject: [PATCH 02/66] qdev: Fix exit code for -device ?
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+Help was shoehorned into device creation, qdev_device_add().  Since
+help doesn't create a device, it returns NULL, which looks to callers
+just like failed device creation.  Monitor handler do_device_add()
+doesn't care, but main() exits unsuccessfully.
+
+Move help out of device creation, into new qdev_device_help().
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit ff952ba25deb927fea0b30b8a74e0059a47c1ef1)
+---
+ hw/qdev.c |   28 +++++++++++++++++++---------
+ hw/qdev.h |    1 +
+ vl.c      |    8 ++++++++
+ 3 files changed, 28 insertions(+), 9 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qdev.c |   28 +++++++++++++++++++---------
+ hw/qdev.h |    1 +
+ vl.c      |    8 ++++++++
+ 3 files changed, 28 insertions(+), 9 deletions(-)
+
+diff --git a/hw/qdev.c b/hw/qdev.c
+index e035dfc..a9f5c02 100644
+--- a/hw/qdev.c
++++ b/hw/qdev.c
+@@ -153,6 +153,24 @@ static int set_property(const char *name, const char *value, void *opaque)
+     return 0;
+ }
+ 
++int qdev_device_help(QemuOpts *opts)
++{
++    const char *driver;
++    DeviceInfo *info;
++    char msg[256];
++
++    driver = qemu_opt_get(opts, "driver");
++    if (driver && !strcmp(driver, "?")) {
++        for (info = device_info_list; info != NULL; info = info->next) {
++            qdev_print_devinfo(info, msg, sizeof(msg));
++            qemu_error("%s\n", msg);
++        }
++        return 1;
++    }
++
++    return 0;
++}
++
+ DeviceState *qdev_device_add(QemuOpts *opts)
+ {
+     const char *driver, *path, *id;
+@@ -165,14 +183,6 @@ DeviceState *qdev_device_add(QemuOpts *opts)
+         qemu_error("-device: no driver specified\n");
+         return NULL;
+     }
+-    if (strcmp(driver, "?") == 0) {
+-        char msg[256];
+-        for (info = device_info_list; info != NULL; info = info->next) {
+-            qdev_print_devinfo(info, msg, sizeof(msg));
+-            qemu_error("%s\n", msg);
+-        }
+-        return NULL;
+-    }
+ 
+     /* find driver */
+     info = qdev_find_info(NULL, driver);
+@@ -726,7 +736,7 @@ void do_device_add(Monitor *mon, const QDict *qdict)
+ 
+     opts = qemu_opts_parse(&qemu_device_opts,
+                            qdict_get_str(qdict, "config"), "driver");
+-    if (opts)
++    if (opts && !qdev_device_help(opts))
+         qdev_device_add(opts);
+ }
+ 
+diff --git a/hw/qdev.h b/hw/qdev.h
+index 9277419..adfcf79 100644
+--- a/hw/qdev.h
++++ b/hw/qdev.h
+@@ -108,6 +108,7 @@ typedef struct GlobalProperty {
+ /*** Board API.  This should go away once we have a machine config file.  ***/
+ 
+ DeviceState *qdev_create(BusState *bus, const char *name);
++int qdev_device_help(QemuOpts *opts);
+ DeviceState *qdev_device_add(QemuOpts *opts);
+ int qdev_init(DeviceState *dev) QEMU_WARN_UNUSED_RESULT;
+ void qdev_init_nofail(DeviceState *dev);
+diff --git a/vl.c b/vl.c
+index ec17406..670b61b 100644
+--- a/vl.c
++++ b/vl.c
+@@ -4769,6 +4769,11 @@ char *qemu_find_file(int type, const char *name)
+     return buf;
+ }
+ 
++static int device_help_func(QemuOpts *opts, void *opaque)
++{
++    return qdev_device_help(opts);
++}
++
+ static int device_init_func(QemuOpts *opts, void *opaque)
+ {
+     DeviceState *dev;
+@@ -6186,6 +6191,9 @@ int main(int argc, char **argv, char **envp)
+ 
+     module_call_init(MODULE_INIT_DEVICE);
+ 
++    if (qemu_opts_foreach(&qemu_device_opts, device_help_func, NULL, 0) != 0)
++        exit(0);
++
+     if (watchdog) {
+         i = select_watchdog(watchdog);
+         if (i > 0)
+-- 
+1.7.0.3
+

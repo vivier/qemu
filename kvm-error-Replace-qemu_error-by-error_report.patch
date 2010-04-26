@@ -1,0 +1,1103 @@
+From ce167a76d729dc858379d024dfc0fd85a26f32e1 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 31 Mar 2010 13:24:39 -0300
+Subject: [PATCH 24/66] error: Replace qemu_error() by error_report()
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1270041921-28969-25-git-send-email-armbru@redhat.com>
+Patchwork-id: 8266
+O-Subject: [PATCH 24/66] error: Replace qemu_error() by error_report()
+Bugzilla: 579470
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+From: Markus Armbruster <armbru@pond.sub.org>
+
+error_report() terminates the message with a newline.  Strip it it
+from its arguments.
+
+This fixes a few error messages lacking a newline:
+net_handle_fd_param()'s "No file descriptor named %s found", and
+tap_open()'s "vnet_hdr=1 requested, but no kernel support for
+IFF_VNET_HDR available" (all three versions).
+
+There's one place that passes arguments without newlines
+intentionally: load_vmstate().  Fix it up.
+(cherry picked from commit 1ecda02b24a13f501e747b8442934829d82698ae)
+
+Conflicts:
+
+	hw/scsi-disk.c
+
+hw/device-assignment.c and net/tap.c manually backported.
+---
+ hw/device-assignment.c |    6 +++---
+ hw/pc.c                |    6 +++---
+ hw/pci-hotplug.c       |    2 +-
+ hw/pci.c               |   14 +++++++-------
+ hw/qdev.c              |   42 +++++++++++++++++++++---------------------
+ hw/scsi-bus.c          |    2 +-
+ hw/scsi-disk.c         |    2 +-
+ hw/scsi-generic.c      |    8 ++++----
+ hw/usb-bus.c           |    4 ++--
+ hw/usb-msd.c           |    2 +-
+ hw/usb-serial.c        |    8 ++++----
+ hw/virtio-net.c        |    4 ++--
+ hw/virtio-pci.c        |    2 +-
+ hw/virtio-serial-bus.c |    2 +-
+ net.c                  |   28 ++++++++++++++--------------
+ net/dump.c             |    4 ++--
+ net/slirp.c            |   28 ++++++++++++++--------------
+ net/socket.c           |   10 +++++-----
+ net/tap-bsd.c          |    7 ++++---
+ net/tap-linux.c        |    8 ++++----
+ net/tap-solaris.c      |    4 ++--
+ net/tap-win32.c        |    2 +-
+ net/tap.c              |    6 +++---
+ qemu-config.c          |   10 +++++-----
+ qemu-error.c           |    8 +++++++-
+ qemu-error.h           |    2 +-
+ qemu-tool.c            |    2 +-
+ qerror.c               |    4 ++--
+ savevm.c               |   23 ++++++++++++-----------
+ vl.c                   |    4 ++--
+ 30 files changed, 131 insertions(+), 123 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |    6 +++---
+ hw/pc.c                |    6 +++---
+ hw/pci-hotplug.c       |    2 +-
+ hw/pci.c               |   14 +++++++-------
+ hw/qdev.c              |   42 +++++++++++++++++++++---------------------
+ hw/scsi-bus.c          |    2 +-
+ hw/scsi-disk.c         |    2 +-
+ hw/scsi-generic.c      |    8 ++++----
+ hw/usb-bus.c           |    4 ++--
+ hw/usb-msd.c           |    2 +-
+ hw/usb-serial.c        |    8 ++++----
+ hw/virtio-net.c        |    4 ++--
+ hw/virtio-pci.c        |    2 +-
+ hw/virtio-serial-bus.c |    2 +-
+ net.c                  |   28 ++++++++++++++--------------
+ net/dump.c             |    4 ++--
+ net/slirp.c            |   28 ++++++++++++++--------------
+ net/socket.c           |   10 +++++-----
+ net/tap-bsd.c          |    7 ++++---
+ net/tap-linux.c        |    8 ++++----
+ net/tap-solaris.c      |    4 ++--
+ net/tap-win32.c        |    2 +-
+ net/tap.c              |    6 +++---
+ qemu-config.c          |   10 +++++-----
+ qemu-error.c           |    8 +++++++-
+ qemu-error.h           |    2 +-
+ qemu-tool.c            |    2 +-
+ qerror.c               |    4 ++--
+ savevm.c               |   23 ++++++++++++-----------
+ vl.c                   |    4 ++--
+ 30 files changed, 131 insertions(+), 123 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index 08396ef..348e9dd 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -1131,13 +1131,13 @@ static int assigned_initfn(struct PCIDevice *pci_dev)
+     int r;
+ 
+     if (!dev->host.bus && !dev->host.dev && !dev->host.func) {
+-        qemu_error("pci-assign: error: no host device specified\n");
++        error_report("pci-assign: error: no host device specified");
+         goto out;
+     }
+ 
+     if (get_real_device(dev, dev->host.bus, dev->host.dev, dev->host.func)) {
+-        qemu_error("pci-assign: Error: Couldn't get real device (%s)!\n",
+-                   dev->dev.qdev.id);
++        error_report("pci-assign: Error: Couldn't get real device (%s)!",
++                     dev->dev.qdev.id);
+         goto out;
+     }
+ 
+diff --git a/hw/pc.c b/hw/pc.c
+index 7feaf32..a77d3b6 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -232,14 +232,14 @@ static int set_boot_dev(RTCState *s, const char *boot_device, int fd_bootchk)
+ 
+     nbds = strlen(boot_device);
+     if (nbds > PC_MAX_BOOT_DEVICES) {
+-        qemu_error("Too many boot devices for PC\n");
++        error_report("Too many boot devices for PC");
+         return(1);
+     }
+     for (i = 0; i < nbds; i++) {
+         bds[i] = boot_device2nibble(boot_device[i]);
+         if (bds[i] == 0) {
+-            qemu_error("Invalid boot device for PC: '%c'\n",
+-                       boot_device[i]);
++            error_report("Invalid boot device for PC: '%c'",
++                         boot_device[i]);
+             return(1);
+         }
+     }
+diff --git a/hw/pci-hotplug.c b/hw/pci-hotplug.c
+index e0653c9..f3df5a3 100644
+--- a/hw/pci-hotplug.c
++++ b/hw/pci-hotplug.c
+@@ -82,7 +82,7 @@ static int scsi_hot_add(Monitor *mon, DeviceState *adapter,
+ 
+     scsibus = DO_UPCAST(SCSIBus, qbus, QLIST_FIRST(&adapter->child_bus));
+     if (!scsibus || strcmp(scsibus->qbus.info->name, "SCSI") != 0) {
+-        qemu_error("Device is not a SCSI adapter\n");
++        error_report("Device is not a SCSI adapter");
+         return -1;
+     }
+ 
+diff --git a/hw/pci.c b/hw/pci.c
+index 861d427..e9972b1 100644
+--- a/hw/pci.c
++++ b/hw/pci.c
+@@ -636,12 +636,12 @@ static PCIDevice *do_pci_register_device(PCIDevice *pci_dev, PCIBus *bus,
+             if (!bus->devices[devfn])
+                 goto found;
+         }
+-        qemu_error("PCI: no devfn available for %s, all in use\n", name);
++        error_report("PCI: no devfn available for %s, all in use", name);
+         return NULL;
+     found: ;
+     } else if (bus->devices[devfn]) {
+-        qemu_error("PCI: devfn %d not available for %s, in use by %s\n", devfn,
+-                 name, bus->devices[devfn]->name);
++        error_report("PCI: devfn %d not available for %s, in use by %s",
++                     devfn, name, bus->devices[devfn]->name);
+         return NULL;
+     }
+     pci_dev->bus = bus;
+@@ -1313,8 +1313,8 @@ PCIDevice *pci_nic_init(NICInfo *nd, const char *default_model,
+ 
+     bus = pci_get_bus_devfn(&devfn, devaddr);
+     if (!bus) {
+-        qemu_error("Invalid PCI device address %s for device %s\n",
+-                   devaddr, pci_nic_names[i]);
++        error_report("Invalid PCI device address %s for device %s",
++                     devaddr, pci_nic_names[i]);
+         return NULL;
+     }
+ 
+@@ -1634,8 +1634,8 @@ static int pci_add_option_rom(PCIDevice *pdev)
+ 
+     size = get_image_size(path);
+     if (size < 0) {
+-        qemu_error("%s: failed to find romfile \"%s\"\n", __FUNCTION__,
+-                   pdev->romfile);
++        error_report("%s: failed to find romfile \"%s\"",
++                     __FUNCTION__, pdev->romfile);
+         return -1;
+     }
+     if (size & (size - 1)) {
+diff --git a/hw/qdev.c b/hw/qdev.c
+index 8dd995f..98123e6 100644
+--- a/hw/qdev.c
++++ b/hw/qdev.c
+@@ -139,8 +139,8 @@ static int set_property(const char *name, const char *value, void *opaque)
+         return 0;
+ 
+     if (qdev_prop_parse(dev, name, value) == -1) {
+-        qemu_error("can't set property \"%s\" to \"%s\" for \"%s\"\n",
+-                   name, value, dev->info->name);
++        error_report("can't set property \"%s\" to \"%s\" for \"%s\"",
++                     name, value, dev->info->name);
+         return -1;
+     }
+     return 0;
+@@ -184,7 +184,7 @@ DeviceState *qdev_device_add(QemuOpts *opts)
+ 
+     driver = qemu_opt_get(opts, "driver");
+     if (!driver) {
+-        qemu_error("-device: no driver specified\n");
++        error_report("-device: no driver specified");
+         return NULL;
+     }
+ 
+@@ -195,8 +195,8 @@ DeviceState *qdev_device_add(QemuOpts *opts)
+         return NULL;
+     }
+     if (info->no_user) {
+-        qemu_error("device \"%s\" can't be added via command line\n",
+-                   info->name);
++        error_report("device \"%s\" can't be added via command line",
++                     info->name);
+         return NULL;
+     }
+ 
+@@ -208,13 +208,13 @@ DeviceState *qdev_device_add(QemuOpts *opts)
+         bus = qbus_find_recursive(main_system_bus, NULL, info->bus_info);
+     }
+     if (!bus) {
+-        qemu_error("Did not find %s bus for %s\n",
+-                   path ? path : info->bus_info->name, info->name);
++        error_report("Did not find %s bus for %s",
++                     path ? path : info->bus_info->name, info->name);
+         return NULL;
+     }
+     if (qdev_hotplug && !bus->allow_hotplug) {
+-        qemu_error("Bus %s does not support hotplugging\n",
+-                   bus->name);
++        error_report("Bus %s does not support hotplugging",
++                     bus->name);
+         return NULL;
+     }
+ 
+@@ -229,7 +229,7 @@ DeviceState *qdev_device_add(QemuOpts *opts)
+         return NULL;
+     }
+     if (qdev_init(qdev) < 0) {
+-        qemu_error("Error initializing device %s\n", driver);
++        error_report("Error initializing device %s", driver);
+         return NULL;
+     }
+     qdev->opts = opts;
+@@ -268,8 +268,8 @@ int qdev_init(DeviceState *dev)
+ int qdev_unplug(DeviceState *dev)
+ {
+     if (!dev->parent_bus->allow_hotplug) {
+-        qemu_error("Bus %s does not support hotplugging\n",
+-                   dev->parent_bus->name);
++        error_report("Bus %s does not support hotplugging",
++                     dev->parent_bus->name);
+         return -1;
+     }
+     assert(dev->info->unplug != NULL);
+@@ -538,12 +538,12 @@ static BusState *qbus_find(const char *path)
+         pos = 0;
+     } else {
+         if (sscanf(path, "%127[^/]%n", elem, &len) != 1) {
+-            qemu_error("path parse error (\"%s\")\n", path);
++            error_report("path parse error (\"%s\")", path);
+             return NULL;
+         }
+         bus = qbus_find_recursive(main_system_bus, elem, NULL);
+         if (!bus) {
+-            qemu_error("bus \"%s\" not found\n", elem);
++            error_report("bus \"%s\" not found", elem);
+             return NULL;
+         }
+         pos = len;
+@@ -557,13 +557,13 @@ static BusState *qbus_find(const char *path)
+ 
+         /* find device */
+         if (sscanf(path+pos, "/%127[^/]%n", elem, &len) != 1) {
+-            qemu_error("path parse error (\"%s\" pos %d)\n", path, pos);
++            error_report("path parse error (\"%s\" pos %d)", path, pos);
+             return NULL;
+         }
+         pos += len;
+         dev = qbus_find_dev(bus, elem);
+         if (!dev) {
+-            qemu_error("device \"%s\" not found\n", elem);
++            error_report("device \"%s\" not found", elem);
+             qbus_list_dev(bus);
+             return NULL;
+         }
+@@ -572,12 +572,12 @@ static BusState *qbus_find(const char *path)
+              * one child bus accept it nevertheless */
+             switch (dev->num_child_bus) {
+             case 0:
+-                qemu_error("device has no child bus (%s)\n", path);
++                error_report("device has no child bus (%s)", path);
+                 return NULL;
+             case 1:
+                 return QLIST_FIRST(&dev->child_bus);
+             default:
+-                qemu_error("device has multiple child busses (%s)\n", path);
++                error_report("device has multiple child busses (%s)", path);
+                 qbus_list_bus(dev);
+                 return NULL;
+             }
+@@ -585,13 +585,13 @@ static BusState *qbus_find(const char *path)
+ 
+         /* find bus */
+         if (sscanf(path+pos, "/%127[^/]%n", elem, &len) != 1) {
+-            qemu_error("path parse error (\"%s\" pos %d)\n", path, pos);
++            error_report("path parse error (\"%s\" pos %d)", path, pos);
+             return NULL;
+         }
+         pos += len;
+         bus = qbus_find_bus(dev, elem);
+         if (!bus) {
+-            qemu_error("child bus \"%s\" not found\n", elem);
++            error_report("child bus \"%s\" not found", elem);
+             qbus_list_bus(dev);
+             return NULL;
+         }
+@@ -749,7 +749,7 @@ void do_device_del(Monitor *mon, const QDict *qdict)
+ 
+     dev = qdev_find_recursive(main_system_bus, id);
+     if (NULL == dev) {
+-        qemu_error("Device '%s' not found\n", id);
++        error_report("Device '%s' not found", id);
+         return;
+     }
+     qdev_unplug(dev);
+diff --git a/hw/scsi-bus.c b/hw/scsi-bus.c
+index 8adf5f0..893eaa1 100644
+--- a/hw/scsi-bus.c
++++ b/hw/scsi-bus.c
+@@ -41,7 +41,7 @@ static int scsi_qdev_init(DeviceState *qdev, DeviceInfo *base)
+         }
+     }
+     if (dev->id >= bus->ndev) {
+-        qemu_error("bad scsi device id: %d\n", dev->id);
++        error_report("bad scsi device id: %d", dev->id);
+         goto err;
+     }
+ 
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index 5f3c240..edd338e 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -1022,7 +1022,7 @@ static int scsi_disk_initfn(SCSIDevice *dev)
+     uint64_t nb_sectors;
+ 
+     if (!s->qdev.conf.dinfo || !s->qdev.conf.dinfo->bdrv) {
+-        qemu_error("scsi-disk: drive property not set\n");
++        error_report("scsi-disk: drive property not set");
+         return -1;
+     }
+     s->bs = s->qdev.conf.dinfo->bdrv;
+diff --git a/hw/scsi-generic.c b/hw/scsi-generic.c
+index cfd9903..c9aa853 100644
+--- a/hw/scsi-generic.c
++++ b/hw/scsi-generic.c
+@@ -464,27 +464,27 @@ static int scsi_generic_initfn(SCSIDevice *dev)
+     struct sg_scsi_id scsiid;
+ 
+     if (!s->qdev.conf.dinfo || !s->qdev.conf.dinfo->bdrv) {
+-        qemu_error("scsi-generic: drive property not set\n");
++        error_report("scsi-generic: drive property not set");
+         return -1;
+     }
+     s->bs = s->qdev.conf.dinfo->bdrv;
+ 
+     /* check we are really using a /dev/sg* file */
+     if (!bdrv_is_sg(s->bs)) {
+-        qemu_error("scsi-generic: not /dev/sg*\n");
++        error_report("scsi-generic: not /dev/sg*");
+         return -1;
+     }
+ 
+     /* check we are using a driver managing SG_IO (version 3 and after */
+     if (bdrv_ioctl(s->bs, SG_GET_VERSION_NUM, &sg_version) < 0 ||
+         sg_version < 30000) {
+-        qemu_error("scsi-generic: scsi generic interface too old\n");
++        error_report("scsi-generic: scsi generic interface too old");
+         return -1;
+     }
+ 
+     /* get LUN of the /dev/sg? */
+     if (bdrv_ioctl(s->bs, SG_GET_SCSI_ID, &scsiid)) {
+-        qemu_error("scsi-generic: SG_GET_SCSI_ID ioctl failed\n");
++        error_report("scsi-generic: SG_GET_SCSI_ID ioctl failed");
+         return -1;
+     }
+ 
+diff --git a/hw/usb-bus.c b/hw/usb-bus.c
+index 54027df..df6d8d9 100644
+--- a/hw/usb-bus.c
++++ b/hw/usb-bus.c
+@@ -288,14 +288,14 @@ USBDevice *usbdevice_create(const char *cmdline)
+     if (info == NULL) {
+ #if 0
+         /* no error because some drivers are not converted (yet) */
+-        qemu_error("usbdevice %s not found\n", driver);
++        error_report("usbdevice %s not found", driver);
+ #endif
+         return NULL;
+     }
+ 
+     if (!usb->usbdevice_init) {
+         if (params) {
+-            qemu_error("usbdevice %s accepts no params\n", driver);
++            error_report("usbdevice %s accepts no params", driver);
+             return NULL;
+         }
+         return usb_create_simple(bus, usb->qdev.name);
+diff --git a/hw/usb-msd.c b/hw/usb-msd.c
+index 1e3e101..25d4a14 100644
+--- a/hw/usb-msd.c
++++ b/hw/usb-msd.c
+@@ -524,7 +524,7 @@ static int usb_msd_initfn(USBDevice *dev)
+     MSDState *s = DO_UPCAST(MSDState, dev, dev);
+ 
+     if (!s->conf.dinfo || !s->conf.dinfo->bdrv) {
+-        qemu_error("usb-msd: drive property not set\n");
++        error_report("usb-msd: drive property not set");
+         return -1;
+     }
+ 
+diff --git a/hw/usb-serial.c b/hw/usb-serial.c
+index e78c6c0..80d194e 100644
+--- a/hw/usb-serial.c
++++ b/hw/usb-serial.c
+@@ -565,26 +565,26 @@ static USBDevice *usb_serial_init(const char *filename)
+         if (strstart(filename, "vendorid=", &p)) {
+             vendorid = strtol(p, &e, 16);
+             if (e == p || (*e && *e != ',' && *e != ':')) {
+-                qemu_error("bogus vendor ID %s\n", p);
++                error_report("bogus vendor ID %s", p);
+                 return NULL;
+             }
+             filename = e;
+         } else if (strstart(filename, "productid=", &p)) {
+             productid = strtol(p, &e, 16);
+             if (e == p || (*e && *e != ',' && *e != ':')) {
+-                qemu_error("bogus product ID %s\n", p);
++                error_report("bogus product ID %s", p);
+                 return NULL;
+             }
+             filename = e;
+         } else {
+-            qemu_error("unrecognized serial USB option %s\n", filename);
++            error_report("unrecognized serial USB option %s", filename);
+             return NULL;
+         }
+         while(*filename == ',')
+             filename++;
+     }
+     if (!*filename) {
+-        qemu_error("character device specification needed\n");
++        error_report("character device specification needed");
+         return NULL;
+     }
+     filename++;
+diff --git a/hw/virtio-net.c b/hw/virtio-net.c
+index 491bf2d..92d13e1 100644
+--- a/hw/virtio-net.c
++++ b/hw/virtio-net.c
+@@ -793,7 +793,7 @@ static int virtio_net_load(QEMUFile *f, void *opaque, int version_id)
+ 
+     if (version_id >= 7) {
+         if (qemu_get_be32(f) && !peer_has_vnet_hdr(n)) {
+-            qemu_error("virtio-net: saved image requires vnet_hdr=on\n");
++            error_report("virtio-net: saved image requires vnet_hdr=on");
+             return -1;
+         }
+ 
+@@ -822,7 +822,7 @@ static int virtio_net_load(QEMUFile *f, void *opaque, int version_id)
+ 
+     if (version_id >= 11) {
+         if (qemu_get_byte(f) && !peer_has_ufo(n)) {
+-            qemu_error("virtio-net: saved image requires TUN_F_UFO support\n");
++            error_report("virtio-net: saved image requires TUN_F_UFO support");
+             return -1;
+         }
+     }
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index fffd98e..8597aa2 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -550,7 +550,7 @@ static int virtio_blk_init_pci(PCIDevice *pci_dev)
+         proxy->class_code = PCI_CLASS_STORAGE_SCSI;
+ 
+     if (!proxy->block.dinfo) {
+-        qemu_error("virtio-blk-pci: drive property not set\n");
++        error_report("virtio-blk-pci: drive property not set");
+         return -1;
+     }
+     vdev = virtio_blk_init(&pci_dev->qdev, &proxy->block);
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index d0e0219..17c1ec1 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -485,7 +485,7 @@ static int virtser_port_qdev_init(DeviceState *qdev, DeviceInfo *base)
+     plugging_port0 = port->is_console && !find_port_by_id(port->vser, 0);
+ 
+     if (port->vser->config.nr_ports == bus->max_nr_ports && !plugging_port0) {
+-        qemu_error("virtio-serial-bus: Maximum device limit reached\n");
++        error_report("virtio-serial-bus: Maximum device limit reached");
+         return -1;
+     }
+     dev->info = info;
+diff --git a/net.c b/net.c
+index 6441a18..4c92f9f 100644
+--- a/net.c
++++ b/net.c
+@@ -733,7 +733,7 @@ int qemu_find_nic_model(NICInfo *nd, const char * const *models,
+             return i;
+     }
+ 
+-    qemu_error("qemu: Unsupported NIC model: %s\n", nd->model);
++    error_report("qemu: Unsupported NIC model: %s", nd->model);
+     return -1;
+ }
+ 
+@@ -744,7 +744,7 @@ int net_handle_fd_param(Monitor *mon, const char *param)
+ 
+         fd = monitor_get_fd(mon, param);
+         if (fd == -1) {
+-            qemu_error("No file descriptor named %s found", param);
++            error_report("No file descriptor named %s found", param);
+             return -1;
+         }
+ 
+@@ -765,7 +765,7 @@ static int net_init_nic(QemuOpts *opts,
+ 
+     idx = nic_get_free_idx();
+     if (idx == -1 || nb_nics >= MAX_NICS) {
+-        qemu_error("Too Many NICs\n");
++        error_report("Too Many NICs");
+         return -1;
+     }
+ 
+@@ -776,7 +776,7 @@ static int net_init_nic(QemuOpts *opts,
+     if ((netdev = qemu_opt_get(opts, "netdev"))) {
+         nd->netdev = qemu_find_netdev(netdev);
+         if (!nd->netdev) {
+-            qemu_error("netdev '%s' not found\n", netdev);
++            error_report("netdev '%s' not found", netdev);
+             return -1;
+         }
+     } else {
+@@ -802,7 +802,7 @@ static int net_init_nic(QemuOpts *opts,
+ 
+     if (qemu_opt_get(opts, "macaddr") &&
+         net_parse_macaddr(nd->macaddr, qemu_opt_get(opts, "macaddr")) < 0) {
+-        qemu_error("invalid syntax for ethernet address\n");
++        error_report("invalid syntax for ethernet address");
+         return -1;
+     }
+ 
+@@ -810,7 +810,7 @@ static int net_init_nic(QemuOpts *opts,
+                                        DEV_NVECTORS_UNSPECIFIED);
+     if (nd->nvectors != DEV_NVECTORS_UNSPECIFIED &&
+         (nd->nvectors < 0 || nd->nvectors > 0x7ffffff)) {
+-        qemu_error("invalid # of vectors: %d\n", nd->nvectors);
++        error_report("invalid # of vectors: %d", nd->nvectors);
+         return -1;
+     }
+ 
+@@ -1068,12 +1068,12 @@ int net_client_init(Monitor *mon, QemuOpts *opts, int is_netdev)
+ 
+     if (!is_netdev) {
+         if (!type) {
+-            qemu_error("No type specified for -net\n");
++            error_report("No type specified for -net");
+             return -1;
+         }
+     } else {
+         if (!type) {
+-            qemu_error("No type specified for -netdev\n");
++            error_report("No type specified for -netdev");
+             return -1;
+         }
+ 
+@@ -1085,21 +1085,21 @@ int net_client_init(Monitor *mon, QemuOpts *opts, int is_netdev)
+             strcmp(type, "vde") != 0 &&
+ #endif
+             strcmp(type, "socket") != 0) {
+-            qemu_error("The '%s' network backend type is not valid with -netdev\n",
+-                       type);
++            error_report("The '%s' network backend type is not valid with -netdev",
++                         type);
+             return -1;
+         }
+ 
+         if (qemu_opt_get(opts, "vlan")) {
+-            qemu_error("The 'vlan' parameter is not valid with -netdev\n");
++            error_report("The 'vlan' parameter is not valid with -netdev");
+             return -1;
+         }
+         if (qemu_opt_get(opts, "name")) {
+-            qemu_error("The 'name' parameter is not valid with -netdev\n");
++            error_report("The 'name' parameter is not valid with -netdev");
+             return -1;
+         }
+         if (!qemu_opts_id(opts)) {
+-            qemu_error("The id= parameter is required with -netdev\n");
++            error_report("The id= parameter is required with -netdev");
+             return -1;
+         }
+     }
+@@ -1132,7 +1132,7 @@ int net_client_init(Monitor *mon, QemuOpts *opts, int is_netdev)
+         }
+     }
+ 
+-    qemu_error("Invalid -net type '%s'\n", type);
++    error_report("Invalid -net type '%s'", type);
+     return -1;
+ }
+ 
+diff --git a/net/dump.c b/net/dump.c
+index e702830..6db7ecf 100644
+--- a/net/dump.c
++++ b/net/dump.c
+@@ -108,7 +108,7 @@ static int net_dump_init(VLANState *vlan, const char *device,
+ 
+     fd = open(filename, O_CREAT | O_WRONLY | O_BINARY, 0644);
+     if (fd < 0) {
+-        qemu_error("-net dump: can't open %s\n", filename);
++        error_report("-net dump: can't open %s", filename);
+         return -1;
+     }
+ 
+@@ -121,7 +121,7 @@ static int net_dump_init(VLANState *vlan, const char *device,
+     hdr.linktype = 1;
+ 
+     if (write(fd, &hdr, sizeof(hdr)) < sizeof(hdr)) {
+-        qemu_error("-net dump write error: %s\n", strerror(errno));
++        error_report("-net dump write error: %s", strerror(errno));
+         close(fd);
+         return -1;
+     }
+diff --git a/net/slirp.c b/net/slirp.c
+index 7e35059..480e6ae 100644
+--- a/net/slirp.c
++++ b/net/slirp.c
+@@ -410,14 +410,14 @@ static int slirp_hostfwd(SlirpState *s, const char *redir_str,
+ 
+     if (slirp_add_hostfwd(s->slirp, is_udp, host_addr, host_port, guest_addr,
+                           guest_port) < 0) {
+-        qemu_error("could not set up host forwarding rule '%s'\n",
+-                   redir_str);
++        error_report("could not set up host forwarding rule '%s'",
++                     redir_str);
+         return -1;
+     }
+     return 0;
+ 
+  fail_syntax:
+-    qemu_error("invalid host forwarding rule '%s'\n", redir_str);
++    error_report("invalid host forwarding rule '%s'", redir_str);
+     return -1;
+ }
+ 
+@@ -470,10 +470,10 @@ static void slirp_smb_cleanup(SlirpState *s)
+         snprintf(cmd, sizeof(cmd), "rm -rf %s", s->smb_dir);
+         ret = system(cmd);
+         if (ret == -1 || !WIFEXITED(ret)) {
+-            qemu_error("'%s' failed.\n", cmd);
++            error_report("'%s' failed.", cmd);
+         } else if (WEXITSTATUS(ret)) {
+-            qemu_error("'%s' failed. Error code: %d\n",
+-                    cmd, WEXITSTATUS(ret));
++            error_report("'%s' failed. Error code: %d",
++                         cmd, WEXITSTATUS(ret));
+         }
+         s->smb_dir[0] = '\0';
+     }
+@@ -490,7 +490,7 @@ static int slirp_smb(SlirpState* s, const char *exported_dir,
+     snprintf(s->smb_dir, sizeof(s->smb_dir), "/tmp/qemu-smb.%ld-%d",
+              (long)getpid(), instance++);
+     if (mkdir(s->smb_dir, 0700) < 0) {
+-        qemu_error("could not create samba server dir '%s'\n", s->smb_dir);
++        error_report("could not create samba server dir '%s'", s->smb_dir);
+         return -1;
+     }
+     snprintf(smb_conf, sizeof(smb_conf), "%s/%s", s->smb_dir, "smb.conf");
+@@ -498,8 +498,8 @@ static int slirp_smb(SlirpState* s, const char *exported_dir,
+     f = fopen(smb_conf, "w");
+     if (!f) {
+         slirp_smb_cleanup(s);
+-        qemu_error("could not create samba server configuration file '%s'\n",
+-                   smb_conf);
++        error_report("could not create samba server configuration file '%s'",
++                     smb_conf);
+         return -1;
+     }
+     fprintf(f,
+@@ -530,7 +530,7 @@ static int slirp_smb(SlirpState* s, const char *exported_dir,
+ 
+     if (slirp_add_exec(s->slirp, 0, smb_cmdline, &vserver_addr, 139) < 0) {
+         slirp_smb_cleanup(s);
+-        qemu_error("conflicting/invalid smbserver address\n");
++        error_report("conflicting/invalid smbserver address");
+         return -1;
+     }
+     return 0;
+@@ -615,14 +615,14 @@ static int slirp_guestfwd(SlirpState *s, const char *config_str,
+     snprintf(buf, sizeof(buf), "guestfwd.tcp:%d", port);
+     fwd->hd = qemu_chr_open(buf, p, NULL);
+     if (!fwd->hd) {
+-        qemu_error("could not open guest forwarding device '%s'\n", buf);
++        error_report("could not open guest forwarding device '%s'", buf);
+         qemu_free(fwd);
+         return -1;
+     }
+ 
+     if (slirp_add_exec(s->slirp, 3, fwd->hd, &server, port) < 0) {
+-        qemu_error("conflicting/invalid host:port in guest forwarding "
+-                   "rule '%s'\n", config_str);
++        error_report("conflicting/invalid host:port in guest forwarding "
++                     "rule '%s'", config_str);
+         qemu_free(fwd);
+         return -1;
+     }
+@@ -635,7 +635,7 @@ static int slirp_guestfwd(SlirpState *s, const char *config_str,
+     return 0;
+ 
+  fail_syntax:
+-    qemu_error("invalid guest forwarding rule '%s'\n", config_str);
++    error_report("invalid guest forwarding rule '%s'", config_str);
+     return -1;
+ }
+ 
+diff --git a/net/socket.c b/net/socket.c
+index 474d573..1c4e153 100644
+--- a/net/socket.c
++++ b/net/socket.c
+@@ -506,7 +506,7 @@ int net_init_socket(QemuOpts *opts,
+         if (qemu_opt_get(opts, "listen") ||
+             qemu_opt_get(opts, "connect") ||
+             qemu_opt_get(opts, "mcast")) {
+-            qemu_error("listen=, connect= and mcast= is invalid with fd=\n");
++            error_report("listen=, connect= and mcast= is invalid with fd=");
+             return -1;
+         }
+ 
+@@ -525,7 +525,7 @@ int net_init_socket(QemuOpts *opts,
+         if (qemu_opt_get(opts, "fd") ||
+             qemu_opt_get(opts, "connect") ||
+             qemu_opt_get(opts, "mcast")) {
+-            qemu_error("fd=, connect= and mcast= is invalid with listen=\n");
++            error_report("fd=, connect= and mcast= is invalid with listen=");
+             return -1;
+         }
+ 
+@@ -540,7 +540,7 @@ int net_init_socket(QemuOpts *opts,
+         if (qemu_opt_get(opts, "fd") ||
+             qemu_opt_get(opts, "listen") ||
+             qemu_opt_get(opts, "mcast")) {
+-            qemu_error("fd=, listen= and mcast= is invalid with connect=\n");
++            error_report("fd=, listen= and mcast= is invalid with connect=");
+             return -1;
+         }
+ 
+@@ -555,7 +555,7 @@ int net_init_socket(QemuOpts *opts,
+         if (qemu_opt_get(opts, "fd") ||
+             qemu_opt_get(opts, "connect") ||
+             qemu_opt_get(opts, "listen")) {
+-            qemu_error("fd=, connect= and listen= is invalid with mcast=\n");
++            error_report("fd=, connect= and listen= is invalid with mcast=");
+             return -1;
+         }
+ 
+@@ -565,7 +565,7 @@ int net_init_socket(QemuOpts *opts,
+             return -1;
+         }
+     } else {
+-        qemu_error("-socket requires fd=, listen=, connect= or mcast=\n");
++        error_report("-socket requires fd=, listen=, connect= or mcast=");
+         return -1;
+     }
+ 
+diff --git a/net/tap-bsd.c b/net/tap-bsd.c
+index 815997d..e51d068 100644
+--- a/net/tap-bsd.c
++++ b/net/tap-bsd.c
+@@ -69,7 +69,8 @@ int tap_open(char *ifname, int ifname_size, int *vnet_hdr, int vnet_hdr_required
+         }
+     }
+     if (fd < 0) {
+-        qemu_error("warning: could not open %s (%s): no virtual network emulation\n", dname, strerror(errno));
++        error_report("warning: could not open %s (%s): no virtual network emulation",
++                   dname, strerror(errno));
+         return -1;
+     }
+ #else
+@@ -89,8 +90,8 @@ int tap_open(char *ifname, int ifname_size, int *vnet_hdr, int vnet_hdr_required
+         *vnet_hdr = 0;
+ 
+         if (vnet_hdr_required && !*vnet_hdr) {
+-            qemu_error("vnet_hdr=1 requested, but no kernel "
+-                       "support for IFF_VNET_HDR available");
++            error_report("vnet_hdr=1 requested, but no kernel "
++                         "support for IFF_VNET_HDR available");
+             close(fd);
+             return -1;
+         }
+diff --git a/net/tap-linux.c b/net/tap-linux.c
+index c5748e6..03b8301 100644
+--- a/net/tap-linux.c
++++ b/net/tap-linux.c
+@@ -58,8 +58,8 @@ int tap_open(char *ifname, int ifname_size, int *vnet_hdr, int vnet_hdr_required
+         }
+ 
+         if (vnet_hdr_required && !*vnet_hdr) {
+-            qemu_error("vnet_hdr=1 requested, but no kernel "
+-                       "support for IFF_VNET_HDR available");
++            error_report("vnet_hdr=1 requested, but no kernel "
++                         "support for IFF_VNET_HDR available");
+             close(fd);
+             return -1;
+         }
+@@ -97,7 +97,7 @@ int tap_set_sndbuf(int fd, QemuOpts *opts)
+     }
+ 
+     if (ioctl(fd, TUNSETSNDBUF, &sndbuf) == -1 && qemu_opt_get(opts, "sndbuf")) {
+-        qemu_error("TUNSETSNDBUF ioctl failed: %s\n", strerror(errno));
++        error_report("TUNSETSNDBUF ioctl failed: %s", strerror(errno));
+         return -1;
+     }
+     return 0;
+@@ -108,7 +108,7 @@ int tap_probe_vnet_hdr(int fd)
+     struct ifreq ifr;
+ 
+     if (ioctl(fd, TUNGETIFF, &ifr) != 0) {
+-        qemu_error("TUNGETIFF ioctl() failed: %s\n", strerror(errno));
++        error_report("TUNGETIFF ioctl() failed: %s", strerror(errno));
+         return 0;
+     }
+ 
+diff --git a/net/tap-solaris.c b/net/tap-solaris.c
+index e14fe36..c12cb8a 100644
+--- a/net/tap-solaris.c
++++ b/net/tap-solaris.c
+@@ -185,8 +185,8 @@ int tap_open(char *ifname, int ifname_size, int *vnet_hdr, int vnet_hdr_required
+         *vnet_hdr = 0;
+ 
+         if (vnet_hdr_required && !*vnet_hdr) {
+-            qemu_error("vnet_hdr=1 requested, but no kernel "
+-                       "support for IFF_VNET_HDR available");
++            error_report("vnet_hdr=1 requested, but no kernel "
++                         "support for IFF_VNET_HDR available");
+             close(fd);
+             return -1;
+         }
+diff --git a/net/tap-win32.c b/net/tap-win32.c
+index 8370c80..a5c2ce9 100644
+--- a/net/tap-win32.c
++++ b/net/tap-win32.c
+@@ -706,7 +706,7 @@ int net_init_tap(QemuOpts *opts, Monitor *mon, const char *name, VLANState *vlan
+     ifname = qemu_opt_get(opts, "ifname");
+ 
+     if (!ifname) {
+-        qemu_error("tap: no interface name\n");
++        error_report("tap: no interface name");
+         return -1;
+     }
+ 
+diff --git a/net/tap.c b/net/tap.c
+index 9a7959f..303d69f 100644
+--- a/net/tap.c
++++ b/net/tap.c
+@@ -409,7 +409,7 @@ int net_init_tap(QemuOpts *opts, Monitor *mon, const char *name, VLANState *vlan
+             qemu_opt_get(opts, "script") ||
+             qemu_opt_get(opts, "downscript") ||
+             qemu_opt_get(opts, "vnet_hdr")) {
+-            qemu_error("ifname=, script=, downscript= and vnet_hdr= is invalid with fd=\n");
++            error_report("ifname=, script=, downscript= and vnet_hdr= is invalid with fd=");
+             return -1;
+         }
+ 
+@@ -478,11 +478,11 @@ int net_init_tap(QemuOpts *opts, Monitor *mon, const char *name, VLANState *vlan
+         }
+         s->vhost_net = vhost_net_init(&s->nc, vhostfd);
+         if (!s->vhost_net) {
+-            qemu_error("vhost-net requested but could not be initialized\n");
++            error_report("vhost-net requested but could not be initialized");
+             return -1;
+         }
+     } else if (qemu_opt_get(opts, "vhostfd")) {
+-        qemu_error("vhostfd= is not valid without vhost\n");
++        error_report("vhostfd= is not valid without vhost");
+         return -1;
+     }
+ 
+diff --git a/qemu-config.c b/qemu-config.c
+index e590dd0..1042339 100644
+--- a/qemu-config.c
++++ b/qemu-config.c
+@@ -320,7 +320,7 @@ static QemuOptsList *find_list(const char *group)
+             break;
+     }
+     if (lists[i] == NULL) {
+-        qemu_error("there is no option group \"%s\"\n", group);
++        error_report("there is no option group \"%s\"", group);
+     }
+     return lists[i];
+ }
+@@ -334,7 +334,7 @@ int qemu_set_option(const char *str)
+ 
+     rc = sscanf(str, "%63[^.].%63[^.].%63[^=]%n", group, id, arg, &offset);
+     if (rc < 3 || str[offset] != '=') {
+-        qemu_error("can't parse: \"%s\"\n", str);
++        error_report("can't parse: \"%s\"", str);
+         return -1;
+     }
+ 
+@@ -345,8 +345,8 @@ int qemu_set_option(const char *str)
+ 
+     opts = qemu_opts_find(list, id);
+     if (!opts) {
+-        qemu_error("there is no %s \"%s\" defined\n",
+-                   list->name, id);
++        error_report("there is no %s \"%s\" defined",
++                     list->name, id);
+         return -1;
+     }
+ 
+@@ -364,7 +364,7 @@ int qemu_global_option(const char *str)
+ 
+     rc = sscanf(str, "%63[^.].%63[^=]%n", driver, property, &offset);
+     if (rc < 2 || str[offset] != '=') {
+-        qemu_error("can't parse: \"%s\"\n", str);
++        error_report("can't parse: \"%s\"", str);
+         return -1;
+     }
+ 
+diff --git a/qemu-error.c b/qemu-error.c
+index d20fd0f..51e2abf 100644
+--- a/qemu-error.c
++++ b/qemu-error.c
+@@ -41,13 +41,19 @@ void error_printf(const char *fmt, ...)
+     va_end(ap);
+ }
+ 
+-void qemu_error(const char *fmt, ...)
++/*
++ * Print an error message to current monitor if we have one, else to stderr.
++ * Appends a newline to the message.
++ * It's wrong to call this in a QMP monitor.  Use qemu_error_new() there.
++ */
++void error_report(const char *fmt, ...)
+ {
+     va_list ap;
+ 
+     va_start(ap, fmt);
+     error_vprintf(fmt, ap);
+     va_end(ap);
++    error_printf("\n");
+ }
+ 
+ void qemu_error_internal(const char *file, int linenr, const char *func,
+diff --git a/qemu-error.h b/qemu-error.h
+index d90f1da..99dfcce 100644
+--- a/qemu-error.h
++++ b/qemu-error.h
+@@ -15,7 +15,7 @@
+ 
+ void error_vprintf(const char *fmt, va_list ap);
+ void error_printf(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
+-void qemu_error(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
++void error_report(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
+ void qemu_error_internal(const char *file, int linenr, const char *func,
+                          const char *fmt, ...)
+                          __attribute__ ((format(printf, 4, 5)));
+diff --git a/qemu-tool.c b/qemu-tool.c
+index 26f46eb..939049a 100644
+--- a/qemu-tool.c
++++ b/qemu-tool.c
+@@ -104,7 +104,7 @@ int64_t qemu_get_clock(QEMUClock *clock)
+     return (tv.tv_sec * 1000000000LL + (tv.tv_usec * 1000)) / 1000000;
+ }
+ 
+-void qemu_error(const char *fmt, ...)
++void error_report(const char *fmt, ...)
+ {
+     va_list args;
+ 
+diff --git a/qerror.c b/qerror.c
+index 02da498..978632b 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -322,13 +322,13 @@ QString *qerror_human(const QError *qerror)
+  * qerror_print(): Print QError data
+  *
+  * This function will print the member 'desc' of the specified QError object,
+- * it uses qemu_error() for this, so that the output is routed to the right
++ * it uses error_report() for this, so that the output is routed to the right
+  * place (ie. stderr or Monitor's device).
+  */
+ void qerror_print(const QError *qerror)
+ {
+     QString *qstring = qerror_human(qerror);
+-    qemu_error("%s\n", qstring_get_str(qstring));
++    error_report("%s", qstring_get_str(qstring));
+     QDECREF(qstring);
+ }
+ 
+diff --git a/savevm.c b/savevm.c
+index 098dbcf..98e5c77 100644
+--- a/savevm.c
++++ b/savevm.c
+@@ -1766,7 +1766,7 @@ int load_vmstate(const char *name)
+ 
+     bs = get_bs_snapshots();
+     if (!bs) {
+-        qemu_error("No block device supports snapshots\n");
++        error_report("No block device supports snapshots");
+         return -EINVAL;
+     }
+ 
+@@ -1778,20 +1778,21 @@ int load_vmstate(const char *name)
+         if (bdrv_has_snapshot(bs1)) {
+             ret = bdrv_snapshot_goto(bs1, name);
+             if (ret < 0) {
+-                if (bs != bs1)
+-                    qemu_error("Warning: ");
+                 switch(ret) {
+                 case -ENOTSUP:
+-                    qemu_error("Snapshots not supported on device '%s'\n",
+-                               bdrv_get_device_name(bs1));
++                    error_report("%sSnapshots not supported on device '%s'",
++                                 bs != bs1 ? "Warning: " : "",
++                                 bdrv_get_device_name(bs1));
+                     break;
+                 case -ENOENT:
+-                    qemu_error("Could not find snapshot '%s' on device '%s'\n",
+-                               name, bdrv_get_device_name(bs1));
++                    error_report("%sCould not find snapshot '%s' on device '%s'",
++                                 bs != bs1 ? "Warning: " : "",
++                                 name, bdrv_get_device_name(bs1));
+                     break;
+                 default:
+-                    qemu_error("Error %d while activating snapshot on '%s'\n",
+-                               ret, bdrv_get_device_name(bs1));
++                    error_report("%sError %d while activating snapshot on '%s'",
++                                 bs != bs1 ? "Warning: " : "",
++                                 ret, bdrv_get_device_name(bs1));
+                     break;
+                 }
+                 /* fatal on snapshot block device */
+@@ -1809,13 +1810,13 @@ int load_vmstate(const char *name)
+     /* restore the VM state */
+     f = qemu_fopen_bdrv(bs, 0);
+     if (!f) {
+-        qemu_error("Could not open VM state file\n");
++        error_report("Could not open VM state file");
+         return -EINVAL;
+     }
+     ret = qemu_loadvm_state(f);
+     qemu_fclose(f);
+     if (ret < 0) {
+-        qemu_error("Error %d while loading VM state\n", ret);
++        error_report("Error %d while loading VM state", ret);
+         return ret;
+     }
+     return 0;
+diff --git a/vl.c b/vl.c
+index fda3368..11cacfa 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2779,7 +2779,7 @@ void do_usb_add(Monitor *mon, const QDict *qdict)
+ {
+     const char *devname = qdict_get_str(qdict, "devname");
+     if (usb_device_add(devname, 1) < 0) {
+-        qemu_error("could not add USB device '%s'\n", devname);
++        error_report("could not add USB device '%s'", devname);
+     }
+ }
+ 
+@@ -2787,7 +2787,7 @@ void do_usb_del(Monitor *mon, const QDict *qdict)
+ {
+     const char *devname = qdict_get_str(qdict, "devname");
+     if (usb_device_del(devname) < 0) {
+-        qemu_error("could not delete USB device '%s'\n", devname);
++        error_report("could not delete USB device '%s'", devname);
+     }
+ }
+ 
+-- 
+1.7.0.3
+
