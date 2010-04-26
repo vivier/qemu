@@ -1,0 +1,104 @@
+From 7f7ea52f15f31a424f634c1e88c96b85e48df840 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 25 Mar 2010 15:42:17 -0300
+Subject: [PATCH] spice: add more config options
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1269531737-22660-1-git-send-email-kraxel@redhat.com>
+Patchwork-id: 8130
+O-Subject: [RHEL-6 kvm PATCH v3] spice: add more config options
+Bugzilla: 576561
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Yonit Halperin <yhalperi@redhat.com>
+RH-Acked-by: Alexander Larsson <alexl@redhat.com>
+
+A few command line options are still missing (streaming-video,
+agent-mouse and playback-compression).  This patch adds them,
+so we are on par with RHEL-5.5 here.
+
+Patch depends on the libspice patches posted today.
+
+[ v2: add missing sanity check for streaming video ]
+[ v3: fix cut+paste bug: s/compression/streaming_video/ ]
+
+bugzilla: 576561 -- spice: add more config options
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ spice.c |   34 +++++++++++++++++++++++++++++++++-
+ 1 files changed, 33 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ spice.c |   34 +++++++++++++++++++++++++++++++++-
+ 1 files changed, 33 insertions(+), 1 deletions(-)
+
+diff --git a/spice.c b/spice.c
+index c4fcaef..cd448c7 100644
+--- a/spice.c
++++ b/spice.c
+@@ -209,6 +209,14 @@ static const char *channel_names[] = {
+ #define parse_channel(_name) \
+     name2enum(_name, channel_names, ARRAY_SIZE(channel_names))
+ 
++static const char *stream_video_names[] = {
++    [ SPICE_STREAM_VIDEO_OFF ]    = "off",
++    [ SPICE_STREAM_VIDEO_ALL ]    = "all",
++    [ SPICE_STREAM_VIDEO_FILTER ] = "filter",
++};
++#define parse_stream_video(_name) \
++    name2enum(_name, stream_video_names, ARRAY_SIZE(stream_video_names))
++
+ /* functions for the rest of qemu */
+ 
+ QemuOptsList qemu_spice_opts = {
+@@ -243,6 +251,15 @@ QemuOptsList qemu_spice_opts = {
+             .name = "renderer",
+             .type = QEMU_OPT_STRING,
+         },{
++            .name = "streaming-video",    /* old: sv */
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "agent-mouse",
++            .type = QEMU_OPT_BOOL,
++        },{
++            .name = "playback-compression",
++            .type = QEMU_OPT_BOOL,
++        },{
+             .name = "tls-channel",
+             .type = QEMU_OPT_STRING,
+         },{
+@@ -384,7 +401,7 @@ void qemu_spice_init(void)
+     char *x509_key_file = NULL,
+         *x509_cert_file = NULL,
+         *x509_cacert_file = NULL;
+-    int port, tls_port, len, addr_flags;
++    int port, tls_port, len, addr_flags, streaming_video;
+     spice_image_compression_t compression;
+ 
+     if (!opts)
+@@ -471,6 +488,21 @@ void qemu_spice_init(void)
+     qemu_opt_foreach(opts, add_channel, NULL, 0);
+     qemu_opt_foreach(opts, add_renderer, NULL, 0);
+ 
++    str = qemu_opt_get(opts, "streaming-video");
++    if (str) {
++        streaming_video = parse_stream_video(str);
++        if (streaming_video == -1) {
++            fprintf(stderr, "spice: invalid streaming video: %s\n", str);
++            exit(1);
++        }
++        spice_server_set_streaming_video(s, streaming_video);
++    }
++
++    spice_server_set_agent_mouse
++        (s, qemu_opt_get_bool(opts, "agent-mouse", 1));
++    spice_server_set_playback_compression
++        (s, qemu_opt_get_bool(opts, "playback-compression", 1));
++
+     spice_server_init(s, &core_interface);
+     using_spice = 1;
+ 
+-- 
+1.7.0.3
+

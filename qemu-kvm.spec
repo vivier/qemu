@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.43%{?dist}
+Release: 2.44%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -774,6 +774,8 @@ Patch1372: kvm-error-Make-use-of-error_set_progname-optional.patch
 Patch1373: kvm-error-Link-qemu-img-qemu-nbd-qemu-io-with-qemu-error.patch
 # For bz#579470 - QMP: device_add support
 Patch1374: kvm-error-Move-qerror_report-from-qemu-error.-ch-to-qerr.patch
+# For bz#576561 - spice: add more config options
+Patch1375: kvm-spice-add-more-config-options-readd.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -782,7 +784,9 @@ BuildRequires: pciutils-devel
 BuildRequires: pulseaudio-libs-devel
 BuildRequires: ncurses-devel
 BuildRequires: libaio-devel
-BuildRequires: spice-server-devel >= 0.4.2-4.el6
+
+# require spice-server API changes from bz#571286
+BuildRequires: spice-server >= 0.4.2-10.el6
 
 Requires(post): /usr/bin/getent
 Requires(post): /usr/sbin/groupadd
@@ -1210,6 +1214,7 @@ such as kvmtrace and kvm_stat.
 %patch1372 -p1
 %patch1373 -p1
 %patch1374 -p1
+%patch1375 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1407,6 +1412,12 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Apr 26 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.44.el6
+- kvm-spice-add-more-config-options-readd.patch [bz#576561]
+- BuildRequires spice-server-devel >= 0.4.2-10.el6 because of API changes
+- Resolves: bz#576561
+  (spice: add more config options)
+
 * Mon Apr 26 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.43.el6
 - kvm-qemu-option-Make-qemu_opts_foreach-accumulate-return.patch [bz#579470]
 - kvm-qdev-Fix-exit-code-for-device.patch [bz#579470]
