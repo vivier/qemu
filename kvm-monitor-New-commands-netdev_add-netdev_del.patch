@@ -1,0 +1,153 @@
+From 2916a0c3467e8431c60eb412bae6158622fa63bb Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 15 Apr 2010 10:59:58 -0300
+Subject: [PATCH 12/16] monitor: New commands netdev_add, netdev_del
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1271329198-13424-13-git-send-email-armbru@redhat.com>
+Patchwork-id: 8636
+O-Subject: [RHEL-6 KVM PATCH 12/12] monitor: New commands netdev_add, netdev_del
+Bugzilla: 559670
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Monitor commands to go with -netdev.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ net.c           |   55 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ net.h           |    2 ++
+ qemu-monitor.hx |   30 ++++++++++++++++++++++++++++++
+ 3 files changed, 87 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ net.c           |   55 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ net.h           |    2 ++
+ qemu-monitor.hx |   30 ++++++++++++++++++++++++++++++
+ 3 files changed, 87 insertions(+), 0 deletions(-)
+
+diff --git a/net.c b/net.c
+index 9b0a8c4..513cb08 100644
+--- a/net.c
++++ b/net.c
+@@ -1194,6 +1194,61 @@ void net_host_device_remove(Monitor *mon, const QDict *qdict)
+     qemu_del_vlan_client(vc);
+ }
+ 
++/**
++ * do_netdev_add(): Add a host network device
++ *
++ * Argument qdict contains
++ * - "type": the device type, "tap", "user", ...
++ * - "id": the device's ID (must be unique)
++ * - device options
++ *
++ * Example:
++ *
++ * { "type": "user", "id": "netdev1", "hostname": "a-guest" }
++ */
++int do_netdev_add(Monitor *mon, const QDict *qdict, QObject **ret_data)
++{
++    QemuOpts *opts;
++    int res;
++
++    opts = qemu_opts_from_qdict(&qemu_netdev_opts, qdict);
++    if (!opts) {
++        return -1;
++    }
++
++    res = net_client_init(mon, opts, 1);
++    return res;
++}
++
++/**
++ * do_netdev_del(): Delete a host network device
++ *
++ * Argument qdict contains
++ * - "id": the device's ID
++ *
++ * Example:
++ *
++ * { "id": "netdev1" }
++ */
++int do_netdev_del(Monitor *mon, const QDict *qdict, QObject **ret_data)
++{
++    const char *id = qdict_get_str(qdict, "id");
++    VLANClientState *vc;
++
++    vc = qemu_find_netdev(id);
++    if (!vc || vc->info->type == NET_CLIENT_TYPE_NIC) {
++        qerror_report(QERR_DEVICE_NOT_FOUND, id);
++        return -1;
++    }
++    if (vc->peer) {
++        qerror_report(QERR_DEVICE_IN_USE, id);
++        return -1;
++    }
++    qemu_del_vlan_client(vc);
++    qemu_opts_del(qemu_opts_find(&qemu_netdev_opts, id));
++    return 0;
++}
++
+ void do_info_network(Monitor *mon)
+ {
+     VLANState *vlan;
+diff --git a/net.h b/net.h
+index 20be8d7..9f3c82f 100644
+--- a/net.h
++++ b/net.h
+@@ -164,6 +164,8 @@ void net_check_clients(void);
+ void net_cleanup(void);
+ void net_host_device_add(Monitor *mon, const QDict *qdict);
+ void net_host_device_remove(Monitor *mon, const QDict *qdict);
++int do_netdev_add(Monitor *mon, const QDict *qdict, QObject **ret_data);
++int do_netdev_del(Monitor *mon, const QDict *qdict, QObject **ret_data);
+ 
+ #define DEFAULT_NETWORK_SCRIPT "/etc/qemu-ifup"
+ #define DEFAULT_NETWORK_DOWN_SCRIPT "/etc/qemu-ifdown"
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 0e614e4..ab0b7b3 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -913,6 +913,36 @@ STEXI
+ Remove host VLAN client.
+ ETEXI
+ 
++    {
++        .name       = "netdev_add",
++        .args_type  = "netdev:O",
++        .params     = "[user|tap|socket],id=str[,prop=value][,...]",
++        .help       = "add host network device",
++        .user_print = monitor_user_noop,
++        .mhandler.cmd_new = do_netdev_add,
++    },
++
++STEXI
++@item netdev_add
++@findex netdev_add
++Add host network device.
++ETEXI
++
++    {
++        .name       = "netdev_del",
++        .args_type  = "id:s",
++        .params     = "id",
++        .help       = "remove host network device",
++        .user_print = monitor_user_noop,
++        .mhandler.cmd_new = do_netdev_del,
++    },
++
++STEXI
++@item netdev_del
++@findex netdev_del
++Remove host network device.
++ETEXI
++
+ #ifdef CONFIG_SLIRP
+     {
+         .name       = "hostfwd_add",
+-- 
+1.7.0.3
+

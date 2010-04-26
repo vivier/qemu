@@ -1,0 +1,58 @@
+From f3183cde1e189ec878cdd38d9bc76f7e93a8ad2d Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 15 Apr 2010 10:59:49 -0300
+Subject: [PATCH 03/16] error: New QERR_DUPLICATE_ID
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1271329198-13424-4-git-send-email-armbru@redhat.com>
+Patchwork-id: 8628
+O-Subject: [RHEL-6 KVM PATCH 03/12] error: New QERR_DUPLICATE_ID
+Bugzilla: 559670
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/qerror.c b/qerror.c
+index 4520b0d..9fb817e 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -97,6 +97,10 @@ static const QErrorStringTable qerror_table[] = {
+         .desc      = "Device '%(device)' has no child bus",
+     },
+     {
++        .error_fmt = QERR_DUPLICATE_ID,
++        .desc      = "Duplicate ID '%(id)' for %(object)",
++    },
++    {
+         .error_fmt = QERR_FD_NOT_FOUND,
+         .desc      = "File descriptor named '%(name)' not found",
+     },
+diff --git a/qerror.h b/qerror.h
+index a2664ab..870cdc3 100644
+--- a/qerror.h
++++ b/qerror.h
+@@ -88,6 +88,9 @@ QError *qobject_to_qerror(const QObject *obj);
+ #define QERR_DEVICE_NO_BUS \
+     "{ 'class': 'DeviceNoBus', 'data': { 'device': %s } }"
+ 
++#define QERR_DUPLICATE_ID \
++    "{ 'class': 'DuplicateId', 'data': { 'id': %s, 'object': %s } }"
++
+ #define QERR_FD_NOT_FOUND \
+     "{ 'class': 'FdNotFound', 'data': { 'name': %s } }"
+ 
+-- 
+1.7.0.3
+

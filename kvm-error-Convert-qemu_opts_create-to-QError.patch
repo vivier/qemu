@@ -1,0 +1,52 @@
+From d51eba86365fe180bcf56f0e70bfeb7bf35c8526 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 15 Apr 2010 10:59:50 -0300
+Subject: [PATCH 04/16] error: Convert qemu_opts_create() to QError
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1271329198-13424-5-git-send-email-armbru@redhat.com>
+Patchwork-id: 8631
+O-Subject: [RHEL-6 KVM PATCH 04/12] error: Convert qemu_opts_create() to QError
+Bugzilla: 559670
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Fixes device_add to report duplicate ID properly in QMP, as
+DuplicateId instead of UndefinedError.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ qemu-option.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-option.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/qemu-option.c b/qemu-option.c
+index 6a6414a..ca973a3 100644
+--- a/qemu-option.c
++++ b/qemu-option.c
+@@ -30,6 +30,7 @@
+ #include "qemu-error.h"
+ #include "qemu-objects.h"
+ #include "qemu-option.h"
++#include "qerror.h"
+ 
+ /*
+  * Extracts the name of an option from the parameter string (p points at the
+@@ -643,8 +644,7 @@ QemuOpts *qemu_opts_create(QemuOptsList *list, const char *id, int fail_if_exist
+         opts = qemu_opts_find(list, id);
+         if (opts != NULL) {
+             if (fail_if_exists) {
+-                fprintf(stderr, "tried to create id \"%s\" twice for \"%s\"\n",
+-                        id, list->name);
++                qerror_report(QERR_DUPLICATE_ID, id, list->name);
+                 return NULL;
+             } else {
+                 return opts;
+-- 
+1.7.0.3
+

@@ -1,0 +1,58 @@
+From cbc8c9eb98cdfd41b27684c105a8fa7846d15a88 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 15 Apr 2010 10:59:57 -0300
+Subject: [PATCH 11/16] error: New QERR_DEVICE_IN_USE
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1271329198-13424-12-git-send-email-armbru@redhat.com>
+Patchwork-id: 8637
+O-Subject: [RHEL-6 KVM PATCH 11/12] error: New QERR_DEVICE_IN_USE
+Bugzilla: 559670
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/qerror.c b/qerror.c
+index 97e8d4a..8d885cd 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -69,6 +69,10 @@ static const QErrorStringTable qerror_table[] = {
+         .desc      = "Device '%(device)' could not be initialized",
+     },
+     {
++        .error_fmt = QERR_DEVICE_IN_USE,
++        .desc      = "Device '%(device)' is in use",
++    },
++    {
+         .error_fmt = QERR_DEVICE_LOCKED,
+         .desc      = "Device '%(device)' is locked",
+     },
+diff --git a/qerror.h b/qerror.h
+index 5625d54..bae08c0 100644
+--- a/qerror.h
++++ b/qerror.h
+@@ -67,6 +67,9 @@ QError *qobject_to_qerror(const QObject *obj);
+ #define QERR_DEVICE_INIT_FAILED \
+     "{ 'class': 'DeviceInitFailed', 'data': { 'device': %s } }"
+ 
++#define QERR_DEVICE_IN_USE \
++    "{ 'class': 'DeviceInUse', 'data': { 'device': %s } }"
++
+ #define QERR_DEVICE_LOCKED \
+     "{ 'class': 'DeviceLocked', 'data': { 'device': %s } }"
+ 
+-- 
+1.7.0.3
+

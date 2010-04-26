@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.44%{?dist}
+Release: 2.45%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -776,6 +776,38 @@ Patch1373: kvm-error-Link-qemu-img-qemu-nbd-qemu-io-with-qemu-error.patch
 Patch1374: kvm-error-Move-qerror_report-from-qemu-error.-ch-to-qerr.patch
 # For bz#576561 - spice: add more config options
 Patch1375: kvm-spice-add-more-config-options-readd.patch
+# For bz#559670 - No 'netdev_add' command in monitor
+Patch1376: kvm-Documentation-Add-monitor-commands-to-function-index.patch
+# For bz#559670 - No 'netdev_add' command in monitor
+Patch1377: kvm-error-Put-error-definitions-back-in-alphabetical-ord.patch
+# For bz#559670 - No 'netdev_add' command in monitor
+Patch1378: kvm-error-New-QERR_DUPLICATE_ID.patch
+# For bz#559670 - No 'netdev_add' command in monitor
+Patch1379: kvm-error-Convert-qemu_opts_create-to-QError.patch
+# For bz#559670 - No 'netdev_add' command in monitor
+Patch1380: kvm-error-New-QERR_INVALID_PARAMETER_VALUE.patch
+# For bz#559670 - No 'netdev_add' command in monitor
+Patch1381: kvm-error-Convert-qemu_opts_set-to-QError.patch
+# For bz#559670 - No 'netdev_add' command in monitor
+Patch1382: kvm-error-Drop-extra-messages-after-qemu_opts_set-and-qe.patch
+# For bz#559670 - No 'netdev_add' command in monitor
+Patch1383: kvm-error-Use-QERR_INVALID_PARAMETER_VALUE-instead-of-QE.patch
+# For bz#559670 - No 'netdev_add' command in monitor
+Patch1384: kvm-error-Convert-qemu_opts_validate-to-QError.patch
+# For bz#559670 - No 'netdev_add' command in monitor
+Patch1385: kvm-error-Convert-net_client_init-to-QError.patch
+# For bz#559670 - No 'netdev_add' command in monitor
+Patch1386: kvm-error-New-QERR_DEVICE_IN_USE.patch
+# For bz#559670 - No 'netdev_add' command in monitor
+Patch1387: kvm-monitor-New-commands-netdev_add-netdev_del.patch
+# For bz#582325 - QMP: device_del support
+Patch1388: kvm-qdev-Convert-qdev_unplug-to-QError.patch
+# For bz#582325 - QMP: device_del support
+Patch1389: kvm-monitor-convert-do_device_del-to-QObject-QError.patch
+# For bz#582575 - Backport bdrv_aio_multiwrite fixes
+Patch1390: kvm-block-Fix-error-code-in-multiwrite-for-immediate-fai.patch
+# For bz#582575 - Backport bdrv_aio_multiwrite fixes
+Patch1391: kvm-block-Fix-multiwrite-memory-leak-in-error-case.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1215,6 +1247,22 @@ such as kvmtrace and kvm_stat.
 %patch1373 -p1
 %patch1374 -p1
 %patch1375 -p1
+%patch1376 -p1
+%patch1377 -p1
+%patch1378 -p1
+%patch1379 -p1
+%patch1380 -p1
+%patch1381 -p1
+%patch1382 -p1
+%patch1383 -p1
+%patch1384 -p1
+%patch1385 -p1
+%patch1386 -p1
+%patch1387 -p1
+%patch1388 -p1
+%patch1389 -p1
+%patch1390 -p1
+%patch1391 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1412,6 +1460,30 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Apr 26 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.45.el6
+- kvm-Documentation-Add-monitor-commands-to-function-index.patch [bz#559670]
+- kvm-error-Put-error-definitions-back-in-alphabetical-ord.patch [bz#559670]
+- kvm-error-New-QERR_DUPLICATE_ID.patch [bz#559670]
+- kvm-error-Convert-qemu_opts_create-to-QError.patch [bz#559670]
+- kvm-error-New-QERR_INVALID_PARAMETER_VALUE.patch [bz#559670]
+- kvm-error-Convert-qemu_opts_set-to-QError.patch [bz#559670]
+- kvm-error-Drop-extra-messages-after-qemu_opts_set-and-qe.patch [bz#559670]
+- kvm-error-Use-QERR_INVALID_PARAMETER_VALUE-instead-of-QE.patch [bz#559670]
+- kvm-error-Convert-qemu_opts_validate-to-QError.patch [bz#559670]
+- kvm-error-Convert-net_client_init-to-QError.patch [bz#559670]
+- kvm-error-New-QERR_DEVICE_IN_USE.patch [bz#559670]
+- kvm-monitor-New-commands-netdev_add-netdev_del.patch [bz#559670]
+- kvm-qdev-Convert-qdev_unplug-to-QError.patch [bz#582325]
+- kvm-monitor-convert-do_device_del-to-QObject-QError.patch [bz#582325]
+- kvm-block-Fix-error-code-in-multiwrite-for-immediate-fai.patch [bz#582575]
+- kvm-block-Fix-multiwrite-memory-leak-in-error-case.patch [bz#582575]
+- Resolves: bz#559670
+  (No 'netdev_add' command in monitor)
+- Resolves: bz#582325
+  (QMP: device_del support)
+- Resolves: bz#582575
+  (Backport bdrv_aio_multiwrite fixes)
+
 * Mon Apr 26 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.44.el6
 - kvm-spice-add-more-config-options-readd.patch [bz#576561]
 - BuildRequires spice-server-devel >= 0.4.2-10.el6 because of API changes

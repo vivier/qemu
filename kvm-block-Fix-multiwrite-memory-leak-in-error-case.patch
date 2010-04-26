@@ -1,0 +1,53 @@
+From 4941a65e174fd30222e9a5e17834b4031c2fd1bc Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Thu, 15 Apr 2010 11:11:11 -0300
+Subject: [PATCH 16/16] block: Fix multiwrite memory leak in error case
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1271329871-11990-3-git-send-email-kwolf@redhat.com>
+Patchwork-id: 8646
+O-Subject: [RHEL-6 qemu-kvm PATCH 2/2] block: Fix multiwrite memory leak in
+	error case
+Bugzilla: 582575
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+Bugzilla: 582575
+
+Previously multiwrite_user_cb was never called if a request in the multiwrite
+batch failed right away because it did set mcb->error immediately. Make it look
+more like a normal callback to fix this.
+
+Reported-by: Juan Quintela <quintela@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit 7eb58a6c556c3880e6712cbf6d24d681261c5095)
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/block.c b/block.c
+index 9340267..e4d2744 100644
+--- a/block.c
++++ b/block.c
+@@ -1872,7 +1872,8 @@ int bdrv_aio_multiwrite(BlockDriverState *bs, BlockRequest *reqs, int num_reqs)
+                 reqs[i].error = -EIO;
+                 goto fail;
+             } else {
+-                mcb->error = -EIO;
++                mcb->num_requests++;
++                multiwrite_cb(mcb, -EIO);
+                 break;
+             }
+         } else {
+-- 
+1.7.0.3
+

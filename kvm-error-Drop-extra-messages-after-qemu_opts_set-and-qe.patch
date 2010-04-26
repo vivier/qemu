@@ -1,0 +1,112 @@
+From ebf326415d225674ce8dad3641e2c410457b4669 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 15 Apr 2010 10:59:53 -0300
+Subject: [PATCH 07/16] error: Drop extra messages after qemu_opts_set() and qemu_opts_parse()
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1271329198-13424-8-git-send-email-armbru@redhat.com>
+Patchwork-id: 8639
+O-Subject: [RHEL-6 KVM PATCH 07/12] error: Drop extra messages after
+	qemu_opts_set() and qemu_opts_parse()
+Bugzilla: 559670
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Both functions report errors nicely enough now, no need for additional
+messages.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ hw/pci-hotplug.c |    2 --
+ net.c            |    2 --
+ qemu-config.c    |    1 -
+ vl.c             |    5 -----
+ 4 files changed, 0 insertions(+), 10 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pci-hotplug.c |    2 --
+ net.c            |    2 --
+ qemu-config.c    |    1 -
+ vl.c             |    5 -----
+ 4 files changed, 0 insertions(+), 10 deletions(-)
+
+diff --git a/hw/pci-hotplug.c b/hw/pci-hotplug.c
+index de888fc..78a6dde 100644
+--- a/hw/pci-hotplug.c
++++ b/hw/pci-hotplug.c
+@@ -57,8 +57,6 @@ static PCIDevice *qemu_pci_hot_add_nic(Monitor *mon,
+ 
+     opts = qemu_opts_parse(&qemu_net_opts, opts_str ? opts_str : "", 0);
+     if (!opts) {
+-        monitor_printf(mon, "parsing network options '%s' failed\n",
+-                       opts_str ? opts_str : "");
+         return NULL;
+     }
+ 
+diff --git a/net.c b/net.c
+index 5e3333f..e843da0 100644
+--- a/net.c
++++ b/net.c
+@@ -1169,8 +1169,6 @@ void net_host_device_add(Monitor *mon, const QDict *qdict)
+ 
+     opts = qemu_opts_parse(&qemu_net_opts, opts_str ? opts_str : "", 0);
+     if (!opts) {
+-        monitor_printf(mon, "parsing network options '%s' failed\n",
+-                       opts_str ? opts_str : "");
+         return;
+     }
+ 
+diff --git a/qemu-config.c b/qemu-config.c
+index e630391..5c9ea14 100644
+--- a/qemu-config.c
++++ b/qemu-config.c
+@@ -479,7 +479,6 @@ int qemu_config_parse(FILE *fp, const char *fname)
+                 goto out;
+             }
+             if (qemu_opt_set(opts, arg, value) != 0) {
+-                error_report("failed to set \"%s\" for %s", arg, group);
+                 goto out;
+             }
+             continue;
+diff --git a/vl.c b/vl.c
+index 4014bde..9c1bdea 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2046,8 +2046,6 @@ QemuOpts *drive_add(const char *file, const char *fmt, ...)
+ 
+     opts = qemu_opts_parse(&qemu_drive_opts, optstr, 0);
+     if (!opts) {
+-        fprintf(stderr, "%s: huh? duplicate? (%s)\n",
+-                __FUNCTION__, optstr);
+         return NULL;
+     }
+     if (file)
+@@ -5550,7 +5548,6 @@ int main(int argc, char **argv, char **envp)
+             case QEMU_OPTION_mon:
+                 opts = qemu_opts_parse(&qemu_mon_opts, optarg, 1);
+                 if (!opts) {
+-                    fprintf(stderr, "parse error: %s\n", optarg);
+                     exit(1);
+                 }
+                 default_monitor = 0;
+@@ -5558,7 +5555,6 @@ int main(int argc, char **argv, char **envp)
+             case QEMU_OPTION_chardev:
+                 opts = qemu_opts_parse(&qemu_chardev_opts, optarg, 1);
+                 if (!opts) {
+-                    fprintf(stderr, "parse error: %s\n", optarg);
+                     exit(1);
+                 }
+                 break;
+@@ -5813,7 +5809,6 @@ int main(int argc, char **argv, char **envp)
+             case QEMU_OPTION_rtc:
+                 opts = qemu_opts_parse(&qemu_rtc_opts, optarg, 0);
+                 if (!opts) {
+-                    fprintf(stderr, "parse error: %s\n", optarg);
+                     exit(1);
+                 }
+                 configure_rtc(opts);
+-- 
+1.7.0.3
+

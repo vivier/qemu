@@ -1,0 +1,41 @@
+From 33e9266796ab9485537d7edc1ad311b904fdcc40 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 15 Apr 2010 10:59:55 -0300
+Subject: [PATCH 09/16] error: Convert qemu_opts_validate() to QError
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1271329198-13424-10-git-send-email-armbru@redhat.com>
+Patchwork-id: 8630
+O-Subject: [RHEL-6 KVM PATCH 09/12] error: Convert qemu_opts_validate() to QError
+Bugzilla: 559670
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ qemu-option.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-option.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+diff --git a/qemu-option.c b/qemu-option.c
+index 2dbe7b8..c4e61b3 100644
+--- a/qemu-option.c
++++ b/qemu-option.c
+@@ -876,8 +876,7 @@ int qemu_opts_validate(QemuOpts *opts, QemuOptDesc *desc)
+             }
+         }
+         if (desc[i].name == NULL) {
+-            fprintf(stderr, "option \"%s\" is not valid for %s\n",
+-                    opt->name, opts->list->name);
++            qerror_report(QERR_INVALID_PARAMETER, opt->name);
+             return -1;
+         }
+ 
+-- 
+1.7.0.3
+

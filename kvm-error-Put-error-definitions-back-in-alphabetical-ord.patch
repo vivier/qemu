@@ -1,0 +1,102 @@
+From 2b7f1ba93218e49df1fdb2707a7fa80640f004be Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 15 Apr 2010 10:59:48 -0300
+Subject: [PATCH 02/16] error: Put error definitions back in alphabetical order
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1271329198-13424-3-git-send-email-armbru@redhat.com>
+Patchwork-id: 8638
+O-Subject: [RHEL-6 KVM PATCH 02/12] error: Put error definitions back in
+	alphabetical order
+Bugzilla: 559670
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Add suitable comments to help keerp them in order.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ qerror.c |   12 ++++++++----
+ qerror.h |    8 +++++---
+ 2 files changed, 13 insertions(+), 7 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qerror.c |   12 ++++++++----
+ qerror.h |    8 +++++---
+ 2 files changed, 13 insertions(+), 7 deletions(-)
+
+diff --git a/qerror.c b/qerror.c
+index 7322e43..4520b0d 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -38,6 +38,10 @@ static const QType qerror_type = {
+  * for example:
+  *
+  * "running out of foo: %(foo)%%"
++ *
++ * Please keep the entries in alphabetical order.
++ * Use "sed -n '/^static.*qerror_table\[\]/,/^};/s/QERR_/&/gp' qerror.c | sort -c"
++ * to check.
+  */
+ static const QErrorStringTable qerror_table[] = {
+     {
+@@ -61,10 +65,6 @@ static const QErrorStringTable qerror_table[] = {
+         .desc      = "Device '%(device)' is encrypted",
+     },
+     {
+-        .error_fmt = QERR_DEVICE_NOT_ENCRYPTED,
+-        .desc      = "Device '%(device)' is not encrypted",
+-    },
+-    {
+         .error_fmt = QERR_DEVICE_INIT_FAILED,
+         .desc      = "Device '%(device)' could not be initialized",
+     },
+@@ -81,6 +81,10 @@ static const QErrorStringTable qerror_table[] = {
+         .desc      = "Device '%(device)' has not been activated by the guest",
+     },
+     {
++        .error_fmt = QERR_DEVICE_NOT_ENCRYPTED,
++        .desc      = "Device '%(device)' is not encrypted",
++    },
++    {
+         .error_fmt = QERR_DEVICE_NOT_FOUND,
+         .desc      = "Device '%(device)' not found",
+     },
+diff --git a/qerror.h b/qerror.h
+index dd298d4..a2664ab 100644
+--- a/qerror.h
++++ b/qerror.h
+@@ -46,6 +46,8 @@ QError *qobject_to_qerror(const QObject *obj);
+ 
+ /*
+  * QError class list
++ * Please keep the definitions in alphabetical order.
++ * Use "grep '^#define QERR_' qerror.h | sort -c" to check.
+  */
+ #define QERR_BAD_BUS_FOR_DEVICE \
+     "{ 'class': 'BadBusForDevice', 'data': { 'device': %s, 'bad_bus_type': %s } }"
+@@ -62,9 +64,6 @@ QError *qobject_to_qerror(const QObject *obj);
+ #define QERR_DEVICE_ENCRYPTED \
+     "{ 'class': 'DeviceEncrypted', 'data': { 'device': %s } }"
+ 
+-#define QERR_DEVICE_NOT_ENCRYPTED \
+-    "{ 'class': 'DeviceNotEncrypted', 'data': { 'device': %s } }"
+-
+ #define QERR_DEVICE_INIT_FAILED \
+     "{ 'class': 'DeviceInitFailed', 'data': { 'device': %s } }"
+ 
+@@ -77,6 +76,9 @@ QError *qobject_to_qerror(const QObject *obj);
+ #define QERR_DEVICE_NOT_ACTIVE \
+     "{ 'class': 'DeviceNotActive', 'data': { 'device': %s } }"
+ 
++#define QERR_DEVICE_NOT_ENCRYPTED \
++    "{ 'class': 'DeviceNotEncrypted', 'data': { 'device': %s } }"
++
+ #define QERR_DEVICE_NOT_FOUND \
+     "{ 'class': 'DeviceNotFound', 'data': { 'device': %s } }"
+ 
+-- 
+1.7.0.3
+

@@ -1,0 +1,51 @@
+From dd9f0e6b3b1105e3c14a4638c233e89740012b42 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Thu, 15 Apr 2010 11:11:10 -0300
+Subject: [PATCH 15/16] block: Fix error code in multiwrite for immediate failures
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1271329871-11990-2-git-send-email-kwolf@redhat.com>
+Patchwork-id: 8645
+O-Subject: [RHEL-6 qemu-kvm PATCH 1/2] block: Fix error code in multiwrite for
+	immediate failures
+Bugzilla: 582575
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+Bugzilla: 582575
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit 0f0b604b00851f2c7160b4195136c1fd27418088)
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/block.c b/block.c
+index 3826e23..9340267 100644
+--- a/block.c
++++ b/block.c
+@@ -1869,10 +1869,10 @@ int bdrv_aio_multiwrite(BlockDriverState *bs, BlockRequest *reqs, int num_reqs)
+             // submitted yet. Otherwise we'll wait for the submitted AIOs to
+             // complete and report the error in the callback.
+             if (mcb->num_requests == 0) {
+-                reqs[i].error = EIO;
++                reqs[i].error = -EIO;
+                 goto fail;
+             } else {
+-                mcb->error = EIO;
++                mcb->error = -EIO;
+                 break;
+             }
+         } else {
+-- 
+1.7.0.3
+

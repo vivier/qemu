@@ -1,0 +1,83 @@
+From 596b5ce2dae3539ec709d8000692c41025a1a30f Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 15 Apr 2010 11:04:43 -0300
+Subject: [PATCH 14/16] monitor: convert do_device_del() to QObject, QError
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1271329483-13665-3-git-send-email-armbru@redhat.com>
+Patchwork-id: 8642
+O-Subject: [RHEL-6 KVM PATCH 2/2] monitor: convert do_device_del() to QObject,
+	QError
+Bugzilla: 582325
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ hw/qdev.c       |    8 ++++----
+ hw/qdev.h       |    2 +-
+ qemu-monitor.hx |    3 ++-
+ 3 files changed, 7 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qdev.c       |    8 ++++----
+ hw/qdev.h       |    2 +-
+ qemu-monitor.hx |    3 ++-
+ 3 files changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/hw/qdev.c b/hw/qdev.c
+index c521115..d3bf0fa 100644
+--- a/hw/qdev.c
++++ b/hw/qdev.c
+@@ -799,15 +799,15 @@ int do_device_add(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     return 0;
+ }
+ 
+-void do_device_del(Monitor *mon, const QDict *qdict)
++int do_device_del(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     const char *id = qdict_get_str(qdict, "id");
+     DeviceState *dev;
+ 
+     dev = qdev_find_recursive(main_system_bus, id);
+     if (NULL == dev) {
+-        error_report("Device '%s' not found", id);
+-        return;
++        qerror_report(QERR_DEVICE_NOT_FOUND, id);
++        return -1;
+     }
+-    qdev_unplug(dev);
++    return qdev_unplug(dev);
+ }
+diff --git a/hw/qdev.h b/hw/qdev.h
+index 9475705..40373c8 100644
+--- a/hw/qdev.h
++++ b/hw/qdev.h
+@@ -176,7 +176,7 @@ void qbus_free(BusState *bus);
+ void do_info_qtree(Monitor *mon);
+ void do_info_qdm(Monitor *mon);
+ int do_device_add(Monitor *mon, const QDict *qdict, QObject **ret_data);
+-void do_device_del(Monitor *mon, const QDict *qdict);
++int do_device_del(Monitor *mon, const QDict *qdict, QObject **ret_data);
+ 
+ /*** qdev-properties.c ***/
+ 
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index ab0b7b3..c7ae741 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -589,7 +589,8 @@ ETEXI
+         .args_type  = "id:s",
+         .params     = "device",
+         .help       = "remove device",
+-        .mhandler.cmd = do_device_del,
++        .user_print = monitor_user_noop,
++        .mhandler.cmd_new = do_device_del,
+     },
+ 
+ STEXI
+-- 
+1.7.0.3
+

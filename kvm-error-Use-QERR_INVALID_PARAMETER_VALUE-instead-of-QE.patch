@@ -1,0 +1,67 @@
+From ad86952bce587788882e453c2ab49f67f939f7b2 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 15 Apr 2010 10:59:54 -0300
+Subject: [PATCH 08/16] error: Use QERR_INVALID_PARAMETER_VALUE instead of QERR_INVALID_PARAMETER
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1271329198-13424-9-git-send-email-armbru@redhat.com>
+Patchwork-id: 8629
+O-Subject: [RHEL-6 KVM PATCH 08/12] error: Use QERR_INVALID_PARAMETER_VALUE
+	instead of QERR_INVALID_PARAMETER
+Bugzilla: 559670
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ hw/qdev.c |    2 +-
+ monitor.c |    6 ++++--
+ 2 files changed, 5 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qdev.c |    2 +-
+ monitor.c |    6 ++++--
+ 2 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/hw/qdev.c b/hw/qdev.c
+index 17a46a7..f45ed0f 100644
+--- a/hw/qdev.c
++++ b/hw/qdev.c
+@@ -207,7 +207,7 @@ DeviceState *qdev_device_add(QemuOpts *opts)
+     /* find driver */
+     info = qdev_find_info(NULL, driver);
+     if (!info || info->no_user) {
+-        qerror_report(QERR_INVALID_PARAMETER, "driver");
++        qerror_report(QERR_INVALID_PARAMETER_VALUE, "driver", "a driver name");
+         error_printf_unless_qmp("Try with argument '?' for a list.\n");
+         return NULL;
+     }
+diff --git a/monitor.c b/monitor.c
+index 82b0901..e3c2155 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -987,7 +987,8 @@ static int do_cpu_set(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     int index = qdict_get_int(qdict, "index");
+     if (mon_set_cpu(index) < 0) {
+-        qerror_report(QERR_INVALID_PARAMETER, "index");
++        qerror_report(QERR_INVALID_PARAMETER_VALUE, "index",
++                      "a CPU number");
+         return -1;
+     }
+     return 0;
+@@ -2531,7 +2532,8 @@ static int do_getfd(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     }
+ 
+     if (qemu_isdigit(fdname[0])) {
+-        qerror_report(QERR_INVALID_PARAMETER, "fdname");
++        qerror_report(QERR_INVALID_PARAMETER_VALUE, "fdname",
++                      "a name not starting with a digit");
+         return -1;
+     }
+ 
+-- 
+1.7.0.3
+
