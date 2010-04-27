@@ -1,0 +1,61 @@
+From 680a04008ab5bbe07de3958b9f241457602e3e70 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Tue, 13 Apr 2010 14:30:15 -0300
+Subject: [PATCH] spice: add auth info to monitor events.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1271169015-27769-1-git-send-email-kraxel@redhat.com>
+Patchwork-id: 8584
+O-Subject: [RHEL-6 kvm PATCH] spice: add auth info to monitor events.
+Bugzilla: 581540
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+
+bugzilla: #581540 -- SPICE graphics event does not include auth details
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ spice.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ spice.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+diff --git a/spice.c b/spice.c
+index cd448c7..92b84d7 100644
+--- a/spice.c
++++ b/spice.c
+@@ -21,6 +21,7 @@
+ 
+ static SpiceServer *s;
+ int using_spice = 0;
++static const char *auth = "spice";
+ 
+ void qemu_spice_migrate_start(void)
+ {
+@@ -100,6 +101,7 @@ static void spice_qmp_event_initialized(void)
+         if (getnameinfo((struct sockaddr*)&sa, salen,
+                         addr, sizeof(addr), port, sizeof(port),
+                         NI_NUMERICHOST | NI_NUMERICSERV) == 0) {
++            qdict_put(server, "auth", qstring_from_str(auth));
+             qdict_put(server, "host", qstring_from_str(addr));
+             qdict_put(server, "family", qstring_from_str(inet_strfamily(sa.ss_family)));
+         }
+@@ -481,8 +483,10 @@ void qemu_spice_init(void)
+     }
+     if (password)
+         spice_server_set_ticket(s, password, 0, 0, 0);
+-    if (qemu_opt_get_bool(opts, "disable-ticketing", 0))
++    if (qemu_opt_get_bool(opts, "disable-ticketing", 0)) {
+         spice_server_set_noauth(s);
++        auth = "none";
++    }
+ 
+     spice_server_set_image_compression(s, compression);
+     qemu_opt_foreach(opts, add_channel, NULL, 0);
+-- 
+1.7.0.3
+

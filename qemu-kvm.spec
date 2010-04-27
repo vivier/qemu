@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.45%{?dist}
+Release: 2.46%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -808,6 +808,8 @@ Patch1389: kvm-monitor-convert-do_device_del-to-QObject-QError.patch
 Patch1390: kvm-block-Fix-error-code-in-multiwrite-for-immediate-fai.patch
 # For bz#582575 - Backport bdrv_aio_multiwrite fixes
 Patch1391: kvm-block-Fix-multiwrite-memory-leak-in-error-case.patch
+# For bz#581540 - SPICE graphics event does not include auth details
+Patch1392: kvm-spice-add-auth-info-to-monitor-events.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1263,6 +1265,7 @@ such as kvmtrace and kvm_stat.
 %patch1389 -p1
 %patch1390 -p1
 %patch1391 -p1
+%patch1392 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1460,6 +1463,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Apr 27 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.46.el6
+- kvm-spice-add-auth-info-to-monitor-events.patch [bz#581540]
+- Resolves: bz#581540
+  (SPICE graphics event does not include auth details)
+
 * Mon Apr 26 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.45.el6
 - kvm-Documentation-Add-monitor-commands-to-function-index.patch [bz#559670]
 - kvm-error-Put-error-definitions-back-in-alphabetical-ord.patch [bz#559670]
