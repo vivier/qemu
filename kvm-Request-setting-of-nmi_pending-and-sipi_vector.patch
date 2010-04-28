@@ -1,0 +1,51 @@
+From 9138517b096d9714174a871b3a6cc7f0985e7d4b Mon Sep 17 00:00:00 2001
+From: Marcelo Tosatti <mtosatti@redhat.com>
+Date: Mon, 1 Mar 2010 20:52:06 -0300
+Subject: [PATCH] KVM: Request setting of nmi_pending and sipi_vector
+
+RH-Author: Marcelo Tosatti <mtosatti@redhat.com>
+Message-id: <926dbffe590b55e73caa3951d652b946f4063066.1267476474.git.mtosatti@redhat.com>
+Patchwork-id: 7345
+O-Subject: [PATCH 04/21] KVM: Request setting of nmi_pending and sipi_vector
+Bugzilla: 569613
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Jan Kiszka <jan.kiszka@siemens.com>
+
+The final version of VCPU events in 2.6.33 will allow to skip
+nmi_pending and sipi_vector on KVM_SET_VCPU_EVENTS. For now let's write
+them unconditionally, which is unproblematic for upstream due to missing
+SMP support. Future version which enable SMP will write them only on
+reset.
+
+Signed-off-by: Jan Kiszka <jan.kiszka@siemens.com>
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+(cherry picked from commit 59691c0cb129c9aa955be22573b43b26534f9db4)
+---
+ target-i386/kvm.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ target-i386/kvm.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/target-i386/kvm.c b/target-i386/kvm.c
+index e813b73..8e5660d 100644
+--- a/target-i386/kvm.c
++++ b/target-i386/kvm.c
+@@ -744,6 +744,9 @@ int kvm_put_vcpu_events(CPUState *env)
+ 
+     events.sipi_vector = env->sipi_vector;
+ 
++    events.flags =
++        KVM_VCPUEVENT_VALID_NMI_PENDING | KVM_VCPUEVENT_VALID_SIPI_VECTOR;
++
+     return kvm_vcpu_ioctl(env, KVM_SET_VCPU_EVENTS, &events);
+ #else
+     return 0;
+-- 
+1.7.0.3
+

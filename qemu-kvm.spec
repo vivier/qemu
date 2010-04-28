@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.46%{?dist}
+Release: 2.47%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -810,6 +810,8 @@ Patch1390: kvm-block-Fix-error-code-in-multiwrite-for-immediate-fai.patch
 Patch1391: kvm-block-Fix-multiwrite-memory-leak-in-error-case.patch
 # For bz#581540 - SPICE graphics event does not include auth details
 Patch1392: kvm-spice-add-auth-info-to-monitor-events.patch
+# For bz#569613 - backport qemu-kvm-0.12.3 fixes to RHEL6
+Patch1393: kvm-Request-setting-of-nmi_pending-and-sipi_vector.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1266,6 +1268,7 @@ such as kvmtrace and kvm_stat.
 %patch1390 -p1
 %patch1391 -p1
 %patch1392 -p1
+%patch1393 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1463,6 +1466,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Apr 28 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.47.el6
+- kvm-Request-setting-of-nmi_pending-and-sipi_vector.patch [bz#569613]
+- Resolves: bz#569613
+  (backport qemu-kvm-0.12.3 fixes to RHEL6)
+
 * Tue Apr 27 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.46.el6
 - kvm-spice-add-auth-info-to-monitor-events.patch [bz#581540]
 - Resolves: bz#581540
