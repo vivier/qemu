@@ -1,0 +1,73 @@
+From 8c34ad2ccfe9b8f66df5fd53f8d18b2e2d41bd9b Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Tue, 27 Apr 2010 09:07:35 -0300
+Subject: [PATCH 08/20] virtio-serial: Update copyright year to 2010
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1272359264-8464-9-git-send-email-amit.shah@redhat.com>
+Patchwork-id: 8854
+O-Subject: [RHEL6 PATCH v4 08/17] virtio-serial: Update copyright year to 2010
+Bugzilla: 574296
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+
+Bugzilla: 574296
+Upstream: <posted>
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-console.c    |    2 +-
+ hw/virtio-serial-bus.c |    2 +-
+ hw/virtio-serial.h     |    2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-console.c    |    2 +-
+ hw/virtio-serial-bus.c |    2 +-
+ hw/virtio-serial.h     |    2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/hw/virtio-console.c b/hw/virtio-console.c
+index 17b221d..bbbb6b8 100644
+--- a/hw/virtio-console.c
++++ b/hw/virtio-console.c
+@@ -1,7 +1,7 @@
+ /*
+  * Virtio Console and Generic Serial Port Devices
+  *
+- * Copyright Red Hat, Inc. 2009
++ * Copyright Red Hat, Inc. 2009, 2010
+  *
+  * Authors:
+  *  Amit Shah <amit.shah@redhat.com>
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index c1d9851..c77ea4f 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -1,7 +1,7 @@
+ /*
+  * A bus for connecting virtio serial and console ports
+  *
+- * Copyright (C) 2009 Red Hat, Inc.
++ * Copyright (C) 2009, 2010 Red Hat, Inc.
+  *
+  * Author(s):
+  *  Amit Shah <amit.shah@redhat.com>
+diff --git a/hw/virtio-serial.h b/hw/virtio-serial.h
+index 0548689..f023873 100644
+--- a/hw/virtio-serial.h
++++ b/hw/virtio-serial.h
+@@ -2,7 +2,7 @@
+  * Virtio Serial / Console Support
+  *
+  * Copyright IBM, Corp. 2008
+- * Copyright Red Hat, Inc. 2009
++ * Copyright Red Hat, Inc. 2009, 2010
+  *
+  * Authors:
+  *  Christian Ehrhardt <ehrhardt@linux.vnet.ibm.com>
+-- 
+1.7.0.3
+

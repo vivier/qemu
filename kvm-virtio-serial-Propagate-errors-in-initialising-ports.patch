@@ -1,0 +1,62 @@
+From 73156801539af79248973cc7fae0e7a20b10c945 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Tue, 27 Apr 2010 09:07:36 -0300
+Subject: [PATCH 09/20] virtio-serial: Propagate errors in initialising ports / devices in guest
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1272359264-8464-10-git-send-email-amit.shah@redhat.com>
+Patchwork-id: 8855
+O-Subject: [RHEL6 PATCH v4 09/17] virtio-serial: Propagate errors in
+	initialising ports / devices in guest
+Bugzilla: 574296
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+
+If adding of ports or devices in the guest fails we can send out a QMP
+event so that management software can deal with it.
+
+Bugzilla: 574296
+Upstream: <posted>
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-serial-bus.c |   10 ++++++++++
+ 1 files changed, 10 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial-bus.c |   10 ++++++++++
+ 1 files changed, 10 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index c77ea4f..3a09f0d 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -223,6 +223,11 @@ static void handle_control_message(VirtIOSerial *vser, void *buf)
+ 
+     switch(cpkt.event) {
+     case VIRTIO_CONSOLE_DEVICE_READY:
++        if (!cpkt.value) {
++            error_report("virtio-serial-bus: Guest failure in adding device %s\n",
++                         vser->bus->qbus.name);
++            break;
++        }
+         /*
+          * The device is up, we can now tell the device about all the
+          * ports we have here.
+@@ -233,6 +238,11 @@ static void handle_control_message(VirtIOSerial *vser, void *buf)
+         break;
+ 
+     case VIRTIO_CONSOLE_PORT_READY:
++        if (!cpkt.value) {
++            error_report("virtio-serial-bus: Guest failure in adding port %u for device %s\n",
++                         port->id, vser->bus->qbus.name);
++            break;
++        }
+         /*
+          * Now that we know the guest asked for the port name, we're
+          * sure the guest has initialised whatever state is necessary
+-- 
+1.7.0.3
+

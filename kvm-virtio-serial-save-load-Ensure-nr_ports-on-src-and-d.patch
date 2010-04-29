@@ -1,0 +1,73 @@
+From 39fc7713d8081dd2b2563d2a0cb3bd820dc8f178 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Tue, 27 Apr 2010 09:07:29 -0300
+Subject: [PATCH 02/20] virtio-serial: save/load: Ensure nr_ports on src and dest are same.
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1272359264-8464-3-git-send-email-amit.shah@redhat.com>
+Patchwork-id: 8848
+O-Subject: [RHEL6 PATCH v4 02/17] virtio-serial: save/load: Ensure nr_ports on
+	src and dest are same.
+Bugzilla: 574296
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+
+The number of ports on the source as well as the destination machines
+should match. If they don't, it means some ports that got hotplugged on
+the source aren't instantiated on the destination. Or that ports that
+were hot-unplugged on the source are created on the destination.
+
+Bugzilla: 574296
+Upstream: <posted>
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Reported-by: Juan Quintela <quintela@redhat.com>
+---
+ hw/virtio-serial-bus.c |   18 ++++++++++++++++--
+ 1 files changed, 16 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial-bus.c |   18 ++++++++++++++++--
+ 1 files changed, 16 insertions(+), 2 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index 9a7f0c1..d31e62d 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -402,7 +402,7 @@ static int virtio_serial_load(QEMUFile *f, void *opaque, int version_id)
+ {
+     VirtIOSerial *s = opaque;
+     VirtIOSerialPort *port;
+-    uint32_t max_nr_ports, nr_active_ports;
++    uint32_t max_nr_ports, nr_active_ports, nr_ports;
+     unsigned int i;
+ 
+     if (version_id > 2) {
+@@ -419,7 +419,21 @@ static int virtio_serial_load(QEMUFile *f, void *opaque, int version_id)
+     /* The config space */
+     qemu_get_be16s(f, &s->config.cols);
+     qemu_get_be16s(f, &s->config.rows);
+-    s->config.nr_ports = qemu_get_be32(f);
++    nr_ports = qemu_get_be32(f);
++
++    if (nr_ports != s->config.nr_ports) {
++        /*
++         * Source hot-plugged/unplugged ports and we don't have all of
++         * them here.
++         *
++         * Note: This condition cannot check for all hotplug/unplug
++         * events: eg, if one port was hot-plugged and one was
++         * unplugged, the nr_ports remains the same but the port id's
++         * would have changed and we won't catch it here. A later
++         * check for !find_port_by_id() will confirm if this happened.
++         */
++        return -EINVAL;
++    }
+ 
+     /* Items in struct VirtIOSerial */
+ 
+-- 
+1.7.0.3
+

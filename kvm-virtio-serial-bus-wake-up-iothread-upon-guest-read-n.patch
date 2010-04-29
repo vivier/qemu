@@ -1,0 +1,48 @@
+From b13c44b6b8e0c6a2f4737690a70a557dc6158b46 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Tue, 27 Apr 2010 13:01:04 -0300
+Subject: [PATCH 19/20] virtio-serial-bus: wake up iothread upon guest read notification
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1272373264-23968-2-git-send-email-amit.shah@redhat.com>
+Patchwork-id: 8868
+O-Subject: [RHEL6 PATCH v4 19/19] virtio-serial-bus: wake up iothread upon guest
+	read notification
+Bugzilla: 574296
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+
+From: Marcelo Tosatti <mtosatti@redhat.com>
+
+Wake up iothread when buffers are consumed.
+
+Upstream: posted
+Bugzilla: 574296
+
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-serial-bus.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial-bus.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index 3ce95e8..fbc19ba 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -417,6 +417,7 @@ static void handle_output(VirtIODevice *vdev, VirtQueue *vq)
+ 
+ static void handle_input(VirtIODevice *vdev, VirtQueue *vq)
+ {
++    qemu_notify_event();
+ }
+ 
+ static uint32_t get_features(VirtIODevice *vdev, uint32_t features)
+-- 
+1.7.0.3
+

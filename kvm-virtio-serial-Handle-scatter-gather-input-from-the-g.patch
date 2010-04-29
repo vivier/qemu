@@ -1,0 +1,65 @@
+From 9ae14850584c133b52cbe0aa3bdd851431d69b1d Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Tue, 27 Apr 2010 09:07:41 -0300
+Subject: [PATCH 14/20] virtio-serial: Handle scatter/gather input from the guest
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1272359264-8464-15-git-send-email-amit.shah@redhat.com>
+Patchwork-id: 8860
+O-Subject: [RHEL6 PATCH v4 14/17] virtio-serial: Handle scatter/gather input
+	from the guest
+Bugzilla: 574296
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+
+Current guests don't send more than one iov but it can change later.
+Ensure we handle that case.
+
+Bugzilla: 574296
+Upstream: <posted>
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+CC: Avi Kivity <avi@redhat.com>
+---
+ hw/virtio-serial-bus.c |   12 ++++++++----
+ 1 files changed, 8 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial-bus.c |   12 ++++++++----
+ 1 files changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index b8410c3..3053a35 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -351,7 +351,8 @@ static void handle_output(VirtIODevice *vdev, VirtQueue *vq)
+ 
+     while (virtqueue_pop(vq, &elem)) {
+         VirtIOSerialPort *port;
+-        size_t ret;
++        uint8_t *buf;
++        size_t ret, buf_size;
+ 
+         port = find_port_by_vq(vser, vq);
+         if (!port) {
+@@ -374,9 +375,12 @@ static void handle_output(VirtIODevice *vdev, VirtQueue *vq)
+             goto next_buf;
+         }
+ 
+-        /* The guest always sends only one sg */
+-        ret = port->info->have_data(port, elem.out_sg[0].iov_base,
+-                                    elem.out_sg[0].iov_len);
++        buf_size = iov_size(elem.out_sg, elem.out_num);
++        buf = qemu_malloc(buf_size);
++        ret = iov_to_buf(elem.out_sg, elem.out_num, buf, 0, buf_size);
++
++        ret = port->info->have_data(port, buf, ret);
++        qemu_free(buf);
+ 
+     next_buf:
+         virtqueue_push(vq, &elem, ret);
+-- 
+1.7.0.3
+

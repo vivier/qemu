@@ -1,0 +1,77 @@
+From 92634689a7e5f987f5c7f4c7d991cec6f830f7b3 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Tue, 27 Apr 2010 09:07:28 -0300
+Subject: [PATCH 01/20] virtio-serial: save/load: Ensure target has enough ports
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1272359264-8464-2-git-send-email-amit.shah@redhat.com>
+Patchwork-id: 8847
+O-Subject: [RHEL6 PATCH v4 01/17] virtio-serial: save/load: Ensure target has
+	enough ports
+Bugzilla: 574296
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+
+The target could be started with max_nr_ports for a virtio-serial device
+lesser than what was available on the source machine. Fail the migration
+in such a case.
+
+Bugzilla: 574296
+Upstream: <posted>
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Reported-by: Juan Quintela <quintela@redhat.com>
+---
+ hw/virtio-serial-bus.c |   13 +++++++++++--
+ 1 files changed, 11 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial-bus.c |   13 +++++++++++--
+ 1 files changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index 17c1ec1..9a7f0c1 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -374,10 +374,13 @@ static void virtio_serial_save(QEMUFile *f, void *opaque)
+ 
+     /* Items in struct VirtIOSerial */
+ 
++    qemu_put_be32s(f, &s->bus->max_nr_ports);
++
+     /* Do this because we might have hot-unplugged some ports */
+     nr_active_ports = 0;
+-    QTAILQ_FOREACH(port, &s->ports, next)
++    QTAILQ_FOREACH(port, &s->ports, next) {
+         nr_active_ports++;
++    }
+ 
+     qemu_put_be32s(f, &nr_active_ports);
+ 
+@@ -399,7 +402,7 @@ static int virtio_serial_load(QEMUFile *f, void *opaque, int version_id)
+ {
+     VirtIOSerial *s = opaque;
+     VirtIOSerialPort *port;
+-    uint32_t nr_active_ports;
++    uint32_t max_nr_ports, nr_active_ports;
+     unsigned int i;
+ 
+     if (version_id > 2) {
+@@ -420,6 +423,12 @@ static int virtio_serial_load(QEMUFile *f, void *opaque, int version_id)
+ 
+     /* Items in struct VirtIOSerial */
+ 
++    qemu_get_be32s(f, &max_nr_ports);
++    if (max_nr_ports > s->bus->max_nr_ports) {
++        /* Source could have more ports than us. Fail migration. */
++        return -EINVAL;
++    }
++
+     qemu_get_be32s(f, &nr_active_ports);
+ 
+     /* Items in struct VirtIOSerialPort */
+-- 
+1.7.0.3
+

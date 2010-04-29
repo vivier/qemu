@@ -1,0 +1,220 @@
+From 229e83b433779e1f595c266fc23c3c80b85b4acc Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Tue, 27 Apr 2010 09:07:38 -0300
+Subject: [PATCH 11/20] iov: Introduce a new file for helpers around iovs, add iov_from_buf()
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1272359264-8464-12-git-send-email-amit.shah@redhat.com>
+Patchwork-id: 8856
+O-Subject: [RHEL6 PATCH v4 11/17] iov: Introduce a new file for helpers around
+	iovs, add iov_from_buf()
+Bugzilla: 574296
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+
+The virtio-net code uses iov_fill() which fills an iov from a linear
+buffer. The virtio-serial-bus code does something similar in an
+open-coded function.
+
+Create a new iov.c file that has iov_from_buf().
+
+Convert virtio-net and virtio-serial-bus over to use this functionality.
+virtio-net used ints to hold sizes, the new function is going to use
+size_t types.
+
+Later commits will add the opposite functionality -- going from an iov
+to a linear buffer.
+
+Bugzilla: 574296
+Upstream: <posted>
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ Makefile.hw            |    1 +
+ hw/iov.c               |   33 +++++++++++++++++++++++++++++++++
+ hw/iov.h               |   16 ++++++++++++++++
+ hw/virtio-net.c        |   20 +++-----------------
+ hw/virtio-serial-bus.c |   15 +++++++--------
+ 5 files changed, 60 insertions(+), 25 deletions(-)
+ create mode 100644 hw/iov.c
+ create mode 100644 hw/iov.h
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile.hw            |    1 +
+ hw/iov.c               |   33 +++++++++++++++++++++++++++++++++
+ hw/iov.h               |   16 ++++++++++++++++
+ hw/virtio-net.c        |   20 +++-----------------
+ hw/virtio-serial-bus.c |   15 +++++++--------
+ 5 files changed, 60 insertions(+), 25 deletions(-)
+ create mode 100644 hw/iov.c
+ create mode 100644 hw/iov.h
+
+diff --git a/Makefile.hw b/Makefile.hw
+index 43ca541..079c5d2 100644
+--- a/Makefile.hw
++++ b/Makefile.hw
+@@ -13,6 +13,7 @@ QEMU_CFLAGS+=-I.. -I$(SRC_PATH)/fpu
+ 
+ obj-y =
+ obj-y += loader.o
++obj-y += iov.o
+ obj-y += virtio.o virtio-console.o
+ obj-y += fw_cfg.o
+ obj-y += watchdog.o
+diff --git a/hw/iov.c b/hw/iov.c
+new file mode 100644
+index 0000000..07bd499
+--- /dev/null
++++ b/hw/iov.c
+@@ -0,0 +1,33 @@
++/*
++ * Helpers for getting linearized buffers from iov / filling buffers into iovs
++ *
++ * Copyright IBM, Corp. 2007, 2008
++ * Copyright (C) 2010 Red Hat, Inc.
++ *
++ * Author(s):
++ *  Anthony Liguori <aliguori@us.ibm.com>
++ *  Amit Shah <amit.shah@redhat.com>
++ *
++ * This work is licensed under the terms of the GNU GPL, version 2.  See
++ * the COPYING file in the top-level directory.
++ */
++
++#include "iov.h"
++
++size_t iov_from_buf(struct iovec *iov, unsigned int iovcnt,
++                    const void *buf, size_t size)
++{
++    size_t offset;
++    unsigned int i;
++
++    offset = 0;
++    for (i = 0; offset < size && i < iovcnt; i++) {
++        size_t len;
++
++        len = MIN(iov[i].iov_len, size - offset);
++
++        memcpy(iov[i].iov_base, buf + offset, len);
++        offset += len;
++    }
++    return offset;
++}
+diff --git a/hw/iov.h b/hw/iov.h
+new file mode 100644
+index 0000000..5e3e541
+--- /dev/null
++++ b/hw/iov.h
+@@ -0,0 +1,16 @@
++/*
++ * Helpers for getting linearized buffers from iov / filling buffers into iovs
++ *
++ * Copyright (C) 2010 Red Hat, Inc.
++ *
++ * Author(s):
++ *  Amit Shah <amit.shah@redhat.com>
++ *
++ * This work is licensed under the terms of the GNU GPL, version 2.  See
++ * the COPYING file in the top-level directory.
++ */
++
++#include "qemu-common.h"
++
++size_t iov_from_buf(struct iovec *iov, unsigned int iovcnt,
++                    const void *buf, size_t size);
+diff --git a/hw/virtio-net.c b/hw/virtio-net.c
+index 92d13e1..db52c42 100644
+--- a/hw/virtio-net.c
++++ b/hw/virtio-net.c
+@@ -11,6 +11,7 @@
+  *
+  */
+ 
++#include "iov.h"
+ #include "virtio.h"
+ #include "net.h"
+ #include "net/checksum.h"
+@@ -445,21 +446,6 @@ static void work_around_broken_dhclient(struct virtio_net_hdr *hdr,
+     }
+ }
+ 
+-static int iov_fill(struct iovec *iov, int iovcnt, const void *buf, int count)
+-{
+-    int offset, i;
+-
+-    offset = i = 0;
+-    while (offset < count && i < iovcnt) {
+-        int len = MIN(iov[i].iov_len, count - offset);
+-        memcpy(iov[i].iov_base, buf + offset, len);
+-        offset += len;
+-        i++;
+-    }
+-
+-    return offset;
+-}
+-
+ static int receive_header(VirtIONet *n, struct iovec *iov, int iovcnt,
+                           const void *buf, size_t size, size_t hdr_len)
+ {
+@@ -595,8 +581,8 @@ static ssize_t virtio_net_receive(VLANClientState *nc, const uint8_t *buf, size_
+         }
+ 
+         /* copy in packet.  ugh */
+-        len = iov_fill(sg, elem.in_num,
+-                       buf + offset, size - offset);
++        len = iov_from_buf(sg, elem.in_num,
++                           buf + offset, size - offset);
+         total += len;
+ 
+         /* signal other side */
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index 6befd4d..a72b6b5 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -15,6 +15,7 @@
+  * the COPYING file in the top-level directory.
+  */
+ 
++#include "iov.h"
+ #include "monitor.h"
+ #include "qemu-queue.h"
+ #include "sysbus.h"
+@@ -84,27 +85,25 @@ static size_t write_to_port(VirtIOSerialPort *port,
+ {
+     VirtQueueElement elem;
+     VirtQueue *vq;
+-    size_t offset = 0;
+-    size_t len = 0;
++    size_t offset;
+ 
+     vq = port->ivq;
+     if (!virtio_queue_ready(vq)) {
+         return 0;
+     }
+ 
++    offset = 0;
+     while (offset < size) {
+-        int i;
++        size_t len;
+ 
+         if (!virtqueue_pop(vq, &elem)) {
+             break;
+         }
+ 
+-        for (i = 0; offset < size && i < elem.in_num; i++) {
+-            len = MIN(elem.in_sg[i].iov_len, size - offset);
++        len = iov_from_buf(elem.in_sg, elem.in_num,
++                           buf + offset, size - offset);
++        offset += len;
+ 
+-            memcpy(elem.in_sg[i].iov_base, buf + offset, len);
+-            offset += len;
+-        }
+         virtqueue_push(vq, &elem, len);
+     }
+ 
+-- 
+1.7.0.3
+

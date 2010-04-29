@@ -1,0 +1,73 @@
+From b3236778ab93495dd9209c606537750571ef449e Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Tue, 27 Apr 2010 09:07:31 -0300
+Subject: [PATCH 04/20] virtio-serial: save/load: Send target host connection status if different
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1272359264-8464-5-git-send-email-amit.shah@redhat.com>
+Patchwork-id: 8850
+O-Subject: [RHEL6 PATCH v4 04/17] virtio-serial: save/load: Send target host
+	connection status if different
+Bugzilla: 574296
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+
+If the host connection to a port is closed on the destination machine
+after migration, whereas the connection was open on the source, the
+guest has to be informed of that.
+
+Similar for a host connection open on the destination.
+
+Bugzilla: 574296
+Upstream: <posted>
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-serial-bus.c |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial-bus.c |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index 5316ef6..484dc94 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -395,6 +395,7 @@ static void virtio_serial_save(QEMUFile *f, void *opaque)
+          */
+         qemu_put_be32s(f, &port->id);
+         qemu_put_byte(f, port->guest_connected);
++        qemu_put_byte(f, port->host_connected);
+     }
+ }
+ 
+@@ -448,6 +449,7 @@ static int virtio_serial_load(QEMUFile *f, void *opaque, int version_id)
+     /* Items in struct VirtIOSerialPort */
+     for (i = 0; i < nr_active_ports; i++) {
+         uint32_t id;
++        bool host_connected;
+ 
+         id = qemu_get_be32(f);
+         port = find_port_by_id(s, id);
+@@ -460,6 +462,15 @@ static int virtio_serial_load(QEMUFile *f, void *opaque, int version_id)
+         }
+ 
+         port->guest_connected = qemu_get_byte(f);
++        host_connected = qemu_get_byte(f);
++        if (host_connected != port->host_connected) {
++            /*
++             * We have to let the guest know of the host connection
++             * status change
++             */
++            send_control_event(port, VIRTIO_CONSOLE_PORT_OPEN,
++                               port->host_connected);
++        }
+     }
+ 
+     return 0;
+-- 
+1.7.0.3
+

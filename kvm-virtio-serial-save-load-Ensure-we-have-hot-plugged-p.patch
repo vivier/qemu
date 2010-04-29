@@ -1,0 +1,54 @@
+From 466235794d61bacb79f987ed8a77027ee9e1f44a Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Tue, 27 Apr 2010 09:07:30 -0300
+Subject: [PATCH 03/20] virtio-serial: save/load: Ensure we have hot-plugged ports instantiated
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1272359264-8464-4-git-send-email-amit.shah@redhat.com>
+Patchwork-id: 8849
+O-Subject: [RHEL6 PATCH v4 03/17] virtio-serial: save/load: Ensure we have
+	hot-plugged ports instantiated
+Bugzilla: 574296
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+
+If some ports that were hot-plugged on the source are not available on
+the destination, fail migration instead of trying to deref a NULL
+pointer.
+
+Bugzilla: 574296
+Upstream: <posted>
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Reported-by: Juan Quintela <quintela@redhat.com>
+---
+ hw/virtio-serial-bus.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial-bus.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index d31e62d..5316ef6 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -451,6 +451,13 @@ static int virtio_serial_load(QEMUFile *f, void *opaque, int version_id)
+ 
+         id = qemu_get_be32(f);
+         port = find_port_by_id(s, id);
++        if (!port) {
++            /*
++             * The requested port was hot-plugged on the source but we
++             * don't have it
++             */
++            return -EINVAL;
++        }
+ 
+         port->guest_connected = qemu_get_byte(f);
+     }
+-- 
+1.7.0.3
+

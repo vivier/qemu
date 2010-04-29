@@ -1,0 +1,49 @@
+From 3b14f2dd4a1f3ed4e1cf0fd199436593849bb40a Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Tue, 27 Apr 2010 09:07:37 -0300
+Subject: [PATCH 10/20] virtio-serial: Send out guest data to ports only if port is opened
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1272359264-8464-11-git-send-email-amit.shah@redhat.com>
+Patchwork-id: 8857
+O-Subject: [RHEL6 PATCH v4 10/17] virtio-serial: Send out guest data to ports
+	only if port is opened
+Bugzilla: 574296
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+
+Data should be written only when ports are open.
+
+Bugzilla: 574296
+Upstream: <posted>
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-serial-bus.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial-bus.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index 3a09f0d..6befd4d 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -335,6 +335,11 @@ static void handle_output(VirtIODevice *vdev, VirtQueue *vq)
+             goto next_buf;
+         }
+ 
++	if (!port->host_connected) {
++            ret = 0;
++            goto next_buf;
++        }
++
+         /*
+          * A port may not have any handler registered for consuming the
+          * data that the guest sends or it may not have a chardev associated
+-- 
+1.7.0.3
+

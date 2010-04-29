@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.47%{?dist}
+Release: 2.48%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -812,6 +812,46 @@ Patch1391: kvm-block-Fix-multiwrite-memory-leak-in-error-case.patch
 Patch1392: kvm-spice-add-auth-info-to-monitor-events.patch
 # For bz#569613 - backport qemu-kvm-0.12.3 fixes to RHEL6
 Patch1393: kvm-Request-setting-of-nmi_pending-and-sipi_vector.patch
+# For bz#574296 - Fix migration for virtio-serial after port hot-plug/hot-unplug operations
+Patch1394: kvm-virtio-serial-save-load-Ensure-target-has-enough-por.patch
+# For bz#574296 - Fix migration for virtio-serial after port hot-plug/hot-unplug operations
+Patch1395: kvm-virtio-serial-save-load-Ensure-nr_ports-on-src-and-d.patch
+# For bz#574296 - Fix migration for virtio-serial after port hot-plug/hot-unplug operations
+Patch1396: kvm-virtio-serial-save-load-Ensure-we-have-hot-plugged-p.patch
+# For bz#574296 - Fix migration for virtio-serial after port hot-plug/hot-unplug operations
+Patch1397: kvm-virtio-serial-save-load-Send-target-host-connection-.patch
+# For bz#574296 - Fix migration for virtio-serial after port hot-plug/hot-unplug operations
+Patch1398: kvm-virtio-serial-Use-control-messages-to-notify-guest-o.patch
+# For bz#574296 - Fix migration for virtio-serial after port hot-plug/hot-unplug operations
+Patch1399: kvm-virtio-serial-whitespace-match-surrounding-code.patch
+# For bz#574296 - Fix migration for virtio-serial after port hot-plug/hot-unplug operations
+Patch1400: kvm-virtio-serial-Remove-redundant-check-for-0-sized-wri.patch
+# For bz#574296 - Fix migration for virtio-serial after port hot-plug/hot-unplug operations
+Patch1401: kvm-virtio-serial-Update-copyright-year-to-2010.patch
+# For bz#574296 - Fix migration for virtio-serial after port hot-plug/hot-unplug operations
+Patch1402: kvm-virtio-serial-Propagate-errors-in-initialising-ports.patch
+# For bz#574296 - Fix migration for virtio-serial after port hot-plug/hot-unplug operations
+Patch1403: kvm-virtio-serial-Send-out-guest-data-to-ports-only-if-p.patch
+# For bz#574296 - Fix migration for virtio-serial after port hot-plug/hot-unplug operations
+Patch1404: kvm-iov-Introduce-a-new-file-for-helpers-around-iovs-add.patch
+# For bz#574296 - Fix migration for virtio-serial after port hot-plug/hot-unplug operations
+Patch1405: kvm-iov-Add-iov_to_buf-and-iov_size-helpers.patch
+# For bz#574296 - Fix migration for virtio-serial after port hot-plug/hot-unplug operations
+Patch1406: kvm-virtio-serial-Handle-scatter-gather-buffers-for-cont.patch
+# For bz#574296 - Fix migration for virtio-serial after port hot-plug/hot-unplug operations
+Patch1407: kvm-virtio-serial-Handle-scatter-gather-input-from-the-g.patch
+# For bz#574296 - Fix migration for virtio-serial after port hot-plug/hot-unplug operations
+Patch1408: kvm-virtio-serial-Apps-should-consume-all-data-that-gues.patch
+# For bz#574296 - Fix migration for virtio-serial after port hot-plug/hot-unplug operations
+Patch1409: kvm-virtio-serial-Discard-data-that-guest-sends-us-when-.patch
+# For bz#574296 - Fix migration for virtio-serial after port hot-plug/hot-unplug operations
+Patch1410: kvm-virtio-serial-Implement-flow-control-for-individual-.patch
+# For bz#574296 - Fix migration for virtio-serial after port hot-plug/hot-unplug operations
+Patch1411: kvm-virtio-serial-Handle-output-from-guest-to-unintialis.patch
+# For bz#574296 - Fix migration for virtio-serial after port hot-plug/hot-unplug operations
+Patch1412: kvm-virtio-serial-bus-wake-up-iothread-upon-guest-read-n.patch
+# For bz#587227 - Fix segfault when creating more vcpus than allowed.
+Patch1413: kvm-Bail-out-when-VCPU_CREATE-fails.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1269,6 +1309,26 @@ such as kvmtrace and kvm_stat.
 %patch1391 -p1
 %patch1392 -p1
 %patch1393 -p1
+%patch1394 -p1
+%patch1395 -p1
+%patch1396 -p1
+%patch1397 -p1
+%patch1398 -p1
+%patch1399 -p1
+%patch1400 -p1
+%patch1401 -p1
+%patch1402 -p1
+%patch1403 -p1
+%patch1404 -p1
+%patch1405 -p1
+%patch1406 -p1
+%patch1407 -p1
+%patch1408 -p1
+%patch1409 -p1
+%patch1410 -p1
+%patch1411 -p1
+%patch1412 -p1
+%patch1413 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1466,6 +1526,32 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Apr 29 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.48.el6
+- kvm-virtio-serial-save-load-Ensure-target-has-enough-por.patch [bz#574296]
+- kvm-virtio-serial-save-load-Ensure-nr_ports-on-src-and-d.patch [bz#574296]
+- kvm-virtio-serial-save-load-Ensure-we-have-hot-plugged-p.patch [bz#574296]
+- kvm-virtio-serial-save-load-Send-target-host-connection-.patch [bz#574296]
+- kvm-virtio-serial-Use-control-messages-to-notify-guest-o.patch [bz#574296]
+- kvm-virtio-serial-whitespace-match-surrounding-code.patch [bz#574296]
+- kvm-virtio-serial-Remove-redundant-check-for-0-sized-wri.patch [bz#574296]
+- kvm-virtio-serial-Update-copyright-year-to-2010.patch [bz#574296]
+- kvm-virtio-serial-Propagate-errors-in-initialising-ports.patch [bz#574296]
+- kvm-virtio-serial-Send-out-guest-data-to-ports-only-if-p.patch [bz#574296]
+- kvm-iov-Introduce-a-new-file-for-helpers-around-iovs-add.patch [bz#574296]
+- kvm-iov-Add-iov_to_buf-and-iov_size-helpers.patch [bz#574296]
+- kvm-virtio-serial-Handle-scatter-gather-buffers-for-cont.patch [bz#574296]
+- kvm-virtio-serial-Handle-scatter-gather-input-from-the-g.patch [bz#574296]
+- kvm-virtio-serial-Apps-should-consume-all-data-that-gues.patch [bz#574296]
+- kvm-virtio-serial-Discard-data-that-guest-sends-us-when-.patch [bz#574296]
+- kvm-virtio-serial-Implement-flow-control-for-individual-.patch [bz#574296]
+- kvm-virtio-serial-Handle-output-from-guest-to-unintialis.patch [bz#574296]
+- kvm-virtio-serial-bus-wake-up-iothread-upon-guest-read-n.patch [bz#574296]
+- kvm-Bail-out-when-VCPU_CREATE-fails.patch [bz#587227]
+- Resolves: bz#574296
+  (Fix migration for virtio-serial after port hot-plug/hot-unplug operations)
+- Resolves: bz#587227
+  (Fix segfault when creating more vcpus than allowed.)
+
 * Wed Apr 28 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.47.el6
 - kvm-Request-setting-of-nmi_pending-and-sipi_vector.patch [bz#569613]
 - Resolves: bz#569613

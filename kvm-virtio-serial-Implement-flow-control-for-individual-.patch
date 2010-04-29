@@ -1,0 +1,154 @@
+From 0cf30e5b630f838073eb583ce1c09f9421c74042 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Tue, 27 Apr 2010 09:07:44 -0300
+Subject: [PATCH 17/20] virtio-serial: Implement flow control for individual ports
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1272359264-8464-18-git-send-email-amit.shah@redhat.com>
+Patchwork-id: 8863
+O-Subject: [RHEL6 PATCH v4 17/17] virtio-serial: Implement flow control for
+	individual ports
+Bugzilla: 574296
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+
+Individual ports can now signal to the virtio-serial core to stop
+sending data if the ports cannot immediately handle new data.  When a
+port later unthrottles, any data queued up in the virtqueue are sent to
+the port.
+
+Add a bus info message for showing port's throttled status: show whether
+a port is throttled in 'info qtree'.
+
+Bugzilla: 574296
+Upstream: <posted>
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-serial-bus.c |   37 ++++++++++++++++++++++++++++++++++---
+ hw/virtio-serial.h     |    9 +++++++++
+ 2 files changed, 43 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial-bus.c |   37 ++++++++++++++++++++++++++++++++++---
+ hw/virtio-serial.h     |    9 +++++++++
+ 2 files changed, 43 insertions(+), 3 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index 0166780..de64154 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -117,7 +117,7 @@ static void flush_queued_data(VirtIOSerialPort *port, bool discard)
+     VirtQueueElement elem;
+ 
+     vq = port->ovq;
+-    while (virtqueue_pop(vq, &elem)) {
++    while ((discard || !port->throttled) && virtqueue_pop(vq, &elem)) {
+         uint8_t *buf;
+         size_t ret, buf_size;
+ 
+@@ -185,6 +185,13 @@ int virtio_serial_open(VirtIOSerialPort *port)
+ int virtio_serial_close(VirtIOSerialPort *port)
+ {
+     port->host_connected = false;
++    /*
++     * If there's any data the guest sent which the app didn't
++     * consume, reset the throttling flag and discard the data.
++     */
++    port->throttled = false;
++    flush_queued_data(port, true);
++
+     send_control_event(port, VIRTIO_CONSOLE_PORT_OPEN, 0);
+ 
+     return 0;
+@@ -226,6 +233,20 @@ size_t virtio_serial_guest_ready(VirtIOSerialPort *port)
+     return 0;
+ }
+ 
++void virtio_serial_throttle_port(VirtIOSerialPort *port, bool throttle)
++{
++    if (!port) {
++        return;
++    }
++
++    port->throttled = throttle;
++    if (throttle) {
++        return;
++    }
++
++    flush_queued_data(port, false);
++}
++
+ /* Guest wants to notify us of some event */
+ static void handle_control_message(VirtIOSerial *vser, void *buf, size_t len)
+ {
+@@ -379,6 +400,10 @@ static void handle_output(VirtIODevice *vdev, VirtQueue *vq)
+         discard = true;
+     }
+ 
++    if (!discard && port->throttled) {
++        return;
++    }
++
+     flush_queued_data(port, discard);
+ }
+ 
+@@ -554,6 +579,8 @@ static void virtser_bus_dev_print(Monitor *mon, DeviceState *qdev, int indent)
+                    indent, "", port->guest_connected);
+     monitor_printf(mon, "%*s dev-prop-int: host_connected: %d\n",
+                    indent, "", port->host_connected);
++    monitor_printf(mon, "%*s dev-prop-int: throttled: %d\n",
++                   indent, "", port->throttled);
+ }
+ 
+ /* This function is only used if a port id is not provided by the user */
+@@ -591,13 +618,17 @@ static void add_port(VirtIOSerial *vser, uint32_t port_id)
+ 
+ static void remove_port(VirtIOSerial *vser, uint32_t port_id)
+ {
++    VirtIOSerialPort *port;
+     unsigned int i;
+ 
+     i = port_id / 32;
+     vser->ports_map[i] &= ~(1U << (port_id % 32));
+ 
+-    send_control_event(find_port_by_id(vser, port_id),
+-                       VIRTIO_CONSOLE_PORT_REMOVE, 1);
++    port = find_port_by_id(vser, port_id);
++    /* Flush out any unconsumed buffers first */
++    flush_queued_data(port, true);
++
++    send_control_event(port, VIRTIO_CONSOLE_PORT_REMOVE, 1);
+ }
+ 
+ static int virtser_port_qdev_init(DeviceState *qdev, DeviceInfo *base)
+diff --git a/hw/virtio-serial.h b/hw/virtio-serial.h
+index 62d76a2..a93b545 100644
+--- a/hw/virtio-serial.h
++++ b/hw/virtio-serial.h
+@@ -110,6 +110,8 @@ struct VirtIOSerialPort {
+     bool guest_connected;
+     /* Is this device open for IO on the host? */
+     bool host_connected;
++    /* Do apps not want to receive data? */
++    bool throttled;
+ };
+ 
+ struct VirtIOSerialPortInfo {
+@@ -173,4 +175,11 @@ ssize_t virtio_serial_write(VirtIOSerialPort *port, const uint8_t *buf,
+  */
+ size_t virtio_serial_guest_ready(VirtIOSerialPort *port);
+ 
++/*
++ * Flow control: Ports can signal to the virtio-serial core to stop
++ * sending data or re-start sending data, depending on the 'throttle'
++ * value here.
++ */
++void virtio_serial_throttle_port(VirtIOSerialPort *port, bool throttle);
++
+ #endif
+-- 
+1.7.0.3
+

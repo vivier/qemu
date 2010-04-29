@@ -1,0 +1,133 @@
+From 8914f3b81d22130e1c2e0e61ec56658586f68559 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Tue, 27 Apr 2010 09:07:43 -0300
+Subject: [PATCH 16/20] virtio-serial: Discard data that guest sends us when ports aren't connected
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1272359264-8464-17-git-send-email-amit.shah@redhat.com>
+Patchwork-id: 8862
+O-Subject: [RHEL6 PATCH v4 16/17] virtio-serial: Discard data that guest sends
+	us when ports aren't connected
+Bugzilla: 574296
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+
+Before the earlier patch, we relied on incorrect virtio api usage to
+signal to the guest that a particular buffer wasn't consumed by the
+host.
+
+After fixing that, we now just discard the data the guest sends us while
+a host port is disconnected or doesn't have a handler registered for
+consuming data.
+
+This commit really doesn't change anything from the current behaviour,
+just makes the code slightly better by spinning off data handling to
+ports in another function.
+
+Bugzilla: 574296
+Upstream: <posted>
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-serial-bus.c |   68 ++++++++++++++++++++++--------------------------
+ 1 files changed, 31 insertions(+), 37 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial-bus.c |   68 ++++++++++++++++++++++--------------------------
+ 1 files changed, 31 insertions(+), 37 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index ad44127..0166780 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -111,6 +111,29 @@ static size_t write_to_port(VirtIOSerialPort *port,
+     return offset;
+ }
+ 
++static void flush_queued_data(VirtIOSerialPort *port, bool discard)
++{
++    VirtQueue *vq;
++    VirtQueueElement elem;
++
++    vq = port->ovq;
++    while (virtqueue_pop(vq, &elem)) {
++        uint8_t *buf;
++        size_t ret, buf_size;
++
++        if (!discard) {
++            buf_size = iov_size(elem.out_sg, elem.out_num);
++            buf = qemu_malloc(buf_size);
++            ret = iov_to_buf(elem.out_sg, elem.out_num, buf, 0, buf_size);
++
++            port->info->have_data(port, buf, ret);
++            qemu_free(buf);
++        }
++        virtqueue_push(vq, &elem, 0);
++    }
++    virtio_notify(&port->vser->vdev, vq);
++}
++
+ static size_t send_control_msg(VirtIOSerialPort *port, void *buf, size_t len)
+ {
+     VirtQueueElement elem;
+@@ -345,47 +368,18 @@ static void control_out(VirtIODevice *vdev, VirtQueue *vq)
+ static void handle_output(VirtIODevice *vdev, VirtQueue *vq)
+ {
+     VirtIOSerial *vser;
+-    VirtQueueElement elem;
++    VirtIOSerialPort *port;
++    bool discard;
+ 
+     vser = DO_UPCAST(VirtIOSerial, vdev, vdev);
++    port = find_port_by_vq(vser, vq);
+ 
+-    while (virtqueue_pop(vq, &elem)) {
+-        VirtIOSerialPort *port;
+-        uint8_t *buf;
+-        size_t ret, buf_size;
+-
+-        port = find_port_by_vq(vser, vq);
+-        if (!port) {
+-            ret = 0;
+-            goto next_buf;
+-        }
+-
+-	if (!port->host_connected) {
+-            ret = 0;
+-            goto next_buf;
+-        }
+-
+-        /*
+-         * A port may not have any handler registered for consuming the
+-         * data that the guest sends or it may not have a chardev associated
+-         * with it. Just ignore the data in that case.
+-         */
+-        if (!port->info->have_data) {
+-            ret = 0;
+-            goto next_buf;
+-        }
+-
+-        buf_size = iov_size(elem.out_sg, elem.out_num);
+-        buf = qemu_malloc(buf_size);
+-        ret = iov_to_buf(elem.out_sg, elem.out_num, buf, 0, buf_size);
+-
+-        port->info->have_data(port, buf, ret);
+-        qemu_free(buf);
+-
+-    next_buf:
+-        virtqueue_push(vq, &elem, 0);
++    discard = false;
++    if (!port || !port->host_connected || !port->info->have_data) {
++        discard = true;
+     }
+-    virtio_notify(vdev, vq);
++
++    flush_queued_data(port, discard);
+ }
+ 
+ static void handle_input(VirtIODevice *vdev, VirtQueue *vq)
+-- 
+1.7.0.3
+

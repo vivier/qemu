@@ -1,0 +1,140 @@
+From 88d6d2b4f725da9443a0b75f387f92aef0ac8b64 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Tue, 27 Apr 2010 09:07:42 -0300
+Subject: [PATCH 15/20] virtio-serial: Apps should consume all data that guest sends out / Fix virtio api abuse
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1272359264-8464-16-git-send-email-amit.shah@redhat.com>
+Patchwork-id: 8861
+O-Subject: [RHEL6 PATCH v4 15/17] virtio-serial: Apps should consume all data
+	that guest sends out / Fix virtio api abuse
+Bugzilla: 574296
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+
+We cannot indicate to the guest how much data was consumed by an app for
+out_bufs.  So we just have to assume the apps will consume all the data
+that are handed over to them.
+
+Fix the virtio api abuse in control_out() and handle_output().
+
+Bugzilla: 574296
+Upstream: <posted>
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/spice-vmc.c         |    6 +++---
+ hw/virtio-console.c    |    7 ++-----
+ hw/virtio-serial-bus.c |    6 +++---
+ hw/virtio-serial.h     |    6 +++---
+ 4 files changed, 11 insertions(+), 14 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/spice-vmc.c         |    6 +++---
+ hw/virtio-console.c    |    7 ++-----
+ hw/virtio-serial-bus.c |    6 +++---
+ hw/virtio-serial.h     |    6 +++---
+ 4 files changed, 11 insertions(+), 14 deletions(-)
+
+diff --git a/hw/spice-vmc.c b/hw/spice-vmc.c
+index f7297fa..f48f4a1 100644
+--- a/hw/spice-vmc.c
++++ b/hw/spice-vmc.c
+@@ -212,7 +212,7 @@ static void spice_virtual_channel_guest_ready(VirtIOSerialPort *port)
+ #endif
+ }
+ 
+-static size_t spice_virtual_channel_have_data(
++static void spice_virtual_channel_have_data(
+                 VirtIOSerialPort *port, const uint8_t *buf, size_t len)
+ {
+     SpiceVirtualChannel *svc = DO_UPCAST(SpiceVirtualChannel, port, port);
+@@ -226,7 +226,7 @@ static size_t spice_virtual_channel_have_data(
+     if (svc->guest_out_ring.bytes == sizeof(svc->guest_out_ring.d)) {
+         printf("WARNING: %s: throwing away %lu bytes due to ring being full\n",
+             __func__, len);
+-        return len;
++        return;
+     }
+     int bytes_read = MIN(sizeof(svc->guest_out_ring.d) - svc->guest_out_ring.bytes, len);
+     if (svc->guest_out_ring.write_pos + bytes_read > sizeof(svc->guest_out_ring.d)) {
+@@ -245,7 +245,7 @@ static size_t spice_virtual_channel_have_data(
+         svc->guest_out_ring.bytes, svc->guest_out_ring.write_pos, bytes_read);
+     // wakeup spice
+     if (svc->plug) svc->plug->wakeup(svc->plug);
+-    return bytes_read;
++    return;
+ }
+ 
+ static int spice_virtual_channel_initfn(VirtIOSerialDevice *dev)
+diff --git a/hw/virtio-console.c b/hw/virtio-console.c
+index bbbb6b8..caea11f 100644
+--- a/hw/virtio-console.c
++++ b/hw/virtio-console.c
+@@ -20,14 +20,11 @@ typedef struct VirtConsole {
+ 
+ 
+ /* Callback function that's called when the guest sends us data */
+-static size_t flush_buf(VirtIOSerialPort *port, const uint8_t *buf, size_t len)
++static void flush_buf(VirtIOSerialPort *port, const uint8_t *buf, size_t len)
+ {
+     VirtConsole *vcon = DO_UPCAST(VirtConsole, port, port);
+-    ssize_t ret;
+ 
+-    ret = qemu_chr_write(vcon->chr, buf, len);
+-
+-    return ret < 0 ? 0 : ret;
++    qemu_chr_write(vcon->chr, buf, len);
+ }
+ 
+ /* Readiness of the guest to accept data on a port */
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index 3053a35..ad44127 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -335,7 +335,7 @@ static void control_out(VirtIODevice *vdev, VirtQueue *vq)
+         copied = iov_to_buf(elem.out_sg, elem.out_num, buf, 0, len);
+ 
+         handle_control_message(vser, buf, copied);
+-        virtqueue_push(vq, &elem, copied);
++        virtqueue_push(vq, &elem, 0);
+     }
+     qemu_free(buf);
+     virtio_notify(vdev, vq);
+@@ -379,11 +379,11 @@ static void handle_output(VirtIODevice *vdev, VirtQueue *vq)
+         buf = qemu_malloc(buf_size);
+         ret = iov_to_buf(elem.out_sg, elem.out_num, buf, 0, buf_size);
+ 
+-        ret = port->info->have_data(port, buf, ret);
++        port->info->have_data(port, buf, ret);
+         qemu_free(buf);
+ 
+     next_buf:
+-        virtqueue_push(vq, &elem, ret);
++        virtqueue_push(vq, &elem, 0);
+     }
+     virtio_notify(vdev, vq);
+ }
+diff --git a/hw/virtio-serial.h b/hw/virtio-serial.h
+index f023873..62d76a2 100644
+--- a/hw/virtio-serial.h
++++ b/hw/virtio-serial.h
+@@ -136,10 +136,10 @@ struct VirtIOSerialPortInfo {
+ 
+     /*
+      * Guest wrote some data to the port. This data is handed over to
+-     * the app via this callback. The app should return the number of
+-     * bytes it successfully consumed.
++     * the app via this callback.  The app is supposed to consume all
++     * the data that is presented to it.
+      */
+-    size_t (*have_data)(VirtIOSerialPort *port, const uint8_t *buf, size_t len);
++    void (*have_data)(VirtIOSerialPort *port, const uint8_t *buf, size_t len);
+ };
+ 
+ /* Interface to the virtio-serial bus */
+-- 
+1.7.0.3
+

@@ -1,0 +1,72 @@
+From 3e9702d7a92f7f385a99f310379a19c932476321 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Thu, 29 Apr 2010 12:55:28 -0300
+Subject: [PATCH 20/20] Bail out when VCPU_CREATE fails
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1272545728-28868-1-git-send-email-amit.shah@redhat.com>
+Patchwork-id: 8894
+O-Subject: [RHEL6 PATCH] Bail out when VCPU_CREATE fails
+Bugzilla: 587227
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Alexander Graf <agraf@suse.de>
+
+When we fail to create a VCPU we have no way to tell our callers that something
+failed. So the caller happily uses a completely broken state.
+
+This code should become deprecated in the process of converting qemu-kvm to
+qemu anyways, so let's not care about remdeling it but just bailing out when
+something breaks. Also give the user a hint on why the VCPU_CREATE might have
+failed.
+
+This fixes a segmentation fault with -smp > VCPU_MAX in the host kernel.
+
+Bugzilla: 587227
+
+Signed-off-by: Alexander Graf <agraf@suse.de>
+Reported-by: Michael Tokarev <mjt@tls.msk.ru>
+Signed-off-by: Avi Kivity <avi@redhat.com>
+(cherry picked from commit ef1ac550e43e366bb54565b359f007b8a72d3967)
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+Same patch, updated bz and subject line. For RHEL6.
+
+ qemu-kvm.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-kvm.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-kvm.c b/qemu-kvm.c
+index caa7249..470e272 100644
+--- a/qemu-kvm.c
++++ b/qemu-kvm.c
+@@ -445,7 +445,8 @@ static void kvm_create_vcpu(CPUState *env, int id)
+     r = kvm_vm_ioctl(kvm_state, KVM_CREATE_VCPU, id);
+     if (r < 0) {
+         fprintf(stderr, "kvm_create_vcpu: %m\n");
+-        return;
++        fprintf(stderr, "Failed to create vCPU. Check the -smp parameter.\n");
++        goto err;
+     }
+ 
+     env->kvm_fd = r;
+@@ -467,6 +468,9 @@ static void kvm_create_vcpu(CPUState *env, int id)
+     return;
+   err_fd:
+     close(env->kvm_fd);
++  err:
++    /* We're no good with semi-broken states. */
++    abort();
+ }
+ 
+ static int kvm_set_boot_vcpu_id(kvm_context_t kvm, uint32_t id)
+-- 
+1.7.0.3
+
