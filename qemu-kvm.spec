@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.48%{?dist}
+Release: 2.49%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -852,6 +852,8 @@ Patch1411: kvm-virtio-serial-Handle-output-from-guest-to-unintialis.patch
 Patch1412: kvm-virtio-serial-bus-wake-up-iothread-upon-guest-read-n.patch
 # For bz#587227 - Fix segfault when creating more vcpus than allowed.
 Patch1413: kvm-Bail-out-when-VCPU_CREATE-fails.patch
+# For bz#586572 - virtio-blk multiwrite merge memory leak
+Patch1414: kvm-block-Free-iovec-arrays-allocated-by-multiwrite_merg.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -862,7 +864,7 @@ BuildRequires: ncurses-devel
 BuildRequires: libaio-devel
 
 # require spice-server API changes from bz#571286
-BuildRequires: spice-server >= 0.4.2-10.el6
+BuildRequires: spice-server-devel >= 0.4.2-10.el6
 
 Requires(post): /usr/bin/getent
 Requires(post): /usr/sbin/groupadd
@@ -1329,6 +1331,7 @@ such as kvmtrace and kvm_stat.
 %patch1411 -p1
 %patch1412 -p1
 %patch1413 -p1
+%patch1414 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1362,6 +1365,7 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
             --disable-vde \
             --enable-linux-aio \
             --enable-kvm \
+            --enable-spice \
             --enable-kvm-cap-pit \
             --enable-kvm-cap-device-assignment
 
@@ -1526,6 +1530,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue May 04 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.49.el6
+- kvm-block-Free-iovec-arrays-allocated-by-multiwrite_merg.patch [bz#586572]
+- Resolves: bz#586572
+  (virtio-blk multiwrite merge memory leak)
+- Force spice to be enabled and fix BuildRequires to use spice-server-devel
+- Resolves: bz#588904
+  (qemu-kvm builds without spice support)
+
 * Thu Apr 29 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.48.el6
 - kvm-virtio-serial-save-load-Ensure-target-has-enough-por.patch [bz#574296]
 - kvm-virtio-serial-save-load-Ensure-nr_ports-on-src-and-d.patch [bz#574296]
