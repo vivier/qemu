@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.49%{?dist}
+Release: 2.50%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -854,6 +854,8 @@ Patch1412: kvm-virtio-serial-bus-wake-up-iothread-upon-guest-read-n.patch
 Patch1413: kvm-Bail-out-when-VCPU_CREATE-fails.patch
 # For bz#586572 - virtio-blk multiwrite merge memory leak
 Patch1414: kvm-block-Free-iovec-arrays-allocated-by-multiwrite_merg.patch
+# For bz#588828 - endless loop when parsing of command line with bare image argument
+Patch1415: kvm-vl.c-fix-BZ-588828-endless-loop-caused-by-non-option.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1332,6 +1334,7 @@ such as kvmtrace and kvm_stat.
 %patch1412 -p1
 %patch1413 -p1
 %patch1414 -p1
+%patch1415 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1530,6 +1533,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed May 05 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.50.el6
+- kvm-vl.c-fix-BZ-588828-endless-loop-caused-by-non-option.patch [bz#588828]
+- Resolves: bz#588828
+  (endless loop when parsing of command line with bare image argument)
+
 * Tue May 04 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.49.el6
 - kvm-block-Free-iovec-arrays-allocated-by-multiwrite_merg.patch [bz#586572]
 - Resolves: bz#586572

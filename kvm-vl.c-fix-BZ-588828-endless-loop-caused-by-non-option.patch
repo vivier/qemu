@@ -1,0 +1,48 @@
+From bb20055b5ff6807bb30b175b2594885297f447bf Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Wed, 5 May 2010 07:54:15 -0300
+Subject: [PATCH] vl.c: fix BZ 588828, endless loop caused by non option argument
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1273046055-22810-1-git-send-email-alevy@redhat.com>
+Patchwork-id: 9043
+O-Subject: [RHEL6 PATCH] vl.c: fix BZ 588828,
+	endless loop caused by non option argument
+Bugzilla: 588828
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+---
+
+Not present in upstream.
+BZ 588828.
+Issue when running with a non parameter image name, like
+$ qemu image
+as opposed to
+$ qemu -hda image
+
+---
+ vl.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vl.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index 9c1bdea..a01308a 100644
+--- a/vl.c
++++ b/vl.c
+@@ -5116,6 +5116,7 @@ int main(int argc, char **argv, char **envp)
+     while (optind < argc) {
+         if (argv[optind][0] != '-') {
+             /* disk image */
++            optind++;
+             continue;
+         } else {
+             const QEMUOption *popt;
+-- 
+1.7.0.3
+
