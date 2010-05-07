@@ -1,0 +1,78 @@
+From 5a8b6b79765623956fa09e1c9cc869bda3eea650 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 5 May 2010 10:13:14 -0300
+Subject: [PATCH] fdc: fix drive property handling.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1273054394-8204-1-git-send-email-kraxel@redhat.com>
+Patchwork-id: 9047
+O-Subject: [RHEL-6 kvm PATCH] fdc: fix drive property handling.
+Bugzilla: 584902
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Fix the floppy controller init wrappers to set the drive properties
+only in case the DriveInfo pointers passed in are non NULL.  This allows
+to set the properties using -global.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit 995bf0ca57e52f4991d7f90c7eb2bbf7bc3f3c44)
+---
+ hw/fdc.c |   20 +++++++++++++++-----
+ 1 files changed, 15 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/fdc.c |   20 +++++++++++++++-----
+ 1 files changed, 15 insertions(+), 5 deletions(-)
+
+diff --git a/hw/fdc.c b/hw/fdc.c
+index 0579b03..b291365 100644
+--- a/hw/fdc.c
++++ b/hw/fdc.c
+@@ -1860,8 +1860,12 @@ fdctrl_t *fdctrl_init_isa(DriveInfo **fds)
+     ISADevice *dev;
+ 
+     dev = isa_create("isa-fdc");
+-    qdev_prop_set_drive(&dev->qdev, "driveA", fds[0]);
+-    qdev_prop_set_drive(&dev->qdev, "driveB", fds[1]);
++    if (fds[0]) {
++        qdev_prop_set_drive(&dev->qdev, "driveA", fds[0]);
++    }
++    if (fds[1]) {
++        qdev_prop_set_drive(&dev->qdev, "driveB", fds[1]);
++    }
+     if (qdev_init(&dev->qdev) < 0)
+         return NULL;
+     return &(DO_UPCAST(fdctrl_isabus_t, busdev, dev)->state);
+@@ -1879,8 +1883,12 @@ fdctrl_t *fdctrl_init_sysbus(qemu_irq irq, int dma_chann,
+     sys = DO_UPCAST(fdctrl_sysbus_t, busdev.qdev, dev);
+     fdctrl = &sys->state;
+     fdctrl->dma_chann = dma_chann; /* FIXME */
+-    qdev_prop_set_drive(dev, "driveA", fds[0]);
+-    qdev_prop_set_drive(dev, "driveB", fds[1]);
++    if (fds[0]) {
++        qdev_prop_set_drive(dev, "driveA", fds[0]);
++    }
++    if (fds[1]) {
++        qdev_prop_set_drive(dev, "driveB", fds[1]);
++    }
+     qdev_init_nofail(dev);
+     sysbus_connect_irq(&sys->busdev, 0, irq);
+     sysbus_mmio_map(&sys->busdev, 0, mmio_base);
+@@ -1896,7 +1904,9 @@ fdctrl_t *sun4m_fdctrl_init (qemu_irq irq, target_phys_addr_t io_base,
+     fdctrl_t *fdctrl;
+ 
+     dev = qdev_create(NULL, "SUNW,fdtwo");
+-    qdev_prop_set_drive(dev, "drive", fds[0]);
++    if (fds[0]) {
++        qdev_prop_set_drive(dev, "drive", fds[0]);
++    }
+     qdev_init_nofail(dev);
+     sys = DO_UPCAST(fdctrl_sysbus_t, busdev.qdev, dev);
+     fdctrl = &sys->state;
+-- 
+1.7.0.3
+
