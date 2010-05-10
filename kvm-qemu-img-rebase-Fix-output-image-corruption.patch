@@ -1,0 +1,60 @@
+From 7792369ee1ca0728e0584bb656367ae2089fe81b Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Thu, 29 Apr 2010 13:27:51 -0300
+Subject: [PATCH 2/2] qemu-img rebase: Fix output image corruption
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1272547671-14461-3-git-send-email-kwolf@redhat.com>
+Patchwork-id: 8896
+O-Subject: [RHEL-6 qemu-kvm PATCH 2/2] qemu-img rebase: Fix output image
+	corruption
+Bugzilla: 585837
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 585837
+Upstream status: Submitted
+
+qemu-img rebase must always give clusters in the COW file priority over those
+in the backing file. As it failed to use number of non-allocated clusters but
+assumed the maximum, it was possible that allocated clusters were taken from
+the backing file instead, leading to a corrupted output image.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ qemu-img.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-img.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/qemu-img.c b/qemu-img.c
+index f109509..9569d96 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -1196,7 +1196,7 @@ static int img_rebase(int argc, char **argv)
+     if (!unsafe) {
+         uint64_t num_sectors;
+         uint64_t sector;
+-        int n, n1;
++        int n;
+         uint8_t * buf_old;
+         uint8_t * buf_new;
+ 
+@@ -1215,8 +1215,8 @@ static int img_rebase(int argc, char **argv)
+             }
+ 
+             /* If the cluster is allocated, we don't need to take action */
+-            if (bdrv_is_allocated(bs, sector, n, &n1)) {
+-                n = n1;
++            ret = bdrv_is_allocated(bs, sector, n, &n);
++            if (ret) {
+                 continue;
+             }
+ 
+-- 
+1.7.0.3
+

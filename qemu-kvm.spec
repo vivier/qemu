@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.51%{?dist}
+Release: 2.52%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -858,6 +858,10 @@ Patch1414: kvm-block-Free-iovec-arrays-allocated-by-multiwrite_merg.patch
 Patch1415: kvm-vl.c-fix-BZ-588828-endless-loop-caused-by-non-option.patch
 # For bz#584902 - Cannot associate drive with a floppy device using -global
 Patch1416: kvm-fdc-fix-drive-property-handling.patch
+# For bz#585837 - After re-base snapshot, the file in the snapshot disappeared
+Patch1417: kvm-qemu-img-use-the-heap-instead-of-the-huge-stack-arra.patch
+# For bz#585837 - After re-base snapshot, the file in the snapshot disappeared
+Patch1418: kvm-qemu-img-rebase-Fix-output-image-corruption.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1338,6 +1342,8 @@ such as kvmtrace and kvm_stat.
 %patch1414 -p1
 %patch1415 -p1
 %patch1416 -p1
+%patch1417 -p1
+%patch1418 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1536,6 +1542,12 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon May 10 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.52.el6
+- kvm-qemu-img-use-the-heap-instead-of-the-huge-stack-arra.patch [bz#585837]
+- kvm-qemu-img-rebase-Fix-output-image-corruption.patch [bz#585837]
+- Resolves: bz#585837
+  (After re-base snapshot, the file in the snapshot disappeared)
+
 * Fri May 07 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.51.el6
 - kvm-fdc-fix-drive-property-handling.patch [bz#584902]
 - Resolves: bz#584902
