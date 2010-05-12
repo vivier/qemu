@@ -1,0 +1,45 @@
+From d46e30733f611705be1442fc87d42e5afc63dbf9 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Fri, 7 May 2010 17:37:18 -0300
+Subject: [PATCH 5/9] QMP: Use QERR_QMP_BAD_INPUT_OBJECT_MEMBER
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1273253840-25924-3-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 9114
+O-Subject: [PATCH 2/4] QMP: Use QERR_QMP_BAD_INPUT_OBJECT_MEMBER
+Bugzilla: 573578
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+The QERR_QMP_BAD_INPUT_OBJECT error is going to be used only
+for two problems: the input is not an object or the "execute"
+key is missing.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+(cherry picked from commit 88f7db846264223f6059ec329e7b7a77026ad475)
+---
+ monitor.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index e3c2155..43cc3be 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -4497,7 +4497,7 @@ static void handle_qmp_command(JSONMessageParser *parser, QList *tokens)
+         qerror_report(QERR_QMP_BAD_INPUT_OBJECT, "execute");
+         goto err_input;
+     } else if (qobject_type(obj) != QTYPE_QSTRING) {
+-        qerror_report(QERR_QMP_BAD_INPUT_OBJECT, "string");
++        qerror_report(QERR_QMP_BAD_INPUT_OBJECT_MEMBER, "execute", "string");
+         goto err_input;
+     }
+ 
+-- 
+1.7.0.3
+

@@ -1,0 +1,47 @@
+From 11b172d47507bbf56781f00fb104c11cb3e841ca Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 6 Apr 2010 13:53:40 -0300
+Subject: [PATCH 2/9] block: Fix multiwrite error handling
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1270562020-32167-3-git-send-email-kwolf@redhat.com>
+Patchwork-id: 8370
+O-Subject: [RHEL-6 KVM PATCH 2/2] block: Fix multiwrite error handling
+Bugzilla: 578448
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 578448
+Upstream status: Submitted
+
+When two requests of the same multiwrite batch fail, the callback of all
+requests in that batch were called twice. This could have any kind of nasty
+effects, in my case it led to use after free and eventually a segfault.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/block.c b/block.c
+index 7e3f898..ff659e3 100644
+--- a/block.c
++++ b/block.c
+@@ -1731,7 +1731,7 @@ static void multiwrite_cb(void *opaque, int ret)
+ {
+     MultiwriteCB *mcb = opaque;
+ 
+-    if (ret < 0) {
++    if (ret < 0 && !mcb->error) {
+         mcb->error = ret;
+         multiwrite_user_cb(mcb);
+     }
+-- 
+1.7.0.3
+

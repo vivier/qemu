@@ -1,0 +1,60 @@
+From 8ef285c7d75335abb4b884d0e392935ccbee2d4a Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 6 Apr 2010 13:53:39 -0300
+Subject: [PATCH 1/9] virtio-blk: Fix use after free in error case
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1270562020-32167-2-git-send-email-kwolf@redhat.com>
+Patchwork-id: 8369
+O-Subject: [RHEL-6 KVM PATCH 1/2] virtio-blk: Fix use after free in error case
+Bugzilla: 578448
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+Bugzilla: 578448
+Upstream status: Submitted
+
+virtio_blk_req_complete frees the request, so we can't access it any more when
+calling bdrv_mon_event. Use the pointer that was copied earlier.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ hw/virtio-blk.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-blk.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index 8f4256d..28ad056 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -64,7 +64,7 @@ static int virtio_blk_handle_rw_error(VirtIOBlockReq *req, int error,
+     VirtIOBlock *s = req->dev;
+ 
+     if (action == BLOCK_ERR_IGNORE) {
+-        bdrv_mon_event(req->dev->bs, BDRV_ACTION_IGNORE, is_read);
++        bdrv_mon_event(s->bs, BDRV_ACTION_IGNORE, is_read);
+         return 0;
+     }
+ 
+@@ -72,11 +72,11 @@ static int virtio_blk_handle_rw_error(VirtIOBlockReq *req, int error,
+             || action == BLOCK_ERR_STOP_ANY) {
+         req->next = s->rq;
+         s->rq = req;
+-        bdrv_mon_event(req->dev->bs, BDRV_ACTION_STOP, is_read);
++        bdrv_mon_event(s->bs, BDRV_ACTION_STOP, is_read);
+         vm_stop(0);
+     } else {
+         virtio_blk_req_complete(req, VIRTIO_BLK_S_IOERR);
+-        bdrv_mon_event(req->dev->bs, BDRV_ACTION_REPORT, is_read);
++        bdrv_mon_event(s->bs, BDRV_ACTION_REPORT, is_read);
+     }
+ 
+     return 1;
+-- 
+1.7.0.3
+

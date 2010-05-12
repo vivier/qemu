@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.52%{?dist}
+Release: 2.53%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -862,6 +862,24 @@ Patch1416: kvm-fdc-fix-drive-property-handling.patch
 Patch1417: kvm-qemu-img-use-the-heap-instead-of-the-huge-stack-arra.patch
 # For bz#585837 - After re-base snapshot, the file in the snapshot disappeared
 Patch1418: kvm-qemu-img-rebase-Fix-output-image-corruption.patch
+# For bz#578448 - qemu-kvm segfault when nfs restart(without using werror&rerror)
+Patch1419: kvm-virtio-blk-Fix-use-after-free-in-error-case.patch
+# For bz#578448 - qemu-kvm segfault when nfs restart(without using werror&rerror)
+Patch1420: kvm-block-Fix-multiwrite-error-handling.patch
+# For bz#579692 - qemu-kvm "-boot once=drives" couldn't function properly
+Patch1421: kvm-Fix-boot-once-option.patch
+# For bz#573578 - Segfault when migrating via QMP command interface
+Patch1422: kvm-QError-New-QERR_QMP_BAD_INPUT_OBJECT_MEMBER.patch
+# For bz#573578 - Segfault when migrating via QMP command interface
+Patch1423: kvm-QMP-Use-QERR_QMP_BAD_INPUT_OBJECT_MEMBER.patch
+# For bz#573578 - Segfault when migrating via QMP command interface
+Patch1424: kvm-QError-Improve-QERR_QMP_BAD_INPUT_OBJECT-desc.patch
+# For bz#573578 - Segfault when migrating via QMP command interface
+Patch1425: kvm-QMP-Check-arguments-member-s-type.patch
+# For bz#590102 - QMP: Backport RESUME event
+Patch1426: kvm-QMP-Introduce-RESUME-event.patch
+# For bz#588133 - RHEL5.4 guest can lose virtio networking during migration
+Patch1427: kvm-pci-irq_state-vmstate-breakage.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1344,6 +1362,15 @@ such as kvmtrace and kvm_stat.
 %patch1416 -p1
 %patch1417 -p1
 %patch1418 -p1
+%patch1419 -p1
+%patch1420 -p1
+%patch1421 -p1
+%patch1422 -p1
+%patch1423 -p1
+%patch1424 -p1
+%patch1425 -p1
+%patch1426 -p1
+%patch1427 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1542,6 +1569,27 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed May 12 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.53.el6
+- kvm-virtio-blk-Fix-use-after-free-in-error-case.patch [bz#578448]
+- kvm-block-Fix-multiwrite-error-handling.patch [bz#578448]
+- kvm-Fix-boot-once-option.patch [bz#579692]
+- kvm-QError-New-QERR_QMP_BAD_INPUT_OBJECT_MEMBER.patch [bz#573578]
+- kvm-QMP-Use-QERR_QMP_BAD_INPUT_OBJECT_MEMBER.patch [bz#573578]
+- kvm-QError-Improve-QERR_QMP_BAD_INPUT_OBJECT-desc.patch [bz#573578]
+- kvm-QMP-Check-arguments-member-s-type.patch [bz#573578]
+- kvm-QMP-Introduce-RESUME-event.patch [bz#590102]
+- kvm-pci-irq_state-vmstate-breakage.patch [bz#588133]
+- Resolves: bz#573578
+  (Segfault when migrating via QMP command interface)
+- Resolves: bz#578448
+  (qemu-kvm segfault when nfs restart(without using werror&rerror))
+- Resolves: bz#579692
+  (qemu-kvm "-boot once=drives" couldn't function properly)
+- Resolves: bz#588133
+  (RHEL5.4 guest can lose virtio networking during migration)
+- Resolves: bz#590102
+  (QMP: Backport RESUME event)
+
 * Mon May 10 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.52.el6
 - kvm-qemu-img-use-the-heap-instead-of-the-huge-stack-arra.patch [bz#585837]
 - kvm-qemu-img-rebase-Fix-output-image-corruption.patch [bz#585837]

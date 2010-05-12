@@ -1,0 +1,63 @@
+From d0c65b15398636b48a82ea1983f6ea5894d00ed1 Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Sun, 9 May 2010 16:19:03 -0300
+Subject: [PATCH 9/9] pci: irq_state vmstate breakage
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <20100509161903.GA20565@redhat.com>
+Patchwork-id: 9126
+O-Subject: [PATCH RHEL6.0] pci: irq_state vmstate breakage
+Bugzilla: 588133
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 588133
+Upstream status: posted
+
+Code for saving irq_state got vm_state
+macros wrong, passing in the wrong parameter.
+As a result, we both saved a wrong value
+and restored it to a wrong offset.
+
+This leads to device and bus irq counts getting
+out of sync, which in turn leads to interrupts getting lost or
+never cleared, such as
+https://bugzilla.redhat.com/show_bug.cgi?id=588133
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+
+ hw/pci.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pci.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/hw/pci.c b/hw/pci.c
+index e9972b1..c8f325a 100644
+--- a/hw/pci.c
++++ b/hw/pci.c
+@@ -320,7 +320,7 @@ static VMStateInfo vmstate_info_pci_config = {
+ 
+ static int get_pci_irq_state(QEMUFile *f, void *pv, size_t size)
+ {
+-    PCIDevice *s = container_of(pv, PCIDevice, config);
++    PCIDevice *s = container_of(pv, PCIDevice, irq_state);
+     uint32_t irq_state[PCI_NUM_PINS];
+     int i;
+     for (i = 0; i < PCI_NUM_PINS; ++i) {
+@@ -342,7 +342,7 @@ static int get_pci_irq_state(QEMUFile *f, void *pv, size_t size)
+ static void put_pci_irq_state(QEMUFile *f, void *pv, size_t size)
+ {
+     int i;
+-    PCIDevice *s = container_of(pv, PCIDevice, config);
++    PCIDevice *s = container_of(pv, PCIDevice, irq_state);
+ 
+     for (i = 0; i < PCI_NUM_PINS; ++i) {
+         qemu_put_be32(f, pci_irq_state(s, i));
+-- 
+1.7.0.3
+

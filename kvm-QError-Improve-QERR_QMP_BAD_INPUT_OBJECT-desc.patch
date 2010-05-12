@@ -1,0 +1,41 @@
+From d544c5e67d640ee1a38a4208eb9867735f27bc52 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Fri, 7 May 2010 17:37:19 -0300
+Subject: [PATCH 6/9] QError: Improve QERR_QMP_BAD_INPUT_OBJECT desc
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1273253840-25924-4-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 9115
+O-Subject: [PATCH 3/4] QError: Improve QERR_QMP_BAD_INPUT_OBJECT desc
+Bugzilla: 573578
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+(cherry picked from commit abaf2f52716625d4b1e29204cab644ed656504cf)
+---
+ qerror.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qerror.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/qerror.c b/qerror.c
+index b6aaec7..034c7de 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -170,7 +170,7 @@ static const QErrorStringTable qerror_table[] = {
+     },
+     {
+         .error_fmt = QERR_QMP_BAD_INPUT_OBJECT,
+-        .desc      = "Bad QMP input object",
++        .desc      = "Expected '%(expected)' in QMP input",
+     },
+     {
+         .error_fmt = QERR_QMP_BAD_INPUT_OBJECT_MEMBER,
+-- 
+1.7.0.3
+

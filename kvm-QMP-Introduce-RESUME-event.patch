@@ -1,0 +1,104 @@
+From bc835da2ee1a13c7a4632f456aba111f8996d9f9 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Fri, 7 May 2010 18:09:44 -0300
+Subject: [PATCH 8/9] QMP: Introduce RESUME event
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <20100507150944.6cb0c68b@redhat.com>
+Patchwork-id: 9118
+O-Subject: [PATCH RHEL6 qemu-kvm] QMP: Introduce RESUME event
+Bugzilla: 590102
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Bugzilla: 590102
+
+It's emitted when the Virtual Machine resumes execution.
+
+We currently have the STOP event but don't have the matching
+RESUME one, this means that clients are notified when the VM
+is stopped but don't get anything when it resumes.
+
+Let's fix that as it's already causing some trouble to libvirt.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ QMP/qmp-events.txt |   12 ++++++++++++
+ monitor.c          |    3 +++
+ monitor.h          |    1 +
+ vl.c               |    1 +
+ 4 files changed, 17 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ QMP/qmp-events.txt |   12 ++++++++++++
+ monitor.c          |    3 +++
+ monitor.h          |    1 +
+ vl.c               |    1 +
+ 4 files changed, 17 insertions(+), 0 deletions(-)
+
+diff --git a/QMP/qmp-events.txt b/QMP/qmp-events.txt
+index a94e9b4..7d8370e 100644
+--- a/QMP/qmp-events.txt
++++ b/QMP/qmp-events.txt
+@@ -38,6 +38,18 @@ Example:
+ { "event": "RESET",
+     "timestamp": { "seconds": 1267041653, "microseconds": 9518 } }
+ 
++RESUME
++------
++
++Emitted when the Virtual Machine resumes execution.
++
++Data: None.
++
++Example:
++
++{ "event": "RESUME",
++    "timestamp": { "seconds": 1271770767, "microseconds": 582542 } }
++
+ RTC_CHANGE
+ ----------
+ 
+diff --git a/monitor.c b/monitor.c
+index 4037127..d2ca9c6 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -428,6 +428,9 @@ void monitor_protocol_event(MonitorEvent event, QObject *data)
+         case QEVENT_STOP:
+             event_name = "STOP";
+             break;
++        case QEVENT_RESUME:
++            event_name = "RESUME";
++            break;
+         case QEVENT_VNC_CONNECTED:
+             event_name = "VNC_CONNECTED";
+             break;
+diff --git a/monitor.h b/monitor.h
+index ce2785c..f7b136a 100644
+--- a/monitor.h
++++ b/monitor.h
+@@ -21,6 +21,7 @@ typedef enum MonitorEvent {
+     QEVENT_RESET,
+     QEVENT_POWERDOWN,
+     QEVENT_STOP,
++    QEVENT_RESUME,
+     QEVENT_VNC_CONNECTED,
+     QEVENT_VNC_INITIALIZED,
+     QEVENT_VNC_DISCONNECTED,
+diff --git a/vl.c b/vl.c
+index 45f4514..e54ab81 100644
+--- a/vl.c
++++ b/vl.c
+@@ -3351,6 +3351,7 @@ void vm_start(void)
+         vm_state_notify(1, 0);
+         qemu_rearm_alarm_timer(alarm_timer);
+         resume_all_vcpus();
++        monitor_protocol_event(QEVENT_RESUME, NULL);
+     }
+ }
+ 
+-- 
+1.7.0.3
+

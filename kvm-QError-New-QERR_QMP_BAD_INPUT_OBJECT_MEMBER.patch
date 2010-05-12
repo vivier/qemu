@@ -1,0 +1,59 @@
+From 3b867b100330d22af1115fe6184d0d12fcb0144d Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Fri, 7 May 2010 17:37:17 -0300
+Subject: [PATCH 4/9] QError: New QERR_QMP_BAD_INPUT_OBJECT_MEMBER
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1273253840-25924-2-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 9113
+O-Subject: [PATCH 1/4] QError: New QERR_QMP_BAD_INPUT_OBJECT_MEMBER
+Bugzilla: 573578
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+(cherry picked from commit 7dfb61238a472acf6fb48d9a444564b9b99a4b56)
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/qerror.c b/qerror.c
+index 8d885cd..b6aaec7 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -173,6 +173,10 @@ static const QErrorStringTable qerror_table[] = {
+         .desc      = "Bad QMP input object",
+     },
+     {
++        .error_fmt = QERR_QMP_BAD_INPUT_OBJECT_MEMBER,
++        .desc      = "QMP input object member '%(member)' expects '%(expected)'",
++    },
++    {
+         .error_fmt = QERR_SET_PASSWD_FAILED,
+         .desc      = "Could not set password",
+     },
+diff --git a/qerror.h b/qerror.h
+index bae08c0..c98c61a 100644
+--- a/qerror.h
++++ b/qerror.h
+@@ -145,6 +145,9 @@ QError *qobject_to_qerror(const QObject *obj);
+ #define QERR_QMP_BAD_INPUT_OBJECT \
+     "{ 'class': 'QMPBadInputObject', 'data': { 'expected': %s } }"
+ 
++#define QERR_QMP_BAD_INPUT_OBJECT_MEMBER \
++    "{ 'class': 'QMPBadInputObjectMember', 'data': { 'member': %s, 'expected': %s } }"
++
+ #define QERR_SET_PASSWD_FAILED \
+     "{ 'class': 'SetPasswdFailed', 'data': {} }"
+ 
+-- 
+1.7.0.3
+

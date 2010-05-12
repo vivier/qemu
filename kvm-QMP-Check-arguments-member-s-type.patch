@@ -1,0 +1,46 @@
+From d9a1b922640b7cb09e04dfe3405401fc816b76e6 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Fri, 7 May 2010 17:37:20 -0300
+Subject: [PATCH 7/9] QMP: Check "arguments" member's type
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1273253840-25924-5-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 9116
+O-Subject: [PATCH 4/4] QMP: Check "arguments" member's type
+Bugzilla: 573578
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Otherwise the following input crashes QEMU:
+
+{ "execute": "migrate", "arguments": "tcp:0:4446" }
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+(cherry picked from commit 04f8c053cca9c329eebb761f3a1ffef3d349b84c)
+---
+ monitor.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 43cc3be..4037127 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -4530,6 +4530,9 @@ static void handle_qmp_command(JSONMessageParser *parser, QList *tokens)
+     obj = qdict_get(input, "arguments");
+     if (!obj) {
+         args = qdict_new();
++    } else if (qobject_type(obj) != QTYPE_QDICT) {
++        qerror_report(QERR_QMP_BAD_INPUT_OBJECT_MEMBER, "arguments", "object");
++        goto err_input;
+     } else {
+         args = qobject_to_qdict(obj);
+         QINCREF(args);
+-- 
+1.7.0.3
+

@@ -1,0 +1,54 @@
+From 9dfe0bab607d6781b13254b31b5e6aad381c2f98 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Wed, 5 May 2010 16:19:59 -0300
+Subject: [PATCH 3/9] Fix boot once option
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <1273076399.2616.36.camel@localhost>
+Patchwork-id: 9051
+O-Subject: [RHEL-6 qemu-kvm PATCH] Fix boot once option
+Bugzilla: 579692
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 579692
+Upstream commit: 37905d6ae53d8a9f0744867a8cf2dad6e7ae3674
+
+The boot once options seems to have gotten broken since it originally
+went in.  We need to wait until the second time restore_boot_devices()
+gets called before restoring the standard boot order and removing itself
+from the reset list.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+ vl.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vl.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index a01308a..45f4514 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2598,6 +2598,13 @@ static void validate_bootdevices(char *devices)
+ static void restore_boot_devices(void *opaque)
+ {
+     char *standard_boot_devices = opaque;
++    static int first = 1;
++
++    /* Restore boot order and remove ourselves after the first boot */
++    if (first) {
++        first = 0;
++        return;
++    }
+ 
+     qemu_boot_set(standard_boot_devices);
+ 
+-- 
+1.7.0.3
+
