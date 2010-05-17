@@ -1,0 +1,62 @@
+From ab3e24bd373694da3f49dcd0d569bf37bb98cdba Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 11 May 2010 12:58:24 -0300
+Subject: [PATCH 18/20] block: Fix bdrv_commit
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1273582704-7546-1-git-send-email-kwolf@redhat.com>
+Patchwork-id: 9181
+O-Subject: [RHEL-6 qemu-kvm PATCH] block: Fix bdrv_commit
+Bugzilla: 589439
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Naphtali Sprei <nsprei@redhat.com>
+
+Bugzilla: 589439
+Upstream status: Submitted
+
+When reopening the image, don't guess the driver, but use the same driver as
+was used before. This is important if the format=... option was used for that
+image.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/block.c b/block.c
+index 250f4e4..3f64aee 100644
+--- a/block.c
++++ b/block.c
+@@ -599,12 +599,12 @@ int bdrv_commit(BlockDriverState *bs)
+         bdrv_delete(bs->backing_hd);
+         bs->backing_hd = NULL;
+         bs_rw = bdrv_new("");
+-        rw_ret = bdrv_open(bs_rw, filename, open_flags | BDRV_O_RDWR, NULL);
++        rw_ret = bdrv_open(bs_rw, filename, open_flags | BDRV_O_RDWR, drv);
+         if (rw_ret < 0) {
+             bdrv_delete(bs_rw);
+             /* try to re-open read-only */
+             bs_ro = bdrv_new("");
+-            ret = bdrv_open(bs_ro, filename, open_flags & ~BDRV_O_RDWR, NULL);
++            ret = bdrv_open(bs_ro, filename, open_flags & ~BDRV_O_RDWR, drv);
+             if (ret < 0) {
+                 bdrv_delete(bs_ro);
+                 /* drive not functional anymore */
+@@ -656,7 +656,7 @@ ro_cleanup:
+         bdrv_delete(bs->backing_hd);
+         bs->backing_hd = NULL;
+         bs_ro = bdrv_new("");
+-        ret = bdrv_open(bs_ro, filename, open_flags & ~BDRV_O_RDWR, NULL);
++        ret = bdrv_open(bs_ro, filename, open_flags & ~BDRV_O_RDWR, drv);
+         if (ret < 0) {
+             bdrv_delete(bs_ro);
+             /* drive not functional anymore */
+-- 
+1.7.0.3
+

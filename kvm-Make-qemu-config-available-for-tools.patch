@@ -1,0 +1,305 @@
+From ea97b0e7dcc518909802a84f0ce5cbed485c10e5 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Wed, 5 May 2010 10:08:46 -0300
+Subject: [PATCH 05/20] Make qemu-config available for tools
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1273054126-16811-1-git-send-email-kwolf@redhat.com>
+Patchwork-id: 9046
+O-Subject: [RHEL-6 qemu-kvm PATCH v2 5/7] Make qemu-config available for tools
+Bugzilla: 588756
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+
+Bugzilla: 588756
+Upstream commit: 25920d6ad61b078a69b6ba401d4d6cd46ce83804
+
+To be able to use config files for blkdebug, we need to make these functions
+available in the tools. This involves moving two functions that can only be
+built in the context of the emulator.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+v2:
+- Moved Spice option group into qemu-config.c to fix build
+
+ Makefile             |    4 +-
+ hw/qdev-properties.c |   19 ++++++++++-
+ hw/qdev.h            |    1 -
+ qemu-config.c        |   91 ++++++++++++++++++++++++++++++++++++++++---------
+ spice.c              |   72 ---------------------------------------
+ 5 files changed, 94 insertions(+), 93 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile             |    4 +-
+ hw/qdev-properties.c |   19 ++++++++++-
+ hw/qdev.h            |    1 -
+ qemu-config.c        |   91 ++++++++++++++++++++++++++++++++++++++++---------
+ spice.c              |   72 ---------------------------------------
+ 5 files changed, 94 insertions(+), 93 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index ed681c4..2a395d4 100644
+--- a/Makefile
++++ b/Makefile
+@@ -103,7 +103,7 @@ qobject-obj-y += qerror.o
+ # block-obj-y is code used by both qemu system emulation and qemu-img
+ 
+ block-obj-y = cutils.o cache-utils.o qemu-malloc.o qemu-option.o module.o
+-block-obj-y += nbd.o block.o aio.o aes.o osdep.o
++block-obj-y += nbd.o block.o aio.o aes.o osdep.o qemu-config.o
+ block-obj-$(CONFIG_POSIX) += posix-aio-compat.o
+ block-obj-$(CONFIG_LINUX_AIO) += linux-aio.o
+ block-obj-$(CONFIG_POSIX) += compatfd.o
+@@ -172,7 +172,7 @@ obj-y += buffered_file.o migration.o migration-tcp.o qemu-sockets.o
+ obj-y += qemu-char.o aio.o savevm.o
+ obj-y += msmouse.o ps2.o
+ obj-y += qdev.o qdev-properties.o
+-obj-y += qemu-config.o block-migration.o
++obj-y += block-migration.o
+ 
+ obj-$(CONFIG_BRLAPI) += baum.o
+ obj-$(CONFIG_POSIX) += migration-exec.o migration-unix.o migration-fd.o
+diff --git a/hw/qdev-properties.c b/hw/qdev-properties.c
+index 157a111..9ffdba7 100644
+--- a/hw/qdev-properties.c
++++ b/hw/qdev-properties.c
+@@ -661,7 +661,7 @@ void qdev_prop_set_defaults(DeviceState *dev, Property *props)
+ 
+ static QTAILQ_HEAD(, GlobalProperty) global_props = QTAILQ_HEAD_INITIALIZER(global_props);
+ 
+-void qdev_prop_register_global(GlobalProperty *prop)
++static void qdev_prop_register_global(GlobalProperty *prop)
+ {
+     QTAILQ_INSERT_TAIL(&global_props, prop, next);
+ }
+@@ -689,3 +689,20 @@ void qdev_prop_set_globals(DeviceState *dev)
+         }
+     }
+ }
++
++static int qdev_add_one_global(QemuOpts *opts, void *opaque)
++{
++    GlobalProperty *g;
++
++    g = qemu_mallocz(sizeof(*g));
++    g->driver   = qemu_opt_get(opts, "driver");
++    g->property = qemu_opt_get(opts, "property");
++    g->value    = qemu_opt_get(opts, "value");
++    qdev_prop_register_global(g);
++    return 0;
++}
++
++void qemu_add_globals(void)
++{
++    qemu_opts_foreach(&qemu_global_opts, qdev_add_one_global, NULL, 0);
++}
+diff --git a/hw/qdev.h b/hw/qdev.h
+index 40373c8..d8fbc73 100644
+--- a/hw/qdev.h
++++ b/hw/qdev.h
+@@ -273,7 +273,6 @@ void qdev_prop_set_macaddr(DeviceState *dev, const char *name, uint8_t *value);
+ void qdev_prop_set_ptr(DeviceState *dev, const char *name, void *value);
+ void qdev_prop_set_defaults(DeviceState *dev, Property *props);
+ 
+-void qdev_prop_register_global(GlobalProperty *prop);
+ void qdev_prop_register_global_list(GlobalProperty *props);
+ void qdev_prop_set_globals(DeviceState *dev);
+ 
+diff --git a/qemu-config.c b/qemu-config.c
+index f2efc08..b27d660 100644
+--- a/qemu-config.c
++++ b/qemu-config.c
+@@ -300,6 +300,80 @@ QemuOptsList qemu_cpudef_opts = {
+     },
+ };
+ 
++#ifdef CONFIG_SPICE
++QemuOptsList qemu_spice_opts = {
++    .name = "spice",
++    .head = QTAILQ_HEAD_INITIALIZER(qemu_spice_opts.head),
++    .desc = {
++        {
++            .name = "port",
++            .type = QEMU_OPT_NUMBER,
++        },{
++            .name = "tls-port",           /* old: sport */
++            .type = QEMU_OPT_NUMBER,
++        },{
++            .name = "addr",               /* old: host */
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "ipv4",
++            .type = QEMU_OPT_BOOL,
++        },{
++            .name = "ipv6",
++            .type = QEMU_OPT_BOOL,
++        },{
++            .name = "password",
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "disable-ticketing",
++            .type = QEMU_OPT_BOOL,
++        },{
++            .name = "image-compression",  /* old: ic */
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "renderer",
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "streaming-video",    /* old: sv */
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "agent-mouse",
++            .type = QEMU_OPT_BOOL,
++        },{
++            .name = "playback-compression",
++            .type = QEMU_OPT_BOOL,
++        },{
++            .name = "tls-channel",
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "plaintext-channel",
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "x509-dir",
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "x509-key-file",      /* old: sslkey */
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "x509-key-password",  /* old: sslpassword */
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "x509-cert-file",     /* old: sslcert */
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "x509-cacert-file",   /* old: sslcafile */
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "x509-dh-key-file",   /* old: ssldhfile */
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "tls-ciphers",        /* old: sslciphersuite */
++            .type = QEMU_OPT_STRING,
++        },
++        { /* end if list */ }
++    },
++};
++#endif
++
+ static QemuOptsList *vm_config_groups[] = {
+     &qemu_drive_opts,
+     &qemu_chardev_opts,
+@@ -385,23 +459,6 @@ int qemu_global_option(const char *str)
+     return 0;
+ }
+ 
+-static int qemu_add_one_global(QemuOpts *opts, void *opaque)
+-{
+-    GlobalProperty *g;
+-
+-    g = qemu_mallocz(sizeof(*g));
+-    g->driver   = qemu_opt_get(opts, "driver");
+-    g->property = qemu_opt_get(opts, "property");
+-    g->value    = qemu_opt_get(opts, "value");
+-    qdev_prop_register_global(g);
+-    return 0;
+-}
+-
+-void qemu_add_globals(void)
+-{
+-    qemu_opts_foreach(&qemu_global_opts, qemu_add_one_global, NULL, 0);
+-}
+-
+ struct ConfigWriteData {
+     QemuOptsList *list;
+     FILE *fp;
+diff --git a/spice.c b/spice.c
+index 92b84d7..aaf8bf6 100644
+--- a/spice.c
++++ b/spice.c
+@@ -221,78 +221,6 @@ static const char *stream_video_names[] = {
+ 
+ /* functions for the rest of qemu */
+ 
+-QemuOptsList qemu_spice_opts = {
+-    .name = "spice",
+-    .head = QTAILQ_HEAD_INITIALIZER(qemu_spice_opts.head),
+-    .desc = {
+-        {
+-            .name = "port",
+-            .type = QEMU_OPT_NUMBER,
+-        },{
+-            .name = "tls-port",           /* old: sport */
+-            .type = QEMU_OPT_NUMBER,
+-        },{
+-            .name = "addr",               /* old: host */
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "ipv4",
+-            .type = QEMU_OPT_BOOL,
+-        },{
+-            .name = "ipv6",
+-            .type = QEMU_OPT_BOOL,
+-        },{
+-            .name = "password",
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "disable-ticketing",
+-            .type = QEMU_OPT_BOOL,
+-        },{
+-            .name = "image-compression",  /* old: ic */
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "renderer",
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "streaming-video",    /* old: sv */
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "agent-mouse",
+-            .type = QEMU_OPT_BOOL,
+-        },{
+-            .name = "playback-compression",
+-            .type = QEMU_OPT_BOOL,
+-        },{
+-            .name = "tls-channel",
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "plaintext-channel",
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "x509-dir",
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "x509-key-file",      /* old: sslkey */
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "x509-key-password",  /* old: sslpassword */
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "x509-cert-file",     /* old: sslcert */
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "x509-cacert-file",   /* old: sslcafile */
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "x509-dh-key-file",   /* old: ssldhfile */
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "tls-ciphers",        /* old: sslciphersuite */
+-            .type = QEMU_OPT_STRING,
+-        },
+-        { /* end if list */ }
+-    },
+-};
+-
+ int mon_set_password(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     const char *protocol  = qdict_get_str(qdict, "protocol");
+-- 
+1.7.0.3
+

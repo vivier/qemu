@@ -1,0 +1,132 @@
+From 8e00d4a06130ea7b1545638994b3e54ccfd9a0c4 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 4 May 2010 13:11:30 -0300
+Subject: [PATCH 01/20] qemu-config: qemu_read_config_file() reads the normal config file
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1272978696-18996-2-git-send-email-kwolf@redhat.com>
+Patchwork-id: 8986
+O-Subject: [RHEL-6 qemu-kvm PATCH 1/7] qemu-config: qemu_read_config_file()
+	reads the normal config file
+Bugzilla: 588756
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+Bugzilla: 588756
+Upstream commit: dcfb0939bd7042c9d2622181263c01d78531f272
+
+Introduce a new function qemu_read_config_file which reads the VM configuration
+from a config file. Unlike qemu_config_parse it doesn't take a open file but a
+filename and reduces code duplication as a side effect.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ qemu-config.c |   15 +++++++++++++++
+ qemu-config.h |    2 ++
+ vl.c          |   38 +++++++++++++-------------------------
+ 3 files changed, 30 insertions(+), 25 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-config.c |   15 +++++++++++++++
+ qemu-config.h |    2 ++
+ vl.c          |   38 +++++++++++++-------------------------
+ 3 files changed, 30 insertions(+), 25 deletions(-)
+
+diff --git a/qemu-config.c b/qemu-config.c
+index 5c9ea14..53c7c20 100644
+--- a/qemu-config.c
++++ b/qemu-config.c
+@@ -495,3 +495,18 @@ out:
+     loc_pop(&loc);
+     return res;
+ }
++
++int qemu_read_config_file(const char *filename)
++{
++    FILE *f = fopen(filename, "r");
++    if (f == NULL) {
++        return -errno;
++    }
++
++    if (qemu_config_parse(f, filename) != 0) {
++        return -EINVAL;
++    }
++    fclose(f);
++
++    return 0;
++}
+diff --git a/qemu-config.h b/qemu-config.h
+index e743efa..a387e49 100644
+--- a/qemu-config.h
++++ b/qemu-config.h
+@@ -20,4 +20,6 @@ void qemu_add_globals(void);
+ void qemu_config_write(FILE *fp);
+ int qemu_config_parse(FILE *fp, const char *fname);
+ 
++int qemu_read_config_file(const char *filename);
++
+ #endif /* QEMU_CONFIG_H */
+diff --git a/vl.c b/vl.c
+index e54ab81..4b5997a 100644
+--- a/vl.c
++++ b/vl.c
+@@ -5139,25 +5139,17 @@ int main(int argc, char **argv, char **envp)
+     }
+ 
+     if (defconfig) {
+-        const char *fname;
+-        FILE *fp;
++        int ret;
+ 
+-        fname = CONFIG_QEMU_CONFDIR "/qemu.conf";
+-        fp = fopen(fname, "r");
+-        if (fp) {
+-            if (qemu_config_parse(fp, fname) != 0) {
+-                exit(1);
+-            }
+-            fclose(fp);
++        ret = qemu_read_config_file(CONFIG_QEMU_CONFDIR "/qemu.conf");
++        if (ret == -EINVAL) {
++            exit(1);
+         }
+ 
+-        fname = CONFIG_QEMU_CONFDIR "/target-" TARGET_ARCH ".conf";
+-        fp = fopen(fname, "r");
+-        if (fp) {
+-            if (qemu_config_parse(fp, fname) != 0) {
+-                exit(1);
+-            }
+-            fclose(fp);
++        ret = qemu_read_config_file(
++            CONFIG_QEMU_CONFDIR "/target-" TARGET_ARCH ".conf");
++        if (ret == -EINVAL) {
++            exit(1);
+         }
+     }
+ #if defined(cpudef_setup)
+@@ -5873,16 +5865,12 @@ int main(int argc, char **argv, char **envp)
+ #endif
+             case QEMU_OPTION_readconfig:
+                 {
+-                    FILE *fp;
+-                    fp = fopen(optarg, "r");
+-                    if (fp == NULL) {
+-                        fprintf(stderr, "open %s: %s\n", optarg, strerror(errno));
++                    int ret = qemu_read_config_file(optarg);
++                    if (ret < 0) {
++                        fprintf(stderr, "read config %s: %s\n", optarg,
++                            strerror(-ret));
+                         exit(1);
+                     }
+-                    if (qemu_config_parse(fp, optarg) != 0) {
+-                        exit(1);
+-                    }
+-                    fclose(fp);
+                     break;
+                 }
+ #ifdef CONFIG_SPICE
+-- 
+1.7.0.3
+

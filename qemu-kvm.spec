@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.53%{?dist}
+Release: 2.54%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -880,6 +880,46 @@ Patch1425: kvm-QMP-Check-arguments-member-s-type.patch
 Patch1426: kvm-QMP-Introduce-RESUME-event.patch
 # For bz#588133 - RHEL5.4 guest can lose virtio networking during migration
 Patch1427: kvm-pci-irq_state-vmstate-breakage.patch
+# For bz#588756 - blkdebug is missing
+Patch1428: kvm-qemu-config-qemu_read_config_file-reads-the-normal-c.patch
+# For bz#588756 - blkdebug is missing
+Patch1429: kvm-qemu-config-Make-qemu_config_parse-more-generic.patch
+# For bz#588756 - blkdebug is missing
+Patch1430: kvm-blkdebug-Basic-request-passthrough.patch
+# For bz#588756 - blkdebug is missing
+Patch1431: kvm-blkdebug-Inject-errors.patch
+# For bz#588756 - blkdebug is missing
+Patch1432: kvm-Make-qemu-config-available-for-tools.patch
+# For bz#588756 - blkdebug is missing
+Patch1433: kvm-blkdebug-Add-events-and-rules.patch
+# For bz#588756 - blkdebug is missing
+Patch1434: kvm-qcow2-Trigger-blkdebug-events.patch
+# For bz#588762 - Backport qcow2 fixes
+Patch1435: kvm-qcow2-Fix-access-after-end-of-array.patch
+# For bz#588762 - Backport qcow2 fixes
+Patch1436: kvm-qcow2-rename-two-QCowAIOCB-members.patch
+# For bz#588762 - Backport qcow2 fixes
+Patch1437: kvm-qcow2-Don-t-ignore-immediate-read-write-failures.patch
+# For bz#588762 - Backport qcow2 fixes
+Patch1438: kvm-qcow2-Remove-request-from-in-flight-list-after-error.patch
+# For bz#588762 - Backport qcow2 fixes
+Patch1439: kvm-qcow2-Return-0-errno-in-write_l2_entries.patch
+# For bz#588762 - Backport qcow2 fixes
+Patch1440: kvm-qcow2-Fix-error-return-code-in-qcow2_alloc_cluster_l.patch
+# For bz#588762 - Backport qcow2 fixes
+Patch1441: kvm-qcow2-Return-0-errno-in-write_l1_entry.patch
+# For bz#588762 - Backport qcow2 fixes
+Patch1442: kvm-qcow2-Return-0-errno-in-l2_allocate.patch
+# For bz#588762 - Backport qcow2 fixes
+Patch1443: kvm-qcow2-Remove-abort-on-free_clusters-failure.patch
+# For bz#591061 - make fails to build after make clean
+Patch1444: kvm-Add-qemu-error.o-only-once-to-target-list.patch
+# For bz#589439 - Qcow2 snapshot got corruption after commit using block device
+Patch1445: kvm-block-Fix-bdrv_commit.patch
+# For bz#578106 - call trace when boot guest with -cpu host
+Patch1446: kvm-fix-80000001.EDX-supported-bit-filtering.patch
+# For bz#591604 - cannot override cpu vendor from the command line
+Patch1447: kvm-fix-CPUID-vendor-override.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1371,6 +1411,26 @@ such as kvmtrace and kvm_stat.
 %patch1425 -p1
 %patch1426 -p1
 %patch1427 -p1
+%patch1428 -p1
+%patch1429 -p1
+%patch1430 -p1
+%patch1431 -p1
+%patch1432 -p1
+%patch1433 -p1
+%patch1434 -p1
+%patch1435 -p1
+%patch1436 -p1
+%patch1437 -p1
+%patch1438 -p1
+%patch1439 -p1
+%patch1440 -p1
+%patch1441 -p1
+%patch1442 -p1
+%patch1443 -p1
+%patch1444 -p1
+%patch1445 -p1
+%patch1446 -p1
+%patch1447 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1569,6 +1629,40 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon May 17 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.54.el6
+- kvm-qemu-config-qemu_read_config_file-reads-the-normal-c.patch [bz#588756]
+- kvm-qemu-config-Make-qemu_config_parse-more-generic.patch [bz#588756]
+- kvm-blkdebug-Basic-request-passthrough.patch [bz#588756]
+- kvm-blkdebug-Inject-errors.patch [bz#588756]
+- kvm-Make-qemu-config-available-for-tools.patch [bz#588756]
+- kvm-blkdebug-Add-events-and-rules.patch [bz#588756]
+- kvm-qcow2-Trigger-blkdebug-events.patch [bz#588756]
+- kvm-qcow2-Fix-access-after-end-of-array.patch [bz#588762]
+- kvm-qcow2-rename-two-QCowAIOCB-members.patch [bz#588762]
+- kvm-qcow2-Don-t-ignore-immediate-read-write-failures.patch [bz#588762]
+- kvm-qcow2-Remove-request-from-in-flight-list-after-error.patch [bz#588762]
+- kvm-qcow2-Return-0-errno-in-write_l2_entries.patch [bz#588762]
+- kvm-qcow2-Fix-error-return-code-in-qcow2_alloc_cluster_l.patch [bz#588762]
+- kvm-qcow2-Return-0-errno-in-write_l1_entry.patch [bz#588762]
+- kvm-qcow2-Return-0-errno-in-l2_allocate.patch [bz#588762]
+- kvm-qcow2-Remove-abort-on-free_clusters-failure.patch [bz#588762]
+- kvm-Add-qemu-error.o-only-once-to-target-list.patch [bz#591061]
+- kvm-block-Fix-bdrv_commit.patch [bz#589439]
+- kvm-fix-80000001.EDX-supported-bit-filtering.patch [bz#578106]
+- kvm-fix-CPUID-vendor-override.patch [bz#591604]
+- Resolves: bz#578106
+  (call trace when boot guest with -cpu host)
+- Resolves: bz#588756
+  (blkdebug is missing)
+- Resolves: bz#588762
+  (Backport qcow2 fixes)
+- Resolves: bz#589439
+  (Qcow2 snapshot got corruption after commit using block device)
+- Resolves: bz#591061
+  (make fails to build after make clean)
+- Resolves: bz#591604
+  (cannot override cpu vendor from the command line)
+
 * Wed May 12 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.53.el6
 - kvm-virtio-blk-Fix-use-after-free-in-error-case.patch [bz#578448]
 - kvm-block-Fix-multiwrite-error-handling.patch [bz#578448]

@@ -1,0 +1,56 @@
+From ddab44946d78cfeeed75ae2fbc2bd5922b39e866 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 4 May 2010 13:30:34 -0300
+Subject: [PATCH 12/20] qcow2: Return 0/-errno in write_l2_entries
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1272979838-20032-6-git-send-email-kwolf@redhat.com>
+Patchwork-id: 9003
+O-Subject: [RHEL-6 qemu-kvm PATCH 5/9] qcow2: Return 0/-errno in write_l2_entries
+Bugzilla: 588762
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+Bugzilla: 588762
+
+Change write_l2_entries to return the real error code instead of -1.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 79a31189d4e3d226c6c700d630476ec63bbc19a2)
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block/qcow2-cluster.c |    9 +++++----
+ 1 files changed, 5 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2-cluster.c |    9 +++++----
+ 1 files changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/block/qcow2-cluster.c b/block/qcow2-cluster.c
+index 8cb4b38..2f37acd 100644
+--- a/block/qcow2-cluster.c
++++ b/block/qcow2-cluster.c
+@@ -627,12 +627,13 @@ static int write_l2_entries(BDRVQcowState *s, uint64_t *l2_table,
+     int start_offset = (8 * l2_index) & ~511;
+     int end_offset = (8 * (l2_index + num) + 511) & ~511;
+     size_t len = end_offset - start_offset;
++    int ret;
+ 
+     BLKDBG_EVENT(s->hd, BLKDBG_L2_UPDATE);
+-    if (bdrv_pwrite(s->hd, l2_offset + start_offset, &l2_table[l2_start_index],
+-        len) != len)
+-    {
+-        return -1;
++    ret = bdrv_pwrite(s->hd, l2_offset + start_offset,
++        &l2_table[l2_start_index], len);
++    if (ret < 0) {
++        return ret;
+     }
+ 
+     return 0;
+-- 
+1.7.0.3
+

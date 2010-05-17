@@ -1,0 +1,46 @@
+From 3536f839418923bbfc9934c0b312369f8d6a966c Mon Sep 17 00:00:00 2001
+From: Gleb Natapov <gleb@redhat.com>
+Date: Wed, 12 May 2010 09:32:53 -0300
+Subject: [PATCH 19/20] fix 80000001.EDX supported bit filtering
+
+RH-Author: Gleb Natapov <gleb@redhat.com>
+Message-id: <20100512093253.GW2504@redhat.com>
+Patchwork-id: 9204
+O-Subject: [PATCH KVM RHEL6] fix 80000001.EDX supported bit filtering
+Bugzilla: 578106
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+
+On AMD some bits from 1.EDX are reported in 80000001.EDX. The mask used
+to copy bits from 1.EDX to 80000001.EDX is incorrect resulting in
+unsupported features passed into a guest.
+
+BZ: 578106
+Upstream status: c1667e409764bb43a8196e40d01c409326d54a96
+
+Signed-off-by: Gleb Natapov <gleb@redhat.com>
+--
+			Gleb.
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-kvm-x86.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-kvm-x86.c b/qemu-kvm-x86.c
+index 7f820a4..e6d5e1c 100644
+--- a/qemu-kvm-x86.c
++++ b/qemu-kvm-x86.c
+@@ -707,7 +707,7 @@ uint32_t kvm_get_supported_cpuid(kvm_context_t kvm, uint32_t function, int reg)
+ 				 */
+ 				if (function == 0x80000001) {
+ 					cpuid_1_edx = kvm_get_supported_cpuid(kvm, 1, R_EDX);
+-					ret |= cpuid_1_edx & 0xdfeff7ff;
++					ret |= cpuid_1_edx & 0x183f7ff;
+ 				}
+ 				break;
+ 			}
+-- 
+1.7.0.3
+

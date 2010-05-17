@@ -1,0 +1,50 @@
+From 70ceb2fb1ac7cdaa634f7ee56ff3d47ddfd0aad0 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 4 May 2010 13:30:38 -0300
+Subject: [PATCH 16/20] qcow2: Remove abort on free_clusters failure
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1272979838-20032-10-git-send-email-kwolf@redhat.com>
+Patchwork-id: 8996
+O-Subject: [RHEL-6 qemu-kvm PATCH 9/9] qcow2: Remove abort on free_clusters
+	failure
+Bugzilla: 588762
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+Bugzilla: 588762
+
+While it's true that during regular operation free_clusters failure would be a
+bug, an I/O error can always happen. There's no need to kill the VM, the worst
+thing that can happen (and it will) is that we leak some clusters.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 003fad6e2cae5311d3aea996388c90e3ab17de90)
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block/qcow2-refcount.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2-refcount.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/block/qcow2-refcount.c b/block/qcow2-refcount.c
+index ab58bb5..bb44f0d 100644
+--- a/block/qcow2-refcount.c
++++ b/block/qcow2-refcount.c
+@@ -638,7 +638,7 @@ void qcow2_free_clusters(BlockDriverState *bs,
+     ret = update_refcount(bs, offset, size, -1);
+     if (ret < 0) {
+         fprintf(stderr, "qcow2_free_clusters failed: %s\n", strerror(-ret));
+-        abort();
++        /* TODO Remember the clusters to free them later and avoid leaking */
+     }
+ }
+ 
+-- 
+1.7.0.3
+

@@ -1,0 +1,150 @@
+From c4abd399cf5b0c3891af4fd4148fe288f5190310 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 4 May 2010 13:11:33 -0300
+Subject: [PATCH 04/20] blkdebug: Inject errors
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1272978696-18996-5-git-send-email-kwolf@redhat.com>
+Patchwork-id: 8988
+O-Subject: [RHEL-6 qemu-kvm PATCH 4/7] blkdebug: Inject errors
+Bugzilla: 588756
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+Bugzilla: 588756
+
+Add a mechanism to inject errors instead of passing requests on. With no
+further patches applied, you can use it by setting inject_errno in gdb.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit b9f66d96950b7c10253f9f27b9109df5ff8aa611)
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block/blkdebug.c |   81 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 81 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/blkdebug.c |   81 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 81 insertions(+), 0 deletions(-)
+
+diff --git a/block/blkdebug.c b/block/blkdebug.c
+index 2c7e0dd..dad3ac6 100644
+--- a/block/blkdebug.c
++++ b/block/blkdebug.c
+@@ -26,10 +26,41 @@
+ #include "block_int.h"
+ #include "module.h"
+ 
++#include <stdbool.h>
++
++typedef struct BlkdebugVars {
++    int state;
++
++    /* If inject_errno != 0, an error is injected for requests */
++    int inject_errno;
++
++    /* Decides if all future requests fail (false) or only the next one and
++     * after the next request inject_errno is reset to 0 (true) */
++    bool inject_once;
++
++    /* Decides if aio_readv/writev fails right away (true) or returns an error
++     * return value only in the callback (false) */
++    bool inject_immediately;
++} BlkdebugVars;
++
+ typedef struct BDRVBlkdebugState {
+     BlockDriverState *hd;
++    BlkdebugVars vars;
+ } BDRVBlkdebugState;
+ 
++typedef struct BlkdebugAIOCB {
++    BlockDriverAIOCB common;
++    QEMUBH *bh;
++    int ret;
++} BlkdebugAIOCB;
++
++static void blkdebug_aio_cancel(BlockDriverAIOCB *blockacb);
++
++static AIOPool blkdebug_aio_pool = {
++    .aiocb_size = sizeof(BlkdebugAIOCB),
++    .cancel     = blkdebug_aio_cancel,
++};
++
+ static int blkdebug_open(BlockDriverState *bs, const char *filename, int flags)
+ {
+     BDRVBlkdebugState *s = bs->opaque;
+@@ -42,11 +73,56 @@ static int blkdebug_open(BlockDriverState *bs, const char *filename, int flags)
+     return bdrv_file_open(&s->hd, filename, flags);
+ }
+ 
++static void error_callback_bh(void *opaque)
++{
++    struct BlkdebugAIOCB *acb = opaque;
++    qemu_bh_delete(acb->bh);
++    acb->common.cb(acb->common.opaque, acb->ret);
++    qemu_aio_release(acb);
++}
++
++static void blkdebug_aio_cancel(BlockDriverAIOCB *blockacb)
++{
++    BlkdebugAIOCB *acb = (BlkdebugAIOCB*) blockacb;
++    qemu_aio_release(acb);
++}
++
++static BlockDriverAIOCB *inject_error(BlockDriverState *bs,
++    BlockDriverCompletionFunc *cb, void *opaque)
++{
++    BDRVBlkdebugState *s = bs->opaque;
++    int error = s->vars.inject_errno;
++    struct BlkdebugAIOCB *acb;
++    QEMUBH *bh;
++
++    if (s->vars.inject_once) {
++        s->vars.inject_errno = 0;
++    }
++
++    if (s->vars.inject_immediately) {
++        return NULL;
++    }
++
++    acb = qemu_aio_get(&blkdebug_aio_pool, bs, cb, opaque);
++    acb->ret = -error;
++
++    bh = qemu_bh_new(error_callback_bh, acb);
++    acb->bh = bh;
++    qemu_bh_schedule(bh);
++
++    return (BlockDriverAIOCB*) acb;
++}
++
+ static BlockDriverAIOCB *blkdebug_aio_readv(BlockDriverState *bs,
+     int64_t sector_num, QEMUIOVector *qiov, int nb_sectors,
+     BlockDriverCompletionFunc *cb, void *opaque)
+ {
+     BDRVBlkdebugState *s = bs->opaque;
++
++    if (s->vars.inject_errno) {
++        return inject_error(bs, cb, opaque);
++    }
++
+     BlockDriverAIOCB *acb =
+         bdrv_aio_readv(s->hd, sector_num, qiov, nb_sectors, cb, opaque);
+     return acb;
+@@ -57,6 +133,11 @@ static BlockDriverAIOCB *blkdebug_aio_writev(BlockDriverState *bs,
+     BlockDriverCompletionFunc *cb, void *opaque)
+ {
+     BDRVBlkdebugState *s = bs->opaque;
++
++    if (s->vars.inject_errno) {
++        return inject_error(bs, cb, opaque);
++    }
++
+     BlockDriverAIOCB *acb =
+         bdrv_aio_writev(s->hd, sector_num, qiov, nb_sectors, cb, opaque);
+     return acb;
+-- 
+1.7.0.3
+

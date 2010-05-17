@@ -1,0 +1,67 @@
+From dc60e8152c11e031c4ebecba1569582351aba88f Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 4 May 2010 13:30:30 -0300
+Subject: [PATCH 08/20] qcow2: Fix access after end of array
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1272979838-20032-2-git-send-email-kwolf@redhat.com>
+Patchwork-id: 8995
+O-Subject: [RHEL-6 qemu-kvm PATCH 1/9] qcow2: Fix access after end of array
+Bugzilla: 588762
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+Bugzilla: 588762
+
+If a write requests crosses a L2 table boundary and all clusters until the
+end of the L2 table are usable for the request, we must not look at the next
+L2 entry because we already have arrived at the end of the array.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 4805bb66969622f86376191c94c4748bce91e6be)
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block/qcow2-cluster.c |    8 ++++++--
+ 1 files changed, 6 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2-cluster.c |    8 ++++++--
+ 1 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/block/qcow2-cluster.c b/block/qcow2-cluster.c
+index 90fe040..9b3d686 100644
+--- a/block/qcow2-cluster.c
++++ b/block/qcow2-cluster.c
+@@ -764,12 +764,15 @@ int qcow2_alloc_cluster_offset(BlockDriverState *bs, uint64_t offset,
+     while (i < nb_clusters) {
+         i += count_contiguous_clusters(nb_clusters - i, s->cluster_size,
+                 &l2_table[l2_index], i, 0);
+-
+-        if(be64_to_cpu(l2_table[l2_index + i]))
++        if ((i >= nb_clusters) || be64_to_cpu(l2_table[l2_index + i])) {
+             break;
++        }
+ 
+         i += count_contiguous_free_clusters(nb_clusters - i,
+                 &l2_table[l2_index + i]);
++        if (i >= nb_clusters) {
++            break;
++        }
+ 
+         cluster_offset = be64_to_cpu(l2_table[l2_index + i]);
+ 
+@@ -777,6 +780,7 @@ int qcow2_alloc_cluster_offset(BlockDriverState *bs, uint64_t offset,
+                 (cluster_offset & QCOW_OFLAG_COMPRESSED))
+             break;
+     }
++    assert(i <= nb_clusters);
+     nb_clusters = i;
+ 
+     /*
+-- 
+1.7.0.3
+

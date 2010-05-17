@@ -1,0 +1,62 @@
+From 206b2587ea2596831782d23cc47080e608beb035 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 4 May 2010 13:30:36 -0300
+Subject: [PATCH 14/20] qcow2: Return 0/-errno in write_l1_entry
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1272979838-20032-8-git-send-email-kwolf@redhat.com>
+Patchwork-id: 9000
+O-Subject: [RHEL-6 qemu-kvm PATCH 7/9] qcow2: Return 0/-errno in write_l1_entry
+Bugzilla: 588762
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+Bugzilla: 588762
+
+Change write_l1_entry to return the real error code instead of -1.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit f7defcb62792eff05fa8a7ffec6a927a88087b83)
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block/qcow2-cluster.c |   10 +++++-----
+ 1 files changed, 5 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2-cluster.c |   10 +++++-----
+ 1 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/block/qcow2-cluster.c b/block/qcow2-cluster.c
+index d2774d1..d5c52a9 100644
+--- a/block/qcow2-cluster.c
++++ b/block/qcow2-cluster.c
+@@ -193,7 +193,7 @@ static int write_l1_entry(BDRVQcowState *s, int l1_index)
+ {
+     uint64_t buf[L1_ENTRIES_PER_SECTOR];
+     int l1_start_index;
+-    int i;
++    int i, ret;
+ 
+     l1_start_index = l1_index & ~(L1_ENTRIES_PER_SECTOR - 1);
+     for (i = 0; i < L1_ENTRIES_PER_SECTOR; i++) {
+@@ -201,10 +201,10 @@ static int write_l1_entry(BDRVQcowState *s, int l1_index)
+     }
+ 
+     BLKDBG_EVENT(s->hd, BLKDBG_L1_UPDATE);
+-    if (bdrv_pwrite(s->hd, s->l1_table_offset + 8 * l1_start_index,
+-        buf, sizeof(buf)) != sizeof(buf))
+-    {
+-        return -1;
++    ret = bdrv_pwrite(s->hd, s->l1_table_offset + 8 * l1_start_index,
++        buf, sizeof(buf));
++    if (ret < 0) {
++        return ret;
+     }
+ 
+     return 0;
+-- 
+1.7.0.3
+

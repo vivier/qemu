@@ -1,0 +1,90 @@
+From cdea9b8f0d643c66e6bfa422d7d5ab0dcc2c9a83 Mon Sep 17 00:00:00 2001
+From: Juan Quintela <quintela@redhat.com>
+Date: Tue, 11 May 2010 11:06:11 -0300
+Subject: [PATCH 17/20] Add qemu-error.o only once to target list
+
+RH-Author: Juan Quintela <quintela@redhat.com>
+Message-id: <1273575971-27776-1-git-send-email-quintela@redhat.com>
+Patchwork-id: 9177
+O-Subject: [PATCH] Add qemu-error.o only once to target list
+Bugzilla: 591061
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+This fixes the
+	make
+	make clean
+	make
+
+build problem.  Similar patch sent upstream, but there code is quite different
+bugzilla: 591061
+
+Signed-off-by: Juan Quintela <quintela@redhat.com>
+---
+ Makefile        |   15 ++++++++++-----
+ Makefile.target |    1 -
+ 2 files changed, 10 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile        |   15 ++++++++++-----
+ Makefile.target |    1 -
+ 2 files changed, 10 insertions(+), 6 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 2a395d4..fa04077 100644
+--- a/Makefile
++++ b/Makefile
+@@ -132,14 +132,17 @@ net-nested-$(CONFIG_VDE) += vde.o
+ net-obj-y += $(addprefix net/, $(net-nested-y))
+ 
+ ######################################################################
++# shared-obj-y has the object that are shared by qemu binary and tools
++shared-obj-y = qemu-error.o $(block-obj-y) $(qobject-obj-y)
++
++######################################################################
+ # libqemu_common.a: Target independent part of system emulation. The
+ # long term path is to suppress *all* target specific code in case of
+ # system emulation, i.e. a single QEMU executable should support all
+ # CPUs and machines.
+ 
+-obj-y = $(block-obj-y)
++obj-y = $(shared-obj-y)
+ obj-y += $(net-obj-y)
+-obj-y += $(qobject-obj-y)
+ obj-y += readline.o console.o
+ 
+ obj-y += tcg-runtime.o host-utils.o
+@@ -249,11 +252,13 @@ libqemu_common.a: $(obj-y)
+ 
+ qemu-img.o: qemu-img-cmds.h
+ 
+-qemu-img$(EXESUF): qemu-img.o qemu-tool.o qemu-error.o $(block-obj-y) $(qobject-obj-y)
++TOOLS_OBJ=qemu-tool.o $(shared-obj-y)
++
++qemu-img$(EXESUF): qemu-img.o $(TOOLS_OBJ)
+ 
+-qemu-nbd$(EXESUF): qemu-nbd.o qemu-tool.o qemu-error.o $(block-obj-y) $(qobject-obj-y)
++qemu-nbd$(EXESUF): qemu-nbd.o $(TOOLS_OBJ)
+ 
+-qemu-io$(EXESUF): qemu-io.o cmd.o qemu-tool.o qemu-error.o $(block-obj-y) $(qobject-obj-y)
++qemu-io$(EXESUF): qemu-io.o cmd.o $(TOOLS_OBJ)
+ 
+ qemu-img-cmds.h: $(SRC_PATH)/qemu-img-cmds.hx
+ 	$(call quiet-command,sh $(SRC_PATH)/hxtool -h < $< > $@,"  GEN   $@")
+diff --git a/Makefile.target b/Makefile.target
+index c514883..97b35f5 100644
+--- a/Makefile.target
++++ b/Makefile.target
+@@ -164,7 +164,6 @@ endif #CONFIG_BSD_USER
+ ifdef CONFIG_SOFTMMU
+ 
+ obj-y = vl.o async.o monitor.o pci.o pci_host.o pcie_host.o machine.o gdbstub.o
+-obj-y += qemu-error.o
+ # virtio has to be here due to weird dependency between PCI and virtio-net.
+ # need to fix this properly
+ obj-y += virtio-blk.o virtio-balloon.o virtio-net.o virtio-pci.o virtio-serial-bus.o
+-- 
+1.7.0.3
+
