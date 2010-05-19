@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.57%{?dist}
+Release: 2.58%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -948,6 +948,8 @@ Patch1459: kvm-block-Convert-bdrv_first-to-QTAILQ.patch
 Patch1460: kvm-block-Add-wr_highest_sector-blockstat.patch
 # For bz#582684 - Monitor: getfd command is broken
 Patch1461: kvm-stash-away-SCM_RIGHTS-fd-until-a-getfd-command-arriv.patch
+# For bz#582874 - Guest hangs during restart after hot unplug then hot plug physical NIC card
+Patch1462: kvm-Fix-segfault-after-device-assignment-hot-remove.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1473,6 +1475,7 @@ such as kvmtrace and kvm_stat.
 %patch1459 -p1
 %patch1460 -p1
 %patch1461 -p1
+%patch1462 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1671,6 +1674,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed May 19 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.58.el6
+- kvm-Fix-segfault-after-device-assignment-hot-remove.patch [bz#582874]
+- Resolves: bz#582874
+  (Guest hangs during restart after hot unplug then hot plug physical NIC card)
+
 * Wed May 19 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.57.el6
 - kvm-stash-away-SCM_RIGHTS-fd-until-a-getfd-command-arriv.patch [bz#582684]
 - Resolves: bz#582684

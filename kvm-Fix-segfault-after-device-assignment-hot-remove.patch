@@ -1,0 +1,51 @@
+From ae36732ed6e038562a21c8f993cc6591420bfd82 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Sun, 16 May 2010 19:05:51 -0300
+Subject: [PATCH] Fix segfault after device assignment hot remove
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100516190543.27313.14802.stgit@virtlab9.virt.bos.redhat.com>
+Patchwork-id: 9306
+O-Subject: [RHEL-6 qemu-kvm PATCH] Fix segfault after device assignment hot
+	remove
+Bugzilla: 582874
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+Bugzilla: 582874
+Upstream commit: f2691dddc5240f6ecfb170c8e171dce03c437db6
+
+We keep a qlist of assigned devices for irq updates, but we forgot to
+remove entries from it if they're hot unplugged.  This makes
+assigned_dev_update_irqs() a timebomb that goes off when the guest is
+rebooted.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+---
+
+ hw/device-assignment.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index 348e9dd..6c0af9e 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -1195,6 +1195,7 @@ static int assigned_exitfn(struct PCIDevice *pci_dev)
+ {
+     AssignedDevice *dev = DO_UPCAST(AssignedDevice, dev, pci_dev);
+ 
++    QLIST_REMOVE(dev, next);
+     deassign_device(dev);
+     free_assigned_device(dev);
+     return 0;
+-- 
+1.7.0.3
+
