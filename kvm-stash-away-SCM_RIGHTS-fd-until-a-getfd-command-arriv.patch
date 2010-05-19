@@ -1,0 +1,86 @@
+From 229ddaf464e5bdf97ffe89fd3befc0a2b479c246 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Fri, 7 May 2010 17:50:47 -0300
+Subject: [PATCH] stash away SCM_RIGHTS fd until a getfd command arrives
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <20100507145047.41f35f9a@redhat.com>
+Patchwork-id: 9117
+O-Subject: [PATCH RHEL6 qemu-kvm] stash away SCM_RIGHTS fd until a getfd
+	command arrives
+Bugzilla: 582684
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+Bugzilla: 582684
+
+If there is already a fd in s->msgfd before recvmsg it is
+closed by parts that this patch does not touch.  So, only
+one descriptor can be "leaked" by attaching it to a command
+other than getfd.
+
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+(cherry picked from commit e53f27b9d9df73461308618151fa6e6392aebd85)
+---
+ monitor.c   |    9 ---------
+ qemu-char.c |    9 +++------
+ 2 files changed, 3 insertions(+), 15 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c   |    9 ---------
+ qemu-char.c |    9 +++------
+ 2 files changed, 3 insertions(+), 15 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index d2ca9c6..0c866a5 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -2540,15 +2540,6 @@ static int do_getfd(Monitor *mon, const QDict *qdict, QObject **ret_data)
+         return -1;
+     }
+ 
+-    fd = dup(fd);
+-    if (fd == -1) {
+-        if (errno == EMFILE)
+-            qerror_report(QERR_TOO_MANY_FILES);
+-        else
+-            qerror_report(QERR_UNDEFINED_ERROR);
+-        return -1;
+-    }
+-
+     QLIST_FOREACH(monfd, &mon->fds, next) {
+         if (strcmp(monfd->name, fdname) != 0) {
+             continue;
+diff --git a/qemu-char.c b/qemu-char.c
+index 8a6112e..836bbc1 100644
+--- a/qemu-char.c
++++ b/qemu-char.c
+@@ -1980,8 +1980,9 @@ static void tcp_chr_process_IAC_bytes(CharDriverState *chr,
+ static int tcp_get_msgfd(CharDriverState *chr)
+ {
+     TCPCharDriver *s = chr->opaque;
+-
+-    return s->msgfd;
++    int fd = s->msgfd;
++    s->msgfd = -1;
++    return fd;
+ }
+ 
+ #ifndef _WIN32
+@@ -2069,10 +2070,6 @@ static void tcp_chr_read(void *opaque)
+             tcp_chr_process_IAC_bytes(chr, s, buf, &size);
+         if (size > 0)
+             qemu_chr_read(chr, buf, size);
+-        if (s->msgfd != -1) {
+-            close(s->msgfd);
+-            s->msgfd = -1;
+-        }
+     }
+ }
+ 
+-- 
+1.7.0.3
+

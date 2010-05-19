@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.56%{?dist}
+Release: 2.57%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -946,6 +946,8 @@ Patch1458: kvm-block-Do-not-export-bdrv_first.patch
 Patch1459: kvm-block-Convert-bdrv_first-to-QTAILQ.patch
 # For bz#590998 - qcow2 high watermark
 Patch1460: kvm-block-Add-wr_highest_sector-blockstat.patch
+# For bz#582684 - Monitor: getfd command is broken
+Patch1461: kvm-stash-away-SCM_RIGHTS-fd-until-a-getfd-command-arriv.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1470,6 +1472,7 @@ such as kvmtrace and kvm_stat.
 %patch1458 -p1
 %patch1459 -p1
 %patch1460 -p1
+%patch1461 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1668,6 +1671,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed May 19 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.57.el6
+- kvm-stash-away-SCM_RIGHTS-fd-until-a-getfd-command-arriv.patch [bz#582684]
+- Resolves: bz#582684
+  (Monitor: getfd command is broken)
+
 * Wed May 19 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.56.el6
 - kvm-dmg-fix-open-failure.patch [bz#580363]
 - kvm-block-get-rid-of-the-BDRV_O_FILE-flag.patch [bz#580363]
