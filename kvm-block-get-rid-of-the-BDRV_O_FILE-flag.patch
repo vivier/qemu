@@ -1,0 +1,152 @@
+From 81491bbfb140de2284e52ae8e4353a6d74cebc73 Mon Sep 17 00:00:00 2001
+From: Christoph Hellwig <chellwig@redhat.com>
+Date: Fri, 7 May 2010 15:50:09 -0300
+Subject: [PATCH 02/11] block: get rid of the BDRV_O_FILE flag
+
+RH-Author: Christoph Hellwig <chellwig@redhat.com>
+Message-id: <1273247415-28118-2-git-send-email-chellwig@redhat.com>
+Patchwork-id: 9103
+O-Subject: [RHEL6 qemu PATCH 2/8] block: get rid of the BDRV_O_FILE flag
+Bugzilla: 580363
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Christoph Hellwig <hch@lst.de>
+
+BDRV_O_FILE is only used to communicate between bdrv_file_open and bdrv_open.
+It affects two things:  first bdrv_open only searches for protocols using
+find_protocol instead of all image formats and host drivers.  We can easily
+move that to the caller and pass the found driver to bdrv_open.  Second
+it is used to not force a read-write open of a snapshot file.  But we never
+use bdrv_file_open to open snapshots and this behaviour doesn't make sense
+to start with.
+
+qemu-io abused the BDRV_O_FILE for it's growable option, switch it to
+using bdrv_file_open to make sure we only open files as growable were
+we can actually support that.
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+
+Upstream commit: 6db956039db8a6333265d458be561dc1bc2b4481
+Bugzilla: 580363
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c   |   19 +++++++++++--------
+ block.h   |    4 ----
+ qemu-io.c |   28 ++++++++++++++--------------
+ 3 files changed, 25 insertions(+), 26 deletions(-)
+
+diff --git a/block.c b/block.c
+index 3f64aee..7510c40 100644
+--- a/block.c
++++ b/block.c
+@@ -335,10 +335,16 @@ static BlockDriver *find_image_format(const char *filename)
+ int bdrv_file_open(BlockDriverState **pbs, const char *filename, int flags)
+ {
+     BlockDriverState *bs;
++    BlockDriver *drv;
+     int ret;
+ 
++    drv = find_protocol(filename);
++    if (!drv) {
++        return -ENOENT;
++    }
++
+     bs = bdrv_new("");
+-    ret = bdrv_open(bs, filename, flags | BDRV_O_FILE, NULL);
++    ret = bdrv_open(bs, filename, flags, drv);
+     if (ret < 0) {
+         bdrv_delete(bs);
+         return ret;
+@@ -416,9 +422,8 @@ int bdrv_open(BlockDriverState *bs, const char *filename, int flags,
+     }
+ 
+     pstrcpy(bs->filename, sizeof(bs->filename), filename);
+-    if (flags & BDRV_O_FILE) {
+-        drv = find_protocol(filename);
+-    } else if (!drv) {
++
++    if (!drv) {
+         drv = find_hdev_driver(filename);
+         if (!drv) {
+             drv = find_image_format(filename);
+@@ -450,14 +455,12 @@ int bdrv_open(BlockDriverState *bs, const char *filename, int flags,
+      * Clear flags that are internal to the block layer before opening the
+      * image.
+      */
+-    open_flags = flags & ~(BDRV_O_FILE | BDRV_O_SNAPSHOT | BDRV_O_NO_BACKING);
++    open_flags = flags & ~(BDRV_O_SNAPSHOT | BDRV_O_NO_BACKING);
+ 
+     /*
+      * Snapshots should be writeable.
+-     *
+-     * XXX(hch): and what is the point of a snapshot during a read-only open?
+      */
+-    if (!(flags & BDRV_O_FILE) && bs->is_temporary) {
++    if (bs->is_temporary) {
+         open_flags |= BDRV_O_RDWR;
+     }
+ 
+diff --git a/block.h b/block.h
+index f8ad779..065eb87 100644
+--- a/block.h
++++ b/block.h
+@@ -30,10 +30,6 @@ typedef struct QEMUSnapshotInfo {
+ #define BDRV_O_RDWR        0x0002
+ #define BDRV_O_CREAT       0x0004 /* create an empty file */
+ #define BDRV_O_SNAPSHOT    0x0008 /* open the file read only and save writes in a snapshot */
+-#define BDRV_O_FILE        0x0010 /* open as a raw file (do not try to
+-                                     use a disk image format on top of
+-                                     it (default for
+-                                     bdrv_file_open()) */
+ #define BDRV_O_NOCACHE     0x0020 /* do not use the host page cache */
+ #define BDRV_O_CACHE_WB    0x0040 /* use write-back caching */
+ #define BDRV_O_NATIVE_AIO  0x0080 /* use native AIO instead of the thread pool */
+diff --git a/qemu-io.c b/qemu-io.c
+index 12162da..0c66753 100644
+--- a/qemu-io.c
++++ b/qemu-io.c
+@@ -1274,23 +1274,23 @@ static int openfile(char *name, int flags, int growable)
+ 		return 1;
+ 	}
+ 
+-	bs = bdrv_new("hda");
+-	if (!bs)
+-		return 1;
+-
+ 	if (growable) {
+-		flags |= BDRV_O_FILE;
+-	}
+-
+-	if (bdrv_open(bs, name, flags, NULL) < 0) {
+-		fprintf(stderr, "%s: can't open device %s\n", progname, name);
+-		bs = NULL;
+-		return 1;
++		if (bdrv_file_open(&bs, name, flags)) {
++			fprintf(stderr, "%s: can't open device %s\n", progname, name);
++			return 1;
++		}
++	} else {
++		bs = bdrv_new("hda");
++		if (!bs)
++			return 1;
++
++		if (bdrv_open(bs, name, flags, NULL) < 0) {
++			fprintf(stderr, "%s: can't open device %s\n", progname, name);
++			bs = NULL;
++			return 1;
++		}
+ 	}
+ 
+-	if (growable) {
+-		bs->growable = 1;
+-	}
+ 	return 0;
+ }
+ 
+-- 
+1.7.0.3
+

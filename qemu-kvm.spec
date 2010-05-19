@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.55%{?dist}
+Release: 2.56%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -924,6 +924,28 @@ Patch1447: kvm-fix-CPUID-vendor-override.patch
 Patch1448: kvm-turn-off-kvmclock-when-resetting-cpu.patch
 # For bz#593369 - virtio-blk: Avoid zeroing every request structure
 Patch1449: kvm-virtio-blk-Avoid-zeroing-every-request-structure.patch
+# For bz#580363 - Error while creating raw image on block device
+Patch1450: kvm-dmg-fix-open-failure.patch
+# For bz#580363 - Error while creating raw image on block device
+Patch1451: kvm-block-get-rid-of-the-BDRV_O_FILE-flag.patch
+# For bz#580363 - Error while creating raw image on block device
+Patch1452: kvm-block-Convert-first_drv-to-QLIST.patch
+# For bz#580363 - Error while creating raw image on block device
+Patch1453: kvm-block-separate-raw-images-from-the-file-protocol.patch
+# For bz#580363 - Error while creating raw image on block device
+Patch1454: kvm-block-Split-bdrv_open.patch
+# For bz#580363 - Error while creating raw image on block device
+Patch1455: kvm-block-Avoid-forward-declaration-of-bdrv_open_common.patch
+# For bz#580363 - Error while creating raw image on block device
+Patch1456: kvm-block-Open-the-underlying-image-file-in-generic-code.patch
+# For bz#580363 - Error while creating raw image on block device
+Patch1457: kvm-block-bdrv_has_zero_init.patch
+# For bz#590998 - qcow2 high watermark
+Patch1458: kvm-block-Do-not-export-bdrv_first.patch
+# For bz#590998 - qcow2 high watermark
+Patch1459: kvm-block-Convert-bdrv_first-to-QTAILQ.patch
+# For bz#590998 - qcow2 high watermark
+Patch1460: kvm-block-Add-wr_highest_sector-blockstat.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1437,6 +1459,17 @@ such as kvmtrace and kvm_stat.
 %patch1447 -p1
 %patch1448 -p1
 %patch1449 -p1
+%patch1450 -p1
+%patch1451 -p1
+%patch1452 -p1
+%patch1453 -p1
+%patch1454 -p1
+%patch1455 -p1
+%patch1456 -p1
+%patch1457 -p1
+%patch1458 -p1
+%patch1459 -p1
+%patch1460 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1635,6 +1668,23 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed May 19 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.56.el6
+- kvm-dmg-fix-open-failure.patch [bz#580363]
+- kvm-block-get-rid-of-the-BDRV_O_FILE-flag.patch [bz#580363]
+- kvm-block-Convert-first_drv-to-QLIST.patch [bz#580363]
+- kvm-block-separate-raw-images-from-the-file-protocol.patch [bz#580363]
+- kvm-block-Split-bdrv_open.patch [bz#580363]
+- kvm-block-Avoid-forward-declaration-of-bdrv_open_common.patch [bz#580363]
+- kvm-block-Open-the-underlying-image-file-in-generic-code.patch [bz#580363]
+- kvm-block-bdrv_has_zero_init.patch [bz#580363]
+- kvm-block-Do-not-export-bdrv_first.patch [bz#590998]
+- kvm-block-Convert-bdrv_first-to-QTAILQ.patch [bz#590998]
+- kvm-block-Add-wr_highest_sector-blockstat.patch [bz#590998]
+- Resolves: bz#580363
+  (Error while creating raw image on block device)
+- Resolves: bz#590998
+  (qcow2 high watermark)
+
 * Wed May 19 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.55.el6
 - kvm-turn-off-kvmclock-when-resetting-cpu.patch [bz#588884]
 - kvm-virtio-blk-Avoid-zeroing-every-request-structure.patch [bz#593369]

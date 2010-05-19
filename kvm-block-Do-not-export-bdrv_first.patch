@@ -1,0 +1,149 @@
+From 6ca03f87c264d19ec7bab7233ebaf5ccc11b6a39 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Mon, 10 May 2010 17:28:37 -0300
+Subject: [PATCH 09/11] block: Do not export bdrv_first
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1273512519-16871-2-git-send-email-kwolf@redhat.com>
+Patchwork-id: 9135
+O-Subject: [RHEL-6 qemu-kvm PATCH 1/3] block: Do not export bdrv_first
+Bugzilla: 590998
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+The bdrv_first linked list of BlockDriverStates is currently extern so
+that block migration can iterate the list.  However, since there is
+already a bdrv_iterate() function there is no need to expose bdrv_first.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit b66460e4e938910b0e5495e6d3d7b2d5b3cf9c99)
+---
+ block-migration.c |   63 +++++++++++++++++++++++++++-------------------------
+ block.c           |    2 +-
+ block_int.h       |    2 -
+ 3 files changed, 34 insertions(+), 33 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block-migration.c |   63 +++++++++++++++++++++++++++-------------------------
+ block.c           |    2 +-
+ block_int.h       |    2 -
+ 3 files changed, 34 insertions(+), 33 deletions(-)
+
+diff --git a/block-migration.c b/block-migration.c
+index 258a88a..681c5ba 100644
+--- a/block-migration.c
++++ b/block-migration.c
+@@ -218,46 +218,49 @@ static void set_dirty_tracking(int enable)
+     }
+ }
+ 
+-static void init_blk_migration(Monitor *mon, QEMUFile *f)
++static void init_blk_migration_it(void *opaque, BlockDriverState *bs)
+ {
++    Monitor *mon = opaque;
+     BlkMigDevState *bmds;
+-    BlockDriverState *bs;
+     int64_t sectors;
+ 
++    if (bs->type == BDRV_TYPE_HD) {
++        sectors = bdrv_getlength(bs) >> BDRV_SECTOR_BITS;
++        if (sectors == 0) {
++            return;
++        }
++
++        bmds = qemu_mallocz(sizeof(BlkMigDevState));
++        bmds->bs = bs;
++        bmds->bulk_completed = 0;
++        bmds->total_sectors = sectors;
++        bmds->completed_sectors = 0;
++        bmds->shared_base = block_mig_state.shared_base;
++
++        block_mig_state.total_sector_sum += sectors;
++
++        if (bmds->shared_base) {
++            monitor_printf(mon, "Start migration for %s with shared base "
++                                "image\n",
++                           bs->device_name);
++        } else {
++            monitor_printf(mon, "Start full migration for %s\n",
++                           bs->device_name);
++        }
++
++        QSIMPLEQ_INSERT_TAIL(&block_mig_state.bmds_list, bmds, entry);
++    }
++}
++
++static void init_blk_migration(Monitor *mon, QEMUFile *f)
++{
+     block_mig_state.submitted = 0;
+     block_mig_state.read_done = 0;
+     block_mig_state.transferred = 0;
+     block_mig_state.total_sector_sum = 0;
+     block_mig_state.prev_progress = -1;
+ 
+-    for (bs = bdrv_first; bs != NULL; bs = bs->next) {
+-        if (bs->type == BDRV_TYPE_HD) {
+-            sectors = bdrv_getlength(bs) >> BDRV_SECTOR_BITS;
+-            if (sectors == 0) {
+-                continue;
+-            }
+-
+-            bmds = qemu_mallocz(sizeof(BlkMigDevState));
+-            bmds->bs = bs;
+-            bmds->bulk_completed = 0;
+-            bmds->total_sectors = sectors;
+-            bmds->completed_sectors = 0;
+-            bmds->shared_base = block_mig_state.shared_base;
+-
+-            block_mig_state.total_sector_sum += sectors;
+-
+-            if (bmds->shared_base) {
+-                monitor_printf(mon, "Start migration for %s with shared base "
+-                                    "image\n",
+-                               bs->device_name);
+-            } else {
+-                monitor_printf(mon, "Start full migration for %s\n",
+-                               bs->device_name);
+-            }
+-
+-            QSIMPLEQ_INSERT_TAIL(&block_mig_state.bmds_list, bmds, entry);
+-        }
+-    }
++    bdrv_iterate(init_blk_migration_it, mon);
+ }
+ 
+ static int blk_mig_save_bulked_block(Monitor *mon, QEMUFile *f, int is_async)
+diff --git a/block.c b/block.c
+index e551ddb..03bf3f0 100644
+--- a/block.c
++++ b/block.c
+@@ -56,7 +56,7 @@ static int bdrv_write_em(BlockDriverState *bs, int64_t sector_num,
+                          const uint8_t *buf, int nb_sectors);
+ static BlockDriver *find_protocol(const char *filename);
+ 
+-BlockDriverState *bdrv_first;
++static BlockDriverState *bdrv_first;
+ 
+ static QLIST_HEAD(, BlockDriver) bdrv_drivers =
+     QLIST_HEAD_INITIALIZER(bdrv_drivers);
+diff --git a/block_int.h b/block_int.h
+index b008503..4176e8a 100644
+--- a/block_int.h
++++ b/block_int.h
+@@ -202,8 +202,6 @@ void qemu_aio_release(void *p);
+ 
+ void *qemu_blockalign(BlockDriverState *bs, size_t size);
+ 
+-extern BlockDriverState *bdrv_first;
+-
+ #ifdef _WIN32
+ int is_windows_drive(const char *filename);
+ #endif
+-- 
+1.7.0.3
+

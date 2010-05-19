@@ -1,0 +1,103 @@
+From b56be87ffda890f7b9c0af385f29fd79597aa552 Mon Sep 17 00:00:00 2001
+From: Christoph Hellwig <chellwig@redhat.com>
+Date: Fri, 7 May 2010 15:50:15 -0300
+Subject: [PATCH 08/11] block: bdrv_has_zero_init
+
+RH-Author: Christoph Hellwig <chellwig@redhat.com>
+Message-id: <1273247415-28118-8-git-send-email-chellwig@redhat.com>
+Patchwork-id: 9107
+O-Subject: [RHEL6 qemu PATCH 8/8] block: bdrv_has_zero_init
+Bugzilla: 580363
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Kevin Wolf <kwolf@redhat.com>
+
+This fixes the problem that qemu-img's use of no_zero_init only considered the
+no_zero_init flag of the format driver, but not of the underlying protocols.
+
+Between the raw/file split and this fix, converting to host devices is broken.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+
+Upstream commit: f2feebbd93c251ec0098a9ccf808f7cb1da7f67c
+Bugzilla: 580363
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c    |   13 +++++++++++++
+ block.h    |    1 +
+ qemu-img.c |    6 ++++--
+ 3 files changed, 18 insertions(+), 2 deletions(-)
+
+diff --git a/block.c b/block.c
+index f7b6033..e551ddb 100644
+--- a/block.c
++++ b/block.c
+@@ -1279,6 +1279,19 @@ void bdrv_flush_all(void)
+             bdrv_flush(bs);
+ }
+ 
++int bdrv_has_zero_init(BlockDriverState *bs)
++{
++    assert(bs->drv);
++
++    if (bs->drv->no_zero_init) {
++        return 0;
++    } else if (bs->file) {
++        return bdrv_has_zero_init(bs->file);
++    }
++
++    return 1;
++}
++
+ /*
+  * Returns true iff the specified sector is present in the disk image. Drivers
+  * not implementing the functionality are assumed to not support backing files,
+diff --git a/block.h b/block.h
+index 9deee98..223caf7 100644
+--- a/block.h
++++ b/block.h
+@@ -127,6 +127,7 @@ BlockDriverAIOCB *bdrv_aio_ioctl(BlockDriverState *bs,
+ void bdrv_flush(BlockDriverState *bs);
+ void bdrv_flush_all(void);
+ 
++int bdrv_has_zero_init(BlockDriverState *bs);
+ int bdrv_is_allocated(BlockDriverState *bs, int64_t sector_num, int nb_sectors,
+ 	int *pnum);
+ 
+diff --git a/qemu-img.c b/qemu-img.c
+index 9569d96..7d2a4f2 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -761,6 +761,8 @@ static int img_convert(int argc, char **argv)
+         /* signal EOF to align */
+         bdrv_write_compressed(out_bs, 0, NULL, 0);
+     } else {
++        int has_zero_init = bdrv_has_zero_init(out_bs);
++
+         sector_num = 0; // total number of sectors converted so far
+         for(;;) {
+             nb_sectors = total_sectors - sector_num;
+@@ -784,7 +786,7 @@ static int img_convert(int argc, char **argv)
+             if (n > bs_offset + bs_sectors - sector_num)
+                 n = bs_offset + bs_sectors - sector_num;
+ 
+-            if (!drv->no_zero_init) {
++            if (has_zero_init) {
+                 /* If the output image is being created as a copy on write image,
+                    assume that sectors which are unallocated in the input image
+                    are present in both the output's and input's base images (no
+@@ -817,7 +819,7 @@ static int img_convert(int argc, char **argv)
+                    If the output is to a host device, we also write out
+                    sectors that are entirely 0, since whatever data was
+                    already there is garbage, not 0s. */
+-                if (drv->no_zero_init || out_baseimg ||
++                if (!has_zero_init || out_baseimg ||
+                     is_allocated_sectors(buf1, n, &n1)) {
+                     if (bdrv_write(out_bs, sector_num, buf1, n1) < 0)
+                         error("error while writing");
+-- 
+1.7.0.3
+

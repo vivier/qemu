@@ -1,0 +1,511 @@
+From 99f54424699078378fb82c8118d13b69dd7fb7e6 Mon Sep 17 00:00:00 2001
+From: Christoph Hellwig <chellwig@redhat.com>
+Date: Fri, 7 May 2010 15:50:11 -0300
+Subject: [PATCH 04/11] block: separate raw images from the file protocol
+
+RH-Author: Christoph Hellwig <chellwig@redhat.com>
+Message-id: <1273247415-28118-4-git-send-email-chellwig@redhat.com>
+Patchwork-id: 9105
+O-Subject: [RHEL6 qemu PATCH 4/8] block: separate raw images from the file
+	protocol
+Bugzilla: 580363
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Christoph Hellwig <hch@lst.de>
+
+We're running into various problems because the "raw" file access, which
+is used internally by the various image formats is entangled with the
+"raw" image format, which maps the VM view 1:1 to a file system.
+
+This patch renames the raw file backends to the file protocol which
+is treated like other protocols (e.g. nbd and http) and adds a new
+"raw" image format which is just a wrapper around calls to the underlying
+protocol.
+
+The patch is surprisingly simple, besides changing the probing logical
+in block.c to only look for image formats when using bdrv_open and
+renaming of the old raw protocols to file there's almost nothing in there.
+
+For creating images, a new bdrv_create_file is introduced which guesses the
+protocol to use. This allows using qemu-img create -f raw (or just using the
+default) for both files and host devices. Converting the other format drivers
+to use this function to create their images is left for later patches.
+
+The only issues still open are in the handling of the host devices.
+Firstly in current qemu we can specifiy the host* format names
+on various command line acceping images, but the new code can't
+do that without adding some translation.  Second the layering breaks
+the no_zero_init flag in the BlockDriver used by qemu-img.  I'm not
+happy how this is done per-driver instead of per-state so I'll
+prepare a separate patch to clean this up.
+
+There's some more cleanup opportunity after this patch, e.g. using
+separate lists and registration functions for image formats vs
+protocols and maybe even host drivers, but this can be done at a
+later stage.
+
+Also there's a check for protocol in bdrv_open for the BDRV_O_SNAPSHOT
+case that I don't quite understand, but which I fear won't work as
+expected - possibly even before this patch.
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+
+Upstream commit: 84a12e6648444f517055138a7d7f25a22d7e1029
+Bugzilla: 580363
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile          |    2 +-
+ block.c           |   74 ++++++++++++++---------
+ block.h           |    1 +
+ block/raw-posix.c |   15 +++--
+ block/raw-win32.c |   12 ++--
+ block/raw.c       |  171 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 6 files changed, 235 insertions(+), 40 deletions(-)
+ create mode 100644 block/raw.c
+
+diff --git a/Makefile b/Makefile
+index fa04077..4e1391c 100644
+--- a/Makefile
++++ b/Makefile
+@@ -108,7 +108,7 @@ block-obj-$(CONFIG_POSIX) += posix-aio-compat.o
+ block-obj-$(CONFIG_LINUX_AIO) += linux-aio.o
+ block-obj-$(CONFIG_POSIX) += compatfd.o
+ 
+-block-nested-y += cow.o qcow.o vdi.o vmdk.o cloop.o dmg.o bochs.o vpc.o vvfat.o
++block-nested-y += raw.o cow.o qcow.o vdi.o vmdk.o cloop.o dmg.o bochs.o vpc.o vvfat.o
+ block-nested-y += qcow2.o qcow2-refcount.o qcow2-cluster.o qcow2-snapshot.o
+ block-nested-y += parallels.o nbd.o blkdebug.o
+ block-nested-$(CONFIG_WIN32) += raw-win32.o
+diff --git a/block.c b/block.c
+index 42ad4ba..0a1215c 100644
+--- a/block.c
++++ b/block.c
+@@ -54,6 +54,7 @@ static int bdrv_read_em(BlockDriverState *bs, int64_t sector_num,
+                         uint8_t *buf, int nb_sectors);
+ static int bdrv_write_em(BlockDriverState *bs, int64_t sector_num,
+                          const uint8_t *buf, int nb_sectors);
++static BlockDriver *find_protocol(const char *filename);
+ 
+ BlockDriverState *bdrv_first;
+ 
+@@ -206,6 +207,18 @@ int bdrv_create(BlockDriver *drv, const char* filename,
+     return drv->bdrv_create(filename, options);
+ }
+ 
++int bdrv_create_file(const char* filename, QEMUOptionParameter *options)
++{
++    BlockDriver *drv;
++
++    drv = find_protocol(filename);
++    if (drv == NULL) {
++        drv = bdrv_find_format("file");
++    }
++
++    return bdrv_create(drv, filename, options);
++}
++
+ #ifdef _WIN32
+ void get_tmp_filename(char *filename, int size)
+ {
+@@ -249,6 +262,28 @@ int is_windows_drive(const char *filename)
+ }
+ #endif
+ 
++/*
++ * Detect host devices. By convention, /dev/cdrom[N] is always
++ * recognized as a host CDROM.
++ */
++static BlockDriver *find_hdev_driver(const char *filename)
++{
++    int score_max = 0, score;
++    BlockDriver *drv = NULL, *d;
++
++    QLIST_FOREACH(d, &bdrv_drivers, list) {
++        if (d->bdrv_probe_device) {
++            score = d->bdrv_probe_device(filename);
++            if (score > score_max) {
++                score_max = score;
++                drv = d;
++            }
++        }
++    }
++
++    return drv;
++}
++
+ static BlockDriver *find_protocol(const char *filename)
+ {
+     BlockDriver *drv1;
+@@ -259,11 +294,16 @@ static BlockDriver *find_protocol(const char *filename)
+ #ifdef _WIN32
+     if (is_windows_drive(filename) ||
+         is_windows_drive_prefix(filename))
+-        return bdrv_find_format("raw");
++        return bdrv_find_format("file");
+ #endif
+     p = strchr(filename, ':');
+-    if (!p)
+-        return bdrv_find_format("raw");
++    if (!p) {
++        drv1 = find_hdev_driver(filename);
++        if (!drv1) {
++            drv1 = bdrv_find_format("file");
++        }
++        return drv1;
++    }
+     len = p - filename;
+     if (len > sizeof(protocol) - 1)
+         len = sizeof(protocol) - 1;
+@@ -278,28 +318,6 @@ static BlockDriver *find_protocol(const char *filename)
+     return NULL;
+ }
+ 
+-/*
+- * Detect host devices. By convention, /dev/cdrom[N] is always
+- * recognized as a host CDROM.
+- */
+-static BlockDriver *find_hdev_driver(const char *filename)
+-{
+-    int score_max = 0, score;
+-    BlockDriver *drv = NULL, *d;
+-
+-    QLIST_FOREACH(d, &bdrv_drivers, list) {
+-        if (d->bdrv_probe_device) {
+-            score = d->bdrv_probe_device(filename);
+-            if (score > score_max) {
+-                score_max = score;
+-                drv = d;
+-            }
+-        }
+-    }
+-
+-    return drv;
+-}
+-
+ static BlockDriver *find_image_format(const char *filename)
+ {
+     int ret, score, score_max;
+@@ -322,6 +340,7 @@ static BlockDriver *find_image_format(const char *filename)
+     }
+ 
+     score_max = 0;
++    drv = NULL;
+     QLIST_FOREACH(drv1, &bdrv_drivers, list) {
+         if (drv1->bdrv_probe) {
+             score = drv1->bdrv_probe(buf, ret, filename);
+@@ -426,10 +445,7 @@ int bdrv_open(BlockDriverState *bs, const char *filename, int flags,
+     pstrcpy(bs->filename, sizeof(bs->filename), filename);
+ 
+     if (!drv) {
+-        drv = find_hdev_driver(filename);
+-        if (!drv) {
+-            drv = find_image_format(filename);
+-        }
++        drv = find_image_format(filename);
+     }
+ 
+     if (!drv) {
+diff --git a/block.h b/block.h
+index 065eb87..9deee98 100644
+--- a/block.h
++++ b/block.h
+@@ -58,6 +58,7 @@ BlockDriver *bdrv_find_format(const char *format_name);
+ BlockDriver *bdrv_find_whitelisted_format(const char *format_name);
+ int bdrv_create(BlockDriver *drv, const char* filename,
+     QEMUOptionParameter *options);
++int bdrv_create_file(const char* filename, QEMUOptionParameter *options);
+ int bdrv_create2(BlockDriver *drv,
+                  const char *filename, int64_t size_in_sectors,
+                  const char *backing_file, const char *backing_format,
+diff --git a/block/raw-posix.c b/block/raw-posix.c
+index fc36b17..3c839e5 100644
+--- a/block/raw-posix.c
++++ b/block/raw-posix.c
+@@ -752,8 +752,9 @@ static QEMUOptionParameter raw_create_options[] = {
+     { NULL }
+ };
+ 
+-static BlockDriver bdrv_raw = {
+-    .format_name = "raw",
++static BlockDriver bdrv_file = {
++    .format_name = "file",
++    .protocol_name = "file",
+     .instance_size = sizeof(BDRVRawState),
+     .bdrv_probe = NULL, /* no probe for protocols */
+     .bdrv_open = raw_open,
+@@ -1010,6 +1011,7 @@ static int hdev_create(const char *filename, QEMUOptionParameter *options)
+ 
+ static BlockDriver bdrv_host_device = {
+     .format_name        = "host_device",
++    .protocol_name        = "host_device",
+     .instance_size      = sizeof(BDRVRawState),
+     .bdrv_probe_device  = hdev_probe_device,
+     .bdrv_open          = hdev_open,
+@@ -1107,6 +1109,7 @@ static int floppy_eject(BlockDriverState *bs, int eject_flag)
+ 
+ static BlockDriver bdrv_host_floppy = {
+     .format_name        = "host_floppy",
++    .protocol_name      = "host_floppy",
+     .instance_size      = sizeof(BDRVRawState),
+     .bdrv_probe_device	= floppy_probe_device,
+     .bdrv_open          = floppy_open,
+@@ -1190,6 +1193,7 @@ static int cdrom_set_locked(BlockDriverState *bs, int locked)
+ 
+ static BlockDriver bdrv_host_cdrom = {
+     .format_name        = "host_cdrom",
++    .protocol_name      = "host_cdrom",
+     .instance_size      = sizeof(BDRVRawState),
+     .bdrv_probe_device	= cdrom_probe_device,
+     .bdrv_open          = cdrom_open,
+@@ -1312,6 +1316,7 @@ static int cdrom_set_locked(BlockDriverState *bs, int locked)
+ 
+ static BlockDriver bdrv_host_cdrom = {
+     .format_name        = "host_cdrom",
++    .protocol_name      = "host_cdrom",
+     .instance_size      = sizeof(BDRVRawState),
+     .bdrv_probe_device	= cdrom_probe_device,
+     .bdrv_open          = cdrom_open,
+@@ -1336,13 +1341,13 @@ static BlockDriver bdrv_host_cdrom = {
+ };
+ #endif /* __FreeBSD__ */
+ 
+-static void bdrv_raw_init(void)
++static void bdrv_file_init(void)
+ {
+     /*
+      * Register all the drivers.  Note that order is important, the driver
+      * registered last will get probed first.
+      */
+-    bdrv_register(&bdrv_raw);
++    bdrv_register(&bdrv_file);
+     bdrv_register(&bdrv_host_device);
+ #ifdef __linux__
+     bdrv_register(&bdrv_host_floppy);
+@@ -1353,4 +1358,4 @@ static void bdrv_raw_init(void)
+ #endif
+ }
+ 
+-block_init(bdrv_raw_init);
++block_init(bdrv_file_init);
+diff --git a/block/raw-win32.c b/block/raw-win32.c
+index 01a6d25..839e3e9 100644
+--- a/block/raw-win32.c
++++ b/block/raw-win32.c
+@@ -242,8 +242,9 @@ static QEMUOptionParameter raw_create_options[] = {
+     { NULL }
+ };
+ 
+-static BlockDriver bdrv_raw = {
+-    .format_name	= "raw",
++static BlockDriver bdrv_file = {
++    .format_name	= "file",
++    .protocol_name	= "file",
+     .instance_size	= sizeof(BDRVRawState),
+     .bdrv_open		= raw_open,
+     .bdrv_close		= raw_close,
+@@ -399,6 +400,7 @@ static int raw_set_locked(BlockDriverState *bs, int locked)
+ 
+ static BlockDriver bdrv_host_device = {
+     .format_name	= "host_device",
++    .protocol_name	= "host_device",
+     .instance_size	= sizeof(BDRVRawState),
+     .bdrv_probe_device	= hdev_probe_device,
+     .bdrv_open		= hdev_open,
+@@ -410,10 +412,10 @@ static BlockDriver bdrv_host_device = {
+     .bdrv_getlength	= raw_getlength,
+ };
+ 
+-static void bdrv_raw_init(void)
++static void bdrv_file_init(void)
+ {
+-    bdrv_register(&bdrv_raw);
++    bdrv_register(&bdrv_file);
+     bdrv_register(&bdrv_host_device);
+ }
+ 
+-block_init(bdrv_raw_init);
++block_init(bdrv_file_init);
+diff --git a/block/raw.c b/block/raw.c
+new file mode 100644
+index 0000000..953e285
+--- /dev/null
++++ b/block/raw.c
+@@ -0,0 +1,171 @@
++
++#include "qemu-common.h"
++#include "block_int.h"
++#include "module.h"
++
++typedef struct RAWState {
++    BlockDriverState *hd;
++} RAWState;
++
++static int raw_open(BlockDriverState *bs, const char *filename, int flags)
++{
++    RAWState *s = bs->opaque;
++    int ret;
++
++    ret = bdrv_file_open(&s->hd, filename, flags);
++    if (!ret) {
++        bs->sg = s->hd->sg;
++    }
++
++    return ret;
++}
++
++static int raw_read(BlockDriverState *bs, int64_t sector_num,
++                    uint8_t *buf, int nb_sectors)
++{
++    RAWState *s = bs->opaque;
++    return bdrv_read(s->hd, sector_num, buf, nb_sectors);
++}
++
++static int raw_write(BlockDriverState *bs, int64_t sector_num,
++                     const uint8_t *buf, int nb_sectors)
++{
++    RAWState *s = bs->opaque;
++    return bdrv_write(s->hd, sector_num, buf, nb_sectors);
++}
++
++static BlockDriverAIOCB *raw_aio_readv(BlockDriverState *bs,
++    int64_t sector_num, QEMUIOVector *qiov, int nb_sectors,
++    BlockDriverCompletionFunc *cb, void *opaque)
++{
++    RAWState *s = bs->opaque;
++
++    return bdrv_aio_readv(s->hd, sector_num, qiov, nb_sectors, cb, opaque);
++}
++
++static BlockDriverAIOCB *raw_aio_writev(BlockDriverState *bs,
++    int64_t sector_num, QEMUIOVector *qiov, int nb_sectors,
++    BlockDriverCompletionFunc *cb, void *opaque)
++{
++    RAWState *s = bs->opaque;
++
++    return bdrv_aio_writev(s->hd, sector_num, qiov, nb_sectors, cb, opaque);
++}
++
++static void raw_close(BlockDriverState *bs)
++{
++    RAWState *s = bs->opaque;
++    bdrv_delete(s->hd);
++}
++
++static void raw_flush(BlockDriverState *bs)
++{
++    RAWState *s = bs->opaque;
++    bdrv_flush(s->hd);
++}
++
++static BlockDriverAIOCB *raw_aio_flush(BlockDriverState *bs,
++    BlockDriverCompletionFunc *cb, void *opaque)
++{
++    RAWState *s = bs->opaque;
++    return bdrv_aio_flush(s->hd, cb, opaque);
++}
++
++static int64_t raw_getlength(BlockDriverState *bs)
++{
++    RAWState *s = bs->opaque;
++    return bdrv_getlength(s->hd);
++}
++
++static int raw_truncate(BlockDriverState *bs, int64_t offset)
++{
++    RAWState *s = bs->opaque;
++    return bdrv_truncate(s->hd, offset);
++}
++
++static int raw_probe(const uint8_t *buf, int buf_size, const char *filename)
++{
++   return 1; /* everything can be opened as raw image */
++}
++
++static int raw_is_inserted(BlockDriverState *bs)
++{
++    RAWState *s = bs->opaque;
++    return bdrv_is_inserted(s->hd);
++}
++
++static int raw_eject(BlockDriverState *bs, int eject_flag)
++{
++    RAWState *s = bs->opaque;
++    return bdrv_eject(s->hd, eject_flag);
++}
++
++static int raw_set_locked(BlockDriverState *bs, int locked)
++{
++    RAWState *s = bs->opaque;
++    bdrv_set_locked(s->hd, locked);
++    return 0;
++}
++
++static int raw_ioctl(BlockDriverState *bs, unsigned long int req, void *buf)
++{
++   RAWState *s = bs->opaque;
++   return bdrv_ioctl(s->hd, req, buf);
++}
++
++static BlockDriverAIOCB *raw_aio_ioctl(BlockDriverState *bs,
++        unsigned long int req, void *buf,
++        BlockDriverCompletionFunc *cb, void *opaque)
++{
++   RAWState *s = bs->opaque;
++   return bdrv_aio_ioctl(s->hd, req, buf, cb, opaque);
++}
++
++static int raw_create(const char *filename, QEMUOptionParameter *options)
++{
++    return bdrv_create_file(filename, options);
++}
++
++static QEMUOptionParameter raw_create_options[] = {
++    {
++        .name = BLOCK_OPT_SIZE,
++        .type = OPT_SIZE,
++        .help = "Virtual disk size"
++    },
++    { NULL }
++};
++
++static BlockDriver bdrv_raw = {
++    .format_name        = "raw",
++
++    .instance_size      = sizeof(RAWState),
++
++    .bdrv_open          = raw_open,
++    .bdrv_close         = raw_close,
++    .bdrv_read          = raw_read,
++    .bdrv_write         = raw_write,
++    .bdrv_flush         = raw_flush,
++    .bdrv_probe         = raw_probe,
++    .bdrv_getlength     = raw_getlength,
++    .bdrv_truncate      = raw_truncate,
++
++    .bdrv_aio_readv     = raw_aio_readv,
++    .bdrv_aio_writev    = raw_aio_writev,
++    .bdrv_aio_flush     = raw_aio_flush,
++
++    .bdrv_is_inserted   = raw_is_inserted,
++    .bdrv_eject         = raw_eject,
++    .bdrv_set_locked    = raw_set_locked,
++    .bdrv_ioctl         = raw_ioctl,
++    .bdrv_aio_ioctl     = raw_aio_ioctl,
++
++    .bdrv_create        = raw_create,
++    .create_options     = raw_create_options,
++};
++
++static void bdrv_raw_init(void)
++{
++    bdrv_register(&bdrv_raw);
++}
++
++block_init(bdrv_raw_init);
+-- 
+1.7.0.3
+

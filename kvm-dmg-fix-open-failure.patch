@@ -1,0 +1,113 @@
+From 0a7220f1a0f22ac2c3df4c3b514b7eacde9e7c6c Mon Sep 17 00:00:00 2001
+From: Christoph Hellwig <chellwig@redhat.com>
+Date: Fri, 7 May 2010 15:50:08 -0300
+Subject: [PATCH 01/11] dmg: fix ->open failure
+
+RH-Author: Christoph Hellwig <chellwig@redhat.com>
+Message-id: <1273247415-28118-1-git-send-email-chellwig@redhat.com>
+Patchwork-id: 9101
+O-Subject: [RHEL6 qemu PATCH 1/8] dmg: fix ->open failure
+Bugzilla: 580363
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Christoph Hellwig <hch@lst.de>
+
+Currently the dmg image format driver simply opens the images as raw
+if any kind of failure happens.  This is contrarty to the behaviour
+of all other image formats which just return an error and let the
+block core deal with it.
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+
+Upstream commit: 1559ca00bc90ce6917c2798ed81098e4be67f58e
+Bugzilla: 580363
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/dmg.c |   28 ++++++++++++++--------------
+ 1 files changed, 14 insertions(+), 14 deletions(-)
+
+diff --git a/block/dmg.c b/block/dmg.c
+index 262560f..f4c01c7 100644
+--- a/block/dmg.c
++++ b/block/dmg.c
+@@ -90,24 +90,21 @@ static int dmg_open(BlockDriverState *bs, const char *filename, int flags)
+ 
+     /* read offset of info blocks */
+     if(lseek(s->fd,-0x1d8,SEEK_END)<0) {
+-dmg_close:
+-	close(s->fd);
+-	/* open raw instead */
+-	bs->drv=bdrv_find_format("raw");
+-	return bs->drv->bdrv_open(bs, filename, flags);
++        goto fail;
+     }
++
+     info_begin=read_off(s->fd);
+     if(info_begin==0)
+-	goto dmg_close;
++	goto fail;
+     if(lseek(s->fd,info_begin,SEEK_SET)<0)
+-	goto dmg_close;
++	goto fail;
+     if(read_uint32(s->fd)!=0x100)
+-	goto dmg_close;
++	goto fail;
+     if((count = read_uint32(s->fd))==0)
+-	goto dmg_close;
++	goto fail;
+     info_end = info_begin+count;
+     if(lseek(s->fd,0xf8,SEEK_CUR)<0)
+-	goto dmg_close;
++	goto fail;
+ 
+     /* read offsets */
+     last_in_offset = last_out_offset = 0;
+@@ -116,14 +113,14 @@ dmg_close:
+ 
+ 	count = read_uint32(s->fd);
+ 	if(count==0)
+-	    goto dmg_close;
++	    goto fail;
+ 	type = read_uint32(s->fd);
+ 	if(type!=0x6d697368 || count<244)
+ 	    lseek(s->fd,count-4,SEEK_CUR);
+ 	else {
+ 	    int new_size, chunk_count;
+ 	    if(lseek(s->fd,200,SEEK_CUR)<0)
+-	        goto dmg_close;
++	        goto fail;
+ 	    chunk_count = (count-204)/40;
+ 	    new_size = sizeof(uint64_t) * (s->n_chunks + chunk_count);
+ 	    s->types = qemu_realloc(s->types, new_size/2);
+@@ -142,7 +139,7 @@ dmg_close:
+ 		    chunk_count--;
+ 		    i--;
+ 		    if(lseek(s->fd,36,SEEK_CUR)<0)
+-			goto dmg_close;
++			goto fail;
+ 		    continue;
+ 		}
+ 		read_uint32(s->fd);
+@@ -163,11 +160,14 @@ dmg_close:
+     s->compressed_chunk = qemu_malloc(max_compressed_size+1);
+     s->uncompressed_chunk = qemu_malloc(512*max_sectors_per_chunk);
+     if(inflateInit(&s->zstream) != Z_OK)
+-	goto dmg_close;
++	goto fail;
+ 
+     s->current_chunk = s->n_chunks;
+ 
+     return 0;
++fail:
++    close(s->fd);
++    return -1;
+ }
+ 
+ static inline int is_sector_in_chunk(BDRVDMGState* s,
+-- 
+1.7.0.3
+
