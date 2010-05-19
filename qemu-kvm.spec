@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.58%{?dist}
+Release: 2.59%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -950,6 +950,10 @@ Patch1460: kvm-block-Add-wr_highest_sector-blockstat.patch
 Patch1461: kvm-stash-away-SCM_RIGHTS-fd-until-a-getfd-command-arriv.patch
 # For bz#582874 - Guest hangs during restart after hot unplug then hot plug physical NIC card
 Patch1462: kvm-Fix-segfault-after-device-assignment-hot-remove.patch
+# For bz#590884 - bogus 'info pci' state when hot-added assigned device fails to initialize
+Patch1463: kvm-pci-cleanly-backout-of-pci_qdev_init.patch
+# For bz#593287 - Failed asserting during ide_dma_cancel
+Patch1464: kvm-ide-Fix-ide_dma_cancel.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1476,6 +1480,8 @@ such as kvmtrace and kvm_stat.
 %patch1460 -p1
 %patch1461 -p1
 %patch1462 -p1
+%patch1463 -p1
+%patch1464 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1674,6 +1680,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed May 19 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.59.el6
+- kvm-pci-cleanly-backout-of-pci_qdev_init.patch [bz#590884]
+- kvm-ide-Fix-ide_dma_cancel.patch [bz#593287]
+- Resolves: bz#590884
+  (bogus 'info pci' state when hot-added assigned device fails to initialize)
+- Resolves: bz#593287
+  (Failed asserting during ide_dma_cancel)
+
 * Wed May 19 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.58.el6
 - kvm-Fix-segfault-after-device-assignment-hot-remove.patch [bz#582874]
 - Resolves: bz#582874

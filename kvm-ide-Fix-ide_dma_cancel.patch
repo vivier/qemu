@@ -1,0 +1,62 @@
+From 2a6ba2f3f9492f480616d18efe08a8e583e4b15f Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 18 May 2010 12:47:08 -0300
+Subject: [PATCH 2/2] ide: Fix ide_dma_cancel
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1274186828-9142-1-git-send-email-kwolf@redhat.com>
+Patchwork-id: 9339
+O-Subject: [RHEL-6 qemu-kvm PATCH] ide: Fix ide_dma_cancel
+Bugzilla: 593287
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 593287
+
+When cancelling a request, bdrv_aio_cancel may decide that it waits for
+completion of a request rather than for cancellation. IDE therefore can't
+abandon its DMA status before calling bdrv_aio_cancel; otherwise the callback
+of a completed request would use invalid data.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 38d8dfa193e9a45f0f08b06aab2ba2a94f40a041)
+---
+ hw/ide/core.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/ide/core.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index ec55894..e5c0db2 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -2837,10 +2837,6 @@ static void ide_dma_restart(IDEState *s, int is_read)
+ void ide_dma_cancel(BMDMAState *bm)
+ {
+     if (bm->status & BM_STATUS_DMAING) {
+-        bm->status &= ~BM_STATUS_DMAING;
+-        /* cancel DMA request */
+-        bm->unit = -1;
+-        bm->dma_cb = NULL;
+         if (bm->aiocb) {
+ #ifdef DEBUG_AIO
+             printf("aio_cancel\n");
+@@ -2848,6 +2844,10 @@ void ide_dma_cancel(BMDMAState *bm)
+             bdrv_aio_cancel(bm->aiocb);
+             bm->aiocb = NULL;
+         }
++        bm->status &= ~BM_STATUS_DMAING;
++        /* cancel DMA request */
++        bm->unit = -1;
++        bm->dma_cb = NULL;
+     }
+ }
+ 
+-- 
+1.7.0.3
+

@@ -1,0 +1,80 @@
+From c1ccdc23fde45fd49f2620aaee1ec9f00ac884fa Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Mon, 17 May 2010 14:00:45 -0300
+Subject: [PATCH 1/2] pci: cleanly backout of pci_qdev_init()
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100517140045.9721.47995.stgit@virtlab9.virt.bos.redhat.com>
+Patchwork-id: 9327
+O-Subject: [RHEL-6 qemu-kvm PATCH] pci: cleanly backout of pci_qdev_init()
+Bugzilla: 590884
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+
+Bugzilla: 590884
+Upstream commit: 925fe64ae7b487fdb7bd56fcab63e2f87653c226
+
+If the init function of a device fails, as might happen with device
+assignment, we never undo the work done by do_pci_register_device().
+This not only causes a bit of a memory leak, but also leaves a bogus
+pointer in the bus devices array that can cause a segfault or
+garbage data from 'info pci'.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+
+ hw/pci.c |   16 +++++++++++-----
+ 1 files changed, 11 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pci.c |   16 +++++++++++-----
+ 1 files changed, 11 insertions(+), 5 deletions(-)
+
+diff --git a/hw/pci.c b/hw/pci.c
+index c8f325a..05847c4 100644
+--- a/hw/pci.c
++++ b/hw/pci.c
+@@ -672,6 +672,13 @@ static PCIDevice *do_pci_register_device(PCIDevice *pci_dev, PCIBus *bus,
+     return pci_dev;
+ }
+ 
++static void do_pci_unregister_device(PCIDevice *pci_dev)
++{
++    qemu_free_irqs(pci_dev->irq);
++    pci_dev->bus->devices[pci_dev->devfn] = NULL;
++    pci_config_free(pci_dev);
++}
++
+ PCIDevice *pci_register_device(PCIBus *bus, const char *name,
+                                int instance_size, int devfn,
+                                PCIConfigReadFunc *config_read,
+@@ -724,10 +731,7 @@ static int pci_unregister_device(DeviceState *dev)
+         return ret;
+ 
+     pci_unregister_io_regions(pci_dev);
+-
+-    qemu_free_irqs(pci_dev->irq);
+-    pci_dev->bus->devices[pci_dev->devfn] = NULL;
+-    pci_config_free(pci_dev);
++    do_pci_unregister_device(pci_dev);
+     return 0;
+ }
+ 
+@@ -1480,8 +1484,10 @@ static int pci_qdev_init(DeviceState *qdev, DeviceInfo *base)
+     if (pci_dev == NULL)
+         return -1;
+     rc = info->init(pci_dev);
+-    if (rc != 0)
++    if (rc != 0) {
++        do_pci_unregister_device(pci_dev);
+         return rc;
++    }
+ 
+     /* rom loading */
+     if (pci_dev->romfile == NULL && info->romfile != NULL)
+-- 
+1.7.0.3
+
