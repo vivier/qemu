@@ -1,0 +1,78 @@
+From 880dfee460dba4b21067e3e2762484a29bd9b9d4 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Tue, 18 May 2010 16:13:27 -0300
+Subject: [PATCH 2/2] virtio-blk: Avoid zeroing every request structure
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <4BF2BCA7.5080707@redhat.com>
+Patchwork-id: 9360
+O-Subject: [RHEL-6 qemu-kvm PATCH]  virtio-blk: Avoid zeroing every request
+	structure
+Bugzilla: 593369
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Glauber Costa <glommer@redhat.com>
+
+Bugzilla: 593369
+
+Patch to not zero every request structure within virtio-blk. I have run
+benchmarks on a ramdisk device exported to guest via virtio and am
+seeing performance increases of 5-20% with FFSB test case, which is the
+test case used by one of our partners. Variations most likely due to not
+being able to numactl assign the guest as most of my host memory was
+taken up by the ramdisk.
+
+Mileage may vary but I believe this is very low risk and we need the
+speed boost.
+
+I'd love to get this into RHEL6 in time, so please ack quickly if you
+have no objections.
+
+Cheers,
+Jes
+The VirtIOBlockRequest structure is about 40 KB in size.  This patch
+avoids zeroing every request by only initializing fields that are read.
+The other fields are either written to or may not be used at all.
+
+Oprofile shows about 10% of CPU samples in memset called by
+virtio_blk_alloc_request().  The workload is
+dd if=/dev/vda of=/dev/null iflag=direct bs=8k running concurrently 4
+times.  This patch makes memset disappear to the bottom of the profile.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+---
+This applies to qemu.git and qemu-kvm.git.
+
+A related change would be a pool of requests to avoid malloc/free for every
+single request.  That's a separate change and malloc/free do not show up at the
+top of the profile, so I am not introducing a pool yet.
+
+ hw/virtio-blk.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-blk.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index 28ad056..04e0b29 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -104,8 +104,10 @@ static void virtio_blk_flush_complete(void *opaque, int ret)
+ 
+ static VirtIOBlockReq *virtio_blk_alloc_request(VirtIOBlock *s)
+ {
+-    VirtIOBlockReq *req = qemu_mallocz(sizeof(*req));
++    VirtIOBlockReq *req = qemu_malloc(sizeof(*req));
+     req->dev = s;
++    req->qiov.size = 0;
++    req->next = NULL;
+     return req;
+ }
+ 
+-- 
+1.7.0.3
+

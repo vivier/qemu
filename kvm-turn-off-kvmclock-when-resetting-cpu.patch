@@ -1,0 +1,106 @@
+From e92166219a33ec608b8e45b89cd0b8d7751d3f64 Mon Sep 17 00:00:00 2001
+From: Glauber Costa <glommer@redhat.com>
+Date: Tue, 11 May 2010 21:28:49 -0300
+Subject: [PATCH 1/2] turn off kvmclock when resetting cpu
+
+RH-Author: Glauber Costa <glommer@redhat.com>
+Message-id: <1273613329-32679-1-git-send-email-glommer@redhat.com>
+Patchwork-id: 9197
+O-Subject: [RHEL6 PATCH] turn off kvmclock when resetting cpu
+Bugzilla: 588884
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Zachary Amsden <zamsden@redhat.com>
+
+RH-Bugzilla: 588884
+RH-Upstream-status: qemu-kvm/master
+RH-Author: Glauber Costa <glommer@gmail.com>
+
+Difference from upstream:
+
+To avoid risking regressions in the RHEL6 timeframe, we skip loading the
+TSC.
+
+Upstream changelog:
+
+Currently, in the linux kernel, we reset kvmclock if we are rebooting
+into a crash kernel through kexec. The rationale, is that a new kernel
+won't follow the same memory addresses, and the memory where kvmclock is
+located in the first kernel, will be something else in the second one.
+
+We don't do it in normal reboots, because the second kernel ends up
+registering kvmclock again, which has the effect of turning off the
+first instance.
+
+This is, however, totally wrong. This assumes we're booting into
+a kernel that also has kvmclock enabled. If by some reason we reboot
+into something that doesn't do kvmclock including but not limited to:
+ * rebooting into an older kernel without kvmclock support,
+ * rebooting with no-kvmclock,
+ * rebootint into another O.S,
+
+we'll simply have the hypervisor writting into a random memory position
+into the guest. Neat, uh?
+
+Moreover, I believe the fix belongs in qemu, since it is the entity
+more prepared to detect all kinds of reboots (by means of a cpu_reset),
+not to mention the presence of misbehaving guests, that can forget
+to turn kvmclock off.
+
+It is also necessary to reset other msrs, so this patch resets
+everything that kvm exports through its MSR list.
+
+This patch fixes the issue for me.
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+ qemu-kvm-x86.c |   26 ++++++++++++++++++++++++++
+ 1 files changed, 26 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-kvm-x86.c |   26 ++++++++++++++++++++++++++
+ 1 files changed, 26 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-kvm-x86.c b/qemu-kvm-x86.c
+index e6d5e1c..1ead95f 100644
+--- a/qemu-kvm-x86.c
++++ b/qemu-kvm-x86.c
+@@ -1455,8 +1455,34 @@ void kvm_arch_push_nmi(void *opaque)
+ }
+ #endif /* KVM_CAP_USER_NMI */
+ 
++static int kvm_reset_msrs(CPUState *env)
++{
++    struct {
++        struct kvm_msrs info;
++        struct kvm_msr_entry entries[100];
++    } msr_data;
++    int n, n_msrs;
++    struct kvm_msr_entry *msrs = msr_data.entries;
++
++    if (!kvm_msr_list)
++        return -1;
++
++    n_msrs = 0;
++    for (n = 0; n < kvm_msr_list->nmsrs; n++) {
++        if (kvm_msr_list->indices[n] == MSR_IA32_TSC)
++            continue;
++        set_msr_entry(&msrs[n_msrs++], kvm_msr_list->indices[n], 0);
++    }
++
++    msr_data.info.nmsrs = n_msrs;
++
++    return kvm_vcpu_ioctl(env, KVM_SET_MSRS, &msr_data);
++}
++
++
+ void kvm_arch_cpu_reset(CPUState *env)
+ {
++    kvm_reset_msrs(env);
+     kvm_arch_reset_vcpu(env);
+     kvm_arch_load_regs(env);
+     kvm_put_vcpu_events(env);
+-- 
+1.7.0.3
+

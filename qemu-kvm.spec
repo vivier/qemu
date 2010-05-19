@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.54%{?dist}
+Release: 2.55%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -920,6 +920,10 @@ Patch1445: kvm-block-Fix-bdrv_commit.patch
 Patch1446: kvm-fix-80000001.EDX-supported-bit-filtering.patch
 # For bz#591604 - cannot override cpu vendor from the command line
 Patch1447: kvm-fix-CPUID-vendor-override.patch
+# For bz#588884 - Rebooting a kernel with kvmclock enabled, into a kernel with kvmclock disabled, causes random crashes
+Patch1448: kvm-turn-off-kvmclock-when-resetting-cpu.patch
+# For bz#593369 - virtio-blk: Avoid zeroing every request structure
+Patch1449: kvm-virtio-blk-Avoid-zeroing-every-request-structure.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1431,6 +1435,8 @@ such as kvmtrace and kvm_stat.
 %patch1445 -p1
 %patch1446 -p1
 %patch1447 -p1
+%patch1448 -p1
+%patch1449 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1629,6 +1635,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed May 19 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.55.el6
+- kvm-turn-off-kvmclock-when-resetting-cpu.patch [bz#588884]
+- kvm-virtio-blk-Avoid-zeroing-every-request-structure.patch [bz#593369]
+- Resolves: bz#588884
+  (Rebooting a kernel with kvmclock enabled, into a kernel with kvmclock disabled, causes random crashes)
+- Resolves: bz#593369
+  (virtio-blk: Avoid zeroing every request structure)
+
 * Mon May 17 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.54.el6
 - kvm-qemu-config-qemu_read_config_file-reads-the-normal-c.patch [bz#588756]
 - kvm-qemu-config-Make-qemu_config_parse-more-generic.patch [bz#588756]
