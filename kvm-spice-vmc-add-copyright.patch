@@ -1,0 +1,81 @@
+From 3696d41954c5f95dc31c6233e2bd8c59b48cd090 Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Mon, 3 May 2010 13:23:53 -0300
+Subject: [PATCH 01/15] spice-vmc: add copyright
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1272893033-3663-1-git-send-email-alevy@redhat.com>
+Patchwork-id: 8973
+O-Subject: [RHEL-6 PATCH] spice-vmc: add copyright
+Bugzilla: 576488
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: alon.levy <alevy@redhat.com>
+
+Copyright and description.
+
+---
+ hw/spice-vmc.c |   42 +++++++++++++++++++++++++++++++++---------
+ 1 files changed, 33 insertions(+), 9 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/spice-vmc.c |   42 +++++++++++++++++++++++++++++++++---------
+ 1 files changed, 33 insertions(+), 9 deletions(-)
+
+diff --git a/hw/spice-vmc.c b/hw/spice-vmc.c
+index f48f4a1..a80b034 100644
+--- a/hw/spice-vmc.c
++++ b/hw/spice-vmc.c
+@@ -1,13 +1,37 @@
+ /*
+-
+- Spice Virtual Machine Channel (VMC).
+-
+-  A virtio-serial port used for spice to guest communication, over which spice client
+- and a daemon in the guest operating system communicate.
+-
+-  Replaces the old vdi_port PCI device.
+-
+-*/
++ * Spice Virtual Machine Channel (VMC).
++ *
++ * A specialized virtio-serial port used for spice to guest communication,
++ * used by spice client and a daemon in the guest operating system (vdservice).
++ * Connects the VDIPortInterface exposed by spice.h to a virtio-serial-bus
++ * port.
++ *
++ * Usage:
++ *  Current: mouse data (works better in wan environment), screen resize.
++ *  Planned: shared clipboard.
++ *
++ * Author: Alon Levy <alevy@redhat.com>
++ *
++ * Copyright (c) 2010 Red Hat, Inc.
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
++ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ */
+ 
+ #include <spice.h>
+ #include <vd_interface.h>
+-- 
+1.7.0.3
+

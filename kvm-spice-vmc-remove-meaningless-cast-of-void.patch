@@ -1,0 +1,42 @@
+From 45d89456f986b0c17bd08e99cdd51f89f00a7cca Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Mon, 3 May 2010 12:56:01 -0300
+Subject: [PATCH 07/15] spice-vmc: remove meaningless cast of void*
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1272891368-32706-7-git-send-email-alevy@redhat.com>
+Patchwork-id: 8972
+O-Subject: [RHEL-6 PATCH 06/13] spice-vmc: remove meaningless cast of void*
+Bugzilla: 576488
+RH-Acked-by: Arnon Gilboa <agilboa@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: alon.levy <alevy@redhat.com>
+
+BZ: 576488
+---
+ hw/spice-vmc.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/spice-vmc.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/hw/spice-vmc.c b/hw/spice-vmc.c
+index 2b741a0..d563459 100644
+--- a/hw/spice-vmc.c
++++ b/hw/spice-vmc.c
+@@ -175,7 +175,7 @@ static void spice_vmc_unregister_interface(SpiceVMChannel *svc)
+ static void spice_vmc_vm_change_state_handler(
+                         void *opaque, int running, int reason)
+ {
+-    SpiceVMChannel* svc=(SpiceVMChannel*)opaque;
++    SpiceVMChannel* svc = opaque;
+ 
+     if (running) {
+         svc->running = true;
+-- 
+1.7.0.3
+

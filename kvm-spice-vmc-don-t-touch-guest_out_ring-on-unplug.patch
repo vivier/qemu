@@ -1,0 +1,54 @@
+From aaa62f3dc7e82b5c70230ed861b71c9f9f378f1c Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Mon, 3 May 2010 12:56:03 -0300
+Subject: [PATCH 09/15] spice-vmc: don't touch guest_out_ring on unplug
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1272891368-32706-9-git-send-email-alevy@redhat.com>
+Patchwork-id: 8971
+O-Subject: [RHEL-6 PATCH 08/13] spice-vmc: don't touch guest_out_ring on unplug
+Bugzilla: 576488
+RH-Acked-by: Arnon Gilboa <agilboa@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: alon.levy <alevy@redhat.com>
+
+This was just protective coding. And I don't think it is neccessary after all.
+
+BZ: 576488
+---
+ hw/spice-vmc.c |   12 ------------
+ 1 files changed, 0 insertions(+), 12 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/spice-vmc.c |   12 ------------
+ 1 files changed, 0 insertions(+), 12 deletions(-)
+
+diff --git a/hw/spice-vmc.c b/hw/spice-vmc.c
+index cf9ef72..f28d907 100644
+--- a/hw/spice-vmc.c
++++ b/hw/spice-vmc.c
+@@ -134,18 +134,6 @@ static void spice_vmc_interface_unplug(
+         return;
+     }
+     svc->plug = NULL;
+-
+-    /* XXX - throw away anything the client has not read */
+-
+-    if (svc->guest_out_ring.bytes != 0) {
+-        printf("warning: %s: %lu unwritten bytes discarded.\n",
+-                            __func__, svc->guest_out_ring.bytes);
+-    }
+-    svc->guest_out_ring.read_pos = svc->guest_out_ring.write_pos;
+-
+-    if (!svc->running) {
+-        printf("%s: TODO - notify_guest! what to do??\n", __func__);
+-    }
+ }
+ 
+ static int spice_vmc_interface_write(
+-- 
+1.7.0.3
+

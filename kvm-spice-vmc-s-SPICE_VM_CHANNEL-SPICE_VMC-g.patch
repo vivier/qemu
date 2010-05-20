@@ -1,0 +1,62 @@
+From 19a4ad55ddb1d301eaf37ba02d730aa030bfd22d Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Mon, 3 May 2010 12:56:06 -0300
+Subject: [PATCH 12/15] spice-vmc: s/SPICE_VM_CHANNEL/SPICE_VMC/g
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1272891368-32706-12-git-send-email-alevy@redhat.com>
+Patchwork-id: 8967
+O-Subject: [RHEL-6 PATCH 11/13] spice-vmc: s/SPICE_VM_CHANNEL/SPICE_VMC/g
+Bugzilla: 576488
+RH-Acked-by: Arnon Gilboa <agilboa@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: alon.levy <alevy@redhat.com>
+
+BZ: 576488
+---
+ hw/spice-vmc.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/spice-vmc.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/hw/spice-vmc.c b/hw/spice-vmc.c
+index 74c9e18..f3dfe0d 100644
+--- a/hw/spice-vmc.c
++++ b/hw/spice-vmc.c
+@@ -39,8 +39,8 @@
+ #include "virtio-serial.h"
+ #include "qemu-spice.h"
+ 
+-#define SPICE_VM_CHANNEL_GUEST_DEVICE_NAME "org.redhat.spice.0"
+-#define SPICE_VM_CHANNEL_DEVICE_NAME       "spicevmc"
++#define SPICE_VMC_GUEST_DEVICE_NAME "org.redhat.spice.0"
++#define SPICE_VMC_DEVICE_NAME       "spicevmc"
+ 
+ typedef struct {
+     uint8_t  d[1024*16]; /* 16 KiB */
+@@ -256,7 +256,7 @@ static int spice_vmc_initfn(VirtIOSerialDevice *dev)
+     VirtIOSerialPort *vserport = DO_UPCAST(VirtIOSerialPort, dev, &dev->qdev);
+     SpiceVMChannel *svc = DO_UPCAST(SpiceVMChannel, vserport, vserport);
+ 
+-    vserport->name = (char*)SPICE_VM_CHANNEL_GUEST_DEVICE_NAME;
++    vserport->name = (char*)SPICE_VMC_GUEST_DEVICE_NAME;
+ 
+     vserport->info = dev->info;
+ 
+@@ -281,7 +281,7 @@ static int spice_vmc_exitfn(VirtIOSerialDevice *dev)
+ }
+ 
+ static VirtIOSerialPortInfo spice_vmc_info = {
+-    .qdev.name     = SPICE_VM_CHANNEL_DEVICE_NAME,
++    .qdev.name     = SPICE_VMC_DEVICE_NAME,
+     .qdev.size     = sizeof(SpiceVMChannel),
+     .init          = spice_vmc_initfn,
+     .exit          = spice_vmc_exitfn,
+-- 
+1.7.0.3
+

@@ -1,0 +1,87 @@
+From 53791c680a2e6f9121a8bd724244aeb1cb6f570e Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Mon, 3 May 2010 12:56:07 -0300
+Subject: [PATCH 13/15] spice-vmc: add vmstate. saves active_interface.
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1272891368-32706-13-git-send-email-alevy@redhat.com>
+Patchwork-id: 8968
+O-Subject: [RHEL-6 PATCH 12/13] spice-vmc: add vmstate. saves active_interface.
+Bugzilla: 576488
+RH-Acked-by: Arnon Gilboa <agilboa@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: alon.levy <alevy@redhat.com>
+
+migration implementation.
+
+Author: Juan Quintela
+
+BZ: 576488
+---
+ hw/spice-vmc.c |   29 +++++++++++++++++++++++++++++
+ 1 files changed, 29 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/spice-vmc.c |   29 +++++++++++++++++++++++++++++
+ 1 files changed, 29 insertions(+), 0 deletions(-)
+
+diff --git a/hw/spice-vmc.c b/hw/spice-vmc.c
+index f3dfe0d..38ac097 100644
+--- a/hw/spice-vmc.c
++++ b/hw/spice-vmc.c
+@@ -56,6 +56,7 @@ typedef struct SpiceVMChannel {
+     VirtIOSerialPort vserport;
+     bool running;
+     bool active_interface;
++    uint8_t active_interface_vmstate;
+     VDIPortInterface interface;
+     VDIPortPlug *plug;
+ 
+@@ -251,6 +252,33 @@ static void spice_vmc_have_data(
+     return;
+ }
+ 
++static int spice_vmc_post_load(void *opaque, int version_id)
++{
++    SpiceVMChannel* svc = opaque;
++    if (svc->active_interface_vmstate) {
++        spice_vmc_register_interface(svc);
++    }
++    return 0;
++}
++
++static void spice_vmc_pre_save(void *opaque)
++{
++    SpiceVMChannel* svc = opaque;
++    svc->active_interface_vmstate = svc->active_interface;
++}
++
++static VMStateDescription spice_vmc_vmstate = {
++    .name = SPICE_VMC_DEVICE_NAME,
++    .version_id = 1,
++    .minimum_version_id = 1,
++    .post_load = spice_vmc_post_load,
++    .pre_save = spice_vmc_pre_save,
++    .fields = (VMStateField []) {
++        VMSTATE_UINT8(active_interface_vmstate, SpiceVMChannel),
++        VMSTATE_END_OF_LIST()
++    }
++};
++
+ static int spice_vmc_initfn(VirtIOSerialDevice *dev)
+ {
+     VirtIOSerialPort *vserport = DO_UPCAST(VirtIOSerialPort, dev, &dev->qdev);
+@@ -283,6 +311,7 @@ static int spice_vmc_exitfn(VirtIOSerialDevice *dev)
+ static VirtIOSerialPortInfo spice_vmc_info = {
+     .qdev.name     = SPICE_VMC_DEVICE_NAME,
+     .qdev.size     = sizeof(SpiceVMChannel),
++    .qdev.vmsd     = &spice_vmc_vmstate,
+     .init          = spice_vmc_initfn,
+     .exit          = spice_vmc_exitfn,
+     .guest_open    = spice_vmc_guest_open,
+-- 
+1.7.0.3
+

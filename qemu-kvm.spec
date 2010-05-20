@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.59%{?dist}
+Release: 2.60%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -954,6 +954,36 @@ Patch1462: kvm-Fix-segfault-after-device-assignment-hot-remove.patch
 Patch1463: kvm-pci-cleanly-backout-of-pci_qdev_init.patch
 # For bz#593287 - Failed asserting during ide_dma_cancel
 Patch1464: kvm-ide-Fix-ide_dma_cancel.patch
+# For bz#576488 - Spice: virtio serial based device for guest-spice client communication
+Patch1465: kvm-spice-vmc-add-copyright.patch
+# For bz#576488 - Spice: virtio serial based device for guest-spice client communication
+Patch1466: kvm-spice-vmc-remove-debug-prints-and-defines.patch
+# For bz#576488 - Spice: virtio serial based device for guest-spice client communication
+Patch1467: kvm-spice-vmc-add-braces-to-single-line-if-s.patch
+# For bz#576488 - Spice: virtio serial based device for guest-spice client communication
+Patch1468: kvm-spice-vmc-s-SpiceVirtualChannel-SpiceVMChannel-g.patch
+# For bz#576488 - Spice: virtio serial based device for guest-spice client communication
+Patch1469: kvm-spice-vmc-s-spice_virtual_channel-spice_vmc-g.patch
+# For bz#576488 - Spice: virtio serial based device for guest-spice client communication
+Patch1470: kvm-spice-vmc-all-variables-of-type-SpiceVMChannel-renam.patch
+# For bz#576488 - Spice: virtio serial based device for guest-spice client communication
+Patch1471: kvm-spice-vmc-remove-meaningless-cast-of-void.patch
+# For bz#576488 - Spice: virtio serial based device for guest-spice client communication
+Patch1472: kvm-spice-vmc-add-spice_vmc_ring_t-fix-write-function.patch
+# For bz#576488 - Spice: virtio serial based device for guest-spice client communication
+Patch1473: kvm-spice-vmc-don-t-touch-guest_out_ring-on-unplug.patch
+# For bz#576488 - Spice: virtio serial based device for guest-spice client communication
+Patch1474: kvm-spice-vmc-VirtIOSerialPort-vars-renamed-to-vserport.patch
+# For bz#576488 - Spice: virtio serial based device for guest-spice client communication
+Patch1475: kvm-spice-vmc-add-nr-property.patch
+# For bz#576488 - Spice: virtio serial based device for guest-spice client communication
+Patch1476: kvm-spice-vmc-s-SPICE_VM_CHANNEL-SPICE_VMC-g.patch
+# For bz#576488 - Spice: virtio serial based device for guest-spice client communication
+Patch1477: kvm-spice-vmc-add-vmstate.-saves-active_interface.patch
+# For bz#576488 - Spice: virtio serial based device for guest-spice client communication
+Patch1478: kvm-spice-vmc-rename-guest-device-name-to-com.redhat.spi.patch
+# For bz#576488 - Spice: virtio serial based device for guest-spice client communication
+Patch1479: kvm-spice-vmc-remove-unused-property-name.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1482,6 +1512,21 @@ such as kvmtrace and kvm_stat.
 %patch1462 -p1
 %patch1463 -p1
 %patch1464 -p1
+%patch1465 -p1
+%patch1466 -p1
+%patch1467 -p1
+%patch1468 -p1
+%patch1469 -p1
+%patch1470 -p1
+%patch1471 -p1
+%patch1472 -p1
+%patch1473 -p1
+%patch1474 -p1
+%patch1475 -p1
+%patch1476 -p1
+%patch1477 -p1
+%patch1478 -p1
+%patch1479 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1680,6 +1725,25 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu May 20 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.60.el6
+- kvm-spice-vmc-add-copyright.patch [bz#576488]
+- kvm-spice-vmc-remove-debug-prints-and-defines.patch [bz#576488]
+- kvm-spice-vmc-add-braces-to-single-line-if-s.patch [bz#576488]
+- kvm-spice-vmc-s-SpiceVirtualChannel-SpiceVMChannel-g.patch [bz#576488]
+- kvm-spice-vmc-s-spice_virtual_channel-spice_vmc-g.patch [bz#576488]
+- kvm-spice-vmc-all-variables-of-type-SpiceVMChannel-renam.patch [bz#576488]
+- kvm-spice-vmc-remove-meaningless-cast-of-void.patch [bz#576488]
+- kvm-spice-vmc-add-spice_vmc_ring_t-fix-write-function.patch [bz#576488]
+- kvm-spice-vmc-don-t-touch-guest_out_ring-on-unplug.patch [bz#576488]
+- kvm-spice-vmc-VirtIOSerialPort-vars-renamed-to-vserport.patch [bz#576488]
+- kvm-spice-vmc-add-nr-property.patch [bz#576488]
+- kvm-spice-vmc-s-SPICE_VM_CHANNEL-SPICE_VMC-g.patch [bz#576488]
+- kvm-spice-vmc-add-vmstate.-saves-active_interface.patch [bz#576488]
+- kvm-spice-vmc-rename-guest-device-name-to-com.redhat.spi.patch [bz#576488]
+- kvm-spice-vmc-remove-unused-property-name.patch [bz#576488]
+- Resolves: bz#576488
+  (Spice: virtio serial based device for guest-spice client communication)
+
 * Wed May 19 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.59.el6
 - kvm-pci-cleanly-backout-of-pci_qdev_init.patch [bz#590884]
 - kvm-ide-Fix-ide_dma_cancel.patch [bz#593287]
