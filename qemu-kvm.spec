@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.61%{?dist}
+Release: 2.62%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -984,6 +984,12 @@ Patch1477: kvm-spice-vmc-add-vmstate.-saves-active_interface.patch
 Patch1478: kvm-spice-vmc-rename-guest-device-name-to-com.redhat.spi.patch
 # For bz#576488 - Spice: virtio serial based device for guest-spice client communication
 Patch1479: kvm-spice-vmc-remove-unused-property-name.patch
+# For bz#566785 - virt block layer must not keep guest's logical_block_size fixed
+Patch1480: kvm-block-add-logical_block_size-property.patch
+# For bz#591176 - migration fails since virtio-serial-bus is using uninitialized memory
+Patch1481: kvm-virtio-serial-bus-fix-ports_map-allocation.patch
+# For bz#569661 - RHEL6.0 requires backport of upstream cpu model support..
+Patch1482: kvm-Move-cpu-model-config-file-to-agree-with-rpm-build-B.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1527,6 +1533,9 @@ such as kvmtrace and kvm_stat.
 %patch1477 -p1
 %patch1478 -p1
 %patch1479 -p1
+%patch1480 -p1
+%patch1481 -p1
+%patch1482 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1538,6 +1547,7 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
 # oss works, but is very problematic because it grabs exclusive control of the device causing other apps to go haywire
 ./configure --target-list=x86_64-softmmu \
             --prefix=%{_prefix} \
+            --sysconfdir=%{_sysconfdir} \
             --audio-drv-list=pa,alsa \
             --audio-card-list=ac97,es1370 \
             --disable-strip \
@@ -1725,6 +1735,17 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon May 24 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.62.el6
+- kvm-block-add-logical_block_size-property.patch [bz#566785]
+- kvm-virtio-serial-bus-fix-ports_map-allocation.patch [bz#591176]
+- kvm-Move-cpu-model-config-file-to-agree-with-rpm-build-B.patch [bz#569661]
+- Resolves: bz#566785
+  (virt block layer must not keep guest's logical_block_size fixed)
+- Resolves: bz#569661
+  (RHEL6.0 requires backport of upstream cpu model support..)
+- Resolves: bz#591176
+  (migration fails since virtio-serial-bus is using uninitialized memory)
+
 * Mon May 24 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.61.el6
 - Add "file" format to bdrv whitelist
 - Resolves: bz#593909

@@ -1,0 +1,188 @@
+From 60c1b65735204e2529217754026109944f1bccb2 Mon Sep 17 00:00:00 2001
+From: Christoph Hellwig <chellwig@redhat.com>
+Date: Fri, 7 May 2010 10:46:41 -0300
+Subject: [PATCH 1/3] block: add logical_block_size property
+
+RH-Author: Christoph Hellwig <chellwig@redhat.com>
+Message-id: <1273229201-8143-1-git-send-email-chellwig@redhat.com>
+Patchwork-id: 9100
+O-Subject: [RHEL6 qemu PATCH] block: add logical_block_size property
+Bugzilla: 566785
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Christoph Hellwig <hch@lst.de>
+
+Add a logical block size attribute as various guest side tools only
+increase the filesystem sector size based on it, not the advisory
+physical block size.
+
+For scsi we already have support for a different logical block size
+in place for CDROMs that we can built upon.  Only my recent block
+device characteristics VPD page needs some fixups.  Note that we
+leave the logial block size for CDROMs hardcoded as the 2k value
+is expected for it in general.
+
+For virtio-blk we already have a feature flag claiming to support
+a variable logical block size that was added for the s390 kuli
+hypervisor.  Interestingly it does not actually change the units
+in which the protocol works, which is still fixed at 512 bytes,
+but only communicates a different minimum I/O granularity.  So
+all we need to do in virtio is to add a trap for unaligned I/O
+and round down the device size to the next multiple of the logical
+block size.
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+
+Upstream commit: 8cfacf079047c50d272ce64e45a78d816db8b36e
+BZ: https://bugzilla.redhat.com/show_bug.cgi?id=566785
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block_int.h     |    3 +++
+ hw/scsi-disk.c  |   13 ++++++++-----
+ hw/virtio-blk.c |   20 +++++++++++++++++---
+ hw/virtio-blk.h |    2 +-
+ 4 files changed, 29 insertions(+), 9 deletions(-)
+
+diff --git a/block_int.h b/block_int.h
+index 65cb95d..3a42688 100644
+--- a/block_int.h
++++ b/block_int.h
+@@ -213,6 +213,7 @@ struct DriveInfo;
+ typedef struct BlockConf {
+     struct DriveInfo *dinfo;
+     uint16_t physical_block_size;
++    uint16_t logical_block_size;
+     uint16_t min_io_size;
+     uint32_t opt_io_size;
+ } BlockConf;
+@@ -230,6 +231,8 @@ static inline unsigned int get_physical_block_exp(BlockConf *conf)
+ 
+ #define DEFINE_BLOCK_PROPERTIES(_state, _conf)                          \
+     DEFINE_PROP_DRIVE("drive", _state, _conf.dinfo),                    \
++    DEFINE_PROP_UINT16("logical_block_size", _state,                    \
++                       _conf.logical_block_size, 512),                  \
+     DEFINE_PROP_UINT16("physical_block_size", _state,                   \
+                        _conf.physical_block_size, 512),                 \
+     DEFINE_PROP_UINT16("min_io_size", _state, _conf.min_io_size, 512),  \
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index edd338e..833ea69 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -396,8 +396,10 @@ static int scsi_disk_emulate_inquiry(SCSIRequest *req, uint8_t *outbuf)
+         }
+         case 0xb0: /* block device characteristics */
+         {
+-            unsigned int min_io_size = s->qdev.conf.min_io_size >> 9;
+-            unsigned int opt_io_size = s->qdev.conf.opt_io_size >> 9;
++            unsigned int min_io_size =
++                    s->qdev.conf.min_io_size / s->qdev.blocksize;
++            unsigned int opt_io_size =
++                    s->qdev.conf.opt_io_size / s->qdev.blocksize;
+ 
+             /* required VPD size with unmap support */
+             outbuf[3] = buflen = 0x3c;
+@@ -1028,11 +1030,12 @@ static int scsi_disk_initfn(SCSIDevice *dev)
+     s->bs = s->qdev.conf.dinfo->bdrv;
+ 
+     if (bdrv_get_type_hint(s->bs) == BDRV_TYPE_CDROM) {
+-        s->cluster_size = 4;
++        s->qdev.blocksize = 2048;
+     } else {
+-        s->cluster_size = 1;
++        s->qdev.blocksize = s->qdev.conf.logical_block_size;
+     }
+-    s->qdev.blocksize = 512 * s->cluster_size;
++    s->cluster_size = s->qdev.blocksize / 512;
++
+     s->qdev.type = TYPE_DISK;
+     bdrv_get_geometry(s->bs, &nb_sectors);
+     nb_sectors /= s->cluster_size;
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index 04e0b29..f70779f 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -27,6 +27,7 @@ typedef struct VirtIOBlock
+     void *rq;
+     QEMUBH *bh;
+     BlockConf *conf;
++    unsigned short sector_mask;
+ } VirtIOBlock;
+ 
+ static VirtIOBlock *to_virtio_blk(VirtIODevice *vdev)
+@@ -255,6 +256,11 @@ static void virtio_blk_handle_flush(VirtIOBlockReq *req)
+ static void virtio_blk_handle_write(BlockRequest *blkreq, int *num_writes,
+     VirtIOBlockReq *req, BlockDriverState **old_bs)
+ {
++    if (req->out->sector & req->dev->sector_mask) {
++        virtio_blk_rw_complete(req, -EIO);
++        return;
++    }
++
+     if (req->dev->bs != *old_bs || *num_writes == 32) {
+         if (*old_bs != NULL) {
+             do_multiwrite(*old_bs, blkreq, *num_writes);
+@@ -277,6 +283,11 @@ static void virtio_blk_handle_read(VirtIOBlockReq *req)
+ {
+     BlockDriverAIOCB *acb;
+ 
++    if (req->out->sector & req->dev->sector_mask) {
++        virtio_blk_rw_complete(req, -EIO);
++        return;
++    }
++
+     acb = bdrv_aio_readv(req->dev->bs, req->out->sector, &req->qiov,
+                          req->qiov.size / 512, virtio_blk_rw_complete, req);
+     if (!acb) {
+@@ -409,12 +420,13 @@ static void virtio_blk_update_config(VirtIODevice *vdev, uint8_t *config)
+     stl_raw(&blkcfg.seg_max, 128 - 2);
+     stw_raw(&blkcfg.cylinders, cylinders);
+     blkcfg.heads = heads;
+-    blkcfg.sectors = secs;
++    blkcfg.sectors = secs & ~s->sector_mask;
++    blkcfg.blk_size = s->conf->logical_block_size;
+     blkcfg.size_max = 0;
+     blkcfg.physical_block_exp = get_physical_block_exp(s->conf);
+     blkcfg.alignment_offset = 0;
+-    blkcfg.min_io_size = s->conf->min_io_size / 512;
+-    blkcfg.opt_io_size = s->conf->opt_io_size / 512;
++    blkcfg.min_io_size = s->conf->min_io_size / blkcfg.blk_size;
++    blkcfg.opt_io_size = s->conf->opt_io_size / blkcfg.blk_size;
+     memcpy(config, &blkcfg, sizeof(struct virtio_blk_config));
+ }
+ 
+@@ -425,6 +437,7 @@ static uint32_t virtio_blk_get_features(VirtIODevice *vdev, uint32_t features)
+     features |= (1 << VIRTIO_BLK_F_SEG_MAX);
+     features |= (1 << VIRTIO_BLK_F_GEOMETRY);
+     features |= (1 << VIRTIO_BLK_F_TOPOLOGY);
++    features |= (1 << VIRTIO_BLK_F_BLK_SIZE);
+ 
+     if (bdrv_enable_write_cache(s->bs))
+         features |= (1 << VIRTIO_BLK_F_WCACHE);
+@@ -484,6 +497,7 @@ VirtIODevice *virtio_blk_init(DeviceState *dev, BlockConf *conf)
+     s->bs = conf->dinfo->bdrv;
+     s->conf = conf;
+     s->rq = NULL;
++    s->sector_mask = (s->conf->logical_block_size / 512) - 1;
+     bdrv_guess_geometry(s->bs, &cylinders, &heads, &secs);
+     bdrv_set_geometry_hint(s->bs, cylinders, heads, secs);
+ 
+diff --git a/hw/virtio-blk.h b/hw/virtio-blk.h
+index f675375..7a7ece3 100644
+--- a/hw/virtio-blk.h
++++ b/hw/virtio-blk.h
+@@ -42,7 +42,7 @@ struct virtio_blk_config
+     uint16_t cylinders;
+     uint8_t heads;
+     uint8_t sectors;
+-    uint32_t _blk_size;    /* structure pad, currently unused */
++    uint32_t blk_size;
+     uint8_t physical_block_exp;
+     uint8_t alignment_offset;
+     uint16_t min_io_size;
+-- 
+1.7.0.3
+

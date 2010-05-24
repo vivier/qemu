@@ -1,0 +1,46 @@
+From 15eef5bad62e488228de5f90dfb2eba9d180b861 Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Tue, 11 May 2010 15:40:52 -0300
+Subject: [PATCH 2/3] virtio-serial-bus: fix ports_map allocation
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1273592452-24586-1-git-send-email-alevy@redhat.com>
+Patchwork-id: 9186
+O-Subject: [RHEL6 PATCH] virtio-serial-bus: fix ports_map allocation
+Bugzilla: 591176
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+BZ 591176
+
+fixes a too small allocation to ports_map.
+
+ Signed-off-by: Alon Levy <alevy@redhat.com>
+
+---
+ hw/virtio-serial-bus.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial-bus.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index fbc19ba..0d1ca0f 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -775,7 +775,8 @@ VirtIODevice *virtio_serial_init(DeviceState *dev, uint32_t max_nr_ports)
+     }
+ 
+     vser->config.max_nr_ports = max_nr_ports;
+-    vser->ports_map = qemu_mallocz((max_nr_ports + 31) / 32);
++    vser->ports_map = qemu_mallocz(((max_nr_ports + 31) / 32)
++        * sizeof(vser->ports_map[0]));
+     /*
+      * Reserve location 0 for a console port for backward compat
+      * (old kernel, new qemu)
+-- 
+1.7.0.3
+

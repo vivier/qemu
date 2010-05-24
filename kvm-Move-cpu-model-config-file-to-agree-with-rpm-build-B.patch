@@ -1,0 +1,51 @@
+From db2c6e7a656d9da12387c4d63b7a92328d9b6cc4 Mon Sep 17 00:00:00 2001
+From: john cooper <john.cooper@redhat.com>
+Date: Wed, 19 May 2010 19:45:15 -0300
+Subject: [PATCH 3/3] Move cpu model config file to agree with rpm build [BZ #569661]
+
+RH-Author: john cooper <john.cooper@redhat.com>
+Message-id: <4BF43FCB.8030208@redhat.com>
+Patchwork-id: 9421
+O-Subject: [RHEL6 PATCH] Move cpu model config file to agree with rpm build
+	[BZ #569661]
+Bugzilla: 569661
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+
+The current qemu rpmbuild has it's own notion
+of userland config file location.  Change qemu
+build to agree.
+
+BZ: 569661
+
+brew build: https://brewweb.devel.redhat.com/taskinfo?taskID=2453761
+
+Signed-off-by: john cooper <john.cooper@redhat.com>
+---
+
+Fix configure to point qemu build CONFIG_QEMU_CONFDIR
+at rpm invoked 'make install' location of the same.
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ configure                     |    2 +-
+ redhat/qemu-kvm.spec.template |    1 +
+ 2 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/configure b/configure
+index dd6d447..ff6155d 100755
+--- a/configure
++++ b/configure
+@@ -478,7 +478,7 @@ for opt do
+   ;;
+   --static) static="yes"
+   ;;
+-  --sysconfdir) sysconfdir="$optarg"
++  --sysconfdir=*) sysconfdir="$optarg"
+   ;;
+   --disable-sdl) sdl="no"
+   ;;
+-- 
+1.7.0.3
+
