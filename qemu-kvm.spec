@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.60%{?dist}
+Release: 2.61%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1544,7 +1544,7 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
             --extra-ldflags=$extraldflags \
             --extra-cflags="$RPM_OPT_FLAGS" \
             --disable-xen \
-            --block-drv-whitelist=qcow2,raw,host_device,host_cdrom \
+            --block-drv-whitelist=qcow2,raw,file,host_device,host_cdrom \
             --disable-debug-tcg \
             --disable-sparse \
             --enable-werror \
@@ -1725,6 +1725,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon May 24 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.61.el6
+- Add "file" format to bdrv whitelist
+- Resolves: bz#593909
+  (VM can not start by using qemu-kvm-0.12.1.2-2.56.el6)
+
 * Thu May 20 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.60.el6
 - kvm-spice-vmc-add-copyright.patch [bz#576488]
 - kvm-spice-vmc-remove-debug-prints-and-defines.patch [bz#576488]
