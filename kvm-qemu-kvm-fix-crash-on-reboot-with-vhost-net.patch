@@ -1,0 +1,140 @@
+From 3375b46d53947b2ef7fbfab6a97b12e3e1872349 Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Thu, 29 Apr 2010 15:31:43 -0300
+Subject: [PATCH] qemu-kvm: fix crash on reboot with vhost-net
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <20100429153143.GA28816@redhat.com>
+Patchwork-id: 8900
+O-Subject: [RHEL6.0 PATCH] qemu-kvm: fix crash on reboot with vhost-net
+Bugzilla:
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Herbert Xu <herbert.xu@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+Bugzilla-related: 585940
+
+Bugzilla: 585940
+Upstream status: applied on qemu-kvm.git,
+commit 992cc816c433332f2e93db033919a9ddbfcd1da4
+
+When vhost-net is disabled on reboot, we set msix mask notifier
+to NULL to disable further mask/unmask notifications.
+Code currently tries to pass this NULL to notifier,
+leading to a crash.  The right thing to do is
+to add explicit APIs to enable/disable notifications.
+Now when disabling notifications:
+- if vector is masked, we don't need to notify backend,
+  just disable future notifications
+- if vector is unmasked, invoke callback to unassign backend,
+  then disable future notifications
+
+This patch also polls notifier before closing it,
+to make sure we don't lose events if poll callback
+didn't have time to run.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+
+Resending to the proper list.
+Cc'd please review.
+
+ hw/msix.c       |   40 +++++++++++++++++++++++++++++++++++-----
+ hw/msix.h       |    1 +
+ hw/virtio-pci.c |    7 +++++--
+ 3 files changed, 41 insertions(+), 7 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/msix.c       |   40 +++++++++++++++++++++++++++++++++++-----
+ hw/msix.h       |    1 +
+ hw/virtio-pci.c |    7 +++++--
+ 3 files changed, 41 insertions(+), 7 deletions(-)
+
+diff --git a/hw/msix.c b/hw/msix.c
+index 3fcf3a1..94e3981 100644
+--- a/hw/msix.c
++++ b/hw/msix.c
+@@ -610,14 +610,44 @@ void msix_unuse_all_vectors(PCIDevice *dev)
+ 
+ int msix_set_mask_notifier(PCIDevice *dev, unsigned vector, void *opaque)
+ {
++    int r;
++    if (vector >= dev->msix_entries_nr || !dev->msix_entry_used[vector])
++        return 0;
++
++    assert(dev->msix_mask_notifier);
++    assert(opaque);
++    assert(!dev->msix_mask_notifier_opaque[vector]);
++
++    if (msix_is_masked(dev, vector)) {
++        return 0;
++    }
++    r = dev->msix_mask_notifier(dev, vector, opaque,
++                                msix_is_masked(dev, vector));
++    if (r < 0) {
++        return r;
++    }
++    dev->msix_mask_notifier_opaque[vector] = opaque;
++    return r;
++}
++
++int msix_unset_mask_notifier(PCIDevice *dev, unsigned vector)
++{
+     int r = 0;
+     if (vector >= dev->msix_entries_nr || !dev->msix_entry_used[vector])
+         return 0;
+ 
+-    if (dev->msix_mask_notifier)
+-        r = dev->msix_mask_notifier(dev, vector, opaque,
+-                                    msix_is_masked(dev, vector));
+-    if (r >= 0)
+-        dev->msix_mask_notifier_opaque[vector] = opaque;
++    assert(dev->msix_mask_notifier);
++    assert(dev->msix_mask_notifier_opaque[vector]);
++
++    if (msix_is_masked(dev, vector)) {
++        return 0;
++    }
++    r = dev->msix_mask_notifier(dev, vector,
++                                dev->msix_mask_notifier_opaque[vector],
++                                msix_is_masked(dev, vector));
++    if (r < 0) {
++        return r;
++    }
++    dev->msix_mask_notifier_opaque[vector] = NULL;
+     return r;
+ }
+diff --git a/hw/msix.h b/hw/msix.h
+index f167231..6b21ffb 100644
+--- a/hw/msix.h
++++ b/hw/msix.h
+@@ -34,4 +34,5 @@ void msix_reset(PCIDevice *dev);
+ extern int msix_supported;
+ 
+ int msix_set_mask_notifier(PCIDevice *dev, unsigned vector, void *opaque);
++int msix_unset_mask_notifier(PCIDevice *dev, unsigned vector);
+ #endif
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index 8597aa2..4aeabbf 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -439,10 +439,13 @@ static int virtio_pci_set_guest_notifier(void *opaque, int n, bool assign)
+         msix_set_mask_notifier(&proxy->pci_dev,
+                                virtio_queue_vector(proxy->vdev, n), vq);
+     } else {
+-        msix_set_mask_notifier(&proxy->pci_dev,
+-                               virtio_queue_vector(proxy->vdev, n), NULL);
++        msix_unset_mask_notifier(&proxy->pci_dev,
++				 virtio_queue_vector(proxy->vdev, n));
+         qemu_set_fd_handler(event_notifier_get_fd(notifier),
+                             NULL, NULL, NULL);
++        /* Test and clear notifier before closing it,
++         * in case poll callback didn't have time to run. */
++        virtio_pci_guest_notifier_read(vq);
+         event_notifier_cleanup(notifier);
+     }
+ 
+-- 
+1.7.0.3
+

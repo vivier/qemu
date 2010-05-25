@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.63%{?dist}
+Release: 2.64%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1006,6 +1006,8 @@ Patch1488: kvm-Fix-SIGFPE-for-vnc-display-of-width-height-1.patch
 Patch1489: kvm-spice-vmc-remove-ringbuffer.patch
 # For bz#589670 - spice: Ensure ring data is save/restored on migration
 Patch1490: kvm-spice-vmc-add-dprintfs.patch
+# For bz#585940 - qemu-kvm crashes on reboot when vhost is enabled
+Patch1491: kvm-qemu-kvm-fix-crash-on-reboot-with-vhost-net.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1560,6 +1562,7 @@ such as kvmtrace and kvm_stat.
 %patch1488 -p1
 %patch1489 -p1
 %patch1490 -p1
+%patch1491 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1759,6 +1762,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue May 25 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.64.el6
+- kvm-qemu-kvm-fix-crash-on-reboot-with-vhost-net.patch [bz#585940]
+- Related: bz#585940
+  (qemu-kvm crashes on reboot when vhost is enabled)
+
 * Tue May 25 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.63.el6
 - kvm-fix-undefined-shifts-by-32.patch [bz#590922]
 - kvm-qemu-char.c-drop-debug-printfs-from-qemu_chr_parse_c.patch [bz#590922]
