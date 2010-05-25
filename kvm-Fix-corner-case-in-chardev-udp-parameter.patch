@@ -1,0 +1,48 @@
+From 74af937f47529adff2b3207565149a3f5f17c786 Mon Sep 17 00:00:00 2001
+From: Marcelo Tosatti <mtosatti@redhat.com>
+Date: Tue, 11 May 2010 00:20:13 -0300
+Subject: [PATCH 3/8] Fix corner case in chardev udp: parameter
+
+RH-Author: Marcelo Tosatti <mtosatti@redhat.com>
+Message-id: <20100511002137.872631704@amt.cnet>
+Patchwork-id: 9145
+O-Subject: [RHEL6 qemu-kvm patch 04/16] Fix corner case in chardev udp: parameter
+Bugzilla:
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+Bugzilla-related: 590922
+
+commit 6629fa647330f6d28ba843cda2c0700dc7d4c952
+From: Jan Kiszka <jan.kiszka@siemens.com>
+
+Fix corner case in chardev udp: parameter
+
+The missing '@' broke 'udp::<port>@:<port>' parsing.
+
+Signed-off-by: Jan Kiszka <jan.kiszka@siemens.com>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit 39324ca488ac8f7124b3698d28bf46b90d9acd84)
+Bugzilla: 590922
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-char.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-char.c b/qemu-char.c
+index 8568d4c..4b0eeac 100644
+--- a/qemu-char.c
++++ b/qemu-char.c
+@@ -2340,7 +2340,7 @@ QemuOpts *qemu_chr_parse_compat(const char *label, const char *filename)
+         qemu_opt_set(opts, "backend", "udp");
+         if (sscanf(p, "%64[^:]:%32[^@,]%n", host, port, &pos) < 2) {
+             host[0] = 0;
+-            if (sscanf(p, ":%32[^,]%n", port, &pos) < 1) {
++            if (sscanf(p, ":%32[^@,]%n", port, &pos) < 1) {
+                 goto fail;
+             }
+         }
+-- 
+1.7.0.3
+

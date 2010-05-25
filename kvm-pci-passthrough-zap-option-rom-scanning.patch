@@ -1,0 +1,129 @@
+From ef4fbe2d628056d2e7d491a406c3622a94783dd7 Mon Sep 17 00:00:00 2001
+From: Marcelo Tosatti <mtosatti@redhat.com>
+Date: Tue, 11 May 2010 00:20:14 -0300
+Subject: [PATCH 4/8] pci passthrough: zap option rom scanning.
+
+RH-Author: Marcelo Tosatti <mtosatti@redhat.com>
+Message-id: <20100511002137.941281876@amt.cnet>
+Patchwork-id: 9157
+O-Subject: [RHEL6 qemu-kvm patch 05/16] pci passthrough: zap option rom scanning.
+Bugzilla:
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+Bugzilla-related: 590922
+
+commit ffe6c5b5feb073900e91240d400242f710887719
+From: Gerd Hoffmann <kraxel@redhat.com>
+
+pci passthrough: zap option rom scanning.
+
+Nowdays (qemu 0.12) seabios loads option roms from pci rom bars.  So
+there is no need any more to scan for option roms and have qemu load
+them.  Zap the code.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+(cherry picked from commit 51c0dad5ce383be94ca7c46e491ada17cc9ec416)
+Bugzilla: 590922
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |   75 ------------------------------------------------
+ 1 files changed, 0 insertions(+), 75 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index 6c0af9e..1048952 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -1312,77 +1312,6 @@ void add_assigned_devices(PCIBus *bus, const char **devices, int n_devices)
+     }
+ }
+ 
+-/* Option ROM header */
+-struct option_rom_header {
+-    uint8_t signature[2];
+-    uint8_t rom_size;
+-    uint32_t entry_point;
+-    uint8_t reserved[17];
+-    uint16_t pci_header_offset;
+-    uint16_t expansion_header_offset;
+-} __attribute__ ((packed));
+-
+-/* Option ROM PCI data structure */
+-struct option_rom_pci_header {
+-    uint8_t signature[4];
+-    uint16_t vendor_id;
+-    uint16_t device_id;
+-    uint16_t vital_product_data_offset;
+-    uint16_t structure_length;
+-    uint8_t structure_revision;
+-    uint8_t class_code[3];
+-    uint16_t image_length;
+-    uint16_t image_revision;
+-    uint8_t code_type;
+-    uint8_t indicator;
+-    uint16_t reserved;
+-} __attribute__ ((packed));
+-
+-/*
+- * Scan the list of Option ROMs at roms. If a suitable Option ROM is found,
+- * allocate a ram space and copy it there. Then return its size aligned to
+- * both 2KB and target page size.
+- */
+-#define OPTION_ROM_ALIGN(x) (((x) + 2047) & ~2047)
+-static void scan_option_rom(const char *name, uint8_t devfn, void *roms)
+-{
+-    int i, size;
+-    uint8_t csum;
+-    struct option_rom_header *rom;
+-    struct option_rom_pci_header *pcih;
+-
+-    rom = roms;
+-
+-    for ( ; ; ) {
+-        /* Invalid signature means we're out of option ROMs. */
+-        if (strncmp((char *)rom->signature, "\x55\xaa", 2) ||
+-             (rom->rom_size == 0))
+-            break;
+-
+-        size = rom->rom_size * 512;
+-        /* Invalid checksum means we're out of option ROMs. */
+-        csum = 0;
+-        for (i = 0; i < size; i++)
+-            csum += ((uint8_t *)rom)[i];
+-        if (csum != 0)
+-            break;
+-
+-        /* Check the PCI header (if any) for a match. */
+-        pcih = (struct option_rom_pci_header *)
+-                ((char *)rom + rom->pci_header_offset);
+-        if ((rom->pci_header_offset != 0) &&
+-             !strncmp((char *)pcih->signature, "PCIR", 4))
+-            goto found;
+-
+-        rom = (struct option_rom_header *)((char *)rom + size);
+-    }
+-    return;
+-
+- found:
+-    rom_add_blob(name ? name : "assigned device", rom, size, 0);
+-    return;
+-}
+-
+ /*
+  * Scan the assigned devices for the devices that have an option ROM, and then
+  * load the corresponding ROM data to RAM. If an error occurs while loading an
+@@ -1446,9 +1375,5 @@ static void assigned_dev_load_option_rom(AssignedDevice *dev)
+                  size, PROT_READ);
+     }
+ 
+-    if (!dev->dev.qdev.hotplugged) {
+-        /* Scan the buffer for suitable ROMs and increase the offset */
+-        scan_option_rom(dev->dev.qdev.id, dev->dev.devfn, buf);
+-    }
+     free(buf);
+ }
+-- 
+1.7.0.3
+

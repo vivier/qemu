@@ -1,0 +1,63 @@
+From 40bbebbd563bdf854623e7f884d83e157325a209 Mon Sep 17 00:00:00 2001
+From: Marcelo Tosatti <mtosatti@redhat.com>
+Date: Tue, 11 May 2010 00:20:12 -0300
+Subject: [PATCH 2/8] qemu-char.c: drop debug printfs from qemu_chr_parse_compat
+
+RH-Author: Marcelo Tosatti <mtosatti@redhat.com>
+Message-id: <20100511002137.800465233@amt.cnet>
+Patchwork-id: 9142
+O-Subject: [RHEL6 qemu-kvm patch 03/16] qemu-char.c: drop debug printfs from
+	qemu_chr_parse_compat
+Bugzilla:
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+Bugzilla-related: 590922
+
+commit cc21d131e347673564ccc10f9d30c9995f4b664e
+From: Jan Kiszka <jan.kiszka@web.de>
+
+qemu-char.c: drop debug printfs from qemu_chr_parse_compat
+
+Signed-off-by: Jan Kiszka <jan.kiszka@siemens.com>
+Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit 5bb599023a6478e86152a2e8bc2b21775261b9da)
+Bugzilla: 590922
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-char.c |    3 ---
+ 1 files changed, 0 insertions(+), 3 deletions(-)
+
+diff --git a/qemu-char.c b/qemu-char.c
+index 836bbc1..8568d4c 100644
+--- a/qemu-char.c
++++ b/qemu-char.c
+@@ -2341,7 +2341,6 @@ QemuOpts *qemu_chr_parse_compat(const char *label, const char *filename)
+         if (sscanf(p, "%64[^:]:%32[^@,]%n", host, port, &pos) < 2) {
+             host[0] = 0;
+             if (sscanf(p, ":%32[^,]%n", port, &pos) < 1) {
+-                fprintf(stderr, "udp #1\n");
+                 goto fail;
+             }
+         }
+@@ -2352,7 +2351,6 @@ QemuOpts *qemu_chr_parse_compat(const char *label, const char *filename)
+             if (sscanf(p, "%64[^:]:%32[^,]%n", host, port, &pos) < 2) {
+                 host[0] = 0;
+                 if (sscanf(p, ":%32[^,]%n", port, &pos) < 1) {
+-                    fprintf(stderr, "udp #2\n");
+                     goto fail;
+                 }
+             }
+@@ -2380,7 +2378,6 @@ QemuOpts *qemu_chr_parse_compat(const char *label, const char *filename)
+     }
+ 
+ fail:
+-    fprintf(stderr, "%s: fail on \"%s\"\n", __FUNCTION__, filename);
+     qemu_opts_del(opts);
+     return NULL;
+ }
+-- 
+1.7.0.3
+

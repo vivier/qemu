@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.62%{?dist}
+Release: 2.63%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -990,6 +990,22 @@ Patch1480: kvm-block-add-logical_block_size-property.patch
 Patch1481: kvm-virtio-serial-bus-fix-ports_map-allocation.patch
 # For bz#569661 - RHEL6.0 requires backport of upstream cpu model support..
 Patch1482: kvm-Move-cpu-model-config-file-to-agree-with-rpm-build-B.patch
+# For bz#590922 - backport qemu-kvm-0.12.4 fixes to RHEL6
+Patch1483: kvm-fix-undefined-shifts-by-32.patch
+# For bz#590922 - backport qemu-kvm-0.12.4 fixes to RHEL6
+Patch1484: kvm-qemu-char.c-drop-debug-printfs-from-qemu_chr_parse_c.patch
+# For bz#590922 - backport qemu-kvm-0.12.4 fixes to RHEL6
+Patch1485: kvm-Fix-corner-case-in-chardev-udp-parameter.patch
+# For bz#590922 - backport qemu-kvm-0.12.4 fixes to RHEL6
+Patch1486: kvm-pci-passthrough-zap-option-rom-scanning.patch
+# For bz#590922 - backport qemu-kvm-0.12.4 fixes to RHEL6
+Patch1487: kvm-UHCI-spurious-interrupt-fix.patch
+# For bz#590922 - backport qemu-kvm-0.12.4 fixes to RHEL6
+Patch1488: kvm-Fix-SIGFPE-for-vnc-display-of-width-height-1.patch
+# For bz#589670 - spice: Ensure ring data is save/restored on migration
+Patch1489: kvm-spice-vmc-remove-ringbuffer.patch
+# For bz#589670 - spice: Ensure ring data is save/restored on migration
+Patch1490: kvm-spice-vmc-add-dprintfs.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1536,6 +1552,14 @@ such as kvmtrace and kvm_stat.
 %patch1480 -p1
 %patch1481 -p1
 %patch1482 -p1
+%patch1483 -p1
+%patch1484 -p1
+%patch1485 -p1
+%patch1486 -p1
+%patch1487 -p1
+%patch1488 -p1
+%patch1489 -p1
+%patch1490 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1735,6 +1759,20 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue May 25 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.63.el6
+- kvm-fix-undefined-shifts-by-32.patch [bz#590922]
+- kvm-qemu-char.c-drop-debug-printfs-from-qemu_chr_parse_c.patch [bz#590922]
+- kvm-Fix-corner-case-in-chardev-udp-parameter.patch [bz#590922]
+- kvm-pci-passthrough-zap-option-rom-scanning.patch [bz#590922]
+- kvm-UHCI-spurious-interrupt-fix.patch [bz#590922]
+- kvm-Fix-SIGFPE-for-vnc-display-of-width-height-1.patch [bz#590922]
+- kvm-spice-vmc-remove-ringbuffer.patch [bz#589670]
+- kvm-spice-vmc-add-dprintfs.patch [bz#589670]
+- Resolves: bz#589670
+  (spice: Ensure ring data is save/restored on migration)
+- Related: bz#590922
+  (backport qemu-kvm-0.12.4 fixes to RHEL6)
+
 * Mon May 24 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.62.el6
 - kvm-block-add-logical_block_size-property.patch [bz#566785]
 - kvm-virtio-serial-bus-fix-ports_map-allocation.patch [bz#591176]

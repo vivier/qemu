@@ -1,0 +1,51 @@
+From 2799e90439faa8592e4588aa704a3d7e2a4de4da Mon Sep 17 00:00:00 2001
+From: Marcelo Tosatti <mtosatti@redhat.com>
+Date: Tue, 11 May 2010 00:20:11 -0300
+Subject: [PATCH 1/8] fix undefined shifts by >32
+
+RH-Author: Marcelo Tosatti <mtosatti@redhat.com>
+Message-id: <20100511002137.736962506@amt.cnet>
+Patchwork-id: 9153
+O-Subject: [RHEL6 qemu-kvm patch 02/16] fix undefined shifts by >32
+Bugzilla:
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+Bugzilla-related: 590922
+
+commit 41a5bda61fcab457cbfe8aa5f55cf7aadd0067a9
+From: Paolo Bonzini <pbonzini@redhat.com>
+
+fix undefined shifts by >32
+
+This one is for 0.12 too.
+
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+(cherry picked from commit 0dfbd514460045e3af1ed6805ab97ffedbbd1ab2)
+Bugzilla: 590922
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vl.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index 4b5997a..53b8f88 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2656,9 +2656,9 @@ static void numa_add(const char *optarg)
+                         fprintf(stderr,
+                             "only 63 CPUs in NUMA mode supported.\n");
+                     }
+-                    value = (1 << (endvalue + 1)) - (1 << value);
++                    value = (2ULL << endvalue) - (1ULL << value);
+                 } else {
+-                    value = 1 << value;
++                    value = 1ULL << value;
+                 }
+             }
+             node_cpumask[nodenr] = value;
+-- 
+1.7.0.3
+
