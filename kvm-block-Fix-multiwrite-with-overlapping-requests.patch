@@ -1,0 +1,47 @@
+From a25e528a8f4908ea9ad02f72e018ad7d6636524b Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Wed, 26 May 2010 11:21:24 -0300
+Subject: [PATCH 9/9] block: Fix multiwrite with overlapping requests
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1274872884-23841-3-git-send-email-kwolf@redhat.com>
+Patchwork-id: 9570
+O-Subject: [RHEL-6 qemu-kvm PATCH 2/2] block: Fix multiwrite with overlapping
+	requests
+Bugzilla: 596119
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+Bugzilla: 596119
+Upstream status: Submitted
+
+With overlapping requests, the total number of sectors is smaller than the sum
+of the nb_sectors of both requests.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/block.c b/block.c
+index 98fe44e..978d3e5 100644
+--- a/block.c
++++ b/block.c
+@@ -1966,7 +1966,7 @@ static int multiwrite_merge(BlockDriverState *bs, BlockRequest *reqs,
+             // Add the second request
+             qemu_iovec_concat(qiov, reqs[i].qiov, reqs[i].qiov->size);
+ 
+-            reqs[outidx].nb_sectors += reqs[i].nb_sectors;
++            reqs[outidx].nb_sectors = qiov->size >> 9;
+             reqs[outidx].qiov = qiov;
+ 
+             mcb->callbacks[i].free_qiov = reqs[outidx].qiov;
+-- 
+1.7.0.3
+

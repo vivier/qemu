@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.64%{?dist}
+Release: 2.65%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1008,6 +1008,24 @@ Patch1489: kvm-spice-vmc-remove-ringbuffer.patch
 Patch1490: kvm-spice-vmc-add-dprintfs.patch
 # For bz#585940 - qemu-kvm crashes on reboot when vhost is enabled
 Patch1491: kvm-qemu-kvm-fix-crash-on-reboot-with-vhost-net.patch
+# For bz#577106 - Abort/Segfault when creating qcow2 format image with 512b cluster size
+Patch1492: kvm-qcow2-Fix-creation-of-large-images.patch
+# For bz#569767 - Caps Lock the key's appearance  of guest is not synchronous as host's --view kvm with vnc
+Patch1493: kvm-vnc-sync-lock-modifier-state-on-connect.patch
+# For bz#589952 - QMP breaks when issuing any command with a backslash
+Patch1494: kvm-json-lexer-Initialize-x-and-y.patch
+# For bz#589952 - QMP breaks when issuing any command with a backslash
+Patch1495: kvm-json-lexer-Handle-missing-escapes.patch
+# For bz#589952 - QMP breaks when issuing any command with a backslash
+Patch1496: kvm-qjson-Handle-f.patch
+# For bz#589952 - QMP breaks when issuing any command with a backslash
+Patch1497: kvm-json-lexer-Drop-buf.patch
+# For bz#589952 - QMP breaks when issuing any command with a backslash
+Patch1498: kvm-json-streamer-Don-t-use-qdict_put_obj.patch
+# For bz#596119 - Possible corruption after block request merge
+Patch1499: kvm-block-fix-sector-comparism-in-multiwrite_req_compare.patch
+# For bz#596119 - Possible corruption after block request merge
+Patch1500: kvm-block-Fix-multiwrite-with-overlapping-requests.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1563,6 +1581,15 @@ such as kvmtrace and kvm_stat.
 %patch1489 -p1
 %patch1490 -p1
 %patch1491 -p1
+%patch1492 -p1
+%patch1493 -p1
+%patch1494 -p1
+%patch1495 -p1
+%patch1496 -p1
+%patch1497 -p1
+%patch1498 -p1
+%patch1499 -p1
+%patch1500 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1762,6 +1789,25 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed May 26 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.65.el6
+- kvm-qcow2-Fix-creation-of-large-images.patch [bz#577106]
+- kvm-vnc-sync-lock-modifier-state-on-connect.patch [bz#569767]
+- kvm-json-lexer-Initialize-x-and-y.patch [bz#589952]
+- kvm-json-lexer-Handle-missing-escapes.patch [bz#589952]
+- kvm-qjson-Handle-f.patch [bz#589952]
+- kvm-json-lexer-Drop-buf.patch [bz#589952]
+- kvm-json-streamer-Don-t-use-qdict_put_obj.patch [bz#589952]
+- kvm-block-fix-sector-comparism-in-multiwrite_req_compare.patch [bz#596119]
+- kvm-block-Fix-multiwrite-with-overlapping-requests.patch [bz#596119]
+- Resolves: bz#569767
+  (Caps Lock the key's appearance  of guest is not synchronous as host's --view kvm with vnc)
+- Resolves: bz#577106
+  (Abort/Segfault when creating qcow2 format image with 512b cluster size)
+- Resolves: bz#589952
+  (QMP breaks when issuing any command with a backslash)
+- Resolves: bz#596119
+  (Possible corruption after block request merge)
+
 * Tue May 25 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.64.el6
 - kvm-qemu-kvm-fix-crash-on-reboot-with-vhost-net.patch [bz#585940]
 - Related: bz#585940

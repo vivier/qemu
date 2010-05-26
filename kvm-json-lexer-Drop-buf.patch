@@ -1,0 +1,57 @@
+From 988404dc941f7e73d0615203cb4cdfe57ba7d991 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 24 May 2010 17:08:46 -0300
+Subject: [PATCH 6/9] json-lexer: Drop 'buf'
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1274720927-19579-5-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 9508
+O-Subject: [PATCH 4/5] json-lexer: Drop 'buf'
+Bugzilla: 589952
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+Bugzilla: 589952
+Upstream status: Submitted
+
+QString supports adding a single char, 'buf' is unneeded.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ json-lexer.c |    7 +------
+ 1 files changed, 1 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ json-lexer.c |    7 +------
+ 1 files changed, 1 insertions(+), 6 deletions(-)
+
+diff --git a/json-lexer.c b/json-lexer.c
+index 5cc7e6c..1d9b81f 100644
+--- a/json-lexer.c
++++ b/json-lexer.c
+@@ -284,8 +284,6 @@ void json_lexer_init(JSONLexer *lexer, JSONLexerEmitter func)
+ 
+ static int json_lexer_feed_char(JSONLexer *lexer, char ch)
+ {
+-    char buf[2];
+-
+     lexer->x++;
+     if (ch == '\n') {
+         lexer->x = 0;
+@@ -313,10 +311,7 @@ static int json_lexer_feed_char(JSONLexer *lexer, char ch)
+         break;
+     }
+ 
+-    buf[0] = ch;
+-    buf[1] = 0;
+-
+-    qstring_append(lexer->token, buf);
++    qstring_append_chr(lexer->token, ch);
+ 
+     return 0;
+ }
+-- 
+1.7.0.3
+

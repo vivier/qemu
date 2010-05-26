@@ -1,0 +1,63 @@
+From dc761a0389b892c9df3f84fc888df8a2bd124a97 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 24 May 2010 17:08:45 -0300
+Subject: [PATCH 5/9] qjson: Handle "\f"
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1274720927-19579-4-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 9507
+O-Subject: [PATCH 3/5] qjson: Handle "\f"
+Bugzilla: 589952
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+Bugzilla: 589952
+Upstream status: Submitted
+
+It's valid JSON and should be handled.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ json-parser.c |    4 ++++
+ qjson.c       |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ json-parser.c |    4 ++++
+ qjson.c       |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/json-parser.c b/json-parser.c
+index 2c990a6..f0e3997 100644
+--- a/json-parser.c
++++ b/json-parser.c
+@@ -206,6 +206,10 @@ static QString *qstring_from_escaped_str(JSONParserContext *ctxt, QObject *token
+                 qstring_append(str, "\b");
+                 ptr++;
+                 break;
++            case 'f':
++                qstring_append(str, "\f");
++                ptr++;
++                break;
+             case 'n':
+                 qstring_append(str, "\n");
+                 ptr++;
+diff --git a/qjson.c b/qjson.c
+index 483c667..e4ee433 100644
+--- a/qjson.c
++++ b/qjson.c
+@@ -158,6 +158,9 @@ static void to_json(const QObject *obj, QString *str)
+                 case '\b':
+                     qstring_append(str, "\\b");
+                     break;
++                case '\f':
++                    qstring_append(str, "\\f");
++                    break;
+                 case '\n':
+                     qstring_append(str, "\\n");
+                     break;
+-- 
+1.7.0.3
+
