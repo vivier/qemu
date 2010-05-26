@@ -1,0 +1,115 @@
+From 266d4c1359d00f35c2b26556b01b857456537294 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Mon, 24 May 2010 20:01:08 -0300
+Subject: [PATCH 3/3] device-assignment: add config fd qdev property
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100524200108.23875.54793.stgit@virtlab9.virt.bos.redhat.com>
+Patchwork-id: 9516
+O-Subject: [RHEL6.0 qemu-kvm PATCH 3/3] device-assignment: add config fd qdev
+	property
+Bugzilla: 595495
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 595495
+Upstream status: submitted
+
+When libvirt launches a guest it first chowns the relevenat
+/sys/bus/pci/.../config file for an assigned device then drops privileges.
+
+This causes an issue for device assignment because despite being file
+owner, the sysfs config space file checks for CAP_SYS_ADMIN before
+allowing access to device dependent config space.
+
+This adds a new qdev configfd property which allows libvirt to open the
+sysfs config space file and give qemu an already opened file descriptor.
+Along with a change pending for the 2.6.35 kernel, this allows the
+capability check to compare against privileges from when the file was
+opened.
+
+Signed-off-by: Chris Wright <chrisw@redhat.com>
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+---
+
+ hw/device-assignment.c |   28 ++++++++++++++++++++++------
+ hw/device-assignment.h |    1 +
+ 2 files changed, 23 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |   28 ++++++++++++++++++++++------
+ hw/device-assignment.h |    1 +
+ 2 files changed, 23 insertions(+), 6 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index 9f59062..d05fd0f 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -37,6 +37,7 @@
+ #include "console.h"
+ #include "device-assignment.h"
+ #include "loader.h"
++#include "monitor.h"
+ #include <pci/header.h>
+ 
+ /* From linux/ioport.h */
+@@ -511,14 +512,28 @@ static int get_real_device(AssignedDevice *pci_dev, uint8_t r_bus,
+ 
+     snprintf(name, sizeof(name), "%sconfig", dir);
+ 
+-    fd = open(name, O_RDWR);
+-    if (fd == -1) {
+-        fprintf(stderr, "%s: %s: %m\n", __func__, name);
+-        return 1;
++    if (pci_dev->configfd_name && *pci_dev->configfd_name) {
++        if (qemu_isdigit(pci_dev->configfd_name[0])) {
++            dev->config_fd = strtol(pci_dev->configfd_name, NULL, 0);
++        } else {
++            dev->config_fd = monitor_get_fd(cur_mon, pci_dev->configfd_name);
++            if (dev->config_fd < 0) {
++                fprintf(stderr, "%s: (%s) unkown\n", __func__,
++                        pci_dev->configfd_name);
++                return 1;
++            }
++        }
++    } else {
++        dev->config_fd = open(name, O_RDWR);
++
++        if (dev->config_fd == -1) {
++            fprintf(stderr, "%s: %s: %m\n", __func__, name);
++            return 1;
++        }
+     }
+-    dev->config_fd = fd;
+ again:
+-    r = read(fd, pci_dev->dev.config, pci_config_size(&pci_dev->dev));
++    r = read(dev->config_fd, pci_dev->dev.config,
++             pci_config_size(&pci_dev->dev));
+     if (r < 0) {
+         if (errno == EINTR || errno == EAGAIN)
+             goto again;
+@@ -1272,6 +1287,7 @@ static PCIDeviceInfo assign_info = {
+     .qdev.props   = (Property[]) {
+         DEFINE_PROP("host", AssignedDevice, host, qdev_prop_hostaddr, PCIHostDevice),
+         DEFINE_PROP_UINT32("iommu", AssignedDevice, use_iommu, 1),
++        DEFINE_PROP_STRING("configfd", AssignedDevice, configfd_name),
+         DEFINE_PROP_END_OF_LIST(),
+     },
+ };
+diff --git a/hw/device-assignment.h b/hw/device-assignment.h
+index 40ba09d..b3ef4db 100644
+--- a/hw/device-assignment.h
++++ b/hw/device-assignment.h
+@@ -101,6 +101,7 @@ typedef struct AssignedDevice {
+     target_phys_addr_t msix_table_addr;
+     int mmio_index;
+     int need_emulate_cmd;
++    char *configfd_name;
+     QLIST_ENTRY(AssignedDevice) next;
+ } AssignedDevice;
+ 
+-- 
+1.7.0.3
+

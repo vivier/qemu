@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.65%{?dist}
+Release: 2.66%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1026,6 +1026,12 @@ Patch1498: kvm-json-streamer-Don-t-use-qdict_put_obj.patch
 Patch1499: kvm-block-fix-sector-comparism-in-multiwrite_req_compare.patch
 # For bz#596119 - Possible corruption after block request merge
 Patch1500: kvm-block-Fix-multiwrite-with-overlapping-requests.patch
+# For bz#595495 - Fail to hotplug pci device to guest
+Patch1501: kvm-device-assignment-use-stdint-types.patch
+# For bz#595495 - Fail to hotplug pci device to guest
+Patch1502: kvm-device-assignment-Don-t-use-libpci.patch
+# For bz#595495 - Fail to hotplug pci device to guest
+Patch1503: kvm-device-assignment-add-config-fd-qdev-property.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1590,6 +1596,9 @@ such as kvmtrace and kvm_stat.
 %patch1498 -p1
 %patch1499 -p1
 %patch1500 -p1
+%patch1501 -p1
+%patch1502 -p1
+%patch1503 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1789,6 +1798,13 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed May 26 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.66.el6
+- kvm-device-assignment-use-stdint-types.patch [bz#595495]
+- kvm-device-assignment-Don-t-use-libpci.patch [bz#595495]
+- kvm-device-assignment-add-config-fd-qdev-property.patch [bz#595495]
+- Resolves: bz#595495
+  (Fail to hotplug pci device to guest)
+
 * Wed May 26 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.65.el6
 - kvm-qcow2-Fix-creation-of-large-images.patch [bz#577106]
 - kvm-vnc-sync-lock-modifier-state-on-connect.patch [bz#569767]

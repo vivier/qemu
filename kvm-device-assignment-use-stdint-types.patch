@@ -1,0 +1,59 @@
+From 94949ed2ad6963f225721d40974e59024d19f9ee Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Mon, 24 May 2010 20:00:56 -0300
+Subject: [PATCH 1/3] device-assignment: use stdint types
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100524200056.23875.50862.stgit@virtlab9.virt.bos.redhat.com>
+Patchwork-id: 9514
+O-Subject: [RHEL6.0 qemu-kvm PATCH 1/3] device-assignment: use stdint types
+Bugzilla: 595495
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 595495
+Upstream status: submitted
+
+Use stdint types to avoid extra reliance on pci/pci.h header.
+
+Cc: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Chris Wright <chrisw@redhat.com>
+---
+
+ hw/device-assignment.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index 1048952..3957316 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -831,9 +831,9 @@ static void assigned_dev_update_msi(PCIDevice *pci_dev, unsigned int ctrl_pos)
+ static int assigned_dev_update_msix_mmio(PCIDevice *pci_dev)
+ {
+     AssignedDevice *adev = container_of(pci_dev, AssignedDevice, dev);
+-    u16 entries_nr = 0, entries_max_nr;
++    uint16_t entries_nr = 0, entries_max_nr;
+     int pos = 0, i, r = 0;
+-    u32 msg_addr, msg_upper_addr, msg_data, msg_ctrl;
++    uint32_t msg_addr, msg_upper_addr, msg_data, msg_ctrl;
+     struct kvm_assigned_msix_nr msix_nr;
+     struct kvm_assigned_msix_entry msix_entry;
+     void *va = adev->msix_table_page;
+@@ -1017,7 +1017,7 @@ static int assigned_device_pci_cap_init(PCIDevice *pci_dev)
+     /* Expose MSI-X capability */
+     if (pci_find_cap_offset(dev->pdev, PCI_CAP_ID_MSIX)) {
+         int pos, entry_nr, bar_nr;
+-        u32 msix_table_entry;
++        uint32_t msix_table_entry;
+         dev->cap.available |= ASSIGNED_DEVICE_CAP_MSIX;
+         memset(&pci_dev->config[pci_dev->cap.start + pci_dev->cap.length],
+                0, PCI_CAPABILITY_CONFIG_MSIX_LENGTH);
+-- 
+1.7.0.3
+
