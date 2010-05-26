@@ -1,0 +1,72 @@
+From 4a5f99787dff0abe95ae58ecd0d2e96fb65d398e Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 25 May 2010 16:52:43 -0300
+Subject: [PATCH] virtio-blk: fix barrier support
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1274806363-24234-1-git-send-email-kwolf@redhat.com>
+Patchwork-id: 9547
+O-Subject: [RHEL-6 qemu-kvm PATCH] virtio-blk: fix barrier support
+Bugzilla: 595813
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+From: Christoph Hellwig <hch@lst.de>
+
+Bugzilla: 595813
+
+Before issuing the barrier to the block driver we need to flush our oustanding
+queue of write requests, as the flush is supposed to be issued after them.
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 618fbb84299780af96e3d4c4b6f2148656fe3708)
+---
+ hw/virtio-blk.c |   15 +++++++++++++--
+ 1 files changed, 13 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-blk.c |   15 +++++++++++++--
+ 1 files changed, 13 insertions(+), 2 deletions(-)
+
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index f70779f..e4edd5a 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -243,10 +243,20 @@ static void do_multiwrite(BlockDriverState *bs, BlockRequest *blkreq,
+     }
+ }
+ 
+-static void virtio_blk_handle_flush(VirtIOBlockReq *req)
++static void virtio_blk_handle_flush(BlockRequest *blkreq, int *num_writes,
++    VirtIOBlockReq *req, BlockDriverState **old_bs)
+ {
+     BlockDriverAIOCB *acb;
+ 
++    /*
++     * Make sure all outstanding writes are posted to the backing device.
++     */
++    if (*old_bs != NULL) {
++        do_multiwrite(*old_bs, blkreq, *num_writes);
++    }
++    *num_writes = 0;
++    *old_bs = req->dev->bs;
++
+     acb = bdrv_aio_flush(req->dev->bs, virtio_blk_flush_complete, req);
+     if (!acb) {
+         virtio_blk_req_complete(req, VIRTIO_BLK_S_IOERR);
+@@ -319,7 +329,8 @@ static void virtio_blk_handle_request(VirtIOBlockReq *req,
+     req->in = (void *)req->elem.in_sg[req->elem.in_num - 1].iov_base;
+ 
+     if (req->out->type & VIRTIO_BLK_T_FLUSH) {
+-        virtio_blk_handle_flush(req);
++        virtio_blk_handle_flush(mrb->blkreq, &mrb->num_writes,
++            req, &mrb->old_bs);
+     } else if (req->out->type & VIRTIO_BLK_T_SCSI_CMD) {
+         virtio_blk_handle_scsi(req);
+     } else if (req->out->type & VIRTIO_BLK_T_OUT) {
+-- 
+1.7.0.3
+

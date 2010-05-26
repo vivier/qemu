@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.67%{?dist}
+Release: 2.68%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1034,6 +1034,8 @@ Patch1502: kvm-device-assignment-Don-t-use-libpci.patch
 Patch1503: kvm-device-assignment-add-config-fd-qdev-property.patch
 # For bz#595301 - QEMU terminates without warning with virtio-net and SMP enabled
 Patch1504: kvm-qemu-address-todo-comment-in-exec.c.patch
+# For bz#595813 - virtio-blk doesn't handle barriers correctly
+Patch1505: kvm-virtio-blk-fix-barrier-support.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1602,6 +1604,7 @@ such as kvmtrace and kvm_stat.
 %patch1502 -p1
 %patch1503 -p1
 %patch1504 -p1
+%patch1505 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1801,6 +1804,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed May 26 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.68.el6
+- kvm-virtio-blk-fix-barrier-support.patch [bz#595813]
+- Resolves: bz#595813
+  (virtio-blk doesn't handle barriers correctly)
+
 * Wed May 26 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.67.el6
 - kvm-qemu-address-todo-comment-in-exec.c.patch [bz#595301]
 - Resolves: bz#595301
