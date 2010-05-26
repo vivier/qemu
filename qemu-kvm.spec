@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.66%{?dist}
+Release: 2.67%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1032,6 +1032,8 @@ Patch1501: kvm-device-assignment-use-stdint-types.patch
 Patch1502: kvm-device-assignment-Don-t-use-libpci.patch
 # For bz#595495 - Fail to hotplug pci device to guest
 Patch1503: kvm-device-assignment-add-config-fd-qdev-property.patch
+# For bz#595301 - QEMU terminates without warning with virtio-net and SMP enabled
+Patch1504: kvm-qemu-address-todo-comment-in-exec.c.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1599,6 +1601,7 @@ such as kvmtrace and kvm_stat.
 %patch1501 -p1
 %patch1502 -p1
 %patch1503 -p1
+%patch1504 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1798,6 +1801,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed May 26 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.67.el6
+- kvm-qemu-address-todo-comment-in-exec.c.patch [bz#595301]
+- Resolves: bz#595301
+  (QEMU terminates without warning with virtio-net and SMP enabled)
+
 * Wed May 26 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.66.el6
 - kvm-device-assignment-use-stdint-types.patch [bz#595495]
 - kvm-device-assignment-Don-t-use-libpci.patch [bz#595495]
