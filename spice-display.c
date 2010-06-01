@@ -31,10 +31,15 @@ static struct SpiceDisplay {
 
 QXLUpdate *qemu_spice_display_create_update(DisplayState *ds, Rect *dirty, int unique)
 {
+    PixelFormat pf;
     QXLUpdate *update;
     QXLDrawable *drawable;
     QXLImage *image;
     QXLCommand *cmd;
+    uint32_t *dst;
+    uint16_t *src16;
+    void *src;
+    int pixels, x, y;
 
     dirty->left = 0;
 #if 0
@@ -43,7 +48,8 @@ QXLUpdate *qemu_spice_display_create_update(DisplayState *ds, Rect *dirty, int u
             dirty->top, dirty->bottom);
 #endif
 
-    update   = qemu_mallocz(sizeof(*update));
+    pixels   = (dirty->bottom - dirty->top) * (dirty->right - dirty->left);
+    update   = qemu_mallocz(sizeof(*update) + pixels * sizeof(uint32_t));
     drawable = &update->drawable;
     image    = &update->image;
     cmd      = &update->cmd;
@@ -67,25 +73,43 @@ QXLUpdate *qemu_spice_display_create_update(DisplayState *ds, Rect *dirty, int u
     image->descriptor.type   = IMAGE_TYPE_BITMAP;
     image->descriptor.flags  = 0;
     QXL_SET_IMAGE_ID(image, QXL_IMAGE_GROUP_DEVICE, unique);
-    image->bitmap.flags      = QXL_BITMAP_DIRECT | QXL_BITMAP_TOP_DOWN | QXL_BITMAP_UNSTABLE;
-    image->bitmap.stride     = ds_get_linesize(ds);
+    image->bitmap.flags      = QXL_BITMAP_DIRECT | QXL_BITMAP_TOP_DOWN;
+    image->bitmap.stride     = drawable->u.copy.src_area.right * sizeof(uint32_t);
     image->descriptor.width  = image->bitmap.x = drawable->u.copy.src_area.right;
     image->descriptor.height = image->bitmap.y = drawable->u.copy.src_area.bottom;
-    image->bitmap.data = (PHYSICAL)(ds_get_data(ds) +
-                                    dirty->top * image->bitmap.stride +
-                                    dirty->left * ds_get_bytes_per_pixel(ds));
+    image->bitmap.data = (PHYSICAL)update->bitmap;
     image->bitmap.palette = 0;
-    switch (ds_get_bits_per_pixel(ds)) {
-    case 16:
-        image->bitmap.format = BITMAP_FMT_16BIT;
-        break;
-    case 32:
-        image->bitmap.format = BITMAP_FMT_32BIT;
-        break;
-    default:
-        fprintf(stderr, "%s: unhandled depth: %d bits\n", __FUNCTION__,
-                ds_get_bits_per_pixel(ds));
-        abort();
+    image->bitmap.format = BITMAP_FMT_32BIT;
+
+    dst = update->bitmap;
+    src = (ds_get_data(ds) +
+           dirty->top * ds_get_linesize(ds) +
+           dirty->left * ds_get_bytes_per_pixel(ds));
+    pf = ds->surface->pf;
+    for (y = 0; y < image->bitmap.y; y++) {
+        switch (ds_get_bits_per_pixel(ds)) {
+        case 16:
+            src16 = src;
+            for (x = 0; x < image->bitmap.x; x++) {
+                uint32_t r = (src16[x] & pf.rmask) >> pf.rshift;
+                uint32_t g = (src16[x] & pf.gmask) >> pf.gshift;
+                uint32_t b = (src16[x] & pf.bmask) >> pf.bshift;
+                r <<= (8 - pf.rbits);
+                g <<= (8 - pf.gbits);
+                b <<= (8 - pf.bbits);
+                dst[x] = (r << 16) | (g << 8) | b;
+            }
+            break;
+        case 32:
+            memcpy(dst, src, image->bitmap.stride);
+            break;
+        default:
+            fprintf(stderr, "%s: unhandled depth: %d bits\n", __FUNCTION__,
+                    ds_get_bits_per_pixel(ds));
+            abort();
+        }
+        dst += image->bitmap.x;
+        src += ds_get_linesize(ds);
     }
 
     cmd->type = QXL_CMD_DRAW;

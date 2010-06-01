@@ -6,6 +6,7 @@ typedef struct QXLUpdate {
     QXLDrawable drawable;
     QXLImage image;
     QXLCommand cmd;
+    uint32_t bitmap[];
 } QXLUpdate;
 
 QXLUpdate *qemu_spice_display_create_update(DisplayState *ds, Rect *dirty, int unique);
