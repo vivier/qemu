@@ -249,11 +249,7 @@ static void _qxl_get_info(PCIQXLDevice *d, QXLDevInfo *info)
 
         info->x_res = ds_get_width(qxl_vga.ds);
         info->y_res = ds_get_height(qxl_vga.ds);
-        info->bits = ds_get_bits_per_pixel(qxl_vga.ds);
-        if (info->bits != 32) {
-            dprintf(1, "%s: unexpected depth %d\n", __FUNCTION__, info->bits);
-            abort();
-        }
+        info->bits = 32;
 
         info->use_hardware_cursor = false;
 
