@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.68%{?dist}
+Release: 2.69%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1036,6 +1036,10 @@ Patch1503: kvm-device-assignment-add-config-fd-qdev-property.patch
 Patch1504: kvm-qemu-address-todo-comment-in-exec.c.patch
 # For bz#595813 - virtio-blk doesn't handle barriers correctly
 Patch1505: kvm-virtio-blk-fix-barrier-support.patch
+# changes for make-release with no resulting changes on binary
+Patch1506: kvm-make-release-misc-fixes.patch
+# For bz#595287 - virtio net/vhost net speed enhancements from upstream kernel
+Patch1507: kvm-virtio-utilize-PUBLISH_USED_IDX-feature.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1605,6 +1609,8 @@ such as kvmtrace and kvm_stat.
 %patch1503 -p1
 %patch1504 -p1
 %patch1505 -p1
+%patch1506 -p1
+%patch1507 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1804,6 +1810,12 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jun 01 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.69.el6
+- Changes to make-release script with no resulting changes on binary package
+- kvm-virtio-utilize-PUBLISH_USED_IDX-feature.patch [bz#595287]
+- Resolves: bz#595287
+  (virtio net/vhost net speed enhancements from upstream kernel)
+
 * Wed May 26 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.68.el6
 - kvm-virtio-blk-fix-barrier-support.patch [bz#595813]
 - Resolves: bz#595813
