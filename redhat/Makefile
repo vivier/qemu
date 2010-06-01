@@ -124,7 +124,7 @@ sources-rh: $(TARBALL) $(RC_PATCH) $(GIT_PATCH) $(REDHAT)/create-patches.sh Make
 	@cp $(TESTPATCH) $(SOURCES)/$(COMMON_NAME)-test.patch
 #	@cp configs/Makefile $(SOURCES)/Makefile.config
 	@cp Makefile.common $(SOURCES)/
-	@cp ksmtuned.conf ksmtuned ksmtuned.init ksm.sysconfig ksm.init 80-kvm.rules kvm.modules $(SOURCES)/
+	@cp $(EXTRA_SOURCES) $(SOURCES)/
 #	@cp genkey perf Makefile.common kabi/{find-provides,kabitool,check-kabi} kabi/Module.kabi_{i686,ppc64,s390x,x86_64} configs/{config-*,merge.pl} extrakeys.pub $(SOURCES)/
 
 rh-sources: setup-source sources-rh
