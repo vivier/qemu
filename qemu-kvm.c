@@ -590,6 +590,8 @@ int kvm_register_phys_mem(kvm_context_t kvm,
     }
     register_slot(memory.slot, memory.guest_phys_addr, memory.memory_size,
                   memory.userspace_addr, memory.flags);
+    if (kvm->dirty_pages_log_all)
+        kvm_dirty_pages_log_enable_slot(kvm, phys_start, len);
     return 0;
 }
 
