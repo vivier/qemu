@@ -1,0 +1,91 @@
+From 4537dd58850bf7f9e50ca7430a53100d0a4eecae Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 18 May 2010 19:31:41 -0300
+Subject: [PATCH 05/20] doc: Clean up monitor command function index
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1274211101-5748-5-git-send-email-armbru@redhat.com>
+Patchwork-id: 9379
+O-Subject: [RHEL-6 KVM PATCH 4/4] doc: Clean up monitor command function index
+Bugzilla: 588719
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Remove bogus entries "count", "format" and "size".  Accidentally added
+in commit 70fcbbe7.
+
+Add missing entry "qmp_capabilities".  Was forgotten in commit
+4a7e1190.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 54d7cf136f040713095cbc064f62d753bff6f9d2)
+
+Missing entries added for commands not in upstream qemu: cpu_set,
+__com.redhat_set_password, __com.redhat_spice_migrate_info.
+---
+ qemu-monitor.hx |    7 ++++---
+ 1 files changed, 4 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-monitor.hx |    7 ++++---
+ 1 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 226c7de..8a3d331 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -373,16 +373,13 @@ data. Its syntax is: @option{/@{count@}@{format@}@{size@}}
+ 
+ @table @var
+ @item count
+-@findex count
+ is the number of items to be dumped.
+ 
+ @item format
+-@findex format
+ can be x (hex), d (signed decimal), u (unsigned decimal), o (octal),
+ c (char) or i (asm instruction).
+ 
+ @item size
+-@findex size
+ can be b (8 bits), h (16 bits), w (32 bits) or g (64 bits). On x86,
+ @code{h} or @code{w} can be specified with the @code{i} format to
+ respectively select 16 or 32 bit code instruction size.
+@@ -1178,6 +1175,7 @@ ETEXI
+ 
+ STEXI
+ @item cpu_set @var{cpu} [online|offline]
++@findex cpu_set
+ Set CPU @var{cpu} online or offline.
+ ETEXI
+ 
+@@ -1192,6 +1190,7 @@ ETEXI
+ 
+ STEXI
+ @item qmp_capabilities
++@findex qmp_capabilities
+ Enable the specified QMP capabilities
+ ETEXI
+ 
+@@ -1208,6 +1207,7 @@ ETEXI
+ 
+ STEXI
+ @item __com.redhat_set_password [ vnc | spice ] password expiration [ action-if-connected ]
++@findex __com.redhat_set_password
+ change spice/vnc ticket
+ ETEXI
+ 
+@@ -1224,6 +1224,7 @@ ETEXI
+ 
+ STEXI
+ @item __com.redhat_spice_migrate_info hostname port tls-port cert-subject
++@findex __com.redhat_spice_migrate_info
+ send migration info to spice client
+ ETEXI
+ 
+-- 
+1.7.0.3
+

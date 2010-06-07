@@ -1,0 +1,26 @@
+From b9b6c0649599fac37dc36648337a6a8927be202e Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Mon, 7 Jun 2010 16:35:35 -0300
+Subject: [PATCH 20/20] redhat: update release number to 2.70
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ redhat/Makefile.common |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/redhat/Makefile.common b/redhat/Makefile.common
+index 3ca6d50..a8fe7e6 100644
+--- a/redhat/Makefile.common
++++ b/redhat/Makefile.common
+@@ -14,7 +14,7 @@ REDHAT:=$(shell pwd)
+ RPM:=$(REDHAT)/rpm
+ SRPMS:=$(RPM)/SRPMS
+ SOURCES:=$(RPM)/SOURCES
+-BUILD:=59
++BUILD:=70
+ PREBUILD=2.
+ DIST=.el6
+ PKGNAME=$(COMMON_NAME)
+-- 
+1.7.0.3
+

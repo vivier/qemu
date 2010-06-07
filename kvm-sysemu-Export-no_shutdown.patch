@@ -1,0 +1,44 @@
+From 7804b4c654cc080a684a581fe531ed0395a41774 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 24 May 2010 16:46:03 -0300
+Subject: [PATCH 07/20] sysemu: Export 'no_shutdown'
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1274719564-17462-2-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 9502
+O-Subject: [PATCH 1/2] sysemu: Export 'no_shutdown'
+Bugzilla: 559618
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+Bugzilla: 559618
+Upstream status: Submitted
+
+It's a global variable already, do_quit() will use it.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ sysemu.h |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ sysemu.h |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/sysemu.h b/sysemu.h
+index 3f3e42e..f1d76ad 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -126,6 +126,7 @@ extern int max_cpus;
+ extern int cursor_hide;
+ extern int graphic_rotate;
+ extern int no_quit;
++extern int no_shutdown;
+ extern int semihosting_enabled;
+ extern int old_param;
+ extern int boot_menu;
+-- 
+1.7.0.3
+

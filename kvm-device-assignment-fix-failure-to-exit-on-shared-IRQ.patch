@@ -1,0 +1,57 @@
+From dbf779b1b5aa9ae47aefac2a186a0bee04209ab1 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Sun, 16 May 2010 19:08:58 -0300
+Subject: [PATCH 01/20] device-assignment: fix failure to exit on shared IRQ
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100516190842.27397.29750.stgit@virtlab9.virt.bos.redhat.com>
+Patchwork-id: 9307
+O-Subject: [RHEL-6 qemu-kvm PATCH] device-assignment: fix failure to exit on
+	shared IRQ
+Bugzilla: 585310
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+Bugzilla: 585310
+Upstream commit: 33e0628b713222489eed42c677bb7126fd486802
+
+Since c1699988, piix config space isn't programmed until the first
+system reset.  This means that when we call assign_irq() from
+assigned_initfn(), we're going to get back an irq of 0x0, which
+unfortunately matches our initialization value, so we don't bother
+to call kvm_assign_irq().  Switch to a -1 initializer so we can
+test whether kvm_assign_irq() is going to succeed and allow the
+process to exit if it doesn't.  The guest irq will get reset to a
+more appropriate value on system reset anyway.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Acked-by: Chris Wright <chrisw@redhat.com>
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+---
+
+ hw/device-assignment.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index d05fd0f..d28dc71 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -1205,7 +1205,7 @@ static int assigned_initfn(struct PCIDevice *pci_dev)
+     e_intx = dev->dev.config[0x3d] - 1;
+     dev->intpin = e_intx;
+     dev->run = 0;
+-    dev->girq = 0;
++    dev->girq = -1;
+     dev->h_busnr = dev->host.bus;
+     dev->h_devfn = PCI_DEVFN(dev->host.dev, dev->host.func);
+ 
+-- 
+1.7.0.3
+

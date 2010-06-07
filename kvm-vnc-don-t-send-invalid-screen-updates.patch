@@ -1,0 +1,64 @@
+From 849039e37ed2ca80fcdd22e9068b3e6815fe91d4 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 3 Jun 2010 10:09:48 -0300
+Subject: [PATCH 17/20] vnc: don't send invalid screen updates.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1275559789-2280-5-git-send-email-kraxel@redhat.com>
+Patchwork-id: 9696
+O-Subject: [RHEL-6 kvm PATCH 4/5] vnc: don't send invalid screen updates.
+Bugzilla: 590070
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+Don't send updates for screen areas which are outside the clients
+desktop.  May happed with vnc clients which don't support the desktop
+resize message.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+
+bugzilla: #590070 -- QEMU misses DESKTOP-RESIZE event if it is triggered
+                     during client connection initialization
+upstream: 847ce6a185f9ccbc089ef24a6c402b8c99113341
+---
+ vnc.c |    8 ++++++--
+ 1 files changed, 6 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vnc.c |    8 ++++++--
+ 1 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/vnc.c b/vnc.c
+index 0741329..0a9d45e 100644
+--- a/vnc.c
++++ b/vnc.c
+@@ -964,6 +964,7 @@ static int vnc_update_client(VncState *vs, int has_dirty)
+         int y;
+         int n_rectangles;
+         int saved_offset;
++        int width, height;
+ 
+         if (vs->output.offset && !vs->audio_cap && !vs->force_update)
+             /* kernel send buffers are full -> drop frames to throttle */
+@@ -984,10 +985,13 @@ static int vnc_update_client(VncState *vs, int has_dirty)
+         saved_offset = vs->output.offset;
+         vnc_write_u16(vs, 0);
+ 
+-        for (y = 0; y < vd->server->height; y++) {
++        width = MIN(vd->server->width, vs->client_width);
++        height = MIN(vd->server->height, vs->client_height);
++
++        for (y = 0; y < height; y++) {
+             int x;
+             int last_x = -1;
+-            for (x = 0; x < vd->server->width / 16; x++) {
++            for (x = 0; x < width / 16; x++) {
+                 if (vnc_get_bit(vs->dirty[y], x)) {
+                     if (last_x == -1) {
+                         last_x = x;
+-- 
+1.7.0.3
+

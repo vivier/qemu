@@ -1,0 +1,46 @@
+From d64bd7e48412481fd62fe1c2614f8073b6b2633e Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 18 May 2010 19:31:40 -0300
+Subject: [PATCH 04/20] doc: Heading for monitor command cpu got lost, restore it
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1274211101-5748-4-git-send-email-armbru@redhat.com>
+Patchwork-id: 9375
+O-Subject: [RHEL-6 KVM PATCH 3/4] doc: Heading for monitor command cpu got lost,
+	restore it
+Bugzilla: 588719
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: john cooper <john.cooper@redhat.com>
+
+Broken in commit 2313086a.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit c427ea9cd110818bb4f6906b6d36d9a4d93f6fd7)
+---
+ qemu-monitor.hx |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-monitor.hx |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index c8d07a4..226c7de 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -610,6 +610,8 @@ ETEXI
+     },
+ 
+ STEXI
++@item cpu @var{index}
++@findex cpu
+ Set the default CPU.
+ ETEXI
+ 
+-- 
+1.7.0.3
+

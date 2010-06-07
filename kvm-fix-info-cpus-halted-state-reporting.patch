@@ -1,0 +1,45 @@
+From c3eb41127f0a4ff3af5525c9ba85790cfdd37641 Mon Sep 17 00:00:00 2001
+From: Gleb Natapov <gleb@redhat.com>
+Date: Wed, 19 May 2010 16:45:28 -0300
+Subject: [PATCH 06/20] fix "info cpus" halted state reporting
+
+RH-Author: Gleb Natapov <gleb@redhat.com>
+Message-id: <20100519164528.GA5264@redhat.com>
+Patchwork-id: 9414
+O-Subject: [PATCH RHEL6] fix "info cpus" halted state reporting
+Bugzilla: 593769
+RH-Acked-by: Glauber Costa <glommer@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Fix "info cpus" halted state reporting. Currently halted state is not
+shown properly.
+
+BZ: 593769
+Upstream status: Code is different there, so different patch was sent
+
+Signed-off-by: Gleb Natapov <gleb@redhat.com>
+--
+			Gleb.
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-kvm-x86.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-kvm-x86.c b/qemu-kvm-x86.c
+index 1ead95f..ab7bbe3 100644
+--- a/qemu-kvm-x86.c
++++ b/qemu-kvm-x86.c
+@@ -1044,6 +1044,8 @@ void kvm_arch_save_mpstate(CPUState *env)
+         env->mp_state = -1;
+     else
+         env->mp_state = mp_state.mp_state;
++    if (kvm_irqchip_in_kernel())
++        env->halted = (env->mp_state == KVM_MP_STATE_HALTED);
+ #else
+     env->mp_state = -1;
+ #endif
+-- 
+1.7.0.3
+

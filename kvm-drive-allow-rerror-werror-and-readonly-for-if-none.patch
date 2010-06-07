@@ -1,0 +1,73 @@
+From 39a911e311e78e00d1684d2d6bec1ef9b98d1f4d Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 26 May 2010 12:34:38 -0300
+Subject: [PATCH 12/20] drive: allow rerror, werror and readonly for if=none
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1274877278-26380-1-git-send-email-kraxel@redhat.com>
+Patchwork-id: 9573
+O-Subject: [RHEL-6 kvm PATCH] drive: allow rerror,
+	werror and readonly for if=none
+Bugzilla: 565609 593256
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+When creating guest disks the qdev way using ...
+
+  -drive if=none,id=$name,args
+  -device $driver,drive=$name
+
+it is not possible to specify rerror, werror and readonly arguments
+for drive as drive_init allows/blocks them based on the interface (if=)
+specified and none isn't white-listed there.
+
+bugzilla: #565609, #593256
+upstream: submitted, in block branch now.
+          http://patchwork.ozlabs.org/patch/53598/
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ vl.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vl.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index 03f9a6c..0d28dc0 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2347,7 +2347,7 @@ DriveInfo *drive_init(QemuOpts *opts, void *opaque,
+ 
+     on_write_error = BLOCK_ERR_STOP_ENOSPC;
+     if ((buf = qemu_opt_get(opts, "werror")) != NULL) {
+-        if (type != IF_IDE && type != IF_SCSI && type != IF_VIRTIO) {
++        if (type != IF_IDE && type != IF_SCSI && type != IF_VIRTIO && type != IF_NONE) {
+             fprintf(stderr, "werror is no supported by this format\n");
+             return NULL;
+         }
+@@ -2360,7 +2360,7 @@ DriveInfo *drive_init(QemuOpts *opts, void *opaque,
+ 
+     on_read_error = BLOCK_ERR_REPORT;
+     if ((buf = qemu_opt_get(opts, "rerror")) != NULL) {
+-        if (type != IF_IDE && type != IF_VIRTIO) {
++        if (type != IF_IDE && type != IF_VIRTIO && type != IF_NONE) {
+             fprintf(stderr, "rerror is no supported by this format\n");
+             return NULL;
+         }
+@@ -2521,7 +2521,7 @@ DriveInfo *drive_init(QemuOpts *opts, void *opaque,
+         /* mark CDROM as read-only. CDROM is fine for any interface, don't check */
+         ro = 1;
+     } else if (ro == 1) {
+-        if (type != IF_SCSI && type != IF_VIRTIO && type != IF_FLOPPY) {
++        if (type != IF_SCSI && type != IF_VIRTIO && type != IF_FLOPPY && type != IF_NONE) {
+             fprintf(stderr, "qemu: readonly flag not supported for drive with this interface\n");
+             return NULL;
+         }
+-- 
+1.7.0.3
+

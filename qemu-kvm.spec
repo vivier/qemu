@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.70%{?dist}
+Release: 2.71%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1052,6 +1052,45 @@ Patch1511: kvm-hpet-Disable-for-Red-Hat-Enterprise-Linux.patch
 Patch1513: kvm-virtio-net-stop-vhost-backend-on-vmstop.patch
 # For bz#598896 - migration breaks networking with vhost-net
 Patch1514: kvm-msix-fix-msix_set-unset_mask_notifier.patch
+# For bz#585310 - qemu-kvm does not exit when device assignment fails due to IRQ sharing
+Patch1515: kvm-device-assignment-fix-failure-to-exit-on-shared-IRQ.patch
+# For bz#588719 - Fix monitor command documentation
+Patch1516: kvm-doc-Fix-host-forwarding-monitor-command-documentatio.patch
+# For bz#588719 - Fix monitor command documentation
+Patch1517: kvm-doc-Fix-acl-monitor-command-documentation.patch
+# For bz#588719 - Fix monitor command documentation
+Patch1518: kvm-doc-Heading-for-monitor-command-cpu-got-lost-restore.patch
+# For bz#588719 - Fix monitor command documentation
+Patch1519: kvm-doc-Clean-up-monitor-command-function-index.patch
+# For bz#593769 - "info cpus" doesn't show halted state
+Patch1520: kvm-fix-info-cpus-halted-state-reporting.patch
+# For bz#559618 - QMP: Fix 'quit' to return success before exiting
+Patch1521: kvm-sysemu-Export-no_shutdown.patch
+# For bz#559618 - QMP: Fix 'quit' to return success before exiting
+Patch1522: kvm-Monitor-Return-before-exiting-with-quit.patch
+# For bz#566291 - QMP: Support vendor extensions
+Patch1523: kvm-QMP-Add-Downstream-extension-of-QMP-to-spec.patch
+# For bz#580365 - QMP: pci_add/pci_del conversion should be reverted
+Patch1524: kvm-Revert-PCI-Convert-pci_device_hot_add-to-QObject.patch
+# For bz#580365 - QMP: pci_add/pci_del conversion should be reverted
+Patch1525: kvm-Revert-monitor-Convert-do_pci_device_hot_remove-to-Q.patch
+# For bz#565609 - Unable to use werror/rerror with  -drive syntax using if=none
+# For bz#593256 - Unable to set readonly flag for floppy disks
+Patch1526: kvm-drive-allow-rerror-werror-and-readonly-for-if-none.patch
+# For bz#596093 - 16bit integer qdev properties are not parsed correctly.
+Patch1527: kvm-qdev-properties-Fix-u-intXX-parsers.patch
+# For bz#590070 - QEMU misses DESKTOP-RESIZE event if it is triggered during client connection initialization
+Patch1528: kvm-vnc-factor-out-vnc_desktop_resize.patch
+# For bz#590070 - QEMU misses DESKTOP-RESIZE event if it is triggered during client connection initialization
+Patch1529: kvm-vnc-send-desktopresize-event-as-reply-to-set-encodin.patch
+# For bz#590070 - QEMU misses DESKTOP-RESIZE event if it is triggered during client connection initialization
+Patch1530: kvm-vnc-keep-track-of-client-desktop-size.patch
+# For bz#590070 - QEMU misses DESKTOP-RESIZE event if it is triggered during client connection initialization
+Patch1531: kvm-vnc-don-t-send-invalid-screen-updates.patch
+# For bz#590070 - QEMU misses DESKTOP-RESIZE event if it is triggered during client connection initialization
+Patch1532: kvm-vnc-move-size-changed-check-into-the-vnc_desktop_res.patch
+# For bz#591759 - Segmentation fault when using vnc to view guest without vga card
+Patch1533: kvm-check-for-active_console-before-using-it.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1629,6 +1668,25 @@ such as kvmtrace and kvm_stat.
 %patch1511 -p1
 %patch1513 -p1
 %patch1514 -p1
+%patch1515 -p1
+%patch1516 -p1
+%patch1517 -p1
+%patch1518 -p1
+%patch1519 -p1
+%patch1520 -p1
+%patch1521 -p1
+%patch1522 -p1
+%patch1523 -p1
+%patch1524 -p1
+%patch1525 -p1
+%patch1526 -p1
+%patch1527 -p1
+%patch1528 -p1
+%patch1529 -p1
+%patch1530 -p1
+%patch1531 -p1
+%patch1532 -p1
+%patch1533 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1828,6 +1886,49 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Jun 07 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.71.el6
+- kvm-device-assignment-fix-failure-to-exit-on-shared-IRQ.patch [bz#585310]
+- kvm-doc-Fix-host-forwarding-monitor-command-documentatio.patch [bz#588719]
+- kvm-doc-Fix-acl-monitor-command-documentation.patch [bz#588719]
+- kvm-doc-Heading-for-monitor-command-cpu-got-lost-restore.patch [bz#588719]
+- kvm-doc-Clean-up-monitor-command-function-index.patch [bz#588719]
+- kvm-fix-info-cpus-halted-state-reporting.patch [bz#593769]
+- kvm-sysemu-Export-no_shutdown.patch [bz#559618]
+- kvm-Monitor-Return-before-exiting-with-quit.patch [bz#559618]
+- kvm-QMP-Add-Downstream-extension-of-QMP-to-spec.patch [bz#566291]
+- kvm-Revert-PCI-Convert-pci_device_hot_add-to-QObject.patch [bz#580365]
+- kvm-Revert-monitor-Convert-do_pci_device_hot_remove-to-Q.patch [bz#580365]
+- kvm-drive-allow-rerror-werror-and-readonly-for-if-none.patch [bz#565609 bz#593256]
+- kvm-qdev-properties-Fix-u-intXX-parsers.patch [bz#596093]
+- kvm-vnc-factor-out-vnc_desktop_resize.patch [bz#590070]
+- kvm-vnc-send-desktopresize-event-as-reply-to-set-encodin.patch [bz#590070]
+- kvm-vnc-keep-track-of-client-desktop-size.patch [bz#590070]
+- kvm-vnc-don-t-send-invalid-screen-updates.patch [bz#590070]
+- kvm-vnc-move-size-changed-check-into-the-vnc_desktop_res.patch [bz#590070]
+- kvm-check-for-active_console-before-using-it.patch [bz#591759]
+- Resolves: bz#559618
+  (QMP: Fix 'quit' to return success before exiting)
+- Resolves: bz#565609
+  (Unable to use werror/rerror with  -drive syntax using if=none)
+- Resolves: bz#566291
+  (QMP: Support vendor extensions)
+- Resolves: bz#580365
+  (QMP: pci_add/pci_del conversion should be reverted)
+- Resolves: bz#585310
+  (qemu-kvm does not exit when device assignment fails due to IRQ sharing)
+- Resolves: bz#588719
+  (Fix monitor command documentation)
+- Resolves: bz#590070
+  (QEMU misses DESKTOP-RESIZE event if it is triggered during client connection initialization)
+- Resolves: bz#591759
+  (Segmentation fault when using vnc to view guest without vga card)
+- Resolves: bz#593256
+  (Unable to set readonly flag for floppy disks)
+- Resolves: bz#593769
+  ("info cpus" doesn't show halted state)
+- Resolves: bz#596093
+  (16bit integer qdev properties are not parsed correctly.)
+
 * Mon Jun 07 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.70.el6
 - kvm-virtio-invoke-set_features-on-load.patch [bz#595263]
 - kvm-virtio-net-return-with-value-in-void-function.patch [bz#595263]

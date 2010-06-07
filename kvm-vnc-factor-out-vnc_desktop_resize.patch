@@ -1,0 +1,74 @@
+From fc567d69f041646f3cb9c186f1b520a87ac0133a Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 3 Jun 2010 10:09:45 -0300
+Subject: [PATCH 14/20] vnc: factor out vnc_desktop_resize()
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1275559789-2280-2-git-send-email-kraxel@redhat.com>
+Patchwork-id: 9693
+O-Subject: [RHEL-6 kvm PATCH 1/5] vnc: factor out vnc_desktop_resize()
+Bugzilla: 590070
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+
+bugzilla: #590070 -- QEMU misses DESKTOP-RESIZE event if it is triggered
+                     during client connection initialization
+upstream: 621aaeb9991933a367e3964ecfc88a8f96af1f6a
+---
+ vnc.c |   24 ++++++++++++++++--------
+ 1 files changed, 16 insertions(+), 8 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vnc.c |   24 ++++++++++++++++--------
+ 1 files changed, 16 insertions(+), 8 deletions(-)
+
+diff --git a/vnc.c b/vnc.c
+index 4997114..68c1ff3 100644
+--- a/vnc.c
++++ b/vnc.c
+@@ -515,6 +515,21 @@ void buffer_append(Buffer *buffer, const void *data, size_t len)
+     buffer->offset += len;
+ }
+ 
++static void vnc_desktop_resize(VncState *vs)
++{
++    DisplayState *ds = vs->ds;
++
++    if (vs->csock == -1 || !vnc_has_feature(vs, VNC_FEATURE_RESIZE)) {
++        return;
++    }
++    vnc_write_u8(vs, 0); /* VNC_MSG_SERVER_FRAMEBUFFER_UPDATE */
++    vnc_write_u8(vs, 0);
++    vnc_write_u16(vs, 1); /* number of rects */
++    vnc_framebuffer_update(vs, 0, 0, ds_get_width(ds), ds_get_height(ds),
++                           VNC_ENCODING_DESKTOPRESIZE);
++    vnc_flush(vs);
++}
++
+ static void vnc_dpy_resize(DisplayState *ds)
+ {
+     int size_changed;
+@@ -543,14 +558,7 @@ static void vnc_dpy_resize(DisplayState *ds)
+     while (vs != NULL) {
+         vnc_colordepth(vs);
+         if (size_changed) {
+-            if (vs->csock != -1 && vnc_has_feature(vs, VNC_FEATURE_RESIZE)) {
+-                vnc_write_u8(vs, 0);  /* msg id */
+-                vnc_write_u8(vs, 0);
+-                vnc_write_u16(vs, 1); /* number of rects */
+-                vnc_framebuffer_update(vs, 0, 0, ds_get_width(ds), ds_get_height(ds),
+-                        VNC_ENCODING_DESKTOPRESIZE);
+-                vnc_flush(vs);
+-            }
++            vnc_desktop_resize(vs);
+         }
+         memset(vs->dirty, 0xFF, sizeof(vs->dirty));
+         vs = vs->next;
+-- 
+1.7.0.3
+

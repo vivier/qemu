@@ -1,0 +1,172 @@
+From e80422d551b8d94c269ac061ec68c89282954bcc Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 24 May 2010 17:46:56 -0300
+Subject: [PATCH 10/20] Revert "PCI: Convert pci_device_hot_add() to QObject"
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1274723217-13508-2-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 9512
+O-Subject: [PATCH 1/2] Revert "PCI: Convert pci_device_hot_add() to QObject"
+Bugzilla: 580365
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 580365
+
+Short story: We don't want pci_add in QMP.  Long story follows.
+
+pci_add can do two things:
+
+* Hot plug a PCI NIC.  device_add is more general.
+
+* Hot plug a PCI disk controller, and a drive connected to it.
+
+  The controller is either virtio-blk-pci (if=virtio) or lsi53c895a
+  (if=scsi).  With the latter, the drive is optional.  Use drive_add to
+  hotplug additional SCSI drives.  Except drive_add is not available in
+  QMP.
+
+  device_add is more general for controllers and the guest part of
+  drives.  I'm working on a more general alternative for the host part
+  of drives.
+
+Why am I proposing to remove pci_add from QMP before its replacement is
+ready?  I want it out sooner rather than later, because it isn't fully
+functional (errors and drive_add are missing), and we do not plan to
+complete the job.  In other words, it's not really usable over QMP now,
+and it's not what we want for QMP anyway.  Since we don't want it to be
+used over QMP, we should take it out, not leave it around as a trap for
+the uninitiated.
+
+Dan Berrange confirmed that libvirt has no need for pci_add & friends
+over QMP.
+
+This reverts commit 7a344f7ac7bb651d0556a933ed8060d3a9e5d949.
+
+Conflicts:
+
+	hw/pci-hotplug.c
+	sysemu.h
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+(cherry picked from commit 6c6a58aee425338bf67ec8faffdcda56b0b82090)
+---
+ hw/pci-hotplug.c |   46 +++++-----------------------------------------
+ qemu-monitor.hx  |    3 +--
+ sysemu.h         |    3 +--
+ 3 files changed, 7 insertions(+), 45 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pci-hotplug.c |   46 +++++-----------------------------------------
+ qemu-monitor.hx  |    3 +--
+ sysemu.h         |    3 +--
+ 3 files changed, 7 insertions(+), 45 deletions(-)
+
+diff --git a/hw/pci-hotplug.c b/hw/pci-hotplug.c
+index 78a6dde..7796f38 100644
+--- a/hw/pci-hotplug.c
++++ b/hw/pci-hotplug.c
+@@ -33,7 +33,6 @@
+ #include "scsi.h"
+ #include "virtio-blk.h"
+ #include "qemu-config.h"
+-#include "qemu-objects.h"
+ #include "device-assignment.h"
+ 
+ #if defined(TARGET_I386)
+@@ -244,36 +243,7 @@ static PCIDevice *qemu_pci_hot_assign_device(Monitor *mon,
+ }
+ #endif /* CONFIG_KVM_DEVICE_ASSIGNMENT */
+ 
+-void pci_device_hot_add_print(Monitor *mon, const QObject *data)
+-{
+-    QDict *qdict;
+-
+-    assert(qobject_type(data) == QTYPE_QDICT);
+-    qdict = qobject_to_qdict(data);
+-
+-    monitor_printf(mon, "OK domain %d, bus %d, slot %d, function %d\n",
+-                   (int) qdict_get_int(qdict, "domain"),
+-                   (int) qdict_get_int(qdict, "bus"),
+-                   (int) qdict_get_int(qdict, "slot"),
+-                   (int) qdict_get_int(qdict, "function"));
+-
+-}
+-
+-/**
+- * pci_device_hot_add(): Hot add a PCI device
+- *
+- * Return a QDict with the following device information:
+- *
+- * - "domain": domain number
+- * - "bus": bus number
+- * - "slot": slot number
+- * - "function": function number
+- *
+- * Example:
+- *
+- * { "domain": 0, "bus": 0, "slot": 5, "function": 0 }
+- */
+-int pci_device_hot_add(Monitor *mon, const QDict *qdict, QObject **ret_data)
++void pci_device_hot_add(Monitor *mon, const QDict *qdict)
+ {
+     PCIDevice *dev = NULL;
+     const char *pci_addr = qdict_get_str(qdict, "pci_addr");
+@@ -304,20 +274,14 @@ int pci_device_hot_add(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ #endif /* CONFIG_KVM_DEVICE_ASSIGNMENT */
+     else {
+         monitor_printf(mon, "invalid type: %s\n", type);
+-        return -1;
+     }
+ 
+     if (dev) {
+-        *ret_data =
+-        qobject_from_jsonf("{ 'domain': 0, 'bus': %d, 'slot': %d, "
+-                           "'function': %d }", pci_bus_num(dev->bus),
+-                           PCI_SLOT(dev->devfn), PCI_FUNC(dev->devfn));
+-    } else {
++        monitor_printf(mon, "OK domain %d, bus %d, slot %d, function %d\n",
++                       0, pci_bus_num(dev->bus), PCI_SLOT(dev->devfn),
++                       PCI_FUNC(dev->devfn));
++    } else
+         monitor_printf(mon, "failed to add %s\n", opts);
+-        return -1;
+-    }
+-
+-    return 0;
+ }
+ #endif
+ 
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 8a3d331..dfc1328 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -857,8 +857,7 @@ ETEXI
+         .args_type  = "pci_addr:s,type:s,opts:s?",
+         .params     = "auto|[[<domain>:]<bus>:]<slot> nic|storage|host [[vlan=n][,macaddr=addr][,model=type]] [file=file][,if=type][,bus=nr]... [host=02:00.0[,name=string][,dma=none]",
+         .help       = "hot-add PCI device",
+-        .user_print = pci_device_hot_add_print,
+-        .mhandler.cmd_new = pci_device_hot_add,
++        .mhandler.cmd = pci_device_hot_add,
+     },
+ #endif
+ 
+diff --git a/sysemu.h b/sysemu.h
+index f1d76ad..22e3cf5 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -207,8 +207,7 @@ void qemu_system_cpu_hot_add(int cpu, int state);
+ DriveInfo *add_init_drive(const char *opts);
+ 
+ /* pci-hotplug */
+-void pci_device_hot_add_print(Monitor *mon, const QObject *data);
+-int pci_device_hot_add(Monitor *mon, const QDict *qdict, QObject **ret_data);
++void pci_device_hot_add(Monitor *mon, const QDict *qdict);
+ void drive_hot_add(Monitor *mon, const QDict *qdict);
+ int pci_device_hot_remove(Monitor *mon, const char *pci_addr);
+ int do_pci_device_hot_remove(Monitor *mon, const QDict *qdict,
+-- 
+1.7.0.3
+

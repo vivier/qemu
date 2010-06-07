@@ -1,0 +1,89 @@
+From 85062ef80003f779095908268cf32919b676d5e1 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 24 May 2010 17:46:57 -0300
+Subject: [PATCH 11/20] Revert "monitor: Convert do_pci_device_hot_remove() to QObject"
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1274723217-13508-3-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 9513
+O-Subject: [PATCH 2/2] Revert "monitor: Convert do_pci_device_hot_remove() to
+	QObject"
+Bugzilla: 580365
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+Bugzilla: 580365
+
+We don't want pci_del in QMP.  Use device_del instead.
+
+This reverts commit 6848d827162fea039f2658414a4adb6164a4f9b0.
+
+Conflicts:
+
+	hw/pci-hotplug.c
+	sysemu.h
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+(cherry picked from commit b752daf03092b6720e39fdf7f4198eec95f71468)
+---
+ hw/pci-hotplug.c |    5 ++---
+ qemu-monitor.hx  |    3 +--
+ sysemu.h         |    3 +--
+ 3 files changed, 4 insertions(+), 7 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pci-hotplug.c |    5 ++---
+ qemu-monitor.hx  |    3 +--
+ sysemu.h         |    3 +--
+ 3 files changed, 4 insertions(+), 7 deletions(-)
+
+diff --git a/hw/pci-hotplug.c b/hw/pci-hotplug.c
+index 7796f38..e4f187f 100644
+--- a/hw/pci-hotplug.c
++++ b/hw/pci-hotplug.c
+@@ -303,8 +303,7 @@ int pci_device_hot_remove(Monitor *mon, const char *pci_addr)
+     return qdev_unplug(&d->qdev);
+ }
+ 
+-int do_pci_device_hot_remove(Monitor *mon, const QDict *qdict,
+-                             QObject **ret_data)
++void do_pci_device_hot_remove(Monitor *mon, const QDict *qdict)
+ {
+-    return pci_device_hot_remove(mon, qdict_get_str(qdict, "pci_addr"));
++    pci_device_hot_remove(mon, qdict_get_str(qdict, "pci_addr"));
+ }
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index dfc1328..7044c0b 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -873,8 +873,7 @@ ETEXI
+         .args_type  = "pci_addr:s",
+         .params     = "[[<domain>:]<bus>:]<slot>",
+         .help       = "hot remove PCI device",
+-        .user_print = monitor_user_noop,
+-        .mhandler.cmd_new = do_pci_device_hot_remove,
++        .mhandler.cmd = do_pci_device_hot_remove,
+     },
+ #endif
+ 
+diff --git a/sysemu.h b/sysemu.h
+index 22e3cf5..d8c119b 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -210,8 +210,7 @@ DriveInfo *add_init_drive(const char *opts);
+ void pci_device_hot_add(Monitor *mon, const QDict *qdict);
+ void drive_hot_add(Monitor *mon, const QDict *qdict);
+ int pci_device_hot_remove(Monitor *mon, const char *pci_addr);
+-int do_pci_device_hot_remove(Monitor *mon, const QDict *qdict,
+-                             QObject **ret_data);
++void do_pci_device_hot_remove(Monitor *mon, const QDict *qdict);
+ 
+ /* serial ports */
+ 
+-- 
+1.7.0.3
+

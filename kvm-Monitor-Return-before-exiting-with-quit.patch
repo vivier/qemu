@@ -1,0 +1,59 @@
+From e3aff0473bda49139de8752f0921b70e88c84b23 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 24 May 2010 16:46:04 -0300
+Subject: [PATCH 08/20] Monitor: Return before exiting with 'quit'
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1274719564-17462-3-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 9503
+O-Subject: [PATCH 2/2] Monitor: Return before exiting with 'quit'
+Bugzilla: 559618
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+Bugzilla: 559618
+Upstream status: Submitted
+
+The 'quit' Monitor command (implemented by do_quit()) calls
+exit() directly, this is problematic under QMP because QEMU
+exits before having a chance to send the ok response.
+
+Clients don't know if QEMU exited because of a problem or
+because the 'quit' command has been executed.
+
+This commit fixes that by making do_quit() use
+qemu_system_shutdown_request(), so that we exit gracefully.
+
+Thanks to Paolo Bonzini <pbonzini@redhat.com> for suggesting
+this solution.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 0c866a5..660520d 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -1056,7 +1056,10 @@ static void do_info_cpu_stats(Monitor *mon)
+  */
+ static int do_quit(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+-    exit(0);
++    monitor_suspend(mon);
++    no_shutdown = 0;
++    qemu_system_shutdown_request();
++
+     return 0;
+ }
+ 
+-- 
+1.7.0.3
+

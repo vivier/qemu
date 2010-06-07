@@ -1,0 +1,49 @@
+From b0a6cd3ed206e06846e67ee9f3b48617c517f9ca Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 3 Jun 2010 10:13:55 -0300
+Subject: [PATCH 19/20] check for active_console before using it
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1275560035-2452-1-git-send-email-kraxel@redhat.com>
+Patchwork-id: 9699
+O-Subject: [RHEL-6 kvm PATCH] check for active_console before using it
+Bugzilla: 591759
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+Other vga_hw_* functions do the same.
+Fixes a segmentation fault.  Trigger: boot with -nodefaults,
+then connect via vnc.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 26572b8a0e90ee0c77587173a78fa293a1d2beb6)
+
+bugzilla: #591759 --  Segmentation fault when using vnc to view guest
+                      without vga card
+---
+ console.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ console.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/console.c b/console.c
+index 8086bd6..358d748 100644
+--- a/console.c
++++ b/console.c
+@@ -166,7 +166,7 @@ void vga_hw_update(void)
+ 
+ void vga_hw_invalidate(void)
+ {
+-    if (active_console->hw_invalidate)
++    if (active_console && active_console->hw_invalidate)
+         active_console->hw_invalidate(active_console->hw);
+ }
+ 
+-- 
+1.7.0.3
+
