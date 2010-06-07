@@ -1,0 +1,102 @@
+From ad36da8d133a00afff5ddf3a568a80dca6bc41d6 Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Wed, 2 Jun 2010 17:17:37 -0300
+Subject: [PATCH 2/2] qemu-kvm/redhat: check tarball content hash
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <20100602171737.GA16082@redhat.com>
+Patchwork-id: 9676
+O-Subject: Re: [PATCH] qemu-kvm/redhat: use make-release to generate tarballs
+Bugzilla:
+
+On Wed, Jun 02, 2010 at 11:22:35AM -0300, Eduardo Habkost wrote:
+> On Wed, Jun 02, 2010 at 01:08:26PM +0300, Michael S. Tsirkin wrote:
+> > On Wed, Jun 02, 2010 at 12:07:22PM +0200, Juan Quintela wrote:
+> > > "Michael S. Tsirkin" <mst@redhat.com> wrote:
+> > > > generate tarballs from git, skip wget step
+> > > > Also disable sha1 checking as it was checking
+> > > > dates which change on each run.
+> > > > Note: do we care about base tarball not changing?
+> > >
+> > > I don't know how this is handled today, but in theory we care.
+> > >
+> > > We use upstream tarballs always that is possible, just to make everybody
+> > > able to lookup upstream and see that we are using the same tarball +
+> > > explicit patches (this uses to be fedora packaging guidelines if I
+> > > remember correctly).
+> >
+> > See below. Same tarball or tarball with the same content?
+>
+> On CVS and official builds, using exactly the same tarball from upstream
+> is preferred. But we can simply see it as just an optimization of the
+> git->CVS process, to avoid regenerating the tarball every time the
+> git->CVS process is run; we would do that even if we were not using the
+> upstream tarball.
+>
+>
+> >
+> > > And the other reason is how things are stored for changing tracking.
+> > > binaries (tarballs and similar) where not stored on CVS (they are stored
+> > > in some other funny thing that I don't remember the name).  If you
+> > > change the tarball, you have to "upload" by hand the new tarball to match.
+> >
+> > Note that tarball contents are unchanged. Only dates/usernames changed.
+> > So it is still possible to verify it is the same tarball,
+> > just by doing
+> > tar -oxzf <file> | sha
+> > instead of
+> > sha <file>
+> >
+> > (I did verify it, and it's possible to automate this as well).
+>
+> If we were working always from git only, I think we wouldn't need such
+> check. But it may be a good consistency check for the git->CVS process,
+> to make sure we really don't need to replace the tarball on CVS.
+
+OK, so apply this on top:
+
+qemu-kvm/redhat: check tar content
+
+This runs sha256 on generated tar content to verify that
+it matches the expected value.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+
+---
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ redhat/Makefile        |    4 ++++
+ redhat/Makefile.common |    1 +
+ 2 files changed, 5 insertions(+), 0 deletions(-)
+
+diff --git a/redhat/Makefile b/redhat/Makefile
+index caf8f35..31371ba 100644
+--- a/redhat/Makefile
++++ b/redhat/Makefile
+@@ -103,6 +103,10 @@ sources-rh: $(TARBALL) $(RC_PATCH) $(GIT_PATCH) $(REDHAT)/create-patches.sh Make
+ 			echo "$(TARBALL) sha1sum does not match (expected: $(TARSHA1))" >&2; \
+ 			exit 1; \
+ 	fi
++	@if [ -n "$(TARSHA256)" -a "$$(tar -oxzf $(TARBALL) | sha256sum | cut -d' ' -f1)" != "$(TARSHA256)" ];then \
++			echo "$(TARBALL) sha256sum $(TARSHA256) does not match (expected: $(TARSHA256))" >&2; \
++			exit 1; \
++	fi
+ 	@cp $(TARBALL) $(SOURCES)/
+ 	@(if [ -n "$(RCREV)" ]; then \
+ 		cp $(RC_PATCH) $(SOURCES)/; \
+diff --git a/redhat/Makefile.common b/redhat/Makefile.common
+index b3c5e98..3ca6d50 100644
+--- a/redhat/Makefile.common
++++ b/redhat/Makefile.common
+@@ -23,6 +23,7 @@ PKGNAME=$(COMMON_NAME)
+ TARFILE:=$(COMMON_NAME)-$(KVERSION).tar.gz
+ #TARURL:=http://downloads.sourceforge.net/sourceforge/kvm/$(COMMON_NAME)-$(KVERSION).tar.gz
+ #TARSHA1:=dee7359094757af77ea839bbfd9dca8826edcbd2
++TARSHA256:=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+ 
+ TARBALL:=$(REDHAT)/$(TARFILE)
+ TESTPATCH:=$(REDHAT)/$(COMMON_NAME)-test.patch
+-- 
+1.7.0.3
+

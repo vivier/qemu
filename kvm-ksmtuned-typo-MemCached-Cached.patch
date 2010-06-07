@@ -1,0 +1,44 @@
+From 0398733b69135122f9e72ec35132b0e640d8c144 Mon Sep 17 00:00:00 2001
+From: Dan Kenigsberg <danken@redhat.com>
+Date: Fri, 28 May 2010 11:55:20 -0300
+Subject: [PATCH 5/7] ksmtuned: typo MemCached -> Cached
+
+RH-Author: Dan Kenigsberg <danken@redhat.com>
+Message-id: <20100528115519.GB6583@danken.usersys.redhat.com>
+Patchwork-id: 9604
+O-Subject: [PATCH RHEL-6 qemu-kvm] ksmtuned: typo MemCached -> Cached
+Bugzilla: 597005
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=597005
+
+When sampling the amount of memory used for cache, ksmtuned looked for
+the wrong text.
+
+Thanks to Dave Hansen.
+
+Following patch is relative to qemu-kvm/RHEL-6 cvs branch.
+
+---
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ redhat/ksmtuned |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/redhat/ksmtuned b/redhat/ksmtuned
+index decf41d..2b7af5c 100644
+--- a/redhat/ksmtuned
++++ b/redhat/ksmtuned
+@@ -75,7 +75,7 @@ committed_memory () {
+ }
+ 
+ free_memory () {
+-    awk '/^(MemFree|Buffers|MemCached):/ {free += $2}; END {print free}' \
++    awk '/^(MemFree|Buffers|Cached):/ {free += $2}; END {print free}' \
+                 /proc/meminfo
+ }
+ 
+-- 
+1.7.0.3
+

@@ -1,0 +1,45 @@
+From 9dde0819eeb25e7bdcfd7036cc05927cb9497f0b Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Mon, 24 May 2010 09:28:46 -0300
+Subject: [PATCH 2/7] virtio-net: return with value in void function
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <6ded59ef40847d803e58e7de4b4a2cbc44c199bf.1274691899.git.mst@redhat.com>
+Patchwork-id: 9482
+O-Subject: [RHEL6.0 PATCH 1/2] virtio-net: return with value in void function
+Bugzilla: 595263
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+virtio-net has return with value in a void function.
+No idea why does it compile with gcc,
+but this isn't legal C.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Cherry-picked from upstream 57c3229ba1c5cecae277301b8b16577fbf2de98b
+---
+ hw/virtio-net.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-net.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/hw/virtio-net.c b/hw/virtio-net.c
+index db52c42..28f26e1 100644
+--- a/hw/virtio-net.c
++++ b/hw/virtio-net.c
+@@ -227,7 +227,7 @@ static void virtio_net_set_features(VirtIODevice *vdev, uint32_t features)
+     if (!tap_get_vhost_net(n->nic->nc.peer)) {
+         return;
+     }
+-    return vhost_net_ack_features(tap_get_vhost_net(n->nic->nc.peer), features);
++    vhost_net_ack_features(tap_get_vhost_net(n->nic->nc.peer), features);
+ }
+ 
+ static int virtio_net_handle_rx_mode(VirtIONet *n, uint8_t cmd,
+-- 
+1.7.0.3
+

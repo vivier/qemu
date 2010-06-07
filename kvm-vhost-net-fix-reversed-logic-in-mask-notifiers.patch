@@ -1,0 +1,72 @@
+From 1b235a6d3c7a46736abe2dbcb566a11bb43ecaba Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Tue, 25 May 2010 14:14:20 -0300
+Subject: [PATCH 3/7] vhost-net: fix reversed logic in mask notifiers
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <20100525141420.GA26016@redhat.com>
+Patchwork-id: 9538
+O-Subject: [RHEL6.0 PATCH] vhost-net: fix reversed logic in mask notifiers
+Bugzilla: 585940
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+When guest notifier is assigned, we set mask notifier, which will assign
+kvm irqfd.  When guest notifier is unassigned, mask notifier is unset,
+which should unassign kvm irqfd.
+
+The way to do this is to call mask notifier telling it to mask the vector.
+This, unless vector is already masked which unassigns irqfd already.
+
+The logic in unassign was reversed, which left kvm irqfd assigned.
+
+This patch is qemu-kvm only as irqfd is not upstream.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Reported-by: Amit Shah <amit.shah@redhat.com>
+
+Bugzilla: 585940
+(this completes the fix)
+Upstream status: posted
+Brew build: https://brewweb.devel.redhat.com/taskinfo?taskID=2469235
+
+---
+ hw/msix.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/msix.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/hw/msix.c b/hw/msix.c
+index 94e3981..b400769 100644
+--- a/hw/msix.c
++++ b/hw/msix.c
+@@ -618,6 +618,7 @@ int msix_set_mask_notifier(PCIDevice *dev, unsigned vector, void *opaque)
+     assert(opaque);
+     assert(!dev->msix_mask_notifier_opaque[vector]);
+ 
++    /* Unmask the new notifier unless vector is masked. */
+     if (msix_is_masked(dev, vector)) {
+         return 0;
+     }
+@@ -639,12 +640,13 @@ int msix_unset_mask_notifier(PCIDevice *dev, unsigned vector)
+     assert(dev->msix_mask_notifier);
+     assert(dev->msix_mask_notifier_opaque[vector]);
+ 
++    /* Mask the old notifier unless it is already masked. */
+     if (msix_is_masked(dev, vector)) {
+         return 0;
+     }
+     r = dev->msix_mask_notifier(dev, vector,
+                                 dev->msix_mask_notifier_opaque[vector],
+-                                msix_is_masked(dev, vector));
++                                !msix_is_masked(dev, vector));
+     if (r < 0) {
+         return r;
+     }
+-- 
+1.7.0.3
+

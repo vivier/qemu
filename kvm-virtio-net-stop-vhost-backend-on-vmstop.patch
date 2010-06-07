@@ -1,0 +1,57 @@
+From 52d2355a0743220f495b1a80f7be0bd90ec19556 Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Wed, 2 Jun 2010 18:09:08 -0300
+Subject: [PATCH 6/7] virtio-net: stop vhost backend on vmstop
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <ff0cdf9bb98a0ef55afcde1d61567528a443d6f2.1275501859.git.mst@redhat.com>
+Patchwork-id: 9678
+O-Subject: [RHEL6.0 PATCHv2 1/2] virtio-net: stop vhost backend on vmstop
+Bugzilla: 598896
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+vhost net currently keeps running after vmstop,
+which causes trouble as qemy does not check
+for dirty pages anymore.
+The fix is to simply keep vm and vhost running/stopped
+status in sync.
+
+Tested-by: David L Stevens <dlstevens@us.ibm.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ hw/virtio-net.c |   11 +++++------
+ 1 files changed, 5 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-net.c |   11 +++++------
+ 1 files changed, 5 insertions(+), 6 deletions(-)
+
+diff --git a/hw/virtio-net.c b/hw/virtio-net.c
+index 28f26e1..67eebcf 100644
+--- a/hw/virtio-net.c
++++ b/hw/virtio-net.c
+@@ -877,12 +877,11 @@ static void virtio_net_set_status(struct VirtIODevice *vdev, uint8_t status)
+ static void virtio_net_vmstate_change(void *opaque, int running, int reason)
+ {
+     VirtIONet *n = opaque;
+-    if (!running) {
+-        return;
+-    }
+-    /* This is called when vm is started, it will start vhost backend if
+-     * appropriate e.g. after migration. */
+-    virtio_net_set_status(&n->vdev, n->vdev.status);
++    uint8_t status = running ? n->vdev.status : 0;
++    /* This is called when vm is started/stopped,
++     * it will start/stop vhost backend if appropriate
++     * e.g. after migration. */
++    virtio_net_set_status(&n->vdev, status);
+ }
+ 
+ VirtIODevice *virtio_net_init(DeviceState *dev, NICConf *conf)
+-- 
+1.7.0.3
+

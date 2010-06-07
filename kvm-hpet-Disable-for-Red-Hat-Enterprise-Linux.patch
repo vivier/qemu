@@ -1,0 +1,79 @@
+From 1c07ac5125ce636144621ad82e5aad54c197809f Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Wed, 26 May 2010 12:06:03 -0300
+Subject: [PATCH 4/7] hpet: Disable for Red Hat Enterprise Linux
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <3f04ddf43dce46deb658387d9ad72b39854c9dc4.1274875561.git.amit.shah@redhat.com>
+Patchwork-id: 9571
+O-Subject: [RHEL6 PATCH] hpet: Disable for Red Hat Enterprise Linux
+Bugzilla: 595130
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+The HPET emulation isn't stable yet. Disable for EL.
+
+Also disable advertising the '-no-hpet' command line option and its
+parsing. This is done by adding a CONFIG_RED_HAT_DISABLED ifdef, which
+is not defined.
+
+This patch is not applicable upstream as there are efforts there to
+get it working properly and disabling HPET isn't seen as a good option
+there.
+
+Bugzilla: 595130
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ qemu-options.hx |    2 +-
+ vl.c            |    4 +++-
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-options.hx |    2 +-
+ vl.c            |    4 +++-
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/qemu-options.hx b/qemu-options.hx
+index 0081258..7476f81 100644
+--- a/qemu-options.hx
++++ b/qemu-options.hx
+@@ -741,7 +741,7 @@ it if your guest OS complains about ACPI problems (PC target machine
+ only).
+ ETEXI
+ 
+-#ifdef TARGET_I386
++#ifdef CONFIG_RED_HAT_DISABLED
+ DEF("no-hpet", 0, QEMU_OPTION_no_hpet,
+     "-no-hpet        disable HPET\n")
+ #endif
+diff --git a/vl.c b/vl.c
+index 2589f99..03f9a6c 100644
+--- a/vl.c
++++ b/vl.c
+@@ -231,7 +231,7 @@ int smp_threads = 1;
+ const char *vnc_display;
+ int acpi_enabled = 1;
+ #ifdef TARGET_I386
+-int no_hpet = 0;
++int no_hpet = 1; /* Always disabled in Red Hat Enterprise Linux */
+ #endif
+ int fd_bootchk = 1;
+ int no_reboot = 0;
+@@ -5720,9 +5720,11 @@ int main(int argc, char **argv, char **envp)
+             case QEMU_OPTION_no_acpi:
+                 acpi_enabled = 0;
+                 break;
++#ifdef CONFIG_RED_HAT_DISABLED
+             case QEMU_OPTION_no_hpet:
+                 no_hpet = 1;
+                 break;
++#endif /* CONFIG_RED_HAT_DISABLED */
+             case QEMU_OPTION_balloon:
+                 if (balloon_parse(optarg) < 0) {
+                     fprintf(stderr, "Unknown -balloon argument %s\n", optarg);
+-- 
+1.7.0.3
+

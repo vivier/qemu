@@ -1,0 +1,101 @@
+From 96c3228f5d0992a61bb6ae3c947bbcb13a30316f Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Wed, 2 Jun 2010 18:09:11 -0300
+Subject: [PATCH 7/7] msix: fix msix_set/unset_mask_notifier
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <b84cbb37c06d6e4891b7fea9dc498242c2037934.1275501859.git.mst@redhat.com>
+Patchwork-id: 9679
+O-Subject: [RHEL6.0 PATCHv2 2/2] msix: fix msix_set/unset_mask_notifier
+Bugzilla: 598896
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Sridhar Samudrala reported hitting the following assertions
+in msix.c when doing a guest reboot or live migration using vhost.
+qemu-kvm/hw/msix.c:375: msix_mask_all: Assertion `r >= 0' failed.
+qemu-kvm/hw/msix.c:640: msix_unset_mask_notifier:
+Assertion `dev->msix_mask_notifier_opaque[vector]' failed.
+
+The issue is that we didn't clear/set the opaque pointer
+when vector is masked. The following patch fixes this.
+
+Signed-off-by: Sridhar Samudrala <sri@us.ibm.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ hw/msix.c |   32 +++++++++++++++-----------------
+ 1 files changed, 15 insertions(+), 17 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/msix.c |   32 +++++++++++++++-----------------
+ 1 files changed, 15 insertions(+), 17 deletions(-)
+
+diff --git a/hw/msix.c b/hw/msix.c
+index b400769..24ff6ae 100644
+--- a/hw/msix.c
++++ b/hw/msix.c
+@@ -610,7 +610,7 @@ void msix_unuse_all_vectors(PCIDevice *dev)
+ 
+ int msix_set_mask_notifier(PCIDevice *dev, unsigned vector, void *opaque)
+ {
+-    int r;
++    int r = 0;
+     if (vector >= dev->msix_entries_nr || !dev->msix_entry_used[vector])
+         return 0;
+ 
+@@ -619,13 +619,11 @@ int msix_set_mask_notifier(PCIDevice *dev, unsigned vector, void *opaque)
+     assert(!dev->msix_mask_notifier_opaque[vector]);
+ 
+     /* Unmask the new notifier unless vector is masked. */
+-    if (msix_is_masked(dev, vector)) {
+-        return 0;
+-    }
+-    r = dev->msix_mask_notifier(dev, vector, opaque,
+-                                msix_is_masked(dev, vector));
+-    if (r < 0) {
+-        return r;
++    if (!msix_is_masked(dev, vector)) {
++        r = dev->msix_mask_notifier(dev, vector, opaque, false);
++        if (r < 0) {
++            return r;
++        }
+     }
+     dev->msix_mask_notifier_opaque[vector] = opaque;
+     return r;
+@@ -634,21 +632,21 @@ int msix_set_mask_notifier(PCIDevice *dev, unsigned vector, void *opaque)
+ int msix_unset_mask_notifier(PCIDevice *dev, unsigned vector)
+ {
+     int r = 0;
++    void *opaque;
+     if (vector >= dev->msix_entries_nr || !dev->msix_entry_used[vector])
+         return 0;
+ 
++    opaque = dev->msix_mask_notifier_opaque[vector];
++
+     assert(dev->msix_mask_notifier);
+-    assert(dev->msix_mask_notifier_opaque[vector]);
++    assert(opaque);
+ 
+     /* Mask the old notifier unless it is already masked. */
+-    if (msix_is_masked(dev, vector)) {
+-        return 0;
+-    }
+-    r = dev->msix_mask_notifier(dev, vector,
+-                                dev->msix_mask_notifier_opaque[vector],
+-                                !msix_is_masked(dev, vector));
+-    if (r < 0) {
+-        return r;
++    if (!msix_is_masked(dev, vector)) {
++        r = dev->msix_mask_notifier(dev, vector, opaque, true);
++        if (r < 0) {
++            return r;
++        }
+     }
+     dev->msix_mask_notifier_opaque[vector] = NULL;
+     return r;
+-- 
+1.7.0.3
+

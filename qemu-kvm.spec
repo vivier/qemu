@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.69%{?dist}
+Release: 2.70%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1040,6 +1040,18 @@ Patch1505: kvm-virtio-blk-fix-barrier-support.patch
 Patch1506: kvm-make-release-misc-fixes.patch
 # For bz#595287 - virtio net/vhost net speed enhancements from upstream kernel
 Patch1507: kvm-virtio-utilize-PUBLISH_USED_IDX-feature.patch
+# For bz#595263 - virtio net lacks upstream fixes as of may 24
+Patch1508: kvm-virtio-invoke-set_features-on-load.patch
+# For bz#595263 - virtio net lacks upstream fixes as of may 24
+Patch1509: kvm-virtio-net-return-with-value-in-void-function.patch
+# For bz#585940 - qemu-kvm crashes on reboot when vhost is enabled
+Patch1510: kvm-vhost-net-fix-reversed-logic-in-mask-notifiers.patch
+# For bz#595130 - Disable hpet by default
+Patch1511: kvm-hpet-Disable-for-Red-Hat-Enterprise-Linux.patch
+# For bz#598896 - migration breaks networking with vhost-net
+Patch1513: kvm-virtio-net-stop-vhost-backend-on-vmstop.patch
+# For bz#598896 - migration breaks networking with vhost-net
+Patch1514: kvm-msix-fix-msix_set-unset_mask_notifier.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1611,6 +1623,12 @@ such as kvmtrace and kvm_stat.
 %patch1505 -p1
 %patch1506 -p1
 %patch1507 -p1
+%patch1508 -p1
+%patch1509 -p1
+%patch1510 -p1
+%patch1511 -p1
+%patch1513 -p1
+%patch1514 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1810,6 +1828,25 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Jun 07 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.70.el6
+- kvm-virtio-invoke-set_features-on-load.patch [bz#595263]
+- kvm-virtio-net-return-with-value-in-void-function.patch [bz#595263]
+- kvm-vhost-net-fix-reversed-logic-in-mask-notifiers.patch [bz#585940]
+- kvm-hpet-Disable-for-Red-Hat-Enterprise-Linux.patch [bz#595130]
+- ksmtuned: typo MemCached -> Cached [bz#597005]
+- kvm-virtio-net-stop-vhost-backend-on-vmstop.patch [bz#598896]
+- kvm-msix-fix-msix_set-unset_mask_notifier.patch [bz#598896]
+- Resolves: bz#585940
+  (qemu-kvm crashes on reboot when vhost is enabled)
+- Resolves: bz#595130
+  (Disable hpet by default)
+- Resolves: bz#595263
+  (virtio net lacks upstream fixes as of may 24)
+- Resolves: bz#597005
+  (ksmtune: typo: MemCached -> Cached)
+- Resolves: bz#598896
+  (migration breaks networking with vhost-net)
+
 * Tue Jun 01 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.69.el6
 - Changes to make-release script with no resulting changes on binary package
 - kvm-virtio-utilize-PUBLISH_USED_IDX-feature.patch [bz#595287]

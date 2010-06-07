@@ -1,0 +1,64 @@
+From 0f74af6fe7d9dec3c50ed87609d439ec6e11814a Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Wed, 2 Jun 2010 09:38:33 -0300
+Subject: [PATCH 1/2] qemu-kvm/redhat: use make-release to generate tarballs
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <20100602093833.GA25330@redhat.com>
+Patchwork-id: 9666
+O-Subject: [PATCH] qemu-kvm/redhat: use make-release to generate tarballs
+Bugzilla:
+
+generate tarballs from git, skip wget step
+Also disable sha1 checking as it was checking
+dates which change on each run.
+Note: do we care about base tarball not changing?
+If yes we should force mtime in make-release.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ redhat/Makefile        |    6 ++----
+ redhat/Makefile.common |    4 ++--
+ 2 files changed, 4 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ redhat/Makefile        |    6 ++----
+ redhat/Makefile.common |    4 ++--
+ 2 files changed, 4 insertions(+), 6 deletions(-)
+
+diff --git a/redhat/Makefile b/redhat/Makefile
+index ac1f988..caf8f35 100644
+--- a/redhat/Makefile
++++ b/redhat/Makefile
+@@ -79,10 +79,8 @@ $(TARBALL):
+ 		wget -O $(TARBALL) $(TARURL) || exit; \
+ 	else \
+ 		echo "Creating archive $(TARBALL)"; \
+-		cd ../ && \
+-		git archive --prefix=$(COMMON_NAME)-$(KVERSION)/ --format=tar $(MARKER) | \
+-		    gzip > $(TARBALL) \
+-		  || exit; \
++		rm -f $(TARBALL); \
++		../kvm/scripts/make-release --formal $(MARKER) $(COMMON_NAME)-$(KVERSION) $(TARBALL); \
+ 	fi
+ 
+ $(RC_PATCH):
+diff --git a/redhat/Makefile.common b/redhat/Makefile.common
+index b2f5cc6..b3c5e98 100644
+--- a/redhat/Makefile.common
++++ b/redhat/Makefile.common
+@@ -21,8 +21,8 @@ PKGNAME=$(COMMON_NAME)
+ 
+ #TARFILE:=$(subst _,.,$(MARKER)).tar.bz2
+ TARFILE:=$(COMMON_NAME)-$(KVERSION).tar.gz
+-TARURL:=http://downloads.sourceforge.net/sourceforge/kvm/$(COMMON_NAME)-$(KVERSION).tar.gz
+-TARSHA1:=dee7359094757af77ea839bbfd9dca8826edcbd2
++#TARURL:=http://downloads.sourceforge.net/sourceforge/kvm/$(COMMON_NAME)-$(KVERSION).tar.gz
++#TARSHA1:=dee7359094757af77ea839bbfd9dca8826edcbd2
+ 
+ TARBALL:=$(REDHAT)/$(TARFILE)
+ TESTPATCH:=$(REDHAT)/$(COMMON_NAME)-test.patch
+-- 
+1.7.0.3
+
