@@ -1,0 +1,84 @@
+From 3b33c1abf8bf3fb60c1125382de1da57d823d785 Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Mon, 7 Jun 2010 11:13:03 -0300
+Subject: [PATCH 3/6] virtio-net: truncating packet
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <20100607111303.GA6264@redhat.com>
+Patchwork-id: 9738
+O-Subject: [RHEL6.0 PATCHv3] virtio-net: truncating packet
+Bugzilla: 591494
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+virtio net attempts to peek into virtio queue to
+determine that we have enough space for the complete
+packet to fit. However, it fails to account for space
+consumed by virtio net header when it does this,
+under stress this results in a failure
+with the message 'truncating packet'.
+
+redhat bz 591494.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+
+Upstream status: posted
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=591494
+Brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=2497427
+
+v2 was posted mistakenly, is was identical to v1.
+v3 really tweaks whitespace as suggested by Amit.
+
+Sorry about the noise.
+
+---
+ hw/virtio-net.c |   15 +++++++++------
+ 1 files changed, 9 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-net.c |   15 +++++++++------
+ 1 files changed, 9 insertions(+), 6 deletions(-)
+
+diff --git a/hw/virtio-net.c b/hw/virtio-net.c
+index 67eebcf..4b677b9 100644
+--- a/hw/virtio-net.c
++++ b/hw/virtio-net.c
+@@ -532,16 +532,17 @@ static ssize_t virtio_net_receive(VLANClientState *nc, const uint8_t *buf, size_
+     if (!virtio_net_can_receive(&n->nic->nc))
+         return -1;
+ 
+-    if (!virtio_net_has_buffers(n, size))
++    /* hdr_len refers to the header we supply to the guest */
++    hdr_len = n->mergeable_rx_bufs ?
++        sizeof(struct virtio_net_hdr_mrg_rxbuf) : sizeof(struct virtio_net_hdr);
++
++
++    if (!virtio_net_has_buffers(n, size + hdr_len))
+         return 0;
+ 
+     if (!receive_filter(n, buf, size))
+         return size;
+ 
+-    /* hdr_len refers to the header we supply to the guest */
+-    hdr_len = n->mergeable_rx_bufs ?
+-        sizeof(struct virtio_net_hdr_mrg_rxbuf) : sizeof(struct virtio_net_hdr);
+-
+     offset = i = 0;
+ 
+     while (offset < size) {
+@@ -555,7 +556,9 @@ static ssize_t virtio_net_receive(VLANClientState *nc, const uint8_t *buf, size_
+             virtqueue_pop(n->rx_vq, &elem) == 0) {
+             if (i == 0)
+                 return -1;
+-            fprintf(stderr, "virtio-net truncating packet\n");
++            fprintf(stderr, "virtio-net truncating packet: "
++                    "offset %zd, size %zd, hdr_len %zd\n",
++                    offset, size, hdr_len);
+             exit(1);
+         }
+ 
+-- 
+1.7.0.3
+

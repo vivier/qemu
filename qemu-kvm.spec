@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.71%{?dist}
+Release: 2.72%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1091,6 +1091,18 @@ Patch1531: kvm-vnc-don-t-send-invalid-screen-updates.patch
 Patch1532: kvm-vnc-move-size-changed-check-into-the-vnc_desktop_res.patch
 # For bz#591759 - Segmentation fault when using vnc to view guest without vga card
 Patch1533: kvm-check-for-active_console-before-using-it.patch
+# For bz#586349 - BLOCK_IO_ERROR event does not provide the errno that caused it.
+Patch1534: kvm-Monitor-Make-RFQDN_REDHAT-public.patch
+# For bz#586349 - BLOCK_IO_ERROR event does not provide the errno that caused it.
+Patch1535: kvm-QMP-Add-error-reason-to-BLOCK_IO_ERROR-event.patch
+# For bz#591494 - Virtio: Transfer file caused guest in same vlan abnormally quit
+Patch1536: kvm-virtio-net-truncating-packet.patch
+# For bz#600203 - vhost net new userspace on old kernel: 95: falling back on userspace virtio
+Patch1537: kvm-vhost-net-check-PUBLISH_USED-in-backend.patch
+# For bz#596315 - device assignment truncates MSIX table size
+Patch1538: kvm-device-assignment-don-t-truncate-MSIX-capabilities-t.patch
+# For bz#561433 - Segfault when keyboard is removed
+Patch1539: kvm-If-a-USB-keyboard-is-unplugged-the-keyboard-eventhan.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1687,6 +1699,12 @@ such as kvmtrace and kvm_stat.
 %patch1531 -p1
 %patch1532 -p1
 %patch1533 -p1
+%patch1534 -p1
+%patch1535 -p1
+%patch1536 -p1
+%patch1537 -p1
+%patch1538 -p1
+%patch1539 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1886,6 +1904,24 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Jun 09 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.72.el6
+- kvm-Monitor-Make-RFQDN_REDHAT-public.patch [bz#586349]
+- kvm-QMP-Add-error-reason-to-BLOCK_IO_ERROR-event.patch [bz#586349]
+- kvm-virtio-net-truncating-packet.patch [bz#591494]
+- kvm-vhost-net-check-PUBLISH_USED-in-backend.patch [bz#600203]
+- kvm-device-assignment-don-t-truncate-MSIX-capabilities-t.patch [bz#596315]
+- kvm-If-a-USB-keyboard-is-unplugged-the-keyboard-eventhan.patch [bz#561433]
+- Resolves: bz#561433
+  (Segfault when keyboard is removed)
+- Resolves: bz#586349
+  (BLOCK_IO_ERROR event does not provide the errno that caused it.)
+- Resolves: bz#591494
+  (Virtio: Transfer file caused guest in same vlan abnormally quit)
+- Resolves: bz#596315
+  (device assignment truncates MSIX table size)
+- Resolves: bz#600203
+  (vhost net new userspace on old kernel: 95: falling back on userspace virtio)
+
 * Mon Jun 07 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.71.el6
 - kvm-device-assignment-fix-failure-to-exit-on-shared-IRQ.patch [bz#585310]
 - kvm-doc-Fix-host-forwarding-monitor-command-documentatio.patch [bz#588719]

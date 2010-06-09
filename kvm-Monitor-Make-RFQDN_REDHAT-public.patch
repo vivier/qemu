@@ -1,0 +1,62 @@
+From 8d99c4ad4d9fa53768bfbca8606457f8179f4404 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Fri, 14 May 2010 22:49:19 -0300
+Subject: [PATCH 1/6] Monitor: Make RFQDN_REDHAT public
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1273877360-19825-2-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 9295
+O-Subject: [PATCH 1/2] Monitor: Make RFQDN_REDHAT public
+Bugzilla: 586349
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Bugzilla: 586349
+Upstream: N/A - this macro is RHEL6-only
+
+Next commit will use it.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c |    3 ---
+ monitor.h |    3 +++
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c |    3 ---
+ monitor.h |    3 +++
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 660520d..c64fd4d 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -152,9 +152,6 @@ struct Monitor {
+     QLIST_ENTRY(Monitor) entry;
+ };
+ 
+-/* Red Hat Monitor's prefix (reversed fully qualified domain) */
+-#define RFQDN_REDHAT "__com.redhat_"
+-
+ #ifdef CONFIG_DEBUG_MONITOR
+ #define MON_DEBUG(fmt, ...) do {    \
+     fprintf(stderr, "Monitor: ");       \
+diff --git a/monitor.h b/monitor.h
+index f7b136a..9b1aecd 100644
+--- a/monitor.h
++++ b/monitor.h
+@@ -15,6 +15,9 @@ extern Monitor *default_mon;
+ #define MONITOR_USE_READLINE  0x02
+ #define MONITOR_USE_CONTROL   0x04
+ 
++/* Red Hat Monitor's prefix (reversed fully qualified domain) */
++#define RFQDN_REDHAT "__com.redhat_"
++
+ /* QMP events */
+ typedef enum MonitorEvent {
+     QEVENT_SHUTDOWN,
+-- 
+1.7.0.3
+

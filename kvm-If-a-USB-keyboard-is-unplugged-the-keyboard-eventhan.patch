@@ -1,0 +1,79 @@
+From d3ace949eea1eea161a0c8093dffbd6e12339762 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Tue, 8 Jun 2010 11:27:34 -0300
+Subject: [PATCH 6/6] If a USB keyboard is unplugged, the keyboard eventhandler is never removed, and events will continue to be passed through to the device, causing crashes or memory corruption.
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1275996454-32069-2-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 9779
+O-Subject: [PATCH] If a USB keyboard is unplugged,
+	the keyboard eventhandler is never removed,
+	and events will continue to be passed through to the device,
+	causing crashes or memory corruption.
+Bugzilla: 561433
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+---
+ console.h    |    1 +
+ hw/usb-hid.c |    3 +++
+ vl.c         |    6 ++++++
+ 3 files changed, 10 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ console.h    |    1 +
+ hw/usb-hid.c |    3 +++
+ vl.c         |    6 ++++++
+ 3 files changed, 10 insertions(+), 0 deletions(-)
+
+diff --git a/console.h b/console.h
+index b605cdf..402fd0c 100644
+--- a/console.h
++++ b/console.h
+@@ -39,6 +39,7 @@ typedef struct QEMUPutLEDEntry {
+ } QEMUPutLEDEntry;
+ 
+ void qemu_add_kbd_event_handler(QEMUPutKBDEvent *func, void *opaque);
++void qemu_remove_kbd_event_handler(void);
+ QEMUPutMouseEntry *qemu_add_mouse_event_handler(QEMUPutMouseEvent *func,
+                                                 void *opaque, int absolute,
+                                                 const char *name);
+diff --git a/hw/usb-hid.c b/hw/usb-hid.c
+index e67dac9..09a21fd 100644
+--- a/hw/usb-hid.c
++++ b/hw/usb-hid.c
+@@ -850,6 +850,9 @@ static void usb_hid_handle_destroy(USBDevice *dev)
+ 
+     if (s->kind != USB_KEYBOARD)
+         qemu_remove_mouse_event_handler(s->ptr.eh_entry);
++    if (s->kind == USB_KEYBOARD)
++        qemu_remove_kbd_event_handler();
++
+     /* TODO: else */
+ }
+ 
+diff --git a/vl.c b/vl.c
+index 0d28dc0..1930c7a 100644
+--- a/vl.c
++++ b/vl.c
+@@ -417,6 +417,12 @@ void qemu_add_kbd_event_handler(QEMUPutKBDEvent *func, void *opaque)
+     qemu_put_kbd_event = func;
+ }
+ 
++void qemu_remove_kbd_event_handler(void)
++{
++    qemu_put_kbd_event_opaque = NULL;
++    qemu_put_kbd_event = NULL;
++}
++
+ QEMUPutMouseEntry *qemu_add_mouse_event_handler(QEMUPutMouseEvent *func,
+                                                 void *opaque, int absolute,
+                                                 const char *name)
+-- 
+1.7.0.3
+
