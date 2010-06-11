@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.72%{?dist}
+Release: 2.73%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1103,6 +1103,8 @@ Patch1537: kvm-vhost-net-check-PUBLISH_USED-in-backend.patch
 Patch1538: kvm-device-assignment-don-t-truncate-MSIX-capabilities-t.patch
 # For bz#561433 - Segfault when keyboard is removed
 Patch1539: kvm-If-a-USB-keyboard-is-unplugged-the-keyboard-eventhan.patch
+# For bz#599460 - virtio nic is hotpluged when hotplug rtl8139 nic to guest
+Patch1540: kvm-net-Fix-hotplug-with-pci_add.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1705,6 +1707,7 @@ such as kvmtrace and kvm_stat.
 %patch1537 -p1
 %patch1538 -p1
 %patch1539 -p1
+%patch1540 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1904,6 +1907,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Jun 11 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.73.el6
+- kvm-net-Fix-hotplug-with-pci_add.patch [bz#599460]
+- Resolves: bz#599460
+  (virtio nic is hotpluged when hotplug rtl8139 nic to guest)
+
 * Wed Jun 09 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.72.el6
 - kvm-Monitor-Make-RFQDN_REDHAT-public.patch [bz#586349]
 - kvm-QMP-Add-error-reason-to-BLOCK_IO_ERROR-event.patch [bz#586349]

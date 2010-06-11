@@ -1,0 +1,75 @@
+From fa9bf630b242dc5705a3b99a492277faa1aa4569 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Tue, 8 Jun 2010 15:49:30 -0300
+Subject: [PATCH] net: Fix hotplug with pci_add
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <45613f0e81aeaba395dfdafb4df750466197dcda.1276012163.git.amit.shah@redhat.com>
+Patchwork-id: 9783
+O-Subject: [RHEL6 PATCH] net: Fix hotplug with pci_add
+Bugzilla: 599460
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+The correct model type wasn't getting added when hotplugging nics with
+pci_add.
+
+Testcase: start VM with default nic type. In the qemu_monitor:
+
+(qemu) pci_add auto nic model=virtio
+
+This results in a nic hot-plug of the same nic type as the default.
+
+Also changes the behaviour where no .init is defined for a
+net_client_type. Previously, 0 was returned, which indicated the init
+was successful and that 0 was the index into the nd_tables[] array.
+Return -1, indicating unsuccessful init, in such a case.
+
+Bugzilla: 599460
+Upstream: posted
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ net.c |    7 +++++--
+ 1 files changed, 5 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ net.c |    7 +++++--
+ 1 files changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/net.c b/net.c
+index 513cb08..cfbb083 100644
+--- a/net.c
++++ b/net.c
+@@ -1106,6 +1106,7 @@ int net_client_init(Monitor *mon, QemuOpts *opts, int is_netdev)
+     for (i = 0; net_client_types[i].type != NULL; i++) {
+         if (!strcmp(net_client_types[i].type, type)) {
+             VLANState *vlan = NULL;
++            int ret;
+ 
+             if (qemu_opts_validate(opts, &net_client_types[i].desc[0]) == -1) {
+                 return -1;
+@@ -1118,14 +1119,16 @@ int net_client_init(Monitor *mon, QemuOpts *opts, int is_netdev)
+                 vlan = qemu_find_vlan(qemu_opt_get_number(opts, "vlan", 0), 1);
+             }
+ 
++            ret = -1;
+             if (net_client_types[i].init) {
+-                if (net_client_types[i].init(opts, mon, name, vlan) < 0) {
++                ret = net_client_types[i].init(opts, mon, name, vlan);
++                if (ret < 0) {
+                     /* TODO push error reporting into init() methods */
+                     qerror_report(QERR_DEVICE_INIT_FAILED, type);
+                     return -1;
+                 }
+             }
+-            return 0;
++            return ret;
+         }
+     }
+ 
+-- 
+1.7.0.3
+
