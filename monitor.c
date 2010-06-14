@@ -1122,6 +1122,7 @@ static int do_change_block(Monitor *mon, const char *device,
 {
     BlockDriverState *bs;
     BlockDriver *drv = NULL;
+    int bdrv_flags;
 
     bs = bdrv_find(device);
     if (!bs) {
@@ -1138,7 +1139,8 @@ static int do_change_block(Monitor *mon, const char *device,
     if (eject_device(mon, bs, 0) < 0) {
         return -1;
     }
-    if (bdrv_open(bs, filename, BDRV_O_RDWR, drv) < 0) {
+    bdrv_flags = bdrv_get_type_hint(bs) == BDRV_TYPE_CDROM ? 0 : BDRV_O_RDWR;
+    if (bdrv_open(bs, filename, bdrv_flags, drv)) {
         return -1;
     }
     return monitor_read_bdrv_key_start(mon, bs, NULL, NULL);
