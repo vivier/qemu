@@ -1,0 +1,57 @@
+From 8e623c20521ea616a3cbd151db05825353ffdb1b Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 8 Jun 2010 10:46:08 -0300
+Subject: [PATCH 3/5] block: Make find_image_format() return 'raw' BlockDriver for SG_IO devices
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1275993970-15531-4-git-send-email-kwolf@redhat.com>
+Patchwork-id: 9761
+O-Subject: [RHEL-6 qemu-kvm PATCH 3/5] block: Make find_image_format() return
+	'raw' BlockDriver for SG_IO devices
+Bugzilla: 593758
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+From: Nicholas Bellinger <nab@linux-iscsi.org>
+
+Bugzilla: 593758
+
+This patch adds a special BlockDriverState->sg check in block.c:find_image_format()
+after bdrv_file_open() -> block/raw-posix.c:hdev_open() has been called to determine
+if we are dealing with a Linux host scsi-generic device.
+
+The patch then returns the BlockDriver * from bdrv_find_format("raw"), skipping the
+subsequent bdrv_read() and rest of find_image_format().
+
+Signed-off-by: Nicholas A. Bellinger <nab@linux-iscsi.org>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit f8ea0b00e087380fa0c7309f843f67b7e2d0126a)
+---
+ block.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+diff --git a/block.c b/block.c
+index 0dbb6e0..a46c421 100644
+--- a/block.c
++++ b/block.c
+@@ -327,6 +327,11 @@ static BlockDriver *find_image_format(const char *filename)
+     ret = bdrv_file_open(&bs, filename, 0);
+     if (ret < 0)
+         return NULL;
++
++    /* Return the raw BlockDriver * to scsi-generic devices */
++    if (bs->sg)
++        return bdrv_find_format("raw");
++
+     ret = bdrv_pread(bs, 0, buf, sizeof(buf));
+     bdrv_delete(bs);
+     if (ret < 0) {
+-- 
+1.7.0.3
+

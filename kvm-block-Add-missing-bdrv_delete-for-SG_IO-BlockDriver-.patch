@@ -1,0 +1,55 @@
+From 035a6d7b1e164c59d2e745e60bb5d7be137a0d2d Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 8 Jun 2010 10:46:09 -0300
+Subject: [PATCH 4/5] block: Add missing bdrv_delete() for SG_IO BlockDriver in find_image_format()
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1275993970-15531-5-git-send-email-kwolf@redhat.com>
+Patchwork-id: 9762
+O-Subject: [RHEL-6 qemu-kvm PATCH 4/5] block: Add missing bdrv_delete() for
+	SG_IO BlockDriver in find_image_format()
+Bugzilla: 593758
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+From: Nicholas A. Bellinger <nab@linux-iscsi.org>
+
+Bugzilla: 593758
+
+This patch adds a missing bdrv_delete() call in find_image_format() so that a
+SG_IO BlockDriver properly releases the temporary BlockDriverState *bs created
+from bdrv_file_open()
+
+Signed-off-by: Nicholas A. Bellinger <nab@linux-iscsi.org>
+Reported-by: Chris Krumme <chris.krumme@windriver.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 1a396859105c4c27fdec08180be26288b8a629a3)
+---
+ block.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/block.c b/block.c
+index a46c421..97f1ced 100644
+--- a/block.c
++++ b/block.c
+@@ -329,8 +329,10 @@ static BlockDriver *find_image_format(const char *filename)
+         return NULL;
+ 
+     /* Return the raw BlockDriver * to scsi-generic devices */
+-    if (bs->sg)
++    if (bs->sg) {
++        bdrv_delete(bs);
+         return bdrv_find_format("raw");
++    }
+ 
+     ret = bdrv_pread(bs, 0, buf, sizeof(buf));
+     bdrv_delete(bs);
+-- 
+1.7.0.3
+

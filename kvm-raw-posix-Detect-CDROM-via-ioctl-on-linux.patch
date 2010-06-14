@@ -1,0 +1,82 @@
+From a4532255001966c563b836298404dfe1a8c04cb0 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 8 Jun 2010 10:46:06 -0300
+Subject: [PATCH 1/5] raw-posix: Detect CDROM via ioctl on linux
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1275993970-15531-2-git-send-email-kwolf@redhat.com>
+Patchwork-id: 9759
+O-Subject: [RHEL-6 qemu-kvm PATCH 1/5] raw-posix: Detect CDROM via ioctl on linux
+Bugzilla: 593758
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+From: Cole Robinson <crobinso@redhat.com>
+
+Bugzilla: 593758
+
+Current CDROM detection is hardcoded based on source file name.
+Make this smarter on linux by attempting a CDROM specific ioctl.
+
+This makes '-cdrom /dev/sr0' succeed with no media present.
+
+v2:
+    Give ioctl check higher priority than filename check.
+
+v3:
+    Actually initialize 'prio' variable.
+    Check for ioctl success rather than absence of specific failure.
+
+v4:
+    Explicitly mention that change is linux specific.
+
+Signed-off-by: Cole Robinson <crobinso@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 3baf720e6b920d583ce2834d05e5a4e9603a1d56)
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block/raw-posix.c |   20 ++++++++++++++++++--
+ 1 files changed, 18 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/raw-posix.c |   20 ++++++++++++++++++--
+ 1 files changed, 18 insertions(+), 2 deletions(-)
+
+diff --git a/block/raw-posix.c b/block/raw-posix.c
+index fdd3389..0ca0807 100644
+--- a/block/raw-posix.c
++++ b/block/raw-posix.c
+@@ -1145,9 +1145,25 @@ static int cdrom_open(BlockDriverState *bs, const char *filename, int flags)
+ 
+ static int cdrom_probe_device(const char *filename)
+ {
++    int fd, ret;
++    int prio = 0;
++
+     if (strstart(filename, "/dev/cd", NULL))
+-        return 100;
+-    return 0;
++        prio = 50;
++
++    fd = open(filename, O_RDONLY | O_NONBLOCK);
++    if (fd < 0) {
++        goto out;
++    }
++
++    /* Attempt to detect via a CDROM specific ioctl */
++    ret = ioctl(fd, CDROM_DRIVE_STATUS, CDSL_CURRENT);
++    if (ret >= 0)
++        prio = 100;
++
++    close(fd);
++out:
++    return prio;
+ }
+ 
+ static int cdrom_is_inserted(BlockDriverState *bs)
+-- 
+1.7.0.3
+

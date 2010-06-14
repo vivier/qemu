@@ -1,0 +1,50 @@
+From 9783e6a7fa3d85d4570a92678ea0549ca3e85694 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 8 Jun 2010 10:46:07 -0300
+Subject: [PATCH 2/5] block: Remove special case for vvfat
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1275993970-15531-3-git-send-email-kwolf@redhat.com>
+Patchwork-id: 9760
+O-Subject: [RHEL-6 qemu-kvm PATCH 2/5] block: Remove special case for vvfat
+Bugzilla: 593758
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+Bugzilla: 593758
+
+The special case doesn't really us buy anything. Without it vvfat works more
+consistently as a protocol. We get raw on top of vvfat now, which works just
+as well as using vvfat directly.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 35ed5de6be186d46ff3e33554f32151fba0f401f)
+---
+ block.c |    5 -----
+ 1 files changed, 0 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c |    5 -----
+ 1 files changed, 0 insertions(+), 5 deletions(-)
+
+diff --git a/block.c b/block.c
+index f706b6f..0dbb6e0 100644
+--- a/block.c
++++ b/block.c
+@@ -324,11 +324,6 @@ static BlockDriver *find_image_format(const char *filename)
+     uint8_t buf[2048];
+     BlockDriverState *bs;
+ 
+-    drv = find_protocol(filename);
+-    /* no need to test disk image formats for vvfat */
+-    if (drv && strcmp(drv->format_name, "vvfat") == 0)
+-        return drv;
+-
+     ret = bdrv_file_open(&bs, filename, 0);
+     if (ret < 0)
+         return NULL;
+-- 
+1.7.0.3
+

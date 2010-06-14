@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.73%{?dist}
+Release: 2.74%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1105,6 +1105,16 @@ Patch1538: kvm-device-assignment-don-t-truncate-MSIX-capabilities-t.patch
 Patch1539: kvm-If-a-USB-keyboard-is-unplugged-the-keyboard-eventhan.patch
 # For bz#599460 - virtio nic is hotpluged when hotplug rtl8139 nic to guest
 Patch1540: kvm-net-Fix-hotplug-with-pci_add.patch
+# For bz#593758 - qemu fails to start with -cdrom /dev/sr0 if no media inserted
+Patch1541: kvm-raw-posix-Detect-CDROM-via-ioctl-on-linux.patch
+# For bz#593758 - qemu fails to start with -cdrom /dev/sr0 if no media inserted
+Patch1542: kvm-block-Remove-special-case-for-vvfat.patch
+# For bz#593758 - qemu fails to start with -cdrom /dev/sr0 if no media inserted
+Patch1543: kvm-block-Make-find_image_format-return-raw-BlockDriver-.patch
+# For bz#593758 - qemu fails to start with -cdrom /dev/sr0 if no media inserted
+Patch1544: kvm-block-Add-missing-bdrv_delete-for-SG_IO-BlockDriver-.patch
+# For bz#593758 - qemu fails to start with -cdrom /dev/sr0 if no media inserted
+Patch1545: kvm-block-Assume-raw-for-drives-without-media.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1708,6 +1718,11 @@ such as kvmtrace and kvm_stat.
 %patch1538 -p1
 %patch1539 -p1
 %patch1540 -p1
+%patch1541 -p1
+%patch1542 -p1
+%patch1543 -p1
+%patch1544 -p1
+%patch1545 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1907,6 +1922,15 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Jun 14 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.74.el6
+- kvm-raw-posix-Detect-CDROM-via-ioctl-on-linux.patch [bz#593758]
+- kvm-block-Remove-special-case-for-vvfat.patch [bz#593758]
+- kvm-block-Make-find_image_format-return-raw-BlockDriver-.patch [bz#593758]
+- kvm-block-Add-missing-bdrv_delete-for-SG_IO-BlockDriver-.patch [bz#593758]
+- kvm-block-Assume-raw-for-drives-without-media.patch [bz#593758]
+- Resolves: bz#593758
+  (qemu fails to start with -cdrom /dev/sr0 if no media inserted)
+
 * Fri Jun 11 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.73.el6
 - kvm-net-Fix-hotplug-with-pci_add.patch [bz#599460]
 - Resolves: bz#599460
