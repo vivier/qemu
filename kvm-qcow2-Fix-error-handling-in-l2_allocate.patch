@@ -1,0 +1,93 @@
+From 63fd7380b9af9d4a1e2e77baedfe059cb38b1216 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 8 Jun 2010 11:12:49 -0300
+Subject: [PATCH 07/13] qcow2: Fix error handling in l2_allocate
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1275995574-17666-7-git-send-email-kwolf@redhat.com>
+Patchwork-id: 9771
+O-Subject: [RHEL-6 qemu-kvm PATCH v2 06/11] qcow2: Fix error handling in
+	l2_allocate
+Bugzilla: 598507
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 598507
+Upstream status: Submitted
+
+l2_allocate has some intermediate states in which the image is inconsistent.
+Change the order to write to the L1 table only after the new L2 table has
+successfully been initialized.
+
+Also reset the L2 cache in failure case, it's very likely wrong.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 6214e553a40bf8f9691c168fb59f8d78e4d6f9ff)
+---
+ block/qcow2-cluster.c |   23 +++++++++++++----------
+ 1 files changed, 13 insertions(+), 10 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2-cluster.c |   23 +++++++++++++----------
+ 1 files changed, 13 insertions(+), 10 deletions(-)
+
+diff --git a/block/qcow2-cluster.c b/block/qcow2-cluster.c
+index 0b647d4..03a9f25 100644
+--- a/block/qcow2-cluster.c
++++ b/block/qcow2-cluster.c
+@@ -244,14 +244,6 @@ static int l2_allocate(BlockDriverState *bs, int l1_index, uint64_t **table)
+         return l2_offset;
+     }
+ 
+-    /* update the L1 entry */
+-
+-    s->l1_table[l1_index] = l2_offset | QCOW_OFLAG_COPIED;
+-    ret = write_l1_entry(bs, l1_index);
+-    if (ret < 0) {
+-        return ret;
+-    }
+-
+     /* allocate a new entry in the l2 cache */
+ 
+     min_index = l2_cache_new_entry(bs);
+@@ -266,7 +258,7 @@ static int l2_allocate(BlockDriverState *bs, int l1_index, uint64_t **table)
+         ret = bdrv_pread(bs->file, old_l2_offset, l2_table,
+             s->l2_size * sizeof(uint64_t));
+         if (ret < 0) {
+-            return ret;
++            goto fail;
+         }
+     }
+     /* write the l2 table to the file */
+@@ -274,7 +266,14 @@ static int l2_allocate(BlockDriverState *bs, int l1_index, uint64_t **table)
+     ret = bdrv_pwrite(bs->file, l2_offset, l2_table,
+         s->l2_size * sizeof(uint64_t));
+     if (ret < 0) {
+-        return ret;
++        goto fail;
++    }
++
++    /* update the L1 entry */
++    s->l1_table[l1_index] = l2_offset | QCOW_OFLAG_COPIED;
++    ret = write_l1_entry(bs, l1_index);
++    if (ret < 0) {
++        goto fail;
+     }
+ 
+     /* update the l2 cache entry */
+@@ -284,6 +283,10 @@ static int l2_allocate(BlockDriverState *bs, int l1_index, uint64_t **table)
+ 
+     *table = l2_table;
+     return 0;
++
++fail:
++    qcow2_l2_cache_reset(bs);
++    return ret;
+ }
+ 
+ static int count_contiguous_clusters(uint64_t nb_clusters, int cluster_size,
+-- 
+1.7.0.3
+

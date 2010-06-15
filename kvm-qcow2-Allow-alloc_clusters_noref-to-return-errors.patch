@@ -1,0 +1,84 @@
+From 7e812043ce730bd33ef1e08507ecdf408ab9e8a6 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 8 Jun 2010 11:12:53 -0300
+Subject: [PATCH 11/13] qcow2: Allow alloc_clusters_noref to return errors
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1275995574-17666-11-git-send-email-kwolf@redhat.com>
+Patchwork-id: 9775
+O-Subject: [RHEL-6 qemu-kvm PATCH v2 10/11] qcow2: Allow alloc_clusters_noref to
+	return errors
+Bugzilla: 598507
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 598507
+Upstream status: Submitted
+
+Currently it would consider blocks for which get_refcount fails used. However,
+it's unlikely that get_refcount would succeed for the next cluster, so it's not
+really helpful. Return an error instead.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block/qcow2-refcount.c |   18 +++++++++++++++---
+ 1 files changed, 15 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2-refcount.c |   18 +++++++++++++++---
+ 1 files changed, 15 insertions(+), 3 deletions(-)
+
+diff --git a/block/qcow2-refcount.c b/block/qcow2-refcount.c
+index b282256..b8f6a00 100644
+--- a/block/qcow2-refcount.c
++++ b/block/qcow2-refcount.c
+@@ -228,7 +228,10 @@ static int64_t alloc_refcount_block(BlockDriverState *bs, int64_t cluster_index)
+     }
+ 
+     /* Allocate the refcount block itself and mark it as used */
+-    uint64_t new_block = alloc_clusters_noref(bs, s->cluster_size);
++    int64_t new_block = alloc_clusters_noref(bs, s->cluster_size);
++    if (new_block < 0) {
++        return new_block;
++    }
+ 
+ #ifdef DEBUG_ALLOC2
+     fprintf(stderr, "qcow2: Allocate refcount block %d for %" PRIx64
+@@ -579,14 +582,19 @@ static int update_cluster_refcount(BlockDriverState *bs,
+ static int64_t alloc_clusters_noref(BlockDriverState *bs, int64_t size)
+ {
+     BDRVQcowState *s = bs->opaque;
+-    int i, nb_clusters;
++    int i, nb_clusters, refcount;
+ 
+     nb_clusters = size_to_clusters(s, size);
+ retry:
+     for(i = 0; i < nb_clusters; i++) {
+         int64_t next_cluster_index = s->free_cluster_index++;
+-        if (get_refcount(bs, next_cluster_index) != 0)
++        refcount = get_refcount(bs, next_cluster_index);
++
++        if (refcount < 0) {
++            return refcount;
++        } else if (refcount != 0) {
+             goto retry;
++        }
+     }
+ #ifdef DEBUG_ALLOC2
+     printf("alloc_clusters: size=%" PRId64 " -> %" PRId64 "\n",
+@@ -603,6 +611,10 @@ int64_t qcow2_alloc_clusters(BlockDriverState *bs, int64_t size)
+ 
+     BLKDBG_EVENT(bs->file, BLKDBG_CLUSTER_ALLOC);
+     offset = alloc_clusters_noref(bs, size);
++    if (offset < 0) {
++        return offset;
++    }
++
+     ret = update_refcount(bs, offset, size, 1);
+     if (ret < 0) {
+         return ret;
+-- 
+1.7.0.3
+

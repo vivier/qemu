@@ -1,0 +1,52 @@
+From 339e45505984ffbe39b13a6f761400e827056f2a Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 8 Jun 2010 11:12:52 -0300
+Subject: [PATCH 10/13] qcow2: Avoid shadowing variable in alloc_clusters_noref()
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1275995574-17666-10-git-send-email-kwolf@redhat.com>
+Patchwork-id: 9774
+O-Subject: [RHEL-6 qemu-kvm PATCH v2 09/11] qcow2: Avoid shadowing variable in
+	alloc_clusters_noref()
+Bugzilla: 598507
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+Bugzilla: 598507
+Upstream commit: 508e0893686794be55cfaa336fea584b16a471d9
+
+The i loop iterator is shadowed by the next free cluster index.  Both
+using the variable name 'i' makes the code harder to read.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block/qcow2-refcount.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2-refcount.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/block/qcow2-refcount.c b/block/qcow2-refcount.c
+index a5edf14..b282256 100644
+--- a/block/qcow2-refcount.c
++++ b/block/qcow2-refcount.c
+@@ -584,8 +584,8 @@ static int64_t alloc_clusters_noref(BlockDriverState *bs, int64_t size)
+     nb_clusters = size_to_clusters(s, size);
+ retry:
+     for(i = 0; i < nb_clusters; i++) {
+-        int64_t i = s->free_cluster_index++;
+-        if (get_refcount(bs, i) != 0)
++        int64_t next_cluster_index = s->free_cluster_index++;
++        if (get_refcount(bs, next_cluster_index) != 0)
+             goto retry;
+     }
+ #ifdef DEBUG_ALLOC2
+-- 
+1.7.0.3
+

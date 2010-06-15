@@ -1,0 +1,47 @@
+From 7bb123b896c2ac1dab39511b5e435a990d45e019 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 8 Jun 2010 11:12:50 -0300
+Subject: [PATCH 08/13] qcow2: Restore L1 entry on l2_allocate failure
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1275995574-17666-8-git-send-email-kwolf@redhat.com>
+Patchwork-id: 9772
+O-Subject: [RHEL-6 qemu-kvm PATCH v2 07/11] qcow2: Restore L1 entry on
+	l2_allocate failure
+Bugzilla: 598507
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 598507
+Upstream status: Submitted
+
+If writing the L1 table to disk failed, we need to restore its old content in
+memory to avoid inconsistencies.
+
+Reported-by: Juan Quintela <quintela@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block/qcow2-cluster.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2-cluster.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/block/qcow2-cluster.c b/block/qcow2-cluster.c
+index 03a9f25..5760ad6 100644
+--- a/block/qcow2-cluster.c
++++ b/block/qcow2-cluster.c
+@@ -285,6 +285,7 @@ static int l2_allocate(BlockDriverState *bs, int l1_index, uint64_t **table)
+     return 0;
+ 
+ fail:
++    s->l1_table[l1_index] = old_l2_offset;
+     qcow2_l2_cache_reset(bs);
+     return ret;
+ }
+-- 
+1.7.0.3
+

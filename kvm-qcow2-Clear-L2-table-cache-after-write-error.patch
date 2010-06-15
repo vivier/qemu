@@ -1,0 +1,48 @@
+From 3492f6620693468843d8d21c4980c7c835b3bd61 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 8 Jun 2010 11:12:48 -0300
+Subject: [PATCH 06/13] qcow2: Clear L2 table cache after write error
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1275995574-17666-6-git-send-email-kwolf@redhat.com>
+Patchwork-id: 9770
+O-Subject: [RHEL-6 qemu-kvm PATCH v2 05/11] qcow2: Clear L2 table cache after
+	write error
+Bugzilla: 598507
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 598507
+Upstream status: Submitted
+
+If the L2 table was already updated in cache, but writing it to disk has
+failed, we must not continue using the changed version in the cache to stay
+consistent with what's on the disk.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit d8be14880dee5927beadde7f4c9b375a1b3aab91)
+---
+ block/qcow2-cluster.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2-cluster.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/block/qcow2-cluster.c b/block/qcow2-cluster.c
+index c7e7308..0b647d4 100644
+--- a/block/qcow2-cluster.c
++++ b/block/qcow2-cluster.c
+@@ -710,6 +710,7 @@ int qcow2_alloc_cluster_link_l2(BlockDriverState *bs, QCowL2Meta *m)
+ 
+     ret = write_l2_entries(bs, l2_table, l2_offset, l2_index, m->nb_clusters);
+     if (ret < 0) {
++        qcow2_l2_cache_reset(bs);
+         goto err;
+     }
+ 
+-- 
+1.7.0.3
+

@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.74%{?dist}
+Release: 2.75%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1115,6 +1115,31 @@ Patch1543: kvm-block-Make-find_image_format-return-raw-BlockDriver-.patch
 Patch1544: kvm-block-Add-missing-bdrv_delete-for-SG_IO-BlockDriver-.patch
 # For bz#593758 - qemu fails to start with -cdrom /dev/sr0 if no media inserted
 Patch1545: kvm-block-Assume-raw-for-drives-without-media.patch
+# For bz#598407 - qcow2 corruption bug in refcount table growth
+Patch1546: kvm-qcow2-Fix-corruption-after-refblock-allocation.patch
+# For bz#598507 - Backport qcow2 error path fixes
+Patch1547: kvm-qcow2-Fix-corruption-after-error-in-update_refcount.patch
+# For bz#598507 - Backport qcow2 error path fixes
+Patch1548: kvm-qcow2-Allow-qcow2_get_cluster_offset-to-return-error.patch
+# For bz#598507 - Backport qcow2 error path fixes
+Patch1549: kvm-qcow2-Change-l2_load-to-return-0-errno.patch
+# For bz#598507 - Backport qcow2 error path fixes
+Patch1550: kvm-qcow2-Return-right-error-code-in-write_refcount_bloc.patch
+# For bz#598507 - Backport qcow2 error path fixes
+Patch1551: kvm-qcow2-Clear-L2-table-cache-after-write-error.patch
+# For bz#598507 - Backport qcow2 error path fixes
+Patch1552: kvm-qcow2-Fix-error-handling-in-l2_allocate.patch
+# For bz#598507 - Backport qcow2 error path fixes
+Patch1553: kvm-qcow2-Restore-L1-entry-on-l2_allocate-failure.patch
+# For bz#598507 - Backport qcow2 error path fixes
+Patch1554: kvm-qcow2-Allow-get_refcount-to-return-errors.patch
+# For bz#598507 - Backport qcow2 error path fixes
+Patch1555: kvm-qcow2-Avoid-shadowing-variable-in-alloc_clusters_nor.patch
+# For bz#598507 - Backport qcow2 error path fixes
+Patch1556: kvm-qcow2-Allow-alloc_clusters_noref-to-return-errors.patch
+# For bz#598507 - Backport qcow2 error path fixes
+Patch1557: kvm-qcow2-Return-real-error-code-in-load_refcount_block.patch
+Patch1558: kvm-make-release-make-mtime-owner-group-consistent.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1723,6 +1748,19 @@ such as kvmtrace and kvm_stat.
 %patch1543 -p1
 %patch1544 -p1
 %patch1545 -p1
+%patch1546 -p1
+%patch1547 -p1
+%patch1548 -p1
+%patch1549 -p1
+%patch1550 -p1
+%patch1551 -p1
+%patch1552 -p1
+%patch1553 -p1
+%patch1554 -p1
+%patch1555 -p1
+%patch1556 -p1
+%patch1557 -p1
+%patch1558 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1922,6 +1960,25 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jun 15 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.75.el6
+- kvm-qcow2-Fix-corruption-after-refblock-allocation.patch [bz#598407]
+- kvm-qcow2-Fix-corruption-after-error-in-update_refcount.patch [bz#598507]
+- kvm-qcow2-Allow-qcow2_get_cluster_offset-to-return-error.patch [bz#598507]
+- kvm-qcow2-Change-l2_load-to-return-0-errno.patch [bz#598507]
+- kvm-qcow2-Return-right-error-code-in-write_refcount_bloc.patch [bz#598507]
+- kvm-qcow2-Clear-L2-table-cache-after-write-error.patch [bz#598507]
+- kvm-qcow2-Fix-error-handling-in-l2_allocate.patch [bz#598507]
+- kvm-qcow2-Restore-L1-entry-on-l2_allocate-failure.patch [bz#598507]
+- kvm-qcow2-Allow-get_refcount-to-return-errors.patch [bz#598507]
+- kvm-qcow2-Avoid-shadowing-variable-in-alloc_clusters_nor.patch [bz#598507]
+- kvm-qcow2-Allow-alloc_clusters_noref-to-return-errors.patch [bz#598507]
+- kvm-qcow2-Return-real-error-code-in-load_refcount_block.patch [bz#598507]
+- kvm-make-release-make-mtime-owner-group-consistent.patch
+- Resolves: bz#598407
+  (qcow2 corruption bug in refcount table growth)
+- Resolves: bz#598507
+  (Backport qcow2 error path fixes)
+
 * Mon Jun 14 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.74.el6
 - kvm-raw-posix-Detect-CDROM-via-ioctl-on-linux.patch [bz#593758]
 - kvm-block-Remove-special-case-for-vvfat.patch [bz#593758]

@@ -1,0 +1,53 @@
+From 10f9848d04f8279c2cc67d7970233b2e2dfec9ba Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 8 Jun 2010 11:12:44 -0300
+Subject: [PATCH 02/13] qcow2: Fix corruption after error in update_refcount
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1275995574-17666-2-git-send-email-kwolf@redhat.com>
+Patchwork-id: 9766
+O-Subject: [RHEL-6 qemu-kvm PATCH v2 01/11] qcow2: Fix corruption after error in
+	update_refcount
+Bugzilla: 598507
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 598507
+Upstream status: Submitted
+
+After it is done with updating refcounts in the cache, update_refcount writes
+all changed entries to disk. If a refcount block allocation fails, however,
+there was no change yet and therefore first_index = last_index = -1. Don't
+treat -1 as a normal sector index (resulting in a 512 byte write!) but return
+without updating anything in this case.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 10f0bb658e6d7265d658a162c47700bf9b8a4de1)
+---
+ block/qcow2-refcount.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2-refcount.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/block/qcow2-refcount.c b/block/qcow2-refcount.c
+index 1fc0aa1..dc57e16 100644
+--- a/block/qcow2-refcount.c
++++ b/block/qcow2-refcount.c
+@@ -416,6 +416,10 @@ static int write_refcount_block_entries(BlockDriverState *bs,
+         return 0;
+     }
+ 
++    if (first_index < 0) {
++        return 0;
++    }
++
+     first_index &= ~(REFCOUNTS_PER_SECTOR - 1);
+     last_index = (last_index + REFCOUNTS_PER_SECTOR)
+         & ~(REFCOUNTS_PER_SECTOR - 1);
+-- 
+1.7.0.3
+
