@@ -831,7 +831,7 @@ STEXI
 Set maximum tolerated downtime (in seconds) for migration.
 ETEXI
 
-#if defined(TARGET_I386)
+#if defined(TARGET_I386) && 0 /* Disabled for Red Hat Enterprise Linux */
     {
         .name       = "drive_add",
         .args_type  = "pci_addr:s,opts:s",
