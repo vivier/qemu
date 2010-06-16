@@ -1,0 +1,63 @@
+From b3e5551d82b7012a3f5a41e9bf9f2de0b4be5440 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Tue, 15 Jun 2010 08:03:18 -0300
+Subject: [PATCH 2/5] net: Fix VM start with '-net none'
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <67f1c23f177d7b40149a556b1764c1e8bc0dfc17.1276588995.git.amit.shah@redhat.com>
+Patchwork-id: 9914
+O-Subject: [RHEL6 PATCH] net: Fix VM start with '-net none'
+Bugzilla: 599460
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+
+Commit 50e32ea8f31035877decc10f1075aa0e619e09cb changed the behaviour
+for the return type of net_client_init() when a nic type with no init
+method was specified. 'none' is one such nic type. Instead of returning
+0, which gets interpreted as an index into the nd_table[] array, we
+switched to returning -1, which signifies an error as well.
+
+That broke VM start with '-net none'. Testing was only done with the
+monitor command 'pci_add', which doesn't fail.
+
+The correct fix would still be to return 0+ values from
+net_client_init() only when the return value can be used as an index to
+refer to an entry in nd_table[]. With the current code, callers can
+erroneously poke into nd_table[0] when -net nic is used, which can lead
+to badness.
+
+However, this commit just returns to the previous behaviour before the
+offending commit.
+
+(Offending commit in RHEL6: fa9bf630b242dc5705a3b99a492277faa1aa4569 )
+Bugzilla: 5999460
+ (re-using the bug for the prev. commit)
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ net.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ net.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/net.c b/net.c
+index cfbb083..15e9ff7 100644
+--- a/net.c
++++ b/net.c
+@@ -1119,7 +1119,7 @@ int net_client_init(Monitor *mon, QemuOpts *opts, int is_netdev)
+                 vlan = qemu_find_vlan(qemu_opt_get_number(opts, "vlan", 0), 1);
+             }
+ 
+-            ret = -1;
++            ret = 0;
+             if (net_client_types[i].init) {
+                 ret = net_client_types[i].init(opts, mon, name, vlan);
+                 if (ret < 0) {
+-- 
+1.7.0.3
+

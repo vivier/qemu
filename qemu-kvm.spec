@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.75%{?dist}
+Release: 2.76%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1140,6 +1140,16 @@ Patch1556: kvm-qcow2-Allow-alloc_clusters_noref-to-return-errors.patch
 # For bz#598507 - Backport qcow2 error path fixes
 Patch1557: kvm-qcow2-Return-real-error-code-in-load_refcount_block.patch
 Patch1558: kvm-make-release-make-mtime-owner-group-consistent.patch
+# For bz#602724 - VNC disconnect segfault on KVM video consoles
+Patch1559: kvm-fix-vnc-memory-corruption-with-width-1400.patch
+# For bz#599460 - virtio nic is hotpluged when hotplug rtl8139 nic to guest
+Patch1560: kvm-net-Fix-VM-start-with-net-none.patch
+# For bz#602590 - Disable pci_add, pci_del, drive_add
+Patch1561: kvm-monitor-Remove-pci_add-command-for-Red-Hat-Enterpris.patch
+# For bz#602590 - Disable pci_add, pci_del, drive_add
+Patch1562: kvm-monitor-Remove-pci_del-command-for-Red-Hat-Enterpris.patch
+# For bz#602590 - Disable pci_add, pci_del, drive_add
+Patch1563: kvm-monitor-Remove-drive_add-command-for-Red-Hat-Enterpr.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1761,6 +1771,11 @@ such as kvmtrace and kvm_stat.
 %patch1556 -p1
 %patch1557 -p1
 %patch1558 -p1
+%patch1559 -p1
+%patch1560 -p1
+%patch1561 -p1
+%patch1562 -p1
+%patch1563 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1960,6 +1975,19 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Jun 16 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.76.el6
+- kvm-fix-vnc-memory-corruption-with-width-1400.patch [bz#602724]
+- kvm-net-Fix-VM-start-with-net-none.patch [bz#599460]
+- kvm-monitor-Remove-pci_add-command-for-Red-Hat-Enterpris.patch [bz#602590]
+- kvm-monitor-Remove-pci_del-command-for-Red-Hat-Enterpris.patch [bz#602590]
+- kvm-monitor-Remove-drive_add-command-for-Red-Hat-Enterpr.patch [bz#602590]
+- Resolves: bz#599460
+  (virtio nic is hotpluged when hotplug rtl8139 nic to guest)
+- Resolves: bz#602590
+  (Disable pci_add, pci_del, drive_add)
+- Resolves: bz#602724
+  (VNC disconnect segfault on KVM video consoles)
+
 * Tue Jun 15 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.75.el6
 - kvm-qcow2-Fix-corruption-after-refblock-allocation.patch [bz#598407]
 - kvm-qcow2-Fix-corruption-after-error-in-update_refcount.patch [bz#598507]
