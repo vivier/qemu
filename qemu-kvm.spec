@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.76%{?dist}
+Release: 2.77%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1975,6 +1975,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Jun 16 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.77.el6
+- kvm.modules: autoload vhost-net module too [bz#596891]
+- Resolves: bz#596891
+  (vhost-net module should be loaded automatically)
+
 * Wed Jun 16 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.76.el6
 - kvm-fix-vnc-memory-corruption-with-width-1400.patch [bz#602724]
 - kvm-net-Fix-VM-start-with-net-none.patch [bz#599460]
