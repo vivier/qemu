@@ -192,7 +192,9 @@ void virtio_net_exit(VirtIODevice *vdev);
 
 #define DEFINE_VIRTIO_COMMON_FEATURES(_state, _field) \
 	DEFINE_PROP_BIT("indirect_desc", _state, _field, \
-			VIRTIO_RING_F_INDIRECT_DESC, true)
+			VIRTIO_RING_F_INDIRECT_DESC, true), \
+        DEFINE_PROP_BIT("publish_used", _state, _field, \
+                        VIRTIO_RING_F_PUBLISH_USED, true)
 
 target_phys_addr_t virtio_queue_get_desc_addr(VirtIODevice *vdev, int n);
 target_phys_addr_t virtio_queue_get_avail_addr(VirtIODevice *vdev, int n);
