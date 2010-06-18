@@ -475,15 +475,37 @@ static int unavailable_host_feature(struct model_features_t *f, uint32_t mask)
     return 0;
 }
 
-/* best effort attempt to inform user requested cpu flags aren't making
- * their way to the guest.  Note: ft[].check_feat ideally should be
- * specified via a guest_def field to suppress report of extraneous flags.
+/* determine the effective set of cpuid features visible to a guest.
+ * in the case kvm is enabled, we also include features emulated by
+ * the hypervisor
+ */ 
+static void summary_cpuid_features(CPUX86State *env, x86_def_t *hd)
+{
+    struct {
+        uint32_t *pfeat, cmd, reg;
+	} fmap[] = {
+            {&hd->features, 0x00000001, R_EDX},
+            {&hd->ext_features, 0x00000001, R_ECX},
+            {&hd->ext2_features, 0x80000001, R_EDX},
+            {&hd->ext3_features, 0x80000001, R_ECX},
+            {NULL}}, *p;
+
+    if (kvm_enabled()) {
+        for (p = fmap; p->pfeat; ++p)
+            *p->pfeat = kvm_arch_get_supported_cpuid(env, p->cmd, p->reg);
+    } else {
+        cpu_x86_fill_host(hd);
+    }
+}
+
+/* inform the user of any requested cpu features (both explicitly requested
+ * flags and implicit cpu model flags) not making their way to the guest
  */
-static int check_features_against_host(x86_def_t *guest_def)
+static int check_features_against_host(CPUX86State *env, x86_def_t *guest_def)
 {
     x86_def_t host_def;
     uint32_t mask;
-    int rv, i;
+    int rv;
     struct model_features_t ft[] = {
         {&guest_def->features, &host_def.features,
             ~0, feature_name, 0x00000000},
@@ -492,16 +514,16 @@ static int check_features_against_host(x86_def_t *guest_def)
         {&guest_def->ext2_features, &host_def.ext2_features,
             ~PPRO_FEATURES, ext2_feature_name, 0x80000000},
         {&guest_def->ext3_features, &host_def.ext3_features,
-            ~CPUID_EXT3_SVM, ext3_feature_name, 0x80000001}};
+            ~CPUID_EXT3_SVM, ext3_feature_name, 0x80000001},
+        {NULL}}, *p;
 
-    cpu_x86_fill_host(&host_def);
-    for (rv = 0, i = 0; i < sizeof (ft) / sizeof (ft[0]); ++i)
+    summary_cpuid_features(env, &host_def);
+    for (rv = 0, p = ft; p->guest_feat; ++p)
         for (mask = 1; mask; mask <<= 1)
-            if (ft[i].check_feat & mask && *ft[i].guest_feat & mask &&
-                !(*ft[i].host_feat & mask)) {
-                    unavailable_host_feature(&ft[i], mask);
-                    rv = 1;
-                }
+            if (mask & p->check_feat & *p->guest_feat & ~*p->host_feat) {
+                unavailable_host_feature(p, mask);
+                rv = 1;
+            }
     return rv;
 }
 
@@ -627,10 +649,6 @@ static int cpu_x86_find_by_name(x86_def_t *x86_cpu_def, const char *cpu_model)
     x86_cpu_def->ext2_features &= ~minus_ext2_features;
     x86_cpu_def->ext3_features &= ~minus_ext3_features;
     x86_cpu_def->kvm_features &= ~minus_kvm_features;
-    if (check_cpuid) {
-        if (check_features_against_host(x86_cpu_def) && enforce_cpuid)
-            goto error;
-    }
     free(s);
     return 0;
 
@@ -775,6 +793,10 @@ static int cpu_x86_register (CPUX86State *env, const char *cpu_model)
                 c = (uint8_t)model_id[i];
             env->cpuid_model[i >> 2] |= c << (8 * (i & 3));
         }
+    }
+    if (check_cpuid) {
+        if (check_features_against_host(env, def) && enforce_cpuid)
+            return -1;
     }
     return 0;
 }
