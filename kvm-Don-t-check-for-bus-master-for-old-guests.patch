@@ -1,0 +1,119 @@
+From bb249ed9187a4eb62c8ca9331b6e609c17d32dfb Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Thu, 17 Jun 2010 18:12:53 -0300
+Subject: [PATCH 3/4] Don't check for bus master for old guests
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100617181136.5443.9919.stgit@localhost.localdomain>
+Patchwork-id: 9960
+O-Subject: [RHEL6.0 qemu-kvm PATCH v2] Don't check for bus master for old guests
+Bugzilla: 596014
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Alexander Graf <agraf@suse.de>
+
+Bugzilla: 596014
+Upstream commit: c81131db15dd1844d0db1d51f3cd7a105cfd2cf3
+
+Older Linux guests don't activate the bus master enable bit. So for those we
+can just try to be clever and track if they set the DEVICE_OK bit even though
+bus mastering is still disabled.
+
+Under that condition we can disable the windows safety check. With that logic
+in place both guests should work just fine. Without PCI hotplug breaks
+virtio-net in Linux < 2.6.34 guests.
+
+Signed-off-by: Alexander Graf <agraf@suse.de>
+CC: Michael S. Tsirkin <mst@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+
+v2: Fix bug noted by Amit (also submitted upstream)
+    Fix whitespace to match upstream in virtio_write_config()
+
+ hw/virtio-pci.c |   27 +++++++++++++++++++++++++--
+ 1 files changed, 25 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-pci.c |   27 +++++++++++++++++++++++++--
+ 1 files changed, 25 insertions(+), 2 deletions(-)
+
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index 4aeabbf..dba38b6 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -80,6 +80,10 @@
+  * 12 is historical, and due to x86 page size. */
+ #define VIRTIO_PCI_QUEUE_ADDR_SHIFT    12
+ 
++/* We can catch some guest bugs inside here so we continue supporting older
++   guests. */
++#define VIRTIO_PCI_BUG_BUS_MASTER	(1 << 0)
++
+ /* QEMU doesn't strictly need write barriers since everything runs in
+  * lock-step.  We'll leave the calls to wmb() in though to make it obvious for
+  * KVM or if kqemu gets SMP support.
+@@ -91,6 +95,7 @@
+ typedef struct {
+     PCIDevice pci_dev;
+     VirtIODevice *vdev;
++    uint32_t bugs;
+     uint32_t addr;
+     uint32_t class_code;
+     uint32_t nvectors;
+@@ -145,6 +150,13 @@ static int virtio_pci_load_config(void * opaque, QEMUFile *f)
+     if (proxy->vdev->config_vector != VIRTIO_NO_VECTOR) {
+         return msix_vector_use(&proxy->pci_dev, proxy->vdev->config_vector);
+     }
++
++    /* Try to find out if the guest has bus master disabled, but is
++       in ready state. Then we have a buggy guest OS. */
++    if ((proxy->vdev->status & VIRTIO_CONFIG_S_DRIVER_OK) &&
++        !(proxy->pci_dev.config[PCI_COMMAND] & PCI_COMMAND_MASTER)) {
++        proxy->bugs |= VIRTIO_PCI_BUG_BUS_MASTER;
++    }
+     return 0;
+ }
+ 
+@@ -169,6 +181,7 @@ static void virtio_pci_reset(DeviceState *d)
+     VirtIOPCIProxy *proxy = container_of(d, VirtIOPCIProxy, pci_dev.qdev);
+     virtio_reset(proxy->vdev);
+     msix_reset(&proxy->pci_dev);
++    proxy->bugs = 0;
+ }
+ 
+ static void virtio_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+@@ -212,6 +225,14 @@ static void virtio_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+             virtio_reset(proxy->vdev);
+             msix_unuse_all_vectors(&proxy->pci_dev);
+         }
++
++        /* Linux before 2.6.34 sets the device as OK without enabling
++           the PCI device bus master bit. In this case we need to disable
++           some safety checks. */
++        if ((val & VIRTIO_CONFIG_S_DRIVER_OK) &&
++            !(proxy->pci_dev.config[PCI_COMMAND] & PCI_COMMAND_MASTER)) {
++            proxy->bugs |= VIRTIO_PCI_BUG_BUS_MASTER;
++        }
+         break;
+     case VIRTIO_MSI_CONFIG_VECTOR:
+         msix_vector_unuse(&proxy->pci_dev, vdev->config_vector);
+@@ -378,8 +399,10 @@ static void virtio_write_config(PCIDevice *pci_dev, uint32_t address,
+ 
+     if (PCI_COMMAND == address) {
+         if (!(val & PCI_COMMAND_MASTER)) {
+-            virtio_set_status(proxy->vdev,
+-                              proxy->vdev->status & ~VIRTIO_CONFIG_S_DRIVER_OK);
++            if (!(proxy->bugs & VIRTIO_PCI_BUG_BUS_MASTER)) {
++                virtio_set_status(proxy->vdev,
++                                  proxy->vdev->status & ~VIRTIO_CONFIG_S_DRIVER_OK);
++            }
+         }
+     }
+ 
+-- 
+1.7.0.3
+

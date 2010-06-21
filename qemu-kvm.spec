@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.77%{?dist}
+Release: 2.78%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1150,6 +1150,14 @@ Patch1561: kvm-monitor-Remove-pci_add-command-for-Red-Hat-Enterpris.patch
 Patch1562: kvm-monitor-Remove-pci_del-command-for-Red-Hat-Enterpris.patch
 # For bz#602590 - Disable pci_add, pci_del, drive_add
 Patch1563: kvm-monitor-Remove-drive_add-command-for-Red-Hat-Enterpr.patch
+# For bz#602026 - Cannot change cdrom by "change device filename [format] " in (qemu) command line
+Patch1564: kvm-block-read-only-open-cdrom-as-read-only-when-using-m.patch
+# For bz#598022 - Hot-added device is not visible in guest after live-migration.
+Patch1565: kvm-acpi_piix4-save-gpe-and-pci-hotplug-slot-status.patch
+# For bz#596014 - hot add virtio-blk-pci via device_add lead to virtio network lost
+Patch1566: kvm-Don-t-check-for-bus-master-for-old-guests.patch
+# For bz#597147 - libvirt: kvm disk error after first stage install of Win2K or WinXP
+Patch1567: kvm-Make-IDE-drives-defined-with-device-visible-to-cmos_.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1776,6 +1784,10 @@ such as kvmtrace and kvm_stat.
 %patch1561 -p1
 %patch1562 -p1
 %patch1563 -p1
+%patch1564 -p1
+%patch1565 -p1
+%patch1566 -p1
+%patch1567 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1975,6 +1987,20 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Jun 21 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.78.el6
+- kvm-block-read-only-open-cdrom-as-read-only-when-using-m.patch [bz#602026]
+- kvm-acpi_piix4-save-gpe-and-pci-hotplug-slot-status.patch [bz#598022]
+- kvm-Don-t-check-for-bus-master-for-old-guests.patch [bz#596014]
+- kvm-Make-IDE-drives-defined-with-device-visible-to-cmos_.patch [bz#597147]
+- Resolves: bz#596014
+  (hot add virtio-blk-pci via device_add lead to virtio network lost)
+- Resolves: bz#597147
+  (libvirt: kvm disk error after first stage install of Win2K or WinXP)
+- Resolves: bz#598022
+  (Hot-added device is not visible in guest after live-migration.)
+- Resolves: bz#602026
+  (Cannot change cdrom by "change device filename [format] " in (qemu) command line)
+
 * Wed Jun 16 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.77.el6
 - kvm.modules: autoload vhost-net module too [bz#596891]
 - Resolves: bz#596891

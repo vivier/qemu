@@ -1,0 +1,55 @@
+From 852ee243c6968d0f5a0b310580cd244193bdd124 Mon Sep 17 00:00:00 2001
+From: Christoph Hellwig <chellwig@redhat.com>
+Date: Mon, 14 Jun 2010 11:07:06 -0300
+Subject: [PATCH 1/4] block: read-only: open cdrom as read-only when using monitor's change command
+
+RH-Author: Christoph Hellwig <chellwig@redhat.com>
+Message-id: <1276513626-28122-1-git-send-email-chellwig@redhat.com>
+Patchwork-id: 9884
+O-Subject: [RHEL6 qemu PATCH v2] block: read-only: open cdrom as read-only when
+	using monitor's change command
+Bugzilla: 602026
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Naphtali Sprei <nsprei@redhat.com>
+
+Current code of monitor command: 'change', used to open file for read-write
+uncoditionally. Change to open it as read-only for CDROM, and read-write for all others.
+
+Signed-off-by: Naphtali Sprei <nsprei@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Upstream commit: cb4e5f8ed1b648c451491b10dc92b1af1e324535
+BZ: 602026
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index c64fd4d..11a3faa 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -1122,6 +1122,7 @@ static int do_change_block(Monitor *mon, const char *device,
+ {
+     BlockDriverState *bs;
+     BlockDriver *drv = NULL;
++    int bdrv_flags;
+ 
+     bs = bdrv_find(device);
+     if (!bs) {
+@@ -1138,7 +1139,8 @@ static int do_change_block(Monitor *mon, const char *device,
+     if (eject_device(mon, bs, 0) < 0) {
+         return -1;
+     }
+-    if (bdrv_open(bs, filename, BDRV_O_RDWR, drv) < 0) {
++    bdrv_flags = bdrv_get_type_hint(bs) == BDRV_TYPE_CDROM ? 0 : BDRV_O_RDWR;
++    if (bdrv_open(bs, filename, bdrv_flags, drv)) {
+         return -1;
+     }
+     return monitor_read_bdrv_key_start(mon, bs, NULL, NULL);
+-- 
+1.7.0.3
+
