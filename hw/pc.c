@@ -262,6 +262,23 @@ static void cmos_init(ram_addr_t ram_size, ram_addr_t above_4g_mem_size,
     int fd0, fd1, nb;
     int i;
 
+    /*
+     * hd_table[] has only IDE drives defined with -drive if=ide, not
+     * the ones defined with -device.  A proper fix requires quite a
+     * bit of surgery.  This is just a quick, temporary patch to make
+     * things work with libvirt.  It relies on the way libvirt names
+     * drives, namely "drive-ide0-BUS-UNIT".
+     */
+    for (i = 0; i < 4; i++) {
+        char id[32];
+
+        if (hd_table[i])
+            continue;
+        snprintf(id, sizeof(id), "drive-ide0-%d-%d",
+                 i / MAX_IDE_DEVS, i % MAX_IDE_DEVS);
+        hd_table[i] = drive_get_by_id(id);
+    }
+
     /* various important CMOS locations needed by PC/Bochs bios */
 
     /* memory size */
