@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.12.3
-Release: 6%{?dist}
+Release: 7%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -89,7 +89,7 @@ Patch52: 0052-virtio-console-patches.patch
 Patch53: 0053-net-remove-NICInfo.bootable-field.patch
 Patch54: 0054-net-remove-broken-net_set_boot_mask-boot-device-vali.patch
 Patch55: 0055-boot-remove-unused-boot_devices_bitmap-variable.patch
-
+Patch56: block-vvfat.c-fix-warnings-with-_FORTIFY_SOURCE.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -336,6 +336,7 @@ such as kvmtrace and kvm_stat.
 %patch53 -p1
 %patch54 -p1
 %patch55 -p1
+%patch56 -p1
 
 %build
 # By default we build everything, but allow x86 to build a minimal version
@@ -639,6 +640,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jun 22 2010 Amit Shah <amit.shah@redhat.com> - 2:0.12.3-7
+- Add vvfat hardening patch from upstream (#605202)
+
 * Fri Apr 23 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.3-6
 - Change requires to the noarch seabios-bin
 - Add ownership of docdir to qemu-common (#572110)
