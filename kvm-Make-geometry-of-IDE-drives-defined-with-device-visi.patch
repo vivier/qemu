@@ -1,0 +1,57 @@
+From f6e9171b9a1f20b35d1a4ab2ed8853b45ceebece Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 22 Jun 2010 18:05:02 -0300
+Subject: [PATCH] Make geometry of IDE drives defined with -device visible to cmos_init()
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <m37hlrq6y9.fsf@blackfin.pond.sub.org>
+Patchwork-id: 10085
+O-Subject: [PATCH] Make geometry of IDE drives defined with -device visible to
+	cmos_init()
+Bugzilla: 597147
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+RH-Acked-by: john cooper <john.cooper@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+The previous patch makes the drives visible all right.  However, they
+don't have their geometry guessed, yet.  The guessing is in
+ide_init_drive(), which runs within the qdev init() method.
+
+Drives defined with -drive if=ide get created along with the IDE
+controller is created, inside machine->init().  That's before
+cmos_init().  For drives defined with -device, it happens during
+generic device init.  That's after cmos_init().
+
+Fortunately, bdrv_guess_geometry() is idempotent, so we can call it
+right in cmos_init().
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pc.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/hw/pc.c b/hw/pc.c
+index d142282..c60a79a 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -271,12 +271,16 @@ static void cmos_init(ram_addr_t ram_size, ram_addr_t above_4g_mem_size,
+      */
+     for (i = 0; i < 4; i++) {
+         char id[32];
++        int cylinders, heads, secs;
+ 
+         if (hd_table[i])
+             continue;
+         snprintf(id, sizeof(id), "drive-ide0-%d-%d",
+                  i / MAX_IDE_DEVS, i % MAX_IDE_DEVS);
+         hd_table[i] = drive_get_by_id(id);
++        if (hd_table[i]) {
++            bdrv_guess_geometry(hd_table[i]->bdrv, &cylinders, &heads, &secs);
++        }
+     }
+ 
+     /* various important CMOS locations needed by PC/Bochs bios */
+-- 
+1.7.0.3
+

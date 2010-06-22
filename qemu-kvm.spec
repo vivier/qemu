@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.78%{?dist}
+Release: 2.79%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1158,6 +1158,8 @@ Patch1565: kvm-acpi_piix4-save-gpe-and-pci-hotplug-slot-status.patch
 Patch1566: kvm-Don-t-check-for-bus-master-for-old-guests.patch
 # For bz#597147 - libvirt: kvm disk error after first stage install of Win2K or WinXP
 Patch1567: kvm-Make-IDE-drives-defined-with-device-visible-to-cmos_.patch
+# For bz#597147 - libvirt: kvm disk error after first stage install of Win2K or WinXP
+Patch1568: kvm-Make-geometry-of-IDE-drives-defined-with-device-visi.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1788,6 +1790,7 @@ such as kvmtrace and kvm_stat.
 %patch1565 -p1
 %patch1566 -p1
 %patch1567 -p1
+%patch1568 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1987,6 +1990,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jun 22 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.79.el6
+- kvm-Make-geometry-of-IDE-drives-defined-with-device-visi.patch [bz#597147]
+- Resolves: bz#597147
+  (libvirt: kvm disk error after first stage install of Win2K or WinXP)
+
 * Mon Jun 21 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.78.el6
 - kvm-block-read-only-open-cdrom-as-read-only-when-using-m.patch [bz#602026]
 - kvm-acpi_piix4-save-gpe-and-pci-hotplug-slot-status.patch [bz#598022]
