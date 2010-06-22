@@ -271,12 +271,16 @@ static void cmos_init(ram_addr_t ram_size, ram_addr_t above_4g_mem_size,
      */
     for (i = 0; i < 4; i++) {
         char id[32];
+        int cylinders, heads, secs;
 
         if (hd_table[i])
             continue;
         snprintf(id, sizeof(id), "drive-ide0-%d-%d",
                  i / MAX_IDE_DEVS, i % MAX_IDE_DEVS);
         hd_table[i] = drive_get_by_id(id);
+        if (hd_table[i]) {
+            bdrv_guess_geometry(hd_table[i]->bdrv, &cylinders, &heads, &secs);
+        }
     }
 
     /* various important CMOS locations needed by PC/Bochs bios */
