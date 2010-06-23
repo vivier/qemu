@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.79%{?dist}
+Release: 2.80%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1217,7 +1217,7 @@ Group: Development/Tools
 
 %description tools
 This package contains some diagnostics and debugging tools for KVM,
-such as kvmtrace and kvm_stat.
+such as kvm_stat.
 
 %prep
 %setup -q -n qemu-kvm-%{version}
@@ -1836,11 +1836,6 @@ echo "==="
 
 make V=1 %{?_smp_mflags} $buildldflags
 
-cd kvm/user
-./configure --prefix=%{_prefix} --kerneldir=$(pwd)/../kernel/
-make kvmtrace
-cd ../../
-
 %install
 rm -rf $RPM_BUILD_ROOT
 
@@ -1858,8 +1853,6 @@ mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{name}
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
 
 install -m 0755 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules/kvm.modules
-install -m 0755 kvm/user/kvmtrace $RPM_BUILD_ROOT%{_bindir}/
-install -m 0755 kvm/user/kvmtrace_format $RPM_BUILD_ROOT%{_bindir}/
 install -m 0755 kvm/kvm_stat $RPM_BUILD_ROOT%{_bindir}/
 install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
 
@@ -1979,8 +1972,6 @@ fi
 
 %files tools
 %defattr(-,root,root,-)
-%{_bindir}/kvmtrace
-%{_bindir}/kvmtrace_format
 %{_bindir}/kvm_stat
 
 %files -n qemu-img
@@ -1990,6 +1981,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Jun 23 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.80.el6
+- don't package kvmtrace anymore
+- Resolves: bz#605426
+  (obsolete kvmtrace binary is still being packaged)
+
 * Tue Jun 22 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.79.el6
 - kvm-Make-geometry-of-IDE-drives-defined-with-device-visi.patch [bz#597147]
 - Resolves: bz#597147
