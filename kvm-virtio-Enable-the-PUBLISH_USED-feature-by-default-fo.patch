@@ -1,0 +1,76 @@
+From 34bb77bdedba99cf3384d16bacdccf8051aff683 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 18 Jun 2010 03:53:30 -0300
+Subject: [PATCH 1/2] virtio: Enable the PUBLISH_USED feature by default for all devices
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <c71c78a5dcd5d5782a4c95875dafd21dc84f9504.1276833209.git.amit.shah@redhat.com>
+Patchwork-id: 9969
+O-Subject: [RHEL6 PATCH V2] virtio: Enable the PUBLISH_USED feature by default
+	for all devices
+Bugzilla: 602417
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+When both the host and the guest support the PUBLISH_USED feature, the
+guest lets the host know how far it is in its consumption of the buffers
+in virtqueues. Based on this knowledge, the guest may not raise an
+interrupt on new virtqueue pushes to save the guest the interrupt work,
+as the guest anyway would be processing the data it has already queued
+up.
+
+This reduces guest interrupts and vmexits.
+
+This was only enabled for virtio-net earlier, as virtio-blk had
+exhibited some performance loss. Later tests reveal no performance
+degradation for virtio-blk as well as virtio-serial. So enable for all
+the devices now.
+
+And now that the PUBLISH_USED feature is available for all virtio
+devices, remove the net-specific define.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-net.h |    2 --
+ hw/virtio.h     |    4 +++-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-net.h |    2 --
+ hw/virtio.h     |    4 +++-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/hw/virtio-net.h b/hw/virtio-net.h
+index 27c63ee..e55119b 100644
+--- a/hw/virtio-net.h
++++ b/hw/virtio-net.h
+@@ -155,8 +155,6 @@ struct virtio_net_ctrl_mac {
+ 
+ #define DEFINE_VIRTIO_NET_FEATURES(_state, _field) \
+         DEFINE_VIRTIO_COMMON_FEATURES(_state, _field), \
+-        DEFINE_PROP_BIT("publish_used", _state, _field, \
+-                        VIRTIO_RING_F_PUBLISH_USED, true), \
+         DEFINE_PROP_BIT("csum", _state, _field, VIRTIO_NET_F_CSUM, true), \
+         DEFINE_PROP_BIT("guest_csum", _state, _field, VIRTIO_NET_F_GUEST_CSUM, true), \
+         DEFINE_PROP_BIT("gso", _state, _field, VIRTIO_NET_F_GSO, true), \
+diff --git a/hw/virtio.h b/hw/virtio.h
+index 8bd75f9..bcbe94a 100644
+--- a/hw/virtio.h
++++ b/hw/virtio.h
+@@ -192,7 +192,9 @@ void virtio_net_exit(VirtIODevice *vdev);
+ 
+ #define DEFINE_VIRTIO_COMMON_FEATURES(_state, _field) \
+ 	DEFINE_PROP_BIT("indirect_desc", _state, _field, \
+-			VIRTIO_RING_F_INDIRECT_DESC, true)
++			VIRTIO_RING_F_INDIRECT_DESC, true), \
++        DEFINE_PROP_BIT("publish_used", _state, _field, \
++                        VIRTIO_RING_F_PUBLISH_USED, true)
+ 
+ target_phys_addr_t virtio_queue_get_desc_addr(VirtIODevice *vdev, int n);
+ target_phys_addr_t virtio_queue_get_avail_addr(VirtIODevice *vdev, int n);
+-- 
+1.7.0.3
+

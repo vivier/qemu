@@ -1,0 +1,63 @@
+From f1b3aafefb19004739eedc1743bc3ce49becd457 Mon Sep 17 00:00:00 2001
+From: Gleb Natapov <gleb@redhat.com>
+Date: Mon, 21 Jun 2010 10:56:34 -0300
+Subject: [PATCH 2/2] do not enter vcpu again if it was stopped during IO
+
+RH-Author: Gleb Natapov <gleb@redhat.com>
+Message-id: <20100621105634.GH4689@redhat.com>
+Patchwork-id: 10028
+O-Subject: [PATCH RHEL6] do not enter vcpu again if it was stopped during IO
+Bugzilla: 595647
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+To prevent reentering vcpu after IO completion it is not enough
+to set env->stopped since it is checked only in main loop but control
+will not get there until next non-IO exit since kvm_run() will reenter
+vcpu to complete IO instruction. Solve this by sending self-signal to
+request exit after IO instruction completion.
+
+BZ: 595647
+Upstream status: sent upstream
+
+Signed-off-by: Gleb Natapov <gleb@redhat.com>
+--
+			Gleb.
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-kvm.c |    4 ++++
+ vl.c       |    1 +
+ 2 files changed, 5 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-kvm.c b/qemu-kvm.c
+index 470e272..df26447 100644
+--- a/qemu-kvm.c
++++ b/qemu-kvm.c
+@@ -919,6 +919,10 @@ int kvm_run(CPUState *env)
+     r = pre_kvm_run(kvm, env);
+     if (r)
+         return r;
++    if (env->exit_request) {
++        env->exit_request = 0;
++        pthread_kill(env->kvm_cpu_state.thread, SIG_IPI);
++    }
+     r = ioctl(fd, KVM_RUN, 0);
+ 
+     if (r == -1 && errno != EINTR && errno != EAGAIN) {
+diff --git a/vl.c b/vl.c
+index 1930c7a..398c6f3 100644
+--- a/vl.c
++++ b/vl.c
+@@ -3479,6 +3479,7 @@ void qemu_system_reset_request(void)
+     }
+     if (cpu_single_env) {
+         cpu_single_env->stopped = 1;
++        cpu_exit(cpu_single_env);
+     }
+     qemu_notify_event();
+ }
+-- 
+1.7.0.3
+

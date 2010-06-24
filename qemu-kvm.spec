@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.80%{?dist}
+Release: 2.81%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1160,6 +1160,10 @@ Patch1566: kvm-Don-t-check-for-bus-master-for-old-guests.patch
 Patch1567: kvm-Make-IDE-drives-defined-with-device-visible-to-cmos_.patch
 # For bz#597147 - libvirt: kvm disk error after first stage install of Win2K or WinXP
 Patch1568: kvm-Make-geometry-of-IDE-drives-defined-with-device-visi.patch
+# For bz#602417 - Enable VIRTIO_RING_F_PUBLISHED bit for all virtio devices
+Patch1569: kvm-virtio-Enable-the-PUBLISH_USED-feature-by-default-fo.patch
+# For bz#595647 - Windows guest with qxl driver can't get into S3 state
+Patch1570: kvm-do-not-enter-vcpu-again-if-it-was-stopped-during-IO.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1791,6 +1795,8 @@ such as kvm_stat.
 %patch1566 -p1
 %patch1567 -p1
 %patch1568 -p1
+%patch1569 -p1
+%patch1570 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1981,6 +1987,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Jun 24 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.81.el6
+- kvm-virtio-Enable-the-PUBLISH_USED-feature-by-default-fo.patch [bz#602417]
+- kvm-do-not-enter-vcpu-again-if-it-was-stopped-during-IO.patch [bz#595647]
+- Resolves: bz#595647
+  (Windows guest with qxl driver can't get into S3 state)
+- Resolves: bz#602417
+  (Enable VIRTIO_RING_F_PUBLISHED bit for all virtio devices)
+
 * Wed Jun 23 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.80.el6
 - don't package kvmtrace anymore
 - Resolves: bz#605426
