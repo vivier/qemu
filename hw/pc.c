@@ -1470,11 +1470,41 @@ machine_init(pc_machine_init);
 
 /* RHEL machine types */
 
+static void rhel_common_init(const char *type1_version)
+{
+    char buf[32];
+
+    snprintf(buf, sizeof(buf), "Red Hat");
+    smbios_add_field(1, offsetof(struct smbios_type_1, manufacturer_str),
+                     strlen(buf) + 1, buf);
+    snprintf(buf, sizeof(buf), "KVM");
+    smbios_add_field(1, offsetof(struct smbios_type_1, product_name_str),
+                     strlen(buf) + 1, buf);
+    snprintf(buf, sizeof(buf), type1_version);
+    smbios_add_field(1, offsetof(struct smbios_type_1, version_str),
+                     strlen(buf) + 1, buf);
+    snprintf(buf, sizeof(buf), "Red Hat Enterprise Linux");
+    smbios_add_field(1, offsetof(struct smbios_type_1, family_str),
+                     strlen(buf) + 1, buf);
+}
+
+static void pc_init_rhel600(ram_addr_t ram_size,
+                            const char *boot_device,
+                            const char *kernel_filename,
+                            const char *kernel_cmdline,
+                            const char *initrd_filename,
+                            const char *cpu_model)
+{
+    rhel_common_init("RHEL 6.0.0 PC");
+    pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
+                initrd_filename, cpu_model);
+}
+
 static QEMUMachine pc_machine_rhel600 = {
     .name = "rhel6.0.0",
     .alias = "pc",
     .desc = "RHEL 6.0.0 PC",
-    .init = pc_init_pci,
+    .init = pc_init_rhel600,
     .max_cpus = 255,
     .is_default = 1,
 };
@@ -1515,26 +1545,62 @@ static GlobalProperty compat_rhel5[] = {
         { /* end of list */ }
 };
 
+static void pc_init_rhel550(ram_addr_t ram_size,
+                            const char *boot_device,
+                            const char *kernel_filename,
+                            const char *kernel_cmdline,
+                            const char *initrd_filename,
+                            const char *cpu_model)
+{
+    rhel_common_init("RHEL 5.5.0 PC");
+    pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
+                initrd_filename, cpu_model);
+}
+
 static QEMUMachine pc_machine_rhel550 = {
     .name = "rhel5.5.0",
     .desc = "RHEL 5.5.0 PC",
-    .init = pc_init_pci,
+    .init = pc_init_rhel550,
     .max_cpus = 255,
     .compat_props = compat_rhel5,
 };
+
+static void pc_init_rhel544(ram_addr_t ram_size,
+                            const char *boot_device,
+                            const char *kernel_filename,
+                            const char *kernel_cmdline,
+                            const char *initrd_filename,
+                            const char *cpu_model)
+{
+    rhel_common_init("RHEL 5.4.4 PC");
+    pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
+                initrd_filename, cpu_model);
+}
 
 static QEMUMachine pc_machine_rhel544 = {
     .name = "rhel5.4.4",
     .desc = "RHEL 5.4.4 PC",
-    .init = pc_init_pci,
+    .init = pc_init_rhel544,
     .max_cpus = 255,
     .compat_props = compat_rhel5,
 };
 
+static void pc_init_rhel540(ram_addr_t ram_size,
+                            const char *boot_device,
+                            const char *kernel_filename,
+                            const char *kernel_cmdline,
+                            const char *initrd_filename,
+                            const char *cpu_model)
+{
+    rhel_common_init("RHEL 5.4.0 PC");
+    pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
+                initrd_filename, cpu_model);
+}
+
 static QEMUMachine pc_machine_rhel540 = {
     .name = "rhel5.4.0",
     .desc = "RHEL 5.4.0 PC",
-    .init = pc_init_pci,
+    .init = pc_init_rhel540,
     .max_cpus = 255,
     .compat_props = compat_rhel5,
 };
