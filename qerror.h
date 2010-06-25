@@ -67,6 +67,10 @@ QError *qobject_to_qerror(const QObject *obj);
 #define QERR_DEVICE_INIT_FAILED \
     "{ 'class': 'DeviceInitFailed', 'data': { 'device': %s } }"
 
+/* Ugly hack to allow hw/device-assigment.c report useful errors */
+#define QERR_DEVICE_INIT_FAILED_2 \
+    "{ 'class': 'DeviceInitFailed', 'data': { 'device': %s, '__com.redhat_reason': %s, '__com.redhat_strerror': %s } }"
+
 #define QERR_DEVICE_IN_USE \
     "{ 'class': 'DeviceInUse', 'data': { 'device': %s } }"
 

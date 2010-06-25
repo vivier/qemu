@@ -69,6 +69,10 @@ static const QErrorStringTable qerror_table[] = {
         .desc      = "Device '%(device)' could not be initialized",
     },
     {
+        .error_fmt = QERR_DEVICE_INIT_FAILED_2,
+        .desc      = "Device '%(device)' could not be initialized: %(__com.redhat_reason): %(__com.redhat_strerror)",
+    },
+    {
         .error_fmt = QERR_DEVICE_IN_USE,
         .desc      = "Device '%(device)' is in use",
     },
