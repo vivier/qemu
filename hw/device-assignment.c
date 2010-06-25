@@ -753,6 +753,8 @@ static int assign_irq(AssignedDevice *dev)
 
     r = kvm_assign_irq(kvm_context, &assigned_irq_data);
     if (r < 0) {
+        qerror_report(QERR_DEVICE_INIT_FAILED_2, "pci-assign",
+                      "Failed to assign irq", strerror(-r));
         fprintf(stderr, "Failed to assign irq for \"%s\": %s\n",
                 dev->dev.qdev.id, strerror(-r));
         fprintf(stderr, "Perhaps you are assigning a device "
