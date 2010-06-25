@@ -1,0 +1,63 @@
+From a68c859d7dd467bf8e28cc4ee72b0dd7d169280c Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Mon, 14 Jun 2010 17:07:10 -0300
+Subject: [PATCH 03/11] Make netdev_del delete the netdev even when it's in use
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <m3hbl5bl1d.fsf@blackfin.pond.sub.org>
+Patchwork-id: 9891
+O-Subject: [PATCH RHEL6 qemu-kvm] Make netdev_del delete the netdev even when
+	it's in use
+Bugzilla: 596274
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+To hot-unplug guest and host part of a network device, you do:
+
+    device_del NIC-ID
+    netdev_del NETDEV-ID
+
+For PCI devices, device_del merely tells ACPI to unplug the device.
+The device goes away for real only after the guest processed the ACPI
+unplug event.
+
+You have to wait until then (e.g. by polling info pci) before you can
+unplug the netdev.  Not good.
+
+Fix by removing the "in use" check from do_netdev_del().  Deleting a
+netdev while it's in use is safe; packets simply get routed to the bit
+bucket.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 2ffcb18de0bc02ad8a836ec955584c02b70e0e24)
+---
+Bug 596274
+
+ net.c |    4 ----
+ 1 files changed, 0 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ net.c |    4 ----
+ 1 files changed, 0 insertions(+), 4 deletions(-)
+
+diff --git a/net.c b/net.c
+index 15e9ff7..6139cc7 100644
+--- a/net.c
++++ b/net.c
+@@ -1243,10 +1243,6 @@ int do_netdev_del(Monitor *mon, const QDict *qdict, QObject **ret_data)
+         qerror_report(QERR_DEVICE_NOT_FOUND, id);
+         return -1;
+     }
+-    if (vc->peer) {
+-        qerror_report(QERR_DEVICE_IN_USE, id);
+-        return -1;
+-    }
+     qemu_del_vlan_client(vc);
+     qemu_opts_del(qemu_opts_find(&qemu_netdev_opts, id));
+     return 0;
+-- 
+1.7.0.3
+

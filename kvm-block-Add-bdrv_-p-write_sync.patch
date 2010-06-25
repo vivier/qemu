@@ -1,0 +1,101 @@
+From 1aa16aaa360e6d5aa0bc32f0c9942ba2e90a5f28 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Wed, 23 Jun 2010 14:52:20 -0300
+Subject: [PATCH 08/11] block: Add bdrv_(p)write_sync
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1277304741-19012-2-git-send-email-kwolf@redhat.com>
+Patchwork-id: 10132
+O-Subject: [RHEL-6 qemu-kvm PATCH 1/2] block: Add bdrv_(p)write_sync
+Bugzilla: 607200
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+Bugzilla: 607200
+
+Add new functions that write and flush the written data to disk immediately.
+This is what needs to be used for image format metadata to maintain integrity
+for cache=... modes that don't use O_DSYNC. (Actually, we only need barriers,
+and therefore the functions are defined as such, but flushes is what is
+implemented in this patch - we can try to change that later)
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit f08145fe16470aca09304099888f68cfbc5d1de7)
+---
+ block.c |   37 +++++++++++++++++++++++++++++++++++++
+ block.h |    4 ++++
+ 2 files changed, 41 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c |   37 +++++++++++++++++++++++++++++++++++++
+ block.h |    4 ++++
+ 2 files changed, 41 insertions(+), 0 deletions(-)
+
+diff --git a/block.c b/block.c
+index 0aa3ce7..976145b 100644
+--- a/block.c
++++ b/block.c
+@@ -951,6 +951,43 @@ int bdrv_pwrite(BlockDriverState *bs, int64_t offset,
+     return count1;
+ }
+ 
++/*
++ * Writes to the file and ensures that no writes are reordered across this
++ * request (acts as a barrier)
++ *
++ * Returns 0 on success, -errno in error cases.
++ */
++int bdrv_pwrite_sync(BlockDriverState *bs, int64_t offset,
++    const void *buf, int count)
++{
++    int ret;
++
++    ret = bdrv_pwrite(bs, offset, buf, count);
++    if (ret < 0) {
++        return ret;
++    }
++
++    /* No flush needed for cache=writethrough, it uses O_DSYNC */
++    if ((bs->open_flags & BDRV_O_CACHE_MASK) != 0) {
++        bdrv_flush(bs);
++    }
++
++    return 0;
++}
++
++/*
++ * Writes to the file and ensures that no writes are reordered across this
++ * request (acts as a barrier)
++ *
++ * Returns 0 on success, -errno in error cases.
++ */
++int bdrv_write_sync(BlockDriverState *bs, int64_t sector_num,
++    const uint8_t *buf, int nb_sectors)
++{
++    return bdrv_pwrite_sync(bs, BDRV_SECTOR_SIZE * sector_num,
++        buf, BDRV_SECTOR_SIZE * nb_sectors);
++}
++
+ /**
+  * Truncate file to 'offset' bytes (needed only for file protocols)
+  */
+diff --git a/block.h b/block.h
+index f8bd98a..a394e2a 100644
+--- a/block.h
++++ b/block.h
+@@ -78,6 +78,10 @@ int bdrv_pread(BlockDriverState *bs, int64_t offset,
+                void *buf, int count);
+ int bdrv_pwrite(BlockDriverState *bs, int64_t offset,
+                 const void *buf, int count);
++int bdrv_pwrite_sync(BlockDriverState *bs, int64_t offset,
++    const void *buf, int count);
++int bdrv_write_sync(BlockDriverState *bs, int64_t sector_num,
++    const uint8_t *buf, int nb_sectors);
+ int bdrv_truncate(BlockDriverState *bs, int64_t offset);
+ int64_t bdrv_getlength(BlockDriverState *bs);
+ void bdrv_get_geometry(BlockDriverState *bs, uint64_t *nb_sectors_ptr);
+-- 
+1.7.0.3
+

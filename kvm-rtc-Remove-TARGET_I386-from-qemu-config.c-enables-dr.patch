@@ -1,0 +1,51 @@
+From 851b6a54e648dfd13b75b36606e209934548c4fe Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Wed, 23 Jun 2010 17:34:43 -0300
+Subject: [PATCH 11/11] rtc: Remove TARGET_I386 from qemu-config.c, enables driftfix
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <0597ceff87ebec7e7b5b2021a805f6149edf2fdc.1277314479.git.amit.shah@redhat.com>
+Patchwork-id: 10148
+O-Subject: [RHEL6 PATCH] rtc: Remove TARGET_I386 from qemu-config.c,
+	enables driftfix
+Bugzilla: 606733
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+qemu-config.c doesn't contain any target-specific code, and the
+TARGET_I386 conditional code didn't get compiled as a result. Removing
+this enables the driftfix parameter for rtc.
+
+Bugzilla: 606733
+Upstream: posted
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ qemu-config.c |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-config.c |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+diff --git a/qemu-config.c b/qemu-config.c
+index b27d660..aecb035 100644
+--- a/qemu-config.c
++++ b/qemu-config.c
+@@ -205,11 +205,9 @@ QemuOptsList qemu_rtc_opts = {
+         },{
+             .name = "clock",
+             .type = QEMU_OPT_STRING,
+-#ifdef TARGET_I386
+         },{
+             .name = "driftfix",
+             .type = QEMU_OPT_STRING,
+-#endif
+         },
+         { /* end if list */ }
+     },
+-- 
+1.7.0.3
+

@@ -1,0 +1,82 @@
+From 7f697c24de918cfb553558ba80d1d02e67717959 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Wed, 23 Jun 2010 17:33:19 -0300
+Subject: [PATCH 10/11] virtio-serial: Fix compat property name
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1a1c22fc66fb3bc302e9b194e2094e2d1e142bb3.1277314397.git.amit.shah@redhat.com>
+Patchwork-id: 10147
+O-Subject: [RHEL6 PATCH] virtio-serial: Fix compat property name
+Bugzilla: 607263
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+Starting with qemu -M pc-0.12 -device virtio-serial
+
+results in
+
+-device virtio-serial: Property 'virtio-serial-pci.max_nr_ports' not found
+
+The property name 'max_ports' is incorrectly named 'max_nr_ports'. Fix
+that.
+
+Also fix the ppc440 machine type bamboo-0.12 which has this typo.
+
+Bugzilla: 607263
+Upstream: Posted, this is a backport (upstream code moved files)
+
+Reported-by: Daniel P. Berrange <berrange@redhat.com>
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/pc.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pc.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/hw/pc.c b/hw/pc.c
+index c60a79a..6ff2717 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -1358,7 +1358,7 @@ static QEMUMachine pc_machine = {
+     .compat_props = (GlobalProperty[]) {
+         {
+             .driver   = "virtio-serial-pci",
+-            .property = "max_nr_ports",
++            .property = "max_ports",
+             .value    = stringify(1),
+         },{
+             .driver   = "virtio-serial-pci",
+@@ -1381,7 +1381,7 @@ static QEMUMachine pc_machine_v0_11 = {
+             .value    = stringify(0),
+         },{
+             .driver   = "virtio-serial-pci",
+-            .property = "max_nr_ports",
++            .property = "max_ports",
+             .value    = stringify(1),
+         },{
+             .driver   = "virtio-serial-pci",
+@@ -1420,7 +1420,7 @@ static QEMUMachine pc_machine_v0_10 = {
+             .value    = stringify(PCI_CLASS_DISPLAY_OTHER),
+         },{
+             .driver   = "virtio-serial-pci",
+-            .property = "max_nr_ports",
++            .property = "max_ports",
+             .value    = stringify(1),
+         },{
+             .driver   = "virtio-serial-pci",
+@@ -1490,7 +1490,7 @@ static GlobalProperty compat_rhel5[] = {
+             .value    = stringify(0),
+         },{
+             .driver   = "virtio-serial-pci",
+-            .property = "max_nr_ports",
++            .property = "max_ports",
+             .value    = stringify(1),
+         },{
+             .driver   = "virtio-serial-pci",
+-- 
+1.7.0.3
+

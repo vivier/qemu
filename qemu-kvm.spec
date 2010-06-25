@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.81%{?dist}
+Release: 2.82%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1164,6 +1164,28 @@ Patch1568: kvm-Make-geometry-of-IDE-drives-defined-with-device-visi.patch
 Patch1569: kvm-virtio-Enable-the-PUBLISH_USED-feature-by-default-fo.patch
 # For bz#595647 - Windows guest with qxl driver can't get into S3 state
 Patch1570: kvm-do-not-enter-vcpu-again-if-it-was-stopped-during-IO.patch
+# For bz#581789 - Cannot eject cd-rom when configured to host cd-rom
+Patch1571: kvm-monitor-allow-device-to-be-ejected-if-no-disk-is-ins.patch
+# For bz#596609 - Live migration failed when migration during boot
+Patch1572: kvm-New-slots-need-dirty-tracking-enabled-when-migrating.patch
+# For bz#596274 - QMP: netdev_del sometimes fails claiming the device is in use
+Patch1573: kvm-Make-netdev_del-delete-the-netdev-even-when-it-s-in-.patch
+# For bz#605359 - Fix MSIX regression from bz595495
+Patch1574: kvm-device-assignment-msi-PBA-is-long.patch
+# For bz#604210 - Segmentation fault when check  preallocated qcow2 image on lvm.
+Patch1575: kvm-qcow2-Fix-qemu-img-check-segfault-on-corrupted-image.patch
+# For bz#604210 - Segmentation fault when check  preallocated qcow2 image on lvm.
+Patch1576: kvm-qcow2-Don-t-try-to-check-tables-that-couldn-t-be-loa.patch
+# For bz#604210 - Segmentation fault when check  preallocated qcow2 image on lvm.
+Patch1577: kvm-qcow2-Fix-error-handling-during-metadata-preallocati.patch
+# For bz#607200 - qcow2 image corruption when using cache=writeback
+Patch1578: kvm-block-Add-bdrv_-p-write_sync.patch
+# For bz#607200 - qcow2 image corruption when using cache=writeback
+Patch1579: kvm-qcow2-Use-bdrv_-p-write_sync-for-metadata-writes.patch
+# For bz#607263 - Unable to launch QEMU with -M pc-0.12 and  virtio serial
+Patch1580: kvm-virtio-serial-Fix-compat-property-name.patch
+# For bz#606733 - Unable to set the driftfix parameter
+Patch1581: kvm-rtc-Remove-TARGET_I386-from-qemu-config.c-enables-dr.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1797,6 +1819,17 @@ such as kvm_stat.
 %patch1568 -p1
 %patch1569 -p1
 %patch1570 -p1
+%patch1571 -p1
+%patch1572 -p1
+%patch1573 -p1
+%patch1574 -p1
+%patch1575 -p1
+%patch1576 -p1
+%patch1577 -p1
+%patch1578 -p1
+%patch1579 -p1
+%patch1580 -p1
+%patch1581 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1987,6 +2020,35 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Jun 25 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.82.el6
+- kvm-monitor-allow-device-to-be-ejected-if-no-disk-is-ins.patch [bz#581789]
+- kvm-New-slots-need-dirty-tracking-enabled-when-migrating.patch [bz#596609]
+- kvm-Make-netdev_del-delete-the-netdev-even-when-it-s-in-.patch [bz#596274]
+- kvm-device-assignment-msi-PBA-is-long.patch [bz#605359]
+- kvm-qcow2-Fix-qemu-img-check-segfault-on-corrupted-image.patch [bz#604210]
+- kvm-qcow2-Don-t-try-to-check-tables-that-couldn-t-be-loa.patch [bz#604210]
+- kvm-qcow2-Fix-error-handling-during-metadata-preallocati.patch [bz#604210]
+- kvm-block-Add-bdrv_-p-write_sync.patch [bz#607200]
+- kvm-qcow2-Use-bdrv_-p-write_sync-for-metadata-writes.patch [bz#607200]
+- kvm-virtio-serial-Fix-compat-property-name.patch [bz#607263]
+- kvm-rtc-Remove-TARGET_I386-from-qemu-config.c-enables-dr.patch [bz#606733]
+- Resolves: bz#581789
+  (Cannot eject cd-rom when configured to host cd-rom)
+- Resolves: bz#596274
+  (QMP: netdev_del sometimes fails claiming the device is in use)
+- Resolves: bz#596609
+  (Live migration failed when migration during boot)
+- Resolves: bz#604210
+  (Segmentation fault when check  preallocated qcow2 image on lvm.)
+- Resolves: bz#605359
+  (Fix MSIX regression from bz595495)
+- Resolves: bz#606733
+  (Unable to set the driftfix parameter)
+- Resolves: bz#607200
+  (qcow2 image corruption when using cache=writeback)
+- Resolves: bz#607263
+  (Unable to launch QEMU with -M pc-0.12 and  virtio serial)
+
 * Thu Jun 24 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.81.el6
 - kvm-virtio-Enable-the-PUBLISH_USED-feature-by-default-fo.patch [bz#602417]
 - kvm-do-not-enter-vcpu-again-if-it-was-stopped-during-IO.patch [bz#595647]

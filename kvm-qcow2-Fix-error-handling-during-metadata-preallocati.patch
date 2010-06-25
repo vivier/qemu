@@ -1,0 +1,78 @@
+From 52d1f6bb96178eb84cc7c152dcd3377fe1586248 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Wed, 23 Jun 2010 10:48:12 -0300
+Subject: [PATCH 07/11] qcow2: Fix error handling during metadata preallocation
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1277290092-8810-4-git-send-email-kwolf@redhat.com>
+Patchwork-id: 10108
+O-Subject: [RHEL-6 qemu-kvm PATCH 3/3] qcow2: Fix error handling during metadata
+	preallocation
+Bugzilla: 604210
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 604210
+Upstream status: Submitted
+
+People were wondering why qemu-img check failed after they tried to preallocate
+a large qcow2 file and ran out of disk space.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block/qcow2.c |   15 +++++++++------
+ 1 files changed, 9 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2.c |   15 +++++++++------
+ 1 files changed, 9 insertions(+), 6 deletions(-)
+
+diff --git a/block/qcow2.c b/block/qcow2.c
+index 6ecbae6..98eca50 100644
+--- a/block/qcow2.c
++++ b/block/qcow2.c
+@@ -813,14 +813,14 @@ static int preallocate(BlockDriverState *bs)
+     while (nb_sectors) {
+         num = MIN(nb_sectors, INT_MAX >> 9);
+         ret = qcow2_alloc_cluster_offset(bs, offset, 0, num, &num, &meta);
+-
+         if (ret < 0) {
+-            return -1;
++            return ret;
+         }
+ 
+-        if (qcow2_alloc_cluster_link_l2(bs, &meta) < 0) {
++        ret = qcow2_alloc_cluster_link_l2(bs, &meta);
++        if (ret < 0) {
+             qcow2_free_any_clusters(bs, meta.cluster_offset, meta.nb_clusters);
+-            return -1;
++            return ret;
+         }
+ 
+         /* There are no dependent requests, but we need to remove our request
+@@ -841,7 +841,10 @@ static int preallocate(BlockDriverState *bs)
+     if (meta.cluster_offset != 0) {
+         uint8_t buf[512];
+         memset(buf, 0, 512);
+-        bdrv_write(bs->file, (meta.cluster_offset >> 9) + num - 1, buf, 1);
++        ret = bdrv_write(bs->file, (meta.cluster_offset >> 9) + num - 1, buf, 1);
++        if (ret < 0) {
++            return ret;
++        }
+     }
+ 
+     return 0;
+@@ -1037,7 +1040,7 @@ exit:
+         BlockDriverState *bs;
+         bs = bdrv_new("");
+         bdrv_open(bs, filename, BDRV_O_CACHE_WB | BDRV_O_RDWR, &bdrv_qcow2);
+-        preallocate(bs);
++        ret = preallocate(bs);
+         bdrv_close(bs);
+     }
+ 
+-- 
+1.7.0.3
+

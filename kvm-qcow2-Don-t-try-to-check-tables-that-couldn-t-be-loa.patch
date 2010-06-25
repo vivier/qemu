@@ -1,0 +1,49 @@
+From d80f01a74b43901bf85e42d69de928e9780b9a9d Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Wed, 23 Jun 2010 10:48:11 -0300
+Subject: [PATCH 06/11] qcow2: Don't try to check tables that couldn't be loaded
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1277290092-8810-3-git-send-email-kwolf@redhat.com>
+Patchwork-id: 10107
+O-Subject: [RHEL-6 qemu-kvm PATCH 2/3] qcow2: Don't try to check tables that
+	couldn't be loaded
+Bugzilla: 604210
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 604210
+
+Trying to check them leads to a second error message which is more confusing
+than helpful:
+
+    Can't get refcount for cluster 0: Invalid argument
+    ERROR cluster 0 refcount=-22 reference=1
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit f74550fd53598ac6529dbcfc3c06e98d2d7fbe51)
+---
+ block/qcow2-refcount.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2-refcount.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/block/qcow2-refcount.c b/block/qcow2-refcount.c
+index 4781d53..70a007d 100644
+--- a/block/qcow2-refcount.c
++++ b/block/qcow2-refcount.c
+@@ -1175,6 +1175,7 @@ int qcow2_check_refcounts(BlockDriverState *bs)
+         if (refcount1 < 0) {
+             fprintf(stderr, "Can't get refcount for cluster %d: %s\n",
+                 i, strerror(-refcount1));
++            continue;
+         }
+ 
+         refcount2 = refcount_table[i];
+-- 
+1.7.0.3
+

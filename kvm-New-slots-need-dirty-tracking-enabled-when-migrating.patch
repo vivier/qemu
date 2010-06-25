@@ -1,0 +1,48 @@
+From 40524c580f7cb86d0af59034e481418444102fa7 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 3 Jun 2010 08:31:59 -0300
+Subject: [PATCH 02/11] New slots need dirty tracking enabled when migrating.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1275553919-32133-1-git-send-email-kraxel@redhat.com>
+Patchwork-id: 9688
+O-Subject: [RHEL-6 kvm PATCH] New slots need dirty tracking enabled when
+	migrating.
+Bugzilla: 596609
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+When the guest remaps PCI regions kvm will delete and re-create the
+memory slots.  When creating the new slots we have to enable dirty
+logging there in case migration is in progress, otherwise reading
+the dirty maps for the remapped PCI region stops working.
+
+bugzilla: #596609
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ qemu-kvm.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-kvm.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-kvm.c b/qemu-kvm.c
+index df26447..8b042e7 100644
+--- a/qemu-kvm.c
++++ b/qemu-kvm.c
+@@ -590,6 +590,8 @@ int kvm_register_phys_mem(kvm_context_t kvm,
+     }
+     register_slot(memory.slot, memory.guest_phys_addr, memory.memory_size,
+                   memory.userspace_addr, memory.flags);
++    if (kvm->dirty_pages_log_all)
++        kvm_dirty_pages_log_enable_slot(kvm, phys_start, len);
+     return 0;
+ }
+ 
+-- 
+1.7.0.3
+

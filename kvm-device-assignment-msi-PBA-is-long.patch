@@ -1,0 +1,54 @@
+From d9d0ca8fae655dcfe6f14ab619257134da4de1ed Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Mon, 21 Jun 2010 20:33:07 -0300
+Subject: [PATCH 04/11] device-assignment, msi: PBA is long
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100621203230.24134.8834.stgit@localhost.localdomain>
+Patchwork-id: 10040
+O-Subject: [RHEL6.0 qemu-kvm PATCH] device-assignment, msi: PBA is long
+Bugzilla: 605359
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
+
+Bugzilla: 605359
+Upstream commit: 5220e8d762afef12af69114dd88ce02c3dbd0a6c
+
+Accidentally a pci_read_long() was replaced with assigned_dev_pci_read_byte()
+by the commit:
+ commit a81a1f0a7410976be7dbc9a81524a8640f446ab5
+ Author: Alex Williamson <alex.williamson@redhat.com>
+    device-assignment: Don't use libpci
+
+Signed-off-by: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
+Acked-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+---
+
+ hw/device-assignment.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index d3f67da..888154a 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -1085,7 +1085,7 @@ static int assigned_device_pci_cap_init(PCIDevice *pci_dev)
+                       pci_dev->cap.length + PCI_MSIX_TABLE) = msix_table_entry;
+         *(uint32_t *)(pci_dev->config + pci_dev->cap.start +
+                       pci_dev->cap.length + PCI_MSIX_PBA) =
+-                    assigned_dev_pci_read_byte(pci_dev, pos + PCI_MSIX_PBA);
++                    assigned_dev_pci_read_long(pci_dev, pos + PCI_MSIX_PBA);
+         bar_nr = msix_table_entry & PCI_MSIX_BIR;
+         msix_table_entry &= ~PCI_MSIX_BIR;
+         dev->msix_table_addr = pci_region[bar_nr].base_addr + msix_table_entry;
+-- 
+1.7.0.3
+
