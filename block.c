@@ -290,6 +290,18 @@ static BlockDriver *find_protocol(const char *filename)
 
     /* TODO Drivers without bdrv_file_open must be specified explicitly */
 
+    /*
+     * XXX(hch): we really should not let host device detection
+     * override an explicit protocol specification, but moving this
+     * later breaks access to device names with colons in them.
+     * Thanks to the brain-dead persistent naming schemes on udev-
+     * based Linux systems those actually are quite common.
+     */
+    drv1 = find_hdev_driver(filename);
+    if (drv1) {
+        return drv1;
+    }
+
 #ifdef _WIN32
     if (is_windows_drive(filename) ||
         is_windows_drive_prefix(filename))
@@ -297,11 +309,7 @@ static BlockDriver *find_protocol(const char *filename)
 #endif
     p = strchr(filename, ':');
     if (!p) {
-        drv1 = find_hdev_driver(filename);
-        if (!drv1) {
-            drv1 = bdrv_find_format("file");
-        }
-        return drv1;
+        return bdrv_find_format("file");
     }
     len = p - filename;
     if (len > sizeof(protocol) - 1)
