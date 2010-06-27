@@ -1310,7 +1310,7 @@ int kvm_arch_init_vcpu(CPUState *cenv)
     pv_ent = &cpuid_ent[cpuid_nent++];
     memset(pv_ent, 0, sizeof(*pv_ent));
     pv_ent->function = KVM_CPUID_FEATURES;
-    pv_ent->eax = get_para_features(kvm_context);
+    pv_ent->eax = cenv->cpuid_kvm_features & get_para_features(kvm_context);
 #endif
 
     kvm_trim_features(&cenv->cpuid_features,
