@@ -5071,6 +5071,7 @@ int main(int argc, char **argv, char **envp)
     CPUState *env;
     int show_vnc_port = 0;
     int defconfig = 1;
+    int defconfig_verbose = 0;
 
     error_set_progname(argv[0]);
 
@@ -5148,6 +5149,11 @@ int main(int argc, char **argv, char **envp)
             case QEMU_OPTION_nodefconfig:
                 defconfig=0;
                 break;
+            case QEMU_OPTION_readconfig:
+                /* pseudo filename "?" enables verbose config file handling */
+                if (!strcmp(optarg, "?"))
+                    defconfig_verbose = 1;
+                break;
             }
         }
     }
@@ -5155,13 +5161,15 @@ int main(int argc, char **argv, char **envp)
     if (defconfig) {
         int ret;
 
-        ret = qemu_read_config_file(CONFIG_QEMU_CONFDIR "/qemu.conf");
+        ret = qemu_read_config_file(CONFIG_QEMU_CONFDIR "/qemu.conf",
+                                    defconfig_verbose);
         if (ret == -EINVAL) {
             exit(1);
         }
 
         ret = qemu_read_config_file(
-            CONFIG_QEMU_CONFDIR "/target-" TARGET_ARCH ".conf");
+            CONFIG_QEMU_CONFDIR "/target-" TARGET_ARCH ".conf",
+            defconfig_verbose);
         if (ret == -EINVAL) {
             exit(1);
         }
@@ -5880,15 +5888,10 @@ int main(int argc, char **argv, char **envp)
                 break;
 #endif
             case QEMU_OPTION_readconfig:
-                {
-                    int ret = qemu_read_config_file(optarg);
-                    if (ret < 0) {
-                        fprintf(stderr, "read config %s: %s\n", optarg,
-                            strerror(-ret));
+                if (!!strcmp(optarg, "?") &&
+                    qemu_read_config_file(optarg, defconfig_verbose) < 0)
                         exit(1);
-                    }
-                    break;
-                }
+                break;
 #ifdef CONFIG_SPICE
             case QEMU_OPTION_spice:
                 opts = qemu_opts_parse(&qemu_spice_opts, optarg, 0);
