@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.85%{?dist}
+Release: 2.86%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1214,6 +1214,14 @@ Patch1593: kvm-virtio-blk-fix-the-list-operation-in-virtio_blk_load.patch
 Patch1594: kvm-QError-Introduce-QERR_DEVICE_INIT_FAILED_2.patch
 # For bz#596279 - QMP: does not report the real cause of PCI device assignment failure
 Patch1595: kvm-dev-assignment-Report-IRQ-assign-errors-in-QMP.patch
+# For bz#603851 - QMP: Can't reuse same 'id' when netdev_add fails
+Patch1596: kvm-net-delete-QemuOpts-when-net_client_init-fails.patch
+# For bz#587382 - QMP: balloon command may not report an error
+Patch1597: kvm-QMP-Fix-error-reporting-in-the-async-API.patch
+# For bz#580648 - QMP: Bad package version in greeting message
+Patch1598: kvm-QMP-Remove-leading-whitespace-in-package.patch
+# For bz#601540 - qemu requires ability to verify location of cpu model definition file..
+Patch1599: kvm-Add-optional-dump-of-default-config-file-paths-v2-BZ.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1872,6 +1880,10 @@ such as kvm_stat.
 %patch1593 -p1
 %patch1594 -p1
 %patch1595 -p1
+%patch1596 -p1
+%patch1597 -p1
+%patch1598 -p1
+%patch1599 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2062,6 +2074,20 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Jun 28 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.86.el6
+- kvm-net-delete-QemuOpts-when-net_client_init-fails.patch [bz#603851]
+- kvm-QMP-Fix-error-reporting-in-the-async-API.patch [bz#587382]
+- kvm-QMP-Remove-leading-whitespace-in-package.patch [bz#580648]
+- kvm-Add-optional-dump-of-default-config-file-paths-v2-BZ.patch [bz#601540]
+- Resolves: bz#580648
+  (QMP: Bad package version in greeting message)
+- Resolves: bz#587382
+  (QMP: balloon command may not report an error)
+- Resolves: bz#601540
+  (qemu requires ability to verify location of cpu model definition file..)
+- Resolves: bz#603851
+  (QMP: Can't reuse same 'id' when netdev_add fails)
+
 * Mon Jun 28 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.85.el6
 - kvm-Remove-usage-of-CONFIG_RED_HAT_DISABLED.patch [bz#605638]
 - kvm-monitor-Remove-host_net_add-remove-for-Red-Hat-Enter.patch [bz#605638]

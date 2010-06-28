@@ -1,0 +1,56 @@
+From 60307894a0623798d1235b15516ad6c1e354a28c Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Wed, 23 Jun 2010 18:48:27 -0300
+Subject: [PATCH 3/4] QMP: Remove leading whitespace in 'package'
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1277318907-23590-4-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 10153
+O-Subject: [PATCH 3/3] QMP: Remove leading whitespace in 'package'
+Bugzilla: 580648
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Bugzilla: 580648
+Upstream: Greeting message is going to be revamped, maybe N/A
+
+The 'package' member of QMP's greeting message contains a whitespace,
+doesn't matter maybe as that string has other problems and is probably
+going to change (I don't think libvirt cares either).
+
+But as the leading whitespace is ugly and the fix is simple...
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c |    8 +++++++-
+ 1 files changed, 7 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c |    8 +++++++-
+ 1 files changed, 7 insertions(+), 1 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index a95ef4e..88d370b 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -699,8 +699,14 @@ static void do_info_version_print(Monitor *mon, const QObject *data)
+  */
+ static void do_info_version(Monitor *mon, QObject **ret_data)
+ {
++    const char *p = QEMU_PKGVERSION;
++
++    while (qemu_isspace(*p)) {
++        p++;
++    }
++
+     *ret_data = qobject_from_jsonf("{ 'qemu': %s, 'package': %s }",
+-                                   QEMU_VERSION, QEMU_PKGVERSION);
++                                   QEMU_VERSION, p);
+ }
+ 
+ static void do_info_name_print(Monitor *mon, const QObject *data)
+-- 
+1.7.0.3
+

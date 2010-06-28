@@ -1,0 +1,169 @@
+From 51c0ad40404737ff091ad324822e556424cc5a08 Mon Sep 17 00:00:00 2001
+From: john cooper <john.cooper@redhat.com>
+Date: Mon, 28 Jun 2010 07:05:09 -0300
+Subject: [PATCH 4/4] Add optional dump of default config file paths, v2 [BZ #601540]
+
+RH-Author: john cooper <john.cooper@redhat.com>
+Message-id: <4C2849A5.6060706@redhat.com>
+Patchwork-id: 10271
+O-Subject: [RHEL6 PATCH] Add optional dump of default config file paths, v2
+	[BZ #601540]
+Bugzilla: 601540
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Addresses BZ# 601540 - qemu requires ability to verify location of cpu model definition file..
+
+This patch adds the ability to determine the build-configured
+runtime "config file" paths from the command line.
+
+Failure by qemu to open a default config file isn't cause to
+error exit -- it just quietly continues on.   In testing of
+cpu model definitions added to the runtime "target-" config
+file, we've tripped over an unintentionally mis-installed
+config file enough to justify some help resolving this issue.
+
+As no general "verbose" flag is currently available, the
+special case of a "?" pseudo filename arg to -readconfig
+will enable verbose open of all config files.  However
+treatment of all config files is otherwise unaffected by
+this option.
+
+This patch addresses incorrect handling of multiple occurrences
+of -readconfig found in review of the prior patch version.
+
+Upstream status:  Submitted.  The rhel6 dependency here is
+a slightly modified CLI interface.  This is reduced further
+as use of this functionality is limited to debug cases.
+
+Signed-off-by: john cooper <john.cooper@redhat.com>
+---
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-config.c |   30 ++++++++++++++++++++++--------
+ qemu-config.h |    2 +-
+ vl.c          |   23 +++++++++++++----------
+ 3 files changed, 36 insertions(+), 19 deletions(-)
+
+diff --git a/qemu-config.c b/qemu-config.c
+index aecb035..3999dc5 100644
+--- a/qemu-config.c
++++ b/qemu-config.c
+@@ -557,17 +557,31 @@ out:
+     return res;
+ }
+ 
+-int qemu_read_config_file(const char *filename)
++/* attempt to open and parse config file, report problems if vflag
++ */
++int qemu_read_config_file(const char *filename, int vflag)
+ {
+     FILE *f = fopen(filename, "r");
++    int rv = 0;
++    const char *err;
++
+     if (f == NULL) {
+-        return -errno;
++        rv = -errno;
++        err = "open";
+     }
+-
+-    if (qemu_config_parse(f, vm_config_groups, filename) != 0) {
+-        return -EINVAL;
++    else if (qemu_config_parse(f, vm_config_groups, filename) != 0) {
++        rv = -EINVAL;
++        err = "parse";
+     }
+-    fclose(f);
+-
+-    return 0;
++    else if (vflag) {
++        fprintf(stderr, "parsed config file %s\n", filename);
++    }
++    if (f) {
++        fclose(f);
++    }
++    if (rv && vflag) {
++        fprintf(stderr, "can't %s config file %s: %s\n",
++                err, filename, strerror(-rv));
++    }
++    return rv;
+ }
+diff --git a/qemu-config.h b/qemu-config.h
+index eb804a2..6cad1c3 100644
+--- a/qemu-config.h
++++ b/qemu-config.h
+@@ -20,6 +20,6 @@ void qemu_add_globals(void);
+ void qemu_config_write(FILE *fp);
+ int qemu_config_parse(FILE *fp, QemuOptsList **lists, const char *fname);
+ 
+-int qemu_read_config_file(const char *filename);
++int qemu_read_config_file(const char *filename, int vflag);
+ 
+ #endif /* QEMU_CONFIG_H */
+diff --git a/vl.c b/vl.c
+index 9144e56..4e98320 100644
+--- a/vl.c
++++ b/vl.c
+@@ -5071,6 +5071,7 @@ int main(int argc, char **argv, char **envp)
+     CPUState *env;
+     int show_vnc_port = 0;
+     int defconfig = 1;
++    int defconfig_verbose = 0;
+ 
+     error_set_progname(argv[0]);
+ 
+@@ -5148,6 +5149,11 @@ int main(int argc, char **argv, char **envp)
+             case QEMU_OPTION_nodefconfig:
+                 defconfig=0;
+                 break;
++            case QEMU_OPTION_readconfig:
++                /* pseudo filename "?" enables verbose config file handling */
++                if (!strcmp(optarg, "?"))
++                    defconfig_verbose = 1;
++                break;
+             }
+         }
+     }
+@@ -5155,13 +5161,15 @@ int main(int argc, char **argv, char **envp)
+     if (defconfig) {
+         int ret;
+ 
+-        ret = qemu_read_config_file(CONFIG_QEMU_CONFDIR "/qemu.conf");
++        ret = qemu_read_config_file(CONFIG_QEMU_CONFDIR "/qemu.conf",
++                                    defconfig_verbose);
+         if (ret == -EINVAL) {
+             exit(1);
+         }
+ 
+         ret = qemu_read_config_file(
+-            CONFIG_QEMU_CONFDIR "/target-" TARGET_ARCH ".conf");
++            CONFIG_QEMU_CONFDIR "/target-" TARGET_ARCH ".conf",
++            defconfig_verbose);
+         if (ret == -EINVAL) {
+             exit(1);
+         }
+@@ -5880,15 +5888,10 @@ int main(int argc, char **argv, char **envp)
+                 break;
+ #endif
+             case QEMU_OPTION_readconfig:
+-                {
+-                    int ret = qemu_read_config_file(optarg);
+-                    if (ret < 0) {
+-                        fprintf(stderr, "read config %s: %s\n", optarg,
+-                            strerror(-ret));
++                if (!!strcmp(optarg, "?") &&
++                    qemu_read_config_file(optarg, defconfig_verbose) < 0)
+                         exit(1);
+-                    }
+-                    break;
+-                }
++                break;
+ #ifdef CONFIG_SPICE
+             case QEMU_OPTION_spice:
+                 opts = qemu_opts_parse(&qemu_spice_opts, optarg, 0);
+-- 
+1.7.0.3
+

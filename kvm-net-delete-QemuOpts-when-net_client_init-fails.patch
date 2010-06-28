@@ -1,0 +1,59 @@
+From caae005362be240a3b53b2924baf381e116762be Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Wed, 23 Jun 2010 18:48:25 -0300
+Subject: [PATCH 1/4] net: delete QemuOpts when net_client_init() fails.
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1277318907-23590-2-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 10150
+O-Subject: [PATCH 1/3] net: delete QemuOpts when net_client_init() fails.
+Bugzilla: 603851
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Yoshiaki Tamura <tamura.yoshiaki@lab.ntt.co.jp>
+
+Bugzilla: 603851
+Upstream: Submitted, but not merged yet
+
+This fixes the following scenario using QMP.
+
+First, put a bogus argument "foo" to "type", which results in an error.
+{"execute": "netdev_add", "arguments": { "type": "foo", "id": "netdev1" } }
+Then, call it again with correct argument "user".
+{"execute": "netdev_add", "arguments": { "type": "user", "id": "netdev1" } }
+This results in "DuplicatedId" error.
+
+Because the first command was invalid, it should be able to reuse the
+same "id", and the second command should work.
+
+Reported-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Yoshiaki Tamura <tamura.yoshiaki@lab.ntt.co.jp>
+---
+ net.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ net.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/net.c b/net.c
+index 6139cc7..2a05006 100644
+--- a/net.c
++++ b/net.c
+@@ -1220,6 +1220,10 @@ int do_netdev_add(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     }
+ 
+     res = net_client_init(mon, opts, 1);
++    if (res < 0) {
++        qemu_opts_del(opts);
++    }
++
+     return res;
+ }
+ 
+-- 
+1.7.0.3
+
