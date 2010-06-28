@@ -1,0 +1,66 @@
+From 0338f7496f28a45c9ff5ad57857788d2288805d1 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Tue, 22 Jun 2010 05:31:18 -0300
+Subject: [PATCH 1/6] Remove usage of CONFIG_RED_HAT_DISABLED
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <469533528ae3b4d4c8c4a2582c360631cf919562.1277184524.git.amit.shah@redhat.com>
+Patchwork-id: 10063
+O-Subject: [RHEL6 qemu PATCH 1/3] Remove usage of CONFIG_RED_HAT_DISABLED
+Bugzilla: 605638
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+The disabling hpet patch, 1c07ac5125ce636144621ad82e5aad54c197809f,
+added a new macro, that was undefined, to configure out the hpet
+support. The macro name, however, is confusing. Replace the macro name
+with #ifdef 0 instead and put a comment mentioning that the
+functionality is disabled for Red Hat Enterprise Linux.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ qemu-options.hx |    2 +-
+ vl.c            |    4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-options.hx |    2 +-
+ vl.c            |    4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/qemu-options.hx b/qemu-options.hx
+index 7476f81..632c448 100644
+--- a/qemu-options.hx
++++ b/qemu-options.hx
+@@ -741,7 +741,7 @@ it if your guest OS complains about ACPI problems (PC target machine
+ only).
+ ETEXI
+ 
+-#ifdef CONFIG_RED_HAT_DISABLED
++#if defined(TARGET_I386) && 0 /* Disabled for Red Hat Enterprise Linux */
+ DEF("no-hpet", 0, QEMU_OPTION_no_hpet,
+     "-no-hpet        disable HPET\n")
+ #endif
+diff --git a/vl.c b/vl.c
+index 398c6f3..9144e56 100644
+--- a/vl.c
++++ b/vl.c
+@@ -5727,11 +5727,11 @@ int main(int argc, char **argv, char **envp)
+             case QEMU_OPTION_no_acpi:
+                 acpi_enabled = 0;
+                 break;
+-#ifdef CONFIG_RED_HAT_DISABLED
++#if 0 /* Disabled for Red Hat Enterprise Linux */
+             case QEMU_OPTION_no_hpet:
+                 no_hpet = 1;
+                 break;
+-#endif /* CONFIG_RED_HAT_DISABLED */
++#endif
+             case QEMU_OPTION_balloon:
+                 if (balloon_parse(optarg) < 0) {
+                     fprintf(stderr, "Unknown -balloon argument %s\n", optarg);
+-- 
+1.7.0.3
+

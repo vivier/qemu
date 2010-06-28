@@ -1,0 +1,50 @@
+From dc57018e50c1445d0d21ef04cac84d5b4efbf53f Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Wed, 23 Jun 2010 15:39:33 -0300
+Subject: [PATCH 4/6] virtio-blk: fix the list operation in virtio_blk_load().
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1277307573-19714-1-git-send-email-kwolf@redhat.com>
+Patchwork-id: 10145
+O-Subject: [RHEL-6 qemu-kvm PATCH] virtio-blk: fix the list operation in
+	virtio_blk_load().
+Bugzilla: 607244
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Yoshiaki Tamura <tamura.yoshiaki@lab.ntt.co.jp>
+
+Bugzilla: 607244
+
+Although it is really rare to get in to the while loop, the list
+operation in the loop is obviously wrong.
+
+Signed-off-by: Yoshiaki Tamura <tamura.yoshiaki@lab.ntt.co.jp>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 20a81e4d178379381fbd522eda5f664ba2ecdaaa)
+---
+ hw/virtio-blk.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-blk.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index 0c2c97e..2a5a823 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -486,7 +486,7 @@ static int virtio_blk_load(QEMUFile *f, void *opaque, int version_id)
+         VirtIOBlockReq *req = virtio_blk_alloc_request(s);
+         qemu_get_buffer(f, (unsigned char*)&req->elem, sizeof(req->elem));
+         req->next = s->rq;
+-        s->rq = req->next;
++        s->rq = req;
+     }
+ 
+     return 0;
+-- 
+1.7.0.3
+

@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.84%{?dist}
+Release: 2.85%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1202,6 +1202,18 @@ Patch1587: kvm-block-Cache-total_sectors-to-reduce-bdrv_getlength-c.patch
 Patch1588: kvm-block-allow-filenames-with-colons-again-for-host-dev.patch
 # For bz#606084 - Allow control of kvm cpuid option via -cpu flag
 Patch1589: kvm-Add-KVM-paravirt-cpuid-leaf.patch
+# For bz#605638 - Remove unsupported monitor commands from qemu-kvm
+Patch1590: kvm-Remove-usage-of-CONFIG_RED_HAT_DISABLED.patch
+# For bz#605638 - Remove unsupported monitor commands from qemu-kvm
+Patch1591: kvm-monitor-Remove-host_net_add-remove-for-Red-Hat-Enter.patch
+# For bz#605638 - Remove unsupported monitor commands from qemu-kvm
+Patch1592: kvm-monitor-Remove-usb_add-del-commands-for-Red-Hat-Ente.patch
+# For bz#607244 - virtio-blk doesn't load list of pending requests correctly
+Patch1593: kvm-virtio-blk-fix-the-list-operation-in-virtio_blk_load.patch
+# For bz#596279 - QMP: does not report the real cause of PCI device assignment failure
+Patch1594: kvm-QError-Introduce-QERR_DEVICE_INIT_FAILED_2.patch
+# For bz#596279 - QMP: does not report the real cause of PCI device assignment failure
+Patch1595: kvm-dev-assignment-Report-IRQ-assign-errors-in-QMP.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1854,6 +1866,12 @@ such as kvm_stat.
 %patch1587 -p1
 %patch1588 -p1
 %patch1589 -p1
+%patch1590 -p1
+%patch1591 -p1
+%patch1592 -p1
+%patch1593 -p1
+%patch1594 -p1
+%patch1595 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2044,6 +2062,20 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Jun 28 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.85.el6
+- kvm-Remove-usage-of-CONFIG_RED_HAT_DISABLED.patch [bz#605638]
+- kvm-monitor-Remove-host_net_add-remove-for-Red-Hat-Enter.patch [bz#605638]
+- kvm-monitor-Remove-usb_add-del-commands-for-Red-Hat-Ente.patch [bz#605638]
+- kvm-virtio-blk-fix-the-list-operation-in-virtio_blk_load.patch [bz#607244]
+- kvm-QError-Introduce-QERR_DEVICE_INIT_FAILED_2.patch [bz#596279]
+- kvm-dev-assignment-Report-IRQ-assign-errors-in-QMP.patch [bz#596279]
+- Resolves: bz#596279
+  (QMP: does not report the real cause of PCI device assignment failure)
+- Resolves: bz#605638
+  (Remove unsupported monitor commands from qemu-kvm)
+- Resolves: bz#607244
+  (virtio-blk doesn't load list of pending requests correctly)
+
 * Mon Jun 28 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.84.el6
 - kvm-Add-KVM-paravirt-cpuid-leaf.patch [bz#606084]
 - Resolves: bz#606084

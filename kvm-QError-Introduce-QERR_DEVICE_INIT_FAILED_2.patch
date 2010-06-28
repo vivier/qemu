@@ -1,0 +1,73 @@
+From 617a96edfc257ebcdb741ef3bf129d78eb80b76c Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Fri, 25 Jun 2010 19:09:20 -0300
+Subject: [PATCH 5/6] QError: Introduce QERR_DEVICE_INIT_FAILED_2
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1277492961-24090-2-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 10259
+O-Subject: [PATCH 1/2] QError: Introduce QERR_DEVICE_INIT_FAILED_2
+Bugzilla: 596279
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+This is an hacky extension to existing DeviceInitFailed error which
+provides more end-user information regarding the error cause.
+
+The main motivation is to allow the device assigment driver to report
+more specific errors when it's unable to assign an IRQ for the device
+being attached.
+
+This is really an exception, which is justified by the fact that
+libvirt is unable to detect this problem and this can turn out to be
+a source of bug reports if we use a generic error message for it,
+as explained in this BZ comment:
+
+ https://bugzilla.redhat.com/show_bug.cgi?id=596279#c6
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qerror.c |    4 ++++
+ qerror.h |    4 ++++
+ 2 files changed, 8 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qerror.c |    4 ++++
+ qerror.h |    4 ++++
+ 2 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/qerror.c b/qerror.c
+index 034c7de..eb18d44 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -69,6 +69,10 @@ static const QErrorStringTable qerror_table[] = {
+         .desc      = "Device '%(device)' could not be initialized",
+     },
+     {
++        .error_fmt = QERR_DEVICE_INIT_FAILED_2,
++        .desc      = "Device '%(device)' could not be initialized: %(__com.redhat_reason): %(__com.redhat_strerror)",
++    },
++    {
+         .error_fmt = QERR_DEVICE_IN_USE,
+         .desc      = "Device '%(device)' is in use",
+     },
+diff --git a/qerror.h b/qerror.h
+index c98c61a..9a5c5ae 100644
+--- a/qerror.h
++++ b/qerror.h
+@@ -67,6 +67,10 @@ QError *qobject_to_qerror(const QObject *obj);
+ #define QERR_DEVICE_INIT_FAILED \
+     "{ 'class': 'DeviceInitFailed', 'data': { 'device': %s } }"
+ 
++/* Ugly hack to allow hw/device-assigment.c report useful errors */
++#define QERR_DEVICE_INIT_FAILED_2 \
++    "{ 'class': 'DeviceInitFailed', 'data': { 'device': %s, '__com.redhat_reason': %s, '__com.redhat_strerror': %s } }"
++
+ #define QERR_DEVICE_IN_USE \
+     "{ 'class': 'DeviceInUse', 'data': { 'device': %s } }"
+ 
+-- 
+1.7.0.3
+

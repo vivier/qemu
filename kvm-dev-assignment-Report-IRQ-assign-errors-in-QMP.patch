@@ -1,0 +1,40 @@
+From fbecb5a76c09fe9cdc137abd302c8aa57a8a8dec Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Fri, 25 Jun 2010 19:09:21 -0300
+Subject: [PATCH 6/6] dev-assignment: Report IRQ assign errors in QMP
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1277492961-24090-3-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 10260
+O-Subject: [PATCH 2/2] dev-assignment: Report IRQ assign errors in QMP
+Bugzilla: 596279
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/device-assignment.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index 888154a..522eca5 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -753,6 +753,8 @@ static int assign_irq(AssignedDevice *dev)
+ 
+     r = kvm_assign_irq(kvm_context, &assigned_irq_data);
+     if (r < 0) {
++        qerror_report(QERR_DEVICE_INIT_FAILED_2, "pci-assign",
++                      "Failed to assign irq", strerror(-r));
+         fprintf(stderr, "Failed to assign irq for \"%s\": %s\n",
+                 dev->dev.qdev.id, strerror(-r));
+         fprintf(stderr, "Perhaps you are assigning a device "
+-- 
+1.7.0.3
+

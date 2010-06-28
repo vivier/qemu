@@ -1,0 +1,51 @@
+From 754e6292b4ab41c8848171555af830ab7284f4d3 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Tue, 22 Jun 2010 05:31:20 -0300
+Subject: [PATCH 3/6] monitor: Remove usb_add/del commands for Red Hat Enterprise Linux
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <388d33a9fa468e1e0202e688de684def4e7b5458.1277184524.git.amit.shah@redhat.com>
+Patchwork-id: 10065
+O-Subject: [RHEL6 qemu PATCH 3/3] monitor: Remove usb_add/del commands for Red
+	Hat Enterprise Linux
+Bugzilla: 605638
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+The usb_add/del commands have been obsoleted by the device_add/del
+commands.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ qemu-monitor.hx |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-monitor.hx |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 279da7e..f7d08b0 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -532,6 +532,7 @@ STEXI
+ Compute the checksum of a memory region.
+ ETEXI
+ 
++#if 0 /* Disabled for Red Hat Enterprise Linux */
+     {
+         .name       = "usb_add",
+         .args_type  = "devname:s",
+@@ -564,6 +565,7 @@ Remove the USB device @var{devname} from the QEMU virtual USB
+ hub. @var{devname} has the syntax @code{bus.addr}. Use the monitor
+ command @code{info usb} to see the devices you can remove.
+ ETEXI
++#endif
+ 
+     {
+         .name       = "device_add",
+-- 
+1.7.0.3
+

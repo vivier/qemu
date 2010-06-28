@@ -1,0 +1,51 @@
+From dd94505bd1b826db0c7e155ccee5c24f77987f16 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Tue, 22 Jun 2010 05:31:19 -0300
+Subject: [PATCH 2/6] monitor: Remove host_net_add/remove for Red Hat Enterprise Linux
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <f467856242a97327b9bbc85cf3887134b47e34b7.1277184524.git.amit.shah@redhat.com>
+Patchwork-id: 10064
+O-Subject: [RHEL6 qemu PATCH 2/3] monitor: Remove host_net_add/remove for Red
+	Hat Enterprise Linux
+Bugzilla: 605638
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+The host_net_add/remove commands are replaced by netdev_add/del. Remove
+them.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ qemu-monitor.hx |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-monitor.hx |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 063257b..279da7e 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -883,6 +883,7 @@ STEXI
+ Hot remove PCI device.
+ ETEXI
+ 
++#if 0 /* Disabled for Red Hat Enterprise Linux */
+     {
+         .name       = "host_net_add",
+         .args_type  = "device:s,opts:s?",
+@@ -910,6 +911,7 @@ STEXI
+ @findex host_net_remove
+ Remove host VLAN client.
+ ETEXI
++#endif
+ 
+     {
+         .name       = "netdev_add",
+-- 
+1.7.0.3
+
