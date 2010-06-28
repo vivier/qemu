@@ -1,0 +1,150 @@
+From 68c63bd37fc88227f4c5b99ca1c16c26d69485c2 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Wed, 23 Jun 2010 21:30:55 -0300
+Subject: [PATCH 4/7] per-machine-type smbios Type 1 smbios values
+
+RH-Author: Eduardo Habkost <ehabkost@redhat.com>
+Message-id: <20100623213055.GE14947@blackpad.lan.raisama.net>
+Patchwork-id: 10163
+O-Subject: [RHEL-6 qemu-kvm PATCH] per-machine-type smbios Type 1 smbios values
+Bugzilla: 605704
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+Bugzilla: 605704
+
+This keeps the same strings that were added as new defaults on SeaBIOS,
+but sets version and family info depending on the machine-type being
+used.
+
+-----
+From: Alex Williamson <alex.williamson@redhat.com>
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pc.c |   74 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++---
+ 1 files changed, 70 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pc.c |   74 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++---
+ 1 files changed, 70 insertions(+), 4 deletions(-)
+
+diff --git a/hw/pc.c b/hw/pc.c
+index 6ff2717..718b818 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -1470,11 +1470,41 @@ machine_init(pc_machine_init);
+ 
+ /* RHEL machine types */
+ 
++static void rhel_common_init(const char *type1_version)
++{
++    char buf[32];
++
++    snprintf(buf, sizeof(buf), "Red Hat");
++    smbios_add_field(1, offsetof(struct smbios_type_1, manufacturer_str),
++                     strlen(buf) + 1, buf);
++    snprintf(buf, sizeof(buf), "KVM");
++    smbios_add_field(1, offsetof(struct smbios_type_1, product_name_str),
++                     strlen(buf) + 1, buf);
++    snprintf(buf, sizeof(buf), type1_version);
++    smbios_add_field(1, offsetof(struct smbios_type_1, version_str),
++                     strlen(buf) + 1, buf);
++    snprintf(buf, sizeof(buf), "Red Hat Enterprise Linux");
++    smbios_add_field(1, offsetof(struct smbios_type_1, family_str),
++                     strlen(buf) + 1, buf);
++}
++
++static void pc_init_rhel600(ram_addr_t ram_size,
++                            const char *boot_device,
++                            const char *kernel_filename,
++                            const char *kernel_cmdline,
++                            const char *initrd_filename,
++                            const char *cpu_model)
++{
++    rhel_common_init("RHEL 6.0.0 PC");
++    pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
++                initrd_filename, cpu_model);
++}
++
+ static QEMUMachine pc_machine_rhel600 = {
+     .name = "rhel6.0.0",
+     .alias = "pc",
+     .desc = "RHEL 6.0.0 PC",
+-    .init = pc_init_pci,
++    .init = pc_init_rhel600,
+     .max_cpus = 255,
+     .is_default = 1,
+ };
+@@ -1515,26 +1545,62 @@ static GlobalProperty compat_rhel5[] = {
+         { /* end of list */ }
+ };
+ 
++static void pc_init_rhel550(ram_addr_t ram_size,
++                            const char *boot_device,
++                            const char *kernel_filename,
++                            const char *kernel_cmdline,
++                            const char *initrd_filename,
++                            const char *cpu_model)
++{
++    rhel_common_init("RHEL 5.5.0 PC");
++    pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
++                initrd_filename, cpu_model);
++}
++
+ static QEMUMachine pc_machine_rhel550 = {
+     .name = "rhel5.5.0",
+     .desc = "RHEL 5.5.0 PC",
+-    .init = pc_init_pci,
++    .init = pc_init_rhel550,
+     .max_cpus = 255,
+     .compat_props = compat_rhel5,
+ };
+ 
++static void pc_init_rhel544(ram_addr_t ram_size,
++                            const char *boot_device,
++                            const char *kernel_filename,
++                            const char *kernel_cmdline,
++                            const char *initrd_filename,
++                            const char *cpu_model)
++{
++    rhel_common_init("RHEL 5.4.4 PC");
++    pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
++                initrd_filename, cpu_model);
++}
++
+ static QEMUMachine pc_machine_rhel544 = {
+     .name = "rhel5.4.4",
+     .desc = "RHEL 5.4.4 PC",
+-    .init = pc_init_pci,
++    .init = pc_init_rhel544,
+     .max_cpus = 255,
+     .compat_props = compat_rhel5,
+ };
+ 
++static void pc_init_rhel540(ram_addr_t ram_size,
++                            const char *boot_device,
++                            const char *kernel_filename,
++                            const char *kernel_cmdline,
++                            const char *initrd_filename,
++                            const char *cpu_model)
++{
++    rhel_common_init("RHEL 5.4.0 PC");
++    pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
++                initrd_filename, cpu_model);
++}
++
+ static QEMUMachine pc_machine_rhel540 = {
+     .name = "rhel5.4.0",
+     .desc = "RHEL 5.4.0 PC",
+-    .init = pc_init_pci,
++    .init = pc_init_rhel540,
+     .max_cpus = 255,
+     .compat_props = compat_rhel5,
+ };
+-- 
+1.7.0.3
+

@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.82%{?dist}
+Release: 2.83%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1186,6 +1186,20 @@ Patch1579: kvm-qcow2-Use-bdrv_-p-write_sync-for-metadata-writes.patch
 Patch1580: kvm-virtio-serial-Fix-compat-property-name.patch
 # For bz#606733 - Unable to set the driftfix parameter
 Patch1581: kvm-rtc-Remove-TARGET_I386-from-qemu-config.c-enables-dr.patch
+# For bz#585009 - QMP: input needs trailing  char
+Patch1582: kvm-add-some-tests-for-invalid-JSON.patch
+# For bz#585009 - QMP: input needs trailing  char
+Patch1583: kvm-implement-optional-lookahead-in-json-lexer.patch
+# For bz#585009 - QMP: input needs trailing  char
+Patch1584: kvm-remove-unnecessary-lookaheads.patch
+# For bz#605704 - qemu-kvm: set per-machine-type smbios strings
+Patch1585: kvm-per-machine-type-smbios-Type-1-smbios-values.patch
+# For bz#607688 - Excessive lseek() causes severe performance issues with vm disk images over NFS
+Patch1586: kvm-raw-posix-Use-pread-pwrite-instead-of-lseek-read-wri.patch
+# For bz#607688 - Excessive lseek() causes severe performance issues with vm disk images over NFS
+Patch1587: kvm-block-Cache-total_sectors-to-reduce-bdrv_getlength-c.patch
+# For bz#599122 - Unable to launch QEMU with a guest disk filename containing a ':'
+Patch1588: kvm-block-allow-filenames-with-colons-again-for-host-dev.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1830,6 +1844,13 @@ such as kvm_stat.
 %patch1579 -p1
 %patch1580 -p1
 %patch1581 -p1
+%patch1582 -p1
+%patch1583 -p1
+%patch1584 -p1
+%patch1585 -p1
+%patch1586 -p1
+%patch1587 -p1
+%patch1588 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2020,6 +2041,23 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Jun 28 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.83.el6
+- kvm-add-some-tests-for-invalid-JSON.patch [bz#585009]
+- kvm-implement-optional-lookahead-in-json-lexer.patch [bz#585009]
+- kvm-remove-unnecessary-lookaheads.patch [bz#585009]
+- kvm-per-machine-type-smbios-Type-1-smbios-values.patch [bz#605704]
+- kvm-raw-posix-Use-pread-pwrite-instead-of-lseek-read-wri.patch [bz#607688]
+- kvm-block-Cache-total_sectors-to-reduce-bdrv_getlength-c.patch [bz#607688]
+- kvm-block-allow-filenames-with-colons-again-for-host-dev.patch [bz#599122]
+- Resolves: bz#585009
+  (QMP: input needs trailing  char)
+- Resolves: bz#599122
+  (Unable to launch QEMU with a guest disk filename containing a ':')
+- Resolves: bz#605704
+  (qemu-kvm: set per-machine-type smbios strings)
+- Resolves: bz#607688
+  (Excessive lseek() causes severe performance issues with vm disk images over NFS)
+
 * Fri Jun 25 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.82.el6
 - kvm-monitor-allow-device-to-be-ejected-if-no-disk-is-ins.patch [bz#581789]
 - kvm-New-slots-need-dirty-tracking-enabled-when-migrating.patch [bz#596609]

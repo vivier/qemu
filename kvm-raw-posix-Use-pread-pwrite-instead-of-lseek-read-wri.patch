@@ -1,0 +1,119 @@
+From f322825047bc9d933103637559c253e8882e3761 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Thu, 24 Jun 2010 16:43:46 -0300
+Subject: [PATCH 5/7] raw-posix: Use pread/pwrite instead of lseek+read/write
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1277397827-20052-2-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 10188
+O-Subject: [PATCH 1/2] raw-posix: Use pread/pwrite instead of lseek+read/write
+Bugzilla: 607688
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+This patch combines the lseek+read/write calls to use pread/pwrite
+instead.  This will result in fewer system calls and is already used by
+AIO.
+
+Thanks to Jan Kiszka <jan.kiszka@siemens.com> for identifying excessive
+lseek and Christoph Hellwig <hch@lst.de> for confirming that this
+approach should work.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 4899d10d142e97eea8f64141a3507b2ee1a64f52)
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+---
+ block/raw-posix.c |   37 ++++---------------------------------
+ 1 files changed, 4 insertions(+), 33 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/raw-posix.c |   37 ++++---------------------------------
+ 1 files changed, 4 insertions(+), 33 deletions(-)
+
+diff --git a/block/raw-posix.c b/block/raw-posix.c
+index 0ca0807..d2f7522 100644
+--- a/block/raw-posix.c
++++ b/block/raw-posix.c
+@@ -107,7 +107,6 @@
+ typedef struct BDRVRawState {
+     int fd;
+     int type;
+-    unsigned int lseek_err_cnt;
+     int open_flags;
+ #if defined(__linux__)
+     /* linux floppy specific */
+@@ -136,8 +135,6 @@ static int raw_open_common(BlockDriverState *bs, const char *filename,
+     BDRVRawState *s = bs->opaque;
+     int fd, ret;
+ 
+-    s->lseek_err_cnt = 0;
+-
+     s->open_flags = open_flags | O_BINARY;
+     s->open_flags &= ~O_ACCMODE;
+     if (bdrv_flags & BDRV_O_RDWR) {
+@@ -250,19 +247,7 @@ static int raw_pread_aligned(BlockDriverState *bs, int64_t offset,
+     if (ret < 0)
+         return ret;
+ 
+-    if (offset >= 0 && lseek(s->fd, offset, SEEK_SET) == (off_t)-1) {
+-        ++(s->lseek_err_cnt);
+-        if(s->lseek_err_cnt <= 10) {
+-            DEBUG_BLOCK_PRINT("raw_pread(%d:%s, %" PRId64 ", %p, %d) [%" PRId64
+-                              "] lseek failed : %d = %s\n",
+-                              s->fd, bs->filename, offset, buf, count,
+-                              bs->total_sectors, errno, strerror(errno));
+-        }
+-        return -1;
+-    }
+-    s->lseek_err_cnt=0;
+-
+-    ret = read(s->fd, buf, count);
++    ret = pread(s->fd, buf, count, offset);
+     if (ret == count)
+         goto label__raw_read__success;
+ 
+@@ -283,12 +268,10 @@ static int raw_pread_aligned(BlockDriverState *bs, int64_t offset,
+ 
+     /* Try harder for CDrom. */
+     if (bs->type == BDRV_TYPE_CDROM) {
+-        lseek(s->fd, offset, SEEK_SET);
+-        ret = read(s->fd, buf, count);
++        ret = pread(s->fd, buf, count, offset);
+         if (ret == count)
+             goto label__raw_read__success;
+-        lseek(s->fd, offset, SEEK_SET);
+-        ret = read(s->fd, buf, count);
++        ret = pread(s->fd, buf, count, offset);
+         if (ret == count)
+             goto label__raw_read__success;
+ 
+@@ -320,19 +303,7 @@ static int raw_pwrite_aligned(BlockDriverState *bs, int64_t offset,
+     if (ret < 0)
+         return -errno;
+ 
+-    if (offset >= 0 && lseek(s->fd, offset, SEEK_SET) == (off_t)-1) {
+-        ++(s->lseek_err_cnt);
+-        if(s->lseek_err_cnt) {
+-            DEBUG_BLOCK_PRINT("raw_pwrite(%d:%s, %" PRId64 ", %p, %d) [%"
+-                              PRId64 "] lseek failed : %d = %s\n",
+-                              s->fd, bs->filename, offset, buf, count,
+-                              bs->total_sectors, errno, strerror(errno));
+-        }
+-        return -EIO;
+-    }
+-    s->lseek_err_cnt = 0;
+-
+-    ret = write(s->fd, buf, count);
++    ret = pwrite(s->fd, buf, count, offset);
+     if (ret == count)
+         goto label__raw_write__success;
+ 
+-- 
+1.7.0.3
+

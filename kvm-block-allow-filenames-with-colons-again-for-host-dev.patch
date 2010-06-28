@@ -1,0 +1,74 @@
+From 91d3a56609c07d7cb29226d655c411a3a4c07c46 Mon Sep 17 00:00:00 2001
+From: Christoph Hellwig <chellwig@redhat.com>
+Date: Sat, 26 Jun 2010 07:17:28 -0300
+Subject: [PATCH 7/7] block: allow filenames with colons again for host devices
+
+RH-Author: Christoph Hellwig <chellwig@redhat.com>
+Message-id: <1277536648-6209-1-git-send-email-chellwig@redhat.com>
+Patchwork-id: 10266
+O-Subject: [RHEL6 qemu PATCH] block: allow filenames with colons again for host
+	devices
+Bugzilla: 599122
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Christoph Hellwig <hch@lst.de>
+
+Before the raw/file split we used to allow filenames with colons for host
+device only.  While this was more by accident than by design people rely
+on it, so we need to bring it back.
+
+So move the host device probing to be before the protocol detection
+again.
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+
+Upstream commit: none - only accepted into Kevin's block tree so far
+BZ: 599122
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c |   18 +++++++++++++-----
+ 1 files changed, 13 insertions(+), 5 deletions(-)
+
+diff --git a/block.c b/block.c
+index a4f6c9b..c878f77 100644
+--- a/block.c
++++ b/block.c
+@@ -290,6 +290,18 @@ static BlockDriver *find_protocol(const char *filename)
+ 
+     /* TODO Drivers without bdrv_file_open must be specified explicitly */
+ 
++    /*
++     * XXX(hch): we really should not let host device detection
++     * override an explicit protocol specification, but moving this
++     * later breaks access to device names with colons in them.
++     * Thanks to the brain-dead persistent naming schemes on udev-
++     * based Linux systems those actually are quite common.
++     */
++    drv1 = find_hdev_driver(filename);
++    if (drv1) {
++        return drv1;
++    }
++
+ #ifdef _WIN32
+     if (is_windows_drive(filename) ||
+         is_windows_drive_prefix(filename))
+@@ -297,11 +309,7 @@ static BlockDriver *find_protocol(const char *filename)
+ #endif
+     p = strchr(filename, ':');
+     if (!p) {
+-        drv1 = find_hdev_driver(filename);
+-        if (!drv1) {
+-            drv1 = bdrv_find_format("file");
+-        }
+-        return drv1;
++        return bdrv_find_format("file");
+     }
+     len = p - filename;
+     if (len > sizeof(protocol) - 1)
+-- 
+1.7.0.3
+
