@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.83%{?dist}
+Release: 2.84%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1200,6 +1200,8 @@ Patch1586: kvm-raw-posix-Use-pread-pwrite-instead-of-lseek-read-wri.patch
 Patch1587: kvm-block-Cache-total_sectors-to-reduce-bdrv_getlength-c.patch
 # For bz#599122 - Unable to launch QEMU with a guest disk filename containing a ':'
 Patch1588: kvm-block-allow-filenames-with-colons-again-for-host-dev.patch
+# For bz#606084 - Allow control of kvm cpuid option via -cpu flag
+Patch1589: kvm-Add-KVM-paravirt-cpuid-leaf.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1851,6 +1853,7 @@ such as kvm_stat.
 %patch1586 -p1
 %patch1587 -p1
 %patch1588 -p1
+%patch1589 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2041,6 +2044,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Jun 28 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.84.el6
+- kvm-Add-KVM-paravirt-cpuid-leaf.patch [bz#606084]
+- Resolves: bz#606084
+  (Allow control of kvm cpuid option via -cpu flag)
+
 * Mon Jun 28 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.83.el6
 - kvm-add-some-tests-for-invalid-JSON.patch [bz#585009]
 - kvm-implement-optional-lookahead-in-json-lexer.patch [bz#585009]

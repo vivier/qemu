@@ -1,0 +1,162 @@
+From 5fdb64cec688ed7ce5984172364cbd8e83e1ae5b Mon Sep 17 00:00:00 2001
+From: Gleb Natapov <gleb@redhat.com>
+Date: Sun, 27 Jun 2010 07:57:26 -0300
+Subject: [PATCH] Add KVM paravirt cpuid leaf
+
+RH-Author: Gleb Natapov <gleb@redhat.com>
+Message-id: <20100627075726.GG4689@redhat.com>
+Patchwork-id: 10267
+O-Subject: [PATCHv2 RHEL6] Add KVM paravirt cpuid leaf
+Bugzilla: 606084
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+
+Initialize KVM paravirt cpuid leaf and allow user to control guest
+visible PV features through -cpu flag.
+
+BZ: 606084
+Upstream status: backport of bb0300dc57
+
+Signed-off-by: Gleb Natapov <gleb@redhat.com>
+---
+ Changelog:
+  v1->v2
+   - v1 removed one line unintentionally. Fix that.
+
+--
+			Gleb.
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-kvm-x86.c       |    2 +-
+ target-i386/cpu.h    |    3 ++-
+ target-i386/helper.c |   31 +++++++++++++++++++++++--------
+ 3 files changed, 26 insertions(+), 10 deletions(-)
+
+diff --git a/qemu-kvm-x86.c b/qemu-kvm-x86.c
+index ab7bbe3..7c608ab 100644
+--- a/qemu-kvm-x86.c
++++ b/qemu-kvm-x86.c
+@@ -1310,7 +1310,7 @@ int kvm_arch_init_vcpu(CPUState *cenv)
+     pv_ent = &cpuid_ent[cpuid_nent++];
+     memset(pv_ent, 0, sizeof(*pv_ent));
+     pv_ent->function = KVM_CPUID_FEATURES;
+-    pv_ent->eax = get_para_features(kvm_context);
++    pv_ent->eax = cenv->cpuid_kvm_features & get_para_features(kvm_context);
+ #endif
+ 
+     kvm_trim_features(&cenv->cpuid_features,
+diff --git a/target-i386/cpu.h b/target-i386/cpu.h
+index 6728b2c..b64bd02 100644
+--- a/target-i386/cpu.h
++++ b/target-i386/cpu.h
+@@ -717,7 +717,8 @@ typedef struct CPUX86State {
+     uint8_t nmi_pending;
+     uint8_t has_error_code;
+     uint32_t sipi_vector;
+-
++    uint32_t cpuid_kvm_features;
++    
+     /* in order to simplify APIC support, we leave this pointer to the
+        user */
+     struct APICState *apic_state;
+diff --git a/target-i386/helper.c b/target-i386/helper.c
+index b979d5d..ebb9d49 100644
+--- a/target-i386/helper.c
++++ b/target-i386/helper.c
+@@ -156,15 +156,24 @@ static int lookup_feature(uint32_t *pval, const char *s, const char *e,
+     return (mask ? 1 : 0);
+ }
+ 
++static const char *kvm_feature_name[] = {
++    "kvmclock", "kvm_nopiodelay", "kvm_mmu", NULL, NULL, NULL, NULL, NULL,
++    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
++    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
++    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
++};
++
+ static void add_flagname_to_bitmaps(const char *flagname, uint32_t *features,
+                                     uint32_t *ext_features,
+                                     uint32_t *ext2_features,
+-                                    uint32_t *ext3_features)
++                                    uint32_t *ext3_features,
++                                    uint32_t *kvm_features)
+ {
+     if (!lookup_feature(features, flagname, NULL, feature_name) &&
+         !lookup_feature(ext_features, flagname, NULL, ext_feature_name) &&
+         !lookup_feature(ext2_features, flagname, NULL, ext2_feature_name) &&
+-        !lookup_feature(ext3_features, flagname, NULL, ext3_feature_name))
++        !lookup_feature(ext3_features, flagname, NULL, ext3_feature_name) &&
++        !lookup_feature(kvm_features, flagname, NULL, kvm_feature_name))
+             fprintf(stderr, "CPU feature %s not found\n", flagname);
+ }
+ 
+@@ -176,7 +185,7 @@ typedef struct x86_def_t {
+     int family;
+     int model;
+     int stepping;
+-    uint32_t features, ext_features, ext2_features, ext3_features;
++    uint32_t features, ext_features, ext2_features, ext3_features, kvm_features;
+     uint32_t xlevel;
+     char model_id[48];
+     int vendor_override;
+@@ -503,8 +512,8 @@ static int cpu_x86_find_by_name(x86_def_t *x86_cpu_def, const char *cpu_model)
+ 
+     char *s = strdup(cpu_model);
+     char *featurestr, *name = strtok(s, ",");
+-    uint32_t plus_features = 0, plus_ext_features = 0, plus_ext2_features = 0, plus_ext3_features = 0;
+-    uint32_t minus_features = 0, minus_ext_features = 0, minus_ext2_features = 0, minus_ext3_features = 0;
++    uint32_t plus_features = 0, plus_ext_features = 0, plus_ext2_features = 0, plus_ext3_features = 0, plus_kvm_features = 0;
++    uint32_t minus_features = 0, minus_ext_features = 0, minus_ext2_features = 0, minus_ext3_features = 0, minus_kvm_features = 0;
+     uint32_t numvalue;
+ 
+     for (def = x86_defs; def; def = def->next)
+@@ -518,17 +527,20 @@ static int cpu_x86_find_by_name(x86_def_t *x86_cpu_def, const char *cpu_model)
+         memcpy(x86_cpu_def, def, sizeof(*def));
+     }
+ 
++    plus_kvm_features = ~0; /* not supported bits will be filtered out later */
++
+     add_flagname_to_bitmaps("hypervisor", &plus_features,
+-        &plus_ext_features, &plus_ext2_features, &plus_ext3_features);
++        &plus_ext_features, &plus_ext2_features, &plus_ext3_features,
++        &plus_kvm_features);
+ 
+     featurestr = strtok(NULL, ",");
+ 
+     while (featurestr) {
+         char *val;
+         if (featurestr[0] == '+') {
+-            add_flagname_to_bitmaps(featurestr + 1, &plus_features, &plus_ext_features, &plus_ext2_features, &plus_ext3_features);
++            add_flagname_to_bitmaps(featurestr + 1, &plus_features, &plus_ext_features, &plus_ext2_features, &plus_ext3_features, &plus_kvm_features);
+         } else if (featurestr[0] == '-') {
+-            add_flagname_to_bitmaps(featurestr + 1, &minus_features, &minus_ext_features, &minus_ext2_features, &minus_ext3_features);
++            add_flagname_to_bitmaps(featurestr + 1, &minus_features, &minus_ext_features, &minus_ext2_features, &minus_ext3_features, &minus_kvm_features);
+         } else if ((val = strchr(featurestr, '='))) {
+             *val = 0; val++;
+             if (!strcmp(featurestr, "family")) {
+@@ -609,10 +621,12 @@ static int cpu_x86_find_by_name(x86_def_t *x86_cpu_def, const char *cpu_model)
+     x86_cpu_def->ext_features |= plus_ext_features;
+     x86_cpu_def->ext2_features |= plus_ext2_features;
+     x86_cpu_def->ext3_features |= plus_ext3_features;
++    x86_cpu_def->kvm_features |= plus_kvm_features;
+     x86_cpu_def->features &= ~minus_features;
+     x86_cpu_def->ext_features &= ~minus_ext_features;
+     x86_cpu_def->ext2_features &= ~minus_ext2_features;
+     x86_cpu_def->ext3_features &= ~minus_ext3_features;
++    x86_cpu_def->kvm_features &= ~minus_kvm_features;
+     if (check_cpuid) {
+         if (check_features_against_host(x86_cpu_def) && enforce_cpuid)
+             goto error;
+@@ -747,6 +761,7 @@ static int cpu_x86_register (CPUX86State *env, const char *cpu_model)
+     env->cpuid_ext2_features = def->ext2_features;
+     env->cpuid_xlevel = def->xlevel;
+     env->cpuid_ext3_features = def->ext3_features;
++    env->cpuid_kvm_features = def->kvm_features;
+     {
+         const char *model_id = def->model_id;
+         int c, len, i;
+-- 
+1.7.0.3
+
