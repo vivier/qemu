@@ -149,7 +149,7 @@ static void unix_accept_incoming_migration(void *opaque)
     socklen_t addrlen = sizeof(addr);
     int s = (unsigned long)opaque;
     QEMUFile *f;
-    int c, ret;
+    int c;
 
     do {
         c = qemu_accept(s, (struct sockaddr *)&addr, &addrlen);
@@ -168,16 +168,7 @@ static void unix_accept_incoming_migration(void *opaque)
         goto out;
     }
 
-    ret = qemu_loadvm_state(f);
-    if (ret < 0) {
-        fprintf(stderr, "load of migration failed\n");
-        goto out_fopen;
-    }
-    qemu_announce_self();
-    dprintf("successfully loaded vm state\n");
-
-
-out_fopen:
+    process_incoming_migration(f);
     qemu_fclose(f);
 out:
     qemu_set_fd_handler2(s, NULL, NULL, NULL, NULL);
