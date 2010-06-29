@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.89%{?dist}
+Release: 2.90%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1239,6 +1239,10 @@ Patch1605: kvm-Exit-if-incoming-migration-fails.patch
 Patch1606: kvm-Factorize-common-migration-incoming-code.patch
 # For bz#605361 - 82576 physical function device assignment doesn't work with win7
 Patch1607: kvm-device-assignment-be-more-selective-in-interrupt-dis.patch
+# For bz#572043 - Guest gets segfault when do multiple device hot-plug and hot-unplug
+Patch1608: kvm-device-assignment-Avoid-munmapping-the-real-MSIX-are.patch
+# For bz#572043 - Guest gets segfault when do multiple device hot-plug and hot-unplug
+Patch1609: kvm-device-assignment-Cleanup-on-exit.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1909,6 +1913,8 @@ such as kvm_stat.
 %patch1605 -p1
 %patch1606 -p1
 %patch1607 -p1
+%patch1608 -p1
+%patch1609 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2099,6 +2105,12 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jun 29 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.90.el6
+- kvm-device-assignment-Avoid-munmapping-the-real-MSIX-are.patch [bz#572043]
+- kvm-device-assignment-Cleanup-on-exit.patch [bz#572043]
+- Resolves: bz#572043
+  (Guest gets segfault when do multiple device hot-plug and hot-unplug)
+
 * Tue Jun 29 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.89.el6
 - kvm-device-assignment-be-more-selective-in-interrupt-dis.patch [bz#605361]
 - Resolves: bz#605361
