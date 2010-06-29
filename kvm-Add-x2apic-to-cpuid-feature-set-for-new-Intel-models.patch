@@ -1,0 +1,168 @@
+From 19ab65a663cfdfa8365f3ec324af6b0ab26be5a1 Mon Sep 17 00:00:00 2001
+From: john cooper <john.cooper@redhat.com>
+Date: Fri, 18 Jun 2010 04:48:07 -0300
+Subject: [PATCH 5/5] Add x2apic to cpuid feature set for new Intel models.. [BZ #601517]
+
+RH-Author: john cooper <john.cooper@redhat.com>
+Message-id: <4C1AFA87.7070907@redhat.com>
+Patchwork-id: 9970
+O-Subject: [RHEL6 PATCH] Add x2apic to cpuid feature set for new Intel models..
+	[BZ #601517]
+Bugzilla: 601517
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Addresses BZ# 601517 - x2apic needs to be present in all new Intel cpu models..
+
+This patch adds the x2APIC feature flag cpuid:0000_0001,ecx:21
+to the new Intel cpu model definitions.  As this feature flag
+is emulated by kvm, it is available to a guest even in the
+case it is not present on the host.
+
+The existing code which optionally polices feature flags
+currently only checks against host features.  When kvm
+is enabled we now consult it rather than host, otherwise
+we fall back to the host cpuid feature set.
+
+Upstream status:  Submission pending reconciling this case
+along with related BZs (603017, 604187) in order to submit
+a single patch/series.
+
+Signed-off-by: john cooper <john.cooper@redhat.com>
+---
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ sysconfigs/target/target-x86_64.conf |    6 ++--
+ target-i386/helper.c                 |   56 +++++++++++++++++++++++----------
+ 2 files changed, 42 insertions(+), 20 deletions(-)
+
+diff --git a/sysconfigs/target/target-x86_64.conf b/sysconfigs/target/target-x86_64.conf
+index f63be2f..ca07088 100644
+--- a/sysconfigs/target/target-x86_64.conf
++++ b/sysconfigs/target/target-x86_64.conf
+@@ -8,7 +8,7 @@
+    model = "2"
+    stepping = "3"
+    feature_edx = "sse2 sse fxsr mmx pat cmov pge sep apic cx8 mce pae msr tsc pse de fpu    mtrr clflush mca pse36"
+-   feature_ecx = "sse3 ssse3"
++   feature_ecx = "sse3 ssse3 x2apic"
+    extfeature_edx = "fxsr mmx pat cmov pge apic cx8 mce pae msr tsc pse de fpu    lm syscall nx"
+    extfeature_ecx = "lahf_lm"
+    xlevel = "0x8000000A"
+@@ -22,7 +22,7 @@
+    model = "2"
+    stepping = "3"
+    feature_edx = "sse2 sse fxsr mmx pat cmov pge sep apic cx8 mce pae msr tsc pse de fpu    mtrr clflush mca pse36"
+-   feature_ecx = "sse3 cx16 ssse3 sse4.1"
++   feature_ecx = "sse3 cx16 ssse3 sse4.1 x2apic"
+    extfeature_edx = "fxsr mmx pat cmov pge apic cx8 mce pae msr tsc pse de fpu    lm syscall nx"
+    extfeature_ecx = "lahf_lm"
+    xlevel = "0x8000000A"
+@@ -36,7 +36,7 @@
+    model = "2"
+    stepping = "3"
+    feature_edx = "sse2 sse fxsr mmx pat cmov pge sep apic cx8 mce pae msr tsc pse de fpu    mtrr clflush mca pse36"
+-   feature_ecx = "sse3 cx16 ssse3 sse4.1 sse4.2 popcnt"
++   feature_ecx = "sse3 cx16 ssse3 sse4.1 sse4.2 x2apic popcnt"
+    extfeature_edx = "fxsr mmx pat cmov pge apic cx8 mce pae msr tsc pse de fpu    lm syscall nx"
+    extfeature_ecx = "lahf_lm"
+    xlevel = "0x8000000A"
+diff --git a/target-i386/helper.c b/target-i386/helper.c
+index ebb9d49..e271b31 100644
+--- a/target-i386/helper.c
++++ b/target-i386/helper.c
+@@ -475,15 +475,37 @@ static int unavailable_host_feature(struct model_features_t *f, uint32_t mask)
+     return 0;
+ }
+ 
+-/* best effort attempt to inform user requested cpu flags aren't making
+- * their way to the guest.  Note: ft[].check_feat ideally should be
+- * specified via a guest_def field to suppress report of extraneous flags.
++/* determine the effective set of cpuid features visible to a guest.
++ * in the case kvm is enabled, we also include features emulated by
++ * the hypervisor
++ */ 
++static void summary_cpuid_features(CPUX86State *env, x86_def_t *hd)
++{
++    struct {
++        uint32_t *pfeat, cmd, reg;
++	} fmap[] = {
++            {&hd->features, 0x00000001, R_EDX},
++            {&hd->ext_features, 0x00000001, R_ECX},
++            {&hd->ext2_features, 0x80000001, R_EDX},
++            {&hd->ext3_features, 0x80000001, R_ECX},
++            {NULL}}, *p;
++
++    if (kvm_enabled()) {
++        for (p = fmap; p->pfeat; ++p)
++            *p->pfeat = kvm_arch_get_supported_cpuid(env, p->cmd, p->reg);
++    } else {
++        cpu_x86_fill_host(hd);
++    }
++}
++
++/* inform the user of any requested cpu features (both explicitly requested
++ * flags and implicit cpu model flags) not making their way to the guest
+  */
+-static int check_features_against_host(x86_def_t *guest_def)
++static int check_features_against_host(CPUX86State *env, x86_def_t *guest_def)
+ {
+     x86_def_t host_def;
+     uint32_t mask;
+-    int rv, i;
++    int rv;
+     struct model_features_t ft[] = {
+         {&guest_def->features, &host_def.features,
+             ~0, feature_name, 0x00000000},
+@@ -492,16 +514,16 @@ static int check_features_against_host(x86_def_t *guest_def)
+         {&guest_def->ext2_features, &host_def.ext2_features,
+             ~PPRO_FEATURES, ext2_feature_name, 0x80000000},
+         {&guest_def->ext3_features, &host_def.ext3_features,
+-            ~CPUID_EXT3_SVM, ext3_feature_name, 0x80000001}};
++            ~CPUID_EXT3_SVM, ext3_feature_name, 0x80000001},
++        {NULL}}, *p;
+ 
+-    cpu_x86_fill_host(&host_def);
+-    for (rv = 0, i = 0; i < sizeof (ft) / sizeof (ft[0]); ++i)
++    summary_cpuid_features(env, &host_def);
++    for (rv = 0, p = ft; p->guest_feat; ++p)
+         for (mask = 1; mask; mask <<= 1)
+-            if (ft[i].check_feat & mask && *ft[i].guest_feat & mask &&
+-                !(*ft[i].host_feat & mask)) {
+-                    unavailable_host_feature(&ft[i], mask);
+-                    rv = 1;
+-                }
++            if (mask & p->check_feat & *p->guest_feat & ~*p->host_feat) {
++                unavailable_host_feature(p, mask);
++                rv = 1;
++            }
+     return rv;
+ }
+ 
+@@ -627,10 +649,6 @@ static int cpu_x86_find_by_name(x86_def_t *x86_cpu_def, const char *cpu_model)
+     x86_cpu_def->ext2_features &= ~minus_ext2_features;
+     x86_cpu_def->ext3_features &= ~minus_ext3_features;
+     x86_cpu_def->kvm_features &= ~minus_kvm_features;
+-    if (check_cpuid) {
+-        if (check_features_against_host(x86_cpu_def) && enforce_cpuid)
+-            goto error;
+-    }
+     free(s);
+     return 0;
+ 
+@@ -776,6 +794,10 @@ static int cpu_x86_register (CPUX86State *env, const char *cpu_model)
+             env->cpuid_model[i >> 2] |= c << (8 * (i & 3));
+         }
+     }
++    if (check_cpuid) {
++        if (check_features_against_host(env, def) && enforce_cpuid)
++            return -1;
++    }
+     return 0;
+ }
+ 
+-- 
+1.7.0.3
+

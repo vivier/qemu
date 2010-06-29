@@ -1,0 +1,50 @@
+From 21110545dbe0b82da36b3a48c7767de35804881b Mon Sep 17 00:00:00 2001
+From: Christoph Hellwig <chellwig@redhat.com>
+Date: Thu, 17 Jun 2010 08:58:15 -0300
+Subject: [PATCH 4/5] block: fix physical_block_size calculation
+
+RH-Author: Christoph Hellwig <chellwig@redhat.com>
+Message-id: <1276765095-8406-1-git-send-email-chellwig@redhat.com>
+Patchwork-id: 9950
+O-Subject: [RHEL6 qemu PATCH] block: fix physical_block_size calculation
+Bugzilla: 566785
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Christoph Hellwig <hch@lst.de>
+
+Both SCSI and virtio expect the physical block size relative to the
+logical block size.  So get the factor first before calculating the
+log2.
+
+Reported-by: Mike Cao <bcao@redhat.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+
+tream commit a4c10b82da574ca324342aba647557a5a86cffa5 (in the block queue)
+BZ: 566785
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block_int.h |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/block_int.h b/block_int.h
+index 3a42688..81a4620 100644
+--- a/block_int.h
++++ b/block_int.h
+@@ -222,7 +222,9 @@ static inline unsigned int get_physical_block_exp(BlockConf *conf)
+ {
+     unsigned int exp = 0, size;
+ 
+-    for (size = conf->physical_block_size; size > 512; size >>= 1) {
++    for (size = conf->physical_block_size;
++        size > conf->logical_block_size;
++        size >>= 1) {
+         exp++;
+     }
+ 
+-- 
+1.7.0.3
+

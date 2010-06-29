@@ -1,0 +1,146 @@
+From 8674e4020de7bf5e130340edd338938ebd890a30 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Tue, 1 Jun 2010 10:15:07 -0300
+Subject: [PATCH 2/5] spice: handle 16 bit color depth.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1275387307-25378-3-git-send-email-kraxel@redhat.com>
+Patchwork-id: 9640
+O-Subject: [RHEL-6 kvm PATCH 2/2] spice: handle 16 bit color depth.
+Bugzilla: 597198 600205
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Just saying BITMAP_FMT_16BIT doesn't work, this means 555.  The
+usual 565 modes come up with funky colors then.  So we attach the
+bitmap data to QXLUpdate instead of passing a pointer into the
+DisplaySurface.
+
+This allows us to convert the data as needed.  We'll pass 32bit rgb
+data to spice unconditionally, i.e. 16bpp image data is converted.
+
+We can also zap the UNSTABLE flag (which means 'bitmap data may change
+under your feet because you got a pointer to guest memory'), so
+spice-server will not copy the data again when it wants the data be
+stable for compression.
+
+bugzilla: #597198 --  qxl: 16bpp vga mode is broken
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ spice-display.c |   58 ++++++++++++++++++++++++++++++++++++++----------------
+ spice-display.h |    1 +
+ 2 files changed, 42 insertions(+), 17 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ spice-display.c |   58 ++++++++++++++++++++++++++++++++++++++----------------
+ spice-display.h |    1 +
+ 2 files changed, 42 insertions(+), 17 deletions(-)
+
+diff --git a/spice-display.c b/spice-display.c
+index e491e6e..bfbde4a 100644
+--- a/spice-display.c
++++ b/spice-display.c
+@@ -31,10 +31,15 @@ static struct SpiceDisplay {
+ 
+ QXLUpdate *qemu_spice_display_create_update(DisplayState *ds, Rect *dirty, int unique)
+ {
++    PixelFormat pf;
+     QXLUpdate *update;
+     QXLDrawable *drawable;
+     QXLImage *image;
+     QXLCommand *cmd;
++    uint32_t *dst;
++    uint16_t *src16;
++    void *src;
++    int pixels, x, y;
+ 
+     dirty->left = 0;
+ #if 0
+@@ -43,7 +48,8 @@ QXLUpdate *qemu_spice_display_create_update(DisplayState *ds, Rect *dirty, int u
+             dirty->top, dirty->bottom);
+ #endif
+ 
+-    update   = qemu_mallocz(sizeof(*update));
++    pixels   = (dirty->bottom - dirty->top) * (dirty->right - dirty->left);
++    update   = qemu_mallocz(sizeof(*update) + pixels * sizeof(uint32_t));
+     drawable = &update->drawable;
+     image    = &update->image;
+     cmd      = &update->cmd;
+@@ -67,25 +73,43 @@ QXLUpdate *qemu_spice_display_create_update(DisplayState *ds, Rect *dirty, int u
+     image->descriptor.type   = IMAGE_TYPE_BITMAP;
+     image->descriptor.flags  = 0;
+     QXL_SET_IMAGE_ID(image, QXL_IMAGE_GROUP_DEVICE, unique);
+-    image->bitmap.flags      = QXL_BITMAP_DIRECT | QXL_BITMAP_TOP_DOWN | QXL_BITMAP_UNSTABLE;
+-    image->bitmap.stride     = ds_get_linesize(ds);
++    image->bitmap.flags      = QXL_BITMAP_DIRECT | QXL_BITMAP_TOP_DOWN;
++    image->bitmap.stride     = drawable->u.copy.src_area.right * sizeof(uint32_t);
+     image->descriptor.width  = image->bitmap.x = drawable->u.copy.src_area.right;
+     image->descriptor.height = image->bitmap.y = drawable->u.copy.src_area.bottom;
+-    image->bitmap.data = (PHYSICAL)(ds_get_data(ds) +
+-                                    dirty->top * image->bitmap.stride +
+-                                    dirty->left * ds_get_bytes_per_pixel(ds));
++    image->bitmap.data = (PHYSICAL)update->bitmap;
+     image->bitmap.palette = 0;
+-    switch (ds_get_bits_per_pixel(ds)) {
+-    case 16:
+-        image->bitmap.format = BITMAP_FMT_16BIT;
+-        break;
+-    case 32:
+-        image->bitmap.format = BITMAP_FMT_32BIT;
+-        break;
+-    default:
+-        fprintf(stderr, "%s: unhandled depth: %d bits\n", __FUNCTION__,
+-                ds_get_bits_per_pixel(ds));
+-        abort();
++    image->bitmap.format = BITMAP_FMT_32BIT;
++
++    dst = update->bitmap;
++    src = (ds_get_data(ds) +
++           dirty->top * ds_get_linesize(ds) +
++           dirty->left * ds_get_bytes_per_pixel(ds));
++    pf = ds->surface->pf;
++    for (y = 0; y < image->bitmap.y; y++) {
++        switch (ds_get_bits_per_pixel(ds)) {
++        case 16:
++            src16 = src;
++            for (x = 0; x < image->bitmap.x; x++) {
++                uint32_t r = (src16[x] & pf.rmask) >> pf.rshift;
++                uint32_t g = (src16[x] & pf.gmask) >> pf.gshift;
++                uint32_t b = (src16[x] & pf.bmask) >> pf.bshift;
++                r <<= (8 - pf.rbits);
++                g <<= (8 - pf.gbits);
++                b <<= (8 - pf.bbits);
++                dst[x] = (r << 16) | (g << 8) | b;
++            }
++            break;
++        case 32:
++            memcpy(dst, src, image->bitmap.stride);
++            break;
++        default:
++            fprintf(stderr, "%s: unhandled depth: %d bits\n", __FUNCTION__,
++                    ds_get_bits_per_pixel(ds));
++            abort();
++        }
++        dst += image->bitmap.x;
++        src += ds_get_linesize(ds);
+     }
+ 
+     cmd->type = QXL_CMD_DRAW;
+diff --git a/spice-display.h b/spice-display.h
+index 17de7b3..6b25de4 100644
+--- a/spice-display.h
++++ b/spice-display.h
+@@ -6,6 +6,7 @@ typedef struct QXLUpdate {
+     QXLDrawable drawable;
+     QXLImage image;
+     QXLCommand cmd;
++    uint32_t bitmap[];
+ } QXLUpdate;
+ 
+ QXLUpdate *qemu_spice_display_create_update(DisplayState *ds, Rect *dirty, int unique);
+-- 
+1.7.0.3
+

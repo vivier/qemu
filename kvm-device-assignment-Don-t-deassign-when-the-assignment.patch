@@ -1,0 +1,58 @@
+From 98341003b2d1dda297ceb6d492736e8a947084ee Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Mon, 14 Jun 2010 21:09:53 -0300
+Subject: [PATCH 3/5] device-assignment: Don't deassign when the assignment fails
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100614210935.9529.53328.stgit@localhost.localdomain>
+Patchwork-id: 9907
+O-Subject: [RHEL6.0 qemu-kvm PATCH] device-assignment: Don't deassign when the
+	assignment fails
+Bugzilla: 597968
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+Bugzilla: 597968
+Upstream status: applied, unknown commit id
+
+The last thing assign_device() does is call into KVM_ASSIGN_PCI_DEVICE.
+If that fails, the device is not assigned, so we shouldn't then try to
+deassign it.  If you try to assign the same device multiple times, you
+can get into a nasty fail-succeed-fail-succeed loop.  And we certainly
+shouldn't take the assigned_out branch before we've even attempted
+to assign the device.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+---
+
+ hw/device-assignment.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index 522eca5..5ffe6f3 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -1214,12 +1214,12 @@ static int assigned_initfn(struct PCIDevice *pci_dev)
+     if (pci_enable_capability_support(pci_dev, 0, NULL,
+                     assigned_device_pci_cap_write_config,
+                     assigned_device_pci_cap_init) < 0)
+-        goto assigned_out;
++        goto out;
+ 
+     /* assign device to guest */
+     r = assign_device(dev);
+     if (r < 0)
+-        goto assigned_out;
++        goto out;
+ 
+     /* assign irq for the device */
+     r = assign_irq(dev);
+-- 
+1.7.0.3
+

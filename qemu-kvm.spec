@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.86%{?dist}
+Release: 2.87%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1222,6 +1222,17 @@ Patch1597: kvm-QMP-Fix-error-reporting-in-the-async-API.patch
 Patch1598: kvm-QMP-Remove-leading-whitespace-in-package.patch
 # For bz#601540 - qemu requires ability to verify location of cpu model definition file..
 Patch1599: kvm-Add-optional-dump-of-default-config-file-paths-v2-BZ.patch
+# For bz#597198 - qxl: 16bpp vga mode is broken.
+Patch1600: kvm-qxl-drop-check-for-depths-32.patch
+# For bz#597198 - qxl: 16bpp vga mode is broken.
+# For bz#600205 - Live migration cause qemu-kvm Segmentation fault (core dumped)by using "-vga std"
+Patch1601: kvm-spice-handle-16-bit-color-depth.patch
+# For bz#597968 - Should not allow one physical NIC card to be assigned to one guest for many times
+Patch1602: kvm-device-assignment-Don-t-deassign-when-the-assignment.patch
+# For bz#566785 - virt block layer must not keep guest's logical_block_size fixed
+Patch1603: kvm-block-fix-physical_block_size-calculation.patch
+# For bz#601517 - x2apic needs to be present in all new Intel cpu models..
+Patch1604: kvm-Add-x2apic-to-cpuid-feature-set-for-new-Intel-models.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1884,6 +1895,11 @@ such as kvm_stat.
 %patch1597 -p1
 %patch1598 -p1
 %patch1599 -p1
+%patch1600 -p1
+%patch1601 -p1
+%patch1602 -p1
+%patch1603 -p1
+%patch1604 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2074,6 +2090,23 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jun 29 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.87.el6
+- kvm-qxl-drop-check-for-depths-32.patch [bz#597198]
+- kvm-spice-handle-16-bit-color-depth.patch [bz#597198 bz#600205]
+- kvm-device-assignment-Don-t-deassign-when-the-assignment.patch [bz#597968]
+- kvm-block-fix-physical_block_size-calculation.patch [bz#566785]
+- kvm-Add-x2apic-to-cpuid-feature-set-for-new-Intel-models.patch [bz#601517]
+- Resolves: bz#566785
+  (virt block layer must not keep guest's logical_block_size fixed)
+- Resolves: bz#597198
+  (qxl: 16bpp vga mode is broken.)
+- Resolves: bz#597968
+  (Should not allow one physical NIC card to be assigned to one guest for many times)
+- Resolves: bz#600205
+  (Live migration cause qemu-kvm Segmentation fault (core dumped)by using "-vga std")
+- Resolves: bz#601517
+  (x2apic needs to be present in all new Intel cpu models..)
+
 * Mon Jun 28 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.86.el6
 - kvm-net-delete-QemuOpts-when-net_client_init-fails.patch [bz#603851]
 - kvm-QMP-Fix-error-reporting-in-the-async-API.patch [bz#587382]
