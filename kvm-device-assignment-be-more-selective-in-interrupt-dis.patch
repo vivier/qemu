@@ -1,0 +1,102 @@
+From 1f3771aa029990b917d6fc6fced8d43324601c3d Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 29 Jun 2010 17:15:45 -0300
+Subject: [PATCH] device-assignment: be more selective in interrupt disabling
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100629171522.3167.14000.stgit@localhost.localdomain>
+Patchwork-id: 10348
+O-Subject: [RHEL6.0 qemu-kvm PATCH v2] device-assignment: be more selective in
+	interrupt disabling
+Bugzilla: 605361
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Chris Wright <chrisw@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 605361
+Upstream status: applied
+
+An 82576 physical function assigned to a Windows 7 guest currently
+doesn't work because the driver seems to gratuitiously disable
+MSI and MSIX interrupts.  When it does this, we blindly deassign
+the current interrupt setup, leaving the device with no interrupts.
+Instead let's only deassign the irq if we were previously using
+MSI/MSIX or if we're going to start using MSI/MSIX.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+---
+
+v2: clear the assigned_dev interrupt type, not the local variable
+
+ hw/device-assignment.c |   34 +++++++++++++++++++++++++---------
+ 1 files changed, 25 insertions(+), 9 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |   34 +++++++++++++++++++++++++---------
+ 1 files changed, 25 insertions(+), 9 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index 5ffe6f3..eba7d8b 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -834,13 +834,20 @@ static void assigned_dev_update_msi(PCIDevice *pci_dev, unsigned int ctrl_pos)
+         calc_assigned_dev_id(assigned_dev->h_busnr,
+                 (uint8_t)assigned_dev->h_devfn);
+ 
+-    if (assigned_dev->irq_requested_type) {
+-	    assigned_irq_data.flags = assigned_dev->irq_requested_type;
+-	    free_dev_irq_entries(assigned_dev);
+-	    r = kvm_deassign_irq(kvm_context, &assigned_irq_data);
+-	    /* -ENXIO means no assigned irq */
+-	    if (r && r != -ENXIO)
+-		    perror("assigned_dev_update_msi: deassign irq");
++    /* Some guests gratuitously disable MSI even if they're not using it,
++     * try to catch this by only deassigning irqs if the guest is using
++     * MSI or intends to start. */
++    if ((assigned_dev->irq_requested_type & KVM_DEV_IRQ_GUEST_MSI) ||
++        (ctrl_byte & PCI_MSI_FLAGS_ENABLE)) {
++
++        assigned_irq_data.flags = assigned_dev->irq_requested_type;
++        free_dev_irq_entries(assigned_dev);
++        r = kvm_deassign_irq(kvm_context, &assigned_irq_data);
++        /* -ENXIO means no assigned irq */
++        if (r && r != -ENXIO)
++            perror("assigned_dev_update_msi: deassign irq");
++
++        assigned_dev->irq_requested_type = 0;
+     }
+ 
+     if (ctrl_byte & PCI_MSI_FLAGS_ENABLE) {
+@@ -991,17 +998,26 @@ static void assigned_dev_update_msix(PCIDevice *pci_dev, unsigned int ctrl_pos)
+             calc_assigned_dev_id(assigned_dev->h_busnr,
+                     (uint8_t)assigned_dev->h_devfn);
+ 
+-    if (assigned_dev->irq_requested_type) {
++    /* Some guests gratuitously disable MSIX even if they're not using it,
++     * try to catch this by only deassigning irqs if the guest is using
++     * MSIX or intends to start. */
++    if ((assigned_dev->irq_requested_type & KVM_DEV_IRQ_GUEST_MSIX) ||
++        (*ctrl_word & PCI_MSIX_ENABLE)) {
++
+         assigned_irq_data.flags = assigned_dev->irq_requested_type;
+         free_dev_irq_entries(assigned_dev);
+         r = kvm_deassign_irq(kvm_context, &assigned_irq_data);
+         /* -ENXIO means no assigned irq */
+         if (r && r != -ENXIO)
+             perror("assigned_dev_update_msix: deassign irq");
++
++        assigned_dev->irq_requested_type = 0;
+     }
+-    assigned_irq_data.flags = KVM_DEV_IRQ_HOST_MSIX | KVM_DEV_IRQ_GUEST_MSIX;
+ 
+     if (*ctrl_word & PCI_MSIX_ENABLE) {
++        assigned_irq_data.flags = KVM_DEV_IRQ_HOST_MSIX |
++                                  KVM_DEV_IRQ_GUEST_MSIX;
++
+         if (assigned_dev_update_msix_mmio(pci_dev) < 0) {
+             perror("assigned_dev_update_msix_mmio");
+             return;
+-- 
+1.7.0.3
+

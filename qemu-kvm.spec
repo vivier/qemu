@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.88%{?dist}
+Release: 2.89%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1237,6 +1237,8 @@ Patch1604: kvm-Add-x2apic-to-cpuid-feature-set-for-new-Intel-models.patch
 Patch1605: kvm-Exit-if-incoming-migration-fails.patch
 # For bz#570174 - Restoring a qemu guest from a saved state file using -incoming sometimes fails and hangs
 Patch1606: kvm-Factorize-common-migration-incoming-code.patch
+# For bz#605361 - 82576 physical function device assignment doesn't work with win7
+Patch1607: kvm-device-assignment-be-more-selective-in-interrupt-dis.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1906,6 +1908,7 @@ such as kvm_stat.
 %patch1604 -p1
 %patch1605 -p1
 %patch1606 -p1
+%patch1607 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2096,6 +2099,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jun 29 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.89.el6
+- kvm-device-assignment-be-more-selective-in-interrupt-dis.patch [bz#605361]
+- Resolves: bz#605361
+  (82576 physical function device assignment doesn't work with win7)
+
 * Tue Jun 29 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.88.el6
 - kvm-Exit-if-incoming-migration-fails.patch [bz#570174]
 - kvm-Factorize-common-migration-incoming-code.patch [bz#570174]
