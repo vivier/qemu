@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.87%{?dist}
+Release: 2.88%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1233,6 +1233,10 @@ Patch1602: kvm-device-assignment-Don-t-deassign-when-the-assignment.patch
 Patch1603: kvm-block-fix-physical_block_size-calculation.patch
 # For bz#601517 - x2apic needs to be present in all new Intel cpu models..
 Patch1604: kvm-Add-x2apic-to-cpuid-feature-set-for-new-Intel-models.patch
+# For bz#570174 - Restoring a qemu guest from a saved state file using -incoming sometimes fails and hangs
+Patch1605: kvm-Exit-if-incoming-migration-fails.patch
+# For bz#570174 - Restoring a qemu guest from a saved state file using -incoming sometimes fails and hangs
+Patch1606: kvm-Factorize-common-migration-incoming-code.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1900,6 +1904,8 @@ such as kvm_stat.
 %patch1602 -p1
 %patch1603 -p1
 %patch1604 -p1
+%patch1605 -p1
+%patch1606 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2090,6 +2096,12 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jun 29 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.88.el6
+- kvm-Exit-if-incoming-migration-fails.patch [bz#570174]
+- kvm-Factorize-common-migration-incoming-code.patch [bz#570174]
+- Resolves: bz#570174
+  (Restoring a qemu guest from a saved state file using -incoming sometimes fails and hangs)
+
 * Tue Jun 29 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.87.el6
 - kvm-qxl-drop-check-for-depths-32.patch [bz#597198]
 - kvm-spice-handle-16-bit-color-depth.patch [bz#597198 bz#600205]
