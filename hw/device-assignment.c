@@ -166,32 +166,60 @@ static void assigned_dev_iomem_map(PCIDevice *pci_dev, int region_num,
     region->e_physbase = e_phys;
     region->e_size = e_size;
 
-    if (!first_map)
-	kvm_destroy_phys_mem(kvm_context, old_ephys,
-                             TARGET_PAGE_ALIGN(old_esize));
-
     if (e_size > 0) {
         /* deal with MSI-X MMIO page */
         if (real_region->base_addr <= r_dev->msix_table_addr &&
                 real_region->base_addr + real_region->size >=
                 r_dev->msix_table_addr) {
+
             int offset = r_dev->msix_table_addr - real_region->base_addr;
-            ret = munmap(region->u.r_virtbase + offset, TARGET_PAGE_SIZE);
-            if (ret == 0)
-                DEBUG("munmap done, virt_base 0x%p\n",
-                        region->u.r_virtbase + offset);
-            else {
-                fprintf(stderr, "%s: fail munmap msix table!\n", __func__);
-                exit(1);
-            }
+
             cpu_register_physical_memory(e_phys + offset,
-                    TARGET_PAGE_SIZE, r_dev->mmio_index);
+                                         TARGET_PAGE_SIZE, r_dev->mmio_index);
+
+            if (offset > 0) {
+                if (!first_map)
+                    kvm_destroy_phys_mem(kvm_context, old_ephys,
+                                         TARGET_PAGE_ALIGN(offset));
+
+                ret = kvm_register_phys_mem(kvm_context, e_phys,
+                                            region->u.r_virtbase,
+                                            TARGET_PAGE_ALIGN(offset), 0);
+                if (ret != 0)
+                    goto out;
+            }
+
+            if (e_size - offset - TARGET_PAGE_SIZE > 0) {
+                if (!first_map)
+                    kvm_destroy_phys_mem(kvm_context,
+                                         old_ephys + offset + TARGET_PAGE_SIZE,
+                                         TARGET_PAGE_ALIGN(e_size - offset -
+                                                           TARGET_PAGE_SIZE));
+
+                ret = kvm_register_phys_mem(kvm_context,
+                                            e_phys + offset + TARGET_PAGE_SIZE,
+                                            region->u.r_virtbase + offset +
+                                            TARGET_PAGE_SIZE,
+                                            TARGET_PAGE_ALIGN(e_size - offset -
+                                                              TARGET_PAGE_SIZE),
+                                            0);
+                if (ret != 0)
+                    goto out;
+            }
+
+        } else {
+
+            if (!first_map)
+                kvm_destroy_phys_mem(kvm_context, old_ephys,
+                                     TARGET_PAGE_ALIGN(old_esize));
+
+            ret = kvm_register_phys_mem(kvm_context, e_phys,
+                                        region->u.r_virtbase,
+                                        TARGET_PAGE_ALIGN(e_size), 0);
         }
-	ret = kvm_register_phys_mem(kvm_context, e_phys,
-                                    region->u.r_virtbase,
-                                    TARGET_PAGE_ALIGN(e_size), 0);
     }
 
+out:
     if (ret != 0) {
 	fprintf(stderr, "%s: Error: create new mapping failed\n", __func__);
 	exit(1);
@@ -648,9 +676,28 @@ static void free_assigned_device(AssignedDevice *dev)
                 kvm_remove_ioperm_data(region->u.r_baseport, region->r_size);
                 continue;
             } else if (pci_region->type & IORESOURCE_MEM) {
-                if (region->e_size > 0)
+                if (region->e_size == 0)
+                    continue;
+
+                if (pci_region->base_addr <= dev->msix_table_addr &&
+                    pci_region->base_addr + pci_region->size >=
+                    dev->msix_table_addr) {
+
+                    int offset = dev->msix_table_addr - pci_region->base_addr;
+
+                    if (offset > 0)
+                        kvm_destroy_phys_mem(kvm_context, region->e_physbase,
+                                             TARGET_PAGE_ALIGN(offset));
+                    if (region->e_size - offset - TARGET_PAGE_SIZE > 0)
+                        kvm_destroy_phys_mem(kvm_context,
+                               region->e_physbase + offset + TARGET_PAGE_SIZE,
+                               TARGET_PAGE_ALIGN(region->e_size - offset -
+                                                 TARGET_PAGE_SIZE));
+
+                } else {
                     kvm_destroy_phys_mem(kvm_context, region->e_physbase,
                                          TARGET_PAGE_ALIGN(region->e_size));
+                }
 
                 if (region->u.r_virtbase) {
                     int ret = munmap(region->u.r_virtbase,
