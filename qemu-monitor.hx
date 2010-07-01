@@ -1570,6 +1570,57 @@ Note: This command must be issued before issuing any other command.
 
 EQMP
 
+    {
+        .name       = RFQDN_REDHAT "drive_add",
+        .args_type  = "simple-drive:O",
+        .params     = "id=name,[file=file][,format=f][,media=d]...",
+        .help       = "Create a drive similar to -device if=none.",
+	.user_print = monitor_user_noop,
+        .mhandler.cmd_new = simple_drive_add,
+    },
+
+STEXI
+@item __com.redhat_drive_add
+@findex __com.redhat_drive_add
+Create a drive similar to -device if=none.
+ETEXI
+SQMP
+__com.redhat_drive_add
+----------------------
+
+Create a drive similar to -device if=none.
+
+Arguments:
+
+- "id": Drive ID, must be unique (json-string)
+- "file": Disk image (json-string, optional)
+- "format": Disk format (json-string, optional)
+- "aio": How to perform asynchronous disk I/O (json-string, optional)
+- "cache": Host cache use policy (json-string, optional)
+- "cyls", "heads", "secs": Disk geometry (json-int, optional)
+- "trans": BIOS translation mode (json-string, optional)
+- "media": Media type (json-string, optional)
+- "readonly": Open image read-only (json-bool, optional)
+- "rerror": What to do on read error (json-string, optional)
+- "werror": What to do on write error (json-string, optional)
+- "serial": Drive serial number (json-string, optional)
+- "snapshot": Enable snapshot mode (json-bool, optional)
+
+Example:
+
+1. Add a drive without medium:
+
+-> { "execute": "__com.redhat_drive_add", "arguments": { "id": "foo" } }
+<- {"return": {}}
+
+2. Add a drive with 
+
+-> { "execute": "__com.redhat_drive_add",
+     "arguments": { "id": "bar", "file": "tmp.qcow2", "format": "qcow2" } }
+<- {"return": {}}
+
+EQMP
+
 #if defined(CONFIG_SPICE)
     {
         .name       = RFQDN_REDHAT "set_password",

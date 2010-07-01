@@ -88,6 +88,20 @@ QemuOptsList qemu_drive_opts = {
     },
 };
 
+QemuOptsList qemu_simple_drive_opts = {
+    .name = "simple-drive",
+    .implied_opt_name = "format",
+    .head = QTAILQ_HEAD_INITIALIZER(qemu_simple_drive_opts.head),
+    .desc = {
+        /*
+         * no elements => accept any
+         * sanity checking will happen later
+         * when setting device properties
+         */
+        { /* end if list */ }
+    }
+};
+
 QemuOptsList qemu_chardev_opts = {
     .name = "chardev",
     .implied_opt_name = "backend",
@@ -374,6 +388,7 @@ QemuOptsList qemu_spice_opts = {
 
 static QemuOptsList *vm_config_groups[] = {
     &qemu_drive_opts,
+    &qemu_simple_drive_opts,
     &qemu_chardev_opts,
     &qemu_device_opts,
     &qemu_netdev_opts,

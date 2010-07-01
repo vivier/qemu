@@ -24,6 +24,7 @@
 
 #include "hw.h"
 #include "boards.h"
+#include "qerror.h"
 #include "net.h"
 #include "block_int.h"
 #include "sysemu.h"
@@ -45,4 +46,67 @@ DriveInfo *add_init_drive(const char *optstr)
     }
 
     return dinfo;
+}
+
+static void check_parm(const char *key, QObject *obj, void *opaque)
+{
+    static const char *valid_keys[] = {
+        "id", "cyls", "heads", "secs", "trans", "media", "snapshot",
+        "file", "cache", "aio", "format", "serial", "rerror", "werror",
+        "readonly", NULL
+    };
+    int *stopped = opaque;
+    const char **p;
+
+    if (*stopped) {
+        return;
+    }
+
+    for (p = valid_keys; *p; p++) {
+        if (!strcmp(key, *p)) {
+            return;
+        }
+    }
+    
+    qerror_report(QERR_INVALID_PARAMETER, key);
+    *stopped = 1;
+}
+
+int simple_drive_add(Monitor *mon, const QDict *qdict, QObject **ret_data)
+{
+    int stopped, fatal_error;
+    QemuOpts *opts;
+    DriveInfo *dinfo;
+
+    if (!qdict_haskey(qdict, "id")) {
+        qerror_report(QERR_MISSING_PARAMETER, "id");
+        return -1;
+    }
+
+    stopped = 0;
+    qdict_iter(qdict, check_parm, &stopped);
+    if (stopped) {
+        return -1;
+    }
+
+    opts = qemu_opts_from_qdict(&qemu_drive_opts, qdict);
+    if (!opts) {
+        return -1;
+    }
+    qemu_opt_set(opts, "if", "none");
+    dinfo = drive_init(opts, current_machine, &fatal_error);
+    if (!dinfo && fatal_error) {
+        qerror_report(QERR_DEVICE_INIT_FAILED, /* close enough */
+                      qemu_opts_id(opts));
+        /* drive_init() can leave an empty drive behind, reap it */
+        dinfo = drive_get_by_id(qemu_opts_id(opts));
+        if (dinfo) {
+            drive_uninit(dinfo);
+        } else {
+            qemu_opts_del(opts);
+        }
+        return -1;
+    }
+
+    return 0;
 }
