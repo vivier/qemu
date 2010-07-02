@@ -70,10 +70,10 @@ case "$1" in
         status -p ${pidfile} $prog
 	RETVAL=$?
 	;;
-  restart)
+  restart|force-reload)
 	restart
 	;;
-  condrestart)
+  condrestart|try-restart)
 	condrestart
 	;;
   retune)
@@ -81,8 +81,8 @@ case "$1" in
         RETVAL=$?
         ;;
   *)
-	echo $"Usage: $prog {start|stop|restart|condrestart|status|retune|help}"
-	RETVAL=3
+	echo $"Usage: $prog {start|stop|restart|force-reload|condrestart|try-restart|status|retune|help}"
+	RETVAL=2
 esac
 
 exit $RETVAL
