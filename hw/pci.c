@@ -77,6 +77,7 @@ static struct BusInfo pci_bus_info = {
 static void pci_update_mappings(PCIDevice *d);
 static void pci_set_irq(void *opaque, int irq_num, int level);
 static int pci_add_option_rom(PCIDevice *pdev);
+static void pci_del_option_rom(PCIDevice *pdev);
 
 target_phys_addr_t pci_mem_base;
 static uint16_t pci_default_sub_vendor_id = PCI_SUBVENDOR_ID_REDHAT_QUMRANET;
@@ -733,6 +734,7 @@ static int pci_unregister_device(DeviceState *dev)
         return ret;
 
     pci_unregister_io_regions(pci_dev);
+    pci_del_option_rom(pci_dev);
     do_pci_unregister_device(pci_dev);
     return 0;
 }
@@ -1665,6 +1667,15 @@ static int pci_add_option_rom(PCIDevice *pdev)
                      0, pci_map_option_rom);
 
     return 0;
+}
+
+static void pci_del_option_rom(PCIDevice *pdev)
+{
+    if (!pdev->rom_offset)
+        return;
+
+    qemu_ram_free(pdev->rom_offset);
+    pdev->rom_offset = 0;
 }
 
 /* Reserve space and add capability to the linked list in pci config space */
