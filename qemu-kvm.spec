@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.91%{?dist}
+Release: 2.92%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1261,6 +1261,7 @@ Patch1616: kvm-hxtool-Fix-line-number-reporting-on-SQMP-EQMP-errors.patch
 Patch1617: kvm-monitor-New-command-__com.redhat_drive_add.patch
 # For bz#611229 - -rtc cmdline changes
 Patch1618: kvm-Fix-driftfix-option.patch
+Patch1619: kvm-make-release-fix-mtime-on-rhel6-beta.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1942,6 +1943,7 @@ such as kvm_stat.
 %patch1616 -p1
 %patch1617 -p1
 %patch1618 -p1
+%patch1619 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2132,6 +2134,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Jul 07 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.92.el6
+- build-time-only fix: fix the tarball-generation make-release script for newer git versions
+  (kvm-make-release-fix-mtime-on-rhel6-beta.patch)
+- Related: bz#581963 bz#582262 bz#611229
+
 * Wed Jul 07 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.91.el6
 - kvm-doc-Update-monitor-info-subcommands.patch [bz#582262]
 - kvm-Fix-typo-in-balloon-help.patch [bz#582262]
