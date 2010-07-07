@@ -1128,7 +1128,7 @@ int apic_init(CPUState *env)
     }
     s->timer = qemu_new_timer(vm_clock, apic_timer, s);
 
-    vmstate_register(s->idx, &vmstate_apic, s);
+    vmstate_register(NULL, s->idx, &vmstate_apic, s);
     qemu_register_reset(apic_reset, s);
 
     /* apic_reset must be called before the vcpu threads are initialized and load

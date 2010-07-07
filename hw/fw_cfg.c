@@ -352,7 +352,7 @@ FWCfgState *fw_cfg_init(uint32_t ctl_port, uint32_t data_port,
     fw_cfg_add_i16(s, FW_CFG_MAX_CPUS, (uint16_t)max_cpus);
     fw_cfg_add_i16(s, FW_CFG_BOOT_MENU, (uint16_t)boot_menu);
 
-    vmstate_register(-1, &vmstate_fw_cfg, s);
+    vmstate_register(NULL, -1, &vmstate_fw_cfg, s);
     qemu_register_reset(fw_cfg_reset, s);
 
     return s;

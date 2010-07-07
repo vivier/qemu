@@ -279,7 +279,7 @@ int qdev_init(DeviceState *dev)
     }
     qemu_register_reset(qdev_reset, dev);
     if (dev->info->vmsd)
-        vmstate_register(-1, dev->info->vmsd, dev);
+        vmstate_register(dev, -1, dev->info->vmsd, dev);
     dev->state = DEV_STATE_INITIALIZED;
     return 0;
 }
@@ -329,7 +329,7 @@ void qdev_free(DeviceState *dev)
             qbus_free(bus);
         }
         if (dev->info->vmsd)
-            vmstate_unregister(dev->info->vmsd, dev);
+            vmstate_unregister(dev, dev->info->vmsd, dev);
         if (dev->info->exit)
             dev->info->exit(dev);
         if (dev->opts)

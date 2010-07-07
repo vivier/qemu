@@ -1061,7 +1061,8 @@ static int calculate_new_instance_id(const char *idstr)
    of the system, so instance_id should be removed/replaced.
    Meanwhile pass -1 as instance_id if you do not already have a clearly
    distinguishing id for all instances of your device class. */
-int register_savevm_live(const char *idstr,
+int register_savevm_live(DeviceState *dev,
+                         const char *idstr,
                          int instance_id,
                          int version_id,
                          SaveSetParamsHandler *set_params,
@@ -1093,18 +1094,19 @@ int register_savevm_live(const char *idstr,
     return 0;
 }
 
-int register_savevm(const char *idstr,
+int register_savevm(DeviceState *dev,
+                    const char *idstr,
                     int instance_id,
                     int version_id,
                     SaveStateHandler *save_state,
                     LoadStateHandler *load_state,
                     void *opaque)
 {
-    return register_savevm_live(idstr, instance_id, version_id,
+    return register_savevm_live(dev, idstr, instance_id, version_id,
                                 NULL, NULL, save_state, load_state, opaque);
 }
 
-void unregister_savevm(const char *idstr, void *opaque)
+void unregister_savevm(DeviceState *dev, const char *idstr, void *opaque)
 {
     SaveStateEntry *se, *new_se;
 
@@ -1116,8 +1118,8 @@ void unregister_savevm(const char *idstr, void *opaque)
     }
 }
 
-int vmstate_register(int instance_id, const VMStateDescription *vmsd,
-                     void *opaque)
+int vmstate_register(DeviceState *dev, int instance_id,
+                     const VMStateDescription *vmsd, void *opaque)
 {
     SaveStateEntry *se;
 
@@ -1141,7 +1143,8 @@ int vmstate_register(int instance_id, const VMStateDescription *vmsd,
     return 0;
 }
 
-void vmstate_unregister(const VMStateDescription *vmsd, void *opaque)
+void vmstate_unregister(DeviceState *dev, const VMStateDescription *vmsd,
+                        void *opaque)
 {
     SaveStateEntry *se, *new_se;
 

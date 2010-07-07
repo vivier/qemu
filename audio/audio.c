@@ -1895,7 +1895,7 @@ static void audio_init (void)
     }
 
     QLIST_INIT (&s->card_head);
-    vmstate_register (0, &vmstate_audio, s);
+    vmstate_register (NULL, 0, &vmstate_audio, s);
 }
 
 void AUD_register_card (const char *name, QEMUSoundCard *card)

@@ -605,7 +605,7 @@ i2c_bus *piix4_pm_init(PCIBus *bus, int devfn, uint32_t smb_io_base,
 
     qemu_system_powerdown = *qemu_allocate_irqs(piix4_powerdown, s, 1);
 
-    vmstate_register(0, &vmstate_acpi, s);
+    vmstate_register(&s->dev.qdev, 0, &vmstate_acpi, s);
 
     s->smbus = i2c_init_bus(NULL, "i2c");
     s->irq = sci_irq;

@@ -421,7 +421,7 @@ static void ipf_init1(ram_addr_t ram_size,
         }
         if (i != 0)
             env->hflags |= HF_HALTED_MASK;
-        register_savevm("cpu", i, 4, cpu_save, cpu_load, env);
+        register_savevm(NULL, "cpu", i, 4, cpu_save, cpu_load, env);
         qemu_register_reset(main_cpu_reset, 0, env);
     }
 

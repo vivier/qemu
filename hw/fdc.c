@@ -1948,7 +1948,7 @@ static int fdctrl_init_common(fdctrl_t *fdctrl, target_phys_addr_t io_base)
         DMA_register_channel(fdctrl->dma_chann, &fdctrl_transfer_handler, fdctrl);
     fdctrl_connect_drives(fdctrl);
 
-    vmstate_register(io_base, &vmstate_fdc, fdctrl);
+    vmstate_register(NULL, io_base, &vmstate_fdc, fdctrl);
     return 0;
 }
 

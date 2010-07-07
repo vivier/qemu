@@ -759,7 +759,7 @@ static int serial_isa_initfn(ISADevice *dev)
     s->baudbase = 115200;
     isa_init_irq(dev, &s->irq, isa->isairq);
     serial_init_core(s);
-    vmstate_register(isa->iobase, &vmstate_serial, s);
+    vmstate_register(&dev->qdev, isa->iobase, &vmstate_serial, s);
 
     register_ioport_write(isa->iobase, 8, 1, serial_ioport_write, s);
     register_ioport_read(isa->iobase, 8, 1, serial_ioport_read, s);
@@ -790,7 +790,7 @@ SerialState *serial_init(int base, qemu_irq irq, int baudbase,
     s->chr = chr;
     serial_init_core(s);
 
-    vmstate_register(base, &vmstate_serial, s);
+    vmstate_register(NULL, base, &vmstate_serial, s);
 
     register_ioport_write(base, 8, 1, serial_ioport_write, s);
     register_ioport_read(base, 8, 1, serial_ioport_read, s);
@@ -884,7 +884,7 @@ SerialState *serial_mm_init (target_phys_addr_t base, int it_shift,
     s->chr = chr;
 
     serial_init_core(s);
-    vmstate_register(base, &vmstate_serial, s);
+    vmstate_register(NULL, base, &vmstate_serial, s);
 
     if (ioregister) {
         s_io_memory = cpu_register_io_memory(serial_mm_read,

@@ -1791,7 +1791,7 @@ static int pci_nic_uninit(PCIDevice *pci_dev)
     EEPRO100State *s = DO_UPCAST(EEPRO100State, dev, pci_dev);
 
     cpu_unregister_io_memory(s->mmio_index);
-    vmstate_unregister(s->vmstate, s);
+    vmstate_unregister(&pci_dev->qdev, s->vmstate, s);
     eeprom93xx_free(s->eeprom);
     qemu_del_vlan_client(&s->nic->nc);
     return 0;
@@ -1848,7 +1848,7 @@ static int nic_init(PCIDevice *pci_dev, uint32_t device)
     s->vmstate = qemu_malloc(sizeof(vmstate_eepro100));
     memcpy(s->vmstate, &vmstate_eepro100, sizeof(vmstate_eepro100));
     s->vmstate->name = s->nic->nc.model;
-    vmstate_register(-1, s->vmstate, s);
+    vmstate_register(&pci_dev->qdev, -1, s->vmstate, s);
 
     if (!pci_dev->qdev.hotplugged) {
         static int loaded = 0;
