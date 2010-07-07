@@ -2544,7 +2544,9 @@ static long gethugepagesize(const char *path)
     return fs.f_bsize;
 }
 
-static void *file_ram_alloc(ram_addr_t memory, const char *path)
+static void *file_ram_alloc(RAMBlock *block,
+                            ram_addr_t memory,
+                            const char *path)
 {
     char *filename;
     void *area;
@@ -2613,6 +2615,7 @@ static void *file_ram_alloc(ram_addr_t memory, const char *path)
 	close(fd);
 	return (NULL);
     }
+    block->fd = fd;
     return area;
 }
 
@@ -2640,6 +2643,32 @@ extern const char *mem_path;
 #endif
 
 static ram_addr_t find_ram_offset(ram_addr_t size)
+{
+    RAMBlock *block, *next_block;
+    ram_addr_t offset, mingap = ULONG_MAX;
+
+    if (QLIST_EMPTY(&ram_list.blocks))
+        return 0;
+
+    QLIST_FOREACH(block, &ram_list.blocks, next) {
+        ram_addr_t end, next = ULONG_MAX;
+
+        end = block->offset + block->length;
+
+        QLIST_FOREACH(next_block, &ram_list.blocks, next) {
+            if (next_block->offset >= end) {
+                next = MIN(next, next_block->offset);
+            }
+        }
+        if (next - end >= size && next - end < mingap) {
+            offset =  end;
+            mingap = next - end;
+        }
+    }
+    return offset;
+}
+
+static ram_addr_t last_ram_offset(void)
 {
     RAMBlock *block;
     ram_addr_t last = 0;
@@ -2681,7 +2710,7 @@ ram_addr_t qemu_ram_alloc(DeviceState *dev, const char *name, ram_addr_t size)
         }
     }
 
-    new_block->host = file_ram_alloc(size, mem_path);
+    new_block->host = file_ram_alloc(new_block, size, mem_path);
     if (!new_block->host) {
 #if defined(TARGET_S390X) && defined(CONFIG_KVM)
     /* XXX S390 KVM requires the topmost vma of the RAM to be < 256GB */
@@ -2709,7 +2738,7 @@ ram_addr_t qemu_ram_alloc(DeviceState *dev, const char *name, ram_addr_t size)
     QLIST_INSERT_HEAD(&ram_list.blocks, new_block, next);
 
     ram_list.phys_dirty = qemu_realloc(ram_list.phys_dirty,
-        (new_block->offset + size) >> TARGET_PAGE_BITS);
+                                       last_ram_offset() >> TARGET_PAGE_BITS);
     memset(ram_list.phys_dirty + (new_block->offset >> TARGET_PAGE_BITS),
            0xff, size >> TARGET_PAGE_BITS);
 
@@ -2721,7 +2750,32 @@ ram_addr_t qemu_ram_alloc(DeviceState *dev, const char *name, ram_addr_t size)
 
 void qemu_ram_free(ram_addr_t addr)
 {
-    /* TODO: implement this.  */
+    RAMBlock *block;
+
+    QLIST_FOREACH(block, &ram_list.blocks, next) {
+        if (addr == block->offset) {
+            QLIST_REMOVE(block, next);
+            if (mem_path) {
+#if defined (__linux__) && !defined(TARGET_S390X)
+                if (block->fd) {
+                    munmap(block->host, block->length);
+                    close(block->fd);
+                } else {
+                    qemu_vfree(block->host);
+                }
+#endif
+            } else {
+#if defined(TARGET_S390X) && defined(CONFIG_KVM)
+                munmap(block->host, block->length);
+#else
+                qemu_vfree(block->host);
+#endif
+            }
+            qemu_free(block);
+            return;
+        }
+    }
+
 }
 
 /* Return a host pointer to ram allocated with qemu_ram_alloc.
