@@ -1,0 +1,243 @@
+From 6dcbbeb882eb95e78173ee0c4ed974e243546a13 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Wed, 30 Jun 2010 16:29:58 -0300
+Subject: [PATCH 3/9] monitor: Reorder info documentation
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1277915402-6415-4-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 10381
+O-Subject: [PATCH 3/7] monitor: Reorder info documentation
+Bugzilla: 582262
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Jan Kiszka <jan.kiszka@siemens.com>
+
+Push the doc fragments for the info command to the end of
+qemu-monitor.hx. This helps to establish a proper layout in the upcoming
+QMP documentation.
+
+Conflicts:
+
+  qemu-monitor.hx
+
+Signed-off-by: Jan Kiszka <jan.kiszka@siemens.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 33572ece26744889b14b7d72ac81870d076725ac)
+---
+ qemu-monitor.hx |  185 ++++++++++++++++++++++++++++---------------------------
+ 1 files changed, 95 insertions(+), 90 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-monitor.hx |  185 ++++++++++++++++++++++++++++---------------------------
+ 1 files changed, 95 insertions(+), 90 deletions(-)
+
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 37d2b1c..5306027 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -38,96 +38,6 @@ Commit changes to the disk images (if -snapshot is used) or backing files.
+ ETEXI
+ 
+     {
+-        .name       = "info",
+-        .args_type  = "item:s?",
+-        .params     = "[subcommand]",
+-        .help       = "show various information about the system state",
+-        .user_print = monitor_user_noop,
+-        .mhandler.cmd_new = do_info,
+-    },
+-
+-STEXI
+-@item info @var{subcommand}
+-@findex info
+-Show various information about the system state.
+-
+-@table @option
+-@item info version
+-show the version of QEMU
+-@item info commands
+-list QMP available commands
+-@item info network
+-show the various VLANs and the associated devices
+-@item info chardev
+-show the character devices
+-@item info block
+-show the block devices
+-@item info blockstats
+-show block device statistics
+-@item info registers
+-show the cpu registers
+-@item info cpus
+-show infos for each CPU
+-@item info history
+-show the command line history
+-@item info irq
+-show the interrupts statistics (if available)
+-@item info pic
+-show i8259 (PIC) state
+-@item info pci
+-show emulated PCI device info
+-@item info tlb
+-show virtual to physical memory mappings (i386 only)
+-@item info mem
+-show the active virtual memory mappings (i386 only)
+-@item info hpet
+-show state of HPET (i386 only)
+-@item info jit
+-show dynamic compiler info
+-@item info kvm
+-show KVM information
+-@item info numa
+-show NUMA information
+-@item info usb
+-show USB devices plugged on the virtual USB hub
+-@item info usbhost
+-show all USB host devices
+-@item info profile
+-show profiling information
+-@item info capture
+-show information about active capturing
+-@item info snapshots
+-show list of VM snapshots
+-@item info status
+-show the current VM status (running|paused)
+-@item info pcmcia
+-show guest PCMCIA status
+-@item info mice
+-show which guest mouse is receiving events
+-@item info vnc
+-show the vnc server status
+-@item info name
+-show the current VM name
+-@item info uuid
+-show the current VM UUID
+-@item info cpustats
+-show CPU statistics
+-@item info usernet
+-show user network stack connection states
+-@item info migrate
+-show migration status
+-@item info balloon
+-show balloon information
+-@item info qtree
+-show device tree
+-@item info qdm
+-show qdev device model list
+-@item info roms
+-show roms
+-@end table
+-ETEXI
+-
+-    {
+         .name       = "q|quit",
+         .args_type  = "",
+         .params     = "",
+@@ -1240,6 +1150,101 @@ STEXI
+ send migration info to spice client
+ ETEXI
+ 
++HXCOMM Keep the 'info' command at the end!
++HXCOMM This is required for the QMP documentation layout.
++
++    {
++        .name       = "info",
++        .args_type  = "item:s?",
++        .params     = "[subcommand]",
++        .help       = "show various information about the system state",
++        .user_print = monitor_user_noop,
++        .mhandler.cmd_new = do_info,
++    },
++
++STEXI
++@item info @var{subcommand}
++@findex info
++Show various information about the system state.
++
++@table @option
++@item info version
++show the version of QEMU
++@item info commands
++list QMP available commands
++@item info network
++show the various VLANs and the associated devices
++@item info chardev
++show the character devices
++@item info block
++show the block devices
++@item info blockstats
++show block device statistics
++@item info registers
++show the cpu registers
++@item info cpus
++show infos for each CPU
++@item info history
++show the command line history
++@item info irq
++show the interrupts statistics (if available)
++@item info pic
++show i8259 (PIC) state
++@item info pci
++show emulated PCI device info
++@item info tlb
++show virtual to physical memory mappings (i386 only)
++@item info mem
++show the active virtual memory mappings (i386 only)
++@item info hpet
++show state of HPET (i386 only)
++@item info jit
++show dynamic compiler info
++@item info kvm
++show KVM information
++@item info numa
++show NUMA information
++@item info usb
++show USB devices plugged on the virtual USB hub
++@item info usbhost
++show all USB host devices
++@item info profile
++show profiling information
++@item info capture
++show information about active capturing
++@item info snapshots
++show list of VM snapshots
++@item info status
++show the current VM status (running|paused)
++@item info pcmcia
++show guest PCMCIA status
++@item info mice
++show which guest mouse is receiving events
++@item info vnc
++show the vnc server status
++@item info name
++show the current VM name
++@item info uuid
++show the current VM UUID
++@item info cpustats
++show CPU statistics
++@item info usernet
++show user network stack connection states
++@item info migrate
++show migration status
++@item info balloon
++show balloon information
++@item info qtree
++show device tree
++@item info qdm
++show qdev device model list
++@item info roms
++show roms
++@end table
++ETEXI
++
++HXCOMM DO NOT add new commands after 'info', move your addition before it!
++
+ STEXI
+ @end table
+ ETEXI
+-- 
+1.7.0.3
+

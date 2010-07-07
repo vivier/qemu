@@ -1,0 +1,516 @@
+From 46d9bd65cb07b6df10ae3cc51ed143f1c9989b74 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Wed, 30 Jun 2010 16:30:01 -0300
+Subject: [PATCH 6/9] Monitor: Drop QMP documentation from code
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1277915402-6415-7-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 10383
+O-Subject: [PATCH 6/7] Monitor: Drop QMP documentation from code
+Bugzilla: 582262
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Previous commit added QMP documentation to the qemu-monitor.hx
+file, it's is a copy of this information.
+
+While it's good to keep it near code, maintaining two copies of
+the same information is too hard and has little benefit as we
+don't expect client writers to consult the code to find how to
+use a QMP command.
+
+Conflicts:
+
+	block.c
+	hw/pci.c
+	input.c
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 637503d122eb7656d91a8489e254d9e880be7504)
+---
+ block.c     |   70 ----------------------------------------
+ hw/qdev.c   |   13 -------
+ migration.c |   38 ----------------------
+ monitor.c   |  102 -----------------------------------------------------------
+ net.c       |   22 -------------
+ qemu-char.c |   16 ---------
+ vl.c        |   17 ----------
+ vnc.c       |   29 -----------------
+ 8 files changed, 0 insertions(+), 307 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c     |   70 ----------------------------------------
+ hw/qdev.c   |   13 -------
+ migration.c |   38 ----------------------
+ monitor.c   |  102 -----------------------------------------------------------
+ net.c       |   22 -------------
+ qemu-char.c |   16 ---------
+ vl.c        |   17 ----------
+ vnc.c       |   29 -----------------
+ 8 files changed, 0 insertions(+), 307 deletions(-)
+
+diff --git a/block.c b/block.c
+index c878f77..21ceb79 100644
+--- a/block.c
++++ b/block.c
+@@ -1496,33 +1496,6 @@ void bdrv_info_print(Monitor *mon, const QObject *data)
+     qlist_iter(qobject_to_qlist(data), bdrv_print_dict, mon);
+ }
+ 
+-/**
+- * bdrv_info(): Block devices information
+- *
+- * Each block device information is stored in a QDict and the
+- * returned QObject is a QList of all devices.
+- *
+- * The QDict contains the following:
+- *
+- * - "device": device name
+- * - "type": device type
+- * - "removable": true if the device is removable, false otherwise
+- * - "locked": true if the device is locked, false otherwise
+- * - "inserted": only present if the device is inserted, it is a QDict
+- *    containing the following:
+- *          - "file": device file name
+- *          - "ro": true if read-only, false otherwise
+- *          - "drv": driver format name
+- *          - "backing_file": backing file name if one is used
+- *          - "encrypted": true if encrypted, false otherwise
+- *
+- * Example:
+- *
+- * [ { "device": "ide0-hd0", "type": "hd", "removable": false, "locked": false,
+- *     "inserted": { "file": "/tmp/foobar", "ro": false, "drv": "qcow2" } },
+- *   { "device": "floppy0", "type": "floppy", "removable": true,
+- *     "locked": false } ]
+- */
+ void bdrv_info(Monitor *mon, QObject **ret_data)
+ {
+     QList *bs_list;
+@@ -1628,49 +1601,6 @@ static QObject* bdrv_info_stats_bs(BlockDriverState *bs)
+     return res;
+ }
+ 
+-/**
+- * bdrv_info_stats(): show block device statistics
+- *
+- * Each device statistic information is stored in a QDict and
+- * the returned QObject is a QList of all devices.
+- *
+- * The QDict contains the following:
+- *
+- * - "device": device name
+- * - "stats": A QDict with the statistics information, it contains:
+- *     - "rd_bytes": bytes read
+- *     - "wr_bytes": bytes written
+- *     - "rd_operations": read operations
+- *     - "wr_operations": write operations
+- *     - "wr_highest_offset": Highest offset of a sector written since the
+- *       BlockDriverState has been opened
+- *     - "parent": Contains recursively the statistics of the underlying
+- *       protocol (e.g. the host file for a qcow2 image). If there is no
+- *       underlying protocol, this field is omitted.
+- *
+- * Example:
+- *
+- * [ { "device": "ide0-hd0",
+- *               "stats": { "rd_bytes": 512,
+- *                          "wr_bytes": 0,
+- *                          "rd_operations": 1,
+- *                          "wr_operations": 0,
+- *                          "wr_highest_offset": 0,
+- *                          "parent": {
+- *                              "stats": { "rd_bytes": 1024,
+- *                                         "wr_bytes": 0,
+- *                                         "rd_operations": 2,
+- *                                         "wr_operations": 0,
+- *                                         "wr_highest_offset": 0,
+- *                              }
+- *                          } } },
+- *   { "device": "ide1-cd0",
+- *               "stats": { "rd_bytes": 0,
+- *                          "wr_bytes": 0,
+- *                          "rd_operations": 0,
+- *                          "wr_operations": 0,
+- *                          "wr_highest_offset": 0 } },
+- */
+ void bdrv_info_stats(Monitor *mon, QObject **ret_data)
+ {
+     QObject *obj;
+diff --git a/hw/qdev.c b/hw/qdev.c
+index d3bf0fa..4d23adf 100644
+--- a/hw/qdev.c
++++ b/hw/qdev.c
+@@ -767,19 +767,6 @@ void do_info_qdm(Monitor *mon)
+     }
+ }
+ 
+-/**
+- * do_device_add(): Add a device
+- *
+- * Argument qdict contains
+- * - "driver": the name of the new device's driver
+- * - "bus": the device's parent bus (device tree path)
+- * - "id": the device's ID (must be unique)
+- * - device properties
+- *
+- * Example:
+- *
+- * { "driver": "usb-net", "id": "eth1", "netdev": "netdev1" }
+- */
+ int do_device_add(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     QemuOpts *opts;
+diff --git a/migration.c b/migration.c
+index d37ccd7..5170376 100644
+--- a/migration.c
++++ b/migration.c
+@@ -218,44 +218,6 @@ static void migrate_put_status(QDict *qdict, const char *name,
+     qdict_put_obj(qdict, name, obj);
+ }
+ 
+-/**
+- * do_info_migrate(): Migration status
+- *
+- * Return a QDict. If migration is active there will be another
+- * QDict with RAM migration status and if block migration is active
+- * another one with block migration status.
+- *
+- * The main QDict contains the following:
+- *
+- * - "status": migration status
+- * - "ram": only present if "status" is "active", it is a QDict with the
+- *   following RAM information (in bytes):
+- *          - "transferred": amount transferred
+- *          - "remaining": amount remaining
+- *          - "total": total
+- * - "disk": only present if "status" is "active" and it is a block migration,
+- *   it is a QDict with the following disk information (in bytes):
+- *          - "transferred": amount transferred
+- *          - "remaining": amount remaining
+- *          - "total": total
+- *
+- * Examples:
+- *
+- * 1. Migration is "completed":
+- *
+- * { "status": "completed" }
+- *
+- * 2. Migration is "active" and it is not a block migration:
+- *
+- * { "status": "active",
+- *            "ram": { "transferred": 123, "remaining": 123, "total": 246 } }
+- *
+- * 3. Migration is "active" and it is a block migration:
+- *
+- * { "status": "active",
+- *   "ram": { "total": 1057024, "remaining": 1053304, "transferred": 3720 },
+- *   "disk": { "total": 20971520, "remaining": 20880384, "transferred": 91136 }}
+- */
+ void do_info_migrate(Monitor *mon, QObject **ret_data)
+ {
+     QDict *qdict;
+diff --git a/monitor.c b/monitor.c
+index 88d370b..8f51189 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -685,18 +685,6 @@ static void do_info_version_print(Monitor *mon, const QObject *data)
+                                   qdict_get_str(qdict, "package"));
+ }
+ 
+-/**
+- * do_info_version(): Show QEMU version
+- *
+- * Return a QDict with the following information:
+- *
+- * - "qemu": QEMU's version
+- * - "package": package's version
+- *
+- * Example:
+- *
+- * { "qemu": "0.11.50", "package": "" }
+- */
+ static void do_info_version(Monitor *mon, QObject **ret_data)
+ {
+     const char *p = QEMU_PKGVERSION;
+@@ -721,17 +709,6 @@ static void do_info_name_print(Monitor *mon, const QObject *data)
+     monitor_printf(mon, "%s\n", qdict_get_str(qdict, "name"));
+ }
+ 
+-/**
+- * do_info_name(): Show VM name
+- *
+- * Return a QDict with the following information:
+- *
+- * - "name": VM's name (optional)
+- *
+- * Example:
+- *
+- * { "name": "qemu-name" }
+- */
+ static void do_info_name(Monitor *mon, QObject **ret_data)
+ {
+     *ret_data = qemu_name ? qobject_from_jsonf("{'name': %s }", qemu_name) :
+@@ -753,20 +730,6 @@ static QObject *get_cmd_dict(const char *name)
+     return qobject_from_jsonf("{ 'name': %s }", p);
+ }
+ 
+-/**
+- * do_info_commands(): List QMP available commands
+- *
+- * Each command is represented by a QDict, the returned QObject is a QList
+- * of all commands.
+- *
+- * The QDict contains:
+- *
+- * - "name": command's name
+- *
+- * Example:
+- *
+- * { [ { "name": "query-balloon" }, { "name": "system_powerdown" } ] }
+- */
+ static void do_info_commands(Monitor *mon, QObject **ret_data)
+ {
+     QList *cmd_list;
+@@ -799,17 +762,6 @@ static void do_info_hpet_print(Monitor *mon, const QObject *data)
+                    "enabled" : "disabled");
+ }
+ 
+-/**
+- * do_info_hpet(): Show HPET state
+- *
+- * Return a QDict with the following information:
+- *
+- * - "enabled": true if hpet if enabled, false otherwise
+- *
+- * Example:
+- *
+- * { "enabled": true }
+- */
+ static void do_info_hpet(Monitor *mon, QObject **ret_data)
+ {
+     *ret_data = qobject_from_jsonf("{ 'enabled': %i }", !no_hpet);
+@@ -821,17 +773,6 @@ static void do_info_uuid_print(Monitor *mon, const QObject *data)
+     monitor_printf(mon, "%s\n", qdict_get_str(qobject_to_qdict(data), "UUID"));
+ }
+ 
+-/**
+- * do_info_uuid(): Show VM UUID
+- *
+- * Return a QDict with the following information:
+- *
+- * - "UUID": Universally Unique Identifier
+- *
+- * Example:
+- *
+- * { "UUID": "550e8400-e29b-41d4-a716-446655440000" }
+- */
+ static void do_info_uuid(Monitor *mon, QObject **ret_data)
+ {
+     char uuid[64];
+@@ -930,25 +871,6 @@ static void monitor_print_cpus(Monitor *mon, const QObject *data)
+     qlist_iter(cpu_list, print_cpu_iter, mon);
+ }
+ 
+-/**
+- * do_info_cpus(): Show CPU information
+- *
+- * Return a QList. Each CPU is represented by a QDict, which contains:
+- *
+- * - "cpu": CPU index
+- * - "current": true if this is the current CPU, false otherwise
+- * - "halted": true if the cpu is halted, false otherwise
+- * - Current program counter. The key's name depends on the architecture:
+- *      "pc": i386/x86)64
+- *      "nip": PPC
+- *      "pc" and "npc": sparc
+- *      "PC": mips
+- *
+- * Example:
+- *
+- * [ { "CPU": 0, "current": true, "halted": false, "pc": 3227107138 },
+- *   { "CPU": 1, "current": false, "halted": true, "pc": 7108165 } ]
+- */
+ static void do_info_cpus(Monitor *mon, QObject **ret_data)
+ {
+     CPUState *env;
+@@ -2142,18 +2064,6 @@ static void do_info_kvm_print(Monitor *mon, const QObject *data)
+     }
+ }
+ 
+-/**
+- * do_info_kvm(): Show KVM information
+- *
+- * Return a QDict with the following information:
+- *
+- * - "enabled": true if KVM support is enabled, false otherwise
+- * - "present": true if QEMU has KVM support, false otherwise
+- *
+- * Example:
+- *
+- * { "enabled": true, "present": true }
+- */
+ static void do_info_kvm(Monitor *mon, QObject **ret_data)
+ {
+ #ifdef CONFIG_KVM
+@@ -2300,18 +2210,6 @@ static void do_info_status_print(Monitor *mon, const QObject *data)
+     monitor_printf(mon, "\n");
+ }
+ 
+-/**
+- * do_info_status(): VM status
+- *
+- * Return a QDict with the following information:
+- *
+- * - "running": true if the VM is running, or false if it is paused
+- * - "singlestep": true if the VM is in single step mode, false otherwise
+- *
+- * Example:
+- *
+- * { "running": true, "singlestep": false }
+- */
+ static void do_info_status(Monitor *mon, QObject **ret_data)
+ {
+     *ret_data = qobject_from_jsonf("{ 'running': %i, 'singlestep': %i }",
+diff --git a/net.c b/net.c
+index 2a05006..985099e 100644
+--- a/net.c
++++ b/net.c
+@@ -1197,18 +1197,6 @@ void net_host_device_remove(Monitor *mon, const QDict *qdict)
+     qemu_del_vlan_client(vc);
+ }
+ 
+-/**
+- * do_netdev_add(): Add a host network device
+- *
+- * Argument qdict contains
+- * - "type": the device type, "tap", "user", ...
+- * - "id": the device's ID (must be unique)
+- * - device options
+- *
+- * Example:
+- *
+- * { "type": "user", "id": "netdev1", "hostname": "a-guest" }
+- */
+ int do_netdev_add(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     QemuOpts *opts;
+@@ -1227,16 +1215,6 @@ int do_netdev_add(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     return res;
+ }
+ 
+-/**
+- * do_netdev_del(): Delete a host network device
+- *
+- * Argument qdict contains
+- * - "id": the device's ID
+- *
+- * Example:
+- *
+- * { "id": "netdev1" }
+- */
+ int do_netdev_del(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     const char *id = qdict_get_str(qdict, "id");
+diff --git a/qemu-char.c b/qemu-char.c
+index 4b0eeac..70a7425 100644
+--- a/qemu-char.c
++++ b/qemu-char.c
+@@ -2508,22 +2508,6 @@ void qemu_chr_info_print(Monitor *mon, const QObject *ret_data)
+     qlist_iter(qobject_to_qlist(ret_data), qemu_chr_qlist_iter, mon);
+ }
+ 
+-/**
+- * qemu_chr_info(): Character devices information
+- *
+- * Each device is represented by a QDict. The returned QObject is a QList
+- * of all devices.
+- *
+- * The QDict contains the following:
+- *
+- * - "label": device's label
+- * - "filename": device's file
+- *
+- * Example:
+- *
+- * [ { "label": "monitor", "filename", "stdio" },
+- *   { "label": "serial0", "filename": "vc" } ]
+- */
+ void qemu_chr_info(Monitor *mon, QObject **ret_data)
+ {
+     QList *chr_list;
+diff --git a/vl.c b/vl.c
+index c45784b..64de54c 100644
+--- a/vl.c
++++ b/vl.c
+@@ -589,23 +589,6 @@ void do_info_mice_print(Monitor *mon, const QObject *data)
+     qlist_iter(mice_list, info_mice_iter, mon);
+ }
+ 
+-/**
+- * do_info_mice(): Show VM mice information
+- *
+- * Each mouse is represented by a QDict, the returned QObject is a QList of
+- * all mice.
+- *
+- * The mouse QDict contains the following:
+- *
+- * - "name": mouse's name
+- * - "index": mouse's index
+- * - "current": true if this mouse is receiving events, false otherwise
+- *
+- * Example:
+- *
+- * [ { "name": "QEMU Microsoft Mouse", "index": 0, "current": false },
+- *   { "name": "QEMU PS/2 Mouse", "index": 1, "current": true } ]
+- */
+ void do_info_mice(Monitor *mon, QObject **ret_data)
+ {
+     QEMUPutMouseEntry *cursor;
+diff --git a/vnc.c b/vnc.c
+index e83a6d4..26acf73 100644
+--- a/vnc.c
++++ b/vnc.c
+@@ -321,35 +321,6 @@ void do_info_vnc_print(Monitor *mon, const QObject *data)
+     }
+ }
+ 
+-/**
+- * do_info_vnc(): Show VNC server information
+- *
+- * Return a QDict with server information. Connected clients are returned
+- * as a QList of QDicts.
+- *
+- * The main QDict contains the following:
+- *
+- * - "enabled": true or false
+- * - "host": server's IP address
+- * - "family": address family ("ipv4" or "ipv6")
+- * - "service": server's port number
+- * - "auth": authentication method
+- * - "clients": a QList of all connected clients
+- *
+- * Clients are described by a QDict, with the following information:
+- *
+- * - "host": client's IP address
+- * - "family": address family ("ipv4" or "ipv6")
+- * - "service": client's port number
+- * - "x509_dname": TLS dname (optional)
+- * - "sasl_username": SASL username (optional)
+- *
+- * Example:
+- *
+- * { "enabled": true, "host": "0.0.0.0", "service": "50402", "auth": "vnc",
+- *   "family": "ipv4",
+- *   "clients": [{ "host": "127.0.0.1", "service": "50401", "family": "ipv4" }]}
+- */
+ void do_info_vnc(Monitor *mon, QObject **ret_data)
+ {
+     if (vnc_display == NULL || vnc_display->display == NULL) {
+-- 
+1.7.0.3
+

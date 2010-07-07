@@ -1,0 +1,361 @@
+From 6e8d472c1f3ded49fda3da2532da5e856f63ae71 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Wed, 30 Jun 2010 16:30:00 -0300
+Subject: [PATCH 5/9] QMP: Sync documentation with RHEL6-only changes
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1277915402-6415-6-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 10385
+O-Subject: [PATCH 5/7] QMP: Sync documentation with RHEL6-only changes
+Bugzilla: 582262
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+- Drop handlers we don't have (screendump, set_link, query-pci)
+- Document rhel6-only commands (set_password, spice_migrate_info)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-monitor.hx |  284 +++++++-----------------------------------------------
+ 1 files changed, 37 insertions(+), 247 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-monitor.hx |  284 +++++++-----------------------------------------------
+ 1 files changed, 37 insertions(+), 247 deletions(-)
+
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 3f1ca66..f6795fc 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -11,7 +11,8 @@ SQMP
+                         QMP Supported Commands
+                         ----------------------
+ 
+-This document describes all commands currently supported by QMP.
++This document describes all commands currently supported by QMP in
++Red Hat Enterprise Linux 6.0.
+ 
+ Most of the time their usage is exactly the same as in the user Monitor, this
+ means that any other document which also describe commands (the manpage,
+@@ -227,22 +228,6 @@ STEXI
+ @findex screendump
+ Save screen into PPM image @var{filename}.
+ ETEXI
+-SQMP
+-screendump
+-----------
+-
+-Save screen into PPM image.
+-
+-Arguments:
+-
+-- "filename": file path (json-string)
+-
+-Example:
+-
+--> { "execute": "screendump", "arguments": { "filename": "/tmp/image" } }
+-<- { "return": {} }
+-
+-EQMP
+ 
+     {
+         .name       = "logfile",
+@@ -1328,23 +1313,6 @@ STEXI
+ @findex set_link
+ Set link @var{name} up or down.
+ ETEXI
+-SQMP
+-set_link
+---------
+-
+-Change the link status of a network adapter.
+-
+-Arguments:
+-
+-- "name": network device name (json-string)
+-- "up": status is up (json-bool)
+-
+-Example:
+-
+--> { "execute": "set_link", "arguments": { "name": "e1000.0", "up": false } }
+-<- { "return": {} }
+-
+-EQMP
+ 
+     {
+         .name       = "watchdog_action",
+@@ -1618,6 +1586,25 @@ STEXI
+ @findex __com.redhat_set_password
+ change spice/vnc ticket
+ ETEXI
++SQMP
++__com.redhat_set_password
++-------------------------
++
++Change spice/vnc ticket.
++
++Arguments:
++
++- protocol: protocol name (json-string)
++        - Possible values: "vnc", "spice"
++- password: password to be set (json-string)
++- expiration: password life-time, in seconds (json-int)
++- connected: what to do with connected clients (json-string, optional)
++        - Possible values: "fail", "disconnect", "keep"
++
++TODO: 1. Improve "connected" explanation
++      2. Add usage example
++
++EQMP
+ 
+ #if defined(CONFIG_SPICE)
+     {
+@@ -1635,6 +1622,22 @@ STEXI
+ @findex __com.redhat_spice_migrate_info
+ send migration info to spice client
+ ETEXI
++SQMP
++__com.redhat_spice_migrate_info
++-------------------------------
++
++Send migration info to spice client.
++
++Arguments:
++
++- hostname: destination address (json-string)
++- port: destination port number (json-int, optional)
++- tls-port: destination TLS port (json-int, optional)
++- cert-subject: certificate subject (json-string, optional)
++
++TODO: Add usage example
++
++EQMP
+ 
+ HXCOMM Keep the 'info' command at the end!
+ HXCOMM This is required for the QMP documentation layout.
+@@ -1973,219 +1976,6 @@ ETEXI
+ STEXI
+ @item info pci
+ show emulated PCI device info
+-ETEXI
+-SQMP
+-query-pci
+----------
+-
+-PCI buses and devices information.
+-
+-The returned value is a json-array of all buses. Each bus is represented by
+-a json-object, which has a key with a json-array of all PCI devices attached
+-to it. Each device is represented by a json-object.
+-
+-The bus json-object contains the following:
+-
+-- "bus": bus number (json-int)
+-- "devices": a json-array of json-objects, each json-object represents a
+-             PCI device
+-
+-The PCI device json-object contains the following:
+-
+-- "bus": identical to the parent's bus number (json-int)
+-- "slot": slot number (json-int)
+-- "function": function number (json-int)
+-- "class_info": a json-object containing:
+-     - "desc": device class description (json-string, optional)
+-     - "class": device class number (json-int)
+-- "id": a json-object containing:
+-     - "device": device ID (json-int)
+-     - "vendor": vendor ID (json-int)
+-- "irq": device's IRQ if assigned (json-int, optional)
+-- "qdev_id": qdev id string (json-string)
+-- "pci_bridge": It's a json-object, only present if this device is a
+-                PCI bridge, contains:
+-     - "bus": bus number (json-int)
+-     - "secondary": secondary bus number (json-int)
+-     - "subordinate": subordinate bus number (json-int)
+-     - "io_range": I/O memory range information, a json-object with the
+-                   following members:
+-                 - "base": base address, in bytes (json-int)
+-                 - "limit": limit address, in bytes (json-int)
+-     - "memory_range": memory range information, a json-object with the
+-                       following members:
+-                 - "base": base address, in bytes (json-int)
+-                 - "limit": limit address, in bytes (json-int)
+-     - "prefetchable_range": Prefetchable memory range information, a
+-                             json-object with the following members:
+-                 - "base": base address, in bytes (json-int)
+-                 - "limit": limit address, in bytes (json-int)
+-     - "devices": a json-array of PCI devices if there's any attached, each
+-                  each element is represented by a json-object, which contains
+-                  the same members of the 'PCI device json-object' described
+-                  above (optional)
+-- "regions": a json-array of json-objects, each json-object represents a
+-             memory region of this device
+-
+-The memory range json-object contains the following:
+-
+-- "base": base memory address (json-int)
+-- "limit": limit value (json-int)
+-
+-The region json-object can be an I/O region or a memory region, an I/O region
+-json-object contains the following:
+-
+-- "type": "io" (json-string, fixed)
+-- "bar": BAR number (json-int)
+-- "address": memory address (json-int)
+-- "size": memory size (json-int)
+-
+-A memory region json-object contains the following:
+-
+-- "type": "memory" (json-string, fixed)
+-- "bar": BAR number (json-int)
+-- "address": memory address (json-int)
+-- "size": memory size (json-int)
+-- "mem_type_64": true or false (json-bool)
+-- "prefetch": true or false (json-bool)
+-
+-Example:
+-
+--> { "execute": "query-pci" }
+-<- {
+-      "return":[
+-         {
+-            "bus":0,
+-            "devices":[
+-               {
+-                  "bus":0,
+-                  "qdev_id":"",
+-                  "slot":0,
+-                  "class_info":{
+-                     "class":1536,
+-                     "desc":"Host bridge"
+-                  },
+-                  "id":{
+-                     "device":32902,
+-                     "vendor":4663
+-                  },
+-                  "function":0,
+-                  "regions":[
+-   
+-                  ]
+-               },
+-               {
+-                  "bus":0,
+-                  "qdev_id":"",
+-                  "slot":1,
+-                  "class_info":{
+-                     "class":1537,
+-                     "desc":"ISA bridge"
+-                  },
+-                  "id":{
+-                     "device":32902,
+-                     "vendor":28672
+-                  },
+-                  "function":0,
+-                  "regions":[
+-   
+-                  ]
+-               },
+-               {
+-                  "bus":0,
+-                  "qdev_id":"",
+-                  "slot":1,
+-                  "class_info":{
+-                     "class":257,
+-                     "desc":"IDE controller"
+-                  },
+-                  "id":{
+-                     "device":32902,
+-                     "vendor":28688
+-                  },
+-                  "function":1,
+-                  "regions":[
+-                     {
+-                        "bar":4,
+-                        "size":16,
+-                        "address":49152,
+-                        "type":"io"
+-                     }
+-                  ]
+-               },
+-               {
+-                  "bus":0,
+-                  "qdev_id":"",
+-                  "slot":2,
+-                  "class_info":{
+-                     "class":768,
+-                     "desc":"VGA controller"
+-                  },
+-                  "id":{
+-                     "device":4115,
+-                     "vendor":184
+-                  },
+-                  "function":0,
+-                  "regions":[
+-                     {
+-                        "prefetch":true,
+-                        "mem_type_64":false,
+-                        "bar":0,
+-                        "size":33554432,
+-                        "address":4026531840,
+-                        "type":"memory"
+-                     },
+-                     {
+-                        "prefetch":false,
+-                        "mem_type_64":false,
+-                        "bar":1,
+-                        "size":4096,
+-                        "address":4060086272,
+-                        "type":"memory"
+-                     },
+-                     {
+-                        "prefetch":false,
+-                        "mem_type_64":false,
+-                        "bar":6,
+-                        "size":65536,
+-                        "address":-1,
+-                        "type":"memory"
+-                     }
+-                  ]
+-               },
+-               {
+-                  "bus":0,
+-                  "qdev_id":"",
+-                  "irq":11,
+-                  "slot":4,
+-                  "class_info":{
+-                     "class":1280,
+-                     "desc":"RAM controller"
+-                  },
+-                  "id":{
+-                     "device":6900,
+-                     "vendor":4098
+-                  },
+-                  "function":0,
+-                  "regions":[
+-                     {
+-                        "bar":0,
+-                        "size":32,
+-                        "address":49280,
+-                        "type":"io"
+-                     }
+-                  ]
+-               }
+-            ]
+-         }
+-      ]
+-   }
+-
+-Note: This example has been shortened as the real response is too long.
+-
+-EQMP
+-
+-STEXI
+ @item info tlb
+ show virtual to physical memory mappings (i386 only)
+ @item info mem
+-- 
+1.7.0.3
+

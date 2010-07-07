@@ -1,0 +1,52 @@
+From 8831dce054ac84ae4636ec080c915004e10654b6 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Wed, 30 Jun 2010 16:30:02 -0300
+Subject: [PATCH 7/9] hxtool: Fix line number reporting on SQMP/EQMP errors
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1277915402-6415-8-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 10384
+O-Subject: [PATCH 7/7] hxtool: Fix line number reporting on SQMP/EQMP errors
+Bugzilla: 582262
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Jan Kiszka <jan.kiszka@siemens.com>
+
+Signed-off-by: Jan Kiszka <jan.kiszka@siemens.com>
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+(cherry picked from commit 02e95918b82efde24db1d759300ec3c61bd694b3)
+---
+ hxtool |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hxtool |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/hxtool b/hxtool
+index ec8eea1..6540a7a 100644
+--- a/hxtool
++++ b/hxtool
+@@ -45,6 +45,7 @@ hxtoqmp()
+ {
+     IFS=
+     flag=0
++    line=1
+     while read -r str; do
+         case "$str" in
+             HXCOMM*)
+@@ -73,6 +74,7 @@ hxtoqmp()
+             test $flag -eq 1 && echo "$str"
+             ;;
+         esac
++        line=$((line+1))
+     done
+ }
+ 
+-- 
+1.7.0.3
+

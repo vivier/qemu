@@ -1,0 +1,246 @@
+From 545d0d89056f9efc253dd8034803d22db0c02c7c Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 1 Jul 2010 12:06:53 -0300
+Subject: [PATCH 8/9] monitor: New command __com.redhat_drive_add
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <m3fx032gdn.fsf@blackfin.pond.sub.org>
+Patchwork-id: 10416
+O-Subject: [PATCH RHEL6 qemu-kvm v2] monitor: New command __com.redhat_drive_add
+Bugzilla: 581963
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+>From 47597d12609010b758cc37be76d4fa76205a81ec Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 1 Jul 2010 07:40:28 +0200
+Subject: [PATCH] monitor: New command __com.redhat_drive_add
+
+We need drive hot plug for 6.0.  Upstream's drive_add is ugly, and being
+replaced.  Because of that, upstream doesn't want it in QMP.  Because
+the replacement is not yet ready, provide a simple, relatively clean,
+QMP-enabled command as vendor extension.
+
+It's essentially drive_add specialized to if=none, with superfluous crap
+cut, and error handling fixed.  QError conversion is shallow: any
+drive_init() failure gets reported as DeviceInitFailed.  drive_init()
+reports details to stderr, as before.
+
+Code is minimally invasive, which makes it a bit ugly in places
+(qemu_simple_drive_opts *cough*).
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+v2: Handle check_parm() failure correctly
+
+BZ 581963
+Upstream: not applicable
+Testing: Dan Berrange tested a slightly older version (same code, just
+no docs) successfully with libvirt.
+Based on da4605503f7cfd4826ce69057a36dd81cbb87344, because I need Luiz's
+doc series.
+
+ hw/device-hotplug.c |   64 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ qemu-config.c       |   15 ++++++++++++
+ qemu-monitor.hx     |   51 ++++++++++++++++++++++++++++++++++++++++
+ sysemu.h            |    1 +
+ 4 files changed, 131 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-hotplug.c |   64 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ qemu-config.c       |   15 ++++++++++++
+ qemu-monitor.hx     |   51 ++++++++++++++++++++++++++++++++++++++++
+ sysemu.h            |    1 +
+ 4 files changed, 131 insertions(+), 0 deletions(-)
+
+diff --git a/hw/device-hotplug.c b/hw/device-hotplug.c
+index 9cc8376..3b957b2 100644
+--- a/hw/device-hotplug.c
++++ b/hw/device-hotplug.c
+@@ -24,6 +24,7 @@
+ 
+ #include "hw.h"
+ #include "boards.h"
++#include "qerror.h"
+ #include "net.h"
+ #include "block_int.h"
+ #include "sysemu.h"
+@@ -46,3 +47,66 @@ DriveInfo *add_init_drive(const char *optstr)
+ 
+     return dinfo;
+ }
++
++static void check_parm(const char *key, QObject *obj, void *opaque)
++{
++    static const char *valid_keys[] = {
++        "id", "cyls", "heads", "secs", "trans", "media", "snapshot",
++        "file", "cache", "aio", "format", "serial", "rerror", "werror",
++        "readonly", NULL
++    };
++    int *stopped = opaque;
++    const char **p;
++
++    if (*stopped) {
++        return;
++    }
++
++    for (p = valid_keys; *p; p++) {
++        if (!strcmp(key, *p)) {
++            return;
++        }
++    }
++    
++    qerror_report(QERR_INVALID_PARAMETER, key);
++    *stopped = 1;
++}
++
++int simple_drive_add(Monitor *mon, const QDict *qdict, QObject **ret_data)
++{
++    int stopped, fatal_error;
++    QemuOpts *opts;
++    DriveInfo *dinfo;
++
++    if (!qdict_haskey(qdict, "id")) {
++        qerror_report(QERR_MISSING_PARAMETER, "id");
++        return -1;
++    }
++
++    stopped = 0;
++    qdict_iter(qdict, check_parm, &stopped);
++    if (stopped) {
++        return -1;
++    }
++
++    opts = qemu_opts_from_qdict(&qemu_drive_opts, qdict);
++    if (!opts) {
++        return -1;
++    }
++    qemu_opt_set(opts, "if", "none");
++    dinfo = drive_init(opts, current_machine, &fatal_error);
++    if (!dinfo && fatal_error) {
++        qerror_report(QERR_DEVICE_INIT_FAILED, /* close enough */
++                      qemu_opts_id(opts));
++        /* drive_init() can leave an empty drive behind, reap it */
++        dinfo = drive_get_by_id(qemu_opts_id(opts));
++        if (dinfo) {
++            drive_uninit(dinfo);
++        } else {
++            qemu_opts_del(opts);
++        }
++        return -1;
++    }
++
++    return 0;
++}
+diff --git a/qemu-config.c b/qemu-config.c
+index 3999dc5..04c7a4d 100644
+--- a/qemu-config.c
++++ b/qemu-config.c
+@@ -88,6 +88,20 @@ QemuOptsList qemu_drive_opts = {
+     },
+ };
+ 
++QemuOptsList qemu_simple_drive_opts = {
++    .name = "simple-drive",
++    .implied_opt_name = "format",
++    .head = QTAILQ_HEAD_INITIALIZER(qemu_simple_drive_opts.head),
++    .desc = {
++        /*
++         * no elements => accept any
++         * sanity checking will happen later
++         * when setting device properties
++         */
++        { /* end if list */ }
++    }
++};
++
+ QemuOptsList qemu_chardev_opts = {
+     .name = "chardev",
+     .implied_opt_name = "backend",
+@@ -374,6 +388,7 @@ QemuOptsList qemu_spice_opts = {
+ 
+ static QemuOptsList *vm_config_groups[] = {
+     &qemu_drive_opts,
++    &qemu_simple_drive_opts,
+     &qemu_chardev_opts,
+     &qemu_device_opts,
+     &qemu_netdev_opts,
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index f6795fc..e09bc88 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -1570,6 +1570,57 @@ Note: This command must be issued before issuing any other command.
+ 
+ EQMP
+ 
++    {
++        .name       = RFQDN_REDHAT "drive_add",
++        .args_type  = "simple-drive:O",
++        .params     = "id=name,[file=file][,format=f][,media=d]...",
++        .help       = "Create a drive similar to -device if=none.",
++	.user_print = monitor_user_noop,
++        .mhandler.cmd_new = simple_drive_add,
++    },
++
++STEXI
++@item __com.redhat_drive_add
++@findex __com.redhat_drive_add
++Create a drive similar to -device if=none.
++ETEXI
++SQMP
++__com.redhat_drive_add
++----------------------
++
++Create a drive similar to -device if=none.
++
++Arguments:
++
++- "id": Drive ID, must be unique (json-string)
++- "file": Disk image (json-string, optional)
++- "format": Disk format (json-string, optional)
++- "aio": How to perform asynchronous disk I/O (json-string, optional)
++- "cache": Host cache use policy (json-string, optional)
++- "cyls", "heads", "secs": Disk geometry (json-int, optional)
++- "trans": BIOS translation mode (json-string, optional)
++- "media": Media type (json-string, optional)
++- "readonly": Open image read-only (json-bool, optional)
++- "rerror": What to do on read error (json-string, optional)
++- "werror": What to do on write error (json-string, optional)
++- "serial": Drive serial number (json-string, optional)
++- "snapshot": Enable snapshot mode (json-bool, optional)
++
++Example:
++
++1. Add a drive without medium:
++
++-> { "execute": "__com.redhat_drive_add", "arguments": { "id": "foo" } }
++<- {"return": {}}
++
++2. Add a drive with 
++
++-> { "execute": "__com.redhat_drive_add",
++     "arguments": { "id": "bar", "file": "tmp.qcow2", "format": "qcow2" } }
++<- {"return": {}}
++
++EQMP
++
+ #if defined(CONFIG_SPICE)
+     {
+         .name       = RFQDN_REDHAT "set_password",
+diff --git a/sysemu.h b/sysemu.h
+index d8c119b..f20abd6 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -205,6 +205,7 @@ void qemu_system_cpu_hot_add(int cpu, int state);
+ /* device-hotplug */
+ 
+ DriveInfo *add_init_drive(const char *opts);
++int simple_drive_add(Monitor *mon, const QDict *qdict, QObject **ret_data);
+ 
+ /* pci-hotplug */
+ void pci_device_hot_add(Monitor *mon, const QDict *qdict);
+-- 
+1.7.0.3
+

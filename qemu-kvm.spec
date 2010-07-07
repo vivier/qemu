@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.90%{?dist}
+Release: 2.91%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1243,6 +1243,24 @@ Patch1607: kvm-device-assignment-be-more-selective-in-interrupt-dis.patch
 Patch1608: kvm-device-assignment-Avoid-munmapping-the-real-MSIX-are.patch
 # For bz#572043 - Guest gets segfault when do multiple device hot-plug and hot-unplug
 Patch1609: kvm-device-assignment-Cleanup-on-exit.patch
+# For bz#582262 - QMP: Missing commands doc
+Patch1610: kvm-doc-Update-monitor-info-subcommands.patch
+# For bz#582262 - QMP: Missing commands doc
+Patch1611: kvm-Fix-typo-in-balloon-help.patch
+# For bz#582262 - QMP: Missing commands doc
+Patch1612: kvm-monitor-Reorder-info-documentation.patch
+# For bz#582262 - QMP: Missing commands doc
+Patch1613: kvm-QMP-Introduce-commands-documentation.patch
+# For bz#582262 - QMP: Missing commands doc
+Patch1614: kvm-QMP-Sync-documentation-with-RHEL6-only-changes.patch
+# For bz#582262 - QMP: Missing commands doc
+Patch1615: kvm-Monitor-Drop-QMP-documentation-from-code.patch
+# For bz#582262 - QMP: Missing commands doc
+Patch1616: kvm-hxtool-Fix-line-number-reporting-on-SQMP-EQMP-errors.patch
+# For bz#581963 - QMP: missing drive_add command in JSON mode
+Patch1617: kvm-monitor-New-command-__com.redhat_drive_add.patch
+# For bz#611229 - -rtc cmdline changes
+Patch1618: kvm-Fix-driftfix-option.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1915,6 +1933,15 @@ such as kvm_stat.
 %patch1607 -p1
 %patch1608 -p1
 %patch1609 -p1
+%patch1610 -p1
+%patch1611 -p1
+%patch1612 -p1
+%patch1613 -p1
+%patch1614 -p1
+%patch1615 -p1
+%patch1616 -p1
+%patch1617 -p1
+%patch1618 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2105,6 +2132,23 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Jul 07 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.91.el6
+- kvm-doc-Update-monitor-info-subcommands.patch [bz#582262]
+- kvm-Fix-typo-in-balloon-help.patch [bz#582262]
+- kvm-monitor-Reorder-info-documentation.patch [bz#582262]
+- kvm-QMP-Introduce-commands-documentation.patch [bz#582262]
+- kvm-QMP-Sync-documentation-with-RHEL6-only-changes.patch [bz#582262]
+- kvm-Monitor-Drop-QMP-documentation-from-code.patch [bz#582262]
+- kvm-hxtool-Fix-line-number-reporting-on-SQMP-EQMP-errors.patch [bz#582262]
+- kvm-monitor-New-command-__com.redhat_drive_add.patch [bz#581963]
+- kvm-Fix-driftfix-option.patch [bz#611229]
+- Resolves: bz#581963
+  (QMP: missing drive_add command in JSON mode)
+- Resolves: bz#582262
+  (QMP: Missing commands doc)
+- Resolves: bz#611229
+  (-rtc cmdline changes)
+
 * Tue Jun 29 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.90.el6
 - kvm-device-assignment-Avoid-munmapping-the-real-MSIX-are.patch [bz#572043]
 - kvm-device-assignment-Cleanup-on-exit.patch [bz#572043]

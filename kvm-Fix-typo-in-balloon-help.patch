@@ -1,0 +1,47 @@
+From add1655723d6d703c65edbe245ca58738eb9df78 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Wed, 30 Jun 2010 16:29:57 -0300
+Subject: [PATCH 2/9] Fix typo in balloon help
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1277915402-6415-3-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 10380
+O-Subject: [PATCH 2/7] Fix typo in balloon help
+Bugzilla: 582262
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Riccardo Magliocchetti <riccardo.magliocchetti@gmail.com>
+
+Fix launchpad #563883
+
+Signed-off-by: Riccardo Magliocchetti <riccardo.magliocchetti@gmail.com>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit 3c05613a6a51da833105c1bf3db4917d917f5a3a)
+---
+ qemu-monitor.hx |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-monitor.hx |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 6bc60fb..37d2b1c 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -990,7 +990,7 @@ ETEXI
+         .name       = "balloon",
+         .args_type  = "value:M",
+         .params     = "target",
+-        .help       = "request VM to change it's memory allocation (in MB)",
++        .help       = "request VM to change its memory allocation (in MB)",
+         .user_print = monitor_user_noop,
+         .mhandler.cmd_async = do_balloon,
+         .async      = 1,
+-- 
+1.7.0.3
+
