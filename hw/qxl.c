@@ -1282,7 +1282,8 @@ static int qxl_init(PCIDevice *dev)
         if (ram_size < 16 * 1024 * 1024)
             ram_size = 16 * 1024 * 1024;
         qxl->vga.vram_size = ram_size;
-        qxl->vga.vram_offset = qemu_ram_alloc(qxl->vga.vram_size);
+        qxl->vga.vram_offset = qemu_ram_alloc(&dev->qdev, "qxl.vgavram",
+                                              qxl->vga.vram_size);
 
         pci_config_set_class(config, PCI_CLASS_DISPLAY_OTHER);
     }
@@ -1293,12 +1294,12 @@ static int qxl_init(PCIDevice *dev)
     pci_set_byte(&config[PCI_INTERRUPT_PIN], 1);
 
     qxl->rom_size = rom_size;
-    qxl->rom_offset = qemu_ram_alloc(rom_size);
+    qxl->rom_offset = qemu_ram_alloc(&dev->qdev, "qxl.rom", rom_size);
     init_qxl_rom(qxl, qemu_get_ram_ptr(qxl->rom_offset));
     init_qxl_ram(qxl, qemu_get_ram_ptr(qxl->vga.vram_offset), qxl->vga.vram_size);
 
     qxl->vram_size = QXL_VRAM_SIZE;
-    qxl->vram_offset = qemu_ram_alloc(QXL_VRAM_SIZE);
+    qxl->vram_offset = qemu_ram_alloc(&dev->qdev, "qxl.vram", QXL_VRAM_SIZE);
     qxl->vram = qemu_get_ram_ptr(qxl->vram_offset);
 
     dprintf(1, "%s: rom(%p, 0x%" PRIx64 ", 0x%x) ram(%p, 0x%" PRIx64 ", 0x%x) vram(%p, 0x%lx, 0x%x)\n",

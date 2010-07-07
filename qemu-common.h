@@ -11,6 +11,8 @@
 #define QEMU_WARN_UNUSED_RESULT
 #endif
 
+typedef struct DeviceState DeviceState;
+
 /* Hack around the mess dyngen-exec.h causes: We need QEMU_NORETURN in files that
    cannot include the following headers without conflicts. This condition has
    to be removed once dyngen is gone. */
@@ -222,7 +224,6 @@ typedef struct PCMCIACardState PCMCIACardState;
 typedef struct MouseTransformInfo MouseTransformInfo;
 typedef struct uWireSlave uWireSlave;
 typedef struct I2SCodec I2SCodec;
-typedef struct DeviceState DeviceState;
 typedef struct SSIBus SSIBus;
 typedef struct EventNotifier EventNotifier;
 typedef struct VirtIODevice VirtIODevice;
