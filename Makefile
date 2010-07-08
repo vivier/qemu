@@ -319,11 +319,11 @@ ifdef CONFIG_POSIX
 	$(INSTALL_DATA) qemu-nbd.8 "$(DESTDIR)$(mandir)/man8"
 endif
 
-install-sysconfig:
-	$(INSTALL_DIR) "$(sysconfdir)/qemu"
-	$(INSTALL_DATA) sysconfigs/target/target-x86_64.conf "$(sysconfdir)/qemu"
+install-cpuconfig:
+	$(INSTALL_DIR) "$(DESTDIR)$(cpuconfdir)"
+	$(INSTALL_DATA) sysconfigs/target/cpu-x86_64.conf "$(DESTDIR)$(cpuconfdir)"
 
-install: all $(if $(BUILD_DOCS),install-doc) install-sysconfig
+install: all $(if $(BUILD_DOCS),install-doc) install-cpuconfig
 	$(INSTALL_DIR) "$(DESTDIR)$(bindir)"
 ifneq ($(TOOLS),)
 	$(INSTALL_PROG) $(STRIP_OPT) $(TOOLS) "$(DESTDIR)$(bindir)"

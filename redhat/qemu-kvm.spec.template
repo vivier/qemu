@@ -79,6 +79,7 @@ Conflicts: vdsm < 4.5
 Requires: qemu-img = %{epoch}:%{version}-%{release}
 
 %define qemudocdir %{_docdir}/%{name}-%{version}
+%define cpumodeldir %{_datadir}/%{name}/cpu-model
 
 %description
 KVM (for Kernel-based Virtual Machine) is a full virtualization solution
@@ -158,6 +159,7 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
 ./configure --target-list=x86_64-softmmu \
             --prefix=%{_prefix} \
             --sysconfdir=%{_sysconfdir} \
+            --cpuconfdir=%{cpumodeldir} \
             --audio-drv-list=pa,alsa \
             --audio-card-list=ac97,es1370 \
             --disable-strip \
@@ -217,6 +219,7 @@ make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
      mandir="${RPM_BUILD_ROOT}%{_mandir}" \
      docdir="${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}" \
      datadir="${RPM_BUILD_ROOT}%{_datadir}/%{name}" \
+     cpuconfdir="${RPM_BUILD_ROOT}%{cpumodeldir}" \
      sysconfdir="${RPM_BUILD_ROOT}%{_sysconfdir}" install
 
 mv ${RPM_BUILD_ROOT}%{_bindir}/qemu-system-x86_64 ${RPM_BUILD_ROOT}%{_libexecdir}/qemu-kvm
@@ -323,7 +326,7 @@ fi
 %{_libexecdir}/qemu-kvm
 %{_sysconfdir}/sysconfig/modules/kvm.modules
 %{_sysconfdir}/udev/rules.d/80-kvm.rules
-%{_sysconfdir}/qemu/target-x86_64.conf
+%{cpumodeldir}/cpu-x86_64.conf
 
 %files tools
 %defattr(-,root,root,-)
