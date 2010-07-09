@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.92%{?dist}
+Release: 2.93%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1262,6 +1262,12 @@ Patch1617: kvm-monitor-New-command-__com.redhat_drive_add.patch
 # For bz#611229 - -rtc cmdline changes
 Patch1618: kvm-Fix-driftfix-option.patch
 Patch1619: kvm-make-release-fix-mtime-on-rhel6-beta.patch
+# For bz#598836 - RHEL 6.0 RTC Alarm unusable in vm
+Patch1620: kvm-make-rtc-alatm-work.patch
+# For bz#612164 - [kvm] qemu image check returns cluster errors when using virtIO block (thinly provisioned) during e_no_space events (along with EIO errors)
+Patch1621: kvm-qemu-img-check-Distinguish-different-kinds-of-errors.patch
+# For bz#612164 - [kvm] qemu image check returns cluster errors when using virtIO block (thinly provisioned) during e_no_space events (along with EIO errors)
+Patch1622: kvm-qcow2-vdi-Change-check-to-distinguish-error-cases.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1944,6 +1950,9 @@ such as kvm_stat.
 %patch1617 -p1
 %patch1618 -p1
 %patch1619 -p1
+%patch1620 -p1
+%patch1621 -p1
+%patch1622 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2134,6 +2143,15 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Jul 09 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.93.el6
+- kvm-make-rtc-alatm-work.patch [bz#598836]
+- kvm-qemu-img-check-Distinguish-different-kinds-of-errors.patch [bz#612164]
+- kvm-qcow2-vdi-Change-check-to-distinguish-error-cases.patch [bz#612164]
+- Resolves: bz#598836
+  (RHEL 6.0 RTC Alarm unusable in vm)
+- Resolves: bz#612164
+  ([kvm] qemu image check returns cluster errors when using virtIO block (thinly provisioned) during e_no_space events (along with EIO errors))
+
 * Wed Jul 07 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.92.el6
 - build-time-only fix: fix the tarball-generation make-release script for newer git versions
   (kvm-make-release-fix-mtime-on-rhel6-beta.patch)

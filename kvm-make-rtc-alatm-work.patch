@@ -1,0 +1,59 @@
+From 3e3411d96b64ff60eaf5821b89d09089685a567c Mon Sep 17 00:00:00 2001
+From: Gleb Natapov <gleb@redhat.com>
+Date: Tue, 6 Jul 2010 16:07:02 -0300
+Subject: [PATCH 1/3] make rtc alatm work
+
+RH-Author: Gleb Natapov <gleb@redhat.com>
+Message-id: <20100706160702.GW4689@redhat.com>
+Patchwork-id: 10499
+O-Subject: [PATCH RHEL6] make rtc alatm work
+Bugzilla: 598836
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Convert alarm time from BCD if needed before comparing with current
+time.
+
+BZ: 598836
+Upstream: f292787d9
+
+Signed-off-by: Gleb Natapov <gleb@redhat.com>
+--
+			Gleb.
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/mc146818rtc.c |    7 +++----
+ 1 files changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/hw/mc146818rtc.c b/hw/mc146818rtc.c
+index a537855..9ff3f0d 100644
+--- a/hw/mc146818rtc.c
++++ b/hw/mc146818rtc.c
+@@ -217,7 +217,6 @@ static void cmos_ioport_write(void *opaque, uint32_t addr, uint32_t data)
+         case RTC_SECONDS_ALARM:
+         case RTC_MINUTES_ALARM:
+         case RTC_HOURS_ALARM:
+-            /* XXX: not supported */
+             s->cmos_data[s->cmos_index] = data;
+             break;
+         case RTC_SECONDS:
+@@ -417,11 +416,11 @@ static void rtc_update_second2(void *opaque)
+     /* check alarm */
+     if (s->cmos_data[RTC_REG_B] & REG_B_AIE) {
+         if (((s->cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0 ||
+-             s->cmos_data[RTC_SECONDS_ALARM] == s->current_tm.tm_sec) &&
++             rtc_from_bcd(s, s->cmos_data[RTC_SECONDS_ALARM]) == s->current_tm.tm_sec) &&
+             ((s->cmos_data[RTC_MINUTES_ALARM] & 0xc0) == 0xc0 ||
+-             s->cmos_data[RTC_MINUTES_ALARM] == s->current_tm.tm_mon) &&
++             rtc_from_bcd(s, s->cmos_data[RTC_MINUTES_ALARM]) == s->current_tm.tm_min) &&
+             ((s->cmos_data[RTC_HOURS_ALARM] & 0xc0) == 0xc0 ||
+-             s->cmos_data[RTC_HOURS_ALARM] == s->current_tm.tm_hour)) {
++             rtc_from_bcd(s, s->cmos_data[RTC_HOURS_ALARM]) == s->current_tm.tm_hour)) {
+ 
+             s->cmos_data[RTC_REG_C] |= 0xa0;
+             rtc_irq_raise(s->irq);
+-- 
+1.7.0.3
+

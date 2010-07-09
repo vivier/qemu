@@ -1,0 +1,191 @@
+From e52103e701c32b2fbe229d3c8dacdb2a6eee4c30 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Wed, 7 Jul 2010 14:07:19 -0300
+Subject: [PATCH 2/3] qemu-img check: Distinguish different kinds of errors
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1278511640-15314-2-git-send-email-kwolf@redhat.com>
+Patchwork-id: 10550
+O-Subject: [RHEL-6 qemu-kvm PATCH 1/2] qemu-img check: Distinguish different
+	kinds of errors
+Bugzilla: 612164
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 612164
+
+People think that their images are corrupted when in fact there are just some
+leaked clusters. Differentiating several error cases should make the messages
+more comprehensible.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit e076f3383b08a563d76c8beb9a716788a3987df9)
+
+Conflicts:
+
+	block.h
+	qemu-img.c
+---
+ block.c    |   10 ++++++--
+ block.h    |   10 ++++++++-
+ qemu-img.c |   63 ++++++++++++++++++++++++++++++++++++++++++++++-------------
+ 3 files changed, 65 insertions(+), 18 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c    |   10 ++++++--
+ block.h    |   10 ++++++++-
+ qemu-img.c |   63 ++++++++++++++++++++++++++++++++++++++++++++++-------------
+ 3 files changed, 65 insertions(+), 18 deletions(-)
+
+diff --git a/block.c b/block.c
+index 21ceb79..4b2c65c 100644
+--- a/block.c
++++ b/block.c
+@@ -664,15 +664,19 @@ void bdrv_delete(BlockDriverState *bs)
+ /*
+  * Run consistency checks on an image
+  *
+- * Returns the number of errors or -errno when an internal error occurs
++ * Returns 0 if the check could be completed (it doesn't mean that the image is
++ * free of errors) or -errno when an internal error occured. The results of the
++ * check are stored in res.
+  */
+-int bdrv_check(BlockDriverState *bs)
++int bdrv_check(BlockDriverState *bs, BdrvCheckResult *res)
+ {
+     if (bs->drv->bdrv_check == NULL) {
+         return -ENOTSUP;
+     }
+ 
+-    return bs->drv->bdrv_check(bs);
++    memset(res, 0, sizeof(*res));
++    res->corruptions = bs->drv->bdrv_check(bs);
++    return res->corruptions < 0 ? res->corruptions : 0;
+ }
+ 
+ /* commit COW file into the raw image */
+diff --git a/block.h b/block.h
+index a394e2a..90eebbe 100644
+--- a/block.h
++++ b/block.h
+@@ -69,7 +69,6 @@ int bdrv_file_open(BlockDriverState **pbs, const char *filename, int flags);
+ int bdrv_open(BlockDriverState *bs, const char *filename, int flags,
+               BlockDriver *drv);
+ void bdrv_close(BlockDriverState *bs);
+-int bdrv_check(BlockDriverState *bs);
+ int bdrv_read(BlockDriverState *bs, int64_t sector_num,
+               uint8_t *buf, int nb_sectors);
+ int bdrv_write(BlockDriverState *bs, int64_t sector_num,
+@@ -91,6 +90,15 @@ int bdrv_change_backing_file(BlockDriverState *bs,
+     const char *backing_file, const char *backing_fmt);
+ void bdrv_register(BlockDriver *bdrv);
+ 
++
++typedef struct BdrvCheckResult {
++    int corruptions;
++    int leaks;
++    int check_errors;
++} BdrvCheckResult;
++
++int bdrv_check(BlockDriverState *bs, BdrvCheckResult *res);
++
+ /* async block I/O */
+ typedef struct BlockDriverAIOCB BlockDriverAIOCB;
+ typedef void BlockDriverCompletionFunc(void *opaque, int ret);
+diff --git a/qemu-img.c b/qemu-img.c
+index 7d2a4f2..b2a1393 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -379,12 +379,21 @@ static int img_create(int argc, char **argv)
+     return 0;
+ }
+ 
++/*
++ * Checks an image for consistency. Exit codes:
++ *
++ * 0 - Check completed, image is good
++ * 1 - Check not completed because of internal errors
++ * 2 - Check completed, image is corrupted
++ * 3 - Check completed, image has leaked clusters, but is good otherwise
++ */
+ static int img_check(int argc, char **argv)
+ {
+     int c, ret;
+     const char *filename, *fmt;
+     BlockDriver *drv;
+     BlockDriverState *bs;
++    BdrvCheckResult result;
+ 
+     fmt = NULL;
+     for(;;) {
+@@ -417,25 +426,51 @@ static int img_check(int argc, char **argv)
+     if (bdrv_open(bs, filename, BRDV_O_FLAGS, drv) < 0) {
+         error("Could not open '%s'", filename);
+     }
+-    ret = bdrv_check(bs);
+-    switch(ret) {
+-    case 0:
+-        printf("No errors were found on the image.\n");
+-        break;
+-    case -ENOTSUP:
++    ret = bdrv_check(bs, &result);
++
++    if (ret == -ENOTSUP) {
++        bdrv_delete(bs);
+         error("This image format does not support checks");
+-        break;
+-    default:
+-        if (ret < 0) {
+-            error("An error occurred during the check");
+-        } else {
+-            printf("%d errors were found on the image.\n", ret);
++    }
++
++    if (!(result.corruptions || result.leaks || result.check_errors)) {
++        printf("No errors were found on the image.\n");
++    } else {
++        if (result.corruptions) {
++            printf("\n%d errors were found on the image.\n"
++                "Data may be corrupted, or further writes to the image "
++                "may corrupt it.\n",
++                result.corruptions);
++        }
++
++        if (result.leaks) {
++            printf("\n%d leaked clusters were found on the image.\n"
++                "This means waste of disk space, but no harm to data.\n",
++                result.leaks);
++        }
++
++        if (result.check_errors) {
++            printf("\n%d internal errors have occurred during the check.\n",
++                result.check_errors);
+         }
+-        break;
+     }
+ 
+     bdrv_delete(bs);
+-    return 0;
++
++    if (ret < 0 || result.check_errors) {
++        printf("\nAn error has occurred during the check: %s\n"
++            "The check is not complete and may have missed error.\n",
++            strerror(-ret));
++        return 1;
++    }
++
++    if (result.corruptions) {
++        return 2;
++    } else if (result.leaks) {
++        return 3;
++    } else {
++        return 0;
++    }
+ }
+ 
+ static int img_commit(int argc, char **argv)
+-- 
+1.7.0.3
+
