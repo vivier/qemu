@@ -273,13 +273,17 @@ void migrate_fd_error(FdMigrationState *s)
     migrate_fd_cleanup(s);
 }
 
-void migrate_fd_cleanup(FdMigrationState *s)
+int migrate_fd_cleanup(FdMigrationState *s)
 {
+    int ret = 0;
+
     qemu_set_fd_handler2(s->fd, NULL, NULL, NULL, NULL);
 
     if (s->file) {
         dprintf("closing file\n");
-        qemu_fclose(s->file);
+        if (qemu_fclose(s->file) != 0) {
+            ret = -1;
+        }
         s->file = NULL;
     }
 
@@ -299,6 +303,8 @@ void migrate_fd_cleanup(FdMigrationState *s)
     }
 
     s->fd = -1;
+
+    return ret;
 }
 
 void migrate_fd_put_notify(void *opaque)
@@ -381,8 +387,13 @@ void migrate_fd_put_ready(void *opaque)
         } else {
             state = MIG_STATE_COMPLETED;
         }
+        if (migrate_fd_cleanup(s) < 0) {
+            if (old_vm_running) {
+                vm_start();
+            }
+            state = MIG_STATE_ERROR;
+        }
         s->state = state;
-        migrate_fd_cleanup(s);
     }
 }
 
