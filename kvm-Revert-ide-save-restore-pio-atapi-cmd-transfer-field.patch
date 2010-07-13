@@ -1,0 +1,146 @@
+From 24632b2b312078899dad238af56fe817ebd61c3e Mon Sep 17 00:00:00 2001
+From: Juan Quintela <quintela@redhat.com>
+Date: Wed, 7 Jul 2010 12:48:28 -0300
+Subject: [PATCH 1/6] Revert "ide save/restore pio/atapi cmd transfer fields and io buffer"
+
+RH-Author: Juan Quintela <quintela@redhat.com>
+Message-id: <b8f48d3e39ab498f81a20e317ae9281c014fad61.1278506570.git.quintela@redhat.com>
+Patchwork-id: 10524
+O-Subject: [PATCH 1/5] Revert "ide save/restore pio/atapi cmd transfer fields
+	and io buffer"
+Bugzilla: 612481
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+This reverts commit ed487bb1d69040b9dac64a4fc076d8dd82b131d6.
+
+The conflicts are due to commit 4fc8d6711aff7a9c11e402c3d77b481609f9f486
+that is a fix to the ide_drive_pre_save() function.  It reverts both
+(and both are reinstantiated later in the series)
+
+Conflicts:
+
+	hw/ide/core.c
+
+Signed-off-by: Juan Quintela <quintela@redhat.com>
+---
+ hw/ide/core.c     |   58 +---------------------------------------------------
+ hw/ide/internal.h |    5 ----
+ 2 files changed, 2 insertions(+), 61 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/ide/core.c     |   58 +---------------------------------------------------
+ hw/ide/internal.h |    5 ----
+ 2 files changed, 2 insertions(+), 61 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 0ecdd5e..baa0277 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -2685,25 +2685,6 @@ static bool is_identify_set(void *opaque, int version_id)
+     return s->identify_set != 0;
+ }
+ 
+-static EndTransferFunc* transfer_end_table[] = {
+-        ide_sector_read,
+-        ide_sector_write,
+-        ide_transfer_stop,
+-        ide_atapi_cmd_reply_end,
+-        ide_atapi_cmd,
+-};
+-
+-static int transfer_end_table_idx(EndTransferFunc *fn)
+-{
+-    int i;
+-
+-    for (i = 0; i < ARRAY_SIZE(transfer_end_table); i++)
+-        if (transfer_end_table[i] == fn)
+-            return i;
+-
+-    return -1;
+-}
+-
+ static int ide_drive_post_load(void *opaque, int version_id)
+ {
+     IDEState *s = opaque;
+@@ -2714,42 +2695,14 @@ static int ide_drive_post_load(void *opaque, int version_id)
+             s->cdrom_changed = 1;
+         }
+     }
+-
+-    if (s->cur_io_buffer_len) {
+-        s->end_transfer_func = transfer_end_table[s->end_transfer_fn_idx];
+-        s->data_ptr = s->io_buffer + s->cur_io_buffer_offset;
+-        s->data_end = s->data_ptr + s->cur_io_buffer_len;
+-    }
+-        
+     return 0;
+ }
+ 
+-static void ide_drive_pre_save(void *opaque)
+-{
+-    IDEState *s = opaque;
+-
+-    s->cur_io_buffer_len = 0;
+-
+-    if (!(s->status & DRQ_STAT))
+-        return;
+-
+-    s->cur_io_buffer_offset = s->data_ptr - s->io_buffer;
+-    s->cur_io_buffer_len = s->data_end - s->data_ptr;
+-
+-    s->end_transfer_fn_idx = transfer_end_table_idx(s->end_transfer_func);
+-    if (s->end_transfer_fn_idx == -1) {
+-        fprintf(stderr, "%s: invalid end_transfer_func for DRQ_STAT\n",
+-                        __func__);
+-        s->end_transfer_fn_idx = 2;
+-    }
+-}
+-
+ const VMStateDescription vmstate_ide_drive = {
+     .name = "ide_drive",
+-    .version_id = 4,
++    .version_id = 3,
+     .minimum_version_id = 0,
+     .minimum_version_id_old = 0,
+-    .pre_save = ide_drive_pre_save,
+     .post_load = ide_drive_post_load,
+     .fields      = (VMStateField []) {
+         VMSTATE_INT32(mult_sectors, IDEState),
+@@ -2772,14 +2725,7 @@ const VMStateDescription vmstate_ide_drive = {
+         VMSTATE_UINT8(sense_key, IDEState),
+         VMSTATE_UINT8(asc, IDEState),
+         VMSTATE_UINT8_V(cdrom_changed, IDEState, 3),
+-        VMSTATE_INT32_V(req_nb_sectors, IDEState, 4),
+-        VMSTATE_VARRAY_INT32(io_buffer, IDEState, io_buffer_total_len, 4,
+-			     vmstate_info_uint8, uint8_t),
+-        VMSTATE_INT32_V(cur_io_buffer_offset, IDEState, 4),
+-        VMSTATE_INT32_V(cur_io_buffer_len, IDEState, 4),
+-        VMSTATE_UINT8_V(end_transfer_fn_idx, IDEState, 4),
+-        VMSTATE_INT32_V(elementary_transfer_size, IDEState, 4),
+-        VMSTATE_INT32_V(packet_transfer_size, IDEState, 4),
++        /* XXX: if a transfer is pending, we do not save it yet */
+         VMSTATE_END_OF_LIST()
+     }
+ };
+diff --git a/hw/ide/internal.h b/hw/ide/internal.h
+index 2efc784..5e5719e 100644
+--- a/hw/ide/internal.h
++++ b/hw/ide/internal.h
+@@ -419,11 +419,6 @@ struct IDEState {
+     uint8_t *data_ptr;
+     uint8_t *data_end;
+     uint8_t *io_buffer;
+-    /* PIO save/restore */
+-    int32_t io_buffer_total_len;
+-    int cur_io_buffer_offset;
+-    int cur_io_buffer_len;
+-    uint8_t end_transfer_fn_idx;
+     QEMUTimer *sector_write_timer; /* only used for win2k install hack */
+     uint32_t irq_count; /* counts IRQs when using win2k install hack */
+     /* CF-ATA extended error */
+-- 
+1.7.0.3
+

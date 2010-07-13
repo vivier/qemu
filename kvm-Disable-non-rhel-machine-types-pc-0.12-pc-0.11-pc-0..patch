@@ -1,0 +1,66 @@
+From 6e9714f7ab7c54ff26a9f7aeef56179de30f7373 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Fri, 9 Jul 2010 06:01:59 -0300
+Subject: [PATCH 6/6] Disable non rhel machine types (pc-0.12, pc-0.11, pc-0.10, isapc)
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1278655319-19961-2-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 10593
+O-Subject: [RHEL6 qemu-kvm PATCH 1/1] Disable non rhel machine types (pc-0.12,
+	pc-0.11, pc-0.10, isapc)
+Bugzilla: 607263
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+---
+ hw/pc.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pc.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/hw/pc.c b/hw/pc.c
+index 718b818..81e1a2c 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -1328,6 +1328,7 @@ static void pc_init_pci(ram_addr_t ram_size,
+              initrd_filename, cpu_model, 1);
+ }
+ 
++#if 0 /* Disabled for Red Hat Enterprise Linux */
+ static void pc_init_isa(ram_addr_t ram_size,
+                         const char *boot_device,
+                         const char *kernel_filename,
+@@ -1341,6 +1342,7 @@ static void pc_init_isa(ram_addr_t ram_size,
+              kernel_filename, kernel_cmdline,
+              initrd_filename, cpu_model, 0);
+ }
++#endif
+ 
+ /* set CMOS shutdown status register (index 0xF) as S3_resume(0xFE)
+    BIOS will read it and start S3 resume at POST Entry */
+@@ -1350,6 +1352,7 @@ void cmos_set_s3_resume(void)
+         rtc_set_memory(rtc_state, 0xF, 0xFE);
+ }
+ 
++#if 0 /* Disabled for Red Hat Enterprise Linux */
+ static QEMUMachine pc_machine = {
+     .name = "pc-0.12",
+     .desc = "Standard PC",
+@@ -1467,6 +1470,7 @@ static void pc_machine_init(void)
+ }
+ 
+ machine_init(pc_machine_init);
++#endif
+ 
+ /* RHEL machine types */
+ 
+-- 
+1.7.0.3
+

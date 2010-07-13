@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.93%{?dist}
+Release: 2.94%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1268,6 +1268,18 @@ Patch1620: kvm-make-rtc-alatm-work.patch
 Patch1621: kvm-qemu-img-check-Distinguish-different-kinds-of-errors.patch
 # For bz#612164 - [kvm] qemu image check returns cluster errors when using virtIO block (thinly provisioned) during e_no_space events (along with EIO errors)
 Patch1622: kvm-qcow2-vdi-Change-check-to-distinguish-error-cases.patch
+# For bz#612481 - Enable migration subsections
+Patch1623: kvm-Revert-ide-save-restore-pio-atapi-cmd-transfer-field.patch
+# For bz#612481 - Enable migration subsections
+Patch1624: kvm-vmstate-add-subsections-code.patch
+# For bz#612481 - Enable migration subsections
+Patch1625: kvm-ide-fix-migration-in-the-middle-of-pio-operation.patch
+# For bz#612481 - Enable migration subsections
+Patch1626: kvm-ide-fix-migration-in-the-middle-of-a-bmdma-transfer.patch
+# For bz#612481 - Enable migration subsections
+Patch1627: kvm-Initial-documentation-for-migration-Signed-off-by-Ju.patch
+# For bz#607263 - Remove -M pc-0.12 support
+Patch1628: kvm-Disable-non-rhel-machine-types-pc-0.12-pc-0.11-pc-0..patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1953,6 +1965,12 @@ such as kvm_stat.
 %patch1620 -p1
 %patch1621 -p1
 %patch1622 -p1
+%patch1623 -p1
+%patch1624 -p1
+%patch1625 -p1
+%patch1626 -p1
+%patch1627 -p1
+%patch1628 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2143,6 +2161,18 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jul 13 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.94.el6
+- kvm-Revert-ide-save-restore-pio-atapi-cmd-transfer-field.patch [bz#612481]
+- kvm-vmstate-add-subsections-code.patch [bz#612481]
+- kvm-ide-fix-migration-in-the-middle-of-pio-operation.patch [bz#612481]
+- kvm-ide-fix-migration-in-the-middle-of-a-bmdma-transfer.patch [bz#612481]
+- kvm-Initial-documentation-for-migration-Signed-off-by-Ju.patch [bz#612481]
+- kvm-Disable-non-rhel-machine-types-pc-0.12-pc-0.11-pc-0..patch [bz#607263]
+- Resolves: bz#607263
+  (Remove -M pc-0.12 support)
+- Resolves: bz#612481
+  (Enable migration subsections)
+
 * Fri Jul 09 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.93.el6
 - kvm-make-rtc-alatm-work.patch [bz#598836]
 - kvm-qemu-img-check-Distinguish-different-kinds-of-errors.patch [bz#612164]
