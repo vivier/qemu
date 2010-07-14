@@ -1474,10 +1474,16 @@ machine_init(pc_machine_init);
 
 /* RHEL machine types */
 
-static void rhel_common_init(const char *type1_version)
+static void rhel_common_init(const char *type1_version,
+                             int legacy_smbios_vendor)
 {
     char buf[32];
 
+    if (legacy_smbios_vendor) {
+        snprintf(buf, sizeof(buf), "QEMU");
+        smbios_add_field(0, offsetof(struct smbios_type_0, vendor_str),
+                         strlen(buf) + 1, buf);
+    }
     snprintf(buf, sizeof(buf), "Red Hat");
     smbios_add_field(1, offsetof(struct smbios_type_1, manufacturer_str),
                      strlen(buf) + 1, buf);
@@ -1499,7 +1505,7 @@ static void pc_init_rhel600(ram_addr_t ram_size,
                             const char *initrd_filename,
                             const char *cpu_model)
 {
-    rhel_common_init("RHEL 6.0.0 PC");
+    rhel_common_init("RHEL 6.0.0 PC", 0);
     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
                 initrd_filename, cpu_model);
 }
@@ -1556,7 +1562,7 @@ static void pc_init_rhel550(ram_addr_t ram_size,
                             const char *initrd_filename,
                             const char *cpu_model)
 {
-    rhel_common_init("RHEL 5.5.0 PC");
+    rhel_common_init("RHEL 5.5.0 PC", 1);
     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
                 initrd_filename, cpu_model);
 }
@@ -1576,7 +1582,7 @@ static void pc_init_rhel544(ram_addr_t ram_size,
                             const char *initrd_filename,
                             const char *cpu_model)
 {
-    rhel_common_init("RHEL 5.4.4 PC");
+    rhel_common_init("RHEL 5.4.4 PC", 1);
     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
                 initrd_filename, cpu_model);
 }
@@ -1596,7 +1602,7 @@ static void pc_init_rhel540(ram_addr_t ram_size,
                             const char *initrd_filename,
                             const char *cpu_model)
 {
-    rhel_common_init("RHEL 5.4.0 PC");
+    rhel_common_init("RHEL 5.4.0 PC", 1);
     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
                 initrd_filename, cpu_model);
 }
