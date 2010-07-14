@@ -1,0 +1,78 @@
+From 0ae9f9d6f9baaea589bee65bb11c11a4db642c11 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Mon, 12 Jul 2010 14:23:41 -0300
+Subject: [PATCH 3/3] device-assignment: Better fd tracking
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100712142238.30598.85393.stgit@localhost6.localdomain6>
+Patchwork-id: 10645
+O-Subject: [RHEL6.0 qemu-kvm PATCH] device-assignment: Better fd tracking
+Bugzilla: 611715
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+
+Bugzilla: 611715
+Upstream status: posted
+
+Commit 909bfdba fixed a hole with not closing resource file descriptors
+but we need to be more careful about tracking which are real fds,
+otherwise we might close fd 0, which doesn't work out so well for stdio.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+---
+
+ hw/device-assignment.c |   10 ++++++----
+ 1 files changed, 6 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |   10 ++++++----
+ 1 files changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index 0180e3d..e8ede16 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -584,6 +584,7 @@ again:
+ 
+         rp = dev->regions + r;
+         rp->valid = 0;
++        rp->resource_fd = -1;
+         size = end - start + 1;
+         flags &= IORESOURCE_IO | IORESOURCE_MEM | IORESOURCE_PREFETCH;
+         if (size == 0 || (flags & ~IORESOURCE_PREFETCH) == 0)
+@@ -708,7 +709,9 @@ static void free_assigned_device(AssignedDevice *dev)
+                         fprintf(stderr,
+ 				"Failed to unmap assigned device region: %s\n",
+ 				strerror(errno));
+-                    close(pci_region->resource_fd);
++                    if (pci_region->resource_fd >= 0) {
++                        close(pci_region->resource_fd);
++                    }
+                 }
+ 	    }
+         }
+@@ -716,9 +719,8 @@ static void free_assigned_device(AssignedDevice *dev)
+         if (dev->cap.available & ASSIGNED_DEVICE_CAP_MSIX)
+             assigned_dev_unregister_msix_mmio(dev);
+ 
+-        if (dev->real_device.config_fd) {
++        if (dev->real_device.config_fd >= 0) {
+             close(dev->real_device.config_fd);
+-            dev->real_device.config_fd = 0;
+         }
+ 
+ #ifdef KVM_CAP_IRQ_ROUTING
+@@ -1271,7 +1273,7 @@ static int assigned_initfn(struct PCIDevice *pci_dev)
+ 
+     if (!dev->host.bus && !dev->host.dev && !dev->host.func) {
+         error_report("pci-assign: error: no host device specified");
+-        goto out;
++        return -1;
+     }
+ 
+     if (get_real_device(dev, dev->host.bus, dev->host.dev, dev->host.func)) {
+-- 
+1.7.0.3
+

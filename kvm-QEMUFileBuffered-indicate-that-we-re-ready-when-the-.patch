@@ -1,0 +1,67 @@
+From 458aab48e0fc32ede2b651939e6ea0cb0d4e6991 Mon Sep 17 00:00:00 2001
+From: Avi Kivity <avi@redhat.com>
+Date: Sun, 11 Jul 2010 08:37:49 -0300
+Subject: [PATCH 2/3] QEMUFileBuffered: indicate that we're ready when the underlying file is ready
+
+RH-Author: Avi Kivity <avi@redhat.com>
+Message-id: <1278837469-18011-1-git-send-email-avi@redhat.com>
+Patchwork-id: 10627
+O-Subject: [PATCH RHEL6 v2 QEMU] QEMUFileBuffered: indicate that we're ready
+	when the underlying file is ready
+Bugzilla: 609261
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 609261
+Upstream: patch posted
+
+QEMUFileBuffered stops writing when the underlying QEMUFile is not ready,
+and tells its producer so.  However, when the underlying QEMUFile becomes
+ready, it neglects to pass that information along, resulting in stoppage
+of all data until the next tick (a tenths of a second).
+
+Usually this doesn't matter, because most QEMUFiles used with QEMUFileBuffered
+are almost always ready, but in the case of exec: migration this is not true,
+due to the small pipe buffers used to connect to the target process.  The
+result is very slow migration.
+
+Fix by detecting the readiness notification and propagating it.  The detection
+is a little ugly since QEMUFile overloads put_buffer() to send it, but that's
+the suject for a different patch.
+
+Signed-off-by: Avi Kivity <avi@redhat.com>
+---
+
+v2: s/DPRINTF/dprintf/, to make is build.
+
+ buffered_file.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ buffered_file.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/buffered_file.c b/buffered_file.c
+index 217f75e..fdbd848 100644
+--- a/buffered_file.c
++++ b/buffered_file.c
+@@ -156,6 +156,14 @@ static int buffered_put_buffer(void *opaque, const uint8_t *buf, int64_t pos, in
+         offset = size;
+     }
+ 
++    if (pos == 0 && size == 0) {
++        dprintf("file is ready\n");
++        if (s->bytes_xfer <= s->xfer_limit) {
++            dprintf("notifying client\n");
++            s->put_ready(s->opaque);
++        }
++    }
++
+     return offset;
+ }
+ 
+-- 
+1.7.0.3
+

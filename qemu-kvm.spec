@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.94%{?dist}
+Release: 2.95%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1280,6 +1280,12 @@ Patch1626: kvm-ide-fix-migration-in-the-middle-of-a-bmdma-transfer.patch
 Patch1627: kvm-Initial-documentation-for-migration-Signed-off-by-Ju.patch
 # For bz#607263 - Remove -M pc-0.12 support
 Patch1628: kvm-Disable-non-rhel-machine-types-pc-0.12-pc-0.11-pc-0..patch
+# For bz#610805 - Move CPU definitions to /usr/share/...
+Patch1629: kvm-Move-CPU-definitions-to-usr-share-.-BZ-610805.patch
+# For bz#609261 - Exec outgoing migration is too slow
+Patch1630: kvm-QEMUFileBuffered-indicate-that-we-re-ready-when-the-.patch
+# For bz#611715 - qemu-kvm gets no responsive  when do  hot-unplug pass-through device
+Patch1631: kvm-device-assignment-Better-fd-tracking.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1316,6 +1322,7 @@ Conflicts: vdsm < 4.5
 Requires: qemu-img = %{epoch}:%{version}-%{release}
 
 %define qemudocdir %{_docdir}/%{name}-%{version}
+%define cpumodeldir %{_datadir}/%{name}/cpu-model
 
 %description
 KVM (for Kernel-based Virtual Machine) is a full virtualization solution
@@ -1971,6 +1978,9 @@ such as kvm_stat.
 %patch1626 -p1
 %patch1627 -p1
 %patch1628 -p1
+%patch1629 -p1
+%patch1630 -p1
+%patch1631 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -1983,6 +1993,7 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
 ./configure --target-list=x86_64-softmmu \
             --prefix=%{_prefix} \
             --sysconfdir=%{_sysconfdir} \
+            --cpuconfdir=%{cpumodeldir} \
             --audio-drv-list=pa,alsa \
             --audio-card-list=ac97,es1370 \
             --disable-strip \
@@ -2042,6 +2053,7 @@ make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
      mandir="${RPM_BUILD_ROOT}%{_mandir}" \
      docdir="${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}" \
      datadir="${RPM_BUILD_ROOT}%{_datadir}/%{name}" \
+     cpuconfdir="${RPM_BUILD_ROOT}%{cpumodeldir}" \
      sysconfdir="${RPM_BUILD_ROOT}%{_sysconfdir}" install
 
 mv ${RPM_BUILD_ROOT}%{_bindir}/qemu-system-x86_64 ${RPM_BUILD_ROOT}%{_libexecdir}/qemu-kvm
@@ -2148,7 +2160,7 @@ fi
 %{_libexecdir}/qemu-kvm
 %{_sysconfdir}/sysconfig/modules/kvm.modules
 %{_sysconfdir}/udev/rules.d/80-kvm.rules
-%{_sysconfdir}/qemu/target-x86_64.conf
+%{cpumodeldir}/cpu-x86_64.conf
 
 %files tools
 %defattr(-,root,root,-)
@@ -2161,6 +2173,17 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Jul 14 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.95.el6
+- kvm-Move-CPU-definitions-to-usr-share-.-BZ-610805.patch [bz#610805]
+- kvm-QEMUFileBuffered-indicate-that-we-re-ready-when-the-.patch [bz#609261]
+- kvm-device-assignment-Better-fd-tracking.patch [bz#611715]
+- Resolves: bz#609261
+  (Exec outgoing migration is too slow)
+- Resolves: bz#610805
+  (Move CPU definitions to /usr/share/...)
+- Resolves: bz#611715
+  (qemu-kvm gets no responsive  when do  hot-unplug pass-through device)
+
 * Tue Jul 13 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.94.el6
 - kvm-Revert-ide-save-restore-pio-atapi-cmd-transfer-field.patch [bz#612481]
 - kvm-vmstate-add-subsections-code.patch [bz#612481]
