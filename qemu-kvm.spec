@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.95%{?dist}
+Release: 2.96%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1286,6 +1286,8 @@ Patch1629: kvm-Move-CPU-definitions-to-usr-share-.-BZ-610805.patch
 Patch1630: kvm-QEMUFileBuffered-indicate-that-we-re-ready-when-the-.patch
 # For bz#611715 - qemu-kvm gets no responsive  when do  hot-unplug pass-through device
 Patch1631: kvm-device-assignment-Better-fd-tracking.patch
+# For bz#613884 - x2apic needs to be present in all new AMD cpu models..
+Patch1634: kvm-Add-x2apic-to-cpuid-feature-set-for-new-AMD-models.-.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1981,6 +1983,7 @@ such as kvm_stat.
 %patch1629 -p1
 %patch1630 -p1
 %patch1631 -p1
+%patch1634 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2173,6 +2176,17 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Jul 15 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.96.el6
+- fix some errors in ksmd.init [bz#570467]
+- fix some errors in ksmtuned.init [bz#579883]
+- kvm-Add-x2apic-to-cpuid-feature-set-for-new-AMD-models.-.patch [bz#613884]
+- Resolves: bz#570467
+  ([RHEL 6] Initscripts improvement for ksm and ksmtuned)
+- Resolves: bz#579883
+  (init script doesn't stop ksmd)
+- Resolves: bz#613884
+  (x2apic needs to be present in all new AMD cpu models..)
+
 * Wed Jul 14 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.95.el6
 - kvm-Move-CPU-definitions-to-usr-share-.-BZ-610805.patch [bz#610805]
 - kvm-QEMUFileBuffered-indicate-that-we-re-ready-when-the-.patch [bz#609261]

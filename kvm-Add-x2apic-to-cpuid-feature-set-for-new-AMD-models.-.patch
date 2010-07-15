@@ -1,0 +1,73 @@
+From d7af05a862bf614bcd062c90dc683247e5e9c365 Mon Sep 17 00:00:00 2001
+From: john cooper <john.cooper@redhat.com>
+Date: Tue, 13 Jul 2010 05:55:36 -0300
+Subject: [PATCH 3/3] Add x2apic to cpuid feature set for new AMD models.. [BZ #613884]
+
+RH-Author: john cooper <john.cooper@redhat.com>
+Message-id: <4C3BFFD8.3080407@redhat.com>
+Patchwork-id: 10677
+O-Subject: [RHEL6 PATCH] Add x2apic to cpuid feature set for new AMD models..
+	[BZ #613884]
+Bugzilla: 613884
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+Addresses BZ #613884 - x2apic needs to be present in all new AMD cpu models..
+
+x2apic support for new AMD models was held from resolution of
+BZ #601517 due to verification and test concerns which have
+since been resolved.  This patch supplies the AMD model
+omissions.  Note: this is also relative to BZ #610805 which
+relocates the cpu model config file.
+
+Further detail may be found in the related patch resolution for BZ #601517:
+
+    http://post-office.corp.redhat.com/archives/rhvirt-patches/2010-June/msg00548.html
+
+Upstream status:  Submission pending reconciling this case
+along with related BZs (601517, 603017, 604187) in order to
+submit a single patch series.
+
+Signed-off-by: john cooper <john.cooper@redhat.com>
+---
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ sysconfigs/target/cpu-x86_64.conf |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/sysconfigs/target/cpu-x86_64.conf b/sysconfigs/target/cpu-x86_64.conf
+index ca07088..14db68e 100644
+--- a/sysconfigs/target/cpu-x86_64.conf
++++ b/sysconfigs/target/cpu-x86_64.conf
+@@ -50,7 +50,7 @@
+    model = "6"
+    stepping = "1"
+    feature_edx = "sse2 sse fxsr mmx pat cmov pge sep apic cx8 mce pae msr tsc pse de fpu    mtrr clflush mca pse36"
+-   feature_ecx = "sse3"
++   feature_ecx = "sse3 x2apic"
+    extfeature_edx = "fxsr mmx pat cmov pge apic cx8 mce pae msr tsc pse de fpu    lm syscall nx"
+ #   extfeature_ecx = ""
+    xlevel = "0x80000008"
+@@ -64,7 +64,7 @@
+    model = "6"
+    stepping = "1"
+    feature_edx = "sse2 sse fxsr mmx pat cmov pge sep apic cx8 mce pae msr tsc pse de fpu    mtrr clflush mca pse36"
+-   feature_ecx = "sse3 cx16"
++   feature_ecx = "sse3 cx16 x2apic"
+    extfeature_edx = "fxsr mmx pat cmov pge apic cx8 mce pae msr tsc pse de fpu    lm syscall nx rdtscp"
+    extfeature_ecx = "svm lahf_lm"
+    xlevel = "0x80000008"
+@@ -78,7 +78,7 @@
+    model = "6"
+    stepping = "1"
+    feature_edx = "sse2 sse fxsr mmx pat cmov pge sep apic cx8 mce pae msr tsc pse de fpu    mtrr clflush mca pse36"
+-   feature_ecx = "sse3 cx16 monitor popcnt"
++   feature_ecx = "sse3 cx16 monitor popcnt x2apic"
+    extfeature_edx = "fxsr mmx pat cmov pge apic cx8 mce pae msr tsc pse de fpu    lm syscall nx rdtscp"
+    extfeature_ecx = "svm sse4a  abm misalignsse lahf_lm"
+    xlevel = "0x80000008"
+-- 
+1.7.0.3
+
