@@ -219,7 +219,8 @@ static x86_def_t builtin_x86_defs[] = {
         .vendor2 = CPUID_VENDOR_AMD_2,
         .vendor3 = CPUID_VENDOR_AMD_3,
         .family = 6,
-        .model = 2,
+        /* Athlon (PM core) || P2 with on-die L2 cache - P6 has no sep */
+        .model = 6,
         .stepping = 3,
         .features = PPRO_FEATURES | 
         /* these features are needed for Win64 and aren't fully implemented */
