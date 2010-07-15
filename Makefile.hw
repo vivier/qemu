@@ -37,7 +37,6 @@ obj-$(CONFIG_SMC91C111) += smc91c111.o
 obj-$(CONFIG_LAN9118) += lan9118.o
 
 # SCSI layer
-obj-y += lsi53c895a.o
 obj-$(CONFIG_ESP) += esp.o
 
 obj-y += dma-helpers.o sysbus.o isa-bus.o
