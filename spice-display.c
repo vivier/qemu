@@ -160,10 +160,7 @@ static void spice_display_resize(struct DisplayState *ds)
     }
 
     pthread_mutex_lock(&sdpy.lock);
-    sdpy.dirty.left   = 0;
-    sdpy.dirty.right  = ds_get_width(ds);
-    sdpy.dirty.top    = 0;
-    sdpy.dirty.bottom = ds_get_height(ds);
+    memset(&sdpy.dirty, 0, sizeof(sdpy.dirty));
     pthread_mutex_unlock(&sdpy.lock);
 
     if (!sdpy.is_attached && sdpy.worker) {
