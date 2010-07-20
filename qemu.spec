@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.12.3
-Release: 7%{?dist}
+Release: 8%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -11,6 +11,11 @@ URL: http://www.qemu.org/
 # Allow one off builds to be minimalized without foreign
 # architecture support (--with x86only):
 %define with_x86only  %{?_with_x86only:     1} %{?!_with_x86only:     0}
+
+# OOM killer breaks builds with parallel make on s390(x)
+%ifarch s390 s390x
+%define _smp_mflags %{nil}
+%endif
 
 Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-kvm-%{version}.tar.gz
 Source1: qemu.init
@@ -90,6 +95,7 @@ Patch53: 0053-net-remove-NICInfo.bootable-field.patch
 Patch54: 0054-net-remove-broken-net_set_boot_mask-boot-device-vali.patch
 Patch55: 0055-boot-remove-unused-boot_devices_bitmap-variable.patch
 Patch56: block-vvfat.c-fix-warnings-with-_FORTIFY_SOURCE.patch
+Patch57: avoid-llseek.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -337,6 +343,7 @@ such as kvmtrace and kvm_stat.
 %patch54 -p1
 %patch55 -p1
 %patch56 -p1
+%patch57 -p1
 
 %build
 # By default we build everything, but allow x86 to build a minimal version
@@ -640,6 +647,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jul 20 2010 Dan Horák <dan[at]danny.cz> - 2:0.12.3-8
+- Add avoid-llseek patch from upstream needed for building on s390(x)
+- Don't use parallel make on s390(x)
+
 * Tue Jun 22 2010 Amit Shah <amit.shah@redhat.com> - 2:0.12.3-7
 - Add vvfat hardening patch from upstream (#605202)
 
