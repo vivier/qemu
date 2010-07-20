@@ -477,25 +477,28 @@ static int unavailable_host_feature(struct model_features_t *f, uint32_t mask)
 }
 
 /* determine the effective set of cpuid features visible to a guest.
- * in the case kvm is enabled, we also include features emulated by
- * the hypervisor
+ * in the case kvm is enabled, we also selectively include features
+ * emulated by the hypervisor
  */ 
 static void summary_cpuid_features(CPUX86State *env, x86_def_t *hd)
 {
     struct {
-        uint32_t *pfeat, cmd, reg;
+        uint32_t *pfeat, cmd, reg, mask;
 	} fmap[] = {
-            {&hd->features, 0x00000001, R_EDX},
-            {&hd->ext_features, 0x00000001, R_ECX},
-            {&hd->ext2_features, 0x80000001, R_EDX},
-            {&hd->ext3_features, 0x80000001, R_ECX},
+            {&hd->features, 0x00000001, R_EDX, 0},
+            {&hd->ext_features, 0x00000001, R_ECX, CPUID_EXT_X2APIC},
+            {&hd->ext2_features, 0x80000001, R_EDX, 0},
+            {&hd->ext3_features, 0x80000001, R_ECX, 0},
             {NULL}}, *p;
 
+    cpu_x86_fill_host(hd);
     if (kvm_enabled()) {
-        for (p = fmap; p->pfeat; ++p)
-            *p->pfeat = kvm_arch_get_supported_cpuid(env, p->cmd, p->reg);
-    } else {
-        cpu_x86_fill_host(hd);
+        for (p = fmap; p->pfeat; ++p) {
+            if (p->mask) {
+                *p->pfeat |= p->mask &
+                    kvm_arch_get_supported_cpuid(env, p->cmd, p->reg);
+            }
+        }
     }
 }
 
@@ -545,6 +548,7 @@ static int cpu_x86_find_by_name(x86_def_t *x86_cpu_def, const char *cpu_model)
     if (kvm_enabled() && strcmp(name, "host") == 0) {
         cpu_x86_fill_host(x86_cpu_def);
     } else if (!def) {
+        fprintf(stderr, "Unknown cpu model: %s\n", name);
         goto error;
     } else {
         memcpy(x86_cpu_def, def, sizeof(*def));

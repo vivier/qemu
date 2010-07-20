@@ -983,7 +983,7 @@ CPUState *pc_new_cpu(const char *cpu_model)
 
     env = cpu_init(cpu_model);
     if (!env) {
-        fprintf(stderr, "Unable to find x86 CPU definition\n");
+        fprintf(stderr, "Unable to support requested x86 CPU definition\n");
         exit(1);
     }
     env->kvm_cpu_state.regs_modified = 1;
