@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.96%{?dist}
+Release: 2.97%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1288,6 +1288,24 @@ Patch1630: kvm-QEMUFileBuffered-indicate-that-we-re-ready-when-the-.patch
 Patch1631: kvm-device-assignment-Better-fd-tracking.patch
 # For bz#613884 - x2apic needs to be present in all new AMD cpu models..
 Patch1634: kvm-Add-x2apic-to-cpuid-feature-set-for-new-AMD-models.-.patch
+# For bz#602209 - Core dumped during Guest installation
+Patch1635: kvm-block-Fix-early-failure-in-multiwrite.patch
+# For bz#602209 - Core dumped during Guest installation
+Patch1636: kvm-block-Handle-multiwrite-errors-only-when-all-request.patch
+# For bz#584372 - Fails to detect errors when using exec: based migration
+Patch1637: kvm-migration-respect-exit-status-with-exec.patch
+# For bz#584372 - Fails to detect errors when using exec: based migration
+Patch1638: kvm-set-proper-migration-status-on-write-error-v3.patch
+# For bz#614377 - Windows 7 requires re-activation when migrated from RHEL5 to RHEL6
+Patch1639: kvm-Set-SMBIOS-vendor-to-QEMU-for-RHEL5-machine-types.patch
+# For bz#611797 - qemu does not call unlink() on temp files in snapshot mode
+Patch1640: kvm-Don-t-reset-bs-is_temporary-in-bdrv_open_common.patch
+# For bz#614537 - Skype crashes on VM.
+Patch1641: kvm-Change-default-CPU-model-qemu64-to-model-6.patch
+# For bz#614537 - Skype crashes on VM.
+Patch1642: kvm-set-model-6-on-Intel-CPUs-on-cpu-x86_64.conf.patch
+# For bz#615228 - oom in vhost_dev_start
+Patch1643: kvm-vhost-fix-miration-during-device-start.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1984,6 +2002,15 @@ such as kvm_stat.
 %patch1630 -p1
 %patch1631 -p1
 %patch1634 -p1
+%patch1635 -p1
+%patch1636 -p1
+%patch1637 -p1
+%patch1638 -p1
+%patch1639 -p1
+%patch1640 -p1
+%patch1641 -p1
+%patch1642 -p1
+%patch1643 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2176,6 +2203,29 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jul 20 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.97.el6
+- kvm-block-Fix-early-failure-in-multiwrite.patch [bz#602209]
+- kvm-block-Handle-multiwrite-errors-only-when-all-request.patch [bz#602209]
+- kvm-migration-respect-exit-status-with-exec.patch [bz#584372]
+- kvm-set-proper-migration-status-on-write-error-v3.patch [bz#584372]
+- kvm-Set-SMBIOS-vendor-to-QEMU-for-RHEL5-machine-types.patch [bz#614377]
+- kvm-Don-t-reset-bs-is_temporary-in-bdrv_open_common.patch [bz#611797]
+- kvm-Change-default-CPU-model-qemu64-to-model-6.patch [bz#614537]
+- kvm-set-model-6-on-Intel-CPUs-on-cpu-x86_64.conf.patch [bz#614537]
+- kvm-vhost-fix-miration-during-device-start.patch [bz#615228]
+- Resolves: bz#584372
+  (Fails to detect errors when using exec: based migration)
+- Resolves: bz#602209
+  (Core dumped during Guest installation)
+- Resolves: bz#611797
+  (qemu does not call unlink() on temp files in snapshot mode)
+- Resolves: bz#614377
+  (Windows 7 requires re-activation when migrated from RHEL5 to RHEL6)
+- Resolves: bz#614537
+  (Skype crashes on VM.)
+- Resolves: bz#615228
+  (oom in vhost_dev_start)
+
 * Thu Jul 15 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.96.el6
 - fix some errors in ksmd.init [bz#570467]
 - fix some errors in ksmtuned.init [bz#579883]

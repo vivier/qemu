@@ -1,0 +1,72 @@
+From 87d785b907c0e4a30a609812fd66cd90e45370f6 Mon Sep 17 00:00:00 2001
+From: Marcelo Tosatti <mtosatti@redhat.com>
+Date: Tue, 13 Jul 2010 17:26:19 -0300
+Subject: [PATCH 4/9] set proper migration status on ->write error (v3)
+
+RH-Author: Marcelo Tosatti <mtosatti@redhat.com>
+Message-id: <20100713172619.GA32391@amt.cnet>
+Patchwork-id: 10698
+O-Subject: [RHEL6 qemu-kvm PATCH 2/2] set proper migration status on ->write
+	error (v3)
+Bugzilla: 584372
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+If ->write fails, declare migration status as MIG_STATE_ERROR.
+
+Also, in buffered_file.c, ->close the object in case of an
+error.
+
+Fixes "migrate -d "exec:dd of=file", where dd fails to open file.
+
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+(patch submitted upstream, not yet included)
+BZ: 584372
+
+v3: check for non-NULL s->mon before invoking monitor_resume
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ buffered_file.c |    4 +++-
+ migration.c     |    8 +++++++-
+ 2 files changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/buffered_file.c b/buffered_file.c
+index fdbd848..a89d760 100644
+--- a/buffered_file.c
++++ b/buffered_file.c
+@@ -230,8 +230,10 @@ static void buffered_rate_tick(void *opaque)
+ {
+     QEMUFileBuffered *s = opaque;
+ 
+-    if (s->has_error)
++    if (s->has_error) {
++        buffered_close(s);
+         return;
++    }
+ 
+     qemu_mod_timer(s->timer, qemu_get_clock(rt_clock) + 100);
+ 
+diff --git a/migration.c b/migration.c
+index 4f2403e..a8ee608 100644
+--- a/migration.c
++++ b/migration.c
+@@ -327,8 +327,14 @@ ssize_t migrate_fd_put_buffer(void *opaque, const void *data, size_t size)
+     if (ret == -1)
+         ret = -(s->get_error(s));
+ 
+-    if (ret == -EAGAIN)
++    if (ret == -EAGAIN) {
+         qemu_set_fd_handler2(s->fd, NULL, NULL, migrate_fd_put_notify, s);
++    } else if (ret < 0) {
++        if (s->mon) {
++            monitor_resume(s->mon);
++        }
++        s->state = MIG_STATE_ERROR;
++    }
+ 
+     return ret;
+ }
+-- 
+1.7.0.3
+

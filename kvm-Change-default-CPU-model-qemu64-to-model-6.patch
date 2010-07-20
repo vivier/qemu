@@ -1,0 +1,96 @@
+From f49b231d18ed4b54645570ed3cfeed004fd9bb7f Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Thu, 15 Jul 2010 19:32:14 -0300
+Subject: [PATCH 7/9] Change default CPU model (qemu64) to model=6
+
+RH-Author: Eduardo Habkost <ehabkost@redhat.com>
+Message-id: <1279222335-10031-2-git-send-email-ehabkost@redhat.com>
+Patchwork-id: 10742
+O-Subject: [PATCH 1/2] Change default CPU model (qemu64) to model=6
+Bugzilla: 614537
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Andrea Arcangeli <aarcange@redhat.com>
+RH-Acked-by: john cooper <john.cooper@redhat.com>
+
+This is a port of a patch we included on RHEL5.
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=614537
+
+Upstream status: I am still trying to understand what's the status of the
+                 RHEL5 patch, and why it was not accepted in the first place.
+                 Andrea has more details
+
+Original patch description below:
+
+    --------------
+    enable sysenter on 32bit guests (skype fix) #2
+
+    Update, see comment on model=3... such subtle details there seem to be
+    in windows, and then somebody on qemu-devel thought they could use a
+    brand not-existing qemu new vendor_id != intel/amd with the potential
+    for bigger screwup of all the guest OS... (not just windows) to fix
+    this ;).
+
+    NOTE: you should check the patch applied with no offset-warnings
+    because this risks to go to modify some other cpu definition and not
+    qemu64 if there are offsets (if applied on current source it changes
+    athlon because qemu64 is 6,3,3 in rhel5/master). This is not against
+    rhel5/master but against rhel5/master minus the previous version of
+    this patch and it obsoletes the previous patch. I guess it also
+    invalidates all my testing (however intel/windows32 + skype has
+    already been tested, and linux32/64 is sure fine as well on intel). I
+    think I only need to re-test windows32+skype on svm and linux32 on
+    svm, and linux64 with compatibility mode again on svm.
+
+    ------------
+    From: Andrea Arcangeli <aarcange@redhat.com>
+
+    model=2 is not existent when vendor is intel and an errata of P6 says
+    that any model <= 2 when family is 6 lack sap feature, so windows and
+    linux 32bit guests disable sap in software and slowdown for no good
+    reason when running inside kvm on intel CPU.
+
+    model=3 would fix sysenter troubles but it prevents windows XP from using
+    all cpus, so model=6 matches "Athlon (PM core)" on AMD and "P2 with
+    on-die L2 cache" on Intel and it allows windows to use all CPUs as well
+    as fixing sysenter.
+
+    Patch will follow, workaround without this fix is -cpu qemu64,model=6.
+
+    There is a bug in skype that it checks if the sep feature is set to
+    run sysenter on intel chip inside its binary without passing through
+    ntdll, without verifying the model was <= 2 like windows does, so
+    windows forbids sysenter but skype calls it anyway. This is skype bug
+    and it would trigger on real P6 hardware too (but nobody tests skype
+    on P6). qemu64,-sep fixed skype. But because every time we have an
+    intel cpu running kvm, we also have sysenter functioning, we boots the
+    model to 6 so windows 32bit (and linux32bit) gets a boost with
+    sysenter too.
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ target-i386/helper.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ target-i386/helper.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/target-i386/helper.c b/target-i386/helper.c
+index e271b31..0b3b239 100644
+--- a/target-i386/helper.c
++++ b/target-i386/helper.c
+@@ -219,7 +219,8 @@ static x86_def_t builtin_x86_defs[] = {
+         .vendor2 = CPUID_VENDOR_AMD_2,
+         .vendor3 = CPUID_VENDOR_AMD_3,
+         .family = 6,
+-        .model = 2,
++        /* Athlon (PM core) || P2 with on-die L2 cache - P6 has no sep */
++        .model = 6,
+         .stepping = 3,
+         .features = PPRO_FEATURES | 
+         /* these features are needed for Win64 and aren't fully implemented */
+-- 
+1.7.0.3
+

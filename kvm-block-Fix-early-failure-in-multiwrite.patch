@@ -1,0 +1,101 @@
+From f6bee6a69113b7c01bbc61a16f13862542add797 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Mon, 5 Jul 2010 14:41:01 -0300
+Subject: [PATCH 1/9] block: Fix early failure in multiwrite
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1278340862-16848-2-git-send-email-kwolf@redhat.com>
+Patchwork-id: 10478
+O-Subject: [RHEL-6 qemu-kvm PATCH 1/2] block: Fix early failure in multiwrite
+Bugzilla: 602209
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 602209
+
+bdrv_aio_writev may call the callback immediately (and it will commonly do so
+in error cases). Current code doesn't consider this. For details see the
+comment added by this patch.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 453f9a1652629e5805995b165be2e634c8487139)
+---
+ block.c |   37 ++++++++++++++++++++++++++++++-------
+ 1 files changed, 30 insertions(+), 7 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c |   37 ++++++++++++++++++++++++++++++-------
+ 1 files changed, 30 insertions(+), 7 deletions(-)
+
+diff --git a/block.c b/block.c
+index ad7a66f..0e03583 100644
+--- a/block.c
++++ b/block.c
+@@ -2057,8 +2057,29 @@ int bdrv_aio_multiwrite(BlockDriverState *bs, BlockRequest *reqs, int num_reqs)
+     // Check for mergable requests
+     num_reqs = multiwrite_merge(bs, reqs, num_reqs, mcb);
+ 
+-    // Run the aio requests
++    /*
++     * Run the aio requests. As soon as one request can't be submitted
++     * successfully, fail all requests that are not yet submitted (we must
++     * return failure for all requests anyway)
++     *
++     * num_requests cannot be set to the right value immediately: If
++     * bdrv_aio_writev fails for some request, num_requests would be too high
++     * and therefore multiwrite_cb() would never recognize the multiwrite
++     * request as completed. We also cannot use the loop variable i to set it
++     * when the first request fails because the callback may already have been
++     * called for previously submitted requests. Thus, num_requests must be
++     * incremented for each request that is submitted.
++     *
++     * The problem that callbacks may be called early also means that we need
++     * to take care that num_requests doesn't become 0 before all requests are
++     * submitted - multiwrite_cb() would consider the multiwrite request
++     * completed. A dummy request that is "completed" by a manual call to
++     * multiwrite_cb() takes care of this.
++     */
++    mcb->num_requests = 1;
++
+     for (i = 0; i < num_reqs; i++) {
++        mcb->num_requests++;
+         acb = bdrv_aio_writev(bs, reqs[i].sector, reqs[i].qiov,
+             reqs[i].nb_sectors, multiwrite_cb, mcb);
+ 
+@@ -2066,23 +2087,25 @@ int bdrv_aio_multiwrite(BlockDriverState *bs, BlockRequest *reqs, int num_reqs)
+             // We can only fail the whole thing if no request has been
+             // submitted yet. Otherwise we'll wait for the submitted AIOs to
+             // complete and report the error in the callback.
+-            if (mcb->num_requests == 0) {
+-                reqs[i].error = -EIO;
++            if (i == 0) {
+                 goto fail;
+             } else {
+-                mcb->num_requests++;
+                 multiwrite_cb(mcb, -EIO);
+                 break;
+             }
+-        } else {
+-            mcb->num_requests++;
+         }
+     }
+ 
++    /* Complete the dummy request */
++    multiwrite_cb(mcb, 0);
++
+     return 0;
+ 
+ fail:
+-    free(mcb);
++    for (i = 0; i < mcb->num_callbacks; i++) {
++        reqs[i].error = -EIO;
++    }
++    qemu_free(mcb);
+     return -1;
+ }
+ 
+-- 
+1.7.0.3
+

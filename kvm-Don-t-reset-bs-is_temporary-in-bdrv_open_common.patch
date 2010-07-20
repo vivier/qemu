@@ -1,0 +1,53 @@
+From e117f91f3fa9175eb793c4085336ea6c9530cc14 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Thu, 15 Jul 2010 10:06:01 -0300
+Subject: [PATCH 6/9] Don't reset bs->is_temporary in bdrv_open_common
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1386c299a8d157fe46e6d9ccf8ddde814eaa7c87.1279188354.git.amit.shah@redhat.com>
+Patchwork-id: 10735
+O-Subject: [RHEL6.0 PATCH] Don't reset bs->is_temporary in bdrv_open_common
+Bugzilla: 611797
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Ryan Harper <ryanh@us.ibm.com>
+
+To fix https://bugs.launchpad.net/qemu/+bug/597402 where qemu fails to
+call unlink() on temporary snapshots due to bs->is_temporary getting clobbered
+in bdrv_open_common() after being set in bdrv_open() which calls the former.
+
+We don't need to initialize bs->is_temporary in bdrv_open_common().
+
+Signed-off-by: Ryan Harper <ryanh@us.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 15c7733bb231090e5ebd6d10060dccdb98bb4941)
+
+Bugzilla: 611797
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ block.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+diff --git a/block.c b/block.c
+index 1b6ae4d..d250c0d 100644
+--- a/block.c
++++ b/block.c
+@@ -394,7 +394,6 @@ static int bdrv_open_common(BlockDriverState *bs, const char *filename,
+ 
+     bs->file = NULL;
+     bs->total_sectors = 0;
+-    bs->is_temporary = 0;
+     bs->encrypted = 0;
+     bs->valid_key = 0;
+     bs->open_flags = flags;
+-- 
+1.7.0.3
+

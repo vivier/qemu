@@ -1,0 +1,70 @@
+From 9a2e04fed8d1c4b44c4122b211e236a36a036cc7 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Thu, 15 Jul 2010 19:35:10 -0300
+Subject: [PATCH 8/9] set model=6 on Intel CPUs on cpu-x86_64.conf
+
+RH-Author: Eduardo Habkost <ehabkost@redhat.com>
+Message-id: <20100715193510.GU12410@blackpad.lan.raisama.net>
+Patchwork-id: 10743
+O-Subject: [PATCH 2/2] set model=6 on Intel CPUs on cpu-x86_64.conf
+Bugzilla: 614537
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: john cooper <john.cooper@redhat.com>
+RH-Acked-by: Andrea Arcangeli <aarcange@redhat.com>
+
+This implements the same model=2 -> model=6 change on the Intel CPU definitions
+on the cpu-x86_64.conf file.
+
+This will be tested as soon as I find an Intel machine where I can reproduce
+the bug.
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=614537
+
+Upstream status: I am still trying to understand what's the status of the
+                 RHEL5 patch, and why it was not accepted in the first place.
+                 Andrea has more details
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ sysconfigs/target/cpu-x86_64.conf |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ sysconfigs/target/cpu-x86_64.conf |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/sysconfigs/target/cpu-x86_64.conf b/sysconfigs/target/cpu-x86_64.conf
+index 14db68e..279f0e7 100644
+--- a/sysconfigs/target/cpu-x86_64.conf
++++ b/sysconfigs/target/cpu-x86_64.conf
+@@ -5,7 +5,7 @@
+    level = "2"
+    vendor = "GenuineIntel"
+    family = "6"
+-   model = "2"
++   model = "6"
+    stepping = "3"
+    feature_edx = "sse2 sse fxsr mmx pat cmov pge sep apic cx8 mce pae msr tsc pse de fpu    mtrr clflush mca pse36"
+    feature_ecx = "sse3 ssse3 x2apic"
+@@ -19,7 +19,7 @@
+    level = "2"
+    vendor = "GenuineIntel"
+    family = "6"
+-   model = "2"
++   model = "6"
+    stepping = "3"
+    feature_edx = "sse2 sse fxsr mmx pat cmov pge sep apic cx8 mce pae msr tsc pse de fpu    mtrr clflush mca pse36"
+    feature_ecx = "sse3 cx16 ssse3 sse4.1 x2apic"
+@@ -33,7 +33,7 @@
+    level = "2"
+    vendor = "GenuineIntel"
+    family = "6"
+-   model = "2"
++   model = "6"
+    stepping = "3"
+    feature_edx = "sse2 sse fxsr mmx pat cmov pge sep apic cx8 mce pae msr tsc pse de fpu    mtrr clflush mca pse36"
+    feature_ecx = "sse3 cx16 ssse3 sse4.1 sse4.2 x2apic popcnt"
+-- 
+1.7.0.3
+
