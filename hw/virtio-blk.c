@@ -28,6 +28,7 @@ typedef struct VirtIOBlock
     QEMUBH *bh;
     BlockConf *conf;
     unsigned short sector_mask;
+    DeviceState *qdev;
 } VirtIOBlock;
 
 static VirtIOBlock *to_virtio_blk(VirtIODevice *vdev)
@@ -515,8 +516,15 @@ VirtIODevice *virtio_blk_init(DeviceState *dev, BlockConf *conf)
     s->vq = virtio_add_queue(&s->vdev, 128, virtio_blk_handle_output);
 
     qemu_add_vm_change_state_handler(virtio_blk_dma_restart_cb, s);
+    s->qdev = dev;
     register_savevm(dev, "virtio-blk", virtio_blk_id++, 2,
                     virtio_blk_save, virtio_blk_load, s);
 
     return &s->vdev;
+}
+
+void virtio_blk_exit(VirtIODevice *vdev)
+{
+    VirtIOBlock *s = to_virtio_blk(vdev);
+    unregister_savevm(s->qdev, "virtio-blk", s);
 }
