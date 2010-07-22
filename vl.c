@@ -4464,9 +4464,17 @@ static void version(void)
     printf("QEMU PC emulator version " QEMU_VERSION QEMU_PKGVERSION ", Copyright (c) 2003-2008 Fabrice Bellard\n");
 }
 
+static void print_rh_warning(void)
+{
+    printf("\nWARNING: Direct use of qemu-kvm from the command line is unsupported."
+           "\nWARNING: Only use via libvirt."
+           "\nWARNING: Some options listed here may not be available in future releases.\n\n");
+}
+
 static void help(int exitcode)
 {
     version();
+    print_rh_warning();
     printf("usage: %s [options] [disk_image]\n"
            "\n"
            "'disk_image' is a raw hard image image for IDE hard disk 0\n"
@@ -4494,6 +4502,7 @@ static void help(int exitcode)
 #endif
            DEFAULT_GDBSTUB_PORT,
            "/tmp/qemu.log");
+    print_rh_warning();
     exit(exitcode);
 }
 
