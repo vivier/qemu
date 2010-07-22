@@ -1,0 +1,79 @@
+From 13a1d113ac5707c8983a99af07c54166db6f0104 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 6 Jul 2010 22:29:16 -0300
+Subject: [PATCH 17/24] ramblocks: No more being lazy about duplicate names
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100706222915.1033.60498.stgit@localhost.localdomain>
+Patchwork-id: 10520
+O-Subject: [RHEL6.0 qemu-kvm PATCH 17/17] ramblocks: No more being lazy about
+	duplicate names
+Bugzilla: 596328
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 596328
+Upstream commit: fb787f81e749fde8c74548f9db1472eb321b9a0c
+
+Now that we have a working qemu_ram_free() and the primary runtime
+user of it has been updated, don't be lenient about duplicate id strings.
+We also shouldn't need to create them ondemand at the target.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+
+ exec.c |   13 +++----------
+ vl.c   |    5 +++--
+ 2 files changed, 6 insertions(+), 12 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ exec.c |   13 +++----------
+ vl.c   |    5 +++--
+ 2 files changed, 6 insertions(+), 12 deletions(-)
+
+diff --git a/exec.c b/exec.c
+index 0df3a7a..3d1404d 100644
+--- a/exec.c
++++ b/exec.c
+@@ -2697,16 +2697,9 @@ ram_addr_t qemu_ram_alloc(DeviceState *dev, const char *name, ram_addr_t size)
+ 
+     QLIST_FOREACH(block, &ram_list.blocks, next) {
+         if (!strcmp(block->idstr, new_block->idstr)) {
+-            if (block->length == new_block->length) {
+-                fprintf(stderr, "RAMBlock \"%s\" exists, assuming lack of"
+-                        "free.\n", new_block->idstr);
+-                qemu_free(new_block);
+-                return block->offset;
+-            } else {
+-                fprintf(stderr, "RAMBlock \"%s\" already registered with"
+-                        "different size, abort\n", new_block->idstr);
+-                abort();
+-            }
++            fprintf(stderr, "RAMBlock \"%s\" already registered, abort!\n",
++                    new_block->idstr);
++            abort();
+         }
+     }
+ 
+diff --git a/vl.c b/vl.c
+index 571c306..b871327 100644
+--- a/vl.c
++++ b/vl.c
+@@ -3312,8 +3312,9 @@ static int ram_load(QEMUFile *f, void *opaque, int version_id)
+                     }
+ 
+                     if (!block) {
+-                        if (!qemu_ram_alloc(NULL, id, length))
+-                            return -ENOMEM;
++                        fprintf(stderr, "Unknown ramblock \"%s\", cannot "
++                                "accept migration\n", id);
++                        return -EINVAL;
+                     }
+ 
+                     total_ram_bytes -= length;
+-- 
+1.7.0.3
+

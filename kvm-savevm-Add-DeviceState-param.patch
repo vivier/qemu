@@ -1,0 +1,1837 @@
+From b0a64fe6ae2945910078a6ed076a1d94580f1ba1 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 6 Jul 2010 22:28:09 -0300
+Subject: [PATCH 06/24] savevm: Add DeviceState param
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100706222809.1033.59564.stgit@localhost.localdomain>
+Patchwork-id: 10509
+O-Subject: [RHEL6.0 qemu-kvm PATCH 06/17] savevm: Add DeviceState param
+Bugzilla: 596328
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Zachary Amsden <zamsden@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 596328
+Upstream commit: 0be71e324f774a77243f1a1487f468232d69542b
+
+When available, we'd like to be able to access the DeviceState
+when registering a savevm.  For buses with a get_dev_path()
+function, this will allow us to create more unique savevm
+id strings.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+
+ audio/audio.c          |    2 +-
+ block-migration.c      |    4 ++--
+ exec.c                 |    4 ++--
+ hw/acpi.c              |    2 +-
+ hw/adb.c               |    4 ++--
+ hw/ads7846.c           |    2 +-
+ hw/apic.c              |    2 +-
+ hw/arm_gic.c           |    2 +-
+ hw/arm_timer.c         |    4 ++--
+ hw/armv7m_nvic.c       |    2 +-
+ hw/cirrus_vga.c        |    2 +-
+ hw/cuda.c              |    2 +-
+ hw/dma.c               |    4 ++--
+ hw/eepro100.c          |    4 ++--
+ hw/eeprom93xx.c        |    4 ++--
+ hw/fdc.c               |    2 +-
+ hw/fw_cfg.c            |    2 +-
+ hw/g364fb.c            |    2 +-
+ hw/grackle_pci.c       |    4 ++--
+ hw/gt64xxx.c           |    3 ++-
+ hw/heathrow_pic.c      |    2 +-
+ hw/hpet.c              |    2 +-
+ hw/hw.h                |   15 +++++++++------
+ hw/i2c.c               |    2 +-
+ hw/i8254-kvm.c         |    2 +-
+ hw/i8254.c             |    2 +-
+ hw/i8259.c             |    4 ++--
+ hw/ide/cmd646.c        |    2 +-
+ hw/ide/isa.c           |    2 +-
+ hw/ide/macio.c         |    2 +-
+ hw/ide/microdrive.c    |    2 +-
+ hw/ide/mmio.c          |    2 +-
+ hw/ide/piix.c          |    2 +-
+ hw/ioapic.c            |    2 +-
+ hw/ipf.c               |    2 +-
+ hw/m48t59.c            |    2 +-
+ hw/mac_dbdma.c         |    2 +-
+ hw/mac_nvram.c         |    4 ++--
+ hw/max111x.c           |    3 ++-
+ hw/mc146818rtc.c       |    2 +-
+ hw/mipsnet.c           |    4 ++--
+ hw/mst_fpga.c          |    3 ++-
+ hw/nand.c              |    2 +-
+ hw/openpic.c           |    5 +++--
+ hw/pci.c               |    2 +-
+ hw/pckbd.c             |    2 +-
+ hw/piix4.c             |    2 +-
+ hw/pl011.c             |    2 +-
+ hw/pl022.c             |    2 +-
+ hw/pl061.c             |    2 +-
+ hw/ppc4xx_pci.c        |    4 ++--
+ hw/ppce500_pci.c       |    4 ++--
+ hw/ps2.c               |    4 ++--
+ hw/pxa2xx.c            |   27 +++++++++++++++------------
+ hw/pxa2xx_dma.c        |    2 +-
+ hw/pxa2xx_gpio.c       |    2 +-
+ hw/pxa2xx_keypad.c     |    2 +-
+ hw/pxa2xx_lcd.c        |    2 +-
+ hw/pxa2xx_mmci.c       |    2 +-
+ hw/pxa2xx_pic.c        |    3 ++-
+ hw/pxa2xx_timer.c      |    2 +-
+ hw/qdev.c              |    4 ++--
+ hw/rc4030.c            |    2 +-
+ hw/serial.c            |    6 +++---
+ hw/spitz.c             |    9 +++++----
+ hw/ssd0323.c           |    3 ++-
+ hw/ssi-sd.c            |    2 +-
+ hw/stellaris.c         |   11 ++++++-----
+ hw/stellaris_enet.c    |    4 ++--
+ hw/stellaris_input.c   |    2 +-
+ hw/syborg_fb.c         |    2 +-
+ hw/syborg_interrupt.c  |    3 ++-
+ hw/syborg_keyboard.c   |    2 +-
+ hw/syborg_pointer.c    |    2 +-
+ hw/syborg_rtc.c        |    3 ++-
+ hw/syborg_serial.c     |    2 +-
+ hw/syborg_timer.c      |    2 +-
+ hw/tsc2005.c           |    2 +-
+ hw/tsc210x.c           |    4 ++--
+ hw/unin_pci.c          |    3 ++-
+ hw/vga-isa-mm.c        |    2 +-
+ hw/vga-isa.c           |    2 +-
+ hw/virtio-balloon.c    |    3 ++-
+ hw/virtio-blk.c        |    2 +-
+ hw/virtio-net.c        |    4 ++--
+ hw/virtio-serial-bus.c |    2 +-
+ hw/vmmouse.c           |    2 +-
+ hw/vmware_vga.c        |    2 +-
+ hw/zaurus.c            |    2 +-
+ kvm-tpr-opt.c          |    2 +-
+ qemu-kvm-x86.c         |    2 +-
+ savevm.c               |   17 ++++++++++-------
+ slirp/slirp.c          |    5 +++--
+ vl.c                   |    4 ++--
+ 94 files changed, 168 insertions(+), 146 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ audio/audio.c          |    2 +-
+ block-migration.c      |    4 ++--
+ exec.c                 |    4 ++--
+ hw/acpi.c              |    2 +-
+ hw/adb.c               |    4 ++--
+ hw/ads7846.c           |    2 +-
+ hw/apic.c              |    2 +-
+ hw/arm_gic.c           |    2 +-
+ hw/arm_timer.c         |    4 ++--
+ hw/armv7m_nvic.c       |    2 +-
+ hw/cirrus_vga.c        |    2 +-
+ hw/cuda.c              |    2 +-
+ hw/dma.c               |    4 ++--
+ hw/eepro100.c          |    4 ++--
+ hw/eeprom93xx.c        |    4 ++--
+ hw/fdc.c               |    2 +-
+ hw/fw_cfg.c            |    2 +-
+ hw/g364fb.c            |    2 +-
+ hw/grackle_pci.c       |    4 ++--
+ hw/gt64xxx.c           |    3 ++-
+ hw/heathrow_pic.c      |    2 +-
+ hw/hpet.c              |    2 +-
+ hw/hw.h                |   15 +++++++++------
+ hw/i2c.c               |    2 +-
+ hw/i8254-kvm.c         |    2 +-
+ hw/i8254.c             |    2 +-
+ hw/i8259.c             |    4 ++--
+ hw/ide/cmd646.c        |    2 +-
+ hw/ide/isa.c           |    2 +-
+ hw/ide/macio.c         |    2 +-
+ hw/ide/microdrive.c    |    2 +-
+ hw/ide/mmio.c          |    2 +-
+ hw/ide/piix.c          |    2 +-
+ hw/ioapic.c            |    2 +-
+ hw/ipf.c               |    2 +-
+ hw/m48t59.c            |    2 +-
+ hw/mac_dbdma.c         |    2 +-
+ hw/mac_nvram.c         |    4 ++--
+ hw/max111x.c           |    3 ++-
+ hw/mc146818rtc.c       |    2 +-
+ hw/mipsnet.c           |    4 ++--
+ hw/mst_fpga.c          |    3 ++-
+ hw/nand.c              |    2 +-
+ hw/openpic.c           |    5 +++--
+ hw/pci.c               |    2 +-
+ hw/pckbd.c             |    2 +-
+ hw/piix4.c             |    2 +-
+ hw/pl011.c             |    2 +-
+ hw/pl022.c             |    2 +-
+ hw/pl061.c             |    2 +-
+ hw/ppc4xx_pci.c        |    4 ++--
+ hw/ppce500_pci.c       |    4 ++--
+ hw/ps2.c               |    4 ++--
+ hw/pxa2xx.c            |   27 +++++++++++++++------------
+ hw/pxa2xx_dma.c        |    2 +-
+ hw/pxa2xx_gpio.c       |    2 +-
+ hw/pxa2xx_keypad.c     |    2 +-
+ hw/pxa2xx_lcd.c        |    2 +-
+ hw/pxa2xx_mmci.c       |    2 +-
+ hw/pxa2xx_pic.c        |    3 ++-
+ hw/pxa2xx_timer.c      |    2 +-
+ hw/qdev.c              |    4 ++--
+ hw/rc4030.c            |    2 +-
+ hw/serial.c            |    6 +++---
+ hw/spitz.c             |    9 +++++----
+ hw/ssd0323.c           |    3 ++-
+ hw/ssi-sd.c            |    2 +-
+ hw/stellaris.c         |   11 ++++++-----
+ hw/stellaris_enet.c    |    4 ++--
+ hw/stellaris_input.c   |    2 +-
+ hw/syborg_fb.c         |    2 +-
+ hw/syborg_interrupt.c  |    3 ++-
+ hw/syborg_keyboard.c   |    2 +-
+ hw/syborg_pointer.c    |    2 +-
+ hw/syborg_rtc.c        |    3 ++-
+ hw/syborg_serial.c     |    2 +-
+ hw/syborg_timer.c      |    2 +-
+ hw/tsc2005.c           |    2 +-
+ hw/tsc210x.c           |    4 ++--
+ hw/unin_pci.c          |    3 ++-
+ hw/vga-isa-mm.c        |    2 +-
+ hw/vga-isa.c           |    2 +-
+ hw/virtio-balloon.c    |    3 ++-
+ hw/virtio-blk.c        |    2 +-
+ hw/virtio-net.c        |    4 ++--
+ hw/virtio-serial-bus.c |    2 +-
+ hw/vmmouse.c           |    2 +-
+ hw/vmware_vga.c        |    2 +-
+ hw/zaurus.c            |    2 +-
+ kvm-tpr-opt.c          |    2 +-
+ qemu-kvm-x86.c         |    2 +-
+ savevm.c               |   17 ++++++++++-------
+ slirp/slirp.c          |    5 +++--
+ vl.c                   |    4 ++--
+ 94 files changed, 168 insertions(+), 146 deletions(-)
+
+diff --git a/audio/audio.c b/audio/audio.c
+index 986b479..8470983 100644
+--- a/audio/audio.c
++++ b/audio/audio.c
+@@ -1895,7 +1895,7 @@ static void audio_init (void)
+     }
+ 
+     QLIST_INIT (&s->card_head);
+-    vmstate_register (0, &vmstate_audio, s);
++    vmstate_register (NULL, 0, &vmstate_audio, s);
+ }
+ 
+ void AUD_register_card (const char *name, QEMUSoundCard *card)
+diff --git a/block-migration.c b/block-migration.c
+index 681c5ba..1a8dab4 100644
+--- a/block-migration.c
++++ b/block-migration.c
+@@ -539,6 +539,6 @@ void blk_mig_init(void)
+     QSIMPLEQ_INIT(&block_mig_state.bmds_list);
+     QSIMPLEQ_INIT(&block_mig_state.blk_list);
+ 
+-    register_savevm_live("block", 0, 1, block_set_params, block_save_live,
+-                         NULL, block_load, &block_mig_state);
++    register_savevm_live(NULL, "block", 0, 1, block_set_params,
++                         block_save_live, NULL, block_load, &block_mig_state);
+ }
+diff --git a/exec.c b/exec.c
+index 099d2ea..6545ba0 100644
+--- a/exec.c
++++ b/exec.c
+@@ -598,8 +598,8 @@ void cpu_exec_init(CPUState *env)
+     cpu_list_unlock();
+ #endif
+ #if defined(CPU_SAVE_VERSION) && !defined(CONFIG_USER_ONLY)
+-    vmstate_register(cpu_index, &vmstate_cpu_common, env);
+-    register_savevm("cpu", cpu_index, CPU_SAVE_VERSION,
++    vmstate_register(NULL, cpu_index, &vmstate_cpu_common, env);
++    register_savevm(NULL, "cpu", cpu_index, CPU_SAVE_VERSION,
+                     cpu_save, cpu_load, env);
+ #endif
+ }
+diff --git a/hw/acpi.c b/hw/acpi.c
+index 83bcc44..ab9f89b 100644
+--- a/hw/acpi.c
++++ b/hw/acpi.c
+@@ -605,7 +605,7 @@ i2c_bus *piix4_pm_init(PCIBus *bus, int devfn, uint32_t smb_io_base,
+ 
+     qemu_system_powerdown = *qemu_allocate_irqs(piix4_powerdown, s, 1);
+ 
+-    vmstate_register(0, &vmstate_acpi, s);
++    vmstate_register(&s->dev.qdev, 0, &vmstate_acpi, s);
+ 
+     s->smbus = i2c_init_bus(NULL, "i2c");
+     s->irq = sci_irq;
+diff --git a/hw/adb.c b/hw/adb.c
+index 4fb7a62..99b30f6 100644
+--- a/hw/adb.c
++++ b/hw/adb.c
+@@ -305,7 +305,7 @@ void adb_kbd_init(ADBBusState *bus)
+     d = adb_register_device(bus, ADB_KEYBOARD, adb_kbd_request,
+                             adb_kbd_reset, s);
+     qemu_add_kbd_event_handler(adb_kbd_put_keycode, d);
+-    register_savevm("adb_kbd", -1, 1, adb_kbd_save,
++    register_savevm(NULL, "adb_kbd", -1, 1, adb_kbd_save,
+                     adb_kbd_load, s);
+ }
+ 
+@@ -475,6 +475,6 @@ void adb_mouse_init(ADBBusState *bus)
+     d = adb_register_device(bus, ADB_MOUSE, adb_mouse_request,
+                             adb_mouse_reset, s);
+     qemu_add_mouse_event_handler(adb_mouse_event, d, 0, "QEMU ADB Mouse");
+-    register_savevm("adb_mouse", -1, 1, adb_mouse_save,
++    register_savevm(NULL, "adb_mouse", -1, 1, adb_mouse_save,
+                     adb_mouse_load, s);
+ }
+diff --git a/hw/ads7846.c b/hw/ads7846.c
+index 184b3dd..b3bbeaf 100644
+--- a/hw/ads7846.c
++++ b/hw/ads7846.c
+@@ -151,7 +151,7 @@ static int ads7846_init(SSISlave *dev)
+ 
+     ads7846_int_update(s);
+ 
+-    register_savevm("ads7846", -1, 0, ads7846_save, ads7846_load, s);
++    register_savevm(NULL, "ads7846", -1, 0, ads7846_save, ads7846_load, s);
+     return 0;
+ }
+ 
+diff --git a/hw/apic.c b/hw/apic.c
+index ae805dc..e760fe1 100644
+--- a/hw/apic.c
++++ b/hw/apic.c
+@@ -1128,7 +1128,7 @@ int apic_init(CPUState *env)
+     }
+     s->timer = qemu_new_timer(vm_clock, apic_timer, s);
+ 
+-    vmstate_register(s->idx, &vmstate_apic, s);
++    vmstate_register(NULL, s->idx, &vmstate_apic, s);
+     qemu_register_reset(apic_reset, s);
+ 
+     /* apic_reset must be called before the vcpu threads are initialized and load
+diff --git a/hw/arm_gic.c b/hw/arm_gic.c
+index c4afc6a..8286a28 100644
+--- a/hw/arm_gic.c
++++ b/hw/arm_gic.c
+@@ -744,5 +744,5 @@ static void gic_init(gic_state *s)
+     s->iomemtype = cpu_register_io_memory(gic_dist_readfn,
+                                           gic_dist_writefn, s);
+     gic_reset(s);
+-    register_savevm("arm_gic", -1, 1, gic_save, gic_load, s);
++    register_savevm(NULL, "arm_gic", -1, 1, gic_save, gic_load, s);
+ }
+diff --git a/hw/arm_timer.c b/hw/arm_timer.c
+index 9fef191..7d1eed9 100644
+--- a/hw/arm_timer.c
++++ b/hw/arm_timer.c
+@@ -174,7 +174,7 @@ static arm_timer_state *arm_timer_init(uint32_t freq)
+ 
+     bh = qemu_bh_new(arm_timer_tick, s);
+     s->timer = ptimer_init(bh);
+-    register_savevm("arm_timer", -1, 1, arm_timer_save, arm_timer_load, s);
++    register_savevm(NULL, "arm_timer", -1, 1, arm_timer_save, arm_timer_load, s);
+     return s;
+ }
+ 
+@@ -271,7 +271,7 @@ static int sp804_init(SysBusDevice *dev)
+     iomemtype = cpu_register_io_memory(sp804_readfn,
+                                        sp804_writefn, s);
+     sysbus_init_mmio(dev, 0x1000, iomemtype);
+-    register_savevm("sp804", -1, 1, sp804_save, sp804_load, s);
++    register_savevm(&dev->qdev, "sp804", -1, 1, sp804_save, sp804_load, s);
+     return 0;
+ }
+ 
+diff --git a/hw/armv7m_nvic.c b/hw/armv7m_nvic.c
+index 3360808..5861bd5 100644
+--- a/hw/armv7m_nvic.c
++++ b/hw/armv7m_nvic.c
+@@ -397,7 +397,7 @@ static int armv7m_nvic_init(SysBusDevice *dev)
+     gic_init(&s->gic);
+     cpu_register_physical_memory(0xe000e000, 0x1000, s->gic.iomemtype);
+     s->systick.timer = qemu_new_timer(vm_clock, systick_timer_tick, s);
+-    register_savevm("armv7m_nvic", -1, 1, nvic_save, nvic_load, s);
++    register_savevm(&dev->qdev, "armv7m_nvic", -1, 1, nvic_save, nvic_load, s);
+     return 0;
+ }
+ 
+diff --git a/hw/cirrus_vga.c b/hw/cirrus_vga.c
+index 571044f..21d057a 100644
+--- a/hw/cirrus_vga.c
++++ b/hw/cirrus_vga.c
+@@ -3141,7 +3141,7 @@ void isa_cirrus_vga_init(void)
+     s->vga.ds = graphic_console_init(s->vga.update, s->vga.invalidate,
+                                      s->vga.screen_dump, s->vga.text_update,
+                                      &s->vga);
+-    vmstate_register(0, &vmstate_cirrus_vga, s);
++    vmstate_register(NULL, 0, &vmstate_cirrus_vga, s);
+     rom_add_vga(VGABIOS_CIRRUS_FILENAME);
+     /* XXX ISA-LFB support */
+ }
+diff --git a/hw/cuda.c b/hw/cuda.c
+index 83ae68a..4bc0e03 100644
+--- a/hw/cuda.c
++++ b/hw/cuda.c
+@@ -761,6 +761,6 @@ void cuda_init (int *cuda_mem_index, qemu_irq irq)
+ 
+     s->adb_poll_timer = qemu_new_timer(vm_clock, cuda_adb_poll, s);
+     *cuda_mem_index = cpu_register_io_memory(cuda_read, cuda_write, s);
+-    register_savevm("cuda", -1, 1, cuda_save, cuda_load, s);
++    register_savevm(NULL, "cuda", -1, 1, cuda_save, cuda_load, s);
+     qemu_register_reset(cuda_reset, s);
+ }
+diff --git a/hw/dma.c b/hw/dma.c
+index 44c642e..fe69ddd 100644
+--- a/hw/dma.c
++++ b/hw/dma.c
+@@ -546,8 +546,8 @@ void DMA_init (int high_page_enable)
+               high_page_enable ? 0x480 : -1);
+     dma_init2(&dma_controllers[1], 0xc0, 1, 0x88,
+               high_page_enable ? 0x488 : -1);
+-    vmstate_register (0, &vmstate_dma, &dma_controllers[0]);
+-    vmstate_register (1, &vmstate_dma, &dma_controllers[1]);
++    vmstate_register (NULL, 0, &vmstate_dma, &dma_controllers[0]);
++    vmstate_register (NULL, 1, &vmstate_dma, &dma_controllers[1]);
+ 
+     dma_bh = qemu_bh_new(DMA_run_bh, NULL);
+ }
+diff --git a/hw/eepro100.c b/hw/eepro100.c
+index 2a9e3b5..646e27d 100644
+--- a/hw/eepro100.c
++++ b/hw/eepro100.c
+@@ -1791,7 +1791,7 @@ static int pci_nic_uninit(PCIDevice *pci_dev)
+     EEPRO100State *s = DO_UPCAST(EEPRO100State, dev, pci_dev);
+ 
+     cpu_unregister_io_memory(s->mmio_index);
+-    vmstate_unregister(s->vmstate, s);
++    vmstate_unregister(&pci_dev->qdev, s->vmstate, s);
+     eeprom93xx_free(s->eeprom);
+     qemu_del_vlan_client(&s->nic->nc);
+     return 0;
+@@ -1848,7 +1848,7 @@ static int nic_init(PCIDevice *pci_dev, uint32_t device)
+     s->vmstate = qemu_malloc(sizeof(vmstate_eepro100));
+     memcpy(s->vmstate, &vmstate_eepro100, sizeof(vmstate_eepro100));
+     s->vmstate->name = s->nic->nc.model;
+-    vmstate_register(-1, s->vmstate, s);
++    vmstate_register(&pci_dev->qdev, -1, s->vmstate, s);
+ 
+     if (!pci_dev->qdev.hotplugged) {
+         static int loaded = 0;
+diff --git a/hw/eeprom93xx.c b/hw/eeprom93xx.c
+index 30a3534..6ba546f 100644
+--- a/hw/eeprom93xx.c
++++ b/hw/eeprom93xx.c
+@@ -316,7 +316,7 @@ eeprom_t *eeprom93xx_new(uint16_t nwords)
+     /* Output DO is tristate, read results in 1. */
+     eeprom->eedo = 1;
+     logout("eeprom = 0x%p, nwords = %u\n", eeprom, nwords);
+-    vmstate_register(0, &vmstate_eeprom, eeprom);
++    vmstate_register(NULL, 0, &vmstate_eeprom, eeprom);
+     return eeprom;
+ }
+ 
+@@ -324,7 +324,7 @@ void eeprom93xx_free(eeprom_t *eeprom)
+ {
+     /* Destroy EEPROM. */
+     logout("eeprom = 0x%p\n", eeprom);
+-    vmstate_unregister(&vmstate_eeprom, eeprom);
++    vmstate_unregister(NULL, &vmstate_eeprom, eeprom);
+     qemu_free(eeprom);
+ }
+ 
+diff --git a/hw/fdc.c b/hw/fdc.c
+index b291365..1c3d8ba 100644
+--- a/hw/fdc.c
++++ b/hw/fdc.c
+@@ -1948,7 +1948,7 @@ static int fdctrl_init_common(fdctrl_t *fdctrl, target_phys_addr_t io_base)
+         DMA_register_channel(fdctrl->dma_chann, &fdctrl_transfer_handler, fdctrl);
+     fdctrl_connect_drives(fdctrl);
+ 
+-    vmstate_register(io_base, &vmstate_fdc, fdctrl);
++    vmstate_register(NULL, io_base, &vmstate_fdc, fdctrl);
+     return 0;
+ }
+ 
+diff --git a/hw/fw_cfg.c b/hw/fw_cfg.c
+index ea120ba..43d72e6 100644
+--- a/hw/fw_cfg.c
++++ b/hw/fw_cfg.c
+@@ -352,7 +352,7 @@ FWCfgState *fw_cfg_init(uint32_t ctl_port, uint32_t data_port,
+     fw_cfg_add_i16(s, FW_CFG_MAX_CPUS, (uint16_t)max_cpus);
+     fw_cfg_add_i16(s, FW_CFG_BOOT_MENU, (uint16_t)boot_menu);
+ 
+-    vmstate_register(-1, &vmstate_fw_cfg, s);
++    vmstate_register(NULL, -1, &vmstate_fw_cfg, s);
+     qemu_register_reset(fw_cfg_reset, s);
+ 
+     return s;
+diff --git a/hw/g364fb.c b/hw/g364fb.c
+index d1d2c12..beafd70 100644
+--- a/hw/g364fb.c
++++ b/hw/g364fb.c
+@@ -598,7 +598,7 @@ int g364fb_mm_init(target_phys_addr_t vram_base,
+     s->irq = irq;
+ 
+     qemu_register_reset(g364fb_reset, s);
+-    register_savevm("g364fb", 0, 1, g364fb_save, g364fb_load, s);
++    register_savevm(NULL, "g364fb", 0, 1, g364fb_save, g364fb_load, s);
+     g364fb_reset(s);
+ 
+     s->ds = graphic_console_init(g364fb_update_display,
+diff --git a/hw/grackle_pci.c b/hw/grackle_pci.c
+index ee4fed5..4b3aa55 100644
+--- a/hw/grackle_pci.c
++++ b/hw/grackle_pci.c
+@@ -113,8 +113,8 @@ static int pci_grackle_init_device(SysBusDevice *dev)
+     sysbus_init_mmio(dev, 0x1000, pci_mem_config);
+     sysbus_init_mmio(dev, 0x1000, pci_mem_data);
+ 
+-    register_savevm("grackle", 0, 1, pci_grackle_save, pci_grackle_load,
+-                    &s->host_state);
++    register_savevm(&dev->qdev, "grackle", 0, 1, pci_grackle_save,
++                    pci_grackle_load, &s->host_state);
+     qemu_register_reset(pci_grackle_reset, &s->host_state);
+     return 0;
+ }
+diff --git a/hw/gt64xxx.c b/hw/gt64xxx.c
+index fb7f5bd..0d0e2a5 100644
+--- a/hw/gt64xxx.c
++++ b/hw/gt64xxx.c
+@@ -1153,7 +1153,8 @@ PCIBus *pci_gt64120_init(qemu_irq *pic)
+ 
+     gt64120_reset(s);
+ 
+-    register_savevm("GT64120 PCI Bus", 0, 1, gt64120_save, gt64120_load, d);
++    register_savevm(&d->qdev, "GT64120 PCI Bus", 0, 1,
++                    gt64120_save, gt64120_load, d);
+ 
+     return s->pci->bus;
+ }
+diff --git a/hw/heathrow_pic.c b/hw/heathrow_pic.c
+index f6174b1..63ceb39 100644
+--- a/hw/heathrow_pic.c
++++ b/hw/heathrow_pic.c
+@@ -228,7 +228,7 @@ qemu_irq *heathrow_pic_init(int *pmem_index,
+     s->irqs = irqs[0];
+     *pmem_index = cpu_register_io_memory(pic_read, pic_write, s);
+ 
+-    register_savevm("heathrow_pic", -1, 1, heathrow_pic_save,
++    register_savevm(NULL, "heathrow_pic", -1, 1, heathrow_pic_save,
+                     heathrow_pic_load, s);
+     qemu_register_reset(heathrow_pic_reset, s);
+     return qemu_allocate_irqs(heathrow_pic_set_irq, s, 64);
+diff --git a/hw/hpet.c b/hw/hpet.c
+index 92382e7..b253755 100644
+--- a/hw/hpet.c
++++ b/hw/hpet.c
+@@ -584,7 +584,7 @@ void hpet_init(qemu_irq *irq) {
+         HPETTimer *timer = &s->timer[i];
+         timer->qemu_timer = qemu_new_timer(vm_clock, hpet_timer, timer);
+     }
+-    vmstate_register(-1, &vmstate_hpet, s);
++    vmstate_register(NULL, -1, &vmstate_hpet, s);
+     qemu_register_reset(hpet_reset, s);
+     /* HPET Area */
+     iomemtype = cpu_register_io_memory(hpet_ram_read,
+diff --git a/hw/hw.h b/hw/hw.h
+index 82fbcaf..da6232a 100644
+--- a/hw/hw.h
++++ b/hw/hw.h
+@@ -248,14 +248,16 @@ typedef int SaveLiveStateHandler(Monitor *mon, QEMUFile *f, int stage,
+                                  void *opaque);
+ typedef int LoadStateHandler(QEMUFile *f, void *opaque, int version_id);
+ 
+-int register_savevm(const char *idstr,
++int register_savevm(DeviceState *dev,
++                    const char *idstr,
+                     int instance_id,
+                     int version_id,
+                     SaveStateHandler *save_state,
+                     LoadStateHandler *load_state,
+                     void *opaque);
+ 
+-int register_savevm_live(const char *idstr,
++int register_savevm_live(DeviceState *dev,
++                         const char *idstr,
+                          int instance_id,
+                          int version_id,
+                          SaveSetParamsHandler *set_params,
+@@ -264,7 +266,7 @@ int register_savevm_live(const char *idstr,
+                          LoadStateHandler *load_state,
+                          void *opaque);
+ 
+-void unregister_savevm(const char *idstr, void *opaque);
++void unregister_savevm(DeviceState *dev, const char *idstr, void *opaque);
+ 
+ typedef void QEMUResetHandler(void *opaque);
+ 
+@@ -792,7 +794,8 @@ extern int vmstate_load_state(QEMUFile *f, const VMStateDescription *vmsd,
+                               void *opaque, int version_id);
+ extern void vmstate_save_state(QEMUFile *f, const VMStateDescription *vmsd,
+                                void *opaque);
+-extern int vmstate_register(int instance_id, const VMStateDescription *vmsd,
+-                            void *base);
+-void vmstate_unregister(const VMStateDescription *vmsd, void *opaque);
++extern int vmstate_register(DeviceState *dev, int instance_id,
++                            const VMStateDescription *vmsd, void *base);
++void vmstate_unregister(DeviceState *dev, const VMStateDescription *vmsd,
++                        void *opaque);
+ #endif
+diff --git a/hw/i2c.c b/hw/i2c.c
+index bee8e88..f80d12d 100644
+--- a/hw/i2c.c
++++ b/hw/i2c.c
+@@ -62,7 +62,7 @@ i2c_bus *i2c_init_bus(DeviceState *parent, const char *name)
+     i2c_bus *bus;
+ 
+     bus = FROM_QBUS(i2c_bus, qbus_create(&i2c_bus_info, parent, name));
+-    vmstate_register(-1, &vmstate_i2c_bus, bus);
++    vmstate_register(NULL, -1, &vmstate_i2c_bus, bus);
+     return bus;
+ }
+ 
+diff --git a/hw/i8254-kvm.c b/hw/i8254-kvm.c
+index c62ab6a..6125213 100644
+--- a/hw/i8254-kvm.c
++++ b/hw/i8254-kvm.c
+@@ -114,7 +114,7 @@ PITState *kvm_pit_init(int base, qemu_irq irq)
+     s->irq_timer = qemu_new_timer(vm_clock, dummy_timer, s);
+     vmstate_pit.pre_save = kvm_pit_pre_save;
+     vmstate_pit.post_load = kvm_pit_post_load;
+-    vmstate_register(base, &vmstate_pit, pit);
++    vmstate_register(NULL, base, &vmstate_pit, pit);
+     qemu_register_reset(pit_reset, pit);
+     pit_reset(pit);
+ 
+diff --git a/hw/i8254.c b/hw/i8254.c
+index c4f8d2e..b59c993 100644
+--- a/hw/i8254.c
++++ b/hw/i8254.c
+@@ -539,7 +539,7 @@ PITState *pit_init(int base, qemu_irq irq)
+     s->irq_timer = qemu_new_timer(vm_clock, pit_irq_timer, s);
+     s->irq = irq;
+ 
+-    vmstate_register(base, &vmstate_pit, pit);
++    vmstate_register(NULL, base, &vmstate_pit, pit);
+     qemu_register_reset(pit_reset, pit);
+     register_ioport_write(base, 4, 1, pit_ioport_write, pit);
+     register_ioport_read(base, 3, 1, pit_ioport_read, pit);
+diff --git a/hw/i8259.c b/hw/i8259.c
+index 7a484c0..1722dc4 100644
+--- a/hw/i8259.c
++++ b/hw/i8259.c
+@@ -523,7 +523,7 @@ static void pic_init1(int io_addr, int elcr_addr, PicState *s)
+         register_ioport_write(elcr_addr, 1, 1, elcr_ioport_write, s);
+         register_ioport_read(elcr_addr, 1, 1, elcr_ioport_read, s);
+     }
+-    vmstate_register(io_addr, &vmstate_pic, s);
++    vmstate_register(NULL, io_addr, &vmstate_pic, s);
+     qemu_register_reset(pic_reset, s);
+ }
+ 
+@@ -655,7 +655,7 @@ static void kvm_i8259_set_irq(void *opaque, int irq, int level)
+ 
+ static void kvm_pic_init1(int io_addr, PicState *s)
+ {
+-    vmstate_register(io_addr, &vmstate_pic, s);
++    vmstate_register(NULL, io_addr, &vmstate_pic, s);
+     qemu_register_reset(pic_reset, s);
+ }
+ 
+diff --git a/hw/ide/cmd646.c b/hw/ide/cmd646.c
+index e1e626e..f002568 100644
+--- a/hw/ide/cmd646.c
++++ b/hw/ide/cmd646.c
+@@ -235,7 +235,7 @@ static int pci_cmd646_ide_initfn(PCIDevice *dev)
+     ide_init2(&d->bus[0], NULL, NULL, irq[0]);
+     ide_init2(&d->bus[1], NULL, NULL, irq[1]);
+ 
+-    vmstate_register(0, &vmstate_ide_pci, d);
++    vmstate_register(&dev->qdev, 0, &vmstate_ide_pci, d);
+     qemu_register_reset(cmd646_reset, d);
+     return 0;
+ }
+diff --git a/hw/ide/isa.c b/hw/ide/isa.c
+index dff7c79..f1d220b 100644
+--- a/hw/ide/isa.c
++++ b/hw/ide/isa.c
+@@ -71,7 +71,7 @@ static int isa_ide_initfn(ISADevice *dev)
+     ide_init_ioport(&s->bus, s->iobase, s->iobase2);
+     isa_init_irq(dev, &s->irq, s->isairq);
+     ide_init2(&s->bus, NULL, NULL, s->irq);
+-    vmstate_register(0, &vmstate_ide_isa, s);
++    vmstate_register(&dev->qdev, 0, &vmstate_ide_isa, s);
+     return 0;
+ };
+ 
+diff --git a/hw/ide/macio.c b/hw/ide/macio.c
+index d1bdb49..683e592 100644
+--- a/hw/ide/macio.c
++++ b/hw/ide/macio.c
+@@ -327,7 +327,7 @@ int pmac_ide_init (DriveInfo **hd_table, qemu_irq irq,
+ 
+     pmac_ide_memory = cpu_register_io_memory(pmac_ide_read,
+                                              pmac_ide_write, d);
+-    vmstate_register(0, &vmstate_pmac, d);
++    vmstate_register(NULL, 0, &vmstate_pmac, d);
+     qemu_register_reset(pmac_ide_reset, d);
+ 
+     return pmac_ide_memory;
+diff --git a/hw/ide/microdrive.c b/hw/ide/microdrive.c
+index bfdb8c8..30c8aa4 100644
+--- a/hw/ide/microdrive.c
++++ b/hw/ide/microdrive.c
+@@ -544,7 +544,7 @@ PCMCIACardState *dscm1xxxx_init(DriveInfo *bdrv)
+     md->bus.ifs[0].mdata_size = METADATA_SIZE;
+     md->bus.ifs[0].mdata_storage = (uint8_t *) qemu_mallocz(METADATA_SIZE);
+ 
+-    vmstate_register(-1, &vmstate_microdrive, md);
++    vmstate_register(NULL, -1, &vmstate_microdrive, md);
+ 
+     return &md->card;
+ }
+diff --git a/hw/ide/mmio.c b/hw/ide/mmio.c
+index cca883f..5909f21 100644
+--- a/hw/ide/mmio.c
++++ b/hw/ide/mmio.c
+@@ -133,7 +133,7 @@ void mmio_ide_init (target_phys_addr_t membase, target_phys_addr_t membase2,
+     mem2 = cpu_register_io_memory(mmio_ide_status, mmio_ide_cmd, s);
+     cpu_register_physical_memory(membase, 16 << shift, mem1);
+     cpu_register_physical_memory(membase2, 2 << shift, mem2);
+-    vmstate_register(0, &vmstate_ide_mmio, s);
++    vmstate_register(NULL, 0, &vmstate_ide_mmio, s);
+     qemu_register_reset(mmio_ide_reset, s);
+ }
+ 
+diff --git a/hw/ide/piix.c b/hw/ide/piix.c
+index de36480..4a5a4b4 100644
+--- a/hw/ide/piix.c
++++ b/hw/ide/piix.c
+@@ -125,7 +125,7 @@ static int pci_piix_ide_initfn(PCIIDEState *d)
+ 
+     pci_register_bar(&d->dev, 4, 0x10, PCI_BASE_ADDRESS_SPACE_IO, bmdma_map);
+ 
+-    vmstate_register(0, &vmstate_ide_pci, d);
++    vmstate_register(&d->dev.qdev, 0, &vmstate_ide_pci, d);
+ 
+     ide_bus_new(&d->bus[0], &d->dev.qdev);
+     ide_bus_new(&d->bus[1], &d->dev.qdev);
+diff --git a/hw/ioapic.c b/hw/ioapic.c
+index a66325d..fcfbc62 100644
+--- a/hw/ioapic.c
++++ b/hw/ioapic.c
+@@ -328,7 +328,7 @@ qemu_irq *ioapic_init(void)
+                                        ioapic_mem_write, s);
+     cpu_register_physical_memory(0xfec00000, 0x1000, io_memory);
+ 
+-    vmstate_register(0, &vmstate_ioapic, s);
++    vmstate_register(NULL, 0, &vmstate_ioapic, s);
+     qemu_register_reset(ioapic_reset, s);
+     irq = qemu_allocate_irqs(ioapic_set_irq, s, IOAPIC_NUM_PINS);
+ 
+diff --git a/hw/ipf.c b/hw/ipf.c
+index 21cff72..bb6ce1f 100644
+--- a/hw/ipf.c
++++ b/hw/ipf.c
+@@ -421,7 +421,7 @@ static void ipf_init1(ram_addr_t ram_size,
+         }
+         if (i != 0)
+             env->hflags |= HF_HALTED_MASK;
+-        register_savevm("cpu", i, 4, cpu_save, cpu_load, env);
++        register_savevm(NULL, "cpu", i, 4, cpu_save, cpu_load, env);
+         qemu_register_reset(main_cpu_reset, 0, env);
+     }
+ 
+diff --git a/hw/m48t59.c b/hw/m48t59.c
+index ce38f8b..37661b9 100644
+--- a/hw/m48t59.c
++++ b/hw/m48t59.c
+@@ -695,7 +695,7 @@ static void m48t59_init_common(m48t59_t *s)
+     }
+     qemu_get_timedate(&s->alarm, 0);
+ 
+-    register_savevm("m48t59", -1, 1, m48t59_save, m48t59_load, s);
++    register_savevm(NULL, "m48t59", -1, 1, m48t59_save, m48t59_load, s);
+ }
+ 
+ static int m48t59_init_isa1(ISADevice *dev)
+diff --git a/hw/mac_dbdma.c b/hw/mac_dbdma.c
+index 98dccfd..d864900 100644
+--- a/hw/mac_dbdma.c
++++ b/hw/mac_dbdma.c
+@@ -838,7 +838,7 @@ void* DBDMA_init (int *dbdma_mem_index)
+     s = qemu_mallocz(sizeof(DBDMA_channel) * DBDMA_CHANNELS);
+ 
+     *dbdma_mem_index = cpu_register_io_memory(dbdma_read, dbdma_write, s);
+-    register_savevm("dbdma", -1, 1, dbdma_save, dbdma_load, s);
++    register_savevm(NULL, "dbdma", -1, 1, dbdma_save, dbdma_load, s);
+     qemu_register_reset(dbdma_reset, s);
+ 
+     dbdma_bh = qemu_bh_new(DBDMA_run_bh, s);
+diff --git a/hw/mac_nvram.c b/hw/mac_nvram.c
+index f28db6b..ce287c3 100644
+--- a/hw/mac_nvram.c
++++ b/hw/mac_nvram.c
+@@ -140,8 +140,8 @@ MacIONVRAMState *macio_nvram_init (int *mem_index, target_phys_addr_t size,
+ 
+     s->mem_index = cpu_register_io_memory(nvram_read, nvram_write, s);
+     *mem_index = s->mem_index;
+-    register_savevm("macio_nvram", -1, 1, macio_nvram_save, macio_nvram_load,
+-                    s);
++    register_savevm(NULL, "macio_nvram", -1, 1, macio_nvram_save,
++                    macio_nvram_load, s);
+     qemu_register_reset(macio_nvram_reset, s);
+ 
+     return s;
+diff --git a/hw/max111x.c b/hw/max111x.c
+index bd656bb..2844665 100644
+--- a/hw/max111x.c
++++ b/hw/max111x.c
+@@ -143,7 +143,8 @@ static int max111x_init(SSISlave *dev, int inputs)
+     s->input[7] = 0x80;
+     s->com = 0;
+ 
+-    register_savevm("max111x", -1, 0, max111x_save, max111x_load, s);
++    register_savevm(&dev->qdev, "max111x", -1, 0,
++                    max111x_save, max111x_load, s);
+     return 0;
+ }
+ 
+diff --git a/hw/mc146818rtc.c b/hw/mc146818rtc.c
+index 9ff3f0d..57f9ae8 100644
+--- a/hw/mc146818rtc.c
++++ b/hw/mc146818rtc.c
+@@ -607,7 +607,7 @@ static int rtc_initfn(ISADevice *dev)
+     register_ioport_write(base, 2, 1, cmos_ioport_write, s);
+     register_ioport_read(base, 2, 1, cmos_ioport_read, s);
+ 
+-    vmstate_register(base, &vmstate_rtc, s);
++    vmstate_register(&dev->qdev, base, &vmstate_rtc, s);
+     qemu_register_reset(rtc_reset, s);
+     return 0;
+ }
+diff --git a/hw/mipsnet.c b/hw/mipsnet.c
+index a066f63..a95b3ce 100644
+--- a/hw/mipsnet.c
++++ b/hw/mipsnet.c
+@@ -239,7 +239,7 @@ static void mipsnet_cleanup(VLANClientState *nc)
+ {
+     MIPSnetState *s = DO_UPCAST(NICState, nc, nc)->opaque;
+ 
+-    unregister_savevm("mipsnet", s);
++    unregister_savevm(NULL, "mipsnet", s);
+ 
+     isa_unassign_ioport(s->io_base, 36);
+ 
+@@ -284,5 +284,5 @@ void mipsnet_init (int base, qemu_irq irq, NICInfo *nd)
+     }
+ 
+     mipsnet_reset(s);
+-    register_savevm("mipsnet", 0, 0, mipsnet_save, mipsnet_load, s);
++    register_savevm(NULL, "mipsnet", 0, 0, mipsnet_save, mipsnet_load, s);
+ }
+diff --git a/hw/mst_fpga.c b/hw/mst_fpga.c
+index 1b6cb77..8fc348f 100644
+--- a/hw/mst_fpga.c
++++ b/hw/mst_fpga.c
+@@ -234,6 +234,7 @@ qemu_irq *mst_irq_init(PXA2xxState *cpu, uint32_t base, int irq)
+ 	iomemtype = cpu_register_io_memory(mst_fpga_readfn,
+ 		mst_fpga_writefn, s);
+ 	cpu_register_physical_memory(base, 0x00100000, iomemtype);
+-	register_savevm("mainstone_fpga", 0, 0, mst_fpga_save, mst_fpga_load, s);
++	register_savevm(NULL, "mainstone_fpga", 0, 0, mst_fpga_save,
++                        mst_fpga_load, s);
+ 	return qi;
+ }
+diff --git a/hw/nand.c b/hw/nand.c
+index 838f8bc..8b34f14 100644
+--- a/hw/nand.c
++++ b/hw/nand.c
+@@ -494,7 +494,7 @@ NANDFlashState *nand_init(int manf_id, int chip_id)
+        is used.  */
+     s->ioaddr = s->io;
+ 
+-    register_savevm("nand", -1, 0, nand_save, nand_load, s);
++    register_savevm(NULL, "nand", -1, 0, nand_save, nand_load, s);
+ 
+     return s;
+ }
+diff --git a/hw/openpic.c b/hw/openpic.c
+index 42db59d..8ffaf0e 100644
+--- a/hw/openpic.c
++++ b/hw/openpic.c
+@@ -1246,7 +1246,8 @@ qemu_irq *openpic_init (PCIBus *bus, int *pmem_index, int nb_cpus,
+     opp->irq_out = irq_out;
+     opp->need_swap = 1;
+ 
+-    register_savevm("openpic", 0, 2, openpic_save, openpic_load, opp);
++    register_savevm(&opp->pci_dev.qdev, "openpic", 0, 2,
++                    openpic_save, openpic_load, opp);
+     qemu_register_reset(openpic_reset, opp);
+ 
+     opp->irq_raise = openpic_irq_raise;
+@@ -1704,7 +1705,7 @@ qemu_irq *mpic_init (target_phys_addr_t base, int nb_cpus,
+     mpp->irq_raise = mpic_irq_raise;
+     mpp->reset = mpic_reset;
+ 
+-    register_savevm("mpic", 0, 2, openpic_save, openpic_load, mpp);
++    register_savevm(NULL, "mpic", 0, 2, openpic_save, openpic_load, mpp);
+     qemu_register_reset(mpic_reset, mpp);
+ 
+     return qemu_allocate_irqs(openpic_set_irq, mpp, mpp->max_irq);
+diff --git a/hw/pci.c b/hw/pci.c
+index a596154..261ab1b 100644
+--- a/hw/pci.c
++++ b/hw/pci.c
+@@ -214,7 +214,7 @@ void pci_bus_new_inplace(PCIBus *bus, DeviceState *parent,
+     QLIST_INIT(&bus->child);
+     pci_host_bus_register(0, bus); /* for now only pci domain 0 is supported */
+ 
+-    vmstate_register(-1, &vmstate_pcibus, bus);
++    vmstate_register(NULL, -1, &vmstate_pcibus, bus);
+     qemu_register_reset(pci_bus_reset, bus);
+ }
+ 
+diff --git a/hw/pckbd.c b/hw/pckbd.c
+index 7998aa6..5d3becf 100644
+--- a/hw/pckbd.c
++++ b/hw/pckbd.c
+@@ -397,7 +397,7 @@ void i8042_mm_init(qemu_irq kbd_irq, qemu_irq mouse_irq,
+     s->irq_mouse = mouse_irq;
+     s->mask = mask;
+ 
+-    vmstate_register(0, &vmstate_kbd, s);
++    vmstate_register(NULL, 0, &vmstate_kbd, s);
+     s_io_memory = cpu_register_io_memory(kbd_mm_read, kbd_mm_write, s);
+     cpu_register_physical_memory(base, size, s_io_memory);
+ 
+diff --git a/hw/piix4.c b/hw/piix4.c
+index f75951b..6f08c5a 100644
+--- a/hw/piix4.c
++++ b/hw/piix4.c
+@@ -87,7 +87,7 @@ static int piix4_initfn(PCIDevice *d)
+     uint8_t *pci_conf;
+ 
+     isa_bus_new(&d->qdev);
+-    register_savevm("PIIX4", 0, 2, piix_save, piix_load, d);
++    register_savevm(&d->qdev, "PIIX4", 0, 2, piix_save, piix_load, d);
+ 
+     pci_conf = d->config;
+     pci_config_set_vendor_id(pci_conf, PCI_VENDOR_ID_INTEL);
+diff --git a/hw/pl011.c b/hw/pl011.c
+index 81de91e..02cf84a 100644
+--- a/hw/pl011.c
++++ b/hw/pl011.c
+@@ -306,7 +306,7 @@ static int pl011_init(SysBusDevice *dev, const unsigned char *id)
+         qemu_chr_add_handlers(s->chr, pl011_can_receive, pl011_receive,
+                               pl011_event, s);
+     }
+-    register_savevm("pl011_uart", -1, 1, pl011_save, pl011_load, s);
++    register_savevm(&dev->qdev, "pl011_uart", -1, 1, pl011_save, pl011_load, s);
+     return 0;
+ }
+ 
+diff --git a/hw/pl022.c b/hw/pl022.c
+index c2e2dda..d7862bc 100644
+--- a/hw/pl022.c
++++ b/hw/pl022.c
+@@ -299,7 +299,7 @@ static int pl022_init(SysBusDevice *dev)
+     sysbus_init_irq(dev, &s->irq);
+     s->ssi = ssi_create_bus(&dev->qdev, "ssi");
+     pl022_reset(s);
+-    register_savevm("pl022_ssp", -1, 1, pl022_save, pl022_load, s);
++    register_savevm(&dev->qdev, "pl022_ssp", -1, 1, pl022_save, pl022_load, s);
+     return 0;
+ }
+ 
+diff --git a/hw/pl061.c b/hw/pl061.c
+index 7b1b636..e4505f5 100644
+--- a/hw/pl061.c
++++ b/hw/pl061.c
+@@ -303,7 +303,7 @@ static int pl061_init(SysBusDevice *dev)
+     qdev_init_gpio_in(&dev->qdev, pl061_set_irq, 8);
+     qdev_init_gpio_out(&dev->qdev, s->out, 8);
+     pl061_reset(s);
+-    register_savevm("pl061_gpio", -1, 1, pl061_save, pl061_load, s);
++    register_savevm(&dev->qdev, "pl061_gpio", -1, 1, pl061_save, pl061_load, s);
+     return 0;
+ }
+ 
+diff --git a/hw/ppc4xx_pci.c b/hw/ppc4xx_pci.c
+index 2d00b61..fe25bd4 100644
+--- a/hw/ppc4xx_pci.c
++++ b/hw/ppc4xx_pci.c
+@@ -392,8 +392,8 @@ PCIBus *ppc4xx_pci_init(CPUState *env, qemu_irq pci_irqs[4],
+     qemu_register_reset(ppc4xx_pci_reset, controller);
+ 
+     /* XXX load/save code not tested. */
+-    register_savevm("ppc4xx_pci", ppc4xx_pci_id++, 1,
+-                    ppc4xx_pci_save, ppc4xx_pci_load, controller);
++    register_savevm(&controller->pci_dev->qdev, "ppc4xx_pci", ppc4xx_pci_id++,
++                    1, ppc4xx_pci_save, ppc4xx_pci_load, controller);
+ 
+     return controller->pci_state.bus;
+ 
+diff --git a/hw/ppce500_pci.c b/hw/ppce500_pci.c
+index a72fb86..6c7e011 100644
+--- a/hw/ppce500_pci.c
++++ b/hw/ppce500_pci.c
+@@ -312,8 +312,8 @@ PCIBus *ppce500_pci_init(qemu_irq pci_irqs[4], target_phys_addr_t registers)
+                                    PCIE500_REG_SIZE, index);
+ 
+     /* XXX load/save code not tested. */
+-    register_savevm("ppce500_pci", ppce500_pci_id++, 1,
+-                    ppce500_pci_save, ppce500_pci_load, controller);
++    register_savevm(&d->qdev, "ppce500_pci", ppce500_pci_id++,
++                    1, ppce500_pci_save, ppce500_pci_load, controller);
+ 
+     return controller->pci_state.bus;
+ 
+diff --git a/hw/ps2.c b/hw/ps2.c
+index f0b206a..762bb00 100644
+--- a/hw/ps2.c
++++ b/hw/ps2.c
+@@ -595,7 +595,7 @@ void *ps2_kbd_init(void (*update_irq)(void *, int), void *update_arg)
+     s->common.update_irq = update_irq;
+     s->common.update_arg = update_arg;
+     s->scancode_set = 2;
+-    vmstate_register(0, &vmstate_ps2_keyboard, s);
++    vmstate_register(NULL, 0, &vmstate_ps2_keyboard, s);
+     qemu_add_kbd_event_handler(ps2_put_keycode, s);
+     qemu_register_reset(ps2_kbd_reset, s);
+     return s;
+@@ -607,7 +607,7 @@ void *ps2_mouse_init(void (*update_irq)(void *, int), void *update_arg)
+ 
+     s->common.update_irq = update_irq;
+     s->common.update_arg = update_arg;
+-    vmstate_register(0, &vmstate_ps2_mouse, s);
++    vmstate_register(NULL, 0, &vmstate_ps2_mouse, s);
+     qemu_add_mouse_event_handler(ps2_mouse_event, s, 0, "QEMU PS/2 Mouse");
+     qemu_register_reset(ps2_mouse_reset, s);
+     return s;
+diff --git a/hw/pxa2xx.c b/hw/pxa2xx.c
+index f8292e7..169bb58 100644
+--- a/hw/pxa2xx.c
++++ b/hw/pxa2xx.c
+@@ -860,7 +860,7 @@ static int pxa2xx_ssp_init(SysBusDevice *dev)
+     iomemtype = cpu_register_io_memory(pxa2xx_ssp_readfn,
+                                        pxa2xx_ssp_writefn, s);
+     sysbus_init_mmio(dev, 0x1000, iomemtype);
+-    register_savevm("pxa2xx_ssp", -1, 0,
++    register_savevm(&dev->qdev, "pxa2xx_ssp", -1, 0,
+                     pxa2xx_ssp_save, pxa2xx_ssp_load, s);
+ 
+     s->bus = ssi_create_bus(&dev->qdev, "ssi");
+@@ -1515,7 +1515,7 @@ PXA2xxI2CState *pxa2xx_i2c_init(target_phys_addr_t base,
+     cpu_register_physical_memory(base & ~region_size,
+                     region_size + 1, iomemtype);
+ 
+-    vmstate_register(base, &vmstate_pxa2xx_i2c, s);
++    vmstate_register(NULL, base, &vmstate_pxa2xx_i2c, s);
+ 
+     return s;
+ }
+@@ -1751,7 +1751,7 @@ static PXA2xxI2SState *pxa2xx_i2s_init(target_phys_addr_t base,
+                     pxa2xx_i2s_writefn, s);
+     cpu_register_physical_memory(base, 0x100000, iomemtype);
+ 
+-    register_savevm("pxa2xx_i2s", base, 0,
++    register_savevm(NULL, "pxa2xx_i2s", base, 0,
+                     pxa2xx_i2s_save, pxa2xx_i2s_load, s);
+ 
+     return s;
+@@ -2014,7 +2014,8 @@ static PXA2xxFIrState *pxa2xx_fir_init(target_phys_addr_t base,
+         qemu_chr_add_handlers(chr, pxa2xx_fir_is_empty,
+                         pxa2xx_fir_rx, pxa2xx_fir_event, s);
+ 
+-    register_savevm("pxa2xx_fir", 0, 0, pxa2xx_fir_save, pxa2xx_fir_load, s);
++    register_savevm(NULL, "pxa2xx_fir", 0, 0, pxa2xx_fir_save,
++                    pxa2xx_fir_load, s);
+ 
+     return s;
+ }
+@@ -2093,7 +2094,7 @@ PXA2xxState *pxa270_init(unsigned int sdram_size, const char *revision)
+     iomemtype = cpu_register_io_memory(pxa2xx_cm_readfn,
+                     pxa2xx_cm_writefn, s);
+     cpu_register_physical_memory(s->cm_base, 0x1000, iomemtype);
+-    register_savevm("pxa2xx_cm", 0, 0, pxa2xx_cm_save, pxa2xx_cm_load, s);
++    register_savevm(NULL, "pxa2xx_cm", 0, 0, pxa2xx_cm_save, pxa2xx_cm_load, s);
+ 
+     cpu_arm_set_cp_io(s->env, 14, pxa2xx_cp14_read, pxa2xx_cp14_write, s);
+ 
+@@ -2104,13 +2105,13 @@ PXA2xxState *pxa270_init(unsigned int sdram_size, const char *revision)
+     iomemtype = cpu_register_io_memory(pxa2xx_mm_readfn,
+                     pxa2xx_mm_writefn, s);
+     cpu_register_physical_memory(s->mm_base, 0x1000, iomemtype);
+-    register_savevm("pxa2xx_mm", 0, 0, pxa2xx_mm_save, pxa2xx_mm_load, s);
++    register_savevm(NULL, "pxa2xx_mm", 0, 0, pxa2xx_mm_save, pxa2xx_mm_load, s);
+ 
+     s->pm_base = 0x40f00000;
+     iomemtype = cpu_register_io_memory(pxa2xx_pm_readfn,
+                     pxa2xx_pm_writefn, s);
+     cpu_register_physical_memory(s->pm_base, 0x100, iomemtype);
+-    register_savevm("pxa2xx_pm", 0, 0, pxa2xx_pm_save, pxa2xx_pm_load, s);
++    register_savevm(NULL, "pxa2xx_pm", 0, 0, pxa2xx_pm_save, pxa2xx_pm_load, s);
+ 
+     for (i = 0; pxa27x_ssp[i].io_base; i ++);
+     s->ssp = (SSIBus **)qemu_mallocz(sizeof(SSIBus *) * i);
+@@ -2133,7 +2134,8 @@ PXA2xxState *pxa270_init(unsigned int sdram_size, const char *revision)
+                     pxa2xx_rtc_writefn, s);
+     cpu_register_physical_memory(s->rtc_base, 0x1000, iomemtype);
+     pxa2xx_rtc_init(s);
+-    register_savevm("pxa2xx_rtc", 0, 0, pxa2xx_rtc_save, pxa2xx_rtc_load, s);
++    register_savevm(NULL, "pxa2xx_rtc", 0, 0, pxa2xx_rtc_save,
++                    pxa2xx_rtc_load, s);
+ 
+     s->i2c[0] = pxa2xx_i2c_init(0x40301600, s->pic[PXA2XX_PIC_I2C], 0xffff);
+     s->i2c[1] = pxa2xx_i2c_init(0x40f00100, s->pic[PXA2XX_PIC_PWRI2C], 0xff);
+@@ -2205,7 +2207,7 @@ PXA2xxState *pxa255_init(unsigned int sdram_size)
+     iomemtype = cpu_register_io_memory(pxa2xx_cm_readfn,
+                     pxa2xx_cm_writefn, s);
+     cpu_register_physical_memory(s->cm_base, 0x1000, iomemtype);
+-    register_savevm("pxa2xx_cm", 0, 0, pxa2xx_cm_save, pxa2xx_cm_load, s);
++    register_savevm(NULL, "pxa2xx_cm", 0, 0, pxa2xx_cm_save, pxa2xx_cm_load, s);
+ 
+     cpu_arm_set_cp_io(s->env, 14, pxa2xx_cp14_read, pxa2xx_cp14_write, s);
+ 
+@@ -2216,13 +2218,13 @@ PXA2xxState *pxa255_init(unsigned int sdram_size)
+     iomemtype = cpu_register_io_memory(pxa2xx_mm_readfn,
+                     pxa2xx_mm_writefn, s);
+     cpu_register_physical_memory(s->mm_base, 0x1000, iomemtype);
+-    register_savevm("pxa2xx_mm", 0, 0, pxa2xx_mm_save, pxa2xx_mm_load, s);
++    register_savevm(NULL, "pxa2xx_mm", 0, 0, pxa2xx_mm_save, pxa2xx_mm_load, s);
+ 
+     s->pm_base = 0x40f00000;
+     iomemtype = cpu_register_io_memory(pxa2xx_pm_readfn,
+                     pxa2xx_pm_writefn, s);
+     cpu_register_physical_memory(s->pm_base, 0x100, iomemtype);
+-    register_savevm("pxa2xx_pm", 0, 0, pxa2xx_pm_save, pxa2xx_pm_load, s);
++    register_savevm(NULL, "pxa2xx_pm", 0, 0, pxa2xx_pm_save, pxa2xx_pm_load, s);
+ 
+     for (i = 0; pxa255_ssp[i].io_base; i ++);
+     s->ssp = (SSIBus **)qemu_mallocz(sizeof(SSIBus *) * i);
+@@ -2245,7 +2247,8 @@ PXA2xxState *pxa255_init(unsigned int sdram_size)
+                     pxa2xx_rtc_writefn, s);
+     cpu_register_physical_memory(s->rtc_base, 0x1000, iomemtype);
+     pxa2xx_rtc_init(s);
+-    register_savevm("pxa2xx_rtc", 0, 0, pxa2xx_rtc_save, pxa2xx_rtc_load, s);
++    register_savevm(NULL, "pxa2xx_rtc", 0, 0, pxa2xx_rtc_save,
++                    pxa2xx_rtc_load, s);
+ 
+     s->i2c[0] = pxa2xx_i2c_init(0x40301600, s->pic[PXA2XX_PIC_I2C], 0xffff);
+     s->i2c[1] = pxa2xx_i2c_init(0x40f00100, s->pic[PXA2XX_PIC_PWRI2C], 0xff);
+diff --git a/hw/pxa2xx_dma.c b/hw/pxa2xx_dma.c
+index 66c2c30..9c479df 100644
+--- a/hw/pxa2xx_dma.c
++++ b/hw/pxa2xx_dma.c
+@@ -507,7 +507,7 @@ static PXA2xxDMAState *pxa2xx_dma_init(target_phys_addr_t base,
+                     pxa2xx_dma_writefn, s);
+     cpu_register_physical_memory(base, 0x00010000, iomemtype);
+ 
+-    register_savevm("pxa2xx_dma", 0, 0, pxa2xx_dma_save, pxa2xx_dma_load, s);
++    register_savevm(NULL, "pxa2xx_dma", 0, 0, pxa2xx_dma_save, pxa2xx_dma_load, s);
+ 
+     return s;
+ }
+diff --git a/hw/pxa2xx_gpio.c b/hw/pxa2xx_gpio.c
+index f354f4b..2abcb65 100644
+--- a/hw/pxa2xx_gpio.c
++++ b/hw/pxa2xx_gpio.c
+@@ -312,7 +312,7 @@ PXA2xxGPIOInfo *pxa2xx_gpio_init(target_phys_addr_t base,
+                     pxa2xx_gpio_writefn, s);
+     cpu_register_physical_memory(base, 0x00001000, iomemtype);
+ 
+-    register_savevm("pxa2xx_gpio", 0, 0,
++    register_savevm(NULL, "pxa2xx_gpio", 0, 0,
+                     pxa2xx_gpio_save, pxa2xx_gpio_load, s);
+ 
+     return s;
+diff --git a/hw/pxa2xx_keypad.c b/hw/pxa2xx_keypad.c
+index 060df58..dfa8945 100644
+--- a/hw/pxa2xx_keypad.c
++++ b/hw/pxa2xx_keypad.c
+@@ -317,7 +317,7 @@ PXA2xxKeyPadState *pxa27x_keypad_init(target_phys_addr_t base,
+                     pxa2xx_keypad_writefn, s);
+     cpu_register_physical_memory(base, 0x00100000, iomemtype);
+ 
+-    register_savevm("pxa2xx_keypad", 0, 0,
++    register_savevm(NULL, "pxa2xx_keypad", 0, 0,
+                     pxa2xx_keypad_save, pxa2xx_keypad_load, s);
+ 
+     return s;
+diff --git a/hw/pxa2xx_lcd.c b/hw/pxa2xx_lcd.c
+index 930299a..111a0dc 100644
+--- a/hw/pxa2xx_lcd.c
++++ b/hw/pxa2xx_lcd.c
+@@ -970,7 +970,7 @@ PXA2xxLCDState *pxa2xx_lcdc_init(target_phys_addr_t base, qemu_irq irq)
+         exit(1);
+     }
+ 
+-    register_savevm("pxa2xx_lcdc", 0, 0,
++    register_savevm(NULL, "pxa2xx_lcdc", 0, 0,
+                     pxa2xx_lcdc_save, pxa2xx_lcdc_load, s);
+ 
+     return s;
+diff --git a/hw/pxa2xx_mmci.c b/hw/pxa2xx_mmci.c
+index a415349..ca98660 100644
+--- a/hw/pxa2xx_mmci.c
++++ b/hw/pxa2xx_mmci.c
+@@ -534,7 +534,7 @@ PXA2xxMMCIState *pxa2xx_mmci_init(target_phys_addr_t base,
+     /* Instantiate the actual storage */
+     s->card = sd_init(bd, 0);
+ 
+-    register_savevm("pxa2xx_mmci", 0, 0,
++    register_savevm(NULL, "pxa2xx_mmci", 0, 0,
+                     pxa2xx_mmci_save, pxa2xx_mmci_load, s);
+ 
+     return s;
+diff --git a/hw/pxa2xx_pic.c b/hw/pxa2xx_pic.c
+index 0a98342..4d8944b 100644
+--- a/hw/pxa2xx_pic.c
++++ b/hw/pxa2xx_pic.c
+@@ -306,7 +306,8 @@ qemu_irq *pxa2xx_pic_init(target_phys_addr_t base, CPUState *env)
+     /* Enable IC coprocessor access.  */
+     cpu_arm_set_cp_io(env, 6, pxa2xx_pic_cp_read, pxa2xx_pic_cp_write, s);
+ 
+-    register_savevm("pxa2xx_pic", 0, 0, pxa2xx_pic_save, pxa2xx_pic_load, s);
++    register_savevm(NULL, "pxa2xx_pic", 0, 0, pxa2xx_pic_save,
++                    pxa2xx_pic_load, s);
+ 
+     return qi;
+ }
+diff --git a/hw/pxa2xx_timer.c b/hw/pxa2xx_timer.c
+index d992cc3..0f0ffd3 100644
+--- a/hw/pxa2xx_timer.c
++++ b/hw/pxa2xx_timer.c
+@@ -455,7 +455,7 @@ static pxa2xx_timer_info *pxa2xx_timer_init(target_phys_addr_t base,
+                     pxa2xx_timer_writefn, s);
+     cpu_register_physical_memory(base, 0x00001000, iomemtype);
+ 
+-    register_savevm("pxa2xx_timer", 0, 0,
++    register_savevm(NULL, "pxa2xx_timer", 0, 0,
+                     pxa2xx_timer_save, pxa2xx_timer_load, s);
+ 
+     return s;
+diff --git a/hw/qdev.c b/hw/qdev.c
+index 4d23adf..4097d6f 100644
+--- a/hw/qdev.c
++++ b/hw/qdev.c
+@@ -279,7 +279,7 @@ int qdev_init(DeviceState *dev)
+     }
+     qemu_register_reset(qdev_reset, dev);
+     if (dev->info->vmsd)
+-        vmstate_register(-1, dev->info->vmsd, dev);
++        vmstate_register(dev, -1, dev->info->vmsd, dev);
+     dev->state = DEV_STATE_INITIALIZED;
+     return 0;
+ }
+@@ -329,7 +329,7 @@ void qdev_free(DeviceState *dev)
+             qbus_free(bus);
+         }
+         if (dev->info->vmsd)
+-            vmstate_unregister(dev->info->vmsd, dev);
++            vmstate_unregister(dev, dev->info->vmsd, dev);
+         if (dev->info->exit)
+             dev->info->exit(dev);
+         if (dev->opts)
+diff --git a/hw/rc4030.c b/hw/rc4030.c
+index c2b2a3e..d9fce97 100644
+--- a/hw/rc4030.c
++++ b/hw/rc4030.c
+@@ -812,7 +812,7 @@ void *rc4030_init(qemu_irq timer, qemu_irq jazz_bus,
+     s->jazz_bus_irq = jazz_bus;
+ 
+     qemu_register_reset(rc4030_reset, s);
+-    register_savevm("rc4030", 0, 2, rc4030_save, rc4030_load, s);
++    register_savevm(NULL, "rc4030", 0, 2, rc4030_save, rc4030_load, s);
+     rc4030_reset(s);
+ 
+     s_chipset = cpu_register_io_memory(rc4030_read, rc4030_write, s);
+diff --git a/hw/serial.c b/hw/serial.c
+index e7538ac..7846c29 100644
+--- a/hw/serial.c
++++ b/hw/serial.c
+@@ -759,7 +759,7 @@ static int serial_isa_initfn(ISADevice *dev)
+     s->baudbase = 115200;
+     isa_init_irq(dev, &s->irq, isa->isairq);
+     serial_init_core(s);
+-    vmstate_register(isa->iobase, &vmstate_serial, s);
++    vmstate_register(&dev->qdev, isa->iobase, &vmstate_serial, s);
+ 
+     register_ioport_write(isa->iobase, 8, 1, serial_ioport_write, s);
+     register_ioport_read(isa->iobase, 8, 1, serial_ioport_read, s);
+@@ -790,7 +790,7 @@ SerialState *serial_init(int base, qemu_irq irq, int baudbase,
+     s->chr = chr;
+     serial_init_core(s);
+ 
+-    vmstate_register(base, &vmstate_serial, s);
++    vmstate_register(NULL, base, &vmstate_serial, s);
+ 
+     register_ioport_write(base, 8, 1, serial_ioport_write, s);
+     register_ioport_read(base, 8, 1, serial_ioport_read, s);
+@@ -884,7 +884,7 @@ SerialState *serial_mm_init (target_phys_addr_t base, int it_shift,
+     s->chr = chr;
+ 
+     serial_init_core(s);
+-    vmstate_register(base, &vmstate_serial, s);
++    vmstate_register(NULL, base, &vmstate_serial, s);
+ 
+     if (ioregister) {
+         s_io_memory = cpu_register_io_memory(serial_mm_read,
+diff --git a/hw/spitz.c b/hw/spitz.c
+index 564519b..47f36d7 100644
+--- a/hw/spitz.c
++++ b/hw/spitz.c
+@@ -178,7 +178,7 @@ static void sl_flash_register(PXA2xxState *cpu, int size)
+                     sl_writefn, s);
+     cpu_register_physical_memory(FLASH_BASE, 0x40, iomemtype);
+ 
+-    register_savevm("sl_flash", 0, 0, sl_save, sl_load, s);
++    register_savevm(NULL, "sl_flash", 0, 0, sl_save, sl_load, s);
+ }
+ 
+ /* Spitz Keyboard */
+@@ -508,7 +508,7 @@ static void spitz_keyboard_register(PXA2xxState *cpu)
+     spitz_keyboard_pre_map(s);
+     qemu_add_kbd_event_handler((QEMUPutKBDEvent *) spitz_keyboard_handler, s);
+ 
+-    register_savevm("spitz_keyboard", 0, 0,
++    register_savevm(NULL, "spitz_keyboard", 0, 0,
+                     spitz_keyboard_save, spitz_keyboard_load, s);
+ }
+ 
+@@ -613,7 +613,7 @@ static int spitz_lcdtg_init(SSISlave *dev)
+     s->bl_power = 0;
+     s->bl_intensity = 0x20;
+ 
+-    register_savevm("spitz-lcdtg", -1, 1,
++    register_savevm(&dev->qdev, "spitz-lcdtg", -1, 1,
+                     spitz_lcdtg_save, spitz_lcdtg_load, s);
+     return 0;
+ }
+@@ -708,7 +708,8 @@ static int corgi_ssp_init(SSISlave *dev)
+     s->bus[1] = ssi_create_bus(&dev->qdev, "ssi1");
+     s->bus[2] = ssi_create_bus(&dev->qdev, "ssi2");
+ 
+-    register_savevm("spitz_ssp", -1, 1, spitz_ssp_save, spitz_ssp_load, s);
++    register_savevm(&dev->qdev, "spitz_ssp", -1, 1,
++                    spitz_ssp_save, spitz_ssp_load, s);
+     return 0;
+ }
+ 
+diff --git a/hw/ssd0323.c b/hw/ssd0323.c
+index b632825..8643961 100644
+--- a/hw/ssd0323.c
++++ b/hw/ssd0323.c
+@@ -335,7 +335,8 @@ static int ssd0323_init(SSISlave *dev)
+ 
+     qdev_init_gpio_in(&dev->qdev, ssd0323_cd, 1);
+ 
+-    register_savevm("ssd0323_oled", -1, 1, ssd0323_save, ssd0323_load, s);
++    register_savevm(&dev->qdev, "ssd0323_oled", -1, 1,
++                    ssd0323_save, ssd0323_load, s);
+     return 0;
+ }
+ 
+diff --git a/hw/ssi-sd.c b/hw/ssi-sd.c
+index 5e74e5d..b0fed58 100644
+--- a/hw/ssi-sd.c
++++ b/hw/ssi-sd.c
+@@ -237,7 +237,7 @@ static int ssi_sd_init(SSISlave *dev)
+     s->mode = SSI_SD_CMD;
+     bs = qdev_init_bdrv(&dev->qdev, IF_SD);
+     s->sd = sd_init(bs, 1);
+-    register_savevm("ssi_sd", -1, 1, ssi_sd_save, ssi_sd_load, s);
++    register_savevm(&dev->qdev, "ssi_sd", -1, 1, ssi_sd_save, ssi_sd_load, s);
+     return 0;
+ }
+ 
+diff --git a/hw/stellaris.c b/hw/stellaris.c
+index 44c9eee..5fbcc07 100644
+--- a/hw/stellaris.c
++++ b/hw/stellaris.c
+@@ -354,7 +354,8 @@ static int stellaris_gptm_init(SysBusDevice *dev)
+     s->opaque[0] = s->opaque[1] = s;
+     s->timer[0] = qemu_new_timer(vm_clock, gptm_tick, &s->opaque[0]);
+     s->timer[1] = qemu_new_timer(vm_clock, gptm_tick, &s->opaque[1]);
+-    register_savevm("stellaris_gptm", -1, 1, gptm_save, gptm_load, s);
++    register_savevm(&dev->qdev, "stellaris_gptm", -1, 1,
++                    gptm_save, gptm_load, s);
+     return 0;
+ }
+ 
+@@ -673,7 +674,7 @@ static int stellaris_sys_init(uint32_t base, qemu_irq irq,
+                                        ssys_writefn, s);
+     cpu_register_physical_memory(base, 0x00001000, iomemtype);
+     ssys_reset(s);
+-    register_savevm("stellaris_sys", -1, 1, ssys_save, ssys_load, s);
++    register_savevm(NULL, "stellaris_sys", -1, 1, ssys_save, ssys_load, s);
+     return 0;
+ }
+ 
+@@ -887,7 +888,7 @@ static int stellaris_i2c_init(SysBusDevice * dev)
+     sysbus_init_mmio(dev, 0x1000, iomemtype);
+     /* ??? For now we only implement the master interface.  */
+     stellaris_i2c_reset(s);
+-    register_savevm("stellaris_i2c", -1, 1,
++    register_savevm(&dev->qdev, "stellaris_i2c", -1, 1,
+                     stellaris_i2c_save, stellaris_i2c_load, s);
+     return 0;
+ }
+@@ -1196,7 +1197,7 @@ static int stellaris_adc_init(SysBusDevice *dev)
+     sysbus_init_mmio(dev, 0x1000, iomemtype);
+     stellaris_adc_reset(s);
+     qdev_init_gpio_in(&dev->qdev, stellaris_adc_trigger, 1);
+-    register_savevm("stellaris_adc", -1, 1,
++    register_savevm(&dev->qdev, "stellaris_adc", -1, 1,
+                     stellaris_adc_save, stellaris_adc_load, s);
+     return 0;
+ }
+@@ -1256,7 +1257,7 @@ static int stellaris_ssi_bus_init(SSISlave *dev)
+     s->bus[1] = ssi_create_bus(&dev->qdev, "ssi1");
+     qdev_init_gpio_in(&dev->qdev, stellaris_ssi_bus_select, 1);
+ 
+-    register_savevm("stellaris_ssi_bus", -1, 1,
++    register_savevm(&dev->qdev, "stellaris_ssi_bus", -1, 1,
+                     stellaris_ssi_bus_save, stellaris_ssi_bus_load, s);
+     return 0;
+ }
+diff --git a/hw/stellaris_enet.c b/hw/stellaris_enet.c
+index d1d755e..330a9d6 100644
+--- a/hw/stellaris_enet.c
++++ b/hw/stellaris_enet.c
+@@ -389,7 +389,7 @@ static void stellaris_enet_cleanup(VLANClientState *nc)
+ {
+     stellaris_enet_state *s = DO_UPCAST(NICState, nc, nc)->opaque;
+ 
+-    unregister_savevm("stellaris_enet", s);
++    unregister_savevm(&s->busdev.qdev, "stellaris_enet", s);
+ 
+     cpu_unregister_io_memory(s->mmio_index);
+ 
+@@ -419,7 +419,7 @@ static int stellaris_enet_init(SysBusDevice *dev)
+     qemu_format_nic_info_str(&s->nic->nc, s->conf.macaddr.a);
+ 
+     stellaris_enet_reset(s);
+-    register_savevm("stellaris_enet", -1, 1,
++    register_savevm(&s->busdev.qdev, "stellaris_enet", -1, 1,
+                     stellaris_enet_save, stellaris_enet_load, s);
+     return 0;
+ }
+diff --git a/hw/stellaris_input.c b/hw/stellaris_input.c
+index 33395a4..16aae96 100644
+--- a/hw/stellaris_input.c
++++ b/hw/stellaris_input.c
+@@ -86,6 +86,6 @@ void stellaris_gamepad_init(int n, qemu_irq *irq, const int *keycode)
+     }
+     s->num_buttons = n;
+     qemu_add_kbd_event_handler(stellaris_gamepad_put_key, s);
+-    register_savevm("stellaris_gamepad", -1, 1,
++    register_savevm(NULL, "stellaris_gamepad", -1, 1,
+                     stellaris_gamepad_save, stellaris_gamepad_load, s);
+ }
+diff --git a/hw/syborg_fb.c b/hw/syborg_fb.c
+index 7be04a3..ed57203 100644
+--- a/hw/syborg_fb.c
++++ b/hw/syborg_fb.c
+@@ -526,7 +526,7 @@ static int syborg_fb_init(SysBusDevice *dev)
+     if (!s->rows)
+         s->rows = ds_get_height(s->ds);
+ 
+-    register_savevm("syborg_framebuffer", -1, 1,
++    register_savevm(&dev->qdev, "syborg_framebuffer", -1, 1,
+                     syborg_fb_save, syborg_fb_load, s);
+     return 0;
+ }
+diff --git a/hw/syborg_interrupt.c b/hw/syborg_interrupt.c
+index f3a1767..30140fb 100644
+--- a/hw/syborg_interrupt.c
++++ b/hw/syborg_interrupt.c
+@@ -214,7 +214,8 @@ static int syborg_int_init(SysBusDevice *dev)
+     sysbus_init_mmio(dev, 0x1000, iomemtype);
+     s->flags = qemu_mallocz(s->num_irqs * sizeof(syborg_int_flags));
+ 
+-    register_savevm("syborg_int", -1, 1, syborg_int_save, syborg_int_load, s);
++    register_savevm(&dev->qdev, "syborg_int", -1, 1, syborg_int_save,
++                    syborg_int_load, s);
+     return 0;
+ }
+ 
+diff --git a/hw/syborg_keyboard.c b/hw/syborg_keyboard.c
+index 4a562f8..7709100 100644
+--- a/hw/syborg_keyboard.c
++++ b/hw/syborg_keyboard.c
+@@ -220,7 +220,7 @@ static int syborg_keyboard_init(SysBusDevice *dev)
+ 
+     qemu_add_kbd_event_handler(syborg_keyboard_event, s);
+ 
+-    register_savevm("syborg_keyboard", -1, 1,
++    register_savevm(&dev->qdev, "syborg_keyboard", -1, 1,
+                     syborg_keyboard_save, syborg_keyboard_load, s);
+     return 0;
+ }
+diff --git a/hw/syborg_pointer.c b/hw/syborg_pointer.c
+index 563d730..69b8d96 100644
+--- a/hw/syborg_pointer.c
++++ b/hw/syborg_pointer.c
+@@ -218,7 +218,7 @@ static int syborg_pointer_init(SysBusDevice *dev)
+     qemu_add_mouse_event_handler(syborg_pointer_event, s, s->absolute,
+                                  "Syborg Pointer");
+ 
+-    register_savevm("syborg_pointer", -1, 1,
++    register_savevm(&dev->qdev, "syborg_pointer", -1, 1,
+                     syborg_pointer_save, syborg_pointer_load, s);
+     return 0;
+ }
+diff --git a/hw/syborg_rtc.c b/hw/syborg_rtc.c
+index b066213..78d5edb 100644
+--- a/hw/syborg_rtc.c
++++ b/hw/syborg_rtc.c
+@@ -136,7 +136,8 @@ static int syborg_rtc_init(SysBusDevice *dev)
+     qemu_get_timedate(&tm, 0);
+     s->offset = (uint64_t)mktime(&tm) * 1000000000;
+ 
+-    register_savevm("syborg_rtc", -1, 1, syborg_rtc_save, syborg_rtc_load, s);
++    register_savevm(&dev->qdev, "syborg_rtc", -1, 1,
++                    syborg_rtc_save, syborg_rtc_load, s);
+     return 0;
+ }
+ 
+diff --git a/hw/syborg_serial.c b/hw/syborg_serial.c
+index cac00ea..8c42956 100644
+--- a/hw/syborg_serial.c
++++ b/hw/syborg_serial.c
+@@ -335,7 +335,7 @@ static int syborg_serial_init(SysBusDevice *dev)
+     }
+     s->read_fifo = qemu_mallocz(s->fifo_size * sizeof(s->read_fifo[0]));
+ 
+-    register_savevm("syborg_serial", -1, 1,
++    register_savevm(&dev->qdev, "syborg_serial", -1, 1,
+                     syborg_serial_save, syborg_serial_load, s);
+     return 0;
+ }
+diff --git a/hw/syborg_timer.c b/hw/syborg_timer.c
+index 3e4a447..95e07d7 100644
+--- a/hw/syborg_timer.c
++++ b/hw/syborg_timer.c
+@@ -221,7 +221,7 @@ static int syborg_timer_init(SysBusDevice *dev)
+     bh = qemu_bh_new(syborg_timer_tick, s);
+     s->timer = ptimer_init(bh);
+     ptimer_set_freq(s->timer, s->freq);
+-    register_savevm("syborg_timer", -1, 1,
++    register_savevm(&dev->qdev, "syborg_timer", -1, 1,
+                     syborg_timer_save, syborg_timer_load, s);
+     return 0;
+ }
+diff --git a/hw/tsc2005.c b/hw/tsc2005.c
+index b75cc86..a55853c 100644
+--- a/hw/tsc2005.c
++++ b/hw/tsc2005.c
+@@ -548,7 +548,7 @@ void *tsc2005_init(qemu_irq pintdav)
+                     "QEMU TSC2005-driven Touchscreen");
+ 
+     qemu_register_reset((void *) tsc2005_reset, s);
+-    register_savevm("tsc2005", -1, 0, tsc2005_save, tsc2005_load, s);
++    register_savevm(NULL, "tsc2005", -1, 0, tsc2005_save, tsc2005_load, s);
+ 
+     return s;
+ }
+diff --git a/hw/tsc210x.c b/hw/tsc210x.c
+index e851ca1..fca73f1 100644
+--- a/hw/tsc210x.c
++++ b/hw/tsc210x.c
+@@ -1143,7 +1143,7 @@ uWireSlave *tsc2102_init(qemu_irq pint)
+     AUD_register_card(s->name, &s->card);
+ 
+     qemu_register_reset((void *) tsc210x_reset, s);
+-    register_savevm(s->name, -1, 0,
++    register_savevm(NULL, s->name, -1, 0,
+                     tsc210x_save, tsc210x_load, s);
+ 
+     return &s->chip;
+@@ -1194,7 +1194,7 @@ uWireSlave *tsc2301_init(qemu_irq penirq, qemu_irq kbirq, qemu_irq dav)
+     AUD_register_card(s->name, &s->card);
+ 
+     qemu_register_reset((void *) tsc210x_reset, s);
+-    register_savevm(s->name, -1, 0, tsc210x_save, tsc210x_load, s);
++    register_savevm(NULL, s->name, -1, 0, tsc210x_save, tsc210x_load, s);
+ 
+     return &s->chip;
+ }
+diff --git a/hw/unin_pci.c b/hw/unin_pci.c
+index 3ae4e7a..a9e248b 100644
+--- a/hw/unin_pci.c
++++ b/hw/unin_pci.c
+@@ -89,7 +89,8 @@ static int pci_unin_main_init_device(SysBusDevice *dev)
+     sysbus_init_mmio(dev, 0x1000, pci_mem_config);
+     sysbus_init_mmio(dev, 0x1000, pci_mem_data);
+ 
+-    register_savevm("uninorth", 0, 1, pci_unin_save, pci_unin_load, &s->host_state);
++    register_savevm(&dev->qdev, "uninorth", 0, 1,
++                    pci_unin_save, pci_unin_load, &s->host_state);
+     qemu_register_reset(pci_unin_reset, &s->host_state);
+     return 0;
+ }
+diff --git a/hw/vga-isa-mm.c b/hw/vga-isa-mm.c
+index 2faefa5..b4ff23c 100644
+--- a/hw/vga-isa-mm.c
++++ b/hw/vga-isa-mm.c
+@@ -100,7 +100,7 @@ static void vga_mm_init(ISAVGAMMState *s, target_phys_addr_t vram_base,
+     s_ioport_ctrl = cpu_register_io_memory(vga_mm_read_ctrl, vga_mm_write_ctrl, s);
+     vga_io_memory = cpu_register_io_memory(vga_mem_read, vga_mem_write, s);
+ 
+-    vmstate_register(0, &vmstate_vga_common, s);
++    vmstate_register(NULL, 0, &vmstate_vga_common, s);
+ 
+     cpu_register_physical_memory(ctrl_base, 0x100000, s_ioport_ctrl);
+     s->vga.bank_offset = 0;
+diff --git a/hw/vga-isa.c b/hw/vga-isa.c
+index 7937144..3046054 100644
+--- a/hw/vga-isa.c
++++ b/hw/vga-isa.c
+@@ -37,7 +37,7 @@ int isa_vga_init(void)
+ 
+     vga_common_init(s, VGA_RAM_SIZE);
+     vga_init(s);
+-    vmstate_register(0, &vmstate_vga_common, s);
++    vmstate_register(NULL, 0, &vmstate_vga_common, s);
+ 
+     s->ds = graphic_console_init(s->update, s->invalidate,
+                                  s->screen_dump, s->text_update, s);
+diff --git a/hw/virtio-balloon.c b/hw/virtio-balloon.c
+index a4e72ed..1e4dfdd 100644
+--- a/hw/virtio-balloon.c
++++ b/hw/virtio-balloon.c
+@@ -271,7 +271,8 @@ VirtIODevice *virtio_balloon_init(DeviceState *dev)
+     reset_stats(s);
+     qemu_add_balloon_handler(virtio_balloon_to_target, s);
+ 
+-    register_savevm("virtio-balloon", -1, 1, virtio_balloon_save, virtio_balloon_load, s);
++    register_savevm(dev, "virtio-balloon", -1, 1,
++                    virtio_balloon_save, virtio_balloon_load, s);
+ 
+     return &s->vdev;
+ }
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index 2a5a823..a23658e 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -515,7 +515,7 @@ VirtIODevice *virtio_blk_init(DeviceState *dev, BlockConf *conf)
+     s->vq = virtio_add_queue(&s->vdev, 128, virtio_blk_handle_output);
+ 
+     qemu_add_vm_change_state_handler(virtio_blk_dma_restart_cb, s);
+-    register_savevm("virtio-blk", virtio_blk_id++, 2,
++    register_savevm(dev, "virtio-blk", virtio_blk_id++, 2,
+                     virtio_blk_save, virtio_blk_load, s);
+ 
+     return &s->vdev;
+diff --git a/hw/virtio-net.c b/hw/virtio-net.c
+index 4b677b9..6e90330 100644
+--- a/hw/virtio-net.c
++++ b/hw/virtio-net.c
+@@ -923,7 +923,7 @@ VirtIODevice *virtio_net_init(DeviceState *dev, NICConf *conf)
+ 
+     n->vlans = qemu_mallocz(MAX_VLAN >> 3);
+ 
+-    register_savevm("virtio-net", virtio_net_id++, VIRTIO_NET_VM_VERSION,
++    register_savevm(NULL, "virtio-net", virtio_net_id++, VIRTIO_NET_VM_VERSION,
+                     virtio_net_save, virtio_net_load, n);
+     n->vmstate = qemu_add_vm_change_state_handler(virtio_net_vmstate_change, n);
+ 
+@@ -941,7 +941,7 @@ void virtio_net_exit(VirtIODevice *vdev)
+ 
+     qemu_purge_queued_packets(&n->nic->nc);
+ 
+-    unregister_savevm("virtio-net", n);
++    unregister_savevm(NULL, "virtio-net", n);
+ 
+     qemu_free(n->mac_table.macs);
+     qemu_free(n->vlans);
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index 0d1ca0f..94117dc 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -791,7 +791,7 @@ VirtIODevice *virtio_serial_init(DeviceState *dev, uint32_t max_nr_ports)
+      * Register for the savevm section with the virtio-console name
+      * to preserve backward compat
+      */
+-    register_savevm("virtio-console", -1, 2, virtio_serial_save,
++    register_savevm(dev, "virtio-console", -1, 2, virtio_serial_save,
+                     virtio_serial_load, vser);
+ 
+     return vdev;
+diff --git a/hw/vmmouse.c b/hw/vmmouse.c
+index bb6e605..51b6e31 100644
+--- a/hw/vmmouse.c
++++ b/hw/vmmouse.c
+@@ -274,7 +274,7 @@ void *vmmouse_init(void *m)
+     vmport_register(VMMOUSE_STATUS, vmmouse_ioport_read, s);
+     vmport_register(VMMOUSE_COMMAND, vmmouse_ioport_read, s);
+     vmport_register(VMMOUSE_DATA, vmmouse_ioport_read, s);
+-    vmstate_register(0, &vmstate_vmmouse, s);
++    vmstate_register(NULL, 0, &vmstate_vmmouse, s);
+ 
+     return s;
+ }
+diff --git a/hw/vmware_vga.c b/hw/vmware_vga.c
+index 5e969ae..98b9515 100644
+--- a/hw/vmware_vga.c
++++ b/hw/vmware_vga.c
+@@ -1139,7 +1139,7 @@ static void vmsvga_init(struct vmsvga_state_s *s, int vga_ram_size)
+ 
+     vga_common_init(&s->vga, vga_ram_size);
+     vga_init(&s->vga);
+-    vmstate_register(0, &vmstate_vga_common, &s->vga);
++    vmstate_register(NULL, 0, &vmstate_vga_common, &s->vga);
+ 
+     vga_init_vbe(&s->vga);
+ 
+diff --git a/hw/zaurus.c b/hw/zaurus.c
+index db6ba75..dd999d7 100644
+--- a/hw/zaurus.c
++++ b/hw/zaurus.c
+@@ -230,7 +230,7 @@ ScoopInfo *scoop_init(PXA2xxState *cpu,
+     iomemtype = cpu_register_io_memory(scoop_readfn,
+                     scoop_writefn, s);
+     cpu_register_physical_memory(target_base, 0x1000, iomemtype);
+-    register_savevm("scoop", instance, 1, scoop_save, scoop_load, s);
++    register_savevm(NULL, "scoop", instance, 1, scoop_save, scoop_load, s);
+ 
+     return s;
+ }
+diff --git a/kvm-tpr-opt.c b/kvm-tpr-opt.c
+index bf9c9a0..71f78f0 100644
+--- a/kvm-tpr-opt.c
++++ b/kvm-tpr-opt.c
+@@ -403,7 +403,7 @@ static void vtpr_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+ 
+ void kvm_tpr_opt_setup(void)
+ {
+-    register_savevm("kvm-tpr-opt", 0, 1, tpr_save, tpr_load, NULL);
++    register_savevm(NULL, "kvm-tpr-opt", 0, 1, tpr_save, tpr_load, NULL);
+     register_ioport_write(0x7e, 1, 1, vtpr_ioport_write, NULL);
+     register_ioport_write(0x7e, 2, 2, vtpr_ioport_write16, NULL);
+ }
+diff --git a/qemu-kvm-x86.c b/qemu-kvm-x86.c
+index 7c608ab..93deeff 100644
+--- a/qemu-kvm-x86.c
++++ b/qemu-kvm-x86.c
+@@ -793,7 +793,7 @@ int kvm_arch_qemu_create_context(void)
+ 
+ #ifdef KVM_CAP_ADJUST_CLOCK
+     if (kvm_check_extension(kvm_state, KVM_CAP_ADJUST_CLOCK))
+-        vmstate_register(0, &vmstate_kvmclock, &kvmclock_data);
++        vmstate_register(NULL, 0, &vmstate_kvmclock, &kvmclock_data);
+ #endif
+     return 0;
+ }
+diff --git a/savevm.c b/savevm.c
+index 52e999f..72ad844 100644
+--- a/savevm.c
++++ b/savevm.c
+@@ -1061,7 +1061,8 @@ static int calculate_new_instance_id(const char *idstr)
+    of the system, so instance_id should be removed/replaced.
+    Meanwhile pass -1 as instance_id if you do not already have a clearly
+    distinguishing id for all instances of your device class. */
+-int register_savevm_live(const char *idstr,
++int register_savevm_live(DeviceState *dev,
++                         const char *idstr,
+                          int instance_id,
+                          int version_id,
+                          SaveSetParamsHandler *set_params,
+@@ -1093,18 +1094,19 @@ int register_savevm_live(const char *idstr,
+     return 0;
+ }
+ 
+-int register_savevm(const char *idstr,
++int register_savevm(DeviceState *dev,
++                    const char *idstr,
+                     int instance_id,
+                     int version_id,
+                     SaveStateHandler *save_state,
+                     LoadStateHandler *load_state,
+                     void *opaque)
+ {
+-    return register_savevm_live(idstr, instance_id, version_id,
++    return register_savevm_live(dev, idstr, instance_id, version_id,
+                                 NULL, NULL, save_state, load_state, opaque);
+ }
+ 
+-void unregister_savevm(const char *idstr, void *opaque)
++void unregister_savevm(DeviceState *dev, const char *idstr, void *opaque)
+ {
+     SaveStateEntry *se, *new_se;
+ 
+@@ -1116,8 +1118,8 @@ void unregister_savevm(const char *idstr, void *opaque)
+     }
+ }
+ 
+-int vmstate_register(int instance_id, const VMStateDescription *vmsd,
+-                     void *opaque)
++int vmstate_register(DeviceState *dev, int instance_id,
++                     const VMStateDescription *vmsd, void *opaque)
+ {
+     SaveStateEntry *se;
+ 
+@@ -1141,7 +1143,8 @@ int vmstate_register(int instance_id, const VMStateDescription *vmsd,
+     return 0;
+ }
+ 
+-void vmstate_unregister(const VMStateDescription *vmsd, void *opaque)
++void vmstate_unregister(DeviceState *dev, const VMStateDescription *vmsd,
++                        void *opaque)
+ {
+     SaveStateEntry *se, *new_se;
+ 
+diff --git a/slirp/slirp.c b/slirp/slirp.c
+index 6731f52..0b1eb7b 100644
+--- a/slirp/slirp.c
++++ b/slirp/slirp.c
+@@ -232,7 +232,8 @@ Slirp *slirp_init(int restricted, struct in_addr vnetwork,
+ 
+     slirp->opaque = opaque;
+ 
+-    register_savevm("slirp", 0, 3, slirp_state_save, slirp_state_load, slirp);
++    register_savevm(NULL, "slirp", 0, 3,
++                    slirp_state_save, slirp_state_load, slirp);
+ 
+     QTAILQ_INSERT_TAIL(&slirp_instances, slirp, entry);
+ 
+@@ -243,7 +244,7 @@ void slirp_cleanup(Slirp *slirp)
+ {
+     QTAILQ_REMOVE(&slirp_instances, slirp, entry);
+ 
+-    unregister_savevm("slirp", slirp);
++    unregister_savevm(NULL, "slirp", slirp);
+ 
+     qemu_free(slirp->tftp_prefix);
+     qemu_free(slirp->bootp_filename);
+diff --git a/vl.c b/vl.c
+index 0ea505e..ecb5f11 100644
+--- a/vl.c
++++ b/vl.c
+@@ -6152,8 +6152,8 @@ int main(int argc, char **argv, char **envp)
+     if (qemu_opts_foreach(&qemu_drive_opts, drive_init_func, machine, 1) != 0)
+         exit(1);
+ 
+-    vmstate_register(0, &vmstate_timers ,&timers_state);
+-    register_savevm_live("ram", 0, 3, NULL, ram_save_live, NULL, 
++    vmstate_register(NULL, 0, &vmstate_timers ,&timers_state);
++    register_savevm_live(NULL, "ram", 0, 3, NULL, ram_save_live, NULL, 
+                          ram_load, NULL);
+ 
+     if (nb_numa_nodes > 0) {
+-- 
+1.7.0.3
+

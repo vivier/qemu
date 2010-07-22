@@ -1,0 +1,105 @@
+From 3cef9c2c706228ed317317d08a22ea5f9e0db634 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 6 Jul 2010 22:28:39 -0300
+Subject: [PATCH 11/24] ramblocks: Make use of DeviceState pointer and BusInfo.get_dev_path
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100706222839.1033.50206.stgit@localhost.localdomain>
+Patchwork-id: 10514
+O-Subject: [RHEL6.0 qemu-kvm PATCH 11/17] ramblocks: Make use of DeviceState
+	pointer and BusInfo.get_dev_path
+Bugzilla: 596328
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Zachary Amsden <zamsden@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 596328
+Upstream commit: cc9e98cb8f20d5ef87290591a8e4324c482f3cdd
+
+With these two pieces in place, we can start naming ramblocks.  When
+the device is present and it lives on a bus that provides a device
+path, we concatenate the path and the provided name.  Otherwise we
+just use name.  The resulting id string must be unique.  For now we
+assume an allocation for the same name and size is a device that has
+been removed and reinserted and return the same block.  This will go
+away once qemu_ram_free() is implemented.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+
+ cpu-all.h |    1 +
+ exec.c    |   29 +++++++++++++++++++++++++++--
+ 2 files changed, 28 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ cpu-all.h |    1 +
+ exec.c    |   29 +++++++++++++++++++++++++++--
+ 2 files changed, 28 insertions(+), 2 deletions(-)
+
+diff --git a/cpu-all.h b/cpu-all.h
+index aee2032..922ad0b 100644
+--- a/cpu-all.h
++++ b/cpu-all.h
+@@ -853,6 +853,7 @@ typedef struct RAMBlock {
+     uint8_t *host;
+     ram_addr_t offset;
+     ram_addr_t length;
++    char idstr[256];
+     QLIST_ENTRY(RAMBlock) next;
+ } RAMBlock;
+ 
+diff --git a/exec.c b/exec.c
+index d3d75cf..fa29ced 100644
+--- a/exec.c
++++ b/exec.c
+@@ -42,6 +42,7 @@
+ #include "qemu-kvm.h"
+ 
+ #include "hw/hw.h"
++#include "hw/qdev.h"
+ #include "osdep.h"
+ #include "kvm.h"
+ #if defined(CONFIG_USER_ONLY)
+@@ -2651,10 +2652,34 @@ static ram_addr_t find_ram_offset(ram_addr_t size)
+ 
+ ram_addr_t qemu_ram_alloc(DeviceState *dev, const char *name, ram_addr_t size)
+ {
+-    RAMBlock *new_block;
++    RAMBlock *new_block, *block;
+ 
+     size = TARGET_PAGE_ALIGN(size);
+-    new_block = qemu_malloc(sizeof(*new_block));
++    new_block = qemu_mallocz(sizeof(*new_block));
++
++    if (dev && dev->parent_bus && dev->parent_bus->info->get_dev_path) {
++        char *id = dev->parent_bus->info->get_dev_path(dev);
++        if (id) {
++            snprintf(new_block->idstr, sizeof(new_block->idstr), "%s/", id);
++            qemu_free(id);
++        }
++    }
++    pstrcat(new_block->idstr, sizeof(new_block->idstr), name);
++
++    QLIST_FOREACH(block, &ram_list.blocks, next) {
++        if (!strcmp(block->idstr, new_block->idstr)) {
++            if (block->length == new_block->length) {
++                fprintf(stderr, "RAMBlock \"%s\" exists, assuming lack of"
++                        "free.\n", new_block->idstr);
++                qemu_free(new_block);
++                return block->offset;
++            } else {
++                fprintf(stderr, "RAMBlock \"%s\" already registered with"
++                        "different size, abort\n", new_block->idstr);
++                abort();
++            }
++        }
++    }
+ 
+     new_block->host = file_ram_alloc(size, mem_path);
+     if (!new_block->host) {
+-- 
+1.7.0.3
+

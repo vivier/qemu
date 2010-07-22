@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.97%{?dist}
+Release: 2.98%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1306,6 +1306,54 @@ Patch1641: kvm-Change-default-CPU-model-qemu64-to-model-6.patch
 Patch1642: kvm-set-model-6-on-Intel-CPUs-on-cpu-x86_64.conf.patch
 # For bz#615228 - oom in vhost_dev_start
 Patch1643: kvm-vhost-fix-miration-during-device-start.patch
+# For bz#596328 - [RHEL6 Beta1] : KVM guest remote migration fails with pci device hotplug.
+Patch1644: kvm-ram_blocks-Convert-to-a-QLIST.patch
+# For bz#596328 - [RHEL6 Beta1] : KVM guest remote migration fails with pci device hotplug.
+Patch1645: kvm-Remove-uses-of-ram.last_offset-aka-last_ram_offset.patch
+# For bz#596328 - [RHEL6 Beta1] : KVM guest remote migration fails with pci device hotplug.
+Patch1646: kvm-pc-Allocate-all-ram-in-a-single-qemu_ram_alloc.patch
+# For bz#596328 - [RHEL6 Beta1] : KVM guest remote migration fails with pci device hotplug.
+Patch1647: kvm-qdev-Add-a-get_dev_path-function-to-BusInfo.patch
+# For bz#596328 - [RHEL6 Beta1] : KVM guest remote migration fails with pci device hotplug.
+Patch1648: kvm-pci-Implement-BusInfo.get_dev_path.patch
+# For bz#596328 - [RHEL6 Beta1] : KVM guest remote migration fails with pci device hotplug.
+Patch1649: kvm-savevm-Add-DeviceState-param.patch
+# For bz#596328 - [RHEL6 Beta1] : KVM guest remote migration fails with pci device hotplug.
+Patch1650: kvm-savevm-Make-use-of-DeviceState.patch
+# For bz#596328 - [RHEL6 Beta1] : KVM guest remote migration fails with pci device hotplug.
+Patch1651: kvm-eepro100-Add-a-dev-field-to-eeprom-new-free-function.patch
+# For bz#596328 - [RHEL6 Beta1] : KVM guest remote migration fails with pci device hotplug.
+Patch1652: kvm-virtio-net-Incorporate-a-DeviceState-pointer-and-let.patch
+# For bz#596328 - [RHEL6 Beta1] : KVM guest remote migration fails with pci device hotplug.
+Patch1653: kvm-qemu_ram_alloc-Add-DeviceState-and-name-parameters.patch
+# For bz#596328 - [RHEL6 Beta1] : KVM guest remote migration fails with pci device hotplug.
+Patch1654: kvm-ramblocks-Make-use-of-DeviceState-pointer-and-BusInf.patch
+# For bz#596328 - [RHEL6 Beta1] : KVM guest remote migration fails with pci device hotplug.
+Patch1655: kvm-savevm-Migrate-RAM-based-on-name-offset.patch
+# For bz#596328 - [RHEL6 Beta1] : KVM guest remote migration fails with pci device hotplug.
+Patch1656: kvm-savevm-Use-RAM-blocks-for-basis-of-migration.patch
+# For bz#596328 - [RHEL6 Beta1] : KVM guest remote migration fails with pci device hotplug.
+Patch1657: kvm-savevm-Create-a-new-continue-flag-to-avoid-resending.patch
+# For bz#596328 - [RHEL6 Beta1] : KVM guest remote migration fails with pci device hotplug.
+Patch1658: kvm-qemu_ram_free-Implement-it.patch
+# For bz#596328 - [RHEL6 Beta1] : KVM guest remote migration fails with pci device hotplug.
+Patch1659: kvm-pci-Free-the-space-allocated-for-the-option-rom-on-r.patch
+# For bz#596328 - [RHEL6 Beta1] : KVM guest remote migration fails with pci device hotplug.
+Patch1660: kvm-ramblocks-No-more-being-lazy-about-duplicate-names.patch
+# For bz#616525 - savevm needs to reset block info on each new save
+Patch1661: kvm-savevm-Reset-last-block-info-at-beginning-of-each-sa.patch
+# For bz#615152 - rhel 6 performance worse than rhel5.6 when committing 1G  changes recorded in  snapshot in its base image.
+Patch1662: kvm-block-Change-bdrv_commit-to-handle-multiple-sectors-.patch
+# For bz#616501 - publish used ABI incompatible with future guests
+Patch1663: kvm-Revert-virtio-Enable-the-PUBLISH_USED-feature-by-def.patch
+# For bz#616501 - publish used ABI incompatible with future guests
+Patch1664: kvm-Revert-vhost-net-check-PUBLISH_USED-in-backend.patch
+# For bz#616501 - publish used ABI incompatible with future guests
+Patch1665: kvm-Revert-virtio-utilize-PUBLISH_USED_IDX-feature.patch
+# For bz#596328 - [RHEL6 Beta1] : KVM guest remote migration fails with pci device hotplug.
+Patch1666: kvm-savevm-Fix-memory-leak-of-compat-struct.patch
+# For bz#580010 - migration failed after pci_add and pci_del a virtio storage device
+Patch1667: kvm-virtio-blk-Create-exit-function-to-unregister-savevm.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2011,6 +2059,30 @@ such as kvm_stat.
 %patch1641 -p1
 %patch1642 -p1
 %patch1643 -p1
+%patch1644 -p1
+%patch1645 -p1
+%patch1646 -p1
+%patch1647 -p1
+%patch1648 -p1
+%patch1649 -p1
+%patch1650 -p1
+%patch1651 -p1
+%patch1652 -p1
+%patch1653 -p1
+%patch1654 -p1
+%patch1655 -p1
+%patch1656 -p1
+%patch1657 -p1
+%patch1658 -p1
+%patch1659 -p1
+%patch1660 -p1
+%patch1661 -p1
+%patch1662 -p1
+%patch1663 -p1
+%patch1664 -p1
+%patch1665 -p1
+%patch1666 -p1
+%patch1667 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2203,6 +2275,42 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Jul 22 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.98.el6
+- kvm-ram_blocks-Convert-to-a-QLIST.patch [bz#596328]
+- kvm-Remove-uses-of-ram.last_offset-aka-last_ram_offset.patch [bz#596328]
+- kvm-pc-Allocate-all-ram-in-a-single-qemu_ram_alloc.patch [bz#596328]
+- kvm-qdev-Add-a-get_dev_path-function-to-BusInfo.patch [bz#596328]
+- kvm-pci-Implement-BusInfo.get_dev_path.patch [bz#596328]
+- kvm-savevm-Add-DeviceState-param.patch [bz#596328]
+- kvm-savevm-Make-use-of-DeviceState.patch [bz#596328]
+- kvm-eepro100-Add-a-dev-field-to-eeprom-new-free-function.patch [bz#596328]
+- kvm-virtio-net-Incorporate-a-DeviceState-pointer-and-let.patch [bz#596328]
+- kvm-qemu_ram_alloc-Add-DeviceState-and-name-parameters.patch [bz#596328]
+- kvm-ramblocks-Make-use-of-DeviceState-pointer-and-BusInf.patch [bz#596328]
+- kvm-savevm-Migrate-RAM-based-on-name-offset.patch [bz#596328]
+- kvm-savevm-Use-RAM-blocks-for-basis-of-migration.patch [bz#596328]
+- kvm-savevm-Create-a-new-continue-flag-to-avoid-resending.patch [bz#596328]
+- kvm-qemu_ram_free-Implement-it.patch [bz#596328]
+- kvm-pci-Free-the-space-allocated-for-the-option-rom-on-r.patch [bz#596328]
+- kvm-ramblocks-No-more-being-lazy-about-duplicate-names.patch [bz#596328]
+- kvm-savevm-Reset-last-block-info-at-beginning-of-each-sa.patch [bz#616525]
+- kvm-block-Change-bdrv_commit-to-handle-multiple-sectors-.patch [bz#615152]
+- kvm-Revert-virtio-Enable-the-PUBLISH_USED-feature-by-def.patch [bz#616501]
+- kvm-Revert-vhost-net-check-PUBLISH_USED-in-backend.patch [bz#616501]
+- kvm-Revert-virtio-utilize-PUBLISH_USED_IDX-feature.patch [bz#616501]
+- kvm-savevm-Fix-memory-leak-of-compat-struct.patch [bz#596328]
+- kvm-virtio-blk-Create-exit-function-to-unregister-savevm.patch [bz#580010]
+- Resolves: bz#580010
+  (migration failed after pci_add and pci_del a virtio storage device)
+- Resolves: bz#596328
+  ([RHEL6 Beta1] : KVM guest remote migration fails with pci device hotplug.)
+- Resolves: bz#615152
+  (rhel 6 performance worse than rhel5.6 when committing 1G  changes recorded in  snapshot in its base image.)
+- Resolves: bz#616501
+  (publish used ABI incompatible with future guests)
+- Resolves: bz#616525
+  (savevm needs to reset block info on each new save)
+
 * Tue Jul 20 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.97.el6
 - kvm-block-Fix-early-failure-in-multiwrite.patch [bz#602209]
 - kvm-block-Handle-multiwrite-errors-only-when-all-request.patch [bz#602209]

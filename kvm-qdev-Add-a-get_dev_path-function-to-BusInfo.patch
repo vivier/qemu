@@ -1,0 +1,58 @@
+From b793438999e9ec3b28111575e93ca1303837c7c8 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 6 Jul 2010 22:27:57 -0300
+Subject: [PATCH 04/24] qdev: Add a get_dev_path() function to BusInfo
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100706222757.1033.92738.stgit@localhost.localdomain>
+Patchwork-id: 10507
+O-Subject: [RHEL6.0 qemu-kvm PATCH 04/17] qdev: Add a get_dev_path() function to
+	BusInfo
+Bugzilla: 596328
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Zachary Amsden <zamsden@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 596328
+Upstream commit: 6772b9364a9ef8b44a7c4deef0544df95bf88741
+
+This function is meant to provide a stable device path for buses
+which are able to implement it.  If a bus has a globally unique
+addresses scheme, one address level may be sufficient to provide
+a path.  Other buses may need to recursively traverse up the
+qdev tree.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+
+ hw/qdev.h |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qdev.h |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/hw/qdev.h b/hw/qdev.h
+index d8fbc73..f9791f1 100644
+--- a/hw/qdev.h
++++ b/hw/qdev.h
+@@ -47,10 +47,13 @@ struct DeviceState {
+ };
+ 
+ typedef void (*bus_dev_printfn)(Monitor *mon, DeviceState *dev, int indent);
++typedef char *(*bus_get_dev_path)(DeviceState *dev);
++
+ struct BusInfo {
+     const char *name;
+     size_t size;
+     bus_dev_printfn print_dev;
++    bus_get_dev_path get_dev_path;
+     Property *props;
+ };
+ 
+-- 
+1.7.0.3
+

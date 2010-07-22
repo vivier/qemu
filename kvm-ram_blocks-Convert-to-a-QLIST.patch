@@ -1,0 +1,417 @@
+From 238ec1665aea6924d19ac79163c32b8cce1e3d43 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 6 Jul 2010 22:27:39 -0300
+Subject: [PATCH 01/24] ram_blocks: Convert to a QLIST
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100706222739.1033.95526.stgit@localhost.localdomain>
+Patchwork-id: 10504
+O-Subject: [RHEL6.0 qemu-kvm PATCH 01/17] ram_blocks: Convert to a QLIST
+Bugzilla: 596328
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Zachary Amsden <zamsden@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 596328
+Upstream commit: f471a17e9d869df3c6573f7ec02c4725676d6f3a
+
+This makes the RAM block list easier to manipulate.  Also incorporate
+relevant variables into the RAMList struct.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Acked-by: Chris Wright <chrisw@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+
+ cpu-all.h |   22 +++++++++---
+ exec.c    |  116 ++++++++++++++++++++++---------------------------------------
+ vl.c      |   14 ++++---
+ 3 files changed, 66 insertions(+), 86 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ cpu-all.h |   22 +++++++++---
+ exec.c    |  116 ++++++++++++++++++++++---------------------------------------
+ vl.c      |   14 ++++----
+ 3 files changed, 66 insertions(+), 86 deletions(-)
+
+diff --git a/cpu-all.h b/cpu-all.h
+index 8ed76c7..caf8d1c 100644
+--- a/cpu-all.h
++++ b/cpu-all.h
+@@ -846,11 +846,23 @@ int cpu_str_to_log_mask(const char *str);
+ /* memory API */
+ 
+ extern int phys_ram_fd;
+-extern uint8_t *phys_ram_dirty;
+ extern ram_addr_t ram_size;
+-extern ram_addr_t last_ram_offset;
+ extern uint8_t *bios_mem;
+ 
++typedef struct RAMBlock {
++    uint8_t *host;
++    ram_addr_t offset;
++    ram_addr_t length;
++    QLIST_ENTRY(RAMBlock) next;
++} RAMBlock;
++
++typedef struct RAMList {
++    uint8_t *phys_dirty;
++    ram_addr_t last_offset;
++    QLIST_HEAD(ram, RAMBlock) blocks;
++} RAMList;
++extern RAMList ram_list;
++
+ /* physical memory access */
+ 
+ /* MMIO pages are identified by a combination of an IO device index and
+@@ -879,18 +891,18 @@ int cpu_memory_rw_debug(CPUState *env, target_ulong addr,
+ /* read dirty bit (return 0 or 1) */
+ static inline int cpu_physical_memory_is_dirty(ram_addr_t addr)
+ {
+-    return phys_ram_dirty[addr >> TARGET_PAGE_BITS] == 0xff;
++    return ram_list.phys_dirty[addr >> TARGET_PAGE_BITS] == 0xff;
+ }
+ 
+ static inline int cpu_physical_memory_get_dirty(ram_addr_t addr,
+                                                 int dirty_flags)
+ {
+-    return phys_ram_dirty[addr >> TARGET_PAGE_BITS] & dirty_flags;
++    return ram_list.phys_dirty[addr >> TARGET_PAGE_BITS] & dirty_flags;
+ }
+ 
+ static inline void cpu_physical_memory_set_dirty(ram_addr_t addr)
+ {
+-    phys_ram_dirty[addr >> TARGET_PAGE_BITS] = 0xff;
++    ram_list.phys_dirty[addr >> TARGET_PAGE_BITS] = 0xff;
+ }
+ 
+ void cpu_physical_memory_reset_dirty(ram_addr_t start, ram_addr_t end,
+diff --git a/exec.c b/exec.c
+index 0fbe285..5c68ad2 100644
+--- a/exec.c
++++ b/exec.c
+@@ -118,22 +118,10 @@ uint8_t *code_gen_ptr;
+ 
+ #if !defined(CONFIG_USER_ONLY)
+ int phys_ram_fd;
+-uint8_t *phys_ram_dirty;
+ uint8_t *bios_mem;
+ static int in_migration;
+ 
+-typedef struct RAMBlock {
+-    uint8_t *host;
+-    ram_addr_t offset;
+-    ram_addr_t length;
+-    struct RAMBlock *next;
+-} RAMBlock;
+-
+-static RAMBlock *ram_blocks;
+-/* TODO: When we implement (and use) ram deallocation (e.g. for hotplug)
+-   then we can no longer assume contiguous ram offsets, and external uses
+-   of this variable will break.  */
+-ram_addr_t last_ram_offset;
++RAMList ram_list = { .blocks = QLIST_HEAD_INITIALIZER(ram_list) };
+ #endif
+ 
+ CPUState *first_cpu;
+@@ -1936,7 +1924,7 @@ static void tlb_protect_code(ram_addr_t ram_addr)
+ static void tlb_unprotect_code_phys(CPUState *env, ram_addr_t ram_addr,
+                                     target_ulong vaddr)
+ {
+-    phys_ram_dirty[ram_addr >> TARGET_PAGE_BITS] |= CODE_DIRTY_FLAG;
++    ram_list.phys_dirty[ram_addr >> TARGET_PAGE_BITS] |= CODE_DIRTY_FLAG;
+ }
+ 
+ static inline void tlb_reset_dirty_range(CPUTLBEntry *tlb_entry,
+@@ -1968,7 +1956,7 @@ void cpu_physical_memory_reset_dirty(ram_addr_t start, ram_addr_t end,
+         return;
+     len = length >> TARGET_PAGE_BITS;
+     mask = ~dirty_flags;
+-    p = phys_ram_dirty + (start >> TARGET_PAGE_BITS);
++    p = ram_list.phys_dirty + (start >> TARGET_PAGE_BITS);
+     for(i = 0; i < len; i++)
+         p[i] &= mask;
+ 
+@@ -2679,18 +2667,17 @@ ram_addr_t qemu_ram_alloc(ram_addr_t size)
+         madvise(new_block->host, size, MADV_HUGEPAGE);
+ #endif
+     }
+-    new_block->offset = last_ram_offset;
++    new_block->offset = ram_list.last_offset;
+     new_block->length = size;
+ 
+-    new_block->next = ram_blocks;
+-    ram_blocks = new_block;
++    QLIST_INSERT_HEAD(&ram_list.blocks, new_block, next);
+ 
+-    phys_ram_dirty = qemu_realloc(phys_ram_dirty,
+-        (last_ram_offset + size) >> TARGET_PAGE_BITS);
+-    memset(phys_ram_dirty + (last_ram_offset >> TARGET_PAGE_BITS),
++    ram_list.phys_dirty = qemu_realloc(ram_list.phys_dirty,
++        (ram_list.last_offset + size) >> TARGET_PAGE_BITS);
++    memset(ram_list.phys_dirty + (ram_list.last_offset >> TARGET_PAGE_BITS),
+            0xff, size >> TARGET_PAGE_BITS);
+ 
+-    last_ram_offset += size;
++    ram_list.last_offset += size;
+ 
+     if (kvm_enabled())
+         kvm_setup_guest_memory(new_block->host, size);
+@@ -2713,54 +2700,34 @@ void qemu_ram_free(ram_addr_t addr)
+  */
+ void *qemu_get_ram_ptr(ram_addr_t addr)
+ {
+-    RAMBlock *prev;
+-    RAMBlock **prevp;
+     RAMBlock *block;
+ 
+-    prev = NULL;
+-    prevp = &ram_blocks;
+-    block = ram_blocks;
+-    while (block && (block->offset > addr
+-                     || block->offset + block->length <= addr)) {
+-        if (prev)
+-          prevp = &prev->next;
+-        prev = block;
+-        block = block->next;
+-    }
+-    if (!block) {
+-        fprintf(stderr, "Bad ram offset %" PRIx64 "\n", (uint64_t)addr);
+-        abort();
+-    }
+-    /* Move this entry to to start of the list.  */
+-    if (prev) {
+-        prev->next = block->next;
+-        block->next = *prevp;
+-        *prevp = block;
++    QLIST_FOREACH(block, &ram_list.blocks, next) {
++        if (addr - block->offset < block->length) {
++            QLIST_REMOVE(block, next);
++            QLIST_INSERT_HEAD(&ram_list.blocks, block, next);
++            return block->host + (addr - block->offset);
++        }
+     }
+-    return block->host + (addr - block->offset);
++
++    fprintf(stderr, "Bad ram offset %" PRIx64 "\n", (uint64_t)addr);
++    abort();
++
++    return NULL;
+ }
+ 
+ int do_qemu_ram_addr_from_host(void *ptr, ram_addr_t *ram_addr)
+ {
+-    RAMBlock *prev;
+-    RAMBlock **prevp;
+     RAMBlock *block;
+     uint8_t *host = ptr;
+ 
+-    prev = NULL;
+-    prevp = &ram_blocks;
+-    block = ram_blocks;
+-    while (block && (block->host > host
+-                     || block->host + block->length <= host)) {
+-        if (prev)
+-          prevp = &prev->next;
+-        prev = block;
+-        block = block->next;
+-    }
+-    if (!block)
+-        return -1;
+-    *ram_addr = block->offset + (host - block->host);
+-    return 0;
++    QLIST_FOREACH(block, &ram_list.blocks, next) {
++        if (host - block->host < block->length) {
++            *ram_addr = block->offset + (host - block->host);
++            return 0;
++        }
++    }
++    return -1;
+ }
+ 
+ /* Some of the softmmu routines need to translate from a host pointer
+@@ -2773,6 +2740,7 @@ ram_addr_t qemu_ram_addr_from_host(void *ptr)
+         fprintf(stderr, "Bad ram pointer %p\n", ptr);
+         abort();
+     }
++
+     return ram_addr;
+ }
+ 
+@@ -2855,16 +2823,16 @@ static void notdirty_mem_writeb(void *opaque, target_phys_addr_t ram_addr,
+                                 uint32_t val)
+ {
+     int dirty_flags;
+-    dirty_flags = phys_ram_dirty[ram_addr >> TARGET_PAGE_BITS];
++    dirty_flags = ram_list.phys_dirty[ram_addr >> TARGET_PAGE_BITS];
+     if (!(dirty_flags & CODE_DIRTY_FLAG)) {
+ #if !defined(CONFIG_USER_ONLY)
+         tb_invalidate_phys_page_fast(ram_addr, 1);
+-        dirty_flags = phys_ram_dirty[ram_addr >> TARGET_PAGE_BITS];
++        dirty_flags = ram_list.phys_dirty[ram_addr >> TARGET_PAGE_BITS];
+ #endif
+     }
+     stb_p(qemu_get_ram_ptr(ram_addr), val);
+     dirty_flags |= (0xff & ~CODE_DIRTY_FLAG);
+-    phys_ram_dirty[ram_addr >> TARGET_PAGE_BITS] = dirty_flags;
++    ram_list.phys_dirty[ram_addr >> TARGET_PAGE_BITS] = dirty_flags;
+     /* we remove the notdirty callback only if the code has been
+        flushed */
+     if (dirty_flags == 0xff)
+@@ -2875,16 +2843,16 @@ static void notdirty_mem_writew(void *opaque, target_phys_addr_t ram_addr,
+                                 uint32_t val)
+ {
+     int dirty_flags;
+-    dirty_flags = phys_ram_dirty[ram_addr >> TARGET_PAGE_BITS];
++    dirty_flags = ram_list.phys_dirty[ram_addr >> TARGET_PAGE_BITS];
+     if (!(dirty_flags & CODE_DIRTY_FLAG)) {
+ #if !defined(CONFIG_USER_ONLY)
+         tb_invalidate_phys_page_fast(ram_addr, 2);
+-        dirty_flags = phys_ram_dirty[ram_addr >> TARGET_PAGE_BITS];
++        dirty_flags = ram_list.phys_dirty[ram_addr >> TARGET_PAGE_BITS];
+ #endif
+     }
+     stw_p(qemu_get_ram_ptr(ram_addr), val);
+     dirty_flags |= (0xff & ~CODE_DIRTY_FLAG);
+-    phys_ram_dirty[ram_addr >> TARGET_PAGE_BITS] = dirty_flags;
++    ram_list.phys_dirty[ram_addr >> TARGET_PAGE_BITS] = dirty_flags;
+     /* we remove the notdirty callback only if the code has been
+        flushed */
+     if (dirty_flags == 0xff)
+@@ -2895,16 +2863,16 @@ static void notdirty_mem_writel(void *opaque, target_phys_addr_t ram_addr,
+                                 uint32_t val)
+ {
+     int dirty_flags;
+-    dirty_flags = phys_ram_dirty[ram_addr >> TARGET_PAGE_BITS];
++    dirty_flags = ram_list.phys_dirty[ram_addr >> TARGET_PAGE_BITS];
+     if (!(dirty_flags & CODE_DIRTY_FLAG)) {
+ #if !defined(CONFIG_USER_ONLY)
+         tb_invalidate_phys_page_fast(ram_addr, 4);
+-        dirty_flags = phys_ram_dirty[ram_addr >> TARGET_PAGE_BITS];
++        dirty_flags = ram_list.phys_dirty[ram_addr >> TARGET_PAGE_BITS];
+ #endif
+     }
+     stl_p(qemu_get_ram_ptr(ram_addr), val);
+     dirty_flags |= (0xff & ~CODE_DIRTY_FLAG);
+-    phys_ram_dirty[ram_addr >> TARGET_PAGE_BITS] = dirty_flags;
++    ram_list.phys_dirty[ram_addr >> TARGET_PAGE_BITS] = dirty_flags;
+     /* we remove the notdirty callback only if the code has been
+        flushed */
+     if (dirty_flags == 0xff)
+@@ -3356,7 +3324,7 @@ void cpu_physical_memory_rw(target_phys_addr_t addr, uint8_t *buf,
+                     /* invalidate code */
+                     tb_invalidate_phys_page_range(addr1, addr1 + l, 0);
+                     /* set dirty bit */
+-                    phys_ram_dirty[addr1 >> TARGET_PAGE_BITS] |=
++                    ram_list.phys_dirty[addr1 >> TARGET_PAGE_BITS] |=
+                         (0xff & ~CODE_DIRTY_FLAG);
+                 }
+ 		/* qemu doesn't execute guest code directly, but kvm does
+@@ -3570,7 +3538,7 @@ void cpu_physical_memory_unmap(void *buffer, target_phys_addr_t len,
+                     /* invalidate code */
+                     tb_invalidate_phys_page_range(addr1, addr1 + l, 0);
+                     /* set dirty bit */
+-                    phys_ram_dirty[addr1 >> TARGET_PAGE_BITS] |=
++                    ram_list.phys_dirty[addr1 >> TARGET_PAGE_BITS] |=
+                         (0xff & ~CODE_DIRTY_FLAG);
+                 }
+                 addr1 += l;
+@@ -3731,7 +3699,7 @@ void stl_phys_notdirty(target_phys_addr_t addr, uint32_t val)
+                 /* invalidate code */
+                 tb_invalidate_phys_page_range(addr1, addr1 + 4, 0);
+                 /* set dirty bit */
+-                phys_ram_dirty[addr1 >> TARGET_PAGE_BITS] |=
++                ram_list.phys_dirty[addr1 >> TARGET_PAGE_BITS] |=
+                     (0xff & ~CODE_DIRTY_FLAG);
+             }
+         }
+@@ -3800,7 +3768,7 @@ void stl_phys(target_phys_addr_t addr, uint32_t val)
+             /* invalidate code */
+             tb_invalidate_phys_page_range(addr1, addr1 + 4, 0);
+             /* set dirty bit */
+-            phys_ram_dirty[addr1 >> TARGET_PAGE_BITS] |=
++            ram_list.phys_dirty[addr1 >> TARGET_PAGE_BITS] |=
+                 (0xff & ~CODE_DIRTY_FLAG);
+         }
+     }
+@@ -3843,7 +3811,7 @@ void stw_phys(target_phys_addr_t addr, uint32_t val)
+             /* invalidate code */
+             tb_invalidate_phys_page_range(addr1, addr1 + 2, 0);
+             /* set dirty bit */
+-            phys_ram_dirty[addr1 >> TARGET_PAGE_BITS] |=
++            ram_list.phys_dirty[addr1 >> TARGET_PAGE_BITS] |=
+                 (0xff & ~CODE_DIRTY_FLAG);
+         }
+     }
+diff --git a/vl.c b/vl.c
+index eb993d6..d81b3ea 100644
+--- a/vl.c
++++ b/vl.c
+@@ -3052,7 +3052,7 @@ static int ram_save_block(QEMUFile *f)
+     ram_addr_t addr = 0;
+     int found = 0;
+ 
+-    while (addr < last_ram_offset) {
++    while (addr < ram_list.last_offset) {
+         if (kvm_enabled() && current_addr == 0) {
+             int r;
+             r = kvm_update_dirty_pages_log();
+@@ -3083,7 +3083,7 @@ static int ram_save_block(QEMUFile *f)
+             break;
+         }
+         addr += TARGET_PAGE_SIZE;
+-        current_addr = (saved_addr + addr) % last_ram_offset;
++        current_addr = (saved_addr + addr) % ram_list.last_offset;
+     }
+ 
+     return found;
+@@ -3096,7 +3096,7 @@ static ram_addr_t ram_save_remaining(void)
+     ram_addr_t addr;
+     ram_addr_t count = 0;
+ 
+-    for (addr = 0; addr < last_ram_offset; addr += TARGET_PAGE_SIZE) {
++    for (addr = 0; addr < ram_list.last_offset; addr += TARGET_PAGE_SIZE) {
+         if (cpu_physical_memory_get_dirty(addr, MIGRATION_DIRTY_FLAG))
+             count++;
+     }
+@@ -3116,7 +3116,7 @@ uint64_t ram_bytes_transferred(void)
+ 
+ uint64_t ram_bytes_total(void)
+ {
+-    return last_ram_offset;
++    return ram_list.last_offset;
+ }
+ 
+ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
+@@ -3140,7 +3140,7 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
+         bytes_transferred = 0;
+ 
+         /* Make sure all dirty bits are set */
+-        for (addr = 0; addr < last_ram_offset; addr += TARGET_PAGE_SIZE) {
++        for (addr = 0; addr < ram_list.last_offset; addr += TARGET_PAGE_SIZE) {
+             if (!cpu_physical_memory_get_dirty(addr, MIGRATION_DIRTY_FLAG))
+                 cpu_physical_memory_set_dirty(addr);
+         }
+@@ -3148,7 +3148,7 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
+         /* Enable dirty memory tracking */
+         cpu_physical_memory_set_dirty_tracking(1);
+ 
+-        qemu_put_be64(f, last_ram_offset | RAM_SAVE_FLAG_MEM_SIZE);
++        qemu_put_be64(f, ram_list.last_offset | RAM_SAVE_FLAG_MEM_SIZE);
+     }
+ 
+     bytes_transferred_last = bytes_transferred;
+@@ -3202,7 +3202,7 @@ static int ram_load(QEMUFile *f, void *opaque, int version_id)
+         addr &= TARGET_PAGE_MASK;
+ 
+         if (flags & RAM_SAVE_FLAG_MEM_SIZE) {
+-            if (addr != last_ram_offset)
++            if (addr != ram_list.last_offset)
+                 return -EINVAL;
+         }
+ 
+-- 
+1.7.0.3
+

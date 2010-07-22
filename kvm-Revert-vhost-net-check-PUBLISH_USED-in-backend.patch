@@ -1,0 +1,56 @@
+From 324918915471ccb42fe4fd2cd9f8008154e863c0 Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Wed, 21 Jul 2010 14:11:07 -0300
+Subject: [PATCH 21/24] Revert "vhost-net: check PUBLISH_USED in backend"
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <640fce35830ffbb8677bd77d14d87af841d1a540.1279721307.git.mst@redhat.com>
+Patchwork-id: 10896
+O-Subject: [PATCH RHEL6.0 2/3] Revert "vhost-net: check PUBLISH_USED in backend"
+Bugzilla: 616501
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+This reverts commit 2e8898277a9156927e2f282262e392061f39bc7f.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+
+Part of a series reverting PUBLISH_USED.
+
+PUBLISH_USED was reverted upstream.
+Discussions on layout and ABI to use are still ongoing,
+and there is high risk layout won't match what we put in RHEL,
+so we won't be able to support this going forward.
+
+https://bugzilla.redhat.com/show_bug.cgi?id=616501
+https://brewweb.devel.redhat.com/taskinfo?taskID=2614379
+
+Tested: on x86_64
+
+---
+ hw/vhost_net.c |    3 ---
+ 1 files changed, 0 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/vhost_net.c |    3 ---
+ 1 files changed, 0 insertions(+), 3 deletions(-)
+
+diff --git a/hw/vhost_net.c b/hw/vhost_net.c
+index 7714176..a2ff80b 100644
+--- a/hw/vhost_net.c
++++ b/hw/vhost_net.c
+@@ -51,9 +51,6 @@ unsigned vhost_net_get_features(struct vhost_net *net, unsigned features)
+     if (!(net->dev.features & (1 << VIRTIO_RING_F_INDIRECT_DESC))) {
+         features &= ~(1 << VIRTIO_RING_F_INDIRECT_DESC);
+     }
+-    if (!(net->dev.features & (1 << VIRTIO_RING_F_PUBLISH_USED))) {
+-        features &= ~(1 << VIRTIO_RING_F_PUBLISH_USED);
+-    }
+     features &= ~(1 << VIRTIO_NET_F_MRG_RXBUF);
+ 
+     return features;
+-- 
+1.7.0.3
+

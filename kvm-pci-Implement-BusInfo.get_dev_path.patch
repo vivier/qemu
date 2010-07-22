@@ -1,0 +1,75 @@
+From cb3e471deb861cdd2cf572e5b9768316423342b3 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 6 Jul 2010 22:28:03 -0300
+Subject: [PATCH 05/24] pci: Implement BusInfo.get_dev_path()
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100706222803.1033.7022.stgit@localhost.localdomain>
+Patchwork-id: 10508
+O-Subject: [RHEL6.0 qemu-kvm PATCH 05/17] pci: Implement BusInfo.get_dev_path()
+Bugzilla: 596328
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Zachary Amsden <zamsden@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 596328
+Upstream commit: 4f43c1ff3b8ce99de80db7c51423e5ba8b143802
+
+This works great for PCI since a <segment>:<bus>:<dev>.<fn> uniquely
+describes a global address.  No need to traverse up the qdev tree.
+PCI segment support is a placeholder for compatibility once we
+support multiple segments.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+
+ hw/pci.c |   14 ++++++++++++++
+ 1 files changed, 14 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pci.c |   14 ++++++++++++++
+ 1 files changed, 14 insertions(+), 0 deletions(-)
+
+diff --git a/hw/pci.c b/hw/pci.c
+index 05847c4..a596154 100644
+--- a/hw/pci.c
++++ b/hw/pci.c
+@@ -59,11 +59,13 @@ struct PCIBus {
+ };
+ 
+ static void pcibus_dev_print(Monitor *mon, DeviceState *dev, int indent);
++static char *pcibus_get_dev_path(DeviceState *dev);
+ 
+ static struct BusInfo pci_bus_info = {
+     .name       = "PCI",
+     .size       = sizeof(PCIBus),
+     .print_dev  = pcibus_dev_print,
++    .get_dev_path = pcibus_get_dev_path,
+     .props      = (Property[]) {
+         DEFINE_PROP_PCI_DEVFN("addr", PCIDevice, devfn, -1),
+         DEFINE_PROP_STRING("romfile", PCIDevice, romfile),
+@@ -1746,6 +1748,18 @@ static void pcibus_dev_print(Monitor *mon, DeviceState *dev, int indent)
+     }
+ }
+ 
++static char *pcibus_get_dev_path(DeviceState *dev)
++{
++    PCIDevice *d = (PCIDevice *)dev;
++    char path[16];
++
++    snprintf(path, sizeof(path), "%04x:%02x:%02x.%x",
++             /* pci_find_domain(d->bus) */ 0, d->config[PCI_SECONDARY_BUS],
++             PCI_SLOT(d->devfn), PCI_FUNC(d->devfn));
++
++    return strdup(path);
++}
++
+ static PCIDeviceInfo bridge_info = {
+     .qdev.name    = "pci-bridge",
+     .qdev.size    = sizeof(PCIBridge),
+-- 
+1.7.0.3
+

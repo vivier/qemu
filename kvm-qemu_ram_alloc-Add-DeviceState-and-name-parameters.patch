@@ -1,0 +1,1195 @@
+From ce5fbe8139bea9618f42316ae09d04039cad8485 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 6 Jul 2010 22:28:33 -0300
+Subject: [PATCH 10/24] qemu_ram_alloc: Add DeviceState and name parameters
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100706222833.1033.72413.stgit@localhost.localdomain>
+Patchwork-id: 10513
+O-Subject: [RHEL6.0 qemu-kvm PATCH 10/17] qemu_ram_alloc: Add DeviceState and
+	name parameters
+Bugzilla: 596328
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Zachary Amsden <zamsden@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 596328
+Upstream commit: 1724f04985367b15751f11f4a9558f8736b2ab59
+
+These will be used to generate unique id strings for ramblocks.  The name
+field is required, the device pointer is optional as most callers don't
+have a device.  When there's no device or the device isn't a child of
+a bus implementing BusInfo.get_dev_path, the name should be unique for
+the platform.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+
+ cpu-common.h                  |    2 +-
+ exec.c                        |    2 +-
+ hw/an5206.c                   |    4 ++--
+ hw/armv7m.c                   |    9 ++++++---
+ hw/axis_dev88.c               |    4 ++--
+ hw/dummy_m68k.c               |    2 +-
+ hw/etraxfs.c                  |    6 +++---
+ hw/g364fb.c                   |    2 +-
+ hw/gumstix.c                  |    6 ++++--
+ hw/integratorcp.c             |    4 ++--
+ hw/ipf.c                      |   15 ++++++++-------
+ hw/mainstone.c                |    6 ++++--
+ hw/mcf5208.c                  |    4 ++--
+ hw/mips_jazz.c                |    4 ++--
+ hw/mips_malta.c               |    4 ++--
+ hw/mips_mipssim.c             |    4 ++--
+ hw/mips_r4k.c                 |    6 +++---
+ hw/musicpal.c                 |    8 +++++---
+ hw/omap1.c                    |    6 ++++--
+ hw/omap2.c                    |    6 ++++--
+ hw/omap_sx1.c                 |   12 ++++++++----
+ hw/onenand.c                  |    2 +-
+ hw/palm.c                     |    3 ++-
+ hw/pc.c                       |    7 ++++---
+ hw/pci.c                      |    7 ++++++-
+ hw/petalogix_s3adsp1800_mmu.c |    7 ++++---
+ hw/ppc405_boards.c            |   18 +++++++++---------
+ hw/ppc405_uc.c                |    2 +-
+ hw/ppc4xx_devs.c              |    4 +++-
+ hw/ppc_newworld.c             |    6 +++---
+ hw/ppc_oldworld.c             |    6 +++---
+ hw/ppc_prep.c                 |    4 ++--
+ hw/ppce500_mpc8544ds.c        |    3 ++-
+ hw/pxa2xx.c                   |   12 ++++++++----
+ hw/qxl.c                      |    7 ++++---
+ hw/r2d.c                      |    2 +-
+ hw/realview.c                 |    4 ++--
+ hw/s390-virtio.c              |    2 +-
+ hw/sm501.c                    |    2 +-
+ hw/spitz.c                    |    2 +-
+ hw/sun4m.c                    |    6 +++---
+ hw/sun4u.c                    |    4 ++--
+ hw/syborg.c                   |    2 +-
+ hw/tc6393xb.c                 |    2 +-
+ hw/tcx.c                      |    2 +-
+ hw/tosa.c                     |    2 +-
+ hw/versatilepb.c              |    2 +-
+ hw/vga.c                      |    2 +-
+ hw/vmware_vga.c               |    2 +-
+ qemu-common.h                 |    3 ++-
+ 50 files changed, 139 insertions(+), 104 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ cpu-common.h                  |    2 +-
+ exec.c                        |    2 +-
+ hw/an5206.c                   |    4 ++--
+ hw/armv7m.c                   |    9 ++++++---
+ hw/axis_dev88.c               |    4 ++--
+ hw/dummy_m68k.c               |    2 +-
+ hw/etraxfs.c                  |    6 +++---
+ hw/g364fb.c                   |    2 +-
+ hw/gumstix.c                  |    6 ++++--
+ hw/integratorcp.c             |    4 ++--
+ hw/ipf.c                      |   15 ++++++++-------
+ hw/mainstone.c                |    6 ++++--
+ hw/mcf5208.c                  |    4 ++--
+ hw/mips_jazz.c                |    4 ++--
+ hw/mips_malta.c               |    4 ++--
+ hw/mips_mipssim.c             |    4 ++--
+ hw/mips_r4k.c                 |    6 +++---
+ hw/musicpal.c                 |    8 +++++---
+ hw/omap1.c                    |    6 ++++--
+ hw/omap2.c                    |    6 ++++--
+ hw/omap_sx1.c                 |   12 ++++++++----
+ hw/onenand.c                  |    2 +-
+ hw/palm.c                     |    3 ++-
+ hw/pc.c                       |    7 ++++---
+ hw/pci.c                      |    7 ++++++-
+ hw/petalogix_s3adsp1800_mmu.c |    7 ++++---
+ hw/ppc405_boards.c            |   18 +++++++++---------
+ hw/ppc405_uc.c                |    2 +-
+ hw/ppc4xx_devs.c              |    4 +++-
+ hw/ppc_newworld.c             |    6 +++---
+ hw/ppc_oldworld.c             |    6 +++---
+ hw/ppc_prep.c                 |    4 ++--
+ hw/ppce500_mpc8544ds.c        |    3 ++-
+ hw/pxa2xx.c                   |   12 ++++++++----
+ hw/qxl.c                      |    7 ++++---
+ hw/r2d.c                      |    2 +-
+ hw/realview.c                 |    4 ++--
+ hw/s390-virtio.c              |    2 +-
+ hw/sm501.c                    |    2 +-
+ hw/spitz.c                    |    2 +-
+ hw/sun4m.c                    |    6 +++---
+ hw/sun4u.c                    |    4 ++--
+ hw/syborg.c                   |    2 +-
+ hw/tc6393xb.c                 |    2 +-
+ hw/tcx.c                      |    2 +-
+ hw/tosa.c                     |    2 +-
+ hw/versatilepb.c              |    2 +-
+ hw/vga.c                      |    2 +-
+ hw/vmware_vga.c               |    2 +-
+ qemu-common.h                 |    3 ++-
+ 50 files changed, 139 insertions(+), 104 deletions(-)
+
+diff --git a/cpu-common.h b/cpu-common.h
+index 326513d..acb91ac 100644
+--- a/cpu-common.h
++++ b/cpu-common.h
+@@ -30,7 +30,7 @@ static inline void cpu_register_physical_memory(target_phys_addr_t start_addr,
+ }
+ 
+ ram_addr_t cpu_get_physical_page_desc(target_phys_addr_t addr);
+-ram_addr_t qemu_ram_alloc(ram_addr_t);
++ram_addr_t qemu_ram_alloc(DeviceState *dev, const char *name, ram_addr_t size);
+ void qemu_ram_free(ram_addr_t addr);
+ /* This should only be used for ram local to a device.  */
+ void *qemu_get_ram_ptr(ram_addr_t addr);
+diff --git a/exec.c b/exec.c
+index 6545ba0..d3d75cf 100644
+--- a/exec.c
++++ b/exec.c
+@@ -2649,7 +2649,7 @@ static ram_addr_t find_ram_offset(ram_addr_t size)
+     return last;
+ }
+ 
+-ram_addr_t qemu_ram_alloc(ram_addr_t size)
++ram_addr_t qemu_ram_alloc(DeviceState *dev, const char *name, ram_addr_t size)
+ {
+     RAMBlock *new_block;
+ 
+diff --git a/hw/an5206.c b/hw/an5206.c
+index a4b83b0..919fc0e 100644
+--- a/hw/an5206.c
++++ b/hw/an5206.c
+@@ -54,11 +54,11 @@ static void an5206_init(ram_addr_t ram_size,
+ 
+     /* DRAM at address zero */
+     cpu_register_physical_memory(0, ram_size,
+-        qemu_ram_alloc(ram_size) | IO_MEM_RAM);
++        qemu_ram_alloc(NULL, "an5206.ram", ram_size) | IO_MEM_RAM);
+ 
+     /* Internal SRAM.  */
+     cpu_register_physical_memory(AN5206_RAMBAR_ADDR, 512,
+-        qemu_ram_alloc(512) | IO_MEM_RAM);
++        qemu_ram_alloc(NULL, "an5206.sram", 512) | IO_MEM_RAM);
+ 
+     mcf5206_init(AN5206_MBAR_ADDR, env);
+ 
+diff --git a/hw/armv7m.c b/hw/armv7m.c
+index 034323d..f789d6a 100644
+--- a/hw/armv7m.c
++++ b/hw/armv7m.c
+@@ -195,9 +195,11 @@ qemu_irq *armv7m_init(int flash_size, int sram_size,
+ 
+     /* Flash programming is done via the SCU, so pretend it is ROM.  */
+     cpu_register_physical_memory(0, flash_size,
+-                                 qemu_ram_alloc(flash_size) | IO_MEM_ROM);
++                                 qemu_ram_alloc(NULL, "armv7m.flash",
++                                                flash_size) | IO_MEM_ROM);
+     cpu_register_physical_memory(0x20000000, sram_size,
+-                                 qemu_ram_alloc(sram_size) | IO_MEM_RAM);
++                                 qemu_ram_alloc(NULL, "armv7m.sram",
++                                                sram_size) | IO_MEM_RAM);
+     armv7m_bitband_init();
+ 
+     nvic = qdev_create(NULL, "armv7m_nvic");
+@@ -243,7 +245,8 @@ qemu_irq *armv7m_init(int flash_size, int sram_size,
+        space.  This stops qemu complaining about executing code outside RAM
+        when returning from an exception.  */
+     cpu_register_physical_memory(0xfffff000, 0x1000,
+-                                 qemu_ram_alloc(0x1000) | IO_MEM_RAM);
++                                 qemu_ram_alloc(NULL, "armv7m.hack", 
++                                                0x1000) | IO_MEM_RAM);
+ 
+     return pic;
+ }
+diff --git a/hw/axis_dev88.c b/hw/axis_dev88.c
+index 1a66649..49fb9a9 100644
+--- a/hw/axis_dev88.c
++++ b/hw/axis_dev88.c
+@@ -276,12 +276,12 @@ void axisdev88_init (ram_addr_t ram_size,
+     qemu_register_reset(main_cpu_reset, env);
+ 
+     /* allocate RAM */
+-    phys_ram = qemu_ram_alloc(ram_size);
++    phys_ram = qemu_ram_alloc(NULL, "axisdev88.ram", ram_size);
+     cpu_register_physical_memory(0x40000000, ram_size, phys_ram | IO_MEM_RAM);
+ 
+     /* The ETRAX-FS has 128Kb on chip ram, the docs refer to it as the 
+        internal memory.  */
+-    phys_intmem = qemu_ram_alloc(INTMEM_SIZE);
++    phys_intmem = qemu_ram_alloc(NULL, "axisdev88.chipram", INTMEM_SIZE);
+     cpu_register_physical_memory(0x38000000, INTMEM_SIZE,
+                                  phys_intmem | IO_MEM_RAM);
+ 
+diff --git a/hw/dummy_m68k.c b/hw/dummy_m68k.c
+index ce45a59..861f28f 100644
+--- a/hw/dummy_m68k.c
++++ b/hw/dummy_m68k.c
+@@ -39,7 +39,7 @@ static void dummy_m68k_init(ram_addr_t ram_size,
+ 
+     /* RAM at address zero */
+     cpu_register_physical_memory(0, ram_size,
+-        qemu_ram_alloc(ram_size) | IO_MEM_RAM);
++        qemu_ram_alloc(NULL, "dummy_m68k.ram", ram_size) | IO_MEM_RAM);
+ 
+     /* Load kernel.  */
+     if (kernel_filename) {
+diff --git a/hw/etraxfs.c b/hw/etraxfs.c
+index 2f7f369..af517c1 100644
+--- a/hw/etraxfs.c
++++ b/hw/etraxfs.c
+@@ -71,17 +71,17 @@ void bareetraxfs_init (ram_addr_t ram_size,
+     qemu_register_reset(main_cpu_reset, env);
+ 
+     /* allocate RAM */
+-    phys_ram = qemu_ram_alloc(ram_size);
++    phys_ram = qemu_ram_alloc(NULL, "etraxfs.ram", ram_size);
+     cpu_register_physical_memory(0x40000000, ram_size, phys_ram | IO_MEM_RAM);
+ 
+     /* The ETRAX-FS has 128Kb on chip ram, the docs refer to it as the 
+        internal memory.  */
+-    phys_intmem = qemu_ram_alloc(INTMEM_SIZE);
++    phys_intmem = qemu_ram_alloc(NULL, "etraxfs.chipram", INTMEM_SIZE);
+     cpu_register_physical_memory(0x38000000, INTMEM_SIZE,
+                                  phys_intmem | IO_MEM_RAM);
+ 
+ 
+-    phys_flash = qemu_ram_alloc(FLASH_SIZE);
++    phys_flash = qemu_ram_alloc(NULL, "etraxfs.flash", FLASH_SIZE);
+     dinfo = drive_get(IF_PFLASH, 0, 0);
+     pflash_cfi02_register(0x0, phys_flash,
+                           dinfo ? dinfo->bdrv : NULL, (64 * 1024),
+diff --git a/hw/g364fb.c b/hw/g364fb.c
+index beafd70..3c8fb98 100644
+--- a/hw/g364fb.c
++++ b/hw/g364fb.c
+@@ -593,7 +593,7 @@ int g364fb_mm_init(target_phys_addr_t vram_base,
+     s = qemu_mallocz(sizeof(G364State));
+ 
+     s->vram_size = 8 * 1024 * 1024;
+-    s->vram_offset = qemu_ram_alloc(s->vram_size);
++    s->vram_offset = qemu_ram_alloc(NULL, "g364fb.vram", s->vram_size);
+     s->vram = qemu_get_ram_ptr(s->vram_offset);
+     s->irq = irq;
+ 
+diff --git a/hw/gumstix.c b/hw/gumstix.c
+index 8fbf64c..9a0779c 100644
+--- a/hw/gumstix.c
++++ b/hw/gumstix.c
+@@ -61,7 +61,8 @@ static void connex_init(ram_addr_t ram_size,
+         exit(1);
+     }
+ 
+-    if (!pflash_cfi01_register(0x00000000, qemu_ram_alloc(connex_rom),
++    if (!pflash_cfi01_register(0x00000000, qemu_ram_alloc(NULL, "connext.rom",
++                                                          connex_rom),
+             dinfo->bdrv, sector_len, connex_rom / sector_len,
+             2, 0, 0, 0, 0)) {
+         fprintf(stderr, "qemu: Error registering flash memory.\n");
+@@ -95,7 +96,8 @@ static void verdex_init(ram_addr_t ram_size,
+         exit(1);
+     }
+ 
+-    if (!pflash_cfi01_register(0x00000000, qemu_ram_alloc(verdex_rom),
++    if (!pflash_cfi01_register(0x00000000, qemu_ram_alloc(NULL, "verdex.rom",
++                                                          verdex_rom),
+             dinfo->bdrv, sector_len, verdex_rom / sector_len,
+             2, 0, 0, 0, 0)) {
+         fprintf(stderr, "qemu: Error registering flash memory.\n");
+diff --git a/hw/integratorcp.c b/hw/integratorcp.c
+index bee8298..3bf216b 100644
+--- a/hw/integratorcp.c
++++ b/hw/integratorcp.c
+@@ -253,7 +253,7 @@ static int integratorcm_init(SysBusDevice *dev)
+     }
+     memcpy(integrator_spd + 73, "QEMU-MEMORY", 11);
+     s->cm_init = 0x00000112;
+-    s->flash_offset = qemu_ram_alloc(0x100000);
++    s->flash_offset = qemu_ram_alloc(NULL, "integrator.flash", 0x100000);
+ 
+     iomemtype = cpu_register_io_memory(integratorcm_readfn,
+                                        integratorcm_writefn, s);
+@@ -467,7 +467,7 @@ static void integratorcp_init(ram_addr_t ram_size,
+         fprintf(stderr, "Unable to find CPU definition\n");
+         exit(1);
+     }
+-    ram_offset = qemu_ram_alloc(ram_size);
++    ram_offset = qemu_ram_alloc(NULL, "integrator.ram", ram_size);
+     /* ??? On a real system the first 1Mb is mapped as SSRAM or boot flash.  */
+     /* ??? RAM should repeat to fill physical memory space.  */
+     /* SDRAM at address zero*/
+diff --git a/hw/ipf.c b/hw/ipf.c
+index bb6ce1f..5ea9122 100644
+--- a/hw/ipf.c
++++ b/hw/ipf.c
+@@ -427,24 +427,25 @@ static void ipf_init1(ram_addr_t ram_size,
+ 
+     /* allocate RAM */
+     if (kvm_enabled()) {
+-        ram_addr = qemu_ram_alloc(0xa0000);
++        ram_addr = qemu_ram_alloc(NULL, "ipf.lowmem", 0xa0000);
+         cpu_register_physical_memory(0, 0xa0000, ram_addr);
+ 
+-        ram_addr = qemu_ram_alloc(0x20000); // Workaround 0xa0000-0xc0000
++        // Workaround 0xa0000-0xc0000
++        ram_addr = qemu_ram_alloc(NULL, "ipf.vgashadow", 0x20000);
+ 
+-        ram_addr = qemu_ram_alloc(0x40000);
++        ram_addr = qemu_ram_alloc(NULL, "ipf.biosshadow", 0x40000);
+         cpu_register_physical_memory(0xc0000, 0x40000, ram_addr);
+ 
+-        ram_addr = qemu_ram_alloc(ram_size - 0x100000);
++        ram_addr = qemu_ram_alloc(NULL, "ipf.ram", ram_size - 0x100000);
+         cpu_register_physical_memory(0x100000, ram_size - 0x100000, ram_addr);
+     } else {
+-        ram_addr = qemu_ram_alloc(ram_size);
++        ram_addr = qemu_ram_alloc(NULL, "ipf.ram", ram_size);
+         cpu_register_physical_memory(0, ram_size, ram_addr);
+     }
+ 
+     /* above 4giga memory allocation */
+     if (above_4g_mem_size > 0) {
+-        ram_addr = qemu_ram_alloc(above_4g_mem_size);
++        ram_addr = qemu_ram_alloc(NULL, "ipf.highmem", above_4g_mem_size);
+         cpu_register_physical_memory(0x100000000, above_4g_mem_size, ram_addr);
+     }
+ 
+@@ -457,7 +458,7 @@ static void ipf_init1(ram_addr_t ram_size,
+         unsigned long type = READ_FROM_NVRAM;
+         unsigned long i = 0;
+         unsigned long fw_offset;
+-        ram_addr_t fw_mem = qemu_ram_alloc(GFW_SIZE);
++        ram_addr_t fw_mem = qemu_ram_alloc(NULL, "ipf.gfw", GFW_SIZE);
+ 
+         snprintf(buf, sizeof(buf), "%s/%s", bios_dir, FW_FILENAME);
+         image = read_image(buf, &image_size );
+diff --git a/hw/mainstone.c b/hw/mainstone.c
+index 3e517f0..1534668 100644
+--- a/hw/mainstone.c
++++ b/hw/mainstone.c
+@@ -86,7 +86,8 @@ static void mainstone_common_init(ram_addr_t ram_size,
+     /* Setup CPU & memory */
+     cpu = pxa270_init(mainstone_binfo.ram_size, cpu_model);
+     cpu_register_physical_memory(0, MAINSTONE_ROM,
+-                    qemu_ram_alloc(MAINSTONE_ROM) | IO_MEM_ROM);
++                    qemu_ram_alloc(NULL, "mainstone.rom",
++                                   MAINSTONE_ROM) | IO_MEM_ROM);
+ 
+     /* Setup initial (reset) machine state */
+     cpu->env->regs[15] = mainstone_binfo.loader_start;
+@@ -101,7 +102,8 @@ static void mainstone_common_init(ram_addr_t ram_size,
+         }
+ 
+         if (!pflash_cfi01_register(mainstone_flash_base[i],
+-                                qemu_ram_alloc(MAINSTONE_FLASH),
++                                qemu_ram_alloc(NULL, "mainstone.flash",
++                                                  MAINSTONE_FLASH),
+                                 dinfo->bdrv, sector_len,
+                                 MAINSTONE_FLASH / sector_len, 4, 0, 0, 0, 0)) {
+             fprintf(stderr, "qemu: Error registering flash memory.\n");
+diff --git a/hw/mcf5208.c b/hw/mcf5208.c
+index 5598611..c603d31 100644
+--- a/hw/mcf5208.c
++++ b/hw/mcf5208.c
+@@ -220,11 +220,11 @@ static void mcf5208evb_init(ram_addr_t ram_size,
+ 
+     /* DRAM at 0x40000000 */
+     cpu_register_physical_memory(0x40000000, ram_size,
+-        qemu_ram_alloc(ram_size) | IO_MEM_RAM);
++        qemu_ram_alloc(NULL, "mcf5208.ram", ram_size) | IO_MEM_RAM);
+ 
+     /* Internal SRAM.  */
+     cpu_register_physical_memory(0x80000000, 16384,
+-        qemu_ram_alloc(16384) | IO_MEM_RAM);
++        qemu_ram_alloc(NULL, "mcf5208.sram", 16384) | IO_MEM_RAM);
+ 
+     /* Internal peripherals.  */
+     pic = mcf_intc_init(0xfc048000, env);
+diff --git a/hw/mips_jazz.c b/hw/mips_jazz.c
+index 94ebd36..5bc84a8 100644
+--- a/hw/mips_jazz.c
++++ b/hw/mips_jazz.c
+@@ -148,10 +148,10 @@ void mips_jazz_init (ram_addr_t ram_size,
+     qemu_register_reset(main_cpu_reset, env);
+ 
+     /* allocate RAM */
+-    ram_offset = qemu_ram_alloc(ram_size);
++    ram_offset = qemu_ram_alloc(NULL, "mips_jazz.ram", ram_size);
+     cpu_register_physical_memory(0, ram_size, ram_offset | IO_MEM_RAM);
+ 
+-    bios_offset = qemu_ram_alloc(MAGNUM_BIOS_SIZE);
++    bios_offset = qemu_ram_alloc(NULL, "mips_jazz.bios", MAGNUM_BIOS_SIZE);
+     cpu_register_physical_memory(0x1fc00000LL,
+                                  MAGNUM_BIOS_SIZE, bios_offset | IO_MEM_ROM);
+     cpu_register_physical_memory(0xfff00000LL,
+diff --git a/hw/mips_malta.c b/hw/mips_malta.c
+index 571d8ce..b79826b 100644
+--- a/hw/mips_malta.c
++++ b/hw/mips_malta.c
+@@ -824,8 +824,8 @@ void mips_malta_init (ram_addr_t ram_size,
+                 ((unsigned int)ram_size / (1 << 20)));
+         exit(1);
+     }
+-    ram_offset = qemu_ram_alloc(ram_size);
+-    bios_offset = qemu_ram_alloc(BIOS_SIZE);
++    ram_offset = qemu_ram_alloc(NULL, "mips_malta.ram", ram_size);
++    bios_offset = qemu_ram_alloc(NULL, "mips_malta.bios", BIOS_SIZE);
+ 
+ 
+     cpu_register_physical_memory(0, ram_size, ram_offset | IO_MEM_RAM);
+diff --git a/hw/mips_mipssim.c b/hw/mips_mipssim.c
+index aa90116..27b499a 100644
+--- a/hw/mips_mipssim.c
++++ b/hw/mips_mipssim.c
+@@ -147,8 +147,8 @@ mips_mipssim_init (ram_addr_t ram_size,
+     qemu_register_reset(main_cpu_reset, reset_info);
+ 
+     /* Allocate RAM. */
+-    ram_offset = qemu_ram_alloc(ram_size);
+-    bios_offset = qemu_ram_alloc(BIOS_SIZE);
++    ram_offset = qemu_ram_alloc(NULL, "mips_mipssim.ram", ram_size);
++    bios_offset = qemu_ram_alloc(NULL, "mips_mipssim.bios", BIOS_SIZE);
+ 
+     cpu_register_physical_memory(0, ram_size, ram_offset | IO_MEM_RAM);
+ 
+diff --git a/hw/mips_r4k.c b/hw/mips_r4k.c
+index b69d7c3..29f1a5f 100644
+--- a/hw/mips_r4k.c
++++ b/hw/mips_r4k.c
+@@ -198,7 +198,7 @@ void mips_r4k_init (ram_addr_t ram_size,
+                 ((unsigned int)ram_size / (1 << 20)));
+         exit(1);
+     }
+-    ram_offset = qemu_ram_alloc(ram_size);
++    ram_offset = qemu_ram_alloc(NULL, "mips_r4k.ram", ram_size);
+ 
+     cpu_register_physical_memory(0, ram_size, ram_offset | IO_MEM_RAM);
+ 
+@@ -221,14 +221,14 @@ void mips_r4k_init (ram_addr_t ram_size,
+         bios_size = -1;
+     }
+     if ((bios_size > 0) && (bios_size <= BIOS_SIZE)) {
+-        bios_offset = qemu_ram_alloc(BIOS_SIZE);
++        bios_offset = qemu_ram_alloc(NULL, "mips_r4k.bios", BIOS_SIZE);
+ 	cpu_register_physical_memory(0x1fc00000, BIOS_SIZE,
+                                      bios_offset | IO_MEM_ROM);
+ 
+         load_image_targphys(filename, 0x1fc00000, BIOS_SIZE);
+     } else if ((dinfo = drive_get(IF_PFLASH, 0, 0)) != NULL) {
+         uint32_t mips_rom = 0x00400000;
+-        bios_offset = qemu_ram_alloc(mips_rom);
++        bios_offset = qemu_ram_alloc(NULL, "mips_r4k.bios", mips_rom);
+         if (!pflash_cfi01_register(0x1fc00000, bios_offset,
+             dinfo->bdrv, sector_len, mips_rom / sector_len,
+             4, 0, 0, 0, 0)) {
+diff --git a/hw/musicpal.c b/hw/musicpal.c
+index 4a33e28..9a1875a 100644
+--- a/hw/musicpal.c
++++ b/hw/musicpal.c
+@@ -1511,9 +1511,10 @@ static void musicpal_init(ram_addr_t ram_size,
+ 
+     /* For now we use a fixed - the original - RAM size */
+     cpu_register_physical_memory(0, MP_RAM_DEFAULT_SIZE,
+-                                 qemu_ram_alloc(MP_RAM_DEFAULT_SIZE));
++                                 qemu_ram_alloc(NULL, "musicpal.ram",
++                                                MP_RAM_DEFAULT_SIZE));
+ 
+-    sram_off = qemu_ram_alloc(MP_SRAM_SIZE);
++    sram_off = qemu_ram_alloc(NULL, "musicpal.sram", MP_SRAM_SIZE);
+     cpu_register_physical_memory(MP_SRAM_BASE, MP_SRAM_SIZE, sram_off);
+ 
+     dev = sysbus_create_simple("mv88w8618_pic", MP_PIC_BASE,
+@@ -1549,7 +1550,8 @@ static void musicpal_init(ram_addr_t ram_size,
+          * 0xFF800000 (if there is 8 MB flash). So remap flash access if the
+          * image is smaller than 32 MB.
+          */
+-        pflash_cfi02_register(0-MP_FLASH_SIZE_MAX, qemu_ram_alloc(flash_size),
++        pflash_cfi02_register(0-MP_FLASH_SIZE_MAX, qemu_ram_alloc(NULL,
++                              "musicpal.flash", flash_size),
+                               dinfo->bdrv, 0x10000,
+                               (flash_size + 0xffff) >> 16,
+                               MP_FLASH_SIZE_MAX / flash_size,
+diff --git a/hw/omap1.c b/hw/omap1.c
+index b5d78cd..cce326f 100644
+--- a/hw/omap1.c
++++ b/hw/omap1.c
+@@ -4642,9 +4642,11 @@ struct omap_mpu_state_s *omap310_mpu_init(unsigned long sdram_size,
+ 
+     /* Memory-mapped stuff */
+     cpu_register_physical_memory(OMAP_EMIFF_BASE, s->sdram_size,
+-                    (emiff_base = qemu_ram_alloc(s->sdram_size)) | IO_MEM_RAM);
++                    (emiff_base = qemu_ram_alloc(NULL, "omap1.dram",
++                                                 s->sdram_size)) | IO_MEM_RAM);
+     cpu_register_physical_memory(OMAP_IMIF_BASE, s->sram_size,
+-                    (imif_base = qemu_ram_alloc(s->sram_size)) | IO_MEM_RAM);
++                    (imif_base = qemu_ram_alloc(NULL, "omap1.sram",
++                                                s->sram_size)) | IO_MEM_RAM);
+ 
+     omap_clkm_init(0xfffece00, 0xe1008000, s);
+ 
+diff --git a/hw/omap2.c b/hw/omap2.c
+index a3fa89d..05ef7f7 100644
+--- a/hw/omap2.c
++++ b/hw/omap2.c
+@@ -4516,9 +4516,11 @@ struct omap_mpu_state_s *omap2420_mpu_init(unsigned long sdram_size,
+ 
+     /* Memory-mapped stuff */
+     cpu_register_physical_memory(OMAP2_Q2_BASE, s->sdram_size,
+-                    (q2_base = qemu_ram_alloc(s->sdram_size)) | IO_MEM_RAM);
++                    (q2_base = qemu_ram_alloc(NULL, "omap2.dram",
++                                              s->sdram_size)) | IO_MEM_RAM);
+     cpu_register_physical_memory(OMAP2_SRAM_BASE, s->sram_size,
+-                    (sram_base = qemu_ram_alloc(s->sram_size)) | IO_MEM_RAM);
++                    (sram_base = qemu_ram_alloc(NULL, "omap2.sram",
++                                                s->sram_size)) | IO_MEM_RAM);
+ 
+     s->l4 = omap_l4_init(OMAP2_L4_BASE, 54);
+ 
+diff --git a/hw/omap_sx1.c b/hw/omap_sx1.c
+index 255dcbd..68e40ec 100644
+--- a/hw/omap_sx1.c
++++ b/hw/omap_sx1.c
+@@ -139,7 +139,8 @@ static void sx1_init(ram_addr_t ram_size,
+ 
+     /* External Flash (EMIFS) */
+     cpu_register_physical_memory(OMAP_CS0_BASE, flash_size,
+-                    (phys_flash = qemu_ram_alloc(flash_size)) | IO_MEM_ROM);
++                    (phys_flash = qemu_ram_alloc(NULL, "omap_sx1.flash0-0",
++                                                flash_size)) | IO_MEM_ROM);
+ 
+     io = cpu_register_io_memory(static_readfn, static_writefn, &cs0val);
+     cpu_register_physical_memory(OMAP_CS0_BASE + flash_size,
+@@ -152,7 +153,8 @@ static void sx1_init(ram_addr_t ram_size,
+     fl_idx = 0;
+ 
+     if ((dinfo = drive_get(IF_PFLASH, 0, fl_idx)) != NULL) {
+-        if (!pflash_cfi01_register(OMAP_CS0_BASE, qemu_ram_alloc(flash_size),
++        if (!pflash_cfi01_register(OMAP_CS0_BASE, qemu_ram_alloc(NULL,
++                                   "omap_sx1.flash0-1", flash_size),
+             dinfo->bdrv, sector_size, flash_size / sector_size,
+             4, 0, 0, 0, 0)) {
+             fprintf(stderr, "qemu: Error registering flash memory %d.\n",
+@@ -164,13 +166,15 @@ static void sx1_init(ram_addr_t ram_size,
+     if ((version == 1) &&
+             (dinfo = drive_get(IF_PFLASH, 0, fl_idx)) != NULL) {
+         cpu_register_physical_memory(OMAP_CS1_BASE, flash1_size,
+-                        (phys_flash = qemu_ram_alloc(flash1_size)) |
++                        (phys_flash = qemu_ram_alloc(NULL, "omap_sx1.flash1-0",
++                                                    flash1_size)) |
+                         IO_MEM_ROM);
+         io = cpu_register_io_memory(static_readfn, static_writefn, &cs1val);
+         cpu_register_physical_memory(OMAP_CS1_BASE + flash1_size,
+                         OMAP_CS1_SIZE - flash1_size, io);
+ 
+-        if (!pflash_cfi01_register(OMAP_CS1_BASE, qemu_ram_alloc(flash1_size),
++        if (!pflash_cfi01_register(OMAP_CS1_BASE, qemu_ram_alloc(NULL,
++                                   "omap_sx1.flash1-1", flash1_size),
+             dinfo->bdrv, sector_size, flash1_size / sector_size,
+             4, 0, 0, 0, 0)) {
+             fprintf(stderr, "qemu: Error registering flash memory %d.\n",
+diff --git a/hw/onenand.c b/hw/onenand.c
+index c1e7e4d..40390ad 100644
+--- a/hw/onenand.c
++++ b/hw/onenand.c
+@@ -639,7 +639,7 @@ void *onenand_init(uint32_t id, int regshift, qemu_irq irq)
+         s->bdrv = dinfo->bdrv;
+     s->otp = memset(qemu_malloc((64 + 2) << PAGE_SHIFT),
+                     0xff, (64 + 2) << PAGE_SHIFT);
+-    s->ram = qemu_ram_alloc(0xc000 << s->shift);
++    s->ram = qemu_ram_alloc(NULL, "onenand.ram", 0xc000 << s->shift);
+     ram = qemu_get_ram_ptr(s->ram);
+     s->boot[0] = ram + (0x0000 << s->shift);
+     s->boot[1] = ram + (0x8000 << s->shift);
+diff --git a/hw/palm.c b/hw/palm.c
+index 6d19167..8706a21 100644
+--- a/hw/palm.c
++++ b/hw/palm.c
+@@ -214,7 +214,8 @@ static void palmte_init(ram_addr_t ram_size,
+ 
+     /* External Flash (EMIFS) */
+     cpu_register_physical_memory(OMAP_CS0_BASE, flash_size,
+-                    (phys_flash = qemu_ram_alloc(flash_size)) | IO_MEM_ROM);
++                                 (phys_flash = qemu_ram_alloc(NULL, "palmte.flash",
++                                                flash_size)) | IO_MEM_ROM);
+ 
+     io = cpu_register_io_memory(static_readfn, static_writefn, &cs0val);
+     cpu_register_physical_memory(OMAP_CS0_BASE + flash_size,
+diff --git a/hw/pc.c b/hw/pc.c
+index 44c76cb..61648f9 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -1061,7 +1061,8 @@ static void pc_init1(ram_addr_t ram_size,
+     vmport_init();
+ 
+     /* allocate RAM */
+-    ram_addr = qemu_ram_alloc(below_4g_mem_size + above_4g_mem_size);
++    ram_addr = qemu_ram_alloc(NULL, "pc.ram",
++                              below_4g_mem_size + above_4g_mem_size);
+     cpu_register_physical_memory(0, 0xa0000, ram_addr);
+     cpu_register_physical_memory(0x100000,
+                  below_4g_mem_size - 0x100000,
+@@ -1086,7 +1087,7 @@ static void pc_init1(ram_addr_t ram_size,
+         (bios_size % 65536) != 0) {
+         goto bios_error;
+     }
+-    bios_offset = qemu_ram_alloc(bios_size);
++    bios_offset = qemu_ram_alloc(NULL, "pc.bios", bios_size);
+     ret = rom_add_file_fixed(bios_name, (uint32_t)(-bios_size));
+     if (ret != 0) {
+     bios_error:
+@@ -1113,7 +1114,7 @@ static void pc_init1(ram_addr_t ram_size,
+     option_rom[nb_option_roms++] = qemu_strdup(VAPIC_FILENAME);
+ 
+     rom_enable_driver_roms = 1;
+-    option_rom_offset = qemu_ram_alloc(PC_ROM_SIZE);
++    option_rom_offset = qemu_ram_alloc(NULL, "pc.rom", PC_ROM_SIZE);
+     cpu_register_physical_memory(PC_ROM_MIN_VGA, PC_ROM_SIZE, option_rom_offset);
+ 
+     /* map all the bios at the top of memory */
+diff --git a/hw/pci.c b/hw/pci.c
+index 261ab1b..93be5d0 100644
+--- a/hw/pci.c
++++ b/hw/pci.c
+@@ -1615,6 +1615,7 @@ static int pci_add_option_rom(PCIDevice *pdev)
+     int size;
+     char *path;
+     void *ptr;
++    char name[32];
+ 
+     if (!pdev->romfile)
+         return 0;
+@@ -1650,7 +1651,11 @@ static int pci_add_option_rom(PCIDevice *pdev)
+         size = 1 << qemu_fls(size);
+     }
+ 
+-    pdev->rom_offset = qemu_ram_alloc(size);
++    if (pdev->qdev.info->vmsd)
++        snprintf(name, sizeof(name), "%s.rom", pdev->qdev.info->vmsd->name);
++    else
++        snprintf(name, sizeof(name), "%s.rom", pdev->qdev.info->name);
++    pdev->rom_offset = qemu_ram_alloc(&pdev->qdev, name, size);
+ 
+     ptr = qemu_get_ram_ptr(pdev->rom_offset);
+     load_image(path, ptr);
+diff --git a/hw/petalogix_s3adsp1800_mmu.c b/hw/petalogix_s3adsp1800_mmu.c
+index 9f4c360..2be6540 100644
+--- a/hw/petalogix_s3adsp1800_mmu.c
++++ b/hw/petalogix_s3adsp1800_mmu.c
+@@ -124,14 +124,15 @@ petalogix_s3adsp1800_init(ram_addr_t ram_size,
+     qemu_register_reset(main_cpu_reset, env);
+ 
+     /* Attach emulated BRAM through the LMB.  */
+-    phys_lmb_bram = qemu_ram_alloc(LMB_BRAM_SIZE);
++    phys_lmb_bram = qemu_ram_alloc(NULL, "petalogix_s3adsp1800.lmb_bram",
++                                   LMB_BRAM_SIZE);
+     cpu_register_physical_memory(0x00000000, LMB_BRAM_SIZE,
+                                  phys_lmb_bram | IO_MEM_RAM);
+ 
+-    phys_ram = qemu_ram_alloc(ram_size);
++    phys_ram = qemu_ram_alloc(NULL, "petalogix_s3adsp1800.ram", ram_size);
+     cpu_register_physical_memory(ddr_base, ram_size, phys_ram | IO_MEM_RAM);
+ 
+-    phys_flash = qemu_ram_alloc(FLASH_SIZE);
++    phys_flash = qemu_ram_alloc(NULL, "petalogix_s3adsp1800.flash", FLASH_SIZE);
+     dinfo = drive_get(IF_PFLASH, 0, 0);
+     pflash_cfi02_register(0xa0000000, phys_flash,
+                           dinfo ? dinfo->bdrv : NULL, (64 * 1024),
+diff --git a/hw/ppc405_boards.c b/hw/ppc405_boards.c
+index 735adc9..fbbc4a5 100644
+--- a/hw/ppc405_boards.c
++++ b/hw/ppc405_boards.c
+@@ -191,7 +191,7 @@ static void ref405ep_init (ram_addr_t ram_size,
+     DriveInfo *dinfo;
+ 
+     /* XXX: fix this */
+-    ram_bases[0] = qemu_ram_alloc(0x08000000);
++    ram_bases[0] = qemu_ram_alloc(NULL, "ef405ep.ram", 0x08000000);
+     ram_sizes[0] = 0x08000000;
+     ram_bases[1] = 0x00000000;
+     ram_sizes[1] = 0x00000000;
+@@ -203,7 +203,7 @@ static void ref405ep_init (ram_addr_t ram_size,
+                         kernel_filename == NULL ? 0 : 1);
+     /* allocate SRAM */
+     sram_size = 512 * 1024;
+-    sram_offset = qemu_ram_alloc(sram_size);
++    sram_offset = qemu_ram_alloc(NULL, "ef405ep.sram", sram_size);
+ #ifdef DEBUG_BOARD_INIT
+     printf("%s: register SRAM at offset %08lx\n", __func__, sram_offset);
+ #endif
+@@ -218,7 +218,7 @@ static void ref405ep_init (ram_addr_t ram_size,
+     dinfo = drive_get(IF_PFLASH, 0, fl_idx);
+     if (dinfo) {
+         bios_size = bdrv_getlength(dinfo->bdrv);
+-        bios_offset = qemu_ram_alloc(bios_size);
++        bios_offset = qemu_ram_alloc(NULL, "ef405ep.bios", bios_size);
+         fl_sectors = (bios_size + 65535) >> 16;
+ #ifdef DEBUG_BOARD_INIT
+         printf("Register parallel flash %d size " TARGET_FMT_lx
+@@ -236,7 +236,7 @@ static void ref405ep_init (ram_addr_t ram_size,
+ #ifdef DEBUG_BOARD_INIT
+         printf("Load BIOS from file\n");
+ #endif
+-        bios_offset = qemu_ram_alloc(BIOS_SIZE);
++        bios_offset = qemu_ram_alloc(NULL, "ef405ep.bios", BIOS_SIZE);
+         if (bios_name == NULL)
+             bios_name = BIOS_FILENAME;
+         filename = qemu_find_file(QEMU_FILE_TYPE_BIOS, bios_name);
+@@ -511,9 +511,9 @@ static void taihu_405ep_init(ram_addr_t ram_size,
+     DriveInfo *dinfo;
+ 
+     /* RAM is soldered to the board so the size cannot be changed */
+-    ram_bases[0] = qemu_ram_alloc(0x04000000);
++    ram_bases[0] = qemu_ram_alloc(NULL, "taihu_405ep.ram-0", 0x04000000);
+     ram_sizes[0] = 0x04000000;
+-    ram_bases[1] = qemu_ram_alloc(0x04000000);
++    ram_bases[1] = qemu_ram_alloc(NULL, "taihu_405ep.ram-1", 0x04000000);
+     ram_sizes[1] = 0x04000000;
+     ram_size = 0x08000000;
+ #ifdef DEBUG_BOARD_INIT
+@@ -533,7 +533,7 @@ static void taihu_405ep_init(ram_addr_t ram_size,
+         /* XXX: should check that size is 2MB */
+         //        bios_size = 2 * 1024 * 1024;
+         fl_sectors = (bios_size + 65535) >> 16;
+-        bios_offset = qemu_ram_alloc(bios_size);
++        bios_offset = qemu_ram_alloc(NULL, "taihu_405ep.bios", bios_size);
+ #ifdef DEBUG_BOARD_INIT
+         printf("Register parallel flash %d size " TARGET_FMT_lx
+                " at offset %08lx addr " TARGET_FMT_lx " '%s' %d\n",
+@@ -552,7 +552,7 @@ static void taihu_405ep_init(ram_addr_t ram_size,
+ #endif
+         if (bios_name == NULL)
+             bios_name = BIOS_FILENAME;
+-        bios_offset = qemu_ram_alloc(BIOS_SIZE);
++        bios_offset = qemu_ram_alloc(NULL, "taihu_405ep.bios", BIOS_SIZE);
+         filename = qemu_find_file(QEMU_FILE_TYPE_BIOS, bios_name);
+         if (filename) {
+             bios_size = load_image(filename, qemu_get_ram_ptr(bios_offset));
+@@ -581,7 +581,7 @@ static void taihu_405ep_init(ram_addr_t ram_size,
+                fl_idx, bios_size, bios_offset, (target_ulong)0xfc000000,
+                bdrv_get_device_name(dinfo->bdrv));
+ #endif
+-        bios_offset = qemu_ram_alloc(bios_size);
++        bios_offset = qemu_ram_alloc(NULL, "taihu_405ep.flash", bios_size);
+         pflash_cfi02_register(0xfc000000, bios_offset,
+                               dinfo->bdrv, 65536, fl_sectors, 1,
+                               4, 0x0001, 0x22DA, 0x0000, 0x0000, 0x555, 0x2AA);
+diff --git a/hw/ppc405_uc.c b/hw/ppc405_uc.c
+index 052f902..6999b0c 100644
+--- a/hw/ppc405_uc.c
++++ b/hw/ppc405_uc.c
+@@ -994,7 +994,7 @@ static void ppc405_ocm_init(CPUState *env)
+     ppc405_ocm_t *ocm;
+ 
+     ocm = qemu_mallocz(sizeof(ppc405_ocm_t));
+-    ocm->offset = qemu_ram_alloc(4096);
++    ocm->offset = qemu_ram_alloc(NULL, "ppc405.ocm", 4096);
+     qemu_register_reset(&ocm_reset, ocm);
+     ppc_dcr_register(env, OCM0_ISARC,
+                      ocm, &dcr_read_ocm, &dcr_write_ocm);
+diff --git a/hw/ppc4xx_devs.c b/hw/ppc4xx_devs.c
+index 7921ebf..1d04e5b 100644
+--- a/hw/ppc4xx_devs.c
++++ b/hw/ppc4xx_devs.c
+@@ -668,7 +668,9 @@ ram_addr_t ppc4xx_sdram_adjust(ram_addr_t ram_size, int nr_banks,
+             unsigned int bank_size = sdram_bank_sizes[j];
+ 
+             if (bank_size <= size_left) {
+-                ram_bases[i] = qemu_ram_alloc(bank_size);
++                char name[32];
++                snprintf(name, sizeof(name), "ppc4xx.sdram%d", i);
++                ram_bases[i] = qemu_ram_alloc(NULL, name, bank_size);
+                 ram_sizes[i] = bank_size;
+                 size_left -= bank_size;
+                 break;
+diff --git a/hw/ppc_newworld.c b/hw/ppc_newworld.c
+index b29a7bc..47b527b 100644
+--- a/hw/ppc_newworld.c
++++ b/hw/ppc_newworld.c
+@@ -140,11 +140,11 @@ static void ppc_core99_init (ram_addr_t ram_size,
+     cpu_synchronize_state(env);
+ 
+     /* allocate RAM */
+-    ram_offset = qemu_ram_alloc(ram_size);
++    ram_offset = qemu_ram_alloc(NULL, "ppc_core99.ram", ram_size);
+     cpu_register_physical_memory(0, ram_size, ram_offset);
+ 
+     /* allocate and load BIOS */
+-    bios_offset = qemu_ram_alloc(BIOS_SIZE);
++    bios_offset = qemu_ram_alloc(NULL, "ppc_core99.bios", BIOS_SIZE);
+     if (bios_name == NULL)
+         bios_name = PROM_FILENAME;
+     filename = qemu_find_file(QEMU_FILE_TYPE_BIOS, bios_name);
+@@ -164,7 +164,7 @@ static void ppc_core99_init (ram_addr_t ram_size,
+     }
+ 
+     /* allocate and load VGA BIOS */
+-    vga_bios_offset = qemu_ram_alloc(VGA_BIOS_SIZE);
++    vga_bios_offset = qemu_ram_alloc(NULL, "ppc_core99.vbios", VGA_BIOS_SIZE);
+     vga_bios_ptr = qemu_get_ram_ptr(vga_bios_offset);
+     filename = qemu_find_file(QEMU_FILE_TYPE_BIOS, VGABIOS_FILENAME);
+     if (filename) {
+diff --git a/hw/ppc_oldworld.c b/hw/ppc_oldworld.c
+index c90b151..c0cbe62 100644
+--- a/hw/ppc_oldworld.c
++++ b/hw/ppc_oldworld.c
+@@ -175,11 +175,11 @@ static void ppc_heathrow_init (ram_addr_t ram_size,
+         exit(1);
+     }
+ 
+-    ram_offset = qemu_ram_alloc(ram_size);
++    ram_offset = qemu_ram_alloc(NULL, "ppc_heathrow.ram", ram_size);
+     cpu_register_physical_memory(0, ram_size, ram_offset);
+ 
+     /* allocate and load BIOS */
+-    bios_offset = qemu_ram_alloc(BIOS_SIZE);
++    bios_offset = qemu_ram_alloc(NULL, "ppc_heathrow.bios", BIOS_SIZE);
+     if (bios_name == NULL)
+         bios_name = PROM_FILENAME;
+     filename = qemu_find_file(QEMU_FILE_TYPE_BIOS, bios_name);
+@@ -199,7 +199,7 @@ static void ppc_heathrow_init (ram_addr_t ram_size,
+     }
+ 
+     /* allocate and load VGA BIOS */
+-    vga_bios_offset = qemu_ram_alloc(VGA_BIOS_SIZE);
++    vga_bios_offset = qemu_ram_alloc(NULL, "ppc_heathrow.vbios", VGA_BIOS_SIZE);
+     vga_bios_ptr = qemu_get_ram_ptr(vga_bios_offset);
+     filename = qemu_find_file(QEMU_FILE_TYPE_BIOS, VGABIOS_FILENAME);
+     if (filename) {
+diff --git a/hw/ppc_prep.c b/hw/ppc_prep.c
+index eb758f2..402076f 100644
+--- a/hw/ppc_prep.c
++++ b/hw/ppc_prep.c
+@@ -593,11 +593,11 @@ static void ppc_prep_init (ram_addr_t ram_size,
+     }
+ 
+     /* allocate RAM */
+-    ram_offset = qemu_ram_alloc(ram_size);
++    ram_offset = qemu_ram_alloc(NULL, "ppc_prep.ram", ram_size);
+     cpu_register_physical_memory(0, ram_size, ram_offset);
+ 
+     /* allocate and load BIOS */
+-    bios_offset = qemu_ram_alloc(BIOS_SIZE);
++    bios_offset = qemu_ram_alloc(NULL, "ppc_prep.bios", BIOS_SIZE);
+     if (bios_name == NULL)
+         bios_name = BIOS_FILENAME;
+     filename = qemu_find_file(QEMU_FILE_TYPE_BIOS, bios_name);
+diff --git a/hw/ppce500_mpc8544ds.c b/hw/ppce500_mpc8544ds.c
+index 45356ca..ea342bd 100644
+--- a/hw/ppce500_mpc8544ds.c
++++ b/hw/ppce500_mpc8544ds.c
+@@ -186,7 +186,8 @@ static void mpc8544ds_init(ram_addr_t ram_size,
+     ram_size &= ~(RAM_SIZES_ALIGN - 1);
+ 
+     /* Register Memory */
+-    cpu_register_physical_memory(0, ram_size, qemu_ram_alloc(ram_size));
++    cpu_register_physical_memory(0, ram_size, qemu_ram_alloc(NULL,
++                                 "mpc8544ds.ram", ram_size));
+ 
+     /* MPIC */
+     irqs = qemu_mallocz(sizeof(qemu_irq) * OPENPIC_OUTPUT_NB);
+diff --git a/hw/pxa2xx.c b/hw/pxa2xx.c
+index 169bb58..8be207a 100644
+--- a/hw/pxa2xx.c
++++ b/hw/pxa2xx.c
+@@ -2054,9 +2054,11 @@ PXA2xxState *pxa270_init(unsigned int sdram_size, const char *revision)
+ 
+     /* SDRAM & Internal Memory Storage */
+     cpu_register_physical_memory(PXA2XX_SDRAM_BASE,
+-                    sdram_size, qemu_ram_alloc(sdram_size) | IO_MEM_RAM);
++                    sdram_size, qemu_ram_alloc(NULL, "pxa270.sdram",
++                                               sdram_size) | IO_MEM_RAM);
+     cpu_register_physical_memory(PXA2XX_INTERNAL_BASE,
+-                    0x40000, qemu_ram_alloc(0x40000) | IO_MEM_RAM);
++                    0x40000, qemu_ram_alloc(NULL, "pxa270.internal",
++                                            0x40000) | IO_MEM_RAM);
+ 
+     s->pic = pxa2xx_pic_init(0x40d00000, s->env);
+ 
+@@ -2168,9 +2170,11 @@ PXA2xxState *pxa255_init(unsigned int sdram_size)
+ 
+     /* SDRAM & Internal Memory Storage */
+     cpu_register_physical_memory(PXA2XX_SDRAM_BASE, sdram_size,
+-                    qemu_ram_alloc(sdram_size) | IO_MEM_RAM);
++                    qemu_ram_alloc(NULL, "pxa255.sdram",
++                                   sdram_size) | IO_MEM_RAM);
+     cpu_register_physical_memory(PXA2XX_INTERNAL_BASE, PXA2XX_INTERNAL_SIZE,
+-                    qemu_ram_alloc(PXA2XX_INTERNAL_SIZE) | IO_MEM_RAM);
++                    qemu_ram_alloc(NULL, "pxa255.internal",
++                                   PXA2XX_INTERNAL_SIZE) | IO_MEM_RAM);
+ 
+     s->pic = pxa2xx_pic_init(0x40d00000, s->env);
+ 
+diff --git a/hw/qxl.c b/hw/qxl.c
+index b73c087..b123ae0 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -1282,7 +1282,8 @@ static int qxl_init(PCIDevice *dev)
+         if (ram_size < 16 * 1024 * 1024)
+             ram_size = 16 * 1024 * 1024;
+         qxl->vga.vram_size = ram_size;
+-        qxl->vga.vram_offset = qemu_ram_alloc(qxl->vga.vram_size);
++        qxl->vga.vram_offset = qemu_ram_alloc(&dev->qdev, "qxl.vgavram",
++                                              qxl->vga.vram_size);
+ 
+         pci_config_set_class(config, PCI_CLASS_DISPLAY_OTHER);
+     }
+@@ -1293,12 +1294,12 @@ static int qxl_init(PCIDevice *dev)
+     pci_set_byte(&config[PCI_INTERRUPT_PIN], 1);
+ 
+     qxl->rom_size = rom_size;
+-    qxl->rom_offset = qemu_ram_alloc(rom_size);
++    qxl->rom_offset = qemu_ram_alloc(&dev->qdev, "qxl.rom", rom_size);
+     init_qxl_rom(qxl, qemu_get_ram_ptr(qxl->rom_offset));
+     init_qxl_ram(qxl, qemu_get_ram_ptr(qxl->vga.vram_offset), qxl->vga.vram_size);
+ 
+     qxl->vram_size = QXL_VRAM_SIZE;
+-    qxl->vram_offset = qemu_ram_alloc(QXL_VRAM_SIZE);
++    qxl->vram_offset = qemu_ram_alloc(&dev->qdev, "qxl.vram", QXL_VRAM_SIZE);
+     qxl->vram = qemu_get_ram_ptr(qxl->vram_offset);
+ 
+     dprintf(1, "%s: rom(%p, 0x%" PRIx64 ", 0x%x) ram(%p, 0x%" PRIx64 ", 0x%x) vram(%p, 0x%lx, 0x%x)\n",
+diff --git a/hw/r2d.c b/hw/r2d.c
+index e4c02f0..a35ac18 100644
+--- a/hw/r2d.c
++++ b/hw/r2d.c
+@@ -221,7 +221,7 @@ static void r2d_init(ram_addr_t ram_size,
+     }
+ 
+     /* Allocate memory space */
+-    sdram_addr = qemu_ram_alloc(SDRAM_SIZE);
++    sdram_addr = qemu_ram_alloc(NULL, "r2d.sdram", SDRAM_SIZE);
+     cpu_register_physical_memory(SDRAM_BASE, SDRAM_SIZE, sdram_addr);
+     /* Register peripherals */
+     s = sh7750_init(env);
+diff --git a/hw/realview.c b/hw/realview.c
+index fd2d6be..a15c75f 100644
+--- a/hw/realview.c
++++ b/hw/realview.c
+@@ -192,7 +192,7 @@ static void realview_init(ram_addr_t ram_size,
+         proc_id = 0x02000000;
+     }
+ 
+-    ram_offset = qemu_ram_alloc(ram_size);
++    ram_offset = qemu_ram_alloc(NULL, "realview.highmem", ram_size);
+     low_ram_size = ram_size;
+     if (low_ram_size > 0x10000000)
+       low_ram_size = 0x10000000;
+@@ -346,7 +346,7 @@ static void realview_init(ram_addr_t ram_size,
+        startup code.  I guess this works on real hardware because the
+        BootROM happens to be in ROM/flash or in memory that isn't clobbered
+        until after Linux boots the secondary CPUs.  */
+-    ram_offset = qemu_ram_alloc(0x1000);
++    ram_offset = qemu_ram_alloc(NULL, "realview.hack", 0x1000);
+     cpu_register_physical_memory(SMP_BOOT_ADDR, 0x1000,
+                                  ram_offset | IO_MEM_RAM);
+ 
+diff --git a/hw/s390-virtio.c b/hw/s390-virtio.c
+index 3582728..2407df6 100644
+--- a/hw/s390-virtio.c
++++ b/hw/s390-virtio.c
+@@ -152,7 +152,7 @@ static void s390_init(ram_addr_t ram_size,
+     s390_bus = s390_virtio_bus_init(&ram_size);
+ 
+     /* allocate RAM */
+-    ram_addr = qemu_ram_alloc(ram_size);
++    ram_addr = qemu_ram_alloc(NULL, "s390.ram", ram_size);
+     cpu_register_physical_memory(0, ram_size, ram_addr);
+ 
+     /* init CPUs */
+diff --git a/hw/sm501.c b/hw/sm501.c
+index 612a8e5..96dda43 100644
+--- a/hw/sm501.c
++++ b/hw/sm501.c
+@@ -1074,7 +1074,7 @@ void sm501_init(uint32_t base, uint32_t local_mem_bytes, qemu_irq irq,
+     s->dc_crt_control = 0x00010000;
+ 
+     /* allocate local memory */
+-    s->local_mem_offset = qemu_ram_alloc(local_mem_bytes);
++    s->local_mem_offset = qemu_ram_alloc(NULL, "sm501.local", local_mem_bytes);
+     s->local_mem = qemu_get_ram_ptr(s->local_mem_offset);
+     cpu_register_physical_memory(base, local_mem_bytes, s->local_mem_offset);
+ 
+diff --git a/hw/spitz.c b/hw/spitz.c
+index 47f36d7..11b9bd3 100644
+--- a/hw/spitz.c
++++ b/hw/spitz.c
+@@ -966,7 +966,7 @@ static void spitz_common_init(ram_addr_t ram_size,
+     sl_flash_register(cpu, (model == spitz) ? FLASH_128M : FLASH_1024M);
+ 
+     cpu_register_physical_memory(0, SPITZ_ROM,
+-                    qemu_ram_alloc(SPITZ_ROM) | IO_MEM_ROM);
++                    qemu_ram_alloc(NULL, "spitz.rom", SPITZ_ROM) | IO_MEM_ROM);
+ 
+     /* Setup peripherals */
+     spitz_keyboard_register(cpu);
+diff --git a/hw/sun4m.c b/hw/sun4m.c
+index 5b3e0fd..a70c23b 100644
+--- a/hw/sun4m.c
++++ b/hw/sun4m.c
+@@ -582,7 +582,7 @@ static int idreg_init1(SysBusDevice *dev)
+ {
+     ram_addr_t idreg_offset;
+ 
+-    idreg_offset = qemu_ram_alloc(sizeof(idreg_data));
++    idreg_offset = qemu_ram_alloc(NULL, "sun4m.idreg", sizeof(idreg_data));
+     sysbus_init_mmio(dev, sizeof(idreg_data), idreg_offset | IO_MEM_ROM);
+     return 0;
+ }
+@@ -639,7 +639,7 @@ static int prom_init1(SysBusDevice *dev)
+ {
+     ram_addr_t prom_offset;
+ 
+-    prom_offset = qemu_ram_alloc(PROM_SIZE_MAX);
++    prom_offset = qemu_ram_alloc(NULL, "sun4m.prom", PROM_SIZE_MAX);
+     sysbus_init_mmio(dev, PROM_SIZE_MAX, prom_offset | IO_MEM_ROM);
+     return 0;
+ }
+@@ -674,7 +674,7 @@ static int ram_init1(SysBusDevice *dev)
+ 
+     RAM_size = d->size;
+ 
+-    ram_offset = qemu_ram_alloc(RAM_size);
++    ram_offset = qemu_ram_alloc(NULL, "sun4m.ram", RAM_size);
+     sysbus_init_mmio(dev, RAM_size, ram_offset);
+     return 0;
+ }
+diff --git a/hw/sun4u.c b/hw/sun4u.c
+index a7a227b..b048d8a 100644
+--- a/hw/sun4u.c
++++ b/hw/sun4u.c
+@@ -449,7 +449,7 @@ static int prom_init1(SysBusDevice *dev)
+ {
+     ram_addr_t prom_offset;
+ 
+-    prom_offset = qemu_ram_alloc(PROM_SIZE_MAX);
++    prom_offset = qemu_ram_alloc(NULL, "sun4u.prom", PROM_SIZE_MAX);
+     sysbus_init_mmio(dev, PROM_SIZE_MAX, prom_offset | IO_MEM_ROM);
+     return 0;
+ }
+@@ -485,7 +485,7 @@ static int ram_init1(SysBusDevice *dev)
+ 
+     RAM_size = d->size;
+ 
+-    ram_offset = qemu_ram_alloc(RAM_size);
++    ram_offset = qemu_ram_alloc(NULL, "sun4u.ram", RAM_size);
+     sysbus_init_mmio(dev, RAM_size, ram_offset);
+     return 0;
+ }
+diff --git a/hw/syborg.c b/hw/syborg.c
+index 2d08cb2..758c69a 100644
+--- a/hw/syborg.c
++++ b/hw/syborg.c
+@@ -51,7 +51,7 @@ static void syborg_init(ram_addr_t ram_size,
+     }
+ 
+     /* RAM at address zero. */
+-    ram_addr = qemu_ram_alloc(ram_size);
++    ram_addr = qemu_ram_alloc(NULL, "syborg.ram", ram_size);
+     cpu_register_physical_memory(0, ram_size, ram_addr | IO_MEM_RAM);
+ 
+     cpu_pic = arm_pic_init_cpu(env);
+diff --git a/hw/tc6393xb.c b/hw/tc6393xb.c
+index e0c5e5f..16db51d 100644
+--- a/hw/tc6393xb.c
++++ b/hw/tc6393xb.c
+@@ -593,7 +593,7 @@ TC6393xbState *tc6393xb_init(uint32_t base, qemu_irq irq)
+                     tc6393xb_writefn, s);
+     cpu_register_physical_memory(base, 0x10000, iomemtype);
+ 
+-    s->vram_addr = qemu_ram_alloc(0x100000);
++    s->vram_addr = qemu_ram_alloc(NULL, "tc6393xb.vram", 0x100000);
+     s->vram_ptr = qemu_get_ram_ptr(s->vram_addr);
+     cpu_register_physical_memory(base + 0x100000, 0x100000, s->vram_addr);
+     s->scr_width = 480;
+diff --git a/hw/tcx.c b/hw/tcx.c
+index 7598e8c..13d9b80 100644
+--- a/hw/tcx.c
++++ b/hw/tcx.c
+@@ -510,7 +510,7 @@ static int tcx_init1(SysBusDevice *dev)
+     int size;
+     uint8_t *vram_base;
+ 
+-    vram_offset = qemu_ram_alloc(s->vram_size * (1 + 4 + 4));
++    vram_offset = qemu_ram_alloc(NULL, "tcx.vram", s->vram_size * (1 + 4 + 4));
+     vram_base = qemu_get_ram_ptr(vram_offset);
+     s->vram_offset = vram_offset;
+ 
+diff --git a/hw/tosa.c b/hw/tosa.c
+index bc6591f..a78e25d 100644
+--- a/hw/tosa.c
++++ b/hw/tosa.c
+@@ -215,7 +215,7 @@ static void tosa_init(ram_addr_t ram_size,
+     cpu = pxa255_init(tosa_binfo.ram_size);
+ 
+     cpu_register_physical_memory(0, TOSA_ROM,
+-                    qemu_ram_alloc(TOSA_ROM) | IO_MEM_ROM);
++                    qemu_ram_alloc(NULL, "tosa.rom", TOSA_ROM) | IO_MEM_ROM);
+ 
+     tmio = tc6393xb_init(0x10000000,
+             pxa2xx_gpio_in_get(cpu->gpio)[TOSA_GPIO_TC6393XB_INT]);
+diff --git a/hw/versatilepb.c b/hw/versatilepb.c
+index 391f5b8..1d049f2 100644
+--- a/hw/versatilepb.c
++++ b/hw/versatilepb.c
+@@ -180,7 +180,7 @@ static void versatile_init(ram_addr_t ram_size,
+         fprintf(stderr, "Unable to find CPU definition\n");
+         exit(1);
+     }
+-    ram_offset = qemu_ram_alloc(ram_size);
++    ram_offset = qemu_ram_alloc(NULL, "versatile.ram", ram_size);
+     /* ??? RAM should repeat to fill physical memory space.  */
+     /* SDRAM at address zero.  */
+     cpu_register_physical_memory(0, ram_size, ram_offset | IO_MEM_RAM);
+diff --git a/hw/vga.c b/hw/vga.c
+index 2ad2dcd..34362fd 100644
+--- a/hw/vga.c
++++ b/hw/vga.c
+@@ -2288,7 +2288,7 @@ void vga_common_init(VGACommonState *s, int vga_ram_size)
+ #else
+     s->is_vbe_vmstate = 0;
+ #endif
+-    s->vram_offset = qemu_ram_alloc(vga_ram_size);
++    s->vram_offset = qemu_ram_alloc(NULL, "vga.vram", vga_ram_size);
+     s->vram_ptr = qemu_get_ram_ptr(s->vram_offset);
+     s->vram_size = vga_ram_size;
+     s->get_bpp = vga_get_bpp;
+diff --git a/hw/vmware_vga.c b/hw/vmware_vga.c
+index 98b9515..fef7e14 100644
+--- a/hw/vmware_vga.c
++++ b/hw/vmware_vga.c
+@@ -1134,7 +1134,7 @@ static void vmsvga_init(struct vmsvga_state_s *s, int vga_ram_size)
+ 
+ 
+     s->fifo_size = SVGA_FIFO_SIZE;
+-    s->fifo_offset = qemu_ram_alloc(s->fifo_size);
++    s->fifo_offset = qemu_ram_alloc(NULL, "vmsvga.fifo", s->fifo_size);
+     s->fifo_ptr = qemu_get_ram_ptr(s->fifo_offset);
+ 
+     vga_common_init(&s->vga, vga_ram_size);
+diff --git a/qemu-common.h b/qemu-common.h
+index 9a31ce0..d2b9478 100644
+--- a/qemu-common.h
++++ b/qemu-common.h
+@@ -11,6 +11,8 @@
+ #define QEMU_WARN_UNUSED_RESULT
+ #endif
+ 
++typedef struct DeviceState DeviceState;
++
+ /* Hack around the mess dyngen-exec.h causes: We need QEMU_NORETURN in files that
+    cannot include the following headers without conflicts. This condition has
+    to be removed once dyngen is gone. */
+@@ -222,7 +224,6 @@ typedef struct PCMCIACardState PCMCIACardState;
+ typedef struct MouseTransformInfo MouseTransformInfo;
+ typedef struct uWireSlave uWireSlave;
+ typedef struct I2SCodec I2SCodec;
+-typedef struct DeviceState DeviceState;
+ typedef struct SSIBus SSIBus;
+ typedef struct EventNotifier EventNotifier;
+ typedef struct VirtIODevice VirtIODevice;
+-- 
+1.7.0.3
+

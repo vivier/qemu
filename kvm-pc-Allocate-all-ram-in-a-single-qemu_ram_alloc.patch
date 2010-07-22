@@ -1,0 +1,81 @@
+From 43e4f9c2b61a0242acfa7e04a90af27e92fd3d03 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 6 Jul 2010 22:27:51 -0300
+Subject: [PATCH 03/24] pc: Allocate all ram in a single qemu_ram_alloc()
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100706222751.1033.18095.stgit@localhost.localdomain>
+Patchwork-id: 10506
+O-Subject: [RHEL6.0 qemu-kvm PATCH 03/17] pc: Allocate all ram in a single
+	qemu_ram_alloc()
+Bugzilla: 596328
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Zachary Amsden <zamsden@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 596328
+Upstream commit: 44ae28f3152138e71ccad66c201d730b93374bc2
+Notes: Also includes change to avoid registering zero sized areas
+       for small memory VMs, patch posted upstream.
+
+This will benefit us when we migrate based on ramblock name since
+we won't be bouncing between separate blocks.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+
+ hw/pc.c |   22 ++++++++++------------
+ 1 files changed, 10 insertions(+), 12 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pc.c |   22 ++++++++++------------
+ 1 files changed, 10 insertions(+), 12 deletions(-)
+
+diff --git a/hw/pc.c b/hw/pc.c
+index cf294c9..44c76cb 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -1053,27 +1053,25 @@ static void pc_init1(ram_addr_t ram_size,
+         env = pc_new_cpu(cpu_model);
+     }
+ 
++#if TARGET_PHYS_ADDR_BITS == 32
++    if (above_4g_mem_size > 0) {
++        hw_error("To much RAM for 32-bit physical address");
++    }
++#endif
+     vmport_init();
+ 
+     /* allocate RAM */
+-    ram_addr = qemu_ram_alloc(below_4g_mem_size);
++    ram_addr = qemu_ram_alloc(below_4g_mem_size + above_4g_mem_size);
+     cpu_register_physical_memory(0, 0xa0000, ram_addr);
+     cpu_register_physical_memory(0x100000,
+                  below_4g_mem_size - 0x100000,
+                  ram_addr + 0x100000);
+-
+-    /* above 4giga memory allocation */
++#if TARGET_PHYS_ADDR_BITS > 32
+     if (above_4g_mem_size > 0) {
+-#if TARGET_PHYS_ADDR_BITS == 32
+-        hw_error("To much RAM for 32-bit physical address");
+-#else
+-        ram_addr = qemu_ram_alloc(above_4g_mem_size);
+-        cpu_register_physical_memory(0x100000000ULL,
+-                                     above_4g_mem_size,
+-                                     ram_addr);
+-#endif
++        cpu_register_physical_memory(0x100000000ULL, above_4g_mem_size,
++                                     ram_addr + below_4g_mem_size);
+     }
+-
++#endif
+ 
+     /* BIOS load */
+     if (bios_name == NULL)
+-- 
+1.7.0.3
+

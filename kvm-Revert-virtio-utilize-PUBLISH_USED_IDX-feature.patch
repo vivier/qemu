@@ -1,0 +1,134 @@
+From ff13ccccd62ffe5b4034d4ebdcdb6ed94826fa1a Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Wed, 21 Jul 2010 14:11:23 -0300
+Subject: [PATCH 22/24] Revert "virtio: utilize PUBLISH_USED_IDX feature"
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <7fe3ccd5998e8774e82ba1ecac4c1a789a979e99.1279721307.git.mst@redhat.com>
+Patchwork-id: 10897
+O-Subject: [PATCH RHEL6.0 3/3] Revert "virtio: utilize PUBLISH_USED_IDX feature"
+Bugzilla: 616501
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+This reverts commit 86f990ba73c75413f4359d43349e8979b935059b.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+
+Part of a series reverting PUBLISH_USED.
+
+PUBLISH_USED was reverted upstream.
+Discussions on layout and ABI to use are still ongoing,
+and there is high risk layout won't match what we put in RHEL,
+so we won't be able to support this going forward.
+
+https://bugzilla.redhat.com/show_bug.cgi?id=616501
+https://brewweb.devel.redhat.com/taskinfo?taskID=2614379
+Tested: on x86_64
+
+---
+ hw/vhost_net.c  |    3 ---
+ hw/virtio-net.h |    2 --
+ hw/virtio.c     |   15 ---------------
+ hw/virtio.h     |    2 --
+ 4 files changed, 0 insertions(+), 22 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/vhost_net.c  |    3 ---
+ hw/virtio-net.h |    2 --
+ hw/virtio.c     |   15 ---------------
+ hw/virtio.h     |    2 --
+ 4 files changed, 0 insertions(+), 22 deletions(-)
+
+diff --git a/hw/vhost_net.c b/hw/vhost_net.c
+index a2ff80b..7d81cac 100644
+--- a/hw/vhost_net.c
++++ b/hw/vhost_net.c
+@@ -65,9 +65,6 @@ void vhost_net_ack_features(struct vhost_net *net, unsigned features)
+     if (features & (1 << VIRTIO_RING_F_INDIRECT_DESC)) {
+         net->dev.acked_features |= (1 << VIRTIO_RING_F_INDIRECT_DESC);
+     }
+-    if (features & (1 << VIRTIO_RING_F_PUBLISH_USED)) {
+-        net->dev.acked_features |= (1 << VIRTIO_RING_F_PUBLISH_USED);
+-    }
+ }
+ 
+ static int vhost_net_get_fd(VLANClientState *backend)
+diff --git a/hw/virtio-net.h b/hw/virtio-net.h
+index 27c63ee..e55119b 100644
+--- a/hw/virtio-net.h
++++ b/hw/virtio-net.h
+@@ -155,8 +155,6 @@ struct virtio_net_ctrl_mac {
+ 
+ #define DEFINE_VIRTIO_NET_FEATURES(_state, _field) \
+         DEFINE_VIRTIO_COMMON_FEATURES(_state, _field), \
+-        DEFINE_PROP_BIT("publish_used", _state, _field, \
+-                        VIRTIO_RING_F_PUBLISH_USED, true), \
+         DEFINE_PROP_BIT("csum", _state, _field, VIRTIO_NET_F_CSUM, true), \
+         DEFINE_PROP_BIT("guest_csum", _state, _field, VIRTIO_NET_F_GUEST_CSUM, true), \
+         DEFINE_PROP_BIT("gso", _state, _field, VIRTIO_NET_F_GSO, true), \
+diff --git a/hw/virtio.c b/hw/virtio.c
+index 6de9aa3..4475bb3 100644
+--- a/hw/virtio.c
++++ b/hw/virtio.c
+@@ -71,7 +71,6 @@ struct VirtQueue
+     target_phys_addr_t pa;
+     uint16_t last_avail_idx;
+     int inuse;
+-    int num_notify;
+     uint16_t vector;
+     void (*handle_output)(VirtIODevice *vdev, VirtQueue *vq);
+     VirtIODevice *vdev;
+@@ -140,11 +139,6 @@ static inline uint16_t vring_avail_ring(VirtQueue *vq, int i)
+     return lduw_phys(pa);
+ }
+ 
+-static inline uint16_t vring_last_used_idx(VirtQueue *vq)
+-{
+-    return vring_avail_ring(vq, vq->vring.num);
+-}
+-
+ static inline void vring_used_ring_id(VirtQueue *vq, int i, uint32_t val)
+ {
+     target_phys_addr_t pa;
+@@ -240,7 +234,6 @@ void virtqueue_flush(VirtQueue *vq, unsigned int count)
+     wmb();
+     vring_used_idx_increment(vq, count);
+     vq->inuse -= count;
+-    vq->num_notify += count;
+ }
+ 
+ void virtqueue_push(VirtQueue *vq, const VirtQueueElement *elem,
+@@ -610,14 +603,6 @@ void virtio_irq(VirtQueue *vq)
+ 
+ void virtio_notify(VirtIODevice *vdev, VirtQueue *vq)
+ {
+-    uint16_t n = vq->num_notify;
+-    vq->num_notify = 0;
+-
+-    /* Do not notify if guest did not yet see the last update. */
+-    if ((vdev->guest_features & (1 << VIRTIO_RING_F_PUBLISH_USED)) &&
+-         (uint16_t)(vring_last_used_idx(vq) - vring_used_idx(vq) + n) >= n)
+-	return;
+-
+     /* Always notify when queue is empty (when feature acknowledge) */
+     if ((vring_avail_flags(vq) & VRING_AVAIL_F_NO_INTERRUPT) &&
+         (!(vdev->guest_features & (1 << VIRTIO_F_NOTIFY_ON_EMPTY)) ||
+diff --git a/hw/virtio.h b/hw/virtio.h
+index 8bd75f9..f885f1b 100644
+--- a/hw/virtio.h
++++ b/hw/virtio.h
+@@ -43,8 +43,6 @@
+ #define VIRTIO_F_NOTIFY_ON_EMPTY        24
+ /* We support indirect buffer descriptors */
+ #define VIRTIO_RING_F_INDIRECT_DESC     28
+-/* The Guest publishes last-seen used index at the end of the avail ring. */
+-#define VIRTIO_RING_F_PUBLISH_USED	29
+ /* A guest should never accept this.  It implies negotiation is broken. */
+ #define VIRTIO_F_BAD_FEATURE		30
+ 
+-- 
+1.7.0.3
+

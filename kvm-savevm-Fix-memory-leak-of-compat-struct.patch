@@ -1,0 +1,59 @@
+From 847a9489a337e6da586670caa28fd6c260a399bd Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Wed, 21 Jul 2010 14:48:08 -0300
+Subject: [PATCH 23/24] savevm: Fix memory leak of compat struct
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100721144608.5341.36548.stgit@localhost6.localdomain6>
+Patchwork-id: 10899
+O-Subject: [PATCH] savevm: Fix memory leak of compat struct
+Bugzilla: 596328
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Zachary Amsden <zamsden@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 596328
+Upstream status: posted
+Depends on previous 1-17 series for same bz, bug found in review
+
+Forgot to check for and free these.
+
+Found-by: Zachary Amsden <zamsden@redhat.com>
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+---
+
+ savevm.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ savevm.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+diff --git a/savevm.c b/savevm.c
+index b008e87..1c249a2 100644
+--- a/savevm.c
++++ b/savevm.c
+@@ -1164,6 +1164,9 @@ void unregister_savevm(DeviceState *dev, const char *idstr, void *opaque)
+     QTAILQ_FOREACH_SAFE(se, &savevm_handlers, entry, new_se) {
+         if (strcmp(se->idstr, id) == 0 && se->opaque == opaque) {
+             QTAILQ_REMOVE(&savevm_handlers, se, entry);
++            if (se->compat) {
++                qemu_free(se->compat);
++            }
+             qemu_free(se);
+         }
+     }
+@@ -1218,6 +1221,9 @@ void vmstate_unregister(DeviceState *dev, const VMStateDescription *vmsd,
+     QTAILQ_FOREACH_SAFE(se, &savevm_handlers, entry, new_se) {
+         if (se->vmsd == vmsd && se->opaque == opaque) {
+             QTAILQ_REMOVE(&savevm_handlers, se, entry);
++            if (se->compat) {
++                qemu_free(se->compat);
++            }
+             qemu_free(se);
+         }
+     }
+-- 
+1.7.0.3
+

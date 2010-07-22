@@ -1,0 +1,159 @@
+From 753be0d51879511f743dcbfee738df14ded0bf08 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 6 Jul 2010 22:29:03 -0300
+Subject: [PATCH 15/24] qemu_ram_free: Implement it
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100706222903.1033.76924.stgit@localhost.localdomain>
+Patchwork-id: 10518
+O-Subject: [RHEL6.0 qemu-kvm PATCH 15/17] qemu_ram_free: Implement it
+Bugzilla: 596328
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 596328
+Upstream commit: 04b16653720cb3db353461e088612f8a24ff360b
+
+Now that we can support a ram_addr_t space with holes, we can implement
+qemu_ram_free().
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+
+ cpu-all.h |    3 +++
+ exec.c    |   62 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++----
+ 2 files changed, 61 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ cpu-all.h |    3 ++
+ exec.c    |   62 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 61 insertions(+), 4 deletions(-)
+
+diff --git a/cpu-all.h b/cpu-all.h
+index 922ad0b..854c63d 100644
+--- a/cpu-all.h
++++ b/cpu-all.h
+@@ -855,6 +855,9 @@ typedef struct RAMBlock {
+     ram_addr_t length;
+     char idstr[256];
+     QLIST_ENTRY(RAMBlock) next;
++#if defined(__linux__) && !defined(TARGET_S390X)
++    int fd;
++#endif
+ } RAMBlock;
+ 
+ typedef struct RAMList {
+diff --git a/exec.c b/exec.c
+index fa29ced..0df3a7a 100644
+--- a/exec.c
++++ b/exec.c
+@@ -2544,7 +2544,9 @@ static long gethugepagesize(const char *path)
+     return fs.f_bsize;
+ }
+ 
+-static void *file_ram_alloc(ram_addr_t memory, const char *path)
++static void *file_ram_alloc(RAMBlock *block,
++                            ram_addr_t memory,
++                            const char *path)
+ {
+     char *filename;
+     void *area;
+@@ -2613,6 +2615,7 @@ static void *file_ram_alloc(ram_addr_t memory, const char *path)
+ 	close(fd);
+ 	return (NULL);
+     }
++    block->fd = fd;
+     return area;
+ }
+ 
+@@ -2641,6 +2644,32 @@ extern const char *mem_path;
+ 
+ static ram_addr_t find_ram_offset(ram_addr_t size)
+ {
++    RAMBlock *block, *next_block;
++    ram_addr_t offset, mingap = ULONG_MAX;
++
++    if (QLIST_EMPTY(&ram_list.blocks))
++        return 0;
++
++    QLIST_FOREACH(block, &ram_list.blocks, next) {
++        ram_addr_t end, next = ULONG_MAX;
++
++        end = block->offset + block->length;
++
++        QLIST_FOREACH(next_block, &ram_list.blocks, next) {
++            if (next_block->offset >= end) {
++                next = MIN(next, next_block->offset);
++            }
++        }
++        if (next - end >= size && next - end < mingap) {
++            offset =  end;
++            mingap = next - end;
++        }
++    }
++    return offset;
++}
++
++static ram_addr_t last_ram_offset(void)
++{
+     RAMBlock *block;
+     ram_addr_t last = 0;
+ 
+@@ -2681,7 +2710,7 @@ ram_addr_t qemu_ram_alloc(DeviceState *dev, const char *name, ram_addr_t size)
+         }
+     }
+ 
+-    new_block->host = file_ram_alloc(size, mem_path);
++    new_block->host = file_ram_alloc(new_block, size, mem_path);
+     if (!new_block->host) {
+ #if defined(TARGET_S390X) && defined(CONFIG_KVM)
+     /* XXX S390 KVM requires the topmost vma of the RAM to be < 256GB */
+@@ -2709,7 +2738,7 @@ ram_addr_t qemu_ram_alloc(DeviceState *dev, const char *name, ram_addr_t size)
+     QLIST_INSERT_HEAD(&ram_list.blocks, new_block, next);
+ 
+     ram_list.phys_dirty = qemu_realloc(ram_list.phys_dirty,
+-        (new_block->offset + size) >> TARGET_PAGE_BITS);
++                                       last_ram_offset() >> TARGET_PAGE_BITS);
+     memset(ram_list.phys_dirty + (new_block->offset >> TARGET_PAGE_BITS),
+            0xff, size >> TARGET_PAGE_BITS);
+ 
+@@ -2721,7 +2750,32 @@ ram_addr_t qemu_ram_alloc(DeviceState *dev, const char *name, ram_addr_t size)
+ 
+ void qemu_ram_free(ram_addr_t addr)
+ {
+-    /* TODO: implement this.  */
++    RAMBlock *block;
++
++    QLIST_FOREACH(block, &ram_list.blocks, next) {
++        if (addr == block->offset) {
++            QLIST_REMOVE(block, next);
++            if (mem_path) {
++#if defined (__linux__) && !defined(TARGET_S390X)
++                if (block->fd) {
++                    munmap(block->host, block->length);
++                    close(block->fd);
++                } else {
++                    qemu_vfree(block->host);
++                }
++#endif
++            } else {
++#if defined(TARGET_S390X) && defined(CONFIG_KVM)
++                munmap(block->host, block->length);
++#else
++                qemu_vfree(block->host);
++#endif
++            }
++            qemu_free(block);
++            return;
++        }
++    }
++
+ }
+ 
+ /* Return a host pointer to ram allocated with qemu_ram_alloc.
+-- 
+1.7.0.3
+

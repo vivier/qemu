@@ -1,0 +1,111 @@
+From c3cff04277787920b7f14db8b8b374ad2cc3532e Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 6 Jul 2010 22:28:21 -0300
+Subject: [PATCH 08/24] eepro100: Add a dev field to eeprom new/free functions
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100706222821.1033.74776.stgit@localhost.localdomain>
+Patchwork-id: 10511
+O-Subject: [RHEL6.0 qemu-kvm PATCH 08/17] eepro100: Add a dev field to eeprom
+	new/free functions
+Bugzilla: 596328
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Zachary Amsden <zamsden@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 596328
+Upstream commit: 5fce2b3e46b697230996568e1fed39d02a6bedb2
+
+This allows us to create a more meaningful savevm string.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+
+ hw/eepro100.c   |    4 ++--
+ hw/eeprom93xx.c |    8 ++++----
+ hw/eeprom93xx.h |    4 ++--
+ 3 files changed, 8 insertions(+), 8 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/eepro100.c   |    4 ++--
+ hw/eeprom93xx.c |    8 ++++----
+ hw/eeprom93xx.h |    4 ++--
+ 3 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/hw/eepro100.c b/hw/eepro100.c
+index 646e27d..24d5421 100644
+--- a/hw/eepro100.c
++++ b/hw/eepro100.c
+@@ -1792,7 +1792,7 @@ static int pci_nic_uninit(PCIDevice *pci_dev)
+ 
+     cpu_unregister_io_memory(s->mmio_index);
+     vmstate_unregister(&pci_dev->qdev, s->vmstate, s);
+-    eeprom93xx_free(s->eeprom);
++    eeprom93xx_free(&pci_dev->qdev, s->eeprom);
+     qemu_del_vlan_client(&s->nic->nc);
+     return 0;
+ }
+@@ -1817,7 +1817,7 @@ static int nic_init(PCIDevice *pci_dev, uint32_t device)
+ 
+     /* Add 64 * 2 EEPROM. i82557 and i82558 support a 64 word EEPROM,
+      * i82559 and later support 64 or 256 word EEPROM. */
+-    s->eeprom = eeprom93xx_new(EEPROM_SIZE);
++    s->eeprom = eeprom93xx_new(&pci_dev->qdev, EEPROM_SIZE);
+ 
+     /* Handler for memory-mapped I/O */
+     s->mmio_index =
+diff --git a/hw/eeprom93xx.c b/hw/eeprom93xx.c
+index 6ba546f..660b28f 100644
+--- a/hw/eeprom93xx.c
++++ b/hw/eeprom93xx.c
+@@ -289,7 +289,7 @@ void eeprom93xx_reset(eeprom_t *eeprom)
+ }
+ #endif
+ 
+-eeprom_t *eeprom93xx_new(uint16_t nwords)
++eeprom_t *eeprom93xx_new(DeviceState *dev, uint16_t nwords)
+ {
+     /* Add a new EEPROM (with 16, 64 or 256 words). */
+     eeprom_t *eeprom;
+@@ -316,15 +316,15 @@ eeprom_t *eeprom93xx_new(uint16_t nwords)
+     /* Output DO is tristate, read results in 1. */
+     eeprom->eedo = 1;
+     logout("eeprom = 0x%p, nwords = %u\n", eeprom, nwords);
+-    vmstate_register(NULL, 0, &vmstate_eeprom, eeprom);
++    vmstate_register(dev, 0, &vmstate_eeprom, eeprom);
+     return eeprom;
+ }
+ 
+-void eeprom93xx_free(eeprom_t *eeprom)
++void eeprom93xx_free(DeviceState *dev, eeprom_t *eeprom)
+ {
+     /* Destroy EEPROM. */
+     logout("eeprom = 0x%p\n", eeprom);
+-    vmstate_unregister(NULL, &vmstate_eeprom, eeprom);
++    vmstate_unregister(dev, &vmstate_eeprom, eeprom);
+     qemu_free(eeprom);
+ }
+ 
+diff --git a/hw/eeprom93xx.h b/hw/eeprom93xx.h
+index 47282d3..8ba0e28 100644
+--- a/hw/eeprom93xx.h
++++ b/hw/eeprom93xx.h
+@@ -23,10 +23,10 @@
+ typedef struct _eeprom_t eeprom_t;
+ 
+ /* Create a new EEPROM with (nwords * 2) bytes. */
+-eeprom_t *eeprom93xx_new(uint16_t nwords);
++eeprom_t *eeprom93xx_new(DeviceState *dev, uint16_t nwords);
+ 
+ /* Destroy an existing EEPROM. */
+-void eeprom93xx_free(eeprom_t *eeprom);
++void eeprom93xx_free(DeviceState *dev, eeprom_t *eeprom);
+ 
+ /* Read from the EEPROM. */
+ uint16_t eeprom93xx_read(eeprom_t *eeprom);
+-- 
+1.7.0.3
+

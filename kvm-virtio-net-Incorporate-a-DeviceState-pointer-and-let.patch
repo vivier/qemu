@@ -1,0 +1,78 @@
+From 529d8063f7361060854b1deccf1baf4acff742a2 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 6 Jul 2010 22:28:27 -0300
+Subject: [PATCH 09/24] virtio-net: Incorporate a DeviceState pointer and let savevm track instances
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100706222827.1033.29027.stgit@localhost.localdomain>
+Patchwork-id: 10512
+O-Subject: [RHEL6.0 qemu-kvm PATCH 09/17] virtio-net: Incorporate a DeviceState
+	pointer and let savevm track instances
+Bugzilla: 596328
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Zachary Amsden <zamsden@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 596328
+Upstream commit: 01657c867d21bbabb1af22c6fe62ff80a2970446
+
+Stuff a pointer to the DeviceState into the VirtIONet structure so that
+we can easily remove the vmstate entry later.  Also, let vmstate track
+the instance number (it should always be zero internally since the
+device path should now be unique).
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+
+ hw/virtio-net.c |    7 ++++---
+ 1 files changed, 4 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-net.c |    7 ++++---
+ 1 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/hw/virtio-net.c b/hw/virtio-net.c
+index 6e90330..a00698e 100644
+--- a/hw/virtio-net.c
++++ b/hw/virtio-net.c
+@@ -60,6 +60,7 @@ typedef struct VirtIONet
+         uint8_t *macs;
+     } mac_table;
+     uint32_t *vlans;
++    DeviceState *qdev;
+ } VirtIONet;
+ 
+ /* TODO
+@@ -890,7 +891,6 @@ static void virtio_net_vmstate_change(void *opaque, int running, int reason)
+ VirtIODevice *virtio_net_init(DeviceState *dev, NICConf *conf)
+ {
+     VirtIONet *n;
+-    static int virtio_net_id;
+ 
+     n = (VirtIONet *)virtio_common_init("virtio-net", VIRTIO_ID_NET,
+                                         sizeof(struct virtio_net_config),
+@@ -923,7 +923,8 @@ VirtIODevice *virtio_net_init(DeviceState *dev, NICConf *conf)
+ 
+     n->vlans = qemu_mallocz(MAX_VLAN >> 3);
+ 
+-    register_savevm(NULL, "virtio-net", virtio_net_id++, VIRTIO_NET_VM_VERSION,
++    n->qdev = dev;
++    register_savevm(dev, "virtio-net", -1, VIRTIO_NET_VM_VERSION,
+                     virtio_net_save, virtio_net_load, n);
+     n->vmstate = qemu_add_vm_change_state_handler(virtio_net_vmstate_change, n);
+ 
+@@ -941,7 +942,7 @@ void virtio_net_exit(VirtIODevice *vdev)
+ 
+     qemu_purge_queued_packets(&n->nic->nc);
+ 
+-    unregister_savevm(NULL, "virtio-net", n);
++    unregister_savevm(n->qdev, "virtio-net", n);
+ 
+     qemu_free(n->mac_table.macs);
+     qemu_free(n->vlans);
+-- 
+1.7.0.3
+

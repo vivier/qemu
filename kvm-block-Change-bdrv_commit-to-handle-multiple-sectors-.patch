@@ -1,0 +1,106 @@
+From c92607520eb1b5fad188e11c3602f700439895f2 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Wed, 21 Jul 2010 10:04:03 -0300
+Subject: [PATCH 19/24] block: Change bdrv_commit to handle multiple sectors at once
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1279706643-10383-1-git-send-email-kwolf@redhat.com>
+Patchwork-id: 10870
+O-Subject: [RHEL-6 qemu-kvm PATCH] block: Change bdrv_commit to handle multiple
+	sectors at once
+Bugzilla: 615152
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+Bugzilla: 615152
+Upstream status: Submitted
+
+bdrv_commit copies the image to its backing file sector by sector, which
+is (surprise!) relatively slow. Let's take a larger buffer and handle more
+sectors at once if possible.
+
+With a 1G qcow2 file, this brought the time bdrv_commit takes down from
+5:06 min to 1:14 min for me.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block.c |   39 ++++++++++++++++++++-------------------
+ 1 files changed, 20 insertions(+), 19 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c |   39 ++++++++++++++++++++-------------------
+ 1 files changed, 20 insertions(+), 19 deletions(-)
+
+diff --git a/block.c b/block.c
+index d250c0d..8abe538 100644
+--- a/block.c
++++ b/block.c
+@@ -677,14 +677,16 @@ int bdrv_check(BlockDriverState *bs, BdrvCheckResult *res)
+     return bs->drv->bdrv_check(bs, res);
+ }
+ 
++#define COMMIT_BUF_SECTORS 2048
++
+ /* commit COW file into the raw image */
+ int bdrv_commit(BlockDriverState *bs)
+ {
+     BlockDriver *drv = bs->drv;
+-    int64_t i, total_sectors;
+-    int n, j, ro, open_flags;
++    int64_t sector, total_sectors;
++    int n, ro, open_flags;
+     int ret = 0, rw_ret = 0;
+-    unsigned char sector[512];
++    uint8_t *buf;
+     char filename[1024];
+     BlockDriverState *bs_rw, *bs_ro;
+ 
+@@ -727,22 +729,20 @@ int bdrv_commit(BlockDriverState *bs)
+     }
+ 
+     total_sectors = bdrv_getlength(bs) >> BDRV_SECTOR_BITS;
+-    for (i = 0; i < total_sectors;) {
+-        if (drv->bdrv_is_allocated(bs, i, 65536, &n)) {
+-            for(j = 0; j < n; j++) {
+-                if (bdrv_read(bs, i, sector, 1) != 0) {
+-                    ret = -EIO;
+-                    goto ro_cleanup;
+-                }
++    buf = qemu_malloc(COMMIT_BUF_SECTORS * BDRV_SECTOR_SIZE);
+ 
+-                if (bdrv_write(bs->backing_hd, i, sector, 1) != 0) {
+-                    ret = -EIO;
+-                    goto ro_cleanup;
+-                }
+-                i++;
+-	    }
+-	} else {
+-            i += n;
++    for (sector = 0; sector < total_sectors; sector += n) {
++        if (drv->bdrv_is_allocated(bs, sector, COMMIT_BUF_SECTORS, &n)) {
++
++            if (bdrv_read(bs, sector, buf, n) != 0) {
++                ret = -EIO;
++                goto ro_cleanup;
++            }
++
++            if (bdrv_write(bs->backing_hd, sector, buf, n) != 0) {
++                ret = -EIO;
++                goto ro_cleanup;
++            }
+         }
+     }
+ 
+@@ -759,6 +759,7 @@ int bdrv_commit(BlockDriverState *bs)
+         bdrv_flush(bs->backing_hd);
+ 
+ ro_cleanup:
++    qemu_free(buf);
+ 
+     if (ro) {
+         /* re-open as RO */
+-- 
+1.7.0.3
+
