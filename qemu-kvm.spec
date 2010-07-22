@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.98%{?dist}
+Release: 2.99%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1354,6 +1354,8 @@ Patch1665: kvm-Revert-virtio-utilize-PUBLISH_USED_IDX-feature.patch
 Patch1666: kvm-savevm-Fix-memory-leak-of-compat-struct.patch
 # For bz#580010 - migration failed after pci_add and pci_del a virtio storage device
 Patch1667: kvm-virtio-blk-Create-exit-function-to-unregister-savevm.patch
+# For bz#596232 - Update docs to exclude unsupported options
+Patch1668: kvm-Documentation-Add-a-warning-message-to-qemu-kvm-help.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2083,6 +2085,7 @@ such as kvm_stat.
 %patch1665 -p1
 %patch1666 -p1
 %patch1667 -p1
+%patch1668 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2275,6 +2278,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Jul 22 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.99.el6
+- kvm-Documentation-Add-a-warning-message-to-qemu-kvm-help.patch [bz#596232]
+- Resolves: bz#596232
+  (Update docs to exclude unsupported options)
+
 * Thu Jul 22 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.98.el6
 - kvm-ram_blocks-Convert-to-a-QLIST.patch [bz#596328]
 - kvm-Remove-uses-of-ram.last_offset-aka-last_ram_offset.patch [bz#596328]

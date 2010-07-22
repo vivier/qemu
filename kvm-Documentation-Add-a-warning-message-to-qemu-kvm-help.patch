@@ -1,0 +1,62 @@
+From e938546803f0b79b94dd9abcbc38482fe5bb29c0 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Thu, 22 Jul 2010 08:30:51 -0300
+Subject: [PATCH] Documentation: Add a warning message to 'qemu-kvm -help'
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <2f16b501f85e60f67112df1a2f774abe1677efb7.1279787428.git.amit.shah@redhat.com>
+Patchwork-id: 10910
+O-Subject: [RHEL6 qemu-kvm PATCH v2] Documentation: Add a warning message to
+	'qemu-kvm -help'
+Bugzilla: 596232
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Alert users running qemu-kvm directly that it's unsupported in any form
+other than via libvirt and also that commands / options may change
+without notice and voids all warranties.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ vl.c |    9 +++++++++
+ 1 files changed, 9 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vl.c |    9 +++++++++
+ 1 files changed, 9 insertions(+), 0 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index eb7fb60..c863558 100644
+--- a/vl.c
++++ b/vl.c
+@@ -4464,9 +4464,17 @@ static void version(void)
+     printf("QEMU PC emulator version " QEMU_VERSION QEMU_PKGVERSION ", Copyright (c) 2003-2008 Fabrice Bellard\n");
+ }
+ 
++static void print_rh_warning(void)
++{
++    printf("\nWARNING: Direct use of qemu-kvm from the command line is unsupported."
++           "\nWARNING: Only use via libvirt."
++           "\nWARNING: Some options listed here may not be available in future releases.\n\n");
++}
++
+ static void help(int exitcode)
+ {
+     version();
++    print_rh_warning();
+     printf("usage: %s [options] [disk_image]\n"
+            "\n"
+            "'disk_image' is a raw hard image image for IDE hard disk 0\n"
+@@ -4494,6 +4502,7 @@ static void help(int exitcode)
+ #endif
+            DEFAULT_GDBSTUB_PORT,
+            "/tmp/qemu.log");
++    print_rh_warning();
+     exit(exitcode);
+ }
+ 
+-- 
+1.7.0.3
+
