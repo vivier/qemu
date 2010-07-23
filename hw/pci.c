@@ -1625,11 +1625,15 @@ static int pci_add_option_rom(PCIDevice *pdev)
         return 0;
 
     if (!pdev->rom_bar) {
+        int class;
         /*
          * Load rom via fw_cfg instead of creating a rom bar,
-         * for 0.11 compatibility.
+         * for 0.11 compatibility. fw_cfg is initialized at boot, so
+         * we cannot do hotplug load of option roms.
          */
-        int class = pci_get_word(pdev->config + PCI_CLASS_DEVICE);
+        if (pdev->qdev.hotplugged)
+            return 0;
+        class = pci_get_word(pdev->config + PCI_CLASS_DEVICE);
         if (class == 0x0300) {
             rom_add_vga(pdev->romfile);
         } else {
