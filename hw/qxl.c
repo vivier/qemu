@@ -1294,7 +1294,7 @@ static int qxl_init(PCIDevice *dev)
     pci_set_byte(&config[PCI_INTERRUPT_PIN], 1);
 
     qxl->rom_size = rom_size;
-    qxl->rom_offset = qemu_ram_alloc(&dev->qdev, "qxl.rom", rom_size);
+    qxl->rom_offset = qemu_ram_alloc(&dev->qdev, "qxl.vrom", rom_size);
     init_qxl_rom(qxl, qemu_get_ram_ptr(qxl->rom_offset));
     init_qxl_ram(qxl, qemu_get_ram_ptr(qxl->vga.vram_offset), qxl->vga.vram_size);
 
