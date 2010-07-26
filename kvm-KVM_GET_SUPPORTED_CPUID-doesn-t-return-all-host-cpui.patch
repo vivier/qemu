@@ -1,0 +1,113 @@
+From 81bc31f21fb6bb0510de591267ba65d71a5167db Mon Sep 17 00:00:00 2001
+From: john cooper <john.cooper@redhat.com>
+Date: Tue, 20 Jul 2010 06:54:02 -0300
+Subject: [PATCH 3/4] KVM_GET_SUPPORTED_CPUID doesn't return all host cpuid flags.. [BZ #616188]
+
+RH-Author: john cooper <john.cooper@redhat.com>
+Message-id: <4C45480A.9060704@redhat.com>
+Patchwork-id: 10834
+O-Subject: [RHEL6 PATCH] KVM_GET_SUPPORTED_CPUID doesn't return all host cpuid
+	flags.. [BZ #616188]
+Bugzilla: 616188
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Summary:
+
+BZ #613884 changed cpuid flag check which was relative to the
+host's cpuid to kvm/KVM_GET_SUPPORTED_CPUID.  Unfortunately
+some host flags are not represented in that set.  So we
+revert to using the host cpuid set as a base but selectively
+retrieve flags from kvm.  Currently we're only concerned with
+import of x2apic even though the code supports a more general
+mechanism.
+
+Also the enforce/check error messages have been modified to
+more clearly indicate the source of an error.
+
+Brew build (verification pending):
+
+https://brewweb.devel.redhat.com/taskinfo?taskID=2609252
+
+Upstream status:  Submission pending reconciling this case
+along with related BZs (#613884, 601517, 603017, 604187) in
+order to submit a single patch series.
+
+Signed-off-by: john cooper <john.cooper@redhat.com>
+---
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pc.c              |    2 +-
+ target-i386/helper.c |   26 +++++++++++++++-----------
+ 2 files changed, 16 insertions(+), 12 deletions(-)
+
+diff --git a/hw/pc.c b/hw/pc.c
+index 61648f9..f73fddf 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -983,7 +983,7 @@ CPUState *pc_new_cpu(const char *cpu_model)
+ 
+     env = cpu_init(cpu_model);
+     if (!env) {
+-        fprintf(stderr, "Unable to find x86 CPU definition\n");
++        fprintf(stderr, "Unable to support requested x86 CPU definition\n");
+         exit(1);
+     }
+     env->kvm_cpu_state.regs_modified = 1;
+diff --git a/target-i386/helper.c b/target-i386/helper.c
+index 0b3b239..4913f4d 100644
+--- a/target-i386/helper.c
++++ b/target-i386/helper.c
+@@ -477,25 +477,28 @@ static int unavailable_host_feature(struct model_features_t *f, uint32_t mask)
+ }
+ 
+ /* determine the effective set of cpuid features visible to a guest.
+- * in the case kvm is enabled, we also include features emulated by
+- * the hypervisor
++ * in the case kvm is enabled, we also selectively include features
++ * emulated by the hypervisor
+  */ 
+ static void summary_cpuid_features(CPUX86State *env, x86_def_t *hd)
+ {
+     struct {
+-        uint32_t *pfeat, cmd, reg;
++        uint32_t *pfeat, cmd, reg, mask;
+ 	} fmap[] = {
+-            {&hd->features, 0x00000001, R_EDX},
+-            {&hd->ext_features, 0x00000001, R_ECX},
+-            {&hd->ext2_features, 0x80000001, R_EDX},
+-            {&hd->ext3_features, 0x80000001, R_ECX},
++            {&hd->features, 0x00000001, R_EDX, 0},
++            {&hd->ext_features, 0x00000001, R_ECX, CPUID_EXT_X2APIC},
++            {&hd->ext2_features, 0x80000001, R_EDX, 0},
++            {&hd->ext3_features, 0x80000001, R_ECX, 0},
+             {NULL}}, *p;
+ 
++    cpu_x86_fill_host(hd);
+     if (kvm_enabled()) {
+-        for (p = fmap; p->pfeat; ++p)
+-            *p->pfeat = kvm_arch_get_supported_cpuid(env, p->cmd, p->reg);
+-    } else {
+-        cpu_x86_fill_host(hd);
++        for (p = fmap; p->pfeat; ++p) {
++            if (p->mask) {
++                *p->pfeat |= p->mask &
++                    kvm_arch_get_supported_cpuid(env, p->cmd, p->reg);
++            }
++        }
+     }
+ }
+ 
+@@ -545,6 +548,7 @@ static int cpu_x86_find_by_name(x86_def_t *x86_cpu_def, const char *cpu_model)
+     if (kvm_enabled() && strcmp(name, "host") == 0) {
+         cpu_x86_fill_host(x86_cpu_def);
+     } else if (!def) {
++        fprintf(stderr, "Unknown cpu model: %s\n", name);
+         goto error;
+     } else {
+         memcpy(x86_cpu_def, def, sizeof(*def));
+-- 
+1.7.0.3
+

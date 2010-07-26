@@ -1,0 +1,106 @@
+From 1ef1142319c7a4f6620b33a8c04f353e5c44cefb Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 15 Jul 2010 12:11:38 -0300
+Subject: [PATCH 1/4] Disable SCSI
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <m3zkxtdjwl.fsf@blackfin.pond.sub.org>
+Patchwork-id: 10736
+O-Subject: [RHEL-6 qemu-kvm PATCH RFC] Disable SCSI
+Bugzilla: 617534
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+
+Yes, I know how late it is.  Lateness is no excuse for letting
+problematic code drift into the product by inertia.  Instead, I want us
+to weigh pros and cons, then make an informed decision.
+
+As far as I know (correct me where I'm wrong):
+
+* We actively track and backport fixes to IDE and virtio, but not SCSI.
+
+* We test IDE and virtio, but not SCSI.
+
+* usb-storage is SCSI under the hood.  It doesn't work reliably.
+
+* Consequently, we support neither SCSI nor usb-storage.
+
+* But we're about to ship them anyway.
+
+I think this is a much more serious issue than VLANs:
+
+1. The chief concerns with VLANs are "only" performance and long-term
+   maintainability, not "it may eat your data".
+
+2. VLANs are much less visible to users.  It's one thing to have
+   "running /usr/libexec/qemu-kvm is unsupported" in the release notes,
+   but "clicking on SCSI in the virt-manager menu is unsupported" is a
+   different ball game.  A user can't reasonably expect that stuff in
+   /usr/libexec is for him to run, so the fine print in the release
+   notes won't catch reasonable users by surprise.  But users *can*
+   reasonably expect that menu items are fine to click.
+
+3. Same applies to libvirt API.  Users can reasonably expect that stuff
+   available in the supported API actually works.
+
+One of the main reasons for keeping VLANs in 6.0 despite they're
+unsupported is that uses have crept into the product.  Are there any
+known uses of SCSI or usb-storage?
+
+For the sake of the argument, let's see how to disable SCSI.  The
+appended patch should do the trick.  It touches no code, only makefiles.
+It drops scsi-disk.o scsi-generic.o scsi-bus.o usb-msd.o lsi53c895a.o
+pci-hotplug.o.  Note that pci-hotplug.o is already 100% dead code.
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile        |    5 ++---
+ Makefile.hw     |    1 -
+ Makefile.target |    2 +-
+ 3 files changed, 3 insertions(+), 5 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index d147632..878d65f 100644
+--- a/Makefile
++++ b/Makefile
+@@ -162,9 +162,8 @@ obj-$(CONFIG_MAX111X) += max111x.o
+ obj-$(CONFIG_DS1338) += ds1338.o
+ obj-y += i2c.o smbus.o smbus_eeprom.o
+ obj-y += eeprom93xx.o
+-obj-y += scsi-disk.o cdrom.o
+-obj-y += scsi-generic.o scsi-bus.o
+-obj-y += usb.o usb-hub.o usb-$(HOST_USB).o usb-hid.o usb-msd.o usb-wacom.o
++obj-y += cdrom.o
++obj-y += usb.o usb-hub.o usb-$(HOST_USB).o usb-hid.o usb-wacom.o
+ obj-y += usb-serial.o usb-net.o usb-bus.o
+ obj-$(CONFIG_SSI) += ssi.o
+ obj-$(CONFIG_SSI_SD) += ssi-sd.o
+diff --git a/Makefile.hw b/Makefile.hw
+index 079c5d2..88a6c1e 100644
+--- a/Makefile.hw
++++ b/Makefile.hw
+@@ -37,7 +37,6 @@ obj-$(CONFIG_SMC91C111) += smc91c111.o
+ obj-$(CONFIG_LAN9118) += lan9118.o
+ 
+ # SCSI layer
+-obj-y += lsi53c895a.o
+ obj-$(CONFIG_ESP) += esp.o
+ 
+ obj-y += dma-helpers.o sysbus.o isa-bus.o
+diff --git a/Makefile.target b/Makefile.target
+index 97b35f5..9e3a369 100644
+--- a/Makefile.target
++++ b/Makefile.target
+@@ -210,7 +210,7 @@ obj-i386-y += vga.o vga-pci.o vga-isa.o
+ obj-i386-y += fdc.o mc146818rtc.o serial.o i8259.o i8254.o pcspk.o pc.o
+ obj-i386-y += cirrus_vga.o apic.o ioapic.o parallel.o acpi.o piix_pci.o
+ obj-i386-y += usb-uhci.o vmmouse.o vmport.o vmware_vga.o hpet.o
+-obj-i386-y += device-hotplug.o pci-hotplug.o smbios.o wdt_ib700.o
++obj-i386-y += device-hotplug.o smbios.o wdt_ib700.o
+ obj-i386-y += extboot.o
+ obj-i386-y += ne2000-isa.o
+ obj-i386-y += testdev.o
+-- 
+1.7.0.3
+

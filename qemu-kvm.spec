@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.99%{?dist}
+Release: 2.100%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1356,6 +1356,14 @@ Patch1666: kvm-savevm-Fix-memory-leak-of-compat-struct.patch
 Patch1667: kvm-virtio-blk-Create-exit-function-to-unregister-savevm.patch
 # For bz#596232 - Update docs to exclude unsupported options
 Patch1668: kvm-Documentation-Add-a-warning-message-to-qemu-kvm-help.patch
+# For bz#617534 - Disable SCSI and usb-storage
+Patch1669: kvm-Disable-SCSI.patch
+# For bz#612074 - core dumped while live migration with spice
+Patch1670: kvm-spice-don-t-force-fullscreen-redraw-on-display-resiz.patch
+# For bz#616188 - KVM_GET_SUPPORTED_CPUID doesn't return all host cpuid flags..
+Patch1671: kvm-KVM_GET_SUPPORTED_CPUID-doesn-t-return-all-host-cpui.patch
+# For bz#612696 - virsh attach-device crash kvm guest.
+Patch1672: kvm-Do-not-try-loading-option-ROM-for-hotplug-PCI-device.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2086,6 +2094,10 @@ such as kvm_stat.
 %patch1666 -p1
 %patch1667 -p1
 %patch1668 -p1
+%patch1669 -p1
+%patch1670 -p1
+%patch1671 -p1
+%patch1672 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2278,6 +2290,20 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Jul 26 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.100.el6
+- kvm-Disable-SCSI.patch [bz#617534]
+- kvm-spice-don-t-force-fullscreen-redraw-on-display-resiz.patch [bz#612074]
+- kvm-KVM_GET_SUPPORTED_CPUID-doesn-t-return-all-host-cpui.patch [bz#616188]
+- kvm-Do-not-try-loading-option-ROM-for-hotplug-PCI-device.patch [bz#612696]
+- Resolves: bz#612074
+  (core dumped while live migration with spice)
+- Resolves: bz#612696
+  (virsh attach-device crash kvm guest.)
+- Resolves: bz#616188
+  (KVM_GET_SUPPORTED_CPUID doesn't return all host cpuid flags..)
+- Resolves: bz#617534
+  (Disable SCSI and usb-storage)
+
 * Thu Jul 22 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.99.el6
 - kvm-Documentation-Add-a-warning-message-to-qemu-kvm-help.patch [bz#596232]
 - Resolves: bz#596232

@@ -1,0 +1,65 @@
+From a8733f5dcec4928b3efdf2529f9fa8a4422fae60 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Fri, 16 Jul 2010 11:24:58 -0300
+Subject: [PATCH 2/4] spice: don't force fullscreen redraw on display resize.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1279279498-12062-1-git-send-email-kraxel@redhat.com>
+Patchwork-id: 10762
+O-Subject: [RHEL-6 kvm PATCH] spice: don't force fullscreen redraw on display
+	resize.
+Bugzilla: 612074
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Alexander Larsson <alexl@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+It is pretty pointless.  Screen content is undefined after mode
+switching, so there is nothing to draw anyway.  Once the guest filled
+something in we get notified about it.
+
+The only useful effect the code has is to make sure the dirty rectangle
+isn't larger than the new screen size.  Just zeroing the dirty rectangle
+will do that too.
+
+This especially avoids display updates for the initial 640x480 display
+which is never ever used because the first thing the vga code does is
+resizing the display to 720x400 (80x25 text mode).  This in turn avoids
+the segmentation fault reported in bug 612074.
+
+No, this isn't the real fix.  The real bug is a race condition, and this
+patch only makes it much harder to actually hit it.  Fixing it for real
+isn't trivial though, so I'll put that at my upstream/rhel-6.1 todo list
+and go with this non-invasive patch for rhel-6.0.
+
+bugzilla: #612074
+upstream: n/a
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ spice-display.c |    5 +----
+ 1 files changed, 1 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ spice-display.c |    5 +----
+ 1 files changed, 1 insertions(+), 4 deletions(-)
+
+diff --git a/spice-display.c b/spice-display.c
+index bfbde4a..17913ee 100644
+--- a/spice-display.c
++++ b/spice-display.c
+@@ -160,10 +160,7 @@ static void spice_display_resize(struct DisplayState *ds)
+     }
+ 
+     pthread_mutex_lock(&sdpy.lock);
+-    sdpy.dirty.left   = 0;
+-    sdpy.dirty.right  = ds_get_width(ds);
+-    sdpy.dirty.top    = 0;
+-    sdpy.dirty.bottom = ds_get_height(ds);
++    memset(&sdpy.dirty, 0, sizeof(sdpy.dirty));
+     pthread_mutex_unlock(&sdpy.lock);
+ 
+     if (!sdpy.is_attached && sdpy.worker) {
+-- 
+1.7.0.3
+
