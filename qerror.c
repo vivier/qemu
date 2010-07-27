@@ -145,6 +145,10 @@ static const QErrorStringTable qerror_table[] = {
         .desc      = "Using KVM without %(capability), %(feature) unavailable",
     },
     {
+        .error_fmt = QERR_MIGRATION_EXPECTED,
+        .desc      = "An incoming migration is expected before this command can be executed",
+    },
+    {
         .error_fmt = QERR_MISSING_PARAMETER,
         .desc      = "Parameter '%(name)' is missing",
     },

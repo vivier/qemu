@@ -71,6 +71,8 @@ void process_incoming_migration(QEMUFile *f)
     qemu_announce_self();
     dprintf("successfully loaded vm state\n");
 
+    incoming_expected = false;
+
     if (autostart)
         vm_start();
 }
