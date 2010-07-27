@@ -1,0 +1,136 @@
+From ce4cb2079037d63fd7af4a1f15cdf66157608247 Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Mon, 12 Jul 2010 16:42:06 -0300
+Subject: [PATCH 1/2] virtio-net: correct packet length checks
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <20100712164205.GA10374@redhat.com>
+Patchwork-id: 10663
+O-Subject: [PATCH RHEL6.0] virtio-net: correct packet length checks
+Bugzilla: 591494
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+We were requesting too much when checking buffer
+length: size already includes host header length.
+
+Further, we should not exit if we get a packet that
+is too long, since this might not be under control
+of the guest. Just drop the packet.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=591494
+Upstream: in my pci tree, pull request sent Sunday
+Brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=2589532
+---
+
+Note: the if 0 code is intentional, it's there so I remember what
+to turn on to re-enable these messages, and also as a kind
+of ducumentation that something strange goes on if
+we get to this if statement.
+
+ hw/virtio-net.c |   41 ++++++++++++++++++++++++++++-------------
+ 1 files changed, 28 insertions(+), 13 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-net.c |   41 ++++++++++++++++++++++++++++-------------
+ 1 files changed, 28 insertions(+), 13 deletions(-)
+
+diff --git a/hw/virtio-net.c b/hw/virtio-net.c
+index a00698e..41af292 100644
+--- a/hw/virtio-net.c
++++ b/hw/virtio-net.c
+@@ -528,17 +528,18 @@ static ssize_t virtio_net_receive(VLANClientState *nc, const uint8_t *buf, size_
+ {
+     VirtIONet *n = DO_UPCAST(NICState, nc, nc)->opaque;
+     struct virtio_net_hdr_mrg_rxbuf *mhdr = NULL;
+-    size_t hdr_len, offset, i;
++    size_t guest_hdr_len, offset, i, host_hdr_len;
+ 
+     if (!virtio_net_can_receive(&n->nic->nc))
+         return -1;
+ 
+     /* hdr_len refers to the header we supply to the guest */
+-    hdr_len = n->mergeable_rx_bufs ?
++    guest_hdr_len = n->mergeable_rx_bufs ?
+         sizeof(struct virtio_net_hdr_mrg_rxbuf) : sizeof(struct virtio_net_hdr);
+ 
+ 
+-    if (!virtio_net_has_buffers(n, size + hdr_len))
++    host_hdr_len = n->has_vnet_hdr ? sizeof(struct virtio_net_hdr) : 0;
++    if (!virtio_net_has_buffers(n, size + guest_hdr_len - host_hdr_len))
+         return 0;
+ 
+     if (!receive_filter(n, buf, size))
+@@ -553,13 +554,14 @@ static ssize_t virtio_net_receive(VLANClientState *nc, const uint8_t *buf, size_
+ 
+         len = total = 0;
+ 
+-        if ((i != 0 && !n->mergeable_rx_bufs) ||
+-            virtqueue_pop(n->rx_vq, &elem) == 0) {
++        if (virtqueue_pop(n->rx_vq, &elem) == 0) {
+             if (i == 0)
+                 return -1;
+-            fprintf(stderr, "virtio-net truncating packet: "
+-                    "offset %zd, size %zd, hdr_len %zd\n",
+-                    offset, size, hdr_len);
++            fprintf(stderr, "virtio-net unexpected empty queue: "
++                    "i %zd mergeable %d offset %zd, size %zd, "
++                    "guest hdr len %zd, host hdr len %zd guest features 0x%x\n",
++                    i, n->mergeable_rx_bufs, offset, size,
++                    guest_hdr_len, host_hdr_len, n->vdev.guest_features);
+             exit(1);
+         }
+ 
+@@ -568,7 +570,7 @@ static ssize_t virtio_net_receive(VLANClientState *nc, const uint8_t *buf, size_
+             exit(1);
+         }
+ 
+-        if (!n->mergeable_rx_bufs && elem.in_sg[0].iov_len != hdr_len) {
++        if (!n->mergeable_rx_bufs && elem.in_sg[0].iov_len != guest_hdr_len) {
+             fprintf(stderr, "virtio-net header not in first element\n");
+             exit(1);
+         }
+@@ -580,19 +582,32 @@ static ssize_t virtio_net_receive(VLANClientState *nc, const uint8_t *buf, size_
+                 mhdr = (struct virtio_net_hdr_mrg_rxbuf *)sg[0].iov_base;
+ 
+             offset += receive_header(n, sg, elem.in_num,
+-                                     buf + offset, size - offset, hdr_len);
+-            total += hdr_len;
++                                     buf + offset, size - offset, guest_hdr_len);
++            total += guest_hdr_len;
+         }
+ 
+         /* copy in packet.  ugh */
+         len = iov_from_buf(sg, elem.in_num,
+                            buf + offset, size - offset);
+         total += len;
++        offset += len;
++        /* If buffers can't be merged, at this point we
++         * must have consumed the complete packet.
++         * Otherwise, drop it. */
++        if (!n->mergeable_rx_bufs && offset < size) {
++#if 0
++            fprintf(stderr, "virtio-net truncated non-mergeable packet: "
++
++                    "i %zd mergeable %d offset %zd, size %zd, "
++                    "guest hdr len %zd, host hdr len %zd\n",
++                    i, n->mergeable_rx_bufs,
++                    offset, size, guest_hdr_len, host_hdr_len);
++#endif
++            return size;
++        }
+ 
+         /* signal other side */
+         virtqueue_fill(n->rx_vq, &elem, total, i++);
+-
+-        offset += len;
+     }
+ 
+     if (mhdr)
+-- 
+1.7.0.3
+

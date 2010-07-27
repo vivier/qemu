@@ -1,0 +1,56 @@
+From 62936c3c0a4191c748b7504822923768326d6b11 Mon Sep 17 00:00:00 2001
+From: Andrea Arcangeli <aarcange@redhat.com>
+Date: Fri, 23 Jul 2010 00:56:00 -0300
+Subject: [PATCH 2/2] avoid canceling ide dma (rediff)
+
+RH-Author: Andrea Arcangeli <aarcange@redhat.com>
+Message-id: <20100723005600.GU24928@random.random>
+Patchwork-id: 10933
+O-Subject: [RHEL6 PATCH] avoid canceling ide dma (rediff)
+Bugzilla: 617414
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+
+https://bugzilla.redhat.com/show_bug.cgi?id=617414
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/ide/pci.c |   21 +++++++++++++++++++--
+ 1 files changed, 19 insertions(+), 2 deletions(-)
+
+diff --git a/hw/ide/pci.c b/hw/ide/pci.c
+index 4331d77..d5d6088 100644
+--- a/hw/ide/pci.c
++++ b/hw/ide/pci.c
+@@ -40,8 +40,25 @@ void bmdma_cmd_writeb(void *opaque, uint32_t addr, uint32_t val)
+     printf("%s: 0x%08x\n", __func__, val);
+ #endif
+     if (!(val & BM_CMD_START)) {
+-        /* XXX: do it better */
+-        ide_dma_cancel(bm);
++        /*
++	 * We can't cancel Scatter Gather DMA in the middle of the
++	 * operation or a partial (not full) DMA transfer would reach
++	 * the storage so we wait for completion instead (we beahve
++	 * like if the DMA was completed by the time the guest trying
++	 * to cancel dma with bmdma_cmd_writeb with BM_CMD_START not
++	 * set).
++	 *
++	 * In the future we'll be able to safely cancel the I/O if the
++	 * whole DMA operation will be submitted to disk with a single
++	 * aio operation with preadv/pwritev.
++	 */
++	if (bm->aiocb) {
++		qemu_aio_flush();
++		if (bm->aiocb)
++			printf("ide_dma_cancel: aiocb still pending");
++		if (bm->status & BM_STATUS_DMAING)
++			printf("ide_dma_cancel: BM_STATUS_DMAING still pending");
++	}
+         bm->cmd = val & 0x09;
+     } else {
+         if (!(bm->status & BM_STATUS_DMAING)) {
+-- 
+1.7.0.3
+

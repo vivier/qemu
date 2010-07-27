@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.100%{?dist}
+Release: 2.101%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1364,6 +1364,10 @@ Patch1670: kvm-spice-don-t-force-fullscreen-redraw-on-display-resiz.patch
 Patch1671: kvm-KVM_GET_SUPPORTED_CPUID-doesn-t-return-all-host-cpui.patch
 # For bz#612696 - virsh attach-device crash kvm guest.
 Patch1672: kvm-Do-not-try-loading-option-ROM-for-hotplug-PCI-device.patch
+# For bz#591494 - Virtio: Transfer file caused guest in same vlan abnormally quit
+Patch1673: kvm-virtio-net-correct-packet-length-checks.patch
+# For bz#617414 - avoid canceling in flight ide dma
+Patch1674: kvm-avoid-canceling-ide-dma-rediff.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2098,6 +2102,8 @@ such as kvm_stat.
 %patch1670 -p1
 %patch1671 -p1
 %patch1672 -p1
+%patch1673 -p1
+%patch1674 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2290,6 +2296,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jul 27 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.101.el6
+- kvm-virtio-net-correct-packet-length-checks.patch [bz#591494]
+- kvm-avoid-canceling-ide-dma-rediff.patch [bz#617414]
+- Resolves: bz#591494
+  (Virtio: Transfer file caused guest in same vlan abnormally quit)
+- Resolves: bz#617414
+  (avoid canceling in flight ide dma)
+
 * Mon Jul 26 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.100.el6
 - kvm-Disable-SCSI.patch [bz#617534]
 - kvm-spice-don-t-force-fullscreen-redraw-on-display-resiz.patch [bz#612074]
