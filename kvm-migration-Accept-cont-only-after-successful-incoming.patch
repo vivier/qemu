@@ -1,0 +1,141 @@
+From 255d380a0a97462ec33249fae67e51656c2bfce0 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Tue, 27 Jul 2010 14:51:00 -0300
+Subject: [PATCH] migration: Accept 'cont' only after successful incoming migration
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <0174d6e0a630349285cce83d5509afefd820a560.1280242257.git.amit.shah@redhat.com>
+Patchwork-id: 11013
+O-Subject: [RHEL6 PATCH v2] migration: Accept 'cont' only after successful
+	incoming migration
+Bugzilla: 581555
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+When a 'cont' is issued on a VM that's just waiting for an incoming
+migration, the VM reboots and boots into the guest, possibly corrupting
+its storage since it could be shared with another VM running elsewhere.
+
+Ensure that a VM started with '-incoming' is only run when an incoming
+migration successfully completes.
+
+A new qerror, QERR_MIGRATION_EXPECTED, is added to signal that 'cont'
+failed due to no incoming migration has been attempted yet.
+
+Bugzilla: 581555
+Upstream: posted
+
+Reported-by: Laine Stump <laine@redhat.com>
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ migration.c |    2 ++
+ monitor.c   |    4 ++++
+ qerror.c    |    4 ++++
+ qerror.h    |    3 +++
+ sysemu.h    |    1 +
+ vl.c        |    2 ++
+ 6 files changed, 16 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ migration.c |    2 ++
+ monitor.c   |    4 ++++
+ qerror.c    |    4 ++++
+ qerror.h    |    3 +++
+ sysemu.h    |    1 +
+ vl.c        |    2 ++
+ 6 files changed, 16 insertions(+), 0 deletions(-)
+
+diff --git a/migration.c b/migration.c
+index a8ee608..03ac5b3 100644
+--- a/migration.c
++++ b/migration.c
+@@ -71,6 +71,8 @@ void process_incoming_migration(QEMUFile *f)
+     qemu_announce_self();
+     dprintf("successfully loaded vm state\n");
+ 
++    incoming_expected = false;
++
+     if (autostart)
+         vm_start();
+ }
+diff --git a/monitor.c b/monitor.c
+index 8f51189..f52dd63 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -1192,6 +1192,10 @@ static int do_cont(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     struct bdrv_iterate_context context = { mon, 0 };
+ 
++    if (incoming_expected) {
++        qerror_report(QERR_MIGRATION_EXPECTED);
++        return -1;
++    }
+     bdrv_iterate(encrypted_bdrv_it, &context);
+     /* only resume the vm if all keys are set and valid */
+     if (!context.err) {
+diff --git a/qerror.c b/qerror.c
+index eb18d44..8eb45e0 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -145,6 +145,10 @@ static const QErrorStringTable qerror_table[] = {
+         .desc      = "Using KVM without %(capability), %(feature) unavailable",
+     },
+     {
++        .error_fmt = QERR_MIGRATION_EXPECTED,
++        .desc      = "An incoming migration is expected before this command can be executed",
++    },
++    {
+         .error_fmt = QERR_MISSING_PARAMETER,
+         .desc      = "Parameter '%(name)' is missing",
+     },
+diff --git a/qerror.h b/qerror.h
+index 9a5c5ae..d732b30 100644
+--- a/qerror.h
++++ b/qerror.h
+@@ -125,6 +125,9 @@ QError *qobject_to_qerror(const QObject *obj);
+ #define QERR_KVM_MISSING_CAP \
+     "{ 'class': 'KVMMissingCap', 'data': { 'capability': %s, 'feature': %s } }"
+ 
++#define QERR_MIGRATION_EXPECTED \
++    "{ 'class': 'MigrationExpected', 'data': {} }"
++
+ #define QERR_MISSING_PARAMETER \
+     "{ 'class': 'MissingParameter', 'data': { 'name': %s } }"
+ 
+diff --git a/sysemu.h b/sysemu.h
+index f20abd6..a78e167 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -97,6 +97,7 @@ typedef enum DisplayType
+ } DisplayType;
+ 
+ extern int autostart;
++extern int incoming_expected;
+ extern int bios_size;
+ 
+ typedef enum {
+diff --git a/vl.c b/vl.c
+index c863558..ea4980b 100644
+--- a/vl.c
++++ b/vl.c
+@@ -195,6 +195,7 @@ int nb_nics;
+ NICInfo nd_table[MAX_NICS];
+ int vm_running;
+ int autostart;
++int incoming_expected; /* Started with -incoming and waiting for incoming */
+ static int rtc_utc = 1;
+ static int rtc_date_offset = -1; /* -1 means no change */
+ QEMUClock *rtc_clock;
+@@ -5986,6 +5987,7 @@ int main(int argc, char **argv, char **envp)
+                 break;
+             case QEMU_OPTION_incoming:
+                 incoming = optarg;
++                incoming_expected = true;
+                 break;
+             case QEMU_OPTION_nodefaults:
+                 default_serial = 0;
+-- 
+1.7.0.3
+
