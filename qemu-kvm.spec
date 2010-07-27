@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.103%{?dist}
+Release: 2.104%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1374,6 +1374,8 @@ Patch1675: kvm-spice-Rename-conflicting-ramblock.patch
 Patch1676: kvm-block-default-to-0-minimal-optimal-I-O-size.patch
 # For bz#581555 - race between qemu monitor "cont" and incoming migration can cause failed restore/migration
 Patch1677: kvm-migration-Accept-cont-only-after-successful-incoming.patch
+# For bz#617085 - core dumped when add netdev to VM with vhost on
+Patch1678: kvm-vhost_dev_unassign_memory-don-t-assert-if-removing-f.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2113,6 +2115,7 @@ such as kvm_stat.
 %patch1675 -p1
 %patch1676 -p1
 %patch1677 -p1
+%patch1678 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2305,6 +2308,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jul 27 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.104.el6
+- kvm-vhost_dev_unassign_memory-don-t-assert-if-removing-f.patch [bz#617085]
+- Resolves: bz#617085
+  (core dumped when add netdev to VM with vhost on)
+
 * Tue Jul 27 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.103.el6
 - kvm-migration-Accept-cont-only-after-successful-incoming.patch [bz#581555]
 - Resolves: bz#581555
