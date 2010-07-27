@@ -1,0 +1,44 @@
+From 629c46819266908a6abef0cd2b75111da65a97c7 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Sat, 24 Jul 2010 14:00:41 -0300
+Subject: [PATCH 1/2] spice: Rename conflicting ramblock
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100724140029.14152.77866.stgit@localhost6.localdomain6>
+Patchwork-id: 10962
+O-Subject: [PATCH] spice: Rename conflicting ramblock
+Bugzilla: 617463
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+The PCI option ROM will create a "qxl.rom", which conflicts with this one.
+Pick a different name.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+---
+
+ hw/qxl.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qxl.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index b123ae0..e01f67f 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -1294,7 +1294,7 @@ static int qxl_init(PCIDevice *dev)
+     pci_set_byte(&config[PCI_INTERRUPT_PIN], 1);
+ 
+     qxl->rom_size = rom_size;
+-    qxl->rom_offset = qemu_ram_alloc(&dev->qdev, "qxl.rom", rom_size);
++    qxl->rom_offset = qemu_ram_alloc(&dev->qdev, "qxl.vrom", rom_size);
+     init_qxl_rom(qxl, qemu_get_ram_ptr(qxl->rom_offset));
+     init_qxl_ram(qxl, qemu_get_ram_ptr(qxl->vga.vram_offset), qxl->vga.vram_size);
+ 
+-- 
+1.7.0.3
+

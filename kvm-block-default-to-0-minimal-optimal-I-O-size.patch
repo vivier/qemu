@@ -1,0 +1,47 @@
+From 694bc753ca5b0fbdfbd79addb48a1bab109a2c5d Mon Sep 17 00:00:00 2001
+From: Christoph Hellwig <chellwig@redhat.com>
+Date: Mon, 26 Jul 2010 13:44:16 -0300
+Subject: [PATCH 2/2] block: default to 0 minimal / optimal I/O size
+
+RH-Author: Christoph Hellwig <chellwig@redhat.com>
+Message-id: <1280151856-3862-1-git-send-email-chellwig@redhat.com>
+Patchwork-id: 10990
+O-Subject: [RHEL6 qemu PATCH] block: default to 0 minimal / optimal I/O size
+Bugzilla: 617271
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Christoph Hellwig <hch@lst.de>
+
+Currently we set them to 512 bytes unless manually specified.  Unforuntaly
+some brain-dead partitioning tools create unaligned partitions if they
+get low enough optiomal I/O size values, so don't report any at all
+unless explicitly set.
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Upstream status: submitted
+BZ: 616509
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block_int.h |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/block_int.h b/block_int.h
+index f6d7504..3d0a338 100644
+--- a/block_int.h
++++ b/block_int.h
+@@ -240,7 +240,7 @@ static inline unsigned int get_physical_block_exp(BlockConf *conf)
+                        _conf.logical_block_size, 512),                  \
+     DEFINE_PROP_UINT16("physical_block_size", _state,                   \
+                        _conf.physical_block_size, 512),                 \
+-    DEFINE_PROP_UINT16("min_io_size", _state, _conf.min_io_size, 512),  \
+-    DEFINE_PROP_UINT32("opt_io_size", _state, _conf.opt_io_size, 512)
++    DEFINE_PROP_UINT16("min_io_size", _state, _conf.min_io_size, 0),  \
++    DEFINE_PROP_UINT32("opt_io_size", _state, _conf.opt_io_size, 0)
+ 
+ #endif /* BLOCK_INT_H */
+-- 
+1.7.0.3
+

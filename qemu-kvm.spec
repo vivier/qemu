@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.101%{?dist}
+Release: 2.102%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1368,6 +1368,10 @@ Patch1672: kvm-Do-not-try-loading-option-ROM-for-hotplug-PCI-device.patch
 Patch1673: kvm-virtio-net-correct-packet-length-checks.patch
 # For bz#617414 - avoid canceling in flight ide dma
 Patch1674: kvm-avoid-canceling-ide-dma-rediff.patch
+# For bz#617463 - Coredump occorred when enable qxl
+Patch1675: kvm-spice-Rename-conflicting-ramblock.patch
+# For bz#617271 - RHEL6 qemu-kvm guest gets partitioned at sector 63
+Patch1676: kvm-block-default-to-0-minimal-optimal-I-O-size.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2104,6 +2108,8 @@ such as kvm_stat.
 %patch1672 -p1
 %patch1673 -p1
 %patch1674 -p1
+%patch1675 -p1
+%patch1676 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2296,6 +2302,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jul 27 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.102.el6
+- kvm-spice-Rename-conflicting-ramblock.patch [bz#617463]
+- kvm-block-default-to-0-minimal-optimal-I-O-size.patch [bz#617271]
+- Resolves: bz#617271
+  (RHEL6 qemu-kvm guest gets partitioned at sector 63)
+- Resolves: bz#617463
+  (Coredump occorred when enable qxl)
+
 * Tue Jul 27 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.101.el6
 - kvm-virtio-net-correct-packet-length-checks.patch [bz#591494]
 - kvm-avoid-canceling-ide-dma-rediff.patch [bz#617414]
