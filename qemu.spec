@@ -3,7 +3,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.13.0
-Release: 0.1.20100727git%{githead}%{?dist}
+Release: 0.2.20100727git%{githead}%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -48,6 +48,7 @@ BuildRequires: rsync
 BuildRequires: pciutils-devel
 BuildRequires: pulseaudio-libs-devel
 BuildRequires: ncurses-devel
+BuildRequires: texinfo
 Requires: %{name}-user = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-x86 = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-sparc = %{epoch}:%{version}-%{release}
@@ -540,6 +541,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jul 27 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.13.0-0.2.20100727gitb81fe95
+- add texinfo buildreq for manpages.
+
 * Tue Jul 27 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.13.0-0.1.20100727gitb81fe95
 - Update to 0.13.0 upstream snapshot
 - ksm init fixes from upstream
