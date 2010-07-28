@@ -40,15 +40,12 @@ default_max_kernel_pages () {
 
 start() {
     echo -n $"Starting $prog: "
-    if [ -f /sys/kernel/mm/ksm/max_kernel_pages ]; then
-        KSM_MAX_KERNEL_PAGES=${KSM_MAX_KERNEL_PAGES:-`default_max_kernel_pages`}
-        echo $KSM_MAX_KERNEL_PAGES > /sys/kernel/mm/ksm/max_kernel_pages
-    fi
+    KSM_MAX_KERNEL_PAGES=${KSM_MAX_KERNEL_PAGES:-`default_max_kernel_pages`}
+    echo $KSM_MAX_KERNEL_PAGES > /sys/kernel/mm/ksm/max_kernel_pages
     echo 1 > /sys/kernel/mm/ksm/run
     RETVAL=$?
     [ $RETVAL = 0 ] && success $"$prog startup" || failure $"$prog startup"
     echo
-    return $RETVAL
 }
 
 stop() {
@@ -72,6 +69,11 @@ status() {
     fi; fi
 }
 
+restart() {
+    stop
+    start
+}
+
 case "$1" in
   start)
 	start
@@ -83,14 +85,18 @@ case "$1" in
         status
 	;;
   restart)
-	stop
-	start
+	restart
 	;;
-  condrestart)
+  condrestart|try-restart)
+	status >/dev/null 2>&1 || exit 0
+	restart
         ;;
+  force-reload)
+	restart
+	;;
   *)
-	echo $"Usage: $prog {start|stop|restart|condrestart|status|help}"
-	RETVAL=3
+	echo $"Usage: $prog {start|stop|restart|force-reload|condrestart|try-restart|status|help}"
+	RETVAL=2
 esac
 
 exit $RETVAL
