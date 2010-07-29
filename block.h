@@ -7,8 +7,6 @@
 #include "qobject.h"
 
 /* block.c */
-typedef struct BlockDriver BlockDriver;
-
 typedef struct BlockDriverInfo {
     /* in bytes, 0 if irrelevant */
     int cluster_size;

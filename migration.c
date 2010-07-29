@@ -66,12 +66,17 @@ void process_incoming_migration(QEMUFile *f)
 {
     if (qemu_loadvm_state(f) < 0) {
         fprintf(stderr, "load of migration failed\n");
-        exit(0);
+        exit(1);
     }
     qemu_announce_self();
     dprintf("successfully loaded vm state\n");
 
     incoming_expected = false;
+
+    if (drives_reopen() != 0) {
+        fprintf(stderr, "reopening of drives failed\n");
+        exit(1);
+    }
 
     if (autostart)
         vm_start();

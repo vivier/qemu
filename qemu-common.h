@@ -227,6 +227,7 @@ typedef struct I2SCodec I2SCodec;
 typedef struct SSIBus SSIBus;
 typedef struct EventNotifier EventNotifier;
 typedef struct VirtIODevice VirtIODevice;
+typedef struct BlockDriver BlockDriver;
 
 /* CPU save/load.  */
 void cpu_save(QEMUFile *f, void *opaque);

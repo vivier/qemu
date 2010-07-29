@@ -2127,6 +2127,7 @@ void drive_uninit(DriveInfo *dinfo)
     qemu_opts_del(dinfo->opts);
     bdrv_delete(dinfo->bdrv);
     QTAILQ_REMOVE(&drives, dinfo, next);
+    qemu_free(dinfo->file);
     qemu_free(dinfo);
 }
 
@@ -2145,6 +2146,36 @@ static int parse_block_error_action(const char *buf, int is_read)
             buf, is_read ? "read" : "write");
         return -1;
     }
+}
+
+static int drive_open(DriveInfo *dinfo)
+{
+    int res = bdrv_open(dinfo->bdrv, dinfo->file, dinfo->bdrv_flags, dinfo->drv);
+
+    if (res < 0) {
+        fprintf(stderr, "qemu: could not open disk image %s: %s\n",
+                        dinfo->file, strerror(errno));
+    }
+    return res;
+}
+
+int drives_reopen(void)
+{
+    DriveInfo *dinfo;
+
+    QTAILQ_FOREACH(dinfo, &drives, next) {
+        if (dinfo->opened && !bdrv_is_read_only(dinfo->bdrv)) {
+            int res;
+            bdrv_close(dinfo->bdrv);
+            res = drive_open(dinfo);
+            if (res) {
+		    fprintf(stderr, "qemu: re-open of %s failed wth error %d\n",
+			    dinfo->file, res);
+		    return res;
+	    }
+        }
+    }
+    return 0;
 }
 
 DriveInfo *drive_init(QemuOpts *opts, void *opaque,
@@ -2518,9 +2549,13 @@ DriveInfo *drive_init(QemuOpts *opts, void *opaque,
     }
     bdrv_flags |= ro ? 0 : BDRV_O_RDWR;
 
-    if (bdrv_open(dinfo->bdrv, file, bdrv_flags, drv) < 0) {
-        fprintf(stderr, "qemu: could not open disk image %s: %s\n",
-                        file, strerror(errno));
+    dinfo->file = qemu_strdup(file);
+    dinfo->bdrv_flags = bdrv_flags;
+    dinfo->drv = drv;
+    dinfo->opened = 1;
+
+    if (drive_open(dinfo) < 0) {
+        *fatal_error = 1;
         return NULL;
     }
 

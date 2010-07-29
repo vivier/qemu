@@ -176,6 +176,10 @@ typedef struct DriveInfo {
     BlockInterfaceErrorAction on_write_error;
     char serial[BLOCK_SERIAL_STRLEN + 1];
     QTAILQ_ENTRY(DriveInfo) next;
+    int opened;
+    int bdrv_flags;
+    char *file;
+    BlockDriver *drv;
 } DriveInfo;
 
 #define MAX_IDE_DEVS	2
@@ -199,6 +203,8 @@ BlockDriverState *qdev_init_bdrv(DeviceState *dev, BlockInterfaceType type);
 
 extern QemuOpts *drive_add(const char *file, const char *fmt, ...);
 extern DriveInfo *drive_init(QemuOpts *arg, void *machine, int *fatal_error);
+
+extern int drives_reopen(void);
 
 /* acpi */
 void qemu_system_cpu_hot_add(int cpu, int state);
