@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.104%{?dist}
+Release: 2.105%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1376,6 +1376,10 @@ Patch1676: kvm-block-default-to-0-minimal-optimal-I-O-size.patch
 Patch1677: kvm-migration-Accept-cont-only-after-successful-incoming.patch
 # For bz#617085 - core dumped when add netdev to VM with vhost on
 Patch1678: kvm-vhost_dev_unassign_memory-don-t-assert-if-removing-f.patch
+# For bz#615214 - [VT-d] Booting RHEL6 guest with Intel 82541PI NIC assigned by libvirt cause qemu crash
+Patch1679: kvm-device-assignment-Use-PCI-I-O-port-sysfs-resource-fi.patch
+# For bz#558256 - rhel6 disk not detected first time in install
+Patch1680: kvm-block-Change-bdrv_eject-not-to-drop-the-image.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2116,6 +2120,8 @@ such as kvm_stat.
 %patch1676 -p1
 %patch1677 -p1
 %patch1678 -p1
+%patch1679 -p1
+%patch1680 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2308,6 +2314,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Jul 28 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.105.el6
+- kvm-device-assignment-Use-PCI-I-O-port-sysfs-resource-fi.patch [bz#615214]
+- kvm-block-Change-bdrv_eject-not-to-drop-the-image.patch [bz#558256]
+- Resolves: bz#558256
+  (rhel6 disk not detected first time in install)
+- Resolves: bz#615214
+  ([VT-d] Booting RHEL6 guest with Intel 82541PI NIC assigned by libvirt cause qemu crash)
+
 * Tue Jul 27 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.104.el6
 - kvm-vhost_dev_unassign_memory-don-t-assert-if-removing-f.patch [bz#617085]
 - Resolves: bz#617085

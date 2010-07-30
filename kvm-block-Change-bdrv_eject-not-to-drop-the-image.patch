@@ -1,0 +1,103 @@
+From e5d306aa6702026c477fa6fa847069ff59237a54 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 27 Jul 2010 16:57:40 -0300
+Subject: [PATCH 2/2] block: Change bdrv_eject() not to drop the image
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <m3wrsgj20r.fsf@blackfin.pond.sub.org>
+Patchwork-id: 11015
+O-Subject: [PATCH RHEL6 qemu-kvm] block: Change bdrv_eject() not to drop the
+	image
+Bugzilla: 558256
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+bdrv_eject() gets called when a device model opens or closes the tray.
+
+If the block driver implements method bdrv_eject(), that method gets
+called.  Drivers host_cdrom implements it, and it opens and closes the
+physical tray, and nothing else.  When a device model opens, then
+closes the tray, media changes only if the user actively changes the
+physical media while the tray is open.  This is matches how physical
+hardware behaves.
+
+If the block driver doesn't implement method bdrv_eject(), we do
+something quite different: opening the tray severs the connection to
+the image by calling bdrv_close(), and closing the tray does nothing.
+When the device model opens, then closes the tray, media is gone,
+unless the user actively inserts another one while the tray is open,
+with a suitable change command in the monitor.  This isn't how
+physical hardware behaves.  Rather inconvenient when programs
+"helpfully" eject media to give you a chance to change it.  The way
+bdrv_eject() behaves here turns that chance into a must, which is not
+what these programs or their users expect.
+
+Change the default action not to call bdrv_close().  Instead, note the
+tray status in new BlockDriverState member tray_open.  Use it in
+bdrv_is_inserted().
+
+Arguably, the device models should keep track of tray status
+themselves.  But this is less invasive.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+Upstream: posted
+BZ 558256
+Testing:
+* RHEL-6 install: media test now works as designed with image file
+* virtual CD-ROM backed by image file works as expected: ENOMEDIUM while
+  the tray is open
+
+ block.c     |    7 ++++---
+ block_int.h |    1 +
+ 2 files changed, 5 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c     |    7 ++++---
+ block_int.h |    1 +
+ 2 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/block.c b/block.c
+index 8abe538..e98a529 100644
+--- a/block.c
++++ b/block.c
+@@ -2345,7 +2345,7 @@ int bdrv_is_inserted(BlockDriverState *bs)
+     if (!drv)
+         return 0;
+     if (!drv->bdrv_is_inserted)
+-        return 1;
++        return !bs->tray_open;
+     ret = drv->bdrv_is_inserted(bs);
+     return ret;
+ }
+@@ -2387,10 +2387,11 @@ int bdrv_eject(BlockDriverState *bs, int eject_flag)
+         ret = drv->bdrv_eject(bs, eject_flag);
+     }
+     if (ret == -ENOTSUP) {
+-        if (eject_flag)
+-            bdrv_close(bs);
+         ret = 0;
+     }
++    if (ret >= 0) {
++        bs->tray_open = eject_flag;
++    }
+ 
+     return ret;
+ }
+diff --git a/block_int.h b/block_int.h
+index 3d0a338..7f54d77 100644
+--- a/block_int.h
++++ b/block_int.h
+@@ -141,6 +141,7 @@ struct BlockDriverState {
+     int open_flags; /* flags used to open the file, re-used for re-open */
+     int removable; /* if true, the media can be removed */
+     int locked;    /* if true, the media cannot temporarily be ejected */
++    int tray_open; /* if true, the virtual tray is open */
+     int encrypted; /* if true, the media is encrypted */
+     int valid_key; /* if true, a valid encryption key has been set */
+     int sg;        /* if true, the device is a /dev/sg* */
+-- 
+1.7.0.3
+
