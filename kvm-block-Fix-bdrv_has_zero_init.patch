@@ -1,0 +1,177 @@
+From af705aba79ddc86179fc4268fab530f5fda35a8b Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Wed, 28 Jul 2010 10:24:42 -0300
+Subject: [PATCH 2/4] block: Fix bdrv_has_zero_init
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1280312682-29091-1-git-send-email-kwolf@redhat.com>
+Patchwork-id: 11029
+O-Subject: [RHEL-6 qemu-kvm PATCH] block: Fix bdrv_has_zero_init
+Bugzilla: 616890
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 616890
+Upstream status: Submitted
+
+Assuming that any image on a block device is not properly zero-initialized is
+actually wrong: Only raw images have this problem. Any other image format
+shouldn't care about it, they initialize everything properly themselves.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block.c           |    6 ++----
+ block/raw-posix.c |   13 +++++++++----
+ block/raw-win32.c |    6 ++++++
+ block/raw.c       |    6 ++++++
+ block_int.h       |    7 +++++--
+ 5 files changed, 28 insertions(+), 10 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c           |    6 ++----
+ block/raw-posix.c |   13 +++++++++----
+ block/raw-win32.c |    6 ++++++
+ block/raw.c       |    6 ++++++
+ block_int.h       |    7 +++++--
+ 5 files changed, 28 insertions(+), 10 deletions(-)
+
+diff --git a/block.c b/block.c
+index e98a529..01f4050 100644
+--- a/block.c
++++ b/block.c
+@@ -1367,10 +1367,8 @@ int bdrv_has_zero_init(BlockDriverState *bs)
+ {
+     assert(bs->drv);
+ 
+-    if (bs->drv->no_zero_init) {
+-        return 0;
+-    } else if (bs->file) {
+-        return bdrv_has_zero_init(bs->file);
++    if (bs->drv->bdrv_has_zero_init) {
++        return bs->drv->bdrv_has_zero_init(bs);
+     }
+ 
+     return 1;
+diff --git a/block/raw-posix.c b/block/raw-posix.c
+index d2f7522..f64635d 100644
+--- a/block/raw-posix.c
++++ b/block/raw-posix.c
+@@ -980,6 +980,11 @@ static int hdev_create(const char *filename, QEMUOptionParameter *options)
+     return ret;
+ }
+ 
++static int hdev_has_zero_init(BlockDriverState *bs)
++{
++    return 0;
++}
++
+ static BlockDriver bdrv_host_device = {
+     .format_name        = "host_device",
+     .protocol_name        = "host_device",
+@@ -989,7 +994,7 @@ static BlockDriver bdrv_host_device = {
+     .bdrv_close         = raw_close,
+     .bdrv_create        = hdev_create,
+     .create_options     = raw_create_options,
+-    .no_zero_init       = 1,
++    .bdrv_has_zero_init = hdev_has_zero_init,
+     .bdrv_flush         = raw_flush,
+ 
+     .bdrv_aio_readv	= raw_aio_readv,
+@@ -1087,7 +1092,7 @@ static BlockDriver bdrv_host_floppy = {
+     .bdrv_close         = raw_close,
+     .bdrv_create        = hdev_create,
+     .create_options     = raw_create_options,
+-    .no_zero_init       = 1,
++    .bdrv_has_zero_init = hdev_has_zero_init,
+     .bdrv_flush         = raw_flush,
+ 
+     .bdrv_aio_readv     = raw_aio_readv,
+@@ -1187,7 +1192,7 @@ static BlockDriver bdrv_host_cdrom = {
+     .bdrv_close         = raw_close,
+     .bdrv_create        = hdev_create,
+     .create_options     = raw_create_options,
+-    .no_zero_init       = 1,
++    .bdrv_has_zero_init = hdev_has_zero_init,
+     .bdrv_flush         = raw_flush,
+ 
+     .bdrv_aio_readv     = raw_aio_readv,
+@@ -1310,7 +1315,7 @@ static BlockDriver bdrv_host_cdrom = {
+     .bdrv_close         = raw_close,
+     .bdrv_create        = hdev_create,
+     .create_options     = raw_create_options,
+-    .no_zero_init       = 1,
++    .bdrv_has_zero_init = hdev_has_zero_init,
+     .bdrv_flush         = raw_flush,
+ 
+     .bdrv_aio_readv     = raw_aio_readv,
+diff --git a/block/raw-win32.c b/block/raw-win32.c
+index 9b74229..32ce701 100644
+--- a/block/raw-win32.c
++++ b/block/raw-win32.c
+@@ -398,6 +398,11 @@ static int raw_set_locked(BlockDriverState *bs, int locked)
+ }
+ #endif
+ 
++static int hdev_has_zero_init(BlockDriverState *bs)
++{
++    return 0;
++}
++
+ static BlockDriver bdrv_host_device = {
+     .format_name	= "host_device",
+     .protocol_name	= "host_device",
+@@ -406,6 +411,7 @@ static BlockDriver bdrv_host_device = {
+     .bdrv_file_open	= hdev_open,
+     .bdrv_close		= raw_close,
+     .bdrv_flush		= raw_flush,
++    .bdrv_has_zero_init = hdev_has_zero_init,
+ 
+     .bdrv_read		= raw_read,
+     .bdrv_write	        = raw_write,
+diff --git a/block/raw.c b/block/raw.c
+index 4406b8c..9108779 100644
+--- a/block/raw.c
++++ b/block/raw.c
+@@ -107,6 +107,11 @@ static QEMUOptionParameter raw_create_options[] = {
+     { NULL }
+ };
+ 
++static int raw_has_zero_init(BlockDriverState *bs)
++{
++    return bdrv_has_zero_init(bs->file);
++}
++
+ static BlockDriver bdrv_raw = {
+     .format_name        = "raw",
+ 
+@@ -134,6 +139,7 @@ static BlockDriver bdrv_raw = {
+ 
+     .bdrv_create        = raw_create,
+     .create_options     = raw_create_options,
++    .bdrv_has_zero_init = raw_has_zero_init,
+ };
+ 
+ static void bdrv_raw_init(void)
+diff --git a/block_int.h b/block_int.h
+index 7f54d77..df53b8a 100644
+--- a/block_int.h
++++ b/block_int.h
+@@ -127,8 +127,11 @@ struct BlockDriver {
+ 
+     void (*bdrv_debug_event)(BlockDriverState *bs, BlkDebugEvent event);
+ 
+-    /* Set if newly created images are not guaranteed to contain only zeros */
+-    int no_zero_init;
++    /*
++     * Returns 1 if newly created images are guaranteed to contain only
++     * zeros, 0 otherwise.
++     */
++    int (*bdrv_has_zero_init)(BlockDriverState *bs);
+ 
+     QLIST_ENTRY(BlockDriver) list;
+ };
+-- 
+1.7.2.1
+

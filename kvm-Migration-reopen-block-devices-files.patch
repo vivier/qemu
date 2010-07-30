@@ -1,0 +1,214 @@
+From db3124b139335845a5447b5cb49dd39693add26a Mon Sep 17 00:00:00 2001
+From: Juan Quintela <quintela@redhat.com>
+Date: Thu, 29 Jul 2010 14:13:15 -0300
+Subject: [PATCH 4/4] Migration: reopen block devices files
+
+RH-Author: Juan Quintela <quintela@redhat.com>
+Message-id: <1280412795-12821-1-git-send-email-quintela@redhat.com>
+Patchwork-id: 11084
+O-Subject: [RHEL6 v3 PATCH] Migration: reopen block devices files
+Bugzilla: 618601
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+v3:
+- s/strdup/qemu_strdup/ (luiz)
+- only reopen readwrite images
+
+v2:
+- s/int/bool/ a.k.a. make Jes happy
+- add free of dinfo->file (luiz)
+- exit(1) for errors.  There were another exit(0) on process_migration, also got changed.
+  markus.  If you feel really strong that I have to open another bugzilla for it, just told me.
+- move fields to end of struct, they are basically never used, could help cacheline utilization.
+- make drive_open() static (markus)
+
+v1:
+
+If files are stored on NFS, we need the close-to-open consistence.
+Furthermore, file can have been modified since it was opened in the target destination.  To remove the posibility of target caching the contents, we need to reopen  the files.
+
+We already have this patch on RHEL5.x.
+
+Problem is easier to reproduce with qcow2 images over NFS and migration.
+
+Source Host	   	     	       	Target Host
+create /shared/image.img (empty)
+			       		Open /shared/image.img
+Open /shared/image.img
+(Fill image, for instance
+ install the VM)
+
+At this point L1 table has probably changed on Source Host, but Target Host don't know.
+If we do a migration at that point, we would get corruption.
+
+We need to do close + open becaues we need Target Host to re-read the data from the NFS server,
+it has to invalidate its own cache (the image has only been read).
+
+In this bugzilla, you have a better explanation of the problem.
+
+   Bug 614286  - Installation failed and Image errors occurs when do Live Migration during Guest installation
+
+Bugzilla: 618601
+
+Signed-off-by: Juan Quintela <quintela@redhat.com>
+---
+ block.h       |    2 --
+ migration.c   |    7 ++++++-
+ qemu-common.h |    1 +
+ sysemu.h      |    6 ++++++
+ vl.c          |   41 ++++++++++++++++++++++++++++++++++++++---
+ 5 files changed, 51 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.h       |    2 --
+ migration.c   |    7 ++++++-
+ qemu-common.h |    1 +
+ sysemu.h      |    6 ++++++
+ vl.c          |   41 ++++++++++++++++++++++++++++++++++++++---
+ 5 files changed, 51 insertions(+), 6 deletions(-)
+
+diff --git a/block.h b/block.h
+index 90eebbe..90cbef9 100644
+--- a/block.h
++++ b/block.h
+@@ -7,8 +7,6 @@
+ #include "qobject.h"
+ 
+ /* block.c */
+-typedef struct BlockDriver BlockDriver;
+-
+ typedef struct BlockDriverInfo {
+     /* in bytes, 0 if irrelevant */
+     int cluster_size;
+diff --git a/migration.c b/migration.c
+index 03ac5b3..1dbb1d5 100644
+--- a/migration.c
++++ b/migration.c
+@@ -66,13 +66,18 @@ void process_incoming_migration(QEMUFile *f)
+ {
+     if (qemu_loadvm_state(f) < 0) {
+         fprintf(stderr, "load of migration failed\n");
+-        exit(0);
++        exit(1);
+     }
+     qemu_announce_self();
+     dprintf("successfully loaded vm state\n");
+ 
+     incoming_expected = false;
+ 
++    if (drives_reopen() != 0) {
++        fprintf(stderr, "reopening of drives failed\n");
++        exit(1);
++    }
++
+     if (autostart)
+         vm_start();
+ }
+diff --git a/qemu-common.h b/qemu-common.h
+index d2b9478..86c08a3 100644
+--- a/qemu-common.h
++++ b/qemu-common.h
+@@ -227,6 +227,7 @@ typedef struct I2SCodec I2SCodec;
+ typedef struct SSIBus SSIBus;
+ typedef struct EventNotifier EventNotifier;
+ typedef struct VirtIODevice VirtIODevice;
++typedef struct BlockDriver BlockDriver;
+ 
+ /* CPU save/load.  */
+ void cpu_save(QEMUFile *f, void *opaque);
+diff --git a/sysemu.h b/sysemu.h
+index a78e167..8c3ec8e 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -176,6 +176,10 @@ typedef struct DriveInfo {
+     BlockInterfaceErrorAction on_write_error;
+     char serial[BLOCK_SERIAL_STRLEN + 1];
+     QTAILQ_ENTRY(DriveInfo) next;
++    int opened;
++    int bdrv_flags;
++    char *file;
++    BlockDriver *drv;
+ } DriveInfo;
+ 
+ #define MAX_IDE_DEVS	2
+@@ -200,6 +204,8 @@ BlockDriverState *qdev_init_bdrv(DeviceState *dev, BlockInterfaceType type);
+ extern QemuOpts *drive_add(const char *file, const char *fmt, ...);
+ extern DriveInfo *drive_init(QemuOpts *arg, void *machine, int *fatal_error);
+ 
++extern int drives_reopen(void);
++
+ /* acpi */
+ void qemu_system_cpu_hot_add(int cpu, int state);
+ 
+diff --git a/vl.c b/vl.c
+index ea4980b..cda2d96 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2127,6 +2127,7 @@ void drive_uninit(DriveInfo *dinfo)
+     qemu_opts_del(dinfo->opts);
+     bdrv_delete(dinfo->bdrv);
+     QTAILQ_REMOVE(&drives, dinfo, next);
++    qemu_free(dinfo->file);
+     qemu_free(dinfo);
+ }
+ 
+@@ -2147,6 +2148,36 @@ static int parse_block_error_action(const char *buf, int is_read)
+     }
+ }
+ 
++static int drive_open(DriveInfo *dinfo)
++{
++    int res = bdrv_open(dinfo->bdrv, dinfo->file, dinfo->bdrv_flags, dinfo->drv);
++
++    if (res < 0) {
++        fprintf(stderr, "qemu: could not open disk image %s: %s\n",
++                        dinfo->file, strerror(errno));
++    }
++    return res;
++}
++
++int drives_reopen(void)
++{
++    DriveInfo *dinfo;
++
++    QTAILQ_FOREACH(dinfo, &drives, next) {
++        if (dinfo->opened && !bdrv_is_read_only(dinfo->bdrv)) {
++            int res;
++            bdrv_close(dinfo->bdrv);
++            res = drive_open(dinfo);
++            if (res) {
++		    fprintf(stderr, "qemu: re-open of %s failed wth error %d\n",
++			    dinfo->file, res);
++		    return res;
++	    }
++        }
++    }
++    return 0;
++}
++
+ DriveInfo *drive_init(QemuOpts *opts, void *opaque,
+                       int *fatal_error)
+ {
+@@ -2518,9 +2549,13 @@ DriveInfo *drive_init(QemuOpts *opts, void *opaque,
+     }
+     bdrv_flags |= ro ? 0 : BDRV_O_RDWR;
+ 
+-    if (bdrv_open(dinfo->bdrv, file, bdrv_flags, drv) < 0) {
+-        fprintf(stderr, "qemu: could not open disk image %s: %s\n",
+-                        file, strerror(errno));
++    dinfo->file = qemu_strdup(file);
++    dinfo->bdrv_flags = bdrv_flags;
++    dinfo->drv = drv;
++    dinfo->opened = 1;
++
++    if (drive_open(dinfo) < 0) {
++        *fatal_error = 1;
+         return NULL;
+     }
+ 
+-- 
+1.7.2.1
+

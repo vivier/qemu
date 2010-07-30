@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.105%{?dist}
+Release: 2.106%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1380,6 +1380,14 @@ Patch1678: kvm-vhost_dev_unassign_memory-don-t-assert-if-removing-f.patch
 Patch1679: kvm-device-assignment-Use-PCI-I-O-port-sysfs-resource-fi.patch
 # For bz#558256 - rhel6 disk not detected first time in install
 Patch1680: kvm-block-Change-bdrv_eject-not-to-drop-the-image.patch
+# For bz#618788 - device-assignment hangs with kvm_run: Bad address
+Patch1681: kvm-device-assignment-Leave-option-ROM-space-RW-KVM-does.patch
+# For bz#616890 - "qemu-img convert" fails on block device
+Patch1682: kvm-block-Fix-bdrv_has_zero_init.patch
+# For bz#619414 - CVE-2010-2784 qemu: insufficient constraints checking in exec.c:subpage_register() [rhel-6.0]
+Patch1683: kvm-Fix-segfault-in-mmio-subpage-handling-code.patch
+# For bz#618601 - We need to reopen images after migration
+Patch1684: kvm-Migration-reopen-block-devices-files.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2122,6 +2130,10 @@ such as kvm_stat.
 %patch1678 -p1
 %patch1679 -p1
 %patch1680 -p1
+%patch1681 -p1
+%patch1682 -p1
+%patch1683 -p1
+%patch1684 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2314,6 +2326,20 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Jul 30 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.106.el6
+- kvm-device-assignment-Leave-option-ROM-space-RW-KVM-does.patch [bz#618788]
+- kvm-block-Fix-bdrv_has_zero_init.patch [bz#616890]
+- kvm-Fix-segfault-in-mmio-subpage-handling-code.patch [bz#619414]
+- kvm-Migration-reopen-block-devices-files.patch [bz#618601]
+- Resolves: bz#616890
+  ("qemu-img convert" fails on block device)
+- Resolves: bz#618601
+  (We need to reopen images after migration)
+- Resolves: bz#618788
+  (device-assignment hangs with kvm_run: Bad address)
+- Resolves: bz#619414
+  (CVE-2010-2784 qemu: insufficient constraints checking in exec.c:subpage_register() [rhel-6.0])
+
 * Wed Jul 28 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.105.el6
 - kvm-device-assignment-Use-PCI-I-O-port-sysfs-resource-fi.patch [bz#615214]
 - kvm-block-Change-bdrv_eject-not-to-drop-the-image.patch [bz#558256]

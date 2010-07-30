@@ -1,0 +1,68 @@
+From 0755d5dbf87fb9f6fcd65cb631bb5282b5d00d01 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 27 Jul 2010 18:11:25 -0300
+Subject: [PATCH 1/4] device-assignment: Leave option ROM space RW, KVM doesn't support RO MMIO
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100727181113.6439.58330.stgit@localhost6.localdomain6>
+Patchwork-id: 11016
+O-Subject: [RHEL6 qemu-kvm PATCH] device-assignment: Leave option ROM space RW,
+	KVM doesn't support RO MMIO
+Bugzilla: 618788
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Chris Wright <chrisw@redhat.com>
+
+Bugzilla: 618788
+Upstream: N/A, will pursue different fix there
+
+KVM doesn't support read-only MMIO, so remove the mprotects from the
+anonymous mmap covering the option ROM backing.  If a guests writes to
+this space, they're only changing their own local copy of the option
+ROM.  Real hardware tends to have bad side-effects when the host writes
+to the option ROM (SERR), so it's expected that OSes try to avoid
+this anywayi (guest write cannot cause this).  Emulated devices already
+allow writes to the ROM space.  Expect to fix this differently in
+upstream, using the slow mapping path.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+---
+
+ hw/device-assignment.c |    6 ------
+ 1 files changed, 0 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |    6 ------
+ 1 files changed, 0 insertions(+), 6 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index e8cfbd2..5422e9a 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -496,8 +496,6 @@ static int assigned_dev_register_regions(PCIRegion *io_regions,
+             if (i == PCI_ROM_SLOT) {
+                 memset(pci_dev->v_addrs[i].u.r_virtbase, 0,
+                        (cur_region->size + 0xFFF) & 0xFFFFF000);
+-                mprotect(pci_dev->v_addrs[PCI_ROM_SLOT].u.r_virtbase,
+-                         (cur_region->size + 0xFFF) & 0xFFFFF000, PROT_READ);
+             }
+ 
+             pci_dev->v_addrs[i].r_size = cur_region->size;
+@@ -1534,12 +1532,8 @@ static void assigned_dev_load_option_rom(AssignedDevice *dev)
+     /* Copy ROM contents into the space backing the ROM BAR */
+     if (dev->v_addrs[PCI_ROM_SLOT].r_size >= size &&
+         dev->v_addrs[PCI_ROM_SLOT].u.r_virtbase) {
+-        mprotect(dev->v_addrs[PCI_ROM_SLOT].u.r_virtbase,
+-                 size, PROT_READ | PROT_WRITE);
+         memcpy(dev->v_addrs[PCI_ROM_SLOT].u.r_virtbase,
+                buf, size);
+-        mprotect(dev->v_addrs[PCI_ROM_SLOT].u.r_virtbase,
+-                 size, PROT_READ);
+     }
+ 
+     free(buf);
+-- 
+1.7.2.1
+

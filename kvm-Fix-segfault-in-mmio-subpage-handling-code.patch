@@ -1,0 +1,56 @@
+From 4feebe8d03db52561f671b6f6a522d0403adb241 Mon Sep 17 00:00:00 2001
+From: Gleb Natapov <gleb@redhat.com>
+Date: Thu, 29 Jul 2010 14:11:52 -0300
+Subject: [PATCH 3/4] Fix segfault in mmio subpage handling code.
+
+RH-Author: Gleb Natapov <gleb@redhat.com>
+Message-id: <patch-11083-clone-for-rhel6-rhel6>
+Patchwork-id: 11090
+O-Subject: [RHEL5.5/RHEL6 CVE-2010-2784 PATCH] Fix segfault in mmio subpage
+	handling code.
+Bugzilla: 619414
+CVE: CVE-2010-2784
+RH-Acked-by: Petr Matousek <pmatouse@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+It is possible that subpage mmio is registered over existing memory
+page. When this happens "memory" will have real memory address and not
+index into io_mem array so next access to the page will generate
+segfault. It is uncommon to have some part of a page to be accessed as
+memory and some as mmio, but qemu shouldn't crash even when guest does
+stupid things. So lets just pretend that the rest of the page is
+unassigned if guest configure part of the memory page as mmio.
+
+RHEL5.5. BZ: 619412
+RHEL6 BZ: 619421
+
+Upstream: similar patch was sent there.
+
+Signed-off-by: Gleb Natapov <gleb@redhat.com>
+--
+			Gleb.
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ exec.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/exec.c b/exec.c
+index 3d1404d..171a749 100644
+--- a/exec.c
++++ b/exec.c
+@@ -3183,7 +3183,9 @@ static int subpage_register (subpage_t *mmio, uint32_t start, uint32_t end,
+     printf("%s: %p start %08x end %08x idx %08x eidx %08x mem %ld\n", __func__,
+            mmio, start, end, idx, eidx, memory);
+ #endif
+-    memory >>= IO_MEM_SHIFT;
++    if ((memory & ~TARGET_PAGE_MASK) == IO_MEM_RAM)
++        memory = IO_MEM_UNASSIGNED;    
++    memory = (memory >> IO_MEM_SHIFT) & (IO_MEM_NB_ENTRIES - 1);
+     for (; idx <= eidx; idx++) {
+         for (i = 0; i < 4; i++) {
+             if (io_mem_read[memory][i]) {
+-- 
+1.7.2.1
+
