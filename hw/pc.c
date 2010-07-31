@@ -1506,7 +1506,7 @@ static void pc_init_rhel600(ram_addr_t ram_size,
 {
     rhel_common_init("RHEL 6.0.0 PC", 0);
     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
-                initrd_filename, cpu_model);
+                initrd_filename, cpu_model ? cpu_model : "cpu64-rhel6");
 }
 
 static QEMUMachine pc_machine_rhel600 = {
@@ -1563,7 +1563,7 @@ static void pc_init_rhel550(ram_addr_t ram_size,
 {
     rhel_common_init("RHEL 5.5.0 PC", 1);
     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
-                initrd_filename, cpu_model);
+                initrd_filename, cpu_model ? cpu_model : "cpu64-rhel5");
 }
 
 static QEMUMachine pc_machine_rhel550 = {
@@ -1583,7 +1583,7 @@ static void pc_init_rhel544(ram_addr_t ram_size,
 {
     rhel_common_init("RHEL 5.4.4 PC", 1);
     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
-                initrd_filename, cpu_model);
+                initrd_filename, cpu_model ? cpu_model : "cpu64-rhel5");
 }
 
 static QEMUMachine pc_machine_rhel544 = {
@@ -1603,7 +1603,7 @@ static void pc_init_rhel540(ram_addr_t ram_size,
 {
     rhel_common_init("RHEL 5.4.0 PC", 1);
     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
-                initrd_filename, cpu_model);
+                initrd_filename, cpu_model ? cpu_model : "cpu64-rhel5");
 }
 
 static QEMUMachine pc_machine_rhel540 = {
