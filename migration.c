@@ -290,6 +290,7 @@ int migrate_fd_cleanup(FdMigrationState *s)
         dprintf("closing file\n");
         if (qemu_fclose(s->file) != 0) {
             ret = -1;
+            s->state = MIG_STATE_ERROR;
         }
         s->file = NULL;
     }
@@ -400,13 +401,12 @@ void migrate_fd_put_ready(void *opaque)
         } else {
             state = MIG_STATE_COMPLETED;
         }
+        s->state = state;
         if (migrate_fd_cleanup(s) < 0) {
             if (old_vm_running) {
                 vm_start();
             }
-            state = MIG_STATE_ERROR;
         }
-        s->state = state;
     }
 }
 
