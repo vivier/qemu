@@ -277,6 +277,9 @@ int qdev_init(DeviceState *dev)
         qdev_free(dev);
         return rc;
     }
+    if (dev->hotplugged) {
+        qdev_reset(dev);
+    }
     qemu_register_reset(qdev_reset, dev);
     if (dev->info->vmsd)
         vmstate_register(dev, -1, dev->info->vmsd, dev);
