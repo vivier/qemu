@@ -1,0 +1,170 @@
+From 93824ded9d38ab2e408626f6111ae19ff13174f1 Mon Sep 17 00:00:00 2001
+From: john cooper <john.cooper@redhat.com>
+Date: Sat, 31 Jul 2010 06:36:29 -0300
+Subject: [PATCH] Correct cpuid flags and "model" fields, V2
+
+RH-Author: john cooper <john.cooper@redhat.com>
+Message-id: <4C53C46D.5090008@redhat.com>
+Patchwork-id: 11119
+O-Subject: [RHEL6 PATCH]  Correct cpuid flags and "model" fields, V2
+Bugzilla: 613892 618332
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Addresses BZs:
+
+    #618332 - CPUID_EXT_POPCNT enabled in qemu64 and qemu32 built-in models.
+    #613892 - [SR-IOV]VF device can not start on 32bit Windows2008 SP2
+
+Summary:
+
+    CPU feature flags for several processor definitions require correction
+    to accurately reflect the corresponding shipped silicon.  In particular
+    overly conservative values for cpuid "model" fields cause disable of
+    MSI support in windows guests (BZ #613892).  Also recent upstream changes
+    of qemu64's built-in definition enables POPCNT (for the benefit of TCG)
+    but risks kvm migration breakage (BZ #618332).  The following patch
+    address these issues collectively.
+
+    Changes relative to previous version:
+
+      - drop of the "qemu32-rhel5" model as it appears to be unneeded.
+
+      - rename of "qemu64-rhel?" to "cpu64-rhel?" as we're diverging from
+        upstream qemu64's definition but haven't migrated to kvm64 quite yet.
+
+      - Correction of several fields for the (now) cpu64-rhel5 model.
+
+Further detail may be found in the associated mail thread common to
+both BZ cases starting about here:
+
+    http://post-office.corp.redhat.com/archives/rhvirt-patches/2010-July/msg00831.html
+
+Brew Build:
+
+    https://brewweb.devel.redhat.com/taskinfo?taskID=2643552
+
+Upstream status:
+
+    BZ #618332 is a local, interim change and doesn't relate to upstream
+    concerns.  Longer-term this qemu64 derived model would be displaced
+    by kvm64.  The update of cpu definitions (BZ #613892) however needs
+    to be pushed upstream upon validation in rhel6.  We're currently the
+    sole users of the new cpu models which fosters this inverted process.
+
+Signed-off-by: john cooper <john.cooper@redhat.com>
+---
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pc.c                           |    8 ++++----
+ sysconfigs/target/cpu-x86_64.conf |   34 +++++++++++++++++++++++++++++++---
+ 2 files changed, 35 insertions(+), 7 deletions(-)
+
+diff --git a/hw/pc.c b/hw/pc.c
+index f73fddf..f79a0bc 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -1506,7 +1506,7 @@ static void pc_init_rhel600(ram_addr_t ram_size,
+ {
+     rhel_common_init("RHEL 6.0.0 PC", 0);
+     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
+-                initrd_filename, cpu_model);
++                initrd_filename, cpu_model ? cpu_model : "cpu64-rhel6");
+ }
+ 
+ static QEMUMachine pc_machine_rhel600 = {
+@@ -1563,7 +1563,7 @@ static void pc_init_rhel550(ram_addr_t ram_size,
+ {
+     rhel_common_init("RHEL 5.5.0 PC", 1);
+     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
+-                initrd_filename, cpu_model);
++                initrd_filename, cpu_model ? cpu_model : "cpu64-rhel5");
+ }
+ 
+ static QEMUMachine pc_machine_rhel550 = {
+@@ -1583,7 +1583,7 @@ static void pc_init_rhel544(ram_addr_t ram_size,
+ {
+     rhel_common_init("RHEL 5.4.4 PC", 1);
+     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
+-                initrd_filename, cpu_model);
++                initrd_filename, cpu_model ? cpu_model : "cpu64-rhel5");
+ }
+ 
+ static QEMUMachine pc_machine_rhel544 = {
+@@ -1603,7 +1603,7 @@ static void pc_init_rhel540(ram_addr_t ram_size,
+ {
+     rhel_common_init("RHEL 5.4.0 PC", 1);
+     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
+-                initrd_filename, cpu_model);
++                initrd_filename, cpu_model ? cpu_model : "cpu64-rhel5");
+ }
+ 
+ static QEMUMachine pc_machine_rhel540 = {
+diff --git a/sysconfigs/target/cpu-x86_64.conf b/sysconfigs/target/cpu-x86_64.conf
+index 279f0e7..d48e4d1 100644
+--- a/sysconfigs/target/cpu-x86_64.conf
++++ b/sysconfigs/target/cpu-x86_64.conf
+@@ -1,11 +1,39 @@
+ # x86 CPU MODELS
+ 
+ [cpudef]
++   name = "cpu64-rhel6"
++   level = "4"
++   vendor = "AuthenticAMD"
++   family = "6"
++   model = "13"
++   stepping = "3"
++   feature_edx = "sse2 sse fxsr mmx clflush pse36 pat cmov mca pge mtrr sep apic cx8 mce pae msr tsc pse de fpu"
++   feature_ecx = "cx16 sse3"
++   extfeature_edx = "lm fxsr mmx nx pat cmov pge syscall apic cx8 mce pae msr tsc pse de fpu"
++   extfeature_ecx = "sse4a abm svm lahf_lm"
++   xlevel = "0x8000000A"
++   model_id = "QEMU Virtual CPU version (cpu64-rhel6)"
++
++[cpudef]
++   name = "cpu64-rhel5"
++   level = "4"
++   vendor = "AuthenticAMD"
++   family = "6"
++   model = "6"
++   stepping = "3"
++   feature_edx = "sse2 sse fxsr mmx clflush pse36 pat cmov mca pge mtrr sep apic cx8 mce pae msr tsc pse de fpu"
++   feature_ecx = "sse3"
++   extfeature_edx = "3dnow 3dnowext lm fxsr mmx nx pat cmov pge syscall apic cx8 mce pae msr tsc pse de fpu"
++   extfeature_ecx = "svm"
++   xlevel = "0x8000000A"
++   model_id = "QEMU Virtual CPU version (cpu64-rhel5)"
++
++[cpudef]
+    name = "Conroe"
+    level = "2"
+    vendor = "GenuineIntel"
+    family = "6"
+-   model = "6"
++   model = "15"
+    stepping = "3"
+    feature_edx = "sse2 sse fxsr mmx pat cmov pge sep apic cx8 mce pae msr tsc pse de fpu    mtrr clflush mca pse36"
+    feature_ecx = "sse3 ssse3 x2apic"
+@@ -19,7 +47,7 @@
+    level = "2"
+    vendor = "GenuineIntel"
+    family = "6"
+-   model = "6"
++   model = "23"
+    stepping = "3"
+    feature_edx = "sse2 sse fxsr mmx pat cmov pge sep apic cx8 mce pae msr tsc pse de fpu    mtrr clflush mca pse36"
+    feature_ecx = "sse3 cx16 ssse3 sse4.1 x2apic"
+@@ -33,7 +61,7 @@
+    level = "2"
+    vendor = "GenuineIntel"
+    family = "6"
+-   model = "6"
++   model = "26"
+    stepping = "3"
+    feature_edx = "sse2 sse fxsr mmx pat cmov pge sep apic cx8 mce pae msr tsc pse de fpu    mtrr clflush mca pse36"
+    feature_ecx = "sse3 cx16 ssse3 sse4.1 sse4.2 x2apic popcnt"
+-- 
+1.7.2.1
+

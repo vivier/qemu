@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.106%{?dist}
+Release: 2.107%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1388,6 +1388,9 @@ Patch1682: kvm-block-Fix-bdrv_has_zero_init.patch
 Patch1683: kvm-Fix-segfault-in-mmio-subpage-handling-code.patch
 # For bz#618601 - We need to reopen images after migration
 Patch1684: kvm-Migration-reopen-block-devices-files.patch
+# For bz#613892 - [SR-IOV]VF device can not start on 32bit Windows2008 SP2
+# For bz#618332 - CPUID_EXT_POPCNT enabled in qemu64 and qemu32 built-in models.
+Patch1685: kvm-Correct-cpuid-flags-and-model-fields-V2.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2134,6 +2137,7 @@ such as kvm_stat.
 %patch1682 -p1
 %patch1683 -p1
 %patch1684 -p1
+%patch1685 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2326,6 +2330,13 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Aug 03 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.107.el6
+- kvm-Correct-cpuid-flags-and-model-fields-V2.patch [bz#613892 bz#618332]
+- Resolves: bz#613892
+  ([SR-IOV]VF device can not start on 32bit Windows2008 SP2)
+- Resolves: bz#618332
+  (CPUID_EXT_POPCNT enabled in qemu64 and qemu32 built-in models.)
+
 * Fri Jul 30 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.106.el6
 - kvm-device-assignment-Leave-option-ROM-space-RW-KVM-does.patch [bz#618788]
 - kvm-block-Fix-bdrv_has_zero_init.patch [bz#616890]
