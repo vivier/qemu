@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.107%{?dist}
+Release: 2.108%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1391,6 +1391,12 @@ Patch1684: kvm-Migration-reopen-block-devices-files.patch
 # For bz#613892 - [SR-IOV]VF device can not start on 32bit Windows2008 SP2
 # For bz#618332 - CPUID_EXT_POPCNT enabled in qemu64 and qemu32 built-in models.
 Patch1685: kvm-Correct-cpuid-flags-and-model-fields-V2.patch
+# For bz#618168 - Qemu-kvm in the src host core dump when do migration by using spice
+Patch1686: kvm-Fix-migration-with-spice-enabled.patch
+# For bz#607244 - virtio-blk doesn't load list of pending requests correctly
+Patch1687: kvm-virtio-Factor-virtqueue_map_sg-out.patch
+# For bz#607244 - virtio-blk doesn't load list of pending requests correctly
+Patch1688: kvm-virtio-blk-Fix-migration-of-queued-requests.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2138,6 +2144,9 @@ such as kvm_stat.
 %patch1683 -p1
 %patch1684 -p1
 %patch1685 -p1
+%patch1686 -p1
+%patch1687 -p1
+%patch1688 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2330,6 +2339,15 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Aug 04 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.108.el6
+- kvm-Fix-migration-with-spice-enabled.patch [bz#618168]
+- kvm-virtio-Factor-virtqueue_map_sg-out.patch [bz#607244]
+- kvm-virtio-blk-Fix-migration-of-queued-requests.patch [bz#607244]
+- Resolves: bz#607244
+  (virtio-blk doesn't load list of pending requests correctly)
+- Resolves: bz#618168
+  (Qemu-kvm in the src host core dump when do migration by using spice)
+
 * Tue Aug 03 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.107.el6
 - kvm-Correct-cpuid-flags-and-model-fields-V2.patch [bz#613892 bz#618332]
 - Resolves: bz#613892

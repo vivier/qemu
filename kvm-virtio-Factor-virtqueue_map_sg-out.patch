@@ -1,0 +1,133 @@
+From a7279a4662f748ab1568f5428ca8833df41f04af Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Wed, 4 Aug 2010 11:48:44 -0300
+Subject: [PATCH 2/3] virtio: Factor virtqueue_map_sg out
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1280922525-17312-2-git-send-email-kwolf@redhat.com>
+Patchwork-id: 11176
+O-Subject: [RHEL-6 qemu-kvm PATCH 1/2] virtio: Factor virtqueue_map_sg out
+Bugzilla: 607244
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 607244
+Upstream status: Submitted
+
+Separate the mapping of requests to host memory from the descriptor iteration.
+The next patch will make use of it in a different context.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ hw/virtio.c |   38 ++++++++++++++++++++++++--------------
+ hw/virtio.h |    3 +++
+ 2 files changed, 27 insertions(+), 14 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio.c |   38 ++++++++++++++++++++++++--------------
+ hw/virtio.h |    3 +++
+ 2 files changed, 27 insertions(+), 14 deletions(-)
+
+diff --git a/hw/virtio.c b/hw/virtio.c
+index 4475bb3..85312b3 100644
+--- a/hw/virtio.c
++++ b/hw/virtio.c
+@@ -360,11 +360,26 @@ int virtqueue_avail_bytes(VirtQueue *vq, int in_bytes, int out_bytes)
+     return 0;
+ }
+ 
++void virtqueue_map_sg(struct iovec *sg, target_phys_addr_t *addr,
++    size_t num_sg, int is_write)
++{
++    unsigned int i;
++    target_phys_addr_t len;
++
++    for (i = 0; i < num_sg; i++) {
++        len = sg[i].iov_len;
++        sg[i].iov_base = cpu_physical_memory_map(addr[i], &len, is_write);
++        if (sg[i].iov_base == NULL || len != sg[i].iov_len) {
++            fprintf(stderr, "virtio: trying to map MMIO memory\n");
++            exit(1);
++        }
++    }
++}
++
+ int virtqueue_pop(VirtQueue *vq, VirtQueueElement *elem)
+ {
+     unsigned int i, head, max;
+     target_phys_addr_t desc_pa = vq->vring.desc;
+-    target_phys_addr_t len;
+ 
+     if (!virtqueue_num_heads(vq, vq->last_avail_idx))
+         return 0;
+@@ -388,28 +403,19 @@ int virtqueue_pop(VirtQueue *vq, VirtQueueElement *elem)
+         i = 0;
+     }
+ 
++    /* Collect all the descriptors */
+     do {
+         struct iovec *sg;
+-        int is_write = 0;
+ 
+         if (vring_desc_flags(desc_pa, i) & VRING_DESC_F_WRITE) {
+             elem->in_addr[elem->in_num] = vring_desc_addr(desc_pa, i);
+             sg = &elem->in_sg[elem->in_num++];
+-            is_write = 1;
+-        } else
++        } else {
++            elem->out_addr[elem->out_num] = vring_desc_addr(desc_pa, i);
+             sg = &elem->out_sg[elem->out_num++];
++        }
+ 
+-        /* Grab the first descriptor, and check it's OK. */
+         sg->iov_len = vring_desc_len(desc_pa, i);
+-        len = sg->iov_len;
+-
+-        sg->iov_base = cpu_physical_memory_map(vring_desc_addr(desc_pa, i),
+-                                               &len, is_write);
+-
+-        if (sg->iov_base == NULL || len != sg->iov_len) {
+-            fprintf(stderr, "virtio: trying to map MMIO memory\n");
+-            exit(1);
+-        }
+ 
+         /* If we've got too many, that implies a descriptor loop. */
+         if ((elem->in_num + elem->out_num) > max) {
+@@ -418,6 +424,10 @@ int virtqueue_pop(VirtQueue *vq, VirtQueueElement *elem)
+         }
+     } while ((i = virtqueue_next_desc(desc_pa, i, max)) != max);
+ 
++    /* Now map what we have collected */
++    virtqueue_map_sg(elem->in_sg, elem->in_addr, elem->in_num, 1);
++    virtqueue_map_sg(elem->out_sg, elem->out_addr, elem->out_num, 0);
++
+     elem->index = head;
+ 
+     vq->inuse++;
+diff --git a/hw/virtio.h b/hw/virtio.h
+index 5b3aaca..8e0a554 100644
+--- a/hw/virtio.h
++++ b/hw/virtio.h
+@@ -78,6 +78,7 @@ typedef struct VirtQueueElement
+     unsigned int out_num;
+     unsigned int in_num;
+     target_phys_addr_t in_addr[VIRTQUEUE_MAX_SIZE];
++    target_phys_addr_t out_addr[VIRTQUEUE_MAX_SIZE];
+     struct iovec in_sg[VIRTQUEUE_MAX_SIZE];
+     struct iovec out_sg[VIRTQUEUE_MAX_SIZE];
+ } VirtQueueElement;
+@@ -139,6 +140,8 @@ void virtqueue_flush(VirtQueue *vq, unsigned int count);
+ void virtqueue_fill(VirtQueue *vq, const VirtQueueElement *elem,
+                     unsigned int len, unsigned int idx);
+ 
++void virtqueue_map_sg(struct iovec *sg, target_phys_addr_t *addr,
++    size_t num_sg, int is_write);
+ int virtqueue_pop(VirtQueue *vq, VirtQueueElement *elem);
+ int virtqueue_avail_bytes(VirtQueue *vq, int in_bytes, int out_bytes);
+ 
+-- 
+1.7.2.1
+

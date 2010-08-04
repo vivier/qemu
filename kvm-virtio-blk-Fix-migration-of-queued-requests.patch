@@ -1,0 +1,52 @@
+From bbeb6889c7c665a0b267e4037e802b6705c77dbf Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Wed, 4 Aug 2010 11:48:45 -0300
+Subject: [PATCH 3/3] virtio-blk: Fix migration of queued requests
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1280922525-17312-3-git-send-email-kwolf@redhat.com>
+Patchwork-id: 11177
+O-Subject: [RHEL-6 qemu-kvm PATCH 2/2] virtio-blk: Fix migration of queued
+	requests
+Bugzilla: 607244
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 607244
+Upstream status: Submitted
+
+in_sg[].iovec and out_sg[].ioved are pointer to (source) host memory and
+therefore invalid after migration. When loading the device state we must
+create a new mapping on the destination host.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ hw/virtio-blk.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-blk.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index e5a9ed6..f6fcb13 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -488,6 +488,11 @@ static int virtio_blk_load(QEMUFile *f, void *opaque, int version_id)
+         qemu_get_buffer(f, (unsigned char*)&req->elem, sizeof(req->elem));
+         req->next = s->rq;
+         s->rq = req;
++
++        virtqueue_map_sg(req->elem.in_sg, req->elem.in_addr,
++            req->elem.in_num, 1);
++        virtqueue_map_sg(req->elem.out_sg, req->elem.out_addr,
++            req->elem.out_num, 0);
+     }
+ 
+     return 0;
+-- 
+1.7.2.1
+
