@@ -1,0 +1,54 @@
+From 2ea0bc70abc0ec8b71fff83a7caca5c0588a8bb8 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 3 Aug 2010 17:24:49 -0300
+Subject: [PATCH 1/2] qdev: Reset hotplugged devices
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100803172438.27743.96642.stgit@localhost6.localdomain6>
+Patchwork-id: 11164
+O-Subject: [RHEL6 qemu-kvm PATCH] qdev: Reset hotplugged devices
+Bugzilla: 607611
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Glauber Costa <glommer@redhat.com>
+
+Bugzilla: 607611
+Upstream status: posted
+Brew: https://brewweb.devel.redhat.com/taskinfo?taskID=2649050
+
+Several devices rely on their reset() function being called to
+initialize device state, e1000 and rtl8139 in particular.  When
+the device is hot added, the reset doesn't occur, often leaving
+the device in an unusable state.  Adding a call to reset() after
+init() for hotplugged devices puts the device in the expected
+state for the guest.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+---
+
+ hw/qdev.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qdev.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/hw/qdev.c b/hw/qdev.c
+index 4097d6f..7a7e344 100644
+--- a/hw/qdev.c
++++ b/hw/qdev.c
+@@ -277,6 +277,9 @@ int qdev_init(DeviceState *dev)
+         qdev_free(dev);
+         return rc;
+     }
++    if (dev->hotplugged) {
++        qdev_reset(dev);
++    }
+     qemu_register_reset(qdev_reset, dev);
+     if (dev->info->vmsd)
+         vmstate_register(dev, -1, dev->info->vmsd, dev);
+-- 
+1.6.5.5
+

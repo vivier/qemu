@@ -1,0 +1,67 @@
+From 08d5a5ac207b35a2cbacea1945bb3a8c8e1f5c4f Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Fri, 6 Aug 2010 08:05:52 -0300
+Subject: [PATCH 2/2] Block I/O signals in audio helper threads.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1281081952-19637-1-git-send-email-kraxel@redhat.com>
+Patchwork-id: 11208
+O-Subject: [RHEL-6 kvm PATCH] Block I/O signals in audio helper threads.
+Bugzilla: 621161
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Otherwise qemu might be killed due to SIGIO being received by a thread
+which isn't prepared for that.  Seen happening with pulseaudio backend.
+
+bugzilla: #621161
+upstream: submitted
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ audio/audio_pt_int.c |    9 +++++++++
+ 1 files changed, 9 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ audio/audio_pt_int.c |    9 +++++++++
+ 1 files changed, 9 insertions(+), 0 deletions(-)
+
+diff --git a/audio/audio_pt_int.c b/audio/audio_pt_int.c
+index e889a98..0e5aa2c 100644
+--- a/audio/audio_pt_int.c
++++ b/audio/audio_pt_int.c
+@@ -1,5 +1,6 @@
+ #include "qemu-common.h"
+ #include "audio.h"
++#include <signal.h>
+ 
+ #define AUDIO_CAP "audio-pt"
+ 
+@@ -23,6 +24,7 @@ int audio_pt_init (struct audio_pt *p, void *(*func) (void *),
+ {
+     int err, err2;
+     const char *efunc;
++    sigset_t set, old;
+ 
+     p->drv = drv;
+ 
+@@ -38,7 +40,14 @@ int audio_pt_init (struct audio_pt *p, void *(*func) (void *),
+         goto err1;
+     }
+ 
++    sigemptyset(&set);
++    sigaddset(&set, SIGUSR2);
++    sigaddset(&set, SIGIO);
++    sigaddset(&set, SIGALRM);
++
++    pthread_sigmask(SIG_BLOCK, &set, &old);
+     err = pthread_create (&p->thread, NULL, func, opaque);
++    pthread_sigmask(SIG_SETMASK, &old, NULL);
+     if (err) {
+         efunc = "pthread_create";
+         goto err2;
+-- 
+1.6.5.5
+

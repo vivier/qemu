@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.108%{?dist}
+Release: 2.109%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1397,6 +1397,10 @@ Patch1686: kvm-Fix-migration-with-spice-enabled.patch
 Patch1687: kvm-virtio-Factor-virtqueue_map_sg-out.patch
 # For bz#607244 - virtio-blk doesn't load list of pending requests correctly
 Patch1688: kvm-virtio-blk-Fix-migration-of-queued-requests.patch
+# For bz#607611 - pci hotplug of e1000, rtl8139 nic device fails for all guests.
+Patch1689: kvm-qdev-Reset-hotplugged-devices.patch
+# For bz#621161 - qemu-kvm crashes with I/O Possible message
+Patch1690: kvm-Block-I-O-signals-in-audio-helper-threads.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2147,6 +2151,8 @@ such as kvm_stat.
 %patch1686 -p1
 %patch1687 -p1
 %patch1688 -p1
+%patch1689 -p1
+%patch1690 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2339,6 +2345,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Aug 09 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.109.el6
+- kvm-qdev-Reset-hotplugged-devices.patch [bz#607611]
+- kvm-Block-I-O-signals-in-audio-helper-threads.patch [bz#621161]
+- Resolves: bz#607611
+  (pci hotplug of e1000, rtl8139 nic device fails for all guests.)
+- Resolves: bz#621161
+  (qemu-kvm crashes with I/O Possible message)
+
 * Wed Aug 04 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.108.el6
 - kvm-Fix-migration-with-spice-enabled.patch [bz#618168]
 - kvm-virtio-Factor-virtqueue_map_sg-out.patch [bz#607244]
