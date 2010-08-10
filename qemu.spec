@@ -3,7 +3,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.13.0
-Release: 0.4.20100809git%{githead}%{?dist}
+Release: 0.5.20100809git%{githead}%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -131,9 +131,9 @@ Group: Development/Tools
 Requires: %{name}-common = %{epoch}:%{version}-%{release}
 Provides: kvm = 85
 Obsoletes: kvm < 85
-Requires: vgabios
+Requires: vgabios >= 0.6c-2
 Requires: seabios-bin
-Requires: /usr/share/gpxe/8086100e.rom.rom
+Requires: /usr/share/gpxe/8086100e.rom
 Requires: /usr/share/gpxe/rtl8029.rom
 Requires: /usr/share/gpxe/pcnet32.rom
 Requires: /usr/share/gpxe/rtl8139.rom
@@ -368,6 +368,9 @@ pxe_link rtl8139 rtl8139
 pxe_link virtio virtio-net
 ln -s ../vgabios/VGABIOS-lgpl-latest.bin  %{buildroot}/%{_datadir}/%{name}/vgabios.bin
 ln -s ../vgabios/VGABIOS-lgpl-latest.cirrus.bin %{buildroot}/%{_datadir}/%{name}/vgabios-cirrus.bin
+ln -s ../vgabios/VGABIOS-lgpl-latest.qxl.bin %{buildroot}/%{_datadir}/%{name}/vgabios-qxl.bin
+ln -s ../vgabios/VGABIOS-lgpl-latest.stdvga.bin %{buildroot}/%{_datadir}/%{name}/vgabios-stdvga.bin
+ln -s ../vgabios/VGABIOS-lgpl-latest.vmware.bin %{buildroot}/%{_datadir}/%{name}/vgabios-vmware.bin
 ln -s ../seabios/bios.bin %{buildroot}/%{_datadir}/%{name}/bios.bin
 %if !%{with_x86only}
 ln -s ../openbios/openbios-ppc %{buildroot}/%{_datadir}/%{name}/openbios-ppc
@@ -482,6 +485,9 @@ fi
 %{_datadir}/%{name}/vapic.bin
 %{_datadir}/%{name}/vgabios.bin
 %{_datadir}/%{name}/vgabios-cirrus.bin
+%{_datadir}/%{name}/vgabios-qxl.bin
+%{_datadir}/%{name}/vgabios-stdvga.bin
+%{_datadir}/%{name}/vgabios-vmware.bin
 %{_datadir}/%{name}/pxe-e1000.bin
 %{_datadir}/%{name}/pxe-virtio.bin
 %{_datadir}/%{name}/pxe-pcnet.bin
@@ -540,6 +546,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Aug 10 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.13.0-0.5.20100809git25fdf4a
+- Fix typo in e1000 gpxe rom requires.
+- Add links to newer vgabios
+
 * Tue Aug 10 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.13.0-0.4.20100809git25fdf4a
 - Disable spice on 32bit, it is not supported and buildreqs don't exist.
 
