@@ -3,7 +3,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.13.0
-Release: 0.3.20100809git%{githead}%{?dist}
+Release: 0.4.20100809git%{githead}%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -47,7 +47,9 @@ BuildRequires: pciutils-devel
 BuildRequires: pulseaudio-libs-devel
 BuildRequires: ncurses-devel
 BuildRequires: texinfo
+%ifarch x86_64
 BuildRequires: spice-protocol spice-server-devel
+%endif
 Requires: %{name}-user = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-x86 = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-sparc = %{epoch}:%{version}-%{release}
@@ -263,7 +265,9 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
             --disable-strip \
             --extra-ldflags=$extraldflags \
             --extra-cflags="$RPM_OPT_FLAGS" \
+%ifarch x86_64
             --enable-spice \
+%endif
             --disable-xen
 
 echo "config-host.mak contents:"
@@ -288,7 +292,9 @@ make clean
     --extra-ldflags=$extraldflags \
     --extra-cflags="$RPM_OPT_FLAGS" \
     --disable-xen \
+%ifarch x86_64
     --enable-spice \
+%endif
     --disable-werror
 
 echo "config-host.mak contents:"
@@ -534,6 +540,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Aug 10 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.13.0-0.4.20100809git25fdf4a
+- Disable spice on 32bit, it is not supported and buildreqs don't exist.
+
 * Mon Aug 9 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.13.0-0.3.20100809git25fdf4a
 - Updates from upstream towards 0.13 stable
 - Fix requires on gpxe
