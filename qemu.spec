@@ -1,9 +1,9 @@
-%define githead b81fe95
+%define githead 25fdf4a
 
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.13.0
-Release: 0.2.20100727git%{githead}%{?dist}
+Release: 0.3.20100809git%{githead}%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -39,8 +39,6 @@ Source6: ksmtuned.init
 Source7: ksmtuned
 Source8: ksmtuned.conf
 
-Patch57: avoid-llseek.patch
-
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
 BuildRequires: libaio-devel
@@ -49,6 +47,7 @@ BuildRequires: pciutils-devel
 BuildRequires: pulseaudio-libs-devel
 BuildRequires: ncurses-devel
 BuildRequires: texinfo
+BuildRequires: spice-protocol spice-server-devel
 Requires: %{name}-user = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-x86 = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-sparc = %{epoch}:%{version}-%{release}
@@ -132,7 +131,7 @@ Provides: kvm = 85
 Obsoletes: kvm < 85
 Requires: vgabios
 Requires: seabios-bin
-Requires: /usr/share/gpxe/e1000-0x100e.rom
+Requires: /usr/share/gpxe/8086100e.rom.rom
 Requires: /usr/share/gpxe/rtl8029.rom
 Requires: /usr/share/gpxe/pcnet32.rom
 Requires: /usr/share/gpxe/rtl8139.rom
@@ -226,7 +225,7 @@ Group: Development/Tools
 
 %description kvm-tools
 This package contains some diagnostics and debugging tools for KVM,
-such as kvmtrace and kvm_stat.
+such as kvm_stat.
 %endif
 
 %prep
@@ -264,6 +263,7 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
             --disable-strip \
             --extra-ldflags=$extraldflags \
             --extra-cflags="$RPM_OPT_FLAGS" \
+            --enable-spice \
             --disable-xen
 
 echo "config-host.mak contents:"
@@ -275,10 +275,6 @@ make V=1 %{?_smp_mflags} $buildldflags
 cp -a x86_64-softmmu/qemu-system-x86_64 qemu-kvm
 make clean
 
-cd kvm/test
-./configure --prefix=%{_prefix} --kerneldir=$(pwd)/../kernel/
-make kvmtrace
-cd ../../
 %endif
 
 ./configure \
@@ -292,6 +288,7 @@ cd ../../
     --extra-ldflags=$extraldflags \
     --extra-cflags="$RPM_OPT_FLAGS" \
     --disable-xen \
+    --enable-spice \
     --disable-werror
 
 echo "config-host.mak contents:"
@@ -318,8 +315,6 @@ mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{name}
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
 
 install -m 0755 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules/kvm.modules
-install -m 0755 kvm/test/kvmtrace $RPM_BUILD_ROOT%{_bindir}/
-install -m 0755 kvm/test/kvmtrace_format $RPM_BUILD_ROOT%{_bindir}/
 install -m 0755 kvm/kvm_stat $RPM_BUILD_ROOT%{_bindir}/
 install -m 0755 qemu-kvm $RPM_BUILD_ROOT%{_bindir}/
 install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
@@ -360,7 +355,7 @@ pxe_link() {
   ln -s ../gpxe/$2.rom %{buildroot}%{_datadir}/%{name}/pxe-$1.bin
 }
 
-pxe_link e1000 e1000-0x100e
+pxe_link e1000 8086100e
 pxe_link ne2k_pci rtl8029
 pxe_link pcnet pcnet32
 pxe_link rtl8139 rtl8139
@@ -494,8 +489,6 @@ fi
 %{_sysconfdir}/qemu/target-*
 %files kvm-tools
 %defattr(-,root,root,-)
-%{_bindir}/kvmtrace
-%{_bindir}/kvmtrace_format
 %{_bindir}/kvm_stat
 %endif
 %if !%{with_x86only}
@@ -541,6 +534,12 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Aug 9 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.13.0-0.3.20100809git25fdf4a
+- Updates from upstream towards 0.13 stable
+- Fix requires on gpxe
+- enable spice now that buildreqs are in the repository.
+- ksmtrace has moved to a separate upstream package
+
 * Tue Jul 27 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.13.0-0.2.20100727gitb81fe95
 - add texinfo buildreq for manpages.
 
