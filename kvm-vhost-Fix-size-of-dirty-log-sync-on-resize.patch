@@ -1,0 +1,71 @@
+From f9b857f6f4bdb8d6c2daa6b7d1fe1bb8d12948c3 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Fri, 13 Aug 2010 13:59:49 -0300
+Subject: [PATCH] vhost: Fix size of dirty log sync on resize
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100813135739.14750.15245.stgit@localhost6.localdomain6>
+Patchwork-id: 11304
+O-Subject: [RHEL6 qemu-kvm PATCH] vhost: Fix size of dirty log sync on resize
+Bugzilla: 622356
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 622356
+Upstream status: posted
+Brew build: https://brewweb.devel.redhat.com/taskinfo?taskID=2679417
+
+When the vhost log is resized, we want to sync up to
+the size of the old log.  With that end address in place,
+ignore regions that start after then end rather than
+hitting assert.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+---
+
+ Note MST is on PTO, but verbally ack'd the second chunk of this patch.
+ The first chunk was added to ignore ranges starting after the requested
+ end address.
+
+ hw/vhost.c |    7 ++++---
+ 1 files changed, 4 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/vhost.c |    7 ++++---
+ 1 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/hw/vhost.c b/hw/vhost.c
+index 82a7c8e..084ae7c 100644
+--- a/hw/vhost.c
++++ b/hw/vhost.c
+@@ -28,11 +28,11 @@ static void vhost_dev_sync_region(struct vhost_dev *dev,
+     vhost_log_chunk_t *to = dev->log + end / VHOST_LOG_CHUNK + 1;
+     uint64_t addr = (start / VHOST_LOG_CHUNK) * VHOST_LOG_CHUNK;
+ 
+-    assert(end / VHOST_LOG_CHUNK < dev->log_size);
+-    assert(start / VHOST_LOG_CHUNK < dev->log_size);
+     if (end < start) {
+         return;
+     }
++    assert(end / VHOST_LOG_CHUNK < dev->log_size);
++
+     for (;from < to; ++from) {
+         vhost_log_chunk_t log;
+         int bit;
+@@ -258,8 +258,9 @@ static inline void vhost_dev_log_resize(struct vhost_dev* dev, uint64_t size)
+     log_base = (uint64_t)(unsigned long)log;
+     r = ioctl(dev->control, VHOST_SET_LOG_BASE, &log_base);
+     assert(r >= 0);
++    /* Sync only the range covered by the old log */
+     vhost_client_sync_dirty_bitmap(&dev->client, 0,
+-                                   (target_phys_addr_t)~0x0ull);
++                                   dev->log_size * VHOST_LOG_CHUNK - 1);
+     if (dev->log) {
+         qemu_free(dev->log);
+     }
+-- 
+1.6.5.5
+
