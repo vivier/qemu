@@ -39,6 +39,8 @@ Source6: ksmtuned.init
 Source7: ksmtuned
 Source8: ksmtuned.conf
 
+# Blacklist vhost-net for RHEL6.0 GA
+Source9: blacklist-kvm.conf
 
 %%CONFIGS%%
 
@@ -208,10 +210,12 @@ mkdir -p $RPM_BUILD_ROOT%{_bindir}/
 mkdir -p $RPM_BUILD_ROOT%{_libexecdir}/
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{name}
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
+mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/modprobe.d
 
 install -m 0755 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules/kvm.modules
 install -m 0755 kvm/kvm_stat $RPM_BUILD_ROOT%{_bindir}/
 install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
+install -m 0644 %{SOURCE9} $RPM_BUILD_ROOT%{_sysconfdir}/modprobe.d/blacklist-kvm.conf
 
 make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
      bindir="${RPM_BUILD_ROOT}%{_bindir}" \
@@ -327,6 +331,7 @@ fi
 %{_sysconfdir}/sysconfig/modules/kvm.modules
 %{_sysconfdir}/udev/rules.d/80-kvm.rules
 %{cpumodeldir}/cpu-x86_64.conf
+%config(noreplace) %{_sysconfdir}/modprobe.d/blacklist-kvm.conf
 
 %files tools
 %defattr(-,root,root,-)
