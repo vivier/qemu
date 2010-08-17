@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.110%{?dist}
+Release: 2.111%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -23,6 +23,9 @@ Source5: ksm.sysconfig
 Source6: ksmtuned.init
 Source7: ksmtuned
 Source8: ksmtuned.conf
+
+# Blacklist vhost-net for RHEL6.0 GA
+Source9: blacklist-kvm.conf
 
 # Change datadir to /usr/share/qemu-kvm
 Patch1000: qemu-change-share-suffix.patch
@@ -2217,10 +2220,12 @@ mkdir -p $RPM_BUILD_ROOT%{_bindir}/
 mkdir -p $RPM_BUILD_ROOT%{_libexecdir}/
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{name}
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
+mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/modprobe.d
 
 install -m 0755 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules/kvm.modules
 install -m 0755 kvm/kvm_stat $RPM_BUILD_ROOT%{_bindir}/
 install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
+install -m 0644 %{SOURCE9} $RPM_BUILD_ROOT%{_sysconfdir}/modprobe.d/blacklist-kvm.conf
 
 make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
      bindir="${RPM_BUILD_ROOT}%{_bindir}" \
@@ -2336,6 +2341,7 @@ fi
 %{_sysconfdir}/sysconfig/modules/kvm.modules
 %{_sysconfdir}/udev/rules.d/80-kvm.rules
 %{cpumodeldir}/cpu-x86_64.conf
+%config(noreplace) %{_sysconfdir}/modprobe.d/blacklist-kvm.conf
 
 %files tools
 %defattr(-,root,root,-)
@@ -2348,6 +2354,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Aug 17 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.111.el6
+- blacklist vhost_net [bz#624769]
+- Resolves: bz#624769
+  (Blacklist vhost_net)
+
 * Mon Aug 16 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.110.el6
 - kvm-vhost-Fix-size-of-dirty-log-sync-on-resize.patch [bz#622356]
 - Resolves: bz#622356
