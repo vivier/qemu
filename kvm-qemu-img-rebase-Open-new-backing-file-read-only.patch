@@ -1,0 +1,47 @@
+From 54e96f8eb27d7fdba335b9e22e2cab1632acb7b9 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 17 Aug 2010 17:13:08 -0300
+Subject: [PATCH] qemu-img rebase: Open new backing file read-only
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1282065188-7862-1-git-send-email-kwolf@redhat.com>
+Patchwork-id: 11364
+O-Subject: [RHEL-6 qemu-kvm PATCH] qemu-img rebase: Open new backing file
+	read-only
+Bugzilla: 624666
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Glauber Costa <glommer@redhat.com>
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+
+Bugzilla: 624666
+Upstream status: Submitted
+
+We never write to a backing file, so opening rw is useless. It just means that
+you can't rebase on top of a file for which you don't have write permissions.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ qemu-img.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-img.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-img.c b/qemu-img.c
+index b2a1393..b9e7e73 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -1213,7 +1213,7 @@ static int img_rebase(int argc, char **argv)
+         }
+ 
+         bs_new_backing = bdrv_new("new_backing");
+-        if (bdrv_open(bs_new_backing, out_baseimg, BRDV_O_FLAGS | BDRV_O_RDWR,
++        if (bdrv_open(bs_new_backing, out_baseimg, BRDV_O_FLAGS,
+             new_backing_drv))
+         {
+             error("Could not open new backing file '%s'", out_baseimg);
+-- 
+1.6.5.5
+
