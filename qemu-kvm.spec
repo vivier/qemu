@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.112%{?dist}
+Release: 2.113%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1408,6 +1408,8 @@ Patch1690: kvm-Block-I-O-signals-in-audio-helper-threads.patch
 Patch1691: kvm-vhost-Fix-size-of-dirty-log-sync-on-resize.patch
 # For bz#624666 - qemu-img re-base broken on RHEL6
 Patch1692: kvm-qemu-img-rebase-Open-new-backing-file-read-only.patch
+# For bz#623903 - query-balloon commmand didn't return on pasued guest cause virt-manger hang
+Patch1693: kvm-disable-guest-provided-stats-on-info-ballon-monitor-.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2162,6 +2164,7 @@ such as kvm_stat.
 %patch1690 -p1
 %patch1691 -p1
 %patch1692 -p1
+%patch1693 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2357,6 +2360,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Aug 24 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.113.el6
+- kvm-disable-guest-provided-stats-on-info-ballon-monitor-.patch [bz#623903]
+- Resolves: bz#623903
+  (query-balloon commmand didn't return on pasued guest cause virt-manger hang)
+
 * Wed Aug 18 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.112.el6
 - kvm-qemu-img-rebase-Open-new-backing-file-read-only.patch [bz#624666]
 - Resolves: bz#624666

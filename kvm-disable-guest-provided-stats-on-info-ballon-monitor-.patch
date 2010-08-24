@@ -1,0 +1,77 @@
+From 799659077e3e912094c070cba7943f701b545a08 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Tue, 24 Aug 2010 16:23:02 -0300
+Subject: [PATCH] disable guest-provided stats on "info ballon" monitor command
+
+RH-Author: Eduardo Habkost <ehabkost@redhat.com>
+Message-id: <20100824162302.GF1893@blackpad.lan.raisama.net>
+Patchwork-id: 11488
+O-Subject: [RHEL6 qemu-kvm PATCH] disable guest-provided stats on "info
+	ballon" monitor command
+Bugzilla: 623903
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+This feature depends on the guest being alive and working well, but it
+breaks "virsh dump" of crashed guests, and can hang virt-manager (see
+BZs below).
+
+The proper solution would be adding a timeout on the stats requests, but
+disabling the feature reduces our risk at this point in the schedule.
+
+Bugzilla: 623903
+Bugzilla: 626544
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-balloon.c |    8 +++++++-
+ 1 files changed, 7 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-balloon.c |    8 +++++++-
+ 1 files changed, 7 insertions(+), 1 deletions(-)
+
+diff --git a/hw/virtio-balloon.c b/hw/virtio-balloon.c
+index 1e4dfdd..92e9057 100644
+--- a/hw/virtio-balloon.c
++++ b/hw/virtio-balloon.c
+@@ -30,6 +30,10 @@
+ #include <sys/mman.h>
+ #endif
+ 
++/* Disable guest-provided stats by now (bz#623903, bz#626544) */
++#define ENABLE_GUEST_STATS   0
++
++
+ typedef struct VirtIOBalloon
+ {
+     VirtIODevice vdev;
+@@ -84,12 +88,14 @@ static QObject *get_stats_qobject(VirtIOBalloon *dev)
+                                   VIRTIO_BALLOON_PFN_SHIFT);
+ 
+     stat_put(dict, "actual", actual);
++#if ENABLE_GUEST_STATS
+     stat_put(dict, "mem_swapped_in", dev->stats[VIRTIO_BALLOON_S_SWAP_IN]);
+     stat_put(dict, "mem_swapped_out", dev->stats[VIRTIO_BALLOON_S_SWAP_OUT]);
+     stat_put(dict, "major_page_faults", dev->stats[VIRTIO_BALLOON_S_MAJFLT]);
+     stat_put(dict, "minor_page_faults", dev->stats[VIRTIO_BALLOON_S_MINFLT]);
+     stat_put(dict, "free_mem", dev->stats[VIRTIO_BALLOON_S_MEMFREE]);
+     stat_put(dict, "total_mem", dev->stats[VIRTIO_BALLOON_S_MEMTOT]);
++#endif
+ 
+     return QOBJECT(dict);
+ }
+@@ -215,7 +221,7 @@ static void virtio_balloon_to_target(void *opaque, ram_addr_t target,
+         }
+         dev->stats_callback = cb;
+         dev->stats_opaque_callback_data = cb_data; 
+-        if (dev->vdev.guest_features & (1 << VIRTIO_BALLOON_F_STATS_VQ)) {
++        if (ENABLE_GUEST_STATS && (dev->vdev.guest_features & (1 << VIRTIO_BALLOON_F_STATS_VQ))) {
+             virtqueue_push(dev->svq, &dev->stats_vq_elem, dev->stats_vq_offset);
+             virtio_notify(&dev->vdev, dev->svq);
+         } else {
+-- 
+1.6.5.5
+
