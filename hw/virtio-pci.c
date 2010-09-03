@@ -104,6 +104,7 @@ typedef struct {
     uint32_t host_features;
     /* Max. number of ports we can have for a the virtio-serial device */
     uint32_t max_virtserial_ports;
+    virtio_net_conf net;
 } VirtIOPCIProxy;
 
 /* virtio device */
@@ -634,7 +635,7 @@ static int virtio_net_init_pci(PCIDevice *pci_dev)
     VirtIOPCIProxy *proxy = DO_UPCAST(VirtIOPCIProxy, pci_dev, pci_dev);
     VirtIODevice *vdev;
 
-    vdev = virtio_net_init(&pci_dev->qdev, &proxy->nic);
+    vdev = virtio_net_init(&pci_dev->qdev, &proxy->nic, &proxy->net);
 
     vdev->nvectors = proxy->nvectors;
     virtio_init_pci(proxy, vdev,
@@ -694,6 +695,8 @@ static PCIDeviceInfo virtio_info[] = {
             DEFINE_PROP_UINT32("vectors", VirtIOPCIProxy, nvectors, 3),
             DEFINE_VIRTIO_NET_FEATURES(VirtIOPCIProxy, host_features),
             DEFINE_NIC_PROPERTIES(VirtIOPCIProxy, nic),
+            DEFINE_PROP_UINT32("x-txtimer", VirtIOPCIProxy,
+                               net.txtimer, TX_TIMER_INTERVAL),
             DEFINE_PROP_END_OF_LIST(),
         },
         .qdev.reset = virtio_pci_reset,
