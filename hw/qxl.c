@@ -731,22 +731,21 @@ static void init_qxl_ram(PCIQXLDevice *d, uint8_t *buf, uint32_t actual_ram_size
     *item = 0;
 
     if (d->id == 0) {
-        d->shadow_rom.draw_area_offset = VGA_RAM_SIZE;
-    } else {
-        d->shadow_rom.draw_area_offset = 0;
+        if (draw_area_size < VGA_RAM_SIZE) {
+            draw_area_size = d->shadow_rom.draw_area_size = VGA_RAM_SIZE;
+        }
     }
+    d->shadow_rom.draw_area_offset = 0;
     d->shadow_rom.pages_offset = d->shadow_rom.draw_area_offset + draw_area_size;
     d->shadow_rom.num_io_pages = (actual_ram_size - ram_header_size - d->shadow_rom.pages_offset) >> TARGET_PAGE_BITS;
 
     *d->rom = d->shadow_rom;
 
     dprintf(1, "qxl device memory layout (device #%d)\n"
-            "  vga ram:    0x%08x\n"
-            "  draw area:  0x%08x\n"
+            "  vga/draw:   0x%08x\n"
             "  io pages:   0x%08x (%d pages)\n"
             "  ram header: 0x%08x\n",
             d->id, 0,
-            d->shadow_rom.draw_area_offset,
             d->shadow_rom.pages_offset, d->shadow_rom.num_io_pages,
             d->shadow_rom.ram_header_offset);
 }
