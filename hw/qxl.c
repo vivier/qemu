@@ -97,8 +97,6 @@ static pthread_mutex_t dirty_lock = PTHREAD_MUTEX_INITIALIZER;
     QXL_MODE_16_32(x_res, y_res, 0), QXL_MODE_16_32(y_res, x_res, 1), \
     QXL_MODE_16_32(x_res, y_res, 2), QXL_MODE_16_32(y_res, x_res, 3)
 
-//#define QXL_HIRES_MODES
-
 QXLMode qxl_modes[] = {
     QXL_MODE_EX(640, 480),
     QXL_MODE_EX(800, 600),
@@ -121,11 +119,15 @@ QXLMode qxl_modes[] = {
     QXL_MODE_EX(1600, 1200),
     QXL_MODE_EX(1680, 1050),
     QXL_MODE_EX(1920, 1080),
-#ifdef QXL_HIRES_MODES
+#if VGA_RAM_SIZE >= (16 * 1024 * 1024)
+    /* these modes need more than 8 MB video memory */
     QXL_MODE_EX(1920, 1200),
     QXL_MODE_EX(1920, 1440),
     QXL_MODE_EX(2048, 1536),
     QXL_MODE_EX(2560, 1600),
+#endif
+#if VGA_RAM_SIZE >= (32 * 1024 * 1024)
+    /* these modes need more than 16 MB video memory */
     QXL_MODE_EX(2560, 2048),
     QXL_MODE_EX(2800, 2100),
     QXL_MODE_EX(3200, 2400),
