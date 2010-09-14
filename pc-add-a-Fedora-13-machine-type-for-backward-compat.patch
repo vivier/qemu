@@ -1,0 +1,37 @@
+From: Justin M. Forbes <jforbes@redhat.com>
+Date: Thu, Aug 19 09:13:45 2010 -0500
+Subject: pc: Add a Fedora-13 machine type for backwards compatibility.
+
+In Fedora 13 a fedora-13 machine type was added as default to allow
+interaction with upstream stable qemu which did not support the same
+feature set.  As a result we need to support this machine type through
+the Fedora 15 release.
+
+
+diff --git a/hw/pc_piix.c b/hw/pc_piix.c
+index 9e4bac8..eb1ed05 100644
+--- a/hw/pc_piix.c
++++ b/hw/pc_piix.c
+@@ -237,6 +237,14 @@ static QEMUMachine pc_machine = {
+     .is_default = 1,
+ };
+
++static QEMUMachine pc_machine_f13 = {
++    .name = "fedora-13",
++    .desc = "Standard PC",
++    .init = pc_init_pci,
++    .max_cpus = 255,
++    .is_default = 0,
++};
++
+ static QEMUMachine pc_machine_v0_12 = {
+     .name = "pc-0.12",
+     .desc = "Standard PC",
+@@ -348,6 +356,7 @@ static QEMUMachine isapc_machine = {
+ static void pc_machine_init(void)
+ {
+     qemu_register_machine(&pc_machine);
++    qemu_register_machine(&pc_machine_f13);
+     qemu_register_machine(&pc_machine_v0_12);
+     qemu_register_machine(&pc_machine_v0_11);
+     qemu_register_machine(&pc_machine_v0_10);
