@@ -2721,6 +2721,14 @@ ram_addr_t qemu_ram_alloc(DeviceState *dev, const char *name, ram_addr_t size)
 #ifdef MADV_MERGEABLE
         madvise(new_block->host, size, MADV_MERGEABLE);
 #endif
+#ifndef MADV_DONTFORK
+#if defined(__linux__) 
+#error "MADV_DONTFORK missing"
+#endif
+#endif
+#ifdef MADV_DONTFORK
+    madvise(new_block->host, size, MADV_DONTFORK);
+#endif
 #ifdef MADV_HUGEPAGE
         madvise(new_block->host, size, MADV_HUGEPAGE);
 #endif
