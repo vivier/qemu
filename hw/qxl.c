@@ -819,6 +819,7 @@ static void qxl_display_resize(struct DisplayState *ds)
         if (client->mode == QXL_MODE_VGA) {
             dprintf(1, "%s\n", __FUNCTION__);
             pthread_mutex_lock(&dirty_lock);
+            memset(&client->dirty_rect, 0, sizeof(client->dirty_rect));
             qxl_reset(client);
             pthread_mutex_unlock(&dirty_lock);
         }
