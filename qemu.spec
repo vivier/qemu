@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.13.0
-Release: 0.6.rc1%{?dist}
+Release: 0.7.rc1%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -77,6 +77,7 @@ Patch36: 0036-Revert-spice-add-pci-vdi-port-backend-obsolete.patch
 Patch37: 0037-Revert-spice-add-virtio-serial-based-vdi-port-backen.patch
 Patch38: 0038-spice-add-virtio-serial-based-spice-vmchannel-backen.patch
 Patch39: 0039-qxl-fix-release-ring-overrun.patch
+Patch40: 0040-qxl-flip-default-to-stable-pci-revision.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -313,6 +314,7 @@ such as kvm_stat.
 %patch37 -p1
 %patch38 -p1
 %patch39 -p1
+%patch40 -p1
 
 %build
 # By default we build everything, but allow x86 to build a minimal version
@@ -627,7 +629,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
-* Tue Aug 10 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.13.0-0.6.rc1
+* Tue Sep 21 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.13.0-0.7.rc1
+- Flip qxl pci id from unstable to stable (#634535)
+- KSM Fixes from upstream (#558281)
+
+* Tue Sep 14 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.13.0-0.6.rc1
 - Move away from git snapshots as 0.13 is close to release
 - Updates for spice 0.6
 
