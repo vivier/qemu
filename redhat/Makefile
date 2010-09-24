@@ -80,7 +80,7 @@ $(TARBALL):
 	else \
 		echo "Creating archive $(TARBALL)"; \
 		rm -f $(TARBALL); \
-		../kvm/scripts/make-release --formal $(MARKER) $(COMMON_NAME)-$(KVERSION) $(TARBALL); \
+		scripts/kvm-make-release --formal $(MARKER) $(COMMON_NAME)-$(KVERSION) $(TARBALL); \
 	fi
 
 $(RC_PATCH):
