@@ -198,7 +198,7 @@ static void assigned_dev_iomem_map(PCIDevice *pci_dev, int region_num,
                     goto out;
             }
 
-            if (e_size - offset - TARGET_PAGE_SIZE > 0) {
+            if (e_size >  offset + TARGET_PAGE_SIZE) {
                 if (!first_map)
                     kvm_destroy_phys_mem(kvm_context,
                                          old_ephys + offset + TARGET_PAGE_SIZE,
@@ -718,7 +718,7 @@ static void free_assigned_device(AssignedDevice *dev)
                     if (offset > 0)
                         kvm_destroy_phys_mem(kvm_context, region->e_physbase,
                                              TARGET_PAGE_ALIGN(offset));
-                    if (region->e_size - offset - TARGET_PAGE_SIZE > 0)
+                    if (region->e_size > offset + TARGET_PAGE_SIZE)
                         kvm_destroy_phys_mem(kvm_context,
                                region->e_physbase + offset + TARGET_PAGE_SIZE,
                                TARGET_PAGE_ALIGN(region->e_size - offset -
