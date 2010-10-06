@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.13.0
-Release: 0.7.rc1%{?dist}
+Release: 0.7.rc1%{?dist}.1
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -629,6 +629,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Oct 05 2010 jkeating - 2:0.13.0-0.7.rc1.1
+- Rebuilt for gcc bug 634757
+
 * Tue Sep 21 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.13.0-0.7.rc1
 - Flip qxl pci id from unstable to stable (#634535)
 - KSM Fixes from upstream (#558281)
