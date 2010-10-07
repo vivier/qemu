@@ -863,7 +863,7 @@ static int qcow_create2(const char *filename, int64_t total_size,
     uint64_t old_ref_clusters;
     QCowCreateState s1, *s = &s1;
     QCowExtension ext_bf = {0, 0};
-    int ret;
+    int ret, cret;
 
     memset(s, 0, sizeof(*s));
 
@@ -1033,7 +1033,10 @@ static int qcow_create2(const char *filename, int64_t total_size,
 exit:
     qemu_free(s->refcount_table);
     qemu_free(s->refcount_block);
-    close(fd);
+
+    cret = close(fd);
+    if (ret == 0 && cret < 0)
+        ret = -errno;
 
     /* Preallocate metadata */
     if (ret == 0 && prealloc) {
