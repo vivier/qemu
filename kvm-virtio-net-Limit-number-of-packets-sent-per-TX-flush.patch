@@ -1,0 +1,196 @@
+From 44ae92187ccfda6d4554b72e9ed30598d590a23f Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Fri, 3 Sep 2010 19:44:15 -0300
+Subject: [RHEL6 qemu-kvm PATCH 03/16] virtio-net: Limit number of packets sent per TX flush
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <patch-11762-clone-for-rhel6-rhel61>
+Patchwork-id: 11766
+O-Subject: [RHEL6.z qemu-kvm PATCH v2 2/4] virtio-net: Limit number of packets
+	sent per TX flush
+Bugzilla: 624767
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 624767
+Upstream status: posted
+
+If virtio_net_flush_tx() is called with notification disabled, we can
+race with the guest, processing packets at the same rate as they
+get produced.  The trouble is that this means we have no guaranteed
+exit condition from the function and can spend minutes in there.
+Currently flush_tx is only called with notification on, which seems
+to limit us to one pass through the queue per call.  An upcoming
+patch changes this.
+
+Also add an option to set this value on the command line as different
+workloads may wish to use different values.  We can't necessarily
+support any random value, so this is a developer option: x-txburst=
+Usage:
+
+-device virtio-net-pci,x-txburst=64 # 64 packets per tx flush
+
+One pass through the queue (256) seems to be a good default value
+for this, balancing latency with throughput.  We use a signed int
+for x-txburst because 2^31 packets in a burst would take many, many
+minutes to process and it allows us to easily return a negative
+value value from virtio_net_flush_tx() to indicate a back-off
+or error condition.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+---
+
+ hw/s390-virtio-bus.c |    2 ++
+ hw/syborg_virtio.c   |    2 ++
+ hw/virtio-net.c      |   21 +++++++++++++++------
+ hw/virtio-net.h      |    8 ++++++++
+ hw/virtio-pci.c      |    2 ++
+ 5 files changed, 29 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/s390-virtio-bus.c |    2 ++
+ hw/syborg_virtio.c   |    2 ++
+ hw/virtio-net.c      |   21 +++++++++++++++------
+ hw/virtio-net.h      |    8 ++++++++
+ hw/virtio-pci.c      |    2 ++
+ 5 files changed, 29 insertions(+), 6 deletions(-)
+
+diff --git a/hw/s390-virtio-bus.c b/hw/s390-virtio-bus.c
+index 95a96d7..9c99a7c 100644
+--- a/hw/s390-virtio-bus.c
++++ b/hw/s390-virtio-bus.c
+@@ -331,6 +331,8 @@ static VirtIOS390DeviceInfo s390_virtio_net = {
+         DEFINE_NIC_PROPERTIES(VirtIOS390Device, nic),
+         DEFINE_PROP_UINT32("x-txtimer", VirtIOS390Device,
+                            net.txtimer, TX_TIMER_INTERVAL),
++        DEFINE_PROP_INT32("x-txburst", VirtIOS390Device,
++                          net.txburst, TX_BURST),
+         DEFINE_PROP_END_OF_LIST(),
+     },
+ };
+diff --git a/hw/syborg_virtio.c b/hw/syborg_virtio.c
+index 7ced84d..59942a5 100644
+--- a/hw/syborg_virtio.c
++++ b/hw/syborg_virtio.c
+@@ -298,6 +298,8 @@ static SysBusDeviceInfo syborg_virtio_net_info = {
+         DEFINE_VIRTIO_NET_FEATURES(SyborgVirtIOProxy, host_features),
+         DEFINE_PROP_UINT32("x-txtimer", SyborgVirtIOProxy,
+                            net.txtimer, TX_TIMER_INTERVAL),
++        DEFINE_PROP_INT32("x-txburst", SyborgVirtIOProxy,
++                          net.txburst, TX_BURST),
+         DEFINE_PROP_END_OF_LIST(),
+     }
+ };
+diff --git a/hw/virtio-net.c b/hw/virtio-net.c
+index ae97b9c..058df27 100644
+--- a/hw/virtio-net.c
++++ b/hw/virtio-net.c
+@@ -37,6 +37,7 @@ typedef struct VirtIONet
+     NICState *nic;
+     QEMUTimer *tx_timer;
+     uint32_t tx_timeout;
++    int32_t tx_burst;
+     int tx_timer_active;
+     uint32_t has_vnet_hdr;
+     uint8_t has_ufo;
+@@ -620,7 +621,7 @@ static ssize_t virtio_net_receive(VLANClientState *nc, const uint8_t *buf, size_
+     return size;
+ }
+ 
+-static void virtio_net_flush_tx(VirtIONet *n, VirtQueue *vq);
++static int32_t virtio_net_flush_tx(VirtIONet *n, VirtQueue *vq);
+ 
+ static void virtio_net_tx_complete(VLANClientState *nc, ssize_t len)
+ {
+@@ -636,16 +637,18 @@ static void virtio_net_tx_complete(VLANClientState *nc, ssize_t len)
+ }
+ 
+ /* TX */
+-static void virtio_net_flush_tx(VirtIONet *n, VirtQueue *vq)
++static int32_t virtio_net_flush_tx(VirtIONet *n, VirtQueue *vq)
+ {
+     VirtQueueElement elem;
++    int32_t num_packets = 0;
+ 
+-    if (!(n->vdev.status & VIRTIO_CONFIG_S_DRIVER_OK))
+-        return;
++    if (!(n->vdev.status & VIRTIO_CONFIG_S_DRIVER_OK)) {
++        return num_packets;
++    }
+ 
+     if (n->async_tx.elem.out_num) {
+         virtio_queue_set_notification(n->tx_vq, 0);
+-        return;
++        return num_packets;
+     }
+ 
+     while (virtqueue_pop(vq, &elem)) {
+@@ -682,14 +685,19 @@ static void virtio_net_flush_tx(VirtIONet *n, VirtQueue *vq)
+             virtio_queue_set_notification(n->tx_vq, 0);
+             n->async_tx.elem = elem;
+             n->async_tx.len  = len;
+-            return;
++            return -EBUSY;
+         }
+ 
+         len += ret;
+ 
+         virtqueue_push(vq, &elem, len);
+         virtio_notify(&n->vdev, vq);
++
++        if (++num_packets >= n->tx_burst) {
++            break;
++        }
+     }
++    return num_packets;
+ }
+ 
+ static void virtio_net_handle_tx(VirtIODevice *vdev, VirtQueue *vq)
+@@ -934,6 +942,7 @@ VirtIODevice *virtio_net_init(DeviceState *dev, NICConf *conf,
+     n->tx_timer = qemu_new_timer(vm_clock, virtio_net_tx_timer, n);
+     n->tx_timer_active = 0;
+     n->tx_timeout = net->txtimer;
++    n->tx_burst = net->txburst;
+     n->mergeable_rx_bufs = 0;
+     n->promisc = 1; /* for compatibility */
+ 
+diff --git a/hw/virtio-net.h b/hw/virtio-net.h
+index faadf16..a4b861f 100644
+--- a/hw/virtio-net.h
++++ b/hw/virtio-net.h
+@@ -49,9 +49,17 @@
+ 
+ #define TX_TIMER_INTERVAL 150000 /* 150 us */
+ 
++/* Limit the number of packets that can be sent via a single flush
++ * of the TX queue.  This gives us a guaranteed exit condition and
++ * ensures fairness in the io path.  256 conveniently matches the
++ * length of the TX queue and shows a good balance of performance
++ * and latency. */
++#define TX_BURST 256
++
+ typedef struct virtio_net_conf
+ {
+     uint32_t txtimer;
++    int32_t txburst;
+ } virtio_net_conf;
+ 
+ /* Maximum packet size we can receive from tap device: header + 64k */
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index a51b07a..bfad7f7 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -697,6 +697,8 @@ static PCIDeviceInfo virtio_info[] = {
+             DEFINE_NIC_PROPERTIES(VirtIOPCIProxy, nic),
+             DEFINE_PROP_UINT32("x-txtimer", VirtIOPCIProxy,
+                                net.txtimer, TX_TIMER_INTERVAL),
++            DEFINE_PROP_INT32("x-txburst", VirtIOPCIProxy,
++                              net.txburst, TX_BURST),
+             DEFINE_PROP_END_OF_LIST(),
+         },
+         .qdev.reset = virtio_pci_reset,
+-- 
+1.6.5.5
+

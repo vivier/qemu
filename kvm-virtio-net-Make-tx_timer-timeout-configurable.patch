@@ -1,0 +1,234 @@
+From 6da2da12261137db7762bd28ca26939e9af5688a Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Fri, 3 Sep 2010 19:44:09 -0300
+Subject: [RHEL6 qemu-kvm PATCH 02/16] virtio-net: Make tx_timer timeout configurable
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <patch-11761-clone-for-rhel6-rhel61>
+Patchwork-id: 11765
+O-Subject: [RHEL6.z qemu-kvm PATCH v2 1/4] virtio-net: Make tx_timer timeout
+	configurable
+Bugzilla: 624767
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 624767
+Upstream status: posted
+
+Add an option to make the TX mitigation timer adjustable as a device
+option.  The 150us hard coded default used currently is reasonable,
+but may not be suitable for all workloads, this gives us a way to
+adjust it using a single binary.  We can't support any random option
+though, so use the "x-" prefix to indicate this is a developer
+option.  Usage:
+
+-device virtio-net-pci,x-txtimer=500000,... # .5ms timeout
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+---
+
+ hw/s390-virtio-bus.c |    5 ++++-
+ hw/s390-virtio-bus.h |    1 +
+ hw/syborg_virtio.c   |    5 ++++-
+ hw/virtio-net.c      |    9 ++++++---
+ hw/virtio-net.h      |    5 +++++
+ hw/virtio-pci.c      |    5 ++++-
+ hw/virtio.h          |    4 +++-
+ 7 files changed, 27 insertions(+), 7 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/s390-virtio-bus.c |    5 ++++-
+ hw/s390-virtio-bus.h |    1 +
+ hw/syborg_virtio.c   |    5 ++++-
+ hw/virtio-net.c      |    9 ++++++---
+ hw/virtio-net.h      |    5 +++++
+ hw/virtio-pci.c      |    5 ++++-
+ hw/virtio.h          |    4 +++-
+ 7 files changed, 27 insertions(+), 7 deletions(-)
+
+diff --git a/hw/s390-virtio-bus.c b/hw/s390-virtio-bus.c
+index 6f93d67..95a96d7 100644
+--- a/hw/s390-virtio-bus.c
++++ b/hw/s390-virtio-bus.c
+@@ -27,6 +27,7 @@
+ #include "elf.h"
+ #include "hw/virtio.h"
+ #include "hw/virtio-serial.h"
++#include "hw/virtio-net.h"
+ #include "hw/sysbus.h"
+ #include "kvm.h"
+ 
+@@ -111,7 +112,7 @@ static int s390_virtio_net_init(VirtIOS390Device *dev)
+ {
+     VirtIODevice *vdev;
+ 
+-    vdev = virtio_net_init((DeviceState *)dev, &dev->nic);
++    vdev = virtio_net_init((DeviceState *)dev, &dev->nic, &dev->net);
+     if (!vdev) {
+         return -1;
+     }
+@@ -328,6 +329,8 @@ static VirtIOS390DeviceInfo s390_virtio_net = {
+     .qdev.size = sizeof(VirtIOS390Device),
+     .qdev.props = (Property[]) {
+         DEFINE_NIC_PROPERTIES(VirtIOS390Device, nic),
++        DEFINE_PROP_UINT32("x-txtimer", VirtIOS390Device,
++                           net.txtimer, TX_TIMER_INTERVAL),
+         DEFINE_PROP_END_OF_LIST(),
+     },
+ };
+diff --git a/hw/s390-virtio-bus.h b/hw/s390-virtio-bus.h
+index 0ea8f54..0357dd3 100644
+--- a/hw/s390-virtio-bus.h
++++ b/hw/s390-virtio-bus.h
+@@ -43,6 +43,7 @@ typedef struct VirtIOS390Device {
+     uint32_t host_features;
+     /* Max. number of ports we can have for a the virtio-serial device */
+     uint32_t max_virtserial_ports;
++    virtio_net_conf net;
+ } VirtIOS390Device;
+ 
+ typedef struct VirtIOS390Bus {
+diff --git a/hw/syborg_virtio.c b/hw/syborg_virtio.c
+index c7b1162..7ced84d 100644
+--- a/hw/syborg_virtio.c
++++ b/hw/syborg_virtio.c
+@@ -68,6 +68,7 @@ typedef struct {
+     uint32_t id;
+     NICConf nic;
+     uint32_t host_features;
++    virtio_net_conf net;
+ } SyborgVirtIOProxy;
+ 
+ static uint32_t syborg_virtio_readl(void *opaque, target_phys_addr_t offset)
+@@ -284,7 +285,7 @@ static int syborg_virtio_net_init(SysBusDevice *dev)
+     VirtIODevice *vdev;
+     SyborgVirtIOProxy *proxy = FROM_SYSBUS(SyborgVirtIOProxy, dev);
+ 
+-    vdev = virtio_net_init(&dev->qdev, &proxy->nic);
++    vdev = virtio_net_init(&dev->qdev, &proxy->nic, &proxy->net);
+     return syborg_virtio_init(proxy, vdev);
+ }
+ 
+@@ -295,6 +296,8 @@ static SysBusDeviceInfo syborg_virtio_net_info = {
+     .qdev.props = (Property[]) {
+         DEFINE_NIC_PROPERTIES(SyborgVirtIOProxy, nic),
+         DEFINE_VIRTIO_NET_FEATURES(SyborgVirtIOProxy, host_features),
++        DEFINE_PROP_UINT32("x-txtimer", SyborgVirtIOProxy,
++                           net.txtimer, TX_TIMER_INTERVAL),
+         DEFINE_PROP_END_OF_LIST(),
+     }
+ };
+diff --git a/hw/virtio-net.c b/hw/virtio-net.c
+index 41af292..ae97b9c 100644
+--- a/hw/virtio-net.c
++++ b/hw/virtio-net.c
+@@ -36,6 +36,7 @@ typedef struct VirtIONet
+     VirtQueue *ctrl_vq;
+     NICState *nic;
+     QEMUTimer *tx_timer;
++    uint32_t tx_timeout;
+     int tx_timer_active;
+     uint32_t has_vnet_hdr;
+     uint8_t has_ufo;
+@@ -702,7 +703,7 @@ static void virtio_net_handle_tx(VirtIODevice *vdev, VirtQueue *vq)
+         virtio_net_flush_tx(n, vq);
+     } else {
+         qemu_mod_timer(n->tx_timer,
+-                       qemu_get_clock(vm_clock) + TX_TIMER_INTERVAL);
++                       qemu_get_clock(vm_clock) + n->tx_timeout);
+         n->tx_timer_active = 1;
+         virtio_queue_set_notification(vq, 0);
+     }
+@@ -842,7 +843,7 @@ static int virtio_net_load(QEMUFile *f, void *opaque, int version_id)
+ 
+     if (n->tx_timer_active) {
+         qemu_mod_timer(n->tx_timer,
+-                       qemu_get_clock(vm_clock) + TX_TIMER_INTERVAL);
++                       qemu_get_clock(vm_clock) + n->tx_timeout);
+     }
+     return 0;
+ }
+@@ -903,7 +904,8 @@ static void virtio_net_vmstate_change(void *opaque, int running, int reason)
+     virtio_net_set_status(&n->vdev, status);
+ }
+ 
+-VirtIODevice *virtio_net_init(DeviceState *dev, NICConf *conf)
++VirtIODevice *virtio_net_init(DeviceState *dev, NICConf *conf,
++                              virtio_net_conf *net)
+ {
+     VirtIONet *n;
+ 
+@@ -931,6 +933,7 @@ VirtIODevice *virtio_net_init(DeviceState *dev, NICConf *conf)
+ 
+     n->tx_timer = qemu_new_timer(vm_clock, virtio_net_tx_timer, n);
+     n->tx_timer_active = 0;
++    n->tx_timeout = net->txtimer;
+     n->mergeable_rx_bufs = 0;
+     n->promisc = 1; /* for compatibility */
+ 
+diff --git a/hw/virtio-net.h b/hw/virtio-net.h
+index e55119b..faadf16 100644
+--- a/hw/virtio-net.h
++++ b/hw/virtio-net.h
+@@ -49,6 +49,11 @@
+ 
+ #define TX_TIMER_INTERVAL 150000 /* 150 us */
+ 
++typedef struct virtio_net_conf
++{
++    uint32_t txtimer;
++} virtio_net_conf;
++
+ /* Maximum packet size we can receive from tap device: header + 64k */
+ #define VIRTIO_NET_MAX_BUFSIZE (sizeof(struct virtio_net_hdr) + (64 << 10))
+ 
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index 0c4245b..a51b07a 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -104,6 +104,7 @@ typedef struct {
+     uint32_t host_features;
+     /* Max. number of ports we can have for a the virtio-serial device */
+     uint32_t max_virtserial_ports;
++    virtio_net_conf net;
+ } VirtIOPCIProxy;
+ 
+ /* virtio device */
+@@ -634,7 +635,7 @@ static int virtio_net_init_pci(PCIDevice *pci_dev)
+     VirtIOPCIProxy *proxy = DO_UPCAST(VirtIOPCIProxy, pci_dev, pci_dev);
+     VirtIODevice *vdev;
+ 
+-    vdev = virtio_net_init(&pci_dev->qdev, &proxy->nic);
++    vdev = virtio_net_init(&pci_dev->qdev, &proxy->nic, &proxy->net);
+ 
+     vdev->nvectors = proxy->nvectors;
+     virtio_init_pci(proxy, vdev,
+@@ -694,6 +695,8 @@ static PCIDeviceInfo virtio_info[] = {
+             DEFINE_PROP_UINT32("vectors", VirtIOPCIProxy, nvectors, 3),
+             DEFINE_VIRTIO_NET_FEATURES(VirtIOPCIProxy, host_features),
+             DEFINE_NIC_PROPERTIES(VirtIOPCIProxy, nic),
++            DEFINE_PROP_UINT32("x-txtimer", VirtIOPCIProxy,
++                               net.txtimer, TX_TIMER_INTERVAL),
+             DEFINE_PROP_END_OF_LIST(),
+         },
+         .qdev.reset = virtio_pci_reset,
+diff --git a/hw/virtio.h b/hw/virtio.h
+index 8e0a554..c358b27 100644
+--- a/hw/virtio.h
++++ b/hw/virtio.h
+@@ -185,7 +185,9 @@ void virtio_bind_device(VirtIODevice *vdev, const VirtIOBindings *binding,
+ 
+ /* Base devices.  */
+ VirtIODevice *virtio_blk_init(DeviceState *dev, BlockConf *conf);
+-VirtIODevice *virtio_net_init(DeviceState *dev, NICConf *conf);
++struct virtio_net_conf;
++VirtIODevice *virtio_net_init(DeviceState *dev, NICConf *conf,
++                              struct virtio_net_conf *net);
+ VirtIODevice *virtio_serial_init(DeviceState *dev, uint32_t max_nr_ports);
+ VirtIODevice *virtio_balloon_init(DeviceState *dev);
+ 
+-- 
+1.6.5.5
+

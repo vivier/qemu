@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.113%{?dist}
+Release: 2.114%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1410,6 +1410,36 @@ Patch1691: kvm-vhost-Fix-size-of-dirty-log-sync-on-resize.patch
 Patch1692: kvm-qemu-img-rebase-Open-new-backing-file-read-only.patch
 # For bz#623903 - query-balloon commmand didn't return on pasued guest cause virt-manger hang
 Patch1693: kvm-disable-guest-provided-stats-on-info-ballon-monitor-.patch
+# For bz#624767 - Replace virtio-net TX timer mitigation with bottom half handler
+Patch1695: kvm-virtio-net-Make-tx_timer-timeout-configurable.patch
+# For bz#624767 - Replace virtio-net TX timer mitigation with bottom half handler
+Patch1696: kvm-virtio-net-Limit-number-of-packets-sent-per-TX-flush.patch
+# For bz#624767 - Replace virtio-net TX timer mitigation with bottom half handler
+Patch1697: kvm-virtio-net-Rename-tx_timer_active-to-tx_waiting.patch
+# For bz#624767 - Replace virtio-net TX timer mitigation with bottom half handler
+Patch1698: kvm-virtio-net-Introduce-a-new-bottom-half-packet-TX.patch
+# For bz#482427 - support high resolutions
+Patch1699: kvm-spice-qxl-enable-some-highres-modes.patch
+# For bz#633699 - Cannot hot-plug nic in windows VM when the vmem is larger
+Patch1700: kvm-add-MADV_DONTFORK-to-guest-physical-memory-v2.patch
+# For bz#596610 - "Guest moved used index from 0 to 61440" if remove virtio serial device before virtserialport
+Patch1701: kvm-virtio-serial-Check-if-virtio-queue-is-ready-before-.patch
+# For bz#596610 - "Guest moved used index from 0 to 61440" if remove virtio serial device before virtserialport
+Patch1702: kvm-virtio-serial-Assert-for-virtio-queue-ready-before-v.patch
+# For bz#616703 - qemu-kvm core dump with virtio-serial-pci max-port greater than 31
+Patch1703: kvm-virtio-serial-Check-if-more-max_ports-specified-than.patch
+# For bz#624396 - migration failed after hot-unplug virtserialport - Unknown savevm section or instance '0000:00:07.0/virtio-console' 0
+Patch1704: kvm-virtio-serial-Cleanup-on-device-hot-unplug.patch
+# For bz#635354 - Can not commit copy-on-write image's data to raw backing-image
+Patch1705: kvm-block-Fix-image-re-open-in-bdrv_commit.patch
+# For bz#617119 - Qemu becomes unresponsive during unattended_installation
+Patch1706: kvm-qxl-clear-dirty-rectangle-on-resize.patch
+# For bz#625948 - qemu exits when hot adding rtl8139 nic to win2k8 guest
+Patch1707: kvm-VGA-Don-t-register-deprecated-VBE-range.patch
+# For bz#619168 - qemu should more clearly indicate internal detection of this host out-of-memory condition at startup..
+Patch1708: kvm-BZ-619168-qemu-should-more-clearly-indicate-internal.patch
+# For bz#639437 - Incorrect russian vnc keymap
+Patch1709: kvm-fix-and-on-russian-keymap.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2165,6 +2195,21 @@ such as kvm_stat.
 %patch1691 -p1
 %patch1692 -p1
 %patch1693 -p1
+%patch1695 -p1
+%patch1696 -p1
+%patch1697 -p1
+%patch1698 -p1
+%patch1699 -p1
+%patch1700 -p1
+%patch1701 -p1
+%patch1702 -p1
+%patch1703 -p1
+%patch1704 -p1
+%patch1705 -p1
+%patch1706 -p1
+%patch1707 -p1
+%patch1708 -p1
+%patch1709 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2360,6 +2405,48 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Oct 07 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.114.el6
+- fix ksmd.init "status" [bz#570467]
+- kvm-virtio-net-Make-tx_timer-timeout-configurable.patch [bz#624767]
+- kvm-virtio-net-Limit-number-of-packets-sent-per-TX-flush.patch [bz#624767]
+- kvm-virtio-net-Rename-tx_timer_active-to-tx_waiting.patch [bz#624767]
+- kvm-virtio-net-Introduce-a-new-bottom-half-packet-TX.patch [bz#624767]
+- kvm-spice-qxl-enable-some-highres-modes.patch [bz#482427]
+- kvm-add-MADV_DONTFORK-to-guest-physical-memory-v2.patch [bz#633699]
+- kvm-virtio-serial-Check-if-virtio-queue-is-ready-before-.patch [bz#596610]
+- kvm-virtio-serial-Assert-for-virtio-queue-ready-before-v.patch [bz#596610]
+- kvm-virtio-serial-Check-if-more-max_ports-specified-than.patch [bz#616703]
+- kvm-virtio-serial-Cleanup-on-device-hot-unplug.patch [bz#624396]
+- kvm-block-Fix-image-re-open-in-bdrv_commit.patch [bz#635354]
+- kvm-qxl-clear-dirty-rectangle-on-resize.patch [bz#617119]
+- kvm-VGA-Don-t-register-deprecated-VBE-range.patch [bz#625948]
+- kvm-BZ-619168-qemu-should-more-clearly-indicate-internal.patch [bz#619168]
+- kvm-fix-and-on-russian-keymap.patch [bz#639437]
+- Resolves: bz#482427
+  (support high resolutions)
+- Resolves: bz#570467
+  ([RHEL 6] Initscripts improvement for ksm and ksmtuned)
+- Resolves: bz#596610
+  ("Guest moved used index from 0 to 61440" if remove virtio serial device before virtserialport)
+- Resolves: bz#616703
+  (qemu-kvm core dump with virtio-serial-pci max-port greater than 31)
+- Resolves: bz#617119
+  (Qemu becomes unresponsive during unattended_installation)
+- Resolves: bz#619168
+  (qemu should more clearly indicate internal detection of this host out-of-memory condition at startup..)
+- Resolves: bz#624396
+  (migration failed after hot-unplug virtserialport - Unknown savevm section or instance '0000:00:07.0/virtio-console' 0)
+- Resolves: bz#624767
+  (Replace virtio-net TX timer mitigation with bottom half handler)
+- Resolves: bz#625948
+  (qemu exits when hot adding rtl8139 nic to win2k8 guest)
+- Resolves: bz#633699
+  (Cannot hot-plug nic in windows VM when the vmem is larger)
+- Resolves: bz#635354
+  (Can not commit copy-on-write image's data to raw backing-image)
+- Resolves: bz#639437
+  (Incorrect russian vnc keymap)
+
 * Tue Aug 24 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.113.el6
 - kvm-disable-guest-provided-stats-on-info-ballon-monitor-.patch [bz#623903]
 - Resolves: bz#623903

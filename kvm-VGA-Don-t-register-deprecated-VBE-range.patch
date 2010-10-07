@@ -1,0 +1,61 @@
+From e38ce5d98ab83b243753e7288e9fb95863c3955e Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Wed, 22 Sep 2010 15:52:06 -0300
+Subject: [RHEL6 qemu-kvm PATCH 14/16] VGA: Don't register deprecated VBE range
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20100922155152.27557.72745.stgit@s20.home>
+Patchwork-id: 12243
+O-Subject: [RHEL6.1 qemu-kvm PATCH] VGA: Don't register deprecated VBE range
+Bugzilla: 625948
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=625948
+Upstream commit: 916452df46d7c1cec1357d3ec033f540db069156
+Brew build: https://brewweb.devel.redhat.com/taskinfo?taskID=2775862
+
+Old versions of the BOCHs VGA BIOS (cira 2003) made use of VBE
+registers at 0xff80/81.  In VBE API version 0xb0c2 these were
+moved to 0x1ce/cf.  Unfortunately, QEMU still registers handlers
+for the old range.  If a guest attempts to assign an I/O device
+overlapping this region, QEMU exits with a hw_error.  Windows
+guests seem to like to assign I/O devices to the high end of
+the address space, so it's pretty easy to hot add an rtl8139
+to a Win2k8 guest and trigger the bug.  I can't find any reason
+to register these handlers, so let's remove the cruft.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+
+ hw/vga.c |    7 -------
+ 1 files changed, 0 insertions(+), 7 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/vga.c |    7 -------
+ 1 files changed, 0 insertions(+), 7 deletions(-)
+
+diff --git a/hw/vga.c b/hw/vga.c
+index 34362fd..1d269d5 100644
+--- a/hw/vga.c
++++ b/hw/vga.c
+@@ -2340,13 +2340,6 @@ void vga_init(VGACommonState *s)
+ 
+     register_ioport_write(0x1ce, 1, 2, vbe_ioport_write_index, s);
+     register_ioport_write(0x1cf, 1, 2, vbe_ioport_write_data, s);
+-
+-    /* old Bochs IO ports */
+-    register_ioport_read(0xff80, 1, 2, vbe_ioport_read_index, s);
+-    register_ioport_read(0xff81, 1, 2, vbe_ioport_read_data, s);
+-
+-    register_ioport_write(0xff80, 1, 2, vbe_ioport_write_index, s);
+-    register_ioport_write(0xff81, 1, 2, vbe_ioport_write_data, s);
+ #else
+     register_ioport_read(0x1ce, 1, 2, vbe_ioport_read_index, s);
+     register_ioport_read(0x1d0, 1, 2, vbe_ioport_read_data, s);
+-- 
+1.6.5.5
+

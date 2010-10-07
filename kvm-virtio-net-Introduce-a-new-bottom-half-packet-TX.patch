@@ -1,0 +1,256 @@
+From c2b086b417c4678e4664fa08596f9ac9ea6b5a09 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Fri, 3 Sep 2010 19:44:27 -0300
+Subject: [RHEL6 qemu-kvm PATCH 05/16] virtio-net: Introduce a new bottom half packet TX
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <patch-11764-clone-for-rhel6-rhel61>
+Patchwork-id: 11768
+O-Subject: [RHEL6.z qemu-kvm PATCH v2 4/4] virtio-net: Introduce a new bottom
+	half packet TX
+Bugzilla: 624767
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 624767
+Upstream status: posted
+
+Based on a patch from Mark McLoughlin, this patch introduces a new
+bottom half packet transmitter that avoids the latency imposed by
+the tx_timer approach.  Rather than scheduling a timer when a TX
+packet comes in, schedule a bottom half to be run from the iothread.
+The bottom half handler first attempts to flush the queue with
+notification disabled (this is where we could race with a guest
+without txburst).  If we flush a full burst, reschedule immediately.
+If we send short of a full burst, try to re-enable notification.
+To avoid a race with TXs that may have occurred, we must then
+flush again.  If we find some packets to send, the guest it probably
+active, so we can reschedule again.
+
+tx_timer and tx_bh are mutually exclusive, so we can re-use the
+tx_waiting flag to indicate one or the other needs to be setup.
+This allows us to seamlessly migrate between timer and bh TX
+handling.
+
+The bottom half handler becomes the new default and we add a new
+tx= option to virtio-net-pci.  Usage:
+
+-device virtio-net-pci,tx=timer # select timer mitigation vs "bh"
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+---
+
+ hw/s390-virtio-bus.c |    1 +
+ hw/syborg_virtio.c   |    1 +
+ hw/virtio-net.c      |   85 +++++++++++++++++++++++++++++++++++++++++++++-----
+ hw/virtio-net.h      |    1 +
+ hw/virtio-pci.c      |    1 +
+ 5 files changed, 81 insertions(+), 8 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/s390-virtio-bus.c |    1 +
+ hw/syborg_virtio.c   |    1 +
+ hw/virtio-net.c      |   85 +++++++++++++++++++++++++++++++++++++++++++++-----
+ hw/virtio-net.h      |    1 +
+ hw/virtio-pci.c      |    1 +
+ 5 files changed, 81 insertions(+), 8 deletions(-)
+
+diff --git a/hw/s390-virtio-bus.c b/hw/s390-virtio-bus.c
+index 9c99a7c..332fe7f 100644
+--- a/hw/s390-virtio-bus.c
++++ b/hw/s390-virtio-bus.c
+@@ -333,6 +333,7 @@ static VirtIOS390DeviceInfo s390_virtio_net = {
+                            net.txtimer, TX_TIMER_INTERVAL),
+         DEFINE_PROP_INT32("x-txburst", VirtIOS390Device,
+                           net.txburst, TX_BURST),
++        DEFINE_PROP_STRING("tx", VirtIOS390Device, net.tx),
+         DEFINE_PROP_END_OF_LIST(),
+     },
+ };
+diff --git a/hw/syborg_virtio.c b/hw/syborg_virtio.c
+index 59942a5..dd0a87b 100644
+--- a/hw/syborg_virtio.c
++++ b/hw/syborg_virtio.c
+@@ -300,6 +300,7 @@ static SysBusDeviceInfo syborg_virtio_net_info = {
+                            net.txtimer, TX_TIMER_INTERVAL),
+         DEFINE_PROP_INT32("x-txburst", SyborgVirtIOProxy,
+                           net.txburst, TX_BURST),
++        DEFINE_PROP_STRING("tx", SyborgVirtIOProxy, net.tx),
+         DEFINE_PROP_END_OF_LIST(),
+     }
+ };
+diff --git a/hw/virtio-net.c b/hw/virtio-net.c
+index 07b0932..1df671a 100644
+--- a/hw/virtio-net.c
++++ b/hw/virtio-net.c
+@@ -36,6 +36,7 @@ typedef struct VirtIONet
+     VirtQueue *ctrl_vq;
+     NICState *nic;
+     QEMUTimer *tx_timer;
++    QEMUBH *tx_bh;
+     uint32_t tx_timeout;
+     int32_t tx_burst;
+     int tx_waiting;
+@@ -700,7 +701,7 @@ static int32_t virtio_net_flush_tx(VirtIONet *n, VirtQueue *vq)
+     return num_packets;
+ }
+ 
+-static void virtio_net_handle_tx(VirtIODevice *vdev, VirtQueue *vq)
++static void virtio_net_handle_tx_timer(VirtIODevice *vdev, VirtQueue *vq)
+ {
+     VirtIONet *n = to_virtio_net(vdev);
+ 
+@@ -717,6 +718,18 @@ static void virtio_net_handle_tx(VirtIODevice *vdev, VirtQueue *vq)
+     }
+ }
+ 
++static void virtio_net_handle_tx_bh(VirtIODevice *vdev, VirtQueue *vq)
++{
++    VirtIONet *n = to_virtio_net(vdev);
++
++    if (unlikely(n->tx_waiting)) {
++        return;
++    }
++    virtio_queue_set_notification(vq, 0);
++    qemu_bh_schedule(n->tx_bh);
++    n->tx_waiting = 1;
++}
++
+ static void virtio_net_tx_timer(void *opaque)
+ {
+     VirtIONet *n = opaque;
+@@ -731,6 +744,41 @@ static void virtio_net_tx_timer(void *opaque)
+     virtio_net_flush_tx(n, n->tx_vq);
+ }
+ 
++static void virtio_net_tx_bh(void *opaque)
++{
++    VirtIONet *n = opaque;
++    int32_t ret;
++
++    n->tx_waiting = 0;
++
++    /* Just in case the driver is not ready on more */
++    if (unlikely(!(n->vdev.status & VIRTIO_CONFIG_S_DRIVER_OK)))
++        return;
++
++    ret = virtio_net_flush_tx(n, n->tx_vq);
++    if (ret == -EBUSY) {
++        return; /* Notification re-enable handled by tx_complete */
++    }
++
++    /* If we flush a full burst of packets, assume there are
++     * more coming and immediately reschedule */
++    if (ret >= n->tx_burst) {
++        qemu_bh_schedule(n->tx_bh);
++        n->tx_waiting = 1;
++        return;
++    }
++
++    /* If less than a full burst, re-enable notification and flush
++     * anything that may have come in while we weren't looking.  If
++     * we find something, assume the guest is still active and reschedule */
++    virtio_queue_set_notification(n->tx_vq, 1);
++    if (virtio_net_flush_tx(n, n->tx_vq) > 0) {
++        virtio_queue_set_notification(n->tx_vq, 0);
++        qemu_bh_schedule(n->tx_bh);
++        n->tx_waiting = 1;
++    }
++}
++
+ static void virtio_net_save(QEMUFile *f, void *opaque)
+ {
+     VirtIONet *n = opaque;
+@@ -850,8 +898,12 @@ static int virtio_net_load(QEMUFile *f, void *opaque, int version_id)
+     n->mac_table.first_multi = i;
+ 
+     if (n->tx_waiting) {
+-        qemu_mod_timer(n->tx_timer,
+-                       qemu_get_clock(vm_clock) + n->tx_timeout);
++        if (n->tx_timer) {
++            qemu_mod_timer(n->tx_timer,
++                           qemu_get_clock(vm_clock) + n->tx_timeout);
++        } else {
++            qemu_bh_schedule(n->tx_bh);
++        }
+     }
+     return 0;
+ }
+@@ -929,7 +981,22 @@ VirtIODevice *virtio_net_init(DeviceState *dev, NICConf *conf,
+     n->vdev.reset = virtio_net_reset;
+     n->vdev.set_status = virtio_net_set_status;
+     n->rx_vq = virtio_add_queue(&n->vdev, 256, virtio_net_handle_rx);
+-    n->tx_vq = virtio_add_queue(&n->vdev, 256, virtio_net_handle_tx);
++
++    if (net->tx && strcmp(net->tx, "timer") && strcmp(net->tx, "bh")) {
++        fprintf(stderr, "virtio-net: "
++                "Unknown option tx=%s, valid options: \"timer\" \"bh\"\n",
++                net->tx);
++        fprintf(stderr, "Defaulting to \"bh\"\n");
++    }
++
++    if (net->tx && !strcmp(net->tx, "timer")) {
++        n->tx_vq = virtio_add_queue(&n->vdev, 256, virtio_net_handle_tx_timer);
++        n->tx_timer = qemu_new_timer(vm_clock, virtio_net_tx_timer, n);
++        n->tx_timeout = net->txtimer;
++    } else {
++        n->tx_vq = virtio_add_queue(&n->vdev, 256, virtio_net_handle_tx_bh);
++        n->tx_bh = qemu_bh_new(virtio_net_tx_bh, n);
++    }
+     n->ctrl_vq = virtio_add_queue(&n->vdev, 64, virtio_net_handle_ctrl);
+     qemu_macaddr_default_if_unset(&conf->macaddr);
+     memcpy(&n->mac[0], &conf->macaddr, sizeof(n->mac));
+@@ -939,9 +1006,7 @@ VirtIODevice *virtio_net_init(DeviceState *dev, NICConf *conf,
+ 
+     qemu_format_nic_info_str(&n->nic->nc, conf->macaddr.a);
+ 
+-    n->tx_timer = qemu_new_timer(vm_clock, virtio_net_tx_timer, n);
+     n->tx_waiting = 0;
+-    n->tx_timeout = net->txtimer;
+     n->tx_burst = net->txburst;
+     n->mergeable_rx_bufs = 0;
+     n->promisc = 1; /* for compatibility */
+@@ -974,8 +1039,12 @@ void virtio_net_exit(VirtIODevice *vdev)
+     qemu_free(n->mac_table.macs);
+     qemu_free(n->vlans);
+ 
+-    qemu_del_timer(n->tx_timer);
+-    qemu_free_timer(n->tx_timer);
++    if (n->tx_timer) {
++        qemu_del_timer(n->tx_timer);
++        qemu_free_timer(n->tx_timer);
++    } else {
++        qemu_bh_delete(n->tx_bh);
++    }
+ 
+     virtio_cleanup(&n->vdev);
+     qemu_del_vlan_client(&n->nic->nc);
+diff --git a/hw/virtio-net.h b/hw/virtio-net.h
+index a4b861f..5eacda6 100644
+--- a/hw/virtio-net.h
++++ b/hw/virtio-net.h
+@@ -60,6 +60,7 @@ typedef struct virtio_net_conf
+ {
+     uint32_t txtimer;
+     int32_t txburst;
++    char *tx;
+ } virtio_net_conf;
+ 
+ /* Maximum packet size we can receive from tap device: header + 64k */
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index bfad7f7..5101541 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -699,6 +699,7 @@ static PCIDeviceInfo virtio_info[] = {
+                                net.txtimer, TX_TIMER_INTERVAL),
+             DEFINE_PROP_INT32("x-txburst", VirtIOPCIProxy,
+                               net.txburst, TX_BURST),
++            DEFINE_PROP_STRING("tx", VirtIOPCIProxy, net.tx),
+             DEFINE_PROP_END_OF_LIST(),
+         },
+         .qdev.reset = virtio_pci_reset,
+-- 
+1.6.5.5
+

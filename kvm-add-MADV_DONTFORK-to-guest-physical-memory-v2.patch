@@ -1,0 +1,53 @@
+From 67a59261db1cd9c5dfb9f714d3947b0e8cd22346 Mon Sep 17 00:00:00 2001
+From: Andrea Arcangeli <aarcange@redhat.com>
+Date: Wed, 15 Sep 2010 16:50:29 -0300
+Subject: [RHEL6 qemu-kvm PATCH 07/16] add MADV_DONTFORK to guest physical memory v2
+
+RH-Author: Andrea Arcangeli <aarcange@redhat.com>
+Message-id: <20100915165029.GK5981@random.random>
+Patchwork-id: 12097
+O-Subject: [RHEL-6 kvm PATCH] add MADV_DONTFORK to guest physical memory v2
+Bugzilla: 633699
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Rik van Riel <riel@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+https://bugzilla.redhat.com/show_bug.cgi?id=633699
+
+resending against rhel6/master as the older one that didn't apply
+clean is getting acked. I also replaced the forced define with an
+#error if not defined to verify our buildsystem gets it right at all
+times. Upstream won't have the #error and later we can go just with
+the upstream version once we're sure the glibc in buildsystem gets
+this right for quite some time.
+
+previous patch applied by hand is in this build
+https://brewweb.devel.redhat.com/taskinfo?taskID=2764810
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ exec.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/exec.c b/exec.c
+index 171a749..251938d 100644
+--- a/exec.c
++++ b/exec.c
+@@ -2721,6 +2721,14 @@ ram_addr_t qemu_ram_alloc(DeviceState *dev, const char *name, ram_addr_t size)
+ #ifdef MADV_MERGEABLE
+         madvise(new_block->host, size, MADV_MERGEABLE);
+ #endif
++#ifndef MADV_DONTFORK
++#if defined(__linux__) 
++#error "MADV_DONTFORK missing"
++#endif
++#endif
++#ifdef MADV_DONTFORK
++    madvise(new_block->host, size, MADV_DONTFORK);
++#endif
+ #ifdef MADV_HUGEPAGE
+         madvise(new_block->host, size, MADV_HUGEPAGE);
+ #endif
+-- 
+1.6.5.5
+

@@ -1,0 +1,65 @@
+From 507055e11d013dc08229209aa70e8fd5044e3682 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 8 Sep 2010 11:02:25 -0300
+Subject: [RHEL6 qemu-kvm PATCH 06/16] spice/qxl: enable some highres modes.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1283943745-12068-4-git-send-email-kraxel@redhat.com>
+Patchwork-id: 11880
+O-Subject: [RHEL-6 kvm PATCH 3/3] spice/qxl: enable some highres modes.
+Bugzilla: 482427
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Alexander Larsson <alexl@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Remove the QXL_HIRES_MODES #define.  Make the highres modes depend on
+the size of the vga ram (and draw area) instead.  This enables some
+of the highres modes as RHEL-6.0 has VGA_RAM_SIZE set to 16 MB (unlike
+upstream qemu which has 8MB only).
+
+bugzilla: #482427 -- support high resolutions
+upstream: n/a.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/qxl.c |    8 +++++---
+ 1 files changed, 5 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qxl.c |    8 +++++---
+ 1 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index e01f67f..cba9d0c 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -97,8 +97,6 @@ static pthread_mutex_t dirty_lock = PTHREAD_MUTEX_INITIALIZER;
+     QXL_MODE_16_32(x_res, y_res, 0), QXL_MODE_16_32(y_res, x_res, 1), \
+     QXL_MODE_16_32(x_res, y_res, 2), QXL_MODE_16_32(y_res, x_res, 3)
+ 
+-//#define QXL_HIRES_MODES
+-
+ QXLMode qxl_modes[] = {
+     QXL_MODE_EX(640, 480),
+     QXL_MODE_EX(800, 600),
+@@ -121,11 +119,15 @@ QXLMode qxl_modes[] = {
+     QXL_MODE_EX(1600, 1200),
+     QXL_MODE_EX(1680, 1050),
+     QXL_MODE_EX(1920, 1080),
+-#ifdef QXL_HIRES_MODES
++#if VGA_RAM_SIZE >= (16 * 1024 * 1024)
++    /* these modes need more than 8 MB video memory */
+     QXL_MODE_EX(1920, 1200),
+     QXL_MODE_EX(1920, 1440),
+     QXL_MODE_EX(2048, 1536),
+     QXL_MODE_EX(2560, 1600),
++#endif
++#if VGA_RAM_SIZE >= (32 * 1024 * 1024)
++    /* these modes need more than 16 MB video memory */
+     QXL_MODE_EX(2560, 2048),
+     QXL_MODE_EX(2800, 2100),
+     QXL_MODE_EX(3200, 2400),
+-- 
+1.6.5.5
+

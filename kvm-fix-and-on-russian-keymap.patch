@@ -1,0 +1,46 @@
+From 87faf6af8016e4f9a9ae413f4bc8fbedcec0ed07 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Fri, 1 Oct 2010 18:29:10 -0300
+Subject: [RHEL6 qemu-kvm PATCH 16/16] fix '/' and '|' on russian keymap
+
+RH-Author: Eduardo Habkost <ehabkost@redhat.com>
+Message-id: <1285957750-19938-1-git-send-email-ehabkost@redhat.com>
+Patchwork-id: 12362
+O-Subject: [RHEL6 qemu-kvm PATCH] fix '/' and '|' on russian keymap
+Bugzilla: 639437
+RH-Acked-by: john cooper <john.cooper@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+I can't test it myself, but it was reported to be working, by the bug
+reporter. The current keymap really looks wrong, as it had duplicate
+definitions for "slash" and "bar", and the plain 0x35 scancode is more
+likely to work on all guest OSes than the unusual altgr+0x56 scancode.
+
+Bugzilla: 639437
+Upstream status: submitted to qemu-devel
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ pc-bios/keymaps/ru |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ pc-bios/keymaps/ru |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+diff --git a/pc-bios/keymaps/ru b/pc-bios/keymaps/ru
+index b3e7d24..70a68f4 100644
+--- a/pc-bios/keymaps/ru
++++ b/pc-bios/keymaps/ru
+@@ -105,5 +105,3 @@ Cyrillic_yu 0x34 altgr
+ Cyrillic_YU 0x34 shift altgr
+ slash 0x35
+ question 0x35 shift
+-slash 0x56 altgr
+-bar 0x56 shift altgr
+-- 
+1.6.5.5
+

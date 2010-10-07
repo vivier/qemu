@@ -1,0 +1,51 @@
+From 997878fb5c287343ada338d8ebf3ed86b33eda74 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Mon, 20 Sep 2010 11:52:57 -0300
+Subject: [RHEL6 qemu-kvm PATCH 13/16] qxl: clear dirty rectangle on resize.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1284983577-12420-1-git-send-email-kraxel@redhat.com>
+Patchwork-id: 12182
+O-Subject: [RHEL-6 kvm PATCH] qxl: clear dirty rectangle on resize.
+Bugzilla: 617119
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Zachary Amsden <zamsden@redhat.com>
+
+Clear the vga-mode dirty rectangle before resetting the device.  As part
+of the reset process the spice server will get all outstanding commands
+and flush the work queue.  Clearing the dirty rectangle makes sure qxl
+will not create a update command for the dirty region when the spice
+server checks for outstanding commands.  Creating a update command will
+deadlock as this needs aquiring dirty_rect too.  It is also pretty
+pointless as we are about to reset the device anyway.
+
+bugzilla: #617119
+upstream: n/a
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/qxl.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qxl.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index cba9d0c..5ce90f3 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -820,6 +820,7 @@ static void qxl_display_resize(struct DisplayState *ds)
+         if (client->mode == QXL_MODE_VGA) {
+             dprintf(1, "%s\n", __FUNCTION__);
+             pthread_mutex_lock(&dirty_lock);
++            memset(&client->dirty_rect, 0, sizeof(client->dirty_rect));
+             qxl_reset(client);
+             pthread_mutex_unlock(&dirty_lock);
+         }
+-- 
+1.6.5.5
+

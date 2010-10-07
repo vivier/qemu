@@ -1,0 +1,93 @@
+From d9335712d453c7c6edf0a44566c8468e3d6080c0 Mon Sep 17 00:00:00 2001
+From: john cooper <john.cooper@redhat.com>
+Date: Thu, 23 Sep 2010 15:24:02 -0300
+Subject: [RHEL6 qemu-kvm PATCH 15/16] BZ #619168 - qemu should more clearly indicate internal detection of this host out-of-memory condition at startup.
+
+RH-Author: john cooper <john.cooper@redhat.com>
+Message-id: <4C9B7112.2080108@redhat.com>
+Patchwork-id: 12257
+O-Subject: [RHEL6.1 PATCH] BZ #619168 - qemu should more clearly indicate
+	internal detection of this host out-of-memory condition at startup.
+Bugzilla: 619168
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+Qemu terminates upon detection of an error from
+posix_memalign(3) bailing with an abort().  In
+its current state this creates the appearance of
+hitting an internal bug.  This consistency check
+is infrequently detected, is related to host memory
+availability, and the cause should be clearly
+communicated to the user.
+
+The following patch is a pulled from upstream and
+resolves BZ #619168:
+
+    https://bugzilla.redhat.com/show_bug.cgi?id=619168
+
+Signed-off-by: john cooper <john.cooper@redhat.com>
+---
+
+commit d2d5adcb58d32e8ac6c168c4c2e72cf0f90dcab0
+Author: Stefan Weil <weil@mail.berlios.de>
+Date:   Thu Jan 21 22:24:58 2010 +0100
+
+    Tell users about out-of-memory errors
+
+    Aborting without an error message when memory is short
+    is not helpful, so print the reason for the abort.
+
+    Try
+        qemu -m 1000000
+    or
+        qemu -m 2000 (win32)
+
+    to force an out-of-memory error.
+
+    v2:
+    * Fix error message for win32.
+    * Fix error message for posix_memalign.
+
+    Thanks to malc for the hints.
+
+    Signed-off-by: Stefan Weil <weil@mail.berlios.de>
+    Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ osdep.c |   10 +++++++++-
+ 1 files changed, 9 insertions(+), 1 deletions(-)
+
+diff --git a/osdep.c b/osdep.c
+index 62c5b49..b60d32b 100644
+--- a/osdep.c
++++ b/osdep.c
+@@ -52,6 +52,11 @@
+ static void *oom_check(void *ptr)
+ {
+     if (ptr == NULL) {
++#if defined(_WIN32)
++        fprintf(stderr, "Failed to allocate memory: %lu\n", GetLastError());
++#else
++        fprintf(stderr, "Failed to allocate memory: %s\n", strerror(errno));
++#endif
+         abort();
+     }
+     return ptr;
+@@ -91,8 +96,11 @@ void *qemu_memalign(size_t alignment, size_t size)
+     int ret;
+     void *ptr;
+     ret = posix_memalign(&ptr, alignment, size);
+-    if (ret != 0)
++    if (ret != 0) {
++        fprintf(stderr, "Failed to allocate %zu B: %s\n",
++                size, strerror(ret));
+         abort();
++    }
+     return ptr;
+ #elif defined(CONFIG_BSD)
+     return oom_check(valloc(size));
+-- 
+1.6.5.5
+

@@ -1,0 +1,65 @@
+From 1e875e177601d1241aff1fa5e6bb33d8b6600894 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Mon, 20 Sep 2010 08:12:19 -0300
+Subject: [RHEL6 qemu-kvm PATCH 10/16] virtio-serial: Check if more max_ports specified than we can handle
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <f7be8fbe818929a63ad9a53986438fa0b8987520.1284967504.git.amit.shah@redhat.com>
+Patchwork-id: 12177
+O-Subject: [RHEL 6.1 PATCH 3/4] virtio-serial: Check if more max_ports specified
+	than we can handle
+Bugzilla: 616703
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Currently virtio-serial supports a maximum of 31 ports. Specifying the
+'max_ports' parameter to be > 31 on the cmd line causes badness.
+
+Ensure we initialise virtio-serial only if max_ports is within the
+supported range.
+
+Bugzilla: 616703
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit 5ab4bb598d3f58542a06a6946f04b140be222892)
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-serial-bus.c |   10 +++++++++-
+ 1 files changed, 9 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial-bus.c |   10 +++++++++-
+ 1 files changed, 9 insertions(+), 1 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index ebac47e..cb6191d 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -741,11 +741,19 @@ VirtIODevice *virtio_serial_init(DeviceState *dev, uint32_t max_nr_ports)
+ {
+     VirtIOSerial *vser;
+     VirtIODevice *vdev;
+-    uint32_t i;
++    uint32_t i, max_supported_ports;
+ 
+     if (!max_nr_ports)
+         return NULL;
+ 
++    /* Each port takes 2 queues, and one pair is for the control queue */
++    max_supported_ports = VIRTIO_PCI_QUEUE_MAX / 2 - 1;
++
++    if (max_nr_ports > max_supported_ports) {
++        error_report("maximum ports supported: %u", max_supported_ports);
++        return NULL;
++    }
++
+     vdev = virtio_common_init("virtio-serial", VIRTIO_ID_CONSOLE,
+                               sizeof(struct virtio_console_config),
+                               sizeof(VirtIOSerial));
+-- 
+1.6.5.5
+

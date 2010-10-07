@@ -1,0 +1,50 @@
+From f5bfa97bbcd0022164976c632ed76c5c2bab01b2 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Mon, 20 Sep 2010 07:38:36 -0300
+Subject: [RHEL6 qemu-kvm PATCH 09/16] virtio-serial: Assert for virtio queue ready before virtqueue operations
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <b6e17355c5a45d5793ecc69ecd6cea3ffcf44645.1284967504.git.amit.shah@redhat.com>
+Patchwork-id: 12175
+O-Subject: [RHEL 6.1 PATCH 2/4] virtio-serial: Assert for virtio queue ready
+	before virtqueue operations
+Bugzilla: 596610
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+In addition to the previous fix for calling do_flush_queued_data() only
+when the virtqueue is ready, ensure do_flush_queued_data() gets a vq
+that's suitably initialised.
+
+Bugzilla: 596610
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit fd11a78be8dfc992a5c642d8e2e1ebd80a761b86)
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-serial-bus.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial-bus.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index cb9fb03..ebac47e 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -117,6 +117,7 @@ static void do_flush_queued_data(VirtIOSerialPort *port, VirtQueue *vq,
+     VirtQueueElement elem;
+ 
+     assert(port || discard);
++    assert(virtio_queue_ready(vq));
+ 
+     while ((discard || !port->throttled) && virtqueue_pop(vq, &elem)) {
+         uint8_t *buf;
+-- 
+1.6.5.5
+

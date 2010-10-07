@@ -1,0 +1,59 @@
+From d02dbb6e02a311b5a09066a56fb345a60b04da1c Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Mon, 20 Sep 2010 07:38:35 -0300
+Subject: [RHEL6 qemu-kvm PATCH 08/16] virtio-serial: Check if virtio queue is ready before consuming data
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <5e343fb5bb35a806b3d58ee5648b6cee2aa35c21.1284967504.git.amit.shah@redhat.com>
+Patchwork-id: 12174
+O-Subject: [RHEL 6.1 PATCH 1/4] virtio-serial: Check if virtio queue is ready
+	before consuming data
+Bugzilla: 596610
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+If a virtio-serial port is removed before the guest comes up and
+initialises the virtqueues, qemu exits with the message
+
+Guest moved used index from 0 to 61440
+
+This happens because we try to clear any pending buffers from the
+virtqueue.
+
+Ensure the virtqueue is initialised before calling any virtqueue
+operations.
+
+Bugzilla: 596610
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 6b611d3ab820d6e3b30a23ebac69df04ab0105a0)
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-serial-bus.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial-bus.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index 94117dc..cb9fb03 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -139,6 +139,9 @@ static void flush_queued_data(VirtIOSerialPort *port, bool discard)
+ {
+     assert(port);
+ 
++    if (!virtio_queue_ready(port->ovq)) {
++        return;
++    }
+     do_flush_queued_data(port, port->ovq, &port->vser->vdev, discard);
+ }
+ 
+-- 
+1.6.5.5
+

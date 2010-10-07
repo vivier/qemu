@@ -61,10 +61,10 @@ stop() {
 status() {
     if [ ! -f /sys/kernel/mm/ksm/run ] ; then
         echo $"$prog not supported"
-        RETVAL=1
+        RETVAL=4
     else if [ "$(cat /sys/kernel/mm/ksm/run 2>/dev/null)" != "1" ]; then
         echo $"$prog is not running"
-        RETVAL=1
+        RETVAL=3
     else
         echo $"$prog is running"
         RETVAL=0

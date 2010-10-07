@@ -1,0 +1,87 @@
+From 97217f71916af83c263fc95b92b12b47483f2f4e Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Mon, 20 Sep 2010 11:09:59 -0300
+Subject: [RHEL6 qemu-kvm PATCH 12/16] block: Fix image re-open in bdrv_commit
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1284980999-6467-1-git-send-email-kwolf@redhat.com>
+Patchwork-id: 12181
+O-Subject: [RHEL-6.1/6.0.z qemu-kvm PATCH] block: Fix image re-open in
+	bdrv_commit
+Bugzilla: 635354
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 635354
+
+Arguably we should re-open the backing file with the backing file format and
+not with the format of the snapshot image.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit ee1811965fd15e0b41f8d508b951a8ab826ae3a7)
+
+Conflicts:
+
+	block.c
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block.c |   11 ++++++++---
+ 1 files changed, 8 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c |   11 ++++++++---
+ 1 files changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/block.c b/block.c
+index 01f4050..85d23fc 100644
+--- a/block.c
++++ b/block.c
+@@ -683,6 +683,7 @@ int bdrv_check(BlockDriverState *bs, BdrvCheckResult *res)
+ int bdrv_commit(BlockDriverState *bs)
+ {
+     BlockDriver *drv = bs->drv;
++    BlockDriver *backing_drv;
+     int64_t sector, total_sectors;
+     int n, ro, open_flags;
+     int ret = 0, rw_ret = 0;
+@@ -701,6 +702,7 @@ int bdrv_commit(BlockDriverState *bs)
+         return -EACCES;
+     }
+ 
++    backing_drv = bs->backing_hd->drv;
+     ro = bs->backing_hd->read_only;
+     strncpy(filename, bs->backing_hd->filename, sizeof(filename));
+     open_flags =  bs->backing_hd->open_flags;
+@@ -710,12 +712,14 @@ int bdrv_commit(BlockDriverState *bs)
+         bdrv_delete(bs->backing_hd);
+         bs->backing_hd = NULL;
+         bs_rw = bdrv_new("");
+-        rw_ret = bdrv_open(bs_rw, filename, open_flags | BDRV_O_RDWR, drv);
++        rw_ret = bdrv_open(bs_rw, filename, open_flags | BDRV_O_RDWR,
++            backing_drv);
+         if (rw_ret < 0) {
+             bdrv_delete(bs_rw);
+             /* try to re-open read-only */
+             bs_ro = bdrv_new("");
+-            ret = bdrv_open(bs_ro, filename, open_flags & ~BDRV_O_RDWR, drv);
++            ret = bdrv_open(bs_ro, filename, open_flags & ~BDRV_O_RDWR,
++                backing_drv);
+             if (ret < 0) {
+                 bdrv_delete(bs_ro);
+                 /* drive not functional anymore */
+@@ -766,7 +770,8 @@ ro_cleanup:
+         bdrv_delete(bs->backing_hd);
+         bs->backing_hd = NULL;
+         bs_ro = bdrv_new("");
+-        ret = bdrv_open(bs_ro, filename, open_flags & ~BDRV_O_RDWR, drv);
++        ret = bdrv_open(bs_ro, filename, open_flags & ~BDRV_O_RDWR,
++            backing_drv);
+         if (ret < 0) {
+             bdrv_delete(bs_ro);
+             /* drive not functional anymore */
+-- 
+1.6.5.5
+
