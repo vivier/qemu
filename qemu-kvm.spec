@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.114%{?dist}
+Release: 2.115%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1440,6 +1440,10 @@ Patch1707: kvm-VGA-Don-t-register-deprecated-VBE-range.patch
 Patch1708: kvm-BZ-619168-qemu-should-more-clearly-indicate-internal.patch
 # For bz#639437 - Incorrect russian vnc keymap
 Patch1709: kvm-fix-and-on-russian-keymap.patch
+# For bz#631522 - spice: prepare qxl for 6.1 update.
+Patch1710: kvm-spice-qxl-update-modes-ptr-in-post_load.patch
+# For bz#631522 - spice: prepare qxl for 6.1 update.
+Patch1711: kvm-spice-qxl-make-draw_area-and-vgafb-share-memory.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2210,6 +2214,8 @@ such as kvm_stat.
 %patch1707 -p1
 %patch1708 -p1
 %patch1709 -p1
+%patch1710 -p1
+%patch1711 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2405,6 +2411,15 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Oct 08 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.115.el6
+- kvm-spice-qxl-update-modes-ptr-in-post_load.patch [bz#631522]
+- kvm-spice-qxl-make-draw_area-and-vgafb-share-memory.patch [bz#631522]
+- Give a nicer message if retune is called while ksmtuned is off [bz#637976]
+- Resolves: bz#631522
+  (spice: prepare qxl for 6.1 update.)
+- Resolves: bz#637976
+  (ksmtuned: give a nicer message if retune is called while ksmtuned is off)
+
 * Thu Oct 07 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.114.el6
 - fix ksmd.init "status" [bz#570467]
 - kvm-virtio-net-Make-tx_timer-timeout-configurable.patch [bz#624767]

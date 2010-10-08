@@ -1,0 +1,49 @@
+From 0701354b218e0c059a910f63b1dea3fd0519b5e3 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 8 Sep 2010 11:02:23 -0300
+Subject: [RHEL6 qemu-kvm PATCH 1/3] spice/qxl: update modes ptr in post_load
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1283943745-12068-2-git-send-email-kraxel@redhat.com>
+Patchwork-id: 11881
+O-Subject: [RHEL-6 kvm PATCH 1/3] spice/qxl: update modes ptr in post_load
+Bugzilla: 631522
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Alexander Larsson <alexl@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+The location of the mode table in the qxl rom bar isn't fixed.  Check
+modes_offset field and update the pointer to the table accordingly in
+post_load.
+
+This is required for rhel-6.0 <-> rhel-6.1 qxl live migration.
+
+bugzilla: #631522 -- spice: prepare qxl for 6.1 update.
+upstream: n/a
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/qxl.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qxl.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index 5ce90f3..d6c516b 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -943,6 +943,8 @@ static int qxl_post_load(void *opaque, int version)
+         d->last_release = (QXLReleaseInfo *)(d->ram_start + d->last_release_offset);
+     }
+ 
++    d->modes = (QXLModes*)((uint8_t*)d->rom + d->rom->modes_offset);
++
+     if (d->mode == QXL_MODE_VGA) {
+         qxl_add_vga_client();
+     }
+-- 
+1.6.5.5
+

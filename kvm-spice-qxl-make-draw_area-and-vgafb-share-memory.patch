@@ -1,0 +1,79 @@
+From 0fedcbf47c559c01a4566f5873e435bf3dae9827 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 8 Sep 2010 11:02:24 -0300
+Subject: [RHEL6 qemu-kvm PATCH 2/3] spice/qxl: make draw_area and vgafb share memory
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1283943745-12068-3-git-send-email-kraxel@redhat.com>
+Patchwork-id: 11878
+O-Subject: [RHEL-6 kvm PATCH 2/3] spice/qxl: make draw_area and vgafb share
+	memory
+Bugzilla: 631522
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Alexander Larsson <alexl@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+This patch changes the qxl memory usage.  In RHEL-6.0 the drawing area
+(used in qxl native mode, i.e. with qxl driver active) and the vga
+framebuffer (used in vga mode) are separate memory areas.  They are
+never ever used at the same time though and thus can easily be shared.
+
+Latest upstream (freedesktop.org) code does that already for quite some
+time, and most likely RHEL-6.1 will to the same.  Switch over RHEL-6.0
+too.
+
+This will simplify rhel-6.0 <-> rhel-6.1 qxl live migration as it will
+remove the need to deal with multiple possible device memory layouts in
+the rhel-6.1 qxl device.
+
+The big drawback is that this breaks live migration (only in case qxl is
+active of course).
+
+bugzilla: #631522 -- spice: prepare qxl for 6.1 update.
+upstream: n/a
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/qxl.c |   11 +++++------
+ 1 files changed, 5 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qxl.c |   11 +++++------
+ 1 files changed, 5 insertions(+), 6 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index d6c516b..0db910b 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -733,22 +733,21 @@ static void init_qxl_ram(PCIQXLDevice *d, uint8_t *buf, uint32_t actual_ram_size
+     *item = 0;
+ 
+     if (d->id == 0) {
+-        d->shadow_rom.draw_area_offset = VGA_RAM_SIZE;
+-    } else {
+-        d->shadow_rom.draw_area_offset = 0;
++        if (draw_area_size < VGA_RAM_SIZE) {
++            draw_area_size = d->shadow_rom.draw_area_size = VGA_RAM_SIZE;
++        }
+     }
++    d->shadow_rom.draw_area_offset = 0;
+     d->shadow_rom.pages_offset = d->shadow_rom.draw_area_offset + draw_area_size;
+     d->shadow_rom.num_io_pages = (actual_ram_size - ram_header_size - d->shadow_rom.pages_offset) >> TARGET_PAGE_BITS;
+ 
+     *d->rom = d->shadow_rom;
+ 
+     dprintf(1, "qxl device memory layout (device #%d)\n"
+-            "  vga ram:    0x%08x\n"
+-            "  draw area:  0x%08x\n"
++            "  vga/draw:   0x%08x\n"
+             "  io pages:   0x%08x (%d pages)\n"
+             "  ram header: 0x%08x\n",
+             d->id, 0,
+-            d->shadow_rom.draw_area_offset,
+             d->shadow_rom.pages_offset, d->shadow_rom.num_io_pages,
+             d->shadow_rom.ram_header_offset);
+ }
+-- 
+1.6.5.5
+
