@@ -85,8 +85,9 @@ typedef struct model_features_t {
     uint32_t *guest_feat;
     uint32_t *host_feat;
     uint32_t check_feat;
+    uint32_t restrict_feat;
     const char **flag_names;
-    uint32_t cpuid;
+    const char *cpuid_fn;
     } model_features_t;
 
 int check_cpuid = 0;
@@ -464,12 +465,13 @@ static int cpu_x86_fill_host(x86_def_t *x86_cpu_def)
 static int unavailable_host_feature(struct model_features_t *f, uint32_t mask)
 {
     int i;
+    uint32_t m;
 
     for (i = 0; i < 32; ++i)
-        if (1 << i & mask) {
-            fprintf(stderr, "warning: host cpuid %04x_%04x lacks requested"
-                " flag '%s' [0x%08x]\n",
-                f->cpuid >> 16, f->cpuid & 0xffff,
+        if ((m = 1 << i & mask)) {
+            fprintf(stderr, "warning: host cpuid %s %s '%s' [0x%08x]\n",
+                f->cpuid_fn, m & f->restrict_feat & *f->host_feat ?
+                    "flag restricted to guest" : "lacks requested flag",
                 f->flag_names[i] ? f->flag_names[i] : "[reserved]", mask);
             break;
         }
@@ -512,21 +514,26 @@ static int check_features_against_host(CPUX86State *env, x86_def_t *guest_def)
     int rv;
     struct model_features_t ft[] = {
         {&guest_def->features, &host_def.features,
-            ~0, feature_name, 0x00000000},
+            ~0, 0,
+            feature_name, "0000_0001:edx"},
         {&guest_def->ext_features, &host_def.ext_features,
-            ~CPUID_EXT_HYPERVISOR, ext_feature_name, 0x00000001},
+            ~CPUID_EXT_HYPERVISOR, CPUID_EXT_VMX,
+            ext_feature_name, "0000_0001:ecx"},
         {&guest_def->ext2_features, &host_def.ext2_features,
-            ~PPRO_FEATURES, ext2_feature_name, 0x80000000},
+            ~PPRO_FEATURES, 0,
+            ext2_feature_name, "8000_0001:edx"},
         {&guest_def->ext3_features, &host_def.ext3_features,
-            ~CPUID_EXT3_SVM, ext3_feature_name, 0x80000001},
+            ~0, kvm_nested ? 0 : CPUID_EXT3_SVM,
+            ext3_feature_name, "8000_0001:ecx"},
         {NULL}}, *p;
 
     summary_cpuid_features(env, &host_def);
     for (rv = 0, p = ft; p->guest_feat; ++p)
         for (mask = 1; mask; mask <<= 1)
-            if (mask & p->check_feat & *p->guest_feat & ~*p->host_feat) {
-                unavailable_host_feature(p, mask);
-                rv = 1;
+            if (mask & p->check_feat & *p->guest_feat &
+                (~*p->host_feat | p->restrict_feat)) {
+                    unavailable_host_feature(p, mask);
+                    rv = 1;
             }
     return rv;
 }
