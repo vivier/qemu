@@ -1,4 +1,4 @@
-%define zrelease 1
+%define zrelease 2
 
 Summary: Userspace component of KVM
 Name: qemu-kvm
@@ -1420,6 +1420,8 @@ Patch1695: kvm-virtio-net-Limit-number-of-packets-sent-per-TX-flush.patch
 Patch1696: kvm-virtio-net-Rename-tx_timer_active-to-tx_waiting.patch
 # For bz#633963 - Replace virtio-net TX timer mitigation with bottom half handler
 Patch1697: kvm-virtio-net-Introduce-a-new-bottom-half-packet-TX.patch
+# For bz#641835 - Can not commit copy-on-write image's data to raw backing-image
+Patch1698: kvm-block-Fix-image-re-open-in-bdrv_commit.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2179,6 +2181,7 @@ such as kvm_stat.
 %patch1695 -p1
 %patch1696 -p1
 %patch1697 -p1
+%patch1698 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2374,6 +2377,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Oct 13 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.113.el6_0.2
+- kvm-block-Fix-image-re-open-in-bdrv_commit.patch [bz#641835]
+- Resolves: bz#641835
+  (Can not commit copy-on-write image's data to raw backing-image)
+
 * Tue Sep 14 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.113.el6_0.1
 - kvm-virtio-net-Make-tx_timer-timeout-configurable.patch [bz#633963]
 - kvm-virtio-net-Limit-number-of-packets-sent-per-TX-flush.patch [bz#633963]
