@@ -1,4 +1,4 @@
-%define zrelease 2
+%define zrelease 3
 
 Summary: Userspace component of KVM
 Name: qemu-kvm
@@ -2377,6 +2377,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Oct 14 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.113.el6_0.3
+- ksmtuned: committed_memory of 0 qemus [bz#634249]
+- Resolves: bz#634249
+  (incorrect committed memory on idle host)
+
 * Wed Oct 13 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.113.el6_0.2
 - kvm-block-Fix-image-re-open-in-bdrv_commit.patch [bz#641835]
 - Resolves: bz#641835
