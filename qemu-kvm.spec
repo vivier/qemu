@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.115%{?dist}
+Release: 2.116%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1444,6 +1444,10 @@ Patch1709: kvm-fix-and-on-russian-keymap.patch
 Patch1710: kvm-spice-qxl-update-modes-ptr-in-post_load.patch
 # For bz#631522 - spice: prepare qxl for 6.1 update.
 Patch1711: kvm-spice-qxl-make-draw_area-and-vgafb-share-memory.patch
+# For bz#632054 - [Intel 6.0 Virt] guest bootup fail with intel 82574L NIC assigned
+Patch1713: kvm-Fix-underflow-error-in-device-assignment-size-check.patch
+# For bz#641127 - qemu-img ignores close() errors
+Patch1714: kvm-check-for-close-errors-on-qcow2_create.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2216,6 +2220,8 @@ such as kvm_stat.
 %patch1709 -p1
 %patch1710 -p1
 %patch1711 -p1
+%patch1713 -p1
+%patch1714 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2411,6 +2417,17 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Oct 14 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.116.el6
+- ksmtuned: committed_memory of 0 qemus [bz#609016]
+- kvm-Fix-underflow-error-in-device-assignment-size-check.patch [bz#632054]
+- kvm-check-for-close-errors-on-qcow2_create.patch [bz#641127]
+- Resolves: bz#609016
+  (incorrect committed memory on idle host)
+- Resolves: bz#632054
+  ([Intel 6.0 Virt] guest bootup fail with intel 82574L NIC assigned)
+- Resolves: bz#641127
+  (qemu-img ignores close() errors)
+
 * Fri Oct 08 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.115.el6
 - kvm-spice-qxl-update-modes-ptr-in-post_load.patch [bz#631522]
 - kvm-spice-qxl-make-draw_area-and-vgafb-share-memory.patch [bz#631522]

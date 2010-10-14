@@ -1,0 +1,61 @@
+From 5bf83d85e5e0ee5d053f5e69b488736e7c7e2ae8 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Thu, 7 Oct 2010 20:31:29 -0300
+Subject: [RHEL6 qemu-kvm PATCH 3/3] check for close() errors on qcow2_create()
+
+RH-Author: Eduardo Habkost <ehabkost@redhat.com>
+Message-id: <1286483489-10946-1-git-send-email-ehabkost@redhat.com>
+Patchwork-id: 12457
+O-Subject: [RHEL6 qemu-kvm PATCH] check for close() errors on qcow2_create()
+Bugzilla: 641127
+RH-Acked-by: Zachary Amsden <zamsden@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Errors when closing the file we just created should not be ignored. I/O errors
+may happen and "qemu-img create" should fail in those cases.
+
+If we are already exiting due to an error, we will still return the original
+error number, though.
+
+Bugzilla: 641127
+Upstream status: submitted
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2.c |    7 +++++--
+ 1 files changed, 5 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2.c |    7 +++++--
+ 1 files changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/block/qcow2.c b/block/qcow2.c
+index 258de50..d7a05af 100644
+--- a/block/qcow2.c
++++ b/block/qcow2.c
+@@ -863,7 +863,7 @@ static int qcow_create2(const char *filename, int64_t total_size,
+     uint64_t old_ref_clusters;
+     QCowCreateState s1, *s = &s1;
+     QCowExtension ext_bf = {0, 0};
+-    int ret;
++    int ret, cret;
+ 
+     memset(s, 0, sizeof(*s));
+ 
+@@ -1033,7 +1033,10 @@ static int qcow_create2(const char *filename, int64_t total_size,
+ exit:
+     qemu_free(s->refcount_table);
+     qemu_free(s->refcount_block);
+-    close(fd);
++
++    cret = close(fd);
++    if (ret == 0 && cret < 0)
++        ret = -errno;
+ 
+     /* Preallocate metadata */
+     if (ret == 0 && prealloc) {
+-- 
+1.6.5.5
+

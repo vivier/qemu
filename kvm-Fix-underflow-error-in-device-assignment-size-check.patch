@@ -1,0 +1,89 @@
+From 4052d11248b87a5beb2986fc80ab78746fc58ab7 Mon Sep 17 00:00:00 2001
+From: Don Dutile <ddutile@redhat.com>
+Date: Wed, 29 Sep 2010 19:56:42 -0300
+Subject: [RHEL6 qemu-kvm PATCH 2/3] Fix underflow error in device-assignment size check
+
+RH-Author: Don Dutile <ddutile@redhat.com>
+Message-id: <4CA399FA.6000600@redhat.com>
+Patchwork-id: 12349
+O-Subject: Re: [RHEL6.1 qemu-kvm PATCH V2] Fix underflow error in
+	device-assignment size check
+Bugzilla: 632054
+RH-Acked-by: Chris Wright <chrisw@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+Alex Williamson wrote:
+> On Mon, 2010-09-27 at 16:28 -0400, Don Dutile wrote:
+>> BZ 632054
+>>
+>> In assigned_dev_iomem_map() and free_assigned_device(),
+>> a check against an unsigned int is done:
+>>       if  (region->e_size - offset - TARGET_PAGE_SIZE > 0)
+>>
+>> e_size is unsigned, so this calculation can only fail when == 0,
+>> but in the case that e_size is < offset + TARGET_PAGE_SIZE, it will
+>> underflow and wrap around to a very large number.
+>>
+>> Simple change of check so it works for unsigned comparison.
+>>
+>>
+>> Brew-build:
+>> http://brewweb.devel.redhat.com/brew/taskinfo?taskID=2783014
+>>
+>> Testing:
+>> Put an 82574L into a Sandybridge rhts system, duplicating
+>> bz configuration and corroborating failure with qemu-kvm in rhel6.0.
+>> Updated qemu-kvm with patch, and able to add & remove the
+>> 82574L half-a-dozen times without errors, even checked
+>> /var/log/libvirt/qemu/<guest-name>.log, which is how the same failure
+>> in assigned_dev_iomem_map() was also found in free_assigned_device().
+>> Also asked partner to verify the brew-build rpm.
+>>
+>> Please review and ack.
+>
+> ACK.  Nit - extra ()s aren't needed.
+>
+V2 update: remove extra ()s -- agree they are not needed....
+
+>> ps -- the bz should be tagged for z-stream, since this is a simple,
+>>       yet common device-assignment bug to occur.
+>
+>
+> Yep, I agree, I'm not sure how we don't trip on this more.
+>
+> Alex
+>
+hw/device-assignment.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index 5422e9a..cdfab95 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -198,7 +198,7 @@ static void assigned_dev_iomem_map(PCIDevice *pci_dev, int region_num,
+                     goto out;
+             }
+ 
+-            if (e_size - offset - TARGET_PAGE_SIZE > 0) {
++            if (e_size >  offset + TARGET_PAGE_SIZE) {
+                 if (!first_map)
+                     kvm_destroy_phys_mem(kvm_context,
+                                          old_ephys + offset + TARGET_PAGE_SIZE,
+@@ -718,7 +718,7 @@ static void free_assigned_device(AssignedDevice *dev)
+                     if (offset > 0)
+                         kvm_destroy_phys_mem(kvm_context, region->e_physbase,
+                                              TARGET_PAGE_ALIGN(offset));
+-                    if (region->e_size - offset - TARGET_PAGE_SIZE > 0)
++                    if (region->e_size > offset + TARGET_PAGE_SIZE)
+                         kvm_destroy_phys_mem(kvm_context,
+                                region->e_physbase + offset + TARGET_PAGE_SIZE,
+                                TARGET_PAGE_ALIGN(region->e_size - offset -
+-- 
+1.6.5.5
+
