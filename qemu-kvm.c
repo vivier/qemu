@@ -1480,6 +1480,9 @@ static void sigbus_reraise(void)
     abort();
 }
 
+static int kvm_physical_memory_addr_from_ram(KVMState *s, ram_addr_t ram_addr,
+                                             target_phys_addr_t *phys_addr);
+
 static void sigbus_handler(int n, struct qemu_signalfd_siginfo *siginfo,
                            void *ctx)
 {
@@ -1487,12 +1490,15 @@ static void sigbus_handler(int n, struct qemu_signalfd_siginfo *siginfo,
     if (first_cpu->mcg_cap && siginfo->ssi_addr
         && siginfo->ssi_code == BUS_MCEERR_AO) {
         uint64_t status;
+        void *vaddr;
+        ram_addr_t ram_addr;
         unsigned long paddr;
         CPUState *cenv;
 
         /* Hope we are lucky for AO MCE */
-        if (do_qemu_ram_addr_from_host((void *)(intptr_t)siginfo->ssi_addr,
-				       &paddr)) {
+        vaddr = (void *)(intptr_t)siginfo->ssi_addr;
+        if (do_qemu_ram_addr_from_host(vaddr, &ram_addr) ||
+            !kvm_physical_memory_addr_from_ram(kvm_state, ram_addr, (target_phys_addr_t *)&paddr)) {
             fprintf(stderr, "Hardware memory error for memory used by "
                     "QEMU itself instead of guest system!: %llx\n",
                     (unsigned long long)siginfo->ssi_addr);
@@ -1704,6 +1710,8 @@ static void kvm_on_sigbus(CPUState *env, siginfo_t *siginfo)
     struct kvm_x86_mce mce = {
             .bank = 9,
     };
+    void *vaddr;
+    ram_addr_t ram_addr;
     unsigned long paddr;
     int r;
 
@@ -1734,7 +1742,9 @@ static void kvm_on_sigbus(CPUState *env, siginfo_t *siginfo)
             mce.misc = (MCM_ADDR_PHYS << 6) | 0xc;
             mce.mcg_status = MCG_STATUS_MCIP | MCG_STATUS_RIPV;
         }
-        if (do_qemu_ram_addr_from_host((void *)siginfo->si_addr, &paddr)) {
+        vaddr = (void *)siginfo->si_addr;
+        if (do_qemu_ram_addr_from_host(vaddr, &ram_addr) ||
+            !kvm_physical_memory_addr_from_ram(kvm_state, ram_addr, (target_phys_addr_t *)&paddr)) {
             fprintf(stderr, "Hardware memory error for memory used by "
                     "QEMU itself instaed of guest system!\n");
             /* Hope we are lucky for AO MCE */
@@ -2382,6 +2392,18 @@ void kvm_set_phys_mem(target_phys_addr_t start_addr, ram_addr_t size,
 #endif
 
     return;
+}
+
+static int kvm_physical_memory_addr_from_ram(KVMState *s, ram_addr_t ram_addr,
+                                             target_phys_addr_t *phys_addr)
+{
+    struct mapping *p;
+
+    p = find_ram_mapping(ram_addr);
+    if (p)
+        *phys_addr = p->phys + (ram_addr - p->ram);
+
+    return !!p;
 }
 
 int kvm_setup_guest_memory(void *area, unsigned long size)
