@@ -847,7 +847,22 @@ static int get_msr_entry(struct kvm_msr_entry *entry, CPUState *env)
         case MSR_KVM_WALL_CLOCK:
             env->wall_clock_msr = entry->data;
             break;
+#ifdef KVM_CAP_MCE
+        case MSR_MCG_STATUS:
+            env->mcg_status = entry->data;
+            break;
+        case MSR_MCG_CTL:
+            env->mcg_ctl = entry->data;
+            break;
+#endif
         default:
+#ifdef KVM_CAP_MCE
+            if (entry->index >= MSR_MC0_CTL &&
+                entry->index < MSR_MC0_CTL + (env->mcg_cap & 0xff) * 4) {
+                env->mce_banks[entry->index - MSR_MC0_CTL] = entry->data;
+                break;
+            }
+#endif
             printf("Warning unknown msr index 0x%x\n", entry->index);
             return 1;
         }
@@ -1015,6 +1030,15 @@ void kvm_arch_load_regs(CPUState *env)
 #endif
     set_msr_entry(&msrs[n++], MSR_KVM_SYSTEM_TIME,  env->system_time_msr);
     set_msr_entry(&msrs[n++], MSR_KVM_WALL_CLOCK,  env->wall_clock_msr);
+
+#ifdef KVM_CAP_MCE
+    if (env->mcg_cap) {
+        set_msr_entry(&msrs[n++], MSR_MCG_STATUS, env->mcg_status);
+        set_msr_entry(&msrs[n++], MSR_MCG_CTL, env->mcg_ctl);
+        for (i = 0; i < (env->mcg_cap & 0xff) * 4; i++)
+            set_msr_entry(&msrs[n++], MSR_MC0_CTL + i, env->mce_banks[i]);
+    }
+#endif
 
     rc = kvm_set_msrs(env, msrs, n);
     if (rc == -1)
@@ -1207,6 +1231,15 @@ void kvm_arch_save_regs(CPUState *env)
 #endif
     msrs[n++].index = MSR_KVM_SYSTEM_TIME;
     msrs[n++].index = MSR_KVM_WALL_CLOCK;
+
+#ifdef KVM_CAP_MCE
+    if (env->mcg_cap) {
+        msrs[n++].index = MSR_MCG_STATUS;
+        msrs[n++].index = MSR_MCG_CTL;
+        for (i = 0; i < (env->mcg_cap & 0xff) * 4; i++)
+            msrs[n++].index = MSR_MC0_CTL + i;
+    }
+#endif
 
     rc = kvm_get_msrs(env, msrs, n);
     if (rc == -1) {
