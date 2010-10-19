@@ -647,6 +647,9 @@ fi
 - Resolve build issues with S390 (#639471)
 - Fix Windows XP on Raw Devices (#631591)
 
+* Tue Oct 05 2010 jkeating - 2:0.13.0-0.7.rc1.1
+- Rebuilt for gcc bug 634757
+
 * Tue Sep 21 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.13.0-0.7.rc1
 - Flip qxl pci id from unstable to stable (#634535)
 - KSM Fixes from upstream (#558281)
