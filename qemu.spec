@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.13.0
-Release: 0.7.rc1%{?dist}
+Release: 1%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -17,7 +17,7 @@ URL: http://www.qemu.org/
 %define _smp_mflags %{nil}
 %endif
 
-Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-kvm-%{version}-rc1.tar.gz
+Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-kvm-%{version}.tar.gz
 Source1: qemu.init
 
 # Loads kvm kernel modules at boot
@@ -78,6 +78,8 @@ Patch37: 0037-Revert-spice-add-virtio-serial-based-vdi-port-backen.patch
 Patch38: 0038-spice-add-virtio-serial-based-spice-vmchannel-backen.patch
 Patch39: 0039-qxl-fix-release-ring-overrun.patch
 Patch40: 0040-qxl-flip-default-to-stable-pci-revision.patch
+Patch41: 0041-vmmouse-adapt-to-mouse-handler-changes.patch
+Patch42: 0042-vhost-net-patches-for-qemu-0.13.0-tarball.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -272,7 +274,7 @@ such as kvm_stat.
 %endif
 
 %prep
-%setup -q -n qemu-kvm-%{version}-rc1
+%setup -q -n qemu-kvm-%{version}
 
 %patch00 -p1
 %patch01 -p1
@@ -315,6 +317,8 @@ such as kvm_stat.
 %patch38 -p1
 %patch39 -p1
 %patch40 -p1
+%patch41 -p1
+%patch42 -p1
 
 %build
 # By default we build everything, but allow x86 to build a minimal version
@@ -337,6 +341,12 @@ such as kvm_stat.
 extraldflags="-Wl,--build-id";
 buildldflags="VL_LDFLAGS=-Wl,--build-id"
 
+ifarch s390
+# drop -g flag to prevent memory exhaustion by linker
+%global optflags %(echo %{optflags} | sed 's/-g//')
+sed -i.debug 's/-g//g' configure
+%endif
+
 %ifarch %{ix86} x86_64
 # sdl outputs to alsa or pulseaudio depending on system config, but it's broken (#495964)
 # alsa works, but causes huge CPU load due to bugs
@@ -347,7 +357,7 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
             --audio-drv-list=pa,sdl,alsa,oss \
             --disable-strip \
             --extra-ldflags=$extraldflags \
-            --extra-cflags="$RPM_OPT_FLAGS" \
+            --extra-cflags="%{optflags}" \
 %ifarch x86_64
             --enable-spice \
 %endif
@@ -373,7 +383,7 @@ make clean
     --disable-kvm \
     --disable-strip \
     --extra-ldflags=$extraldflags \
-    --extra-cflags="$RPM_OPT_FLAGS" \
+    --extra-cflags=="%{optflags}" \
     --disable-xen \
 %ifarch x86_64
     --enable-spice \
@@ -629,6 +639,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Oct 18 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.13.0-1
+- Update to 0.13.0 upstream release
+- Fixes for vhost
+- Fix mouse in certain guests (#636887)
+- Fix issues with WinXP guest install (#579348)
+- Resolve build issues with S390 (#639471)
+- Fix Windows XP on Raw Devices (#631591)
+
 * Tue Sep 21 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.13.0-0.7.rc1
 - Flip qxl pci id from unstable to stable (#634535)
 - KSM Fixes from upstream (#558281)

@@ -77,8 +77,14 @@ case "$1" in
 	condrestart
 	;;
   retune)
-        kill -SIGUSR1 `cat ${pidfile}`
+        pid=`cat ${pidfile} 2> /dev/null`
         RETVAL=$?
+        if [ -z "$pid" ]; then
+	    echo $"Cannot retune, service is not running."
+	else
+            kill -SIGUSR1 $pid
+            RETVAL=$?
+	fi
         ;;
   *)
 	echo $"Usage: $prog {start|stop|restart|force-reload|condrestart|try-restart|status|retune|help}"
