@@ -341,7 +341,7 @@ such as kvm_stat.
 extraldflags="-Wl,--build-id";
 buildldflags="VL_LDFLAGS=-Wl,--build-id"
 
-ifarch s390
+%ifarch s390
 # drop -g flag to prevent memory exhaustion by linker
 %global optflags %(echo %{optflags} | sed 's/-g//')
 sed -i.debug 's/-g//g' configure
