@@ -383,7 +383,7 @@ make clean
     --disable-kvm \
     --disable-strip \
     --extra-ldflags=$extraldflags \
-    --extra-cflags=="%{optflags}" \
+    --extra-cflags="%{optflags}" \
     --disable-xen \
 %ifarch x86_64
     --enable-spice \
