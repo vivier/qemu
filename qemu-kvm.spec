@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.116%{?dist}
+Release: 2.117%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1448,6 +1448,20 @@ Patch1711: kvm-spice-qxl-make-draw_area-and-vgafb-share-memory.patch
 Patch1713: kvm-Fix-underflow-error-in-device-assignment-size-check.patch
 # For bz#641127 - qemu-img ignores close() errors
 Patch1714: kvm-check-for-close-errors-on-qcow2_create.patch
+# For bz#599307 - info snapshot return "bdrv_snapshot_list: error -95"
+Patch1715: kvm-savevm-Really-verify-if-a-drive-supports-snapshots.patch
+# For bz#643681 - Do not advertise boot=on capability to libvirt
+Patch1716: kvm-drop-boot-on-from-help-string.patch
+# For bz#585910 - [Intel 6.1 Bug] SRAO MCE in guest kills QEMU-KVM (qemu-kvm component)
+Patch1717: kvm-Fix-parameters-of-prctl.patch
+# For bz#585910 - [Intel 6.1 Bug] SRAO MCE in guest kills QEMU-KVM (qemu-kvm component)
+Patch1718: kvm-Ignore-SRAO-MCE-if-another-MCE-is-being-processed.patch
+# For bz#585910 - [Intel 6.1 Bug] SRAO MCE in guest kills QEMU-KVM (qemu-kvm component)
+Patch1719: kvm-Add-RAM-physical-addr-mapping-in-MCE-simulation.patch
+# For bz#585910 - [Intel 6.1 Bug] SRAO MCE in guest kills QEMU-KVM (qemu-kvm component)
+Patch1720: kvm-Add-savevm-loadvm-support-for-MCE.patch
+# For bz#585910 - [Intel 6.1 Bug] SRAO MCE in guest kills QEMU-KVM (qemu-kvm component)
+Patch1721: kvm-Fix-SRAO-SRAR-MCE-injecting-on-guest-without-MCG_SER.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2222,6 +2236,13 @@ such as kvm_stat.
 %patch1711 -p1
 %patch1713 -p1
 %patch1714 -p1
+%patch1715 -p1
+%patch1716 -p1
+%patch1717 -p1
+%patch1718 -p1
+%patch1719 -p1
+%patch1720 -p1
+%patch1721 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2417,6 +2438,21 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Oct 25 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.117.el6
+- kvm-savevm-Really-verify-if-a-drive-supports-snapshots.patch [bz#599307]
+- kvm-drop-boot-on-from-help-string.patch [bz#643681]
+- kvm-Fix-parameters-of-prctl.patch [bz#585910]
+- kvm-Ignore-SRAO-MCE-if-another-MCE-is-being-processed.patch [bz#585910]
+- kvm-Add-RAM-physical-addr-mapping-in-MCE-simulation.patch [bz#585910]
+- kvm-Add-savevm-loadvm-support-for-MCE.patch [bz#585910]
+- kvm-Fix-SRAO-SRAR-MCE-injecting-on-guest-without-MCG_SER.patch [bz#585910]
+- Resolves: bz#585910
+  ([Intel 6.1 Bug] SRAO MCE in guest kills QEMU-KVM (qemu-kvm component))
+- Resolves: bz#599307
+  (info snapshot return "bdrv_snapshot_list: error -95")
+- Resolves: bz#643681
+  (Do not advertise boot=on capability to libvirt)
+
 * Thu Oct 14 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.116.el6
 - ksmtuned: committed_memory of 0 qemus [bz#609016]
 - kvm-Fix-underflow-error-in-device-assignment-size-check.patch [bz#632054]

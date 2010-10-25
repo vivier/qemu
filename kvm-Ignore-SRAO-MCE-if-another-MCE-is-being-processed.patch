@@ -1,0 +1,98 @@
+From e764a21b89a14dd291428e0275d685a3d8419d1d Mon Sep 17 00:00:00 2001
+From: Dean Nelson <dnelson@redhat.com>
+Date: Fri, 15 Oct 2010 21:17:35 -0300
+Subject: [RHEL6 qemu-kvm PATCH 4/7] Ignore SRAO MCE if another MCE is being processed
+
+RH-Author: Dean Nelson <dnelson@redhat.com>
+Message-id: <20101015211735.4348.60230.send-patch@localhost6.localdomain6>
+Patchwork-id: 12689
+O-Subject: [RHEL6.1 qemu-kvm PATCH v2 2/5] Ignore SRAO MCE if another MCE is
+	being processed
+Bugzilla: 585910
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+
+Resolves RHBZ 585910.
+
+In common cases, guest SRAO MCE will cause corresponding poisoned page
+be un-mapped in host and SIGBUS be sent to QEMU-KVM, then QEMU-KVM
+will relay the MCE to guest OS.
+
+But it is possible that the poisoned page is accessed in guest after
+un-mapped in host and before MCE is relayed to guest OS. So that, the
+SRAR SIGBUS is sent to QEMU-KVM before the SRAO SIGBUS, and if
+QEMU-KVM relays them to guest OS one by one, guest system may reset,
+because the SRAO MCE may be triggered while the SRAR MCE is being
+processed. In fact, the SRAO MCE can be ignored in this situation, so
+that the guest system is given opportunity to survive.
+
+Backport of upstream commit:
+http://git.kernel.org/?p=virt/kvm/qemu-kvm.git;a=commitdiff;h=fb3ba1008cd9af6c7e03ca1d22ec1a904d9719a9
+
+---
+
+ qemu-kvm.c |   28 ++++++++++++++++++++++++++++
+ 1 files changed, 28 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-kvm.c |   28 ++++++++++++++++++++++++++++
+ 1 files changed, 28 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-kvm.c b/qemu-kvm.c
+index 717957e..b34f131 100644
+--- a/qemu-kvm.c
++++ b/qemu-kvm.c
+@@ -1685,6 +1685,19 @@ static void flush_queued_work(CPUState *env)
+     pthread_cond_broadcast(&qemu_work_cond);
+ }
+ 
++static int kvm_mce_in_exception(CPUState *env)
++{
++    struct kvm_msr_entry msr_mcg_status = {
++        .index = MSR_MCG_STATUS,
++    };
++    int r;
++
++    r = kvm_get_msrs(env, &msr_mcg_status, 1);
++    if (r == -1 || r == 0)
++        return -1;
++    return !!(msr_mcg_status.data & MCG_STATUS_MCIP);
++}
++
+ static void kvm_on_sigbus(CPUState *env, siginfo_t *siginfo)
+ {
+ #if defined(KVM_CAP_MCE) && defined(TARGET_I386)
+@@ -1705,6 +1718,15 @@ static void kvm_on_sigbus(CPUState *env, siginfo_t *siginfo)
+             mce.misc = (MCM_ADDR_PHYS << 6) | 0xc;
+             mce.mcg_status = MCG_STATUS_MCIP | MCG_STATUS_EIPV;
+         } else {
++            /*
++             * If there is an MCE excpetion being processed, ignore
++             * this SRAO MCE
++             */
++            r = kvm_mce_in_exception(env);
++            if (r == -1)
++                fprintf(stderr, "Failed to get MCE status\n");
++            else if (r)
++                return;
+             /* Fake an Intel architectural Memory scrubbing UCR */
+             mce.status = MCI_STATUS_VAL | MCI_STATUS_UC | MCI_STATUS_EN
+                 | MCI_STATUS_MISCV | MCI_STATUS_ADDRV | MCI_STATUS_S
+@@ -2638,6 +2660,12 @@ static void kvm_do_inject_x86_mce(void *_data)
+     struct kvm_x86_mce_data *data = _data;
+     int r;
+ 
++    /* If there is an MCE excpetion being processed, ignore this SRAO MCE */
++    r = kvm_mce_in_exception(data->env);
++    if (r == -1)
++        fprintf(stderr, "Failed to get MCE status\n");
++    else if (r && !(data->mce->status & MCI_STATUS_AR))
++        return;
+     r = kvm_set_mce(data->env, data->mce);
+     if (r < 0) {
+         perror("kvm_set_mce FAILED");
+-- 
+1.6.5.5
+

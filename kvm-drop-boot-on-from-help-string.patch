@@ -1,0 +1,51 @@
+From 8a7213472c71e1901bd9011da90c08a0350be145 Mon Sep 17 00:00:00 2001
+From: Gleb Natapov <gleb@redhat.com>
+Date: Sun, 17 Oct 2010 11:04:19 -0200
+Subject: [RHEL6 qemu-kvm PATCH 2/7] drop boot=on from help string.
+
+RH-Author: Gleb Natapov <gleb@redhat.com>
+Message-id: <20101017110419.GO19207@redhat.com>
+Patchwork-id: 12704
+O-Subject: [PATCH RHEL6.1] drop boot=on from help string.
+Bugzilla: 643681
+RH-Acked-by: Glauber Costa <glommer@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Seabios supports booting from virtio directly, so we shouldn't use
+boot=on anymore. Libvirt uses help string to check for extboot support.
+Removing it from help string will tell libvirt that the option should
+not be used.
+
+BZ: 643681
+Upstream: extboot is not supported in qemu.git, we may still want to
+          allow use it in qemu-kvm for booting from scsi, so it is to
+	  early to drop it there, but correct solution is to add scsi
+          support to seabios or use option rom with scsi support.
+
+Signed-off-by: Gleb Natapov <gleb@redhat.com>
+--
+			Gleb.
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-options.hx |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-options.hx b/qemu-options.hx
+index 632c448..f77439b 100644
+--- a/qemu-options.hx
++++ b/qemu-options.hx
+@@ -104,7 +104,7 @@ DEF("drive", HAS_ARG, QEMU_OPTION_drive,
+     "       [,cyls=c,heads=h,secs=s[,trans=t]][,snapshot=on|off]\n"
+     "       [,cache=writethrough|writeback|none][,format=f][,serial=s]\n"
+     "       [,addr=A][,id=name][,aio=threads|native]\n"
+-    "       [,boot=on|off][,readonly=on|off]\n"
++    "       [,readonly=on|off]\n"
+     "                use 'file' as a drive image\n")
+ DEF("set", HAS_ARG, QEMU_OPTION_set,
+     "-set group.id.arg=value\n"
+-- 
+1.6.5.5
+

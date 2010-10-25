@@ -1,0 +1,117 @@
+From 77987914abafe1bb1a86ec32dad164d37dc17004 Mon Sep 17 00:00:00 2001
+From: Dean Nelson <dnelson@redhat.com>
+Date: Fri, 15 Oct 2010 21:17:41 -0300
+Subject: [RHEL6 qemu-kvm PATCH 5/7] Add RAM -> physical addr mapping in MCE simulation
+
+RH-Author: Dean Nelson <dnelson@redhat.com>
+Message-id: <20101015211741.4348.38484.send-patch@localhost6.localdomain6>
+Patchwork-id: 12690
+O-Subject: [RHEL6.1 qemu-kvm PATCH v2 3/5] Add RAM -> physical addr mapping in
+	MCE simulation
+Bugzilla: 585910
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+Resolves RHBZ 585910.
+
+In QEMU-KVM, physical address != RAM address. While MCE simulation
+needs physical address instead of RAM address. So
+kvm_physical_memory_addr_from_ram() is implemented to do the
+conversion, and it is invoked before being filled in the IA32_MCi_ADDR
+MSR.
+
+Modified backport of upstream commit:
+http://git.kernel.org/?p=virt/kvm/qemu-kvm.git;a=commitdiff;h=a05684e367d4eb6809a25eaaea8d83eb6f8cf6c2
+
+v2 of this patch adds:
+
+ Explicit type conversion to avoid compilation failure.
+
+ Backport of upstream commit:
+ http://git.kernel.org/?p=virt/kvm/qemu-kvm.git;a=commitdiff;h=6c8578617ed01c915da793ae98017ebd1244a4e1
+
+---
+
+ qemu-kvm.c |   28 +++++++++++++++++++++++++---
+ 1 files changed, 25 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-kvm.c |   28 +++++++++++++++++++++++++---
+ 1 files changed, 25 insertions(+), 3 deletions(-)
+
+diff --git a/qemu-kvm.c b/qemu-kvm.c
+index b34f131..35993e7 100644
+--- a/qemu-kvm.c
++++ b/qemu-kvm.c
+@@ -1480,6 +1480,9 @@ static void sigbus_reraise(void)
+     abort();
+ }
+ 
++static int kvm_physical_memory_addr_from_ram(KVMState *s, ram_addr_t ram_addr,
++                                             target_phys_addr_t *phys_addr);
++
+ static void sigbus_handler(int n, struct qemu_signalfd_siginfo *siginfo,
+                            void *ctx)
+ {
+@@ -1487,12 +1490,15 @@ static void sigbus_handler(int n, struct qemu_signalfd_siginfo *siginfo,
+     if (first_cpu->mcg_cap && siginfo->ssi_addr
+         && siginfo->ssi_code == BUS_MCEERR_AO) {
+         uint64_t status;
++        void *vaddr;
++        ram_addr_t ram_addr;
+         unsigned long paddr;
+         CPUState *cenv;
+ 
+         /* Hope we are lucky for AO MCE */
+-        if (do_qemu_ram_addr_from_host((void *)(intptr_t)siginfo->ssi_addr,
+-				       &paddr)) {
++        vaddr = (void *)(intptr_t)siginfo->ssi_addr;
++        if (do_qemu_ram_addr_from_host(vaddr, &ram_addr) ||
++            !kvm_physical_memory_addr_from_ram(kvm_state, ram_addr, (target_phys_addr_t *)&paddr)) {
+             fprintf(stderr, "Hardware memory error for memory used by "
+                     "QEMU itself instead of guest system!: %llx\n",
+                     (unsigned long long)siginfo->ssi_addr);
+@@ -1704,6 +1710,8 @@ static void kvm_on_sigbus(CPUState *env, siginfo_t *siginfo)
+     struct kvm_x86_mce mce = {
+             .bank = 9,
+     };
++    void *vaddr;
++    ram_addr_t ram_addr;
+     unsigned long paddr;
+     int r;
+ 
+@@ -1734,7 +1742,9 @@ static void kvm_on_sigbus(CPUState *env, siginfo_t *siginfo)
+             mce.misc = (MCM_ADDR_PHYS << 6) | 0xc;
+             mce.mcg_status = MCG_STATUS_MCIP | MCG_STATUS_RIPV;
+         }
+-        if (do_qemu_ram_addr_from_host((void *)siginfo->si_addr, &paddr)) {
++        vaddr = (void *)siginfo->si_addr;
++        if (do_qemu_ram_addr_from_host(vaddr, &ram_addr) ||
++            !kvm_physical_memory_addr_from_ram(kvm_state, ram_addr, (target_phys_addr_t *)&paddr)) {
+             fprintf(stderr, "Hardware memory error for memory used by "
+                     "QEMU itself instaed of guest system!\n");
+             /* Hope we are lucky for AO MCE */
+@@ -2384,6 +2394,18 @@ void kvm_set_phys_mem(target_phys_addr_t start_addr, ram_addr_t size,
+     return;
+ }
+ 
++static int kvm_physical_memory_addr_from_ram(KVMState *s, ram_addr_t ram_addr,
++                                             target_phys_addr_t *phys_addr)
++{
++    struct mapping *p;
++
++    p = find_ram_mapping(ram_addr);
++    if (p)
++        *phys_addr = p->phys + (ram_addr - p->ram);
++
++    return !!p;
++}
++
+ int kvm_setup_guest_memory(void *area, unsigned long size)
+ {
+     int ret = 0;
+-- 
+1.6.5.5
+

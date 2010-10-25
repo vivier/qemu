@@ -1,0 +1,104 @@
+From ffce11e7ca10697ffa9537514e0fef41b118af08 Mon Sep 17 00:00:00 2001
+From: Dean Nelson <dnelson@redhat.com>
+Date: Fri, 15 Oct 2010 21:17:47 -0300
+Subject: [RHEL6 qemu-kvm PATCH 6/7] Add savevm/loadvm support for MCE
+
+RH-Author: Dean Nelson <dnelson@redhat.com>
+Message-id: <20101015211747.4348.617.send-patch@localhost6.localdomain6>
+Patchwork-id: 12691
+O-Subject: [RHEL6.1 qemu-kvm PATCH v2 4/5] Add savevm/loadvm support for MCE
+Bugzilla: 585910
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+Resolves RHBZ 585910.
+
+MCE registers are saved/load into/from CPUState in
+kvm_arch_save/load_regs. To simulate the MCG_STATUS clearing upon
+reset, MSR_MCG_STATUS is set to 0 for KVM_PUT_RESET_STATE.
+
+Remove extraneous line continuation.
+
+Fix the calculation of the number of msr mce bank entries to equal
+the number of mce banks multiplied by 4.
+
+Backport of upstream commits:
+http://git.kernel.org/?p=virt/kvm/qemu-kvm.git;a=commitdiff;h=1bab5d11545d8de5facf46c28630085a2f9651ae
+http://git.kernel.org/?p=virt/kvm/qemu-kvm.git;a=commitdiff;h=93572fe6d62bcf733e139f41a3a8fa36232d4d08
+http://git.kernel.org/?p=virt/kvm/qemu-kvm.git;a=commitdiff;h=6574f651de4e7bf3ce47d598c1966a55357a7acf
+
+This entire patch is new with v2.
+
+---
+
+ qemu-kvm-x86.c |   37 +++++++++++++++++++++++++++++++++++++
+ 1 files changed, 37 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-kvm-x86.c |   33 +++++++++++++++++++++++++++++++++
+ 1 files changed, 33 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-kvm-x86.c b/qemu-kvm-x86.c
+index 93deeff..d4fdb88 100644
+--- a/qemu-kvm-x86.c
++++ b/qemu-kvm-x86.c
+@@ -847,7 +847,22 @@ static int get_msr_entry(struct kvm_msr_entry *entry, CPUState *env)
+         case MSR_KVM_WALL_CLOCK:
+             env->wall_clock_msr = entry->data;
+             break;
++#ifdef KVM_CAP_MCE
++        case MSR_MCG_STATUS:
++            env->mcg_status = entry->data;
++            break;
++        case MSR_MCG_CTL:
++            env->mcg_ctl = entry->data;
++            break;
++#endif
+         default:
++#ifdef KVM_CAP_MCE
++            if (entry->index >= MSR_MC0_CTL &&
++                entry->index < MSR_MC0_CTL + (env->mcg_cap & 0xff) * 4) {
++                env->mce_banks[entry->index - MSR_MC0_CTL] = entry->data;
++                break;
++            }
++#endif
+             printf("Warning unknown msr index 0x%x\n", entry->index);
+             return 1;
+         }
+@@ -1016,6 +1031,15 @@ void kvm_arch_load_regs(CPUState *env)
+     set_msr_entry(&msrs[n++], MSR_KVM_SYSTEM_TIME,  env->system_time_msr);
+     set_msr_entry(&msrs[n++], MSR_KVM_WALL_CLOCK,  env->wall_clock_msr);
+ 
++#ifdef KVM_CAP_MCE
++    if (env->mcg_cap) {
++        set_msr_entry(&msrs[n++], MSR_MCG_STATUS, env->mcg_status);
++        set_msr_entry(&msrs[n++], MSR_MCG_CTL, env->mcg_ctl);
++        for (i = 0; i < (env->mcg_cap & 0xff) * 4; i++)
++            set_msr_entry(&msrs[n++], MSR_MC0_CTL + i, env->mce_banks[i]);
++    }
++#endif
++
+     rc = kvm_set_msrs(env, msrs, n);
+     if (rc == -1)
+         perror("kvm_set_msrs FAILED");
+@@ -1208,6 +1232,15 @@ void kvm_arch_save_regs(CPUState *env)
+     msrs[n++].index = MSR_KVM_SYSTEM_TIME;
+     msrs[n++].index = MSR_KVM_WALL_CLOCK;
+ 
++#ifdef KVM_CAP_MCE
++    if (env->mcg_cap) {
++        msrs[n++].index = MSR_MCG_STATUS;
++        msrs[n++].index = MSR_MCG_CTL;
++        for (i = 0; i < (env->mcg_cap & 0xff) * 4; i++)
++            msrs[n++].index = MSR_MC0_CTL + i;
++    }
++#endif
++
+     rc = kvm_get_msrs(env, msrs, n);
+     if (rc == -1) {
+         perror("kvm_get_msrs FAILED");
+-- 
+1.6.5.5
+

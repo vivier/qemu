@@ -1,0 +1,269 @@
+From f1bee1cd3382b64879f9a689acb33ac7843376cb Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Fri, 8 Oct 2010 10:01:05 -0300
+Subject: [RHEL6 qemu-kvm PATCH 1/7] savevm: Really verify if a drive supports snapshots
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1286532065-10435-1-git-send-email-kwolf@redhat.com>
+Patchwork-id: 12460
+O-Subject: [RHEL-6.1 qemu-kvm PATCH] savevm: Really verify if a drive supports
+	snapshots
+Bugzilla: 599307
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Miguel Di Ciurcio Filho <miguel.filho@gmail.com>
+
+Bugzilla: 599307
+
+Both bdrv_can_snapshot() and bdrv_has_snapshot() does not work as advertized.
+
+First issue: Their names implies different porpouses, but they do the same thing
+and have exactly the same code. Maybe copied and pasted and forgotten?
+bdrv_has_snapshot() is called in various places for actually checking if there
+is snapshots or not.
+
+Second issue: the way bdrv_can_snapshot() verifies if a block driver supports or
+not snapshots does not catch all cases. E.g.: a raw image.
+
+So when do_savevm() is called, first thing it does is to set a global
+BlockDriverState to save the VM memory state calling get_bs_snapshots().
+
+static BlockDriverState *get_bs_snapshots(void)
+{
+    BlockDriverState *bs;
+    DriveInfo *dinfo;
+
+    if (bs_snapshots)
+        return bs_snapshots;
+    QTAILQ_FOREACH(dinfo, &drives, next) {
+        bs = dinfo->bdrv;
+        if (bdrv_can_snapshot(bs))
+            goto ok;
+    }
+    return NULL;
+ ok:
+    bs_snapshots = bs;
+    return bs;
+}
+
+bdrv_can_snapshot() may return a BlockDriverState that does not support
+snapshots and do_savevm() goes on.
+
+Later on in do_savevm(), we find:
+
+    QTAILQ_FOREACH(dinfo, &drives, next) {
+        bs1 = dinfo->bdrv;
+        if (bdrv_has_snapshot(bs1)) {
+            /* Write VM state size only to the image that contains the state */
+            sn->vm_state_size = (bs == bs1 ? vm_state_size : 0);
+            ret = bdrv_snapshot_create(bs1, sn);
+            if (ret < 0) {
+                monitor_printf(mon, "Error while creating snapshot on '%s'\n",
+                               bdrv_get_device_name(bs1));
+            }
+        }
+    }
+
+bdrv_has_snapshot(bs1) is not checking if the device does support or has
+snapshots as explained above. Only in bdrv_snapshot_create() the device is
+actually checked for snapshot support.
+
+So, in cases where the first device supports snapshots, and the second does not,
+the snapshot on the first will happen anyways. I believe this is not a good
+behavior. It should be an all or nothing process.
+
+This patch addresses these issues by making bdrv_can_snapshot() actually do
+what it must do and enforces better tests to avoid errors in the middle of
+do_savevm(). bdrv_has_snapshot() is removed and replaced by bdrv_can_snapshot()
+where appropriate.
+
+bdrv_can_snapshot() was moved from savevm.c to block.c. It makes more sense to me.
+
+The loadvm_state() function was updated too to enforce that when loading a VM at
+least all writable devices must support snapshots too.
+
+Signed-off-by: Miguel Di Ciurcio Filho <miguel.filho@gmail.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit feeee5aca765606818e00f5a19d19f141f4ae365)
+---
+ block.c  |   17 +++++++++++++++++
+ block.h  |    1 +
+ savevm.c |   58 ++++++++++++++++++++++++++++++++++++----------------------
+ 3 files changed, 54 insertions(+), 22 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c  |   17 +++++++++++++++++
+ block.h  |    1 +
+ savevm.c |   58 ++++++++++++++++++++++++++++++++++++----------------------
+ 3 files changed, 54 insertions(+), 22 deletions(-)
+
+diff --git a/block.c b/block.c
+index 85d23fc..74b7180 100644
+--- a/block.c
++++ b/block.c
+@@ -1709,6 +1709,23 @@ void bdrv_debug_event(BlockDriverState *bs, BlkDebugEvent event)
+ /**************************************************************/
+ /* handling of snapshots */
+ 
++int bdrv_can_snapshot(BlockDriverState *bs)
++{
++    BlockDriver *drv = bs->drv;
++    if (!drv || bdrv_is_removable(bs) || bdrv_is_read_only(bs)) {
++        return 0;
++    }
++
++    if (!drv->bdrv_snapshot_create) {
++        if (bs->file != NULL) {
++            return bdrv_can_snapshot(bs->file);
++        }
++        return 0;
++    }
++
++    return 1;
++}
++
+ int bdrv_snapshot_create(BlockDriverState *bs,
+                          QEMUSnapshotInfo *sn_info)
+ {
+diff --git a/block.h b/block.h
+index 90cbef9..7122e76 100644
+--- a/block.h
++++ b/block.h
+@@ -187,6 +187,7 @@ int bdrv_get_info(BlockDriverState *bs, BlockDriverInfo *bdi);
+ const char *bdrv_get_encrypted_filename(BlockDriverState *bs);
+ void bdrv_get_backing_filename(BlockDriverState *bs,
+                                char *filename, int filename_size);
++int bdrv_can_snapshot(BlockDriverState *bs);
+ int bdrv_snapshot_create(BlockDriverState *bs,
+                          QEMUSnapshotInfo *sn_info);
+ int bdrv_snapshot_goto(BlockDriverState *bs,
+diff --git a/savevm.c b/savevm.c
+index 1c249a2..d23db57 100644
+--- a/savevm.c
++++ b/savevm.c
+@@ -1749,22 +1749,6 @@ out:
+     return ret;
+ }
+ 
+-/* device can contain snapshots */
+-static int bdrv_can_snapshot(BlockDriverState *bs)
+-{
+-    return (bs &&
+-            !bdrv_is_removable(bs) &&
+-            !bdrv_is_read_only(bs));
+-}
+-
+-/* device must be snapshots in order to have a reliable snapshot */
+-static int bdrv_has_snapshot(BlockDriverState *bs)
+-{
+-    return (bs &&
+-            !bdrv_is_removable(bs) &&
+-            !bdrv_is_read_only(bs));
+-}
+-
+ static BlockDriverState *get_bs_snapshots(void)
+ {
+     BlockDriverState *bs;
+@@ -1774,8 +1758,9 @@ static BlockDriverState *get_bs_snapshots(void)
+         return bs_snapshots;
+     QTAILQ_FOREACH(dinfo, &drives, next) {
+         bs = dinfo->bdrv;
+-        if (bdrv_can_snapshot(bs))
++        if (bdrv_can_snapshot(bs)) {
+             goto ok;
++        }
+     }
+     return NULL;
+  ok:
+@@ -1849,12 +1834,26 @@ void do_savevm(Monitor *mon, const QDict *qdict)
+ #endif
+     const char *name = qdict_get_try_str(qdict, "name");
+ 
++    /* Verify if there is a device that doesn't support snapshots and is writable */
++    QTAILQ_FOREACH(dinfo, &drives, next) {
++        bs = dinfo->bdrv;
++
++        if (bdrv_is_removable(bs) || bdrv_is_read_only(bs)) {
++            continue;
++        }
++
++        if (!bdrv_can_snapshot(bs)) {
++            monitor_printf(mon, "Device '%s' is writable but does not support snapshots.\n",
++                               bdrv_get_device_name(bs));
++            return;
++        }
++    }
++
+     bs = get_bs_snapshots();
+     if (!bs) {
+         monitor_printf(mon, "No block device can accept snapshots\n");
+         return;
+     }
+-
+     /* ??? Should this occur after vm_stop?  */
+     qemu_aio_flush();
+ 
+@@ -1907,7 +1906,7 @@ void do_savevm(Monitor *mon, const QDict *qdict)
+ 
+     QTAILQ_FOREACH(dinfo, &drives, next) {
+         bs1 = dinfo->bdrv;
+-        if (bdrv_has_snapshot(bs1)) {
++        if (bdrv_can_snapshot(bs1)) {
+             /* Write VM state size only to the image that contains the state */
+             sn->vm_state_size = (bs == bs1 ? vm_state_size : 0);
+             ret = bdrv_snapshot_create(bs1, sn);
+@@ -1931,6 +1930,21 @@ int load_vmstate(const char *name)
+     QEMUFile *f;
+     int ret;
+ 
++    /* Verify if there is a device that doesn't support snapshots and is writable */
++    QTAILQ_FOREACH(dinfo, &drives, next) {
++        bs = dinfo->bdrv;
++
++        if (bdrv_is_removable(bs) || bdrv_is_read_only(bs)) {
++            continue;
++        }
++
++        if (!bdrv_can_snapshot(bs)) {
++            error_report("Device '%s' is writable but does not support snapshots.",
++                               bdrv_get_device_name(bs));
++            return -ENOTSUP;
++        }
++    }
++
+     bs = get_bs_snapshots();
+     if (!bs) {
+         error_report("No block device supports snapshots");
+@@ -1942,7 +1956,7 @@ int load_vmstate(const char *name)
+ 
+     QTAILQ_FOREACH(dinfo, &drives, next) {
+         bs1 = dinfo->bdrv;
+-        if (bdrv_has_snapshot(bs1)) {
++        if (bdrv_can_snapshot(bs1)) {
+             ret = bdrv_snapshot_goto(bs1, name);
+             if (ret < 0) {
+                 switch(ret) {
+@@ -2004,7 +2018,7 @@ void do_delvm(Monitor *mon, const QDict *qdict)
+ 
+     QTAILQ_FOREACH(dinfo, &drives, next) {
+         bs1 = dinfo->bdrv;
+-        if (bdrv_has_snapshot(bs1)) {
++        if (bdrv_can_snapshot(bs1)) {
+             ret = bdrv_snapshot_delete(bs1, name);
+             if (ret < 0) {
+                 if (ret == -ENOTSUP)
+@@ -2035,7 +2049,7 @@ void do_info_snapshots(Monitor *mon)
+     monitor_printf(mon, "Snapshot devices:");
+     QTAILQ_FOREACH(dinfo, &drives, next) {
+         bs1 = dinfo->bdrv;
+-        if (bdrv_has_snapshot(bs1)) {
++        if (bdrv_can_snapshot(bs1)) {
+             if (bs == bs1)
+                 monitor_printf(mon, " %s", bdrv_get_device_name(bs1));
+         }
+-- 
+1.6.5.5
+

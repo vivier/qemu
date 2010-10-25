@@ -1,0 +1,70 @@
+From dfad90eda6c727d93432deb1fdb3d86801b47bbc Mon Sep 17 00:00:00 2001
+From: Dean Nelson <dnelson@redhat.com>
+Date: Fri, 15 Oct 2010 21:17:53 -0300
+Subject: [RHEL6 qemu-kvm PATCH 7/7] Fix SRAO/SRAR MCE injecting on guest without MCG_SER_P
+
+RH-Author: Dean Nelson <dnelson@redhat.com>
+Message-id: <20101015211753.4348.10482.send-patch@localhost6.localdomain6>
+Patchwork-id: 12692
+O-Subject: [RHEL6.1 qemu-kvm PATCH v2 5/5] Fix SRAO/SRAR MCE injecting on guest
+	without MCG_SER_P
+Bugzilla: 585910
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+Resolves RHBZ 585910.
+
+On real machine, if MCG_SER_P in MSR_MCG_CAP is not set, SRAO/SRAR MCE
+should not be raised by hardware. This patch makes QEMU-KVM to follow
+the same rule.
+
+Backport of upstream commit:
+http://git.kernel.org/?p=virt/kvm/qemu-kvm.git;a=commitdiff;h=85566812a4f8cae721fea0224e05a7e75c08c5dd
+
+This entire patch is new with v2.
+
+---
+
+ qemu-kvm.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-kvm.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/qemu-kvm.c b/qemu-kvm.c
+index 35993e7..90d5714 100644
+--- a/qemu-kvm.c
++++ b/qemu-kvm.c
+@@ -1487,7 +1487,7 @@ static void sigbus_handler(int n, struct qemu_signalfd_siginfo *siginfo,
+                            void *ctx)
+ {
+ #if defined(KVM_CAP_MCE) && defined(TARGET_I386)
+-    if (first_cpu->mcg_cap && siginfo->ssi_addr
++    if ((first_cpu->mcg_cap & MCG_SER_P) && siginfo->ssi_addr
+         && siginfo->ssi_code == BUS_MCEERR_AO) {
+         uint64_t status;
+         void *vaddr;
+@@ -1715,7 +1715,7 @@ static void kvm_on_sigbus(CPUState *env, siginfo_t *siginfo)
+     unsigned long paddr;
+     int r;
+ 
+-    if (env->mcg_cap && siginfo->si_addr
++    if ((env->mcg_cap & MCG_SER_P) && siginfo->si_addr
+         && (siginfo->si_code == BUS_MCEERR_AR
+             || siginfo->si_code == BUS_MCEERR_AO)) {
+         if (siginfo->si_code == BUS_MCEERR_AR) {
+@@ -1746,7 +1746,7 @@ static void kvm_on_sigbus(CPUState *env, siginfo_t *siginfo)
+         if (do_qemu_ram_addr_from_host(vaddr, &ram_addr) ||
+             !kvm_physical_memory_addr_from_ram(kvm_state, ram_addr, (target_phys_addr_t *)&paddr)) {
+             fprintf(stderr, "Hardware memory error for memory used by "
+-                    "QEMU itself instaed of guest system!\n");
++                    "QEMU itself instead of guest system!\n");
+             /* Hope we are lucky for AO MCE */
+             if (siginfo->si_code == BUS_MCEERR_AO)
+                 return;
+-- 
+1.6.5.5
+
