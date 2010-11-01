@@ -73,6 +73,7 @@ typedef struct NICState {
     VLANClientState nc;
     NICConf *conf;
     void *opaque;
+    bool peer_deleted;
 } NICState;
 
 struct VLANState {
