@@ -447,11 +447,6 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/ppc_rom.bin
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/video.x
 %endif
 
-# remove config used by kvm
-%ifnarch %{ix86} x86_64
-rm -rf ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/target-*
-%endif
-
 # the pxe gpxe images will be symlinks to the images on
 # /usr/share/gpxe, as QEMU doesn't know how to look
 # for other paths, yet.
@@ -551,6 +546,8 @@ fi
 %{_initddir}/ksmtuned
 %{_sbindir}/ksmtuned
 %config(noreplace) %{_sysconfdir}/ksmtuned.conf
+%dir %{_sysconfdir}/qemu
+
 %files user
 %defattr(-,root,root)
 %{_initddir}/qemu
@@ -573,6 +570,7 @@ fi
 %{_bindir}/qemu-sparc64
 %{_bindir}/qemu-sparc32plus
 %endif
+
 %files system-x86
 %defattr(-,root,root)
 %{_bindir}/qemu
@@ -591,32 +589,40 @@ fi
 %{_datadir}/%{name}/pxe-pcnet.bin
 %{_datadir}/%{name}/pxe-rtl8139.bin
 %{_datadir}/%{name}/pxe-ne2k_pci.bin
+%config(noreplace) %{_sysconfdir}/qemu/target-x86_64.conf
+
 %ifarch %{ix86} x86_64
 %{_datadir}/%{name}/extboot.bin
 %{_bindir}/qemu-kvm
 %{_sysconfdir}/sysconfig/modules/kvm.modules
 %{_sysconfdir}/udev/rules.d/80-kvm.rules
-%dir %{_sysconfdir}/qemu
-%{_sysconfdir}/qemu/target-*
+%endif
+
+%ifarch %{ix86} x86_64
 %files kvm-tools
 %defattr(-,root,root,-)
 %{_bindir}/kvm_stat
 %endif
+
 %if !%{with_x86only}
+
 %files system-sparc
 %defattr(-,root,root)
 %{_bindir}/qemu-system-sparc
 %{_datadir}/%{name}/openbios-sparc32
 %{_datadir}/%{name}/openbios-sparc64
+
 %files system-arm
 %defattr(-,root,root)
 %{_bindir}/qemu-system-arm
+
 %files system-mips
 %defattr(-,root,root)
 %{_bindir}/qemu-system-mips
 %{_bindir}/qemu-system-mipsel
 %{_bindir}/qemu-system-mips64
 %{_bindir}/qemu-system-mips64el
+
 %files system-ppc
 %defattr(-,root,root)
 %{_bindir}/qemu-system-ppc
@@ -626,16 +632,20 @@ fi
 %{_datadir}/%{name}/video.x
 %{_datadir}/%{name}/bamboo.dtb
 %{_datadir}/%{name}/ppc_rom.bin
+
 %files system-cris
 %defattr(-,root,root)
 %{_bindir}/qemu-system-cris
+
 %files system-m68k
 %defattr(-,root,root)
 %{_bindir}/qemu-system-m68k
+
 %files system-sh4
 %defattr(-,root,root)
 %{_bindir}/qemu-system-sh4
 %{_bindir}/qemu-system-sh4eb
+
 %endif
 
 %files img
@@ -645,6 +655,12 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Nov  3 2010 Daniel P. Berrange <berrange@redhat.com> - 2:0.13.0-2
+- Revert previous change
+- Make qemu-common own the /etc/qemu directory
+- Add /etc/qemu/target-x86_64.conf to qemu-system-x86 regardless
+  of host architecture.
+
 * Wed Nov 03 2010 Dan Horák <dan[at]danny.cz> - 2:0.13.0-2
 - Remove kvm config file on non-x86 arches (part of #639471)
 - Own the /etc/qemu directory
