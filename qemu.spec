@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.13.0
-Release: 1%{?dist}
+Release: 2%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -447,6 +447,11 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/ppc_rom.bin
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/video.x
 %endif
 
+# remove config used by kvm
+%ifnarch %{ix86} x86_64
+rm -rf ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/target-*
+%endif
+
 # the pxe gpxe images will be symlinks to the images on
 # /usr/share/gpxe, as QEMU doesn't know how to look
 # for other paths, yet.
@@ -591,6 +596,7 @@ fi
 %{_bindir}/qemu-kvm
 %{_sysconfdir}/sysconfig/modules/kvm.modules
 %{_sysconfdir}/udev/rules.d/80-kvm.rules
+%dir %{_sysconfdir}/qemu
 %{_sysconfdir}/qemu/target-*
 %files kvm-tools
 %defattr(-,root,root,-)
@@ -639,6 +645,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Nov 03 2010 Dan Horák <dan[at]danny.cz> - 2:0.13.0-2
+- Remove kvm config file on non-x86 arches (part of #639471)
+- Own the /etc/qemu directory
+
 * Mon Oct 18 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.13.0-1
 - Update to 0.13.0 upstream release
 - Fixes for vhost
