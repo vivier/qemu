@@ -341,6 +341,15 @@ is_vlan_txd(uint32_t txd_lower)
     return ((txd_lower & E1000_TXD_CMD_VLE) != 0);
 }
 
+/* FCS aka Ethernet CRC-32. We don't get it from backends and can't
+ * fill it in, just pad descriptor length by 4 bytes unless guest
+ * told us to strip it off the packet. */
+static inline int
+fcs_len(E1000State *s)
+{
+    return (s->mac_reg[RCTL] & E1000_RCTL_SECRC) ? 0 : 4;
+}
+
 static void
 xmit_seg(E1000State *s)
 {
@@ -646,7 +655,7 @@ e1000_receive(VLANClientState *nc, const uint8_t *buf, size_t size)
     }
 
     rdh_start = s->mac_reg[RDH];
-    size += 4; // for the header
+    size += fcs_len(s);
     do {
         if (s->mac_reg[RDH] == s->mac_reg[RDT] && s->check_rxov) {
             set_ics(s, 0, E1000_ICS_RXO);
