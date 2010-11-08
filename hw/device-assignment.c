@@ -578,6 +578,8 @@ static int assigned_dev_register_regions(PCIRegion *io_regions,
             /* map physical memory */
             pci_dev->v_addrs[i].e_physbase = cur_region->base_addr;
             if (i == PCI_ROM_SLOT) {
+                /* KVM doesn't support read-only mappings, use slow map */
+                slow_map = 1;
                 pci_dev->v_addrs[i].u.r_virtbase =
                     mmap(NULL,
                          cur_region->size,
