@@ -425,7 +425,7 @@ int main(int argc, char **argv)
     max_fd = sharing_fds[0];
     nb_fds++;
 
-    data = qemu_memalign(512, NBD_BUFFER_SIZE);
+    data = qemu_blockalign(bs, NBD_BUFFER_SIZE);
     if (data == NULL)
         errx(ENOMEM, "Cannot allocate data buffer");
 
