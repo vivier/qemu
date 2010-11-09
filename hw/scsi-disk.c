@@ -1036,6 +1036,7 @@ static int scsi_disk_initfn(SCSIDevice *dev)
         s->qdev.blocksize = s->qdev.conf.logical_block_size;
     }
     s->cluster_size = s->qdev.blocksize / 512;
+    s->bs->buffer_alignment = s->qdev.blocksize;
 
     s->qdev.type = TYPE_DISK;
     bdrv_get_geometry(s->bs, &nb_sectors);
