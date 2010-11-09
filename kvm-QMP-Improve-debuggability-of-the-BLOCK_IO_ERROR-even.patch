@@ -1,0 +1,120 @@
+From 1a2b98f958fb770b70fa5a244e86c93655400858 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 4 Nov 2010 13:51:42 -0200
+Subject: [RHEL6 qemu-kvm PATCH 2/2] QMP: Improve debuggability of the BLOCK_IO_ERROR event
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <20101104115142.7dafa97a@doriath>
+Patchwork-id: 13201
+O-Subject: [PATCH v2 RHEL6.0.z/RHEL6.1] QMP: Improve debuggability of the
+	BLOCK_IO_ERROR event
+Bugzilla: 624607
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+BZ: 624607
+Upstream: N/A
+
+We have a vendor extension in the BLOCK_IO_ERROR event which adds
+a 'reason' field, which contains a stringfied errno (Please, check
+commit a635efd74e to learn why this was needed).
+
+However, it turns out that this information is not enough for
+debugging.
+
+Based on a suggestion from Kevin Wolf, this commit adds a new
+json-object member to the event, containing the errno value and an
+error string from strerror(). Additionally, an error message is
+printed to stderr.
+
+All this new information is meant for human debugging only and should
+not be used by libvirt (as stated in the event's documentation entry).
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+
+v2:
+- Add errno and error string (as a json-object)
+- Update event example in QMP/qmp-events.txt
+
+ QMP/qmp-events.txt |   10 +++++++++-
+ block.c            |   16 ++++++++++++++++
+ 2 files changed, 25 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ QMP/qmp-events.txt |   10 +++++++++-
+ block.c            |   16 ++++++++++++++++
+ 2 files changed, 25 insertions(+), 1 deletions(-)
+
+diff --git a/QMP/qmp-events.txt b/QMP/qmp-events.txt
+index 46f8b63..aa815f7 100644
+--- a/QMP/qmp-events.txt
++++ b/QMP/qmp-events.txt
+@@ -20,6 +20,11 @@ Data:
+     "eperm": errno EPERM
+     "enospc": errno ENOSPC
+     "eother": any other errno (other than EIO, EPERM, ENOSPC)
++- "__com.redhat_debug_info": RHEL6 extension containing debug information for
++                             humans, applications should NOT read any
++                             information from this member (json-object):
++    - "errno": errno value (json-int)
++    - "message": error message returned by strerror() (json-string)
+ 
+ Example:
+ 
+@@ -27,7 +32,10 @@ Example:
+     "data": { "device": "ide0-hd1",
+               "operation": "write",
+               "action": "stop",
+-              "__com.redhat_reason": "enospc" },
++              "__com.redhat_reason": "enospc",
++              "__com.redhat_debug_info": {
++                  "message": "No space left on device",
++                  "errno": 28 } }
+     "timestamp": { "seconds": 1265044230, "microseconds": 450486 } }
+ 
+ Note: If action is "stop", a STOP event will eventually follow the
+diff --git a/block.c b/block.c
+index 74b7180..d09addd 100644
+--- a/block.c
++++ b/block.c
+@@ -1431,6 +1431,18 @@ static void bdrv_put_rhel6_reason(QDict *event, int error)
+     qdict_put(event, BDRV_REASON_KEY, qstring_from_str(reason));
+ }
+ 
++#define BDRV_DEBUG_KEY  RFQDN_REDHAT "debug_info"
++
++/* RHEL6 vendor extension */
++static void bdrv_put_rhel6_debug_info(QDict *event, int error)
++{
++    QObject *info;
++
++    info = qobject_from_jsonf("{ 'errno': %d, 'message': %s }", error,
++                               strerror(error));
++    qdict_put_obj(event, BDRV_DEBUG_KEY, info);
++}
++
+ void bdrv_mon_event(const BlockDriverState *bdrv,
+                     BlockMonEventAction action, int error, int is_read)
+ {
+@@ -1451,11 +1463,15 @@ void bdrv_mon_event(const BlockDriverState *bdrv,
+         abort();
+     }
+ 
++    fprintf(stderr, "block I/O error in device '%s': %s (%d)\n",
++                     bdrv->device_name, strerror(error), error);
++
+     data = qobject_from_jsonf("{ 'device': %s, 'action': %s, 'operation': %s }",
+                               bdrv->device_name,
+                               action_str,
+                               is_read ? "read" : "write");
+     bdrv_put_rhel6_reason(qobject_to_qdict(data), error);
++    bdrv_put_rhel6_debug_info(qobject_to_qdict(data), error);
+     monitor_protocol_event(QEVENT_BLOCK_IO_ERROR, data);
+ 
+     qobject_decref(data);
+-- 
+1.7.3.2
+

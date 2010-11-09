@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.117%{?dist}
+Release: 2.118%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1462,6 +1462,10 @@ Patch1719: kvm-Add-RAM-physical-addr-mapping-in-MCE-simulation.patch
 Patch1720: kvm-Add-savevm-loadvm-support-for-MCE.patch
 # For bz#585910 - [Intel 6.1 Bug] SRAO MCE in guest kills QEMU-KVM (qemu-kvm component)
 Patch1721: kvm-Fix-SRAO-SRAR-MCE-injecting-on-guest-without-MCG_SER.patch
+# For bz#634661 - [RHEL6 Snap13]: Hot-unplugging of virtio nic issue in Windows2008 KVM guest.
+Patch1722: kvm-net-delay-freeing-peer-host-device.patch
+# For bz#624607 - [qemu] [rhel6] guest installation stop (pause) on 'eother' event over COW disks (thin-provisioning)
+Patch1723: kvm-QMP-Improve-debuggability-of-the-BLOCK_IO_ERROR-even.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2243,6 +2247,8 @@ such as kvm_stat.
 %patch1719 -p1
 %patch1720 -p1
 %patch1721 -p1
+%patch1722 -p1
+%patch1723 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2438,6 +2444,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Nov 09 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.118.el6
+- kvm-net-delay-freeing-peer-host-device.patch [bz#634661]
+- kvm-QMP-Improve-debuggability-of-the-BLOCK_IO_ERROR-even.patch [bz#624607]
+- Resolves: bz#624607
+  ([qemu] [rhel6] guest installation stop (pause) on 'eother' event over COW disks (thin-provisioning))
+- Resolves: bz#634661
+  ([RHEL6 Snap13]: Hot-unplugging of virtio nic issue in Windows2008 KVM guest.)
+
 * Mon Oct 25 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.117.el6
 - kvm-savevm-Really-verify-if-a-drive-supports-snapshots.patch [bz#599307]
 - kvm-drop-boot-on-from-help-string.patch [bz#643681]
