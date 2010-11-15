@@ -1043,6 +1043,7 @@ static int scsi_disk_initfn(SCSIDevice *dev)
         nb_sectors--;
     s->max_lba = nb_sectors;
     qemu_add_vm_change_state_handler(scsi_dma_restart_cb, s);
+    bdrv_set_removable(s->bs, is_cd);
     return 0;
 }
 

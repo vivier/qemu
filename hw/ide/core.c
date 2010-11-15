@@ -2620,6 +2620,7 @@ void ide_init_drive(IDEState *s, DriveInfo *dinfo, BlockConf *conf,
             s->is_cdrom = 1;
             bdrv_set_change_cb(s->bs, cdrom_change_cb, s);
         }
+        bdrv_set_removable(s->bs, s->is_cdrom);
         strncpy(s->drive_serial_str, drive_get_serial(s->bs),
                 sizeof(s->drive_serial_str));
         if (conf) {

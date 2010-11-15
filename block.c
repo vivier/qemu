@@ -1235,6 +1235,11 @@ int bdrv_get_translation_hint(BlockDriverState *bs)
     return bs->translation;
 }
 
+void bdrv_set_removable(BlockDriverState *bs, int removable)
+{
+    bs->removable = removable;
+}
+
 int bdrv_is_removable(BlockDriverState *bs)
 {
     return bs->removable;
