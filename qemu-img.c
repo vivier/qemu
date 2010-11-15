@@ -695,7 +695,8 @@ static int img_convert(int argc, char **argv)
         }
     }
 
-    out_bs = bdrv_new_open(out_filename, out_fmt, BDRV_O_FLAGS | BDRV_O_RDWR);
+    out_bs = bdrv_new_open(out_filename, out_fmt,
+        BDRV_O_FLAGS | BDRV_O_RDWR | BDRV_O_NO_FLUSH);
 
     bs_i = 0;
     bs_offset = 0;
