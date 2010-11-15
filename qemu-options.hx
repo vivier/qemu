@@ -102,7 +102,7 @@ ETEXI
 DEF("drive", HAS_ARG, QEMU_OPTION_drive,
     "-drive [file=file][,if=type][,bus=n][,unit=m][,media=d][,index=i]\n"
     "       [,cyls=c,heads=h,secs=s[,trans=t]][,snapshot=on|off]\n"
-    "       [,cache=writethrough|writeback|unsafe|none][,format=f]\n"
+    "       [,cache=writethrough|writeback|none|unsafe][,format=f]\n"
     "       [,serial=s][,addr=A][,id=name][,aio=threads|native]\n"
     "       [,boot=on|off][,readonly=on|off]\n"
     "                use 'file' as a drive image\n")
