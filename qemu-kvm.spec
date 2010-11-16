@@ -1,4 +1,4 @@
-%define zrelease 3
+%define zrelease 4
 
 Summary: Userspace component of KVM
 Name: qemu-kvm
@@ -1422,6 +1422,22 @@ Patch1696: kvm-virtio-net-Rename-tx_timer_active-to-tx_waiting.patch
 Patch1697: kvm-virtio-net-Introduce-a-new-bottom-half-packet-TX.patch
 # For bz#641835 - Can not commit copy-on-write image's data to raw backing-image
 Patch1698: kvm-block-Fix-image-re-open-in-bdrv_commit.patch
+# For bz#653334 - spice: prepare qxl for 6.1 update.
+Patch1699: kvm-spice-qxl-make-draw_area-and-vgafb-share-memory.patch
+# For bz#653334 - spice: prepare qxl for 6.1 update.
+Patch1700: kvm-spice-qxl-update-modes-ptr-in-post_load.patch
+# For bz#653329 - support high resolutions
+Patch1701: kvm-spice-qxl-enable-some-highres-modes.patch
+# For bz#653343 - Cannot hot-plug nic in windows VM when the vmem is larger
+Patch1702: kvm-add-MADV_DONTFORK-to-guest-physical-memory-v2.patch
+# For bz#653341 - Qemu becomes unresponsive during unattended_installation
+Patch1703: kvm-qxl-clear-dirty-rectangle-on-resize.patch
+# For bz#639437 - Incorrect russian vnc keymap
+# For bz#653337 - Incorrect russian vnc keymap
+Patch1704: kvm-fix-and-on-russian-keymap.patch
+# For bz#634661 - [RHEL6 Snap13]: Hot-unplugging of virtio nic issue in Windows2008 KVM guest.
+# For bz#648821 - [RHEL6 Snap13]: Hot-unplugging of virtio nic issue in Windows2008 KVM guest.
+Patch1705: kvm-net-delay-freeing-peer-host-device.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2182,6 +2198,13 @@ such as kvm_stat.
 %patch1696 -p1
 %patch1697 -p1
 %patch1698 -p1
+%patch1699 -p1
+%patch1700 -p1
+%patch1701 -p1
+%patch1702 -p1
+%patch1703 -p1
+%patch1704 -p1
+%patch1705 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2377,6 +2400,27 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Nov 16 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.113.el6_0.4
+- kvm-spice-qxl-make-draw_area-and-vgafb-share-memory.patch [bz#653334]
+- kvm-spice-qxl-update-modes-ptr-in-post_load.patch [bz#653334]
+- kvm-spice-qxl-enable-some-highres-modes.patch [bz#653329]
+- kvm-add-MADV_DONTFORK-to-guest-physical-memory-v2.patch [bz#653343]
+- kvm-qxl-clear-dirty-rectangle-on-resize.patch [bz#653341]
+- kvm-fix-and-on-russian-keymap.patch [bz#653337]
+- kvm-net-delay-freeing-peer-host-device.patch [bz#648821]
+- Resolves: bz#648821
+  ([RHEL6 Snap13]: Hot-unplugging of virtio nic issue in Windows2008 KVM guest.)
+- Resolves: bz#653329
+  (support high resolutions)
+- Resolves: bz#653334
+  (spice: prepare qxl for 6.1 update.)
+- Resolves: bz#653337
+  (Incorrect russian vnc keymap)
+- Resolves: bz#653341
+  (Qemu becomes unresponsive during unattended_installation)
+- Resolves: bz#653343
+  (Cannot hot-plug nic in windows VM when the vmem is larger)
+
 * Thu Oct 14 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.113.el6_0.3
 - ksmtuned: committed_memory of 0 qemus [bz#634249]
 - Resolves: bz#634249
