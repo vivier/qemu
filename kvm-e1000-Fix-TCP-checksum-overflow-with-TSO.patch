@@ -1,0 +1,54 @@
+From 0da8c016dbdda56fd6ecb30eced100a270af83b9 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Wed, 10 Nov 2010 23:43:55 -0200
+Subject: [RHEL6 qemu-kvm PATCH 7/8] e1000: Fix TCP checksum overflow with TSO
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20101110234323.21466.70297.stgit@s20.home>
+Patchwork-id: 13416
+O-Subject: [RHEL6.1 qemu-kvm PATCH] e1000: Fix TCP checksum overflow with TSO
+Bugzilla: 648333
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+
+Upstream status: Submitted, component maintainer ACK
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=648333
+Brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=2888339
+
+When adding the length to the pseudo header, we're not properly
+accounting for overflow.
+
+From: Mark Wu <dwu@redhat.com>
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+---
+
+ hw/e1000.c |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/e1000.c |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
+
+diff --git a/hw/e1000.c b/hw/e1000.c
+index 7467603..546461d 100644
+--- a/hw/e1000.c
++++ b/hw/e1000.c
+@@ -381,9 +381,12 @@ xmit_seg(E1000State *s)
+         } else	// UDP
+             cpu_to_be16wu((uint16_t *)(tp->data+css+4), len);
+         if (tp->sum_needed & E1000_TXD_POPTS_TXSM) {
++            unsigned int phsum;
+             // add pseudo-header length before checksum calculation
+             sp = (uint16_t *)(tp->data + tp->tucso);
+-            cpu_to_be16wu(sp, be16_to_cpup(sp) + len);
++            phsum = be16_to_cpup(sp) + len;
++            phsum = (phsum >> 16) + (phsum & 0xffff);
++            cpu_to_be16wu(sp, phsum);
+         }
+         tp->tso_frames++;
+     }
+-- 
+1.7.3.2
+

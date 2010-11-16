@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.118%{?dist}
+Release: 2.119%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1466,6 +1466,22 @@ Patch1721: kvm-Fix-SRAO-SRAR-MCE-injecting-on-guest-without-MCG_SER.patch
 Patch1722: kvm-net-delay-freeing-peer-host-device.patch
 # For bz#624607 - [qemu] [rhel6] guest installation stop (pause) on 'eother' event over COW disks (thin-provisioning)
 Patch1723: kvm-QMP-Improve-debuggability-of-the-BLOCK_IO_ERROR-even.patch
+# For bz#603413 - RHEL3.9 guest netdump hung with e1000
+Patch1724: kvm-bz-603413-e1000-secrc-support.patch
+# For bz#581750 - Vhost: Segfault when assigning a none vhostfd
+Patch1725: kvm-net-properly-handle-illegal-fd-vhostfd-from-command-.patch
+# For bz#647307 - Support slow mapping of PCI Bars
+Patch1726: kvm-Enable-non-page-boundary-BAR-device-assignment.patch
+# For bz#647307 - Support slow mapping of PCI Bars
+Patch1727: kvm-Fix-build-failure-with-DEVICE_ASSIGNMENT_DEBUG.patch
+# For bz#647307 - Support slow mapping of PCI Bars
+Patch1728: kvm-slow_map-minor-improvements-to-ROM-BAR-handling.patch
+# For bz#647307 - Support slow mapping of PCI Bars
+Patch1729: kvm-device-assignment-Always-use-slow-mapping-for-PCI-op.patch
+# For bz#648333 - TCP checksum overflows in qemu's e1000 emulation code when TSO is enabled in guest OS
+Patch1730: kvm-e1000-Fix-TCP-checksum-overflow-with-TSO.patch
+# For bz#647307 - Support slow mapping of PCI Bars
+Patch1731: kvm-device-assignment-Fix-slow-option-ROM-mapping.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2249,6 +2265,14 @@ such as kvm_stat.
 %patch1721 -p1
 %patch1722 -p1
 %patch1723 -p1
+%patch1724 -p1
+%patch1725 -p1
+%patch1726 -p1
+%patch1727 -p1
+%patch1728 -p1
+%patch1729 -p1
+%patch1730 -p1
+%patch1731 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2444,6 +2468,24 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Nov 16 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.119.el6
+- kvm-bz-603413-e1000-secrc-support.patch [bz#603413]
+- kvm-net-properly-handle-illegal-fd-vhostfd-from-command-.patch [bz#581750]
+- kvm-Enable-non-page-boundary-BAR-device-assignment.patch [bz#647307]
+- kvm-Fix-build-failure-with-DEVICE_ASSIGNMENT_DEBUG.patch [bz#647307]
+- kvm-slow_map-minor-improvements-to-ROM-BAR-handling.patch [bz#647307]
+- kvm-device-assignment-Always-use-slow-mapping-for-PCI-op.patch [bz#647307]
+- kvm-e1000-Fix-TCP-checksum-overflow-with-TSO.patch [bz#648333]
+- kvm-device-assignment-Fix-slow-option-ROM-mapping.patch [bz#647307]
+- Resolves: bz#581750
+  (Vhost: Segfault when assigning a none vhostfd)
+- Resolves: bz#603413
+  (RHEL3.9 guest netdump hung with e1000)
+- Resolves: bz#647307
+  (Support slow mapping of PCI Bars)
+- Resolves: bz#648333
+  (TCP checksum overflows in qemu's e1000 emulation code when TSO is enabled in guest OS)
+
 * Tue Nov 09 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.118.el6
 - kvm-net-delay-freeing-peer-host-device.patch [bz#634661]
 - kvm-QMP-Improve-debuggability-of-the-BLOCK_IO_ERROR-even.patch [bz#624607]

@@ -1,0 +1,78 @@
+From e11fc971ad295b095f18cf843becca970b558972 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Mon, 8 Nov 2010 19:55:43 -0200
+Subject: [RHEL6 qemu-kvm PATCH 4/8] Fix build failure with DEVICE_ASSIGNMENT_DEBUG.
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20101108195538.30035.93660.stgit@s20.home>
+Patchwork-id: 13327
+O-Subject: [RHEL6.1 qemu-kvm PATCH 2/4] Fix build failure with
+	DEVICE_ASSIGNMENT_DEBUG.
+Bugzilla: 647307
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+
+From: Kusanagi Kouichi <slash@ac.auone-net.jp>
+
+Upstream commit: d79e445860d92835abe240b4b497d01223e13d2c
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=647307
+Brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=2881033
+
+If DEVICE_ASSIGNMENT_DEBUG is defined, build fails.
+
+Signed-off-by: Kusanagi Kouichi <slash@ac.auone-net.jp>
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+---
+
+ hw/device-assignment.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index 1205851..d4b6df5 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -242,7 +242,7 @@ static void assigned_dev_iomem_map_slow(PCIDevice *pci_dev, int region_num,
+     PCIRegion *real_region = &r_dev->real_device.regions[region_num];
+     int m;
+ 
+-    DEBUG("slow map\n");
++    DEBUG("%s", "slow map\n");
+     m = cpu_register_io_memory(slow_bar_read, slow_bar_write, region);
+     cpu_register_physical_memory(e_phys, e_size, m);
+ 
+@@ -268,7 +268,7 @@ static void assigned_dev_iomem_map(PCIDevice *pci_dev, int region_num,
+     int first_map = (region->e_size == 0);
+     int ret = 0;
+ 
+-    DEBUG("e_phys=%08x r_virt=%p type=%d len=%08x region_num=%d \n",
++    DEBUG("e_phys=%08" FMT_PCIBUS " r_virt=%p type=%d len=%08" FMT_PCIBUS " region_num=%d \n",
+           e_phys, region->u.r_virtbase, type, e_size, region_num);
+ 
+     region->e_physbase = e_phys;
+@@ -345,7 +345,7 @@ static void assigned_dev_ioport_map(PCIDevice *pci_dev, int region_num,
+     region->e_physbase = addr;
+     region->e_size = size;
+ 
+-    DEBUG("e_phys=0x%x r_baseport=%x type=0x%x len=%d region_num=%d \n",
++    DEBUG("e_phys=0x%" FMT_PCIBUS " r_baseport=%x type=0x%x len=%" FMT_PCIBUS " region_num=%d \n",
+           addr, region->u.r_baseport, type, size, region_num);
+ 
+     if (first_map && region->region->resource_fd < 0) {
+@@ -1341,7 +1341,7 @@ static void msix_mmio_writel(void *opaque,
+     unsigned int offset = addr & 0xfff;
+     void *page = adev->msix_table_page;
+ 
+-    DEBUG("write to MSI-X entry table mmio offset 0x%lx, val 0x%lx\n",
++    DEBUG("write to MSI-X entry table mmio offset 0x%lx, val 0x%x\n",
+ 		    addr, val);
+     memcpy((void *)((char *)page + offset), &val, 4);
+ }
+-- 
+1.7.3.2
+

@@ -1,0 +1,64 @@
+From cfd31d19c18a734ce23052afa7954d8a44b0a1d8 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Fri, 12 Nov 2010 01:24:51 -0200
+Subject: [RHEL6 qemu-kvm PATCH 8/8] device-assignment: Fix slow option ROM mapping
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20101112012159.16243.19694.stgit@s20.home>
+Patchwork-id: 13479
+O-Subject: [RHEL6.1 qemu-kvm PATCH 5/4] device-assignment: Fix slow option ROM
+	mapping
+Bugzilla: 647307
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Upstream commit: 537e22d6c2ee9bd690ffd9ca4e9d8c4e8a1f072d
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=647307
+Brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=2891198
+
+cpu_register_io_memory() supports individual function pointers
+being NULL, not the structure itself.  Create and pass the
+right thing.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Acked-by: Chris Wright <chrisw@redhat.com>
+Signed-off-by: Avi Kivity <avi@redhat.com>
+---
+
+Oops, one more patch is required for this.  Eduardo, hopefully you can
+pull this in with the first 4 patches.  Thanks, Alex
+
+ hw/device-assignment.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index 0ddc21f..b776a8f 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -233,6 +233,8 @@ static CPUReadMemoryFunc * const slow_bar_read[] = {
+     &slow_bar_readl
+ };
+ 
++static CPUWriteMemoryFunc * const slow_bar_null_write[] = {NULL, NULL, NULL};
++
+ static void assigned_dev_iomem_map_slow(PCIDevice *pci_dev, int region_num,
+                                         pcibus_t e_phys, pcibus_t e_size,
+                                         int type)
+@@ -244,7 +246,7 @@ static void assigned_dev_iomem_map_slow(PCIDevice *pci_dev, int region_num,
+ 
+     DEBUG("%s", "slow map\n");
+     if (region_num == PCI_ROM_SLOT)
+-        m = cpu_register_io_memory(slow_bar_read, NULL, region);
++        m = cpu_register_io_memory(slow_bar_read, slow_bar_null_write, region);
+     else
+         m = cpu_register_io_memory(slow_bar_read, slow_bar_write, region);
+     cpu_register_physical_memory(e_phys, e_size, m);
+-- 
+1.7.3.2
+

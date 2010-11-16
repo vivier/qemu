@@ -1,0 +1,91 @@
+From a0abf4aafa83e3a3b233ba8b2b4188ac5d01578a Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Mon, 8 Nov 2010 19:55:52 -0200
+Subject: [RHEL6 qemu-kvm PATCH 5/8] slow_map: minor improvements to ROM BAR handling
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20101108195549.30035.79310.stgit@s20.home>
+Patchwork-id: 13328
+O-Subject: [RHEL6.1 qemu-kvm PATCH 3/4] slow_map: minor improvements to ROM BAR
+	handling
+Bugzilla: 647307
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+
+From: Michael S. Tsirkin <mst@redhat.com>
+
+Upstream commit: be5a9efb3359cac07217d477b44f6bd0e17658f0
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=647307
+Brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=2881033
+
+ROM BAR can be handled same as regular BAR:
+load_option_roms utility will take care of
+copying it to RAM as appropriate.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+---
+
+ hw/device-assignment.c |   25 +++++++++++++------------
+ 1 files changed, 13 insertions(+), 12 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |   25 +++++++++++++------------
+ 1 files changed, 13 insertions(+), 12 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index d4b6df5..d62e7a9 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -243,7 +243,10 @@ static void assigned_dev_iomem_map_slow(PCIDevice *pci_dev, int region_num,
+     int m;
+ 
+     DEBUG("%s", "slow map\n");
+-    m = cpu_register_io_memory(slow_bar_read, slow_bar_write, region);
++    if (region_num == PCI_ROM_SLOT)
++        m = cpu_register_io_memory(slow_bar_read, NULL, region);
++    else
++        m = cpu_register_io_memory(slow_bar_read, slow_bar_write, region);
+     cpu_register_physical_memory(e_phys, e_size, m);
+ 
+     /* MSI-X MMIO page */
+@@ -561,25 +564,23 @@ static int assigned_dev_register_regions(PCIRegion *io_regions,
+                 : PCI_BASE_ADDRESS_SPACE_MEMORY;
+ 
+             if (cur_region->size & 0xFFF) {
+-                fprintf(stderr, "PCI region %d at address 0x%llx "
+-                        "has size 0x%x, which is not a multiple of 4K. "
+-                        "You might experience some performance hit due to that.\n",
+-                        i, (unsigned long long)cur_region->base_addr,
+-                        cur_region->size);
++                if (i != PCI_ROM_SLOT) {
++                    fprintf(stderr, "PCI region %d at address 0x%llx "
++                            "has size 0x%x, which is not a multiple of 4K. "
++                            "You might experience some performance hit "
++                            "due to that.\n",
++                            i, (unsigned long long)cur_region->base_addr,
++                            cur_region->size);
++                }
+                 slow_map = 1;
+             }
+ 
+-            if (slow_map && (i == PCI_ROM_SLOT)) {
+-                fprintf(stderr, "ROM not aligned - can't continue\n");
+-                return -1;
+-            }
+-
+             /* map physical memory */
+             pci_dev->v_addrs[i].e_physbase = cur_region->base_addr;
+             if (i == PCI_ROM_SLOT) {
+                 pci_dev->v_addrs[i].u.r_virtbase =
+                     mmap(NULL,
+-                         (cur_region->size + 0xFFF) & 0xFFFFF000,
++                         cur_region->size,
+                          PROT_WRITE | PROT_READ, MAP_ANONYMOUS | MAP_PRIVATE,
+                          0, (off_t) 0);
+ 
+-- 
+1.7.3.2
+

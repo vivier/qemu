@@ -1,0 +1,54 @@
+From 037cf4c3ff93ac52e1641236fb1b7f06146dd376 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Mon, 8 Nov 2010 19:56:00 -0200
+Subject: [RHEL6 qemu-kvm PATCH 6/8] device-assignment: Always use slow mapping for PCI option ROM
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20101108195558.30035.32618.stgit@s20.home>
+Patchwork-id: 13329
+O-Subject: [RHEL6.1 qemu-kvm PATCH 4/4] device-assignment: Always use slow
+	mapping for PCI option ROM
+Bugzilla: 647307
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+
+Upstream commit: c890e259dfe412a18b685fa0ca60392c49712cb7
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=647307
+Brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=2881033
+
+KVM doesn't support read-only mappings for MMIO space.  Performance isn't
+an issue for the option ROM mapping, so always use slow mapping.  kvm.git
+cset b4f8c249 will make kvm hang with a "Bad address" fault without this.
+We can also then drop the extraneous mprotects since the guest has no way
+to write to these regions.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Acked-by: Chris Wright <chrisw@redhat.com>
+Signed-off-by: Avi Kivity <avi@redhat.com>
+---
+
+ hw/device-assignment.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index d62e7a9..0ddc21f 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -578,6 +578,8 @@ static int assigned_dev_register_regions(PCIRegion *io_regions,
+             /* map physical memory */
+             pci_dev->v_addrs[i].e_physbase = cur_region->base_addr;
+             if (i == PCI_ROM_SLOT) {
++                /* KVM doesn't support read-only mappings, use slow map */
++                slow_map = 1;
+                 pci_dev->v_addrs[i].u.r_virtbase =
+                     mmap(NULL,
+                          cur_region->size,
+-- 
+1.7.3.2
+

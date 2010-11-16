@@ -1,0 +1,79 @@
+From 76db97b6328b8cf1393b51d0725f02f69f305577 Mon Sep 17 00:00:00 2001
+From: Xiao Wang <jasowang@redhat.com>
+Date: Fri, 5 Nov 2010 08:25:32 -0200
+Subject: [RHEL6 qemu-kvm PATCH 2/8] net: properly handle illegal fd/vhostfd from command line
+
+RH-Author: Xiao Wang <jasowang@redhat.com>
+Message-id: <20101105082532.17041.92379.stgit@dhcp-91-158.nay.redhat.com>
+Patchwork-id: 13247
+O-Subject: [RHEL 6.1 PATCH] net: properly handle illegal fd/vhostfd from command
+	line
+Bugzilla: 581750
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 581750
+Brew: https://brewweb.devel.redhat.com/taskinfo?taskID=2874251
+
+When hanlding fd/vhostfd form command line through net_handle_fd_param(),
+we need to check mon and return value of strtol() otherwise we could
+get segmentation fault or invalid fd when user type an illegal fd/vhostfd.
+
+This patch is based on the suggestions from
+Luiz Capitulino <lcapitulino@redhat.com>.
+
+Test status:
+Tested with QE and me.
+
+Signed-off-by: Jason Wang <jasowang@redhat.com>
+Reviewed-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry picked from f7c31d6381f2cbac03e82fc23133f6863606edd8)
+---
+ net.c |   16 +++++++++++-----
+ 1 files changed, 11 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ net.c |   16 +++++++++++-----
+ 1 files changed, 11 insertions(+), 5 deletions(-)
+
+diff --git a/net.c b/net.c
+index 037c699..d511b3a 100644
+--- a/net.c
++++ b/net.c
+@@ -774,19 +774,25 @@ int qemu_find_nic_model(NICInfo *nd, const char * const *models,
+ 
+ int net_handle_fd_param(Monitor *mon, const char *param)
+ {
+-    if (!qemu_isdigit(param[0])) {
+-        int fd;
++    int fd;
++
++    if (!qemu_isdigit(param[0]) && mon) {
+ 
+         fd = monitor_get_fd(mon, param);
+         if (fd == -1) {
+             error_report("No file descriptor named %s found", param);
+             return -1;
+         }
+-
+-        return fd;
+     } else {
+-        return strtol(param, NULL, 0);
++        char *endptr = NULL;
++
++        fd = strtol(param, &endptr, 10);
++        if (*endptr || (fd == 0 && param == endptr)) {
++            return -1;
++        }
+     }
++
++    return fd;
+ }
+ 
+ static int net_init_nic(QemuOpts *opts,
+-- 
+1.7.3.2
+
