@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.119%{?dist}
+Release: 2.120%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1482,6 +1482,8 @@ Patch1729: kvm-device-assignment-Always-use-slow-mapping-for-PCI-op.patch
 Patch1730: kvm-e1000-Fix-TCP-checksum-overflow-with-TSO.patch
 # For bz#647307 - Support slow mapping of PCI Bars
 Patch1731: kvm-device-assignment-Fix-slow-option-ROM-mapping.patch
+# For bz#653582 - Changing media with -snapshot deletes image file
+Patch1732: kvm-Fix-snapshot-deleting-images-on-disk-change.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2273,6 +2275,7 @@ such as kvm_stat.
 %patch1729 -p1
 %patch1730 -p1
 %patch1731 -p1
+%patch1732 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2468,6 +2471,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Nov 18 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.120.el6
+- kvm-Fix-snapshot-deleting-images-on-disk-change.patch [bz#653582]
+- Resolves: bz#653582
+  (Changing media with -snapshot deletes image file)
+
 * Tue Nov 16 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.119.el6
 - kvm-bz-603413-e1000-secrc-support.patch [bz#603413]
 - kvm-net-properly-handle-illegal-fd-vhostfd-from-command-.patch [bz#581750]
