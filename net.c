@@ -1293,7 +1293,7 @@ void do_info_network(Monitor *mon)
     }
 }
 
-void do_set_link(Monitor *mon, const QDict *qdict)
+int do_set_link(Monitor *mon, const QDict *qdict, QObject **ret_data)
 {
     VLANState *vlan;
     VLANClientState *vc = NULL;
@@ -1311,8 +1311,8 @@ void do_set_link(Monitor *mon, const QDict *qdict)
 done:
 
     if (!vc) {
-        monitor_printf(mon, "could not find network device '%s'\n", name);
-        return;
+        qerror_report(QERR_DEVICE_NOT_FOUND, name);
+        return -1;
     }
 
     vc->link_down = !up;
@@ -1320,6 +1320,7 @@ done:
     if (vc->info->link_status_changed) {
         vc->info->link_status_changed(vc);
     }
+    return 0;
 }
 
 void net_cleanup(void)
