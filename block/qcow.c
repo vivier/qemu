@@ -913,6 +913,12 @@ static void qcow_flush(BlockDriverState *bs)
     bdrv_flush(bs->file);
 }
 
+static BlockDriverAIOCB *qcow_aio_flush(BlockDriverState *bs,
+        BlockDriverCompletionFunc *cb, void *opaque)
+{
+    return bdrv_aio_flush(bs->file, cb, opaque);
+}
+
 static int qcow_get_info(BlockDriverState *bs, BlockDriverInfo *bdi)
 {
     BDRVQcowState *s = bs->opaque;
@@ -953,6 +959,7 @@ static BlockDriver bdrv_qcow = {
     .bdrv_make_empty	= qcow_make_empty,
     .bdrv_aio_readv	= qcow_aio_readv,
     .bdrv_aio_writev	= qcow_aio_writev,
+    .bdrv_aio_flush	= qcow_aio_flush,
     .bdrv_write_compressed = qcow_write_compressed,
     .bdrv_get_info	= qcow_get_info,
 
