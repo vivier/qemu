@@ -27,7 +27,6 @@
 * QEMU System emulator for non PC targets::
 * QEMU User space emulator::
 * compilation:: Compilation from the sources
-* Index::
 @end menu
 @end ifnottex
 
@@ -2361,9 +2360,5 @@ QEMU for Win32.
 The Mac OS X patches are not fully merged in QEMU, so you should look
 at the QEMU mailing list archive to have all the necessary
 information.
-
-@node Index
-@chapter Index
-@printindex cp
 
 @bye
