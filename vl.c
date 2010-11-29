@@ -265,6 +265,9 @@ const char *prom_envs[MAX_PROM_ENVS];
 #endif
 const char *nvram = NULL;
 int boot_menu;
+#ifdef CONFIG_FAKE_MACHINE
+int fake_machine = 0;
+#endif
 
 int nb_numa_nodes;
 uint64_t node_mem[MAX_NODES];
@@ -4337,6 +4340,9 @@ static void tcg_cpu_exec(void)
 
 static int cpu_has_work(CPUState *env)
 {
+    if (fake_machine) {
+        return 0;
+    }
     if (env->stop)
         return 1;
     if (env->stopped)
@@ -6077,6 +6083,11 @@ int main(int argc, char **argv, char **envp)
                     fclose(fp);
                     break;
                 }
+#ifdef CONFIG_FAKE_MACHINE
+            case QEMU_OPTION_fake_machine:
+                fake_machine = 1;
+                break;
+#endif
             }
         }
     }
@@ -6159,6 +6170,16 @@ int main(int argc, char **argv, char **envp)
     }
     if (default_vga)
         vga_interface_type = VGA_CIRRUS;
+    if (fake_machine) {
+        /* HACK: Ideally we'd configure VGA as usual, but this causes
+         * several MB of VGA RAM to be allocated, and we can't do the
+         * tricks we use elsewhere to just return a single 4k page,
+         * because the VGA driver immediately memsets() the entire
+         * allocation it requested
+         * TODO try to use -vga none instead
+         */
+        vga_interface_type = VGA_NONE;
+    }
 
     if (qemu_opts_foreach(&qemu_chardev_opts, chardev_init_func, NULL, 1) != 0)
         exit(1);
@@ -6222,6 +6243,9 @@ int main(int argc, char **argv, char **envp)
     }
 #endif
 
+    if (fake_machine) {
+        kvm_allowed = 0;
+    }
     if (kvm_enabled()) {
         int ret;
 

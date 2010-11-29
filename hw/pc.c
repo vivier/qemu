@@ -1067,6 +1067,15 @@ static void pc_init1(ram_addr_t ram_size,
     vmport_init();
 
     /* allocate RAM */
+    if (fake_machine) {
+        /* If user boots with -m 1000 We don't actually want to
+         * allocate a GB of RAM, so lets force all RAM allocs to one
+         * page to keep our memory footprint nice and low.
+         *
+         * TODO try to use -m 1k instead
+         */
+        ram_addr = qemu_ram_alloc(NULL, "pc.ram", 1);
+    } else {
     ram_addr = qemu_ram_alloc(NULL, "pc.ram",
                               below_4g_mem_size + above_4g_mem_size);
     cpu_register_physical_memory(0, 0xa0000, ram_addr);
@@ -1079,6 +1088,7 @@ static void pc_init1(ram_addr_t ram_size,
                                      ram_addr + below_4g_mem_size);
     }
 #endif
+    }
 
     /* BIOS load */
     if (bios_name == NULL)

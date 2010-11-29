@@ -2011,3 +2011,9 @@ DEF("mem-path", HAS_ARG, QEMU_OPTION_mempath,
 DEF("mem-prealloc", 0, QEMU_OPTION_mem_prealloc,
     "-mem-prealloc        preallocate guest memory (use with -mempath)\n")
 #endif
+
+#ifdef CONFIG_FAKE_MACHINE
+DEF("fake-machine", 0, QEMU_OPTION_fake_machine,
+    "-fake-machine        create a fake machine incapable of running guest code\n"
+    "                     mimimal resource use, use for scalability testing")
+#endif

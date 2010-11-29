@@ -277,6 +277,7 @@ check_utests="no"
 user_pie="no"
 zero_malloc=""
 spice=""
+fake_machine="no"
 
 # OS specific
 if check_define __linux__ ; then
@@ -657,6 +658,10 @@ for opt do
   ;;
   --enable-vhost-net) vhost_net="yes"
   ;;
+  --disable-fake-machine) fake_machine="no"
+  ;;
+  --enable-fake-machine) fake_machine="yes"
+  ;;
   *) echo "ERROR: unknown option $opt"; show_help="yes"
   ;;
   esac
@@ -821,6 +826,8 @@ echo "  --with-kvm-trace         enable building the KVM module with the kvm tra
 echo "  --disable-cpu-emulation  disables use of qemu cpu emulation code"
 echo "  --disable-vhost-net      disable vhost-net acceleration support"
 echo "  --enable-vhost-net       enable vhost-net acceleration support"
+echo "  --disable-fake-machine   disable -fake-machine option"
+echo "  --enable-fake-machine    enable -fake-machine option"
 echo ""
 echo "NOTE: The object files are built at the place where configure is launched"
 exit 1
@@ -2147,6 +2154,7 @@ echo "preadv support    $preadv"
 echo "fdatasync         $fdatasync"
 echo "uuid support      $uuid"
 echo "vhost-net support $vhost_net"
+echo "-fake-machine     $fake_machine"
 echo "Spice             $spice"
 
 if test $sdl_too_old = "yes"; then
@@ -2379,6 +2387,10 @@ fi
 
 if test "$spice" = "yes" ; then
   echo "CONFIG_SPICE=y" >> $config_host_mak
+fi
+
+if test $fake_machine = "yes" ; then
+  echo "CONFIG_FAKE_MACHINE=y" >> $config_host_mak
 fi
 
 # XXX: suppress that
