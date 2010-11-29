@@ -7,13 +7,19 @@
 #
 %define buildid %{nil}%%BUILDID%%
 
+%define enable_fake_machine 0
+
 %define sublevel %%SUBLEVEL%%
 %define pkgrelease %%PKGRELEASE%%
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
 
+%if %{enable_fake_machine}
+Summary: Userspace component of KVM (testing only)
+%else
 Summary: Userspace component of KVM
+%endif
 Name: qemu-kvm
 Version: %{rpmversion}
 Release: %{full_release}
@@ -91,6 +97,13 @@ Using KVM, one can run multiple virtual machines running unmodified Linux
 or Windows images. Each virtual machine has private virtualized hardware:
 a network card, disk, graphics adapter, etc.
 
+%if %{enable_fake_machine}
+NOTE: This package includes a version of qemu-kvm compiled with
+--enable-fake-machine, meaning it is usable only for scalability testing of
+management code, not to run actual virtual machines.
+%endif
+
+
 %package -n qemu-img
 Summary: QEMU command line tool for manipulating disk images
 Group: Development/Tools
@@ -155,6 +168,12 @@ ApplyOptionalPatch qemu-kvm-test.patch
 extraldflags="-Wl,--build-id";
 buildldflags="VL_LDFLAGS=-Wl,--build-id"
 
+%if %{enable_fake_machine}
+%define fake_machine_arg --enable-fake-machine
+%else
+%define fake_machine_arg %{nil}
+%endif
+
 # sdl outputs to alsa or pulseaudio depending on system config, but it's broken (#495964)
 # alsa works, but causes huge CPU load due to bugs
 # oss works, but is very problematic because it grabs exclusive control of the device causing other apps to go haywire
@@ -186,7 +205,8 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
             --enable-kvm \
             --enable-spice \
             --enable-kvm-cap-pit \
-            --enable-kvm-cap-device-assignment
+            --enable-kvm-cap-device-assignment \
+            %{fake_machine_arg}
 
 echo "config-host.mak contents:"
 echo "==="
