@@ -1,0 +1,94 @@
+From 16307fba40d75eb6c67af09441512923b279056e Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 22 Nov 2010 17:16:34 -0200
+Subject: [RHEL6 qemu-kvm PATCH 4/4] monitor: Convert do_set_link() to QObject, QError
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1290446194-4179-5-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 13799
+O-Subject: [PATCH 4/4] monitor: Convert do_set_link() to QObject, QError
+Bugzilla: 625681
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+(cherry picked from commit 5369e3c0b8997210a2558191d8451775f7643683)
+---
+ net.c           |    7 ++++---
+ net.h           |    2 +-
+ qemu-monitor.hx |    3 ++-
+ 3 files changed, 7 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ net.c           |    7 ++++---
+ net.h           |    2 +-
+ qemu-monitor.hx |    3 ++-
+ 3 files changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/net.c b/net.c
+index d666626..f62a9e9 100644
+--- a/net.c
++++ b/net.c
+@@ -1293,7 +1293,7 @@ void do_info_network(Monitor *mon)
+     }
+ }
+ 
+-void do_set_link(Monitor *mon, const QDict *qdict)
++int do_set_link(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     VLANState *vlan;
+     VLANClientState *vc = NULL;
+@@ -1311,8 +1311,8 @@ void do_set_link(Monitor *mon, const QDict *qdict)
+ done:
+ 
+     if (!vc) {
+-        monitor_printf(mon, "could not find network device '%s'\n", name);
+-        return;
++        qerror_report(QERR_DEVICE_NOT_FOUND, name);
++        return -1;
+     }
+ 
+     vc->link_down = !up;
+@@ -1320,6 +1320,7 @@ done:
+     if (vc->info->link_status_changed) {
+         vc->info->link_status_changed(vc);
+     }
++    return 0;
+ }
+ 
+ void net_cleanup(void)
+diff --git a/net.h b/net.h
+index b7857cd..897582b 100644
+--- a/net.h
++++ b/net.h
+@@ -119,7 +119,7 @@ int qemu_find_nic_model(NICInfo *nd, const char * const *models,
+                         const char *default_model);
+ 
+ void do_info_network(Monitor *mon);
+-void do_set_link(Monitor *mon, const QDict *qdict);
++int do_set_link(Monitor *mon, const QDict *qdict, QObject **ret_data);
+ 
+ /* NIC info */
+ 
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 939fd13..680e13f 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -1305,7 +1305,8 @@ EQMP
+         .args_type  = "name:s,up:b",
+         .params     = "name on|off",
+         .help       = "change the link status of a network adapter",
+-        .mhandler.cmd = do_set_link,
++        .user_print = monitor_user_noop,
++        .mhandler.cmd_new = do_set_link,
+     },
+ 
+ STEXI
+-- 
+1.7.3.2
+

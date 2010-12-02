@@ -1,0 +1,90 @@
+From ba57d8544858fa87b68421e8843e6cfecc40671d Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 8 Nov 2010 13:55:23 -0200
+Subject: [RHEL6 qemu-kvm PATCH 2/4] monitor: New argument type 'b'
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1289224537-7543-3-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 13304
+O-Subject: [PATCH 02/16] monitor: New argument type 'b'
+Bugzilla: 625681
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+This is a boolean value.  Human monitor accepts "on" or "off".
+Consistent with option parsing (see parse_option_bool()).
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+(cherry picked from commit 942cd1f2889dbc74db850218b270bc5b41656dfd)
+---
+ monitor.c |   31 +++++++++++++++++++++++++++++++
+ 1 files changed, 31 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c |   31 +++++++++++++++++++++++++++++++
+ 1 files changed, 31 insertions(+), 0 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index dff9d17..d25291a 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -89,6 +89,8 @@
+  *
+  * '?'          optional type (for all types, except '/')
+  * '.'          other form of optional type (for 'i' and 'l')
++ * 'b'          boolean
++ *              user mode accepts "on" or "off"
+  * '-'          optional parameter (eg. '-f')
+  *
+  */
+@@ -3785,6 +3787,29 @@ static const mon_cmd_t *monitor_parse_command(Monitor *mon,
+                 qdict_put(qdict, key, qfloat_from_double(val));
+             }
+             break;
++        case 'b':
++            {
++                const char *beg;
++                int val;
++
++                while (qemu_isspace(*p)) {
++                    p++;
++                }
++                beg = p;
++                while (qemu_isgraph(*p)) {
++                    p++;
++                }
++                if (p - beg == 2 && !memcmp(beg, "on", p - beg)) {
++                    val = 1;
++                } else if (p - beg == 3 && !memcmp(beg, "off", p - beg)) {
++                    val = 0;
++                } else {
++                    monitor_printf(mon, "Expected 'on' or 'off'\n");
++                    goto fail;
++                }
++                qdict_put(qdict, key, qbool_from_int(val));
++            }
++            break;
+         case '-':
+             {
+                 const char *tmp = p;
+@@ -4266,6 +4291,12 @@ static int check_arg(const CmdArgs *cmd_args, QDict *args)
+                 return -1;
+             }
+             break;
++        case 'b':
++            if (qobject_type(value) != QTYPE_QBOOL) {
++                qerror_report(QERR_INVALID_PARAMETER_TYPE, name, "bool");
++                return -1;
++            }
++            break;
+         case '-':
+             if (qobject_type(value) != QTYPE_QINT &&
+                 qobject_type(value) != QTYPE_QBOOL) {
+-- 
+1.7.3.2
+

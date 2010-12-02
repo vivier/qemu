@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.120%{?dist}
+Release: 2.121%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1484,6 +1484,14 @@ Patch1730: kvm-e1000-Fix-TCP-checksum-overflow-with-TSO.patch
 Patch1731: kvm-device-assignment-Fix-slow-option-ROM-mapping.patch
 # For bz#653582 - Changing media with -snapshot deletes image file
 Patch1732: kvm-Fix-snapshot-deleting-images-on-disk-change.patch
+# For bz#625681 - RFE QMP: should have command to disconnect and connect network card for whql testing
+Patch1733: kvm-monitor-Rename-argument-type-b-to-f.patch
+# For bz#625681 - RFE QMP: should have command to disconnect and connect network card for whql testing
+Patch1734: kvm-monitor-New-argument-type-b-bool.patch
+# For bz#625681 - RFE QMP: should have command to disconnect and connect network card for whql testing
+Patch1735: kvm-monitor-Use-argument-type-b-for-set_link.patch
+# For bz#625681 - RFE QMP: should have command to disconnect and connect network card for whql testing
+Patch1736: kvm-monitor-Convert-do_set_link-to-QObject-QError.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2276,6 +2284,10 @@ such as kvm_stat.
 %patch1730 -p1
 %patch1731 -p1
 %patch1732 -p1
+%patch1733 -p1
+%patch1734 -p1
+%patch1735 -p1
+%patch1736 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2471,6 +2483,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Dec 02 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.121.el6
+- kvm-monitor-Rename-argument-type-b-to-f.patch [bz#625681]
+- kvm-monitor-New-argument-type-b-bool.patch [bz#625681]
+- kvm-monitor-Use-argument-type-b-for-set_link.patch [bz#625681]
+- kvm-monitor-Convert-do_set_link-to-QObject-QError.patch [bz#625681]
+- Resolves: bz#625681
+  (RFE QMP: should have command to disconnect and connect network card for whql testing)
+
 * Thu Nov 18 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.120.el6
 - kvm-Fix-snapshot-deleting-images-on-disk-change.patch [bz#653582]
 - Resolves: bz#653582

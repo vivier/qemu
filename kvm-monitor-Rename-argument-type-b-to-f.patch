@@ -1,0 +1,88 @@
+From 33ce890def46b09fda07819597e7407be04d3faf Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 8 Nov 2010 13:55:22 -0200
+Subject: [RHEL6 qemu-kvm PATCH 1/4] monitor: Rename argument type 'b' to 'f'
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1289224537-7543-2-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 13303
+O-Subject: [PATCH 01/16] monitor: Rename argument type 'b' to 'f'
+Bugzilla: 625681
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+To make 'b' available for boolean argument.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+(cherry picked from commit ee9545dad4004b92a93554a92cbb3e1b0e1c949d)
+---
+ monitor.c       |    8 ++++----
+ qemu-monitor.hx |    2 +-
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c       |    8 ++++----
+ qemu-monitor.hx |    2 +-
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 2c5eb59..dff9d17 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -78,7 +78,7 @@
+  * 'l'          target long (32 or 64 bit)
+  * 'M'          just like 'l', except in user mode the value is
+  *              multiplied by 2^20 (think Mebibyte)
+- * 'b'          double
++ * 'f'          double
+  *              user mode accepts an optional G, g, M, m, K, k suffix,
+  *              which multiplies the value by 2^30 for suffixes G and
+  *              g, 2^20 for M and m, 2^10 for K and k
+@@ -3742,7 +3742,7 @@ static const mon_cmd_t *monitor_parse_command(Monitor *mon,
+                 qdict_put(qdict, key, qint_from_int(val));
+             }
+             break;
+-        case 'b':
++        case 'f':
+         case 'T':
+             {
+                 double val;
+@@ -3758,7 +3758,7 @@ static const mon_cmd_t *monitor_parse_command(Monitor *mon,
+                 if (get_double(mon, &val, &p) < 0) {
+                     goto fail;
+                 }
+-                if (c == 'b' && *p) {
++                if (c == 'f' && *p) {
+                     switch (*p) {
+                     case 'K': case 'k':
+                         val *= 1 << 10; p++; break;
+@@ -4259,7 +4259,7 @@ static int check_arg(const CmdArgs *cmd_args, QDict *args)
+                 return -1;
+             }
+             break;
+-        case 'b':
++        case 'f':
+         case 'T':
+             if (qobject_type(value) != QTYPE_QINT && qobject_type(value) != QTYPE_QFLOAT) {
+                 qerror_report(QERR_INVALID_PARAMETER_TYPE, name, "number");
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index e09bc88..9e65237 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -1027,7 +1027,7 @@ EQMP
+ 
+     {
+         .name       = "migrate_set_speed",
+-        .args_type  = "value:b",
++        .args_type  = "value:f",
+         .params     = "value",
+         .help       = "set maximum speed (in bytes) for migrations",
+         .user_print = monitor_user_noop,
+-- 
+1.7.3.2
+
