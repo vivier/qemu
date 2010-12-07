@@ -91,7 +91,6 @@ typedef void PCICapConfigWriteFunc(PCIDevice *pci_dev,
                                    uint32_t address, uint32_t val, int len);
 typedef uint32_t PCICapConfigReadFunc(PCIDevice *pci_dev,
                                       uint32_t address, int len);
-typedef int PCICapConfigInitFunc(PCIDevice *pci_dev);
 
 typedef struct PCIIORegion {
     pcibus_t addr; /* current PCI mapping address. -1 means not mapped */
@@ -230,11 +229,9 @@ void pci_register_bar(PCIDevice *pci_dev, int region_num,
                             pcibus_t size, int type,
                             PCIMapIORegionFunc *map_func);
 
-int pci_enable_capability_support(PCIDevice *pci_dev,
-                                  uint32_t config_start,
-                                  PCICapConfigReadFunc *config_read,
-                                  PCICapConfigWriteFunc *config_write,
-                                  PCICapConfigInitFunc *config_init);
+void pci_register_capability_handlers(PCIDevice *pci_dev,
+                                      PCICapConfigReadFunc *config_read,
+                                      PCICapConfigWriteFunc *config_write);
 
 int pci_map_irq(PCIDevice *pci_dev, int pin);
 
