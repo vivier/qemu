@@ -615,7 +615,7 @@ static void pci_config_alloc(PCIDevice *pci_dev)
     pci_dev->config = qemu_mallocz(config_size);
     pci_dev->cmask = qemu_mallocz(config_size);
     pci_dev->wmask = qemu_mallocz(config_size);
-    pci_dev->used = qemu_mallocz(config_size);
+    pci_dev->config_map = qemu_mallocz(config_size);
 }
 
 static void pci_config_free(PCIDevice *pci_dev)
@@ -623,7 +623,7 @@ static void pci_config_free(PCIDevice *pci_dev)
     qemu_free(pci_dev->config);
     qemu_free(pci_dev->cmask);
     qemu_free(pci_dev->wmask);
-    qemu_free(pci_dev->used);
+    qemu_free(pci_dev->config_map);
 }
 
 /* -1 for devfn means auto assign */
@@ -654,6 +654,9 @@ static PCIDevice *do_pci_register_device(PCIDevice *pci_dev, PCIBus *bus,
     pci_config_alloc(pci_dev);
 
     header_type &= ~PCI_HEADER_TYPE_MULTI_FUNCTION;
+
+    memset(pci_dev->config_map, 0xff, PCI_CONFIG_HEADER_SIZE);
+
     if (header_type == PCI_HEADER_TYPE_NORMAL) {
         pci_set_default_subsystem_id(pci_dev);
     }
@@ -1025,19 +1028,11 @@ uint32_t pci_default_read_config(PCIDevice *d,
 {
     assert(len == 1 || len == 2 || len == 4);
 
-    if (pci_access_cap_config(d, address, len)) {
+    if (address > PCI_CONFIG_HEADER_SIZE && d->config_map[address]) {
         return d->cap.config_read(d, address, len);
     }
 
     return pci_read_config(d, address, len);
-}
-
-int pci_access_cap_config(PCIDevice *pci_dev, uint32_t address, int len)
-{
-    if (pci_dev->cap.supported && address >= pci_dev->cap.start &&
-            (address + len) < pci_dev->cap.start + pci_dev->cap.length)
-        return 1;
-    return 0;
 }
 
 uint32_t pci_default_cap_read_config(PCIDevice *pci_dev,
@@ -1064,7 +1059,7 @@ void pci_default_write_config(PCIDevice *d, uint32_t addr, uint32_t val, int l)
     int i;
     uint32_t config_size = pci_config_size(d);
 
-    if (pci_access_cap_config(d, addr, l)) {
+    if (addr > PCI_CONFIG_HEADER_SIZE && d->config_map[addr]) {
         d->cap.config_write(d, addr, val, l);
         return;
     }
@@ -1566,7 +1561,7 @@ static int pci_find_space(PCIDevice *pdev, uint8_t size)
     int offset = PCI_CONFIG_HEADER_SIZE;
     int i;
     for (i = PCI_CONFIG_HEADER_SIZE; i < config_size; ++i)
-        if (pdev->used[i])
+        if (pdev->config_map[i])
             offset = i + 1;
         else if (i - offset + 1 == size)
             return offset;
@@ -1689,7 +1684,7 @@ int pci_add_capability(PCIDevice *pdev, uint8_t cap_id,
     config[PCI_CAP_LIST_ID] = cap_id;
     config[PCI_CAP_LIST_NEXT] = pdev->config[PCI_CAPABILITY_LIST];
     pdev->config[PCI_CAPABILITY_LIST] = offset;
-    memset(pdev->used + offset, 0xFF, size);
+    memset(pdev->config_map + offset, cap_id, size);
     /* Make capability read-only by default */
     memset(pdev->wmask + offset, 0, size);
     /* Check capability by default */
@@ -1713,18 +1708,12 @@ void pci_del_capability(PCIDevice *pdev, uint8_t cap_id, uint8_t size)
     memset(pdev->wmask + offset, 0xff, size);
     /* Clear cmask as device-specific registers can't be checked */
     memset(pdev->cmask + offset, 0, size);
-    memset(pdev->used + offset, 0, size);
+    memset(pdev->config_map + offset, 0, size);
 
     if (!pdev->config[PCI_CAPABILITY_LIST]) {
         pdev->config[PCI_STATUS] &= ~PCI_STATUS_CAP_LIST;
         pdev->cap.start = pdev->cap.length = 0;
     }
-}
-
-/* Reserve space for capability at a known offset (to call after load). */
-void pci_reserve_capability(PCIDevice *pdev, uint8_t offset, uint8_t size)
-{
-    memset(pdev->used + offset, 0xff, size);
 }
 
 uint8_t pci_find_capability(PCIDevice *pdev, uint8_t cap_id)
