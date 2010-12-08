@@ -1,0 +1,59 @@
+From bb265a162176179166e9a2540ad848c3e9e2c740 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Thu, 25 Nov 2010 16:54:22 -0200
+Subject: [RHEL6 qemu-kvm PATCH 19/21] kill empty index on qemu-doc.texi
+
+RH-Author: Eduardo Habkost <ehabkost@redhat.com>
+Message-id: <20101125165422.GX30884@otherpad.lan.raisama.net>
+Patchwork-id: 13938
+O-Subject: [PATCH qemu-kvm 6.1] kill empty index on qemu-doc.texi
+Bugzilla: 604992
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+Bugzilla: 604992
+
+I don't even know what was supposed to appear on this index. There are
+no @cindex entries on the current docs, so having an empty Concept Index
+doesn't make sense.
+
+Please ACK.
+
+Upstream status: not applicable. upstream docs are very different and
+                 contain a non-empty concept index
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-doc.texi |    5 -----
+ 1 files changed, 0 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-doc.texi |    5 -----
+ 1 files changed, 0 insertions(+), 5 deletions(-)
+
+diff --git a/qemu-doc.texi b/qemu-doc.texi
+index 7b8488f..4dbc35e 100644
+--- a/qemu-doc.texi
++++ b/qemu-doc.texi
+@@ -27,7 +27,6 @@
+ * QEMU System emulator for non PC targets::
+ * QEMU User space emulator::
+ * compilation:: Compilation from the sources
+-* Index::
+ @end menu
+ @end ifnottex
+ 
+@@ -2362,8 +2361,4 @@ The Mac OS X patches are not fully merged in QEMU, so you should look
+ at the QEMU mailing list archive to have all the necessary
+ information.
+ 
+-@node Index
+-@chapter Index
+-@printindex cp
+-
+ @bye
+-- 
+1.7.3.2
+

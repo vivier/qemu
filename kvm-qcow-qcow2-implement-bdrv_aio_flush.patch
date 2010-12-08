@@ -1,0 +1,90 @@
+From 8cb64c55e22b87cd3bd224a657a1f3e3180b6c1b Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 23 Nov 2010 10:31:37 -0200
+Subject: [RHEL6 qemu-kvm PATCH 09/21] qcow/qcow2: implement bdrv_aio_flush
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1290508306-11607-2-git-send-email-kwolf@redhat.com>
+Patchwork-id: 13826
+O-Subject: [RHEL-6.1 qemu-kvm PATCH v2 01/10] qcow/qcow2: implement
+	bdrv_aio_flush
+Bugzilla: 653972
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 653972
+
+Now that we do not have to flush the backing device anymore implementing
+the bdrv_aio_flush method for image formats is trivial.
+
+[hch: forward ported to qemu mainline from a product tree]
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit f8012c135ecb0f410245b3ed0476a5d0a61beb9c)
+---
+ block/qcow.c  |    7 +++++++
+ block/qcow2.c |    7 +++++++
+ 2 files changed, 14 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow.c  |    7 +++++++
+ block/qcow2.c |    7 +++++++
+ 2 files changed, 14 insertions(+), 0 deletions(-)
+
+diff --git a/block/qcow.c b/block/qcow.c
+index 8cd9449..2883c40 100644
+--- a/block/qcow.c
++++ b/block/qcow.c
+@@ -913,6 +913,12 @@ static void qcow_flush(BlockDriverState *bs)
+     bdrv_flush(bs->file);
+ }
+ 
++static BlockDriverAIOCB *qcow_aio_flush(BlockDriverState *bs,
++        BlockDriverCompletionFunc *cb, void *opaque)
++{
++    return bdrv_aio_flush(bs->file, cb, opaque);
++}
++
+ static int qcow_get_info(BlockDriverState *bs, BlockDriverInfo *bdi)
+ {
+     BDRVQcowState *s = bs->opaque;
+@@ -953,6 +959,7 @@ static BlockDriver bdrv_qcow = {
+     .bdrv_make_empty	= qcow_make_empty,
+     .bdrv_aio_readv	= qcow_aio_readv,
+     .bdrv_aio_writev	= qcow_aio_writev,
++    .bdrv_aio_flush	= qcow_aio_flush,
+     .bdrv_write_compressed = qcow_write_compressed,
+     .bdrv_get_info	= qcow_get_info,
+ 
+diff --git a/block/qcow2.c b/block/qcow2.c
+index d7a05af..9c02067 100644
+--- a/block/qcow2.c
++++ b/block/qcow2.c
+@@ -1192,6 +1192,12 @@ static void qcow_flush(BlockDriverState *bs)
+     bdrv_flush(bs->file);
+ }
+ 
++static BlockDriverAIOCB *qcow_aio_flush(BlockDriverState *bs,
++         BlockDriverCompletionFunc *cb, void *opaque)
++{
++     return bdrv_aio_flush(bs->file, cb, opaque);
++}
++
+ static int64_t qcow_vm_state_offset(BDRVQcowState *s)
+ {
+ 	return (int64_t)s->l1_vm_state_index << (s->cluster_bits + s->l2_bits);
+@@ -1309,6 +1315,7 @@ static BlockDriver bdrv_qcow2 = {
+ 
+     .bdrv_aio_readv	= qcow_aio_readv,
+     .bdrv_aio_writev	= qcow_aio_writev,
++    .bdrv_aio_flush	= qcow_aio_flush,
+     .bdrv_write_compressed = qcow_write_compressed,
+ 
+     .bdrv_snapshot_create   = qcow2_snapshot_create,
+-- 
+1.7.3.2
+

@@ -1,0 +1,69 @@
+From f0711bdb5757ca953b062b57c73108cf356eb3f2 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 23 Nov 2010 10:31:39 -0200
+Subject: [RHEL6 qemu-kvm PATCH 11/21] qcow2: Remove unnecessary flush after L2 write
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1290508306-11607-4-git-send-email-kwolf@redhat.com>
+Patchwork-id: 13830
+O-Subject: [RHEL-6.1 qemu-kvm PATCH v2 03/10] qcow2: Remove unnecessary flush
+	after L2 write
+Bugzilla: 653972
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 653972
+
+When a new cluster was allocated, we only need a flush after the write to the
+L2 table if it was a COW and we need to decrease the refcounts of the old
+clusters.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 7ec5e6a4ca43494949465f9f9f3d9e4c7c620503)
+---
+ block/qcow2-cluster.c |   16 ++++++++++++----
+ 1 files changed, 12 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2-cluster.c |   16 ++++++++++++----
+ 1 files changed, 12 insertions(+), 4 deletions(-)
+
+diff --git a/block/qcow2-cluster.c b/block/qcow2-cluster.c
+index 166922f..f562b16 100644
+--- a/block/qcow2-cluster.c
++++ b/block/qcow2-cluster.c
+@@ -655,7 +655,7 @@ static int write_l2_entries(BlockDriverState *bs, uint64_t *l2_table,
+     int ret;
+ 
+     BLKDBG_EVENT(bs->file, BLKDBG_L2_UPDATE);
+-    ret = bdrv_pwrite_sync(bs->file, l2_offset + start_offset,
++    ret = bdrv_pwrite(bs->file, l2_offset + start_offset,
+         &l2_table[l2_start_index], len);
+     if (ret < 0) {
+         return ret;
+@@ -718,9 +718,17 @@ int qcow2_alloc_cluster_link_l2(BlockDriverState *bs, QCowL2Meta *m)
+         goto err;
+     }
+ 
+-    for (i = 0; i < j; i++)
+-        qcow2_free_any_clusters(bs,
+-            be64_to_cpu(old_cluster[i]) & ~QCOW_OFLAG_COPIED, 1);
++    /*
++     * If this was a COW, we need to decrease the refcount of the old cluster.
++     * Also flush bs->file to get the right order for L2 and refcount update.
++     */
++    if (j != 0) {
++        bdrv_flush(bs->file);
++        for (i = 0; i < j; i++) {
++            qcow2_free_any_clusters(bs,
++                be64_to_cpu(old_cluster[i]) & ~QCOW_OFLAG_COPIED, 1);
++        }
++    }
+ 
+     ret = 0;
+ err:
+-- 
+1.7.3.2
+

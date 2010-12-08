@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.121%{?dist}
+Release: 2.122%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1492,6 +1492,48 @@ Patch1734: kvm-monitor-New-argument-type-b-bool.patch
 Patch1735: kvm-monitor-Use-argument-type-b-for-set_link.patch
 # For bz#625681 - RFE QMP: should have command to disconnect and connect network card for whql testing
 Patch1736: kvm-monitor-Convert-do_set_link-to-QObject-QError.patch
+# For bz#653536 - qemu-img convert poor performance
+Patch1737: kvm-cleanup-block-driver-option-handling-in-vl.c.patch
+# For bz#653536 - qemu-img convert poor performance
+Patch1738: kvm-Add-cache-unsafe-parameter-to-drive.patch
+# For bz#653536 - qemu-img convert poor performance
+Patch1739: kvm-move-unsafe-to-end-of-caching-modes-in-help.patch
+# For bz#653536 - qemu-img convert poor performance
+Patch1740: kvm-qemu-img-Eliminate-bdrv_new_open-code-duplication.patch
+# For bz#653536 - qemu-img convert poor performance
+Patch1741: kvm-qemu-img-Fix-BRDV_O_FLAGS-typo.patch
+# For bz#653536 - qemu-img convert poor performance
+Patch1742: kvm-qemu-img-convert-Use-cache-unsafe-for-output-image.patch
+# For bz#625319 - Failed to update the media in floppy device
+Patch1743: kvm-block-Fix-virtual-media-change-for-if-none.patch
+# For bz#624721 - [qemu] [rhel6] bad error handling when qemu has no 'read' permissions over {kernel,initrd} files [pass boot options]
+Patch1744: kvm-Check-for-invalid-initrd-file.patch
+# For bz#653972 - qcow2: Backport performance related patches
+Patch1745: kvm-qcow-qcow2-implement-bdrv_aio_flush.patch
+# For bz#653972 - qcow2: Backport performance related patches
+Patch1746: kvm-block-Remove-unused-s-hd-in-various-drivers.patch
+# For bz#653972 - qcow2: Backport performance related patches
+Patch1747: kvm-qcow2-Remove-unnecessary-flush-after-L2-write.patch
+# For bz#653972 - qcow2: Backport performance related patches
+Patch1748: kvm-qcow2-Move-sync-out-of-write_refcount_block_entries.patch
+# For bz#653972 - qcow2: Backport performance related patches
+Patch1749: kvm-qcow2-Move-sync-out-of-update_refcount.patch
+# For bz#653972 - qcow2: Backport performance related patches
+Patch1750: kvm-qcow2-Move-sync-out-of-qcow2_alloc_clusters.patch
+# For bz#653972 - qcow2: Backport performance related patches
+Patch1751: kvm-qcow2-Get-rid-of-additional-sync-on-COW.patch
+# For bz#653972 - qcow2: Backport performance related patches
+Patch1752: kvm-cutils-qemu_iovec_copy-and-qemu_iovec_memset.patch
+# For bz#653972 - qcow2: Backport performance related patches
+Patch1753: kvm-qcow2-Avoid-bounce-buffers-for-AIO-read-requests.patch
+# For bz#653972 - qcow2: Backport performance related patches
+Patch1754: kvm-qcow2-Avoid-bounce-buffers-for-AIO-write-requests.patch
+# For bz#604992 - index is empty in qemu-doc.html
+Patch1755: kvm-kill-empty-index-on-qemu-doc.texi.patch
+# For bz#645342 - Implement QEMU driver for modern sound device like Intel HDA
+Patch1756: kvm-add-VMSTATE_BOOL.patch
+# For bz#645342 - Implement QEMU driver for modern sound device like Intel HDA
+Patch1757: kvm-Add-Intel-HD-Audio-support-to-qemu.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2288,6 +2330,27 @@ such as kvm_stat.
 %patch1734 -p1
 %patch1735 -p1
 %patch1736 -p1
+%patch1737 -p1
+%patch1738 -p1
+%patch1739 -p1
+%patch1740 -p1
+%patch1741 -p1
+%patch1742 -p1
+%patch1743 -p1
+%patch1744 -p1
+%patch1745 -p1
+%patch1746 -p1
+%patch1747 -p1
+%patch1748 -p1
+%patch1749 -p1
+%patch1750 -p1
+%patch1751 -p1
+%patch1752 -p1
+%patch1753 -p1
+%patch1754 -p1
+%patch1755 -p1
+%patch1756 -p1
+%patch1757 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2483,6 +2546,41 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Dec 08 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.122.el6
+- kvm-cleanup-block-driver-option-handling-in-vl.c.patch [bz#653536]
+- kvm-Add-cache-unsafe-parameter-to-drive.patch [bz#653536]
+- kvm-move-unsafe-to-end-of-caching-modes-in-help.patch [bz#653536]
+- kvm-qemu-img-Eliminate-bdrv_new_open-code-duplication.patch [bz#653536]
+- kvm-qemu-img-Fix-BRDV_O_FLAGS-typo.patch [bz#653536]
+- kvm-qemu-img-convert-Use-cache-unsafe-for-output-image.patch [bz#653536]
+- kvm-block-Fix-virtual-media-change-for-if-none.patch [bz#625319]
+- kvm-Check-for-invalid-initrd-file.patch [bz#624721]
+- kvm-qcow-qcow2-implement-bdrv_aio_flush.patch [bz#653972]
+- kvm-block-Remove-unused-s-hd-in-various-drivers.patch [bz#653972]
+- kvm-qcow2-Remove-unnecessary-flush-after-L2-write.patch [bz#653972]
+- kvm-qcow2-Move-sync-out-of-write_refcount_block_entries.patch [bz#653972]
+- kvm-qcow2-Move-sync-out-of-update_refcount.patch [bz#653972]
+- kvm-qcow2-Move-sync-out-of-qcow2_alloc_clusters.patch [bz#653972]
+- kvm-qcow2-Get-rid-of-additional-sync-on-COW.patch [bz#653972]
+- kvm-cutils-qemu_iovec_copy-and-qemu_iovec_memset.patch [bz#653972]
+- kvm-qcow2-Avoid-bounce-buffers-for-AIO-read-requests.patch [bz#653972]
+- kvm-qcow2-Avoid-bounce-buffers-for-AIO-write-requests.patch [bz#653972]
+- kvm-kill-empty-index-on-qemu-doc.texi.patch [bz#604992]
+- kvm-add-VMSTATE_BOOL.patch [bz#645342]
+- kvm-Add-Intel-HD-Audio-support-to-qemu.patch [bz#645342]
+- Resolves: bz#604992
+  (index is empty in qemu-doc.html)
+- Resolves: bz#624721
+  ([qemu] [rhel6] bad error handling when qemu has no 'read' permissions over {kernel,initrd} files [pass boot options])
+- Resolves: bz#625319
+  (Failed to update the media in floppy device)
+- Resolves: bz#645342
+  (Implement QEMU driver for modern sound device like Intel HDA)
+- Resolves: bz#653536
+  (qemu-img convert poor performance)
+- Resolves: bz#653972
+  (qcow2: Backport performance related patches)
+
 * Thu Dec 02 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.121.el6
 - kvm-monitor-Rename-argument-type-b-to-f.patch [bz#625681]
 - kvm-monitor-New-argument-type-b-bool.patch [bz#625681]

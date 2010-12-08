@@ -1,0 +1,181 @@
+From 69ce1679c292ef15d97c0215b33747a89a361c33 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Mon, 15 Nov 2010 17:41:37 -0200
+Subject: [RHEL6 qemu-kvm PATCH 07/21] block: Fix virtual media change for if=none
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1289842897-32670-1-git-send-email-kwolf@redhat.com>
+Patchwork-id: 13569
+O-Subject: [RHEL-6.1 qemu-kvm PATCH] block: Fix virtual media change for if=none
+Bugzilla: 625319
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+Bugzilla: 625319
+
+BlockDriverState member removable controls whether virtual media
+change (monitor commands change, eject) is allowed.  It is set when
+the "type hint" is BDRV_TYPE_CDROM or BDRV_TYPE_FLOPPY.
+
+The type hint is only set by drive_init().  It sets BDRV_TYPE_FLOPPY
+for if=floppy.  It sets BDRV_TYPE_CDROM for media=cdrom and if=ide,
+scsi, xen, or none.
+
+if=ide and if=scsi work, because the type hint makes it a CD-ROM.
+if=xen likewise, I think.
+
+For the same reason, if=none works when it's used by ide-drive or
+scsi-disk.  For other guest devices, there are problems:
+
+* fdc: you can't change virtual media
+
+    $ qemu [...] -drive if=none,id=foo,... -global isa-fdc.driveA=foo
+    QEMU 0.12.50 monitor - type 'help' for more information
+    (qemu) eject foo
+    Device 'foo' is not removable
+
+  unless you add media=cdrom, but that makes it readonly.
+
+* virtio: if you add media=cdrom, you can change virtual media.  If
+  you eject, the guest gets I/O errors.  If you change, the guest sees
+  the drive's contents suddenly change.
+
+* scsi-generic: if you add media=cdrom, you can change virtual media.
+  I didn't test what that does to the guest or the physical device,
+  but it can't be pretty.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 7d0d69509a966a5328e4fed7d0a942112d431c35)
+
+Conflicts:
+
+	block.c
+	block.h
+	hw/scsi-disk.c
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block.c           |    5 +++++
+ block.h           |    1 +
+ hw/fdc.c          |   10 ++++++++--
+ hw/ide/core.c     |    1 +
+ hw/scsi-disk.c    |    1 +
+ hw/scsi-generic.c |    1 +
+ hw/virtio-blk.c   |    1 +
+ 7 files changed, 18 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c           |    5 +++++
+ block.h           |    1 +
+ hw/fdc.c          |   10 ++++++++--
+ hw/ide/core.c     |    1 +
+ hw/scsi-disk.c    |    1 +
+ hw/scsi-generic.c |    1 +
+ hw/virtio-blk.c   |    1 +
+ 7 files changed, 18 insertions(+), 2 deletions(-)
+
+diff --git a/block.c b/block.c
+index 394af13..f7457c9 100644
+--- a/block.c
++++ b/block.c
+@@ -1235,6 +1235,11 @@ int bdrv_get_translation_hint(BlockDriverState *bs)
+     return bs->translation;
+ }
+ 
++void bdrv_set_removable(BlockDriverState *bs, int removable)
++{
++    bs->removable = removable;
++}
++
+ int bdrv_is_removable(BlockDriverState *bs)
+ {
+     return bs->removable;
+diff --git a/block.h b/block.h
+index 42ac5ae..efa6ff5 100644
+--- a/block.h
++++ b/block.h
+@@ -159,6 +159,7 @@ void bdrv_get_geometry_hint(BlockDriverState *bs,
+                             int *pcyls, int *pheads, int *psecs);
+ int bdrv_get_type_hint(BlockDriverState *bs);
+ int bdrv_get_translation_hint(BlockDriverState *bs);
++void bdrv_set_removable(BlockDriverState *bs, int removable);
+ int bdrv_is_removable(BlockDriverState *bs);
+ int bdrv_is_read_only(BlockDriverState *bs);
+ int bdrv_is_sg(BlockDriverState *bs);
+diff --git a/hw/fdc.c b/hw/fdc.c
+index 1c3d8ba..65462a5 100644
+--- a/hw/fdc.c
++++ b/hw/fdc.c
+@@ -1848,10 +1848,16 @@ static void fdctrl_result_timer(void *opaque)
+ static void fdctrl_connect_drives(fdctrl_t *fdctrl)
+ {
+     unsigned int i;
++    fdrive_t *drive;
+ 
+     for (i = 0; i < MAX_FD; i++) {
+-        fd_init(&fdctrl->drives[i]);
+-        fd_revalidate(&fdctrl->drives[i]);
++        drive = &fdctrl->drives[i];
++
++        fd_init(drive);
++        fd_revalidate(drive);
++        if (drive->bs) {
++            bdrv_set_removable(drive->bs, 1);
++        }
+     }
+ }
+ 
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index cbc8d14..0c54100 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -2620,6 +2620,7 @@ void ide_init_drive(IDEState *s, DriveInfo *dinfo, BlockConf *conf,
+             s->is_cdrom = 1;
+             bdrv_set_change_cb(s->bs, cdrom_change_cb, s);
+         }
++        bdrv_set_removable(s->bs, s->is_cdrom);
+         strncpy(s->drive_serial_str, drive_get_serial(s->bs),
+                 sizeof(s->drive_serial_str));
+         if (conf) {
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index f2b43fe..dcb79ee 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -1043,6 +1043,7 @@ static int scsi_disk_initfn(SCSIDevice *dev)
+         nb_sectors--;
+     s->max_lba = nb_sectors;
+     qemu_add_vm_change_state_handler(scsi_dma_restart_cb, s);
++    bdrv_set_removable(s->bs, is_cd);
+     return 0;
+ }
+ 
+diff --git a/hw/scsi-generic.c b/hw/scsi-generic.c
+index c9aa853..41f7d17 100644
+--- a/hw/scsi-generic.c
++++ b/hw/scsi-generic.c
+@@ -510,6 +510,7 @@ static int scsi_generic_initfn(SCSIDevice *dev)
+     DPRINTF("block size %d\n", s->qdev.blocksize);
+     s->driver_status = 0;
+     memset(s->sensebuf, 0, sizeof(s->sensebuf));
++    bdrv_set_removable(s->bs, 0);
+     return 0;
+ }
+ 
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index f6fcb13..edd6aad 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -524,6 +524,7 @@ VirtIODevice *virtio_blk_init(DeviceState *dev, BlockConf *conf)
+     s->qdev = dev;
+     register_savevm(dev, "virtio-blk", virtio_blk_id++, 2,
+                     virtio_blk_save, virtio_blk_load, s);
++    bdrv_set_removable(s->bs, 0);
+ 
+     return &s->vdev;
+ }
+-- 
+1.7.3.2
+

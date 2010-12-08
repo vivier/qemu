@@ -1,0 +1,59 @@
+From 86017d35770d84faf88e91c44b58b2727e72531f Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Mon, 15 Nov 2010 17:16:32 -0200
+Subject: [RHEL6 qemu-kvm PATCH 03/21] move 'unsafe' to end of caching modes in help
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1289841395-30386-4-git-send-email-kwolf@redhat.com>
+Patchwork-id: 13565
+O-Subject: [RHEL-6.1 qemu-kvm PATCH 3/6] move 'unsafe' to end of caching modes
+	in help
+Bugzilla: 653536
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+
+From: Bruce Rogers <brogers@novell.com>
+
+Bugzilla: 653536
+
+Libvirt parses qemu help output to determine qemu features. In particular
+it probes for the following: "cache=writethrough|writeback|none". The
+addition of the unsafe cache mode was inserted within this string, as
+opposed to being added to the end, which impacted libvirt's probe.
+Unbreak libvirt by keeping the existing cache modes intact and add
+unsafe to the end.
+
+This problem only manifests itself if a caching mode is explicitly
+specified in the libvirt xml, in which case older syntax for caching is
+passed to qemu, which it  no longer understands.
+
+Signed-off-by: Bruce Rogers <brogers@novell.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 6c6b6ba20a167a89f85606125ee1e10eafef5b33)
+---
+ qemu-options.hx |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-options.hx |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-options.hx b/qemu-options.hx
+index ee42a31..21ef706 100644
+--- a/qemu-options.hx
++++ b/qemu-options.hx
+@@ -102,7 +102,7 @@ ETEXI
+ DEF("drive", HAS_ARG, QEMU_OPTION_drive,
+     "-drive [file=file][,if=type][,bus=n][,unit=m][,media=d][,index=i]\n"
+     "       [,cyls=c,heads=h,secs=s[,trans=t]][,snapshot=on|off]\n"
+-    "       [,cache=writethrough|writeback|unsafe|none][,format=f]\n"
++    "       [,cache=writethrough|writeback|none|unsafe][,format=f]\n"
+     "       [,serial=s][,addr=A][,id=name][,aio=threads|native]\n"
+     "       [,readonly=on|off]\n"
+     "                use 'file' as a drive image\n")
+-- 
+1.7.3.2
+

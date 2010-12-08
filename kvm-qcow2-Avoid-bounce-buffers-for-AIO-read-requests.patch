@@ -1,0 +1,261 @@
+From 1486e716880d4a569ba4afa6d19660b3ccc458a4 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 23 Nov 2010 10:31:45 -0200
+Subject: [RHEL6 qemu-kvm PATCH 17/21] qcow2: Avoid bounce buffers for AIO read requests
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1290508306-11607-10-git-send-email-kwolf@redhat.com>
+Patchwork-id: 13833
+O-Subject: [RHEL-6.1 qemu-kvm PATCH v2 09/10] qcow2: Avoid bounce buffers for
+	AIO read requests
+Bugzilla: 653972
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 653972
+
+qcow2 used to use bounce buffers for any AIO requests. This does not only imply
+unnecessary copying, but also unbounded allocations which should be avoided.
+
+This patch removes bounce buffers from the normal AIO read path, and constrains
+them to a constant size for encrypted images.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit bd28f835652e396841bb73080a07bcc08fe21bf0)
+---
+ block/qcow2-cluster.c |    8 ++++-
+ block/qcow2.c         |   86 +++++++++++++++++++++++++++++++++---------------
+ block/qcow2.h         |    4 +-
+ 3 files changed, 68 insertions(+), 30 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2-cluster.c |    8 ++++-
+ block/qcow2.c         |   86 +++++++++++++++++++++++++++++++++---------------
+ block/qcow2.h         |    4 +-
+ 3 files changed, 68 insertions(+), 30 deletions(-)
+
+diff --git a/block/qcow2-cluster.c b/block/qcow2-cluster.c
+index cb2e33f..fb4224a 100644
+--- a/block/qcow2-cluster.c
++++ b/block/qcow2-cluster.c
+@@ -350,6 +350,8 @@ static int qcow_read(BlockDriverState *bs, int64_t sector_num,
+     BDRVQcowState *s = bs->opaque;
+     int ret, index_in_cluster, n, n1;
+     uint64_t cluster_offset;
++    struct iovec iov;
++    QEMUIOVector qiov;
+ 
+     while (nb_sectors > 0) {
+         n = nb_sectors;
+@@ -364,7 +366,11 @@ static int qcow_read(BlockDriverState *bs, int64_t sector_num,
+         if (!cluster_offset) {
+             if (bs->backing_hd) {
+                 /* read from the base image */
+-                n1 = qcow2_backing_read1(bs->backing_hd, sector_num, buf, n);
++                iov.iov_base = buf;
++                iov.iov_len = n * 512;
++                qemu_iovec_init_external(&qiov, &iov, 1);
++
++                n1 = qcow2_backing_read1(bs->backing_hd, &qiov, sector_num, n);
+                 if (n1 > 0) {
+                     BLKDBG_EVENT(bs->file, BLKDBG_READ_BACKING);
+                     ret = bdrv_read(bs->backing_hd, sector_num, buf, n1);
+diff --git a/block/qcow2.c b/block/qcow2.c
+index 9c02067..780e282 100644
+--- a/block/qcow2.c
++++ b/block/qcow2.c
+@@ -313,8 +313,8 @@ static int qcow_is_allocated(BlockDriverState *bs, int64_t sector_num,
+ }
+ 
+ /* handle reading after the end of the backing file */
+-int qcow2_backing_read1(BlockDriverState *bs,
+-                  int64_t sector_num, uint8_t *buf, int nb_sectors)
++int qcow2_backing_read1(BlockDriverState *bs, QEMUIOVector *qiov,
++                  int64_t sector_num, int nb_sectors)
+ {
+     int n1;
+     if ((sector_num + nb_sectors) <= bs->total_sectors)
+@@ -323,7 +323,9 @@ int qcow2_backing_read1(BlockDriverState *bs,
+         n1 = 0;
+     else
+         n1 = bs->total_sectors - sector_num;
+-    memset(buf + n1 * 512, 0, 512 * (nb_sectors - n1));
++
++    qemu_iovec_memset(qiov, 0, 512 * (nb_sectors - n1));
++
+     return n1;
+ }
+ 
+@@ -335,6 +337,7 @@ typedef struct QCowAIOCB {
+     void *orig_buf;
+     int remaining_sectors;
+     int cur_nr_sectors;	/* number of sectors in current iteration */
++    uint64_t bytes_done;
+     uint64_t cluster_offset;
+     uint8_t *cluster_data;
+     BlockDriverAIOCB *hd_aiocb;
+@@ -399,15 +402,19 @@ static void qcow_aio_read_cb(void *opaque, int ret)
+         /* nothing to do */
+     } else {
+         if (s->crypt_method) {
+-            qcow2_encrypt_sectors(s, acb->sector_num, acb->buf, acb->buf,
+-                            acb->cur_nr_sectors, 0,
+-                            &s->aes_decrypt_key);
++            qcow2_encrypt_sectors(s, acb->sector_num,  acb->cluster_data,
++                acb->cluster_data, acb->cur_nr_sectors, 0, &s->aes_decrypt_key);
++            qemu_iovec_reset(&acb->hd_qiov);
++            qemu_iovec_copy(&acb->hd_qiov, acb->qiov, acb->bytes_done,
++                acb->cur_nr_sectors * 512);
++            qemu_iovec_from_buffer(&acb->hd_qiov, acb->cluster_data,
++                512 * acb->cur_nr_sectors);
+         }
+     }
+ 
+     acb->remaining_sectors -= acb->cur_nr_sectors;
+     acb->sector_num += acb->cur_nr_sectors;
+-    acb->buf += acb->cur_nr_sectors * 512;
++    acb->bytes_done += acb->cur_nr_sectors * 512;
+ 
+     if (acb->remaining_sectors == 0) {
+         /* request completed */
+@@ -417,6 +424,11 @@ static void qcow_aio_read_cb(void *opaque, int ret)
+ 
+     /* prepare next AIO request */
+     acb->cur_nr_sectors = acb->remaining_sectors;
++    if (s->crypt_method) {
++        acb->cur_nr_sectors = MIN(acb->cur_nr_sectors,
++            QCOW_MAX_CRYPT_CLUSTERS * s->cluster_sectors);
++    }
++
+     ret = qcow2_get_cluster_offset(bs, acb->sector_num << 9,
+         &acb->cur_nr_sectors, &acb->cluster_offset);
+     if (ret < 0) {
+@@ -425,15 +437,17 @@ static void qcow_aio_read_cb(void *opaque, int ret)
+ 
+     index_in_cluster = acb->sector_num & (s->cluster_sectors - 1);
+ 
++    qemu_iovec_reset(&acb->hd_qiov);
++    qemu_iovec_copy(&acb->hd_qiov, acb->qiov, acb->bytes_done,
++        acb->cur_nr_sectors * 512);
++
+     if (!acb->cluster_offset) {
++
+         if (bs->backing_hd) {
+             /* read from the base image */
+-            n1 = qcow2_backing_read1(bs->backing_hd, acb->sector_num,
+-                               acb->buf, acb->cur_nr_sectors);
++            n1 = qcow2_backing_read1(bs->backing_hd, &acb->hd_qiov,
++                acb->sector_num, acb->cur_nr_sectors);
+             if (n1 > 0) {
+-                acb->hd_iov.iov_base = (void *)acb->buf;
+-                acb->hd_iov.iov_len = acb->cur_nr_sectors * 512;
+-                qemu_iovec_init_external(&acb->hd_qiov, &acb->hd_iov, 1);
+                 BLKDBG_EVENT(bs->file, BLKDBG_READ_BACKING_AIO);
+                 acb->hd_aiocb = bdrv_aio_readv(bs->backing_hd, acb->sector_num,
+                                     &acb->hd_qiov, acb->cur_nr_sectors,
+@@ -447,7 +461,7 @@ static void qcow_aio_read_cb(void *opaque, int ret)
+             }
+         } else {
+             /* Note: in this case, no need to wait */
+-            memset(acb->buf, 0, 512 * acb->cur_nr_sectors);
++            qemu_iovec_memset(&acb->hd_qiov, 0, 512 * acb->cur_nr_sectors);
+             ret = qcow_schedule_bh(qcow_aio_read_bh, acb);
+             if (ret < 0)
+                 goto done;
+@@ -456,8 +470,11 @@ static void qcow_aio_read_cb(void *opaque, int ret)
+         /* add AIO support for compressed blocks ? */
+         if (qcow2_decompress_cluster(bs, acb->cluster_offset) < 0)
+             goto done;
+-        memcpy(acb->buf, s->cluster_cache + index_in_cluster * 512,
+-               512 * acb->cur_nr_sectors);
++
++        qemu_iovec_from_buffer(&acb->hd_qiov,
++            s->cluster_cache + index_in_cluster * 512,
++            512 * acb->cur_nr_sectors);
++
+         ret = qcow_schedule_bh(qcow_aio_read_bh, acb);
+         if (ret < 0)
+             goto done;
+@@ -467,9 +484,23 @@ static void qcow_aio_read_cb(void *opaque, int ret)
+             goto done;
+         }
+ 
+-        acb->hd_iov.iov_base = (void *)acb->buf;
+-        acb->hd_iov.iov_len = acb->cur_nr_sectors * 512;
+-        qemu_iovec_init_external(&acb->hd_qiov, &acb->hd_iov, 1);
++        if (s->crypt_method) {
++            /*
++             * For encrypted images, read everything into a temporary
++             * contiguous buffer on which the AES functions can work.
++             */
++            if (!acb->cluster_data) {
++                acb->cluster_data =
++                    qemu_mallocz(QCOW_MAX_CRYPT_CLUSTERS * s->cluster_size);
++            }
++
++            assert(acb->cur_nr_sectors <=
++                QCOW_MAX_CRYPT_CLUSTERS * s->cluster_sectors);
++            qemu_iovec_reset(&acb->hd_qiov);
++            qemu_iovec_add(&acb->hd_qiov, acb->cluster_data,
++                512 * acb->cur_nr_sectors);
++        }
++
+         BLKDBG_EVENT(bs->file, BLKDBG_READ_AIO);
+         acb->hd_aiocb = bdrv_aio_readv(bs->file,
+                             (acb->cluster_offset >> 9) + index_in_cluster,
+@@ -483,11 +514,8 @@ static void qcow_aio_read_cb(void *opaque, int ret)
+ 
+     return;
+ done:
+-    if (acb->qiov->niov > 1) {
+-        qemu_iovec_from_buffer(acb->qiov, acb->orig_buf, acb->qiov->size);
+-        qemu_vfree(acb->orig_buf);
+-    }
+     acb->common.cb(acb->common.opaque, ret);
++    qemu_iovec_destroy(&acb->hd_qiov);
+     qemu_aio_release(acb);
+ }
+ 
+@@ -503,13 +531,17 @@ static QCowAIOCB *qcow_aio_setup(BlockDriverState *bs,
+     acb->hd_aiocb = NULL;
+     acb->sector_num = sector_num;
+     acb->qiov = qiov;
+-    if (qiov->niov > 1) {
+-        acb->buf = acb->orig_buf = qemu_blockalign(bs, qiov->size);
+-        if (is_write)
+-            qemu_iovec_to_buffer(qiov, acb->buf);
+-    } else {
++
++    if (!is_write) {
++        qemu_iovec_init(&acb->hd_qiov, qiov->niov);
++    } else if (qiov->niov == 1) {
+         acb->buf = (uint8_t *)qiov->iov->iov_base;
++    } else {
++        acb->buf = acb->orig_buf = qemu_blockalign(bs, qiov->size);
++        qemu_iovec_to_buffer(qiov, acb->buf);
+     }
++
++    acb->bytes_done = 0;
+     acb->remaining_sectors = nb_sectors;
+     acb->cur_nr_sectors = 0;
+     acb->cluster_offset = 0;
+diff --git a/block/qcow2.h b/block/qcow2.h
+index d976e2b..023fa67 100644
+--- a/block/qcow2.h
++++ b/block/qcow2.h
+@@ -159,8 +159,8 @@ static inline int64_t align_offset(int64_t offset, int n)
+ // FIXME Need qcow2_ prefix to global functions
+ 
+ /* qcow2.c functions */
+-int qcow2_backing_read1(BlockDriverState *bs,
+-                  int64_t sector_num, uint8_t *buf, int nb_sectors);
++int qcow2_backing_read1(BlockDriverState *bs, QEMUIOVector *qiov,
++                  int64_t sector_num, int nb_sectors);
+ 
+ /* qcow2-refcount.c functions */
+ int qcow2_refcount_init(BlockDriverState *bs);
+-- 
+1.7.3.2
+

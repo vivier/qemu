@@ -1,0 +1,141 @@
+From 3418929d44a5148644eda8199c5f15e3a1ece7d7 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 23 Nov 2010 10:31:44 -0200
+Subject: [RHEL6 qemu-kvm PATCH 16/21] cutils: qemu_iovec_copy and qemu_iovec_memset
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1290508306-11607-9-git-send-email-kwolf@redhat.com>
+Patchwork-id: 13832
+O-Subject: [RHEL-6.1 qemu-kvm PATCH v2 08/10] cutils: qemu_iovec_copy and
+	qemu_iovec_memset
+Bugzilla: 653972
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 653972
+
+This adds two functions that work on QEMUIOVectors and will be used by the next
+qcow2 patches.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit b8a83a4f79ca4cd0689117b119ffaa1a91b00d52)
+
+Conflicts:
+
+	cutils.c
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ cutils.c      |   50 +++++++++++++++++++++++++++++++++++++++++---------
+ qemu-common.h |    3 +++
+ 2 files changed, 44 insertions(+), 9 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ cutils.c      |   50 +++++++++++++++++++++++++++++++++++++++++---------
+ qemu-common.h |    3 +++
+ 2 files changed, 44 insertions(+), 9 deletions(-)
+
+diff --git a/cutils.c b/cutils.c
+index be99b21..ee656a3 100644
+--- a/cutils.c
++++ b/cutils.c
+@@ -168,30 +168,50 @@ void qemu_iovec_add(QEMUIOVector *qiov, void *base, size_t len)
+ }
+ 
+ /*
+- * Copies iovecs from src to the end dst until src is completely copied or the
+- * total size of the copied iovec reaches size. The size of the last copied
+- * iovec is changed in order to fit the specified total size if it isn't a
+- * perfect fit already.
++ * Copies iovecs from src to the end of dst. It starts copying after skipping
++ * the given number of bytes in src and copies until src is completely copied
++ * or the total size of the copied iovec reaches size.The size of the last
++ * copied iovec is changed in order to fit the specified total size if it isn't
++ * a perfect fit already.
+  */
+-void qemu_iovec_concat(QEMUIOVector *dst, QEMUIOVector *src, size_t size)
++void qemu_iovec_copy(QEMUIOVector *dst, QEMUIOVector *src, uint64_t skip,
++    size_t size)
+ {
+     int i;
+     size_t done;
++    void *iov_base;
++    uint64_t iov_len;
+ 
+     assert(dst->nalloc != -1);
+ 
+     done = 0;
+     for (i = 0; (i < src->niov) && (done != size); i++) {
+-        if (done + src->iov[i].iov_len > size) {
+-            qemu_iovec_add(dst, src->iov[i].iov_base, size - done);
++        if (skip >= src->iov[i].iov_len) {
++            /* Skip the whole iov */
++            skip -= src->iov[i].iov_len;
++            continue;
++        } else {
++            /* Skip only part (or nothing) of the iov */
++            iov_base = (uint8_t*) src->iov[i].iov_base + skip;
++            iov_len = src->iov[i].iov_len - skip;
++            skip = 0;
++        }
++
++        if (done + iov_len > size) {
++            qemu_iovec_add(dst, iov_base, size - done);
+             break;
+         } else {
+-            qemu_iovec_add(dst, src->iov[i].iov_base, src->iov[i].iov_len);
++            qemu_iovec_add(dst, iov_base, iov_len);
+         }
+-        done += src->iov[i].iov_len;
++        done += iov_len;
+     }
+ }
+ 
++void qemu_iovec_concat(QEMUIOVector *dst, QEMUIOVector *src, size_t size)
++{
++    qemu_iovec_copy(dst, src, 0, size);
++}
++
+ void qemu_iovec_destroy(QEMUIOVector *qiov)
+ {
+     assert(qiov->nalloc != -1);
+@@ -238,3 +258,15 @@ void qemu_iovec_from_buffer(QEMUIOVector *qiov, const void *buf, size_t count)
+         count -= copy;
+     }
+ }
++
++void qemu_iovec_memset(QEMUIOVector *qiov, int c, size_t count)
++{
++    size_t n;
++    int i;
++
++    for (i = 0; i < qiov->niov && count; ++i) {
++        n = MIN(count, qiov->iov[i].iov_len);
++        memset(qiov->iov[i].iov_base, c, n);
++        count -= n;
++    }
++}
+diff --git a/qemu-common.h b/qemu-common.h
+index 86c08a3..c2fcfad 100644
+--- a/qemu-common.h
++++ b/qemu-common.h
+@@ -267,11 +267,14 @@ typedef struct QEMUIOVector {
+ void qemu_iovec_init(QEMUIOVector *qiov, int alloc_hint);
+ void qemu_iovec_init_external(QEMUIOVector *qiov, struct iovec *iov, int niov);
+ void qemu_iovec_add(QEMUIOVector *qiov, void *base, size_t len);
++void qemu_iovec_copy(QEMUIOVector *dst, QEMUIOVector *src, uint64_t skip,
++    size_t size);
+ void qemu_iovec_concat(QEMUIOVector *dst, QEMUIOVector *src, size_t size);
+ void qemu_iovec_destroy(QEMUIOVector *qiov);
+ void qemu_iovec_reset(QEMUIOVector *qiov);
+ void qemu_iovec_to_buffer(QEMUIOVector *qiov, void *buf);
+ void qemu_iovec_from_buffer(QEMUIOVector *qiov, const void *buf, size_t count);
++void qemu_iovec_memset(QEMUIOVector *qiov, int c, size_t count);
+ 
+ struct Monitor;
+ typedef struct Monitor Monitor;
+-- 
+1.7.3.2
+

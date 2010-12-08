@@ -1,0 +1,105 @@
+From 5237ec3c704121015193ab7b14683cf2227cdfee Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 23 Nov 2010 10:31:42 -0200
+Subject: [RHEL6 qemu-kvm PATCH 14/21] qcow2: Move sync out of qcow2_alloc_clusters
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1290508306-11607-7-git-send-email-kwolf@redhat.com>
+Patchwork-id: 13829
+O-Subject: [RHEL-6.1 qemu-kvm PATCH v2 06/10] qcow2: Move sync out of
+	qcow2_alloc_clusters
+Bugzilla: 653972
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 653972
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 29216ed14f0bae35d1d9bb114a1aee7ee6837670)
+---
+ block/qcow2-cluster.c  |    3 +++
+ block/qcow2-refcount.c |    4 ++--
+ block/qcow2-snapshot.c |    2 ++
+ 3 files changed, 7 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2-cluster.c  |    3 +++
+ block/qcow2-refcount.c |    4 ++--
+ block/qcow2-snapshot.c |    2 ++
+ 3 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/block/qcow2-cluster.c b/block/qcow2-cluster.c
+index f562b16..818c0db 100644
+--- a/block/qcow2-cluster.c
++++ b/block/qcow2-cluster.c
+@@ -60,6 +60,7 @@ int qcow2_grow_l1_table(BlockDriverState *bs, int min_size)
+         qemu_free(new_l1_table);
+         return new_l1_table_offset;
+     }
++    bdrv_flush(bs->file);
+ 
+     BLKDBG_EVENT(bs->file, BLKDBG_L1_GROW_WRITE_TABLE);
+     for(i = 0; i < s->l1_size; i++)
+@@ -243,6 +244,7 @@ static int l2_allocate(BlockDriverState *bs, int l1_index, uint64_t **table)
+     if (l2_offset < 0) {
+         return l2_offset;
+     }
++    bdrv_flush(bs->file);
+ 
+     /* allocate a new entry in the l2 cache */
+ 
+@@ -863,6 +865,7 @@ int qcow2_alloc_cluster_offset(BlockDriverState *bs, uint64_t offset,
+         QLIST_REMOVE(m, next_in_flight);
+         return cluster_offset;
+     }
++    bdrv_flush(bs->file);
+ 
+     /* save info needed for meta data update */
+     m->offset = offset;
+diff --git a/block/qcow2-refcount.c b/block/qcow2-refcount.c
+index aac2862..3e5071f 100644
+--- a/block/qcow2-refcount.c
++++ b/block/qcow2-refcount.c
+@@ -629,8 +629,6 @@ int64_t qcow2_alloc_clusters(BlockDriverState *bs, int64_t size)
+         return ret;
+     }
+ 
+-    bdrv_flush(bs->file);
+-
+     return offset;
+ }
+ 
+@@ -678,6 +676,8 @@ int64_t qcow2_alloc_bytes(BlockDriverState *bs, int size)
+             goto redo;
+         }
+     }
++
++    bdrv_flush(bs->file);
+     return offset;
+ }
+ 
+diff --git a/block/qcow2-snapshot.c b/block/qcow2-snapshot.c
+index 6228612..bbfcaaa 100644
+--- a/block/qcow2-snapshot.c
++++ b/block/qcow2-snapshot.c
+@@ -138,6 +138,7 @@ static int qcow_write_snapshots(BlockDriverState *bs)
+     snapshots_size = offset;
+ 
+     snapshots_offset = qcow2_alloc_clusters(bs, snapshots_size);
++    bdrv_flush(bs->file);
+     offset = snapshots_offset;
+     if (offset < 0) {
+         return offset;
+@@ -271,6 +272,7 @@ int qcow2_snapshot_create(BlockDriverState *bs, QEMUSnapshotInfo *sn_info)
+     if (l1_table_offset < 0) {
+         goto fail;
+     }
++    bdrv_flush(bs->file);
+ 
+     sn->l1_table_offset = l1_table_offset;
+     sn->l1_size = s->l1_size;
+-- 
+1.7.3.2
+

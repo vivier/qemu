@@ -1,0 +1,69 @@
+From 315be262eec6602d48e709783c67f7774707389c Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 23 Nov 2010 10:31:43 -0200
+Subject: [RHEL6 qemu-kvm PATCH 15/21] qcow2: Get rid of additional sync on COW
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1290508306-11607-8-git-send-email-kwolf@redhat.com>
+Patchwork-id: 13831
+O-Subject: [RHEL-6.1 qemu-kvm PATCH v2 07/10] qcow2: Get rid of additional sync
+	on COW
+Bugzilla: 653972
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 653972
+
+We always have a sync for the refcount update when a new cluster is
+allocated. If we move this past the COW, we can save an additional sync.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 9f8e668eb1826434f61a63ff260d6c8b466e483a)
+---
+ block/qcow2-cluster.c |   10 ++++++++--
+ 1 files changed, 8 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2-cluster.c |   10 ++++++++--
+ 1 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/block/qcow2-cluster.c b/block/qcow2-cluster.c
+index 818c0db..cb2e33f 100644
+--- a/block/qcow2-cluster.c
++++ b/block/qcow2-cluster.c
+@@ -415,7 +415,7 @@ static int copy_sectors(BlockDriverState *bs, uint64_t start_sect,
+                         &s->aes_encrypt_key);
+     }
+     BLKDBG_EVENT(bs->file, BLKDBG_COW_WRITE);
+-    ret = bdrv_write_sync(bs->file, (cluster_offset >> 9) + n_start,
++    ret = bdrv_write(bs->file, (cluster_offset >> 9) + n_start,
+         s->cluster_data, n);
+     if (ret < 0)
+         return ret;
+@@ -714,6 +714,13 @@ int qcow2_alloc_cluster_link_l2(BlockDriverState *bs, QCowL2Meta *m)
+                     (i << s->cluster_bits)) | QCOW_OFLAG_COPIED);
+      }
+ 
++    /*
++     * Before we update the L2 table to actually point to the new cluster, we
++     * need to be sure that the refcounts have been increased and COW was
++     * handled.
++     */
++    bdrv_flush(bs->file);
++
+     ret = write_l2_entries(bs, l2_table, l2_offset, l2_index, m->nb_clusters);
+     if (ret < 0) {
+         qcow2_l2_cache_reset(bs);
+@@ -865,7 +872,6 @@ int qcow2_alloc_cluster_offset(BlockDriverState *bs, uint64_t offset,
+         QLIST_REMOVE(m, next_in_flight);
+         return cluster_offset;
+     }
+-    bdrv_flush(bs->file);
+ 
+     /* save info needed for meta data update */
+     m->offset = offset;
+-- 
+1.7.3.2
+

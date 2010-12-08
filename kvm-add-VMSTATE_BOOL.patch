@@ -1,0 +1,115 @@
+From 30e414b78fc14bcfe32a96f3ee121af580d941ad Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 8 Dec 2010 09:47:40 -0200
+Subject: [RHEL6 qemu-kvm PATCH 20/21] add VMSTATE_BOOL
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1291801661-28041-2-git-send-email-kraxel@redhat.com>
+Patchwork-id: 14396
+O-Subject: [RHEL-6.1 kvm PATCH v2 1/2] add VMSTATE_BOOL
+Bugzilla: 645342
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+RH-Acked-by: john cooper <john.cooper@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+$subject says all -- add bool support to vmstate.
+The Intel HDA driver depends on this.
+
+bugzilla: #645342 -- Implement QEMU driver for Intel HDA.
+upstream: cdae5cfbd3a61a5d4de79b829fb41188073d3002
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/hw.h  |   14 ++++++++++++++
+ savevm.c |   21 +++++++++++++++++++++
+ 2 files changed, 35 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/hw.h  |   14 ++++++++++++++
+ savevm.c |   21 +++++++++++++++++++++
+ 2 files changed, 35 insertions(+), 0 deletions(-)
+
+diff --git a/hw/hw.h b/hw/hw.h
+index da6232a..a1bd644 100644
+--- a/hw/hw.h
++++ b/hw/hw.h
+@@ -335,6 +335,8 @@ struct VMStateDescription {
+     const VMStateSubsection *subsections;
+ };
+ 
++extern const VMStateInfo vmstate_info_bool;
++
+ extern const VMStateInfo vmstate_info_int8;
+ extern const VMStateInfo vmstate_info_int16;
+ extern const VMStateInfo vmstate_info_int32;
+@@ -609,6 +611,9 @@ extern const VMStateDescription vmstate_i2c_slave;
+ #define VMSTATE_STRUCT_POINTER(_field, _state, _vmsd, _type)          \
+     VMSTATE_STRUCT_POINTER_TEST(_field, _state, NULL, _vmsd, _type)
+ 
++#define VMSTATE_BOOL_V(_f, _s, _v)                                    \
++    VMSTATE_SINGLE(_f, _s, _v, vmstate_info_bool, bool)
++
+ #define VMSTATE_INT8_V(_f, _s, _v)                                    \
+     VMSTATE_SINGLE(_f, _s, _v, vmstate_info_int8, int8_t)
+ #define VMSTATE_INT16_V(_f, _s, _v)                                   \
+@@ -627,6 +632,9 @@ extern const VMStateDescription vmstate_i2c_slave;
+ #define VMSTATE_UINT64_V(_f, _s, _v)                                  \
+     VMSTATE_SINGLE(_f, _s, _v, vmstate_info_uint64, uint64_t)
+ 
++#define VMSTATE_BOOL(_f, _s)                                          \
++    VMSTATE_BOOL_V(_f, _s, 0)
++
+ #define VMSTATE_INT8(_f, _s)                                          \
+     VMSTATE_INT8_V(_f, _s, 0)
+ #define VMSTATE_INT16(_f, _s)                                         \
+@@ -690,6 +698,12 @@ extern const VMStateDescription vmstate_i2c_slave;
+ #define VMSTATE_PTIMER(_f, _s)                                        \
+     VMSTATE_PTIMER_V(_f, _s, 0)
+ 
++#define VMSTATE_BOOL_ARRAY_V(_f, _s, _n, _v)                         \
++    VMSTATE_ARRAY(_f, _s, _n, _v, vmstate_info_bool, bool)
++
++#define VMSTATE_BOOL_ARRAY(_f, _s, _n)                               \
++    VMSTATE_BOOL_ARRAY_V(_f, _s, _n, 0)
++
+ #define VMSTATE_UINT16_ARRAY_V(_f, _s, _n, _v)                         \
+     VMSTATE_ARRAY(_f, _s, _n, _v, vmstate_info_uint16, uint16_t)
+ 
+diff --git a/savevm.c b/savevm.c
+index d23db57..a5f1559 100644
+--- a/savevm.c
++++ b/savevm.c
+@@ -678,6 +678,27 @@ uint64_t qemu_get_be64(QEMUFile *f)
+     return v;
+ }
+ 
++/* bool */
++
++static int get_bool(QEMUFile *f, void *pv, size_t size)
++{
++    bool *v = pv;
++    *v = qemu_get_byte(f);
++    return 0;
++}
++
++static void put_bool(QEMUFile *f, void *pv, size_t size)
++{
++    bool *v = pv;
++    qemu_put_byte(f, *v);
++}
++
++const VMStateInfo vmstate_info_bool = {
++    .name = "bool",
++    .get  = get_bool,
++    .put  = put_bool,
++};
++
+ /* 8 bit int */
+ 
+ static int get_int8(QEMUFile *f, void *pv, size_t size)
+-- 
+1.7.3.2
+

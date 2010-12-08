@@ -1,0 +1,48 @@
+From 1b4058284a078855f8266002b06e2848418d3939 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Mon, 15 Nov 2010 17:16:35 -0200
+Subject: [RHEL6 qemu-kvm PATCH 06/21] qemu-img convert: Use cache=unsafe for output image
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1289841395-30386-7-git-send-email-kwolf@redhat.com>
+Patchwork-id: 13568
+O-Subject: [RHEL-6.1 qemu-kvm PATCH 6/6] qemu-img convert: Use cache=unsafe for
+	output image
+Bugzilla: 653536
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+Bugzilla: 653536
+
+If qemu-img crashes during the conversion, the user will throw away the broken
+output file anyway and start over. So no need to be too cautious.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 1bd8e175580a87c7b9e6791faca7626f9bc3ceeb)
+---
+ qemu-img.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-img.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-img.c b/qemu-img.c
+index 462bfc9..381e7b1 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -695,7 +695,8 @@ static int img_convert(int argc, char **argv)
+         }
+     }
+ 
+-    out_bs = bdrv_new_open(out_filename, out_fmt, BDRV_O_FLAGS | BDRV_O_RDWR);
++    out_bs = bdrv_new_open(out_filename, out_fmt,
++        BDRV_O_FLAGS | BDRV_O_RDWR | BDRV_O_NO_FLUSH);
+ 
+     bs_i = 0;
+     bs_offset = 0;
+-- 
+1.7.3.2
+

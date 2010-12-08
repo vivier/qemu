@@ -1,0 +1,89 @@
+From e6d323ad90eca5aef88b5ef506cd087c7f6978a7 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 23 Nov 2010 10:31:38 -0200
+Subject: [RHEL6 qemu-kvm PATCH 10/21] block: Remove unused s->hd in various drivers
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1290508306-11607-3-git-send-email-kwolf@redhat.com>
+Patchwork-id: 13825
+O-Subject: [RHEL-6.1 qemu-kvm PATCH v2 02/10] block: Remove unused s->hd in
+	various drivers
+Bugzilla: 653972
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 653972
+Upstream status: Submitted
+
+All drivers use bs->file instead of s->hd fpr quite a while now, so it's time
+to remove s->hd.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block/qcow.c  |    1 -
+ block/qcow2.h |    1 -
+ block/vdi.c   |    1 -
+ block/vpc.c   |    2 --
+ 4 files changed, 0 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow.c  |    1 -
+ block/qcow2.h |    1 -
+ block/vdi.c   |    1 -
+ block/vpc.c   |    2 --
+ 4 files changed, 0 insertions(+), 5 deletions(-)
+
+diff --git a/block/qcow.c b/block/qcow.c
+index 2883c40..1c0be6d 100644
+--- a/block/qcow.c
++++ b/block/qcow.c
+@@ -54,7 +54,6 @@ typedef struct QCowHeader {
+ #define L2_CACHE_SIZE 16
+ 
+ typedef struct BDRVQcowState {
+-    BlockDriverState *hd;
+     int cluster_bits;
+     int cluster_size;
+     int cluster_sectors;
+diff --git a/block/qcow2.h b/block/qcow2.h
+index 9368d7e..d976e2b 100644
+--- a/block/qcow2.h
++++ b/block/qcow2.h
+@@ -79,7 +79,6 @@ typedef struct QCowSnapshot {
+ } QCowSnapshot;
+ 
+ typedef struct BDRVQcowState {
+-    BlockDriverState *hd;
+     int cluster_bits;
+     int cluster_size;
+     int cluster_sectors;
+diff --git a/block/vdi.c b/block/vdi.c
+index f8d4b7a..314457b 100644
+--- a/block/vdi.c
++++ b/block/vdi.c
+@@ -186,7 +186,6 @@ typedef struct {
+ } VdiHeader;
+ 
+ typedef struct {
+-    BlockDriverState *hd;
+     /* The block map entries are little endian (even in memory). */
+     uint32_t *bmap;
+     /* Size of block (bytes). */
+diff --git a/block/vpc.c b/block/vpc.c
+index f94e469..265e36b 100644
+--- a/block/vpc.c
++++ b/block/vpc.c
+@@ -110,8 +110,6 @@ struct vhd_dyndisk_header {
+ };
+ 
+ typedef struct BDRVVPCState {
+-    BlockDriverState *hd;
+-
+     uint8_t footer_buf[HEADER_SIZE];
+     uint64_t free_data_block_offset;
+     int max_table_entries;
+-- 
+1.7.3.2
+

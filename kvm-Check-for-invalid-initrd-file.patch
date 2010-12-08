@@ -1,0 +1,56 @@
+From c40c9a595edc97981a15239637b42a1b536fa7bc Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 19 Nov 2010 10:09:27 -0200
+Subject: [RHEL6 qemu-kvm PATCH 08/21] Check for invalid initrd file
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <90dc3e7f2f3a943b1034ca57f123be557be10e1b.1290161363.git.amit.shah@redhat.com>
+Patchwork-id: 13712
+O-Subject: [RHEL6.1 PATCH] Check for invalid initrd file
+Bugzilla: 624721
+RH-Acked-by: Glauber Costa <glommer@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: M. Mohan Kumar <mohan@in.ibm.com>
+
+When qemu is invoked with an invalid initrd file, it crashes. Following
+patch prints a error message and exits if an invalid initrd is
+specified. Includes changes suggested by JV.
+
+Signed-off-by: M. Mohan Kumar <mohan@in.ibm.com>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit d6fa4b77fb8f27ac84cf23fb1e15016673d98a47)
+
+Bugzilla: 624721
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/pc.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pc.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+diff --git a/hw/pc.c b/hw/pc.c
+index f79a0bc..8adc5b6 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -883,6 +883,12 @@ static void load_linux(void *fw_cfg,
+ 	}
+ 
+ 	initrd_size = get_image_size(initrd_filename);
++        if (initrd_size < 0) {
++            fprintf(stderr, "qemu: error reading initrd %s\n",
++                    initrd_filename);
++            exit(1);
++        }
++
+         initrd_addr = (initrd_max-initrd_size) & ~4095;
+ 
+         initrd_data = qemu_malloc(initrd_size);
+-- 
+1.7.3.2
+

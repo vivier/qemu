@@ -1,0 +1,86 @@
+From 431a2608045d4cd69757f2e807ad3bc4b48b6140 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 23 Nov 2010 10:31:41 -0200
+Subject: [RHEL6 qemu-kvm PATCH 13/21] qcow2: Move sync out of update_refcount
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1290508306-11607-6-git-send-email-kwolf@redhat.com>
+Patchwork-id: 13828
+O-Subject: [RHEL-6.1 qemu-kvm PATCH v2 05/10] qcow2: Move sync out of
+	update_refcount
+Bugzilla: 653972
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 653972
+
+Note that the flush is omitted intentionally in qcow2_free_clusters. If
+anything, we can leak clusters here if we lose the writes.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 1c4c28149fff77b8c983fdabe4e76bdc8cadd572)
+---
+ block/qcow2-refcount.c |   13 +++++++++++--
+ 1 files changed, 11 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2-refcount.c |   13 +++++++++++--
+ 1 files changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/block/qcow2-refcount.c b/block/qcow2-refcount.c
+index 564c678..aac2862 100644
+--- a/block/qcow2-refcount.c
++++ b/block/qcow2-refcount.c
+@@ -261,6 +261,8 @@ static int64_t alloc_refcount_block(BlockDriverState *bs, int64_t cluster_index)
+             goto fail_block;
+         }
+ 
++        bdrv_flush(bs->file);
++
+         /* Initialize the new refcount block only after updating its refcount,
+          * update_refcount uses the refcount cache itself */
+         memset(s->refcount_block_cache, 0, s->cluster_size);
+@@ -551,8 +553,6 @@ fail:
+         dummy = update_refcount(bs, offset, cluster_offset - offset, -addend);
+     }
+ 
+-    bdrv_flush(bs->file);
+-
+     return ret;
+ }
+ 
+@@ -575,6 +575,8 @@ static int update_cluster_refcount(BlockDriverState *bs,
+         return ret;
+     }
+ 
++    bdrv_flush(bs->file);
++
+     return get_refcount(bs, cluster_index);
+ }
+ 
+@@ -626,6 +628,9 @@ int64_t qcow2_alloc_clusters(BlockDriverState *bs, int64_t size)
+     if (ret < 0) {
+         return ret;
+     }
++
++    bdrv_flush(bs->file);
++
+     return offset;
+ }
+ 
+@@ -804,6 +809,10 @@ int qcow2_update_snapshot_refcount(BlockDriverState *bs,
+                             if (ret < 0) {
+                                 goto fail;
+                             }
++
++                            /* TODO Flushing once for the whole function should
++                             * be enough */
++                            bdrv_flush(bs->file);
+                         }
+                         /* compressed clusters are never modified */
+                         refcount = 2;
+-- 
+1.7.3.2
+

@@ -1,0 +1,192 @@
+From c9362e8c14bc511d472306c419d2d14b1807b948 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Mon, 15 Nov 2010 17:16:31 -0200
+Subject: [RHEL6 qemu-kvm PATCH 02/21] Add cache=unsafe parameter to -drive
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1289841395-30386-3-git-send-email-kwolf@redhat.com>
+Patchwork-id: 13564
+O-Subject: [RHEL-6.1 qemu-kvm PATCH 2/6] Add cache=unsafe parameter to -drive
+Bugzilla: 653536
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+Bugzilla: 653536
+
+Usually the guest can tell the host to flush data to disk. In some cases we
+don't want to flush though, but try to keep everything in cache.
+
+So let's add a new cache value to -drive that allows us to set the cache
+policy to most aggressive, disabling flushes. We call this mode "unsafe",
+as guest data is not guaranteed to survive host crashes anymore.
+
+This patch also adds a noop function for aio, so we can do nothing in AIO
+fashion.
+
+Signed-off-by: Alexander Graf <agraf@suse.de>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit 016f5cf6ff465411733878a17c8f8febb7668321)
+
+Conflicts:
+
+	qemu-options.hx
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block.c         |   29 +++++++++++++++++++++++++++++
+ block.h         |    1 +
+ qemu-config.c   |    2 +-
+ qemu-options.hx |   12 +++++++++---
+ vl.c            |    3 +++
+ 5 files changed, 43 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c         |   29 +++++++++++++++++++++++++++++
+ block.h         |    1 +
+ qemu-config.c   |    2 +-
+ qemu-options.hx |   12 +++++++++---
+ vl.c            |    3 +++
+ 5 files changed, 43 insertions(+), 4 deletions(-)
+
+diff --git a/block.c b/block.c
+index a575111..394af13 100644
+--- a/block.c
++++ b/block.c
+@@ -50,6 +50,8 @@ static BlockDriverAIOCB *bdrv_aio_writev_em(BlockDriverState *bs,
+         BlockDriverCompletionFunc *cb, void *opaque);
+ static BlockDriverAIOCB *bdrv_aio_flush_em(BlockDriverState *bs,
+         BlockDriverCompletionFunc *cb, void *opaque);
++static BlockDriverAIOCB *bdrv_aio_noop_em(BlockDriverState *bs,
++        BlockDriverCompletionFunc *cb, void *opaque);
+ static int bdrv_read_em(BlockDriverState *bs, int64_t sector_num,
+                         uint8_t *buf, int nb_sectors);
+ static int bdrv_write_em(BlockDriverState *bs, int64_t sector_num,
+@@ -1352,6 +1354,10 @@ const char *bdrv_get_device_name(BlockDriverState *bs)
+ 
+ void bdrv_flush(BlockDriverState *bs)
+ {
++    if (bs->open_flags & BDRV_O_NO_FLUSH) {
++        return;
++    }
++
+     if (bs->drv && bs->drv->bdrv_flush)
+         bs->drv->bdrv_flush(bs);
+ }
+@@ -2152,6 +2158,10 @@ BlockDriverAIOCB *bdrv_aio_flush(BlockDriverState *bs,
+ {
+     BlockDriver *drv = bs->drv;
+ 
++    if (bs->open_flags & BDRV_O_NO_FLUSH) {
++        return bdrv_aio_noop_em(bs, cb, opaque);
++    }
++
+     if (!drv)
+         return NULL;
+     return drv->bdrv_aio_flush(bs, cb, opaque);
+@@ -2266,6 +2276,25 @@ static BlockDriverAIOCB *bdrv_aio_flush_em(BlockDriverState *bs,
+     return &acb->common;
+ }
+ 
++static BlockDriverAIOCB *bdrv_aio_noop_em(BlockDriverState *bs,
++        BlockDriverCompletionFunc *cb, void *opaque)
++{
++    BlockDriverAIOCBSync *acb;
++
++    acb = qemu_aio_get(&bdrv_em_aio_pool, bs, cb, opaque);
++    acb->is_write = 1; /* don't bounce in the completion handler */
++    acb->qiov = NULL;
++    acb->bounce = NULL;
++    acb->ret = 0;
++
++    if (!acb->bh) {
++        acb->bh = qemu_bh_new(bdrv_aio_bh_cb, acb);
++    }
++
++    qemu_bh_schedule(acb->bh);
++    return &acb->common;
++}
++
+ /**************************************************************/
+ /* sync block device emulation */
+ 
+diff --git a/block.h b/block.h
+index 9b08d07..42ac5ae 100644
+--- a/block.h
++++ b/block.h
+@@ -32,6 +32,7 @@ typedef struct QEMUSnapshotInfo {
+ #define BDRV_O_CACHE_WB    0x0040 /* use write-back caching */
+ #define BDRV_O_NATIVE_AIO  0x0080 /* use native AIO instead of the thread pool */
+ #define BDRV_O_NO_BACKING  0x0100 /* don't open the backing file */
++#define BDRV_O_NO_FLUSH    0x0200 /* disable flushing on this disk */
+ 
+ #define BDRV_O_CACHE_MASK  (BDRV_O_NOCACHE | BDRV_O_CACHE_WB)
+ 
+diff --git a/qemu-config.c b/qemu-config.c
+index 04c7a4d..45882d4 100644
+--- a/qemu-config.c
++++ b/qemu-config.c
+@@ -54,7 +54,7 @@ QemuOptsList qemu_drive_opts = {
+         },{
+             .name = "cache",
+             .type = QEMU_OPT_STRING,
+-            .help = "host cache usage (none, writeback, writethrough)",
++            .help = "host cache usage (none, writeback, writethrough, unsafe)",
+         },{
+             .name = "aio",
+             .type = QEMU_OPT_STRING,
+diff --git a/qemu-options.hx b/qemu-options.hx
+index f77439b..ee42a31 100644
+--- a/qemu-options.hx
++++ b/qemu-options.hx
+@@ -102,8 +102,8 @@ ETEXI
+ DEF("drive", HAS_ARG, QEMU_OPTION_drive,
+     "-drive [file=file][,if=type][,bus=n][,unit=m][,media=d][,index=i]\n"
+     "       [,cyls=c,heads=h,secs=s[,trans=t]][,snapshot=on|off]\n"
+-    "       [,cache=writethrough|writeback|none][,format=f][,serial=s]\n"
+-    "       [,addr=A][,id=name][,aio=threads|native]\n"
++    "       [,cache=writethrough|writeback|unsafe|none][,format=f]\n"
++    "       [,serial=s][,addr=A][,id=name][,aio=threads|native]\n"
+     "       [,readonly=on|off]\n"
+     "                use 'file' as a drive image\n")
+ DEF("set", HAS_ARG, QEMU_OPTION_set,
+@@ -139,7 +139,7 @@ These options have the same definition as they have in @option{-hdachs}.
+ @item snapshot=@var{snapshot}
+ @var{snapshot} is "on" or "off" and allows to enable snapshot for given drive (see @option{-snapshot}).
+ @item cache=@var{cache}
+-@var{cache} is "none", "writeback", or "writethrough" and controls how the host cache is used to access block data.
++@var{cache} is "none", "writeback", "unsafe", or "writethrough" and controls how the host cache is used to access block data.
+ @item aio=@var{aio}
+ @var{aio} is "threads", or "native" and selects between pthread based disk I/O and native Linux AIO.
+ @item format=@var{format}
+@@ -171,6 +171,12 @@ Some block drivers perform badly with @option{cache=writethrough}, most notably,
+ qcow2.  If performance is more important than correctness,
+ @option{cache=writeback} should be used with qcow2.
+ 
++In case you don't care about data integrity over host failures, use
++cache=unsafe. This option tells qemu that it never needs to write any data
++to the disk but can instead keeps things in cache. If anything goes wrong,
++like your host losing power, the disk storage getting disconnected accidently,
++etc. you're image will most probably be rendered unusable.
++
+ Instead of @option{-cdrom} you can use:
+ @example
+ qemu -drive file=file,index=2,media=cdrom
+diff --git a/vl.c b/vl.c
+index d19a3e9..5014a5a 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2322,6 +2322,9 @@ DriveInfo *drive_init(QemuOpts *opts, void *opaque,
+             bdrv_flags |= BDRV_O_NOCACHE;
+         } else if (!strcmp(buf, "writeback")) {
+             bdrv_flags |= BDRV_O_CACHE_WB;
++        } else if (!strcmp(buf, "unsafe")) {
++            bdrv_flags |= BDRV_O_CACHE_WB;
++            bdrv_flags |= BDRV_O_NO_FLUSH;
+         } else if (!strcmp(buf, "writethrough")) {
+             /* this is the default */
+         } else {
+-- 
+1.7.3.2
+
