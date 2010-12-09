@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.122%{?dist}
+Release: 2.123%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1534,6 +1534,12 @@ Patch1755: kvm-kill-empty-index-on-qemu-doc.texi.patch
 Patch1756: kvm-add-VMSTATE_BOOL.patch
 # For bz#645342 - Implement QEMU driver for modern sound device like Intel HDA
 Patch1757: kvm-Add-Intel-HD-Audio-support-to-qemu.patch
+# For bz#613893 - [RFE] qemu-io enable truncate function for qcow2.
+Patch1758: kvm-qcow2-Implement-bdrv_truncate-for-growing-images.patch
+# For bz#613893 - [RFE] qemu-io enable truncate function for qcow2.
+Patch1759: kvm-qemu-img-Add-resize-command-to-grow-shrink-disk-imag.patch
+# For bz#613893 - [RFE] qemu-io enable truncate function for qcow2.
+Patch1760: kvm-qemu-img-Fix-copy-paste-bug-in-documentation.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2351,6 +2357,9 @@ such as kvm_stat.
 %patch1755 -p1
 %patch1756 -p1
 %patch1757 -p1
+%patch1758 -p1
+%patch1759 -p1
+%patch1760 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2546,6 +2555,13 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Dec 09 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.123.el6
+- kvm-qcow2-Implement-bdrv_truncate-for-growing-images.patch [bz#613893]
+- kvm-qemu-img-Add-resize-command-to-grow-shrink-disk-imag.patch [bz#613893]
+- kvm-qemu-img-Fix-copy-paste-bug-in-documentation.patch [bz#613893]
+- Resolves: bz#613893
+  ([RFE] qemu-io enable truncate function for qcow2.)
+
 * Wed Dec 08 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.122.el6
 - kvm-cleanup-block-driver-option-handling-in-vl.c.patch [bz#653536]
 - kvm-Add-cache-unsafe-parameter-to-drive.patch [bz#653536]

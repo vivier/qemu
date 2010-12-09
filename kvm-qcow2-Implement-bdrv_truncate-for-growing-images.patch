@@ -1,0 +1,152 @@
+From 35d93678731f1fb9886ad4af4a9530fecaa4ed2e Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 23 Nov 2010 13:55:16 -0200
+Subject: [RHEL6 qemu-kvm PATCH 1/3] qcow2: Implement bdrv_truncate() for growing images
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1290520518-19194-2-git-send-email-kwolf@redhat.com>
+Patchwork-id: 13846
+O-Subject: [RHEL-6.1 qemu-kvm PATCH 1/3] qcow2: Implement bdrv_truncate() for
+	growing images
+Bugzilla: 613893
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 613893
+
+This patch adds the ability to grow qcow2 images in-place using
+bdrv_truncate().  This enables qemu-img resize command support for
+qcow2.
+
+Snapshots are not supported and bdrv_truncate() will return -ENOTSUP.
+The notion of resizing an image with snapshots could lead to confusion:
+users may expect snapshots to remain unchanged, but this is not possible
+with the current qcow2 on-disk format where the header.size field is
+global instead of per-snapshot.  Others may expect snapshots to change
+size along with the current image data.  I think it is safest to not
+support snapshots and perhaps add behavior later if there is a
+consensus.
+
+Backing images continue to work.  If the image is now larger than its
+backing image, zeroes are read when accessing beyond the end of the
+backing image.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 419b19d9b427fad5ff2fa886d8cc217f7acee18c)
+
+Conflicts:
+
+	block/qcow2.c
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block/qcow2.c |   46 ++++++++++++++++++++++++++++++++++++++++++----
+ block/qcow2.h |    6 ++++++
+ 2 files changed, 48 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2.c |   46 ++++++++++++++++++++++++++++++++++++++++++----
+ block/qcow2.h |    6 ++++++
+ 2 files changed, 48 insertions(+), 4 deletions(-)
+
+diff --git a/block/qcow2.c b/block/qcow2.c
+index 57a6ee8..deea8f8 100644
+--- a/block/qcow2.c
++++ b/block/qcow2.c
+@@ -140,7 +140,7 @@ static int qcow_read_extensions(BlockDriverState *bs, uint64_t start_offset,
+ static int qcow_open(BlockDriverState *bs, int flags)
+ {
+     BDRVQcowState *s = bs->opaque;
+-    int len, i, shift;
++    int len, i;
+     QCowHeader header;
+     uint64_t ext_end;
+ 
+@@ -188,8 +188,7 @@ static int qcow_open(BlockDriverState *bs, int flags)
+ 
+     /* read the level 1 table */
+     s->l1_size = header.l1_size;
+-    shift = s->cluster_bits + s->l2_bits;
+-    s->l1_vm_state_index = (header.size + (1LL << shift) - 1) >> shift;
++    s->l1_vm_state_index = size_to_l1(s, header.size);
+     /* the L1 table must contain at least enough entries to put
+        header.size bytes */
+     if (s->l1_size < s->l1_vm_state_index)
+@@ -877,6 +876,43 @@ static int preallocate(BlockDriverState *bs)
+     return 0;
+ }
+ 
++static int qcow2_truncate(BlockDriverState *bs, int64_t offset)
++{
++    BDRVQcowState *s = bs->opaque;
++    int ret, new_l1_size;
++
++    if (offset & 511) {
++        return -EINVAL;
++    }
++
++    /* cannot proceed if image has snapshots */
++    if (s->nb_snapshots) {
++        return -ENOTSUP;
++    }
++
++    /* shrinking is currently not supported */
++    if (offset < bs->total_sectors * 512) {
++        return -ENOTSUP;
++    }
++
++    new_l1_size = size_to_l1(s, offset);
++    ret = qcow2_grow_l1_table(bs, new_l1_size);
++    if (ret < 0) {
++        return ret;
++    }
++
++    /* write updated header.size */
++    offset = cpu_to_be64(offset);
++    ret = bdrv_pwrite(bs->file, offsetof(QCowHeader, size),
++                      &offset, sizeof(uint64_t));
++    if (ret < 0) {
++        return ret;
++    }
++
++    s->l1_vm_state_index = new_l1_size;
++    return 0;
++}
++
+ static int qcow_create2(const char *filename, int64_t total_size,
+                         const char *backing_file, const char *backing_format,
+                         int flags, size_t cluster_size, int prealloc)
+@@ -1343,7 +1379,9 @@ static BlockDriver bdrv_qcow2 = {
+     .bdrv_aio_readv	= qcow_aio_readv,
+     .bdrv_aio_writev	= qcow_aio_writev,
+     .bdrv_aio_flush	= qcow_aio_flush,
+-    .bdrv_write_compressed = qcow_write_compressed,
++
++    .bdrv_truncate          = qcow2_truncate,
++    .bdrv_write_compressed  = qcow_write_compressed,
+ 
+     .bdrv_snapshot_create   = qcow2_snapshot_create,
+     .bdrv_snapshot_goto     = qcow2_snapshot_goto,
+diff --git a/block/qcow2.h b/block/qcow2.h
+index 023fa67..364258c 100644
+--- a/block/qcow2.h
++++ b/block/qcow2.h
+@@ -149,6 +149,12 @@ static inline int size_to_clusters(BDRVQcowState *s, int64_t size)
+     return (size + (s->cluster_size - 1)) >> s->cluster_bits;
+ }
+ 
++static inline int size_to_l1(BDRVQcowState *s, int64_t size)
++{
++    int shift = s->cluster_bits + s->l2_bits;
++    return (size + (1ULL << shift) - 1) >> shift;
++}
++
+ static inline int64_t align_offset(int64_t offset, int n)
+ {
+     offset = (offset + n - 1) & ~(n - 1);
+-- 
+1.7.3.2
+

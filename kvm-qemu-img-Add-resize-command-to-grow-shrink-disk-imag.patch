@@ -1,0 +1,184 @@
+From 542580d0ef143ebe09f1aaf5f072df1fc3cf1a5e Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 23 Nov 2010 13:55:17 -0200
+Subject: [RHEL6 qemu-kvm PATCH 2/3] qemu-img: Add 'resize' command to grow/shrink disk images
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1290520518-19194-3-git-send-email-kwolf@redhat.com>
+Patchwork-id: 13847
+O-Subject: [RHEL-6.1 qemu-kvm PATCH 2/3] qemu-img: Add 'resize' command to
+	grow/shrink disk images
+Bugzilla: 613893
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+Bugzilla: 613893
+
+This patch adds a 'resize' command to grow/shrink disk images.  This
+allows changing the size of disk images without copying to a new image
+file.  Currently only raw files support resize.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit ae6b0ed6d4d4a41e77584f44d2888303645fa845)
+---
+ qemu-img-cmds.hx |    6 +++
+ qemu-img.c       |   92 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ qemu-img.texi    |   12 +++++++
+ 3 files changed, 110 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-img-cmds.hx |    6 +++
+ qemu-img.c       |   92 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ qemu-img.texi    |   12 +++++++
+ 3 files changed, 110 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-img-cmds.hx b/qemu-img-cmds.hx
+index f96876a..c079019 100644
+--- a/qemu-img-cmds.hx
++++ b/qemu-img-cmds.hx
+@@ -49,5 +49,11 @@ DEF("rebase", img_rebase,
+     "rebase [-f fmt] [-u] -b backing_file [-F backing_fmt] filename")
+ STEXI
+ @item rebase [-f @var{fmt}] [-u] -b @var{backing_file} [-F @var{backing_fmt}] @var{filename}
++ETEXI
++
++DEF("resize", img_resize,
++    "resize filename [+ | -]size")
++STEXI
++@item rebase @var{filename} [+ | -]@var{size}
+ @end table
+ ETEXI
+diff --git a/qemu-img.c b/qemu-img.c
+index 381e7b1..771016e 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -1260,6 +1260,98 @@ static int img_rebase(int argc, char **argv)
+     return 0;
+ }
+ 
++static int img_resize(int argc, char **argv)
++{
++    int c, ret, relative;
++    const char *filename, *fmt, *size;
++    int64_t n, total_size;
++    BlockDriverState *bs;
++    QEMUOptionParameter *param;
++    QEMUOptionParameter resize_options[] = {
++        {
++            .name = BLOCK_OPT_SIZE,
++            .type = OPT_SIZE,
++            .help = "Virtual disk size"
++        },
++        { NULL }
++    };
++
++    fmt = NULL;
++    for(;;) {
++        c = getopt(argc, argv, "f:h");
++        if (c == -1) {
++            break;
++        }
++        switch(c) {
++        case 'h':
++            help();
++            break;
++        case 'f':
++            fmt = optarg;
++            break;
++        }
++    }
++    if (optind + 1 >= argc) {
++        help();
++    }
++    filename = argv[optind++];
++    size = argv[optind++];
++
++    /* Choose grow, shrink, or absolute resize mode */
++    switch (size[0]) {
++    case '+':
++        relative = 1;
++        size++;
++        break;
++    case '-':
++        relative = -1;
++        size++;
++        break;
++    default:
++        relative = 0;
++        break;
++    }
++
++    /* Parse size */
++    param = parse_option_parameters("", resize_options, NULL);
++    if (set_option_parameter(param, BLOCK_OPT_SIZE, size)) {
++        /* Error message already printed when size parsing fails */
++        exit(1);
++    }
++    n = get_option_parameter(param, BLOCK_OPT_SIZE)->value.n;
++    free_option_parameters(param);
++
++    bs = bdrv_new_open(filename, fmt, BDRV_O_FLAGS | BDRV_O_RDWR);
++
++    if (relative) {
++        total_size = bdrv_getlength(bs) + n * relative;
++    } else {
++        total_size = n;
++    }
++    if (total_size <= 0) {
++        error("New image size must be positive");
++    }
++
++    ret = bdrv_truncate(bs, total_size);
++    switch (ret) {
++    case 0:
++        printf("Image resized.\n");
++        break;
++    case -ENOTSUP:
++        error("This image format does not support resize");
++        break;
++    case -EACCES:
++        error("Image is read-only");
++        break;
++    default:
++        error("Error resizing image (%d)", -ret);
++        break;
++    }
++
++    bdrv_delete(bs);
++    return 0;
++}
++
+ static const img_cmd_t img_cmds[] = {
+ #define DEF(option, callback, arg_string)        \
+     { option, callback },
+diff --git a/qemu-img.texi b/qemu-img.texi
+index ac97854..c1b1f27 100644
+--- a/qemu-img.texi
++++ b/qemu-img.texi
+@@ -106,6 +106,18 @@ they are displayed too.
+ @item snapshot [-l | -a @var{snapshot} | -c @var{snapshot} | -d @var{snapshot} ] @var{filename}
+ 
+ List, apply, create or delete snapshots in image @var{filename}.
++
++@item resize @var{filename} [+ | -]@var{size}
++
++Change the disk image as if it had been created with @var{size}.
++
++Before using this command to shrink a disk image, you MUST use file system and
++partitioning tools inside the VM to reduce allocated file systems and partition
++sizes accordingly.  Failure to do so will result in data loss!
++
++After using this command to grow a disk image, you must use file system and
++partitioning tools inside the VM to actually begin using the new space on the
++device.
+ @end table
+ 
+ Supported image file formats:
+-- 
+1.7.3.2
+

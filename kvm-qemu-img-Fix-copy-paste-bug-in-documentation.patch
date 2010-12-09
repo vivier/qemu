@@ -1,0 +1,51 @@
+From b4307e40f29c7c52298aa42ff2bdb7c57fd8e629 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 23 Nov 2010 13:55:18 -0200
+Subject: [RHEL6 qemu-kvm PATCH 3/3] qemu-img: Fix copy+paste bug in documentation
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1290520518-19194-4-git-send-email-kwolf@redhat.com>
+Patchwork-id: 13848
+O-Subject: [RHEL-6.1 qemu-kvm PATCH 3/3] qemu-img: Fix copy+paste bug in
+	documentation
+Bugzilla: 613893
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Stefan Weil <weil@mail.berlios.de>
+
+Bugzilla: 613893
+
+Replace rebase by resize in documentation of resize command.
+
+Cc: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Cc: Kevin Wolf <kwolf@redhat.com>
+
+Signed-off-by: Stefan Weil <weil@mail.berlios.de>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 5fb58b067ab02afd6bb1737b04f8d3d8f23a0c8d)
+---
+ qemu-img-cmds.hx |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-img-cmds.hx |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-img-cmds.hx b/qemu-img-cmds.hx
+index c079019..480cc07 100644
+--- a/qemu-img-cmds.hx
++++ b/qemu-img-cmds.hx
+@@ -54,6 +54,6 @@ ETEXI
+ DEF("resize", img_resize,
+     "resize filename [+ | -]size")
+ STEXI
+-@item rebase @var{filename} [+ | -]@var{size}
++@item resize @var{filename} [+ | -]@var{size}
+ @end table
+ ETEXI
+-- 
+1.7.3.2
+
