@@ -1404,6 +1404,10 @@ static void assigned_dev_unregister_msix_mmio(AssignedDevice *dev)
     dev->msix_table_page = NULL;
 }
 
+static const VMStateDescription vmstate_assigned_device = {
+    .name = "pci-assign"
+};
+
 static int assigned_initfn(struct PCIDevice *pci_dev)
 {
     AssignedDevice *dev = DO_UPCAST(AssignedDevice, dev, pci_dev);
@@ -1458,6 +1462,12 @@ static int assigned_initfn(struct PCIDevice *pci_dev)
 
     assigned_dev_load_option_rom(dev);
     QLIST_INSERT_HEAD(&devs, dev, next);
+
+    /* Register a vmsd so that we can mark it unmigratable. */
+    vmstate_register(&dev->dev.qdev, 0, &vmstate_assigned_device, dev);
+    register_device_unmigratable(&dev->dev.qdev,
+                                 vmstate_assigned_device.name, dev);
+
     return 0;
 
 assigned_out:
@@ -1471,6 +1481,7 @@ static int assigned_exitfn(struct PCIDevice *pci_dev)
 {
     AssignedDevice *dev = DO_UPCAST(AssignedDevice, dev, pci_dev);
 
+    vmstate_unregister(&dev->dev.qdev, &vmstate_assigned_device, dev);
     QLIST_REMOVE(dev, next);
     deassign_device(dev);
     free_assigned_device(dev);
