@@ -1,7 +1,22 @@
+# Versions of various parts
+
+# Polite request for people who spin their own qemu-kvm rpms:
+# please modify the "buildid" define in a way that identifies
+# that the kernel isn't the stock distribution qemu-kvm, for example,
+# by setting the define to ".local" or ".bz123456"
+#
+%define buildid %{nil}%%BUILDID%%
+
+%define sublevel %%SUBLEVEL%%
+%define pkgrelease %%PKGRELEASE%%
+
+%define rpmversion %{sublevel}
+%define full_release %{pkgrelease}%{?dist}%{?buildid}
+
 Summary: Userspace component of KVM
 Name: qemu-kvm
-Version: 0.12.1.2
-Release: 2.124%{?dist}
+Version: %{rpmversion}
+Release: %{full_release}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1619,6 +1634,42 @@ such as kvm_stat.
 %prep
 %setup -q -n qemu-kvm-%{version}
 
+# if patch fuzzy patch applying will be forbidden
+%define with_fuzzy_patches 0
+%if %{with_fuzzy_patches}
+  patch_command='patch -p1 -s'
+%else
+  patch_command='patch -p1 -F1 -s'
+%endif
+
+ApplyPatch()
+{
+  local patch=$1
+  shift
+  if [ ! -f $RPM_SOURCE_DIR/$patch ]; then
+    exit 1
+  fi
+  case "$patch" in
+  *.bz2) bunzip2 < "$RPM_SOURCE_DIR/$patch" | $patch_command ${1+"$@"} ;;
+  *.gz) gunzip < "$RPM_SOURCE_DIR/$patch" | $patch_command ${1+"$@"} ;;
+  *) $patch_command ${1+"$@"} < "$RPM_SOURCE_DIR/$patch" ;;
+  esac
+}
+
+# don't apply patch if it's empty or does not exist
+ApplyOptionalPatch()
+{
+  local patch=$1
+  shift
+  if [ ! -f $RPM_SOURCE_DIR/$patch ]; then
+    return 0
+  fi
+  local C=$(wc -l $RPM_SOURCE_DIR/$patch | awk '{print $1}')
+  if [ "$C" -gt 9 ]; then
+    ApplyPatch $patch ${1+"$@"}
+  fi
+}
+
 
 %patch1000 -p1
 %patch1001 -p1
@@ -2384,6 +2435,8 @@ such as kvm_stat.
 %patch1766 -p1
 %patch1767 -p1
 %patch1768 -p1
+
+ApplyOptionalPatch qemu-kvm-test.patch
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
