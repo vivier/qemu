@@ -5,10 +5,10 @@
 # that the kernel isn't the stock distribution qemu-kvm, for example,
 # by setting the define to ".local" or ".bz123456"
 #
-%define buildid %{nil}%%BUILDID%%
+%define buildid %{nil}
 
-%define sublevel %%SUBLEVEL%%
-%define pkgrelease %%PKGRELEASE%%
+%define sublevel 0.12.1.2
+%define pkgrelease 2.124
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
