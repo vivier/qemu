@@ -1,7 +1,7 @@
 Summary: Userspace component of KVM
 Name: qemu-kvm
 Version: 0.12.1.2
-Release: 2.123%{?dist}
+Release: 2.124%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1540,6 +1540,22 @@ Patch1758: kvm-qcow2-Implement-bdrv_truncate-for-growing-images.patch
 Patch1759: kvm-qemu-img-Add-resize-command-to-grow-shrink-disk-imag.patch
 # For bz#613893 - [RFE] qemu-io enable truncate function for qcow2.
 Patch1760: kvm-qemu-img-Fix-copy-paste-bug-in-documentation.patch
+# For bz#608548 - QEMU doesn't respect hardware sector size of underlying block device when doing O_DIRECT
+Patch1761: kvm-Fix-compilation-error-missing-include-statement.patch
+# For bz#608548 - QEMU doesn't respect hardware sector size of underlying block device when doing O_DIRECT
+Patch1762: kvm-use-qemu_blockalign-consistently.patch
+# For bz#608548 - QEMU doesn't respect hardware sector size of underlying block device when doing O_DIRECT
+Patch1763: kvm-raw-posix-handle-512-byte-alignment-correctly.patch
+# For bz#608548 - QEMU doesn't respect hardware sector size of underlying block device when doing O_DIRECT
+Patch1764: kvm-virtio-blk-propagate-the-required-alignment.patch
+# For bz#608548 - QEMU doesn't respect hardware sector size of underlying block device when doing O_DIRECT
+Patch1765: kvm-scsi-disk-propagate-the-required-alignment.patch
+# For bz#608548 - QEMU doesn't respect hardware sector size of underlying block device when doing O_DIRECT
+Patch1766: kvm-ide-propagate-the-required-alignment.patch
+# For bz#635954 - RFE: Assigned device should block migration
+Patch1767: kvm-Support-marking-a-device-as-non-migratable.patch
+# For bz#635954 - RFE: Assigned device should block migration
+Patch1768: kvm-device-assignment-Register-as-un-migratable.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2360,6 +2376,14 @@ such as kvm_stat.
 %patch1758 -p1
 %patch1759 -p1
 %patch1760 -p1
+%patch1761 -p1
+%patch1762 -p1
+%patch1763 -p1
+%patch1764 -p1
+%patch1765 -p1
+%patch1766 -p1
+%patch1767 -p1
+%patch1768 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2555,6 +2579,20 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Dec 10 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.124.el6
+- kvm-Fix-compilation-error-missing-include-statement.patch [bz#608548]
+- kvm-use-qemu_blockalign-consistently.patch [bz#608548]
+- kvm-raw-posix-handle-512-byte-alignment-correctly.patch [bz#608548]
+- kvm-virtio-blk-propagate-the-required-alignment.patch [bz#608548]
+- kvm-scsi-disk-propagate-the-required-alignment.patch [bz#608548]
+- kvm-ide-propagate-the-required-alignment.patch [bz#608548]
+- kvm-Support-marking-a-device-as-non-migratable.patch [bz#635954]
+- kvm-device-assignment-Register-as-un-migratable.patch [bz#635954]
+- Resolves: bz#608548
+  (QEMU doesn't respect hardware sector size of underlying block device when doing O_DIRECT)
+- Resolves: bz#635954
+  (RFE: Assigned device should block migration)
+
 * Thu Dec 09 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.123.el6
 - kvm-qcow2-Implement-bdrv_truncate-for-growing-images.patch [bz#613893]
 - kvm-qemu-img-Add-resize-command-to-grow-shrink-disk-imag.patch [bz#613893]

@@ -1,0 +1,240 @@
+From 4dcf203ce8d128f370ae6fd28b1bf6d471b367e9 Mon Sep 17 00:00:00 2001
+From: Christoph Hellwig <chellwig@redhat.com>
+Date: Tue, 9 Nov 2010 17:54:10 -0200
+Subject: [RHEL6 qemu-kvm PATCH 3/8] raw-posix: handle > 512 byte alignment correctly
+
+RH-Author: Christoph Hellwig <chellwig@redhat.com>
+Message-id: <1289325254-25070-2-git-send-email-chellwig@redhat.com>
+Patchwork-id: 13352
+O-Subject: [RHEL6.1 qemu PATCH 2/5] raw-posix: handle > 512 byte alignment
+	correctly
+Bugzilla: 608548
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Christoph Hellwig <hch@lst.de>
+
+Replace the hardcoded handling of 512 byte alignment with bs->buffer_alignment
+to handle larger sector size devices correctly.
+
+Note that we can not rely on it to be initialize in bdrv_open, so deal
+with the worst case there.
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Upstream commit: 581b9e29f36eec5de0779c3dbade980e4405d92e
+BZ: 608548
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/raw-posix.c |   79 +++++++++++++++++++++++++++++++----------------------
+ 1 files changed, 46 insertions(+), 33 deletions(-)
+
+diff --git a/block/raw-posix.c b/block/raw-posix.c
+index f64635d..915968a 100644
+--- a/block/raw-posix.c
++++ b/block/raw-posix.c
+@@ -98,12 +98,12 @@
+ #define FTYPE_CD     1
+ #define FTYPE_FD     2
+ 
+-#define ALIGNED_BUFFER_SIZE (32 * 512)
+-
+ /* if the FD is not accessed during that time (in ms), we try to
+    reopen it to see if the disk has been changed */
+ #define FD_OPEN_TIMEOUT 1000
+ 
++#define MAX_BLOCKSIZE	4096
++
+ typedef struct BDRVRawState {
+     int fd;
+     int type;
+@@ -119,7 +119,8 @@ typedef struct BDRVRawState {
+     int use_aio;
+     void *aio_ctx;
+ #endif
+-    uint8_t* aligned_buf;
++    uint8_t *aligned_buf;
++    unsigned aligned_buf_size;
+ } BDRVRawState;
+ 
+ static int fd_open(BlockDriverState *bs);
+@@ -163,7 +164,12 @@ static int raw_open_common(BlockDriverState *bs, const char *filename,
+     s->aligned_buf = NULL;
+ 
+     if ((bdrv_flags & BDRV_O_NOCACHE)) {
+-        s->aligned_buf = qemu_blockalign(bs, ALIGNED_BUFFER_SIZE);
++        /*
++         * Allocate a buffer for read/modify/write cycles.  Chose the size
++         * pessimistically as we don't know the block size yet.
++         */
++        s->aligned_buf_size = 32 * MAX_BLOCKSIZE;
++        s->aligned_buf = qemu_memalign(MAX_BLOCKSIZE, s->aligned_buf_size);
+         if (s->aligned_buf == NULL) {
+             goto out_close;
+         }
+@@ -287,8 +293,9 @@ label__raw_read__success:
+ }
+ 
+ /*
+- * offset and count are in bytes, but must be multiples of 512 for files
+- * opened with O_DIRECT. buf must be aligned to 512 bytes then.
++ * offset and count are in bytes, but must be multiples of the sector size
++ * for files opened with O_DIRECT. buf must be aligned to sector size bytes
++ * then.
+  *
+  * This function may be called without alignment if the caller ensures
+  * that O_DIRECT is not in effect.
+@@ -327,24 +334,25 @@ static int raw_pread(BlockDriverState *bs, int64_t offset,
+                      uint8_t *buf, int count)
+ {
+     BDRVRawState *s = bs->opaque;
++    unsigned sector_mask = bs->buffer_alignment - 1;
+     int size, ret, shift, sum;
+ 
+     sum = 0;
+ 
+     if (s->aligned_buf != NULL)  {
+ 
+-        if (offset & 0x1ff) {
+-            /* align offset on a 512 bytes boundary */
++        if (offset & sector_mask) {
++            /* align offset on a sector size bytes boundary */
+ 
+-            shift = offset & 0x1ff;
+-            size = (shift + count + 0x1ff) & ~0x1ff;
+-            if (size > ALIGNED_BUFFER_SIZE)
+-                size = ALIGNED_BUFFER_SIZE;
++            shift = offset & sector_mask;
++            size = (shift + count + sector_mask) & ~sector_mask;
++            if (size > s->aligned_buf_size)
++                size = s->aligned_buf_size;
+             ret = raw_pread_aligned(bs, offset - shift, s->aligned_buf, size);
+             if (ret < 0)
+                 return ret;
+ 
+-            size = 512 - shift;
++            size = bs->buffer_alignment - shift;
+             if (size > count)
+                 size = count;
+             memcpy(buf, s->aligned_buf + shift, size);
+@@ -357,15 +365,15 @@ static int raw_pread(BlockDriverState *bs, int64_t offset,
+             if (count == 0)
+                 return sum;
+         }
+-        if (count & 0x1ff || (uintptr_t) buf & 0x1ff) {
++        if (count & sector_mask || (uintptr_t) buf & sector_mask) {
+ 
+             /* read on aligned buffer */
+ 
+             while (count) {
+ 
+-                size = (count + 0x1ff) & ~0x1ff;
+-                if (size > ALIGNED_BUFFER_SIZE)
+-                    size = ALIGNED_BUFFER_SIZE;
++                size = (count + sector_mask) & ~sector_mask;
++                if (size > s->aligned_buf_size)
++                    size = s->aligned_buf_size;
+ 
+                 ret = raw_pread_aligned(bs, offset, s->aligned_buf, size);
+                 if (ret < 0)
+@@ -410,25 +418,28 @@ static int raw_pwrite(BlockDriverState *bs, int64_t offset,
+                       const uint8_t *buf, int count)
+ {
+     BDRVRawState *s = bs->opaque;
++    unsigned sector_mask = bs->buffer_alignment - 1;
+     int size, ret, shift, sum;
+ 
+     sum = 0;
+ 
+     if (s->aligned_buf != NULL) {
+ 
+-        if (offset & 0x1ff) {
+-            /* align offset on a 512 bytes boundary */
+-            shift = offset & 0x1ff;
+-            ret = raw_pread_aligned(bs, offset - shift, s->aligned_buf, 512);
++        if (offset & sector_mask) {
++            /* align offset on a sector size bytes boundary */
++            shift = offset & sector_mask;
++            ret = raw_pread_aligned(bs, offset - shift, s->aligned_buf,
++                                    bs->buffer_alignment);
+             if (ret < 0)
+                 return ret;
+ 
+-            size = 512 - shift;
++            size = bs->buffer_alignment - shift;
+             if (size > count)
+                 size = count;
+             memcpy(s->aligned_buf + shift, buf, size);
+ 
+-            ret = raw_pwrite_aligned(bs, offset - shift, s->aligned_buf, 512);
++            ret = raw_pwrite_aligned(bs, offset - shift, s->aligned_buf,
++                                     bs->buffer_alignment);
+             if (ret < 0)
+                 return ret;
+ 
+@@ -440,12 +451,12 @@ static int raw_pwrite(BlockDriverState *bs, int64_t offset,
+             if (count == 0)
+                 return sum;
+         }
+-        if (count & 0x1ff || (uintptr_t) buf & 0x1ff) {
++        if (count & sector_mask || (uintptr_t) buf & sector_mask) {
+ 
+-            while ((size = (count & ~0x1ff)) != 0) {
++            while ((size = (count & ~sector_mask)) != 0) {
+ 
+-                if (size > ALIGNED_BUFFER_SIZE)
+-                    size = ALIGNED_BUFFER_SIZE;
++                if (size > s->aligned_buf_size)
++                    size = s->aligned_buf_size;
+ 
+                 memcpy(s->aligned_buf, buf, size);
+ 
+@@ -458,14 +469,16 @@ static int raw_pwrite(BlockDriverState *bs, int64_t offset,
+                 count -= ret;
+                 sum += ret;
+             }
+-            /* here, count < 512 because (count & ~0x1ff) == 0 */
++            /* here, count < 512 because (count & ~sector_mask) == 0 */
+             if (count) {
+-                ret = raw_pread_aligned(bs, offset, s->aligned_buf, 512);
++                ret = raw_pread_aligned(bs, offset, s->aligned_buf,
++                                     bs->buffer_alignment);
+                 if (ret < 0)
+                     return ret;
+                  memcpy(s->aligned_buf, buf, count);
+ 
+-                 ret = raw_pwrite_aligned(bs, offset, s->aligned_buf, 512);
++                 ret = raw_pwrite_aligned(bs, offset, s->aligned_buf,
++                                     bs->buffer_alignment);
+                  if (ret < 0)
+                      return ret;
+                  if (count < ret)
+@@ -492,12 +505,12 @@ static int raw_write(BlockDriverState *bs, int64_t sector_num,
+ /*
+  * Check if all memory in this vector is sector aligned.
+  */
+-static int qiov_is_aligned(QEMUIOVector *qiov)
++static int qiov_is_aligned(BlockDriverState *bs, QEMUIOVector *qiov)
+ {
+     int i;
+ 
+     for (i = 0; i < qiov->niov; i++) {
+-        if ((uintptr_t) qiov->iov[i].iov_base % 512) {
++        if ((uintptr_t) qiov->iov[i].iov_base % bs->buffer_alignment) {
+             return 0;
+         }
+     }
+@@ -520,7 +533,7 @@ static BlockDriverAIOCB *raw_aio_submit(BlockDriverState *bs,
+      * driver that it needs to copy the buffer.
+      */
+     if (s->aligned_buf) {
+-        if (!qiov_is_aligned(qiov)) {
++        if (!qiov_is_aligned(bs, qiov)) {
+             type |= QEMU_AIO_MISALIGNED;
+ #ifdef CONFIG_LINUX_AIO
+         } else if (s->use_aio) {
+-- 
+1.7.3.2
+

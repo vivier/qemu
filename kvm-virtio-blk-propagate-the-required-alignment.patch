@@ -1,0 +1,62 @@
+From 402a6c5038a0897e0c367259947b818f0c7ce73f Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Wed, 8 Dec 2010 18:57:15 -0200
+Subject: [RHEL6 qemu-kvm PATCH 4/8] virtio-blk: propagate the required alignment
+
+RH-Author: Eduardo Habkost <ehabkost@redhat.com>
+Message-id: <20101208185715.GT4246@otherpad.lan.raisama.net>
+Patchwork-id: 14441
+O-Subject: Re: [RHEL6.1 qemu PATCH 3/5] virtio-blk: propagate the required
+	alignment
+Bugzilla: 608548
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+On Tue, Nov 09, 2010 at 12:54:11PM -0500, Christoph Hellwig wrote:
+> From: Christoph Hellwig <hch@lst.de>
+>
+> Signed-off-by: Christoph Hellwig <hch@lst.de>
+> Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+> Upstream commit: 316a7af35029d52c971f5df044eb69901d6f16ff
+> BZ: 608548
+>
+> Index: qemu-kvm-rhel6/hw/virtio-blk.c
+> ===================================================================
+> --- qemu-kvm-rhel6.orig/hw/virtio-blk.c	2010-11-09 19:09:01.978196346 +0100
+> +++ qemu-kvm-rhel6/hw/virtio-blk.c	2010-11-09 19:10:16.321529673 +0100
+> @@ -524,6 +524,7 @@ VirtIODevice *virtio_blk_init(DeviceStat
+>      s->qdev = dev;
+>      register_savevm(dev, "virtio-blk", virtio_blk_id++, 2,
+>                      virtio_blk_save, virtio_blk_load, s);
+> +    s->bs->buffer_alignment = conf->logical_block_size;
+>
+>      return &s->vdev;
+>  }
+
+I just manually fixed the conflict with the previous series from Kevin,
+and the result is below. Please ACK.
+
+(I won't wait for full three ACKs as the conflict was trivial, but I
+would like to get at least an ACK from Christoph or one of the original
+reviewers).
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-blk.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index edd6aad..f65d9b5 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -525,6 +525,7 @@ VirtIODevice *virtio_blk_init(DeviceState *dev, BlockConf *conf)
+     register_savevm(dev, "virtio-blk", virtio_blk_id++, 2,
+                     virtio_blk_save, virtio_blk_load, s);
+     bdrv_set_removable(s->bs, 0);
++    s->bs->buffer_alignment = conf->logical_block_size;
+ 
+     return &s->vdev;
+ }
+-- 
+1.7.3.2
+

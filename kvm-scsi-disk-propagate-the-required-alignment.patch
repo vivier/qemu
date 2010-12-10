@@ -1,0 +1,41 @@
+From ad7ad76e7fc11a43466fb3958aa35da8b180a772 Mon Sep 17 00:00:00 2001
+From: Christoph Hellwig <chellwig@redhat.com>
+Date: Tue, 9 Nov 2010 17:54:12 -0200
+Subject: [RHEL6 qemu-kvm PATCH 5/8] scsi-disk: propagate the required alignment
+
+RH-Author: Christoph Hellwig <chellwig@redhat.com>
+Message-id: <1289325254-25070-4-git-send-email-chellwig@redhat.com>
+Patchwork-id: 13354
+O-Subject: [RHEL6.1 qemu PATCH 4/5] scsi-disk: propagate the required alignment
+Bugzilla: 608548
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Christoph Hellwig <hch@lst.de>
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Upstream commit: 73fdb1e1956c6ac10e76882a2e8426d794e02bb2
+BZ: 608548
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/scsi-disk.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index 8fa43ce..a109e80 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -1036,6 +1036,7 @@ static int scsi_disk_initfn(SCSIDevice *dev)
+         s->qdev.blocksize = s->qdev.conf.logical_block_size;
+     }
+     s->cluster_size = s->qdev.blocksize / 512;
++    s->bs->buffer_alignment = s->qdev.blocksize;
+ 
+     s->qdev.type = TYPE_DISK;
+     bdrv_get_geometry(s->bs, &nb_sectors);
+-- 
+1.7.3.2
+

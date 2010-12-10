@@ -1,0 +1,121 @@
+From 5c6ceb6e020cae997651aa0d34059a6d3582caab Mon Sep 17 00:00:00 2001
+From: Christoph Hellwig <chellwig@redhat.com>
+Date: Tue, 9 Nov 2010 17:54:09 -0200
+Subject: [RHEL6 qemu-kvm PATCH 2/8] use qemu_blockalign consistently
+
+RH-Author: Christoph Hellwig <chellwig@redhat.com>
+Message-id: <1289325254-25070-1-git-send-email-chellwig@redhat.com>
+Patchwork-id: 13353
+O-Subject: [RHEL6.1 qemu PATCH 1/5] use qemu_blockalign consistently
+Bugzilla: 608548
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Christoph Hellwig <hch@lst.de>
+
+Use qemu_blockalign for all allocations in the block layer.  This allows
+increasing the required alignment, which is need to support O_DIRECT on
+devices with large block sizes.
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Upstream commit: 72aef7318f54f0ec8c84c2bf2bb8edc5702d7dd0
+BZ: 608548
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/scsi-disk.c     |    9 +++++----
+ hw/sd.c            |    2 +-
+ posix-aio-compat.c |    2 +-
+ qemu-io.c          |    2 +-
+ qemu-nbd.c         |    2 +-
+ 5 files changed, 9 insertions(+), 8 deletions(-)
+
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index dcb79ee..8fa43ce 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -68,14 +68,15 @@ struct SCSIDiskState
+     char *version;
+ };
+ 
+-static SCSIDiskReq *scsi_new_request(SCSIDevice *d, uint32_t tag, uint32_t lun)
++static SCSIDiskReq *scsi_new_request(SCSIDiskState *s, uint32_t tag,
++        uint32_t lun)
+ {
+     SCSIRequest *req;
+     SCSIDiskReq *r;
+ 
+-    req = scsi_req_alloc(sizeof(SCSIDiskReq), d, tag, lun);
++    req = scsi_req_alloc(sizeof(SCSIDiskReq), &s->qdev, tag, lun);
+     r = DO_UPCAST(SCSIDiskReq, req, req);
+-    r->iov.iov_base = qemu_memalign(512, SCSI_DMA_BUF_SIZE);
++    r->iov.iov_base = qemu_blockalign(s->bs, SCSI_DMA_BUF_SIZE);
+     return r;
+ }
+ 
+@@ -876,7 +877,7 @@ static int32_t scsi_send_command(SCSIDevice *d, uint32_t tag,
+     }
+     /* ??? Tags are not unique for different luns.  We only implement a
+        single lun, so this should not matter.  */
+-    r = scsi_new_request(d, tag, lun);
++    r = scsi_new_request(s, tag, lun);
+     outbuf = (uint8_t *)r->iov.iov_base;
+     is_write = 0;
+     DPRINTF("Command: lun=%d tag=0x%x data=0x%02x", lun, tag, buf[0]);
+diff --git a/hw/sd.c b/hw/sd.c
+index b597930..9f4fbe8 100644
+--- a/hw/sd.c
++++ b/hw/sd.c
+@@ -441,7 +441,7 @@ SDState *sd_init(BlockDriverState *bs, int is_spi)
+     SDState *sd;
+ 
+     sd = (SDState *) qemu_mallocz(sizeof(SDState));
+-    sd->buf = qemu_memalign(512, 512);
++    sd->buf = qemu_blockalign(bs, 512);
+     sd->spi = is_spi;
+     sd->enable = 1;
+     sd_reset(sd, bs);
+diff --git a/posix-aio-compat.c b/posix-aio-compat.c
+index 272e998..ea87fb8 100644
+--- a/posix-aio-compat.c
++++ b/posix-aio-compat.c
+@@ -270,7 +270,7 @@ static ssize_t handle_aiocb_rw(struct qemu_paiocb *aiocb)
+      * Ok, we have to do it the hard way, copy all segments into
+      * a single aligned buffer.
+      */
+-    buf = qemu_memalign(512, aiocb->aio_nbytes);
++    buf = qemu_blockalign(aiocb->common.bs, aiocb->aio_nbytes);
+     if (aiocb->aio_type & QEMU_AIO_WRITE) {
+         char *p = buf;
+         int i;
+diff --git a/qemu-io.c b/qemu-io.c
+index 0c66753..44d2d41 100644
+--- a/qemu-io.c
++++ b/qemu-io.c
+@@ -61,7 +61,7 @@ static void *qemu_io_alloc(size_t len, int pattern)
+ 
+ 	if (misalign)
+ 		len += MISALIGN_OFFSET;
+-	buf = qemu_memalign(512, len);
++	buf = qemu_blockalign(bs, len);
+ 	memset(buf, pattern, len);
+ 	if (misalign)
+ 		buf += MISALIGN_OFFSET;
+diff --git a/qemu-nbd.c b/qemu-nbd.c
+index f96be60..5a22fe9 100644
+--- a/qemu-nbd.c
++++ b/qemu-nbd.c
+@@ -425,7 +425,7 @@ int main(int argc, char **argv)
+     max_fd = sharing_fds[0];
+     nb_fds++;
+ 
+-    data = qemu_memalign(512, NBD_BUFFER_SIZE);
++    data = qemu_blockalign(bs, NBD_BUFFER_SIZE);
+     if (data == NULL)
+         errx(ENOMEM, "Cannot allocate data buffer");
+ 
+-- 
+1.7.3.2
+

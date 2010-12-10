@@ -1,0 +1,52 @@
+From 957667c02468bfabb0792e580b45e7b2fd04e7f9 Mon Sep 17 00:00:00 2001
+From: Christoph Hellwig <chellwig@redhat.com>
+Date: Tue, 9 Nov 2010 17:54:14 -0200
+Subject: [RHEL6 qemu-kvm PATCH 1/8] Fix compilation error (missing include statement)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+RH-Author: Christoph Hellwig <chellwig@redhat.com>
+Message-id: <1289325254-25070-6-git-send-email-chellwig@redhat.com>
+Patchwork-id: 13357
+O-Subject: [RHEL6.1 qemu PATCH 1/5] Fix compilation error (missing include
+	statement)
+Bugzilla: 608548
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Stefan Weil <weil@mail.berlios.de>
+
+./hw/sd.c: In function ‘sd_init’:
+./hw/sd.c:443: error: implicit declaration of function ‘qemu_blockalign’
+./hw/sd.c:443: error: nested extern declaration of ‘qemu_blockalign’
+./hw/sd.c:443: error: assignment makes pointer from integer without a cast
+
+Cc: Christoph Hellwig <hch@lst.de>
+Cc: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Stefan Weil <weil@mail.berlios.de>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Upstream commit: 879f0655579a1f94fab2cd20a1597aef9a3117ef
+BZ: 608548
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/sd.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/hw/sd.c b/hw/sd.c
+index 7b345e7..b597930 100644
+--- a/hw/sd.c
++++ b/hw/sd.c
+@@ -31,6 +31,7 @@
+ 
+ #include "hw.h"
+ #include "block.h"
++#include "block_int.h"
+ #include "sd.h"
+ 
+ //#define DEBUG_SD 1
+-- 
+1.7.3.2
+

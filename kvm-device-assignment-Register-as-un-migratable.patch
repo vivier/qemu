@@ -1,0 +1,73 @@
+From bf3b0e4d1f37c003873eaf797022f1ad73958050 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Thu, 9 Dec 2010 21:22:00 -0200
+Subject: [RHEL6 qemu-kvm PATCH 8/8] device-assignment: Register as un-migratable
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20101209212155.10949.70467.stgit@s20.home>
+Patchwork-id: 14516
+O-Subject: [RHEL6.1 qemu-kvm PATCH 2/2] device-assignment: Register as
+	un-migratable
+Bugzilla: 635954
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Upstream commit: 4f21cd82ecede4a065def2ff146cd001078ffcb8
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=635954
+Brew build: https://brewweb.devel.redhat.com/taskinfo?taskID=2963354
+
+Use register_device_unmigratable() to declare ourselves as
+non-migratable.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+---
+
+ hw/device-assignment.c |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index b776a8f..2226936 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -1404,6 +1404,10 @@ static void assigned_dev_unregister_msix_mmio(AssignedDevice *dev)
+     dev->msix_table_page = NULL;
+ }
+ 
++static const VMStateDescription vmstate_assigned_device = {
++    .name = "pci-assign"
++};
++
+ static int assigned_initfn(struct PCIDevice *pci_dev)
+ {
+     AssignedDevice *dev = DO_UPCAST(AssignedDevice, dev, pci_dev);
+@@ -1458,6 +1462,12 @@ static int assigned_initfn(struct PCIDevice *pci_dev)
+ 
+     assigned_dev_load_option_rom(dev);
+     QLIST_INSERT_HEAD(&devs, dev, next);
++
++    /* Register a vmsd so that we can mark it unmigratable. */
++    vmstate_register(&dev->dev.qdev, 0, &vmstate_assigned_device, dev);
++    register_device_unmigratable(&dev->dev.qdev,
++                                 vmstate_assigned_device.name, dev);
++
+     return 0;
+ 
+ assigned_out:
+@@ -1471,6 +1481,7 @@ static int assigned_exitfn(struct PCIDevice *pci_dev)
+ {
+     AssignedDevice *dev = DO_UPCAST(AssignedDevice, dev, pci_dev);
+ 
++    vmstate_unregister(&dev->dev.qdev, &vmstate_assigned_device, dev);
+     QLIST_REMOVE(dev, next);
+     deassign_device(dev);
+     free_assigned_device(dev);
+-- 
+1.7.3.2
+

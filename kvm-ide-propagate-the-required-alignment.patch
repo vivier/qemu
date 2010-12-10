@@ -1,0 +1,59 @@
+From ef76247131b1bcbea4c6ad96c4452f802a7e3c42 Mon Sep 17 00:00:00 2001
+From: Christoph Hellwig <chellwig@redhat.com>
+Date: Tue, 9 Nov 2010 17:54:13 -0200
+Subject: [RHEL6 qemu-kvm PATCH 6/8] ide: propagate the required alignment
+
+RH-Author: Christoph Hellwig <chellwig@redhat.com>
+Message-id: <1289325254-25070-5-git-send-email-chellwig@redhat.com>
+Patchwork-id: 13356
+O-Subject: [RHEL6.1 qemu PATCH 5/5] ide: propagate the required alignment
+Bugzilla: 608548
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Christoph Hellwig <hch@lst.de>
+
+IDE is a bit ugly in this respect.  For one it doesn't really keep track
+of a sector size - most of the protocol is in units of 512 bytes, and we
+assume 2048 bytes for CDROMs which is correct most of the time.
+
+Second IDE allocates an I/O buffer long before we know if we're dealing
+with a CDROM or not, so increase the alignment for the io_buffer
+unconditionally.
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Upstream commit: 1b2adf28030ee3a570ba3a22401d44da2b18fe01
+BZ: 608548
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/ide/core.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 0c54100..f4a84f4 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -2619,6 +2619,7 @@ void ide_init_drive(IDEState *s, DriveInfo *dinfo, BlockConf *conf,
+         if (bdrv_get_type_hint(s->bs) == BDRV_TYPE_CDROM) {
+             s->is_cdrom = 1;
+             bdrv_set_change_cb(s->bs, cdrom_change_cb, s);
++            s->bs->buffer_alignment = 2048;
+         }
+         bdrv_set_removable(s->bs, s->is_cdrom);
+         strncpy(s->drive_serial_str, drive_get_serial(s->bs),
+@@ -2650,7 +2651,8 @@ void ide_init2(IDEBus *bus, DriveInfo *hd0, DriveInfo *hd1,
+         s->bus = bus;
+         s->unit = i;
+         s->drive_serial = drive_serial++;
+-        s->io_buffer = qemu_blockalign(s->bs, IDE_DMA_BUF_SECTORS*512 + 4);
++        /* we need at least 2k alignment for accessing CDROMs using O_DIRECT */
++        s->io_buffer = qemu_memalign(2048, IDE_DMA_BUF_SECTORS*512 + 4);
+         s->io_buffer_total_len = IDE_DMA_BUF_SECTORS*512 + 4;
+         s->smart_selftest_data = qemu_blockalign(s->bs, 512);
+         s->sector_write_timer = qemu_new_timer(vm_clock,
+-- 
+1.7.3.2
+
