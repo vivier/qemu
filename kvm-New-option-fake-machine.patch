@@ -1,0 +1,265 @@
+From cd30fc16f765e8e9e290cd22bf9c6828c553f354 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Mon, 29 Nov 2010 21:53:20 -0200
+Subject: [RHEL6 qemu-kvm PATCH 1/2] New option -fake-machine
+
+RH-Author: Eduardo Habkost <ehabkost@redhat.com>
+Message-id: <1291067601-14610-2-git-send-email-ehabkost@redhat.com>
+Patchwork-id: 14033
+O-Subject: [RHEL6 qemu-kvm PATCH 1/2] New option -fake-machine
+Bugzilla: 658288
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+Bugzilla: 658288
+
+-fake-machine creates a fake machine incapable of running guest code.
+Mimimal resource use, use for scalability testing.
+
+Works by hacking the main loop so it never executes any guest code.
+Not implemented for KVM's main loop, thus -fake-machine needs to force
+KVM off.  It also replaces guest RAM by a token amount (pc only), and
+forces -vga none, because VGA eats too much memory.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+Dan solved this problem with a new target, patterned after i386.  His
+patch works.  It's against upstream.  I looked into backporting it, but
+it's messy.  Keeping the new target in sync with i386 would be
+bothersome.
+
+So I tried another idea that came up while talking this over with Dan:
+hack the main loop.
+
+No change without --enable-fake-machine.  That's how we should build the
+real RPM.  We can build a separate RPM with --enable-fake-machine and
+use that for testing.  Details of integration into the stack to be
+worked out.  Wrapper script, probably.
+
+Review and testing greatly appreciated!  Especially migration; I didn't
+try that myself, yet, and I'm pressed for time (vacation coming up).
+
+v2: Make core functionality target independent
+
+ configure       |   12 ++++++++++++
+ cpu-exec.c      |    2 +-
+ exec-all.h      |    6 ++++++
+ hw/pc.c         |   10 ++++++++++
+ qemu-options.hx |    6 ++++++
+ vl.c            |   24 ++++++++++++++++++++++++
+ 6 files changed, 59 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ configure       |   12 ++++++++++++
+ cpu-exec.c      |    2 +-
+ exec-all.h      |    6 ++++++
+ hw/pc.c         |   10 ++++++++++
+ qemu-options.hx |    6 ++++++
+ vl.c            |   24 ++++++++++++++++++++++++
+ 6 files changed, 59 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ configure       |   12 ++++++++++++
+ cpu-exec.c      |    2 +-
+ exec-all.h      |    6 ++++++
+ hw/pc.c         |   10 ++++++++++
+ qemu-options.hx |    6 ++++++
+ vl.c            |   24 ++++++++++++++++++++++++
+ 6 files changed, 59 insertions(+), 1 deletions(-)
+
+diff --git a/configure b/configure
+index be78a0c..d767802 100755
+--- a/configure
++++ b/configure
+@@ -277,6 +277,7 @@ check_utests="no"
+ user_pie="no"
+ zero_malloc=""
+ spice=""
++fake_machine="no"
+ 
+ # OS specific
+ if check_define __linux__ ; then
+@@ -657,6 +658,10 @@ for opt do
+   ;;
+   --enable-vhost-net) vhost_net="yes"
+   ;;
++  --disable-fake-machine) fake_machine="no"
++  ;;
++  --enable-fake-machine) fake_machine="yes"
++  ;;
+   *) echo "ERROR: unknown option $opt"; show_help="yes"
+   ;;
+   esac
+@@ -821,6 +826,8 @@ echo "  --with-kvm-trace         enable building the KVM module with the kvm tra
+ echo "  --disable-cpu-emulation  disables use of qemu cpu emulation code"
+ echo "  --disable-vhost-net      disable vhost-net acceleration support"
+ echo "  --enable-vhost-net       enable vhost-net acceleration support"
++echo "  --disable-fake-machine   disable -fake-machine option"
++echo "  --enable-fake-machine    enable -fake-machine option"
+ echo ""
+ echo "NOTE: The object files are built at the place where configure is launched"
+ exit 1
+@@ -2147,6 +2154,7 @@ echo "preadv support    $preadv"
+ echo "fdatasync         $fdatasync"
+ echo "uuid support      $uuid"
+ echo "vhost-net support $vhost_net"
++echo "-fake-machine     $fake_machine"
+ echo "Spice             $spice"
+ 
+ if test $sdl_too_old = "yes"; then
+@@ -2381,6 +2389,10 @@ if test "$spice" = "yes" ; then
+   echo "CONFIG_SPICE=y" >> $config_host_mak
+ fi
+ 
++if test $fake_machine = "yes" ; then
++  echo "CONFIG_FAKE_MACHINE=y" >> $config_host_mak
++fi
++
+ # XXX: suppress that
+ if [ "$bsd" = "yes" ] ; then
+   echo "CONFIG_BSD=y" >> $config_host_mak
+diff --git a/cpu-exec.c b/cpu-exec.c
+index 0f085ea..c3fd6c4 100644
+--- a/cpu-exec.c
++++ b/cpu-exec.c
+@@ -224,7 +224,7 @@ int cpu_exec(CPUState *env1)
+     uint8_t *tc_ptr;
+     unsigned long next_tb;
+ 
+-    if (cpu_halted(env1) == EXCP_HALTED)
++    if (fake_machine || cpu_halted(env1) == EXCP_HALTED)
+         return EXCP_HALTED;
+ 
+     cpu_single_env = env1;
+diff --git a/exec-all.h b/exec-all.h
+index 820b59e..ba6e088 100644
+--- a/exec-all.h
++++ b/exec-all.h
+@@ -58,6 +58,12 @@ extern uint32_t gen_opc_hflags[OPC_BUF_SIZE];
+ 
+ #include "qemu-log.h"
+ 
++#ifdef CONFIG_FAKE_MACHINE
++extern int fake_machine;
++#else
++#define fake_machine 0
++#endif
++
+ void gen_intermediate_code(CPUState *env, struct TranslationBlock *tb);
+ void gen_intermediate_code_pc(CPUState *env, struct TranslationBlock *tb);
+ void gen_pc_load(CPUState *env, struct TranslationBlock *tb,
+diff --git a/hw/pc.c b/hw/pc.c
+index 8adc5b6..7eaa1b7 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -1067,6 +1067,15 @@ static void pc_init1(ram_addr_t ram_size,
+     vmport_init();
+ 
+     /* allocate RAM */
++    if (fake_machine) {
++        /* If user boots with -m 1000 We don't actually want to
++         * allocate a GB of RAM, so lets force all RAM allocs to one
++         * page to keep our memory footprint nice and low.
++         *
++         * TODO try to use -m 1k instead
++         */
++        ram_addr = qemu_ram_alloc(NULL, "pc.ram", 1);
++    } else {
+     ram_addr = qemu_ram_alloc(NULL, "pc.ram",
+                               below_4g_mem_size + above_4g_mem_size);
+     cpu_register_physical_memory(0, 0xa0000, ram_addr);
+@@ -1079,6 +1088,7 @@ static void pc_init1(ram_addr_t ram_size,
+                                      ram_addr + below_4g_mem_size);
+     }
+ #endif
++    }
+ 
+     /* BIOS load */
+     if (bios_name == NULL)
+diff --git a/qemu-options.hx b/qemu-options.hx
+index d4e05b2..be167e7 100644
+--- a/qemu-options.hx
++++ b/qemu-options.hx
+@@ -2011,3 +2011,9 @@ DEF("mem-path", HAS_ARG, QEMU_OPTION_mempath,
+ DEF("mem-prealloc", 0, QEMU_OPTION_mem_prealloc,
+     "-mem-prealloc        preallocate guest memory (use with -mempath)\n")
+ #endif
++
++#ifdef CONFIG_FAKE_MACHINE
++DEF("fake-machine", 0, QEMU_OPTION_fake_machine,
++    "-fake-machine        create a fake machine incapable of running guest code\n"
++    "                     mimimal resource use, use for scalability testing")
++#endif
+diff --git a/vl.c b/vl.c
+index 5014a5a..31fde4c 100644
+--- a/vl.c
++++ b/vl.c
+@@ -265,6 +265,9 @@ const char *prom_envs[MAX_PROM_ENVS];
+ #endif
+ const char *nvram = NULL;
+ int boot_menu;
++#ifdef CONFIG_FAKE_MACHINE
++int fake_machine = 0;
++#endif
+ 
+ int nb_numa_nodes;
+ uint64_t node_mem[MAX_NODES];
+@@ -4337,6 +4340,9 @@ static void tcg_cpu_exec(void)
+ 
+ static int cpu_has_work(CPUState *env)
+ {
++    if (fake_machine) {
++        return 0;
++    }
+     if (env->stop)
+         return 1;
+     if (env->stopped)
+@@ -6077,6 +6083,11 @@ int main(int argc, char **argv, char **envp)
+                     fclose(fp);
+                     break;
+                 }
++#ifdef CONFIG_FAKE_MACHINE
++            case QEMU_OPTION_fake_machine:
++                fake_machine = 1;
++                break;
++#endif
+             }
+         }
+     }
+@@ -6159,6 +6170,16 @@ int main(int argc, char **argv, char **envp)
+     }
+     if (default_vga)
+         vga_interface_type = VGA_CIRRUS;
++    if (fake_machine) {
++        /* HACK: Ideally we'd configure VGA as usual, but this causes
++         * several MB of VGA RAM to be allocated, and we can't do the
++         * tricks we use elsewhere to just return a single 4k page,
++         * because the VGA driver immediately memsets() the entire
++         * allocation it requested
++         * TODO try to use -vga none instead
++         */
++        vga_interface_type = VGA_NONE;
++    }
+ 
+     if (qemu_opts_foreach(&qemu_chardev_opts, chardev_init_func, NULL, 1) != 0)
+         exit(1);
+@@ -6222,6 +6243,9 @@ int main(int argc, char **argv, char **envp)
+     }
+ #endif
+ 
++    if (fake_machine) {
++        kvm_allowed = 0;
++    }
+     if (kvm_enabled()) {
+         int ret;
+ 
+-- 
+1.7.3.2
+

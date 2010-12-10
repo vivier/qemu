@@ -7,13 +7,19 @@
 #
 %define buildid %{nil}
 
+%define enable_fake_machine 0
+
 %define sublevel 0.12.1.2
-%define pkgrelease 2.124
+%define pkgrelease 2.125
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
 
+%if %{enable_fake_machine}
+Summary: Userspace component of KVM (testing only)
+%else
 Summary: Userspace component of KVM
+%endif
 Name: qemu-kvm
 Version: %{rpmversion}
 Release: %{full_release}
@@ -1571,6 +1577,8 @@ Patch1766: kvm-ide-propagate-the-required-alignment.patch
 Patch1767: kvm-Support-marking-a-device-as-non-migratable.patch
 # For bz#635954 - RFE: Assigned device should block migration
 Patch1768: kvm-device-assignment-Register-as-un-migratable.patch
+# For bz#658288 - Include (disabled by default) -fake-machine patch on qemu-kvm RPM spec
+Patch1769: kvm-New-option-fake-machine.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1616,6 +1624,13 @@ for Linux on x86 hardware.
 Using KVM, one can run multiple virtual machines running unmodified Linux
 or Windows images. Each virtual machine has private virtualized hardware:
 a network card, disk, graphics adapter, etc.
+
+%if %{enable_fake_machine}
+NOTE: This package includes a version of qemu-kvm compiled with
+--enable-fake-machine, meaning it is usable only for scalability testing of
+management code, not to run actual virtual machines.
+%endif
+
 
 %package -n qemu-img
 Summary: QEMU command line tool for manipulating disk images
@@ -2435,6 +2450,7 @@ ApplyOptionalPatch()
 %patch1766 -p1
 %patch1767 -p1
 %patch1768 -p1
+%patch1769 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -2442,6 +2458,12 @@ ApplyOptionalPatch qemu-kvm-test.patch
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
 extraldflags="-Wl,--build-id";
 buildldflags="VL_LDFLAGS=-Wl,--build-id"
+
+%if %{enable_fake_machine}
+%define fake_machine_arg --enable-fake-machine
+%else
+%define fake_machine_arg %{nil}
+%endif
 
 # sdl outputs to alsa or pulseaudio depending on system config, but it's broken (#495964)
 # alsa works, but causes huge CPU load due to bugs
@@ -2474,7 +2496,8 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
             --enable-kvm \
             --enable-spice \
             --enable-kvm-cap-pit \
-            --enable-kvm-cap-device-assignment
+            --enable-kvm-cap-device-assignment \
+            %{fake_machine_arg}
 
 echo "config-host.mak contents:"
 echo "==="
@@ -2632,6 +2655,12 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Dec 10 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.125.el6
+- kvm-New-option-fake-machine.patch [bz#658288]
+- spec file code for --enable-fake-machine [bz#658288]
+- Resolves: bz#658288
+  (Include (disabled by default) -fake-machine patch on qemu-kvm RPM spec)
+
 * Fri Dec 10 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.124.el6
 - kvm-Fix-compilation-error-missing-include-statement.patch [bz#608548]
 - kvm-use-qemu_blockalign-consistently.patch [bz#608548]
