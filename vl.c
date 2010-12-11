@@ -5325,7 +5325,8 @@ int main(int argc, char **argv, char **envp)
     tb_size = 0;
     autostart= 1;
 
-    /* first pass of option parsing */
+    /* first pass of CLI options -- interpret config file parse modifiers
+     */
     optind = 1;
     while (optind < argc) {
         if (argv[optind][0] != '-') {
@@ -5349,13 +5350,8 @@ int main(int argc, char **argv, char **envp)
         }
     }
 
-    /* load local cpu config, NB: may possibly be overridden by defconfigs
+    /* pull in default configs unless explicitly disabled
      */
-    if (qemu_read_config_file(
-        CONFIG_QEMU_CPUCONFDIR "/cpu-" TARGET_ARCH ".conf",
-        defconfig_verbose) == -EINVAL) {
-            exit(1);
-    }
     if (defconfig) {
         int ret;
 
@@ -5372,11 +5368,45 @@ int main(int argc, char **argv, char **envp)
             exit(1);
         }
     }
+
+    /* load local cpu config
+     */
+    if (qemu_read_config_file(
+        CONFIG_QEMU_CPUCONFDIR "/cpu-" TARGET_ARCH ".conf",
+        defconfig_verbose) == -EINVAL) {
+            exit(1);
+    }
+
+    /* second pass of CLI options -- bring in any -readconfig flags
+     */
+    optind = 1;
+    while (optind < argc) {
+        if (argv[optind][0] != '-') {
+            /* disk image */
+            optind++;
+            continue;
+        } else {
+            const QEMUOption *popt;
+
+            popt = lookup_opt(argc, argv, &optarg, &optind);
+            switch (popt->index) {
+            case QEMU_OPTION_readconfig:
+                /* pull in cli specified config files in advance of general
+                 * flag parsing which may reference their content
+                 */
+                if (strcmp(optarg, "?") &&
+                    qemu_read_config_file(optarg, defconfig_verbose) < 0)
+                        exit(1);
+                break;
+            }
+        }
+    }
 #if defined(cpudef_setup)
     cpudef_setup(); /* parse cpu definitions in target config file */
 #endif
 
-    /* second pass of option parsing */
+    /* third pass of CLI options -- general flag interpretation
+     */
     optind = 1;
     for(;;) {
         if (optind >= argc)
@@ -6084,11 +6114,6 @@ int main(int argc, char **argv, char **envp)
                 xen_mode = XEN_ATTACH;
                 break;
 #endif
-            case QEMU_OPTION_readconfig:
-                if (!!strcmp(optarg, "?") &&
-                    qemu_read_config_file(optarg, defconfig_verbose) < 0)
-                        exit(1);
-                break;
             case QEMU_OPTION_spice:
                 olist = qemu_find_opts("spice");
                 if (!olist) {
