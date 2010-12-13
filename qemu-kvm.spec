@@ -1,4 +1,4 @@
-%define zrelease 4
+%define zrelease 5
 
 Summary: Userspace component of KVM
 Name: qemu-kvm
@@ -1438,6 +1438,18 @@ Patch1704: kvm-fix-and-on-russian-keymap.patch
 # For bz#634661 - [RHEL6 Snap13]: Hot-unplugging of virtio nic issue in Windows2008 KVM guest.
 # For bz#648821 - [RHEL6 Snap13]: Hot-unplugging of virtio nic issue in Windows2008 KVM guest.
 Patch1705: kvm-net-delay-freeing-peer-host-device.patch
+# For bz#662058 - qemu-img convert poor performance
+Patch1706: kvm-cleanup-block-driver-option-handling-in-vl.c.patch
+# For bz#662058 - qemu-img convert poor performance
+Patch1707: kvm-Add-cache-unsafe-parameter-to-drive.patch
+# For bz#662058 - qemu-img convert poor performance
+Patch1708: kvm-move-unsafe-to-end-of-caching-modes-in-help.patch
+# For bz#662058 - qemu-img convert poor performance
+Patch1709: kvm-qemu-img-Eliminate-bdrv_new_open-code-duplication.patch
+# For bz#662058 - qemu-img convert poor performance
+Patch1710: kvm-qemu-img-Fix-BRDV_O_FLAGS-typo.patch
+# For bz#662058 - qemu-img convert poor performance
+Patch1711: kvm-qemu-img-convert-Use-cache-unsafe-for-output-image.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2205,6 +2217,12 @@ such as kvm_stat.
 %patch1703 -p1
 %patch1704 -p1
 %patch1705 -p1
+%patch1706 -p1
+%patch1707 -p1
+%patch1708 -p1
+%patch1709 -p1
+%patch1710 -p1
+%patch1711 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2400,6 +2418,16 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Dec 13 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.113.el6_0.5
+- kvm-cleanup-block-driver-option-handling-in-vl.c.patch [bz#662058]
+- kvm-Add-cache-unsafe-parameter-to-drive.patch [bz#662058]
+- kvm-move-unsafe-to-end-of-caching-modes-in-help.patch [bz#662058]
+- kvm-qemu-img-Eliminate-bdrv_new_open-code-duplication.patch [bz#662058]
+- kvm-qemu-img-Fix-BRDV_O_FLAGS-typo.patch [bz#662058]
+- kvm-qemu-img-convert-Use-cache-unsafe-for-output-image.patch [bz#662058]
+- Resolves: bz#662058
+  (qemu-img convert poor performance)
+
 * Tue Nov 16 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.113.el6_0.4
 - kvm-spice-qxl-make-draw_area-and-vgafb-share-memory.patch [bz#653334]
 - kvm-spice-qxl-update-modes-ptr-in-post_load.patch [bz#653334]
