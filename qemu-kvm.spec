@@ -7,10 +7,14 @@
 #
 %define buildid %{nil}
 
+%if 0%{?rhev_test}
+%define enable_fake_machine 1
+%else
 %define enable_fake_machine 0
+%endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.125
+%define pkgrelease 2.126
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -1579,6 +1583,10 @@ Patch1767: kvm-Support-marking-a-device-as-non-migratable.patch
 Patch1768: kvm-device-assignment-Register-as-un-migratable.patch
 # For bz#658288 - Include (disabled by default) -fake-machine patch on qemu-kvm RPM spec
 Patch1769: kvm-New-option-fake-machine.patch
+# For bz#662633 - Fix build problem with recent compilers
+Patch1770: kvm-Fix-build-problem-with-recent-compilers.patch
+# For bz#628634 - vhost_net: untested error handling in vhost_net_start
+Patch1771: kvm-vhost-fix-infinite-loop-on-error-path.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2451,6 +2459,8 @@ ApplyOptionalPatch()
 %patch1767 -p1
 %patch1768 -p1
 %patch1769 -p1
+%patch1770 -p1
+%patch1771 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -2655,6 +2665,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Dec 17 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.126.el6
+- kvm-Fix-build-problem-with-recent-compilers.patch [bz#662633]
+- kvm-vhost-fix-infinite-loop-on-error-path.patch [bz#628634]
+- Resolves: bz#628634
+  (vhost_net: untested error handling in vhost_net_start)
+- Resolves: bz#662633
+  (Fix build problem with recent compilers)
+
 * Fri Dec 10 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.125.el6
 - kvm-New-option-fake-machine.patch [bz#658288]
 - spec file code for --enable-fake-machine [bz#658288]

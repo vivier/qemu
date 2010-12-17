@@ -1,0 +1,53 @@
+From f3f069a7a0e5e0738d67a1bf041e92feff671c25 Mon Sep 17 00:00:00 2001
+From: Xiao Wang <jasowang@redhat.com>
+Date: Mon, 13 Dec 2010 13:56:05 -0200
+Subject: [RHEL6 qemu-kvm PATCH 2/2] vhost: fix infinite loop on error path
+
+RH-Author: Xiao Wang <jasowang@redhat.com>
+Message-id: <20101213135605.21153.50753.stgit@dhcp-91-158.nay.redhat.com>
+Patchwork-id: 14622
+O-Subject: [RHEL6.1 PATCH] vhost: fix infinite loop on error path
+Bugzilla: 628634
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Michael S. Tsirkin <mst@redhat.com>
+
+Bugzilla: 628634
+Brew build: https://brewweb.devel.redhat.com/taskinfo?taskID=2969665
+Test status:
+Test with my local machine.
+
+file.index is unsigned, hence 'while (--file.index >= 0)'
+will loop > forever. Change to while (file.index-- > 0).
+
+Reported-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry-picked from 6b37c87c96a5b148685e8e6bf09d0aca953cb1a8)
+Signed-off-by: Jason Wang <jasowang@redhat.com>
+---
+ hw/vhost_net.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/vhost_net.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/hw/vhost_net.c b/hw/vhost_net.c
+index 7d81cac..4098a68 100644
+--- a/hw/vhost_net.c
++++ b/hw/vhost_net.c
+@@ -140,7 +140,7 @@ int vhost_net_start(struct vhost_net *net,
+     return 0;
+ fail:
+     file.fd = -1;
+-    while (--file.index >= 0) {
++    while (file.index-- > 0) {
+         int r = ioctl(net->dev.control, VHOST_NET_SET_BACKEND, &file);
+         assert(r >= 0);
+     }
+-- 
+1.7.3.2
+

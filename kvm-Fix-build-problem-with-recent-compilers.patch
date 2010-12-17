@@ -1,0 +1,78 @@
+From 5aee6f1d0afe80374213a06a52bd8f8758d34c23 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 13 Dec 2010 13:24:38 -0200
+Subject: [RHEL6 qemu-kvm PATCH 1/2] Fix build problem with recent compilers
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1292246678-2329-1-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 14610
+O-Subject: [RHEL6.1 qemu-kvm PATCH] Upstream-commit
+	8bb414d2aac3b41695b528f21b7e285ebdb225e4 Bugzilla:
+	https://bugzilla.redhat.com/show_bug.cgi?id=662633
+Bugzilla: 662633
+RH-Acked-by: Glauber Costa <glommer@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+
+Upstream-commit 8bb414d2aac3b41695b528f21b7e285ebdb225e4
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=662633
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Author: malc <av1474@comtv.ru>
+Date:   Wed Apr 21 15:40:23 2010 +0400
+
+    audio/alsa: Avoid snd_pcm_format_t vs audfmt_e mixup
+
+    Spotted by Serge Ziryukin and based on his patch, thanks.
+
+    Signed-off-by: malc <av1474@comtv.ru>
+---
+ audio/alsaaudio.c |   11 ++++++-----
+ 1 files changed, 6 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ audio/alsaaudio.c |   11 ++++++-----
+ 1 files changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/audio/alsaaudio.c b/audio/alsaaudio.c
+index 7698d10..399d6df 100644
+--- a/audio/alsaaudio.c
++++ b/audio/alsaaudio.c
+@@ -407,10 +407,11 @@ static int alsa_to_audfmt (snd_pcm_format_t alsafmt, audfmt_e *fmt,
+ }
+ 
+ static void alsa_dump_info (struct alsa_params_req *req,
+-                            struct alsa_params_obt *obt)
++                            struct alsa_params_obt *obt,
++                            snd_pcm_format_t obtfmt)
+ {
+     dolog ("parameter | requested value | obtained value\n");
+-    dolog ("format    |      %10d |     %10d\n", req->fmt, obt->fmt);
++    dolog ("format    |      %10d |     %10d\n", req->fmt, obtfmt);
+     dolog ("channels  |      %10d |     %10d\n",
+            req->nchannels, obt->nchannels);
+     dolog ("frequency |      %10d |     %10d\n", req->freq, obt->freq);
+@@ -662,15 +663,15 @@ static int alsa_open (int in, struct alsa_params_req *req,
+     *handlep = handle;
+ 
+     if (conf.verbose &&
+-        (obt->fmt != req->fmt ||
++        (obtfmt != req->fmt ||
+          obt->nchannels != req->nchannels ||
+          obt->freq != req->freq)) {
+         dolog ("Audio paramters for %s\n", typ);
+-        alsa_dump_info (req, obt);
++        alsa_dump_info (req, obt, obtfmt);
+     }
+ 
+ #ifdef DEBUG
+-    alsa_dump_info (req, obt);
++    alsa_dump_info (req, obt, obtfmt);
+ #endif
+     return 0;
+ 
+-- 
+1.7.3.2
+
