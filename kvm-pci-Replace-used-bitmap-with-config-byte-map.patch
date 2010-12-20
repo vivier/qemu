@@ -1,0 +1,203 @@
+From 9a26d6e14fcb16bb75d3bd5820fa213b2fb06914 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 7 Dec 2010 20:50:47 -0200
+Subject: [RHEL6 qemu-kvm PATCH 09/18] pci: Replace used bitmap with config byte map
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20101207205047.4625.36283.stgit@s20.home>
+Patchwork-id: 14376
+O-Subject: [RHEL6.1 qemu-kvm PATCH 09/18] pci: Replace used bitmap with config
+	byte map
+Bugzilla: 624790
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Upstream commit: 1f3ef957426124e3e7649ce6766874e3753aa055
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=624790
+Brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=2948901
+
+Capabilities are allocated in bytes, so we can track both whether
+a byte is used and by what capability in the same structure.
+
+Remove pci_reserve_capability() as there are no users, remove
+pci_access_cap_config() since it's now a trivial lookup.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+---
+
+ hw/device-assignment.c |    4 ++--
+ hw/pci.c               |   31 ++++++++++---------------------
+ hw/pci.h               |    8 ++------
+ 3 files changed, 14 insertions(+), 29 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |    4 ++--
+ hw/pci.c               |   31 ++++++++++---------------------
+ hw/pci.h               |    8 ++------
+ 3 files changed, 14 insertions(+), 29 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index 238946a..9916ea2 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -471,7 +471,7 @@ static void assigned_dev_pci_write_config(PCIDevice *d, uint32_t address,
+ 
+     if ((address >= 0x10 && address <= 0x24) || address == 0x30 ||
+         address == 0x34 || address == 0x3c || address == 0x3d ||
+-        pci_access_cap_config(d, address, len)) {
++        (address > PCI_CONFIG_HEADER_SIZE && d->config_map[address])) {
+         /* used for update-mappings (BAR emulation) */
+         pci_default_write_config(d, address, val, len);
+         return;
+@@ -507,7 +507,7 @@ static uint32_t assigned_dev_pci_read_config(PCIDevice *d, uint32_t address,
+     if (address < 0x4 || (pci_dev->need_emulate_cmd && address == 0x4) ||
+ 	(address >= 0x10 && address <= 0x24) || address == 0x30 ||
+         address == 0x34 || address == 0x3c || address == 0x3d ||
+-        pci_access_cap_config(d, address, len)) {
++        (address > PCI_CONFIG_HEADER_SIZE && d->config_map[address])) {
+         val = pci_default_read_config(d, address, len);
+         DEBUG("(%x.%x): address=%04x val=0x%08x len=%d\n",
+               (d->devfn >> 3) & 0x1F, (d->devfn & 0x7), address, val, len);
+diff --git a/hw/pci.c b/hw/pci.c
+index 6fbcdd9..ead1466 100644
+--- a/hw/pci.c
++++ b/hw/pci.c
+@@ -615,7 +615,7 @@ static void pci_config_alloc(PCIDevice *pci_dev)
+     pci_dev->config = qemu_mallocz(config_size);
+     pci_dev->cmask = qemu_mallocz(config_size);
+     pci_dev->wmask = qemu_mallocz(config_size);
+-    pci_dev->used = qemu_mallocz(config_size);
++    pci_dev->config_map = qemu_mallocz(config_size);
+ }
+ 
+ static void pci_config_free(PCIDevice *pci_dev)
+@@ -623,7 +623,7 @@ static void pci_config_free(PCIDevice *pci_dev)
+     qemu_free(pci_dev->config);
+     qemu_free(pci_dev->cmask);
+     qemu_free(pci_dev->wmask);
+-    qemu_free(pci_dev->used);
++    qemu_free(pci_dev->config_map);
+ }
+ 
+ /* -1 for devfn means auto assign */
+@@ -654,6 +654,9 @@ static PCIDevice *do_pci_register_device(PCIDevice *pci_dev, PCIBus *bus,
+     pci_config_alloc(pci_dev);
+ 
+     header_type &= ~PCI_HEADER_TYPE_MULTI_FUNCTION;
++
++    memset(pci_dev->config_map, 0xff, PCI_CONFIG_HEADER_SIZE);
++
+     if (header_type == PCI_HEADER_TYPE_NORMAL) {
+         pci_set_default_subsystem_id(pci_dev);
+     }
+@@ -1025,21 +1028,13 @@ uint32_t pci_default_read_config(PCIDevice *d,
+ {
+     assert(len == 1 || len == 2 || len == 4);
+ 
+-    if (pci_access_cap_config(d, address, len)) {
++    if (address > PCI_CONFIG_HEADER_SIZE && d->config_map[address]) {
+         return d->cap.config_read(d, address, len);
+     }
+ 
+     return pci_read_config(d, address, len);
+ }
+ 
+-int pci_access_cap_config(PCIDevice *pci_dev, uint32_t address, int len)
+-{
+-    if (pci_dev->cap.supported && address >= pci_dev->cap.start &&
+-            (address + len) < pci_dev->cap.start + pci_dev->cap.length)
+-        return 1;
+-    return 0;
+-}
+-
+ uint32_t pci_default_cap_read_config(PCIDevice *pci_dev,
+                                      uint32_t address, int len)
+ {
+@@ -1064,7 +1059,7 @@ void pci_default_write_config(PCIDevice *d, uint32_t addr, uint32_t val, int l)
+     int i;
+     uint32_t config_size = pci_config_size(d);
+ 
+-    if (pci_access_cap_config(d, addr, l)) {
++    if (addr > PCI_CONFIG_HEADER_SIZE && d->config_map[addr]) {
+         d->cap.config_write(d, addr, val, l);
+         return;
+     }
+@@ -1566,7 +1561,7 @@ static int pci_find_space(PCIDevice *pdev, uint8_t size)
+     int offset = PCI_CONFIG_HEADER_SIZE;
+     int i;
+     for (i = PCI_CONFIG_HEADER_SIZE; i < config_size; ++i)
+-        if (pdev->used[i])
++        if (pdev->config_map[i])
+             offset = i + 1;
+         else if (i - offset + 1 == size)
+             return offset;
+@@ -1689,7 +1684,7 @@ int pci_add_capability(PCIDevice *pdev, uint8_t cap_id,
+     config[PCI_CAP_LIST_ID] = cap_id;
+     config[PCI_CAP_LIST_NEXT] = pdev->config[PCI_CAPABILITY_LIST];
+     pdev->config[PCI_CAPABILITY_LIST] = offset;
+-    memset(pdev->used + offset, 0xFF, size);
++    memset(pdev->config_map + offset, cap_id, size);
+     /* Make capability read-only by default */
+     memset(pdev->wmask + offset, 0, size);
+     /* Check capability by default */
+@@ -1713,7 +1708,7 @@ void pci_del_capability(PCIDevice *pdev, uint8_t cap_id, uint8_t size)
+     memset(pdev->wmask + offset, 0xff, size);
+     /* Clear cmask as device-specific registers can't be checked */
+     memset(pdev->cmask + offset, 0, size);
+-    memset(pdev->used + offset, 0, size);
++    memset(pdev->config_map + offset, 0, size);
+ 
+     if (!pdev->config[PCI_CAPABILITY_LIST]) {
+         pdev->config[PCI_STATUS] &= ~PCI_STATUS_CAP_LIST;
+@@ -1721,12 +1716,6 @@ void pci_del_capability(PCIDevice *pdev, uint8_t cap_id, uint8_t size)
+     }
+ }
+ 
+-/* Reserve space for capability at a known offset (to call after load). */
+-void pci_reserve_capability(PCIDevice *pdev, uint8_t offset, uint8_t size)
+-{
+-    memset(pdev->used + offset, 0xff, size);
+-}
+-
+ uint8_t pci_find_capability(PCIDevice *pdev, uint8_t cap_id)
+ {
+     return pci_find_capability_list(pdev, cap_id, NULL);
+diff --git a/hw/pci.h b/hw/pci.h
+index 509b5f2..c152c5e 100644
+--- a/hw/pci.h
++++ b/hw/pci.h
+@@ -155,8 +155,8 @@ struct PCIDevice {
+     /* Used to implement R/W bytes */
+     uint8_t *wmask;
+ 
+-    /* Used to allocate config space for capabilities. */
+-    uint8_t *used;
++    /* Used to allocate config space and track capabilities. */
++    uint8_t *config_map;
+ 
+     /* the following fields are read only */
+     PCIBus *bus;
+@@ -240,8 +240,6 @@ int pci_add_capability(PCIDevice *pdev, uint8_t cap_id,
+ 
+ void pci_del_capability(PCIDevice *pci_dev, uint8_t cap_id, uint8_t cap_size);
+ 
+-void pci_reserve_capability(PCIDevice *pci_dev, uint8_t offset, uint8_t size);
+-
+ uint8_t pci_find_capability(PCIDevice *pci_dev, uint8_t cap_id);
+ 
+ uint32_t pci_default_read_config(PCIDevice *d,
+@@ -254,8 +252,6 @@ uint32_t pci_default_cap_read_config(PCIDevice *pci_dev,
+                                      uint32_t address, int len);
+ void pci_default_cap_write_config(PCIDevice *pci_dev,
+                                   uint32_t address, uint32_t val, int len);
+-int pci_access_cap_config(PCIDevice *pci_dev, uint32_t address, int len);
+-
+ typedef void (*pci_set_irq_fn)(void *opaque, int irq_num, int level);
+ typedef int (*pci_map_irq_fn)(PCIDevice *pci_dev, int irq_num);
+ typedef int (*pci_hotplug_fn)(PCIDevice *pci_dev, int state);
+-- 
+1.7.3.2
+

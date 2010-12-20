@@ -1,0 +1,85 @@
+From d52e7fb2bf0e0861f92f39e0552386f256860330 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 7 Dec 2010 20:51:25 -0200
+Subject: [RHEL6 qemu-kvm PATCH 15/18] pci: Remove PCI_CAPABILITY_CONFIG_*
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20101207205125.4625.9957.stgit@s20.home>
+Patchwork-id: 14382
+O-Subject: [RHEL6.1 qemu-kvm PATCH 15/18] pci: Remove PCI_CAPABILITY_CONFIG_*
+Bugzilla: 624790
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Upstream commit: 3de4c3634b341335f2750a517eb9754dcc3b580f
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=624790
+Brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=2948901
+
+Half of these aren't used anywhere, the other half are wrong.  Now that
+device assignment is trying to match physical hardware offsets for PCI
+capabilities, we can't round up the MSI and MSI-X length.  MSI-X is
+always 12 bytes.  MSI is variable length depending on features, but for
+the current device assignment implementation, it's always the minimum
+length of 10 bytes.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Avi Kivity <avi@redhat.com>
+---
+
+ hw/device-assignment.c |    8 +++-----
+ hw/pci.h               |    5 -----
+ 2 files changed, 3 insertions(+), 10 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |    8 +++-----
+ hw/pci.h               |    5 -----
+ 2 files changed, 3 insertions(+), 10 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index 0b7a194..f7c07da 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -1272,10 +1272,9 @@ static int assigned_device_pci_cap_init(PCIDevice *pci_dev)
+      * MSI capability is the 1st capability in capability config */
+     if ((pos = pci_find_cap_offset(pci_dev, PCI_CAP_ID_MSI))) {
+         dev->cap.available |= ASSIGNED_DEVICE_CAP_MSI;
+-        pci_add_capability(pci_dev, PCI_CAP_ID_MSI, pos,
+-                           PCI_CAPABILITY_CONFIG_MSI_LENGTH);
+-
+         /* Only 32-bit/no-mask currently supported */
++        pci_add_capability(pci_dev, PCI_CAP_ID_MSI, pos, 10);
++
+         pci_set_word(pci_dev->config + pos + PCI_MSI_FLAGS,
+                      pci_get_word(pci_dev->config + pos + PCI_MSI_FLAGS) &
+                      PCI_MSI_FLAGS_QMASK);
+@@ -1296,8 +1295,7 @@ static int assigned_device_pci_cap_init(PCIDevice *pci_dev)
+         uint32_t msix_table_entry;
+ 
+         dev->cap.available |= ASSIGNED_DEVICE_CAP_MSIX;
+-        pci_add_capability(pci_dev, PCI_CAP_ID_MSIX, pos,
+-                           PCI_CAPABILITY_CONFIG_MSIX_LENGTH);
++        pci_add_capability(pci_dev, PCI_CAP_ID_MSIX, pos, 12);
+ 
+         pci_set_word(pci_dev->config + pos + PCI_MSIX_FLAGS,
+                      pci_get_word(pci_dev->config + pos + PCI_MSIX_FLAGS) &
+diff --git a/hw/pci.h b/hw/pci.h
+index eae1c7b..fad671c 100644
+--- a/hw/pci.h
++++ b/hw/pci.h
+@@ -130,11 +130,6 @@ enum {
+     QEMU_PCI_CAP_EXPRESS = 0x2,
+ };
+ 
+-#define PCI_CAPABILITY_CONFIG_MAX_LENGTH 0x60
+-#define PCI_CAPABILITY_CONFIG_DEFAULT_START_ADDR 0x40
+-#define PCI_CAPABILITY_CONFIG_MSI_LENGTH 0x10
+-#define PCI_CAPABILITY_CONFIG_MSIX_LENGTH 0x10
+-
+ typedef int (*msix_mask_notifier_func)(PCIDevice *, unsigned vector,
+ 				       void *opaque, int masked);
+ 
+-- 
+1.7.3.2
+

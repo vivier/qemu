@@ -1,0 +1,243 @@
+From f0acf06ded1cd7bf404d3b84f996b132eee1dcd5 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 7 Dec 2010 20:51:06 -0200
+Subject: [RHEL6 qemu-kvm PATCH 12/18] pci: Remove capability specific handlers
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20101207205106.4625.10339.stgit@s20.home>
+Patchwork-id: 14379
+O-Subject: [RHEL6.1 qemu-kvm PATCH 12/18] pci: Remove capability specific
+	handlers
+Bugzilla: 624790
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Upstream commit: fb9b69f921d10213992b12dede53440039d3d820
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=624790
+Brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=2948901
+
+Drivers can break these out on their own if they need to.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+---
+
+ hw/device-assignment.c |   16 ++++++++-----
+ hw/pci.c               |   61 ++----------------------------------------------
+ hw/pci.h               |   19 ---------------
+ 3 files changed, 13 insertions(+), 83 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |   16 ++++++++----
+ hw/pci.c               |   61 ++---------------------------------------------
+ hw/pci.h               |   19 ---------------
+ 3 files changed, 13 insertions(+), 83 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index b025655..18c8089 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -63,6 +63,10 @@ static void assigned_dev_load_option_rom(AssignedDevice *dev);
+ 
+ static void assigned_dev_unregister_msix_mmio(AssignedDevice *dev);
+ 
++static void assigned_device_pci_cap_write_config(PCIDevice *pci_dev,
++                                                 uint32_t address,
++                                                 uint32_t val, int len);
++
+ static uint32_t assigned_dev_ioport_rw(AssignedDevRegion *dev_region,
+                                        uint32_t addr, int len, uint32_t *val)
+ {
+@@ -454,14 +458,17 @@ static void assigned_dev_pci_write_config(PCIDevice *d, uint32_t address,
+           ((d->devfn >> 3) & 0x1F), (d->devfn & 0x7),
+           (uint16_t) address, val, len);
+ 
++    if (address > PCI_CONFIG_HEADER_SIZE && d->config_map[address]) {
++        return assigned_device_pci_cap_write_config(d, address, val, len);
++    }
++
+     if (address == 0x4) {
+         pci_default_write_config(d, address, val, len);
+         /* Continue to program the card */
+     }
+ 
+     if ((address >= 0x10 && address <= 0x24) || address == 0x30 ||
+-        address == 0x34 || address == 0x3c || address == 0x3d ||
+-        (address > PCI_CONFIG_HEADER_SIZE && d->config_map[address])) {
++        address == 0x34 || address == 0x3c || address == 0x3d) {
+         /* used for update-mappings (BAR emulation) */
+         pci_default_write_config(d, address, val, len);
+         return;
+@@ -1219,7 +1226,7 @@ static void assigned_device_pci_cap_write_config(PCIDevice *pci_dev, uint32_t ad
+ {
+     AssignedDevice *assigned_dev = container_of(pci_dev, AssignedDevice, dev);
+ 
+-    pci_default_cap_write_config(pci_dev, address, val, len);
++    pci_default_write_config(pci_dev, address, val, len);
+ #ifdef KVM_CAP_IRQ_ROUTING
+ #ifdef KVM_CAP_DEVICE_MSI
+     if (assigned_dev->cap.available & ASSIGNED_DEVICE_CAP_MSI) {
+@@ -1430,9 +1437,6 @@ static int assigned_initfn(struct PCIDevice *pci_dev)
+     dev->h_busnr = dev->host.bus;
+     dev->h_devfn = PCI_DEVFN(dev->host.dev, dev->host.func);
+ 
+-    pci_register_capability_handlers(pci_dev, NULL,
+-                                     assigned_device_pci_cap_write_config);
+-
+     if (assigned_device_pci_cap_init(pci_dev) < 0)
+         goto out;
+ 
+diff --git a/hw/pci.c b/hw/pci.c
+index e6406b2..c87d31b 100644
+--- a/hw/pci.c
++++ b/hw/pci.c
+@@ -672,8 +672,6 @@ static PCIDevice *do_pci_register_device(PCIDevice *pci_dev, PCIBus *bus,
+         config_write = pci_default_write_config;
+     pci_dev->config_read = config_read;
+     pci_dev->config_write = config_write;
+-    pci_dev->cap.config_read = pci_default_cap_read_config;
+-    pci_dev->cap.config_write = pci_default_cap_write_config;
+     bus->devices[devfn] = pci_dev;
+     pci_dev->irq = qemu_allocate_irqs(pci_set_irq, pci_dev, PCI_NUM_PINS);
+     pci_dev->version_id = 2; /* Current pci device vmstate version */
+@@ -1013,57 +1011,21 @@ static void pci_update_mappings(PCIDevice *d)
+     }
+ }
+ 
+-static uint32_t pci_read_config(PCIDevice *d,
+-                                uint32_t address, int len)
++uint32_t pci_default_read_config(PCIDevice *d,
++                                 uint32_t address, int len)
+ {
+     uint32_t val = 0;
+-
++    assert(len == 1 || len == 2 || len == 4);
+     len = MIN(len, pci_config_size(d) - address);
+     memcpy(&val, d->config + address, len);
+     return le32_to_cpu(val);
+ }
+ 
+-uint32_t pci_default_read_config(PCIDevice *d,
+-                                 uint32_t address, int len)
+-{
+-    assert(len == 1 || len == 2 || len == 4);
+-
+-    if (address > PCI_CONFIG_HEADER_SIZE && d->config_map[address]) {
+-        return d->cap.config_read(d, address, len);
+-    }
+-
+-    return pci_read_config(d, address, len);
+-}
+-
+-uint32_t pci_default_cap_read_config(PCIDevice *pci_dev,
+-                                     uint32_t address, int len)
+-{
+-    return pci_read_config(pci_dev, address, len);
+-}
+-
+-void pci_default_cap_write_config(PCIDevice *pci_dev,
+-                                  uint32_t address, uint32_t val, int len)
+-{
+-    uint32_t config_size = pci_config_size(pci_dev);
+-    int i;
+-
+-    for (i = 0; i < len && address + i < config_size; val >>= 8, ++i) {
+-        uint8_t wmask = pci_dev->wmask[address + i];
+-        pci_dev->config[address + i] =
+-            (pci_dev->config[address + i] & ~wmask) | (val & wmask);
+-    }
+-}
+-
+ void pci_default_write_config(PCIDevice *d, uint32_t addr, uint32_t val, int l)
+ {
+     int i;
+     uint32_t config_size = pci_config_size(d);
+ 
+-    if (addr > PCI_CONFIG_HEADER_SIZE && d->config_map[addr]) {
+-        d->cap.config_write(d, addr, val, l);
+-        return;
+-    }
+-
+     for (i = 0; i < l && addr + i < config_size; val >>= 8, ++i) {
+         uint8_t wmask = d->wmask[addr + i];
+         d->config[addr + i] = (d->config[addr + i] & ~wmask) | (val & wmask);
+@@ -1538,23 +1500,6 @@ PCIDevice *pci_create_simple(PCIBus *bus, int devfn, const char *name)
+     return dev;
+ }
+ 
+-void pci_register_capability_handlers(PCIDevice *pdev,
+-                                      PCICapConfigReadFunc *config_read,
+-                                      PCICapConfigWriteFunc *config_write)
+-{
+-    if (config_read) {
+-        pdev->cap.config_read = config_read;
+-    } else {
+-        pdev->cap.config_read = pci_default_cap_read_config;
+-    }
+-
+-    if (config_write) {
+-        pdev->cap.config_write = config_write;
+-    } else {
+-        pdev->cap.config_write = pci_default_cap_write_config;
+-    }
+-}
+-
+ static int pci_find_space(PCIDevice *pdev, uint8_t size)
+ {
+     int config_size = pci_config_size(pdev);
+diff --git a/hw/pci.h b/hw/pci.h
+index 3baf3d2..eae1c7b 100644
+--- a/hw/pci.h
++++ b/hw/pci.h
+@@ -87,11 +87,6 @@ typedef void PCIMapIORegionFunc(PCIDevice *pci_dev, int region_num,
+                                 pcibus_t addr, pcibus_t size, int type);
+ typedef int PCIUnregisterFunc(PCIDevice *pci_dev);
+ 
+-typedef void PCICapConfigWriteFunc(PCIDevice *pci_dev,
+-                                   uint32_t address, uint32_t val, int len);
+-typedef uint32_t PCICapConfigReadFunc(PCIDevice *pci_dev,
+-                                      uint32_t address, int len);
+-
+ typedef struct PCIIORegion {
+     pcibus_t addr; /* current PCI mapping address. -1 means not mapped */
+ #define PCI_BAR_UNMAPPED (~(pcibus_t)0)
+@@ -210,12 +205,6 @@ struct PCIDevice {
+ 
+     void **msix_mask_notifier_opaque;
+     msix_mask_notifier_func msix_mask_notifier;
+-
+-    /* Device capability configuration space */
+-    struct {
+-        PCICapConfigReadFunc *config_read;
+-        PCICapConfigWriteFunc *config_write;
+-    } cap;
+ };
+ 
+ PCIDevice *pci_register_device(PCIBus *bus, const char *name,
+@@ -227,10 +216,6 @@ void pci_register_bar(PCIDevice *pci_dev, int region_num,
+                             pcibus_t size, int type,
+                             PCIMapIORegionFunc *map_func);
+ 
+-void pci_register_capability_handlers(PCIDevice *pci_dev,
+-                                      PCICapConfigReadFunc *config_read,
+-                                      PCICapConfigWriteFunc *config_write);
+-
+ int pci_map_irq(PCIDevice *pci_dev, int pin);
+ 
+ int pci_add_capability(PCIDevice *pdev, uint8_t cap_id,
+@@ -246,10 +231,6 @@ void pci_default_write_config(PCIDevice *d,
+                               uint32_t address, uint32_t val, int len);
+ void pci_device_save(PCIDevice *s, QEMUFile *f);
+ int pci_device_load(PCIDevice *s, QEMUFile *f);
+-uint32_t pci_default_cap_read_config(PCIDevice *pci_dev,
+-                                     uint32_t address, int len);
+-void pci_default_cap_write_config(PCIDevice *pci_dev,
+-                                  uint32_t address, uint32_t val, int len);
+ typedef void (*pci_set_irq_fn)(void *opaque, int irq_num, int level);
+ typedef int (*pci_map_irq_fn)(PCIDevice *pci_dev, int irq_num);
+ typedef int (*pci_hotplug_fn)(PCIDevice *pci_dev, int state);
+-- 
+1.7.3.2
+

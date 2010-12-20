@@ -1,0 +1,89 @@
+From c2bb6441d4234422aa20ca056968705cf6da0091 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 7 Dec 2010 20:51:12 -0200
+Subject: [RHEL6 qemu-kvm PATCH 13/18] device-assignment: Make use of config_map
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20101207205112.4625.97560.stgit@s20.home>
+Patchwork-id: 14380
+O-Subject: [RHEL6.1 qemu-kvm PATCH 13/18] device-assignment: Make use of
+	config_map
+Bugzilla: 624790
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Upstream commit: bdce0cb95bc07c2d0585210a4fe42f3c9c437a6b
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=624790
+Brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=2948901
+
+We can figure out the capability being touched much more quickly
+and efficiently with the config_map.  Use it.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+---
+
+ hw/device-assignment.c |   32 +++++++++++++++++++-------------
+ 1 files changed, 19 insertions(+), 13 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |   32 +++++++++++++++++++-------------
+ 1 files changed, 19 insertions(+), 13 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index 18c8089..b816f54 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -1224,28 +1224,34 @@ static void assigned_dev_update_msix(PCIDevice *pci_dev, unsigned int ctrl_pos)
+ static void assigned_device_pci_cap_write_config(PCIDevice *pci_dev, uint32_t address,
+                                                  uint32_t val, int len)
+ {
+-    AssignedDevice *assigned_dev = container_of(pci_dev, AssignedDevice, dev);
++    uint8_t cap_id = pci_dev->config_map[address];
+ 
+     pci_default_write_config(pci_dev, address, val, len);
++    switch (cap_id) {
+ #ifdef KVM_CAP_IRQ_ROUTING
++    case PCI_CAP_ID_MSI:
+ #ifdef KVM_CAP_DEVICE_MSI
+-    if (assigned_dev->cap.available & ASSIGNED_DEVICE_CAP_MSI) {
+-        int pos = pci_find_capability(pci_dev, PCI_CAP_ID_MSI);
+-        if (ranges_overlap(address, len, pos + PCI_MSI_FLAGS, 1)) {
+-            assigned_dev_update_msi(pci_dev, pos + PCI_MSI_FLAGS);
++        {
++            uint8_t cap = pci_find_capability(pci_dev, cap_id);
++            if (ranges_overlap(address - cap, len, PCI_MSI_FLAGS, 1)) {
++                assigned_dev_update_msi(pci_dev, cap + PCI_MSI_FLAGS);
++            }
+         }
+-    }
+ #endif
++        break;
++
++    case PCI_CAP_ID_MSIX:
+ #ifdef KVM_CAP_DEVICE_MSIX
+-    if (assigned_dev->cap.available & ASSIGNED_DEVICE_CAP_MSIX) {
+-        int pos = pci_find_capability(pci_dev, PCI_CAP_ID_MSIX);
+-        if (ranges_overlap(address, len, pos + PCI_MSIX_FLAGS + 1, 1)) {
+-            assigned_dev_update_msix(pci_dev, pos + PCI_MSIX_FLAGS);
+-	}
+-    }
++        {
++            uint8_t cap = pci_find_capability(pci_dev, cap_id);
++            if (ranges_overlap(address - cap, len, PCI_MSIX_FLAGS + 1, 1)) {
++                assigned_dev_update_msix(pci_dev, cap + PCI_MSIX_FLAGS);
++            }
++        }
+ #endif
++        break;
+ #endif
+-    return;
++    }
+ }
+ 
+ static int assigned_device_pci_cap_init(PCIDevice *pci_dev)
+-- 
+1.7.3.2
+

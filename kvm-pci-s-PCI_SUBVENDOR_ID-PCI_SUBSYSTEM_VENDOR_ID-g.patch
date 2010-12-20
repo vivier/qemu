@@ -1,0 +1,67 @@
+From 3a7a124afaed0f2033191c6102786cf6c0cf4acd Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 7 Dec 2010 20:50:04 -0200
+Subject: [RHEL6 qemu-kvm PATCH 02/18] pci: s/PCI_SUBVENDOR_ID/PCI_SUBSYSTEM_VENDOR_ID/g
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20101207205004.4625.12649.stgit@s20.home>
+Patchwork-id: 14369
+O-Subject: [RHEL6.1 qemu-kvm PATCH 02/18] pci:
+	s/PCI_SUBVENDOR_ID/PCI_SUBSYSTEM_VENDOR_ID/g
+Bugzilla: 624790
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Isaku Yamahata <yamahata@valinux.co.jp>
+
+Upstream commit: 3d09c490e57cd150f07a698e611ad7e4d7fca265
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=624790
+Brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=2948901
+
+To match Linux PCI register definition,
+rename PCI_SUBVENDOR_ID to PCI_SUBSYSTEM_VENDOR_ID.
+
+Signed-off-by: Isaku Yamahata <yamahata@valinux.co.jp>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+
+ hw/pci.c |    2 +-
+ hw/pci.h |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pci.c |    2 +-
+ hw/pci.h |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/hw/pci.c b/hw/pci.c
+index 6d0649f..5361bcc 100644
+--- a/hw/pci.c
++++ b/hw/pci.c
+@@ -422,7 +422,7 @@ static int pci_set_default_subsystem_id(PCIDevice *pci_dev)
+ {
+     uint16_t *id;
+ 
+-    id = (void*)(&pci_dev->config[PCI_SUBVENDOR_ID]);
++    id = (void*)(&pci_dev->config[PCI_SUBSYSTEM_VENDOR_ID]);
+     id[0] = cpu_to_le16(pci_default_sub_vendor_id);
+     id[1] = cpu_to_le16(pci_default_sub_device_id);
+     return 0;
+diff --git a/hw/pci.h b/hw/pci.h
+index bf722ca..eb3f1bd 100644
+--- a/hw/pci.h
++++ b/hw/pci.h
+@@ -165,7 +165,7 @@ typedef struct PCIIORegion {
+ #define PCI_CAP_LIST_NEXT	1	/* Next capability in the list */
+ 
+ #define PCI_REVISION            0x08    /* obsolete, use PCI_REVISION_ID */
+-#define PCI_SUBVENDOR_ID        0x2c    /* obsolete, use PCI_SUBSYSTEM_VENDOR_ID */
++#define PCI_SUBSYSTEM_VENDOR_ID 0x2c
+ #define PCI_SUBDEVICE_ID        0x2e    /* obsolete, use PCI_SUBSYSTEM_ID */
+ 
+ /* Bits in the PCI Status Register (PCI 2.3 spec) */
+-- 
+1.7.3.2
+

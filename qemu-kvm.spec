@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.126
+%define pkgrelease 2.127
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -1587,6 +1587,42 @@ Patch1769: kvm-New-option-fake-machine.patch
 Patch1770: kvm-Fix-build-problem-with-recent-compilers.patch
 # For bz#628634 - vhost_net: untested error handling in vhost_net_start
 Patch1771: kvm-vhost-fix-infinite-loop-on-error-path.patch
+# For bz#624790 - pass through fails with KVM using Neterion Inc's X3100 Series 10GbE PCIe I/O Virtualized Server Adapter in Multifunction mode.
+Patch1772: kvm-pci-import-Linux-pci_regs.h.patch
+# For bz#624790 - pass through fails with KVM using Neterion Inc's X3100 Series 10GbE PCIe I/O Virtualized Server Adapter in Multifunction mode.
+Patch1773: kvm-pci-s-PCI_SUBVENDOR_ID-PCI_SUBSYSTEM_VENDOR_ID-g.patch
+# For bz#624790 - pass through fails with KVM using Neterion Inc's X3100 Series 10GbE PCIe I/O Virtualized Server Adapter in Multifunction mode.
+Patch1774: kvm-pci-use-pci_regs.h.patch
+# For bz#624790 - pass through fails with KVM using Neterion Inc's X3100 Series 10GbE PCIe I/O Virtualized Server Adapter in Multifunction mode.
+Patch1775: kvm-pci-add-API-to-add-capability-at-a-known-offset.patch
+# For bz#624790 - pass through fails with KVM using Neterion Inc's X3100 Series 10GbE PCIe I/O Virtualized Server Adapter in Multifunction mode.
+Patch1776: kvm-pci-consolidate-pci_add_capability_at_offset-into-pc.patch
+# For bz#624790 - pass through fails with KVM using Neterion Inc's X3100 Series 10GbE PCIe I/O Virtualized Server Adapter in Multifunction mode.
+Patch1777: kvm-pci-pci_default_cap_write_config-ignores-wmask.patch
+# For bz#624790 - pass through fails with KVM using Neterion Inc's X3100 Series 10GbE PCIe I/O Virtualized Server Adapter in Multifunction mode.
+Patch1778: kvm-pci-Remove-pci_enable_capability_support.patch
+# For bz#624790 - pass through fails with KVM using Neterion Inc's X3100 Series 10GbE PCIe I/O Virtualized Server Adapter in Multifunction mode.
+Patch1779: kvm-device-assignment-Use-PCI-capabilities-support.patch
+# For bz#624790 - pass through fails with KVM using Neterion Inc's X3100 Series 10GbE PCIe I/O Virtualized Server Adapter in Multifunction mode.
+Patch1780: kvm-pci-Replace-used-bitmap-with-config-byte-map.patch
+# For bz#624790 - pass through fails with KVM using Neterion Inc's X3100 Series 10GbE PCIe I/O Virtualized Server Adapter in Multifunction mode.
+Patch1781: kvm-pci-Remove-cap.length-cap.start-cap.supported.patch
+# For bz#624790 - pass through fails with KVM using Neterion Inc's X3100 Series 10GbE PCIe I/O Virtualized Server Adapter in Multifunction mode.
+Patch1782: kvm-device-assignment-Move-PCI-capabilities-to-match-phy.patch
+# For bz#624790 - pass through fails with KVM using Neterion Inc's X3100 Series 10GbE PCIe I/O Virtualized Server Adapter in Multifunction mode.
+Patch1783: kvm-pci-Remove-capability-specific-handlers.patch
+# For bz#624790 - pass through fails with KVM using Neterion Inc's X3100 Series 10GbE PCIe I/O Virtualized Server Adapter in Multifunction mode.
+Patch1784: kvm-device-assignment-Make-use-of-config_map.patch
+# For bz#624790 - pass through fails with KVM using Neterion Inc's X3100 Series 10GbE PCIe I/O Virtualized Server Adapter in Multifunction mode.
+Patch1785: kvm-device-assignment-Fix-off-by-one-in-header-check.patch
+# For bz#624790 - pass through fails with KVM using Neterion Inc's X3100 Series 10GbE PCIe I/O Virtualized Server Adapter in Multifunction mode.
+Patch1786: kvm-pci-Remove-PCI_CAPABILITY_CONFIG_.patch
+# For bz#624790 - pass through fails with KVM using Neterion Inc's X3100 Series 10GbE PCIe I/O Virtualized Server Adapter in Multifunction mode.
+Patch1787: kvm-pci-Error-on-PCI-capability-collisions.patch
+# For bz#624790 - pass through fails with KVM using Neterion Inc's X3100 Series 10GbE PCIe I/O Virtualized Server Adapter in Multifunction mode.
+Patch1788: kvm-device-assignment-Error-checking-when-adding-capabil.patch
+# For bz#624790 - pass through fails with KVM using Neterion Inc's X3100 Series 10GbE PCIe I/O Virtualized Server Adapter in Multifunction mode.
+Patch1789: kvm-device-assignment-pass-through-and-stub-more-PCI-cap.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2461,6 +2497,24 @@ ApplyOptionalPatch()
 %patch1769 -p1
 %patch1770 -p1
 %patch1771 -p1
+%patch1772 -p1
+%patch1773 -p1
+%patch1774 -p1
+%patch1775 -p1
+%patch1776 -p1
+%patch1777 -p1
+%patch1778 -p1
+%patch1779 -p1
+%patch1780 -p1
+%patch1781 -p1
+%patch1782 -p1
+%patch1783 -p1
+%patch1784 -p1
+%patch1785 -p1
+%patch1786 -p1
+%patch1787 -p1
+%patch1788 -p1
+%patch1789 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -2665,6 +2719,28 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Dec 20 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.127.el6
+- kvm-pci-import-Linux-pci_regs.h.patch [bz#624790]
+- kvm-pci-s-PCI_SUBVENDOR_ID-PCI_SUBSYSTEM_VENDOR_ID-g.patch [bz#624790]
+- kvm-pci-use-pci_regs.h.patch [bz#624790]
+- kvm-pci-add-API-to-add-capability-at-a-known-offset.patch [bz#624790]
+- kvm-pci-consolidate-pci_add_capability_at_offset-into-pc.patch [bz#624790]
+- kvm-pci-pci_default_cap_write_config-ignores-wmask.patch [bz#624790]
+- kvm-pci-Remove-pci_enable_capability_support.patch [bz#624790]
+- kvm-device-assignment-Use-PCI-capabilities-support.patch [bz#624790]
+- kvm-pci-Replace-used-bitmap-with-config-byte-map.patch [bz#624790]
+- kvm-pci-Remove-cap.length-cap.start-cap.supported.patch [bz#624790]
+- kvm-device-assignment-Move-PCI-capabilities-to-match-phy.patch [bz#624790]
+- kvm-pci-Remove-capability-specific-handlers.patch [bz#624790]
+- kvm-device-assignment-Make-use-of-config_map.patch [bz#624790]
+- kvm-device-assignment-Fix-off-by-one-in-header-check.patch [bz#624790]
+- kvm-pci-Remove-PCI_CAPABILITY_CONFIG_.patch [bz#624790]
+- kvm-pci-Error-on-PCI-capability-collisions.patch [bz#624790]
+- kvm-device-assignment-Error-checking-when-adding-capabil.patch [bz#624790]
+- kvm-device-assignment-pass-through-and-stub-more-PCI-cap.patch [bz#624790]
+- Resolves: bz#624790
+  (pass through fails with KVM using Neterion Inc's X3100 Series 10GbE PCIe I/O Virtualized Server Adapter in Multifunction mode.)
+
 * Fri Dec 17 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.126.el6
 - kvm-Fix-build-problem-with-recent-compilers.patch [bz#662633]
 - kvm-vhost-fix-infinite-loop-on-error-path.patch [bz#628634]

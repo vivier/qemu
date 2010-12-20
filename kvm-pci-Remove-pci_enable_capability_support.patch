@@ -1,0 +1,195 @@
+From 93f4e1feca443fc516fd307fe1cf8bd8934f37dd Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 7 Dec 2010 20:50:35 -0200
+Subject: [RHEL6 qemu-kvm PATCH 07/18] pci: Remove pci_enable_capability_support()
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20101207205035.4625.51188.stgit@s20.home>
+Patchwork-id: 14374
+O-Subject: [RHEL6.1 qemu-kvm PATCH 07/18] pci: Remove
+	pci_enable_capability_support()
+Bugzilla: 624790
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Upstream commit: 87ba8237a10bed58d4e6a070ea797998a8c24fef
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=624790
+Brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=2948901
+
+This interface doesn't make much sense, adding a capability can
+take care of everything, just provide a means to register
+capability read/write handlers.
+
+Device assignment does it's own thing, so requires a couple
+ugly hacks that will be cleaned by subsequent patches.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+---
+
+ hw/device-assignment.c |   12 ++++++++---
+ hw/pci.c               |   52 +++++++++++++++++++++---------------------------
+ hw/pci.h               |    9 +++-----
+ 3 files changed, 35 insertions(+), 38 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |   12 ++++++++--
+ hw/pci.c               |   52 +++++++++++++++++++++--------------------------
+ hw/pci.h               |    9 ++-----
+ 3 files changed, 35 insertions(+), 38 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index 2226936..331dc42 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -1262,7 +1262,12 @@ static int assigned_device_pci_cap_init(PCIDevice *pci_dev)
+     PCIRegion *pci_region = dev->real_device.regions;
+     int next_cap_pt = 0;
+ 
++    pci_dev->cap.supported = 1;
++    pci_dev->cap.start = PCI_CAPABILITY_CONFIG_DEFAULT_START_ADDR;
+     pci_dev->cap.length = 0;
++    pci_dev->config[PCI_STATUS] |= PCI_STATUS_CAP_LIST;
++    pci_dev->config[PCI_CAPABILITY_LIST] = pci_dev->cap.start;
++
+ #ifdef KVM_CAP_IRQ_ROUTING
+ #ifdef KVM_CAP_DEVICE_MSI
+     /* Expose MSI capability
+@@ -1440,9 +1445,10 @@ static int assigned_initfn(struct PCIDevice *pci_dev)
+     dev->h_busnr = dev->host.bus;
+     dev->h_devfn = PCI_DEVFN(dev->host.dev, dev->host.func);
+ 
+-    if (pci_enable_capability_support(pci_dev, 0, NULL,
+-                    assigned_device_pci_cap_write_config,
+-                    assigned_device_pci_cap_init) < 0)
++    pci_register_capability_handlers(pci_dev, NULL,
++                                     assigned_device_pci_cap_write_config);
++
++    if (assigned_device_pci_cap_init(pci_dev) < 0)
+         goto out;
+ 
+     /* assign device to guest */
+diff --git a/hw/pci.c b/hw/pci.c
+index 5fa0cdc..6fbcdd9 100644
+--- a/hw/pci.c
++++ b/hw/pci.c
+@@ -669,6 +669,8 @@ static PCIDevice *do_pci_register_device(PCIDevice *pci_dev, PCIBus *bus,
+         config_write = pci_default_write_config;
+     pci_dev->config_read = config_read;
+     pci_dev->config_write = config_write;
++    pci_dev->cap.config_read = pci_default_cap_read_config;
++    pci_dev->cap.config_write = pci_default_cap_write_config;
+     bus->devices[devfn] = pci_dev;
+     pci_dev->irq = qemu_allocate_irqs(pci_set_irq, pci_dev, PCI_NUM_PINS);
+     pci_dev->version_id = 2; /* Current pci device vmstate version */
+@@ -1541,35 +1543,21 @@ PCIDevice *pci_create_simple(PCIBus *bus, int devfn, const char *name)
+     return dev;
+ }
+ 
+-int pci_enable_capability_support(PCIDevice *pci_dev,
+-                                  uint32_t config_start,
+-                                  PCICapConfigReadFunc *config_read,
+-                                  PCICapConfigWriteFunc *config_write,
+-                                  PCICapConfigInitFunc *config_init)
++void pci_register_capability_handlers(PCIDevice *pdev,
++                                      PCICapConfigReadFunc *config_read,
++                                      PCICapConfigWriteFunc *config_write)
+ {
+-    if (!pci_dev)
+-        return -ENODEV;
+-
+-    pci_dev->config[0x06] |= 0x10; // status = capabilities
+-
+-    if (config_start == 0)
+-	pci_dev->cap.start = PCI_CAPABILITY_CONFIG_DEFAULT_START_ADDR;
+-    else if (config_start >= 0x40 && config_start < 0xff)
+-        pci_dev->cap.start = config_start;
+-    else
+-        return -EINVAL;
++    if (config_read) {
++        pdev->cap.config_read = config_read;
++    } else {
++        pdev->cap.config_read = pci_default_cap_read_config;
++    }
+ 
+-    if (config_read)
+-        pci_dev->cap.config_read = config_read;
+-    else
+-        pci_dev->cap.config_read = pci_default_cap_read_config;
+-    if (config_write)
+-        pci_dev->cap.config_write = config_write;
+-    else
+-        pci_dev->cap.config_write = pci_default_cap_write_config;
+-    pci_dev->cap.supported = 1;
+-    pci_dev->config[PCI_CAPABILITY_LIST] = pci_dev->cap.start;
+-    return config_init(pci_dev);
++    if (config_write) {
++        pdev->cap.config_write = config_write;
++    } else {
++        pdev->cap.config_write = pci_default_cap_write_config;
++    }
+ }
+ 
+ static int pci_find_space(PCIDevice *pdev, uint8_t size)
+@@ -1701,12 +1689,16 @@ int pci_add_capability(PCIDevice *pdev, uint8_t cap_id,
+     config[PCI_CAP_LIST_ID] = cap_id;
+     config[PCI_CAP_LIST_NEXT] = pdev->config[PCI_CAPABILITY_LIST];
+     pdev->config[PCI_CAPABILITY_LIST] = offset;
+-    pdev->config[PCI_STATUS] |= PCI_STATUS_CAP_LIST;
+     memset(pdev->used + offset, 0xFF, size);
+     /* Make capability read-only by default */
+     memset(pdev->wmask + offset, 0, size);
+     /* Check capability by default */
+     memset(pdev->cmask + offset, 0xFF, size);
++
++    pdev->config[PCI_STATUS] |= PCI_STATUS_CAP_LIST;
++    pdev->cap.supported = 1;
++    pdev->cap.start = pdev->cap.start ? MIN(pdev->cap.start, offset) : offset;
++
+     return offset;
+ }
+ 
+@@ -1723,8 +1715,10 @@ void pci_del_capability(PCIDevice *pdev, uint8_t cap_id, uint8_t size)
+     memset(pdev->cmask + offset, 0, size);
+     memset(pdev->used + offset, 0, size);
+ 
+-    if (!pdev->config[PCI_CAPABILITY_LIST])
++    if (!pdev->config[PCI_CAPABILITY_LIST]) {
+         pdev->config[PCI_STATUS] &= ~PCI_STATUS_CAP_LIST;
++        pdev->cap.start = pdev->cap.length = 0;
++    }
+ }
+ 
+ /* Reserve space for capability at a known offset (to call after load). */
+diff --git a/hw/pci.h b/hw/pci.h
+index 635945a..509b5f2 100644
+--- a/hw/pci.h
++++ b/hw/pci.h
+@@ -91,7 +91,6 @@ typedef void PCICapConfigWriteFunc(PCIDevice *pci_dev,
+                                    uint32_t address, uint32_t val, int len);
+ typedef uint32_t PCICapConfigReadFunc(PCIDevice *pci_dev,
+                                       uint32_t address, int len);
+-typedef int PCICapConfigInitFunc(PCIDevice *pci_dev);
+ 
+ typedef struct PCIIORegion {
+     pcibus_t addr; /* current PCI mapping address. -1 means not mapped */
+@@ -230,11 +229,9 @@ void pci_register_bar(PCIDevice *pci_dev, int region_num,
+                             pcibus_t size, int type,
+                             PCIMapIORegionFunc *map_func);
+ 
+-int pci_enable_capability_support(PCIDevice *pci_dev,
+-                                  uint32_t config_start,
+-                                  PCICapConfigReadFunc *config_read,
+-                                  PCICapConfigWriteFunc *config_write,
+-                                  PCICapConfigInitFunc *config_init);
++void pci_register_capability_handlers(PCIDevice *pci_dev,
++                                      PCICapConfigReadFunc *config_read,
++                                      PCICapConfigWriteFunc *config_write);
+ 
+ int pci_map_irq(PCIDevice *pci_dev, int pin);
+ 
+-- 
+1.7.3.2
+

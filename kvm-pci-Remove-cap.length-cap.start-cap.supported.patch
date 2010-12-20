@@ -1,0 +1,107 @@
+From 58b1d89485a3924fcbce2681b8843c84d706f9a3 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 7 Dec 2010 20:50:54 -0200
+Subject: [RHEL6 qemu-kvm PATCH 10/18] pci: Remove cap.length, cap.start, cap.supported
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20101207205053.4625.16748.stgit@s20.home>
+Patchwork-id: 14377
+O-Subject: [RHEL6.1 qemu-kvm PATCH 10/18] pci: Remove cap.length, cap.start,
+	cap.supported
+Bugzilla: 624790
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Upstream commit: 355f2bf993379398251fddbdc8b1c8cc123a570e
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=624790
+Brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=2948901
+
+Capabilities aren't required to be contiguous, so cap.length never
+really made much sense.  Likewise, cap.start is mostly meaningless
+too.  Both of these are better served by the capability map.  We
+can also get rid of cap.supported, since it's really now unused
+and redundant with flag in the status word anyway.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+---
+
+ hw/device-assignment.c |    4 ----
+ hw/pci.c               |    3 ---
+ hw/pci.h               |    2 --
+ 3 files changed, 0 insertions(+), 9 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |    4 ----
+ hw/pci.c               |    3 ---
+ hw/pci.h               |    2 --
+ 3 files changed, 0 insertions(+), 9 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index 9916ea2..c56d266 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -1262,8 +1262,6 @@ static int assigned_device_pci_cap_init(PCIDevice *pci_dev)
+                  pci_get_word(pci_dev->config + PCI_STATUS) &
+                  ~PCI_STATUS_CAP_LIST);
+ 
+-    pci_dev->cap.length = 0;
+-
+ #ifdef KVM_CAP_IRQ_ROUTING
+ #ifdef KVM_CAP_DEVICE_MSI
+     /* Expose MSI capability
+@@ -1290,7 +1288,6 @@ static int assigned_device_pci_cap_init(PCIDevice *pci_dev)
+                      PCI_MSI_FLAGS_QSIZE | PCI_MSI_FLAGS_ENABLE);
+         pci_set_long(pci_dev->wmask + vpos + PCI_MSI_ADDRESS_LO, 0xfffffffc);
+         pci_set_long(pci_dev->wmask + vpos + PCI_MSI_DATA_32, 0xffff);
+-        pci_dev->cap.length += PCI_CAPABILITY_CONFIG_MSI_LENGTH;
+     }
+ #endif
+ #ifdef KVM_CAP_DEVICE_MSIX
+@@ -1326,7 +1323,6 @@ static int assigned_device_pci_cap_init(PCIDevice *pci_dev)
+         bar_nr = msix_table_entry & PCI_MSIX_BIR;
+         msix_table_entry &= ~PCI_MSIX_BIR;
+         dev->msix_table_addr = pci_region[bar_nr].base_addr + msix_table_entry;
+-        pci_dev->cap.length += PCI_CAPABILITY_CONFIG_MSIX_LENGTH;
+     }
+ #endif
+ #endif
+diff --git a/hw/pci.c b/hw/pci.c
+index ead1466..e6406b2 100644
+--- a/hw/pci.c
++++ b/hw/pci.c
+@@ -1691,8 +1691,6 @@ int pci_add_capability(PCIDevice *pdev, uint8_t cap_id,
+     memset(pdev->cmask + offset, 0xFF, size);
+ 
+     pdev->config[PCI_STATUS] |= PCI_STATUS_CAP_LIST;
+-    pdev->cap.supported = 1;
+-    pdev->cap.start = pdev->cap.start ? MIN(pdev->cap.start, offset) : offset;
+ 
+     return offset;
+ }
+@@ -1712,7 +1710,6 @@ void pci_del_capability(PCIDevice *pdev, uint8_t cap_id, uint8_t size)
+ 
+     if (!pdev->config[PCI_CAPABILITY_LIST]) {
+         pdev->config[PCI_STATUS] &= ~PCI_STATUS_CAP_LIST;
+-        pdev->cap.start = pdev->cap.length = 0;
+     }
+ }
+ 
+diff --git a/hw/pci.h b/hw/pci.h
+index c152c5e..3baf3d2 100644
+--- a/hw/pci.h
++++ b/hw/pci.h
+@@ -213,8 +213,6 @@ struct PCIDevice {
+ 
+     /* Device capability configuration space */
+     struct {
+-        int supported;
+-        unsigned int start, length;
+         PCICapConfigReadFunc *config_read;
+         PCICapConfigWriteFunc *config_write;
+     } cap;
+-- 
+1.7.3.2
+

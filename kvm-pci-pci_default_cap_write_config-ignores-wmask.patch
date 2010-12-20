@@ -1,0 +1,76 @@
+From f0d18e1bd9cba06eb23fa79e752c098480ce8726 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 7 Dec 2010 20:50:29 -0200
+Subject: [RHEL6 qemu-kvm PATCH 06/18] pci: pci_default_cap_write_config ignores wmask
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20101207205029.4625.56023.stgit@s20.home>
+Patchwork-id: 14373
+O-Subject: [RHEL6.1 qemu-kvm PATCH 06/18] pci: pci_default_cap_write_config
+	ignores wmask
+Bugzilla: 624790
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Upstream commit: 1164350eb791c33a7815e26f33dc45bccf99ef6e
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=624790
+Brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=2948901
+
+Make use of wmask, just like the rest of config space.
+
+This duplicates code in pci_default_write_config, but we plan to get
+rid of this function anyway, so avoid the code churn.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+---
+
+ hw/pci.c |   19 ++++++++-----------
+ 1 files changed, 8 insertions(+), 11 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pci.c |   19 ++++++++-----------
+ 1 files changed, 8 insertions(+), 11 deletions(-)
+
+diff --git a/hw/pci.c b/hw/pci.c
+index bf78b00..5fa0cdc 100644
+--- a/hw/pci.c
++++ b/hw/pci.c
+@@ -1030,16 +1030,6 @@ uint32_t pci_default_read_config(PCIDevice *d,
+     return pci_read_config(d, address, len);
+ }
+ 
+-static void pci_write_config(PCIDevice *pci_dev,
+-                             uint32_t address, uint32_t val, int len)
+-{
+-    int i;
+-    for (i = 0; i < len; i++) {
+-        pci_dev->config[address + i] = val & 0xff;
+-        val >>= 8;
+-    }
+-}
+-
+ int pci_access_cap_config(PCIDevice *pci_dev, uint32_t address, int len)
+ {
+     if (pci_dev->cap.supported && address >= pci_dev->cap.start &&
+@@ -1057,7 +1047,14 @@ uint32_t pci_default_cap_read_config(PCIDevice *pci_dev,
+ void pci_default_cap_write_config(PCIDevice *pci_dev,
+                                   uint32_t address, uint32_t val, int len)
+ {
+-    pci_write_config(pci_dev, address, val, len);
++    uint32_t config_size = pci_config_size(pci_dev);
++    int i;
++
++    for (i = 0; i < len && address + i < config_size; val >>= 8, ++i) {
++        uint8_t wmask = pci_dev->wmask[address + i];
++        pci_dev->config[address + i] =
++            (pci_dev->config[address + i] & ~wmask) | (val & wmask);
++    }
+ }
+ 
+ void pci_default_write_config(PCIDevice *d, uint32_t addr, uint32_t val, int l)
+-- 
+1.7.3.2
+

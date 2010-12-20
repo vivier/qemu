@@ -1,0 +1,129 @@
+From b49a80b91104425a897c472d958664164d065d92 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 7 Dec 2010 20:50:22 -0200
+Subject: [RHEL6 qemu-kvm PATCH 05/18] pci: consolidate pci_add_capability_at_offset() into pci_add_capability().
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20101207205022.4625.5254.stgit@s20.home>
+Patchwork-id: 14372
+O-Subject: [RHEL6.1 qemu-kvm PATCH 05/18] pci: consolidate
+	pci_add_capability_at_offset() into pci_add_capability().
+Bugzilla: 624790
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Isaku Yamahata <yamahata@valinux.co.jp>
+
+Upstream commit: ca77089d2d8e73283bfc73f03d954504561e1ce8
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=624790
+Brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=2948901
+RHEL Note: Merged w/o eepro100 chunk due to unnecessary pre-reqs
+
+By making pci_add_capability() the special case of
+pci_add_capability_at_offset() of offset = 0,
+consolidate pci_add_capability_at_offset() into pci_add_capability().
+
+Cc: Stefan Weil <weil@mail.berlios.de>
+Cc: Michael S. Tsirkin <mst@redhat.com>
+Signed-off-by: Isaku Yamahata <yamahata@valinux.co.jp>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+
+ hw/msix.c |    3 ++-
+ hw/pci.c  |   33 ++++++++++++++++++---------------
+ hw/pci.h  |    5 ++---
+ 3 files changed, 22 insertions(+), 19 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/msix.c |    3 ++-
+ hw/pci.c  |   33 ++++++++++++++++++---------------
+ hw/pci.h  |    5 ++---
+ 3 files changed, 22 insertions(+), 19 deletions(-)
+
+diff --git a/hw/msix.c b/hw/msix.c
+index 24ff6ae..1fe1823 100644
+--- a/hw/msix.c
++++ b/hw/msix.c
+@@ -203,7 +203,8 @@ static int msix_add_config(struct PCIDevice *pdev, unsigned short nentries,
+     }
+ 
+     pdev->msix_bar_size = new_size;
+-    config_offset = pci_add_capability(pdev, PCI_CAP_ID_MSIX, MSIX_CAP_LENGTH);
++    config_offset = pci_add_capability(pdev, PCI_CAP_ID_MSIX,
++                                       0, MSIX_CAP_LENGTH);
+     if (config_offset < 0)
+         return config_offset;
+     config = pdev->config + config_offset;
+diff --git a/hw/pci.c b/hw/pci.c
+index ef49115..bf78b00 100644
+--- a/hw/pci.c
++++ b/hw/pci.c
+@@ -1682,11 +1682,25 @@ static void pci_del_option_rom(PCIDevice *pdev)
+     pdev->rom_offset = 0;
+ }
+ 
+-/* Reserve space and add capability to the linked list in pci config space */
+-int pci_add_capability_at_offset(PCIDevice *pdev, uint8_t cap_id,
+-                                 uint8_t offset, uint8_t size)
++/*
++ * if !offset
++ * Reserve space and add capability to the linked list in pci config space
++ *
++ * if offset = 0,
++ * Find and reserve space and add capability to the linked list
++ * in pci config space */
++int pci_add_capability(PCIDevice *pdev, uint8_t cap_id,
++                       uint8_t offset, uint8_t size)
+ {
+-    uint8_t *config = pdev->config + offset;
++    uint8_t *config;
++    if (!offset) {
++        offset = pci_find_space(pdev, size);
++        if (!offset) {
++            return -ENOSPC;
++        }
++    }
++
++    config = pdev->config + offset;
+     config[PCI_CAP_LIST_ID] = cap_id;
+     config[PCI_CAP_LIST_NEXT] = pdev->config[PCI_CAPABILITY_LIST];
+     pdev->config[PCI_CAPABILITY_LIST] = offset;
+@@ -1699,17 +1713,6 @@ int pci_add_capability_at_offset(PCIDevice *pdev, uint8_t cap_id,
+     return offset;
+ }
+ 
+-/* Find and reserve space and add capability to the linked list
+- * in pci config space */
+-int pci_add_capability(PCIDevice *pdev, uint8_t cap_id, uint8_t size)
+-{
+-    uint8_t offset = pci_find_space(pdev, size);
+-    if (!offset) {
+-        return -ENOSPC;
+-    }
+-    return pci_add_capability_at_offset(pdev, cap_id, offset, size);
+-}
+-
+ /* Unlink capability from the pci config space. */
+ void pci_del_capability(PCIDevice *pdev, uint8_t cap_id, uint8_t size)
+ {
+diff --git a/hw/pci.h b/hw/pci.h
+index 91f5137..635945a 100644
+--- a/hw/pci.h
++++ b/hw/pci.h
+@@ -238,9 +238,8 @@ int pci_enable_capability_support(PCIDevice *pci_dev,
+ 
+ int pci_map_irq(PCIDevice *pci_dev, int pin);
+ 
+-int pci_add_capability(PCIDevice *pci_dev, uint8_t cap_id, uint8_t cap_size);
+-int pci_add_capability_at_offset(PCIDevice *pci_dev, uint8_t cap_id,
+-                                 uint8_t cap_offset, uint8_t cap_size);
++int pci_add_capability(PCIDevice *pdev, uint8_t cap_id,
++                       uint8_t offset, uint8_t size);
+ 
+ void pci_del_capability(PCIDevice *pci_dev, uint8_t cap_id, uint8_t cap_size);
+ 
+-- 
+1.7.3.2
+

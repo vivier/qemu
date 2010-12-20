@@ -1,0 +1,69 @@
+From 7a86a868924f91c5933504279a21e0f3b3c09df6 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 7 Dec 2010 20:51:37 -0200
+Subject: [RHEL6 qemu-kvm PATCH 17/18] device-assignment: Error checking when adding capabilities
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20101207205137.4625.51586.stgit@s20.home>
+Patchwork-id: 14384
+O-Subject: [RHEL6.1 qemu-kvm PATCH 17/18] device-assignment: Error checking when
+	adding capabilities
+Bugzilla: 624790
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Upstream commit: ff26d407b43449d9e59284cce2afc8c9c9324776
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=624790
+Brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=2948901
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Avi Kivity <avi@redhat.com>
+---
+
+ hw/device-assignment.c |   10 +++++++---
+ 1 files changed, 7 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |   10 +++++++---
+ 1 files changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index f7c07da..ed59fa3 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -1258,7 +1258,7 @@ static int assigned_device_pci_cap_init(PCIDevice *pci_dev)
+ {
+     AssignedDevice *dev = container_of(pci_dev, AssignedDevice, dev);
+     PCIRegion *pci_region = dev->real_device.regions;
+-    int pos;
++    int ret, pos;
+ 
+     /* Clear initial capabilities pointer and status copied from hw */
+     pci_set_byte(pci_dev->config + PCI_CAPABILITY_LIST, 0);
+@@ -1273,7 +1273,9 @@ static int assigned_device_pci_cap_init(PCIDevice *pci_dev)
+     if ((pos = pci_find_cap_offset(pci_dev, PCI_CAP_ID_MSI))) {
+         dev->cap.available |= ASSIGNED_DEVICE_CAP_MSI;
+         /* Only 32-bit/no-mask currently supported */
+-        pci_add_capability(pci_dev, PCI_CAP_ID_MSI, pos, 10);
++        if ((ret = pci_add_capability(pci_dev, PCI_CAP_ID_MSI, pos, 10)) < 0) {
++            return ret;
++        }
+ 
+         pci_set_word(pci_dev->config + pos + PCI_MSI_FLAGS,
+                      pci_get_word(pci_dev->config + pos + PCI_MSI_FLAGS) &
+@@ -1295,7 +1297,9 @@ static int assigned_device_pci_cap_init(PCIDevice *pci_dev)
+         uint32_t msix_table_entry;
+ 
+         dev->cap.available |= ASSIGNED_DEVICE_CAP_MSIX;
+-        pci_add_capability(pci_dev, PCI_CAP_ID_MSIX, pos, 12);
++        if ((ret = pci_add_capability(pci_dev, PCI_CAP_ID_MSIX, pos, 12)) < 0) {
++            return ret;
++        }
+ 
+         pci_set_word(pci_dev->config + pos + PCI_MSIX_FLAGS,
+                      pci_get_word(pci_dev->config + pos + PCI_MSIX_FLAGS) &
+-- 
+1.7.3.2
+

@@ -1,0 +1,60 @@
+From 7a6e903c2516ec0642c4448d4670217ee0c9bffb Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 7 Dec 2010 20:51:31 -0200
+Subject: [RHEL6 qemu-kvm PATCH 16/18] pci: Error on PCI capability collisions
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20101207205131.4625.54906.stgit@s20.home>
+Patchwork-id: 14383
+O-Subject: [RHEL6.1 qemu-kvm PATCH 16/18] pci: Error on PCI capability collisions
+Bugzilla: 624790
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Upstream commit: 15ddab0ae48b7b7ac8a154d9df7e37b9cd4583a3
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=624790
+Brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=2948901
+
+Nothing good can happen when we overlap capabilities
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Avi Kivity <avi@redhat.com>
+---
+
+ hw/pci.c |   14 ++++++++++++++
+ 1 files changed, 14 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pci.c |   14 ++++++++++++++
+ 1 files changed, 14 insertions(+), 0 deletions(-)
+
+diff --git a/hw/pci.c b/hw/pci.c
+index c87d31b..05ab6a3 100644
+--- a/hw/pci.c
++++ b/hw/pci.c
+@@ -1623,6 +1623,20 @@ int pci_add_capability(PCIDevice *pdev, uint8_t cap_id,
+         if (!offset) {
+             return -ENOSPC;
+         }
++    } else {
++        int i;
++
++        for (i = offset; i < offset + size; i++) {
++            if (pdev->config_map[i]) {
++                fprintf(stderr, "ERROR: %04x:%02x:%02x.%x "
++                        "Attempt to add PCI capability %x at offset "
++                        "%x overlaps existing capability %x at offset %x\n",
++                        /* pci_find_domain(pdev->bus) */ 0, pci_bus_num(pdev->bus),
++                        PCI_SLOT(pdev->devfn), PCI_FUNC(pdev->devfn),
++                        cap_id, offset, pdev->config_map[i], i);
++                return -EFAULT;
++            }
++        }
+     }
+ 
+     config = pdev->config + offset;
+-- 
+1.7.3.2
+
