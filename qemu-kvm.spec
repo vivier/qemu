@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.127
+%define pkgrelease 2.128
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -1623,6 +1623,14 @@ Patch1787: kvm-pci-Error-on-PCI-capability-collisions.patch
 Patch1788: kvm-device-assignment-Error-checking-when-adding-capabil.patch
 # For bz#624790 - pass through fails with KVM using Neterion Inc's X3100 Series 10GbE PCIe I/O Virtualized Server Adapter in Multifunction mode.
 Patch1789: kvm-device-assignment-pass-through-and-stub-more-PCI-cap.patch
+# For bz#623735 - hot unplug of vhost net virtio NIC causes qemu segfault
+Patch1790: kvm-virtio-invoke-set_status-callback-on-reset.patch
+# For bz#623735 - hot unplug of vhost net virtio NIC causes qemu segfault
+Patch1791: kvm-virtio-net-unify-vhost-net-start-stop.patch
+# For bz#623735 - hot unplug of vhost net virtio NIC causes qemu segfault
+Patch1792: kvm-tap-clear-vhost_net-backend-on-cleanup.patch
+# For bz#623735 - hot unplug of vhost net virtio NIC causes qemu segfault
+Patch1793: kvm-tap-make-set_offload-a-nop-after-netdev-cleanup.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2515,6 +2523,10 @@ ApplyOptionalPatch()
 %patch1787 -p1
 %patch1788 -p1
 %patch1789 -p1
+%patch1790 -p1
+%patch1791 -p1
+%patch1792 -p1
+%patch1793 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -2719,6 +2731,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Dec 20 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.128.el6
+- kvm-virtio-invoke-set_status-callback-on-reset.patch [bz#623735]
+- kvm-virtio-net-unify-vhost-net-start-stop.patch [bz#623735]
+- kvm-tap-clear-vhost_net-backend-on-cleanup.patch [bz#623735]
+- kvm-tap-make-set_offload-a-nop-after-netdev-cleanup.patch [bz#623735]
+- Resolves: bz#623735
+  (hot unplug of vhost net virtio NIC causes qemu segfault)
+
 * Mon Dec 20 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.127.el6
 - kvm-pci-import-Linux-pci_regs.h.patch [bz#624790]
 - kvm-pci-s-PCI_SUBVENDOR_ID-PCI_SUBSYSTEM_VENDOR_ID-g.patch [bz#624790]

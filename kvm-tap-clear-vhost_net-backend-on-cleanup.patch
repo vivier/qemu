@@ -1,0 +1,55 @@
+From fb6e9219b6374fc29ac145db973e2630cc5d9375 Mon Sep 17 00:00:00 2001
+From: Xiao Wang <jasowang@redhat.com>
+Date: Mon, 13 Dec 2010 13:55:16 -0200
+Subject: [RHEL6 qemu-kvm PATCH 3/4] tap: clear vhost_net backend on cleanup
+
+RH-Author: Xiao Wang <jasowang@redhat.com>
+Message-id: <20101213135516.21058.84453.stgit@dhcp-91-158.nay.redhat.com>
+Patchwork-id: 14619
+O-Subject: [RHEL6.1 PATCH 3/4] tap: clear vhost_net backend on cleanup
+Bugzilla: 623735
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+From: Michael S. Tsirkin <mst@redhat.com>
+
+Bugzilla: 623735
+Brew Build: https://brewweb.devel.redhat.com/taskinfo?taskID=2969665
+Test status:
+Test with my local machine.
+
+Frontends calling tap_get_vhost_net get an invalid pointer after the
+peer backend has been deleted. Jason Wang <jasowang@redhat.com> reports
+this leading to a crash in ack_features when we remove the vhost-net
+bakend of a virtio nic.
+
+The fix is simply to clear the backend pointer.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry-picked from 43849424cff82803011fad21074531a1101e514e)
+Signed-off-by: Jason Wang <jasowang@redhat.com>
+---
+ net/tap.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ net/tap.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/net/tap.c b/net/tap.c
+index 303d69f..4ffe6cc 100644
+--- a/net/tap.c
++++ b/net/tap.c
+@@ -258,6 +258,7 @@ static void tap_cleanup(VLANClientState *nc)
+ 
+     if (s->vhost_net) {
+         vhost_net_cleanup(s->vhost_net);
++        s->vhost_net = NULL;
+     }
+ 
+     qemu_purge_queued_packets(nc);
+-- 
+1.7.3.2
+

@@ -1,0 +1,67 @@
+From ee2a0eaf999900c6fdc53908a4ed18a75521e8d2 Mon Sep 17 00:00:00 2001
+From: Xiao Wang <jasowang@redhat.com>
+Date: Mon, 13 Dec 2010 13:55:21 -0200
+Subject: [RHEL6 qemu-kvm PATCH 4/4] tap: make set_offload a nop after netdev cleanup
+
+RH-Author: Xiao Wang <jasowang@redhat.com>
+Message-id: <20101213135521.21058.21990.stgit@dhcp-91-158.nay.redhat.com>
+Patchwork-id: 14620
+O-Subject: [RHEL6.1 PATCH 4/4] tap: make set_offload a nop after netdev cleanup
+Bugzilla: 623735
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+From: Michael S. Tsirkin <mst@redhat.com>
+
+Bugzilla: 623735
+Brew build: https://brewweb.devel.redhat.com/taskinfo?taskID=2969665
+Test status:
+Test with my local machine.
+
+virtio-net expects set_offload to succeed after
+peer cleanup.
+Since we don't have an open fd anymore, make it so.
+Fixes warning about the failure of offload setting.
+
+Reported-by: Jason Wang <jasowang@redhat.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry-picked from 27a6375de3edece2e5d115847d54c01e52331f7e)
+Signed-off-by: Jason Wang <jasowang@redhat.com>
+---
+ net/tap.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ net/tap.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+diff --git a/net/tap.c b/net/tap.c
+index 4ffe6cc..bec19ce 100644
+--- a/net/tap.c
++++ b/net/tap.c
+@@ -248,8 +248,11 @@ void tap_set_offload(VLANClientState *nc, int csum, int tso4,
+                      int tso6, int ecn, int ufo)
+ {
+     TAPState *s = DO_UPCAST(TAPState, nc, nc);
++    if (s->fd < 0) {
++        return;
++    }
+ 
+-    return tap_fd_set_offload(s->fd, csum, tso4, tso6, ecn, ufo);
++    tap_fd_set_offload(s->fd, csum, tso4, tso6, ecn, ufo);
+ }
+ 
+ static void tap_cleanup(VLANClientState *nc)
+@@ -269,6 +272,7 @@ static void tap_cleanup(VLANClientState *nc)
+     tap_read_poll(s, 0);
+     tap_write_poll(s, 0);
+     close(s->fd);
++    s->fd = -1;
+ }
+ 
+ static void tap_poll(VLANClientState *nc, bool enable)
+-- 
+1.7.3.2
+

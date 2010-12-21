@@ -1,0 +1,56 @@
+From d8885057aa4d3ac681a6710af0fafd6af665fe61 Mon Sep 17 00:00:00 2001
+From: Xiao Wang <jasowang@redhat.com>
+Date: Mon, 13 Dec 2010 13:55:05 -0200
+Subject: [RHEL6 qemu-kvm PATCH 1/4] virtio: invoke set_status callback on reset
+
+RH-Author: Xiao Wang <jasowang@redhat.com>
+Message-id: <20101213135505.21058.12483.stgit@dhcp-91-158.nay.redhat.com>
+Patchwork-id: 14617
+O-Subject: [RHEL6.1 PATCH 1/4] virtio: invoke set_status callback on reset
+Bugzilla: 623735
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+From: Michael S. Tsirkin <mst@redhat.com>
+
+Bugzilla: 623735
+Brew build: https://brewweb.devel.redhat.com/taskinfo?taskID=2969665
+Test status:
+Test with my local machine.
+
+As status is set to 0 on reset, invoke the relevant callback. This makes
+for a cleaner code in devices as they don't need to duplicate the code
+in their reset routine, as well as excercises this path a little more.
+
+In particular this makes it possible to unify
+vhost-net handling code with the following patch.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry-picked from e0c472d8c2795e523b0f9006dbe5bc22545c8300)
+Signed-off-by: Jason Wang <jasowang@redhat.com>
+---
+ hw/virtio.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio.c b/hw/virtio.c
+index 85312b3..f6ad42d 100644
+--- a/hw/virtio.c
++++ b/hw/virtio.c
+@@ -453,6 +453,8 @@ void virtio_reset(void *opaque)
+     VirtIODevice *vdev = opaque;
+     int i;
+ 
++    virtio_set_status(vdev, 0);
++
+     if (vdev->reset)
+         vdev->reset(vdev);
+ 
+-- 
+1.7.3.2
+
