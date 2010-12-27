@@ -172,6 +172,8 @@ int main(int argc, char **argv)
 
 #include "qemu-spice.h"
 
+#include "trace.h"
+
 //#define DEBUG_NET
 //#define DEBUG_SLIRP
 
@@ -390,6 +392,7 @@ void qemu_add_balloon_handler(QEMUBalloonEvent *func, void *opaque)
 int qemu_balloon(ram_addr_t target, MonitorCompletion cb, void *opaque)
 {
     if (qemu_balloon_event) {
+        trace_balloon_event(qemu_balloon_event_opaque, target);
         qemu_balloon_event(qemu_balloon_event_opaque, target, cb, opaque);
         return 1;
     } else {
