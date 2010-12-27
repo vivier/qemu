@@ -81,3 +81,6 @@ disable apic_mem_writel(uint64_t addr, uint32_t val) "%"PRIx64" = %08x"
 disable apic_reset_irq_delivered(int apic_irq_delivered) "old coalescing %d"
 disable apic_get_irq_delivered(int apic_irq_delivered) "returning coalescing %d"
 disable apic_set_irq(int apic_irq_delivered) "coalescing %d"
+
+# vl.c
+disable vm_state_notify(int running, int reason) "running %d reason %d"
