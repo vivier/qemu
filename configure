@@ -2031,6 +2031,10 @@ if test "$trace_backend" = "dtrace"; then
     echo
     exit 1
   fi
+  trace_backend_stap="no"
+  if test -x "$(which stap 2>/dev/null)"; then
+    trace_backend_stap="yes"
+  fi
 fi
 
 ##########################################
@@ -2449,6 +2453,9 @@ esac
 echo "KVM_KMOD=$kvm_kmod" >> $config_host_mak
 
 echo "TRACE_BACKEND=$trace_backend" >> $config_host_mak
+if test "$trace_backend" = "dtrace" -a "$trace_backend_stap" = "yes" ; then
+  echo "CONFIG_SYSTEMTAP_TRACE=y" >> $config_host_mak
+fi
 
 tools=
 if test `expr "$target_list" : ".*softmmu.*"` != 0 ; then
