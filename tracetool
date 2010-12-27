@@ -75,6 +75,20 @@ get_fmt()
     echo "$fmt"
 }
 
+# Get the state of a trace event
+get_state()
+{
+    local str disable state
+    str=$(get_name "$1")
+    disable=${str##disable }
+    if [ "$disable" = "$str" ] ; then
+        state=1
+    else
+        state=0
+    fi
+    echo "$state"
+}
+
 linetoh_begin_nop()
 {
     return
@@ -118,7 +132,7 @@ linetoc_end_nop()
 # Process stdin by calling begin, line, and end functions for the backend
 convert()
 {
-    local begin process_line end
+    local begin process_line end str disable
     begin="lineto$1_begin_$backend"
     process_line="lineto$1_$backend"
     end="lineto$1_end_$backend"
@@ -130,8 +144,20 @@ convert()
         str=${str%%#*}
         test -z "$str" && continue
 
+        # Process the line.  The nop backend handles disabled lines.
+        disable=${str%%disable *}
         echo
-        "$process_line" "$str"
+        if test -z "$disable"; then
+            # Pass the disabled state as an arg to lineto$1_simple().
+            # For all other cases, call lineto$1_nop()
+            if [ $backend = "simple" ]; then
+                "$process_line" "$str"
+            else
+                "lineto$1_nop" "${str##disable }"
+            fi
+        else
+            "$process_line" "$str"
+        fi
     done
 
     echo
