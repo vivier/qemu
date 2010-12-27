@@ -13,6 +13,7 @@
 
 #include <qemu-common.h>
 #include <sysemu.h>
+#include "trace.h"
 #include "virtio-blk.h"
 #include "block_int.h"
 #ifdef __linux__
@@ -51,6 +52,8 @@ static void virtio_blk_req_complete(VirtIOBlockReq *req, int status)
 {
     VirtIOBlock *s = req->dev;
 
+    trace_virtio_blk_req_complete(req, status);
+
     req->in->status = status;
     virtqueue_push(s->vq, &req->elem, req->qiov.size + sizeof(*req->in));
     virtio_notify(&s->vdev, s->vq);
@@ -87,6 +90,8 @@ static int virtio_blk_handle_rw_error(VirtIOBlockReq *req, int error,
 static void virtio_blk_rw_complete(void *opaque, int ret)
 {
     VirtIOBlockReq *req = opaque;
+
+    trace_virtio_blk_rw_complete(req, ret);
 
     if (ret) {
         int is_read = !(req->out->type & VIRTIO_BLK_T_OUT);
@@ -267,6 +272,8 @@ static void virtio_blk_handle_flush(BlockRequest *blkreq, int *num_writes,
 static void virtio_blk_handle_write(BlockRequest *blkreq, int *num_writes,
     VirtIOBlockReq *req, BlockDriverState **old_bs)
 {
+    trace_virtio_blk_handle_write(req, req->out->sector, req->qiov.size / 512);
+
     if (req->out->sector & req->dev->sector_mask) {
         virtio_blk_rw_complete(req, -EIO);
         return;
