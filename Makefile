@@ -1,7 +1,7 @@
 # Makefile for QEMU.
 
 # This needs to be defined before rules.mak
-GENERATED_HEADERS = config-host.h
+GENERATED_HEADERS = config-host.h trace.h
 
 ifneq ($(wildcard config-host.mak),)
 # Put the all: rule here so that config-host.mak can contain dependencies.
@@ -131,9 +131,11 @@ net-nested-$(CONFIG_SLIRP) += slirp.o
 net-nested-$(CONFIG_VDE) += vde.o
 net-obj-y += $(addprefix net/, $(net-nested-y))
 
+trace-obj-y = trace.o
+
 ######################################################################
 # shared-obj-y has the object that are shared by qemu binary and tools
-shared-obj-y = qemu-error.o $(block-obj-y) $(qobject-obj-y)
+shared-obj-y = qemu-error.o $(trace-obj-y) $(block-obj-y) $(qobject-obj-y)
 
 ######################################################################
 # libqemu_common.a: Target independent part of system emulation. The
@@ -247,6 +249,14 @@ bt-host.o: QEMU_CFLAGS += $(BLUEZ_CFLAGS)
 
 libqemu_common.a: $(obj-y)
 
+trace.h: $(SRC_PATH)/trace-events config-host.mak
+	$(call quiet-command,sh $(SRC_PATH)/tracetool --$(TRACE_BACKEND) -h < $< > $@,"  GEN   $@")
+
+trace.c: $(SRC_PATH)/trace-events config-host.mak
+	$(call quiet-command,sh $(SRC_PATH)/tracetool --$(TRACE_BACKEND) -c < $< > $@,"  GEN   $@")
+
+trace.o: trace.c $(GENERATED_HEADERS)
+
 ######################################################################
 
 qemu-img.o: qemu-img-cmds.h
@@ -275,6 +285,7 @@ clean:
 	rm -f *.o *.d *.a $(TOOLS) TAGS cscope.* *.pod *~ */*~
 	rm -f slirp/*.o slirp/*.d audio/*.o audio/*.d block/*.o block/*.d net/*.o net/*.d
 	rm -f qemu-img-cmds.h
+	rm -f trace.c trace.h
 	$(MAKE) -C tests clean
 	for d in $(ALL_SUBDIRS) libhw32 libhw64 libuser; do \
 	if test -d $$d; then $(MAKE) -C $$d $@ || exit 1; fi; \
