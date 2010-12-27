@@ -249,11 +249,15 @@ bt-host.o: QEMU_CFLAGS += $(BLUEZ_CFLAGS)
 
 libqemu_common.a: $(obj-y)
 
-trace.h: $(SRC_PATH)/trace-events config-host.mak
-	$(call quiet-command,sh $(SRC_PATH)/tracetool --$(TRACE_BACKEND) -h < $< > $@,"  GEN   $@")
+trace.h: trace.h-timestamp
+trace.h-timestamp: $(SRC_PATH)/trace-events config-host.mak
+	$(call quiet-command,sh $(SRC_PATH)/tracetool --$(TRACE_BACKEND) -h < $< > $@,"  GEN   trace.h")
+	@cmp -s $@ trace.h || cp $@ trace.h
 
-trace.c: $(SRC_PATH)/trace-events config-host.mak
-	$(call quiet-command,sh $(SRC_PATH)/tracetool --$(TRACE_BACKEND) -c < $< > $@,"  GEN   $@")
+trace.c: trace.c-timestamp
+trace.c-timestamp: $(SRC_PATH)/trace-events config-host.mak
+	$(call quiet-command,sh $(SRC_PATH)/tracetool --$(TRACE_BACKEND) -c < $< > $@,"  GEN   trace.c")
+	@cmp -s $@ trace.c || cp $@ trace.c
 
 trace.o: trace.c $(GENERATED_HEADERS)
 
