@@ -2682,6 +2682,7 @@ static ram_addr_t last_ram_offset(void)
 ram_addr_t qemu_ram_alloc(DeviceState *dev, const char *name, ram_addr_t size)
 {
     RAMBlock *new_block, *block;
+    extern int disable_KSM, disable_THP;
 
     size = TARGET_PAGE_ALIGN(size);
     new_block = qemu_mallocz(sizeof(*new_block));
@@ -2719,7 +2720,12 @@ ram_addr_t qemu_ram_alloc(DeviceState *dev, const char *name, ram_addr_t size)
 		new_block->host = qemu_vmalloc(size);
 #endif
 #ifdef MADV_MERGEABLE
-        madvise(new_block->host, size, MADV_MERGEABLE);
+        if (!disable_KSM)
+            madvise(new_block->host, size, MADV_MERGEABLE);
+#else
+#if defined(__linux__) 
+#error "MADV_MERGEABLE missing"
+#endif
 #endif
 #ifndef MADV_DONTFORK
 #if defined(__linux__) 
@@ -2727,10 +2733,17 @@ ram_addr_t qemu_ram_alloc(DeviceState *dev, const char *name, ram_addr_t size)
 #endif
 #endif
 #ifdef MADV_DONTFORK
-    madvise(new_block->host, size, MADV_DONTFORK);
+        madvise(new_block->host, size, MADV_DONTFORK);
 #endif
 #ifdef MADV_HUGEPAGE
         madvise(new_block->host, size, MADV_HUGEPAGE);
+#endif
+#if !defined(MADV_NOHUGEPAGE) && defined(__linux__) && defined(__x86_64__)
+#define MADV_NOHUGEPAGE 73342815
+#endif
+#ifdef MADV_NOHUGEPAGE
+        if (disable_THP)
+            madvise(new_block->host, size, MADV_NOHUGEPAGE);
 #endif
     }
     new_block->offset = find_ram_offset(size);

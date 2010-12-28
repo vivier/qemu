@@ -2017,3 +2017,8 @@ DEF("fake-machine", 0, QEMU_OPTION_fake_machine,
     "-fake-machine        create a fake machine incapable of running guest code\n"
     "                     mimimal resource use, use for scalability testing")
 #endif
+
+DEF("redhat-disable-THP", 0, QEMU_OPTION_disable_THP,
+    "-redhat-disable-THP  disable THP on guest physical memory\n")
+DEF("redhat-disable-KSM", 0, QEMU_OPTION_disable_KSM,
+    "-redhat-disable-KSM  disable KSM on guest physical memory\n")
