@@ -1,0 +1,29 @@
+From 06f067fe2396650a11b4221d4b978350858029df Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Tue, 4 Jan 2011 17:46:43 -0200
+Subject: [RHEL6 qemu-kvm PATCH 2/2] Revert "spice/qxl: update modes ptr in post_load"
+
+RH-Reverts: 891229eba035f84ad3a82b9569d6cb9ebc3bed67
+RH-Reverts-patchwork-id: 12135
+Bugzilla-related: 653334
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qxl.c |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index d6c516b..5ce90f3 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -943,8 +943,6 @@ static int qxl_post_load(void *opaque, int version)
+         d->last_release = (QXLReleaseInfo *)(d->ram_start + d->last_release_offset);
+     }
+ 
+-    d->modes = (QXLModes*)((uint8_t*)d->rom + d->rom->modes_offset);
+-
+     if (d->mode == QXL_MODE_VGA) {
+         qxl_add_vga_client();
+     }
+-- 
+1.7.3.2
+

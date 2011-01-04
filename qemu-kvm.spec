@@ -1,4 +1,4 @@
-%define zrelease 5
+%define zrelease 6
 
 Summary: Userspace component of KVM
 Name: qemu-kvm
@@ -1450,6 +1450,10 @@ Patch1709: kvm-qemu-img-Eliminate-bdrv_new_open-code-duplication.patch
 Patch1710: kvm-qemu-img-Fix-BRDV_O_FLAGS-typo.patch
 # For bz#662058 - qemu-img convert poor performance
 Patch1711: kvm-qemu-img-convert-Use-cache-unsafe-for-output-image.patch
+# For bz#653334 - spice: prepare qxl for 6.1 update.
+Patch1712: kvm-Revert-spice-qxl-make-draw_area-and-vgafb-share-memo.patch
+# For bz#653334 - spice: prepare qxl for 6.1 update.
+Patch1713: kvm-Revert-spice-qxl-update-modes-ptr-in-post_load.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2223,6 +2227,8 @@ such as kvm_stat.
 %patch1709 -p1
 %patch1710 -p1
 %patch1711 -p1
+%patch1712 -p1
+%patch1713 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2418,6 +2424,12 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jan 04 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.113.el6_0.6
+- kvm-Revert-spice-qxl-make-draw_area-and-vgafb-share-memo.patch [bz#653334]
+- kvm-Revert-spice-qxl-update-modes-ptr-in-post_load.patch [bz#653334]
+- Related: bz#653334
+  (spice: prepare qxl for 6.1 update.)
+
 * Mon Dec 13 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.113.el6_0.5
 - kvm-cleanup-block-driver-option-handling-in-vl.c.patch [bz#662058]
 - kvm-Add-cache-unsafe-parameter-to-drive.patch [bz#662058]
