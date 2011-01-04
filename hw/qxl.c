@@ -943,8 +943,6 @@ static int qxl_post_load(void *opaque, int version)
         d->last_release = (QXLReleaseInfo *)(d->ram_start + d->last_release_offset);
     }
 
-    d->modes = (QXLModes*)((uint8_t*)d->rom + d->rom->modes_offset);
-
     if (d->mode == QXL_MODE_VGA) {
         qxl_add_vga_client();
     }
