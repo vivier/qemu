@@ -694,7 +694,7 @@ static void do_info_version_print(Monitor *mon, const QObject *data)
 
 static void do_info_version(Monitor *mon, QObject **ret_data)
 {
-    const char *version = QEMU_VERSION;
+    const char *p, *version = QEMU_VERSION;
     int major = 0, minor = 0, micro = 0;
     char *tmp;
 
@@ -704,8 +704,13 @@ static void do_info_version(Monitor *mon, QObject **ret_data)
     tmp++;
     micro = strtol(tmp, &tmp, 10);
 
+    p = QEMU_PKGVERSION;
+    while (qemu_isspace(*p)) {
+        p++;
+    }
+
     *ret_data = qobject_from_jsonf("{ 'qemu': { 'major': %d, 'minor': %d, \
-        'micro': %d }, 'package': %s }", major, minor, micro, QEMU_PKGVERSION);
+        'micro': %d }, 'package': %s }", major, minor, micro, p);
 }
 
 static void do_info_name_print(Monitor *mon, const QObject *data)
