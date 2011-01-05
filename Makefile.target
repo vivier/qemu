@@ -245,6 +245,7 @@ obj-ia64-y += fdc.o mc146818rtc.o serial.o i8259.o ipf.o
 obj-ia64-y += cirrus_vga.o parallel.o acpi.o piix_pci.o
 obj-ia64-y += usb-uhci.o
 obj-ia64-$(CONFIG_KVM_DEVICE_ASSIGNMENT) += device-assignment.o
+obj-i386-$(CONFIG_SPICE) += qxl.o qxl-logger.o qxl-render.o
 
 # shared objects
 obj-ppc-y = ppc.o ide/core.o ide/qdev.o ide/isa.o ide/pci.o ide/macio.o
