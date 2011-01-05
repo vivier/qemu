@@ -189,6 +189,8 @@ obj-y += pflib.o
 obj-$(CONFIG_BRLAPI) += baum.o
 obj-$(CONFIG_POSIX) += migration-exec.o migration-unix.o migration-fd.o
 
+obj-$(CONFIG_SPICE) += ui/spice-core.o
+
 audio/audio.o audio/fmodaudio.o: QEMU_CFLAGS += $(FMOD_CFLAGS)
 
 audio-obj-y = audio.o noaudio.o wavaudio.o mixeng.o

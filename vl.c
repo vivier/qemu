@@ -173,6 +173,8 @@ int main(int argc, char **argv)
 
 #include "trace.h"
 
+#include "ui/qemu-spice.h"
+
 //#define DEBUG_NET
 //#define DEBUG_SLIRP
 
@@ -5240,6 +5242,7 @@ int main(int argc, char **argv, char **envp)
     DisplayChangeListener *dcl;
     int cyls, heads, secs, translation;
     QemuOpts *hda_opts = NULL, *opts;
+    QemuOptsList *olist;
     int optind;
     const char *optarg;
     const char *loadvm = NULL;
@@ -6094,6 +6097,18 @@ int main(int argc, char **argv, char **envp)
                 if (!!strcmp(optarg, "?") &&
                     qemu_read_config_file(optarg, defconfig_verbose) < 0)
                         exit(1);
+                break;
+            case QEMU_OPTION_spice:
+                olist = qemu_find_opts("spice");
+                if (!olist) {
+                    fprintf(stderr, "spice is not supported by this qemu build.\n");
+                    exit(1);
+                }
+                opts = qemu_opts_parse(olist, optarg, 0);
+                if (!opts) {
+                    fprintf(stderr, "parse error: %s\n", optarg);
+                    exit(1);
+                }
                 break;
             case QEMU_OPTION_writeconfig:
                 {
