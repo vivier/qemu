@@ -190,6 +190,7 @@ DriveInfo *extboot_drive = NULL;
 enum vga_retrace_method vga_retrace_method = VGA_RETRACE_DUMB;
 static DisplayState *display_state;
 DisplayType display_type = DT_DEFAULT;
+int display_remote = 0;
 const char* keyboard_layout = NULL;
 ram_addr_t ram_size;
 int nb_nics;
@@ -5897,7 +5898,7 @@ int main(int argc, char **argv, char **envp)
                 }
                 break;
 	    case QEMU_OPTION_vnc:
-                display_type = DT_VNC;
+                display_remote++;
 		vnc_display = optarg;
 		break;
 #ifdef TARGET_I386
@@ -6443,17 +6444,17 @@ int main(int argc, char **argv, char **envp)
     /* just use the first displaystate for the moment */
     ds = display_state;
 
-    if (display_type == DT_DEFAULT) {
+    if (display_type == DT_DEFAULT && !display_remote) {
 #if defined(CONFIG_SDL) || defined(CONFIG_COCOA)
         display_type = DT_SDL;
 #else
-        display_type = DT_VNC;
         vnc_display = "localhost:0,to=99";
         show_vnc_port = 1;
 #endif
     }
         
 
+    /* init local displays */
     switch (display_type) {
     case DT_NOGRAPHIC:
         break;
@@ -6471,7 +6472,12 @@ int main(int argc, char **argv, char **envp)
         cocoa_display_init(ds, full_screen);
         break;
 #endif
-    case DT_VNC:
+    default:
+        break;
+    }
+
+    /* init remote displays */
+    if (vnc_display) {
         vnc_display_init(ds);
         if (vnc_display_open(ds, vnc_display) < 0)
             exit(1);
@@ -6479,12 +6485,10 @@ int main(int argc, char **argv, char **envp)
         if (show_vnc_port) {
             printf("VNC server running on `%s'\n", vnc_display_local_addr(ds));
         }
-        break;
-    default:
-        break;
     }
-    dpy_resize(ds);
 
+    /* display setup */
+    dpy_resize(ds);
     dcl = ds->listeners;
     while (dcl != NULL) {
         if (dcl->dpy_refresh != NULL) {
@@ -6493,13 +6497,11 @@ int main(int argc, char **argv, char **envp)
         }
         dcl = dcl->next;
     }
-
-    if (display_type == DT_NOGRAPHIC || display_type == DT_VNC) {
+    if (ds->gui_timer == NULL) {
         nographic_timer = qemu_new_timer(rt_clock, nographic_update, NULL);
         qemu_mod_timer(nographic_timer, qemu_get_clock(rt_clock));
     }
-
-    text_consoles_set_display(display_state);
+    text_consoles_set_display(ds);
 
     if (qemu_opts_foreach(&qemu_mon_opts, mon_init_func, NULL, 1) != 0)
         exit(1);
