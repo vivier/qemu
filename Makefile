@@ -152,7 +152,7 @@ shared-obj-y = qemu-error.o $(trace-obj-y) $(block-obj-y) $(qobject-obj-y)
 
 obj-y = $(shared-obj-y)
 obj-y += $(net-obj-y)
-obj-y += readline.o console.o
+obj-y += readline.o console.o cursor.o
 
 obj-y += tcg-runtime.o host-utils.o
 obj-y += irq.o ioport.o
