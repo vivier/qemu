@@ -1121,7 +1121,7 @@ static int do_change_block(Monitor *mon, const char *device,
 
 static int change_vnc_password(const char *password)
 {
-    if (vnc_display_password(NULL, password, 0) < 0) {
+    if (vnc_display_password(NULL, password) < 0) {
         qerror_report(QERR_SET_PASSWD_FAILED);
         return -1;
     }
