@@ -171,8 +171,6 @@ int main(int argc, char **argv)
 #include "trace.h"
 #include "qemu-queue.h"
 
-#include "qemu-spice.h"
-
 #include "trace.h"
 
 //#define DEBUG_NET
@@ -4731,8 +4729,6 @@ static void select_vgahw (const char *p)
         vga_interface_type = VGA_VMWARE;
     } else if (strstart(p, "xenfb", &opts)) {
         vga_interface_type = VGA_XENFB;
-    } else if (strstart(p, "qxl", &opts)) {
-        vga_interface_type = VGA_QXL;
     } else if (!strstart(p, "none", &opts)) {
     invalid_vga:
         fprintf(stderr, "Unknown vga type: %s\n", p);
@@ -6072,15 +6068,6 @@ int main(int argc, char **argv, char **envp)
                     qemu_read_config_file(optarg, defconfig_verbose) < 0)
                         exit(1);
                 break;
-#ifdef CONFIG_SPICE
-            case QEMU_OPTION_spice:
-                opts = qemu_opts_parse(&qemu_spice_opts, optarg, 0);
-                if (!opts) {
-                    fprintf(stderr, "parse error: %s\n", optarg);
-                    exit(1);
-                }
-                break;
-#endif
             case QEMU_OPTION_writeconfig:
                 {
                     FILE *fp;
@@ -6420,10 +6407,6 @@ int main(int argc, char **argv, char **envp)
     }
     qemu_add_globals();
 
-#ifdef CONFIG_SPICE
-    qemu_spice_init();
-#endif
-
     machine->init(ram_size, boot_devices,
                   kernel_filename, kernel_cmdline, initrd_filename, cpu_model);
 
@@ -6460,7 +6443,7 @@ int main(int argc, char **argv, char **envp)
     /* just use the first displaystate for the moment */
     ds = display_state;
 
-    if (display_type == DT_DEFAULT && !using_spice) {
+    if (display_type == DT_DEFAULT) {
 #if defined(CONFIG_SDL) || defined(CONFIG_COCOA)
         display_type = DT_SDL;
 #else
@@ -6500,15 +6483,6 @@ int main(int argc, char **argv, char **envp)
     default:
         break;
     }
-#ifdef CONFIG_SPICE
-    if (using_spice) {
-        if (qxl_enabled) {
-            qxl_display_init(ds);
-        } else {
-            qemu_spice_display_init(ds);
-        }
-    }
-#endif
     dpy_resize(ds);
 
     dcl = ds->listeners;

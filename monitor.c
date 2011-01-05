@@ -34,7 +34,6 @@
 #include "net.h"
 #include "net/slirp.h"
 #include "qemu-char.h"
-#include "qemu-spice.h"
 #include "sysemu.h"
 #include "monitor.h"
 #include "readline.h"
@@ -438,12 +437,6 @@ void monitor_protocol_event(MonitorEvent event, QObject *data)
             break;
         case QEVENT_VNC_DISCONNECTED:
             event_name = "VNC_DISCONNECTED";
-            break;
-        case QEVENT_SPICE_INITIALIZED:
-            event_name = RFQDN_REDHAT "SPICE_INITIALIZED";
-            break;
-        case QEVENT_SPICE_DISCONNECTED:
-            event_name = RFQDN_REDHAT "SPICE_DISCONNECTED";
             break;
         case QEVENT_BLOCK_IO_ERROR:
             event_name = "BLOCK_IO_ERROR";

@@ -312,80 +312,6 @@ QemuOptsList qemu_cpudef_opts = {
     },
 };
 
-#ifdef CONFIG_SPICE
-QemuOptsList qemu_spice_opts = {
-    .name = "spice",
-    .head = QTAILQ_HEAD_INITIALIZER(qemu_spice_opts.head),
-    .desc = {
-        {
-            .name = "port",
-            .type = QEMU_OPT_NUMBER,
-        },{
-            .name = "tls-port",           /* old: sport */
-            .type = QEMU_OPT_NUMBER,
-        },{
-            .name = "addr",               /* old: host */
-            .type = QEMU_OPT_STRING,
-        },{
-            .name = "ipv4",
-            .type = QEMU_OPT_BOOL,
-        },{
-            .name = "ipv6",
-            .type = QEMU_OPT_BOOL,
-        },{
-            .name = "password",
-            .type = QEMU_OPT_STRING,
-        },{
-            .name = "disable-ticketing",
-            .type = QEMU_OPT_BOOL,
-        },{
-            .name = "image-compression",  /* old: ic */
-            .type = QEMU_OPT_STRING,
-        },{
-            .name = "renderer",
-            .type = QEMU_OPT_STRING,
-        },{
-            .name = "streaming-video",    /* old: sv */
-            .type = QEMU_OPT_STRING,
-        },{
-            .name = "agent-mouse",
-            .type = QEMU_OPT_BOOL,
-        },{
-            .name = "playback-compression",
-            .type = QEMU_OPT_BOOL,
-        },{
-            .name = "tls-channel",
-            .type = QEMU_OPT_STRING,
-        },{
-            .name = "plaintext-channel",
-            .type = QEMU_OPT_STRING,
-        },{
-            .name = "x509-dir",
-            .type = QEMU_OPT_STRING,
-        },{
-            .name = "x509-key-file",      /* old: sslkey */
-            .type = QEMU_OPT_STRING,
-        },{
-            .name = "x509-key-password",  /* old: sslpassword */
-            .type = QEMU_OPT_STRING,
-        },{
-            .name = "x509-cert-file",     /* old: sslcert */
-            .type = QEMU_OPT_STRING,
-        },{
-            .name = "x509-cacert-file",   /* old: sslcafile */
-            .type = QEMU_OPT_STRING,
-        },{
-            .name = "x509-dh-key-file",   /* old: ssldhfile */
-            .type = QEMU_OPT_STRING,
-        },{
-            .name = "tls-ciphers",        /* old: sslciphersuite */
-            .type = QEMU_OPT_STRING,
-        },
-        { /* end if list */ }
-    },
-};
-#endif
-
 static QemuOptsList *vm_config_groups[] = {
     &qemu_drive_opts,
     &qemu_simple_drive_opts,
@@ -397,9 +323,6 @@ static QemuOptsList *vm_config_groups[] = {
     &qemu_global_opts,
     &qemu_mon_opts,
     &qemu_cpudef_opts,
-#ifdef CONFIG_SPICE
-    &qemu_spice_opts,
-#endif
     NULL,
 };
 

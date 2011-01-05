@@ -531,14 +531,6 @@ STEXI
 Enable SDL.
 ETEXI
 
-#ifdef CONFIG_SPICE
-DEF("spice", HAS_ARG, QEMU_OPTION_spice,
-    "-spice <args>   use spice\n")
-STEXI
-Use Spice.
-ETEXI
-#endif
-
 DEF("portrait", 0, QEMU_OPTION_portrait,
     "-portrait       rotate graphical output 90 deg left (only PXA LCD)\n")
 STEXI
@@ -548,7 +540,7 @@ Rotate graphical output 90 deg left (only PXA LCD).
 ETEXI
 
 DEF("vga", HAS_ARG, QEMU_OPTION_vga,
-    "-vga [std|cirrus|vmware|xenfb|qxl|none]\n"
+    "-vga [std|cirrus|vmware|xenfb|none]\n"
     "                select video card type\n")
 STEXI
 @item -vga @var{type}
