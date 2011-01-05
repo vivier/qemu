@@ -56,8 +56,8 @@
 #include "json-parser.h"
 #include "osdep.h"
 #include "exec-all.h"
-
 #include "qemu-kvm.h"
+#include "ui/qemu-spice.h"
 
 //#define DEBUG
 //#define DEBUG_COMPLETION
@@ -446,6 +446,15 @@ void monitor_protocol_event(MonitorEvent event, QObject *data)
             break;
         case QEVENT_WATCHDOG:
             event_name = "WATCHDOG";
+            break;
+        case QEVENT_SPICE_CONNECTED:
+            event_name = "SPICE_CONNECTED";
+            break;
+        case QEVENT_SPICE_INITIALIZED:
+            event_name = "SPICE_INITIALIZED";
+            break;
+        case QEVENT_SPICE_DISCONNECTED:
+            event_name = "SPICE_DISCONNECTED";
             break;
         default:
             abort();
