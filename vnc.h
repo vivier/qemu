@@ -169,6 +169,7 @@ struct VncState
     Buffer zlib_tmp;
     z_stream zlib_stream[4];
 
+    Notifier mouse_mode_notifier;
     VncState *next;
 };
 
