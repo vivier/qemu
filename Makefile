@@ -196,6 +196,7 @@ audio/audio.o audio/fmodaudio.o: QEMU_CFLAGS += $(FMOD_CFLAGS)
 audio-obj-y = audio.o noaudio.o wavaudio.o mixeng.o
 audio-obj-$(CONFIG_SDL) += sdlaudio.o
 audio-obj-$(CONFIG_OSS) += ossaudio.o
+audio-obj-$(CONFIG_SPICE) += spiceaudio.o
 audio-obj-$(CONFIG_COREAUDIO) += coreaudio.o
 audio-obj-$(CONFIG_ALSA) += alsaaudio.o
 audio-obj-$(CONFIG_DSOUND) += dsoundaudio.o
