@@ -1811,6 +1811,7 @@ static void set_encodings(VncState *vs, int32_t *encodings, size_t n_encodings)
     }
 
     vnc_desktop_resize(vs);
+    check_pointer_type_change(&vs->mouse_mode_notifier);
 }
 
 static void set_pixel_conversion(VncState *vs)
