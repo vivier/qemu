@@ -419,6 +419,8 @@ static QTAILQ_HEAD(, QEMUPutLEDEntry) led_handlers = QTAILQ_HEAD_INITIALIZER(led
 static int ledstate;
 static QTAILQ_HEAD(, QEMUPutMouseEntry) mouse_handlers =
     QTAILQ_HEAD_INITIALIZER(mouse_handlers);
+static NotifierList mouse_mode_notifiers = 
+    NOTIFIER_LIST_INITIALIZER(mouse_mode_notifiers);
 
 void qemu_add_kbd_event_handler(QEMUPutKBDEvent *func, void *opaque)
 {
@@ -430,6 +432,24 @@ void qemu_remove_kbd_event_handler(void)
 {
     qemu_put_kbd_event_opaque = NULL;
     qemu_put_kbd_event = NULL;
+}
+
+static void check_mode_change(void)
+{
+    static int current_is_absolute, current_has_absolute;
+    int is_absolute;
+    int has_absolute;
+
+    is_absolute = kbd_mouse_is_absolute();
+    has_absolute = kbd_mouse_has_absolute();
+
+    if (is_absolute != current_is_absolute ||
+        has_absolute != current_has_absolute) {
+        notifier_list_notify(&mouse_mode_notifiers);
+    }
+
+    current_is_absolute = is_absolute;
+    current_has_absolute = has_absolute;
 }
 
 QEMUPutMouseEntry *qemu_add_mouse_event_handler(QEMUPutMouseEvent *func,
@@ -449,6 +469,8 @@ QEMUPutMouseEntry *qemu_add_mouse_event_handler(QEMUPutMouseEvent *func,
 
     QTAILQ_INSERT_TAIL(&mouse_handlers, s, node);
 
+    check_mode_change();
+
     return s;
 }
 
@@ -456,6 +478,8 @@ void qemu_activate_mouse_event_handler(QEMUPutMouseEntry *entry)
 {
     QTAILQ_REMOVE(&mouse_handlers, entry, node);
     QTAILQ_INSERT_HEAD(&mouse_handlers, entry, node);
+
+    check_mode_change();
 }
 
 void qemu_remove_mouse_event_handler(QEMUPutMouseEntry *entry)
@@ -464,6 +488,8 @@ void qemu_remove_mouse_event_handler(QEMUPutMouseEntry *entry)
 
     qemu_free(entry->qemu_put_mouse_event_name);
     qemu_free(entry);
+
+    check_mode_change();
 }
 
 QEMUPutLEDEntry *qemu_add_led_event_handler(QEMUPutLEDEvent *func,
@@ -634,6 +660,18 @@ void do_mouse_set(Monitor *mon, const QDict *qdict)
     if (!found) {
         monitor_printf(mon, "Mouse at given index not found\n");
     }
+
+    check_mode_change();
+}
+
+void qemu_add_mouse_mode_change_notifier(Notifier *notify)
+{
+    notifier_list_add(&mouse_mode_notifiers, notify);
+}
+
+void qemu_remove_mouse_mode_change_notifier(Notifier *notify)
+{
+    notifier_list_remove(&mouse_mode_notifiers, notify);
 }
 
 /* compute with 96 bit intermediate result: (a*b)/c */
