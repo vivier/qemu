@@ -6485,6 +6485,8 @@ int main(int argc, char **argv, char **envp)
     /* just use the first displaystate for the moment */
     ds = display_state;
 
+    if (using_spice)
+        display_remote++;
     if (display_type == DT_DEFAULT && !display_remote) {
 #if defined(CONFIG_SDL) || defined(CONFIG_COCOA)
         display_type = DT_SDL;
@@ -6527,6 +6529,11 @@ int main(int argc, char **argv, char **envp)
             printf("VNC server running on `%s'\n", vnc_display_local_addr(ds));
         }
     }
+#ifdef CONFIG_SPICE
+    if (using_spice) {
+        qemu_spice_display_init(ds);
+    }
+#endif
 
     /* display setup */
     dpy_resize(ds);
