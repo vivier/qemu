@@ -606,6 +606,7 @@ static int rtc_initfn(ISADevice *dev)
 
     register_ioport_write(base, 2, 1, cmos_ioport_write, s);
     register_ioport_read(base, 2, 1, cmos_ioport_read, s);
+    isa_init_ioport_range(dev, base, 2);
 
     vmstate_register(&dev->qdev, base, &vmstate_rtc, s);
     qemu_register_reset(rtc_reset, s);

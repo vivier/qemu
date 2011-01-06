@@ -434,8 +434,10 @@ static int i8042_initfn(ISADevice *dev)
 
     register_ioport_read(0x60, 1, 1, kbd_read_data, s);
     register_ioport_write(0x60, 1, 1, kbd_write_data, s);
+    isa_init_ioport(dev, 0x60);
     register_ioport_read(0x64, 1, 1, kbd_read_status, s);
     register_ioport_write(0x64, 1, 1, kbd_write_command, s);
+    isa_init_ioport(dev, 0x64);
 
     s->kbd = ps2_kbd_init(kbd_update_kbd_irq, s);
     s->mouse = ps2_mouse_init(kbd_update_aux_irq, s);

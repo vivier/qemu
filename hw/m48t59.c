@@ -681,6 +681,7 @@ m48t59_t *m48t59_init_isa(uint32_t io_base, uint16_t size, int type)
     if (io_base != 0) {
         register_ioport_read(io_base, 0x04, 1, NVRAM_readb, s);
         register_ioport_write(io_base, 0x04, 1, NVRAM_writeb, s);
+        isa_init_ioport_range(dev, io_base, 4);
     }
 
     return s;
