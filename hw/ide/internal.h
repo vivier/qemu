@@ -448,6 +448,7 @@ struct IDEBus {
     IDEDevice *slave;
     BMDMAState *bmdma;
     IDEState ifs[2];
+    int bus_id;
     uint8_t unit;
     uint8_t cmd;
     qemu_irq irq;
@@ -565,7 +566,7 @@ void ide_init2(IDEBus *bus, DriveInfo *hd0, DriveInfo *hd1,
 void ide_init_ioport(IDEBus *bus, int iobase, int iobase2);
 
 /* hw/ide/qdev.c */
-void ide_bus_new(IDEBus *idebus, DeviceState *dev);
+void ide_bus_new(IDEBus *idebus, DeviceState *dev, int bus_id);
 IDEDevice *ide_create_drive(IDEBus *bus, int unit, DriveInfo *drive);
 
 #endif /* HW_IDE_INTERNAL_H */
