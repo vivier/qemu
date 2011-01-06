@@ -307,6 +307,9 @@ uint8_t qemu_uuid[16];
 static QEMUBootSetHandler *boot_set_handler;
 static void *boot_set_opaque;
 
+static NotifierList machine_init_done_notifiers =
+    NOTIFIER_LIST_INITIALIZER(machine_init_done_notifiers);
+
 static int default_serial = 1;
 static int default_parallel = 1;
 static int default_virtcon = 1;
@@ -5228,6 +5231,16 @@ static int virtcon_parse(const char *devname)
     return 0;
 }
 
+void qemu_add_machine_init_done_notifier(Notifier *notify)
+{
+    notifier_list_add(&machine_init_done_notifiers, notify);
+}
+
+static void qemu_run_machine_init_done_notifiers(void)
+{
+    notifier_list_notify(&machine_init_done_notifiers);
+}
+
 static const QEMUOption *lookup_opt(int argc, char **argv,
                                     const char **poptarg, int *poptind)
 {
@@ -6625,6 +6638,8 @@ int main(int argc, char **argv, char **envp)
         fprintf(stderr, "rom loading failed\n");
         exit(1);
     }
+
+    qemu_run_machine_init_done_notifiers();
 
     qemu_system_reset();
     if (loadvm) {
