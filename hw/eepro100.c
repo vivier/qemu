@@ -1856,7 +1856,7 @@ static int nic_init(PCIDevice *pci_dev, uint32_t device)
         if (!loaded) {
             char fname[32];
             snprintf(fname, sizeof(fname), "pxe-%s.bin", s->nic->nc.model);
-            rom_add_option(fname);
+            rom_add_option(fname, -1);
             loaded = 1;
         }
     }

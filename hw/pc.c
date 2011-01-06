@@ -746,7 +746,8 @@ static int load_multiboot(void *fw_cfg,
     fw_cfg_add_bytes(fw_cfg, FW_CFG_INITRD_DATA, mb_bootinfo_data,
                      sizeof(bootinfo));
 
-    option_rom[nb_option_roms] = "multiboot.bin";
+    option_rom[nb_option_roms].name = "multiboot.bin";
+    option_rom[nb_option_roms].bootindex = 0;
     nb_option_roms++;
 
     return 1; /* yes, we are multiboot */
@@ -930,7 +931,8 @@ static void load_linux(void *fw_cfg,
     fw_cfg_add_i32(fw_cfg, FW_CFG_SETUP_SIZE, setup_size);
     fw_cfg_add_bytes(fw_cfg, FW_CFG_SETUP_DATA, setup, setup_size);
 
-    option_rom[nb_option_roms] = "linuxboot.bin";
+    option_rom[nb_option_roms].name = "linuxboot.bin";
+    option_rom[nb_option_roms].bootindex = 0;
     nb_option_roms++;
 }
 
@@ -1103,7 +1105,7 @@ static void pc_init1(ram_addr_t ram_size,
         goto bios_error;
     }
     bios_offset = qemu_ram_alloc(NULL, "pc.bios", bios_size);
-    ret = rom_add_file_fixed(bios_name, (uint32_t)(-bios_size));
+    ret = rom_add_file_fixed(bios_name, (uint32_t)(-bios_size), -1);
     if (ret != 0) {
     bios_error:
         fprintf(stderr, "qemu: could not load PC BIOS '%s'\n", bios_name);
@@ -1124,9 +1126,13 @@ static void pc_init1(ram_addr_t ram_size,
                                  (bios_offset + bios_size - isa_bios_size) /* | IO_MEM_ROM */);
 
     if (extboot_drive) {
-        option_rom[nb_option_roms++] = qemu_strdup(EXTBOOT_FILENAME);
+        option_rom[nb_option_roms].name = qemu_strdup(EXTBOOT_FILENAME);
+        option_rom[nb_option_roms].bootindex = 0;
+        nb_option_roms++;
     }
-    option_rom[nb_option_roms++] = qemu_strdup(VAPIC_FILENAME);
+    option_rom[nb_option_roms].name = qemu_strdup(VAPIC_FILENAME);
+    option_rom[nb_option_roms].bootindex = -1;
+    nb_option_roms++;
 
     rom_enable_driver_roms = 1;
     option_rom_offset = qemu_ram_alloc(NULL, "pc.rom", PC_ROM_SIZE);
@@ -1144,7 +1150,7 @@ static void pc_init1(ram_addr_t ram_size,
     }
 
     for (i = 0; i < nb_option_roms; i++) {
-        rom_add_option(option_rom[i]);
+        rom_add_option(option_rom[i].name, option_rom[i].bootindex);
     }
 
     cpu_irq = qemu_allocate_irqs(pic_irq_request, NULL, 1);

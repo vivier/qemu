@@ -235,14 +235,14 @@ static void palmte_init(ram_addr_t ram_size,
 
     /* Setup initial (reset) machine state */
     if (nb_option_roms) {
-        rom_size = get_image_size(option_rom[0]);
+        rom_size = get_image_size(option_rom[0].name);
         if (rom_size > flash_size) {
             fprintf(stderr, "%s: ROM image too big (%x > %x)\n",
                             __FUNCTION__, rom_size, flash_size);
             rom_size = 0;
         }
         if (rom_size > 0) {
-            rom_size = load_image_targphys(option_rom[0], OMAP_CS0_BASE,
+            rom_size = load_image_targphys(option_rom[0].name, OMAP_CS0_BASE,
                                            flash_size);
             rom_loaded = 1;
             cpu->env->regs[15] = 0x00000000;
