@@ -50,6 +50,7 @@ struct _FWCfgState {
     FWCfgFiles *files;
     uint16_t cur_entry;
     uint32_t cur_offset;
+    Notifier machine_ready;
 };
 
 static void fw_cfg_write(FWCfgState *s, uint8_t value)
@@ -312,6 +313,15 @@ int fw_cfg_add_file(FWCfgState *s,  const char *filename, uint8_t *data,
     return 1;
 }
 
+static void fw_cfg_machine_ready(struct Notifier* n)
+{
+    uint32_t len;
+    FWCfgState *s = container_of(n, FWCfgState, machine_ready);
+    char *bootindex = get_boot_devices_list(&len);
+
+    fw_cfg_add_file(s, "bootorder", (uint8_t*)bootindex, len);
+}
+
 FWCfgState *fw_cfg_init(uint32_t ctl_port, uint32_t data_port,
                         target_phys_addr_t ctl_addr, target_phys_addr_t data_addr)
 {
@@ -346,6 +356,10 @@ FWCfgState *fw_cfg_init(uint32_t ctl_port, uint32_t data_port,
 
     vmstate_register(NULL, -1, &vmstate_fw_cfg, s);
     qemu_register_reset(fw_cfg_reset, s);
+
+
+    s->machine_ready.notify = fw_cfg_machine_ready;
+    qemu_add_machine_init_done_notifier(&s->machine_ready);
 
     return s;
 }
