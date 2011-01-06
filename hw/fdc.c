@@ -2019,6 +2019,7 @@ static int sun4m_fdc_init1(SysBusDevice *dev)
 static ISADeviceInfo isa_fdc_info = {
     .init = isabus_fdc_init1,
     .qdev.name  = "isa-fdc",
+    .qdev.fw_name  = "fdc",
     .qdev.size  = sizeof(fdctrl_isabus_t),
     .qdev.no_user = 1,
     .qdev.reset = fdctrl_external_reset_isa,

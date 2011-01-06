@@ -1051,6 +1051,7 @@ static int scsi_disk_initfn(SCSIDevice *dev)
 
 static SCSIDeviceInfo scsi_disk_info = {
     .qdev.name    = "scsi-disk",
+    .qdev.fw_name = "disk",
     .qdev.desc    = "virtual scsi disk or cdrom",
     .qdev.size    = sizeof(SCSIDiskState),
     .init         = scsi_disk_initfn,
