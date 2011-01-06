@@ -31,6 +31,8 @@
 #include "monitor.h"
 
 static int qdev_hotplug = 0;
+static bool qdev_hot_added = false;
+static bool qdev_hot_removed = false;
 
 /* This is a nasty hack to allow passing a NULL bus to qdev_create.  */
 static BusState *main_system_bus;
@@ -92,6 +94,7 @@ static DeviceState *qdev_create_from_info(BusState *bus, DeviceInfo *info)
     if (qdev_hotplug) {
         assert(bus->allow_hotplug);
         dev->hotplugged = 1;
+        qdev_hot_added = true;
     }
     dev->state = DEV_STATE_CREATED;
     return dev;
@@ -295,6 +298,8 @@ int qdev_unplug(DeviceState *dev)
     }
     assert(dev->info->unplug != NULL);
 
+    qdev_hot_removed = true;
+
     return dev->info->unplug(dev);
 }
 
@@ -350,6 +355,11 @@ void qdev_machine_creation_done(void)
      * only create hotpluggable devices
      */
     qdev_hotplug = 1;
+}
+
+bool qdev_machine_modified(void)
+{
+    return qdev_hot_added || qdev_hot_removed;
 }
 
 /* Get a character (serial) device interface.  */
