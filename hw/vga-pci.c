@@ -110,6 +110,12 @@ static int pci_vga_initfn(PCIDevice *dev)
          if (dev->romfile == NULL)
              dev->romfile = qemu_strdup("vgabios-stdvga.bin");
      }
+
+     if (!dev->rom_bar) {
+         /* compatibility with pc-0.13 and older */
+         vga_init_vbe(s);
+     }
+
      return 0;
 }
 

@@ -1550,6 +1550,18 @@ static QEMUMachine pc_machine_rhel600 = {
     .desc = "RHEL 6.0.0 PC",
     .init = pc_init_rhel600,
     .max_cpus = 255,
+    .compat_props = (GlobalProperty[]) {
+        {
+            .driver   = "VGA",
+            .property = "rombar",
+            .value    = stringify(0),
+        },{
+            .driver   = "vmware-svga",
+            .property = "rombar",
+            .value    = stringify(0),
+        },
+        { /* end of list */ }
+    },
 };
 
 static GlobalProperty compat_rhel5[] = {
