@@ -1512,6 +1512,27 @@ static void rhel_common_init(const char *type1_version,
                      strlen(buf) + 1, buf);
 }
 
+static void pc_init_rhel610(ram_addr_t ram_size,
+                            const char *boot_device,
+                            const char *kernel_filename,
+                            const char *kernel_cmdline,
+                            const char *initrd_filename,
+                            const char *cpu_model)
+{
+    rhel_common_init("RHEL 6.1.0 PC", 0);
+    pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
+                initrd_filename, cpu_model ? cpu_model : "cpu64-rhel6");
+}
+
+static QEMUMachine pc_machine_rhel610 = {
+    .name = "rhel6.1.0",
+    .alias = "pc",
+    .desc = "RHEL 6.1.0 PC",
+    .init = pc_init_rhel610,
+    .max_cpus = 255,
+    .is_default = 1,
+};
+
 static void pc_init_rhel600(ram_addr_t ram_size,
                             const char *boot_device,
                             const char *kernel_filename,
@@ -1526,11 +1547,9 @@ static void pc_init_rhel600(ram_addr_t ram_size,
 
 static QEMUMachine pc_machine_rhel600 = {
     .name = "rhel6.0.0",
-    .alias = "pc",
     .desc = "RHEL 6.0.0 PC",
     .init = pc_init_rhel600,
     .max_cpus = 255,
-    .is_default = 1,
 };
 
 static GlobalProperty compat_rhel5[] = {
@@ -1631,6 +1650,7 @@ static QEMUMachine pc_machine_rhel540 = {
 
 static void rhel_machine_init(void)
 {
+    qemu_register_machine(&pc_machine_rhel610);
     qemu_register_machine(&pc_machine_rhel600);
     qemu_register_machine(&pc_machine_rhel550);
     qemu_register_machine(&pc_machine_rhel544);
