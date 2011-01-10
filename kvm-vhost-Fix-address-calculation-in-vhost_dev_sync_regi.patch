@@ -1,0 +1,50 @@
+From 2702437b256df56bf96bac9c3161a1746cc5a44a Mon Sep 17 00:00:00 2001
+From: Xiao Wang <jasowang@redhat.com>
+Date: Mon, 13 Dec 2010 13:55:49 -0200
+Subject: [RHEL6 qemu-kvm PATCH 5/5] vhost: Fix address calculation in vhost_dev_sync_region()
+
+RH-Author: Xiao Wang <jasowang@redhat.com>
+Message-id: <20101213135549.21128.76463.stgit@dhcp-91-158.nay.redhat.com>
+Patchwork-id: 14621
+O-Subject: [RHEL6.1 PATCH] vhost: Fix address calculation in
+	vhost_dev_sync_region()
+Bugzilla: 623552
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+Bugzilla: 623552
+Brew build: https://brewweb.devel.redhat.com/taskinfo?taskID=2969665
+Test status:
+Pass the migration.with_file_transfer test of autotest.
+
+We still need advance address even we find there's no dirty pages in
+current chunk.
+
+Signed-off-by: Jason Wang <jasowang@redhat.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry-picked from 0c600ce2a7a419c7247b2ac63327dea5daa3d5a2)
+---
+ hw/vhost.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/vhost.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/hw/vhost.c b/hw/vhost.c
+index 084ae7c..4cf9f06 100644
+--- a/hw/vhost.c
++++ b/hw/vhost.c
+@@ -39,6 +39,7 @@ static void vhost_dev_sync_region(struct vhost_dev *dev,
+         /* We first check with non-atomic: much cheaper,
+          * and we expect non-dirty to be the common case. */
+         if (!*from) {
++            addr += VHOST_LOG_CHUNK;
+             continue;
+         }
+         /* Data must be read atomically. We don't really
+-- 
+1.7.3.2
+

@@ -1,0 +1,130 @@
+From 591c79d6f25dfd8dc31663db52b0e63ac9bd4735 Mon Sep 17 00:00:00 2001
+From: Andrea Arcangeli <aarcange@redhat.com>
+Date: Tue, 28 Dec 2010 11:35:47 -0200
+Subject: [RHEL6 qemu-kvm PATCH 1/5] let management choose whether transparent huge pages are used #2
+
+RH-Author: Andrea Arcangeli <aarcange@redhat.com>
+Message-id: <20101228113546.GT21490@random.random>
+Patchwork-id: 15331
+O-Subject: [PATCH RHEL6 qemu-kvm] let management choose whether transparent
+	huge pages are used #2
+Bugzilla: 628308
+RH-Acked-by: Xiao Wang <jasowang@redhat.com>
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+I replaced the tabs with spaces as requested by Jes, but the code is
+identical to the previous submit, so Avi's ack shall still count.
+
+This patch depends on the rhkernel-list madvise(MADV_NOHUGEPAGE)
+submit (5 kernel patches pending). If we're lucky we may be able to
+remove the 733428 prefix from the below madvise and from the kernel
+side patches when THP goes from -mm to upstream in 38-rc (as we hope).
+
+=====
+Subject: per-VM disable THP and KSM
+
+From: Andrea Arcangeli <aarcange@redhat.com>
+
+Make MADV_MERGEABLE conditional to -redhat-disable-KSM not being passed.
+
+Make MADV_NOHUGEPAGE conditional to -redhat-disable-THP being passed.
+
+Signed-off-by: Andrea Arcangeli <aarcange@redhat.com>
+---
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ exec.c          |   17 +++++++++++++++--
+ qemu-options.hx |    5 +++++
+ vl.c            |    8 ++++++++
+ 3 files changed, 28 insertions(+), 2 deletions(-)
+
+diff --git a/exec.c b/exec.c
+index 251938d..645d27e 100644
+--- a/exec.c
++++ b/exec.c
+@@ -2682,6 +2682,7 @@ static ram_addr_t last_ram_offset(void)
+ ram_addr_t qemu_ram_alloc(DeviceState *dev, const char *name, ram_addr_t size)
+ {
+     RAMBlock *new_block, *block;
++    extern int disable_KSM, disable_THP;
+ 
+     size = TARGET_PAGE_ALIGN(size);
+     new_block = qemu_mallocz(sizeof(*new_block));
+@@ -2719,7 +2720,12 @@ ram_addr_t qemu_ram_alloc(DeviceState *dev, const char *name, ram_addr_t size)
+ 		new_block->host = qemu_vmalloc(size);
+ #endif
+ #ifdef MADV_MERGEABLE
+-        madvise(new_block->host, size, MADV_MERGEABLE);
++        if (!disable_KSM)
++            madvise(new_block->host, size, MADV_MERGEABLE);
++#else
++#if defined(__linux__) 
++#error "MADV_MERGEABLE missing"
++#endif
+ #endif
+ #ifndef MADV_DONTFORK
+ #if defined(__linux__) 
+@@ -2727,11 +2733,18 @@ ram_addr_t qemu_ram_alloc(DeviceState *dev, const char *name, ram_addr_t size)
+ #endif
+ #endif
+ #ifdef MADV_DONTFORK
+-    madvise(new_block->host, size, MADV_DONTFORK);
++        madvise(new_block->host, size, MADV_DONTFORK);
+ #endif
+ #ifdef MADV_HUGEPAGE
+         madvise(new_block->host, size, MADV_HUGEPAGE);
+ #endif
++#if !defined(MADV_NOHUGEPAGE) && defined(__linux__) && defined(__x86_64__)
++#define MADV_NOHUGEPAGE 73342815
++#endif
++#ifdef MADV_NOHUGEPAGE
++        if (disable_THP)
++            madvise(new_block->host, size, MADV_NOHUGEPAGE);
++#endif
+     }
+     new_block->offset = find_ram_offset(size);
+     new_block->length = size;
+diff --git a/qemu-options.hx b/qemu-options.hx
+index be167e7..cb96daa 100644
+--- a/qemu-options.hx
++++ b/qemu-options.hx
+@@ -2017,3 +2017,8 @@ DEF("fake-machine", 0, QEMU_OPTION_fake_machine,
+     "-fake-machine        create a fake machine incapable of running guest code\n"
+     "                     mimimal resource use, use for scalability testing")
+ #endif
++
++DEF("redhat-disable-THP", 0, QEMU_OPTION_disable_THP,
++    "-redhat-disable-THP  disable THP on guest physical memory\n")
++DEF("redhat-disable-KSM", 0, QEMU_OPTION_disable_KSM,
++    "-redhat-disable-KSM  disable KSM on guest physical memory\n")
+diff --git a/vl.c b/vl.c
+index 31fde4c..b17a703 100644
+--- a/vl.c
++++ b/vl.c
+@@ -250,6 +250,8 @@ int semihosting_enabled = 0;
+ int time_drift_fix = 0;
+ unsigned int kvm_shadow_memory = 0;
+ const char *mem_path = NULL;
++int disable_THP;
++int disable_KSM;
+ #ifdef MAP_POPULATE
+ int mem_prealloc = 1;	/* force preallocation of physical target memory */
+ #endif
+@@ -5955,6 +5957,12 @@ int main(int argc, char **argv, char **envp)
+             case QEMU_OPTION_mempath:
+ 		mem_path = optarg;
+ 		break;
++            case QEMU_OPTION_disable_THP:
++                disable_THP = 1;
++                break;
++            case QEMU_OPTION_disable_KSM:
++                disable_KSM = 1;
++                break;
+ #ifdef MAP_POPULATE
+             case QEMU_OPTION_mem_prealloc:
+ 		mem_prealloc = !mem_prealloc;
+-- 
+1.7.3.2
+

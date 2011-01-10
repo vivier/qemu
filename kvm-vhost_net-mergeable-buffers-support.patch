@@ -1,0 +1,112 @@
+From 5525136f75eb58f4746c3978d3a3106e652e6b77 Mon Sep 17 00:00:00 2001
+From: Xiao Wang <jasowang@redhat.com>
+Date: Mon, 13 Dec 2010 13:52:40 -0200
+Subject: [RHEL6 qemu-kvm PATCH 4/5] vhost_net: mergeable buffers support
+
+RH-Author: Xiao Wang <jasowang@redhat.com>
+Message-id: <20101213135240.20882.31223.stgit@dhcp-91-158.nay.redhat.com>
+Patchwork-id: 14616
+O-Subject: [RHEL6.1 PATCH 3/3] vhost_net: mergeable buffers support
+Bugzilla: 616659
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+Bugzilla: 616659
+Brew Build: https://brewweb.devel.redhat.com/taskinfo?taskID=2969665
+Upstream status: ca736c8e748e3bf77abe401231a412b9cdccb9d3
+Test status:
+Pass the autotest network related tests.
+
+use the new tap APIs to set header length
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Signed-off-by: Jason Wang <jasowang@redhat.com>
+---
+ hw/vhost_net.c |   25 +++++++++++++++++++++++--
+ 1 files changed, 23 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/vhost_net.c |   25 +++++++++++++++++++++++--
+ 1 files changed, 23 insertions(+), 2 deletions(-)
+
+diff --git a/hw/vhost_net.c b/hw/vhost_net.c
+index 4098a68..430bd6e 100644
+--- a/hw/vhost_net.c
++++ b/hw/vhost_net.c
+@@ -51,8 +51,9 @@ unsigned vhost_net_get_features(struct vhost_net *net, unsigned features)
+     if (!(net->dev.features & (1 << VIRTIO_RING_F_INDIRECT_DESC))) {
+         features &= ~(1 << VIRTIO_RING_F_INDIRECT_DESC);
+     }
+-    features &= ~(1 << VIRTIO_NET_F_MRG_RXBUF);
+-
++    if (!(net->dev.features & (1 << VIRTIO_NET_F_MRG_RXBUF))) {
++        features &= ~(1 << VIRTIO_NET_F_MRG_RXBUF);
++    }
+     return features;
+ }
+ 
+@@ -65,6 +66,9 @@ void vhost_net_ack_features(struct vhost_net *net, unsigned features)
+     if (features & (1 << VIRTIO_RING_F_INDIRECT_DESC)) {
+         net->dev.acked_features |= (1 << VIRTIO_RING_F_INDIRECT_DESC);
+     }
++    if (features & (1 << VIRTIO_NET_F_MRG_RXBUF)) {
++        net->dev.acked_features |= (1 << VIRTIO_NET_F_MRG_RXBUF);
++    }
+ }
+ 
+ static int vhost_net_get_fd(VLANClientState *backend)
+@@ -99,6 +103,10 @@ struct vhost_net *vhost_net_init(VLANClientState *backend, int devfd)
+     if (r < 0) {
+         goto fail;
+     }
++    if (!tap_has_vnet_hdr_len(backend,
++                              sizeof(struct virtio_net_hdr_mrg_rxbuf))) {
++        net->dev.features &= ~(1 << VIRTIO_NET_F_MRG_RXBUF);
++    }
+     if (~net->dev.features & net->dev.backend_features) {
+         fprintf(stderr, "vhost lacks feature mask %llu for backend\n",
+                 ~net->dev.features & net->dev.backend_features);
+@@ -119,6 +127,10 @@ int vhost_net_start(struct vhost_net *net,
+ {
+     struct vhost_vring_file file = { };
+     int r;
++    if (net->dev.acked_features & (1 << VIRTIO_NET_F_MRG_RXBUF)) {
++        tap_set_vnet_hdr_len(net->vc,
++                             sizeof(struct virtio_net_hdr_mrg_rxbuf));
++    }
+ 
+     net->dev.nvqs = 2;
+     net->dev.vqs = net->vqs;
+@@ -146,6 +158,9 @@ fail:
+     }
+     net->vc->info->poll(net->vc, true);
+     vhost_dev_stop(&net->dev, dev);
++    if (net->dev.acked_features & (1 << VIRTIO_NET_F_MRG_RXBUF)) {
++        tap_set_vnet_hdr_len(net->vc, sizeof(struct virtio_net_hdr));
++    }
+     return r;
+ }
+ 
+@@ -160,11 +175,17 @@ void vhost_net_stop(struct vhost_net *net,
+     }
+     net->vc->info->poll(net->vc, true);
+     vhost_dev_stop(&net->dev, dev);
++    if (net->dev.acked_features & (1 << VIRTIO_NET_F_MRG_RXBUF)) {
++        tap_set_vnet_hdr_len(net->vc, sizeof(struct virtio_net_hdr));
++    }
+ }
+ 
+ void vhost_net_cleanup(struct vhost_net *net)
+ {
+     vhost_dev_cleanup(&net->dev);
++    if (net->dev.acked_features & (1 << VIRTIO_NET_F_MRG_RXBUF)) {
++        tap_set_vnet_hdr_len(net->vc, sizeof(struct virtio_net_hdr));
++    }
+     qemu_free(net);
+ }
+ #else
+-- 
+1.7.3.2
+

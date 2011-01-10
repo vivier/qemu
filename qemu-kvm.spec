@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.128
+%define pkgrelease 2.129
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -1631,6 +1631,16 @@ Patch1791: kvm-virtio-net-unify-vhost-net-start-stop.patch
 Patch1792: kvm-tap-clear-vhost_net-backend-on-cleanup.patch
 # For bz#623735 - hot unplug of vhost net virtio NIC causes qemu segfault
 Patch1793: kvm-tap-make-set_offload-a-nop-after-netdev-cleanup.patch
+# For bz#628308 - [RFE] let management choose whether transparent huge pages are used
+Patch1794: kvm-let-management-choose-whether-transparent-huge-pages.patch
+# For bz#616659 - mrg buffers: migration breaks between systems with/without vhost
+Patch1795: kvm-tap-generalize-code-for-different-vnet-header-len.patch
+# For bz#616659 - mrg buffers: migration breaks between systems with/without vhost
+Patch1796: kvm-tap-add-APIs-for-vnet-header-length.patch
+# For bz#616659 - mrg buffers: migration breaks between systems with/without vhost
+Patch1797: kvm-vhost_net-mergeable-buffers-support.patch
+# For bz#623552 - SCP image fails from host to guest with vhost on when do migration
+Patch1798: kvm-vhost-Fix-address-calculation-in-vhost_dev_sync_regi.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2527,6 +2537,11 @@ ApplyOptionalPatch()
 %patch1791 -p1
 %patch1792 -p1
 %patch1793 -p1
+%patch1794 -p1
+%patch1795 -p1
+%patch1796 -p1
+%patch1797 -p1
+%patch1798 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -2731,6 +2746,19 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Jan 10 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.129.el6
+- kvm-let-management-choose-whether-transparent-huge-pages.patch [bz#628308]
+- kvm-tap-generalize-code-for-different-vnet-header-len.patch [bz#616659]
+- kvm-tap-add-APIs-for-vnet-header-length.patch [bz#616659]
+- kvm-vhost_net-mergeable-buffers-support.patch [bz#616659]
+- kvm-vhost-Fix-address-calculation-in-vhost_dev_sync_regi.patch [bz#623552]
+- Resolves: bz#616659
+  (mrg buffers: migration breaks between systems with/without vhost)
+- Resolves: bz#623552
+  (SCP image fails from host to guest with vhost on when do migration)
+- Resolves: bz#628308
+  ([RFE] let management choose whether transparent huge pages are used)
+
 * Mon Dec 20 2010 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.128.el6
 - kvm-virtio-invoke-set_status-callback-on-reset.patch [bz#623735]
 - kvm-virtio-net-unify-vhost-net-start-stop.patch [bz#623735]

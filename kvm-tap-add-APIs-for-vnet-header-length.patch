@@ -1,0 +1,240 @@
+From 7527e5be964f104b45b55186b6e0af1031b341ff Mon Sep 17 00:00:00 2001
+From: Xiao Wang <jasowang@redhat.com>
+Date: Mon, 13 Dec 2010 13:52:35 -0200
+Subject: [RHEL6 qemu-kvm PATCH 3/5] tap: add APIs for vnet header length
+
+RH-Author: Xiao Wang <jasowang@redhat.com>
+Message-id: <20101213135235.20882.53642.stgit@dhcp-91-158.nay.redhat.com>
+Patchwork-id: 14615
+O-Subject: [RHEL6.1 PATCH 2/3] tap: add APIs for vnet header length
+Bugzilla: 616659
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+From: Michael S. Tsirkin <mst@redhat.com>
+
+Bugzilla: 616659
+Brew build: https://brewweb.devel.redhat.com/taskinfo?taskID=2969665
+Test status:
+Pass autotest network related tests.
+
+Add APIs to control host header length. First user
+will be vhost-net.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry picked from 445d892f43e6a6031cd1aac292df433f821aa830)
+Signed-off-by: Jason Wang <jasowang@redhat.com>
+---
+ net/tap-aix.c     |    9 +++++++++
+ net/tap-bsd.c     |    9 +++++++++
+ net/tap-linux.c   |   29 +++++++++++++++++++++++++++++
+ net/tap-linux.h   |    2 ++
+ net/tap-solaris.c |    9 +++++++++
+ net/tap-win32.c   |    9 +++++++++
+ net/tap.c         |   21 +++++++++++++++++++++
+ net/tap.h         |    4 ++++
+ 8 files changed, 92 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ net/tap-aix.c     |    9 +++++++++
+ net/tap-bsd.c     |    9 +++++++++
+ net/tap-linux.c   |   29 +++++++++++++++++++++++++++++
+ net/tap-linux.h   |    2 ++
+ net/tap-solaris.c |    9 +++++++++
+ net/tap-win32.c   |    9 +++++++++
+ net/tap.c         |   21 +++++++++++++++++++++
+ net/tap.h         |    4 ++++
+ 8 files changed, 92 insertions(+), 0 deletions(-)
+
+diff --git a/net/tap-aix.c b/net/tap-aix.c
+index 4bc9f2f..e19aaba 100644
+--- a/net/tap-aix.c
++++ b/net/tap-aix.c
+@@ -46,6 +46,15 @@ int tap_probe_has_ufo(int fd)
+     return 0;
+ }
+ 
++int tap_probe_vnet_hdr_len(int fd, int len)
++{
++    return 0;
++}
++
++void tap_fd_set_vnet_hdr_len(int fd, int len)
++{
++}
++
+ void tap_fd_set_offload(int fd, int csum, int tso4,
+                         int tso6, int ecn, int ufo)
+ {
+diff --git a/net/tap-bsd.c b/net/tap-bsd.c
+index e51d068..a225149 100644
+--- a/net/tap-bsd.c
++++ b/net/tap-bsd.c
+@@ -115,6 +115,15 @@ int tap_probe_has_ufo(int fd)
+     return 0;
+ }
+ 
++int tap_probe_vnet_hdr_len(int fd, int len)
++{
++    return 0;
++}
++
++void tap_fd_set_vnet_hdr_len(int fd, int len)
++{
++}
++
+ void tap_fd_set_offload(int fd, int csum, int tso4,
+                         int tso6, int ecn, int ufo)
+ {
+diff --git a/net/tap-linux.c b/net/tap-linux.c
+index 03b8301..a425ff0 100644
+--- a/net/tap-linux.c
++++ b/net/tap-linux.c
+@@ -127,6 +127,35 @@ int tap_probe_has_ufo(int fd)
+     return 1;
+ }
+ 
++/* Verify that we can assign given length */
++int tap_probe_vnet_hdr_len(int fd, int len)
++{
++    int orig;
++    if (ioctl(fd, TUNGETVNETHDRSZ, &orig) == -1) {
++        return 0;
++    }
++    if (ioctl(fd, TUNSETVNETHDRSZ, &len) == -1) {
++        return 0;
++    }
++    /* Restore original length: we can't handle failure. */
++    if (ioctl(fd, TUNSETVNETHDRSZ, &orig) == -1) {
++        fprintf(stderr, "TUNGETVNETHDRSZ ioctl() failed: %s. Exiting.\n",
++                strerror(errno));
++        assert(0);
++        return -errno;
++    }
++    return 1;
++}
++
++void tap_fd_set_vnet_hdr_len(int fd, int len)
++{
++    if (ioctl(fd, TUNSETVNETHDRSZ, &len) == -1) {
++        fprintf(stderr, "TUNSETVNETHDRSZ ioctl() failed: %s. Exiting.\n",
++                strerror(errno));
++        assert(0);
++    }
++}
++
+ void tap_fd_set_offload(int fd, int csum, int tso4,
+                         int tso6, int ecn, int ufo)
+ {
+diff --git a/net/tap-linux.h b/net/tap-linux.h
+index 727fcf5..659e981 100644
+--- a/net/tap-linux.h
++++ b/net/tap-linux.h
+@@ -27,6 +27,8 @@
+ #define TUNSETOFFLOAD  _IOW('T', 208, unsigned int)
+ #define TUNGETIFF      _IOR('T', 210, unsigned int)
+ #define TUNSETSNDBUF   _IOW('T', 212, int)
++#define TUNGETVNETHDRSZ _IOR('T', 215, int)
++#define TUNSETVNETHDRSZ _IOW('T', 216, int)
+ 
+ #endif
+ 
+diff --git a/net/tap-solaris.c b/net/tap-solaris.c
+index c12cb8a..42f6e4e 100644
+--- a/net/tap-solaris.c
++++ b/net/tap-solaris.c
+@@ -210,6 +210,15 @@ int tap_probe_has_ufo(int fd)
+     return 0;
+ }
+ 
++int tap_probe_vnet_hdr_len(int fd, int len)
++{
++    return 0;
++}
++
++void tap_fd_set_vnet_hdr_len(int fd, int len)
++{
++}
++
+ void tap_fd_set_offload(int fd, int csum, int tso4,
+                         int tso6, int ecn, int ufo)
+ {
+diff --git a/net/tap-win32.c b/net/tap-win32.c
+index a5c2ce9..6d2eeef 100644
+--- a/net/tap-win32.c
++++ b/net/tap-win32.c
+@@ -727,6 +727,15 @@ int tap_has_vnet_hdr(VLANClientState *vc)
+     return 0;
+ }
+ 
++int tap_probe_vnet_hdr_len(int fd, int len)
++{
++    return 0;
++}
++
++void tap_fd_set_vnet_hdr_len(int fd, int len)
++{
++}
++
+ void tap_using_vnet_hdr(VLANClientState *vc, int using_vnet_hdr)
+ {
+ }
+diff --git a/net/tap.c b/net/tap.c
+index 3657202..25d64f4 100644
+--- a/net/tap.c
++++ b/net/tap.c
+@@ -232,6 +232,27 @@ int tap_has_vnet_hdr(VLANClientState *nc)
+     return !!s->host_vnet_hdr_len;
+ }
+ 
++int tap_has_vnet_hdr_len(VLANClientState *nc, int len)
++{
++    TAPState *s = DO_UPCAST(TAPState, nc, nc);
++
++    assert(nc->info->type == NET_CLIENT_TYPE_TAP);
++
++    return tap_probe_vnet_hdr_len(s->fd, len);
++}
++
++void tap_set_vnet_hdr_len(VLANClientState *nc, int len)
++{
++    TAPState *s = DO_UPCAST(TAPState, nc, nc);
++
++    assert(nc->info->type == NET_CLIENT_TYPE_TAP);
++    assert(len == sizeof(struct virtio_net_hdr_mrg_rxbuf) ||
++           len == sizeof(struct virtio_net_hdr));
++
++    tap_fd_set_vnet_hdr_len(s->fd, len);
++    s->host_vnet_hdr_len = len;
++}
++
+ void tap_using_vnet_hdr(VLANClientState *nc, int using_vnet_hdr)
+ {
+     TAPState *s = DO_UPCAST(TAPState, nc, nc);
+diff --git a/net/tap.h b/net/tap.h
+index b8cec83..e44bd2b 100644
+--- a/net/tap.h
++++ b/net/tap.h
+@@ -40,13 +40,17 @@ ssize_t tap_read_packet(int tapfd, uint8_t *buf, int maxlen);
+ 
+ int tap_has_ufo(VLANClientState *vc);
+ int tap_has_vnet_hdr(VLANClientState *vc);
++int tap_has_vnet_hdr_len(VLANClientState *vc, int len);
+ void tap_using_vnet_hdr(VLANClientState *vc, int using_vnet_hdr);
+ void tap_set_offload(VLANClientState *vc, int csum, int tso4, int tso6, int ecn, int ufo);
++void tap_set_vnet_hdr_len(VLANClientState *vc, int len);
+ 
+ int tap_set_sndbuf(int fd, QemuOpts *opts);
+ int tap_probe_vnet_hdr(int fd);
++int tap_probe_vnet_hdr_len(int fd, int len);
+ int tap_probe_has_ufo(int fd);
+ void tap_fd_set_offload(int fd, int csum, int tso4, int tso6, int ecn, int ufo);
++void tap_fd_set_vnet_hdr_len(int fd, int len);
+ 
+ int tap_get_fd(VLANClientState *vc);
+ 
+-- 
+1.7.3.2
+
