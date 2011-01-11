@@ -36,6 +36,9 @@ static uint32_t max_throttle = (32 << 20);
 
 static MigrationState *current_migration;
 
+static NotifierList migration_state_notifiers =
+    NOTIFIER_LIST_INITIALIZER(migration_state_notifiers);
+
 int qemu_start_incoming_migration(const char *uri)
 {
     const char *p;
@@ -128,6 +131,7 @@ int do_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data)
     }
 
     current_migration = s;
+    notifier_list_notify(&migration_state_notifiers);
     return 0;
 }
 
@@ -278,6 +282,7 @@ void migrate_fd_error(FdMigrationState *s)
     dprintf("setting error state\n");
     s->state = MIG_STATE_ERROR;
     migrate_fd_cleanup(s);
+    notifier_list_notify(&migration_state_notifiers);
 }
 
 int migrate_fd_cleanup(FdMigrationState *s)
@@ -335,6 +340,7 @@ ssize_t migrate_fd_put_buffer(void *opaque, const void *data, size_t size)
             monitor_resume(s->mon);
         }
         s->state = MIG_STATE_ERROR;
+        notifier_list_notify(&migration_state_notifiers);
     }
 
     return ret;
@@ -396,6 +402,7 @@ void migrate_fd_put_ready(void *opaque)
                 vm_start();
             }
         }
+        notifier_list_notify(&migration_state_notifiers);
     }
 }
 
@@ -416,8 +423,8 @@ void migrate_fd_cancel(MigrationState *mig_state)
 
     s->state = MIG_STATE_CANCELLED;
     qemu_savevm_state_cancel(s->mon, s->file);
-
     migrate_fd_cleanup(s);
+    notifier_list_notify(&migration_state_notifiers);
 }
 
 void migrate_fd_release(MigrationState *mig_state)
@@ -429,6 +436,7 @@ void migrate_fd_release(MigrationState *mig_state)
     if (s->state == MIG_STATE_ACTIVE) {
         s->state = MIG_STATE_CANCELLED;
         migrate_fd_cleanup(s);
+        notifier_list_notify(&migration_state_notifiers);
     }
     free(s);
 }
@@ -458,4 +466,23 @@ int migrate_fd_close(void *opaque)
 
     qemu_set_fd_handler2(s->fd, NULL, NULL, NULL, NULL);
     return s->close(s);
+}
+
+void add_migration_state_change_notifier(Notifier *notify)
+{
+    notifier_list_add(&migration_state_notifiers, notify);
+}
+
+void remove_migration_state_change_notifier(Notifier *notify)
+{
+    notifier_list_remove(&migration_state_notifiers, notify);
+}
+
+int get_migration_state(void)
+{
+    if (current_migration) {
+        return migrate_fd_get_status(current_migration);
+    } else {
+        return MIG_STATE_ERROR;
+    }
 }
