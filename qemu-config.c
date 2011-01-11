@@ -164,6 +164,12 @@ QemuOptsList qemu_chardev_opts = {
         },{
             .name = "signal",
             .type = QEMU_OPT_BOOL,
+        },{
+            .name = "name",
+            .type = QEMU_OPT_STRING,
+        },{
+            .name = "debug",
+            .type = QEMU_OPT_NUMBER,
         },
         { /* end if list */ }
     },

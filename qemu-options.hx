@@ -1216,6 +1216,9 @@ DEF("chardev", HAS_ARG, QEMU_OPTION_chardev,
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__DragonFly__)
     "-chardev parport,id=id,path=path\n"
 #endif
+#if defined(CONFIG_SPICE)
+    "-chardev spicevmc,id=id,debug=debug,name=name\n"
+#endif
 )
 
 STEXI
@@ -1239,7 +1242,8 @@ Backend is one of:
 @option{stdio},
 @option{braille},
 @option{tty},
-@option{parport}.
+@option{parport}
+@option{spicevmc}.
 The specific backend will determine the applicable options.
 
 All devices must have an id, which can be any string up to 127 characters long.
@@ -1406,6 +1410,16 @@ Connect to a local parallel port.
 
 @option{path} specifies the path to the parallel port device. @option{path} is
 required.
+
+#if defined(CONFIG_SPICE)
+@item -chardev spicevmc ,id=@var{id} ,debug=@var{debug}, name=@var{name}
+
+@option{debug} debug level for spicevmc
+
+@option{name} name of spice channel to connect to
+
+Connect to a spice virtual machine channel, such as vdiport.
+#endif
 
 @end table
 ETEXI

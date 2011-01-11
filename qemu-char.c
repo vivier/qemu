@@ -98,6 +98,7 @@
 #endif
 
 #include "qemu_socket.h"
+#include "ui/qemu-spice.h"
 
 #define READ_BUF_LEN 4096
 
@@ -2477,6 +2478,9 @@ static const struct {
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__DragonFly__) \
     || defined(__FreeBSD_kernel__)
     { .name = "parport",   .open = qemu_chr_open_pp },
+#endif
+#ifdef CONFIG_SPICE
+    { .name = "spicevmc",     .open = qemu_chr_open_spice },
 #endif
 };
 
