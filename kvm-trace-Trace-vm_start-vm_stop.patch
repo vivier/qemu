@@ -1,0 +1,70 @@
+From e06e9759221f63045eaf9c617f968d30561f1ca2 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 27 Dec 2010 16:48:12 -0200
+Subject: [RHEL6 qemu-kvm PATCH 22/23] trace: Trace vm_start()/vm_stop()
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1293468492-25473-21-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 15303
+O-Subject: [PATCH 20/20] trace: Trace vm_start()/vm_stop()
+Bugzilla: 632722
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+VM state change notifications are invoked from vm_start()/vm_stop().
+Trace these state changes so we can reason about the state of the VM
+from trace output.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 94b0b5ff5f5c3ab946fa926d464738edb3713ed4)
+---
+ trace-events |    3 +++
+ vl.c         |    3 +++
+ 2 files changed, 6 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ trace-events |    3 +++
+ vl.c         |    3 +++
+ 2 files changed, 6 insertions(+), 0 deletions(-)
+
+diff --git a/trace-events b/trace-events
+index ed2055e..35b6a3f 100644
+--- a/trace-events
++++ b/trace-events
+@@ -81,3 +81,6 @@ disable apic_mem_writel(uint64_t addr, uint32_t val) "%"PRIx64" = %08x"
+ disable apic_reset_irq_delivered(int apic_irq_delivered) "old coalescing %d"
+ disable apic_get_irq_delivered(int apic_irq_delivered) "returning coalescing %d"
+ disable apic_set_irq(int apic_irq_delivered) "coalescing %d"
++
++# vl.c
++disable vm_state_notify(int running, int reason) "running %d reason %d"
+diff --git a/vl.c b/vl.c
+index 6fd9d39..3d8fb3b 100644
+--- a/vl.c
++++ b/vl.c
+@@ -168,6 +168,7 @@ int main(int argc, char **argv)
+ 
+ #include "slirp/libslirp.h"
+ 
++#include "trace.h"
+ #include "qemu-queue.h"
+ 
+ #include "qemu-spice.h"
+@@ -3499,6 +3500,8 @@ static void vm_state_notify(int running, int reason)
+ {
+     VMChangeStateEntry *e;
+ 
++    trace_vm_state_notify(running, reason);
++
+     for (e = vm_change_state_head.lh_first; e; e = e->entries.le_next) {
+         e->cb(e->opaque, running, reason);
+     }
+-- 
+1.7.3.2
+

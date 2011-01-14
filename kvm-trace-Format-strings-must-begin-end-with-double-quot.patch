@@ -1,0 +1,52 @@
+From 6f767b6ef1308fd972252c4127cf5aca26592c05 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 27 Dec 2010 16:48:08 -0200
+Subject: [RHEL6 qemu-kvm PATCH 18/23] trace: Format strings must begin/end with double quotes
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1293468492-25473-17-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 15299
+O-Subject: [PATCH 16/20] trace: Format strings must begin/end with double quotes
+Bugzilla: 632722
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+Document the restriction that format strings must begin and end with
+double quotes.  This is for easy parsing since we don't run cpp over
+trace-events.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+(cherry picked from commit cf85cf8e972f3ad79f203be4edb7968d6e052293)
+---
+ docs/tracing.txt |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ docs/tracing.txt |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
+
+diff --git a/docs/tracing.txt b/docs/tracing.txt
+index 5504850..963c504 100644
+--- a/docs/tracing.txt
++++ b/docs/tracing.txt
+@@ -74,7 +74,10 @@ Trace events should use types as follows:
+ 
+ Format strings should reflect the types defined in the trace event.  Take
+ special care to use PRId64 and PRIu64 for int64_t and uint64_t types,
+-respectively.  This ensures portability between 32- and 64-bit platforms.
++respectively.  This ensures portability between 32- and 64-bit platforms.  Note
++that format strings must begin and end with double quotes.  When using
++portability macros, ensure they are preceded and followed by double quotes:
++"value %"PRIx64"".
+ 
+ === Hints for adding new trace events ===
+ 
+-- 
+1.7.3.2
+

@@ -1,0 +1,63 @@
+From 0a64290d496754ae7872b66b35909e44d1ef2c08 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 27 Dec 2010 16:48:03 -0200
+Subject: [RHEL6 qemu-kvm PATCH 13/23] trace: avoid unnecessary recompilation if nothing changed
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1293468492-25473-12-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 15294
+O-Subject: [PATCH 11/20] trace: avoid unnecessary recompilation if nothing
+	changed
+Bugzilla: 632722
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+
+From: Blue Swirl <blauwirbel@gmail.com>
+
+Add logic to detect changes in generated files. If the old
+and new files are identical, don't touch the generated file.
+This avoids a lot of churn since many files depend on trace.h.
+
+Based on suggestion by Paolo Bonzini.
+
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+(cherry picked from commit a82cdd58fd9ffa8c651f51de8d855f6baf708681)
+---
+ Makefile |   14 +++++++++-----
+ 1 files changed, 9 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile |   14 +++++++++-----
+ 1 files changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index f48af9f..fc27af7 100644
+--- a/Makefile
++++ b/Makefile
+@@ -249,11 +249,15 @@ bt-host.o: QEMU_CFLAGS += $(BLUEZ_CFLAGS)
+ 
+ libqemu_common.a: $(obj-y)
+ 
+-trace.h: $(SRC_PATH)/trace-events config-host.mak
+-	$(call quiet-command,sh $(SRC_PATH)/tracetool --$(TRACE_BACKEND) -h < $< > $@,"  GEN   $@")
+-
+-trace.c: $(SRC_PATH)/trace-events config-host.mak
+-	$(call quiet-command,sh $(SRC_PATH)/tracetool --$(TRACE_BACKEND) -c < $< > $@,"  GEN   $@")
++trace.h: trace.h-timestamp
++trace.h-timestamp: $(SRC_PATH)/trace-events config-host.mak
++	$(call quiet-command,sh $(SRC_PATH)/tracetool --$(TRACE_BACKEND) -h < $< > $@,"  GEN   trace.h")
++	@cmp -s $@ trace.h || cp $@ trace.h
++
++trace.c: trace.c-timestamp
++trace.c-timestamp: $(SRC_PATH)/trace-events config-host.mak
++	$(call quiet-command,sh $(SRC_PATH)/tracetool --$(TRACE_BACKEND) -c < $< > $@,"  GEN   trace.c")
++	@cmp -s $@ trace.c || cp $@ trace.c
+ 
+ trace.o: trace.c $(GENERATED_HEADERS)
+ 
+-- 
+1.7.3.2
+

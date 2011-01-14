@@ -1,0 +1,137 @@
+From c3b1e5844cb5efe16ee6f08dc54fba59c6646a30 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 27 Dec 2010 16:47:54 -0200
+Subject: [RHEL6 qemu-kvm PATCH 04/23] trace: Support disabled events in trace-events
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1293468492-25473-3-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 15285
+O-Subject: [PATCH 02/20] trace: Support disabled events in trace-events
+Bugzilla: 632722
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+Sometimes it is useful to disable a trace event.  Removing the event
+from trace-events is not enough since source code will call the
+trace_*() function for the event.
+
+This patch makes it easy to build without specific trace events by
+marking them disabled in trace-events:
+
+disable multiwrite_cb(void *mcb, int ret) "mcb %p ret %d"
+
+This builds without the multiwrite_cb trace event.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+trace: Allow bulk enabling/disabling of trace events at compile time
+
+For 'simple' trace backend, allow bulk enabling/disabling of trace
+events at compile time.  Trace events that are preceded by 'disable'
+keyword are compiled in, but turned off by default. These can
+individually be turned on using the monitor.  All other trace events are
+enabled by default.
+
+TODO :
+This could be enhanced when the trace-event namespace is partitioned into a
+group and an ID within that group. In such a case, marking a group as enabled
+would automatically enable all trace-events listed under it.
+
+Signed-off-by: Prerna Saxena <prerna@linux.vnet.ibm.com>
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+(cherry picked from commit 1e2cf2bc455622f9e0903a360cdaf6b89ec949a2)
+---
+ trace-events |    7 ++++++-
+ tracetool    |   30 ++++++++++++++++++++++++++++--
+ 2 files changed, 34 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ trace-events |    7 ++++++-
+ tracetool    |   30 ++++++++++++++++++++++++++++--
+ 2 files changed, 34 insertions(+), 3 deletions(-)
+
+diff --git a/trace-events b/trace-events
+index a37d3cc..2a986ec 100644
+--- a/trace-events
++++ b/trace-events
+@@ -12,10 +12,15 @@
+ #
+ # Format of a trace event:
+ #
+-# <name>(<type1> <arg1>[, <type2> <arg2>] ...) "<format-string>"
++# [disable] <name>(<type1> <arg1>[, <type2> <arg2>] ...) "<format-string>"
+ #
+ # Example: qemu_malloc(size_t size) "size %zu"
+ #
++# The "disable" keyword will build without the trace event.
++# In case of 'simple' trace backend, it will allow the trace event to be
++# compiled, but this would be turned off by default. It can be toggled on via
++# the monitor.
++#
+ # The <name> must be a valid as a C function name.
+ #
+ # Types should be standard C types.  Use void * for pointers because the trace
+diff --git a/tracetool b/tracetool
+index 01de580..a36ce1c 100644
+--- a/tracetool
++++ b/tracetool
+@@ -75,6 +75,20 @@ get_fmt()
+     echo "$fmt"
+ }
+ 
++# Get the state of a trace event
++get_state()
++{
++    local str disable state
++    str=$(get_name "$1")
++    disable=${str##disable }
++    if [ "$disable" = "$str" ] ; then
++        state=1
++    else
++        state=0
++    fi
++    echo "$state"
++}
++
+ linetoh_begin_nop()
+ {
+     return
+@@ -118,7 +132,7 @@ linetoc_end_nop()
+ # Process stdin by calling begin, line, and end functions for the backend
+ convert()
+ {
+-    local begin process_line end
++    local begin process_line end str disable
+     begin="lineto$1_begin_$backend"
+     process_line="lineto$1_$backend"
+     end="lineto$1_end_$backend"
+@@ -130,8 +144,20 @@ convert()
+         str=${str%%#*}
+         test -z "$str" && continue
+ 
++        # Process the line.  The nop backend handles disabled lines.
++        disable=${str%%disable *}
+         echo
+-        "$process_line" "$str"
++        if test -z "$disable"; then
++            # Pass the disabled state as an arg to lineto$1_simple().
++            # For all other cases, call lineto$1_nop()
++            if [ $backend = "simple" ]; then
++                "$process_line" "$str"
++            else
++                "lineto$1_nop" "${str##disable }"
++            fi
++        else
++            "$process_line" "$str"
++        fi
+     done
+ 
+     echo
+-- 
+1.7.3.2
+

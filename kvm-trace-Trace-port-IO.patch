@@ -1,0 +1,104 @@
+From b996ebe587b7df03ebae8643b0c91c1ea48318cd Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 27 Dec 2010 16:47:59 -0200
+Subject: [RHEL6 qemu-kvm PATCH 09/23] trace: Trace port IO
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1293468492-25473-8-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 15290
+O-Subject: [PATCH 07/20] trace: Trace port IO
+Bugzilla: 632722
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+
+From: Prerna Saxena <prerna@linux.vnet.ibm.com>
+
+Signed-off-by: Prerna Saxena <prerna@linux.vnet.ibm.com>
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+(cherry picked from commit bd3c9aa5319ba2656a0dd8faae2c68b7feb39d1c)
+---
+ ioport.c     |    7 +++++++
+ trace-events |    4 ++++
+ 2 files changed, 11 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ ioport.c     |    7 +++++++
+ trace-events |    4 ++++
+ 2 files changed, 11 insertions(+), 0 deletions(-)
+
+diff --git a/ioport.c b/ioport.c
+index 53dd87a..ec3dc65 100644
+--- a/ioport.c
++++ b/ioport.c
+@@ -26,6 +26,7 @@
+  */
+ 
+ #include "ioport.h"
++#include "trace.h"
+ 
+ /***********************************************************/
+ /* IO Port */
+@@ -195,18 +196,21 @@ void isa_unassign_ioport(pio_addr_t start, int length)
+ void cpu_outb(pio_addr_t addr, uint8_t val)
+ {
+     LOG_IOPORT("outb: %04"FMT_pioaddr" %02"PRIx8"\n", addr, val);
++    trace_cpu_out(addr, val);
+     ioport_write(0, addr, val);
+ }
+ 
+ void cpu_outw(pio_addr_t addr, uint16_t val)
+ {
+     LOG_IOPORT("outw: %04"FMT_pioaddr" %04"PRIx16"\n", addr, val);
++    trace_cpu_out(addr, val);
+     ioport_write(1, addr, val);
+ }
+ 
+ void cpu_outl(pio_addr_t addr, uint32_t val)
+ {
+     LOG_IOPORT("outl: %04"FMT_pioaddr" %08"PRIx32"\n", addr, val);
++    trace_cpu_out(addr, val);
+     ioport_write(2, addr, val);
+ }
+ 
+@@ -214,6 +218,7 @@ uint8_t cpu_inb(pio_addr_t addr)
+ {
+     uint8_t val;
+     val = ioport_read(0, addr);
++    trace_cpu_in(addr, val);
+     LOG_IOPORT("inb : %04"FMT_pioaddr" %02"PRIx8"\n", addr, val);
+     return val;
+ }
+@@ -222,6 +227,7 @@ uint16_t cpu_inw(pio_addr_t addr)
+ {
+     uint16_t val;
+     val = ioport_read(1, addr);
++    trace_cpu_in(addr, val);
+     LOG_IOPORT("inw : %04"FMT_pioaddr" %04"PRIx16"\n", addr, val);
+     return val;
+ }
+@@ -230,6 +236,7 @@ uint32_t cpu_inl(pio_addr_t addr)
+ {
+     uint32_t val;
+     val = ioport_read(2, addr);
++    trace_cpu_in(addr, val);
+     LOG_IOPORT("inl : %04"FMT_pioaddr" %08"PRIx32"\n", addr, val);
+     return val;
+ }
+diff --git a/trace-events b/trace-events
+index 29580a5..b2c7f10 100644
+--- a/trace-events
++++ b/trace-events
+@@ -59,3 +59,7 @@ disable virtio_blk_handle_write(void *req, unsigned long sector, unsigned long n
+ 
+ # posix-aio-compat.c
+ disable paio_submit(void *acb, void *opaque, unsigned long sector_num, unsigned long nb_sectors, unsigned long type) "acb %p opaque %p sector_num %lu nb_sectors %lu type %lu"
++
++# ioport.c
++disable cpu_in(unsigned int addr, unsigned int val) "addr %#x value %u"
++disable cpu_out(unsigned int addr, unsigned int val) "addr %#x value %u"
+-- 
+1.7.3.2
+

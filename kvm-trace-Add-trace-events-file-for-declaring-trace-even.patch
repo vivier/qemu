@@ -1,0 +1,424 @@
+From f73b9949b5b318af9ba847f4701a4b0ee7aa4b2b Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 27 Dec 2010 16:47:53 -0200
+Subject: [RHEL6 qemu-kvm PATCH 03/23] trace: Add trace-events file for declaring trace events
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1293468492-25473-2-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 15284
+O-Subject: [PATCH 01/20] trace: Add trace-events file for declaring trace events
+Bugzilla: 632722
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+This patch introduces the trace-events file where trace events can be
+declared like so:
+
+qemu_malloc(size_t size) "size %zu"
+qemu_free(void *ptr) "ptr %p"
+
+These trace event declarations are processed by a new tool called
+tracetool to generate code for the trace events.  Trace event
+declarations are independent of the backend tracing system (LTTng User
+Space Tracing, ftrace markers, DTrace).
+
+The default "nop" backend generates empty trace event functions.
+Therefore trace events are disabled by default.
+
+The trace-events file serves two purposes:
+
+1. Adding trace events is easy.  It is not necessary to understand the
+   details of a backend tracing system.  The trace-events file is a
+   single location where trace events can be declared without code
+   duplication.
+
+2. QEMU is not tightly coupled to one particular backend tracing system.
+   In order to support tracing across QEMU host platforms and to
+   anticipate new backend tracing systems that are currently maturing,
+   it is important to be flexible and not tied to one system.
+
+This commit includes fixes from Prerna Saxena
+<prerna@linux.vnet.ibm.com> and Blue Swirl <blauwirbel@gmail.com>.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+(cherry picked from commit 94a420b170b3e997a185a4148accc87bdcd18156)
+---
+ .gitignore      |    2 +
+ Makefile        |   15 ++++-
+ Makefile.target |    1 +
+ configure       |   19 ++++++
+ trace-events    |   24 ++++++++
+ tracetool       |  175 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 6 files changed, 234 insertions(+), 2 deletions(-)
+ create mode 100644 trace-events
+ create mode 100644 tracetool
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ .gitignore      |    2 +
+ Makefile        |   15 ++++-
+ Makefile.target |    1 +
+ configure       |   19 ++++++
+ trace-events    |   24 ++++++++
+ tracetool       |  175 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 6 files changed, 234 insertions(+), 2 deletions(-)
+ create mode 100644 trace-events
+ create mode 100644 tracetool
+
+diff --git a/.gitignore b/.gitignore
+index bbd4d17..ac04793 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -2,6 +2,8 @@ config-devices.*
+ config-all-devices.*
+ config-host.*
+ config-target.*
++trace.h
++trace.c
+ i386
+ *-softmmu
+ *-darwin-user
+diff --git a/Makefile b/Makefile
+index 878d65f..f48af9f 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,7 +1,7 @@
+ # Makefile for QEMU.
+ 
+ # This needs to be defined before rules.mak
+-GENERATED_HEADERS = config-host.h
++GENERATED_HEADERS = config-host.h trace.h
+ 
+ ifneq ($(wildcard config-host.mak),)
+ # Put the all: rule here so that config-host.mak can contain dependencies.
+@@ -131,9 +131,11 @@ net-nested-$(CONFIG_SLIRP) += slirp.o
+ net-nested-$(CONFIG_VDE) += vde.o
+ net-obj-y += $(addprefix net/, $(net-nested-y))
+ 
++trace-obj-y = trace.o
++
+ ######################################################################
+ # shared-obj-y has the object that are shared by qemu binary and tools
+-shared-obj-y = qemu-error.o $(block-obj-y) $(qobject-obj-y)
++shared-obj-y = qemu-error.o $(trace-obj-y) $(block-obj-y) $(qobject-obj-y)
+ 
+ ######################################################################
+ # libqemu_common.a: Target independent part of system emulation. The
+@@ -247,6 +249,14 @@ bt-host.o: QEMU_CFLAGS += $(BLUEZ_CFLAGS)
+ 
+ libqemu_common.a: $(obj-y)
+ 
++trace.h: $(SRC_PATH)/trace-events config-host.mak
++	$(call quiet-command,sh $(SRC_PATH)/tracetool --$(TRACE_BACKEND) -h < $< > $@,"  GEN   $@")
++
++trace.c: $(SRC_PATH)/trace-events config-host.mak
++	$(call quiet-command,sh $(SRC_PATH)/tracetool --$(TRACE_BACKEND) -c < $< > $@,"  GEN   $@")
++
++trace.o: trace.c $(GENERATED_HEADERS)
++
+ ######################################################################
+ 
+ qemu-img.o: qemu-img-cmds.h
+@@ -275,6 +285,7 @@ clean:
+ 	rm -f *.o *.d *.a $(TOOLS) TAGS cscope.* *.pod *~ */*~
+ 	rm -f slirp/*.o slirp/*.d audio/*.o audio/*.d block/*.o block/*.d net/*.o net/*.d
+ 	rm -f qemu-img-cmds.h
++	rm -f trace.c trace.h
+ 	$(MAKE) -C tests clean
+ 	for d in $(ALL_SUBDIRS) libhw32 libhw64 libuser; do \
+ 	if test -d $$d; then $(MAKE) -C $$d $@ || exit 1; fi; \
+diff --git a/Makefile.target b/Makefile.target
+index a18522c..9ef43e5 100644
+--- a/Makefile.target
++++ b/Makefile.target
+@@ -345,6 +345,7 @@ ARLIBS=../libqemu_common.a libqemu.a $(HWLIB)
+ 
+ endif # CONFIG_SOFTMMU
+ 
++obj-y += $(addprefix ../, $(trace-obj-y))
+ obj-$(CONFIG_GDBSTUB_XML) += gdbstub-xml.o
+ 
+ $(QEMU_PROG): $(obj-y) $(obj-$(TARGET_BASE_ARCH)-y) $(ARLIBS)
+diff --git a/configure b/configure
+index d767802..2a3d63a 100755
+--- a/configure
++++ b/configure
+@@ -277,6 +277,7 @@ check_utests="no"
+ user_pie="no"
+ zero_malloc=""
+ spice=""
++trace_backend="nop"
+ fake_machine="no"
+ 
+ # OS specific
+@@ -476,6 +477,8 @@ for opt do
+   ;;
+   --target-list=*) target_list="$optarg"
+   ;;
++  --trace-backend=*) trace_backend="$optarg"
++  ;;
+   --enable-gprof) gprof="yes"
+   ;;
+   --static) static="yes"
+@@ -826,6 +829,7 @@ echo "  --with-kvm-trace         enable building the KVM module with the kvm tra
+ echo "  --disable-cpu-emulation  disables use of qemu cpu emulation code"
+ echo "  --disable-vhost-net      disable vhost-net acceleration support"
+ echo "  --enable-vhost-net       enable vhost-net acceleration support"
++echo "  --trace-backend=B        Trace backend nop"
+ echo "  --disable-fake-machine   disable -fake-machine option"
+ echo "  --enable-fake-machine    enable -fake-machine option"
+ echo ""
+@@ -2006,6 +2010,18 @@ if compile_prog "" "" ; then
+     fdatasync=yes
+ fi
+ 
++##########################################
++# check if trace backend exists
++
++sh "$source_path/tracetool" "--$trace_backend" --check-backend > /dev/null 2> /dev/null
++if test "$?" -ne 0 ; then
++  echo
++  echo "Error: invalid trace backend"
++  echo "Please choose a supported trace backend."
++  echo
++  exit 1
++fi
++
+ # End of CC checks
+ # After here, no more $cc or $ld runs
+ 
+@@ -2156,6 +2172,7 @@ echo "uuid support      $uuid"
+ echo "vhost-net support $vhost_net"
+ echo "-fake-machine     $fake_machine"
+ echo "Spice             $spice"
++echo "Trace backend     $trace_backend"
+ 
+ if test $sdl_too_old = "yes"; then
+ echo "-> Your SDL version is too old - please upgrade to have SDL support"
+@@ -2419,6 +2436,8 @@ esac
+ 
+ echo "KVM_KMOD=$kvm_kmod" >> $config_host_mak
+ 
++echo "TRACE_BACKEND=$trace_backend" >> $config_host_mak
++
+ tools=
+ if test `expr "$target_list" : ".*softmmu.*"` != 0 ; then
+   tools="qemu-img\$(EXESUF) qemu-io\$(EXESUF) $tools"
+diff --git a/trace-events b/trace-events
+new file mode 100644
+index 0000000..a37d3cc
+--- /dev/null
++++ b/trace-events
+@@ -0,0 +1,24 @@
++# Trace events for debugging and performance instrumentation
++#
++# This file is processed by the tracetool script during the build.
++#
++# To add a new trace event:
++#
++# 1. Choose a name for the trace event.  Declare its arguments and format
++#    string.
++#
++# 2. Call the trace event from code using trace_##name, e.g. multiwrite_cb() ->
++#    trace_multiwrite_cb().  The source file must #include "trace.h".
++#
++# Format of a trace event:
++#
++# <name>(<type1> <arg1>[, <type2> <arg2>] ...) "<format-string>"
++#
++# Example: qemu_malloc(size_t size) "size %zu"
++#
++# The <name> must be a valid as a C function name.
++#
++# Types should be standard C types.  Use void * for pointers because the trace
++# system may not have the necessary headers included.
++#
++# The <format-string> should be a sprintf()-compatible format string.
+diff --git a/tracetool b/tracetool
+new file mode 100644
+index 0000000..01de580
+--- /dev/null
++++ b/tracetool
+@@ -0,0 +1,175 @@
++#!/bin/sh
++#
++# Code generator for trace events
++#
++# Copyright IBM, Corp. 2010
++#
++# This work is licensed under the terms of the GNU GPL, version 2.  See
++# the COPYING file in the top-level directory.
++
++# Disable pathname expansion, makes processing text with '*' characters simpler
++set -f
++
++usage()
++{
++    cat >&2 <<EOF
++usage: $0 --nop [-h | -c]
++Generate tracing code for a file on stdin.
++
++Backends:
++  --nop Tracing disabled
++
++Output formats:
++  -h    Generate .h file
++  -c    Generate .c file
++EOF
++    exit 1
++}
++
++# Get the name of a trace event
++get_name()
++{
++    echo ${1%%\(*}
++}
++
++# Get the argument list of a trace event, including types and names
++get_args()
++{
++    local args
++    args=${1#*\(}
++    args=${args%)*}
++    echo "$args"
++}
++
++# Get the argument name list of a trace event
++get_argnames()
++{
++    local nfields field name
++    nfields=0
++    for field in $(get_args "$1"); do
++        nfields=$((nfields + 1))
++
++        # Drop pointer star
++        field=${field#\*}
++
++        # Only argument names have commas at the end
++        name=${field%,}
++        test "$field" = "$name" && continue
++
++        printf "%s" "$name, "
++    done
++
++    # Last argument name
++    if [ "$nfields" -gt 1 ]
++    then
++        printf "%s" "$name"
++    fi
++}
++
++# Get the format string for a trace event
++get_fmt()
++{
++    local fmt
++    fmt=${1#*\"}
++    fmt=${fmt%\"*}
++    echo "$fmt"
++}
++
++linetoh_begin_nop()
++{
++    return
++}
++
++linetoh_nop()
++{
++    local name args
++    name=$(get_name "$1")
++    args=$(get_args "$1")
++
++    # Define an empty function for the trace event
++    cat <<EOF
++static inline void trace_$name($args)
++{
++}
++EOF
++}
++
++linetoh_end_nop()
++{
++    return
++}
++
++linetoc_begin_nop()
++{
++    return
++}
++
++linetoc_nop()
++{
++    # No need for function definitions in nop backend
++    return
++}
++
++linetoc_end_nop()
++{
++    return
++}
++
++# Process stdin by calling begin, line, and end functions for the backend
++convert()
++{
++    local begin process_line end
++    begin="lineto$1_begin_$backend"
++    process_line="lineto$1_$backend"
++    end="lineto$1_end_$backend"
++
++    "$begin"
++
++    while read -r str; do
++        # Skip comments and empty lines
++        str=${str%%#*}
++        test -z "$str" && continue
++
++        echo
++        "$process_line" "$str"
++    done
++
++    echo
++    "$end"
++}
++
++tracetoh()
++{
++    cat <<EOF
++#ifndef TRACE_H
++#define TRACE_H
++
++/* This file is autogenerated by tracetool, do not edit. */
++
++#include "qemu-common.h"
++EOF
++    convert h
++    echo "#endif /* TRACE_H */"
++}
++
++tracetoc()
++{
++    echo "/* This file is autogenerated by tracetool, do not edit. */"
++    convert c
++}
++
++# Choose backend
++case "$1" in
++"--nop") backend="${1#--}" ;;
++*) usage ;;
++esac
++shift
++
++case "$1" in
++"-h") tracetoh ;;
++"-c") tracetoc ;;
++"--check-backend") exit 0 ;; # used by ./configure to test for backend
++*) usage ;;
++esac
++
++exit 0
+-- 
+1.7.3.2
+

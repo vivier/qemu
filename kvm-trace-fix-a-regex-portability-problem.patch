@@ -1,0 +1,50 @@
+From 3a56b739490a1092cc44a7e282ba0aa72a696bb4 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 27 Dec 2010 16:48:02 -0200
+Subject: [RHEL6 qemu-kvm PATCH 12/23] trace: fix a regex portability problem
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1293468492-25473-11-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 15293
+O-Subject: [PATCH 10/20] trace: fix a regex portability problem
+Bugzilla: 632722
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+
+From: Blue Swirl <blauwirbel@gmail.com>
+
+The /bin/sh in Milax has problems with the regex:
+Error: invalid trace backend
+Please choose a supported trace backend.
+
+Fix it by escaping ')' like the regexes with '('.
+
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+(cherry picked from commit 2184d75b4a6a253e8b1e002b3dbcc85c20ba6041)
+---
+ tracetool |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ tracetool |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/tracetool b/tracetool
+index a36ce1c..7092ff9 100644
+--- a/tracetool
++++ b/tracetool
+@@ -37,7 +37,7 @@ get_args()
+ {
+     local args
+     args=${1#*\(}
+-    args=${args%)*}
++    args=${args%\)*}
+     echo "$args"
+ }
+ 
+-- 
+1.7.3.2
+

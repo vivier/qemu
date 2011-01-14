@@ -1,0 +1,70 @@
+From 13daaf8b3dc0435cfa9fdfbb99251f90a79c629b Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 27 Dec 2010 16:48:04 -0200
+Subject: [RHEL6 qemu-kvm PATCH 14/23] trace: Use portable format strings
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1293468492-25473-13-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 15295
+O-Subject: [PATCH 12/20] trace: Use portable format strings
+Bugzilla: 632722
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+It is not portable to use "%ld" for int64_t because int64_t may have
+type long on 64-bit platforms and long long on 32-bit platforms.  Use
+the standard library PRId64 macros to keep format strings portable.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+(cherry picked from commit 9a85d3944715c709d740edb987b84bd657b9d7ef)
+---
+ docs/tracing.txt |    4 ++++
+ trace-events     |    4 ++--
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ docs/tracing.txt |    4 ++++
+ trace-events     |    4 ++--
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/docs/tracing.txt b/docs/tracing.txt
+index ae01ff1..5504850 100644
+--- a/docs/tracing.txt
++++ b/docs/tracing.txt
+@@ -72,6 +72,10 @@ Trace events should use types as follows:
+  * For everything else, use primitive scalar types (char, int, long) with the
+    appropriate signedness.
+ 
++Format strings should reflect the types defined in the trace event.  Take
++special care to use PRId64 and PRIu64 for int64_t and uint64_t types,
++respectively.  This ensures portability between 32- and 64-bit platforms.
++
+ === Hints for adding new trace events ===
+ 
+ 1. Trace state changes in the code.  Interesting points in the code usually
+diff --git a/trace-events b/trace-events
+index f32c83f..b43317e 100644
+--- a/trace-events
++++ b/trace-events
+@@ -55,10 +55,10 @@ disable bdrv_aio_multiwrite_latefail(void *mcb, int i) "mcb %p i %d"
+ # hw/virtio-blk.c
+ disable virtio_blk_req_complete(void *req, int status) "req %p status %d"
+ disable virtio_blk_rw_complete(void *req, int ret) "req %p ret %d"
+-disable virtio_blk_handle_write(void *req, unsigned long sector, unsigned long nsectors) "req %p sector %lu nsectors %lu"
++disable virtio_blk_handle_write(void *req, uint64_t sector, size_t nsectors) "req %p sector %"PRIu64" nsectors %zu"
+ 
+ # posix-aio-compat.c
+-disable paio_submit(void *acb, void *opaque, unsigned long sector_num, unsigned long nb_sectors, unsigned long type) "acb %p opaque %p sector_num %lu nb_sectors %lu type %lu"
++disable paio_submit(void *acb, void *opaque, int64_t sector_num, int nb_sectors, int type) "acb %p opaque %p sector_num %"PRId64" nb_sectors %d type %d"
+ 
+ # ioport.c
+ disable cpu_in(unsigned int addr, unsigned int val) "addr %#x value %u"
+-- 
+1.7.3.2
+

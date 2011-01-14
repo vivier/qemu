@@ -1,0 +1,161 @@
+From 2bee471d66cf8ea67821acc30c28c1178edd2cbe Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 27 Dec 2010 16:48:09 -0200
+Subject: [RHEL6 qemu-kvm PATCH 19/23] apic: convert debug printf statements to tracepoints
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1293468492-25473-18-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 15300
+O-Subject: [PATCH 17/20] apic: convert debug printf statements to tracepoints
+Bugzilla: 632722
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+
+From: Blue Swirl <blauwirbel@gmail.com>
+
+Replace debug printf statements with tracepoints.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+(cherry picked from commit d8023f311499e06c02b4da7e74388d7ad906ea23)
+---
+ hw/apic.c    |   33 ++++++++++++++++++++-------------
+ trace-events |   12 ++++++++++++
+ 2 files changed, 32 insertions(+), 13 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/apic.c    |   33 ++++++++++++++++++++-------------
+ trace-events |   12 ++++++++++++
+ 2 files changed, 32 insertions(+), 13 deletions(-)
+
+diff --git a/hw/apic.c b/hw/apic.c
+index e760fe1..383eeae 100644
+--- a/hw/apic.c
++++ b/hw/apic.c
+@@ -23,6 +23,7 @@
+ #include "qemu-timer.h"
+ #include "host-utils.h"
+ #include "kvm.h"
++#include "trace.h"
+ 
+ #include "qemu-kvm.h"
+ 
+@@ -159,6 +160,8 @@ static void apic_local_deliver(CPUState *env, int vector)
+     uint32_t lvt = s->lvt[vector];
+     int trigger_mode;
+ 
++    trace_apic_local_deliver(vector, (lvt >> 8) & 7);
++
+     if (lvt & APIC_LVT_MASKED)
+         return;
+ 
+@@ -288,6 +291,9 @@ void apic_deliver_irq(uint8_t dest, uint8_t dest_mode,
+ {
+     uint32_t deliver_bitmask[MAX_APIC_WORDS];
+ 
++    trace_apic_deliver_irq(dest, dest_mode, delivery_mode, vector_num,
++                           polarity, trigger_mode);
++
+     apic_get_delivery_bitmask(deliver_bitmask, dest, dest_mode);
+     apic_bus_deliver(deliver_bitmask, delivery_mode, vector_num, polarity,
+                      trigger_mode);
+@@ -296,9 +302,9 @@ void apic_deliver_irq(uint8_t dest, uint8_t dest_mode,
+ void cpu_set_apic_base(CPUState *env, uint64_t val)
+ {
+     APICState *s = env->apic_state;
+-#ifdef DEBUG_APIC
+-    printf("cpu_set_apic_base: %016" PRIx64 "\n", val);
+-#endif
++
++    trace_cpu_set_apic_base(val);
++
+     if (!s)
+         return;
+     if (kvm_enabled() && kvm_irqchip_in_kernel())
+@@ -317,10 +323,9 @@ void cpu_set_apic_base(CPUState *env, uint64_t val)
+ uint64_t cpu_get_apic_base(CPUState *env)
+ {
+     APICState *s = env->apic_state;
+-#ifdef DEBUG_APIC
+-    printf("cpu_get_apic_base: %016" PRIx64 "\n",
+-           s ? (uint64_t)s->apicbase: 0);
+-#endif
++
++    trace_cpu_get_apic_base(s ? (uint64_t)s->apicbase: 0);
++
+     return s ? s->apicbase : 0;
+ }
+ 
+@@ -390,11 +395,15 @@ static void apic_update_irq(APICState *s)
+ 
+ void apic_reset_irq_delivered(void)
+ {
++    trace_apic_reset_irq_delivered(apic_irq_delivered);
++
+     apic_irq_delivered = 0;
+ }
+ 
+ int apic_get_irq_delivered(void)
+ {
++    trace_apic_get_irq_delivered(apic_irq_delivered);
++
+     return apic_irq_delivered;
+ }
+ 
+@@ -407,6 +416,8 @@ static void apic_set_irq(APICState *s, int vector_num, int trigger_mode)
+ {
+     apic_irq_delivered += !get_bit(s->irr, vector_num);
+ 
++    trace_apic_set_irq(apic_irq_delivered);
++
+     set_bit(s->irr, vector_num);
+     if (trigger_mode)
+         set_bit(s->tmr, vector_num);
+@@ -772,9 +783,7 @@ static uint32_t apic_mem_readl(void *opaque, target_phys_addr_t addr)
+         val = 0;
+         break;
+     }
+-#ifdef DEBUG_APIC
+-    printf("APIC read: %08x = %08x\n", (uint32_t)addr, val);
+-#endif
++    trace_apic_mem_readl(addr, val);
+     return val;
+ }
+ 
+@@ -809,9 +818,7 @@ static void apic_mem_writel(void *opaque, target_phys_addr_t addr, uint32_t val)
+         return;
+     s = env->apic_state;
+ 
+-#ifdef DEBUG_APIC
+-    printf("APIC write: %08x = %08x\n", (uint32_t)addr, val);
+-#endif
++    trace_apic_mem_writel(addr, val);
+ 
+     switch(index) {
+     case 0x02:
+diff --git a/trace-events b/trace-events
+index 4300178..ed2055e 100644
+--- a/trace-events
++++ b/trace-events
+@@ -69,3 +69,15 @@ disable cpu_out(unsigned int addr, unsigned int val) "addr %#x value %u"
+ # balloon.c
+ # Since requests are raised via monitor, not many tracepoints are needed.
+ disable balloon_event(void *opaque, unsigned long addr) "opaque %p addr %lu"
++
++# hw/apic.c
++disable apic_local_deliver(int vector, uint32_t lvt) "vector %d delivery mode %d"
++disable apic_deliver_irq(uint8_t dest, uint8_t dest_mode, uint8_t delivery_mode, uint8_t vector_num, uint8_t polarity, uint8_t trigger_mode) "dest %d dest_mode %d delivery_mode %d vector %d polarity %d trigger_mode %d"
++disable cpu_set_apic_base(uint64_t val) "%016"PRIx64""
++disable cpu_get_apic_base(uint64_t val) "%016"PRIx64""
++disable apic_mem_readl(uint64_t addr, uint32_t val)  "%"PRIx64" = %08x"
++disable apic_mem_writel(uint64_t addr, uint32_t val) "%"PRIx64" = %08x"
++# coalescing
++disable apic_reset_irq_delivered(int apic_irq_delivered) "old coalescing %d"
++disable apic_get_irq_delivered(int apic_irq_delivered) "returning coalescing %d"
++disable apic_set_irq(int apic_irq_delivered) "coalescing %d"
+-- 
+1.7.3.2
+

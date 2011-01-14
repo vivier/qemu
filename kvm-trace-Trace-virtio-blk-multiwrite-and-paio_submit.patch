@@ -1,0 +1,170 @@
+From 0dfaf62b57bb669dfb356ff5117becc6d9e8661d Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 27 Dec 2010 16:47:57 -0200
+Subject: [RHEL6 qemu-kvm PATCH 07/23] trace: Trace virtio-blk, multiwrite, and paio_submit
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1293468492-25473-6-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 15288
+O-Subject: [PATCH 05/20] trace: Trace virtio-blk, multiwrite, and paio_submit
+Bugzilla: 632722
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+This patch adds trace events that make it possible to observe
+virtio-blk.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+(cherry picked from commit 6d519a5f95960176039baf0af8799fa289915534)
+---
+ block.c            |    8 ++++++++
+ hw/virtio-blk.c    |    7 +++++++
+ posix-aio-compat.c |    2 ++
+ trace-events       |   14 ++++++++++++++
+ 4 files changed, 31 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c            |    8 ++++++++
+ hw/virtio-blk.c    |    7 +++++++
+ posix-aio-compat.c |    2 ++
+ trace-events       |   14 ++++++++++++++
+ 4 files changed, 31 insertions(+), 0 deletions(-)
+
+diff --git a/block.c b/block.c
+index f7457c9..dc3e1df 100644
+--- a/block.c
++++ b/block.c
+@@ -23,6 +23,7 @@
+  */
+ #include "config-host.h"
+ #include "qemu-common.h"
++#include "trace.h"
+ #include "monitor.h"
+ #include "block_int.h"
+ #include "module.h"
+@@ -1966,6 +1967,8 @@ static void multiwrite_cb(void *opaque, int ret)
+ {
+     MultiwriteCB *mcb = opaque;
+ 
++    trace_multiwrite_cb(mcb, ret);
++
+     if (ret < 0 && !mcb->error) {
+         mcb->error = ret;
+     }
+@@ -2106,6 +2109,8 @@ int bdrv_aio_multiwrite(BlockDriverState *bs, BlockRequest *reqs, int num_reqs)
+     // Check for mergable requests
+     num_reqs = multiwrite_merge(bs, reqs, num_reqs, mcb);
+ 
++    trace_bdrv_aio_multiwrite(mcb, mcb->num_callbacks, num_reqs);
++
+     /*
+      * Run the aio requests. As soon as one request can't be submitted
+      * successfully, fail all requests that are not yet submitted (we must
+@@ -2127,6 +2132,7 @@ int bdrv_aio_multiwrite(BlockDriverState *bs, BlockRequest *reqs, int num_reqs)
+      */
+     mcb->num_requests = 1;
+ 
++    // Run the aio requests
+     for (i = 0; i < num_reqs; i++) {
+         mcb->num_requests++;
+         acb = bdrv_aio_writev(bs, reqs[i].sector, reqs[i].qiov,
+@@ -2137,8 +2143,10 @@ int bdrv_aio_multiwrite(BlockDriverState *bs, BlockRequest *reqs, int num_reqs)
+             // submitted yet. Otherwise we'll wait for the submitted AIOs to
+             // complete and report the error in the callback.
+             if (i == 0) {
++                trace_bdrv_aio_multiwrite_earlyfail(mcb);
+                 goto fail;
+             } else {
++                trace_bdrv_aio_multiwrite_latefail(mcb, i);
+                 multiwrite_cb(mcb, -EIO);
+                 break;
+             }
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index f65d9b5..db7bba1 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -13,6 +13,7 @@
+ 
+ #include <qemu-common.h>
+ #include <sysemu.h>
++#include "trace.h"
+ #include "virtio-blk.h"
+ #include "block_int.h"
+ #ifdef __linux__
+@@ -51,6 +52,8 @@ static void virtio_blk_req_complete(VirtIOBlockReq *req, int status)
+ {
+     VirtIOBlock *s = req->dev;
+ 
++    trace_virtio_blk_req_complete(req, status);
++
+     req->in->status = status;
+     virtqueue_push(s->vq, &req->elem, req->qiov.size + sizeof(*req->in));
+     virtio_notify(&s->vdev, s->vq);
+@@ -88,6 +91,8 @@ static void virtio_blk_rw_complete(void *opaque, int ret)
+ {
+     VirtIOBlockReq *req = opaque;
+ 
++    trace_virtio_blk_rw_complete(req, ret);
++
+     if (ret) {
+         int is_read = !(req->out->type & VIRTIO_BLK_T_OUT);
+         if (virtio_blk_handle_rw_error(req, -ret, is_read))
+@@ -267,6 +272,8 @@ static void virtio_blk_handle_flush(BlockRequest *blkreq, int *num_writes,
+ static void virtio_blk_handle_write(BlockRequest *blkreq, int *num_writes,
+     VirtIOBlockReq *req, BlockDriverState **old_bs)
+ {
++    trace_virtio_blk_handle_write(req, req->out->sector, req->qiov.size / 512);
++
+     if (req->out->sector & req->dev->sector_mask) {
+         virtio_blk_rw_complete(req, -EIO);
+         return;
+diff --git a/posix-aio-compat.c b/posix-aio-compat.c
+index ea87fb8..047b7f1 100644
+--- a/posix-aio-compat.c
++++ b/posix-aio-compat.c
+@@ -25,6 +25,7 @@
+ #include "qemu-queue.h"
+ #include "osdep.h"
+ #include "qemu-common.h"
++#include "trace.h"
+ #include "block_int.h"
+ #include "compatfd.h"
+ 
+@@ -581,6 +582,7 @@ BlockDriverAIOCB *paio_submit(BlockDriverState *bs, int fd,
+     acb->next = posix_aio_state->first_aio;
+     posix_aio_state->first_aio = acb;
+ 
++    trace_paio_submit(acb, opaque, sector_num, nb_sectors, type);
+     qemu_paio_submit(acb);
+     return &acb->common;
+ }
+diff --git a/trace-events b/trace-events
+index d2f2bbc..de6479e 100644
+--- a/trace-events
++++ b/trace-events
+@@ -37,3 +37,17 @@ disable qemu_free(void *ptr) "ptr %p"
+ disable qemu_memalign(size_t alignment, size_t size, void *ptr) "alignment %zu size %zu ptr %p"
+ disable qemu_valloc(size_t size, void *ptr) "size %zu ptr %p"
+ disable qemu_vfree(void *ptr) "ptr %p"
++
++# block.c
++disable multiwrite_cb(void *mcb, int ret) "mcb %p ret %d"
++disable bdrv_aio_multiwrite(void *mcb, int num_callbacks, int num_reqs) "mcb %p num_callbacks %d num_reqs %d"
++disable bdrv_aio_multiwrite_earlyfail(void *mcb) "mcb %p"
++disable bdrv_aio_multiwrite_latefail(void *mcb, int i) "mcb %p i %d"
++
++# hw/virtio-blk.c
++disable virtio_blk_req_complete(void *req, int status) "req %p status %d"
++disable virtio_blk_rw_complete(void *req, int ret) "req %p ret %d"
++disable virtio_blk_handle_write(void *req, unsigned long sector, unsigned long nsectors) "req %p sector %lu nsectors %lu"
++
++# posix-aio-compat.c
++disable paio_submit(void *acb, void *opaque, unsigned long sector_num, unsigned long nb_sectors, unsigned long type) "acb %p opaque %p sector_num %lu nb_sectors %lu type %lu"
+-- 
+1.7.3.2
+

@@ -1,0 +1,108 @@
+From 52d55aad333d6e91743d2fd79ceaa74c5c74d2dc Mon Sep 17 00:00:00 2001
+From: john cooper <john.cooper@redhat.com>
+Date: Mon, 22 Nov 2010 20:17:41 -0200
+Subject: [RHEL6 qemu-kvm PATCH 02/23] BZ #647308 - Support Westmere as a CPU model or included within existing models..
+
+RH-Author: john cooper <john.cooper@redhat.com>
+Message-id: <4CEACFE5.4080002@redhat.com>
+Patchwork-id: 13810
+O-Subject: [RHEL6.1 PATCH 1/2 v2] BZ #647308 - Support Westmere as a CPU model
+	or included within existing models..
+Bugzilla: 647308
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+[Note: version 2 of this individual [1/2] patch]
+
+This patch adds Westmere as a qemu cpu model.  The only
+additional guest visible feature of a Westmere relative
+to Nehalem is the inclusion of AES instructions.  However
+as other non-ABI visible modifications exist along with
+fabrication changes, the CPUID data of the corresponding
+deployed silicon was altered slightly to reflect this.
+
+We've seen isolated cases where apparent unrelated yet
+slightly incoherent CPUID data has caused problems, most
+notably during guest boot.  Providing Westmere as a
+separate model allows us to address (hopefully eliminate)
+them.
+
+The balance of support lies with exposing a Westmere model
+via libvirt.
+
+Open issues:
+
+- the CPUID data is believed to be a reasonably accurate
+  Westmere least common denominator, however it is subject
+  to revision pending Intel feedback.  This is relatively
+  low risk.
+
+- extfeature_edx needs to be trimmed per BZ #632257 (patch
+  is in flight awaiting ACKs).  This is however a code
+  maintenance vs. functional concern.
+
+Upstream: AES cpuid flag already exists upstream.
+
+Test: launch a linux guest on a Westmere host as:
+
+    -cpu Westmere,enforce
+
+(qemu will error exit if the host < Westmere)
+
+On the guest verify "aes" is present in /proc/cpuinfo
+along with the expected Westmere family/model/stepping/level
+CPUID data.
+
+Brew build: https://brewweb.devel.redhat.com/taskinfo?taskID=2904951
+
+Signed-off-by: john cooper <john.cooper@redhat.com>
+---
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ sysconfigs/target/cpu-x86_64.conf |   14 ++++++++++++++
+ target-i386/helper.c              |    2 +-
+ 2 files changed, 15 insertions(+), 1 deletions(-)
+
+diff --git a/sysconfigs/target/cpu-x86_64.conf b/sysconfigs/target/cpu-x86_64.conf
+index e7a0fa3..9e51443 100644
+--- a/sysconfigs/target/cpu-x86_64.conf
++++ b/sysconfigs/target/cpu-x86_64.conf
+@@ -71,6 +71,20 @@
+    model_id = "Intel Core i7 9xx (Nehalem Class Core i7)"
+ 
+ [cpudef]
++   name = "Westmere"
++   level = "11"
++   vendor = "GenuineIntel"
++   family = "6"
++   model = "44"
++   stepping = "1"
++   feature_edx = "sse2 sse fxsr mmx pat cmov pge sep apic cx8 mce pae msr tsc pse de fpu    mtrr clflush mca pse36"
++   feature_ecx = "sse3 cx16 ssse3 sse4.1 sse4.2 x2apic popcnt aes"
++   extfeature_edx = "fxsr mmx pat cmov pge apic cx8 mce pae msr tsc pse de fpu    lm syscall nx"
++   extfeature_ecx = "lahf_lm"
++   xlevel = "0x8000000A"
++   model_id = "Westmere E56xx/L56xx/X56xx (Nehalem-C)"
++
++[cpudef]
+    name = "Opteron_G1"
+    level = "5"
+    vendor = "AuthenticAMD"
+diff --git a/target-i386/helper.c b/target-i386/helper.c
+index 55aa7fb..f9ae62a 100644
+--- a/target-i386/helper.c
++++ b/target-i386/helper.c
+@@ -55,7 +55,7 @@ static const char *ext_feature_name[] = {
+     NULL, "cx16", "xtpr", NULL,
+     NULL, NULL, "dca", "sse4.1|sse4_1",
+     "sse4.2|sse4_2", "x2apic", NULL, "popcnt",
+-    NULL, NULL, NULL, NULL,
++    NULL, "aes", NULL, NULL,
+     NULL, NULL, NULL, "hypervisor",
+ };
+ static const char *ext2_feature_name[] = {
+-- 
+1.7.3.2
+

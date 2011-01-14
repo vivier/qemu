@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.129
+%define pkgrelease 2.130
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -1641,6 +1641,50 @@ Patch1796: kvm-tap-add-APIs-for-vnet-header-length.patch
 Patch1797: kvm-vhost_net-mergeable-buffers-support.patch
 # For bz#623552 - SCP image fails from host to guest with vhost on when do migration
 Patch1798: kvm-vhost-Fix-address-calculation-in-vhost_dev_sync_regi.patch
+# For bz#632257 - Duplicate CPU fea.tures in cpu-x86_64.conf
+Patch1799: kvm-Bug-632257-Duplicate-CPU-fea.tures-in-cpu-x86_64.con.patch
+# For bz#647308 - Support Westmere as a CPU model or included within existing models..
+Patch1800: kvm-BZ-647308-Support-Westmere-as-a-CPU-model-or-include.patch
+# For bz#632722 - [6.1 FEAT] QEMU static tracing framework
+Patch1801: kvm-trace-Add-trace-events-file-for-declaring-trace-even.patch
+# For bz#632722 - [6.1 FEAT] QEMU static tracing framework
+Patch1802: kvm-trace-Support-disabled-events-in-trace-events.patch
+# For bz#632722 - [6.1 FEAT] QEMU static tracing framework
+Patch1803: kvm-trace-Add-user-documentation.patch
+# For bz#632722 - [6.1 FEAT] QEMU static tracing framework
+Patch1804: kvm-trace-Trace-qemu_malloc-and-qemu_vmalloc.patch
+# For bz#632722 - [6.1 FEAT] QEMU static tracing framework
+Patch1805: kvm-trace-Trace-virtio-blk-multiwrite-and-paio_submit.patch
+# For bz#632722 - [6.1 FEAT] QEMU static tracing framework
+Patch1806: kvm-trace-Trace-virtqueue-operations.patch
+# For bz#632722 - [6.1 FEAT] QEMU static tracing framework
+Patch1807: kvm-trace-Trace-port-IO.patch
+# For bz#632722 - [6.1 FEAT] QEMU static tracing framework
+Patch1808: kvm-trace-Trace-entry-point-of-balloon-request-handler.patch
+# For bz#632722 - [6.1 FEAT] QEMU static tracing framework
+Patch1809: kvm-trace-fix-a-typo.patch
+# For bz#632722 - [6.1 FEAT] QEMU static tracing framework
+Patch1810: kvm-trace-fix-a-regex-portability-problem.patch
+# For bz#632722 - [6.1 FEAT] QEMU static tracing framework
+Patch1811: kvm-trace-avoid-unnecessary-recompilation-if-nothing-cha.patch
+# For bz#632722 - [6.1 FEAT] QEMU static tracing framework
+Patch1812: kvm-trace-Use-portable-format-strings.patch
+# For bz#632722 - [6.1 FEAT] QEMU static tracing framework
+Patch1813: kvm-trace-Don-t-strip-lines-containing-arbitrarily.patch
+# For bz#632722 - [6.1 FEAT] QEMU static tracing framework
+Patch1814: kvm-trace-Trace-bdrv_aio_-readv-writev.patch
+# For bz#632722 - [6.1 FEAT] QEMU static tracing framework
+Patch1815: kvm-trace-remove-timestamp-files-when-cleaning-up.patch
+# For bz#632722 - [6.1 FEAT] QEMU static tracing framework
+Patch1816: kvm-trace-Format-strings-must-begin-end-with-double-quot.patch
+# For bz#632722 - [6.1 FEAT] QEMU static tracing framework
+Patch1817: kvm-apic-convert-debug-printf-statements-to-tracepoints.patch
+# For bz#632722 - [6.1 FEAT] QEMU static tracing framework
+Patch1818: kvm-Add-a-DTrace-tracing-backend-targetted-for-SystemTAP.patch
+# For bz#632722 - [6.1 FEAT] QEMU static tracing framework
+Patch1819: kvm-Add-support-for-generating-a-systemtap-tapset-static.patch
+# For bz#632722 - [6.1 FEAT] QEMU static tracing framework
+Patch1820: kvm-trace-Trace-vm_start-vm_stop.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -1652,6 +1696,8 @@ BuildRequires: libaio-devel
 
 # require spice-server API changes from bz#571286
 BuildRequires: spice-server-devel >= 0.4.2-10.el6
+
+BuildRequires: systemtap-sdt-devel
 
 Requires(post): /usr/bin/getent
 Requires(post): /usr/sbin/groupadd
@@ -2542,6 +2588,28 @@ ApplyOptionalPatch()
 %patch1796 -p1
 %patch1797 -p1
 %patch1798 -p1
+%patch1799 -p1
+%patch1800 -p1
+%patch1801 -p1
+%patch1802 -p1
+%patch1803 -p1
+%patch1804 -p1
+%patch1805 -p1
+%patch1806 -p1
+%patch1807 -p1
+%patch1808 -p1
+%patch1809 -p1
+%patch1810 -p1
+%patch1811 -p1
+%patch1812 -p1
+%patch1813 -p1
+%patch1814 -p1
+%patch1815 -p1
+%patch1816 -p1
+%patch1817 -p1
+%patch1818 -p1
+%patch1819 -p1
+%patch1820 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -2588,6 +2656,7 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
             --enable-spice \
             --enable-kvm-cap-pit \
             --enable-kvm-cap-device-assignment \
+	    --trace-backend=dtrace \
             %{fake_machine_arg}
 
 echo "config-host.mak contents:"
@@ -2666,6 +2735,11 @@ ln -s ../vgabios/VGABIOS-lgpl-latest.cirrus.bin %{buildroot}/%{_datadir}/%{name}
 ln -s ../vgabios/VGABIOS-lgpl-latest.qxl.bin %{buildroot}/%{_datadir}/%{name}/vgabios-qxl.bin
 ln -s ../seabios/bios.bin %{buildroot}/%{_datadir}/%{name}/bios.bin
 
+cd %{buildroot}/usr/share/systemtap/tapset
+mv qemu-system-x86_64.stp qemu-kvm.stp
+perl -i -p -e 's/qemu\.system\.x86_64/qemu.kvm/' qemu-kvm.stp
+perl -i -p -e 's/qemu-system-x86_64/qemu-kvm/' qemu-kvm.stp
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
@@ -2729,6 +2803,7 @@ fi
 %{_datadir}/%{name}/pxe-rtl8139.bin
 %{_datadir}/%{name}/pxe-ne2k_pci.bin
 %{_datadir}/%{name}/extboot.bin
+%{_datadir}/systemtap/tapset/qemu-kvm.stp
 %{_libexecdir}/qemu-kvm
 %{_sysconfdir}/sysconfig/modules/kvm.modules
 %{_sysconfdir}/udev/rules.d/80-kvm.rules
@@ -2746,6 +2821,37 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Jan 14 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.130.el6
+- kvm-Bug-632257-Duplicate-CPU-fea.tures-in-cpu-x86_64.con.patch [bz#632257]
+- kvm-BZ-647308-Support-Westmere-as-a-CPU-model-or-include.patch [bz#647308]
+- kvm-trace-Add-trace-events-file-for-declaring-trace-even.patch [bz#632722]
+- kvm-trace-Support-disabled-events-in-trace-events.patch [bz#632722]
+- kvm-trace-Add-user-documentation.patch [bz#632722]
+- kvm-trace-Trace-qemu_malloc-and-qemu_vmalloc.patch [bz#632722]
+- kvm-trace-Trace-virtio-blk-multiwrite-and-paio_submit.patch [bz#632722]
+- kvm-trace-Trace-virtqueue-operations.patch [bz#632722]
+- kvm-trace-Trace-port-IO.patch [bz#632722]
+- kvm-trace-Trace-entry-point-of-balloon-request-handler.patch [bz#632722]
+- kvm-trace-fix-a-typo.patch [bz#632722]
+- kvm-trace-fix-a-regex-portability-problem.patch [bz#632722]
+- kvm-trace-avoid-unnecessary-recompilation-if-nothing-cha.patch [bz#632722]
+- kvm-trace-Use-portable-format-strings.patch [bz#632722]
+- kvm-trace-Don-t-strip-lines-containing-arbitrarily.patch [bz#632722]
+- kvm-trace-Trace-bdrv_aio_-readv-writev.patch [bz#632722]
+- kvm-trace-remove-timestamp-files-when-cleaning-up.patch [bz#632722]
+- kvm-trace-Format-strings-must-begin-end-with-double-quot.patch [bz#632722]
+- kvm-apic-convert-debug-printf-statements-to-tracepoints.patch [bz#632722]
+- kvm-Add-a-DTrace-tracing-backend-targetted-for-SystemTAP.patch [bz#632722]
+- kvm-Add-support-for-generating-a-systemtap-tapset-static.patch [bz#632722]
+- kvm-trace-Trace-vm_start-vm_stop.patch [bz#632722]
+- spec file changes to enable trace support [bz#632722]
+- Resolves: bz#632257
+  (Duplicate CPU fea.tures in cpu-x86_64.conf)
+- Resolves: bz#632722
+  ([6.1 FEAT] QEMU static tracing framework)
+- Resolves: bz#647308
+  (Support Westmere as a CPU model or included within existing models..)
+
 * Mon Jan 10 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.129.el6
 - kvm-let-management-choose-whether-transparent-huge-pages.patch [bz#628308]
 - kvm-tap-generalize-code-for-different-vnet-header-len.patch [bz#616659]

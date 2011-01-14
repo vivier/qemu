@@ -1,0 +1,46 @@
+From 3cc3d1d46713db94c9065d35591c8bd35aa6af62 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 27 Dec 2010 16:48:01 -0200
+Subject: [RHEL6 qemu-kvm PATCH 11/23] trace: fix a typo
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1293468492-25473-10-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 15292
+O-Subject: [PATCH 09/20] trace: fix a typo
+Bugzilla: 632722
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+
+From: Blue Swirl <blauwirbel@gmail.com>
+
+There is no qemu_valloc() but qemu_vmalloc().
+
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+(cherry picked from commit dda8521197fa4b5e5bfdd932da54e2567fcff94e)
+---
+ trace-events |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ trace-events |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/trace-events b/trace-events
+index c5fa0aa..f32c83f 100644
+--- a/trace-events
++++ b/trace-events
+@@ -35,7 +35,7 @@ disable qemu_free(void *ptr) "ptr %p"
+ 
+ # osdep.c
+ disable qemu_memalign(size_t alignment, size_t size, void *ptr) "alignment %zu size %zu ptr %p"
+-disable qemu_valloc(size_t size, void *ptr) "size %zu ptr %p"
++disable qemu_vmalloc(size_t size, void *ptr) "size %zu ptr %p"
+ disable qemu_vfree(void *ptr) "ptr %p"
+ 
+ # hw/virtio.c
+-- 
+1.7.3.2
+

@@ -1,0 +1,51 @@
+From 3b1fee5256eb69d5ac21f97f50322edd55f3889b Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 27 Dec 2010 16:48:05 -0200
+Subject: [RHEL6 qemu-kvm PATCH 15/23] trace: Don't strip lines containing '#' arbitrarily
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1293468492-25473-14-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 15296
+O-Subject: [PATCH 13/20] trace: Don't strip lines containing '#' arbitrarily
+Bugzilla: 632722
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+Although comment lines must be skipped, the '#' character can occur in
+valid format strings.  Be more careful when checking for comments.
+Leave comments at the end of the line where they will not interfere with
+other processing.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+(cherry picked from commit 5eb5527b1eaec0955a91f8532424bb45611b7b0c)
+---
+ tracetool |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ tracetool |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+diff --git a/tracetool b/tracetool
+index 7092ff9..4e8ef32 100644
+--- a/tracetool
++++ b/tracetool
+@@ -141,8 +141,7 @@ convert()
+ 
+     while read -r str; do
+         # Skip comments and empty lines
+-        str=${str%%#*}
+-        test -z "$str" && continue
++        test -z "${str%%#*}" && continue
+ 
+         # Process the line.  The nop backend handles disabled lines.
+         disable=${str%%disable *}
+-- 
+1.7.3.2
+

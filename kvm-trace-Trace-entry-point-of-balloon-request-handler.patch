@@ -1,0 +1,67 @@
+From 6ab1a1c767e8450ce8db703ef08c10cd0e64aa9d Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 27 Dec 2010 16:48:00 -0200
+Subject: [RHEL6 qemu-kvm PATCH 10/23] trace: Trace entry point of balloon request handler
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1293468492-25473-9-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 15291
+O-Subject: [PATCH 08/20] trace: Trace entry point of balloon request handler
+Bugzilla: 632722
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+
+From: Prerna Saxena <prerna@linux.vnet.ibm.com>
+
+Signed-off-by: Prerna Saxena <prerna@linux.vnet.ibm.com>
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+(cherry picked from commit 62dd89dea25b08796fcb83beeac3aea5f5a89c95)
+---
+ trace-events |    4 ++++
+ vl.c         |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ trace-events |    4 ++++
+ vl.c         |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/trace-events b/trace-events
+index b2c7f10..c5fa0aa 100644
+--- a/trace-events
++++ b/trace-events
+@@ -63,3 +63,7 @@ disable paio_submit(void *acb, void *opaque, unsigned long sector_num, unsigned
+ # ioport.c
+ disable cpu_in(unsigned int addr, unsigned int val) "addr %#x value %u"
+ disable cpu_out(unsigned int addr, unsigned int val) "addr %#x value %u"
++
++# balloon.c
++# Since requests are raised via monitor, not many tracepoints are needed.
++disable balloon_event(void *opaque, unsigned long addr) "opaque %p addr %lu"
+diff --git a/vl.c b/vl.c
+index b17a703..6fd9d39 100644
+--- a/vl.c
++++ b/vl.c
+@@ -172,6 +172,8 @@ int main(int argc, char **argv)
+ 
+ #include "qemu-spice.h"
+ 
++#include "trace.h"
++
+ //#define DEBUG_NET
+ //#define DEBUG_SLIRP
+ 
+@@ -390,6 +392,7 @@ void qemu_add_balloon_handler(QEMUBalloonEvent *func, void *opaque)
+ int qemu_balloon(ram_addr_t target, MonitorCompletion cb, void *opaque)
+ {
+     if (qemu_balloon_event) {
++        trace_balloon_event(qemu_balloon_event_opaque, target);
+         qemu_balloon_event(qemu_balloon_event_opaque, target, cb, opaque);
+         return 1;
+     } else {
+-- 
+1.7.3.2
+

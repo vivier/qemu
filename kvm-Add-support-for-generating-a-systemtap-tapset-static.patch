@@ -1,0 +1,289 @@
+From 1eea71bfab254eda67db076c2c10b2dfaf0bff07 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 27 Dec 2010 16:48:11 -0200
+Subject: [RHEL6 qemu-kvm PATCH 21/23] Add support for generating a systemtap tapset static probes
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1293468492-25473-20-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 15302
+O-Subject: [PATCH 19/20] Add support for generating a systemtap tapset static
+	probes
+Bugzilla: 632722
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+
+From: Daniel P. Berrange <berrange@redhat.com>
+
+This introduces generation of a qemu.stp/qemu-system-XXX.stp
+files which provides tapsets with friendly names for static
+probes & their arguments. Instead of
+
+    probe process("qemu").mark("qemu_malloc") {
+        printf("Malloc %d %p\n", $arg1, $arg2);
+    }
+
+It is now possible todo
+
+    probe qemu.system.i386.qemu_malloc {
+        printf("Malloc %d %p\n", size, ptr);
+    }
+
+There is one tapset defined per target arch, for both
+user and system emulators.
+
+* Makefile.target: Generate stp files for each target
+* tracetool: Support for generating systemtap tapsets
+* configure: Check for whether systemtap is available
+  with the DTrace backend
+
+Reviewed-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Daniel P. Berrange <berrange@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit c276b17da65b7ff01627722a1abf2b7a684c8fd8)
+---
+ Makefile.target |   29 ++++++++++++-
+ configure       |    7 +++
+ tracetool       |  128 +++++++++++++++++++++++++++++++++++++++++++++++-------
+ 3 files changed, 146 insertions(+), 18 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile.target |   29 ++++++++++++-
+ configure       |    7 +++
+ tracetool       |  128 +++++++++++++++++++++++++++++++++++++++++++++++-------
+ 3 files changed, 146 insertions(+), 18 deletions(-)
+
+diff --git a/Makefile.target b/Makefile.target
+index 9ef43e5..e9a6b4a 100644
+--- a/Makefile.target
++++ b/Makefile.target
+@@ -35,7 +35,27 @@ CFLAGS += $(KVM_CFLAGS)
+ config-target.h: config-target.h-timestamp
+ config-target.h-timestamp: config-target.mak
+ 
+-all: $(PROGS)
++ifdef CONFIG_SYSTEMTAP_TRACE
++stap: $(QEMU_PROG).stp
++
++ifdef CONFIG_USER_ONLY
++TARGET_TYPE=user
++else
++TARGET_TYPE=system
++endif
++
++$(QEMU_PROG).stp:
++	$(call quiet-command,sh $(SRC_PATH)/tracetool \
++		--$(TRACE_BACKEND) \
++		--binary $(bindir)/$(QEMU_PROG) \
++		--target-arch $(TARGET_ARCH) \
++		--target-type $(TARGET_TYPE) \
++		--stap < $(SRC_PATH)/trace-events > $(QEMU_PROG).stp,"  GEN   $(QEMU_PROG).stp")
++else
++stap:
++endif
++
++all: $(PROGS) stap
+ 
+ # Dummy command so that make thinks it has done something
+ 	@true
+@@ -365,11 +385,18 @@ clean:
+ 	rm -f *.o *.a *~ $(PROGS) nwfpe/*.o fpu/*.o
+ 	rm -f *.d */*.d tcg/*.o ide/*.o
+ 	rm -f qemu-options.h qemu-monitor.h gdbstub-xml.c
++ifdef CONFIG_SYSTEMTAP_TRACE
++	rm -f *.stp
++endif
+ 
+ install: all
+ ifneq ($(PROGS),)
+ 	$(INSTALL) -m 755 $(STRIP_OPT) $(PROGS) "$(DESTDIR)$(bindir)"
+ endif
++ifdef CONFIG_SYSTEMTAP_TRACE
++	$(INSTALL_DIR) "$(DESTDIR)$(datadir)/../systemtap/tapset"
++	$(INSTALL_DATA) $(QEMU_PROG).stp "$(DESTDIR)$(datadir)/../systemtap/tapset"
++endif
+ 
+ # Include automatically generated dependency files
+ -include $(wildcard *.d */*.d)
+diff --git a/configure b/configure
+index 7d649a4..951f6b8 100755
+--- a/configure
++++ b/configure
+@@ -2031,6 +2031,10 @@ if test "$trace_backend" = "dtrace"; then
+     echo
+     exit 1
+   fi
++  trace_backend_stap="no"
++  if test -x "$(which stap 2>/dev/null)"; then
++    trace_backend_stap="yes"
++  fi
+ fi
+ 
+ ##########################################
+@@ -2449,6 +2453,9 @@ esac
+ echo "KVM_KMOD=$kvm_kmod" >> $config_host_mak
+ 
+ echo "TRACE_BACKEND=$trace_backend" >> $config_host_mak
++if test "$trace_backend" = "dtrace" -a "$trace_backend_stap" = "yes" ; then
++  echo "CONFIG_SYSTEMTAP_TRACE=y" >> $config_host_mak
++fi
+ 
+ tools=
+ if test `expr "$target_list" : ".*softmmu.*"` != 0 ; then
+diff --git a/tracetool b/tracetool
+index f5d6c60..89ad479 100644
+--- a/tracetool
++++ b/tracetool
+@@ -21,9 +21,16 @@ Backends:
+   --dtrace  DTrace/SystemTAP backend
+ 
+ Output formats:
+-  -h    Generate .h file
+-  -c    Generate .c file
+-  -d    Generate .d file (DTrace only)
++  -h     Generate .h file
++  -c     Generate .c file
++  -d     Generate .d file (DTrace only)
++  --stap Generate .stp file (DTrace with SystemTAP only)
++
++Options:
++  --binary      [path]  Full path to QEMU binary
++  --target-arch [arch]  QEMU emulator target arch
++  --target-type [type]  QEMU emulator target type ('system' or 'user')
++
+ EOF
+     exit 1
+ }
+@@ -219,6 +226,51 @@ linetod_end_dtrace()
+ EOF
+ }
+ 
++linetostap_begin_dtrace()
++{
++    return
++}
++
++linetostap_dtrace()
++{
++    local i arg name args arglist state
++    name=$(get_name "$1")
++    args=$(get_args "$1")
++    arglist=$(get_argnames "$1", "")
++    state=$(get_state "$1")
++    if [ "$state" = "0" ] ; then
++        name=${name##disable }
++    fi
++
++    # Define prototype for probe arguments
++    cat <<EOF
++probe qemu.$targettype.$targetarch.$name = process("$binary").mark("$name")
++{
++EOF
++
++    i=1
++    for arg in $arglist
++    do
++        # 'limit' is a reserved keyword
++        if [ "$arg" = "limit" ]; then
++          arg="_limit"
++        fi
++        cat <<EOF
++  $arg = \$arg$i;
++EOF
++	i="$((i+1))"
++    done
++
++    cat <<EOF
++}
++EOF
++}
++
++linetostap_end_dtrace()
++{
++    return
++}
++
+ # Process stdin by calling begin, line, and end functions for the backend
+ convert()
+ {
+@@ -284,19 +336,61 @@ tracetod()
+     convert d
+ }
+ 
+-# Choose backend
+-case "$1" in
+-"--nop" | "--dtrace") backend="${1#--}" ;;
+-*) usage ;;
+-esac
+-shift
+-
+-case "$1" in
+-"-h") tracetoh ;;
+-"-c") tracetoc ;;
+-"-d") tracetod ;;
+-"--check-backend") exit 0 ;; # used by ./configure to test for backend
+-*) usage ;;
+-esac
++tracetostap()
++{
++    if [ $backend != "dtrace" ]; then
++       echo "SystemTAP tapset generator not applicable to $backend backend"
++       exit 1
++    fi
++    if [ -z "$binary" ]; then
++       echo "--binary is required for SystemTAP tapset generator"
++       exit 1
++    fi
++    if [ -z "$targettype" ]; then
++       echo "--target-type is required for SystemTAP tapset generator"
++       exit 1
++    fi
++    if [ -z "$targetarch" ]; then
++       echo "--target-arch is required for SystemTAP tapset generator"
++       exit 1
++    fi
++    echo "/* This file is autogenerated by tracetool, do not edit. */"
++    convert stap
++}
++
++
++backend=
++output=
++binary=
++targettype=
++targetarch=
++
++
++until [ -z "$1" ]
++do
++  case "$1" in
++    "--nop" | "--dtrace") backend="${1#--}" ;;
++
++    "--binary") shift ; binary="$1" ;;
++    "--target-arch") shift ; targetarch="$1" ;;
++    "--target-type") shift ; targettype="$1" ;;
++
++    "-h" | "-c" | "-d") output="${1#-}" ;;
++    "--stap") output="${1#--}" ;;
++
++    "--check-backend") exit 0 ;; # used by ./configure to test for backend
++
++    *)
++      usage;;
++  esac
++  shift
++done
++
++if [ "$backend" = "" -o "$output" = "" ]; then
++  usage
++fi
++
++gen="traceto$output"
++"$gen"
+ 
+ exit 0
+-- 
+1.7.3.2
+

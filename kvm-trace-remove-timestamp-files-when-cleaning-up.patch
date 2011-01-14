@@ -1,0 +1,50 @@
+From cc2aafeba52dedf2af526a0147051e4c9610362d Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 27 Dec 2010 16:48:07 -0200
+Subject: [RHEL6 qemu-kvm PATCH 17/23] trace: remove timestamp files when cleaning up
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1293468492-25473-16-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 15298
+O-Subject: [PATCH 15/20] trace: remove timestamp files when cleaning up
+Bugzilla: 632722
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+
+From: Blue Swirl <blauwirbel@gmail.com>
+
+'make clean' did not remove trace.[ch]-timestamp files,
+only trace.[ch]. But 'make' did not know how to make trace.[ch]
+files if the timestamp files were present.
+
+Fix by removing the timestamp files along with trace.[ch].
+
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+(cherry picked from commit d7489b72cae6ba5aaf7f3ac868b7fd18c0a59809)
+---
+ Makefile |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index fc27af7..f5e9099 100644
+--- a/Makefile
++++ b/Makefile
+@@ -289,7 +289,7 @@ clean:
+ 	rm -f *.o *.d *.a $(TOOLS) TAGS cscope.* *.pod *~ */*~
+ 	rm -f slirp/*.o slirp/*.d audio/*.o audio/*.d block/*.o block/*.d net/*.o net/*.d
+ 	rm -f qemu-img-cmds.h
+-	rm -f trace.c trace.h
++	rm -f trace.c trace.h trace.c-timestamp trace.h-timestamp
+ 	$(MAKE) -C tests clean
+ 	for d in $(ALL_SUBDIRS) libhw32 libhw64 libuser; do \
+ 	if test -d $$d; then $(MAKE) -C $$d $@ || exit 1; fi; \
+-- 
+1.7.3.2
+

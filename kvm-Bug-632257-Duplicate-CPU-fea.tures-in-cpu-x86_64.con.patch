@@ -1,0 +1,163 @@
+From 733b62b58fb4739122949d38bf6856a868acec23 Mon Sep 17 00:00:00 2001
+From: john cooper <john.cooper@redhat.com>
+Date: Tue, 19 Oct 2010 02:49:19 -0200
+Subject: [RHEL6 qemu-kvm PATCH 01/23] Bug 632257 - Duplicate CPU fea.tures in cpu-x86_64.conf
+
+RH-Author: john cooper <john.cooper@redhat.com>
+Message-id: <4CBD072F.7070004@redhat.com>
+Patchwork-id: 12763
+O-Subject: [RHEL6.1 PATCH] Bug 632257 - Duplicate CPU fea.tures in
+	cpu-x86_64.conf
+Bugzilla: 632257
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+This bug was intended to address the replicated feature
+flags in cpuid 8000_0001:edx from cpuid 0000_0001:edx.
+This is due to AMD's definition where these flags are
+mostly cloned in the 8000_0001:edx cpuid function.
+qemu64 attempted to glue together the respective Intel
+and AMD nearly disjoint features and this propagated to
+the new Intel and AMD definitions as by definition doing
+so was conservative and harmless.  However in retrospect
+lugging around this cruft doesn't do any good and could
+conceivably confuse a guest as well as humans trying to
+maintain/add cpu definitions.  This also causes issues
+for libvirt as documented in the respective BZ case.
+
+So we've here tossed out the AMD replicated definitions
+from the Intel models, added a few replications into AMD
+definitions which were missing according to AMD's latest
+CPUID document, and while I was in there reordered the
+flags in the config file to follow intuitive sequential
+bit ordering.  Also two flag name aliases were added for
+Intel models.  The end result is the new models now
+conform to their respective cpuid specifications sans
+x2apic which is emulated by kvm.
+
+This was tested with the following combinations:
+
+    [Conroe, Penryn, Nehalem] x [F12-64, win64, win32] -- Intel host
+    [Opteron_G1, Opteron_G2, Opteron_G3] x [F12-64, win64, win32] -- AMD host
+
+Yielding successful boots in all cases.
+
+Upstream status: will be pushed after rhel verification.
+Other upstream submitted patch dependencies are still
+queued.  And we're thus far the only known users of this
+functionality which prods the inverted approach.
+
+Signed-off-by: john cooper <john.cooper@redhat.com>
+---
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ sysconfigs/target/cpu-x86_64.conf |   40 ++++++++++++++++++------------------
+ target-i386/helper.c              |    4 +-
+ 2 files changed, 22 insertions(+), 22 deletions(-)
+
+diff --git a/sysconfigs/target/cpu-x86_64.conf b/sysconfigs/target/cpu-x86_64.conf
+index d48e4d1..e7a0fa3 100644
+--- a/sysconfigs/target/cpu-x86_64.conf
++++ b/sysconfigs/target/cpu-x86_64.conf
+@@ -35,9 +35,9 @@
+    family = "6"
+    model = "15"
+    stepping = "3"
+-   feature_edx = "sse2 sse fxsr mmx pat cmov pge sep apic cx8 mce pae msr tsc pse de fpu    mtrr clflush mca pse36"
+-   feature_ecx = "sse3 ssse3 x2apic"
+-   extfeature_edx = "fxsr mmx pat cmov pge apic cx8 mce pae msr tsc pse de fpu    lm syscall nx"
++   feature_edx = "sse2 sse fxsr mmx clflush pse36 pat cmov mca pge mtrr sep apic cx8 mce pae msr tsc pse de fpu"
++   feature_ecx = "x2apic ssse3 sse3"
++   extfeature_edx = "i64 syscall xd"
+    extfeature_ecx = "lahf_lm"
+    xlevel = "0x8000000A"
+    model_id = "Intel Celeron_4x0 (Conroe/Merom Class Core 2)"
+@@ -49,9 +49,9 @@
+    family = "6"
+    model = "23"
+    stepping = "3"
+-   feature_edx = "sse2 sse fxsr mmx pat cmov pge sep apic cx8 mce pae msr tsc pse de fpu    mtrr clflush mca pse36"
+-   feature_ecx = "sse3 cx16 ssse3 sse4.1 x2apic"
+-   extfeature_edx = "fxsr mmx pat cmov pge apic cx8 mce pae msr tsc pse de fpu    lm syscall nx"
++   feature_edx = "sse2 sse fxsr mmx clflush pse36 pat cmov mca pge mtrr sep apic cx8 mce pae msr tsc pse de fpu"
++   feature_ecx = "x2apic sse4.1 cx16 ssse3 sse3"
++   extfeature_edx = "i64 syscall xd"
+    extfeature_ecx = "lahf_lm"
+    xlevel = "0x8000000A"
+    model_id = "Intel Core 2 Duo P9xxx (Penryn Class Core 2)"
+@@ -63,9 +63,9 @@
+    family = "6"
+    model = "26"
+    stepping = "3"
+-   feature_edx = "sse2 sse fxsr mmx pat cmov pge sep apic cx8 mce pae msr tsc pse de fpu    mtrr clflush mca pse36"
+-   feature_ecx = "sse3 cx16 ssse3 sse4.1 sse4.2 x2apic popcnt"
+-   extfeature_edx = "fxsr mmx pat cmov pge apic cx8 mce pae msr tsc pse de fpu    lm syscall nx"
++   feature_edx = "sse2 sse fxsr mmx clflush pse36 pat cmov mca pge mtrr sep apic cx8 mce pae msr tsc pse de fpu"
++   feature_ecx = "popcnt x2apic sse4.2 sse4.1 cx16 ssse3 sse3"
++   extfeature_edx = "i64 syscall xd"
+    extfeature_ecx = "lahf_lm"
+    xlevel = "0x8000000A"
+    model_id = "Intel Core i7 9xx (Nehalem Class Core i7)"
+@@ -77,10 +77,10 @@
+    family = "15"
+    model = "6"
+    stepping = "1"
+-   feature_edx = "sse2 sse fxsr mmx pat cmov pge sep apic cx8 mce pae msr tsc pse de fpu    mtrr clflush mca pse36"
+-   feature_ecx = "sse3 x2apic"
+-   extfeature_edx = "fxsr mmx pat cmov pge apic cx8 mce pae msr tsc pse de fpu    lm syscall nx"
+-#   extfeature_ecx = ""
++   feature_edx = "sse2 sse fxsr mmx clflush pse36 pat cmov mca pge mtrr sep apic cx8 mce pae msr tsc pse de fpu"
++   feature_ecx = "x2apic sse3"	# x2apic kvm emulated
++   extfeature_edx = "lm fxsr mmx nx pse36 pat cmov mca pge mtrr syscall apic cx8 mce pae msr tsc pse de fpu"
++   extfeature_ecx = " "
+    xlevel = "0x80000008"
+    model_id = "AMD Opteron 240 (Gen 1 Class Opteron)"
+ 
+@@ -91,9 +91,9 @@
+    family = "15"
+    model = "6"
+    stepping = "1"
+-   feature_edx = "sse2 sse fxsr mmx pat cmov pge sep apic cx8 mce pae msr tsc pse de fpu    mtrr clflush mca pse36"
+-   feature_ecx = "sse3 cx16 x2apic"
+-   extfeature_edx = "fxsr mmx pat cmov pge apic cx8 mce pae msr tsc pse de fpu    lm syscall nx rdtscp"
++   feature_edx = "sse2 sse fxsr mmx clflush pse36 pat cmov mca pge mtrr sep apic cx8 mce pae msr tsc pse de fpu"
++   feature_ecx = "x2apic cx16 sse3"	# x2apic kvm emulated
++   extfeature_edx = "lm rdtscp fxsr mmx nx pse36 pat cmov mca pge mtrr syscall apic cx8 mce pae msr tsc pse de fpu"
+    extfeature_ecx = "svm lahf_lm"
+    xlevel = "0x80000008"
+    model_id = "AMD Opteron 22xx (Gen 2 Class Opteron)"
+@@ -105,9 +105,9 @@
+    family = "15"
+    model = "6"
+    stepping = "1"
+-   feature_edx = "sse2 sse fxsr mmx pat cmov pge sep apic cx8 mce pae msr tsc pse de fpu    mtrr clflush mca pse36"
+-   feature_ecx = "sse3 cx16 monitor popcnt x2apic"
+-   extfeature_edx = "fxsr mmx pat cmov pge apic cx8 mce pae msr tsc pse de fpu    lm syscall nx rdtscp"
+-   extfeature_ecx = "svm sse4a  abm misalignsse lahf_lm"
++   feature_edx = "sse2 sse fxsr mmx clflush pse36 pat cmov mca pge mtrr sep apic cx8 mce pae msr tsc pse de fpu"
++   feature_ecx = "popcnt x2apic cx16 monitor sse3"	# x2apic kvm emulated
++   extfeature_edx = "lm rdtscp fxsr mmx nx pse36 pat cmov mca pge mtrr syscall apic cx8 mce pae msr tsc pse de fpu"
++   extfeature_ecx = "misalignsse sse4a abm svm lahf_lm"
+    xlevel = "0x80000008"
+    model_id = "AMD Opteron 23xx (Gen 3 Class Opteron)"
+diff --git a/target-i386/helper.c b/target-i386/helper.c
+index 4913f4d..55aa7fb 100644
+--- a/target-i386/helper.c
++++ b/target-i386/helper.c
+@@ -64,9 +64,9 @@ static const char *ext2_feature_name[] = {
+     "cx8" /* AMD CMPXCHG8B */, "apic", NULL, "syscall",
+     "mtrr", "pge", "mca", "cmov",
+     "pat", "pse36", NULL, NULL /* Linux mp */,
+-    "nx" /* Intel xd */, NULL, "mmxext", "mmx",
++    "nx|xd", NULL, "mmxext", "mmx",
+     "fxsr", "fxsr_opt" /* AMD ffxsr */, "pdpe1gb" /* AMD Page1GB */, "rdtscp",
+-    NULL, "lm" /* Intel 64 */, "3dnowext", "3dnow",
++    NULL, "lm|i64", "3dnowext", "3dnow",
+ };
+ static const char *ext3_feature_name[] = {
+     "lahf_lm" /* AMD LahfSahf */, "cmp_legacy", "svm", "extapic" /* AMD ExtApicSpace */,
+-- 
+1.7.3.2
+
