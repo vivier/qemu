@@ -267,10 +267,10 @@ exit:
     return ret;
 }
 
-static void cow_flush(BlockDriverState *bs)
+static int cow_flush(BlockDriverState *bs)
 {
     BDRVCowState *s = bs->opaque;
-    qemu_fdatasync(s->fd);
+    return qemu_fdatasync(s->fd);
 }
 
 static QEMUOptionParameter cow_create_options[] = {
