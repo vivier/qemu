@@ -192,12 +192,16 @@ static int virtio_pci_set_host_notifier_internal(VirtIOPCIProxy *proxy,
     if (assign) {
         r = event_notifier_init(notifier, 1);
         if (r < 0) {
+            error_report("%s: unable to init event notifier: %d",
+                         __func__, r);
             return r;
         }
         r = kvm_set_ioeventfd_pio_word(event_notifier_get_fd(notifier),
                                        proxy->addr + VIRTIO_PCI_QUEUE_NOTIFY,
                                        n, assign);
         if (r < 0) {
+            error_report("%s: unable to map ioeventfd: %d",
+                         __func__, r);
             event_notifier_cleanup(notifier);
         }
     } else {
@@ -205,6 +209,8 @@ static int virtio_pci_set_host_notifier_internal(VirtIOPCIProxy *proxy,
                                        proxy->addr + VIRTIO_PCI_QUEUE_NOTIFY,
                                        n, assign);
         if (r < 0) {
+            error_report("%s: unable to unmap ioeventfd: %d",
+                         __func__, r);
             return r;
         }
 
@@ -243,14 +249,14 @@ static void virtio_pci_set_host_notifier_fd_handler(VirtIOPCIProxy *proxy,
     }
 }
 
-static int virtio_pci_start_ioeventfd(VirtIOPCIProxy *proxy)
+static void virtio_pci_start_ioeventfd(VirtIOPCIProxy *proxy)
 {
     int n, r;
 
     if (!(proxy->flags & VIRTIO_PCI_FLAG_USE_IOEVENTFD) ||
         proxy->ioeventfd_disabled ||
         proxy->ioeventfd_started) {
-        return 0;
+        return;
     }
 
     for (n = 0; n < VIRTIO_PCI_QUEUE_MAX; n++) {
@@ -266,7 +272,7 @@ static int virtio_pci_start_ioeventfd(VirtIOPCIProxy *proxy)
         virtio_pci_set_host_notifier_fd_handler(proxy, n, true);
     }
     proxy->ioeventfd_started = true;
-    return 0;
+    return;
 
 assign_error:
     while (--n >= 0) {
@@ -275,19 +281,20 @@ assign_error:
         }
 
         virtio_pci_set_host_notifier_fd_handler(proxy, n, false);
-        virtio_pci_set_host_notifier_internal(proxy, n, false);
+        r = virtio_pci_set_host_notifier_internal(proxy, n, false);
+        assert(r >= 0);
     }
     proxy->ioeventfd_started = false;
-    proxy->ioeventfd_disabled = true;
-    return r;
+    error_report("%s: failed. Fallback to a userspace (slower).", __func__);
 }
 
-static int virtio_pci_stop_ioeventfd(VirtIOPCIProxy *proxy)
+static void virtio_pci_stop_ioeventfd(VirtIOPCIProxy *proxy)
 {
+    int r;
     int n;
 
     if (!proxy->ioeventfd_started) {
-        return 0;
+        return;
     }
 
     for (n = 0; n < VIRTIO_PCI_QUEUE_MAX; n++) {
@@ -296,10 +303,10 @@ static int virtio_pci_stop_ioeventfd(VirtIOPCIProxy *proxy)
         }
 
         virtio_pci_set_host_notifier_fd_handler(proxy, n, false);
-        virtio_pci_set_host_notifier_internal(proxy, n, false);
+        r = virtio_pci_set_host_notifier_internal(proxy, n, false);
+        assert(r >= 0);
     }
     proxy->ioeventfd_started = false;
-    return 0;
 }
 
 static void virtio_pci_reset(DeviceState *d)
@@ -784,7 +791,6 @@ static void virtio_init_pci(VirtIOPCIProxy *proxy, VirtIODevice *vdev,
     proxy->host_features |= 0x1 << VIRTIO_F_NOTIFY_ON_EMPTY;
     proxy->host_features |= 0x1 << VIRTIO_F_BAD_FEATURE;
     proxy->host_features = vdev->get_features(vdev, proxy->host_features);
-
 }
 
 static int virtio_blk_init_pci(PCIDevice *pci_dev)
