@@ -54,8 +54,6 @@ typedef struct VirtIONet
     uint8_t nouni;
     uint8_t nobcast;
     uint8_t vhost_started;
-    bool vm_running;
-    VMChangeStateEntry *vmstate;
     struct {
         int in_use;
         int first_multi;
@@ -114,7 +112,7 @@ static void virtio_net_set_status(struct VirtIODevice *vdev, uint8_t status)
     }
     if (!!n->vhost_started == ((status & VIRTIO_CONFIG_S_DRIVER_OK) &&
                                (n->status & VIRTIO_NET_S_LINK_UP) &&
-                               n->vm_running)) {
+                               n->vdev.vm_running)) {
         return;
     }
     if (!n->vhost_started) {
@@ -952,16 +950,6 @@ static NetClientInfo net_virtio_info = {
     .link_status_changed = virtio_net_set_link_status,
 };
 
-static void virtio_net_vmstate_change(void *opaque, int running, int reason)
-{
-    VirtIONet *n = opaque;
-    n->vm_running = running;
-    /* This is called when vm is started/stopped,
-     * it will start/stop vhost backend if appropriate
-     * e.g. after migration. */
-    virtio_net_set_status(&n->vdev, n->vdev.status);
-}
-
 VirtIODevice *virtio_net_init(DeviceState *dev, NICConf *conf,
                               virtio_net_conf *net)
 {
@@ -1016,7 +1004,6 @@ VirtIODevice *virtio_net_init(DeviceState *dev, NICConf *conf,
     n->qdev = dev;
     register_savevm(dev, "virtio-net", -1, VIRTIO_NET_VM_VERSION,
                     virtio_net_save, virtio_net_load, n);
-    n->vmstate = qemu_add_vm_change_state_handler(virtio_net_vmstate_change, n);
 
     return &n->vdev;
 }
@@ -1024,7 +1011,6 @@ VirtIODevice *virtio_net_init(DeviceState *dev, NICConf *conf,
 void virtio_net_exit(VirtIODevice *vdev)
 {
     VirtIONet *n = DO_UPCAST(VirtIONet, vdev, vdev);
-    qemu_del_vm_change_state_handler(n->vmstate);
 
     /* This will stop vhost backend if appropriate. */
     virtio_net_set_status(vdev, 0);
