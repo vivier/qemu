@@ -26,6 +26,11 @@
 #include "gdbstub.h"
 #include "kvm.h"
 
+/* This check must be after config-host.h is included */
+#ifdef CONFIG_EVENTFD
+#include <sys/eventfd.h>
+#endif
+
 #ifdef KVM_UPSTREAM
 /* KVM uses PAGE_SIZE in it's definition of COALESCED_MMIO_MAX */
 #define PAGE_SIZE TARGET_PAGE_SIZE
@@ -67,6 +72,7 @@ struct KVMState
 #endif
     int irqchip_in_kernel;
     int pit_in_kernel;
+    int many_ioeventfds;
 };
 
 static KVMState *kvm_state;
@@ -396,8 +402,41 @@ int kvm_check_extension(KVMState *s, unsigned int extension)
 
     return ret;
 }
-#ifdef KVM_UPSTREAM
 
+int kvm_check_many_ioeventfds(void)
+{
+    /* Older kernels have a 6 device limit on the KVM io bus.  Find out so we
+     * can avoid creating too many ioeventfds.
+     */
+#ifdef CONFIG_EVENTFD
+    int ioeventfds[7];
+    int i, ret = 0;
+    for (i = 0; i < ARRAY_SIZE(ioeventfds); i++) {
+        ioeventfds[i] = eventfd(0, EFD_CLOEXEC);
+        if (ioeventfds[i] < 0) {
+            break;
+        }
+        ret = kvm_set_ioeventfd_pio_word(ioeventfds[i], 0, i, true);
+        if (ret < 0) {
+            close(ioeventfds[i]);
+            break;
+        }
+    }
+
+    /* Decide whether many devices are supported or not */
+    ret = i == ARRAY_SIZE(ioeventfds);
+
+    while (i-- > 0) {
+        kvm_set_ioeventfd_pio_word(ioeventfds[i], 0, i, false);
+        close(ioeventfds[i]);
+    }
+    return ret;
+#else
+    return 0;
+#endif
+}
+
+#ifdef KVM_UPSTREAM
 int kvm_init(int smp_cpus)
 {
     static const char upgrade_note[] =
@@ -494,6 +533,8 @@ int kvm_init(int smp_cpus)
         goto err;
 
     kvm_state = s;
+
+    s->many_ioeventfds = kvm_check_many_ioeventfds();
 
     return 0;
 
@@ -884,6 +925,14 @@ int kvm_has_sync_mmu(void)
 int kvm_has_vcpu_events(void)
 {
     return kvm_state->vcpu_events;
+}
+
+int kvm_has_many_ioeventfds(void)
+{
+    if (!kvm_enabled()) {
+        return 0;
+    }
+    return kvm_state->many_ioeventfds;
 }
 
 #ifdef KVM_UPSTREAM

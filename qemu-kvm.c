@@ -2238,6 +2238,8 @@ static int kvm_create_context(void)
     kvm_state->vcpu_events = kvm_check_extension(kvm_state, KVM_CAP_VCPU_EVENTS);
 #endif
 
+    kvm_state->many_ioeventfds = kvm_check_many_ioeventfds();
+
     kvm_init_ap();
     if (kvm_irqchip) {
         if (!qemu_kvm_has_gsi_routing()) {

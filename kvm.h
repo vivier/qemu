@@ -156,13 +156,21 @@ static inline void cpu_synchronize_state(CPUState *env)
 
 #endif
 
+int kvm_has_many_ioeventfds(void);
+
 #if defined(KVM_IOEVENTFD) && defined(CONFIG_KVM)
 int kvm_set_ioeventfd_pio_word(int fd, uint16_t adr, uint16_t val, bool assign);
+int kvm_check_many_ioeventfds(void);
 #else
 static inline
 int kvm_set_ioeventfd_pio_word(int fd, uint16_t adr, uint16_t val, bool assign)
 {
     return -ENOSYS;
+}
+static inline
+int kvm_check_many_ioeventfds(void)
+{
+    return 0;
 }
 #endif
 
