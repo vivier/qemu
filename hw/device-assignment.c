@@ -1640,7 +1640,10 @@ static void assigned_dev_unregister_msix_mmio(AssignedDevice *dev)
 }
 
 static const VMStateDescription vmstate_assigned_device = {
-    .name = "pci-assign"
+    .name = "pci-assign",
+    .fields = (VMStateField []) {
+        VMSTATE_END_OF_LIST()
+    }
 };
 
 static int assigned_initfn(struct PCIDevice *pci_dev)
