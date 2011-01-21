@@ -38,7 +38,6 @@
 #endif
 
 #include <stddef.h>             /* offsetof */
-#include <stdbool.h>
 #include "hw.h"
 #include "loader.h"             /* rom_add_option */
 #include "pci.h"
