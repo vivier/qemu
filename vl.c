@@ -254,7 +254,6 @@ int semihosting_enabled = 0;
 int time_drift_fix = 0;
 unsigned int kvm_shadow_memory = 0;
 const char *mem_path = NULL;
-int disable_THP;
 int disable_KSM;
 #ifdef MAP_POPULATE
 int mem_prealloc = 1;	/* force preallocation of physical target memory */
@@ -6010,9 +6009,6 @@ int main(int argc, char **argv, char **envp)
             case QEMU_OPTION_mempath:
 		mem_path = optarg;
 		break;
-            case QEMU_OPTION_disable_THP:
-                disable_THP = 1;
-                break;
             case QEMU_OPTION_disable_KSM:
                 disable_KSM = 1;
                 break;
