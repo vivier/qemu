@@ -69,6 +69,8 @@ typedef struct PIIX4PMState {
     uint8_t smb_index;
     qemu_irq irq;
 
+    uint32_t smb_io_base;
+
     /* for pci hotplug */
     struct gpe_regs gpe;
     struct pci_status pci0_status;
@@ -547,15 +549,11 @@ static void piix4_powerdown(void *opaque, int irq, int power_failing)
 #endif
 }
 
-i2c_bus *piix4_pm_init(PCIBus *bus, int devfn, uint32_t smb_io_base,
-                       qemu_irq sci_irq)
+static int piix4_pm_initfn(PCIDevice *dev)
 {
-    PIIX4PMState *s;
+    PIIX4PMState *s = DO_UPCAST(PIIX4PMState, dev, dev);
     uint8_t *pci_conf;
 
-    s = (PIIX4PMState *)pci_register_device(bus,
-                                         "PM", sizeof(PIIX4PMState),
-                                         devfn, NULL, pm_write_config);
     pm_state = s;
     pci_conf = s->dev.config;
     pci_config_set_vendor_id(pci_conf, PCI_VENDOR_ID_INTEL);
@@ -595,24 +593,58 @@ i2c_bus *piix4_pm_init(PCIBus *bus, int devfn, uint32_t smb_io_base,
     pci_conf[0x67] = (serial_hds[0] != NULL ? 0x08 : 0) |
 	(serial_hds[1] != NULL ? 0x90 : 0);
 
-    pci_conf[0x90] = smb_io_base | 1;
-    pci_conf[0x91] = smb_io_base >> 8;
+    pci_conf[0x90] = s->smb_io_base | 1;
+    pci_conf[0x91] = s->smb_io_base >> 8;
     pci_conf[0xd2] = 0x09;
-    register_ioport_write(smb_io_base, 64, 1, smb_ioport_writeb, s);
-    register_ioport_read(smb_io_base, 64, 1, smb_ioport_readb, s);
+    register_ioport_write(s->smb_io_base, 64, 1, smb_ioport_writeb, s);
+    register_ioport_read(s->smb_io_base, 64, 1, smb_ioport_readb, s);
 
     s->tmr_timer = qemu_new_timer(vm_clock, pm_tmr_timer, s);
 
     qemu_system_powerdown = *qemu_allocate_irqs(piix4_powerdown, s, 1);
 
-    vmstate_register(&s->dev.qdev, 0, &vmstate_acpi, s);
-
     s->smbus = i2c_init_bus(NULL, "i2c");
-    s->irq = sci_irq;
     qemu_register_reset(piix4_reset, s);
+
+    return 0;
+}
+
+i2c_bus *piix4_pm_init(PCIBus *bus, int devfn, uint32_t smb_io_base,
+                       qemu_irq sci_irq)
+{
+    PCIDevice *dev;
+    PIIX4PMState *s;
+
+    dev = pci_create(bus, devfn, "PIIX4_PM");
+    qdev_prop_set_uint32(&dev->qdev, "smb_io_base", smb_io_base);
+
+    s = DO_UPCAST(PIIX4PMState, dev, dev);
+    s->irq = sci_irq;
+
+    qdev_init_nofail(&dev->qdev);
 
     return s->smbus;
 }
+
+static PCIDeviceInfo piix4_pm_info = {
+    .qdev.name          = "PIIX4_PM",
+    .qdev.desc          = "PM",
+    .qdev.size          = sizeof(PIIX4PMState),
+    .qdev.vmsd          = &vmstate_acpi,
+    .init               = piix4_pm_initfn,
+    .config_write       = pm_write_config,
+    .qdev.props         = (Property[]) {
+        DEFINE_PROP_UINT32("smb_io_base", PIIX4PMState, smb_io_base, 0),
+        DEFINE_PROP_END_OF_LIST(),
+    }
+};
+
+static void piix4_pm_register(void)
+{
+    pci_qdev_register(&piix4_pm_info);
+}
+
+device_init(piix4_pm_register);
 
 static uint32_t gpe_read_val(uint16_t val, uint32_t addr)
 {
