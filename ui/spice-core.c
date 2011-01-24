@@ -153,7 +153,7 @@ static void channel_list_add(SpiceChannelEventInfo *info)
     QTAILQ_INSERT_TAIL(&channel_list, item, link);
 }
 
-static void channel_list_del(SpiceChannelEventInfo *info)
+static int channel_list_del(SpiceChannelEventInfo *info)
 {
     ChannelList *item;
 
@@ -163,8 +163,9 @@ static void channel_list_del(SpiceChannelEventInfo *info)
         }
         QTAILQ_REMOVE(&channel_list, item, link);
         qemu_free(item);
-        return;
+        return 1;
     }
+    return 0;
 }
 
 static void add_addr_info(QDict *dict, struct sockaddr *addr, int len)
@@ -207,6 +208,24 @@ static QList *channel_list_get(void)
     return list;
 }
 
+static void redhat_channel_event(int qevent, SpiceChannelEventInfo *info)
+{
+    QDict *server, *client;
+    QObject *data;
+
+    client = qdict_new();
+    add_addr_info(client, &info->paddr, info->plen);
+
+    server = qdict_new();
+    add_addr_info(server, &info->laddr, info->llen);
+    qdict_put(server, "auth", qstring_from_str(auth));
+
+    data = qobject_from_jsonf("{ 'client': %p, 'server': %p }",
+                              QOBJECT(client), QOBJECT(server));
+    monitor_protocol_event(qevent, data);
+    qobject_decref(data);
+}
+
 static void channel_event(int event, SpiceChannelEventInfo *info)
 {
     static const int qevent[] = {
@@ -227,9 +246,15 @@ static void channel_event(int event, SpiceChannelEventInfo *info)
         qdict_put(server, "auth", qstring_from_str(auth));
         add_channel_info(client, info);
         channel_list_add(info);
+        if (info->type == 1 /* main */) {
+            redhat_channel_event(QEVENT_RH_SPICE_INITIALIZED, info);
+        }
     }
     if (event == SPICE_CHANNEL_EVENT_DISCONNECTED) {
-        channel_list_del(info);
+        int found = channel_list_del(info);
+        if (info->type == 1 /* main */ && found) {
+            redhat_channel_event(QEVENT_RH_SPICE_DISCONNECTED, info);
+        }
     }
 
     data = qobject_from_jsonf("{ 'client': %p, 'server': %p }",
