@@ -40,6 +40,7 @@
 #include "loader.h"
 #include "qemu-timer.h"
 #include "qemu_socket.h"
+#include "sysemu.h"
 
 #include "pcnet.h"
 
@@ -1898,6 +1899,9 @@ int pcnet_common_init(DeviceState *dev, PCNetState *s, NetClientInfo *info)
     qemu_macaddr_default_if_unset(&s->conf.macaddr);
     s->nic = qemu_new_nic(info, &s->conf, dev->info->name, dev->id, s);
     qemu_format_nic_info_str(&s->nic->nc, s->conf.macaddr.a);
+
+    add_boot_device_path(s->conf.bootindex, dev, "/ethernet-phy@0");
+
     return 0;
 }
 

@@ -274,6 +274,17 @@ int boot_menu;
 int fake_machine = 0;
 #endif
 
+typedef struct FWBootEntry FWBootEntry;
+
+struct FWBootEntry {
+    QTAILQ_ENTRY(FWBootEntry) link;
+    int32_t bootindex;
+    DeviceState *dev;
+    char *suffix;
+};
+
+QTAILQ_HEAD(, FWBootEntry) fw_boot_order = QTAILQ_HEAD_INITIALIZER(fw_boot_order);
+
 int nb_numa_nodes;
 uint64_t node_mem[MAX_NODES];
 uint64_t node_cpumask[MAX_NODES];
@@ -2667,6 +2678,35 @@ static void restore_boot_devices(void *opaque)
 
     qemu_unregister_reset(restore_boot_devices, standard_boot_devices);
     qemu_free(standard_boot_devices);
+}
+
+void add_boot_device_path(int32_t bootindex, DeviceState *dev,
+                          const char *suffix)
+{
+    FWBootEntry *node, *i;
+
+    if (bootindex < 0) {
+        return;
+    }
+
+    assert(dev != NULL || suffix != NULL);
+
+    node = qemu_mallocz(sizeof(FWBootEntry));
+    node->bootindex = bootindex;
+    node->suffix = strdup(suffix);
+    node->dev = dev;
+
+    QTAILQ_FOREACH(i, &fw_boot_order, link) {
+        if (i->bootindex == bootindex) {
+            fprintf(stderr, "Two devices with same boot index %d\n", bootindex);
+            exit(1);
+        } else if (i->bootindex < bootindex) {
+            continue;
+        }
+        QTAILQ_INSERT_BEFORE(i, node, link);
+        return;
+    }
+    QTAILQ_INSERT_TAIL(&fw_boot_order, node, link);
 }
 
 static void numa_add(const char *optarg)

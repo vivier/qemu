@@ -1005,6 +1005,8 @@ VirtIODevice *virtio_net_init(DeviceState *dev, NICConf *conf,
     register_savevm(dev, "virtio-net", -1, VIRTIO_NET_VM_VERSION,
                     virtio_net_save, virtio_net_load, n);
 
+    add_boot_device_path(conf->bootindex, dev, "/ethernet-phy@0");
+
     return &n->vdev;
 }
 
