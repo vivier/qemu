@@ -43,6 +43,9 @@ typedef struct SimpleSpiceDisplay {
     QXLRect dirty;
     int notify;
     int running;
+
+    /* qemu-kvm locking ... */
+    void *env;
 } SimpleSpiceDisplay;
 
 typedef struct SimpleSpiceUpdate {
@@ -51,6 +54,9 @@ typedef struct SimpleSpiceUpdate {
     QXLCommandExt ext;
     uint8_t *bitmap;
 } SimpleSpiceUpdate;
+
+void qxl_unlock_iothread(SimpleSpiceDisplay *ssd);
+void qxl_lock_iothread(SimpleSpiceDisplay *ssd);
 
 int qemu_spice_rect_is_empty(const QXLRect* r);
 void qemu_spice_rect_union(QXLRect *dest, const QXLRect *r);

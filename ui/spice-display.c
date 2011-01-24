@@ -187,18 +187,18 @@ void qemu_spice_create_host_primary(SimpleSpiceDisplay *ssd)
     surface.mem        = (intptr_t)ssd->buf;
     surface.group_id   = MEMSLOT_GROUP_HOST;
 
-    qemu_mutex_unlock_iothread();
+    qxl_unlock_iothread(ssd);
     ssd->worker->create_primary_surface(ssd->worker, 0, &surface);
-    qemu_mutex_lock_iothread();
+    qxl_lock_iothread(ssd);
 }
 
 void qemu_spice_destroy_host_primary(SimpleSpiceDisplay *ssd)
 {
     dprint(1, "%s:\n", __FUNCTION__);
 
-    qemu_mutex_unlock_iothread();
+    qxl_unlock_iothread(ssd);
     ssd->worker->destroy_primary_surface(ssd->worker, 0);
-    qemu_mutex_lock_iothread();
+    qxl_lock_iothread(ssd);
 }
 
 void qemu_spice_vm_change_state_handler(void *opaque, int running, int reason)
@@ -208,9 +208,9 @@ void qemu_spice_vm_change_state_handler(void *opaque, int running, int reason)
     if (running) {
         ssd->worker->start(ssd->worker);
     } else {
-        qemu_mutex_unlock_iothread();
+        qxl_unlock_iothread(ssd);
         ssd->worker->stop(ssd->worker);
-        qemu_mutex_lock_iothread();
+        qxl_lock_iothread(ssd);
     }
     ssd->running = running;
 }

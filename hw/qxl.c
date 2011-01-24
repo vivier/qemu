@@ -125,6 +125,27 @@ static void qxl_reset_memslots(PCIQXLDevice *d);
 static void qxl_reset_surfaces(PCIQXLDevice *d);
 static void qxl_ring_set_dirty(PCIQXLDevice *qxl);
 
+/* qemu-kvm locking ... */
+void qxl_unlock_iothread(SimpleSpiceDisplay *ssd)
+{
+    if (cpu_single_env) {
+        assert(ssd->env == NULL);
+        ssd->env = cpu_single_env;
+        cpu_single_env = NULL;
+    }
+    qemu_mutex_unlock_iothread();
+}
+
+void qxl_lock_iothread(SimpleSpiceDisplay *ssd)
+{
+    qemu_mutex_lock_iothread();
+    if (ssd->env) {
+        assert(cpu_single_env == NULL);
+        cpu_single_env = ssd->env;
+        ssd->env = NULL;
+    }
+}
+
 static inline uint32_t msb_mask(uint32_t val)
 {
     uint32_t mask;
@@ -662,10 +683,10 @@ static void qxl_hard_reset(PCIQXLDevice *d, int loadvm)
     dprint(d, 1, "%s: start%s\n", __FUNCTION__,
            loadvm ? " (loadvm)" : "");
 
-    qemu_mutex_unlock_iothread();
+    qxl_unlock_iothread(&d->ssd);
     d->ssd.worker->reset_cursor(d->ssd.worker);
     d->ssd.worker->reset_image_cache(d->ssd.worker);
-    qemu_mutex_lock_iothread();
+    qxl_lock_iothread(&d->ssd);
     qxl_reset_surfaces(d);
     qxl_reset_memslots(d);
 
@@ -795,9 +816,9 @@ static void qxl_reset_surfaces(PCIQXLDevice *d)
 {
     dprint(d, 1, "%s:\n", __FUNCTION__);
     d->mode = QXL_MODE_UNDEFINED;
-    qemu_mutex_unlock_iothread();
+    qxl_unlock_iothread(&d->ssd);
     d->ssd.worker->destroy_surfaces(d->ssd.worker);
-    qemu_mutex_lock_iothread();
+    qxl_lock_iothread(&d->ssd);
     memset(&d->guest_surfaces.cmds, 0, sizeof(d->guest_surfaces.cmds));
 }
 
@@ -866,9 +887,9 @@ static void qxl_destroy_primary(PCIQXLDevice *d)
     dprint(d, 1, "%s\n", __FUNCTION__);
 
     d->mode = QXL_MODE_UNDEFINED;
-    qemu_mutex_unlock_iothread();
+    qxl_unlock_iothread(&d->ssd);
     d->ssd.worker->destroy_primary_surface(d->ssd.worker, 0);
-    qemu_mutex_lock_iothread();
+    qxl_lock_iothread(&d->ssd);
 }
 
 static void qxl_set_mode(PCIQXLDevice *d, int modenr, int loadvm)
@@ -938,10 +959,10 @@ static void ioport_write(void *opaque, uint32_t addr, uint32_t val)
     case QXL_IO_UPDATE_AREA:
     {
         QXLRect update = d->ram->update_area;
-        qemu_mutex_unlock_iothread();
+        qxl_unlock_iothread(&d->ssd);
         d->ssd.worker->update_area(d->ssd.worker, d->ram->update_surface,
                                    &update, NULL, 0, 0);
-        qemu_mutex_lock_iothread();
+        qxl_lock_iothread(&d->ssd);
         break;
     }
     case QXL_IO_NOTIFY_CMD:
