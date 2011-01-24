@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.130
+%define pkgrelease 2.131
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -1699,6 +1699,9 @@ BuildRequires: spice-server-devel >= 0.4.2-10.el6
 
 BuildRequires: systemtap-sdt-devel
 
+# 'stap' binary is required by configure detection of systemtap:
+BuildRequires: systemtap
+
 Requires(post): /usr/bin/getent
 Requires(post): /usr/sbin/groupadd
 Requires(post): /usr/sbin/useradd
@@ -2821,6 +2824,12 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Jan 24 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.131.el6
+- fix spec file to require systemtap, or configure won't enable the systemtap
+  tapset
+- Resolves: bz#632722
+  ([6.1 FEAT] QEMU static tracing framework)
+
 * Fri Jan 14 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.130.el6
 - kvm-Bug-632257-Duplicate-CPU-fea.tures-in-cpu-x86_64.con.patch [bz#632257]
 - kvm-BZ-647308-Support-Westmere-as-a-CPU-model-or-include.patch [bz#647308]
