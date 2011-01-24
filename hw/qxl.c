@@ -1509,6 +1509,7 @@ static PCIDeviceInfo qxl_info_primary = {
     .qdev.desc    = "Spice QXL GPU (primary, vga compatible)",
     .qdev.size    = sizeof(PCIQXLDevice),
     .qdev.reset   = qxl_reset_handler,
+    .no_hotplug   = 1,
     .qdev.vmsd    = &qxl_vmstate,
     .init         = qxl_init_primary,
     .config_write = qxl_write_config,
