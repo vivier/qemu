@@ -1444,6 +1444,11 @@ static int pci_qdev_init(DeviceState *qdev, DeviceInfo *base)
                                      info->header_type);
     if (pci_dev == NULL)
         return -1;
+    if (qdev->hotplugged && info->no_hotplug) {
+        qerror_report(QERR_DEVICE_NO_HOTPLUG, info->qdev.name);
+        do_pci_unregister_device(pci_dev);
+        return -1;
+    }
     rc = info->init(pci_dev);
     if (rc != 0) {
         do_pci_unregister_device(pci_dev);
@@ -1463,6 +1468,12 @@ static int pci_qdev_init(DeviceState *qdev, DeviceInfo *base)
 static int pci_unplug_device(DeviceState *qdev)
 {
     PCIDevice *dev = DO_UPCAST(PCIDevice, qdev, qdev);
+    PCIDeviceInfo *info = container_of(qdev->info, PCIDeviceInfo, qdev);
+
+    if (info->no_hotplug) {
+        qerror_report(QERR_DEVICE_NO_HOTPLUG, info->qdev.name);
+        return -1;
+    }
 
     dev->bus->hotplug(dev, 0);
     return 0;
