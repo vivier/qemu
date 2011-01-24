@@ -1655,6 +1655,24 @@ Example:
 EQMP
 
     {
+        .name       = RFQDN_REDHAT "set_password",
+        .args_type  = "protocol:s,password:s,expiration:i,connected:s?",
+        .params     = "protocol password expiration action-if-connected",
+        .help       = "set spice/vnc password",
+	.user_print = monitor_user_noop,
+        .mhandler.cmd_new = redhat_set_password,
+    },
+    {
+        .name       = RFQDN_REDHAT "spice_migrate_info",
+        .args_type  = "hostname:s,port:i?,tls-port:i?,cert-subject:s?",
+        .params     = "hostname port tls-port cert-subject",
+        .help       = "send migration info to spice client",
+	.user_print = monitor_user_noop,
+        .mhandler.cmd_new = redhat_spice_migrate_info,
+    },
+
+
+    {
         .name       = "qmp_capabilities",
         .args_type  = "",
         .params     = "",
