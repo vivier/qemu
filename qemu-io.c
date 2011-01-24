@@ -1124,7 +1124,7 @@ truncate_f(int argc, char **argv)
 
 	ret = bdrv_truncate(bs, offset);
 	if (ret < 0) {
-		printf("truncate: %s", strerror(ret));
+		printf("truncate: %s\n", strerror(-ret));
 		return 0;
 	}
 
@@ -1149,7 +1149,7 @@ length_f(int argc, char **argv)
 
 	size = bdrv_getlength(bs);
 	if (size < 0) {
-		printf("getlength: %s", strerror(size));
+		printf("getlength: %s\n", strerror(-size));
 		return 0;
 	}
 
