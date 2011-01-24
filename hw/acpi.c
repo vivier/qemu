@@ -37,6 +37,7 @@
 #define PROC_BASE 0xaf00
 #define PCI_BASE 0xae00
 #define PCI_EJ_BASE 0xae08
+#define PCI_RMV_BASE 0xae0c
 
 struct gpe_regs {
     uint16_t sts; /* status */
@@ -74,6 +75,7 @@ typedef struct PIIX4PMState {
     /* for pci hotplug */
     struct gpe_regs gpe;
     struct pci_status pci0_status;
+    uint32_t pci0_hotplug_enable;
 } PIIX4PMState;
 
 #define RSM_STS (1 << 15)
@@ -519,6 +521,25 @@ static const VMStateDescription vmstate_acpi = {
     }
 };
 
+static void piix4_update_hotplug(PIIX4PMState *s)
+{
+    PCIDevice *dev = &s->dev;
+    BusState *bus = qdev_get_parent_bus(&dev->qdev);
+    DeviceState *qdev, *next;
+
+    s->pci0_hotplug_enable = ~0;
+
+    QLIST_FOREACH_SAFE(qdev, &bus->children, sibling, next) {
+        PCIDeviceInfo *info = container_of(qdev->info, PCIDeviceInfo, qdev);
+        PCIDevice *pdev = DO_UPCAST(PCIDevice, qdev, qdev);
+        int slot = PCI_SLOT(pdev->devfn);
+
+        if (info->no_hotplug) {
+            s->pci0_hotplug_enable &= ~(1 << slot);
+        }
+    }
+}
+
 static void piix4_reset(void *opaque)
 {
     PIIX4PMState *s = opaque;
@@ -533,6 +554,7 @@ static void piix4_reset(void *opaque)
         /* Mark SMM as already inited (until KVM supports SMM). */
         pci_conf[0x5B] = 0x02;
     }
+    piix4_update_hotplug(s);
 }
 
 static void piix4_powerdown(void *opaque, int irq, int power_failing)
@@ -793,6 +815,18 @@ static void pciej_write(void *opaque, uint32_t addr, uint32_t val)
 #endif
 }
 
+static uint32_t pcirmv_read(void *opaque, uint32_t addr)
+{
+    PIIX4PMState *s = opaque;
+
+    return s->pci0_hotplug_enable;
+}
+
+static void pcirmv_write(void *opaque, uint32_t addr, uint32_t val)
+{
+    return;
+}
+
 static const char *model;
 
 static int piix4_device_hotplug(PCIDevice *dev, int state);
@@ -818,6 +852,9 @@ void piix4_acpi_system_hot_add_init(PCIBus *bus, const char *cpu_model)
 
     register_ioport_write(PCI_EJ_BASE, 4, 4, pciej_write, bus);
     register_ioport_read(PCI_EJ_BASE, 4, 4,  pciej_read, bus);
+
+    register_ioport_write(PCI_RMV_BASE, 4, 4, pcirmv_write, pm_state);
+    register_ioport_read(PCI_RMV_BASE, 4, 4,  pcirmv_read, pm_state);
 
     model = cpu_model;
 
