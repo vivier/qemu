@@ -1,0 +1,66 @@
+From c9519b76d211699a04d15f36f02ff61ea5c4d347 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Mon, 17 Jan 2011 20:56:48 -0200
+Subject: [PATCH 18/23] PCI: Export pci_map_option_rom()
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20110117205635.25511.32657.stgit@s20.home>
+Patchwork-id: 16423
+O-Subject: [RHEL6.1 qemu-kvm PATCH 1/2] PCI: Export pci_map_option_rom()
+Bugzilla: 667188
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=667188
+Upstream commit: 4b785d9624c1127b358d71933bb5ec476a39db25
+Brew build: https://brewweb.devel.redhat.com/taskinfo?taskID=3040529
+
+Allow it to be referenced outside of hw/pci.c so we can register
+option ROM BARs using the default mapping routine.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Acked-by: Chris Wright <chrisw@redhat.com>
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+---
+
+ hw/pci.c |    2 +-
+ hw/pci.h |    3 +++
+ 2 files changed, 4 insertions(+), 1 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/pci.c |    2 +-
+ hw/pci.h |    3 +++
+ 2 files changed, 4 insertions(+), 1 deletions(-)
+
+diff --git a/hw/pci.c b/hw/pci.c
+index 05ab6a3..04b78bb 100644
+--- a/hw/pci.c
++++ b/hw/pci.c
+@@ -1531,7 +1531,7 @@ static uint8_t pci_find_capability_list(PCIDevice *pdev, uint8_t cap_id,
+     return next;
+ }
+ 
+-static void pci_map_option_rom(PCIDevice *pdev, int region_num, pcibus_t addr, pcibus_t size, int type)
++void pci_map_option_rom(PCIDevice *pdev, int region_num, pcibus_t addr, pcibus_t size, int type)
+ {
+     cpu_register_physical_memory(addr, size, pdev->rom_offset);
+ }
+diff --git a/hw/pci.h b/hw/pci.h
+index fad671c..4748d22 100644
+--- a/hw/pci.h
++++ b/hw/pci.h
+@@ -211,6 +211,9 @@ void pci_register_bar(PCIDevice *pci_dev, int region_num,
+                             pcibus_t size, int type,
+                             PCIMapIORegionFunc *map_func);
+ 
++void pci_map_option_rom(PCIDevice *pdev, int region_num, pcibus_t addr,
++                        pcibus_t size, int type);
++
+ int pci_map_irq(PCIDevice *pci_dev, int pin);
+ 
+ int pci_add_capability(PCIDevice *pdev, uint8_t cap_id,
+-- 
+1.7.4.rc1.16.gd2f15e
+

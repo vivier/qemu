@@ -1,0 +1,54 @@
+From f860930a9d000aa05d14bc13a03c4eb963781e09 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Tue, 4 Jan 2011 19:13:39 -0200
+Subject: [PATCH 07/23] Revert "QMP: Remove leading whitespace in 'package'"
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1294168429-1120-7-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 15676
+O-Subject: [PATCH 06/16] Revert "QMP: Remove leading whitespace in 'package'"
+Bugzilla: 647447
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+This reverts commit 60307894a0623798d1235b15516ad6c1e354a28c.
+
+This is a rhel6.0-only change. The next commit wants to modify
+do_info_version(), which will cause a conflict.
+
+We revert it now and apply a rebased version after the next commit.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c |    8 +-------
+ 1 files changed, 1 insertions(+), 7 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c |    8 +-------
+ 1 files changed, 1 insertions(+), 7 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index c462f5e..575a2a8 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -689,14 +689,8 @@ static void do_info_version_print(Monitor *mon, const QObject *data)
+ 
+ static void do_info_version(Monitor *mon, QObject **ret_data)
+ {
+-    const char *p = QEMU_PKGVERSION;
+-
+-    while (qemu_isspace(*p)) {
+-        p++;
+-    }
+-
+     *ret_data = qobject_from_jsonf("{ 'qemu': %s, 'package': %s }",
+-                                   QEMU_VERSION, p);
++                                   QEMU_VERSION, QEMU_PKGVERSION);
+ }
+ 
+ static void do_info_name_print(Monitor *mon, const QObject *data)
+-- 
+1.7.4.rc1.16.gd2f15e
+

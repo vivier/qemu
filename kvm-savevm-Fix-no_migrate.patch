@@ -1,0 +1,169 @@
+From 91587ff292b1b4dc6a8f10503c9e91c2cc7a14c4 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Fri, 21 Jan 2011 17:33:59 -0200
+Subject: [PATCH 22/23] savevm: Fix no_migrate
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20110121173353.12679.39596.stgit@s20.home>
+Patchwork-id: 16755
+O-Subject: [RHEL6.1 qemu-kvm PATCH 2/3] savevm: Fix no_migrate
+Bugzilla: 635954
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=635954
+Upstream commit: dc9121210eaf34e768901ffc6992dd13062c743a
+Brew build: https://brewweb.devel.redhat.com/taskinfo?taskID=3056309
+
+The no_migrate save state flag is currently only checked in the
+last phase of migration.  This means that we potentially waste
+a lot of time and bandwidth with the live state handlers before
+we ever check the no_migrate flags.  The error message printed
+when we catch a non-migratable device doesn't get printed for
+a detached migration.  And, no_migrate does nothing to prevent
+an incoming migration to a target that includes a non-migratable
+device.  This attempts to fix all of these.
+
+One notable difference in behavior is that an outgoing migration
+now checks for non-migratable devices before ever connecting to
+the target system.  This means the target will remain listening
+rather than exit from failure.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+
+ migration.c |    4 ++++
+ savevm.c    |   40 ++++++++++++++++++++++++++--------------
+ sysemu.h    |    1 +
+ 3 files changed, 31 insertions(+), 14 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ migration.c |    4 ++++
+ savevm.c    |   40 ++++++++++++++++++++++++++--------------
+ sysemu.h    |    1 +
+ 3 files changed, 31 insertions(+), 14 deletions(-)
+
+diff --git a/migration.c b/migration.c
+index 137bacf..fb8fc98 100644
+--- a/migration.c
++++ b/migration.c
+@@ -95,6 +95,10 @@ int do_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data)
+         return -1;
+     }
+ 
++    if (qemu_savevm_state_blocked(mon)) {
++        return -1;
++    }
++
+     if (strstart(uri, "tcp:", &p)) {
+         s = tcp_start_outgoing_migration(mon, p, max_throttle, detach,
+                                          (int)qdict_get_int(qdict, "blk"), 
+diff --git a/savevm.c b/savevm.c
+index 3e0c4af..c177f72 100644
+--- a/savevm.c
++++ b/savevm.c
+@@ -1416,19 +1416,13 @@ static int vmstate_load(QEMUFile *f, SaveStateEntry *se, int version_id)
+     return vmstate_load_state(f, se->vmsd, se->opaque, version_id);
+ }
+ 
+-static int vmstate_save(QEMUFile *f, SaveStateEntry *se)
++static void vmstate_save(QEMUFile *f, SaveStateEntry *se)
+ {
+-    if (se->no_migrate) {
+-        return -1;
+-    }
+-
+     if (!se->vmsd) {         /* Old style */
+         se->save_state(f, se->opaque);
+-        return 0;
++        return;
+     }
+     vmstate_save_state(f,se->vmsd, se->opaque);
+-
+-    return 0;
+ }
+ 
+ #define QEMU_VM_FILE_MAGIC           0x5145564d
+@@ -1442,6 +1436,20 @@ static int vmstate_save(QEMUFile *f, SaveStateEntry *se)
+ #define QEMU_VM_SECTION_FULL         0x04
+ #define QEMU_VM_SUBSECTION           0x05
+ 
++bool qemu_savevm_state_blocked(Monitor *mon)
++{
++    SaveStateEntry *se;
++
++    QTAILQ_FOREACH(se, &savevm_handlers, entry) {
++        if (se->no_migrate) {
++            monitor_printf(mon, "state blocked by non-migratable device '%s'\n",
++                           se->idstr);
++            return true;
++        }
++    }
++    return false;
++}
++
+ int qemu_savevm_state_begin(Monitor *mon, QEMUFile *f, int blk_enable,
+                             int shared)
+ {
+@@ -1523,7 +1531,6 @@ int qemu_savevm_state_iterate(Monitor *mon, QEMUFile *f)
+ int qemu_savevm_state_complete(Monitor *mon, QEMUFile *f)
+ {
+     SaveStateEntry *se;
+-    int r;
+ 
+     QTAILQ_FOREACH(se, &savevm_handlers, entry) {
+         if (se->save_live_state == NULL)
+@@ -1554,11 +1561,7 @@ int qemu_savevm_state_complete(Monitor *mon, QEMUFile *f)
+         qemu_put_be32(f, se->instance_id);
+         qemu_put_be32(f, se->version_id);
+ 
+-        r = vmstate_save(f, se);
+-        if (r < 0) {
+-            monitor_printf(mon, "cannot migrate with device '%s'\n", se->idstr);
+-            return r;
+-        }
++        vmstate_save(f, se);
+     }
+ 
+     qemu_put_byte(f, QEMU_VM_EOF);
+@@ -1590,6 +1593,11 @@ static int qemu_savevm_state(Monitor *mon, QEMUFile *f)
+ 
+     bdrv_flush_all();
+ 
++    if (qemu_savevm_state_blocked(mon)) {
++        ret = -EINVAL;
++        goto out;
++    }
++
+     ret = qemu_savevm_state_begin(mon, f, 0, 0);
+     if (ret < 0)
+         goto out;
+@@ -1705,6 +1713,10 @@ int qemu_loadvm_state(QEMUFile *f)
+     unsigned int v;
+     int ret;
+ 
++    if (qemu_savevm_state_blocked(default_mon)) {
++        return -EINVAL;
++    }
++
+     v = qemu_get_be32(f);
+     if (v != QEMU_VM_FILE_MAGIC)
+         return -EINVAL;
+diff --git a/sysemu.h b/sysemu.h
+index 8c3ec8e..96ec7ad 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -61,6 +61,7 @@ void qemu_announce_self(void);
+ 
+ void main_loop_wait(int timeout);
+ 
++bool qemu_savevm_state_blocked(Monitor *mon);
+ int qemu_savevm_state_begin(Monitor *mon, QEMUFile *f, int blk_enable,
+                             int shared);
+ int qemu_savevm_state_iterate(Monitor *mon, QEMUFile *f);
+-- 
+1.7.4.rc1.16.gd2f15e
+

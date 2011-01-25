@@ -1,0 +1,204 @@
+From 21fa46238852a8ae584ebe8db0c44bcf419ac7df Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Fri, 21 Jan 2011 17:33:47 -0200
+Subject: [PATCH 21/23] Move stdbool.h
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20110121173336.12679.51976.stgit@s20.home>
+Patchwork-id: 16754
+O-Subject: [RHEL6.1 qemu-kvm PATCH 1/3] Move stdbool.h
+Bugzilla: 635954
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+From: Paul Brook <paul@codesourcery.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=635954
+Upstream commit: 11165820d194478d493d667a11ea8480ce893c70
+Brew build: https://brewweb.devel.redhat.com/taskinfo?taskID=3056309
+
+Move inclusion of stdbool.h to common header files, instead of including
+in an ad-hoc manner.
+
+Signed-off-by: Paul Brook <paul@codesourcery.com>
+---
+
+ block/blkdebug.c   |    2 --
+ check-qjson.c      |    1 -
+ dyngen-exec.h      |    1 +
+ hw/eepro100.c      |    1 -
+ hw/hw.h            |    1 -
+ hw/virtio-serial.h |    1 -
+ hw/xenfb.c         |    1 -
+ json-parser.c      |    1 -
+ kvm.h              |    1 -
+ nbd.h              |    1 -
+ net.h              |    1 -
+ qemu-common.h      |    1 +
+ 12 files changed, 2 insertions(+), 11 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ block/blkdebug.c   |    2 --
+ check-qjson.c      |    1 -
+ dyngen-exec.h      |    1 +
+ hw/eepro100.c      |    1 -
+ hw/hw.h            |    1 -
+ hw/virtio-serial.h |    1 -
+ hw/xenfb.c         |    1 -
+ json-parser.c      |    1 -
+ kvm.h              |    1 -
+ nbd.h              |    1 -
+ net.h              |    1 -
+ qemu-common.h      |    1 +
+ 12 files changed, 2 insertions(+), 11 deletions(-)
+
+diff --git a/block/blkdebug.c b/block/blkdebug.c
+index bb4a91a..7b7f87b 100644
+--- a/block/blkdebug.c
++++ b/block/blkdebug.c
+@@ -26,8 +26,6 @@
+ #include "block_int.h"
+ #include "module.h"
+ 
+-#include <stdbool.h>
+-
+ typedef struct BlkdebugVars {
+     int state;
+ 
+diff --git a/check-qjson.c b/check-qjson.c
+index a04e334..0e34acd 100644
+--- a/check-qjson.c
++++ b/check-qjson.c
+@@ -9,7 +9,6 @@
+  *
+  */
+ #include <check.h>
+-#include <stdbool.h>
+ 
+ #include "qstring.h"
+ #include "qint.h"
+diff --git a/dyngen-exec.h b/dyngen-exec.h
+index 0353f36..283c286 100644
+--- a/dyngen-exec.h
++++ b/dyngen-exec.h
+@@ -31,6 +31,7 @@
+    host headers do not allow that. */
+ #include <stddef.h>
+ #include <stdint.h>
++#include <stdbool.h>
+ 
+ #ifdef __OpenBSD__
+ #include <sys/types.h>
+diff --git a/hw/eepro100.c b/hw/eepro100.c
+index 24d5421..f6f319f 100644
+--- a/hw/eepro100.c
++++ b/hw/eepro100.c
+@@ -38,7 +38,6 @@
+ #endif
+ 
+ #include <stddef.h>             /* offsetof */
+-#include <stdbool.h>
+ #include "hw.h"
+ #include "loader.h"             /* rom_add_option */
+ #include "pci.h"
+diff --git a/hw/hw.h b/hw/hw.h
+index 2a89865..ec8762d 100644
+--- a/hw/hw.h
++++ b/hw/hw.h
+@@ -10,7 +10,6 @@
+ #include "cpu-common.h"
+ #endif
+ 
+-#include <stdbool.h>
+ #include "ioport.h"
+ #include "irq.h"
+ 
+diff --git a/hw/virtio-serial.h b/hw/virtio-serial.h
+index a93b545..ff08c40 100644
+--- a/hw/virtio-serial.h
++++ b/hw/virtio-serial.h
+@@ -15,7 +15,6 @@
+ #ifndef _QEMU_VIRTIO_SERIAL_H
+ #define _QEMU_VIRTIO_SERIAL_H
+ 
+-#include <stdbool.h>
+ #include "qdev.h"
+ #include "virtio.h"
+ 
+diff --git a/hw/xenfb.c b/hw/xenfb.c
+index 795a326..1fc1db6 100644
+--- a/hw/xenfb.c
++++ b/hw/xenfb.c
+@@ -29,7 +29,6 @@
+ #include <sys/types.h>
+ #include <fcntl.h>
+ #include <unistd.h>
+-#include <stdbool.h>
+ #include <sys/mman.h>
+ #include <errno.h>
+ #include <stdio.h>
+diff --git a/json-parser.c b/json-parser.c
+index f0e3997..f48f109 100644
+--- a/json-parser.c
++++ b/json-parser.c
+@@ -11,7 +11,6 @@
+  *
+  */
+ 
+-#include <stdbool.h>
+ #include <stdarg.h>
+ 
+ #include "qemu-common.h"
+diff --git a/kvm.h b/kvm.h
+index 93bce5e..47fc819 100644
+--- a/kvm.h
++++ b/kvm.h
+@@ -14,7 +14,6 @@
+ #ifndef QEMU_KVM_H
+ #define QEMU_KVM_H
+ 
+-#include <stdbool.h>
+ #include <errno.h>
+ #include "config.h"
+ #include "qemu-queue.h"
+diff --git a/nbd.h b/nbd.h
+index 5deac29..5a1fbdf 100644
+--- a/nbd.h
++++ b/nbd.h
+@@ -20,7 +20,6 @@
+ #define NBD_H
+ 
+ #include <sys/types.h>
+-#include <stdbool.h>
+ 
+ #include <qemu-common.h>
+ #include "block_int.h"
+diff --git a/net.h b/net.h
+index 897582b..44c31a9 100644
+--- a/net.h
++++ b/net.h
+@@ -1,7 +1,6 @@
+ #ifndef QEMU_NET_H
+ #define QEMU_NET_H
+ 
+-#include <stdbool.h>
+ #include "qemu-queue.h"
+ #include "qemu-common.h"
+ #include "qdict.h"
+diff --git a/qemu-common.h b/qemu-common.h
+index c2fcfad..e00710d 100644
+--- a/qemu-common.h
++++ b/qemu-common.h
+@@ -22,6 +22,7 @@ typedef struct DeviceState DeviceState;
+ #include <stdlib.h>
+ #include <stdio.h>
+ #include <stdarg.h>
++#include <stdbool.h>
+ #include <string.h>
+ #include <strings.h>
+ #include <inttypes.h>
+-- 
+1.7.4.rc1.16.gd2f15e
+

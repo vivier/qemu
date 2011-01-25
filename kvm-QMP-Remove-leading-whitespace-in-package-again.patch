@@ -1,0 +1,62 @@
+From 7e129cb95956b9a3e2dbbe2b09511b7134fc888c Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Tue, 4 Jan 2011 19:13:41 -0200
+Subject: [PATCH 09/23] QMP: Remove leading whitespace in 'package'
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1294168429-1120-9-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 15678
+O-Subject: [PATCH 08/16] QMP: Remove leading whitespace in 'package'
+Bugzilla: 647447
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+The 'package' member of QMP's greeting message contains a whitespace,
+which is likely to be only useful for humans. Fix it by dropping the
+whitespace.
+
+NOTE: This is a new version of 60307894a0623798d1235b15516ad6c1e354a28c
+      rebased to be applied on top of the last commit.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c |    9 +++++++--
+ 1 files changed, 7 insertions(+), 2 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c |    9 +++++++--
+ 1 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 6ff0f6d..211b964 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -694,7 +694,7 @@ static void do_info_version_print(Monitor *mon, const QObject *data)
+ 
+ static void do_info_version(Monitor *mon, QObject **ret_data)
+ {
+-    const char *version = QEMU_VERSION;
++    const char *p, *version = QEMU_VERSION;
+     int major = 0, minor = 0, micro = 0;
+     char *tmp;
+ 
+@@ -704,8 +704,13 @@ static void do_info_version(Monitor *mon, QObject **ret_data)
+     tmp++;
+     micro = strtol(tmp, &tmp, 10);
+ 
++    p = QEMU_PKGVERSION;
++    while (qemu_isspace(*p)) {
++        p++;
++    }
++
+     *ret_data = qobject_from_jsonf("{ 'qemu': { 'major': %d, 'minor': %d, \
+-        'micro': %d }, 'package': %s }", major, minor, micro, QEMU_PKGVERSION);
++        'micro': %d }, 'package': %s }", major, minor, micro, p);
+ }
+ 
+ static void do_info_name_print(Monitor *mon, const QObject *data)
+-- 
+1.7.4.rc1.16.gd2f15e
+

@@ -1,0 +1,159 @@
+From 3876a767dc11ef0c4a3b14acc279758077278e62 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Tue, 4 Jan 2011 19:13:48 -0200
+Subject: [PATCH 16/23] QMP: Introduce Human Monitor passthrough command
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1294168429-1120-16-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 15684
+O-Subject: [PATCH 15/16] QMP: Introduce Human Monitor passthrough command
+Bugzilla: 647447
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+This command allows QMP clients to execute HMP commands.
+
+Please, check the documentation added to the qmp-commands.hx file
+for additional details about the interface and its limitations.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+(cherry picked from commit 0268d97c51207f35a5a01239ad92ef2c35dcd5ba)
+
+Conflicts:
+
+	qmp-commands.hx
+
+Two rhel6-only changes are needed:
+
+ 1. We don't have qmp-commands.hx in the rhel6 branch, so we add the
+    command to qemu-monitor.hx
+
+ 2. It's needed to change do_hmp_passthrough() to check if we're in QMP,
+    because the human-monitor-command command can be called by the user
+    (This is already fixed upstream)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c       |   42 ++++++++++++++++++++++++++++++++++++++++++
+ qemu-monitor.hx |   45 +++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 87 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c       |   42 ++++++++++++++++++++++++++++++++++++++++++
+ qemu-monitor.hx |   45 +++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 87 insertions(+), 0 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 211b964..307e5a4 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -486,6 +486,48 @@ static int do_qmp_capabilities(Monitor *mon, const QDict *params,
+     return 0;
+ }
+ 
++static int mon_set_cpu(int cpu_index);
++static void handle_user_command(Monitor *mon, const char *cmdline);
++
++static int do_hmp_passthrough(Monitor *mon, const QDict *params,
++                              QObject **ret_data)
++{
++    int ret = 0;
++    Monitor *old_mon, hmp;
++    CharDriverState mchar;
++
++    if (!monitor_ctrl_mode(mon)) {
++        return -1;
++    }
++
++    memset(&hmp, 0, sizeof(hmp));
++    qemu_chr_init_mem(&mchar);
++    hmp.chr = &mchar;
++
++    old_mon = cur_mon;
++    cur_mon = &hmp;
++
++    if (qdict_haskey(params, "cpu-index")) {
++        ret = mon_set_cpu(qdict_get_int(params, "cpu-index"));
++        if (ret < 0) {
++            cur_mon = old_mon;
++            qerror_report(QERR_INVALID_PARAMETER_VALUE, "cpu-index", "a CPU number");
++            goto out;
++        }
++    }
++
++    handle_user_command(&hmp, qdict_get_str(params, "command-line"));
++    cur_mon = old_mon;
++
++    if (qemu_chr_mem_osize(hmp.chr) > 0) {
++        *ret_data = QOBJECT(qemu_chr_mem_to_qs(hmp.chr));
++    }
++
++out:
++    qemu_chr_close_mem(hmp.chr);
++    return ret;
++}
++
+ static int compare_cmd(const char *name, const char *list)
+ {
+     const char *p, *pstart;
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 8443254..5a52be7 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -1594,6 +1594,51 @@ Note: This command must be issued before issuing any other command.
+ EQMP
+ 
+     {
++        .name       = "human-monitor-command",
++        .args_type  = "command-line:s,cpu-index:i?",
++        .params     = "",
++        .help       = "",
++        .user_print = monitor_user_noop,
++        .mhandler.cmd_new = do_hmp_passthrough,
++    },
++
++SQMP
++human-monitor-command
++---------------------
++
++Execute a Human Monitor command.
++
++Arguments: 
++
++- command-line: the command name and its arguments, just like the
++                Human Monitor's shell (json-string)
++- cpu-index: select the CPU number to be used by commands which access CPU
++             data, like 'info registers'. The Monitor selects CPU 0 if this
++             argument is not provided (json-int, optional)
++
++Example:
++
++-> { "execute": "human-monitor-command", "arguments": { "command-line": "info kvm" } }
++<- { "return": "kvm support: enabled\r\n" }
++
++Notes:
++
++(1) The Human Monitor is NOT an stable interface, this means that command
++    names, arguments and responses can change or be removed at ANY time.
++    Applications that rely on long term stability guarantees should NOT
++    use this command
++
++(2) Limitations:
++
++    o This command is stateless, this means that commands that depend
++      on state information (such as getfd) might not work
++
++    o Commands that prompt the user for data (eg. 'cont' when the block
++      device is encrypted) don't currently work
++
++EQMP
++
++    {
+         .name       = RFQDN_REDHAT "drive_add",
+         .args_type  = "simple-drive:O",
+         .params     = "id=name,[file=file][,format=f][,media=d]...",
+-- 
+1.7.4.rc1.16.gd2f15e
+

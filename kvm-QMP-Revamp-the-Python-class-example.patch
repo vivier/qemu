@@ -1,0 +1,233 @@
+From dbfb058206904bb983043d6d8ae759567ec9da2d Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Tue, 4 Jan 2011 19:13:44 -0200
+Subject: [PATCH 12/23] QMP: Revamp the Python class example
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1294168429-1120-12-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 15681
+O-Subject: [PATCH 11/16] QMP: Revamp the Python class example
+Bugzilla: 647447
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+This commit simplifies and fixes a number of problems in the Python
+QEMUMonitorProtocol example class.
+
+It's almost a rewrite and it DOES BREAK the qmp-shell script (which
+is going to be fixed in the next commit).
+
+However, I'm not going to split this in different commits because it
+could get up to 10 commits, it's really not worth it for a simple
+demo class.
+
+Highlights:
+
+ o TCP sockets support
+ o QMP events support
+ o Add documentation
+ o Fix a number of unhandled errors
+ o Simplify methods that send commands to the Monitor
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+(cherry picked from commit 1d00a07de980ecf643c7d7699dfc48e94bec15ae)
+---
+ QMP/qmp.py |  157 ++++++++++++++++++++++++++++++++++++++++-------------------
+ 1 files changed, 106 insertions(+), 51 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ QMP/qmp.py |  157 ++++++++++++++++++++++++++++++++++++++++-------------------
+ 1 files changed, 106 insertions(+), 51 deletions(-)
+
+diff --git a/QMP/qmp.py b/QMP/qmp.py
+index 4062f84..14ce8b0 100644
+--- a/QMP/qmp.py
++++ b/QMP/qmp.py
+@@ -1,6 +1,6 @@
+ # QEMU Monitor Protocol Python class
+ # 
+-# Copyright (C) 2009 Red Hat Inc.
++# Copyright (C) 2009, 2010 Red Hat Inc.
+ #
+ # Authors:
+ #  Luiz Capitulino <lcapitulino@redhat.com>
+@@ -8,7 +8,9 @@
+ # This work is licensed under the terms of the GNU GPL, version 2.  See
+ # the COPYING file in the top-level directory.
+ 
+-import socket, json
++import json
++import errno
++import socket
+ 
+ class QMPError(Exception):
+     pass
+@@ -16,61 +18,114 @@ class QMPError(Exception):
+ class QMPConnectError(QMPError):
+     pass
+ 
++class QMPCapabilitiesError(QMPError):
++    pass
++
+ class QEMUMonitorProtocol:
++    def __init__(self, address):
++        """
++        Create a QEMUMonitorProtocol class.
++
++        @param address: QEMU address, can be either a unix socket path (string)
++                        or a tuple in the form ( address, port ) for a TCP
++                        connection
++        @note No connection is established, this is done by the connect() method
++        """
++        self.__events = []
++        self.__address = address
++        self.__sock = self.__get_sock()
++        self.__sockfile = self.__sock.makefile()
++
++    def __get_sock(self):
++        if isinstance(self.__address, tuple):
++            family = socket.AF_INET
++        else:
++            family = socket.AF_UNIX
++        return socket.socket(family, socket.SOCK_STREAM)
++
++    def __json_read(self):
++        while True:
++            data = self.__sockfile.readline()
++            if not data:
++                return
++            resp = json.loads(data)
++            if 'event' in resp:
++                self.__events.append(resp)
++                continue
++            return resp
++
++    error = socket.error
++
+     def connect(self):
+-        self.sock.connect(self.filename)
+-        data = self.__json_read()
+-        if data == None:
+-            raise QMPConnectError
+-        if not data.has_key('QMP'):
++        """
++        Connect to the QMP Monitor and perform capabilities negotiation.
++
++        @return QMP greeting dict
++        @raise socket.error on socket connection errors
++        @raise QMPConnectError if the greeting is not received
++        @raise QMPCapabilitiesError if fails to negotiate capabilities
++        """
++        self.__sock.connect(self.__address)
++        greeting = self.__json_read()
++        if greeting is None or not greeting.has_key('QMP'):
+             raise QMPConnectError
+-        return data['QMP']['capabilities']
++        # Greeting seems ok, negotiate capabilities
++        resp = self.cmd('qmp_capabilities')
++        if "return" in resp:
++            return greeting
++        raise QMPCapabilitiesError
+ 
+-    def close(self):
+-        self.sock.close()
++    def cmd_obj(self, qmp_cmd):
++        """
++        Send a QMP command to the QMP Monitor.
+ 
+-    def send_raw(self, line):
+-        self.sock.send(str(line))
++        @param qmp_cmd: QMP command to be sent as a Python dict
++        @return QMP response as a Python dict or None if the connection has
++                been closed
++        """
++        try:
++            self.__sock.sendall(json.dumps(qmp_cmd))
++        except socket.error, err:
++            if err[0] == errno.EPIPE:
++                return
++            raise socket.error(err)
+         return self.__json_read()
+ 
+-    def send(self, cmdline):
+-        cmd = self.__build_cmd(cmdline)
+-        self.__json_send(cmd)
+-        resp = self.__json_read()
+-        if resp == None:
+-            return
+-        elif resp.has_key('error'):
+-            return resp['error']
+-        else:
+-            return resp['return']
+-
+-    def __build_cmd(self, cmdline):
+-        cmdargs = cmdline.split()
+-        qmpcmd = { 'execute': cmdargs[0], 'arguments': {} }
+-        for arg in cmdargs[1:]:
+-            opt = arg.split('=')
+-            try:
+-                value = int(opt[1])
+-            except ValueError:
+-                value = opt[1]
+-            qmpcmd['arguments'][opt[0]] = value
+-        return qmpcmd
+-
+-    def __json_send(self, cmd):
+-        # XXX: We have to send any additional char, otherwise
+-        # the Server won't read our input
+-        self.sock.send(json.dumps(cmd) + ' ')
++    def cmd(self, name, args=None, id=None):
++        """
++        Build a QMP command and send it to the QMP Monitor.
+ 
+-    def __json_read(self):
++        @param name: command name (string)
++        @param args: command arguments (dict)
++        @param id: command id (dict, list, string or int)
++        """
++        qmp_cmd = { 'execute': name }
++        if args:
++            qmp_cmd['arguments'] = args
++        if id:
++            qmp_cmd['id'] = id
++        return self.cmd_obj(qmp_cmd)
++
++    def get_events(self):
++        """
++        Get a list of available QMP events.
++        """
++        self.__sock.setblocking(0)
+         try:
+-            while True:
+-                line = json.loads(self.sockfile.readline())
+-                if not 'event' in line:
+-                    return line
+-        except ValueError:
+-            return
+-
+-    def __init__(self, filename):
+-        self.filename = filename
+-        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+-        self.sockfile = self.sock.makefile()
++            self.__json_read()
++        except socket.error, err:
++            if err[0] == errno.EAGAIN:
++                # No data available
++                pass
++        self.__sock.setblocking(1)
++        return self.__events
++
++    def clear_events(self):
++        """
++        Clear current list of pending events.
++        """
++        self.__events = []
++
++    def close(self):
++        self.__sock.close()
++        self.__sockfile.close()
+-- 
+1.7.4.rc1.16.gd2f15e
+

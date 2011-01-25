@@ -1,0 +1,54 @@
+From f0fad2bbe04e343668f3fbe28d4e25bfe5828679 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Tue, 4 Jan 2011 19:13:37 -0200
+Subject: [PATCH 05/23] QMP: Fix python helper /wrt long return strings
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1294168429-1120-5-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 15674
+O-Subject: [PATCH 04/16] QMP: Fix python helper /wrt long return strings
+Bugzilla: 647447
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Jan Kiszka <jan.kiszka@siemens.com>
+
+Remove the arbitrary limitation of 1024 characters per return string and
+read complete lines instead. Required for device_show.
+
+Signed-off-by: Jan Kiszka <jan.kiszka@siemens.com>
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+(cherry picked from commit bbafc7a8798bc9ed1380e75033544e0614d344c7)
+---
+ QMP/qmp.py |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ QMP/qmp.py |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+diff --git a/QMP/qmp.py b/QMP/qmp.py
+index d9da603..4062f84 100644
+--- a/QMP/qmp.py
++++ b/QMP/qmp.py
+@@ -63,10 +63,14 @@ class QEMUMonitorProtocol:
+ 
+     def __json_read(self):
+         try:
+-            return json.loads(self.sock.recv(1024))
++            while True:
++                line = json.loads(self.sockfile.readline())
++                if not 'event' in line:
++                    return line
+         except ValueError:
+             return
+ 
+     def __init__(self, filename):
+         self.filename = filename
+         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
++        self.sockfile = self.sock.makefile()
+-- 
+1.7.4.rc1.16.gd2f15e
+

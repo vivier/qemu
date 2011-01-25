@@ -1,0 +1,62 @@
+From 3663cfae658bd3f21809d85e40a4491c7b3a1110 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 21 Jan 2011 03:08:11 -0200
+Subject: [PATCH 20/23] virtio-serial-bus: bump up control vq size to 32
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <f2dc3603340dd7612ef6620c282f3e7814ad8cc2.1295579289.git.amit.shah@redhat.com>
+Patchwork-id: 16724
+O-Subject: [RHEL6.1 v2 PATCH] virtio-serial-bus: bump up control vq size to 32
+Bugzilla: 656198
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+The current default of 16 buffers for the control vq is too small.  We
+can get more entries in there, for example when asking the guest to add
+max. allowed ports.
+
+Note: a more robust solution would involve some kind of event queueing
+in host to guarantee no event loss. Added a TODO to look into
+this later.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry picked from commit a01a9cb821a29852abb142ec52b26c8488ced6e8)
+
+Bugzilla: 656198
+---
+ hw/virtio-serial-bus.c |   10 ++++++++--
+ 1 files changed, 8 insertions(+), 2 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/virtio-serial-bus.c |   10 ++++++++--
+ 1 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index 7d10415..131831a 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -776,10 +776,16 @@ VirtIODevice *virtio_serial_init(DeviceState *dev, uint32_t max_nr_ports)
+     /* Add a queue for guest to host transfers for port 0 (backward compat) */
+     vser->ovqs[0] = virtio_add_queue(vdev, 128, handle_output);
+ 
++    /* TODO: host to guest notifications can get dropped
++     * if the queue fills up. Implement queueing in host,
++     * this might also make it possible to reduce the control
++     * queue size: as guest preposts buffers there,
++     * this will save 4Kbyte of guest memory per entry. */
++
+     /* control queue: host to guest */
+-    vser->c_ivq = virtio_add_queue(vdev, 16, control_in);
++    vser->c_ivq = virtio_add_queue(vdev, 32, control_in);
+     /* control queue: guest to host */
+-    vser->c_ovq = virtio_add_queue(vdev, 16, control_out);
++    vser->c_ovq = virtio_add_queue(vdev, 32, control_out);
+ 
+     for (i = 1; i < vser->bus->max_nr_ports; i++) {
+         /* Add a per-port queue for host to guest transfers */
+-- 
+1.7.4.rc1.16.gd2f15e
+

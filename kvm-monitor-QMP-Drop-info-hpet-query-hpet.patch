@@ -1,0 +1,125 @@
+From a2d197640049f5b776abc4c6cc52eb9b413d47cf Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Tue, 4 Jan 2011 19:13:35 -0200
+Subject: [PATCH 03/23] monitor/QMP: Drop info hpet / query-hpet
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1294168429-1120-3-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 15672
+O-Subject: [PATCH 02/16] monitor/QMP: Drop info hpet / query-hpet
+Bugzilla: 647447
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Jan Kiszka <jan.kiszka@siemens.com>
+
+This command was of minimal use before, now it is useless as the hpet
+become a qdev device and is thus easily discoverable. We should
+definitely not set query-hpet in QMP's stone, and there is also no good
+reason to keep it for the interactive monitor.
+
+Signed-off-by: Jan Kiszka <jan.kiszka@siemens.com>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+(cherry picked from commit ea4e78e590e5dbef9c41d987d2553d752ecb49b1)
+---
+ QMP/vm-info     |    2 +-
+ monitor.c       |   22 ----------------------
+ qemu-monitor.hx |   21 ---------------------
+ 3 files changed, 1 insertions(+), 44 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ QMP/vm-info     |    2 +-
+ monitor.c       |   22 ----------------------
+ qemu-monitor.hx |   21 ---------------------
+ 3 files changed, 1 insertions(+), 44 deletions(-)
+
+diff --git a/QMP/vm-info b/QMP/vm-info
+index b150d82..8ebaeb3 100755
+--- a/QMP/vm-info
++++ b/QMP/vm-info
+@@ -25,7 +25,7 @@ def main():
+     qemu = qmp.QEMUMonitorProtocol(argv[1])
+     qemu.connect()
+ 
+-    for cmd in [ 'version', 'hpet', 'kvm', 'status', 'uuid', 'balloon' ]:
++    for cmd in [ 'version', 'kvm', 'status', 'uuid', 'balloon' ]:
+         print cmd + ': ' + str(qemu.send('query-' + cmd))
+ 
+ if __name__ == '__main__':
+diff --git a/monitor.c b/monitor.c
+index d25291a..c462f5e 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -756,20 +756,6 @@ static void do_info_commands(Monitor *mon, QObject **ret_data)
+     *ret_data = QOBJECT(cmd_list);
+ }
+ 
+-#if defined(TARGET_I386)
+-static void do_info_hpet_print(Monitor *mon, const QObject *data)
+-{
+-    monitor_printf(mon, "HPET is %s by QEMU\n",
+-                   qdict_get_bool(qobject_to_qdict(data), "enabled") ?
+-                   "enabled" : "disabled");
+-}
+-
+-static void do_info_hpet(Monitor *mon, QObject **ret_data)
+-{
+-    *ret_data = qobject_from_jsonf("{ 'enabled': %i }", !no_hpet);
+-}
+-#endif
+-
+ static void do_info_uuid_print(Monitor *mon, const QObject *data)
+ {
+     monitor_printf(mon, "%s\n", qdict_get_str(qobject_to_qdict(data), "UUID"));
+@@ -2639,14 +2625,6 @@ static const mon_cmd_t info_cmds[] = {
+         .help       = "show the active virtual memory mappings",
+         .mhandler.info = mem_info,
+     },
+-    {
+-        .name       = "hpet",
+-        .args_type  = "",
+-        .params     = "",
+-        .help       = "show state of HPET",
+-        .user_print = do_info_hpet_print,
+-        .mhandler.info_new = do_info_hpet,
+-    },
+ #endif
+     {
+         .name       = "jit",
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 680e13f..b073c6f 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -2035,27 +2035,6 @@ show the active virtual memory mappings (i386 only)
+ ETEXI
+ 
+ STEXI
+-@item info hpet
+-show state of HPET (i386 only)
+-ETEXI
+-SQMP
+-query-hpet
+-----------
+-
+-Show HPET state.
+-
+-Return a json-object with the following information:
+-
+-- "enabled": true if hpet if enabled, false otherwise (json-bool)
+-
+-Example:
+-
+--> { "execute": "query-hpet" }
+-<- { "return": { "enabled": true } }
+-
+-EQMP
+-
+-STEXI
+ @item info jit
+ show dynamic compiler info
+ @item info kvm
+-- 
+1.7.4.rc1.16.gd2f15e
+

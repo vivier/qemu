@@ -1,0 +1,76 @@
+From 28945eebf0352c827a3b186ecb032163e5c79d56 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Tue, 4 Jan 2011 19:13:40 -0200
+Subject: [PATCH 08/23] QMP/monitor: update do_info_version() to output broken down version string
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1294168429-1120-8-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 15677
+O-Subject: [PATCH 07/16] QMP/monitor: update do_info_version() to output broken
+	down version string
+Bugzilla: 647447
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Miguel Di Ciurcio Filho <miguel.filho@gmail.com>
+
+This code was originally developed by Daniel P. Berrange <berrange@redhat.com>
+
+Signed-off-by: Miguel Di Ciurcio Filho <miguel.filho@gmail.com>
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 0ec0291d67ccfcc8a488d24341ee138902510ea3)
+---
+ monitor.c |   23 +++++++++++++++++++----
+ 1 files changed, 19 insertions(+), 4 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c |   23 +++++++++++++++++++----
+ 1 files changed, 19 insertions(+), 4 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 575a2a8..6ff0f6d 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -680,17 +680,32 @@ help:
+ static void do_info_version_print(Monitor *mon, const QObject *data)
+ {
+     QDict *qdict;
++    QDict *qemu;
+ 
+     qdict = qobject_to_qdict(data);
++    qemu = qdict_get_qdict(qdict, "qemu");
+ 
+-    monitor_printf(mon, "%s%s\n", qdict_get_str(qdict, "qemu"),
+-                                  qdict_get_str(qdict, "package"));
++    monitor_printf(mon, "%" PRId64 ".%" PRId64 ".%" PRId64 "%s\n",
++                  qdict_get_int(qemu, "major"),
++                  qdict_get_int(qemu, "minor"),
++                  qdict_get_int(qemu, "micro"),
++                  qdict_get_str(qdict, "package"));
+ }
+ 
+ static void do_info_version(Monitor *mon, QObject **ret_data)
+ {
+-    *ret_data = qobject_from_jsonf("{ 'qemu': %s, 'package': %s }",
+-                                   QEMU_VERSION, QEMU_PKGVERSION);
++    const char *version = QEMU_VERSION;
++    int major = 0, minor = 0, micro = 0;
++    char *tmp;
++
++    major = strtol(version, &tmp, 10);
++    tmp++;
++    minor = strtol(tmp, &tmp, 10);
++    tmp++;
++    micro = strtol(tmp, &tmp, 10);
++
++    *ret_data = qobject_from_jsonf("{ 'qemu': { 'major': %d, 'minor': %d, \
++        'micro': %d }, 'package': %s }", major, minor, micro, QEMU_PKGVERSION);
+ }
+ 
+ static void do_info_name_print(Monitor *mon, const QObject *data)
+-- 
+1.7.4.rc1.16.gd2f15e
+

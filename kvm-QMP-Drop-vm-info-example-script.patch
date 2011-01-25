@@ -1,0 +1,89 @@
+From e277ed773e1299095eab1e70c98be16c298ae8cf Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Tue, 4 Jan 2011 19:13:46 -0200
+Subject: [PATCH 14/23] QMP: Drop vm-info example script
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1294168429-1120-14-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 15683
+O-Subject: [PATCH 13/16] QMP: Drop vm-info example script
+Bugzilla: 647447
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+It's broken and not really useful, let's just drop it.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+(cherry picked from commit 4cdbc094ca3865696c1456f1586818766bf9aae6)
+---
+ QMP/README  |    5 +----
+ QMP/vm-info |   33 ---------------------------------
+ 2 files changed, 1 insertions(+), 37 deletions(-)
+ delete mode 100755 QMP/vm-info
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ QMP/README  |    5 +----
+ QMP/vm-info |   33 ---------------------------------
+ 2 files changed, 1 insertions(+), 37 deletions(-)
+ delete mode 100755 QMP/vm-info
+
+diff --git a/QMP/README b/QMP/README
+index 948d445..b4d65e3 100644
+--- a/QMP/README
++++ b/QMP/README
+@@ -19,10 +19,7 @@ o qmp-spec.txt      QEMU Monitor Protocol current specification
+ o qmp-commands.txt  QMP supported commands (auto-generated at build-time)
+ o qmp-events.txt    List of available asynchronous events
+ 
+-There are also two simple Python scripts available:
+-
+-o qmp-shell  A shell
+-o vm-info    Show some information about the Virtual Machine
++There is also a simple Python script called 'qmp-shell' available.
+ 
+ IMPORTANT: It's strongly recommended to read the 'Stability Considerations'
+ section in the qmp-commands.txt file before making any serious use of QMP.
+diff --git a/QMP/vm-info b/QMP/vm-info
+deleted file mode 100755
+index be5b038..0000000
+--- a/QMP/vm-info
++++ /dev/null
+@@ -1,33 +0,0 @@
+-#!/usr/bin/python
+-#
+-# Print Virtual Machine information
+-#
+-# Usage:
+-#
+-# Start QEMU with:
+-#
+-# $ qemu [...] -monitor control,unix:./qmp,server
+-#
+-# Run vm-info:
+-#
+-# $ vm-info ./qmp
+-#
+-# Luiz Capitulino <lcapitulino@redhat.com>
+-
+-import qmp
+-from sys import argv,exit
+-
+-def main():
+-    if len(argv) != 2:
+-        print 'vm-info <unix-socket>'
+-        exit(1)
+-
+-    qemu = qmp.QEMUMonitorProtocol(argv[1])
+-    qemu.connect()
+-    qemu.send("qmp_capabilities")
+-
+-    for cmd in [ 'version', 'kvm', 'status', 'uuid', 'balloon' ]:
+-        print cmd + ': ' + str(qemu.send('query-' + cmd))
+-
+-if __name__ == '__main__':
+-    main()
+-- 
+1.7.4.rc1.16.gd2f15e
+

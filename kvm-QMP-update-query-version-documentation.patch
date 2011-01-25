@@ -1,0 +1,67 @@
+From c34b867e9afc780e466620e4ccdbc878295e2009 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Tue, 4 Jan 2011 19:13:38 -0200
+Subject: [PATCH 06/23] QMP: update 'query-version' documentation
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1294168429-1120-6-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 15675
+O-Subject: [PATCH 05/16] QMP: update 'query-version' documentation
+Bugzilla: 647447
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Miguel Di Ciurcio Filho <miguel.filho@gmail.com>
+
+Update the documentation of 'query-version' to output the string version broken
+down.
+
+Signed-off-by: Miguel Di Ciurcio Filho <miguel.filho@gmail.com>
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 6597e1a6dc2585c6e313b97fa750b7232dc904fd)
+---
+ qemu-monitor.hx |   16 ++++++++++++++--
+ 1 files changed, 14 insertions(+), 2 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-monitor.hx |   16 ++++++++++++++--
+ 1 files changed, 14 insertions(+), 2 deletions(-)
+
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index b073c6f..dfed4b8 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -1727,13 +1727,25 @@ Show QEMU version.
+ 
+ Return a json-object with the following information:
+ 
+-- "qemu": QEMU's version (json-string)
++- "qemu": A json-object containing three integer values:
++    - "major": QEMU's major version (json-int)
++    - "minor": QEMU's minor version (json-int)
++    - "micro": QEMU's micro version (json-int)
+ - "package": package's version (json-string)
+ 
+ Example:
+ 
+ -> { "execute": "query-version" }
+-<- { "return": { "qemu": "0.11.50", "package": "" } }
++<- {
++      "return":{
++         "qemu":{
++            "major":0,
++            "minor":11,
++            "micro":5
++         },
++         "package":""
++      }
++   }
+ 
+ EQMP
+ 
+-- 
+1.7.4.rc1.16.gd2f15e
+

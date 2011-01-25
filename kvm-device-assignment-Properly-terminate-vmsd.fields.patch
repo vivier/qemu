@@ -1,0 +1,56 @@
+From df6ef547585d46cfb4b1686c59819761d3b70a87 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Fri, 21 Jan 2011 17:34:08 -0200
+Subject: [PATCH 23/23] device-assignment: Properly terminate vmsd.fields
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20110121173405.12679.76947.stgit@s20.home>
+Patchwork-id: 16756
+O-Subject: [RHEL6.1 qemu-kvm PATCH 3/3] device-assignment: Properly terminate
+	vmsd.fields
+Bugzilla: 635954
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=635954
+Upstream commit: 367a9617815c0310cfba3648fe6fb3d39ce98133
+Brew build: https://brewweb.devel.redhat.com/taskinfo?taskID=3056309
+
+The vmsd code expects the fields structure to be properly terminated,
+not NULL.  An assigned device should never be saved or restored, and
+recent qemu fixes to the no_migrate flag should ensure this, but let's
+avoid setting the wrong precedent.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Acked-by: Juan Quintela <quintela@redhat.com>
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+---
+
+ hw/device-assignment.c |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/device-assignment.c |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index 9bcfe7e..7bb2b42 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -1640,7 +1640,10 @@ static void assigned_dev_unregister_msix_mmio(AssignedDevice *dev)
+ }
+ 
+ static const VMStateDescription vmstate_assigned_device = {
+-    .name = "pci-assign"
++    .name = "pci-assign",
++    .fields = (VMStateField []) {
++        VMSTATE_END_OF_LIST()
++    }
+ };
+ 
+ static int assigned_initfn(struct PCIDevice *pci_dev)
+-- 
+1.7.4.rc1.16.gd2f15e
+

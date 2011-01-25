@@ -1,0 +1,61 @@
+From 0050119de82aefb76e0cf50a3bf5a46cc847888b Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Tue, 4 Jan 2011 19:13:36 -0200
+Subject: [PATCH 04/23] QMP: Teach basic capability negotiation to python example
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1294168429-1120-4-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 15673
+O-Subject: [PATCH 03/16] QMP: Teach basic capability negotiation to python
+	example
+Bugzilla: 647447
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Jan Kiszka <jan.kiszka@siemens.com>
+
+As sending "qmp_capabilities" on session start became mandatory, both
+python examples were broken.
+
+Signed-off-by: Jan Kiszka <jan.kiszka@siemens.com>
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+(cherry picked from commit 8d7e84571bd3f44c106ed12cb316b1ca30915fc7)
+---
+ QMP/qmp-shell |    1 +
+ QMP/vm-info   |    1 +
+ 2 files changed, 2 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ QMP/qmp-shell |    1 +
+ QMP/vm-info   |    1 +
+ 2 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/QMP/qmp-shell b/QMP/qmp-shell
+index f89b9af..a5b72d1 100755
+--- a/QMP/qmp-shell
++++ b/QMP/qmp-shell
+@@ -42,6 +42,7 @@ def main():
+ 
+     qemu = qmp.QEMUMonitorProtocol(argv[1])
+     qemu.connect()
++    qemu.send("qmp_capabilities")
+ 
+     print 'Connected!'
+ 
+diff --git a/QMP/vm-info b/QMP/vm-info
+index 8ebaeb3..be5b038 100755
+--- a/QMP/vm-info
++++ b/QMP/vm-info
+@@ -24,6 +24,7 @@ def main():
+ 
+     qemu = qmp.QEMUMonitorProtocol(argv[1])
+     qemu.connect()
++    qemu.send("qmp_capabilities")
+ 
+     for cmd in [ 'version', 'kvm', 'status', 'uuid', 'balloon' ]:
+         print cmd + ': ' + str(qemu.send('query-' + cmd))
+-- 
+1.7.4.rc1.16.gd2f15e
+

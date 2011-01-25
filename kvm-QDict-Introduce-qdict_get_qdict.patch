@@ -1,0 +1,69 @@
+From 83f485b11406336e10de728c33f62325e6783684 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Tue, 4 Jan 2011 19:13:34 -0200
+Subject: [PATCH 02/23] QDict: Introduce qdict_get_qdict()
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1294168429-1120-2-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 15671
+O-Subject: [PATCH 01/16] QDict: Introduce qdict_get_qdict()
+Bugzilla: 647447
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+A helper to retrieve a QDict from a QDict.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit df10ce6aa96ef6782250cec8ab53742144ed5c93)
+---
+ qdict.c |   13 +++++++++++++
+ qdict.h |    1 +
+ 2 files changed, 14 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qdict.c |   13 +++++++++++++
+ qdict.h |    1 +
+ 2 files changed, 14 insertions(+), 0 deletions(-)
+
+diff --git a/qdict.c b/qdict.c
+index 32119cf..7d1469d 100644
+--- a/qdict.c
++++ b/qdict.c
+@@ -240,6 +240,19 @@ QList *qdict_get_qlist(const QDict *qdict, const char *key)
+ }
+ 
+ /**
++ * qdict_get_qdict(): Get the QDict mapped by 'key'
++ *
++ * This function assumes that 'key' exists and it stores a
++ * QDict object.
++ *
++ * Return QDict mapped by 'key'.
++ */
++QDict *qdict_get_qdict(const QDict *qdict, const char *key)
++{
++    return qobject_to_qdict(qdict_get_obj(qdict, key, QTYPE_QDICT));
++}
++
++/**
+  * qdict_get_str(): Get a pointer to the stored string mapped
+  * by 'key'
+  *
+diff --git a/qdict.h b/qdict.h
+index 5649ccf..579dcdd 100644
+--- a/qdict.h
++++ b/qdict.h
+@@ -41,6 +41,7 @@ double qdict_get_double(const QDict *qdict, const char *key);
+ int64_t qdict_get_int(const QDict *qdict, const char *key);
+ int qdict_get_bool(const QDict *qdict, const char *key);
+ QList *qdict_get_qlist(const QDict *qdict, const char *key);
++QDict *qdict_get_qdict(const QDict *qdict, const char *key);
+ const char *qdict_get_str(const QDict *qdict, const char *key);
+ int64_t qdict_get_try_int(const QDict *qdict, const char *key,
+                           int64_t err_value);
+-- 
+1.7.4.rc1.16.gd2f15e
+

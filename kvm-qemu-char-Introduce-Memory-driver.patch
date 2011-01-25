@@ -1,0 +1,141 @@
+From dce7bf2484db6b0794bf0bd02b96020a0015e2dc Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Tue, 4 Jan 2011 19:13:47 -0200
+Subject: [PATCH 15/23] qemu-char: Introduce Memory driver
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1294168429-1120-15-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 15685
+O-Subject: [PATCH 14/16] qemu-char: Introduce Memory driver
+Bugzilla: 647447
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+This driver handles in-memory chardev operations. That's, all writes
+to this driver are stored in an internal buffer and it doesn't talk
+to the external world in any way.
+
+Right now it's very simple: it supports only writes. But it can be
+easily extended to support more operations.
+
+This is going to be used by the monitor's "HMP passthrough via QMP"
+feature, which needs to run monitor handlers without a backing
+device.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+(cherry picked from commit 999bd67c879cbd8bf0fe2b4ff0fb308a9a48ec72)
+---
+ qemu-char.c |   64 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ qemu-char.h |    7 ++++++
+ 2 files changed, 71 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-char.c |   64 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ qemu-char.h |    7 ++++++
+ 2 files changed, 71 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-char.c b/qemu-char.c
+index 70a7425..0634117 100644
+--- a/qemu-char.c
++++ b/qemu-char.c
+@@ -2258,6 +2258,70 @@ static CharDriverState *qemu_chr_open_socket(QemuOpts *opts)
+     return NULL;
+ }
+ 
++/***********************************************************/
++/* Memory chardev */
++typedef struct {
++    size_t outbuf_size;
++    size_t outbuf_capacity;
++    uint8_t *outbuf;
++} MemoryDriver;
++
++static int mem_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
++{
++    MemoryDriver *d = chr->opaque;
++
++    /* TODO: the QString implementation has the same code, we should
++     * introduce a generic way to do this in cutils.c */
++    if (d->outbuf_capacity < d->outbuf_size + len) {
++        /* grow outbuf */
++        d->outbuf_capacity += len;
++        d->outbuf_capacity *= 2;
++        d->outbuf = qemu_realloc(d->outbuf, d->outbuf_capacity);
++    }
++
++    memcpy(d->outbuf + d->outbuf_size, buf, len);
++    d->outbuf_size += len;
++
++    return len;
++}
++
++void qemu_chr_init_mem(CharDriverState *chr)
++{
++    MemoryDriver *d;
++
++    d = qemu_malloc(sizeof(*d));
++    d->outbuf_size = 0;
++    d->outbuf_capacity = 4096;
++    d->outbuf = qemu_mallocz(d->outbuf_capacity);
++
++    memset(chr, 0, sizeof(*chr));
++    chr->opaque = d;
++    chr->chr_write = mem_chr_write;
++}
++
++QString *qemu_chr_mem_to_qs(CharDriverState *chr)
++{
++    MemoryDriver *d = chr->opaque;
++    return qstring_from_substr((char *) d->outbuf, 0, d->outbuf_size - 1);
++}
++
++/* NOTE: this driver can not be closed with qemu_chr_close()! */
++void qemu_chr_close_mem(CharDriverState *chr)
++{
++    MemoryDriver *d = chr->opaque;
++
++    qemu_free(d->outbuf);
++    qemu_free(chr->opaque);
++    chr->opaque = NULL;
++    chr->chr_write = NULL;
++}
++
++size_t qemu_chr_mem_osize(const CharDriverState *chr)
++{
++    const MemoryDriver *d = chr->opaque;
++    return d->outbuf_size;
++}
++
+ QemuOpts *qemu_chr_parse_compat(const char *label, const char *filename)
+ {
+     char host[65], port[33], width[8], height[8];
+diff --git a/qemu-char.h b/qemu-char.h
+index bcc0766..d04611a 100644
+--- a/qemu-char.h
++++ b/qemu-char.h
+@@ -6,6 +6,7 @@
+ #include "qemu-option.h"
+ #include "qemu-config.h"
+ #include "qobject.h"
++#include "qstring.h"
+ 
+ /* character device */
+ 
+@@ -95,6 +96,12 @@ CharDriverState *qemu_chr_find(const char *name);
+ 
+ extern int term_escape_char;
+ 
++/* memory chardev */
++void qemu_chr_init_mem(CharDriverState *chr);
++void qemu_chr_close_mem(CharDriverState *chr);
++QString *qemu_chr_mem_to_qs(CharDriverState *chr);
++size_t qemu_chr_mem_osize(const CharDriverState *chr);
++
+ /* async I/O support */
+ 
+ int qemu_set_fd_handler2(int fd,
+-- 
+1.7.4.rc1.16.gd2f15e
+

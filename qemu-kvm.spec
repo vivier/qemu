@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.131
+%define pkgrelease 2.132
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -1685,6 +1685,52 @@ Patch1818: kvm-Add-a-DTrace-tracing-backend-targetted-for-SystemTAP.patch
 Patch1819: kvm-Add-support-for-generating-a-systemtap-tapset-static.patch
 # For bz#632722 - [6.1 FEAT] QEMU static tracing framework
 Patch1820: kvm-trace-Trace-vm_start-vm_stop.patch
+# For bz#636494 - -cpu check  does not correctly enforce CPUID items
+Patch1821: kvm-BZ-636494-cpu-check-does-not-correctly-enforce-CPUID.patch
+# For bz#647447 - QMP:  provide a hmp_passthrough command to allow execution of non-converted commands
+Patch1822: kvm-QDict-Introduce-qdict_get_qdict.patch
+# For bz#647447 - QMP:  provide a hmp_passthrough command to allow execution of non-converted commands
+Patch1823: kvm-monitor-QMP-Drop-info-hpet-query-hpet.patch
+# For bz#647447 - QMP:  provide a hmp_passthrough command to allow execution of non-converted commands
+Patch1824: kvm-QMP-Teach-basic-capability-negotiation-to-python-exa.patch
+# For bz#647447 - QMP:  provide a hmp_passthrough command to allow execution of non-converted commands
+Patch1825: kvm-QMP-Fix-python-helper-wrt-long-return-strings.patch
+# For bz#647447 - QMP:  provide a hmp_passthrough command to allow execution of non-converted commands
+Patch1826: kvm-QMP-update-query-version-documentation.patch
+# For bz#647447 - QMP:  provide a hmp_passthrough command to allow execution of non-converted commands
+Patch1827: kvm-Revert-QMP-Remove-leading-whitespace-in-package.patch
+# For bz#647447 - QMP:  provide a hmp_passthrough command to allow execution of non-converted commands
+Patch1828: kvm-QMP-monitor-update-do_info_version-to-output-broken-.patch
+# For bz#647447 - QMP:  provide a hmp_passthrough command to allow execution of non-converted commands
+Patch1829: kvm-QMP-Remove-leading-whitespace-in-package-again.patch
+# For bz#647447 - QMP:  provide a hmp_passthrough command to allow execution of non-converted commands
+Patch1830: kvm-QMP-doc-Add-Stability-Considerations-section.patch
+# For bz#647447 - QMP:  provide a hmp_passthrough command to allow execution of non-converted commands
+Patch1831: kvm-QMP-Update-README-file.patch
+# For bz#647447 - QMP:  provide a hmp_passthrough command to allow execution of non-converted commands
+Patch1832: kvm-QMP-Revamp-the-Python-class-example.patch
+# For bz#647447 - QMP:  provide a hmp_passthrough command to allow execution of non-converted commands
+Patch1833: kvm-QMP-Revamp-the-qmp-shell-script.patch
+# For bz#647447 - QMP:  provide a hmp_passthrough command to allow execution of non-converted commands
+Patch1834: kvm-QMP-Drop-vm-info-example-script.patch
+# For bz#647447 - QMP:  provide a hmp_passthrough command to allow execution of non-converted commands
+Patch1835: kvm-qemu-char-Introduce-Memory-driver.patch
+# For bz#647447 - QMP:  provide a hmp_passthrough command to allow execution of non-converted commands
+Patch1836: kvm-QMP-Introduce-Human-Monitor-passthrough-command.patch
+# For bz#647447 - QMP:  provide a hmp_passthrough command to allow execution of non-converted commands
+Patch1837: kvm-QMP-qmp-shell-Introduce-HMP-mode.patch
+# For bz#667188 - device-assignment leaks option ROM memory
+Patch1838: kvm-PCI-Export-pci_map_option_rom.patch
+# For bz#667188 - device-assignment leaks option ROM memory
+Patch1839: kvm-device-assignment-Allow-PCI-to-manage-the-option-ROM.patch
+# For bz#656198 - Can only see 16 virtio ports while assigned 30 virtio serial ports on commandLine
+Patch1840: kvm-virtio-serial-bus-bump-up-control-vq-size-to-32.patch
+# For bz#635954 - RFE: Assigned device should block migration
+Patch1841: kvm-Move-stdbool.h.patch
+# For bz#635954 - RFE: Assigned device should block migration
+Patch1842: kvm-savevm-Fix-no_migrate.patch
+# For bz#635954 - RFE: Assigned device should block migration
+Patch1843: kvm-device-assignment-Properly-terminate-vmsd.fields.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2613,6 +2659,29 @@ ApplyOptionalPatch()
 %patch1818 -p1
 %patch1819 -p1
 %patch1820 -p1
+%patch1821 -p1
+%patch1822 -p1
+%patch1823 -p1
+%patch1824 -p1
+%patch1825 -p1
+%patch1826 -p1
+%patch1827 -p1
+%patch1828 -p1
+%patch1829 -p1
+%patch1830 -p1
+%patch1831 -p1
+%patch1832 -p1
+%patch1833 -p1
+%patch1834 -p1
+%patch1835 -p1
+%patch1836 -p1
+%patch1837 -p1
+%patch1838 -p1
+%patch1839 -p1
+%patch1840 -p1
+%patch1841 -p1
+%patch1842 -p1
+%patch1843 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -2824,6 +2893,41 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jan 25 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.132.el6
+- kvm-BZ-636494-cpu-check-does-not-correctly-enforce-CPUID.patch [bz#636494]
+- kvm-QDict-Introduce-qdict_get_qdict.patch [bz#647447]
+- kvm-monitor-QMP-Drop-info-hpet-query-hpet.patch [bz#647447]
+- kvm-QMP-Teach-basic-capability-negotiation-to-python-exa.patch [bz#647447]
+- kvm-QMP-Fix-python-helper-wrt-long-return-strings.patch [bz#647447]
+- kvm-QMP-update-query-version-documentation.patch [bz#647447]
+- kvm-Revert-QMP-Remove-leading-whitespace-in-package.patch [bz#647447]
+- kvm-QMP-monitor-update-do_info_version-to-output-broken-.patch [bz#647447]
+- kvm-QMP-Remove-leading-whitespace-in-package-again.patch [bz#647447]
+- kvm-QMP-doc-Add-Stability-Considerations-section.patch [bz#647447]
+- kvm-QMP-Update-README-file.patch [bz#647447]
+- kvm-QMP-Revamp-the-Python-class-example.patch [bz#647447]
+- kvm-QMP-Revamp-the-qmp-shell-script.patch [bz#647447]
+- kvm-QMP-Drop-vm-info-example-script.patch [bz#647447]
+- kvm-qemu-char-Introduce-Memory-driver.patch [bz#647447]
+- kvm-QMP-Introduce-Human-Monitor-passthrough-command.patch [bz#647447]
+- kvm-QMP-qmp-shell-Introduce-HMP-mode.patch [bz#647447]
+- kvm-PCI-Export-pci_map_option_rom.patch [bz#667188]
+- kvm-device-assignment-Allow-PCI-to-manage-the-option-ROM.patch [bz#667188]
+- kvm-virtio-serial-bus-bump-up-control-vq-size-to-32.patch [bz#656198]
+- kvm-Move-stdbool.h.patch [bz#635954]
+- kvm-savevm-Fix-no_migrate.patch [bz#635954]
+- kvm-device-assignment-Properly-terminate-vmsd.fields.patch [bz#635954]
+- Resolves: bz#635954
+  (RFE: Assigned device should block migration)
+- Resolves: bz#636494
+  (-cpu check  does not correctly enforce CPUID items)
+- Resolves: bz#647447
+  (QMP:  provide a hmp_passthrough command to allow execution of non-converted commands)
+- Resolves: bz#656198
+  (Can only see 16 virtio ports while assigned 30 virtio serial ports on commandLine)
+- Resolves: bz#667188
+  (device-assignment leaks option ROM memory)
+
 * Mon Jan 24 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.131.el6
 - fix spec file to require systemtap, or configure won't enable the systemtap
   tapset

@@ -1,0 +1,73 @@
+From a7726f55f743778da6d25c2e7d74e8d4e0eaf223 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Tue, 4 Jan 2011 19:13:42 -0200
+Subject: [PATCH 10/23] QMP doc: Add 'Stability Considerations' section
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1294168429-1120-10-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 15679
+O-Subject: [PATCH 09/16] QMP doc: Add 'Stability Considerations' section
+Bugzilla: 647447
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 05705ce2f8dfd8dcb5622b66ece21c9737a8502c)
+---
+ qemu-monitor.hx |   26 ++++++++++++++++++++++++--
+ 1 files changed, 24 insertions(+), 2 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-monitor.hx |   26 ++++++++++++++++++++++++--
+ 1 files changed, 24 insertions(+), 2 deletions(-)
+
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index dfed4b8..8443254 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -36,7 +36,29 @@ information on the Server command and response formats.
+ 
+ NOTE: This document is temporary and will be replaced soon.
+ 
+-1. Regular Commands
++1. Stability Considerations
++===========================
++
++The current QMP command set (described in this file) may be useful for a
++number of use cases, however it's limited and several commands have bad
++defined semantics, specially with regard to command completion.
++
++These problems are going to be solved incrementally in the next QEMU releases
++and we're going to establish a deprecation policy for badly defined commands.
++
++If you're planning to adopt QMP, please observe the following:
++
++    1. The deprecation policy will take efect and be documented soon, please
++       check the documentation of each used command as soon as a new release of
++       QEMU is available
++
++    2. DO NOT rely on anything which is not explicit documented
++
++    3. Errors, in special, are not documented. Applications should NOT check
++       for specific errors classes or data (it's strongly recommended to only
++       check for the "error" key)
++
++2. Regular Commands
+ ===================
+ 
+ Server's responses in the examples below are always a success response, please
+@@ -1696,7 +1718,7 @@ HXCOMM This is required for the QMP documentation layout.
+ 
+ SQMP
+ 
+-2. Query Commands
++3. Query Commands
+ =================
+ 
+ EQMP
+-- 
+1.7.4.rc1.16.gd2f15e
+
