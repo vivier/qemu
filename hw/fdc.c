@@ -82,7 +82,6 @@ typedef enum fdisk_flags_t {
 } fdisk_flags_t;
 
 typedef struct fdrive_t {
-    DriveInfo *dinfo;
     BlockDriverState *bs;
     /* Drive status */
     fdrive_type_t drive;
@@ -102,7 +101,6 @@ typedef struct fdrive_t {
 static void fd_init (fdrive_t *drv)
 {
     /* Drive */
-    drv->bs = drv->dinfo ? drv->dinfo->bdrv : NULL;
     drv->drive = FDRIVE_DRV_NONE;
     drv->perpendicular = 0;
     /* Disk */
@@ -1870,10 +1868,10 @@ fdctrl_t *fdctrl_init_isa(DriveInfo **fds)
 
     dev = isa_create("isa-fdc");
     if (fds[0]) {
-        qdev_prop_set_drive(&dev->qdev, "driveA", fds[0]);
+        qdev_prop_set_drive(&dev->qdev, "driveA", fds[0]->bdrv);
     }
     if (fds[1]) {
-        qdev_prop_set_drive(&dev->qdev, "driveB", fds[1]);
+        qdev_prop_set_drive(&dev->qdev, "driveB", fds[1]->bdrv);
     }
     if (qdev_init(&dev->qdev) < 0)
         return NULL;
@@ -1893,10 +1891,10 @@ fdctrl_t *fdctrl_init_sysbus(qemu_irq irq, int dma_chann,
     fdctrl = &sys->state;
     fdctrl->dma_chann = dma_chann; /* FIXME */
     if (fds[0]) {
-        qdev_prop_set_drive(dev, "driveA", fds[0]);
+        qdev_prop_set_drive(dev, "driveA", fds[0]->bdrv);
     }
     if (fds[1]) {
-        qdev_prop_set_drive(dev, "driveB", fds[1]);
+        qdev_prop_set_drive(dev, "driveB", fds[1]->bdrv);
     }
     qdev_init_nofail(dev);
     sysbus_connect_irq(&sys->busdev, 0, irq);
@@ -1914,7 +1912,7 @@ fdctrl_t *sun4m_fdctrl_init (qemu_irq irq, target_phys_addr_t io_base,
 
     dev = qdev_create(NULL, "SUNW,fdtwo");
     if (fds[0]) {
-        qdev_prop_set_drive(dev, "drive", fds[0]);
+        qdev_prop_set_drive(dev, "drive", fds[0]->bdrv);
     }
     qdev_init_nofail(dev);
     sys = DO_UPCAST(fdctrl_sysbus_t, busdev.qdev, dev);
@@ -2033,8 +2031,8 @@ static ISADeviceInfo isa_fdc_info = {
     .qdev.no_user = 1,
     .qdev.reset = fdctrl_external_reset_isa,
     .qdev.props = (Property[]) {
-        DEFINE_PROP_DRIVE("driveA", fdctrl_isabus_t, state.drives[0].dinfo),
-        DEFINE_PROP_DRIVE("driveB", fdctrl_isabus_t, state.drives[1].dinfo),
+        DEFINE_PROP_DRIVE("driveA", fdctrl_isabus_t, state.drives[0].bs),
+        DEFINE_PROP_DRIVE("driveB", fdctrl_isabus_t, state.drives[1].bs),
         DEFINE_PROP_INT32("bootindexA", fdctrl_isabus_t, bootindexA, -1),
         DEFINE_PROP_INT32("bootindexB", fdctrl_isabus_t, bootindexB, -1),
         DEFINE_PROP_END_OF_LIST(),
@@ -2047,8 +2045,8 @@ static SysBusDeviceInfo sysbus_fdc_info = {
     .qdev.size  = sizeof(fdctrl_sysbus_t),
     .qdev.reset = fdctrl_external_reset_sysbus,
     .qdev.props = (Property[]) {
-        DEFINE_PROP_DRIVE("driveA", fdctrl_sysbus_t, state.drives[0].dinfo),
-        DEFINE_PROP_DRIVE("driveB", fdctrl_sysbus_t, state.drives[1].dinfo),
+        DEFINE_PROP_DRIVE("driveA", fdctrl_sysbus_t, state.drives[0].bs),
+        DEFINE_PROP_DRIVE("driveB", fdctrl_sysbus_t, state.drives[1].bs),
         DEFINE_PROP_END_OF_LIST(),
     },
 };
@@ -2059,7 +2057,7 @@ static SysBusDeviceInfo sun4m_fdc_info = {
     .qdev.size  = sizeof(fdctrl_sysbus_t),
     .qdev.reset = fdctrl_external_reset_sysbus,
     .qdev.props = (Property[]) {
-        DEFINE_PROP_DRIVE("drive", fdctrl_sysbus_t, state.drives[0].dinfo),
+        DEFINE_PROP_DRIVE("drive", fdctrl_sysbus_t, state.drives[0].bs),
         DEFINE_PROP_END_OF_LIST(),
     },
 };
