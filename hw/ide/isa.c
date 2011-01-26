@@ -72,7 +72,7 @@ static int isa_ide_initfn(ISADevice *dev)
     isa_init_irq(dev, &s->irq, s->isairq);
     isa_init_ioport_range(dev, s->iobase, 8);
     isa_init_ioport(dev, s->iobase2);
-    ide_init2(&s->bus, NULL, NULL, s->irq);
+    ide_init2(&s->bus, s->irq);
     vmstate_register(&dev->qdev, 0, &vmstate_ide_isa, s);
     return 0;
 };
