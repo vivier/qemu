@@ -169,6 +169,9 @@ typedef enum {
     BLOCK_ERR_STOP_ANY
 } BlockInterfaceErrorAction;
 
+void blockdev_mark_auto_del(BlockDriverState *bs);
+void blockdev_auto_del(BlockDriverState *bs);
+
 #define BLOCK_SERIAL_STRLEN 20
 
 typedef struct DriveInfo {
@@ -178,6 +181,7 @@ typedef struct DriveInfo {
     BlockInterfaceType type;
     int bus;
     int unit;
+    int auto_del;               /* see blockdev_mark_auto_del() */
     QemuOpts *opts;
     BlockInterfaceErrorAction on_read_error;
     BlockInterfaceErrorAction on_write_error;
