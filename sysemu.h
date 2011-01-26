@@ -201,6 +201,7 @@ extern DriveInfo *drive_get(BlockInterfaceType type, int bus, int unit);
 extern DriveInfo *drive_get_by_id(const char *id);
 extern int drive_get_max_bus(BlockInterfaceType type);
 extern void drive_uninit(DriveInfo *dinfo);
+extern DriveInfo *drive_get_by_blockdev(BlockDriverState *bs);
 extern const char *drive_get_serial(BlockDriverState *bdrv);
 
 extern BlockInterfaceErrorAction drive_get_on_error(
