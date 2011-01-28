@@ -1,0 +1,323 @@
+From beef6f56424910f621cee0373aa0a0e0eaec9417 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 5 Jan 2011 15:29:10 -0200
+Subject: [PATCH 05/48] Rewrite mouse handlers to use QTAILQ and to have an activation function
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1294241382-17988-7-git-send-email-kraxel@redhat.com>
+Patchwork-id: 15746
+O-Subject: [RHEL-6 kvm PATCH 06/38] Rewrite mouse handlers to use QTAILQ and to
+	have an activation function
+Bugzilla: 642131 634153 615947 632458 631832 647865
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+And convert usb-hid to use it (to avoid regression with bisection)
+
+Right now, when we do info mice and we've added a usb tablet, we don't see it
+until the guest starts using the tablet.  We implement this behavior in order
+to provide a means to delay registration of a mouse handler since we treat
+the last registered handler as the current handler.
+
+This is a usability problem though as we would like to give the user feedback
+that they've either 1) not added an absolute device 2) there is an absolute
+device but the guest isn't using it 3) we have an absolute device and it's
+active.
+
+By using QTAILQ and having an explicit activation function that moves the
+handler to the front of the queue, we can implement the same semantics as
+before with respect to automatically switching to usb tablet while providing
+the user with a whole lot more information.
+
+upstream: 6fef28ee6e5e0a443857e67aa026d49b6bbdc1b6
+
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ console.h    |    6 +++-
+ hw/usb-hid.c |   15 ++++++--
+ vl.c         |  109 ++++++++++++++++++++++-----------------------------------
+ 3 files changed, 58 insertions(+), 72 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ console.h    |    6 +++-
+ hw/usb-hid.c |   15 ++++++--
+ vl.c         |  109 ++++++++++++++++++++++-----------------------------------
+ 3 files changed, 58 insertions(+), 72 deletions(-)
+
+diff --git a/console.h b/console.h
+index 402fd0c..053a00e 100644
+--- a/console.h
++++ b/console.h
+@@ -28,8 +28,10 @@ typedef struct QEMUPutMouseEntry {
+     int qemu_put_mouse_event_absolute;
+     char *qemu_put_mouse_event_name;
+ 
++    int index;
++
+     /* used internally by qemu for handling mice */
+-    struct QEMUPutMouseEntry *next;
++    QTAILQ_ENTRY(QEMUPutMouseEntry) node;
+ } QEMUPutMouseEntry;
+ 
+ typedef struct QEMUPutLEDEntry {
+@@ -44,6 +46,8 @@ QEMUPutMouseEntry *qemu_add_mouse_event_handler(QEMUPutMouseEvent *func,
+                                                 void *opaque, int absolute,
+                                                 const char *name);
+ void qemu_remove_mouse_event_handler(QEMUPutMouseEntry *entry);
++void qemu_activate_mouse_event_handler(QEMUPutMouseEntry *entry);
++
+ QEMUPutLEDEntry *qemu_add_led_event_handler(QEMUPutLEDEvent *func, void *opaque);
+ void qemu_remove_led_event_handler(QEMUPutLEDEntry *entry);
+ 
+diff --git a/hw/usb-hid.c b/hw/usb-hid.c
+index 09a21fd..07ab0e4 100644
+--- a/hw/usb-hid.c
++++ b/hw/usb-hid.c
+@@ -510,8 +510,7 @@ static int usb_mouse_poll(USBHIDState *hs, uint8_t *buf, int len)
+     USBMouseState *s = &hs->ptr;
+ 
+     if (!s->mouse_grabbed) {
+-	s->eh_entry = qemu_add_mouse_event_handler(usb_mouse_event, hs,
+-                                                  0, "QEMU USB Mouse");
++        qemu_activate_mouse_event_handler(s->eh_entry);
+ 	s->mouse_grabbed = 1;
+     }
+ 
+@@ -552,8 +551,7 @@ static int usb_tablet_poll(USBHIDState *hs, uint8_t *buf, int len)
+     USBMouseState *s = &hs->ptr;
+ 
+     if (!s->mouse_grabbed) {
+-	s->eh_entry = qemu_add_mouse_event_handler(usb_tablet_event, hs,
+-                                                  1, "QEMU USB Tablet");
++        qemu_activate_mouse_event_handler(s->eh_entry);
+ 	s->mouse_grabbed = 1;
+     }
+ 
+@@ -861,6 +859,15 @@ static int usb_hid_initfn(USBDevice *dev, int kind)
+     USBHIDState *s = DO_UPCAST(USBHIDState, dev, dev);
+     s->dev.speed = USB_SPEED_FULL;
+     s->kind = kind;
++
++    if (s->kind == USB_MOUSE) {
++        s->ptr.eh_entry = qemu_add_mouse_event_handler(usb_mouse_event, s,
++                                                       0, "QEMU USB Mouse");
++    } else if (s->kind == USB_TABLET) {
++        s->ptr.eh_entry = qemu_add_mouse_event_handler(usb_tablet_event, s,
++                                                       1, "QEMU USB Tablet");
++    }
++        
+     /* Force poll routine to be run and grab input the first time.  */
+     s->changed = 1;
+     return 0;
+diff --git a/vl.c b/vl.c
+index 6e8df7a..b741e83 100644
+--- a/vl.c
++++ b/vl.c
+@@ -415,10 +415,10 @@ int qemu_balloon_status(MonitorCompletion cb, void *opaque)
+ 
+ static QEMUPutKBDEvent *qemu_put_kbd_event;
+ static void *qemu_put_kbd_event_opaque;
+-static QEMUPutMouseEntry *qemu_put_mouse_event_head;
+-static QEMUPutMouseEntry *qemu_put_mouse_event_current;
+ static QTAILQ_HEAD(, QEMUPutLEDEntry) led_handlers = QTAILQ_HEAD_INITIALIZER(led_handlers);
+ static int ledstate;
++static QTAILQ_HEAD(, QEMUPutMouseEntry) mouse_handlers =
++    QTAILQ_HEAD_INITIALIZER(mouse_handlers);
+ 
+ void qemu_add_kbd_event_handler(QEMUPutKBDEvent *func, void *opaque)
+ {
+@@ -436,7 +436,8 @@ QEMUPutMouseEntry *qemu_add_mouse_event_handler(QEMUPutMouseEvent *func,
+                                                 void *opaque, int absolute,
+                                                 const char *name)
+ {
+-    QEMUPutMouseEntry *s, *cursor;
++    QEMUPutMouseEntry *s;
++    static int mouse_index = 0;
+ 
+     s = qemu_mallocz(sizeof(QEMUPutMouseEntry));
+ 
+@@ -444,51 +445,22 @@ QEMUPutMouseEntry *qemu_add_mouse_event_handler(QEMUPutMouseEvent *func,
+     s->qemu_put_mouse_event_opaque = opaque;
+     s->qemu_put_mouse_event_absolute = absolute;
+     s->qemu_put_mouse_event_name = qemu_strdup(name);
+-    s->next = NULL;
++    s->index = mouse_index++;
+ 
+-    if (!qemu_put_mouse_event_head) {
+-        qemu_put_mouse_event_head = qemu_put_mouse_event_current = s;
+-        return s;
+-    }
+-
+-    cursor = qemu_put_mouse_event_head;
+-    while (cursor->next != NULL)
+-        cursor = cursor->next;
+-
+-    cursor->next = s;
+-    qemu_put_mouse_event_current = s;
++    QTAILQ_INSERT_TAIL(&mouse_handlers, s, node);
+ 
+     return s;
+ }
+ 
+-void qemu_remove_mouse_event_handler(QEMUPutMouseEntry *entry)
++void qemu_activate_mouse_event_handler(QEMUPutMouseEntry *entry)
+ {
+-    QEMUPutMouseEntry *prev = NULL, *cursor;
+-
+-    if (!qemu_put_mouse_event_head || entry == NULL)
+-        return;
+-
+-    cursor = qemu_put_mouse_event_head;
+-    while (cursor != NULL && cursor != entry) {
+-        prev = cursor;
+-        cursor = cursor->next;
+-    }
+-
+-    if (cursor == NULL) // does not exist or list empty
+-        return;
+-    else if (prev == NULL) { // entry is head
+-        qemu_put_mouse_event_head = cursor->next;
+-        if (qemu_put_mouse_event_current == entry)
+-            qemu_put_mouse_event_current = cursor->next;
+-        qemu_free(entry->qemu_put_mouse_event_name);
+-        qemu_free(entry);
+-        return;
+-    }
+-
+-    prev->next = entry->next;
++    QTAILQ_REMOVE(&mouse_handlers, entry, node);
++    QTAILQ_INSERT_HEAD(&mouse_handlers, entry, node);
++}
+ 
+-    if (qemu_put_mouse_event_current == entry)
+-        qemu_put_mouse_event_current = prev;
++void qemu_remove_mouse_event_handler(QEMUPutMouseEntry *entry)
++{
++    QTAILQ_REMOVE(&mouse_handlers, entry, node);
+ 
+     qemu_free(entry->qemu_put_mouse_event_name);
+     qemu_free(entry);
+@@ -539,39 +511,41 @@ int kbd_get_ledstate(void)
+ 
+ void kbd_mouse_event(int dx, int dy, int dz, int buttons_state)
+ {
++    QEMUPutMouseEntry *entry;
+     QEMUPutMouseEvent *mouse_event;
+     void *mouse_event_opaque;
+     int width;
+ 
+-    if (!qemu_put_mouse_event_current) {
++    if (QTAILQ_EMPTY(&mouse_handlers)) {
+         return;
+     }
+ 
+-    mouse_event =
+-        qemu_put_mouse_event_current->qemu_put_mouse_event;
+-    mouse_event_opaque =
+-        qemu_put_mouse_event_current->qemu_put_mouse_event_opaque;
++    entry = QTAILQ_FIRST(&mouse_handlers);
++
++    mouse_event = entry->qemu_put_mouse_event;
++    mouse_event_opaque = entry->qemu_put_mouse_event_opaque;
+ 
+     if (mouse_event) {
+         if (graphic_rotate) {
+-            if (qemu_put_mouse_event_current->qemu_put_mouse_event_absolute)
++            if (entry->qemu_put_mouse_event_absolute)
+                 width = 0x7fff;
+             else
+                 width = graphic_width - 1;
+             mouse_event(mouse_event_opaque,
+-                                 width - dy, dx, dz, buttons_state);
++                        width - dy, dx, dz, buttons_state);
+         } else
+             mouse_event(mouse_event_opaque,
+-                                 dx, dy, dz, buttons_state);
++                        dx, dy, dz, buttons_state);
+     }
+ }
+ 
+ int kbd_mouse_is_absolute(void)
+ {
+-    if (!qemu_put_mouse_event_current)
++    if (QTAILQ_EMPTY(&mouse_handlers)) {
+         return 0;
++    }
+ 
+-    return qemu_put_mouse_event_current->qemu_put_mouse_event_absolute;
++    return QTAILQ_FIRST(&mouse_handlers)->qemu_put_mouse_event_absolute;
+ }
+ 
+ static void info_mice_iter(QObject *data, void *opaque)
+@@ -602,23 +576,23 @@ void do_info_mice(Monitor *mon, QObject **ret_data)
+ {
+     QEMUPutMouseEntry *cursor;
+     QList *mice_list;
+-    int index = 0;
++    int current;
+ 
+     mice_list = qlist_new();
+ 
+-    if (!qemu_put_mouse_event_head) {
++    if (QTAILQ_EMPTY(&mouse_handlers)) {
+         goto out;
+     }
+ 
+-    cursor = qemu_put_mouse_event_head;
+-    while (cursor != NULL) {
++    current = QTAILQ_FIRST(&mouse_handlers)->index;
++
++    QTAILQ_FOREACH(cursor, &mouse_handlers, node) {
+         QObject *obj;
+         obj = qobject_from_jsonf("{ 'name': %s, 'index': %d, 'current': %i }",
+                                  cursor->qemu_put_mouse_event_name,
+-                                 index, cursor == qemu_put_mouse_event_current);
++                                 cursor->index,
++                                 cursor->index == current);
+         qlist_append_obj(mice_list, obj);
+-        index++;
+-        cursor = cursor->next;
+     }
+ 
+ out:
+@@ -628,24 +602,25 @@ out:
+ void do_mouse_set(Monitor *mon, const QDict *qdict)
+ {
+     QEMUPutMouseEntry *cursor;
+-    int i = 0;
+     int index = qdict_get_int(qdict, "index");
++    int found = 0;
+ 
+-    if (!qemu_put_mouse_event_head) {
++    if (QTAILQ_EMPTY(&mouse_handlers)) {
+         monitor_printf(mon, "No mouse devices connected\n");
+         return;
+     }
+ 
+-    cursor = qemu_put_mouse_event_head;
+-    while (cursor != NULL && index != i) {
+-        i++;
+-        cursor = cursor->next;
++    QTAILQ_FOREACH(cursor, &mouse_handlers, node) {
++        if (cursor->index == index) {
++            found = 1;
++            qemu_activate_mouse_event_handler(cursor);
++            break;
++        }
+     }
+ 
+-    if (cursor != NULL)
+-        qemu_put_mouse_event_current = cursor;
+-    else
++    if (!found) {
+         monitor_printf(mon, "Mouse at given index not found\n");
++    }
+ }
+ 
+ /* compute with 96 bit intermediate result: (a*b)/c */
+-- 
+1.7.4.rc1.16.gd2f15e
+

@@ -1,0 +1,406 @@
+From 297bd4a04a59284bc43b4005f6605303c9b20614 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 5 Jan 2011 15:29:18 -0200
+Subject: [PATCH 13/48] cursor: add cursor functions.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1294241382-17988-15-git-send-email-kraxel@redhat.com>
+Patchwork-id: 15753
+O-Subject: [RHEL-6 kvm PATCH 14/38] cursor: add cursor functions.
+Bugzilla: 642131 634153 615947 632458 631832 647865
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+Add a new cursor type to console.h and a bunch of functions to
+deal with cursors the (new) cursor.c file.
+
+upstream: 254e59506e34efcc92384ef30af3c266e4633c66
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+ Makefile            |    2 +-
+ console.h           |   24 ++++++-
+ cursor.c            |  210 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ cursor_hidden.xpm   |   37 +++++++++
+ cursor_left_ptr.xpm |   39 ++++++++++
+ 5 files changed, 309 insertions(+), 3 deletions(-)
+ create mode 100644 cursor.c
+ create mode 100644 cursor_hidden.xpm
+ create mode 100644 cursor_left_ptr.xpm
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ Makefile            |    2 +-
+ console.h           |   24 ++++++-
+ cursor.c            |  210 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ cursor_hidden.xpm   |   37 +++++++++
+ cursor_left_ptr.xpm |   39 ++++++++++
+ 5 files changed, 309 insertions(+), 3 deletions(-)
+ create mode 100644 cursor.c
+ create mode 100644 cursor_hidden.xpm
+ create mode 100644 cursor_left_ptr.xpm
+
+diff --git a/Makefile b/Makefile
+index 4e2905a..9cbf524 100644
+--- a/Makefile
++++ b/Makefile
+@@ -152,7 +152,7 @@ shared-obj-y = qemu-error.o $(trace-obj-y) $(block-obj-y) $(qobject-obj-y)
+ 
+ obj-y = $(shared-obj-y)
+ obj-y += $(net-obj-y)
+-obj-y += readline.o console.o
++obj-y += readline.o console.o cursor.o
+ 
+ obj-y += tcg-runtime.o host-utils.o
+ obj-y += irq.o ioport.o
+diff --git a/console.h b/console.h
+index a1e7fa5..9d289b0 100644
+--- a/console.h
++++ b/console.h
+@@ -128,6 +128,27 @@ struct DisplaySurface {
+     struct PixelFormat pf;
+ };
+ 
++/* cursor data format is 32bit RGBA */
++typedef struct QEMUCursor {
++    int                 width, height;
++    int                 hot_x, hot_y;
++    int                 refcount;
++    uint32_t            data[];
++} QEMUCursor;
++
++QEMUCursor *cursor_alloc(int width, int height);
++void cursor_get(QEMUCursor *c);
++void cursor_put(QEMUCursor *c);
++QEMUCursor *cursor_builtin_hidden(void);
++QEMUCursor *cursor_builtin_left_ptr(void);
++void cursor_print_ascii_art(QEMUCursor *c, const char *prefix);
++int cursor_get_mono_bpl(QEMUCursor *c);
++void cursor_set_mono(QEMUCursor *c,
++                     uint32_t foreground, uint32_t background, uint8_t *image,
++                     int transparent, uint8_t *mask);
++void cursor_get_mono_image(QEMUCursor *c, int foreground, uint8_t *mask);
++void cursor_get_mono_mask(QEMUCursor *c, int transparent, uint8_t *mask);
++
+ struct DisplayChangeListener {
+     int idle;
+     uint64_t gui_timer_interval;
+@@ -160,8 +181,7 @@ struct DisplayState {
+     struct DisplayChangeListener* listeners;
+ 
+     void (*mouse_set)(int x, int y, int on);
+-    void (*cursor_define)(int width, int height, int bpp, int hot_x, int hot_y,
+-                          uint8_t *image, uint8_t *mask);
++    void (*cursor_define)(QEMUCursor *cursor);
+ 
+     struct DisplayState *next;
+ };
+diff --git a/cursor.c b/cursor.c
+new file mode 100644
+index 0000000..dfb9eef
+--- /dev/null
++++ b/cursor.c
+@@ -0,0 +1,210 @@
++#include "qemu-common.h"
++#include "console.h"
++
++#include "cursor_hidden.xpm"
++#include "cursor_left_ptr.xpm"
++
++/* for creating built-in cursors */
++static QEMUCursor *cursor_parse_xpm(const char *xpm[])
++{
++    QEMUCursor *c;
++    uint32_t ctab[128];
++    unsigned int width, height, colors, chars;
++    unsigned int line = 0, i, r, g, b, x, y, pixel;
++    char name[16];
++    uint8_t idx;
++
++    /* parse header line: width, height, #colors, #chars */
++    if (sscanf(xpm[line], "%d %d %d %d", &width, &height, &colors, &chars) != 4) {
++        fprintf(stderr, "%s: header parse error: \"%s\"\n",
++                __FUNCTION__, xpm[line]);
++        return NULL;
++    }
++    if (chars != 1) {
++        fprintf(stderr, "%s: chars != 1 not supported\n", __FUNCTION__);
++        return NULL;
++    }
++    line++;
++
++    /* parse color table */
++    for (i = 0; i < colors; i++, line++) {
++        if (sscanf(xpm[line], "%c c %15s", &idx, name) == 2) {
++            if (sscanf(name, "#%02x%02x%02x", &r, &g, &b) == 3) {
++                ctab[idx] = (0xff << 24) | (b << 16) | (g << 8) | r;
++                continue;
++            }
++            if (strcmp(name, "None") == 0) {
++                ctab[idx] = 0x00000000;
++                continue;
++            }
++        }
++        fprintf(stderr, "%s: color parse error: \"%s\"\n",
++                __FUNCTION__, xpm[line]);
++        return NULL;
++    }
++
++    /* parse pixel data */
++    c = cursor_alloc(width, height);
++    for (pixel = 0, y = 0; y < height; y++, line++) {
++        for (x = 0; x < height; x++, pixel++) {
++            idx = xpm[line][x];
++            c->data[pixel] = ctab[idx];
++        }
++    }
++    return c;
++}
++
++/* nice for debugging */
++void cursor_print_ascii_art(QEMUCursor *c, const char *prefix)
++{
++    uint32_t *data = c->data;
++    int x,y;
++
++    for (y = 0; y < c->height; y++) {
++        fprintf(stderr, "%s: %2d: |", prefix, y);
++        for (x = 0; x < c->width; x++, data++) {
++            if ((*data & 0xff000000) != 0xff000000) {
++                fprintf(stderr, " "); /* transparent */
++            } else if ((*data & 0x00ffffff) == 0x00ffffff) {
++                fprintf(stderr, "."); /* white */
++            } else if ((*data & 0x00ffffff) == 0x00000000) {
++                fprintf(stderr, "X"); /* black */
++            } else {
++                fprintf(stderr, "o"); /* other */
++            }
++        }
++        fprintf(stderr, "|\n");
++    }
++}
++
++QEMUCursor *cursor_builtin_hidden(void)
++{
++    QEMUCursor *c;
++
++    c = cursor_parse_xpm(cursor_hidden_xpm);
++    return c;
++}
++
++QEMUCursor *cursor_builtin_left_ptr(void)
++{
++    QEMUCursor *c;
++
++    c = cursor_parse_xpm(cursor_left_ptr_xpm);
++    return c;
++}
++
++QEMUCursor *cursor_alloc(int width, int height)
++{
++    QEMUCursor *c;
++    int datasize = width * height * sizeof(uint32_t);
++
++    c = qemu_mallocz(sizeof(QEMUCursor) + datasize);
++    c->width  = width;
++    c->height = height;
++    c->refcount = 1;
++    return c;
++}
++
++void cursor_get(QEMUCursor *c)
++{
++    c->refcount++;
++}
++
++void cursor_put(QEMUCursor *c)
++{
++    if (c == NULL)
++        return;
++    c->refcount--;
++    if (c->refcount)
++        return;
++    qemu_free(c);
++}
++
++int cursor_get_mono_bpl(QEMUCursor *c)
++{
++    return (c->width + 7) / 8;
++}
++
++void cursor_set_mono(QEMUCursor *c,
++                     uint32_t foreground, uint32_t background, uint8_t *image,
++                     int transparent, uint8_t *mask)
++{
++    uint32_t *data = c->data;
++    uint8_t bit;
++    int x,y,bpl;
++
++    bpl = cursor_get_mono_bpl(c);
++    for (y = 0; y < c->height; y++) {
++        bit = 0x80;
++        for (x = 0; x < c->width; x++, data++) {
++            if (transparent && mask[x/8] & bit) {
++                *data = 0x00000000;
++            } else if (!transparent && !(mask[x/8] & bit)) {
++                *data = 0x00000000;
++            } else if (image[x/8] & bit) {
++                *data = 0xff000000 | foreground;
++            } else {
++                *data = 0xff000000 | background;
++            }
++            bit >>= 1;
++            if (bit == 0) {
++                bit = 0x80;
++            }
++        }
++        mask  += bpl;
++        image += bpl;
++    }
++}
++
++void cursor_get_mono_image(QEMUCursor *c, int foreground, uint8_t *image)
++{
++    uint32_t *data = c->data;
++    uint8_t bit;
++    int x,y,bpl;
++
++    bpl = cursor_get_mono_bpl(c);
++    memset(image, 0, bpl * c->height);
++    for (y = 0; y < c->height; y++) {
++        bit = 0x80;
++        for (x = 0; x < c->width; x++, data++) {
++            if (((*data & 0xff000000) == 0xff000000) &&
++                ((*data & 0x00ffffff) == foreground)) {
++                image[x/8] |= bit;
++            }
++            bit >>= 1;
++            if (bit == 0) {
++                bit = 0x80;
++            }
++        }
++        image += bpl;
++    }
++}
++
++void cursor_get_mono_mask(QEMUCursor *c, int transparent, uint8_t *mask)
++{
++    uint32_t *data = c->data;
++    uint8_t bit;
++    int x,y,bpl;
++
++    bpl = cursor_get_mono_bpl(c);
++    memset(mask, 0, bpl * c->height);
++    for (y = 0; y < c->height; y++) {
++        bit = 0x80;
++        for (x = 0; x < c->width; x++, data++) {
++            if ((*data & 0xff000000) != 0xff000000) {
++                if (transparent != 0) {
++                    mask[x/8] |= bit;
++                }
++            } else {
++                if (transparent == 0) {
++                    mask[x/8] |= bit;
++                }
++            }
++            bit >>= 1;
++            if (bit == 0) {
++                bit = 0x80;
++            }
++        }
++        mask += bpl;
++    }
++}
+diff --git a/cursor_hidden.xpm b/cursor_hidden.xpm
+new file mode 100644
+index 0000000..354e7a9
+--- /dev/null
++++ b/cursor_hidden.xpm
+@@ -0,0 +1,37 @@
++/* XPM */
++static const char *cursor_hidden_xpm[] = {
++    "32 32 1 1",
++    "  c None",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++};
+diff --git a/cursor_left_ptr.xpm b/cursor_left_ptr.xpm
+new file mode 100644
+index 0000000..6c9ada9
+--- /dev/null
++++ b/cursor_left_ptr.xpm
+@@ -0,0 +1,39 @@
++/* XPM */
++static const char *cursor_left_ptr_xpm[] = {
++    "32 32 3 1",
++    "X c #000000",
++    ". c #ffffff",
++    "  c None",
++    "X                               ",
++    "XX                              ",
++    "X.X                             ",
++    "X..X                            ",
++    "X...X                           ",
++    "X....X                          ",
++    "X.....X                         ",
++    "X......X                        ",
++    "X.......X                       ",
++    "X........X                      ",
++    "X.....XXXXX                     ",
++    "X..X..X                         ",
++    "X.X X..X                        ",
++    "XX  X..X                        ",
++    "X    X..X                       ",
++    "     X..X                       ",
++    "      X..X                      ",
++    "      X..X                      ",
++    "       XX                       ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++    "                                ",
++};
+-- 
+1.7.4.rc1.16.gd2f15e
+

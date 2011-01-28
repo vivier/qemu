@@ -1,0 +1,100 @@
+From 0f33e9190e516d090b415e2fa9b92693e8b9aa30 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 5 Jan 2011 15:29:14 -0200
+Subject: [PATCH 09/48] input: make vnc use mouse mode notifiers
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1294241382-17988-11-git-send-email-kraxel@redhat.com>
+Patchwork-id: 15741
+O-Subject: [RHEL-6 kvm PATCH 10/38] input: make vnc use mouse mode notifiers
+Bugzilla: 642131 634153 615947 632458 631832 647865
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+When we switch to absolute mode, we send out a notification (if the client
+supports it).  Today, we only send this notification when the client sends us
+a mouse event and we're in the wrong mode.
+
+upstream: 37c34d9d5d87ea9d51760310c8863b82cb8c055a
+
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ vnc.c |   12 ++++++++----
+ vnc.h |    1 +
+ 2 files changed, 9 insertions(+), 4 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ vnc.c |   12 ++++++++----
+ vnc.h |    1 +
+ 2 files changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/vnc.c b/vnc.c
+index 26acf73..c149830 100644
+--- a/vnc.c
++++ b/vnc.c
+@@ -1106,6 +1106,7 @@ static void vnc_disconnect_finish(VncState *vs)
+     if (!vs->vd->clients)
+         dcl->idle = 1;
+ 
++    qemu_remove_mouse_mode_change_notifier(&vs->mouse_mode_notifier);
+     vnc_remove_timer(vs->vd);
+     qemu_remove_led_event_handler(vs->led);
+     qemu_free(vs);
+@@ -1423,8 +1424,11 @@ static void client_cut_text(VncState *vs, size_t len, uint8_t *text)
+ {
+ }
+ 
+-static void check_pointer_type_change(VncState *vs, int absolute)
++static void check_pointer_type_change(Notifier *notifier)
+ {
++    VncState *vs = container_of(notifier, VncState, mouse_mode_notifier);
++    int absolute = kbd_mouse_is_absolute();
++
+     if (vnc_has_feature(vs, VNC_FEATURE_POINTER_TYPE_CHANGE) && vs->absolute != absolute) {
+         vnc_write_u8(vs, 0);
+         vnc_write_u8(vs, 0);
+@@ -1472,8 +1476,6 @@ static void pointer_event(VncState *vs, int button_mask, int x, int y)
+         vs->last_x = x;
+         vs->last_y = y;
+     }
+-
+-    check_pointer_type_change(vs, kbd_mouse_is_absolute());
+ }
+ 
+ static void reset_keys(VncState *vs)
+@@ -1809,7 +1811,6 @@ static void set_encodings(VncState *vs, int32_t *encodings, size_t n_encodings)
+     }
+ 
+     vnc_desktop_resize(vs);
+-    check_pointer_type_change(vs, kbd_mouse_is_absolute());
+ }
+ 
+ static void set_pixel_conversion(VncState *vs)
+@@ -2438,6 +2439,9 @@ static void vnc_connect(VncDisplay *vd, int csock)
+     vs->led = qemu_add_led_event_handler(kbd_leds, vs);
+     kbd_leds(vs, kbd_get_ledstate());
+ 
++    vs->mouse_mode_notifier.notify = check_pointer_type_change;
++    qemu_add_mouse_mode_change_notifier(&vs->mouse_mode_notifier);
++
+     vnc_init_timer(vd);
+ 
+     /* vs might be free()ed here */
+diff --git a/vnc.h b/vnc.h
+index 724b12a..a752cef 100644
+--- a/vnc.h
++++ b/vnc.h
+@@ -169,6 +169,7 @@ struct VncState
+     Buffer zlib_tmp;
+     z_stream zlib_stream[4];
+ 
++    Notifier mouse_mode_notifier;
+     VncState *next;
+ };
+ 
+-- 
+1.7.4.rc1.16.gd2f15e
+

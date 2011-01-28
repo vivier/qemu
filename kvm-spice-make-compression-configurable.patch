@@ -1,0 +1,182 @@
+From e295b7140513a24baea89b5cd82cce540a0b5b50 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 5 Jan 2011 15:29:27 -0200
+Subject: [PATCH 22/48] spice: make compression configurable.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1294241382-17988-24-git-send-email-kraxel@redhat.com>
+Patchwork-id: 15766
+O-Subject: [RHEL-6 kvm PATCH 23/38] spice: make compression configurable.
+Bugzilla: 642131 634153 615947 632458 631832 647865
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+From: Yonit Halperin <yhalperi@redhat.com>
+
+This patch adds options to the -spice command line switch to
+configure image compression.
+
+[ v2: speling fix in the documentation ]
+
+upstream: 9f04e09e36e430dd57c69c88b0532e9dc5061a47
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ qemu-config.c   |    9 ++++++
+ qemu-options.hx |    9 ++++++
+ ui/spice-core.c |   77 +++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 93 insertions(+), 2 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-config.c   |    9 ++++++
+ qemu-options.hx |    9 ++++++
+ ui/spice-core.c |   77 +++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 93 insertions(+), 2 deletions(-)
+
+diff --git a/qemu-config.c b/qemu-config.c
+index 34ed58a..ef45bff 100644
+--- a/qemu-config.c
++++ b/qemu-config.c
+@@ -349,6 +349,15 @@ QemuOptsList qemu_spice_opts = {
+         },{
+             .name = "tls-ciphers",
+             .type = QEMU_OPT_STRING,
++        },{
++            .name = "image-compression",
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "jpeg-wan-compression",
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "zlib-glz-wan-compression",
++            .type = QEMU_OPT_STRING,
+         },
+         { /* end if list */ }
+     },
+diff --git a/qemu-options.hx b/qemu-options.hx
+index 8c62288..cc635b0 100644
+--- a/qemu-options.hx
++++ b/qemu-options.hx
+@@ -565,6 +565,15 @@ The x509 file names can also be configured individually.
+ @item tls-ciphers=<list>
+ Specify which ciphers to use.
+ 
++@item image-compression=[auto_glz|auto_lz|quic|glz|lz|off]
++Configure image compression (lossless).
++Default is auto_glz.
++
++@item jpeg-wan-compression=[auto|never|always]
++@item zlib-glz-wan-compression=[auto|never|always]
++Configure wan image compression (lossy for slow links).
++Default is auto.
++
+ @end table
+ ETEXI
+ 
+diff --git a/ui/spice-core.c b/ui/spice-core.c
+index 3bd912e..c4f5c45 100644
+--- a/ui/spice-core.c
++++ b/ui/spice-core.c
+@@ -137,6 +137,59 @@ static SpiceCoreInterface core_interface = {
+     .watch_remove       = watch_remove,
+ };
+ 
++/* config string parsing */
++
++static int name2enum(const char *string, const char *table[], int entries)
++{
++    int i;
++
++    if (string) {
++        for (i = 0; i < entries; i++) {
++            if (!table[i]) {
++                continue;
++            }
++            if (strcmp(string, table[i]) != 0) {
++                continue;
++            }
++            return i;
++        }
++    }
++    return -1;
++}
++
++static int parse_name(const char *string, const char *optname,
++                      const char *table[], int entries)
++{
++    int value = name2enum(string, table, entries);
++
++    if (value != -1) {
++        return value;
++    }
++    fprintf(stderr, "spice: invalid %s: %s\n", optname, string);
++    exit(1);
++}
++
++static const char *compression_names[] = {
++    [ SPICE_IMAGE_COMPRESS_OFF ]      = "off",
++    [ SPICE_IMAGE_COMPRESS_AUTO_GLZ ] = "auto_glz",
++    [ SPICE_IMAGE_COMPRESS_AUTO_LZ ]  = "auto_lz",
++    [ SPICE_IMAGE_COMPRESS_QUIC ]     = "quic",
++    [ SPICE_IMAGE_COMPRESS_GLZ ]      = "glz",
++    [ SPICE_IMAGE_COMPRESS_LZ ]       = "lz",
++};
++#define parse_compression(_name)                                        \
++    parse_name(_name, "image compression",                              \
++               compression_names, ARRAY_SIZE(compression_names))
++
++static const char *wan_compression_names[] = {
++    [ SPICE_WAN_COMPRESSION_AUTO   ] = "auto",
++    [ SPICE_WAN_COMPRESSION_NEVER  ] = "never",
++    [ SPICE_WAN_COMPRESSION_ALWAYS ] = "always",
++};
++#define parse_wan_compression(_name)                                    \
++    parse_name(_name, "wan compression",                                \
++               wan_compression_names, ARRAY_SIZE(wan_compression_names))
++
+ /* functions for the rest of qemu */
+ 
+ void qemu_spice_init(void)
+@@ -150,6 +203,8 @@ void qemu_spice_init(void)
+         *x509_cert_file = NULL,
+         *x509_cacert_file = NULL;
+     int port, tls_port, len;
++    spice_image_compression_t compression;
++    spice_wan_compression_t wan_compr;
+ 
+     if (!opts) {
+         return;
+@@ -217,8 +272,26 @@ void qemu_spice_init(void)
+         spice_server_set_noauth(spice_server);
+     }
+ 
+-    /* TODO: make configurable via cmdline */
+-    spice_server_set_image_compression(spice_server, SPICE_IMAGE_COMPRESS_AUTO_GLZ);
++    compression = SPICE_IMAGE_COMPRESS_AUTO_GLZ;
++    str = qemu_opt_get(opts, "image-compression");
++    if (str) {
++        compression = parse_compression(str);
++    }
++    spice_server_set_image_compression(spice_server, compression);
++
++    wan_compr = SPICE_WAN_COMPRESSION_AUTO;
++    str = qemu_opt_get(opts, "jpeg-wan-compression");
++    if (str) {
++        wan_compr = parse_wan_compression(str);
++    }
++    spice_server_set_jpeg_compression(spice_server, wan_compr);
++
++    wan_compr = SPICE_WAN_COMPRESSION_AUTO;
++    str = qemu_opt_get(opts, "zlib-glz-wan-compression");
++    if (str) {
++        wan_compr = parse_wan_compression(str);
++    }
++    spice_server_set_zlib_glz_compression(spice_server, wan_compr);
+ 
+     spice_server_init(spice_server, &core_interface);
+     using_spice = 1;
+-- 
+1.7.4.rc1.16.gd2f15e
+

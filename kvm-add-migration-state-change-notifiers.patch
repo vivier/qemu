@@ -1,0 +1,149 @@
+From bcd3b2d86d8b32047fc6ab9401b02fefda6dc225 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Tue, 11 Jan 2011 13:50:28 -0200
+Subject: [PATCH 40/48] add migration state change notifiers
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1294753832-1164-2-git-send-email-kraxel@redhat.com>
+Patchwork-id: 16115
+O-Subject: [RHEL-6.1 kvm PATCH v2 1/5] add migration state change notifiers
+Bugzilla: 615947 631832 632458 634153 642131 647865
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+This patch adds functions to register and unregister notifiers for
+migration state changes and a function to query the migration state.
+The notifier is called on every state change.  Once after establishing a
+new migration object (which is in active state then) and once when the
+state changes from active to completed, canceled or error.
+
+[ rhel6 backport note: migrate_fd_release() may or may not change state
+  (again) in the rhel6 code base.  handle this by taking care to call
+  the notifier chain only after migrate_fd_release returns. ]
+
+upstream: submitted (http://patchwork.ozlabs.org/patch/78152/)
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ migration.c |   29 ++++++++++++++++++++++++++++-
+ migration.h |    5 +++++
+ 2 files changed, 33 insertions(+), 1 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ migration.c |   29 ++++++++++++++++++++++++++++-
+ migration.h |    5 +++++
+ 2 files changed, 33 insertions(+), 1 deletions(-)
+
+diff --git a/migration.c b/migration.c
+index 621c7b3..55f49d8 100644
+--- a/migration.c
++++ b/migration.c
+@@ -36,6 +36,9 @@ static uint32_t max_throttle = (32 << 20);
+ 
+ static MigrationState *current_migration;
+ 
++static NotifierList migration_state_notifiers =
++    NOTIFIER_LIST_INITIALIZER(migration_state_notifiers);
++
+ int qemu_start_incoming_migration(const char *uri)
+ {
+     const char *p;
+@@ -128,6 +131,7 @@ int do_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     }
+ 
+     current_migration = s;
++    notifier_list_notify(&migration_state_notifiers);
+     return 0;
+ }
+ 
+@@ -278,6 +282,7 @@ void migrate_fd_error(FdMigrationState *s)
+     dprintf("setting error state\n");
+     s->state = MIG_STATE_ERROR;
+     migrate_fd_cleanup(s);
++    notifier_list_notify(&migration_state_notifiers);
+ }
+ 
+ int migrate_fd_cleanup(FdMigrationState *s)
+@@ -335,6 +340,7 @@ ssize_t migrate_fd_put_buffer(void *opaque, const void *data, size_t size)
+             monitor_resume(s->mon);
+         }
+         s->state = MIG_STATE_ERROR;
++        notifier_list_notify(&migration_state_notifiers);
+     }
+ 
+     return ret;
+@@ -396,6 +402,7 @@ void migrate_fd_put_ready(void *opaque)
+                 vm_start();
+             }
+         }
++        notifier_list_notify(&migration_state_notifiers);
+     }
+ }
+ 
+@@ -416,8 +423,8 @@ void migrate_fd_cancel(MigrationState *mig_state)
+ 
+     s->state = MIG_STATE_CANCELLED;
+     qemu_savevm_state_cancel(s->mon, s->file);
+-
+     migrate_fd_cleanup(s);
++    notifier_list_notify(&migration_state_notifiers);
+ }
+ 
+ void migrate_fd_release(MigrationState *mig_state)
+@@ -429,6 +436,7 @@ void migrate_fd_release(MigrationState *mig_state)
+     if (s->state == MIG_STATE_ACTIVE) {
+         s->state = MIG_STATE_CANCELLED;
+         migrate_fd_cleanup(s);
++        notifier_list_notify(&migration_state_notifiers);
+     }
+     free(s);
+ }
+@@ -459,3 +467,22 @@ int migrate_fd_close(void *opaque)
+     qemu_set_fd_handler2(s->fd, NULL, NULL, NULL, NULL);
+     return s->close(s);
+ }
++
++void add_migration_state_change_notifier(Notifier *notify)
++{
++    notifier_list_add(&migration_state_notifiers, notify);
++}
++
++void remove_migration_state_change_notifier(Notifier *notify)
++{
++    notifier_list_remove(&migration_state_notifiers, notify);
++}
++
++int get_migration_state(void)
++{
++    if (current_migration) {
++        return migrate_fd_get_status(current_migration);
++    } else {
++        return MIG_STATE_ERROR;
++    }
++}
+diff --git a/migration.h b/migration.h
+index d13ed4f..2170792 100644
+--- a/migration.h
++++ b/migration.h
+@@ -16,6 +16,7 @@
+ 
+ #include "qdict.h"
+ #include "qemu-common.h"
++#include "notify.h"
+ 
+ #define MIG_STATE_ERROR		-1
+ #define MIG_STATE_COMPLETED	0
+@@ -134,4 +135,8 @@ static inline FdMigrationState *migrate_to_fms(MigrationState *mig_state)
+     return container_of(mig_state, FdMigrationState, mig_state);
+ }
+ 
++void add_migration_state_change_notifier(Notifier *notify);
++void remove_migration_state_change_notifier(Notifier *notify);
++int get_migration_state(void);
++
+ #endif
+-- 
+1.7.4.rc1.16.gd2f15e
+

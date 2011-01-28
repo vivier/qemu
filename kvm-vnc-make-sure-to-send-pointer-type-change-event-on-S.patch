@@ -1,0 +1,49 @@
+From c5c5cb2753b741e4cbc0e57741ccf7406f1f6dec Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 5 Jan 2011 15:29:15 -0200
+Subject: [PATCH 10/48] vnc: make sure to send pointer type change event on SetEncodings
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1294241382-17988-12-git-send-email-kraxel@redhat.com>
+Patchwork-id: 15739
+O-Subject: [RHEL-6 kvm PATCH 11/38] vnc: make sure to send pointer type change
+	event on SetEncodings
+Bugzilla: 642131 634153 615947 632458 631832 647865
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+Commit 37c34d9d5d87ea9d51760310c8863b82cb8c055a introduced a regression when
+using relative mouse mode with a client that understands the PointerTypeChange
+pseudo-encoding.
+
+upstream: 0684bf1b0fa1823bf0614dd8d1c8b10cc0ef3f35
+
+Reported-by: Marcelo Tosatti <mtosatti@redhat.com>
+Reported-by: Gerhard Wiesinger <lists@wiesinger.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ vnc.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ vnc.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/vnc.c b/vnc.c
+index c149830..819ce04 100644
+--- a/vnc.c
++++ b/vnc.c
+@@ -1811,6 +1811,7 @@ static void set_encodings(VncState *vs, int32_t *encodings, size_t n_encodings)
+     }
+ 
+     vnc_desktop_resize(vs);
++    check_pointer_type_change(&vs->mouse_mode_notifier);
+ }
+ 
+ static void set_pixel_conversion(VncState *vs)
+-- 
+1.7.4.rc1.16.gd2f15e
+

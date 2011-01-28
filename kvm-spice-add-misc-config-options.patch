@@ -1,0 +1,130 @@
+From 42852ac94b2c03e7eb4ff193a11938dbd8608a4c Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 5 Jan 2011 15:29:30 -0200
+Subject: [PATCH 25/48] spice: add misc config options
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1294241382-17988-27-git-send-email-kraxel@redhat.com>
+Patchwork-id: 15756
+O-Subject: [RHEL-6 kvm PATCH 26/38] spice: add misc config options
+Bugzilla: 642131 634153 615947 632458 631832 647865
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+This patch adds a few more options to tweak spice server behavior.
+The documentation update chunk has the details ;)
+
+upstream: 84a23f251fe85768338434040257bb96cf555de8
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ qemu-config.c   |    9 +++++++++
+ qemu-options.hx |    9 +++++++++
+ ui/spice-core.c |   29 ++++++++++++++++++++++++++++-
+ 3 files changed, 46 insertions(+), 1 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-config.c   |    9 +++++++++
+ qemu-options.hx |    9 +++++++++
+ ui/spice-core.c |   29 ++++++++++++++++++++++++++++-
+ 3 files changed, 46 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-config.c b/qemu-config.c
+index 801c9f8..c58df74 100644
+--- a/qemu-config.c
++++ b/qemu-config.c
+@@ -373,6 +373,15 @@ QemuOptsList qemu_spice_opts = {
+         },{
+             .name = "zlib-glz-wan-compression",
+             .type = QEMU_OPT_STRING,
++        },{
++            .name = "streaming-video",
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "agent-mouse",
++            .type = QEMU_OPT_BOOL,
++        },{
++            .name = "playback-compression",
++            .type = QEMU_OPT_BOOL,
+         },
+         { /* end if list */ }
+     },
+diff --git a/qemu-options.hx b/qemu-options.hx
+index da7ad05..7421f09 100644
+--- a/qemu-options.hx
++++ b/qemu-options.hx
+@@ -589,6 +589,15 @@ Default is auto_glz.
+ Configure wan image compression (lossy for slow links).
+ Default is auto.
+ 
++@item streaming-video=[off|all|filter]
++Configure video stream detection.  Default is filter.
++
++@item agent-mouse=[on|off]
++Enable/disable passing mouse events via vdagent.  Default is on.
++
++@item playback-compression=[on|off]
++Enable/disable audio stream compression (using celt 0.5.1).  Default is on.
++
+ @end table
+ ETEXI
+ 
+diff --git a/ui/spice-core.c b/ui/spice-core.c
+index f594aab..59ae29c 100644
+--- a/ui/spice-core.c
++++ b/ui/spice-core.c
+@@ -169,6 +169,18 @@ static int parse_name(const char *string, const char *optname,
+     exit(1);
+ }
+ 
++#if SPICE_SERVER_VERSION >= 0x000600 /* 0.6.0 */
++
++static const char *stream_video_names[] = {
++    [ SPICE_STREAM_VIDEO_OFF ]    = "off",
++    [ SPICE_STREAM_VIDEO_ALL ]    = "all",
++    [ SPICE_STREAM_VIDEO_FILTER ] = "filter",
++};
++#define parse_stream_video(_name) \
++    name2enum(_name, stream_video_names, ARRAY_SIZE(stream_video_names))
++
++#endif /* >= 0.6.0 */
++
+ static const char *compression_names[] = {
+     [ SPICE_IMAGE_COMPRESS_OFF ]      = "off",
+     [ SPICE_IMAGE_COMPRESS_AUTO_GLZ ] = "auto_glz",
+@@ -228,7 +240,7 @@ void qemu_spice_init(void)
+     char *x509_key_file = NULL,
+         *x509_cert_file = NULL,
+         *x509_cacert_file = NULL;
+-    int port, tls_port, len, addr_flags;
++    int port, tls_port, len, addr_flags, streaming_video;
+     spice_image_compression_t compression;
+     spice_wan_compression_t wan_compr;
+ 
+@@ -328,6 +340,21 @@ void qemu_spice_init(void)
+     }
+     spice_server_set_zlib_glz_compression(spice_server, wan_compr);
+ 
++#if SPICE_SERVER_VERSION >= 0x000600 /* 0.6.0 */
++
++    str = qemu_opt_get(opts, "streaming-video");
++    if (str) {
++        streaming_video = parse_stream_video(str);
++        spice_server_set_streaming_video(spice_server, streaming_video);
++    }
++
++    spice_server_set_agent_mouse
++        (spice_server, qemu_opt_get_bool(opts, "agent-mouse", 1));
++    spice_server_set_playback_compression
++        (spice_server, qemu_opt_get_bool(opts, "playback-compression", 1));
++
++#endif /* >= 0.6.0 */
++
+     qemu_opt_foreach(opts, add_channel, NULL, 0);
+ 
+     spice_server_init(spice_server, &core_interface);
+-- 
+1.7.4.rc1.16.gd2f15e
+

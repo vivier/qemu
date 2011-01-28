@@ -1,0 +1,204 @@
+From 865e36cfd31b8c5d1e0f094259404e71dfd1d6f2 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Tue, 11 Jan 2011 13:50:29 -0200
+Subject: [PATCH 41/48] spice/vnc: client migration.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1294753832-1164-3-git-send-email-kraxel@redhat.com>
+Patchwork-id: 16116
+O-Subject: [RHEL-6.1 kvm PATCH v2 2/5] spice/vnc: client migration.
+Bugzilla: 615947 631832 632458 634153 642131 647865
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+
+Handle spice client migration, i.e. inform a spice client connected
+about the new host and connection parameters, so it can move over the
+connection automatically.
+
+The monitor command has a not-yet used protocol argument simliar to
+set_password and expire_password commands.  This allows to add a simliar
+feature to vnc in the future.  Daniel Berrange plans to work on this.
+
+upstream: submitted (http://patchwork.ozlabs.org/patch/78370/)
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ monitor.c       |   27 +++++++++++++++++++++++++++
+ qemu-monitor.hx |   35 +++++++++++++++++++++++++++++++++++
+ ui/qemu-spice.h |    4 ++++
+ ui/spice-core.c |   25 +++++++++++++++++++++++++
+ 4 files changed, 91 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c       |   27 +++++++++++++++++++++++++++
+ qemu-monitor.hx |   35 +++++++++++++++++++++++++++++++++++
+ ui/qemu-spice.h |    4 ++++
+ ui/spice-core.c |   25 +++++++++++++++++++++++++
+ 4 files changed, 91 insertions(+), 0 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index e5f84bc..775dff8 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -1277,6 +1277,33 @@ static int expire_password(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     return -1;
+ }
+ 
++static int client_migrate_info(Monitor *mon, const QDict *qdict, QObject **ret_data)
++{
++    const char *protocol = qdict_get_str(qdict, "protocol");
++    const char *hostname = qdict_get_str(qdict, "hostname");
++    const char *subject  = qdict_get_try_str(qdict, "cert-subject");
++    int port             = qdict_get_try_int(qdict, "port", -1);
++    int tls_port         = qdict_get_try_int(qdict, "tls-port", -1);
++    int ret;
++
++    if (strcmp(protocol, "spice") == 0) {
++        if (!using_spice) {
++            qerror_report(QERR_DEVICE_NOT_ACTIVE, "spice");
++            return -1;
++        }
++
++        ret = qemu_spice_migrate_info(hostname, port, tls_port, subject);
++        if (ret != 0) {
++            qerror_report(QERR_UNDEFINED_ERROR);
++            return -1;
++        }
++        return 0;
++    }
++
++    qerror_report(QERR_INVALID_PARAMETER, "protocol");
++    return -1;
++}
++
+ static void do_screen_dump(Monitor *mon, const QDict *qdict)
+ {
+     vga_hw_screen_dump(qdict_get_str(qdict, "filename"));
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 5b6ee19..c9da54d 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -1062,6 +1062,41 @@ STEXI
+ Set maximum speed to @var{value} (in bytes) for migrations.
+ ETEXI
+ SQMP
++client_migrate_info
++------------------
++
++Set the spice/vnc connection info for the migration target.  The spice/vnc
++server will ask the spice/vnc client to automatically reconnect using the
++new parameters (if specified) once the vm migration finished successfully.
++
++Arguments:
++
++- "protocol":     protocol: "spice" or "vnc" (json-string)
++- "hostname":     migration target hostname (json-string)
++- "port":         spice/vnc tcp port for plaintext channels (json-int, optional)
++- "tls-port":     spice tcp port for tls-secured channels (json-int, optional)
++- "cert-subject": server certificate subject (json-string, optional)
++
++Example:
++
++-> { "execute": "client_migrate_info",
++     "arguments": { "protocol": "spice",
++                    "hostname": "virt42.lab.kraxel.org",
++                    "port": 1234 } }
++<- { "return": {} }
++
++EQMP
++
++    {
++        .name       = "client_migrate_info",
++        .args_type  = "protocol:s,hostname:s,port:i?,tls-port:i?,cert-subject:s?",
++        .params     = "protocol hostname port tls-port cert-subject",
++        .help       = "send migration info to spice/vnc client",
++        .user_print = monitor_user_noop,
++        .mhandler.cmd_new = client_migrate_info,
++    },
++
++SQMP
+ migrate_set_speed
+ -----------------
+ 
+diff --git a/ui/qemu-spice.h b/ui/qemu-spice.h
+index 48239c3..05dc50a 100644
+--- a/ui/qemu-spice.h
++++ b/ui/qemu-spice.h
+@@ -35,6 +35,8 @@ int qemu_spice_add_interface(SpiceBaseInstance *sin);
+ int qemu_spice_set_passwd(const char *passwd,
+                           bool fail_if_connected, bool disconnect_if_connected);
+ int qemu_spice_set_pw_expire(time_t expires);
++int qemu_spice_migrate_info(const char *hostname, int port, int tls_port,
++                            const char *subject);
+ 
+ void do_info_spice_print(Monitor *mon, const QObject *data);
+ void do_info_spice(Monitor *mon, QObject **ret_data);
+@@ -44,6 +46,8 @@ void do_info_spice(Monitor *mon, QObject **ret_data);
+ #define using_spice 0
+ #define qemu_spice_set_passwd(_p, _f1, _f2) (-1)
+ #define qemu_spice_set_pw_expire(_e) (-1)
++static inline int qemu_spice_migrate_info(const char *h, int p, int t, const char *s)
++{ return -1; }
+ 
+ #endif /* CONFIG_SPICE */
+ 
+diff --git a/ui/spice-core.c b/ui/spice-core.c
+index bad63cc..b9b016a 100644
+--- a/ui/spice-core.c
++++ b/ui/spice-core.c
+@@ -30,11 +30,15 @@
+ #include "qbool.h"
+ #include "qstring.h"
+ #include "qjson.h"
++#include "notify.h"
++#include "migration.h"
+ #include "monitor.h"
++#include "hw/hw.h"
+ 
+ /* core bits */
+ 
+ static SpiceServer *spice_server;
++static Notifier migration_state;
+ static const char *auth = "spice";
+ static char *auth_passwd;
+ static time_t auth_expires = TIME_MAX;
+@@ -416,6 +420,24 @@ void do_info_spice(Monitor *mon, QObject **ret_data)
+     *ret_data = QOBJECT(server);
+ }
+ 
++static void migration_state_notifier(Notifier *notifier)
++{
++    int state = get_migration_state();
++
++    if (state == MIG_STATE_COMPLETED) {
++#if SPICE_SERVER_VERSION >= 0x000701 /* 0.7.1 */
++        spice_server_migrate_switch(spice_server);
++#endif
++    }
++}
++
++int qemu_spice_migrate_info(const char *hostname, int port, int tls_port,
++                            const char *subject)
++{
++    return spice_server_migrate_info(spice_server, hostname,
++                                     port, tls_port, subject);
++}
++
+ static int add_channel(const char *name, const char *value, void *opaque)
+ {
+     int security = 0;
+@@ -573,6 +595,9 @@ void qemu_spice_init(void)
+     spice_server_init(spice_server, &core_interface);
+     using_spice = 1;
+ 
++    migration_state.notify = migration_state_notifier;
++    add_migration_state_change_notifier(&migration_state);
++
+     qemu_spice_input_init();
+     qemu_spice_audio_init();
+ 
+-- 
+1.7.4.rc1.16.gd2f15e
+

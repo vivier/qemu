@@ -1,0 +1,301 @@
+From 40e961bf00128ca725106b39654d3eff41df83d8 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 5 Jan 2011 15:29:42 -0200
+Subject: [PATCH 37/48] vnc/spice: add set_passwd monitor command.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1294241382-17988-39-git-send-email-kraxel@redhat.com>
+Patchwork-id: 15771
+O-Subject: [RHEL-6 kvm PATCH 38/38] vnc/spice: add set_passwd monitor command.
+Bugzilla: 642131 634153 615947 632458 631832 647865
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+This patch adds new set_password and expire_password monitor commands
+which allows to change and expire the password for spice and vnc
+connections.  See the doc update patch chunk for details.
+
+upstream: 7572150c189c6553c2448334116ab717680de66d
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ monitor.c       |  100 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ qemu-monitor.hx |   57 +++++++++++++++++++++++++++++++
+ ui/qemu-spice.h |    5 +++
+ ui/spice-core.c |   35 +++++++++++++++++++
+ 4 files changed, 197 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c       |  100 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ qemu-monitor.hx |   57 +++++++++++++++++++++++++++++++
+ ui/qemu-spice.h |    5 +++
+ ui/spice-core.c |   35 +++++++++++++++++++
+ 4 files changed, 197 insertions(+), 0 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 0811135..e5f84bc 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -34,6 +34,7 @@
+ #include "net.h"
+ #include "net/slirp.h"
+ #include "qemu-char.h"
++#include "ui/qemu-spice.h"
+ #include "sysemu.h"
+ #include "monitor.h"
+ #include "readline.h"
+@@ -1177,6 +1178,105 @@ static int do_change(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     return ret;
+ }
+ 
++static int set_password(Monitor *mon, const QDict *qdict, QObject **ret_data)
++{
++    const char *protocol  = qdict_get_str(qdict, "protocol");
++    const char *password  = qdict_get_str(qdict, "password");
++    const char *connected = qdict_get_try_str(qdict, "connected");
++    int disconnect_if_connected = 0;
++    int fail_if_connected = 0;
++    int rc;
++
++    if (connected) {
++        if (strcmp(connected, "fail") == 0) {
++            fail_if_connected = 1;
++        } else if (strcmp(connected, "disconnect") == 0) {
++            disconnect_if_connected = 1;
++        } else if (strcmp(connected, "keep") == 0) {
++            /* nothing */
++        } else {
++            qerror_report(QERR_INVALID_PARAMETER, "connected");
++            return -1;
++        }
++    }
++
++    if (strcmp(protocol, "spice") == 0) {
++        if (!using_spice) {
++            /* correct one? spice isn't a device ,,, */
++            qerror_report(QERR_DEVICE_NOT_ACTIVE, "spice");
++            return -1;
++        }
++        rc = qemu_spice_set_passwd(password, fail_if_connected,
++                                   disconnect_if_connected);
++        if (rc != 0) {
++            qerror_report(QERR_SET_PASSWD_FAILED);
++            return -1;
++        }
++        return 0;
++    }
++
++    if (strcmp(protocol, "vnc") == 0) {
++        if (fail_if_connected || disconnect_if_connected) {
++            /* vnc supports "connected=keep" only */
++            qerror_report(QERR_INVALID_PARAMETER, "connected");
++            return -1;
++        }
++        rc = vnc_display_password(NULL, password);
++        if (rc != 0) {
++            qerror_report(QERR_SET_PASSWD_FAILED);
++            return -1;
++        }
++        return 0;
++    }
++
++    qerror_report(QERR_INVALID_PARAMETER, "protocol");
++    return -1;
++}
++
++static int expire_password(Monitor *mon, const QDict *qdict, QObject **ret_data)
++{
++    const char *protocol  = qdict_get_str(qdict, "protocol");
++    const char *whenstr = qdict_get_str(qdict, "time");
++    time_t when;
++    int rc;
++
++    if (strcmp(whenstr, "now")) {
++        when = 0;
++    } else if (strcmp(whenstr, "never")) {
++        when = TIME_MAX;
++    } else if (whenstr[0] == '+') {
++        when = time(NULL) + strtoull(whenstr+1, NULL, 10);
++    } else {
++        when = strtoull(whenstr, NULL, 10);
++    }
++
++    if (strcmp(protocol, "spice") == 0) {
++        if (!using_spice) {
++            /* correct one? spice isn't a device ,,, */
++            qerror_report(QERR_DEVICE_NOT_ACTIVE, "spice");
++            return -1;
++        }
++        rc = qemu_spice_set_pw_expire(when);
++        if (rc != 0) {
++            qerror_report(QERR_SET_PASSWD_FAILED);
++            return -1;
++        }
++        return 0;
++    }
++
++    if (strcmp(protocol, "vnc") == 0) {
++        rc = vnc_display_pw_expire(NULL, when);
++        if (rc != 0) {
++            qerror_report(QERR_SET_PASSWD_FAILED);
++            return -1;
++        }
++        return 0;
++    }
++
++    qerror_report(QERR_INVALID_PARAMETER, "protocol");
++    return -1;
++}
++
+ static void do_screen_dump(Monitor *mon, const QDict *qdict)
+ {
+     vga_hw_screen_dump(qdict_get_str(qdict, "filename"));
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index af00d74..5b6ee19 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -1563,6 +1563,63 @@ Set CPU @var{cpu} online or offline.
+ ETEXI
+ 
+     {
++        .name       = "set_password",
++        .args_type  = "protocol:s,password:s,connected:s?",
++        .params     = "protocol password action-if-connected",
++        .help       = "set spice/vnc password",
++        .user_print = monitor_user_noop,
++        .mhandler.cmd_new = set_password,
++    },
++
++SQMP
++set_password
++------------
++
++Set the password for vnc/spice protocols.
++
++Arguments:
++
++- "protocol": protocol name (json-string)
++- "password": password (json-string)
++- "connected": [ keep | disconnect | fail ] (josn-string, optional)
++
++Example:
++
++-> { "execute": "set_password", "arguments": { "protocol": "vnc",
++                                               "password": "secret" } }
++<- { "return": {} }
++
++EQMP
++
++    {
++        .name       = "expire_password",
++        .args_type  = "protocol:s,time:s",
++        .params     = "protocol time",
++        .help       = "set spice/vnc password expire-time",
++        .user_print = monitor_user_noop,
++        .mhandler.cmd_new = expire_password,
++    },
++
++SQMP
++expire_password
++---------------
++
++Set the password expire time for vnc/spice protocols.
++
++Arguments:
++
++- "protocol": protocol name (json-string)
++- "time": [ now | never | +secs | secs ] (json-string)
++
++Example:
++
++-> { "execute": "expire_password", "arguments": { "protocol": "vnc",
++                                                  "time": "+60" } }
++<- { "return": {} }
++
++EQMP
++
++    {
+         .name       = "qmp_capabilities",
+         .args_type  = "",
+         .params     = "",
+diff --git a/ui/qemu-spice.h b/ui/qemu-spice.h
+index 8b23ac9..48239c3 100644
+--- a/ui/qemu-spice.h
++++ b/ui/qemu-spice.h
+@@ -32,6 +32,9 @@ void qemu_spice_input_init(void);
+ void qemu_spice_audio_init(void);
+ void qemu_spice_display_init(DisplayState *ds);
+ int qemu_spice_add_interface(SpiceBaseInstance *sin);
++int qemu_spice_set_passwd(const char *passwd,
++                          bool fail_if_connected, bool disconnect_if_connected);
++int qemu_spice_set_pw_expire(time_t expires);
+ 
+ void do_info_spice_print(Monitor *mon, const QObject *data);
+ void do_info_spice(Monitor *mon, QObject **ret_data);
+@@ -39,6 +42,8 @@ void do_info_spice(Monitor *mon, QObject **ret_data);
+ #else  /* CONFIG_SPICE */
+ 
+ #define using_spice 0
++#define qemu_spice_set_passwd(_p, _f1, _f2) (-1)
++#define qemu_spice_set_pw_expire(_e) (-1)
+ 
+ #endif /* CONFIG_SPICE */
+ 
+diff --git a/ui/spice-core.c b/ui/spice-core.c
+index 833be32..bad63cc 100644
+--- a/ui/spice-core.c
++++ b/ui/spice-core.c
+@@ -36,6 +36,8 @@
+ 
+ static SpiceServer *spice_server;
+ static const char *auth = "spice";
++static char *auth_passwd;
++static time_t auth_expires = TIME_MAX;
+ int using_spice = 0;
+ 
+ struct SpiceTimer {
+@@ -599,6 +601,39 @@ int qemu_spice_add_interface(SpiceBaseInstance *sin)
+     return spice_server_add_interface(spice_server, sin);
+ }
+ 
++static int qemu_spice_set_ticket(bool fail_if_conn, bool disconnect_if_conn)
++{
++    time_t lifetime, now = time(NULL);
++    char *passwd;
++
++    if (now < auth_expires) {
++        passwd = auth_passwd;
++        lifetime = (auth_expires - now);
++        if (lifetime > INT_MAX) {
++            lifetime = INT_MAX;
++        }
++    } else {
++        passwd = NULL;
++        lifetime = 1;
++    }
++    return spice_server_set_ticket(spice_server, passwd, lifetime,
++                                   fail_if_conn, disconnect_if_conn);
++}
++
++int qemu_spice_set_passwd(const char *passwd,
++                          bool fail_if_conn, bool disconnect_if_conn)
++{
++    free(auth_passwd);
++    auth_passwd = strdup(passwd);
++    return qemu_spice_set_ticket(fail_if_conn, disconnect_if_conn);
++}
++
++int qemu_spice_set_pw_expire(time_t expires)
++{
++    auth_expires = expires;
++    return qemu_spice_set_ticket(false, false);
++}
++
+ static void spice_initialize(void)
+ {
+     qemu_spice_init();
+-- 
+1.7.4.rc1.16.gd2f15e
+

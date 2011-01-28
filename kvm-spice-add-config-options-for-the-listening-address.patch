@@ -1,0 +1,113 @@
+From 8ca1156503c99c544a410fd08cc8d8f8d9c8754a Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 5 Jan 2011 15:29:29 -0200
+Subject: [PATCH 24/48] spice: add config options for the listening address
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1294241382-17988-26-git-send-email-kraxel@redhat.com>
+Patchwork-id: 15752
+O-Subject: [RHEL-6 kvm PATCH 25/38] spice: add config options for the listening
+	address
+Bugzilla: 642131 634153 615947 632458 631832 647865
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+Make listening address configurable.  Also add options to
+force using IPv4 or IPv6.
+
+upstream: 333b0eebcc8941b8453e837293eaa1191e967c25
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ qemu-config.c   |    9 +++++++++
+ qemu-options.hx |    7 +++++++
+ ui/spice-core.c |   13 +++++++++++--
+ 3 files changed, 27 insertions(+), 2 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-config.c   |    9 +++++++++
+ qemu-options.hx |    7 +++++++
+ ui/spice-core.c |   13 +++++++++++--
+ 3 files changed, 27 insertions(+), 2 deletions(-)
+
+diff --git a/qemu-config.c b/qemu-config.c
+index 94f4980..801c9f8 100644
+--- a/qemu-config.c
++++ b/qemu-config.c
+@@ -323,6 +323,15 @@ QemuOptsList qemu_spice_opts = {
+             .name = "tls-port",
+             .type = QEMU_OPT_NUMBER,
+         },{
++            .name = "addr",
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "ipv4",
++            .type = QEMU_OPT_BOOL,
++        },{
++            .name = "ipv6",
++            .type = QEMU_OPT_BOOL,
++        },{
+             .name = "password",
+             .type = QEMU_OPT_STRING,
+         },{
+diff --git a/qemu-options.hx b/qemu-options.hx
+index 5839ed4..da7ad05 100644
+--- a/qemu-options.hx
++++ b/qemu-options.hx
+@@ -543,6 +543,13 @@ Enable the spice remote desktop protocol. Valid options are
+ @item port=<nr>
+ Set the TCP port spice is listening on for plaintext channels.
+ 
++@item addr=<addr>
++Set the IP address spice is listening on.  Default is any address.
++
++@item ipv4
++@item ipv6
++Force using the specified IP version.
++
+ @item password=<secret>
+ Set the password you need to authenticate.
+ 
+diff --git a/ui/spice-core.c b/ui/spice-core.c
+index 26d065c..f594aab 100644
+--- a/ui/spice-core.c
++++ b/ui/spice-core.c
+@@ -221,14 +221,14 @@ static int add_channel(const char *name, const char *value, void *opaque)
+ void qemu_spice_init(void)
+ {
+     QemuOpts *opts = QTAILQ_FIRST(&qemu_spice_opts.head);
+-    const char *password, *str, *x509_dir,
++    const char *password, *str, *x509_dir, *addr,
+         *x509_key_password = NULL,
+         *x509_dh_file = NULL,
+         *tls_ciphers = NULL;
+     char *x509_key_file = NULL,
+         *x509_cert_file = NULL,
+         *x509_cacert_file = NULL;
+-    int port, tls_port, len;
++    int port, tls_port, len, addr_flags;
+     spice_image_compression_t compression;
+     spice_wan_compression_t wan_compr;
+ 
+@@ -278,7 +278,16 @@ void qemu_spice_init(void)
+         tls_ciphers = qemu_opt_get(opts, "tls-ciphers");
+     }
+ 
++    addr = qemu_opt_get(opts, "addr");
++    addr_flags = 0;
++    if (qemu_opt_get_bool(opts, "ipv4", 0)) {
++        addr_flags |= SPICE_ADDR_FLAG_IPV4_ONLY;
++    } else if (qemu_opt_get_bool(opts, "ipv6", 0)) {
++        addr_flags |= SPICE_ADDR_FLAG_IPV6_ONLY;
++    }
++
+     spice_server = spice_server_new();
++    spice_server_set_addr(spice_server, addr ? addr : "", addr_flags);
+     if (port) {
+         spice_server_set_port(spice_server, port);
+     }
+-- 
+1.7.4.rc1.16.gd2f15e
+

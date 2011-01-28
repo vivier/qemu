@@ -1,0 +1,127 @@
+From 1a6d9e06dba53d2b10ff919db356e09cf704b344 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Mon, 24 Jan 2011 13:13:50 -0200
+Subject: [PATCH 47/48] spice qmp events: restore rhel6.0 compatibility.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1295874831-12225-2-git-send-email-kraxel@redhat.com>
+Patchwork-id: 16842
+O-Subject: [RHEL-6 kvm PATCH 1/2] spice qmp events: restore rhel6.0
+	compatibility.
+Bugzilla: 615947 631832 632458 634153 642131 647865
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ monitor.c       |    6 ++++++
+ monitor.h       |    2 ++
+ ui/spice-core.c |   31 ++++++++++++++++++++++++++++---
+ 3 files changed, 36 insertions(+), 3 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c       |    6 ++++++
+ monitor.h       |    2 ++
+ ui/spice-core.c |   31 ++++++++++++++++++++++++++++---
+ 3 files changed, 36 insertions(+), 3 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index ec7347d..692fb97 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -457,6 +457,12 @@ void monitor_protocol_event(MonitorEvent event, QObject *data)
+         case QEVENT_SPICE_DISCONNECTED:
+             event_name = "SPICE_DISCONNECTED";
+             break;
++        case QEVENT_RH_SPICE_INITIALIZED:
++            event_name = RFQDN_REDHAT "SPICE_INITIALIZED";
++            break;
++        case QEVENT_RH_SPICE_DISCONNECTED:
++            event_name = RFQDN_REDHAT "SPICE_DISCONNECTED";
++            break;
+         default:
+             abort();
+             break;
+diff --git a/monitor.h b/monitor.h
+index 6d3333d..e27dec9 100644
+--- a/monitor.h
++++ b/monitor.h
+@@ -34,6 +34,8 @@ typedef enum MonitorEvent {
+     QEVENT_SPICE_CONNECTED,
+     QEVENT_SPICE_INITIALIZED,
+     QEVENT_SPICE_DISCONNECTED,
++    QEVENT_RH_SPICE_INITIALIZED,
++    QEVENT_RH_SPICE_DISCONNECTED,
+     QEVENT_MAX,
+ } MonitorEvent;
+ 
+diff --git a/ui/spice-core.c b/ui/spice-core.c
+index b9b016a..1bc741a 100644
+--- a/ui/spice-core.c
++++ b/ui/spice-core.c
+@@ -153,7 +153,7 @@ static void channel_list_add(SpiceChannelEventInfo *info)
+     QTAILQ_INSERT_TAIL(&channel_list, item, link);
+ }
+ 
+-static void channel_list_del(SpiceChannelEventInfo *info)
++static int channel_list_del(SpiceChannelEventInfo *info)
+ {
+     ChannelList *item;
+ 
+@@ -163,8 +163,9 @@ static void channel_list_del(SpiceChannelEventInfo *info)
+         }
+         QTAILQ_REMOVE(&channel_list, item, link);
+         qemu_free(item);
+-        return;
++        return 1;
+     }
++    return 0;
+ }
+ 
+ static void add_addr_info(QDict *dict, struct sockaddr *addr, int len)
+@@ -207,6 +208,24 @@ static QList *channel_list_get(void)
+     return list;
+ }
+ 
++static void redhat_channel_event(int qevent, SpiceChannelEventInfo *info)
++{
++    QDict *server, *client;
++    QObject *data;
++
++    client = qdict_new();
++    add_addr_info(client, &info->paddr, info->plen);
++
++    server = qdict_new();
++    add_addr_info(server, &info->laddr, info->llen);
++    qdict_put(server, "auth", qstring_from_str(auth));
++
++    data = qobject_from_jsonf("{ 'client': %p, 'server': %p }",
++                              QOBJECT(client), QOBJECT(server));
++    monitor_protocol_event(qevent, data);
++    qobject_decref(data);
++}
++
+ static void channel_event(int event, SpiceChannelEventInfo *info)
+ {
+     static const int qevent[] = {
+@@ -227,9 +246,15 @@ static void channel_event(int event, SpiceChannelEventInfo *info)
+         qdict_put(server, "auth", qstring_from_str(auth));
+         add_channel_info(client, info);
+         channel_list_add(info);
++        if (info->type == 1 /* main */) {
++            redhat_channel_event(QEVENT_RH_SPICE_INITIALIZED, info);
++        }
+     }
+     if (event == SPICE_CHANNEL_EVENT_DISCONNECTED) {
+-        channel_list_del(info);
++        int found = channel_list_del(info);
++        if (info->type == 1 /* main */ && found) {
++            redhat_channel_event(QEVENT_RH_SPICE_DISCONNECTED, info);
++        }
+     }
+ 
+     data = qobject_from_jsonf("{ 'client': %p, 'server': %p }",
+-- 
+1.7.4.rc1.16.gd2f15e
+

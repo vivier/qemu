@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.132
+%define pkgrelease 2.133
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -1731,6 +1731,332 @@ Patch1841: kvm-Move-stdbool.h.patch
 Patch1842: kvm-savevm-Fix-no_migrate.patch
 # For bz#635954 - RFE: Assigned device should block migration
 Patch1843: kvm-device-assignment-Properly-terminate-vmsd.fields.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1844: kvm-spice-rip-out-all-the-old-non-upstream-spice-bits.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1845: kvm-Use-display-types-for-local-display-only.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1846: kvm-add-pflib-PixelFormat-conversion-library.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1847: kvm-Add-support-for-generic-notifier-lists.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1848: kvm-Rewrite-mouse-handlers-to-use-QTAILQ-and-to-have-an-.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1849: kvm-Add-kbd_mouse_has_absolute.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1850: kvm-Add-notifier-for-mouse-mode-changes.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1851: kvm-sdl-use-mouse-mode-notifier.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1852: kvm-input-make-vnc-use-mouse-mode-notifiers.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1853: kvm-vnc-make-sure-to-send-pointer-type-change-event-on-S.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1854: kvm-vmmouse-adapt-to-mouse-handler-changes.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1855: kvm-wacom-tablet-activate-event-handlers.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1856: kvm-cursor-add-cursor-functions.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1857: kvm-use-new-cursor-struct-functions-for-vmware-vga-and-s.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1858: kvm-add-spice-into-the-configure-file-again.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1859: kvm-spice-core-bits-again.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1860: kvm-spice-add-keyboard-again.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1861: kvm-spice-add-mouse-again.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1862: kvm-spice-simple-display-again.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1863: kvm-spice-add-tablet-support.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1864: kvm-spice-tls-support-again.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1865: kvm-spice-make-compression-configurable.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1866: kvm-spice-add-config-options-for-channel-security.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1867: kvm-spice-add-config-options-for-the-listening-address.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1868: kvm-spice-add-misc-config-options.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1869: kvm-spice-add-audio.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1870: kvm-add-copyright-to-spiceaudio.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1871: kvm-spice-core-fix-watching-for-write-events.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1872: kvm-spice-core-fix-warning-when-building-with-spice-0.6..patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1873: kvm-spice-display-replace-private-lock-with-qemu-mutex.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1874: kvm-spice-add-qxl-device-again.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1875: kvm-spice-connection-events.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1876: kvm-spice-add-qmp-query-spice-and-hmp-info-spice-command.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1877: kvm-Revert-vnc-support-password-expire.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1878: kvm-vnc-auth-reject-cleanup.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1879: kvm-vnc-support-password-expire-again.patch
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#631832 - manpage is missing spice options
+# For bz#647865 - support 2560x1440 in qxl
+Patch1880: kvm-vnc-spice-add-set_passwd-monitor-command.patch
+# For bz#653591 - [RHEL6 Snap13]: Hot-unplugging issue noticed with rtl8139nic after migration of KVM guest.
+Patch1881: kvm-qdev-Track-runtime-machine-modifications.patch
+# For bz#653591 - [RHEL6 Snap13]: Hot-unplugging issue noticed with rtl8139nic after migration of KVM guest.
+Patch1882: kvm-rtl8139-Use-subsection-to-restrict-migration-after-h.patch
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#631832 - manpage is missing spice options
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#647865 - support 2560x1440 in qxl
+Patch1883: kvm-add-migration-state-change-notifiers.patch
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#631832 - manpage is missing spice options
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#647865 - support 2560x1440 in qxl
+Patch1884: kvm-spice-vnc-client-migration.patch
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#631832 - manpage is missing spice options
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#647865 - support 2560x1440 in qxl
+Patch1885: kvm-vnc-spice-fix-never-and-now-expire_time.patch
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#631832 - manpage is missing spice options
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#647865 - support 2560x1440 in qxl
+Patch1886: kvm-spice-qxl-zap-spice-0.4-migration-compatibility-bits.patch
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#631832 - manpage is missing spice options
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#647865 - support 2560x1440 in qxl
+Patch1887: kvm-spice-add-chardev-v4.patch
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#631832 - manpage is missing spice options
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#647865 - support 2560x1440 in qxl
+Patch1888: kvm-qxl-locking-fix.patch
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#631832 - manpage is missing spice options
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#647865 - support 2560x1440 in qxl
+Patch1889: kvm-spice-qxl-locking-fix-for-qemu-kvm.patch
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#631832 - manpage is missing spice options
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#647865 - support 2560x1440 in qxl
+Patch1890: kvm-spice-qmp-events-restore-rhel6.0-compatibility.patch
+# For bz#615947 - RFE QMP: support of query spice for guest
+# For bz#631832 - manpage is missing spice options
+# For bz#632458 - Guest may core dump when booting with spice and qxl.
+# For bz#634153 - coredumped when enable qxl without spice
+# For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
+# For bz#647865 - support 2560x1440 in qxl
+Patch1891: kvm-spice-monitor-commands-restore-rhel6.0-compatibility.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2682,6 +3008,54 @@ ApplyOptionalPatch()
 %patch1841 -p1
 %patch1842 -p1
 %patch1843 -p1
+%patch1844 -p1
+%patch1845 -p1
+%patch1846 -p1
+%patch1847 -p1
+%patch1848 -p1
+%patch1849 -p1
+%patch1850 -p1
+%patch1851 -p1
+%patch1852 -p1
+%patch1853 -p1
+%patch1854 -p1
+%patch1855 -p1
+%patch1856 -p1
+%patch1857 -p1
+%patch1858 -p1
+%patch1859 -p1
+%patch1860 -p1
+%patch1861 -p1
+%patch1862 -p1
+%patch1863 -p1
+%patch1864 -p1
+%patch1865 -p1
+%patch1866 -p1
+%patch1867 -p1
+%patch1868 -p1
+%patch1869 -p1
+%patch1870 -p1
+%patch1871 -p1
+%patch1872 -p1
+%patch1873 -p1
+%patch1874 -p1
+%patch1875 -p1
+%patch1876 -p1
+%patch1877 -p1
+%patch1878 -p1
+%patch1879 -p1
+%patch1880 -p1
+%patch1881 -p1
+%patch1882 -p1
+%patch1883 -p1
+%patch1884 -p1
+%patch1885 -p1
+%patch1886 -p1
+%patch1887 -p1
+%patch1888 -p1
+%patch1889 -p1
+%patch1890 -p1
+%patch1891 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -2893,6 +3267,70 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Jan 28 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.133.el6
+- kvm-spice-rip-out-all-the-old-non-upstream-spice-bits.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-Use-display-types-for-local-display-only.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-add-pflib-PixelFormat-conversion-library.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-Add-support-for-generic-notifier-lists.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-Rewrite-mouse-handlers-to-use-QTAILQ-and-to-have-an-.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-Add-kbd_mouse_has_absolute.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-Add-notifier-for-mouse-mode-changes.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-sdl-use-mouse-mode-notifier.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-input-make-vnc-use-mouse-mode-notifiers.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-vnc-make-sure-to-send-pointer-type-change-event-on-S.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-vmmouse-adapt-to-mouse-handler-changes.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-wacom-tablet-activate-event-handlers.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-cursor-add-cursor-functions.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-use-new-cursor-struct-functions-for-vmware-vga-and-s.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-add-spice-into-the-configure-file-again.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-spice-core-bits-again.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-spice-add-keyboard-again.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-spice-add-mouse-again.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-spice-simple-display-again.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-spice-add-tablet-support.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-spice-tls-support-again.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-spice-make-compression-configurable.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-spice-add-config-options-for-channel-security.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-spice-add-config-options-for-the-listening-address.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-spice-add-misc-config-options.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-spice-add-audio.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-add-copyright-to-spiceaudio.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-spice-core-fix-watching-for-write-events.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-spice-core-fix-warning-when-building-with-spice-0.6..patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-spice-display-replace-private-lock-with-qemu-mutex.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-spice-add-qxl-device-again.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-spice-connection-events.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-spice-add-qmp-query-spice-and-hmp-info-spice-command.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-Revert-vnc-support-password-expire.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-vnc-auth-reject-cleanup.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-vnc-support-password-expire-again.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-vnc-spice-add-set_passwd-monitor-command.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
+- kvm-qdev-Track-runtime-machine-modifications.patch [bz#653591]
+- kvm-rtl8139-Use-subsection-to-restrict-migration-after-h.patch [bz#653591]
+- kvm-add-migration-state-change-notifiers.patch [bz#615947 bz#631832 bz#632458 bz#634153 bz#642131 bz#647865]
+- kvm-spice-vnc-client-migration.patch [bz#615947 bz#631832 bz#632458 bz#634153 bz#642131 bz#647865]
+- kvm-vnc-spice-fix-never-and-now-expire_time.patch [bz#615947 bz#631832 bz#632458 bz#634153 bz#642131 bz#647865]
+- kvm-spice-qxl-zap-spice-0.4-migration-compatibility-bits.patch [bz#615947 bz#631832 bz#632458 bz#634153 bz#642131 bz#647865]
+- kvm-spice-add-chardev-v4.patch [bz#615947 bz#631832 bz#632458 bz#634153 bz#642131 bz#647865]
+- kvm-qxl-locking-fix.patch [bz#615947 bz#631832 bz#632458 bz#634153 bz#642131 bz#647865]
+- kvm-spice-qxl-locking-fix-for-qemu-kvm.patch [bz#615947 bz#631832 bz#632458 bz#634153 bz#642131 bz#647865]
+- kvm-spice-qmp-events-restore-rhel6.0-compatibility.patch [bz#615947 bz#631832 bz#632458 bz#634153 bz#642131 bz#647865]
+- kvm-spice-monitor-commands-restore-rhel6.0-compatibility.patch [bz#615947 bz#631832 bz#632458 bz#634153 bz#642131 bz#647865]
+- Resolves: bz#615947
+  (RFE QMP: support of query spice for guest)
+- Resolves: bz#631832
+  (manpage is missing spice options)
+- Resolves: bz#632458
+  (Guest may core dump when booting with spice and qxl.)
+- Resolves: bz#634153
+  (coredumped when enable qxl without spice)
+- Resolves: bz#642131
+  (qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits')
+- Resolves: bz#647865
+  (support 2560x1440 in qxl)
+- Resolves: bz#653591
+  ([RHEL6 Snap13]: Hot-unplugging issue noticed with rtl8139nic after migration of KVM guest.)
+
 * Tue Jan 25 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.132.el6
 - kvm-BZ-636494-cpu-check-does-not-correctly-enforce-CPUID.patch [bz#636494]
 - kvm-QDict-Introduce-qdict_get_qdict.patch [bz#647447]

@@ -1,0 +1,175 @@
+From a557cdb3d6d001f7735d0f2c9d4a2f0c71912eed Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 5 Jan 2011 15:29:25 -0200
+Subject: [PATCH 20/48] spice: add tablet support
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1294241382-17988-22-git-send-email-kraxel@redhat.com>
+Patchwork-id: 15750
+O-Subject: [RHEL-6 kvm PATCH 21/38] spice: add tablet support
+Bugzilla: 642131 634153 615947 632458 631832 647865
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+Add support for the spice tablet interface.  The tablet interface will
+be registered (and then used by the spice client) as soon as a absolute
+pointing device is available and used by the guest, i.e. you'll have to
+configure your guest with '-usbdevice tablet'.
+
+upstream: 869564a9c0f78b1972e1ac51e69cb2016af3b060
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ ui/spice-display.c |    2 +-
+ ui/spice-input.c   |   94 ++++++++++++++++++++++++++++++++++++++++++++++++----
+ 2 files changed, 88 insertions(+), 8 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ ui/spice-display.c |    2 +-
+ ui/spice-input.c   |   94 ++++++++++++++++++++++++++++++++++++++++++++++++----
+ 2 files changed, 88 insertions(+), 8 deletions(-)
+
+diff --git a/ui/spice-display.c b/ui/spice-display.c
+index 0bc230e..6702dfd 100644
+--- a/ui/spice-display.c
++++ b/ui/spice-display.c
+@@ -180,7 +180,7 @@ void qemu_spice_create_host_primary(SimpleSpiceDisplay *ssd)
+     surface.width      = ds_get_width(ssd->ds);
+     surface.height     = ds_get_height(ssd->ds);
+     surface.stride     = -surface.width * 4;
+-    surface.mouse_mode = 0;
++    surface.mouse_mode = true;
+     surface.flags      = 0;
+     surface.type       = 0;
+     surface.mem        = (intptr_t)ssd->buf;
+diff --git a/ui/spice-input.c b/ui/spice-input.c
+index 91cf18d..37c8578 100644
+--- a/ui/spice-input.c
++++ b/ui/spice-input.c
+@@ -17,6 +17,7 @@
+ 
+ #include <stdlib.h>
+ #include <stdio.h>
++#include <stdbool.h>
+ #include <string.h>
+ 
+ #include <spice.h>
+@@ -76,9 +77,13 @@ static void kbd_leds(void *opaque, int ledstate)
+ 
+ /* mouse bits */
+ 
+-typedef struct QemuSpiceMouse {
+-    SpiceMouseInstance sin;
+-} QemuSpiceMouse;
++typedef struct QemuSpicePointer {
++    SpiceMouseInstance  mouse;
++    SpiceTabletInstance tablet;
++    int width, height, x, y;
++    Notifier mouse_mode;
++    bool absolute;
++} QemuSpicePointer;
+ 
+ static int map_buttons(int spice_buttons)
+ {
+@@ -121,17 +126,92 @@ static const SpiceMouseInterface mouse_interface = {
+     .buttons            = mouse_buttons,
+ };
+ 
++static void tablet_set_logical_size(SpiceTabletInstance* sin, int width, int height)
++{
++    QemuSpicePointer *pointer = container_of(sin, QemuSpicePointer, tablet);
++
++    if (height < 16) {
++        height = 16;
++    }
++    if (width < 16) {
++        width = 16;
++    }
++    pointer->width  = width;
++    pointer->height = height;
++}
++
++static void tablet_position(SpiceTabletInstance* sin, int x, int y,
++                            uint32_t buttons_state)
++{
++    QemuSpicePointer *pointer = container_of(sin, QemuSpicePointer, tablet);
++
++    pointer->x = x * 0x7FFF / (pointer->width - 1);
++    pointer->y = y * 0x7FFF / (pointer->height - 1);
++    kbd_mouse_event(pointer->x, pointer->y, 0, map_buttons(buttons_state));
++}
++
++
++static void tablet_wheel(SpiceTabletInstance* sin, int wheel,
++                         uint32_t buttons_state)
++{
++    QemuSpicePointer *pointer = container_of(sin, QemuSpicePointer, tablet);
++
++    kbd_mouse_event(pointer->x, pointer->y, wheel, map_buttons(buttons_state));
++}
++
++static void tablet_buttons(SpiceTabletInstance *sin,
++                           uint32_t buttons_state)
++{
++    QemuSpicePointer *pointer = container_of(sin, QemuSpicePointer, tablet);
++
++    kbd_mouse_event(pointer->x, pointer->y, 0, map_buttons(buttons_state));
++}
++
++static const SpiceTabletInterface tablet_interface = {
++    .base.type          = SPICE_INTERFACE_TABLET,
++    .base.description   = "tablet",
++    .base.major_version = SPICE_INTERFACE_TABLET_MAJOR,
++    .base.minor_version = SPICE_INTERFACE_TABLET_MINOR,
++    .set_logical_size   = tablet_set_logical_size,
++    .position           = tablet_position,
++    .wheel              = tablet_wheel,
++    .buttons            = tablet_buttons,
++};
++
++static void mouse_mode_notifier(Notifier *notifier)
++{
++    QemuSpicePointer *pointer = container_of(notifier, QemuSpicePointer, mouse_mode);
++    bool is_absolute  = kbd_mouse_is_absolute();
++
++    if (pointer->absolute == is_absolute) {
++        return;
++    }
++
++    if (is_absolute) {
++        qemu_spice_add_interface(&pointer->tablet.base);
++    } else {
++        spice_server_remove_interface(&pointer->tablet.base);
++    }
++    pointer->absolute = is_absolute;
++}
++
+ void qemu_spice_input_init(void)
+ {
+     QemuSpiceKbd *kbd;
+-    QemuSpiceMouse *mouse;
++    QemuSpicePointer *pointer;
+ 
+     kbd = qemu_mallocz(sizeof(*kbd));
+     kbd->sin.base.sif = &kbd_interface.base;
+     qemu_spice_add_interface(&kbd->sin.base);
+     qemu_add_led_event_handler(kbd_leds, kbd);
+ 
+-    mouse = qemu_mallocz(sizeof(*mouse));
+-    mouse->sin.base.sif = &mouse_interface.base;
+-    qemu_spice_add_interface(&mouse->sin.base);
++    pointer = qemu_mallocz(sizeof(*pointer));
++    pointer->mouse.base.sif  = &mouse_interface.base;
++    pointer->tablet.base.sif = &tablet_interface.base;
++    qemu_spice_add_interface(&pointer->mouse.base);
++
++    pointer->absolute = false;
++    pointer->mouse_mode.notify = mouse_mode_notifier;
++    qemu_add_mouse_mode_change_notifier(&pointer->mouse_mode);
++    mouse_mode_notifier(&pointer->mouse_mode);
+ }
+-- 
+1.7.4.rc1.16.gd2f15e
+

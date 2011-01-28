@@ -1,0 +1,4911 @@
+From 90ef67c8d345e0c67c581307fa18c56493940a83 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 5 Jan 2011 15:29:05 -0200
+Subject: [PATCH 01/48] spice: rip out all the old, non-upstream spice bits.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1294241382-17988-2-git-send-email-kraxel@redhat.com>
+Patchwork-id: 15749
+O-Subject: [RHEL-6 kvm PATCH 01/38] spice: rip out all the old,
+	non-upstream spice bits.
+Bugzilla: 642131 634153 615947 632458 631832 647865
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ Makefile               |    1 -
+ Makefile.target        |    2 -
+ audio/audio.c          |    3 -
+ audio/audio_int.h      |    1 -
+ audio/spiceaudio.c     |  397 --------------
+ configure              |   33 --
+ hw/pc.c                |    8 -
+ hw/qxl.c               | 1416 ------------------------------------------------
+ hw/qxl_interface.h     |   22 -
+ hw/qxl_native_worker.c |  150 -----
+ hw/spice-vmc.c         |  301 ----------
+ migration.c            |   15 -
+ monitor.c              |    7 -
+ monitor.h              |    2 -
+ qemu-config.c          |   77 ---
+ qemu-config.h          |    1 -
+ qemu-monitor.hx        |   69 ---
+ qemu-options.hx        |   10 +-
+ qemu-spice.h           |   38 --
+ spice-cmd.h            |  339 ------------
+ spice-display.c        |  370 -------------
+ spice-display.h        |   35 --
+ spice-draw.h           |  389 -------------
+ spice-input.c          |  155 ------
+ spice-ring.h           |  123 -----
+ spice.c                |  446 ---------------
+ sysemu.h               |    3 +-
+ vl.c                   |   28 +-
+ 28 files changed, 3 insertions(+), 4438 deletions(-)
+ delete mode 100644 audio/spiceaudio.c
+ delete mode 100644 hw/qxl.c
+ delete mode 100644 hw/qxl_interface.h
+ delete mode 100644 hw/qxl_native_worker.c
+ delete mode 100644 hw/spice-vmc.c
+ delete mode 100644 qemu-spice.h
+ delete mode 100644 spice-cmd.h
+ delete mode 100644 spice-display.c
+ delete mode 100644 spice-display.h
+ delete mode 100644 spice-draw.h
+ delete mode 100644 spice-input.c
+ delete mode 100644 spice-ring.h
+ delete mode 100644 spice.c
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ Makefile               |    1 -
+ Makefile.target        |    2 -
+ audio/audio.c          |    3 -
+ audio/audio_int.h      |    1 -
+ audio/spiceaudio.c     |  397 --------------
+ configure              |   33 --
+ hw/pc.c                |    8 -
+ hw/qxl.c               | 1416 ------------------------------------------------
+ hw/qxl_interface.h     |   22 -
+ hw/qxl_native_worker.c |  150 -----
+ hw/spice-vmc.c         |  301 ----------
+ migration.c            |   15 -
+ monitor.c              |    7 -
+ monitor.h              |    2 -
+ qemu-config.c          |   77 ---
+ qemu-config.h          |    1 -
+ qemu-monitor.hx        |   69 ---
+ qemu-options.hx        |   10 +-
+ qemu-spice.h           |   38 --
+ spice-cmd.h            |  339 ------------
+ spice-display.c        |  370 -------------
+ spice-display.h        |   35 --
+ spice-draw.h           |  389 -------------
+ spice-input.c          |  155 ------
+ spice-ring.h           |  123 -----
+ spice.c                |  446 ---------------
+ sysemu.h               |    3 +-
+ vl.c                   |   28 +-
+ 28 files changed, 3 insertions(+), 4438 deletions(-)
+ delete mode 100644 audio/spiceaudio.c
+ delete mode 100644 hw/qxl.c
+ delete mode 100644 hw/qxl_interface.h
+ delete mode 100644 hw/qxl_native_worker.c
+ delete mode 100644 hw/spice-vmc.c
+ delete mode 100644 qemu-spice.h
+ delete mode 100644 spice-cmd.h
+ delete mode 100644 spice-display.c
+ delete mode 100644 spice-display.h
+ delete mode 100644 spice-draw.h
+ delete mode 100644 spice-input.c
+ delete mode 100644 spice-ring.h
+ delete mode 100644 spice.c
+
+diff --git a/Makefile b/Makefile
+index 5ff17cc..7d51d0d 100644
+--- a/Makefile
++++ b/Makefile
+@@ -202,7 +202,6 @@ audio-obj-$(CONFIG_PA) += paaudio.o
+ audio-obj-$(CONFIG_WINWAVE) += winwaveaudio.o
+ audio-obj-$(CONFIG_AUDIO_PT_INT) += audio_pt_int.o
+ audio-obj-$(CONFIG_AUDIO_WIN_INT) += audio_win_int.o
+-audio-obj-$(CONFIG_SPICE) += spiceaudio.o 
+ audio-obj-y += wavcapture.o
+ obj-y += $(addprefix audio/, $(audio-obj-y))
+ 
+diff --git a/Makefile.target b/Makefile.target
+index e9a6b4a..71f948a 100644
+--- a/Makefile.target
++++ b/Makefile.target
+@@ -238,8 +238,6 @@ obj-i386-y += testdev.o
+ 
+ obj-i386-$(CONFIG_KVM_PIT) += i8254-kvm.o
+ obj-i386-$(CONFIG_KVM_DEVICE_ASSIGNMENT) += device-assignment.o
+-obj-i386-$(CONFIG_SPICE) += spice.o spice-input.o spice-display.o
+-obj-i386-$(CONFIG_SPICE) += qxl.o qxl_native_worker.o spice-vmc.o
+ 
+ # Hardware support
+ obj-ia64-y += ide.o pckbd.o vga.o $(SOUND_HW) dma.o $(AUDIODRV)
+diff --git a/audio/audio.c b/audio/audio.c
+index 8470983..6058621 100644
+--- a/audio/audio.c
++++ b/audio/audio.c
+@@ -45,9 +45,6 @@
+ */
+ static struct audio_driver *drvtab[] = {
+     CONFIG_AUDIO_DRIVERS
+-#ifdef CONFIG_SPICE
+-    &spice_audio_driver,
+-#endif
+     &no_audio_driver,
+     &wav_audio_driver
+ };
+diff --git a/audio/audio_int.h b/audio/audio_int.h
+index e2e1c2c..06e313f 100644
+--- a/audio/audio_int.h
++++ b/audio/audio_int.h
+@@ -210,7 +210,6 @@ extern struct audio_driver dsound_audio_driver;
+ extern struct audio_driver esd_audio_driver;
+ extern struct audio_driver pa_audio_driver;
+ extern struct audio_driver winwave_audio_driver;
+-extern struct audio_driver spice_audio_driver;
+ extern struct mixeng_volume nominal_volume;
+ 
+ void audio_pcm_init_info (struct audio_pcm_info *info, struct audsettings *as);
+diff --git a/audio/spiceaudio.c b/audio/spiceaudio.c
+deleted file mode 100644
+index 00edd77..0000000
+--- a/audio/spiceaudio.c
++++ /dev/null
+@@ -1,397 +0,0 @@
+-#define AUDIO_CAP "spice"
+-
+-#include "hw/hw.h"
+-#include "audio.h"
+-#include "audio_int.h"
+-#include "qemu-timer.h"
+-#include "qemu-spice.h"
+-
+-#define LINE_IN_SAMPLES 1024
+-#define LINE_OUT_SAMPLES 1024
+-
+-typedef struct InterfaceVoiceOut {
+-    HWVoiceOut base;
+-    uint64_t prev_ticks;
+-    int active;
+-} InterfaceVoiceOut;
+-
+-typedef struct InterfaceVoiceIn {
+-    HWVoiceIn base;
+-    uint64_t prev_ticks;
+-    uint32_t samples[LINE_IN_SAMPLES];
+-    int active;
+-} InterfaceVoiceIn;
+-
+-static VDObjectRef interface_play_plug(PlaybackInterface *playback, PlaybackPlug* plug,
+-                                       int *enabled);
+-static void interface_play_unplug(PlaybackInterface *playback, VDObjectRef obj);
+-static VDObjectRef interface_record_plug(RecordInterface *recorder, RecordPlug* plug,
+-                                         int *enabled);
+-static void interface_record_unplug(RecordInterface *recorder, VDObjectRef obj);
+-
+-static struct audio_option options[] = {
+-    { /* end of list */ },
+-};
+-
+-typedef struct Interface_audio {
+-    PlaybackInterface play_interface;
+-    PlaybackPlug *play_plug;
+-    uint32_t play_avail;
+-    uint32_t *play_frame;
+-    uint32_t *play_now;
+-
+-    RecordInterface record_interface;
+-    RecordPlug *record_plug;
+-    uint32_t silence[LINE_IN_SAMPLES];
+-
+-    InterfaceVoiceOut *voic_out;
+-    InterfaceVoiceIn *voic_in;
+-} Interface_audio;
+-
+-static Interface_audio driver = {
+-    .play_interface = {
+-        .base.base_version  = VM_INTERFACE_VERSION,
+-        .base.type          = VD_INTERFACE_PLAYBACK,
+-        .base.description   = "playback",
+-        .base.major_version = VD_INTERFACE_PLAYBACK_MAJOR,
+-        .base.minor_version = VD_INTERFACE_PLAYBACK_MINOR,
+-        .plug               = interface_play_plug,
+-        .unplug             = interface_play_unplug,
+-    },
+-    .record_interface = {
+-        .base.base_version  = VM_INTERFACE_VERSION,
+-        .base.type          = VD_INTERFACE_RECORD,
+-        .base.description   = "record",
+-        .base.major_version = VD_INTERFACE_RECORD_MAJOR,
+-        .base.minor_version = VD_INTERFACE_RECORD_MINOR,
+-        .plug               = interface_record_plug,
+-        .unplug             = interface_record_unplug,
+-    },
+-};
+-
+-static VDObjectRef interface_play_plug(PlaybackInterface *playback, PlaybackPlug* plug,
+-                                int *enabled)
+-{
+-    if (driver.play_plug) {
+-        return INVALID_VD_OBJECT_REF;
+-    }
+-    assert(plug && playback == &driver.play_interface && enabled);
+-    driver.play_plug = plug;
+-    *enabled = driver.voic_out ? driver.voic_out->active : 0;
+-    return (VDObjectRef)plug;
+-}
+-
+-static void interface_play_unplug(PlaybackInterface *playback, VDObjectRef obj)
+-{
+-    if (!driver.play_plug || obj != (VDObjectRef)driver.play_plug) {
+-        return;
+-    }
+-    assert(playback == &driver.play_interface);
+-    driver.play_plug = NULL;
+-    driver.play_avail = 0;
+-    driver.play_frame = NULL;
+-    driver.play_now = NULL;
+-}
+-
+-static VDObjectRef interface_record_plug(RecordInterface *recorder, RecordPlug* plug,
+-                                  int *enabled)
+-{
+-    assert(!driver.record_plug && plug && recorder == &driver.record_interface
+-           && enabled);
+-    driver.record_plug = plug;
+-    *enabled = driver.voic_in ? driver.voic_in->active : 0;
+-    return (VDObjectRef)plug;
+-}
+-
+-static void interface_record_unplug(RecordInterface *recorder, VDObjectRef obj)
+-{
+-    assert(driver.record_plug && recorder == &driver.record_interface);
+-    driver.record_plug = NULL;
+-}
+-
+-static void *interface_audio_init(void)
+-{
+-    if (VD_INTERFACE_PLAYBACK_FMT != VD_INTERFACE_AUDIO_FMT_S16 ||
+-        VD_INTERFACE_PLAYBACK_CHAN != 2 ||
+-        VD_INTERFACE_RECORD_FMT != VD_INTERFACE_AUDIO_FMT_S16 ||
+-        VD_INTERFACE_RECORD_CHAN != 2) {
+-        exit(-1);
+-    }
+-    if (!using_spice)
+-        return NULL;
+-
+-    memset(driver.silence, 0, sizeof(driver.silence));
+-    qemu_spice_add_interface(&driver.play_interface.base);
+-    qemu_spice_add_interface(&driver.record_interface.base);
+-    return &driver;
+-}
+-
+-static void interface_audio_fini(void *opaque)
+-{
+-    qemu_spice_remove_interface(&driver.play_interface.base);
+-    assert(!driver.play_plug);
+-    qemu_spice_remove_interface(&driver.record_interface.base);
+-    assert(!driver.record_plug);
+-}
+-
+-static int line_out_init(HWVoiceOut *hw, struct audsettings *as)
+-{
+-    InterfaceVoiceOut *voice_out = (InterfaceVoiceOut *)hw;
+-    struct audsettings settings;
+-
+-    settings.freq = VD_INTERFACE_PLAYBACK_FREQ;
+-    settings.nchannels = VD_INTERFACE_PLAYBACK_CHAN;
+-    settings.fmt = AUD_FMT_S16;
+-    settings.endianness = AUDIO_HOST_ENDIANNESS;
+-
+-    audio_pcm_init_info(&hw->info, &settings);
+-    hw->samples = LINE_OUT_SAMPLES;
+-    driver.voic_out = voice_out;
+-    voice_out->active = 0;
+-    return 0;
+-}
+-
+-static void line_out_fini(HWVoiceOut *hw)
+-{
+-    driver.voic_out = NULL;
+-}
+-
+-static uint64_t get_monotonic_time(void)
+-{
+-    struct timespec time_space;
+-    clock_gettime(CLOCK_MONOTONIC, &time_space);
+-    return (uint64_t)time_space.tv_sec * 1000 * 1000 * 1000 + time_space.tv_nsec;
+-}
+-
+-static int line_out_run(HWVoiceOut *hw, int live)
+-{
+-    InterfaceVoiceOut *voice_out = (InterfaceVoiceOut *)hw;
+-    int rpos, decr;
+-    int samples;
+-    uint64_t now;
+-    uint64_t ticks;
+-    uint64_t bytes;
+-
+-    if (!live) {
+-        return 0;
+-    }
+-
+-    now = get_monotonic_time();
+-    ticks = now - voice_out->prev_ticks;
+-    bytes = (ticks * hw->info.bytes_per_second) / (1000 * 1000 * 1000);
+-
+-    voice_out->prev_ticks = now;
+-
+-    decr = (bytes > INT_MAX) ? INT_MAX >> hw->info.shift :
+-                                        (bytes + (1 << (hw->info.shift - 1))) >> hw->info.shift;
+-    decr = audio_MIN(live, decr);
+-
+-    samples = decr;
+-    rpos = hw->rpos;
+-    while (samples) {
+-        int left_till_end_samples = hw->samples - rpos;
+-        int len = audio_MIN(samples, left_till_end_samples);
+-
+-        if (driver.play_plug && !driver.play_frame) {
+-            driver.play_plug->get_frame(driver.play_plug,
+-                                        &driver.play_frame,
+-                                        &driver.play_avail);
+-            driver.play_now = driver.play_frame;
+-        }
+-        if (driver.play_avail) {
+-            len = audio_MIN(len, driver.play_avail);
+-            hw->clip(driver.play_now, hw->mix_buf + rpos, len);
+-            if (!(driver.play_avail -= len)) {
+-                driver.play_plug->put_frame(driver.play_plug,
+-                                            driver.play_frame);
+-                driver.play_frame = driver.play_now = NULL;
+-            } else {
+-                driver.play_now += len;
+-            }
+-        }
+-        rpos = (rpos + len) % hw->samples;
+-        samples -= len;
+-    }
+-    hw->rpos = rpos;
+-    return decr;
+-}
+-
+-static int line_out_write(SWVoiceOut *sw, void *buf, int len)
+-{
+-    return audio_pcm_sw_write(sw, buf, len);
+-}
+-
+-static int line_out_ctl(HWVoiceOut *hw, int cmd, ...)
+-{
+-    InterfaceVoiceOut *voice_out = (InterfaceVoiceOut *)hw;
+-
+-    switch (cmd) {
+-    case VOICE_ENABLE:
+-        if (voice_out->active) {
+-            break;
+-        }
+-        voice_out->active = 1;
+-        voice_out->prev_ticks = get_monotonic_time();
+-        if (driver.play_plug) {
+-            driver.play_plug->start(driver.play_plug);
+-        }
+-        break;
+-    case VOICE_DISABLE:
+-        if (!voice_out->active) {
+-            break;
+-        }
+-        voice_out->active = 0;
+-        if (driver.play_plug) {
+-            if (driver.play_frame) {
+-                uint32_t *frame = driver.play_frame;
+-                memset(driver.play_now, 0, driver.play_avail << 2);
+-                driver.play_avail = 0;
+-                driver.play_now = driver.play_frame = NULL;
+-                driver.play_plug->put_frame(driver.play_plug, frame);
+-            }
+-            driver.play_plug->stop(driver.play_plug);
+-        }
+-        break;
+-    }
+-    return 0;
+-}
+-
+-static int line_in_init(HWVoiceIn *hw, struct audsettings *as)
+-{
+-    InterfaceVoiceIn *voice_in = (InterfaceVoiceIn *)hw;
+-    struct audsettings settings;
+-
+-    settings.freq = VD_INTERFACE_RECORD_FREQ;
+-    settings.nchannels = VD_INTERFACE_RECORD_CHAN;
+-    if (VD_INTERFACE_PLAYBACK_FMT != VD_INTERFACE_AUDIO_FMT_S16) {
+-        return -1;
+-    }
+-    settings.fmt = AUD_FMT_S16;
+-    settings.endianness = AUDIO_HOST_ENDIANNESS;
+-
+-    audio_pcm_init_info(&hw->info, &settings);
+-    hw->samples = LINE_IN_SAMPLES;
+-    driver.voic_in = voice_in;
+-    voice_in->active = 0;
+-    return 0;
+-}
+-
+-static void line_in_fini(HWVoiceIn *hw)
+-{
+-    driver.voic_in = NULL;
+-}
+-
+-static int line_in_run(HWVoiceIn *hw)
+-{
+-    InterfaceVoiceIn *voice_in = (InterfaceVoiceIn *)hw;
+-    int num_samples;
+-    int ready;
+-    int len[2];
+-    uint64_t now;
+-    uint64_t ticks;
+-    uint64_t delta_samp;
+-    uint32_t *samples;
+-
+-    if (!(num_samples = hw->samples - audio_pcm_hw_get_live_in(hw))) {
+-        return 0;
+-    }
+-
+-    now = get_monotonic_time();
+-    ticks = now - voice_in->prev_ticks;
+-    voice_in->prev_ticks = now;
+-    delta_samp = (ticks * hw->info.bytes_per_second) / (1000 * 1000 * 1000);
+-    delta_samp = (delta_samp + (1 << (hw->info.shift - 1))) >> hw->info.shift;
+-
+-    num_samples = audio_MIN(num_samples, delta_samp);
+-
+-    if (driver.record_plug) {
+-        ready = driver.record_plug->read(driver.record_plug, num_samples, voice_in->samples);
+-        samples = voice_in->samples;
+-    } else {
+-        ready = num_samples;
+-        samples = driver.silence;
+-    }
+-
+-    num_samples = audio_MIN(ready, num_samples);
+-
+-    if (hw->wpos + num_samples > hw->samples) {
+-        len[0] = hw->samples - hw->wpos;
+-        len[1] = num_samples - len[0];
+-    } else {
+-        len[0] = num_samples;
+-        len[1] = 0;
+-    }
+-
+-    hw->conv(hw->conv_buf + hw->wpos, samples, len[0], &nominal_volume);
+-
+-    if (len[1]) {
+-        hw->conv(hw->conv_buf, samples + len[0], len[1],
+-                 &nominal_volume);
+-    }
+-
+-    hw->wpos = (hw->wpos + num_samples) % hw->samples;
+-
+-    return num_samples;
+-}
+-
+-static int line_in_read(SWVoiceIn *sw, void *buf, int size)
+-{
+-    return audio_pcm_sw_read(sw, buf, size);
+-}
+-
+-static int line_in_ctl(HWVoiceIn *hw, int cmd, ...)
+-{
+-    InterfaceVoiceIn *voice_in = (InterfaceVoiceIn *)hw;
+-
+-    switch (cmd) {
+-    case VOICE_ENABLE:
+-        if (voice_in->active) {
+-            break;
+-        }
+-        voice_in->active = 1;
+-        voice_in->prev_ticks = get_monotonic_time();
+-        if (driver.record_plug) {
+-            driver.record_plug->start(driver.record_plug);
+-        }
+-        break;
+-    case VOICE_DISABLE:
+-        if (!voice_in->active) {
+-            break;
+-        }
+-        voice_in->active = 0;
+-        if (driver.record_plug) {
+-            driver.record_plug->stop(driver.record_plug);
+-        }
+-        break;
+-    }
+-    return 0;
+-}
+-
+-
+-static struct audio_pcm_ops audio_callbacks = {
+-    .init_out = line_out_init,
+-    .fini_out = line_out_fini,
+-    .run_out  = line_out_run,
+-    .write    = line_out_write,
+-    .ctl_out  = line_out_ctl,
+-
+-    .init_in  = line_in_init,
+-    .fini_in  = line_in_fini,
+-    .run_in   = line_in_run,
+-    .read     = line_in_read,
+-    .ctl_in   = line_in_ctl,
+-};
+-
+-struct audio_driver spice_audio_driver = {
+-    .name = "spice",
+-    .descr = "spice audio driver",
+-    .options = options,
+-    .init = interface_audio_init,
+-    .fini = interface_audio_fini,
+-    .pcm_ops = &audio_callbacks,
+-    .can_be_default = 1,
+-    .max_voices_out = 1,
+-    .max_voices_in = 1,
+-    .voice_size_out = sizeof (InterfaceVoiceOut),
+-    .voice_size_in = sizeof (InterfaceVoiceIn),
+-};
+diff --git a/configure b/configure
+index 951f6b8..f688437 100755
+--- a/configure
++++ b/configure
+@@ -276,7 +276,6 @@ kvm_kmod="no"
+ check_utests="no"
+ user_pie="no"
+ zero_malloc=""
+-spice=""
+ trace_backend="nop"
+ fake_machine="no"
+ 
+@@ -566,10 +565,6 @@ for opt do
+   ;;
+   --enable-kvm-cap-device-assignment) kvm_cap_device_assignment="yes"
+   ;;
+-  --enable-spice) spice="yes"
+-  ;;
+-  --disable-spice) spice="no"
+-  ;;
+   --enable-profiler) profiler="yes"
+   ;;
+   --enable-cocoa)
+@@ -823,8 +818,6 @@ echo "  --enable-linux-aio       enable Linux AIO support"
+ echo "  --enable-io-thread       enable IO thread"
+ echo "  --disable-blobs          disable installing provided firmware blobs"
+ echo "  --kerneldir=PATH         look for kernel includes in PATH"
+-echo "  --disable-spice          disable spice"
+-echo "  --enable-spice           enable spice"
+ echo "  --with-kvm-trace         enable building the KVM module with the kvm trace option"
+ echo "  --disable-cpu-emulation  disables use of qemu cpu emulation code"
+ echo "  --disable-vhost-net      disable vhost-net acceleration support"
+@@ -1975,27 +1968,6 @@ if compile_prog "" ""; then
+     gcc_attribute_warn_unused_result=yes
+ fi
+ 
+-# spice probe
+-if test "$spice" != "no" ; then
+-  cat > $TMPC << EOF
+-#include <spice.h>
+-int main(void) { CoreInterface ci; spice_init(&ci); return 0; }
+-EOF
+-  spice_cflags=`pkg-config --cflags spice-server`
+-  spice_libs=`pkg-config --libs spice-server`
+-  spice_ver=`pkg-config --modversion spice-server`
+-  if test "$spice_ver" = "0.4.2" && compile_prog "$spice_cflags" "$spice_libs" ; then
+-    spice="yes"
+-    libs_softmmu="$spice_libs $libs_softmmu"
+-    QEMU_CFLAGS="$spice_cflags $QEMU_CFLAGS"
+-  else
+-    if test "$spice" = "yes" ; then
+-      feature_not_found "spice"
+-    fi
+-    spice="no"
+-  fi
+-fi
+-
+ ##########################################
+ 
+ ##########################################
+@@ -2187,7 +2159,6 @@ echo "fdatasync         $fdatasync"
+ echo "uuid support      $uuid"
+ echo "vhost-net support $vhost_net"
+ echo "-fake-machine     $fake_machine"
+-echo "Spice             $spice"
+ echo "Trace backend     $trace_backend"
+ 
+ if test $sdl_too_old = "yes"; then
+@@ -2418,10 +2389,6 @@ else
+   echo "CONFIG_NO_CPU_EMULATION=y" >> $config_host_mak
+ fi
+ 
+-if test "$spice" = "yes" ; then
+-  echo "CONFIG_SPICE=y" >> $config_host_mak
+-fi
+-
+ if test $fake_machine = "yes" ; then
+   echo "CONFIG_FAKE_MACHINE=y" >> $config_host_mak
+ fi
+diff --git a/hw/pc.c b/hw/pc.c
+index 7eaa1b7..7a63507 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -45,7 +45,6 @@
+ #include "loader.h"
+ #include "elf.h"
+ #include "device-assignment.h"
+-#include "qemu-spice.h"
+ 
+ #include "qemu-kvm.h"
+ 
+@@ -1188,13 +1187,6 @@ static void pc_init1(ram_addr_t ram_size,
+             pci_vmsvga_init(pci_bus);
+         else
+             fprintf(stderr, "%s: vmware_vga: no PCI bus\n", __FUNCTION__);
+-#ifdef CONFIG_SPICE
+-    } else if (qxl_enabled) {
+-        if (pci_enabled)
+-            qxl_dev_init(pci_bus);
+-        else
+-            fprintf(stderr, "%s: qxl: no PCI bus\n", __FUNCTION__);
+-#endif
+     } else if (std_vga_enabled) {
+         if (pci_enabled) {
+             pci_vga_init(pci_bus, 0, 0);
+diff --git a/hw/qxl.c b/hw/qxl.c
+deleted file mode 100644
+index 0db910b..0000000
+--- a/hw/qxl.c
++++ /dev/null
+@@ -1,1416 +0,0 @@
+-#include <pthread.h>
+-#include <signal.h>
+-
+-#include "qemu-common.h"
+-#include "hw/hw.h"
+-#include "hw/pc.h"
+-#include "hw/pci.h"
+-#include "console.h"
+-#include "hw/vga_int.h"
+-#include "qemu-timer.h"
+-#include "sysemu.h"
+-#include "console.h"
+-#include "pci.h"
+-#include "hw.h"
+-#include "loader.h"
+-#include "cpu-common.h"
+-#include "kvm.h"
+-
+-#include "qemu-spice.h"
+-#include "spice-display.h"
+-#include "qxl_interface.h"
+-
+-#define QXL_VRAM_SIZE 4096
+-#define QXL_DEFAULT_COMPRESSION_LEVEL 0
+-#define QXL_SAVE_VERSION 20
+-#define VDI_PORT_SAVE_VERSION 20
+-
+-#undef ALIGN
+-#define ALIGN(a, b) (((a) + ((b) - 1)) & ~((b) - 1))
+-
+-#define QXL_DEV_NAME "qxl"
+-#define VDI_PORT_DEV_NAME "vdi_port"
+-
+-enum {
+-    QXL_MODE_UNDEFINED,
+-    QXL_MODE_VGA,
+-    QXL_MODE_NATIVE,
+-};
+-
+-typedef struct PCIQXLDevice PCIQXLDevice;
+-
+-struct PCIQXLDevice {
+-    PCIDevice pci_dev;
+-    VGACommonState vga;
+-    int id;
+-    QTAILQ_ENTRY(PCIQXLDevice) next;
+-    int pipe_fd[2];
+-    int running;
+-    uint32_t mode;
+-
+-    Rect dirty_rect;
+-    uint32_t bits_unique;
+-
+-    uint32_t io_base;
+-    QXLRom *rom;
+-    QXLRom shadow_rom;
+-    QXLModes *modes;
+-    uint64_t rom_offset;
+-    uint32_t rom_size;
+-
+-    uint8_t *ram_start;
+-    QXLRam *ram;
+-    uint64_t ram_phys_addr;
+-
+-    uint8_t *vram;
+-    unsigned long vram_offset;
+-    uint32_t vram_size;
+-
+-    uint32_t num_free_res;
+-    QXLReleaseInfo *last_release;
+-    uint32_t last_release_offset;
+-
+-    void *worker_data;
+-    int32_t worker_data_size;
+-
+-    QXLWorker* worker;
+-};
+-
+-static int qxl_debug;
+-static QTAILQ_HEAD(, PCIQXLDevice) devs = QTAILQ_HEAD_INITIALIZER(devs);
+-static pthread_t main_thread;
+-static pthread_mutex_t dirty_lock = PTHREAD_MUTEX_INITIALIZER;
+-
+-#define dprintf(level, fmt, ...)                                         \
+-    do { if (qxl_debug >= level) fprintf(stderr, fmt, ## __VA_ARGS__); } while (0)
+-
+-#define PIXEL_SIZE 0.2936875 //1280x1024 is 14.8" x 11.9"
+-
+-#define QXL_MODE(x_res, y_res, bits, orientation) \
+-    {0, x_res, y_res, bits, (x_res) * (bits) / 8, \
+-     PIXEL_SIZE * (x_res), PIXEL_SIZE * (y_res), orientation}
+-
+-#define QXL_MODE_16_32(x_res, y_res, orientation) \
+-    QXL_MODE(x_res, y_res, 16, orientation), QXL_MODE(x_res, y_res, 32, orientation)
+-
+-#define QXL_MODE_EX(x_res, y_res) \
+-    QXL_MODE_16_32(x_res, y_res, 0), QXL_MODE_16_32(y_res, x_res, 1), \
+-    QXL_MODE_16_32(x_res, y_res, 2), QXL_MODE_16_32(y_res, x_res, 3)
+-
+-QXLMode qxl_modes[] = {
+-    QXL_MODE_EX(640, 480),
+-    QXL_MODE_EX(800, 600),
+-    QXL_MODE_EX(832, 624),
+-    QXL_MODE_EX(1024, 576),
+-    QXL_MODE_EX(1024, 600),
+-    QXL_MODE_EX(1024, 768),
+-    QXL_MODE_EX(1152, 864),
+-    QXL_MODE_EX(1152, 870),
+-    QXL_MODE_EX(1280, 720),
+-    QXL_MODE_EX(1280, 768),
+-    QXL_MODE_EX(1280, 800),
+-    QXL_MODE_EX(1280, 960),
+-    QXL_MODE_EX(1280, 1024),
+-    QXL_MODE_EX(1360, 768),
+-    QXL_MODE_EX(1366, 768),
+-    QXL_MODE_EX(1400, 1050),
+-    QXL_MODE_EX(1440, 900),
+-    QXL_MODE_EX(1600, 900),
+-    QXL_MODE_EX(1600, 1200),
+-    QXL_MODE_EX(1680, 1050),
+-    QXL_MODE_EX(1920, 1080),
+-#if VGA_RAM_SIZE >= (16 * 1024 * 1024)
+-    /* these modes need more than 8 MB video memory */
+-    QXL_MODE_EX(1920, 1200),
+-    QXL_MODE_EX(1920, 1440),
+-    QXL_MODE_EX(2048, 1536),
+-    QXL_MODE_EX(2560, 1600),
+-#endif
+-#if VGA_RAM_SIZE >= (32 * 1024 * 1024)
+-    /* these modes need more than 16 MB video memory */
+-    QXL_MODE_EX(2560, 2048),
+-    QXL_MODE_EX(2800, 2100),
+-    QXL_MODE_EX(3200, 2400),
+-#endif
+-};
+-
+-typedef struct QXLVga {
+-    struct DisplayState *ds;
+-    int active_clients;
+-    QEMUTimer *timer;
+-    int need_update;
+-} QXLVga;
+-
+-static void qxl_exit_vga_mode(PCIQXLDevice *d);
+-static void qxl_reset_state(PCIQXLDevice *d);
+-
+-static QXLVga qxl_vga;
+-
+-inline uint32_t msb_mask(uint32_t val);
+-
+-static inline void atomic_or(uint32_t *var, uint32_t add)
+-{
+-   __asm__ __volatile__ ("lock; orl %1, %0" : "+m" (*var) : "r" (add) : "memory");
+-}
+-
+-static inline uint32_t atomic_exchange(uint32_t val, uint32_t *ptr)
+-{
+-   __asm__ __volatile__("xchgl %0, %1" : "+q"(val), "+m" (*ptr) : : "memory");
+-   return val;
+-}
+-
+-static void qxl_init_modes(void)
+-{
+-    int i;
+-
+-    for (i = 0; i < sizeof(qxl_modes) / sizeof(QXLMode); i++) {
+-        qxl_modes[i].id = i;
+-    }
+-}
+-
+-static UINT32 qxl_max_res_area(void)
+-{
+-    UINT32 area = 0;
+-    int i;
+-
+-    for (i = 0; i < sizeof(qxl_modes) / sizeof(QXLMode); i++) {
+-        area = MAX(qxl_modes[i].x_res*qxl_modes[i].y_res, area);
+-    }
+-    return area;
+-}
+-
+-static void set_dirty(void *base, ram_addr_t offset, void *start, uint32_t length)
+-{
+-    assert(start >= base);
+-
+-    ram_addr_t addr =  (ram_addr_t)((uint8_t*)start - (uint8_t*)base) + offset;
+-    ram_addr_t end =  ALIGN(addr + length, TARGET_PAGE_SIZE);
+-
+-    do {
+-        cpu_physical_memory_set_dirty(addr);
+-        addr += TARGET_PAGE_SIZE;
+-    } while ( addr < end );
+-}
+-
+-static inline void qxl_rom_set_dirty(PCIQXLDevice *d, void *start, uint32_t length)
+-{
+-    set_dirty(d->rom, d->rom_offset, start, length);
+-}
+-
+-static int irq_level(PCIQXLDevice *d)
+-{
+-    return !!(d->ram->int_pending & d->ram->int_mask);
+-}
+-
+-static void qxl_update_irq(void)
+-{
+-    PCIQXLDevice *d;
+-
+-    QTAILQ_FOREACH(d, &devs, next) {
+-        qemu_set_irq(d->pci_dev.irq[0], irq_level(d));
+-    }
+-}
+-
+-static void qxl_send_events(PCIQXLDevice *d, uint32_t events)
+-{
+-    assert(d->running);
+-    mb();
+-    if ((d->ram->int_pending & events) == events) {
+-        return;
+-    }
+-    atomic_or(&d->ram->int_pending, events);
+-    if (pthread_self() == main_thread) {
+-        qemu_set_irq(d->pci_dev.irq[0], irq_level(d));
+-    } else {
+-        //dummy write in order to wake up the main thread
+-        //to update the irq line
+-        if (write(d->pipe_fd[1], d, 1) != 1) {
+-            dprintf(1, "%s: write to pipe failed\n", __FUNCTION__);
+-        }
+-    }
+-}
+-
+-static void set_draw_area(PCIQXLDevice *d, QXLDevInfo *info)
+-{
+-    int stride = info->x_res * sizeof(uint32_t);
+-    info->draw_area.buf = (uint8_t *)d->ram_start + d->shadow_rom.draw_area_offset;
+-    info->draw_area.size = stride * info->y_res;
+-    info->draw_area.line_0 = info->draw_area.buf + info->draw_area.size - stride;
+-    info->draw_area.stride = -stride;
+-    info->draw_area.width = info->x_res;
+-    info->draw_area.heigth = info->y_res;
+-}
+-
+-static void _qxl_get_info(PCIQXLDevice *d, QXLDevInfo *info)
+-{
+-    QXLMode *mode;
+-
+-    info->ram_size = d->shadow_rom.num_io_pages << TARGET_PAGE_BITS;
+-
+-    if (d->mode == QXL_MODE_VGA) {
+-
+-        info->x_res = ds_get_width(qxl_vga.ds);
+-        info->y_res = ds_get_height(qxl_vga.ds);
+-        info->bits = 32;
+-
+-        info->use_hardware_cursor = false;
+-
+-        info->phys_start = 0;
+-        info->phys_end = ~info->phys_start;
+-        info->phys_delta = 0;
+-        set_draw_area(d, info);
+-        return;
+-    }
+-
+-    mode = &qxl_modes[d->shadow_rom.mode];
+-
+-    info->x_res = mode->x_res;
+-    info->y_res = mode->y_res;
+-    info->bits = mode->bits;
+-    info->use_hardware_cursor = true;
+-
+-    info->phys_start = (unsigned long)d->ram_start + d->shadow_rom.pages_offset;
+-    info->phys_end = (unsigned long)d->ram_start + d->vga.vram_size;
+-    info->phys_delta = (long)d->ram_start - d->ram_phys_addr;
+-    set_draw_area(d, info);
+-}
+-
+-static int _qxl_get_command(PCIQXLDevice *d, QXLCommand *cmd)
+-{
+-    QXLCommandRing *ring;
+-    QXLUpdate *update;
+-    QXLCommand *tmp_cmd;
+-    int notify;
+-
+-    if (d->mode == QXL_MODE_VGA) {
+-        if (rect_is_empty(&d->dirty_rect)) {
+-            return false;
+-        }
+-        pthread_mutex_lock(&dirty_lock);
+-        update = qemu_spice_display_create_update(qxl_vga.ds, &d->dirty_rect,
+-                                                  ++d->bits_unique);
+-        memset(&d->dirty_rect, 0, sizeof(d->dirty_rect));
+-        pthread_mutex_unlock(&dirty_lock);
+-        *cmd = update->cmd;
+-        return true;
+-    }
+-
+-    ring = &d->ram->cmd_ring;
+-    if (RING_IS_EMPTY(ring)) {
+-        return false;
+-    }
+-    RING_CONS_ITEM(ring, tmp_cmd);
+-    *cmd = *tmp_cmd;
+-    RING_POP(ring, notify);
+-    if (notify) {
+-        qxl_send_events(d, QXL_INTERRUPT_DISPLAY);
+-    }
+-    return true;
+-}
+-
+-static int _qxl_has_command(PCIQXLDevice *d)
+-{
+-    if (d->mode == QXL_MODE_VGA) {
+-        return !rect_is_empty(&d->dirty_rect);
+-    } else {
+-        return !RING_IS_EMPTY(&d->ram->cmd_ring);
+-    }
+-}
+-
+-static int _qxl_get_cursor_command(PCIQXLDevice *d, QXLCommand *cmd)
+-{
+-    QXLCursorRing *ring;
+-    QXLCommand *tmp_cmd;
+-    int notify;
+-
+-    if (d->mode == QXL_MODE_VGA) {
+-        return 0;
+-    }
+-
+-    ring = &d->ram->cursor_ring;
+-    if (RING_IS_EMPTY(ring)) {
+-        return 0;
+-    }
+-    RING_CONS_ITEM(ring, tmp_cmd);
+-    *cmd = *tmp_cmd;
+-    RING_POP(ring, notify);
+-    if (notify) {
+-        qxl_send_events(d, QXL_INTERRUPT_CURSOR);
+-    }
+-    return 1;
+-}
+-
+-static const Rect *_qxl_get_update_area(PCIQXLDevice *d)
+-{
+-    return &d->ram->update_area;
+-}
+-
+-static int _qxl_req_cmd_notification(PCIQXLDevice *d)
+-{
+-    int wait;
+-
+-    if (d->mode == QXL_MODE_VGA) {
+-        return 1;
+-    }
+-    RING_CONS_WAIT(&d->ram->cmd_ring, wait);
+-    return wait;
+-}
+-
+-static int _qxl_req_cursor_notification(PCIQXLDevice *d)
+-{
+-    int wait;
+-
+-    if (d->mode == QXL_MODE_VGA) {
+-        return 1;
+-    }
+-    RING_CONS_WAIT(&d->ram->cursor_ring, wait);
+-    return wait;
+-}
+-
+-#define QXL_FREE_BUNCH_SIZE 10
+-
+-static inline void qxl_push_free_res(PCIQXLDevice *d)
+-{
+-    QXLReleaseRing *ring = &d->ram->release_ring;
+-    uint64_t *item;
+-
+-    assert(d->mode != QXL_MODE_VGA);
+-    if (RING_IS_EMPTY(ring) || (d->num_free_res == QXL_FREE_BUNCH_SIZE &&
+-                                ring->prod - ring->cons + 1 != ring->num_items)) {
+-        int notify;
+-
+-        RING_PUSH(ring, notify);
+-        if (notify) {
+-            qxl_send_events(d, QXL_INTERRUPT_DISPLAY);
+-        }
+-        RING_PROD_ITEM(ring, item);
+-        *item = 0;
+-        d->num_free_res = 0;
+-        d->last_release = NULL;
+-    }
+-}
+-
+-static void _qxl_release_resource(PCIQXLDevice *d, QXLReleaseInfo *release_info)
+-{
+-    UINT64 id = release_info->id;
+-    QXLReleaseRing *ring;
+-    UINT64 *item;
+-
+-    if (d->mode == QXL_MODE_VGA) {
+-        qemu_free((void *)id);
+-        return;
+-    }
+-    ring = &d->ram->release_ring;
+-    RING_PROD_ITEM(ring, item);
+-    if (*item == 0) {
+-        release_info->next = 0;
+-        *item = id;
+-        d->last_release = release_info;
+-    } else {
+-        d->last_release->next = release_info->id;
+-        release_info->next = 0;
+-        d->last_release = release_info;
+-    }
+-
+-    d->num_free_res++;
+-
+-    qxl_push_free_res(d);
+-}
+-
+-static void _qxl_set_save_data(PCIQXLDevice *d, void *data, int size)
+-{
+-    qemu_free(d->worker_data);
+-    d->worker_data = data;
+-    d->worker_data_size = size;
+-}
+-
+-static void *_qxl_get_save_data(PCIQXLDevice *d)
+-{
+-    return d->worker_data;
+-}
+-
+-static int _qxl_flush_resources(PCIQXLDevice *d)
+-{
+-    int ret;
+-    if (d->mode == QXL_MODE_VGA) {
+-        return 0;
+-    }
+-    ret = d->num_free_res;
+-    if (ret) {
+-        qxl_push_free_res(d);
+-    }
+-    return ret;
+-}
+-
+-static void _qxl_notify_update(PCIQXLDevice *d, uint32_t update_id)
+-{
+-    if (d->mode == QXL_MODE_VGA) {
+-        return;
+-    }
+-
+-    d->rom->update_id = update_id;
+-    qxl_rom_set_dirty(d, &d->rom->update_id, sizeof(d->rom->update_id));
+-    d->shadow_rom.update_id = update_id;
+-    qxl_send_events(d, QXL_INTERRUPT_DISPLAY);
+-}
+-
+-static void qxl_detach(PCIQXLDevice *d)
+-{
+-    if (d->mode == QXL_MODE_UNDEFINED) {
+-        return;
+-    }
+-
+-    d->worker->detach(d->worker);
+-    if (d->mode != QXL_MODE_VGA) {
+-        RING_INIT(&d->ram->cmd_ring);
+-        RING_INIT(&d->ram->cursor_ring);
+-        return;
+-    }
+-}
+-
+-static void qxl_set_mode(PCIQXLDevice *d, uint32_t mode)
+-{
+-    if (mode > sizeof(qxl_modes) / sizeof(QXLMode)) {
+-        dprintf(1, "%s: bad mode %u\n", __FUNCTION__, mode);
+-        return;
+-    }
+-    dprintf(1, "%s: %u\n",__FUNCTION__, mode);
+-    qxl_detach(d);
+-    assert(RING_IS_EMPTY(&d->ram->cmd_ring));
+-    assert(RING_IS_EMPTY(&d->ram->cursor_ring));
+-    qxl_reset_state(d);
+-    qxl_exit_vga_mode(d);
+-    d->shadow_rom.mode = mode;
+-    d->rom->mode = mode;
+-    qxl_rom_set_dirty(d, &d->rom->mode, sizeof(d->rom->mode));
+-    memset(d->vram, 0, d->vram_size);
+-    d->mode = QXL_MODE_NATIVE;
+-    d->worker->attach(d->worker);
+-}
+-
+-static void qxl_add_vga_client(void)
+-{
+-    if (qxl_vga.active_clients++ == 0) {
+-        qemu_mod_timer(qxl_vga.timer, qemu_get_clock(rt_clock));
+-    }
+-}
+-
+-static void qxl_remove_vga_client(void)
+-{
+-    qxl_vga.active_clients--;
+-}
+-
+-static void qxl_enter_vga_mode(PCIQXLDevice *d)
+-{
+-    if (d->mode == QXL_MODE_VGA || d->id) {
+-        return;
+-    }
+-    dprintf(1, "%u: %s\n", d->id, __FUNCTION__);
+-    d->rom->mode = ~0;
+-    qxl_rom_set_dirty(d, &d->rom->mode, sizeof(d->rom->mode));
+-    d->shadow_rom.mode = ~0;
+-    d->mode = QXL_MODE_VGA;
+-    memset(&d->dirty_rect, 0, sizeof(d->dirty_rect));
+-    qxl_add_vga_client();
+-}
+-
+-/* reset the state (assuming the worker is detached) */
+-static void qxl_reset_state(PCIQXLDevice *d)
+-{
+-    QXLRam *ram = d->ram;
+-    QXLRom *rom = d->rom;
+-    uint64_t *item;
+-
+-    assert(RING_IS_EMPTY(&ram->cmd_ring));
+-    assert(RING_IS_EMPTY(&ram->cursor_ring));
+-    ram->magic = QXL_RAM_MAGIC;
+-    ram->int_pending = 0;
+-    ram->int_mask = 0;
+-    d->shadow_rom.update_id = 0;
+-    *rom = d->shadow_rom;
+-    qxl_rom_set_dirty(d, rom, sizeof(*rom));
+-    RING_INIT(&ram->cmd_ring);
+-    RING_INIT(&ram->cursor_ring);
+-    RING_INIT(&ram->release_ring);
+-    RING_PROD_ITEM(&ram->release_ring, item);
+-    *item = 0;
+-    d->num_free_res = 0;
+-    d->last_release = NULL;
+-    memset(&d->dirty_rect, 0, sizeof(d->dirty_rect));
+-}
+-
+-/* reset: detach, reset_state, re-attach */
+-static void qxl_reset(PCIQXLDevice *d)
+-{
+-    dprintf(1, "%s\n", __FUNCTION__);
+-    qxl_detach(d);
+-    qxl_reset_state(d);
+-    if (!d->id) {
+-        qxl_enter_vga_mode(d);
+-        d->worker->attach(d->worker);
+-    } else {
+-        d->mode = QXL_MODE_UNDEFINED;
+-    }
+-    qemu_set_irq(d->pci_dev.irq[0], irq_level(d));
+-}
+-
+-static void ioport_write(void *opaque, uint32_t addr, uint32_t val)
+-{
+-    PCIQXLDevice *d = opaque;
+-    uint32_t io_port = addr - d->io_base;
+-#ifdef DEBUG_QXL
+-    dprintf(1, "%s: addr 0x%x val 0x%x\n", __FUNCTION__, addr, val);
+-#endif
+-    if (d->mode != QXL_MODE_NATIVE && io_port != QXL_IO_RESET && io_port != QXL_IO_SET_MODE) {
+-        dprintf(1, "%s: unexpected port 0x%x in vga mode\n", __FUNCTION__, io_port);
+-        return;
+-    }
+-    switch (io_port) {
+-    case QXL_IO_UPDATE_AREA:
+-        d->worker->update_area(d->worker);
+-        break;
+-    case QXL_IO_NOTIFY_CMD:
+-        d->worker->wakeup(d->worker);
+-        break;
+-    case QXL_IO_NOTIFY_CURSOR:
+-        d->worker->wakeup(d->worker);
+-        break;
+-    case QXL_IO_UPDATE_IRQ:
+-        qemu_set_irq(d->pci_dev.irq[0], irq_level(d));
+-        break;
+-    case QXL_IO_NOTIFY_OOM:
+-        //todo: add counter
+-        if (!RING_IS_EMPTY(&d->ram->release_ring)) {
+-            break;
+-        }
+-        pthread_yield();
+-        if (!RING_IS_EMPTY(&d->ram->release_ring)) {
+-            break;
+-        }
+-        d->worker->oom(d->worker);
+-        break;
+-    case QXL_IO_LOG:
+-        dprintf(1, "%u: %s", d->id, d->ram->log_buf);
+-        break;
+-    case QXL_IO_RESET:
+-        dprintf(1, "%u: QXL_IO_RESET\n", d->id);
+-        qxl_reset(d);
+-        break;
+-    case QXL_IO_SET_MODE:
+-        dprintf(1, "%u: QXL_IO_SET_MODE\n", d->id);
+-        qxl_set_mode(d, val);
+-        break;
+-    default:
+-        dprintf(1, "%s: unexpected addr 0x%x val 0x%x\n", __FUNCTION__, addr, val);
+-    }
+-}
+-
+-static uint32_t ioport_read(void *opaque, uint32_t addr)
+-{
+-    dprintf(1, "%s: unexpected\n", __FUNCTION__);
+-    return 0xff;
+-}
+-
+-static void qxl_write_config(PCIDevice *d, uint32_t address,
+-                             uint32_t val, int len)
+-{
+-    PCIQXLDevice *qxl = DO_UPCAST(PCIQXLDevice, pci_dev, d);
+-    VGACommonState *vga = &qxl->vga;
+-
+-    if (qxl->id == 0) {
+-        vga_dirty_log_stop(vga);
+-    }
+-    pci_default_write_config(d, address, val, len);
+-    if (qxl->id == 0) {
+-        if (vga->map_addr && qxl->pci_dev.io_regions[0].addr == -1)
+-            vga->map_addr = 0;
+-        vga_dirty_log_start(vga);
+-    }
+-}
+-
+-static void qxl_ioport_map(PCIDevice *pci_dev, int region_num,
+-                           pcibus_t addr, pcibus_t size, int type)
+-{
+-    PCIQXLDevice *qxl = DO_UPCAST(PCIQXLDevice, pci_dev, pci_dev);
+-
+-    dprintf(1, "%s: base 0x%lx size 0x%lx\n", __FUNCTION__, addr, size);
+-    qxl->io_base = addr;
+-    register_ioport_write(addr, size, 1, ioport_write, pci_dev);
+-    register_ioport_read(addr, size, 1, ioport_read, pci_dev);
+-}
+-
+-static void qxl_rom_map(PCIDevice *pci_dev, int region_num,
+-                        pcibus_t addr, pcibus_t size, int type)
+-{
+-    PCIQXLDevice *qxl = DO_UPCAST(PCIQXLDevice, pci_dev, pci_dev);
+-
+-    dprintf(1, "%s: addr 0x%lx size 0x%lx\n", __FUNCTION__, addr, size);
+-
+-    assert((addr & (size - 1)) == 0);
+-    assert(size ==  qxl->rom_size);
+-
+-    cpu_register_physical_memory(addr, size, qxl->rom_offset | IO_MEM_ROM);
+-}
+-
+-static void qxl_ram_map(PCIDevice *pci_dev, int region_num,
+-                        pcibus_t addr, pcibus_t size, int type)
+-{
+-    PCIQXLDevice *qxl = DO_UPCAST(PCIQXLDevice, pci_dev, pci_dev);
+-
+-    dprintf(1, "%s: addr 0x%lx size 0x%lx\n", __FUNCTION__, addr, size);
+-
+-    assert((addr & (size - 1)) == 0);
+-    assert((addr & ~TARGET_PAGE_MASK) == 0);
+-    assert(size ==  qxl->vga.vram_size);
+-    assert((size & ~TARGET_PAGE_MASK) == 0);
+-    qxl->ram_phys_addr = addr;
+-    cpu_register_physical_memory(addr, size, qxl->vga.vram_offset | IO_MEM_RAM);
+-
+-    if (qxl->id == 0) {
+-        qxl->vga.map_addr = addr;
+-        qxl->vga.map_end = addr + size;
+-        vga_dirty_log_start(&qxl->vga);
+-    }
+-}
+-
+-static void qxl_vram_map(PCIDevice *pci_dev, int region_num,
+-                         pcibus_t addr, pcibus_t size, int type)
+-{
+-    PCIQXLDevice *qxl = DO_UPCAST(PCIQXLDevice, pci_dev, pci_dev);
+-
+-    dprintf(1, "%s: addr 0x%lx size 0x%lx\n", __FUNCTION__, addr, size);
+-
+-    assert((addr & (size - 1)) == 0);
+-    assert((addr & ~TARGET_PAGE_MASK) == 0);
+-    assert(size ==  qxl->vram_size);
+-    assert((size & ~TARGET_PAGE_MASK) == 0);
+-    cpu_register_physical_memory(addr, size, qxl->vram_offset | IO_MEM_RAM);
+-}
+-
+-static void init_qxl_rom(PCIQXLDevice *d, uint8_t *buf)
+-{
+-    QXLRom *rom = (QXLRom *)buf;
+-    QXLModes *modes = (QXLModes *)(rom + 1);
+-    int i;
+-
+-    rom->magic = QXL_ROM_MAGIC;
+-    rom->id = d->id;
+-    rom->mode = 0;
+-    rom->modes_offset = sizeof(QXLRom);
+-    rom->draw_area_size = ALIGN(qxl_max_res_area()* sizeof(uint32_t), 4096);
+-    rom->compression_level = QXL_DEFAULT_COMPRESSION_LEVEL;
+-    rom->log_level = 0;
+-
+-    modes->n_modes = sizeof(qxl_modes) / sizeof(QXLMode);
+-
+-    for (i = 0; i < modes->n_modes; i++) {
+-        modes->modes[i] = qxl_modes[i];
+-    }
+-    d->shadow_rom = *rom;
+-    d->rom = rom;
+-    d->modes = modes;
+-}
+-
+-static void init_qxl_ram(PCIQXLDevice *d, uint8_t *buf, uint32_t actual_ram_size)
+-{
+-    uint32_t draw_area_size;
+-    uint32_t ram_header_size;
+-    UINT64 *item;
+-
+-    d->ram_start = buf;
+-
+-    draw_area_size = d->shadow_rom.draw_area_size;
+-    ram_header_size = ALIGN(sizeof(*d->ram), 4096);
+-    assert(ram_header_size + draw_area_size < actual_ram_size);
+-
+-    d->shadow_rom.ram_header_offset = actual_ram_size - ram_header_size;
+-    d->ram = (QXLRam *)(buf + d->shadow_rom.ram_header_offset);
+-    d->ram->magic = QXL_RAM_MAGIC;
+-    RING_INIT(&d->ram->cmd_ring);
+-    RING_INIT(&d->ram->cursor_ring);
+-    RING_INIT(&d->ram->release_ring);
+-    RING_PROD_ITEM(&d->ram->release_ring, item);
+-    *item = 0;
+-
+-    if (d->id == 0) {
+-        if (draw_area_size < VGA_RAM_SIZE) {
+-            draw_area_size = d->shadow_rom.draw_area_size = VGA_RAM_SIZE;
+-        }
+-    }
+-    d->shadow_rom.draw_area_offset = 0;
+-    d->shadow_rom.pages_offset = d->shadow_rom.draw_area_offset + draw_area_size;
+-    d->shadow_rom.num_io_pages = (actual_ram_size - ram_header_size - d->shadow_rom.pages_offset) >> TARGET_PAGE_BITS;
+-
+-    *d->rom = d->shadow_rom;
+-
+-    dprintf(1, "qxl device memory layout (device #%d)\n"
+-            "  vga/draw:   0x%08x\n"
+-            "  io pages:   0x%08x (%d pages)\n"
+-            "  ram header: 0x%08x\n",
+-            d->id, 0,
+-            d->shadow_rom.pages_offset, d->shadow_rom.num_io_pages,
+-            d->shadow_rom.ram_header_offset);
+-}
+-
+-inline uint32_t msb_mask(uint32_t val)
+-{
+-    uint32_t mask;
+-
+-    do {
+-        mask = ~(val - 1) & val;
+-        val &= ~mask;
+-    } while (mask < val);
+-
+-    return mask;
+-}
+-
+-static void qxl_display_update(struct DisplayState *ds, int x, int y, int w, int h)
+-{
+-    PCIQXLDevice *client;
+-    Rect update_area;
+-
+-    dprintf(2, "%s: x %d y %d w %d h %d\n", __FUNCTION__, x, y, w, h);
+-    update_area.left = x,
+-    update_area.right = x + w;
+-    update_area.top = y;
+-    update_area.bottom = y + h;
+-
+-    if (rect_is_empty(&update_area)) {
+-        return;
+-    }
+-
+-    qxl_vga.need_update = false;
+-
+-    QTAILQ_FOREACH(client, &devs, next) {
+-        if (client->mode == QXL_MODE_VGA && client->running) {
+-            int notify = 0;
+-            pthread_mutex_lock(&dirty_lock);
+-            if (rect_is_empty(&client->dirty_rect)) {
+-                notify = 1;
+-            }
+-            rect_union(&client->dirty_rect, &update_area);
+-            pthread_mutex_unlock(&dirty_lock);
+-            if (notify) {
+-                client->worker->wakeup(client->worker);
+-            }
+-        }
+-    }
+-}
+-
+-static void qxl_vga_update(void)
+-{
+-    PCIQXLDevice *client;
+-
+-    qxl_vga.need_update = false;
+-
+-    QTAILQ_FOREACH(client, &devs, next) {
+-        if (client->mode == QXL_MODE_VGA && client->running &&
+-                !rect_is_empty(&client->dirty_rect)) {
+-            client->worker->wakeup(client->worker);
+-        }
+-    }
+-}
+-
+-static void qxl_display_resize(struct DisplayState *ds)
+-{
+-    PCIQXLDevice *client;
+-
+-    QTAILQ_FOREACH(client, &devs, next) {
+-        if (client->mode == QXL_MODE_VGA) {
+-            dprintf(1, "%s\n", __FUNCTION__);
+-            pthread_mutex_lock(&dirty_lock);
+-            memset(&client->dirty_rect, 0, sizeof(client->dirty_rect));
+-            qxl_reset(client);
+-            pthread_mutex_unlock(&dirty_lock);
+-        }
+-    }
+-    qemu_spice_tablet_size(ds_get_width(ds), ds_get_height(ds));
+-}
+-
+-static void qxl_display_refresh(struct DisplayState *ds)
+-{
+-    if (qxl_vga.active_clients) {
+-        vga_hw_update();
+-        if (qxl_vga.need_update) {
+-            qxl_vga_update();
+-        }
+-    }
+-}
+-
+-#define DISPLAY_REFRESH_INTERVAL 30
+-
+-static void display_update(void *opaque)
+-{
+-    if (!qxl_vga.active_clients) {
+-        return;
+-    }
+-    qxl_display_refresh(qxl_vga.ds);
+-    qemu_mod_timer(qxl_vga.timer, qemu_get_clock(rt_clock) + DISPLAY_REFRESH_INTERVAL);
+-}
+-
+-void qxl_display_init(DisplayState *ds)
+-{
+-    DisplayChangeListener* display_listener;
+-    PCIQXLDevice *dev;
+-
+-    memset(&qxl_vga, 0, sizeof(qxl_vga));
+-    qxl_vga.ds = ds;
+-
+-    display_listener = qemu_mallocz(sizeof(DisplayChangeListener));
+-    display_listener->dpy_update = qxl_display_update;
+-    display_listener->dpy_resize = qxl_display_resize;
+-    display_listener->dpy_refresh = qxl_display_refresh;
+-    register_displaychangelistener(ds, display_listener);
+-
+-    qxl_vga.timer = qemu_new_timer(rt_clock, display_update, NULL);
+-    QTAILQ_FOREACH(dev, &devs, next) {
+-        if (!dev->id) {
+-            qxl_enter_vga_mode(dev);
+-            dev->worker->attach(dev->worker);
+-        }
+-    }
+-}
+-
+-static void qxl_exit_vga_mode(PCIQXLDevice *d)
+-{
+-    if (d->mode != QXL_MODE_VGA) {
+-        return;
+-    }
+-    dprintf(1, "%s\n", __FUNCTION__);
+-    qxl_remove_vga_client();
+-    d->mode = QXL_MODE_UNDEFINED;
+-}
+-
+-static void qxl_pre_save(void *opaque)
+-{
+-    PCIQXLDevice* d = opaque;
+-
+-    d->worker->save(d->worker);
+-
+-    if (d->last_release == NULL) {
+-        d->last_release_offset = 0;
+-    } else {
+-        d->last_release_offset = (uint8_t *)d->last_release - d->ram_start;
+-    }
+-    assert(d->last_release_offset < d->vga.vram_size);
+-}
+-
+-static void free_worker_data(PCIQXLDevice* d)
+-{
+-    qemu_free(d->worker_data);
+-    d->worker_data = NULL;
+-    d->worker_data_size = 0;
+-}
+-
+-static void qxl_post_save(void *opaque)
+-{
+-    PCIQXLDevice* d = opaque;
+-
+-    free_worker_data(d);
+-}
+-
+-static int qxl_pre_load(void *opaque)
+-{
+-    PCIQXLDevice* d = opaque;
+-
+-    free_worker_data(d);
+-
+-    if (d->mode != QXL_MODE_UNDEFINED) {
+-        d->worker->detach(d->worker);
+-    }
+-
+-    if (d->mode == QXL_MODE_VGA) {
+-        qxl_remove_vga_client();
+-    }
+-
+-    return 0;
+-}
+-
+-static int qxl_post_load(void *opaque, int version)
+-{
+-    PCIQXLDevice* d = opaque;
+-
+-    if (d->last_release_offset >= d->vga.vram_size) {
+-        dprintf(1, "%s: invalid last_release_offset %u, ram_size %u\n",
+-                __FUNCTION__, d->last_release_offset, d->vga.vram_size);
+-        exit(-1);
+-    }
+-
+-    if (d->last_release_offset == 0) {
+-        d->last_release = NULL;
+-    } else {
+-        d->last_release = (QXLReleaseInfo *)(d->ram_start + d->last_release_offset);
+-    }
+-
+-    d->modes = (QXLModes*)((uint8_t*)d->rom + d->rom->modes_offset);
+-
+-    if (d->mode == QXL_MODE_VGA) {
+-        qxl_add_vga_client();
+-    }
+-
+-    if (d->mode != QXL_MODE_UNDEFINED) {
+-        d->worker->attach(d->worker);
+-        d->worker->load(d->worker);
+-    }
+-
+-    free_worker_data(d);
+-
+-    return 0;
+-}
+-
+-static void qxl_pipe_read(void *opaque)
+-{
+-    PCIQXLDevice *d = opaque;
+-    int len;
+-    char dummy;
+-
+-    while (1) {
+-        len = read(d->pipe_fd[0], &dummy, sizeof(dummy));
+-        if (len == -1 && errno == EAGAIN)
+-            break;
+-        if (len != sizeof(dummy)) {
+-            dprintf(1, "%s:error reading pipe_fd, len=%d\n", __FUNCTION__, len);
+-            break;
+-        }
+-    }
+-    qxl_update_irq();
+-}
+-
+-static void qxl_vm_change_state_handler(void *opaque, int running, int reason)
+-{
+-    PCIQXLDevice *d = opaque;
+-
+-    dprintf(1, "QXL: %s: running=%d\n", __FUNCTION__, running);
+-
+-    if (running) {
+-        qxl_vga.need_update = true;
+-        d->running = true;
+-        qemu_set_fd_handler(d->pipe_fd[0], qxl_pipe_read, NULL, d);
+-        d->worker->start(d->worker);
+-        qemu_set_irq(d->pci_dev.irq[0], irq_level(d));
+-        if (qxl_vga.active_clients) {
+-            qemu_mod_timer(qxl_vga.timer, qemu_get_clock(rt_clock));
+-        }
+-    } else {
+-        qemu_del_timer(qxl_vga.timer);
+-        d->worker->stop(d->worker);
+-        qemu_set_fd_handler(d->pipe_fd[0], NULL, NULL, d);
+-        d->running = false;
+-    }
+-}
+-
+-static void init_pipe_signaling(PCIQXLDevice *d)
+-{
+-   if (pipe(d->pipe_fd) < 0) {
+-       dprintf(1, "%s:pipe creation failed\n", __FUNCTION__);
+-       return;
+-   }
+-#ifdef CONFIG_IOTHREAD
+-   fcntl(d->pipe_fd[0], F_SETFL, O_NONBLOCK);
+-#else
+-   fcntl(d->pipe_fd[0], F_SETFL, O_NONBLOCK | O_ASYNC);
+-#endif
+-   fcntl(d->pipe_fd[1], F_SETFL, O_NONBLOCK);
+-   fcntl(d->pipe_fd[0], F_SETOWN, getpid());
+-}
+-
+-static void qxl_reset_handler(DeviceState *dev)
+-{
+-    PCIQXLDevice *d = DO_UPCAST(PCIQXLDevice, pci_dev.qdev, dev);
+-    qxl_reset(d);
+-}
+-
+-void qxl_get_info(QXLDevRef dev_ref, QXLDevInfo *info)
+-{
+-    _qxl_get_info((PCIQXLDevice *)dev_ref, info);
+-}
+-
+-int qxl_get_command(QXLDevRef dev_ref, struct QXLCommand *cmd)
+-{
+-    return _qxl_get_command((PCIQXLDevice *)dev_ref, cmd);
+-}
+-
+-void qxl_release_resource(QXLDevRef dev_ref, union QXLReleaseInfo *release_info)
+-{
+-    _qxl_release_resource((PCIQXLDevice *)dev_ref, release_info);
+-}
+-
+-void qxl_notify_update(QXLDevRef dev_ref, uint32_t update_id)
+-{
+-    _qxl_notify_update((PCIQXLDevice *)dev_ref, update_id);
+-}
+-
+-int qxl_req_cmd_notification(QXLDevRef dev_ref)
+-{
+-    return _qxl_req_cmd_notification((PCIQXLDevice *)dev_ref);
+-}
+-
+-int qxl_get_cursor_command(QXLDevRef dev_ref, struct QXLCommand *cmd)
+-{
+-    return _qxl_get_cursor_command((PCIQXLDevice *)dev_ref, cmd);
+-}
+-
+-int qxl_req_cursor_notification(QXLDevRef dev_ref)
+-{
+-    return _qxl_req_cursor_notification((PCIQXLDevice *)dev_ref);
+-}
+-
+-int qxl_has_command(QXLDevRef dev_ref)
+-{
+-    return _qxl_has_command((PCIQXLDevice *)dev_ref);
+-}
+-
+-const Rect *qxl_get_update_area(QXLDevRef dev_ref)
+-{
+-    return _qxl_get_update_area((PCIQXLDevice *)dev_ref);
+-}
+-
+-int qxl_flush_resources(QXLDevRef dev_ref)
+-{
+-    return _qxl_flush_resources((PCIQXLDevice *)dev_ref);
+-}
+-
+-void qxl_set_save_data(QXLDevRef dev_ref, void *data, int size)
+-{
+-    _qxl_set_save_data((PCIQXLDevice *)dev_ref, data, size);
+-}
+-
+-void *qxl_get_save_data(QXLDevRef dev_ref)
+-{
+-    return _qxl_get_save_data((PCIQXLDevice *)dev_ref);
+-}
+-
+-#ifdef CONFIG_SPICE
+-
+-typedef struct Interface {
+-    QXLInterface vd_interface;
+-    PCIQXLDevice *d;
+-} Interface;
+-
+-static void interface_attache_worker(QXLInterface *qxl, QXLWorker *qxl_worker)
+-{
+-    Interface *interface = DO_UPCAST(Interface, vd_interface, qxl);
+-    if (interface->d->worker) {
+-        dprintf(1, "%s: has worker\n", __FUNCTION__);
+-        exit(-1);
+-    }
+-    interface->d->worker = qxl_worker;
+-}
+-
+-static void interface_set_compression_level(QXLInterface *qxl, int level)
+-{
+-    PCIQXLDevice *d = DO_UPCAST(Interface, vd_interface, qxl)->d;
+-    d->shadow_rom.compression_level = level;
+-    d->rom->compression_level = level;
+-    qxl_rom_set_dirty(d, &d->rom->compression_level,
+-                      sizeof(d->rom->compression_level));
+-}
+-
+-static void interface_set_mm_time(QXLInterface *qxl, uint32_t mm_time)
+-{
+-    PCIQXLDevice *d = DO_UPCAST(Interface, vd_interface, qxl)->d;
+-    d->shadow_rom.mm_clock = mm_time;
+-    d->rom->mm_clock = mm_time;
+-    qxl_rom_set_dirty(d, &d->rom->mm_clock, sizeof(d->rom->mm_clock));
+-}
+-
+-static VDObjectRef interface_register_mode_change(QXLInterface *qxl,
+-                                                  qxl_mode_change_notifier_t notifier,
+-                                                  void *opaque)
+-{
+-    /* should not happen, libspice doesn't use this any more */
+-    fprintf(stderr, "%s: func %p data %p\n", __FUNCTION__, notifier, opaque);
+-    return 0;
+-}
+-
+-static void interface_unregister_mode_change(QXLInterface *qxl, VDObjectRef notifier)
+-{
+-}
+-
+-static void interface_get_info(QXLInterface *qxl, QXLDevInfo *info)
+-{
+-    _qxl_get_info(DO_UPCAST(Interface, vd_interface, qxl)->d, info);
+-}
+-
+-static int interface_get_command(QXLInterface *qxl, struct QXLCommand *cmd)
+-{
+-    return _qxl_get_command(DO_UPCAST(Interface, vd_interface, qxl)->d, cmd);
+-}
+-
+-static int interface_req_cmd_notification(QXLInterface *qxl)
+-{
+-    return _qxl_req_cmd_notification(DO_UPCAST(Interface, vd_interface, qxl)->d);
+-}
+-
+-static int interface_has_command(QXLInterface *qxl)
+-{
+-    return _qxl_has_command(DO_UPCAST(Interface, vd_interface, qxl)->d);
+-}
+-
+-static void interface_release_resource(QXLInterface *qxl, union QXLReleaseInfo *release_info)
+-{
+-    _qxl_release_resource(DO_UPCAST(Interface, vd_interface, qxl)->d, release_info);
+-}
+-
+-static int interface_get_cursor_command(QXLInterface *qxl, struct QXLCommand *cmd)
+-{
+-    return _qxl_get_cursor_command(DO_UPCAST(Interface, vd_interface, qxl)->d, cmd);
+-}
+-
+-static int interface_req_cursor_notification(QXLInterface *qxl)
+-{
+-    return _qxl_req_cursor_notification(DO_UPCAST(Interface, vd_interface, qxl)->d);
+-}
+-
+-static const struct Rect *interface_get_update_area(QXLInterface *qxl)
+-{
+-    return _qxl_get_update_area(DO_UPCAST(Interface, vd_interface, qxl)->d);
+-}
+-
+-static void interface_notify_update(QXLInterface *qxl, uint32_t update_id)
+-{
+-    _qxl_notify_update(DO_UPCAST(Interface, vd_interface, qxl)->d, update_id);
+-}
+-
+-static void interface_set_save_data(QXLInterface *qxl, void *data, int size)
+-{
+-    _qxl_set_save_data(((Interface *)qxl)->d, data, size);
+-}
+-
+-static void *interface_get_save_data(QXLInterface *qxl)
+-{
+-    return _qxl_get_save_data(((Interface *)qxl)->d);
+-}
+-
+-static int interface_flush_resources(QXLInterface *qxl)
+-{
+-    return _qxl_flush_resources(((Interface *)qxl)->d);
+-}
+-
+-static void register_interface(PCIQXLDevice *d)
+-{
+-    Interface *interface = qemu_mallocz(sizeof(*interface));
+-
+-    interface->vd_interface.base.base_version = VM_INTERFACE_VERSION;
+-    interface->vd_interface.base.type = VD_INTERFACE_QXL;
+-    interface->vd_interface.base.id = d->id;
+-    interface->vd_interface.base.description = "QXL GPU";
+-    interface->vd_interface.base.major_version = VD_INTERFACE_QXL_MAJOR;
+-    interface->vd_interface.base.minor_version = VD_INTERFACE_QXL_MINOR;
+-
+-    interface->vd_interface.pci_vendor = REDHAT_PCI_VENDOR_ID;
+-    interface->vd_interface.pci_id = QXL_DEVICE_ID;
+-    interface->vd_interface.pci_revision = QXL_REVISION;
+-
+-    interface->vd_interface.attache_worker = interface_attache_worker;
+-    interface->vd_interface.set_compression_level = interface_set_compression_level;
+-    interface->vd_interface.set_mm_time = interface_set_mm_time;
+-    interface->vd_interface.register_mode_change = interface_register_mode_change;
+-    interface->vd_interface.unregister_mode_change = interface_unregister_mode_change;
+-
+-    interface->vd_interface.get_info = interface_get_info;
+-    interface->vd_interface.get_command = interface_get_command;
+-    interface->vd_interface.req_cmd_notification = interface_req_cmd_notification;
+-    interface->vd_interface.has_command = interface_has_command;
+-    interface->vd_interface.release_resource = interface_release_resource;
+-    interface->vd_interface.get_cursor_command = interface_get_cursor_command;
+-    interface->vd_interface.req_cursor_notification = interface_req_cursor_notification;
+-    interface->vd_interface.get_update_area = interface_get_update_area;
+-    interface->vd_interface.notify_update = interface_notify_update;
+-    interface->vd_interface.set_save_data = interface_set_save_data;
+-    interface->vd_interface.get_save_data = interface_get_save_data;
+-    interface->vd_interface.flush_resources = interface_flush_resources;
+-
+-    interface->d = d;
+-    qemu_spice_add_interface(&interface->vd_interface.base);
+-}
+-
+-#endif
+-
+-static void create_native_worker(PCIQXLDevice *d, int id)
+-{
+-    d->worker = qxl_interface_create_worker((QXLDevRef)d, id);
+-    assert(d->worker);
+-}
+-
+-static ram_addr_t qxl_rom_size(void)
+-{
+-    uint32_t rom_size = sizeof(QXLRom) + sizeof(QXLModes) + sizeof(qxl_modes);
+-    rom_size = MAX(rom_size, TARGET_PAGE_SIZE);
+-    rom_size = msb_mask(rom_size * 2 - 1);
+-    return rom_size;
+-}
+-
+-static void qxl_vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+-{
+-    VGACommonState *vga = opaque;
+-    PCIQXLDevice *qxl = container_of(vga, PCIQXLDevice, vga);
+-
+-    if (qxl->mode != QXL_MODE_VGA) {
+-        qxl_reset(qxl);
+-        vga->invalidate(vga);
+-    }
+-    vga_ioport_write(opaque, addr, val);
+-}
+-
+-static int device_id = 0;
+-
+-static int qxl_init(PCIDevice *dev)
+-{
+-    PCIQXLDevice *qxl = DO_UPCAST(PCIQXLDevice, pci_dev, dev);
+-    VGACommonState *vga = &qxl->vga;
+-    uint8_t* config = qxl->pci_dev.config;
+-    ram_addr_t ram_size = msb_mask(qxl->vga.vram_size * 2 - 1);
+-    ram_addr_t rom_size = qxl_rom_size();
+-
+-    qxl->id = device_id;
+-    qxl->mode = QXL_MODE_UNDEFINED;
+-    if (!qxl->id) {
+-        if (ram_size < 32 * 1024 * 1024)
+-            ram_size = 32 * 1024 * 1024;
+-        vga_common_init(vga, ram_size);
+-        vga_init(vga);
+-        register_ioport_write(0x3c0, 16, 1, qxl_vga_ioport_write, vga);
+-        register_ioport_write(0x3b4,  2, 1, qxl_vga_ioport_write, vga);
+-        register_ioport_write(0x3d4,  2, 1, qxl_vga_ioport_write, vga);
+-        register_ioport_write(0x3ba,  1, 1, qxl_vga_ioport_write, vga);
+-        register_ioport_write(0x3da,  1, 1, qxl_vga_ioport_write, vga);
+-        vga->ds = graphic_console_init(vga->update, vga->invalidate,
+-                                       vga->screen_dump, vga->text_update, vga);
+-        qxl_init_modes();
+-        if (qxl->pci_dev.romfile == NULL)
+-            qxl->pci_dev.romfile = qemu_strdup("vgabios-qxl.bin");
+-
+-        pci_config_set_class(config, PCI_CLASS_DISPLAY_VGA);
+-    } else {
+-        if (ram_size < 16 * 1024 * 1024)
+-            ram_size = 16 * 1024 * 1024;
+-        qxl->vga.vram_size = ram_size;
+-        qxl->vga.vram_offset = qemu_ram_alloc(&dev->qdev, "qxl.vgavram",
+-                                              qxl->vga.vram_size);
+-
+-        pci_config_set_class(config, PCI_CLASS_DISPLAY_OTHER);
+-    }
+-
+-    pci_config_set_vendor_id(config, REDHAT_PCI_VENDOR_ID);
+-    pci_config_set_device_id(config, QXL_DEVICE_ID);
+-    pci_set_byte(&config[PCI_REVISION_ID], QXL_REVISION);
+-    pci_set_byte(&config[PCI_INTERRUPT_PIN], 1);
+-
+-    qxl->rom_size = rom_size;
+-    qxl->rom_offset = qemu_ram_alloc(&dev->qdev, "qxl.vrom", rom_size);
+-    init_qxl_rom(qxl, qemu_get_ram_ptr(qxl->rom_offset));
+-    init_qxl_ram(qxl, qemu_get_ram_ptr(qxl->vga.vram_offset), qxl->vga.vram_size);
+-
+-    qxl->vram_size = QXL_VRAM_SIZE;
+-    qxl->vram_offset = qemu_ram_alloc(&dev->qdev, "qxl.vram", QXL_VRAM_SIZE);
+-    qxl->vram = qemu_get_ram_ptr(qxl->vram_offset);
+-
+-    dprintf(1, "%s: rom(%p, 0x%" PRIx64 ", 0x%x) ram(%p, 0x%" PRIx64 ", 0x%x) vram(%p, 0x%lx, 0x%x)\n",
+-            __FUNCTION__,
+-            qxl->rom,
+-            qxl->rom_offset,
+-            qxl->rom_size,
+-            qxl->ram_start,
+-            qxl->vga.vram_offset,
+-            qxl->vga.vram_size,
+-            qxl->vram,
+-            qxl->vram_offset,
+-            qxl->vram_size);
+-
+-    pci_register_bar(&qxl->pci_dev, QXL_IO_RANGE_INDEX,
+-                     msb_mask(QXL_IO_RANGE_SIZE * 2 - 1),
+-                     PCI_BASE_ADDRESS_SPACE_IO, qxl_ioport_map);
+-
+-    pci_register_bar(&qxl->pci_dev, QXL_ROM_RANGE_INDEX,
+-                     qxl->rom_size, PCI_BASE_ADDRESS_SPACE_MEMORY,
+-                     qxl_rom_map);
+-
+-    pci_register_bar(&qxl->pci_dev, QXL_RAM_RANGE_INDEX,
+-                     qxl->vga.vram_size, PCI_BASE_ADDRESS_SPACE_MEMORY,
+-                     qxl_ram_map);
+-
+-    pci_register_bar(&qxl->pci_dev, QXL_VRAM_RANGE_INDEX, qxl->vram_size,
+-                     PCI_BASE_ADDRESS_SPACE_MEMORY, qxl_vram_map);
+-
+-    qemu_add_vm_change_state_handler(qxl_vm_change_state_handler, qxl);
+-
+-    QTAILQ_INSERT_TAIL(&devs, qxl, next);
+-    main_thread = pthread_self();
+-    qxl_reset_state(qxl);
+-    init_pipe_signaling(qxl);
+-
+-    register_interface(qxl);
+-    if (!qxl->worker) {
+-        create_native_worker(qxl, device_id);
+-    }
+-    device_id++;
+-
+-    return 0;
+-}
+-
+-void qxl_dev_init(PCIBus *bus)
+-{
+-    pci_create_simple(bus, -1, QXL_DEV_NAME);
+-}
+-
+-static bool qxl_is_worker_data_exists(void *opaque, int version_id)
+-{
+-    PCIQXLDevice* d = opaque;
+-
+-    if (!d->worker_data_size) {
+-        return false;
+-    }
+-
+-    if (!d->worker_data) {
+-        d->worker_data = qemu_malloc(d->worker_data_size);
+-    }
+-
+-    return true;
+-}
+-
+-static VMStateDescription qxl_vmstate = {
+-    .name = QXL_DEV_NAME,
+-    .version_id = QXL_SAVE_VERSION,
+-    .minimum_version_id = QXL_SAVE_VERSION,
+-    .pre_save = qxl_pre_save,
+-    .post_save = qxl_post_save,
+-    .pre_load = qxl_pre_load,
+-    .post_load = qxl_post_load,
+-    .fields = (VMStateField []) {
+-        VMSTATE_PCI_DEVICE(pci_dev, PCIQXLDevice),
+-        VMSTATE_STRUCT(vga, PCIQXLDevice, 0, vmstate_vga_common, VGACommonState),
+-        VMSTATE_UINT32(shadow_rom.mode, PCIQXLDevice),
+-        VMSTATE_UINT32(num_free_res, PCIQXLDevice),
+-        VMSTATE_UINT32(last_release_offset, PCIQXLDevice),
+-        VMSTATE_UINT32(mode, PCIQXLDevice),
+-        VMSTATE_UINT32(bits_unique, PCIQXLDevice),
+-        VMSTATE_PARTIAL_VBUFFER_UINT32(ram_start, PCIQXLDevice, vga.vram_size),
+-        VMSTATE_INT32(worker_data_size, PCIQXLDevice),
+-        VMSTATE_VBUFFER(worker_data, PCIQXLDevice, 0, qxl_is_worker_data_exists, 0,
+-                        worker_data_size),
+-        VMSTATE_END_OF_LIST()
+-    }
+-};
+-
+-static PCIDeviceInfo qxl_info = {
+-    .qdev.name = QXL_DEV_NAME,
+-    .qdev.desc = "Spice QXL GPU",
+-    .qdev.size = sizeof(PCIQXLDevice),
+-    .qdev.vmsd = &qxl_vmstate,
+-    .qdev.reset = qxl_reset_handler,
+-    .init = qxl_init,
+-    .config_write = qxl_write_config,
+-    .qdev.props = (Property[]) {
+-        DEFINE_PROP_UINT32("ram_size", PCIQXLDevice, vga.vram_size, 64 * 1024 * 1024),
+-        DEFINE_PROP_END_OF_LIST(),
+-    }
+-};
+-
+-static void qxl_register(void)
+-{
+-    pci_qdev_register(&qxl_info);
+-}
+-
+-device_init(qxl_register);
+-
+diff --git a/hw/qxl_interface.h b/hw/qxl_interface.h
+deleted file mode 100644
+index faf511a..0000000
+--- a/hw/qxl_interface.h
++++ /dev/null
+@@ -1,22 +0,0 @@
+-#ifndef _H_QXL_INTERFACE
+-#define _H_QXL_INTERFACE
+-
+-typedef unsigned long QXLDevRef;
+-
+-void qxl_get_info(QXLDevRef dev_ref, QXLDevInfo *info);
+-int qxl_get_command(QXLDevRef dev_ref, QXLCommand *cmd);
+-void qxl_release_resource(QXLDevRef dev_ref, QXLReleaseInfo *release_info);
+-void qxl_notify_update(QXLDevRef dev_ref, uint32_t update_id);
+-int qxl_req_cmd_notification(QXLDevRef dev_ref);
+-int qxl_get_cursor_command(QXLDevRef dev_ref, QXLCommand *cmd);
+-int qxl_req_cursor_notification(QXLDevRef dev_ref);
+-int qxl_has_command(QXLDevRef dev_ref);
+-const Rect *qxl_get_update_area(QXLDevRef dev_ref);
+-int qxl_flush_resources(QXLDevRef dev_ref);
+-void qxl_set_save_data(QXLDevRef dev_ref, void *data, int size);
+-void *qxl_get_save_data(QXLDevRef dev_ref);
+-
+-QXLWorker *qxl_interface_create_worker(QXLDevRef dev, int id);
+-
+-#endif
+-
+diff --git a/hw/qxl_native_worker.c b/hw/qxl_native_worker.c
+deleted file mode 100644
+index 371992c..0000000
+--- a/hw/qxl_native_worker.c
++++ /dev/null
+@@ -1,150 +0,0 @@
+-#include <stdlib.h>
+-#include <stdio.h>
+-#include <string.h>
+-
+-#include "qemu-common.h"
+-
+-#include "qemu-spice.h"
+-#include "spice-display.h"
+-#include "qxl_interface.h"
+-
+-#define qxl_error(format, ...) {                                 \
+-    printf("%s: " format "\n", __FUNCTION__, ## __VA_ARGS__ );   \
+-    exit(-1);                                                    \
+-}
+-
+-#define qxl_printf(format, ...) \
+-    printf("%s: " format "\n", __FUNCTION__, ## __VA_ARGS__ )
+-
+-typedef struct QxlDispatcher {
+-    QXLWorker base;
+-    int id;
+-    QXLDevRef dev_ref;
+-    QXLDevInfo dev_info;
+-} QxlDispatcher;
+-
+-static void native_qxl_worker_wakeup(QXLWorker *worker)
+-{
+-    QxlDispatcher *dispatcher = DO_UPCAST(QxlDispatcher, base, worker);
+-    QXLCommand cmd;
+-
+-    qxl_printf("");
+-
+-    for (;;) {
+-        if (qxl_get_command(dispatcher->dev_ref, &cmd)) {
+-            switch (cmd.type) {
+-            case QXL_CMD_DRAW: {
+-                QXLDrawable *draw_cmd = (QXLDrawable *)(cmd.data + dispatcher->dev_info.phys_delta);
+-                qxl_release_resource(dispatcher->dev_ref, &draw_cmd->release_info);
+-                break;
+-            }
+-            case QXL_CMD_UPDATE: {
+-                QXLUpdateCmd *update_cmd = (QXLUpdateCmd *)(cmd.data + dispatcher->dev_info.phys_delta);
+-                qxl_notify_update(dispatcher->dev_ref, update_cmd->update_id);
+-                qxl_release_resource(dispatcher->dev_ref, &update_cmd->release_info);
+-                break;
+-            }
+-            case QXL_CMD_MESSAGE: {
+-                QXLMessage *message = (QXLMessage *)(cmd.data + dispatcher->dev_info.phys_delta);
+-                qxl_printf("MESSAGE: %s", message->data);
+-                qxl_release_resource(dispatcher->dev_ref, &message->release_info);
+-                break;
+-            }
+-            default:
+-                qxl_error("bad command type");
+-            }
+-            continue;
+-        }
+-        if (qxl_req_cmd_notification(dispatcher->dev_ref)) {
+-            break;
+-        }
+-    }
+-    for (;;) {
+-        if (qxl_get_cursor_command(dispatcher->dev_ref, &cmd)) {
+-            switch (cmd.type) {
+-            case QXL_CMD_CURSOR: {
+-                QXLCursorCmd *cursor_cmd = (QXLCursorCmd *)(cmd.data + dispatcher->dev_info.phys_delta);
+-                qxl_release_resource(dispatcher->dev_ref, &cursor_cmd->release_info);
+-                break;
+-            }
+-             default:
+-                qxl_error("bad command type");
+-            }
+-            continue;
+-        }
+-        if (qxl_req_cursor_notification(dispatcher->dev_ref)) {
+-            break;
+-        }
+-    }
+-}
+-
+-static void native_qxl_worker_attach(QXLWorker *worker)
+-{
+-    QxlDispatcher *dispatcher = DO_UPCAST(QxlDispatcher, base, worker);
+-
+-    qxl_printf("");
+-
+-    qxl_get_info(dispatcher->dev_ref, &dispatcher->dev_info);
+-    native_qxl_worker_wakeup(worker);
+-}
+-
+-static void native_qxl_worker_detach(QXLWorker *worker)
+-{
+-    qxl_printf("");
+-    native_qxl_worker_wakeup(worker);
+-}
+-
+-static void native_qxl_worker_update_area(QXLWorker *worker)
+-{
+-    qxl_printf("");
+-    native_qxl_worker_wakeup(worker);
+-}
+-
+-static void native_qxl_worker_oom(QXLWorker *worker)
+-{
+-    qxl_printf("");
+-    native_qxl_worker_wakeup(worker);
+-}
+-
+-static void native_qxl_worker_start(QXLWorker *worker)
+-{
+-    qxl_printf("");
+-}
+-
+-static void native_qxl_worker_stop(QXLWorker *worker)
+-{
+-    qxl_printf("");
+-}
+-
+-static void native_qxl_worker_save(QXLWorker *worker)
+-{
+-    qxl_printf("");
+-}
+-
+-static void native_qxl_worker_load(QXLWorker *worker)
+-{
+-    qxl_printf("");
+-}
+-
+-QXLWorker *qxl_interface_create_worker(QXLDevRef dev_ref, int device_id)
+-{
+-    QxlDispatcher *dispatcher;
+-
+-    dispatcher = qemu_malloc(sizeof(QxlDispatcher));
+-    memset(dispatcher, 0, sizeof(*dispatcher));
+-    dispatcher->id = device_id;
+-    dispatcher->dev_ref = dev_ref;
+-
+-    dispatcher->base.attach = native_qxl_worker_attach;
+-    dispatcher->base.detach = native_qxl_worker_detach;
+-    dispatcher->base.wakeup = native_qxl_worker_wakeup;
+-    dispatcher->base.oom = native_qxl_worker_oom;
+-    dispatcher->base.save = native_qxl_worker_save;
+-    dispatcher->base.load = native_qxl_worker_load;
+-    dispatcher->base.start = native_qxl_worker_start;
+-    dispatcher->base.stop = native_qxl_worker_stop;
+-    dispatcher->base.update_area = native_qxl_worker_update_area;
+-
+-    return &dispatcher->base;
+-}
+-
+diff --git a/hw/spice-vmc.c b/hw/spice-vmc.c
+deleted file mode 100644
+index 9a20952..0000000
+--- a/hw/spice-vmc.c
++++ /dev/null
+@@ -1,301 +0,0 @@
+-/*
+- * Spice Virtual Machine Channel (VMC).
+- *
+- * A specialized virtio-serial port used for spice to guest communication,
+- * used by spice client and a daemon in the guest operating system (vdservice).
+- * Connects the VDIPortInterface exposed by spice.h to a virtio-serial-bus
+- * port.
+- *
+- * Usage:
+- *  Current: mouse data (works better in wan environment), screen resize.
+- *  Planned: shared clipboard.
+- *
+- * Author: Alon Levy <alevy@redhat.com>
+- *
+- * Copyright (c) 2010 Red Hat, Inc.
+- *
+- * Permission is hereby granted, free of charge, to any person obtaining a copy
+- * of this software and associated documentation files (the "Software"), to deal
+- * in the Software without restriction, including without limitation the rights
+- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+- * copies of the Software, and to permit persons to whom the Software is
+- * furnished to do so, subject to the following conditions:
+- *
+- * The above copyright notice and this permission notice shall be included in
+- * all copies or substantial portions of the Software.
+- *
+- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+- * THE SOFTWARE.
+- */
+-
+-#include <spice.h>
+-#include <vd_interface.h>
+-
+-#include "virtio-serial.h"
+-#include "qemu-spice.h"
+-
+-#define SPICE_VMC_GUEST_DEVICE_NAME "com.redhat.spice.0"
+-#define SPICE_VMC_DEVICE_NAME       "spicevmc"
+-
+-#define dprintf(_svc, _level, _fmt, ...) \
+-    do { \
+-        if (_svc->debug >= _level) { \
+-            fprintf(stderr, "svc: " _fmt, ## __VA_ARGS__); \
+-        } \
+-    } while (0)
+-
+-typedef struct SpiceVMChannel {
+-    VirtIOSerialPort    vserport;
+-    bool                running;
+-    bool                active_interface;
+-    uint8_t             active_interface_vmstate;
+-    VDIPortInterface    interface;
+-    VDIPortPlug         *plug;
+-    uint8_t             *datapos;
+-    uint32_t            datalen;
+-    uint32_t            debug;
+-} SpiceVMChannel;
+-
+-/*
+- * VDIPortInterface callbacks
+- */
+-
+-static VDObjectRef spice_vmc_interface_plug(
+-                VDIPortInterface *port, VDIPortPlug* plug)
+-{
+-    SpiceVMChannel *svc = container_of(port, SpiceVMChannel, interface);
+-    if (svc->plug) {
+-        return INVALID_VD_OBJECT_REF;
+-    }
+-    svc->plug = plug;
+-    return (VDObjectRef)plug;
+-}
+-
+-static void spice_vmc_interface_unplug(
+-                VDIPortInterface *port, VDObjectRef plug)
+-{
+-    SpiceVMChannel *svc = container_of(port, SpiceVMChannel, interface);
+-    if (!plug || plug != (VDObjectRef)svc->plug) {
+-        return;
+-    }
+-    svc->plug = NULL;
+-}
+-
+-static int spice_vmc_interface_write(
+-    VDIPortInterface *port, VDObjectRef plug, const uint8_t *buf, int len)
+-{
+-    SpiceVMChannel *svc = container_of(port, SpiceVMChannel, interface);
+-    ssize_t written = virtio_serial_write(&svc->vserport, buf, len);
+-
+-    if (written != len) {
+-        printf("WARNING: %s short write. %lu of %d\n", __func__, written, len);
+-    }
+-
+-   /* TODO:
+-    * we always claim the write worked. Reason: otherwise interface gives up
+-    * We could try to close/open interface.. but actually better to fix agent?
+-    */
+-    return len;
+-}
+-
+-static int spice_vmc_interface_read(
+-    VDIPortInterface *port, VDObjectRef plug, uint8_t *buf, int len)
+-{
+-    SpiceVMChannel *svc = container_of(port, SpiceVMChannel, interface);
+-    int bytes = MIN(len, svc->datalen);
+-
+-    dprintf(svc, 2, "%s: %p %d/%d\n", __func__,
+-                svc->datapos, bytes, svc->datalen);
+-
+-    if (bytes) {
+-        assert(svc->datapos);
+-        memcpy(buf, svc->datapos, bytes);
+-        svc->datapos += bytes;
+-        svc->datalen -= bytes;
+-        assert(svc->datalen >= 0);
+-        if (svc->datalen == 0) {
+-            svc->datapos = NULL;
+-        }
+-    }
+-    return bytes;
+-}
+-
+-static void spice_vmc_register_interface(SpiceVMChannel *svc)
+-{
+-    VDIPortInterface *interface = &svc->interface;
+-    static int interface_id = 0;
+-
+-    dprintf(svc, 1, "%s\n", __func__);
+-
+-    if (svc->active_interface ) {
+-        return;
+-    }
+-
+-    interface->base.base_version = VM_INTERFACE_VERSION;
+-    interface->base.type = VD_INTERFACE_VDI_PORT;
+-    interface->base.id = ++interface_id;
+-    interface->base.description = "spice virtual channel vdi port";
+-    interface->base.major_version = VD_INTERFACE_VDI_PORT_MAJOR;
+-    interface->base.minor_version = VD_INTERFACE_VDI_PORT_MINOR;
+-
+-    interface->plug = spice_vmc_interface_plug;
+-    interface->unplug = spice_vmc_interface_unplug;
+-    interface->write = spice_vmc_interface_write;
+-    interface->read = spice_vmc_interface_read;
+-
+-    svc->active_interface = true;
+-    qemu_spice_add_interface(&interface->base);
+-}
+-
+-static void spice_vmc_unregister_interface(SpiceVMChannel *svc)
+-{
+-    dprintf(svc, 1, "%s\n", __func__);
+-    if (!svc->active_interface ) {
+-        return;
+-    }
+-    svc->active_interface = false;
+-    qemu_spice_remove_interface(&svc->interface.base);
+-}
+-
+-
+-static void spice_vmc_vm_change_state_handler(
+-                        void *opaque, int running, int reason)
+-{
+-    SpiceVMChannel* svc = opaque;
+-
+-    if (running) {
+-        svc->running = true;
+-        if (svc->plug) {
+-            svc->plug->wakeup(svc->plug);
+-        }
+-    } else {
+-        svc->running = false;
+-    }
+-}
+-
+-/*
+- * virtio-serial callbacks
+- */
+-
+-static void spice_vmc_guest_open(VirtIOSerialPort *vserport)
+-{
+-    SpiceVMChannel *svc = DO_UPCAST(SpiceVMChannel, vserport, vserport);
+-
+-    dprintf(svc, 1, "%s\n", __func__);
+-    spice_vmc_register_interface(svc);
+-}
+-
+-static void spice_vmc_guest_close(VirtIOSerialPort *vserport)
+-{
+-    SpiceVMChannel *svc = DO_UPCAST(SpiceVMChannel, vserport, vserport);
+-
+-    dprintf(svc, 1, "%s\n", __func__);
+-    spice_vmc_unregister_interface(svc);
+-}
+-
+-static void spice_vmc_guest_ready(VirtIOSerialPort *vserport)
+-{
+-}
+-
+-static void spice_vmc_have_data(
+-                VirtIOSerialPort *vserport, const uint8_t *buf, size_t len)
+-{
+-    SpiceVMChannel *svc = DO_UPCAST(SpiceVMChannel, vserport, vserport);
+-
+-    assert(svc->datalen == 0);
+-    /* unconst cast is fine: datapos is only accessed through  _read
+-     * where it is copied out */
+-    svc->datapos = (uint8_t*)buf;
+-    svc->datalen = len;
+-    dprintf(svc, 2, "%s: %p %d\n", __func__, svc->datapos, svc->datalen);
+-    if (svc->plug) {
+-        svc->plug->wakeup(svc->plug);
+-    }
+-    return;
+-}
+-
+-static int spice_vmc_post_load(void *opaque, int version_id)
+-{
+-    SpiceVMChannel* svc = opaque;
+-    if (svc->active_interface_vmstate) {
+-        spice_vmc_register_interface(svc);
+-    }
+-    return 0;
+-}
+-
+-static void spice_vmc_pre_save(void *opaque)
+-{
+-    SpiceVMChannel* svc = opaque;
+-    svc->active_interface_vmstate = svc->active_interface;
+-}
+-
+-static VMStateDescription spice_vmc_vmstate = {
+-    .name = SPICE_VMC_DEVICE_NAME,
+-    .version_id = 1,
+-    .minimum_version_id = 1,
+-    .post_load = spice_vmc_post_load,
+-    .pre_save = spice_vmc_pre_save,
+-    .fields = (VMStateField []) {
+-        VMSTATE_UINT8(active_interface_vmstate, SpiceVMChannel),
+-        VMSTATE_END_OF_LIST()
+-    }
+-};
+-
+-static int spice_vmc_initfn(VirtIOSerialDevice *dev)
+-{
+-    VirtIOSerialPort *vserport = DO_UPCAST(VirtIOSerialPort, dev, &dev->qdev);
+-    SpiceVMChannel *svc = DO_UPCAST(SpiceVMChannel, vserport, vserport);
+-
+-    vserport->name = (char*)SPICE_VMC_GUEST_DEVICE_NAME;
+-
+-    vserport->info = dev->info;
+-
+-    svc->plug = NULL;
+-
+-    virtio_serial_open(vserport);
+-
+-    qemu_add_vm_change_state_handler(
+-        spice_vmc_vm_change_state_handler, svc);
+-
+-    return 0;
+-}
+-
+-static int spice_vmc_exitfn(VirtIOSerialDevice *dev)
+-{
+-    VirtIOSerialPort *vserport = DO_UPCAST(VirtIOSerialPort, dev, &dev->qdev);
+-    SpiceVMChannel *svc = DO_UPCAST(SpiceVMChannel, vserport, vserport);
+-
+-    spice_vmc_unregister_interface(svc);
+-    virtio_serial_close(vserport);
+-    return 0;
+-}
+-
+-static VirtIOSerialPortInfo spice_vmc_info = {
+-    .qdev.name     = SPICE_VMC_DEVICE_NAME,
+-    .qdev.size     = sizeof(SpiceVMChannel),
+-    .qdev.vmsd     = &spice_vmc_vmstate,
+-    .init          = spice_vmc_initfn,
+-    .exit          = spice_vmc_exitfn,
+-    .guest_open    = spice_vmc_guest_open,
+-    .guest_close   = spice_vmc_guest_close,
+-    .guest_ready   = spice_vmc_guest_ready,
+-    .have_data     = spice_vmc_have_data,
+-    .qdev.props = (Property[]) {
+-        DEFINE_PROP_UINT32("nr", SpiceVMChannel, vserport.id,
+-                           VIRTIO_CONSOLE_BAD_ID),
+-        DEFINE_PROP_UINT32("debug", SpiceVMChannel, debug, 0),
+-        DEFINE_PROP_END_OF_LIST(),
+-    },
+-};
+-
+-static void spice_vmc_register(void)
+-{
+-    virtio_serial_port_qdev_register(&spice_vmc_info);
+-}
+-
+-device_init(spice_vmc_register)
+diff --git a/migration.c b/migration.c
+index fb8fc98..621c7b3 100644
+--- a/migration.c
++++ b/migration.c
+@@ -21,10 +21,6 @@
+ #include "block-migration.h"
+ #include "qemu-objects.h"
+ 
+-#ifdef CONFIG_SPICE
+-#include "qemu-spice.h"
+-#endif
+-
+ //#define DEBUG_MIGRATION
+ 
+ #ifdef DEBUG_MIGRATION
+@@ -302,13 +298,6 @@ int migrate_fd_cleanup(FdMigrationState *s)
+     if (s->fd != -1)
+         close(s->fd);
+ 
+-#ifdef CONFIG_SPICE
+-    if (using_spice) {
+-        assert(s->state != MIG_STATE_ACTIVE);
+-        qemu_spice_migrate_end(s->state == MIG_STATE_COMPLETED);
+-    }
+-#endif
+-
+     /* Don't resume monitor until we've flushed all of the buffers */
+     if (s->mon) {
+         monitor_resume(s->mon);
+@@ -355,10 +344,6 @@ void migrate_fd_connect(FdMigrationState *s)
+ {
+     int ret;
+ 
+-#ifdef CONFIG_SPICE
+-    if (using_spice)
+-        qemu_spice_migrate_start();  
+-#endif
+     s->file = qemu_fopen_ops_buffered(s,
+                                       s->bandwidth_limit,
+                                       migrate_fd_put_buffer,
+diff --git a/monitor.c b/monitor.c
+index 307e5a4..4b62dc0 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -34,7 +34,6 @@
+ #include "net.h"
+ #include "net/slirp.h"
+ #include "qemu-char.h"
+-#include "qemu-spice.h"
+ #include "sysemu.h"
+ #include "monitor.h"
+ #include "readline.h"
+@@ -439,12 +438,6 @@ void monitor_protocol_event(MonitorEvent event, QObject *data)
+         case QEVENT_VNC_DISCONNECTED:
+             event_name = "VNC_DISCONNECTED";
+             break;
+-        case QEVENT_SPICE_INITIALIZED:
+-            event_name = RFQDN_REDHAT "SPICE_INITIALIZED";
+-            break;
+-        case QEVENT_SPICE_DISCONNECTED:
+-            event_name = RFQDN_REDHAT "SPICE_DISCONNECTED";
+-            break;
+         case QEVENT_BLOCK_IO_ERROR:
+             event_name = "BLOCK_IO_ERROR";
+             break;
+diff --git a/monitor.h b/monitor.h
+index 9b1aecd..a5c3457 100644
+--- a/monitor.h
++++ b/monitor.h
+@@ -28,8 +28,6 @@ typedef enum MonitorEvent {
+     QEVENT_VNC_CONNECTED,
+     QEVENT_VNC_INITIALIZED,
+     QEVENT_VNC_DISCONNECTED,
+-    QEVENT_SPICE_INITIALIZED,
+-    QEVENT_SPICE_DISCONNECTED,
+     QEVENT_BLOCK_IO_ERROR,
+     QEVENT_RTC_CHANGE,
+     QEVENT_WATCHDOG,
+diff --git a/qemu-config.c b/qemu-config.c
+index 45882d4..93c27c0 100644
+--- a/qemu-config.c
++++ b/qemu-config.c
+@@ -312,80 +312,6 @@ QemuOptsList qemu_cpudef_opts = {
+     },
+ };
+ 
+-#ifdef CONFIG_SPICE
+-QemuOptsList qemu_spice_opts = {
+-    .name = "spice",
+-    .head = QTAILQ_HEAD_INITIALIZER(qemu_spice_opts.head),
+-    .desc = {
+-        {
+-            .name = "port",
+-            .type = QEMU_OPT_NUMBER,
+-        },{
+-            .name = "tls-port",           /* old: sport */
+-            .type = QEMU_OPT_NUMBER,
+-        },{
+-            .name = "addr",               /* old: host */
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "ipv4",
+-            .type = QEMU_OPT_BOOL,
+-        },{
+-            .name = "ipv6",
+-            .type = QEMU_OPT_BOOL,
+-        },{
+-            .name = "password",
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "disable-ticketing",
+-            .type = QEMU_OPT_BOOL,
+-        },{
+-            .name = "image-compression",  /* old: ic */
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "renderer",
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "streaming-video",    /* old: sv */
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "agent-mouse",
+-            .type = QEMU_OPT_BOOL,
+-        },{
+-            .name = "playback-compression",
+-            .type = QEMU_OPT_BOOL,
+-        },{
+-            .name = "tls-channel",
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "plaintext-channel",
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "x509-dir",
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "x509-key-file",      /* old: sslkey */
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "x509-key-password",  /* old: sslpassword */
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "x509-cert-file",     /* old: sslcert */
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "x509-cacert-file",   /* old: sslcafile */
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "x509-dh-key-file",   /* old: ssldhfile */
+-            .type = QEMU_OPT_STRING,
+-        },{
+-            .name = "tls-ciphers",        /* old: sslciphersuite */
+-            .type = QEMU_OPT_STRING,
+-        },
+-        { /* end if list */ }
+-    },
+-};
+-#endif
+-
+ static QemuOptsList *vm_config_groups[] = {
+     &qemu_drive_opts,
+     &qemu_simple_drive_opts,
+@@ -397,9 +323,6 @@ static QemuOptsList *vm_config_groups[] = {
+     &qemu_global_opts,
+     &qemu_mon_opts,
+     &qemu_cpudef_opts,
+-#ifdef CONFIG_SPICE
+-    &qemu_spice_opts,
+-#endif
+     NULL,
+ };
+ 
+diff --git a/qemu-config.h b/qemu-config.h
+index 6cad1c3..4c0eac6 100644
+--- a/qemu-config.h
++++ b/qemu-config.h
+@@ -10,7 +10,6 @@ extern QemuOptsList qemu_rtc_opts;
+ extern QemuOptsList qemu_global_opts;
+ extern QemuOptsList qemu_mon_opts;
+ extern QemuOptsList qemu_cpudef_opts;
+-extern QemuOptsList qemu_spice_opts;
+ 
+ QemuOptsList *qemu_find_opts(const char *group);
+ int qemu_set_option(const char *str);
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 5a52be7..dc82b0c 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -1689,75 +1689,6 @@ Example:
+ 
+ EQMP
+ 
+-#if defined(CONFIG_SPICE)
+-    {
+-        .name       = RFQDN_REDHAT "set_password",
+-        .args_type  = "protocol:s,password:s,expiration:i,connected:s?",
+-        .params     = "protocol password expiration action-if-connected",
+-        .help       = "set spice/vnc password",
+-	.user_print = monitor_user_noop,
+-        .mhandler.cmd_new = mon_set_password,
+-    },
+-#endif
+-
+-STEXI
+-@item __com.redhat_set_password [ vnc | spice ] password expiration [ action-if-connected ]
+-@findex __com.redhat_set_password
+-change spice/vnc ticket
+-ETEXI
+-SQMP
+-__com.redhat_set_password
+--------------------------
+-
+-Change spice/vnc ticket.
+-
+-Arguments:
+-
+-- protocol: protocol name (json-string)
+-        - Possible values: "vnc", "spice"
+-- password: password to be set (json-string)
+-- expiration: password life-time, in seconds (json-int)
+-- connected: what to do with connected clients (json-string, optional)
+-        - Possible values: "fail", "disconnect", "keep"
+-
+-TODO: 1. Improve "connected" explanation
+-      2. Add usage example
+-
+-EQMP
+-
+-#if defined(CONFIG_SPICE)
+-    {
+-        .name       = RFQDN_REDHAT "spice_migrate_info",
+-        .args_type  = "hostname:s,port:i?,tls-port:i?,cert-subject:s?",
+-        .params     = "hostname port tls-port cert-subject",
+-        .help       = "send migration info to spice client",
+-	.user_print = monitor_user_noop,
+-        .mhandler.cmd_new = mon_spice_migrate,
+-    },
+-#endif
+-
+-STEXI
+-@item __com.redhat_spice_migrate_info hostname port tls-port cert-subject
+-@findex __com.redhat_spice_migrate_info
+-send migration info to spice client
+-ETEXI
+-SQMP
+-__com.redhat_spice_migrate_info
+--------------------------------
+-
+-Send migration info to spice client.
+-
+-Arguments:
+-
+-- hostname: destination address (json-string)
+-- port: destination port number (json-int, optional)
+-- tls-port: destination TLS port (json-int, optional)
+-- cert-subject: certificate subject (json-string, optional)
+-
+-TODO: Add usage example
+-
+-EQMP
+-
+ HXCOMM Keep the 'info' command at the end!
+ HXCOMM This is required for the QMP documentation layout.
+ 
+diff --git a/qemu-options.hx b/qemu-options.hx
+index cb96daa..9d83411 100644
+--- a/qemu-options.hx
++++ b/qemu-options.hx
+@@ -531,14 +531,6 @@ STEXI
+ Enable SDL.
+ ETEXI
+ 
+-#ifdef CONFIG_SPICE
+-DEF("spice", HAS_ARG, QEMU_OPTION_spice,
+-    "-spice <args>   use spice\n")
+-STEXI
+-Use Spice.
+-ETEXI
+-#endif
+-
+ DEF("portrait", 0, QEMU_OPTION_portrait,
+     "-portrait       rotate graphical output 90 deg left (only PXA LCD)\n")
+ STEXI
+@@ -548,7 +540,7 @@ Rotate graphical output 90 deg left (only PXA LCD).
+ ETEXI
+ 
+ DEF("vga", HAS_ARG, QEMU_OPTION_vga,
+-    "-vga [std|cirrus|vmware|xenfb|qxl|none]\n"
++    "-vga [std|cirrus|vmware|xenfb|none]\n"
+     "                select video card type\n")
+ STEXI
+ @item -vga @var{type}
+diff --git a/qemu-spice.h b/qemu-spice.h
+deleted file mode 100644
+index d81d0f8..0000000
+--- a/qemu-spice.h
++++ /dev/null
+@@ -1,38 +0,0 @@
+-#ifndef QEMU_SPICE_H
+-#define QEMU_SPICE_H
+-
+-#ifdef CONFIG_SPICE
+-
+-#include <spice.h>
+-
+-#include "qemu-option.h"
+-#include "qemu-config.h"
+-#include "qdict.h"
+-
+-struct VDInterface;
+-extern int using_spice;
+-
+-void qemu_spice_init(void);
+-void qemu_spice_input_init(SpiceServer *s);
+-void qemu_spice_tablet_size(int width, int height);
+-void qemu_spice_display_init(DisplayState *ds);
+-
+-void qxl_display_init(DisplayState *ds);
+-void qxl_dev_init(PCIBus *bus);
+-
+-void qemu_spice_add_interface(struct VDInterface *interface);
+-void qemu_spice_remove_interface(struct VDInterface *interface);
+-
+-void qemu_spice_migrate_start(void);
+-void qemu_spice_migrate_end(int completed);
+-
+-int mon_set_password(Monitor *mon, const QDict *qdict, QObject **ret_data);
+-int mon_spice_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data);
+-
+-#else  /* CONFIG_SPICE */
+-
+-#define using_spice 0
+-
+-#endif /* CONFIG_SPICE */
+-
+-#endif /* QEMU_SPICE_H */
+diff --git a/spice-cmd.h b/spice-cmd.h
+deleted file mode 100644
+index be384ff..0000000
+--- a/spice-cmd.h
++++ /dev/null
+@@ -1,339 +0,0 @@
+-#ifndef SPICE_CMD_H
+-#define SPICE_CMD_H
+-
+-#ifdef __GNUC__
+-#ifdef __i386__
+-#define mb() __asm__ __volatile__ ("lock; addl $0,0(%%esp)": : :"memory")
+-#else
+-//mfence
+-#define mb() __asm__ __volatile__ ("lock; addl $0,0(%%rsp)": : :"memory")
+-#endif
+-#define ATTR_PACKED __attribute__ ((__packed__))
+-#else
+-#pragma pack(push)
+-#pragma pack(1)
+-#define ATTR_PACKED
+-#define mb() __asm {lock add [esp], 0}
+-#endif
+-
+-#define REDHAT_PCI_VENDOR_ID 0x1b36
+-#define QXL_DEVICE_ID 0x0100 /* 0x100-0x11f reserved for spice */
+-#define QXL_REVISION 0x01
+-
+-#define QXL_ROM_MAGIC (*(UINT32*)"QXRO")
+-#define QXL_RAM_MAGIC (*(UINT32*)"QXRA")
+-
+-enum {
+-    QXL_RAM_RANGE_INDEX,
+-    QXL_VRAM_RANGE_INDEX,
+-    QXL_ROM_RANGE_INDEX,
+-    QXL_IO_RANGE_INDEX,
+-
+-    QXL_PCI_RANGES
+-};
+-
+-enum {
+-    QXL_IO_NOTIFY_CMD,
+-    QXL_IO_NOTIFY_CURSOR,
+-    QXL_IO_UPDATE_AREA,
+-    QXL_IO_UPDATE_IRQ,
+-    QXL_IO_NOTIFY_OOM,
+-    QXL_IO_RESET,
+-    QXL_IO_SET_MODE,
+-    QXL_IO_LOG,
+-
+-    QXL_IO_RANGE_SIZE
+-};
+-
+-typedef struct ATTR_PACKED QXLRom {
+-    UINT32 magic;
+-    UINT32 id;
+-    UINT32 update_id;
+-    UINT32 compression_level;
+-    UINT32 log_level;
+-    UINT32 mode;
+-    UINT32 modes_offset;
+-    UINT32 num_io_pages;
+-    UINT32 pages_offset;
+-    UINT32 draw_area_offset;
+-    UINT32 draw_area_size;
+-    UINT32 ram_header_offset;
+-    UINT32 mm_clock;
+-} QXLRom;
+-
+-typedef struct ATTR_PACKED QXLMode {
+-    UINT32 id;
+-    UINT32 x_res;
+-    UINT32 y_res;
+-    UINT32 bits;
+-    UINT32 stride;
+-    UINT32 x_mili;
+-    UINT32 y_mili;
+-    UINT32 orientation;
+-} QXLMode;
+-
+-typedef struct ATTR_PACKED QXLModes {
+-    UINT32 n_modes;
+-    QXLMode modes[0];
+-} QXLModes;
+-
+-typedef UINT64 PHYSICAL;
+-typedef UINT32 QXLFIXED; //fixed 28.4
+-
+-enum QXLCmdType {
+-    QXL_CMD_NOP,
+-    QXL_CMD_DRAW,
+-    QXL_CMD_UPDATE,
+-    QXL_CMD_CURSOR,
+-    QXL_CMD_MESSAGE,
+-};
+-
+-typedef struct ATTR_PACKED QXLCommand {
+-    PHYSICAL data;
+-    UINT32 type;
+-    UINT32 ped;
+-} QXLCommand;
+-
+-
+-RING_DECLARE(QXLCommandRing, QXLCommand, 32);
+-RING_DECLARE(QXLCursorRing, QXLCommand, 32);
+-
+-RING_DECLARE(QXLReleaseRing, UINT64, 8);
+-
+-#define QXL_LOG_BUF_SIZE 4096
+-
+-#define QXL_INTERRUPT_DISPLAY (1 << 0)
+-#define QXL_INTERRUPT_CURSOR (1 << 1)
+-
+-typedef struct ATTR_PACKED QXLRam {
+-    UINT32 magic;
+-    UINT32 int_pending;
+-    UINT32 int_mask;
+-    UINT8 log_buf[QXL_LOG_BUF_SIZE];
+-    QXLCommandRing cmd_ring;
+-    QXLCursorRing cursor_ring;
+-    QXLReleaseRing release_ring;
+-    Rect update_area;
+-} QXLRam;
+-
+-typedef union QXLReleaseInfo{
+-    UINT64 id;      // in
+-    UINT64 next;    // out
+-} QXLReleaseInfo;
+-
+-typedef struct  ATTR_PACKED QXLDataChunk {
+-    UINT32 data_size;
+-    PHYSICAL prev_chunk;
+-    PHYSICAL next_chunk;
+-    UINT8 data[0];
+-} QXLDataChunk;
+-
+-typedef struct ATTR_PACKED QXLMessage {
+-    QXLReleaseInfo release_info;
+-    UINT8 data[0];
+-} QXLMessage;
+-
+-typedef struct ATTR_PACKED QXLUpdateCmd {
+-    QXLReleaseInfo release_info;
+-    Rect area;
+-    UINT32 update_id;
+-} QXLUpdateCmd;
+-
+-typedef struct ATTR_PACKED QXLCursor {
+-    CursorHeader header;
+-    UINT32 data_size;
+-    QXLDataChunk chunk;
+-} QXLCursor;
+-
+-enum {
+-    QXL_CURSOR_SET,
+-    QXL_CURSOR_MOVE,
+-    QXL_CURSOR_HIDE,
+-    QXL_CURSOR_TRAIL,
+-};
+-
+-#define QXL_CURSUR_DEVICE_DATA_SIZE 128
+-
+-typedef struct ATTR_PACKED QXLCursorCmd {
+-    QXLReleaseInfo release_info;
+-    UINT8 type;
+-    union {
+-        struct ATTR_PACKED {
+-            Point16 position;
+-            UINT8 visible;
+-            PHYSICAL shape;
+-        } set;
+-        struct ATTR_PACKED {
+-            UINT16 length;
+-            UINT16 frequency;
+-        } trail;
+-        Point16 position;
+-    } u;
+-    UINT8 device_data[QXL_CURSUR_DEVICE_DATA_SIZE]; //todo: use host memory
+-} QXLCursorCmd;
+-
+-enum {
+-    QXL_DRAW_NOP,
+-    QXL_DRAW_FILL,
+-    QXL_DRAW_OPAQUE,
+-    QXL_DRAW_COPY,
+-    QXL_COPY_BITS,
+-    QXL_DRAW_BLEND,
+-    QXL_DRAW_BLACKNESS,
+-    QXL_DRAW_WHITENESS,
+-    QXL_DRAW_INVERS,
+-    QXL_DRAW_ROP3,
+-    QXL_DRAW_STROKE,
+-    QXL_DRAW_TEXT,
+-    QXL_DRAW_TRANSPARENT,
+-    QXL_DRAW_ALPHA_BLEND,
+-};
+-
+-typedef struct ATTR_PACKED QXLString{
+-    UINT32 data_size;
+-    UINT16 length;
+-    UINT16 flags;
+-    QXLDataChunk chunk;
+-} QXLString;
+-
+-typedef struct ATTR_PACKED QXLCopyBits {
+-    Point src_pos;
+-} QXLCopyBits;
+-
+-#define QXL_EFFECT_BLEND 0
+-#define QXL_EFFECT_OPAQUE 1
+-#define QXL_EFFECT_REVERT_ON_DUP 2
+-#define QXL_EFFECT_BLACKNESS_ON_DUP 3
+-#define QXL_EFFECT_WHITENESS_ON_DUP 4
+-#define QXL_EFFECT_NOP_ON_DUP 5
+-#define QXL_EFFECT_NOP 6
+-#define QXL_EFFECT_OPAQUE_BRUSH 7
+-
+-typedef struct ATTR_PACKED QXLDrawable {
+-    QXLReleaseInfo release_info;
+-    UINT8 effect;
+-    UINT8 type;
+-    UINT16 bitmap_offset;
+-    Rect bitmap_area;
+-    Rect bbox;
+-    Clip clip;
+-    UINT32 mm_time;
+-    union {
+-        Fill fill;
+-        Opaque opaque;
+-        Copy copy;
+-        Transparent transparent;
+-        AlphaBlnd alpha_blend;
+-        QXLCopyBits copy_bits;
+-        Blend blend;
+-        Rop3 rop3;
+-        Stroke stroke;
+-        Text text;
+-        Blackness blackness;
+-        Invers invers;
+-        Whiteness whiteness;
+-    } u;
+-} QXLDrawable;
+-
+-typedef struct ATTR_PACKED QXLClipRects{
+-    UINT32 num_rects;
+-    QXLDataChunk chunk;
+-} QXLClipRects;
+-
+-enum {
+-    QXL_PATH_BEGIN = (1 << 0),
+-    QXL_PATH_END = (1 << 1),
+-    QXL_PATH_CLOSE = (1 << 3),
+-    QXL_PATH_BEZIER = (1 << 4),
+-};
+-
+-typedef struct ATTR_PACKED QXLPath {
+-    UINT32 data_size;
+-    QXLDataChunk chunk;
+-} QXLPath;
+-
+-enum {
+-    QXL_IMAGE_GROUP_DRIVER,
+-    QXL_IMAGE_GROUP_DEVICE,
+-    QXL_IMAGE_GROUP_RED,
+-    QXL_IMAGE_GROUP_DRIVER_DONT_CACHE,
+-};
+-
+-typedef struct ATTR_PACKED QXLImageID{
+-    UINT32 group;
+-    UINT32 unique;
+-} QXLImageID;
+-
+-enum {
+-    QXL_IMAGE_CACHE = (1 << 0),
+-};
+-
+-enum {
+-    QXL_BITMAP_DIRECT = (1 << 0),
+-    QXL_BITMAP_UNSTABLE = (1 << 1),
+-    QXL_BITMAP_TOP_DOWN = (1 << 2), // == BITMAP_TOP_DOWN
+-};
+-
+-#define QXL_SET_IMAGE_ID(image, _group, _unique) {              \
+-    UINT64* id_ptr = &(image)->descriptor.id;                   \
+-    QXLImageID *image_id = (QXLImageID *)id_ptr;                \
+-    image_id->group = _group;                                   \
+-    image_id->unique = _unique;                                 \
+-}
+-
+-typedef struct ATTR_PACKED QXLImage {
+-    ImageDescriptor descriptor;
+-    union { // variable length
+-        Bitmap bitmap;
+-        PNGData png;
+-        QUICData quic;
+-    };
+-} QXLImage;
+-
+-
+-#define VDI_PORT_DEVICE_ID 0x0105
+-#define VDI_PORT_REVISION 0x01
+-
+-#define VDI_PORT_INTERRUPT (1 << 0)
+-
+-#define VDI_PORT_MAGIC (*(UINT32*)"VDIP")
+-
+-typedef struct ATTR_PACKED VDIPortPacket {
+-    UINT32 gen;
+-    UINT32 size;
+-    UINT8 data[512 - 2 * sizeof(UINT32)];
+-} VDIPortPacket;
+-
+-RING_DECLARE(VDIPortRing, VDIPortPacket, 32);
+-
+-enum {
+-    VDI_PORT_IO_RANGE_INDEX,
+-    VDI_PORT_RAM_RANGE_INDEX,
+-};
+-
+-enum {
+-    VDI_PORT_IO_CONNECTION,
+-    VDI_PORT_IO_NOTIFY = 4,
+-    VDI_PORT_IO_UPDATE_IRQ = 8,
+-
+-    VDI_PORT_IO_RANGE_SIZE = 12
+-};
+-
+-typedef struct ATTR_PACKED VDIPortRam {
+-    UINT32 magic;
+-    UINT32 generation;
+-    UINT32 int_pending;
+-    UINT32 int_mask;
+-    VDIPortRing input;
+-    VDIPortRing output;
+-    UINT32 reserv[32];
+-} VDIPortRam;
+-
+-
+-#ifndef __GNUC__
+-#pragma pack(pop)
+-#endif
+-
+-#undef ATTR_PACKED
+-
+-#endif
+diff --git a/spice-display.c b/spice-display.c
+deleted file mode 100644
+index 17913ee..0000000
+--- a/spice-display.c
++++ /dev/null
+@@ -1,370 +0,0 @@
+-#include <stdio.h>
+-#include <stdlib.h>
+-#include <stdbool.h>
+-#include <string.h>
+-#include <pthread.h>
+-
+-#include "qemu-common.h"
+-#include "qemu-spice.h"
+-#include "qemu-timer.h"
+-#include "qemu-queue.h"
+-#include "monitor.h"
+-#include "console.h"
+-#include "sysemu.h"
+-
+-#include "spice-display.h"
+-
+-#define REDHAT_PCI_VENDOR_ID 0x1b36
+-#define QXL_DEVICE_ID 0x0100 /* 0x100-0x11f reserved for spice */
+-#define QXL_REVISION 0x01
+-
+-static struct SpiceDisplay {
+-    DisplayState *ds;
+-    void *buf;
+-    int bufsize;
+-    QXLWorker *worker;
+-    Rect dirty;
+-    int unique;
+-    int is_attached:1;
+-    pthread_mutex_t lock;
+-} sdpy;
+-
+-QXLUpdate *qemu_spice_display_create_update(DisplayState *ds, Rect *dirty, int unique)
+-{
+-    PixelFormat pf;
+-    QXLUpdate *update;
+-    QXLDrawable *drawable;
+-    QXLImage *image;
+-    QXLCommand *cmd;
+-    uint32_t *dst;
+-    uint16_t *src16;
+-    void *src;
+-    int pixels, x, y;
+-
+-    dirty->left = 0;
+-#if 0
+-    fprintf(stderr, "%s: lr %d -> %d,  tb -> %d -> %d\n", __FUNCTION__,
+-            dirty->left, dirty->right,
+-            dirty->top, dirty->bottom);
+-#endif
+-
+-    pixels   = (dirty->bottom - dirty->top) * (dirty->right - dirty->left);
+-    update   = qemu_mallocz(sizeof(*update) + pixels * sizeof(uint32_t));
+-    drawable = &update->drawable;
+-    image    = &update->image;
+-    cmd      = &update->cmd;
+-
+-    drawable->bbox            = *dirty;
+-    drawable->clip.type       = CLIP_TYPE_NONE;
+-    drawable->clip.data       = 0;
+-    drawable->effect          = QXL_EFFECT_OPAQUE;
+-    drawable->release_info.id = (UINT64)update;
+-    drawable->bitmap_offset   = 0;
+-    drawable->type            = QXL_DRAW_COPY;
+-
+-    drawable->u.copy.rop_decriptor   = ROPD_OP_PUT;
+-    drawable->u.copy.src_bitmap      = (PHYSICAL)image;
+-    drawable->u.copy.src_area.left   = drawable->u.copy.src_area.top = 0;
+-    drawable->u.copy.src_area.right  = dirty->right - dirty->left;
+-    drawable->u.copy.src_area.bottom = dirty->bottom - dirty->top;
+-    drawable->u.copy.scale_mode = 0;
+-    memset(&drawable->u.copy.mask, 0, sizeof(QMask));
+-
+-    image->descriptor.type   = IMAGE_TYPE_BITMAP;
+-    image->descriptor.flags  = 0;
+-    QXL_SET_IMAGE_ID(image, QXL_IMAGE_GROUP_DEVICE, unique);
+-    image->bitmap.flags      = QXL_BITMAP_DIRECT | QXL_BITMAP_TOP_DOWN;
+-    image->bitmap.stride     = drawable->u.copy.src_area.right * sizeof(uint32_t);
+-    image->descriptor.width  = image->bitmap.x = drawable->u.copy.src_area.right;
+-    image->descriptor.height = image->bitmap.y = drawable->u.copy.src_area.bottom;
+-    image->bitmap.data = (PHYSICAL)update->bitmap;
+-    image->bitmap.palette = 0;
+-    image->bitmap.format = BITMAP_FMT_32BIT;
+-
+-    dst = update->bitmap;
+-    src = (ds_get_data(ds) +
+-           dirty->top * ds_get_linesize(ds) +
+-           dirty->left * ds_get_bytes_per_pixel(ds));
+-    pf = ds->surface->pf;
+-    for (y = 0; y < image->bitmap.y; y++) {
+-        switch (ds_get_bits_per_pixel(ds)) {
+-        case 16:
+-            src16 = src;
+-            for (x = 0; x < image->bitmap.x; x++) {
+-                uint32_t r = (src16[x] & pf.rmask) >> pf.rshift;
+-                uint32_t g = (src16[x] & pf.gmask) >> pf.gshift;
+-                uint32_t b = (src16[x] & pf.bmask) >> pf.bshift;
+-                r <<= (8 - pf.rbits);
+-                g <<= (8 - pf.gbits);
+-                b <<= (8 - pf.bbits);
+-                dst[x] = (r << 16) | (g << 8) | b;
+-            }
+-            break;
+-        case 32:
+-            memcpy(dst, src, image->bitmap.stride);
+-            break;
+-        default:
+-            fprintf(stderr, "%s: unhandled depth: %d bits\n", __FUNCTION__,
+-                    ds_get_bits_per_pixel(ds));
+-            abort();
+-        }
+-        dst += image->bitmap.x;
+-        src += ds_get_linesize(ds);
+-    }
+-
+-    cmd->type = QXL_CMD_DRAW;
+-    cmd->data = (PHYSICAL)drawable;
+-    return update;
+-}
+-
+-static void spice_vm_change_state_handler(void *opaque, int running, int reason)
+-{
+-    if (!sdpy.worker) {
+-        return;
+-    }
+-
+-    if (running) {
+-        sdpy.worker->start(sdpy.worker);
+-    } else {
+-        sdpy.worker->stop(sdpy.worker);
+-    }
+-}
+-
+-/* display listener callbacks */
+-
+-static void spice_display_update(struct DisplayState *ds, int x, int y, int w, int h)
+-{
+-    Rect update_area;
+-    int notify = 0;
+-
+-    update_area.left = x,
+-    update_area.right = x + w;
+-    update_area.top = y;
+-    update_area.bottom = y + h;
+-    pthread_mutex_lock(&sdpy.lock);
+-    if (rect_is_empty(&sdpy.dirty)) {
+-        notify = 1;
+-    }
+-    rect_union(&sdpy.dirty, &update_area);
+-    pthread_mutex_unlock(&sdpy.lock);
+-    if (notify && sdpy.is_attached) {
+-        sdpy.worker->wakeup(sdpy.worker);
+-    }
+-}
+-
+-static void spice_display_resize(struct DisplayState *ds)
+-{
+-    if (sdpy.is_attached) {
+-        sdpy.is_attached = 0;
+-        sdpy.worker->detach(sdpy.worker);
+-    }
+-
+-    pthread_mutex_lock(&sdpy.lock);
+-    memset(&sdpy.dirty, 0, sizeof(sdpy.dirty));
+-    pthread_mutex_unlock(&sdpy.lock);
+-
+-    if (!sdpy.is_attached && sdpy.worker) {
+-        sdpy.is_attached = 1;
+-        sdpy.worker->attach(sdpy.worker);
+-    }
+-    qemu_spice_tablet_size(ds_get_width(ds), ds_get_height(ds));
+-}
+-
+-static void spice_display_refresh(struct DisplayState *ds)
+-{
+-    vga_hw_update();
+-}
+-
+-/* spice display interface callbacks */
+-
+-static void interface_attach_worker(QXLInterface *qxl, QXLWorker *qxl_worker)
+-{
+-    sdpy.worker = qxl_worker;
+-}
+-
+-static void interface_set_compression_level(QXLInterface *qxl, int level)
+-{
+-    /* nothing to do */
+-}
+-
+-static void interface_set_mm_time(QXLInterface *qxl, uint32_t mm_time)
+-{
+-    /* nothing to do */
+-}
+-
+-static VDObjectRef interface_register_mode_change(QXLInterface *qxl,
+-                                                  qxl_mode_change_notifier_t notifier,
+-                                                  void *opaque)
+-{
+-    fprintf(stderr, "%s:\n", __FUNCTION__);
+-    abort();
+-    return 0;
+-}
+-
+-static void interface_unregister_mode_change(QXLInterface *qxl, VDObjectRef notifier)
+-{
+-    fprintf(stderr, "%s:\n", __FUNCTION__);
+-    abort();
+-}
+-
+-static void interface_get_info(QXLInterface *qxl, QXLDevInfo *info)
+-{
+-    int stride = ds_get_width(sdpy.ds) * 4;
+-    int size;
+-
+-#if 0
+-    fprintf(stderr, "%s: %dx%d @ %d\n", __FUNCTION__,
+-            ds_get_width(sdpy.ds), ds_get_height(sdpy.ds),
+-            ds_get_bits_per_pixel(sdpy.ds));
+-#endif
+-
+-    info->x_res    = ds_get_width(sdpy.ds);
+-    info->y_res    = ds_get_height(sdpy.ds);
+-    info->bits     = 32;
+-
+-    size = stride * info->y_res;
+-    if (sdpy.bufsize < size) {
+-        sdpy.bufsize = size;
+-        sdpy.buf = qemu_realloc(sdpy.buf, sdpy.bufsize);
+-    }
+-
+-    info->ram_size = sdpy.bufsize;
+-    info->use_hardware_cursor = false;
+-    info->phys_start = 0;
+-    info->phys_end = ~info->phys_start;
+-    info->phys_delta = 0;
+-
+-    info->draw_area.buf    = sdpy.buf;
+-    info->draw_area.size   = sdpy.bufsize;
+-    info->draw_area.line_0 = info->draw_area.buf;
+-    info->draw_area.stride = stride;
+-    info->draw_area.width  = info->x_res;
+-    info->draw_area.heigth = info->y_res;
+-}
+-
+-static int interface_get_command(QXLInterface *qxl, struct QXLCommand *cmd)
+-{
+-    QXLUpdate *update;
+-
+-    if (rect_is_empty(&sdpy.dirty))
+-        return false;
+-    pthread_mutex_lock(&sdpy.lock);
+-    update = qemu_spice_display_create_update(sdpy.ds, &sdpy.dirty, ++sdpy.unique);
+-    memset(&sdpy.dirty, 0, sizeof(sdpy.dirty));
+-    pthread_mutex_unlock(&sdpy.lock);
+-    *cmd = update->cmd;
+-    return true;
+-}
+-
+-static int interface_req_cmd_notification(QXLInterface *qxl)
+-{
+-    /* nothing to do */
+-    return 1;
+-}
+-
+-static int interface_has_command(QXLInterface *qxl)
+-{
+-    fprintf(stderr, "%s:\n", __FUNCTION__);
+-    abort();
+-    return 0;
+-}
+-
+-static void interface_release_resource(QXLInterface *qxl, union QXLReleaseInfo *release_info)
+-{
+-    UINT64 id = release_info->id;
+-    qemu_free((void *)id);
+-}
+-
+-static int interface_get_cursor_command(QXLInterface *qxl, struct QXLCommand *cmd)
+-{
+-    /* nothing to do */
+-    return 0;
+-}
+-
+-static int interface_req_cursor_notification(QXLInterface *qxl)
+-{
+-    /* nothing to do */
+-    return 1;
+-}
+-
+-static const struct Rect *interface_get_update_area(QXLInterface *qxl)
+-{
+-    fprintf(stderr, "%s:\n", __FUNCTION__);
+-    abort();
+-    return NULL;
+-}
+-
+-static void interface_notify_update(QXLInterface *qxl, uint32_t update_id)
+-{
+-    fprintf(stderr, "%s:\n", __FUNCTION__);
+-    abort();
+-}
+-
+-static void interface_set_save_data(QXLInterface *qxl, void *data, int size)
+-{
+-    fprintf(stderr, "%s:\n", __FUNCTION__);
+-    abort();
+-}
+-
+-static void *interface_get_save_data(QXLInterface *qxl)
+-{
+-    fprintf(stderr, "%s:\n", __FUNCTION__);
+-    abort();
+-    return NULL;
+-}
+-
+-static int interface_flush_resources(QXLInterface *qxl)
+-{
+-    fprintf(stderr, "%s:\n", __FUNCTION__);
+-    abort();
+-    return 0;
+-}
+-
+-static QXLInterface dpy_interface = {
+-    .base.base_version = VM_INTERFACE_VERSION,
+-    .base.type = VD_INTERFACE_QXL,
+-    .base.description = "display",
+-    .base.major_version = VD_INTERFACE_QXL_MAJOR,
+-    .base.minor_version = VD_INTERFACE_QXL_MINOR,
+-
+-    .pci_vendor = REDHAT_PCI_VENDOR_ID,
+-    .pci_id = QXL_DEVICE_ID,
+-    .pci_revision = QXL_REVISION,
+-
+-    .attache_worker = interface_attach_worker,
+-    .set_compression_level = interface_set_compression_level,
+-    .set_mm_time = interface_set_mm_time,
+-    .register_mode_change = interface_register_mode_change,
+-    .unregister_mode_change = interface_unregister_mode_change,
+-
+-    .get_info = interface_get_info,
+-    .get_command = interface_get_command,
+-    .req_cmd_notification = interface_req_cmd_notification,
+-    .has_command = interface_has_command,
+-    .release_resource = interface_release_resource,
+-    .get_cursor_command = interface_get_cursor_command,
+-    .req_cursor_notification = interface_req_cursor_notification,
+-    .get_update_area = interface_get_update_area,
+-    .notify_update = interface_notify_update,
+-    .set_save_data = interface_set_save_data,
+-    .get_save_data = interface_get_save_data,
+-    .flush_resources = interface_flush_resources,
+-};
+-
+-void qemu_spice_display_init(DisplayState *ds)
+-{
+-    DisplayChangeListener *display_listener;
+-
+-    assert(sdpy.ds == NULL);
+-    sdpy.ds = ds;
+-    pthread_mutex_init(&sdpy.lock, NULL);
+-
+-    display_listener = qemu_mallocz(sizeof(DisplayChangeListener));
+-    display_listener->dpy_update = spice_display_update;
+-    display_listener->dpy_resize = spice_display_resize;
+-    display_listener->dpy_refresh = spice_display_refresh;
+-    register_displaychangelistener(ds, display_listener);
+-
+-    qemu_spice_add_interface(&dpy_interface.base);
+-    qemu_add_vm_change_state_handler(spice_vm_change_state_handler, NULL);
+-}
+diff --git a/spice-display.h b/spice-display.h
+deleted file mode 100644
+index 6b25de4..0000000
+--- a/spice-display.h
++++ /dev/null
+@@ -1,35 +0,0 @@
+-#include "spice-ring.h"
+-#include "spice-draw.h"
+-#include "spice-cmd.h"
+-
+-typedef struct QXLUpdate {
+-    QXLDrawable drawable;
+-    QXLImage image;
+-    QXLCommand cmd;
+-    uint32_t bitmap[];
+-} QXLUpdate;
+-
+-QXLUpdate *qemu_spice_display_create_update(DisplayState *ds, Rect *dirty, int unique);
+-
+-static inline int rect_is_empty(const Rect* r)
+-{
+-    return r->top == r->bottom || r->left == r->right;
+-}
+-
+-static inline void rect_union(Rect *dest, const Rect *r)
+-{
+-    if (rect_is_empty(r)) {
+-        return;
+-    }
+-
+-    if (rect_is_empty(dest)) {
+-        *dest = *r;
+-        return;
+-    }
+-
+-    dest->top = MIN(dest->top, r->top);
+-    dest->left = MIN(dest->left, r->left);
+-    dest->bottom = MAX(dest->bottom, r->bottom);
+-    dest->right = MAX(dest->right, r->right);
+-}
+-
+diff --git a/spice-draw.h b/spice-draw.h
+deleted file mode 100644
+index d2587d5..0000000
+--- a/spice-draw.h
++++ /dev/null
+@@ -1,389 +0,0 @@
+-#ifndef SPICE_DRAW_H
+-#define SPICE_DRAW_H
+-
+-#ifndef _WIN32
+-#include <stdint.h>
+-#endif
+-
+-#ifdef __GNUC__
+-#define ATTR_PACKED __attribute__ ((__packed__))
+-typedef uint64_t UINT64;
+-typedef uint32_t UINT32;
+-typedef uint16_t UINT16;
+-typedef uint8_t UINT8;
+-
+-typedef int16_t INT16;
+-typedef int32_t INT32;
+-#else
+-#include <basetsd.h>
+-#pragma pack(push)
+-#pragma pack(1)
+-#define ATTR_PACKED
+-#pragma warning(disable:4200)
+-#endif
+-
+-#ifdef _WIN32_WCE
+-#include <stdint.h>
+-typedef uint64_t UINT64;
+-typedef uint32_t UINT32;
+-typedef uint16_t UINT16;
+-typedef uint8_t UINT8;
+-
+-typedef int16_t INT16;
+-typedef int32_t INT32;
+-#endif
+-
+-#define GET_ADDRESS(addr) ((void *)(unsigned long)(addr))
+-#define SET_ADDRESS(addr, val) ((addr) = (unsigned long)(val))
+-
+-typedef INT32 FIXED28_4;
+-typedef UINT64 ADDRESS;
+-
+-enum {
+-    PATH_BEGIN = (1 << 0),
+-    PATH_END = (1 << 1),
+-    PATH_CLOSE = (1 << 3),
+-    PATH_BEZIER = (1 << 4),
+-};
+-
+-enum {
+-    LINE_ATTR_STARTGAP = (1 << 2),
+-    LINE_ATTR_STYLED = (1 << 3),
+-};
+-
+-typedef struct ATTR_PACKED PointFix {
+-    FIXED28_4 x;
+-    FIXED28_4 y;
+-} PointFix;
+-
+-typedef struct ATTR_PACKED Point {
+-    INT32 x;
+-    INT32 y;
+-} Point;
+-
+-typedef struct ATTR_PACKED Point16 {
+-    INT16 x;
+-    INT16 y;
+-} Point16;
+-
+-typedef struct ATTR_PACKED Rect {
+-    INT32 top;
+-    INT32 left;
+-    INT32 bottom;
+-    INT32 right;
+-} Rect;
+-
+-typedef struct ATTR_PACKED PathSeg {
+-    UINT32 flags;
+-    UINT32 count;
+-    UINT8 data[0];
+-} PathSeg;
+-
+-enum ClipType {
+-    CLIP_TYPE_NONE,
+-    CLIP_TYPE_RECTS,
+-    CLIP_TYPE_PATH,
+-};
+-
+-typedef struct ATTR_PACKED Clip {
+-    UINT32 type;
+-    ADDRESS data;
+-} Clip;
+-
+-enum ROPDescriptor {
+-    ROPD_INVERS_SRC = (1 << 0),
+-    ROPD_INVERS_BRUSH = (1 << 1),
+-    ROPD_INVERS_DEST = (1 << 2),
+-    ROPD_OP_PUT = (1 << 3),
+-    ROPD_OP_OR = (1 << 4),
+-    ROPD_OP_AND = (1 << 5),
+-    ROPD_OP_XOR = (1 << 6),
+-    ROPD_OP_BLACKNESS = (1 << 7),
+-    ROPD_OP_WHITENESS = (1 << 8),
+-    ROPD_OP_INVERS = (1 << 9),
+-    ROPD_INVERS_RES = (1 <<10),
+-};
+-
+-typedef struct ATTR_PACKED Pattern {
+-    ADDRESS pat;
+-    Point pos;
+-} Pattern;
+-
+-enum {
+-    BRUSH_TYPE_NONE,
+-    BRUSH_TYPE_SOLID,
+-    BRUSH_TYPE_PATTERN,
+-};
+-
+-typedef struct ATTR_PACKED Brush {
+-    UINT32 type;
+-    union {
+-        UINT32 color;
+-        Pattern pattern;
+-    } u;
+-} Brush;
+-
+-enum {
+-    MASK_INVERS = (1 << 0),
+-};
+-
+-typedef struct ATTR_PACKED QMask {
+-    UINT8 flags;
+-    Point pos;
+-    ADDRESS bitmap;
+-} QMask;
+-
+-typedef struct ATTR_PACKED Fill {
+-    Brush brush;
+-    UINT16 rop_decriptor;
+-    QMask mask;
+-} Fill;
+-
+-typedef struct ATTR_PACKED Palette {
+-    UINT64 unique;
+-    UINT16 num_ents;
+-    UINT32 ents[0];
+-} Palette;
+-
+-enum {
+-    IMAGE_TYPE_BITMAP,
+-    IMAGE_TYPE_QUIC,
+-    IMAGE_TYPE_LZ_PLT,
+-    IMAGE_TYPE_LZ_RGB,
+-    IMAGE_TYPE_PNG,
+-    IMAGE_TYPE_FROM_CACHE,
+-};
+-
+-enum {
+-    IMAGE_CACHE_ME = (1 << 0),
+-};
+-
+-typedef struct ATTR_PACKED ImageDescriptor {
+-    UINT64 id;
+-    UINT8 type;
+-    UINT8 flags;
+-    UINT32 width;
+-    UINT32 height;
+-} ImageDescriptor;
+-
+-enum {
+-    BITMAP_FMT_INVALID,
+-    BITMAP_FMT_1BIT_LE,
+-    BITMAP_FMT_1BIT_BE,
+-    BITMAP_FMT_4BIT_LE,
+-    BITMAP_FMT_4BIT_BE,
+-    BITMAP_FMT_8BIT,
+-    BITMAP_FMT_16BIT,
+-    BITMAP_FMT_24BIT,
+-    BITMAP_FMT_32BIT,
+-    BITMAP_FMT_RGBA,
+-};
+-
+-enum {
+-    BITMAP_PAL_CACHE_ME = (1 << 0),
+-    BITMAP_PAL_FROM_CACHE = (1 << 1),
+-    BITMAP_TOP_DOWN = (1 << 2),
+-};
+-
+-typedef struct ATTR_PACKED Bitmap {
+-    UINT8 format;
+-    UINT8 flags;
+-    UINT32 x;
+-    UINT32 y;
+-    UINT32 stride;
+-    ADDRESS palette;
+-    ADDRESS data; //data[0] ?
+-} Bitmap;
+-
+-typedef struct ATTR_PACKED BitmapImage {
+-    ImageDescriptor descriptor;
+-    Bitmap bitmap;
+-} BitmapImage;
+-
+-typedef struct ATTR_PACKED PNGData {
+-    UINT32 data_size;
+-    UINT8 data[0];
+-} PNGData, QUICData, LZ_RGBData;
+-
+-typedef struct ATTR_PACKED PNGImage {
+-    ImageDescriptor descriptor;
+-    PNGData png;
+-} PNGImage;
+-
+-typedef struct ATTR_PACKED QUICImage {
+-    ImageDescriptor descriptor;
+-    QUICData quic;
+-} QUICImage;
+-
+-typedef struct ATTR_PACKED LZ_RGBImage {
+-    ImageDescriptor descriptor;
+-    LZ_RGBData lz_rgb;
+-} LZ_RGBImage;
+-
+-typedef struct ATTR_PACKED LZ_PLTData {
+-    UINT8 flags;
+-    UINT32 data_size;
+-    ADDRESS palette;
+-    UINT8 data[0];
+-} LZ_PLTData;
+-
+-typedef struct ATTR_PACKED LZ_PLTImage {
+-    ImageDescriptor descriptor;
+-    LZ_PLTData lz_plt;
+-} LZ_PLTImage;
+-
+-typedef struct ATTR_PACKED LZImage {
+-    ImageDescriptor descriptor;
+-    union {
+-        LZ_RGBData	lz_rgb;
+-        LZ_PLTData	lz_plt;
+-    };
+-} LZImage;
+-
+-enum {
+-    IMAGE_SCALE_INTERPOLATE,
+-    IMAGE_SCALE_NEAREST,
+-};
+-
+-typedef struct ATTR_PACKED Opaque {
+-    ADDRESS src_bitmap;
+-    Rect src_area;
+-    Brush brush;
+-    UINT16 rop_decriptor;
+-    UINT8 scale_mode;
+-    QMask mask;
+-} Opaque;
+-
+-typedef struct ATTR_PACKED Copy {
+-    ADDRESS src_bitmap;
+-    Rect src_area;
+-    UINT16 rop_decriptor;
+-    UINT8 scale_mode;
+-    QMask mask;
+-} Copy, Blend;
+-
+-typedef struct ATTR_PACKED Transparent {
+-    ADDRESS src_bitmap;
+-    Rect src_area;
+-    UINT32 src_color;
+-    UINT32 true_color;
+-} Transparent;
+-
+-typedef struct ATTR_PACKED AlphaBlnd {
+-    UINT8 alpha;
+-    ADDRESS src_bitmap;
+-    Rect src_area;
+-} AlphaBlnd;
+-
+-typedef struct ATTR_PACKED Rop3 {
+-    ADDRESS src_bitmap;
+-    Rect src_area;
+-    Brush brush;
+-    UINT8 rop3;
+-    UINT8 scale_mode;
+-    QMask mask;
+-} Rop3;
+-
+-typedef struct ATTR_PACKED Blackness {
+-    QMask mask;
+-} Blackness, Invers, Whiteness;
+-
+-enum {
+-    LINE_SCALABLE = (1 << 0),
+-    LINE_STYLED = (1 << 3),
+-    LINE_START_WITH_GAP = (1 << 2),
+-};
+-
+-enum {
+-    LINE_CAP_ROUND,
+-    LINE_CAP_SQUARE,
+-    LINE_CAP_BUTT,
+-};
+-
+-enum {
+-    LINE_JOIN_ROUND,
+-    LINE_JOIN_BEVEL,
+-    LINE_JOIN_MITER,
+-};
+-
+-typedef struct ATTR_PACKED LineAttr {
+-    UINT8 flags;
+-    UINT8 join_style;
+-    UINT8 end_style;
+-    UINT8 style_nseg;
+-    FIXED28_4 width;
+-    FIXED28_4 miter_limit;
+-    ADDRESS style; //data[0] ?
+-} LineAttr;
+-
+-typedef struct ATTR_PACKED Stroke {
+-    ADDRESS path;
+-    LineAttr attr;
+-    Brush brush;
+-    UINT16 fore_mode;
+-    UINT16 back_mode;
+-} Stroke;
+-
+-typedef struct ATTR_PACKED RasterGlyph {
+-    Point render_pos;
+-    Point glyph_origin;
+-    UINT16 width;
+-    UINT16 height;
+-    UINT8 data[0];
+-} RasterGlyph;
+-
+-typedef struct ATTR_PACKED VectotGlyph {
+-    Point render_pos;
+-    UINT32 data_size;
+-    UINT8 data[0]; //PathSeg[]
+-} VectotGlyph;
+-
+-enum {
+-    STRING_RASTER_A1 = 1 << 0,
+-    STRING_RASTER_A4 = 1 << 1,
+-    STRING_RASTER_A8 = 1 << 2,
+-    STRING_RASTER_TOP_DOWN = 1 << 3,
+-};
+-
+-typedef struct ATTR_PACKED String {
+-    UINT16 length;
+-    UINT16 flags;
+-    UINT8 data[0];
+-} String;
+-
+-typedef struct ATTR_PACKED Text {
+-    ADDRESS str;
+-    Rect back_area;
+-    Brush fore_brush;
+-    Brush back_brush;
+-    UINT16 fore_mode;
+-    UINT16 back_mode;
+-} Text;
+-
+-enum {
+-    CURSOR_TYPE_ALPHA,
+-    CURSOR_TYPE_MONO,
+-    CURSOR_TYPE_COLOR4,
+-    CURSOR_TYPE_COLOR8,
+-    CURSOR_TYPE_COLOR16,
+-    CURSOR_TYPE_COLOR24,
+-    CURSOR_TYPE_COLOR32,
+-};
+-
+-typedef struct ATTR_PACKED CursorHeader {
+-    UINT64 unique;
+-    UINT16 type;
+-    UINT16 width;
+-    UINT16 height;
+-    UINT16 hot_spot_x;
+-    UINT16 hot_spot_y;
+-} CursorHeader;
+-
+-
+-#ifndef __GNUC__
+-#pragma pack(pop)
+-#endif
+-
+-#undef ATTR_PACKED
+-
+-#endif
+diff --git a/spice-input.c b/spice-input.c
+deleted file mode 100644
+index f8454fc..0000000
+--- a/spice-input.c
++++ /dev/null
+@@ -1,155 +0,0 @@
+-#include <stdlib.h>
+-#include <stdio.h>
+-#include <string.h>
+-#include <stdbool.h>
+-
+-#include <spice.h>
+-
+-#include "qemu-common.h"
+-#include "qemu-spice.h"
+-#include "console.h"
+-
+-/* keyboard bits */
+-
+-static int ledstate;
+-static bool have_tablet;
+-static SpiceServer *spice_state;
+-static int abs_x, abs_y, abs_width, abs_height;
+-
+-static void qemu_spice_tablet_mode(bool enabled);
+-static void kbd_push_scan_freg(KeyboardInterface *keyboard, uint8_t frag);
+-static uint8_t kbd_get_leds(KeyboardInterface *keyboard);
+-static void kbd_leds(void *opaque, int l);
+-
+-static KeyboardInterface kbd_interface = {
+-    .base.base_version = VM_INTERFACE_VERSION,
+-    .base.type = VD_INTERFACE_KEYBOARD,
+-    .base.description = "keyboard",
+-    .base.major_version = VD_INTERFACE_KEYBOARD_MAJOR,
+-    .base.minor_version = VD_INTERFACE_KEYBOARD_MINOR,
+-    .push_scan_freg = kbd_push_scan_freg,
+-    .get_leds = kbd_get_leds,
+-};
+-
+-static void kbd_push_scan_freg(KeyboardInterface *keyboard, uint8_t frag)
+-{
+-    kbd_put_keycode(frag);
+-}
+-
+-static uint8_t kbd_get_leds(KeyboardInterface *keyboard)
+-{
+-    return ledstate;
+-}
+-
+-static void kbd_leds(void *opaque, int l)
+-{
+-    SpiceServer *s = opaque;
+-    ledstate = l;
+-    spice_server_kbd_leds(s, &kbd_interface, ledstate);
+-}
+-
+-/* mouse bits */
+-
+-static void mouse_motion(MouseInterface* mouse, int dx, int dy, int dz,
+-                         uint32_t buttons_state)
+-{
+-    if (kbd_mouse_is_absolute()) {
+-        /*
+-         * We'll arrive here when the guest activates some input
+-         * device with absolute positioning, i.e. usb tablet.
+-         */
+-        qemu_spice_tablet_mode(true);
+-        return;
+-    }
+-    kbd_mouse_event(dx, dy, dz, buttons_state);
+-}
+-
+-static void mouse_buttons(MouseInterface* mouse, uint32_t buttons_state)
+-{
+-    kbd_mouse_event(0, 0, 0, buttons_state);
+-}
+-
+-static MouseInterface mouse_interface = {
+-    .base.base_version = VM_INTERFACE_VERSION,
+-    .base.type = VD_INTERFACE_MOUSE,
+-    .base.description = "mouse",
+-    .base.major_version = VD_INTERFACE_MOUSE_MAJOR,
+-    .base.minor_version = VD_INTERFACE_MOUSE_MINOR,
+-    .moution = mouse_motion,
+-    .buttons = mouse_buttons,
+-};
+-
+-/* tablet bits */
+-
+-static void tablet_set_logical_size(TabletInterface* interface, int width, int height)
+-{
+-    abs_width  = width;
+-    abs_height = height;
+-}
+-
+-static void tablet_position(TabletInterface *interface, int x, int y,
+-                            uint32_t buttons_state)
+-{
+-    if (!kbd_mouse_is_absolute()) {
+-        qemu_spice_tablet_mode(false);
+-        return;
+-    }
+-    abs_x = x * 0x7FFF / (abs_width - 1);
+-    abs_y = y * 0x7FFF / (abs_height - 1);
+-    kbd_mouse_event(abs_x, abs_y, 0, buttons_state);
+-}
+-
+-
+-static void tablet_wheel(TabletInterface *interface, int wheel,
+-                         uint32_t buttons_state)
+-{
+-    kbd_mouse_event(abs_x, abs_y, wheel, buttons_state);
+-}
+-
+-static void tablet_buttons(TabletInterface *interface,
+-                           uint32_t buttons_state)
+-{
+-    kbd_mouse_event(abs_x, abs_y, 0, buttons_state);
+-}
+-
+-static TabletInterface tablet_interface = {
+-    .base.base_version = VM_INTERFACE_VERSION,
+-    .base.type = VD_INTERFACE_TABLET,
+-    .base.description = "tablet",
+-    .base.major_version = VD_INTERFACE_TABLET_MAJOR,
+-    .base.minor_version = VD_INTERFACE_TABLET_MINOR,
+-    .set_logical_size = tablet_set_logical_size,
+-    .position = tablet_position,
+-    .wheel = tablet_wheel,
+-    .buttons = tablet_buttons,
+-};
+-
+-void qemu_spice_input_init(SpiceServer *s)
+-{
+-    spice_state = s;
+-    qemu_add_led_event_handler(kbd_leds, s);
+-    qemu_spice_add_interface(&kbd_interface.base);
+-    qemu_spice_add_interface(&mouse_interface.base);
+-}
+-
+-static void qemu_spice_tablet_mode(bool enabled)
+-{
+-    if (enabled) {
+-        if (!have_tablet) {
+-            qemu_spice_add_interface(&tablet_interface.base);
+-            have_tablet = true;
+-        }
+-        spice_server_set_mouse_absolute(spice_state, 1);
+-    } else {
+-        if (have_tablet) {
+-            qemu_spice_remove_interface(&tablet_interface.base);
+-            have_tablet = false;
+-        }
+-        spice_server_set_mouse_absolute(spice_state, 0);
+-    }
+-}
+-
+-void qemu_spice_tablet_size(int width, int height)
+-{
+-    tablet_set_logical_size(&tablet_interface, width, height);
+-}
+diff --git a/spice-ring.h b/spice-ring.h
+deleted file mode 100644
+index 8d76205..0000000
+--- a/spice-ring.h
++++ /dev/null
+@@ -1,123 +0,0 @@
+-#ifndef SPICE_RING_H
+-#define SPICE_RING_H
+-
+-
+-#define MSB_MASK4(x)        \
+-    (((x) & 0x8) ? 0x8 :    \
+-     ((x) & 0x4) ? 0x4 :    \
+-     ((x) & 0x2) ? 0x2 :    \
+-     ((x) & 0x1) ? 0x1 : 0)
+-
+-#define MSB_MASK8(x) \
+-     (((x) & 0xf0) ? MSB_MASK4((x) >> 4) << 4 : MSB_MASK4(x))
+-
+-#define MSB_MASK16(x) \
+-    (((x) & 0xff00) ? MSB_MASK8((x) >> 8) << 8 : MSB_MASK8(x))
+-
+-#define MSB_MASK(x) \
+-    (((x) & 0xffff0000) ? MSB_MASK16((x) >> 16) << 16 : MSB_MASK16(x))
+-
+-#define POWER2_ALIGN(x) MSB_MASK((x) * 2 - 1)
+-
+-
+-#define _TOSHIFT_4(x) \
+-     (((x) & 0x8) ? 3 :    \
+-      ((x) & 0x4) ? 2 :    \
+-      ((x) & 0x2) ? 1 : 0)
+-
+-#define _TOSHIFT_8(x) \
+-    (((x) & 0xf0) ? _TOSHIFT_4((x) >> 4) + 4 : _TOSHIFT_4(x))
+-
+-#define _TOSHIFT_16(x) \
+-    (((x) & 0xff00) ? _TOSHIFT_8((x) >> 8) + 8 : _TOSHIFT_8(x))
+-
+-#define PAWER2_TO_SHIFT(x) \
+-    (((x) & 0xffff0000) ? _TOSHIFT_16((x) >> 16) + 16 : _TOSHIFT_16(x))
+-
+-
+-
+-#define RING_DECLARE(name, el_type, size)               \
+-typedef struct ATTR_PACKED name##_ring_el {             \
+-    union {                                             \
+-        el_type el;                                     \
+-        UINT8 data[POWER2_ALIGN(sizeof(el_type))];      \
+-    } ;                                                 \
+-} name##_ring_el;                                       \
+-                                                        \
+-typedef struct ATTR_PACKED name {                       \
+-    UINT32 num_items;                                   \
+-    UINT32 prod;                                        \
+-    UINT32 notify_on_prod;                              \
+-    UINT32 cons;                                        \
+-    UINT32 notify_on_cons;                              \
+-    name##_ring_el items[POWER2_ALIGN(size)];           \
+-} name;
+-
+-
+-#define RING_INIT(r)                                                \
+-    (r)->num_items = sizeof((r)->items) >>                          \
+-                        PAWER2_TO_SHIFT(sizeof((r)->items[0]));     \
+-    (r)->prod = (r)->cons = 0;                                      \
+-    (r)->notify_on_prod = 1;                                        \
+-    (r)->notify_on_cons = 0;
+-
+-
+-#define RING_INDEX_MASK(r) ((r)->num_items - 1)
+-
+-#define RING_IS_PACKED(r) (sizeof((r)->items[0]) == sizeof((r)->items[0]).el)
+-
+-#define RING_IS_EMPTY(r) ((r)->cons == (r)->prod)
+-
+-#define RING_IS_FULL(r) (((r)->prod - (r)->cons) == (r)->num_items)
+-
+-
+-#define RING_PROD_ITEM(r, ret) {                                                                   \
+-    typeof(r) start = r;                                                                           \
+-    typeof(r) end = r + 1;                                                                         \
+-    UINT32 prod = (r)->prod & RING_INDEX_MASK(r);                                                  \
+-    typeof(&(r)->items[prod]) m_item = &(r)->items[prod];                                          \
+-    if (!((uint8_t*)m_item >= (uint8_t*)(start) && (uint8_t*)(m_item + 1) <= (uint8_t*)(end))) {   \
+-        abort();                                                                                   \
+-    }                                                                                              \
+-    ret = &m_item->el;                                                                             \
+-}
+-
+-#define RING_PROD_WAIT(r, wait)                 \
+-    if (((wait) = RING_IS_FULL(r))) {           \
+-        (r)->notify_on_cons = (r)->cons + 1;    \
+-        mb();	                                \
+-        (wait) = RING_IS_FULL(r);               \
+-    }
+-
+-#define RING_PUSH(r, notify)                    \
+-    (r)->prod++;                                \
+-    mb();                                       \
+-    (notify) = (r)->prod == (r)->notify_on_prod;
+-
+-
+-#define RING_CONS_ITEM(r, ret) {                                                                  \
+-    typeof(r) start = r;                                                                         \
+-    typeof(r) end = r + 1;                                                                       \
+-    UINT32 cons = (r)->cons & RING_INDEX_MASK(r);                                                 \
+-    typeof(&(r)->items[cons]) m_item = &(r)->items[cons];                                         \
+-    if (!((uint8_t*)m_item >= (uint8_t*)(start) && (uint8_t*)(m_item + 1) <= (uint8_t*)(end))) {  \
+-        abort();                                                                                  \
+-    }                                                                                             \
+-    ret = &m_item->el;                                                                            \
+-}
+-
+-#define RING_CONS_WAIT(r, wait)                 \
+-    if (((wait) = RING_IS_EMPTY(r))) {          \
+-        (r)->notify_on_prod = (r)->prod + 1;    \
+-        mb();                                   \
+-        (wait) = RING_IS_EMPTY(r);              \
+-    }
+-
+-#define RING_POP(r, notify)                         \
+-    (r)->cons++;                                    \
+-    mb();                                           \
+-    (notify) = (r)->cons == (r)->notify_on_cons;
+-
+-
+-
+-#endif
+diff --git a/spice.c b/spice.c
+deleted file mode 100644
+index aaf8bf6..0000000
+--- a/spice.c
++++ /dev/null
+@@ -1,446 +0,0 @@
+-#include <stdlib.h>
+-#include <stdio.h>
+-#include <string.h>
+-#include <netdb.h>
+-
+-#include <spice.h>
+-
+-#include "qemu-common.h"
+-#include "qemu_socket.h"
+-#include "qemu-spice.h"
+-#include "qemu-timer.h"
+-#include "qemu-queue.h"
+-#include "qemu-x509.h"
+-#include "monitor.h"
+-#include "qerror.h"
+-#include "qjson.h"
+-#include "sysemu.h"
+-#include "vnc.h"
+-
+-/* core bits */
+-
+-static SpiceServer *s;
+-int using_spice = 0;
+-static const char *auth = "spice";
+-
+-void qemu_spice_migrate_start(void)
+-{
+-    if (!s)
+-        return;
+-    spice_server_migrate_start(s);
+-}
+-
+-void qemu_spice_migrate_end(int completed)
+-{
+-    if (!s)
+-        return;
+-    spice_server_migrate_end(s, completed);
+-}
+-
+-void qemu_spice_add_interface(VDInterface *interface)
+-{
+-    if (!s)
+-        return;
+-    spice_server_add_interface(s, interface);
+-}
+-
+-void qemu_spice_remove_interface(VDInterface *interface)
+-{
+-    if (!s)
+-        return;
+-    spice_server_remove_interface(s, interface);
+-}
+-
+-static VDObjectRef core_create_timer(CoreInterface *core, timer_callback_t callback, void *opaue)
+-{
+-    return (VDObjectRef)qemu_new_timer(rt_clock, callback, opaue);
+-}
+-
+-static void core_arm_timer(CoreInterface *core, VDObjectRef timer, uint32_t ms)
+-{
+-    qemu_mod_timer((QEMUTimer *)timer, qemu_get_clock(rt_clock) + ms);
+-}
+-
+-static void core_disarm_timer(CoreInterface *core, VDObjectRef timer)
+-{
+-    qemu_del_timer((QEMUTimer *)timer);
+-}
+-
+-static void core_destroy_timer(CoreInterface *core, VDObjectRef timer)
+-{
+-    qemu_del_timer((QEMUTimer *)timer);
+-    qemu_free_timer((QEMUTimer *)timer);
+-}
+-
+-static int core_set_file_handlers(CoreInterface *core, int fd,
+-                              void (*on_read)(void *),
+-                              void (*on_write)(void *),
+-                              void *opaque)
+-{
+-    return qemu_set_fd_handler(fd, on_read, on_write, opaque);
+-}
+-
+-static void core_term_printf(CoreInterface *core, const char* format, ...)
+-{
+-    /* ignore */
+-}
+-
+-static QDict *server, *client;
+-
+-static void spice_qmp_event_initialized(void)
+-{
+-    struct sockaddr_storage sa;
+-    char addr[NI_MAXHOST], port[NI_MAXSERV];
+-    socklen_t salen;
+-    QObject *data;
+-
+-    QDECREF(server);
+-    server = qdict_new();
+-    salen = sizeof(sa);
+-    if (spice_server_get_sock_info(s, (struct sockaddr*)&sa, &salen) == 0) {
+-        if (getnameinfo((struct sockaddr*)&sa, salen,
+-                        addr, sizeof(addr), port, sizeof(port),
+-                        NI_NUMERICHOST | NI_NUMERICSERV) == 0) {
+-            qdict_put(server, "auth", qstring_from_str(auth));
+-            qdict_put(server, "host", qstring_from_str(addr));
+-            qdict_put(server, "family", qstring_from_str(inet_strfamily(sa.ss_family)));
+-        }
+-    }
+-
+-    QDECREF(client);
+-    client = qdict_new();
+-    salen = sizeof(sa);
+-    if (spice_server_get_peer_info(s, (struct sockaddr*)&sa, &salen) == 0) {
+-        if (getnameinfo((struct sockaddr*)&sa, salen,
+-                        addr, sizeof(addr), port, sizeof(port),
+-                        NI_NUMERICHOST | NI_NUMERICSERV) == 0) {
+-            qdict_put(client, "host", qstring_from_str(addr));
+-            qdict_put(client, "family", qstring_from_str(inet_strfamily(sa.ss_family)));
+-        }
+-    }
+-
+-    data = qobject_from_jsonf("{ 'client': %p, 'server': %p }",
+-                              QOBJECT(client), QOBJECT(server));
+-    monitor_protocol_event(QEVENT_SPICE_INITIALIZED, data);
+-    QINCREF(client);
+-    QINCREF(server);
+-    qobject_decref(data);
+-}
+-
+-static void spice_qmp_event_disconnect(void)
+-{
+-    QObject *data;
+-
+-    /*
+-     * Right now spice does (a) support one connection at a time only
+-     * and (b) allways sends disconnects for the old client before the
+-     * connect for new client.  So we can simply reuse the server and
+-     * client info collected on connect for the time being.
+-     */
+-    data = qobject_from_jsonf("{ 'client': %p, 'server': %p }",
+-                              QOBJECT(client), QOBJECT(server));
+-    monitor_protocol_event(QEVENT_SPICE_DISCONNECTED, data);
+-    qobject_decref(data);
+-    server = NULL;
+-    client = NULL;
+-}
+-
+-static void core_log(CoreInterface *core, LogLevel level, const char* componnent,
+-                     const char* format, ...)
+-{
+-    if (strcmp(format, "new user connection") == 0) {
+-        spice_qmp_event_initialized();
+-    }
+-    if (strcmp(format, "user disconnected") == 0) {
+-        spice_qmp_event_disconnect();
+-    }
+-}
+-
+-static CoreInterface core_interface = {
+-    .base.base_version  = VM_INTERFACE_VERSION,
+-    .base.type          = VD_INTERFACE_CORE,
+-    .base.description   = "qemu core services",
+-    .base.major_version = VD_INTERFACE_CORE_MAJOR,
+-    .base.minor_version = VD_INTERFACE_CORE_MINOR,
+-    .create_timer       = core_create_timer,
+-    .arm_timer          = core_arm_timer,
+-    .disarm_timer       = core_disarm_timer,
+-    .destroy_timer      = core_destroy_timer,
+-    .set_file_handlers  = core_set_file_handlers,
+-    .term_printf        = core_term_printf,
+-    .log                = core_log,
+-};
+-
+-static int name2enum(const char *name, const char *table[], int entries)
+-{
+-    int i;
+-
+-    if (name) {
+-        for (i = 0; i < entries; i++) {
+-            if (!table[i])
+-                continue;
+-            if (strcmp(name, table[i]) != 0)
+-                continue;
+-            return i;
+-        }
+-    }
+-    return -1;
+-}
+-
+-static const char *compression_names[] = {
+-    [ SPICE_IMAGE_COMPRESS_OFF ]      = "off",
+-    [ SPICE_IMAGE_COMPRESS_AUTO_GLZ ] = "auto_glz",
+-    [ SPICE_IMAGE_COMPRESS_AUTO_LZ ]  = "auto_lz",
+-    [ SPICE_IMAGE_COMPRESS_QUIC ]     = "quic",
+-    [ SPICE_IMAGE_COMPRESS_GLZ ]      = "glz",
+-    [ SPICE_IMAGE_COMPRESS_LZ ]       = "lz",
+-};
+-#define parse_compression(_name) \
+-    name2enum(_name, compression_names, ARRAY_SIZE(compression_names))
+-
+-static const char *channel_names[] = {
+-    [ SPICE_CHANNEL_MAIN ]      = "main",
+-    [ SPICE_CHANNEL_DISPLAY ]   = "display",
+-    [ SPICE_CHANNEL_INPUTS ]    = "inputs",
+-    [ SPICE_CHANNEL_CURSOR ]    = "cursor",
+-    [ SPICE_CHANNEL_PLAYBACK ]  = "playback",
+-    [ SPICE_CHANNEL_RECORD ]    = "record",
+-    [ SPICE_CHANNEL_TUNNEL ]    = "tunnel",
+-    [ SPICE_CHANNEL_ALL ]       = "all",
+-};
+-#define parse_channel(_name) \
+-    name2enum(_name, channel_names, ARRAY_SIZE(channel_names))
+-
+-static const char *stream_video_names[] = {
+-    [ SPICE_STREAM_VIDEO_OFF ]    = "off",
+-    [ SPICE_STREAM_VIDEO_ALL ]    = "all",
+-    [ SPICE_STREAM_VIDEO_FILTER ] = "filter",
+-};
+-#define parse_stream_video(_name) \
+-    name2enum(_name, stream_video_names, ARRAY_SIZE(stream_video_names))
+-
+-/* functions for the rest of qemu */
+-
+-int mon_set_password(Monitor *mon, const QDict *qdict, QObject **ret_data)
+-{
+-    const char *protocol  = qdict_get_str(qdict, "protocol");
+-    const char *password  = qdict_get_str(qdict, "password");
+-    const char *connected = qdict_get_try_str(qdict, "connected");
+-    int lifetime          = qdict_get_int(qdict, "expiration");
+-    int disconnect_if_connected = 0;
+-    int fail_if_connected = 0;
+-    int rc;
+-
+-    if (connected) {
+-        if (strcmp(connected, "fail") == 0) {
+-            fail_if_connected = 1;
+-        } else if (strcmp(connected, "disconnect") == 0) {
+-            disconnect_if_connected = 1;
+-        } else if (strcmp(connected, "keep") == 0) {
+-            /* nothing */
+-        } else {
+-            qerror_report(QERR_INVALID_PARAMETER, "connected");
+-            return -1;
+-        }
+-    }
+-
+-    if (strcmp(protocol, "spice") == 0) {
+-        if (!s) {
+-            /* correct one? spice isn't a device ,,, */
+-            qerror_report(QERR_DEVICE_NOT_ACTIVE, "spice");
+-            return -1;
+-        }
+-        rc = spice_server_set_ticket(s, password, lifetime,
+-                                     fail_if_connected,
+-                                     disconnect_if_connected);
+-        if (rc != 0) {
+-            qerror_report(QERR_SET_PASSWD_FAILED);
+-            return -1;
+-        }
+-
+-    } else if (strcmp(protocol, "vnc") == 0) {
+-        if (fail_if_connected || disconnect_if_connected) {
+-            /* vnc supports "connected=keep" only */
+-            qerror_report(QERR_INVALID_PARAMETER, "connected");
+-            return -1;
+-        }
+-        if (vnc_display_password(NULL, password, lifetime) < 0) {
+-            qerror_report(QERR_SET_PASSWD_FAILED);
+-            return -1;
+-        }
+-
+-    } else {
+-        qerror_report(QERR_INVALID_PARAMETER, "protocol");
+-        return -1;
+-    }
+-
+-    return 0;
+-}
+-
+-int mon_spice_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data)
+-{
+-    const char *hostname = qdict_get_str(qdict, "hostname");
+-    const char *subject  = qdict_get_try_str(qdict, "cert-subject");
+-    int port             = qdict_get_try_int(qdict, "port", -1);
+-    int tls_port         = qdict_get_try_int(qdict, "tls-port", -1);
+-
+-    if (!s) {
+-        qerror_report(QERR_DEVICE_NOT_ACTIVE, "spice");
+-        return -1;
+-    }
+-
+-    /* TODO: Convert to QError */
+-    return spice_server_migrate_info(s, hostname, port, tls_port, subject);
+-}
+-
+-static int add_renderer(const char *name, const char *value, void *opaque)
+-{
+-    if (strcmp(name, "renderer") != 0)
+-        return 0;
+-    spice_server_add_renderer(s, value);
+-    return 0;
+-}
+-
+-static int add_channel(const char *name, const char *value, void *opaque)
+-{
+-    spice_channel_t channel;
+-    int security = 0;
+-
+-    if (strcmp(name, "tls-channel") == 0)
+-        security = SPICE_CHANNEL_SECURITY_SSL;
+-    if (strcmp(name, "plaintext-channel") == 0)
+-        security = SPICE_CHANNEL_SECURITY_NON;
+-    if (security == 0)
+-        return 0;
+-    channel = parse_channel(value);
+-    if (channel == -1) {
+-        fprintf(stderr, "spice: failed to parse channel: %s\n", value);
+-        exit(1);
+-    }
+-    spice_server_set_channel_security(s, channel, security);
+-    return 0;
+-}
+-
+-void qemu_spice_init(void)
+-{
+-    QemuOpts *opts = QTAILQ_FIRST(&qemu_spice_opts.head);
+-    const char *password, *str, *addr, *x509_dir,
+-        *x509_key_password = NULL,
+-        *x509_dh_file = NULL,
+-        *tls_ciphers = NULL;
+-    char *x509_key_file = NULL,
+-        *x509_cert_file = NULL,
+-        *x509_cacert_file = NULL;
+-    int port, tls_port, len, addr_flags, streaming_video;
+-    spice_image_compression_t compression;
+-
+-    if (!opts)
+-        return;
+-    port = qemu_opt_get_number(opts, "port", 0);
+-    tls_port = qemu_opt_get_number(opts, "tls-port", 0);
+-    if (!port && !tls_port)
+-        return;
+-    password = qemu_opt_get(opts, "password");
+-
+-    if (tls_port) {
+-        x509_dir = qemu_opt_get(opts, "x509-dir");
+-        if (NULL == x509_dir)
+-            x509_dir = ".";
+-        len = strlen(x509_dir) + 32;
+-
+-        str = qemu_opt_get(opts, "x509-key-file");
+-        if (str) {
+-            x509_key_file = qemu_strdup(str);
+-        } else {
+-            x509_key_file = qemu_malloc(len);
+-            snprintf(x509_key_file, len, "%s/%s", x509_dir, X509_SERVER_KEY_FILE);
+-        }
+-
+-        str = qemu_opt_get(opts, "x509-cert-file");
+-        if (str) {
+-            x509_cert_file = qemu_strdup(str);
+-        } else {
+-            x509_cert_file = qemu_malloc(len);
+-            snprintf(x509_cert_file, len, "%s/%s", x509_dir, X509_SERVER_CERT_FILE);
+-        }
+-
+-        str = qemu_opt_get(opts, "x509-cacert-file");
+-        if (str) {
+-            x509_cacert_file = qemu_strdup(str);
+-        } else {
+-            x509_cacert_file = qemu_malloc(len);
+-            snprintf(x509_cacert_file, len, "%s/%s", x509_dir, X509_CA_CERT_FILE);
+-        }
+-
+-        x509_key_password = qemu_opt_get(opts, "x509-key-password");
+-        x509_dh_file = qemu_opt_get(opts, "x509-dh-file");
+-        tls_ciphers = qemu_opt_get(opts, "tls-ciphers");
+-    }
+-
+-    str = qemu_opt_get(opts, "image-compression");
+-    if (str) {
+-        compression = parse_compression(str);
+-        if (compression == -1) {
+-            fprintf(stderr, "spice: invalid image compression: %s\n", str);
+-            exit(1);
+-        }
+-    } else {
+-        compression = SPICE_IMAGE_COMPRESS_AUTO_GLZ;
+-    }
+-
+-    addr = qemu_opt_get(opts, "addr");
+-    addr_flags = 0;
+-    if (qemu_opt_get_bool(opts, "ipv4", 0))
+-        addr_flags |= SPICE_ADDR_FLAG_IPV4_ONLY;
+-    else if (qemu_opt_get_bool(opts, "ipv6", 0))
+-        addr_flags |= SPICE_ADDR_FLAG_IPV6_ONLY;
+-
+-    s = spice_server_new();
+-    spice_server_set_addr(s, addr ? addr : "", addr_flags);
+-    if (port) {
+-        spice_server_set_port(s, port);
+-    }
+-    if (tls_port) {
+-        spice_server_set_tls(s, tls_port,
+-                             x509_cacert_file,
+-                             x509_cert_file,
+-                             x509_key_file,
+-                             x509_key_password,
+-                             x509_dh_file,
+-                             tls_ciphers);
+-    }
+-    if (password)
+-        spice_server_set_ticket(s, password, 0, 0, 0);
+-    if (qemu_opt_get_bool(opts, "disable-ticketing", 0)) {
+-        spice_server_set_noauth(s);
+-        auth = "none";
+-    }
+-
+-    spice_server_set_image_compression(s, compression);
+-    qemu_opt_foreach(opts, add_channel, NULL, 0);
+-    qemu_opt_foreach(opts, add_renderer, NULL, 0);
+-
+-    str = qemu_opt_get(opts, "streaming-video");
+-    if (str) {
+-        streaming_video = parse_stream_video(str);
+-        if (streaming_video == -1) {
+-            fprintf(stderr, "spice: invalid streaming video: %s\n", str);
+-            exit(1);
+-        }
+-        spice_server_set_streaming_video(s, streaming_video);
+-    }
+-
+-    spice_server_set_agent_mouse
+-        (s, qemu_opt_get_bool(opts, "agent-mouse", 1));
+-    spice_server_set_playback_compression
+-        (s, qemu_opt_get_bool(opts, "playback-compression", 1));
+-
+-    spice_server_init(s, &core_interface);
+-    using_spice = 1;
+-
+-    qemu_spice_input_init(s);
+-
+-    qemu_free(x509_key_file);
+-    qemu_free(x509_cert_file);
+-    qemu_free(x509_cacert_file);
+-}
+diff --git a/sysemu.h b/sysemu.h
+index 96ec7ad..efdcb54 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -102,7 +102,7 @@ extern int incoming_expected;
+ extern int bios_size;
+ 
+ typedef enum {
+-    VGA_NONE, VGA_STD, VGA_CIRRUS, VGA_VMWARE, VGA_XENFB, VGA_QXL,
++    VGA_NONE, VGA_STD, VGA_CIRRUS, VGA_VMWARE, VGA_XENFB,
+ } VGAInterfaceType;
+ 
+ extern int vga_interface_type;
+@@ -110,7 +110,6 @@ extern int vga_interface_type;
+ #define std_vga_enabled (vga_interface_type == VGA_STD)
+ #define xenfb_enabled (vga_interface_type == VGA_XENFB)
+ #define vmsvga_enabled (vga_interface_type == VGA_VMWARE)
+-#define qxl_enabled (vga_interface_type == VGA_QXL)
+ 
+ extern int graphic_width;
+ extern int graphic_height;
+diff --git a/vl.c b/vl.c
+index 3d8fb3b..b714192 100644
+--- a/vl.c
++++ b/vl.c
+@@ -171,8 +171,6 @@ int main(int argc, char **argv)
+ #include "trace.h"
+ #include "qemu-queue.h"
+ 
+-#include "qemu-spice.h"
+-
+ #include "trace.h"
+ 
+ //#define DEBUG_NET
+@@ -4731,8 +4729,6 @@ static void select_vgahw (const char *p)
+         vga_interface_type = VGA_VMWARE;
+     } else if (strstart(p, "xenfb", &opts)) {
+         vga_interface_type = VGA_XENFB;
+-    } else if (strstart(p, "qxl", &opts)) {
+-        vga_interface_type = VGA_QXL;
+     } else if (!strstart(p, "none", &opts)) {
+     invalid_vga:
+         fprintf(stderr, "Unknown vga type: %s\n", p);
+@@ -6072,15 +6068,6 @@ int main(int argc, char **argv, char **envp)
+                     qemu_read_config_file(optarg, defconfig_verbose) < 0)
+                         exit(1);
+                 break;
+-#ifdef CONFIG_SPICE
+-            case QEMU_OPTION_spice:
+-                opts = qemu_opts_parse(&qemu_spice_opts, optarg, 0);
+-                if (!opts) {
+-                    fprintf(stderr, "parse error: %s\n", optarg);
+-                    exit(1);
+-                }
+-                break;
+-#endif
+             case QEMU_OPTION_writeconfig:
+                 {
+                     FILE *fp;
+@@ -6420,10 +6407,6 @@ int main(int argc, char **argv, char **envp)
+     }
+     qemu_add_globals();
+ 
+-#ifdef CONFIG_SPICE
+-    qemu_spice_init();
+-#endif
+-
+     machine->init(ram_size, boot_devices,
+                   kernel_filename, kernel_cmdline, initrd_filename, cpu_model);
+ 
+@@ -6460,7 +6443,7 @@ int main(int argc, char **argv, char **envp)
+     /* just use the first displaystate for the moment */
+     ds = display_state;
+ 
+-    if (display_type == DT_DEFAULT && !using_spice) {
++    if (display_type == DT_DEFAULT) {
+ #if defined(CONFIG_SDL) || defined(CONFIG_COCOA)
+         display_type = DT_SDL;
+ #else
+@@ -6500,15 +6483,6 @@ int main(int argc, char **argv, char **envp)
+     default:
+         break;
+     }
+-#ifdef CONFIG_SPICE
+-    if (using_spice) {
+-        if (qxl_enabled) {
+-            qxl_display_init(ds);
+-        } else {
+-            qemu_spice_display_init(ds);
+-        }
+-    }
+-#endif
+     dpy_resize(ds);
+ 
+     dcl = ds->listeners;
+-- 
+1.7.4.rc1.16.gd2f15e
+

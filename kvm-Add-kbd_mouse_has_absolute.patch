@@ -1,0 +1,81 @@
+From bdd2ad472a28ffc0503ed6ae202136af7bea5192 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 5 Jan 2011 15:29:11 -0200
+Subject: [PATCH 06/48] Add kbd_mouse_has_absolute()
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1294241382-17988-8-git-send-email-kraxel@redhat.com>
+Patchwork-id: 15744
+O-Subject: [RHEL-6 kvm PATCH 07/38] Add kbd_mouse_has_absolute()
+Bugzilla: 642131 634153 615947 632458 631832 647865
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+kbd_mouse_is_absolute tells us whether the current mouse handler is an absolute
+device.  kbd_mouse_has_absolute tells us whether we have any device that is
+capable of absolute input.
+
+This lets us tell a user that they have configured an absolute device but that
+the guest is not currently using it.
+
+upstream: eb2e259d95a67ef0cd8a61c0bd4974559e9bfa5d
+
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ console.h |    5 +++++
+ vl.c      |   13 +++++++++++++
+ 2 files changed, 18 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ console.h |    5 +++++
+ vl.c      |   13 +++++++++++++
+ 2 files changed, 18 insertions(+), 0 deletions(-)
+
+diff --git a/console.h b/console.h
+index 053a00e..7d0721f 100644
+--- a/console.h
++++ b/console.h
+@@ -55,8 +55,13 @@ void kbd_put_keycode(int keycode);
+ void kbd_put_ledstate(int ledstate);
+ int kbd_get_ledstate(void);
+ void kbd_mouse_event(int dx, int dy, int dz, int buttons_state);
++
++/* Does the current mouse generate absolute events */
+ int kbd_mouse_is_absolute(void);
+ 
++/* Of all the mice, is there one that generates absolute events */
++int kbd_mouse_has_absolute(void);
++
+ struct MouseTransformInfo {
+     /* Touchscreen resolution */
+     int x;
+diff --git a/vl.c b/vl.c
+index b741e83..ab5966b 100644
+--- a/vl.c
++++ b/vl.c
+@@ -548,6 +548,19 @@ int kbd_mouse_is_absolute(void)
+     return QTAILQ_FIRST(&mouse_handlers)->qemu_put_mouse_event_absolute;
+ }
+ 
++int kbd_mouse_has_absolute(void)
++{
++    QEMUPutMouseEntry *entry;
++
++    QTAILQ_FOREACH(entry, &mouse_handlers, node) {
++        if (entry->qemu_put_mouse_event_absolute) {
++            return 1;
++        }
++    }
++
++    return 0;
++}
++
+ static void info_mice_iter(QObject *data, void *opaque)
+ {
+     QDict *mouse;
+-- 
+1.7.4.rc1.16.gd2f15e
+

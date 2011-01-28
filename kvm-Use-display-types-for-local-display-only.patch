@@ -1,0 +1,134 @@
+From dce455ed3df279826df6891edab715031d3aec1b Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 5 Jan 2011 15:29:07 -0200
+Subject: [PATCH 02/48] Use display types for local display only.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1294241382-17988-4-git-send-email-kraxel@redhat.com>
+Patchwork-id: 15738
+O-Subject: [RHEL-6 kvm PATCH 03/38] Use display types for local display only.
+Bugzilla: 642131 634153 615947 632458 631832 647865
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+This patch drops DT_VNC.  The display types are only used to select
+select the local display (i.e. curses, sdl, coca, ...).  Remote
+displays (for now only vnc, spice will follow) can be enabled
+independently.
+
+upstream: 6b62dc2dd7d590815a3b7713633ce59ef64a17d4
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ sysemu.h |    1 -
+ vl.c     |   26 ++++++++++++++------------
+ 2 files changed, 14 insertions(+), 13 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ sysemu.h |    1 -
+ vl.c     |   26 ++++++++++++++------------
+ 2 files changed, 14 insertions(+), 13 deletions(-)
+
+diff --git a/sysemu.h b/sysemu.h
+index efdcb54..834f975 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -93,7 +93,6 @@ typedef enum DisplayType
+     DT_DEFAULT,
+     DT_CURSES,
+     DT_SDL,
+-    DT_VNC,
+     DT_NOGRAPHIC,
+ } DisplayType;
+ 
+diff --git a/vl.c b/vl.c
+index b714192..6e8df7a 100644
+--- a/vl.c
++++ b/vl.c
+@@ -190,6 +190,7 @@ DriveInfo *extboot_drive = NULL;
+ enum vga_retrace_method vga_retrace_method = VGA_RETRACE_DUMB;
+ static DisplayState *display_state;
+ DisplayType display_type = DT_DEFAULT;
++int display_remote = 0;
+ const char* keyboard_layout = NULL;
+ ram_addr_t ram_size;
+ int nb_nics;
+@@ -5897,7 +5898,7 @@ int main(int argc, char **argv, char **envp)
+                 }
+                 break;
+ 	    case QEMU_OPTION_vnc:
+-                display_type = DT_VNC;
++                display_remote++;
+ 		vnc_display = optarg;
+ 		break;
+ #ifdef TARGET_I386
+@@ -6443,17 +6444,17 @@ int main(int argc, char **argv, char **envp)
+     /* just use the first displaystate for the moment */
+     ds = display_state;
+ 
+-    if (display_type == DT_DEFAULT) {
++    if (display_type == DT_DEFAULT && !display_remote) {
+ #if defined(CONFIG_SDL) || defined(CONFIG_COCOA)
+         display_type = DT_SDL;
+ #else
+-        display_type = DT_VNC;
+         vnc_display = "localhost:0,to=99";
+         show_vnc_port = 1;
+ #endif
+     }
+         
+ 
++    /* init local displays */
+     switch (display_type) {
+     case DT_NOGRAPHIC:
+         break;
+@@ -6471,7 +6472,12 @@ int main(int argc, char **argv, char **envp)
+         cocoa_display_init(ds, full_screen);
+         break;
+ #endif
+-    case DT_VNC:
++    default:
++        break;
++    }
++
++    /* init remote displays */
++    if (vnc_display) {
+         vnc_display_init(ds);
+         if (vnc_display_open(ds, vnc_display) < 0)
+             exit(1);
+@@ -6479,12 +6485,10 @@ int main(int argc, char **argv, char **envp)
+         if (show_vnc_port) {
+             printf("VNC server running on `%s'\n", vnc_display_local_addr(ds));
+         }
+-        break;
+-    default:
+-        break;
+     }
+-    dpy_resize(ds);
+ 
++    /* display setup */
++    dpy_resize(ds);
+     dcl = ds->listeners;
+     while (dcl != NULL) {
+         if (dcl->dpy_refresh != NULL) {
+@@ -6493,13 +6497,11 @@ int main(int argc, char **argv, char **envp)
+         }
+         dcl = dcl->next;
+     }
+-
+-    if (display_type == DT_NOGRAPHIC || display_type == DT_VNC) {
++    if (ds->gui_timer == NULL) {
+         nographic_timer = qemu_new_timer(rt_clock, nographic_update, NULL);
+         qemu_mod_timer(nographic_timer, qemu_get_clock(rt_clock));
+     }
+-
+-    text_consoles_set_display(display_state);
++    text_consoles_set_display(ds);
+ 
+     if (qemu_opts_foreach(&qemu_mon_opts, mon_init_func, NULL, 1) != 0)
+         exit(1);
+-- 
+1.7.4.rc1.16.gd2f15e
+

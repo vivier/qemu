@@ -1,0 +1,277 @@
+From 8ecd5b56890c378b5fa3bce376418aeb2890a400 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 5 Jan 2011 15:29:37 -0200
+Subject: [PATCH 32/48] spice: connection events.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1294241382-17988-34-git-send-email-kraxel@redhat.com>
+Patchwork-id: 15768
+O-Subject: [RHEL-6 kvm PATCH 33/38] spice: connection events.
+Bugzilla: 642131 634153 615947 632458 631832 647865
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+This patch adds support for connection events to spice.  The events are
+quite simliar to the vnc events.  Unlike vnc spice uses multiple tcp
+channels though.  qemu will report every single tcp connection (aka
+spice channel).  If you want track spice sessions only you can filter
+for the main channel (channel-type == 1).
+
+upstream: 6f8c63fbd7edc0b41c09f8f8e2d41a3a65464a43
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ QMP/qmp-events.txt |   64 ++++++++++++++++++++++++++++++++++++++++++++
+ monitor.c          |   11 +++++++-
+ monitor.h          |    3 ++
+ ui/spice-core.c    |   75 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 152 insertions(+), 1 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ QMP/qmp-events.txt |   64 ++++++++++++++++++++++++++++++++++++++++++++
+ monitor.c          |   11 +++++++-
+ monitor.h          |    3 ++
+ ui/spice-core.c    |   75 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 152 insertions(+), 1 deletions(-)
+
+diff --git a/QMP/qmp-events.txt b/QMP/qmp-events.txt
+index aa815f7..4f78efe 100644
+--- a/QMP/qmp-events.txt
++++ b/QMP/qmp-events.txt
+@@ -197,6 +197,70 @@ Example:
+                     "host": "127.0.0.1", "sasl_username": "luiz" } },
+         "timestamp": { "seconds": 1263475302, "microseconds": 150772 } }
+ 
++SPICE_CONNECTED, SPICE_DISCONNECTED
++-----------------------------------
++
++Emitted when a SPICE client connects or disconnects.
++
++Data:
++
++- "server": Server information (json-object)
++  - "host": IP address (json-string)
++  - "port": port number (json-string)
++  - "family": address family (json-string, "ipv4" or "ipv6")
++- "client": Client information (json-object)
++  - "host": IP address (json-string)
++  - "port": port number (json-string)
++  - "family": address family (json-string, "ipv4" or "ipv6")
++
++Example:
++
++{ "timestamp": {"seconds": 1290688046, "microseconds": 388707},
++  "event": "SPICE_CONNECTED",
++  "data": {
++    "server": { "port": "5920", "family": "ipv4", "host": "127.0.0.1"},
++    "client": {"port": "52873", "family": "ipv4", "host": "127.0.0.1"}
++}}
++
++
++SPICE_INITIALIZED
++-----------------
++
++Emitted after initial handshake and authentication takes place (if any)
++and the SPICE channel is up'n'running
++
++Data:
++
++- "server": Server information (json-object)
++  - "host": IP address (json-string)
++  - "port": port number (json-string)
++  - "family": address family (json-string, "ipv4" or "ipv6")
++  - "auth": authentication method (json-string, optional)
++- "client": Client information (json-object)
++  - "host": IP address (json-string)
++  - "port": port number (json-string)
++  - "family": address family (json-string, "ipv4" or "ipv6")
++  - "connection-id": spice connection id.  All channels with the same id
++                     belong to the same spice session (json-int)
++  - "channel-type": channel type.  "1" is the main control channel, filter for
++                    this one if you want track spice sessions only (json-int)
++  - "channel-id": channel id.  Usually "0", might be different needed when
++                  multiple channels of the same type exist, such as multiple
++                  display channels in a multihead setup (json-int)
++  - "tls": whevener the channel is encrypted (json-bool)
++
++Example:
++
++{ "timestamp": {"seconds": 1290688046, "microseconds": 417172},
++  "event": "SPICE_INITIALIZED",
++  "data": {"server": {"auth": "spice", "port": "5921",
++                      "family": "ipv4", "host": "127.0.0.1"},
++           "client": {"port": "49004", "family": "ipv4", "channel-type": 3,
++                      "connection-id": 1804289383, "host": "127.0.0.1",
++                      "channel-id": 0, "tls": true}
++}}
++
++
+ WATCHDOG
+ --------
+ 
+diff --git a/monitor.c b/monitor.c
+index 4b62dc0..2733007 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -56,8 +56,8 @@
+ #include "json-parser.h"
+ #include "osdep.h"
+ #include "exec-all.h"
+-
+ #include "qemu-kvm.h"
++#include "ui/qemu-spice.h"
+ 
+ //#define DEBUG
+ //#define DEBUG_COMPLETION
+@@ -447,6 +447,15 @@ void monitor_protocol_event(MonitorEvent event, QObject *data)
+         case QEVENT_WATCHDOG:
+             event_name = "WATCHDOG";
+             break;
++        case QEVENT_SPICE_CONNECTED:
++            event_name = "SPICE_CONNECTED";
++            break;
++        case QEVENT_SPICE_INITIALIZED:
++            event_name = "SPICE_INITIALIZED";
++            break;
++        case QEVENT_SPICE_DISCONNECTED:
++            event_name = "SPICE_DISCONNECTED";
++            break;
+         default:
+             abort();
+             break;
+diff --git a/monitor.h b/monitor.h
+index a5c3457..6d3333d 100644
+--- a/monitor.h
++++ b/monitor.h
+@@ -31,6 +31,9 @@ typedef enum MonitorEvent {
+     QEVENT_BLOCK_IO_ERROR,
+     QEVENT_RTC_CHANGE,
+     QEVENT_WATCHDOG,
++    QEVENT_SPICE_CONNECTED,
++    QEVENT_SPICE_INITIALIZED,
++    QEVENT_SPICE_DISCONNECTED,
+     QEVENT_MAX,
+ } MonitorEvent;
+ 
+diff --git a/ui/spice-core.c b/ui/spice-core.c
+index fc56232..871398e 100644
+--- a/ui/spice-core.c
++++ b/ui/spice-core.c
+@@ -18,16 +18,24 @@
+ #include <spice.h>
+ #include <spice-experimental.h>
+ 
++#include <netdb.h>
++
+ #include "qemu-common.h"
+ #include "qemu-spice.h"
+ #include "qemu-timer.h"
+ #include "qemu-queue.h"
+ #include "qemu-x509.h"
++#include "qemu_socket.h"
++#include "qint.h"
++#include "qbool.h"
++#include "qstring.h"
++#include "qjson.h"
+ #include "monitor.h"
+ 
+ /* core bits */
+ 
+ static SpiceServer *spice_server;
++static const char *auth = "spice";
+ int using_spice = 0;
+ 
+ struct SpiceTimer {
+@@ -121,6 +129,68 @@ static void watch_remove(SpiceWatch *watch)
+     qemu_free(watch);
+ }
+ 
++#if SPICE_INTERFACE_CORE_MINOR >= 3
++
++static void add_addr_info(QDict *dict, struct sockaddr *addr, int len)
++{
++    char host[NI_MAXHOST], port[NI_MAXSERV];
++    const char *family;
++
++    getnameinfo(addr, len, host, sizeof(host), port, sizeof(port),
++                NI_NUMERICHOST | NI_NUMERICSERV);
++    family = inet_strfamily(addr->sa_family);
++
++    qdict_put(dict, "host", qstring_from_str(host));
++    qdict_put(dict, "port", qstring_from_str(port));
++    qdict_put(dict, "family", qstring_from_str(family));
++}
++
++static void add_channel_info(QDict *dict, SpiceChannelEventInfo *info)
++{
++    int tls = info->flags & SPICE_CHANNEL_EVENT_FLAG_TLS;
++
++    qdict_put(dict, "connection-id", qint_from_int(info->connection_id));
++    qdict_put(dict, "channel-type", qint_from_int(info->type));
++    qdict_put(dict, "channel-id", qint_from_int(info->id));
++    qdict_put(dict, "tls", qbool_from_int(tls));
++}
++
++static void channel_event(int event, SpiceChannelEventInfo *info)
++{
++    static const int qevent[] = {
++        [ SPICE_CHANNEL_EVENT_CONNECTED    ] = QEVENT_SPICE_CONNECTED,
++        [ SPICE_CHANNEL_EVENT_INITIALIZED  ] = QEVENT_SPICE_INITIALIZED,
++        [ SPICE_CHANNEL_EVENT_DISCONNECTED ] = QEVENT_SPICE_DISCONNECTED,
++    };
++    QDict *server, *client;
++    QObject *data;
++
++    client = qdict_new();
++    add_addr_info(client, &info->paddr, info->plen);
++
++    server = qdict_new();
++    add_addr_info(server, &info->laddr, info->llen);
++
++    if (event == SPICE_CHANNEL_EVENT_INITIALIZED) {
++        qdict_put(server, "auth", qstring_from_str(auth));
++        add_channel_info(client, info);
++    }
++
++    data = qobject_from_jsonf("{ 'client': %p, 'server': %p }",
++                              QOBJECT(client), QOBJECT(server));
++    monitor_protocol_event(qevent[event], data);
++    qobject_decref(data);
++}
++
++#else /* SPICE_INTERFACE_CORE_MINOR >= 3 */
++
++static QList *channel_list_get(void)
++{
++    return NULL;
++}
++
++#endif /* SPICE_INTERFACE_CORE_MINOR >= 3 */
++
+ static SpiceCoreInterface core_interface = {
+     .base.type          = SPICE_INTERFACE_CORE,
+     .base.description   = "qemu core services",
+@@ -135,6 +205,10 @@ static SpiceCoreInterface core_interface = {
+     .watch_add          = watch_add,
+     .watch_update_mask  = watch_update_mask,
+     .watch_remove       = watch_remove,
++
++#if SPICE_INTERFACE_CORE_MINOR >= 3
++    .channel_event      = channel_event,
++#endif
+ };
+ 
+ /* config string parsing */
+@@ -316,6 +390,7 @@ void qemu_spice_init(void)
+         spice_server_set_ticket(spice_server, password, 0, 0, 0);
+     }
+     if (qemu_opt_get_bool(opts, "disable-ticketing", 0)) {
++        auth = "none";
+         spice_server_set_noauth(spice_server);
+     }
+ 
+-- 
+1.7.4.rc1.16.gd2f15e
+

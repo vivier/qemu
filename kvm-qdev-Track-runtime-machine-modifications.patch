@@ -1,0 +1,100 @@
+From d802adf553d20dc2662020020c15e640cc2df117 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Thu, 6 Jan 2011 18:17:17 -0200
+Subject: [PATCH 38/48] qdev: Track runtime machine modifications
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20110106181700.5924.26061.stgit@s20.home>
+Patchwork-id: 15929
+O-Subject: [RHEL6.1 qemu-kvm PATCH 1/2] qdev: Track runtime machine modifications
+Bugzilla: 653591
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=653591
+Upstream commit: 0ac8ef71329ee242951074eb2dc7136f99421d8c (mst's tree)
+
+Create a trivial interface to track whether the machine has been
+modified since boot.  Adding or removing devices will trigger this
+to return true.  An example usage scenario for such an interface is
+the rtl8139 driver which includes a cpu_register_io_memory() value
+in it's migration stream.  For the majority of migrations, where
+no hotplug has occured in the machine, this works correctly.  Once
+the machine is modified, we can use this interface to detect that
+and include a subsection for the device to prevent migrations to
+rtl8139 versions with this bug.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Acked-by: Michael S. Tsirkin <mst@redhat.com>
+Acked-by: Juan Quintela <quintela@redhat.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+
+ hw/qdev.c |   10 ++++++++++
+ hw/qdev.h |    1 +
+ 2 files changed, 11 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/qdev.c |   10 ++++++++++
+ hw/qdev.h |    1 +
+ 2 files changed, 11 insertions(+), 0 deletions(-)
+
+diff --git a/hw/qdev.c b/hw/qdev.c
+index 7a7e344..cd31dda 100644
+--- a/hw/qdev.c
++++ b/hw/qdev.c
+@@ -31,6 +31,8 @@
+ #include "monitor.h"
+ 
+ static int qdev_hotplug = 0;
++static bool qdev_hot_added = false;
++static bool qdev_hot_removed = false;
+ 
+ /* This is a nasty hack to allow passing a NULL bus to qdev_create.  */
+ static BusState *main_system_bus;
+@@ -92,6 +94,7 @@ static DeviceState *qdev_create_from_info(BusState *bus, DeviceInfo *info)
+     if (qdev_hotplug) {
+         assert(bus->allow_hotplug);
+         dev->hotplugged = 1;
++        qdev_hot_added = true;
+     }
+     dev->state = DEV_STATE_CREATED;
+     return dev;
+@@ -295,6 +298,8 @@ int qdev_unplug(DeviceState *dev)
+     }
+     assert(dev->info->unplug != NULL);
+ 
++    qdev_hot_removed = true;
++
+     return dev->info->unplug(dev);
+ }
+ 
+@@ -352,6 +357,11 @@ void qdev_machine_creation_done(void)
+     qdev_hotplug = 1;
+ }
+ 
++bool qdev_machine_modified(void)
++{
++    return qdev_hot_added || qdev_hot_removed;
++}
++
+ /* Get a character (serial) device interface.  */
+ CharDriverState *qdev_init_chardev(DeviceState *dev)
+ {
+diff --git a/hw/qdev.h b/hw/qdev.h
+index f9791f1..23f1e1b 100644
+--- a/hw/qdev.h
++++ b/hw/qdev.h
+@@ -119,6 +119,7 @@ int qdev_unplug(DeviceState *dev);
+ void qdev_free(DeviceState *dev);
+ int qdev_simple_unplug_cb(DeviceState *dev);
+ void qdev_machine_creation_done(void);
++bool qdev_machine_modified(void);
+ 
+ qemu_irq qdev_get_gpio_in(DeviceState *dev, int n);
+ void qdev_connect_gpio_out(DeviceState *dev, int n, qemu_irq pin);
+-- 
+1.7.4.rc1.16.gd2f15e
+

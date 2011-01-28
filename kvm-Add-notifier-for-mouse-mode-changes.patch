@@ -1,0 +1,141 @@
+From 1c9e1c508a1977e37921a8ae31daebd158aa75f3 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 5 Jan 2011 15:29:12 -0200
+Subject: [PATCH 07/48] Add notifier for mouse mode changes
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1294241382-17988-9-git-send-email-kraxel@redhat.com>
+Patchwork-id: 15745
+O-Subject: [RHEL-6 kvm PATCH 08/38] Add notifier for mouse mode changes
+Bugzilla: 642131 634153 615947 632458 631832 647865
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+Right now, DisplayState clients rely on polling the mouse mode to determine
+when the device is changed to an absolute device.  Use a notification list to
+add an explicit notification.
+
+upstream: 7e581fb3b126691a4358fcc7057b234dcb9ea3ad
+
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ console.h |    3 +++
+ vl.c      |   38 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 41 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ console.h |    3 +++
+ vl.c      |   38 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 41 insertions(+), 0 deletions(-)
+
+diff --git a/console.h b/console.h
+index 7d0721f..a1e7fa5 100644
+--- a/console.h
++++ b/console.h
+@@ -3,6 +3,7 @@
+ 
+ #include "qemu-char.h"
+ #include "qdict.h"
++#include "notify.h"
+ 
+ /* keyboard/mouse support */
+ 
+@@ -58,6 +59,8 @@ void kbd_mouse_event(int dx, int dy, int dz, int buttons_state);
+ 
+ /* Does the current mouse generate absolute events */
+ int kbd_mouse_is_absolute(void);
++void qemu_add_mouse_mode_change_notifier(Notifier *notify);
++void qemu_remove_mouse_mode_change_notifier(Notifier *notify);
+ 
+ /* Of all the mice, is there one that generates absolute events */
+ int kbd_mouse_has_absolute(void);
+diff --git a/vl.c b/vl.c
+index ab5966b..51c8651 100644
+--- a/vl.c
++++ b/vl.c
+@@ -419,6 +419,8 @@ static QTAILQ_HEAD(, QEMUPutLEDEntry) led_handlers = QTAILQ_HEAD_INITIALIZER(led
+ static int ledstate;
+ static QTAILQ_HEAD(, QEMUPutMouseEntry) mouse_handlers =
+     QTAILQ_HEAD_INITIALIZER(mouse_handlers);
++static NotifierList mouse_mode_notifiers = 
++    NOTIFIER_LIST_INITIALIZER(mouse_mode_notifiers);
+ 
+ void qemu_add_kbd_event_handler(QEMUPutKBDEvent *func, void *opaque)
+ {
+@@ -432,6 +434,24 @@ void qemu_remove_kbd_event_handler(void)
+     qemu_put_kbd_event = NULL;
+ }
+ 
++static void check_mode_change(void)
++{
++    static int current_is_absolute, current_has_absolute;
++    int is_absolute;
++    int has_absolute;
++
++    is_absolute = kbd_mouse_is_absolute();
++    has_absolute = kbd_mouse_has_absolute();
++
++    if (is_absolute != current_is_absolute ||
++        has_absolute != current_has_absolute) {
++        notifier_list_notify(&mouse_mode_notifiers);
++    }
++
++    current_is_absolute = is_absolute;
++    current_has_absolute = has_absolute;
++}
++
+ QEMUPutMouseEntry *qemu_add_mouse_event_handler(QEMUPutMouseEvent *func,
+                                                 void *opaque, int absolute,
+                                                 const char *name)
+@@ -449,6 +469,8 @@ QEMUPutMouseEntry *qemu_add_mouse_event_handler(QEMUPutMouseEvent *func,
+ 
+     QTAILQ_INSERT_TAIL(&mouse_handlers, s, node);
+ 
++    check_mode_change();
++
+     return s;
+ }
+ 
+@@ -456,6 +478,8 @@ void qemu_activate_mouse_event_handler(QEMUPutMouseEntry *entry)
+ {
+     QTAILQ_REMOVE(&mouse_handlers, entry, node);
+     QTAILQ_INSERT_HEAD(&mouse_handlers, entry, node);
++
++    check_mode_change();
+ }
+ 
+ void qemu_remove_mouse_event_handler(QEMUPutMouseEntry *entry)
+@@ -464,6 +488,8 @@ void qemu_remove_mouse_event_handler(QEMUPutMouseEntry *entry)
+ 
+     qemu_free(entry->qemu_put_mouse_event_name);
+     qemu_free(entry);
++
++    check_mode_change();
+ }
+ 
+ QEMUPutLEDEntry *qemu_add_led_event_handler(QEMUPutLEDEvent *func,
+@@ -634,6 +660,18 @@ void do_mouse_set(Monitor *mon, const QDict *qdict)
+     if (!found) {
+         monitor_printf(mon, "Mouse at given index not found\n");
+     }
++
++    check_mode_change();
++}
++
++void qemu_add_mouse_mode_change_notifier(Notifier *notify)
++{
++    notifier_list_add(&mouse_mode_notifiers, notify);
++}
++
++void qemu_remove_mouse_mode_change_notifier(Notifier *notify)
++{
++    notifier_list_remove(&mouse_mode_notifiers, notify);
+ }
+ 
+ /* compute with 96 bit intermediate result: (a*b)/c */
+-- 
+1.7.4.rc1.16.gd2f15e
+

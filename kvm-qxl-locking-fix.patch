@@ -1,0 +1,44 @@
+From 6b3c4a4631228fcf59b34cbe374ed8cf14ac6463 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Mon, 24 Jan 2011 09:18:31 -0200
+Subject: [PATCH 45/48] qxl: locking fix
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1295860712-5418-2-git-send-email-kraxel@redhat.com>
+Patchwork-id: 16813
+O-Subject: [RHEL-6 kvm PATCH 1/2] qxl: locking fix
+Bugzilla: 615947 631832 632458 634153 642131 647865
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+
+One spice worker call lacks the unlock/relock calls, which may lead
+to deadlocks, add them.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/qxl.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/qxl.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index 81be592..0cb4fe9 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -866,7 +866,9 @@ static void qxl_destroy_primary(PCIQXLDevice *d)
+     dprint(d, 1, "%s\n", __FUNCTION__);
+ 
+     d->mode = QXL_MODE_UNDEFINED;
++    qemu_mutex_unlock_iothread();
+     d->ssd.worker->destroy_primary_surface(d->ssd.worker, 0);
++    qemu_mutex_lock_iothread();
+ }
+ 
+ static void qxl_set_mode(PCIQXLDevice *d, int modenr, int loadvm)
+-- 
+1.7.4.rc1.16.gd2f15e
+

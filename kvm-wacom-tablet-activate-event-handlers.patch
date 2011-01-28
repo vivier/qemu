@@ -1,0 +1,79 @@
+From a51e3b76377110313ce51e4b0b7b6a738aa50732 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 5 Jan 2011 15:29:17 -0200
+Subject: [PATCH 12/48] wacom tablet: activate event handlers.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1294241382-17988-14-git-send-email-kraxel@redhat.com>
+Patchwork-id: 15748
+O-Subject: [RHEL-6 kvm PATCH 13/38] wacom tablet: activate event handlers.
+Bugzilla: 642131 634153 615947 632458 631832 647865
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+Add qemu_activate_mouse_event_handler() calls to the usb wavom tablet so
+it actually receives events.  Also make sure we only remove the handler
+if we registered it before.
+
+upstream: b2d4d8329963b13c5cebe5944dcc99f0e9d1b5c7
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+ hw/usb-wacom.c |   13 ++++++++++---
+ 1 files changed, 10 insertions(+), 3 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/usb-wacom.c |   13 ++++++++++---
+ 1 files changed, 10 insertions(+), 3 deletions(-)
+
+diff --git a/hw/usb-wacom.c b/hw/usb-wacom.c
+index fe052eb..47f26cd 100644
+--- a/hw/usb-wacom.c
++++ b/hw/usb-wacom.c
+@@ -160,6 +160,7 @@ static int usb_mouse_poll(USBWacomState *s, uint8_t *buf, int len)
+     if (!s->mouse_grabbed) {
+         s->eh_entry = qemu_add_mouse_event_handler(usb_mouse_event, s, 0,
+                         "QEMU PenPartner tablet");
++        qemu_activate_mouse_event_handler(s->eh_entry);
+         s->mouse_grabbed = 1;
+     }
+ 
+@@ -197,6 +198,7 @@ static int usb_wacom_poll(USBWacomState *s, uint8_t *buf, int len)
+     if (!s->mouse_grabbed) {
+         s->eh_entry = qemu_add_mouse_event_handler(usb_wacom_event, s, 1,
+                         "QEMU PenPartner tablet");
++        qemu_activate_mouse_event_handler(s->eh_entry);
+         s->mouse_grabbed = 1;
+     }
+ 
+@@ -334,8 +336,10 @@ static int usb_wacom_handle_control(USBDevice *dev, int request, int value,
+         ret = 0;
+         break;
+     case WACOM_SET_REPORT:
+-        qemu_remove_mouse_event_handler(s->eh_entry);
+-        s->mouse_grabbed = 0;
++        if (s->mouse_grabbed) {
++            qemu_remove_mouse_event_handler(s->eh_entry);
++            s->mouse_grabbed = 0;
++        }
+         s->mode = data[0];
+         ret = 0;
+         break;
+@@ -397,7 +401,10 @@ static void usb_wacom_handle_destroy(USBDevice *dev)
+ {
+     USBWacomState *s = (USBWacomState *) dev;
+ 
+-    qemu_remove_mouse_event_handler(s->eh_entry);
++    if (s->mouse_grabbed) {
++        qemu_remove_mouse_event_handler(s->eh_entry);
++        s->mouse_grabbed = 0;
++    }
+ }
+ 
+ static int usb_wacom_initfn(USBDevice *dev)
+-- 
+1.7.4.rc1.16.gd2f15e
+

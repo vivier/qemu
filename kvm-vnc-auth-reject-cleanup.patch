@@ -1,0 +1,89 @@
+From a97d44222fb6e037aaf94c457aae3c47aeffae46 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 5 Jan 2011 15:29:40 -0200
+Subject: [PATCH 35/48] vnc: auth reject cleanup
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1294241382-17988-37-git-send-email-kraxel@redhat.com>
+Patchwork-id: 15762
+O-Subject: [RHEL-6 kvm PATCH 36/38] vnc: auth reject cleanup
+Bugzilla: 642131 634153 615947 632458 631832 647865
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+protocol_client_auth_vnc() has two places where the auth can fail,
+with identical code sending the reject message to the client.
+Move the common code to the end of the function and make both
+error paths jump there.  No functional change.
+
+upstream: 6bffdf0f83263bad1dd2187c533758d7cb6f5bcf
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ vnc.c |   30 +++++++++++++-----------------
+ 1 files changed, 13 insertions(+), 17 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ vnc.c |   30 +++++++++++++-----------------
+ 1 files changed, 13 insertions(+), 17 deletions(-)
+
+diff --git a/vnc.c b/vnc.c
+index a523096..1a92d39 100644
+--- a/vnc.c
++++ b/vnc.c
+@@ -2129,15 +2129,7 @@ static int protocol_client_auth_vnc(VncState *vs, uint8_t *data, size_t len)
+ 
+     if (!vs->vd->password || !vs->vd->password[0]) {
+         VNC_DEBUG("No password configured on server");
+-        vnc_write_u32(vs, 1); /* Reject auth */
+-        if (vs->minor >= 8) {
+-            static const char err[] = "Authentication failed";
+-            vnc_write_u32(vs, sizeof(err));
+-            vnc_write(vs, err, sizeof(err));
+-        }
+-        vnc_flush(vs);
+-        vnc_client_error(vs);
+-        return 0;
++        goto reject;
+     }
+ 
+     memcpy(response, vs->challenge, VNC_AUTH_CHALLENGE_SIZE);
+@@ -2153,14 +2145,7 @@ static int protocol_client_auth_vnc(VncState *vs, uint8_t *data, size_t len)
+     /* Compare expected vs actual challenge response */
+     if (memcmp(response, data, VNC_AUTH_CHALLENGE_SIZE) != 0) {
+         VNC_DEBUG("Client challenge reponse did not match\n");
+-        vnc_write_u32(vs, 1); /* Reject auth */
+-        if (vs->minor >= 8) {
+-            static const char err[] = "Authentication failed";
+-            vnc_write_u32(vs, sizeof(err));
+-            vnc_write(vs, err, sizeof(err));
+-        }
+-        vnc_flush(vs);
+-        vnc_client_error(vs);
++        goto reject;
+     } else {
+         VNC_DEBUG("Accepting VNC challenge response\n");
+         vnc_write_u32(vs, 0); /* Accept auth */
+@@ -2169,6 +2154,17 @@ static int protocol_client_auth_vnc(VncState *vs, uint8_t *data, size_t len)
+         start_client_init(vs);
+     }
+     return 0;
++
++reject:
++    vnc_write_u32(vs, 1); /* Reject auth */
++    if (vs->minor >= 8) {
++        static const char err[] = "Authentication failed";
++        vnc_write_u32(vs, sizeof(err));
++        vnc_write(vs, err, sizeof(err));
++    }
++    vnc_flush(vs);
++    vnc_client_error(vs);
++    return 0;
+ }
+ 
+ void start_auth_vnc(VncState *vs)
+-- 
+1.7.4.rc1.16.gd2f15e
+

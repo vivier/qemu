@@ -1,0 +1,163 @@
+From 4e8af4e8a768232f095cef9f5fd9e209a17d29a4 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 5 Jan 2011 15:29:35 -0200
+Subject: [PATCH 30/48] spice-display: replace private lock with qemu mutex.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1294241382-17988-32-git-send-email-kraxel@redhat.com>
+Patchwork-id: 15767
+O-Subject: [RHEL-6 kvm PATCH 31/38] spice-display: replace private lock with
+	qemu mutex.
+Bugzilla: 642131 634153 615947 632458 631832 647865
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+qemu_spice_create_update() must aquire the global qemu mutex to
+make sure DisplayState doesn't change while we are accessing it.
+
+Once this is in place the private lock is pretty pointless as
+everything it protects is covered by the global qemu mutex now.
+Drop it.
+
+upstream: 7466bc49107fbd84336ba680f860d5eadd6def13
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ ui/spice-display.c |   27 ++++++++++++++-------------
+ ui/spice-display.h |    1 -
+ 2 files changed, 14 insertions(+), 14 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ ui/spice-display.c |   27 ++++++++++++++-------------
+ ui/spice-display.h |    1 -
+ 2 files changed, 14 insertions(+), 14 deletions(-)
+
+diff --git a/ui/spice-display.c b/ui/spice-display.c
+index 6702dfd..99d9fd6 100644
+--- a/ui/spice-display.c
++++ b/ui/spice-display.c
+@@ -65,10 +65,10 @@ void qemu_spice_rect_union(QXLRect *dest, const QXLRect *r)
+ 
+ /*
+  * Called from spice server thread context (via interface_get_command).
+- * We do *not* hold the global qemu mutex here, so extra care is needed
+- * when calling qemu functions.  Qemu interfaces used:
+- *    - pflib (is re-entrant).
+- *    - qemu_malloc (underlying glibc malloc is re-entrant).
++ *
++ * We must aquire the global qemu mutex here to make sure the
++ * DisplayState (+DisplaySurface) we are accessing doesn't change
++ * underneath us.
+  */
+ SimpleSpiceUpdate *qemu_spice_create_update(SimpleSpiceDisplay *ssd)
+ {
+@@ -79,11 +79,12 @@ SimpleSpiceUpdate *qemu_spice_create_update(SimpleSpiceDisplay *ssd)
+     uint8_t *src, *dst;
+     int by, bw, bh;
+ 
++    qemu_mutex_lock_iothread();
+     if (qemu_spice_rect_is_empty(&ssd->dirty)) {
++        qemu_mutex_unlock_iothread();
+         return NULL;
+     };
+ 
+-    pthread_mutex_lock(&ssd->lock);
+     dprint(2, "%s: lr %d -> %d,  tb -> %d -> %d\n", __FUNCTION__,
+            ssd->dirty.left, ssd->dirty.right,
+            ssd->dirty.top, ssd->dirty.bottom);
+@@ -141,7 +142,7 @@ SimpleSpiceUpdate *qemu_spice_create_update(SimpleSpiceDisplay *ssd)
+     cmd->data = (intptr_t)drawable;
+ 
+     memset(&ssd->dirty, 0, sizeof(ssd->dirty));
+-    pthread_mutex_unlock(&ssd->lock);
++    qemu_mutex_unlock_iothread();
+     return update;
+ }
+ 
+@@ -185,14 +186,19 @@ void qemu_spice_create_host_primary(SimpleSpiceDisplay *ssd)
+     surface.type       = 0;
+     surface.mem        = (intptr_t)ssd->buf;
+     surface.group_id   = MEMSLOT_GROUP_HOST;
++
++    qemu_mutex_unlock_iothread();
+     ssd->worker->create_primary_surface(ssd->worker, 0, &surface);
++    qemu_mutex_lock_iothread();
+ }
+ 
+ void qemu_spice_destroy_host_primary(SimpleSpiceDisplay *ssd)
+ {
+     dprint(1, "%s:\n", __FUNCTION__);
+ 
++    qemu_mutex_unlock_iothread();
+     ssd->worker->destroy_primary_surface(ssd->worker, 0);
++    qemu_mutex_lock_iothread();
+ }
+ 
+ void qemu_spice_vm_change_state_handler(void *opaque, int running, int reason)
+@@ -202,7 +208,9 @@ void qemu_spice_vm_change_state_handler(void *opaque, int running, int reason)
+     if (running) {
+         ssd->worker->start(ssd->worker);
+     } else {
++        qemu_mutex_unlock_iothread();
+         ssd->worker->stop(ssd->worker);
++        qemu_mutex_lock_iothread();
+     }
+     ssd->running = running;
+ }
+@@ -220,31 +228,25 @@ void qemu_spice_display_update(SimpleSpiceDisplay *ssd,
+     update_area.top = y;
+     update_area.bottom = y + h;
+ 
+-    pthread_mutex_lock(&ssd->lock);
+     if (qemu_spice_rect_is_empty(&ssd->dirty)) {
+         ssd->notify++;
+     }
+     qemu_spice_rect_union(&ssd->dirty, &update_area);
+-    pthread_mutex_unlock(&ssd->lock);
+ }
+ 
+ void qemu_spice_display_resize(SimpleSpiceDisplay *ssd)
+ {
+     dprint(1, "%s:\n", __FUNCTION__);
+ 
+-    pthread_mutex_lock(&ssd->lock);
+     memset(&ssd->dirty, 0, sizeof(ssd->dirty));
+     qemu_pf_conv_put(ssd->conv);
+     ssd->conv = NULL;
+-    pthread_mutex_unlock(&ssd->lock);
+ 
+     qemu_spice_destroy_host_primary(ssd);
+     qemu_spice_create_host_primary(ssd);
+ 
+-    pthread_mutex_lock(&ssd->lock);
+     memset(&ssd->dirty, 0, sizeof(ssd->dirty));
+     ssd->notify++;
+-    pthread_mutex_unlock(&ssd->lock);
+ }
+ 
+ void qemu_spice_display_refresh(SimpleSpiceDisplay *ssd)
+@@ -399,7 +401,6 @@ void qemu_spice_display_init(DisplayState *ds)
+     sdpy.ds = ds;
+     sdpy.bufsize = (16 * 1024 * 1024);
+     sdpy.buf = qemu_malloc(sdpy.bufsize);
+-    pthread_mutex_init(&sdpy.lock, NULL);
+     register_displaychangelistener(ds, &display_listener);
+ 
+     sdpy.qxl.base.sif = &dpy_interface.base;
+diff --git a/ui/spice-display.h b/ui/spice-display.h
+index e17671c..aef0464 100644
+--- a/ui/spice-display.h
++++ b/ui/spice-display.h
+@@ -40,7 +40,6 @@ typedef struct SimpleSpiceDisplay {
+     uint32_t unique;
+     QemuPfConv *conv;
+ 
+-    pthread_mutex_t lock;
+     QXLRect dirty;
+     int notify;
+     int running;
+-- 
+1.7.4.rc1.16.gd2f15e
+

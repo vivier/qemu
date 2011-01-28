@@ -1,0 +1,121 @@
+From 2454cd5d1312d1a662c31f37b56422f0fe502391 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 5 Jan 2011 15:29:28 -0200
+Subject: [PATCH 23/48] spice: add config options for channel security.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1294241382-17988-25-git-send-email-kraxel@redhat.com>
+Patchwork-id: 15757
+O-Subject: [RHEL-6 kvm PATCH 24/38] spice: add config options for channel
+	security.
+Bugzilla: 642131 634153 615947 632458 631832 647865
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+This allows to enforce tls or plaintext usage for certain spice
+channels.
+
+[ v2: code style fixup ]
+
+upstream: 17b6dea08bd8c8484bc48dc67add236d2fe002b5
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ qemu-config.c   |    6 ++++++
+ qemu-options.hx |    8 ++++++++
+ ui/spice-core.c |   28 ++++++++++++++++++++++++++++
+ 3 files changed, 42 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-config.c   |    6 ++++++
+ qemu-options.hx |    8 ++++++++
+ ui/spice-core.c |   28 ++++++++++++++++++++++++++++
+ 3 files changed, 42 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-config.c b/qemu-config.c
+index ef45bff..94f4980 100644
+--- a/qemu-config.c
++++ b/qemu-config.c
+@@ -350,6 +350,12 @@ QemuOptsList qemu_spice_opts = {
+             .name = "tls-ciphers",
+             .type = QEMU_OPT_STRING,
+         },{
++            .name = "tls-channel",
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "plaintext-channel",
++            .type = QEMU_OPT_STRING,
++        },{
+             .name = "image-compression",
+             .type = QEMU_OPT_STRING,
+         },{
+diff --git a/qemu-options.hx b/qemu-options.hx
+index cc635b0..5839ed4 100644
+--- a/qemu-options.hx
++++ b/qemu-options.hx
+@@ -565,6 +565,14 @@ The x509 file names can also be configured individually.
+ @item tls-ciphers=<list>
+ Specify which ciphers to use.
+ 
++@item tls-channel=[main|display|inputs|record|playback|tunnel]
++@item plaintext-channel=[main|display|inputs|record|playback|tunnel]
++Force specific channel to be used with or without TLS encryption.  The
++options can be specified multiple times to configure multiple
++channels.  The special name "default" can be used to set the default
++mode.  For channels which are not explicitly forced into one mode the
++spice client is allowed to pick tls/plaintext as he pleases.
++
+ @item image-compression=[auto_glz|auto_lz|quic|glz|lz|off]
+ Configure image compression (lossless).
+ Default is auto_glz.
+diff --git a/ui/spice-core.c b/ui/spice-core.c
+index c4f5c45..26d065c 100644
+--- a/ui/spice-core.c
++++ b/ui/spice-core.c
+@@ -192,6 +192,32 @@ static const char *wan_compression_names[] = {
+ 
+ /* functions for the rest of qemu */
+ 
++static int add_channel(const char *name, const char *value, void *opaque)
++{
++    int security = 0;
++    int rc;
++
++    if (strcmp(name, "tls-channel") == 0) {
++        security = SPICE_CHANNEL_SECURITY_SSL;
++    }
++    if (strcmp(name, "plaintext-channel") == 0) {
++        security = SPICE_CHANNEL_SECURITY_NONE;
++    }
++    if (security == 0) {
++        return 0;
++    }
++    if (strcmp(value, "default") == 0) {
++        rc = spice_server_set_channel_security(spice_server, NULL, security);
++    } else {
++        rc = spice_server_set_channel_security(spice_server, value, security);
++    }
++    if (rc != 0) {
++        fprintf(stderr, "spice: failed to set channel security for %s\n", value);
++        exit(1);
++    }
++    return 0;
++}
++
+ void qemu_spice_init(void)
+ {
+     QemuOpts *opts = QTAILQ_FIRST(&qemu_spice_opts.head);
+@@ -293,6 +319,8 @@ void qemu_spice_init(void)
+     }
+     spice_server_set_zlib_glz_compression(spice_server, wan_compr);
+ 
++    qemu_opt_foreach(opts, add_channel, NULL, 0);
++
+     spice_server_init(spice_server, &core_interface);
+     using_spice = 1;
+ 
+-- 
+1.7.4.rc1.16.gd2f15e
+

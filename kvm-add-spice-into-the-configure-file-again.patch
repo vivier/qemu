@@ -1,0 +1,110 @@
+From f9fb6605a570038af43ca38a5517244bf97f51fc Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 5 Jan 2011 15:29:20 -0200
+Subject: [PATCH 15/48] add spice into the configure file
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1294241382-17988-17-git-send-email-kraxel@redhat.com>
+Patchwork-id: 15747
+O-Subject: [RHEL-6 kvm PATCH 16/38] add spice into the configure file
+Bugzilla: 642131 634153 615947 632458 631832 647865
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+upstream: cd4ec0b4d169faba8cc03a16b361700e32a83bd6
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ configure |   35 +++++++++++++++++++++++++++++++++++
+ 1 files changed, 35 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ configure |   35 +++++++++++++++++++++++++++++++++++
+ 1 files changed, 35 insertions(+), 0 deletions(-)
+
+diff --git a/configure b/configure
+index f688437..3e54f8c 100755
+--- a/configure
++++ b/configure
+@@ -278,6 +278,7 @@ user_pie="no"
+ zero_malloc=""
+ trace_backend="nop"
+ fake_machine="no"
++spice=""
+ 
+ # OS specific
+ if check_define __linux__ ; then
+@@ -565,6 +566,10 @@ for opt do
+   ;;
+   --enable-kvm-cap-device-assignment) kvm_cap_device_assignment="yes"
+   ;;
++  --disable-spice) spice="no"
++  ;;
++  --enable-spice) spice="yes"
++  ;;
+   --enable-profiler) profiler="yes"
+   ;;
+   --enable-cocoa)
+@@ -825,6 +830,8 @@ echo "  --enable-vhost-net       enable vhost-net acceleration support"
+ echo "  --trace-backend=B        Trace backend nop dtrace"
+ echo "  --disable-fake-machine   disable -fake-machine option"
+ echo "  --enable-fake-machine    enable -fake-machine option"
++echo "  --disable-spice          disable spice"
++echo "  --enable-spice           enable spice"
+ echo ""
+ echo "NOTE: The object files are built at the place where configure is launched"
+ exit 1
+@@ -1968,6 +1975,29 @@ if compile_prog "" ""; then
+     gcc_attribute_warn_unused_result=yes
+ fi
+ 
++# spice probe
++if test "$spice" != "no" ; then
++  cat > $TMPC << EOF
++#include <spice.h>
++int main(void) { spice_server_new(); return 0; }
++EOF
++  spice_cflags=$(pkg-config --cflags spice-protocol spice-server 2>/dev/null)
++  spice_libs=$(pkg-config --libs spice-protocol spice-server 2>/dev/null)
++  if pkg-config --atleast-version=0.5.3 spice-server &&\
++     compile_prog "$spice_cflags" "$spice_libs" ; then
++    spice="yes"
++    libs_softmmu="$libs_softmmu $spice_libs"
++    QEMU_CFLAGS="$QEMU_CFLAGS $spice_cflags"
++  else
++    if test "$spice" = "yes" ; then
++      feature_not_found "spice"
++    fi
++    spice="no"
++  fi
++fi
++
++##########################################
++
+ ##########################################
+ 
+ ##########################################
+@@ -2160,6 +2190,7 @@ echo "uuid support      $uuid"
+ echo "vhost-net support $vhost_net"
+ echo "-fake-machine     $fake_machine"
+ echo "Trace backend     $trace_backend"
++echo "spice support     $spice"
+ 
+ if test $sdl_too_old = "yes"; then
+ echo "-> Your SDL version is too old - please upgrade to have SDL support"
+@@ -2393,6 +2424,10 @@ if test $fake_machine = "yes" ; then
+   echo "CONFIG_FAKE_MACHINE=y" >> $config_host_mak
+ fi
+ 
++if test "$spice" = "yes" ; then
++  echo "CONFIG_SPICE=y" >> $config_host_mak
++fi
++
+ # XXX: suppress that
+ if [ "$bsd" = "yes" ] ; then
+   echo "CONFIG_BSD=y" >> $config_host_mak
+-- 
+1.7.4.rc1.16.gd2f15e
+

@@ -1,0 +1,366 @@
+From 47364a91190ba1b67a4f5c5bef65a80544a60aa6 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Tue, 11 Jan 2011 13:50:32 -0200
+Subject: [PATCH 44/48] spice: add chardev (v4)
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1294753832-1164-6-git-send-email-kraxel@redhat.com>
+Patchwork-id: 16114
+O-Subject: [RHEL-6.1 kvm PATCH v2 5/5] spice: add chardev (v4)
+Bugzilla: 615947 631832 632458 634153 642131 647865
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+
+From: Alon Levy <alevy@redhat.com>
+
+Adding a chardev backend for spice, where spice determines what
+to do with it based on the name attribute given during chardev creation.
+For usage by spice vdagent in conjunction with a properly named
+virtio-serial device, and future smartcard channel usage.
+
+Example usage:
+ qemu -device virtio-serial -chardev spicevmc,name=vdagent,id=vdagent \
+ -device virtserialport,chardev=vdagent,name=com.redhat.spice.0
+
+v3->v4:
+ * updated commit message
+
+v1->v3 changes: (v2 had a wrong commit message)
+ * removed spice-qemu-char.h, folded into ui/qemu-spice.h
+ * removed dead IOCTL code
+ * removed comment
+ * removed ifdef CONFIG_SPICE from qemu-config.c and qemu-options.hx help.
+
+upstream: submitted (http://patchwork.ozlabs.org/patch/78153/)
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ Makefile          |    2 +-
+ qemu-char.c       |    4 +
+ qemu-config.c     |    6 ++
+ qemu-options.hx   |   16 ++++-
+ spice-qemu-char.c |  185 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ ui/qemu-spice.h   |    3 +
+ 6 files changed, 214 insertions(+), 2 deletions(-)
+ create mode 100644 spice-qemu-char.c
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ Makefile          |    2 +-
+ qemu-char.c       |    4 +
+ qemu-config.c     |    6 ++
+ qemu-options.hx   |   16 ++++-
+ spice-qemu-char.c |  185 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ ui/qemu-spice.h   |    3 +
+ 6 files changed, 214 insertions(+), 2 deletions(-)
+ create mode 100644 spice-qemu-char.c
+
+diff --git a/Makefile b/Makefile
+index d91548e..ee999a6 100644
+--- a/Makefile
++++ b/Makefile
+@@ -189,7 +189,7 @@ obj-y += pflib.o
+ obj-$(CONFIG_BRLAPI) += baum.o
+ obj-$(CONFIG_POSIX) += migration-exec.o migration-unix.o migration-fd.o
+ 
+-obj-$(CONFIG_SPICE) += ui/spice-core.o ui/spice-input.o ui/spice-display.o
++obj-$(CONFIG_SPICE) += ui/spice-core.o ui/spice-input.o ui/spice-display.o spice-qemu-char.o
+ 
+ audio/audio.o audio/fmodaudio.o: QEMU_CFLAGS += $(FMOD_CFLAGS)
+ 
+diff --git a/qemu-char.c b/qemu-char.c
+index 0634117..e7ec50b 100644
+--- a/qemu-char.c
++++ b/qemu-char.c
+@@ -98,6 +98,7 @@
+ #endif
+ 
+ #include "qemu_socket.h"
++#include "ui/qemu-spice.h"
+ 
+ #define READ_BUF_LEN 4096
+ 
+@@ -2478,6 +2479,9 @@ static const struct {
+     || defined(__FreeBSD_kernel__)
+     { .name = "parport",   .open = qemu_chr_open_pp },
+ #endif
++#ifdef CONFIG_SPICE
++    { .name = "spicevmc",     .open = qemu_chr_open_spice },
++#endif
+ };
+ 
+ CharDriverState *qemu_chr_open_opts(QemuOpts *opts,
+diff --git a/qemu-config.c b/qemu-config.c
+index c58df74..ab3a853 100644
+--- a/qemu-config.c
++++ b/qemu-config.c
+@@ -164,6 +164,12 @@ QemuOptsList qemu_chardev_opts = {
+         },{
+             .name = "signal",
+             .type = QEMU_OPT_BOOL,
++        },{
++            .name = "name",
++            .type = QEMU_OPT_STRING,
++        },{
++            .name = "debug",
++            .type = QEMU_OPT_NUMBER,
+         },
+         { /* end if list */ }
+     },
+diff --git a/qemu-options.hx b/qemu-options.hx
+index bffc1d2..fb2e0a2 100644
+--- a/qemu-options.hx
++++ b/qemu-options.hx
+@@ -1216,6 +1216,9 @@ DEF("chardev", HAS_ARG, QEMU_OPTION_chardev,
+ #if defined(__linux__) || defined(__FreeBSD__) || defined(__DragonFly__)
+     "-chardev parport,id=id,path=path\n"
+ #endif
++#if defined(CONFIG_SPICE)
++    "-chardev spicevmc,id=id,debug=debug,name=name\n"
++#endif
+ )
+ 
+ STEXI
+@@ -1239,7 +1242,8 @@ Backend is one of:
+ @option{stdio},
+ @option{braille},
+ @option{tty},
+-@option{parport}.
++@option{parport}
++@option{spicevmc}.
+ The specific backend will determine the applicable options.
+ 
+ All devices must have an id, which can be any string up to 127 characters long.
+@@ -1407,6 +1411,16 @@ Connect to a local parallel port.
+ @option{path} specifies the path to the parallel port device. @option{path} is
+ required.
+ 
++#if defined(CONFIG_SPICE)
++@item -chardev spicevmc ,id=@var{id} ,debug=@var{debug}, name=@var{name}
++
++@option{debug} debug level for spicevmc
++
++@option{name} name of spice channel to connect to
++
++Connect to a spice virtual machine channel, such as vdiport.
++#endif
++
+ @end table
+ ETEXI
+ 
+diff --git a/spice-qemu-char.c b/spice-qemu-char.c
+new file mode 100644
+index 0000000..0ffa674
+--- /dev/null
++++ b/spice-qemu-char.c
+@@ -0,0 +1,185 @@
++#include "config-host.h"
++#include "ui/qemu-spice.h"
++#include <spice.h>
++#include <spice-experimental.h>
++
++#include "osdep.h"
++
++#define dprintf(_scd, _level, _fmt, ...)                                \
++    do {                                                                \
++        static unsigned __dprintf_counter = 0;                          \
++        if (_scd->debug >= _level) {                                    \
++            fprintf(stderr, "scd: %3d: " _fmt, ++__dprintf_counter, ## __VA_ARGS__);\
++        }                                                               \
++    } while (0)
++
++#define VMC_MAX_HOST_WRITE    2048
++
++typedef struct SpiceCharDriver {
++    CharDriverState*      chr;
++    SpiceCharDeviceInstance     sin;
++    char                  *subtype;
++    bool                  active;
++    uint8_t               *buffer;
++    uint8_t               *datapos;
++    ssize_t               bufsize, datalen;
++    uint32_t              debug;
++} SpiceCharDriver;
++
++static int vmc_write(SpiceCharDeviceInstance *sin, const uint8_t *buf, int len)
++{
++    SpiceCharDriver *scd = container_of(sin, SpiceCharDriver, sin);
++    ssize_t out = 0;
++    ssize_t last_out;
++    uint8_t* p = (uint8_t*)buf;
++
++    while (len > 0) {
++        last_out = MIN(len, VMC_MAX_HOST_WRITE);
++        qemu_chr_read(scd->chr, p, last_out);
++        if (last_out > 0) {
++            out += last_out;
++            len -= last_out;
++            p += last_out;
++        } else {
++            break;
++        }
++    }
++
++    dprintf(scd, 3, "%s: %lu/%zd\n", __func__, out, len + out);
++    return out;
++}
++
++static int vmc_read(SpiceCharDeviceInstance *sin, uint8_t *buf, int len)
++{
++    SpiceCharDriver *scd = container_of(sin, SpiceCharDriver, sin);
++    int bytes = MIN(len, scd->datalen);
++
++    dprintf(scd, 2, "%s: %p %d/%d/%zd\n", __func__, scd->datapos, len, bytes, scd->datalen);
++    if (bytes > 0) {
++        memcpy(buf, scd->datapos, bytes);
++        scd->datapos += bytes;
++        scd->datalen -= bytes;
++        assert(scd->datalen >= 0);
++        if (scd->datalen == 0) {
++            scd->datapos = 0;
++        }
++    }
++    return bytes;
++}
++
++static SpiceCharDeviceInterface vmc_interface = {
++    .base.type          = SPICE_INTERFACE_CHAR_DEVICE,
++    .base.description   = "spice virtual channel char device",
++    .base.major_version = SPICE_INTERFACE_CHAR_DEVICE_MAJOR,
++    .base.minor_version = SPICE_INTERFACE_CHAR_DEVICE_MINOR,
++    .write              = vmc_write,
++    .read               = vmc_read,
++};
++
++
++static void vmc_register_interface(SpiceCharDriver *scd)
++{
++    if (scd->active) {
++        return;
++    }
++    dprintf(scd, 1, "%s\n", __func__);
++    scd->sin.base.sif = &vmc_interface.base;
++    qemu_spice_add_interface(&scd->sin.base);
++    scd->active = true;
++}
++
++static void vmc_unregister_interface(SpiceCharDriver *scd)
++{
++    if (!scd->active) {
++        return;
++    }
++    dprintf(scd, 1, "%s\n", __func__);
++    spice_server_remove_interface(&scd->sin.base);
++    scd->active = false;
++}
++
++
++static int spice_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
++{
++    SpiceCharDriver *s = chr->opaque;
++
++    dprintf(s, 2, "%s: %d\n", __func__, len);
++    vmc_register_interface(s);
++    assert(s->datalen == 0);
++    if (s->bufsize < len) {
++        s->bufsize = len;
++        s->buffer = qemu_realloc(s->buffer, s->bufsize);
++    }
++    memcpy(s->buffer, buf, len);
++    s->datapos = s->buffer;
++    s->datalen = len;
++    spice_server_char_device_wakeup(&s->sin);
++    return len;
++}
++
++static void spice_chr_close(struct CharDriverState *chr)
++{
++    SpiceCharDriver *s = chr->opaque;
++
++    printf("%s\n", __func__);
++    vmc_unregister_interface(s);
++    qemu_free(s);
++}
++
++static void print_allowed_subtypes(void)
++{
++    const char** psubtype;
++    int i;
++
++    fprintf(stderr, "allowed names: ");
++    for(i=0, psubtype = spice_server_char_device_recognized_subtypes();
++        *psubtype != NULL; ++psubtype, ++i) {
++        if (i == 0) {
++            fprintf(stderr, "%s", *psubtype);
++        } else {
++            fprintf(stderr, ", %s", *psubtype);
++        }
++    }
++    fprintf(stderr, "\n");
++}
++
++CharDriverState *qemu_chr_open_spice(QemuOpts *opts)
++{
++    CharDriverState *chr;
++    SpiceCharDriver *s;
++    const char* name = qemu_opt_get(opts, "name");
++    uint32_t debug = qemu_opt_get_number(opts, "debug", 0);
++    const char** psubtype = spice_server_char_device_recognized_subtypes();
++    const char *subtype = NULL;
++
++    if (name == NULL) {
++        fprintf(stderr, "spice-qemu-char: missing name parameter\n");
++        print_allowed_subtypes();
++        return NULL;
++    }
++    for(;*psubtype != NULL; ++psubtype) {
++        if (strcmp(name, *psubtype) == 0) {
++            subtype = *psubtype;
++            break;
++        }
++    }
++    if (subtype == NULL) {
++        fprintf(stderr, "spice-qemu-char: unsupported name\n");
++        print_allowed_subtypes();
++        return NULL;
++    }
++
++    chr = qemu_mallocz(sizeof(CharDriverState));
++    s = qemu_mallocz(sizeof(SpiceCharDriver));
++    s->chr = chr;
++    s->debug = debug;
++    s->active = false;
++    s->sin.subtype = subtype;
++    chr->opaque = s;
++    chr->chr_write = spice_chr_write;
++    chr->chr_close = spice_chr_close;
++
++    qemu_chr_generic_open(chr);
++
++    return chr;
++}
+diff --git a/ui/qemu-spice.h b/ui/qemu-spice.h
+index 05dc50a..916e5dc 100644
+--- a/ui/qemu-spice.h
++++ b/ui/qemu-spice.h
+@@ -24,6 +24,7 @@
+ 
+ #include "qemu-option.h"
+ #include "qemu-config.h"
++#include "qemu-char.h"
+ 
+ extern int using_spice;
+ 
+@@ -41,6 +42,8 @@ int qemu_spice_migrate_info(const char *hostname, int port, int tls_port,
+ void do_info_spice_print(Monitor *mon, const QObject *data);
+ void do_info_spice(Monitor *mon, QObject **ret_data);
+ 
++CharDriverState *qemu_chr_open_spice(QemuOpts *opts);
++
+ #else  /* CONFIG_SPICE */
+ 
+ #define using_spice 0
+-- 
+1.7.4.rc1.16.gd2f15e
+
