@@ -1652,6 +1652,21 @@ static int assigned_initfn(struct PCIDevice *pci_dev)
     uint8_t e_device, e_intx;
     int r;
 
+    {   /*  RHEL6.1 bz670787 */
+        AssignedDevice *adev;
+        int i = 0;
+
+        QLIST_FOREACH(adev, &devs, next) {
+            i++;
+        }
+
+        if (i >= MAX_DEV_ASSIGN_CMDLINE) {
+            error_report("pci-assign: Maximum supported assigned devices (%d) "
+                         "already attached\n", MAX_DEV_ASSIGN_CMDLINE);
+            return -1;
+        }
+    }
+
     if (!dev->host.bus && !dev->host.dev && !dev->host.func) {
         error_report("pci-assign: error: no host device specified");
         return -1;
