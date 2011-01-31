@@ -257,4 +257,6 @@ void rtc_change_mon_event(struct tm *tm);
 
 void register_devices(void);
 
+int do_snapshot_blkdev(Monitor *mon, const QDict *qdict, QObject **ret_data);
+
 #endif
