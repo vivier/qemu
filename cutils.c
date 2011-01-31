@@ -311,16 +311,14 @@ int64_t strtosz_suffix(const char *nptr, char **end, const char default_suffix)
             d = c;
         }
     }
-    switch (d) {
+    switch (qemu_toupper(d)) {
     case 'B':
-    case 'b':
         mul = 1;
         if (mul_required) {
             goto fail;
         }
         break;
     case 'K':
-    case 'k':
         mul = 1 << 10;
         break;
     case 0:
@@ -328,15 +326,12 @@ int64_t strtosz_suffix(const char *nptr, char **end, const char default_suffix)
             goto fail;
         }
     case 'M':
-    case 'm':
         mul = 1ULL << 20;
         break;
     case 'G':
-    case 'g':
         mul = 1ULL << 30;
         break;
     case 'T':
-    case 't':
         mul = 1ULL << 40;
         break;
     default:
