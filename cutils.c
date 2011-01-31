@@ -279,9 +279,9 @@ void qemu_iovec_memset(QEMUIOVector *qiov, int c, size_t count)
  * value must be terminated by whitespace, ',' or '\0'. Return -1 on
  * error.
  */
-ssize_t strtosz_suffix(const char *nptr, char **end, const char default_suffix)
+int64_t strtosz_suffix(const char *nptr, char **end, const char default_suffix)
 {
-    ssize_t retval = -1;
+    int64_t retval = -1;
     char *endptr, c, d;
     int mul_required = 0;
     double val, mul, integral, fraction;
@@ -353,7 +353,7 @@ ssize_t strtosz_suffix(const char *nptr, char **end, const char default_suffix)
             goto fail;
         }
     }
-    if ((val * mul >= ~(size_t)0) || val < 0) {
+    if ((val * mul >= INT64_MAX) || val < 0) {
         goto fail;
     }
     retval = val * mul;
@@ -366,7 +366,7 @@ fail:
     return retval;
 }
 
-ssize_t strtosz(const char *nptr, char **end)
+int64_t strtosz(const char *nptr, char **end)
 {
     return strtosz_suffix(nptr, end, STRTOSZ_DEFSUFFIX_MB);
 }

@@ -142,8 +142,8 @@ int qemu_fdatasync(int fd);
 #define STRTOSZ_DEFSUFFIX_MB	'M'
 #define STRTOSZ_DEFSUFFIX_KB	'K'
 #define STRTOSZ_DEFSUFFIX_B	'B'
-ssize_t strtosz(const char *nptr, char **end);
-ssize_t strtosz_suffix(const char *nptr, char **end, const char default_suffix);
+int64_t strtosz(const char *nptr, char **end);
+int64_t strtosz_suffix(const char *nptr, char **end, const char default_suffix);
 
 /* path.c */
 void init_paths(const char *prefix);
