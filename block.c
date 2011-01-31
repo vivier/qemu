@@ -2583,14 +2583,14 @@ int bdrv_img_create(const char *filename, const char *fmt,
     drv = bdrv_find_format(fmt);
     if (!drv) {
         error_report("Unknown file format '%s'", fmt);
-        ret = -1;
+        ret = -EINVAL;
         goto out;
     }
 
     proto_drv = bdrv_find_protocol(filename);
     if (!proto_drv) {
         error_report("Unknown protocol '%s'", filename);
-        ret = -1;
+        ret = -EINVAL;
         goto out;
     }
 
@@ -2609,7 +2609,7 @@ int bdrv_img_create(const char *filename, const char *fmt,
         param = parse_option_parameters(options, create_options, param);
         if (param == NULL) {
             error_report("Invalid options for file format '%s'.", fmt);
-            ret = -1;
+            ret = -EINVAL;
             goto out;
         }
     }
@@ -2619,7 +2619,7 @@ int bdrv_img_create(const char *filename, const char *fmt,
                                  base_filename)) {
             error_report("Backing file not supported for file format '%s'",
                          fmt);
-            ret = -1;
+            ret = -EINVAL;
             goto out;
         }
     }
@@ -2628,7 +2628,7 @@ int bdrv_img_create(const char *filename, const char *fmt,
         if (set_option_parameter(param, BLOCK_OPT_BACKING_FMT, base_fmt)) {
             error_report("Backing file format not supported for file "
                          "format '%s'", fmt);
-            ret = -1;
+            ret = -EINVAL;
             goto out;
         }
     }
@@ -2638,7 +2638,7 @@ int bdrv_img_create(const char *filename, const char *fmt,
         if (!strcmp(filename, backing_file->value.s)) {
             error_report("Error: Trying to create an image with the "
                          "same filename as the backing file");
-            ret = -1;
+            ret = -EINVAL;
             goto out;
         }
     }
@@ -2648,7 +2648,7 @@ int bdrv_img_create(const char *filename, const char *fmt,
         if (!bdrv_find_format(backing_fmt->value.s)) {
             error_report("Unknown backing file format '%s'",
                          backing_fmt->value.s);
-            ret = -1;
+            ret = -EINVAL;
             goto out;
         }
     }
@@ -2670,7 +2670,6 @@ int bdrv_img_create(const char *filename, const char *fmt,
             ret = bdrv_open(bs, backing_file->value.s, flags, drv);
             if (ret < 0) {
                 error_report("Could not open '%s'", filename);
-                ret = -1;
                 goto out;
             }
             bdrv_get_geometry(bs, &size);
@@ -2680,7 +2679,7 @@ int bdrv_img_create(const char *filename, const char *fmt,
             set_option_parameter(param, BLOCK_OPT_SIZE, buf);
         } else {
             error_report("Image creation needs a size parameter");
-            ret = -1;
+            ret = -EINVAL;
             goto out;
         }
     }
@@ -2711,8 +2710,6 @@ out:
     if (bs) {
         bdrv_delete(bs);
     }
-    if (ret) {
-        return 1;
-    }
-    return 0;
+
+    return ret;
 }
