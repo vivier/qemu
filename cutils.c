@@ -282,7 +282,8 @@ void qemu_iovec_memset(QEMUIOVector *qiov, int c, size_t count)
 int64_t strtosz_suffix(const char *nptr, char **end, const char default_suffix)
 {
     int64_t retval = -1;
-    char *endptr, c, d;
+    char *endptr;
+    unsigned char c, d;
     int mul_required = 0;
     double val, mul, integral, fraction;
 
@@ -302,7 +303,7 @@ int64_t strtosz_suffix(const char *nptr, char **end, const char default_suffix)
      */
     c = *endptr;
     d = c;
-    if (isspace(c) || c == '\0' || c == ',') {
+    if (qemu_isspace(c) || c == '\0' || c == ',') {
         c = 0;
         if (default_suffix) {
             d = default_suffix;
@@ -349,7 +350,7 @@ int64_t strtosz_suffix(const char *nptr, char **end, const char default_suffix)
      */
     if (c != 0) {
         endptr++;
-        if (!isspace(*endptr) && *endptr != ',' && *endptr != 0) {
+        if (!qemu_isspace(*endptr) && *endptr != ',' && *endptr != 0) {
             goto fail;
         }
     }
