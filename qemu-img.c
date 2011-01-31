@@ -307,6 +307,7 @@ static int img_create(int argc, char **argv)
             break;
         }
         switch(c) {
+        case '?':
         case 'h':
             help();
             break;
@@ -475,6 +476,7 @@ static int img_check(int argc, char **argv)
             break;
         }
         switch(c) {
+        case '?':
         case 'h':
             help();
             break;
@@ -553,6 +555,7 @@ static int img_commit(int argc, char **argv)
             break;
         }
         switch(c) {
+        case '?':
         case 'h':
             help();
             break;
@@ -689,6 +692,7 @@ static int img_convert(int argc, char **argv)
             break;
         }
         switch(c) {
+        case '?':
         case 'h':
             help();
             break;
@@ -1071,6 +1075,7 @@ static int img_info(int argc, char **argv)
             break;
         }
         switch(c) {
+        case '?':
         case 'h':
             help();
             break;
@@ -1148,6 +1153,7 @@ static int img_snapshot(int argc, char **argv)
             break;
         }
         switch(c) {
+        case '?':
         case 'h':
             help();
             return 0;
@@ -1263,6 +1269,7 @@ static int img_rebase(int argc, char **argv)
             break;
         }
         switch(c) {
+        case '?':
         case 'h':
             help();
             return 0;
@@ -1477,6 +1484,7 @@ static int img_resize(int argc, char **argv)
             break;
         }
         switch(c) {
+        case '?':
         case 'h':
             help();
             break;
