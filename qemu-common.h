@@ -136,6 +136,7 @@ int qemu_strnlen(const char *s, int max_len);
 time_t mktimegm(struct tm *tm);
 int qemu_fls(int i);
 int qemu_fdatasync(int fd);
+ssize_t strtosz(const char *nptr, char **end);
 
 /* path.c */
 void init_paths(const char *prefix);
