@@ -1,0 +1,125 @@
+From 8b19632ead41cf5262f9f3cc7f6e76347b470182 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 31 Jan 2011 12:23:25 -0200
+Subject: [PATCH 31/37] Make strtosz() return int64_t instead of ssize_t
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1296476610-28514-22-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 17316
+O-Subject: [PATCH 21/26] Make strtosz() return int64_t instead of ssize_t
+Bugzilla: 637701
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+strtosz() needs to return a 64 bit type even on 32 bit
+architectures. Otherwise qemu-img will fail to create disk
+images >= 2GB
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 70b4f4bb05ff5e6812c6593eeefbd19bd61b517d)
+---
+ cutils.c      |    8 ++++----
+ qemu-common.h |    4 ++--
+ qemu-img.c    |    2 +-
+ vl.c          |    4 ++--
+ 4 files changed, 9 insertions(+), 9 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ cutils.c      |    8 ++++----
+ qemu-common.h |    4 ++--
+ qemu-img.c    |    2 +-
+ vl.c          |    4 ++--
+ 4 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/cutils.c b/cutils.c
+index f375f7b..3217b1d 100644
+--- a/cutils.c
++++ b/cutils.c
+@@ -279,9 +279,9 @@ void qemu_iovec_memset(QEMUIOVector *qiov, int c, size_t count)
+  * value must be terminated by whitespace, ',' or '\0'. Return -1 on
+  * error.
+  */
+-ssize_t strtosz_suffix(const char *nptr, char **end, const char default_suffix)
++int64_t strtosz_suffix(const char *nptr, char **end, const char default_suffix)
+ {
+-    ssize_t retval = -1;
++    int64_t retval = -1;
+     char *endptr, c, d;
+     int mul_required = 0;
+     double val, mul, integral, fraction;
+@@ -353,7 +353,7 @@ ssize_t strtosz_suffix(const char *nptr, char **end, const char default_suffix)
+             goto fail;
+         }
+     }
+-    if ((val * mul >= ~(size_t)0) || val < 0) {
++    if ((val * mul >= INT64_MAX) || val < 0) {
+         goto fail;
+     }
+     retval = val * mul;
+@@ -366,7 +366,7 @@ fail:
+     return retval;
+ }
+ 
+-ssize_t strtosz(const char *nptr, char **end)
++int64_t strtosz(const char *nptr, char **end)
+ {
+     return strtosz_suffix(nptr, end, STRTOSZ_DEFSUFFIX_MB);
+ }
+diff --git a/qemu-common.h b/qemu-common.h
+index 9ad3330..c1dd252 100644
+--- a/qemu-common.h
++++ b/qemu-common.h
+@@ -142,8 +142,8 @@ int qemu_fdatasync(int fd);
+ #define STRTOSZ_DEFSUFFIX_MB	'M'
+ #define STRTOSZ_DEFSUFFIX_KB	'K'
+ #define STRTOSZ_DEFSUFFIX_B	'B'
+-ssize_t strtosz(const char *nptr, char **end);
+-ssize_t strtosz_suffix(const char *nptr, char **end, const char default_suffix);
++int64_t strtosz(const char *nptr, char **end);
++int64_t strtosz_suffix(const char *nptr, char **end, const char default_suffix);
+ 
+ /* path.c */
+ void init_paths(const char *prefix);
+diff --git a/qemu-img.c b/qemu-img.c
+index 69f6270..2dd304b 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -328,7 +328,7 @@ static int img_create(int argc, char **argv)
+ 
+     /* Get image size, if specified */
+     if (optind < argc) {
+-        ssize_t sval;
++        int64_t sval;
+         sval = strtosz_suffix(argv[optind++], NULL, STRTOSZ_DEFSUFFIX_B);
+         if (sval < 0) {
+             error("Invalid image size specified! You may use k, M, G or "
+diff --git a/vl.c b/vl.c
+index b6423c5..734a5b2 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2688,7 +2688,7 @@ static void numa_add(const char *optarg)
+         if (get_param_value(option, 128, "mem", optarg) == 0) {
+             node_mem[nodenr] = 0;
+         } else {
+-            ssize_t sval;
++            int64_t sval;
+             sval = strtosz(option, NULL);
+             if (sval < 0) {
+                 fprintf(stderr, "qemu: invalid numa mem size: %s\n", optarg);
+@@ -5643,7 +5643,7 @@ int main(int argc, char **argv, char **envp)
+                 exit(0);
+                 break;
+             case QEMU_OPTION_m: {
+-                ssize_t value;
++                int64_t value;
+ 
+                 value = strtosz(optarg, NULL);
+                 if (value < 0) {
+-- 
+1.7.4.rc1.16.gd2f15e
+

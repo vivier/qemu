@@ -1,0 +1,164 @@
+From d1671013d61fd9204f063a643cb07935c41622bb Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 31 Jan 2011 12:23:20 -0200
+Subject: [PATCH 26/37] Introduce do_snapshot_blkdev() and monitor command to handle it.
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1296476610-28514-17-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 17310
+O-Subject: [PATCH 16/26] Introduce do_snapshot_blkdev() and monitor command to
+	handle it.
+Bugzilla: 637701
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+The monitor command is:
+snapshot_blkdev <device> [snapshot-file] [format]
+
+Default format is qcow2. For now snapshots without a snapshot-file, eg
+internal snapshots, are not supported.
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry-picked from commit f88825680aa71eb4069cdaee9d65f2269f5c7cf3)
+---
+ monitor.c       |   63 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ qemu-monitor.hx |   19 ++++++++++++++++
+ sysemu.h        |    2 +
+ 3 files changed, 84 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c       |   63 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ qemu-monitor.hx |   19 ++++++++++++++++
+ sysemu.h        |    2 +
+ 3 files changed, 84 insertions(+), 0 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index ab1406f..d83736a 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -40,6 +40,7 @@
+ #include "readline.h"
+ #include "console.h"
+ #include "block.h"
++#include "block_int.h"
+ #include "audio/audio.h"
+ #include "disas.h"
+ #include "balloon.h"
+@@ -1041,6 +1042,68 @@ static int do_quit(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     return 0;
+ }
+ 
++int do_snapshot_blkdev(Monitor *mon, const QDict *qdict, QObject **ret_data)
++{
++    const char *device = qdict_get_str(qdict, "device");
++    const char *filename = qdict_get_try_str(qdict, "snapshot_file");
++    const char *format = qdict_get_try_str(qdict, "format");
++    BlockDriverState *bs;
++    BlockDriver *drv, *proto_drv;
++    int ret = 0;
++    int flags;
++
++    bs = bdrv_find(device);
++    if (!bs) {
++        qerror_report(QERR_DEVICE_NOT_FOUND, device);
++        ret = -1;
++        goto out;
++    }
++
++    if (!format) {
++        format = "qcow2";
++    }
++
++    drv = bdrv_find_format(format);
++    if (!drv) {
++        qerror_report(QERR_INVALID_BLOCK_FORMAT, format);
++        ret = -1;
++        goto out;
++    }
++
++    proto_drv = bdrv_find_protocol(filename);
++    if (!proto_drv) {
++        qerror_report(QERR_INVALID_BLOCK_FORMAT, format);
++        ret = -1;
++        goto out;
++    }
++
++    ret = bdrv_img_create(filename, format, bs->filename,
++                          bs->drv->format_name, NULL, -1, bs->open_flags);
++    if (ret) {
++        goto out;
++    }
++
++    qemu_aio_flush();
++    bdrv_flush(bs);
++
++    flags = bs->open_flags;
++    bdrv_close(bs);
++    ret = bdrv_open(bs, filename, flags, drv);
++    /*
++     * If reopening the image file we just created fails, we really
++     * are in trouble :(
++     */
++    if (ret != 0) {
++        abort();
++    }
++out:
++    if (ret) {
++        ret = -1;
++    }
++
++    return ret;
++}
++
+ static int eject_device(Monitor *mon, BlockDriverState *bs, int force)
+ {
+     if (!force) {
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 8368a53..5fab2f8 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -1144,6 +1144,25 @@ Example:
+ 
+ EQMP
+ 
++    {
++        .name       = "snapshot_blkdev",
++        .args_type  = "device:s,snapshot_file:s?,format:s?",
++        .params     = "device [new-image-file] [format]",
++        .help       = "initiates a live snapshot\n\t\t\t"
++                      "of device. If a new image file is specified, the\n\t\t\t"
++                      "new image file will become the new root image.\n\t\t\t"
++                      "If format is specified, the snapshot file will\n\t\t\t"
++                      "be created in that format. Otherwise the\n\t\t\t"
++                      "snapshot will be internal! (currently unsupported)",
++        .mhandler.cmd_new = do_snapshot_blkdev,
++    },
++
++STEXI
++@item snapshot_blkdev
++@findex snapshot_blkdev
++Snapshot device, using snapshot file as target if provided
++ETEXI
++
+ #if defined(TARGET_I386) && 0 /* Disabled for Red Hat Enterprise Linux */
+     {
+         .name       = "drive_add",
+diff --git a/sysemu.h b/sysemu.h
+index 751db36..74d1771 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -257,4 +257,6 @@ void rtc_change_mon_event(struct tm *tm);
+ 
+ void register_devices(void);
+ 
++int do_snapshot_blkdev(Monitor *mon, const QDict *qdict, QObject **ret_data);
++
+ #endif
+-- 
+1.7.4.rc1.16.gd2f15e
+

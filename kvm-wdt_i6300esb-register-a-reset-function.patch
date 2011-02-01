@@ -1,0 +1,113 @@
+From ed2c7425aa53e51f4cba86d78aa403535239703a Mon Sep 17 00:00:00 2001
+From: Richard Jones <rjones@redhat.com>
+Date: Tue, 25 Jan 2011 15:00:02 -0200
+Subject: [PATCH 06/37] wdt_i6300esb: register a reset function
+
+RH-Author: Richard Jones <rjones@redhat.com>
+Message-id: <1295967603-20812-2-git-send-email-rjones@redhat.com>
+Patchwork-id: 16978
+O-Subject: [PATCH 1/2] wdt_i6300esb: register a reset function
+Bugzilla: 637180
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+From: Bernhard Kohl <bernhard.kohl@nsn.com>
+
+The device shall set its default hardware state after each reset.
+This includes that the timer is stopped which is especially important
+if the guest does a reboot independantly of a watchdog bite. I moved
+the initialization of the state variables completely from the init
+to the reset function which is called right after init during the
+first boot and afterwards during each reboot.
+
+Signed-off-by: Bernhard Kohl <bernhard.kohl@nsn.com>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+(cherry picked from commit fa82e9c300df6f7b8bd44a26ac752c4ea5da02c1)
+---
+ hw/wdt_i6300esb.c |   39 +++++++++++++++++++++------------------
+ 1 files changed, 21 insertions(+), 18 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/wdt_i6300esb.c |   39 +++++++++++++++++++++------------------
+ 1 files changed, 21 insertions(+), 18 deletions(-)
+
+diff --git a/hw/wdt_i6300esb.c b/hw/wdt_i6300esb.c
+index 805b302..f1c637e 100644
+--- a/hw/wdt_i6300esb.c
++++ b/hw/wdt_i6300esb.c
+@@ -140,14 +140,26 @@ static void i6300esb_disable_timer(I6300State *d)
+     qemu_del_timer(d->timer);
+ }
+ 
+-static void i6300esb_reset(I6300State *d)
++static void i6300esb_reset(DeviceState *dev)
+ {
+-    /* XXX We should probably reset other parts of the state here,
+-     * but we should also reset our state on general machine reset
+-     * too.  For now just disable the timer so it doesn't fire
+-     * again after the reboot.
+-     */
++    PCIDevice *pdev = DO_UPCAST(PCIDevice, qdev, dev);
++    I6300State *d = DO_UPCAST(I6300State, dev, pdev);
++
++    i6300esb_debug("I6300State = %p\n", d);
++
+     i6300esb_disable_timer(d);
++
++    d->reboot_enabled = 1;
++    d->clock_scale = CLOCK_SCALE_1KHZ;
++    d->int_type = INT_TYPE_IRQ;
++    d->free_run = 0;
++    d->locked = 0;
++    d->enabled = 0;
++    d->timer1_preload = 0xfffff;
++    d->timer2_preload = 0xfffff;
++    d->stage = 1;
++    d->unlock_state = 0;
++    d->previous_reboot_flag = 0;
+ }
+ 
+ /* This function is called when the watchdog expires.  Note that
+@@ -181,7 +193,6 @@ static void i6300esb_timer_expired(void *vp)
+         if (d->reboot_enabled) {
+             d->previous_reboot_flag = 1;
+             watchdog_perform_action(); /* This reboots, exits, etc */
+-            i6300esb_reset(d);
+         }
+ 
+         /* In "free running mode" we start stage 1 again. */
+@@ -394,18 +405,9 @@ static int i6300esb_init(PCIDevice *dev)
+     I6300State *d = DO_UPCAST(I6300State, dev, dev);
+     uint8_t *pci_conf;
+ 
+-    d->reboot_enabled = 1;
+-    d->clock_scale = CLOCK_SCALE_1KHZ;
+-    d->int_type = INT_TYPE_IRQ;
+-    d->free_run = 0;
+-    d->locked = 0;
+-    d->enabled = 0;
++    i6300esb_debug("I6300State = %p\n", d);
++
+     d->timer = qemu_new_timer(vm_clock, i6300esb_timer_expired, d);
+-    d->timer1_preload = 0xfffff;
+-    d->timer2_preload = 0xfffff;
+-    d->stage = 1;
+-    d->unlock_state = 0;
+-    d->previous_reboot_flag = 0;
+ 
+     pci_conf = d->dev.config;
+     pci_config_set_vendor_id(pci_conf, PCI_VENDOR_ID_INTEL);
+@@ -428,6 +430,7 @@ static PCIDeviceInfo i6300esb_info = {
+     .qdev.name    = "i6300esb",
+     .qdev.size    = sizeof(I6300State),
+     .qdev.vmsd    = &vmstate_i6300esb,
++    .qdev.reset   = i6300esb_reset,
+     .config_read  = i6300esb_config_read,
+     .config_write = i6300esb_config_write,
+     .init         = i6300esb_init,
+-- 
+1.7.4.rc1.16.gd2f15e
+

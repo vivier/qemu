@@ -1,0 +1,56 @@
+From f110ae0000e141663c4270a8e07c5e0985b94261 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Mon, 24 Jan 2011 12:27:26 -0200
+Subject: [PATCH 05/37] qemu-io: Fix error messages
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1295872046-14896-1-git-send-email-kwolf@redhat.com>
+Patchwork-id: 16835
+O-Subject: [RHEL-6.1 qemu-kvm PATCH] qemu-io: Fix error messages
+Bugzilla: 672187
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 672187
+
+The truncate and getlength commands passed a negative error number to strerror.
+They also happen to be the two functions that are lacking a newline at the end
+of their error message.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 0923c577f993d61eeaf41f66db1e1010fa113976)
+---
+ qemu-io.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-io.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/qemu-io.c b/qemu-io.c
+index 44d2d41..139a964 100644
+--- a/qemu-io.c
++++ b/qemu-io.c
+@@ -1124,7 +1124,7 @@ truncate_f(int argc, char **argv)
+ 
+ 	ret = bdrv_truncate(bs, offset);
+ 	if (ret < 0) {
+-		printf("truncate: %s", strerror(ret));
++		printf("truncate: %s\n", strerror(-ret));
+ 		return 0;
+ 	}
+ 
+@@ -1149,7 +1149,7 @@ length_f(int argc, char **argv)
+ 
+ 	size = bdrv_getlength(bs);
+ 	if (size < 0) {
+-		printf("getlength: %s", strerror(size));
++		printf("getlength: %s\n", strerror(-size));
+ 		return 0;
+ 	}
+ 
+-- 
+1.7.4.rc1.16.gd2f15e
+

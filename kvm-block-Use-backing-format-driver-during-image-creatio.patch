@@ -1,0 +1,74 @@
+From 96d6cac8aa9246d0b1c627680a761183855d9127 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 31 Jan 2011 12:23:24 -0200
+Subject: [PATCH 30/37] block: Use backing format driver during image creation
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1296476610-28514-21-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 17313
+O-Subject: [PATCH 20/26] block: Use backing format driver during image creation
+Bugzilla: 637701
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+The backing format should be honored during image creation.  For some
+reason we currently use the image format to open the backing file.  This
+fails when the backing file has a different format than the image being
+created.  Keep the image and backing format drivers completely separate.
+
+Also print the backing filename if there is an error opening the backing
+file instead of the image filename.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 96df67d1c3928704cd76d0b2e76372ef18658e85)
+---
+ block.c |    8 +++++---
+ 1 files changed, 5 insertions(+), 3 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ block.c |    8 +++++---
+ 1 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/block.c b/block.c
+index 88cb41d..bd53985 100644
+--- a/block.c
++++ b/block.c
+@@ -2577,6 +2577,7 @@ int bdrv_img_create(const char *filename, const char *fmt,
+     QEMUOptionParameter *backing_fmt, *backing_file;
+     BlockDriverState *bs = NULL;
+     BlockDriver *drv, *proto_drv;
++    BlockDriver *backing_drv = NULL;
+     int ret = 0;
+ 
+     /* Find driver and parse its options */
+@@ -2645,7 +2646,8 @@ int bdrv_img_create(const char *filename, const char *fmt,
+ 
+     backing_fmt = get_option_parameter(param, BLOCK_OPT_BACKING_FMT);
+     if (backing_fmt && backing_fmt->value.s) {
+-        if (!bdrv_find_format(backing_fmt->value.s)) {
++        backing_drv = bdrv_find_format(backing_fmt->value.s);
++        if (!backing_drv) {
+             error_report("Unknown backing file format '%s'",
+                          backing_fmt->value.s);
+             ret = -EINVAL;
+@@ -2667,9 +2669,9 @@ int bdrv_img_create(const char *filename, const char *fmt,
+ 
+             bs = bdrv_new("");
+ 
+-            ret = bdrv_open(bs, backing_file->value.s, flags, drv);
++            ret = bdrv_open(bs, backing_file->value.s, flags, backing_drv);
+             if (ret < 0) {
+-                error_report("Could not open '%s'", filename);
++                error_report("Could not open '%s'", backing_file->value.s);
+                 goto out;
+             }
+             bdrv_get_geometry(bs, &size);
+-- 
+1.7.4.rc1.16.gd2f15e
+

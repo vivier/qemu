@@ -1,0 +1,55 @@
+From 3ead02215345766e21c145e23c4b2d69d011570b Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 31 Jan 2011 12:23:14 -0200
+Subject: [PATCH 20/37] qemu-img: Free option parameter lists in img_create()
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1296476610-28514-11-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 17309
+O-Subject: [PATCH 10/26] qemu-img: Free option parameter lists in img_create()
+Bugzilla: 637701
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+Free option parameter lists in the img_create() error return path.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit a87a6721db3975c93798b6fd6fa42996e9aa695a)
+---
+ qemu-img.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-img.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/qemu-img.c b/qemu-img.c
+index 0a942ce..d92b679 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -426,8 +426,6 @@ static int img_create(int argc, char **argv)
+     puts("");
+ 
+     ret = bdrv_create(drv, filename, param);
+-    free_option_parameters(create_options);
+-    free_option_parameters(param);
+ 
+     if (ret < 0) {
+         if (ret == -ENOTSUP) {
+@@ -439,6 +437,8 @@ static int img_create(int argc, char **argv)
+         }
+     }
+ out:
++    free_option_parameters(create_options);
++    free_option_parameters(param);
+     if (ret) {
+         return 1;
+     }
+-- 
+1.7.4.rc1.16.gd2f15e
+

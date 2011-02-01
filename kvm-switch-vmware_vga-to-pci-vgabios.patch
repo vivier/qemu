@@ -1,0 +1,67 @@
+From 0c5e3454f6321d425b6d50ea630970b01abe9f70 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Fri, 7 Jan 2011 09:46:44 -0200
+Subject: [PATCH 02/37] switch vmware_vga to pci vgabios
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1294393606-1424-3-git-send-email-kraxel@redhat.com>
+Patchwork-id: 15941
+O-Subject: [RHEL-6 kvm PATCH 2/4] switch vmware_vga to pci vgabios
+Bugzilla: 638468
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+upstream: 4eccfec4943db1106c79a01069e18dd4f463219b
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/vmware_vga.c |    7 +------
+ 1 files changed, 1 insertions(+), 6 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/vmware_vga.c |    7 +------
+ 1 files changed, 1 insertions(+), 6 deletions(-)
+
+diff --git a/hw/vmware_vga.c b/hw/vmware_vga.c
+index 4debb45..370985a 100644
+--- a/hw/vmware_vga.c
++++ b/hw/vmware_vga.c
+@@ -114,14 +114,12 @@ struct pci_vmsvga_state_s {
+ # define SVGA_IO_BASE		SVGA_LEGACY_BASE_PORT
+ # define SVGA_IO_MUL		1
+ # define SVGA_FIFO_SIZE		0x10000
+-# define SVGA_MEM_BASE		0xe0000000
+ # define SVGA_PCI_DEVICE_ID	PCI_DEVICE_ID_VMWARE_SVGA2
+ #else
+ # define SVGA_ID		SVGA_ID_1
+ # define SVGA_IO_BASE		SVGA_LEGACY_BASE_PORT
+ # define SVGA_IO_MUL		4
+ # define SVGA_FIFO_SIZE		0x10000
+-# define SVGA_MEM_BASE		0xe0000000
+ # define SVGA_PCI_DEVICE_ID	PCI_DEVICE_ID_VMWARE_SVGA
+ #endif
+ 
+@@ -1171,10 +1169,6 @@ static void vmsvga_init(struct vmsvga_state_s *s, int vga_ram_size)
+     vga_init(&s->vga);
+     vmstate_register(NULL, 0, &vmstate_vga_common, &s->vga);
+ 
+-    vga_init_vbe(&s->vga);
+-
+-    rom_add_vga(VGABIOS_FILENAME);
+-
+     vmsvga_reset(s);
+ }
+ 
+@@ -1274,6 +1268,7 @@ static PCIDeviceInfo vmsvga_info = {
+     .qdev.size    = sizeof(struct pci_vmsvga_state_s),
+     .qdev.vmsd    = &vmstate_vmware_vga,
+     .init         = pci_vmsvga_initfn,
++    .romfile      = "vgabios-vmware.bin",
+ };
+ 
+ static void vmsvga_register(void)
+-- 
+1.7.4.rc1.16.gd2f15e
+

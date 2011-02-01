@@ -1,0 +1,92 @@
+From a7a6f562497d87508d50274113eee272d889a21d Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 31 Jan 2011 12:23:18 -0200
+Subject: [PATCH 24/37] qemu-img.c: Clean up handling of image size in img_create()
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1296476610-28514-15-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 17305
+O-Subject: [PATCH 14/26] qemu-img.c: Clean up handling of image size in
+	img_create()
+Bugzilla: 637701
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+This cleans up the handling of image size in img_create() by parsing
+the value early, and then only setting it once if a value has been
+added as the last argument to the command line.
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Reviewed-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 1da7cfbd0117eeb0aa29b187bb01426d9290e8ab)
+---
+ qemu-img.c |   23 +++++++++++++++++------
+ 1 files changed, 17 insertions(+), 6 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-img.c |   23 +++++++++++++++++------
+ 1 files changed, 17 insertions(+), 6 deletions(-)
+
+diff --git a/qemu-img.c b/qemu-img.c
+index 96149e2..80084df 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -280,6 +280,7 @@ static int add_old_style_options(const char *fmt, QEMUOptionParameter *list,
+ static int img_create(int argc, char **argv)
+ {
+     int c, ret = 0;
++    uint64_t img_size = -1;
+     const char *fmt = "raw";
+     const char *base_fmt = NULL;
+     const char *filename;
+@@ -328,6 +329,20 @@ static int img_create(int argc, char **argv)
+     }
+     filename = argv[optind++];
+ 
++    /* Get image size, if specified */
++    if (optind < argc) {
++        ssize_t sval;
++        sval = strtosz_suffix(argv[optind++], NULL, STRTOSZ_DEFSUFFIX_B);
++        if (sval < 0) {
++            error("Invalid image size specified! You may use k, M, G or "
++                  "T suffixes for ");
++            error("kilobytes, megabytes, gigabytes and terabytes.");
++            ret = -1;
++            goto out;
++        }
++        img_size = (uint64_t)sval;
++    }
++
+     if (options && !strcmp(options, "?")) {
+         ret = print_block_option_help(filename, fmt);
+         goto out;
+@@ -355,7 +370,8 @@ static int img_create(int argc, char **argv)
+ 
+     /* Create parameter list with default values */
+     param = parse_option_parameters("", create_options, param);
+-    set_option_parameter_int(param, BLOCK_OPT_SIZE, -1);
++
++    set_option_parameter_int(param, BLOCK_OPT_SIZE, img_size);
+ 
+     /* Parse -o options */
+     if (options) {
+@@ -367,11 +383,6 @@ static int img_create(int argc, char **argv)
+         }
+     }
+ 
+-    /* Add size to parameters */
+-    if (optind < argc) {
+-        set_option_parameter(param, BLOCK_OPT_SIZE, argv[optind++]);
+-    }
+-
+     /* Add old-style options to parameters */
+     ret = add_old_style_options(fmt, param, base_filename, base_fmt);
+     if (ret < 0) {
+-- 
+1.7.4.rc1.16.gd2f15e
+

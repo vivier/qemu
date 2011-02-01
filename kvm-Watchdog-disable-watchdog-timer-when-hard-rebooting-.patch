@@ -1,0 +1,144 @@
+From af1ca3ab7841a72b33b115d5321e26e0d403d43f Mon Sep 17 00:00:00 2001
+From: Richard Jones <rjones@redhat.com>
+Date: Tue, 25 Jan 2011 15:00:03 -0200
+Subject: [PATCH 07/37] Watchdog: disable watchdog timer when hard-rebooting a guest.
+
+RH-Author: Richard Jones <rjones@redhat.com>
+Message-id: <1295967603-20812-3-git-send-email-rjones@redhat.com>
+Patchwork-id: 16980
+O-Subject: [PATCH 2/2] Watchdog: disable watchdog timer when hard-rebooting a
+	guest.
+Bugzilla: 637180
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+This commit causes the watchdog timer to be reset when a guest is
+hard-rebooted.
+
+The failure case previously was as follows:
+
+  (a) guest boots, watchdog is enabled
+
+  (b) guest does a reset eg:
+        echo 'b' > /proc/sysrq-trigger
+    (note that an ordinary /sbin/reboot wouldn't hit this case
+    since as the watchdog daemon is shut down, the daemon would
+    properly disable the watchdog device)
+
+  (c) the reboot takes longer than the remaining time on the
+    watchdog
+
+  (d) the watchdog therefore fires during the reboot
+
+  (e) probably the VM would just reboot again at this point which
+    is pretty benign, but it could depend on the action that the
+    user had selected for the watchdog
+
+Now we use the qdev reset function to register a reset handler
+which disables the timer.  Note the handler is called _either_
+just after init _or_ when the guest reboots.
+
+In the i6300esb case there is a small refactoring of the code so
+that the device's internal state is now fully restored to defaults
+on a reboot.
+
+Signed-off-by: Richard W.M. Jones <rjones@redhat.com>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+(cherry picked from commit 36888c6335422f07bbc50bf3443a39f24b90c7c6)
+---
+ hw/wdt_i6300esb.c |    5 ++++-
+ hw/wdt_ib700.c    |   20 ++++++++++++++++----
+ 2 files changed, 20 insertions(+), 5 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/wdt_i6300esb.c |    5 ++++-
+ hw/wdt_ib700.c    |   20 ++++++++++++++++----
+ 2 files changed, 20 insertions(+), 5 deletions(-)
+
+diff --git a/hw/wdt_i6300esb.c b/hw/wdt_i6300esb.c
+index f1c637e..2f84267 100644
+--- a/hw/wdt_i6300esb.c
++++ b/hw/wdt_i6300esb.c
+@@ -149,6 +149,8 @@ static void i6300esb_reset(DeviceState *dev)
+ 
+     i6300esb_disable_timer(d);
+ 
++    /* NB: Don't change d->previous_reboot_flag in this function. */
++
+     d->reboot_enabled = 1;
+     d->clock_scale = CLOCK_SCALE_1KHZ;
+     d->int_type = INT_TYPE_IRQ;
+@@ -159,7 +161,6 @@ static void i6300esb_reset(DeviceState *dev)
+     d->timer2_preload = 0xfffff;
+     d->stage = 1;
+     d->unlock_state = 0;
+-    d->previous_reboot_flag = 0;
+ }
+ 
+ /* This function is called when the watchdog expires.  Note that
+@@ -193,6 +194,7 @@ static void i6300esb_timer_expired(void *vp)
+         if (d->reboot_enabled) {
+             d->previous_reboot_flag = 1;
+             watchdog_perform_action(); /* This reboots, exits, etc */
++            i6300esb_reset(&d->dev.qdev);
+         }
+ 
+         /* In "free running mode" we start stage 1 again. */
+@@ -408,6 +410,7 @@ static int i6300esb_init(PCIDevice *dev)
+     i6300esb_debug("I6300State = %p\n", d);
+ 
+     d->timer = qemu_new_timer(vm_clock, i6300esb_timer_expired, d);
++    d->previous_reboot_flag = 0;
+ 
+     pci_conf = d->dev.config;
+     pci_config_set_vendor_id(pci_conf, PCI_VENDOR_ID_INTEL);
+diff --git a/hw/wdt_ib700.c b/hw/wdt_ib700.c
+index c34687b..b6235eb 100644
+--- a/hw/wdt_ib700.c
++++ b/hw/wdt_ib700.c
+@@ -97,6 +97,8 @@ static int wdt_ib700_init(ISADevice *dev)
+ {
+     IB700State *s = DO_UPCAST(IB700State, dev, dev);
+ 
++    ib700_debug("watchdog init\n");
++
+     s->timer = qemu_new_timer(vm_clock, ib700_timer_expired, s);
+     register_ioport_write(0x441, 2, 1, ib700_write_disable_reg, s);
+     register_ioport_write(0x443, 2, 1, ib700_write_enable_reg, s);
+@@ -104,16 +106,26 @@ static int wdt_ib700_init(ISADevice *dev)
+     return 0;
+ }
+ 
++static void wdt_ib700_reset(DeviceState *dev)
++{
++    IB700State *s = DO_UPCAST(IB700State, dev.qdev, dev);
++
++    ib700_debug("watchdog reset\n");
++
++    qemu_del_timer(s->timer);
++}
++
+ static WatchdogTimerModel model = {
+     .wdt_name = "ib700",
+     .wdt_description = "iBASE 700",
+ };
+ 
+ static ISADeviceInfo wdt_ib700_info = {
+-    .qdev.name = "ib700",
+-    .qdev.size = sizeof(IB700State),
+-    .qdev.vmsd = &vmstate_ib700,
+-    .init      = wdt_ib700_init,
++    .qdev.name  = "ib700",
++    .qdev.size  = sizeof(IB700State),
++    .qdev.vmsd  = &vmstate_ib700,
++    .qdev.reset = wdt_ib700_reset,
++    .init       = wdt_ib700_init,
+ };
+ 
+ static void wdt_ib700_register_devices(void)
+-- 
+1.7.4.rc1.16.gd2f15e
+

@@ -1,0 +1,61 @@
+From b6d51ea5284ed899554dfc21ee7a5e736da68853 Mon Sep 17 00:00:00 2001
+From: Gleb Natapov <gleb@redhat.com>
+Date: Sun, 30 Jan 2011 09:31:36 -0200
+Subject: [PATCH 10/37] clear vapic after reset
+
+RH-Author: Gleb Natapov <gleb@redhat.com>
+Message-id: <20110130093136.GB5700@redhat.com>
+Patchwork-id: 17269
+O-Subject: [PATCH RHEL6.1] clear vapic after reset
+Bugzilla: 669268
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+
+Clear the vapic address immediately after reset.  This allows dual-boot gues
+to work efficiently, and more importantly, works around the bios using
+'rep insb' to read in the option rom and confusing the vapic machinery.
+
+Signed-off-by: Avi Kivity <avi@redhat.com>
+
+Upstream commit: 6c52ef31bcb351af944ce2882b2cc3ad0938a7c8
+BZ: 669268
+
+Signed-off-by: Gleb Natapov <gleb@redhat.com>
+--
+			Gleb.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ target-i386/kvm.c |   13 +++++++++++++
+ 1 files changed, 13 insertions(+), 0 deletions(-)
+
+diff --git a/target-i386/kvm.c b/target-i386/kvm.c
+index 8e5660d..56fc1ac 100644
+--- a/target-i386/kvm.c
++++ b/target-i386/kvm.c
+@@ -227,8 +227,21 @@ int kvm_arch_init_vcpu(CPUState *env)
+ }
+ 
+ #endif
++
++static void kvm_clear_vapic(CPUState *env)
++{
++#ifdef KVM_SET_VAPIC_ADDR
++    struct kvm_vapic_addr va = {
++        .vapic_addr = 0,
++    };
++
++    kvm_vcpu_ioctl(env, KVM_SET_VAPIC_ADDR, &va);
++#endif
++}
++
+ void kvm_arch_reset_vcpu(CPUState *env)
+ {
++    kvm_clear_vapic(env);
+     env->interrupt_injected = -1;
+     env->nmi_injected = 0;
+     env->nmi_pending = 0;
+-- 
+1.7.4.rc1.16.gd2f15e
+

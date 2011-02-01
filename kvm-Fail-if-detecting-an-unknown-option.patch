@@ -1,0 +1,103 @@
+From 50d9ed64b5d652b1435832096816c071aec8b583 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 31 Jan 2011 12:23:11 -0200
+Subject: [PATCH 17/37] Fail if detecting an unknown option
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1296476610-28514-8-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 17301
+O-Subject: [PATCH 07/26] Fail if detecting an unknown option
+Bugzilla: 637701
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+This patch changes qemu-img to exit if an unknown option is detected,
+instead of trying to continue with a set of arguments which may be
+incorrect.
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit ef87394c08f348c95dc831e2e45c488f6466172d)
+---
+ qemu-img.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-img.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-img.c b/qemu-img.c
+index 4017300..76943bb 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -307,6 +307,7 @@ static int img_create(int argc, char **argv)
+             break;
+         }
+         switch(c) {
++        case '?':
+         case 'h':
+             help();
+             break;
+@@ -475,6 +476,7 @@ static int img_check(int argc, char **argv)
+             break;
+         }
+         switch(c) {
++        case '?':
+         case 'h':
+             help();
+             break;
+@@ -553,6 +555,7 @@ static int img_commit(int argc, char **argv)
+             break;
+         }
+         switch(c) {
++        case '?':
+         case 'h':
+             help();
+             break;
+@@ -689,6 +692,7 @@ static int img_convert(int argc, char **argv)
+             break;
+         }
+         switch(c) {
++        case '?':
+         case 'h':
+             help();
+             break;
+@@ -1071,6 +1075,7 @@ static int img_info(int argc, char **argv)
+             break;
+         }
+         switch(c) {
++        case '?':
+         case 'h':
+             help();
+             break;
+@@ -1148,6 +1153,7 @@ static int img_snapshot(int argc, char **argv)
+             break;
+         }
+         switch(c) {
++        case '?':
+         case 'h':
+             help();
+             return 0;
+@@ -1263,6 +1269,7 @@ static int img_rebase(int argc, char **argv)
+             break;
+         }
+         switch(c) {
++        case '?':
+         case 'h':
+             help();
+             return 0;
+@@ -1477,6 +1484,7 @@ static int img_resize(int argc, char **argv)
+             break;
+         }
+         switch(c) {
++        case '?':
+         case 'h':
+             help();
+             break;
+-- 
+1.7.4.rc1.16.gd2f15e
+

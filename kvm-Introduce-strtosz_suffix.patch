@@ -1,0 +1,103 @@
+From f94554d9dc5c9f3dcb0acb18fe669c34954cbd94 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 31 Jan 2011 12:23:17 -0200
+Subject: [PATCH 23/37] Introduce strtosz_suffix()
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1296476610-28514-14-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 17306
+O-Subject: [PATCH 13/26] Introduce strtosz_suffix()
+Bugzilla: 637701
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+This introduces strtosz_suffix() which allows the caller to specify a
+default suffix in case the non default of MB is wanted.
+
+strtosz() is kept as a wrapper for strtosz_suffix() which keeps it's
+current default of MB.
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Reviewed-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry-picked from commit d8427002dc1be0a9337cde3ef505ee6e57718675)
+---
+ cutils.c      |   17 ++++++++++++++---
+ qemu-common.h |    7 +++++++
+ 2 files changed, 21 insertions(+), 3 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ cutils.c      |   17 ++++++++++++++---
+ qemu-common.h |    7 +++++++
+ 2 files changed, 21 insertions(+), 3 deletions(-)
+
+diff --git a/cutils.c b/cutils.c
+index 482e54b..f375f7b 100644
+--- a/cutils.c
++++ b/cutils.c
+@@ -279,10 +279,10 @@ void qemu_iovec_memset(QEMUIOVector *qiov, int c, size_t count)
+  * value must be terminated by whitespace, ',' or '\0'. Return -1 on
+  * error.
+  */
+-ssize_t strtosz(const char *nptr, char **end)
++ssize_t strtosz_suffix(const char *nptr, char **end, const char default_suffix)
+ {
+     ssize_t retval = -1;
+-    char *endptr, c;
++    char *endptr, c, d;
+     int mul_required = 0;
+     double val, mul, integral, fraction;
+ 
+@@ -301,10 +301,16 @@ ssize_t strtosz(const char *nptr, char **end)
+      * part of a multi token argument.
+      */
+     c = *endptr;
++    d = c;
+     if (isspace(c) || c == '\0' || c == ',') {
+         c = 0;
++        if (default_suffix) {
++            d = default_suffix;
++        } else {
++            d = c;
++        }
+     }
+-    switch (c) {
++    switch (d) {
+     case 'B':
+     case 'b':
+         mul = 1;
+@@ -359,3 +365,8 @@ fail:
+ 
+     return retval;
+ }
++
++ssize_t strtosz(const char *nptr, char **end)
++{
++    return strtosz_suffix(nptr, end, STRTOSZ_DEFSUFFIX_MB);
++}
+diff --git a/qemu-common.h b/qemu-common.h
+index 8123cbd..9ad3330 100644
+--- a/qemu-common.h
++++ b/qemu-common.h
+@@ -136,7 +136,14 @@ int qemu_strnlen(const char *s, int max_len);
+ time_t mktimegm(struct tm *tm);
+ int qemu_fls(int i);
+ int qemu_fdatasync(int fd);
++
++#define STRTOSZ_DEFSUFFIX_TB	'T'
++#define STRTOSZ_DEFSUFFIX_GB	'G'
++#define STRTOSZ_DEFSUFFIX_MB	'M'
++#define STRTOSZ_DEFSUFFIX_KB	'K'
++#define STRTOSZ_DEFSUFFIX_B	'B'
+ ssize_t strtosz(const char *nptr, char **end);
++ssize_t strtosz_suffix(const char *nptr, char **end, const char default_suffix);
+ 
+ /* path.c */
+ void init_paths(const char *prefix);
+-- 
+1.7.4.rc1.16.gd2f15e
+

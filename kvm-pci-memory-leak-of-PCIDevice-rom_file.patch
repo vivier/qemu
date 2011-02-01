@@ -1,0 +1,52 @@
+From 6ed7d5413cd40bff3a2aea173cb2b54e9576a1b5 Mon Sep 17 00:00:00 2001
+From: Xiao Wang <jasowang@redhat.com>
+Date: Tue, 1 Feb 2011 08:46:55 -0200
+Subject: [PATCH 37/37] pci: memory leak of PCIDevice::rom_file
+
+RH-Author: Xiao Wang <jasowang@redhat.com>
+Message-id: <20110201084655.9183.45331.stgit@dhcp-91-158.nay.redhat.com>
+Patchwork-id: 17386
+O-Subject: [RHEL6.1 PATCH] pci: memory leak of PCIDevice::rom_file
+Bugzilla: 672229
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Isaku Yamahata <yamahata@valinux.co.jp>
+
+Bugzilla: 672229
+Brew build: https://brewweb.devel.redhat.com/taskinfo?taskID=3078205
+Test status: Pass nic_hotplug test of autotest.
+
+PCIDevice::rom_file is leaked.
+PCIDevice::rom_file is allocated in pci_qdev_init(), but not freed anywhere.
+free it in qemu_unregister_device().
+
+Signed-off-by: Isaku Yamahata <yamahata@valinux.co.jp>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry-picked from be7052c2a8f667f1dc42b06afcebb964ee0b03ff)
+Signed-off-by: Jason Wang <jasowang@redhat.com>
+---
+ hw/pci.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/pci.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/hw/pci.c b/hw/pci.c
+index 04b78bb..0cb49b7 100644
+--- a/hw/pci.c
++++ b/hw/pci.c
+@@ -738,6 +738,7 @@ static int pci_unregister_device(DeviceState *dev)
+ 
+     pci_unregister_io_regions(pci_dev);
+     pci_del_option_rom(pci_dev);
++    qemu_free(pci_dev->romfile);
+     do_pci_unregister_device(pci_dev);
+     return 0;
+ }
+-- 
+1.7.4.rc1.16.gd2f15e
+

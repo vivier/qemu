@@ -1,0 +1,109 @@
+From 4ff00d744a1d42e8470d3df5361f4a168dedd411 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Fri, 7 Jan 2011 09:46:46 -0200
+Subject: [PATCH 04/37] vgabios update: handle compatibility with older qemu versions
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1294393606-1424-5-git-send-email-kraxel@redhat.com>
+Patchwork-id: 15942
+O-Subject: [RHEL-6 kvm PATCH 4/4] vgabios update: handle compatibility with
+	older qemu versions
+Bugzilla: 638468
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+As pointed out by avi the vgabios update is guest-visible and thus has
+migration implications.
+
+One change is that the vga has a valid pci rom bar now.  We already have
+a pci bus property to enable/disable the rom bar and we'll load the bios
+via fw_cfg as fallback for the no-rom-bar case.  So we just have to add
+compat properties to handle this case.
+
+A second change is that the magic bochs lfb @ 0xe0000000 is gone.  When
+live-migrating a guest from a older qemu version it might be using the
+lfb though, so we have to keep it for the old machine types.  The patch
+enables the bochs lfb in case we don't have the pci rom bar enabled
+(i.e. we are in 0.13+older compat mode).
+
+[ rhel6 backport note: add the compat properties to the new
+                       rhel6.0.0 machine type instead ]
+
+upstream: 281a26b15b4adcecb8604216738975abd754bea8
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+Cc: avi@redhat.com
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+ hw/pc.c         |   12 ++++++++++++
+ hw/vga-pci.c    |    6 ++++++
+ hw/vmware_vga.c |    5 +++++
+ 3 files changed, 23 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/pc.c         |   12 ++++++++++++
+ hw/vga-pci.c    |    6 ++++++
+ hw/vmware_vga.c |    5 +++++
+ 3 files changed, 23 insertions(+), 0 deletions(-)
+
+diff --git a/hw/pc.c b/hw/pc.c
+index 85a4fc5..e32b68e 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -1550,6 +1550,18 @@ static QEMUMachine pc_machine_rhel600 = {
+     .desc = "RHEL 6.0.0 PC",
+     .init = pc_init_rhel600,
+     .max_cpus = 255,
++    .compat_props = (GlobalProperty[]) {
++        {
++            .driver   = "VGA",
++            .property = "rombar",
++            .value    = stringify(0),
++        },{
++            .driver   = "vmware-svga",
++            .property = "rombar",
++            .value    = stringify(0),
++        },
++        { /* end of list */ }
++    },
+ };
+ 
+ static GlobalProperty compat_rhel5[] = {
+diff --git a/hw/vga-pci.c b/hw/vga-pci.c
+index 5d1c721..c422c91 100644
+--- a/hw/vga-pci.c
++++ b/hw/vga-pci.c
+@@ -110,6 +110,12 @@ static int pci_vga_initfn(PCIDevice *dev)
+          if (dev->romfile == NULL)
+              dev->romfile = qemu_strdup("vgabios-stdvga.bin");
+      }
++
++     if (!dev->rom_bar) {
++         /* compatibility with pc-0.13 and older */
++         vga_init_vbe(s);
++     }
++
+      return 0;
+ }
+ 
+diff --git a/hw/vmware_vga.c b/hw/vmware_vga.c
+index 370985a..0655587 100644
+--- a/hw/vmware_vga.c
++++ b/hw/vmware_vga.c
+@@ -1255,6 +1255,11 @@ static int pci_vmsvga_initfn(PCIDevice *dev)
+ 
+     vmsvga_init(&s->chip, VGA_RAM_SIZE);
+ 
++    if (!dev->rom_bar) {
++        /* compatibility with pc-0.13 and older */
++        vga_init_vbe(&s->chip.vga);
++    }
++
+     return 0;
+ }
+ 
+-- 
+1.7.4.rc1.16.gd2f15e
+

@@ -1,0 +1,52 @@
+From 6a3d73253f6d5320f40ba97579ec0a699f66150c Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 31 Jan 2011 12:23:30 -0200
+Subject: [PATCH 36/37] do_snapshot_blkdev() error on missing snapshot_file argument
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1296476610-28514-27-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 17318
+O-Subject: [PATCH 26/26] do_snapshot_blkdev() error on missing snapshot_file
+	argument
+Bugzilla: 637701
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Current code does not support snapshot internally to the running
+image. Error in case no snapshot_file is specified.
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit c90f1b3297943f2f142d8114bef1092f9ac9acef)
+---
+ monitor.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index d83736a..6e95111 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -1052,6 +1052,12 @@ int do_snapshot_blkdev(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     int ret = 0;
+     int flags;
+ 
++    if (!filename) {
++        qerror_report(QERR_MISSING_PARAMETER, "snapshot_file");
++        ret = -1;
++        goto out;
++    }
++
+     bs = bdrv_find(device);
+     if (!bs) {
+         qerror_report(QERR_DEVICE_NOT_FOUND, device);
+-- 
+1.7.4.rc1.16.gd2f15e
+

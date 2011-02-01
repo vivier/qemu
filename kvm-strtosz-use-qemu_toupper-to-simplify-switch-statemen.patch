@@ -1,0 +1,70 @@
+From bd9e3015684b27fa584ede2e4658721f8a89aeac Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 31 Jan 2011 12:23:27 -0200
+Subject: [PATCH 33/37] strtosz() use qemu_toupper() to simplify switch statement
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1296476610-28514-24-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 17319
+O-Subject: [PATCH 23/26] strtosz() use qemu_toupper() to simplify switch
+	statement
+Bugzilla: 637701
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from block branch)
+---
+ cutils.c |    7 +------
+ 1 files changed, 1 insertions(+), 6 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ cutils.c |    7 +------
+ 1 files changed, 1 insertions(+), 6 deletions(-)
+
+diff --git a/cutils.c b/cutils.c
+index ee5bcc8..edf8880 100644
+--- a/cutils.c
++++ b/cutils.c
+@@ -311,16 +311,14 @@ int64_t strtosz_suffix(const char *nptr, char **end, const char default_suffix)
+             d = c;
+         }
+     }
+-    switch (d) {
++    switch (qemu_toupper(d)) {
+     case 'B':
+-    case 'b':
+         mul = 1;
+         if (mul_required) {
+             goto fail;
+         }
+         break;
+     case 'K':
+-    case 'k':
+         mul = 1 << 10;
+         break;
+     case 0:
+@@ -328,15 +326,12 @@ int64_t strtosz_suffix(const char *nptr, char **end, const char default_suffix)
+             goto fail;
+         }
+     case 'M':
+-    case 'm':
+         mul = 1ULL << 20;
+         break;
+     case 'G':
+-    case 'g':
+         mul = 1ULL << 30;
+         break;
+     case 'T':
+-    case 't':
+         mul = 1ULL << 40;
+         break;
+     default:
+-- 
+1.7.4.rc1.16.gd2f15e
+

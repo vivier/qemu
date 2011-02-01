@@ -1,0 +1,124 @@
+From 2735417fedc435c487ae199494293d82c9198afb Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 31 Jan 2011 12:23:09 -0200
+Subject: [PATCH 15/37] Consolidate printing of block driver options
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1296476610-28514-6-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 17300
+O-Subject: [PATCH 05/26] Consolidate printing of block driver options
+Bugzilla: 637701
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+This consolidates the printing of block driver options in
+print_block_option_help() which is called from both img_create() and
+img_convert().
+
+This allows for the "?" detection to be done just after the parsing of
+options and the filename, instead of half way down the codepath of
+these functions.
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 4ac8aacd954bbc9f3c3006a19cdf13be3caf7ae8)
+---
+ qemu-img.c |   46 +++++++++++++++++++++++++++++++++++++---------
+ 1 files changed, 37 insertions(+), 9 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-img.c |   46 +++++++++++++++++++++++++++++++++++++---------
+ 1 files changed, 37 insertions(+), 9 deletions(-)
+
+diff --git a/qemu-img.c b/qemu-img.c
+index 1206947..04e307e 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -186,6 +186,33 @@ static int read_password(char *buf, int buf_size)
+ }
+ #endif
+ 
++static int print_block_option_help(const char *filename, const char *fmt)
++{
++    BlockDriver *drv, *proto_drv;
++    QEMUOptionParameter *create_options = NULL;
++
++    /* Find driver and parse its options */
++    drv = bdrv_find_format(fmt);
++    if (!drv) {
++        error("Unknown file format '%s'", fmt);
++        return 1;
++    }
++
++    proto_drv = bdrv_find_protocol(filename);
++    if (!proto_drv) {
++        error("Unknown protocol '%s'", filename);
++        return 1;
++    }
++
++    create_options = append_option_parameters(create_options,
++                                              drv->create_options);
++    create_options = append_option_parameters(create_options,
++                                              proto_drv->create_options);
++    print_option_help(create_options);
++    free_option_parameters(create_options);
++    return 0;
++}
++
+ static BlockDriverState *bdrv_new_open(const char *filename,
+                                        const char *fmt,
+                                        int flags)
+@@ -308,6 +335,11 @@ static int img_create(int argc, char **argv)
+         help();
+     filename = argv[optind++];
+ 
++    if (options && !strcmp(options, "?")) {
++        ret = print_block_option_help(filename, fmt);
++        goto out;
++    }
++
+     /* Find driver and parse its options */
+     drv = bdrv_find_format(fmt);
+     if (!drv) {
+@@ -326,11 +358,6 @@ static int img_create(int argc, char **argv)
+     create_options = append_option_parameters(create_options,
+                                               proto_drv->create_options);
+ 
+-    if (options && !strcmp(options, "?")) {
+-        print_option_help(create_options);
+-        goto out;
+-    }
+-
+     /* Create parameter list with default values */
+     param = parse_option_parameters("", create_options, param);
+     set_option_parameter_int(param, BLOCK_OPT_SIZE, -1);
+@@ -687,6 +714,11 @@ static int img_convert(int argc, char **argv)
+ 
+     out_filename = argv[argc - 1];
+ 
++    if (options && !strcmp(options, "?")) {
++        ret = print_block_option_help(out_filename, out_fmt);
++        goto out;
++    }
++
+     if (bs_n > 1 && out_baseimg) {
+         error("-B makes no sense when concatenating multiple input images");
+         ret = -1;
+@@ -726,10 +758,6 @@ static int img_convert(int argc, char **argv)
+                                               drv->create_options);
+     create_options = append_option_parameters(create_options,
+                                               proto_drv->create_options);
+-    if (options && !strcmp(options, "?")) {
+-        print_option_help(create_options);
+-        goto out;
+-    }
+ 
+     if (options) {
+         param = parse_option_parameters(options, create_options, param);
+-- 
+1.7.4.rc1.16.gd2f15e
+

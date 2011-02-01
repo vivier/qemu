@@ -1,0 +1,78 @@
+From b6e76f982d695bf945a4b09e896a11001859b23f Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Fri, 7 Jan 2011 09:46:43 -0200
+Subject: [PATCH 01/37] switch stdvga to pci vgabios
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1294393606-1424-2-git-send-email-kraxel@redhat.com>
+Patchwork-id: 15938
+O-Subject: [RHEL-6 kvm PATCH 1/4] switch stdvga to pci vgabios
+Bugzilla: 638468
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Make stdvga provide the new vgabios binary (with pcibios support)
+using the PCI option rom bar.  Seabios will happily load it from
+there.  The new vga bios will also lookup the framebuffer address
+in pci config space, so the magic bochs lfb @ 0xe0000000 is not
+needed any more -> zap it.
+
+Without the patch:
+
+  # dmesg | grep framebuffer
+  vesafb: framebuffer at 0xe0000000, mapped to 0xf7e80000, using 1875k, total 8192k
+  # lspci -vs2
+  00:02.0 VGA compatible controller: Technical Corp. Device 1111 (prog-if 00 [VGA controller])
+	Subsystem: Qumranet, Inc. Device 1100
+	Physical Slot: 2
+	Flags: fast devsel
+	Memory at f0000000 (32-bit, prefetchable) [size=8M]
+	Expansion ROM at <unassigned> [disabled]
+
+With patch applied:
+
+  # dmesg | grep framebuffer
+  vesafb: framebuffer at 0xf0000000, mapped to 0xf7e80000, using 1875k, total 8192k
+  # lspci -vs2
+  00:02.0 VGA compatible controller: Technical Corp. Device 1111 (prog-if 00 [VGA controller])
+	Subsystem: Qumranet, Inc. Device 1100
+	Physical Slot: 2
+	Flags: fast devsel
+	Memory at f0000000 (32-bit, prefetchable) [size=8M]
+	Expansion ROM at f0800000 [disabled] [size=64K]
+
+upstream: 543f8e3468e6df32bfde8f84ac36d05a7604e082
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/vga-pci.c |    7 +++----
+ 1 files changed, 3 insertions(+), 4 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/vga-pci.c |    7 +++----
+ 1 files changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/hw/vga-pci.c b/hw/vga-pci.c
+index 9089c9f..5d1c721 100644
+--- a/hw/vga-pci.c
++++ b/hw/vga-pci.c
+@@ -106,11 +106,10 @@ static int pci_vga_initfn(PCIDevice *dev)
+             bios_total_size <<= 1;
+         pci_register_bar(&d->dev, PCI_ROM_SLOT, bios_total_size,
+                          PCI_BASE_ADDRESS_MEM_PREFETCH, vga_map);
++     } else {
++         if (dev->romfile == NULL)
++             dev->romfile = qemu_strdup("vgabios-stdvga.bin");
+      }
+-
+-    vga_init_vbe(s);
+-     /* ROM BIOS */
+-     rom_add_vga(VGABIOS_FILENAME);
+      return 0;
+ }
+ 
+-- 
+1.7.4.rc1.16.gd2f15e
+

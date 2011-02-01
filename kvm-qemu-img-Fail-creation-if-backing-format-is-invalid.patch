@@ -1,0 +1,88 @@
+From da07e11b82834f75da99fc27653b88186680e963 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 31 Jan 2011 12:23:15 -0200
+Subject: [PATCH 21/37] qemu-img: Fail creation if backing format is invalid
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1296476610-28514-12-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 17311
+O-Subject: [PATCH 11/26] qemu-img: Fail creation if backing format is invalid
+Bugzilla: 637701
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+The qemu-img create command should check the backing format to ensure
+only image files with valid backing formats are created.  By checking in
+qemu-img.c we can print a useful error message.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 5eeaad5a57b94d26747ed8a96fab69494baef75d)
+---
+ qemu-img.c |   22 ++++++++++++----------
+ 1 files changed, 12 insertions(+), 10 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-img.c |   22 ++++++++++++----------
+ 1 files changed, 12 insertions(+), 10 deletions(-)
+
+diff --git a/qemu-img.c b/qemu-img.c
+index d92b679..96149e2 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -286,6 +286,7 @@ static int img_create(int argc, char **argv)
+     const char *base_filename = NULL;
+     BlockDriver *drv, *proto_drv;
+     QEMUOptionParameter *param = NULL, *create_options = NULL;
++    QEMUOptionParameter *backing_fmt = NULL;
+     char *options = NULL;
+ 
+     for(;;) {
+@@ -377,14 +378,22 @@ static int img_create(int argc, char **argv)
+         goto out;
+     }
+ 
++    backing_fmt = get_option_parameter(param, BLOCK_OPT_BACKING_FMT);
++    if (backing_fmt && backing_fmt->value.s) {
++        if (!bdrv_find_format(backing_fmt->value.s)) {
++            error("Unknown backing file format '%s'",
++                  backing_fmt->value.s);
++            ret = -1;
++            goto out;
++        }
++    }
++
+     // The size for the image must always be specified, with one exception:
+     // If we are using a backing file, we can obtain the size from there
+     if (get_option_parameter(param, BLOCK_OPT_SIZE)->value.n == -1) {
+ 
+         QEMUOptionParameter *backing_file =
+             get_option_parameter(param, BLOCK_OPT_BACKING_FILE);
+-        QEMUOptionParameter *backing_fmt =
+-            get_option_parameter(param, BLOCK_OPT_BACKING_FMT);
+ 
+         if (backing_file && backing_file->value.s) {
+             BlockDriverState *bs;
+@@ -393,14 +402,7 @@ static int img_create(int argc, char **argv)
+             char buf[32];
+ 
+             if (backing_fmt && backing_fmt->value.s) {
+-                 if (bdrv_find_format(backing_fmt->value.s)) {
+-                     fmt = backing_fmt->value.s;
+-                } else {
+-                     error("Unknown backing file format '%s'",
+-                        backing_fmt->value.s);
+-                     ret = -1;
+-                     goto out;
+-                }
++                fmt = backing_fmt->value.s;
+             }
+ 
+             bs = bdrv_new_open(backing_file->value.s, fmt, BDRV_O_FLAGS);
+-- 
+1.7.4.rc1.16.gd2f15e
+

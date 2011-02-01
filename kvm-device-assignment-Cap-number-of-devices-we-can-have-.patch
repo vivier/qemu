@@ -1,0 +1,72 @@
+From 738d9216ab5f6ca963c45804bc60679ce9e76c0c Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Fri, 28 Jan 2011 23:14:49 -0200
+Subject: [PATCH 09/37] device-assignment: Cap number of devices we can have assigned
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20110128231209.29293.34356.stgit@s20.home>
+Patchwork-id: 17257
+O-Subject: [PATCH RHEL6.1 qemu-kvm] device-assignment: Cap number of devices we
+	can have assigned
+Bugzilla: 670787
+RH-Acked-by: Chris Wright <chrisw@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Upstream status: RHEL specific
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=670787
+Brew: https://brewweb.devel.redhat.com/taskinfo?taskID=3073220
+
+This is a RHEL specific patch while we work on fixing this properly
+upstream.  We have a fixed number of kvm memory slots, and assigned
+device MMIO BARs are a user of those slots.  Slots aren't allocated
+until the device is already attached and the guest attempts to
+program it, leaving us few options.  The current code will exit when
+this occurs.  The only alternative is to use the slow mapping path,
+which results in unexpected slownness for a device that's supposed
+to be fast.  While we pursue improvements upstream, let's prevent
+users from running into this problem by putting a cap on the number
+of devices we support.  MAX_DEV_ASSIGN_CMDLINE (8) is the old limit
+for the -pcidevice option.  This is hopefully large enough that we
+don't hit it casually.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+---
+
+ hw/device-assignment.c |   15 +++++++++++++++
+ 1 files changed, 15 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/device-assignment.c |   15 +++++++++++++++
+ 1 files changed, 15 insertions(+), 0 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index 7bb2b42..42f2931 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -1652,6 +1652,21 @@ static int assigned_initfn(struct PCIDevice *pci_dev)
+     uint8_t e_device, e_intx;
+     int r;
+ 
++    {   /*  RHEL6.1 bz670787 */
++        AssignedDevice *adev;
++        int i = 0;
++
++        QLIST_FOREACH(adev, &devs, next) {
++            i++;
++        }
++
++        if (i >= MAX_DEV_ASSIGN_CMDLINE) {
++            error_report("pci-assign: Maximum supported assigned devices (%d) "
++                         "already attached\n", MAX_DEV_ASSIGN_CMDLINE);
++            return -1;
++        }
++    }
++
+     if (!dev->host.bus && !dev->host.dev && !dev->host.func) {
+         error_report("pci-assign: error: no host device specified");
+         return -1;
+-- 
+1.7.4.rc1.16.gd2f15e
+

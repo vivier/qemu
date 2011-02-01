@@ -1,0 +1,213 @@
+From 174e9c9c33e51c39a8ac874bf9e371a8ee09e981 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 31 Jan 2011 12:23:16 -0200
+Subject: [PATCH 22/37] Introduce strtosz() library function to convert a string to a byte count.
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1296476610-28514-13-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 17307
+O-Subject: [PATCH 12/26] Introduce strtosz() library function to convert a
+	string to a byte count.
+Bugzilla: 637701
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+strtosz() returns -1 on error. It now supports human unit formats in
+eg. 1.0G, with better error handling.
+
+The following suffixes are supported:
+B/b = bytes
+K/k = KB
+M/m = MB
+G/g = GB
+T/t = TB
+
+This patch changes -numa and -m input to use strtosz().
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry-picked from commit 9f9b17a4f0865286391e4d3a0a735230122a2289)
+---
+ cutils.c      |   89 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ qemu-common.h |    1 +
+ vl.c          |   29 ++++++-------------
+ 3 files changed, 99 insertions(+), 20 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ cutils.c      |   89 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ qemu-common.h |    1 +
+ vl.c          |   29 ++++++-------------
+ 3 files changed, 99 insertions(+), 20 deletions(-)
+
+diff --git a/cutils.c b/cutils.c
+index ee656a3..482e54b 100644
+--- a/cutils.c
++++ b/cutils.c
+@@ -23,6 +23,7 @@
+  */
+ #include "qemu-common.h"
+ #include "host-utils.h"
++#include <math.h>
+ 
+ void pstrcpy(char *buf, int buf_size, const char *str)
+ {
+@@ -270,3 +271,91 @@ void qemu_iovec_memset(QEMUIOVector *qiov, int c, size_t count)
+         count -= n;
+     }
+ }
++
++/*
++ * Convert string to bytes, allowing either B/b for bytes, K/k for KB,
++ * M/m for MB, G/g for GB or T/t for TB. Default without any postfix
++ * is MB. End pointer will be returned in *end, if not NULL. A valid
++ * value must be terminated by whitespace, ',' or '\0'. Return -1 on
++ * error.
++ */
++ssize_t strtosz(const char *nptr, char **end)
++{
++    ssize_t retval = -1;
++    char *endptr, c;
++    int mul_required = 0;
++    double val, mul, integral, fraction;
++
++    errno = 0;
++    val = strtod(nptr, &endptr);
++    if (isnan(val) || endptr == nptr || errno != 0) {
++        goto fail;
++    }
++    integral = modf(val, &fraction);
++    if (integral != 0) {
++        mul_required = 1;
++    }
++    /*
++     * Any whitespace character is fine for terminating the number,
++     * in addition we accept ',' to handle strings where the size is
++     * part of a multi token argument.
++     */
++    c = *endptr;
++    if (isspace(c) || c == '\0' || c == ',') {
++        c = 0;
++    }
++    switch (c) {
++    case 'B':
++    case 'b':
++        mul = 1;
++        if (mul_required) {
++            goto fail;
++        }
++        break;
++    case 'K':
++    case 'k':
++        mul = 1 << 10;
++        break;
++    case 0:
++        if (mul_required) {
++            goto fail;
++        }
++    case 'M':
++    case 'm':
++        mul = 1ULL << 20;
++        break;
++    case 'G':
++    case 'g':
++        mul = 1ULL << 30;
++        break;
++    case 'T':
++    case 't':
++        mul = 1ULL << 40;
++        break;
++    default:
++        goto fail;
++    }
++    /*
++     * If not terminated by whitespace, ',', or \0, increment endptr
++     * to point to next character, then check that we are terminated
++     * by an appropriate separating character, ie. whitespace, ',', or
++     * \0. If not, we are seeing trailing garbage, thus fail.
++     */
++    if (c != 0) {
++        endptr++;
++        if (!isspace(*endptr) && *endptr != ',' && *endptr != 0) {
++            goto fail;
++        }
++    }
++    if ((val * mul >= ~(size_t)0) || val < 0) {
++        goto fail;
++    }
++    retval = val * mul;
++
++fail:
++    if (end) {
++        *end = endptr;
++    }
++
++    return retval;
++}
+diff --git a/qemu-common.h b/qemu-common.h
+index 389222e..8123cbd 100644
+--- a/qemu-common.h
++++ b/qemu-common.h
+@@ -136,6 +136,7 @@ int qemu_strnlen(const char *s, int max_len);
+ time_t mktimegm(struct tm *tm);
+ int qemu_fls(int i);
+ int qemu_fdatasync(int fd);
++ssize_t strtosz(const char *nptr, char **end);
+ 
+ /* path.c */
+ void init_paths(const char *prefix);
+diff --git a/vl.c b/vl.c
+index 25823f8..b6423c5 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2688,16 +2688,13 @@ static void numa_add(const char *optarg)
+         if (get_param_value(option, 128, "mem", optarg) == 0) {
+             node_mem[nodenr] = 0;
+         } else {
+-            value = strtoull(option, &endptr, 0);
+-            switch (*endptr) {
+-            case 0: case 'M': case 'm':
+-                value <<= 20;
+-                break;
+-            case 'G': case 'g':
+-                value <<= 30;
+-                break;
++            ssize_t sval;
++            sval = strtosz(option, NULL);
++            if (sval < 0) {
++                fprintf(stderr, "qemu: invalid numa mem size: %s\n", optarg);
++                exit(1);
+             }
+-            node_mem[nodenr] = value;
++            node_mem[nodenr] = sval;
+         }
+         if (get_param_value(option, 128, "cpus", optarg) == 0) {
+             node_cpumask[nodenr] = 0;
+@@ -5646,18 +5643,10 @@ int main(int argc, char **argv, char **envp)
+                 exit(0);
+                 break;
+             case QEMU_OPTION_m: {
+-                uint64_t value;
+-                char *ptr;
++                ssize_t value;
+ 
+-                value = strtoul(optarg, &ptr, 10);
+-                switch (*ptr) {
+-                case 0: case 'M': case 'm':
+-                    value <<= 20;
+-                    break;
+-                case 'G': case 'g':
+-                    value <<= 30;
+-                    break;
+-                default:
++                value = strtosz(optarg, NULL);
++                if (value < 0) {
+                     fprintf(stderr, "qemu: invalid ram size: %s\n", optarg);
+                     exit(1);
+                 }
+-- 
+1.7.4.rc1.16.gd2f15e
+

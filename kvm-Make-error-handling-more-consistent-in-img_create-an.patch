@@ -1,0 +1,93 @@
+From 98ca233c67a1558f9a907056e421d70b4c419705 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 31 Jan 2011 12:23:12 -0200
+Subject: [PATCH 18/37] Make error handling more consistent in img_create() and img_resize()
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1296476610-28514-9-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 17303
+O-Subject: [PATCH 08/26] Make error handling more consistent in img_create() and
+	img_resize()
+Bugzilla: 637701
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 2a81998a1af40cbc13a5ab1030ec7f05d13d742c)
+---
+ qemu-img.c |   18 ++++++++++++------
+ 1 files changed, 12 insertions(+), 6 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-img.c |   18 ++++++++++++------
+ 1 files changed, 12 insertions(+), 6 deletions(-)
+
+diff --git a/qemu-img.c b/qemu-img.c
+index 76943bb..778485d 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -347,13 +347,15 @@ static int img_create(int argc, char **argv)
+     drv = bdrv_find_format(fmt);
+     if (!drv) {
+         error("Unknown file format '%s'", fmt);
+-        return 1;
++        ret = -1;
++        goto out;
+     }
+ 
+     proto_drv = bdrv_find_protocol(filename);
+     if (!proto_drv) {
+         error("Unknown protocol '%s'", filename);
+-        return 1;
++        ret = -1;
++        goto out;
+     }
+ 
+     create_options = append_option_parameters(create_options,
+@@ -1466,7 +1468,7 @@ static int img_resize(int argc, char **argv)
+     int c, ret, relative;
+     const char *filename, *fmt, *size;
+     int64_t n, total_size;
+-    BlockDriverState *bs;
++    BlockDriverState *bs = NULL;
+     QEMUOptionParameter *param;
+     QEMUOptionParameter resize_options[] = {
+         {
+@@ -1518,14 +1520,16 @@ static int img_resize(int argc, char **argv)
+     param = parse_option_parameters("", resize_options, NULL);
+     if (set_option_parameter(param, BLOCK_OPT_SIZE, size)) {
+         /* Error message already printed when size parsing fails */
+-        exit(1);
++        ret = -1;
++        goto out;
+     }
+     n = get_option_parameter(param, BLOCK_OPT_SIZE)->value.n;
+     free_option_parameters(param);
+ 
+     bs = bdrv_new_open(filename, fmt, BDRV_O_FLAGS | BDRV_O_RDWR);
+     if (!bs) {
+-        return 1;
++        ret = -1;
++        goto out;
+     }
+ 
+     if (relative) {
+@@ -1555,7 +1559,9 @@ static int img_resize(int argc, char **argv)
+         break;
+     }
+ out:
+-    bdrv_delete(bs);
++    if (bs) {
++        bdrv_delete(bs);
++    }
+     if (ret) {
+         return 1;
+     }
+-- 
+1.7.4.rc1.16.gd2f15e
+

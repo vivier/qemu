@@ -1,0 +1,57 @@
+From 535e2233c6431626e2f2963519334b5d64ef90e6 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 31 Jan 2011 12:23:07 -0200
+Subject: [PATCH 13/37] Use qemu_mallocz() instead of calloc() in img_convert()
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1296476610-28514-4-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 17298
+O-Subject: [PATCH 03/26] Use qemu_mallocz() instead of calloc() in img_convert()
+Bugzilla: 637701
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 5bdf61fdd76b5ca7101353abbdbcd1ed692fa9e2)
+---
+ qemu-img.c |    8 ++------
+ 1 files changed, 2 insertions(+), 6 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-img.c |    8 ++------
+ 1 files changed, 2 insertions(+), 6 deletions(-)
+
+diff --git a/qemu-img.c b/qemu-img.c
+index 2f0b6a1..8e29555 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -692,11 +692,7 @@ static int img_convert(int argc, char **argv)
+         return 1;
+     }
+         
+-    bs = calloc(bs_n, sizeof(BlockDriverState *));
+-    if (!bs) {
+-        error("Out of memory");
+-        return 1;
+-    }
++    bs = qemu_mallocz(bs_n * sizeof(BlockDriverState *));
+ 
+     total_sectors = 0;
+     for (bs_i = 0; bs_i < bs_n; bs_i++) {
+@@ -957,7 +953,7 @@ out:
+             bdrv_delete(bs[bs_i]);
+         }
+     }
+-    free(bs);
++    qemu_free(bs);
+     if (ret) {
+         return 1;
+     }
+-- 
+1.7.4.rc1.16.gd2f15e
+

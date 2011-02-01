@@ -1,0 +1,55 @@
+From b6037511c7b691e006235ad860e2e8f7c2a67643 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Thu, 27 Jan 2011 20:13:58 -0200
+Subject: [PATCH 08/37] usb-linux: increase buffer for USB control requests
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20110127201348.16211.34144.stgit@localhost6.localdomain6>
+Patchwork-id: 17183
+O-Subject: [PATCH RHEL6.1 qemu-kvm] usb-linux: increase buffer for USB control
+	requests
+Bugzilla: 672720
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+
+From: Christian Krause <chkr@plauener.de>
+
+Upstream commit: fd7a446f162768c044b3bf3844f7605eeef351af
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=672720
+Brew build: https://brewweb.devel.redhat.com/taskinfo?taskID=3069936
+
+The WLAN USB stick ZyXEL NWD271N (0586:3417) uses very large
+usb control transfers of more than 2048 bytes which won't fit
+into the buffer of the ctrl_struct. This results in an error message
+"husb: ctrl buffer too small" and a non-working device.
+Increasing the buffer size to 8192 seems to be a safe choice.
+
+Signed-off-by: Christian Krause <chkr@plauener.de>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+---
+
+ usb-linux.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ usb-linux.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index f17b485..fe59378 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -113,7 +113,7 @@ struct ctrl_struct {
+     uint16_t offset;
+     uint8_t  state;
+     struct   usb_ctrlrequest req;
+-    uint8_t  buffer[2048];
++    uint8_t  buffer[8192];
+ };
+ 
+ struct USBAutoFilter {
+-- 
+1.7.4.rc1.16.gd2f15e
+

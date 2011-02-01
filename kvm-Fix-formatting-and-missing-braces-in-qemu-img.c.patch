@@ -1,0 +1,291 @@
+From 27698ea9120eb1ae744d1aa756dca0651478be5b Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 31 Jan 2011 12:23:10 -0200
+Subject: [PATCH 16/37] Fix formatting and missing braces in qemu-img.c
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1296476610-28514-7-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 17299
+O-Subject: [PATCH 06/26] Fix formatting and missing braces in qemu-img.c
+Bugzilla: 637701
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Reviewed-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry-picked from b8fb60da2d27ad52593bea4ee5fb33a2644ebaa6)
+---
+ qemu-img.c |   77 +++++++++++++++++++++++++++++++++++++++--------------------
+ 1 files changed, 51 insertions(+), 26 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-img.c |   77 +++++++++++++++++++++++++++++++++++++++--------------------
+ 1 files changed, 51 insertions(+), 26 deletions(-)
+
+diff --git a/qemu-img.c b/qemu-img.c
+index 04e307e..4017300 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -303,8 +303,9 @@ static int img_create(int argc, char **argv)
+     flags = 0;
+     for(;;) {
+         c = getopt(argc, argv, "F:b:f:he6o:");
+-        if (c == -1)
++        if (c == -1) {
+             break;
++        }
+         switch(c) {
+         case 'h':
+             help();
+@@ -331,8 +332,9 @@ static int img_create(int argc, char **argv)
+     }
+ 
+     /* Get the filename */
+-    if (optind >= argc)
++    if (optind >= argc) {
+         help();
++    }
+     filename = argv[optind++];
+ 
+     if (options && !strcmp(options, "?")) {
+@@ -469,8 +471,9 @@ static int img_check(int argc, char **argv)
+     fmt = NULL;
+     for(;;) {
+         c = getopt(argc, argv, "f:h");
+-        if (c == -1)
++        if (c == -1) {
+             break;
++        }
+         switch(c) {
+         case 'h':
+             help();
+@@ -480,8 +483,9 @@ static int img_check(int argc, char **argv)
+             break;
+         }
+     }
+-    if (optind >= argc)
++    if (optind >= argc) {
+         help();
++    }
+     filename = argv[optind++];
+ 
+     bs = bdrv_new_open(filename, fmt, BDRV_O_FLAGS);
+@@ -545,8 +549,9 @@ static int img_commit(int argc, char **argv)
+     fmt = NULL;
+     for(;;) {
+         c = getopt(argc, argv, "f:h");
+-        if (c == -1)
++        if (c == -1) {
+             break;
++        }
+         switch(c) {
+         case 'h':
+             help();
+@@ -556,8 +561,9 @@ static int img_commit(int argc, char **argv)
+             break;
+         }
+     }
+-    if (optind >= argc)
++    if (optind >= argc) {
+         help();
++    }
+     filename = argv[optind++];
+ 
+     bs = bdrv_new_open(filename, fmt, BDRV_O_FLAGS | BDRV_O_RDWR);
+@@ -679,8 +685,9 @@ static int img_convert(int argc, char **argv)
+     flags = 0;
+     for(;;) {
+         c = getopt(argc, argv, "f:O:B:hce6o:");
+-        if (c == -1)
++        if (c == -1) {
+             break;
++        }
+         switch(c) {
+         case 'h':
+             help();
+@@ -710,7 +717,9 @@ static int img_convert(int argc, char **argv)
+     }
+ 
+     bs_n = argc - optind - 1;
+-    if (bs_n < 1) help();
++    if (bs_n < 1) {
++        help();
++    }
+ 
+     out_filename = argv[argc - 1];
+ 
+@@ -879,8 +888,9 @@ static int img_convert(int argc, char **argv)
+             }
+             assert (remainder == 0);
+ 
+-            if (n < cluster_sectors)
++            if (n < cluster_sectors) {
+                 memset(buf + n * 512, 0, cluster_size - n * 512);
++            }
+             if (is_not_zero(buf, cluster_size)) {
+                 ret = bdrv_write_compressed(out_bs, sector_num, buf,
+                                             cluster_sectors);
+@@ -900,12 +910,14 @@ static int img_convert(int argc, char **argv)
+         sector_num = 0; // total number of sectors converted so far
+         for(;;) {
+             nb_sectors = total_sectors - sector_num;
+-            if (nb_sectors <= 0)
++            if (nb_sectors <= 0) {
+                 break;
+-            if (nb_sectors >= (IO_BUF_SIZE / 512))
++            }
++            if (nb_sectors >= (IO_BUF_SIZE / 512)) {
+                 n = (IO_BUF_SIZE / 512);
+-            else
++            } else {
+                 n = nb_sectors;
++            }
+ 
+             while (sector_num - bs_offset >= bs_sectors) {
+                 bs_i ++;
+@@ -917,8 +929,9 @@ static int img_convert(int argc, char **argv)
+                    sector_num, bs_i, bs_offset, bs_sectors); */
+             }
+ 
+-            if (n > bs_offset + bs_sectors - sector_num)
++            if (n > bs_offset + bs_sectors - sector_num) {
+                 n = bs_offset + bs_sectors - sector_num;
++            }
+ 
+             if (has_zero_init) {
+                 /* If the output image is being created as a copy on write image,
+@@ -1054,8 +1067,9 @@ static int img_info(int argc, char **argv)
+     fmt = NULL;
+     for(;;) {
+         c = getopt(argc, argv, "f:h");
+-        if (c == -1)
++        if (c == -1) {
+             break;
++        }
+         switch(c) {
+         case 'h':
+             help();
+@@ -1065,8 +1079,9 @@ static int img_info(int argc, char **argv)
+             break;
+         }
+     }
+-    if (optind >= argc)
++    if (optind >= argc) {
+         help();
++    }
+     filename = argv[optind++];
+ 
+     bs = bdrv_new_open(filename, fmt, BDRV_O_FLAGS | BDRV_O_NO_BACKING);
+@@ -1077,11 +1092,12 @@ static int img_info(int argc, char **argv)
+     bdrv_get_geometry(bs, &total_sectors);
+     get_human_readable_size(size_buf, sizeof(size_buf), total_sectors * 512);
+     allocated_size = get_allocated_file_size(filename);
+-    if (allocated_size < 0)
++    if (allocated_size < 0) {
+         snprintf(dsize_buf, sizeof(dsize_buf), "unavailable");
+-    else
++    } else {
+         get_human_readable_size(dsize_buf, sizeof(dsize_buf),
+                                 allocated_size);
++    }
+     printf("image: %s\n"
+            "file format: %s\n"
+            "virtual size: %s (%" PRId64 " bytes)\n"
+@@ -1089,11 +1105,13 @@ static int img_info(int argc, char **argv)
+            filename, fmt_name, size_buf,
+            (total_sectors * 512),
+            dsize_buf);
+-    if (bdrv_is_encrypted(bs))
++    if (bdrv_is_encrypted(bs)) {
+         printf("encrypted: yes\n");
++    }
+     if (bdrv_get_info(bs, &bdi) >= 0) {
+-        if (bdi.cluster_size != 0)
++        if (bdi.cluster_size != 0) {
+             printf("cluster_size: %d\n", bdi.cluster_size);
++        }
+     }
+     bdrv_get_backing_filename(bs, backing_filename, sizeof(backing_filename));
+     if (backing_filename[0] != '\0') {
+@@ -1126,8 +1144,9 @@ static int img_snapshot(int argc, char **argv)
+     /* Parse commandline parameters */
+     for(;;) {
+         c = getopt(argc, argv, "la:c:d:h");
+-        if (c == -1)
++        if (c == -1) {
+             break;
++        }
+         switch(c) {
+         case 'h':
+             help();
+@@ -1167,8 +1186,9 @@ static int img_snapshot(int argc, char **argv)
+         }
+     }
+ 
+-    if (optind >= argc)
++    if (optind >= argc) {
+         help();
++    }
+     filename = argv[optind++];
+ 
+     /* Open the image */
+@@ -1192,23 +1212,26 @@ static int img_snapshot(int argc, char **argv)
+         sn.date_nsec = tv.tv_usec * 1000;
+ 
+         ret = bdrv_snapshot_create(bs, &sn);
+-        if (ret)
++        if (ret) {
+             error("Could not create snapshot '%s': %d (%s)",
+                 snapshot_name, ret, strerror(-ret));
++        }
+         break;
+ 
+     case SNAPSHOT_APPLY:
+         ret = bdrv_snapshot_goto(bs, snapshot_name);
+-        if (ret)
++        if (ret) {
+             error("Could not apply snapshot '%s': %d (%s)",
+                 snapshot_name, ret, strerror(-ret));
++        }
+         break;
+ 
+     case SNAPSHOT_DELETE:
+         ret = bdrv_snapshot_delete(bs, snapshot_name);
+-        if (ret)
++        if (ret) {
+             error("Could not delete snapshot '%s': %d (%s)",
+                 snapshot_name, ret, strerror(-ret));
++        }
+         break;
+     }
+ 
+@@ -1236,8 +1259,9 @@ static int img_rebase(int argc, char **argv)
+ 
+     for(;;) {
+         c = getopt(argc, argv, "uhf:F:b:");
+-        if (c == -1)
++        if (c == -1) {
+             break;
++        }
+         switch(c) {
+         case 'h':
+             help();
+@@ -1257,8 +1281,9 @@ static int img_rebase(int argc, char **argv)
+         }
+     }
+ 
+-    if ((optind >= argc) || !out_baseimg)
++    if ((optind >= argc) || !out_baseimg) {
+         help();
++    }
+     filename = argv[optind++];
+ 
+     /*
+-- 
+1.7.4.rc1.16.gd2f15e
+

@@ -1,0 +1,67 @@
+From dd50d3eba6d17980c2f702e02265e42cfa3a9de2 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 31 Jan 2011 12:23:08 -0200
+Subject: [PATCH 14/37] img_convert(): Only try to free bs[] entries if bs is valid.
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1296476610-28514-5-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 17302
+O-Subject: [PATCH 04/26] img_convert(): Only try to free bs[] entries if bs is
+	valid.
+Bugzilla: 637701
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+This allows for jumping to 'out:' consistently for error exit.
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 31ca34b8cc2efe1b7e3f726dedb30c450a81abaf)
+---
+ qemu-img.c |   13 ++++++++-----
+ 1 files changed, 8 insertions(+), 5 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-img.c |   13 ++++++++-----
+ 1 files changed, 8 insertions(+), 5 deletions(-)
+
+diff --git a/qemu-img.c b/qemu-img.c
+index 8e29555..1206947 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -689,7 +689,8 @@ static int img_convert(int argc, char **argv)
+ 
+     if (bs_n > 1 && out_baseimg) {
+         error("-B makes no sense when concatenating multiple input images");
+-        return 1;
++        ret = -1;
++        goto out;
+     }
+         
+     bs = qemu_mallocz(bs_n * sizeof(BlockDriverState *));
+@@ -948,12 +949,14 @@ out:
+     if (out_bs) {
+         bdrv_delete(out_bs);
+     }
+-    for (bs_i = 0; bs_i < bs_n; bs_i++) {
+-        if (bs[bs_i]) {
+-            bdrv_delete(bs[bs_i]);
++    if (bs) {
++        for (bs_i = 0; bs_i < bs_n; bs_i++) {
++            if (bs[bs_i]) {
++                bdrv_delete(bs[bs_i]);
++            }
+         }
++        qemu_free(bs);
+     }
+-    qemu_free(bs);
+     if (ret) {
+         return 1;
+     }
+-- 
+1.7.4.rc1.16.gd2f15e
+

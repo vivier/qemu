@@ -1,0 +1,72 @@
+From c57d080acfc8f327fab08c3488d4576b836ab42d Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 31 Jan 2011 12:23:21 -0200
+Subject: [PATCH 27/37] Prevent creating an image with the same filename as backing file
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1296476610-28514-18-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 17312
+O-Subject: [PATCH 17/26] Prevent creating an image with the same filename as
+	backing file
+Bugzilla: 637701
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 792da93a635bce0181c8a46a26941560bf2f7412)
+---
+ block.c |   15 +++++++++++----
+ 1 files changed, 11 insertions(+), 4 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ block.c |   15 +++++++++++----
+ 1 files changed, 11 insertions(+), 4 deletions(-)
+
+diff --git a/block.c b/block.c
+index 782aca2..2abdfe7 100644
+--- a/block.c
++++ b/block.c
+@@ -2574,7 +2574,7 @@ int bdrv_img_create(const char *filename, const char *fmt,
+                     char *options, uint64_t img_size, int flags)
+ {
+     QEMUOptionParameter *param = NULL, *create_options = NULL;
+-    QEMUOptionParameter *backing_fmt;
++    QEMUOptionParameter *backing_fmt, *backing_file;
+     BlockDriverState *bs = NULL;
+     BlockDriver *drv, *proto_drv;
+     int ret = 0;
+@@ -2633,6 +2633,16 @@ int bdrv_img_create(const char *filename, const char *fmt,
+         }
+     }
+ 
++    backing_file = get_option_parameter(param, BLOCK_OPT_BACKING_FILE);
++    if (backing_file && backing_file->value.s) {
++        if (!strcmp(filename, backing_file->value.s)) {
++            error_report("Error: Trying to create an image with the "
++                         "same filename as the backing file");
++            ret = -1;
++            goto out;
++        }
++    }
++
+     backing_fmt = get_option_parameter(param, BLOCK_OPT_BACKING_FMT);
+     if (backing_fmt && backing_fmt->value.s) {
+         if (!bdrv_find_format(backing_fmt->value.s)) {
+@@ -2646,9 +2656,6 @@ int bdrv_img_create(const char *filename, const char *fmt,
+     // The size for the image must always be specified, with one exception:
+     // If we are using a backing file, we can obtain the size from there
+     if (get_option_parameter(param, BLOCK_OPT_SIZE)->value.n == -1) {
+-        QEMUOptionParameter *backing_file =
+-            get_option_parameter(param, BLOCK_OPT_BACKING_FILE);
+-
+         if (backing_file && backing_file->value.s) {
+             uint64_t size;
+             const char *fmt = NULL;
+-- 
+1.7.4.rc1.16.gd2f15e
+

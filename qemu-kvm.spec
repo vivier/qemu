@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.133
+%define pkgrelease 2.134
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2057,6 +2057,80 @@ Patch1890: kvm-spice-qmp-events-restore-rhel6.0-compatibility.patch
 # For bz#642131 - qemu-kvm aborts of 'qemu_spice_display_create_update: unhandled depth: 0 bits'
 # For bz#647865 - support 2560x1440 in qxl
 Patch1891: kvm-spice-monitor-commands-restore-rhel6.0-compatibility.patch
+# For bz#638468 - [qemu-kvm] bochs vga lfb @ 0xe0000000 causes trouble for hot-plug
+Patch1892: kvm-switch-stdvga-to-pci-vgabios.patch
+# For bz#638468 - [qemu-kvm] bochs vga lfb @ 0xe0000000 causes trouble for hot-plug
+Patch1893: kvm-switch-vmware_vga-to-pci-vgabios.patch
+# For bz#638468 - [qemu-kvm] bochs vga lfb @ 0xe0000000 causes trouble for hot-plug
+Patch1894: kvm-add-rhel6.1.0-machine-type.patch
+# For bz#638468 - [qemu-kvm] bochs vga lfb @ 0xe0000000 causes trouble for hot-plug
+Patch1895: kvm-vgabios-update-handle-compatibility-with-older-qemu-.patch
+# For bz#672187 - Improper responsive message when shrinking qcow2 image
+Patch1896: kvm-qemu-io-Fix-error-messages.patch
+# For bz#637180 - watchdog timer isn't reset when qemu resets
+Patch1897: kvm-wdt_i6300esb-register-a-reset-function.patch
+# For bz#637180 - watchdog timer isn't reset when qemu resets
+Patch1898: kvm-Watchdog-disable-watchdog-timer-when-hard-rebooting-.patch
+# For bz#672720 - getting 'ctrl buffer too small' error on USB passthrough
+Patch1899: kvm-usb-linux-increase-buffer-for-USB-control-requests.patch
+# For bz#670787 - Hot plug the 14st VF to guest causes guest shut down
+Patch1900: kvm-device-assignment-Cap-number-of-devices-we-can-have-.patch
+# For bz#669268 - WinXP hang when reboot after setup copies files to the installation folders
+Patch1901: kvm-clear-vapic-after-reset.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1902: kvm-add-support-for-protocol-driver-create_options.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1903: kvm-qemu-img-avoid-calling-exit-1-to-release-resources-p.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1904: kvm-Use-qemu_mallocz-instead-of-calloc-in-img_convert.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1905: kvm-img_convert-Only-try-to-free-bs-entries-if-bs-is-val.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1906: kvm-Consolidate-printing-of-block-driver-options.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1907: kvm-Fix-formatting-and-missing-braces-in-qemu-img.c.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1908: kvm-Fail-if-detecting-an-unknown-option.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1909: kvm-Make-error-handling-more-consistent-in-img_create-an.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1910: kvm-qemu-img-Deprecate-obsolete-6-and-e-options.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1911: kvm-qemu-img-Free-option-parameter-lists-in-img_create.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1912: kvm-qemu-img-Fail-creation-if-backing-format-is-invalid.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1913: kvm-Introduce-strtosz-library-function-to-convert-a-stri.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1914: kvm-Introduce-strtosz_suffix.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1915: kvm-qemu-img.c-Clean-up-handling-of-image-size-in-img_cr.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1916: kvm-qemu-img.c-Re-factor-img_create.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1917: kvm-Introduce-do_snapshot_blkdev-and-monitor-command-to-.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1918: kvm-Prevent-creating-an-image-with-the-same-filename-as-.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1919: kvm-qemu-option-Fix-uninitialized-value-in-append_option.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1920: kvm-bdrv_img_create-use-proper-errno-return-values.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1921: kvm-block-Use-backing-format-driver-during-image-creatio.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1922: kvm-Make-strtosz-return-int64_t-instead-of-ssize_t.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1923: kvm-strtosz-use-unsigned-char-and-switch-to-qemu_isspace.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1924: kvm-strtosz-use-qemu_toupper-to-simplify-switch-statemen.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1925: kvm-strtosz-Fix-name-confusion-in-use-of-modf.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1926: kvm-strtosz-Use-suffix-macros-in-switch-statement.patch
+# For bz#637701 - RFE - support live snapshot of a subset of disks without RAM
+Patch1927: kvm-do_snapshot_blkdev-error-on-missing-snapshot_file-ar.patch
+# For bz#672229 - romfile memory leak
+Patch1928: kvm-pci-memory-leak-of-PCIDevice-rom_file.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3056,6 +3130,43 @@ ApplyOptionalPatch()
 %patch1889 -p1
 %patch1890 -p1
 %patch1891 -p1
+%patch1892 -p1
+%patch1893 -p1
+%patch1894 -p1
+%patch1895 -p1
+%patch1896 -p1
+%patch1897 -p1
+%patch1898 -p1
+%patch1899 -p1
+%patch1900 -p1
+%patch1901 -p1
+%patch1902 -p1
+%patch1903 -p1
+%patch1904 -p1
+%patch1905 -p1
+%patch1906 -p1
+%patch1907 -p1
+%patch1908 -p1
+%patch1909 -p1
+%patch1910 -p1
+%patch1911 -p1
+%patch1912 -p1
+%patch1913 -p1
+%patch1914 -p1
+%patch1915 -p1
+%patch1916 -p1
+%patch1917 -p1
+%patch1918 -p1
+%patch1919 -p1
+%patch1920 -p1
+%patch1921 -p1
+%patch1922 -p1
+%patch1923 -p1
+%patch1924 -p1
+%patch1925 -p1
+%patch1926 -p1
+%patch1927 -p1
+%patch1928 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3267,6 +3378,61 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Feb 01 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.134.el6
+- kvm-switch-stdvga-to-pci-vgabios.patch [bz#638468]
+- kvm-switch-vmware_vga-to-pci-vgabios.patch [bz#638468]
+- kvm-add-rhel6.1.0-machine-type.patch [bz#638468]
+- kvm-vgabios-update-handle-compatibility-with-older-qemu-.patch [bz#638468]
+- kvm-qemu-io-Fix-error-messages.patch [bz#672187]
+- kvm-wdt_i6300esb-register-a-reset-function.patch [bz#637180]
+- kvm-Watchdog-disable-watchdog-timer-when-hard-rebooting-.patch [bz#637180]
+- kvm-usb-linux-increase-buffer-for-USB-control-requests.patch [bz#672720]
+- kvm-device-assignment-Cap-number-of-devices-we-can-have-.patch [bz#670787]
+- kvm-clear-vapic-after-reset.patch [bz#669268]
+- kvm-add-support-for-protocol-driver-create_options.patch [bz#637701]
+- kvm-qemu-img-avoid-calling-exit-1-to-release-resources-p.patch [bz#637701]
+- kvm-Use-qemu_mallocz-instead-of-calloc-in-img_convert.patch [bz#637701]
+- kvm-img_convert-Only-try-to-free-bs-entries-if-bs-is-val.patch [bz#637701]
+- kvm-Consolidate-printing-of-block-driver-options.patch [bz#637701]
+- kvm-Fix-formatting-and-missing-braces-in-qemu-img.c.patch [bz#637701]
+- kvm-Fail-if-detecting-an-unknown-option.patch [bz#637701]
+- kvm-Make-error-handling-more-consistent-in-img_create-an.patch [bz#637701]
+- kvm-qemu-img-Deprecate-obsolete-6-and-e-options.patch [bz#637701]
+- kvm-qemu-img-Free-option-parameter-lists-in-img_create.patch [bz#637701]
+- kvm-qemu-img-Fail-creation-if-backing-format-is-invalid.patch [bz#637701]
+- kvm-Introduce-strtosz-library-function-to-convert-a-stri.patch [bz#637701]
+- kvm-Introduce-strtosz_suffix.patch [bz#637701]
+- kvm-qemu-img.c-Clean-up-handling-of-image-size-in-img_cr.patch [bz#637701]
+- kvm-qemu-img.c-Re-factor-img_create.patch [bz#637701]
+- kvm-Introduce-do_snapshot_blkdev-and-monitor-command-to-.patch [bz#637701]
+- kvm-Prevent-creating-an-image-with-the-same-filename-as-.patch [bz#637701]
+- kvm-qemu-option-Fix-uninitialized-value-in-append_option.patch [bz#637701]
+- kvm-bdrv_img_create-use-proper-errno-return-values.patch [bz#637701]
+- kvm-block-Use-backing-format-driver-during-image-creatio.patch [bz#637701]
+- kvm-Make-strtosz-return-int64_t-instead-of-ssize_t.patch [bz#637701]
+- kvm-strtosz-use-unsigned-char-and-switch-to-qemu_isspace.patch [bz#637701]
+- kvm-strtosz-use-qemu_toupper-to-simplify-switch-statemen.patch [bz#637701]
+- kvm-strtosz-Fix-name-confusion-in-use-of-modf.patch [bz#637701]
+- kvm-strtosz-Use-suffix-macros-in-switch-statement.patch [bz#637701]
+- kvm-do_snapshot_blkdev-error-on-missing-snapshot_file-ar.patch [bz#637701]
+- kvm-pci-memory-leak-of-PCIDevice-rom_file.patch [bz#672229]
+- Resolves: bz#637180
+  (watchdog timer isn't reset when qemu resets)
+- Resolves: bz#637701
+  (RFE - support live snapshot of a subset of disks without RAM)
+- Resolves: bz#638468
+  ([qemu-kvm] bochs vga lfb @ 0xe0000000 causes trouble for hot-plug)
+- Resolves: bz#669268
+  (WinXP hang when reboot after setup copies files to the installation folders)
+- Resolves: bz#670787
+  (Hot plug the 14st VF to guest causes guest shut down)
+- Resolves: bz#672187
+  (Improper responsive message when shrinking qcow2 image)
+- Resolves: bz#672229
+  (romfile memory leak)
+- Resolves: bz#672720
+  (getting 'ctrl buffer too small' error on USB passthrough)
+
 * Fri Jan 28 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.133.el6
 - kvm-spice-rip-out-all-the-old-non-upstream-spice-bits.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
 - kvm-Use-display-types-for-local-display-only.patch [bz#642131 bz#634153 bz#615947 bz#632458 bz#631832 bz#647865]
