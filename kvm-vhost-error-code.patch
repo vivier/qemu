@@ -1,0 +1,55 @@
+From b05a2b7f1264f129e7299ab7ddb2a98f8d74b0fc Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Wed, 19 Jan 2011 11:49:21 -0200
+Subject: [PATCH 08/24] vhost: error code
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <a414dc4d29852e563000d1e3b7403956b21a88ea.1295437447.git.mst@redhat.com>
+Patchwork-id: 16556
+O-Subject: [PATCHv4 RHEL6.1 1/8] vhost: error code
+Bugzilla: 633394
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+commit c885212109b0ad79888ced410c2ff0d0e883cb15
+Author: Michael S. Tsirkin <mst@redhat.com>
+Date:   Wed Oct 6 15:20:28 2010 +0200
+
+    vhost: error code
+
+    fix up errors returned to include errno, not just -1
+
+    Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ hw/vhost.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/vhost.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/hw/vhost.c b/hw/vhost.c
+index 4cf9f06..1cc3bd5 100644
+--- a/hw/vhost.c
++++ b/hw/vhost.c
+@@ -529,12 +529,14 @@ static int vhost_virtqueue_init(struct vhost_dev *dev,
+     file.fd = event_notifier_get_fd(virtio_queue_get_host_notifier(vvq));
+     r = ioctl(dev->control, VHOST_SET_VRING_KICK, &file);
+     if (r) {
++        r = -errno;
+         goto fail_kick;
+     }
+ 
+     file.fd = event_notifier_get_fd(virtio_queue_get_guest_notifier(vvq));
+     r = ioctl(dev->control, VHOST_SET_VRING_CALL, &file);
+     if (r) {
++        r = -errno;
+         goto fail_call;
+     }
+ 
+-- 
+1.7.4.rc1.16.gd2f15e
+

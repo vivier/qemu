@@ -1,0 +1,118 @@
+From 2bffd0e1921dfcd4840d34030972479fc7ef573d Mon Sep 17 00:00:00 2001
+From: Marcelo Tosatti <mtosatti@redhat.com>
+Date: Mon, 24 Jan 2011 08:43:11 -0200
+Subject: [PATCH 22/24] PATCH RHEL6.1 qemu-kvm acpi_piix4: expose no_hotplug attribute via i/o port
+
+RH-Author: Marcelo Tosatti <mtosatti@redhat.com>
+Message-id: <20110124084449.241541863@amt.cnet>
+Patchwork-id: 16808
+O-Subject: [patch 6/6] PATCH RHEL6.1 qemu-kvm acpi_piix4: expose no_hotplug
+	attribute via i/o port
+Bugzilla: 498774
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Expose no_hotplug attribute via I/O port, so ACPI BIOS can indicate
+removability status to guest OS.
+
+An updated seabios is required to make use of this feature (seabios.git
+commit ID 3c241edf3d7ef29c21).
+
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+Tested-by: Gleb Natapov <gleb@redhat.com>
+(upstream backport of commit 668643b025dcff72b9b18adb5df794be9e9be5dc on pci
+tree)
+BZ: 498774
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/acpi.c |   37 +++++++++++++++++++++++++++++++++++++
+ 1 files changed, 37 insertions(+), 0 deletions(-)
+
+diff --git a/hw/acpi.c b/hw/acpi.c
+index e519c3d..87917e3 100644
+--- a/hw/acpi.c
++++ b/hw/acpi.c
+@@ -37,6 +37,7 @@
+ #define PROC_BASE 0xaf00
+ #define PCI_BASE 0xae00
+ #define PCI_EJ_BASE 0xae08
++#define PCI_RMV_BASE 0xae0c
+ 
+ struct gpe_regs {
+     uint16_t sts; /* status */
+@@ -74,6 +75,7 @@ typedef struct PIIX4PMState {
+     /* for pci hotplug */
+     struct gpe_regs gpe;
+     struct pci_status pci0_status;
++    uint32_t pci0_hotplug_enable;
+ } PIIX4PMState;
+ 
+ #define RSM_STS (1 << 15)
+@@ -519,6 +521,25 @@ static const VMStateDescription vmstate_acpi = {
+     }
+ };
+ 
++static void piix4_update_hotplug(PIIX4PMState *s)
++{
++    PCIDevice *dev = &s->dev;
++    BusState *bus = qdev_get_parent_bus(&dev->qdev);
++    DeviceState *qdev, *next;
++
++    s->pci0_hotplug_enable = ~0;
++
++    QLIST_FOREACH_SAFE(qdev, &bus->children, sibling, next) {
++        PCIDeviceInfo *info = container_of(qdev->info, PCIDeviceInfo, qdev);
++        PCIDevice *pdev = DO_UPCAST(PCIDevice, qdev, qdev);
++        int slot = PCI_SLOT(pdev->devfn);
++
++        if (info->no_hotplug) {
++            s->pci0_hotplug_enable &= ~(1 << slot);
++        }
++    }
++}
++
+ static void piix4_reset(void *opaque)
+ {
+     PIIX4PMState *s = opaque;
+@@ -533,6 +554,7 @@ static void piix4_reset(void *opaque)
+         /* Mark SMM as already inited (until KVM supports SMM). */
+         pci_conf[0x5B] = 0x02;
+     }
++    piix4_update_hotplug(s);
+ }
+ 
+ static void piix4_powerdown(void *opaque, int irq, int power_failing)
+@@ -793,6 +815,18 @@ static void pciej_write(void *opaque, uint32_t addr, uint32_t val)
+ #endif
+ }
+ 
++static uint32_t pcirmv_read(void *opaque, uint32_t addr)
++{
++    PIIX4PMState *s = opaque;
++
++    return s->pci0_hotplug_enable;
++}
++
++static void pcirmv_write(void *opaque, uint32_t addr, uint32_t val)
++{
++    return;
++}
++
+ static const char *model;
+ 
+ static int piix4_device_hotplug(PCIDevice *dev, int state);
+@@ -819,6 +853,9 @@ void piix4_acpi_system_hot_add_init(PCIBus *bus, const char *cpu_model)
+     register_ioport_write(PCI_EJ_BASE, 4, 4, pciej_write, bus);
+     register_ioport_read(PCI_EJ_BASE, 4, 4,  pciej_read, bus);
+ 
++    register_ioport_write(PCI_RMV_BASE, 4, 4, pcirmv_write, pm_state);
++    register_ioport_read(PCI_RMV_BASE, 4, 4,  pcirmv_read, pm_state);
++
+     model = cpu_model;
+ 
+     pci_bus_hotplug(bus, piix4_device_hotplug);
+-- 
+1.7.4.rc1.16.gd2f15e
+

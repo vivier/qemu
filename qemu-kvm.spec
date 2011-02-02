@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.134
+%define pkgrelease 2.135
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2131,6 +2131,54 @@ Patch1926: kvm-strtosz-Use-suffix-macros-in-switch-statement.patch
 Patch1927: kvm-do_snapshot_blkdev-error-on-missing-snapshot_file-ar.patch
 # For bz#672229 - romfile memory leak
 Patch1928: kvm-pci-memory-leak-of-PCIDevice-rom_file.patch
+# For bz#625333 - qemu treatment of -nodefconfig and -readconfig problematic for debug
+Patch1929: kvm-Bug-625333-qemu-treatment-of-nodefconfig-and-readcon.patch
+# For bz#670539 - Block devices don't implement correct flush error handling
+Patch1930: kvm-ide-Factor-ide_flush_cache-out.patch
+# For bz#670539 - Block devices don't implement correct flush error handling
+Patch1931: kvm-ide-Handle-flush-failure.patch
+# For bz#670539 - Block devices don't implement correct flush error handling
+Patch1932: kvm-virtio-blk-Respect-werror-option-for-flushes.patch
+# For bz#670539 - Block devices don't implement correct flush error handling
+Patch1933: kvm-block-Allow-bdrv_flush-to-return-errors.patch
+# For bz#670539 - Block devices don't implement correct flush error handling
+Patch1934: kvm-ide-Handle-immediate-bdrv_aio_flush-failure.patch
+# For bz#670539 - Block devices don't implement correct flush error handling
+Patch1935: kvm-virtio-blk-Handle-immediate-flush-failure-properly.patch
+# For bz#633394 - [6.1 FEAT] virtio-blk ioeventfd support
+Patch1936: kvm-vhost-error-code.patch
+# For bz#633394 - [6.1 FEAT] virtio-blk ioeventfd support
+Patch1937: kvm-vhost-fix-up-irqfd-support.patch
+# For bz#633394 - [6.1 FEAT] virtio-blk ioeventfd support
+Patch1938: kvm-virtio-pci-mask-notifier-error-handling-fixups.patch
+# For bz#633394 - [6.1 FEAT] virtio-blk ioeventfd support
+Patch1939: kvm-test-for-ioeventfd-support-on-old-kernels.patch
+# For bz#633394 - [6.1 FEAT] virtio-blk ioeventfd support
+Patch1940: kvm-virtio-pci-Rename-bugs-field-to-flags.patch
+# For bz#633394 - [6.1 FEAT] virtio-blk ioeventfd support
+Patch1941: kvm-virtio-move-vmstate-change-tracking-to-core.patch
+# For bz#633394 - [6.1 FEAT] virtio-blk ioeventfd support
+Patch1942: kvm-virtio-pci-Use-ioeventfd-for-virtqueue-notify.patch
+# For bz#633394 - [6.1 FEAT] virtio-blk ioeventfd support
+Patch1943: kvm-ioeventfd-error-handling-cleanup.patch
+# For bz#635418 - Allow enable/disable ksm per VM
+Patch1944: kvm-remove-redhat-disable-THP.patch
+# For bz#498774 - QEMU: Too many devices are available for unplug in Windows XP (and we don't support that)
+Patch1945: kvm-PATCH-RHEL6.1-qemu-kvm-acpi_piix4-qdevfy.patch
+# For bz#498774 - QEMU: Too many devices are available for unplug in Windows XP (and we don't support that)
+Patch1946: kvm-PATCH-RHEL6.1-qemu-kvm-pci-allow-devices-being-tagge.patch
+# For bz#498774 - QEMU: Too many devices are available for unplug in Windows XP (and we don't support that)
+Patch1947: kvm-PATCH-RHEL6.1-qemu-kvm-piix-tag-as-not-hotpluggable.patch
+# For bz#498774 - QEMU: Too many devices are available for unplug in Windows XP (and we don't support that)
+Patch1948: kvm-PATCH-RHEL6.1-qemu-kvm-vga-tag-as-not-hotplugable-v3.patch
+# For bz#498774 - QEMU: Too many devices are available for unplug in Windows XP (and we don't support that)
+Patch1949: kvm-PATCH-RHEL6.1-qemu-kvm-qxl-tag-as-not-hotpluggable.patch
+# For bz#498774 - QEMU: Too many devices are available for unplug in Windows XP (and we don't support that)
+Patch1950: kvm-PATCH-RHEL6.1-qemu-kvm-acpi_piix4-expose-no_hotplug-.patch
+# For bz#621484 - Broken pipe when working with unix socket chardev
+Patch1951: kvm-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
+# For bz#621484 - Broken pipe when working with unix socket chardev
+Patch1952: kvm-char-mark-socket-closed-if-write-fails-with-EPIPE.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3167,6 +3215,30 @@ ApplyOptionalPatch()
 %patch1926 -p1
 %patch1927 -p1
 %patch1928 -p1
+%patch1929 -p1
+%patch1930 -p1
+%patch1931 -p1
+%patch1932 -p1
+%patch1933 -p1
+%patch1934 -p1
+%patch1935 -p1
+%patch1936 -p1
+%patch1937 -p1
+%patch1938 -p1
+%patch1939 -p1
+%patch1940 -p1
+%patch1941 -p1
+%patch1942 -p1
+%patch1943 -p1
+%patch1944 -p1
+%patch1945 -p1
+%patch1946 -p1
+%patch1947 -p1
+%patch1948 -p1
+%patch1949 -p1
+%patch1950 -p1
+%patch1951 -p1
+%patch1952 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3378,6 +3450,46 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Feb 02 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.135.el6
+- kvm-Bug-625333-qemu-treatment-of-nodefconfig-and-readcon.patch [bz#625333]
+- kvm-ide-Factor-ide_flush_cache-out.patch [bz#670539]
+- kvm-ide-Handle-flush-failure.patch [bz#670539]
+- kvm-virtio-blk-Respect-werror-option-for-flushes.patch [bz#670539]
+- kvm-block-Allow-bdrv_flush-to-return-errors.patch [bz#670539]
+- kvm-ide-Handle-immediate-bdrv_aio_flush-failure.patch [bz#670539]
+- kvm-virtio-blk-Handle-immediate-flush-failure-properly.patch [bz#670539]
+- kvm-vhost-error-code.patch [bz#633394]
+- kvm-vhost-fix-up-irqfd-support.patch [bz#633394]
+- kvm-virtio-pci-mask-notifier-error-handling-fixups.patch [bz#633394]
+- kvm-test-for-ioeventfd-support-on-old-kernels.patch [bz#633394]
+- kvm-virtio-pci-Rename-bugs-field-to-flags.patch [bz#633394]
+- kvm-virtio-move-vmstate-change-tracking-to-core.patch [bz#633394]
+- kvm-virtio-pci-Use-ioeventfd-for-virtqueue-notify.patch [bz#633394]
+- kvm-ioeventfd-error-handling-cleanup.patch [bz#633394]
+- kvm-remove-redhat-disable-THP.patch [bz#635418]
+- kvm-PATCH-RHEL6.1-qemu-kvm-acpi_piix4-qdevfy.patch [bz#498774]
+- kvm-PATCH-RHEL6.1-qemu-kvm-pci-allow-devices-being-tagge.patch [bz#498774]
+- kvm-PATCH-RHEL6.1-qemu-kvm-piix-tag-as-not-hotpluggable.patch [bz#498774]
+- kvm-PATCH-RHEL6.1-qemu-kvm-vga-tag-as-not-hotplugable-v3.patch [bz#498774]
+- kvm-PATCH-RHEL6.1-qemu-kvm-qxl-tag-as-not-hotpluggable.patch [bz#498774]
+- kvm-PATCH-RHEL6.1-qemu-kvm-acpi_piix4-expose-no_hotplug-.patch [bz#498774]
+- kvm-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch [bz#621484]
+- kvm-char-mark-socket-closed-if-write-fails-with-EPIPE.patch [bz#621484]
+- Resolves: bz#498774
+  (QEMU: Too many devices are available for unplug in Windows XP (and we don't support that))
+- Resolves: bz#621484
+  (Broken pipe when working with unix socket chardev)
+- Resolves: bz#625333
+  (qemu treatment of -nodefconfig and -readconfig problematic for debug)
+- Resolves: bz#633394
+  ([6.1 FEAT] virtio-blk ioeventfd support)
+- Resolves: bz#635418
+  (Allow enable/disable ksm per VM)
+- Resolves: bz#670539
+  (Block devices don't implement correct flush error handling)
+- Related: bz#635418
+  (Allow enable/disable ksm per VM)
+
 * Tue Feb 01 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.134.el6
 - kvm-switch-stdvga-to-pci-vgabios.patch [bz#638468]
 - kvm-switch-vmware_vga-to-pci-vgabios.patch [bz#638468]

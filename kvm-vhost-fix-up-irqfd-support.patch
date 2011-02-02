@@ -1,0 +1,505 @@
+From 1d7064f9d2ab2f291353c0582fd5a64d671a56c2 Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Wed, 19 Jan 2011 11:49:25 -0200
+Subject: [PATCH 09/24] vhost: fix up irqfd support
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <32d45de7a44062d50e4a68b9ccab069c7498a65a.1295437447.git.mst@redhat.com>
+Patchwork-id: 16559
+O-Subject: [PATCHv4 RHEL6.1 2/8] vhost: fix up irqfd support
+Bugzilla: 633394
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+commit c9646bee60f419f76181ab4d1d094afa193834a3
+Author: Michael S. Tsirkin <mst@redhat.com>
+Date:   Wed Oct 6 07:22:00 2010 +0200
+
+    vhost: fix up irqfd support
+
+    vhost irqfd support: case where many vqs are
+    mapped to a single msix vector is currently broken.
+    Fix it up.
+
+        Includes this patch from qemu.git:
+
+    virtio: change set guest notifier to per-device
+
+    When using irqfd with vhost-net to inject interrupts,
+    a single evenfd might inject multiple interrupts.
+    Implementing this is much easier with a single
+    per-device callback to set guest notifiers.
+
+    Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ hw/msix.c       |   68 ++++++++++++++++++++++++++++++-------------
+ hw/msix.h       |    4 +-
+ hw/pci.h        |    3 +-
+ hw/vhost.c      |   52 ++++++++++++++++++---------------
+ hw/virtio-pci.c |   85 ++++++++++++++++++++++++++++++++++++++++++++++++------
+ hw/virtio.h     |    2 +-
+ 6 files changed, 154 insertions(+), 60 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/msix.c       |   68 ++++++++++++++++++++++++++++++-------------
+ hw/msix.h       |    4 +-
+ hw/pci.h        |    3 +-
+ hw/vhost.c      |   52 ++++++++++++++++++---------------
+ hw/virtio-pci.c |   85 ++++++++++++++++++++++++++++++++++++++++++++++++------
+ hw/virtio.h     |    2 +-
+ 6 files changed, 154 insertions(+), 60 deletions(-)
+
+diff --git a/hw/msix.c b/hw/msix.c
+index 1fe1823..2586de8 100644
+--- a/hw/msix.c
++++ b/hw/msix.c
+@@ -319,10 +319,8 @@ static void msix_mmio_writel(void *opaque, target_phys_addr_t addr,
+     if (kvm_enabled() && kvm_irqchip_in_kernel()) {
+         kvm_msix_update(dev, vector, was_masked, msix_is_masked(dev, vector));
+     }
+-    if (was_masked != msix_is_masked(dev, vector) &&
+-        dev->msix_mask_notifier && dev->msix_mask_notifier_opaque[vector]) {
++    if (was_masked != msix_is_masked(dev, vector) && dev->msix_mask_notifier) {
+         int r = dev->msix_mask_notifier(dev, vector,
+-					dev->msix_mask_notifier_opaque[vector],
+ 					msix_is_masked(dev, vector));
+         assert(r >= 0);
+     }
+@@ -370,9 +368,8 @@ static void msix_mask_all(struct PCIDevice *dev, unsigned nentries)
+         int was_masked = msix_is_masked(dev, vector);
+         dev->msix_table_page[offset] |= MSIX_VECTOR_MASK;
+         if (was_masked != msix_is_masked(dev, vector) &&
+-            dev->msix_mask_notifier && dev->msix_mask_notifier_opaque[vector]) {
++            dev->msix_mask_notifier) {
+             r = dev->msix_mask_notifier(dev, vector,
+-                                        dev->msix_mask_notifier_opaque[vector],
+                                         msix_is_masked(dev, vector));
+             assert(r >= 0);
+         }
+@@ -398,8 +395,6 @@ int msix_init(struct PCIDevice *dev, unsigned short nentries,
+                                             sizeof *dev->msix_irq_entries);
+     }
+ #endif
+-    dev->msix_mask_notifier_opaque =
+-        qemu_mallocz(nentries * sizeof *dev->msix_mask_notifier_opaque);
+     dev->msix_mask_notifier = NULL;
+     dev->msix_entry_used = qemu_mallocz(MSIX_MAX_ENTRIES *
+                                         sizeof *dev->msix_entry_used);
+@@ -463,8 +458,6 @@ int msix_uninit(PCIDevice *dev)
+     dev->msix_entry_used = NULL;
+     qemu_free(dev->msix_irq_entries);
+     dev->msix_irq_entries = NULL;
+-    qemu_free(dev->msix_mask_notifier_opaque);
+-    dev->msix_mask_notifier_opaque = NULL;
+     dev->cap_present &= ~QEMU_PCI_CAP_MSIX;
+     return 0;
+ }
+@@ -609,46 +602,79 @@ void msix_unuse_all_vectors(PCIDevice *dev)
+     msix_free_irq_entries(dev);
+ }
+ 
+-int msix_set_mask_notifier(PCIDevice *dev, unsigned vector, void *opaque)
++static int msix_set_mask_notifier_for_vector(PCIDevice *dev, unsigned vector)
+ {
+     int r = 0;
+     if (vector >= dev->msix_entries_nr || !dev->msix_entry_used[vector])
+         return 0;
+ 
+     assert(dev->msix_mask_notifier);
+-    assert(opaque);
+-    assert(!dev->msix_mask_notifier_opaque[vector]);
+ 
+     /* Unmask the new notifier unless vector is masked. */
+     if (!msix_is_masked(dev, vector)) {
+-        r = dev->msix_mask_notifier(dev, vector, opaque, false);
++        r = dev->msix_mask_notifier(dev, vector, false);
+         if (r < 0) {
+             return r;
+         }
+     }
+-    dev->msix_mask_notifier_opaque[vector] = opaque;
+     return r;
+ }
+ 
+-int msix_unset_mask_notifier(PCIDevice *dev, unsigned vector)
++static int msix_unset_mask_notifier_for_vector(PCIDevice *dev, unsigned vector)
+ {
+     int r = 0;
+-    void *opaque;
+     if (vector >= dev->msix_entries_nr || !dev->msix_entry_used[vector])
+         return 0;
+ 
+-    opaque = dev->msix_mask_notifier_opaque[vector];
+-
+     assert(dev->msix_mask_notifier);
+-    assert(opaque);
+ 
+     /* Mask the old notifier unless it is already masked. */
+     if (!msix_is_masked(dev, vector)) {
+-        r = dev->msix_mask_notifier(dev, vector, opaque, true);
++        r = dev->msix_mask_notifier(dev, vector, true);
+         if (r < 0) {
+             return r;
+         }
+     }
+-    dev->msix_mask_notifier_opaque[vector] = NULL;
++    return r;
++}
++
++int msix_set_mask_notifier(PCIDevice *dev, msix_mask_notifier_func f)
++{
++    int r, n;
++    assert(!dev->msix_mask_notifier);
++    dev->msix_mask_notifier = f;
++    for (n = 0; n < dev->msix_entries_nr; ++n) {
++        r = msix_set_mask_notifier_for_vector(dev, n);
++        if (r < 0) {
++            goto undo;
++        }
++    }
++    return 0;
++
++undo:
++    while (--n >= 0) {
++        msix_unset_mask_notifier_for_vector(dev, n);
++    }
++    dev->msix_mask_notifier = NULL;
++    return r;
++}
++
++int msix_unset_mask_notifier(PCIDevice *dev)
++{
++    int r, n;
++    assert(dev->msix_mask_notifier);
++    for (n = 0; n < dev->msix_entries_nr; ++n) {
++        r = msix_unset_mask_notifier_for_vector(dev, n);
++        if (r < 0) {
++            goto undo;
++        }
++    }
++    dev->msix_mask_notifier = NULL;
++    return 0;
++
++undo:
++    while (--n >= 0) {
++        msix_set_mask_notifier_for_vector(dev, n);
++    }
+     return r;
+ }
+diff --git a/hw/msix.h b/hw/msix.h
+index 6b21ffb..5a81df5 100644
+--- a/hw/msix.h
++++ b/hw/msix.h
+@@ -33,6 +33,6 @@ void msix_reset(PCIDevice *dev);
+ 
+ extern int msix_supported;
+ 
+-int msix_set_mask_notifier(PCIDevice *dev, unsigned vector, void *opaque);
+-int msix_unset_mask_notifier(PCIDevice *dev, unsigned vector);
++int msix_set_mask_notifier(PCIDevice *dev, msix_mask_notifier_func);
++int msix_unset_mask_notifier(PCIDevice *dev);
+ #endif
+diff --git a/hw/pci.h b/hw/pci.h
+index 4748d22..25aad90 100644
+--- a/hw/pci.h
++++ b/hw/pci.h
+@@ -131,7 +131,7 @@ enum {
+ };
+ 
+ typedef int (*msix_mask_notifier_func)(PCIDevice *, unsigned vector,
+-				       void *opaque, int masked);
++				       int masked);
+ 
+ struct PCIDevice {
+     DeviceState qdev;
+@@ -198,7 +198,6 @@ struct PCIDevice {
+ 
+     struct kvm_irq_routing_entry *msix_irq_entries;
+ 
+-    void **msix_mask_notifier_opaque;
+     msix_mask_notifier_func msix_mask_notifier;
+ };
+ 
+diff --git a/hw/vhost.c b/hw/vhost.c
+index 1cc3bd5..1f3852d 100644
+--- a/hw/vhost.c
++++ b/hw/vhost.c
+@@ -457,11 +457,6 @@ static int vhost_virtqueue_init(struct vhost_dev *dev,
+     };
+     struct VirtQueue *vvq = virtio_get_queue(vdev, idx);
+ 
+-    if (!vdev->binding->set_guest_notifier) {
+-        fprintf(stderr, "binding does not support guest notifiers\n");
+-        return -ENOSYS;
+-    }
+-
+     if (!vdev->binding->set_host_notifier) {
+         fprintf(stderr, "binding does not support host notifiers\n");
+         return -ENOSYS;
+@@ -514,12 +509,6 @@ static int vhost_virtqueue_init(struct vhost_dev *dev,
+         r = -errno;
+         goto fail_alloc;
+     }
+-    r = vdev->binding->set_guest_notifier(vdev->binding_opaque, idx, true);
+-    if (r < 0) {
+-        fprintf(stderr, "Error binding guest notifier: %d\n", -r);
+-        goto fail_guest_notifier;
+-    }
+-
+     r = vdev->binding->set_host_notifier(vdev->binding_opaque, idx, true);
+     if (r < 0) {
+         fprintf(stderr, "Error binding host notifier: %d\n", -r);
+@@ -546,8 +535,6 @@ fail_call:
+ fail_kick:
+     vdev->binding->set_host_notifier(vdev->binding_opaque, idx, false);
+ fail_host_notifier:
+-    vdev->binding->set_guest_notifier(vdev->binding_opaque, idx, false);
+-fail_guest_notifier:
+ fail_alloc:
+     cpu_physical_memory_unmap(vq->ring, virtio_queue_get_ring_size(vdev, idx),
+                               0, 0);
+@@ -573,13 +560,6 @@ static void vhost_virtqueue_cleanup(struct vhost_dev *dev,
+         .index = idx,
+     };
+     int r;
+-    r = vdev->binding->set_guest_notifier(vdev->binding_opaque, idx, false);
+-    if (r < 0) {
+-        fprintf(stderr, "vhost VQ %d guest cleanup failed: %d\n", idx, r);
+-        fflush(stderr);
+-    }
+-    assert (r >= 0);
+-
+     r = vdev->binding->set_host_notifier(vdev->binding_opaque, idx, false);
+     if (r < 0) {
+         fprintf(stderr, "vhost VQ %d host cleanup failed: %d\n", idx, r);
+@@ -652,15 +632,26 @@ void vhost_dev_cleanup(struct vhost_dev *hdev)
+ int vhost_dev_start(struct vhost_dev *hdev, VirtIODevice *vdev)
+ {
+     int i, r;
++    if (!vdev->binding->set_guest_notifiers) {
++        fprintf(stderr, "binding does not support guest notifiers\n");
++        r = -ENOSYS;
++        goto fail;
++    }
++
++    r = vdev->binding->set_guest_notifiers(vdev->binding_opaque, true);
++    if (r < 0) {
++        fprintf(stderr, "Error binding guest notifier: %d\n", -r);
++        goto fail_notifiers;
++    }
+ 
+     r = vhost_dev_set_features(hdev, hdev->log_enabled);
+     if (r < 0) {
+-        goto fail;
++        goto fail_features;
+     }
+     r = ioctl(hdev->control, VHOST_SET_MEM_TABLE, hdev->mem);
+     if (r < 0) {
+         r = -errno;
+-        goto fail;
++        goto fail_mem;
+     }
+     for (i = 0; i < hdev->nvqs; ++i) {
+         r = vhost_virtqueue_init(hdev,
+@@ -680,13 +671,14 @@ int vhost_dev_start(struct vhost_dev *hdev, VirtIODevice *vdev)
+                   (uint64_t)(unsigned long)hdev->log);
+         if (r < 0) {
+             r = -errno;
+-            goto fail_vq;
++            goto fail_log;
+         }
+     }
+ 
+     hdev->started = true;
+ 
+     return 0;
++fail_log:
+ fail_vq:
+     while (--i >= 0) {
+         vhost_virtqueue_cleanup(hdev,
+@@ -694,13 +686,18 @@ fail_vq:
+                                 hdev->vqs + i,
+                                 i);
+     }
++fail_mem:
++fail_features:
++    vdev->binding->set_guest_notifiers(vdev->binding_opaque, false);
++fail_notifiers:
+ fail:
+     return r;
+ }
+ 
+ void vhost_dev_stop(struct vhost_dev *hdev, VirtIODevice *vdev)
+ {
+-    int i;
++    int i, r;
++
+     for (i = 0; i < hdev->nvqs; ++i) {
+         vhost_virtqueue_cleanup(hdev,
+                                 vdev,
+@@ -709,6 +706,13 @@ void vhost_dev_stop(struct vhost_dev *hdev, VirtIODevice *vdev)
+     }
+     vhost_client_sync_dirty_bitmap(&hdev->client, 0,
+                                    (target_phys_addr_t)~0x0ull);
++    r = vdev->binding->set_guest_notifiers(vdev->binding_opaque, false);
++    if (r < 0) {
++        fprintf(stderr, "vhost guest notifier cleanup failed: %d\n", r);
++        fflush(stderr);
++    }
++    assert (r >= 0);
++
+     hdev->started = false;
+     qemu_free(hdev->log);
+     hdev->log_size = 0;
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index 35768d3..1771ad0 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -426,10 +426,9 @@ static void virtio_pci_guest_notifier_read(void *opaque)
+     }
+ }
+ 
+-static int virtio_pci_mask_notifier(PCIDevice *dev, unsigned vector,
+-                                    void *opaque, int masked)
++static int virtio_pci_mask_vq(PCIDevice *dev, unsigned vector,
++                              VirtQueue *vq, int masked)
+ {
+-    VirtQueue *vq = opaque;
+     EventNotifier *notifier = virtio_queue_get_guest_notifier(vq);
+     int r = kvm_set_irqfd(dev->msix_irq_entries[vector].gsi,
+                           event_notifier_get_fd(notifier),
+@@ -447,6 +446,34 @@ static int virtio_pci_mask_notifier(PCIDevice *dev, unsigned vector,
+     return 0;
+ }
+ 
++static int virtio_pci_mask_notifier(PCIDevice *dev, unsigned vector,
++                                    int masked)
++{
++    VirtIOPCIProxy *proxy = container_of(dev, VirtIOPCIProxy, pci_dev);
++    VirtIODevice *vdev = proxy->vdev;
++    int r, n;
++
++    for (n = 0; n < VIRTIO_PCI_QUEUE_MAX; n++) {
++        if (!virtio_queue_get_num(vdev, n)) {
++            break;
++        }
++        if (virtio_queue_vector(vdev, n) != vector) {
++            continue;
++        }
++        r = virtio_pci_mask_vq(dev, vector, virtio_get_queue(vdev, n), masked);
++        if (r < 0) {
++            goto undo;
++        }
++    }
++    return 0;
++undo:
++    while (--n >= 0) {
++        virtio_pci_mask_vq(dev, vector, virtio_get_queue(vdev, n), !masked);
++    }
++    return r;
++}
++
++
+ static int virtio_pci_set_guest_notifier(void *opaque, int n, bool assign)
+ {
+     VirtIOPCIProxy *proxy = opaque;
+@@ -460,11 +487,7 @@ static int virtio_pci_set_guest_notifier(void *opaque, int n, bool assign)
+         }
+         qemu_set_fd_handler(event_notifier_get_fd(notifier),
+                             virtio_pci_guest_notifier_read, NULL, vq);
+-        msix_set_mask_notifier(&proxy->pci_dev,
+-                               virtio_queue_vector(proxy->vdev, n), vq);
+     } else {
+-        msix_unset_mask_notifier(&proxy->pci_dev,
+-				 virtio_queue_vector(proxy->vdev, n));
+         qemu_set_fd_handler(event_notifier_get_fd(notifier),
+                             NULL, NULL, NULL);
+         /* Test and clear notifier before closing it,
+@@ -476,6 +499,50 @@ static int virtio_pci_set_guest_notifier(void *opaque, int n, bool assign)
+     return 0;
+ }
+ 
++static int virtio_pci_set_guest_notifiers(void *opaque, bool assign)
++{
++    VirtIOPCIProxy *proxy = opaque;
++    VirtIODevice *vdev = proxy->vdev;
++    int r, n;
++
++    /* Must unset mask notifier while guest notifier
++     * is still assigned */
++    if (!assign) {
++	    r = msix_unset_mask_notifier(&proxy->pci_dev);
++            assert(r >= 0);
++    }
++
++    for (n = 0; n < VIRTIO_PCI_QUEUE_MAX; n++) {
++        if (!virtio_queue_get_num(vdev, n)) {
++            break;
++        }
++
++        r = virtio_pci_set_guest_notifier(opaque, n, assign);
++        if (r < 0) {
++            goto assign_error;
++        }
++    }
++
++    /* Must set mask notifier after guest notifier
++     * has been assigned */
++    if (assign) {
++        r = msix_set_mask_notifier(&proxy->pci_dev,
++                                   virtio_pci_mask_notifier);
++        if (r < 0) {
++            goto assign_error;
++        }
++    }
++
++    return 0;
++
++assign_error:
++    /* We get here on assignment failure. Recover by undoing for VQs 0 .. n. */
++    while (--n >= 0) {
++        virtio_pci_set_guest_notifier(opaque, n, !assign);
++    }
++    return r;
++}
++
+ static int virtio_pci_set_host_notifier(void *opaque, int n, bool assign)
+ {
+     VirtIOPCIProxy *proxy = opaque;
+@@ -513,7 +580,7 @@ static const VirtIOBindings virtio_pci_bindings = {
+     .load_queue = virtio_pci_load_queue,
+     .get_features = virtio_pci_get_features,
+     .set_host_notifier = virtio_pci_set_host_notifier,
+-    .set_guest_notifier = virtio_pci_set_guest_notifier,
++    .set_guest_notifiers = virtio_pci_set_guest_notifiers,
+ };
+ 
+ static void virtio_init_pci(VirtIOPCIProxy *proxy, VirtIODevice *vdev,
+@@ -552,8 +619,6 @@ static void virtio_init_pci(VirtIOPCIProxy *proxy, VirtIODevice *vdev,
+ 
+     proxy->pci_dev.config_write = virtio_write_config;
+ 
+-    proxy->pci_dev.msix_mask_notifier = virtio_pci_mask_notifier;
+-
+     size = VIRTIO_PCI_REGION_SIZE(&proxy->pci_dev) + vdev->config_len;
+     if (size & (size-1))
+         size = 1 << qemu_fls(size);
+diff --git a/hw/virtio.h b/hw/virtio.h
+index 5532dcf..661a0a3 100644
+--- a/hw/virtio.h
++++ b/hw/virtio.h
+@@ -90,7 +90,7 @@ typedef struct {
+     int (*load_config)(void * opaque, QEMUFile *f);
+     int (*load_queue)(void * opaque, int n, QEMUFile *f);
+     unsigned (*get_features)(void * opaque);
+-    int (*set_guest_notifier)(void * opaque, int n, bool assigned);
++    int (*set_guest_notifiers)(void * opaque, bool assigned);
+     int (*set_host_notifier)(void * opaque, int n, bool assigned);
+ } VirtIOBindings;
+ 
+-- 
+1.7.4.rc1.16.gd2f15e
+

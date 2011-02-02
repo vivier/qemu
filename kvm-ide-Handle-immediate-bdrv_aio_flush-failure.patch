@@ -1,0 +1,57 @@
+From 6371a5096b5fb03b8f8f1dd988a719b0b9b729e0 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 18 Jan 2011 16:03:15 -0200
+Subject: [PATCH 06/24] ide: Handle immediate bdrv_aio_flush failure
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1295366596-3551-6-git-send-email-kwolf@redhat.com>
+Patchwork-id: 16504
+O-Subject: [RHEL-6.1 qemu-kvm PATCH 5/6] ide: Handle immediate bdrv_aio_flush
+	failure
+Bugzilla: 670539
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 670539
+
+If bdrv_aio_flush returns NULL, this should be treated as an error.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit b2df7531f3adc4f0f65067b917cef8c66ba812c5)
+---
+ hw/ide/core.c |   12 +++++++++---
+ 1 files changed, 9 insertions(+), 3 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/ide/core.c |   12 +++++++++---
+ 1 files changed, 9 insertions(+), 3 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index d09b461..2f6dd1a 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -811,10 +811,16 @@ static void ide_flush_cb(void *opaque, int ret)
+ 
+ static void ide_flush_cache(IDEState *s)
+ {
+-    if (s->bs) {
+-        bdrv_aio_flush(s->bs, ide_flush_cb, s);
+-    } else {
++    BlockDriverAIOCB *acb;
++
++    if (s->bs == NULL) {
+         ide_flush_cb(s, 0);
++        return;
++    }
++
++    acb = bdrv_aio_flush(s->bs, ide_flush_cb, s);
++    if (acb == NULL) {
++        ide_flush_cb(s, -EIO);
+     }
+ }
+ 
+-- 
+1.7.4.rc1.16.gd2f15e
+

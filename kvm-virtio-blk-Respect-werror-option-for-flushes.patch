@@ -1,0 +1,53 @@
+From 2d61dc2ebd778bc916c861154346212f9c8f198b Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 18 Jan 2011 16:03:13 -0200
+Subject: [PATCH 04/24] virtio-blk: Respect werror option for flushes
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1295366596-3551-4-git-send-email-kwolf@redhat.com>
+Patchwork-id: 16501
+O-Subject: [RHEL-6.1 qemu-kvm PATCH 3/6] virtio-blk: Respect werror option for
+	flushes
+Bugzilla: 670539
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 670539
+
+The werror option now affects not only write requests, but also flush requests.
+Previously, it was not possible to stop a VM on a failed flush.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 8c269b542c5bbbcd74c1664959b223d941a2893b)
+---
+ hw/virtio-blk.c |    8 +++++++-
+ 1 files changed, 7 insertions(+), 1 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/virtio-blk.c |    8 +++++++-
+ 1 files changed, 7 insertions(+), 1 deletions(-)
+
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index db7bba1..0e8c62b 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -106,7 +106,13 @@ static void virtio_blk_flush_complete(void *opaque, int ret)
+ {
+     VirtIOBlockReq *req = opaque;
+ 
+-    virtio_blk_req_complete(req, ret ? VIRTIO_BLK_S_IOERR : VIRTIO_BLK_S_OK);
++    if (ret) {
++        if (virtio_blk_handle_rw_error(req, -ret, 0)) {
++            return;
++        }
++    }
++
++    virtio_blk_req_complete(req, VIRTIO_BLK_S_OK);
+ }
+ 
+ static VirtIOBlockReq *virtio_blk_alloc_request(VirtIOBlock *s)
+-- 
+1.7.4.rc1.16.gd2f15e
+

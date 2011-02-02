@@ -1,0 +1,105 @@
+From b50b757fe1ce2d2b7b4a20481404ebfa182e3203 Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Wed, 19 Jan 2011 11:49:37 -0200
+Subject: [PATCH 12/24] virtio-pci: Rename bugs field to flags
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <95723285cbb0e8908ffc3de96c30b26f19cdd084.1295437447.git.mst@redhat.com>
+Patchwork-id: 16560
+O-Subject: [PATCHv4 RHEL6.1 5/8] virtio-pci: Rename bugs field to flags
+Bugzilla: 633394
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+commit 3dbca8e6a7a5be52c3251ad03bf30d73301babf3
+Author: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Date:   Fri Dec 17 12:01:49 2010 +0000
+
+    virtio-pci: Rename bugs field to flags
+
+    The VirtIOPCIProxy bugs field is currently used to enable workarounds
+    for older guests.  Rename it to flags so that other per-device behavior
+    can be tracked.
+
+    A later patch uses the flags field to remember whether ioeventfd should
+    be used for virtqueue host notification.
+
+    Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+    Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=633394
+---
+ hw/virtio-pci.c |   15 +++++++--------
+ 1 files changed, 7 insertions(+), 8 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/virtio-pci.c |   15 +++++++--------
+ 1 files changed, 7 insertions(+), 8 deletions(-)
+
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index d9e4bc9..7ee9ce2 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -80,9 +80,8 @@
+  * 12 is historical, and due to x86 page size. */
+ #define VIRTIO_PCI_QUEUE_ADDR_SHIFT    12
+ 
+-/* We can catch some guest bugs inside here so we continue supporting older
+-   guests. */
+-#define VIRTIO_PCI_BUG_BUS_MASTER	(1 << 0)
++/* Flags track per-device state like workarounds for quirks in older guests. */
++#define VIRTIO_PCI_FLAG_BUS_MASTER_BUG  (1 << 0)
+ 
+ /* QEMU doesn't strictly need write barriers since everything runs in
+  * lock-step.  We'll leave the calls to wmb() in though to make it obvious for
+@@ -95,7 +94,7 @@
+ typedef struct {
+     PCIDevice pci_dev;
+     VirtIODevice *vdev;
+-    uint32_t bugs;
++    uint32_t flags;
+     uint32_t addr;
+     uint32_t class_code;
+     uint32_t nvectors;
+@@ -156,7 +155,7 @@ static int virtio_pci_load_config(void * opaque, QEMUFile *f)
+        in ready state. Then we have a buggy guest OS. */
+     if ((proxy->vdev->status & VIRTIO_CONFIG_S_DRIVER_OK) &&
+         !(proxy->pci_dev.config[PCI_COMMAND] & PCI_COMMAND_MASTER)) {
+-        proxy->bugs |= VIRTIO_PCI_BUG_BUS_MASTER;
++        proxy->flags |= VIRTIO_PCI_FLAG_BUS_MASTER_BUG;
+     }
+     return 0;
+ }
+@@ -182,7 +181,7 @@ static void virtio_pci_reset(DeviceState *d)
+     VirtIOPCIProxy *proxy = container_of(d, VirtIOPCIProxy, pci_dev.qdev);
+     virtio_reset(proxy->vdev);
+     msix_reset(&proxy->pci_dev);
+-    proxy->bugs = 0;
++    proxy->flags = 0;
+ }
+ 
+ static void virtio_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+@@ -232,7 +231,7 @@ static void virtio_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+            some safety checks. */
+         if ((val & VIRTIO_CONFIG_S_DRIVER_OK) &&
+             !(proxy->pci_dev.config[PCI_COMMAND] & PCI_COMMAND_MASTER)) {
+-            proxy->bugs |= VIRTIO_PCI_BUG_BUS_MASTER;
++            proxy->flags |= VIRTIO_PCI_FLAG_BUS_MASTER_BUG;
+         }
+         break;
+     case VIRTIO_MSI_CONFIG_VECTOR:
+@@ -400,7 +399,7 @@ static void virtio_write_config(PCIDevice *pci_dev, uint32_t address,
+ 
+     if (PCI_COMMAND == address) {
+         if (!(val & PCI_COMMAND_MASTER)) {
+-            if (!(proxy->bugs & VIRTIO_PCI_BUG_BUS_MASTER)) {
++            if (!(proxy->flags & VIRTIO_PCI_FLAG_BUS_MASTER_BUG)) {
+                 virtio_set_status(proxy->vdev,
+                                   proxy->vdev->status & ~VIRTIO_CONFIG_S_DRIVER_OK);
+             }
+-- 
+1.7.4.rc1.16.gd2f15e
+

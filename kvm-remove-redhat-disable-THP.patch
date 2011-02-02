@@ -1,0 +1,118 @@
+From 8f6abc4ff5a257e7097e4698bfa8417c729692f9 Mon Sep 17 00:00:00 2001
+From: Andrea Arcangeli <aarcange@redhat.com>
+Date: Fri, 21 Jan 2011 05:59:12 -0200
+Subject: [PATCH 16/24] remove -redhat-disable-THP
+
+RH-Author: Andrea Arcangeli <aarcange@redhat.com>
+Message-id: <20110121055912.GC9506@random.random>
+Patchwork-id: 16725
+O-Subject: [PATCH RHEL6 qemu-kvm] remove -redhat-disable-THP
+Bugzilla: 635418
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+Bugzilla-related: 635418
+
+This is against qemu-kvm origin/rhel60/next as described here:
+
+https://bugzilla.redhat.com/show_bug.cgi?id=635418#c6
+
+-redhat-disable-THP isn't needed because we expect this below patch to
+be merged into the RHEL6.1 kernel to enable KSM over THP:
+
+https://bugzilla.redhat.com/show_bug.cgi?id=647334#c3
+
+THP is merged upstream in 2.6.38-rc1 so we could add
+madvise(MADV_*HUGEPAGE) to the RHEL6.1 kernel with the right value
+(and retain a -redhat-disable-THP), but it's not needed anymore and we
+should instead merge the KSM over THP feature as described in the
+above in the above link in bug 647334.
+
+I'll be posting soon a patch for qemu upstream but it won't be called
+-redhat-disable-THP and it'll be slightly more complex (plus uncertain
+how it will change later upstream). There was apparently no problem in
+adding a disable-KSM feature in qemu upstream when I asked, just the
+command line is uncertain so going with the -redhat-* prefix makes its
+safer for now.
+
+===
+Subject: remove -redhat-disable-THP
+
+From: Andrea Arcangeli <aarcange@redhat.com>
+
+KSM over THP works so there's no need of this.
+
+Signed-off-by: Andrea Arcangeli <aarcange@redhat.com>
+---
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ exec.c          |    9 +--------
+ qemu-options.hx |    2 --
+ vl.c            |    4 ----
+ 3 files changed, 1 insertions(+), 14 deletions(-)
+
+diff --git a/exec.c b/exec.c
+index 645d27e..f21faf0 100644
+--- a/exec.c
++++ b/exec.c
+@@ -2682,7 +2682,7 @@ static ram_addr_t last_ram_offset(void)
+ ram_addr_t qemu_ram_alloc(DeviceState *dev, const char *name, ram_addr_t size)
+ {
+     RAMBlock *new_block, *block;
+-    extern int disable_KSM, disable_THP;
++    extern int disable_KSM;
+ 
+     size = TARGET_PAGE_ALIGN(size);
+     new_block = qemu_mallocz(sizeof(*new_block));
+@@ -2738,13 +2738,6 @@ ram_addr_t qemu_ram_alloc(DeviceState *dev, const char *name, ram_addr_t size)
+ #ifdef MADV_HUGEPAGE
+         madvise(new_block->host, size, MADV_HUGEPAGE);
+ #endif
+-#if !defined(MADV_NOHUGEPAGE) && defined(__linux__) && defined(__x86_64__)
+-#define MADV_NOHUGEPAGE 73342815
+-#endif
+-#ifdef MADV_NOHUGEPAGE
+-        if (disable_THP)
+-            madvise(new_block->host, size, MADV_NOHUGEPAGE);
+-#endif
+     }
+     new_block->offset = find_ram_offset(size);
+     new_block->length = size;
+diff --git a/qemu-options.hx b/qemu-options.hx
+index fb2e0a2..9178387 100644
+--- a/qemu-options.hx
++++ b/qemu-options.hx
+@@ -2098,7 +2098,5 @@ DEF("fake-machine", 0, QEMU_OPTION_fake_machine,
+     "                     mimimal resource use, use for scalability testing")
+ #endif
+ 
+-DEF("redhat-disable-THP", 0, QEMU_OPTION_disable_THP,
+-    "-redhat-disable-THP  disable THP on guest physical memory\n")
+ DEF("redhat-disable-KSM", 0, QEMU_OPTION_disable_KSM,
+     "-redhat-disable-KSM  disable KSM on guest physical memory\n")
+diff --git a/vl.c b/vl.c
+index cac6921..44f24f3 100644
+--- a/vl.c
++++ b/vl.c
+@@ -254,7 +254,6 @@ int semihosting_enabled = 0;
+ int time_drift_fix = 0;
+ unsigned int kvm_shadow_memory = 0;
+ const char *mem_path = NULL;
+-int disable_THP;
+ int disable_KSM;
+ #ifdef MAP_POPULATE
+ int mem_prealloc = 1;	/* force preallocation of physical target memory */
+@@ -6010,9 +6009,6 @@ int main(int argc, char **argv, char **envp)
+             case QEMU_OPTION_mempath:
+ 		mem_path = optarg;
+ 		break;
+-            case QEMU_OPTION_disable_THP:
+-                disable_THP = 1;
+-                break;
+             case QEMU_OPTION_disable_KSM:
+                 disable_KSM = 1;
+                 break;
+-- 
+1.7.4.rc1.16.gd2f15e
+

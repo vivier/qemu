@@ -1,0 +1,54 @@
+From ba75551d24d1b0577118854ee166f8fee84c0969 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Thu, 27 Jan 2011 12:32:12 -0200
+Subject: [PATCH 24/24] char: mark socket closed if write fails with -EPIPE
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <d74ff135056165a8d9de68f1a392276e3750505b.1296131377.git.amit.shah@redhat.com>
+Patchwork-id: 17135
+O-Subject: [RHEL 6.1 PATCH v2 2/2] char: mark socket closed if write fails with
+	-EPIPE
+Bugzilla: 621484
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+
+The current code relies on a read() attempt timing out instead of doing
+this.  This is Linux-specific code, so I'm not submitting it upstream.
+Upstream will hopefully get a poll() call instead of select(), due to
+which this can be handled in main_loop_wait() itself.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ qemu-char.c |    9 ++++++++-
+ 1 files changed, 8 insertions(+), 1 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-char.c |    9 ++++++++-
+ 1 files changed, 8 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-char.c b/qemu-char.c
+index 4b697e0..e295a69 100644
+--- a/qemu-char.c
++++ b/qemu-char.c
+@@ -1925,8 +1925,15 @@ static void tcp_closed(void *opaque)
+ static int tcp_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
+ {
+     TCPCharDriver *s = chr->opaque;
++
+     if (s->connected) {
+-        return send_all(s->fd, buf, len);
++        int ret;
++
++        ret = send_all(s->fd, buf, len);
++        if (ret == -1 && errno == EPIPE) {
++            tcp_closed(chr);
++        }
++        return ret;
+     } else {
+         /* XXX: indicate an error ? */
+         return len;
+-- 
+1.7.4.rc1.16.gd2f15e
+

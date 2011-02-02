@@ -1,0 +1,68 @@
+From 0cfe8fd1139a9614ca03bc3fc51f0237cd028724 Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Wed, 19 Jan 2011 11:49:30 -0200
+Subject: [PATCH 10/24] virtio-pci: mask notifier error handling fixups
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <13e8e0f7137ef2e503d604be59c66c9a8c1b2426.1295437447.git.mst@redhat.com>
+Patchwork-id: 16557
+O-Subject: [PATCHv4 RHEL6.1 3/8] virtio-pci: mask notifier error handling fixups
+Bugzilla: 633394
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Fix virtio-pci error handling in the mask notifiers: be careful to undo
+exactly what we did so far.
+
+Reported-by: Alex Williamson <alex.williamson@redhat.com>
+Acked-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+
+Upstream: posted
+---
+ hw/virtio-pci.c |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/virtio-pci.c |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index 1771ad0..d9e4bc9 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -468,6 +468,9 @@ static int virtio_pci_mask_notifier(PCIDevice *dev, unsigned vector,
+     return 0;
+ undo:
+     while (--n >= 0) {
++        if (virtio_queue_vector(vdev, n) != vector) {
++            continue;
++        }
+         virtio_pci_mask_vq(dev, vector, virtio_get_queue(vdev, n), !masked);
+     }
+     return r;
+@@ -537,9 +540,18 @@ static int virtio_pci_set_guest_notifiers(void *opaque, bool assign)
+ 
+ assign_error:
+     /* We get here on assignment failure. Recover by undoing for VQs 0 .. n. */
++    if (assign) {
++        msix_unset_mask_notifier(&proxy->pci_dev);
++    }
++
+     while (--n >= 0) {
+         virtio_pci_set_guest_notifier(opaque, n, !assign);
+     }
++
++    if (!assign) {
++        msix_set_mask_notifier(&proxy->pci_dev,
++                               virtio_pci_mask_notifier);
++    }
+     return r;
+ }
+ 
+-- 
+1.7.4.rc1.16.gd2f15e
+

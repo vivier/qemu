@@ -1,0 +1,163 @@
+From 4eb647d7081b3090ba949a129756f7f7a42abf5a Mon Sep 17 00:00:00 2001
+From: john cooper <john.cooper@redhat.com>
+Date: Sat, 11 Dec 2010 04:30:10 -0200
+Subject: [PATCH 01/24] Bug #625333 - qemu treatment of -nodefconfig and -readconfig problematic for debug
+
+RH-Author: john cooper <john.cooper@redhat.com>
+Message-id: <4D02FE52.7050405@redhat.com>
+Patchwork-id: 14538
+O-Subject: [RHEL6.1 PATCH v3] Bug #625333 - qemu treatment of -nodefconfig and
+	-readconfig problematic for debug
+Bugzilla: 625333
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+The prior version of this patch had the side effect of allowing a
+-readconfig specified config file to be overridden by a wired-in
+default config file.  Although this scenario would not occur in
+the context of a libvirt launch, altering semantics relative to
+upstream qemu is best avoided.
+
+Details:
+
+The problem is qemu currently has only two discrete scans of CLI
+arguments.  Trying to live within that structure while supporting
+flags which affect other flags is problematic.  Qemu attempts to
+implement flag semantics simultaneous with their parsing.  As such
+semantic actions follow the unpredictable sequence of args appearing
+on the command like.
+
+This patch therefore enforces consistent ordering of the following
+semantics as:
+
+- interpret config file parse modifiers
+- conditionally read default qemu configs
+- read local cpu config
+- read any -readconfig configs
+- interpret all other options
+
+Testing:
+
+- The config file processing order above should be in effect.
+  Specifically an identical data item in a later config file
+  should redefine the same introduced by a prior config file.
+
+- Default and local config files may or may not exist on the
+  host.  If they do not exist, they are quietly ignored unless
+  verbose handling by "-readconfig ?" is specified.  However if
+  any do exist and contain config file format errors, qemu will
+  error exit.
+
+- Handling of config files specified by "-readconfig <file>"
+  is the same as default/local config files with the addition
+  qemu will error exit if <file> cannot be opened for read.
+
+- any sequence of "-readconfig" | "-nodefconfig" | "-cpu" has the
+  same effect irrespective of relative location in the command line
+
+Upstream Status:
+
+This patch has seen modification in the process of trying to push it
+upstream, which resulted in minor syntax changes to the CLI.  We will
+need to accommodate this when we rebase qemu.
+
+Signed-off-by: john cooper <john.cooper@redhat.com>
+---
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ vl.c |   51 ++++++++++++++++++++++++++++++++++++++-------------
+ 1 files changed, 38 insertions(+), 13 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index 734a5b2..cac6921 100644
+--- a/vl.c
++++ b/vl.c
+@@ -5325,7 +5325,8 @@ int main(int argc, char **argv, char **envp)
+     tb_size = 0;
+     autostart= 1;
+ 
+-    /* first pass of option parsing */
++    /* first pass of CLI options -- interpret config file parse modifiers
++     */
+     optind = 1;
+     while (optind < argc) {
+         if (argv[optind][0] != '-') {
+@@ -5349,13 +5350,8 @@ int main(int argc, char **argv, char **envp)
+         }
+     }
+ 
+-    /* load local cpu config, NB: may possibly be overridden by defconfigs
++    /* pull in default configs unless explicitly disabled
+      */
+-    if (qemu_read_config_file(
+-        CONFIG_QEMU_CPUCONFDIR "/cpu-" TARGET_ARCH ".conf",
+-        defconfig_verbose) == -EINVAL) {
+-            exit(1);
+-    }
+     if (defconfig) {
+         int ret;
+ 
+@@ -5372,11 +5368,45 @@ int main(int argc, char **argv, char **envp)
+             exit(1);
+         }
+     }
++
++    /* load local cpu config
++     */
++    if (qemu_read_config_file(
++        CONFIG_QEMU_CPUCONFDIR "/cpu-" TARGET_ARCH ".conf",
++        defconfig_verbose) == -EINVAL) {
++            exit(1);
++    }
++
++    /* second pass of CLI options -- bring in any -readconfig flags
++     */
++    optind = 1;
++    while (optind < argc) {
++        if (argv[optind][0] != '-') {
++            /* disk image */
++            optind++;
++            continue;
++        } else {
++            const QEMUOption *popt;
++
++            popt = lookup_opt(argc, argv, &optarg, &optind);
++            switch (popt->index) {
++            case QEMU_OPTION_readconfig:
++                /* pull in cli specified config files in advance of general
++                 * flag parsing which may reference their content
++                 */
++                if (strcmp(optarg, "?") &&
++                    qemu_read_config_file(optarg, defconfig_verbose) < 0)
++                        exit(1);
++                break;
++            }
++        }
++    }
+ #if defined(cpudef_setup)
+     cpudef_setup(); /* parse cpu definitions in target config file */
+ #endif
+ 
+-    /* second pass of option parsing */
++    /* third pass of CLI options -- general flag interpretation
++     */
+     optind = 1;
+     for(;;) {
+         if (optind >= argc)
+@@ -6084,11 +6114,6 @@ int main(int argc, char **argv, char **envp)
+                 xen_mode = XEN_ATTACH;
+                 break;
+ #endif
+-            case QEMU_OPTION_readconfig:
+-                if (!!strcmp(optarg, "?") &&
+-                    qemu_read_config_file(optarg, defconfig_verbose) < 0)
+-                        exit(1);
+-                break;
+             case QEMU_OPTION_spice:
+                 olist = qemu_find_opts("spice");
+                 if (!olist) {
+-- 
+1.7.4.rc1.16.gd2f15e
+

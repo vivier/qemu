@@ -1,0 +1,48 @@
+From 87cf3d730fc4234520d463007a56c07f27599d68 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 18 Jan 2011 16:03:16 -0200
+Subject: [PATCH 07/24] virtio-blk: Handle immediate flush failure properly
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1295366596-3551-7-git-send-email-kwolf@redhat.com>
+Patchwork-id: 16505
+O-Subject: [RHEL-6.1 qemu-kvm PATCH 6/6] virtio-blk: Handle immediate flush
+	failure properly
+Bugzilla: 670539
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 670539
+
+Fix virtio-blk to use the usual completion path that involves werror handling
+instead of directly completing the request in cases where bdrv_aio_flush
+returns NULL.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 18a8d4214b861aff0caa5acfa921862d0be05bbb)
+---
+ hw/virtio-blk.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/virtio-blk.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index 0e8c62b..b570754 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -271,7 +271,7 @@ static void virtio_blk_handle_flush(BlockRequest *blkreq, int *num_writes,
+ 
+     acb = bdrv_aio_flush(req->dev->bs, virtio_blk_flush_complete, req);
+     if (!acb) {
+-        virtio_blk_req_complete(req, VIRTIO_BLK_S_IOERR);
++        virtio_blk_flush_complete(req, -EIO);
+     }
+ }
+ 
+-- 
+1.7.4.rc1.16.gd2f15e
+

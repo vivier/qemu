@@ -1,0 +1,165 @@
+From ef48253058e7efbdce74b3fd2d2aae950e348853 Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Wed, 19 Jan 2011 11:49:41 -0200
+Subject: [PATCH 13/24] virtio: move vmstate change tracking to core
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <9f0b38cbda5646a4fa9e1d8d7751d0d827212946.1295437447.git.mst@redhat.com>
+Patchwork-id: 16564
+O-Subject: [PATCHv4 RHEL6.1 6/8] virtio: move vmstate change tracking to core
+Bugzilla: 633394
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+commit 85cf2a8d7435754f685a26f95dcb43a93a84ff60
+Author: Michael S. Tsirkin <mst@redhat.com>
+Date:   Mon Jan 10 14:28:40 2011 +0200
+
+    virtio: move vmstate change tracking to core
+
+    Move tracking vmstate change from virtio-net to virtio.c
+    as it is going to be used by virito-blk and virtio-pci
+    for the ioeventfd support.
+
+    Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=633394
+---
+ hw/virtio-net.c |   16 +---------------
+ hw/virtio.c     |   22 ++++++++++++++++++++++
+ hw/virtio.h     |    3 +++
+ 3 files changed, 26 insertions(+), 15 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/virtio-net.c |   16 +---------------
+ hw/virtio.c     |   22 ++++++++++++++++++++++
+ hw/virtio.h     |    3 +++
+ 3 files changed, 26 insertions(+), 15 deletions(-)
+
+diff --git a/hw/virtio-net.c b/hw/virtio-net.c
+index fac13e1..5cf57b7 100644
+--- a/hw/virtio-net.c
++++ b/hw/virtio-net.c
+@@ -54,8 +54,6 @@ typedef struct VirtIONet
+     uint8_t nouni;
+     uint8_t nobcast;
+     uint8_t vhost_started;
+-    bool vm_running;
+-    VMChangeStateEntry *vmstate;
+     struct {
+         int in_use;
+         int first_multi;
+@@ -114,7 +112,7 @@ static void virtio_net_set_status(struct VirtIODevice *vdev, uint8_t status)
+     }
+     if (!!n->vhost_started == ((status & VIRTIO_CONFIG_S_DRIVER_OK) &&
+                                (n->status & VIRTIO_NET_S_LINK_UP) &&
+-                               n->vm_running)) {
++                               n->vdev.vm_running)) {
+         return;
+     }
+     if (!n->vhost_started) {
+@@ -952,16 +950,6 @@ static NetClientInfo net_virtio_info = {
+     .link_status_changed = virtio_net_set_link_status,
+ };
+ 
+-static void virtio_net_vmstate_change(void *opaque, int running, int reason)
+-{
+-    VirtIONet *n = opaque;
+-    n->vm_running = running;
+-    /* This is called when vm is started/stopped,
+-     * it will start/stop vhost backend if appropriate
+-     * e.g. after migration. */
+-    virtio_net_set_status(&n->vdev, n->vdev.status);
+-}
+-
+ VirtIODevice *virtio_net_init(DeviceState *dev, NICConf *conf,
+                               virtio_net_conf *net)
+ {
+@@ -1016,7 +1004,6 @@ VirtIODevice *virtio_net_init(DeviceState *dev, NICConf *conf,
+     n->qdev = dev;
+     register_savevm(dev, "virtio-net", -1, VIRTIO_NET_VM_VERSION,
+                     virtio_net_save, virtio_net_load, n);
+-    n->vmstate = qemu_add_vm_change_state_handler(virtio_net_vmstate_change, n);
+ 
+     return &n->vdev;
+ }
+@@ -1024,7 +1011,6 @@ VirtIODevice *virtio_net_init(DeviceState *dev, NICConf *conf,
+ void virtio_net_exit(VirtIODevice *vdev)
+ {
+     VirtIONet *n = DO_UPCAST(VirtIONet, vdev, vdev);
+-    qemu_del_vm_change_state_handler(n->vmstate);
+ 
+     /* This will stop vhost backend if appropriate. */
+     virtio_net_set_status(vdev, 0);
+diff --git a/hw/virtio.c b/hw/virtio.c
+index c8a0fc6..dacd5b4 100644
+--- a/hw/virtio.c
++++ b/hw/virtio.c
+@@ -726,11 +726,31 @@ int virtio_load(VirtIODevice *vdev, QEMUFile *f)
+ 
+ void virtio_cleanup(VirtIODevice *vdev)
+ {
++    qemu_del_vm_change_state_handler(vdev->vmstate);
+     if (vdev->config)
+         qemu_free(vdev->config);
+     qemu_free(vdev->vq);
+ }
+ 
++static void virtio_vmstate_change(void *opaque, int running, int reason)
++{
++    VirtIODevice *vdev = opaque;
++    bool backend_run = running && (vdev->status & VIRTIO_CONFIG_S_DRIVER_OK);
++    vdev->vm_running = running;
++
++    if (backend_run) {
++        virtio_set_status(vdev, vdev->status);
++    }
++
++    if (vdev->binding->vmstate_change) {
++        vdev->binding->vmstate_change(vdev->binding_opaque, backend_run);
++    }
++
++    if (!backend_run) {
++        virtio_set_status(vdev, vdev->status);
++    }
++}
++
+ VirtIODevice *virtio_common_init(const char *name, uint16_t device_id,
+                                  size_t config_size, size_t struct_size)
+ {
+@@ -757,6 +777,8 @@ VirtIODevice *virtio_common_init(const char *name, uint16_t device_id,
+     else
+         vdev->config = NULL;
+ 
++    vdev->vmstate = qemu_add_vm_change_state_handler(virtio_vmstate_change, vdev);
++
+     return vdev;
+ }
+ 
+diff --git a/hw/virtio.h b/hw/virtio.h
+index 661a0a3..fb072a4 100644
+--- a/hw/virtio.h
++++ b/hw/virtio.h
+@@ -92,6 +92,7 @@ typedef struct {
+     unsigned (*get_features)(void * opaque);
+     int (*set_guest_notifiers)(void * opaque, bool assigned);
+     int (*set_host_notifier)(void * opaque, int n, bool assigned);
++    void (*vmstate_change)(void * opaque, bool running);
+ } VirtIOBindings;
+ 
+ #define VIRTIO_PCI_QUEUE_MAX 64
+@@ -120,6 +121,8 @@ struct VirtIODevice
+     const VirtIOBindings *binding;
+     void *binding_opaque;
+     uint16_t device_id;
++    bool vm_running;
++    VMChangeStateEntry *vmstate;
+ };
+ 
+ static inline void virtio_set_status(VirtIODevice *vdev, uint8_t val)
+-- 
+1.7.4.rc1.16.gd2f15e
+

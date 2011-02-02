@@ -1,0 +1,98 @@
+From 322f2c7b0c7a336f82052258bbfe26d29d343240 Mon Sep 17 00:00:00 2001
+From: Marcelo Tosatti <mtosatti@redhat.com>
+Date: Mon, 24 Jan 2011 08:43:08 -0200
+Subject: [PATCH 19/24] PATCH RHEL6.1 qemu-kvm piix: tag as not hotpluggable.
+
+RH-Author: Marcelo Tosatti <mtosatti@redhat.com>
+Message-id: <20110124084449.041848576@amt.cnet>
+Patchwork-id: 16809
+O-Subject: [patch 3/6] PATCH RHEL6.1 qemu-kvm piix: tag as not hotpluggable.
+Bugzilla: 498774
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Gerd Hoffmann <kraxel@redhat.com>
+
+This patch tags all pci devices which belong to the piix3/4 chipsets as
+not hotpluggable (Host bridge, ISA bridge, IDE controller, ACPI bridge).
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+(upstream backport of commit 0965f12da61cbfe62252d21a8e6fa309753760e8)
+BZ: 498774
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/acpi.c     |    2 ++
+ hw/ide/piix.c |    2 ++
+ hw/piix4.c    |    1 +
+ hw/piix_pci.c |    2 ++
+ 4 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/hw/acpi.c b/hw/acpi.c
+index 42fad0f..e519c3d 100644
+--- a/hw/acpi.c
++++ b/hw/acpi.c
+@@ -631,6 +631,8 @@ static PCIDeviceInfo piix4_pm_info = {
+     .qdev.desc          = "PM",
+     .qdev.size          = sizeof(PIIX4PMState),
+     .qdev.vmsd          = &vmstate_acpi,
++    .qdev.no_user       = 1,
++    .no_hotplug         = 1,
+     .init               = piix4_pm_initfn,
+     .config_write       = pm_write_config,
+     .qdev.props         = (Property[]) {
+diff --git a/hw/ide/piix.c b/hw/ide/piix.c
+index 4a5a4b4..2b527a3 100644
+--- a/hw/ide/piix.c
++++ b/hw/ide/piix.c
+@@ -180,11 +180,13 @@ static PCIDeviceInfo piix_ide_info[] = {
+         .qdev.name    = "piix3-ide",
+         .qdev.size    = sizeof(PCIIDEState),
+         .qdev.no_user = 1,
++        .no_hotplug   = 1,
+         .init         = pci_piix3_ide_initfn,
+     },{
+         .qdev.name    = "piix4-ide",
+         .qdev.size    = sizeof(PCIIDEState),
+         .qdev.no_user = 1,
++        .no_hotplug   = 1,
+         .init         = pci_piix4_ide_initfn,
+     },{
+         /* end of list */
+diff --git a/hw/piix4.c b/hw/piix4.c
+index 6f08c5a..8c2c1e2 100644
+--- a/hw/piix4.c
++++ b/hw/piix4.c
+@@ -115,6 +115,7 @@ static PCIDeviceInfo piix4_info[] = {
+         .qdev.desc    = "ISA bridge",
+         .qdev.size    = sizeof(PCIDevice),
+         .qdev.no_user = 1,
++        .no_hotplug = 1,
+         .init         = piix4_initfn,
+     },{
+         /* end of list */
+diff --git a/hw/piix_pci.c b/hw/piix_pci.c
+index 001bc93..519cd69 100644
+--- a/hw/piix_pci.c
++++ b/hw/piix_pci.c
+@@ -347,6 +347,7 @@ static PCIDeviceInfo i440fx_info[] = {
+         .qdev.size    = sizeof(PCII440FXState),
+         .qdev.vmsd    = &vmstate_i440fx,
+         .qdev.no_user = 1,
++        .no_hotplug   = 1,
+         .init         = i440fx_initfn,
+         .config_write = i440fx_write_config,
+     },{
+@@ -355,6 +356,7 @@ static PCIDeviceInfo i440fx_info[] = {
+         .qdev.size    = sizeof(PIIX3State),
+         .qdev.vmsd    = &vmstate_piix3,
+         .qdev.no_user = 1,
++        .no_hotplug   = 1,
+         .init         = piix3_initfn,
+     },{
+         /* end of list */
+-- 
+1.7.4.rc1.16.gd2f15e
+

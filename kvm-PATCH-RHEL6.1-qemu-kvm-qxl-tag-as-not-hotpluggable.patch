@@ -1,0 +1,40 @@
+From 3cda2258d785ce1692358937c5cc4f67e2e52896 Mon Sep 17 00:00:00 2001
+From: Marcelo Tosatti <mtosatti@redhat.com>
+Date: Mon, 24 Jan 2011 08:43:10 -0200
+Subject: [PATCH 21/24] PATCH RHEL6.1 qemu-kvm qxl: tag as not hotpluggable
+
+RH-Author: Marcelo Tosatti <mtosatti@redhat.com>
+Message-id: <20110124084449.176835772@amt.cnet>
+Patchwork-id: 16805
+O-Subject: [patch 5/6] PATCH RHEL6.1 qemu-kvm qxl: tag as not hotpluggable
+Bugzilla: 498774
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Gerd Hoffmann <kraxel@redhat.com>
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+BZ: 498774
+(upstream backport of commit 2f6bfe3b0c5bb216abfe015d824eaf84c449c6a5)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/qxl.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index a5af690..58d6222 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -1509,6 +1509,7 @@ static PCIDeviceInfo qxl_info_primary = {
+     .qdev.desc    = "Spice QXL GPU (primary, vga compatible)",
+     .qdev.size    = sizeof(PCIQXLDevice),
+     .qdev.reset   = qxl_reset_handler,
++    .no_hotplug   = 1,
+     .qdev.vmsd    = &qxl_vmstate,
+     .init         = qxl_init_primary,
+     .config_write = qxl_write_config,
+-- 
+1.7.4.rc1.16.gd2f15e
+

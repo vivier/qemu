@@ -1,0 +1,64 @@
+From 8155df1d23f1b830d72695dafcaca270eb276b3a Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 18 Jan 2011 16:03:11 -0200
+Subject: [PATCH 02/24] ide: Factor ide_flush_cache out
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1295366596-3551-2-git-send-email-kwolf@redhat.com>
+Patchwork-id: 16500
+O-Subject: [RHEL-6.1 qemu-kvm PATCH 1/6] ide: Factor ide_flush_cache out
+Bugzilla: 670539
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 670539
+
+The next patch reuses this code, so put it in its own function.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 6bcb1a79a31563f2c414e1bd35d044d6ab385011)
+---
+ hw/ide/core.c |   14 ++++++++++----
+ 1 files changed, 10 insertions(+), 4 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/ide/core.c |   14 ++++++++++----
+ 1 files changed, 10 insertions(+), 4 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index f4a84f4..659baa5 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -801,6 +801,15 @@ static void ide_flush_cb(void *opaque, int ret)
+     ide_set_irq(s->bus);
+ }
+ 
++static void ide_flush_cache(IDEState *s)
++{
++    if (s->bs) {
++        bdrv_aio_flush(s->bs, ide_flush_cb, s);
++    } else {
++        ide_flush_cb(s, 0);
++    }
++}
++
+ static inline void cpu_to_ube16(uint8_t *buf, int val)
+ {
+     buf[0] = val >> 8;
+@@ -2016,10 +2025,7 @@ void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+             break;
+         case WIN_FLUSH_CACHE:
+         case WIN_FLUSH_CACHE_EXT:
+-            if (s->bs)
+-                bdrv_aio_flush(s->bs, ide_flush_cb, s);
+-            else
+-                ide_flush_cb(s, 0);
++            ide_flush_cache(s);
+             break;
+         case WIN_STANDBY:
+         case WIN_STANDBY2:
+-- 
+1.7.4.rc1.16.gd2f15e
+

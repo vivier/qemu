@@ -1,0 +1,72 @@
+From d6c52c3edf6aef391ee1c7e8383cc0a3af97bad2 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Thu, 27 Jan 2011 12:32:11 -0200
+Subject: [PATCH 23/24] char: Split out tcp socket close code in a separate function
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <c02b43f47328b1ff82306a49c52a2f446ddb8f0e.1296131377.git.amit.shah@redhat.com>
+Patchwork-id: 17134
+O-Subject: [RHEL 6.1 PATCH v2 1/2] char: Split out tcp socket close code in a
+	separate function
+Bugzilla: 621484
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ qemu-char.c |   25 ++++++++++++++++---------
+ 1 files changed, 16 insertions(+), 9 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-char.c |   25 ++++++++++++++++---------
+ 1 files changed, 16 insertions(+), 9 deletions(-)
+
+diff --git a/qemu-char.c b/qemu-char.c
+index e7ec50b..4b697e0 100644
+--- a/qemu-char.c
++++ b/qemu-char.c
+@@ -1907,6 +1907,21 @@ typedef struct {
+ 
+ static void tcp_chr_accept(void *opaque);
+ 
++static void tcp_closed(void *opaque)
++{
++    CharDriverState *chr = opaque;
++    TCPCharDriver *s = chr->opaque;
++
++    s->connected = 0;
++    if (s->listen_fd >= 0) {
++        qemu_set_fd_handler(s->listen_fd, tcp_chr_accept, NULL, chr);
++    }
++    qemu_set_fd_handler(s->fd, NULL, NULL, NULL);
++    closesocket(s->fd);
++    s->fd = -1;
++    qemu_chr_event(chr, CHR_EVENT_CLOSED);
++}
++
+ static int tcp_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
+ {
+     TCPCharDriver *s = chr->opaque;
+@@ -2057,15 +2072,7 @@ static void tcp_chr_read(void *opaque)
+         len = s->max_size;
+     size = tcp_chr_recv(chr, (void *)buf, len);
+     if (size == 0) {
+-        /* connection closed */
+-        s->connected = 0;
+-        if (s->listen_fd >= 0) {
+-            qemu_set_fd_handler(s->listen_fd, tcp_chr_accept, NULL, chr);
+-        }
+-        qemu_set_fd_handler(s->fd, NULL, NULL, NULL);
+-        closesocket(s->fd);
+-        s->fd = -1;
+-        qemu_chr_event(chr, CHR_EVENT_CLOSED);
++        tcp_closed(chr);
+     } else if (size > 0) {
+         if (s->do_telnetopt)
+             tcp_chr_process_IAC_bytes(chr, s, buf, &size);
+-- 
+1.7.4.rc1.16.gd2f15e
+

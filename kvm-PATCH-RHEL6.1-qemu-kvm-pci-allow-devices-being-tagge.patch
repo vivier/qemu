@@ -1,0 +1,109 @@
+From 904baf0fb3994122c94a416881393a4341b4825c Mon Sep 17 00:00:00 2001
+From: Marcelo Tosatti <mtosatti@redhat.com>
+Date: Mon, 24 Jan 2011 08:43:07 -0200
+Subject: [PATCH 18/24] PATCH RHEL6.1 qemu-kvm pci: allow devices being tagged as not hotpluggable.
+
+RH-Author: Marcelo Tosatti <mtosatti@redhat.com>
+Message-id: <20110124084448.972851224@amt.cnet>
+Patchwork-id: 16804
+O-Subject: [patch 2/6] PATCH RHEL6.1 qemu-kvm pci: allow devices being tagged as
+	not hotpluggable.
+Bugzilla: 498774
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Gerd Hoffmann <kraxel@redhat.com>
+
+This patch adds a field to PCIDeviceInfo to tag devices as being
+not hotpluggable.  Any attempt to plug-in or -out such a device
+will throw an error.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+(upstream backport of commit 180c22e18b0a9be21445271f94347238b0bc0a25)
+BZ: 498774
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/pci.c |   11 +++++++++++
+ hw/pci.h |    3 +++
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 4 files changed, 21 insertions(+), 0 deletions(-)
+
+diff --git a/hw/pci.c b/hw/pci.c
+index 0cb49b7..c9359d9 100644
+--- a/hw/pci.c
++++ b/hw/pci.c
+@@ -1444,6 +1444,11 @@ static int pci_qdev_init(DeviceState *qdev, DeviceInfo *base)
+                                      info->header_type);
+     if (pci_dev == NULL)
+         return -1;
++    if (qdev->hotplugged && info->no_hotplug) {
++        qerror_report(QERR_DEVICE_NO_HOTPLUG, info->qdev.name);
++        do_pci_unregister_device(pci_dev);
++        return -1;
++    }
+     rc = info->init(pci_dev);
+     if (rc != 0) {
+         do_pci_unregister_device(pci_dev);
+@@ -1463,6 +1468,12 @@ static int pci_qdev_init(DeviceState *qdev, DeviceInfo *base)
+ static int pci_unplug_device(DeviceState *qdev)
+ {
+     PCIDevice *dev = DO_UPCAST(PCIDevice, qdev, qdev);
++    PCIDeviceInfo *info = container_of(qdev->info, PCIDeviceInfo, qdev);
++
++    if (info->no_hotplug) {
++        qerror_report(QERR_DEVICE_NO_HOTPLUG, info->qdev.name);
++        return -1;
++    }
+ 
+     dev->bus->hotplug(dev, 0);
+     return 0;
+diff --git a/hw/pci.h b/hw/pci.h
+index 25aad90..f687908 100644
+--- a/hw/pci.h
++++ b/hw/pci.h
+@@ -343,6 +343,9 @@ typedef struct {
+     /* pcie stuff */
+     int is_express;   /* is this device pci express? */
+ 
++    /* device isn't hot-pluggable */
++    int no_hotplug;
++
+     /* rom bar */
+     const char *romfile;
+ } PCIDeviceInfo;
+diff --git a/qerror.c b/qerror.c
+index 8eb45e0..484e2f2 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -105,6 +105,10 @@ static const QErrorStringTable qerror_table[] = {
+         .desc      = "Device '%(device)' has no child bus",
+     },
+     {
++        .error_fmt = QERR_DEVICE_NO_HOTPLUG,
++        .desc      = "Device '%(device)' does not support hotplugging",
++    },
++    {
+         .error_fmt = QERR_DUPLICATE_ID,
+         .desc      = "Duplicate ID '%(id)' for %(object)",
+     },
+diff --git a/qerror.h b/qerror.h
+index d732b30..a50df4d 100644
+--- a/qerror.h
++++ b/qerror.h
+@@ -95,6 +95,9 @@ QError *qobject_to_qerror(const QObject *obj);
+ #define QERR_DEVICE_NO_BUS \
+     "{ 'class': 'DeviceNoBus', 'data': { 'device': %s } }"
+ 
++#define QERR_DEVICE_NO_HOTPLUG \
++    "{ 'class': 'DeviceNoHotplug', 'data': { 'device': %s } }"
++
+ #define QERR_DUPLICATE_ID \
+     "{ 'class': 'DuplicateId', 'data': { 'id': %s, 'object': %s } }"
+ 
+-- 
+1.7.4.rc1.16.gd2f15e
+

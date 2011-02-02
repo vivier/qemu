@@ -1,0 +1,91 @@
+From 00cbe03775acc4cf88b45900381a4a404cdd2cd3 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 18 Jan 2011 16:03:12 -0200
+Subject: [PATCH 03/24] ide: Handle flush failure
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1295366596-3551-3-git-send-email-kwolf@redhat.com>
+Patchwork-id: 16502
+O-Subject: [RHEL-6.1 qemu-kvm PATCH 2/6] ide: Handle flush failure
+Bugzilla: 670539
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 670539
+
+Instead of always assuming success for bdrv_aio_flush, actually do something
+with the error. This respects the werror option and accordingly ignores the
+error, reports it to the guest or stops the VM and retries after cont.
+
+Ignoring the error is trivial, obviously. For stopping the VM and retrying
+later old code can be reused, but we need to introduce a new status for "retry
+a flush". For reporting to the guest, fortunately the same action is required
+as for a failed read/write (status = DRDY | ERR, error = ABRT), so this code
+can be reused as well.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit e2bcadadc35673223c1445152445d0c9b6887b9e)
+---
+ hw/ide/core.c     |   10 +++++++++-
+ hw/ide/internal.h |    3 ++-
+ 2 files changed, 11 insertions(+), 2 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/ide/core.c     |   10 +++++++++-
+ hw/ide/internal.h |    3 ++-
+ 2 files changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 659baa5..d09b461 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -64,6 +64,7 @@ static void ide_dma_start(IDEState *s, BlockDriverCompletionFunc *dma_cb);
+ static void ide_dma_restart(IDEState *s, int is_read);
+ static void ide_atapi_cmd_read_dma_cb(void *opaque, int ret);
+ static int ide_handle_rw_error(IDEState *s, int error, int op);
++static void ide_flush_cache(IDEState *s);
+ 
+ static void padstr(char *str, const char *src, int len)
+ {
+@@ -688,6 +689,8 @@ static void ide_dma_restart_bh(void *opaque)
+         } else {
+             ide_sector_write(bmdma_active_if(bm));
+         }
++    } else if (bm->status & BM_STATUS_RETRY_FLUSH) {
++        ide_flush_cache(bmdma_active_if(bm));
+     }
+ }
+ 
+@@ -795,7 +798,12 @@ static void ide_flush_cb(void *opaque, int ret)
+ {
+     IDEState *s = opaque;
+ 
+-    /* XXX: how do we signal I/O errors here? */
++    if (ret < 0) {
++        /* XXX: What sector number to set here? */
++        if (ide_handle_rw_error(s, -ret, BM_STATUS_RETRY_FLUSH)) {
++            return;
++        }
++    }
+ 
+     s->status = READY_STAT | SEEK_STAT;
+     ide_set_irq(s->bus);
+diff --git a/hw/ide/internal.h b/hw/ide/internal.h
+index 2efc784..d871137 100644
+--- a/hw/ide/internal.h
++++ b/hw/ide/internal.h
+@@ -473,7 +473,8 @@ struct IDEDeviceInfo {
+ #define BM_STATUS_INT    0x04
+ #define BM_STATUS_DMA_RETRY  0x08
+ #define BM_STATUS_PIO_RETRY  0x10
+-#define BM_STATUS_RETRY_READ 0x20
++#define BM_STATUS_RETRY_READ  0x20
++#define BM_STATUS_RETRY_FLUSH 0x40
+ 
+ #define BM_CMD_START     0x01
+ #define BM_CMD_READ      0x08
+-- 
+1.7.4.rc1.16.gd2f15e
+
