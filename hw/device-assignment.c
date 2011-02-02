@@ -40,6 +40,7 @@
 #include "monitor.h"
 /* #include "range.h" */
 #include <pci/header.h>
+#include "sysemu.h"
 
 /* From linux/ioport.h */
 #define IORESOURCE_IO       0x00000100  /* Resource type */
@@ -1714,6 +1715,8 @@ static int assigned_initfn(struct PCIDevice *pci_dev)
     assigned_dev_load_option_rom(dev);
     QLIST_INSERT_HEAD(&devs, dev, next);
 
+    add_boot_device_path(dev->bootindex, &pci_dev->qdev, NULL);
+
     /* Register a vmsd so that we can mark it unmigratable. */
     vmstate_register(&dev->dev.qdev, 0, &vmstate_assigned_device, dev);
     register_device_unmigratable(&dev->dev.qdev,
@@ -1776,6 +1779,7 @@ static PCIDeviceInfo assign_info = {
     .qdev.props   = (Property[]) {
         DEFINE_PROP("host", AssignedDevice, host, qdev_prop_hostaddr, PCIHostDevice),
         DEFINE_PROP_UINT32("iommu", AssignedDevice, use_iommu, 1),
+        DEFINE_PROP_INT32("bootindex", AssignedDevice, bootindex, -1),
         DEFINE_PROP_STRING("configfd", AssignedDevice, configfd_name),
         DEFINE_PROP_END_OF_LIST(),
     },
