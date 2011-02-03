@@ -2304,6 +2304,7 @@ CPUX86State *cpu_x86_init(const char *cpu_model)
     env = qemu_mallocz(sizeof(CPUX86State));
     cpu_exec_init(env);
     env->cpu_model_str = cpu_model;
+    fprintf(stderr, "Using CPU model \"%s\"\n", cpu_model);
 
     /* init various static tables */
     if (!inited) {

@@ -1009,6 +1009,38 @@ CPUState *pc_new_cpu(const char *cpu_model)
     return env;
 }
 
+/* CLI cpu model name which expands to the actual configuration default
+ */
+#define CMD_KEYWORD     "default"
+#define CMD_KEYWORD_LN	(sizeof (CMD_KEYWORD) - 1)
+
+/* set configuration default cpu model if current model string is
+ * uninitialized, or if user explicitly requests use of the config'ed
+ * default by specifying a cpu model name of "default".
+ * Use of "default" as a cpu model pseudo-name exists primarily to
+ * ease treatment of qualifier flags requested by the user without
+ * requiring knowledge of all cpu model names in advance of full "-cpu"
+ * option parsing.
+ */
+static const char *setdef_cpu_model(const char *model_str,
+                                    const char *default_str)
+{
+    int default_str_ln = strlen(default_str);
+
+    if (!model_str || !*model_str) {
+        return default_str;
+    } else if (strncmp(model_str, CMD_KEYWORD, CMD_KEYWORD_LN)) {
+        return model_str;
+    } else {
+        char *new = qemu_malloc(strlen(model_str) - CMD_KEYWORD_LN +
+                                default_str_ln + 1);
+
+        strcpy(new, default_str);
+        strcpy(new + default_str_ln, model_str + CMD_KEYWORD_LN);
+        return new;
+    }
+}
+
 /* PC hardware initialisation */
 static void pc_init1(ram_addr_t ram_size,
                      const char *boot_device,
@@ -1045,13 +1077,12 @@ static void pc_init1(ram_addr_t ram_size,
     linux_boot = (kernel_filename != NULL);
 
     /* init CPUs */
-    if (cpu_model == NULL) {
+    cpu_model = setdef_cpu_model(cpu_model,
 #ifdef TARGET_X86_64
-        cpu_model = "qemu64";
+        "qemu64");
 #else
-        cpu_model = "qemu32";
+        "qemu32");
 #endif
-    }
 
     if (kvm_enabled()) {
         kvm_set_boot_cpu_id(0);
@@ -1527,7 +1558,7 @@ static void pc_init_rhel610(ram_addr_t ram_size,
 {
     rhel_common_init("RHEL 6.1.0 PC", 0);
     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
-                initrd_filename, cpu_model ? cpu_model : "cpu64-rhel6");
+                initrd_filename, setdef_cpu_model(cpu_model, "cpu64-rhel6"));
 }
 
 static QEMUMachine pc_machine_rhel610 = {
@@ -1548,7 +1579,7 @@ static void pc_init_rhel600(ram_addr_t ram_size,
 {
     rhel_common_init("RHEL 6.0.0 PC", 0);
     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
-                initrd_filename, cpu_model ? cpu_model : "cpu64-rhel6");
+                initrd_filename, setdef_cpu_model(cpu_model, "cpu64-rhel6"));
 }
 
 static QEMUMachine pc_machine_rhel600 = {
@@ -1623,7 +1654,7 @@ static void pc_init_rhel550(ram_addr_t ram_size,
 {
     rhel_common_init("RHEL 5.5.0 PC", 1);
     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
-                initrd_filename, cpu_model ? cpu_model : "cpu64-rhel5");
+                initrd_filename, setdef_cpu_model(cpu_model, "cpu64-rhel5"));
 }
 
 static QEMUMachine pc_machine_rhel550 = {
@@ -1643,7 +1674,7 @@ static void pc_init_rhel544(ram_addr_t ram_size,
 {
     rhel_common_init("RHEL 5.4.4 PC", 1);
     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
-                initrd_filename, cpu_model ? cpu_model : "cpu64-rhel5");
+                initrd_filename, setdef_cpu_model(cpu_model, "cpu64-rhel5"));
 }
 
 static QEMUMachine pc_machine_rhel544 = {
@@ -1663,7 +1694,7 @@ static void pc_init_rhel540(ram_addr_t ram_size,
 {
     rhel_common_init("RHEL 5.4.0 PC", 1);
     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
-                initrd_filename, cpu_model ? cpu_model : "cpu64-rhel5");
+                initrd_filename, setdef_cpu_model(cpu_model, "cpu64-rhel5"));
 }
 
 static QEMUMachine pc_machine_rhel540 = {
