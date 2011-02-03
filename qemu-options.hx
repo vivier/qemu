@@ -907,7 +907,7 @@ DEF("net", HAS_ARG, QEMU_OPTION_net,
     "-net tap[,vlan=n][,name=str],ifname=name\n"
     "                connect the host TAP network interface to VLAN 'n'\n"
 #else
-    "-net tap[,vlan=n][,name=str][,fd=h][,ifname=name][,script=file][,downscript=dfile][,sndbuf=nbytes][,vnet_hdr=on|off][,vhost=on|off][,vhostfd=h]\n"
+    "-net tap[,vlan=n][,name=str][,fd=h][,ifname=name][,script=file][,downscript=dfile][,sndbuf=nbytes][,vnet_hdr=on|off][,vhost=on|off][,vhostfd=h][,vhostforce=on|off]\n"
     "                connect the host TAP network interface to VLAN 'n' and use the\n"
     "                network scripts 'file' (default=%s)\n"
     "                and 'dfile' (default=%s);\n"
@@ -918,6 +918,8 @@ DEF("net", HAS_ARG, QEMU_OPTION_net,
     "                use vnet_hdr=off to avoid enabling the IFF_VNET_HDR tap flag; use\n"
     "                vnet_hdr=on to make the lack of IFF_VNET_HDR support an error condition\n"
     "                use vhost=on to enable experimental in kernel accelerator\n"
+    "                    (only has effect for virtio guests which use MSIX)\n"
+    "                use vhostforce=on to force vhost on for non-MSIX virtio guests\n"
     "                use 'vhostfd=h' to connect to an already opened vhost net device\n"
 #endif
     "-net socket[,vlan=n][,name=str][,fd=h][,listen=[host]:port][,connect=host:port]\n"
