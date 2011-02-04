@@ -279,6 +279,7 @@ zero_malloc=""
 trace_backend="nop"
 fake_machine="no"
 spice=""
+smartcard="yes"
 
 # OS specific
 if check_define __linux__ ; then
@@ -2191,6 +2192,7 @@ echo "vhost-net support $vhost_net"
 echo "-fake-machine     $fake_machine"
 echo "Trace backend     $trace_backend"
 echo "spice support     $spice"
+echo "smartcard support $smartcard"
 
 if test $sdl_too_old = "yes"; then
 echo "-> Your SDL version is too old - please upgrade to have SDL support"
@@ -2426,6 +2428,10 @@ fi
 
 if test "$spice" = "yes" ; then
   echo "CONFIG_SPICE=y" >> $config_host_mak
+fi
+
+if test "$smartcard" = "yes" ; then
+  echo "CONFIG_SMARTCARD=y" >> $config_host_mak
 fi
 
 # XXX: suppress that
