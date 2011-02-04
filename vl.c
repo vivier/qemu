@@ -3346,7 +3346,6 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
     ram_addr_t addr;
     uint64_t bytes_transferred_last;
     double bwidth = 0;
-    uint64_t expected_time = 0;
 
     if (stage < 0) {
         cpu_physical_memory_set_dirty_tracking(0);
@@ -3417,9 +3416,13 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
 
     qemu_put_be64(f, RAM_SAVE_FLAG_EOS);
 
-    expected_time = ram_save_remaining() * TARGET_PAGE_SIZE / bwidth;
+    if (stage == 2) {
+        uint64_t expected_time;
 
-    return (stage == 2) && (expected_time <= migrate_max_downtime());
+        expected_time = ram_save_remaining() * TARGET_PAGE_SIZE / bwidth;
+        return expected_time <= migrate_max_downtime();
+    }
+    return 0;
 }
 
 static inline void *host_from_stream_offset(QEMUFile *f,
