@@ -211,7 +211,9 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
             --enable-spice \
             --enable-kvm-cap-pit \
             --enable-kvm-cap-device-assignment \
-	    --trace-backend=dtrace \
+            --trace-backend=dtrace \
+            --enable-smartcard \
+            --disable-smartcard-nss \
             %{fake_machine_arg}
 
 echo "config-host.mak contents:"
