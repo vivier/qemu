@@ -1,0 +1,149 @@
+From 495319483ab87ea4b2204f448ccb25dab9db857d Mon Sep 17 00:00:00 2001
+From: Christoph Hellwig <chellwig@redhat.com>
+Date: Thu, 3 Feb 2011 23:48:59 -0200
+Subject: [PATCH 02/15] block: add block_resize monitor command
+
+RH-Author: Christoph Hellwig <chellwig@redhat.com>
+Message-id: <1296776941-22666-2-git-send-email-chellwig@redhat.com>
+Patchwork-id: 17656
+O-Subject: [RHEL6 qemu PATCH 2/4 v2] block: add block_resize monitor command
+Bugzilla: 515775
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Christoph Hellwig <hch@lst.de>
+
+Add a monitor command that allows resizing of block devices while
+qemu is running.  It uses the existing bdrv_truncate method already
+used by qemu-img to do it's work.  Compared to qemu-img the size
+parsing is very simplicistic, but I think having a properly numering
+object is more useful for non-humand monitor users than having
+the units and relative resize parsing.
+
+For SCSI devices the new size can be updated in Linux guests by
+doing the following shell command:
+
+	echo > /sys/class/scsi_device/0:0:0:0/device/rescan
+
+For ATA devices I don't know of a way to update the block device
+size in Linux system, and for virtio-blk the next two patches
+will provide an automatic update of the size when this command
+is issued on the host.
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+
+Upstream commit: 6d4a2b3a47959f02e7f307f50396e70e8464f95e
+BZ: 515775
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c       |   30 ++++++++++++++++++++++++++++++
+ qemu-monitor.hx |   36 ++++++++++++++++++++++++++++++++++++
+ sysemu.h        |    1 +
+ 3 files changed, 67 insertions(+), 0 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index ea4fd56..afed4bc 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -1115,6 +1115,36 @@ out:
+     return ret;
+ }
+ 
++/*
++ * XXX: replace the QERR_UNDEFINED_ERROR errors with real values once the
++ * existing QERR_ macro mess is cleaned up.  A good example for better
++ * error reports can be found in the qemu-img resize code.
++ */
++int do_block_resize(Monitor *mon, const QDict *qdict, QObject **ret_data)
++{
++    const char *device = qdict_get_str(qdict, "device");
++    int64_t size = qdict_get_int(qdict, "size");
++    BlockDriverState *bs;
++
++    bs = bdrv_find(device);
++    if (!bs) {
++        qerror_report(QERR_DEVICE_NOT_FOUND, device);
++        return -1;
++    }
++
++    if (size < 0) {
++        qerror_report(QERR_UNDEFINED_ERROR);
++        return -1;
++    }
++
++    if (bdrv_truncate(bs, size)) {
++        qerror_report(QERR_UNDEFINED_ERROR);
++        return -1;
++    }
++
++    return 0;
++}
++
+ static int eject_device(Monitor *mon, BlockDriverState *bs, int force)
+ {
+     if (!force) {
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 5fab2f8..e2c0c22 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -1163,6 +1163,42 @@ STEXI
+ Snapshot device, using snapshot file as target if provided
+ ETEXI
+ 
++    {
++        .name       = "block_resize",
++        .args_type  = "device:B,size:o",
++        .params     = "device size",
++        .help       = "resize a block image",
++        .user_print = monitor_user_noop,
++        .mhandler.cmd_new = do_block_resize,
++    },
++
++STEXI
++@item block_resize
++@findex block_resize
++Resize a block image while a guest is running.  Usually requires guest
++action to see the updated size.  Resize to a lower size is supported,
++but should be used with extreme caution.  Note that this command only
++resizes image files, it can not resize block devices like LVM volumes.
++ETEXI
++SQMP
++block_resize
++------------
++
++Resize a block image while a guest is running.
++
++Arguments:
++
++- "device": the device's ID, must be unique (json-string)
++- "size": new size
++
++Example:
++
++-> { "execute": "block_resize", "arguments": { "device": "scratch", "size": 1073741824 }
++}
++<- { "return": {} }
++
++EQMP
++
+ #if defined(TARGET_I386) && 0 /* Disabled for Red Hat Enterprise Linux */
+     {
+         .name       = "drive_add",
+diff --git a/sysemu.h b/sysemu.h
+index bf6fa20..94b457e 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -265,6 +265,7 @@ void rtc_change_mon_event(struct tm *tm);
+ void register_devices(void);
+ 
+ int do_snapshot_blkdev(Monitor *mon, const QDict *qdict, QObject **ret_data);
++int do_block_resize(Monitor *mon, const QDict *qdict, QObject **ret_data);
+ 
+ void add_boot_device_path(int32_t bootindex, DeviceState *dev,
+                           const char *suffix);
+-- 
+1.7.4.rc1.16.gd2f15e
+

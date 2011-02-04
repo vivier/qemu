@@ -1,0 +1,90 @@
+From 145d5301bf1311e048bbb17c694d5b426964e39f Mon Sep 17 00:00:00 2001
+From: Christoph Hellwig <chellwig@redhat.com>
+Date: Thu, 3 Feb 2011 23:48:58 -0200
+Subject: [PATCH 01/15] Add support for 'o' octet (bytes) format as monitor parameter.
+
+RH-Author: Christoph Hellwig <chellwig@redhat.com>
+Message-id: <1296776941-22666-1-git-send-email-chellwig@redhat.com>
+Patchwork-id: 17655
+O-Subject: [RHEL6 qemu PATCH 1/4 v2] Add support for 'o' octet (bytes) format as
+	monitor parameter.
+Bugzilla: 515775
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Octet format relies on strtosz which supports K/k, M/m, G/g, T/t
+suffixes and unit support for humans, like 1.3G
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+
+Upstream commit: dbc0c67faff9f44ff6917eb4157a9c471902a453
+BZ: 515775
+
+[folded a type fix for val in]
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c |   29 +++++++++++++++++++++++++++++
+ 1 files changed, 29 insertions(+), 0 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 6e95111..ea4fd56 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -79,6 +79,11 @@
+  * 'l'          target long (32 or 64 bit)
+  * 'M'          just like 'l', except in user mode the value is
+  *              multiplied by 2^20 (think Mebibyte)
++ * 'o'          octets (aka bytes)
++ *              user mode accepts an optional T, t, G, g, M, m, K, k
++ *              suffix, which multiplies the value by 2^40 for
++ *              suffixes T and t, 2^30 for suffixes G and g, 2^20 for
++ *              M and m, 2^10 for K and k
+  * 'f'          double
+  *              user mode accepts an optional G, g, M, m, K, k suffix,
+  *              which multiplies the value by 2^30 for suffixes G and
+@@ -4077,6 +4082,29 @@ static const mon_cmd_t *monitor_parse_command(Monitor *mon,
+                 qdict_put(qdict, key, qint_from_int(val));
+             }
+             break;
++        case 'o':
++            {
++                int64_t val;
++                char *end;
++
++                while (qemu_isspace(*p)) {
++                    p++;
++                }
++                if (*typestr == '?') {
++                    typestr++;
++                    if (*p == '\0') {
++                        break;
++                    }
++                }
++                val = strtosz(p, &end);
++                if (val < 0) {
++                    monitor_printf(mon, "invalid size\n");
++                    goto fail;
++                }
++                qdict_put(qdict, key, qint_from_int(val));
++                p = end;
++            }
++            break;
+         case 'f':
+         case 'T':
+             {
+@@ -4612,6 +4640,7 @@ static int check_arg(const CmdArgs *cmd_args, QDict *args)
+         case 'i':
+         case 'l':
+         case 'M':
++        case 'o':
+             if (qobject_type(value) != QTYPE_QINT) {
+                 qerror_report(QERR_INVALID_PARAMETER_TYPE, name, "int");
+                 return -1;
+-- 
+1.7.4.rc1.16.gd2f15e
+

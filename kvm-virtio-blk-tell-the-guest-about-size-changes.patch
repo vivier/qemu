@@ -1,0 +1,63 @@
+From 9af3176dbda518c399b6e48b58293b39708aeae8 Mon Sep 17 00:00:00 2001
+From: Christoph Hellwig <chellwig@redhat.com>
+Date: Thu, 3 Feb 2011 23:49:01 -0200
+Subject: [PATCH 04/15] virtio-blk: tell the guest about size changes
+
+RH-Author: Christoph Hellwig <chellwig@redhat.com>
+Message-id: <1296776941-22666-4-git-send-email-chellwig@redhat.com>
+Patchwork-id: 17657
+O-Subject: [RHEL6 qemu PATCH 3/3 v2] virtio-blk: tell the guest about size
+	changes
+Bugzilla: 515775
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Christoph Hellwig <hch@lst.de>
+
+Raise a config change interrupt when the size changed.  This allows
+virtio-blk guest drivers to read-read the information from the
+config space once it got the config chaged interrupt.
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+
+Upstream commit e5051fc70807750f7a4798d2d83e159793c466d3
+BZ: 515775
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/virtio-blk.c |   10 ++++++++++
+ 1 files changed, 10 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index b965173..898985d 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -511,6 +511,15 @@ static int virtio_blk_load(QEMUFile *f, void *opaque, int version_id)
+     return 0;
+ }
+ 
++static void virtio_blk_change_cb(void *opaque, int reason)
++{
++    VirtIOBlock *s = opaque;
++
++    if (reason & CHANGE_SIZE) {
++        virtio_notify_config(&s->vdev);
++    }
++}
++
+ VirtIODevice *virtio_blk_init(DeviceState *dev, BlockConf *conf)
+ {
+     VirtIOBlock *s;
+@@ -538,6 +547,7 @@ VirtIODevice *virtio_blk_init(DeviceState *dev, BlockConf *conf)
+     register_savevm(dev, "virtio-blk", virtio_blk_id++, 2,
+                     virtio_blk_save, virtio_blk_load, s);
+     bdrv_set_removable(s->bs, 0);
++    bdrv_set_change_cb(s->bs, virtio_blk_change_cb, s);
+     s->bs->buffer_alignment = conf->logical_block_size;
+ 
+     add_boot_device_path(conf->bootindex, dev, "/disk@0,0");
+-- 
+1.7.4.rc1.16.gd2f15e
+

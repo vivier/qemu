@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.136
+%define pkgrelease 2.137
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2233,6 +2233,34 @@ Patch1978: kvm-Use-Makefile-to-install-qemu-kvm-in-correct-location.patch
 Patch1979: kvm-Fix-CVE-2011-0011-qemu-kvm-Setting-VNC-password-to-e.patch
 # For bz#674562 - disable vhost-net for rhel5 and older guests
 Patch1980: kvm-vhost-force-vhost-off-for-non-MSI-guests.patch
+# For bz#515775 - [RFE] Include support for online resizing of storage and network block devices
+Patch1981: kvm-Add-support-for-o-octet-bytes-format-as-monitor-para.patch
+# For bz#515775 - [RFE] Include support for online resizing of storage and network block devices
+Patch1982: kvm-block-add-block_resize-monitor-command.patch
+# For bz#515775 - [RFE] Include support for online resizing of storage and network block devices
+Patch1983: kvm-block-tell-drivers-about-an-image-resize.patch
+# For bz#515775 - [RFE] Include support for online resizing of storage and network block devices
+Patch1984: kvm-virtio-blk-tell-the-guest-about-size-changes.patch
+# For bz#641833 - Spice CAC support - qemu
+Patch1985: kvm-qdev-add-print_options-callback.patch
+# For bz#641833 - Spice CAC support - qemu
+Patch1986: kvm-qdev-add-data-pointer-to-Property.patch
+# For bz#641833 - Spice CAC support - qemu
+Patch1987: kvm-qdev-properties-add-PROP_TYPE_ENUM.patch
+# For bz#641833 - Spice CAC support - qemu
+Patch1988: kvm-usb-ccid-add-CCID-bus.patch
+# For bz#641833 - Spice CAC support - qemu
+Patch1989: kvm-introduce-libcacard-vscard_common.h.patch
+# For bz#641833 - Spice CAC support - qemu
+Patch1990: kvm-ccid-add-passthru-card-device.patch
+# For bz#641833 - Spice CAC support - qemu
+Patch1991: kvm-libcacard-initial-commit.patch
+# For bz#641833 - Spice CAC support - qemu
+Patch1992: kvm-ccid-add-ccid-card-emulated-device-v2.patch
+# For bz#641833 - Spice CAC support - qemu
+Patch1993: kvm-ccid-add-docs.patch
+# For bz#641833 - Spice CAC support - qemu
+Patch1994: kvm-ccid-configure-fix-enable-disable-flags.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3320,6 +3348,20 @@ ApplyOptionalPatch()
 %patch1978 -p1
 %patch1979 -p1
 %patch1980 -p1
+%patch1981 -p1
+%patch1982 -p1
+%patch1983 -p1
+%patch1984 -p1
+%patch1985 -p1
+%patch1986 -p1
+%patch1987 -p1
+%patch1988 -p1
+%patch1989 -p1
+%patch1990 -p1
+%patch1991 -p1
+%patch1992 -p1
+%patch1993 -p1
+%patch1994 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3366,7 +3408,9 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
             --enable-spice \
             --enable-kvm-cap-pit \
             --enable-kvm-cap-device-assignment \
-	    --trace-backend=dtrace \
+            --trace-backend=dtrace \
+            --enable-smartcard \
+            --disable-smartcard-nss \
             %{fake_machine_arg}
 
 echo "config-host.mak contents:"
@@ -3528,6 +3572,27 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Feb 04 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.137.el6
+- kvm-Add-support-for-o-octet-bytes-format-as-monitor-para.patch [bz#515775]
+- kvm-block-add-block_resize-monitor-command.patch [bz#515775]
+- kvm-block-tell-drivers-about-an-image-resize.patch [bz#515775]
+- kvm-virtio-blk-tell-the-guest-about-size-changes.patch [bz#515775]
+- kvm-qdev-add-print_options-callback.patch [bz#641833]
+- kvm-qdev-add-data-pointer-to-Property.patch [bz#641833]
+- kvm-qdev-properties-add-PROP_TYPE_ENUM.patch [bz#641833]
+- kvm-usb-ccid-add-CCID-bus.patch [bz#641833]
+- kvm-introduce-libcacard-vscard_common.h.patch [bz#641833]
+- kvm-ccid-add-passthru-card-device.patch [bz#641833]
+- kvm-libcacard-initial-commit.patch [bz#641833]
+- kvm-ccid-add-ccid-card-emulated-device-v2.patch [bz#641833]
+- kvm-ccid-add-docs.patch [bz#641833]
+- kvm-ccid-configure-fix-enable-disable-flags.patch [bz#641833]
+- Note: smartcard spec patch applied by hand [bz#641833]
+- Resolves: bz#515775
+  ([RFE] Include support for online resizing of storage and network block devices)
+- Resolves: bz#641833
+  (Spice CAC support - qemu)
+
 * Fri Feb 04 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.136.el6
 - kvm-Introduce-fw_name-field-to-DeviceInfo-structure.patch [bz#643687]
 - kvm-Introduce-new-BusInfo-callback-get_fw_dev_path.patch [bz#643687]

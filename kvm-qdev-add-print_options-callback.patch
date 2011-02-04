@@ -1,0 +1,73 @@
+From b972da092dd04af997069f2aec5fa8cd51cf765b Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Fri, 4 Feb 2011 12:15:00 -0200
+Subject: [PATCH 05/15] qdev: add print_options callback
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1296821710-5316-2-git-send-email-alevy@redhat.com>
+Patchwork-id: 17723
+O-Subject: [PATCHv4 RHEL6.1 qemu-kvm 01/11] qdev: add print_options callback
+Bugzilla: 641833
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+another callback added to PropertyInfo, for later use by PROP_TYPE_ENUM.
+Allows printing of runtime computed options when doing:
+ qemu -device foo,?
+
+Signed-off-by: Alon Levy <alevy@redhat.com>
+
+---
+
+prev upstream status: http://patchwork.ozlabs.org/patch/81737/
+
+additions:
+ * remove unused free ptr.
+---
+ hw/qdev.c |   10 +++++++++-
+ hw/qdev.h |    1 +
+ 2 files changed, 10 insertions(+), 1 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/qdev.c |   10 +++++++++-
+ hw/qdev.h |    1 +
+ 2 files changed, 10 insertions(+), 1 deletions(-)
+
+diff --git a/hw/qdev.c b/hw/qdev.c
+index 7ebb368..fd791a6 100644
+--- a/hw/qdev.c
++++ b/hw/qdev.c
+@@ -189,7 +189,15 @@ int qdev_device_help(QemuOpts *opts)
+         if (!prop->info->parse) {
+             continue;           /* no way to set it, don't show */
+         }
+-        error_printf("%s.%s=%s\n", info->name, prop->name, prop->info->name);
++        if (prop->info->print_options) {
++            char buf[256];
++            int ret;
++            ret = prop->info->print_options(info, prop, buf, sizeof(buf) - 3);
++            error_printf("%s.%s=%s%s\n", info->name, prop->name, buf,
++                ret == sizeof(buf) - 3 ? "..." : "" );
++        } else {
++            error_printf("%s.%s=%s\n", info->name, prop->name, prop->info->name);
++        }
+     }
+     return 1;
+ }
+diff --git a/hw/qdev.h b/hw/qdev.h
+index a7e17bf..d6ce3de 100644
+--- a/hw/qdev.h
++++ b/hw/qdev.h
+@@ -106,6 +106,7 @@ struct PropertyInfo {
+     enum PropertyType type;
+     int (*parse)(DeviceState *dev, Property *prop, const char *str);
+     int (*print)(DeviceState *dev, Property *prop, char *dest, size_t len);
++    int (*print_options)(DeviceInfo *info, Property *prop, char *dest, size_t len);
+ };
+ 
+ typedef struct GlobalProperty {
+-- 
+1.7.4.rc1.16.gd2f15e
+

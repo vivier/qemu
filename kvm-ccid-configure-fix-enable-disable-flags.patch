@@ -1,0 +1,200 @@
+From b742fd94f94d3503317216a32e0c906e353fe0a8 Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Fri, 4 Feb 2011 12:15:09 -0200
+Subject: [PATCH 14/15] ccid: configure: fix enable/disable flags
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1296821710-5316-11-git-send-email-alevy@redhat.com>
+Patchwork-id: 17732
+O-Subject: [PATCHv4 RHEL6.1 qemu-kvm 10/11] ccid: configure: fix enable/disable
+	flags
+Bugzilla: 641833
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+* add --enable-smartcard and --enable-smartcard-nss, and
+   disable equivalents.
+ * report only nss as an enabled/disabled feature.
+ * don't link with NSS if --disable-smartcard-nss
+
+add --enable-smartcard and --disable-smartcard flags, and let the nss
+check only disable building the ccid-card-emulated device, since both
+the usb-ccid and ccid-card-passthru don't depend on it.
+
+Signed-off-by: Alon Levy <alevy@redhat.com>
+
+---
+
+upstream: merge of multiple submissions:
+ * http://patchwork.ozlabs.org/patch/81769/
+ * http://patchwork.ozlabs.org/patch/81740/
+ * http://patchwork.ozlabs.org/patch/81762/
+ * http://patchwork.ozlabs.org/patch/81773/
+
+upstream changes:
+ * s/$pkg_config/pkg-config/
+ * we don't have Makefile.objs, use Makefile.
+---
+ Makefile        |    3 ++-
+ Makefile.target |    4 ++--
+ configure       |   55 ++++++++++++++++++++++++++++++++++++++++++-------------
+ 3 files changed, 46 insertions(+), 16 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ Makefile        |    3 ++-
+ Makefile.target |    4 ++--
+ configure       |   55 ++++++++++++++++++++++++++++++++++++++++++-------------
+ 3 files changed, 46 insertions(+), 16 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 503957b..60c319b 100644
+--- a/Makefile
++++ b/Makefile
+@@ -191,7 +191,8 @@ obj-$(CONFIG_POSIX) += migration-exec.o migration-unix.o migration-fd.o
+ 
+ obj-$(CONFIG_SPICE) += ui/spice-core.o ui/spice-input.o ui/spice-display.o spice-qemu-char.o
+ 
+-obj-$(CONFIG_SMARTCARD) += usb-ccid.o ccid-card-passthru.o ccid-card-emulated.o
++obj-$(CONFIG_SMARTCARD) += usb-ccid.o ccid-card-passthru.o
++obj-$(CONFIG_SMARTCARD_NSS) += ccid-card-emulated.o
+ 
+ audio/audio.o audio/fmodaudio.o: QEMU_CFLAGS += $(FMOD_CFLAGS)
+ 
+diff --git a/Makefile.target b/Makefile.target
+index 2bf6dd1..95ab004 100644
+--- a/Makefile.target
++++ b/Makefile.target
+@@ -365,11 +365,11 @@ ARLIBS=../libqemu_common.a libqemu.a $(HWLIB)
+ 
+ endif # CONFIG_SOFTMMU
+ 
+-ifdef CONFIG_SMARTCARD
++ifdef CONFIG_SMARTCARD_NSS
+ libcacard-y = cac.o event.o passthru.o vcard.o vreader.o vcard_emul_nss.o vcard_emul_type.o card_7816.o
+ 
+ obj-y += $(addprefix $(SRC_PATH)/libcacard/, $(libcacard-y))
+-endif # CONFIG_SMARTCARD
++endif # CONFIG_SMARTCARD_NSS
+ 
+ obj-y += $(addprefix ../, $(trace-obj-y))
+ obj-$(CONFIG_GDBSTUB_XML) += gdbstub-xml.o
+diff --git a/configure b/configure
+index 9e0f238..31b72c3 100755
+--- a/configure
++++ b/configure
+@@ -279,7 +279,8 @@ zero_malloc=""
+ trace_backend="nop"
+ fake_machine="no"
+ spice=""
+-smartcard="yes"
++smartcard=""
++smartcard_nss=""
+ 
+ # OS specific
+ if check_define __linux__ ; then
+@@ -666,6 +667,14 @@ for opt do
+   ;;
+   --enable-fake-machine) fake_machine="yes"
+   ;;
++  --disable-smartcard) smartcard="no"
++  ;;
++  --enable-smartcard) smartcard="yes"
++  ;;
++  --disable-smartcard-nss) smartcard_nss="no"
++  ;;
++  --enable-smartcard-nss) smartcard_nss="yes"
++  ;;
+   *) echo "ERROR: unknown option $opt"; show_help="yes"
+   ;;
+   esac
+@@ -833,6 +842,10 @@ echo "  --disable-fake-machine   disable -fake-machine option"
+ echo "  --enable-fake-machine    enable -fake-machine option"
+ echo "  --disable-spice          disable spice"
+ echo "  --enable-spice           enable spice"
++echo "  --disable-smartcard      disable smartcard support"
++echo "  --enable-smartcard       enable smartcard support"
++echo "  --disable-smartcard-nss  disable smartcard nss support"
++echo "  --enable-smartcard-nss   enable smartcard nss support"
+ echo ""
+ echo "NOTE: The object files are built at the place where configure is launched"
+ exit 1
+@@ -1998,16 +2011,28 @@ EOF
+ fi
+ 
+ # check for libcacard for smartcard support
+-smartcard_cflags="-I\$(SRC_PATH)/libcacard"
+-libcacard_libs=$(pkg-config --libs nss 2>/dev/null)
+-libcacard_cflags=$(pkg-config --cflags nss)
+-# TODO - what's the minimal nss version we support?
+-if pkg-config --atleast-version=3.12.8 nss; then
++if test "$smartcard" != "no" ; then
+     smartcard="yes"
+-    QEMU_CFLAGS="$QEMU_CFLAGS $smartcard_cflags $libcacard_cflags"
+-    LIBS="$libcacard_libs $LIBS"
+-else
+-    smartcard="no"
++    smartcard_cflags=""
++    # TODO - what's the minimal nss version we support?
++    if test "$smartcard_nss" != "no"; then
++        smartcard_cflags="-I\$(SRC_PATH)/libcacard"
++        libcacard_libs=$(pkg-config --libs nss 2>/dev/null)
++        libcacard_cflags=$(pkg-config --cflags nss 2>/dev/null)
++        if pkg-config --atleast-version=3.12.8 nss >/dev/null 2>&1 ; then
++            smartcard_nss="yes"
++            QEMU_CFLAGS="$QEMU_CFLAGS $smartcard_cflags $libcacard_cflags"
++            LIBS="$libcacard_libs $LIBS"
++        else
++            if test "$smartcard_nss" == "yes"; then
++                feature_not_found "nss"
++            fi
++            smartcard_nss="no"
++        fi
++    fi
++fi
++if test "$smartcard" == "no" ; then
++    smartcard_nss="no"
+ fi
+ 
+ ##########################################
+@@ -2205,7 +2230,7 @@ echo "vhost-net support $vhost_net"
+ echo "-fake-machine     $fake_machine"
+ echo "Trace backend     $trace_backend"
+ echo "spice support     $spice"
+-echo "smartcard support $smartcard"
++echo "nss used          $smartcard_nss"
+ 
+ if test $sdl_too_old = "yes"; then
+ echo "-> Your SDL version is too old - please upgrade to have SDL support"
+@@ -2447,6 +2472,10 @@ if test "$smartcard" = "yes" ; then
+   echo "CONFIG_SMARTCARD=y" >> $config_host_mak
+ fi
+ 
++if test "$smartcard_nss" = "yes" ; then
++  echo "CONFIG_SMARTCARD_NSS=y" >> $config_host_mak
++fi
++
+ # XXX: suppress that
+ if [ "$bsd" = "yes" ] ; then
+   echo "CONFIG_BSD=y" >> $config_host_mak
+@@ -2793,7 +2822,7 @@ fi
+ if test "$target_darwin_user" = "yes" ; then
+   echo "CONFIG_DARWIN_USER=y" >> $config_target_mak
+ fi
+-if test "$smartcard" = "yes" ; then
++if test "$smartcard_nss" = "yes" ; then
+   echo "subdir-$target: subdir-libcacard" >> $config_host_mak
+   echo "libcacard_libs=$libcacard_libs" >> $config_host_mak
+   echo "libcacard_cflags=$libcacard_cflags" >> $config_host_mak
+@@ -3007,7 +3036,7 @@ for hwlib in 32 64; do
+   echo "QEMU_CFLAGS+=-DTARGET_PHYS_ADDR_BITS=$hwlib" >> $d/config.mak
+ done
+ 
+-if [ $source_path != $workdir ]; then
++if [ $source_path != `pwd` ]; then
+     # out of tree build
+     mkdir -p libcacard
+     rm -f libcacard/Makefile
+-- 
+1.7.4.rc1.16.gd2f15e
+

@@ -1,0 +1,165 @@
+From 94574e9a940144c4eb40da315f218505b2c4b1ee Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Fri, 4 Feb 2011 12:15:02 -0200
+Subject: [PATCH 07/15] qdev-properties: add PROP_TYPE_ENUM
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1296821710-5316-4-git-send-email-alevy@redhat.com>
+Patchwork-id: 17724
+O-Subject: [PATCHv4 RHEL6.1 qemu-kvm 03/11] qdev-properties: add PROP_TYPE_ENUM
+Bugzilla: 641833
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+Example usage:
+
+EnumTable foo_enum_table[] = {
+    {"bar", 1},
+    {"buz", 2},
+    {NULL, 0},
+};
+
+DEFINE_PROP_ENUM("foo", State, foo, 1, foo_enum_table)
+
+When using qemu -device foodev,? it will appear as:
+ foodev.foo=bar/buz
+
+Signed-off-by: Alon Levy <alevy@redhat.com>
+---
+
+upstream status: merge of sumitted
+ * http://patchwork.ozlabs.org/patch/81739/
+ * http://patchwork.ozlabs.org/patch/81738/
+---
+ hw/qdev-properties.c |   60 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ hw/qdev.h            |   15 ++++++++++++
+ 2 files changed, 75 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/qdev-properties.c |   60 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ hw/qdev.h            |   15 ++++++++++++
+ 2 files changed, 75 insertions(+), 0 deletions(-)
+
+diff --git a/hw/qdev-properties.c b/hw/qdev-properties.c
+index 64d83ce..d46507b 100644
+--- a/hw/qdev-properties.c
++++ b/hw/qdev-properties.c
+@@ -63,6 +63,66 @@ PropertyInfo qdev_prop_bit = {
+     .print = print_bit,
+ };
+ 
++/* --- Enumeration --- */
++/* Example usage:
++EnumTable foo_enum_table[] = {
++    {"bar", 1},
++    {"buz", 2},
++    {NULL, 0},
++};
++DEFINE_PROP_ENUM("foo", State, foo, 1, foo_enum_table),
++ */
++static int parse_enum(DeviceState *dev, Property *prop, const char *str)
++{
++    uint8_t *ptr = qdev_get_prop_ptr(dev, prop);
++    EnumTable *option = prop->data;
++
++    while (option->name != NULL) {
++        if (!strncmp(str, option->name, strlen(option->name))) {
++            *ptr = option->value;
++            return 0;
++        }
++        option++;
++    }
++    return -EINVAL;
++}
++
++static int print_enum(DeviceState *dev, Property *prop, char *dest, size_t len)
++{
++    uint32_t *p = qdev_get_prop_ptr(dev, prop);
++    EnumTable *option = (EnumTable*)prop->data;
++    while (option->name != NULL) {
++        if (*p == option->value) {
++            return snprintf(dest, len, "%s", option->name);
++        }
++        option++;
++    }
++    return 0;
++}
++
++static int print_enum_options(DeviceInfo *info, Property *prop, char *dest, size_t len)
++{
++    int ret = 0;
++    EnumTable *option = (EnumTable*)prop->data;
++    while (option->name != NULL) {
++        ret += snprintf(dest + ret, len - ret, "%s", option->name);
++        if (option[1].name != NULL) {
++            ret += snprintf(dest + ret, len - ret, "/");
++        }
++        option++;
++    }
++    return ret;
++}
++
++PropertyInfo qdev_prop_enum = {
++    .name  = "enum",
++    .type  = PROP_TYPE_ENUM,
++    .size  = sizeof(uint32_t),
++    .parse = parse_enum,
++    .print = print_enum,
++    .print_options = print_enum_options,
++};
++
+ /* --- 8bit integer --- */
+ 
+ static int parse_uint8(DeviceState *dev, Property *prop, const char *str)
+diff --git a/hw/qdev.h b/hw/qdev.h
+index 353e38a..684721f 100644
+--- a/hw/qdev.h
++++ b/hw/qdev.h
+@@ -99,6 +99,7 @@ enum PropertyType {
+     PROP_TYPE_VLAN,
+     PROP_TYPE_PTR,
+     PROP_TYPE_BIT,
++    PROP_TYPE_ENUM,
+ };
+ 
+ struct PropertyInfo {
+@@ -117,6 +118,11 @@ typedef struct GlobalProperty {
+     QTAILQ_ENTRY(GlobalProperty) next;
+ } GlobalProperty;
+ 
++typedef struct EnumTable {
++    const char *name;
++    uint32_t    value;
++} EnumTable;
++
+ /*** Board API.  This should go away once we have a machine config file.  ***/
+ 
+ DeviceState *qdev_create(BusState *bus, const char *name);
+@@ -210,6 +216,7 @@ extern PropertyInfo qdev_prop_drive;
+ extern PropertyInfo qdev_prop_netdev;
+ extern PropertyInfo qdev_prop_vlan;
+ extern PropertyInfo qdev_prop_pci_devfn;
++extern PropertyInfo qdev_prop_enum;
+ 
+ #define DEFINE_PROP(_name, _state, _field, _prop, _type) { \
+         .name      = (_name),                                    \
+@@ -232,6 +239,14 @@ extern PropertyInfo qdev_prop_pci_devfn;
+             + type_check(uint32_t,typeof_field(_state, _field)), \
+         .defval    = (bool[]) { (_defval) },                     \
+         }
++#define DEFINE_PROP_ENUM(_name, _state, _field, _defval, _options) {    \
++        .name      = (_name),                                           \
++        .info      = &(qdev_prop_enum),                                 \
++        .offset    = offsetof(_state, _field)                           \
++            + type_check(uint32_t,typeof_field(_state, _field)),        \
++        .defval    = (uint32_t[]) { (_defval) },                        \
++        .data      = (void*)(_options),                                 \
++        }
+ 
+ #define DEFINE_PROP_UINT8(_n, _s, _f, _d)                       \
+     DEFINE_PROP_DEFAULT(_n, _s, _f, _d, qdev_prop_uint8, uint8_t)
+-- 
+1.7.4.rc1.16.gd2f15e
+
