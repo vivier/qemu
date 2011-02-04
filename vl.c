@@ -159,6 +159,7 @@ int main(int argc, char **argv)
 #include "qemu-objects.h"
 #include "qemu-kvm.h"
 #include "hw/device-assignment.h"
+#include "buffered_file.h"
 
 #include "disas.h"
 
@@ -3347,6 +3348,7 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
     uint64_t bytes_transferred_last;
     uint64_t t0;
     double bwidth = 0;
+    int i;
 
     if (stage < 0) {
         cpu_physical_memory_set_dirty_tracking(0);
@@ -3389,6 +3391,7 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
     bytes_transferred_last = bytes_transferred;
     t0 = get_clock();
 
+    i = 0;
     while (!qemu_file_rate_limit(f)) {
         int ret;
 
@@ -3396,6 +3399,18 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
         bytes_transferred += ret * TARGET_PAGE_SIZE;
         if (ret == 0) /* no more blocks */
             break;
+       /* we want to check in the 1st loop, just in case it was the 1st time
+           and we had to sync the dirty bitmap.
+           get_clock() is a bit expensive, so we only check each some
+           iterations
+       */
+        if ((i & 63) == 0) {
+            uint64_t t1 = (get_clock() - t0) / 1000000;
+            if (t1 > 50000000) { /* 50 ms */
+               break;
+            }
+        }
+        i++;
     }
 
     t0 = get_clock() - t0;
