@@ -371,7 +371,7 @@ endif
 
 install-cpuconfig:
 	$(INSTALL_DIR) "$(DESTDIR)$(cpuconfdir)"
-	$(INSTALL_DATA) sysconfigs/target/cpu-x86_64.conf "$(DESTDIR)$(cpuconfdir)"
+	$(INSTALL_DATA) $(SRC_PATH)/sysconfigs/target/cpu-x86_64.conf "$(DESTDIR)$(cpuconfdir)"
 
 install: all $(if $(BUILD_DOCS),install-doc) install-cpuconfig
 	$(INSTALL_DIR) "$(DESTDIR)$(bindir)"
