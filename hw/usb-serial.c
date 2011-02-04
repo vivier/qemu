@@ -540,13 +540,18 @@ static void usb_serial_event(void *opaque, int event)
     }
 }
 
+static const QemuChrHandlers usb_serial_handlers = {
+    .fd_can_read = usb_serial_can_read,
+    .fd_read = usb_serial_read,
+    .fd_event = usb_serial_event,
+};
+
 static int usb_serial_initfn(USBDevice *dev)
 {
     USBSerialState *s = DO_UPCAST(USBSerialState, dev, dev);
     s->dev.speed = USB_SPEED_FULL;
 
-    qemu_chr_add_handlers(s->cs, usb_serial_can_read, usb_serial_read,
-                          usb_serial_event, s);
+    qemu_chr_add_handlers(s->cs, &usb_serial_handlers, s);
     usb_serial_handle_reset(dev);
     return 0;
 }

@@ -712,6 +712,12 @@ static void serial_reset(void *opaque)
     qemu_irq_lower(s->irq);
 }
 
+static const QemuChrHandlers serial_handlers = {
+    .fd_can_read = serial_can_receive1,
+    .fd_read = serial_receive1,
+    .fd_event = serial_event,
+};
+
 static void serial_init_core(SerialState *s)
 {
     if (!s->chr) {
@@ -726,8 +732,7 @@ static void serial_init_core(SerialState *s)
 
     qemu_register_reset(serial_reset, s);
 
-    qemu_chr_add_handlers(s->chr, serial_can_receive1, serial_receive1,
-                          serial_event, s);
+    qemu_chr_add_handlers(s->chr, &serial_handlers, s);
 }
 
 /* Change the main reference oscillator frequency. */

@@ -182,15 +182,22 @@ void qemu_chr_send_event(CharDriverState *s, int event)
         s->chr_send_event(s, event);
 }
 
+static const QemuChrHandlers null_handlers = {
+    /* All handlers are initialised to NULL */
+};
+
 void qemu_chr_add_handlers(CharDriverState *s,
-                           IOCanRWHandler *fd_can_read,
-                           IOReadHandler *fd_read,
-                           IOEventHandler *fd_event,
-                           void *opaque)
+                           const QemuChrHandlers *handlers, void *opaque)
 {
-    s->chr_can_read = fd_can_read;
-    s->chr_read = fd_read;
-    s->chr_event = fd_event;
+    if (!s) {
+        return;
+    }
+    if (!handlers) {
+        handlers = &null_handlers;
+    }
+    s->chr_can_read = handlers->fd_can_read;
+    s->chr_read = handlers->fd_read;
+    s->chr_event = handlers->fd_event;
     s->handler_opaque = opaque;
     if (s->chr_update_read_handler)
         s->chr_update_read_handler(s);
@@ -427,6 +434,12 @@ static void mux_chr_event(void *opaque, int event)
         mux_chr_send_event(d, i, event);
 }
 
+static const QemuChrHandlers mux_chr_handlers = {
+    .fd_can_read = mux_chr_can_read,
+    .fd_read = mux_chr_read,
+    .fd_event = mux_chr_event,
+};
+
 static void mux_chr_update_read_handler(CharDriverState *chr)
 {
     MuxDriver *d = chr->opaque;
@@ -441,8 +454,7 @@ static void mux_chr_update_read_handler(CharDriverState *chr)
     d->chr_event[d->mux_cnt] = chr->chr_event;
     /* Fix up the real driver with mux routines */
     if (d->mux_cnt == 0) {
-        qemu_chr_add_handlers(d->drv, mux_chr_can_read, mux_chr_read,
-                              mux_chr_event, chr);
+        qemu_chr_add_handlers(d->drv, &mux_chr_handlers, chr);
     }
     if (d->focus != -1) {
         mux_chr_send_event(d, d->focus, CHR_EVENT_MUX_OUT);
