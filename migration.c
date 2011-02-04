@@ -26,9 +26,16 @@
 #ifdef DEBUG_MIGRATION
 #define dprintf(fmt, ...) \
     do { printf("migration: " fmt, ## __VA_ARGS__); } while (0)
+static int64_t start, stop;
+#define START_MIGRATION_CLOCK()	do { start = qemu_get_clock(rt_clock); } while (0)
+#define STOP_MIGRATION_CLOCK() \
+	do { stop = qemu_get_clock(rt_clock) - start; \
+	} while (0)
 #else
 #define dprintf(fmt, ...) \
     do { } while (0)
+#define START_MIGRATION_CLOCK()	do {} while (0)
+#define STOP_MIGRATION_CLOCK()	do {} while (0)
 #endif
 
 /* Migration speed throttling */
@@ -98,6 +105,7 @@ int do_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data)
         return -1;
     }
 
+    START_MIGRATION_CLOCK();
     if (strstart(uri, "tcp:", &p)) {
         s = tcp_start_outgoing_migration(mon, p, max_throttle, detach,
                                          (int)qdict_get_int(qdict, "blk"), 
@@ -142,6 +150,8 @@ int do_migrate_cancel(Monitor *mon, const QDict *qdict, QObject **ret_data)
     if (s)
         s->cancel(s);
 
+    STOP_MIGRATION_CLOCK();
+    dprintf("canceled after %lu milliseconds\n", stop);
     return 0;
 }
 
@@ -397,6 +407,9 @@ void migrate_fd_put_ready(void *opaque)
             state = MIG_STATE_COMPLETED;
         }
         s->state = state;
+	STOP_MIGRATION_CLOCK();
+	dprintf("ended after %lu milliseconds\n", stop);
+
         if (migrate_fd_cleanup(s) < 0) {
             if (old_vm_running) {
                 vm_start();
