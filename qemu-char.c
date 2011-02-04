@@ -108,6 +108,19 @@
 static QTAILQ_HEAD(CharDriverStateHead, CharDriverState) chardevs =
     QTAILQ_HEAD_INITIALIZER(chardevs);
 
+/*
+ * Generic routine that gets called when chardev becomes writable.
+ * Lets chardev user know it's OK to send more data.
+ */
+static void char_write_unblocked(void *opaque)
+{
+    CharDriverState *chr = opaque;
+
+    chr->write_blocked = false;
+    chr->chr_disable_write_fd_handler(chr);
+    chr->chr_write_unblocked(chr->handler_opaque);
+}
+
 static void qemu_chr_event(CharDriverState *s, int event)
 {
     if (!s->chr_event)
@@ -2247,6 +2260,25 @@ static void tcp_chr_close(CharDriverState *chr)
     qemu_chr_event(chr, CHR_EVENT_CLOSED);
 }
 
+static void tcp_enable_write_fd_handler(CharDriverState *chr)
+{
+    TCPCharDriver *s = chr->opaque;
+
+    /*
+     * This function is called only after tcp_chr_connect() is called
+     * (either in 'server' mode or client mode.  So we're sure of
+     * s->fd being initialised.
+     */
+    enable_write_fd_handler(s->fd, char_write_unblocked);
+}
+
+static void tcp_disable_write_fd_handler(CharDriverState *chr)
+{
+    TCPCharDriver *s = chr->opaque;
+
+    disable_write_fd_handler(s->fd);
+}
+
 static CharDriverState *qemu_chr_open_socket(QemuOpts *opts)
 {
     CharDriverState *chr = NULL;
@@ -2299,6 +2331,8 @@ static CharDriverState *qemu_chr_open_socket(QemuOpts *opts)
     chr->chr_write = tcp_chr_write;
     chr->chr_close = tcp_chr_close;
     chr->get_msgfd = tcp_get_msgfd;
+    chr->chr_enable_write_fd_handler = tcp_enable_write_fd_handler;
+    chr->chr_disable_write_fd_handler = tcp_disable_write_fd_handler;
 
     if (is_listen) {
         s->listen_fd = fd;
