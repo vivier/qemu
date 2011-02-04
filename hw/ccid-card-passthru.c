@@ -317,6 +317,7 @@ static CCIDCardInfo passthru_card_info = {
     .exitfn = passthru_exitfn,
     .get_atr = passthru_get_atr,
     .apdu_from_guest = passthru_apdu_from_guest,
+    .qdev.unplug    = qdev_simple_unplug_cb,
     .qdev.props     = (Property[]) {
         DEFINE_PROP_CHR("chardev", PassthruState, cs),
         DEFINE_PROP_UINT8("debug", PassthruState, debug, 0),
