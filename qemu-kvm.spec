@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.137
+%define pkgrelease 2.138
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2261,6 +2261,61 @@ Patch1992: kvm-ccid-add-ccid-card-emulated-device-v2.patch
 Patch1993: kvm-ccid-add-docs.patch
 # For bz#641833 - Spice CAC support - qemu
 Patch1994: kvm-ccid-configure-fix-enable-disable-flags.patch
+# For bz#588916 - qemu char fixes for nonblocking writes, virtio-console flow control
+Patch1995: kvm-virtio-console-Factor-out-common-init-between-consol.patch
+# For bz#588916 - qemu char fixes for nonblocking writes, virtio-console flow control
+Patch1996: kvm-virtio-console-Remove-unnecessary-braces.patch
+# For bz#588916 - qemu char fixes for nonblocking writes, virtio-console flow control
+Patch1997: kvm-virtio-serial-Use-a-struct-to-pass-config-informatio.patch
+# For bz#588916 - qemu char fixes for nonblocking writes, virtio-console flow control
+Patch1998: kvm-Fold-send_all-wrapper-unix_write-into-one-function.patch
+# For bz#588916 - qemu char fixes for nonblocking writes, virtio-console flow control
+Patch1999: kvm-char-Add-a-QemuChrHandlers-struct-to-initialise-char.patch
+# For bz#588916 - qemu char fixes for nonblocking writes, virtio-console flow control
+Patch2000: kvm-virtio-serial-move-out-discard-logic-in-a-separate-f.patch
+# For bz#588916 - qemu char fixes for nonblocking writes, virtio-console flow control
+Patch2001: kvm-virtio-serial-Make-sure-virtqueue-is-ready-before-di.patch
+# For bz#588916 - qemu char fixes for nonblocking writes, virtio-console flow control
+Patch2002: kvm-virtio-serial-Don-t-copy-over-guest-buffer-to-host.patch
+# For bz#588916 - qemu char fixes for nonblocking writes, virtio-console flow control
+Patch2003: kvm-virtio-serial-Let-virtio-serial-bus-know-if-all-data.patch
+# For bz#588916 - qemu char fixes for nonblocking writes, virtio-console flow control
+Patch2004: kvm-virtio-serial-Add-support-for-flow-control.patch
+# For bz#588916 - qemu char fixes for nonblocking writes, virtio-console flow control
+Patch2005: kvm-virtio-serial-Add-rhel6.0.0-compat-property-for-flow.patch
+# For bz#588916 - qemu char fixes for nonblocking writes, virtio-console flow control
+Patch2006: kvm-virtio-serial-save-restore-new-fields-in-port-struct.patch
+# For bz#588916 - qemu char fixes for nonblocking writes, virtio-console flow control
+Patch2007: kvm-Convert-io-handlers-to-QLIST.patch
+# For bz#588916 - qemu char fixes for nonblocking writes, virtio-console flow control
+Patch2008: kvm-iohandlers-Add-enable-disable_write_fd_handler-funct.patch
+# For bz#588916 - qemu char fixes for nonblocking writes, virtio-console flow control
+Patch2009: kvm-char-Add-framework-for-a-write-unblocked-callback.patch
+# For bz#588916 - qemu char fixes for nonblocking writes, virtio-console flow control
+Patch2010: kvm-char-Update-send_all-to-handle-nonblocking-chardev-w.patch
+# For bz#588916 - qemu char fixes for nonblocking writes, virtio-console flow control
+Patch2011: kvm-char-Equip-the-unix-tcp-backend-to-handle-nonblockin.patch
+# For bz#588916 - qemu char fixes for nonblocking writes, virtio-console flow control
+# For bz#621484 - Broken pipe when working with unix socket chardev
+Patch2012: kvm-char-Throttle-when-host-connection-is-down.patch
+# For bz#588916 - qemu char fixes for nonblocking writes, virtio-console flow control
+Patch2013: kvm-virtio-console-Enable-port-throttling-when-chardev-i.patch
+# For bz#643970 - guest migration turns failed by the end (16G + stress load)
+Patch2014: kvm-Add-spent-time-to-migration.patch
+# For bz#643970 - guest migration turns failed by the end (16G + stress load)
+Patch2015: kvm-No-need-to-iterate-if-we-already-are-over-the-limit.patch
+# For bz#643970 - guest migration turns failed by the end (16G + stress load)
+Patch2016: kvm-don-t-care-about-TLB-handling.patch
+# For bz#643970 - guest migration turns failed by the end (16G + stress load)
+Patch2017: kvm-Only-calculate-expected_time-for-stage-2.patch
+# For bz#643970 - guest migration turns failed by the end (16G + stress load)
+Patch2018: kvm-Count-nanoseconds-with-uint64_t-not-doubles.patch
+# For bz#643970 - guest migration turns failed by the end (16G + stress load)
+Patch2019: kvm-Exit-loop-if-we-have-been-there-too-long.patch
+# For bz#643970 - guest migration turns failed by the end (16G + stress load)
+Patch2020: kvm-Maintaing-number-of-dirty-pages.patch
+# For bz#643970 - guest migration turns failed by the end (16G + stress load)
+Patch2021: kvm-Drop-qemu_mutex_iothread-during-migration.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3362,6 +3417,33 @@ ApplyOptionalPatch()
 %patch1992 -p1
 %patch1993 -p1
 %patch1994 -p1
+%patch1995 -p1
+%patch1996 -p1
+%patch1997 -p1
+%patch1998 -p1
+%patch1999 -p1
+%patch2000 -p1
+%patch2001 -p1
+%patch2002 -p1
+%patch2003 -p1
+%patch2004 -p1
+%patch2005 -p1
+%patch2006 -p1
+%patch2007 -p1
+%patch2008 -p1
+%patch2009 -p1
+%patch2010 -p1
+%patch2011 -p1
+%patch2012 -p1
+%patch2013 -p1
+%patch2014 -p1
+%patch2015 -p1
+%patch2016 -p1
+%patch2017 -p1
+%patch2018 -p1
+%patch2019 -p1
+%patch2020 -p1
+%patch2021 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3572,6 +3654,41 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Feb 04 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.138.el6
+- kvm-virtio-console-Factor-out-common-init-between-consol.patch [bz#588916]
+- kvm-virtio-console-Remove-unnecessary-braces.patch [bz#588916]
+- kvm-virtio-serial-Use-a-struct-to-pass-config-informatio.patch [bz#588916]
+- kvm-Fold-send_all-wrapper-unix_write-into-one-function.patch [bz#588916]
+- kvm-char-Add-a-QemuChrHandlers-struct-to-initialise-char.patch [bz#588916]
+- kvm-virtio-serial-move-out-discard-logic-in-a-separate-f.patch [bz#588916]
+- kvm-virtio-serial-Make-sure-virtqueue-is-ready-before-di.patch [bz#588916]
+- kvm-virtio-serial-Don-t-copy-over-guest-buffer-to-host.patch [bz#588916]
+- kvm-virtio-serial-Let-virtio-serial-bus-know-if-all-data.patch [bz#588916]
+- kvm-virtio-serial-Add-support-for-flow-control.patch [bz#588916]
+- kvm-virtio-serial-Add-rhel6.0.0-compat-property-for-flow.patch [bz#588916]
+- kvm-virtio-serial-save-restore-new-fields-in-port-struct.patch [bz#588916]
+- kvm-Convert-io-handlers-to-QLIST.patch [bz#588916]
+- kvm-iohandlers-Add-enable-disable_write_fd_handler-funct.patch [bz#588916]
+- kvm-char-Add-framework-for-a-write-unblocked-callback.patch [bz#588916]
+- kvm-char-Update-send_all-to-handle-nonblocking-chardev-w.patch [bz#588916]
+- kvm-char-Equip-the-unix-tcp-backend-to-handle-nonblockin.patch [bz#588916]
+- kvm-char-Throttle-when-host-connection-is-down.patch [bz#588916 bz#621484]
+- kvm-virtio-console-Enable-port-throttling-when-chardev-i.patch [bz#588916]
+- kvm-Add-spent-time-to-migration.patch [bz#643970]
+- kvm-No-need-to-iterate-if-we-already-are-over-the-limit.patch [bz#643970]
+- kvm-don-t-care-about-TLB-handling.patch [bz#643970]
+- kvm-Only-calculate-expected_time-for-stage-2.patch [bz#643970]
+- kvm-Count-nanoseconds-with-uint64_t-not-doubles.patch [bz#643970]
+- kvm-Exit-loop-if-we-have-been-there-too-long.patch [bz#643970]
+- kvm-Maintaing-number-of-dirty-pages.patch [bz#643970]
+- kvm-Drop-qemu_mutex_iothread-during-migration.patch [bz#643970]
+- Resolves: bz#588916
+  (qemu char fixes for nonblocking writes, virtio-console flow control)
+- Resolves: bz#621484
+  (Broken pipe when working with unix socket chardev)
+- Resolves: bz#643970
+  (guest migration turns failed by the end (16G + stress load))
+
 * Fri Feb 04 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.137.el6
 - kvm-Add-support-for-o-octet-bytes-format-as-monitor-para.patch [bz#515775]
 - kvm-block-add-block_resize-monitor-command.patch [bz#515775]

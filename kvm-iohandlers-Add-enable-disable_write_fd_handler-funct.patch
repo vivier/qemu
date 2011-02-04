@@ -1,0 +1,92 @@
+From e4f644bb88c42e71dcbba6e54f59fc1084cf6e51 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 4 Feb 2011 08:20:45 -0200
+Subject: [RHEL6 qemu-kvm PATCH 14/27] iohandlers: Add enable/disable_write_fd_handler() functions
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1166ea165f26bf1294ef1f23a8c1590379a6a58d.1296806194.git.amit.shah@redhat.com>
+Patchwork-id: 17715
+O-Subject: [RHEL6.1 qemu PATCH v5 14/19] iohandlers: Add
+	enable/disable_write_fd_handler() functions
+Bugzilla: 588916
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+These will be used to provide a cleaner API for the nonblocking case.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ qemu-char.h |    3 +++
+ vl.c        |   35 +++++++++++++++++++++++++++++++++++
+ 2 files changed, 38 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-char.h |    3 +++
+ vl.c        |   35 +++++++++++++++++++++++++++++++++++
+ 2 files changed, 38 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-char.h b/qemu-char.h
+index 8d2e3ba..3af9f9b 100644
+--- a/qemu-char.h
++++ b/qemu-char.h
+@@ -109,6 +109,9 @@ size_t qemu_chr_mem_osize(const CharDriverState *chr);
+ 
+ /* async I/O support */
+ 
++void enable_write_fd_handler(int fd, IOHandler *fd_write);
++void disable_write_fd_handler(int fd);
++
+ int qemu_set_fd_handler2(int fd,
+                          IOCanRWHandler *fd_read_poll,
+                          IOHandler *fd_read,
+diff --git a/vl.c b/vl.c
+index ae9aebe..fbad661 100644
+--- a/vl.c
++++ b/vl.c
+@@ -3042,6 +3042,41 @@ typedef struct IOHandlerRecord {
+ static QLIST_HEAD(, IOHandlerRecord) io_handlers =
+     QLIST_HEAD_INITIALIZER(io_handlers);
+ 
++static IOHandlerRecord *find_iohandler(int fd)
++{
++    IOHandlerRecord *ioh;
++
++    QLIST_FOREACH(ioh, &io_handlers, next) {
++        if (ioh->fd == fd) {
++            return ioh;
++        }
++    }
++    return NULL;
++}
++
++void enable_write_fd_handler(int fd, IOHandler *fd_write)
++{
++    IOHandlerRecord *ioh;
++
++    ioh = find_iohandler(fd);
++    if (!ioh) {
++        return;
++    }
++
++    ioh->fd_write = fd_write;
++}
++
++void disable_write_fd_handler(int fd)
++{
++    IOHandlerRecord *ioh;
++
++    ioh = find_iohandler(fd);
++    if (!ioh) {
++        return;
++    }
++
++    ioh->fd_write = NULL;
++}
+ 
+ /* XXX: fd_read_poll should be suppressed, but an API change is
+    necessary in the character devices to suppress fd_can_read(). */
+-- 
+1.7.3.2
+

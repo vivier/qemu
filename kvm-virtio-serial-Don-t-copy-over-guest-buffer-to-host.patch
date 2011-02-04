@@ -1,0 +1,66 @@
+From 57beaf52578dc4ba57d6876b467abe20e7f6353f Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 4 Feb 2011 08:20:39 -0200
+Subject: [RHEL6 qemu-kvm PATCH 08/27] virtio-serial: Don't copy over guest buffer to host
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <3ef7928f93dfce80654e8101eb359aa7b0a25b05.1296806194.git.amit.shah@redhat.com>
+Patchwork-id: 17709
+O-Subject: [RHEL6.1 qemu PATCH v5 08/19] virtio-serial: Don't copy over guest
+	buffer to host
+Bugzilla: 588916
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+When the guest writes something to a host, we copied over the entire
+buffer first into the host and then processed it.  Do away with that, it
+could result in a malicious guest causing a DoS on the host.
+
+Reported-by: Paul Brook <paul@codesourcery.com>
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+(cherry picked from commit 471344db88cc3e7adf7664aa34d54ce0cacc3419)
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-serial-bus.c |   15 ++++++++-------
+ 1 files changed, 8 insertions(+), 7 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial-bus.c |   15 ++++++++-------
+ 1 files changed, 8 insertions(+), 7 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index 3839260..e23b4eb 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -135,16 +135,17 @@ static void do_flush_queued_data(VirtIOSerialPort *port, VirtQueue *vq,
+     assert(virtio_queue_ready(vq));
+ 
+     while (!port->throttled && virtqueue_pop(vq, &elem)) {
+-        uint8_t *buf;
+-        size_t ret, buf_size;
++        unsigned int i;
+ 
+-        buf_size = iov_size(elem.out_sg, elem.out_num);
+-        buf = qemu_malloc(buf_size);
+-        ret = iov_to_buf(elem.out_sg, elem.out_num, buf, 0, buf_size);
++        for (i = 0; i < elem.out_num; i++) {
++            size_t buf_size;
+ 
+-        port->info->have_data(port, buf, ret);
+-        qemu_free(buf);
++            buf_size = elem.out_sg[i].iov_len;
+ 
++            port->info->have_data(port,
++                                  elem.out_sg[i].iov_base,
++                                  buf_size);
++        }
+         virtqueue_push(vq, &elem, 0);
+     }
+     virtio_notify(vdev, vq);
+-- 
+1.7.3.2
+

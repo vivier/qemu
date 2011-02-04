@@ -1,0 +1,92 @@
+From 3d8ad6aa942be3a497ec7988c01761e9079e63fd Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 4 Feb 2011 08:20:32 -0200
+Subject: [RHEL6 qemu-kvm PATCH 01/27] virtio-console: Factor out common init between console and generic ports
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <0d5498eb1ca589871b24989dcbd88ae6c237b3ec.1296806194.git.amit.shah@redhat.com>
+Patchwork-id: 17702
+O-Subject: [RHEL6.1 qemu PATCH v5 01/19] virtio-console: Factor out common init
+	between console and generic ports
+Bugzilla: 588916
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+The initialisation for generic ports and console ports is similar.
+Factor out the parts that are the same in a different function that can
+be called from each of the initfns.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+(cherry picked from commit cbe77b616cb73d0a0aedbf9c80cb3dcb7d324535)
+---
+ hw/virtio-console.c |   31 ++++++++++++++-----------------
+ 1 files changed, 14 insertions(+), 17 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-console.c |   31 ++++++++++++++-----------------
+ 1 files changed, 14 insertions(+), 17 deletions(-)
+
+diff --git a/hw/virtio-console.c b/hw/virtio-console.c
+index caea11f..d7fe68b 100644
+--- a/hw/virtio-console.c
++++ b/hw/virtio-console.c
+@@ -58,24 +58,28 @@ static void chr_event(void *opaque, int event)
+     }
+ }
+ 
+-/* Virtio Console Ports */
+-static int virtconsole_initfn(VirtIOSerialDevice *dev)
++static int generic_port_init(VirtConsole *vcon, VirtIOSerialDevice *dev)
+ {
+-    VirtIOSerialPort *port = DO_UPCAST(VirtIOSerialPort, dev, &dev->qdev);
+-    VirtConsole *vcon = DO_UPCAST(VirtConsole, port, port);
+-
+-    port->info = dev->info;
+-
+-    port->is_console = true;
++    vcon->port.info = dev->info;
+ 
+     if (vcon->chr) {
+         qemu_chr_add_handlers(vcon->chr, chr_can_read, chr_read, chr_event,
+                               vcon);
+-        port->info->have_data = flush_buf;
++        vcon->port.info->have_data = flush_buf;
+     }
+     return 0;
+ }
+ 
++/* Virtio Console Ports */
++static int virtconsole_initfn(VirtIOSerialDevice *dev)
++{
++    VirtIOSerialPort *port = DO_UPCAST(VirtIOSerialPort, dev, &dev->qdev);
++    VirtConsole *vcon = DO_UPCAST(VirtConsole, port, port);
++
++    port->is_console = true;
++    return generic_port_init(vcon, dev);
++}
++
+ static int virtconsole_exitfn(VirtIOSerialDevice *dev)
+ {
+     VirtIOSerialPort *port = DO_UPCAST(VirtIOSerialPort, dev, &dev->qdev);
+@@ -115,14 +119,7 @@ static int virtserialport_initfn(VirtIOSerialDevice *dev)
+     VirtIOSerialPort *port = DO_UPCAST(VirtIOSerialPort, dev, &dev->qdev);
+     VirtConsole *vcon = DO_UPCAST(VirtConsole, port, port);
+ 
+-    port->info = dev->info;
+-
+-    if (vcon->chr) {
+-        qemu_chr_add_handlers(vcon->chr, chr_can_read, chr_read, chr_event,
+-                              vcon);
+-        port->info->have_data = flush_buf;
+-    }
+-    return 0;
++    return generic_port_init(vcon, dev);
+ }
+ 
+ static VirtIOSerialPortInfo virtserialport_info = {
+-- 
+1.7.3.2
+

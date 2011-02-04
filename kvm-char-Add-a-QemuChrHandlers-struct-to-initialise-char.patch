@@ -1,0 +1,599 @@
+From 45b991f7d27145deeaabf5cbee5f14d3a0c5dfbd Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 4 Feb 2011 08:20:36 -0200
+Subject: [RHEL6 qemu-kvm PATCH 05/27] char: Add a QemuChrHandlers struct to initialise chardev handlers
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <cf62b0335319171c189d2279176324a99743137f.1296806194.git.amit.shah@redhat.com>
+Patchwork-id: 17706
+O-Subject: [RHEL6.1 qemu PATCH v5 05/19] char: Add a QemuChrHandlers struct to
+	initialise chardev handlers
+Bugzilla: 588916
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+Instead of passing each handler in the qemu_add_handlers() function,
+create a struct of handlers that can be passed to the function instead.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ gdbstub.c            |    9 +++++++--
+ hw/escc.c            |    9 +++++++--
+ hw/etraxfs_ser.c     |   13 +++++++++----
+ hw/mcf_uart.c        |    9 +++++++--
+ hw/pl011.c           |    9 +++++++--
+ hw/pxa2xx.c          |   13 +++++++++----
+ hw/serial.c          |    9 +++++++--
+ hw/sh_serial.c       |   12 +++++++++---
+ hw/syborg_serial.c   |    9 +++++++--
+ hw/usb-serial.c      |    9 +++++++--
+ hw/virtio-console.c  |    9 +++++++--
+ hw/xen_console.c     |   16 +++++++++++-----
+ hw/xilinx_uartlite.c |   11 +++++++++--
+ monitor.c            |   19 +++++++++++++++----
+ net/slirp.c          |    8 ++++++--
+ qemu-char.c          |   30 +++++++++++++++++++++---------
+ qemu-char.h          |   13 +++++++++----
+ 17 files changed, 154 insertions(+), 53 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ gdbstub.c            |    9 +++++++--
+ hw/escc.c            |    9 +++++++--
+ hw/etraxfs_ser.c     |   13 +++++++++----
+ hw/mcf_uart.c        |    9 +++++++--
+ hw/pl011.c           |    9 +++++++--
+ hw/pxa2xx.c          |   13 +++++++++----
+ hw/serial.c          |    9 +++++++--
+ hw/sh_serial.c       |   12 +++++++++---
+ hw/syborg_serial.c   |    9 +++++++--
+ hw/usb-serial.c      |    9 +++++++--
+ hw/virtio-console.c  |    9 +++++++--
+ hw/xen_console.c     |   16 +++++++++++-----
+ hw/xilinx_uartlite.c |   11 +++++++++--
+ monitor.c            |   19 +++++++++++++++----
+ net/slirp.c          |    8 ++++++--
+ qemu-char.c          |   30 +++++++++++++++++++++---------
+ qemu-char.h          |   13 +++++++++----
+ 17 files changed, 154 insertions(+), 53 deletions(-)
+
+diff --git a/gdbstub.c b/gdbstub.c
+index 0a738bf..81846bc 100644
+--- a/gdbstub.c
++++ b/gdbstub.c
+@@ -2552,6 +2552,12 @@ static void gdb_sigterm_handler(int signal)
+ }
+ #endif
+ 
++static const QemuChrHandlers gdb_handlers = {
++    .fd_can_read = gdb_chr_can_receive,
++    .fd_read = gdb_chr_receive,
++    .fd_event = gdb_chr_event,
++};
++
+ int gdbserver_start(const char *device)
+ {
+     GDBState *s;
+@@ -2581,8 +2587,7 @@ int gdbserver_start(const char *device)
+         if (!chr)
+             return -1;
+ 
+-        qemu_chr_add_handlers(chr, gdb_chr_can_receive, gdb_chr_receive,
+-                              gdb_chr_event, NULL);
++        qemu_chr_add_handlers(chr, &gdb_handlers, NULL);
+     }
+ 
+     s = gdbserver_state;
+diff --git a/hw/escc.c b/hw/escc.c
+index 0b20aea..0cb1d45 100644
+--- a/hw/escc.c
++++ b/hw/escc.c
+@@ -890,6 +890,12 @@ void slavio_serial_ms_kbd_init(target_phys_addr_t base, qemu_irq irq,
+     sysbus_mmio_map(s, 0, base);
+ }
+ 
++static const QemuChrHandlers serial_handlers = {
++    .fd_can_read = serial_can_receive,
++    .fd_read = serial_receive1,
++    .fd_event = serial_event,
++};
++
+ static int escc_init1(SysBusDevice *dev)
+ {
+     SerialState *s = FROM_SYSBUS(SerialState, dev);
+@@ -903,8 +909,7 @@ static int escc_init1(SysBusDevice *dev)
+         s->chn[i].chn = 1 - i;
+         s->chn[i].clock = s->frequency / 2;
+         if (s->chn[i].chr) {
+-            qemu_chr_add_handlers(s->chn[i].chr, serial_can_receive,
+-                                  serial_receive1, serial_event, &s->chn[i]);
++            qemu_chr_add_handlers(s->chn[i].chr, &serial_handlers, &s->chn[i]);
+         }
+     }
+     s->chn[0].otherchn = &s->chn[1];
+diff --git a/hw/etraxfs_ser.c b/hw/etraxfs_ser.c
+index e1f9615..0c0c485 100644
+--- a/hw/etraxfs_ser.c
++++ b/hw/etraxfs_ser.c
+@@ -161,6 +161,12 @@ static void serial_event(void *opaque, int event)
+ 
+ }
+ 
++static const QemuChrHandlers serial_handlers = {
++    .fd_can_read = serial_can_receive,
++    .fd_read = serial_receive,
++    .fd_event = serial_event,
++};
++
+ static int etraxfs_ser_init(SysBusDevice *dev)
+ {
+     struct etrax_serial *s = FROM_SYSBUS(typeof (*s), dev);
+@@ -174,10 +180,9 @@ static int etraxfs_ser_init(SysBusDevice *dev)
+     ser_regs = cpu_register_io_memory(ser_read, ser_write, s);
+     sysbus_init_mmio(dev, R_MAX * 4, ser_regs);
+     s->chr = qdev_init_chardev(&dev->qdev);
+-    if (s->chr)
+-        qemu_chr_add_handlers(s->chr,
+-                      serial_can_receive, serial_receive,
+-                      serial_event, s);
++    if (s->chr) {
++        qemu_chr_add_handlers(s->chr, &serial_handlers, s);
++    }
+     return 0;
+ }
+ 
+diff --git a/hw/mcf_uart.c b/hw/mcf_uart.c
+index d16bac7..d2ce5f6 100644
+--- a/hw/mcf_uart.c
++++ b/hw/mcf_uart.c
+@@ -268,6 +268,12 @@ static void mcf_uart_receive(void *opaque, const uint8_t *buf, int size)
+     mcf_uart_push_byte(s, buf[0]);
+ }
+ 
++static const QemuChrHandlers mcf_uart_handlers = {
++    .fd_can_read = mcf_uart_can_receive,
++    .fd_read = mcf_uart_receive,
++    .fd_event = mcf_uart_event,
++};
++
+ void *mcf_uart_init(qemu_irq irq, CharDriverState *chr)
+ {
+     mcf_uart_state *s;
+@@ -276,8 +282,7 @@ void *mcf_uart_init(qemu_irq irq, CharDriverState *chr)
+     s->chr = chr;
+     s->irq = irq;
+     if (chr) {
+-        qemu_chr_add_handlers(chr, mcf_uart_can_receive, mcf_uart_receive,
+-                              mcf_uart_event, s);
++        qemu_chr_add_handlers(chr, &mcf_uart_handlers, s);
+     }
+     mcf_uart_reset(s);
+     return s;
+diff --git a/hw/pl011.c b/hw/pl011.c
+index 02cf84a..339d4ac 100644
+--- a/hw/pl011.c
++++ b/hw/pl011.c
+@@ -286,6 +286,12 @@ static int pl011_load(QEMUFile *f, void *opaque, int version_id)
+     return 0;
+ }
+ 
++static const QemuChrHandlers pl011_handlers = {
++    .fd_can_read = pl011_can_receive,
++    .fd_read = pl011_receive,
++    .fd_event = pl011_event,
++};
++
+ static int pl011_init(SysBusDevice *dev, const unsigned char *id)
+ {
+     int iomemtype;
+@@ -303,8 +309,7 @@ static int pl011_init(SysBusDevice *dev, const unsigned char *id)
+     s->cr = 0x300;
+     s->flags = 0x90;
+     if (s->chr) {
+-        qemu_chr_add_handlers(s->chr, pl011_can_receive, pl011_receive,
+-                              pl011_event, s);
++        qemu_chr_add_handlers(s->chr, &pl011_handlers, s);
+     }
+     register_savevm(&dev->qdev, "pl011_uart", -1, 1, pl011_save, pl011_load, s);
+     return 0;
+diff --git a/hw/pxa2xx.c b/hw/pxa2xx.c
+index 8be207a..3973681 100644
+--- a/hw/pxa2xx.c
++++ b/hw/pxa2xx.c
+@@ -1992,6 +1992,12 @@ static int pxa2xx_fir_load(QEMUFile *f, void *opaque, int version_id)
+     return 0;
+ }
+ 
++static const QemuChrHandlers pxa2xx_handlers = {
++    .fd_can_read = pxa2xx_fir_is_empty,
++    .fd_read = pxa2xx_fir_rx,
++    .fd_event = pxa2xx_fir_event,
++};
++
+ static PXA2xxFIrState *pxa2xx_fir_init(target_phys_addr_t base,
+                 qemu_irq irq, PXA2xxDMAState *dma,
+                 CharDriverState *chr)
+@@ -2010,10 +2016,9 @@ static PXA2xxFIrState *pxa2xx_fir_init(target_phys_addr_t base,
+                     pxa2xx_fir_writefn, s);
+     cpu_register_physical_memory(base, 0x1000, iomemtype);
+ 
+-    if (chr)
+-        qemu_chr_add_handlers(chr, pxa2xx_fir_is_empty,
+-                        pxa2xx_fir_rx, pxa2xx_fir_event, s);
+-
++    if (chr) {
++        qemu_chr_add_handlers(chr, &pxa2xx_handlers, s);
++    }
+     register_savevm(NULL, "pxa2xx_fir", 0, 0, pxa2xx_fir_save,
+                     pxa2xx_fir_load, s);
+ 
+diff --git a/hw/serial.c b/hw/serial.c
+index 1a7458c..44a2810 100644
+--- a/hw/serial.c
++++ b/hw/serial.c
+@@ -712,6 +712,12 @@ static void serial_reset(void *opaque)
+     qemu_irq_lower(s->irq);
+ }
+ 
++static const QemuChrHandlers serial_handlers = {
++    .fd_can_read = serial_can_receive1,
++    .fd_read = serial_receive1,
++    .fd_event = serial_event,
++};
++
+ static void serial_init_core(SerialState *s)
+ {
+     if (!s->chr) {
+@@ -726,8 +732,7 @@ static void serial_init_core(SerialState *s)
+ 
+     qemu_register_reset(serial_reset, s);
+ 
+-    qemu_chr_add_handlers(s->chr, serial_can_receive1, serial_receive1,
+-                          serial_event, s);
++    qemu_chr_add_handlers(s->chr, &serial_handlers, s);
+ }
+ 
+ /* Change the main reference oscillator frequency. */
+diff --git a/hw/sh_serial.c b/hw/sh_serial.c
+index 2447b91..a66a57a 100644
+--- a/hw/sh_serial.c
++++ b/hw/sh_serial.c
+@@ -363,6 +363,12 @@ static CPUWriteMemoryFunc * const sh_serial_writefn[] = {
+     &sh_serial_write,
+ };
+ 
++static const QemuChrHandlers sh_serial_handlers = {
++    .fd_can_read = sh_serial_can_receive1,
++    .fd_read = sh_serial_receive1,
++    .fd_event = sh_serial_event,
++};
++
+ void sh_serial_init (target_phys_addr_t base, int feat,
+ 		     uint32_t freq, CharDriverState *chr,
+ 		     qemu_irq eri_source,
+@@ -401,9 +407,9 @@ void sh_serial_init (target_phys_addr_t base, int feat,
+ 
+     s->chr = chr;
+ 
+-    if (chr)
+-        qemu_chr_add_handlers(chr, sh_serial_can_receive1, sh_serial_receive1,
+-			      sh_serial_event, s);
++    if (chr) {
++        qemu_chr_add_handlers(chr, &sh_serial_handlers, s);
++    }
+ 
+     s->eri = eri_source;
+     s->rxi = rxi_source;
+diff --git a/hw/syborg_serial.c b/hw/syborg_serial.c
+index 8c42956..febcd15 100644
+--- a/hw/syborg_serial.c
++++ b/hw/syborg_serial.c
+@@ -315,6 +315,12 @@ static int syborg_serial_load(QEMUFile *f, void *opaque, int version_id)
+     return 0;
+ }
+ 
++static const QemuChrHandlers syborg_serial_handlers = {
++    .fd_can_read = syborg_serial_can_receive,
++    .fd_read = syborg_serial_receive,
++    .fd_event = syborg_serial_event,
++};
++
+ static int syborg_serial_init(SysBusDevice *dev)
+ {
+     SyborgSerialState *s = FROM_SYSBUS(SyborgSerialState, dev);
+@@ -326,8 +332,7 @@ static int syborg_serial_init(SysBusDevice *dev)
+     sysbus_init_mmio(dev, 0x1000, iomemtype);
+     s->chr = qdev_init_chardev(&dev->qdev);
+     if (s->chr) {
+-        qemu_chr_add_handlers(s->chr, syborg_serial_can_receive,
+-                              syborg_serial_receive, syborg_serial_event, s);
++        qemu_chr_add_handlers(s->chr, &syborg_serial_handlers, s);
+     }
+     if (s->fifo_size <= 0) {
+         fprintf(stderr, "syborg_serial: fifo too small\n");
+diff --git a/hw/usb-serial.c b/hw/usb-serial.c
+index 80d194e..3620251 100644
+--- a/hw/usb-serial.c
++++ b/hw/usb-serial.c
+@@ -540,13 +540,18 @@ static void usb_serial_event(void *opaque, int event)
+     }
+ }
+ 
++static const QemuChrHandlers usb_serial_handlers = {
++    .fd_can_read = usb_serial_can_read,
++    .fd_read = usb_serial_read,
++    .fd_event = usb_serial_event,
++};
++
+ static int usb_serial_initfn(USBDevice *dev)
+ {
+     USBSerialState *s = DO_UPCAST(USBSerialState, dev, dev);
+     s->dev.speed = USB_SPEED_FULL;
+ 
+-    qemu_chr_add_handlers(s->cs, usb_serial_can_read, usb_serial_read,
+-                          usb_serial_event, s);
++    qemu_chr_add_handlers(s->cs, &usb_serial_handlers, s);
+     usb_serial_handle_reset(dev);
+     return 0;
+ }
+diff --git a/hw/virtio-console.c b/hw/virtio-console.c
+index d0b9354..1bb6f8e 100644
+--- a/hw/virtio-console.c
++++ b/hw/virtio-console.c
+@@ -57,13 +57,18 @@ static void chr_event(void *opaque, int event)
+     }
+ }
+ 
++static const QemuChrHandlers chr_handlers = {
++    .fd_can_read = chr_can_read,
++    .fd_read = chr_read,
++    .fd_event = chr_event,
++};
++
+ static int generic_port_init(VirtConsole *vcon, VirtIOSerialDevice *dev)
+ {
+     vcon->port.info = dev->info;
+ 
+     if (vcon->chr) {
+-        qemu_chr_add_handlers(vcon->chr, chr_can_read, chr_read, chr_event,
+-                              vcon);
++        qemu_chr_add_handlers(vcon->chr, &chr_handlers, vcon);
+         vcon->port.info->have_data = flush_buf;
+     }
+     return 0;
+diff --git a/hw/xen_console.c b/hw/xen_console.c
+index d2261f4..8327e4e 100644
+--- a/hw/xen_console.c
++++ b/hw/xen_console.c
+@@ -202,6 +202,11 @@ static int con_init(struct XenDevice *xendev)
+     return 0;
+ }
+ 
++static const QemuChrHandlers xencons_handlers = {
++    .fd_can_read = xencons_can_receive,
++    .fd_read = xencons_receive,
++};
++
+ static int con_connect(struct XenDevice *xendev)
+ {
+     struct XenConsole *con = container_of(xendev, struct XenConsole, xendev);
+@@ -222,9 +227,9 @@ static int con_connect(struct XenDevice *xendev)
+ 	return -1;
+ 
+     xen_be_bind_evtchn(&con->xendev);
+-    if (con->chr)
+-        qemu_chr_add_handlers(con->chr, xencons_can_receive, xencons_receive,
+-                              NULL, con);
++    if (con->chr) {
++        qemu_chr_add_handlers(con->chr, &xencons_handlers, con);
++    }
+ 
+     xen_be_printf(xendev, 1, "ring mfn %d, remote port %d, local port %d, limit %zd\n",
+ 		  con->ring_ref,
+@@ -238,8 +243,9 @@ static void con_disconnect(struct XenDevice *xendev)
+ {
+     struct XenConsole *con = container_of(xendev, struct XenConsole, xendev);
+ 
+-    if (con->chr)
+-        qemu_chr_add_handlers(con->chr, NULL, NULL, NULL, NULL);
++    if (con->chr) {
++        qemu_chr_add_handlers(con->chr, NULL, NULL);
++    }
+     xen_be_unbind_evtchn(&con->xendev);
+ 
+     if (con->sring) {
+diff --git a/hw/xilinx_uartlite.c b/hw/xilinx_uartlite.c
+index adab759..66f0396 100644
+--- a/hw/xilinx_uartlite.c
++++ b/hw/xilinx_uartlite.c
+@@ -193,6 +193,12 @@ static void uart_event(void *opaque, int event)
+ 
+ }
+ 
++static const QemuChrHandlers uart_handlers = {
++    .fd_can_read = uart_can_rx,
++    .fd_read = uart_rx,
++    .fd_event = uart_event,
++};
++
+ static int xilinx_uartlite_init(SysBusDevice *dev)
+ {
+     struct xlx_uartlite *s = FROM_SYSBUS(typeof (*s), dev);
+@@ -205,8 +211,9 @@ static int xilinx_uartlite_init(SysBusDevice *dev)
+     sysbus_init_mmio(dev, R_MAX * 4, uart_regs);
+ 
+     s->chr = qdev_init_chardev(&dev->qdev);
+-    if (s->chr)
+-        qemu_chr_add_handlers(s->chr, uart_can_rx, uart_rx, uart_event, s);
++    if (s->chr) {
++        qemu_chr_add_handlers(s->chr, &uart_handlers, s);
++    }
+     return 0;
+ }
+ 
+diff --git a/monitor.c b/monitor.c
+index afed4bc..796d745 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -5026,6 +5026,18 @@ static void monitor_event(void *opaque, int event)
+  * End:
+  */
+ 
++static const QemuChrHandlers monitor_handlers = {
++    .fd_can_read = monitor_can_read,
++    .fd_read = monitor_read,
++    .fd_event = monitor_event,
++};
++
++static const QemuChrHandlers monitor_control_handlers = {
++    .fd_can_read = monitor_can_read,
++    .fd_read = monitor_control_read,
++    .fd_event = monitor_control_event,
++};
++
+ void monitor_init(CharDriverState *chr, int flags)
+ {
+     static int is_first_init = 1;
+@@ -5047,12 +5059,11 @@ void monitor_init(CharDriverState *chr, int flags)
+ 
+     if (monitor_ctrl_mode(mon)) {
+         mon->mc = qemu_mallocz(sizeof(MonitorControl));
++
+         /* Control mode requires special handlers */
+-        qemu_chr_add_handlers(chr, monitor_can_read, monitor_control_read,
+-                              monitor_control_event, mon);
++        qemu_chr_add_handlers(chr, &monitor_control_handlers, mon);
+     } else {
+-        qemu_chr_add_handlers(chr, monitor_can_read, monitor_read,
+-                              monitor_event, mon);
++        qemu_chr_add_handlers(chr, &monitor_handlers, mon);
+     }
+ 
+     QLIST_INSERT_HEAD(&mon_list, mon, entry);
+diff --git a/net/slirp.c b/net/slirp.c
+index 480e6ae..dbc29c8 100644
+--- a/net/slirp.c
++++ b/net/slirp.c
+@@ -574,6 +574,11 @@ static void guestfwd_read(void *opaque, const uint8_t *buf, int size)
+     slirp_socket_recv(fwd->slirp, fwd->server, fwd->port, buf, size);
+ }
+ 
++static const QemuChrHandlers guestfwd_handlers = {
++    .fd_can_read = guestfwd_can_read,
++    .fd_read = guestfwd_read,
++};
++
+ static int slirp_guestfwd(SlirpState *s, const char *config_str,
+                           int legacy_format)
+ {
+@@ -630,8 +635,7 @@ static int slirp_guestfwd(SlirpState *s, const char *config_str,
+     fwd->port = port;
+     fwd->slirp = s->slirp;
+ 
+-    qemu_chr_add_handlers(fwd->hd, guestfwd_can_read, guestfwd_read,
+-                          NULL, fwd);
++    qemu_chr_add_handlers(fwd->hd, &guestfwd_handlers, fwd);
+     return 0;
+ 
+  fail_syntax:
+diff --git a/qemu-char.c b/qemu-char.c
+index 9af279f..08ef24b 100644
+--- a/qemu-char.c
++++ b/qemu-char.c
+@@ -182,15 +182,22 @@ void qemu_chr_send_event(CharDriverState *s, int event)
+         s->chr_send_event(s, event);
+ }
+ 
++static const QemuChrHandlers null_handlers = {
++    /* All handlers are initialised to NULL */
++};
++
+ void qemu_chr_add_handlers(CharDriverState *s,
+-                           IOCanRWHandler *fd_can_read,
+-                           IOReadHandler *fd_read,
+-                           IOEventHandler *fd_event,
+-                           void *opaque)
+-{
+-    s->chr_can_read = fd_can_read;
+-    s->chr_read = fd_read;
+-    s->chr_event = fd_event;
++                           const QemuChrHandlers *handlers, void *opaque)
++{
++    if (!s) {
++        return;
++    }
++    if (!handlers) {
++        handlers = &null_handlers;
++    }
++    s->chr_can_read = handlers->fd_can_read;
++    s->chr_read = handlers->fd_read;
++    s->chr_event = handlers->fd_event;
+     s->handler_opaque = opaque;
+     if (s->chr_update_read_handler)
+         s->chr_update_read_handler(s);
+@@ -427,6 +434,12 @@ static void mux_chr_event(void *opaque, int event)
+         mux_chr_send_event(d, i, event);
+ }
+ 
++static const QemuChrHandlers mux_chr_handlers = {
++    .fd_can_read = mux_chr_can_read,
++    .fd_read = mux_chr_read,
++    .fd_event = mux_chr_event,
++};
++
+ static void mux_chr_update_read_handler(CharDriverState *chr)
+ {
+     MuxDriver *d = chr->opaque;
+@@ -441,8 +454,7 @@ static void mux_chr_update_read_handler(CharDriverState *chr)
+     d->chr_event[d->mux_cnt] = chr->chr_event;
+     /* Fix up the real driver with mux routines */
+     if (d->mux_cnt == 0) {
+-        qemu_chr_add_handlers(d->drv, mux_chr_can_read, mux_chr_read,
+-                              mux_chr_event, chr);
++        qemu_chr_add_handlers(d->drv, &mux_chr_handlers, chr);
+     }
+     if (d->focus != -1) {
+         mux_chr_send_event(d, d->focus, CHR_EVENT_MUX_OUT);
+diff --git a/qemu-char.h b/qemu-char.h
+index d04611a..8d2e3ba 100644
+--- a/qemu-char.h
++++ b/qemu-char.h
+@@ -1,6 +1,7 @@
+ #ifndef QEMU_CHAR_H
+ #define QEMU_CHAR_H
+ 
++#include <stdbool.h>
+ #include "qemu-common.h"
+ #include "qemu-queue.h"
+ #include "qemu-option.h"
+@@ -71,6 +72,13 @@ struct CharDriverState {
+     QTAILQ_ENTRY(CharDriverState) next;
+ };
+ 
++typedef struct QemuChrHandlers {
++    IOCanRWHandler *fd_can_read;
++    IOReadHandler *fd_read;
++    IOHandler *fd_write_unblocked;
++    IOEventHandler *fd_event;
++} QemuChrHandlers;
++
+ QemuOpts *qemu_chr_parse_compat(const char *label, const char *filename);
+ CharDriverState *qemu_chr_open_opts(QemuOpts *opts,
+                                     void (*init)(struct CharDriverState *s));
+@@ -79,10 +87,7 @@ void qemu_chr_close(CharDriverState *chr);
+ void qemu_chr_printf(CharDriverState *s, const char *fmt, ...);
+ int qemu_chr_write(CharDriverState *s, const uint8_t *buf, int len);
+ void qemu_chr_send_event(CharDriverState *s, int event);
+-void qemu_chr_add_handlers(CharDriverState *s,
+-                           IOCanRWHandler *fd_can_read,
+-                           IOReadHandler *fd_read,
+-                           IOEventHandler *fd_event,
++void qemu_chr_add_handlers(CharDriverState *s, const QemuChrHandlers *handlers,
+                            void *opaque);
+ int qemu_chr_ioctl(CharDriverState *s, int cmd, void *arg);
+ void qemu_chr_generic_open(CharDriverState *s);
+-- 
+1.7.3.2
+

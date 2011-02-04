@@ -1,0 +1,140 @@
+From 7ec5f1490c84fce3c63cedfd0c9da45cb1297db8 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 4 Feb 2011 08:20:41 -0200
+Subject: [RHEL6 qemu-kvm PATCH 10/27] virtio-serial: Add support for flow control
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <181eb3013a7bde8c711023a8b6c489d893c56bf9.1296806194.git.amit.shah@redhat.com>
+Patchwork-id: 17711
+O-Subject: [RHEL6.1 qemu PATCH v5 10/19] virtio-serial: Add support for flow
+	control
+Bugzilla: 588916
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+This commit lets apps signal an incomplete write.  When that happens,
+stop sending out any more data to the app and wait for it to unthrottle
+the port.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+(cherry picked from commit f1925dff7e6c4799f5951cf167a437c0737a266c)
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-serial-bus.c |   49 +++++++++++++++++++++++++++++++++++++----------
+ hw/virtio-serial.h     |   17 ++++++++++++++++
+ 2 files changed, 55 insertions(+), 11 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial-bus.c |   49 +++++++++++++++++++++++++++++++++++++----------
+ hw/virtio-serial.h     |   17 ++++++++++++++++
+ 2 files changed, 55 insertions(+), 11 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index e23b4eb..554bb99 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -129,24 +129,49 @@ static void discard_vq_data(VirtQueue *vq, VirtIODevice *vdev)
+ static void do_flush_queued_data(VirtIOSerialPort *port, VirtQueue *vq,
+                                  VirtIODevice *vdev)
+ {
+-    VirtQueueElement elem;
+-
+     assert(port);
+     assert(virtio_queue_ready(vq));
+ 
+-    while (!port->throttled && virtqueue_pop(vq, &elem)) {
++    while (!port->throttled) {
+         unsigned int i;
+ 
+-        for (i = 0; i < elem.out_num; i++) {
+-            size_t buf_size;
+-
+-            buf_size = elem.out_sg[i].iov_len;
++        /* Pop an elem only if we haven't left off a previous one mid-way */
++        if (!port->elem.out_num) {
++            if (!virtqueue_pop(vq, &port->elem)) {
++                break;
++            }
++            port->iov_idx = 0;
++            port->iov_offset = 0;
++        }
+ 
+-            port->info->have_data(port,
+-                                  elem.out_sg[i].iov_base,
+-                                  buf_size);
++        for (i = port->iov_idx; i < port->elem.out_num; i++) {
++            size_t buf_size;
++            ssize_t ret;
++
++            buf_size = port->elem.out_sg[i].iov_len - port->iov_offset;
++            ret = port->info->have_data(port,
++                                        port->elem.out_sg[i].iov_base
++                                          + port->iov_offset,
++                                        buf_size);
++            if (ret < 0 && ret != -EAGAIN) {
++                /* We don't handle any other type of errors here */
++                abort();
++            }
++            if (ret == -EAGAIN || (ret >= 0 && ret < buf_size)) {
++                virtio_serial_throttle_port(port, true);
++                port->iov_idx = i;
++                if (ret > 0) {
++                    port->iov_offset += ret;
++                }
++                break;
++            }
++            port->iov_offset = 0;
+         }
+-        virtqueue_push(vq, &elem, 0);
++        if (port->throttled) {
++            break;
++        }
++        virtqueue_push(vq, &port->elem, 0);
++        port->elem.out_num = 0;
+     }
+     virtio_notify(vdev, vq);
+ }
+@@ -719,6 +744,8 @@ static int virtser_port_qdev_init(DeviceState *qdev, DeviceInfo *base)
+         port->guest_connected = true;
+     }
+ 
++    port->elem.out_num = 0;
++
+     QTAILQ_INSERT_TAIL(&port->vser->ports, port, next);
+     port->ivq = port->vser->ivqs[port->id];
+     port->ovq = port->vser->ovqs[port->id];
+diff --git a/hw/virtio-serial.h b/hw/virtio-serial.h
+index 89078d9..de624c3 100644
+--- a/hw/virtio-serial.h
++++ b/hw/virtio-serial.h
+@@ -107,6 +107,23 @@ struct VirtIOSerialPort {
+      */
+     uint32_t id;
+ 
++    /*
++     * This is the elem that we pop from the virtqueue.  A slow
++     * backend that consumes guest data (e.g. the file backend for
++     * qemu chardevs) can cause the guest to block till all the output
++     * is flushed.  This isn't desired, so we keep a note of the last
++     * element popped and continue consuming it once the backend
++     * becomes writable again.
++     */
++    VirtQueueElement elem;
++
++    /*
++     * The index and the offset into the iov buffer that was popped in
++     * elem above.
++     */
++    uint32_t iov_idx;
++    uint64_t iov_offset;
++
+     /* Identify if this is a port that binds with hvc in the guest */
+     uint8_t is_console;
+ 
+-- 
+1.7.3.2
+

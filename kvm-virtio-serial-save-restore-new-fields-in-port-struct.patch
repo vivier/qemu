@@ -1,0 +1,136 @@
+From 5da17b249740d02c2961767c2cd744c664d55038 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 4 Feb 2011 08:20:43 -0200
+Subject: [RHEL6 qemu-kvm PATCH 12/27] virtio-serial: save/restore new fields in port struct
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1933a98baedfb835321e8950dcbcceeaf1c7f4f6.1296806194.git.amit.shah@redhat.com>
+Patchwork-id: 17713
+O-Subject: [RHEL6.1 qemu PATCH v5 12/19] virtio-serial: save/restore new fields
+	in port struct
+Bugzilla: 588916
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+The new fields that got added as part of not copying over the guest
+buffer to the host need to be saved/restored across migration.  Do that
+and bump up the version number.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+(cherry picked from commit 37f95bf3d063fcfcb3b05f82203629dc50f18615)
+
+[Edited for rhel6: add extra flow-control on/off checks for the save
+section]
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-serial-bus.c |   47 +++++++++++++++++++++++++++++++++++++++++++++--
+ 1 files changed, 45 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial-bus.c |   47 +++++++++++++++++++++++++++++++++++++++++++++--
+ 1 files changed, 45 insertions(+), 2 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index 12fc527..6a070b3 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -576,9 +576,26 @@ static void virtio_serial_save(QEMUFile *f, void *opaque)
+      * Items in struct VirtIOSerialPort.
+      */
+     QTAILQ_FOREACH(port, &s->ports, next) {
++        uint32_t elem_popped;
++
+         qemu_put_be32s(f, &port->id);
+         qemu_put_byte(f, port->guest_connected);
+         qemu_put_byte(f, port->host_connected);
++
++        if (virtio_serial_flow_control_enabled(port)) {
++            elem_popped = 0;
++            if (port->elem.out_num) {
++                elem_popped = 1;
++            }
++            qemu_put_be32s(f, &elem_popped);
++            if (elem_popped) {
++                qemu_put_be32s(f, &port->iov_idx);
++                qemu_put_be64s(f, &port->iov_offset);
++
++                qemu_put_buffer(f, (unsigned char *)&port->elem,
++                                sizeof(port->elem));
++            }
++        }
+     }
+ }
+ 
+@@ -590,7 +607,7 @@ static int virtio_serial_load(QEMUFile *f, void *opaque, int version_id)
+     uint32_t max_nr_ports, nr_active_ports, *ports_map;
+     unsigned int i;
+ 
+-    if (version_id > 2) {
++    if (version_id > 3) {
+         return -EINVAL;
+     }
+ 
+@@ -648,6 +665,29 @@ static int virtio_serial_load(QEMUFile *f, void *opaque, int version_id)
+             send_control_event(port, VIRTIO_CONSOLE_PORT_OPEN,
+                                port->host_connected);
+         }
++
++        if (version_id > 2) {
++            uint32_t elem_popped;
++
++            qemu_get_be32s(f, &elem_popped);
++            if (elem_popped) {
++                qemu_get_be32s(f, &port->iov_idx);
++                qemu_get_be64s(f, &port->iov_offset);
++
++                qemu_get_buffer(f, (unsigned char *)&port->elem,
++                                sizeof(port->elem));
++                virtqueue_map_sg(port->elem.in_sg, port->elem.in_addr,
++                                 port->elem.in_num, 1);
++                virtqueue_map_sg(port->elem.out_sg, port->elem.out_addr,
++                                 port->elem.out_num, 1);
++
++                /*
++                 *  Port was throttled on source machine.  Let's
++                 *  unthrottle it here so data starts flowing again.
++                 */
++                virtio_serial_throttle_port(port, false);
++            }
++        }
+     }
+     return 0;
+ }
+@@ -833,6 +873,7 @@ VirtIODevice *virtio_serial_init(DeviceState *dev, virtio_serial_conf *conf)
+     VirtIOSerial *vser;
+     VirtIODevice *vdev;
+     uint32_t i, max_supported_ports;
++    unsigned int savevm_ver;
+ 
+     if (!conf->max_virtserial_ports)
+         return NULL;
+@@ -899,15 +940,17 @@ VirtIODevice *virtio_serial_init(DeviceState *dev, virtio_serial_conf *conf)
+     vser->qdev = dev;
+ 
+     vser->flow_control = true;
++    savevm_ver = 3;
+     if (!conf->flow_control) {
+         vser->flow_control = false;
++        savevm_ver = 2;
+     }
+ 
+     /*
+      * Register for the savevm section with the virtio-console name
+      * to preserve backward compat
+      */
+-    register_savevm(dev, "virtio-console", -1, 2, virtio_serial_save,
++    register_savevm(dev, "virtio-console", -1, savevm_ver, virtio_serial_save,
+                     virtio_serial_load, vser);
+ 
+     return vdev;
+-- 
+1.7.3.2
+

@@ -1,0 +1,48 @@
+From 1963b93c7645bb47e3bab1ee185bfc4d314ed085 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 4 Feb 2011 08:20:33 -0200
+Subject: [RHEL6 qemu-kvm PATCH 02/27] virtio-console: Remove unnecessary braces
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <a8748dbe3307476714c3fdd97adbdaa87462952a.1296806194.git.amit.shah@redhat.com>
+Patchwork-id: 17703
+O-Subject: [RHEL6.1 qemu PATCH v5 02/19] virtio-console: Remove unnecessary
+	braces
+Bugzilla: 588916
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+Remove unnecessary braces around a case statement.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+(cherry picked from commit 28eaf465316491884952f855f7bfc9dab597e6fb)
+---
+ hw/virtio-console.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-console.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+diff --git a/hw/virtio-console.c b/hw/virtio-console.c
+index d7fe68b..d0b9354 100644
+--- a/hw/virtio-console.c
++++ b/hw/virtio-console.c
+@@ -48,10 +48,9 @@ static void chr_event(void *opaque, int event)
+     VirtConsole *vcon = opaque;
+ 
+     switch (event) {
+-    case CHR_EVENT_OPENED: {
++    case CHR_EVENT_OPENED:
+         virtio_serial_open(&vcon->port);
+         break;
+-    }
+     case CHR_EVENT_CLOSED:
+         virtio_serial_close(&vcon->port);
+         break;
+-- 
+1.7.3.2
+

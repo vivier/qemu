@@ -1,0 +1,75 @@
+From d7b0a238f6c4b0c907f40be2c43979f63cd65727 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 4 Feb 2011 08:20:40 -0200
+Subject: [RHEL6 qemu-kvm PATCH 09/27] virtio-serial: Let virtio-serial-bus know if all data was consumed
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <48e0eae25a7ae045e630d25b01a9e61dc6dd4b3d.1296806194.git.amit.shah@redhat.com>
+Patchwork-id: 17710
+O-Subject: [RHEL6.1 qemu PATCH v5 09/19] virtio-serial: Let virtio-serial-bus
+	know if all data was consumed
+Bugzilla: 588916
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+The have_data() API to hand off guest data to apps using virtio-serial
+so far assumed all the data was consumed.  Relax this assumption.
+Future commits will allow for incomplete writes.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+(cherry picked from commit e300ac275bbf19b31cf5968b8de8abe52c26e163)
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-console.c |    4 ++--
+ hw/virtio-serial.h  |    7 ++++---
+ 2 files changed, 6 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-console.c |    4 ++--
+ hw/virtio-serial.h  |    7 ++++---
+ 2 files changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/hw/virtio-console.c b/hw/virtio-console.c
+index 1bb6f8e..22cf28c 100644
+--- a/hw/virtio-console.c
++++ b/hw/virtio-console.c
+@@ -20,11 +20,11 @@ typedef struct VirtConsole {
+ 
+ 
+ /* Callback function that's called when the guest sends us data */
+-static void flush_buf(VirtIOSerialPort *port, const uint8_t *buf, size_t len)
++static ssize_t flush_buf(VirtIOSerialPort *port, const uint8_t *buf, size_t len)
+ {
+     VirtConsole *vcon = DO_UPCAST(VirtConsole, port, port);
+ 
+-    qemu_chr_write(vcon->chr, buf, len);
++    return qemu_chr_write(vcon->chr, buf, len);
+ }
+ 
+ /* Readiness of the guest to accept data on a port */
+diff --git a/hw/virtio-serial.h b/hw/virtio-serial.h
+index 4e64c44..89078d9 100644
+--- a/hw/virtio-serial.h
++++ b/hw/virtio-serial.h
+@@ -142,10 +142,11 @@ struct VirtIOSerialPortInfo {
+ 
+     /*
+      * Guest wrote some data to the port. This data is handed over to
+-     * the app via this callback.  The app is supposed to consume all
+-     * the data that is presented to it.
++     * the app via this callback.  The app can return a size less than
++     * 'len'.  In this case, throttling will be enabled for this port.
+      */
+-    void (*have_data)(VirtIOSerialPort *port, const uint8_t *buf, size_t len);
++    ssize_t (*have_data)(VirtIOSerialPort *port, const uint8_t *buf,
++                         size_t len);
+ };
+ 
+ /* Interface to the virtio-serial bus */
+-- 
+1.7.3.2
+

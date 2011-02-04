@@ -1,0 +1,146 @@
+From bb149441f3b3e60e8c51483285b14ae0d805551f Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 4 Feb 2011 08:20:37 -0200
+Subject: [RHEL6 qemu-kvm PATCH 06/27] virtio-serial: move out discard logic in a separate function
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <9c32e5c876179be3ef0fe07e1f9408a9276ba9ae.1296806194.git.amit.shah@redhat.com>
+Patchwork-id: 17707
+O-Subject: [RHEL6.1 qemu PATCH v5 06/19] virtio-serial: move out discard logic
+	in a separate function
+Bugzilla: 588916
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+Instead of combining flush logic into the discard case and not discard
+case, have one function doing discard case.  This will help later when
+adding flow control logic to the do_flush_queued_data() function.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+(cherry picked from commit 6bff86560d42a9c391cf1e502ebd764c293c4d02)
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-serial-bus.c |   47 ++++++++++++++++++++++++++++++-----------------
+ 1 files changed, 30 insertions(+), 17 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial-bus.c |   47 ++++++++++++++++++++++++++++++-----------------
+ 1 files changed, 30 insertions(+), 17 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index cc627af..1420994 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -113,39 +113,48 @@ static size_t write_to_port(VirtIOSerialPort *port,
+     return offset;
+ }
+ 
++static void discard_vq_data(VirtQueue *vq, VirtIODevice *vdev)
++{
++    VirtQueueElement elem;
++
++    while (virtqueue_pop(vq, &elem)) {
++        virtqueue_push(vq, &elem, 0);
++    }
++    virtio_notify(vdev, vq);
++}
++
+ static void do_flush_queued_data(VirtIOSerialPort *port, VirtQueue *vq,
+-                                 VirtIODevice *vdev, bool discard)
++                                 VirtIODevice *vdev)
+ {
+     VirtQueueElement elem;
+ 
+-    assert(port || discard);
++    assert(port);
+     assert(virtio_queue_ready(vq));
+ 
+-    while ((discard || !port->throttled) && virtqueue_pop(vq, &elem)) {
++    while (!port->throttled && virtqueue_pop(vq, &elem)) {
+         uint8_t *buf;
+         size_t ret, buf_size;
+ 
+-        if (!discard) {
+-            buf_size = iov_size(elem.out_sg, elem.out_num);
+-            buf = qemu_malloc(buf_size);
+-            ret = iov_to_buf(elem.out_sg, elem.out_num, buf, 0, buf_size);
++        buf_size = iov_size(elem.out_sg, elem.out_num);
++        buf = qemu_malloc(buf_size);
++        ret = iov_to_buf(elem.out_sg, elem.out_num, buf, 0, buf_size);
++
++        port->info->have_data(port, buf, ret);
++        qemu_free(buf);
+ 
+-            port->info->have_data(port, buf, ret);
+-            qemu_free(buf);
+-        }
+         virtqueue_push(vq, &elem, 0);
+     }
+     virtio_notify(vdev, vq);
+ }
+ 
+-static void flush_queued_data(VirtIOSerialPort *port, bool discard)
++static void flush_queued_data(VirtIOSerialPort *port)
+ {
+     assert(port);
+ 
+     if (!virtio_queue_ready(port->ovq)) {
+         return;
+     }
+-    do_flush_queued_data(port, port->ovq, &port->vser->vdev, discard);
++    do_flush_queued_data(port, port->ovq, &port->vser->vdev);
+ }
+ 
+ static size_t send_control_msg(VirtIOSerialPort *port, void *buf, size_t len)
+@@ -204,7 +213,7 @@ int virtio_serial_close(VirtIOSerialPort *port)
+      * consume, reset the throttling flag and discard the data.
+      */
+     port->throttled = false;
+-    flush_queued_data(port, true);
++    discard_vq_data(port->ovq, &port->vser->vdev);
+ 
+     send_control_event(port, VIRTIO_CONSOLE_PORT_OPEN, 0);
+ 
+@@ -258,7 +267,7 @@ void virtio_serial_throttle_port(VirtIOSerialPort *port, bool throttle)
+         return;
+     }
+ 
+-    flush_queued_data(port, false);
++    flush_queued_data(port);
+ }
+ 
+ /* Guest wants to notify us of some event */
+@@ -414,11 +423,15 @@ static void handle_output(VirtIODevice *vdev, VirtQueue *vq)
+         discard = true;
+     }
+ 
+-    if (!discard && port->throttled) {
++    if (discard) {
++        discard_vq_data(vq, vdev);
++        return;
++    }
++    if (port->throttled) {
+         return;
+     }
+ 
+-    do_flush_queued_data(port, vq, vdev, discard);
++    do_flush_queued_data(port, vq, vdev);
+ }
+ 
+ static void handle_input(VirtIODevice *vdev, VirtQueue *vq)
+@@ -641,7 +654,7 @@ static void remove_port(VirtIOSerial *vser, uint32_t port_id)
+ 
+     port = find_port_by_id(vser, port_id);
+     /* Flush out any unconsumed buffers first */
+-    flush_queued_data(port, true);
++    discard_vq_data(port->ovq, &port->vser->vdev);
+ 
+     send_control_event(port, VIRTIO_CONSOLE_PORT_REMOVE, 1);
+ }
+-- 
+1.7.3.2
+

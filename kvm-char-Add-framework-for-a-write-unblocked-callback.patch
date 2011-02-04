@@ -1,0 +1,77 @@
+From bd6143f9f61e840c97b49888b4d4cffdc6f1e089 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 4 Feb 2011 08:20:46 -0200
+Subject: [RHEL6 qemu-kvm PATCH 15/27] char: Add framework for a 'write unblocked' callback
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <385793a2276c015056c57162160650f3aa5a8282.1296806194.git.amit.shah@redhat.com>
+Patchwork-id: 17716
+O-Subject: [RHEL6.1 qemu PATCH v5 15/19] char: Add framework for a 'write
+	unblocked' callback
+Bugzilla: 588916
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+The char layer can let users know that the driver will block on further
+input.  For users interested in not blocking, they can assign a function
+pointer that will be called back when the driver becomes writable.  This
+patch just adds the function pointers to the CharDriverState structure,
+future patches will enable the nonblocking and callback functionality.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ qemu-char.c |    3 +++
+ qemu-char.h |    5 +++++
+ 2 files changed, 8 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-char.c |    3 +++
+ qemu-char.h |    5 +++++
+ 2 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-char.c b/qemu-char.c
+index 08ef24b..7864224 100644
+--- a/qemu-char.c
++++ b/qemu-char.c
+@@ -197,10 +197,13 @@ void qemu_chr_add_handlers(CharDriverState *s,
+     }
+     s->chr_can_read = handlers->fd_can_read;
+     s->chr_read = handlers->fd_read;
++    s->chr_write_unblocked = handlers->fd_write_unblocked;
+     s->chr_event = handlers->fd_event;
+     s->handler_opaque = opaque;
+     if (s->chr_update_read_handler)
+         s->chr_update_read_handler(s);
++
++    s->write_blocked = false;
+ }
+ 
+ static int null_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
+diff --git a/qemu-char.h b/qemu-char.h
+index 3af9f9b..c1c437c 100644
+--- a/qemu-char.h
++++ b/qemu-char.h
+@@ -61,6 +61,9 @@ struct CharDriverState {
+     IOEventHandler *chr_event;
+     IOCanRWHandler *chr_can_read;
+     IOReadHandler *chr_read;
++    IOHandler *chr_write_unblocked;
++    void (*chr_enable_write_fd_handler)(struct CharDriverState *chr);
++    void (*chr_disable_write_fd_handler)(struct CharDriverState *chr);
+     void *handler_opaque;
+     void (*chr_send_event)(struct CharDriverState *chr, int event);
+     void (*chr_close)(struct CharDriverState *chr);
+@@ -69,6 +72,8 @@ struct CharDriverState {
+     QEMUBH *bh;
+     char *label;
+     char *filename;
++    /* Are we in a blocked state? */
++    bool write_blocked;
+     QTAILQ_ENTRY(CharDriverState) next;
+ };
+ 
+-- 
+1.7.3.2
+

@@ -1,0 +1,55 @@
+From ea7b2a50c49b499377bbfd91e2cc81a9a9f06f4c Mon Sep 17 00:00:00 2001
+From: Juan Quintela <quintela@redhat.com>
+Date: Fri, 4 Feb 2011 12:19:59 -0200
+Subject: [RHEL6 qemu-kvm PATCH 23/27] Only calculate expected_time for stage 2
+
+RH-Author: Juan Quintela <quintela@redhat.com>
+Message-id: <f1b8d6cccb5a4834ad0ce45a9a11d12d7bd46e3a.1296800500.git.quintela@redhat.com>
+Patchwork-id: 17738
+O-Subject: [PATCH 4/8] Only calculate expected_time for stage 2
+Bugzilla: 643970
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+Signed-off-by: Juan Quintela <quintela@redhat.com>
+---
+ vl.c |    9 ++++++---
+ 1 files changed, 6 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vl.c |    9 ++++++---
+ 1 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index fbad661..96e052b 100644
+--- a/vl.c
++++ b/vl.c
+@@ -3346,7 +3346,6 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
+     ram_addr_t addr;
+     uint64_t bytes_transferred_last;
+     double bwidth = 0;
+-    uint64_t expected_time = 0;
+ 
+     if (stage < 0) {
+         cpu_physical_memory_set_dirty_tracking(0);
+@@ -3417,9 +3416,13 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
+ 
+     qemu_put_be64(f, RAM_SAVE_FLAG_EOS);
+ 
+-    expected_time = ram_save_remaining() * TARGET_PAGE_SIZE / bwidth;
++    if (stage == 2) {
++        uint64_t expected_time;
+ 
+-    return (stage == 2) && (expected_time <= migrate_max_downtime());
++        expected_time = ram_save_remaining() * TARGET_PAGE_SIZE / bwidth;
++        return expected_time <= migrate_max_downtime();
++    }
++    return 0;
+ }
+ 
+ static inline void *host_from_stream_offset(QEMUFile *f,
+-- 
+1.7.3.2
+

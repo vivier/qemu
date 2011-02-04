@@ -1,0 +1,124 @@
+From b3b90c4a2deadc6cc49e400844d7467958d7aaaf Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 4 Feb 2011 08:20:44 -0200
+Subject: [RHEL6 qemu-kvm PATCH 13/27] Convert io handlers to QLIST
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <6b4b8eda60eecdf0d510be8e716cd399fbff889f.1296806194.git.amit.shah@redhat.com>
+Patchwork-id: 17714
+O-Subject: [RHEL6.1 qemu PATCH v5 13/19] Convert io handlers to QLIST
+Bugzilla: 588916
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Juan Quintela <quintela@redhat.com>
+
+Signed-off-by: Juan Quintela <quintela@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 31d4ee6cf69b4a78a9ac1fe0c2108dd72f3374f6)
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ vl.c |   35 ++++++++++++++---------------------
+ 1 files changed, 14 insertions(+), 21 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vl.c |   35 ++++++++++++++---------------------
+ 1 files changed, 14 insertions(+), 21 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index 8e6195e..ae9aebe 100644
+--- a/vl.c
++++ b/vl.c
+@@ -3036,10 +3036,12 @@ typedef struct IOHandlerRecord {
+     void *opaque;
+     /* temporary data */
+     struct pollfd *ufd;
+-    struct IOHandlerRecord *next;
++    QLIST_ENTRY(IOHandlerRecord) next;
+ } IOHandlerRecord;
+ 
+-static IOHandlerRecord *first_io_handler;
++static QLIST_HEAD(, IOHandlerRecord) io_handlers =
++    QLIST_HEAD_INITIALIZER(io_handlers);
++
+ 
+ /* XXX: fd_read_poll should be suppressed, but an API change is
+    necessary in the character devices to suppress fd_can_read(). */
+@@ -3049,28 +3051,22 @@ int qemu_set_fd_handler2(int fd,
+                          IOHandler *fd_write,
+                          void *opaque)
+ {
+-    IOHandlerRecord **pioh, *ioh;
++    IOHandlerRecord *ioh;
+ 
+     if (!fd_read && !fd_write) {
+-        pioh = &first_io_handler;
+-        for(;;) {
+-            ioh = *pioh;
+-            if (ioh == NULL)
+-                break;
++        QLIST_FOREACH(ioh, &io_handlers, next) {
+             if (ioh->fd == fd) {
+                 ioh->deleted = 1;
+                 break;
+             }
+-            pioh = &ioh->next;
+         }
+     } else {
+-        for(ioh = first_io_handler; ioh != NULL; ioh = ioh->next) {
++        QLIST_FOREACH(ioh, &io_handlers, next) {
+             if (ioh->fd == fd)
+                 goto found;
+         }
+         ioh = qemu_mallocz(sizeof(IOHandlerRecord));
+-        ioh->next = first_io_handler;
+-        first_io_handler = ioh;
++        QLIST_INSERT_HEAD(&io_handlers, ioh, next);
+     found:
+         ioh->fd = fd;
+         ioh->fd_read_poll = fd_read_poll;
+@@ -4316,7 +4312,7 @@ void main_loop_wait(int timeout)
+     FD_ZERO(&rfds);
+     FD_ZERO(&wfds);
+     FD_ZERO(&xfds);
+-    for(ioh = first_io_handler; ioh != NULL; ioh = ioh->next) {
++    QLIST_FOREACH(ioh, &io_handlers, next) {
+         if (ioh->deleted)
+             continue;
+         if (ioh->fd_read &&
+@@ -4342,9 +4338,9 @@ void main_loop_wait(int timeout)
+     ret = select(nfds + 1, &rfds, &wfds, &xfds, &tv);
+     qemu_mutex_lock_iothread();
+     if (ret > 0) {
+-        IOHandlerRecord **pioh;
++        IOHandlerRecord *pioh;
+ 
+-        for(ioh = first_io_handler; ioh != NULL; ioh = ioh->next) {
++        QLIST_FOREACH(ioh, &io_handlers, next) {
+             if (!ioh->deleted && ioh->fd_read && FD_ISSET(ioh->fd, &rfds)) {
+                 ioh->fd_read(ioh->opaque);
+                 if (!(ioh->fd_read_poll && ioh->fd_read_poll(ioh->opaque)))
+@@ -4356,14 +4352,11 @@ void main_loop_wait(int timeout)
+         }
+ 
+ 	/* remove deleted IO handlers */
+-	pioh = &first_io_handler;
+-	while (*pioh) {
+-            ioh = *pioh;
++        QLIST_FOREACH_SAFE(ioh, &io_handlers, next, pioh) {
+             if (ioh->deleted) {
+-                *pioh = ioh->next;
++                QLIST_REMOVE(ioh, next);
+                 qemu_free(ioh);
+-            } else
+-                pioh = &ioh->next;
++            }
+         }
+     }
+ 
+-- 
+1.7.3.2
+

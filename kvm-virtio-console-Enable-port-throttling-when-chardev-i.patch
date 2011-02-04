@@ -1,0 +1,64 @@
+From b3d706dd43977c6be2eb5fe042d3cf9c21914963 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 4 Feb 2011 08:20:50 -0200
+Subject: [RHEL6 qemu-kvm PATCH 19/27] virtio-console: Enable port throttling when chardev is slow to consume data
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <4ec4fd6b5545a3b1775d2981c5f184b6edba7e55.1296806194.git.amit.shah@redhat.com>
+Patchwork-id: 17720
+O-Subject: [RHEL6.1 qemu PATCH v5 19/19] virtio-console: Enable port throttling
+	when chardev is slow to consume data
+Bugzilla: 588916
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+When a chardev indicates it can't accept more data, we tell the
+virtio-serial code to stop sending us any more data till we tell
+otherwise.  This helps in guests continuing to run normally while the vq
+keeps getting full and eventually the guest stops queueing more data.
+As soon as the chardev indicates it can accept more data, start pushing!
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-console.c |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-console.c |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-console.c b/hw/virtio-console.c
+index ccfa539..27ac475 100644
+--- a/hw/virtio-console.c
++++ b/hw/virtio-console.c
+@@ -18,6 +18,16 @@ typedef struct VirtConsole {
+     CharDriverState *chr;
+ } VirtConsole;
+ 
++/*
++ * Callback function that's called from chardevs when backend becomes
++ * writable.
++ */
++static void chr_write_unblocked(void *opaque)
++{
++    VirtConsole *vcon = opaque;
++
++    virtio_serial_throttle_port(&vcon->port, false);
++}
+ 
+ /* Callback function that's called when the guest sends us data */
+ static ssize_t flush_buf(VirtIOSerialPort *port, const uint8_t *buf, size_t len)
+@@ -61,6 +71,7 @@ static const QemuChrHandlers chr_handlers = {
+     .fd_can_read = chr_can_read,
+     .fd_read = chr_read,
+     .fd_event = chr_event,
++    .fd_write_unblocked = chr_write_unblocked,
+ };
+ 
+ static const QemuChrHandlers chr_handlers_no_flow_control = {
+-- 
+1.7.3.2
+

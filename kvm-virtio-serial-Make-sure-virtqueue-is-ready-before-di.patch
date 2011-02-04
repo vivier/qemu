@@ -1,0 +1,46 @@
+From 40af4bfde88ee8ffce7a257464ded002fa4d4a56 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 4 Feb 2011 08:20:38 -0200
+Subject: [RHEL6 qemu-kvm PATCH 07/27] virtio-serial: Make sure virtqueue is ready before discarding data
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <18d18c9df4ae88c7379b137691d5afb3c9673461.1296806194.git.amit.shah@redhat.com>
+Patchwork-id: 17708
+O-Subject: [RHEL6.1 qemu PATCH v5 07/19] virtio-serial: Make sure virtqueue is
+	ready before discarding data
+Bugzilla: 588916
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+This can happen if a port gets unplugged before guest has chance to
+initialise vqs.
+
+Reported-by: Juan Quintela <quintela@redhat.com>
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-serial-bus.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial-bus.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index 1420994..3839260 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -117,6 +117,9 @@ static void discard_vq_data(VirtQueue *vq, VirtIODevice *vdev)
+ {
+     VirtQueueElement elem;
+ 
++    if (!virtio_queue_ready(vq)) {
++        return;
++    }
+     while (virtqueue_pop(vq, &elem)) {
+         virtqueue_push(vq, &elem, 0);
+     }
+-- 
+1.7.3.2
+

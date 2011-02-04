@@ -1,0 +1,218 @@
+From 975ced46e7e1db173ad6463081b24cbdb95bad49 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 4 Feb 2011 08:20:42 -0200
+Subject: [RHEL6 qemu-kvm PATCH 11/27] virtio-serial: Add rhel6.0.0 compat property for flow control
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <54e7d8fa7ab562afc4907dc17f2e4623540c3892.1296806194.git.amit.shah@redhat.com>
+Patchwork-id: 17712
+O-Subject: [RHEL6.1 qemu PATCH v5 11/19] virtio-serial: Add rhel6.0.0 compat
+	property for flow control
+Bugzilla: 588916
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+Add a compat property for the rhel6.0.0 machine type.  When this is used
+(via -M rhel6.0.0, for example), the new flow control mechanisms will not
+be used.  This is done to keep migration from a machine started with the
+rhel600 type on a rhel6.1 installation to a rhel6.0 machine working.
+
+The property is named 'flow_control' and defaults to on.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/pc.c                |    4 +++
+ hw/virtio-console.c    |   14 ++++++++++++-
+ hw/virtio-pci.c        |    2 +
+ hw/virtio-serial-bus.c |   50 ++++++++++++++++++++++++++++++++++++++++++++++++
+ hw/virtio-serial.h     |   12 +++++++++++
+ 5 files changed, 81 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pc.c                |    4 +++
+ hw/virtio-console.c    |   14 ++++++++++++-
+ hw/virtio-pci.c        |    2 +
+ hw/virtio-serial-bus.c |   50 ++++++++++++++++++++++++++++++++++++++++++++++++
+ hw/virtio-serial.h     |   12 +++++++++++
+ 5 files changed, 81 insertions(+), 1 deletions(-)
+
+diff --git a/hw/pc.c b/hw/pc.c
+index d49bdb7..d76c693 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -1565,6 +1565,10 @@ static QEMUMachine pc_machine_rhel600 = {
+             .driver   = "vmware-svga",
+             .property = "rombar",
+             .value    = stringify(0),
++        },{
++            .driver   = "virtio-serial-pci",
++            .property = "flow_control",
++            .value    = stringify(0),
+         },
+         { /* end of list */ }
+     },
+diff --git a/hw/virtio-console.c b/hw/virtio-console.c
+index 22cf28c..ccfa539 100644
+--- a/hw/virtio-console.c
++++ b/hw/virtio-console.c
+@@ -63,12 +63,24 @@ static const QemuChrHandlers chr_handlers = {
+     .fd_event = chr_event,
+ };
+ 
++static const QemuChrHandlers chr_handlers_no_flow_control = {
++    .fd_can_read = chr_can_read,
++    .fd_read = chr_read,
++    .fd_event = chr_event,
++};
++
+ static int generic_port_init(VirtConsole *vcon, VirtIOSerialDevice *dev)
+ {
++    static const QemuChrHandlers *handlers;
++
+     vcon->port.info = dev->info;
+ 
+     if (vcon->chr) {
+-        qemu_chr_add_handlers(vcon->chr, &chr_handlers, vcon);
++        handlers = &chr_handlers;
++        if (!virtio_serial_flow_control_enabled(&vcon->port)) {
++            handlers = &chr_handlers_no_flow_control;
++        }
++        qemu_chr_add_handlers(vcon->chr, handlers, vcon);
+         vcon->port.info->have_data = flush_buf;
+     }
+     return 0;
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index 36ec04c..db4da7f 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -964,6 +964,8 @@ static PCIDeviceInfo virtio_info[] = {
+             DEFINE_VIRTIO_COMMON_FEATURES(VirtIOPCIProxy, host_features),
+             DEFINE_PROP_UINT32("max_ports", VirtIOPCIProxy,
+                                serial.max_virtserial_ports, 31),
++            DEFINE_PROP_UINT32("flow_control", VirtIOPCIProxy,
++                               serial.flow_control, 1),
+             DEFINE_PROP_END_OF_LIST(),
+         },
+         .qdev.reset = virtio_pci_reset,
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index 554bb99..12fc527 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -49,6 +49,8 @@ struct VirtIOSerial {
+     uint32_t *ports_map;
+ 
+     struct virtio_console_config config;
++
++    bool flow_control;
+ };
+ 
+ static VirtIOSerialPort *find_port_by_id(VirtIOSerial *vser, uint32_t id)
+@@ -126,12 +128,46 @@ static void discard_vq_data(VirtQueue *vq, VirtIODevice *vdev)
+     virtio_notify(vdev, vq);
+ }
+ 
++static void do_flush_queued_data_no_flow_control(VirtIOSerialPort *port,
++                                                 VirtQueue *vq,
++                                                 VirtIODevice *vdev)
++{
++    VirtQueueElement elem;
++
++    while (!port->throttled && virtqueue_pop(vq, &elem)) {
++        uint8_t *buf;
++        size_t ret, buf_size;
++
++        buf_size = iov_size(elem.out_sg, elem.out_num);
++        buf = qemu_malloc(buf_size);
++        ret = iov_to_buf(elem.out_sg, elem.out_num, buf, 0, buf_size);
++
++        /*
++         * have_data has since been modified to return the number of
++         * bytes successfully consumed.  We can't act upon that
++         * information in the rhel6.0 implementation, so we'll discard
++         * it here.  virtio-console.c has been suitably updated to not
++         * do any flow control, and just use the rhel6.0 behaviour.
++         */
++        port->info->have_data(port, buf, ret);
++        qemu_free(buf);
++
++        virtqueue_push(vq, &elem, 0);
++    }
++    virtio_notify(vdev, vq);
++}
++
+ static void do_flush_queued_data(VirtIOSerialPort *port, VirtQueue *vq,
+                                  VirtIODevice *vdev)
+ {
+     assert(port);
+     assert(virtio_queue_ready(vq));
+ 
++    if (!virtio_serial_flow_control_enabled(port)) {
++        do_flush_queued_data_no_flow_control(port, vq, vdev);
++        return;
++    }
++
+     while (!port->throttled) {
+         unsigned int i;
+ 
+@@ -299,6 +335,15 @@ void virtio_serial_throttle_port(VirtIOSerialPort *port, bool throttle)
+     flush_queued_data(port);
+ }
+ 
++bool virtio_serial_flow_control_enabled(VirtIOSerialPort *port)
++{
++    if (!port) {
++        return false;
++    }
++
++    return port->vser->flow_control;
++}
++
+ /* Guest wants to notify us of some event */
+ static void handle_control_message(VirtIOSerial *vser, void *buf, size_t len)
+ {
+@@ -853,6 +898,11 @@ VirtIODevice *virtio_serial_init(DeviceState *dev, virtio_serial_conf *conf)
+ 
+     vser->qdev = dev;
+ 
++    vser->flow_control = true;
++    if (!conf->flow_control) {
++        vser->flow_control = false;
++    }
++
+     /*
+      * Register for the savevm section with the virtio-console name
+      * to preserve backward compat
+diff --git a/hw/virtio-serial.h b/hw/virtio-serial.h
+index de624c3..ecba281 100644
+--- a/hw/virtio-serial.h
++++ b/hw/virtio-serial.h
+@@ -48,6 +48,13 @@ struct virtio_console_control {
+ struct virtio_serial_conf {
+     /* Max. number of ports we can have for a the virtio-serial device */
+     uint32_t max_virtserial_ports;
++
++    /*
++     * Should this device behave the way it did in RHEL 6.0 (ie. no
++     * flow control)?  This will be necessary to allow migrations from
++     * a 6.0-machine type to older 6.0 code
++     */
++    uint32_t flow_control;
+ };
+ 
+ /* Some events for the internal messages (control packets) */
+@@ -204,4 +211,9 @@ size_t virtio_serial_guest_ready(VirtIOSerialPort *port);
+  */
+ void virtio_serial_throttle_port(VirtIOSerialPort *port, bool throttle);
+ 
++/*
++ * Does this machine type disable the use of flow control?
++ */
++bool virtio_serial_flow_control_enabled(VirtIOSerialPort *port);
++
+ #endif
+-- 
+1.7.3.2
+

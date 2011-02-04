@@ -1,0 +1,66 @@
+From 7cd116eb84fbe02da7a07cfced665c4291f3e05a Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 4 Feb 2011 08:20:35 -0200
+Subject: [RHEL6 qemu-kvm PATCH 04/27] Fold send_all() wrapper unix_write() into one function
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <043c20df4b0cf38a59dbd9e6564d17de0bc0cd49.1296806194.git.amit.shah@redhat.com>
+Patchwork-id: 17705
+O-Subject: [RHEL6.1 qemu PATCH v5 04/19] Fold send_all() wrapper unix_write()
+	into one function
+Bugzilla: 588916
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+The current send_all() wrapper for POSIX calls does nothing but call
+unix_write(). Merge them to simplify the code.
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 5fc9cfedfa09199e10b5f9b67dcd286bfeae4f7a)
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ qemu-char.c |    8 ++------
+ 1 files changed, 2 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-char.c |    8 ++------
+ 1 files changed, 2 insertions(+), 6 deletions(-)
+
+diff --git a/qemu-char.c b/qemu-char.c
+index e295a69..9af279f 100644
+--- a/qemu-char.c
++++ b/qemu-char.c
+@@ -495,9 +495,10 @@ int send_all(int fd, const void *buf, int len1)
+ 
+ #else
+ 
+-static int unix_write(int fd, const uint8_t *buf, int len1)
++int send_all(int fd, const void *_buf, int len1)
+ {
+     int ret, len;
++    const uint8_t *buf = _buf;
+ 
+     len = len1;
+     while (len > 0) {
+@@ -514,11 +515,6 @@ static int unix_write(int fd, const uint8_t *buf, int len1)
+     }
+     return len1 - len;
+ }
+-
+-int send_all(int fd, const void *buf, int len1)
+-{
+-    return unix_write(fd, buf, len1);
+-}
+ #endif /* !_WIN32 */
+ 
+ #ifndef _WIN32
+-- 
+1.7.3.2
+
