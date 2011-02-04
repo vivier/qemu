@@ -79,6 +79,11 @@
  * 'l'          target long (32 or 64 bit)
  * 'M'          just like 'l', except in user mode the value is
  *              multiplied by 2^20 (think Mebibyte)
+ * 'o'          octets (aka bytes)
+ *              user mode accepts an optional T, t, G, g, M, m, K, k
+ *              suffix, which multiplies the value by 2^40 for
+ *              suffixes T and t, 2^30 for suffixes G and g, 2^20 for
+ *              M and m, 2^10 for K and k
  * 'f'          double
  *              user mode accepts an optional G, g, M, m, K, k suffix,
  *              which multiplies the value by 2^30 for suffixes G and
@@ -4077,6 +4082,29 @@ static const mon_cmd_t *monitor_parse_command(Monitor *mon,
                 qdict_put(qdict, key, qint_from_int(val));
             }
             break;
+        case 'o':
+            {
+                int64_t val;
+                char *end;
+
+                while (qemu_isspace(*p)) {
+                    p++;
+                }
+                if (*typestr == '?') {
+                    typestr++;
+                    if (*p == '\0') {
+                        break;
+                    }
+                }
+                val = strtosz(p, &end);
+                if (val < 0) {
+                    monitor_printf(mon, "invalid size\n");
+                    goto fail;
+                }
+                qdict_put(qdict, key, qint_from_int(val));
+                p = end;
+            }
+            break;
         case 'f':
         case 'T':
             {
@@ -4612,6 +4640,7 @@ static int check_arg(const CmdArgs *cmd_args, QDict *args)
         case 'i':
         case 'l':
         case 'M':
+        case 'o':
             if (qobject_type(value) != QTYPE_QINT) {
                 qerror_report(QERR_INVALID_PARAMETER_TYPE, name, "int");
                 return -1;
