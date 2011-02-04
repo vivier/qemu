@@ -63,6 +63,66 @@ PropertyInfo qdev_prop_bit = {
     .print = print_bit,
 };
 
+/* --- Enumeration --- */
+/* Example usage:
+EnumTable foo_enum_table[] = {
+    {"bar", 1},
+    {"buz", 2},
+    {NULL, 0},
+};
+DEFINE_PROP_ENUM("foo", State, foo, 1, foo_enum_table),
+ */
+static int parse_enum(DeviceState *dev, Property *prop, const char *str)
+{
+    uint8_t *ptr = qdev_get_prop_ptr(dev, prop);
+    EnumTable *option = prop->data;
+
+    while (option->name != NULL) {
+        if (!strncmp(str, option->name, strlen(option->name))) {
+            *ptr = option->value;
+            return 0;
+        }
+        option++;
+    }
+    return -EINVAL;
+}
+
+static int print_enum(DeviceState *dev, Property *prop, char *dest, size_t len)
+{
+    uint32_t *p = qdev_get_prop_ptr(dev, prop);
+    EnumTable *option = (EnumTable*)prop->data;
+    while (option->name != NULL) {
+        if (*p == option->value) {
+            return snprintf(dest, len, "%s", option->name);
+        }
+        option++;
+    }
+    return 0;
+}
+
+static int print_enum_options(DeviceInfo *info, Property *prop, char *dest, size_t len)
+{
+    int ret = 0;
+    EnumTable *option = (EnumTable*)prop->data;
+    while (option->name != NULL) {
+        ret += snprintf(dest + ret, len - ret, "%s", option->name);
+        if (option[1].name != NULL) {
+            ret += snprintf(dest + ret, len - ret, "/");
+        }
+        option++;
+    }
+    return ret;
+}
+
+PropertyInfo qdev_prop_enum = {
+    .name  = "enum",
+    .type  = PROP_TYPE_ENUM,
+    .size  = sizeof(uint32_t),
+    .parse = parse_enum,
+    .print = print_enum,
+    .print_options = print_enum_options,
+};
+
 /* --- 8bit integer --- */
 
 static int parse_uint8(DeviceState *dev, Property *prop, const char *str)

@@ -99,6 +99,7 @@ enum PropertyType {
     PROP_TYPE_VLAN,
     PROP_TYPE_PTR,
     PROP_TYPE_BIT,
+    PROP_TYPE_ENUM,
 };
 
 struct PropertyInfo {
@@ -116,6 +117,11 @@ typedef struct GlobalProperty {
     const char *value;
     QTAILQ_ENTRY(GlobalProperty) next;
 } GlobalProperty;
+
+typedef struct EnumTable {
+    const char *name;
+    uint32_t    value;
+} EnumTable;
 
 /*** Board API.  This should go away once we have a machine config file.  ***/
 
@@ -210,6 +216,7 @@ extern PropertyInfo qdev_prop_drive;
 extern PropertyInfo qdev_prop_netdev;
 extern PropertyInfo qdev_prop_vlan;
 extern PropertyInfo qdev_prop_pci_devfn;
+extern PropertyInfo qdev_prop_enum;
 
 #define DEFINE_PROP(_name, _state, _field, _prop, _type) { \
         .name      = (_name),                                    \
@@ -231,6 +238,14 @@ extern PropertyInfo qdev_prop_pci_devfn;
         .offset    = offsetof(_state, _field)                    \
             + type_check(uint32_t,typeof_field(_state, _field)), \
         .defval    = (bool[]) { (_defval) },                     \
+        }
+#define DEFINE_PROP_ENUM(_name, _state, _field, _defval, _options) {    \
+        .name      = (_name),                                           \
+        .info      = &(qdev_prop_enum),                                 \
+        .offset    = offsetof(_state, _field)                           \
+            + type_check(uint32_t,typeof_field(_state, _field)),        \
+        .defval    = (uint32_t[]) { (_defval) },                        \
+        .data      = (void*)(_options),                                 \
         }
 
 #define DEFINE_PROP_UINT8(_n, _s, _f, _d)                       \
