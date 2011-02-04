@@ -314,6 +314,8 @@ check-qlist: check-qlist.o qlist.o qint.o qemu-malloc.o
 check-qfloat: check-qfloat.o qfloat.o qemu-malloc.o
 check-qjson: check-qjson.o qfloat.o qint.o qdict.o qstring.o qlist.o qbool.o qjson.o json-streamer.o json-lexer.o json-parser.o qemu-malloc.o
 
+QEMULIBS=libhw32 libhw64 libuser
+
 clean:
 # avoid old build problems by removing potentially incorrect old files
 	rm -f config.mak op-i386.h opc-i386.h gen-op-i386.h op-arm.h opc-arm.h gen-op-arm.h
@@ -324,7 +326,7 @@ clean:
 	rm -f trace-dtrace.dtrace trace-dtrace.dtrace-timestamp
 	rm -f trace-dtrace.h trace-dtrace.h-timestamp
 	$(MAKE) -C tests clean
-	for d in $(ALL_SUBDIRS) libhw32 libhw64 libuser; do \
+	for d in $(ALL_SUBDIRS) $(QEMULIBS) libcacard; do \
 	if test -d $$d; then $(MAKE) -C $$d $@ || exit 1; fi; \
         done
 
@@ -333,7 +335,7 @@ distclean: clean
 	rm -f config-all-devices.mak
 	rm -f roms/seabios/config.mak roms/vgabios/config.mak
 	rm -f qemu-{doc,tech}.{info,aux,cp,dvi,fn,info,ky,log,pg,toc,tp,vr}
-	for d in $(TARGET_DIRS) libhw32 libhw64 libuser; do \
+	for d in $(TARGET_DIRS) $(QEMULIBS); do \
 	rm -rf $$d || exit 1 ; \
         done
 

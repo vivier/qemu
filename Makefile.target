@@ -365,6 +365,12 @@ ARLIBS=../libqemu_common.a libqemu.a $(HWLIB)
 
 endif # CONFIG_SOFTMMU
 
+ifdef CONFIG_SMARTCARD
+libcacard-y = cac.o event.o passthru.o vcard.o vreader.o vcard_emul_nss.o vcard_emul_type.o card_7816.o
+
+obj-y += $(addprefix $(SRC_PATH)/libcacard/, $(libcacard-y))
+endif # CONFIG_SMARTCARD
+
 obj-y += $(addprefix ../, $(trace-obj-y))
 obj-$(CONFIG_GDBSTUB_XML) += gdbstub-xml.o
 
