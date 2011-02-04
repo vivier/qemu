@@ -1565,6 +1565,10 @@ static QEMUMachine pc_machine_rhel600 = {
             .driver   = "vmware-svga",
             .property = "rombar",
             .value    = stringify(0),
+        },{
+            .driver   = "virtio-serial-pci",
+            .property = "flow_control",
+            .value    = stringify(0),
         },
         { /* end of list */ }
     },

@@ -48,6 +48,13 @@ struct virtio_console_control {
 struct virtio_serial_conf {
     /* Max. number of ports we can have for a the virtio-serial device */
     uint32_t max_virtserial_ports;
+
+    /*
+     * Should this device behave the way it did in RHEL 6.0 (ie. no
+     * flow control)?  This will be necessary to allow migrations from
+     * a 6.0-machine type to older 6.0 code
+     */
+    uint32_t flow_control;
 };
 
 /* Some events for the internal messages (control packets) */
@@ -203,5 +210,10 @@ size_t virtio_serial_guest_ready(VirtIOSerialPort *port);
  * value here.
  */
 void virtio_serial_throttle_port(VirtIOSerialPort *port, bool throttle);
+
+/*
+ * Does this machine type disable the use of flow control?
+ */
+bool virtio_serial_flow_control_enabled(VirtIOSerialPort *port);
 
 #endif

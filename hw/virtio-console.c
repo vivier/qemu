@@ -63,12 +63,24 @@ static const QemuChrHandlers chr_handlers = {
     .fd_event = chr_event,
 };
 
+static const QemuChrHandlers chr_handlers_no_flow_control = {
+    .fd_can_read = chr_can_read,
+    .fd_read = chr_read,
+    .fd_event = chr_event,
+};
+
 static int generic_port_init(VirtConsole *vcon, VirtIOSerialDevice *dev)
 {
+    static const QemuChrHandlers *handlers;
+
     vcon->port.info = dev->info;
 
     if (vcon->chr) {
-        qemu_chr_add_handlers(vcon->chr, &chr_handlers, vcon);
+        handlers = &chr_handlers;
+        if (!virtio_serial_flow_control_enabled(&vcon->port)) {
+            handlers = &chr_handlers_no_flow_control;
+        }
+        qemu_chr_add_handlers(vcon->chr, handlers, vcon);
         vcon->port.info->have_data = flush_buf;
     }
     return 0;

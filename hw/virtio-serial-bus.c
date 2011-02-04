@@ -49,6 +49,8 @@ struct VirtIOSerial {
     uint32_t *ports_map;
 
     struct virtio_console_config config;
+
+    bool flow_control;
 };
 
 static VirtIOSerialPort *find_port_by_id(VirtIOSerial *vser, uint32_t id)
@@ -126,11 +128,45 @@ static void discard_vq_data(VirtQueue *vq, VirtIODevice *vdev)
     virtio_notify(vdev, vq);
 }
 
+static void do_flush_queued_data_no_flow_control(VirtIOSerialPort *port,
+                                                 VirtQueue *vq,
+                                                 VirtIODevice *vdev)
+{
+    VirtQueueElement elem;
+
+    while (!port->throttled && virtqueue_pop(vq, &elem)) {
+        uint8_t *buf;
+        size_t ret, buf_size;
+
+        buf_size = iov_size(elem.out_sg, elem.out_num);
+        buf = qemu_malloc(buf_size);
+        ret = iov_to_buf(elem.out_sg, elem.out_num, buf, 0, buf_size);
+
+        /*
+         * have_data has since been modified to return the number of
+         * bytes successfully consumed.  We can't act upon that
+         * information in the rhel6.0 implementation, so we'll discard
+         * it here.  virtio-console.c has been suitably updated to not
+         * do any flow control, and just use the rhel6.0 behaviour.
+         */
+        port->info->have_data(port, buf, ret);
+        qemu_free(buf);
+
+        virtqueue_push(vq, &elem, 0);
+    }
+    virtio_notify(vdev, vq);
+}
+
 static void do_flush_queued_data(VirtIOSerialPort *port, VirtQueue *vq,
                                  VirtIODevice *vdev)
 {
     assert(port);
     assert(virtio_queue_ready(vq));
+
+    if (!virtio_serial_flow_control_enabled(port)) {
+        do_flush_queued_data_no_flow_control(port, vq, vdev);
+        return;
+    }
 
     while (!port->throttled) {
         unsigned int i;
@@ -297,6 +333,15 @@ void virtio_serial_throttle_port(VirtIOSerialPort *port, bool throttle)
     }
 
     flush_queued_data(port);
+}
+
+bool virtio_serial_flow_control_enabled(VirtIOSerialPort *port)
+{
+    if (!port) {
+        return false;
+    }
+
+    return port->vser->flow_control;
 }
 
 /* Guest wants to notify us of some event */
@@ -852,6 +897,11 @@ VirtIODevice *virtio_serial_init(DeviceState *dev, virtio_serial_conf *conf)
     vser->vdev.set_config = set_config;
 
     vser->qdev = dev;
+
+    vser->flow_control = true;
+    if (!conf->flow_control) {
+        vser->flow_control = false;
+    }
 
     /*
      * Register for the savevm section with the virtio-console name

@@ -964,6 +964,8 @@ static PCIDeviceInfo virtio_info[] = {
             DEFINE_VIRTIO_COMMON_FEATURES(VirtIOPCIProxy, host_features),
             DEFINE_PROP_UINT32("max_ports", VirtIOPCIProxy,
                                serial.max_virtserial_ports, 31),
+            DEFINE_PROP_UINT32("flow_control", VirtIOPCIProxy,
+                               serial.flow_control, 1),
             DEFINE_PROP_END_OF_LIST(),
         },
         .qdev.reset = virtio_pci_reset,
