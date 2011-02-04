@@ -265,6 +265,7 @@ void rtc_change_mon_event(struct tm *tm);
 void register_devices(void);
 
 int do_snapshot_blkdev(Monitor *mon, const QDict *qdict, QObject **ret_data);
+int do_block_resize(Monitor *mon, const QDict *qdict, QObject **ret_data);
 
 void add_boot_device_path(int32_t bootindex, DeviceState *dev,
                           const char *suffix);
