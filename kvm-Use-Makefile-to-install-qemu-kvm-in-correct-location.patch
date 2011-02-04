@@ -1,0 +1,66 @@
+From 245a9c407dcef32a29f28b26c1ed97c00d014e96 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Thu, 3 Feb 2011 11:22:26 -0200
+Subject: [PATCH 26/28] Use Makefile to install qemu-kvm in correct location
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1296732146-3876-1-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 17590
+O-Subject: [PATCH v2 RHEL6.1 qemu-kvm] Use Makefile to install qemu-kvm in
+	correct location
+Bugzilla: 672441
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+tracetool relies on the destination path for qemu-kvm when generating
+the .stp, so it doesn't work if we just mv the file afterwards. Do the
+right thing instead.
+
+In addition use QEMU's Makefile infrastructure for installing into the
+right directory, rather than trying to mangle the buildroot into the
+target directories one by one.
+
+BugZilla: https://bugzilla.redhat.com/show_bug.cgi?id=672441
+Upstream status: RHEL build specific
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+---
+ Makefile.target               |    5 +++--
+
+diff --git a/Makefile.target b/Makefile.target
+index 932fb2a..96f2efe 100644
+--- a/Makefile.target
++++ b/Makefile.target
+@@ -23,6 +23,7 @@ else
+ QEMU_PROG=qemu-system-$(TARGET_ARCH2)$(EXESUF)
+ endif
+ endif
++QEMU_BINDIR=$(bindir)
+ 
+ PROGS=$(QEMU_PROG)
+ 
+@@ -47,7 +48,7 @@ endif
+ $(QEMU_PROG).stp:
+ 	$(call quiet-command,sh $(SRC_PATH)/tracetool \
+ 		--$(TRACE_BACKEND) \
+-		--binary $(bindir)/$(QEMU_PROG) \
++		--binary $(QEMU_BINDIR)/$(QEMU_PROG) \
+ 		--target-arch $(TARGET_ARCH) \
+ 		--target-type $(TARGET_TYPE) \
+ 		--stap < $(SRC_PATH)/trace-events > $(QEMU_PROG).stp,"  GEN   $(QEMU_PROG).stp")
+@@ -390,7 +391,7 @@ endif
+ 
+ install: all
+ ifneq ($(PROGS),)
+-	$(INSTALL) -m 755 $(STRIP_OPT) $(PROGS) "$(DESTDIR)$(bindir)"
++	$(INSTALL) -m 755 $(STRIP_OPT) $(PROGS) "$(DESTDIR)$(QEMU_BINDIR)"
+ endif
+ ifdef CONFIG_SYSTEMTAP_TRACE
+ 	$(INSTALL_DIR) "$(DESTDIR)$(datadir)/../systemtap/tapset"
+-- 
+1.7.4.rc1.16.gd2f15e
+

@@ -1,0 +1,87 @@
+From b62ca8e7a52d6d18987d04e9c7cbbad3eef8023d Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Wed, 2 Feb 2011 15:08:48 -0200
+Subject: [PATCH 24/28] tap: safe sndbuf default
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <20110202150848.GA12274@redhat.com>
+Patchwork-id: 17513
+O-Subject: [PATCH resend RHEL6.1] tap: safe sndbuf default
+Bugzilla: 674539
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+commit f157ed202e51dc2492b201dc34ed28e89c973fb7
+Author: Michael S. Tsirkin <mst@redhat.com>
+Date:   Tue Feb 1 14:25:40 2011 +0200
+
+    tap: safe sndbuf default
+
+    With current sndbuf default value, a blocked
+    target guest can prevent another guest from
+    transmitting any packets. While current
+    sndbuf value (1M) is reported to help some
+    UDP based workloads, the default should
+    be safe (0).
+
+    Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+    Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=674539
+
+---
+ net/tap-linux.c |   13 +++++++++----
+ qemu-options.hx |    4 ++--
+ 2 files changed, 11 insertions(+), 6 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ net/tap-linux.c |   13 +++++++++----
+ qemu-options.hx |    4 ++--
+ 2 files changed, 11 insertions(+), 6 deletions(-)
+
+diff --git a/net/tap-linux.c b/net/tap-linux.c
+index a425ff0..00f84d4 100644
+--- a/net/tap-linux.c
++++ b/net/tap-linux.c
+@@ -80,12 +80,17 @@ int tap_open(char *ifname, int ifname_size, int *vnet_hdr, int vnet_hdr_required
+     return fd;
+ }
+ 
+-/* sndbuf should be set to a value lower than the tx queue
+- * capacity of any destination network interface.
++/* sndbuf implements a kind of flow control for tap.
++ * Unfortunately when it's enabled, and packets are sent
++ * to other guests on the same host, the receiver
++ * can lock up the transmitter indefinitely.
++ *
++ * To avoid packet loss, sndbuf should be set to a value lower than the tx
++ * queue capacity of any destination network interface.
+  * Ethernet NICs generally have txqueuelen=1000, so 1Mb is
+- * a good default, given a 1500 byte MTU.
++ * a good value, given a 1500 byte MTU.
+  */
+-#define TAP_DEFAULT_SNDBUF 1024*1024
++#define TAP_DEFAULT_SNDBUF 0
+ 
+ int tap_set_sndbuf(int fd, QemuOpts *opts)
+ {
+diff --git a/qemu-options.hx b/qemu-options.hx
+index 9178387..01a0a5b 100644
+--- a/qemu-options.hx
++++ b/qemu-options.hx
+@@ -913,8 +913,8 @@ DEF("net", HAS_ARG, QEMU_OPTION_net,
+     "                and 'dfile' (default=%s);\n"
+     "                use '[down]script=no' to disable script execution;\n"
+     "                use 'fd=h' to connect to an already opened TAP interface\n"
+-    "                use 'sndbuf=nbytes' to limit the size of the send buffer; the\n"
+-    "                default of 'sndbuf=1048576' can be disabled using 'sndbuf=0'\n"
++    "                use 'sndbuf=nbytes' to limit the size of the send buffer (the\n"
++    "                default is disabled 'sndbuf=0' to enable flow control set 'sndbuf=1048576')\n"
+     "                use vnet_hdr=off to avoid enabling the IFF_VNET_HDR tap flag; use\n"
+     "                vnet_hdr=on to make the lack of IFF_VNET_HDR support an error condition\n"
+     "                use vhost=on to enable experimental in kernel accelerator\n"
+-- 
+1.7.4.rc1.16.gd2f15e
+

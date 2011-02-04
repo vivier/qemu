@@ -1,0 +1,141 @@
+From 15f6d5acb6c9684a34c39a81076fd795ec481d47 Mon Sep 17 00:00:00 2001
+From: Gleb Natapov <gleb@redhat.com>
+Date: Thu, 6 Jan 2011 09:50:30 -0200
+Subject: [PATCH 16/28] Pass boot device list to firmware.
+
+RH-Author: Gleb Natapov <gleb@redhat.com>
+Message-id: <1294307430-1358-18-git-send-email-gleb@redhat.com>
+Patchwork-id: 15829
+O-Subject: [PATCH RHEL6.1 17/17] Pass boot device list to firmware.
+Bugzilla: 643687
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Signed-off-by: Gleb Natapov <gleb@redhat.com>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+
+Upstream commit: 962630f207a33b7de4316022884b5241e05491cd
+---
+ hw/fw_cfg.c |   14 ++++++++++++++
+ sysemu.h    |    1 +
+ vl.c        |   48 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 63 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/fw_cfg.c |   14 ++++++++++++++
+ sysemu.h    |    1 +
+ vl.c        |   48 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 63 insertions(+), 0 deletions(-)
+
+diff --git a/hw/fw_cfg.c b/hw/fw_cfg.c
+index ac56bc9..d0519e8 100644
+--- a/hw/fw_cfg.c
++++ b/hw/fw_cfg.c
+@@ -50,6 +50,7 @@ struct _FWCfgState {
+     FWCfgFiles *files;
+     uint16_t cur_entry;
+     uint32_t cur_offset;
++    Notifier machine_ready;
+ };
+ 
+ static void fw_cfg_write(FWCfgState *s, uint8_t value)
+@@ -312,6 +313,15 @@ int fw_cfg_add_file(FWCfgState *s,  const char *filename, uint8_t *data,
+     return 1;
+ }
+ 
++static void fw_cfg_machine_ready(struct Notifier* n)
++{
++    uint32_t len;
++    FWCfgState *s = container_of(n, FWCfgState, machine_ready);
++    char *bootindex = get_boot_devices_list(&len);
++
++    fw_cfg_add_file(s, "bootorder", (uint8_t*)bootindex, len);
++}
++
+ FWCfgState *fw_cfg_init(uint32_t ctl_port, uint32_t data_port,
+                         target_phys_addr_t ctl_addr, target_phys_addr_t data_addr)
+ {
+@@ -347,5 +357,9 @@ FWCfgState *fw_cfg_init(uint32_t ctl_port, uint32_t data_port,
+     vmstate_register(NULL, -1, &vmstate_fw_cfg, s);
+     qemu_register_reset(fw_cfg_reset, s);
+ 
++
++    s->machine_ready.notify = fw_cfg_machine_ready;
++    qemu_add_machine_init_done_notifier(&s->machine_ready);
++
+     return s;
+ }
+diff --git a/sysemu.h b/sysemu.h
+index 6d5dc53..bf6fa20 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -268,4 +268,5 @@ int do_snapshot_blkdev(Monitor *mon, const QDict *qdict, QObject **ret_data);
+ 
+ void add_boot_device_path(int32_t bootindex, DeviceState *dev,
+                           const char *suffix);
++char *get_boot_devices_list(uint32_t *size);
+ #endif
+diff --git a/vl.c b/vl.c
+index e9cf9c0..a9401f8 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2712,6 +2712,54 @@ void add_boot_device_path(int32_t bootindex, DeviceState *dev,
+     QTAILQ_INSERT_TAIL(&fw_boot_order, node, link);
+ }
+ 
++/*
++ * This function returns null terminated string that consist of new line
++ * separated device pathes.
++ *
++ * memory pointed by "size" is assigned total length of the array in bytes
++ *
++ */
++char *get_boot_devices_list(uint32_t *size)
++{
++    FWBootEntry *i;
++    uint32_t total = 0;
++    char *list = NULL;
++
++    QTAILQ_FOREACH(i, &fw_boot_order, link) {
++        char *devpath = NULL, *bootpath;
++        int len;
++
++        if (i->dev) {
++            devpath = qdev_get_fw_dev_path(i->dev);
++            assert(devpath);
++        }
++
++        if (i->suffix && devpath) {
++            bootpath = qemu_malloc(strlen(devpath) + strlen(i->suffix) + 1);
++            sprintf(bootpath, "%s%s", devpath, i->suffix);
++            qemu_free(devpath);
++        } else if (devpath) {
++            bootpath = devpath;
++        } else {
++            bootpath = strdup(i->suffix);
++            assert(bootpath);
++        }
++
++        if (total) {
++            list[total-1] = '\n';
++        }
++        len = strlen(bootpath) + 1;
++        list = qemu_realloc(list, total + len);
++        memcpy(&list[total], bootpath, len);
++        total += len;
++        qemu_free(bootpath);
++    }
++
++    *size = total;
++
++    return list;
++}
++
+ static void numa_add(const char *optarg)
+ {
+     char option[128];
+-- 
+1.7.4.rc1.16.gd2f15e
+

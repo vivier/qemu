@@ -1,0 +1,118 @@
+From 65daaccecf3b0ba17e93d1d61027eaa2da32dd78 Mon Sep 17 00:00:00 2001
+From: Gleb Natapov <gleb@redhat.com>
+Date: Thu, 6 Jan 2011 09:50:26 -0200
+Subject: [PATCH 13/28] Change fw_cfg_add_file() to get full file path as a parameter.
+
+RH-Author: Gleb Natapov <gleb@redhat.com>
+Message-id: <1294307430-1358-14-git-send-email-gleb@redhat.com>
+Patchwork-id: 15833
+O-Subject: [PATCH RHEL6.1 13/17] Change fw_cfg_add_file() to get full file path
+	as a parameter.
+Bugzilla: 643687
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Change fw_cfg_add_file() to get full file path as a parameter instead
+of building one internally. Two reasons for that. First caller may need
+to know how file is named. Second this moves policy of file naming out
+from fw_cfg. Platform may want to use more then two levels of
+directories for instance.
+
+Signed-off-by: Gleb Natapov <gleb@redhat.com>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+
+Upstream commit: de1f34cb6351c028ebcc61fea9fa78008ca1a529
+---
+ hw/fw_cfg.c |   16 ++++------------
+ hw/fw_cfg.h |    4 ++--
+ hw/loader.c |   16 ++++++++++++++--
+ 3 files changed, 20 insertions(+), 16 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/fw_cfg.c |   16 ++++------------
+ hw/fw_cfg.h |    4 ++--
+ hw/loader.c |   16 ++++++++++++++--
+ 3 files changed, 20 insertions(+), 16 deletions(-)
+
+diff --git a/hw/fw_cfg.c b/hw/fw_cfg.c
+index 43d72e6..ac56bc9 100644
+--- a/hw/fw_cfg.c
++++ b/hw/fw_cfg.c
+@@ -274,10 +274,9 @@ int fw_cfg_add_callback(FWCfgState *s, uint16_t key, FWCfgCallback callback,
+     return 1;
+ }
+ 
+-int fw_cfg_add_file(FWCfgState *s,  const char *dir, const char *filename,
+-                    uint8_t *data, uint32_t len)
++int fw_cfg_add_file(FWCfgState *s,  const char *filename, uint8_t *data,
++                    uint32_t len)
+ {
+-    const char *basename;
+     int i, index;
+ 
+     if (!s->files) {
+@@ -294,15 +293,8 @@ int fw_cfg_add_file(FWCfgState *s,  const char *dir, const char *filename,
+ 
+     fw_cfg_add_bytes(s, FW_CFG_FILE_FIRST + index, data, len);
+ 
+-    basename = strrchr(filename, '/');
+-    if (basename) {
+-        basename++;
+-    } else {
+-        basename = filename;
+-    }
+-
+-    snprintf(s->files->f[index].name, sizeof(s->files->f[index].name),
+-             "%s/%s", dir, basename);
++    pstrcpy(s->files->f[index].name, sizeof(s->files->f[index].name),
++            filename);
+     for (i = 0; i < index; i++) {
+         if (strcmp(s->files->f[index].name, s->files->f[i].name) == 0) {
+             FW_CFG_DPRINTF("%s: skip duplicate: %s\n", __FUNCTION__,
+diff --git a/hw/fw_cfg.h b/hw/fw_cfg.h
+index c1019d0..8bb549b 100644
+--- a/hw/fw_cfg.h
++++ b/hw/fw_cfg.h
+@@ -60,8 +60,8 @@ int fw_cfg_add_i32(FWCfgState *s, uint16_t key, uint32_t value);
+ int fw_cfg_add_i64(FWCfgState *s, uint16_t key, uint64_t value);
+ int fw_cfg_add_callback(FWCfgState *s, uint16_t key, FWCfgCallback callback,
+                         void *callback_opaque, uint8_t *data, size_t len);
+-int fw_cfg_add_file(FWCfgState *s, const char *dir, const char *filename,
+-                    uint8_t *data, uint32_t len);
++int fw_cfg_add_file(FWCfgState *s, const char *filename, uint8_t *data,
++                    uint32_t len);
+ FWCfgState *fw_cfg_init(uint32_t ctl_port, uint32_t data_port,
+                         target_phys_addr_t crl_addr, target_phys_addr_t data_addr);
+ 
+diff --git a/hw/loader.c b/hw/loader.c
+index b3bbd77..215dcb3 100644
+--- a/hw/loader.c
++++ b/hw/loader.c
+@@ -593,8 +593,20 @@ int rom_add_file(const char *file, const char *fw_dir,
+     }
+     close(fd);
+     rom_insert(rom);
+-    if (rom->fw_file && fw_cfg)
+-        fw_cfg_add_file(fw_cfg, rom->fw_dir, rom->fw_file, rom->data, rom->romsize);
++    if (rom->fw_file && fw_cfg) {
++        const char *basename;
++        char fw_file_name[56];
++
++        basename = strrchr(rom->fw_file, '/');
++        if (basename) {
++            basename++;
++        } else {
++            basename = rom->fw_file;
++        }
++        snprintf(fw_file_name, sizeof(fw_file_name), "%s/%s", rom->fw_dir,
++                 basename);
++        fw_cfg_add_file(fw_cfg, fw_file_name, rom->data, rom->romsize);
++    }
+     return 0;
+ 
+ err:
+-- 
+1.7.4.rc1.16.gd2f15e
+

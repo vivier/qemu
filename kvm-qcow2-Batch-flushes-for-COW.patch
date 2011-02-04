@@ -1,0 +1,125 @@
+From c0b502933a26094be92f1427544cb07097ed659b Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 1 Feb 2011 13:32:41 -0200
+Subject: [PATCH 21/28] qcow2: Batch flushes for COW
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1296567161-8837-6-git-send-email-kwolf@redhat.com>
+Patchwork-id: 17412
+O-Subject: [RHEL-6.1 qemu-kvm PATCH v2 5/5] qcow2: Batch flushes for COW
+Bugzilla: 635527
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 635527
+
+qcow2 calls bdrv_flush() after performing COW in order to ensure that the
+L2 table change is never written before the copy is safe on disk. Now that the
+L2 table is cached, we can wait with flushing until we write out the next L2
+table.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 3de0a2944bdb3047dce275560631834bcb4afe22)
+---
+ block/qcow2-cache.c   |   20 +++++++++++++++++---
+ block/qcow2-cluster.c |    2 +-
+ block/qcow2.h         |    1 +
+ 3 files changed, 19 insertions(+), 4 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ block/qcow2-cache.c   |   20 +++++++++++++++++---
+ block/qcow2-cluster.c |    2 +-
+ block/qcow2.h         |    1 +
+ 3 files changed, 19 insertions(+), 4 deletions(-)
+
+diff --git a/block/qcow2-cache.c b/block/qcow2-cache.c
+index 5f1740b..8f2955b 100644
+--- a/block/qcow2-cache.c
++++ b/block/qcow2-cache.c
+@@ -38,6 +38,7 @@ struct Qcow2Cache {
+     int                     size;
+     Qcow2CachedTable*       entries;
+     struct Qcow2Cache*      depends;
++    bool                    depends_on_flush;
+     bool                    writethrough;
+ };
+ 
+@@ -85,13 +86,15 @@ static int qcow2_cache_flush_dependency(BlockDriverState *bs, Qcow2Cache *c)
+     }
+ 
+     c->depends = NULL;
++    c->depends_on_flush = false;
++
+     return 0;
+ }
+ 
+ static int qcow2_cache_entry_flush(BlockDriverState *bs, Qcow2Cache *c, int i)
+ {
+     BDRVQcowState *s = bs->opaque;
+-    int ret;
++    int ret = 0;
+ 
+     if (!c->entries[i].dirty || !c->entries[i].offset) {
+         return 0;
+@@ -99,11 +102,17 @@ static int qcow2_cache_entry_flush(BlockDriverState *bs, Qcow2Cache *c, int i)
+ 
+     if (c->depends) {
+         ret = qcow2_cache_flush_dependency(bs, c);
+-        if (ret < 0) {
+-            return ret;
++    } else if (c->depends_on_flush) {
++        ret = bdrv_flush(bs->file);
++        if (ret >= 0) {
++            c->depends_on_flush = false;
+         }
+     }
+ 
++    if (ret < 0) {
++        return ret;
++    }
++
+     if (c == s->refcount_block_cache) {
+         BLKDBG_EVENT(bs->file, BLKDBG_REFBLOCK_UPDATE_PART);
+     } else if (c == s->l2_table_cache) {
+@@ -167,6 +176,11 @@ int qcow2_cache_set_dependency(BlockDriverState *bs, Qcow2Cache *c,
+     return 0;
+ }
+ 
++void qcow2_cache_depends_on_flush(Qcow2Cache *c)
++{
++    c->depends_on_flush = true;
++}
++
+ static int qcow2_cache_find_entry_to_replace(Qcow2Cache *c)
+ {
+     int i;
+diff --git a/block/qcow2-cluster.c b/block/qcow2-cluster.c
+index d0eff2a..9779cca 100644
+--- a/block/qcow2-cluster.c
++++ b/block/qcow2-cluster.c
+@@ -630,7 +630,7 @@ int qcow2_alloc_cluster_link_l2(BlockDriverState *bs, QCowL2Meta *m)
+      * handled.
+      */
+     if (cow) {
+-        bdrv_flush(bs->file);
++        qcow2_cache_depends_on_flush(s->l2_table_cache);
+     }
+ 
+     qcow2_cache_set_dependency(bs, s->l2_table_cache, s->refcount_block_cache);
+diff --git a/block/qcow2.h b/block/qcow2.h
+index d040cc9..bc3a4db 100644
+--- a/block/qcow2.h
++++ b/block/qcow2.h
+@@ -229,6 +229,7 @@ void qcow2_cache_entry_mark_dirty(Qcow2Cache *c, void *table);
+ int qcow2_cache_flush(BlockDriverState *bs, Qcow2Cache *c);
+ int qcow2_cache_set_dependency(BlockDriverState *bs, Qcow2Cache *c,
+     Qcow2Cache *dependency);
++void qcow2_cache_depends_on_flush(Qcow2Cache *c);
+ 
+ int qcow2_cache_get(BlockDriverState *bs, Qcow2Cache *c, uint64_t offset,
+     void **table);
+-- 
+1.7.4.rc1.16.gd2f15e
+

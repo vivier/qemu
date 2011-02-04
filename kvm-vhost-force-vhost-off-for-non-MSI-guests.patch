@@ -1,0 +1,307 @@
+From f43ae8fd243fff753a30340c6f64ed05781aeb05 Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Thu, 3 Feb 2011 16:00:06 -0200
+Subject: [PATCH 28/28] vhost: force vhost off for non-MSI guests
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <20110203160005.GA9768@redhat.com>
+Patchwork-id: 17637
+O-Subject: [PATCHv2 RHEL6.1] vhost: force vhost off for non-MSI guests
+Bugzilla: 674562
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+commit 5430a28fe452907c9e1b2097e073bc1ea4b29f39
+Author: mst@redhat.com <mst@redhat.com>
+Date:   Tue Feb 1 22:13:42 2011 +0200
+
+    vhost: force vhost off for non-MSI guests
+
+    When MSI is off, each interrupt needs to be bounced through the io
+    thread when it's set/cleared, so vhost-net causes more context
+    switches and
+    higher CPU utilization than userspace virtio which handles
+    networking in the same thread.
+
+    We'll need to fix this by adding level irq support in kvm irqfd,
+    for now disable vhost-net in these configurations.
+
+    Added a vhostforce flag to force vhost-net back on.
+
+    Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+    Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=674562
+
+---
+
+Changes from v1:
+	no functional changes, rebased to rhel6/master
+	only virtio-net chunk was modified
+
+ hw/vhost.c      |   10 +++++++++-
+ hw/vhost.h      |    4 +++-
+ hw/vhost_net.c  |   24 ++++++++++++++++++------
+ hw/vhost_net.h  |    3 ++-
+ hw/virtio-net.c |    6 +++++-
+ hw/virtio-pci.c |    7 +++++++
+ hw/virtio.h     |    1 +
+ net/tap.c       |    6 ++++--
+ qemu-options.hx |    4 +++-
+ 9 files changed, 52 insertions(+), 13 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/vhost.c      |   10 +++++++++-
+ hw/vhost.h      |    4 +++-
+ hw/vhost_net.c  |   24 ++++++++++++++++++------
+ hw/vhost_net.h  |    3 ++-
+ hw/virtio-net.c |    6 +++++-
+ hw/virtio-pci.c |    7 +++++++
+ hw/virtio.h     |    1 +
+ net/tap.c       |    6 ++++--
+ qemu-options.hx |    4 +++-
+ 9 files changed, 52 insertions(+), 13 deletions(-)
+
+diff --git a/hw/vhost.c b/hw/vhost.c
+index 1f3852d..aaa34e4 100644
+--- a/hw/vhost.c
++++ b/hw/vhost.c
+@@ -583,7 +583,7 @@ static void vhost_virtqueue_cleanup(struct vhost_dev *dev,
+                               0, virtio_queue_get_desc_size(vdev, idx));
+ }
+ 
+-int vhost_dev_init(struct vhost_dev *hdev, int devfd)
++int vhost_dev_init(struct vhost_dev *hdev, int devfd, bool force)
+ {
+     uint64_t features;
+     int r;
+@@ -615,6 +615,7 @@ int vhost_dev_init(struct vhost_dev *hdev, int devfd)
+     hdev->log_enabled = false;
+     hdev->started = false;
+     cpu_register_phys_memory_client(&hdev->client);
++    hdev->force = force;
+     return 0;
+ fail:
+     r = -errno;
+@@ -629,6 +630,13 @@ void vhost_dev_cleanup(struct vhost_dev *hdev)
+     close(hdev->control);
+ }
+ 
++bool vhost_dev_query(struct vhost_dev *hdev, VirtIODevice *vdev)
++{
++    return !vdev->binding->query_guest_notifiers ||
++        vdev->binding->query_guest_notifiers(vdev->binding_opaque) ||
++        hdev->force;
++}
++
+ int vhost_dev_start(struct vhost_dev *hdev, VirtIODevice *vdev)
+ {
+     int i, r;
+diff --git a/hw/vhost.h b/hw/vhost.h
+index 86dd834..c8c595a 100644
+--- a/hw/vhost.h
++++ b/hw/vhost.h
+@@ -38,10 +38,12 @@ struct vhost_dev {
+     bool log_enabled;
+     vhost_log_chunk_t *log;
+     unsigned long long log_size;
++    bool force;
+ };
+ 
+-int vhost_dev_init(struct vhost_dev *hdev, int devfd);
++int vhost_dev_init(struct vhost_dev *hdev, int devfd, bool force);
+ void vhost_dev_cleanup(struct vhost_dev *hdev);
++bool vhost_dev_query(struct vhost_dev *hdev, VirtIODevice *vdev);
+ int vhost_dev_start(struct vhost_dev *hdev, VirtIODevice *vdev);
+ void vhost_dev_stop(struct vhost_dev *hdev, VirtIODevice *vdev);
+ 
+diff --git a/hw/vhost_net.c b/hw/vhost_net.c
+index 430bd6e..1915ab8 100644
+--- a/hw/vhost_net.c
++++ b/hw/vhost_net.c
+@@ -82,7 +82,8 @@ static int vhost_net_get_fd(VLANClientState *backend)
+     }
+ }
+ 
+-struct vhost_net *vhost_net_init(VLANClientState *backend, int devfd)
++struct vhost_net *vhost_net_init(VLANClientState *backend, int devfd,
++                                 bool force)
+ {
+     int r;
+     struct vhost_net *net = qemu_malloc(sizeof *net);
+@@ -99,7 +100,7 @@ struct vhost_net *vhost_net_init(VLANClientState *backend, int devfd)
+         (1 << VHOST_NET_F_VIRTIO_NET_HDR);
+     net->backend = r;
+ 
+-    r = vhost_dev_init(&net->dev, devfd);
++    r = vhost_dev_init(&net->dev, devfd, force);
+     if (r < 0) {
+         goto fail;
+     }
+@@ -122,6 +123,11 @@ fail:
+     return NULL;
+ }
+ 
++bool vhost_net_query(VHostNetState *net, VirtIODevice *dev)
++{
++    return vhost_dev_query(&net->dev, dev);
++}
++
+ int vhost_net_start(struct vhost_net *net,
+                     VirtIODevice *dev)
+ {
+@@ -189,15 +195,21 @@ void vhost_net_cleanup(struct vhost_net *net)
+     qemu_free(net);
+ }
+ #else
+-struct vhost_net *vhost_net_init(VLANClientState *backend, int devfd)
++struct vhost_net *vhost_net_init(VLANClientState *backend, int devfd,
++                                 bool force)
++{
++    return NULL;
++}
++
++bool vhost_net_query(VHostNetState *net, VirtIODevice *dev)
+ {
+-	return NULL;
++    return false;
+ }
+ 
+ int vhost_net_start(struct vhost_net *net,
+ 		    VirtIODevice *dev)
+ {
+-	return -ENOSYS;
++    return -ENOSYS;
+ }
+ void vhost_net_stop(struct vhost_net *net,
+ 		    VirtIODevice *dev)
+@@ -210,7 +222,7 @@ void vhost_net_cleanup(struct vhost_net *net)
+ 
+ unsigned vhost_net_get_features(struct vhost_net *net, unsigned features)
+ {
+-	return features;
++    return features;
+ }
+ void vhost_net_ack_features(struct vhost_net *net, unsigned features)
+ {
+diff --git a/hw/vhost_net.h b/hw/vhost_net.h
+index 6c18ff7..91e40b1 100644
+--- a/hw/vhost_net.h
++++ b/hw/vhost_net.h
+@@ -6,8 +6,9 @@
+ struct vhost_net;
+ typedef struct vhost_net VHostNetState;
+ 
+-VHostNetState *vhost_net_init(VLANClientState *backend, int devfd);
++VHostNetState *vhost_net_init(VLANClientState *backend, int devfd, bool force);
+ 
++bool vhost_net_query(VHostNetState *net, VirtIODevice *dev);
+ int vhost_net_start(VHostNetState *net, VirtIODevice *dev);
+ void vhost_net_stop(VHostNetState *net, VirtIODevice *dev);
+ 
+diff --git a/hw/virtio-net.c b/hw/virtio-net.c
+index ddf7ed1..21965a4 100644
+--- a/hw/virtio-net.c
++++ b/hw/virtio-net.c
+@@ -116,7 +116,11 @@ static void virtio_net_set_status(struct VirtIODevice *vdev, uint8_t status)
+         return;
+     }
+     if (!n->vhost_started) {
+-        int r = vhost_net_start(tap_get_vhost_net(n->nic->nc.peer), &n->vdev);
++        int r;
++        if (!vhost_net_query(tap_get_vhost_net(n->nic->nc.peer), &n->vdev)) {
++            return;
++        }
++        r = vhost_net_start(tap_get_vhost_net(n->nic->nc.peer), vdev);
+         if (r < 0) {
+             fprintf(stderr, "unable to start vhost net: %d: "
+                     "falling back on userspace virtio\n", -r);
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index 4851d69..fcd7aa2 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -646,6 +646,12 @@ static int virtio_pci_set_guest_notifier(void *opaque, int n, bool assign)
+     return 0;
+ }
+ 
++static bool virtio_pci_query_guest_notifiers(void *opaque)
++{
++    VirtIOPCIProxy *proxy = opaque;
++    return msix_enabled(&proxy->pci_dev);
++}
++
+ static int virtio_pci_set_guest_notifiers(void *opaque, bool assign)
+ {
+     VirtIOPCIProxy *proxy = opaque;
+@@ -735,6 +741,7 @@ static const VirtIOBindings virtio_pci_bindings = {
+     .save_queue = virtio_pci_save_queue,
+     .load_queue = virtio_pci_load_queue,
+     .get_features = virtio_pci_get_features,
++    .query_guest_notifiers = virtio_pci_query_guest_notifiers,
+     .set_host_notifier = virtio_pci_set_host_notifier,
+     .set_guest_notifiers = virtio_pci_set_guest_notifiers,
+     .vmstate_change = virtio_pci_vmstate_change,
+diff --git a/hw/virtio.h b/hw/virtio.h
+index 446e116..14bc41a 100644
+--- a/hw/virtio.h
++++ b/hw/virtio.h
+@@ -90,6 +90,7 @@ typedef struct {
+     int (*load_config)(void * opaque, QEMUFile *f);
+     int (*load_queue)(void * opaque, int n, QEMUFile *f);
+     unsigned (*get_features)(void * opaque);
++    bool (*query_guest_notifiers)(void * opaque);
+     int (*set_guest_notifiers)(void * opaque, bool assigned);
+     int (*set_host_notifier)(void * opaque, int n, bool assigned);
+     void (*vmstate_change)(void * opaque, bool running);
+diff --git a/net/tap.c b/net/tap.c
+index 25d64f4..5b229be 100644
+--- a/net/tap.c
++++ b/net/tap.c
+@@ -491,8 +491,10 @@ int net_init_tap(QemuOpts *opts, Monitor *mon, const char *name, VLANState *vlan
+         }
+     }
+ 
+-    if (qemu_opt_get_bool(opts, "vhost", !!qemu_opt_get(opts, "vhostfd"))) {
++    if (qemu_opt_get_bool(opts, "vhost", !!qemu_opt_get(opts, "vhostfd") ||
++                          qemu_opt_get_bool(opts, "vhostforce", false))) {
+         int vhostfd, r;
++        bool force = qemu_opt_get_bool(opts, "vhostforce", false);
+         if (qemu_opt_get(opts, "vhostfd")) {
+             r = net_handle_fd_param(mon, qemu_opt_get(opts, "vhostfd"));
+             if (r == -1) {
+@@ -502,7 +504,7 @@ int net_init_tap(QemuOpts *opts, Monitor *mon, const char *name, VLANState *vlan
+         } else {
+             vhostfd = -1;
+         }
+-        s->vhost_net = vhost_net_init(&s->nc, vhostfd);
++        s->vhost_net = vhost_net_init(&s->nc, vhostfd, force);
+         if (!s->vhost_net) {
+             error_report("vhost-net requested but could not be initialized");
+             return -1;
+diff --git a/qemu-options.hx b/qemu-options.hx
+index 01a0a5b..cba033d 100644
+--- a/qemu-options.hx
++++ b/qemu-options.hx
+@@ -907,7 +907,7 @@ DEF("net", HAS_ARG, QEMU_OPTION_net,
+     "-net tap[,vlan=n][,name=str],ifname=name\n"
+     "                connect the host TAP network interface to VLAN 'n'\n"
+ #else
+-    "-net tap[,vlan=n][,name=str][,fd=h][,ifname=name][,script=file][,downscript=dfile][,sndbuf=nbytes][,vnet_hdr=on|off][,vhost=on|off][,vhostfd=h]\n"
++    "-net tap[,vlan=n][,name=str][,fd=h][,ifname=name][,script=file][,downscript=dfile][,sndbuf=nbytes][,vnet_hdr=on|off][,vhost=on|off][,vhostfd=h][,vhostforce=on|off]\n"
+     "                connect the host TAP network interface to VLAN 'n' and use the\n"
+     "                network scripts 'file' (default=%s)\n"
+     "                and 'dfile' (default=%s);\n"
+@@ -918,6 +918,8 @@ DEF("net", HAS_ARG, QEMU_OPTION_net,
+     "                use vnet_hdr=off to avoid enabling the IFF_VNET_HDR tap flag; use\n"
+     "                vnet_hdr=on to make the lack of IFF_VNET_HDR support an error condition\n"
+     "                use vhost=on to enable experimental in kernel accelerator\n"
++    "                    (only has effect for virtio guests which use MSIX)\n"
++    "                use vhostforce=on to force vhost on for non-MSIX virtio guests\n"
+     "                use 'vhostfd=h' to connect to an already opened vhost net device\n"
+ #endif
+     "-net socket[,vlan=n][,name=str][,fd=h][,listen=[host]:port][,connect=host:port]\n"
+-- 
+1.7.4.rc1.16.gd2f15e
+

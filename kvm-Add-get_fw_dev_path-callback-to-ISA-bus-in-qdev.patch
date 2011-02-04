@@ -1,0 +1,69 @@
+From 56fe3d43fcec8de03670cb174de94e0c945b34f9 Mon Sep 17 00:00:00 2001
+From: Gleb Natapov <gleb@redhat.com>
+Date: Thu, 6 Jan 2011 09:50:17 -0200
+Subject: [PATCH 04/28] Add get_fw_dev_path callback to ISA bus in qdev.
+
+RH-Author: Gleb Natapov <gleb@redhat.com>
+Message-id: <1294307430-1358-5-git-send-email-gleb@redhat.com>
+Patchwork-id: 15825
+O-Subject: [PATCH RHEL6.1 04/17] Add get_fw_dev_path callback to ISA bus in qdev.
+Bugzilla: 643687
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Use device ioports to create unique device path.
+
+Signed-off-by: Gleb Natapov <gleb@redhat.com>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+
+Upstream commit: 6a26e1197db1684798c4255955c04e31270eccb8
+---
+ hw/isa-bus.c |   16 ++++++++++++++++
+ 1 files changed, 16 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/isa-bus.c |   16 ++++++++++++++++
+ 1 files changed, 16 insertions(+), 0 deletions(-)
+
+diff --git a/hw/isa-bus.c b/hw/isa-bus.c
+index ecc6183..1b18ab6 100644
+--- a/hw/isa-bus.c
++++ b/hw/isa-bus.c
+@@ -30,11 +30,13 @@ struct ISABus {
+ static ISABus *isabus;
+ 
+ static void isabus_dev_print(Monitor *mon, DeviceState *dev, int indent);
++static char *isabus_get_fw_dev_path(DeviceState *dev);
+ 
+ static struct BusInfo isa_bus_info = {
+     .name      = "ISA",
+     .size      = sizeof(ISABus),
+     .print_dev = isabus_dev_print,
++    .get_fw_dev_path = isabus_get_fw_dev_path,
+ };
+ 
+ ISABus *isa_bus_new(DeviceState *dev)
+@@ -187,4 +189,18 @@ static void isabus_register_devices(void)
+     sysbus_register_withprop(&isabus_bridge_info);
+ }
+ 
++static char *isabus_get_fw_dev_path(DeviceState *dev)
++{
++    ISADevice *d = (ISADevice*)dev;
++    char path[40];
++    int off;
++
++    off = snprintf(path, sizeof(path), "%s", qdev_fw_name(dev));
++    if (d->nioports) {
++        snprintf(path + off, sizeof(path) - off, "@%04x", d->ioports[0]);
++    }
++
++    return strdup(path);
++}
++
+ device_init(isabus_register_devices)
+-- 
+1.7.4.rc1.16.gd2f15e
+

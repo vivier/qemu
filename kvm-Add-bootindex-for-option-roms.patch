@@ -1,0 +1,377 @@
+From f2f5dcb4011e8720ebdaecb7eae6dcb95a3bae40 Mon Sep 17 00:00:00 2001
+From: Gleb Natapov <gleb@redhat.com>
+Date: Thu, 6 Jan 2011 09:50:27 -0200
+Subject: [PATCH 14/28] Add bootindex for option roms.
+
+RH-Author: Gleb Natapov <gleb@redhat.com>
+Message-id: <1294307430-1358-15-git-send-email-gleb@redhat.com>
+Patchwork-id: 15835
+O-Subject: [PATCH RHEL6.1 14/17] Add bootindex for option roms.
+Bugzilla: 643687
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Extend -option-rom command to have additional parameter ,bootindex=.
+
+Signed-off-by: Gleb Natapov <gleb@redhat.com>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+
+Upstream commit: 2e55e84282c545aeab8f5c9dd52a8073deaf3dbc
+---
+ hw/eepro100.c |    2 +-
+ hw/loader.c   |   16 +++++++++++-----
+ hw/loader.h   |    8 ++++----
+ hw/ne2000.c   |    2 +-
+ hw/nseries.c  |    4 ++--
+ hw/palm.c     |    4 ++--
+ hw/pc.c       |   18 ++++++++++++------
+ hw/pci.c      |    2 +-
+ hw/pcnet.c    |    2 +-
+ qemu-config.c |   17 +++++++++++++++++
+ sysemu.h      |    6 +++++-
+ vl.c          |   11 +++++++++--
+ 12 files changed, 66 insertions(+), 26 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/eepro100.c |    2 +-
+ hw/loader.c   |   16 +++++++++++-----
+ hw/loader.h   |    8 ++++----
+ hw/ne2000.c   |    2 +-
+ hw/nseries.c  |    4 ++--
+ hw/palm.c     |    4 ++--
+ hw/pc.c       |   18 ++++++++++++------
+ hw/pci.c      |    2 +-
+ hw/pcnet.c    |    2 +-
+ qemu-config.c |   17 +++++++++++++++++
+ sysemu.h      |    6 +++++-
+ vl.c          |   11 +++++++++--
+ 12 files changed, 66 insertions(+), 26 deletions(-)
+
+diff --git a/hw/eepro100.c b/hw/eepro100.c
+index 5dfd32d..febb48c 100644
+--- a/hw/eepro100.c
++++ b/hw/eepro100.c
+@@ -1856,7 +1856,7 @@ static int nic_init(PCIDevice *pci_dev, uint32_t device)
+         if (!loaded) {
+             char fname[32];
+             snprintf(fname, sizeof(fname), "pxe-%s.bin", s->nic->nc.model);
+-            rom_add_option(fname);
++            rom_add_option(fname, -1);
+             loaded = 1;
+         }
+     }
+diff --git a/hw/loader.c b/hw/loader.c
+index 215dcb3..379928d 100644
+--- a/hw/loader.c
++++ b/hw/loader.c
+@@ -107,7 +107,7 @@ int load_image_targphys(const char *filename,
+ 
+     size = get_image_size(filename);
+     if (size > 0)
+-        rom_add_file_fixed(filename, addr);
++        rom_add_file_fixed(filename, addr, -1);
+     return size;
+ }
+ 
+@@ -558,10 +558,11 @@ static void rom_insert(Rom *rom)
+ }
+ 
+ int rom_add_file(const char *file, const char *fw_dir,
+-                 target_phys_addr_t addr)
++                 target_phys_addr_t addr, int32_t bootindex)
+ {
+     Rom *rom;
+     int rc, fd = -1;
++    char devpath[100];
+ 
+     rom = qemu_mallocz(sizeof(*rom));
+     rom->name = qemu_strdup(file);
+@@ -606,7 +607,12 @@ int rom_add_file(const char *file, const char *fw_dir,
+         snprintf(fw_file_name, sizeof(fw_file_name), "%s/%s", rom->fw_dir,
+                  basename);
+         fw_cfg_add_file(fw_cfg, fw_file_name, rom->data, rom->romsize);
++        snprintf(devpath, sizeof(devpath), "/rom@%s", fw_file_name);
++    } else {
++        snprintf(devpath, sizeof(devpath), "/rom@" TARGET_FMT_plx, addr);
+     }
++
++    add_boot_device_path(bootindex, NULL, devpath);
+     return 0;
+ 
+ err:
+@@ -638,14 +644,14 @@ int rom_add_vga(const char *file)
+ {
+     if (!rom_enable_driver_roms)
+         return 0;
+-    return rom_add_file(file, "vgaroms", 0);
++    return rom_add_file(file, "vgaroms", 0, -1);
+ }
+ 
+-int rom_add_option(const char *file)
++int rom_add_option(const char *file, int32_t bootindex)
+ {
+     if (!rom_enable_driver_roms)
+         return 0;
+-    return rom_add_file(file, "genroms", 0);
++    return rom_add_file(file, "genroms", 0, bootindex);
+ }
+ 
+ static void rom_reset(void *unused)
+diff --git a/hw/loader.h b/hw/loader.h
+index 8ff3c94..27e2022 100644
+--- a/hw/loader.h
++++ b/hw/loader.h
+@@ -21,7 +21,7 @@ void pstrcpy_targphys(const char *name,
+ 
+ 
+ int rom_add_file(const char *file, const char *fw_dir,
+-                 target_phys_addr_t addr);
++                 target_phys_addr_t addr, int32_t bootindex);
+ int rom_add_blob(const char *name, const void *blob, size_t len,
+                  target_phys_addr_t addr);
+ int rom_load_all(void);
+@@ -30,8 +30,8 @@ int rom_copy(uint8_t *dest, target_phys_addr_t addr, size_t size);
+ void *rom_ptr(target_phys_addr_t addr);
+ void do_info_roms(Monitor *mon);
+ 
+-#define rom_add_file_fixed(_f, _a)              \
+-    rom_add_file(_f, NULL, _a)
++#define rom_add_file_fixed(_f, _a, _i)          \
++    rom_add_file(_f, NULL, _a, _i)
+ #define rom_add_blob_fixed(_f, _b, _l, _a)      \
+     rom_add_blob(_f, _b, _l, _a)
+ 
+@@ -43,6 +43,6 @@ void do_info_roms(Monitor *mon);
+ 
+ extern int rom_enable_driver_roms;
+ int rom_add_vga(const char *file);
+-int rom_add_option(const char *file);
++int rom_add_option(const char *file, int32_t bootindex);
+ 
+ #endif
+diff --git a/hw/ne2000.c b/hw/ne2000.c
+index 2b61aac..7f514d9 100644
+--- a/hw/ne2000.c
++++ b/hw/ne2000.c
+@@ -742,7 +742,7 @@ static int pci_ne2000_init(PCIDevice *pci_dev)
+     if (!pci_dev->qdev.hotplugged) {
+         static int loaded = 0;
+         if (!loaded) {
+-            rom_add_option("pxe-ne2k_pci.bin");
++            rom_add_option("pxe-ne2k_pci.bin", -1);
+             loaded = 1;
+         }
+     }
+diff --git a/hw/nseries.c b/hw/nseries.c
+index 0273eee..58b856a 100644
+--- a/hw/nseries.c
++++ b/hw/nseries.c
+@@ -1333,7 +1333,7 @@ static void n8x0_init(ram_addr_t ram_size, const char *boot_device,
+         n8x0_boot_init(s);
+     }
+ 
+-    if (option_rom[0] && (boot_device[0] == 'n' || !kernel_filename)) {
++    if (option_rom[0].name && (boot_device[0] == 'n' || !kernel_filename)) {
+         int rom_size;
+         uint8_t nolo_tags[0x10000];
+         /* No, wait, better start at the ROM.  */
+@@ -1348,7 +1348,7 @@ static void n8x0_init(ram_addr_t ram_size, const char *boot_device,
+          *
+          * The code above is for loading the `zImage' file from Nokia
+          * images.  */
+-        rom_size = load_image_targphys(option_rom[0],
++        rom_size = load_image_targphys(option_rom[0].name,
+                                        OMAP2_Q2_BASE + 0x400000,
+                                        sdram_size - 0x400000);
+         printf("%i bytes of image loaded\n", rom_size);
+diff --git a/hw/palm.c b/hw/palm.c
+index 8706a21..ea6f8bf 100644
+--- a/hw/palm.c
++++ b/hw/palm.c
+@@ -235,14 +235,14 @@ static void palmte_init(ram_addr_t ram_size,
+ 
+     /* Setup initial (reset) machine state */
+     if (nb_option_roms) {
+-        rom_size = get_image_size(option_rom[0]);
++        rom_size = get_image_size(option_rom[0].name);
+         if (rom_size > flash_size) {
+             fprintf(stderr, "%s: ROM image too big (%x > %x)\n",
+                             __FUNCTION__, rom_size, flash_size);
+             rom_size = 0;
+         }
+         if (rom_size > 0) {
+-            rom_size = load_image_targphys(option_rom[0], OMAP_CS0_BASE,
++            rom_size = load_image_targphys(option_rom[0].name, OMAP_CS0_BASE,
+                                            flash_size);
+             rom_loaded = 1;
+             cpu->env->regs[15] = 0x00000000;
+diff --git a/hw/pc.c b/hw/pc.c
+index e32b68e..d49bdb7 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -746,7 +746,8 @@ static int load_multiboot(void *fw_cfg,
+     fw_cfg_add_bytes(fw_cfg, FW_CFG_INITRD_DATA, mb_bootinfo_data,
+                      sizeof(bootinfo));
+ 
+-    option_rom[nb_option_roms] = "multiboot.bin";
++    option_rom[nb_option_roms].name = "multiboot.bin";
++    option_rom[nb_option_roms].bootindex = 0;
+     nb_option_roms++;
+ 
+     return 1; /* yes, we are multiboot */
+@@ -930,7 +931,8 @@ static void load_linux(void *fw_cfg,
+     fw_cfg_add_i32(fw_cfg, FW_CFG_SETUP_SIZE, setup_size);
+     fw_cfg_add_bytes(fw_cfg, FW_CFG_SETUP_DATA, setup, setup_size);
+ 
+-    option_rom[nb_option_roms] = "linuxboot.bin";
++    option_rom[nb_option_roms].name = "linuxboot.bin";
++    option_rom[nb_option_roms].bootindex = 0;
+     nb_option_roms++;
+ }
+ 
+@@ -1103,7 +1105,7 @@ static void pc_init1(ram_addr_t ram_size,
+         goto bios_error;
+     }
+     bios_offset = qemu_ram_alloc(NULL, "pc.bios", bios_size);
+-    ret = rom_add_file_fixed(bios_name, (uint32_t)(-bios_size));
++    ret = rom_add_file_fixed(bios_name, (uint32_t)(-bios_size), -1);
+     if (ret != 0) {
+     bios_error:
+         fprintf(stderr, "qemu: could not load PC BIOS '%s'\n", bios_name);
+@@ -1124,9 +1126,13 @@ static void pc_init1(ram_addr_t ram_size,
+                                  (bios_offset + bios_size - isa_bios_size) /* | IO_MEM_ROM */);
+ 
+     if (extboot_drive) {
+-        option_rom[nb_option_roms++] = qemu_strdup(EXTBOOT_FILENAME);
++        option_rom[nb_option_roms].name = qemu_strdup(EXTBOOT_FILENAME);
++        option_rom[nb_option_roms].bootindex = 0;
++        nb_option_roms++;
+     }
+-    option_rom[nb_option_roms++] = qemu_strdup(VAPIC_FILENAME);
++    option_rom[nb_option_roms].name = qemu_strdup(VAPIC_FILENAME);
++    option_rom[nb_option_roms].bootindex = -1;
++    nb_option_roms++;
+ 
+     rom_enable_driver_roms = 1;
+     option_rom_offset = qemu_ram_alloc(NULL, "pc.rom", PC_ROM_SIZE);
+@@ -1144,7 +1150,7 @@ static void pc_init1(ram_addr_t ram_size,
+     }
+ 
+     for (i = 0; i < nb_option_roms; i++) {
+-        rom_add_option(option_rom[i]);
++        rom_add_option(option_rom[i].name, option_rom[i].bootindex);
+     }
+ 
+     cpu_irq = qemu_allocate_irqs(pic_irq_request, NULL, 1);
+diff --git a/hw/pci.c b/hw/pci.c
+index 7b0568d..c268e1c 100644
+--- a/hw/pci.c
++++ b/hw/pci.c
+@@ -1594,7 +1594,7 @@ static int pci_add_option_rom(PCIDevice *pdev)
+         if (class == 0x0300) {
+             rom_add_vga(pdev->romfile);
+         } else {
+-            rom_add_option(pdev->romfile);
++            rom_add_option(pdev->romfile, -1);
+         }
+         return 0;
+     }
+diff --git a/hw/pcnet.c b/hw/pcnet.c
+index ccfc5b2..c2ad6af 100644
+--- a/hw/pcnet.c
++++ b/hw/pcnet.c
+@@ -2019,7 +2019,7 @@ static int pci_pcnet_init(PCIDevice *pci_dev)
+     if (!pci_dev->qdev.hotplugged) {
+         static int loaded = 0;
+         if (!loaded) {
+-            rom_add_option("pxe-pcnet.bin");
++            rom_add_option("pxe-pcnet.bin", -1);
+             loaded = 1;
+         }
+     }
+diff --git a/qemu-config.c b/qemu-config.c
+index ab3a853..5d54b17 100644
+--- a/qemu-config.c
++++ b/qemu-config.c
+@@ -393,6 +393,22 @@ QemuOptsList qemu_spice_opts = {
+     },
+ };
+ 
++QemuOptsList qemu_option_rom_opts = {
++    .name = "option-rom",
++    .implied_opt_name = "romfile",
++    .head = QTAILQ_HEAD_INITIALIZER(qemu_option_rom_opts.head),
++    .desc = {
++        {
++            .name = "bootindex",
++            .type = QEMU_OPT_NUMBER,
++        }, {
++            .name = "romfile",
++            .type = QEMU_OPT_STRING,
++        },
++        { /* end if list */ }
++    },
++};
++
+ static QemuOptsList *vm_config_groups[] = {
+     &qemu_drive_opts,
+     &qemu_simple_drive_opts,
+@@ -405,6 +421,7 @@ static QemuOptsList *vm_config_groups[] = {
+     &qemu_mon_opts,
+     &qemu_cpudef_opts,
+     &qemu_spice_opts,
++    &qemu_option_rom_opts,
+     NULL,
+ };
+ 
+diff --git a/sysemu.h b/sysemu.h
+index c3cdebb..d770934 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -140,7 +140,11 @@ extern uint64_t node_mem[MAX_NODES];
+ extern uint64_t node_cpumask[MAX_NODES];
+ 
+ #define MAX_OPTION_ROMS 16
+-extern const char *option_rom[MAX_OPTION_ROMS];
++typedef struct QEMUOptionRom {
++    const char *name;
++    int32_t bootindex;
++} QEMUOptionRom;
++extern QEMUOptionRom option_rom[MAX_OPTION_ROMS];
+ extern int nb_option_roms;
+ 
+ #ifdef NEED_CPU_H
+diff --git a/vl.c b/vl.c
+index 2cbcb43..945cb83 100644
+--- a/vl.c
++++ b/vl.c
+@@ -248,7 +248,7 @@ uint8_t irq0override = 1;
+ int daemonize = 0;
+ #endif
+ const char *watchdog;
+-const char *option_rom[MAX_OPTION_ROMS];
++QEMUOptionRom option_rom[MAX_OPTION_ROMS];
+ int nb_option_roms;
+ int semihosting_enabled = 0;
+ int time_drift_fix = 0;
+@@ -6032,7 +6032,14 @@ int main(int argc, char **argv, char **envp)
+ 		    fprintf(stderr, "Too many option ROMs\n");
+ 		    exit(1);
+ 		}
+-		option_rom[nb_option_roms] = optarg;
++                opts = qemu_opts_parse(qemu_find_opts("option-rom"), optarg, 1);
++                option_rom[nb_option_roms].name = qemu_opt_get(opts, "romfile");
++                option_rom[nb_option_roms].bootindex =
++                    qemu_opt_get_number(opts, "bootindex", -1);
++                if (!option_rom[nb_option_roms].name) {
++                    fprintf(stderr, "Option ROM file is not specified\n");
++                    exit(1);
++                }
+ 		nb_option_roms++;
+ 		break;
+ #if defined(TARGET_ARM) || defined(TARGET_M68K)
+-- 
+1.7.4.rc1.16.gd2f15e
+

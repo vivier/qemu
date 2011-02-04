@@ -1,0 +1,64 @@
+From c09addb883897411cc5e0de7e9c86a03eda096c8 Mon Sep 17 00:00:00 2001
+From: Gleb Natapov <gleb@redhat.com>
+Date: Thu, 6 Jan 2011 09:50:19 -0200
+Subject: [PATCH 06/28] Add get_fw_dev_path callback to IDE bus.
+
+RH-Author: Gleb Natapov <gleb@redhat.com>
+Message-id: <1294307430-1358-7-git-send-email-gleb@redhat.com>
+Patchwork-id: 15830
+O-Subject: [PATCH RHEL6.1 06/17] Add get_fw_dev_path callback to IDE bus.
+Bugzilla: 643687
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Signed-off-by: Gleb Natapov <gleb@redhat.com>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+
+Upstream commit: dc1a46b60941e137b3194936540790b720952055
+---
+ hw/ide/qdev.c |   13 +++++++++++++
+ 1 files changed, 13 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/ide/qdev.c |   13 +++++++++++++
+ 1 files changed, 13 insertions(+), 0 deletions(-)
+
+diff --git a/hw/ide/qdev.c b/hw/ide/qdev.c
+index 66204c2..8c50374 100644
+--- a/hw/ide/qdev.c
++++ b/hw/ide/qdev.c
+@@ -24,9 +24,12 @@
+ 
+ /* --------------------------------- */
+ 
++static char *idebus_get_fw_dev_path(DeviceState *dev);
++
+ static struct BusInfo ide_bus_info = {
+     .name  = "IDE",
+     .size  = sizeof(IDEBus),
++    .get_fw_dev_path = idebus_get_fw_dev_path,
+ };
+ 
+ void ide_bus_new(IDEBus *idebus, DeviceState *dev, int bus_id)
+@@ -35,6 +38,16 @@ void ide_bus_new(IDEBus *idebus, DeviceState *dev, int bus_id)
+     idebus->bus_id = bus_id;
+ }
+ 
++static char *idebus_get_fw_dev_path(DeviceState *dev)
++{
++    char path[30];
++
++    snprintf(path, sizeof(path), "%s@%d", qdev_fw_name(dev),
++             ((IDEBus*)dev->parent_bus)->bus_id);
++
++    return strdup(path);
++}
++
+ static int ide_qdev_init(DeviceState *qdev, DeviceInfo *base)
+ {
+     IDEDevice *dev = DO_UPCAST(IDEDevice, qdev, qdev);
+-- 
+1.7.4.rc1.16.gd2f15e
+

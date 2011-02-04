@@ -1,0 +1,53 @@
+From 78edb7d402e46d52cfb9da24bc8a1f406ea861e4 Mon Sep 17 00:00:00 2001
+From: Gleb Natapov <gleb@redhat.com>
+Date: Wed, 2 Feb 2011 15:39:17 -0200
+Subject: [PATCH 25/28] do not pass NULL to strdup.
+
+RH-Author: Gleb Natapov <gleb@redhat.com>
+Message-id: <20110202153917.GQ14984@redhat.com>
+Patchwork-id: 17516
+O-Subject: [PATCH RHEL6.1] do not pass NULL to strdup.
+Bugzilla: 643687
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Also use qemu_strdup() instead of strdup() in bootindex code.
+
+BZ: 643687
+Upstream status: submitted upstream
+
+Signed-off-by: Gleb Natapov <gleb@redhat.com>
+--
+			Gleb.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ vl.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index f821364..8e6195e 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2696,7 +2696,7 @@ void add_boot_device_path(int32_t bootindex, DeviceState *dev,
+ 
+     node = qemu_mallocz(sizeof(FWBootEntry));
+     node->bootindex = bootindex;
+-    node->suffix = strdup(suffix);
++    node->suffix = suffix ? qemu_strdup(suffix) : NULL;
+     node->dev = dev;
+ 
+     QTAILQ_FOREACH(i, &fw_boot_order, link) {
+@@ -2741,7 +2741,7 @@ char *get_boot_devices_list(uint32_t *size)
+         } else if (devpath) {
+             bootpath = devpath;
+         } else {
+-            bootpath = strdup(i->suffix);
++            bootpath = qemu_strdup(i->suffix);
+             assert(bootpath);
+         }
+ 
+-- 
+1.7.4.rc1.16.gd2f15e
+

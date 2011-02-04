@@ -1,0 +1,48 @@
+From 9ee3844884821d599845c19b1250557cecd61e6f Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 1 Feb 2011 13:32:38 -0200
+Subject: [PATCH 18/28] qemu-img snapshot: Use writeback caching
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1296567161-8837-3-git-send-email-kwolf@redhat.com>
+Patchwork-id: 17407
+O-Subject: [RHEL-6.1 qemu-kvm PATCH v2 2/5] qemu-img snapshot: Use writeback
+	caching
+Bugzilla: 635527
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 635527
+
+None of the other qemu-img subcommands uses writethrough, and there's no reason
+why snapshot should be special.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Reviewed-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+(cherry picked from commit 710da702beb0dc4aeeab1b9e712cd9473b083a89)
+---
+ qemu-img.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-img.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-img.c b/qemu-img.c
+index 2dd304b..3d31f40 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -1047,7 +1047,7 @@ static int img_snapshot(int argc, char **argv)
+     int action = 0;
+     qemu_timeval tv;
+ 
+-    bdrv_oflags = BDRV_O_RDWR;
++    bdrv_oflags = BDRV_O_FLAGS | BDRV_O_RDWR;
+     /* Parse commandline parameters */
+     for(;;) {
+         c = getopt(argc, argv, "la:c:d:h");
+-- 
+1.7.4.rc1.16.gd2f15e
+

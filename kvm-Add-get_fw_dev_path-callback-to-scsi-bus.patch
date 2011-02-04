@@ -1,0 +1,71 @@
+From 8f429ef9b969573210c19431f29485976ec88952 Mon Sep 17 00:00:00 2001
+From: Gleb Natapov <gleb@redhat.com>
+Date: Thu, 6 Jan 2011 09:50:24 -0200
+Subject: [PATCH 11/28] Add get_fw_dev_path callback to scsi bus.
+
+RH-Author: Gleb Natapov <gleb@redhat.com>
+Message-id: <1294307430-1358-12-git-send-email-gleb@redhat.com>
+Patchwork-id: 15840
+O-Subject: [PATCH RHEL6.1 11/17] Add get_fw_dev_path callback to scsi bus.
+Bugzilla: 643687
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Signed-off-by: Gleb Natapov <gleb@redhat.com>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+
+Upstream commit: db07c0f84ba2bedea4b8201ccb62602fd5e64c28
+---
+ hw/scsi-bus.c |   23 +++++++++++++++++++++++
+ 1 files changed, 23 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/scsi-bus.c |   23 +++++++++++++++++++++++
+ 1 files changed, 23 insertions(+), 0 deletions(-)
+
+diff --git a/hw/scsi-bus.c b/hw/scsi-bus.c
+index 893eaa1..a2571aa 100644
+--- a/hw/scsi-bus.c
++++ b/hw/scsi-bus.c
+@@ -5,9 +5,12 @@
+ #include "block.h"
+ #include "qdev.h"
+ 
++static char *scsibus_get_fw_dev_path(DeviceState *dev);
++
+ static struct BusInfo scsi_bus_info = {
+     .name  = "SCSI",
+     .size  = sizeof(SCSIBus),
++    .get_fw_dev_path = scsibus_get_fw_dev_path,
+     .props = (Property[]) {
+         DEFINE_PROP_UINT32("scsi-id", SCSIDevice, id, -1),
+         DEFINE_PROP_END_OF_LIST(),
+@@ -496,3 +499,23 @@ void scsi_req_complete(SCSIRequest *req)
+                        req->tag,
+                        req->status);
+ }
++
++static char *scsibus_get_fw_dev_path(DeviceState *dev)
++{
++    SCSIDevice *d = (SCSIDevice*)dev;
++    SCSIBus *bus = scsi_bus_from_device(d);
++    char path[100];
++    int i;
++
++    for (i = 0; i < bus->ndev; i++) {
++        if (bus->devs[i] == d) {
++            break;
++        }
++    }
++
++    assert(i != bus->ndev);
++
++    snprintf(path, sizeof(path), "%s@%x", qdev_fw_name(dev), i);
++
++    return strdup(path);
++}
+-- 
+1.7.4.rc1.16.gd2f15e
+

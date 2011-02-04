@@ -1,0 +1,57 @@
+From c18e44c7796ae32ee053b11dd711e76fc66d06e3 Mon Sep 17 00:00:00 2001
+From: Gleb Natapov <gleb@redhat.com>
+Date: Thu, 6 Jan 2011 09:50:15 -0200
+Subject: [PATCH 02/28] Introduce new BusInfo callback get_fw_dev_path.
+
+RH-Author: Gleb Natapov <gleb@redhat.com>
+Message-id: <1294307430-1358-3-git-send-email-gleb@redhat.com>
+Patchwork-id: 15838
+O-Subject: [PATCH RHEL6.1 02/17] Introduce new BusInfo callback get_fw_dev_path.
+Bugzilla: 643687
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+New get_fw_dev_path callback will be used for build device path usable
+by firmware in contrast to qdev qemu internal device path.
+
+Signed-off-by: Gleb Natapov <gleb@redhat.com>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+
+Upstream commit: 21150814d9f0d40b77f8ec54e716505b85b87e6b
+---
+ hw/qdev.h |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/qdev.h |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/hw/qdev.h b/hw/qdev.h
+index 1ebdc82..f636871 100644
+--- a/hw/qdev.h
++++ b/hw/qdev.h
+@@ -48,12 +48,19 @@ struct DeviceState {
+ 
+ typedef void (*bus_dev_printfn)(Monitor *mon, DeviceState *dev, int indent);
+ typedef char *(*bus_get_dev_path)(DeviceState *dev);
++/*
++ * This callback is used to create Open Firmware device path in accordance with
++ * OF spec http://forthworks.com/standards/of1275.pdf. Indicidual bus bindings
++ * can be found here http://playground.sun.com/1275/bindings/.
++ */
++typedef char *(*bus_get_fw_dev_path)(DeviceState *dev);
+ 
+ struct BusInfo {
+     const char *name;
+     size_t size;
+     bus_dev_printfn print_dev;
+     bus_get_dev_path get_dev_path;
++    bus_get_fw_dev_path get_fw_dev_path;
+     Property *props;
+ };
+ 
+-- 
+1.7.4.rc1.16.gd2f15e
+

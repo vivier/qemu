@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.135
+%define pkgrelease 2.136
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2179,6 +2179,60 @@ Patch1950: kvm-PATCH-RHEL6.1-qemu-kvm-acpi_piix4-expose-no_hotplug-.patch
 Patch1951: kvm-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
 # For bz#621484 - Broken pipe when working with unix socket chardev
 Patch1952: kvm-char-mark-socket-closed-if-write-fails-with-EPIPE.patch
+# For bz#643687 - Allow to specify boot order on qemu command line.
+Patch1953: kvm-Introduce-fw_name-field-to-DeviceInfo-structure.patch
+# For bz#643687 - Allow to specify boot order on qemu command line.
+Patch1954: kvm-Introduce-new-BusInfo-callback-get_fw_dev_path.patch
+# For bz#643687 - Allow to specify boot order on qemu command line.
+Patch1955: kvm-Keep-track-of-ISA-ports-ISA-device-is-using-in-qdev.patch
+# For bz#643687 - Allow to specify boot order on qemu command line.
+Patch1956: kvm-Add-get_fw_dev_path-callback-to-ISA-bus-in-qdev.patch
+# For bz#643687 - Allow to specify boot order on qemu command line.
+Patch1957: kvm-Store-IDE-bus-id-in-IDEBus-structure-for-easy-access.patch
+# For bz#643687 - Allow to specify boot order on qemu command line.
+Patch1958: kvm-Add-get_fw_dev_path-callback-to-IDE-bus.patch
+# For bz#643687 - Allow to specify boot order on qemu command line.
+Patch1959: kvm-Add-get_fw_dev_path-callback-for-system-bus.patch
+# For bz#643687 - Allow to specify boot order on qemu command line.
+Patch1960: kvm-Add-get_fw_dev_path-callback-for-pci-bus.patch
+# For bz#643687 - Allow to specify boot order on qemu command line.
+Patch1961: kvm-Record-which-USBDevice-USBPort-belongs-too.patch
+# For bz#643687 - Allow to specify boot order on qemu command line.
+Patch1962: kvm-Add-get_fw_dev_path-callback-for-usb-bus.patch
+# For bz#643687 - Allow to specify boot order on qemu command line.
+Patch1963: kvm-Add-get_fw_dev_path-callback-to-scsi-bus.patch
+# For bz#643687 - Allow to specify boot order on qemu command line.
+Patch1964: kvm-Add-bootindex-parameter-to-net-block-fd-device.patch
+# For bz#643687 - Allow to specify boot order on qemu command line.
+Patch1965: kvm-Change-fw_cfg_add_file-to-get-full-file-path-as-a-pa.patch
+# For bz#643687 - Allow to specify boot order on qemu command line.
+Patch1966: kvm-Add-bootindex-for-option-roms.patch
+# For bz#643687 - Allow to specify boot order on qemu command line.
+Patch1967: kvm-Add-notifier-that-will-be-called-when-machine-is-ful.patch
+# For bz#643687 - Allow to specify boot order on qemu command line.
+Patch1968: kvm-Pass-boot-device-list-to-firmware.patch
+# For bz#635527 - KVM:qemu-img re-base poor performance(on local storage) when snapshot to a new disk
+Patch1969: kvm-close-all-the-block-drivers-before-the-qemu-process-.patch
+# For bz#635527 - KVM:qemu-img re-base poor performance(on local storage) when snapshot to a new disk
+Patch1970: kvm-qemu-img-snapshot-Use-writeback-caching.patch
+# For bz#635527 - KVM:qemu-img re-base poor performance(on local storage) when snapshot to a new disk
+Patch1971: kvm-qcow2-Add-QcowCache.patch
+# For bz#635527 - KVM:qemu-img re-base poor performance(on local storage) when snapshot to a new disk
+Patch1972: kvm-qcow2-Use-QcowCache.patch
+# For bz#635527 - KVM:qemu-img re-base poor performance(on local storage) when snapshot to a new disk
+Patch1973: kvm-qcow2-Batch-flushes-for-COW.patch
+# For bz#643687 - Allow to specify boot order on qemu command line.
+Patch1975: kvm-add-bootindex-parameter-to-assigned-device.patch
+# For bz#674539 - slow guests block other guests on the same lan
+Patch1976: kvm-tap-safe-sndbuf-default.patch
+# For bz#643687 - Allow to specify boot order on qemu command line.
+Patch1977: kvm-do-not-pass-NULL-to-strdup.patch
+# For bz#672441 - Tracetool autogenerate qemu-kvm.stp with wrong qemu-kvm path
+Patch1978: kvm-Use-Makefile-to-install-qemu-kvm-in-correct-location.patch
+# For bz#667976 - CVE-2011-0011 qemu-kvm: Setting VNC password to empty string silently disables all authentication [rhel-6.1]
+Patch1979: kvm-Fix-CVE-2011-0011-qemu-kvm-Setting-VNC-password-to-e.patch
+# For bz#674562 - disable vhost-net for rhel5 and older guests
+Patch1980: kvm-vhost-force-vhost-off-for-non-MSI-guests.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3239,6 +3293,33 @@ ApplyOptionalPatch()
 %patch1950 -p1
 %patch1951 -p1
 %patch1952 -p1
+%patch1953 -p1
+%patch1954 -p1
+%patch1955 -p1
+%patch1956 -p1
+%patch1957 -p1
+%patch1958 -p1
+%patch1959 -p1
+%patch1960 -p1
+%patch1961 -p1
+%patch1962 -p1
+%patch1963 -p1
+%patch1964 -p1
+%patch1965 -p1
+%patch1966 -p1
+%patch1967 -p1
+%patch1968 -p1
+%patch1969 -p1
+%patch1970 -p1
+%patch1971 -p1
+%patch1972 -p1
+%patch1973 -p1
+%patch1975 -p1
+%patch1976 -p1
+%patch1977 -p1
+%patch1978 -p1
+%patch1979 -p1
+%patch1980 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3447,6 +3528,50 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Feb 04 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.136.el6
+- kvm-Introduce-fw_name-field-to-DeviceInfo-structure.patch [bz#643687]
+- kvm-Introduce-new-BusInfo-callback-get_fw_dev_path.patch [bz#643687]
+- kvm-Keep-track-of-ISA-ports-ISA-device-is-using-in-qdev.patch [bz#643687]
+- kvm-Add-get_fw_dev_path-callback-to-ISA-bus-in-qdev.patch [bz#643687]
+- kvm-Store-IDE-bus-id-in-IDEBus-structure-for-easy-access.patch [bz#643687]
+- kvm-Add-get_fw_dev_path-callback-to-IDE-bus.patch [bz#643687]
+- kvm-Add-get_fw_dev_path-callback-for-system-bus.patch [bz#643687]
+- kvm-Add-get_fw_dev_path-callback-for-pci-bus.patch [bz#643687]
+- kvm-Record-which-USBDevice-USBPort-belongs-too.patch [bz#643687]
+- kvm-Add-get_fw_dev_path-callback-for-usb-bus.patch [bz#643687]
+- kvm-Add-get_fw_dev_path-callback-to-scsi-bus.patch [bz#643687]
+- kvm-Add-bootindex-parameter-to-net-block-fd-device.patch [bz#643687]
+- kvm-Change-fw_cfg_add_file-to-get-full-file-path-as-a-pa.patch [bz#643687]
+- kvm-Add-bootindex-for-option-roms.patch [bz#643687]
+- kvm-Add-notifier-that-will-be-called-when-machine-is-ful.patch [bz#643687]
+- kvm-Pass-boot-device-list-to-firmware.patch [bz#643687]
+- kvm-close-all-the-block-drivers-before-the-qemu-process-.patch [bz#635527]
+- kvm-qemu-img-snapshot-Use-writeback-caching.patch [bz#635527]
+- kvm-qcow2-Add-QcowCache.patch [bz#635527]
+- kvm-qcow2-Use-QcowCache.patch [bz#635527]
+- kvm-qcow2-Batch-flushes-for-COW.patch [bz#635527]
+- Commited 'Remove vhost blacklisting' by hand [bz#665299]
+- kvm-add-bootindex-parameter-to-assigned-device.patch [bz#643687]
+- kvm-tap-safe-sndbuf-default.patch [bz#674539]
+- kvm-do-not-pass-NULL-to-strdup.patch [bz#643687]
+- kvm-Use-Makefile-to-install-qemu-kvm-in-correct-location.patch [bz#672441]
+- kvm-Fix-CVE-2011-0011-qemu-kvm-Setting-VNC-password-to-e.patch [bz#667976]
+- kvm-vhost-force-vhost-off-for-non-MSI-guests.patch [bz#674562]
+- Resolves: bz#635527
+  (KVM:qemu-img re-base poor performance(on local storage) when snapshot to a new disk)
+- Resolves: bz#643687
+  (Allow to specify boot order on qemu command line.)
+- Resolves: bz#665299
+  (load vhost-net by default)
+- Resolves: bz#667976
+  (CVE-2011-0011 qemu-kvm: Setting VNC password to empty string silently disables all authentication [rhel-6.1])
+- Resolves: bz#672441
+  (Tracetool autogenerate qemu-kvm.stp with wrong qemu-kvm path)
+- Resolves: bz#674539
+  (slow guests block other guests on the same lan)
+- Resolves: bz#674562
+  (disable vhost-net for rhel5 and older guests)
+
 * Wed Feb 02 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.135.el6
 - kvm-Bug-625333-qemu-treatment-of-nodefconfig-and-readcon.patch [bz#625333]
 - kvm-ide-Factor-ide_flush_cache-out.patch [bz#670539]

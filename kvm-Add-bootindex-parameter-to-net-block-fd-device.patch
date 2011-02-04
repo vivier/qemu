@@ -1,0 +1,432 @@
+From 0fb78c57a7478589c78c152fa86f5ae5acf9bf92 Mon Sep 17 00:00:00 2001
+From: Gleb Natapov <gleb@redhat.com>
+Date: Mon, 24 Jan 2011 14:12:18 -0200
+Subject: [PATCH 12/28] Add bootindex parameter to net/block/fd device
+
+RH-Author: Gleb Natapov <gleb@redhat.com>
+Message-id: <20110124141218.GB29523@redhat.com>
+Patchwork-id: 16850
+O-Subject: [PATCHv2 RHEL6.1 12/17] Add bootindex parameter to net/block/fd device
+Bugzilla: 643687
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+If bootindex is specified on command line a string that describes device
+in firmware readable way is added into sorted list. Later this list will
+be passed into firmware to control boot order.
+
+Signed-off-by: Gleb Natapov <gleb@redhat.com>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+
+Upstream commit: 1ca4d09ae0bcc2fdd6aeef0fdc11f82394f7e757
+---
+Space discrepancy with upstream is fixed.
+
+--
+			Gleb.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ block_int.h     |    4 +++-
+ hw/e1000.c      |    4 ++++
+ hw/eepro100.c   |    2 ++
+ hw/fdc.c        |    8 ++++++++
+ hw/ide/qdev.c   |    3 +++
+ hw/ne2000.c     |    3 +++
+ hw/pcnet.c      |    4 ++++
+ hw/qdev.c       |   32 ++++++++++++++++++++++++++++++++
+ hw/qdev.h       |    1 +
+ hw/rtl8139.c    |    3 +++
+ hw/scsi-disk.c  |    1 +
+ hw/usb-net.c    |    2 ++
+ hw/virtio-blk.c |    2 ++
+ hw/virtio-net.c |    2 ++
+ net.h           |    4 +++-
+ sysemu.h        |    2 ++
+ vl.c            |   40 ++++++++++++++++++++++++++++++++++++++++
+ 17 files changed, 115 insertions(+), 2 deletions(-)
+
+diff --git a/block_int.h b/block_int.h
+index e5873ae..467b759 100644
+--- a/block_int.h
++++ b/block_int.h
+@@ -222,6 +222,7 @@ typedef struct BlockConf {
+     uint16_t logical_block_size;
+     uint16_t min_io_size;
+     uint32_t opt_io_size;
++    int32_t bootindex;
+ } BlockConf;
+ 
+ static inline unsigned int get_physical_block_exp(BlockConf *conf)
+@@ -244,6 +245,7 @@ static inline unsigned int get_physical_block_exp(BlockConf *conf)
+     DEFINE_PROP_UINT16("physical_block_size", _state,                   \
+                        _conf.physical_block_size, 512),                 \
+     DEFINE_PROP_UINT16("min_io_size", _state, _conf.min_io_size, 0),  \
+-    DEFINE_PROP_UINT32("opt_io_size", _state, _conf.opt_io_size, 0)
++    DEFINE_PROP_UINT32("opt_io_size", _state, _conf.opt_io_size, 0),    \
++    DEFINE_PROP_INT32("bootindex", _state, _conf.bootindex, -1)         \
+ 
+ #endif /* BLOCK_INT_H */
+diff --git a/hw/e1000.c b/hw/e1000.c
+index 546461d..1e17cff 100644
+--- a/hw/e1000.c
++++ b/hw/e1000.c
+@@ -27,6 +27,7 @@
+ #include "net.h"
+ #include "net/checksum.h"
+ #include "loader.h"
++#include "sysemu.h"
+ 
+ #include "e1000_hw.h"
+ 
+@@ -1132,6 +1133,9 @@ static int pci_e1000_init(PCIDevice *pci_dev)
+                           d->dev.qdev.info->name, d->dev.qdev.id, d);
+ 
+     qemu_format_nic_info_str(&d->nic->nc, macaddr);
++
++    add_boot_device_path(d->conf.bootindex, &pci_dev->qdev, "/ethernet-phy@0");
++
+     return 0;
+ }
+ 
+diff --git a/hw/eepro100.c b/hw/eepro100.c
+index f6f319f..5dfd32d 100644
+--- a/hw/eepro100.c
++++ b/hw/eepro100.c
+@@ -43,6 +43,7 @@
+ #include "pci.h"
+ #include "net.h"
+ #include "eeprom93xx.h"
++#include "sysemu.h"
+ 
+ /* Common declarations for all PCI devices. */
+ 
+@@ -1848,6 +1849,7 @@ static int nic_init(PCIDevice *pci_dev, uint32_t device)
+     memcpy(s->vmstate, &vmstate_eepro100, sizeof(vmstate_eepro100));
+     s->vmstate->name = s->nic->nc.model;
+     vmstate_register(&pci_dev->qdev, -1, s->vmstate, s);
++    add_boot_device_path(s->conf.bootindex, &pci_dev->qdev, "/ethernet-phy@0");
+ 
+     if (!pci_dev->qdev.hotplugged) {
+         static int loaded = 0;
+diff --git a/hw/fdc.c b/hw/fdc.c
+index 67f9db3..c049688 100644
+--- a/hw/fdc.c
++++ b/hw/fdc.c
+@@ -34,6 +34,7 @@
+ #include "isa.h"
+ #include "sysbus.h"
+ #include "qdev-addr.h"
++#include "sysemu.h"
+ 
+ /********************************************************/
+ /* debug Floppy devices */
+@@ -524,6 +525,8 @@ typedef struct fdctrl_sysbus_t {
+ typedef struct fdctrl_isabus_t {
+     ISADevice busdev;
+     struct fdctrl_t state;
++    int32_t bootindexA;
++    int32_t bootindexB;
+ } fdctrl_isabus_t;
+ 
+ static uint32_t fdctrl_read (void *opaque, uint32_t reg)
+@@ -1983,6 +1986,9 @@ static int isabus_fdc_init1(ISADevice *dev)
+ 
+     ret = fdctrl_init_common(fdctrl, iobase);
+ 
++    add_boot_device_path(isa->bootindexA, &dev->qdev, "/floppy@0");
++    add_boot_device_path(isa->bootindexB, &dev->qdev, "/floppy@1");
++
+     return ret;
+ }
+ 
+@@ -2029,6 +2035,8 @@ static ISADeviceInfo isa_fdc_info = {
+     .qdev.props = (Property[]) {
+         DEFINE_PROP_DRIVE("driveA", fdctrl_isabus_t, state.drives[0].dinfo),
+         DEFINE_PROP_DRIVE("driveB", fdctrl_isabus_t, state.drives[1].dinfo),
++        DEFINE_PROP_INT32("bootindexA", fdctrl_isabus_t, bootindexA, -1),
++        DEFINE_PROP_INT32("bootindexB", fdctrl_isabus_t, bootindexB, -1),
+         DEFINE_PROP_END_OF_LIST(),
+     },
+ };
+diff --git a/hw/ide/qdev.c b/hw/ide/qdev.c
+index 8c50374..d55bbfa 100644
+--- a/hw/ide/qdev.c
++++ b/hw/ide/qdev.c
+@@ -115,6 +115,9 @@ static int ide_drive_initfn(IDEDevice *dev)
+     IDEBus *bus = DO_UPCAST(IDEBus, qbus, dev->qdev.parent_bus);
+     ide_init_drive(bus->ifs + dev->unit, dev->conf.dinfo, &dev->conf,
+                    dev->version);
++    add_boot_device_path(dev->conf.bootindex, &dev->qdev,
++                         dev->unit ? "/disk@1" : "/disk@0");
++
+     return 0;
+ }
+ 
+diff --git a/hw/ne2000.c b/hw/ne2000.c
+index d1416cf..2b61aac 100644
+--- a/hw/ne2000.c
++++ b/hw/ne2000.c
+@@ -26,6 +26,7 @@
+ #include "net.h"
+ #include "ne2000.h"
+ #include "loader.h"
++#include "sysemu.h"
+ 
+ /* debug NE2000 card */
+ //#define DEBUG_NE2000
+@@ -746,6 +747,8 @@ static int pci_ne2000_init(PCIDevice *pci_dev)
+         }
+     }
+ 
++    add_boot_device_path(s->c.bootindex, &pci_dev->qdev, "/ethernet-phy@0");
++
+     return 0;
+ }
+ 
+diff --git a/hw/pcnet.c b/hw/pcnet.c
+index 0afc46d..ccfc5b2 100644
+--- a/hw/pcnet.c
++++ b/hw/pcnet.c
+@@ -40,6 +40,7 @@
+ #include "loader.h"
+ #include "qemu-timer.h"
+ #include "qemu_socket.h"
++#include "sysemu.h"
+ 
+ #include "pcnet.h"
+ 
+@@ -1898,6 +1899,9 @@ int pcnet_common_init(DeviceState *dev, PCNetState *s, NetClientInfo *info)
+     qemu_macaddr_default_if_unset(&s->conf.macaddr);
+     s->nic = qemu_new_nic(info, &s->conf, dev->info->name, dev->id, s);
+     qemu_format_nic_info_str(&s->nic->nc, s->conf.macaddr.a);
++
++    add_boot_device_path(s->conf.bootindex, dev, "/ethernet-phy@0");
++
+     return 0;
+ }
+ 
+diff --git a/hw/qdev.c b/hw/qdev.c
+index cd31dda..7ebb368 100644
+--- a/hw/qdev.c
++++ b/hw/qdev.c
+@@ -811,3 +811,35 @@ int do_device_del(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     }
+     return qdev_unplug(dev);
+ }
++
++static int qdev_get_fw_dev_path_helper(DeviceState *dev, char *p, int size)
++{
++    int l = 0;
++
++    if (dev && dev->parent_bus) {
++        char *d;
++        l = qdev_get_fw_dev_path_helper(dev->parent_bus->parent, p, size);
++        if (dev->parent_bus->info->get_fw_dev_path) {
++            d = dev->parent_bus->info->get_fw_dev_path(dev);
++            l += snprintf(p + l, size - l, "%s", d);
++            qemu_free(d);
++        } else {
++            l += snprintf(p + l, size - l, "%s", dev->info->name);
++        }
++    }
++    l += snprintf(p + l , size - l, "/");
++
++    return l;
++}
++
++char* qdev_get_fw_dev_path(DeviceState *dev)
++{
++    char path[128];
++    int l;
++
++    l = qdev_get_fw_dev_path_helper(dev, path, 128);
++
++    path[l-1] = '\0';
++
++    return strdup(path);
++}
+diff --git a/hw/qdev.h b/hw/qdev.h
+index f636871..a7e17bf 100644
+--- a/hw/qdev.h
++++ b/hw/qdev.h
+@@ -293,6 +293,7 @@ static inline const char *qdev_fw_name(DeviceState *dev)
+     return dev->info->fw_name ? : dev->info->alias ? : dev->info->name;
+ }
+ 
++char *qdev_get_fw_dev_path(DeviceState *dev);
+ /* This is a nasty hack to allow passing a NULL bus to qdev_create.  */
+ extern struct BusInfo system_bus_info;
+ 
+diff --git a/hw/rtl8139.c b/hw/rtl8139.c
+index 6f52ca1..95208ac 100644
+--- a/hw/rtl8139.c
++++ b/hw/rtl8139.c
+@@ -48,6 +48,7 @@
+ #include "qemu-timer.h"
+ #include "net.h"
+ #include "loader.h"
++#include "sysemu.h"
+ 
+ /* debug RTL8139 card */
+ //#define DEBUG_RTL8139 1
+@@ -3385,6 +3386,8 @@ static int pci_rtl8139_init(PCIDevice *dev)
+     qemu_mod_timer(s->timer,
+         rtl8139_get_next_tctr_time(s,qemu_get_clock(vm_clock)));
+ #endif /* RTL8139_ONBOARD_TIMER */
++
++    add_boot_device_path(s->conf.bootindex, &dev->qdev, "/ethernet-phy@0");
+     return 0;
+ }
+ 
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index 5290b3a..e326332 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -1046,6 +1046,7 @@ static int scsi_disk_initfn(SCSIDevice *dev)
+     s->max_lba = nb_sectors;
+     qemu_add_vm_change_state_handler(scsi_dma_restart_cb, s);
+     bdrv_set_removable(s->bs, is_cd);
++    add_boot_device_path(s->qdev.conf.bootindex, &dev->qdev, ",0");
+     return 0;
+ }
+ 
+diff --git a/hw/usb-net.c b/hw/usb-net.c
+index 2c741c6..d7aa34f 100644
+--- a/hw/usb-net.c
++++ b/hw/usb-net.c
+@@ -27,6 +27,7 @@
+ #include "usb.h"
+ #include "net.h"
+ #include "qemu-queue.h"
++#include "sysemu.h"
+ 
+ /*#define TRAFFIC_DEBUG*/
+ /* Thanks to NetChip Technologies for donating this product ID.
+@@ -1469,6 +1470,7 @@ static int usb_net_initfn(USBDevice *dev)
+              s->conf.macaddr.a[4],
+              s->conf.macaddr.a[5]);
+ 
++    add_boot_device_path(s->conf.bootindex, &dev->qdev, "/ethernet@0");
+     return 0;
+ }
+ 
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index b570754..b965173 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -540,6 +540,8 @@ VirtIODevice *virtio_blk_init(DeviceState *dev, BlockConf *conf)
+     bdrv_set_removable(s->bs, 0);
+     s->bs->buffer_alignment = conf->logical_block_size;
+ 
++    add_boot_device_path(conf->bootindex, dev, "/disk@0,0");
++
+     return &s->vdev;
+ }
+ 
+diff --git a/hw/virtio-net.c b/hw/virtio-net.c
+index 5cf57b7..ddf7ed1 100644
+--- a/hw/virtio-net.c
++++ b/hw/virtio-net.c
+@@ -1005,6 +1005,8 @@ VirtIODevice *virtio_net_init(DeviceState *dev, NICConf *conf,
+     register_savevm(dev, "virtio-net", -1, VIRTIO_NET_VM_VERSION,
+                     virtio_net_save, virtio_net_load, n);
+ 
++    add_boot_device_path(conf->bootindex, dev, "/ethernet-phy@0");
++
+     return &n->vdev;
+ }
+ 
+diff --git a/net.h b/net.h
+index 44c31a9..6ceca50 100644
+--- a/net.h
++++ b/net.h
+@@ -17,12 +17,14 @@ typedef struct NICConf {
+     MACAddr macaddr;
+     VLANState *vlan;
+     VLANClientState *peer;
++    int32_t bootindex;
+ } NICConf;
+ 
+ #define DEFINE_NIC_PROPERTIES(_state, _conf)                            \
+     DEFINE_PROP_MACADDR("mac",   _state, _conf.macaddr),                \
+     DEFINE_PROP_VLAN("vlan",     _state, _conf.vlan),                   \
+-    DEFINE_PROP_NETDEV("netdev", _state, _conf.peer)
++    DEFINE_PROP_NETDEV("netdev", _state, _conf.peer),                   \
++    DEFINE_PROP_INT32("bootindex", _state, _conf.bootindex, -1)
+ 
+ /* VLANs support */
+ 
+diff --git a/sysemu.h b/sysemu.h
+index 74d1771..c3cdebb 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -259,4 +259,6 @@ void register_devices(void);
+ 
+ int do_snapshot_blkdev(Monitor *mon, const QDict *qdict, QObject **ret_data);
+ 
++void add_boot_device_path(int32_t bootindex, DeviceState *dev,
++                          const char *suffix);
+ #endif
+diff --git a/vl.c b/vl.c
+index 44f24f3..2cbcb43 100644
+--- a/vl.c
++++ b/vl.c
+@@ -274,6 +274,17 @@ int boot_menu;
+ int fake_machine = 0;
+ #endif
+ 
++typedef struct FWBootEntry FWBootEntry;
++
++struct FWBootEntry {
++    QTAILQ_ENTRY(FWBootEntry) link;
++    int32_t bootindex;
++    DeviceState *dev;
++    char *suffix;
++};
++
++QTAILQ_HEAD(, FWBootEntry) fw_boot_order = QTAILQ_HEAD_INITIALIZER(fw_boot_order);
++
+ int nb_numa_nodes;
+ uint64_t node_mem[MAX_NODES];
+ uint64_t node_cpumask[MAX_NODES];
+@@ -2669,6 +2680,35 @@ static void restore_boot_devices(void *opaque)
+     qemu_free(standard_boot_devices);
+ }
+ 
++void add_boot_device_path(int32_t bootindex, DeviceState *dev,
++                          const char *suffix)
++{
++    FWBootEntry *node, *i;
++
++    if (bootindex < 0) {
++        return;
++    }
++
++    assert(dev != NULL || suffix != NULL);
++
++    node = qemu_mallocz(sizeof(FWBootEntry));
++    node->bootindex = bootindex;
++    node->suffix = strdup(suffix);
++    node->dev = dev;
++
++    QTAILQ_FOREACH(i, &fw_boot_order, link) {
++        if (i->bootindex == bootindex) {
++            fprintf(stderr, "Two devices with same boot index %d\n", bootindex);
++            exit(1);
++        } else if (i->bootindex < bootindex) {
++            continue;
++        }
++        QTAILQ_INSERT_BEFORE(i, node, link);
++        return;
++    }
++    QTAILQ_INSERT_TAIL(&fw_boot_order, node, link);
++}
++
+ static void numa_add(const char *optarg)
+ {
+     char option[128];
+-- 
+1.7.4.rc1.16.gd2f15e
+

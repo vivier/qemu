@@ -1,0 +1,198 @@
+From c825dbe991bfb5b47e45ee30949f00742660c8a6 Mon Sep 17 00:00:00 2001
+From: Gleb Natapov <gleb@redhat.com>
+Date: Thu, 6 Jan 2011 09:50:14 -0200
+Subject: [PATCH 01/28] Introduce fw_name field to DeviceInfo structure.
+
+RH-Author: Gleb Natapov <gleb@redhat.com>
+Message-id: <1294307430-1358-2-git-send-email-gleb@redhat.com>
+Patchwork-id: 15841
+O-Subject: [PATCH RHEL6.1 01/17] Introduce fw_name field to DeviceInfo structure.
+Bugzilla: 643687
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Add "fw_name" to DeviceInfo to use in device path building. In
+contrast to "name" "fw_name" should refer to functionality device
+provides instead of particular device model like "name" does.
+
+Signed-off-by: Gleb Natapov <gleb@redhat.com>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+
+Upstream commit: 779206de677533616ec3558bae89ea06fb91fc84
+---
+ hw/fdc.c        |    1 +
+ hw/ide/isa.c    |    1 +
+ hw/ide/qdev.c   |    1 +
+ hw/isa-bus.c    |    1 +
+ hw/lance.c      |    1 +
+ hw/piix_pci.c   |    1 +
+ hw/qdev.h       |    6 ++++++
+ hw/scsi-disk.c  |    1 +
+ hw/usb-hub.c    |    1 +
+ hw/usb-net.c    |    1 +
+ hw/virtio-pci.c |    1 +
+ 11 files changed, 16 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/fdc.c        |    1 +
+ hw/ide/isa.c    |    1 +
+ hw/ide/qdev.c   |    1 +
+ hw/isa-bus.c    |    1 +
+ hw/lance.c      |    1 +
+ hw/piix_pci.c   |    1 +
+ hw/qdev.h       |    6 ++++++
+ hw/scsi-disk.c  |    1 +
+ hw/usb-hub.c    |    1 +
+ hw/usb-net.c    |    1 +
+ hw/virtio-pci.c |    1 +
+ 11 files changed, 16 insertions(+), 0 deletions(-)
+
+diff --git a/hw/fdc.c b/hw/fdc.c
+index 65462a5..f415f57 100644
+--- a/hw/fdc.c
++++ b/hw/fdc.c
+@@ -2019,6 +2019,7 @@ static int sun4m_fdc_init1(SysBusDevice *dev)
+ static ISADeviceInfo isa_fdc_info = {
+     .init = isabus_fdc_init1,
+     .qdev.name  = "isa-fdc",
++    .qdev.fw_name  = "fdc",
+     .qdev.size  = sizeof(fdctrl_isabus_t),
+     .qdev.no_user = 1,
+     .qdev.reset = fdctrl_external_reset_isa,
+diff --git a/hw/ide/isa.c b/hw/ide/isa.c
+index f1d220b..4a30f65 100644
+--- a/hw/ide/isa.c
++++ b/hw/ide/isa.c
+@@ -98,6 +98,7 @@ int isa_ide_init(int iobase, int iobase2, int isairq,
+ 
+ static ISADeviceInfo isa_ide_info = {
+     .qdev.name  = "isa-ide",
++    .qdev.fw_name  = "ide",
+     .qdev.size  = sizeof(ISAIDEState),
+     .init       = isa_ide_initfn,
+     .qdev.reset = isa_ide_reset,
+diff --git a/hw/ide/qdev.c b/hw/ide/qdev.c
+index b18693d..c29d26d 100644
+--- a/hw/ide/qdev.c
++++ b/hw/ide/qdev.c
+@@ -106,6 +106,7 @@ static int ide_drive_initfn(IDEDevice *dev)
+ 
+ static IDEDeviceInfo ide_drive_info = {
+     .qdev.name  = "ide-drive",
++    .qdev.fw_name  = "drive",
+     .qdev.size  = sizeof(IDEDrive),
+     .init       = ide_drive_initfn,
+     .qdev.props = (Property[]) {
+diff --git a/hw/isa-bus.c b/hw/isa-bus.c
+index 4d489d2..d8b8457 100644
+--- a/hw/isa-bus.c
++++ b/hw/isa-bus.c
+@@ -152,6 +152,7 @@ static int isabus_bridge_init(SysBusDevice *dev)
+ static SysBusDeviceInfo isabus_bridge_info = {
+     .init = isabus_bridge_init,
+     .qdev.name  = "isabus-bridge",
++    .qdev.fw_name  = "isa",
+     .qdev.size  = sizeof(SysBusDevice),
+     .qdev.no_user = 1,
+ };
+diff --git a/hw/lance.c b/hw/lance.c
+index b6b04dd..309099d 100644
+--- a/hw/lance.c
++++ b/hw/lance.c
+@@ -147,6 +147,7 @@ static void lance_reset(DeviceState *dev)
+ static SysBusDeviceInfo lance_info = {
+     .init       = lance_init,
+     .qdev.name  = "lance",
++    .qdev.fw_name  = "ethernet",
+     .qdev.size  = sizeof(SysBusPCNetState),
+     .qdev.reset = lance_reset,
+     .qdev.vmsd  = &vmstate_lance,
+diff --git a/hw/piix_pci.c b/hw/piix_pci.c
+index 519cd69..49d35c4 100644
+--- a/hw/piix_pci.c
++++ b/hw/piix_pci.c
+@@ -366,6 +366,7 @@ static PCIDeviceInfo i440fx_info[] = {
+ static SysBusDeviceInfo i440fx_pcihost_info = {
+     .init         = i440fx_pcihost_initfn,
+     .qdev.name    = "i440FX-pcihost",
++    .qdev.fw_name = "pci",
+     .qdev.size    = sizeof(I440FXState),
+     .qdev.no_user = 1,
+ };
+diff --git a/hw/qdev.h b/hw/qdev.h
+index 23f1e1b..1ebdc82 100644
+--- a/hw/qdev.h
++++ b/hw/qdev.h
+@@ -134,6 +134,7 @@ typedef void (*qdev_resetfn)(DeviceState *dev);
+ 
+ struct DeviceInfo {
+     const char *name;
++    const char *fw_name;
+     const char *alias;
+     const char *desc;
+     size_t size;
+@@ -280,6 +281,11 @@ void qdev_prop_set_defaults(DeviceState *dev, Property *props);
+ void qdev_prop_register_global_list(GlobalProperty *props);
+ void qdev_prop_set_globals(DeviceState *dev);
+ 
++static inline const char *qdev_fw_name(DeviceState *dev)
++{
++    return dev->info->fw_name ? : dev->info->alias ? : dev->info->name;
++}
++
+ /* This is a nasty hack to allow passing a NULL bus to qdev_create.  */
+ extern struct BusInfo system_bus_info;
+ 
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index a109e80..5290b3a 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -1051,6 +1051,7 @@ static int scsi_disk_initfn(SCSIDevice *dev)
+ 
+ static SCSIDeviceInfo scsi_disk_info = {
+     .qdev.name    = "scsi-disk",
++    .qdev.fw_name = "disk",
+     .qdev.desc    = "virtual scsi disk or cdrom",
+     .qdev.size    = sizeof(SCSIDiskState),
+     .init         = scsi_disk_initfn,
+diff --git a/hw/usb-hub.c b/hw/usb-hub.c
+index acf7f60..26cd6aa 100644
+--- a/hw/usb-hub.c
++++ b/hw/usb-hub.c
+@@ -546,6 +546,7 @@ static int usb_hub_initfn(USBDevice *dev)
+ static struct USBDeviceInfo hub_info = {
+     .product_desc   = "QEMU USB Hub",
+     .qdev.name      = "usb-hub",
++    .qdev.fw_name    = "hub",
+     .qdev.size      = sizeof(USBHubState),
+     .init           = usb_hub_initfn,
+     .handle_packet  = usb_hub_handle_packet,
+diff --git a/hw/usb-net.c b/hw/usb-net.c
+index 56fdd9b..2c741c6 100644
+--- a/hw/usb-net.c
++++ b/hw/usb-net.c
+@@ -1499,6 +1499,7 @@ static USBDevice *usb_net_init(const char *cmdline)
+ static struct USBDeviceInfo net_info = {
+     .product_desc   = "QEMU USB Network Interface",
+     .qdev.name      = "usb-net",
++    .qdev.fw_name    = "network",
+     .qdev.size      = sizeof(USBNetState),
+     .init           = usb_net_initfn,
+     .handle_packet  = usb_generic_handle_packet,
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index c2db1d1..4851d69 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -910,6 +910,7 @@ static int virtio_balloon_init_pci(PCIDevice *pci_dev)
+ static PCIDeviceInfo virtio_info[] = {
+     {
+         .qdev.name = "virtio-blk-pci",
++        .qdev.alias = "virtio-blk",
+         .qdev.size = sizeof(VirtIOPCIProxy),
+         .init      = virtio_blk_init_pci,
+         .exit      = virtio_blk_exit_pci,
+-- 
+1.7.4.rc1.16.gd2f15e
+

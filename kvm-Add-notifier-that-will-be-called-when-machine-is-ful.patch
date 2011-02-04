@@ -1,0 +1,97 @@
+From 1b3a0e1f2905502484c6a3e3e67a33e29006df48 Mon Sep 17 00:00:00 2001
+From: Gleb Natapov <gleb@redhat.com>
+Date: Thu, 6 Jan 2011 09:50:29 -0200
+Subject: [PATCH 15/28] Add notifier that will be called when machine is fully created.
+
+RH-Author: Gleb Natapov <gleb@redhat.com>
+Message-id: <1294307430-1358-17-git-send-email-gleb@redhat.com>
+Patchwork-id: 15842
+O-Subject: [PATCH RHEL6.1 16/17] Add notifier that will be called when machine
+	is fully created.
+Bugzilla: 643687
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Action that depends on fully initialized device model should register
+with this notifier chain.
+
+Signed-off-by: Gleb Natapov <gleb@redhat.com>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+
+Upstream commit: 4cab946a4adc3094a846dd3c7ea104abe7bdc5f1
+---
+ sysemu.h |    3 +++
+ vl.c     |   15 +++++++++++++++
+ 2 files changed, 18 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ sysemu.h |    3 +++
+ vl.c     |   15 +++++++++++++++
+ 2 files changed, 18 insertions(+), 0 deletions(-)
+
+diff --git a/sysemu.h b/sysemu.h
+index d770934..6d5dc53 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -6,6 +6,7 @@
+ #include "qemu-option.h"
+ #include "qemu-queue.h"
+ #include "qemu-timer.h"
++#include "notify.h"
+ 
+ #ifdef _WIN32
+ #include <windows.h>
+@@ -52,6 +53,8 @@ int qemu_powerdown_requested(void);
+ extern qemu_irq qemu_system_powerdown;
+ void qemu_system_reset(void);
+ 
++void qemu_add_machine_init_done_notifier(Notifier *notify);
++
+ void do_savevm(Monitor *mon, const QDict *qdict);
+ int load_vmstate(const char *name);
+ void do_delvm(Monitor *mon, const QDict *qdict);
+diff --git a/vl.c b/vl.c
+index 945cb83..e9cf9c0 100644
+--- a/vl.c
++++ b/vl.c
+@@ -307,6 +307,9 @@ uint8_t qemu_uuid[16];
+ static QEMUBootSetHandler *boot_set_handler;
+ static void *boot_set_opaque;
+ 
++static NotifierList machine_init_done_notifiers =
++    NOTIFIER_LIST_INITIALIZER(machine_init_done_notifiers);
++
+ static int default_serial = 1;
+ static int default_parallel = 1;
+ static int default_virtcon = 1;
+@@ -5228,6 +5231,16 @@ static int virtcon_parse(const char *devname)
+     return 0;
+ }
+ 
++void qemu_add_machine_init_done_notifier(Notifier *notify)
++{
++    notifier_list_add(&machine_init_done_notifiers, notify);
++}
++
++static void qemu_run_machine_init_done_notifiers(void)
++{
++    notifier_list_notify(&machine_init_done_notifiers);
++}
++
+ static const QEMUOption *lookup_opt(int argc, char **argv,
+                                     const char **poptarg, int *poptind)
+ {
+@@ -6626,6 +6639,8 @@ int main(int argc, char **argv, char **envp)
+         exit(1);
+     }
+ 
++    qemu_run_machine_init_done_notifiers();
++
+     qemu_system_reset();
+     if (loadvm) {
+         if (load_vmstate(loadvm) < 0) {
+-- 
+1.7.4.rc1.16.gd2f15e
+

@@ -1,0 +1,140 @@
+From 1cb8172b038d016acd1cb88a45257f7a4bdae910 Mon Sep 17 00:00:00 2001
+From: Gleb Natapov <gleb@redhat.com>
+Date: Thu, 6 Jan 2011 09:50:20 -0200
+Subject: [PATCH 07/28] Add get_fw_dev_path callback for system bus.
+
+RH-Author: Gleb Natapov <gleb@redhat.com>
+Message-id: <1294307430-1358-8-git-send-email-gleb@redhat.com>
+Patchwork-id: 15839
+O-Subject: [PATCH RHEL6.1 07/17] Add get_fw_dev_path callback for system bus.
+Bugzilla: 643687
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Prints out mmio or pio used to access child device.
+
+Signed-off-by: Gleb Natapov <gleb@redhat.com>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+
+Upstream commit: c646f74ffdc2c514bc12e0c241faf08fab10d181
+---
+ hw/pci_host.c |    2 ++
+ hw/sysbus.c   |   30 ++++++++++++++++++++++++++++++
+ hw/sysbus.h   |    4 ++++
+ 3 files changed, 36 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/pci_host.c |    2 ++
+ hw/sysbus.c   |   30 ++++++++++++++++++++++++++++++
+ hw/sysbus.h   |    4 ++++
+ 3 files changed, 36 insertions(+), 0 deletions(-)
+
+diff --git a/hw/pci_host.c b/hw/pci_host.c
+index eeb8dee..6de2522 100644
+--- a/hw/pci_host.c
++++ b/hw/pci_host.c
+@@ -185,6 +185,7 @@ void pci_host_conf_register_ioport(pio_addr_t ioport, PCIHostState *s)
+ {
+     register_ioport_write(ioport, 4, 4, pci_host_config_writel_ioport, s);
+     register_ioport_read(ioport, 4, 4, pci_host_config_readl_ioport, s);
++    sysbus_init_ioports(&s->busdev, ioport, 4);
+ }
+ 
+ #define PCI_ADDR_T      target_phys_addr_t
+@@ -227,4 +228,5 @@ void pci_host_data_register_ioport(pio_addr_t ioport, PCIHostState *s)
+     register_ioport_read(ioport, 4, 1, pci_host_data_readb_ioport, s);
+     register_ioport_read(ioport, 4, 2, pci_host_data_readw_ioport, s);
+     register_ioport_read(ioport, 4, 4, pci_host_data_readl_ioport, s);
++    sysbus_init_ioports(&s->busdev, ioport, 4);
+ }
+diff --git a/hw/sysbus.c b/hw/sysbus.c
+index 1f7f138..89f9b6e 100644
+--- a/hw/sysbus.c
++++ b/hw/sysbus.c
+@@ -22,11 +22,13 @@
+ #include "monitor.h"
+ 
+ static void sysbus_dev_print(Monitor *mon, DeviceState *dev, int indent);
++static char *sysbus_get_fw_dev_path(DeviceState *dev);
+ 
+ struct BusInfo system_bus_info = {
+     .name       = "System",
+     .size       = sizeof(BusState),
+     .print_dev  = sysbus_dev_print,
++    .get_fw_dev_path = sysbus_get_fw_dev_path,
+ };
+ 
+ void sysbus_connect_irq(SysBusDevice *dev, int n, qemu_irq irq)
+@@ -105,6 +107,16 @@ void sysbus_init_mmio_cb(SysBusDevice *dev, target_phys_addr_t size,
+     dev->mmio[n].cb = cb;
+ }
+ 
++void sysbus_init_ioports(SysBusDevice *dev, pio_addr_t ioport, pio_addr_t size)
++{
++    pio_addr_t i;
++
++    for (i = 0; i < size; i++) {
++        assert(dev->num_pio < QDEV_MAX_PIO);
++        dev->pio[dev->num_pio++] = ioport++;
++    }
++}
++
+ static int sysbus_device_init(DeviceState *dev, DeviceInfo *base)
+ {
+     SysBusDeviceInfo *info = container_of(base, SysBusDeviceInfo, qdev);
+@@ -170,3 +182,21 @@ static void sysbus_dev_print(Monitor *mon, DeviceState *dev, int indent)
+                        indent, "", s->mmio[i].addr, s->mmio[i].size);
+     }
+ }
++
++static char *sysbus_get_fw_dev_path(DeviceState *dev)
++{
++    SysBusDevice *s = sysbus_from_qdev(dev);
++    char path[40];
++    int off;
++
++    off = snprintf(path, sizeof(path), "%s", qdev_fw_name(dev));
++
++    if (s->num_mmio) {
++        snprintf(path + off, sizeof(path) - off, "@"TARGET_FMT_plx,
++                 s->mmio[0].addr);
++    } else if (s->num_pio) {
++        snprintf(path + off, sizeof(path) - off, "@i%04x", s->pio[0]);
++    }
++
++    return strdup(path);
++}
+diff --git a/hw/sysbus.h b/hw/sysbus.h
+index 1a8f289..eb54d7c 100644
+--- a/hw/sysbus.h
++++ b/hw/sysbus.h
+@@ -6,6 +6,7 @@
+ #include "qdev.h"
+ 
+ #define QDEV_MAX_MMIO 32
++#define QDEV_MAX_PIO 32
+ #define QDEV_MAX_IRQ 256
+ 
+ typedef struct SysBusDevice SysBusDevice;
+@@ -23,6 +24,8 @@ struct SysBusDevice {
+         mmio_mapfunc cb;
+         int iofunc;
+     } mmio[QDEV_MAX_MMIO];
++    int num_pio;
++    pio_addr_t pio[QDEV_MAX_PIO];
+ };
+ 
+ typedef int (*sysbus_initfn)(SysBusDevice *dev);
+@@ -44,6 +47,7 @@ void sysbus_init_mmio_cb(SysBusDevice *dev, target_phys_addr_t size,
+                             mmio_mapfunc cb);
+ void sysbus_init_irq(SysBusDevice *dev, qemu_irq *p);
+ void sysbus_pass_irq(SysBusDevice *dev, SysBusDevice *target);
++void sysbus_init_ioports(SysBusDevice *dev, pio_addr_t ioport, pio_addr_t size);
+ 
+ 
+ void sysbus_connect_irq(SysBusDevice *dev, int n, qemu_irq irq);
+-- 
+1.7.4.rc1.16.gd2f15e
+
