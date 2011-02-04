@@ -3293,7 +3293,8 @@ echo "==="
 cat config-host.mak
 echo "==="
 
-make V=1 %{?_smp_mflags} $buildldflags
+make V=1 QEMU_PROG=qemu-kvm QEMU_BINDIR="%{_prefix}/libexec" \
+     %{?_smp_mflags} $buildldflags
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -3317,16 +3318,15 @@ install -m 0755 kvm/kvm_stat $RPM_BUILD_ROOT%{_bindir}/
 install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
 install -m 0644 %{SOURCE9} $RPM_BUILD_ROOT%{_sysconfdir}/modprobe.d/blacklist-kvm.conf
 
-make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
-     bindir="${RPM_BUILD_ROOT}%{_bindir}" \
-     sharedir="${RPM_BUILD_ROOT}%{_datadir}/%{name}" \
-     mandir="${RPM_BUILD_ROOT}%{_mandir}" \
-     docdir="${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}" \
-     datadir="${RPM_BUILD_ROOT}%{_datadir}/%{name}" \
-     cpuconfdir="${RPM_BUILD_ROOT}%{cpumodeldir}" \
-     sysconfdir="${RPM_BUILD_ROOT}%{_sysconfdir}" install
-
-mv ${RPM_BUILD_ROOT}%{_bindir}/qemu-system-x86_64 ${RPM_BUILD_ROOT}%{_libexecdir}/qemu-kvm
+make DESTDIR="${RPM_BUILD_ROOT}" \
+     docdir="%{_docdir}/%{name}-%{version}" \
+     sharedir="%{_datadir}/%{name}" \
+     datadir="%{_datadir}/%{name}" \
+     cpuconfdir="%{cpumodeldir}" \
+     sysconfdir="%{_sysconfdir}" \
+     QEMU_PROG=qemu-kvm \
+     QEMU_BINDIR="%{_prefix}/libexec" \
+     install
 
 rm -rf ${RPM_BUILD_ROOT}%{_bindir}/qemu-nbd
 rm -rf ${RPM_BUILD_ROOT}%{_mandir}/man8/qemu-nbd.8*
@@ -3365,9 +3365,6 @@ ln -s ../vgabios/VGABIOS-lgpl-latest.qxl.bin %{buildroot}/%{_datadir}/%{name}/vg
 ln -s ../seabios/bios.bin %{buildroot}/%{_datadir}/%{name}/bios.bin
 
 cd %{buildroot}/usr/share/systemtap/tapset
-mv qemu-system-x86_64.stp qemu-kvm.stp
-perl -i -p -e 's/qemu\.system\.x86_64/qemu.kvm/' qemu-kvm.stp
-perl -i -p -e 's/qemu-system-x86_64/qemu-kvm/' qemu-kvm.stp
 
 %clean
 rm -rf $RPM_BUILD_ROOT
