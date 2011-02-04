@@ -1961,6 +1961,9 @@ void cpu_physical_memory_reset_dirty(ram_addr_t start, ram_addr_t end,
     for(i = 0; i < len; i++)
         p[i] &= mask;
 
+    if (kvm_enabled())
+        return;
+
     /* we modify the TLB cache so that the dirty bit will be set again
        when accessing the range */
     start1 = (unsigned long)qemu_get_ram_ptr(start);
