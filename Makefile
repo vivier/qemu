@@ -191,7 +191,8 @@ obj-$(CONFIG_POSIX) += migration-exec.o migration-unix.o migration-fd.o
 
 obj-$(CONFIG_SPICE) += ui/spice-core.o ui/spice-input.o ui/spice-display.o spice-qemu-char.o
 
-obj-$(CONFIG_SMARTCARD) += usb-ccid.o ccid-card-passthru.o ccid-card-emulated.o
+obj-$(CONFIG_SMARTCARD) += usb-ccid.o ccid-card-passthru.o
+obj-$(CONFIG_SMARTCARD_NSS) += ccid-card-emulated.o
 
 audio/audio.o audio/fmodaudio.o: QEMU_CFLAGS += $(FMOD_CFLAGS)
 
