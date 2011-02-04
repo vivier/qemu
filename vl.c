@@ -3345,6 +3345,7 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
 {
     ram_addr_t addr;
     uint64_t bytes_transferred_last;
+    uint64_t t0;
     double bwidth = 0;
 
     if (stage < 0) {
@@ -3386,7 +3387,7 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
     }
 
     bytes_transferred_last = bytes_transferred;
-    bwidth = get_clock();
+    t0 = get_clock();
 
     while (!qemu_file_rate_limit(f)) {
         int ret;
@@ -3397,8 +3398,8 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
             break;
     }
 
-    bwidth = get_clock() - bwidth;
-    bwidth = (bytes_transferred - bytes_transferred_last) / bwidth;
+    t0 = get_clock() - t0;
+    bwidth = (bytes_transferred - bytes_transferred_last) / t0;
 
     /* if we haven't transferred anything this round, force expected_time to a
      * a very high value, but without crashing */
