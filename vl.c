@@ -3306,19 +3306,7 @@ static uint64_t bytes_transferred;
 
 static ram_addr_t ram_save_remaining(void)
 {
-    RAMBlock *block;
-    ram_addr_t count = 0;
-
-    QLIST_FOREACH(block, &ram_list.blocks, next) {
-        ram_addr_t addr;
-        for (addr = block->offset; addr < block->offset + block->length;
-             addr += TARGET_PAGE_SIZE) {
-            if (cpu_physical_memory_get_dirty(addr, MIGRATION_DIRTY_FLAG))
-                count++;
-        }
-    }
-
-    return count;
+    return ram_list.dirty_pages;
 }
 
 uint64_t ram_bytes_remaining(void)

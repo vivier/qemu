@@ -862,6 +862,7 @@ typedef struct RAMBlock {
 
 typedef struct RAMList {
     uint8_t *phys_dirty;
+    uint64_t dirty_pages;
     QLIST_HEAD(ram, RAMBlock) blocks;
 } RAMList;
 extern RAMList ram_list;
@@ -905,6 +906,9 @@ static inline int cpu_physical_memory_get_dirty(ram_addr_t addr,
 
 static inline void cpu_physical_memory_set_dirty(ram_addr_t addr)
 {
+    if (!cpu_physical_memory_get_dirty(addr, MIGRATION_DIRTY_FLAG))
+        ram_list.dirty_pages++;
+
     ram_list.phys_dirty[addr >> TARGET_PAGE_BITS] = 0xff;
 }
 

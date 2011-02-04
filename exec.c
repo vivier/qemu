@@ -1958,8 +1958,12 @@ void cpu_physical_memory_reset_dirty(ram_addr_t start, ram_addr_t end,
     len = length >> TARGET_PAGE_BITS;
     mask = ~dirty_flags;
     p = ram_list.phys_dirty + (start >> TARGET_PAGE_BITS);
-    for(i = 0; i < len; i++)
+    for(i = 0; i < len; i++) {
+        if (cpu_physical_memory_get_dirty(start + i * TARGET_PAGE_SIZE,
+                                          MIGRATION_DIRTY_FLAG & dirty_flags))
+            ram_list.dirty_pages--;
         p[i] &= mask;
+    }
 
     if (kvm_enabled())
         return;
@@ -2752,6 +2756,8 @@ ram_addr_t qemu_ram_alloc(DeviceState *dev, const char *name, ram_addr_t size)
     memset(ram_list.phys_dirty + (new_block->offset >> TARGET_PAGE_BITS),
            0xff, size >> TARGET_PAGE_BITS);
 
+    ram_list.dirty_pages += size >> TARGET_PAGE_BITS;
+
     if (kvm_enabled())
         kvm_setup_guest_memory(new_block->host, size);
 
@@ -2930,6 +2936,9 @@ static void notdirty_mem_writeb(void *opaque, target_phys_addr_t ram_addr,
     }
     stb_p(qemu_get_ram_ptr(ram_addr), val);
     dirty_flags |= (0xff & ~CODE_DIRTY_FLAG);
+    if (!cpu_physical_memory_get_dirty(ram_addr,
+                                      MIGRATION_DIRTY_FLAG & dirty_flags))
+        ram_list.dirty_pages++;
     ram_list.phys_dirty[ram_addr >> TARGET_PAGE_BITS] = dirty_flags;
     /* we remove the notdirty callback only if the code has been
        flushed */
@@ -2950,6 +2959,9 @@ static void notdirty_mem_writew(void *opaque, target_phys_addr_t ram_addr,
     }
     stw_p(qemu_get_ram_ptr(ram_addr), val);
     dirty_flags |= (0xff & ~CODE_DIRTY_FLAG);
+    if (!cpu_physical_memory_get_dirty(ram_addr,
+                                      MIGRATION_DIRTY_FLAG & dirty_flags))
+        ram_list.dirty_pages++;
     ram_list.phys_dirty[ram_addr >> TARGET_PAGE_BITS] = dirty_flags;
     /* we remove the notdirty callback only if the code has been
        flushed */
@@ -2970,6 +2982,9 @@ static void notdirty_mem_writel(void *opaque, target_phys_addr_t ram_addr,
     }
     stl_p(qemu_get_ram_ptr(ram_addr), val);
     dirty_flags |= (0xff & ~CODE_DIRTY_FLAG);
+    if (!cpu_physical_memory_get_dirty(ram_addr,
+                                      MIGRATION_DIRTY_FLAG & dirty_flags))
+        ram_list.dirty_pages++;
     ram_list.phys_dirty[ram_addr >> TARGET_PAGE_BITS] = dirty_flags;
     /* we remove the notdirty callback only if the code has been
        flushed */
@@ -3424,6 +3439,8 @@ void cpu_physical_memory_rw(target_phys_addr_t addr, uint8_t *buf,
                     /* invalidate code */
                     tb_invalidate_phys_page_range(addr1, addr1 + l, 0);
                     /* set dirty bit */
+                    if (!cpu_physical_memory_get_dirty(addr1, MIGRATION_DIRTY_FLAG))
+                        ram_list.dirty_pages++;
                     ram_list.phys_dirty[addr1 >> TARGET_PAGE_BITS] |=
                         (0xff & ~CODE_DIRTY_FLAG);
                 }
@@ -3638,6 +3655,8 @@ void cpu_physical_memory_unmap(void *buffer, target_phys_addr_t len,
                     /* invalidate code */
                     tb_invalidate_phys_page_range(addr1, addr1 + l, 0);
                     /* set dirty bit */
+                    if (!cpu_physical_memory_get_dirty(addr1, MIGRATION_DIRTY_FLAG))
+                        ram_list.dirty_pages++;
                     ram_list.phys_dirty[addr1 >> TARGET_PAGE_BITS] |=
                         (0xff & ~CODE_DIRTY_FLAG);
                 }
@@ -3799,6 +3818,8 @@ void stl_phys_notdirty(target_phys_addr_t addr, uint32_t val)
                 /* invalidate code */
                 tb_invalidate_phys_page_range(addr1, addr1 + 4, 0);
                 /* set dirty bit */
+                    if (!cpu_physical_memory_get_dirty(addr1, MIGRATION_DIRTY_FLAG))
+                        ram_list.dirty_pages++;
                 ram_list.phys_dirty[addr1 >> TARGET_PAGE_BITS] |=
                     (0xff & ~CODE_DIRTY_FLAG);
             }
@@ -3868,6 +3889,8 @@ void stl_phys(target_phys_addr_t addr, uint32_t val)
             /* invalidate code */
             tb_invalidate_phys_page_range(addr1, addr1 + 4, 0);
             /* set dirty bit */
+            if (!cpu_physical_memory_get_dirty(addr1, MIGRATION_DIRTY_FLAG))
+                ram_list.dirty_pages++;
             ram_list.phys_dirty[addr1 >> TARGET_PAGE_BITS] |=
                 (0xff & ~CODE_DIRTY_FLAG);
         }
@@ -3911,6 +3934,8 @@ void stw_phys(target_phys_addr_t addr, uint32_t val)
             /* invalidate code */
             tb_invalidate_phys_page_range(addr1, addr1 + 2, 0);
             /* set dirty bit */
+            if (!cpu_physical_memory_get_dirty(addr1, MIGRATION_DIRTY_FLAG))
+                ram_list.dirty_pages++;
             ram_list.phys_dirty[addr1 >> TARGET_PAGE_BITS] |=
                 (0xff & ~CODE_DIRTY_FLAG);
         }
