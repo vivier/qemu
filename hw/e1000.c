@@ -637,15 +637,11 @@ e1000_receive(VLANClientState *nc, const uint8_t *buf, size_t size)
     uint32_t rdh_start;
     uint16_t vlan_special = 0;
     uint8_t vlan_status = 0, vlan_offset = 0;
+    size_t desc_offset;
+    size_t desc_size;
 
     if (!(s->mac_reg[RCTL] & E1000_RCTL_EN))
         return -1;
-
-    if (size > s->rxbuf_size) {
-        DBGOUT(RX, "packet too large for buffers (%lu > %d)\n",
-               (unsigned long)size, s->rxbuf_size);
-        return -1;
-    }
 
     if (!receive_filter(s, buf, size))
         return size;
@@ -660,8 +656,15 @@ e1000_receive(VLANClientState *nc, const uint8_t *buf, size_t size)
 
     rdh_start = s->mac_reg[RDH];
     size += fcs_len(s);
+    desc_offset = 0;
     do {
+        desc_size = size - desc_offset;
+        if (desc_size > s->rxbuf_size) {
+            desc_size = s->rxbuf_size;
+        }
         if (s->mac_reg[RDH] == s->mac_reg[RDT] && s->check_rxov) {
+            /* Discard all data written so far */
+            s->mac_reg[RDH] = rdh_start;
             set_ics(s, 0, E1000_ICS_RXO);
             return -1;
         }
@@ -672,9 +675,15 @@ e1000_receive(VLANClientState *nc, const uint8_t *buf, size_t size)
         desc.status |= (vlan_status | E1000_RXD_STAT_DD);
         if (desc.buffer_addr) {
             cpu_physical_memory_write(le64_to_cpu(desc.buffer_addr),
-                                      (void *)(buf + vlan_offset), size);
-            desc.length = cpu_to_le16(size);
-            desc.status |= E1000_RXD_STAT_EOP|E1000_RXD_STAT_IXSM;
+                                      (void *)(buf + desc_offset + vlan_offset),
+                                      desc_size);
+            desc_offset += desc_size;
+            if (desc_offset >= size) {
+                desc.length = cpu_to_le16(desc_size);
+                desc.status |= E1000_RXD_STAT_EOP | E1000_RXD_STAT_IXSM;
+            } else {
+                desc.length = cpu_to_le16(desc_size);
+            }
         } else // as per intel docs; skip descriptors with null buf addr
             DBGOUT(RX, "Null RX descriptor!!\n");
         cpu_physical_memory_write(base, (void *)&desc, sizeof(desc));
@@ -689,7 +698,7 @@ e1000_receive(VLANClientState *nc, const uint8_t *buf, size_t size)
             set_ics(s, 0, E1000_ICS_RXO);
             return -1;
         }
-    } while (desc.buffer_addr == 0);
+    } while (desc_offset < size);
 
     s->mac_reg[GPRC]++;
     s->mac_reg[TPR]++;
