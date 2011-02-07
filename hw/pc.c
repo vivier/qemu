@@ -1592,6 +1592,10 @@ static GlobalProperty compat_rhel5[] = {
             .property = "vectors",
             .value    = stringify(0),
         },{
+            .driver   = "virtio-serial-pci",
+            .property = "flow_control",
+            .value    = stringify(0),
+        },
             .driver   = "PCI",
             .property = "rombar",
             .value    = stringify(0),
