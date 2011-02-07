@@ -3379,7 +3379,6 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
     bytes_transferred_last = bytes_transferred;
     t0 = get_clock();
 
-    qemu_mutex_unlock_iothread();
     i = 0;
     while (!qemu_file_rate_limit(f)) {
         int ret;
@@ -3401,7 +3400,7 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
         }
         i++;
     }
-    qemu_mutex_lock_iothread();
+
     t0 = get_clock() - t0;
     bwidth = (bytes_transferred - bytes_transferred_last) / t0;
 
