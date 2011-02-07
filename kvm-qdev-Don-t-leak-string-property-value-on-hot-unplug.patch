@@ -1,0 +1,103 @@
+From fa7a0ba782ab21165061717e03504a070d6751c6 Mon Sep 17 00:00:00 2001
+From: Anthony Liguori <aliguori@redhat.com>
+Date: Wed, 26 Jan 2011 14:58:00 -0200
+Subject: [RHEL6 qemu-kvm PATCH 05/14] qdev: Don't leak string property value on hot unplug
+
+RH-Author: Anthony Liguori <aliguori@redhat.com>
+Message-id: <1296053886-2905-6-git-send-email-aliguori@redhat.com>
+Patchwork-id: 17092
+O-Subject: [PATCH RHEL6.1 qemu-kvm 05/11] qdev: Don't leak string property value
+	on hot unplug
+Bugzilla: 654682
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+BZ: 654682
+Upstream-status: accepted
+
+parse_string() qemu_strdup()s the property value.  It is never freed.
+It needs to be freed along with the device.  Otherwise, the value of
+scsi-disk property "ver" gets leaked when hot-unplugging the disk, for
+instance.
+
+Call new PropertyInfo method free() from qdev_free().  Implement it
+for qdev_prop_string.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit d21357df9a2a6b7e6bb2f579d04877f3bd65c557)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qdev-properties.c |    6 ++++++
+ hw/qdev.c            |    6 ++++++
+ hw/qdev.h            |    1 +
+ 3 files changed, 13 insertions(+), 0 deletions(-)
+
+diff --git a/hw/qdev-properties.c b/hw/qdev-properties.c
+index d46507b..8a58b1e 100644
+--- a/hw/qdev-properties.c
++++ b/hw/qdev-properties.c
+@@ -340,6 +340,11 @@ static int parse_string(DeviceState *dev, Property *prop, const char *str)
+     return 0;
+ }
+ 
++static void free_string(DeviceState *dev, Property *prop)
++{
++    qemu_free(*(char **)qdev_get_prop_ptr(dev, prop));
++}
++
+ static int print_string(DeviceState *dev, Property *prop, char *dest, size_t len)
+ {
+     char **ptr = qdev_get_prop_ptr(dev, prop);
+@@ -354,6 +359,7 @@ PropertyInfo qdev_prop_string = {
+     .size  = sizeof(char*),
+     .parse = parse_string,
+     .print = print_string,
++    .free  = free_string,
+ };
+ 
+ /* --- drive --- */
+diff --git a/hw/qdev.c b/hw/qdev.c
+index fd791a6..76f8755 100644
+--- a/hw/qdev.c
++++ b/hw/qdev.c
+@@ -338,6 +338,7 @@ void qdev_init_nofail(DeviceState *dev)
+ void qdev_free(DeviceState *dev)
+ {
+     BusState *bus;
++    Property *prop;
+ 
+     if (dev->state == DEV_STATE_INITIALIZED) {
+         while (dev->num_child_bus) {
+@@ -353,6 +354,11 @@ void qdev_free(DeviceState *dev)
+     }
+     qemu_unregister_reset(qdev_reset, dev);
+     QLIST_REMOVE(dev, sibling);
++    for (prop = dev->info->props; prop && prop->name; prop++) {
++        if (prop->info->free) {
++            prop->info->free(dev, prop);
++        }
++    }
+     qemu_free(dev);
+ }
+ 
+diff --git a/hw/qdev.h b/hw/qdev.h
+index 684721f..f335d14 100644
+--- a/hw/qdev.h
++++ b/hw/qdev.h
+@@ -109,6 +109,7 @@ struct PropertyInfo {
+     int (*parse)(DeviceState *dev, Property *prop, const char *str);
+     int (*print)(DeviceState *dev, Property *prop, char *dest, size_t len);
+     int (*print_options)(DeviceInfo *info, Property *prop, char *dest, size_t len);
++    void (*free)(DeviceState *dev, Property *prop);
+ };
+ 
+ typedef struct GlobalProperty {
+-- 
+1.7.3.2
+

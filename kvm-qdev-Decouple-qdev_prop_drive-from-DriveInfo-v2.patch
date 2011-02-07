@@ -1,0 +1,578 @@
+From 6f1918362f0a99d0cd316098a1df29d15b7ef605 Mon Sep 17 00:00:00 2001
+From: Anthony Liguori <aliguori@redhat.com>
+Date: Wed, 26 Jan 2011 14:58:03 -0200
+Subject: [RHEL6 qemu-kvm PATCH 08/14] qdev: Decouple qdev_prop_drive from DriveInfo (v2)
+
+RH-Author: Anthony Liguori <aliguori@redhat.com>
+Message-id: <1296053886-2905-9-git-send-email-aliguori@redhat.com>
+Patchwork-id: 17094
+O-Subject: [PATCH RHEL6.1 qemu-kvm 08/11] qdev: Decouple qdev_prop_drive from
+	DriveInfo (v2)
+Bugzilla: 654682
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+BZ: 654682
+Upstream-status: accepted
+
+Make the property point to BlockDriverState, cutting out the DriveInfo
+middleman.  This prepares the ground for block devices that don't have
+a DriveInfo.
+
+Currently all user-defined ones have a DriveInfo, because the only way
+to define one is -drive & friends (they go through drive_init()).
+DriveInfo is closely tied to -drive, and like -drive, it mixes
+information about host and guest part of the block device.  I'm
+working towards a new way to define block devices, with clean
+host/guest separation, and I need to get DriveInfo out of the way for
+that.
+
+Fortunately, the device models are perfectly happy with
+BlockDriverState, except for two places: ide_drive_initfn() and
+scsi_disk_initfn() need to check the DriveInfo for a serial number set
+with legacy -drive serial=...  Use drive_get_by_blockdev() there.
+
+Device model code should now use DriveInfo only when explicitly
+dealing with drives defined the old way, i.e. without -device.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit f8b6cc0070aab8b75bd082582c829be1353f395f)
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+--
+v1 -> v2
+ - remove peer field from block_int.h (move to next patch)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block_int.h          |    6 ++----
+ hw/fdc.c             |   22 ++++++++++------------
+ hw/ide/core.c        |   14 +++++++-------
+ hw/ide/internal.h    |    2 +-
+ hw/ide/qdev.c        |    6 +++---
+ hw/pci-hotplug.c     |    4 ++--
+ hw/qdev-properties.c |   22 +++++++++++++---------
+ hw/qdev.h            |    6 +++---
+ hw/s390-virtio.c     |    2 +-
+ hw/scsi-bus.c        |    8 ++++----
+ hw/scsi-disk.c       |    6 +++---
+ hw/scsi-generic.c    |    6 +++---
+ hw/scsi.h            |    2 +-
+ hw/usb-msd.c         |   15 +++++++--------
+ hw/virtio-blk.c      |    2 +-
+ hw/virtio-pci.c      |    4 ++--
+ 16 files changed, 63 insertions(+), 64 deletions(-)
+
+diff --git a/block_int.h b/block_int.h
+index 76f0613..5c576a7 100644
+--- a/block_int.h
++++ b/block_int.h
+@@ -217,10 +217,8 @@ void *qemu_blockalign(BlockDriverState *bs, size_t size);
+ int is_windows_drive(const char *filename);
+ #endif
+ 
+-struct DriveInfo;
+-
+ typedef struct BlockConf {
+-    struct DriveInfo *dinfo;
++    BlockDriverState *bs;
+     uint16_t physical_block_size;
+     uint16_t logical_block_size;
+     uint16_t min_io_size;
+@@ -242,7 +240,7 @@ static inline unsigned int get_physical_block_exp(BlockConf *conf)
+ }
+ 
+ #define DEFINE_BLOCK_PROPERTIES(_state, _conf)                          \
+-    DEFINE_PROP_DRIVE("drive", _state, _conf.dinfo),                    \
++    DEFINE_PROP_DRIVE("drive", _state, _conf.bs),                       \
+     DEFINE_PROP_UINT16("logical_block_size", _state,                    \
+                        _conf.logical_block_size, 512),                  \
+     DEFINE_PROP_UINT16("physical_block_size", _state,                   \
+diff --git a/hw/fdc.c b/hw/fdc.c
+index c049688..470e96e 100644
+--- a/hw/fdc.c
++++ b/hw/fdc.c
+@@ -82,7 +82,6 @@ typedef enum fdisk_flags_t {
+ } fdisk_flags_t;
+ 
+ typedef struct fdrive_t {
+-    DriveInfo *dinfo;
+     BlockDriverState *bs;
+     /* Drive status */
+     fdrive_type_t drive;
+@@ -102,7 +101,6 @@ typedef struct fdrive_t {
+ static void fd_init (fdrive_t *drv)
+ {
+     /* Drive */
+-    drv->bs = drv->dinfo ? drv->dinfo->bdrv : NULL;
+     drv->drive = FDRIVE_DRV_NONE;
+     drv->perpendicular = 0;
+     /* Disk */
+@@ -1870,10 +1868,10 @@ fdctrl_t *fdctrl_init_isa(DriveInfo **fds)
+ 
+     dev = isa_create("isa-fdc");
+     if (fds[0]) {
+-        qdev_prop_set_drive(&dev->qdev, "driveA", fds[0]);
++        qdev_prop_set_drive(&dev->qdev, "driveA", fds[0]->bdrv);
+     }
+     if (fds[1]) {
+-        qdev_prop_set_drive(&dev->qdev, "driveB", fds[1]);
++        qdev_prop_set_drive(&dev->qdev, "driveB", fds[1]->bdrv);
+     }
+     if (qdev_init(&dev->qdev) < 0)
+         return NULL;
+@@ -1893,10 +1891,10 @@ fdctrl_t *fdctrl_init_sysbus(qemu_irq irq, int dma_chann,
+     fdctrl = &sys->state;
+     fdctrl->dma_chann = dma_chann; /* FIXME */
+     if (fds[0]) {
+-        qdev_prop_set_drive(dev, "driveA", fds[0]);
++        qdev_prop_set_drive(dev, "driveA", fds[0]->bdrv);
+     }
+     if (fds[1]) {
+-        qdev_prop_set_drive(dev, "driveB", fds[1]);
++        qdev_prop_set_drive(dev, "driveB", fds[1]->bdrv);
+     }
+     qdev_init_nofail(dev);
+     sysbus_connect_irq(&sys->busdev, 0, irq);
+@@ -1914,7 +1912,7 @@ fdctrl_t *sun4m_fdctrl_init (qemu_irq irq, target_phys_addr_t io_base,
+ 
+     dev = qdev_create(NULL, "SUNW,fdtwo");
+     if (fds[0]) {
+-        qdev_prop_set_drive(dev, "drive", fds[0]);
++        qdev_prop_set_drive(dev, "drive", fds[0]->bdrv);
+     }
+     qdev_init_nofail(dev);
+     sys = DO_UPCAST(fdctrl_sysbus_t, busdev.qdev, dev);
+@@ -2033,8 +2031,8 @@ static ISADeviceInfo isa_fdc_info = {
+     .qdev.no_user = 1,
+     .qdev.reset = fdctrl_external_reset_isa,
+     .qdev.props = (Property[]) {
+-        DEFINE_PROP_DRIVE("driveA", fdctrl_isabus_t, state.drives[0].dinfo),
+-        DEFINE_PROP_DRIVE("driveB", fdctrl_isabus_t, state.drives[1].dinfo),
++        DEFINE_PROP_DRIVE("driveA", fdctrl_isabus_t, state.drives[0].bs),
++        DEFINE_PROP_DRIVE("driveB", fdctrl_isabus_t, state.drives[1].bs),
+         DEFINE_PROP_INT32("bootindexA", fdctrl_isabus_t, bootindexA, -1),
+         DEFINE_PROP_INT32("bootindexB", fdctrl_isabus_t, bootindexB, -1),
+         DEFINE_PROP_END_OF_LIST(),
+@@ -2047,8 +2045,8 @@ static SysBusDeviceInfo sysbus_fdc_info = {
+     .qdev.size  = sizeof(fdctrl_sysbus_t),
+     .qdev.reset = fdctrl_external_reset_sysbus,
+     .qdev.props = (Property[]) {
+-        DEFINE_PROP_DRIVE("driveA", fdctrl_sysbus_t, state.drives[0].dinfo),
+-        DEFINE_PROP_DRIVE("driveB", fdctrl_sysbus_t, state.drives[1].dinfo),
++        DEFINE_PROP_DRIVE("driveA", fdctrl_sysbus_t, state.drives[0].bs),
++        DEFINE_PROP_DRIVE("driveB", fdctrl_sysbus_t, state.drives[1].bs),
+         DEFINE_PROP_END_OF_LIST(),
+     },
+ };
+@@ -2059,7 +2057,7 @@ static SysBusDeviceInfo sun4m_fdc_info = {
+     .qdev.size  = sizeof(fdctrl_sysbus_t),
+     .qdev.reset = fdctrl_external_reset_sysbus,
+     .qdev.props = (Property[]) {
+-        DEFINE_PROP_DRIVE("drive", fdctrl_sysbus_t, state.drives[0].dinfo),
++        DEFINE_PROP_DRIVE("drive", fdctrl_sysbus_t, state.drives[0].bs),
+         DEFINE_PROP_END_OF_LIST(),
+     },
+ };
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index e797c42..00b0aa6 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -2622,14 +2622,14 @@ void ide_bus_reset(IDEBus *bus)
+     ide_clear_hob(bus);
+ }
+ 
+-void ide_init_drive(IDEState *s, DriveInfo *dinfo, const char *version)
++void ide_init_drive(IDEState *s, BlockDriverState *bs, const char *version)
+ {
+     int cylinders, heads, secs;
+     uint64_t nb_sectors;
+ 
+-    s->bs = dinfo->bdrv;
+-    bdrv_get_geometry(s->bs, &nb_sectors);
+-    bdrv_guess_geometry(s->bs, &cylinders, &heads, &secs);
++    s->bs = bs;
++    bdrv_get_geometry(bs, &nb_sectors);
++    bdrv_guess_geometry(bs, &cylinders, &heads, &secs);
+     s->cylinders = cylinders;
+     s->heads = heads;
+     s->sectors = secs;
+@@ -2640,9 +2640,9 @@ void ide_init_drive(IDEState *s, DriveInfo *dinfo, const char *version)
+     s->smart_autosave = 1;
+     s->smart_errors = 0;
+     s->smart_selftest_count = 0;
+-    if (bdrv_get_type_hint(s->bs) == BDRV_TYPE_CDROM) {
++    if (bdrv_get_type_hint(bs) == BDRV_TYPE_CDROM) {
+         s->is_cdrom = 1;
+-        bdrv_set_change_cb(s->bs, cdrom_change_cb, s);
++        bdrv_set_change_cb(bs, cdrom_change_cb, s);
+         s->bs->buffer_alignment = 2048;
+     }
+     bdrv_set_removable(s->bs, s->is_cdrom);
+@@ -2699,7 +2699,7 @@ void ide_init2_with_non_qdev_drives(IDEBus *bus, DriveInfo *hd0,
+         dinfo = i == 0 ? hd0 : hd1;
+         ide_init1(bus, i);
+         if (dinfo) {
+-            ide_init_drive(&bus->ifs[i], dinfo, NULL);
++            ide_init_drive(&bus->ifs[i], dinfo->bdrv, NULL);
+         } else {
+             ide_reset(&bus->ifs[i]);
+         }
+diff --git a/hw/ide/internal.h b/hw/ide/internal.h
+index 94ee01b..644c845 100644
+--- a/hw/ide/internal.h
++++ b/hw/ide/internal.h
+@@ -558,7 +558,7 @@ uint32_t ide_data_readw(void *opaque, uint32_t addr);
+ void ide_data_writel(void *opaque, uint32_t addr, uint32_t val);
+ uint32_t ide_data_readl(void *opaque, uint32_t addr);
+ 
+-void ide_init_drive(IDEState *s, DriveInfo *dinfo, const char *version);
++void ide_init_drive(IDEState *s, BlockDriverState *bs, const char *version);
+ void ide_init2(IDEBus *bus, qemu_irq irq);
+ void ide_init2_with_non_qdev_drives(IDEBus *bus, DriveInfo *hd0,
+                                     DriveInfo *hd1, qemu_irq irq);
+diff --git a/hw/ide/qdev.c b/hw/ide/qdev.c
+index 4153659..46e9761 100644
+--- a/hw/ide/qdev.c
++++ b/hw/ide/qdev.c
+@@ -54,7 +54,7 @@ static int ide_qdev_init(DeviceState *qdev, DeviceInfo *base)
+     IDEDeviceInfo *info = DO_UPCAST(IDEDeviceInfo, qdev, base);
+     IDEBus *bus = DO_UPCAST(IDEBus, qbus, qdev->parent_bus);
+ 
+-    if (!dev->conf.dinfo) {
++    if (!dev->conf.bs) {
+         fprintf(stderr, "%s: no drive specified\n", qdev->info->name);
+         goto err;
+     }
+@@ -98,7 +98,7 @@ IDEDevice *ide_create_drive(IDEBus *bus, int unit, DriveInfo *drive)
+ 
+     dev = qdev_create(&bus->qbus, "ide-drive");
+     qdev_prop_set_uint32(dev, "unit", unit);
+-    qdev_prop_set_drive(dev, "drive", drive);
++    qdev_prop_set_drive(dev, "drive", drive->bdrv);
+     if (qdev_init(dev) < 0)
+         return NULL;
+     return DO_UPCAST(IDEDevice, qdev, dev);
+@@ -113,7 +113,7 @@ typedef struct IDEDrive {
+ static int ide_drive_initfn(IDEDevice *dev)
+ {
+     IDEBus *bus = DO_UPCAST(IDEBus, qbus, dev->qdev.parent_bus);
+-    ide_init_drive(bus->ifs + dev->unit, dev->conf.dinfo, dev->version);
++    ide_init_drive(bus->ifs + dev->unit, dev->conf.bs, dev->version);
+     add_boot_device_path(dev->conf.bootindex, &dev->qdev,
+                          dev->unit ? "/disk@1" : "/disk@0");
+ 
+diff --git a/hw/pci-hotplug.c b/hw/pci-hotplug.c
+index e4f187f..248634a 100644
+--- a/hw/pci-hotplug.c
++++ b/hw/pci-hotplug.c
+@@ -92,7 +92,7 @@ static int scsi_hot_add(Monitor *mon, DeviceState *adapter,
+      * specified).
+      */
+     dinfo->unit = qemu_opt_get_number(dinfo->opts, "unit", -1);
+-    scsidev = scsi_bus_legacy_add_drive(scsibus, dinfo, dinfo->unit);
++    scsidev = scsi_bus_legacy_add_drive(scsibus, dinfo->bdrv, dinfo->unit);
+     dinfo->unit = scsidev->id;
+ 
+     if (printinfo)
+@@ -215,7 +215,7 @@ static PCIDevice *qemu_pci_hot_add_storage(Monitor *mon,
+             return NULL;
+         }
+         dev = pci_create(bus, devfn, "virtio-blk-pci");
+-        qdev_prop_set_drive(&dev->qdev, "drive", dinfo);
++        qdev_prop_set_drive(&dev->qdev, "drive", dinfo->bdrv);
+         if (qdev_init(&dev->qdev) < 0)
+             dev = NULL;
+         break;
+diff --git a/hw/qdev-properties.c b/hw/qdev-properties.c
+index 535e087..b33aa67 100644
+--- a/hw/qdev-properties.c
++++ b/hw/qdev-properties.c
+@@ -2,6 +2,7 @@
+ #include "net.h"
+ #include "qdev.h"
+ #include "qerror.h"
++#include "block.h"
+ 
+ void *qdev_get_prop_ptr(DeviceState *dev, Property *prop)
+ {
+@@ -366,33 +367,36 @@ PropertyInfo qdev_prop_string = {
+ 
+ static int parse_drive(DeviceState *dev, Property *prop, const char *str)
+ {
+-    DriveInfo **ptr = qdev_get_prop_ptr(dev, prop);
++    BlockDriverState **ptr = qdev_get_prop_ptr(dev, prop);
++    BlockDriverState *bs;
+ 
+-    *ptr = drive_get_by_id(str);
+-    if (*ptr == NULL)
++    bs = bdrv_find(str);
++    if (bs == NULL)
+         return -ENOENT;
++    *ptr = bs;
+     return 0;
+ }
+ 
+ static void free_drive(DeviceState *dev, Property *prop)
+ {
+-    DriveInfo **ptr = qdev_get_prop_ptr(dev, prop);
++    BlockDriverState **ptr = qdev_get_prop_ptr(dev, prop);
+ 
+     if (*ptr) {
+-        blockdev_auto_del((*ptr)->bdrv);
++        blockdev_auto_del(*ptr);
+     }
+ }
+ 
+ static int print_drive(DeviceState *dev, Property *prop, char *dest, size_t len)
+ {
+-    DriveInfo **ptr = qdev_get_prop_ptr(dev, prop);
+-    return snprintf(dest, len, "%s", (*ptr) ? (*ptr)->id : "<null>");
++    BlockDriverState **ptr = qdev_get_prop_ptr(dev, prop);
++    return snprintf(dest, len, "%s",
++                    *ptr ? bdrv_get_device_name(*ptr) : "<null>");
+ }
+ 
+ PropertyInfo qdev_prop_drive = {
+     .name  = "drive",
+     .type  = PROP_TYPE_DRIVE,
+-    .size  = sizeof(DriveInfo*),
++    .size  = sizeof(BlockDriverState *),
+     .parse = parse_drive,
+     .print = print_drive,
+     .free  = free_drive,
+@@ -713,7 +717,7 @@ void qdev_prop_set_uint64(DeviceState *dev, const char *name, uint64_t value)
+     qdev_prop_set(dev, name, &value, PROP_TYPE_UINT64);
+ }
+ 
+-void qdev_prop_set_drive(DeviceState *dev, const char *name, DriveInfo *value)
++void qdev_prop_set_drive(DeviceState *dev, const char *name, BlockDriverState *value)
+ {
+     qdev_prop_set(dev, name, &value, PROP_TYPE_DRIVE);
+ }
+diff --git a/hw/qdev.h b/hw/qdev.h
+index f335d14..5e22c74 100644
+--- a/hw/qdev.h
++++ b/hw/qdev.h
+@@ -276,8 +276,8 @@ extern PropertyInfo qdev_prop_enum;
+     DEFINE_PROP(_n, _s, _f, qdev_prop_netdev, VLANClientState*)
+ #define DEFINE_PROP_VLAN(_n, _s, _f)             \
+     DEFINE_PROP(_n, _s, _f, qdev_prop_vlan, VLANState*)
+-#define DEFINE_PROP_DRIVE(_n, _s, _f)             \
+-    DEFINE_PROP(_n, _s, _f, qdev_prop_drive, DriveInfo*)
++#define DEFINE_PROP_DRIVE(_n, _s, _f) \
++    DEFINE_PROP(_n, _s, _f, qdev_prop_drive, BlockDriverState *)
+ #define DEFINE_PROP_MACADDR(_n, _s, _f)         \
+     DEFINE_PROP(_n, _s, _f, qdev_prop_macaddr, MACAddr)
+ 
+@@ -297,7 +297,7 @@ void qdev_prop_set_uint64(DeviceState *dev, const char *name, uint64_t value);
+ void qdev_prop_set_chr(DeviceState *dev, const char *name, CharDriverState *value);
+ void qdev_prop_set_netdev(DeviceState *dev, const char *name, VLANClientState *value);
+ void qdev_prop_set_vlan(DeviceState *dev, const char *name, VLANState *value);
+-void qdev_prop_set_drive(DeviceState *dev, const char *name, DriveInfo *value);
++void qdev_prop_set_drive(DeviceState *dev, const char *name, BlockDriverState *value);
+ void qdev_prop_set_macaddr(DeviceState *dev, const char *name, uint8_t *value);
+ /* FIXME: Remove opaque pointer properties.  */
+ void qdev_prop_set_ptr(DeviceState *dev, const char *name, void *value);
+diff --git a/hw/s390-virtio.c b/hw/s390-virtio.c
+index 2407df6..c79305f 100644
+--- a/hw/s390-virtio.c
++++ b/hw/s390-virtio.c
+@@ -236,7 +236,7 @@ static void s390_init(ram_addr_t ram_size,
+         }
+ 
+         dev = qdev_create((BusState *)s390_bus, "virtio-blk-s390");
+-        qdev_prop_set_drive(dev, "drive", dinfo);
++        qdev_prop_set_drive(dev, "drive", dinfo->bdrv);
+         qdev_init_nofail(dev);
+     }
+ }
+diff --git a/hw/scsi-bus.c b/hw/scsi-bus.c
+index a2571aa..926ca17 100644
+--- a/hw/scsi-bus.c
++++ b/hw/scsi-bus.c
+@@ -88,15 +88,15 @@ void scsi_qdev_register(SCSIDeviceInfo *info)
+ 
+ /* handle legacy '-drive if=scsi,...' cmd line args */
+ /* FIXME callers should check for failure, but don't */
+-SCSIDevice *scsi_bus_legacy_add_drive(SCSIBus *bus, DriveInfo *dinfo, int unit)
++SCSIDevice *scsi_bus_legacy_add_drive(SCSIBus *bus, BlockDriverState *bdrv, int unit)
+ {
+     const char *driver;
+     DeviceState *dev;
+ 
+-    driver = bdrv_is_sg(dinfo->bdrv) ? "scsi-generic" : "scsi-disk";
++    driver = bdrv_is_sg(bdrv) ? "scsi-generic" : "scsi-disk";
+     dev = qdev_create(&bus->qbus, driver);
+     qdev_prop_set_uint32(dev, "scsi-id", unit);
+-    qdev_prop_set_drive(dev, "drive", dinfo);
++    qdev_prop_set_drive(dev, "drive", bdrv);
+     if (qdev_init(dev) < 0)
+         return NULL;
+     return DO_UPCAST(SCSIDevice, qdev, dev);
+@@ -112,7 +112,7 @@ void scsi_bus_legacy_handle_cmdline(SCSIBus *bus)
+         if (dinfo == NULL) {
+             continue;
+         }
+-        scsi_bus_legacy_add_drive(bus, dinfo, unit);
++        scsi_bus_legacy_add_drive(bus, dinfo->bdrv, unit);
+     }
+ }
+ 
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index 5229299..78445ac 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -1016,7 +1016,7 @@ static void scsi_destroy(SCSIDevice *dev)
+         r = DO_UPCAST(SCSIDiskReq, req, QTAILQ_FIRST(&s->qdev.requests));
+         scsi_remove_request(r);
+     }
+-    blockdev_mark_auto_del(s->qdev.conf.dinfo->bdrv);
++    blockdev_mark_auto_del(s->qdev.conf.bs);
+ }
+ 
+ static int scsi_disk_initfn(SCSIDevice *dev)
+@@ -1024,11 +1024,11 @@ static int scsi_disk_initfn(SCSIDevice *dev)
+     SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, dev);
+     uint64_t nb_sectors;
+ 
+-    if (!s->qdev.conf.dinfo || !s->qdev.conf.dinfo->bdrv) {
++    if (!s->qdev.conf.bs) {
+         error_report("scsi-disk: drive property not set");
+         return -1;
+     }
+-    s->bs = s->qdev.conf.dinfo->bdrv;
++    s->bs = s->qdev.conf.bs;
+ 
+     if (bdrv_get_type_hint(s->bs) == BDRV_TYPE_CDROM) {
+         s->qdev.blocksize = 2048;
+diff --git a/hw/scsi-generic.c b/hw/scsi-generic.c
+index c456147..7dc800d 100644
+--- a/hw/scsi-generic.c
++++ b/hw/scsi-generic.c
+@@ -454,7 +454,7 @@ static void scsi_destroy(SCSIDevice *d)
+         r = DO_UPCAST(SCSIGenericReq, req, QTAILQ_FIRST(&s->qdev.requests));
+         scsi_remove_request(r);
+     }
+-    blockdev_mark_auto_del(s->qdev.conf.dinfo->bdrv);
++    blockdev_mark_auto_del(s->qdev.conf.bs);
+ }
+ 
+ static int scsi_generic_initfn(SCSIDevice *dev)
+@@ -463,11 +463,11 @@ static int scsi_generic_initfn(SCSIDevice *dev)
+     int sg_version;
+     struct sg_scsi_id scsiid;
+ 
+-    if (!s->qdev.conf.dinfo || !s->qdev.conf.dinfo->bdrv) {
++    if (!s->qdev.conf.bs) {
+         error_report("scsi-generic: drive property not set");
+         return -1;
+     }
+-    s->bs = s->qdev.conf.dinfo->bdrv;
++    s->bs = s->qdev.conf.bs;
+ 
+     /* check we are really using a /dev/sg* file */
+     if (!bdrv_is_sg(s->bs)) {
+diff --git a/hw/scsi.h b/hw/scsi.h
+index b668e27..8ca3c2d 100644
+--- a/hw/scsi.h
++++ b/hw/scsi.h
+@@ -97,7 +97,7 @@ static inline SCSIBus *scsi_bus_from_device(SCSIDevice *d)
+     return DO_UPCAST(SCSIBus, qbus, d->qdev.parent_bus);
+ }
+ 
+-SCSIDevice *scsi_bus_legacy_add_drive(SCSIBus *bus, DriveInfo *dinfo, int unit);
++SCSIDevice *scsi_bus_legacy_add_drive(SCSIBus *bus, BlockDriverState *bdrv, int unit);
+ void scsi_bus_legacy_handle_cmdline(SCSIBus *bus);
+ 
+ void scsi_dev_clear_sense(SCSIDevice *dev);
+diff --git a/hw/usb-msd.c b/hw/usb-msd.c
+index 97fd6fb..5788eb6 100644
+--- a/hw/usb-msd.c
++++ b/hw/usb-msd.c
+@@ -522,9 +522,9 @@ static void usb_msd_password_cb(void *opaque, int err)
+ static int usb_msd_initfn(USBDevice *dev)
+ {
+     MSDState *s = DO_UPCAST(MSDState, dev, dev);
+-    DriveInfo *dinfo = s->conf.dinfo;
++    BlockDriverState *bs = s->conf.bs;
+ 
+-    if (!dinfo || !dinfo->bdrv) {
++    if (!bs) {
+         error_report("usb-msd: drive property not set");
+         return -1;
+     }
+@@ -538,18 +538,17 @@ static int usb_msd_initfn(USBDevice *dev)
+      *
+      * The hack is probably a bad idea.
+      */
+-    s->conf.dinfo = NULL;
++    s->conf.bs = NULL;
+ 
+     s->dev.speed = USB_SPEED_FULL;
+     scsi_bus_new(&s->bus, &s->dev.qdev, 0, 1, usb_msd_command_complete);
+-    s->scsi_dev = scsi_bus_legacy_add_drive(&s->bus, dinfo, 0);
++    s->scsi_dev = scsi_bus_legacy_add_drive(&s->bus, bs, 0);
+     s->bus.qbus.allow_hotplug = 0;
+     usb_msd_handle_reset(dev);
+ 
+-    if (bdrv_key_required(dinfo->bdrv)) {
++    if (bdrv_key_required(bs)) {
+         if (cur_mon) {
+-            monitor_read_bdrv_key_start(cur_mon, dinfo->bdrv,
+-                                        usb_msd_password_cb, s);
++            monitor_read_bdrv_key_start(cur_mon, bs, usb_msd_password_cb, s);
+             s->dev.auto_attach = 0;
+         } else {
+             autostart = 0;
+@@ -604,7 +603,7 @@ static USBDevice *usb_msd_init(const char *filename)
+ 
+     /* create guest device */
+     dev = usb_create(NULL /* FIXME */, "usb-storage");
+-    qdev_prop_set_drive(&dev->qdev, "drive", dinfo);
++    qdev_prop_set_drive(&dev->qdev, "drive", dinfo->bdrv);
+     if (qdev_init(&dev->qdev) < 0)
+         return NULL;
+ 
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index 898985d..cff21a9 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -533,7 +533,7 @@ VirtIODevice *virtio_blk_init(DeviceState *dev, BlockConf *conf)
+     s->vdev.get_config = virtio_blk_update_config;
+     s->vdev.get_features = virtio_blk_get_features;
+     s->vdev.reset = virtio_blk_reset;
+-    s->bs = conf->dinfo->bdrv;
++    s->bs = conf->bs;
+     s->conf = conf;
+     s->rq = NULL;
+     s->sector_mask = (s->conf->logical_block_size / 512) - 1;
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index eb35dc2..0cde17e 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -809,7 +809,7 @@ static int virtio_blk_init_pci(PCIDevice *pci_dev)
+         proxy->class_code != PCI_CLASS_STORAGE_OTHER)
+         proxy->class_code = PCI_CLASS_STORAGE_SCSI;
+ 
+-    if (!proxy->block.dinfo) {
++    if (!proxy->block.bs) {
+         error_report("virtio-blk-pci: drive property not set");
+         return -1;
+     }
+@@ -835,7 +835,7 @@ static int virtio_blk_exit_pci(PCIDevice *pci_dev)
+ 
+     virtio_pci_stop_ioeventfd(proxy);
+     virtio_blk_exit(proxy->vdev);
+-    blockdev_mark_auto_del(proxy->block.dinfo->bdrv);
++    blockdev_mark_auto_del(proxy->block.bs);
+     return virtio_exit_pci(pci_dev);
+ }
+ 
+-- 
+1.7.3.2
+

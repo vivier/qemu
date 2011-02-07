@@ -1,0 +1,320 @@
+From 7fe5d52d142f1ff94d0454283b656d3447be912c Mon Sep 17 00:00:00 2001
+From: Anthony Liguori <aliguori@redhat.com>
+Date: Wed, 26 Jan 2011 14:58:04 -0200
+Subject: [RHEL6 qemu-kvm PATCH 09/14] block: Catch attempt to attach multiple devices to a blockdev (v2)
+
+RH-Author: Anthony Liguori <aliguori@redhat.com>
+Message-id: <1296053886-2905-10-git-send-email-aliguori@redhat.com>
+Patchwork-id: 17095
+O-Subject: [PATCH RHEL6.1 qemu-kvm 09/11] block: Catch attempt to attach
+	multiple devices to a blockdev (v2)
+Bugzilla: 654682
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+BZ: 654682
+Upstream-status: accepted
+
+For instance, -device scsi-disk,drive=foo -device scsi-disk,drive=foo
+happily creates two SCSI disks connected to the same block device.
+It's all downhill from there.
+
+Device usb-storage deliberately attaches twice to the same blockdev,
+which fails with the fix in place.  Detach before the second attach
+there.
+
+Also catch attempt to delete while a guest device model is attached.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 18846dee1a795b4345ac0bd10b70a3a46fd14287)
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+--
+v1 -> v2
+ - move peer field from previous patch to this patch
+ - fix broken build
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c              |   22 ++++++++++++++++++++++
+ block.h              |    3 +++
+ block_int.h          |    2 ++
+ hw/fdc.c             |   10 +++++-----
+ hw/ide/qdev.c        |    2 +-
+ hw/pci-hotplug.c     |    6 +++++-
+ hw/qdev-properties.c |   22 +++++++++++++++++++++-
+ hw/qdev.h            |    3 ++-
+ hw/s390-virtio.c     |    2 +-
+ hw/scsi-bus.c        |    5 ++++-
+ hw/usb-msd.c         |   12 ++++++++----
+ 11 files changed, 74 insertions(+), 15 deletions(-)
+
+diff --git a/block.c b/block.c
+index ce3bca6..ec231da 100644
+--- a/block.c
++++ b/block.c
+@@ -658,6 +658,8 @@ void bdrv_close_all(void)
+ 
+ void bdrv_delete(BlockDriverState *bs)
+ {
++    assert(!bs->peer);
++
+     /* remove from list, if necessary */
+     if (bs->device_name[0] != '\0') {
+         QTAILQ_REMOVE(&bdrv_states, bs, list);
+@@ -671,6 +673,26 @@ void bdrv_delete(BlockDriverState *bs)
+     qemu_free(bs);
+ }
+ 
++int bdrv_attach(BlockDriverState *bs, DeviceState *qdev)
++{
++    if (bs->peer) {
++        return -EBUSY;
++    }
++    bs->peer = qdev;
++    return 0;
++}
++
++void bdrv_detach(BlockDriverState *bs, DeviceState *qdev)
++{
++    assert(bs->peer == qdev);
++    bs->peer = NULL;
++}
++
++DeviceState *bdrv_get_attached(BlockDriverState *bs)
++{
++    return bs->peer;
++}
++
+ /*
+  * Run consistency checks on an image
+  *
+diff --git a/block.h b/block.h
+index 15e68ee..e71d95c 100644
+--- a/block.h
++++ b/block.h
+@@ -69,6 +69,9 @@ int bdrv_file_open(BlockDriverState **pbs, const char *filename, int flags);
+ int bdrv_open(BlockDriverState *bs, const char *filename, int flags,
+               BlockDriver *drv);
+ void bdrv_close(BlockDriverState *bs);
++int bdrv_attach(BlockDriverState *bs, DeviceState *qdev);
++void bdrv_detach(BlockDriverState *bs, DeviceState *qdev);
++DeviceState *bdrv_get_attached(BlockDriverState *bs);
+ int bdrv_read(BlockDriverState *bs, int64_t sector_num,
+               uint8_t *buf, int nb_sectors);
+ int bdrv_write(BlockDriverState *bs, int64_t sector_num,
+diff --git a/block_int.h b/block_int.h
+index 5c576a7..ca4d2f8 100644
+--- a/block_int.h
++++ b/block_int.h
+@@ -154,6 +154,8 @@ struct BlockDriverState {
+     BlockDriver *drv; /* NULL means no media */
+     void *opaque;
+ 
++    DeviceState *peer;
++
+     char filename[1024];
+     char backing_file[1024]; /* if non zero, the image is a diff of
+                                 this file image */
+diff --git a/hw/fdc.c b/hw/fdc.c
+index 470e96e..35c1a9e 100644
+--- a/hw/fdc.c
++++ b/hw/fdc.c
+@@ -1868,10 +1868,10 @@ fdctrl_t *fdctrl_init_isa(DriveInfo **fds)
+ 
+     dev = isa_create("isa-fdc");
+     if (fds[0]) {
+-        qdev_prop_set_drive(&dev->qdev, "driveA", fds[0]->bdrv);
++        qdev_prop_set_drive_nofail(&dev->qdev, "driveA", fds[0]->bdrv);
+     }
+     if (fds[1]) {
+-        qdev_prop_set_drive(&dev->qdev, "driveB", fds[1]->bdrv);
++        qdev_prop_set_drive_nofail(&dev->qdev, "driveB", fds[1]->bdrv);
+     }
+     if (qdev_init(&dev->qdev) < 0)
+         return NULL;
+@@ -1891,10 +1891,10 @@ fdctrl_t *fdctrl_init_sysbus(qemu_irq irq, int dma_chann,
+     fdctrl = &sys->state;
+     fdctrl->dma_chann = dma_chann; /* FIXME */
+     if (fds[0]) {
+-        qdev_prop_set_drive(dev, "driveA", fds[0]->bdrv);
++        qdev_prop_set_drive_nofail(dev, "driveA", fds[0]->bdrv);
+     }
+     if (fds[1]) {
+-        qdev_prop_set_drive(dev, "driveB", fds[1]->bdrv);
++        qdev_prop_set_drive_nofail(dev, "driveB", fds[1]->bdrv);
+     }
+     qdev_init_nofail(dev);
+     sysbus_connect_irq(&sys->busdev, 0, irq);
+@@ -1912,7 +1912,7 @@ fdctrl_t *sun4m_fdctrl_init (qemu_irq irq, target_phys_addr_t io_base,
+ 
+     dev = qdev_create(NULL, "SUNW,fdtwo");
+     if (fds[0]) {
+-        qdev_prop_set_drive(dev, "drive", fds[0]->bdrv);
++        qdev_prop_set_drive_nofail(dev, "drive", fds[0]->bdrv);
+     }
+     qdev_init_nofail(dev);
+     sys = DO_UPCAST(fdctrl_sysbus_t, busdev.qdev, dev);
+diff --git a/hw/ide/qdev.c b/hw/ide/qdev.c
+index 46e9761..ca79c90 100644
+--- a/hw/ide/qdev.c
++++ b/hw/ide/qdev.c
+@@ -98,7 +98,7 @@ IDEDevice *ide_create_drive(IDEBus *bus, int unit, DriveInfo *drive)
+ 
+     dev = qdev_create(&bus->qbus, "ide-drive");
+     qdev_prop_set_uint32(dev, "unit", unit);
+-    qdev_prop_set_drive(dev, "drive", drive->bdrv);
++    qdev_prop_set_drive_nofail(dev, "drive", drive->bdrv);
+     if (qdev_init(dev) < 0)
+         return NULL;
+     return DO_UPCAST(IDEDevice, qdev, dev);
+diff --git a/hw/pci-hotplug.c b/hw/pci-hotplug.c
+index 248634a..bf34747 100644
+--- a/hw/pci-hotplug.c
++++ b/hw/pci-hotplug.c
+@@ -215,7 +215,11 @@ static PCIDevice *qemu_pci_hot_add_storage(Monitor *mon,
+             return NULL;
+         }
+         dev = pci_create(bus, devfn, "virtio-blk-pci");
+-        qdev_prop_set_drive(&dev->qdev, "drive", dinfo->bdrv);
++        if (qdev_prop_set_drive(&dev->qdev, "drive", dinfo->bdrv) < 0) {
++            qdev_free(&dev->qdev);
++            dev = NULL;
++            break;
++        }
+         if (qdev_init(&dev->qdev) < 0)
+             dev = NULL;
+         break;
+diff --git a/hw/qdev-properties.c b/hw/qdev-properties.c
+index b33aa67..34c4d89 100644
+--- a/hw/qdev-properties.c
++++ b/hw/qdev-properties.c
+@@ -373,6 +373,8 @@ static int parse_drive(DeviceState *dev, Property *prop, const char *str)
+     bs = bdrv_find(str);
+     if (bs == NULL)
+         return -ENOENT;
++    if (bdrv_attach(bs, dev) < 0)
++        return -EEXIST;
+     *ptr = bs;
+     return 0;
+ }
+@@ -382,6 +384,7 @@ static void free_drive(DeviceState *dev, Property *prop)
+     BlockDriverState **ptr = qdev_get_prop_ptr(dev, prop);
+ 
+     if (*ptr) {
++        bdrv_detach(*ptr, dev);
+         blockdev_auto_del(*ptr);
+     }
+ }
+@@ -717,11 +720,28 @@ void qdev_prop_set_uint64(DeviceState *dev, const char *name, uint64_t value)
+     qdev_prop_set(dev, name, &value, PROP_TYPE_UINT64);
+ }
+ 
+-void qdev_prop_set_drive(DeviceState *dev, const char *name, BlockDriverState *value)
++int qdev_prop_set_drive(DeviceState *dev, const char *name, BlockDriverState *value)
+ {
++    int res;
++
++    res = bdrv_attach(value, dev);
++    if (res < 0) {
++        error_report("Can't attach drive %s to %s.%s: %s",
++                     bdrv_get_device_name(value),
++                     dev->id ? dev->id : dev->info->name,
++                     name, strerror(-res));
++        return -1;
++    }
+     qdev_prop_set(dev, name, &value, PROP_TYPE_DRIVE);
++    return 0;
+ }
+ 
++void qdev_prop_set_drive_nofail(DeviceState *dev, const char *name, BlockDriverState *value)
++{
++    if (qdev_prop_set_drive(dev, name, value) < 0) {
++        exit(1);
++    }
++}
+ void qdev_prop_set_chr(DeviceState *dev, const char *name, CharDriverState *value)
+ {
+     qdev_prop_set(dev, name, &value, PROP_TYPE_CHR);
+diff --git a/hw/qdev.h b/hw/qdev.h
+index 5e22c74..a3fe2cf 100644
+--- a/hw/qdev.h
++++ b/hw/qdev.h
+@@ -297,7 +297,8 @@ void qdev_prop_set_uint64(DeviceState *dev, const char *name, uint64_t value);
+ void qdev_prop_set_chr(DeviceState *dev, const char *name, CharDriverState *value);
+ void qdev_prop_set_netdev(DeviceState *dev, const char *name, VLANClientState *value);
+ void qdev_prop_set_vlan(DeviceState *dev, const char *name, VLANState *value);
+-void qdev_prop_set_drive(DeviceState *dev, const char *name, BlockDriverState *value);
++int qdev_prop_set_drive(DeviceState *dev, const char *name, BlockDriverState *value) QEMU_WARN_UNUSED_RESULT;
++void qdev_prop_set_drive_nofail(DeviceState *dev, const char *name, BlockDriverState *value);
+ void qdev_prop_set_macaddr(DeviceState *dev, const char *name, uint8_t *value);
+ /* FIXME: Remove opaque pointer properties.  */
+ void qdev_prop_set_ptr(DeviceState *dev, const char *name, void *value);
+diff --git a/hw/s390-virtio.c b/hw/s390-virtio.c
+index c79305f..886507f 100644
+--- a/hw/s390-virtio.c
++++ b/hw/s390-virtio.c
+@@ -236,7 +236,7 @@ static void s390_init(ram_addr_t ram_size,
+         }
+ 
+         dev = qdev_create((BusState *)s390_bus, "virtio-blk-s390");
+-        qdev_prop_set_drive(dev, "drive", dinfo->bdrv);
++        qdev_prop_set_drive_nofail(dev, "drive", dinfo->bdrv);
+         qdev_init_nofail(dev);
+     }
+ }
+diff --git a/hw/scsi-bus.c b/hw/scsi-bus.c
+index 926ca17..3848ff2 100644
+--- a/hw/scsi-bus.c
++++ b/hw/scsi-bus.c
+@@ -96,7 +96,10 @@ SCSIDevice *scsi_bus_legacy_add_drive(SCSIBus *bus, BlockDriverState *bdrv, int
+     driver = bdrv_is_sg(bdrv) ? "scsi-generic" : "scsi-disk";
+     dev = qdev_create(&bus->qbus, driver);
+     qdev_prop_set_uint32(dev, "scsi-id", unit);
+-    qdev_prop_set_drive(dev, "drive", bdrv);
++    if (qdev_prop_set_drive(dev, "drive", bdrv) < 0) {
++        qdev_free(dev);
++        return NULL;
++    }
+     if (qdev_init(dev) < 0)
+         return NULL;
+     return DO_UPCAST(SCSIDevice, qdev, dev);
+diff --git a/hw/usb-msd.c b/hw/usb-msd.c
+index 5788eb6..51de68d 100644
+--- a/hw/usb-msd.c
++++ b/hw/usb-msd.c
+@@ -532,12 +532,13 @@ static int usb_msd_initfn(USBDevice *dev)
+     /*
+      * Hack alert: this pretends to be a block device, but it's really
+      * a SCSI bus that can serve only a single device, which it
+-     * creates automatically.  Two drive properties pointing to the
+-     * same drive is not good: free_drive() dies for the second one.
+-     * Zap the one we're not going to use.
++     * creates automatically.  But first it needs to detach from its
++     * blockdev, or else scsi_bus_legacy_add_drive() dies when it
++     * attaches again.
+      *
+      * The hack is probably a bad idea.
+      */
++    bdrv_detach(bs, &s->dev.qdev);
+     s->conf.bs = NULL;
+ 
+     s->dev.speed = USB_SPEED_FULL;
+@@ -603,7 +604,10 @@ static USBDevice *usb_msd_init(const char *filename)
+ 
+     /* create guest device */
+     dev = usb_create(NULL /* FIXME */, "usb-storage");
+-    qdev_prop_set_drive(&dev->qdev, "drive", dinfo->bdrv);
++    if (qdev_prop_set_drive(&dev->qdev, "drive", dinfo->bdrv) < 0) {
++        qdev_free(&dev->qdev);
++        return NULL;
++    }
+     if (qdev_init(&dev->qdev) < 0)
+         return NULL;
+ 
+-- 
+1.7.3.2
+

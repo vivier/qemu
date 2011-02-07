@@ -1,0 +1,100 @@
+From 67f2c53eac01bc0d1f45ddb0f688f8dc439134c2 Mon Sep 17 00:00:00 2001
+From: Paolo Bonzini <pbonzini@redhat.com>
+Date: Fri, 4 Feb 2011 13:31:17 -0200
+Subject: [RHEL6 qemu-kvm PATCH 13/14] savevm: fix corruption in vmstate_subsection_load().
+
+RH-Author: Paolo Bonzini <pbonzini@redhat.com>
+Message-id: <1296826277-6286-1-git-send-email-pbonzini@redhat.com>
+Patchwork-id: 17744
+O-Subject: [RHEL6.1 KVM PATCH v2] savevm: fix corruption in
+	vmstate_subsection_load().
+Bugzilla: 671100
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=671100
+
+Upstream status: eb60260de0b050a5e8ab725e84d377d0b44c43ae
+
+Brew build: https://brewweb.devel.redhat.com/taskinfo?taskID=3089560
+
+In rare cases, subsection support can cause live migration to fail.
+This happens for example if you have a VMS_STRUCT and the field after
+the VMS_STRUCT starts with 0x5.  The protocol cannot distinguish
+whether a 0x5 byte after the VMS_STRUCT is a subsection or part of
+the parent data stream.
+
+Similarly, the current code could not handle 2 subsections, because
+it could not tell whether 2 consecutive subsections are siblings, or
+the second is nested into the first.  It would mistakenly assume the
+latter is true, so that when vmstate_subsection_load is called for the
+first subsection, it would see a 0x5 byte (the beginning of the second
+subsection), eat it and then fail with ENOENT.  The second subsection
+would then fail to load.
+
+We can only be safe when the VMState being loaded has no subsections.
+In this case obviously you can assume that there are none in the data
+stream.
+
+This unsafeness hints logically at forbidding nested subsections, as
+well as subsections of VMS_STRUCT.  The former is possible and this patch
+does it.  Unfortunately, while subsections of VMS_STRUCT are ambiguous,
+both of our (current) uses of subsection are inside VMS_STRUCT, so we
+cannot outlaw it right away.  (It's *very* hard, if at all possible,
+without changing the format incompatibly.  Maybe it's time to).
+
+Signed-off-by: Yoshiaki Tamura <tamura.yoshiaki@lab.ntt.co.jp>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+---
+        v1 -> v2: Only changed the subject and upstream status
+
+ savevm.c |   10 +++++++++-
+ 1 files changed, 9 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ savevm.c |   10 +++++++++-
+ 1 files changed, 9 insertions(+), 1 deletions(-)
+
+diff --git a/savevm.c b/savevm.c
+index 53a0b7f..161bb70 100644
+--- a/savevm.c
++++ b/savevm.c
+@@ -1655,6 +1655,12 @@ static const VMStateDescription *vmstate_get_subsection(const VMStateSubsection
+ static int vmstate_subsection_load(QEMUFile *f, const VMStateDescription *vmsd,
+                                    void *opaque)
+ {
++    const VMStateSubsection *sub = vmsd->subsections;
++
++    if (!sub || !sub->needed) {
++        return 0;
++    }
++
+     while (qemu_peek_byte(f) == QEMU_VM_SUBSECTION) {
+         char idstr[256];
+         int ret;
+@@ -1667,10 +1673,11 @@ static int vmstate_subsection_load(QEMUFile *f, const VMStateDescription *vmsd,
+         idstr[len] = 0;
+         version_id = qemu_get_be32(f);
+ 
+-        sub_vmsd = vmstate_get_subsection(vmsd->subsections, idstr);
++        sub_vmsd = vmstate_get_subsection(sub, idstr);
+         if (sub_vmsd == NULL) {
+             return -ENOENT;
+         }
++        assert(!sub_vmsd->subsections);
+         ret = vmstate_load_state(f, sub_vmsd, opaque, version_id);
+         if (ret) {
+             return ret;
+@@ -1694,6 +1701,7 @@ static void vmstate_subsection_save(QEMUFile *f, const VMStateDescription *vmsd,
+             qemu_put_byte(f, len);
+             qemu_put_buffer(f, (uint8_t *)vmsd->name, len);
+             qemu_put_be32(f, vmsd->version_id);
++            assert(!vmsd->subsections);
+             vmstate_save_state(f, vmsd, opaque);
+         }
+         sub++;
+-- 
+1.7.3.2
+

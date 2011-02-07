@@ -1,0 +1,51 @@
+From 5f4baf72b05a28631a07e5805e2c4c5a55ba44f7 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Mon, 7 Feb 2011 07:09:08 -0200
+Subject: [RHEL6 qemu-kvm PATCH 14/14] virtio-serial: Disable flow control for RHEL 5.0 machine type
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <11770c5023308939b951abca3b3471d73999b3dd.1297062544.git.amit.shah@redhat.com>
+Patchwork-id: 17783
+O-Subject: [PATCH] virtio-serial: Disable flow control for RHEL 5.0 machine type
+Bugzilla: 588916
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+Alex pointed out we'll need to disable flow control for RHEL 5 in
+addition to RHEL6.0 machine type.
+
+We need to do this to ensure a RHEL6.1+ qemu started with -M rhel5 can
+migrate fine to qemu started on a RHEL5.
+
+Bugzilla: 588916
+(riding on top of the flow control bug)
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/pc.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pc.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/hw/pc.c b/hw/pc.c
+index d76c693..e790447 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -1592,6 +1592,10 @@ static GlobalProperty compat_rhel5[] = {
+             .property = "vectors",
+             .value    = stringify(0),
+         },{
++            .driver   = "virtio-serial-pci",
++            .property = "flow_control",
++            .value    = stringify(0),
++        },
+             .driver   = "PCI",
+             .property = "rombar",
+             .value    = stringify(0),
+-- 
+1.7.3.2
+

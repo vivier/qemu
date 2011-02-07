@@ -1,0 +1,224 @@
+From 5a572d4c12cac08a39c29b1779f7213be60c1f99 Mon Sep 17 00:00:00 2001
+From: Anthony Liguori <aliguori@redhat.com>
+Date: Wed, 26 Jan 2011 14:58:02 -0200
+Subject: [RHEL6 qemu-kvm PATCH 07/14] blockdev: Clean up automatic drive deletion (v2)
+
+RH-Author: Anthony Liguori <aliguori@redhat.com>
+Message-id: <1296053886-2905-8-git-send-email-aliguori@redhat.com>
+Patchwork-id: 17093
+O-Subject: [PATCH RHEL6.1 qemu-kvm 07/11] blockdev: Clean up automatic drive
+	deletion (v2)
+Bugzilla: 654682
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+BZ: 654682
+Upstream-status: accepted
+
+We automatically delete blockdev host parts on unplug of the guest
+device.  Too much magic, but we can't change that now.
+
+The delete happens early in the guest device teardown, before the
+connection to the host part is severed.  Thus, the guest part's
+pointer to the host part dangles for a brief time.  No actual harm
+comes from this, but we'll catch such dangling pointers a few commits
+down the road.  Clean up the dangling pointers by delaying the
+automatic deletion until the guest part's pointer is gone.
+
+Device usb-storage deliberately makes two qdev properties refer to the
+same drive, because it automatically creates a second device.  Again,
+too much magic we can't change now.  Multiple references worked okay
+before, but now free_drive() dies for the second one.  Zap the extra
+reference.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 14bafc540774baf316e9ce2474e97d5df6cb8e6c)
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+--
+v1 -> v2
+ - Remove bad dup if statement
+ - Reorder declarations in header to match upstream
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qdev-properties.c |   10 ++++++++++
+ hw/scsi-disk.c       |    2 +-
+ hw/scsi-generic.c    |    2 +-
+ hw/usb-msd.c         |   20 ++++++++++++++++----
+ hw/virtio-pci.c      |    2 +-
+ sysemu.h             |    4 ++++
+ vl.c                 |   23 +++++++++++++++++++++++
+ 7 files changed, 56 insertions(+), 7 deletions(-)
+
+diff --git a/hw/qdev-properties.c b/hw/qdev-properties.c
+index 8a58b1e..535e087 100644
+--- a/hw/qdev-properties.c
++++ b/hw/qdev-properties.c
+@@ -374,6 +374,15 @@ static int parse_drive(DeviceState *dev, Property *prop, const char *str)
+     return 0;
+ }
+ 
++static void free_drive(DeviceState *dev, Property *prop)
++{
++    DriveInfo **ptr = qdev_get_prop_ptr(dev, prop);
++
++    if (*ptr) {
++        blockdev_auto_del((*ptr)->bdrv);
++    }
++}
++
+ static int print_drive(DeviceState *dev, Property *prop, char *dest, size_t len)
+ {
+     DriveInfo **ptr = qdev_get_prop_ptr(dev, prop);
+@@ -386,6 +395,7 @@ PropertyInfo qdev_prop_drive = {
+     .size  = sizeof(DriveInfo*),
+     .parse = parse_drive,
+     .print = print_drive,
++    .free  = free_drive,
+ };
+ 
+ /* --- character device --- */
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index e326332..5229299 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -1016,7 +1016,7 @@ static void scsi_destroy(SCSIDevice *dev)
+         r = DO_UPCAST(SCSIDiskReq, req, QTAILQ_FIRST(&s->qdev.requests));
+         scsi_remove_request(r);
+     }
+-    drive_uninit(s->qdev.conf.dinfo);
++    blockdev_mark_auto_del(s->qdev.conf.dinfo->bdrv);
+ }
+ 
+ static int scsi_disk_initfn(SCSIDevice *dev)
+diff --git a/hw/scsi-generic.c b/hw/scsi-generic.c
+index 41f7d17..c456147 100644
+--- a/hw/scsi-generic.c
++++ b/hw/scsi-generic.c
+@@ -454,7 +454,7 @@ static void scsi_destroy(SCSIDevice *d)
+         r = DO_UPCAST(SCSIGenericReq, req, QTAILQ_FIRST(&s->qdev.requests));
+         scsi_remove_request(r);
+     }
+-    drive_uninit(s->qdev.conf.dinfo);
++    blockdev_mark_auto_del(s->qdev.conf.dinfo->bdrv);
+ }
+ 
+ static int scsi_generic_initfn(SCSIDevice *dev)
+diff --git a/hw/usb-msd.c b/hw/usb-msd.c
+index 25d4a14..97fd6fb 100644
+--- a/hw/usb-msd.c
++++ b/hw/usb-msd.c
+@@ -522,21 +522,33 @@ static void usb_msd_password_cb(void *opaque, int err)
+ static int usb_msd_initfn(USBDevice *dev)
+ {
+     MSDState *s = DO_UPCAST(MSDState, dev, dev);
++    DriveInfo *dinfo = s->conf.dinfo;
+ 
+-    if (!s->conf.dinfo || !s->conf.dinfo->bdrv) {
++    if (!dinfo || !dinfo->bdrv) {
+         error_report("usb-msd: drive property not set");
+         return -1;
+     }
+ 
++    /*
++     * Hack alert: this pretends to be a block device, but it's really
++     * a SCSI bus that can serve only a single device, which it
++     * creates automatically.  Two drive properties pointing to the
++     * same drive is not good: free_drive() dies for the second one.
++     * Zap the one we're not going to use.
++     *
++     * The hack is probably a bad idea.
++     */
++    s->conf.dinfo = NULL;
++
+     s->dev.speed = USB_SPEED_FULL;
+     scsi_bus_new(&s->bus, &s->dev.qdev, 0, 1, usb_msd_command_complete);
+-    s->scsi_dev = scsi_bus_legacy_add_drive(&s->bus, s->conf.dinfo, 0);
++    s->scsi_dev = scsi_bus_legacy_add_drive(&s->bus, dinfo, 0);
+     s->bus.qbus.allow_hotplug = 0;
+     usb_msd_handle_reset(dev);
+ 
+-    if (bdrv_key_required(s->conf.dinfo->bdrv)) {
++    if (bdrv_key_required(dinfo->bdrv)) {
+         if (cur_mon) {
+-            monitor_read_bdrv_key_start(cur_mon, s->conf.dinfo->bdrv,
++            monitor_read_bdrv_key_start(cur_mon, dinfo->bdrv,
+                                         usb_msd_password_cb, s);
+             s->dev.auto_attach = 0;
+         } else {
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index db4da7f..eb35dc2 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -835,7 +835,7 @@ static int virtio_blk_exit_pci(PCIDevice *pci_dev)
+ 
+     virtio_pci_stop_ioeventfd(proxy);
+     virtio_blk_exit(proxy->vdev);
+-    drive_uninit(proxy->block.dinfo);
++    blockdev_mark_auto_del(proxy->block.dinfo->bdrv);
+     return virtio_exit_pci(pci_dev);
+ }
+ 
+diff --git a/sysemu.h b/sysemu.h
+index 49d1383..ea5c3cc 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -169,6 +169,9 @@ typedef enum {
+     BLOCK_ERR_STOP_ANY
+ } BlockInterfaceErrorAction;
+ 
++void blockdev_mark_auto_del(BlockDriverState *bs);
++void blockdev_auto_del(BlockDriverState *bs);
++
+ #define BLOCK_SERIAL_STRLEN 20
+ 
+ typedef struct DriveInfo {
+@@ -178,6 +181,7 @@ typedef struct DriveInfo {
+     BlockInterfaceType type;
+     int bus;
+     int unit;
++    int auto_del;               /* see blockdev_mark_auto_del() */
+     QemuOpts *opts;
+     BlockInterfaceErrorAction on_read_error;
+     BlockInterfaceErrorAction on_write_error;
+diff --git a/vl.c b/vl.c
+index 23bf101..8d8af44 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2140,6 +2140,29 @@ DriveInfo *drive_get_by_blockdev(BlockDriverState *bs)
+     return NULL;
+ }
+ 
++/*
++ * We automatically delete the drive when a device using it gets
++ * unplugged.  Questionable feature, but we can't just drop it.
++ * Device models call blockdev_mark_auto_del() to schedule the
++ * automatic deletion, and generic qdev code calls blockdev_auto_del()
++ * when deletion is actually safe.
++ */
++void blockdev_mark_auto_del(BlockDriverState *bs)
++{
++    DriveInfo *dinfo = drive_get_by_blockdev(bs);
++
++    dinfo->auto_del = 1;
++}
++
++void blockdev_auto_del(BlockDriverState *bs)
++{
++    DriveInfo *dinfo = drive_get_by_blockdev(bs);
++
++    if (dinfo->auto_del) {
++        drive_uninit(dinfo);
++    }
++}
++
+ int drive_get_max_bus(BlockInterfaceType type)
+ {
+     int max_bus;
+-- 
+1.7.3.2
+

@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.141
+%define pkgrelease 2.142
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2318,6 +2318,34 @@ Patch2020: kvm-Maintaing-number-of-dirty-pages.patch
 Patch2021: kvm-Drop-qemu_mutex_iothread-during-migration.patch
 # For bz#643970 - guest migration turns failed by the end (16G + stress load)
 Patch2022: kvm-Revert-Drop-qemu_mutex_iothread-during-migration.patch
+# For bz#654682 - drive_del command to let libvirt safely remove block device from guest
+Patch2023: kvm-ide-Remove-redundant-IDEState-member-conf.patch
+# For bz#654682 - drive_del command to let libvirt safely remove block device from guest
+Patch2024: kvm-ide-Split-ide_init1-off-ide_init2-v2.patch
+# For bz#654682 - drive_del command to let libvirt safely remove block device from guest
+Patch2025: kvm-ide-Change-ide_init_drive-to-require-valid-dinfo-arg.patch
+# For bz#654682 - drive_del command to let libvirt safely remove block device from guest
+Patch2026: kvm-ide-Split-non-qdev-code-off-ide_init2.patch
+# For bz#654682 - drive_del command to let libvirt safely remove block device from guest
+Patch2027: kvm-qdev-Don-t-leak-string-property-value-on-hot-unplug.patch
+# For bz#654682 - drive_del command to let libvirt safely remove block device from guest
+Patch2028: kvm-blockdev-New-drive_get_by_blockdev-v2.patch
+# For bz#654682 - drive_del command to let libvirt safely remove block device from guest
+Patch2029: kvm-blockdev-Clean-up-automatic-drive-deletion-v2.patch
+# For bz#654682 - drive_del command to let libvirt safely remove block device from guest
+Patch2030: kvm-qdev-Decouple-qdev_prop_drive-from-DriveInfo-v2.patch
+# For bz#654682 - drive_del command to let libvirt safely remove block device from guest
+Patch2031: kvm-block-Catch-attempt-to-attach-multiple-devices-to-a-.patch
+# For bz#654682 - drive_del command to let libvirt safely remove block device from guest
+Patch2032: kvm-Implement-drive_del-to-decouple-block-removal-from-d.patch
+# For bz#654682 - drive_del command to let libvirt safely remove block device from guest
+Patch2033: kvm-blockdev-check-dinfo-ptr-before-using-v2.patch
+# For bz#634652 - [RFE] qemu-img qcow2 'pre-allocation' should not only pre-allocate meta-data, but also data
+Patch2034: kvm-qcow2-Add-full-image-preallocation-option.patch
+# For bz#671100 - possible migration failure due to erroneous interpretation of subsection
+Patch2035: kvm-savevm-fix-corruption-in-vmstate_subsection_load.patch
+# For bz#588916 - qemu char fixes for nonblocking writes, virtio-console flow control
+Patch2036: kvm-virtio-serial-Disable-flow-control-for-RHEL-5.0-mach.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3449,6 +3477,20 @@ ApplyOptionalPatch()
 %patch2020 -p1
 %patch2021 -p1
 %patch2022 -p1
+%patch2023 -p1
+%patch2024 -p1
+%patch2025 -p1
+%patch2026 -p1
+%patch2027 -p1
+%patch2028 -p1
+%patch2029 -p1
+%patch2030 -p1
+%patch2031 -p1
+%patch2032 -p1
+%patch2033 -p1
+%patch2034 -p1
+%patch2035 -p1
+%patch2036 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3663,6 +3705,30 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Feb 07 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.142.el6
+- kvm-ide-Remove-redundant-IDEState-member-conf.patch [bz#654682]
+- kvm-ide-Split-ide_init1-off-ide_init2-v2.patch [bz#654682]
+- kvm-ide-Change-ide_init_drive-to-require-valid-dinfo-arg.patch [bz#654682]
+- kvm-ide-Split-non-qdev-code-off-ide_init2.patch [bz#654682]
+- kvm-qdev-Don-t-leak-string-property-value-on-hot-unplug.patch [bz#654682]
+- kvm-blockdev-New-drive_get_by_blockdev-v2.patch [bz#654682]
+- kvm-blockdev-Clean-up-automatic-drive-deletion-v2.patch [bz#654682]
+- kvm-qdev-Decouple-qdev_prop_drive-from-DriveInfo-v2.patch [bz#654682]
+- kvm-block-Catch-attempt-to-attach-multiple-devices-to-a-.patch [bz#654682]
+- kvm-Implement-drive_del-to-decouple-block-removal-from-d.patch [bz#654682]
+- kvm-blockdev-check-dinfo-ptr-before-using-v2.patch [bz#654682]
+- kvm-qcow2-Add-full-image-preallocation-option.patch [bz#634652]
+- kvm-savevm-fix-corruption-in-vmstate_subsection_load.patch [bz#671100]
+- kvm-virtio-serial-Disable-flow-control-for-RHEL-5.0-mach.patch [bz#588916]
+- Resolves: bz#588916
+  (qemu char fixes for nonblocking writes, virtio-console flow control)
+- Resolves: bz#634652
+  ([RFE] qemu-img qcow2 'pre-allocation' should not only pre-allocate meta-data, but also data)
+- Resolves: bz#654682
+  (drive_del command to let libvirt safely remove block device from guest)
+- Resolves: bz#671100
+  (possible migration failure due to erroneous interpretation of subsection)
+
 * Mon Feb 07 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.141.el6
 - spec file: symlink to stdvga and vmware vgabios images [bz#638468]
 - Related: bz#638468

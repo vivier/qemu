@@ -1,0 +1,135 @@
+From 77103d63ac3d6c292035bee983cf60672399343d Mon Sep 17 00:00:00 2001
+From: Anthony Liguori <aliguori@redhat.com>
+Date: Wed, 26 Jan 2011 14:57:56 -0200
+Subject: [RHEL6 qemu-kvm PATCH 01/14] ide: Remove redundant IDEState member conf
+
+RH-Author: Anthony Liguori <aliguori@redhat.com>
+Message-id: <1296053886-2905-2-git-send-email-aliguori@redhat.com>
+Patchwork-id: 17088
+O-Subject: [PATCH RHEL6.1 qemu-kvm 01/11] ide: Remove redundant IDEState member
+	conf
+Bugzilla: 654682
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+BZ: 654682
+Upstream-status: accepted
+
+Commit 428c149b added IDEState member conf to let commit 0009baf1 find
+the BlockConf from there.  It exists only for qdev drives, created via
+ide_drive_initfn(), not for drives created via ide_init2().
+
+But for a qdev drive, we can just as well reach its IDEDevice, which
+contains the BlockConf.  Do that, and revert the parts of commit
+428c149b that add IDEState member conf.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 57dac7ef8aeabcd17b1ceee2296917bc48ccd526)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/ide/core.c     |   16 +++++++---------
+ hw/ide/internal.h |    4 +---
+ hw/ide/qdev.c     |    3 +--
+ 3 files changed, 9 insertions(+), 14 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index eb6d001..da8b7d7 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -98,6 +98,7 @@ static void ide_identify(IDEState *s)
+ {
+     uint16_t *p;
+     unsigned int oldsize;
++    IDEDevice *dev;
+ 
+     if (s->identify_set) {
+ 	memcpy(s->io_buffer, s->identify_data, sizeof(s->identify_data));
+@@ -165,8 +166,9 @@ static void ide_identify(IDEState *s)
+     put_le16(p + 101, s->nb_sectors >> 16);
+     put_le16(p + 102, s->nb_sectors >> 32);
+     put_le16(p + 103, s->nb_sectors >> 48);
+-    if (s->conf && s->conf->physical_block_size)
+-        put_le16(p + 106, 0x6000 | get_physical_block_exp(s->conf));
++    dev = s->unit ? s->bus->slave : s->bus->master;
++    if (dev && dev->conf.physical_block_size)
++        put_le16(p + 106, 0x6000 | get_physical_block_exp(&dev->conf));
+ 
+     memcpy(s->identify_data, p, sizeof(s->identify_data));
+     s->identify_set = 1;
+@@ -2620,8 +2622,7 @@ void ide_bus_reset(IDEBus *bus)
+     ide_clear_hob(bus);
+ }
+ 
+-void ide_init_drive(IDEState *s, DriveInfo *dinfo, BlockConf *conf,
+-        const char *version)
++void ide_init_drive(IDEState *s, DriveInfo *dinfo, const char *version)
+ {
+     int cylinders, heads, secs;
+     uint64_t nb_sectors;
+@@ -2648,9 +2649,6 @@ void ide_init_drive(IDEState *s, DriveInfo *dinfo, BlockConf *conf,
+         bdrv_set_removable(s->bs, s->is_cdrom);
+         strncpy(s->drive_serial_str, drive_get_serial(s->bs),
+                 sizeof(s->drive_serial_str));
+-        if (conf) {
+-            s->conf = conf;
+-        }
+     }
+     if (strlen(s->drive_serial_str) == 0)
+         snprintf(s->drive_serial_str, sizeof(s->drive_serial_str),
+@@ -2682,9 +2680,9 @@ void ide_init2(IDEBus *bus, DriveInfo *hd0, DriveInfo *hd1,
+         s->sector_write_timer = qemu_new_timer(vm_clock,
+                                                ide_sector_write_timer_cb, s);
+         if (i == 0)
+-            ide_init_drive(s, hd0, NULL, NULL);
++            ide_init_drive(s, hd0, NULL);
+         if (i == 1)
+-            ide_init_drive(s, hd1, NULL, NULL);
++            ide_init_drive(s, hd1, NULL);
+     }
+     bus->irq = irq;
+ }
+diff --git a/hw/ide/internal.h b/hw/ide/internal.h
+index ce32ba4..05be651 100644
+--- a/hw/ide/internal.h
++++ b/hw/ide/internal.h
+@@ -398,7 +398,6 @@ struct IDEState {
+     /* set for lba48 access */
+     uint8_t lba48;
+     BlockDriverState *bs;
+-    BlockConf *conf;
+     char version[9];
+     /* ATAPI specific */
+     uint8_t sense_key;
+@@ -559,8 +558,7 @@ uint32_t ide_data_readw(void *opaque, uint32_t addr);
+ void ide_data_writel(void *opaque, uint32_t addr, uint32_t val);
+ uint32_t ide_data_readl(void *opaque, uint32_t addr);
+ 
+-void ide_init_drive(IDEState *s, DriveInfo *dinfo, BlockConf *conf,
+-    const char *version);
++void ide_init_drive(IDEState *s, DriveInfo *dinfo, const char *version);
+ void ide_init2(IDEBus *bus, DriveInfo *hd0, DriveInfo *hd1,
+                qemu_irq irq);
+ void ide_init_ioport(IDEBus *bus, int iobase, int iobase2);
+diff --git a/hw/ide/qdev.c b/hw/ide/qdev.c
+index d55bbfa..4153659 100644
+--- a/hw/ide/qdev.c
++++ b/hw/ide/qdev.c
+@@ -113,8 +113,7 @@ typedef struct IDEDrive {
+ static int ide_drive_initfn(IDEDevice *dev)
+ {
+     IDEBus *bus = DO_UPCAST(IDEBus, qbus, dev->qdev.parent_bus);
+-    ide_init_drive(bus->ifs + dev->unit, dev->conf.dinfo, &dev->conf,
+-                   dev->version);
++    ide_init_drive(bus->ifs + dev->unit, dev->conf.dinfo, dev->version);
+     add_boot_device_path(dev->conf.bootindex, &dev->qdev,
+                          dev->unit ? "/disk@1" : "/disk@0");
+ 
+-- 
+1.7.3.2
+
