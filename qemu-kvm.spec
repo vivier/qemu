@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.140
+%define pkgrelease 2.141
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3574,6 +3574,8 @@ pxe_link virtio virtio-net
 ln -s ../vgabios/VGABIOS-lgpl-latest.bin  %{buildroot}/%{_datadir}/%{name}/vgabios.bin
 ln -s ../vgabios/VGABIOS-lgpl-latest.cirrus.bin %{buildroot}/%{_datadir}/%{name}/vgabios-cirrus.bin
 ln -s ../vgabios/VGABIOS-lgpl-latest.qxl.bin %{buildroot}/%{_datadir}/%{name}/vgabios-qxl.bin
+ln -s ../vgabios/VGABIOS-lgpl-latest.stdvga.bin %{buildroot}/%{_datadir}/%{name}/vgabios-stdvga.bin
+ln -s ../vgabios/VGABIOS-lgpl-latest.vmware.bin %{buildroot}/%{_datadir}/%{name}/vgabios-vmware.bin
 ln -s ../seabios/bios.bin %{buildroot}/%{_datadir}/%{name}/bios.bin
 
 cd %{buildroot}/usr/share/systemtap/tapset
@@ -3635,6 +3637,8 @@ fi
 %{_datadir}/%{name}/vgabios.bin
 %{_datadir}/%{name}/vgabios-cirrus.bin
 %{_datadir}/%{name}/vgabios-qxl.bin
+%{_datadir}/%{name}/vgabios-stdvga.bin
+%{_datadir}/%{name}/vgabios-vmware.bin
 %{_datadir}/%{name}/pxe-e1000.bin
 %{_datadir}/%{name}/pxe-virtio.bin
 %{_datadir}/%{name}/pxe-pcnet.bin
@@ -3659,6 +3663,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Feb 07 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.141.el6
+- spec file: symlink to stdvga and vmware vgabios images [bz#638468]
+- Related: bz#638468
+  ([qemu-kvm] bochs vga lfb @ 0xe0000000 causes trouble for hot-plug)
+
 * Mon Feb 07 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.140.el6
 - spec file: require new vgabios images (stdvga and vmware) [bz#638468]
 - Related: bz#638468
