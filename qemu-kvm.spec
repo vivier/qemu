@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.139
+%define pkgrelease 2.140
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2346,6 +2346,8 @@ Provides: kvm = 85
 Obsoletes: kvm < 85
 Requires: vgabios
 Requires: vgabios-qxl
+Requires: vgabios-stdvga
+Requires: vgabios-vmware
 Requires: seabios
 Requires: /usr/share/gpxe/e1000-0x100e.rom
 Requires: /usr/share/gpxe/rtl8029.rom
@@ -3657,6 +3659,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Feb 07 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.140.el6
+- spec file: require new vgabios images (stdvga and vmware) [bz#638468]
+- Related: bz#638468
+  ([qemu-kvm] bochs vga lfb @ 0xe0000000 causes trouble for hot-plug)
+
 * Mon Feb 07 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.139.el6
 - kvm-Revert-Drop-qemu_mutex_iothread-during-migration.patch [bz#643970]
 - Related: bz#643970
