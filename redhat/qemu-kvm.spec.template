@@ -79,6 +79,8 @@ Provides: kvm = 85
 Obsoletes: kvm < 85
 Requires: vgabios
 Requires: vgabios-qxl
+Requires: vgabios-stdvga
+Requires: vgabios-vmware
 Requires: seabios
 Requires: /usr/share/gpxe/e1000-0x100e.rom
 Requires: /usr/share/gpxe/rtl8029.rom
