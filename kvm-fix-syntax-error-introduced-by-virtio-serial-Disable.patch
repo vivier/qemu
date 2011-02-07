@@ -1,0 +1,26 @@
+From 4821571cec4edfc67aed5515d752bbd0f71c029d Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Mon, 7 Feb 2011 14:45:13 -0200
+Subject: [RHEL6 qemu-kvm PATCH] fix syntax error introduced by "virtio-serial: Disable flow control for RHEL 5.0 machine type"
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pc.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/hw/pc.c b/hw/pc.c
+index e790447..b786231 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -1595,7 +1595,7 @@ static GlobalProperty compat_rhel5[] = {
+             .driver   = "virtio-serial-pci",
+             .property = "flow_control",
+             .value    = stringify(0),
+-        },
++        },{
+             .driver   = "PCI",
+             .property = "rombar",
+             .value    = stringify(0),
+-- 
+1.7.3.2
+

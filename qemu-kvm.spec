@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.142
+%define pkgrelease 2.143
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2346,6 +2346,7 @@ Patch2034: kvm-qcow2-Add-full-image-preallocation-option.patch
 Patch2035: kvm-savevm-fix-corruption-in-vmstate_subsection_load.patch
 # For bz#588916 - qemu char fixes for nonblocking writes, virtio-console flow control
 Patch2036: kvm-virtio-serial-Disable-flow-control-for-RHEL-5.0-mach.patch
+Patch2037: kvm-fix-syntax-error-introduced-by-virtio-serial-Disable.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3491,6 +3492,7 @@ ApplyOptionalPatch()
 %patch2034 -p1
 %patch2035 -p1
 %patch2036 -p1
+%patch2037 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3705,6 +3707,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Feb 07 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.143.el6
+- kvm-fix-syntax-error-introduced-by-virtio-serial-Disable.patch [bz#588916]
+- Resolves: bz#588916
+  (qemu char fixes for nonblocking writes, virtio-console flow control)
+
 * Mon Feb 07 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.142.el6
 - kvm-ide-Remove-redundant-IDEState-member-conf.patch [bz#654682]
 - kvm-ide-Split-ide_init1-off-ide_init2-v2.patch [bz#654682]
