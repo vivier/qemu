@@ -1,0 +1,37 @@
+From 1c593e52aadf9e48179da79a8fd492018ed6e18e Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 7 Feb 2011 10:49:38 -0200
+Subject: [PATCH] Revert "Drop qemu_mutex_iothread during migration"
+
+RH-Reverts: 2bdc308e19e1ec54974b3fdc5d961dd71fab8027
+RH-Reverts-patchwork-id: 17742
+Bugzilla-related: 643970
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ vl.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index 2c85070..d899c9c 100644
+--- a/vl.c
++++ b/vl.c
+@@ -3379,7 +3379,6 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
+     bytes_transferred_last = bytes_transferred;
+     t0 = get_clock();
+ 
+-    qemu_mutex_unlock_iothread();
+     i = 0;
+     while (!qemu_file_rate_limit(f)) {
+         int ret;
+@@ -3401,7 +3400,7 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
+         }
+         i++;
+     }
+-    qemu_mutex_lock_iothread();
++
+     t0 = get_clock() - t0;
+     bwidth = (bytes_transferred - bytes_transferred_last) / t0;
+ 
+-- 
+1.7.4.rc1.16.gd2f15e
+

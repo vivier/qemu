@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.138
+%define pkgrelease 2.139
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2316,6 +2316,8 @@ Patch2019: kvm-Exit-loop-if-we-have-been-there-too-long.patch
 Patch2020: kvm-Maintaing-number-of-dirty-pages.patch
 # For bz#643970 - guest migration turns failed by the end (16G + stress load)
 Patch2021: kvm-Drop-qemu_mutex_iothread-during-migration.patch
+# For bz#643970 - guest migration turns failed by the end (16G + stress load)
+Patch2022: kvm-Revert-Drop-qemu_mutex_iothread-during-migration.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3444,6 +3446,7 @@ ApplyOptionalPatch()
 %patch2019 -p1
 %patch2020 -p1
 %patch2021 -p1
+%patch2022 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3654,6 +3657,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Feb 07 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.139.el6
+- kvm-Revert-Drop-qemu_mutex_iothread-during-migration.patch [bz#643970]
+- Related: bz#643970
+  (guest migration turns failed by the end (16G + stress load))
+
 * Fri Feb 04 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.138.el6
 - kvm-virtio-console-Factor-out-common-init-between-consol.patch [bz#588916]
 - kvm-virtio-console-Remove-unnecessary-braces.patch [bz#588916]
