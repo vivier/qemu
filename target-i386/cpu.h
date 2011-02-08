@@ -20,6 +20,7 @@
 #define CPU_I386_H
 
 #include "config.h"
+#include "qemu-common.h"
 
 #ifdef TARGET_X86_64
 #define TARGET_LONG_BITS 64
@@ -718,7 +719,8 @@ typedef struct CPUX86State {
     uint8_t has_error_code;
     uint32_t sipi_vector;
     uint32_t cpuid_kvm_features;
-    
+    bool tsc_valid;
+
     /* in order to simplify APIC support, we leave this pointer to the
        user */
     struct APICState *apic_state;

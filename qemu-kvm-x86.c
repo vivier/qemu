@@ -1218,7 +1218,12 @@ void kvm_arch_save_regs(CPUState *env)
     msrs[n++].index = MSR_IA32_SYSENTER_EIP;
     if (kvm_has_msr_star)
 	msrs[n++].index = MSR_STAR;
-    msrs[n++].index = MSR_IA32_TSC;
+
+    if (!env->tsc_valid) {
+        msrs[n++].index = MSR_IA32_TSC;
+        env->tsc_valid = !vm_running;
+    }
+
     if (kvm_has_vm_hsave_pa)
         msrs[n++].index = MSR_VM_HSAVE_PA;
 #ifdef TARGET_X86_64
@@ -1311,6 +1316,15 @@ static void kvm_trim_features(uint32_t *features, uint32_t supported)
         if ((*features & mask) && !(supported & mask)) {
             *features &= ~mask;
         }
+    }
+}
+
+static void cpu_update_state(void *opaque, int running, int reason)
+{
+    CPUState *env = opaque;
+
+    if (running) {
+        env->tsc_valid = false;
     }
 }
 
@@ -1421,6 +1435,9 @@ int kvm_arch_init_vcpu(CPUState *cenv)
 #ifdef KVM_EXIT_TPR_ACCESS
     kvm_tpr_vcpu_start(cenv);
 #endif
+
+    qemu_add_vm_change_state_handler(cpu_update_state, cenv);
+
     return 0;
 }
 
