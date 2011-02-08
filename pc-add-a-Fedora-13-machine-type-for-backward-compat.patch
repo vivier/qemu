@@ -12,10 +12,10 @@ diff --git a/hw/pc_piix.c b/hw/pc_piix.c
 index 9e4bac8..eb1ed05 100644
 --- a/hw/pc_piix.c
 +++ b/hw/pc_piix.c
-@@ -237,6 +237,14 @@ static QEMUMachine pc_machine = {
-     .is_default = 1,
+@@ -266,6 +266,14 @@ static QEMUMachine pc_machine_v0_13 = {
+     },
  };
-
+ 
 +static QEMUMachine pc_machine_f13 = {
 +    .name = "fedora-13",
 +    .desc = "Standard PC",
@@ -27,11 +27,11 @@ index 9e4bac8..eb1ed05 100644
  static QEMUMachine pc_machine_v0_12 = {
      .name = "pc-0.12",
      .desc = "Standard PC",
-@@ -348,6 +356,7 @@ static QEMUMachine isapc_machine = {
+@@ -397,6 +405,7 @@ static QEMUMachine isapc_machine = {
  static void pc_machine_init(void)
  {
      qemu_register_machine(&pc_machine);
 +    qemu_register_machine(&pc_machine_f13);
+     qemu_register_machine(&pc_machine_v0_13);
      qemu_register_machine(&pc_machine_v0_12);
      qemu_register_machine(&pc_machine_v0_11);
-     qemu_register_machine(&pc_machine_v0_10);

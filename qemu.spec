@@ -1,7 +1,9 @@
+%define githead 3593e6b
+
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
-Version: 0.13.0
-Release: 2%{?dist}
+Version: 0.14.0
+Release: 0.1.20110208git%githead%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -17,7 +19,11 @@ URL: http://www.qemu.org/
 %define _smp_mflags %{nil}
 %endif
 
-Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-kvm-%{version}.tar.gz
+# Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-kvm-%{version}.tar.gz
+# The source for this package was pulled from upstream's git.  Use the
+# following commands to generate the tarball:
+# git archive --format=tar --prefix=qemu-kvm-0.14/ 3593e6b | gzip > qemu-kvm-0.14.0-3593e6b.tar.gz
+Source0: qemu-kvm-%{version}-%{githead}.tar.gz
 Source1: qemu.init
 
 # Loads kvm kernel modules at boot
@@ -36,50 +42,6 @@ Source8: ksmtuned.conf
 # This patch must be carried through F-15 to support guests created
 # with F-13/
 Patch00: pc-add-a-Fedora-13-machine-type-for-backward-compat.patch
-
-# Patches from Fedora qemu git (http://git.fedorahosted.org/git/qemu-kvm-fedora.git)
-Patch01: 0001-add-pflib-PixelFormat-conversion-library.patch
-Patch02: 0002-configure-add-logging.patch
-Patch03: 0003-add-spice-into-the-configure-file.patch
-Patch04: 0004-spice-core-bits.patch
-Patch05: 0005-spice-add-keyboard.patch
-Patch06: 0006-spice-add-mouse.patch
-Patch07: 0007-spice-simple-display.patch
-Patch08: 0008-spice-add-tablet-support.patch
-Patch09: 0009-vgabios-update-to-0.6c-pcibios-patches.patch
-Patch10: 0010-switch-stdvga-to-pci-vgabios.patch
-Patch11: 0011-switch-vmware_vga-to-pci-vgabios.patch
-Patch12: 0012-all-vga-refuse-hotplugging.patch
-Patch13: 0013-spice-tls-support.patch
-Patch14: 0014-spice-add-qxl-device.patch
-Patch15: 0015-spice-add-audio.patch
-Patch16: 0016-spice-add-virtio-serial-based-vdi-port-backend.patch
-Patch17: 0017-spice-add-pci-vdi-port-backend-obsolete.patch
-Patch18: 0018-use-memalign-instead-of-posix_memalign.patch
-Patch19: 0019-spice-live-migration-wip.patch
-Patch20: 0020-spice-display-draw.h-is-internal-now.patch
-Patch21: 0021-spice-display-disable-debug.patch
-Patch22: 0022-spice-display-pci-rev-fixups.patch
-Patch23: 0023-qxl-pci-rev-fixups.patch
-Patch24: 0024-qxl-support-QXL_IO_DESTROY_ALL_SURFACES.patch
-Patch25: 0025-spice-vmc-two-bugfixes-in-vmc_read.patch
-Patch26: 0026-spice-enabling-disabling-jpeg-and-zlib-over-glz-via-.patch
-Patch27: 0027-ifdef-new-config-options.patch
-Patch28: 0028-spice-vmc-add-counter-to-debug-statements.patch
-Patch29: 0029-spice-vmc-split-vmc_write-to-max-sized-virtio_serial.patch
-Patch30: 0030-qxl-add-800x480-resolution-to-qxl_modes-n900-native.patch
-Patch31: 0031-qxl-savevm-fixes.patch
-Patch32: 0032-Revert-spice-vmc-split-vmc_write-to-max-sized-virtio.patch
-Patch33: 0033-Revert-spice-vmc-add-counter-to-debug-statements.patch
-Patch34: 0034-Revert-spice-vmc-two-bugfixes-in-vmc_read.patch
-Patch35: 0035-Revert-spice-live-migration-wip.patch
-Patch36: 0036-Revert-spice-add-pci-vdi-port-backend-obsolete.patch
-Patch37: 0037-Revert-spice-add-virtio-serial-based-vdi-port-backen.patch
-Patch38: 0038-spice-add-virtio-serial-based-spice-vmchannel-backen.patch
-Patch39: 0039-qxl-fix-release-ring-overrun.patch
-Patch40: 0040-qxl-flip-default-to-stable-pci-revision.patch
-Patch41: 0041-vmmouse-adapt-to-mouse-handler-changes.patch
-Patch42: 0042-vhost-net-patches-for-qemu-0.13.0-tarball.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -277,48 +239,6 @@ such as kvm_stat.
 %setup -q -n qemu-kvm-%{version}
 
 %patch00 -p1
-%patch01 -p1
-%patch02 -p1
-%patch03 -p1
-%patch04 -p1
-%patch05 -p1
-%patch06 -p1
-%patch07 -p1
-%patch08 -p1
-%patch09 -p1
-%patch10 -p1
-%patch11 -p1
-%patch12 -p1
-%patch13 -p1
-%patch14 -p1
-%patch15 -p1
-%patch16 -p1
-%patch17 -p1
-%patch18 -p1
-%patch19 -p1
-%patch20 -p1
-%patch21 -p1
-%patch22 -p1
-%patch23 -p1
-%patch24 -p1
-%patch25 -p1
-%patch26 -p1
-%patch27 -p1
-%patch28 -p1
-%patch29 -p1
-%patch30 -p1
-%patch31 -p1
-%patch32 -p1
-%patch33 -p1
-%patch34 -p1
-%patch35 -p1
-%patch36 -p1
-%patch37 -p1
-%patch38 -p1
-%patch39 -p1
-%patch40 -p1
-%patch41 -p1
-%patch42 -p1
 
 %build
 # By default we build everything, but allow x86 to build a minimal version
@@ -655,6 +575,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Feb 08 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.14.0-0.1.20110208git3593e6b
+- Update to 0.14.0 rc git snapshot
+- Add virtio-net to modules
+
 * Wed Nov  3 2010 Daniel P. Berrange <berrange@redhat.com> - 2:0.13.0-2
 - Revert previous change
 - Make qemu-common own the /etc/qemu directory
