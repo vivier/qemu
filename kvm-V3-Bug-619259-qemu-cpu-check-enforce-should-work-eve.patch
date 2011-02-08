@@ -1,0 +1,187 @@
+From de343e259189da2d6b893c453ca34b07386f8a3e Mon Sep 17 00:00:00 2001
+From: john cooper <john.cooper@redhat.com>
+Date: Thu, 3 Feb 2011 05:36:05 -0200
+Subject: [RHEL6 qemu-kvm PATCH 1/3] V3 Bug 619259 - qemu "-cpu [check | enforce ]" should work even when a model name is not specified on the command line
+
+RH-Author: john cooper <john.cooper@redhat.com>
+Message-id: <4D4A3EC5.9000809@redhat.com>
+Patchwork-id: 17570
+O-Subject: [PATCH RHEL6.1] V3 Bug 619259 - qemu "-cpu [check | enforce ]" should
+	work even when a model name is not specified on the command line
+Bugzilla: 619259
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+[version 3: same as prior version except here we also address
+the recently added "-M rhel6.1.0" machine model.  In the process
+the same treatment was given to the rhel5 models and upstream
+qemu* defaults for consistency.]
+
+https://bugzilla.redhat.com/show_bug.cgi?id=619259
+
+Launching qemu with "-cpu [check|enforce]" without explicitly
+prefixing a valid model name doesn't do as intuitively expected.
+Rather qemu exits with a CLI parse error.
+
+Unfortunately due to qemu's CLI argument parsing structure and
+the fact cpu models are initialized depending on build configuration,
+supporting the above implicitly for the default model is far more
+clunky than it ought to be.  So as a minor concession to a far more
+simple solution, a pseudo model name of "default" is added which
+expands internally to qemu's build configuration default and is then
+interpreted conventionally.  The result is then the following example
+usage:
+
+    # x86_64-softmmu/qemu-system-x86_64 ../rhel6.0-beta.img
+    Using CPU model "cpu64-rhel6"
+      :
+
+    # 86_64-softmmu/qemu-system-x86_64 ../rhel6.0-beta.img -cpu default,check
+    Using CPU model "cpu64-rhel6,check"
+    warning: host cpuid 8000_0001 lacks requested flag 'abm' [0x00000020]
+    warning: host cpuid 8000_0001 lacks requested flag 'sse4a' [0x00000040]
+      :
+
+    # x86_64-softmmu/qemu-system-x86_64 ../rhel6.0-beta.img -cpu default,enforce,+sse4.1,+sse4.2,-abm
+    Using CPU model "cpu64-rhel6,enforce,+sse4.1,+sse4.2,-abm"
+    warning: host cpuid 0000_0001 lacks requested flag 'sse4.2|sse4_2' [0x00100000]
+    warning: host cpuid 8000_0001 lacks requested flag 'sse4a' [0x00000040]
+    Unable to support requested x86 CPU definition
+
+etc..  allowing both the ability here to "check|enforce" the default
+model, as well as accepting arbitrary feature flags due to fan into the
+existing flag parsing.  The resulting patch, which also indicates the CPU
+model in use, is fairly simple.
+
+Upstream status: submitted.
+
+Signed-off-by: john cooper <john.cooper@redhat.com>
+---
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pc.c              |   49 ++++++++++++++++++++++++++++++++++++++++---------
+ target-i386/helper.c |    1 +
+ 2 files changed, 41 insertions(+), 9 deletions(-)
+
+diff --git a/hw/pc.c b/hw/pc.c
+index b786231..76152f3 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -1009,6 +1009,38 @@ CPUState *pc_new_cpu(const char *cpu_model)
+     return env;
+ }
+ 
++/* CLI cpu model name which expands to the actual configuration default
++ */
++#define CMD_KEYWORD     "default"
++#define CMD_KEYWORD_LN	(sizeof (CMD_KEYWORD) - 1)
++
++/* set configuration default cpu model if current model string is
++ * uninitialized, or if user explicitly requests use of the config'ed
++ * default by specifying a cpu model name of "default".
++ * Use of "default" as a cpu model pseudo-name exists primarily to
++ * ease treatment of qualifier flags requested by the user without
++ * requiring knowledge of all cpu model names in advance of full "-cpu"
++ * option parsing.
++ */
++static const char *setdef_cpu_model(const char *model_str,
++                                    const char *default_str)
++{
++    int default_str_ln = strlen(default_str);
++
++    if (!model_str || !*model_str) {
++        return default_str;
++    } else if (strncmp(model_str, CMD_KEYWORD, CMD_KEYWORD_LN)) {
++        return model_str;
++    } else {
++        char *new = qemu_malloc(strlen(model_str) - CMD_KEYWORD_LN +
++                                default_str_ln + 1);
++
++        strcpy(new, default_str);
++        strcpy(new + default_str_ln, model_str + CMD_KEYWORD_LN);
++        return new;
++    }
++}
++
+ /* PC hardware initialisation */
+ static void pc_init1(ram_addr_t ram_size,
+                      const char *boot_device,
+@@ -1045,13 +1077,12 @@ static void pc_init1(ram_addr_t ram_size,
+     linux_boot = (kernel_filename != NULL);
+ 
+     /* init CPUs */
+-    if (cpu_model == NULL) {
++    cpu_model = setdef_cpu_model(cpu_model,
+ #ifdef TARGET_X86_64
+-        cpu_model = "qemu64";
++        "qemu64");
+ #else
+-        cpu_model = "qemu32";
++        "qemu32");
+ #endif
+-    }
+ 
+     if (kvm_enabled()) {
+         kvm_set_boot_cpu_id(0);
+@@ -1527,7 +1558,7 @@ static void pc_init_rhel610(ram_addr_t ram_size,
+ {
+     rhel_common_init("RHEL 6.1.0 PC", 0);
+     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
+-                initrd_filename, cpu_model ? cpu_model : "cpu64-rhel6");
++                initrd_filename, setdef_cpu_model(cpu_model, "cpu64-rhel6"));
+ }
+ 
+ static QEMUMachine pc_machine_rhel610 = {
+@@ -1548,7 +1579,7 @@ static void pc_init_rhel600(ram_addr_t ram_size,
+ {
+     rhel_common_init("RHEL 6.0.0 PC", 0);
+     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
+-                initrd_filename, cpu_model ? cpu_model : "cpu64-rhel6");
++                initrd_filename, setdef_cpu_model(cpu_model, "cpu64-rhel6"));
+ }
+ 
+ static QEMUMachine pc_machine_rhel600 = {
+@@ -1623,7 +1654,7 @@ static void pc_init_rhel550(ram_addr_t ram_size,
+ {
+     rhel_common_init("RHEL 5.5.0 PC", 1);
+     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
+-                initrd_filename, cpu_model ? cpu_model : "cpu64-rhel5");
++                initrd_filename, setdef_cpu_model(cpu_model, "cpu64-rhel5"));
+ }
+ 
+ static QEMUMachine pc_machine_rhel550 = {
+@@ -1643,7 +1674,7 @@ static void pc_init_rhel544(ram_addr_t ram_size,
+ {
+     rhel_common_init("RHEL 5.4.4 PC", 1);
+     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
+-                initrd_filename, cpu_model ? cpu_model : "cpu64-rhel5");
++                initrd_filename, setdef_cpu_model(cpu_model, "cpu64-rhel5"));
+ }
+ 
+ static QEMUMachine pc_machine_rhel544 = {
+@@ -1663,7 +1694,7 @@ static void pc_init_rhel540(ram_addr_t ram_size,
+ {
+     rhel_common_init("RHEL 5.4.0 PC", 1);
+     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
+-                initrd_filename, cpu_model ? cpu_model : "cpu64-rhel5");
++                initrd_filename, setdef_cpu_model(cpu_model, "cpu64-rhel5"));
+ }
+ 
+ static QEMUMachine pc_machine_rhel540 = {
+diff --git a/target-i386/helper.c b/target-i386/helper.c
+index 9cf6e90..ab2062a 100644
+--- a/target-i386/helper.c
++++ b/target-i386/helper.c
+@@ -2304,6 +2304,7 @@ CPUX86State *cpu_x86_init(const char *cpu_model)
+     env = qemu_mallocz(sizeof(CPUX86State));
+     cpu_exec_init(env);
+     env->cpu_model_str = cpu_model;
++    fprintf(stderr, "Using CPU model \"%s\"\n", cpu_model);
+ 
+     /* init various static tables */
+     if (!inited) {
+-- 
+1.7.3.2
+

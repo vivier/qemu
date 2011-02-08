@@ -1,0 +1,48 @@
+From cde9961725f12179ccf7a35315fe4f8a366780c2 Mon Sep 17 00:00:00 2001
+From: john cooper <john.cooper@redhat.com>
+Date: Fri, 4 Feb 2011 18:53:03 -0200
+Subject: [RHEL6 qemu-kvm PATCH 2/3] Bug 675229 - Install of cpu-x86_64.conf bombs for an out of tree build..
+
+RH-Author: john cooper <john.cooper@redhat.com>
+Message-id: <4D4C4B0F.4000705@redhat.com>
+Patchwork-id: 17756
+O-Subject: [PATCH RHEL6.1] Bug 675229 - Install of cpu-x86_64.conf bombs for
+	an out of tree build..
+Bugzilla: 675229
+RH-Acked-by: Zachary Amsden <zamsden@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+https://bugzilla.redhat.com/show_bug.cgi?id=675229
+
+Install of cpu-x86_64.conf into the host needs a SRC_PATH prefix
+otherwise out of tree builds fail to find the source config
+file.
+
+Upstream status: Logical backport of upstream 9e0a5d5495289337da3ae871890ac3fd58351992
+(rhel convention uses cpu-x86_64.conf vs. target-x86_64.conf)
+
+Signed-off-by: john cooper <john.cooper@redhat.com>
+---
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 60c319b..356e09d 100644
+--- a/Makefile
++++ b/Makefile
+@@ -371,7 +371,7 @@ endif
+ 
+ install-cpuconfig:
+ 	$(INSTALL_DIR) "$(DESTDIR)$(cpuconfdir)"
+-	$(INSTALL_DATA) sysconfigs/target/cpu-x86_64.conf "$(DESTDIR)$(cpuconfdir)"
++	$(INSTALL_DATA) $(SRC_PATH)/sysconfigs/target/cpu-x86_64.conf "$(DESTDIR)$(cpuconfdir)"
+ 
+ install: all $(if $(BUILD_DOCS),install-doc) install-cpuconfig
+ 	$(INSTALL_DIR) "$(DESTDIR)$(bindir)"
+-- 
+1.7.3.2
+

@@ -1,0 +1,110 @@
+From cecd298da4c790be168552d8d3b79d01b5aea7fd Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Sun, 6 Feb 2011 10:03:10 -0200
+Subject: [RHEL6 qemu-kvm PATCH 3/3] e1000: multi-buffer packet support
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <20110206100310.GA25985@redhat.com>
+Patchwork-id: 17768
+O-Subject: [PATCHv3] e1000: multi-buffer packet support
+Bugzilla: 602205
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+e1000 supports multi-buffer packets larger than rxbuf_size.
+
+This fixes the following (on linux):
+- in guest: ifconfig eth1 mtu 16110
+- in host: ifconfig tap0 mtu 16110
+           ping -s 16082 <guest-ip>
+
+Red Hat bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=602205
+Upstream status: 19368fcf08047b8a802d895bda698cc67537e00d
+(not yet pulled, it's in my pci tree at the moment)
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+Changes from v2:
+       fix build (kill extra brace that crept in)
+Changes from v1:
+       removed dead code
+
+ hw/e1000.c |   29 +++++++++++++++++++----------
+ 1 files changed, 19 insertions(+), 10 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/e1000.c |   29 +++++++++++++++++++----------
+ 1 files changed, 19 insertions(+), 10 deletions(-)
+
+diff --git a/hw/e1000.c b/hw/e1000.c
+index 1e17cff..bce0195 100644
+--- a/hw/e1000.c
++++ b/hw/e1000.c
+@@ -637,16 +637,12 @@ e1000_receive(VLANClientState *nc, const uint8_t *buf, size_t size)
+     uint32_t rdh_start;
+     uint16_t vlan_special = 0;
+     uint8_t vlan_status = 0, vlan_offset = 0;
++    size_t desc_offset;
++    size_t desc_size;
+ 
+     if (!(s->mac_reg[RCTL] & E1000_RCTL_EN))
+         return -1;
+ 
+-    if (size > s->rxbuf_size) {
+-        DBGOUT(RX, "packet too large for buffers (%lu > %d)\n",
+-               (unsigned long)size, s->rxbuf_size);
+-        return -1;
+-    }
+-
+     if (!receive_filter(s, buf, size))
+         return size;
+ 
+@@ -660,8 +656,15 @@ e1000_receive(VLANClientState *nc, const uint8_t *buf, size_t size)
+ 
+     rdh_start = s->mac_reg[RDH];
+     size += fcs_len(s);
++    desc_offset = 0;
+     do {
++        desc_size = size - desc_offset;
++        if (desc_size > s->rxbuf_size) {
++            desc_size = s->rxbuf_size;
++        }
+         if (s->mac_reg[RDH] == s->mac_reg[RDT] && s->check_rxov) {
++            /* Discard all data written so far */
++            s->mac_reg[RDH] = rdh_start;
+             set_ics(s, 0, E1000_ICS_RXO);
+             return -1;
+         }
+@@ -672,9 +675,15 @@ e1000_receive(VLANClientState *nc, const uint8_t *buf, size_t size)
+         desc.status |= (vlan_status | E1000_RXD_STAT_DD);
+         if (desc.buffer_addr) {
+             cpu_physical_memory_write(le64_to_cpu(desc.buffer_addr),
+-                                      (void *)(buf + vlan_offset), size);
+-            desc.length = cpu_to_le16(size);
+-            desc.status |= E1000_RXD_STAT_EOP|E1000_RXD_STAT_IXSM;
++                                      (void *)(buf + desc_offset + vlan_offset),
++                                      desc_size);
++            desc_offset += desc_size;
++            if (desc_offset >= size) {
++                desc.length = cpu_to_le16(desc_size);
++                desc.status |= E1000_RXD_STAT_EOP | E1000_RXD_STAT_IXSM;
++            } else {
++                desc.length = cpu_to_le16(desc_size);
++            }
+         } else // as per intel docs; skip descriptors with null buf addr
+             DBGOUT(RX, "Null RX descriptor!!\n");
+         cpu_physical_memory_write(base, (void *)&desc, sizeof(desc));
+@@ -689,7 +698,7 @@ e1000_receive(VLANClientState *nc, const uint8_t *buf, size_t size)
+             set_ics(s, 0, E1000_ICS_RXO);
+             return -1;
+         }
+-    } while (desc.buffer_addr == 0);
++    } while (desc_offset < size);
+ 
+     s->mac_reg[GPRC]++;
+     s->mac_reg[TPR]++;
+-- 
+1.7.3.2
+

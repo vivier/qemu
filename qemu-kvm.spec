@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.143
+%define pkgrelease 2.144
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2347,6 +2347,12 @@ Patch2035: kvm-savevm-fix-corruption-in-vmstate_subsection_load.patch
 # For bz#588916 - qemu char fixes for nonblocking writes, virtio-console flow control
 Patch2036: kvm-virtio-serial-Disable-flow-control-for-RHEL-5.0-mach.patch
 Patch2037: kvm-fix-syntax-error-introduced-by-virtio-serial-Disable.patch
+# For bz#619259 - qemu "-cpu [check | enforce ]" should work even when a model name is not specified on the command line
+Patch2038: kvm-V3-Bug-619259-qemu-cpu-check-enforce-should-work-eve.patch
+# For bz#675229 - Install of cpu-x86_64.conf bombs for an out of tree build..
+Patch2039: kvm-Bug-675229-Install-of-cpu-x86_64.conf-bombs-for-an-o.patch
+# For bz#602205 - Could not ping guest successfully after changing e1000 MTU
+Patch2040: kvm-e1000-multi-buffer-packet-support.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3493,6 +3499,9 @@ ApplyOptionalPatch()
 %patch2035 -p1
 %patch2036 -p1
 %patch2037 -p1
+%patch2038 -p1
+%patch2039 -p1
+%patch2040 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3707,6 +3716,17 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Feb 08 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.144.el6
+- kvm-V3-Bug-619259-qemu-cpu-check-enforce-should-work-eve.patch [bz#619259]
+- kvm-Bug-675229-Install-of-cpu-x86_64.conf-bombs-for-an-o.patch [bz#675229]
+- kvm-e1000-multi-buffer-packet-support.patch [bz#602205]
+- Resolves: bz#602205
+  (Could not ping guest successfully after changing e1000 MTU)
+- Resolves: bz#619259
+  (qemu "-cpu [check | enforce ]" should work even when a model name is not specified on the command line)
+- Resolves: bz#675229
+  (Install of cpu-x86_64.conf bombs for an out of tree build..)
+
 * Mon Feb 07 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.143.el6
 - kvm-fix-syntax-error-introduced-by-virtio-serial-Disable.patch [bz#588916]
 - Resolves: bz#588916
