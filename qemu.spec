@@ -3,7 +3,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.14.0
-Release: 0.1.20110208git%githead%{?dist}
+Release: 0.2.20110208git%githead%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -575,6 +575,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Feb 08 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2:0.14.0-0.2.20110208git3593e6b
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
+
 * Tue Feb 08 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.14.0-0.1.20110208git3593e6b
 - Update to 0.14.0 rc git snapshot
 - Add virtio-net to modules
