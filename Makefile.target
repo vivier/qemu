@@ -29,7 +29,7 @@ PROGS=$(QEMU_PROG)
 
 LIBS+=-lm
 
-kvm.o kvm-all.o: QEMU_CFLAGS+=$(KVM_CFLAGS)
+kvm.o kvm-all.o kvmclock.o: QEMU_CFLAGS+=$(KVM_CFLAGS)
 
 CFLAGS += $(KVM_CFLAGS)
 
@@ -237,6 +237,7 @@ obj-i386-y += device-hotplug.o smbios.o wdt_ib700.o
 obj-i386-y += extboot.o
 obj-i386-y += ne2000-isa.o
 obj-i386-y += testdev.o
+obj-i386-y += kvmclock.o
 
 obj-i386-$(CONFIG_KVM_PIT) += i8254-kvm.o
 obj-i386-$(CONFIG_KVM_DEVICE_ASSIGNMENT) += device-assignment.o
