@@ -47,6 +47,7 @@
 #include "device-assignment.h"
 #include "qemu-kvm.h"
 #include "ui/qemu-spice.h"
+#include "kvmclock.h"
 
 /* output Bochs bios info messages */
 //#define DEBUG_BIOS
@@ -1097,6 +1098,8 @@ static void pc_init1(ram_addr_t ram_size,
     }
 #endif
     vmport_init();
+
+    kvmclock_create();
 
     /* allocate RAM */
     if (fake_machine) {
