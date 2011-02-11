@@ -1,9 +1,9 @@
-%define githead 3593e6b
+%define githead 7aa8c46
 
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.14.0
-Release: 0.1.20110208git%githead%{?dist}
+Release: 0.1.20110210%githead%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -59,7 +59,7 @@ Requires: %{name}-user = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-x86 = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-sparc = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-arm = %{epoch}:%{version}-%{release}
-Requires: %{name}-system-cris = %{epoch}:%{version}-%{release}
+# Requires: %{name}-system-cris = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-sh4 = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-m68k = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-mips = %{epoch}:%{version}-%{release}
@@ -194,15 +194,15 @@ emulation speed by using dynamic translation.
 
 This package provides the system emulator for mips
 
-%package system-cris
-Summary: QEMU system emulator for cris
-Group: Development/Tools
-Requires: %{name}-common = %{epoch}:%{version}-%{release}
-%description system-cris
-QEMU is a generic and open source processor emulator which achieves a good
-emulation speed by using dynamic translation.
+# %package system-cris
+# Summary: QEMU system emulator for cris
+# Group: Development/Tools
+# Requires: %{name}-common = %{epoch}:%{version}-%{release}
+# %description system-cris
+# QEMU is a generic and open source processor emulator which achieves a good
+# emulation speed by using dynamic translation.
 
-This package provides the system emulator for cris
+# This package provides the system emulator for cris
 
 %package system-m68k
 Summary: QEMU system emulator for m68k
@@ -246,9 +246,9 @@ such as kvm_stat.
 %if %{with_x86only}
     buildarch="i386-softmmu x86_64-softmmu i386-linux-user x86_64-linux-user"
 %else
-    buildarch="i386-softmmu x86_64-softmmu arm-softmmu cris-softmmu m68k-softmmu \
+    buildarch="i386-softmmu x86_64-softmmu arm-softmmu m68k-softmmu \
            mips-softmmu mipsel-softmmu mips64-softmmu mips64el-softmmu ppc-softmmu \
-           ppcemb-softmmu ppc64-softmmu sh4-softmmu sh4eb-softmmu sparc-softmmu \
+           ppcemb-softmmu ppc64-softmmu sh4-softmmu sh4eb-softmmu \
            i386-linux-user x86_64-linux-user alpha-linux-user arm-linux-user \
            armeb-linux-user cris-linux-user m68k-linux-user mips-linux-user \
            mipsel-linux-user ppc-linux-user ppc64-linux-user ppc64abi32-linux-user \
@@ -364,7 +364,6 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/s390-zipl.rom
 %if %{with_x86only}
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/bamboo.dtb
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/ppc_rom.bin
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/video.x
 %endif
 
 # the pxe gpxe images will be symlinks to the images on
@@ -528,7 +527,7 @@ fi
 
 %files system-sparc
 %defattr(-,root,root)
-%{_bindir}/qemu-system-sparc
+# %{_bindir}/qemu-system-sparc
 %{_datadir}/%{name}/openbios-sparc32
 %{_datadir}/%{name}/openbios-sparc64
 
@@ -549,13 +548,12 @@ fi
 %{_bindir}/qemu-system-ppc64
 %{_bindir}/qemu-system-ppcemb
 %{_datadir}/%{name}/openbios-ppc
-%{_datadir}/%{name}/video.x
 %{_datadir}/%{name}/bamboo.dtb
 %{_datadir}/%{name}/ppc_rom.bin
 
-%files system-cris
-%defattr(-,root,root)
-%{_bindir}/qemu-system-cris
+# %files system-cris
+# %defattr(-,root,root)
+# %{_bindir}/qemu-system-cris
 
 %files system-m68k
 %defattr(-,root,root)
@@ -575,6 +573,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Feb 11 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.14.0-0.1.20110210git7aa8c46
+- Update git snapshot
+- Temporarily disable qemu-cris and qemu-sparc due to build errors (to be resolved shorly)
+
 * Tue Feb 08 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.14.0-0.1.20110208git3593e6b
 - Update to 0.14.0 rc git snapshot
 - Add virtio-net to modules
