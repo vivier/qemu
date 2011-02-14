@@ -223,6 +223,15 @@ echo "==="
 cat config-host.mak
 echo "==="
 
+
+# generate the default config:
+make x86_64-softmmu/config-devices.mak
+
+# disable vmware emulation devices on the config:
+sed -i -e '/CONFIG_VMWARE_VGA=y/d
+           /CONFIG_VMPORT=y/d
+           /CONFIG_VMMOUSE=y/d' x86_64-softmmu/config-devices.mak
+
 make V=1 QEMU_PROG=qemu-kvm QEMU_BINDIR="%{_prefix}/libexec" \
      %{?_smp_mflags} $buildldflags
 
