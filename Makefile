@@ -1,7 +1,7 @@
 # Makefile for QEMU.
 
 # This needs to be defined before rules.mak
-GENERATED_HEADERS = config-host.h trace.h
+GENERATED_HEADERS = config-host.h trace.h config-all-devices.h
 ifeq ($(TRACE_BACKEND),dtrace)
 GENERATED_HEADERS += trace-dtrace.h
 endif
@@ -63,6 +63,9 @@ build-all: $(DOCS) $(TOOLS) recurse-all
 
 config-host.h: config-host.h-timestamp
 config-host.h-timestamp: config-host.mak
+
+config-all-devices.h: config-all-devices.h-timestamp
+config-all-devices.h-timestamp: config-all-devices.mak
 
 SUBDIR_RULES=$(patsubst %,subdir-%, $(TARGET_DIRS))
 
@@ -333,7 +336,7 @@ clean:
 
 distclean: clean
 	rm -f config-host.mak config-host.h* config-host.ld $(DOCS) qemu-options.texi qemu-img-cmds.texi qemu-monitor.texi
-	rm -f config-all-devices.mak
+	rm -f config-all-devices.mak config-all-devices.h*
 	rm -f roms/seabios/config.mak roms/vgabios/config.mak
 	rm -f qemu-{doc,tech}.{info,aux,cp,dvi,fn,info,ky,log,pg,toc,tp,vr}
 	for d in $(TARGET_DIRS) $(QEMULIBS); do \
