@@ -76,7 +76,11 @@ void vmport_init(void);
 void vmport_register(unsigned char command, IOPortReadFunc *func, void *opaque);
 
 /* vmmouse.c */
+#ifdef CONFIG_VMMOUSE
 void *vmmouse_init(void *m);
+#else
+#define vmmouse_init(m) do { } while (0)
+#endif
 
 /* pckbd.c */
 
