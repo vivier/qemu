@@ -72,8 +72,12 @@ void hpet_disable_pit(void);
 void hpet_enable_pit(void);
 
 /* vmport.c */
+#ifdef CONFIG_VMPORT
 void vmport_init(void);
 void vmport_register(unsigned char command, IOPortReadFunc *func, void *opaque);
+#else
+#define vmport_init() do { } while (0)
+#endif
 
 /* vmmouse.c */
 #ifdef CONFIG_VMMOUSE

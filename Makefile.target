@@ -231,7 +231,7 @@ obj-i386-y += pckbd.o $(sound-obj-y) dma.o
 obj-i386-y += vga.o vga-pci.o vga-isa.o
 obj-i386-y += fdc.o mc146818rtc.o serial.o i8259.o i8254.o pcspk.o pc.o
 obj-i386-y += cirrus_vga.o apic.o ioapic.o parallel.o acpi.o piix_pci.o
-obj-i386-y += usb-uhci.o vmport.o hpet.o
+obj-i386-y += usb-uhci.o hpet.o
 obj-i386-y += device-hotplug.o smbios.o wdt_ib700.o
 obj-i386-y += extboot.o
 obj-i386-y += ne2000-isa.o
@@ -250,6 +250,7 @@ obj-i386-$(CONFIG_SPICE) += qxl.o qxl-logger.o qxl-render.o
 
 obj-i386-$(CONFIG_VMWARE_VGA) += vmware_vga.o
 obj-i386-$(CONFIG_VMMOUSE) += vmmouse.o
+obj-i386-$(CONFIG_VMPORT) += vmport.o
 
 # shared objects
 obj-ppc-y = ppc.o ide/core.o ide/qdev.o ide/isa.o ide/pci.o ide/macio.o
