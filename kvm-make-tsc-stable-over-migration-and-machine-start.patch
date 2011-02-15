@@ -1,0 +1,113 @@
+From 47275214789017a509aba641803efe7faf9643b6 Mon Sep 17 00:00:00 2001
+From: Glauber Costa <glommer@redhat.com>
+Date: Tue, 8 Feb 2011 16:08:58 -0200
+Subject: [PATCH 01/10] kvm: make tsc stable over migration and machine start
+
+RH-Author: Glauber Costa <glommer@redhat.com>
+Message-id: <1297181338-15127-1-git-send-email-glommer@redhat.com>
+Patchwork-id: 17863
+O-Subject: [RHEL6.1 PATCH v2] kvm: make tsc stable over migration and machine
+	start
+Bugzilla: 662386
+RH-Acked-by: Xiao Wang <jasowang@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+RH-Author: Glauber Costa <glommer@redhat.com>
+Upstream: 6fa29c9f3f694cc673bc24f85519aecb4515f692
+RH-Bugzilla: 662386
+
+If the machine is stopped, we should not record two different tsc values
+upon a save operation. The same problem happens with kvmclock.
+
+But kvmclock is taking a different diretion, being now seen as a separate
+device. Since this is unlikely to happen with the tsc, I am taking the
+approach here of simply registering a handler for state change, and
+using a per-CPUState variable that prevents double updates for the TSC.
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+Differences from upstream:
+* trivial code replacements
+* inclusion of qemu-common.h in cpu.h, for the bool type
+v2: marcelo correctly pointed out we're still using those from qemu-kvm-x86.c My bad
+---
+ qemu-kvm-x86.c    |   19 ++++++++++++++++++-
+ target-i386/cpu.h |    4 +++-
+ 2 files changed, 21 insertions(+), 2 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-kvm-x86.c    |   19 ++++++++++++++++++-
+ target-i386/cpu.h |    4 +++-
+ 2 files changed, 21 insertions(+), 2 deletions(-)
+
+diff --git a/qemu-kvm-x86.c b/qemu-kvm-x86.c
+index d4fdb88..2d581cc 100644
+--- a/qemu-kvm-x86.c
++++ b/qemu-kvm-x86.c
+@@ -1218,7 +1218,12 @@ void kvm_arch_save_regs(CPUState *env)
+     msrs[n++].index = MSR_IA32_SYSENTER_EIP;
+     if (kvm_has_msr_star)
+ 	msrs[n++].index = MSR_STAR;
+-    msrs[n++].index = MSR_IA32_TSC;
++
++    if (!env->tsc_valid) {
++        msrs[n++].index = MSR_IA32_TSC;
++        env->tsc_valid = !vm_running;
++    }
++
+     if (kvm_has_vm_hsave_pa)
+         msrs[n++].index = MSR_VM_HSAVE_PA;
+ #ifdef TARGET_X86_64
+@@ -1314,6 +1319,15 @@ static void kvm_trim_features(uint32_t *features, uint32_t supported)
+     }
+ }
+ 
++static void cpu_update_state(void *opaque, int running, int reason)
++{
++    CPUState *env = opaque;
++
++    if (running) {
++        env->tsc_valid = false;
++    }
++}
++
+ int kvm_arch_init_vcpu(CPUState *cenv)
+ {
+     struct kvm_cpuid_entry2 cpuid_ent[100];
+@@ -1421,6 +1435,9 @@ int kvm_arch_init_vcpu(CPUState *cenv)
+ #ifdef KVM_EXIT_TPR_ACCESS
+     kvm_tpr_vcpu_start(cenv);
+ #endif
++
++    qemu_add_vm_change_state_handler(cpu_update_state, cenv);
++
+     return 0;
+ }
+ 
+diff --git a/target-i386/cpu.h b/target-i386/cpu.h
+index b64bd02..47de043 100644
+--- a/target-i386/cpu.h
++++ b/target-i386/cpu.h
+@@ -20,6 +20,7 @@
+ #define CPU_I386_H
+ 
+ #include "config.h"
++#include "qemu-common.h"
+ 
+ #ifdef TARGET_X86_64
+ #define TARGET_LONG_BITS 64
+@@ -718,7 +719,8 @@ typedef struct CPUX86State {
+     uint8_t has_error_code;
+     uint32_t sipi_vector;
+     uint32_t cpuid_kvm_features;
+-    
++    bool tsc_valid;
++
+     /* in order to simplify APIC support, we leave this pointer to the
+        user */
+     struct APICState *apic_state;
+-- 
+1.7.4.rc1.16.gd2f15e
+

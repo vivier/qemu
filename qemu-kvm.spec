@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.144
+%define pkgrelease 2.145
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2353,6 +2353,24 @@ Patch2038: kvm-V3-Bug-619259-qemu-cpu-check-enforce-should-work-eve.patch
 Patch2039: kvm-Bug-675229-Install-of-cpu-x86_64.conf-bombs-for-an-o.patch
 # For bz#602205 - Could not ping guest successfully after changing e1000 MTU
 Patch2040: kvm-e1000-multi-buffer-packet-support.patch
+# For bz#662386 - tsc clock breaks migration result stability
+Patch2041: kvm-make-tsc-stable-over-migration-and-machine-start.patch
+# For bz#635527 - KVM:qemu-img re-base poor performance(on local storage) when snapshot to a new disk
+Patch2042: kvm-qemu-kvm-Close-all-block-drivers-on-quit.patch
+# For bz#676015 - set_link <tap> off not working with vhost-net
+Patch2043: kvm-net-notify-peer-about-link-status-change.patch
+# For bz#676015 - set_link <tap> off not working with vhost-net
+Patch2044: kvm-vhost-disable-on-tap-link-down.patch
+# For bz#616187 - vmware device emulation enabled but not supported
+Patch2045: kvm-Add-config-devices.h-again.patch
+# For bz#616187 - vmware device emulation enabled but not supported
+Patch2046: kvm-Add-CONFIG_VMWARE_VGA-v2.patch
+# For bz#616187 - vmware device emulation enabled but not supported
+Patch2047: kvm-add-CONFIG_VMMOUSE-option-v2.patch
+# For bz#616187 - vmware device emulation enabled but not supported
+Patch2048: kvm-add-CONFIG_VMPORT-option-v2.patch
+# For bz#677222 - segment fault happens after hot drive add then drive delete
+Patch2050: kvm-blockdev-Fix-drive_del-not-to-crash-when-drive-is-no.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3502,6 +3520,15 @@ ApplyOptionalPatch()
 %patch2038 -p1
 %patch2039 -p1
 %patch2040 -p1
+%patch2041 -p1
+%patch2042 -p1
+%patch2043 -p1
+%patch2044 -p1
+%patch2045 -p1
+%patch2046 -p1
+%patch2047 -p1
+%patch2048 -p1
+%patch2050 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3557,6 +3584,15 @@ echo "config-host.mak contents:"
 echo "==="
 cat config-host.mak
 echo "==="
+
+
+# generate the default config:
+make x86_64-softmmu/config-devices.mak
+
+# disable vmware emulation devices on the config:
+sed -i -e '/CONFIG_VMWARE_VGA=y/d
+           /CONFIG_VMPORT=y/d
+           /CONFIG_VMMOUSE=y/d' x86_64-softmmu/config-devices.mak
 
 make V=1 QEMU_PROG=qemu-kvm QEMU_BINDIR="%{_prefix}/libexec" \
      %{?_smp_mflags} $buildldflags
@@ -3716,6 +3752,29 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Feb 15 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.145.el6
+- kvm-make-tsc-stable-over-migration-and-machine-start.patch [bz#662386]
+- kvm-qemu-kvm-Close-all-block-drivers-on-quit.patch [bz#635527]
+- kvm-net-notify-peer-about-link-status-change.patch [bz#676015]
+- kvm-vhost-disable-on-tap-link-down.patch [bz#676015]
+- kvm-Add-config-devices.h-again.patch [bz#616187]
+- kvm-Add-CONFIG_VMWARE_VGA-v2.patch [bz#616187]
+- kvm-add-CONFIG_VMMOUSE-option-v2.patch [bz#616187]
+- kvm-add-CONFIG_VMPORT-option-v2.patch [bz#616187]
+- kvm-blockdev-Fix-drive_del-not-to-crash-when-drive-is-no.patch [bz#677222]
+- Resolves: bz#616187
+  (vmware device emulation enabled but not supported)
+- Resolves: bz#635527
+  (KVM:qemu-img re-base poor performance(on local storage) when snapshot to a new disk)
+- Resolves: bz#662386
+  (tsc clock breaks migration result stability)
+- Resolves: bz#676015
+  (set_link <tap> off not working with vhost-net)
+- Resolves: bz#677222
+  (segment fault happens after hot drive add then drive delete)
+- Related: bz#635527
+  (KVM:qemu-img re-base poor performance(on local storage) when snapshot to a new disk)
+
 * Tue Feb 08 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.144.el6
 - kvm-V3-Bug-619259-qemu-cpu-check-enforce-should-work-eve.patch [bz#619259]
 - kvm-Bug-675229-Install-of-cpu-x86_64.conf-bombs-for-an-o.patch [bz#675229]

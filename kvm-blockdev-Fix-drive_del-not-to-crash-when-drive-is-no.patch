@@ -1,0 +1,81 @@
+From 4b9d66126838750d6a09d8090443ff8df9955353 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Mon, 14 Feb 2011 17:42:35 -0200
+Subject: [PATCH 10/10] blockdev: Fix drive_del not to crash when drive is not in use
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <m3bp2e3438.fsf@blackfin.pond.sub.org>
+Patchwork-id: 18170
+O-Subject: [PATCH RHEL6.1 qemu-kvm] blockdev: Fix drive_del not to crash when
+	drive is not in use
+Bugzilla: 677222
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Xiao Wang <jasowang@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Watch this:
+
+    (qemu) drive_add 0 if=none,file=tmp.img
+    OK
+    (qemu) info block
+    none0: type=hd removable=0 file=tmp.img ro=0 drv=raw encrypted=0
+    (qemu) drive_del none0
+    Segmentation fault (core dumped)
+
+do_drive_del()'s code to clean up the pointer from a qdev using the
+drive back to the drive needs to check whether such a device exists.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Reviewed-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 850ec1133bf0f78ff19402cfd5d77eea376599a9)
+
+Conflicts:
+
+	blockdev.c
+---
+BZ 677222
+Upstream: cherry-picked from there
+Testing:  commit message's test case now works
+z-stream: proposed, because it fixes a crash bug in a patch that's
+          scheduled for z-stream (bug 677170)
+brew: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=3109204
+
+ hw/device-hotplug.c |   16 +++++++++-------
+ 1 files changed, 9 insertions(+), 7 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/device-hotplug.c |   16 +++++++++-------
+ 1 files changed, 9 insertions(+), 7 deletions(-)
+
+diff --git a/hw/device-hotplug.c b/hw/device-hotplug.c
+index 16d7950..cb9a4e0 100644
+--- a/hw/device-hotplug.c
++++ b/hw/device-hotplug.c
+@@ -131,13 +131,15 @@ int do_drive_del(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ 
+     /* clean up guest state from pointing to host resource by
+      * finding and removing DeviceState "drive" property */
+-    for (prop = bs->peer->info->props; prop && prop->name; prop++) {
+-        if (prop->info->type == PROP_TYPE_DRIVE) {
+-            ptr = qdev_get_prop_ptr(bs->peer, prop);
+-            if ((*ptr) == bs) {
+-                bdrv_detach(bs, bs->peer);
+-                *ptr = NULL;
+-                break;
++    if (bs->peer) {
++        for (prop = bs->peer->info->props; prop && prop->name; prop++) {
++            if (prop->info->type == PROP_TYPE_DRIVE) {
++                ptr = qdev_get_prop_ptr(bs->peer, prop);
++                if (*ptr == bs) {
++                    bdrv_detach(bs, bs->peer);
++                    *ptr = NULL;
++                    break;
++                }
+             }
+         }
+     }
+-- 
+1.7.4.rc1.16.gd2f15e
+

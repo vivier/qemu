@@ -1,0 +1,115 @@
+From a49b6803d4da3b7a2e2f38e0f22a6b9b960a5620 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Mon, 14 Feb 2011 18:54:55 -0200
+Subject: [PATCH 05/10] Add config-devices.h again
+
+RH-Author: Eduardo Habkost <ehabkost@redhat.com>
+Message-id: <1297709699-2894-2-git-send-email-ehabkost@redhat.com>
+Patchwork-id: 18175
+O-Subject: [RHEL6 qemu-kvm PATCH 1/5] Add config-devices.h again
+Bugzilla: 616187
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: john cooper <john.cooper@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+This reverts part of commit a992fe3d0fc185112677286f7a02204d8245b61e.
+
+We do have code that needs #ifdefs depending on the list of enabled devices,
+but currently that code breaks when we try to disable a feature that is enabled
+by default.
+
+For example, if we try to disable CONFIG_VMWARE_VGA, we get the following:
+
+   LINK  x86_64-softmmu/qemu-system-x86_64
+  pc.o: In function `pc_vga_init':
+  /home/ehabkost/pessoal/proj/virt/qemu/qemu/hw/pc.c:991: undefined reference to `pci_vmsvga_init'
+  collect2: ld returned 1 exit status
+  make[1]: *** [qemu-system-x86_64] Error 1
+  rm config-devices.h-timestamp
+  make: *** [subdir-x86_64-softmmu] Error 2
+
+config-devices.h will allow us to add an #ifdef to fix the above error, and
+other similar cases.
+
+Bugzilla: 616187
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile        |    7 +++++--
+ Makefile.target |    2 +-
+ config.h        |   11 +++++++++++
+ 3 files changed, 17 insertions(+), 3 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ Makefile        |    7 +++++--
+ Makefile.target |    2 +-
+ config.h        |   11 +++++++++++
+ 3 files changed, 17 insertions(+), 3 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 356e09d..d7ad178 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,7 +1,7 @@
+ # Makefile for QEMU.
+ 
+ # This needs to be defined before rules.mak
+-GENERATED_HEADERS = config-host.h trace.h
++GENERATED_HEADERS = config-host.h trace.h config-all-devices.h
+ ifeq ($(TRACE_BACKEND),dtrace)
+ GENERATED_HEADERS += trace-dtrace.h
+ endif
+@@ -64,6 +64,9 @@ build-all: $(DOCS) $(TOOLS) recurse-all
+ config-host.h: config-host.h-timestamp
+ config-host.h-timestamp: config-host.mak
+ 
++config-all-devices.h: config-all-devices.h-timestamp
++config-all-devices.h-timestamp: config-all-devices.mak
++
+ SUBDIR_RULES=$(patsubst %,subdir-%, $(TARGET_DIRS))
+ 
+ ifeq ($(KVM_KMOD),yes)
+@@ -333,7 +336,7 @@ clean:
+ 
+ distclean: clean
+ 	rm -f config-host.mak config-host.h* config-host.ld $(DOCS) qemu-options.texi qemu-img-cmds.texi qemu-monitor.texi
+-	rm -f config-all-devices.mak
++	rm -f config-all-devices.mak config-all-devices.h*
+ 	rm -f roms/seabios/config.mak roms/vgabios/config.mak
+ 	rm -f qemu-{doc,tech}.{info,aux,cp,dvi,fn,info,ky,log,pg,toc,tp,vr}
+ 	for d in $(TARGET_DIRS) $(QEMULIBS); do \
+diff --git a/Makefile.target b/Makefile.target
+index 95ab004..8677508 100644
+--- a/Makefile.target
++++ b/Makefile.target
+@@ -1,7 +1,7 @@
+ # -*- Mode: makefile -*-
+ 
+ # This needs to be defined before rules.mak
+-GENERATED_HEADERS = config-target.h
++GENERATED_HEADERS = config-target.h config-devices.h
+ 
+ include ../config-host.mak
+ include config-devices.mak
+diff --git a/config.h b/config.h
+index e20f786..07d79d4 100644
+--- a/config.h
++++ b/config.h
+@@ -1,2 +1,13 @@
++
+ #include "config-host.h"
+ #include "config-target.h"
++
++/* We want to include different config files for specific targets
++   And for the common library.  They need a different name because
++   we don't want to rely in paths */
++
++#if defined(NEED_CPU_H)
++#include "config-devices.h"
++#else
++#include "config-all-devices.h"
++#endif
+-- 
+1.7.4.rc1.16.gd2f15e
+

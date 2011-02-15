@@ -1,0 +1,103 @@
+From ff5259f7a656179914248e2742fb64a8d14ee7cc Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Mon, 14 Feb 2011 18:54:58 -0200
+Subject: [PATCH 08/10] add CONFIG_VMPORT option (v2)
+
+RH-Author: Eduardo Habkost <ehabkost@redhat.com>
+Message-id: <1297709699-2894-5-git-send-email-ehabkost@redhat.com>
+Patchwork-id: 18174
+O-Subject: [RHEL6 qemu-kvm PATCH 4/5] add CONFIG_VMPORT option (v2)
+Bugzilla: 616187
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: john cooper <john.cooper@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+This allows vmport to be easily enabled or disabled at build time.
+
+Bugzilla: 616187
+
+Changes v1 -> v2:
+	- instead of using #ifdef around vmport_init() calls,
+	  redefine it at pc.h as a no-op if CONFIG_VMPORT is disabled.
+	  Also, don't define the vmport_register() prototype
+	  if CONFIG_VMPORT is disabled as it won't be available.
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile.target                    |    3 ++-
+ default-configs/i386-softmmu.mak   |    2 ++
+ default-configs/x86_64-softmmu.mak |    2 ++
+ hw/pc.h                            |    4 ++++
+ 4 files changed, 10 insertions(+), 1 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ Makefile.target                    |    3 ++-
+ default-configs/i386-softmmu.mak   |    2 ++
+ default-configs/x86_64-softmmu.mak |    2 ++
+ hw/pc.h                            |    4 ++++
+ 4 files changed, 10 insertions(+), 1 deletions(-)
+
+diff --git a/Makefile.target b/Makefile.target
+index 01b0b36..462ea96 100644
+--- a/Makefile.target
++++ b/Makefile.target
+@@ -231,7 +231,7 @@ obj-i386-y += pckbd.o $(sound-obj-y) dma.o
+ obj-i386-y += vga.o vga-pci.o vga-isa.o
+ obj-i386-y += fdc.o mc146818rtc.o serial.o i8259.o i8254.o pcspk.o pc.o
+ obj-i386-y += cirrus_vga.o apic.o ioapic.o parallel.o acpi.o piix_pci.o
+-obj-i386-y += usb-uhci.o vmport.o hpet.o
++obj-i386-y += usb-uhci.o hpet.o
+ obj-i386-y += device-hotplug.o smbios.o wdt_ib700.o
+ obj-i386-y += extboot.o
+ obj-i386-y += ne2000-isa.o
+@@ -250,6 +250,7 @@ obj-i386-$(CONFIG_SPICE) += qxl.o qxl-logger.o qxl-render.o
+ 
+ obj-i386-$(CONFIG_VMWARE_VGA) += vmware_vga.o
+ obj-i386-$(CONFIG_VMMOUSE) += vmmouse.o
++obj-i386-$(CONFIG_VMPORT) += vmport.o
+ 
+ # shared objects
+ obj-ppc-y = ppc.o ide/core.o ide/qdev.o ide/isa.o ide/pci.o ide/macio.o
+diff --git a/default-configs/i386-softmmu.mak b/default-configs/i386-softmmu.mak
+index 0c10dfe..243c4bf 100644
+--- a/default-configs/i386-softmmu.mak
++++ b/default-configs/i386-softmmu.mak
+@@ -1,4 +1,6 @@
+ # Default configuration for i386-softmmu
+ 
+ CONFIG_VMWARE_VGA=y
++CONFIG_VMPORT=y
++#NOTE: VMMOUSE depends on VMPORT
+ CONFIG_VMMOUSE=y
+diff --git a/default-configs/x86_64-softmmu.mak b/default-configs/x86_64-softmmu.mak
+index 1124e76..7c52ed7 100644
+--- a/default-configs/x86_64-softmmu.mak
++++ b/default-configs/x86_64-softmmu.mak
+@@ -1,4 +1,6 @@
+ # Default configuration for x86_64-softmmu
+ 
+ CONFIG_VMWARE_VGA=y
++CONFIG_VMPORT=y
++#NOTE: VMMOUSE depends on VMPORT
+ CONFIG_VMMOUSE=y
+diff --git a/hw/pc.h b/hw/pc.h
+index b8a79d2..8547516 100644
+--- a/hw/pc.h
++++ b/hw/pc.h
+@@ -72,8 +72,12 @@ void hpet_disable_pit(void);
+ void hpet_enable_pit(void);
+ 
+ /* vmport.c */
++#ifdef CONFIG_VMPORT
+ void vmport_init(void);
+ void vmport_register(unsigned char command, IOPortReadFunc *func, void *opaque);
++#else
++#define vmport_init() do { } while (0)
++#endif
+ 
+ /* vmmouse.c */
+ #ifdef CONFIG_VMMOUSE
+-- 
+1.7.4.rc1.16.gd2f15e
+

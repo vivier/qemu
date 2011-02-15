@@ -1,0 +1,96 @@
+From e79113f940894de868cbc435747d80a2331b1dad Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Mon, 14 Feb 2011 18:54:57 -0200
+Subject: [PATCH 07/10] add CONFIG_VMMOUSE option (v2)
+
+RH-Author: Eduardo Habkost <ehabkost@redhat.com>
+Message-id: <1297709699-2894-4-git-send-email-ehabkost@redhat.com>
+Patchwork-id: 18172
+O-Subject: [RHEL6 qemu-kvm PATCH 3/5] add CONFIG_VMMOUSE option (v2)
+Bugzilla: 616187
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: john cooper <john.cooper@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+This will allow vmmouse to be disabled at build time if necessary.
+
+Bugzilla: 616187
+
+Changes v1 -> v2:
+	- instead of using #ifdef around vmmouse_init() calls,
+	  redefine it at pc.h as a no-op if CONFIG_VMMOUSE is disabled
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile.target                    |    3 ++-
+ default-configs/i386-softmmu.mak   |    1 +
+ default-configs/x86_64-softmmu.mak |    1 +
+ hw/pc.h                            |    4 ++++
+ 4 files changed, 8 insertions(+), 1 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ Makefile.target                    |    3 ++-
+ default-configs/i386-softmmu.mak   |    1 +
+ default-configs/x86_64-softmmu.mak |    1 +
+ hw/pc.h                            |    4 ++++
+ 4 files changed, 8 insertions(+), 1 deletions(-)
+
+diff --git a/Makefile.target b/Makefile.target
+index 3010ccb..01b0b36 100644
+--- a/Makefile.target
++++ b/Makefile.target
+@@ -231,7 +231,7 @@ obj-i386-y += pckbd.o $(sound-obj-y) dma.o
+ obj-i386-y += vga.o vga-pci.o vga-isa.o
+ obj-i386-y += fdc.o mc146818rtc.o serial.o i8259.o i8254.o pcspk.o pc.o
+ obj-i386-y += cirrus_vga.o apic.o ioapic.o parallel.o acpi.o piix_pci.o
+-obj-i386-y += usb-uhci.o vmmouse.o vmport.o hpet.o
++obj-i386-y += usb-uhci.o vmport.o hpet.o
+ obj-i386-y += device-hotplug.o smbios.o wdt_ib700.o
+ obj-i386-y += extboot.o
+ obj-i386-y += ne2000-isa.o
+@@ -249,6 +249,7 @@ obj-ia64-$(CONFIG_KVM_DEVICE_ASSIGNMENT) += device-assignment.o
+ obj-i386-$(CONFIG_SPICE) += qxl.o qxl-logger.o qxl-render.o
+ 
+ obj-i386-$(CONFIG_VMWARE_VGA) += vmware_vga.o
++obj-i386-$(CONFIG_VMMOUSE) += vmmouse.o
+ 
+ # shared objects
+ obj-ppc-y = ppc.o ide/core.o ide/qdev.o ide/isa.o ide/pci.o ide/macio.o
+diff --git a/default-configs/i386-softmmu.mak b/default-configs/i386-softmmu.mak
+index 5948b4a..0c10dfe 100644
+--- a/default-configs/i386-softmmu.mak
++++ b/default-configs/i386-softmmu.mak
+@@ -1,3 +1,4 @@
+ # Default configuration for i386-softmmu
+ 
+ CONFIG_VMWARE_VGA=y
++CONFIG_VMMOUSE=y
+diff --git a/default-configs/x86_64-softmmu.mak b/default-configs/x86_64-softmmu.mak
+index 7cc250c..1124e76 100644
+--- a/default-configs/x86_64-softmmu.mak
++++ b/default-configs/x86_64-softmmu.mak
+@@ -1,3 +1,4 @@
+ # Default configuration for x86_64-softmmu
+ 
+ CONFIG_VMWARE_VGA=y
++CONFIG_VMMOUSE=y
+diff --git a/hw/pc.h b/hw/pc.h
+index b00f311..b8a79d2 100644
+--- a/hw/pc.h
++++ b/hw/pc.h
+@@ -76,7 +76,11 @@ void vmport_init(void);
+ void vmport_register(unsigned char command, IOPortReadFunc *func, void *opaque);
+ 
+ /* vmmouse.c */
++#ifdef CONFIG_VMMOUSE
+ void *vmmouse_init(void *m);
++#else
++#define vmmouse_init(m) do { } while (0)
++#endif
+ 
+ /* pckbd.c */
+ 
+-- 
+1.7.4.rc1.16.gd2f15e
+

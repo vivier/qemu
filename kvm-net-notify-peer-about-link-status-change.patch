@@ -1,0 +1,68 @@
+From b56cf56ccfe6bec17d9ba253eefcbcdad3503907 Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Wed, 9 Feb 2011 14:40:56 -0200
+Subject: [PATCH 03/10] net: notify peer about link status change
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <be8028b4795ce3969d1983c6a54f14a1e2ba00be.1297262374.git.mst@redhat.com>
+Patchwork-id: 17907
+O-Subject: [PATCHv2 RHEL6.1 1/2] net: notify peer about link status change
+Bugzilla: 676015
+RH-Acked-by: Xiao Wang <jasowang@redhat.com>
+RH-Acked-by: Glauber Costa <glommer@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+qemu makes it possible to disable link at tap
+which is not communicated to the guest but
+causes all packets to be dropped.
+
+This works for virtio userspace, as qemu
+stops giving it packets, but not for
+virtio-net connected to vhost-net
+as that does not get notified about this change.
+
+Notify peer when this happens, which will then be used
+by the follow-up patch to stop/start vhost-net.
+
+Note: it might be a good idea to make peer link status match
+tap in this case, so the guest gets an event
+and updates the carrier state. For now
+stay bug for bug compatible with what we used to have
+in userspace.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Reported-by: pradeep <psuriset@linux.vnet.ibm.com>
+---
+ net.c |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ net.c |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
+
+diff --git a/net.c b/net.c
+index f62a9e9..3fc9c9f 100644
+--- a/net.c
++++ b/net.c
+@@ -1320,6 +1320,17 @@ done:
+     if (vc->info->link_status_changed) {
+         vc->info->link_status_changed(vc);
+     }
++
++    /* Notify peer. Don't update peer link status: this makes it possible to
++     * disconnect from host network without notifying the guest.
++     * FIXME: is disconnected link status change operation useful?
++     *
++     * Current behaviour is compatible with qemu vlans where there could be
++     * multiple clients that can still communicate with each other in
++     * disconnected mode. For now maintain this compatibility. */
++    if (vc->peer && vc->peer->info->link_status_changed) {
++        vc->peer->info->link_status_changed(vc->peer);
++    }
+     return 0;
+ }
+ 
+-- 
+1.7.4.rc1.16.gd2f15e
+

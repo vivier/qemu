@@ -1,0 +1,50 @@
+From 177cf101561ec0a687c8691be578ea03afe23907 Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Wed, 9 Feb 2011 14:41:00 -0200
+Subject: [PATCH 04/10] vhost: disable on tap link down
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <747c489b9712a21e8862b3eff7c147d626d94998.1297262374.git.mst@redhat.com>
+Patchwork-id: 17908
+O-Subject: [PATCHv2 RHEL6.1 2/2] vhost: disable on tap link down
+Bugzilla: 676015
+RH-Acked-by: Xiao Wang <jasowang@redhat.com>
+RH-Acked-by: Glauber Costa <glommer@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+qemu makes it possible to disable link at tap
+which is not communicated to the guest but
+causes all packets to be dropped.
+
+When vhost-net is enabled, vhost needs to be aware of both the virtio
+link_down and the peer link_down. we switch to userspace emulation when
+either is down.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Reported-by: pradeep <psuriset@linux.vnet.ibm.com>
+---
+ hw/virtio-net.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/virtio-net.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/hw/virtio-net.c b/hw/virtio-net.c
+index 21965a4..72d37f8 100644
+--- a/hw/virtio-net.c
++++ b/hw/virtio-net.c
+@@ -112,7 +112,8 @@ static void virtio_net_set_status(struct VirtIODevice *vdev, uint8_t status)
+     }
+     if (!!n->vhost_started == ((status & VIRTIO_CONFIG_S_DRIVER_OK) &&
+                                (n->status & VIRTIO_NET_S_LINK_UP) &&
+-                               n->vdev.vm_running)) {
++                               n->vdev.vm_running &&
++                               !n->nic->nc.peer->link_down)) {
+         return;
+     }
+     if (!n->vhost_started) {
+-- 
+1.7.4.rc1.16.gd2f15e
+

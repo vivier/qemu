@@ -1,0 +1,47 @@
+From 9be405651973c3e84f792759b0864a34317c8d50 Mon Sep 17 00:00:00 2001
+From: Avi Kivity <avi@redhat.com>
+Date: Wed, 9 Feb 2011 13:58:47 -0200
+Subject: [PATCH 02/10] qemu-kvm: Close all block drivers on quit
+
+RH-Author: Avi Kivity <avi@redhat.com>
+Message-id: <1297259927-13790-1-git-send-email-avi@redhat.com>
+Patchwork-id: 17901
+O-Subject: [RHEL-6.1 qemu-kvm PATCH v2 6/5] qemu-kvm: Close all block drivers on
+	quit
+Bugzilla:
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+Bugzilla-related: 635527
+
+Bugzilla: 635527
+Upstream: 9d9468914ea5e5a09ac93bd262c69a3333232d56
+
+Following 2bc93fed76c89f7adaa0e5bb3, close all block drivers on quit.
+Fixes qcow2 data loss after quit due to qcowcache being volatile.
+
+Signed-off-by: Avi Kivity <avi@redhat.com>
+---
+ qemu-kvm.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-kvm.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-kvm.c b/qemu-kvm.c
+index f06408b..ccd5f18 100644
+--- a/qemu-kvm.c
++++ b/qemu-kvm.c
+@@ -2181,6 +2181,7 @@ int kvm_main_loop(void)
+         }
+     }
+ 
++    bdrv_close_all();
+     pause_all_threads();
+     pthread_mutex_unlock(&qemu_mutex);
+ 
+-- 
+1.7.4.rc1.16.gd2f15e
+
