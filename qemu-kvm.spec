@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.145
+%define pkgrelease 2.146
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2371,6 +2371,10 @@ Patch2047: kvm-add-CONFIG_VMMOUSE-option-v2.patch
 Patch2048: kvm-add-CONFIG_VMPORT-option-v2.patch
 # For bz#677222 - segment fault happens after hot drive add then drive delete
 Patch2050: kvm-blockdev-Fix-drive_del-not-to-crash-when-drive-is-no.patch
+# For bz#665025 - lost double clicks on slow connections
+Patch2051: kvm-USB-HID-does-not-support-Set_Idle.patch
+# For bz#665025 - lost double clicks on slow connections
+Patch2052: kvm-add-event-queueing-to-USB-HID.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3529,6 +3533,8 @@ ApplyOptionalPatch()
 %patch2047 -p1
 %patch2048 -p1
 %patch2050 -p1
+%patch2051 -p1
+%patch2052 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3589,10 +3595,8 @@ echo "==="
 # generate the default config:
 make x86_64-softmmu/config-devices.mak
 
-# disable vmware emulation devices on the config:
-sed -i -e '/CONFIG_VMWARE_VGA=y/d
-           /CONFIG_VMPORT=y/d
-           /CONFIG_VMMOUSE=y/d' x86_64-softmmu/config-devices.mak
+# disable vmware_vga on the config:
+sed -i -e '/CONFIG_VMWARE_VGA=y/d' x86_64-softmmu/config-devices.mak
 
 make V=1 QEMU_PROG=qemu-kvm QEMU_BINDIR="%{_prefix}/libexec" \
      %{?_smp_mflags} $buildldflags
@@ -3752,6 +3756,15 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Feb 16 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.146.el6
+- kvm-USB-HID-does-not-support-Set_Idle.patch [bz#665025]
+- kvm-add-event-queueing-to-USB-HID.patch [bz#665025]
+- Spec patch to reenable CONFIG_VMMOUSE and CONFIG_VMPORT [bz#616187 (the original feature-disable bug) bz#677712 bz#677712 (the new broken migration bug)]
+- Resolves: bz#665025
+  (lost double clicks on slow connections)
+- Resolves: bz#677712
+  (disabling vmware device emulation breaks old->new migration)
+
 * Tue Feb 15 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.145.el6
 - kvm-make-tsc-stable-over-migration-and-machine-start.patch [bz#662386]
 - kvm-qemu-kvm-Close-all-block-drivers-on-quit.patch [bz#635527]
