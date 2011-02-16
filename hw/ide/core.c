@@ -2645,6 +2645,11 @@ int ide_init_drive(IDEState *s, BlockDriverState *bs, const char *version)
         s->is_cdrom = 1;
         bdrv_set_change_cb(bs, cdrom_change_cb, s);
         s->bs->buffer_alignment = 2048;
+    } else {
+        if (bdrv_is_read_only(bs)) {
+            error_report("Can't use a read-only drive");
+            return -1;
+        }
     }
     bdrv_set_removable(s->bs, s->is_cdrom);
     strncpy(s->drive_serial_str, drive_get_serial(s->bs),
