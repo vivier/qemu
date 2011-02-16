@@ -113,7 +113,11 @@ typedef struct IDEDrive {
 static int ide_drive_initfn(IDEDevice *dev)
 {
     IDEBus *bus = DO_UPCAST(IDEBus, qbus, dev->qdev.parent_bus);
-    ide_init_drive(bus->ifs + dev->unit, dev->conf.bs, dev->version);
+
+    if (ide_init_drive(bus->ifs + dev->unit, dev->conf.bs, dev->version) < 0) {
+        return -1;
+    }
+
     add_boot_device_path(dev->conf.bootindex, &dev->qdev,
                          dev->unit ? "/disk@1" : "/disk@0");
 

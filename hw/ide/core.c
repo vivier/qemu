@@ -29,6 +29,7 @@
 #include <hw/sh.h>
 #include "block.h"
 #include "block_int.h"
+#include "qemu-error.h"
 #include "qemu-timer.h"
 #include "sysemu.h"
 #include "dma.h"
@@ -2622,7 +2623,7 @@ void ide_bus_reset(IDEBus *bus)
     ide_clear_hob(bus);
 }
 
-void ide_init_drive(IDEState *s, BlockDriverState *bs, const char *version)
+int ide_init_drive(IDEState *s, BlockDriverState *bs, const char *version)
 {
     int cylinders, heads, secs;
     uint64_t nb_sectors;
@@ -2659,6 +2660,7 @@ void ide_init_drive(IDEState *s, BlockDriverState *bs, const char *version)
         pstrcpy(s->version, sizeof(s->version), QEMU_VERSION);
     }
     ide_reset(s);
+    return 0;
 }
 
 static void ide_init1(IDEBus *bus, int unit)
@@ -2699,7 +2701,10 @@ void ide_init2_with_non_qdev_drives(IDEBus *bus, DriveInfo *hd0,
         dinfo = i == 0 ? hd0 : hd1;
         ide_init1(bus, i);
         if (dinfo) {
-            ide_init_drive(&bus->ifs[i], dinfo->bdrv, NULL);
+            if (ide_init_drive(&bus->ifs[i], dinfo->bdrv, NULL) < 0) {
+                error_report("Can't set up IDE drive %s", dinfo->id);
+                exit(1);
+            }
         } else {
             ide_reset(&bus->ifs[i]);
         }
