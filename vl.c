@@ -308,7 +308,7 @@ uint8_t qemu_uuid[16];
 static QEMUBootSetHandler *boot_set_handler;
 static void *boot_set_opaque;
 
-int kvm_allowed = 1;
+int kvm_allowed = -1;
 uint32_t xen_domid;
 enum xen_mode xen_mode = XEN_EMULATE;
 
@@ -6060,10 +6060,8 @@ int main(int argc, char **argv, char **envp)
                 break;
 #endif
 #ifdef CONFIG_KVM
-#ifdef KVM_UPSTREAM
             case QEMU_OPTION_enable_kvm:
                 kvm_allowed = 1;
-#endif
                 break;
 	    case QEMU_OPTION_no_kvm:
 		kvm_allowed = 0;
@@ -6486,18 +6484,20 @@ int main(int argc, char **argv, char **envp)
     if (fake_machine) {
         kvm_allowed = 0;
     }
-    if (kvm_enabled()) {
-        int ret;
-
-        ret = kvm_init(smp_cpus);
+    if (kvm_allowed) {
+        int ret = kvm_init(smp_cpus);
         if (ret < 0) {
-#if defined(KVM_UPSTREAM) || defined(CONFIG_NO_CPU_EMULATION)
-            fprintf(stderr, "failed to initialize KVM\n");
-            exit(1);
+            if (kvm_allowed > 0) {
+#ifndef CONFIG_KVM
+                printf("KVM not supported for this target\n");
+#else
+                fprintf(stderr, "failed to initialize KVM: %s\n", strerror(-ret));
 #endif
+                exit(1);
+            }
             fprintf(stderr, "Could not initialize KVM, will disable KVM support\n");
-            kvm_allowed = 0;
         }
+        kvm_allowed = ret >= 0;
     }
 
     if (qemu_init_main_loop()) {
