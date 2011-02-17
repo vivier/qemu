@@ -308,6 +308,10 @@ uint8_t qemu_uuid[16];
 static QEMUBootSetHandler *boot_set_handler;
 static void *boot_set_opaque;
 
+int kvm_allowed = 1;
+uint32_t xen_domid;
+enum xen_mode xen_mode = XEN_EMULATE;
+
 static NotifierList machine_init_done_notifiers =
     NOTIFIER_LIST_INITIALIZER(machine_init_done_notifiers);
 
