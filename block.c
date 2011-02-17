@@ -649,6 +649,8 @@ void bdrv_close(BlockDriverState *bs)
 
 void bdrv_delete(BlockDriverState *bs)
 {
+    assert(!bs->peer);
+
     /* remove from list, if necessary */
     if (bs->device_name[0] != '\0') {
         QTAILQ_REMOVE(&bdrv_states, bs, list);
@@ -660,6 +662,26 @@ void bdrv_delete(BlockDriverState *bs)
     }
 
     qemu_free(bs);
+}
+
+int bdrv_attach(BlockDriverState *bs, DeviceState *qdev)
+{
+    if (bs->peer) {
+        return -EBUSY;
+    }
+    bs->peer = qdev;
+    return 0;
+}
+
+void bdrv_detach(BlockDriverState *bs, DeviceState *qdev)
+{
+    assert(bs->peer == qdev);
+    bs->peer = NULL;
+}
+
+DeviceState *bdrv_get_attached(BlockDriverState *bs)
+{
+    return bs->peer;
 }
 
 /*
