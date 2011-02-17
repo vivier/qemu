@@ -51,6 +51,7 @@ $(QEMU_PROG).stp:
 		--binary $(QEMU_BINDIR)/$(QEMU_PROG) \
 		--target-arch $(TARGET_ARCH) \
 		--target-type $(TARGET_TYPE) \
+		--probe-prefix qemu.kvm \
 		--stap < $(SRC_PATH)/trace-events > $(QEMU_PROG).stp,"  GEN   $(QEMU_PROG).stp")
 else
 stap:
