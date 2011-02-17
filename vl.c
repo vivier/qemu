@@ -2090,6 +2090,29 @@ DriveInfo *drive_get_by_blockdev(BlockDriverState *bs)
     return NULL;
 }
 
+/*
+ * We automatically delete the drive when a device using it gets
+ * unplugged.  Questionable feature, but we can't just drop it.
+ * Device models call blockdev_mark_auto_del() to schedule the
+ * automatic deletion, and generic qdev code calls blockdev_auto_del()
+ * when deletion is actually safe.
+ */
+void blockdev_mark_auto_del(BlockDriverState *bs)
+{
+    DriveInfo *dinfo = drive_get_by_blockdev(bs);
+
+    dinfo->auto_del = 1;
+}
+
+void blockdev_auto_del(BlockDriverState *bs)
+{
+    DriveInfo *dinfo = drive_get_by_blockdev(bs);
+
+    if (dinfo->auto_del) {
+        drive_uninit(dinfo);
+    }
+}
+
 int drive_get_max_bus(BlockInterfaceType type)
 {
     int max_bus;
