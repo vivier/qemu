@@ -2245,7 +2245,7 @@ static int drive_open(DriveInfo *dinfo)
 
     if (res < 0) {
         fprintf(stderr, "qemu: could not open disk image %s: %s\n",
-                        dinfo->file, strerror(errno));
+                        dinfo->file, strerror(-res));
     }
     return res;
 }
