@@ -1015,7 +1015,7 @@ static void scsi_destroy(SCSIDevice *dev)
         r = DO_UPCAST(SCSIDiskReq, req, QTAILQ_FIRST(&s->qdev.requests));
         scsi_remove_request(r);
     }
-    blockdev_mark_auto_del(s->qdev.conf.dinfo->bdrv);
+    blockdev_mark_auto_del(s->qdev.conf.bs);
 }
 
 static int scsi_disk_initfn(SCSIDevice *dev)
@@ -1023,11 +1023,11 @@ static int scsi_disk_initfn(SCSIDevice *dev)
     SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, dev);
     uint64_t nb_sectors;
 
-    if (!s->qdev.conf.dinfo || !s->qdev.conf.dinfo->bdrv) {
+    if (!s->qdev.conf.bs) {
         error_report("scsi-disk: drive property not set");
         return -1;
     }
-    s->bs = s->qdev.conf.dinfo->bdrv;
+    s->bs = s->qdev.conf.bs;
 
     if (bdrv_get_type_hint(s->bs) == BDRV_TYPE_CDROM) {
         s->qdev.blocksize = 2048;
