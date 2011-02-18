@@ -1,0 +1,94 @@
+From 1ea81b827cc1b2993c6792411cc641c844ca7c0c Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Thu, 17 Feb 2011 09:02:18 -0200
+Subject: [PATCH 2/4] e1000: verify we have buffers, upfront
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <c38a4676a679334f3b977dacbe7bc50f8fd914ef.1297933168.git.mst@redhat.com>
+Patchwork-id: 18372
+O-Subject: [PATCH RHEL6.1 2/2] e1000: verify we have buffers, upfront
+Bugzilla: 678338
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+The spec says: Any descriptor with a non-zero status byte has been
+processed by the hardware, and is ready to be handled by the software.
+
+Thus, once we change a descriptor status to non-zero we should
+never move the head backwards and try to reuse this
+descriptor from hardware.
+
+This actually happened with a multibuffer packet
+that arrives when we don't have enough buffers.
+
+Fix by checking that we have enough buffers upfront
+so we never need to discard the packet midway through.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=602205
+Upstream: posted
+---
+ hw/e1000.c |   28 ++++++++++++++++++++++------
+ 1 files changed, 22 insertions(+), 6 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/e1000.c |   28 ++++++++++++++++++++++------
+ 1 files changed, 22 insertions(+), 6 deletions(-)
+
+diff --git a/hw/e1000.c b/hw/e1000.c
+index e4ed0a0..001b4b3 100644
+--- a/hw/e1000.c
++++ b/hw/e1000.c
+@@ -627,6 +627,24 @@ e1000_can_receive(VLANClientState *nc)
+     return (s->mac_reg[RCTL] & E1000_RCTL_EN);
+ }
+ 
++static bool e1000_has_rxbufs(E1000State *s, size_t total_size)
++{
++    int bufs;
++    /* Fast-path short packets */
++    if (total_size <= s->rxbuf_size) {
++        return s->mac_reg[RDH] != s->mac_reg[RDT] || !s->check_rxov;
++    }
++    if (s->mac_reg[RDH] < s->mac_reg[RDT]) {
++        bufs = s->mac_reg[RDT] - s->mac_reg[RDH];
++    } else if (s->mac_reg[RDH] > s->mac_reg[RDT] || !s->check_rxov) {
++        bufs = s->mac_reg[RDLEN] /  sizeof(struct e1000_rx_desc) +
++            s->mac_reg[RDT] - s->mac_reg[RDH];
++    } else {
++        return false;
++    }
++    return total_size <= bufs * s->rxbuf_size;
++}
++
+ static ssize_t
+ e1000_receive(VLANClientState *nc, const uint8_t *buf, size_t size)
+ {
+@@ -657,17 +675,15 @@ e1000_receive(VLANClientState *nc, const uint8_t *buf, size_t size)
+     rdh_start = s->mac_reg[RDH];
+     size += fcs_len(s);
+     desc_offset = 0;
++    if (!e1000_has_rxbufs(s, size)) {
++            set_ics(s, 0, E1000_ICS_RXO);
++            return -1;
++    }
+     do {
+         desc_size = size - desc_offset;
+         if (desc_size > s->rxbuf_size) {
+             desc_size = s->rxbuf_size;
+         }
+-        if (s->mac_reg[RDH] == s->mac_reg[RDT] && s->check_rxov) {
+-            /* Discard all data written so far */
+-            s->mac_reg[RDH] = rdh_start;
+-            set_ics(s, 0, E1000_ICS_RXO);
+-            return -1;
+-        }
+         base = ((uint64_t)s->mac_reg[RDBAH] << 32) + s->mac_reg[RDBAL] +
+                sizeof(desc) * s->mac_reg[RDH];
+         cpu_physical_memory_read(base, (void *)&desc, sizeof(desc));
+-- 
+1.7.4.rc1.16.gd2f15e
+

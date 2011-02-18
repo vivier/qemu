@@ -1,0 +1,66 @@
+From 2ca434e82872a7502aac89c99636808e2cb5dbb8 Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Thu, 17 Feb 2011 09:01:59 -0200
+Subject: [PATCH 1/4] e1000: clear EOP for multi-buffer descriptors
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <0cd0846170b6823fba9d13cc2de50d69ae7d38e8.1297933168.git.mst@redhat.com>
+Patchwork-id: 18371
+O-Subject: [PATCH RHEL6.1 1/2] e1000: clear EOP for multi-buffer descriptors
+Bugzilla: 678338
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+The e1000 spec says: if software statically allocates
+buffers, and uses memory read to check for completed descriptors, it
+simply has to zero the status byte in the descriptor to make it ready
+for reuse by hardware. This is not a hardware requirement (moving the
+hardware tail pointer is), but is necessary for performing an in–memory
+scan.
+
+Thus the guest does not have to clear the status byte.  In case it
+doesn't we need to clear EOP for all descriptors
+except the last.  While I don't know of any such guests,
+it's probably a good idea to stick to the spec.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Reported-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=602205
+Upstream: posted
+---
+ hw/e1000.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/e1000.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/hw/e1000.c b/hw/e1000.c
+index bce0195..e4ed0a0 100644
+--- a/hw/e1000.c
++++ b/hw/e1000.c
+@@ -678,11 +678,13 @@ e1000_receive(VLANClientState *nc, const uint8_t *buf, size_t size)
+                                       (void *)(buf + desc_offset + vlan_offset),
+                                       desc_size);
+             desc_offset += desc_size;
++            desc.length = cpu_to_le16(desc_size);
+             if (desc_offset >= size) {
+-                desc.length = cpu_to_le16(desc_size);
+                 desc.status |= E1000_RXD_STAT_EOP | E1000_RXD_STAT_IXSM;
+             } else {
+-                desc.length = cpu_to_le16(desc_size);
++                /* Guest zeroing out status is not a hardware requirement.
++                   Clear EOP in case guest didn't do it. */
++                desc.status &= ~E1000_RXD_STAT_EOP;
+             }
+         } else // as per intel docs; skip descriptors with null buf addr
+             DBGOUT(RX, "Null RX descriptor!!\n");
+-- 
+1.7.4.rc1.16.gd2f15e
+

@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.146
+%define pkgrelease 2.147
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2375,6 +2375,14 @@ Patch2050: kvm-blockdev-Fix-drive_del-not-to-crash-when-drive-is-no.patch
 Patch2051: kvm-USB-HID-does-not-support-Set_Idle.patch
 # For bz#665025 - lost double clicks on slow connections
 Patch2052: kvm-add-event-queueing-to-USB-HID.patch
+# For bz#678338 - e1000 behaving out of spec after increasing MTU
+Patch2053: kvm-e1000-clear-EOP-for-multi-buffer-descriptors.patch
+# For bz#678338 - e1000 behaving out of spec after increasing MTU
+Patch2054: kvm-e1000-verify-we-have-buffers-upfront.patch
+# For bz#672441 - Tracetool autogenerate qemu-kvm.stp with wrong qemu-kvm path
+Patch2055: kvm-tracetool-Add-optional-argument-to-specify-dtrace-pr.patch
+# For bz#672441 - Tracetool autogenerate qemu-kvm.stp with wrong qemu-kvm path
+Patch2056: kvm-Specify-probe-prefix-to-make-dtrace-probes-use-qemu-.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3535,6 +3543,10 @@ ApplyOptionalPatch()
 %patch2050 -p1
 %patch2051 -p1
 %patch2052 -p1
+%patch2053 -p1
+%patch2054 -p1
+%patch2055 -p1
+%patch2056 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3756,6 +3768,16 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Feb 18 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.147.el6
+- kvm-e1000-clear-EOP-for-multi-buffer-descriptors.patch [bz#678338]
+- kvm-e1000-verify-we-have-buffers-upfront.patch [bz#678338]
+- kvm-tracetool-Add-optional-argument-to-specify-dtrace-pr.patch [bz#672441]
+- kvm-Specify-probe-prefix-to-make-dtrace-probes-use-qemu-.patch [bz#672441]
+- Resolves: bz#672441
+  (Tracetool autogenerate qemu-kvm.stp with wrong qemu-kvm path)
+- Resolves: bz#678338
+  (e1000 behaving out of spec after increasing MTU)
+
 * Wed Feb 16 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.146.el6
 - kvm-USB-HID-does-not-support-Set_Idle.patch [bz#665025]
 - kvm-add-event-queueing-to-USB-HID.patch [bz#665025]

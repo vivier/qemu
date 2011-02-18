@@ -1,0 +1,42 @@
+From b927601aa995ed8c6b79a4e23b49a76efa4b6911 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Thu, 17 Feb 2011 12:51:59 -0200
+Subject: [PATCH 4/4] Specify probe-prefix to make dtrace probes use qemu-kvm name
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1297947119-18943-3-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 18398
+O-Subject: [PATCH 2/2] Specify probe-prefix to make dtrace probes use qemu-kvm
+	name
+Bugzilla: 672441
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+---
+ Makefile.target |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ Makefile.target |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/Makefile.target b/Makefile.target
+index 462ea96..e6c148e 100644
+--- a/Makefile.target
++++ b/Makefile.target
+@@ -51,6 +51,7 @@ $(QEMU_PROG).stp:
+ 		--binary $(QEMU_BINDIR)/$(QEMU_PROG) \
+ 		--target-arch $(TARGET_ARCH) \
+ 		--target-type $(TARGET_TYPE) \
++		--probe-prefix qemu.kvm \
+ 		--stap < $(SRC_PATH)/trace-events > $(QEMU_PROG).stp,"  GEN   $(QEMU_PROG).stp")
+ else
+ stap:
+-- 
+1.7.4.rc1.16.gd2f15e
+
