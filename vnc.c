@@ -2525,16 +2525,11 @@ int vnc_display_password(DisplayState *ds, const char *password, int lifetime)
     if (password && password[0]) {
         if (!(vs->password = qemu_strdup(password)))
             return -1;
-        if (vs->auth == VNC_AUTH_NONE) {
-            vs->auth = VNC_AUTH_VNC;
-        }
         if (lifetime) {
             vs->expires = time(NULL) + lifetime;
         } else {
             vs->expires = 0;
         }
-    } else {
-        vs->auth = VNC_AUTH_NONE;
     }
 
     return 0;
