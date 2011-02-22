@@ -1,4 +1,4 @@
-%define zrelease 6
+%define zrelease 7
 
 Summary: Userspace component of KVM
 Name: qemu-kvm
@@ -1454,6 +1454,32 @@ Patch1711: kvm-qemu-img-convert-Use-cache-unsafe-for-output-image.patch
 Patch1712: kvm-Revert-spice-qxl-make-draw_area-and-vgafb-share-memo.patch
 # For bz#653334 - spice: prepare qxl for 6.1 update.
 Patch1713: kvm-Revert-spice-qxl-update-modes-ptr-in-post_load.patch
+# For bz#677170 - drive_del command to let libvirt safely remove block device from guest
+Patch1714: kvm-ide-Remove-redundant-IDEState-member-conf.patch
+# For bz#677170 - drive_del command to let libvirt safely remove block device from guest
+Patch1715: kvm-ide-Split-ide_init1-off-ide_init2-v2.patch
+# For bz#677170 - drive_del command to let libvirt safely remove block device from guest
+Patch1716: kvm-ide-Change-ide_init_drive-to-require-valid-dinfo-arg.patch
+# For bz#677170 - drive_del command to let libvirt safely remove block device from guest
+Patch1717: kvm-ide-Split-non-qdev-code-off-ide_init2.patch
+# For bz#677170 - drive_del command to let libvirt safely remove block device from guest
+Patch1718: kvm-qdev-Don-t-leak-string-property-value-on-hot-unplug.patch
+# For bz#677170 - drive_del command to let libvirt safely remove block device from guest
+Patch1719: kvm-blockdev-New-drive_get_by_blockdev-v2.patch
+# For bz#677170 - drive_del command to let libvirt safely remove block device from guest
+Patch1720: kvm-blockdev-Clean-up-automatic-drive-deletion-v2.patch
+# For bz#677170 - drive_del command to let libvirt safely remove block device from guest
+Patch1721: kvm-qdev-Decouple-qdev_prop_drive-from-DriveInfo-v2.patch
+# For bz#677170 - drive_del command to let libvirt safely remove block device from guest
+Patch1722: kvm-block-Catch-attempt-to-attach-multiple-devices-to-a-.patch
+# For bz#677170 - drive_del command to let libvirt safely remove block device from guest
+Patch1723: kvm-Implement-drive_del-to-decouple-block-removal-from-d.patch
+# For bz#677170 - drive_del command to let libvirt safely remove block device from guest
+Patch1724: kvm-blockdev-check-dinfo-ptr-before-using-v2.patch
+# For bz#677170 - drive_del command to let libvirt safely remove block device from guest
+Patch1725: kvm-blockdev-Fix-drive_del-not-to-crash-when-drive-is-no.patch
+# For bz#668598 - CVE-2011-0011 qemu-kvm: Setting VNC password to empty string silently disables all authentication [rhel-6.0.z]
+Patch1726: kvm-Fix-CVE-2011-0011-qemu-kvm-Setting-VNC-password-to-e.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2229,6 +2255,19 @@ such as kvm_stat.
 %patch1711 -p1
 %patch1712 -p1
 %patch1713 -p1
+%patch1714 -p1
+%patch1715 -p1
+%patch1716 -p1
+%patch1717 -p1
+%patch1718 -p1
+%patch1719 -p1
+%patch1720 -p1
+%patch1721 -p1
+%patch1722 -p1
+%patch1723 -p1
+%patch1724 -p1
+%patch1725 -p1
+%patch1726 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2424,6 +2463,25 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Feb 22 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.113.el6_0.7
+- kvm-ide-Remove-redundant-IDEState-member-conf.patch [bz#677170]
+- kvm-ide-Split-ide_init1-off-ide_init2-v2.patch [bz#677170]
+- kvm-ide-Change-ide_init_drive-to-require-valid-dinfo-arg.patch [bz#677170]
+- kvm-ide-Split-non-qdev-code-off-ide_init2.patch [bz#677170]
+- kvm-qdev-Don-t-leak-string-property-value-on-hot-unplug.patch [bz#677170]
+- kvm-blockdev-New-drive_get_by_blockdev-v2.patch [bz#677170]
+- kvm-blockdev-Clean-up-automatic-drive-deletion-v2.patch [bz#677170]
+- kvm-qdev-Decouple-qdev_prop_drive-from-DriveInfo-v2.patch [bz#677170]
+- kvm-block-Catch-attempt-to-attach-multiple-devices-to-a-.patch [bz#677170]
+- kvm-Implement-drive_del-to-decouple-block-removal-from-d.patch [bz#677170]
+- kvm-blockdev-check-dinfo-ptr-before-using-v2.patch [bz#677170]
+- kvm-blockdev-Fix-drive_del-not-to-crash-when-drive-is-no.patch [bz#677170]
+- kvm-Fix-CVE-2011-0011-qemu-kvm-Setting-VNC-password-to-e.patch [bz#668598]
+- Resolves: bz#668598
+  (CVE-2011-0011 qemu-kvm: Setting VNC password to empty string silently disables all authentication [rhel-6.0.z])
+- Resolves: bz#677170
+  (drive_del command to let libvirt safely remove block device from guest)
+
 * Tue Jan 04 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.113.el6_0.6
 - kvm-Revert-spice-qxl-make-draw_area-and-vgafb-share-memo.patch [bz#653334]
 - kvm-Revert-spice-qxl-update-modes-ptr-in-post_load.patch [bz#653334]

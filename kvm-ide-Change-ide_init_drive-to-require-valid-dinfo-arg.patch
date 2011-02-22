@@ -1,0 +1,115 @@
+From 512b1be0c13a4dc3aa848e668611af4efb8901c6 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 17 Feb 2011 09:32:39 -0200
+Subject: [PATCH 03/13] ide: Change ide_init_drive() to require valid dinfo argument
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1297935168-2576-4-git-send-email-armbru@redhat.com>
+Patchwork-id: 18382
+O-Subject: [PATCH RHEL6.0.Z qemu-kvm 03/12] ide: Change ide_init_drive() to
+	require valid dinfo argument
+Bugzilla: 677170
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+BZ: 654682
+Upstream-status: accepted
+
+IDEState members drive_serial_str and version are now left empty until
+an actual drive is connected.  Before, they got a default value that
+was overwritten when a drive got connected.  Doesn't matter, because
+they're used only while a drive is connected.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 870111c8ed95df62a101eae0acd08c84233a6341)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+
+Conflicts:
+
+	hw/ide/core.c
+---
+ hw/ide/core.c |   48 ++++++++++++++++++++++++++----------------------
+ 1 files changed, 26 insertions(+), 22 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/ide/core.c |   48 ++++++++++++++++++++++++++----------------------
+ 1 files changed, 26 insertions(+), 22 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 7522176..e0953a2 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -2603,30 +2603,30 @@ void ide_init_drive(IDEState *s, DriveInfo *dinfo, const char *version)
+     int cylinders, heads, secs;
+     uint64_t nb_sectors;
+ 
+-    if (dinfo && dinfo->bdrv) {
+-        s->bs = dinfo->bdrv;
+-        bdrv_get_geometry(s->bs, &nb_sectors);
+-        bdrv_guess_geometry(s->bs, &cylinders, &heads, &secs);
+-        s->cylinders = cylinders;
+-        s->heads = heads;
+-        s->sectors = secs;
+-        s->nb_sectors = nb_sectors;
+-        /* The SMART values should be preserved across power cycles
+-           but they aren't.  */
+-        s->smart_enabled = 1;
+-        s->smart_autosave = 1;
+-        s->smart_errors = 0;
+-        s->smart_selftest_count = 0;
+-        if (bdrv_get_type_hint(s->bs) == BDRV_TYPE_CDROM) {
+-            s->is_cdrom = 1;
+-            bdrv_set_change_cb(s->bs, cdrom_change_cb, s);
+-        }
+-        strncpy(s->drive_serial_str, drive_get_serial(s->bs),
+-                sizeof(s->drive_serial_str));
++    s->bs = dinfo->bdrv;
++    bdrv_get_geometry(s->bs, &nb_sectors);
++    bdrv_guess_geometry(s->bs, &cylinders, &heads, &secs);
++    s->cylinders = cylinders;
++    s->heads = heads;
++    s->sectors = secs;
++    s->nb_sectors = nb_sectors;
++    /* The SMART values should be preserved across power cycles
++       but they aren't.  */
++    s->smart_enabled = 1;
++    s->smart_autosave = 1;
++    s->smart_errors = 0;
++    s->smart_selftest_count = 0;
++    if (bdrv_get_type_hint(s->bs) == BDRV_TYPE_CDROM) {
++        s->is_cdrom = 1;
++        bdrv_set_change_cb(s->bs, cdrom_change_cb, s);
+     }
+-    if (strlen(s->drive_serial_str) == 0)
++    strncpy(s->drive_serial_str, drive_get_serial(s->bs),
++            sizeof(s->drive_serial_str));
++    
++    if (!*s->drive_serial_str) {
+         snprintf(s->drive_serial_str, sizeof(s->drive_serial_str),
+                  "QM%05d", s->drive_serial);
++    }
+     if (version) {
+         pstrcpy(s->version, sizeof(s->version), version);
+     } else {
+@@ -2648,7 +2648,11 @@ static void ide_init1(IDEBus *bus, int unit, DriveInfo *dinfo)
+     s->smart_selftest_data = qemu_blockalign(s->bs, 512);
+     s->sector_write_timer = qemu_new_timer(vm_clock,
+                                            ide_sector_write_timer_cb, s);
+-    ide_init_drive(s, dinfo, NULL);
++    if (dinfo) {
++        ide_init_drive(s, dinfo, NULL);
++    } else {
++        ide_reset(s);
++    }
+ }
+ 
+ void ide_init2(IDEBus *bus, DriveInfo *hd0, DriveInfo *hd1,
+-- 
+1.7.4.rc1.16.gd2f15e
+

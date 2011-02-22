@@ -1,0 +1,78 @@
+From f16fcaddf711076ff2de6531d7b760b9a721ef0e Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 17 Feb 2011 09:32:47 -0200
+Subject: [PATCH 11/13] blockdev: check dinfo ptr before using (v2)
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1297935168-2576-12-git-send-email-armbru@redhat.com>
+Patchwork-id: 18380
+O-Subject: [PATCH RHEL6.0.Z qemu-kvm 11/12] blockdev: check dinfo ptr before
+	using (v2)
+Bugzilla: 677170
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Ryan Harper <ryanh@us.ibm.com>
+
+BZ: 654682
+Upstream-status: accepted
+
+If a user decides to punish a guest by revoking its block device via
+drive_del, and subsequently also attempts to remove the pci device
+backing it, and the device is using blockdev_auto_del() then we get a
+segfault when we attempt to access dinfo->auto_del.[1]
+
+The fix is to check if drive_get_by_blockdev() actually returns a valid
+dinfo pointer or not.
+
+1. (qemu) pci_add auto storage file=images/test01.raw,if=virtio,id=block1,snapshot=on
+   (qemu) drive_del block1
+   (qemu) pci_del 5
+   *segfault*
+
+Signed-off-by: Ryan Harper <ryanh@us.ibm.com>
+Tested-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 0fc0f1fa7f86e9f1d480c6508191ca90ac10b32c)
+--
+v1 -> v2
+ - Add braces to match upstream
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ vl.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ vl.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index 2410338..1ca4872 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2101,14 +2101,16 @@ void blockdev_mark_auto_del(BlockDriverState *bs)
+ {
+     DriveInfo *dinfo = drive_get_by_blockdev(bs);
+ 
+-    dinfo->auto_del = 1;
++    if (dinfo) {
++        dinfo->auto_del = 1;
++    }
+ }
+ 
+ void blockdev_auto_del(BlockDriverState *bs)
+ {
+     DriveInfo *dinfo = drive_get_by_blockdev(bs);
+ 
+-    if (dinfo->auto_del) {
++    if (dinfo && dinfo->auto_del) {
+         drive_uninit(dinfo);
+     }
+ }
+-- 
+1.7.4.rc1.16.gd2f15e
+
