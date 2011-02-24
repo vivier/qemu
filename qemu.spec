@@ -1,9 +1,7 @@
-%define githead 7aa8c46
-
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.14.0
-Release: 0.1.20110210%githead%{?dist}
+Release: 1%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -19,11 +17,7 @@ URL: http://www.qemu.org/
 %define _smp_mflags %{nil}
 %endif
 
-# Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-kvm-%{version}.tar.gz
-# The source for this package was pulled from upstream's git.  Use the
-# following commands to generate the tarball:
-# git archive --format=tar --prefix=qemu-kvm-0.14/ 3593e6b | gzip > qemu-kvm-0.14.0-3593e6b.tar.gz
-Source0: qemu-kvm-%{version}-%{githead}.tar.gz
+Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-kvm-%{version}.tar.gz
 Source1: qemu.init
 
 # Loads kvm kernel modules at boot
@@ -573,6 +567,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Feb 24 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.14.0-1
+- Update to 0.14.0 release
+
 * Fri Feb 11 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.14.0-0.1.20110210git7aa8c46
 - Update git snapshot
 - Temporarily disable qemu-cris and qemu-sparc due to build errors (to be resolved shorly)
