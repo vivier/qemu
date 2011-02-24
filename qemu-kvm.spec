@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.147
+%define pkgrelease 2.148
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2383,6 +2383,16 @@ Patch2054: kvm-e1000-verify-we-have-buffers-upfront.patch
 Patch2055: kvm-tracetool-Add-optional-argument-to-specify-dtrace-pr.patch
 # For bz#672441 - Tracetool autogenerate qemu-kvm.stp with wrong qemu-kvm path
 Patch2056: kvm-Specify-probe-prefix-to-make-dtrace-probes-use-qemu-.patch
+# For bz#655735 - qemu-kvm (or libvirt?) permission denied errors when exporting readonly IDE disk to guest
+Patch2057: kvm-ide-Make-ide_init_drive-return-success.patch
+# For bz#655735 - qemu-kvm (or libvirt?) permission denied errors when exporting readonly IDE disk to guest
+Patch2058: kvm-ide-Reject-readonly-drives-unless-CD-ROM.patch
+# For bz#655735 - qemu-kvm (or libvirt?) permission denied errors when exporting readonly IDE disk to guest
+Patch2059: kvm-ide-Reject-invalid-CHS-geometry.patch
+# For bz#662701 - Option -enable-kvm should exit when KVM is unavailable
+Patch2061: kvm-Move-KVM-and-Xen-global-flags-to-vl.c.patch
+# For bz#662701 - Option -enable-kvm should exit when KVM is unavailable
+Patch2062: kvm-qemu-kvm-Switch-to-upstream-enable-kvm-semantics.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2392,8 +2402,8 @@ BuildRequires: pulseaudio-libs-devel
 BuildRequires: ncurses-devel
 BuildRequires: libaio-devel
 
-# require spice-server API changes from bz#571286
-BuildRequires: spice-server-devel >= 0.4.2-10.el6
+# require spice-server API changes from bz#672035
+BuildRequires: spice-server-devel >= 0.7.2-4.el6
 
 BuildRequires: systemtap-sdt-devel
 
@@ -3547,6 +3557,11 @@ ApplyOptionalPatch()
 %patch2054 -p1
 %patch2055 -p1
 %patch2056 -p1
+%patch2057 -p1
+%patch2058 -p1
+%patch2059 -p1
+%patch2061 -p1
+%patch2062 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3768,6 +3783,20 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Feb 24 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.148.el6
+- kvm-ide-Make-ide_init_drive-return-success.patch [bz#655735]
+- kvm-ide-Reject-readonly-drives-unless-CD-ROM.patch [bz#655735]
+- kvm-ide-Reject-invalid-CHS-geometry.patch [bz#655735]
+- kvm-Move-KVM-and-Xen-global-flags-to-vl.c.patch [bz#662701]
+- kvm-qemu-kvm-Switch-to-upstream-enable-kvm-semantics.patch [bz#662701]
+- Update BuildRequire for newer spice-server [bz#672035]
+- Resolves: bz#655735
+  (qemu-kvm (or libvirt?) permission denied errors when exporting readonly IDE disk to guest)
+- Resolves: bz#662701
+  (Option -enable-kvm should exit when KVM is unavailable)
+- Related: bz#672035
+  (spice-server: rebase to upstream 0.8 for RHEL-6.1)
+
 * Fri Feb 18 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.147.el6
 - kvm-e1000-clear-EOP-for-multi-buffer-descriptors.patch [bz#678338]
 - kvm-e1000-verify-we-have-buffers-upfront.patch [bz#678338]

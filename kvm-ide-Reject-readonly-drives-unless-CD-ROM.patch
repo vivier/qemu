@@ -1,0 +1,52 @@
+From 14cf083a62a724b20e568b9200eb1fd1898da8e6 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 16 Feb 2011 20:28:45 -0200
+Subject: [PATCH 2/6] ide: Reject readonly drives unless CD-ROM
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1297888126-9565-3-git-send-email-armbru@redhat.com>
+Patchwork-id: 18352
+O-Subject: [PATCH RHEL6.1 qemu-kvm 2/3] ide: Reject readonly drives unless CD-ROM
+Bugzilla: 655735
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+drive_init() doesn't permit option readonly for if=ide, but that's
+worthless: we get it via if=none and -device.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 7aa9c811ca0761918a0252d0f923a80224953fa6)
+
+Conflicts:
+
+	hw/ide/core.c
+---
+ hw/ide/core.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/ide/core.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 1901b80..1e779df 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -2645,6 +2645,11 @@ int ide_init_drive(IDEState *s, BlockDriverState *bs, const char *version)
+         s->is_cdrom = 1;
+         bdrv_set_change_cb(bs, cdrom_change_cb, s);
+         s->bs->buffer_alignment = 2048;
++    } else {
++        if (bdrv_is_read_only(bs)) {
++            error_report("Can't use a read-only drive");
++            return -1;
++        }
+     }
+     bdrv_set_removable(s->bs, s->is_cdrom);
+     strncpy(s->drive_serial_str, drive_get_serial(s->bs),
+-- 
+1.7.4.rc1.16.gd2f15e
+

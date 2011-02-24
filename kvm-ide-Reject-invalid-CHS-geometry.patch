@@ -1,0 +1,55 @@
+From 86e80135336016b6178d8c5705225528300494c0 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Wed, 16 Feb 2011 20:28:46 -0200
+Subject: [PATCH 3/6] ide: Reject invalid CHS geometry
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1297888126-9565-4-git-send-email-armbru@redhat.com>
+Patchwork-id: 18355
+O-Subject: [PATCH RHEL6.1 qemu-kvm 3/3] ide: Reject invalid CHS geometry
+Bugzilla: 655735
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+drive_init() doesn't permit invalid CHS for if=ide, but that's
+worthless: we get it via if=none and -device.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit dce9e92834cc4f962e547cae46b73ca559d05b0c)
+---
+ hw/ide/core.c |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/ide/core.c |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 1e779df..96370d8 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -2631,6 +2631,18 @@ int ide_init_drive(IDEState *s, BlockDriverState *bs, const char *version)
+     s->bs = bs;
+     bdrv_get_geometry(bs, &nb_sectors);
+     bdrv_guess_geometry(bs, &cylinders, &heads, &secs);
++    if (cylinders < 1 || cylinders > 16383) {
++        error_report("cyls must be between 1 and 16383");
++        return -1;
++    }
++    if (heads < 1 || heads > 16) {
++        error_report("heads must be between 1 and 16");
++        return -1;
++    }
++    if (secs < 1 || secs > 63) {
++        error_report("secs must be between 1 and 63");
++        return -1;
++    }
+     s->cylinders = cylinders;
+     s->heads = heads;
+     s->sectors = secs;
+-- 
+1.7.4.rc1.16.gd2f15e
+

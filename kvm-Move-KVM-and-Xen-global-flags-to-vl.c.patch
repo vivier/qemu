@@ -1,0 +1,95 @@
+From 2a1b4a9f1ee356e8203757578621964589894993 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 17 Feb 2011 20:59:14 -0200
+Subject: [PATCH 5/6] Move KVM and Xen global flags to vl.c
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1297976355-29218-2-git-send-email-armbru@redhat.com>
+Patchwork-id: 18429
+O-Subject: [PATCH RHEL6.1 qemu-kvm 1/2] Move KVM and Xen global flags to vl.c
+Bugzilla: 662701
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+(cherry picked from commit d745bef890f9fa57298ae099365da8e8aa575cbd)
+
+Conflicts:
+
+	vl.c
+
+Some merge work stolen from commit d745bef8.
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ hw/xen_machine_pv.c |    3 ---
+ kvm-all.c           |    2 --
+ qemu-kvm.c          |    1 -
+ vl.c                |    4 ++++
+ 4 files changed, 4 insertions(+), 6 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/xen_machine_pv.c |    3 ---
+ kvm-all.c           |    2 --
+ qemu-kvm.c          |    1 -
+ vl.c                |    4 ++++
+ 4 files changed, 4 insertions(+), 6 deletions(-)
+
+diff --git a/hw/xen_machine_pv.c b/hw/xen_machine_pv.c
+index 162f88d..586214d 100644
+--- a/hw/xen_machine_pv.c
++++ b/hw/xen_machine_pv.c
+@@ -29,9 +29,6 @@
+ #include "xen_backend.h"
+ #include "xen_domainbuild.h"
+ 
+-uint32_t xen_domid;
+-enum xen_mode xen_mode = XEN_EMULATE;
+-
+ static void xen_init_pv(ram_addr_t ram_size,
+ 			const char *boot_device,
+ 			const char *kernel_filename,
+diff --git a/kvm-all.c b/kvm-all.c
+index fe03358..9607717 100644
+--- a/kvm-all.c
++++ b/kvm-all.c
+@@ -56,8 +56,6 @@ typedef struct KVMSlot
+ 
+ typedef struct kvm_dirty_log KVMDirtyLog;
+ 
+-int kvm_allowed = 0;
+-
+ struct KVMState
+ {
+     KVMSlot slots[32];
+diff --git a/qemu-kvm.c b/qemu-kvm.c
+index ccd5f18..be3b48c 100644
+--- a/qemu-kvm.c
++++ b/qemu-kvm.c
+@@ -50,7 +50,6 @@
+ #error libkvm: userspace and kernel version mismatch
+ #endif
+ 
+-int kvm_allowed = 1;
+ int kvm_irqchip = 1;
+ int kvm_pit = 1;
+ int kvm_pit_reinject = 1;
+diff --git a/vl.c b/vl.c
+index 6795c9d..016442f 100644
+--- a/vl.c
++++ b/vl.c
+@@ -308,6 +308,10 @@ uint8_t qemu_uuid[16];
+ static QEMUBootSetHandler *boot_set_handler;
+ static void *boot_set_opaque;
+ 
++int kvm_allowed = 1;
++uint32_t xen_domid;
++enum xen_mode xen_mode = XEN_EMULATE;
++
+ static NotifierList machine_init_done_notifiers =
+     NOTIFIER_LIST_INITIALIZER(machine_init_done_notifiers);
+ 
+-- 
+1.7.4.rc1.16.gd2f15e
+

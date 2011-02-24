@@ -1,0 +1,135 @@
+From a9a8cc7007f49ed63d6c725ab6bd3cf9ddfa5bc9 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 17 Feb 2011 20:59:15 -0200
+Subject: [PATCH 6/6] qemu-kvm: Switch to upstream -enable-kvm semantics
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1297976355-29218-3-git-send-email-armbru@redhat.com>
+Patchwork-id: 18430
+O-Subject: [PATCH RHEL6.1 qemu-kvm 2/2] qemu-kvm: Switch to upstream -enable-kvm
+	semantics
+Bugzilla: 662701
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+We currently enable KVM by default, and when it's not available, we
+print a message and fall back to TCG.  Option -enable-kvm is ignored.
+Option -no-kvm suppresses KVM.
+
+Upstream works differently: KVM is off by default, -enable-kvm
+switches it on.  -enable-kvm terminates the process unsuccessfully if
+KVM is not available.
+
+upstream qemu   |  default  |-enable-kvm
+----------------+-----------+-----------
+KVM available   | disabled  |  enabled
+KVM unavailable | disabled  |    fail
+
+qemu-kvm        |  default  |-enable-kvm|  -no-kvm
+----------------+-----------+-----------+----------
+KVM available   |  enabled* |  enabled  |  disabled
+KVM unavailable | disabled  | disabled* |  disabled
+
+* differs from upstream
+
+Users of qemu and qemu-kvm need to be aware of these differences to
+enable / disable use of KVM reliably.  This is bothersome.
+
+Consider -enable-kvm when KVM is unavailable: If the user expects
+qemu-kvm behavior (fall back), but qemu fails, he'll likely be
+surprised and unhappy.  If the user expects upstream behavior (fail),
+but qemu-kvm falls back to TCG, the guest runs slow as molasses, and
+the user will likely be confused and unhappy (unless he spots and
+understands the "disable KVM" message).
+
+Eventually, we'll sort this upstream with -accel (defaults tied to
+machine type).  Until then, this patch reduces the difference to
+upstream so that most users shouldn't need to be aware of them.
+
+Make -enable-kvm behave just like in upstream: enable KVM, fail if not
+available.  But retain current default behavior: enable KVM, fall back
+to TCG.
+
+qemu-kvm new    |  default  |-enable-kvm|  -no-kvm
+----------------+-----------+-----------+-----------
+KVM available   |  enabled* |  enabled  |  disabled
+KVM unavailable | disabled  |    fail+  |  disabled
+
+* differs from upstream
++ changed by this patch
+
+Bonus fix: -no-kvm -enable-kvm now enables KVM.  Before, it disabled it.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Avi Kivity <avi@redhat.com>
+(cherry picked from commit b724fa4bb46b82c54b5f0a2cf9177194020433ef)
+
+Conflicts:
+
+	vl.c
+---
+ vl.c |   22 +++++++++++-----------
+ 1 files changed, 11 insertions(+), 11 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ vl.c |   22 +++++++++++-----------
+ 1 files changed, 11 insertions(+), 11 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index 016442f..d7d43b5 100644
+--- a/vl.c
++++ b/vl.c
+@@ -308,7 +308,7 @@ uint8_t qemu_uuid[16];
+ static QEMUBootSetHandler *boot_set_handler;
+ static void *boot_set_opaque;
+ 
+-int kvm_allowed = 1;
++int kvm_allowed = -1;
+ uint32_t xen_domid;
+ enum xen_mode xen_mode = XEN_EMULATE;
+ 
+@@ -6060,10 +6060,8 @@ int main(int argc, char **argv, char **envp)
+                 break;
+ #endif
+ #ifdef CONFIG_KVM
+-#ifdef KVM_UPSTREAM
+             case QEMU_OPTION_enable_kvm:
+                 kvm_allowed = 1;
+-#endif
+                 break;
+ 	    case QEMU_OPTION_no_kvm:
+ 		kvm_allowed = 0;
+@@ -6486,18 +6484,20 @@ int main(int argc, char **argv, char **envp)
+     if (fake_machine) {
+         kvm_allowed = 0;
+     }
+-    if (kvm_enabled()) {
+-        int ret;
+-
+-        ret = kvm_init(smp_cpus);
++    if (kvm_allowed) {
++        int ret = kvm_init(smp_cpus);
+         if (ret < 0) {
+-#if defined(KVM_UPSTREAM) || defined(CONFIG_NO_CPU_EMULATION)
+-            fprintf(stderr, "failed to initialize KVM\n");
+-            exit(1);
++            if (kvm_allowed > 0) {
++#ifndef CONFIG_KVM
++                printf("KVM not supported for this target\n");
++#else
++                fprintf(stderr, "failed to initialize KVM: %s\n", strerror(-ret));
+ #endif
++                exit(1);
++            }
+             fprintf(stderr, "Could not initialize KVM, will disable KVM support\n");
+-            kvm_allowed = 0;
+         }
++        kvm_allowed = ret >= 0;
+     }
+ 
+     if (qemu_init_main_loop()) {
+-- 
+1.7.4.rc1.16.gd2f15e
+
