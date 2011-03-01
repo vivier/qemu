@@ -828,27 +828,29 @@ static void free_assigned_device(AssignedDevice *dev)
                                            region->r_size);
                 }
             } else if (pci_region->type & IORESOURCE_MEM) {
-                if (region->e_size == 0)
-                    continue;
+                if (region->e_size) {
+                    if (pci_region->base_addr <= dev->msix_table_addr &&
+                        pci_region->base_addr + pci_region->size >=
+                        dev->msix_table_addr) {
 
-                if (pci_region->base_addr <= dev->msix_table_addr &&
-                    pci_region->base_addr + pci_region->size >=
-                    dev->msix_table_addr) {
+                        int offset = dev->msix_table_addr -
+                                     pci_region->base_addr;
 
-                    int offset = dev->msix_table_addr - pci_region->base_addr;
-
-                    if (offset > 0)
+                        if (offset > 0) {
+                            kvm_destroy_phys_mem(kvm_context,
+                                                 region->e_physbase,
+                                                 TARGET_PAGE_ALIGN(offset));
+                        }
+                        if (region->e_size > offset + TARGET_PAGE_SIZE) {
+                            kvm_destroy_phys_mem(kvm_context,
+                                 region->e_physbase + offset + TARGET_PAGE_SIZE,
+                                 TARGET_PAGE_ALIGN(region->e_size - offset -
+                                                   TARGET_PAGE_SIZE));
+                        }
+                    } else {
                         kvm_destroy_phys_mem(kvm_context, region->e_physbase,
-                                             TARGET_PAGE_ALIGN(offset));
-                    if (region->e_size > offset + TARGET_PAGE_SIZE)
-                        kvm_destroy_phys_mem(kvm_context,
-                               region->e_physbase + offset + TARGET_PAGE_SIZE,
-                               TARGET_PAGE_ALIGN(region->e_size - offset -
-                                                 TARGET_PAGE_SIZE));
-
-                } else {
-                    kvm_destroy_phys_mem(kvm_context, region->e_physbase,
-                                         TARGET_PAGE_ALIGN(region->e_size));
+                                             TARGET_PAGE_ALIGN(region->e_size));
+                    }
                 }
 
                 if (region->u.r_virtbase) {
