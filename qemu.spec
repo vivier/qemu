@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.14.0
-Release: 1%{?dist}
+Release: 2%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -37,6 +37,8 @@ Source8: ksmtuned.conf
 # with F-13/
 Patch00: pc-add-a-Fedora-13-machine-type-for-backward-compat.patch
 
+Patch01: qemu-fix-non-PCI-target-build.patch
+
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
 BuildRequires: libaio-devel
@@ -53,7 +55,7 @@ Requires: %{name}-user = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-x86 = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-sparc = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-arm = %{epoch}:%{version}-%{release}
-# Requires: %{name}-system-cris = %{epoch}:%{version}-%{release}
+Requires: %{name}-system-cris = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-sh4 = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-m68k = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-mips = %{epoch}:%{version}-%{release}
@@ -188,15 +190,15 @@ emulation speed by using dynamic translation.
 
 This package provides the system emulator for mips
 
-# %package system-cris
-# Summary: QEMU system emulator for cris
-# Group: Development/Tools
-# Requires: %{name}-common = %{epoch}:%{version}-%{release}
-# %description system-cris
-# QEMU is a generic and open source processor emulator which achieves a good
-# emulation speed by using dynamic translation.
+%package system-cris
+Summary: QEMU system emulator for cris
+Group: Development/Tools
+Requires: %{name}-common = %{epoch}:%{version}-%{release}
+%description system-cris
+QEMU is a generic and open source processor emulator which achieves a good
+emulation speed by using dynamic translation.
 
-# This package provides the system emulator for cris
+This package provides the system emulator for cris
 
 %package system-m68k
 Summary: QEMU system emulator for m68k
@@ -233,6 +235,7 @@ such as kvm_stat.
 %setup -q -n qemu-kvm-%{version}
 
 %patch00 -p1
+%patch01 -p1
 
 %build
 # By default we build everything, but allow x86 to build a minimal version
@@ -240,9 +243,9 @@ such as kvm_stat.
 %if %{with_x86only}
     buildarch="i386-softmmu x86_64-softmmu i386-linux-user x86_64-linux-user"
 %else
-    buildarch="i386-softmmu x86_64-softmmu arm-softmmu m68k-softmmu \
+    buildarch="i386-softmmu x86_64-softmmu arm-softmmu cris-softmmu m68k-softmmu \
            mips-softmmu mipsel-softmmu mips64-softmmu mips64el-softmmu ppc-softmmu \
-           ppcemb-softmmu ppc64-softmmu sh4-softmmu sh4eb-softmmu \
+           ppcemb-softmmu ppc64-softmmu sh4-softmmu sh4eb-softmmu sparc-softmmu \
            i386-linux-user x86_64-linux-user alpha-linux-user arm-linux-user \
            armeb-linux-user cris-linux-user m68k-linux-user mips-linux-user \
            mipsel-linux-user ppc-linux-user ppc64-linux-user ppc64abi32-linux-user \
@@ -521,7 +524,7 @@ fi
 
 %files system-sparc
 %defattr(-,root,root)
-# %{_bindir}/qemu-system-sparc
+ %{_bindir}/qemu-system-sparc
 %{_datadir}/%{name}/openbios-sparc32
 %{_datadir}/%{name}/openbios-sparc64
 
@@ -545,9 +548,9 @@ fi
 %{_datadir}/%{name}/bamboo.dtb
 %{_datadir}/%{name}/ppc_rom.bin
 
-# %files system-cris
-# %defattr(-,root,root)
-# %{_bindir}/qemu-system-cris
+%files system-cris
+%defattr(-,root,root)
+%{_bindir}/qemu-system-cris
 
 %files system-m68k
 %defattr(-,root,root)
@@ -567,6 +570,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Mar 02 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.14.0-2
+- Re-enable sparc and cris builds
+
 * Thu Feb 24 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.14.0-1
 - Update to 0.14.0 release
 
