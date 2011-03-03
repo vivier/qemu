@@ -99,7 +99,8 @@ typedef struct IDEDrive {
 static int ide_drive_initfn(IDEDevice *dev)
 {
     IDEBus *bus = DO_UPCAST(IDEBus, qbus, dev->qdev.parent_bus);
-    ide_init_drive(bus->ifs + dev->unit, dev->conf.dinfo, dev->version);
+    ide_init_drive(bus->ifs + dev->unit, dev->conf.dinfo, &dev->conf,
+                   dev->version);
     return 0;
 }
 
