@@ -155,8 +155,6 @@ struct BlockDriverState {
     BlockDriver *drv; /* NULL means no media */
     void *opaque;
 
-    DeviceState *peer;
-
     char filename[1024];
     char backing_file[1024]; /* if non zero, the image is a diff of
                                 this file image */
