@@ -92,7 +92,7 @@ static int scsi_hot_add(Monitor *mon, DeviceState *adapter,
      * specified).
      */
     dinfo->unit = qemu_opt_get_number(dinfo->opts, "unit", -1);
-    scsidev = scsi_bus_legacy_add_drive(scsibus, dinfo->bdrv, dinfo->unit);
+    scsidev = scsi_bus_legacy_add_drive(scsibus, dinfo, dinfo->unit);
     dinfo->unit = scsidev->id;
 
     if (printinfo)
@@ -215,7 +215,7 @@ static PCIDevice *qemu_pci_hot_add_storage(Monitor *mon,
             return NULL;
         }
         dev = pci_create(bus, devfn, "virtio-blk-pci");
-        qdev_prop_set_drive(&dev->qdev, "drive", dinfo->bdrv);
+        qdev_prop_set_drive(&dev->qdev, "drive", dinfo);
         if (qdev_init(&dev->qdev) < 0)
             dev = NULL;
         break;

@@ -522,9 +522,9 @@ static void usb_msd_password_cb(void *opaque, int err)
 static int usb_msd_initfn(USBDevice *dev)
 {
     MSDState *s = DO_UPCAST(MSDState, dev, dev);
-    BlockDriverState *bs = s->conf.bs;
+    DriveInfo *dinfo = s->conf.dinfo;
 
-    if (!bs) {
+    if (!dinfo || !dinfo->bdrv) {
         error_report("usb-msd: drive property not set");
         return -1;
     }
@@ -538,17 +538,18 @@ static int usb_msd_initfn(USBDevice *dev)
      *
      * The hack is probably a bad idea.
      */
-    s->conf.bs = NULL;
+    s->conf.dinfo = NULL;
 
     s->dev.speed = USB_SPEED_FULL;
     scsi_bus_new(&s->bus, &s->dev.qdev, 0, 1, usb_msd_command_complete);
-    s->scsi_dev = scsi_bus_legacy_add_drive(&s->bus, bs, 0);
+    s->scsi_dev = scsi_bus_legacy_add_drive(&s->bus, dinfo, 0);
     s->bus.qbus.allow_hotplug = 0;
     usb_msd_handle_reset(dev);
 
-    if (bdrv_key_required(bs)) {
+    if (bdrv_key_required(dinfo->bdrv)) {
         if (cur_mon) {
-            monitor_read_bdrv_key_start(cur_mon, bs, usb_msd_password_cb, s);
+            monitor_read_bdrv_key_start(cur_mon, dinfo->bdrv,
+                                        usb_msd_password_cb, s);
             s->dev.auto_attach = 0;
         } else {
             autostart = 0;
@@ -603,7 +604,7 @@ static USBDevice *usb_msd_init(const char *filename)
 
     /* create guest device */
     dev = usb_create(NULL /* FIXME */, "usb-storage");
-    qdev_prop_set_drive(&dev->qdev, "drive", dinfo->bdrv);
+    qdev_prop_set_drive(&dev->qdev, "drive", dinfo);
     if (qdev_init(&dev->qdev) < 0)
         return NULL;
 

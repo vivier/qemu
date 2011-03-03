@@ -576,7 +576,7 @@ static int virtio_blk_init_pci(PCIDevice *pci_dev)
         proxy->class_code != PCI_CLASS_STORAGE_OTHER)
         proxy->class_code = PCI_CLASS_STORAGE_SCSI;
 
-    if (!proxy->block.bs) {
+    if (!proxy->block.dinfo) {
         error_report("virtio-blk-pci: drive property not set");
         return -1;
     }
@@ -601,7 +601,7 @@ static int virtio_blk_exit_pci(PCIDevice *pci_dev)
     VirtIOPCIProxy *proxy = DO_UPCAST(VirtIOPCIProxy, pci_dev, pci_dev);
 
     virtio_blk_exit(proxy->vdev);
-    blockdev_mark_auto_del(proxy->block.bs);
+    blockdev_mark_auto_del(proxy->block.dinfo->bdrv);
     return virtio_exit_pci(pci_dev);
 }
 

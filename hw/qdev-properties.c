@@ -2,7 +2,6 @@
 #include "net.h"
 #include "qdev.h"
 #include "qerror.h"
-#include "block.h"
 
 void *qdev_get_prop_ptr(DeviceState *dev, Property *prop)
 {
@@ -307,36 +306,33 @@ PropertyInfo qdev_prop_string = {
 
 static int parse_drive(DeviceState *dev, Property *prop, const char *str)
 {
-    BlockDriverState **ptr = qdev_get_prop_ptr(dev, prop);
-    BlockDriverState *bs;
+    DriveInfo **ptr = qdev_get_prop_ptr(dev, prop);
 
-    bs = bdrv_find(str);
-    if (bs == NULL)
+    *ptr = drive_get_by_id(str);
+    if (*ptr == NULL)
         return -ENOENT;
-    *ptr = bs;
     return 0;
 }
 
 static void free_drive(DeviceState *dev, Property *prop)
 {
-    BlockDriverState **ptr = qdev_get_prop_ptr(dev, prop);
+    DriveInfo **ptr = qdev_get_prop_ptr(dev, prop);
 
     if (*ptr) {
-        blockdev_auto_del(*ptr);
+        blockdev_auto_del((*ptr)->bdrv);
     }
 }
 
 static int print_drive(DeviceState *dev, Property *prop, char *dest, size_t len)
 {
-    BlockDriverState **ptr = qdev_get_prop_ptr(dev, prop);
-    return snprintf(dest, len, "%s",
-                    *ptr ? bdrv_get_device_name(*ptr) : "<null>");
+    DriveInfo **ptr = qdev_get_prop_ptr(dev, prop);
+    return snprintf(dest, len, "%s", (*ptr) ? (*ptr)->id : "<null>");
 }
 
 PropertyInfo qdev_prop_drive = {
     .name  = "drive",
     .type  = PROP_TYPE_DRIVE,
-    .size  = sizeof(BlockDriverState *),
+    .size  = sizeof(DriveInfo*),
     .parse = parse_drive,
     .print = print_drive,
     .free  = free_drive,
@@ -657,7 +653,7 @@ void qdev_prop_set_uint64(DeviceState *dev, const char *name, uint64_t value)
     qdev_prop_set(dev, name, &value, PROP_TYPE_UINT64);
 }
 
-void qdev_prop_set_drive(DeviceState *dev, const char *name, BlockDriverState *value)
+void qdev_prop_set_drive(DeviceState *dev, const char *name, DriveInfo *value)
 {
     qdev_prop_set(dev, name, &value, PROP_TYPE_DRIVE);
 }
