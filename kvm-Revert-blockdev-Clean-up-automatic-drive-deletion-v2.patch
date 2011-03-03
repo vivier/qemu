@@ -1,0 +1,187 @@
+From 2ba7e80c5070ce877d387b4e961b0f2c70726735 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 3 Mar 2011 16:55:25 -0300
+Subject: [PATCH 06/12] Revert "blockdev: Clean up automatic drive deletion (v2)"
+
+RH-Reverts: a63bd97a63072ba07a438f9ae621b7901ffab552
+RH-Reverts-patchwork-id: 18385
+Bugzilla-related: 677170
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/qdev-properties.c |   10 ----------
+ hw/scsi-disk.c       |    2 +-
+ hw/scsi-generic.c    |    2 +-
+ hw/usb-msd.c         |   20 ++++----------------
+ hw/virtio-pci.c      |    2 +-
+ sysemu.h             |    4 ----
+ vl.c                 |   23 -----------------------
+ 7 files changed, 7 insertions(+), 56 deletions(-)
+
+diff --git a/hw/qdev-properties.c b/hw/qdev-properties.c
+index 8e25c47..169b9a2 100644
+--- a/hw/qdev-properties.c
++++ b/hw/qdev-properties.c
+@@ -314,15 +314,6 @@ static int parse_drive(DeviceState *dev, Property *prop, const char *str)
+     return 0;
+ }
+ 
+-static void free_drive(DeviceState *dev, Property *prop)
+-{
+-    DriveInfo **ptr = qdev_get_prop_ptr(dev, prop);
+-
+-    if (*ptr) {
+-        blockdev_auto_del((*ptr)->bdrv);
+-    }
+-}
+-
+ static int print_drive(DeviceState *dev, Property *prop, char *dest, size_t len)
+ {
+     DriveInfo **ptr = qdev_get_prop_ptr(dev, prop);
+@@ -335,7 +326,6 @@ PropertyInfo qdev_prop_drive = {
+     .size  = sizeof(DriveInfo*),
+     .parse = parse_drive,
+     .print = print_drive,
+-    .free  = free_drive,
+ };
+ 
+ /* --- character device --- */
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index 6f3d5f5..f2b43fe 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -1015,7 +1015,7 @@ static void scsi_destroy(SCSIDevice *dev)
+         r = DO_UPCAST(SCSIDiskReq, req, QTAILQ_FIRST(&s->qdev.requests));
+         scsi_remove_request(r);
+     }
+-    blockdev_mark_auto_del(s->qdev.conf.dinfo->bdrv);
++    drive_uninit(s->qdev.conf.dinfo);
+ }
+ 
+ static int scsi_disk_initfn(SCSIDevice *dev)
+diff --git a/hw/scsi-generic.c b/hw/scsi-generic.c
+index b9b6a10..c9aa853 100644
+--- a/hw/scsi-generic.c
++++ b/hw/scsi-generic.c
+@@ -454,7 +454,7 @@ static void scsi_destroy(SCSIDevice *d)
+         r = DO_UPCAST(SCSIGenericReq, req, QTAILQ_FIRST(&s->qdev.requests));
+         scsi_remove_request(r);
+     }
+-    blockdev_mark_auto_del(s->qdev.conf.dinfo->bdrv);
++    drive_uninit(s->qdev.conf.dinfo);
+ }
+ 
+ static int scsi_generic_initfn(SCSIDevice *dev)
+diff --git a/hw/usb-msd.c b/hw/usb-msd.c
+index 97fd6fb..25d4a14 100644
+--- a/hw/usb-msd.c
++++ b/hw/usb-msd.c
+@@ -522,33 +522,21 @@ static void usb_msd_password_cb(void *opaque, int err)
+ static int usb_msd_initfn(USBDevice *dev)
+ {
+     MSDState *s = DO_UPCAST(MSDState, dev, dev);
+-    DriveInfo *dinfo = s->conf.dinfo;
+ 
+-    if (!dinfo || !dinfo->bdrv) {
++    if (!s->conf.dinfo || !s->conf.dinfo->bdrv) {
+         error_report("usb-msd: drive property not set");
+         return -1;
+     }
+ 
+-    /*
+-     * Hack alert: this pretends to be a block device, but it's really
+-     * a SCSI bus that can serve only a single device, which it
+-     * creates automatically.  Two drive properties pointing to the
+-     * same drive is not good: free_drive() dies for the second one.
+-     * Zap the one we're not going to use.
+-     *
+-     * The hack is probably a bad idea.
+-     */
+-    s->conf.dinfo = NULL;
+-
+     s->dev.speed = USB_SPEED_FULL;
+     scsi_bus_new(&s->bus, &s->dev.qdev, 0, 1, usb_msd_command_complete);
+-    s->scsi_dev = scsi_bus_legacy_add_drive(&s->bus, dinfo, 0);
++    s->scsi_dev = scsi_bus_legacy_add_drive(&s->bus, s->conf.dinfo, 0);
+     s->bus.qbus.allow_hotplug = 0;
+     usb_msd_handle_reset(dev);
+ 
+-    if (bdrv_key_required(dinfo->bdrv)) {
++    if (bdrv_key_required(s->conf.dinfo->bdrv)) {
+         if (cur_mon) {
+-            monitor_read_bdrv_key_start(cur_mon, dinfo->bdrv,
++            monitor_read_bdrv_key_start(cur_mon, s->conf.dinfo->bdrv,
+                                         usb_msd_password_cb, s);
+             s->dev.auto_attach = 0;
+         } else {
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index 6e80e7b..5101541 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -601,7 +601,7 @@ static int virtio_blk_exit_pci(PCIDevice *pci_dev)
+     VirtIOPCIProxy *proxy = DO_UPCAST(VirtIOPCIProxy, pci_dev, pci_dev);
+ 
+     virtio_blk_exit(proxy->vdev);
+-    blockdev_mark_auto_del(proxy->block.dinfo->bdrv);
++    drive_uninit(proxy->block.dinfo);
+     return virtio_exit_pci(pci_dev);
+ }
+ 
+diff --git a/sysemu.h b/sysemu.h
+index 145964d..7faa8e9 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -162,9 +162,6 @@ typedef enum {
+     BLOCK_ERR_STOP_ANY
+ } BlockInterfaceErrorAction;
+ 
+-void blockdev_mark_auto_del(BlockDriverState *bs);
+-void blockdev_auto_del(BlockDriverState *bs);
+-
+ #define BLOCK_SERIAL_STRLEN 20
+ 
+ typedef struct DriveInfo {
+@@ -174,7 +171,6 @@ typedef struct DriveInfo {
+     BlockInterfaceType type;
+     int bus;
+     int unit;
+-    int auto_del;               /* see blockdev_mark_auto_del() */
+     QemuOpts *opts;
+     BlockInterfaceErrorAction on_read_error;
+     BlockInterfaceErrorAction on_write_error;
+diff --git a/vl.c b/vl.c
+index 2410338..8b9dbc5 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2090,29 +2090,6 @@ DriveInfo *drive_get_by_blockdev(BlockDriverState *bs)
+     return NULL;
+ }
+ 
+-/*
+- * We automatically delete the drive when a device using it gets
+- * unplugged.  Questionable feature, but we can't just drop it.
+- * Device models call blockdev_mark_auto_del() to schedule the
+- * automatic deletion, and generic qdev code calls blockdev_auto_del()
+- * when deletion is actually safe.
+- */
+-void blockdev_mark_auto_del(BlockDriverState *bs)
+-{
+-    DriveInfo *dinfo = drive_get_by_blockdev(bs);
+-
+-    dinfo->auto_del = 1;
+-}
+-
+-void blockdev_auto_del(BlockDriverState *bs)
+-{
+-    DriveInfo *dinfo = drive_get_by_blockdev(bs);
+-
+-    if (dinfo->auto_del) {
+-        drive_uninit(dinfo);
+-    }
+-}
+-
+ int drive_get_max_bus(BlockInterfaceType type)
+ {
+     int max_bus;
+-- 
+1.7.4.rc1.16.gd2f15e
+

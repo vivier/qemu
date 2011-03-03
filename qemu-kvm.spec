@@ -1,4 +1,4 @@
-%define zrelease 7
+%define zrelease 8
 
 Summary: Userspace component of KVM
 Name: qemu-kvm
@@ -1480,6 +1480,30 @@ Patch1724: kvm-blockdev-check-dinfo-ptr-before-using-v2.patch
 Patch1725: kvm-blockdev-Fix-drive_del-not-to-crash-when-drive-is-no.patch
 # For bz#668598 - CVE-2011-0011 qemu-kvm: Setting VNC password to empty string silently disables all authentication [rhel-6.0.z]
 Patch1726: kvm-Fix-CVE-2011-0011-qemu-kvm-Setting-VNC-password-to-e.patch
+# For bz#677170 - drive_del command to let libvirt safely remove block device from guest
+Patch1727: kvm-Revert-blockdev-Fix-drive_del-not-to-crash-when-driv.patch
+# For bz#677170 - drive_del command to let libvirt safely remove block device from guest
+Patch1728: kvm-Revert-blockdev-check-dinfo-ptr-before-using-v2.patch
+# For bz#677170 - drive_del command to let libvirt safely remove block device from guest
+Patch1729: kvm-Revert-Implement-drive_del-to-decouple-block-removal.patch
+# For bz#677170 - drive_del command to let libvirt safely remove block device from guest
+Patch1730: kvm-Revert-block-Catch-attempt-to-attach-multiple-device.patch
+# For bz#677170 - drive_del command to let libvirt safely remove block device from guest
+Patch1731: kvm-Revert-qdev-Decouple-qdev_prop_drive-from-DriveInfo-.patch
+# For bz#677170 - drive_del command to let libvirt safely remove block device from guest
+Patch1732: kvm-Revert-blockdev-Clean-up-automatic-drive-deletion-v2.patch
+# For bz#677170 - drive_del command to let libvirt safely remove block device from guest
+Patch1733: kvm-Revert-blockdev-New-drive_get_by_blockdev-v2.patch
+# For bz#677170 - drive_del command to let libvirt safely remove block device from guest
+Patch1734: kvm-Revert-qdev-Don-t-leak-string-property-value-on-hot-.patch
+# For bz#677170 - drive_del command to let libvirt safely remove block device from guest
+Patch1735: kvm-Revert-ide-Split-non-qdev-code-off-ide_init2.patch
+# For bz#677170 - drive_del command to let libvirt safely remove block device from guest
+Patch1736: kvm-Revert-ide-Change-ide_init_drive-to-require-valid-di.patch
+# For bz#677170 - drive_del command to let libvirt safely remove block device from guest
+Patch1737: kvm-Revert-ide-Split-ide_init1-off-ide_init2-v2.patch
+# For bz#677170 - drive_del command to let libvirt safely remove block device from guest
+Patch1738: kvm-Revert-ide-Remove-redundant-IDEState-member-conf.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -2268,6 +2292,18 @@ such as kvm_stat.
 %patch1724 -p1
 %patch1725 -p1
 %patch1726 -p1
+%patch1727 -p1
+%patch1728 -p1
+%patch1729 -p1
+%patch1730 -p1
+%patch1731 -p1
+%patch1732 -p1
+%patch1733 -p1
+%patch1734 -p1
+%patch1735 -p1
+%patch1736 -p1
+%patch1737 -p1
+%patch1738 -p1
 
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
@@ -2463,6 +2499,22 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Mar 03 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.113.el6_0.8
+- kvm-Revert-blockdev-Fix-drive_del-not-to-crash-when-driv.patch [bz#677170]
+- kvm-Revert-blockdev-check-dinfo-ptr-before-using-v2.patch [bz#677170]
+- kvm-Revert-Implement-drive_del-to-decouple-block-removal.patch [bz#677170]
+- kvm-Revert-block-Catch-attempt-to-attach-multiple-device.patch [bz#677170]
+- kvm-Revert-qdev-Decouple-qdev_prop_drive-from-DriveInfo-.patch [bz#677170]
+- kvm-Revert-blockdev-Clean-up-automatic-drive-deletion-v2.patch [bz#677170]
+- kvm-Revert-blockdev-New-drive_get_by_blockdev-v2.patch [bz#677170]
+- kvm-Revert-qdev-Don-t-leak-string-property-value-on-hot-.patch [bz#677170]
+- kvm-Revert-ide-Split-non-qdev-code-off-ide_init2.patch [bz#677170]
+- kvm-Revert-ide-Change-ide_init_drive-to-require-valid-di.patch [bz#677170]
+- kvm-Revert-ide-Split-ide_init1-off-ide_init2-v2.patch [bz#677170]
+- kvm-Revert-ide-Remove-redundant-IDEState-member-conf.patch [bz#677170]
+- Related: bz#677170
+  (drive_del command to let libvirt safely remove block device from guest)
+
 * Tue Feb 22 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.113.el6_0.7
 - kvm-ide-Remove-redundant-IDEState-member-conf.patch [bz#677170]
 - kvm-ide-Split-ide_init1-off-ide_init2-v2.patch [bz#677170]

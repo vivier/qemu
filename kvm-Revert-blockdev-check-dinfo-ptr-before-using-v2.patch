@@ -1,0 +1,39 @@
+From f26dfb4ac7bec91137aa0cb53a9a043e14681f46 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 3 Mar 2011 16:54:20 -0300
+Subject: [PATCH 02/12] Revert "blockdev: check dinfo ptr before using (v2)"
+
+RH-Reverts: f16fcaddf711076ff2de6531d7b760b9a721ef0e
+RH-Reverts-patchwork-id: 18380
+Bugzilla-related: 677170
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ vl.c |    6 ++----
+ 1 files changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index 1ca4872..2410338 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2101,16 +2101,14 @@ void blockdev_mark_auto_del(BlockDriverState *bs)
+ {
+     DriveInfo *dinfo = drive_get_by_blockdev(bs);
+ 
+-    if (dinfo) {
+-        dinfo->auto_del = 1;
+-    }
++    dinfo->auto_del = 1;
+ }
+ 
+ void blockdev_auto_del(BlockDriverState *bs)
+ {
+     DriveInfo *dinfo = drive_get_by_blockdev(bs);
+ 
+-    if (dinfo && dinfo->auto_del) {
++    if (dinfo->auto_del) {
+         drive_uninit(dinfo);
+     }
+ }
+-- 
+1.7.4.rc1.16.gd2f15e
+

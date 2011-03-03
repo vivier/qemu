@@ -1,0 +1,52 @@
+From 32906c47f2fcac75c8f64f44926635eb63f8bfa4 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 3 Mar 2011 16:55:42 -0300
+Subject: [PATCH 07/12] Revert "blockdev: New drive_get_by_blockdev() (v2)"
+
+RH-Reverts: 27a8a34f4896e70e0140fb72584cb8df448c72db
+RH-Reverts-patchwork-id: 18384
+Bugzilla-related: 677170
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ sysemu.h |    1 -
+ vl.c     |   12 ------------
+ 2 files changed, 0 insertions(+), 13 deletions(-)
+
+diff --git a/sysemu.h b/sysemu.h
+index 7faa8e9..8c3ec8e 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -194,7 +194,6 @@ extern DriveInfo *drive_get(BlockInterfaceType type, int bus, int unit);
+ extern DriveInfo *drive_get_by_id(const char *id);
+ extern int drive_get_max_bus(BlockInterfaceType type);
+ extern void drive_uninit(DriveInfo *dinfo);
+-extern DriveInfo *drive_get_by_blockdev(BlockDriverState *bs);
+ extern const char *drive_get_serial(BlockDriverState *bdrv);
+ 
+ extern BlockInterfaceErrorAction drive_get_on_error(
+diff --git a/vl.c b/vl.c
+index 8b9dbc5..5014a5a 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2078,18 +2078,6 @@ DriveInfo *drive_get_by_id(const char *id)
+     return NULL;
+ }
+ 
+-DriveInfo *drive_get_by_blockdev(BlockDriverState *bs)
+-{
+-    DriveInfo *dinfo;
+-
+-    QTAILQ_FOREACH(dinfo, &drives, next) {
+-        if (dinfo->bdrv == bs) {
+-            return dinfo;
+-        }
+-    }
+-    return NULL;
+-}
+-
+ int drive_get_max_bus(BlockInterfaceType type)
+ {
+     int max_bus;
+-- 
+1.7.4.rc1.16.gd2f15e
+

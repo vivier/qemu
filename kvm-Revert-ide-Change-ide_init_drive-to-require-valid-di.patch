@@ -1,0 +1,85 @@
+From a56861ad6e730eb4326ea88199b8800e1a1a3b70 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 3 Mar 2011 16:56:20 -0300
+Subject: [PATCH 10/12] Revert "ide: Change ide_init_drive() to require valid dinfo argument"
+
+RH-Reverts: 512b1be0c13a4dc3aa848e668611af4efb8901c6
+RH-Reverts-patchwork-id: 18382
+Bugzilla-related: 677170
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/ide/core.c |   48 ++++++++++++++++++++++--------------------------
+ 1 files changed, 22 insertions(+), 26 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index e0953a2..7522176 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -2603,30 +2603,30 @@ void ide_init_drive(IDEState *s, DriveInfo *dinfo, const char *version)
+     int cylinders, heads, secs;
+     uint64_t nb_sectors;
+ 
+-    s->bs = dinfo->bdrv;
+-    bdrv_get_geometry(s->bs, &nb_sectors);
+-    bdrv_guess_geometry(s->bs, &cylinders, &heads, &secs);
+-    s->cylinders = cylinders;
+-    s->heads = heads;
+-    s->sectors = secs;
+-    s->nb_sectors = nb_sectors;
+-    /* The SMART values should be preserved across power cycles
+-       but they aren't.  */
+-    s->smart_enabled = 1;
+-    s->smart_autosave = 1;
+-    s->smart_errors = 0;
+-    s->smart_selftest_count = 0;
+-    if (bdrv_get_type_hint(s->bs) == BDRV_TYPE_CDROM) {
+-        s->is_cdrom = 1;
+-        bdrv_set_change_cb(s->bs, cdrom_change_cb, s);
++    if (dinfo && dinfo->bdrv) {
++        s->bs = dinfo->bdrv;
++        bdrv_get_geometry(s->bs, &nb_sectors);
++        bdrv_guess_geometry(s->bs, &cylinders, &heads, &secs);
++        s->cylinders = cylinders;
++        s->heads = heads;
++        s->sectors = secs;
++        s->nb_sectors = nb_sectors;
++        /* The SMART values should be preserved across power cycles
++           but they aren't.  */
++        s->smart_enabled = 1;
++        s->smart_autosave = 1;
++        s->smart_errors = 0;
++        s->smart_selftest_count = 0;
++        if (bdrv_get_type_hint(s->bs) == BDRV_TYPE_CDROM) {
++            s->is_cdrom = 1;
++            bdrv_set_change_cb(s->bs, cdrom_change_cb, s);
++        }
++        strncpy(s->drive_serial_str, drive_get_serial(s->bs),
++                sizeof(s->drive_serial_str));
+     }
+-    strncpy(s->drive_serial_str, drive_get_serial(s->bs),
+-            sizeof(s->drive_serial_str));
+-    
+-    if (!*s->drive_serial_str) {
++    if (strlen(s->drive_serial_str) == 0)
+         snprintf(s->drive_serial_str, sizeof(s->drive_serial_str),
+                  "QM%05d", s->drive_serial);
+-    }
+     if (version) {
+         pstrcpy(s->version, sizeof(s->version), version);
+     } else {
+@@ -2648,11 +2648,7 @@ static void ide_init1(IDEBus *bus, int unit, DriveInfo *dinfo)
+     s->smart_selftest_data = qemu_blockalign(s->bs, 512);
+     s->sector_write_timer = qemu_new_timer(vm_clock,
+                                            ide_sector_write_timer_cb, s);
+-    if (dinfo) {
+-        ide_init_drive(s, dinfo, NULL);
+-    } else {
+-        ide_reset(s);
+-    }
++    ide_init_drive(s, dinfo, NULL);
+ }
+ 
+ void ide_init2(IDEBus *bus, DriveInfo *hd0, DriveInfo *hd1,
+-- 
+1.7.4.rc1.16.gd2f15e
+

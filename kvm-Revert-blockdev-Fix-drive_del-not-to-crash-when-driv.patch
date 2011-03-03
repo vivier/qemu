@@ -1,0 +1,43 @@
+From c0f02fd473f7b87623d5a83c93c23e7e971db28a Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Thu, 3 Mar 2011 16:53:58 -0300
+Subject: [PATCH 01/12] Revert "blockdev: Fix drive_del not to crash when drive is not in use"
+
+RH-Reverts: 293237bc9bbce9e65841854bfad1938b6368c4e9
+RH-Reverts-patchwork-id: 18381
+Bugzilla-related: 677170
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/device-hotplug.c |   16 +++++++---------
+ 1 files changed, 7 insertions(+), 9 deletions(-)
+
+diff --git a/hw/device-hotplug.c b/hw/device-hotplug.c
+index cb9a4e0..16d7950 100644
+--- a/hw/device-hotplug.c
++++ b/hw/device-hotplug.c
+@@ -131,15 +131,13 @@ int do_drive_del(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ 
+     /* clean up guest state from pointing to host resource by
+      * finding and removing DeviceState "drive" property */
+-    if (bs->peer) {
+-        for (prop = bs->peer->info->props; prop && prop->name; prop++) {
+-            if (prop->info->type == PROP_TYPE_DRIVE) {
+-                ptr = qdev_get_prop_ptr(bs->peer, prop);
+-                if (*ptr == bs) {
+-                    bdrv_detach(bs, bs->peer);
+-                    *ptr = NULL;
+-                    break;
+-                }
++    for (prop = bs->peer->info->props; prop && prop->name; prop++) {
++        if (prop->info->type == PROP_TYPE_DRIVE) {
++            ptr = qdev_get_prop_ptr(bs->peer, prop);
++            if ((*ptr) == bs) {
++                bdrv_detach(bs, bs->peer);
++                *ptr = NULL;
++                break;
+             }
+         }
+     }
+-- 
+1.7.4.rc1.16.gd2f15e
+
