@@ -218,7 +218,6 @@ void qemu_system_cpu_hot_add(int cpu, int state);
 
 DriveInfo *add_init_drive(const char *opts);
 int simple_drive_add(Monitor *mon, const QDict *qdict, QObject **ret_data);
-int do_drive_del(Monitor *mon, const QDict *qdict, QObject **ret_data);
 
 /* pci-hotplug */
 void pci_device_hot_add(Monitor *mon, const QDict *qdict);

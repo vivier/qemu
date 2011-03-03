@@ -140,45 +140,6 @@ Note: The "force" argument defaults to false.
 EQMP
 
     {
-        .name       = RFQDN_REDHAT "drive_del",
-        .args_type  = "id:s",
-        .params     = "device",
-        .help       = "remove host block device",
-        .user_print = monitor_user_noop,
-        .mhandler.cmd_new = do_drive_del,
-    },
-
-STEXI
-@item __com.redhat_drive_del @var{device}
-@findex __com.redhat_drive_del
-Remove host block device.  The result is that guest generated IO is no longer
-submitted against the host device underlying the disk.  Once a drive has
-been deleted, the QEMU Block layer returns -EIO which results in IO
-errors in the guest for applications that are reading/writing to the device.
-ETEXI
-SQMP
-__com.redhat_drive_del
-----------
-
-    {
-Remove host block device.  The result is that guest generated IO is no longer
-submitted against the host device underlying the disk.  Once a drive has
-been deleted, the QEMU Block layer returns -EIO which results in IO
-errors in the guest for applications that are reading/writing to the device.
-
-Arguments:
-
-- "id": the device's ID (json-string)
-
-Example:
-
--> { "execute": "drive_del", "arguments": { "id": "block1" } }
-<- { "return": {} }
-
-EQMP
-
-    {
-
         .name       = "change",
         .args_type  = "device:B,target:F,arg:s?",
         .params     = "device filename [format]",
