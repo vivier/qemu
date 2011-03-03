@@ -1,0 +1,93 @@
+From eef27585954814795852c5e9af91f74ec80af93f Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Tue, 1 Mar 2011 17:43:24 -0300
+Subject: [PATCH 3/3] device-assignment: Don't skip closing unmapped resources
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20110301174121.9720.43510.stgit@s20.home>
+Patchwork-id: 19155
+O-Subject: [RHEL6.1 qemu-kvm PATCH] device-assignment: Don't skip closing
+	unmapped resources
+Bugzilla: 680058
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=680058
+Brew: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=3143074
+Upstream: N/A introduced by non-upstream commit 70237c63, because
+          our mapping code no longer matches upstream.
+
+If we do hotplugs in quick succession, it's possible that we
+remove the device before the guest maps it's resources.  Skipping
+resources with e_size == 0 is wrong, we only need to skip tearing
+down the direct mapping.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+---
+
+ hw/device-assignment.c |   42 ++++++++++++++++++++++--------------------
+ 1 files changed, 22 insertions(+), 20 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/device-assignment.c |   42 ++++++++++++++++++++++--------------------
+ 1 files changed, 22 insertions(+), 20 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index 3b3ba64..4c04fe5 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -828,27 +828,29 @@ static void free_assigned_device(AssignedDevice *dev)
+                                            region->r_size);
+                 }
+             } else if (pci_region->type & IORESOURCE_MEM) {
+-                if (region->e_size == 0)
+-                    continue;
+-
+-                if (pci_region->base_addr <= dev->msix_table_addr &&
+-                    pci_region->base_addr + pci_region->size >=
+-                    dev->msix_table_addr) {
+-
+-                    int offset = dev->msix_table_addr - pci_region->base_addr;
+-
+-                    if (offset > 0)
++                if (region->e_size) {
++                    if (pci_region->base_addr <= dev->msix_table_addr &&
++                        pci_region->base_addr + pci_region->size >=
++                        dev->msix_table_addr) {
++
++                        int offset = dev->msix_table_addr -
++                                     pci_region->base_addr;
++
++                        if (offset > 0) {
++                            kvm_destroy_phys_mem(kvm_context,
++                                                 region->e_physbase,
++                                                 TARGET_PAGE_ALIGN(offset));
++                        }
++                        if (region->e_size > offset + TARGET_PAGE_SIZE) {
++                            kvm_destroy_phys_mem(kvm_context,
++                                 region->e_physbase + offset + TARGET_PAGE_SIZE,
++                                 TARGET_PAGE_ALIGN(region->e_size - offset -
++                                                   TARGET_PAGE_SIZE));
++                        }
++                    } else {
+                         kvm_destroy_phys_mem(kvm_context, region->e_physbase,
+-                                             TARGET_PAGE_ALIGN(offset));
+-                    if (region->e_size > offset + TARGET_PAGE_SIZE)
+-                        kvm_destroy_phys_mem(kvm_context,
+-                               region->e_physbase + offset + TARGET_PAGE_SIZE,
+-                               TARGET_PAGE_ALIGN(region->e_size - offset -
+-                                                 TARGET_PAGE_SIZE));
+-
+-                } else {
+-                    kvm_destroy_phys_mem(kvm_context, region->e_physbase,
+-                                         TARGET_PAGE_ALIGN(region->e_size));
++                                             TARGET_PAGE_ALIGN(region->e_size));
++                    }
+                 }
+ 
+                 if (region->u.r_virtbase) {
+-- 
+1.7.4.rc1.16.gd2f15e
+

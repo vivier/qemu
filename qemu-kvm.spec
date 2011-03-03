@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.148
+%define pkgrelease 2.149
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2393,6 +2393,12 @@ Patch2059: kvm-ide-Reject-invalid-CHS-geometry.patch
 Patch2061: kvm-Move-KVM-and-Xen-global-flags-to-vl.c.patch
 # For bz#662701 - Option -enable-kvm should exit when KVM is unavailable
 Patch2062: kvm-qemu-kvm-Switch-to-upstream-enable-kvm-semantics.patch
+# For bz#607598 - Incorrect & misleading error reporting when failing to open a drive due to block driver whitelist denial
+Patch2063: kvm-Fix-error-message-in-drive_init.patch
+# For bz#607598 - Incorrect & misleading error reporting when failing to open a drive due to block driver whitelist denial
+Patch2064: kvm-block-Use-error-codes-from-lower-levels-for-error-me.patch
+# For bz#680058 - can't hotplug second vf successful with message "Too many open files"
+Patch2065: kvm-device-assignment-Don-t-skip-closing-unmapped-resour.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3562,6 +3568,9 @@ ApplyOptionalPatch()
 %patch2059 -p1
 %patch2061 -p1
 %patch2062 -p1
+%patch2063 -p1
+%patch2064 -p1
+%patch2065 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3783,6 +3792,15 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Mar 03 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.149.el6
+- kvm-Fix-error-message-in-drive_init.patch [bz#607598]
+- kvm-block-Use-error-codes-from-lower-levels-for-error-me.patch [bz#607598]
+- kvm-device-assignment-Don-t-skip-closing-unmapped-resour.patch [bz#680058]
+- Resolves: bz#607598
+  (Incorrect & misleading error reporting when failing to open a drive due to block driver whitelist denial)
+- Resolves: bz#680058
+  (can't hotplug second vf successful with message "Too many open files")
+
 * Thu Feb 24 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.148.el6
 - kvm-ide-Make-ide_init_drive-return-success.patch [bz#655735]
 - kvm-ide-Reject-readonly-drives-unless-CD-ROM.patch [bz#655735]
