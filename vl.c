@@ -2101,16 +2101,14 @@ void blockdev_mark_auto_del(BlockDriverState *bs)
 {
     DriveInfo *dinfo = drive_get_by_blockdev(bs);
 
-    if (dinfo) {
-        dinfo->auto_del = 1;
-    }
+    dinfo->auto_del = 1;
 }
 
 void blockdev_auto_del(BlockDriverState *bs)
 {
     DriveInfo *dinfo = drive_get_by_blockdev(bs);
 
-    if (dinfo && dinfo->auto_del) {
+    if (dinfo->auto_del) {
         drive_uninit(dinfo);
     }
 }
