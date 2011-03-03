@@ -601,7 +601,7 @@ static int virtio_blk_exit_pci(PCIDevice *pci_dev)
     VirtIOPCIProxy *proxy = DO_UPCAST(VirtIOPCIProxy, pci_dev, pci_dev);
 
     virtio_blk_exit(proxy->vdev);
-    blockdev_mark_auto_del(proxy->block.dinfo->bdrv);
+    drive_uninit(proxy->block.dinfo);
     return virtio_exit_pci(pci_dev);
 }
 
