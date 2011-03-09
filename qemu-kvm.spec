@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.149
+%define pkgrelease 2.150
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2399,6 +2399,8 @@ Patch2063: kvm-Fix-error-message-in-drive_init.patch
 Patch2064: kvm-block-Use-error-codes-from-lower-levels-for-error-me.patch
 # For bz#680058 - can't hotplug second vf successful with message "Too many open files"
 Patch2065: kvm-device-assignment-Don-t-skip-closing-unmapped-resour.patch
+# For bz#676529 - core dumped when save snapshot to non-exist disk
+Patch2066: kvm-Improve-error-handling-in-do_snapshot_blkdev.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3571,6 +3573,7 @@ ApplyOptionalPatch()
 %patch2063 -p1
 %patch2064 -p1
 %patch2065 -p1
+%patch2066 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3792,6 +3795,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Mar 09 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.150.el6
+- kvm-Improve-error-handling-in-do_snapshot_blkdev.patch [bz#676529]
+- Resolves: bz#676529
+  (core dumped when save snapshot to non-exist disk)
+
 * Thu Mar 03 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.149.el6
 - kvm-Fix-error-message-in-drive_init.patch [bz#607598]
 - kvm-block-Use-error-codes-from-lower-levels-for-error-me.patch [bz#607598]

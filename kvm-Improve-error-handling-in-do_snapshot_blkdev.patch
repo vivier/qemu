@@ -1,0 +1,104 @@
+From 609f45263a676fec5baef7a1c233b3a153fd9b21 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Wed, 9 Mar 2011 15:41:00 -0300
+Subject: [PATCH] Improve error handling in do_snapshot_blkdev()
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1299685260-24746-1-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 19760
+O-Subject: [RHEL6.1 qemu-kvm PATCH v4] Improve error handling in
+	do_snapshot_blkdev()
+Bugzilla: 676529
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Upstream status: Posted
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=676529
+
+In case we cannot open the newly created snapshot image, try to fall
+back to the original image file and continue running on that, which
+should prevent the guest from aborting.
+
+This is a corner case which can happen if the admin by mistake
+specifies the snapshot file on a virtual file system which does not
+support O_DIRECT. bdrv_create() does not use O_DIRECT, but the
+following open in bdrv_open() does and will then fail.
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+---
+ monitor.c |   23 +++++++++++++++++------
+ 1 files changed, 17 insertions(+), 6 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c |   23 +++++++++++++++++------
+ 1 files changed, 17 insertions(+), 6 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 796d745..e80cc66 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -1053,9 +1053,10 @@ int do_snapshot_blkdev(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     const char *filename = qdict_get_try_str(qdict, "snapshot_file");
+     const char *format = qdict_get_try_str(qdict, "format");
+     BlockDriverState *bs;
+-    BlockDriver *drv, *proto_drv;
++    BlockDriver *drv, *old_drv, *proto_drv;
+     int ret = 0;
+     int flags;
++    char old_filename[1024];
+ 
+     if (!filename) {
+         qerror_report(QERR_MISSING_PARAMETER, "snapshot_file");
+@@ -1070,6 +1071,11 @@ int do_snapshot_blkdev(Monitor *mon, const QDict *qdict, QObject **ret_data)
+         goto out;
+     }
+ 
++    pstrcpy(old_filename, sizeof(old_filename), bs->filename);
++
++    old_drv = bs->drv;
++    flags = bs->open_flags;
++
+     if (!format) {
+         format = "qcow2";
+     }
+@@ -1089,7 +1095,7 @@ int do_snapshot_blkdev(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     }
+ 
+     ret = bdrv_img_create(filename, format, bs->filename,
+-                          bs->drv->format_name, NULL, -1, bs->open_flags);
++                          bs->drv->format_name, NULL, -1, flags);
+     if (ret) {
+         goto out;
+     }
+@@ -1097,15 +1103,20 @@ int do_snapshot_blkdev(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     qemu_aio_flush();
+     bdrv_flush(bs);
+ 
+-    flags = bs->open_flags;
+     bdrv_close(bs);
+     ret = bdrv_open(bs, filename, flags, drv);
+     /*
+-     * If reopening the image file we just created fails, we really
+-     * are in trouble :(
++     * If reopening the image file we just created fails, fall back
++     * and try to re-open the original image. If that fails too, we
++     * are in serious trouble.
+      */
+     if (ret != 0) {
+-        abort();
++        ret = bdrv_open(bs, old_filename, flags, old_drv);
++        if (ret != 0) {
++            qerror_report(QERR_OPEN_FILE_FAILED, old_filename);
++        } else {
++            qerror_report(QERR_OPEN_FILE_FAILED, filename);
++        }
+     }
+ out:
+     if (ret) {
+-- 
+1.7.4.rc1.16.gd2f15e
+
