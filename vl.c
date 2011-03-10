@@ -5007,11 +5007,6 @@ static void termsig_handler(int signal)
     qemu_system_shutdown_request();
 }
 
-static void sigchld_handler(int signal)
-{
-    waitpid(-1, NULL, WNOHANG);
-}
-
 static void sighandler_setup(void)
 {
     struct sigaction act;
@@ -5021,10 +5016,6 @@ static void sighandler_setup(void)
     sigaction(SIGINT,  &act, NULL);
     sigaction(SIGHUP,  &act, NULL);
     sigaction(SIGTERM, &act, NULL);
-
-    act.sa_handler = sigchld_handler;
-    act.sa_flags = SA_NOCLDSTOP;
-    sigaction(SIGCHLD, &act, NULL);
 }
 
 #endif
