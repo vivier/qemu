@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.14.0
-Release: 2%{?dist}
+Release: 3%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -37,7 +37,16 @@ Source8: ksmtuned.conf
 # with F-13/
 Patch00: pc-add-a-Fedora-13-machine-type-for-backward-compat.patch
 
+# Patches from upstream:
 Patch01: qemu-fix-non-PCI-target-build.patch
+Patch02: qemu-vhost-fix-dirty-page-handling.patch
+
+# Spice fixes
+Patch20: 0001-qxl-spice-display-move-pipe-to-ssd.patch
+Patch21: 0002-qxl-implement-get_command-in-vga-mode-without-locks.patch
+Patch22: 0003-qxl-spice-remove-qemu_mutex_-un-lock_iothread-around.patch
+Patch23: 0004-hw-qxl-render-drop-cursor-locks-replace-with-pipe.patch
+
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -570,6 +579,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Mar 16 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.14.0-3
+- Fix migration issue with vhost
+- Fix qxl locking issues for spice
+
 * Wed Mar 02 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.14.0-2
 - Re-enable sparc and cris builds
 
