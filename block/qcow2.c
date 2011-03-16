@@ -27,6 +27,8 @@
 #include <zlib.h>
 #include "aes.h"
 #include "block/qcow2.h"
+#include "qemu-error.h"
+#include "qerror.h"
 
 /*
   Differences with QCOW:
@@ -60,7 +62,7 @@ static int qcow2_probe(const uint8_t *buf, int buf_size, const char *filename)
 
     if (buf_size >= sizeof(QCowHeader) &&
         be32_to_cpu(cow_header->magic) == QCOW_MAGIC &&
-        be32_to_cpu(cow_header->version) == QCOW_VERSION)
+        be32_to_cpu(cow_header->version) >= QCOW_VERSION)
         return 100;
     else
         return 0;
@@ -163,8 +165,16 @@ static int qcow2_open(BlockDriverState *bs, int flags)
     be64_to_cpus(&header.snapshots_offset);
     be32_to_cpus(&header.nb_snapshots);
 
-    if (header.magic != QCOW_MAGIC || header.version != QCOW_VERSION) {
+    if (header.magic != QCOW_MAGIC) {
         ret = -EINVAL;
+        goto fail;
+    }
+    if (header.version != QCOW_VERSION) {
+        char version[64];
+        snprintf(version, sizeof(version), "QCOW version %d", header.version);
+        qerror_report(QERR_UNKNOWN_BLOCK_FORMAT_FEATURE,
+            bs->device_name, "qcow2", version);
+        ret = -ENOTSUP;
         goto fail;
     }
     if (header.cluster_bits < MIN_CLUSTER_BITS ||
