@@ -1,0 +1,62 @@
+From c45479620c23bac1200c24644145ed2a130134a2 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Wed, 16 Mar 2011 13:52:40 -0300
+Subject: [PATCH 10/11] qcow2: Fix order in L2 table COW
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1300283560-13085-9-git-send-email-kwolf@redhat.com>
+Patchwork-id: 20138
+O-Subject: [RHEL-6.1 qemu-kvm PATCH 8/8] qcow2: Fix order in L2 table COW
+Bugzilla: 688146
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+Bugzilla: 688146
+
+When copying L2 tables (this happens only with internal snapshots), the order
+wasn't completely safe, so that after a crash you could end up with a L2 table
+that has too low refcount, possibly leading to corruption in the long run.
+
+This patch puts the operations in the right order: First allocate the new
+L2 table and replace the reference, and only then decrease the refcount of the
+old table.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 16fde5f2c2788232b16c06d34d0459a5c1ec1f6c)
+---
+ block/qcow2-cluster.c |    9 ++++++---
+ 1 files changed, 6 insertions(+), 3 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ block/qcow2-cluster.c |    9 ++++++---
+ 1 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/block/qcow2-cluster.c b/block/qcow2-cluster.c
+index e49509e..612712a 100644
+--- a/block/qcow2-cluster.c
++++ b/block/qcow2-cluster.c
+@@ -508,13 +508,16 @@ static int get_cluster_table(BlockDriverState *bs, uint64_t offset,
+             return ret;
+         }
+     } else {
+-        /* FIXME Order */
+-        if (l2_offset)
+-            qcow2_free_clusters(bs, l2_offset, s->l2_size * sizeof(uint64_t));
++        /* First allocate a new L2 table (and do COW if needed) */
+         ret = l2_allocate(bs, l1_index, &l2_table);
+         if (ret < 0) {
+             return ret;
+         }
++
++        /* Then decrease the refcount of the old table */
++        if (l2_offset) {
++            qcow2_free_clusters(bs, l2_offset, s->l2_size * sizeof(uint64_t));
++        }
+         l2_offset = s->l1_table[l1_index] & ~QCOW_OFLAG_COPIED;
+     }
+ 
+-- 
+1.7.4.1.230.gae447
+

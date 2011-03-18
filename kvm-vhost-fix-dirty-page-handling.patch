@@ -1,0 +1,54 @@
+From e841a0294348cb4c954d7163df066bf40f8a46ff Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Wed, 16 Mar 2011 11:00:36 -0300
+Subject: [PATCH 02/11] vhost: fix dirty page handling
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <20110316110035.GA20050@redhat.com>
+Patchwork-id: 20126
+O-Subject: [PATCH RHEL6.1] vhost: fix dirty page handling
+Bugzilla: 684076
+RH-Acked-by: Xiao Wang <jasowang@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+vhost was passing a physical address to cpu_physical_memory_set_dirty,
+which is wrong: we need to translate to ram address first
+
+Upstream status: posted
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=684076
+Brew: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=3181659
+Tested-by: akong
+
+Note: this is a blocker bug, pls review ASAP
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ hw/vhost.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/vhost.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/hw/vhost.c b/hw/vhost.c
+index aaa34e4..97a1299 100644
+--- a/hw/vhost.c
++++ b/hw/vhost.c
+@@ -49,8 +49,10 @@ static void vhost_dev_sync_region(struct vhost_dev *dev,
+         log = __sync_fetch_and_and(from, 0);
+         while ((bit = sizeof(log) > sizeof(int) ?
+                 ffsll(log) : ffs(log))) {
++            ram_addr_t ram_addr;
+             bit -= 1;
+-            cpu_physical_memory_set_dirty(addr + bit * VHOST_LOG_PAGE);
++            ram_addr = cpu_get_physical_page_desc(addr + bit * VHOST_LOG_PAGE);
++            cpu_physical_memory_set_dirty(ram_addr);
+             log &= ~(0x1ull << bit);
+         }
+         addr += VHOST_LOG_CHUNK;
+-- 
+1.7.4.1.230.gae447
+

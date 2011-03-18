@@ -1,0 +1,133 @@
+From 4f3bcb4cd17ba8bad80b1e8b57a41dcf9cc96eb7 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Wed, 16 Mar 2011 13:52:35 -0300
+Subject: [PATCH 05/11] QCOW2: bug fix - read base image beyond its size
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1300283560-13085-4-git-send-email-kwolf@redhat.com>
+Patchwork-id: 20134
+O-Subject: [RHEL-6.1 qemu-kvm PATCH 3/8] QCOW2: bug fix - read base image beyond
+	its size
+Bugzilla: 688147
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+Bugzilla: 688147
+
+This patch fixes the following bug in QCOW2. For a QCOW2 image that is larger
+than its base image, when handling a read request straddling over the end of the
+base image, the QCOW2 driver attempts to read beyond the end of the base image
+and the request would fail.
+
+This bug was found by Fast Virtual Disk (FVD)'s fully automated testing tool.
+The following test triggered the bug.
+
+dd if=/dev/zero of=/var/ramdisk/truth.raw count=0 bs=1 seek=1098561536
+dd if=/dev/zero of=/var/ramdisk/zero-500M.raw count=0 bs=1 seek=593099264
+./qemu-img create -f qcow2 -ocluster_size=65536,backing_fmt=blksim -b /var/ramdisk/zero-500M.raw /var/ramdisk/test.qcow2 1098561536
+./qemu-io --auto --seed=30477694 --truth=/var/ramdisk/truth.raw --format=qcow2 --test=blksim:/var/ramdisk/test.qcow2 --verify_write=true --compare_before=false --compare_after=true --round=100000 --parallel=100 --io_size=10485760 --fail_prob=0 --cancel_prob=0 --instant_qemubh=true
+
+Signed-off-by: Chunqiang Tang <ctang@us.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit e0d9c6f93729c9bfc98fcafcd73098bb8e131aeb)
+
+Conflicts:
+
+	cutils.c
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block/qcow2.c |    5 ++---
+ cutils.c      |   31 +++++++++++++++++++++++++++++++
+ qemu-common.h |    2 ++
+ 3 files changed, 35 insertions(+), 3 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ block/qcow2.c |    5 ++---
+ cutils.c      |   31 +++++++++++++++++++++++++++++++
+ qemu-common.h |    2 ++
+ 3 files changed, 35 insertions(+), 3 deletions(-)
+
+diff --git a/block/qcow2.c b/block/qcow2.c
+index 423e24a..0d372ed 100644
+--- a/block/qcow2.c
++++ b/block/qcow2.c
+@@ -355,7 +355,7 @@ int qcow2_backing_read1(BlockDriverState *bs, QEMUIOVector *qiov,
+     else
+         n1 = bs->total_sectors - sector_num;
+ 
+-    qemu_iovec_memset(qiov, 0, 512 * (nb_sectors - n1));
++    qemu_iovec_memset_skip(qiov, 0, 512 * (nb_sectors - n1), 512 * n1);
+ 
+     return n1;
+ }
+@@ -478,8 +478,7 @@ static void qcow2_aio_read_cb(void *opaque, int ret)
+             if (n1 > 0) {
+                 BLKDBG_EVENT(bs->file, BLKDBG_READ_BACKING_AIO);
+                 acb->hd_aiocb = bdrv_aio_readv(bs->backing_hd, acb->sector_num,
+-                                    &acb->hd_qiov, acb->cur_nr_sectors,
+-				    qcow2_aio_read_cb, acb);
++                                    &acb->hd_qiov, n1, qcow2_aio_read_cb, acb);
+                 if (acb->hd_aiocb == NULL)
+                     goto done;
+             } else {
+diff --git a/cutils.c b/cutils.c
+index 01588d3..94fa4cf 100644
+--- a/cutils.c
++++ b/cutils.c
+@@ -272,6 +272,37 @@ void qemu_iovec_memset(QEMUIOVector *qiov, int c, size_t count)
+     }
+ }
+ 
++void qemu_iovec_memset_skip(QEMUIOVector *qiov, int c, size_t count,
++                            size_t skip)
++{
++    int i;
++    size_t done;
++    void *iov_base;
++    uint64_t iov_len;
++
++    done = 0;
++    for (i = 0; (i < qiov->niov) && (done != count); i++) {
++        if (skip >= qiov->iov[i].iov_len) {
++            /* Skip the whole iov */
++            skip -= qiov->iov[i].iov_len;
++            continue;
++        } else {
++            /* Skip only part (or nothing) of the iov */
++            iov_base = (uint8_t*) qiov->iov[i].iov_base + skip;
++            iov_len = qiov->iov[i].iov_len - skip;
++            skip = 0;
++        }
++
++        if (done + iov_len > count) {
++            memset(iov_base, c, count - done);
++            break;
++        } else {
++            memset(iov_base, c, iov_len);
++        }
++        done += iov_len;
++    }
++}
++
+ /*
+  * Convert string to bytes, allowing either B/b for bytes, K/k for KB,
+  * M/m for MB, G/g for GB or T/t for TB. Default without any postfix
+diff --git a/qemu-common.h b/qemu-common.h
+index c1dd252..d6b86b4 100644
+--- a/qemu-common.h
++++ b/qemu-common.h
+@@ -287,6 +287,8 @@ void qemu_iovec_reset(QEMUIOVector *qiov);
+ void qemu_iovec_to_buffer(QEMUIOVector *qiov, void *buf);
+ void qemu_iovec_from_buffer(QEMUIOVector *qiov, const void *buf, size_t count);
+ void qemu_iovec_memset(QEMUIOVector *qiov, int c, size_t count);
++void qemu_iovec_memset_skip(QEMUIOVector *qiov, int c, size_t count,
++                            size_t skip);
+ 
+ struct Monitor;
+ typedef struct Monitor Monitor;
+-- 
+1.7.4.1.230.gae447
+

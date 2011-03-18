@@ -1,0 +1,70 @@
+From cb0981a570ebf417aa5076c3fdbe98353d393aa6 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Wed, 16 Mar 2011 13:52:37 -0300
+Subject: [PATCH 07/11] qcow2: Fix error handling for reading compressed clusters
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1300283560-13085-6-git-send-email-kwolf@redhat.com>
+Patchwork-id: 20135
+O-Subject: [RHEL-6.1 qemu-kvm PATCH 5/8] qcow2: Fix error handling for reading
+	compressed clusters
+Bugzilla: 688146
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+Bugzilla: 688146
+
+When reading a compressed cluster failed, qcow2 falsely returned success.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Reviewed-by: Markus Armbruster <armbru@redhat.com>
+(cherry picked from commit 8af364884355b3f0c5d60a2d2f427927739658ea)
+---
+ block/qcow2-cluster.c |    4 ++--
+ block/qcow2.c         |    4 +++-
+ 2 files changed, 5 insertions(+), 3 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ block/qcow2-cluster.c |    4 ++--
+ block/qcow2.c         |    4 +++-
+ 2 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/block/qcow2-cluster.c b/block/qcow2-cluster.c
+index 7bc6143..e49509e 100644
+--- a/block/qcow2-cluster.c
++++ b/block/qcow2-cluster.c
+@@ -871,11 +871,11 @@ int qcow2_decompress_cluster(BlockDriverState *bs, uint64_t cluster_offset)
+         BLKDBG_EVENT(bs->file, BLKDBG_READ_COMPRESSED);
+         ret = bdrv_read(bs->file, coffset >> 9, s->cluster_data, nb_csectors);
+         if (ret < 0) {
+-            return -1;
++            return ret;
+         }
+         if (decompress_buffer(s->cluster_cache, s->cluster_size,
+                               s->cluster_data + sector_offset, csize) < 0) {
+-            return -1;
++            return -EIO;
+         }
+         s->cluster_cache_offset = coffset;
+     }
+diff --git a/block/qcow2.c b/block/qcow2.c
+index 42ed614..314cc4d 100644
+--- a/block/qcow2.c
++++ b/block/qcow2.c
+@@ -497,8 +497,10 @@ static void qcow2_aio_read_cb(void *opaque, int ret)
+         }
+     } else if (acb->cluster_offset & QCOW_OFLAG_COMPRESSED) {
+         /* add AIO support for compressed blocks ? */
+-        if (qcow2_decompress_cluster(bs, acb->cluster_offset) < 0)
++        ret = qcow2_decompress_cluster(bs, acb->cluster_offset);
++        if (ret < 0) {
+             goto done;
++        }
+ 
+         qemu_iovec_from_buffer(&acb->hd_qiov,
+             s->cluster_cache + index_in_cluster * 512,
+-- 
+1.7.4.1.230.gae447
+

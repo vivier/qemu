@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.150
+%define pkgrelease 2.151
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2401,6 +2401,28 @@ Patch2064: kvm-block-Use-error-codes-from-lower-levels-for-error-me.patch
 Patch2065: kvm-device-assignment-Don-t-skip-closing-unmapped-resour.patch
 # For bz#676529 - core dumped when save snapshot to non-exist disk
 Patch2066: kvm-Improve-error-handling-in-do_snapshot_blkdev.patch
+# For bz#683295 - qemu-kvm: Invalid parameter 'vhostforce'
+Patch2067: kvm-net-Add-the-missing-option-declaration-of-vhostforce.patch
+# For bz#684076 - Segfault occurred during migration
+Patch2068: kvm-vhost-fix-dirty-page-handling.patch
+# For bz#688119 - qcow2: qcow2_open doesn't return useful errors
+Patch2069: kvm-block-qcow2.c-rename-qcow_-functions-to-qcow2_.patch
+# For bz#688119 - qcow2: qcow2_open doesn't return useful errors
+Patch2070: kvm-Add-proper-errno-error-return-values-to-qcow2_open.patch
+# For bz#688147 - qcow2: Reads fail with backing file smaller than snapshot
+Patch2071: kvm-QCOW2-bug-fix-read-base-image-beyond-its-size.patch
+# For bz#688146 - qcow2: Some paths fail to handle I/O errors
+Patch2072: kvm-qcow2-Fix-error-handling-for-immediate-backing-file-.patch
+# For bz#688146 - qcow2: Some paths fail to handle I/O errors
+Patch2073: kvm-qcow2-Fix-error-handling-for-reading-compressed-clus.patch
+# For bz#688119 - qcow2: qcow2_open doesn't return useful errors
+Patch2074: kvm-qerror-Add-QERR_UNKNOWN_BLOCK_FORMAT_FEATURE.patch
+# For bz#688119 - qcow2: qcow2_open doesn't return useful errors
+Patch2075: kvm-qcow2-Report-error-for-version-2.patch
+# For bz#688146 - qcow2: Some paths fail to handle I/O errors
+Patch2076: kvm-qcow2-Fix-order-in-L2-table-COW.patch
+# For bz#688428 - qemu-kvm -no-kvm segfaults on pci_add
+Patch2077: kvm-pci-assign-Catch-missing-KVM-support.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3574,6 +3596,17 @@ ApplyOptionalPatch()
 %patch2064 -p1
 %patch2065 -p1
 %patch2066 -p1
+%patch2067 -p1
+%patch2068 -p1
+%patch2069 -p1
+%patch2070 -p1
+%patch2071 -p1
+%patch2072 -p1
+%patch2073 -p1
+%patch2074 -p1
+%patch2075 -p1
+%patch2076 -p1
+%patch2077 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3795,6 +3828,31 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Mar 18 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.151.el6
+- kvm-net-Add-the-missing-option-declaration-of-vhostforce.patch [bz#683295]
+- kvm-vhost-fix-dirty-page-handling.patch [bz#684076]
+- kvm-block-qcow2.c-rename-qcow_-functions-to-qcow2_.patch [bz#688119]
+- kvm-Add-proper-errno-error-return-values-to-qcow2_open.patch [bz#688119]
+- kvm-QCOW2-bug-fix-read-base-image-beyond-its-size.patch [bz#688147]
+- kvm-qcow2-Fix-error-handling-for-immediate-backing-file-.patch [bz#688146]
+- kvm-qcow2-Fix-error-handling-for-reading-compressed-clus.patch [bz#688146]
+- kvm-qerror-Add-QERR_UNKNOWN_BLOCK_FORMAT_FEATURE.patch [bz#688119]
+- kvm-qcow2-Report-error-for-version-2.patch [bz#688119]
+- kvm-qcow2-Fix-order-in-L2-table-COW.patch [bz#688146]
+- kvm-pci-assign-Catch-missing-KVM-support.patch [bz#688428]
+- Resolves: bz#683295
+  (qemu-kvm: Invalid parameter 'vhostforce')
+- Resolves: bz#684076
+  (Segfault occurred during migration)
+- Resolves: bz#688119
+  (qcow2: qcow2_open doesn't return useful errors)
+- Resolves: bz#688146
+  (qcow2: Some paths fail to handle I/O errors)
+- Resolves: bz#688147
+  (qcow2: Reads fail with backing file smaller than snapshot)
+- Resolves: bz#688428
+  (qemu-kvm -no-kvm segfaults on pci_add)
+
 * Wed Mar 09 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.150.el6
 - kvm-Improve-error-handling-in-do_snapshot_blkdev.patch [bz#676529]
 - Resolves: bz#676529

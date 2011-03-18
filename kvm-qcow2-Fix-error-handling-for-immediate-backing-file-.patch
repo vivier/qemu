@@ -1,0 +1,51 @@
+From 56d5f679260363683371c5c94f3bb257eed733cd Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Wed, 16 Mar 2011 13:52:36 -0300
+Subject: [PATCH 06/11] qcow2: Fix error handling for immediate backing file read failure
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1300283560-13085-5-git-send-email-kwolf@redhat.com>
+Patchwork-id: 20133
+O-Subject: [RHEL-6.1 qemu-kvm PATCH 4/8] qcow2: Fix error handling for immediate
+	backing file read failure
+Bugzilla: 688146
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+Bugzilla: 688146
+
+Requests could return success even though they failed when bdrv_aio_readv
+returned NULL for a backing file read.
+
+Reported-by: Chunqiang Tang <ctang@us.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 3ab4c7e92d39d40e6dc0bdb1c2320889543691cb)
+---
+ block/qcow2.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ block/qcow2.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/block/qcow2.c b/block/qcow2.c
+index 0d372ed..42ed614 100644
+--- a/block/qcow2.c
++++ b/block/qcow2.c
+@@ -479,8 +479,10 @@ static void qcow2_aio_read_cb(void *opaque, int ret)
+                 BLKDBG_EVENT(bs->file, BLKDBG_READ_BACKING_AIO);
+                 acb->hd_aiocb = bdrv_aio_readv(bs->backing_hd, acb->sector_num,
+                                     &acb->hd_qiov, n1, qcow2_aio_read_cb, acb);
+-                if (acb->hd_aiocb == NULL)
++                if (acb->hd_aiocb == NULL) {
++                    ret = -EIO;
+                     goto done;
++                }
+             } else {
+                 ret = qcow2_schedule_bh(qcow2_aio_read_bh, acb);
+                 if (ret < 0)
+-- 
+1.7.4.1.230.gae447
+

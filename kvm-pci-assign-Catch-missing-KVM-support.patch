@@ -1,0 +1,54 @@
+From fed3dd8b59c665741e50a9e7bbadc543ac29c933 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Thu, 17 Mar 2011 20:51:23 -0300
+Subject: [PATCH 11/11] pci-assign: Catch missing KVM support
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20110317205108.26074.448.stgit@s20.home>
+Patchwork-id: 20216
+O-Subject: [RHEL6.1 qemu-kvm PATCH] pci-assign: Catch missing KVM support
+Bugzilla: 688428
+RH-Acked-by: Chris Wright <chrisw@redhat.com>
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Jan Kiszka <jan.kiszka@siemens.com>
+
+Bugillza: https://bugzilla.redhat.com/show_bug.cgi?id=688428
+Brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=3186061
+Upstream commit: 420fe74769cc67baec6f3d962dc054e2972ca3ae
+
+Report an error instead of raising a SEGV when a pci-assign device is
+about to be initialized without KVM enabled.
+
+Signed-off-by: Jan Kiszka <jan.kiszka@siemens.com>
+Signed-off-by: Avi Kivity <avi@redhat.com>
+---
+
+ hw/device-assignment.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/device-assignment.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index 4c04fe5..ef65d80 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -1655,6 +1655,11 @@ static int assigned_initfn(struct PCIDevice *pci_dev)
+     uint8_t e_device, e_intx;
+     int r;
+ 
++    if (!kvm_enabled()) {
++        error_report("pci-assign: error: requires KVM support");
++        return -1;
++    }
++
+     {   /*  RHEL6.1 bz670787 */
+         AssignedDevice *adev;
+         int i = 0;
+-- 
+1.7.4.1.230.gae447
+

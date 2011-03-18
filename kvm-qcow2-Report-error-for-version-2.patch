@@ -1,0 +1,84 @@
+From ec80ff9f8670a1b02d35a77690b096169b7c83b9 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Wed, 16 Mar 2011 13:52:39 -0300
+Subject: [PATCH 09/11] qcow2: Report error for version > 2
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1300283560-13085-8-git-send-email-kwolf@redhat.com>
+Patchwork-id: 20137
+O-Subject: [RHEL-6.1 qemu-kvm PATCH 7/8] qcow2: Report error for version > 2
+Bugzilla: 688119
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+Bugzilla: 688119
+
+The qcow2 driver is now declared responsible for any QCOW image that has
+version 2 or greater (before this, version 3 would be detected as raw).
+
+For everything newer than version 2, an error is reported.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Reviewed-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit e8cdcec123facf0ed273d941caeeeb9b08f14955)
+
+Conflicts:
+
+	block/qcow2.c
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block/qcow2.c |   14 ++++++++++++--
+ 1 files changed, 12 insertions(+), 2 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ block/qcow2.c |   14 ++++++++++++--
+ 1 files changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/block/qcow2.c b/block/qcow2.c
+index 314cc4d..bf25813 100644
+--- a/block/qcow2.c
++++ b/block/qcow2.c
+@@ -27,6 +27,8 @@
+ #include <zlib.h>
+ #include "aes.h"
+ #include "block/qcow2.h"
++#include "qemu-error.h"
++#include "qerror.h"
+ 
+ /*
+   Differences with QCOW:
+@@ -60,7 +62,7 @@ static int qcow2_probe(const uint8_t *buf, int buf_size, const char *filename)
+ 
+     if (buf_size >= sizeof(QCowHeader) &&
+         be32_to_cpu(cow_header->magic) == QCOW_MAGIC &&
+-        be32_to_cpu(cow_header->version) == QCOW_VERSION)
++        be32_to_cpu(cow_header->version) >= QCOW_VERSION)
+         return 100;
+     else
+         return 0;
+@@ -163,10 +165,18 @@ static int qcow2_open(BlockDriverState *bs, int flags)
+     be64_to_cpus(&header.snapshots_offset);
+     be32_to_cpus(&header.nb_snapshots);
+ 
+-    if (header.magic != QCOW_MAGIC || header.version != QCOW_VERSION) {
++    if (header.magic != QCOW_MAGIC) {
+         ret = -EINVAL;
+         goto fail;
+     }
++    if (header.version != QCOW_VERSION) {
++        char version[64];
++        snprintf(version, sizeof(version), "QCOW version %d", header.version);
++        qerror_report(QERR_UNKNOWN_BLOCK_FORMAT_FEATURE,
++            bs->device_name, "qcow2", version);
++        ret = -ENOTSUP;
++        goto fail;
++    }
+     if (header.cluster_bits < MIN_CLUSTER_BITS ||
+         header.cluster_bits > MAX_CLUSTER_BITS) {
+         ret = -EINVAL;
+-- 
+1.7.4.1.230.gae447
+
