@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.14.0
-Release: 3%{?dist}
+Release: 4%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -245,6 +245,12 @@ such as kvm_stat.
 
 %patch00 -p1
 %patch01 -p1
+%patch02 -p1
+
+%patch20 -p1
+%patch21 -p1
+%patch22 -p1
+%patch23 -p1
 
 %build
 # By default we build everything, but allow x86 to build a minimal version
@@ -579,6 +585,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Mar 18 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.14.0-4
+- Fix thinko on adding the most recent patches.
+
+
 * Wed Mar 16 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.14.0-3
 - Fix migration issue with vhost
 - Fix qxl locking issues for spice
