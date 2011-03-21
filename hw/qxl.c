@@ -340,7 +340,6 @@ static void interface_get_init_info(QXLInstance *sin, QXLDevInitInfo *info)
 static int interface_get_command(QXLInstance *sin, struct QXLCommandExt *ext)
 {
     PCIQXLDevice *qxl = container_of(sin, PCIQXLDevice, ssd.qxl);
-    SimpleSpiceUpdate *update;
     QXLCommandRing *ring;
     QXLCommand *cmd;
     int notify;
@@ -348,16 +347,25 @@ static int interface_get_command(QXLInstance *sin, struct QXLCommandExt *ext)
     switch (qxl->mode) {
     case QXL_MODE_VGA:
         dprint(qxl, 2, "%s: vga\n", __FUNCTION__);
-        update = qemu_spice_create_update(&qxl->ssd);
-        if (update == NULL) {
-            return false;
+        if (qxl_vga_mode_get_command(&qxl->ssd, ext)) {
+            qxl_log_command(qxl, "vga", ext);
+            return true;
         }
-        *ext = update->ext;
-        qxl_log_command(qxl, "vga", ext);
-        return true;
+        return false;
     case QXL_MODE_COMPAT:
     case QXL_MODE_NATIVE:
     case QXL_MODE_UNDEFINED:
+        /* flush any existing updates that we didn't send to the guest.
+         * since update != NULL it means the server didn't get it, and
+         * because we changed mode to != QXL_MODE_VGA, it won't. */
+        if (qxl->ssd.update != NULL) {
+            if (qxl->ssd.update != QXL_EMPTY_UPDATE) {
+                qemu_spice_destroy_update(&qxl->ssd, qxl->ssd.update);
+            }
+            qxl->ssd.update = NULL;
+            qxl->ssd.waiting_for_update = 0;
+        }
+        /* */
         dprint(qxl, 2, "%s: %s\n", __FUNCTION__,
                qxl->cmdflags ? "compat" : "native");
         ring = &qxl->ram->cmd_ring;
@@ -1057,17 +1065,50 @@ static void qxl_map(PCIDevice *pci, int region_num,
 
 static void pipe_read(void *opaque)
 {
-    PCIQXLDevice *d = opaque;
-    char dummy;
-    int len;
+    SimpleSpiceDisplay *ssd = opaque;
+    unsigned char cmd;
+    int len, set_irq = 0;
+    int create_update = 0;
 
-    do {
-        len = read(d->ssd.pipe[0], &dummy, sizeof(dummy));
-    } while (len == sizeof(dummy));
-    qxl_set_irq(d);
+    while (1) {
+        cmd = 0;
+        len = read(ssd->pipe[0], &cmd, sizeof(cmd));
+        if (len < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            if (errno == EAGAIN) {
+                break;
+            }
+            perror("qxl: pipe_read: read failed");
+            break;
+        }
+        switch (cmd) {
+        case QXL_SERVER_SET_IRQ:
+            set_irq = 1;
+            break;
+        case QXL_SERVER_CREATE_UPDATE:
+            create_update = 1;
+            break;
+        default:
+            fprintf(stderr, "%s: unknown cmd %u\n", __FUNCTION__, cmd);
+            abort();
+        }
+    }
+    /* no need to do either operation more than once */
+    if (create_update) {
+        assert(ssd->update == NULL);
+        ssd->update = qemu_spice_create_update(ssd);
+        if (ssd->update == NULL) {
+            ssd->update = QXL_EMPTY_UPDATE;
+        }
+        ssd->worker->wakeup(ssd->worker);
+    }
+    if (set_irq) {
+        qxl_set_irq(container_of(ssd, PCIQXLDevice, ssd));
+    }
 }
 
-/* called from spice server thread context only */
 static void qxl_send_events(PCIQXLDevice *d, uint32_t events)
 {
     uint32_t old_pending;
@@ -1082,9 +1123,11 @@ static void qxl_send_events(PCIQXLDevice *d, uint32_t events)
         /* running in io_thread thread */
         qxl_set_irq(d);
     } else {
-        if (write(d->ssd.pipe[1], d, 1) != 1) {
-            dprint(d, 1, "%s: write to pipe failed\n", __FUNCTION__);
-        }
+        /* called from spice-server thread */
+        int ret;
+        unsigned char ack = QXL_SERVER_SET_IRQ;
+        ret = write(d->ssd.pipe[1], &ack, 1);
+        assert(ret == 1);
     }
 }
 

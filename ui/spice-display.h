@@ -31,6 +31,15 @@
 
 #define NUM_SURFACES 1024
 
+/* For commands/requests from server thread to iothread */
+#define QXL_EMPTY_UPDATE ((void *)-1)
+enum {
+    QXL_SERVER_SET_IRQ = 1,
+    QXL_SERVER_CREATE_UPDATE,
+};
+
+struct SimpleSpiceUpdate;
+
 typedef struct SimpleSpiceDisplay {
     DisplayState *ds;
     void *buf;
@@ -48,6 +57,10 @@ typedef struct SimpleSpiceDisplay {
      * and in native mode) and without qxl */
     pthread_t          main;
     int                pipe[2];     /* to iothread */
+
+    /* ssd updates (one request/command at a time) */
+    struct SimpleSpiceUpdate *update;
+    int waiting_for_update;
 } SimpleSpiceDisplay;
 
 typedef struct SimpleSpiceUpdate {
@@ -71,6 +84,9 @@ void qemu_spice_display_update(SimpleSpiceDisplay *ssd,
                                int x, int y, int w, int h);
 void qemu_spice_display_resize(SimpleSpiceDisplay *ssd);
 void qemu_spice_display_refresh(SimpleSpiceDisplay *ssd);
+/* shared with qxl.c in vga mode and ui/spice-display (no qxl mode) */
+int qxl_vga_mode_get_command(
+    SimpleSpiceDisplay *ssd, struct QXLCommandExt *ext);
 /* used by both qxl and spice-display */
 void qxl_create_server_to_iothread_pipe(SimpleSpiceDisplay *ssd,
     IOHandler *pipe_read);
