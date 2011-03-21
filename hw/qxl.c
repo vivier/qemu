@@ -1062,7 +1062,7 @@ static void pipe_read(void *opaque)
     int len;
 
     do {
-        len = read(d->pipe[0], &dummy, sizeof(dummy));
+        len = read(d->ssd.pipe[0], &dummy, sizeof(dummy));
     } while (len == sizeof(dummy));
     qxl_set_irq(d);
 }
@@ -1078,10 +1078,11 @@ static void qxl_send_events(PCIQXLDevice *d, uint32_t events)
     if ((old_pending & le_events) == le_events) {
         return;
     }
-    if (pthread_self() == d->main) {
+    if (pthread_self() == d->ssd.main) {
+        /* running in io_thread thread */
         qxl_set_irq(d);
     } else {
-        if (write(d->pipe[1], d, 1) != 1) {
+        if (write(d->ssd.pipe[1], d, 1) != 1) {
             dprint(d, 1, "%s: write to pipe failed\n", __FUNCTION__);
         }
     }
@@ -1089,20 +1090,7 @@ static void qxl_send_events(PCIQXLDevice *d, uint32_t events)
 
 static void init_pipe_signaling(PCIQXLDevice *d)
 {
-   if (pipe(d->pipe) < 0) {
-       dprint(d, 1, "%s: pipe creation failed\n", __FUNCTION__);
-       return;
-   }
-#ifdef CONFIG_IOTHREAD
-   fcntl(d->pipe[0], F_SETFL, O_NONBLOCK);
-#else
-   fcntl(d->pipe[0], F_SETFL, O_NONBLOCK /* | O_ASYNC */);
-#endif
-   fcntl(d->pipe[1], F_SETFL, O_NONBLOCK);
-   fcntl(d->pipe[0], F_SETOWN, getpid());
-
-   d->main = pthread_self();
-   qemu_set_fd_handler(d->pipe[0], pipe_read, NULL, d);
+   qxl_create_server_to_iothread_pipe(&d->ssd, pipe_read);
 }
 
 /* graphics console */

@@ -43,6 +43,11 @@ typedef struct SimpleSpiceDisplay {
     QXLRect dirty;
     int notify;
     int running;
+
+    /* thread signaling - used both in qxl (in vga mode
+     * and in native mode) and without qxl */
+    pthread_t          main;
+    int                pipe[2];     /* to iothread */
 } SimpleSpiceDisplay;
 
 typedef struct SimpleSpiceUpdate {
@@ -66,3 +71,6 @@ void qemu_spice_display_update(SimpleSpiceDisplay *ssd,
                                int x, int y, int w, int h);
 void qemu_spice_display_resize(SimpleSpiceDisplay *ssd);
 void qemu_spice_display_refresh(SimpleSpiceDisplay *ssd);
+/* used by both qxl and spice-display */
+void qxl_create_server_to_iothread_pipe(SimpleSpiceDisplay *ssd,
+    IOHandler *pipe_read);
