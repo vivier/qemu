@@ -93,6 +93,8 @@ typedef struct PCIQXLDevice {
 
 /* qxl.c */
 void *qxl_phys2virt(PCIQXLDevice *qxl, QXLPHYSICAL phys, int group_id);
+void qxl_server_request_cursor_set(PCIQXLDevice *qxl, QEMUCursor *c, int x, int y);
+void qxl_server_request_cursor_move(PCIQXLDevice *qxl, int x, int y);
 
 /* qxl-logger.c */
 void qxl_log_cmd_cursor(PCIQXLDevice *qxl, QXLCursorCmd *cmd, int group_id);
@@ -102,3 +104,5 @@ void qxl_log_command(PCIQXLDevice *qxl, const char *ring, QXLCommandExt *ext);
 void qxl_render_resize(PCIQXLDevice *qxl);
 void qxl_render_update(PCIQXLDevice *qxl);
 void qxl_render_cursor(PCIQXLDevice *qxl, QXLCommandExt *ext);
+void qxl_render_cursor_set(SimpleSpiceDisplay *ssd, QEMUCursor *c, int x, int y);
+void qxl_render_cursor_move(SimpleSpiceDisplay *ssd, int x, int y);

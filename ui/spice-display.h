@@ -31,11 +31,22 @@
 
 #define NUM_SURFACES 1024
 
-/* For commands/requests from server thread to iothread */
+/*
+ * Commands/requests from server thread to iothread.
+ * Note that CREATE_UPDATE is used both with qxl and without it (spice-display)
+ * the others are only used with the qxl device.
+ *
+ * SET_IRQ - just the request is sent (1 byte)
+ * CREATE_UPDATE - jus the request is sent (1 byte)
+ * CURSOR_SET - send QXLServerRequestCursorSet
+ * CURSOR_MOVE - send QXLServerRequestCursorMove
+ */
 #define QXL_EMPTY_UPDATE ((void *)-1)
 enum {
     QXL_SERVER_SET_IRQ = 1,
     QXL_SERVER_CREATE_UPDATE,
+    QXL_SERVER_CURSOR_SET,
+    QXL_SERVER_CURSOR_MOVE
 };
 
 struct SimpleSpiceUpdate;

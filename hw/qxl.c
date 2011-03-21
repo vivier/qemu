@@ -117,6 +117,27 @@ static QXLMode qxl_modes[] = {
 #endif
 };
 
+typedef struct __attribute__ ((__packed__)) {
+    QEMUCursor *c;
+    int x;
+    int y;
+} QXLServerCursorSet;
+
+typedef struct __attribute__ ((__packed__)) {
+    int x;
+    int y;
+} QXLServerCursorMove;
+
+typedef struct __attribute__ ((__packed__)) {
+    unsigned char req;
+    QXLServerCursorMove data;
+} QXLServerCursorMoveRequest;
+
+typedef struct __attribute__ ((__packed__)) {
+    unsigned char req;
+    QXLServerCursorSet data;
+} QXLServerCursorSetRequest;
+
 static PCIQXLDevice *qxl0;
 
 static void qxl_send_events(PCIQXLDevice *d, uint32_t events);
@@ -334,6 +355,33 @@ static void interface_get_init_info(QXLInstance *sin, QXLDevInitInfo *info)
     info->internal_groupslot_id = 0;
     info->qxl_ram_size = le32_to_cpu(qxl->shadow_rom.num_pages) << TARGET_PAGE_BITS;
     info->n_surfaces = NUM_SURFACES;
+}
+
+/* called from spice server thread context only */
+void qxl_server_request_cursor_set(PCIQXLDevice *qxl, QEMUCursor *c, int x, int y)
+{
+    QXLServerCursorSetRequest req;
+    int r;
+
+    req.req = QXL_SERVER_CURSOR_SET;
+    req.data.c = c;
+    req.data.x = x;
+    req.data.y = y;
+    r = write(qxl->ssd.pipe[1], &req, sizeof(req));
+    assert(r == sizeof(req));
+}
+
+/* called from spice server thread context only */
+void qxl_server_request_cursor_move(PCIQXLDevice *qxl, int x, int y)
+{
+    QXLServerCursorMoveRequest req;
+    int r;
+
+    req.req = QXL_SERVER_CURSOR_MOVE;
+    req.data.x = x;
+    req.data.y = y;
+    r = write(qxl->ssd.pipe[1], &req, sizeof(req));
+    assert(r == sizeof(req));
 }
 
 /* called from spice server thread context only */
@@ -1055,12 +1103,37 @@ static void qxl_map(PCIDevice *pci, int region_num,
     }
 }
 
+static void read_bytes(int fd, void *buf, int len_requested)
+{
+    int len;
+    int total_len = 0;
+
+    do {
+        len = read(fd, buf, len_requested - total_len);
+        if (len < 0) {
+            if (errno == EINTR || errno == EAGAIN) {
+                continue;
+            }
+            perror("qxl: pipe_read: read failed");
+            /* will abort once it's out of the while loop */
+            break;
+        }
+        total_len += len;
+        buf = (uint8_t *)buf + len;
+    } while (total_len < len_requested);
+    assert(total_len == len_requested);
+}
+
 static void pipe_read(void *opaque)
 {
     SimpleSpiceDisplay *ssd = opaque;
     unsigned char cmd;
     int len, set_irq = 0;
     int create_update = 0;
+    int cursor_set = 0;
+    int cursor_move = 0;
+    QXLServerCursorSet cursor_set_data;
+    QXLServerCursorMove cursor_move_data;
 
     while (1) {
         cmd = 0;
@@ -1082,6 +1155,17 @@ static void pipe_read(void *opaque)
         case QXL_SERVER_CREATE_UPDATE:
             create_update = 1;
             break;
+        case QXL_SERVER_CURSOR_SET:
+            if (cursor_set == 1) {
+                cursor_put(cursor_set_data.c);
+            }
+            cursor_set = 1;
+            read_bytes(ssd->pipe[0], &cursor_set_data, sizeof(cursor_set_data));
+            break;
+        case QXL_SERVER_CURSOR_MOVE:
+            cursor_move = 1;
+            read_bytes(ssd->pipe[0], &cursor_move_data, sizeof(cursor_move_data));
+            break;
         default:
             fprintf(stderr, "%s: unknown cmd %u\n", __FUNCTION__, cmd);
             abort();
@@ -1098,6 +1182,12 @@ static void pipe_read(void *opaque)
     }
     if (set_irq) {
         qxl_set_irq(container_of(ssd, PCIQXLDevice, ssd));
+    }
+    if (cursor_move) {
+        qxl_render_cursor_move(ssd, cursor_move_data.x, cursor_move_data.y);
+    }
+    if (cursor_set) {
+        qxl_render_cursor_set(ssd, cursor_set_data.c, cursor_set_data.x, cursor_set_data.y);
     }
 }
 
