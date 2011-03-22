@@ -1,0 +1,72 @@
+From 82177f2ef5872aadebdc5c39fcd5b84e55ee01dd Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Fri, 18 Mar 2011 19:35:26 -0300
+Subject: [PATCH 1/2] device-assignment: register a reset function
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20110318193526.12086.47416.stgit@s20.home>
+Patchwork-id: 20276
+O-Subject: [RHEL6.1 qemu-kvm PATCH 1/2] device-assignment: register a reset
+	function
+Bugzilla: 685147
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Chris Wright <chrisw@redhat.com>
+
+From: Bernhard Kohl <bernhard.kohl@nsn.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=685147
+Brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=3188279
+Upstream commit: b377474e589e5a1fe2abc7b13fafa8bad802637a
+
+This is necessary because during reboot of a VM the assigned devices
+continue DMA transfers which causes memory corruption.
+
+Acked-by: Alex Williamson <alex.williamson@redhat.com>
+Acked-by: Jan Kiszka <jan.kiszka@siemens.com>
+Signed-off-by: Thomas Ostler <thomas.ostler@nsn.com>
+Signed-off-by: Bernhard Kohl <bernhard.kohl@nsn.com>
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+---
+
+ hw/device-assignment.c |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/device-assignment.c |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index ef65d80..ad8826e 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -1649,6 +1649,17 @@ static const VMStateDescription vmstate_assigned_device = {
+     }
+ };
+ 
++static void reset_assigned_device(DeviceState *dev)
++{
++    PCIDevice *d = DO_UPCAST(PCIDevice, qdev, dev);
++
++    /*
++     * When a 0 is written to the command register, the device is logically
++     * disconnected from the PCI bus. This avoids further DMA transfers.
++     */
++    assigned_dev_pci_write_config(d, PCI_COMMAND, 0, 2);
++}
++
+ static int assigned_initfn(struct PCIDevice *pci_dev)
+ {
+     AssignedDevice *dev = DO_UPCAST(AssignedDevice, dev, pci_dev);
+@@ -1779,6 +1790,7 @@ static PCIDeviceInfo assign_info = {
+     .qdev.name    = "pci-assign",
+     .qdev.desc    = "pass through host pci devices to the guest",
+     .qdev.size    = sizeof(AssignedDevice),
++    .qdev.reset   = reset_assigned_device,
+     .init         = assigned_initfn,
+     .exit         = assigned_exitfn,
+     .config_read  = assigned_dev_pci_read_config,
+-- 
+1.7.4.1.230.gae447
+

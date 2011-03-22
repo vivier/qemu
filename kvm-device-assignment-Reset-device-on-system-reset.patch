@@ -1,0 +1,80 @@
+From 064b752454fa2d672c72c34e1b300b854dd27bba Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Fri, 18 Mar 2011 19:35:33 -0300
+Subject: [PATCH 2/2] device-assignment: Reset device on system reset
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20110318193532.12086.39418.stgit@s20.home>
+Patchwork-id: 20277
+O-Subject: [RHEL6.1 qemu-kvm PATCH 2/2] device-assignment: Reset device on
+	system reset
+Bugzilla: 685147
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Chris Wright <chrisw@redhat.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=685147
+Brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=3188279
+Upstream commit: posted (modified for lack of seg support in rhel)
+
+On system reset, we currently try to quiesce DMA by clearing the
+command register.  This assumes that nothing re-enables bus master
+support without first de-programming the device.  Use a bigger
+hammer to help the guest not shoot itself by issuing a function
+reset via sysfs on each system reset.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Acked-by: Chris Wright <chrisw@redhat.com>
+---
+
+ hw/device-assignment.c |   24 ++++++++++++++++++++++--
+ 1 files changed, 22 insertions(+), 2 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/device-assignment.c |   24 ++++++++++++++++++++++--
+ 1 files changed, 22 insertions(+), 2 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index ad8826e..8a70f66 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -1651,13 +1651,33 @@ static const VMStateDescription vmstate_assigned_device = {
+ 
+ static void reset_assigned_device(DeviceState *dev)
+ {
+-    PCIDevice *d = DO_UPCAST(PCIDevice, qdev, dev);
++    PCIDevice *pci_dev = DO_UPCAST(PCIDevice, qdev, dev);
++    AssignedDevice *adev = DO_UPCAST(AssignedDevice, dev, pci_dev);
++    char reset_file[64];
++    const char reset[] = "1";
++    int fd, ret;
++
++    snprintf(reset_file, sizeof(reset_file),
++             "/sys/bus/pci/devices/0000:%02x:%02x.%01x/reset",
++             adev->host.bus, adev->host.dev, adev->host.func);
++
++    /*
++     * Issue a device reset via pci-sysfs.  Note that we use write(2) here
++     * and ignore the return value because some kernels have a bug that
++     * returns 0 rather than bytes written on success, sending us into an
++     * infinite retry loop using other write mechanisms.
++     */
++    fd = open(reset_file, O_WRONLY);
++    if (fd != -1) {
++        ret = write(fd, reset, strlen(reset));
++        close(fd);
++    }
+ 
+     /*
+      * When a 0 is written to the command register, the device is logically
+      * disconnected from the PCI bus. This avoids further DMA transfers.
+      */
+-    assigned_dev_pci_write_config(d, PCI_COMMAND, 0, 2);
++    assigned_dev_pci_write_config(pci_dev, PCI_COMMAND, 0, 2);
+ }
+ 
+ static int assigned_initfn(struct PCIDevice *pci_dev)
+-- 
+1.7.4.1.230.gae447
+

@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.151
+%define pkgrelease 2.152
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2423,6 +2423,10 @@ Patch2075: kvm-qcow2-Report-error-for-version-2.patch
 Patch2076: kvm-qcow2-Fix-order-in-L2-table-COW.patch
 # For bz#688428 - qemu-kvm -no-kvm segfaults on pci_add
 Patch2077: kvm-pci-assign-Catch-missing-KVM-support.patch
+# For bz#685147 - guest with assigned nic got kernel panic when send system_reset signal in QEMU monitor
+Patch2078: kvm-device-assignment-register-a-reset-function.patch
+# For bz#685147 - guest with assigned nic got kernel panic when send system_reset signal in QEMU monitor
+Patch2079: kvm-device-assignment-Reset-device-on-system-reset.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3607,6 +3611,8 @@ ApplyOptionalPatch()
 %patch2075 -p1
 %patch2076 -p1
 %patch2077 -p1
+%patch2078 -p1
+%patch2079 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3828,6 +3834,12 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Mar 22 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.152.el6
+- kvm-device-assignment-register-a-reset-function.patch [bz#685147]
+- kvm-device-assignment-Reset-device-on-system-reset.patch [bz#685147]
+- Resolves: bz#685147
+  (guest with assigned nic got kernel panic when send system_reset signal in QEMU monitor)
+
 * Fri Mar 18 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.151.el6
 - kvm-net-Add-the-missing-option-declaration-of-vhostforce.patch [bz#683295]
 - kvm-vhost-fix-dirty-page-handling.patch [bz#684076]
