@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.14.0
-Release: 4%{?dist}
+Release: 5%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -276,7 +276,7 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
 %ifarch s390
 # drop -g flag to prevent memory exhaustion by linker
 %global optflags %(echo %{optflags} | sed 's/-g//')
-sed -i.debug 's/-g//g' configure
+sed -i.debug 's/"-g $CFLAGS"/"$CFLAGS"/g' configure
 %endif
 
 %ifarch %{ix86} x86_64
@@ -585,9 +585,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Mar 22 2011 Dan Horák <dan[at]danny.cz> - 2:0.14.0-5
+- be more careful when removing the -g flag on s390
+
 * Fri Mar 18 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.14.0-4
 - Fix thinko on adding the most recent patches.
-
 
 * Wed Mar 16 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.14.0-3
 - Fix migration issue with vhost
