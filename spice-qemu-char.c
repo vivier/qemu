@@ -149,6 +149,18 @@ static void spice_chr_close(struct CharDriverState *chr)
     qemu_free(s);
 }
 
+static void spice_chr_guest_open(struct CharDriverState *chr)
+{
+    SpiceCharDriver *s = chr->opaque;
+    vmc_register_interface(s);
+}
+
+static void spice_chr_guest_close(struct CharDriverState *chr)
+{
+    SpiceCharDriver *s = chr->opaque;
+    vmc_unregister_interface(s);
+}
+
 static void print_allowed_subtypes(void)
 {
     const char** psubtype;
@@ -201,6 +213,8 @@ CharDriverState *qemu_chr_open_spice(QemuOpts *opts)
     chr->opaque = s;
     chr->chr_write = spice_chr_write;
     chr->chr_close = spice_chr_close;
+    chr->chr_guest_open = spice_chr_guest_open;
+    chr->chr_guest_close = spice_chr_guest_close;
     s->unblock_timer = qemu_new_timer(vm_clock, spice_chr_unblock, s);
 
     qemu_chr_generic_open(chr);
