@@ -68,6 +68,8 @@ struct CharDriverState {
     void (*chr_send_event)(struct CharDriverState *chr, int event);
     void (*chr_close)(struct CharDriverState *chr);
     void (*chr_accept_input)(struct CharDriverState *chr);
+    void (*chr_guest_open)(struct CharDriverState *chr);
+    void (*chr_guest_close)(struct CharDriverState *chr);
     void *opaque;
     QEMUBH *bh;
     char *label;
@@ -88,6 +90,8 @@ QemuOpts *qemu_chr_parse_compat(const char *label, const char *filename);
 CharDriverState *qemu_chr_open_opts(QemuOpts *opts,
                                     void (*init)(struct CharDriverState *s));
 CharDriverState *qemu_chr_open(const char *label, const char *filename, void (*init)(struct CharDriverState *s));
+void qemu_chr_guest_open(struct CharDriverState *chr);
+void qemu_chr_guest_close(struct CharDriverState *chr);
 void qemu_chr_close(CharDriverState *chr);
 void qemu_chr_printf(CharDriverState *s, const char *fmt, ...);
 int qemu_chr_write(CharDriverState *s, const uint8_t *buf, int len);
