@@ -134,6 +134,114 @@ fail:
     return -1;
 }
 
+static int tcp_server_bind(int fd, struct addrinfo *rp)
+{
+    int ret;
+    int val = 1;
+
+    /* allow fast reuse */
+    setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (const char *)&val, sizeof(val));
+
+    ret = bind(fd, rp->ai_addr, rp->ai_addrlen);
+
+    if (ret == -1) {
+        ret = -socket_error();
+    }
+    return ret;
+
+}
+
+static int tcp_client_connect(int fd, struct addrinfo *rp)
+{
+    int ret;
+
+    do {
+        ret = connect(fd, rp->ai_addr, rp->ai_addrlen);
+        if (ret == -1) {
+            ret = -socket_error();
+        }
+    } while (ret == -EINTR);
+
+    return ret;
+}
+
+
+static int tcp_start_common(const char *str, int *fd, bool server)
+{
+    char hostname[512];
+    const char *service;
+    const char *name;
+    struct addrinfo hints;
+    struct addrinfo *result, *rp;
+    int s;
+    int sfd;
+    int ret = -EINVAL;
+
+    *fd = -1;
+    service = str;
+    if (get_str_sep(hostname, sizeof(hostname), &service, ':') < 0) {
+        return -EINVAL;
+    }
+    if (server && strlen(hostname) == 0) {
+        name = NULL;
+    } else {
+        name = hostname;
+    }
+
+    /* Obtain address(es) matching host/port */
+
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = AF_UNSPEC;     /* Allow IPv4 or IPv6 */
+    hints.ai_socktype = SOCK_STREAM; /* Datagram socket */
+
+    if (server) {
+        hints.ai_flags = AI_PASSIVE;
+    }
+
+    s = getaddrinfo(name, service, &hints, &result);
+    if (s != 0) {
+        fprintf(stderr, "qemu: getaddrinfo: %s\n", gai_strerror(s));
+        return -EINVAL;
+    }
+
+    /* getaddrinfo() returns a list of address structures.
+       Try each address until we successfully bind/connect).
+       If socket(2) (or bind/connect(2)) fails, we (close the socket
+       and) try the next address. */
+
+    for (rp = result; rp != NULL; rp = rp->ai_next) {
+        sfd = qemu_socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        if (sfd == -1) {
+            ret = -errno;
+            continue;
+        }
+        socket_set_nonblock(sfd);
+        if (server) {
+            ret = tcp_server_bind(sfd, rp);
+        } else {
+            ret = tcp_client_connect(sfd, rp);
+        }
+        if (ret >= 0 || ret == -EINPROGRESS || ret == -EWOULDBLOCK) {
+            *fd = sfd;
+            break;                  /* Success */
+        }
+        close(sfd);
+    }
+
+    freeaddrinfo(result);
+    return ret;
+}
+
+int tcp_server_start(const char *str, int *fd)
+{
+    return tcp_start_common(str, fd, true);
+}
+
+int tcp_client_start(const char *str, int *fd)
+{
+    return tcp_start_common(str, fd, false);
+}
+
 int parse_host_port(struct sockaddr_in *saddr, const char *str)
 {
     char buf[512];

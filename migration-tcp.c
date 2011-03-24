@@ -49,7 +49,6 @@ static int tcp_close(FdMigrationState *s)
     return 0;
 }
 
-
 static void tcp_wait_for_connect(void *opaque)
 {
     FdMigrationState *s = opaque;
@@ -83,12 +82,9 @@ MigrationState *tcp_start_outgoing_migration(Monitor *mon,
 					     int blk,
 					     int inc)
 {
-    struct sockaddr_in addr;
     FdMigrationState *s;
+    int fd;
     int ret;
-
-    if (parse_host_port(&addr, host_port) < 0)
-        return NULL;
 
     s = qemu_mallocz(sizeof(*s));
 
@@ -105,35 +101,22 @@ MigrationState *tcp_start_outgoing_migration(Monitor *mon,
     s->state = MIG_STATE_ACTIVE;
     s->mon = NULL;
     s->bandwidth_limit = bandwidth_limit;
-    s->fd = qemu_socket(PF_INET, SOCK_STREAM, 0);
-    if (s->fd == -1) {
-        qemu_free(s);
-        return NULL;
-    }
-
-    socket_set_nonblock(s->fd);
 
     if (!detach) {
         migrate_fd_monitor_suspend(s, mon);
     }
 
-    do {
-        ret = connect(s->fd, (struct sockaddr *)&addr, sizeof(addr));
-        if (ret == -1)
-            ret = -(s->get_error(s));
-
-        if (ret == -EINPROGRESS || ret == -EWOULDBLOCK)
-            qemu_set_fd_handler2(s->fd, NULL, NULL, tcp_wait_for_connect, s);
-    } while (ret == -EINTR);
-
-    if (ret < 0 && ret != -EINPROGRESS && ret != -EWOULDBLOCK) {
+    ret = tcp_client_start(host_port, &fd);
+    s->fd = fd;
+    if (ret == -EINPROGRESS || ret == -EWOULDBLOCK) {
+        dprintf("connect in progress");
+        qemu_set_fd_handler2(s->fd, NULL, NULL, tcp_wait_for_connect, s);
+    } else if (ret < 0) {
         dprintf("connect failed\n");
-        close(s->fd);
-        qemu_free(s);
-        return NULL;
-    } else if (ret >= 0)
+        migrate_fd_error(s);
+    } else {
         migrate_fd_connect(s);
-
+    }
     return &s->mig_state;
 }
 
@@ -172,24 +155,13 @@ out:
 
 int tcp_start_incoming_migration(const char *host_port)
 {
-    struct sockaddr_in addr;
-    int val;
+    int ret;
     int s;
 
-    if (parse_host_port(&addr, host_port) < 0) {
-        fprintf(stderr, "invalid host/port combination: %s\n", host_port);
-        return -EINVAL;
+    ret = tcp_server_start(host_port, &s);
+    if (ret < 0) {
+        return ret;
     }
-
-    s = qemu_socket(PF_INET, SOCK_STREAM, 0);
-    if (s == -1)
-        return -socket_error();
-
-    val = 1;
-    setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (const char *)&val, sizeof(val));
-
-    if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) == -1)
-        goto err;
 
     if (listen(s, 1) == -1)
         goto err;
