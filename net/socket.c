@@ -378,28 +378,13 @@ static int net_socket_listen_init(VLANState *vlan,
                                   const char *host_str)
 {
     NetSocketListenState *s;
-    int fd, val, ret;
-    struct sockaddr_in saddr;
-
-    if (parse_host_port(&saddr, host_str) < 0)
-        return -1;
+    int fd, ret;
 
     s = qemu_mallocz(sizeof(NetSocketListenState));
 
-    fd = qemu_socket(PF_INET, SOCK_STREAM, 0);
-    if (fd < 0) {
-        perror("socket");
-        return -1;
-    }
-    socket_set_nonblock(fd);
-
-    /* allow fast reuse */
-    val = 1;
-    setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (const char *)&val, sizeof(val));
-
-    ret = bind(fd, (struct sockaddr *)&saddr, sizeof(saddr));
+    ret = tcp_server_start(host_str, &fd);
     if (ret < 0) {
-        perror("bind");
+        fprintf(stderr, "tcp_server_start: %s\n", strerror(ret));
         return -1;
     }
     ret = listen(fd, 0);
@@ -421,40 +406,17 @@ static int net_socket_connect_init(VLANState *vlan,
                                    const char *host_str)
 {
     NetSocketState *s;
-    int fd, connected, ret, err;
+    int fd, connected, ret;
     struct sockaddr_in saddr;
 
-    if (parse_host_port(&saddr, host_str) < 0)
+    ret = tcp_client_start(host_str, &fd);
+    if (ret == -EINPROGRESS || ret == -EWOULDBLOCK) {
+        connected = 0;
+    } else if (ret < 0) {
+        closesocket(fd);
         return -1;
-
-    fd = qemu_socket(PF_INET, SOCK_STREAM, 0);
-    if (fd < 0) {
-        perror("socket");
-        return -1;
-    }
-    socket_set_nonblock(fd);
-
-    connected = 0;
-    for(;;) {
-        ret = connect(fd, (struct sockaddr *)&saddr, sizeof(saddr));
-        if (ret < 0) {
-            err = socket_error();
-            if (err == EINTR || err == EWOULDBLOCK) {
-            } else if (err == EINPROGRESS) {
-                break;
-#ifdef _WIN32
-            } else if (err == WSAEALREADY) {
-                break;
-#endif
-            } else {
-                perror("connect");
-                closesocket(fd);
-                return -1;
-            }
-        } else {
-            connected = 1;
-            break;
-        }
+    } else {
+        connected = 1;
     }
     s = net_socket_fd_init(vlan, model, name, fd, connected);
     if (!s)
