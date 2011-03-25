@@ -2566,7 +2566,7 @@ DriveInfo *drive_init(QemuOpts *opts, void *opaque,
     dinfo->on_write_error = on_write_error;
     dinfo->opts = opts;
     if (serial)
-        strncpy(dinfo->serial, serial, sizeof(serial));
+        strncpy(dinfo->serial, serial, sizeof(dinfo->serial) - 1);
     QTAILQ_INSERT_TAIL(&drives, dinfo, next);
     if (is_extboot) {
         extboot_drive = dinfo;
