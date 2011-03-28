@@ -1,0 +1,76 @@
+>From da7e6cd863ed0cffe885cd2d3639f92c82baf6e2 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Mon, 21 Mar 2011 20:32:58 +0100
+Subject: [PATCH 07/17] iohandlers: Add enable/disable_write_fd_handler() functions
+
+These will be used to provide a cleaner API for the nonblocking case.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ qemu-char.h |    3 +++
+ vl.c        |   35 +++++++++++++++++++++++++++++++++++
+ 2 files changed, 38 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-char.h b/qemu-char.h
+index 7a1924c..185377c 100644
+--- a/qemu-char.h
++++ b/qemu-char.h
+@@ -116,6 +116,9 @@ size_t qemu_chr_mem_osize(const CharDriverState *chr);
+ 
+ /* async I/O support */
+ 
++void enable_write_fd_handler(int fd, IOHandler *fd_write);
++void disable_write_fd_handler(int fd);
++
+ int qemu_set_fd_handler2(int fd,
+                          IOCanReadHandler *fd_read_poll,
+                          IOHandler *fd_read,
+diff --git a/vl.c b/vl.c
+index 85c36e3..95f51cb 100644
+--- a/vl.c
++++ b/vl.c
+@@ -1044,6 +1044,41 @@ typedef struct IOHandlerRecord {
+ static QLIST_HEAD(, IOHandlerRecord) io_handlers =
+     QLIST_HEAD_INITIALIZER(io_handlers);
+ 
++static IOHandlerRecord *find_iohandler(int fd)
++{
++    IOHandlerRecord *ioh;
++
++    QLIST_FOREACH(ioh, &io_handlers, next) {
++        if (ioh->fd == fd) {
++            return ioh;
++        }
++    }
++    return NULL;
++}
++
++void enable_write_fd_handler(int fd, IOHandler *fd_write)
++{
++    IOHandlerRecord *ioh;
++
++    ioh = find_iohandler(fd);
++    if (!ioh) {
++        return;
++    }
++
++    ioh->fd_write = fd_write;
++}
++
++void disable_write_fd_handler(int fd)
++{
++    IOHandlerRecord *ioh;
++
++    ioh = find_iohandler(fd);
++    if (!ioh) {
++        return;
++    }
++
++    ioh->fd_write = NULL;
++}
+ 
+ /* XXX: fd_read_poll should be suppressed, but an API change is
+    necessary in the character devices to suppress fd_can_read(). */
+-- 
+1.7.3.2
+

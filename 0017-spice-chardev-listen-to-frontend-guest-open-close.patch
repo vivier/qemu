@@ -1,0 +1,49 @@
+>From c169795bed5374f0071af201da2dd32b3c5a2417 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Fri, 18 Mar 2011 15:35:27 +0100
+Subject: [PATCH 17/17] spice-chardev: listen to frontend guest open / close
+
+Note the vmc_register_interface() in spice_chr_write is left in place
+in case someone uses spice-chardev with a frontend which does not have
+guest open / close notification.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ spice-qemu-char.c |   14 ++++++++++++++
+ 1 files changed, 14 insertions(+), 0 deletions(-)
+
+diff --git a/spice-qemu-char.c b/spice-qemu-char.c
+index ed7851e..343146c 100644
+--- a/spice-qemu-char.c
++++ b/spice-qemu-char.c
+@@ -155,6 +155,18 @@ static void spice_chr_close(struct CharDriverState *chr)
+     qemu_free(s);
+ }
+ 
++static void spice_chr_guest_open(struct CharDriverState *chr)
++{
++    SpiceCharDriver *s = chr->opaque;
++    vmc_register_interface(s);
++}
++
++static void spice_chr_guest_close(struct CharDriverState *chr)
++{
++    SpiceCharDriver *s = chr->opaque;
++    vmc_unregister_interface(s);
++}
++
+ static void print_allowed_subtypes(void)
+ {
+     const char** psubtype;
+@@ -207,6 +219,8 @@ CharDriverState *qemu_chr_open_spice(QemuOpts *opts)
+     chr->opaque = s;
+     chr->chr_write = spice_chr_write;
+     chr->chr_close = spice_chr_close;
++    chr->chr_guest_open = spice_chr_guest_open;
++    chr->chr_guest_close = spice_chr_guest_close;
+     s->unblock_timer = qemu_new_timer(vm_clock, spice_chr_unblock, s);
+ 
+     qemu_chr_generic_open(chr);
+-- 
+1.7.3.2
+

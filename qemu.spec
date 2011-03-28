@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.14.0
-Release: 5%{?dist}
+Release: 6%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -46,6 +46,20 @@ Patch20: 0001-qxl-spice-display-move-pipe-to-ssd.patch
 Patch21: 0002-qxl-implement-get_command-in-vga-mode-without-locks.patch
 Patch22: 0003-qxl-spice-remove-qemu_mutex_-un-lock_iothread-around.patch
 Patch23: 0004-hw-qxl-render-drop-cursor-locks-replace-with-pipe.patch
+Patch24: 0005-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
+Patch25: 0006-char-Add-a-QemuChrHandlers-struct-to-initialise-char.patch
+Patch26: 0007-iohandlers-Add-enable-disable_write_fd_handler-funct.patch
+Patch27: 0008-char-Add-framework-for-a-write-unblocked-callback.patch
+Patch28: 0009-char-Update-send_all-to-handle-nonblocking-chardev-w.patch
+Patch29: 0010-char-Equip-the-unix-tcp-backend-to-handle-nonblockin.patch
+Patch30: 0011-char-Throttle-when-host-connection-is-down.patch
+Patch31: 0012-virtio-console-Enable-port-throttling-when-chardev-i.patch
+Patch32: 0013-spice-qemu-char.c-add-throttling.patch
+Patch33: 0014-spice-qemu-char.c-remove-intermediate-buffer.patch
+Patch34: 0015-chardev-Allow-frontends-to-notify-backends-of-guest-.patch
+Patch35: 0016-virtio-console-notify-backend-of-guest-open-close.patch
+Patch36: 0017-spice-chardev-listen-to-frontend-guest-open-close.patch
+Patch37: 0018-spice-qemu-char-Fix-flow-control-in-client-guest-dir.patch
 
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -251,6 +265,20 @@ such as kvm_stat.
 %patch21 -p1
 %patch22 -p1
 %patch23 -p1
+%patch24 -p1
+%patch25 -p1
+%patch26 -p1
+%patch27 -p1
+%patch28 -p1
+%patch29 -p1
+%patch30 -p1
+%patch31 -p1
+%patch32 -p1
+%patch33 -p1
+%patch34 -p1
+%patch35 -p1
+%patch36 -p1
+%patch37 -p1
 
 %build
 # By default we build everything, but allow x86 to build a minimal version
@@ -585,6 +613,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Mar 28 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.14.0-6
+- Spice fixes for flow control.
+
 * Tue Mar 22 2011 Dan Horák <dan[at]danny.cz> - 2:0.14.0-5
 - be more careful when removing the -g flag on s390
 
