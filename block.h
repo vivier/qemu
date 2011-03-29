@@ -64,6 +64,7 @@ int bdrv_create2(BlockDriver *drv,
                  const char *backing_file, const char *backing_format,
                  int flags);
 BlockDriverState *bdrv_new(const char *device_name);
+void bdrv_make_anon(BlockDriverState *bs);
 void bdrv_delete(BlockDriverState *bs);
 int bdrv_file_open(BlockDriverState **pbs, const char *filename, int flags);
 int bdrv_open(BlockDriverState *bs, const char *filename, int flags,
