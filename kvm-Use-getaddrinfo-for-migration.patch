@@ -1,0 +1,279 @@
+From d59e05bf033eb557bbfb2fcf0352571ea4cb2ca0 Mon Sep 17 00:00:00 2001
+From: Juan Quintela <quintela@redhat.com>
+Date: Thu, 24 Mar 2011 13:29:21 -0300
+Subject: [PATCH 14/16] Use getaddrinfo for migration
+
+RH-Author: Juan Quintela <quintela@redhat.com>
+Message-id: <ffe53dc3b69369a61b8f9657f783780371a2498a.1300967216.git.quintela@redhat.com>
+Patchwork-id: 20561
+O-Subject: [PATCH 1/2] Use getaddrinfo for migration
+Bugzilla: 680356
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+This allows us to use ipv4/ipv6 for migration addresses.
+Once there, it also uses /etc/services names (it came free).
+
+[ Red Hat changes ]
+
+One conflict due to removal of parse_host_src_port(), that still
+exists on Red Hat.  That changeset also give another conflict, so I
+decided not to backport it.
+
+I didn't backport the patch to create the function set_socket_reuseaddr(),
+as its change are cosmetic for RHEL (they only matter for windows hosts).
+So I also fixed the rejects by hand.
+
+[ End Red Hat changes ]
+
+Signed-off-by: Juan Quintela <quintela@redhat.com>
+---
+ migration-tcp.c |   56 +++++++---------------------
+ net.c           |  108 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ qemu_socket.h   |    3 ++
+ 3 files changed, 125 insertions(+), 42 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ migration-tcp.c |   56 +++++++---------------------
+ net.c           |  108 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ qemu_socket.h   |    3 ++
+ 3 files changed, 125 insertions(+), 42 deletions(-)
+
+diff --git a/migration-tcp.c b/migration-tcp.c
+index 0de6c2e..a0bbb22 100644
+--- a/migration-tcp.c
++++ b/migration-tcp.c
+@@ -49,7 +49,6 @@ static int tcp_close(FdMigrationState *s)
+     return 0;
+ }
+ 
+-
+ static void tcp_wait_for_connect(void *opaque)
+ {
+     FdMigrationState *s = opaque;
+@@ -83,13 +82,10 @@ MigrationState *tcp_start_outgoing_migration(Monitor *mon,
+ 					     int blk,
+ 					     int inc)
+ {
+-    struct sockaddr_in addr;
+     FdMigrationState *s;
++    int fd;
+     int ret;
+ 
+-    if (parse_host_port(&addr, host_port) < 0)
+-        return NULL;
+-
+     s = qemu_mallocz(sizeof(*s));
+ 
+     s->get_error = socket_errno;
+@@ -105,35 +101,22 @@ MigrationState *tcp_start_outgoing_migration(Monitor *mon,
+     s->state = MIG_STATE_ACTIVE;
+     s->mon = NULL;
+     s->bandwidth_limit = bandwidth_limit;
+-    s->fd = qemu_socket(PF_INET, SOCK_STREAM, 0);
+-    if (s->fd == -1) {
+-        qemu_free(s);
+-        return NULL;
+-    }
+-
+-    socket_set_nonblock(s->fd);
+ 
+     if (!detach) {
+         migrate_fd_monitor_suspend(s, mon);
+     }
+ 
+-    do {
+-        ret = connect(s->fd, (struct sockaddr *)&addr, sizeof(addr));
+-        if (ret == -1)
+-            ret = -(s->get_error(s));
+-
+-        if (ret == -EINPROGRESS || ret == -EWOULDBLOCK)
+-            qemu_set_fd_handler2(s->fd, NULL, NULL, tcp_wait_for_connect, s);
+-    } while (ret == -EINTR);
+-
+-    if (ret < 0 && ret != -EINPROGRESS && ret != -EWOULDBLOCK) {
++    ret = tcp_client_start(host_port, &fd);
++    s->fd = fd;
++    if (ret == -EINPROGRESS || ret == -EWOULDBLOCK) {
++        dprintf("connect in progress");
++        qemu_set_fd_handler2(s->fd, NULL, NULL, tcp_wait_for_connect, s);
++    } else if (ret < 0) {
+         dprintf("connect failed\n");
+-        close(s->fd);
+-        qemu_free(s);
+-        return NULL;
+-    } else if (ret >= 0)
++        migrate_fd_error(s);
++    } else {
+         migrate_fd_connect(s);
+-
++    }
+     return &s->mig_state;
+ }
+ 
+@@ -172,25 +155,14 @@ out:
+ 
+ int tcp_start_incoming_migration(const char *host_port)
+ {
+-    struct sockaddr_in addr;
+-    int val;
++    int ret;
+     int s;
+ 
+-    if (parse_host_port(&addr, host_port) < 0) {
+-        fprintf(stderr, "invalid host/port combination: %s\n", host_port);
+-        return -EINVAL;
++    ret = tcp_server_start(host_port, &s);
++    if (ret < 0) {
++        return ret;
+     }
+ 
+-    s = qemu_socket(PF_INET, SOCK_STREAM, 0);
+-    if (s == -1)
+-        return -socket_error();
+-
+-    val = 1;
+-    setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (const char *)&val, sizeof(val));
+-
+-    if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) == -1)
+-        goto err;
+-
+     if (listen(s, 1) == -1)
+         goto err;
+ 
+diff --git a/net.c b/net.c
+index 2f498ae..9caacc7 100644
+--- a/net.c
++++ b/net.c
+@@ -134,6 +134,114 @@ fail:
+     return -1;
+ }
+ 
++static int tcp_server_bind(int fd, struct addrinfo *rp)
++{
++    int ret;
++    int val = 1;
++
++    /* allow fast reuse */
++    setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (const char *)&val, sizeof(val));
++
++    ret = bind(fd, rp->ai_addr, rp->ai_addrlen);
++
++    if (ret == -1) {
++        ret = -socket_error();
++    }
++    return ret;
++
++}
++
++static int tcp_client_connect(int fd, struct addrinfo *rp)
++{
++    int ret;
++
++    do {
++        ret = connect(fd, rp->ai_addr, rp->ai_addrlen);
++        if (ret == -1) {
++            ret = -socket_error();
++        }
++    } while (ret == -EINTR);
++
++    return ret;
++}
++
++
++static int tcp_start_common(const char *str, int *fd, bool server)
++{
++    char hostname[512];
++    const char *service;
++    const char *name;
++    struct addrinfo hints;
++    struct addrinfo *result, *rp;
++    int s;
++    int sfd;
++    int ret = -EINVAL;
++
++    *fd = -1;
++    service = str;
++    if (get_str_sep(hostname, sizeof(hostname), &service, ':') < 0) {
++        return -EINVAL;
++    }
++    if (server && strlen(hostname) == 0) {
++        name = NULL;
++    } else {
++        name = hostname;
++    }
++
++    /* Obtain address(es) matching host/port */
++
++    memset(&hints, 0, sizeof(struct addrinfo));
++    hints.ai_family = AF_UNSPEC;     /* Allow IPv4 or IPv6 */
++    hints.ai_socktype = SOCK_STREAM; /* Datagram socket */
++
++    if (server) {
++        hints.ai_flags = AI_PASSIVE;
++    }
++
++    s = getaddrinfo(name, service, &hints, &result);
++    if (s != 0) {
++        fprintf(stderr, "qemu: getaddrinfo: %s\n", gai_strerror(s));
++        return -EINVAL;
++    }
++
++    /* getaddrinfo() returns a list of address structures.
++       Try each address until we successfully bind/connect).
++       If socket(2) (or bind/connect(2)) fails, we (close the socket
++       and) try the next address. */
++
++    for (rp = result; rp != NULL; rp = rp->ai_next) {
++        sfd = qemu_socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
++        if (sfd == -1) {
++            ret = -errno;
++            continue;
++        }
++        socket_set_nonblock(sfd);
++        if (server) {
++            ret = tcp_server_bind(sfd, rp);
++        } else {
++            ret = tcp_client_connect(sfd, rp);
++        }
++        if (ret >= 0 || ret == -EINPROGRESS || ret == -EWOULDBLOCK) {
++            *fd = sfd;
++            break;                  /* Success */
++        }
++        close(sfd);
++    }
++
++    freeaddrinfo(result);
++    return ret;
++}
++
++int tcp_server_start(const char *str, int *fd)
++{
++    return tcp_start_common(str, fd, true);
++}
++
++int tcp_client_start(const char *str, int *fd)
++{
++    return tcp_start_common(str, fd, false);
++}
++
+ int parse_host_port(struct sockaddr_in *saddr, const char *str)
+ {
+     char buf[512];
+diff --git a/qemu_socket.h b/qemu_socket.h
+index 85168ea..68a9e10 100644
+--- a/qemu_socket.h
++++ b/qemu_socket.h
+@@ -57,4 +57,7 @@ int parse_host_src_port(struct sockaddr_in *haddr,
+                         struct sockaddr_in *saddr,
+                         const char *str);
+ 
++int tcp_client_start(const char *str, int *fd);
++int tcp_server_start(const char *str, int *fd);
++
+ #endif /* QEMU_SOCKET_H */
+-- 
+1.7.4.1.230.gae447
+

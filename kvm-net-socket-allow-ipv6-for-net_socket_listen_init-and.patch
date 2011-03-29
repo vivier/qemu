@@ -1,0 +1,121 @@
+From 40f022e7206b5faa5939c107c148e80590a79f44 Mon Sep 17 00:00:00 2001
+From: Juan Quintela <quintela@redhat.com>
+Date: Thu, 24 Mar 2011 13:29:22 -0300
+Subject: [PATCH 15/16] net/socket: allow ipv6 for net_socket_listen_init and net_socket_connect_init
+
+RH-Author: Juan Quintela <quintela@redhat.com>
+Message-id: <23ad3f953b91c1c2cf9cf3bdd24c9c4f4c8b68bd.1300967216.git.quintela@redhat.com>
+Patchwork-id: 20562
+O-Subject: [PATCH 2/2] net/socket: allow ipv6 for net_socket_listen_init and
+	net_socket_connect_init
+Bugzilla: 680356
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+Remove use of parse_host_port.
+
+[Red Hat changes]
+
+More SO_SOCKADDR changes.
+
+[End Red Hat changes ]
+
+Signed-off-by: Juan Quintela <quintela@redhat.com>
+---
+ net/socket.c |   60 ++++++++++-----------------------------------------------
+ 1 files changed, 11 insertions(+), 49 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ net/socket.c |   60 ++++++++++-----------------------------------------------
+ 1 files changed, 11 insertions(+), 49 deletions(-)
+
+diff --git a/net/socket.c b/net/socket.c
+index 902529e..cabeca7 100644
+--- a/net/socket.c
++++ b/net/socket.c
+@@ -378,28 +378,13 @@ static int net_socket_listen_init(VLANState *vlan,
+                                   const char *host_str)
+ {
+     NetSocketListenState *s;
+-    int fd, val, ret;
+-    struct sockaddr_in saddr;
+-
+-    if (parse_host_port(&saddr, host_str) < 0)
+-        return -1;
++    int fd, ret;
+ 
+     s = qemu_mallocz(sizeof(NetSocketListenState));
+ 
+-    fd = qemu_socket(PF_INET, SOCK_STREAM, 0);
+-    if (fd < 0) {
+-        perror("socket");
+-        return -1;
+-    }
+-    socket_set_nonblock(fd);
+-
+-    /* allow fast reuse */
+-    val = 1;
+-    setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (const char *)&val, sizeof(val));
+-
+-    ret = bind(fd, (struct sockaddr *)&saddr, sizeof(saddr));
++    ret = tcp_server_start(host_str, &fd);
+     if (ret < 0) {
+-        perror("bind");
++        fprintf(stderr, "tcp_server_start: %s\n", strerror(ret));
+         return -1;
+     }
+     ret = listen(fd, 0);
+@@ -421,40 +406,17 @@ static int net_socket_connect_init(VLANState *vlan,
+                                    const char *host_str)
+ {
+     NetSocketState *s;
+-    int fd, connected, ret, err;
++    int fd, connected, ret;
+     struct sockaddr_in saddr;
+ 
+-    if (parse_host_port(&saddr, host_str) < 0)
+-        return -1;
+-
+-    fd = qemu_socket(PF_INET, SOCK_STREAM, 0);
+-    if (fd < 0) {
+-        perror("socket");
++    ret = tcp_client_start(host_str, &fd);
++    if (ret == -EINPROGRESS || ret == -EWOULDBLOCK) {
++        connected = 0;
++    } else if (ret < 0) {
++        closesocket(fd);
+         return -1;
+-    }
+-    socket_set_nonblock(fd);
+-
+-    connected = 0;
+-    for(;;) {
+-        ret = connect(fd, (struct sockaddr *)&saddr, sizeof(saddr));
+-        if (ret < 0) {
+-            err = socket_error();
+-            if (err == EINTR || err == EWOULDBLOCK) {
+-            } else if (err == EINPROGRESS) {
+-                break;
+-#ifdef _WIN32
+-            } else if (err == WSAEALREADY) {
+-                break;
+-#endif
+-            } else {
+-                perror("connect");
+-                closesocket(fd);
+-                return -1;
+-            }
+-        } else {
+-            connected = 1;
+-            break;
+-        }
++    } else {
++        connected = 1;
+     }
+     s = net_socket_fd_init(vlan, model, name, fd, connected);
+     if (!s)
+-- 
+1.7.4.1.230.gae447
+

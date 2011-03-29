@@ -1,0 +1,63 @@
+From 1daadaae5e1c2eb75a5e4a85995d6baca4322f58 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Tue, 22 Mar 2011 13:46:32 -0300
+Subject: [PATCH 10/16] virtio-console: notify backend of guest open / close
+
+RH-Author: Hans de Goede <hdegoede@redhat.com>
+Message-id: <1300801593-1297-3-git-send-email-hdegoede@redhat.com>
+Patchwork-id: 20399
+O-Subject: [PATCH 2/3] virtio-console: notify backend of guest open / close
+Bugzilla: 688572
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ hw/virtio-console.c |   18 ++++++++++++++++++
+ 1 files changed, 18 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/virtio-console.c |   18 ++++++++++++++++++
+ 1 files changed, 18 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-console.c b/hw/virtio-console.c
+index 27ac475..930d5c5 100644
+--- a/hw/virtio-console.c
++++ b/hw/virtio-console.c
+@@ -37,6 +37,22 @@ static ssize_t flush_buf(VirtIOSerialPort *port, const uint8_t *buf, size_t len)
+     return qemu_chr_write(vcon->chr, buf, len);
+ }
+ 
++/* Callback function that's called when the guest opens the port */
++static void guest_open(VirtIOSerialPort *port)
++{
++    VirtConsole *vcon = DO_UPCAST(VirtConsole, port, port);
++
++    return qemu_chr_guest_open(vcon->chr);
++}
++
++/* Callback function that's called when the guest closes the port */
++static void guest_close(VirtIOSerialPort *port)
++{
++    VirtConsole *vcon = DO_UPCAST(VirtConsole, port, port);
++
++    return qemu_chr_guest_close(vcon->chr);
++}
++
+ /* Readiness of the guest to accept data on a port */
+ static int chr_can_read(void *opaque)
+ {
+@@ -93,6 +109,8 @@ static int generic_port_init(VirtConsole *vcon, VirtIOSerialDevice *dev)
+         }
+         qemu_chr_add_handlers(vcon->chr, handlers, vcon);
+         vcon->port.info->have_data = flush_buf;
++        vcon->port.info->guest_open = guest_open;
++        vcon->port.info->guest_close = guest_close;
+     }
+     return 0;
+ }
+-- 
+1.7.4.1.230.gae447
+

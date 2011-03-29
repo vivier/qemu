@@ -1,0 +1,53 @@
+From df5e0626ce4a5c464d294b4aae2fa8a32e626902 Mon Sep 17 00:00:00 2001
+From: Xiao Wang <jasowang@redhat.com>
+Date: Fri, 25 Mar 2011 06:12:34 -0300
+Subject: [PATCH 16/16] block: Fix serial number assignment
+
+RH-Author: Xiao Wang <jasowang@redhat.com>
+Message-id: <20110325061233.23036.82907.stgit@dhcp-91-7.nay.redhat.com.englab.nay.redhat.com>
+Patchwork-id: 20624
+O-Subject: [RHEL6.1 PATCH] block: Fix serial number assignment
+Bugzilla: 688058
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=688058
+Upstream: 653dbec7c97cb51d19636423902719e5850da265
+Brew build: https://brewweb.devel.redhat.com/taskinfo?taskID=3204361
+Test status: Tested in my local desktop
+
+We should use 'dinfo->serial' length, 'serial' is a pointer, so
+the serial number length is currently limited to the pointer size.
+
+This fixes https://bugs.launchpad.net/qemu/+bug/584143 and is also
+valid for stable.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Jason Wang <jasowang@redhat.com>
+---
+ vl.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ vl.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index 7de2152..84963d6 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2566,7 +2566,7 @@ DriveInfo *drive_init(QemuOpts *opts, void *opaque,
+     dinfo->on_write_error = on_write_error;
+     dinfo->opts = opts;
+     if (serial)
+-        strncpy(dinfo->serial, serial, sizeof(serial));
++        strncpy(dinfo->serial, serial, sizeof(dinfo->serial) - 1);
+     QTAILQ_INSERT_TAIL(&drives, dinfo, next);
+     if (is_extboot) {
+         extboot_drive = dinfo;
+-- 
+1.7.4.1.230.gae447
+

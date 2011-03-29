@@ -1,0 +1,77 @@
+From 4d33b59379b7bd137d7bff291a33fd7d3ee681a2 Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Wed, 23 Mar 2011 21:33:59 -0300
+Subject: [PATCH 13/16] virtio-pci: fix bus master work around on load
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <20110323213358.GA4471@redhat.com>
+Patchwork-id: 20528
+O-Subject: [PATCH RHEL 6.0.z/6.1] virtio-pci: fix bus master work around on load
+Bugzilla: 682243
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Xiao Wang <jasowang@redhat.com>
+
+Commit c81131db15dd1844d0db1d51f3cd7a105cfd2cf3
+detects old guests by comparing virtio and
+PCI status. It attempts to do this on load,
+as well, but load_config callback in a binding
+is invoked too early and so the virtio status
+isn't set yet.
+
+We could add yet another callback to the
+binding, to invoke after load, but it
+seems easier to reuse the existing vmstate
+callback.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+Acked-by: Alexander Graf <agraf@suse.de>
+
+Upstream status: posted
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=682243
+Brew build: https://brewweb.devel.redhat.com/taskinfo?taskID=3199590
+Tested-by: Alex Williamson <alex.williamson@redhat.com>
+
+---
+ hw/virtio-pci.c |   13 ++++++-------
+ 1 files changed, 6 insertions(+), 7 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/virtio-pci.c |   13 ++++++-------
+ 1 files changed, 6 insertions(+), 7 deletions(-)
+
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index 0cde17e..f9eb9ec 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -157,13 +157,6 @@ static int virtio_pci_load_config(void * opaque, QEMUFile *f)
+     if (proxy->vdev->config_vector != VIRTIO_NO_VECTOR) {
+         return msix_vector_use(&proxy->pci_dev, proxy->vdev->config_vector);
+     }
+-
+-    /* Try to find out if the guest has bus master disabled, but is
+-       in ready state. Then we have a buggy guest OS. */
+-    if ((proxy->vdev->status & VIRTIO_CONFIG_S_DRIVER_OK) &&
+-        !(proxy->pci_dev.config[PCI_COMMAND] & PCI_COMMAND_MASTER)) {
+-        proxy->flags |= VIRTIO_PCI_FLAG_BUS_MASTER_BUG;
+-    }
+     return 0;
+ }
+ 
+@@ -728,6 +721,12 @@ static void virtio_pci_vmstate_change(void *opaque, bool running)
+     VirtIOPCIProxy *proxy = opaque;
+ 
+     if (running) {
++        /* Try to find out if the guest has bus master disabled, but is
++           in ready state. Then we have a buggy guest OS. */
++        if ((proxy->vdev->status & VIRTIO_CONFIG_S_DRIVER_OK) &&
++            !(proxy->pci_dev.config[PCI_COMMAND] & PCI_COMMAND_MASTER)) {
++            proxy->flags |= VIRTIO_PCI_FLAG_BUS_MASTER_BUG;
++        }
+         virtio_pci_start_ioeventfd(proxy);
+     } else {
+         virtio_pci_stop_ioeventfd(proxy);
+-- 
+1.7.4.1.230.gae447
+

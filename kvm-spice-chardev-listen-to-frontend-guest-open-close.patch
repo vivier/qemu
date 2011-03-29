@@ -1,0 +1,63 @@
+From fe91e73b7c3e91cfa6d0f1576741cb0a61bba9ae Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Tue, 22 Mar 2011 13:46:33 -0300
+Subject: [PATCH 11/16] spice-chardev: listen to frontend guest open / close
+
+RH-Author: Hans de Goede <hdegoede@redhat.com>
+Message-id: <1300801593-1297-4-git-send-email-hdegoede@redhat.com>
+Patchwork-id: 20396
+O-Subject: [PATCH 3/3] spice-chardev: listen to frontend guest open / close
+Bugzilla: 688572
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+
+Note the vmc_register_interface() in spice_chr_write is left in place
+in case someone uses spice-chardev with a frontend which does not have
+guest open / close notification.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ spice-qemu-char.c |   14 ++++++++++++++
+ 1 files changed, 14 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ spice-qemu-char.c |   14 ++++++++++++++
+ 1 files changed, 14 insertions(+), 0 deletions(-)
+
+diff --git a/spice-qemu-char.c b/spice-qemu-char.c
+index 454e9ad..84ef965 100644
+--- a/spice-qemu-char.c
++++ b/spice-qemu-char.c
+@@ -149,6 +149,18 @@ static void spice_chr_close(struct CharDriverState *chr)
+     qemu_free(s);
+ }
+ 
++static void spice_chr_guest_open(struct CharDriverState *chr)
++{
++    SpiceCharDriver *s = chr->opaque;
++    vmc_register_interface(s);
++}
++
++static void spice_chr_guest_close(struct CharDriverState *chr)
++{
++    SpiceCharDriver *s = chr->opaque;
++    vmc_unregister_interface(s);
++}
++
+ static void print_allowed_subtypes(void)
+ {
+     const char** psubtype;
+@@ -201,6 +213,8 @@ CharDriverState *qemu_chr_open_spice(QemuOpts *opts)
+     chr->opaque = s;
+     chr->chr_write = spice_chr_write;
+     chr->chr_close = spice_chr_close;
++    chr->chr_guest_open = spice_chr_guest_open;
++    chr->chr_guest_close = spice_chr_guest_close;
+     s->unblock_timer = qemu_new_timer(vm_clock, spice_chr_unblock, s);
+ 
+     qemu_chr_generic_open(chr);
+-- 
+1.7.4.1.230.gae447
+

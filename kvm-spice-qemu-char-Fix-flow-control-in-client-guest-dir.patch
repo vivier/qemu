@@ -1,0 +1,72 @@
+From e1590541a8c11139a534acdf41171ca24aabea5b Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Wed, 23 Mar 2011 09:40:40 -0300
+Subject: [PATCH 08/16] spice-qemu-char: Fix flow control in client -> guest direction
+
+RH-Author: Hans de Goede <hdegoede@redhat.com>
+Message-id: <1300873240-3732-2-git-send-email-hdegoede@redhat.com>
+Patchwork-id: 20471
+O-Subject: [RHEL-6.1 PATCH] spice-qemu-char: Fix flow control in client -> guest
+	direction
+Bugzilla:
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+Bugzilla-related: 672191
+
+In the old spice-vmc device we used to have:
+last_out = virtio_serial_write(&svc->port, p, MIN(len, VMC_MAX_HOST_WRITE));
+if (last_out > 0)
+   ...
+
+Now in the chardev backend we have:
+last_out = MIN(len, VMC_MAX_HOST_WRITE);
+qemu_chr_read(scd->chr, p, last_out);
+if (last_out > 0) {
+   ...
+
+Which causes us to no longer detect if the virtio port is not ready
+to receive data from us. chardev actually has a mechanism to detect this,
+but it requires a separate call to qemu_chr_can_read, before calling
+qemu_chr_read (which return void).
+
+This patch uses qemu_chr_can_read to fix the flow control from client to
+guest.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ spice-qemu-char.c |   11 +++++------
+ 1 files changed, 5 insertions(+), 6 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ spice-qemu-char.c |   11 +++++------
+ 1 files changed, 5 insertions(+), 6 deletions(-)
+
+diff --git a/spice-qemu-char.c b/spice-qemu-char.c
+index 0e49cf1..454e9ad 100644
+--- a/spice-qemu-char.c
++++ b/spice-qemu-char.c
+@@ -37,14 +37,13 @@ static int vmc_write(SpiceCharDeviceInstance *sin, const uint8_t *buf, int len)
+ 
+     while (len > 0) {
+         last_out = MIN(len, VMC_MAX_HOST_WRITE);
+-        qemu_chr_read(scd->chr, p, last_out);
+-        if (last_out > 0) {
+-            out += last_out;
+-            len -= last_out;
+-            p += last_out;
+-        } else {
++        if (qemu_chr_can_read(scd->chr) < last_out) {
+             break;
+         }
++        qemu_chr_read(scd->chr, p, last_out);
++        out += last_out;
++        len -= last_out;
++        p += last_out;
+     }
+ 
+     dprintf(scd, 3, "%s: %lu/%zd\n", __func__, out, len + out);
+-- 
+1.7.4.1.230.gae447
+

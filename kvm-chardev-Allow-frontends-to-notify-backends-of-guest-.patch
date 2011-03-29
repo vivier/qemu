@@ -1,0 +1,93 @@
+From 20c4f40fd54dcce36c90ae94a6b9fd4b5af8bee6 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Tue, 22 Mar 2011 13:46:31 -0300
+Subject: [PATCH 09/16] chardev: Allow frontends to notify backends of guest open / close
+
+RH-Author: Hans de Goede <hdegoede@redhat.com>
+Message-id: <1300801593-1297-2-git-send-email-hdegoede@redhat.com>
+Patchwork-id: 20398
+O-Subject: [PATCH 1/3] chardev: Allow frontends to notify backends of guest open
+	/ close
+Bugzilla: 688572
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+
+Some frontends know when the guest has opened the "channel" and is actively
+listening to it, for example virtio-serial. This patch adds 2 new qemu-chardev
+functions which can be used by frontends to signal guest open / close, and
+allows interested backends to listen to this.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ qemu-char.c |   18 ++++++++++++++++++
+ qemu-char.h |    4 ++++
+ 2 files changed, 22 insertions(+), 0 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ qemu-char.c |   18 ++++++++++++++++++
+ qemu-char.h |    4 ++++
+ 2 files changed, 22 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-char.c b/qemu-char.c
+index bd7dc92..5dc3e10 100644
+--- a/qemu-char.c
++++ b/qemu-char.c
+@@ -497,6 +497,10 @@ static CharDriverState *qemu_chr_open_mux(CharDriverState *drv)
+     chr->chr_write = mux_chr_write;
+     chr->chr_update_read_handler = mux_chr_update_read_handler;
+     chr->chr_accept_input = mux_chr_accept_input;
++    /* Frontend guest-open / -close notification is not support with muxes */
++    chr->chr_guest_open = NULL;
++    chr->chr_guest_close = NULL;
++
+     return chr;
+ }
+ 
+@@ -2685,6 +2689,20 @@ CharDriverState *qemu_chr_open(const char *label, const char *filename, void (*i
+     return chr;
+ }
+ 
++void qemu_chr_guest_open(struct CharDriverState *chr)
++{
++    if (chr->chr_guest_open) {
++        chr->chr_guest_open(chr);
++    }
++}
++
++void qemu_chr_guest_close(struct CharDriverState *chr)
++{
++    if (chr->chr_guest_close) {
++        chr->chr_guest_close(chr);
++    }
++}
++
+ void qemu_chr_close(CharDriverState *chr)
+ {
+     QTAILQ_REMOVE(&chardevs, chr, next);
+diff --git a/qemu-char.h b/qemu-char.h
+index c1c437c..b24a98e 100644
+--- a/qemu-char.h
++++ b/qemu-char.h
+@@ -68,6 +68,8 @@ struct CharDriverState {
+     void (*chr_send_event)(struct CharDriverState *chr, int event);
+     void (*chr_close)(struct CharDriverState *chr);
+     void (*chr_accept_input)(struct CharDriverState *chr);
++    void (*chr_guest_open)(struct CharDriverState *chr);
++    void (*chr_guest_close)(struct CharDriverState *chr);
+     void *opaque;
+     QEMUBH *bh;
+     char *label;
+@@ -88,6 +90,8 @@ QemuOpts *qemu_chr_parse_compat(const char *label, const char *filename);
+ CharDriverState *qemu_chr_open_opts(QemuOpts *opts,
+                                     void (*init)(struct CharDriverState *s));
+ CharDriverState *qemu_chr_open(const char *label, const char *filename, void (*init)(struct CharDriverState *s));
++void qemu_chr_guest_open(struct CharDriverState *chr);
++void qemu_chr_guest_close(struct CharDriverState *chr);
+ void qemu_chr_close(CharDriverState *chr);
+ void qemu_chr_printf(CharDriverState *s, const char *fmt, ...);
+ int qemu_chr_write(CharDriverState *s, const uint8_t *buf, int len);
+-- 
+1.7.4.1.230.gae447
+

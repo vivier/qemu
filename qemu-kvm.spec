@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.152
+%define pkgrelease 2.153
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2427,6 +2427,38 @@ Patch2077: kvm-pci-assign-Catch-missing-KVM-support.patch
 Patch2078: kvm-device-assignment-register-a-reset-function.patch
 # For bz#685147 - guest with assigned nic got kernel panic when send system_reset signal in QEMU monitor
 Patch2079: kvm-device-assignment-Reset-device-on-system-reset.patch
+# For bz#678208 - qemu-kvm hangs when installing guest with -spice option
+Patch2080: kvm-Revert-spice-qxl-locking-fix-for-qemu-kvm.patch
+# For bz#678208 - qemu-kvm hangs when installing guest with -spice option
+Patch2081: kvm-qxl-spice-display-move-pipe-to-ssd.patch
+# For bz#678208 - qemu-kvm hangs when installing guest with -spice option
+Patch2082: kvm-qxl-implement-get_command-in-vga-mode-without-locks.patch
+# For bz#678208 - qemu-kvm hangs when installing guest with -spice option
+Patch2083: kvm-qxl-spice-remove-qemu_mutex_-un-lock_iothread-around.patch
+# For bz#678208 - qemu-kvm hangs when installing guest with -spice option
+Patch2084: kvm-hw-qxl-render-drop-cursor-locks-replace-with-pipe.patch
+# For bz#672191 - spicevmc: flow control on the spice agent channel is missing in both directions
+Patch2085: kvm-spice-qemu-char.c-add-throttling.patch
+# For bz#672191 - spicevmc: flow control on the spice agent channel is missing in both directions
+Patch2086: kvm-spice-qemu-char.c-remove-intermediate-buffer.patch
+# For bz#672191 - spicevmc: flow control on the spice agent channel is missing in both directions
+Patch2087: kvm-spice-qemu-char-Fix-flow-control-in-client-guest-dir.patch
+# For bz#688572 - spice-server does not switch back to server mouse mode if guest spice-agent dies.
+Patch2088: kvm-chardev-Allow-frontends-to-notify-backends-of-guest-.patch
+# For bz#688572 - spice-server does not switch back to server mouse mode if guest spice-agent dies.
+Patch2089: kvm-virtio-console-notify-backend-of-guest-open-close.patch
+# For bz#688572 - spice-server does not switch back to server mouse mode if guest spice-agent dies.
+Patch2090: kvm-spice-chardev-listen-to-frontend-guest-open-close.patch
+# For bz#690267 - Backport qemu_get_ram_ptr() performance improvement
+Patch2091: kvm-Fix-performance-regression-in-qemu_get_ram_ptr.patch
+# For bz#682243 - [KVM] pci hotplug after migration breaks virtio_net.
+Patch2092: kvm-virtio-pci-fix-bus-master-work-around-on-load.patch
+# For bz#680356 - Live migration failed in ipv6 environment
+Patch2093: kvm-Use-getaddrinfo-for-migration.patch
+# For bz#680356 - Live migration failed in ipv6 environment
+Patch2094: kvm-net-socket-allow-ipv6-for-net_socket_listen_init-and.patch
+# For bz#688058 - Drive serial number gets truncated
+Patch2095: kvm-block-Fix-serial-number-assignment.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3613,6 +3645,22 @@ ApplyOptionalPatch()
 %patch2077 -p1
 %patch2078 -p1
 %patch2079 -p1
+%patch2080 -p1
+%patch2081 -p1
+%patch2082 -p1
+%patch2083 -p1
+%patch2084 -p1
+%patch2085 -p1
+%patch2086 -p1
+%patch2087 -p1
+%patch2088 -p1
+%patch2089 -p1
+%patch2090 -p1
+%patch2091 -p1
+%patch2092 -p1
+%patch2093 -p1
+%patch2094 -p1
+%patch2095 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3834,6 +3882,40 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Mar 29 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.153.el6
+- kvm-Revert-spice-qxl-locking-fix-for-qemu-kvm.patch [bz#678208]
+- kvm-qxl-spice-display-move-pipe-to-ssd.patch [bz#678208]
+- kvm-qxl-implement-get_command-in-vga-mode-without-locks.patch [bz#678208]
+- kvm-qxl-spice-remove-qemu_mutex_-un-lock_iothread-around.patch [bz#678208]
+- kvm-hw-qxl-render-drop-cursor-locks-replace-with-pipe.patch [bz#678208]
+- kvm-spice-qemu-char.c-add-throttling.patch [bz#672191]
+- kvm-spice-qemu-char.c-remove-intermediate-buffer.patch [bz#672191]
+- kvm-spice-qemu-char-Fix-flow-control-in-client-guest-dir.patch [bz#672191]
+- kvm-chardev-Allow-frontends-to-notify-backends-of-guest-.patch [bz#688572]
+- kvm-virtio-console-notify-backend-of-guest-open-close.patch [bz#688572]
+- kvm-spice-chardev-listen-to-frontend-guest-open-close.patch [bz#688572]
+- kvm-Fix-performance-regression-in-qemu_get_ram_ptr.patch [bz#690267]
+- kvm-virtio-pci-fix-bus-master-work-around-on-load.patch [bz#682243]
+- kvm-Use-getaddrinfo-for-migration.patch [bz#680356]
+- kvm-net-socket-allow-ipv6-for-net_socket_listen_init-and.patch [bz#680356]
+- kvm-block-Fix-serial-number-assignment.patch [bz#688058]
+- Resolves: bz#672191
+  (spicevmc: flow control on the spice agent channel is missing in both directions)
+- Resolves: bz#678208
+  (qemu-kvm hangs when installing guest with -spice option)
+- Resolves: bz#680356
+  (Live migration failed in ipv6 environment)
+- Resolves: bz#682243
+  ([KVM] pci hotplug after migration breaks virtio_net.)
+- Resolves: bz#688058
+  (Drive serial number gets truncated)
+- Resolves: bz#688572
+  (spice-server does not switch back to server mouse mode if guest spice-agent dies.)
+- Resolves: bz#690267
+  (Backport qemu_get_ram_ptr() performance improvement)
+- Related: bz#672191
+  (spicevmc: flow control on the spice agent channel is missing in both directions)
+
 * Tue Mar 22 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.152.el6
 - kvm-device-assignment-register-a-reset-function.patch [bz#685147]
 - kvm-device-assignment-Reset-device-on-system-reset.patch [bz#685147]
