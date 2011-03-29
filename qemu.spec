@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.14.0
-Release: 6%{?dist}
+Release: 7%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -76,14 +76,15 @@ BuildRequires: spice-server-devel >= 0.6.0
 %endif
 Requires: %{name}-user = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-x86 = %{epoch}:%{version}-%{release}
-Requires: %{name}-system-sparc = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-arm = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-cris = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-sh4 = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-m68k = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-mips = %{epoch}:%{version}-%{release}
-Requires: %{name}-system-ppc = %{epoch}:%{version}-%{release}
 Requires: %{name}-img = %{epoch}:%{version}-%{release}
+
+Obsoletes: %{name}-system-ppc
+Obsoletes: %{name}-system-sparc
 
 %define qemudocdir %{_docdir}/%{name}-%{version}
 
@@ -105,9 +106,6 @@ Summary: QEMU metapackage for KVM support
 Group: Development/Tools
 %ifarch %{ix86} x86_64
 Requires: qemu-system-x86 = %{epoch}:%{version}-%{release}
-%endif
-%ifarch ppc ppc64
-Requires: qemu-system-ppc = %{epoch}:%{version}-%{release}
 %endif
 
 %description kvm
@@ -172,27 +170,6 @@ machine that supports it, this package also provides the KVM virtualization
 platform.
 
 %if !%{with_x86only}
-%package system-ppc
-Summary: QEMU system emulator for ppc
-Group: Development/Tools
-Requires: %{name}-common = %{epoch}:%{version}-%{release}
-Requires: openbios-ppc
-%description system-ppc
-QEMU is a generic and open source processor emulator which achieves a good
-emulation speed by using dynamic translation.
-
-This package provides the system emulator for ppc
-
-%package system-sparc
-Summary: QEMU system emulator for sparc
-Group: Development/Tools
-Requires: %{name}-common = %{epoch}:%{version}-%{release}
-%description system-sparc
-QEMU is a generic and open source processor emulator which achieves a good
-emulation speed by using dynamic translation.
-
-This package provides the system emulator for sparc
-
 %package system-arm
 Summary: QEMU system emulator for arm
 Group: Development/Tools
@@ -287,13 +264,11 @@ such as kvm_stat.
     buildarch="i386-softmmu x86_64-softmmu i386-linux-user x86_64-linux-user"
 %else
     buildarch="i386-softmmu x86_64-softmmu arm-softmmu cris-softmmu m68k-softmmu \
-           mips-softmmu mipsel-softmmu mips64-softmmu mips64el-softmmu ppc-softmmu \
-           ppcemb-softmmu ppc64-softmmu sh4-softmmu sh4eb-softmmu sparc-softmmu \
+           mips-softmmu mipsel-softmmu mips64-softmmu mips64el-softmmu \
+           sh4-softmmu sh4eb-softmmu \
            i386-linux-user x86_64-linux-user alpha-linux-user arm-linux-user \
            armeb-linux-user cris-linux-user m68k-linux-user mips-linux-user \
-           mipsel-linux-user ppc-linux-user ppc64-linux-user ppc64abi32-linux-user \
-           sh4-linux-user sh4eb-linux-user sparc-linux-user sparc64-linux-user \
-           sparc32plus-linux-user" \
+           mipsel-linux-user sh4-linux-user sh4eb-linux-user" \
 %endif
 
 
@@ -401,10 +376,8 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-sparc32
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-sparc64
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/petalogix-s3adsp1800.dtb
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/s390-zipl.rom
-%if %{with_x86only}
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/bamboo.dtb
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/ppc_rom.bin
-%endif
 
 # the pxe gpxe images will be symlinks to the images on
 # /usr/share/gpxe, as QEMU doesn't know how to look
@@ -424,11 +397,6 @@ ln -s ../vgabios/VGABIOS-lgpl-latest.qxl.bin %{buildroot}/%{_datadir}/%{name}/vg
 ln -s ../vgabios/VGABIOS-lgpl-latest.stdvga.bin %{buildroot}/%{_datadir}/%{name}/vgabios-stdvga.bin
 ln -s ../vgabios/VGABIOS-lgpl-latest.vmware.bin %{buildroot}/%{_datadir}/%{name}/vgabios-vmware.bin
 ln -s ../seabios/bios.bin %{buildroot}/%{_datadir}/%{name}/bios.bin
-%if !%{with_x86only}
-ln -s ../openbios/openbios-ppc %{buildroot}/%{_datadir}/%{name}/openbios-ppc
-ln -s ../openbios/openbios-sparc32 %{buildroot}/%{_datadir}/%{name}/openbios-sparc32
-ln -s ../openbios/openbios-sparc64 %{buildroot}/%{_datadir}/%{name}/openbios-sparc64
-%endif
 %clean
 rm -rf $RPM_BUILD_ROOT
 
@@ -520,14 +488,8 @@ fi
 %{_bindir}/qemu-m68k
 %{_bindir}/qemu-mips
 %{_bindir}/qemu-mipsel
-%{_bindir}/qemu-ppc
-%{_bindir}/qemu-ppc64
-%{_bindir}/qemu-ppc64abi32
 %{_bindir}/qemu-sh4
 %{_bindir}/qemu-sh4eb
-%{_bindir}/qemu-sparc
-%{_bindir}/qemu-sparc64
-%{_bindir}/qemu-sparc32plus
 %endif
 
 %files system-x86
@@ -565,12 +527,6 @@ fi
 
 %if !%{with_x86only}
 
-%files system-sparc
-%defattr(-,root,root)
- %{_bindir}/qemu-system-sparc
-%{_datadir}/%{name}/openbios-sparc32
-%{_datadir}/%{name}/openbios-sparc64
-
 %files system-arm
 %defattr(-,root,root)
 %{_bindir}/qemu-system-arm
@@ -581,15 +537,6 @@ fi
 %{_bindir}/qemu-system-mipsel
 %{_bindir}/qemu-system-mips64
 %{_bindir}/qemu-system-mips64el
-
-%files system-ppc
-%defattr(-,root,root)
-%{_bindir}/qemu-system-ppc
-%{_bindir}/qemu-system-ppc64
-%{_bindir}/qemu-system-ppcemb
-%{_datadir}/%{name}/openbios-ppc
-%{_datadir}/%{name}/bamboo.dtb
-%{_datadir}/%{name}/ppc_rom.bin
 
 %files system-cris
 %defattr(-,root,root)
@@ -613,6 +560,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Mar 29 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.14.0-7
+- Disable qemu-ppc and qemu-sparc packages (#679179)
+
 * Mon Mar 28 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.14.0-6
 - Spice fixes for flow control.
 
