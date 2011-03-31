@@ -2067,8 +2067,11 @@ int load_vmstate(const char *name)
 
     /* Don't even try to load empty VM states */
     ret = bdrv_snapshot_find(bs, &sn, name);
-    if ((ret >= 0) && (sn.vm_state_size == 0))
+    if ((ret >= 0) && (sn.vm_state_size == 0)) {
+        error_report("This is a disk-only snapshot. Revert to it offline "
+            "using qemu-img.");
         return -EINVAL;
+    }
 
     /* restore the VM state */
     f = qemu_fopen_bdrv(bs, 0);
