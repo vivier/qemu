@@ -95,6 +95,7 @@ typedef struct EmulEvent {
 struct EmulatedState {
     CCIDCardState base;
     uint8_t  debug;
+    char*    backend_str;
     uint32_t backend;
     char*    cert1;
     char*    cert2;
@@ -438,12 +439,39 @@ static int emulated_initialize_vcard_from_certificates(EmulatedState *card)
     return wrap_vcard_emul_init(options);
 }
 
+typedef struct EmulEnumTable {
+    const char *name;
+    uint32_t value;
+} EmulEnumTable;
+
+EmulEnumTable backend_enum_table[] = {
+    {BACKEND_NSS_EMULATED_NAME, BACKEND_NSS_EMULATED},
+    {BACKEND_CERTIFICATES_NAME, BACKEND_CERTIFICATES},
+    {NULL, 0},
+};
+
+static uint32_t parse_enumeration(char *str, EmulEnumTable* table,
+                                  uint32_t not_found_value)
+{
+    uint32_t ret = not_found_value;
+
+    while (table->name != NULL) {
+        if (strcmp(table->name, str) == 0) {
+            ret = table->value;
+            break;
+        }
+        table++;
+    }
+    return ret;
+}
+
 static int emulated_initfn(CCIDCardState *base)
 {
     EmulatedState *card = DO_UPCAST(EmulatedState, base, base);
     int rv;
     pthread_t thread_id;
     VCardEmulError ret;
+    EmulEnumTable *ptable;
 
     QSIMPLEQ_INIT(&card->event_list);
     QSIMPLEQ_INIT(&card->guest_apdu_list);
@@ -456,7 +484,15 @@ static int emulated_initfn(CCIDCardState *base)
     if (init_pipe_signaling(card) < 0) {
         return -1;
     }
-    ASSERT(card->backend); /* 0 is not a value in the enumeration */
+    card->backend = parse_enumeration(card->backend_str, backend_enum_table, 0);
+    if (card->backend == 0) {
+        printf("unknown backend, must be one of:\n");
+        for (ptable = backend_enum_table; ptable->name != NULL; ++ptable) {
+            printf("%s\n", ptable->name);
+        }
+        return -1;
+    }
+
     /* TODO: a passthru backened that works on local machine. third card type? */
     if (card->backend == BACKEND_CERTIFICATES) {
         if (card->cert1 != NULL && card->cert2 != NULL && card->cert3 != NULL) {
@@ -517,12 +553,6 @@ static int emulated_exitfn(CCIDCardState *base)
     return 0;
 }
 
-EnumTable backend_enum_table[] = {
-    {BACKEND_NSS_EMULATED_NAME, BACKEND_NSS_EMULATED},
-    {BACKEND_CERTIFICATES_NAME, BACKEND_CERTIFICATES},
-    {NULL, 0},
-};
-
 static CCIDCardInfo emulated_card_info = {
     .qdev.name = EMULATED_DEV_NAME,
     .qdev.desc = "emulated smartcard",
@@ -533,7 +563,7 @@ static CCIDCardInfo emulated_card_info = {
     .apdu_from_guest = emulated_apdu_from_guest,
     .qdev.unplug    = qdev_simple_unplug_cb,
     .qdev.props     = (Property[]) {
-        DEFINE_PROP_ENUM("backend", EmulatedState, backend, DEFAULT_BACKEND, backend_enum_table),
+        DEFINE_PROP_STRING("backend", EmulatedState, backend_str),
         DEFINE_PROP_STRING("cert1", EmulatedState, cert1),
         DEFINE_PROP_STRING("cert2", EmulatedState, cert2),
         DEFINE_PROP_STRING("cert3", EmulatedState, cert3),
