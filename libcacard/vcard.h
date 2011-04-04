@@ -1,5 +1,6 @@
 /*
- *
+ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
+ * See the COPYING.LIB file in the top-level directory.
  */
 #ifndef VCARD_H
 #define VCARD_H 1
@@ -54,7 +55,7 @@ VCardApplet *vcard_find_applet(VCard *card, unsigned char *aid, int aid_len);
 /* set the following applet to be current on the given channel */
 void vcard_select_applet(VCard *card, int channel, VCardApplet *applet);
 /* get the card type specific private data on the given channel */
-VCardAppletPrivate * vcard_get_current_applet_private(VCard *card, int channel);
+VCardAppletPrivate *vcard_get_current_applet_private(VCard *card, int channel);
 /* fetch the applet's id */
 unsigned char *vcard_applet_get_aid(VCardApplet *applet, int *aid_len);
 
@@ -65,9 +66,9 @@ VCardStatus vcard_process_applet_apdu(VCard *card, VCardAPDU *apdu,
  * VCard utilities
  */
 /* constructor */
-VCard * vcard_new(VCardEmul *_private, VCardEmulFree private_free);
+VCard *vcard_new(VCardEmul *_private, VCardEmulFree private_free);
 /* get a reference */
-VCard * vcard_reference(VCard *);
+VCard *vcard_reference(VCard *);
 /* destructor (reference counted) */
 void vcard_free(VCard *);
 /* get the atr from the card */

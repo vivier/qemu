@@ -1,12 +1,13 @@
 /*
- *
+ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
+ * See the COPYING.LIB file in the top-level directory.
  */
 
 #ifndef VREADERT_H
 #define VREADERT_H 1
 
 typedef enum {
-    VREADER_OK=0,
+    VREADER_OK = 0,
     VREADER_NO_CARD,
     VREADER_OUT_OF_MEMORY
 } VReaderStatus;
@@ -20,3 +21,4 @@ typedef struct VReaderEmulStruct VReaderEmul;
 typedef void (*VReaderEmulFree)(VReaderEmul *);
 
 #endif
+

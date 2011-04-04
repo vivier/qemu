@@ -1,29 +1,23 @@
 /*
+ * event queue implementation.
  *
+ * This code is licensed under the GNU LGPL, version 2.1 or later.
+ * See the COPYING.LIB file in the top-level directory.
  */
+
+#include "qemu-common.h"
+#include "qemu-thread.h"
+
 #include "vcard.h"
 #include "vreader.h"
 #include "vevent.h"
-
-/*
- * OS includes
- */
-#include <stdlib.h>
-
-/*
- * from spice
- */
-#include "mutex.h"
 
 VEvent *
 vevent_new(VEventType type, VReader *reader, VCard *card)
 {
     VEvent *new_vevent;
 
-    new_vevent = (VEvent *)malloc(sizeof(VEvent));
-    if (new_vevent == NULL) {
-        return NULL;
-    }
+    new_vevent = (VEvent *)qemu_malloc(sizeof(VEvent));
     new_vevent->next = NULL;
     new_vevent->type = type;
     new_vevent->reader = vreader_reference(reader);
@@ -40,22 +34,22 @@ vevent_delete(VEvent *vevent)
     }
     vreader_free(vevent->reader);
     vcard_free(vevent->card);
-    free(vevent);
+    qemu_free(vevent);
 }
 
 /*
  * VEvent queue management
  */
 
-static VEvent *vevent_queue_head = NULL;
-static VEvent *vevent_queue_tail = NULL;
-static mutex_t vevent_queue_lock;
-static condition_t vevent_queue_condition;
+static VEvent *vevent_queue_head;
+static VEvent *vevent_queue_tail;
+static QemuMutex vevent_queue_lock;
+static QemuCond vevent_queue_condition;
 
 void vevent_queue_init(void)
 {
-    MUTEX_INIT(vevent_queue_lock);
-    CONDITION_INIT(vevent_queue_condition);
+    qemu_mutex_init(&vevent_queue_lock);
+    qemu_cond_init(&vevent_queue_condition);
     vevent_queue_head = vevent_queue_tail = NULL;
 }
 
@@ -63,7 +57,7 @@ void
 vevent_queue_vevent(VEvent *vevent)
 {
     vevent->next = NULL;
-    MUTEX_LOCK(vevent_queue_lock);
+    qemu_mutex_lock(&vevent_queue_lock);
     if (vevent_queue_head) {
         assert(vevent_queue_tail);
         vevent_queue_tail->next = vevent;
@@ -71,8 +65,8 @@ vevent_queue_vevent(VEvent *vevent)
         vevent_queue_head = vevent;
     }
     vevent_queue_tail = vevent;
-    CONDITION_NOTIFY(vevent_queue_condition);
-    MUTEX_UNLOCK(vevent_queue_lock);
+    qemu_cond_signal(&vevent_queue_condition);
+    qemu_mutex_unlock(&vevent_queue_lock);
 }
 
 /* must have lock */
@@ -88,24 +82,25 @@ vevent_dequeue_vevent(void)
     return vevent;
 }
 
-VEvent * vevent_wait_next_vevent(void)
+VEvent *vevent_wait_next_vevent(void)
 {
     VEvent *vevent;
 
-    MUTEX_LOCK(vevent_queue_lock);
+    qemu_mutex_lock(&vevent_queue_lock);
     while ((vevent = vevent_dequeue_vevent()) == NULL) {
-        CONDITION_WAIT(vevent_queue_condition, vevent_queue_lock);
+        qemu_cond_wait(&vevent_queue_condition, &vevent_queue_lock);
     }
-    MUTEX_UNLOCK(vevent_queue_lock);
+    qemu_mutex_unlock(&vevent_queue_lock);
     return vevent;
 }
 
-VEvent * vevent_get_next_vevent(void)
+VEvent *vevent_get_next_vevent(void)
 {
     VEvent *vevent;
 
-    MUTEX_LOCK(vevent_queue_lock);
+    qemu_mutex_lock(&vevent_queue_lock);
     vevent = vevent_dequeue_vevent();
-    MUTEX_UNLOCK(vevent_queue_lock);
+    qemu_mutex_unlock(&vevent_queue_lock);
     return vevent;
 }
+

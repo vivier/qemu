@@ -1,29 +1,25 @@
 /*
  * emulate the reader
+ *
+ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
+ * See the COPYING.LIB file in the top-level directory.
  */
+
+#include "qemu-common.h"
+#include "qemu-thread.h"
+
 #include "vcard.h"
 #include "vcard_emul.h"
 #include "card_7816.h"
 #include "vreader.h"
 #include "vevent.h"
 
-/*
- * System includes
- */
-#include <stdlib.h>
-#include <string.h>
-
-/*
- * spice includes
- */
-#include "mutex.h"
-
 struct VReaderStruct {
     int    reference_count;
     VCard *card;
     char *name;
     vreader_id_t id;
-    mutex_t lock;
+    QemuMutex lock;
     VReaderEmul  *reader_private;
     VReaderEmulFree reader_private_free;
 };
@@ -32,13 +28,13 @@ struct VReaderStruct {
 static inline void
 vreader_lock(VReader *reader)
 {
-    MUTEX_LOCK(reader->lock);
+    qemu_mutex_lock(&reader->lock);
 }
 
 static inline void
 vreader_unlock(VReader *reader)
 {
-    MUTEX_UNLOCK(reader->lock);
+    qemu_mutex_unlock(&reader->lock);
 }
 
 /*
@@ -50,11 +46,8 @@ vreader_new(const char *name, VReaderEmul *private,
 {
     VReader *reader;
 
-    reader = (VReader *)malloc(sizeof(VReader));
-    if (reader == NULL) {
-        return NULL;
-    }
-    MUTEX_INIT(reader->lock);
+    reader = (VReader *)qemu_malloc(sizeof(VReader));
+    qemu_mutex_init(&reader->lock);
     reader->reference_count = 1;
     reader->name = name ? strdup(name) : NULL;
     reader->card = NULL;
@@ -94,12 +87,12 @@ vreader_free(VReader *reader)
         vcard_free(reader->card);
     }
     if (reader->name) {
-        free(reader->name);
+        qemu_free(reader->name);
     }
     if (reader->reader_private_free) {
         reader->reader_private_free(reader->reader_private);
     }
-    free(reader);
+    qemu_free(reader);
     return;
 }
 
@@ -182,7 +175,7 @@ vreader_reset(VReader *reader, VCardPower power, unsigned char *atr, int *len)
 VReaderStatus
 vreader_power_on(VReader *reader, unsigned char *atr, int *len)
 {
-    return vreader_reset(reader, VCARD_POWER_ON, atr, len );
+    return vreader_reset(reader, VCARD_POWER_ON, atr, len);
 }
 
 VReaderStatus
@@ -214,7 +207,7 @@ vreader_xfr_bytes(VReader *reader,
     } else {
         card_status = vcard_process_apdu(card, apdu, &response);
     }
-    ASSERT(card_status == VCARD_DONE);
+    assert(card_status == VCARD_DONE);
     if (card_status == VCARD_DONE) {
         int size = MIN(*receive_buf_len, response->b_total_len);
         memcpy(receive_buf, response->b_data, size);
@@ -244,10 +237,7 @@ vreader_list_entry_new(VReader *reader)
     VReaderListEntry *new_reader_list_entry;
 
     new_reader_list_entry = (VReaderListEntry *)
-                               malloc(sizeof(VReaderListEntry));
-    if (new_reader_list_entry == NULL) {
-        return NULL;
-    }
+                               qemu_malloc(sizeof(VReaderListEntry));
     new_reader_list_entry->next = NULL;
     new_reader_list_entry->prev = NULL;
     new_reader_list_entry->reader = vreader_reference(reader);
@@ -261,7 +251,7 @@ vreader_list_entry_delete(VReaderListEntry *entry)
         return;
     }
     vreader_free(entry->reader);
-    free(entry);
+    qemu_free(entry);
 }
 
 
@@ -270,10 +260,7 @@ vreader_list_new(void)
 {
     VReaderList *new_reader_list;
 
-    new_reader_list = (VReaderList *)malloc(sizeof(VReaderList));
-    if (new_reader_list == NULL) {
-        return NULL;
-    }
+    new_reader_list = (VReaderList *)qemu_malloc(sizeof(VReaderList));
     new_reader_list->head = NULL;
     new_reader_list->tail = NULL;
     return new_reader_list;
@@ -284,14 +271,14 @@ vreader_list_delete(VReaderList *list)
 {
     VReaderListEntry *current_entry;
     VReaderListEntry *next_entry = NULL;
-    for (current_entry= vreader_list_get_first(list); current_entry;
-            current_entry=next_entry) {
+    for (current_entry = vreader_list_get_first(list); current_entry;
+         current_entry = next_entry) {
         next_entry = vreader_list_get_next(current_entry);
         vreader_list_entry_delete(current_entry);
     }
     list->head = NULL;
     list->tail = NULL;
-    free(list);
+    qemu_free(list);
 }
 
 
@@ -349,26 +336,26 @@ vreader_dequeue(VReaderList *list, VReaderListEntry *entry)
     entry->next = entry->prev = NULL;
 }
 
-static VReaderList *vreader_list = NULL;
-static mutex_t vreader_list_mutex;
+static VReaderList *vreader_list;
+static QemuMutex vreader_list_mutex;
 
 static void
 vreader_list_init(void)
 {
     vreader_list = vreader_list_new();
-    MUTEX_INIT(vreader_list_mutex);
+    qemu_mutex_init(&vreader_list_mutex);
 }
 
 static void
 vreader_list_lock(void)
 {
-    MUTEX_LOCK(vreader_list_mutex);
+    qemu_mutex_lock(&vreader_list_mutex);
 }
 
 static void
 vreader_list_unlock(void)
 {
-    MUTEX_UNLOCK(vreader_list_mutex);
+    qemu_mutex_unlock(&vreader_list_mutex);
 }
 
 static VReaderList *
@@ -381,8 +368,8 @@ vreader_copy_list(VReaderList *list)
     if (new_list == NULL) {
         return NULL;
     }
-    for (current_entry= vreader_list_get_first(list); current_entry;
-                       current_entry=vreader_list_get_next(current_entry)) {
+    for (current_entry = vreader_list_get_first(list); current_entry;
+         current_entry = vreader_list_get_next(current_entry)) {
         VReader *reader = vreader_list_get_reader(current_entry);
         VReaderListEntry *new_entry = vreader_list_entry_new(reader);
 
@@ -471,8 +458,8 @@ vreader_remove_reader(VReader *reader)
     VReaderListEntry *current_entry;
 
     vreader_list_lock();
-    for (current_entry= vreader_list_get_first(vreader_list); current_entry;
-                       current_entry=vreader_list_get_next(current_entry)) {
+    for (current_entry = vreader_list_get_first(vreader_list); current_entry;
+         current_entry = vreader_list_get_next(current_entry)) {
         if (current_entry->reader == reader) {
             break;
         }
@@ -523,3 +510,4 @@ vreader_init(void)
 {
     vreader_list_init();
 }
+

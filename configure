@@ -2024,7 +2024,7 @@ if test "$smartcard" != "no" ; then
             QEMU_CFLAGS="$QEMU_CFLAGS $smartcard_cflags $libcacard_cflags"
             LIBS="$libcacard_libs $LIBS"
         else
-            if test "$smartcard_nss" == "yes"; then
+            if test "$smartcard_nss" = "yes"; then
                 feature_not_found "nss"
             fi
             smartcard_nss="no"
@@ -3037,11 +3037,11 @@ for hwlib in 32 64; do
   echo "QEMU_CFLAGS+=-DTARGET_PHYS_ADDR_BITS=$hwlib" >> $d/config.mak
 done
 
-if [ $source_path != `pwd` ]; then
+if [ "$source_path" != `pwd` ]; then
     # out of tree build
     mkdir -p libcacard
     rm -f libcacard/Makefile
-    ln -s $source_path/libcacard/Makefile libcacard/Makefile
+    ln -s "$source_path/libcacard/Makefile" libcacard/Makefile
 fi
 
 d=libuser

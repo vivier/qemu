@@ -5,6 +5,9 @@
  * using the underlying system primitives. For Linux it uses NSS, though direct
  * to PKCS #11, openssl+pkcs11, or even gnu crypto libraries+pkcs #11 could be
  * used. On Windows CAPI could be used.
+ *
+ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
+ * See the COPYING.LIB file in the top-level directory.
  */
 
 #ifndef VCARD_EMUL_H
@@ -18,7 +21,7 @@
  * types
  */
 typedef enum {
-    VCARD_EMUL_OK =0,
+    VCARD_EMUL_OK = 0,
     VCARD_EMUL_FAIL,
     /* return values by vcard_emul_init */
     VCARD_EMUL_INIT_ALREADY_INITED,

@@ -1,13 +1,15 @@
 /*
  * Implement the 7816 portion of the card spec
  *
+ * This code is licensed under the GNU LGPL, version 2.1 or later.
+ * See the COPYING.LIB file in the top-level directory.
  */
+
+#include "qemu-common.h"
 
 #include "vcard.h"
 #include "vcard_emul.h"
 #include "card_7816.h"
-#include <stdlib.h>
-#include <string.h>
 
 /*
  * set the status bytes based on the status word
@@ -49,15 +51,8 @@ vcard_response_new_data(unsigned char *buf, int len)
 {
     VCardResponse *new_response;
 
-    new_response = (VCardResponse *)malloc(sizeof(VCardResponse));
-    if (!new_response) {
-        return NULL;
-    }
-    new_response->b_data = malloc(len+2);
-    if (!new_response->b_data) {
-        free(new_response);
-        return NULL;
-    }
+    new_response = (VCardResponse *)qemu_malloc(sizeof(VCardResponse));
+    new_response->b_data = qemu_malloc(len + 2);
     memcpy(new_response->b_data, buf, len);
     new_response->b_total_len = len+2;
     new_response->b_len = len;
@@ -71,7 +66,7 @@ vcard_init_buffer_response(VCard *card, unsigned char *buf, int len)
     VCardResponse *response;
     VCardBufferResponse *buffer_response;
 
-    buffer_response =vcard_get_buffer_response(card);
+    buffer_response = vcard_get_buffer_response(card);
     if (buffer_response) {
         vcard_set_buffer_response(card, NULL);
         vcard_buffer_response_delete(buffer_response);
@@ -85,7 +80,7 @@ vcard_init_buffer_response(VCard *card, unsigned char *buf, int len)
     if (response == NULL) {
         return NULL;
     }
-    vcard_set_buffer_response(card,buffer_response);
+    vcard_set_buffer_response(card, buffer_response);
     return response;
 }
 
@@ -99,13 +94,13 @@ vcard_response_new(VCard *card, unsigned char *buf,
     VCardResponse *new_response;
 
     if (len > Le) {
-       return vcard_init_buffer_response(card, buf, len);
+        return vcard_init_buffer_response(card, buf, len);
     }
-    new_response = vcard_response_new_data(buf,len);
+    new_response = vcard_response_new_data(buf, len);
     if (new_response == NULL) {
         return NULL;
     }
-    vcard_response_set_status(new_response,status);
+    vcard_response_set_status(new_response, status);
     return new_response;
 }
 
@@ -119,13 +114,13 @@ vcard_response_new_bytes(VCard *card, unsigned char *buf, int len, int Le,
     VCardResponse *new_response;
 
     if (len > Le) {
-       return vcard_init_buffer_response(card, buf, len);
+        return vcard_init_buffer_response(card, buf, len);
     }
-    new_response = vcard_response_new_data(buf,len);
+    new_response = vcard_response_new_data(buf, len);
     if (new_response == NULL) {
         return NULL;
     }
-    vcard_response_set_status_bytes(new_response,sw1,sw2);
+    vcard_response_set_status_bytes(new_response, sw1, sw2);
     return new_response;
 }
 
@@ -137,15 +132,12 @@ vcard_response_new_status(vcard_7816_status_t status)
 {
     VCardResponse *new_response;
 
-    new_response = (VCardResponse *)malloc(sizeof(VCardResponse));
-    if (!new_response) {
-        return NULL;
-    }
+    new_response = (VCardResponse *)qemu_malloc(sizeof(VCardResponse));
     new_response->b_data = &new_response->b_sw1;
     new_response->b_len = 0;
     new_response->b_total_len = 2;
     new_response->b_type = VCARD_MALLOC_STRUCT;
-    vcard_response_set_status(new_response,status);
+    vcard_response_set_status(new_response, status);
     return new_response;
 }
 
@@ -157,10 +149,7 @@ vcard_response_new_status_bytes(unsigned char sw1, unsigned char sw2)
 {
     VCardResponse *new_response;
 
-    new_response = (VCardResponse *)malloc(sizeof(VCardResponse));
-    if (!new_response) {
-        return NULL;
-    }
+    new_response = (VCardResponse *)qemu_malloc(sizeof(VCardResponse));
     new_response->b_data = &new_response->b_sw1;
     new_response->b_len = 0;
     new_response->b_total_len = 2;
@@ -184,23 +173,23 @@ vcard_response_delete(VCardResponse *response)
     case VCARD_MALLOC:
         /* everything was malloc'ed */
         if (response->b_data) {
-            free(response->b_data);
+            qemu_free(response->b_data);
         }
-        free(response);
+        qemu_free(response);
         break;
     case VCARD_MALLOC_DATA:
         /* only the data buffer was malloc'ed */
         if (response->b_data) {
-            free(response->b_data);
+            qemu_free(response->b_data);
         }
         break;
-     case VCARD_MALLOC_STRUCT:
+    case VCARD_MALLOC_STRUCT:
         /* only the structure was malloc'ed */
-        free(response);
+        qemu_free(response);
         break;
-     case VCARD_STATIC:
+    case VCARD_STATIC:
         break;
-     }
+    }
 }
 
 /*
@@ -243,7 +232,7 @@ vcard_apdu_set_class(VCardAPDU *apdu) {
     case 0xf0:
     default:
         apdu->a_gen_type =
-            (apdu->a_cla == 0xff)? VCARD_7816_PTS : VCARD_7816_PROPIETARY;
+            (apdu->a_cla == 0xff) ? VCARD_7816_PTS : VCARD_7816_PROPIETARY;
         break;
     }
     return VCARD7816_STATUS_SUCCESS;
@@ -314,7 +303,7 @@ vcard_apdu_set_length(VCardAPDU *apdu)
             return VCARD7816_STATUS_ERROR_WRONG_LENGTH;
         }
         /* not extended */
-        apdu->a_Lc= apdu->a_header->ah_Le;
+        apdu->a_Lc = apdu->a_header->ah_Le;
         apdu->a_body = &apdu->a_header->ah_body[0];
         if (L ==  apdu->a_Lc + 1) {
             /* 3S only body parameters */
@@ -347,25 +336,18 @@ vcard_apdu_new(unsigned char *raw_apdu, int len, vcard_7816_status_t *status)
         return NULL;
     }
 
-    new_apdu = (VCardAPDU *)malloc(sizeof(VCardAPDU));
-    if (!new_apdu) {
-        return NULL;
-    }
-    new_apdu->a_data = malloc(len);
-    if (!new_apdu->a_data) {
-        free(new_apdu);
-        return NULL;
-    }
+    new_apdu = (VCardAPDU *)qemu_malloc(sizeof(VCardAPDU));
+    new_apdu->a_data = qemu_malloc(len);
     memcpy(new_apdu->a_data, raw_apdu, len);
     new_apdu->a_len = len;
     *status = vcard_apdu_set_class(new_apdu);
     if (*status != VCARD7816_STATUS_SUCCESS) {
-        free(new_apdu);
+        qemu_free(new_apdu);
         return NULL;
     }
     *status = vcard_apdu_set_length(new_apdu);
     if (*status != VCARD7816_STATUS_SUCCESS) {
-        free(new_apdu);
+        qemu_free(new_apdu);
         new_apdu = NULL;
     }
     return new_apdu;
@@ -378,9 +360,9 @@ vcard_apdu_delete(VCardAPDU *apdu)
         return;
     }
     if (apdu->a_data) {
-        free(apdu->a_data);
+        qemu_free(apdu->a_data);
     }
-    free(apdu);
+    qemu_free(apdu);
 }
 
 
@@ -563,7 +545,7 @@ vcard_make_response(vcard_7816_status_t status)
                         VCARD7816_STATUS_EXC_ERROR_MEMORY_FAILURE);
         }
     }
-    ASSERT(response);
+    assert(response);
     return response;
 }
 
@@ -651,10 +633,10 @@ vcard7816_vm_process_apdu(VCard *card, VCardAPDU *apdu,
             unsigned char *aid;
             int aid_len;
             aid = vcard_applet_get_aid(current_applet, &aid_len);
-           *response = vcard_response_new(card, aid, aid_len, apdu->a_Le,
+            *response = vcard_response_new(card, aid, aid_len, apdu->a_Le,
                                           VCARD7816_STATUS_SUCCESS);
         } else {
-           *response = vcard_make_response(
+            *response = vcard_make_response(
                              VCARD7816_STATUS_ERROR_FILE_NOT_FOUND);
         }
         break;
@@ -695,6 +677,7 @@ vcard7816_vm_process_apdu(VCard *card, VCardAPDU *apdu,
             *response = vcard_make_response(
                             VCARD7816_STATUS_ERROR_DATA_NOT_FOUND);
             /* handle error */
+            break;
         }
         bytes_to_copy = MIN(buffer_response->len, apdu->a_Le);
         next_byte_count = MIN(256, buffer_response->len - bytes_to_copy);
@@ -702,12 +685,12 @@ vcard7816_vm_process_apdu(VCard *card, VCardAPDU *apdu,
                         card, buffer_response->current, bytes_to_copy,
                         apdu->a_Le,
                         next_byte_count ?
-                        VCARD7816_SW1_RESPONSE_BYTES: VCARD7816_SW1_SUCCESS,
+                        VCARD7816_SW1_RESPONSE_BYTES : VCARD7816_SW1_SUCCESS,
                         next_byte_count);
         buffer_response->current += bytes_to_copy;
         buffer_response->len -= bytes_to_copy;
         if (*response == NULL || (next_byte_count == 0)) {
-            vcard_set_buffer_response(card,NULL);
+            vcard_set_buffer_response(card, NULL);
             vcard_buffer_response_delete(buffer_response);
         }
         if (*response == NULL) {
@@ -728,7 +711,7 @@ vcard7816_vm_process_apdu(VCard *card, VCardAPDU *apdu,
     }
 
     /* response should have been set somewhere */
-    ASSERT(*response != NULL);
+    assert(*response != NULL);
     return VCARD_DONE;
 }
 
@@ -753,11 +736,11 @@ vcard_process_apdu(VCard *card, VCardAPDU *apdu, VCardResponse **response)
     }
     buffer_response = vcard_get_buffer_response(card);
     if (buffer_response && apdu->a_ins != VCARD7816_INS_GET_RESPONSE) {
-       /* clear out buffer_response, return an error */
-        vcard_set_buffer_response(card,NULL);
+        /* clear out buffer_response, return an error */
+        vcard_set_buffer_response(card, NULL);
         vcard_buffer_response_delete(buffer_response);
-       *response = vcard_make_response(VCARD7816_STATUS_EXC_ERROR);
-       return VCARD_DONE;
+        *response = vcard_make_response(VCARD7816_STATUS_EXC_ERROR);
+        return VCARD_DONE;
     }
 
     status = vcard_process_applet_apdu(card, apdu, response);
@@ -766,13 +749,13 @@ vcard_process_apdu(VCard *card, VCardAPDU *apdu, VCardResponse **response)
     }
     switch (vcard_get_type(card)) {
     case VCARD_FILE_SYSTEM:
-        return vcard7816_file_system_process_apdu(card,apdu,response);
+        return vcard7816_file_system_process_apdu(card, apdu, response);
     case VCARD_VM:
-        return vcard7816_vm_process_apdu(card,apdu,response);
+        return vcard7816_vm_process_apdu(card, apdu, response);
     case VCARD_DIRECT:
         /* if we are type direct, then the applet should handle everything */
         assert("VCARD_DIRECT: applet failure");
-       break;
+        break;
     }
     *response =
         vcard_make_response(VCARD7816_STATUS_ERROR_COMMAND_NOT_SUPPORTED);

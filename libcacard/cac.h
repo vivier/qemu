@@ -1,6 +1,9 @@
 /*
  * defines the entry point for the cac card. Only used by cac.c anc
  * vcard_emul_type.c
+ *
+ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
+ * See the COPYING.LIB file in the top-level directory.
  */
 #ifndef CAC_H
 #define CAC_H 1

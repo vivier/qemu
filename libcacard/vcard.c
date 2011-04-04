@@ -1,9 +1,12 @@
 /*
  * implement the Java card standard.
  *
+ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
+ * See the COPYING.LIB file in the top-level directory.
  */
-#include <stdlib.h>
-#include <string.h>
+
+#include "qemu-common.h"
+
 #include "vcard.h"
 #include "vcard_emul.h"
 #include "card_7816t.h"
@@ -34,15 +37,8 @@ vcard_buffer_response_new(unsigned char *buffer, int size)
 {
     VCardBufferResponse *new_buffer;
 
-    new_buffer = (VCardBufferResponse *)malloc(sizeof(VCardBufferResponse));
-    if (new_buffer == NULL) {
-        return NULL;
-    }
-    new_buffer->buffer = (unsigned char *)malloc(size);
-    if (new_buffer->buffer == NULL) {
-        free(new_buffer);
-        return NULL;
-    }
+    new_buffer = (VCardBufferResponse *)qemu_malloc(sizeof(VCardBufferResponse));
+    new_buffer->buffer = (unsigned char *)qemu_malloc(size);
     memcpy(new_buffer->buffer, buffer, size);
     new_buffer->buffer_len = size;
     new_buffer->current = new_buffer->buffer;
@@ -57,9 +53,9 @@ vcard_buffer_response_delete(VCardBufferResponse *buffer_response)
         return;
     }
     if (buffer_response->buffer) {
-        free(buffer_response->buffer);
+        qemu_free(buffer_response->buffer);
     }
-    free(buffer_response);
+    qemu_free(buffer_response);
 }
 
 
@@ -73,14 +69,14 @@ vcard_reset(VCard *card, VCardPower power)
     VCardApplet *applet = NULL;
 
     if (card->type ==  VCARD_DIRECT) {
-       /* select the last applet */
+        /* select the last applet */
         VCardApplet *current_applet = NULL;
         for (current_applet = card->applet_list; current_applet;
                                        current_applet = current_applet->next) {
-           applet = current_applet;
-       }
+            applet = current_applet;
+        }
     }
-    for (i=0; i < MAX_CHANNEL; i++) {
+    for (i = 0; i < MAX_CHANNEL; i++) {
         card->current_applet[i] = applet;
     }
     if (card->vcard_buffer_response) {
@@ -106,21 +102,14 @@ vcard_new_applet(VCardProcessAPDU applet_process_function,
 {
     VCardApplet *applet;
 
-    applet = (VCardApplet *)malloc(sizeof(VCardApplet));
-    if (applet == NULL) {
-        return NULL;
-    }
+    applet = (VCardApplet *)qemu_malloc(sizeof(VCardApplet));
     applet->next = NULL;
     applet->applet_private = NULL;
     applet->applet_private_free = NULL;
     applet->process_apdu = applet_process_function;
     applet->reset_applet = applet_reset_function;
 
-    applet->aid = malloc(aid_len);
-    if (applet->aid == NULL) {
-        free(applet);
-        return NULL;
-    }
+    applet->aid = qemu_malloc(aid_len);
     memcpy(applet->aid, aid, aid_len);
     applet->aid_len = aid_len;
     return applet;
@@ -138,10 +127,10 @@ vcard_delete_applet(VCardApplet *applet)
         applet->applet_private = NULL;
     }
     if (applet->aid) {
-        free(applet->aid);
+        qemu_free(applet->aid);
         applet->aid = NULL;
     }
-    free(applet);
+    qemu_free(applet);
 }
 
 /* accessor */
@@ -162,9 +151,9 @@ vcard_new(VCardEmul *private, VCardEmulFree private_free)
     VCard *new_card;
     int i;
 
-    new_card = (VCard *)malloc(sizeof(VCard));
+    new_card = (VCard *)qemu_malloc(sizeof(VCard));
     new_card->applet_list = NULL;
-    for (i=0; i < MAX_CHANNEL; i++) {
+    for (i = 0; i < MAX_CHANNEL; i++) {
         new_card->current_applet[i] = NULL;
     }
     new_card->vcard_buffer_response = NULL;
@@ -210,7 +199,7 @@ vcard_free(VCard *vcard)
         vcard_delete_applet(current_applet);
     }
     vcard_buffer_response_delete(vcard->vcard_buffer_response);
-    free(vcard);
+    qemu_free(vcard);
     return;
 }
 
@@ -218,8 +207,8 @@ void
 vcard_get_atr(VCard *vcard, unsigned char *atr, int *atr_len)
 {
     if (vcard->vcard_get_atr) {
-       (*vcard->vcard_get_atr)(vcard, atr, atr_len);
-       return;
+        (*vcard->vcard_get_atr)(vcard, atr, atr_len);
+        return;
     }
     vcard_emul_get_atr(vcard, atr, atr_len);
 }
@@ -227,7 +216,7 @@ vcard_get_atr(VCard *vcard, unsigned char *atr, int *atr_len)
 void
 vcard_set_atr_func(VCard *card, VCardGetAtr vcard_get_atr)
 {
-    card-> vcard_get_atr = vcard_get_atr;
+    card->vcard_get_atr = vcard_get_atr;
 }
 
 
@@ -240,7 +229,7 @@ vcard_add_applet(VCard *card, VCardApplet *applet)
     if (card->type ==  VCARD_DIRECT) {
         int i;
 
-        for (i=0; i < MAX_CHANNEL; i++) {
+        for (i = 0; i < MAX_CHANNEL; i++) {
             card->current_applet[i] = applet;
         }
     }
@@ -281,7 +270,7 @@ vcard_applet_get_aid(VCardApplet *applet, int *aid_len)
 void
 vcard_select_applet(VCard *card, int channel, VCardApplet *applet)
 {
-    ASSERT(channel < MAX_CHANNEL);
+    assert(channel < MAX_CHANNEL);
     card->current_applet[channel] = applet;
     /* reset the applet */
     if (applet && applet->reset_applet) {
@@ -347,3 +336,4 @@ vcard_get_private(VCard *vcard)
 {
     return vcard->vcard_private;
 }
+

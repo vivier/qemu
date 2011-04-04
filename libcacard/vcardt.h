@@ -1,5 +1,6 @@
 /*
- *
+ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
+ * See the COPYING.LIB file in the top-level directory.
  */
 #ifndef VCARDT_H
 #define VCARDT_H 1
@@ -8,12 +9,9 @@
  * these should come from some common spice header file
  */
 #include <assert.h>
-#ifndef ASSERT
-#define ASSERT assert
-#endif
 #ifndef MIN
-#define MIN(x,y) ((x)>(y)?(y):(x))
-#define MAX(x,y) ((x)>(y)?(x):(y))
+#define MIN(x, y) ((x) > (y) ? (y) : (x))
+#define MAX(x, y) ((x) > (y) ? (x) : (y))
 #endif
 
 typedef struct VCardStruct VCard;

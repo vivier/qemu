@@ -2,13 +2,17 @@
 -include $(SRC_PATH)/rules.mak
 
 # TODO: duplicate from Makefile, to be removed once Makefile.objs lands.
-libcacard-y = cac.o event.o passthru.o vcard.o vreader.o vcard_emul_nss.o \
+libcacard-y = cac.o event.o vcard.o vreader.o vcard_emul_nss.o \
               vcard_emul_type.o card_7816.o
 
-$(call set-vpath, $(SRC_PATH):$(SRC_PATH)/libcacard)
+VPATH=$(SRC_PATH):$(SRC_PATH)/hw:$(SRC_PATH)/libcacard
 
-vscclient: $(libcacard-y) vscclient.o
-	$(call quiet-command,$(CC) $(libcacard_libs) -o $@ $^,"  LINK  $(TARGET_DIR)$@")
+QEMU_OBJS=$(addprefix ../, $(oslib-obj-y) $(trace-obj-y) qemu-malloc.o qemu-thread.o osdep.o)
+
+QEMU_CFLAGS+=-I../
+
+vscclient: $(libcacard-y) $(QEMU_OBJS) vscclient.o
+	$(call quiet-command,$(CC) $(libcacard_libs) -lrt -o $@ $^,"  LINK  $(TARGET_DIR)$@")
 
 all: vscclient
 
