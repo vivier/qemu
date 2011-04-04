@@ -15,7 +15,8 @@
  *
  * Copyright (c) 2011 Red Hat.
  *
- * This code is licenced under the GNU LGPL, version 2 or later.
+ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
+ * See the COPYING.LIB file in the top-level directory.
  */
 
 #ifndef VSCARD_COMMON_H
@@ -28,11 +29,12 @@
 #define VERSION_MINOR_BITS 10
 
 #define MAKE_VERSION(major, middle, minor) \
-     (  (major  << (VERSION_MINOR_BITS + VERSION_MIDDLE_BITS)) \
+     ((major  << (VERSION_MINOR_BITS + VERSION_MIDDLE_BITS)) \
       | (middle <<  VERSION_MINOR_BITS) \
-      | (minor)  )
+      | (minor))
 
-/** IMPORTANT NOTE on VERSION
+/*
+ * IMPORTANT NOTE on VERSION
  *
  * The version below MUST be changed whenever a change in this file is made.
  *
@@ -45,7 +47,7 @@
  * something that cannot be accomodated with the existing protocol.
  */
 
-#define VSCARD_VERSION MAKE_VERSION(0,0,2)
+#define VSCARD_VERSION MAKE_VERSION(0, 0, 2)
 
 typedef enum VSCMsgType {
     VSC_Init = 1,
@@ -60,8 +62,8 @@ typedef enum VSCMsgType {
 } VSCMsgType;
 
 typedef enum VSCErrorCode {
-    VSC_SUCCESS=0,
-    VSC_GENERAL_ERROR=1,
+    VSC_SUCCESS = 0,
+    VSC_GENERAL_ERROR = 1,
     VSC_CANNOT_ADD_MORE_READERS,
     VSC_CARD_ALREAY_INSERTED,
 } VSCErrorCode;
@@ -69,9 +71,10 @@ typedef enum VSCErrorCode {
 #define VSCARD_UNDEFINED_READER_ID  0xffffffff
 #define VSCARD_MINIMAL_READER_ID    0
 
-#define VSCARD_MAGIC (*(uint32_t*)"VSCD")
+#define VSCARD_MAGIC (*(uint32_t *)"VSCD")
 
-/* Header
+/*
+ * Header
  * Each message starts with the header.
  * type - message type
  * reader_id - used by messages that are reader specific
@@ -85,13 +88,14 @@ typedef struct VSCMsgHeader {
     uint8_t    data[0];
 } VSCMsgHeader;
 
-/* VSCMsgInit               Client <-> Host
+/*
+ * VSCMsgInit               Client <-> Host
  * Client sends it on connection, with its own capabilities.
  * Host replies with VSCMsgInit filling in its capabilities.
  *
  * It is not meant to be used for negotiation, i.e. sending more then
  * once from any side, but could be used for that in the future.
- * */
+ */
 typedef struct VSCMsgInit {
     uint32_t   magic;
     uint32_t   version;
@@ -99,67 +103,75 @@ typedef struct VSCMsgInit {
                                    array may grow in the future*/
 } VSCMsgInit;
 
-/* VSCMsgError              Client <-> Host
+/*
+ * VSCMsgError              Client <-> Host
  * This message is a response to any of:
  *  Reader Add
  *  Reader Remove
  *  Card Remove
  * If the operation was successful then VSC_SUCCESS
  * is returned, other wise a specific error code.
- * */
+ */
 typedef struct VSCMsgError {
     uint32_t   code;
 } VSCMsgError;
 
-/* VSCMsgReaderAdd          Client -> Host
+/*
+ * VSCMsgReaderAdd          Client -> Host
  * Host replies with allocated reader id in VSCMsgError with code==SUCCESS.
  *
  * name - name of the reader on client side, UTF-8 encoded. Only used
  *  for client presentation (may be translated to the device presented to the
  *  guest), protocol wise only reader_id is important.
- * */
+ */
 typedef struct VSCMsgReaderAdd {
     uint8_t    name[0];
 } VSCMsgReaderAdd;
 
-/* VSCMsgReaderRemove       Client -> Host
+/*
+ * VSCMsgReaderRemove       Client -> Host
  * The client's reader has been removed.
- * */
+ */
 typedef struct VSCMsgReaderRemove {
 } VSCMsgReaderRemove;
 
-/* VSCMsgATR                Client -> Host
+/*
+ * VSCMsgATR                Client -> Host
  * Answer to reset. Sent for card insertion or card reset. The reset/insertion
  * happens on the client side, they do not require any action from the host.
- * */
+ */
 typedef struct VSCMsgATR {
     uint8_t     atr[0];
 } VSCMsgATR;
 
-/* VSCMsgCardRemove         Client -> Host
+/*
+ * VSCMsgCardRemove         Client -> Host
  * The client card has been removed.
- * */
+ */
 typedef struct VSCMsgCardRemove {
 } VSCMsgCardRemove;
 
-/* VSCMsgAPDU               Client <-> Host
+/*
+ * VSCMsgAPDU               Client <-> Host
  * Main reason of existance. Transfer a single APDU in either direction.
- * */
+ */
 typedef struct VSCMsgAPDU {
     uint8_t    data[0];
 } VSCMsgAPDU;
 
-/* VSCMsgFlush               Host -> Client
+/*
+ * VSCMsgFlush               Host -> Client
  * Request client to send a FlushComplete message when it is done
  * servicing all outstanding APDUs
- * */
+ */
 typedef struct VSCMsgFlush {
 } VSCMsgFlush;
 
-/* VSCMsgFlush               Client -> Host
+/*
+ * VSCMsgFlush               Client -> Host
  * Client response to Flush after all APDUs have been processed and
  * responses sent.
- * */
+ */
 typedef struct VSCMsgFlushComplete {
 } VSCMsgFlushComplete;
 
