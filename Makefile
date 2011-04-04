@@ -154,6 +154,7 @@ shared-obj-y = qemu-error.o $(trace-obj-y) $(block-obj-y) $(qobject-obj-y)
 # CPUs and machines.
 
 obj-y = $(shared-obj-y)
+obj-y += qemu-thread.o
 obj-y += $(net-obj-y)
 obj-y += readline.o console.o cursor.o
 
