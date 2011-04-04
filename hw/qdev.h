@@ -80,7 +80,6 @@ struct Property {
     int          offset;
     int          bitnr;
     void         *defval;
-    void         *data;
 };
 
 enum PropertyType {
