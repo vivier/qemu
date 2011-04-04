@@ -189,15 +189,7 @@ int qdev_device_help(QemuOpts *opts)
         if (!prop->info->parse) {
             continue;           /* no way to set it, don't show */
         }
-        if (prop->info->print_options) {
-            char buf[256];
-            int ret;
-            ret = prop->info->print_options(info, prop, buf, sizeof(buf) - 3);
-            error_printf("%s.%s=%s%s\n", info->name, prop->name, buf,
-                ret == sizeof(buf) - 3 ? "..." : "" );
-        } else {
-            error_printf("%s.%s=%s\n", info->name, prop->name, prop->info->name);
-        }
+        error_printf("%s.%s=%s\n", info->name, prop->name, prop->info->name);
     }
     return 1;
 }
