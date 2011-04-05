@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.153
+%define pkgrelease 2.154
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2459,6 +2459,14 @@ Patch2093: kvm-Use-getaddrinfo-for-migration.patch
 Patch2094: kvm-net-socket-allow-ipv6-for-net_socket_listen_init-and.patch
 # For bz#688058 - Drive serial number gets truncated
 Patch2095: kvm-block-Fix-serial-number-assignment.patch
+# For bz#678524 - Exec based migration randomly fails, particularly under high load
+Patch2096: kvm-add-a-service-to-reap-zombies-use-it-in-SLIRP.patch
+# For bz#654682 - drive_del command to let libvirt safely remove block device from guest
+Patch2097: kvm-Don-t-allow-multiwrites-against-a-block-device-witho.patch
+# For bz#654682 - drive_del command to let libvirt safely remove block device from guest
+Patch2098: kvm-Do-not-delete-BlockDriverState-when-deleting-the-dri.patch
+# For bz#690174 - virtio-serial qemu-kvm crash on invalid input in migration
+Patch2099: kvm-virtio-serial-don-t-crash-on-invalid-input.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3661,6 +3669,10 @@ ApplyOptionalPatch()
 %patch2093 -p1
 %patch2094 -p1
 %patch2095 -p1
+%patch2096 -p1
+%patch2097 -p1
+%patch2098 -p1
+%patch2099 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3882,6 +3894,18 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Apr 05 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.154.el6
+- kvm-add-a-service-to-reap-zombies-use-it-in-SLIRP.patch [bz#678524]
+- kvm-Don-t-allow-multiwrites-against-a-block-device-witho.patch [bz#654682]
+- kvm-Do-not-delete-BlockDriverState-when-deleting-the-dri.patch [bz#654682]
+- kvm-virtio-serial-don-t-crash-on-invalid-input.patch [bz#690174]
+- Resolves: bz#678524
+  (Exec based migration randomly fails, particularly under high load)
+- Resolves: bz#690174
+  (virtio-serial qemu-kvm crash on invalid input in migration)
+- Resolves: bz#654682
+  (drive_del command to let libvirt safely remove block device from guest)
+
 * Tue Mar 29 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.153.el6
 - kvm-Revert-spice-qxl-locking-fix-for-qemu-kvm.patch [bz#678208]
 - kvm-qxl-spice-display-move-pipe-to-ssd.patch [bz#678208]

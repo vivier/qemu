@@ -1,0 +1,48 @@
+From 2f1bf9b3439f7873e26337fdcce429c0550116cf Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Tue, 29 Mar 2011 13:52:42 -0300
+Subject: [RHEL6 qemu-kvm PATCH 4/4] virtio-serial: don't crash on invalid input
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <20110329135242.GA10611@redhat.com>
+Patchwork-id: 20764
+O-Subject: [PATCH 6.1/6.0.z] virtio-serial: don't crash on invalid input
+Bugzilla: 690174
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+Fix crash on invalid input in virtio-serial.
+Discovered by code review.
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=690174
+Upstream: fbe0c5591077814eead05217fc96f087b254a6a8 (in qemu.git)
+Tested-by: Amit Shah <amit.shah@redhat.com>
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ hw/virtio-serial-bus.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial-bus.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index 6a070b3..7ae2b0d 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -654,6 +654,9 @@ static int virtio_serial_load(QEMUFile *f, void *opaque, int version_id)
+ 
+         id = qemu_get_be32(f);
+         port = find_port_by_id(s, id);
++        if (!port) {
++            return -EINVAL;
++        }
+ 
+         port->guest_connected = qemu_get_byte(f);
+         host_connected = qemu_get_byte(f);
+-- 
+1.7.3.2
+

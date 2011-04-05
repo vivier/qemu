@@ -1,0 +1,158 @@
+From a2f59b6e1b7dd90d538f4cf65e63ae6bd967bd78 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 29 Mar 2011 09:50:58 -0300
+Subject: [RHEL6 qemu-kvm PATCH 3/4] Do not delete BlockDriverState when deleting the drive
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1301392258-4532-3-git-send-email-armbru@redhat.com>
+Patchwork-id: 20729
+O-Subject: [PATCH RHEL6.1 qemu-kvm 2/2] Do not delete BlockDriverState when
+	deleting the drive
+Bugzilla:
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Bugzilla-related: 654682
+
+This is a backport of Ryan Harper's v4 as seen in my crystal ball (he
+hasn't posted it, yet, but the errors I pointed out in v3 are pretty
+straightforward to fix).
+
+v3's commit message:
+
+When removing a drive from the host-side via drive_del we currently have the
+following path:
+
+drive_del
+qemu_aio_flush()
+bdrv_close()    // zaps bs->drv, which makes any subsequent I/O get
+                // dropped.  Works as designed
+drive_uninit()
+bdrv_delete()   // frees the bs.  Since the device is still connected to
+                // bs, any subsequent I/O is a use-after-free.
+
+The value of bs->drv becomes unpredictable on free.  As long as it
+remains null, I/O still gets dropped, however it could become non-null at any
+point after the free resulting SEGVs or other QEMU state corruption.
+
+To resolve this issue as simply as possible, we can chose to not actually
+delete the BlockDriverState pointer.  Since bdrv_close() handles setting the drv
+pointer to NULL, we just need to remove the BlockDriverState from the QLIST
+that is used to enumerate the block devices.  This is currently handled within
+bdrv_delete, so move this into its own function, bdrv_make_anon().
+
+The result is that we can now invoke drive_del, this closes the file descriptors
+and sets BlockDriverState->drv to NULL which prevents futher IO to the device,
+and since we do not free BlockDriverState, we don't have to worry about the copy
+retained in the block devices.
+
+We also don't attempt to remove the qdev property since we are no longer deleting
+the BlockDriverState on drives with associated drives.  This also allows for
+removing Drives with no devices associated either.
+
+Reported-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Ryan Harper <ryanh@us.ibm.com>
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ block.c             |   14 +++++++++++---
+ block.h             |    1 +
+ hw/device-hotplug.c |   25 ++++++++-----------------
+ 3 files changed, 20 insertions(+), 20 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c             |   14 +++++++++++---
+ block.h             |    1 +
+ hw/device-hotplug.c |   25 ++++++++-----------------
+ 3 files changed, 20 insertions(+), 20 deletions(-)
+
+diff --git a/block.c b/block.c
+index ccd925f..ad999b4 100644
+--- a/block.c
++++ b/block.c
+@@ -667,14 +667,22 @@ void bdrv_close_all(void)
+     }
+ }
+ 
++/* make a BlockDriverState anonymous by removing from bdrv_state list.
++   Also, NULL terminate the device_name to prevent double remove */
++void bdrv_make_anon(BlockDriverState *bs)
++{
++    if (bs->device_name[0] != '\0') {
++        QTAILQ_REMOVE(&bdrv_states, bs, list);
++    }
++    bs->device_name[0] = '\0';
++}
++
+ void bdrv_delete(BlockDriverState *bs)
+ {
+     assert(!bs->peer);
+ 
+     /* remove from list, if necessary */
+-    if (bs->device_name[0] != '\0') {
+-        QTAILQ_REMOVE(&bdrv_states, bs, list);
+-    }
++    bdrv_make_anon(bs);
+ 
+     bdrv_close(bs);
+     if (bs->file != NULL) {
+diff --git a/block.h b/block.h
+index e71d95c..9f9d6eb 100644
+--- a/block.h
++++ b/block.h
+@@ -64,6 +64,7 @@ int bdrv_create2(BlockDriver *drv,
+                  const char *backing_file, const char *backing_format,
+                  int flags);
+ BlockDriverState *bdrv_new(const char *device_name);
++void bdrv_make_anon(BlockDriverState *bs);
+ void bdrv_delete(BlockDriverState *bs);
+ int bdrv_file_open(BlockDriverState **pbs, const char *filename, int flags);
+ int bdrv_open(BlockDriverState *bs, const char *filename, int flags,
+diff --git a/hw/device-hotplug.c b/hw/device-hotplug.c
+index cb9a4e0..fd86a2c 100644
+--- a/hw/device-hotplug.c
++++ b/hw/device-hotplug.c
+@@ -115,8 +115,6 @@ int do_drive_del(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     const char *id = qdict_get_str(qdict, "id");
+     BlockDriverState *bs;
+-    BlockDriverState **ptr;
+-    Property *prop;
+ 
+     bs = bdrv_find(id);
+     if (!bs) {
+@@ -129,23 +127,16 @@ int do_drive_del(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     bdrv_flush(bs);
+     bdrv_close(bs);
+ 
+-    /* clean up guest state from pointing to host resource by
+-     * finding and removing DeviceState "drive" property */
++    /* if we have a device associated with this BlockDriverState (bs->peer)
++     * then we need to make the drive anonymous until the device
++     * can be removed.  If this is a drive with no device backing
++     * then we can just get rid of the block driver state right here.
++     */
+     if (bs->peer) {
+-        for (prop = bs->peer->info->props; prop && prop->name; prop++) {
+-            if (prop->info->type == PROP_TYPE_DRIVE) {
+-                ptr = qdev_get_prop_ptr(bs->peer, prop);
+-                if (*ptr == bs) {
+-                    bdrv_detach(bs, bs->peer);
+-                    *ptr = NULL;
+-                    break;
+-                }
+-            }
+-        }
++        bdrv_make_anon(bs);
++    } else {
++        drive_uninit(drive_get_by_blockdev(bs));
+     }
+ 
+-    /* clean up host side */
+-    drive_uninit(drive_get_by_blockdev(bs));
+-
+     return 0;
+ }
+-- 
+1.7.3.2
+

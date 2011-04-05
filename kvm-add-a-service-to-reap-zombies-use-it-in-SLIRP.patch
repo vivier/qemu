@@ -1,0 +1,239 @@
+From 40f5b8baf531162ab9fd5a830c8e7cc5ffc247b8 Mon Sep 17 00:00:00 2001
+From: Paolo Bonzini <pbonzini@redhat.com>
+Date: Thu, 10 Mar 2011 16:49:41 -0300
+Subject: [RHEL6 qemu-kvm PATCH 1/4] add a service to reap zombies, use it in SLIRP
+
+RH-Author: Paolo Bonzini <pbonzini@redhat.com>
+Message-id: <1299775781-3350-1-git-send-email-pbonzini@redhat.com>
+Patchwork-id: 19903
+O-Subject: [PATCH] add a service to reap zombies, use it in SLIRP
+Bugzilla: 678524
+RH-Acked-by: Glauber Costa <glommer@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Eric Blake <eblake@redhat.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=678524
+
+Upstream status: submitted
+
+Brew build: https://brewweb.devel.redhat.com/taskinfo?taskID=3168226
+
+SLIRP -smb support wants to fork a process and forget about reaping it.
+To please it, add a generic service to register a process id and let
+QEMU reap it.  In the future it could be enhanced to pass a status,
+but this would be unused.
+
+With this in place, the SIGCHLD signal handler would not stomp on pclose
+anymore.
+
+The issue does not affect RHEL5.
+
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+---
+        Posting before approval upstream to get impressions for
+        this bug which is a 6.1.0 blocker.  Replies there are
+        helpful as well.
+
+	Please review and ack for both 6.1.0 and 6.0.z.
+
+ Makefile      |    2 +-
+ iohandler.c   |   92 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ qemu-common.h |    1 +
+ slirp/misc.c  |    5 ++-
+ vl.c          |    9 -----
+ 5 files changed, 98 insertions(+), 11 deletions(-)
+ create mode 100644 iohandler.c
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile      |    2 +-
+ iohandler.c   |   92 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ qemu-common.h |    1 +
+ slirp/misc.c  |    5 ++-
+ vl.c          |    9 -----
+ 5 files changed, 98 insertions(+), 11 deletions(-)
+ create mode 100644 iohandler.c
+
+diff --git a/Makefile b/Makefile
+index d7ad178..7edbcb4 100644
+--- a/Makefile
++++ b/Makefile
+@@ -186,7 +186,7 @@ obj-y += buffered_file.o migration.o migration-tcp.o qemu-sockets.o
+ obj-y += qemu-char.o aio.o savevm.o
+ obj-y += msmouse.o ps2.o
+ obj-y += qdev.o qdev-properties.o
+-obj-y += block-migration.o
++obj-y += block-migration.o iohandler.o
+ obj-y += pflib.o
+ 
+ obj-$(CONFIG_BRLAPI) += baum.o
+diff --git a/iohandler.c b/iohandler.c
+new file mode 100644
+index 0000000..e326729
+--- /dev/null
++++ b/iohandler.c
+@@ -0,0 +1,92 @@
++/*
++ * QEMU System Emulator - managing I/O handler
++ *
++ * Copyright (c) 2003-2008 Fabrice Bellard
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
++ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ */
++
++#include "config-host.h"
++#include "qemu-common.h"
++#include "qemu-char.h"
++#include "qemu-queue.h"
++
++#ifndef _WIN32
++#include <sys/wait.h>
++#endif
++
++/* reaping of zombies.  right now we're not passing the status to
++   anyone, but it would be possible to add a callback.  */
++#ifndef _WIN32
++typedef struct ChildProcessRecord {
++    int pid;
++    QLIST_ENTRY(ChildProcessRecord) next;
++} ChildProcessRecord;
++
++static QLIST_HEAD(, ChildProcessRecord) child_watches =
++    QLIST_HEAD_INITIALIZER(child_watches);
++
++static QEMUBH *sigchld_bh;
++
++static void sigchld_handler(int signal)
++{
++    qemu_bh_schedule(sigchld_bh);
++}
++
++static void sigchld_bh_handler(void *opaque)
++{
++    ChildProcessRecord *rec, *next;
++
++    QLIST_FOREACH_SAFE(rec, &child_watches, next, next) {
++        if (waitpid(rec->pid, NULL, WNOHANG) == rec->pid) {
++            QLIST_REMOVE(rec, next);
++            qemu_free(rec);
++        }
++    }
++}
++
++static void qemu_init_child_watch(void)
++{
++    struct sigaction act;
++    sigchld_bh = qemu_bh_new(sigchld_bh_handler, NULL);
++
++    act.sa_handler = sigchld_handler;
++    act.sa_flags = SA_NOCLDSTOP;
++    sigaction(SIGCHLD, &act, NULL);
++}
++
++int qemu_add_child_watch(pid_t pid)
++{
++    ChildProcessRecord *rec;
++
++    if (!sigchld_bh) {
++        qemu_init_child_watch();
++    }
++
++    QLIST_FOREACH(rec, &child_watches, next) {
++        if (rec->pid == pid) {
++            return 1;
++        }
++    }
++    rec = qemu_mallocz(sizeof(ChildProcessRecord));
++    rec->pid = pid;
++    QLIST_INSERT_HEAD(&child_watches, rec, next);
++    return 0;
++}
++#endif
+diff --git a/qemu-common.h b/qemu-common.h
+index d6b86b4..4c5d30c 100644
+--- a/qemu-common.h
++++ b/qemu-common.h
+@@ -184,6 +184,7 @@ ssize_t qemu_write_full(int fd, const void *buf, size_t count)
+ void qemu_set_cloexec(int fd);
+ 
+ #ifndef _WIN32
++int qemu_add_child_watch(pid_t pid);
+ int qemu_pipe(int pipefd[2]);
+ #endif
+ 
+diff --git a/slirp/misc.c b/slirp/misc.c
+index 1aeb401..6af5eef 100644
+--- a/slirp/misc.c
++++ b/slirp/misc.c
+@@ -119,6 +119,7 @@ fork_exec(struct socket *so, const char *ex, int do_pty)
+ 	char *bptr;
+ 	const char *curarg;
+ 	int c, i, ret;
++	pid_t pid;
+ 
+ 	DEBUG_CALL("fork_exec");
+ 	DEBUG_ARG("so = %lx", (long)so);
+@@ -142,7 +143,8 @@ fork_exec(struct socket *so, const char *ex, int do_pty)
+ 		}
+ 	}
+ 
+-	switch(fork()) {
++	pid = fork();
++	switch(pid) {
+ 	 case -1:
+ 		lprint("Error: fork failed: %s\n", strerror(errno));
+ 		close(s);
+@@ -206,6 +208,7 @@ fork_exec(struct socket *so, const char *ex, int do_pty)
+ 		exit(1);
+ 
+ 	 default:
++		qemu_add_child_watch(pid);
+ 		if (do_pty == 2) {
+ 			close(s);
+ 			so->s = master;
+diff --git a/vl.c b/vl.c
+index 84963d6..9c2ec66 100644
+--- a/vl.c
++++ b/vl.c
+@@ -5007,11 +5007,6 @@ static void termsig_handler(int signal)
+     qemu_system_shutdown_request();
+ }
+ 
+-static void sigchld_handler(int signal)
+-{
+-    waitpid(-1, NULL, WNOHANG);
+-}
+-
+ static void sighandler_setup(void)
+ {
+     struct sigaction act;
+@@ -5021,10 +5016,6 @@ static void sighandler_setup(void)
+     sigaction(SIGINT,  &act, NULL);
+     sigaction(SIGHUP,  &act, NULL);
+     sigaction(SIGTERM, &act, NULL);
+-
+-    act.sa_handler = sigchld_handler;
+-    act.sa_flags = SA_NOCLDSTOP;
+-    sigaction(SIGCHLD, &act, NULL);
+ }
+ 
+ #endif
+-- 
+1.7.3.2
+
