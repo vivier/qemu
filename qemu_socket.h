@@ -57,7 +57,4 @@ int parse_host_src_port(struct sockaddr_in *haddr,
                         struct sockaddr_in *saddr,
                         const char *str);
 
-int tcp_client_start(const char *str, int *fd);
-int tcp_server_start(const char *str, int *fd);
-
 #endif /* QEMU_SOCKET_H */
