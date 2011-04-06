@@ -1,0 +1,43 @@
+From 38e5695384b0efbeac903cd166856cf70e23afbb Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Mon, 4 Apr 2011 10:30:11 -0300
+Subject: [RHEL6 qemu-kvm PATCH 01/12] configure: fix out of tree build with --enable-spice
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1301913022-22142-2-git-send-email-alevy@redhat.com>
+Patchwork-id: 21253
+O-Subject: [PATCH RHEL6.1 v4 01/12] configure: fix out of tree build with
+	--enable-spice
+Bugzilla: 641833
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+missing creation of ui subdirectory.
+
+upstream already creates it, but is's Makefile is different, can't cherry
+pick.
+---
+ configure |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ configure |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/configure b/configure
+index 31b72c3..94a7ca2 100755
+--- a/configure
++++ b/configure
+@@ -2995,6 +2995,7 @@ done # for target in $targets
+ if test "$source_path_used" = "yes" ; then
+     DIRS="tests tests/cris slirp audio block net pc-bios/optionrom"
+     DIRS="$DIRS roms/seabios roms/vgabios"
++    DIRS="$DIRS ui"
+     FILES="Makefile tests/Makefile"
+     FILES="$FILES tests/cris/Makefile tests/cris/.gdbinit"
+     FILES="$FILES tests/test-mmap.c"
+-- 
+1.7.3.2
+

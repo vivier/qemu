@@ -1,0 +1,3591 @@
+From b48bf5400770ec955dd0e17f78a5d8ef99abc3c4 Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Mon, 4 Apr 2011 10:30:22 -0300
+Subject: [RHEL6 qemu-kvm PATCH 12/12] libcacard v18-upstream (v25)
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1301913022-22142-13-git-send-email-alevy@redhat.com>
+Patchwork-id: 21257
+O-Subject: [PATCH RHEL6.1 v4 12/12] libcacard v18-upstream (v25)
+Bugzilla: 641833
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+BZ: 641833
+
+update to upstream v25, since v18 is already in rhel 6.1 beta.
+
+the update is a straight copy, with only changes reordering of qemu-common
+and qemu-thread includes in two files (event.c and vreader.c), and Makefile
+staying tweaked for rhel-6 because of lack of upstream's Makefile.objs.
+
+relevant commit log from upstream v25:
+
+changes from v24->v25:
+ * Fix out of tree builds.
+ * Fix build with linux-user targets.
+
+changes from v23->v24: (Jes Sorensen review 2)
+ * libcacard/vsccliient:
+  * use qemu_socket instead of socket
+  * use fprintf(stderr,..) for errors
+  * remove unneccessary includes since using qemu_common.h
+ * libcacard:
+  * remove unrequired includes, include qemu-common before qemu-thread
+   * required adding #define NO_NSPR_10_SUPPORT (harmless)
+  * fix out of tree build (use addprefix, add -I../)
+
+changes from v22->v23:
+ * configure fixes: (reported by Stefan Hajnoczi)
+  * test a = b, not a == b (second isn't portable)
+  * quote $source_path in case it contains spaces
+   - this doesn't really help since there are many other places
+     that need similar fixes, not introduced by this patch.
+
+changes from v21->v22:
+ * fix configure to not link libcacard if nss not found
+    (reported by Stefan Hajnoczi)
+ * fix vscclient linkage with simpletrace backend
+    (reported by Stefan Hajnoczi)
+ * card_7816.c: add missing break in ERROR_DATA_NOT_FOUND
+    (reported by William van de Velde)
+
+changes from v20->v21: (Jes Sorensen review)
+ * use qemu infrastructure: qemu-thread, qemu-common (qemu_malloc
+  and qemu_free), error_report
+ * assert instead of ASSERT
+ * cosmetic fixes
+ * use strpbrk and isspace
+
+changes from v19->v20:
+ * checkpatch.pl
+
+libcacard: fix Makefile.target to upstream (LINUX_USER protect)
+---
+ Makefile.target             |   10 +-
+ configure                   |    6 +-
+ libcacard/Makefile          |   12 +-
+ libcacard/cac.c             |   81 +++---
+ libcacard/cac.h             |    3 +
+ libcacard/card_7816.c       |  109 ++++-----
+ libcacard/card_7816.h       |    2 +
+ libcacard/card_7816t.h      |    2 +
+ libcacard/event.c           |   57 ++---
+ libcacard/eventt.h          |    5 +-
+ libcacard/link_test.c       |    5 +-
+ libcacard/passthru.c        |  612 -------------------------------------------
+ libcacard/passthru.h        |   50 ----
+ libcacard/vcard.c           |   62 ++---
+ libcacard/vcard.h           |    9 +-
+ libcacard/vcard_emul.h      |    5 +-
+ libcacard/vcard_emul_nss.c  |  201 ++++++---------
+ libcacard/vcard_emul_type.c |   15 +-
+ libcacard/vcard_emul_type.h |    5 +-
+ libcacard/vcardt.h          |   10 +-
+ libcacard/vevent.h          |    3 +-
+ libcacard/vreader.c         |   76 +++---
+ libcacard/vreader.h         |    3 +-
+ libcacard/vreadert.h        |    6 +-
+ libcacard/vscclient.c       |  521 +++++++++++++++---------------------
+ 25 files changed, 528 insertions(+), 1342 deletions(-)
+ delete mode 100644 libcacard/passthru.c
+ delete mode 100644 libcacard/passthru.h
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile.target             |   10 +-
+ configure                   |    6 +-
+ libcacard/Makefile          |   12 +-
+ libcacard/cac.c             |   81 +++---
+ libcacard/cac.h             |    3 +
+ libcacard/card_7816.c       |  109 ++++-----
+ libcacard/card_7816.h       |    2 +
+ libcacard/card_7816t.h      |    2 +
+ libcacard/event.c           |   57 ++---
+ libcacard/eventt.h          |    5 +-
+ libcacard/link_test.c       |    5 +-
+ libcacard/passthru.c        |  612 -------------------------------------------
+ libcacard/passthru.h        |   50 ----
+ libcacard/vcard.c           |   62 ++---
+ libcacard/vcard.h           |    9 +-
+ libcacard/vcard_emul.h      |    5 +-
+ libcacard/vcard_emul_nss.c  |  201 ++++++---------
+ libcacard/vcard_emul_type.c |   15 +-
+ libcacard/vcard_emul_type.h |    5 +-
+ libcacard/vcardt.h          |   10 +-
+ libcacard/vevent.h          |    3 +-
+ libcacard/vreader.c         |   76 +++---
+ libcacard/vreader.h         |    3 +-
+ libcacard/vreadert.h        |    6 +-
+ libcacard/vscclient.c       |  521 +++++++++++++++---------------------
+ 25 files changed, 528 insertions(+), 1342 deletions(-)
+ delete mode 100644 libcacard/passthru.c
+ delete mode 100644 libcacard/passthru.h
+
+diff --git a/Makefile.target b/Makefile.target
+index e6c148e..2a087d2 100644
+--- a/Makefile.target
++++ b/Makefile.target
+@@ -370,11 +370,13 @@ ARLIBS=../libqemu_common.a libqemu.a $(HWLIB)
+ 
+ endif # CONFIG_SOFTMMU
+ 
+-ifdef CONFIG_SMARTCARD_NSS
+-libcacard-y = cac.o event.o passthru.o vcard.o vreader.o vcard_emul_nss.o vcard_emul_type.o card_7816.o
++libcacard-y = cac.o event.o vcard.o vreader.o vcard_emul_nss.o vcard_emul_type.o card_7816.o
+ 
+-obj-y += $(addprefix $(SRC_PATH)/libcacard/, $(libcacard-y))
+-endif # CONFIG_SMARTCARD_NSS
++ifndef CONFIG_LINUX_USER
++# libcacard needs qemu-thread support, and besides is only needed by devices
++# so not requires with linux-user targets
++obj-$(CONFIG_SMARTCARD_NSS) += $(addprefix $(SRC_PATH)/libcacard/, $(libcacard-y))
++endif # CONFIG_LINUX_USER
+ 
+ obj-y += $(addprefix ../, $(trace-obj-y))
+ obj-$(CONFIG_GDBSTUB_XML) += gdbstub-xml.o
+diff --git a/configure b/configure
+index 94a7ca2..fc25e87 100755
+--- a/configure
++++ b/configure
+@@ -2024,7 +2024,7 @@ if test "$smartcard" != "no" ; then
+             QEMU_CFLAGS="$QEMU_CFLAGS $smartcard_cflags $libcacard_cflags"
+             LIBS="$libcacard_libs $LIBS"
+         else
+-            if test "$smartcard_nss" == "yes"; then
++            if test "$smartcard_nss" = "yes"; then
+                 feature_not_found "nss"
+             fi
+             smartcard_nss="no"
+@@ -3037,11 +3037,11 @@ for hwlib in 32 64; do
+   echo "QEMU_CFLAGS+=-DTARGET_PHYS_ADDR_BITS=$hwlib" >> $d/config.mak
+ done
+ 
+-if [ $source_path != `pwd` ]; then
++if [ "$source_path" != `pwd` ]; then
+     # out of tree build
+     mkdir -p libcacard
+     rm -f libcacard/Makefile
+-    ln -s $source_path/libcacard/Makefile libcacard/Makefile
++    ln -s "$source_path/libcacard/Makefile" libcacard/Makefile
+ fi
+ 
+ d=libuser
+diff --git a/libcacard/Makefile b/libcacard/Makefile
+index b8184a1..fa3400b 100644
+--- a/libcacard/Makefile
++++ b/libcacard/Makefile
+@@ -2,13 +2,17 @@
+ -include $(SRC_PATH)/rules.mak
+ 
+ # TODO: duplicate from Makefile, to be removed once Makefile.objs lands.
+-libcacard-y = cac.o event.o passthru.o vcard.o vreader.o vcard_emul_nss.o \
++libcacard-y = cac.o event.o vcard.o vreader.o vcard_emul_nss.o \
+               vcard_emul_type.o card_7816.o
+ 
+-$(call set-vpath, $(SRC_PATH):$(SRC_PATH)/libcacard)
++VPATH=$(SRC_PATH):$(SRC_PATH)/hw:$(SRC_PATH)/libcacard
+ 
+-vscclient: $(libcacard-y) vscclient.o
+-	$(call quiet-command,$(CC) $(libcacard_libs) -o $@ $^,"  LINK  $(TARGET_DIR)$@")
++QEMU_OBJS=$(addprefix ../, $(oslib-obj-y) $(trace-obj-y) qemu-malloc.o qemu-thread.o osdep.o)
++
++QEMU_CFLAGS+=-I../
++
++vscclient: $(libcacard-y) $(QEMU_OBJS) vscclient.o
++	$(call quiet-command,$(CC) $(libcacard_libs) -lrt -o $@ $^,"  LINK  $(TARGET_DIR)$@")
+ 
+ all: vscclient
+ 
+diff --git a/libcacard/cac.c b/libcacard/cac.c
+index 3171bfd..f34f63a 100644
+--- a/libcacard/cac.c
++++ b/libcacard/cac.c
+@@ -1,12 +1,16 @@
+ /*
+  * implement the applets for the CAC card.
++ *
++ * This code is licensed under the GNU LGPL, version 2.1 or later.
++ * See the COPYING.LIB file in the top-level directory.
+  */
++
++#include "qemu-common.h"
++
+ #include "cac.h"
+ #include "vcard.h"
+ #include "vcard_emul.h"
+ #include "card_7816.h"
+-#include <stdlib.h>
+-#include <string.h>
+ 
+ #define CAC_GET_PROPERTIES  0x56
+ #define CAC_GET_ACR         0x4c
+@@ -58,7 +62,7 @@ cac_common_process_apdu(VCard *card, VCardAPDU *apdu, VCardResponse **response)
+         }
+         /* CAC 1.0 only supports ef = 0 */
+         ef = apdu->a_body[0] | (apdu->a_body[1] << 8);
+-        if (ef != 0 ) {
++        if (ef != 0) {
+             *response = vcard_make_response(
+                 VCARD7816_STATUS_ERROR_FILE_NOT_FOUND);
+             return VCARD_DONE;
+@@ -81,7 +85,7 @@ cac_common_process_apdu(VCard *card, VCardAPDU *apdu, VCardResponse **response)
+ }
+ 
+ /*
+- *  resest the inter call state between applet selects
++ *  reset the inter call state between applet selects
+  */
+ static VCardStatus
+ cac_applet_pki_reset(VCard *card, int channel)
+@@ -89,12 +93,12 @@ cac_applet_pki_reset(VCard *card, int channel)
+     VCardAppletPrivate *applet_private = NULL;
+     CACPKIAppletData *pki_applet = NULL;
+     applet_private = vcard_get_current_applet_private(card, channel);
+-    ASSERT(applet_private);
++    assert(applet_private);
+     pki_applet = &(applet_private->u.pki_data);
+ 
+     pki_applet->cert_buffer = NULL;
+     if (pki_applet->sign_buffer) {
+-        free(pki_applet->sign_buffer);
++        qemu_free(pki_applet->sign_buffer);
+         pki_applet->sign_buffer = NULL;
+     }
+     pki_applet->cert_buffer_len = 0;
+@@ -113,7 +117,7 @@ cac_applet_pki_process_apdu(VCard *card, VCardAPDU *apdu,
+     vcard_7816_status_t status;
+ 
+     applet_private = vcard_get_current_applet_private(card, apdu->a_channel);
+-    ASSERT(applet_private);
++    assert(applet_private);
+     pki_applet = &(applet_private->u.pki_data);
+ 
+     switch (apdu->a_ins) {
+@@ -123,15 +127,15 @@ cac_applet_pki_process_apdu(VCard *card, VCardAPDU *apdu,
+         return VCARD_DONE;
+     case CAC_GET_CERTIFICATE:
+         if ((apdu->a_p2 != 0) || (apdu->a_p1 != 0)) {
+-           *response = vcard_make_response(
+-                            VCARD7816_STATUS_ERROR_P1_P2_INCORRECT);
+-           break;
++            *response = vcard_make_response(
++                             VCARD7816_STATUS_ERROR_P1_P2_INCORRECT);
++            break;
+         }
+-        ASSERT(pki_applet->cert != NULL);
++        assert(pki_applet->cert != NULL);
+         size = apdu->a_Le;
+         if (pki_applet->cert_buffer == NULL) {
+-            pki_applet->cert_buffer=pki_applet->cert;
+-            pki_applet->cert_buffer_len=pki_applet->cert_len;
++            pki_applet->cert_buffer = pki_applet->cert;
++            pki_applet->cert_buffer_len = pki_applet->cert_len;
+         }
+         size = MIN(size, pki_applet->cert_buffer_len);
+         next = MIN(255, pki_applet->cert_buffer_len - size);
+@@ -144,7 +148,7 @@ cac_applet_pki_process_apdu(VCard *card, VCardAPDU *apdu,
+         pki_applet->cert_buffer += size;
+         pki_applet->cert_buffer_len -= size;
+         if ((*response == NULL) || (next == 0)) {
+-            pki_applet->cert_buffer=NULL;
++            pki_applet->cert_buffer = NULL;
+         }
+         if (*response == NULL) {
+             *response = vcard_make_response(
+@@ -153,16 +157,16 @@ cac_applet_pki_process_apdu(VCard *card, VCardAPDU *apdu,
+         return VCARD_DONE;
+     case CAC_SIGN_DECRYPT:
+         if (apdu->a_p2 != 0) {
+-           *response = vcard_make_response(
+-                            VCARD7816_STATUS_ERROR_P1_P2_INCORRECT);
+-           break;
++            *response = vcard_make_response(
++                             VCARD7816_STATUS_ERROR_P1_P2_INCORRECT);
++            break;
+         }
+         size = apdu->a_Lc;
+ 
+         sign_buffer = realloc(pki_applet->sign_buffer,
+                       pki_applet->sign_buffer_len+size);
+         if (sign_buffer == NULL) {
+-            free(pki_applet->sign_buffer);
++            qemu_free(pki_applet->sign_buffer);
+             pki_applet->sign_buffer = NULL;
+             pki_applet->sign_buffer_len = 0;
+             *response = vcard_make_response(
+@@ -200,7 +204,7 @@ cac_applet_pki_process_apdu(VCard *card, VCardAPDU *apdu,
+                                 VCARD7816_STATUS_ERROR_P1_P2_INCORRECT);
+             break;
+         }
+-        free(sign_buffer);
++        qemu_free(sign_buffer);
+         pki_applet->sign_buffer = NULL;
+         pki_applet->sign_buffer_len = 0;
+         return VCARD_DONE;
+@@ -267,15 +271,15 @@ cac_delete_pki_applet_private(VCardAppletPrivate *applet_private)
+     }
+     pki_applet_data = &(applet_private->u.pki_data);
+     if (pki_applet_data->cert != NULL) {
+-        free(pki_applet_data->cert);
++        qemu_free(pki_applet_data->cert);
+     }
+     if (pki_applet_data->sign_buffer != NULL) {
+-        free(pki_applet_data->sign_buffer);
++        qemu_free(pki_applet_data->sign_buffer);
+     }
+     if (pki_applet_data->key != NULL) {
+         vcard_emul_delete_key(pki_applet_data->key);
+     }
+-    free(applet_private);
++    qemu_free(applet_private);
+ }
+ 
+ static VCardAppletPrivate *
+@@ -284,21 +288,15 @@ cac_new_pki_applet_private(const unsigned char *cert,
+ {
+     CACPKIAppletData *pki_applet_data = NULL;
+     VCardAppletPrivate *applet_private = NULL;
+-    applet_private = (VCardAppletPrivate *)malloc(sizeof(VCardAppletPrivate));
++    applet_private = (VCardAppletPrivate *)qemu_malloc(sizeof(VCardAppletPrivate));
+ 
+-    if (applet_private == NULL) {
+-        goto fail;
+-    }
+-    pki_applet_data= &(applet_private->u.pki_data);
++    pki_applet_data = &(applet_private->u.pki_data);
+     pki_applet_data->cert_buffer = NULL;
+     pki_applet_data->cert_buffer_len = 0;
+     pki_applet_data->sign_buffer = NULL;
+     pki_applet_data->sign_buffer_len = 0;
+     pki_applet_data->key = NULL;
+-    pki_applet_data->cert = (unsigned char *)malloc(cert_len+1);
+-    if (pki_applet_data->cert == NULL) {
+-        goto fail;
+-    }
++    pki_applet_data->cert = (unsigned char *)qemu_malloc(cert_len+1);
+     /*
+      * if we want to support compression, then we simply change the 0 to a 1
+      * and compress the cert data with libz
+@@ -309,12 +307,6 @@ cac_new_pki_applet_private(const unsigned char *cert,
+ 
+     pki_applet_data->key = key;
+     return applet_private;
+-
+-fail:
+-    if (applet_private) {
+-        cac_delete_pki_applet_private(applet_private);
+-    }
+-    return NULL;
+ }
+ 
+ 
+@@ -328,7 +320,7 @@ cac_new_pki_applet(int i, const unsigned char *cert,
+     VCardAppletPrivate *applet_private = NULL;
+     VCardApplet *applet = NULL;
+     unsigned char pki_aid[] = { 0xa0, 0x00, 0x00, 0x00, 0x79, 0x01, 0x00 };
+-    int pki_aid_len = sizeof (pki_aid);
++    int pki_aid_len = sizeof(pki_aid);
+ 
+     pki_aid[pki_aid_len-1] = i;
+ 
+@@ -355,10 +347,10 @@ failure:
+ }
+ 
+ 
+-static unsigned char cac_default_container_aid[] =
+-    { 0xa0, 0x00, 0x00, 0x00, 0x30, 0x00, 0x00 };
+-static unsigned char cac_id_aid[] =
+-    { 0xa0, 0x00, 0x00, 0x00, 0x79, 0x03, 0x00 };
++static unsigned char cac_default_container_aid[] = {
++    0xa0, 0x00, 0x00, 0x00, 0x30, 0x00, 0x00 };
++static unsigned char cac_id_aid[] = {
++    0xa0, 0x00, 0x00, 0x00, 0x79, 0x03, 0x00 };
+ /*
+  * Initialize the cac card. This is the only public function in this file. All
+  * the rest are connected through function pointers.
+@@ -375,10 +367,10 @@ cac_card_init(VReader *reader, VCard *card,
+     VCardApplet *applet;
+ 
+     /* CAC Cards are VM Cards */
+-    vcard_set_type(card,VCARD_VM);
++    vcard_set_type(card, VCARD_VM);
+ 
+     /* create one PKI applet for each cert */
+-    for (i=0; i < cert_count; i++) {
++    for (i = 0; i < cert_count; i++) {
+         applet = cac_new_pki_applet(i, cert[i], cert_len[i], key[i]);
+         if (applet == NULL) {
+             goto failure;
+@@ -408,3 +400,4 @@ cac_card_init(VReader *reader, VCard *card,
+ failure:
+     return VCARD_FAIL;
+ }
++
+diff --git a/libcacard/cac.h b/libcacard/cac.h
+index bb2a9f0..15a61be 100644
+--- a/libcacard/cac.h
++++ b/libcacard/cac.h
+@@ -1,6 +1,9 @@
+ /*
+  * defines the entry point for the cac card. Only used by cac.c anc
+  * vcard_emul_type.c
++ *
++ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
++ * See the COPYING.LIB file in the top-level directory.
+  */
+ #ifndef CAC_H
+ #define CAC_H 1
+diff --git a/libcacard/card_7816.c b/libcacard/card_7816.c
+index e2d8466..eeea849 100644
+--- a/libcacard/card_7816.c
++++ b/libcacard/card_7816.c
+@@ -1,13 +1,15 @@
+ /*
+  * Implement the 7816 portion of the card spec
+  *
++ * This code is licensed under the GNU LGPL, version 2.1 or later.
++ * See the COPYING.LIB file in the top-level directory.
+  */
+ 
++#include "qemu-common.h"
++
+ #include "vcard.h"
+ #include "vcard_emul.h"
+ #include "card_7816.h"
+-#include <stdlib.h>
+-#include <string.h>
+ 
+ /*
+  * set the status bytes based on the status word
+@@ -49,15 +51,8 @@ vcard_response_new_data(unsigned char *buf, int len)
+ {
+     VCardResponse *new_response;
+ 
+-    new_response = (VCardResponse *)malloc(sizeof(VCardResponse));
+-    if (!new_response) {
+-        return NULL;
+-    }
+-    new_response->b_data = malloc(len+2);
+-    if (!new_response->b_data) {
+-        free(new_response);
+-        return NULL;
+-    }
++    new_response = (VCardResponse *)qemu_malloc(sizeof(VCardResponse));
++    new_response->b_data = qemu_malloc(len + 2);
+     memcpy(new_response->b_data, buf, len);
+     new_response->b_total_len = len+2;
+     new_response->b_len = len;
+@@ -71,7 +66,7 @@ vcard_init_buffer_response(VCard *card, unsigned char *buf, int len)
+     VCardResponse *response;
+     VCardBufferResponse *buffer_response;
+ 
+-    buffer_response =vcard_get_buffer_response(card);
++    buffer_response = vcard_get_buffer_response(card);
+     if (buffer_response) {
+         vcard_set_buffer_response(card, NULL);
+         vcard_buffer_response_delete(buffer_response);
+@@ -85,7 +80,7 @@ vcard_init_buffer_response(VCard *card, unsigned char *buf, int len)
+     if (response == NULL) {
+         return NULL;
+     }
+-    vcard_set_buffer_response(card,buffer_response);
++    vcard_set_buffer_response(card, buffer_response);
+     return response;
+ }
+ 
+@@ -99,13 +94,13 @@ vcard_response_new(VCard *card, unsigned char *buf,
+     VCardResponse *new_response;
+ 
+     if (len > Le) {
+-       return vcard_init_buffer_response(card, buf, len);
++        return vcard_init_buffer_response(card, buf, len);
+     }
+-    new_response = vcard_response_new_data(buf,len);
++    new_response = vcard_response_new_data(buf, len);
+     if (new_response == NULL) {
+         return NULL;
+     }
+-    vcard_response_set_status(new_response,status);
++    vcard_response_set_status(new_response, status);
+     return new_response;
+ }
+ 
+@@ -119,13 +114,13 @@ vcard_response_new_bytes(VCard *card, unsigned char *buf, int len, int Le,
+     VCardResponse *new_response;
+ 
+     if (len > Le) {
+-       return vcard_init_buffer_response(card, buf, len);
++        return vcard_init_buffer_response(card, buf, len);
+     }
+-    new_response = vcard_response_new_data(buf,len);
++    new_response = vcard_response_new_data(buf, len);
+     if (new_response == NULL) {
+         return NULL;
+     }
+-    vcard_response_set_status_bytes(new_response,sw1,sw2);
++    vcard_response_set_status_bytes(new_response, sw1, sw2);
+     return new_response;
+ }
+ 
+@@ -137,15 +132,12 @@ vcard_response_new_status(vcard_7816_status_t status)
+ {
+     VCardResponse *new_response;
+ 
+-    new_response = (VCardResponse *)malloc(sizeof(VCardResponse));
+-    if (!new_response) {
+-        return NULL;
+-    }
++    new_response = (VCardResponse *)qemu_malloc(sizeof(VCardResponse));
+     new_response->b_data = &new_response->b_sw1;
+     new_response->b_len = 0;
+     new_response->b_total_len = 2;
+     new_response->b_type = VCARD_MALLOC_STRUCT;
+-    vcard_response_set_status(new_response,status);
++    vcard_response_set_status(new_response, status);
+     return new_response;
+ }
+ 
+@@ -157,10 +149,7 @@ vcard_response_new_status_bytes(unsigned char sw1, unsigned char sw2)
+ {
+     VCardResponse *new_response;
+ 
+-    new_response = (VCardResponse *)malloc(sizeof(VCardResponse));
+-    if (!new_response) {
+-        return NULL;
+-    }
++    new_response = (VCardResponse *)qemu_malloc(sizeof(VCardResponse));
+     new_response->b_data = &new_response->b_sw1;
+     new_response->b_len = 0;
+     new_response->b_total_len = 2;
+@@ -184,23 +173,23 @@ vcard_response_delete(VCardResponse *response)
+     case VCARD_MALLOC:
+         /* everything was malloc'ed */
+         if (response->b_data) {
+-            free(response->b_data);
++            qemu_free(response->b_data);
+         }
+-        free(response);
++        qemu_free(response);
+         break;
+     case VCARD_MALLOC_DATA:
+         /* only the data buffer was malloc'ed */
+         if (response->b_data) {
+-            free(response->b_data);
++            qemu_free(response->b_data);
+         }
+         break;
+-     case VCARD_MALLOC_STRUCT:
++    case VCARD_MALLOC_STRUCT:
+         /* only the structure was malloc'ed */
+-        free(response);
++        qemu_free(response);
+         break;
+-     case VCARD_STATIC:
++    case VCARD_STATIC:
+         break;
+-     }
++    }
+ }
+ 
+ /*
+@@ -243,7 +232,7 @@ vcard_apdu_set_class(VCardAPDU *apdu) {
+     case 0xf0:
+     default:
+         apdu->a_gen_type =
+-            (apdu->a_cla == 0xff)? VCARD_7816_PTS : VCARD_7816_PROPIETARY;
++            (apdu->a_cla == 0xff) ? VCARD_7816_PTS : VCARD_7816_PROPIETARY;
+         break;
+     }
+     return VCARD7816_STATUS_SUCCESS;
+@@ -314,7 +303,7 @@ vcard_apdu_set_length(VCardAPDU *apdu)
+             return VCARD7816_STATUS_ERROR_WRONG_LENGTH;
+         }
+         /* not extended */
+-        apdu->a_Lc= apdu->a_header->ah_Le;
++        apdu->a_Lc = apdu->a_header->ah_Le;
+         apdu->a_body = &apdu->a_header->ah_body[0];
+         if (L ==  apdu->a_Lc + 1) {
+             /* 3S only body parameters */
+@@ -347,25 +336,18 @@ vcard_apdu_new(unsigned char *raw_apdu, int len, vcard_7816_status_t *status)
+         return NULL;
+     }
+ 
+-    new_apdu = (VCardAPDU *)malloc(sizeof(VCardAPDU));
+-    if (!new_apdu) {
+-        return NULL;
+-    }
+-    new_apdu->a_data = malloc(len);
+-    if (!new_apdu->a_data) {
+-        free(new_apdu);
+-        return NULL;
+-    }
++    new_apdu = (VCardAPDU *)qemu_malloc(sizeof(VCardAPDU));
++    new_apdu->a_data = qemu_malloc(len);
+     memcpy(new_apdu->a_data, raw_apdu, len);
+     new_apdu->a_len = len;
+     *status = vcard_apdu_set_class(new_apdu);
+     if (*status != VCARD7816_STATUS_SUCCESS) {
+-        free(new_apdu);
++        qemu_free(new_apdu);
+         return NULL;
+     }
+     *status = vcard_apdu_set_length(new_apdu);
+     if (*status != VCARD7816_STATUS_SUCCESS) {
+-        free(new_apdu);
++        qemu_free(new_apdu);
+         new_apdu = NULL;
+     }
+     return new_apdu;
+@@ -378,9 +360,9 @@ vcard_apdu_delete(VCardAPDU *apdu)
+         return;
+     }
+     if (apdu->a_data) {
+-        free(apdu->a_data);
++        qemu_free(apdu->a_data);
+     }
+-    free(apdu);
++    qemu_free(apdu);
+ }
+ 
+ 
+@@ -563,7 +545,7 @@ vcard_make_response(vcard_7816_status_t status)
+                         VCARD7816_STATUS_EXC_ERROR_MEMORY_FAILURE);
+         }
+     }
+-    ASSERT(response);
++    assert(response);
+     return response;
+ }
+ 
+@@ -651,10 +633,10 @@ vcard7816_vm_process_apdu(VCard *card, VCardAPDU *apdu,
+             unsigned char *aid;
+             int aid_len;
+             aid = vcard_applet_get_aid(current_applet, &aid_len);
+-           *response = vcard_response_new(card, aid, aid_len, apdu->a_Le,
++            *response = vcard_response_new(card, aid, aid_len, apdu->a_Le,
+                                           VCARD7816_STATUS_SUCCESS);
+         } else {
+-           *response = vcard_make_response(
++            *response = vcard_make_response(
+                              VCARD7816_STATUS_ERROR_FILE_NOT_FOUND);
+         }
+         break;
+@@ -695,6 +677,7 @@ vcard7816_vm_process_apdu(VCard *card, VCardAPDU *apdu,
+             *response = vcard_make_response(
+                             VCARD7816_STATUS_ERROR_DATA_NOT_FOUND);
+             /* handle error */
++            break;
+         }
+         bytes_to_copy = MIN(buffer_response->len, apdu->a_Le);
+         next_byte_count = MIN(256, buffer_response->len - bytes_to_copy);
+@@ -702,12 +685,12 @@ vcard7816_vm_process_apdu(VCard *card, VCardAPDU *apdu,
+                         card, buffer_response->current, bytes_to_copy,
+                         apdu->a_Le,
+                         next_byte_count ?
+-                        VCARD7816_SW1_RESPONSE_BYTES: VCARD7816_SW1_SUCCESS,
++                        VCARD7816_SW1_RESPONSE_BYTES : VCARD7816_SW1_SUCCESS,
+                         next_byte_count);
+         buffer_response->current += bytes_to_copy;
+         buffer_response->len -= bytes_to_copy;
+         if (*response == NULL || (next_byte_count == 0)) {
+-            vcard_set_buffer_response(card,NULL);
++            vcard_set_buffer_response(card, NULL);
+             vcard_buffer_response_delete(buffer_response);
+         }
+         if (*response == NULL) {
+@@ -728,7 +711,7 @@ vcard7816_vm_process_apdu(VCard *card, VCardAPDU *apdu,
+     }
+ 
+     /* response should have been set somewhere */
+-    ASSERT(*response != NULL);
++    assert(*response != NULL);
+     return VCARD_DONE;
+ }
+ 
+@@ -753,11 +736,11 @@ vcard_process_apdu(VCard *card, VCardAPDU *apdu, VCardResponse **response)
+     }
+     buffer_response = vcard_get_buffer_response(card);
+     if (buffer_response && apdu->a_ins != VCARD7816_INS_GET_RESPONSE) {
+-       /* clear out buffer_response, return an error */
+-        vcard_set_buffer_response(card,NULL);
++        /* clear out buffer_response, return an error */
++        vcard_set_buffer_response(card, NULL);
+         vcard_buffer_response_delete(buffer_response);
+-       *response = vcard_make_response(VCARD7816_STATUS_EXC_ERROR);
+-       return VCARD_DONE;
++        *response = vcard_make_response(VCARD7816_STATUS_EXC_ERROR);
++        return VCARD_DONE;
+     }
+ 
+     status = vcard_process_applet_apdu(card, apdu, response);
+@@ -766,13 +749,13 @@ vcard_process_apdu(VCard *card, VCardAPDU *apdu, VCardResponse **response)
+     }
+     switch (vcard_get_type(card)) {
+     case VCARD_FILE_SYSTEM:
+-        return vcard7816_file_system_process_apdu(card,apdu,response);
++        return vcard7816_file_system_process_apdu(card, apdu, response);
+     case VCARD_VM:
+-        return vcard7816_vm_process_apdu(card,apdu,response);
++        return vcard7816_vm_process_apdu(card, apdu, response);
+     case VCARD_DIRECT:
+         /* if we are type direct, then the applet should handle everything */
+         assert("VCARD_DIRECT: applet failure");
+-       break;
++        break;
+     }
+     *response =
+         vcard_make_response(VCARD7816_STATUS_ERROR_COMMAND_NOT_SUPPORTED);
+diff --git a/libcacard/card_7816.h b/libcacard/card_7816.h
+index 4351b1c..2bb2a0d 100644
+--- a/libcacard/card_7816.h
++++ b/libcacard/card_7816.h
+@@ -1,6 +1,8 @@
+ /*
+  * Implement the 7816 portion of the card spec
+  *
++ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
++ * See the COPYING.LIB file in the top-level directory.
+  */
+ #ifndef CARD_7816_H
+ #define CARD_7816_H  1
+diff --git a/libcacard/card_7816t.h b/libcacard/card_7816t.h
+index 531455c..9333285 100644
+--- a/libcacard/card_7816t.h
++++ b/libcacard/card_7816t.h
+@@ -1,6 +1,8 @@
+ /*
+  * Implement the 7816 portion of the card spec
+  *
++ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
++ * See the COPYING.LIB file in the top-level directory.
+  */
+ #ifndef CARD_7816T_H
+ #define CARD_7816T_H 1
+diff --git a/libcacard/event.c b/libcacard/event.c
+index c3677cb..bb2f921 100644
+--- a/libcacard/event.c
++++ b/libcacard/event.c
+@@ -1,29 +1,23 @@
+ /*
++ * event queue implementation.
+  *
++ * This code is licensed under the GNU LGPL, version 2.1 or later.
++ * See the COPYING.LIB file in the top-level directory.
+  */
++
++#include "qemu-common.h"
++#include "qemu-thread.h"
++
+ #include "vcard.h"
+ #include "vreader.h"
+ #include "vevent.h"
+ 
+-/*
+- * OS includes
+- */
+-#include <stdlib.h>
+-
+-/*
+- * from spice
+- */
+-#include "mutex.h"
+-
+ VEvent *
+ vevent_new(VEventType type, VReader *reader, VCard *card)
+ {
+     VEvent *new_vevent;
+ 
+-    new_vevent = (VEvent *)malloc(sizeof(VEvent));
+-    if (new_vevent == NULL) {
+-        return NULL;
+-    }
++    new_vevent = (VEvent *)qemu_malloc(sizeof(VEvent));
+     new_vevent->next = NULL;
+     new_vevent->type = type;
+     new_vevent->reader = vreader_reference(reader);
+@@ -40,22 +34,22 @@ vevent_delete(VEvent *vevent)
+     }
+     vreader_free(vevent->reader);
+     vcard_free(vevent->card);
+-    free(vevent);
++    qemu_free(vevent);
+ }
+ 
+ /*
+  * VEvent queue management
+  */
+ 
+-static VEvent *vevent_queue_head = NULL;
+-static VEvent *vevent_queue_tail = NULL;
+-static mutex_t vevent_queue_lock;
+-static condition_t vevent_queue_condition;
++static VEvent *vevent_queue_head;
++static VEvent *vevent_queue_tail;
++static QemuMutex vevent_queue_lock;
++static QemuCond vevent_queue_condition;
+ 
+ void vevent_queue_init(void)
+ {
+-    MUTEX_INIT(vevent_queue_lock);
+-    CONDITION_INIT(vevent_queue_condition);
++    qemu_mutex_init(&vevent_queue_lock);
++    qemu_cond_init(&vevent_queue_condition);
+     vevent_queue_head = vevent_queue_tail = NULL;
+ }
+ 
+@@ -63,7 +57,7 @@ void
+ vevent_queue_vevent(VEvent *vevent)
+ {
+     vevent->next = NULL;
+-    MUTEX_LOCK(vevent_queue_lock);
++    qemu_mutex_lock(&vevent_queue_lock);
+     if (vevent_queue_head) {
+         assert(vevent_queue_tail);
+         vevent_queue_tail->next = vevent;
+@@ -71,8 +65,8 @@ vevent_queue_vevent(VEvent *vevent)
+         vevent_queue_head = vevent;
+     }
+     vevent_queue_tail = vevent;
+-    CONDITION_NOTIFY(vevent_queue_condition);
+-    MUTEX_UNLOCK(vevent_queue_lock);
++    qemu_cond_signal(&vevent_queue_condition);
++    qemu_mutex_unlock(&vevent_queue_lock);
+ }
+ 
+ /* must have lock */
+@@ -88,24 +82,25 @@ vevent_dequeue_vevent(void)
+     return vevent;
+ }
+ 
+-VEvent * vevent_wait_next_vevent(void)
++VEvent *vevent_wait_next_vevent(void)
+ {
+     VEvent *vevent;
+ 
+-    MUTEX_LOCK(vevent_queue_lock);
++    qemu_mutex_lock(&vevent_queue_lock);
+     while ((vevent = vevent_dequeue_vevent()) == NULL) {
+-        CONDITION_WAIT(vevent_queue_condition, vevent_queue_lock);
++        qemu_cond_wait(&vevent_queue_condition, &vevent_queue_lock);
+     }
+-    MUTEX_UNLOCK(vevent_queue_lock);
++    qemu_mutex_unlock(&vevent_queue_lock);
+     return vevent;
+ }
+ 
+-VEvent * vevent_get_next_vevent(void)
++VEvent *vevent_get_next_vevent(void)
+ {
+     VEvent *vevent;
+ 
+-    MUTEX_LOCK(vevent_queue_lock);
++    qemu_mutex_lock(&vevent_queue_lock);
+     vevent = vevent_dequeue_vevent();
+-    MUTEX_UNLOCK(vevent_queue_lock);
++    qemu_mutex_unlock(&vevent_queue_lock);
+     return vevent;
+ }
++
+diff --git a/libcacard/eventt.h b/libcacard/eventt.h
+index 0b7f2c2..0dc7bd4 100644
+--- a/libcacard/eventt.h
++++ b/libcacard/eventt.h
+@@ -1,5 +1,6 @@
+ /*
+- *
++ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
++ * See the COPYING.LIB file in the top-level directory.
+  */
+ 
+ #ifndef EVENTT_H
+@@ -24,3 +25,5 @@ struct VEventStruct {
+     VCard *card;
+ };
+ #endif
++
++
+diff --git a/libcacard/link_test.c b/libcacard/link_test.c
+index 1996d17..6f67a23 100644
+--- a/libcacard/link_test.c
++++ b/libcacard/link_test.c
+@@ -1,6 +1,8 @@
+ /*
+- *
++ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
++ * See the COPYING.LIB file in the top-level directory.
+  */
++
+ #include <stdio.h>
+ #include "vcard.h"
+ 
+@@ -17,3 +19,4 @@ main(int argc, char **argv)
+     VCard *card; /* no constructor yet */
+     cac_card_init("", card, NULL, 0, NULL, 0);
+ }
++
+diff --git a/libcacard/passthru.c b/libcacard/passthru.c
+deleted file mode 100644
+index 09471c7..0000000
+--- a/libcacard/passthru.c
++++ /dev/null
+@@ -1,612 +0,0 @@
+-/*
+- * implement the applets for the CAC card.
+- */
+-#ifdef USE_PASSTHRU
+-#include "vcard.h"
+-#include "vcard_emul.h"
+-#include "card_7816.h"
+-#include "vreader.h"
+-#include "mutex.h"
+-#include "vcard_emul.h"
+-#include "passthru.h"
+-#include <stdlib.h>
+-#include <string.h>
+-#include <pcsclite.h>
+-
+-/*
+- * Passthru applet private data
+- */
+-struct VCardAppletPrivateStruct {
+-    char *reader_name;
+-    /* pcsc-lite parameters */
+-    SCARDHANDLE hCard;
+-    uint32_t hProtocol;
+-    SCARD_IO_REQUEST *send_io;
+-    unsigned char atr[MAX_ATR_SIZE];
+-    int atr_len;
+-};
+-
+-static SCARDCONTEXT global_context = 0;
+-
+-#define MAX_RESPONSE_LENGTH 261 /*65537 */
+-/*
+- * handle all the APDU's that are common to all CAC applets
+- */
+-static VCardStatus
+-passthru_process_apdu(VCard *card, VCardAPDU *apdu, VCardResponse **response)
+-{
+-    LONG rv;
+-    unsigned char buf[MAX_RESPONSE_LENGTH];
+-    uint32_t len = MAX_RESPONSE_LENGTH;
+-    VCardAppletPrivate *applet_private = NULL;
+-    SCARD_IO_REQUEST receive_io;
+-
+-    applet_private = vcard_get_current_applet_private(card, 0);
+-    if (applet_private == NULL) {
+-       *response = vcard_make_response(VCARD7816_STATUS_EXC_ERROR);
+-       return VCARD_DONE;
+-    }
+-
+-    rv = SCardTransmit(applet_private->hCard, applet_private->send_io,
+-                       apdu->a_data, apdu->a_len, &receive_io, buf, &len);
+-    if (rv != SCARD_S_SUCCESS) {
+-       *response = vcard_make_response(VCARD7816_STATUS_EXC_ERROR);
+-       return VCARD_DONE;
+-    }
+-
+-    *response = vcard_response_new_data(buf,len);
+-    if (*response == NULL) {
+-       *response =
+-            vcard_make_response(VCARD7816_STATUS_EXC_ERROR_MEMORY_FAILURE);
+-    } else {
+-       (*response)->b_total_len = (*response)->b_len;
+-    }
+-    return VCARD_DONE;
+-}
+-
+-static void
+-passthru_card_set_atr(VCard *card, unsigned char *atr, int atr_len)
+-{
+-    VCardAppletPrivate *applet_private = NULL;
+-    applet_private = vcard_get_current_applet_private(card, 0);
+-    if (applet_private == NULL) {
+-        return;
+-    }
+-    applet_private->atr_len = MIN(atr_len, sizeof(applet_private->atr));
+-    memcpy(applet_private->atr, atr, applet_private->atr_len);
+-}
+-
+-static void passthru_card_get_atr(VCard *card, unsigned char *atr, int *atr_len)
+-{
+-    VCardAppletPrivate *applet_private = NULL;
+-    SCARD_READERSTATE *state;
+-
+-    applet_private = vcard_get_current_applet_private(card, 0);
+-    if ((applet_private == NULL) || (applet_private->atr_len == 0)) {
+-        vcard_emul_get_atr(card, atr, atr_len);
+-        return;
+-    }
+-    *atr_len = MIN(applet_private->atr_len, *atr_len);
+-    memcpy(atr,applet_private->atr,*atr_len);
+-    return;
+-}
+-
+-/*
+- *  resest the inter call state between applet selects
+- */
+-static VCardStatus
+-passthru_reset(VCard *card, int channel)
+-{
+-    return VCARD_DONE;
+-}
+-
+-static VCardStatus
+-passthru_pcsc_lite_init()
+-{
+-    LONG rv;
+-    if (global_context != 0) {
+-        return VCARD_DONE;
+-    }
+-    rv = SCardEstablishContext(SCARD_SCOPE_SYSTEM, NULL, NULL, &global_context);
+-    if (rv != SCARD_S_SUCCESS) {
+-        return VCARD_FAIL;
+-    }
+-    return VCARD_DONE;
+-}
+-
+-/*
+- *  match if s1 is completely contained in s2
+- */
+-static int
+-string_match(const char *s1, const char *s2)
+-{
+-    int len = strlen(s1);
+-    const char *start;
+-
+-    for (start = strchr(s2, *s1); start; start = strchr(start+1, *s1)) {
+-       if (strncmp(start, s1, len) == 0) {
+-           return 1;
+-       }
+-    }
+-    return 0;
+-}
+-
+-
+-/*
+- *  Look for the reader that best matches the name for VReader
+- */
+-static char *
+-passthru_get_reader_name(VReader *reader)
+-{
+-    const char *reader_name = vreader_get_name(reader);
+-    char *reader_list = NULL;
+-    char *reader_entry = NULL;
+-    char *reader_match = NULL;
+-    uint32_t reader_string_length;
+-    VCardStatus status;
+-    LONG rv;
+-
+-    if (reader_name == NULL) {
+-        return NULL;
+-    }
+-
+-    status = passthru_pcsc_lite_init();
+-    if (status != VCARD_DONE) {
+-       return NULL;
+-    }
+-
+-
+-    /* find the existing reader names */
+-    rv = SCardListReaders(global_context, NULL, NULL, &reader_string_length);
+-    if (rv !=  SCARD_S_SUCCESS) {
+-       return NULL;
+-    }
+-    reader_list = (char *)malloc(reader_string_length);
+-    rv = SCardListReaders(global_context, NULL, reader_list,
+-                          &reader_string_length);
+-    if (rv !=  SCARD_S_SUCCESS) {
+-       goto cleanup;
+-    }
+-
+-    /* match that name */
+-    for (reader_entry= reader_list;*reader_entry;
+-                                   reader_entry += strlen(reader_entry)+1) {
+-       if (string_match(reader_entry, reader_name)) {
+-           reader_match = strdup(reader_entry);
+-           break;
+-       }
+-    }
+-cleanup:
+-    if (reader_list) {
+-        free(reader_list);
+-    }
+-    return reader_match;
+-}
+-
+-
+-/*
+- * utilities for creating and destroying the private applet data
+- */
+-static void
+-passthru_delete_applet_private(VCardAppletPrivate *applet_private)
+-{
+-    if (applet_private == NULL) {
+-        return;
+-    }
+-    if (applet_private->hCard) {
+-        SCardDisconnect(applet_private->hCard,SCARD_LEAVE_CARD);
+-    }
+-    if (applet_private->reader_name != NULL) {
+-        free(applet_private->reader_name);
+-    }
+-    free(applet_private);
+-}
+-
+-static VCardAppletPrivate *
+-passthru_new_applet_private(VReader *reader)
+-{
+-    VCardAppletPrivate *applet_private = NULL;
+-    LONG rv;
+-
+-    applet_private = (VCardAppletPrivate *)malloc(sizeof(VCardAppletPrivate));
+-
+-    if (applet_private == NULL) {
+-        goto fail;
+-    }
+-    applet_private->hCard = 0;
+-    applet_private->reader_name = NULL;
+-
+-    applet_private->reader_name = passthru_get_reader_name(reader);
+-    if (applet_private->reader_name == NULL) {
+-        goto fail;
+-    }
+-
+-    rv = SCardConnect( global_context, applet_private->reader_name,
+-       SCARD_SHARE_DIRECT, SCARD_PROTOCOL_T0|SCARD_PROTOCOL_T1,
+-        &applet_private->hCard,
+-        &applet_private->hProtocol);
+-    if (rv !=  SCARD_S_SUCCESS) {
+-        goto fail;
+-    }
+-
+-    if (applet_private->hProtocol == SCARD_PROTOCOL_T0) {
+-        applet_private->send_io = SCARD_PCI_T0;
+-    } else {
+-        applet_private->send_io = SCARD_PCI_T1;
+-    }
+-    applet_private->atr_len = 0;
+-    return applet_private;
+-
+-fail:
+-    if (applet_private) {
+-        passthru_delete_applet_private(applet_private);
+-    }
+-    return NULL;
+-}
+-
+-
+-/*
+- * create a new applet which links to our override function.
+- */
+-static VCardApplet *
+-passthru_new_applet(VReader *reader)
+-{
+-    VCardAppletPrivate *applet_private = NULL;
+-    VCardApplet *applet = NULL;
+-    unsigned char passthru_aid[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+-    int passthru_aid_len = sizeof (passthru_aid);
+-
+-    applet_private = passthru_new_applet_private(reader);
+-    if (applet_private == NULL) {
+-        goto failure;
+-    }
+-    applet = vcard_new_applet(passthru_process_apdu, passthru_reset,
+-                              passthru_aid, passthru_aid_len);
+-    if (applet == NULL) {
+-        goto failure;
+-    }
+-    vcard_set_applet_private(applet, applet_private,
+-                          passthru_delete_applet_private);
+-    applet_private = NULL;
+-
+-    return applet;
+-
+-failure:
+-    if (applet_private != NULL) {
+-        passthru_delete_applet_private(applet_private);
+-    }
+-    return NULL;
+-}
+-
+-
+-
+-/*
+- * Initialize the card. This is the only 'card type emulator' portion of this
+- * the rest are connected through function pointers.
+- */
+-VCardStatus
+-passthru_card_init(VReader *vreader, VCard *card,
+-              const char *flags,
+-              unsigned char * const *cert,
+-              int cert_len[],
+-              VCardKey *key[] /* adopt the keys*/,
+-              int cert_count)
+-{
+-    int i;
+-    VCardApplet *applet;
+-
+-    /* Don't do soft emulation of the 7816, pass everything to the card */
+-    vcard_set_type(card,VCARD_DIRECT);
+-
+-    applet = passthru_new_applet(vreader);
+-    if (applet == NULL) {
+-        goto failure;
+-    }
+-
+-    vcard_add_applet(card, applet);
+-
+-    /* we are adopting the keys, so free them now (since we don't use them) */
+-    for (i=0; i < cert_count; i++) {
+-      vcard_emul_delete_key(key[i]);
+-    }
+-
+-    return VCARD_DONE;
+-
+-failure:
+-    return VCARD_FAIL;
+-}
+-
+-/*
+- *  Begin passthru_emul code. This emulator only works with the passthru card
+- *  type.
+- *
+- */
+-
+-/*
+- *  Get the state entry that matches this reader. If none found, return NULL
+- */
+-static SCARD_READERSTATE_A *
+-passthru_get_reader_state(SCARD_READERSTATE_A *reader_states,
+-                          int reader_count, char *name)
+-{
+-    int i;
+-
+-    for (i=0; i < reader_count; i++) {
+-        if (name == NULL && reader_states[i].szReader == NULL) {
+-            // looking for a blank slot to return
+-            return &reader_states[i];
+-        }
+-        if (name == NULL || reader_states[i].szReader == NULL) {
+-            continue;
+-        }
+-        if (strcmp(name, reader_states[i].szReader) == 0) {
+-            return &reader_states[i];
+-        }
+-    }
+-    return NULL;
+-}
+-
+-/*
+- * find a card slot that has been cleared out
+- */
+-static SCARD_READERSTATE_A *
+-passthru_get_blank_reader(SCARD_READERSTATE_A *reader_states, int reader_count)
+-{
+-    return passthru_get_reader_state(reader_states,  reader_count, NULL);
+-}
+-
+-
+-/*
+- *  This is the main work of the emulator, handling the thread that looks for
+- *  changes in the readers and the cards.
+- */
+-static void *
+-passthru_emul_event_thread(void *args)
+-{
+-    char *reader_list = NULL;
+-    int reader_list_len = 0;
+-    SCARD_READERSTATE_A *reader_states = NULL;
+-    int reader_count = 0;     /* number of active readers */
+-    int max_reader_count = 0; /* size of the reader_state array (including
+-                                 inactive readers) */
+-    LONG rv;
+-    int timeout=1000;
+-    int i;
+-
+-    do {
+-        /* variables to hold on to our new values until we are ready to replace
+-         * our old values */
+-        char *new_reader_list = NULL;
+-        int new_reader_list_len = 0;
+-        int new_reader_count = 0;
+-
+-        /* other temps */
+-        char * reader_entry;
+-        VReader *reader;
+-
+-        /*
+-         * First check to see if the reader list has changed
+-         */
+-        rv = SCardListReaders(global_context, NULL, NULL, &new_reader_list_len);
+-        if (rv !=  SCARD_S_SUCCESS) {
+-           goto next;
+-        }
+-        /*
+-         * If the names have changed, we need to update our list and states.
+-         * This is where we detect reader insertions and removals.
+-         */
+-        if (new_reader_list_len != reader_list_len) {
+-            /* update the list */
+-            new_reader_list = (char *)malloc(new_reader_list_len);
+-            if (new_reader_list == NULL) {
+-                goto next;
+-            }
+-            rv = SCardListReaders(global_context, NULL, new_reader_list,
+-                                  &new_reader_list_len);
+-            if (rv !=  SCARD_S_SUCCESS) {
+-                free(new_reader_list);
+-                goto next;
+-            }
+-            /* clear out our event state */
+-            for (i=0; i < reader_count; i++) {
+-                    reader_states[i].dwEventState = 0;
+-            }
+-            /* count the readers and mark the ones that are still with us */
+-            for (reader_entry = new_reader_list; *reader_entry;
+-                 reader_entry += strlen(reader_entry)+1) {
+-                SCARD_READERSTATE_A *this_state;
+-                new_reader_count++;
+-                /* if the reader is still on the list, mark it present */
+-                this_state = passthru_get_reader_state(reader_states,
+-                                                       reader_count,
+-                                                       reader_entry);
+-                if (this_state) {
+-                    this_state->dwEventState = SCARD_STATE_PRESENT;
+-                }
+-            }
+-            /* eject any removed readers */
+-            for (i=0; i < reader_count; i++) {
+-                if (reader_states[i].dwEventState == SCARD_STATE_PRESENT) {
+-                    reader_states[i].dwEventState = 0;
+-                    continue;
+-                }
+-                reader = vreader_get_reader_by_name(reader_states[i].szReader);
+-                vreader_remove_reader(reader);
+-                vreader_free(reader);
+-                reader_states[i].szReader = NULL;
+-            }
+-            /* handle the shrinking list */
+-            if (new_reader_count < reader_count) {
+-                /* fold all the valid entries at the end of our reader_states
+-                 * array up into those locations vacated by ejected readers. */
+-                for (i=reader_count-1; i < (new_reader_count -1); i--) {
+-                        if (reader_states[i].szReader) {
+-                            SCARD_READERSTATE_A *blank_reader;
+-                            blank_reader =
+-                                passthru_get_blank_reader(reader_states,
+-                                                          new_reader_count);
+-                            assert(blank_reader);
+-                            *blank_reader = reader_states[i];
+-                            reader_states[i].szReader = NULL;
+-                        }
+-                 }
+-            }
+-            /* handle the growing list */
+-            if (new_reader_count >  max_reader_count) {
+-                SCARD_READERSTATE_A *new_reader_states;
+-
+-                /* grow the list */
+-                new_reader_states =
+-                    (SCARD_READERSTATE_A *)realloc(reader_states,
+-                        sizeof(SCARD_READERSTATE_A)*new_reader_count);
+-                if (new_reader_states) {
+-                    /* successful, update our current state */
+-                    reader_states = new_reader_states;
+-                    max_reader_count = new_reader_count;
+-                } else {
+-                    new_reader_count = max_reader_count; /* couldn't get enough
+-                                                          * space to handle
+-                                                          * all the new readers
+-                                                          * */
+-                }
+-                /* mark our new entries as empty */
+-                for (i=reader_count; i > new_reader_count; i++) {
+-                    reader_states[i].szReader = NULL;
+-                }
+-            }
+-            /* now walk the reader list, updating the state */
+-            for (reader_entry = new_reader_list; *reader_entry;
+-                 reader_entry += strlen(reader_entry)+1) {
+-                SCARD_READERSTATE_A *this_state;
+-                this_state = passthru_get_reader_state(reader_states,
+-                                                       new_reader_count,
+-                                                       reader_entry);
+-                if (this_state) {
+-                    /* replace the old copy of the string with the new copy.
+-                     * This will allow us to free reader_list at the end */
+-                    reader_states->szReader = reader_entry;
+-                    continue;
+-                }
+-                /* this is a new reader, add it to the list */
+-                this_state =
+-                    passthru_get_blank_reader(reader_states, new_reader_count);
+-                if (!this_state) {
+-                    continue; /* this can happen of we couldn't get enough
+-                                 slots in the grow list */
+-                }
+-                this_state->szReader = reader_entry;
+-                this_state->dwCurrentState = SCARD_STATE_UNAWARE;
+-                reader = vreader_new(reader_entry, NULL, NULL);
+-                if (reader) {
+-                    vreader_add_reader(reader);
+-                }
+-                vreader_free(reader);
+-            }
+-            /* finally update our current variables */
+-            free(reader_list);
+-            reader_list = new_reader_list;
+-            reader_list_len = new_reader_list_len;
+-            reader_count = new_reader_count;
+-        }
+-next:
+-        rv = SCardGetStatusChange(global_context, timeout,
+-                                  reader_states, reader_count);
+-        if (rv == SCARD_E_TIMEOUT) {
+-            continue; /* check for new readers */
+-        }
+-        if (rv != SCARD_S_SUCCESS) {
+-            static int restarts = 0;
+-            VCardStatus status;
+-
+-            /* try resetting the pcsc_lite subsystem */
+-            SCardReleaseContext(global_context);
+-            global_context = 0; /* should close it */
+-            printf("***** SCard failure %x\n", rv);
+-            restarts++;
+-            if (restarts >= 3) {
+-                printf("***** SCard failed %d times\n", restarts);
+-                return; /* exit thread */
+-            }
+-            status = passthru_pcsc_lite_init();
+-            assert(status == CARD_DONE);
+-            sleep(1);
+-            continue;
+-        }
+-        /* deal with card insertion/removal */
+-        for (i=0; i < reader_count ; i++) {
+-            if ((reader_states[i].dwEventState & SCARD_STATE_CHANGED) == 0) {
+-                continue;
+-            }
+-            reader_states[i].dwCurrentState = reader_states[i].dwEventState;
+-            reader = vreader_get_reader_by_name(reader_states[i].szReader);
+-            if (reader == NULL) {
+-                continue;
+-            }
+-            if (reader_states[i].dwEventState & SCARD_STATE_EMPTY) {
+-                if (vreader_card_is_present(reader) == VREADER_OK) {
+-                    vreader_insert_card(reader, NULL);
+-                }
+-            }
+-            if (reader_states[i].dwEventState & SCARD_STATE_PRESENT) {
+-                VCard *card;
+-                VCardStatus status = VCARD_FAIL;
+-                /* if there already was a card present, eject it before we
+-                 * insert the new one */
+-                if (vreader_card_is_present(reader) == VREADER_OK) {
+-                    vreader_insert_card(reader, NULL);
+-                }
+-
+-                card = vcard_new(NULL, NULL);
+-                if (card != NULL) {
+-                    status = passthru_card_init(reader, card, "",
+-                                                NULL, NULL, NULL, 0);
+-                    passthru_card_set_atr(card, reader_states[i].rgbAtr,
+-                                  reader_states[i].cbAtr);
+-                    vcard_set_atr_func(card, passthru_card_get_atr);
+-                }
+-                if (status == VCARD_DONE) {
+-                    vreader_insert_card(reader, card);
+-                }
+-                vcard_free(card);
+-            }
+-            vreader_free(reader);
+-        }
+-
+-     } while (1);
+-     return NULL;
+-}
+-
+-/*
+- *  Initializing the passthru emul is simply initializing pcsc-lite and
+- *  launching the event thread.
+- */
+-VCardStatus
+-passthru_emul_init(VCardEmulOptions *options)
+-{
+-    thread_t tid;
+-    thread_status_t tstatus;
+-    VCardStatus status;
+-
+-    vreader_init();
+-    vevent_queue_init();
+-
+-    status = passthru_pcsc_lite_init();
+-    if (status != VCARD_DONE) {
+-        return status;
+-    }
+-
+-    /* launch reader thread */
+-    tstatus = THREAD_CREATE(tid, passthru_emul_event_thread, NULL);
+-    if (!THREAD_SUCCESS(tstatus)) {
+-        return VCARD_FAIL;
+-    }
+-    return VCARD_DONE;
+-}
+-
+-
+-VCardEmulOptions *
+-passthru_emul_options(const char *args)
+-{
+-    return NULL;
+-}
+-#endif
+diff --git a/libcacard/passthru.h b/libcacard/passthru.h
+deleted file mode 100644
+index 3589d12..0000000
+--- a/libcacard/passthru.h
++++ /dev/null
+@@ -1,50 +0,0 @@
+-/*
+- * passthru card type emulator and passhtru emulator.
+- *
+- * passhtru card type emulator can be used with other low level card emulators,
+- * as long as they can recognize card insertion and removals.
+- *
+- * the passthru vcard_emulator, can only use passthru card types.
+- *
+- * Be careful using passthru. 1) passthru does not know the locking state of
+- * the card from the guest side, and thus does not try to get locks. This means
+- * client access can interfere with the guest use of the card. 2) passthru does
+- * not provide the guest and client unique login states for the card. That
+- * means that it is possible for the guest to access private data on the
+- * card without authenticating. You have been warned.
+- *
+- * Passthru is most useful in the following cases: 1) provisioning. Card type
+- *  emulators cannot emulate the open platform secure connections because the
+- *  client software does not have access to the global platform keys on the
+- *  card. Passthru drives these apdu's directly to the card. 2) odd cards. If
+- *  you have guest software the knows how to access the card, but no client
+- *  side PKCS #11 module, then passthru can provide access to those cards.
+- */
+-
+-#ifndef PASSTHRU_H
+-#define PASSTHRU_H 1
+-
+-#include "vcard.h"
+-#include "vcard_emul.h"
+-#include "vreader.h"
+-
+-/*
+- * Initialize the card. This is the only 'card type emulator' portion of this
+- * the rest are connected through function pointers. NOTE: certs are ignored,
+- * keys are freed.
+- */
+-VCardStatus passthru_card_init(VReader *vreader, VCard *card,
+-              const char *flags, unsigned char * const *cert, int cert_len[],
+-              VCardKey *key[], int cert_count);
+-
+-/*
+- * Use this instead of vcard_emul_init to initialize passthru.
+- * passthru is the exception to the rule that only one emul can be compiled
+- * at once. NOTE: you can still have only one emul active at once. The
+- * passhtru card type emul, however can be used with other emuls.
+- *
+- * passthru does not support other card type emuls.
+- */
+-VCardStatus passthru_emul_init(VCardEmulOptions *options);
+-VCardEmulOptions *passthru_emul_options(const char *args);
+-#endif
+diff --git a/libcacard/vcard.c b/libcacard/vcard.c
+index 2629256..29b4cce 100644
+--- a/libcacard/vcard.c
++++ b/libcacard/vcard.c
+@@ -1,9 +1,12 @@
+ /*
+  * implement the Java card standard.
+  *
++ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
++ * See the COPYING.LIB file in the top-level directory.
+  */
+-#include <stdlib.h>
+-#include <string.h>
++
++#include "qemu-common.h"
++
+ #include "vcard.h"
+ #include "vcard_emul.h"
+ #include "card_7816t.h"
+@@ -34,15 +37,8 @@ vcard_buffer_response_new(unsigned char *buffer, int size)
+ {
+     VCardBufferResponse *new_buffer;
+ 
+-    new_buffer = (VCardBufferResponse *)malloc(sizeof(VCardBufferResponse));
+-    if (new_buffer == NULL) {
+-        return NULL;
+-    }
+-    new_buffer->buffer = (unsigned char *)malloc(size);
+-    if (new_buffer->buffer == NULL) {
+-        free(new_buffer);
+-        return NULL;
+-    }
++    new_buffer = (VCardBufferResponse *)qemu_malloc(sizeof(VCardBufferResponse));
++    new_buffer->buffer = (unsigned char *)qemu_malloc(size);
+     memcpy(new_buffer->buffer, buffer, size);
+     new_buffer->buffer_len = size;
+     new_buffer->current = new_buffer->buffer;
+@@ -57,9 +53,9 @@ vcard_buffer_response_delete(VCardBufferResponse *buffer_response)
+         return;
+     }
+     if (buffer_response->buffer) {
+-        free(buffer_response->buffer);
++        qemu_free(buffer_response->buffer);
+     }
+-    free(buffer_response);
++    qemu_free(buffer_response);
+ }
+ 
+ 
+@@ -73,14 +69,14 @@ vcard_reset(VCard *card, VCardPower power)
+     VCardApplet *applet = NULL;
+ 
+     if (card->type ==  VCARD_DIRECT) {
+-       /* select the last applet */
++        /* select the last applet */
+         VCardApplet *current_applet = NULL;
+         for (current_applet = card->applet_list; current_applet;
+                                        current_applet = current_applet->next) {
+-           applet = current_applet;
+-       }
++            applet = current_applet;
++        }
+     }
+-    for (i=0; i < MAX_CHANNEL; i++) {
++    for (i = 0; i < MAX_CHANNEL; i++) {
+         card->current_applet[i] = applet;
+     }
+     if (card->vcard_buffer_response) {
+@@ -106,21 +102,14 @@ vcard_new_applet(VCardProcessAPDU applet_process_function,
+ {
+     VCardApplet *applet;
+ 
+-    applet = (VCardApplet *)malloc(sizeof(VCardApplet));
+-    if (applet == NULL) {
+-        return NULL;
+-    }
++    applet = (VCardApplet *)qemu_malloc(sizeof(VCardApplet));
+     applet->next = NULL;
+     applet->applet_private = NULL;
+     applet->applet_private_free = NULL;
+     applet->process_apdu = applet_process_function;
+     applet->reset_applet = applet_reset_function;
+ 
+-    applet->aid = malloc(aid_len);
+-    if (applet->aid == NULL) {
+-        free(applet);
+-        return NULL;
+-    }
++    applet->aid = qemu_malloc(aid_len);
+     memcpy(applet->aid, aid, aid_len);
+     applet->aid_len = aid_len;
+     return applet;
+@@ -138,10 +127,10 @@ vcard_delete_applet(VCardApplet *applet)
+         applet->applet_private = NULL;
+     }
+     if (applet->aid) {
+-        free(applet->aid);
++        qemu_free(applet->aid);
+         applet->aid = NULL;
+     }
+-    free(applet);
++    qemu_free(applet);
+ }
+ 
+ /* accessor */
+@@ -162,9 +151,9 @@ vcard_new(VCardEmul *private, VCardEmulFree private_free)
+     VCard *new_card;
+     int i;
+ 
+-    new_card = (VCard *)malloc(sizeof(VCard));
++    new_card = (VCard *)qemu_malloc(sizeof(VCard));
+     new_card->applet_list = NULL;
+-    for (i=0; i < MAX_CHANNEL; i++) {
++    for (i = 0; i < MAX_CHANNEL; i++) {
+         new_card->current_applet[i] = NULL;
+     }
+     new_card->vcard_buffer_response = NULL;
+@@ -210,7 +199,7 @@ vcard_free(VCard *vcard)
+         vcard_delete_applet(current_applet);
+     }
+     vcard_buffer_response_delete(vcard->vcard_buffer_response);
+-    free(vcard);
++    qemu_free(vcard);
+     return;
+ }
+ 
+@@ -218,8 +207,8 @@ void
+ vcard_get_atr(VCard *vcard, unsigned char *atr, int *atr_len)
+ {
+     if (vcard->vcard_get_atr) {
+-       (*vcard->vcard_get_atr)(vcard, atr, atr_len);
+-       return;
++        (*vcard->vcard_get_atr)(vcard, atr, atr_len);
++        return;
+     }
+     vcard_emul_get_atr(vcard, atr, atr_len);
+ }
+@@ -227,7 +216,7 @@ vcard_get_atr(VCard *vcard, unsigned char *atr, int *atr_len)
+ void
+ vcard_set_atr_func(VCard *card, VCardGetAtr vcard_get_atr)
+ {
+-    card-> vcard_get_atr = vcard_get_atr;
++    card->vcard_get_atr = vcard_get_atr;
+ }
+ 
+ 
+@@ -240,7 +229,7 @@ vcard_add_applet(VCard *card, VCardApplet *applet)
+     if (card->type ==  VCARD_DIRECT) {
+         int i;
+ 
+-        for (i=0; i < MAX_CHANNEL; i++) {
++        for (i = 0; i < MAX_CHANNEL; i++) {
+             card->current_applet[i] = applet;
+         }
+     }
+@@ -281,7 +270,7 @@ vcard_applet_get_aid(VCardApplet *applet, int *aid_len)
+ void
+ vcard_select_applet(VCard *card, int channel, VCardApplet *applet)
+ {
+-    ASSERT(channel < MAX_CHANNEL);
++    assert(channel < MAX_CHANNEL);
+     card->current_applet[channel] = applet;
+     /* reset the applet */
+     if (applet && applet->reset_applet) {
+@@ -347,3 +336,4 @@ vcard_get_private(VCard *vcard)
+ {
+     return vcard->vcard_private;
+ }
++
+diff --git a/libcacard/vcard.h b/libcacard/vcard.h
+index 8dbd761..47dc703 100644
+--- a/libcacard/vcard.h
++++ b/libcacard/vcard.h
+@@ -1,5 +1,6 @@
+ /*
+- *
++ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
++ * See the COPYING.LIB file in the top-level directory.
+  */
+ #ifndef VCARD_H
+ #define VCARD_H 1
+@@ -54,7 +55,7 @@ VCardApplet *vcard_find_applet(VCard *card, unsigned char *aid, int aid_len);
+ /* set the following applet to be current on the given channel */
+ void vcard_select_applet(VCard *card, int channel, VCardApplet *applet);
+ /* get the card type specific private data on the given channel */
+-VCardAppletPrivate * vcard_get_current_applet_private(VCard *card, int channel);
++VCardAppletPrivate *vcard_get_current_applet_private(VCard *card, int channel);
+ /* fetch the applet's id */
+ unsigned char *vcard_applet_get_aid(VCardApplet *applet, int *aid_len);
+ 
+@@ -65,9 +66,9 @@ VCardStatus vcard_process_applet_apdu(VCard *card, VCardAPDU *apdu,
+  * VCard utilities
+  */
+ /* constructor */
+-VCard * vcard_new(VCardEmul *_private, VCardEmulFree private_free);
++VCard *vcard_new(VCardEmul *_private, VCardEmulFree private_free);
+ /* get a reference */
+-VCard * vcard_reference(VCard *);
++VCard *vcard_reference(VCard *);
+ /* destructor (reference counted) */
+ void vcard_free(VCard *);
+ /* get the atr from the card */
+diff --git a/libcacard/vcard_emul.h b/libcacard/vcard_emul.h
+index 05fb57e..963563f 100644
+--- a/libcacard/vcard_emul.h
++++ b/libcacard/vcard_emul.h
+@@ -5,6 +5,9 @@
+  * using the underlying system primitives. For Linux it uses NSS, though direct
+  * to PKCS #11, openssl+pkcs11, or even gnu crypto libraries+pkcs #11 could be
+  * used. On Windows CAPI could be used.
++ *
++ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
++ * See the COPYING.LIB file in the top-level directory.
+  */
+ 
+ #ifndef VCARD_EMUL_H
+@@ -18,7 +21,7 @@
+  * types
+  */
+ typedef enum {
+-    VCARD_EMUL_OK =0,
++    VCARD_EMUL_OK = 0,
+     VCARD_EMUL_FAIL,
+     /* return values by vcard_emul_init */
+     VCARD_EMUL_INIT_ALREADY_INITED,
+diff --git a/libcacard/vcard_emul_nss.c b/libcacard/vcard_emul_nss.c
+index 6887cf6..71f2ba3 100644
+--- a/libcacard/vcard_emul_nss.c
++++ b/libcacard/vcard_emul_nss.c
+@@ -5,16 +5,18 @@
+  * using the underlying system primitives. For Linux it uses NSS, though direct
+  * to PKCS #11, openssl+pkcs11, or even gnu crypto libraries+pkcs #11 could be
+  * used. On Windows CAPI could be used.
++ *
++ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
++ * See the COPYING.LIB file in the top-level directory.
+  */
+-#include "vcard.h"
+-#include "card_7816t.h"
+-#include "vcard_emul.h"
+-#include "vreader.h"
+-#include "vevent.h"
+ 
+ /*
+  * NSS headers
+  */
++
++/* avoid including prototypes.h that redefines uint32 */
++#define NO_NSPR_10_SUPPORT
++
+ #include <nss.h>
+ #include <pk11pub.h>
+ #include <cert.h>
+@@ -23,11 +25,13 @@
+ #include <prthread.h>
+ #include <secerr.h>
+ 
+-/*
+- * system headers
+- */
+-#include <stdlib.h>
+-#include <string.h>
++#include "qemu-common.h"
++
++#include "vcard.h"
++#include "card_7816t.h"
++#include "vcard_emul.h"
++#include "vreader.h"
++#include "vevent.h"
+ 
+ struct VCardKeyStruct {
+     CERTCertificate *cert;
+@@ -68,7 +72,7 @@ struct VCardEmulOptionsStruct {
+     PRBool use_hw;
+ };
+ 
+-static int nss_emul_init = 0;
++static int nss_emul_init;
+ 
+ /* if we have more that just the slot, define
+  * VCardEmulStruct here */
+@@ -83,25 +87,10 @@ vcard_emul_alloc_arrays(unsigned char ***certsp, int **cert_lenp,
+     *certsp = NULL;
+     *cert_lenp = NULL;
+     *keysp = NULL;
+-    *certsp = (unsigned char **)malloc(sizeof(unsigned char *)*cert_count);
+-    if (*certsp == NULL) {
+-        return PR_FALSE;
+-    }
+-    *cert_lenp = (int *)malloc(sizeof(int)*cert_count);
+-    if (*cert_lenp == NULL) {
+-        free(*certsp);
+-        *certsp = NULL;
+-        return PR_FALSE;
+-    }
+-    *keysp = (VCardKey **)malloc(sizeof(VCardKey *)*cert_count);
+-    if (*keysp != NULL) {
+-        return PR_TRUE;
+-    }
+-    free(*cert_lenp);
+-    free(*certsp);
+-    *cert_lenp = NULL;
+-    *certsp = NULL;
+-    return PR_FALSE;
++    *certsp = (unsigned char **)qemu_malloc(sizeof(unsigned char *)*cert_count);
++    *cert_lenp = (int *)qemu_malloc(sizeof(int)*cert_count);
++    *keysp = (VCardKey **)qemu_malloc(sizeof(VCardKey *)*cert_count);
++    return PR_TRUE;
+ }
+ 
+ /*
+@@ -142,18 +131,15 @@ vcard_emul_card_get_slot(VCard *card)
+ static VCardKey *
+ vcard_emul_make_key(PK11SlotInfo *slot, CERTCertificate *cert)
+ {
+-    VCardKey * key;
++    VCardKey *key;
+ 
+-    key = (VCardKey *)malloc(sizeof(VCardKey));
+-    if (key == NULL) {
+-        return NULL;
+-    }
++    key = (VCardKey *)qemu_malloc(sizeof(VCardKey));
+     key->slot = PK11_ReferenceSlot(slot);
+     key->cert = CERT_DupCertificate(cert);
+     /* NOTE: if we aren't logged into the token, this could return NULL */
+     /* NOTE: the cert is a temp cert, not necessarily the cert in the token,
+      * use the DER version of this function */
+-    key->key = PK11_FindKeyByDERCert(slot,cert, NULL);
++    key->key = PK11_FindKeyByDERCert(slot, cert, NULL);
+     return key;
+ }
+ 
+@@ -187,7 +173,7 @@ vcard_emul_get_nss_key(VCardKey *key)
+         return key->key;
+     }
+     /* NOTE: if we aren't logged into the token, this could return NULL */
+-    key->key = PK11_FindPrivateKeyFromCert(key->slot,key->cert, NULL);
++    key->key = PK11_FindPrivateKeyFromCert(key->slot, key->cert, NULL);
+     return key->key;
+ }
+ 
+@@ -242,7 +228,7 @@ vcard_emul_rsa_op(VCard *card, VCardKey *key,
+     if (rv != SECSuccess) {
+         return vcard_emul_map_error(PORT_GetError());
+     }
+-    ASSERT(buffer_size == signature_len);
++    assert(buffer_size == signature_len);
+     return VCARD7816_STATUS_SUCCESS;
+ }
+ 
+@@ -275,11 +261,8 @@ vcard_emul_login(VCard *card, unsigned char *pin, int pin_len)
+       * to handle multiple guests from one process, then we would need to keep
+       * a lot of extra state in our card structure
+       * */
+-    pin_string = malloc(pin_len+1);
+-    if (pin_string == NULL) {
+-        return VCARD7816_STATUS_EXC_ERROR_MEMORY_FAILURE;
+-    }
+-    memcpy(pin_string,pin,pin_len);
++    pin_string = qemu_malloc(pin_len+1);
++    memcpy(pin_string, pin, pin_len);
+     pin_string[pin_len] = 0;
+ 
+     /* handle CAC expanded pins correctly */
+@@ -290,7 +273,7 @@ vcard_emul_login(VCard *card, unsigned char *pin, int pin_len)
+     rv = PK11_Authenticate(slot, PR_FALSE, pin_string);
+     memset(pin_string, 0, pin_len);  /* don't let the pin hang around in memory
+                                         to be snooped */
+-    free(pin_string);
++    qemu_free(pin_string);
+     if (rv == SECSuccess) {
+         return VCARD7816_STATUS_SUCCESS;
+     }
+@@ -307,11 +290,13 @@ vcard_emul_reset(VCard *card, VCardPower power)
+         return;
+     }
+ 
+-    /* if we reset the card (either power on or power off), we loose our login
+-     * state */
++    /*
++     * if we reset the card (either power on or power off), we lose our login
++     * state
++     */
+     /* TODO: we may also need to send insertion/removal events? */
+     slot = vcard_emul_card_get_slot(card);
+-    (void)PK11_Logout(slot);
++    PK11_Logout(slot); /* NOTE: ignoring SECStatus return value */
+     return;
+ }
+ 
+@@ -325,8 +310,8 @@ vcard_emul_find_vreader_from_slot(PK11SlotInfo *slot)
+     if (reader_list == NULL) {
+         return NULL;
+     }
+-    for (current_entry= vreader_list_get_first(reader_list); current_entry;
+-                        current_entry=vreader_list_get_next(current_entry)) {
++    for (current_entry = vreader_list_get_first(reader_list); current_entry;
++                        current_entry = vreader_list_get_next(current_entry)) {
+         VReader *reader = vreader_list_get_reader(current_entry);
+         VReaderEmul *reader_emul = vreader_get_private(reader);
+         if (reader_emul->slot == slot) {
+@@ -346,10 +331,7 @@ vreader_emul_new(PK11SlotInfo *slot, VCardEmulType type, const char *params)
+ {
+     VReaderEmul *new_reader_emul;
+ 
+-    new_reader_emul = (VReaderEmul *)malloc(sizeof(VReaderEmul));
+-    if (new_reader_emul == NULL) {
+-        return NULL;
+-    }
++    new_reader_emul = (VReaderEmul *)qemu_malloc(sizeof(VReaderEmul));
+ 
+     new_reader_emul->slot = PK11_ReferenceSlot(slot);
+     new_reader_emul->default_type = type;
+@@ -370,9 +352,9 @@ vreader_emul_delete(VReaderEmul *vreader_emul)
+         PK11_FreeSlot(vreader_emul->slot);
+     }
+     if (vreader_emul->type_params) {
+-        free(vreader_emul->type_params);
++        qemu_free(vreader_emul->type_params);
+     }
+-    free(vreader_emul);
++    qemu_free(vreader_emul);
+ }
+ 
+ /*
+@@ -428,7 +410,7 @@ void
+ vcard_emul_get_atr(VCard *card, unsigned char *atr, int *atr_len)
+ {
+     int len = MIN(sizeof(nss_atr), *atr_len);
+-    ASSERT(atr != NULL);
++    assert(atr != NULL);
+ 
+     memcpy(atr, nss_atr, len);
+     *atr_len = len;
+@@ -506,7 +488,7 @@ vcard_emul_mirror_card(VReader *vreader)
+     }
+ 
+     /* count the certs */
+-    cert_count=0;
++    cert_count = 0;
+     for (thisObj = firstObj; thisObj;
+                              thisObj = PK11_GetNextGenericObject(thisObj)) {
+         cert_count++;
+@@ -518,7 +500,7 @@ vcard_emul_mirror_card(VReader *vreader)
+     }
+ 
+     /* allocate the arrays */
+-    ret = vcard_emul_alloc_arrays(&certs,&cert_len, &keys, cert_count);
++    ret = vcard_emul_alloc_arrays(&certs, &cert_len, &keys, cert_count);
+     if (ret == PR_FALSE) {
+         return NULL;
+     }
+@@ -615,7 +597,7 @@ vcard_emul_event_thread(void *arg)
+         vreader_emul->present = 0;
+         PK11_FreeSlot(slot);
+         vreader_free(vreader);
+-    } while(1);
++    } while (1);
+ }
+ 
+ /* if the card is inserted when we start up, make sure our state is correct */
+@@ -639,7 +621,7 @@ vcard_emul_init_series(VReader *vreader, VCard *vcard)
+ static void
+ vcard_emul_new_event_thread(SECMODModule *module)
+ {
+-     PR_CreateThread(PR_SYSTEM_THREAD, vcard_emul_event_thread,
++    PR_CreateThread(PR_SYSTEM_THREAD, vcard_emul_event_thread,
+                      module, PR_PRIORITY_HIGH, PR_GLOBAL_THREAD,
+                      PR_UNJOINABLE_THREAD, 0);
+ }
+@@ -730,7 +712,7 @@ module_has_removable_hw_slots(SECMODModule *mod)
+         return ret;
+     }
+     SECMOD_GetReadLock(moduleLock);
+-    for (i=0; i < mod->slotCount; i++) {
++    for (i = 0; i < mod->slotCount; i++) {
+         PK11SlotInfo *slot = mod->slots[i];
+         if (PK11_IsRemovable(slot) && PK11_IsHW(slot)) {
+             ret = PR_TRUE;
+@@ -747,13 +729,13 @@ module_has_removable_hw_slots(SECMODModule *mod)
+  * recognized later. So Instead return FAIL only if no_hw==1 and no
+  * vcards can be created (indicates error with certificates provided
+  * or db), or if any other higher level error (NSS error, missing coolkey). */
+-static int vcard_emul_init_called = 0;
++static int vcard_emul_init_called;
+ 
+ VCardEmulError
+ vcard_emul_init(const VCardEmulOptions *options)
+ {
+     SECStatus rv;
+-    PRBool ret, has_readers=PR_FALSE, need_coolkey_module;
++    PRBool ret, has_readers = PR_FALSE, need_coolkey_module;
+     VReader *vreader;
+     VReaderEmul *vreader_emul;
+     SECMODListLock *module_lock;
+@@ -811,7 +793,7 @@ vcard_emul_init(const VCardEmulOptions *options)
+             continue;
+         }
+         cert_count = 0;
+-        for (j=0; j < options->vreader[i].cert_count; j++) {
++        for (j = 0; j < options->vreader[i].cert_count; j++) {
+             /* we should have a better way of identifying certs than by
+              * nickname here */
+             CERTCertificate *cert = PK11_FindCertFromNickname(
+@@ -852,7 +834,7 @@ vcard_emul_init(const VCardEmulOptions *options)
+     need_coolkey_module = !has_readers;
+     SECMOD_GetReadLock(module_lock);
+     for (mlp = module_list; mlp; mlp = mlp->next) {
+-        SECMODModule * module = mlp->module;
++        SECMODModule *module = mlp->module;
+         if (module_has_removable_hw_slots(module)) {
+             need_coolkey_module = PR_FALSE;
+             break;
+@@ -863,7 +845,7 @@ vcard_emul_init(const VCardEmulOptions *options)
+     if (need_coolkey_module) {
+         SECMODModule *module;
+         module = SECMOD_LoadUserModule(
+-                    (char*)"library=libcoolkeypk11.so name=Coolkey",
++                    (char *)"library=libcoolkeypk11.so name=Coolkey",
+                     NULL, PR_FALSE);
+         if (module == NULL) {
+             return VCARD_EMUL_FAIL;
+@@ -881,14 +863,14 @@ vcard_emul_init(const VCardEmulOptions *options)
+ 
+     SECMOD_GetReadLock(module_lock);
+     for (mlp = module_list; mlp; mlp = mlp->next) {
+-        SECMODModule * module = mlp->module;
++        SECMODModule *module = mlp->module;
+         PRBool has_emul_slots = PR_FALSE;
+ 
+         if (module == NULL) {
+                 continue;
+         }
+ 
+-        for (i=0; i < module->slotCount; i++) {
++        for (i = 0; i < module->slotCount; i++) {
+             PK11SlotInfo *slot = module->slots[i];
+ 
+             /* only map removable HW slots */
+@@ -932,8 +914,8 @@ vcard_emul_replay_insertion_events(void)
+     VReaderListEntry *next_entry = NULL;
+     VReaderList *list = vreader_get_reader_list();
+ 
+-    for (current_entry= vreader_list_get_first(list); current_entry;
+-            current_entry=next_entry) {
++    for (current_entry = vreader_list_get_first(list); current_entry;
++            current_entry = next_entry) {
+         VReader *vreader = vreader_list_get_reader(current_entry);
+         next_entry = vreader_list_get_next(current_entry);
+         vreader_queue_card_event(vreader);
+@@ -948,7 +930,7 @@ copy_string(const char *str, int str_len)
+ {
+     char *new_str;
+ 
+-    new_str = malloc(str_len+1);
++    new_str = qemu_malloc(str_len+1);
+     memcpy(new_str, str, str_len);
+     new_str[str_len] = 0;
+     return new_str;
+@@ -959,7 +941,7 @@ count_tokens(const char *str, char token, char token_end)
+ {
+     int count = 0;
+ 
+-    for (;*str;str++) {
++    for (; *str; str++) {
+         if (*str == token) {
+             count++;
+         }
+@@ -971,25 +953,9 @@ count_tokens(const char *str, char token, char token_end)
+ }
+ 
+ static const char *
+-find_token(const char *str, char token, char token_end)
+-{
+-    /* just do the blind simple thing */
+-    for (;*str;str++) {
+-        if ((*str == token) || (*str == token_end)) {
+-            break;
+-        }
+-    }
+-    return str;
+-}
+-
+-static const char *
+ strip(const char *str)
+ {
+-    for(;*str; str++) {
+-        if ((*str != ' ') && (*str != '\n') &&
+-           (*str != '\t') && (*str != '\r')) {
+-            break;
+-        }
++    for (; *str && !isspace(*str); str++) {
+     }
+     return str;
+ }
+@@ -997,11 +963,7 @@ strip(const char *str)
+ static const char *
+ find_blank(const char *str)
+ {
+-    for(;*str; str++) {
+-        if ((*str == ' ') || (*str == '\n') ||
+-           (*str == '\t') || (*str == '\r')) {
+-            break;
+-        }
++    for (; *str && isspace(*str); str++) {
+     }
+     return str;
+ }
+@@ -1028,11 +990,11 @@ vcard_emul_options(const char *args)
+     do {
+         args = strip(args); /* strip off the leading spaces */
+         if (*args == ',') {
+-           continue;
++            continue;
+         }
+         /* soft=(slot_name,virt_name,emul_type,emul_flags,cert_1, (no eol)
+          *       cert_2,cert_3...) */
+-        if (strncmp(args,"soft=",5) == 0) {
++        if (strncmp(args, "soft=", 5) == 0) {
+             const char *name;
+             const char *vname;
+             const char *type_params;
+@@ -1040,12 +1002,12 @@ vcard_emul_options(const char *args)
+             int name_length, vname_length, type_params_length, count, i;
+             VirtualReaderOptions *vreaderOpt = NULL;
+ 
+-            args = strip(args+5);
++            args = strip(args + 5);
+             if (*args != '(') {
+                 continue;
+             }
+             name = args;
+-            args = find_token(args+1,',',')');
++            args = strpbrk(args + 1, ",)");
+             if (*args == 0) {
+                 break;
+             }
+@@ -1056,7 +1018,7 @@ vcard_emul_options(const char *args)
+             args = strip(args+1);
+             name_length = args - name - 2;
+             vname = args;
+-            args = find_token(args+1,',',')');
++            args = strpbrk(args + 1, ",)");
+             if (*args == 0) {
+                 break;
+             }
+@@ -1066,12 +1028,12 @@ vcard_emul_options(const char *args)
+             }
+             vname_length = args - name - 2;
+             args = strip(args+1);
+-            type_len = find_token(args,',',')') - args;
++            type_len = strpbrk(args, ",)") - args;
+             assert(sizeof(type_str) > type_len);
+             strncpy(type_str, args, type_len);
+             type_str[type_len] = 0;
+             type = vcard_emul_type_from_string(type_str);
+-            args = find_token(args,',',')');
++            args = strpbrk(args, ",)");
+             if (*args == 0) {
+                 break;
+             }
+@@ -1080,8 +1042,8 @@ vcard_emul_options(const char *args)
+                 continue;
+             }
+             args = strip(args++);
+-            type_params=args;
+-            args = find_token(args+1,',',')');
++            type_params = args;
++            args = strpbrk(args + 1, ",)");
+             if (*args == 0) {
+                 break;
+             }
+@@ -1098,7 +1060,7 @@ vcard_emul_options(const char *args)
+             if (opts->vreader_count >= reader_count) {
+                 reader_count += READER_STEP;
+                 vreaderOpt = realloc(opts->vreader,
+-                                reader_count*sizeof(*vreaderOpt));
++                                reader_count * sizeof(*vreaderOpt));
+                 if (vreaderOpt == NULL) {
+                     return opts; /* we're done */
+                 }
+@@ -1108,13 +1070,14 @@ vcard_emul_options(const char *args)
+             vreaderOpt->name = copy_string(name, name_length);
+             vreaderOpt->vname = copy_string(vname, vname_length);
+             vreaderOpt->card_type = type;
+-            vreaderOpt->type_params = copy_string(type_params, type_params_length);
+-            count = count_tokens(args,',',')');
++            vreaderOpt->type_params =
++                copy_string(type_params, type_params_length);
++            count = count_tokens(args, ',', ')');
+             vreaderOpt->cert_count = count;
+-            vreaderOpt->cert_name = (char **)malloc(count*sizeof(char *));
+-            for (i=0; i < count; i++) {
++            vreaderOpt->cert_name = (char **)qemu_malloc(count*sizeof(char *));
++            for (i = 0; i < count; i++) {
+                 const char *cert = args + 1;
+-                args = find_token(args + 1, ',', ')');
++                args = strpbrk(args + 1, ",)");
+                 vreaderOpt->cert_name[i] = copy_string(cert, args - cert);
+             }
+             if (*args == ')') {
+@@ -1122,7 +1085,7 @@ vcard_emul_options(const char *args)
+             }
+             opts->vreader_count++;
+         /* use_hw= */
+-        } else if (strncmp(args,"use_hw=",7) == 0) {
++        } else if (strncmp(args, "use_hw=", 7) == 0) {
+             args = strip(args+7);
+             if (*args == '0' || *args == 'N' || *args == 'n' || *args == 'F') {
+                 opts->use_hw = PR_FALSE;
+@@ -1131,19 +1094,19 @@ vcard_emul_options(const char *args)
+             }
+             args = find_blank(args);
+         /* hw_type= */
+-        } else if (strncmp(args,"hw_type=",8) == 0) {
++        } else if (strncmp(args, "hw_type=", 8) == 0) {
+             args = strip(args+8);
+             opts->hw_card_type = vcard_emul_type_from_string(args);
+             args = find_blank(args);
+         /* hw_params= */
+-        } else if (strncmp(args,"hw_params=",10) == 0) {
++        } else if (strncmp(args, "hw_params=", 10) == 0) {
+             const char *params;
+             args = strip(args+10);
+-            params= args;
++            params = args;
+             args = find_blank(args);
+             opts->hw_type_params = copy_string(params, args-params);
+         /* db="/data/base/path" */
+-        } else if (strncmp(args,"db=",3) == 0) {
++        } else if (strncmp(args, "db=", 3) == 0) {
+             const char *db;
+             args = strip(args+3);
+             if (*args != '"') {
+@@ -1151,12 +1114,14 @@ vcard_emul_options(const char *args)
+             }
+             args++;
+             db = args;
+-            args = find_token(args, '"', '\n');
+-            opts->nss_db = copy_string(db,args-db);
++            args = strpbrk(args, "\"\n");
++            opts->nss_db = copy_string(db, args-db);
+             if (*args != 0) {
+                 args++;
+             }
+-        } else args = find_blank(args);
++        } else {
++            args = find_blank(args);
++        }
+     } while (*args != 0);
+ 
+     return opts;
+@@ -1184,7 +1149,7 @@ vcard_emul_usage(void)
+ "These parameters come as a single string separated by blanks or newlines."
+ "\n"
+ "Unless use_hw is set to no, all tokens that look like removable hardware\n"
+-"tokens will be presented to the guest using the emulator specified by \n"
++"tokens will be presented to the guest using the emulator specified by\n"
+ "hw_type, and parameters of hw_param.\n"
+ "\n"
+ "If more one or more soft= parameters are specified, these readers will be\n"
+diff --git a/libcacard/vcard_emul_type.c b/libcacard/vcard_emul_type.c
+index adbc54b..59a1458 100644
+--- a/libcacard/vcard_emul_type.c
++++ b/libcacard/vcard_emul_type.c
+@@ -3,16 +3,18 @@
+  *  types.  The goal is that new card types can easily be added by simply
+  *  changing this file and vcard_emul_type.h. It is currently not a requirement
+  *  to dynamically add new card types.
++ *
++ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
++ * See the COPYING.LIB file in the top-level directory.
+  */
+ 
+ #include <strings.h>
+ #include "vcardt.h"
+ #include "vcard_emul_type.h"
+ #include "cac.h"
+-#include "passthru.h"
+ 
+ VCardStatus vcard_init(VReader *vreader, VCard *vcard,
+-                       VCardEmulType type, const char * params,
++                       VCardEmulType type, const char *params,
+                        unsigned char *const *cert, int cert_len[],
+                        VCardKey *key[], int cert_count)
+ {
+@@ -22,11 +24,6 @@ VCardStatus vcard_init(VReader *vreader, VCard *vcard,
+     case VCARD_EMUL_CAC:
+         return cac_card_init(vreader, vcard, params,
+                              cert, cert_len, key,  cert_count);
+-#ifdef USE_PASSTHRU
+-    case VCARD_EMUL_PASSTHRU:
+-        return passthru_card_init(vreader, vcard, params,
+-                                  cert, cert_len, key,  cert_count);
+-#endif
+     /* add new ones here */
+     default:
+         break;
+@@ -48,11 +45,11 @@ VCardEmulType vcard_emul_type_select(VReader *vreader)
+ 
+ VCardEmulType vcard_emul_type_from_string(const char *type_string)
+ {
+-     if (strcasecmp(type_string,"CAC") == 0) {
++     if (strcasecmp(type_string, "CAC") == 0) {
+         return VCARD_EMUL_CAC;
+      }
+ #ifdef USE_PASSTHRU
+-     if (strcasecmp(type_string,"PASSTHRU") == 0) {
++     if (strcasecmp(type_string, "PASSTHRU") == 0) {
+         return VCARD_EMUL_PASSTHRU;
+      }
+ #endif
+diff --git a/libcacard/vcard_emul_type.h b/libcacard/vcard_emul_type.h
+index da15528..0242f40 100644
+--- a/libcacard/vcard_emul_type.h
++++ b/libcacard/vcard_emul_type.h
+@@ -3,6 +3,9 @@
+  *  types can easily be added by simply changing this file and
+  *  vcard_emul_type.c. It is currently not a requirement to dynamically add new
+  *  card types.
++ *
++ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
++ * See the COPYING.LIB file in the top-level directory.
+  */
+ 
+ #ifndef VCARD_EMUL_TYPE_H
+@@ -14,7 +17,7 @@
+  * types
+  */
+ typedef enum {
+-     VCARD_EMUL_NONE =0,
++     VCARD_EMUL_NONE = 0,
+      VCARD_EMUL_CAC,
+      VCARD_EMUL_PASSTHRU
+ } VCardEmulType;
+diff --git a/libcacard/vcardt.h b/libcacard/vcardt.h
+index e371451..538bdde 100644
+--- a/libcacard/vcardt.h
++++ b/libcacard/vcardt.h
+@@ -1,5 +1,6 @@
+ /*
+- *
++ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
++ * See the COPYING.LIB file in the top-level directory.
+  */
+ #ifndef VCARDT_H
+ #define VCARDT_H 1
+@@ -8,12 +9,9 @@
+  * these should come from some common spice header file
+  */
+ #include <assert.h>
+-#ifndef ASSERT
+-#define ASSERT assert
+-#endif
+ #ifndef MIN
+-#define MIN(x,y) ((x)>(y)?(y):(x))
+-#define MAX(x,y) ((x)>(y)?(x):(y))
++#define MIN(x, y) ((x) > (y) ? (y) : (x))
++#define MAX(x, y) ((x) > (y) ? (x) : (y))
+ #endif
+ 
+ typedef struct VCardStruct VCard;
+diff --git a/libcacard/vevent.h b/libcacard/vevent.h
+index f202ea8..38c3482 100644
+--- a/libcacard/vevent.h
++++ b/libcacard/vevent.h
+@@ -1,5 +1,6 @@
+ /*
+- *
++ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
++ * See the COPYING.LIB file in the top-level directory.
+  */
+ #ifndef EVENT_H
+ #define EVENT_H 1
+diff --git a/libcacard/vreader.c b/libcacard/vreader.c
+index 158f6f5..4a0125b 100644
+--- a/libcacard/vreader.c
++++ b/libcacard/vreader.c
+@@ -1,29 +1,25 @@
+ /*
+  * emulate the reader
++ *
++ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
++ * See the COPYING.LIB file in the top-level directory.
+  */
++
++#include "qemu-common.h"
++#include "qemu-thread.h"
++
+ #include "vcard.h"
+ #include "vcard_emul.h"
+ #include "card_7816.h"
+ #include "vreader.h"
+ #include "vevent.h"
+ 
+-/*
+- * System includes
+- */
+-#include <stdlib.h>
+-#include <string.h>
+-
+-/*
+- * spice includes
+- */
+-#include "mutex.h"
+-
+ struct VReaderStruct {
+     int    reference_count;
+     VCard *card;
+     char *name;
+     vreader_id_t id;
+-    mutex_t lock;
++    QemuMutex lock;
+     VReaderEmul  *reader_private;
+     VReaderEmulFree reader_private_free;
+ };
+@@ -32,13 +28,13 @@ struct VReaderStruct {
+ static inline void
+ vreader_lock(VReader *reader)
+ {
+-    MUTEX_LOCK(reader->lock);
++    qemu_mutex_lock(&reader->lock);
+ }
+ 
+ static inline void
+ vreader_unlock(VReader *reader)
+ {
+-    MUTEX_UNLOCK(reader->lock);
++    qemu_mutex_unlock(&reader->lock);
+ }
+ 
+ /*
+@@ -50,11 +46,8 @@ vreader_new(const char *name, VReaderEmul *private,
+ {
+     VReader *reader;
+ 
+-    reader = (VReader *)malloc(sizeof(VReader));
+-    if (reader == NULL) {
+-        return NULL;
+-    }
+-    MUTEX_INIT(reader->lock);
++    reader = (VReader *)qemu_malloc(sizeof(VReader));
++    qemu_mutex_init(&reader->lock);
+     reader->reference_count = 1;
+     reader->name = name ? strdup(name) : NULL;
+     reader->card = NULL;
+@@ -94,12 +87,12 @@ vreader_free(VReader *reader)
+         vcard_free(reader->card);
+     }
+     if (reader->name) {
+-        free(reader->name);
++        qemu_free(reader->name);
+     }
+     if (reader->reader_private_free) {
+         reader->reader_private_free(reader->reader_private);
+     }
+-    free(reader);
++    qemu_free(reader);
+     return;
+ }
+ 
+@@ -182,7 +175,7 @@ vreader_reset(VReader *reader, VCardPower power, unsigned char *atr, int *len)
+ VReaderStatus
+ vreader_power_on(VReader *reader, unsigned char *atr, int *len)
+ {
+-    return vreader_reset(reader, VCARD_POWER_ON, atr, len );
++    return vreader_reset(reader, VCARD_POWER_ON, atr, len);
+ }
+ 
+ VReaderStatus
+@@ -214,7 +207,7 @@ vreader_xfr_bytes(VReader *reader,
+     } else {
+         card_status = vcard_process_apdu(card, apdu, &response);
+     }
+-    ASSERT(card_status == VCARD_DONE);
++    assert(card_status == VCARD_DONE);
+     if (card_status == VCARD_DONE) {
+         int size = MIN(*receive_buf_len, response->b_total_len);
+         memcpy(receive_buf, response->b_data, size);
+@@ -244,10 +237,7 @@ vreader_list_entry_new(VReader *reader)
+     VReaderListEntry *new_reader_list_entry;
+ 
+     new_reader_list_entry = (VReaderListEntry *)
+-                               malloc(sizeof(VReaderListEntry));
+-    if (new_reader_list_entry == NULL) {
+-        return NULL;
+-    }
++                               qemu_malloc(sizeof(VReaderListEntry));
+     new_reader_list_entry->next = NULL;
+     new_reader_list_entry->prev = NULL;
+     new_reader_list_entry->reader = vreader_reference(reader);
+@@ -261,7 +251,7 @@ vreader_list_entry_delete(VReaderListEntry *entry)
+         return;
+     }
+     vreader_free(entry->reader);
+-    free(entry);
++    qemu_free(entry);
+ }
+ 
+ 
+@@ -270,10 +260,7 @@ vreader_list_new(void)
+ {
+     VReaderList *new_reader_list;
+ 
+-    new_reader_list = (VReaderList *)malloc(sizeof(VReaderList));
+-    if (new_reader_list == NULL) {
+-        return NULL;
+-    }
++    new_reader_list = (VReaderList *)qemu_malloc(sizeof(VReaderList));
+     new_reader_list->head = NULL;
+     new_reader_list->tail = NULL;
+     return new_reader_list;
+@@ -284,14 +271,14 @@ vreader_list_delete(VReaderList *list)
+ {
+     VReaderListEntry *current_entry;
+     VReaderListEntry *next_entry = NULL;
+-    for (current_entry= vreader_list_get_first(list); current_entry;
+-            current_entry=next_entry) {
++    for (current_entry = vreader_list_get_first(list); current_entry;
++         current_entry = next_entry) {
+         next_entry = vreader_list_get_next(current_entry);
+         vreader_list_entry_delete(current_entry);
+     }
+     list->head = NULL;
+     list->tail = NULL;
+-    free(list);
++    qemu_free(list);
+ }
+ 
+ 
+@@ -349,26 +336,26 @@ vreader_dequeue(VReaderList *list, VReaderListEntry *entry)
+     entry->next = entry->prev = NULL;
+ }
+ 
+-static VReaderList *vreader_list = NULL;
+-static mutex_t vreader_list_mutex;
++static VReaderList *vreader_list;
++static QemuMutex vreader_list_mutex;
+ 
+ static void
+ vreader_list_init(void)
+ {
+     vreader_list = vreader_list_new();
+-    MUTEX_INIT(vreader_list_mutex);
++    qemu_mutex_init(&vreader_list_mutex);
+ }
+ 
+ static void
+ vreader_list_lock(void)
+ {
+-    MUTEX_LOCK(vreader_list_mutex);
++    qemu_mutex_lock(&vreader_list_mutex);
+ }
+ 
+ static void
+ vreader_list_unlock(void)
+ {
+-    MUTEX_UNLOCK(vreader_list_mutex);
++    qemu_mutex_unlock(&vreader_list_mutex);
+ }
+ 
+ static VReaderList *
+@@ -381,8 +368,8 @@ vreader_copy_list(VReaderList *list)
+     if (new_list == NULL) {
+         return NULL;
+     }
+-    for (current_entry= vreader_list_get_first(list); current_entry;
+-                       current_entry=vreader_list_get_next(current_entry)) {
++    for (current_entry = vreader_list_get_first(list); current_entry;
++         current_entry = vreader_list_get_next(current_entry)) {
+         VReader *reader = vreader_list_get_reader(current_entry);
+         VReaderListEntry *new_entry = vreader_list_entry_new(reader);
+ 
+@@ -471,8 +458,8 @@ vreader_remove_reader(VReader *reader)
+     VReaderListEntry *current_entry;
+ 
+     vreader_list_lock();
+-    for (current_entry= vreader_list_get_first(vreader_list); current_entry;
+-                       current_entry=vreader_list_get_next(current_entry)) {
++    for (current_entry = vreader_list_get_first(vreader_list); current_entry;
++         current_entry = vreader_list_get_next(current_entry)) {
+         if (current_entry->reader == reader) {
+             break;
+         }
+@@ -523,3 +510,4 @@ vreader_init(void)
+ {
+     vreader_list_init();
+ }
++
+diff --git a/libcacard/vreader.h b/libcacard/vreader.h
+index c7054da..ec20421 100644
+--- a/libcacard/vreader.h
++++ b/libcacard/vreader.h
+@@ -1,5 +1,6 @@
+ /*
+- *
++ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
++ * See the COPYING.LIB file in the top-level directory.
+  */
+ 
+ #ifndef VREADER_H
+diff --git a/libcacard/vreadert.h b/libcacard/vreadert.h
+index c09cb09..f97e0a7 100644
+--- a/libcacard/vreadert.h
++++ b/libcacard/vreadert.h
+@@ -1,12 +1,13 @@
+ /*
+- *
++ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
++ * See the COPYING.LIB file in the top-level directory.
+  */
+ 
+ #ifndef VREADERT_H
+ #define VREADERT_H 1
+ 
+ typedef enum {
+-    VREADER_OK=0,
++    VREADER_OK = 0,
+     VREADER_NO_CARD,
+     VREADER_OUT_OF_MEMORY
+ } VReaderStatus;
+@@ -20,3 +21,4 @@ typedef struct VReaderEmulStruct VReaderEmul;
+ typedef void (*VReaderEmulFree)(VReaderEmul *);
+ 
+ #endif
++
+diff --git a/libcacard/vscclient.c b/libcacard/vscclient.c
+index f29fd6b..ce33f5a 100644
+--- a/libcacard/vscclient.c
++++ b/libcacard/vscclient.c
+@@ -6,63 +6,55 @@
+  * Copyright (c) 2011 Red Hat.
+  * Written by Alon Levy.
+  *
+- * This code is licenced under the GNU LGPL, version 2 or later.
++ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
++ * See the COPYING.LIB file in the top-level directory.
+  */
+ 
+-#include <sys/types.h>
+-#include <stdio.h>
+-#include <stdlib.h>
+-#include <string.h>
+-#include <unistd.h>
+-
+-#include <sys/types.h>
+-#include <sys/socket.h>
+ #include <netdb.h>
+-#include <netinet/in.h>
+-#include <arpa/inet.h>
++
++#include "qemu-common.h"
++#include "qemu-thread.h"
++#include "qemu_socket.h"
+ 
+ #include "vscard_common.h"
+ 
+ #include "vreader.h"
+ #include "vcard_emul.h"
+ #include "vevent.h"
+-#include "passthru.h"
+ 
+-#include "mutex.h"
+-
+-int verbose = 0;
++int verbose;
+ 
+ int sock;
+ 
+ static void
+-print_byte_array (
++print_byte_array(
+     uint8_t *arrBytes,
+     unsigned int nSize
+ ) {
+     int i;
+-    for (i=0; i < nSize; i++) {
+-        printf ("%02X ", arrBytes[i]);
++    for (i = 0; i < nSize; i++) {
++        printf("%02X ", arrBytes[i]);
+     }
+-    printf ("\n");
++    printf("\n");
+ }
+ 
+ static void
+-print_usage (void) {
+-    printf ("vscclient [-c <certname> .. -e <emul_args> -d <level>%s] "
+-            "<host> <port> \n",
++print_usage(void) {
++    printf("vscclient [-c <certname> .. -e <emul_args> -d <level>%s] "
++            "<host> <port>\n",
+ #ifdef USE_PASSTHRU
+     " -p");
+-    printf (" -p use passthrough mode\n");
++    printf(" -p use passthrough mode\n");
+ #else
+    "");
+ #endif
+     vcard_emul_usage();
+ }
+ 
+-static mutex_t write_lock;
++static QemuMutex write_lock;
+ 
+ static int
+-send_msg (
++send_msg(
+     VSCMsgType type,
+     uint32_t reader_id,
+     const void *msg,
+@@ -71,7 +63,7 @@ send_msg (
+     int rv;
+     VSCMsgHeader mhHeader;
+ 
+-    MUTEX_LOCK(write_lock);
++    qemu_mutex_lock(&write_lock);
+ 
+     if (verbose > 10) {
+         printf("sending type=%d id=%d, len =%d (0x%x)\n",
+@@ -81,44 +73,36 @@ send_msg (
+     mhHeader.type = htonl(type);
+     mhHeader.reader_id = 0;
+     mhHeader.length = htonl(length);
+-    rv = write (
+-        sock,
+-        &mhHeader,
+-        sizeof (mhHeader)
+-    );
++    rv = write(sock, &mhHeader, sizeof(mhHeader));
+     if (rv < 0) {
+         /* Error */
+-        printf ("write header error\n");
+-        close (sock);
+-        MUTEX_UNLOCK(write_lock);
+-        return (16);
++        fprintf(stderr, "write header error\n");
++        close(sock);
++        qemu_mutex_unlock(&write_lock);
++        return 16;
+     }
+-    rv = write (
+-        sock,
+-        msg,
+-        length
+-    );
++    rv = write(sock, msg, length);
+     if (rv < 0) {
+         /* Error */
+-        printf ("write error\n");
+-        close (sock);
+-        MUTEX_UNLOCK(write_lock);
+-        return (16);
++        fprintf(stderr, "write error\n");
++        close(sock);
++        qemu_mutex_unlock(&write_lock);
++        return 16;
+     }
+-    MUTEX_UNLOCK(write_lock);
++    qemu_mutex_unlock(&write_lock);
+ 
+-    return (0);
++    return 0;
+ }
+ 
+-static VReader *pending_reader = NULL;
+-static mutex_t pending_reader_lock;
+-static condition_t pending_reader_condition;
++static VReader *pending_reader;
++static QemuMutex pending_reader_lock;
++static QemuCond pending_reader_condition;
+ 
+ #define MAX_ATR_LEN 40
+ static void *
+ event_thread(void *arg)
+ {
+-    unsigned char atr[ MAX_ATR_LEN];
++    unsigned char atr[MAX_ATR_LEN];
+     int atr_len = MAX_ATR_LEN;
+     VEvent *event = NULL;
+     unsigned int reader_id;
+@@ -137,20 +121,20 @@ event_thread(void *arg)
+             /* ignore events from readers qemu has rejected */
+             /* if qemu is still deciding on this reader, wait to see if need to
+              * forward this event */
+-            MUTEX_LOCK(pending_reader_lock);
++            qemu_mutex_lock(&pending_reader_lock);
+             if (!pending_reader || (pending_reader != event->reader)) {
+                 /* wasn't for a pending reader, this reader has already been
+                  * rejected by qemu */
+-                MUTEX_UNLOCK(pending_reader_lock);
++                qemu_mutex_unlock(&pending_reader_lock);
+                 vevent_delete(event);
+                 continue;
+             }
+             /* this reader hasn't been told it's status from qemu yet, wait for
+              * that status */
+             while (pending_reader != NULL) {
+-                CONDITION_WAIT(pending_reader_condition,pending_reader_lock);
++                qemu_cond_wait(&pending_reader_condition, &pending_reader_lock);
+             }
+-            MUTEX_UNLOCK(pending_reader_lock);
++            qemu_mutex_unlock(&pending_reader_lock);
+             /* now recheck the id */
+             reader_id = vreader_get_id(event->reader);
+             if (reader_id == VSCARD_UNDEFINED_READER_ID) {
+@@ -166,36 +150,26 @@ event_thread(void *arg)
+             /* wait until qemu has responded to our first reader insert
+              * before we send a second. That way we won't confuse the responses
+              * */
+-            MUTEX_LOCK(pending_reader_lock);
++            qemu_mutex_lock(&pending_reader_lock);
+             while (pending_reader != NULL) {
+-                CONDITION_WAIT(pending_reader_condition,pending_reader_lock);
++                qemu_cond_wait(&pending_reader_condition, &pending_reader_lock);
+             }
+             pending_reader = vreader_reference(event->reader);
+-            MUTEX_UNLOCK(pending_reader_lock);
++            qemu_mutex_unlock(&pending_reader_lock);
+             reader_name = vreader_get_name(event->reader);
+             if (verbose > 10) {
+-                printf (" READER INSERT: %s\n", reader_name);
++                printf(" READER INSERT: %s\n", reader_name);
+             }
+-            send_msg (
+-                VSC_ReaderAdd,
++            send_msg(VSC_ReaderAdd,
+                 reader_id, /* currerntly VSCARD_UNDEFINED_READER_ID */
+-                NULL, 0
+-                /*reader_name,
+-                strlen(reader_name) */
+-            );
+-
++                NULL, 0 /* TODO reader_name, strlen(reader_name) */);
+             break;
+         case VEVENT_READER_REMOVE:
+             /* future, tell qemu that an old CCID reader has been removed */
+             if (verbose > 10) {
+-                printf (" READER REMOVE: %d \n", reader_id);
++                printf(" READER REMOVE: %d\n", reader_id);
+             }
+-            send_msg(
+-                VSC_ReaderRemove,
+-                reader_id,
+-                NULL,
+-                0
+-            );
++            send_msg(VSC_ReaderRemove, reader_id, NULL, 0);
+             break;
+         case VEVENT_CARD_INSERT:
+             /* get the ATR (intended as a response to a power on from the
+@@ -204,27 +178,17 @@ event_thread(void *arg)
+             vreader_power_on(event->reader, atr, &atr_len);
+             /* ATR call functions as a Card Insert event */
+             if (verbose > 10) {
+-                printf (" CARD INSERT %d: ", reader_id);
+-                print_byte_array (atr, atr_len);
++                printf(" CARD INSERT %d: ", reader_id);
++                print_byte_array(atr, atr_len);
+             }
+-            send_msg (
+-                VSC_ATR,
+-                reader_id,
+-                atr,
+-                atr_len
+-            );
++            send_msg(VSC_ATR, reader_id, atr, atr_len);
+             break;
+         case VEVENT_CARD_REMOVE:
+-            // Card removed
++            /* Card removed */
+             if (verbose > 10) {
+-                printf (" CARD REMOVE %d: \n", reader_id);
++                printf(" CARD REMOVE %d:\n", reader_id);
+             }
+-            send_msg (
+-                VSC_CardRemove,
+-                reader_id,
+-                NULL,
+-                0
+-            );
++            send_msg(VSC_CardRemove, reader_id, NULL, 0);
+             break;
+         default:
+             break;
+@@ -253,14 +217,14 @@ do_command(void)
+     char inbuf[255];
+     char *string;
+     VCardEmulError error;
+-    static unsigned int default_reader_id = 0;
++    static unsigned int default_reader_id;
+     unsigned int reader_id;
+     VReader *reader = NULL;
+ 
+     reader_id = default_reader_id;
+     string = fgets(inbuf, sizeof(inbuf), stdin);
+     if (string != NULL) {
+-        if (strncmp(string,"exit",4) == 0) {
++        if (strncmp(string, "exit", 4) == 0) {
+             /* remove all the readers */
+             VReaderList *list = vreader_get_reader_list();
+             VReaderListEntry *reader_entry;
+@@ -269,29 +233,19 @@ do_command(void)
+                  reader_entry = vreader_list_get_next(reader_entry)) {
+                 VReader *reader = vreader_list_get_reader(reader_entry);
+                 vreader_id_t reader_id;
+-                reader_id=vreader_get_id(reader);
++                reader_id = vreader_get_id(reader);
+                 if (reader_id == -1) {
+                     continue;
+                 }
+                 /* be nice and signal card removal first (qemu probably should
+                  * do this itself) */
+                 if (vreader_card_is_present(reader) == VREADER_OK) {
+-                    send_msg (
+-                        VSC_CardRemove,
+-                        reader_id,
+-                        NULL,
+-                        0
+-                    );
++                    send_msg(VSC_CardRemove, reader_id, NULL, 0);
+                 }
+-                send_msg (
+-                    VSC_ReaderRemove,
+-                    reader_id,
+-                    NULL,
+-                    0
+-                );
++                send_msg(VSC_ReaderRemove, reader_id, NULL, 0);
+             }
+             exit(0);
+-        } else if (strncmp(string,"insert",6) == 0) {
++        } else if (strncmp(string, "insert", 6) == 0) {
+             if (string[6] == ' ') {
+                 reader_id = get_id_from_string(&string[7], reader_id);
+             }
+@@ -304,7 +258,7 @@ do_command(void)
+             } else {
+                 printf("no reader by id %d found\n", reader_id);
+             }
+-        } else if (strncmp(string,"remove",6) == 0) {
++        } else if (strncmp(string, "remove", 6) == 0) {
+             if (string[6] == ' ') {
+                 reader_id = get_id_from_string(&string[7], reader_id);
+             }
+@@ -317,7 +271,7 @@ do_command(void)
+             } else {
+                 printf("no reader by id %d found\n", reader_id);
+             }
+-        } else if (strncmp(string,"select",6) == 0) {
++        } else if (strncmp(string, "select", 6) == 0) {
+             if (string[6] == ' ') {
+                 reader_id = get_id_from_string(&string[7],
+                                                VSCARD_UNDEFINED_READER_ID);
+@@ -332,12 +286,12 @@ do_command(void)
+             } else {
+                 printf("Reader with id %d not found\n", reader_id);
+             }
+-        } else if (strncmp(string,"debug",5) == 0) {
++        } else if (strncmp(string, "debug", 5) == 0) {
+             if (string[5] == ' ') {
+-                verbose = get_id_from_string(&string[6],0);
++                verbose = get_id_from_string(&string[6], 0);
+             }
+-            printf ("debug level = %d\n", verbose);
+-        } else if (strncmp(string,"list",4) == 0) {
++            printf("debug level = %d\n", verbose);
++        } else if (strncmp(string, "list", 4) == 0) {
+             VReaderList *list = vreader_get_reader_list();
+             VReaderListEntry *reader_entry;
+             printf("Active Readers:\n");
+@@ -345,13 +299,13 @@ do_command(void)
+                  reader_entry = vreader_list_get_next(reader_entry)) {
+                 VReader *reader = vreader_list_get_reader(reader_entry);
+                 vreader_id_t reader_id;
+-                reader_id=vreader_get_id(reader);
++                reader_id = vreader_get_id(reader);
+                 if (reader_id == -1) {
+                     continue;
+                 }
+-                printf("%3d %s %s\n",reader_id,
++                printf("%3d %s %s\n", reader_id,
+                        vreader_card_is_present(reader) == VREADER_OK ?
+-                       "CARD_PRESENT": "            ",
++                       "CARD_PRESENT" : "            ",
+                        vreader_get_name(reader));
+             }
+             printf("Inactive Readers:\n");
+@@ -359,18 +313,18 @@ do_command(void)
+                  reader_entry = vreader_list_get_next(reader_entry)) {
+                 VReader *reader = vreader_list_get_reader(reader_entry);
+                 vreader_id_t reader_id;
+-                reader_id=vreader_get_id(reader);
++                reader_id = vreader_get_id(reader);
+                 if (reader_id != -1) {
+                     continue;
+                 }
+ 
+                 printf("INA %s %s\n",
+                        vreader_card_is_present(reader) == VREADER_OK ?
+-                       "CARD_PRESENT": "            ",
++                       "CARD_PRESENT" : "            ",
+                        vreader_get_name(reader));
+             }
+         } else if (*string != 0) {
+-            printf("valid commands: \n");
++            printf("valid commands:\n");
+             printf("insert [reader_id]\n");
+             printf("remove [reader_id]\n");
+             printf("select reader_id\n");
+@@ -387,26 +341,22 @@ do_command(void)
+ 
+ #define APDUBufSize 270
+ 
+-// just for ease of parsing command line arguments.
++/* just for ease of parsing command line arguments. */
+ #define MAX_CERTS 100
+ 
+ static int
+-connect_to_qemu (
++connect_to_qemu(
+     const char *host,
+     const char *port
+ ) {
+     struct addrinfo hints;
+-    struct addrinfo* server;
++    struct addrinfo *server;
+     int ret;
+ 
+-    sock = socket (
+-        AF_INET,
+-        SOCK_STREAM,
+-        0
+-    );
++    sock = qemu_socket(AF_INET, SOCK_STREAM, 0);
+     if (sock < 0) {
+-        // Error
+-        printf ("Error opening socket!\n");
++        /* Error */
++        fprintf(stderr, "Error opening socket!\n");
+     }
+ 
+     memset(&hints, 0, sizeof(struct addrinfo));
+@@ -418,22 +368,18 @@ connect_to_qemu (
+     ret = getaddrinfo(host, port, &hints, &server);
+ 
+     if (ret != 0) {
+-        printf ("getaddrinfo failed\n");
+-        return (5);
++        /* Error */
++        fprintf(stderr, "getaddrinfo failed\n");
++        return 5;
+     }
+ 
+-    if (connect (
+-            sock,
+-            server->ai_addr,
+-            server->ai_addrlen
+-        ) < 0
+-    ) {
+-        // Error
+-        printf ("Could not connect\n");
+-        return (5);
++    if (connect(sock, server->ai_addr, server->ai_addrlen) < 0) {
++        /* Error */
++        fprintf(stderr, "Could not connect\n");
++        return 5;
+     }
+     if (verbose) {
+-        printf ("Connected (sizeof Header=%zd)!\n", sizeof (VSCMsgHeader));
++        printf("Connected (sizeof Header=%zd)!\n", sizeof(VSCMsgHeader));
+     }
+     return sock;
+ }
+@@ -441,7 +387,8 @@ connect_to_qemu (
+ static int on_host_init(VSCMsgHeader *mhHeader, VSCMsgInit *incoming)
+ {
+     uint32_t *capabilities = (incoming->capabilities);
+-    int num_capabilities = 1 + ((mhHeader->length - sizeof(VSCMsgInit)) / sizeof(uint32_t));
++    int num_capabilities =
++        1 + ((mhHeader->length - sizeof(VSCMsgInit)) / sizeof(uint32_t));
+     int i;
+     int rv;
+     pthread_t thread_id;
+@@ -464,12 +411,7 @@ static int on_host_init(VSCMsgHeader *mhHeader, VSCMsgInit *incoming)
+     /* Future: check capabilities */
+     /* remove whatever reader might be left in qemu,
+      * in case of an unclean previous exit. */
+-    send_msg(
+-        VSC_ReaderRemove,
+-        VSCARD_MINIMAL_READER_ID,
+-        NULL,
+-        0
+-    );
++    send_msg(VSC_ReaderRemove, VSCARD_MINIMAL_READER_ID, NULL, 0);
+     /* launch the event_thread. This will trigger reader adds for all the
+      * existing readers */
+     rv = pthread_create(&thread_id, NULL, event_thread, NULL);
+@@ -481,12 +423,12 @@ static int on_host_init(VSCMsgHeader *mhHeader, VSCMsgInit *incoming)
+ }
+ 
+ int
+-main (
++main(
+     int argc,
+     char *argv[]
+ ) {
+-    char* qemu_host;
+-    char* qemu_port;
++    char *qemu_host;
++    char *qemu_port;
+     VSCMsgHeader mhHeader;
+     VSCMsgError *error_msg;
+ 
+@@ -498,101 +440,86 @@ main (
+      VReaderStatus reader_status;
+     VReader *reader = NULL;
+     VCardEmulOptions *command_line_options = NULL;
+-    int passthru = 0;
+ 
+-    char* cert_names[MAX_CERTS];
+-    char* emul_args = NULL;
++    char *cert_names[MAX_CERTS];
++    char *emul_args = NULL;
+     int cert_count = 0;
+     int c;
+ 
+     while ((c = getopt(argc, argv, "c:e:pd:")) != -1) {
+         switch (c) {
+-            case 'c':
+-                if (cert_count >= MAX_CERTS) {
+-                    printf("too many certificates (max = %d)\n", MAX_CERTS);
+-                    exit (5);
+-                }
+-                cert_names[cert_count++] = optarg;
+-                break;
+-            case 'e':
+-                emul_args = optarg;
+-                break;
+-            case 'p':
+-#ifdef USE_PASSTHRU
+-                passthru = 1;
+-#else
+-                print_usage();
+-                exit(4);
+-#endif
+-                break;
+-            case 'd':
+-                verbose = get_id_from_string(optarg,1);
+-                break;
++        case 'c':
++            if (cert_count >= MAX_CERTS) {
++                printf("too many certificates (max = %d)\n", MAX_CERTS);
++                exit(5);
++            }
++            cert_names[cert_count++] = optarg;
++            break;
++        case 'e':
++            emul_args = optarg;
++            break;
++        case 'p':
++            print_usage();
++            exit(4);
++            break;
++        case 'd':
++            verbose = get_id_from_string(optarg, 1);
++            break;
+         }
+     }
+ 
+     if (argc - optind != 2) {
+         print_usage();
+-        exit (4);
++        exit(4);
+     }
+ 
+-    if (!passthru && cert_count > 0) {
++    if (cert_count > 0) {
+         char *new_args;
+         int len, i;
+         /* if we've given some -c options, we clearly we want do so some
+          * software emulation.  add that emulation now. this is NSS Emulator
+          * specific */
+         if (emul_args == NULL) {
+-            emul_args = (char*)"db=\"/etc/pki/nssdb\"";
++            emul_args = (char *)"db=\"/etc/pki/nssdb\"";
+         }
+ #define SOFT_STRING ",soft=(,Virtual Reader,CAC,,"
+              /* 2 == close paren & null */
+         len = strlen(emul_args) + strlen(SOFT_STRING) + 2;
+-        for (i=0; i < cert_count; i++) {
+-            len +=strlen(cert_names[i])+1; /* 1 == comma */
++        for (i = 0; i < cert_count; i++) {
++            len += strlen(cert_names[i])+1; /* 1 == comma */
+         }
+-        new_args = malloc(len);
+-        strcpy(new_args,emul_args);
+-        strcat(new_args,SOFT_STRING);
+-        for (i=0; i < cert_count; i++) {
+-            strcat(new_args,cert_names[i]);
+-            strcat(new_args,",");
++        new_args = qemu_malloc(len);
++        strcpy(new_args, emul_args);
++        strcat(new_args, SOFT_STRING);
++        for (i = 0; i < cert_count; i++) {
++            strcat(new_args, cert_names[i]);
++            strcat(new_args, ",");
+         }
+-        strcat(new_args,")");
++        strcat(new_args, ")");
+         emul_args = new_args;
+     }
+     if (emul_args) {
+-#ifdef USE_PASSTHRU
+-        command_line_options = passthru ? passthru_emul_options(emul_args) :
+-#else
+-        command_line_options =
+-#endif
+-                                          vcard_emul_options(emul_args);
++        command_line_options = vcard_emul_options(emul_args);
+     }
+ 
+     qemu_host = strdup(argv[argc - 2]);
+-    qemu_port = strdup(argv[argc -1]);
++    qemu_port = strdup(argv[argc - 1]);
+     sock = connect_to_qemu(qemu_host, qemu_port);
+ 
+-    MUTEX_INIT(write_lock);
+-    MUTEX_INIT(pending_reader_lock);
+-    CONDITION_INIT(pending_reader_condition);
++    qemu_mutex_init(&write_lock);
++    qemu_mutex_init(&pending_reader_lock);
++    qemu_cond_init(&pending_reader_condition);
+ 
+-#ifdef USE_PASSTHRU
+-    if (passthru) {
+-        passthru_emul_init(command_line_options);
+-    } else
+-#endif
+-        vcard_emul_init(command_line_options);
++    vcard_emul_init(command_line_options);
+ 
+     printf("> ");
+     fflush(stdout);
+ 
+     /* Send init message, Host responds (and then we send reader attachments) */
+     VSCMsgInit init = {
+-        .version=htonl(VSCARD_VERSION),
+-        .magic=VSCARD_MAGIC,
+-        .capabilities={0}
++        .version = htonl(VSCARD_VERSION),
++        .magic = VSCARD_MAGIC,
++        .capabilities = {0}
+     };
+     send_msg(VSC_Init, mhHeader.reader_id, &init, sizeof(init));
+ 
+@@ -600,144 +527,126 @@ main (
+         fd_set fds;
+ 
+         FD_ZERO(&fds);
+-        FD_SET(1,&fds);
+-        FD_SET(sock,&fds);
++        FD_SET(1, &fds);
++        FD_SET(sock, &fds);
+ 
+         /* waiting on input from the socket */
+         rv = select(sock+1, &fds, NULL, NULL, NULL);
+         if (rv < 0) {
+             /* handle error */
+             perror("select");
+-            return (7);
++            return 7;
+         }
+-        if (FD_ISSET(1,&fds)) {
++        if (FD_ISSET(1, &fds)) {
+             do_command();
+         }
+-        if (!FD_ISSET(sock,&fds)) {
++        if (!FD_ISSET(sock, &fds)) {
+             continue;
+         }
+ 
+-        rv = read (
+-            sock,
+-            &mhHeader,
+-            sizeof (mhHeader)
+-        );
++        rv = read(sock, &mhHeader, sizeof(mhHeader));
+         if (rv < sizeof(mhHeader)) {
+             /* Error */
+             if (rv < 0) {
+                 perror("header read error\n");
+             } else {
+-                printf ("header short read %d\n", rv);
++                fprintf(stderr, "header short read %d\n", rv);
+             }
+-            return (8);
++            return 8;
+         }
+         mhHeader.type = ntohl(mhHeader.type);
+         mhHeader.reader_id = ntohl(mhHeader.reader_id);
+         mhHeader.length = ntohl(mhHeader.length);
+         if (verbose) {
+-            printf ("Header: type=%d, reader_id=%d length=%d (0x%x)\n",
++            printf("Header: type=%d, reader_id=%d length=%d (0x%x)\n",
+                     mhHeader.type, mhHeader.reader_id, mhHeader.length,
+                                                mhHeader.length);
+         }
+         switch (mhHeader.type) {
+-            case VSC_APDU:
+-            case VSC_Flush:
+-            case VSC_Error:
+-            case VSC_Init:
+-                rv = read (
+-                    sock,
+-                    pbSendBuffer,
+-                    mhHeader.length
+-                );
+-                break;
+-            default:
+-                printf ("Unexpected message of type 0x%X\n", mhHeader.type);
+-                return 0;
++        case VSC_APDU:
++        case VSC_Flush:
++        case VSC_Error:
++        case VSC_Init:
++            rv = read(sock, pbSendBuffer, mhHeader.length);
++            break;
++        default:
++            fprintf(stderr, "Unexpected message of type 0x%X\n", mhHeader.type);
++            return 0;
+         }
+         switch (mhHeader.type) {
+-            case VSC_APDU:
+-                if (rv < 0) {
+-                    /* Error */
+-                    printf ("read error\n");
+-                    close (sock);
+-                    return (8);
+-                }
++        case VSC_APDU:
++            if (rv < 0) {
++                /* Error */
++                fprintf(stderr, "read error\n");
++                close(sock);
++                return 8;
++            }
++            if (verbose) {
++                printf(" recv APDU: ");
++                print_byte_array(pbSendBuffer, mhHeader.length);
++            }
++            /* Transmit recieved APDU */
++            dwSendLength = mhHeader.length;
++            dwRecvLength = sizeof(pbRecvBuffer);
++            reader = vreader_get_reader_by_id(mhHeader.reader_id);
++            reader_status = vreader_xfr_bytes(reader,
++                pbSendBuffer, dwSendLength,
++                pbRecvBuffer, &dwRecvLength);
++            if (reader_status == VREADER_OK) {
++                mhHeader.length = dwRecvLength;
+                 if (verbose) {
+-                    printf (" recv APDU: ");
+-                    print_byte_array (pbSendBuffer, mhHeader.length);
+-                }
+-                /* Transmit recieved APDU */
+-                dwSendLength = mhHeader.length;
+-                dwRecvLength = sizeof(pbRecvBuffer);
+-                reader = vreader_get_reader_by_id(mhHeader.reader_id);
+-                reader_status = vreader_xfr_bytes(reader,
+-                    pbSendBuffer, dwSendLength,
+-                    pbRecvBuffer, &dwRecvLength);
+-                if (reader_status == VREADER_OK) {
+-                    mhHeader.length = dwRecvLength;
+-                    if (verbose) {
+-                        printf (" send response: ");
+-                        print_byte_array (pbRecvBuffer, mhHeader.length);
+-                    }
+-                    send_msg (
+-                        VSC_APDU,
+-                        mhHeader.reader_id,
+-                        pbRecvBuffer,
+-                        dwRecvLength
+-                    );
+-                } else {
+-                    rv = reader_status; /* warning: not meaningful */
+-                    send_msg (
+-                        VSC_Error,
+-                        mhHeader.reader_id,
+-                        &rv,
+-                        sizeof (uint32_t)
+-                    );
+-                }
+-                vreader_free(reader);
+-                reader = NULL; /* we've freed it, don't use it by accident
+-                                  again */
+-                break;
+-            case VSC_Flush:
+-                /* TODO: actually flush */
+-                send_msg(VSC_FlushComplete, mhHeader.reader_id, NULL, 0);
+-                break;
+-            case VSC_Error:
+-                error_msg = (VSCMsgError *) pbSendBuffer;
+-                if (error_msg->code == VSC_SUCCESS) {
+-                    MUTEX_LOCK(pending_reader_lock);
+-                    if (pending_reader) {
+-                        vreader_set_id(pending_reader, mhHeader.reader_id);
+-                        vreader_free(pending_reader);
+-                        pending_reader = NULL;
+-                        CONDITION_NOTIFY(pending_reader_condition);
+-                    }
+-                    MUTEX_UNLOCK(pending_reader_lock);
+-                    break;
++                    printf(" send response: ");
++                    print_byte_array(pbRecvBuffer, mhHeader.length);
+                 }
+-                printf("error: qemu refused to add reader\n");
+-                if (error_msg->code == VSC_CANNOT_ADD_MORE_READERS) {
+-                    /* clear pending reader, qemu can't handle any more */
+-                    MUTEX_LOCK(pending_reader_lock);
+-                    if (pending_reader) {
+-                        pending_reader = NULL;
+-                        /* make sure the event loop doesn't hang */
+-                        CONDITION_NOTIFY(pending_reader_condition);
+-                    }
+-                    MUTEX_UNLOCK(pending_reader_lock);
++                send_msg(VSC_APDU, mhHeader.reader_id,
++                         pbRecvBuffer, dwRecvLength);
++            } else {
++                rv = reader_status; /* warning: not meaningful */
++                send_msg(VSC_Error, mhHeader.reader_id, &rv, sizeof(uint32_t));
++            }
++            vreader_free(reader);
++            reader = NULL; /* we've freed it, don't use it by accident
++                              again */
++            break;
++        case VSC_Flush:
++            /* TODO: actually flush */
++            send_msg(VSC_FlushComplete, mhHeader.reader_id, NULL, 0);
++            break;
++        case VSC_Error:
++            error_msg = (VSCMsgError *) pbSendBuffer;
++            if (error_msg->code == VSC_SUCCESS) {
++                qemu_mutex_lock(&pending_reader_lock);
++                if (pending_reader) {
++                    vreader_set_id(pending_reader, mhHeader.reader_id);
++                    vreader_free(pending_reader);
++                    pending_reader = NULL;
++                    qemu_cond_signal(&pending_reader_condition);
+                 }
++                qemu_mutex_unlock(&pending_reader_lock);
+                 break;
+-            case VSC_Init:
+-                if (on_host_init(&mhHeader, (VSCMsgInit*)pbSendBuffer) < 0) {
+-                    return -1;
++            }
++            printf("warning: qemu refused to add reader\n");
++            if (error_msg->code == VSC_CANNOT_ADD_MORE_READERS) {
++                /* clear pending reader, qemu can't handle any more */
++                qemu_mutex_lock(&pending_reader_lock);
++                if (pending_reader) {
++                    pending_reader = NULL;
++                    /* make sure the event loop doesn't hang */
++                    qemu_cond_signal(&pending_reader_condition);
+                 }
+-                break;
+-            default:
+-                printf ("Default\n");
+-                return 0;
++                qemu_mutex_unlock(&pending_reader_lock);
++            }
++            break;
++        case VSC_Init:
++            if (on_host_init(&mhHeader, (VSCMsgInit *)pbSendBuffer) < 0) {
++                return -1;
++            }
++            break;
++        default:
++            printf("Default\n");
++            return 0;
+         }
+     } while (rv >= 0);
+ 
+-
+-    return (0);
++    return 0;
+ }
+-- 
+1.7.3.2
+

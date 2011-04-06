@@ -1,0 +1,53 @@
+From 9bfe8ccfae1f958525a5d75d6e5f5a040b12d1f1 Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Mon, 4 Apr 2011 10:30:20 -0300
+Subject: [RHEL6 qemu-kvm PATCH 10/12] adding qemu-thread.o to obj-y
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1301913022-22142-11-git-send-email-alevy@redhat.com>
+Patchwork-id: 21254
+O-Subject: [PATCH RHEL6.1 v4 10/12] adding qemu-thread.o to obj-y
+Bugzilla: 641833
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+BZ: 641833
+
+upstream: different solution
+
+We need to link with qemu-thread.o because now libcacard and
+ccid-card-emulated both use it.
+
+This is another result of upstream using a somewhat different makefile.
+They have a common-obj-y that includes qemu-thread.o (actually, the posix
+or win32 one, but we don't need that patch for libcacard so I'm not dragging
+it in). qemu-thread.o .belongs. common-obj-y .subgroup. obj-y .linked-into.
+qemu executable.
+
+So here we have qemu-thread.o .belongs. obj-y .linked-into. qemu exacutable
+(via an intermediate library).
+---
+ Makefile |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 7edbcb4..06acd58 100644
+--- a/Makefile
++++ b/Makefile
+@@ -154,6 +154,7 @@ shared-obj-y = qemu-error.o $(trace-obj-y) $(block-obj-y) $(qobject-obj-y)
+ # CPUs and machines.
+ 
+ obj-y = $(shared-obj-y)
++obj-y += qemu-thread.o
+ obj-y += $(net-obj-y)
+ obj-y += readline.o console.o cursor.o
+ 
+-- 
+1.7.3.2
+

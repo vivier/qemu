@@ -1,0 +1,71 @@
+From 0bcae1e3baf4f1b74cfa3e6e47d200134997625e Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Mon, 4 Apr 2011 10:30:15 -0300
+Subject: [RHEL6 qemu-kvm PATCH 05/12] Revert "qdev: add print_options callback"
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1301913022-22142-6-git-send-email-alevy@redhat.com>
+Patchwork-id: 21252
+O-Subject: [PATCH RHEL6.1 v4 05/12] Revert "qdev: add print_options callback"
+Bugzilla: 641833
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+This reverts commit b972da092dd04af997069f2aec5fa8cd51cf765b.
+
+Conflicts:
+
+	hw/qdev.h
+
+BZ: 641833
+upstream: got dropped between v18 and v19
+
+The conflict is because of the added free callback to fix a strdup leak.
+---
+ hw/qdev.c |   10 +---------
+ hw/qdev.h |    1 -
+ 2 files changed, 1 insertions(+), 10 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qdev.c |   10 +---------
+ hw/qdev.h |    1 -
+ 2 files changed, 1 insertions(+), 10 deletions(-)
+
+diff --git a/hw/qdev.c b/hw/qdev.c
+index 76f8755..0b0c6a2 100644
+--- a/hw/qdev.c
++++ b/hw/qdev.c
+@@ -189,15 +189,7 @@ int qdev_device_help(QemuOpts *opts)
+         if (!prop->info->parse) {
+             continue;           /* no way to set it, don't show */
+         }
+-        if (prop->info->print_options) {
+-            char buf[256];
+-            int ret;
+-            ret = prop->info->print_options(info, prop, buf, sizeof(buf) - 3);
+-            error_printf("%s.%s=%s%s\n", info->name, prop->name, buf,
+-                ret == sizeof(buf) - 3 ? "..." : "" );
+-        } else {
+-            error_printf("%s.%s=%s\n", info->name, prop->name, prop->info->name);
+-        }
++        error_printf("%s.%s=%s\n", info->name, prop->name, prop->info->name);
+     }
+     return 1;
+ }
+diff --git a/hw/qdev.h b/hw/qdev.h
+index e9f3f81..c926224 100644
+--- a/hw/qdev.h
++++ b/hw/qdev.h
+@@ -106,7 +106,6 @@ struct PropertyInfo {
+     enum PropertyType type;
+     int (*parse)(DeviceState *dev, Property *prop, const char *str);
+     int (*print)(DeviceState *dev, Property *prop, char *dest, size_t len);
+-    int (*print_options)(DeviceInfo *info, Property *prop, char *dest, size_t len);
+     void (*free)(DeviceState *dev, Property *prop);
+ };
+ 
+-- 
+1.7.3.2
+

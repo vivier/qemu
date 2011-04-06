@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.154
+%define pkgrelease 2.155
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2467,6 +2467,30 @@ Patch2097: kvm-Don-t-allow-multiwrites-against-a-block-device-witho.patch
 Patch2098: kvm-Do-not-delete-BlockDriverState-when-deleting-the-dri.patch
 # For bz#690174 - virtio-serial qemu-kvm crash on invalid input in migration
 Patch2099: kvm-virtio-serial-don-t-crash-on-invalid-input.patch
+# For bz#641833 - Spice CAC support - qemu
+Patch2100: kvm-configure-fix-out-of-tree-build-with-enable-spice.patch
+# For bz#641833 - Spice CAC support - qemu
+Patch2101: kvm-ccid-card-emulated-replace-DEFINE_PROP_ENUM-with-DEF.patch
+# For bz#641833 - Spice CAC support - qemu
+Patch2102: kvm-Revert-qdev-properties-add-PROP_TYPE_ENUM.patch
+# For bz#641833 - Spice CAC support - qemu
+Patch2103: kvm-Revert-qdev-add-data-pointer-to-Property.patch
+# For bz#641833 - Spice CAC support - qemu
+Patch2104: kvm-Revert-qdev-add-print_options-callback.patch
+# For bz#641833 - Spice CAC support - qemu
+Patch2105: kvm-ccid-v18_upstream-v25-cleanup.patch
+# For bz#641833 - Spice CAC support - qemu
+Patch2106: kvm-libcacard-vscard_common.h-upstream-v18-v25-diff.patch
+# For bz#641833 - Spice CAC support - qemu
+Patch2107: kvm-ccid-card-passthru-upstream-v18-upstream-v25-diff.patch
+# For bz#641833 - Spice CAC support - qemu
+Patch2108: kvm-qemu-thread-add-qemu_mutex-cond_destroy-and-qemu_mut.patch
+# For bz#641833 - Spice CAC support - qemu
+Patch2109: kvm-adding-qemu-thread.o-to-obj-y.patch
+# For bz#641833 - Spice CAC support - qemu
+Patch2110: kvm-ccid-card-emulated-v18-v25.patch
+# For bz#641833 - Spice CAC support - qemu
+Patch2111: kvm-libcacard-v18-upstream-v25.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3673,6 +3697,18 @@ ApplyOptionalPatch()
 %patch2097 -p1
 %patch2098 -p1
 %patch2099 -p1
+%patch2100 -p1
+%patch2101 -p1
+%patch2102 -p1
+%patch2103 -p1
+%patch2104 -p1
+%patch2105 -p1
+%patch2106 -p1
+%patch2107 -p1
+%patch2108 -p1
+%patch2109 -p1
+%patch2110 -p1
+%patch2111 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3894,6 +3930,22 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Apr 06 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.155.el6
+- kvm-configure-fix-out-of-tree-build-with-enable-spice.patch [bz#641833]
+- kvm-ccid-card-emulated-replace-DEFINE_PROP_ENUM-with-DEF.patch [bz#641833]
+- kvm-Revert-qdev-properties-add-PROP_TYPE_ENUM.patch [bz#641833]
+- kvm-Revert-qdev-add-data-pointer-to-Property.patch [bz#641833]
+- kvm-Revert-qdev-add-print_options-callback.patch [bz#641833]
+- kvm-ccid-v18_upstream-v25-cleanup.patch [bz#641833]
+- kvm-libcacard-vscard_common.h-upstream-v18-v25-diff.patch [bz#641833]
+- kvm-ccid-card-passthru-upstream-v18-upstream-v25-diff.patch [bz#641833]
+- kvm-qemu-thread-add-qemu_mutex-cond_destroy-and-qemu_mut.patch [bz#641833]
+- kvm-adding-qemu-thread.o-to-obj-y.patch [bz#641833]
+- kvm-ccid-card-emulated-v18-v25.patch [bz#641833]
+- kvm-libcacard-v18-upstream-v25.patch [bz#641833]
+- Resolves: bz#641833
+  (Spice CAC support - qemu)
+
 * Tue Apr 05 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.154.el6
 - kvm-add-a-service-to-reap-zombies-use-it-in-SLIRP.patch [bz#678524]
 - kvm-Don-t-allow-multiwrites-against-a-block-device-witho.patch [bz#654682]

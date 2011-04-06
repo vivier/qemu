@@ -1,0 +1,42 @@
+From f1154df1b361a02b70af56f6945442a9cbbdc7e9 Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Mon, 4 Apr 2011 10:30:14 -0300
+Subject: [RHEL6 qemu-kvm PATCH 04/12] Revert "qdev: add data pointer to Property"
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1301913022-22142-5-git-send-email-alevy@redhat.com>
+Patchwork-id: 21247
+O-Subject: [PATCH RHEL6.1 v4 04/12] Revert "qdev: add data pointer to Property"
+Bugzilla: 641833
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+This reverts commit 96c86bf6e73ae87472cb9ae39a1c5e019b722795.
+
+BZ: 641833
+upstream: got dropped between v18 and v19
+---
+ hw/qdev.h |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qdev.h |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+diff --git a/hw/qdev.h b/hw/qdev.h
+index c6491c8..e9f3f81 100644
+--- a/hw/qdev.h
++++ b/hw/qdev.h
+@@ -80,7 +80,6 @@ struct Property {
+     int          offset;
+     int          bitnr;
+     void         *defval;
+-    void         *data;
+ };
+ 
+ enum PropertyType {
+-- 
+1.7.3.2
+

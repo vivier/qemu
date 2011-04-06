@@ -1,0 +1,203 @@
+From 506a9add93f5d0369f6a2283431b6a0b512531ce Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Mon, 4 Apr 2011 10:30:17 -0300
+Subject: [RHEL6 qemu-kvm PATCH 07/12] libcacard/vscard_common.h: upstream v18-v25 diff
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1301913022-22142-8-git-send-email-alevy@redhat.com>
+Patchwork-id: 21245
+O-Subject: [PATCH RHEL6.1 v4 07/12] libcacard/vscard_common.h: upstream v18-v25
+	diff
+Bugzilla: 641833
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+BZ: 641833
+
+Straight diff from upstream submission of v25 and v18 (commit done by
+copying over the file and git adding).
+---
+ libcacard/vscard_common.h |   66 ++++++++++++++++++++++++++------------------
+ 1 files changed, 39 insertions(+), 27 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ libcacard/vscard_common.h |   66 ++++++++++++++++++++++++++------------------
+ 1 files changed, 39 insertions(+), 27 deletions(-)
+
+diff --git a/libcacard/vscard_common.h b/libcacard/vscard_common.h
+index 36b18f2..bebd52d 100644
+--- a/libcacard/vscard_common.h
++++ b/libcacard/vscard_common.h
+@@ -15,7 +15,8 @@
+  *
+  * Copyright (c) 2011 Red Hat.
+  *
+- * This code is licenced under the GNU LGPL, version 2 or later.
++ * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
++ * See the COPYING.LIB file in the top-level directory.
+  */
+ 
+ #ifndef VSCARD_COMMON_H
+@@ -28,11 +29,12 @@
+ #define VERSION_MINOR_BITS 10
+ 
+ #define MAKE_VERSION(major, middle, minor) \
+-     (  (major  << (VERSION_MINOR_BITS + VERSION_MIDDLE_BITS)) \
++     ((major  << (VERSION_MINOR_BITS + VERSION_MIDDLE_BITS)) \
+       | (middle <<  VERSION_MINOR_BITS) \
+-      | (minor)  )
++      | (minor))
+ 
+-/** IMPORTANT NOTE on VERSION
++/*
++ * IMPORTANT NOTE on VERSION
+  *
+  * The version below MUST be changed whenever a change in this file is made.
+  *
+@@ -45,7 +47,7 @@
+  * something that cannot be accomodated with the existing protocol.
+  */
+ 
+-#define VSCARD_VERSION MAKE_VERSION(0,0,2)
++#define VSCARD_VERSION MAKE_VERSION(0, 0, 2)
+ 
+ typedef enum VSCMsgType {
+     VSC_Init = 1,
+@@ -60,8 +62,8 @@ typedef enum VSCMsgType {
+ } VSCMsgType;
+ 
+ typedef enum VSCErrorCode {
+-    VSC_SUCCESS=0,
+-    VSC_GENERAL_ERROR=1,
++    VSC_SUCCESS = 0,
++    VSC_GENERAL_ERROR = 1,
+     VSC_CANNOT_ADD_MORE_READERS,
+     VSC_CARD_ALREAY_INSERTED,
+ } VSCErrorCode;
+@@ -69,9 +71,10 @@ typedef enum VSCErrorCode {
+ #define VSCARD_UNDEFINED_READER_ID  0xffffffff
+ #define VSCARD_MINIMAL_READER_ID    0
+ 
+-#define VSCARD_MAGIC (*(uint32_t*)"VSCD")
++#define VSCARD_MAGIC (*(uint32_t *)"VSCD")
+ 
+-/* Header
++/*
++ * Header
+  * Each message starts with the header.
+  * type - message type
+  * reader_id - used by messages that are reader specific
+@@ -85,13 +88,14 @@ typedef struct VSCMsgHeader {
+     uint8_t    data[0];
+ } VSCMsgHeader;
+ 
+-/* VSCMsgInit               Client <-> Host
++/*
++ * VSCMsgInit               Client <-> Host
+  * Client sends it on connection, with its own capabilities.
+  * Host replies with VSCMsgInit filling in its capabilities.
+  *
+  * It is not meant to be used for negotiation, i.e. sending more then
+  * once from any side, but could be used for that in the future.
+- * */
++ */
+ typedef struct VSCMsgInit {
+     uint32_t   magic;
+     uint32_t   version;
+@@ -99,67 +103,75 @@ typedef struct VSCMsgInit {
+                                    array may grow in the future*/
+ } VSCMsgInit;
+ 
+-/* VSCMsgError              Client <-> Host
++/*
++ * VSCMsgError              Client <-> Host
+  * This message is a response to any of:
+  *  Reader Add
+  *  Reader Remove
+  *  Card Remove
+  * If the operation was successful then VSC_SUCCESS
+  * is returned, other wise a specific error code.
+- * */
++ */
+ typedef struct VSCMsgError {
+     uint32_t   code;
+ } VSCMsgError;
+ 
+-/* VSCMsgReaderAdd          Client -> Host
++/*
++ * VSCMsgReaderAdd          Client -> Host
+  * Host replies with allocated reader id in VSCMsgError with code==SUCCESS.
+  *
+  * name - name of the reader on client side, UTF-8 encoded. Only used
+  *  for client presentation (may be translated to the device presented to the
+  *  guest), protocol wise only reader_id is important.
+- * */
++ */
+ typedef struct VSCMsgReaderAdd {
+     uint8_t    name[0];
+ } VSCMsgReaderAdd;
+ 
+-/* VSCMsgReaderRemove       Client -> Host
++/*
++ * VSCMsgReaderRemove       Client -> Host
+  * The client's reader has been removed.
+- * */
++ */
+ typedef struct VSCMsgReaderRemove {
+ } VSCMsgReaderRemove;
+ 
+-/* VSCMsgATR                Client -> Host
++/*
++ * VSCMsgATR                Client -> Host
+  * Answer to reset. Sent for card insertion or card reset. The reset/insertion
+  * happens on the client side, they do not require any action from the host.
+- * */
++ */
+ typedef struct VSCMsgATR {
+     uint8_t     atr[0];
+ } VSCMsgATR;
+ 
+-/* VSCMsgCardRemove         Client -> Host
++/*
++ * VSCMsgCardRemove         Client -> Host
+  * The client card has been removed.
+- * */
++ */
+ typedef struct VSCMsgCardRemove {
+ } VSCMsgCardRemove;
+ 
+-/* VSCMsgAPDU               Client <-> Host
++/*
++ * VSCMsgAPDU               Client <-> Host
+  * Main reason of existance. Transfer a single APDU in either direction.
+- * */
++ */
+ typedef struct VSCMsgAPDU {
+     uint8_t    data[0];
+ } VSCMsgAPDU;
+ 
+-/* VSCMsgFlush               Host -> Client
++/*
++ * VSCMsgFlush               Host -> Client
+  * Request client to send a FlushComplete message when it is done
+  * servicing all outstanding APDUs
+- * */
++ */
+ typedef struct VSCMsgFlush {
+ } VSCMsgFlush;
+ 
+-/* VSCMsgFlush               Client -> Host
++/*
++ * VSCMsgFlush               Client -> Host
+  * Client response to Flush after all APDUs have been processed and
+  * responses sent.
+- * */
++ */
+ typedef struct VSCMsgFlushComplete {
+ } VSCMsgFlushComplete;
+ 
+-- 
+1.7.3.2
+

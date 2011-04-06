@@ -1,0 +1,114 @@
+From 46d90af8d76cfe71b0d0d048fa88a4407cf67573 Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Mon, 4 Apr 2011 10:30:19 -0300
+Subject: [RHEL6 qemu-kvm PATCH 09/12] qemu-thread: add qemu_mutex/cond_destroy and qemu_mutex_exit
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1301913022-22142-10-git-send-email-alevy@redhat.com>
+Patchwork-id: 21251
+O-Subject: [PATCH RHEL6.1 v4 09/12] qemu-thread: add qemu_mutex/cond_destroy and
+	qemu_mutex_exit
+Bugzilla: 641833
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+From: Corentin Chary <corentincj@iksaif.net>
+
+BZ: 641833
+
+straight apply of upstream: 313b1d697d58f284f4490d135a652f8280c52e8a
+
+required by libcacard/ccid-card-emulated qemu-fication, i.e. using
+qemu-thread instead of it's own mutex/condition/thread wrapper.
+
+Add some missing functions in qemu-thread. Currently qemu-thread
+is only used for io-thread but it will used by the vnc server soon
+and we need those functions instead of calling pthread directly.
+
+Signed-off-by: Corentin Chary <corentincj@iksaif.net>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+ qemu-thread.c |   22 ++++++++++++++++++++++
+ qemu-thread.h |    4 ++++
+ 2 files changed, 26 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-thread.c |   22 ++++++++++++++++++++++
+ qemu-thread.h |    4 ++++
+ 2 files changed, 26 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-thread.c b/qemu-thread.c
+index 3923db7..afc9933 100644
+--- a/qemu-thread.c
++++ b/qemu-thread.c
+@@ -34,6 +34,15 @@ void qemu_mutex_init(QemuMutex *mutex)
+         error_exit(err, __func__);
+ }
+ 
++void qemu_mutex_destroy(QemuMutex *mutex)
++{
++    int err;
++
++    err = pthread_mutex_destroy(&mutex->lock);
++    if (err)
++        error_exit(err, __func__);
++}
++
+ void qemu_mutex_lock(QemuMutex *mutex)
+ {
+     int err;
+@@ -90,6 +99,15 @@ void qemu_cond_init(QemuCond *cond)
+         error_exit(err, __func__);
+ }
+ 
++void qemu_cond_destroy(QemuCond *cond)
++{
++    int err;
++
++    err = pthread_cond_destroy(&cond->cond);
++    if (err)
++        error_exit(err, __func__);
++}
++
+ void qemu_cond_signal(QemuCond *cond)
+ {
+     int err;
+@@ -161,3 +179,7 @@ int qemu_thread_equal(QemuThread *thread1, QemuThread *thread2)
+    return pthread_equal(thread1->thread, thread2->thread);
+ }
+ 
++void qemu_thread_exit(void *retval)
++{
++    pthread_exit(retval);
++}
+diff --git a/qemu-thread.h b/qemu-thread.h
+index 5ef4a3a..19bb30c 100644
+--- a/qemu-thread.h
++++ b/qemu-thread.h
+@@ -20,12 +20,14 @@ typedef struct QemuCond QemuCond;
+ typedef struct QemuThread QemuThread;
+ 
+ void qemu_mutex_init(QemuMutex *mutex);
++void qemu_mutex_destroy(QemuMutex *mutex);
+ void qemu_mutex_lock(QemuMutex *mutex);
+ int qemu_mutex_trylock(QemuMutex *mutex);
+ int qemu_mutex_timedlock(QemuMutex *mutex, uint64_t msecs);
+ void qemu_mutex_unlock(QemuMutex *mutex);
+ 
+ void qemu_cond_init(QemuCond *cond);
++void qemu_cond_destroy(QemuCond *cond);
+ void qemu_cond_signal(QemuCond *cond);
+ void qemu_cond_broadcast(QemuCond *cond);
+ void qemu_cond_wait(QemuCond *cond, QemuMutex *mutex);
+@@ -37,4 +39,6 @@ void qemu_thread_create(QemuThread *thread,
+ void qemu_thread_signal(QemuThread *thread, int sig);
+ void qemu_thread_self(QemuThread *thread);
+ int qemu_thread_equal(QemuThread *thread1, QemuThread *thread2);
++void qemu_thread_exit(void *retval);
++
+ #endif
+-- 
+1.7.3.2
+

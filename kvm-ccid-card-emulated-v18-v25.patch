@@ -1,0 +1,613 @@
+From accb4e222648b135a22d658aa5ef650676406328 Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Mon, 4 Apr 2011 10:30:21 -0300
+Subject: [RHEL6 qemu-kvm PATCH 11/12] ccid-card-emulated v18-v25
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1301913022-22142-12-git-send-email-alevy@redhat.com>
+Patchwork-id: 21256
+O-Subject: [PATCH RHEL6.1 v4 11/12] ccid-card-emulated v18-v25
+Bugzilla: 641833
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+BZ: 641833
+
+copy over of upstream v25, with small changes:
+ * include qemu-common.h before qemu-thread.h (uint64_t undefined)
+
+Note this undoes the s/EnumTable/EmulEnumTable/ introduced by
+the first patch in this series. Since EnumTable typedef is now dropped
+from qdev.h, no reason to use EmulEnumTable.
+
+commit message for v18-v25 diff:
+
+changes from v20->v21: (Jes Sorensen review)
+ * cosmetics
+ * use qemu-thread and qemu_malloc/qemu_free
+
+changes from v19->v20:
+ * checkpatch.pl
+
+changes from v18->v19:
+ * add qdev.desc
+ * backend: drop the enumeration property, back to using a string one.
+---
+ hw/ccid-card-emulated.c |  313 +++++++++++++++++++++++++----------------------
+ 1 files changed, 164 insertions(+), 149 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/ccid-card-emulated.c |  313 +++++++++++++++++++++++++----------------------
+ 1 files changed, 164 insertions(+), 149 deletions(-)
+
+diff --git a/hw/ccid-card-emulated.c b/hw/ccid-card-emulated.c
+index 2b64d3c..96b6882 100644
+--- a/hw/ccid-card-emulated.c
++++ b/hw/ccid-card-emulated.c
+@@ -1,6 +1,13 @@
+ /*
+  * CCID Card Device. Emulated card.
+  *
++ * Copyright (c) 2011 Red Hat.
++ * Written by Alon Levy.
++ *
++ * This code is licenced under the GNU LGPL, version 2 or later.
++ */
++
++/*
+  * It can be used to provide access to the local hardware in a non exclusive
+  * way, or it can use certificates. It requires the usb-ccid bus.
+  *
+@@ -9,29 +16,33 @@
+  *
+  * Usage 2: use certificates, no hardware required
+  * one time: create the certificates:
+- *  for i in 1 2 3; do certutil -d /etc/pki/nssdb -x -t "CT,CT,CT" -S -s "CN=user$i" -n user$i; done
+- * qemu .. -usb -device usb-ccid -device ccid-card-emulated,cert1=user1,cert2=user2,cert3=user3
+- *
+- * If you use a non default db for the certificates you can specify it using the db parameter.
++ *  for i in 1 2 3; do
++ *      certutil -d /etc/pki/nssdb -x -t "CT,CT,CT" -S -s "CN=user$i" -n user$i
++ *  done
++ * qemu .. -usb -device usb-ccid \
++ *  -device ccid-card-emulated,cert1=user1,cert2=user2,cert3=user3
+  *
+- *
+- * Copyright (c) 2011 Red Hat.
+- * Written by Alon Levy.
+- *
+- * This code is licenced under the GNU LGPL, version 2 or later.
++ * If you use a non default db for the certificates you can specify it using
++ * the db parameter.
+  */
+ 
+-#include <pthread.h>
+ #include <eventt.h>
+ #include <vevent.h>
+ #include <vreader.h>
+ #include <vcard_emul.h>
++
++#include "qemu-common.h"
++#include "qemu-thread.h"
+ #include "qemu-char.h"
+ #include "monitor.h"
+ #include "hw/ccid.h"
+ 
+ #define DPRINTF(card, lvl, fmt, ...) \
+-do { if (lvl <= card->debug) { printf("ccid-card-emul: %s: " fmt , __func__, ## __VA_ARGS__); } } while (0)
++do {\
++    if (lvl <= card->debug) {\
++        printf("ccid-card-emul: %s: " fmt , __func__, ## __VA_ARGS__);\
++    } \
++} while (0)
+ 
+ #define EMULATED_DEV_NAME "ccid-card-emulated"
+ 
+@@ -39,7 +50,7 @@ do { if (lvl <= card->debug) { printf("ccid-card-emul: %s: " fmt , __func__, ##
+ #define BACKEND_CERTIFICATES_NAME "certificates"
+ 
+ enum {
+-    BACKEND_NSS_EMULATED=1,
++    BACKEND_NSS_EMULATED = 1,
+     BACKEND_CERTIFICATES
+ };
+ 
+@@ -57,18 +68,23 @@ enum {
+     EMUL_ERROR,
+ };
+ 
+-static const char* emul_event_to_string(uint32_t emul_event)
++static const char *emul_event_to_string(uint32_t emul_event)
+ {
+     switch (emul_event) {
+-        case EMUL_READER_INSERT: return "EMUL_READER_INSERT";
+-        case EMUL_READER_REMOVE: return "EMUL_READER_REMOVE";
+-        case EMUL_CARD_INSERT: return "EMUL_CARD_INSERT";
+-        case EMUL_CARD_REMOVE: return "EMUL_CARD_REMOVE";
+-        case EMUL_GUEST_APDU: return "EMUL_GUEST_APDU";
+-        case EMUL_RESPONSE_APDU: return "EMUL_RESPONSE_APDU";
+-        case EMUL_ERROR: return "EMUL_ERROR";
+-        default:
+-            break;
++    case EMUL_READER_INSERT:
++        return "EMUL_READER_INSERT";
++    case EMUL_READER_REMOVE:
++        return "EMUL_READER_REMOVE";
++    case EMUL_CARD_INSERT:
++        return "EMUL_CARD_INSERT";
++    case EMUL_CARD_REMOVE:
++        return "EMUL_CARD_REMOVE";
++    case EMUL_GUEST_APDU:
++        return "EMUL_GUEST_APDU";
++    case EMUL_RESPONSE_APDU:
++        return "EMUL_RESPONSE_APDU";
++    case EMUL_ERROR:
++        return "EMUL_ERROR";
+     }
+     return "UNKNOWN";
+ }
+@@ -95,45 +111,46 @@ typedef struct EmulEvent {
+ struct EmulatedState {
+     CCIDCardState base;
+     uint8_t  debug;
+-    char*    backend_str;
++    char    *backend_str;
+     uint32_t backend;
+-    char*    cert1;
+-    char*    cert2;
+-    char*    cert3;
+-    char*    db;
++    char    *cert1;
++    char    *cert2;
++    char    *cert3;
++    char    *db;
+     uint8_t  atr[MAX_ATR_SIZE];
+     uint8_t  atr_length;
+     QSIMPLEQ_HEAD(event_list, EmulEvent) event_list;
+-    pthread_mutex_t event_list_mutex;
++    QemuMutex event_list_mutex;
+     VReader *reader;
+     QSIMPLEQ_HEAD(guest_apdu_list, EmulEvent) guest_apdu_list;
+-    pthread_mutex_t vreader_mutex; /* and guest_apdu_list mutex */
+-    pthread_mutex_t handle_apdu_mutex;
+-    pthread_cond_t handle_apdu_cond;
++    QemuMutex vreader_mutex; /* and guest_apdu_list mutex */
++    QemuMutex handle_apdu_mutex;
++    QemuCond handle_apdu_cond;
+     int      pipe[2];
+     int      quit_apdu_thread;
+-    pthread_mutex_t apdu_thread_quit_mutex;
+-    pthread_cond_t apdu_thread_quit_cond;
++    QemuMutex apdu_thread_quit_mutex;
++    QemuCond apdu_thread_quit_cond;
+ };
+ 
+-static void emulated_apdu_from_guest(CCIDCardState *base, const uint8_t *apdu, uint32_t len)
++static void emulated_apdu_from_guest(CCIDCardState *base,
++    const uint8_t *apdu, uint32_t len)
+ {
+     EmulatedState *card = DO_UPCAST(EmulatedState, base, base);
+-    EmulEvent *event = (EmulEvent*)malloc(sizeof(EmulEvent) + len);
++    EmulEvent *event = (EmulEvent *)qemu_malloc(sizeof(EmulEvent) + len);
+ 
+     assert(event);
+     event->p.data.type = EMUL_GUEST_APDU;
+     event->p.data.len = len;
+     memcpy(event->p.data.data, apdu, len);
+-    pthread_mutex_lock(&card->vreader_mutex);
++    qemu_mutex_lock(&card->vreader_mutex);
+     QSIMPLEQ_INSERT_TAIL(&card->guest_apdu_list, event, entry);
+-    pthread_mutex_unlock(&card->vreader_mutex);
+-    pthread_mutex_lock(&card->handle_apdu_mutex);
+-    pthread_cond_signal(&card->handle_apdu_cond);
+-    pthread_mutex_unlock(&card->handle_apdu_mutex);
++    qemu_mutex_unlock(&card->vreader_mutex);
++    qemu_mutex_lock(&card->handle_apdu_mutex);
++    qemu_cond_signal(&card->handle_apdu_cond);
++    qemu_mutex_unlock(&card->handle_apdu_mutex);
+ }
+ 
+-static const uint8_t* emulated_get_atr(CCIDCardState *base, uint32_t *len)
++static const uint8_t *emulated_get_atr(CCIDCardState *base, uint32_t *len)
+ {
+     EmulatedState *card = DO_UPCAST(EmulatedState, base, base);
+ 
+@@ -143,9 +160,9 @@ static const uint8_t* emulated_get_atr(CCIDCardState *base, uint32_t *len)
+ 
+ static void emulated_push_event(EmulatedState *card, EmulEvent *event)
+ {
+-    pthread_mutex_lock(&card->event_list_mutex);
++    qemu_mutex_lock(&card->event_list_mutex);
+     QSIMPLEQ_INSERT_TAIL(&(card->event_list), event, entry);
+-    pthread_mutex_unlock(&card->event_list_mutex);
++    qemu_mutex_unlock(&card->event_list_mutex);
+     if (write(card->pipe[1], card, 1) != 1) {
+         DPRINTF(card, 1, "write to pipe failed\n");
+     }
+@@ -153,7 +170,7 @@ static void emulated_push_event(EmulatedState *card, EmulEvent *event)
+ 
+ static void emulated_push_type(EmulatedState *card, uint32_t type)
+ {
+-    EmulEvent *event = (EmulEvent*)malloc(sizeof(EmulEvent));
++    EmulEvent *event = (EmulEvent *)qemu_malloc(sizeof(EmulEvent));
+ 
+     assert(event);
+     event->p.gen.type = type;
+@@ -162,7 +179,7 @@ static void emulated_push_type(EmulatedState *card, uint32_t type)
+ 
+ static void emulated_push_error(EmulatedState *card, uint64_t code)
+ {
+-    EmulEvent *event = (EmulEvent*)malloc(sizeof(EmulEvent));
++    EmulEvent *event = (EmulEvent *)qemu_malloc(sizeof(EmulEvent));
+ 
+     assert(event);
+     event->p.error.type = EMUL_ERROR;
+@@ -173,7 +190,7 @@ static void emulated_push_error(EmulatedState *card, uint64_t code)
+ static void emulated_push_data_type(EmulatedState *card, uint32_t type,
+     const uint8_t *data, uint32_t len)
+ {
+-    EmulEvent *event = (EmulEvent*)malloc(sizeof(EmulEvent) + len);
++    EmulEvent *event = (EmulEvent *)qemu_malloc(sizeof(EmulEvent) + len);
+ 
+     assert(event);
+     event->p.data.type = type;
+@@ -204,7 +221,7 @@ static void emulated_push_card_remove(EmulatedState *card)
+ }
+ 
+ static void emulated_push_response_apdu(EmulatedState *card,
+-    const uint8_t* apdu, uint32_t len)
++    const uint8_t *apdu, uint32_t len)
+ {
+     emulated_push_data_type(card, EMUL_RESPONSE_APDU, apdu, len);
+ }
+@@ -219,26 +236,26 @@ static void *handle_apdu_thread(void* arg)
+     EmulEvent *event;
+ 
+     while (1) {
+-        pthread_mutex_lock(&card->handle_apdu_mutex);
+-        pthread_cond_wait(&card->handle_apdu_cond, &card->handle_apdu_mutex);
+-        pthread_mutex_unlock(&card->handle_apdu_mutex);
++        qemu_mutex_lock(&card->handle_apdu_mutex);
++        qemu_cond_wait(&card->handle_apdu_cond, &card->handle_apdu_mutex);
++        qemu_mutex_unlock(&card->handle_apdu_mutex);
+         if (card->quit_apdu_thread) {
+-            card->quit_apdu_thread = 0; // debugging
++            card->quit_apdu_thread = 0; /* debugging */
+             break;
+         }
+-        pthread_mutex_lock(&card->vreader_mutex);
++        qemu_mutex_lock(&card->vreader_mutex);
+         while (!QSIMPLEQ_EMPTY(&card->guest_apdu_list)) {
+             event = QSIMPLEQ_FIRST(&card->guest_apdu_list);
+             assert((unsigned long)event > 1000);
+             QSIMPLEQ_REMOVE_HEAD(&card->guest_apdu_list, entry);
+             if (event->p.data.type != EMUL_GUEST_APDU) {
+                 DPRINTF(card, 1, "unexpected message in handle_apdu_thread\n");
+-                free(event);
++                qemu_free(event);
+                 continue;
+             }
+             if (card->reader == NULL) {
+                 DPRINTF(card, 1, "reader is NULL\n");
+-                free(event);
++                qemu_free(event);
+                 continue;
+             }
+             recv_len = sizeof(recv_data);
+@@ -251,13 +268,13 @@ static void *handle_apdu_thread(void* arg)
+             } else {
+                 emulated_push_error(card, reader_status);
+             }
+-            free(event);
++            qemu_free(event);
+         }
+-        pthread_mutex_unlock(&card->vreader_mutex);
++        qemu_mutex_unlock(&card->vreader_mutex);
+     }
+-    pthread_mutex_lock(&card->apdu_thread_quit_mutex);
+-    pthread_cond_signal(&card->apdu_thread_quit_cond);
+-    pthread_mutex_unlock(&card->apdu_thread_quit_mutex);
++    qemu_mutex_lock(&card->apdu_thread_quit_mutex);
++    qemu_cond_signal(&card->apdu_thread_quit_cond);
++    qemu_mutex_unlock(&card->apdu_thread_quit_mutex);
+     return NULL;
+ }
+ 
+@@ -277,14 +294,15 @@ static void *event_thread(void *arg)
+         }
+         if (event->type != VEVENT_READER_INSERT) {
+             if (card->reader == NULL && event->reader != NULL) {
+-                // Happens after device_add followed by card remove or insert.
+-                // XXX: create synthetic add_reader events if vcard_emul_init
+-                // already called, which happens if device_del and device_add are
+-                // called
++                /* Happens after device_add followed by card remove or insert.
++                 * XXX: create synthetic add_reader events if vcard_emul_init
++                 * already called, which happens if device_del and device_add
++                 * are called */
+                 card->reader = vreader_reference(event->reader);
+             } else {
+                 if (event->reader != card->reader) {
+-                    fprintf(stderr, "ERROR: wrong reader: quiting event_thread\n");
++                    fprintf(stderr,
++                        "ERROR: wrong reader: quiting event_thread\n");
+                     break;
+                 }
+             }
+@@ -299,24 +317,24 @@ static void *event_thread(void *arg)
+             if (card->reader != NULL) {
+                 DPRINTF(card, 2, "READER INSERT - replacing %s with %s\n",
+                     vreader_get_name(card->reader), reader_name);
+-                pthread_mutex_lock(&card->vreader_mutex);
++                qemu_mutex_lock(&card->vreader_mutex);
+                 vreader_free(card->reader);
+-                pthread_mutex_unlock(&card->vreader_mutex);
++                qemu_mutex_unlock(&card->vreader_mutex);
+                 emulated_push_reader_remove(card);
+             }
+-            pthread_mutex_lock(&card->vreader_mutex);
++            qemu_mutex_lock(&card->vreader_mutex);
+             DPRINTF(card, 2, "READER INSERT %s\n", reader_name);
+             card->reader = vreader_reference(event->reader);
+-            pthread_mutex_unlock(&card->vreader_mutex);
++            qemu_mutex_unlock(&card->vreader_mutex);
+             emulated_push_reader_insert(card);
+             break;
+         case VEVENT_READER_REMOVE:
+-            DPRINTF(card, 2, " READER REMOVE: %s \n",
++            DPRINTF(card, 2, " READER REMOVE: %s\n",
+                     vreader_get_name(event->reader));
+-            pthread_mutex_lock(&card->vreader_mutex);
++            qemu_mutex_lock(&card->vreader_mutex);
+             vreader_free(card->reader);
+             card->reader = NULL;
+-            pthread_mutex_unlock(&card->vreader_mutex);
++            qemu_mutex_unlock(&card->vreader_mutex);
+             emulated_push_reader_remove(card);
+             break;
+         case VEVENT_CARD_INSERT:
+@@ -354,66 +372,69 @@ static void pipe_read(void *opaque)
+     do {
+         len = read(card->pipe[0], &dummy, sizeof(dummy));
+     } while (len == sizeof(dummy));
+-    pthread_mutex_lock(&card->event_list_mutex);
++    qemu_mutex_lock(&card->event_list_mutex);
+     QSIMPLEQ_FOREACH_SAFE(event, &card->event_list, entry, next) {
+         DPRINTF(card, 2, "event %s\n", emul_event_to_string(event->p.gen.type));
+         switch (event->p.gen.type) {
+-            case EMUL_RESPONSE_APDU:
+-                ccid_card_send_apdu_to_guest(&card->base, event->p.data.data,
+-                    event->p.data.len);
+-                break;
+-            case EMUL_READER_INSERT:
+-                ccid_card_ccid_attach(&card->base);
+-                break;
+-            case EMUL_READER_REMOVE:
+-                ccid_card_ccid_detach(&card->base);
+-                break;
+-            case EMUL_CARD_INSERT:
+-                assert(event->p.data.len <= MAX_ATR_SIZE);
+-                card->atr_length = event->p.data.len;
+-                memcpy(card->atr, event->p.data.data, card->atr_length);
+-                ccid_card_card_inserted(&card->base);
+-                break;
+-            case EMUL_CARD_REMOVE:
+-                ccid_card_card_removed(&card->base);
+-                break;
+-            case EMUL_ERROR:
+-                ccid_card_card_error(&card->base, event->p.error.code);
+-                break;
+-            default:
+-                DPRINTF(card, 2, "unexpected event\n");
+-                break;
++        case EMUL_RESPONSE_APDU:
++            ccid_card_send_apdu_to_guest(&card->base, event->p.data.data,
++                event->p.data.len);
++            break;
++        case EMUL_READER_INSERT:
++            ccid_card_ccid_attach(&card->base);
++            break;
++        case EMUL_READER_REMOVE:
++            ccid_card_ccid_detach(&card->base);
++            break;
++        case EMUL_CARD_INSERT:
++            assert(event->p.data.len <= MAX_ATR_SIZE);
++            card->atr_length = event->p.data.len;
++            memcpy(card->atr, event->p.data.data, card->atr_length);
++            ccid_card_card_inserted(&card->base);
++            break;
++        case EMUL_CARD_REMOVE:
++            ccid_card_card_removed(&card->base);
++            break;
++        case EMUL_ERROR:
++            ccid_card_card_error(&card->base, event->p.error.code);
++            break;
++        default:
++            DPRINTF(card, 2, "unexpected event\n");
++            break;
+         }
+-        free(event);
++        qemu_free(event);
+     }
+     QSIMPLEQ_INIT(&card->event_list);
+-    pthread_mutex_unlock(&card->event_list_mutex);
++    qemu_mutex_unlock(&card->event_list_mutex);
+ }
+ 
+ static int init_pipe_signaling(EmulatedState *card)
+ {
+-   if (pipe(card->pipe) < 0) {
+-       DPRINTF(card, 2, "pipe creation failed\n");
+-       return -1;
+-   }
+-   fcntl(card->pipe[0], F_SETFL, O_NONBLOCK);
+-   fcntl(card->pipe[1], F_SETFL, O_NONBLOCK);
+-   fcntl(card->pipe[0], F_SETOWN, getpid());
+-   qemu_set_fd_handler(card->pipe[0], pipe_read, NULL, card);
+-   return 0;
++    if (pipe(card->pipe) < 0) {
++        DPRINTF(card, 2, "pipe creation failed\n");
++        return -1;
++    }
++    fcntl(card->pipe[0], F_SETFL, O_NONBLOCK);
++    fcntl(card->pipe[1], F_SETFL, O_NONBLOCK);
++    fcntl(card->pipe[0], F_SETOWN, getpid());
++    qemu_set_fd_handler(card->pipe[0], pipe_read, NULL, card);
++    return 0;
+ }
+ 
+ #define CERTIFICATES_DEFAULT_DB "/etc/pki/nssdb"
+-#define CERTIFICATES_ARGS_TEMPLATE "db=\"%s\" use_hw=no soft=(,Virtual Reader,CAC,,%s,%s,%s)"
++#define CERTIFICATES_ARGS_TEMPLATE\
++    "db=\"%s\" use_hw=no soft=(,Virtual Reader,CAC,,%s,%s,%s)"
+ 
+ static int wrap_vcard_emul_init(VCardEmulOptions *options)
+ {
+-    static int called = 0;
+-    static int options_was_null = 0;
++    static int called;
++    static int options_was_null;
+ 
+     if (called) {
+         if ((options == NULL) != options_was_null) {
+-            printf("%s: warning: running emulated with certificates and emulated side by side is not supported\n", __FUNCTION__);
++            printf("%s: warning: running emulated with certificates"
++                   " and emulated side by side is not supported\n",
++                   __func__);
+             return VCARD_EMUL_FAIL;
+         }
+         vcard_emul_replay_insertion_events();
+@@ -434,24 +455,25 @@ static int emulated_initialize_vcard_from_certificates(EmulatedState *card)
+         card->cert1, card->cert2, card->cert3);
+     options = vcard_emul_options(emul_args);
+     if (options == NULL) {
+-        printf("%s: warning: not using certificates due to initialization error\n", __func__);
++        printf("%s: warning: not using certificates due to"
++               " initialization error\n", __func__);
+     }
+     return wrap_vcard_emul_init(options);
+ }
+ 
+-typedef struct EmulEnumTable {
++typedef struct EnumTable {
+     const char *name;
+     uint32_t value;
+-} EmulEnumTable;
++} EnumTable;
+ 
+-EmulEnumTable backend_enum_table[] = {
++EnumTable backend_enum_table[] = {
+     {BACKEND_NSS_EMULATED_NAME, BACKEND_NSS_EMULATED},
+     {BACKEND_CERTIFICATES_NAME, BACKEND_CERTIFICATES},
+     {NULL, 0},
+ };
+ 
+-static uint32_t parse_enumeration(char *str, EmulEnumTable* table,
+-                                  uint32_t not_found_value)
++static uint32_t parse_enumeration(char *str,
++    EnumTable *table, uint32_t not_found_value)
+ {
+     uint32_t ret = not_found_value;
+ 
+@@ -468,17 +490,16 @@ static uint32_t parse_enumeration(char *str, EmulEnumTable* table,
+ static int emulated_initfn(CCIDCardState *base)
+ {
+     EmulatedState *card = DO_UPCAST(EmulatedState, base, base);
+-    int rv;
+-    pthread_t thread_id;
++    QemuThread thread_id;
+     VCardEmulError ret;
+-    EmulEnumTable *ptable;
++    EnumTable *ptable;
+ 
+     QSIMPLEQ_INIT(&card->event_list);
+     QSIMPLEQ_INIT(&card->guest_apdu_list);
+-    pthread_mutex_init(&card->event_list_mutex, NULL);
+-    pthread_mutex_init(&card->vreader_mutex, NULL);
+-    pthread_mutex_init(&card->handle_apdu_mutex, NULL);
+-    pthread_cond_init(&card->handle_apdu_cond, NULL);
++    qemu_mutex_init(&card->event_list_mutex);
++    qemu_mutex_init(&card->vreader_mutex);
++    qemu_mutex_init(&card->handle_apdu_mutex);
++    qemu_cond_init(&card->handle_apdu_cond);
+     card->reader = NULL;
+     card->quit_apdu_thread = 0;
+     if (init_pipe_signaling(card) < 0) {
+@@ -493,19 +514,20 @@ static int emulated_initfn(CCIDCardState *base)
+         return -1;
+     }
+ 
+-    /* TODO: a passthru backened that works on local machine. third card type? */
++    /* TODO: a passthru backened that works on local machine. third card type?*/
+     if (card->backend == BACKEND_CERTIFICATES) {
+         if (card->cert1 != NULL && card->cert2 != NULL && card->cert3 != NULL) {
+             ret = emulated_initialize_vcard_from_certificates(card);
+         } else {
+-            printf("%s: you must provide all three certs for certificates backend\n",
+-                EMULATED_DEV_NAME);
++            printf("%s: you must provide all three certs for"
++                   " certificates backend\n", EMULATED_DEV_NAME);
+             return -1;
+         }
+     } else {
+         if (card->backend != BACKEND_NSS_EMULATED) {
+-            printf("%s: bad backend specified. The options are:\n%s (default), %s.\n",
+-                EMULATED_DEV_NAME, BACKEND_NSS_EMULATED_NAME, BACKEND_CERTIFICATES_NAME);
++            printf("%s: bad backend specified. The options are:\n%s (default),"
++                " %s.\n", EMULATED_DEV_NAME, BACKEND_NSS_EMULATED_NAME,
++                BACKEND_CERTIFICATES_NAME);
+             return -1;
+         }
+         if (card->cert1 != NULL || card->cert2 != NULL || card->cert3 != NULL) {
+@@ -520,16 +542,8 @@ static int emulated_initfn(CCIDCardState *base)
+         printf("%s: failed to initialize vcard\n", EMULATED_DEV_NAME);
+         return -1;
+     }
+-    rv = pthread_create(&thread_id, NULL, event_thread, card);
+-    if (rv < 0) {
+-        printf("%s: error creating event thread\n", EMULATED_DEV_NAME);
+-        return -1;
+-    }
+-    rv = pthread_create(&thread_id, NULL, handle_apdu_thread, card);
+-    if (rv < 0) {
+-        printf("%s: error creating handle_apdu thread\n", EMULATED_DEV_NAME);
+-        return -1;
+-    }
++    qemu_thread_create(&thread_id, event_thread, card);
++    qemu_thread_create(&thread_id, handle_apdu_thread, card);
+     return 0;
+ }
+ 
+@@ -539,17 +553,18 @@ static int emulated_exitfn(CCIDCardState *base)
+     VEvent *vevent = vevent_new(VEVENT_LAST, NULL, NULL);
+ 
+     vevent_queue_vevent(vevent); /* stop vevent thread */
+-    pthread_mutex_lock(&card->apdu_thread_quit_mutex);
++    qemu_mutex_lock(&card->apdu_thread_quit_mutex);
+     card->quit_apdu_thread = 1; /* stop handle_apdu thread */
+-    pthread_cond_signal(&card->handle_apdu_cond);
+-    pthread_cond_wait(&card->apdu_thread_quit_cond, &card->apdu_thread_quit_mutex);
++    qemu_cond_signal(&card->handle_apdu_cond);
++    qemu_cond_wait(&card->apdu_thread_quit_cond,
++                      &card->apdu_thread_quit_mutex);
+     /* handle_apdu thread stopped, can destroy all of it's mutexes */
+-    pthread_cond_destroy(&card->handle_apdu_cond);
+-    pthread_cond_destroy(&card->apdu_thread_quit_cond);
+-    pthread_mutex_destroy(&card->apdu_thread_quit_mutex);
+-    pthread_mutex_destroy(&card->handle_apdu_mutex);
+-    pthread_mutex_destroy(&card->vreader_mutex);
+-    pthread_mutex_destroy(&card->event_list_mutex);
++    qemu_cond_destroy(&card->handle_apdu_cond);
++    qemu_cond_destroy(&card->apdu_thread_quit_cond);
++    qemu_mutex_destroy(&card->apdu_thread_quit_mutex);
++    qemu_mutex_destroy(&card->handle_apdu_mutex);
++    qemu_mutex_destroy(&card->vreader_mutex);
++    qemu_mutex_destroy(&card->event_list_mutex);
+     return 0;
+ }
+ 
+-- 
+1.7.3.2
+
