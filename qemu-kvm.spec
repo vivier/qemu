@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.155
+%define pkgrelease 2.156
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2491,6 +2491,10 @@ Patch2109: kvm-adding-qemu-thread.o-to-obj-y.patch
 Patch2110: kvm-ccid-card-emulated-v18-v25.patch
 # For bz#641833 - Spice CAC support - qemu
 Patch2111: kvm-libcacard-v18-upstream-v25.patch
+# For bz#680356 - Live migration failed in ipv6 environment
+Patch2112: kvm-Revert-net-socket-allow-ipv6-for-net_socket_listen_i.patch
+# For bz#680356 - Live migration failed in ipv6 environment
+Patch2113: kvm-Revert-Use-getaddrinfo-for-migration.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3709,6 +3713,8 @@ ApplyOptionalPatch()
 %patch2109 -p1
 %patch2110 -p1
 %patch2111 -p1
+%patch2112 -p1
+%patch2113 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3930,6 +3936,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Apr 06 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.156.el6
+- kvm-Revert-net-socket-allow-ipv6-for-net_socket_listen_i.patch [bz#680356]
+- kvm-Revert-Use-getaddrinfo-for-migration.patch [bz#680356]
+- Related: bz#680356
+  (Live migration failed in ipv6 environment)
+- Fixes bz#694196
+  (RHEL 6.1 qemu-kvm: Specifying ipv6 addresses breaks migration)
+
 * Wed Apr 06 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.155.el6
 - kvm-configure-fix-out-of-tree-build-with-enable-spice.patch [bz#641833]
 - kvm-ccid-card-emulated-replace-DEFINE_PROP_ENUM-with-DEF.patch [bz#641833]

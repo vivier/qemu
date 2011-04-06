@@ -1,0 +1,101 @@
+From 857ffec33ad1205c2de818e3f8acf5342eb2c116 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Wed, 6 Apr 2011 16:03:55 -0300
+Subject: [RHEL6 qemu-kvm PATCH 1/2] Revert "net/socket: allow ipv6 for net_socket_listen_init and net_socket_connect_init"
+
+RH-Reverts: 40f022e7206b5faa5939c107c148e80590a79f44
+RH-Reverts-patchwork-id: 20562
+Bugzilla-related: 680356
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ net/socket.c |   60 +++++++++++++++++++++++++++++++++++++++++++++++----------
+ 1 files changed, 49 insertions(+), 11 deletions(-)
+
+diff --git a/net/socket.c b/net/socket.c
+index cabeca7..902529e 100644
+--- a/net/socket.c
++++ b/net/socket.c
+@@ -378,13 +378,28 @@ static int net_socket_listen_init(VLANState *vlan,
+                                   const char *host_str)
+ {
+     NetSocketListenState *s;
+-    int fd, ret;
++    int fd, val, ret;
++    struct sockaddr_in saddr;
++
++    if (parse_host_port(&saddr, host_str) < 0)
++        return -1;
+ 
+     s = qemu_mallocz(sizeof(NetSocketListenState));
+ 
+-    ret = tcp_server_start(host_str, &fd);
++    fd = qemu_socket(PF_INET, SOCK_STREAM, 0);
++    if (fd < 0) {
++        perror("socket");
++        return -1;
++    }
++    socket_set_nonblock(fd);
++
++    /* allow fast reuse */
++    val = 1;
++    setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (const char *)&val, sizeof(val));
++
++    ret = bind(fd, (struct sockaddr *)&saddr, sizeof(saddr));
+     if (ret < 0) {
+-        fprintf(stderr, "tcp_server_start: %s\n", strerror(ret));
++        perror("bind");
+         return -1;
+     }
+     ret = listen(fd, 0);
+@@ -406,17 +421,40 @@ static int net_socket_connect_init(VLANState *vlan,
+                                    const char *host_str)
+ {
+     NetSocketState *s;
+-    int fd, connected, ret;
++    int fd, connected, ret, err;
+     struct sockaddr_in saddr;
+ 
+-    ret = tcp_client_start(host_str, &fd);
+-    if (ret == -EINPROGRESS || ret == -EWOULDBLOCK) {
+-        connected = 0;
+-    } else if (ret < 0) {
+-        closesocket(fd);
++    if (parse_host_port(&saddr, host_str) < 0)
+         return -1;
+-    } else {
+-        connected = 1;
++
++    fd = qemu_socket(PF_INET, SOCK_STREAM, 0);
++    if (fd < 0) {
++        perror("socket");
++        return -1;
++    }
++    socket_set_nonblock(fd);
++
++    connected = 0;
++    for(;;) {
++        ret = connect(fd, (struct sockaddr *)&saddr, sizeof(saddr));
++        if (ret < 0) {
++            err = socket_error();
++            if (err == EINTR || err == EWOULDBLOCK) {
++            } else if (err == EINPROGRESS) {
++                break;
++#ifdef _WIN32
++            } else if (err == WSAEALREADY) {
++                break;
++#endif
++            } else {
++                perror("connect");
++                closesocket(fd);
++                return -1;
++            }
++        } else {
++            connected = 1;
++            break;
++        }
+     }
+     s = net_socket_fd_init(vlan, model, name, fd, connected);
+     if (!s)
+-- 
+1.7.3.2
+
