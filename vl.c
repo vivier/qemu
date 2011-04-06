@@ -2257,8 +2257,10 @@ int drives_reopen(void)
     QTAILQ_FOREACH(dinfo, &drives, next) {
         if (dinfo->opened && !bdrv_is_read_only(dinfo->bdrv)) {
             int res;
+            int media_changed = dinfo->bdrv->media_changed;
             bdrv_close(dinfo->bdrv);
             res = drive_open(dinfo);
+            dinfo->bdrv->media_changed = media_changed;
             if (res) {
 		    fprintf(stderr, "qemu: re-open of %s failed wth error %d\n",
 			    dinfo->file, res);

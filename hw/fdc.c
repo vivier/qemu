@@ -35,6 +35,7 @@
 #include "sysbus.h"
 #include "qdev-addr.h"
 #include "sysemu.h"
+#include "block_int.h"
 
 /********************************************************/
 /* debug Floppy devices */
@@ -96,6 +97,7 @@ typedef struct fdrive_t {
     uint8_t max_track;        /* Nb of tracks           */
     uint16_t bps;             /* Bytes per sector       */
     uint8_t ro;               /* Is read-only           */
+    uint8_t media_changed;    /* Is media changed       */
 } fdrive_t;
 
 static void fd_init (fdrive_t *drv)
@@ -632,6 +634,45 @@ static CPUWriteMemoryFunc * const fdctrl_mem_write_strict[3] = {
     NULL,
 };
 
+static void fdrive_media_changed_pre_save(void *opaque)
+{
+    fdrive_t *drive = opaque;
+
+    drive->media_changed = drive->bs->media_changed;
+}
+
+static int fdrive_media_changed_post_load(void *opaque, int version_id)
+{
+    fdrive_t *drive = opaque;
+
+    if (drive->bs != NULL) {
+        drive->bs->media_changed = drive->media_changed;
+    }
+
+    /* User ejected the floppy when drive->bs == NULL */
+    return 0;
+}
+
+static bool fdrive_media_changed_needed(void *opaque)
+{
+    fdrive_t *drive = opaque;
+
+    return (drive->bs != NULL && drive->bs->media_changed != 1);
+}
+
+static const VMStateDescription vmstate_fdrive_media_changed = {
+    .name = "fdrive/media_changed",
+    .version_id = 1,
+    .minimum_version_id = 1,
+    .minimum_version_id_old = 1,
+    .pre_save = fdrive_media_changed_pre_save,
+    .post_load = fdrive_media_changed_post_load,
+    .fields      = (VMStateField[]) {
+        VMSTATE_UINT8(media_changed, fdrive_t),
+        VMSTATE_END_OF_LIST()
+    }
+};
+
 static const VMStateDescription vmstate_fdrive = {
     .name = "fdrive",
     .version_id = 1,
@@ -642,6 +683,14 @@ static const VMStateDescription vmstate_fdrive = {
         VMSTATE_UINT8(track, fdrive_t),
         VMSTATE_UINT8(sect, fdrive_t),
         VMSTATE_END_OF_LIST()
+    },
+    .subsections = (VMStateSubsection[]) {
+        {
+            .vmsd = &vmstate_fdrive_media_changed,
+            .needed = &fdrive_media_changed_needed,
+        } , {
+            /* empty */
+        }
     }
 };
 
