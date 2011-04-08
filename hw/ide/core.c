@@ -1252,12 +1252,14 @@ static void ide_atapi_cmd(IDEState *s)
     }
 #endif
     /* If there's a UNIT_ATTENTION condition pending, only
-       REQUEST_SENSE and INQUIRY commands are allowed to complete. */
+       REQUEST_SENSE and INQUIRY  commands are allowed to complete. */
+    /* RHEL: We allow the TEST_UNIT_READY command to complete here as well. */
     if (s->sense_key == SENSE_UNIT_ATTENTION &&
-	s->io_buffer[0] != GPCMD_REQUEST_SENSE &&
-	s->io_buffer[0] != GPCMD_INQUIRY) {
-	ide_atapi_cmd_check_status(s);
-	return;
+        s->io_buffer[0] != GPCMD_REQUEST_SENSE &&
+        s->io_buffer[0] != GPCMD_INQUIRY &&
+        s->io_buffer[0] != GPCMD_TEST_UNIT_READY) {
+        ide_atapi_cmd_check_status(s);
+        return;
     }
     switch(s->io_buffer[0]) {
     case GPCMD_TEST_UNIT_READY:
