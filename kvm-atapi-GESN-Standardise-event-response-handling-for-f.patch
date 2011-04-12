@@ -1,0 +1,81 @@
+From 95eeba2808c03c1d969913fdcb13b7abb19ce534 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@pond.sub.org>
+Date: Tue, 12 Apr 2011 14:52:58 -0300
+Subject: [RHEL6 qemu-kvm PATCH 6/7] atapi: GESN: Standardise event response handling for future additions
+
+RH-Author: Markus Armbruster <armbru@pond.sub.org>
+Message-id: <1302619979-22401-6-git-send-email-armbru@pond.sub.org>
+Patchwork-id: 21974
+O-Subject: [PATCH RHEL6.1 qemu-kvm v2 5/6] atapi: GESN: Standardise event
+	response handling for future additions
+Bugzilla: 558256
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Amit Shah <amit.shah@redhat.com>
+
+Handle GET_EVENT_STATUS_NOTIFICATION's No Event Available response in a
+generic way so that future additions to the code to handle other
+response types is easier.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ hw/ide/core.c |   25 +++++++++++++++++++------
+ 1 files changed, 19 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/ide/core.c |   25 +++++++++++++++++++------
+ 1 files changed, 19 insertions(+), 6 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index a5b7589..db16410 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -1247,9 +1247,17 @@ static void handle_get_event_status_notification(IDEState *s,
+         uint8_t control;
+     } __attribute__((packed)) *gesn_cdb;
+ 
+-    unsigned int max_len;
++    struct {
++        uint16_t len;
++        uint8_t notification_class;
++        uint8_t supported_events;
++    } __attribute((packed)) *gesn_event_header;
++
++    unsigned int max_len, used_len;
+ 
+     gesn_cdb = (void *)packet;
++    gesn_event_header = (void *)buf;
++
+     max_len = be16_to_cpu(gesn_cdb->len);
+ 
+     /* It is fine by the MMC spec to not support async mode operations */
+@@ -1260,12 +1268,17 @@ static void handle_get_event_status_notification(IDEState *s,
+         return;
+     }
+ 
+-    /* polling */
++    /* polling mode operation */
++
+     /* We don't support any event class (yet). */
+-    cpu_to_ube16(buf, 0x00); /* No event descriptor returned */
+-    buf[2] = 0x80;           /* No Event Available (NEA) */
+-    buf[3] = 0x00;           /* Empty supported event classes */
+-    ide_atapi_cmd_reply(s, 4, max_len);
++    gesn_event_header->supported_events = 0;
++
++    gesn_event_header->notification_class = 0x80; /* No event available */
++    used_len = sizeof(*gesn_event_header);
++
++    gesn_event_header->len = cpu_to_be16(used_len
++                                         - sizeof(*gesn_event_header));
++    ide_atapi_cmd_reply(s, used_len, max_len);
+ }
+ 
+ static void ide_atapi_cmd(IDEState *s)
+-- 
+1.7.3.2
+

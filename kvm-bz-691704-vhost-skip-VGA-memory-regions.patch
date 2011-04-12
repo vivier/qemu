@@ -1,0 +1,59 @@
+From bd83a3df8308ed5f55f7e43a6b135b2333384bb9 Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Tue, 12 Apr 2011 13:14:45 -0300
+Subject: [RHEL6 qemu-kvm PATCH 1/7] bz 691704: vhost: skip VGA memory regions
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <20110412131445.GA12694@redhat.com>
+Patchwork-id: 21958
+O-Subject: [PATCH RHEL6.1] bz 691704: vhost: skip VGA memory regions
+Bugzilla: 691704
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+
+There's no good reason for vhost-net to DMA into the VGA region,
+and even if we did, vhost doesn't support write logging
+(except for migration), anyway.
+
+Avi suggested this simpler work around as lower-risk and
+more maintainable given 6.1 schedule.
+
+Upstream: N/A
+Bugzilla: 691704
+Brew build: 3251216
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ hw/vhost.c |   10 ++++++++++
+ 1 files changed, 10 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/vhost.c |   10 ++++++++++
+ 1 files changed, 10 insertions(+), 0 deletions(-)
+
+diff --git a/hw/vhost.c b/hw/vhost.c
+index 97a1299..6dffa2b 100644
+--- a/hw/vhost.c
++++ b/hw/vhost.c
+@@ -310,6 +310,16 @@ static void vhost_client_set_memory(CPUPhysMemoryClient *client,
+         (dev->mem->nregions + 1) * sizeof dev->mem->regions[0];
+     uint64_t log_size;
+     int r;
++
++    /* TODO: this is a hack.
++     * At least one vga card (cirrus) changes the gpa to hva 
++     * memory maps on data path, which slows us down.
++     * Since we should never need to DMA into VGA memory
++     * anyway, lets just skip these regions. */
++    if (ranges_overlap(start_addr, size, 0xa0000, 0x10000)) {
++        return;
++    }
++
+     dev->mem = qemu_realloc(dev->mem, s);
+ 
+     assert(size);
+-- 
+1.7.3.2
+

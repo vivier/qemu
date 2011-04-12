@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.157
+%define pkgrelease 2.158
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2505,6 +2505,20 @@ Patch2116: kvm-block-Do-not-cache-device-size-for-removable-media.patch
 Patch2117: kvm-cdrom-Allow-the-TEST_UNIT_READY-command-after-a-cdro.patch
 # For bz#683877 - RHEL6 guests fail to update cdrom block size on media change
 Patch2118: kvm-cdrom-Make-disc-change-event-visible-to-guests.patch
+# For bz#691704 - Failed to boot up windows guest with huge memory and cpu and vhost=on within 30 mins
+Patch2119: kvm-bz-691704-vhost-skip-VGA-memory-regions.patch
+# For bz#558256 - rhel6 disk not detected first time in install
+Patch2120: kvm-ide-atapi-add-support-for-GET-EVENT-STATUS-NOTIFICAT.patch
+# For bz#558256 - rhel6 disk not detected first time in install
+Patch2121: kvm-atapi-Allow-GET_EVENT_STATUS_NOTIFICATION-after-medi.patch
+# For bz#558256 - rhel6 disk not detected first time in install
+Patch2122: kvm-atapi-Move-GET_EVENT_STATUS_NOTIFICATION-command-han.patch
+# For bz#558256 - rhel6 disk not detected first time in install
+Patch2123: kvm-atapi-GESN-Use-structs-for-commonly-used-field-types.patch
+# For bz#558256 - rhel6 disk not detected first time in install
+Patch2124: kvm-atapi-GESN-Standardise-event-response-handling-for-f.patch
+# For bz#558256 - rhel6 disk not detected first time in install
+Patch2125: kvm-atapi-GESN-implement-media-subcommand.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3730,6 +3744,13 @@ ApplyOptionalPatch()
 %patch2116 -p1
 %patch2117 -p1
 %patch2118 -p1
+%patch2119 -p1
+%patch2120 -p1
+%patch2121 -p1
+%patch2122 -p1
+%patch2123 -p1
+%patch2124 -p1
+%patch2125 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3951,6 +3972,19 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Apr 12 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.158.el6
+- kvm-bz-691704-vhost-skip-VGA-memory-regions.patch [bz#691704]
+- kvm-ide-atapi-add-support-for-GET-EVENT-STATUS-NOTIFICAT.patch [bz#558256]
+- kvm-atapi-Allow-GET_EVENT_STATUS_NOTIFICATION-after-medi.patch [bz#558256]
+- kvm-atapi-Move-GET_EVENT_STATUS_NOTIFICATION-command-han.patch [bz#558256]
+- kvm-atapi-GESN-Use-structs-for-commonly-used-field-types.patch [bz#558256]
+- kvm-atapi-GESN-Standardise-event-response-handling-for-f.patch [bz#558256]
+- kvm-atapi-GESN-implement-media-subcommand.patch [bz#558256]
+- Resolves: bz#558256
+  (rhel6 disk not detected first time in install)
+- Resolves: bz#691704
+  (Failed to boot up windows guest with huge memory and cpu and vhost=on within 30 mins)
+
 * Tue Apr 12 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.157.el6
 - kvm-qemu-img-rebase-Fix-read-only-new-backing-file.patch [bz#693741]
 - kvm-floppy-save-and-restore-DIR-register.patch [bz#681777]

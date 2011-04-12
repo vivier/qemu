@@ -1,0 +1,64 @@
+From a1b7af07d1927e43fdb7bbebd6b366318220fa01 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@pond.sub.org>
+Date: Tue, 12 Apr 2011 14:52:57 -0300
+Subject: [RHEL6 qemu-kvm PATCH 5/7] atapi: GESN: Use structs for commonly-used field types
+
+RH-Author: Markus Armbruster <armbru@pond.sub.org>
+Message-id: <1302619979-22401-5-git-send-email-armbru@pond.sub.org>
+Patchwork-id: 21978
+O-Subject: [PATCH RHEL6.1 qemu-kvm v2 4/6] atapi: GESN: Use structs for
+	commonly-used field types
+Bugzilla: 558256
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Amit Shah <amit.shah@redhat.com>
+
+Instead of using magic numbers, use structs that are more descriptive of
+the fields being used.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ hw/ide/core.c |   16 ++++++++++++++--
+ 1 files changed, 14 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/ide/core.c |   16 ++++++++++++++--
+ 1 files changed, 14 insertions(+), 2 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 1d0952f..a5b7589 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -1237,11 +1237,23 @@ static void handle_get_event_status_notification(IDEState *s,
+                                                  uint8_t *buf,
+                                                  const uint8_t *packet)
+ {
++    struct {
++        uint8_t opcode;
++        uint8_t polled;        /* lsb bit is polled; others are reserved */
++        uint8_t reserved2[2];
++        uint8_t class;
++        uint8_t reserved3[2];
++        uint16_t len;
++        uint8_t control;
++    } __attribute__((packed)) *gesn_cdb;
++
+     unsigned int max_len;
+ 
+-    max_len = ube16_to_cpu(packet + 7);
++    gesn_cdb = (void *)packet;
++    max_len = be16_to_cpu(gesn_cdb->len);
+ 
+-    if (!(packet[1] & 0x01)) { /* asynchronous mode */
++    /* It is fine by the MMC spec to not support async mode operations */
++    if (!(gesn_cdb->polled & 0x01)) { /* asynchronous mode */
+         /* Only polling is supported, asynchronous mode is not. */
+         ide_atapi_cmd_error(s, SENSE_ILLEGAL_REQUEST,
+                             ASC_INV_FIELD_IN_CMD_PACKET);
+-- 
+1.7.3.2
+

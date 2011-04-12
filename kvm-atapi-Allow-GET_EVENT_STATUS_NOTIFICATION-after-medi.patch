@@ -1,0 +1,65 @@
+From 957d03eef7d23a8e4db7bc022e1c9d0d19200c94 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@pond.sub.org>
+Date: Tue, 12 Apr 2011 14:52:55 -0300
+Subject: [RHEL6 qemu-kvm PATCH 3/7] atapi: Allow GET_EVENT_STATUS_NOTIFICATION after media change
+
+RH-Author: Markus Armbruster <armbru@pond.sub.org>
+Message-id: <1302619979-22401-3-git-send-email-armbru@pond.sub.org>
+Patchwork-id: 21976
+O-Subject: [PATCH RHEL6.1 qemu-kvm v2 2/6] atapi: Allow
+	GET_EVENT_STATUS_NOTIFICATION after media change
+Bugzilla: 558256
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Amit Shah <amit.shah@redhat.com>
+
+After a media change, the only commands allowed from the guest were
+REQUEST_SENSE and INQUIRY.  The guest may also issue
+GET_EVENT_STATUS_NOTIFICATION commands to get media
+changed notification.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ hw/ide/core.c |   14 +++++++++++---
+ 1 files changed, 11 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/ide/core.c |   14 +++++++++++---
+ 1 files changed, 11 insertions(+), 3 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index b3cb7d9..5832be7 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -1251,13 +1251,21 @@ static void ide_atapi_cmd(IDEState *s)
+         printf("\n");
+     }
+ #endif
+-    /* If there's a UNIT_ATTENTION condition pending, only
+-       REQUEST_SENSE and INQUIRY  commands are allowed to complete. */
++    /*
++     * If there's a UNIT_ATTENTION condition pending, only
++     * REQUEST_SENSE, INQUIRY, GET_CONFIGURATION and
++     * GET_EVENT_STATUS_NOTIFICATION commands are allowed to complete.
++     * MMC-5, section 4.1.6.1 lists only these commands being allowed
++     * to complete, with other commands getting a CHECK condition
++     * response unless a higher priority status, defined by the drive
++     * here, is pending.
++     */
+     /* RHEL: We allow the TEST_UNIT_READY command to complete here as well. */
+     if (s->sense_key == SENSE_UNIT_ATTENTION &&
+         s->io_buffer[0] != GPCMD_REQUEST_SENSE &&
+         s->io_buffer[0] != GPCMD_INQUIRY &&
+-        s->io_buffer[0] != GPCMD_TEST_UNIT_READY) {
++        s->io_buffer[0] != GPCMD_TEST_UNIT_READY &&
++        s->io_buffer[0] != GPCMD_GET_EVENT_STATUS_NOTIFICATION) {
+         ide_atapi_cmd_check_status(s);
+         return;
+     }
+-- 
+1.7.3.2
+
