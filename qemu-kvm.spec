@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.156
+%define pkgrelease 2.157
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2495,6 +2495,16 @@ Patch2111: kvm-libcacard-v18-upstream-v25.patch
 Patch2112: kvm-Revert-net-socket-allow-ipv6-for-net_socket_listen_i.patch
 # For bz#680356 - Live migration failed in ipv6 environment
 Patch2113: kvm-Revert-Use-getaddrinfo-for-migration.patch
+# For bz#693741 - qemu-img re-base  fail with read-only new backing file
+Patch2114: kvm-qemu-img-rebase-Fix-read-only-new-backing-file.patch
+# For bz#681777 - floppy I/O error after live migration while floppy in use
+Patch2115: kvm-floppy-save-and-restore-DIR-register.patch
+# For bz#687900 - qemu host cdrom support not properly updating guests on media changes at physical CD/DVD drives
+Patch2116: kvm-block-Do-not-cache-device-size-for-removable-media.patch
+# For bz#683877 - RHEL6 guests fail to update cdrom block size on media change
+Patch2117: kvm-cdrom-Allow-the-TEST_UNIT_READY-command-after-a-cdro.patch
+# For bz#683877 - RHEL6 guests fail to update cdrom block size on media change
+Patch2118: kvm-cdrom-Make-disc-change-event-visible-to-guests.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3715,6 +3725,11 @@ ApplyOptionalPatch()
 %patch2111 -p1
 %patch2112 -p1
 %patch2113 -p1
+%patch2114 -p1
+%patch2115 -p1
+%patch2116 -p1
+%patch2117 -p1
+%patch2118 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3936,6 +3951,21 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Apr 12 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.157.el6
+- kvm-qemu-img-rebase-Fix-read-only-new-backing-file.patch [bz#693741]
+- kvm-floppy-save-and-restore-DIR-register.patch [bz#681777]
+- kvm-block-Do-not-cache-device-size-for-removable-media.patch [bz#687900]
+- kvm-cdrom-Allow-the-TEST_UNIT_READY-command-after-a-cdro.patch [bz#683877]
+- kvm-cdrom-Make-disc-change-event-visible-to-guests.patch [bz#683877]
+- Resolves: bz#681777
+  (floppy I/O error after live migration while floppy in use)
+- Resolves: bz#683877
+  (RHEL6 guests fail to update cdrom block size on media change)
+- Resolves: bz#687900
+  (qemu host cdrom support not properly updating guests on media changes at physical CD/DVD drives)
+- Resolves: bz#693741
+  (qemu-img re-base  fail with read-only new backing file)
+
 * Wed Apr 06 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.156.el6
 - kvm-Revert-net-socket-allow-ipv6-for-net_socket_listen_i.patch [bz#680356]
 - kvm-Revert-Use-getaddrinfo-for-migration.patch [bz#680356]

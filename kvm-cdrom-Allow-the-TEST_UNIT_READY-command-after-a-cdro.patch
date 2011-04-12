@@ -1,0 +1,60 @@
+From ebeb5399d04b168825389a4657f39762c7c9c98e Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 8 Apr 2011 07:57:01 -0300
+Subject: [RHEL6 qemu-kvm PATCH 4/5] cdrom: Allow the TEST_UNIT_READY command after a cdrom change
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1842ce6596c8d0ebbc8cbd4b3e4fbb7b3f8a2b5a.1302248815.git.amit.shah@redhat.com>
+Patchwork-id: 21670
+O-Subject: [RHEL 6.1 PATCH v2 1/2] cdrom: Allow the TEST_UNIT_READY command
+	after a cdrom change
+Bugzilla: 683877
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+We restrict the commands that a guest can send us after a cdrom change
+event.  The current list includes REQUEST_SENSE and INQUIRY commands.
+Guests can also issue TEST_UNIT_READY to inquire for the status, so
+allow this command as well.
+
+Upstream: Proper fix in progress
+Bugzilla: 683877
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/ide/core.c |   12 +++++++-----
+ 1 files changed, 7 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/ide/core.c |   12 +++++++-----
+ 1 files changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 96370d8..29de3bd 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -1252,12 +1252,14 @@ static void ide_atapi_cmd(IDEState *s)
+     }
+ #endif
+     /* If there's a UNIT_ATTENTION condition pending, only
+-       REQUEST_SENSE and INQUIRY commands are allowed to complete. */
++       REQUEST_SENSE and INQUIRY  commands are allowed to complete. */
++    /* RHEL: We allow the TEST_UNIT_READY command to complete here as well. */
+     if (s->sense_key == SENSE_UNIT_ATTENTION &&
+-	s->io_buffer[0] != GPCMD_REQUEST_SENSE &&
+-	s->io_buffer[0] != GPCMD_INQUIRY) {
+-	ide_atapi_cmd_check_status(s);
+-	return;
++        s->io_buffer[0] != GPCMD_REQUEST_SENSE &&
++        s->io_buffer[0] != GPCMD_INQUIRY &&
++        s->io_buffer[0] != GPCMD_TEST_UNIT_READY) {
++        ide_atapi_cmd_check_status(s);
++        return;
+     }
+     switch(s->io_buffer[0]) {
+     case GPCMD_TEST_UNIT_READY:
+-- 
+1.7.3.2
+

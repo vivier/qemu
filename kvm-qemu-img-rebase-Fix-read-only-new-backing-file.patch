@@ -1,0 +1,51 @@
+From 25c7255be95080808a50fed7dde0eb375772fbc3 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Wed, 6 Apr 2011 08:09:55 -0300
+Subject: [RHEL6 qemu-kvm PATCH 1/5] qemu-img rebase: Fix read-only new backing file
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1302077395-4452-1-git-send-email-kwolf@redhat.com>
+Patchwork-id: 21450
+O-Subject: [RHEL-6.1 qemu-kvm PATCH] qemu-img rebase: Fix read-only new backing
+	file
+Bugzilla: 693741
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 693741
+Upstream: n/a
+
+Commit 0d3cddbc is a bad backport and accidentally reverted 54e96f8e, which is
+required to be able to use read-only backing files. qemu-img rebase now tries
+to open the backing file read-write again, even though it doesn't write
+anything.
+
+This patch is the very same change as in 54e96f8e.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ qemu-img.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-img.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-img.c b/qemu-img.c
+index 3d31f40..4daeb23 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -1247,7 +1247,7 @@ static int img_rebase(int argc, char **argv)
+         }
+ 
+         bs_new_backing = bdrv_new("new_backing");
+-        ret = bdrv_open(bs_new_backing, out_baseimg, BDRV_O_FLAGS | BDRV_O_RDWR,
++        ret = bdrv_open(bs_new_backing, out_baseimg, BDRV_O_FLAGS,
+                         new_backing_drv);
+         if (ret) {
+             error("Could not open new backing file '%s'", out_baseimg);
+-- 
+1.7.3.2
+

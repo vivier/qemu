@@ -1,0 +1,143 @@
+From 2140952c3ca224cabf0760786427abe89df0bf79 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 8 Apr 2011 07:57:02 -0300
+Subject: [RHEL6 qemu-kvm PATCH 5/5] cdrom: Make disc change event visible to guests
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <7c33834b2a7de77602bb1de5345e4409f5b60fbb.1302248815.git.amit.shah@redhat.com>
+Patchwork-id: 21671
+O-Subject: [RHEL 6.1 PATCH v2 2/2] cdrom: Make disc change event visible to
+	guests
+Bugzilla: 683877
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+Commit 93c8cfd9e67a62711b86f4c93747566885eb7928 sent a 'no disc' event
+after a cdrom change so that guests notice a cd change event between two
+'cd present' states.  However, we don't follow the 2nd arrow in:
+
+ 'cd present' -> 'no cd' -> 'cd present'
+
+as the SENSE_UNIT_ATTENTION sense_key is written over by the
+ide_atapi_cmd_error() function.
+
+So for the disc change event, let us ensure the error() function doesn't
+trample over that value so we do get to report it the next time around.
+Also, ensure we go from 'no cd' to 'cd present' state.
+
+With this, older Linux guests (< 2.6.38) notice cd changes just fine.
+For newer Linux guests (2.6.38+) cd change events break again and that
+will be fixed by implementing the GET_EVENT_STATUS_NOTIFICATION command.
+
+Upstream: Will be incorporated after proper fix for patch 1
+Bugzilla: 683877
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/ide/core.c     |   48 +++++++++++++++++++++++++++++++++++++++++++-----
+ hw/ide/internal.h |    1 +
+ 2 files changed, 44 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/ide/core.c     |   48 +++++++++++++++++++++++++++++++++++++++++++-----
+ hw/ide/internal.h |    1 +
+ 2 files changed, 44 insertions(+), 5 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 29de3bd..40abff3 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -1263,10 +1263,47 @@ static void ide_atapi_cmd(IDEState *s)
+     }
+     switch(s->io_buffer[0]) {
+     case GPCMD_TEST_UNIT_READY:
+-        if (bdrv_is_inserted(s->bs) && !s->cdrom_changed) {
+-            ide_atapi_cmd_ok(s);
++        if (bdrv_is_inserted(s->bs)) {
++            int sense, asc;
++
++            sense = s->sense_key;
++            asc = s->asc;
++
++            /*
++             * Check if there's any pending media change notification
++             * to be given.
++             *
++             * We want the guest to notice an empty tray after a cd
++             * change, so that the guest can trigger its new media
++             * paths.  So send one MEDIUM_NOT_PRESENT message after a
++             * cd change.
++             *
++             * After we've sent that message, the guest will poke at
++             * us again.  Send the UNIT_ATTENTION message then.  Once
++             * this is done, reset the UNIT_ATTENTION message to
++             * ensure we don't keep repeating it.
++             */
++            switch(s->cdrom_changed) {
++            case 0:
++                ide_atapi_cmd_ok(s);
++                break;
++            case 1:
++                s->sense_key = SENSE_UNIT_ATTENTION;
++                s->asc = ASC_MEDIUM_MAY_HAVE_CHANGED;
++                ide_atapi_cmd_ok(s);
++
++                sense = SENSE_NONE;
++                s->cdrom_changed--;
++                break;
++            case 2:
++                ide_atapi_cmd_error(s, SENSE_NOT_READY,
++                                    ASC_MEDIUM_NOT_PRESENT);
++                s->cdrom_changed--;
++                break;
++            }
++            s->sense_key = sense;
++            s->asc = asc;
+         } else {
+-            s->cdrom_changed = 0;
+             ide_atapi_cmd_error(s, SENSE_NOT_READY,
+                                 ASC_MEDIUM_NOT_PRESENT);
+         }
+@@ -1747,7 +1784,7 @@ static void cdrom_change_cb(void *opaque, int reason)
+ 
+     s->sense_key = SENSE_UNIT_ATTENTION;
+     s->asc = ASC_MEDIUM_MAY_HAVE_CHANGED;
+-    s->cdrom_changed = 1;
++    s->cdrom_changed = 2;
+     ide_set_irq(s->bus);
+ }
+ 
+@@ -2599,6 +2636,7 @@ static void ide_reset(IDEState *s)
+     s->sense_key = 0;
+     s->asc = 0;
+     s->cdrom_changed = 0;
++    s->media_change_notified = 0;
+     s->packet_transfer_size = 0;
+     s->elementary_transfer_size = 0;
+     s->io_buffer_index = 0;
+@@ -2781,7 +2819,7 @@ static int ide_drive_post_load(void *opaque, int version_id)
+     if (version_id < 3) {
+         if (s->sense_key == SENSE_UNIT_ATTENTION &&
+             s->asc == ASC_MEDIUM_MAY_HAVE_CHANGED) {
+-            s->cdrom_changed = 1;
++            s->cdrom_changed = 2;
+         }
+     }
+     return 0;
+diff --git a/hw/ide/internal.h b/hw/ide/internal.h
+index edcca48..b74fe7c 100644
+--- a/hw/ide/internal.h
++++ b/hw/ide/internal.h
+@@ -403,6 +403,7 @@ struct IDEState {
+     uint8_t sense_key;
+     uint8_t asc;
+     uint8_t cdrom_changed;
++    uint8_t media_change_notified;
+     int packet_transfer_size;
+     int elementary_transfer_size;
+     int io_buffer_index;
+-- 
+1.7.3.2
+

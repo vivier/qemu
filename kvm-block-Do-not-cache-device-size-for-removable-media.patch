@@ -1,0 +1,70 @@
+From 860e75c762fc543704b2f96be668dd2bc74adb79 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 8 Apr 2011 10:49:54 -0300
+Subject: [RHEL6 qemu-kvm PATCH 3/5] block: Do not cache device size for removable media
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <8adddf3a679ee600a9aab32f24cad48d63784aa0.1302259791.git.amit.shah@redhat.com>
+Patchwork-id: 21676
+O-Subject: [RHEL 6.1 PATCH] block: Do not cache device size for removable media
+Bugzilla: 687900
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+The block layer caches the device size to avoid doing lseek(fd, 0,
+SEEK_END) every time this value is needed.  For removable media the
+device size becomes stale if a new medium is inserted.  This patch
+simply prevents device size caching for removable media.
+
+A smarter solution is to update the cached device size when a new medium
+is inserted.  Given that there are currently bugs with CD-ROM media
+change I do not want to implement that approach until we've gotten
+things correct first.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 46a4e4e6085c1e5ae498e350009ff6d321d9ee67)
+
+Bugzilla: 687900
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ block.c |   12 +++++-------
+ 1 files changed, 5 insertions(+), 7 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c |   12 +++++-------
+ 1 files changed, 5 insertions(+), 7 deletions(-)
+
+diff --git a/block.c b/block.c
+index ad999b4..2152e6d 100644
+--- a/block.c
++++ b/block.c
+@@ -1112,14 +1112,12 @@ int64_t bdrv_getlength(BlockDriverState *bs)
+     if (!drv)
+         return -ENOMEDIUM;
+ 
+-    /* Fixed size devices use the total_sectors value for speed instead of
+-       issuing a length query (like lseek) on each call.  Also, legacy block
+-       drivers don't provide a bdrv_getlength function and must use
+-       total_sectors. */
+-    if (!bs->growable || !drv->bdrv_getlength) {
+-        return bs->total_sectors * BDRV_SECTOR_SIZE;
+-    }
+-    return drv->bdrv_getlength(bs);
++    if (bs->growable || bs->removable) {
++        if (drv->bdrv_getlength) {
++            return drv->bdrv_getlength(bs);
++        }
++    }
++    return bs->total_sectors * BDRV_SECTOR_SIZE;
+ }
+ 
+ /* return 0 as number of sectors if no device present or error */
+-- 
+1.7.3.2
+
