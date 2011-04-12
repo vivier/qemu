@@ -310,6 +310,16 @@ static void vhost_client_set_memory(CPUPhysMemoryClient *client,
         (dev->mem->nregions + 1) * sizeof dev->mem->regions[0];
     uint64_t log_size;
     int r;
+
+    /* TODO: this is a hack.
+     * At least one vga card (cirrus) changes the gpa to hva 
+     * memory maps on data path, which slows us down.
+     * Since we should never need to DMA into VGA memory
+     * anyway, lets just skip these regions. */
+    if (ranges_overlap(start_addr, size, 0xa0000, 0x10000)) {
+        return;
+    }
+
     dev->mem = qemu_realloc(dev->mem, s);
 
     assert(size);
