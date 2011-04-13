@@ -625,6 +625,9 @@ static int piix4_pm_initfn(PCIDevice *dev)
 
     qemu_system_powerdown = *qemu_allocate_irqs(piix4_powerdown, s, 1);
 
+    /* RHEL - To maintain migration compatibility, don't pass a device */
+    vmstate_register(NULL, 0, &vmstate_acpi, s);
+
     s->smbus = i2c_init_bus(NULL, "i2c");
     qemu_register_reset(piix4_reset, s);
 
@@ -652,7 +655,6 @@ static PCIDeviceInfo piix4_pm_info = {
     .qdev.name          = "PIIX4_PM",
     .qdev.desc          = "PM",
     .qdev.size          = sizeof(PIIX4PMState),
-    .qdev.vmsd          = &vmstate_acpi,
     .qdev.no_user       = 1,
     .no_hotplug         = 1,
     .init               = piix4_pm_initfn,
