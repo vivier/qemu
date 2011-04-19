@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.158
+%define pkgrelease 2.159
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2519,6 +2519,8 @@ Patch2123: kvm-atapi-GESN-Use-structs-for-commonly-used-field-types.patch
 Patch2124: kvm-atapi-GESN-Standardise-event-response-handling-for-f.patch
 # For bz#558256 - rhel6 disk not detected first time in install
 Patch2125: kvm-atapi-GESN-implement-media-subcommand.patch
+# For bz#694095 - Migration fails when migrate guest from RHEL6.1 host to RHEL6 host with the same libvirt version
+Patch2126: kvm-acpi_piix4-Maintain-RHEL6.0-migration.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3751,6 +3753,7 @@ ApplyOptionalPatch()
 %patch2123 -p1
 %patch2124 -p1
 %patch2125 -p1
+%patch2126 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3972,6 +3975,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Apr 19 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.159.el6
+- kvm-acpi_piix4-Maintain-RHEL6.0-migration.patch [bz#694095]
+- Resolves: bz#694095
+  (Migration fails when migrate guest from RHEL6.1 host to RHEL6 host with the same libvirt version)
+
 * Tue Apr 12 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.158.el6
 - kvm-bz-691704-vhost-skip-VGA-memory-regions.patch [bz#691704]
 - kvm-ide-atapi-add-support-for-GET-EVENT-STATUS-NOTIFICAT.patch [bz#558256]

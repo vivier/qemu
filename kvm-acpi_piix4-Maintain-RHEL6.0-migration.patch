@@ -1,0 +1,61 @@
+From 0b6269a9988c69f1bd5fce432c0468a06ac2c2e2 Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Wed, 13 Apr 2011 15:02:23 -0300
+Subject: [PATCH] acpi_piix4: Maintain RHEL6.0 migration
+
+RH-Author: Alex Williamson <alex.williamson@redhat.com>
+Message-id: <20110413150223.19102.11982.stgit@s20.home>
+Patchwork-id: 22113
+O-Subject: [RHEL6.1 qemu-kvm PATCH] acpi_piix4: Maintain RHEL6.0 migration
+Bugzilla: 694095
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=694095
+Brew build: https://brewweb.devel.redhat.com/taskinfo?taskID=3255154
+Upstream statis: N/A, RHEL specific
+
+A side effect of upstream e8ec0571 (8c19e007 in qemu-kvm-rhel6.git) is to
+associate the piix4_pm device with a PCI device, which gets represented
+in the save state entry with an ID string of '0000:00:01.3/piix4_pm'.
+This breaks 6.1->6.0 migration.  Hotplug isn't supported for this device
+and it's already unique, so we can safely use the old style vmstate
+registration to maintain the same ID string as previous RHEL6.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+---
+
+ hw/acpi.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ hw/acpi.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/hw/acpi.c b/hw/acpi.c
+index 87917e3..4898b56 100644
+--- a/hw/acpi.c
++++ b/hw/acpi.c
+@@ -625,6 +625,9 @@ static int piix4_pm_initfn(PCIDevice *dev)
+ 
+     qemu_system_powerdown = *qemu_allocate_irqs(piix4_powerdown, s, 1);
+ 
++    /* RHEL - To maintain migration compatibility, don't pass a device */
++    vmstate_register(NULL, 0, &vmstate_acpi, s);
++
+     s->smbus = i2c_init_bus(NULL, "i2c");
+     qemu_register_reset(piix4_reset, s);
+ 
+@@ -652,7 +655,6 @@ static PCIDeviceInfo piix4_pm_info = {
+     .qdev.name          = "PIIX4_PM",
+     .qdev.desc          = "PM",
+     .qdev.size          = sizeof(PIIX4PMState),
+-    .qdev.vmsd          = &vmstate_acpi,
+     .qdev.no_user       = 1,
+     .no_hotplug         = 1,
+     .init               = piix4_pm_initfn,
+-- 
+1.7.5.rc2.5.g60e19
+
