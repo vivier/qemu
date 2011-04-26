@@ -292,6 +292,10 @@ static void virtio_blk_handle_write(BlockRequest *blkreq, int *num_writes,
         *num_writes = 0;
         *old_bs = req->dev->bs;
     }
+    if (req->qiov.size % req->dev->conf->logical_block_size) {
+        virtio_blk_rw_complete(req, -EIO);
+        return;
+    }
 
     blkreq[*num_writes].sector = req->out->sector;
     blkreq[*num_writes].nb_sectors = req->qiov.size / 512;
@@ -308,6 +312,10 @@ static void virtio_blk_handle_read(VirtIOBlockReq *req)
     BlockDriverAIOCB *acb;
 
     if (req->out->sector & req->dev->sector_mask) {
+        virtio_blk_rw_complete(req, -EIO);
+        return;
+    }
+    if (req->qiov.size % req->dev->conf->logical_block_size) {
         virtio_blk_rw_complete(req, -EIO);
         return;
     }
