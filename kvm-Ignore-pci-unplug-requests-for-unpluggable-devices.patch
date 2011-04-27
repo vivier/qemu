@@ -1,0 +1,54 @@
+From 026b1096583d1042c92a756a8e76dcdde99346a7 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 27 Apr 2011 09:59:52 -0300
+Subject: [RHEL6 qemu-kvm PATCH 2/2] Ignore pci unplug requests for unpluggable devices.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1303898392-17877-1-git-send-email-kraxel@redhat.com>
+Patchwork-id: 22919
+O-Subject: [RHEL-6.1 kvm PATCH] Ignore pci unplug requests for unpluggable devices.
+Bugzilla: 699789
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Petr Matousek <pmatouse@redhat.com>
+
+bugzilla: EMBARGOED CVE-2011-1751
+
+This patch makes qemu ignore unplug requests from the guest for pci
+devices which are tagged as non-hotpluggable.  Trouble spot is the
+piix4 chipset with the ISA bridge.  Requests to unplug that one will
+make it go away together with all ISA bus devices, which are not
+prepared to be unplugged and thus don't cleanup, leaving active
+qemu timers behind in free'ed memory.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/acpi.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/acpi.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/hw/acpi.c b/hw/acpi.c
+index 4898b56..6488742 100644
+--- a/hw/acpi.c
++++ b/hw/acpi.c
+@@ -802,11 +802,13 @@ static void pciej_write(void *opaque, uint32_t addr, uint32_t val)
+     BusState *bus = opaque;
+     DeviceState *qdev, *next;
+     PCIDevice *dev;
++    PCIDeviceInfo *info;
+     int slot = ffs(val) - 1;
+ 
+     QLIST_FOREACH_SAFE(qdev, &bus->children, sibling, next) {
+         dev = DO_UPCAST(PCIDevice, qdev, qdev);
+-        if (PCI_SLOT(dev->devfn) == slot) {
++        info = container_of(qdev->info, PCIDeviceInfo, qdev);
++        if (PCI_SLOT(dev->devfn) == slot && !info->no_hotplug) {
+             qdev_free(qdev);
+         }
+     }
+-- 
+1.7.3.2
+

@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.159
+%define pkgrelease 2.160
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2521,6 +2521,10 @@ Patch2124: kvm-atapi-GESN-Standardise-event-response-handling-for-f.patch
 Patch2125: kvm-atapi-GESN-implement-media-subcommand.patch
 # For bz#694095 - Migration fails when migrate guest from RHEL6.1 host to RHEL6 host with the same libvirt version
 Patch2126: kvm-acpi_piix4-Maintain-RHEL6.0-migration.patch
+# For bz#698910 - CVE-2011-1750 virtio-blk: heap buffer overflow caused by unaligned requests [rhel-6.1]
+Patch2127: kvm-virtio-blk-fail-unaligned-requests.patch
+# For bz#699789 - EMBARGOED CVE-2011-1751 acpi_piix4: missing hotplug check during device removal [rhel-6.1]
+Patch2128: kvm-Ignore-pci-unplug-requests-for-unpluggable-devices.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3754,6 +3758,8 @@ ApplyOptionalPatch()
 %patch2124 -p1
 %patch2125 -p1
 %patch2126 -p1
+%patch2127 -p1
+%patch2128 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3975,6 +3981,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Apr 27 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.160.el6
+- kvm-virtio-blk-fail-unaligned-requests.patch [bz#698910]
+- kvm-Ignore-pci-unplug-requests-for-unpluggable-devices.patch [bz#699789]
+- Resolves: bz#698910
+  (CVE-2011-1750 virtio-blk: heap buffer overflow caused by unaligned requests [rhel-6.1])
+- Resolves: bz#699789
+  (CVE-2011-1751 acpi_piix4: missing hotplug check during device removal [rhel-6.1])
+
 * Tue Apr 19 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.159.el6
 - kvm-acpi_piix4-Maintain-RHEL6.0-migration.patch [bz#694095]
 - Resolves: bz#694095
