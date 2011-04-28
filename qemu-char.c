@@ -208,7 +208,7 @@ void qemu_chr_add_handlers(CharDriverState *s,
     if (!s) {
         return;
     }
-    if (!opaque) {
+    if (!opaque && !handlers) {
         /* chr driver being released. */
         ++s->avail_connections;
     }
