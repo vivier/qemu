@@ -409,7 +409,6 @@ struct IDEState {
     uint8_t sense_key;
     uint8_t asc;
     uint8_t cdrom_changed;
-    uint8_t media_change_notified;
     int packet_transfer_size;
     int elementary_transfer_size;
     int io_buffer_index;

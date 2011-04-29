@@ -1401,47 +1401,10 @@ static void ide_atapi_cmd(IDEState *s)
     }
     switch(s->io_buffer[0]) {
     case GPCMD_TEST_UNIT_READY:
-        if (bdrv_is_inserted(s->bs)) {
-            int sense, asc;
-
-            sense = s->sense_key;
-            asc = s->asc;
-
-            /*
-             * Check if there's any pending media change notification
-             * to be given.
-             *
-             * We want the guest to notice an empty tray after a cd
-             * change, so that the guest can trigger its new media
-             * paths.  So send one MEDIUM_NOT_PRESENT message after a
-             * cd change.
-             *
-             * After we've sent that message, the guest will poke at
-             * us again.  Send the UNIT_ATTENTION message then.  Once
-             * this is done, reset the UNIT_ATTENTION message to
-             * ensure we don't keep repeating it.
-             */
-            switch(s->cdrom_changed) {
-            case 0:
-                ide_atapi_cmd_ok(s);
-                break;
-            case 1:
-                s->sense_key = SENSE_UNIT_ATTENTION;
-                s->asc = ASC_MEDIUM_MAY_HAVE_CHANGED;
-                ide_atapi_cmd_ok(s);
-
-                sense = SENSE_NONE;
-                s->cdrom_changed--;
-                break;
-            case 2:
-                ide_atapi_cmd_error(s, SENSE_NOT_READY,
-                                    ASC_MEDIUM_NOT_PRESENT);
-                s->cdrom_changed--;
-                break;
-            }
-            s->sense_key = sense;
-            s->asc = asc;
+        if (bdrv_is_inserted(s->bs) && !s->cdrom_changed) {
+            ide_atapi_cmd_ok(s);
         } else {
+            s->cdrom_changed = 0;
             ide_atapi_cmd_error(s, SENSE_NOT_READY,
                                 ASC_MEDIUM_NOT_PRESENT);
         }
@@ -1925,7 +1888,7 @@ static void cdrom_change_cb(void *opaque, int reason)
 
     s->sense_key = SENSE_UNIT_ATTENTION;
     s->asc = ASC_MEDIUM_MAY_HAVE_CHANGED;
-    s->cdrom_changed = 2;
+    s->cdrom_changed = 1;
     s->events.new_media = true;
     ide_set_irq(s->bus);
 }
@@ -2778,7 +2741,6 @@ static void ide_reset(IDEState *s)
     s->sense_key = 0;
     s->asc = 0;
     s->cdrom_changed = 0;
-    s->media_change_notified = 0;
     s->packet_transfer_size = 0;
     s->elementary_transfer_size = 0;
     s->io_buffer_index = 0;
@@ -2961,7 +2923,7 @@ static int ide_drive_post_load(void *opaque, int version_id)
     if (version_id < 3) {
         if (s->sense_key == SENSE_UNIT_ATTENTION &&
             s->asc == ASC_MEDIUM_MAY_HAVE_CHANGED) {
-            s->cdrom_changed = 2;
+            s->cdrom_changed = 1;
         }
     }
     return 0;
