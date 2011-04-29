@@ -38,7 +38,7 @@ Index: qemu-kvm-0.12.1.2/vl.c
 -
          expected_time = ram_save_remaining() * TARGET_PAGE_SIZE / bwidth;
 -        return expected_time <= migrate_max_downtime();
-+	printf("round %d in stage2, bandwidth = %f, ram_save_remaining = %lu, expected_time = %d\n", round++, bwidth, (uint64_t)ram_save_remaining(), expected_time);
++	printf("round %d in stage2, bandwidth = %f, ram_save_remaining = %lu, expected_time = %lu\n", round++, bwidth, (uint64_t)ram_save_remaining(), expected_time);
 +        if( expected_time <= migrate_max_downtime())
 +	{
 +		printf("ending stage2\n");
