@@ -27,7 +27,7 @@ Summary: Userspace component of KVM
 %endif
 Name: qemu-kvm
 Version: %{rpmversion}
-Release: %{full_release}
+Release: %{full_release}.test
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
