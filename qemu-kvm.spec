@@ -5,7 +5,8 @@
 # that the kernel isn't the stock distribution qemu-kvm, for example,
 # by setting the define to ".local" or ".bz123456"
 #
-%define buildid %{nil}
+%define buildid .00451289
+#%define buildid %{nil}
 
 %if 0%{?rhev_test}
 %define enable_fake_machine 1
@@ -2525,6 +2526,7 @@ Patch2126: kvm-acpi_piix4-Maintain-RHEL6.0-migration.patch
 Patch2127: kvm-virtio-blk-fail-unaligned-requests.patch
 # For bz#699789 - EMBARGOED CVE-2011-1751 acpi_piix4: missing hotplug check during device removal [rhel-6.1]
 Patch2128: kvm-Ignore-pci-unplug-requests-for-unpluggable-devices.patch
+Patch2129: qemu-kvm-debug-migration-downtime.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3760,6 +3762,7 @@ ApplyOptionalPatch()
 %patch2126 -p1
 %patch2127 -p1
 %patch2128 -p1
+%patch2129 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
