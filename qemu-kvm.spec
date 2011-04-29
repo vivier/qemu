@@ -5,7 +5,7 @@
 # that the kernel isn't the stock distribution qemu-kvm, for example,
 # by setting the define to ".local" or ".bz123456"
 #
-%define buildid .00451289
+%define buildid ".00451289"
 #%define buildid %{nil}
 
 %if 0%{?rhev_test}
