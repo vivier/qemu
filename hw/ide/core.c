@@ -1390,11 +1390,9 @@ static void ide_atapi_cmd(IDEState *s)
      * response unless a higher priority status, defined by the drive
      * here, is pending.
      */
-    /* RHEL: We allow the TEST_UNIT_READY command to complete here as well. */
     if (s->sense_key == SENSE_UNIT_ATTENTION &&
         s->io_buffer[0] != GPCMD_REQUEST_SENSE &&
         s->io_buffer[0] != GPCMD_INQUIRY &&
-        s->io_buffer[0] != GPCMD_TEST_UNIT_READY &&
         s->io_buffer[0] != GPCMD_GET_EVENT_STATUS_NOTIFICATION) {
         ide_atapi_cmd_check_status(s);
         return;
