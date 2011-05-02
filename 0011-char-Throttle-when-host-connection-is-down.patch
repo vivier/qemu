@@ -1,7 +1,7 @@
->From 473be206466567646e3377b8eb64e25ffc2b3afe Mon Sep 17 00:00:00 2001
+From 6a758a4f301d3f8450983d6ef82f3b6dbe0644f4 Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 22:05:10 +0100
-Subject: [PATCH 11/17] char: Throttle when host connection is down#
+Subject: [PATCH 11/30] char: Throttle when host connection is down#
 
 When the host-side connection goes down, throttle the virtio-serial bus
 and later unthrottle when a connection gets established.  This helps
@@ -20,7 +20,7 @@ Signed-off-by: Amit Shah <amit.shah@redhat.com>
  1 files changed, 14 insertions(+), 0 deletions(-)
 
 diff --git a/qemu-char.c b/qemu-char.c
-index 7517f64..2ef972f 100644
+index 49e61ba..72c0ce8 100644
 --- a/qemu-char.c
 +++ b/qemu-char.c
 @@ -141,6 +141,9 @@ static void qemu_chr_generic_open_bh(void *opaque)
@@ -49,8 +49,8 @@ index 7517f64..2ef972f 100644
 +                return 0;
 +            }
          }
+         return ret;
      } else {
-         /* XXX: indicate an error ? */
 -- 
-1.7.3.2
+1.7.5
 

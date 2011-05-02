@@ -1,7 +1,8 @@
->From 8b73193a8584da4e93bccd93fe6f0b8f1a1612b3 Mon Sep 17 00:00:00 2001
+From 8f5b96bd3bdd4fe7aa80f2f27d51bece8f64f20f Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 22:00:27 +0100
-Subject: [PATCH 09/17] char: Update send_all() to handle nonblocking chardev write requests
+Subject: [PATCH 09/30] char: Update send_all() to handle nonblocking chardev
+ write requests
 
 The send_all function is modified to return to the caller in case the
 driver cannot handle any more data.  It returns -EAGAIN or
@@ -16,9 +17,9 @@ commits will add such capability.
 Signed-off-by: Amit Shah <amit.shah@redhat.com>
 ---
  net/socket.c  |    4 +-
- qemu-char.c   |   79 ++++++++++++++++++++++++++++++++++++++++++++++++++++----
+ qemu-char.c   |   80 ++++++++++++++++++++++++++++++++++++++++++++++++++++----
  qemu_socket.h |    2 +-
- 3 files changed, 76 insertions(+), 9 deletions(-)
+ 3 files changed, 77 insertions(+), 9 deletions(-)
 
 diff --git a/net/socket.c b/net/socket.c
 index 3182b37..5dedd78 100644
@@ -36,7 +37,7 @@ index 3182b37..5dedd78 100644
  
  static ssize_t net_socket_receive_dgram(VLANClientState *nc, const uint8_t *buf, size_t size)
 diff --git a/qemu-char.c b/qemu-char.c
-index ce76411..eed61d6 100644
+index ce76411..3f665c9 100644
 --- a/qemu-char.c
 +++ b/qemu-char.c
 @@ -500,7 +500,7 @@ static CharDriverState *qemu_chr_open_mux(CharDriverState *drv)
@@ -163,7 +164,7 @@ index ce76411..eed61d6 100644
  }
  
  static int pty_chr_read_poll(void *opaque)
-@@ -1944,8 +2005,14 @@ static void tcp_closed(void *opaque)
+@@ -1944,8 +2005,15 @@ static void tcp_closed(void *opaque)
  static int tcp_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
  {
      TCPCharDriver *s = chr->opaque;
@@ -176,6 +177,7 @@ index ce76411..eed61d6 100644
 +        if (ret == -1 && errno == EPIPE) {
 +            tcp_closed(chr);
 +        }
++        return ret;
      } else {
          /* XXX: indicate an error ? */
          return len;
@@ -193,5 +195,5 @@ index 897a8ae..97dd24a 100644
  /* New, ipv6-ready socket helper functions, see qemu-sockets.c */
  int inet_listen_opts(QemuOpts *opts, int port_offset);
 -- 
-1.7.3.2
+1.7.5
 
