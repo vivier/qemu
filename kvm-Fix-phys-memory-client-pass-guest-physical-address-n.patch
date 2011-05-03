@@ -1,0 +1,98 @@
+From 197c54b0c63088d3c883e892379db563456e83c3 Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Mon, 2 May 2011 21:59:50 -0300
+Subject: [PATCH] Fix phys memory client - pass guest physical address not
+ region offset
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <20110502215949.GA27599@redhat.com>
+Patchwork-id: 23364
+O-Subject: [PATCH RHEL 6.1.z/6.2] Fix phys memory client - pass guest physical address not region offset
+Bugzilla: 700859
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+When we're trying to get a newly registered phys memory client updated
+with the current page mappings, we end up passing the region offset
+(a ram_addr_t) as the start address rather than the actual guest
+physical memory address (target_phys_addr_t).  If your guest has less
+than 3.5G of memory, these are coincidentally the same thing.  If
+there's more, the region offset for the memory above 4G starts over
+at 0, so the set_memory client will overwrite it's lower memory entries.
+
+Instead, keep track of the guest phsyical address as we're walking the
+tables and pass that to the set_memory client.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+
+Upstream status: posted, code upstream is significantly different,
+		this implements the same idea
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=700859
+Brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=3293172
+
+Impact: adding device by hotplug then triggering VM stop
+followed by VM start causes, at best, broken networking,
+and at worst, guest memory corruption.
+
+This is partially mitigated by the fact that
+- When the device is added on the command line, phys_map
+  is NULL so we exit early and do not trigger this bug.
+  So only hotplug-added devices are affected.
+- As a result of another bug, vhost is actually inactive
+  after hotplug until VM is stopped and then restarted.
+  This can happen e.g. if migration fails and management
+  restarts the VM at source.
+  So while the memory tables are incorrect, it does not
+  corrupt memory and networking works until VM stop and start.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ exec.c |   10 ++++++----
+ 1 files changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/exec.c b/exec.c
+index 22ca4c4..57db142 100644
+--- a/exec.c
++++ b/exec.c
+@@ -1667,7 +1667,8 @@ static int cpu_notify_migration_log(int enable)
+ }
+ 
+ static void phys_page_for_each_in_l1_map(PhysPageDesc **phys_map,
+-                                         CPUPhysMemoryClient *client)
++                                         CPUPhysMemoryClient *client,
++                                         target_phys_addr_t o)
+ {
+     PhysPageDesc *pd;
+     int l1, l2;
+@@ -1681,7 +1682,8 @@ static void phys_page_for_each_in_l1_map(PhysPageDesc **phys_map,
+             if (pd[l2].phys_offset == IO_MEM_UNASSIGNED) {
+                 continue;
+             }
+-            client->set_memory(client, pd[l2].region_offset,
++            client->set_memory(client,
++                               (((o + l1) << L2_BITS) + l2) << TARGET_PAGE_BITS,
+                                TARGET_PAGE_SIZE, pd[l2].phys_offset);
+         }
+     }
+@@ -1701,14 +1703,14 @@ static void phys_page_for_each(CPUPhysMemoryClient *client)
+     }
+     for (l1 = 0; l1 < L1_SIZE; ++l1) {
+         if (phys_map[l1]) {
+-            phys_page_for_each_in_l1_map(phys_map[l1], client);
++            phys_page_for_each_in_l1_map(phys_map[l1], client, l1 << L1_BITS);
+         }
+     }
+ #else
+     if (!l1_phys_map) {
+         return;
+     }
+-    phys_page_for_each_in_l1_map(l1_phys_map, client);
++    phys_page_for_each_in_l1_map(l1_phys_map, client, 0);
+ #endif
+ }
+ 
+-- 
+1.7.5.141.g791a
+
