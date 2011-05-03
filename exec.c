@@ -1667,7 +1667,8 @@ static int cpu_notify_migration_log(int enable)
 }
 
 static void phys_page_for_each_in_l1_map(PhysPageDesc **phys_map,
-                                         CPUPhysMemoryClient *client)
+                                         CPUPhysMemoryClient *client,
+                                         target_phys_addr_t o)
 {
     PhysPageDesc *pd;
     int l1, l2;
@@ -1681,7 +1682,8 @@ static void phys_page_for_each_in_l1_map(PhysPageDesc **phys_map,
             if (pd[l2].phys_offset == IO_MEM_UNASSIGNED) {
                 continue;
             }
-            client->set_memory(client, pd[l2].region_offset,
+            client->set_memory(client,
+                               (((o + l1) << L2_BITS) + l2) << TARGET_PAGE_BITS,
                                TARGET_PAGE_SIZE, pd[l2].phys_offset);
         }
     }
@@ -1701,14 +1703,14 @@ static void phys_page_for_each(CPUPhysMemoryClient *client)
     }
     for (l1 = 0; l1 < L1_SIZE; ++l1) {
         if (phys_map[l1]) {
-            phys_page_for_each_in_l1_map(phys_map[l1], client);
+            phys_page_for_each_in_l1_map(phys_map[l1], client, l1 << L1_BITS);
         }
     }
 #else
     if (!l1_phys_map) {
         return;
     }
-    phys_page_for_each_in_l1_map(l1_phys_map, client);
+    phys_page_for_each_in_l1_map(l1_phys_map, client, 0);
 #endif
 }
 
