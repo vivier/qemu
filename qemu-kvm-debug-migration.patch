@@ -6,7 +6,7 @@ Index: qemu-kvm-0.12.1.2/vl.c
      uint64_t t0;
      double bwidth = 0;
      int i;
-+    static int round = 0
++    static int round = 0;
  
      if (stage < 0) {
          cpu_physical_memory_set_dirty_tracking(0);
@@ -42,7 +42,7 @@ Index: qemu-kvm-0.12.1.2/vl.c
              bytes_transferred += bytes_sent;
          }
 +        t0 = get_clock() - t0;
-+        printf("ending stage3 at %lu, used_time = %lu, bandwidth = %f, ram_save_remaining = %lu\n", t0, (double)(bytes_transferred - bytes_transferred_last)/(double)t0 , (uint64_t)ram_save_remaining());
++        printf("ending stage3 used_time = %lu, bandwidth = %f, ram_save_remaining = %lu\n", t0, (double)(bytes_transferred - bytes_transferred_last)/(double)t0 , (uint64_t)ram_save_remaining());
 +
          cpu_physical_memory_set_dirty_tracking(0);
      }
