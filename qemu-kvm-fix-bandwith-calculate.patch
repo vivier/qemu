@@ -1,0 +1,13 @@
+Index: qemu-kvm/qemu-kvm-0.12.1.2/vl.c
+===================================================================
+--- qemu-kvm.orig/qemu-kvm-0.12.1.2/vl.c
++++ qemu-kvm/qemu-kvm-0.12.1.2/vl.c
+@@ -3451,7 +3451,7 @@ static int ram_save_live(Monitor *mon, Q
+     }
+ 
+     t0 = get_clock() - t0;
+-    bwidth = (bytes_transferred - bytes_transferred_last) / t0;
++    bwidth = (double)(bytes_transferred - bytes_transferred_last) / (double)t0;
+     printf("bytes_sent:%lu, used time: %lu, bandwidth = %f\n", bytes_transferred - bytes_transferred_last, t0, bwidth);
+ 
+     /* if we haven't transferred anything this round, force expected_time to a

@@ -2527,7 +2527,7 @@ Patch2127: kvm-virtio-blk-fail-unaligned-requests.patch
 Patch2128: kvm-Ignore-pci-unplug-requests-for-unpluggable-devices.patch
 Patch2129: qemu-kvm-fix-calculation-bytes_transferred.patch
 Patch2130: qemu-kvm-debug-migration.patch
-Patch2131: qemu-kvm-fix-bandwidth.patch
+Patch2131: qemu-kvm-fix-bandwidth-calculate.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
