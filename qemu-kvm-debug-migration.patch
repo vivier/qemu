@@ -1,7 +1,7 @@
-Index: qemu-kvm/qemu-kvm-0.12.1.2/vl.c
+Index: qemu-kvm-0.12.1.2/vl.c
 ===================================================================
---- qemu-kvm.orig/qemu-kvm-0.12.1.2/vl.c
-+++ qemu-kvm/qemu-kvm-0.12.1.2/vl.c
+--- qemu-kvm-0.12.1.2.orig/vl.c
++++ qemu-kvm-0.12.1.2/vl.c
 @@ -3381,11 +3381,15 @@ static int ram_save_live(Monitor *mon, Q
      uint64_t t0;
      double bwidth = 0;
