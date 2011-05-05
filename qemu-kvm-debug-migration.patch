@@ -32,11 +32,14 @@ Index: qemu-kvm-0.12.1.2/vl.c
  	int bytes_sent;
  
          /* flush all remaining blocks regardless of rate limiting */
-+	printf("stage3 flushing at %lu, bandwidth = %f, ram_save_remaining = %lu\n", get_clock(), bwidth, (uint64_t)ram_save_remaining());
++       t0 = get_clock();
++      	printf("stage3 flushing at %lu, ram_save_remaining = %lu\n", t0, (uint64_t)ram_save_remaining());
++       bytes_transferred_last = bytes_transferred; 
          while ((bytes_sent = ram_save_block(f)) != 0) {
              bytes_transferred += bytes_sent;
          }
-+	printf("ending stage3 at %lu, bandwidth = %f, ram_save_remaining = %lu\n", get_clock(), bwidth, (uint64_t)ram_save_remaining());
++       t0 = get_clock() - t0;
++	printf("ending stage3 at %lu, used_time = %lu, bandwidth = %f, ram_save_remaining = %lu\n", t0, (double)(bytes_transferred - bytes_transferred_last)/(double)t0 , (uint64_t)ram_save_remaining());
 +
          cpu_physical_memory_set_dirty_tracking(0);
      }
