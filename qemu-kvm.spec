@@ -26,7 +26,7 @@ Summary: Userspace component of KVM
 %endif
 Name: qemu-kvm
 Version: %{rpmversion}
-Release: %{full_release}.00451289_2
+Release: %{full_release}.00451289_3
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -2526,6 +2526,7 @@ Patch2127: kvm-virtio-blk-fail-unaligned-requests.patch
 # For bz#699789 - EMBARGOED CVE-2011-1751 acpi_piix4: missing hotplug check during device removal [rhel-6.1]
 Patch2128: kvm-Ignore-pci-unplug-requests-for-unpluggable-devices.patch
 Patch2129: qemu-kvm-fix-calculation-bytes_transferred.patch
+Patch2130: qemu-kvm-debug-migration.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3762,6 +3763,7 @@ ApplyOptionalPatch()
 %patch2127 -p1
 %patch2128 -p1
 %patch2129 -p1
+%patch2130 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
