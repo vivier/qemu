@@ -1,12 +1,12 @@
-Index: qemu-kvm-0.12.1.2/vl.c
+Index: qemu-kvm/qemu-kvm-0.12.1.2/vl.c
 ===================================================================
---- qemu-kvm-0.12.1.2.orig/vl.c
-+++ qemu-kvm-0.12.1.2/vl.c
-@@ -3381,11 +3381,16 @@ static int ram_save_live(Monitor *mon, Q
+--- qemu-kvm.orig/qemu-kvm-0.12.1.2/vl.c
++++ qemu-kvm/qemu-kvm-0.12.1.2/vl.c
+@@ -3381,11 +3381,15 @@ static int ram_save_live(Monitor *mon, Q
      uint64_t t0;
      double bwidth = 0;
      int i;
-+    static int round = 0;
++    static int round = 0
  
      if (stage < 0) {
          cpu_physical_memory_set_dirty_tracking(0);
@@ -15,36 +15,39 @@ Index: qemu-kvm-0.12.1.2/vl.c
 +    if (stage == 3)
 +       printf("starting stage3 at %lu, ram_save_remaining = %lu\n", get_clock(), (uint64_t)ram_save_remaining());
 +
-+
  
      if (cpu_physical_sync_dirty_bitmap(0, TARGET_PHYS_ADDR_MAX) != 0) {
          qemu_file_set_error(f);
-@@ -3446,7 +3451,7 @@ static int ram_save_live(Monitor *mon, Q
+@@ -3446,9 +3450,8 @@ static int ram_save_live(Monitor *mon, Q
      }
  
      t0 = get_clock() - t0;
 -    bwidth = (bytes_transferred - bytes_transferred_last) / t0;
+-
+-    /* if we haven't transferred anything this round, force expected_time to a
 +    bwidth = (double)(bytes_transferred - bytes_transferred_last) / (double)t0;
- 
-     /* if we haven't transferred anything this round, force expected_time to a
++/* if we haven't transferred anything this round, force expected_time to a
       * a very high value, but without crashing */
-@@ -3458,9 +3463,12 @@ static int ram_save_live(Monitor *mon, Q
+     if (bwidth == 0)
+         bwidth = 0.000001;
+@@ -3458,9 +3461,16 @@ static int ram_save_live(Monitor *mon, Q
  	int bytes_sent;
  
          /* flush all remaining blocks regardless of rate limiting */
-+       t0 = get_clock();
-+      	printf("stage3 flushing at %lu, ram_save_remaining = %lu\n", t0, (uint64_t)ram_save_remaining());
-+       bytes_transferred_last = bytes_transferred; 
++        t0 = get_clock();
++        printf("stage3 flushing at %lu, ram_save_remaining = %lu\n", t0, (uint64_t)ram_save_remaining());
++        bytes_transferred_last = bytes_transferred; 
++
          while ((bytes_sent = ram_save_block(f)) != 0) {
              bytes_transferred += bytes_sent;
          }
-+       t0 = get_clock() - t0;
-+	printf("ending stage3 at %lu, used_time = %lu, bandwidth = %f, ram_save_remaining = %lu\n", t0, (double)(bytes_transferred - bytes_transferred_last)/(double)t0 , (uint64_t)ram_save_remaining());
++        t0 = get_clock() - t0;
++        printf("ending stage3 at %lu, used_time = %lu, bandwidth = %f, ram_save_remaining = %lu\n", t0, (double)(bytes_transferred - bytes_transferred_last)/(double)t0 , (uint64_t)ram_save_remaining());
 +
          cpu_physical_memory_set_dirty_tracking(0);
      }
  
-@@ -3470,7 +3478,14 @@ static int ram_save_live(Monitor *mon, Q
+@@ -3470,7 +3480,15 @@ static int ram_save_live(Monitor *mon, Q
          uint64_t expected_time;
  
          expected_time = ram_save_remaining() * TARGET_PAGE_SIZE / bwidth;
@@ -56,6 +59,7 @@ Index: qemu-kvm-0.12.1.2/vl.c
 +                printf("ending stage2\n");
 +                return 1;
 +        }
++
 +
      }
      return 0;
