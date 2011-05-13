@@ -84,6 +84,7 @@ static void help(void)
            "       match exactly. The image doesn't need a working backing file before\n"
            "       rebasing in this case (useful for renaming the backing file)\n"
            "  '-h' with or without a command shows this help and lists the supported formats\n"
+           "  '-p' show progress of command (only certain commands)\n"
            "\n"
            "Parameters to snapshot subcommand:\n"
            "  'snapshot' is the name of the snapshot to create, apply or delete\n"
@@ -571,6 +572,7 @@ static int compare_sectors(const uint8_t *buf1, const uint8_t *buf2, int n,
 static int img_convert(int argc, char **argv)
 {
     int c, ret = 0, n, n1, bs_n, bs_i, compress, cluster_size, cluster_sectors;
+    int progress = 0;
     const char *fmt, *out_fmt, *out_baseimg, *out_filename;
     BlockDriver *drv, *proto_drv;
     BlockDriverState **bs = NULL, *out_bs = NULL;
@@ -581,13 +583,14 @@ static int img_convert(int argc, char **argv)
     BlockDriverInfo bdi;
     QEMUOptionParameter *param = NULL, *create_options = NULL;
     char *options = NULL;
+    float local_progress;
 
     fmt = NULL;
     out_fmt = "raw";
     out_baseimg = NULL;
     compress = 0;
     for(;;) {
-        c = getopt(argc, argv, "f:O:B:hce6o:");
+        c = getopt(argc, argv, "f:O:B:hce6o:p");
         if (c == -1) {
             break;
         }
@@ -619,6 +622,9 @@ static int img_convert(int argc, char **argv)
         case 'o':
             options = optarg;
             break;
+        case 'p':
+            progress = 1;
+            break;
         }
     }
 
@@ -640,6 +646,9 @@ static int img_convert(int argc, char **argv)
         goto out;
     }
         
+    qemu_progress_init(progress, 2.0);
+    qemu_progress_print(0, 100);
+
     bs = qemu_mallocz(bs_n * sizeof(BlockDriverState *));
 
     total_sectors = 0;
@@ -748,6 +757,11 @@ static int img_convert(int argc, char **argv)
         }
         cluster_sectors = cluster_size >> 9;
         sector_num = 0;
+
+        nb_sectors = total_sectors;
+        local_progress = (float)100 /
+            (nb_sectors / MIN(nb_sectors, (cluster_sectors)));
+
         for(;;) {
             int64_t bs_num;
             int remainder;
@@ -807,6 +821,7 @@ static int img_convert(int argc, char **argv)
                 }
             }
             sector_num += n;
+            qemu_progress_print(local_progress, 100);
         }
         /* signal EOF to align */
         bdrv_write_compressed(out_bs, 0, NULL, 0);
@@ -814,6 +829,10 @@ static int img_convert(int argc, char **argv)
         int has_zero_init = bdrv_has_zero_init(out_bs);
 
         sector_num = 0; // total number of sectors converted so far
+        nb_sectors = total_sectors - sector_num;
+        local_progress = (float)100 /
+            (nb_sectors / MIN(nb_sectors, (IO_BUF_SIZE / 512)));
+
         for(;;) {
             nb_sectors = total_sectors - sector_num;
             if (nb_sectors <= 0) {
@@ -887,9 +906,11 @@ static int img_convert(int argc, char **argv)
                 n -= n1;
                 buf1 += n1 * 512;
             }
+            qemu_progress_print(local_progress, 100);
         }
     }
 out:
+    qemu_progress_end();
     free_option_parameters(create_options);
     free_option_parameters(param);
     qemu_free(buf);
@@ -1159,6 +1180,7 @@ static int img_rebase(int argc, char **argv)
     const char *fmt, *out_basefmt, *out_baseimg;
     int c, flags, ret;
     int unsafe = 0;
+    int progress = 0;
 
     /* Parse commandline parameters */
     fmt = NULL;
@@ -1166,7 +1188,7 @@ static int img_rebase(int argc, char **argv)
     out_basefmt = NULL;
 
     for(;;) {
-        c = getopt(argc, argv, "uhf:F:b:");
+        c = getopt(argc, argv, "uhf:F:b:p");
         if (c == -1) {
             break;
         }
@@ -1187,6 +1209,9 @@ static int img_rebase(int argc, char **argv)
         case 'u':
             unsafe = 1;
             break;
+        case 'p':
+            progress = 1;
+            break;
         }
     }
 
@@ -1194,6 +1219,9 @@ static int img_rebase(int argc, char **argv)
         help();
     }
     filename = argv[optind++];
+
+    qemu_progress_init(progress, 2.0);
+    qemu_progress_print(0, 100);
 
     /*
      * Open the images.
@@ -1270,12 +1298,15 @@ static int img_rebase(int argc, char **argv)
         int n;
         uint8_t * buf_old;
         uint8_t * buf_new;
+        float local_progress;
 
         buf_old = qemu_malloc(IO_BUF_SIZE);
         buf_new = qemu_malloc(IO_BUF_SIZE);
 
         bdrv_get_geometry(bs, &num_sectors);
 
+        local_progress = (float)100 /
+            (num_sectors / MIN(num_sectors, (IO_BUF_SIZE / 512)));
         for (sector = 0; sector < num_sectors; sector += n) {
 
             /* How many sectors can we handle with the next read? */
@@ -1323,6 +1354,7 @@ static int img_rebase(int argc, char **argv)
 
                 written += pnum;
             }
+            qemu_progress_print(local_progress, 100);
         }
 
         qemu_free(buf_old);
@@ -1343,6 +1375,7 @@ static int img_rebase(int argc, char **argv)
             out_baseimg, strerror(-ret));
     }
 
+    qemu_progress_print(100, 0);
     /*
      * TODO At this point it is possible to check if any clusters that are
      * allocated in the COW file are the same in the backing file. If so, they
@@ -1350,6 +1383,7 @@ static int img_rebase(int argc, char **argv)
      * backing file, in case of a crash this would lead to corruption.
      */
 out:
+    qemu_progress_end();
     /* Cleanup */
     if (!unsafe) {
         bdrv_delete(bs_old_backing);
