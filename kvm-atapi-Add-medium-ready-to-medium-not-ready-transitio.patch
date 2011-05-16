@@ -1,0 +1,95 @@
+From 2189df9358cedf10501cf381a8b2c7950bbdfb52 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 29 Apr 2011 04:42:34 -0300
+Subject: [RHEL6 qemu-kvm PATCH 9/9] atapi: Add 'medium ready' to 'medium not ready' transition on cd change
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <80e8b9dd61ae17dfc9a04298823e8911f985b499.1304051889.git.amit.shah@redhat.com>
+Patchwork-id: 23146
+O-Subject: [RHEL6.2 qemu-kvm PATCH 3/3] atapi: Add 'medium ready' to 'medium not ready' transition on cd change
+Bugzilla: 700065
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+MMC-5 Table F.1 lists errors that can be thrown for the TEST_UNIT_READY
+command.  Going from medium not ready to medium ready states is
+communicated by throwing an error.
+
+This adds the missing 'tray opened' event that we fail to report to
+guests.  After doing this, older Linux guests properly revalidate a disc
+on the change command.  HSM violation errors, which caused Linux guests
+to do a soft-reset of the link, also go away:
+
+ata2.00: exception Emask 0x0 SAct 0x0 SErr 0x0 action 0x6
+sr 1:0:0:0: CDB: Test Unit Ready: 00 00 00 00 00 00
+ata2.00: cmd a0/00:00:00:00:00/00:00:00:00:00/a0 tag 0
+         res 01/60:00:00:00:00/00:00:00:00:00/a0 Emask 0x3 (HSM violation)
+ata2.00: status: { ERR }
+ata2: soft resetting link
+ata2.00: configured for MWDMA2
+ata2: EH complete
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Tested-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 4b9b7092b4cbef084138a446b8247ba89fd474f4)
+
+Bugzilla: 700065
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/ide/core.c |   20 ++++++++++++++++----
+ 1 files changed, 16 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/ide/core.c |   20 ++++++++++++++++----
+ 1 files changed, 16 insertions(+), 4 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 9986ee1..f76e5f6 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -1397,12 +1397,19 @@ static void ide_atapi_cmd(IDEState *s)
+         ide_atapi_cmd_check_status(s);
+         return;
+     }
++    if (bdrv_is_inserted(s->bs) && s->cdrom_changed) {
++        ide_atapi_cmd_error(s, SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
++
++        s->cdrom_changed = 0;
++        s->sense_key = SENSE_UNIT_ATTENTION;
++        s->asc = ASC_MEDIUM_MAY_HAVE_CHANGED;
++        return;
++    }
+     switch(s->io_buffer[0]) {
+     case GPCMD_TEST_UNIT_READY:
+-        if (bdrv_is_inserted(s->bs) && !s->cdrom_changed) {
++        if (bdrv_is_inserted(s->bs)) {
+             ide_atapi_cmd_ok(s);
+         } else {
+-            s->cdrom_changed = 0;
+             ide_atapi_cmd_error(s, SENSE_NOT_READY,
+                                 ASC_MEDIUM_NOT_PRESENT);
+         }
+@@ -1884,8 +1891,13 @@ static void cdrom_change_cb(void *opaque, int reason)
+     bdrv_get_geometry(s->bs, &nb_sectors);
+     s->nb_sectors = nb_sectors;
+ 
+-    s->sense_key = SENSE_UNIT_ATTENTION;
+-    s->asc = ASC_MEDIUM_MAY_HAVE_CHANGED;
++    /*
++     * First indicate to the guest that a CD has been removed.  That's
++     * done on the next command the guest sends us.
++     *
++     * Then we set SENSE_UNIT_ATTENTION, by which the guest will
++     * detect a new CD in the drive.  See ide_atapi_cmd() for details.
++     */
+     s->cdrom_changed = 1;
+     s->events.new_media = true;
+     ide_set_irq(s->bus);
+-- 
+1.7.3.2
+

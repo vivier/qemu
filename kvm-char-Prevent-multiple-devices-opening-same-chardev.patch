@@ -1,0 +1,89 @@
+From 73e6593a7d22631a1ef0a7c94abb504f66de331a Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Thu, 28 Apr 2011 15:25:51 -0300
+Subject: [RHEL6 qemu-kvm PATCH 3/9] char: Prevent multiple devices opening same chardev
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1189b874e28c04e053f307f77ec4186001f417a9.1304003635.git.amit.shah@redhat.com>
+Patchwork-id: 23115
+O-Subject: [RHEL6.2 qemu-kvm PATCH 3/6] char: Prevent multiple devices opening same chardev
+Bugzilla: 656779
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Prevent:
+
+-chardev socket,path=/tmp/foo,server,nowait,id=c0 \
+-device virtserialport,chardev=c0,id=vs0 \
+-device virtserialport,chardev=c0,id=vs1
+
+Reported-by: Mike Cao <bcao@redhat.com>
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+(cherry-picked from commit 2d6c1ef40f3678ab47a4d14fb5dadaa486bfcda6)
+
+Bugzilla: 656779
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/qdev-properties.c |    7 ++++++-
+ qemu-char.c          |    4 ++++
+ qemu-char.h          |    1 +
+ 3 files changed, 11 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qdev-properties.c |    7 ++++++-
+ qemu-char.c          |    4 ++++
+ qemu-char.h          |    1 +
+ 3 files changed, 11 insertions(+), 1 deletions(-)
+
+diff --git a/hw/qdev-properties.c b/hw/qdev-properties.c
+index 2f42fdc..1a189f4 100644
+--- a/hw/qdev-properties.c
++++ b/hw/qdev-properties.c
+@@ -352,8 +352,13 @@ static int parse_chr(DeviceState *dev, Property *prop, const char *str)
+     CharDriverState **ptr = qdev_get_prop_ptr(dev, prop);
+ 
+     *ptr = qemu_chr_find(str);
+-    if (*ptr == NULL)
++    if (*ptr == NULL) {
+         return -ENOENT;
++    }
++    if ((*ptr)->assigned) {
++        return -EEXIST;
++    }
++    (*ptr)->assigned = 1;
+     return 0;
+ }
+ 
+diff --git a/qemu-char.c b/qemu-char.c
+index 5dc3e10..fc21a73 100644
+--- a/qemu-char.c
++++ b/qemu-char.c
+@@ -208,6 +208,10 @@ void qemu_chr_add_handlers(CharDriverState *s,
+     if (!s) {
+         return;
+     }
++    if (!opaque) {
++        /* chr driver being released. */
++        s->assigned = 0;
++    }
+     if (!handlers) {
+         handlers = &null_handlers;
+     }
+diff --git a/qemu-char.h b/qemu-char.h
+index b24a98e..69868ee 100644
+--- a/qemu-char.h
++++ b/qemu-char.h
+@@ -76,6 +76,7 @@ struct CharDriverState {
+     char *filename;
+     /* Are we in a blocked state? */
+     bool write_blocked;
++    int assigned; /* chardev assigned to a device */
+     QTAILQ_ENTRY(CharDriverState) next;
+ };
+ 
+-- 
+1.7.3.2
+

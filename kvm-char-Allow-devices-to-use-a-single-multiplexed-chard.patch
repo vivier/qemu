@@ -1,0 +1,105 @@
+From 89aefe252752cbde75dea71eebdccd95d13fb2f3 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Thu, 28 Apr 2011 15:25:52 -0300
+Subject: [RHEL6 qemu-kvm PATCH 4/9] char: Allow devices to use a single multiplexed chardev.
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <0a99c82f3380ecb49ff3084578250ad5cd8d7610.1304003635.git.amit.shah@redhat.com>
+Patchwork-id: 23116
+O-Subject: [RHEL6.2 qemu-kvm PATCH 4/6] char: Allow devices to use a single multiplexed chardev.
+Bugzilla: 656779
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Kusanagi Kouichi <slash@ac.auone-net.jp>
+
+This fixes regression caused by commit
+2d6c1ef40f3678ab47a4d14fb5dadaa486bfcda6
+("char: Prevent multiple devices opening same chardev"):
+
+-nodefaults -nographic -chardev stdio,id=stdio,mux=on,signal=off \
+ -mon stdio -device virtio-serial-pci \
+ -device virtconsole,chardev=stdio -device isa-serial,chardev=stdio
+
+fails with:
+
+qemu-system-x86_64: -device isa-serial,chardev=stdio: Property 'isa-serial.chardev' can't take value 'stdio', it's in use
+
+Signed-off-by: Kusanagi Kouichi <slash@ac.auone-net.jp>
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+(cherry-picked from commit d5b27167e17e0d9393d6364703cc68e7f018023c)
+
+Bugzilla: 656779
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/qdev-properties.c |    4 ++--
+ qemu-char.c          |    5 ++++-
+ qemu-char.h          |    2 +-
+ 3 files changed, 7 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qdev-properties.c |    4 ++--
+ qemu-char.c          |    5 ++++-
+ qemu-char.h          |    2 +-
+ 3 files changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/hw/qdev-properties.c b/hw/qdev-properties.c
+index 1a189f4..a84a6f3 100644
+--- a/hw/qdev-properties.c
++++ b/hw/qdev-properties.c
+@@ -355,10 +355,10 @@ static int parse_chr(DeviceState *dev, Property *prop, const char *str)
+     if (*ptr == NULL) {
+         return -ENOENT;
+     }
+-    if ((*ptr)->assigned) {
++    if ((*ptr)->avail_connections < 1) {
+         return -EEXIST;
+     }
+-    (*ptr)->assigned = 1;
++    --(*ptr)->avail_connections;
+     return 0;
+ }
+ 
+diff --git a/qemu-char.c b/qemu-char.c
+index fc21a73..6e9dfb1 100644
+--- a/qemu-char.c
++++ b/qemu-char.c
+@@ -210,7 +210,7 @@ void qemu_chr_add_handlers(CharDriverState *s,
+     }
+     if (!opaque) {
+         /* chr driver being released. */
+-        s->assigned = 0;
++        ++s->avail_connections;
+     }
+     if (!handlers) {
+         handlers = &null_handlers;
+@@ -2666,7 +2666,10 @@ CharDriverState *qemu_chr_open_opts(QemuOpts *opts,
+         snprintf(base->label, len, "%s-base", qemu_opts_id(opts));
+         chr = qemu_chr_open_mux(base);
+         chr->filename = base->filename;
++        chr->avail_connections = MAX_MUX;
+         QTAILQ_INSERT_TAIL(&chardevs, chr, next);
++    } else {
++        chr->avail_connections = 1;
+     }
+     chr->label = qemu_strdup(qemu_opts_id(opts));
+     return chr;
+diff --git a/qemu-char.h b/qemu-char.h
+index 69868ee..81bd954 100644
+--- a/qemu-char.h
++++ b/qemu-char.h
+@@ -76,7 +76,7 @@ struct CharDriverState {
+     char *filename;
+     /* Are we in a blocked state? */
+     bool write_blocked;
+-    int assigned; /* chardev assigned to a device */
++    int avail_connections;
+     QTAILQ_ENTRY(CharDriverState) next;
+ };
+ 
+-- 
+1.7.3.2
+

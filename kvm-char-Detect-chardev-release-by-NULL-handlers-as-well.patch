@@ -1,0 +1,49 @@
+From 5047027c4123cb733e34124cdcebf1bc5e89a757 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Thu, 28 Apr 2011 15:25:53 -0300
+Subject: [RHEL6 qemu-kvm PATCH 5/9] char: Detect chardev release by NULL handlers as well as NULL opaque
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <50e762d47cebcf74b2669fe8549346c76678d8fb.1304003635.git.amit.shah@redhat.com>
+Patchwork-id: 23117
+O-Subject: [RHEL6.2 qemu-kvm PATCH 5/6] char: Detect chardev release by NULL handlers as well as NULL opaque
+Bugzilla: 656779
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Juan says he prefers these extra checks to ensure a user of a chardev is
+releasing it.
+
+Requested-by: Juan Quintela <quintela@redhat.com>
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+(cherry-picked from commit da7d998bbb80f141ed5743418a4dfa5c1409e75f)
+
+Bugzilla: 656779
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ qemu-char.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-char.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-char.c b/qemu-char.c
+index 6e9dfb1..38148a0 100644
+--- a/qemu-char.c
++++ b/qemu-char.c
+@@ -208,7 +208,7 @@ void qemu_chr_add_handlers(CharDriverState *s,
+     if (!s) {
+         return;
+     }
+-    if (!opaque) {
++    if (!opaque && !handlers) {
+         /* chr driver being released. */
+         ++s->avail_connections;
+     }
+-- 
+1.7.3.2
+

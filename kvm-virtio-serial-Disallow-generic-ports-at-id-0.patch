@@ -1,0 +1,64 @@
+From 0b05175266d6c8190e5259de44de780e5867fc04 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Thu, 28 Apr 2011 15:25:49 -0300
+Subject: [RHEL6 qemu-kvm PATCH 1/9] virtio-serial: Disallow generic ports at id 0
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <09c3f3f1e529c2557d38b9a7b26419392a77a986.1304003635.git.amit.shah@redhat.com>
+Patchwork-id: 23113
+O-Subject: [RHEL6.2 qemu-kvm PATCH 1/6] virtio-serial: Disallow generic ports at id 0
+Bugzilla: 700511
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Port 0 is reserved for virtconsole devices for backward compatibility
+with the old -virtioconsole (from qemu 0.12) device type.
+
+libvirt prior to commit 8e28c5d40200b4c5d483bd585d237b9d870372e5 used
+port 0 for generic ports.  libvirt will no longer do that, but disallow
+instantiating generic ports at id 0 from qemu as well.
+(cherry-picked from commit 0b8b716d6c43b5a1d4e0293df1c77af4fff21bab)
+
+Bugzilla: 700511
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-console.c |    9 +++++++++
+ 1 files changed, 9 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-console.c |    9 +++++++++
+ 1 files changed, 9 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-console.c b/hw/virtio-console.c
+index 930d5c5..dfb892e 100644
+--- a/hw/virtio-console.c
++++ b/hw/virtio-console.c
+@@ -11,6 +11,7 @@
+  */
+ 
+ #include "qemu-char.h"
++#include "qemu-error.h"
+ #include "virtio-serial.h"
+ 
+ typedef struct VirtConsole {
+@@ -164,6 +165,14 @@ static int virtserialport_initfn(VirtIOSerialDevice *dev)
+     VirtIOSerialPort *port = DO_UPCAST(VirtIOSerialPort, dev, &dev->qdev);
+     VirtConsole *vcon = DO_UPCAST(VirtConsole, port, port);
+ 
++    if (port->id == 0) {
++        /*
++         * Disallow a generic port at id 0, that's reserved for
++         * console ports.
++         */
++        error_report("Port number 0 on virtio-serial devices reserved for virtconsole devices for backward compatibility.");
++        return -1;
++    }
+     return generic_port_init(vcon, dev);
+ }
+ 
+-- 
+1.7.3.2
+

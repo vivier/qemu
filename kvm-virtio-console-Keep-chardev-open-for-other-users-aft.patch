@@ -1,0 +1,58 @@
+From 0d87df483291188839b91fa8a3475800b2efed81 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Thu, 28 Apr 2011 15:25:54 -0300
+Subject: [RHEL6 qemu-kvm PATCH 6/9] virtio-console: Keep chardev open for other users after hot-unplug
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <07fa7db8d37152e9a1ed898ff08bbc88f984f4a9.1304003635.git.amit.shah@redhat.com>
+Patchwork-id: 23118
+O-Subject: [RHEL6.2 qemu-kvm PATCH 6/6] virtio-console: Keep chardev open for other users after hot-unplug
+Bugzilla: 700512
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+After a hot-unplug operation, the previous behaviour was to close the
+chardev.  That meant the chardev couldn't be re-used.  Also, since
+chardev hot-plug isn't possible so far, this means virtio-console
+hot-plug isn't feasible as well.
+
+With this change, the chardev is kept around.  A new virtio-console
+channel can then be hot-plugged with the same chardev and things will
+continue to work.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+(cherry picked from commit f9a90f189c780e066039f2de3906c73c48071bb7)
+
+Bugzilla: 700512
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-console.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-console.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+diff --git a/hw/virtio-console.c b/hw/virtio-console.c
+index e91f523..1287939 100644
+--- a/hw/virtio-console.c
++++ b/hw/virtio-console.c
+@@ -132,7 +132,11 @@ static int virtconsole_exitfn(VirtIOSerialDevice *dev)
+     VirtConsole *vcon = DO_UPCAST(VirtConsole, port, port);
+ 
+     if (vcon->chr) {
+-        qemu_chr_close(vcon->chr);
++	/*
++	 * Instead of closing the chardev, free it so it can be used
++	 * for other purposes.
++	 */
++        qemu_chr_add_handlers(vcon->chr, NULL, NULL);
+     }
+ 
+     return 0;
+-- 
+1.7.3.2
+

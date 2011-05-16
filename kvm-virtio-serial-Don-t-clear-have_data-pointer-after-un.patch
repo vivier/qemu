@@ -1,0 +1,49 @@
+From 6f1624beff84269be5f899a3800aefc2a6c12fb6 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Thu, 28 Apr 2011 15:25:50 -0300
+Subject: [RHEL6 qemu-kvm PATCH 2/9] virtio-serial: Don't clear ->have_data() pointer after unplug
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <0ade34184b684e591723df7c1bedcc866abaec74.1304003635.git.amit.shah@redhat.com>
+Patchwork-id: 23114
+O-Subject: [RHEL6.2 qemu-kvm PATCH 2/6] virtio-serial: Don't clear ->have_data() pointer after unplug
+Bugzilla: 681736
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+After a port unplug operation, the port->info->have_data() pointer was
+set to NULL.  The problem is, the ->info struct is shared by all ports,
+effectively disabling writes to other ports.
+
+Reported-by: juzhang <juzhang@redhat.com>
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+(cherry picked from commit fee063c07f20b442ef4bedef834ab0a3bf55b562)
+
+Bugzilla: 681736
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-console.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-console.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+diff --git a/hw/virtio-console.c b/hw/virtio-console.c
+index dfb892e..e91f523 100644
+--- a/hw/virtio-console.c
++++ b/hw/virtio-console.c
+@@ -132,7 +132,6 @@ static int virtconsole_exitfn(VirtIOSerialDevice *dev)
+     VirtConsole *vcon = DO_UPCAST(VirtConsole, port, port);
+ 
+     if (vcon->chr) {
+-        port->info->have_data = NULL;
+         qemu_chr_close(vcon->chr);
+     }
+ 
+-- 
+1.7.3.2
+

@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.161
+%define pkgrelease 2.162
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2527,6 +2527,24 @@ Patch2127: kvm-virtio-blk-fail-unaligned-requests.patch
 Patch2128: kvm-Ignore-pci-unplug-requests-for-unpluggable-devices.patch
 # For bz#700859 - Fix phys memory client for vhost
 Patch2129: kvm-Fix-phys-memory-client-pass-guest-physical-address-n.patch
+# For bz#700511 - virtio-serial: Disallow generic ports at id 0
+Patch2130: kvm-virtio-serial-Disallow-generic-ports-at-id-0.patch
+# For bz#681736 - Guest->Host communication stops for other ports after one port is unplugged
+Patch2131: kvm-virtio-serial-Don-t-clear-have_data-pointer-after-un.patch
+# For bz#656779 - Core dumped when hot plug/un-plug virtio serial port to the same chardev
+Patch2132: kvm-char-Prevent-multiple-devices-opening-same-chardev.patch
+# For bz#656779 - Core dumped when hot plug/un-plug virtio serial port to the same chardev
+Patch2133: kvm-char-Allow-devices-to-use-a-single-multiplexed-chard.patch
+# For bz#656779 - Core dumped when hot plug/un-plug virtio serial port to the same chardev
+Patch2134: kvm-char-Detect-chardev-release-by-NULL-handlers-as-well.patch
+# For bz#700512 - Keep chardev open for later reuse
+Patch2135: kvm-virtio-console-Keep-chardev-open-for-other-users-aft.patch
+# For bz#700065 - Switch to upstream solution for cdrom patches
+Patch2136: kvm-Revert-cdrom-Make-disc-change-event-visible-to-guest.patch
+# For bz#700065 - Switch to upstream solution for cdrom patches
+Patch2137: kvm-Revert-cdrom-Allow-the-TEST_UNIT_READY-command-after.patch
+# For bz#700065 - Switch to upstream solution for cdrom patches
+Patch2138: kvm-atapi-Add-medium-ready-to-medium-not-ready-transitio.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3763,6 +3781,15 @@ ApplyOptionalPatch()
 %patch2127 -p1
 %patch2128 -p1
 %patch2129 -p1
+%patch2130 -p1
+%patch2131 -p1
+%patch2132 -p1
+%patch2133 -p1
+%patch2134 -p1
+%patch2135 -p1
+%patch2136 -p1
+%patch2137 -p1
+%patch2138 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3984,6 +4011,27 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon May 16 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.162.el6
+- kvm-virtio-serial-Disallow-generic-ports-at-id-0.patch [bz#700511]
+- kvm-virtio-serial-Don-t-clear-have_data-pointer-after-un.patch [bz#681736]
+- kvm-char-Prevent-multiple-devices-opening-same-chardev.patch [bz#656779]
+- kvm-char-Allow-devices-to-use-a-single-multiplexed-chard.patch [bz#656779]
+- kvm-char-Detect-chardev-release-by-NULL-handlers-as-well.patch [bz#656779]
+- kvm-virtio-console-Keep-chardev-open-for-other-users-aft.patch [bz#700512]
+- kvm-Revert-cdrom-Make-disc-change-event-visible-to-guest.patch [bz#700065]
+- kvm-Revert-cdrom-Allow-the-TEST_UNIT_READY-command-after.patch [bz#700065]
+- kvm-atapi-Add-medium-ready-to-medium-not-ready-transitio.patch [bz#700065]
+- Resolves: bz#656779
+  (Core dumped when hot plug/un-plug virtio serial port to the same chardev)
+- Resolves: bz#681736
+  (Guest->Host communication stops for other ports after one port is unplugged)
+- Resolves: bz#700065
+  (Switch to upstream solution for cdrom patches)
+- Resolves: bz#700511
+  (virtio-serial: Disallow generic ports at id 0)
+- Resolves: bz#700512
+  (Keep chardev open for later reuse)
+
 * Tue May 03 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.161.el6
 - kvm-Fix-phys-memory-client-pass-guest-physical-address-n.patch [bz#700859]
 - Resolves: bz#700859

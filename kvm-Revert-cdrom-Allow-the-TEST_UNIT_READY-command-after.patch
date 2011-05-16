@@ -1,0 +1,57 @@
+From 10213dbfbfc529392d79aeba04597fadedd308e2 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 29 Apr 2011 04:42:33 -0300
+Subject: [RHEL6 qemu-kvm PATCH 8/9] Revert "cdrom: Allow the TEST_UNIT_READY command after a cdrom change"
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <4b0d5d1644a4e435af1d81ccb41066f3d7c756d6.1304051889.git.amit.shah@redhat.com>
+Patchwork-id: 23145
+O-Subject: [RHEL6.2 qemu-kvm PATCH 2/3] Revert "cdrom: Allow the TEST_UNIT_READY command after a cdrom change"
+Bugzilla: 700065
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+This reverts commit ebeb5399d04b168825389a4657f39762c7c9c98e.
+
+The right fix for this issue has been found and committed upstream.
+Reverting the rhel-only patches and applying the upstream one.
+
+Conflict is in ide_atapi_cmd() where the comment was changed due to the
+GESN patches.
+
+Conflicts:
+
+	hw/ide/core.c
+
+Bugzilla: 700065
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/ide/core.c |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/ide/core.c |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 2b38477..9986ee1 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -1390,11 +1390,9 @@ static void ide_atapi_cmd(IDEState *s)
+      * response unless a higher priority status, defined by the drive
+      * here, is pending.
+      */
+-    /* RHEL: We allow the TEST_UNIT_READY command to complete here as well. */
+     if (s->sense_key == SENSE_UNIT_ATTENTION &&
+         s->io_buffer[0] != GPCMD_REQUEST_SENSE &&
+         s->io_buffer[0] != GPCMD_INQUIRY &&
+-        s->io_buffer[0] != GPCMD_TEST_UNIT_READY &&
+         s->io_buffer[0] != GPCMD_GET_EVENT_STATUS_NOTIFICATION) {
+         ide_atapi_cmd_check_status(s);
+         return;
+-- 
+1.7.3.2
+
