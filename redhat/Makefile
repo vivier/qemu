@@ -149,6 +149,11 @@ rh-$(COMMON_NAME)-%: rh-sources
 rh-prep: rh-sources
 	$(RPMBUILD) $(RPMBUILD_DEFS) --nodeps --target $(MACH) -bp $(RPM)/SOURCES/$(SPECFILE)
 
+# we could just print the version number to stderr, but make dumps too much junk
+# to stdout to make it usable, so a 'verrel' file is created
+rh-verrel:
+	@echo $(PKG_FULL_NVR) > verrel
+
 # unless you know what you're doing, you don't want to use the next two ones
 rh-release: rh-clean-sources
 	@$(REDHAT)/scripts/new_release.sh $(KVERSION) $(BUILD) $(REDHAT)
