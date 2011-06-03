@@ -29,6 +29,7 @@ typedef struct VirtIOBlock
     QEMUBH *bh;
     BlockConf *conf;
     unsigned short sector_mask;
+    char sn[BLOCK_SERIAL_STRLEN];
     DeviceState *qdev;
 } VirtIOBlock;
 
@@ -355,6 +356,12 @@ static void virtio_blk_handle_request(VirtIOBlockReq *req,
             req, &mrb->old_bs);
     } else if (req->out->type & VIRTIO_BLK_T_SCSI_CMD) {
         virtio_blk_handle_scsi(req);
+    } else if (req->out->type & VIRTIO_BLK_T_GET_ID) {
+        VirtIOBlock *s = req->dev;
+
+        memcpy(req->elem.in_sg[0].iov_base, s->sn,
+               MIN(req->elem.in_sg[0].iov_len, sizeof(s->sn)));
+        virtio_blk_req_complete(req, VIRTIO_BLK_S_OK);
     } else if (req->out->type & VIRTIO_BLK_T_OUT) {
         qemu_iovec_init_external(&req->qiov, &req->elem.out_sg[1],
                                  req->elem.out_num - 1);
@@ -533,6 +540,7 @@ VirtIODevice *virtio_blk_init(DeviceState *dev, BlockConf *conf)
     VirtIOBlock *s;
     int cylinders, heads, secs;
     static int virtio_blk_id;
+    DriveInfo *dinfo;
 
     s = (VirtIOBlock *)virtio_common_init("virtio-blk", VIRTIO_ID_BLOCK,
                                           sizeof(struct virtio_blk_config),
@@ -547,6 +555,12 @@ VirtIODevice *virtio_blk_init(DeviceState *dev, BlockConf *conf)
     s->sector_mask = (s->conf->logical_block_size / 512) - 1;
     bdrv_guess_geometry(s->bs, &cylinders, &heads, &secs);
     bdrv_set_geometry_hint(s->bs, cylinders, heads, secs);
+
+    /* NB: per existing s/n string convention the string is terminated
+     * by '\0' only when less than sizeof (s->sn)
+     */
+    dinfo = drive_get_by_blockdev(s->bs);
+    strncpy(s->sn, dinfo->serial, sizeof (s->sn));
 
     s->vq = virtio_add_queue(&s->vdev, 128, virtio_blk_handle_output);
 
