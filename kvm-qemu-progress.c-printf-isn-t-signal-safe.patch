@@ -1,0 +1,66 @@
+From 5202faf63ba02406962e9a16e2f6b5c76110a93e Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Fri, 13 May 2011 12:08:15 -0300
+Subject: [RHEL6 qemu-kvm PATCH 4/7] qemu-progress.c: printf isn't signal safe
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1305288497-2389-5-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 24240
+O-Subject: [PATCH 4/6] qemu-progress.c: printf isn't signal safe
+Bugzilla: 621482
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Change the signal handling to indicate a signal is pending, rather
+then printing directly from the signal handler.
+
+In addition make the signal prints go to stderr, rather than stdout.
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 2ab3cb8c0ae79c96f38f6bfd35620cc18ddba19f)
+---
+ qemu-progress.c |    7 ++++++-
+ 1 files changed, 6 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-progress.c |    7 ++++++-
+ 1 files changed, 6 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-progress.c b/qemu-progress.c
+index e1feb89..a4894c0 100644
+--- a/qemu-progress.c
++++ b/qemu-progress.c
+@@ -37,6 +37,7 @@ struct progress_state {
+ };
+ 
+ static struct progress_state state;
++static volatile sig_atomic_t print_pending;
+ 
+ /*
+  * Simple progress print function.
+@@ -63,12 +64,16 @@ static void progress_simple_init(void)
+ #ifdef CONFIG_POSIX
+ static void sigusr_print(int signal)
+ {
+-    printf("    (%3.2f/100%%)\n", state.current);
++    print_pending = 1;
+ }
+ #endif
+ 
+ static void progress_dummy_print(void)
+ {
++    if (print_pending) {
++        fprintf(stderr, "    (%3.2f/100%%)\n", state.current);
++        print_pending = 0;
++    }
+ }
+ 
+ static void progress_dummy_end(void)
+-- 
+1.7.3.2
+

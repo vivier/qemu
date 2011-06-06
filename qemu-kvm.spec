@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.162
+%define pkgrelease 2.163
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2545,6 +2545,20 @@ Patch2136: kvm-Revert-cdrom-Make-disc-change-event-visible-to-guest.patch
 Patch2137: kvm-Revert-cdrom-Allow-the-TEST_UNIT_READY-command-after.patch
 # For bz#700065 - Switch to upstream solution for cdrom patches
 Patch2138: kvm-atapi-Add-medium-ready-to-medium-not-ready-transitio.patch
+# For bz#621482 - [RFE] Be able to get progress from qemu-img
+Patch2139: kvm-qemu-img-Initial-progress-printing-support.patch
+# For bz#621482 - [RFE] Be able to get progress from qemu-img
+Patch2140: kvm-Add-dd-style-SIGUSR1-progress-reporting.patch
+# For bz#621482 - [RFE] Be able to get progress from qemu-img
+Patch2141: kvm-Remove-obsolete-enabled-variable-from-progress-state.patch
+# For bz#621482 - [RFE] Be able to get progress from qemu-img
+Patch2142: kvm-qemu-progress.c-printf-isn-t-signal-safe.patch
+# For bz#621482 - [RFE] Be able to get progress from qemu-img
+Patch2143: kvm-qemu-img.c-Remove-superfluous-parenthesis.patch
+# For bz#621482 - [RFE] Be able to get progress from qemu-img
+Patch2144: kvm-Add-documentation-for-qemu_progress_-init-print.patch
+# For bz#655719 - no error pops when change cd to non-exist file
+Patch2145: kvm-Add-qerror-message-if-the-change-target-filename-can.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3790,6 +3804,13 @@ ApplyOptionalPatch()
 %patch2136 -p1
 %patch2137 -p1
 %patch2138 -p1
+%patch2139 -p1
+%patch2140 -p1
+%patch2141 -p1
+%patch2142 -p1
+%patch2143 -p1
+%patch2144 -p1
+%patch2145 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -4011,6 +4032,19 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Jun 06 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.163.el6
+- kvm-qemu-img-Initial-progress-printing-support.patch [bz#621482]
+- kvm-Add-dd-style-SIGUSR1-progress-reporting.patch [bz#621482]
+- kvm-Remove-obsolete-enabled-variable-from-progress-state.patch [bz#621482]
+- kvm-qemu-progress.c-printf-isn-t-signal-safe.patch [bz#621482]
+- kvm-qemu-img.c-Remove-superfluous-parenthesis.patch [bz#621482]
+- kvm-Add-documentation-for-qemu_progress_-init-print.patch [bz#621482]
+- kvm-Add-qerror-message-if-the-change-target-filename-can.patch [bz#655719]
+- Resolves: bz#621482
+  ([RFE] Be able to get progress from qemu-img)
+- Resolves: bz#655719
+  (no error pops when change cd to non-exist file)
+
 * Mon May 16 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.162.el6
 - kvm-virtio-serial-Disallow-generic-ports-at-id-0.patch [bz#700511]
 - kvm-virtio-serial-Don-t-clear-have_data-pointer-after-un.patch [bz#681736]

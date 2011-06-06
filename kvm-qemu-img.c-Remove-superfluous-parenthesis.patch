@@ -1,0 +1,61 @@
+From 0b0f857c28e8d742e42374da50c39aa223a5dd34 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Fri, 13 May 2011 12:08:16 -0300
+Subject: [RHEL6 qemu-kvm PATCH 5/7] qemu-img.c: Remove superfluous parenthesis
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1305288497-2389-6-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 24241
+O-Subject: [PATCH 5/6] qemu-img.c: Remove superfluous parenthesis
+Bugzilla: 621482
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ qemu-img.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-img.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/qemu-img.c b/qemu-img.c
+index d9b07f9..6a1f1d7 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -760,7 +760,7 @@ static int img_convert(int argc, char **argv)
+ 
+         nb_sectors = total_sectors;
+         local_progress = (float)100 /
+-            (nb_sectors / MIN(nb_sectors, (cluster_sectors)));
++            (nb_sectors / MIN(nb_sectors, cluster_sectors));
+ 
+         for(;;) {
+             int64_t bs_num;
+@@ -831,7 +831,7 @@ static int img_convert(int argc, char **argv)
+         sector_num = 0; // total number of sectors converted so far
+         nb_sectors = total_sectors - sector_num;
+         local_progress = (float)100 /
+-            (nb_sectors / MIN(nb_sectors, (IO_BUF_SIZE / 512)));
++            (nb_sectors / MIN(nb_sectors, IO_BUF_SIZE / 512));
+ 
+         for(;;) {
+             nb_sectors = total_sectors - sector_num;
+@@ -1306,7 +1306,7 @@ static int img_rebase(int argc, char **argv)
+         bdrv_get_geometry(bs, &num_sectors);
+ 
+         local_progress = (float)100 /
+-            (num_sectors / MIN(num_sectors, (IO_BUF_SIZE / 512)));
++            (num_sectors / MIN(num_sectors, IO_BUF_SIZE / 512));
+         for (sector = 0; sector < num_sectors; sector += n) {
+ 
+             /* How many sectors can we handle with the next read? */
+-- 
+1.7.3.2
+

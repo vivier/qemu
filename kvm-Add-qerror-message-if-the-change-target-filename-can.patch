@@ -1,0 +1,92 @@
+From a4e106b29975c4f839eef52e67c9d4a259344feb Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Tue, 31 May 2011 18:38:01 -0300
+Subject: [RHEL6 qemu-kvm PATCH 7/7] Add qerror message if the 'change' target filename can't be opened
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <20110531153801.6248d7f7@doriath>
+Patchwork-id: 26035
+O-Subject: [PATCH] Add qerror message if the 'change' target filename can't be opened
+Bugzilla: 655719
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Bugzilla: 655719
+Upstream Status: Merged
+
+The BZ description and the explanation below talk only about the user
+monitor, which we don't support. However, in QMP we currently report
+this error as "undefined". Let's make it more accurate by backporting
+a single liner.
+
+Original description follows:
+
+Currently when using the change command to switch the file in the cd drive
+the command doesn't complain if the file doesn't exit or can't be opened
+and the drive keeps the existing image.  This patch adds a qerror_report
+call to print a message out indicating the failure.  This error message
+can be used to catch failures.
+
+Current behavior:
+
+QEMU 0.12.50 monitor - type 'help' for more information
+(qemu) info block
+ide0-hd0: type=hd removable=0 file=/dev/null ro=0 drv=host_device encrypted=0
+ide1-cd0: type=cdrom removable=1 locked=0 [not inserted]
+floppy0: type=floppy removable=1 locked=0 [not inserted]
+sd0: type=floppy removable=1 locked=0 [not inserted]
+(qemu) change ide1-cd0 /home/rharper/work/isos/Fedora-9-i386-DVD.iso
+(qemu) info block
+ide0-hd0: type=hd removable=0 file=/dev/null ro=0 drv=host_device encrypted=0
+ide1-cd0: type=cdrom removable=1 locked=0
+file=/home/rharper/work/isos/Fedora-9-i386-DVD.iso ro=0 drv=raw encrypted=0
+floppy0: type=floppy removable=1 locked=0 [not inserted]
+sd0: type=floppy removable=1 locked=0 [not inserted]
+(qemu) change ide1-cd0 /tmp/non_existent_file.iso
+(qemu) info block
+ide0-hd0: type=hd removable=0 file=/dev/null ro=0 drv=host_device encrypted=0
+ide1-cd0: type=cdrom removable=1 locked=0 [not inserted]
+floppy0: type=floppy removable=1 locked=0 [not inserted]
+sd0: type=floppy removable=1 locked=0 [not inserted]
+(qemu)
+
+With patch:
+QEMU 0.12.50 monitor - type 'help' for more information
+(qemu) change ide1-cd0 /tmp/non_existent_file.iso
+Could not open '/tmp/non_existent_file.iso'
+(qemu)
+
+Signed-off-by: Ryan Harper <ryanh@us.ibm.com>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit 07a5d95a3b32820662194d353da9c098adddde77)
+
+Conflicts:
+
+	monitor.c
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index e80cc66..b9c5423 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -1236,6 +1236,7 @@ static int do_change_block(Monitor *mon, const char *device,
+     bdrv_flags = bdrv_get_type_hint(bs) == BDRV_TYPE_CDROM ? 0 : BDRV_O_RDWR;
+     bdrv_flags |= bdrv_is_snapshot(bs) ? BDRV_O_SNAPSHOT : 0;
+     if (bdrv_open(bs, filename, bdrv_flags, drv)) {
++        qerror_report(QERR_OPEN_FILE_FAILED, filename);
+         return -1;
+     }
+     return monitor_read_bdrv_key_start(mon, bs, NULL, NULL);
+-- 
+1.7.3.2
+

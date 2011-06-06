@@ -1,0 +1,91 @@
+From 30879fc539d4c3c58f55d4cb7f0f47efe9b09aaf Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Fri, 13 May 2011 12:08:17 -0300
+Subject: [RHEL6 qemu-kvm PATCH 6/7] Add documentation for qemu_progress_{init,print}()
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1305288497-2389-7-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 24242
+O-Subject: [PATCH 6/6] Add documentation for qemu_progress_{init,print}()
+Bugzilla: 621482
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+---
+ qemu-common.h   |    2 +-
+ qemu-progress.c |   24 +++++++++++++++++++++---
+ 2 files changed, 22 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-common.h   |    2 +-
+ qemu-progress.c |   24 +++++++++++++++++++++---
+ 2 files changed, 22 insertions(+), 4 deletions(-)
+
+diff --git a/qemu-common.h b/qemu-common.h
+index 2f4903a..d333f58 100644
+--- a/qemu-common.h
++++ b/qemu-common.h
+@@ -293,7 +293,7 @@ void qemu_iovec_memset_skip(QEMUIOVector *qiov, int c, size_t count,
+ 
+ void qemu_progress_init(int enabled, float min_skip);
+ void qemu_progress_end(void);
+-void qemu_progress_print(float percent, int max);
++void qemu_progress_print(float delta, int max);
+ 
+ struct Monitor;
+ typedef struct Monitor Monitor;
+diff --git a/qemu-progress.c b/qemu-progress.c
+index a4894c0..8ebe8ef 100644
+--- a/qemu-progress.c
++++ b/qemu-progress.c
+@@ -96,6 +96,13 @@ static void progress_dummy_init(void)
+     state.end = progress_dummy_end;
+ }
+ 
++/*
++ * Initialize progress reporting.
++ * If @enabled is false, actual reporting is suppressed.  The user can
++ * still trigger a report by sending a SIGUSR1.
++ * Reports are also suppressed unless we've had at least @min_skip
++ * percent progress since the last report.
++ */
+ void qemu_progress_init(int enabled, float min_skip)
+ {
+     state.min_skip = min_skip;
+@@ -111,14 +118,25 @@ void qemu_progress_end(void)
+     state.end();
+ }
+ 
+-void qemu_progress_print(float percent, int max)
++/*
++ * Report progress.
++ * @delta is how much progress we made.
++ * If @max is zero, @delta is an absolut value of the total job done.
++ * Else, @delta is a progress delta since the last call, as a fraction
++ * of @max.  I.e. the delta is @delta * @max / 100. This allows
++ * relative accounting of functions which may be a different fraction of
++ * the full job, depending on the context they are called in. I.e.
++ * a function might be considered 40% of the full job if used from
++ * bdrv_img_create() but only 20% if called from img_convert().
++ */
++void qemu_progress_print(float delta, int max)
+ {
+     float current;
+ 
+     if (max == 0) {
+-        current = percent;
++        current = delta;
+     } else {
+-        current = state.current + percent / 100 * max;
++        current = state.current + delta / 100 * max;
+     }
+     if (current > 100) {
+         current = 100;
+-- 
+1.7.3.2
+

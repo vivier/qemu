@@ -1,0 +1,129 @@
+From cf1b6b40871064c0247b8e02037a5db0008a73c9 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Fri, 13 May 2011 12:08:13 -0300
+Subject: [RHEL6 qemu-kvm PATCH 2/7] Add dd-style SIGUSR1 progress reporting
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1305288497-2389-3-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 24238
+O-Subject: [PATCH 2/6] Add dd-style SIGUSR1 progress reporting
+Bugzilla: 621482
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+This introduces support for dd-style progress reporting on POSIX
+systems, if the user hasn't specified -p to report progress. If sent a
+SIGUSR1, qemu-img will report current progress for commands that
+support progress reporting.
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit a55c73ba3fb3f5700788933c519c193c5e85c878)
+---
+ qemu-progress.c |   53 ++++++++++++++++++++++++++++++++++++++++++++++++-----
+ 1 files changed, 48 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-progress.c |   53 ++++++++++++++++++++++++++++++++++++++++++++++++-----
+ 1 files changed, 48 insertions(+), 5 deletions(-)
+
+diff --git a/qemu-progress.c b/qemu-progress.c
+index 656e065..b4b751c 100644
+--- a/qemu-progress.c
++++ b/qemu-progress.c
+@@ -26,12 +26,15 @@
+ #include "osdep.h"
+ #include "sysemu.h"
+ #include <stdio.h>
++#include <signal.h>
+ 
+ struct progress_state {
+     int enabled;
+     float current;
+     float last_print;
+     float min_skip;
++    void (*print)(void);
++    void (*end)(void);
+ };
+ 
+ static struct progress_state state;
+@@ -51,20 +54,60 @@ static void progress_simple_print(void)
+ 
+ static void progress_simple_end(void)
+ {
+-    if (state.enabled) {
+-        printf("\n");
+-    }
++    printf("\n");
++}
++
++static void progress_simple_init(void)
++{
++    state.print = progress_simple_print;
++    state.end = progress_simple_end;
++}
++
++#ifdef CONFIG_POSIX
++static void sigusr_print(int signal)
++{
++    printf("    (%3.2f/100%%)\n", state.current);
++}
++#endif
++
++static void progress_dummy_print(void)
++{
++}
++
++static void progress_dummy_end(void)
++{
++}
++
++static void progress_dummy_init(void)
++{
++#ifdef CONFIG_POSIX
++    struct sigaction action;
++
++    memset(&action, 0, sizeof(action));
++    sigfillset(&action.sa_mask);
++    action.sa_handler = sigusr_print;
++    action.sa_flags = 0;
++    sigaction(SIGUSR1, &action, NULL);
++#endif
++
++    state.print = progress_dummy_print;
++    state.end = progress_dummy_end;
+ }
+ 
+ void qemu_progress_init(int enabled, float min_skip)
+ {
+     state.enabled = enabled;
+     state.min_skip = min_skip;
++    if (enabled) {
++        progress_simple_init();
++    } else {
++        progress_dummy_init();
++    }
+ }
+ 
+ void qemu_progress_end(void)
+ {
+-    progress_simple_end();
++    state.end();
+ }
+ 
+ void qemu_progress_print(float percent, int max)
+@@ -84,6 +127,6 @@ void qemu_progress_print(float percent, int max)
+     if (current > (state.last_print + state.min_skip) ||
+         (current == 100) || (current == 0)) {
+         state.last_print = state.current;
+-        progress_simple_print();
++        state.print();
+     }
+ }
+-- 
+1.7.3.2
+

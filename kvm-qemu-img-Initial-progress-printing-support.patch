@@ -1,0 +1,367 @@
+From dd63b5ed7b949d038389e26bd92a0b011fcd74e8 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Fri, 13 May 2011 12:08:12 -0300
+Subject: [RHEL6 qemu-kvm PATCH 1/7] qemu-img: Initial progress printing support
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1305288497-2389-2-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 24236
+O-Subject: [PATCH 1/6] qemu-img: Initial progress printing support
+Bugzilla: 621482
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+This adds the basic infrastructure for supporting progress output
+on the command line, as well as progress support for qemu-img commands
+'rebase' and 'convert'.
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Reviewed-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(back-ported from upstream 6b837bc4a4d81861027c74f882d8c1d43f4ec30c)
+---
+ Makefile         |    2 +-
+ qemu-common.h    |    4 ++
+ qemu-img-cmds.hx |    4 +-
+ qemu-img.c       |   38 ++++++++++++++++++++++-
+ qemu-progress.c  |   89 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 132 insertions(+), 5 deletions(-)
+ create mode 100644 qemu-progress.c
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile         |    2 +-
+ qemu-common.h    |    4 ++
+ qemu-img-cmds.hx |    4 +-
+ qemu-img.c       |   38 ++++++++++++++++++++++-
+ qemu-progress.c  |   89 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 132 insertions(+), 5 deletions(-)
+ create mode 100644 qemu-progress.c
+
+diff --git a/Makefile b/Makefile
+index 06acd58..63cd006 100644
+--- a/Makefile
++++ b/Makefile
+@@ -109,7 +109,7 @@ qobject-obj-y += qerror.o
+ # block-obj-y is code used by both qemu system emulation and qemu-img
+ 
+ block-obj-y = cutils.o cache-utils.o qemu-malloc.o qemu-option.o module.o
+-block-obj-y += nbd.o block.o aio.o aes.o osdep.o qemu-config.o
++block-obj-y += nbd.o block.o aio.o aes.o osdep.o qemu-config.o qemu-progress.o
+ block-obj-$(CONFIG_POSIX) += posix-aio-compat.o
+ block-obj-$(CONFIG_LINUX_AIO) += linux-aio.o
+ block-obj-$(CONFIG_POSIX) += compatfd.o
+diff --git a/qemu-common.h b/qemu-common.h
+index 4c5d30c..2f4903a 100644
+--- a/qemu-common.h
++++ b/qemu-common.h
+@@ -291,6 +291,10 @@ void qemu_iovec_memset(QEMUIOVector *qiov, int c, size_t count);
+ void qemu_iovec_memset_skip(QEMUIOVector *qiov, int c, size_t count,
+                             size_t skip);
+ 
++void qemu_progress_init(int enabled, float min_skip);
++void qemu_progress_end(void);
++void qemu_progress_print(float percent, int max);
++
+ struct Monitor;
+ typedef struct Monitor Monitor;
+ 
+diff --git a/qemu-img-cmds.hx b/qemu-img-cmds.hx
+index 480cc07..995852a 100644
+--- a/qemu-img-cmds.hx
++++ b/qemu-img-cmds.hx
+@@ -28,7 +28,7 @@ STEXI
+ ETEXI
+ 
+ DEF("convert", img_convert,
+-    "convert [-c] [-f fmt] [-O output_fmt] [-o options] filename [filename2 [...]] output_filename")
++    "convert [-c] [-p] [-f fmt] [-O output_fmt] [-o options] filename [filename2 [...]] output_filename")
+ STEXI
+ @item convert [-c] [-f @var{fmt}] [-O @var{output_fmt}] [-o @var{options}] @var{filename} [@var{filename2} [...]] @var{output_filename}
+ ETEXI
+@@ -46,7 +46,7 @@ STEXI
+ ETEXI
+ 
+ DEF("rebase", img_rebase,
+-    "rebase [-f fmt] [-u] -b backing_file [-F backing_fmt] filename")
++    "rebase [-f fmt] [-p] [-u] -b backing_file [-F backing_fmt] filename")
+ STEXI
+ @item rebase [-f @var{fmt}] [-u] -b @var{backing_file} [-F @var{backing_fmt}] @var{filename}
+ ETEXI
+diff --git a/qemu-img.c b/qemu-img.c
+index 4daeb23..d9b07f9 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -84,6 +84,7 @@ static void help(void)
+            "       match exactly. The image doesn't need a working backing file before\n"
+            "       rebasing in this case (useful for renaming the backing file)\n"
+            "  '-h' with or without a command shows this help and lists the supported formats\n"
++           "  '-p' show progress of command (only certain commands)\n"
+            "\n"
+            "Parameters to snapshot subcommand:\n"
+            "  'snapshot' is the name of the snapshot to create, apply or delete\n"
+@@ -571,6 +572,7 @@ static int compare_sectors(const uint8_t *buf1, const uint8_t *buf2, int n,
+ static int img_convert(int argc, char **argv)
+ {
+     int c, ret = 0, n, n1, bs_n, bs_i, compress, cluster_size, cluster_sectors;
++    int progress = 0;
+     const char *fmt, *out_fmt, *out_baseimg, *out_filename;
+     BlockDriver *drv, *proto_drv;
+     BlockDriverState **bs = NULL, *out_bs = NULL;
+@@ -581,13 +583,14 @@ static int img_convert(int argc, char **argv)
+     BlockDriverInfo bdi;
+     QEMUOptionParameter *param = NULL, *create_options = NULL;
+     char *options = NULL;
++    float local_progress;
+ 
+     fmt = NULL;
+     out_fmt = "raw";
+     out_baseimg = NULL;
+     compress = 0;
+     for(;;) {
+-        c = getopt(argc, argv, "f:O:B:hce6o:");
++        c = getopt(argc, argv, "f:O:B:hce6o:p");
+         if (c == -1) {
+             break;
+         }
+@@ -619,6 +622,9 @@ static int img_convert(int argc, char **argv)
+         case 'o':
+             options = optarg;
+             break;
++        case 'p':
++            progress = 1;
++            break;
+         }
+     }
+ 
+@@ -640,6 +646,9 @@ static int img_convert(int argc, char **argv)
+         goto out;
+     }
+         
++    qemu_progress_init(progress, 2.0);
++    qemu_progress_print(0, 100);
++
+     bs = qemu_mallocz(bs_n * sizeof(BlockDriverState *));
+ 
+     total_sectors = 0;
+@@ -748,6 +757,11 @@ static int img_convert(int argc, char **argv)
+         }
+         cluster_sectors = cluster_size >> 9;
+         sector_num = 0;
++
++        nb_sectors = total_sectors;
++        local_progress = (float)100 /
++            (nb_sectors / MIN(nb_sectors, (cluster_sectors)));
++
+         for(;;) {
+             int64_t bs_num;
+             int remainder;
+@@ -807,6 +821,7 @@ static int img_convert(int argc, char **argv)
+                 }
+             }
+             sector_num += n;
++            qemu_progress_print(local_progress, 100);
+         }
+         /* signal EOF to align */
+         bdrv_write_compressed(out_bs, 0, NULL, 0);
+@@ -814,6 +829,10 @@ static int img_convert(int argc, char **argv)
+         int has_zero_init = bdrv_has_zero_init(out_bs);
+ 
+         sector_num = 0; // total number of sectors converted so far
++        nb_sectors = total_sectors - sector_num;
++        local_progress = (float)100 /
++            (nb_sectors / MIN(nb_sectors, (IO_BUF_SIZE / 512)));
++
+         for(;;) {
+             nb_sectors = total_sectors - sector_num;
+             if (nb_sectors <= 0) {
+@@ -887,9 +906,11 @@ static int img_convert(int argc, char **argv)
+                 n -= n1;
+                 buf1 += n1 * 512;
+             }
++            qemu_progress_print(local_progress, 100);
+         }
+     }
+ out:
++    qemu_progress_end();
+     free_option_parameters(create_options);
+     free_option_parameters(param);
+     qemu_free(buf);
+@@ -1159,6 +1180,7 @@ static int img_rebase(int argc, char **argv)
+     const char *fmt, *out_basefmt, *out_baseimg;
+     int c, flags, ret;
+     int unsafe = 0;
++    int progress = 0;
+ 
+     /* Parse commandline parameters */
+     fmt = NULL;
+@@ -1166,7 +1188,7 @@ static int img_rebase(int argc, char **argv)
+     out_basefmt = NULL;
+ 
+     for(;;) {
+-        c = getopt(argc, argv, "uhf:F:b:");
++        c = getopt(argc, argv, "uhf:F:b:p");
+         if (c == -1) {
+             break;
+         }
+@@ -1187,6 +1209,9 @@ static int img_rebase(int argc, char **argv)
+         case 'u':
+             unsafe = 1;
+             break;
++        case 'p':
++            progress = 1;
++            break;
+         }
+     }
+ 
+@@ -1195,6 +1220,9 @@ static int img_rebase(int argc, char **argv)
+     }
+     filename = argv[optind++];
+ 
++    qemu_progress_init(progress, 2.0);
++    qemu_progress_print(0, 100);
++
+     /*
+      * Open the images.
+      *
+@@ -1270,12 +1298,15 @@ static int img_rebase(int argc, char **argv)
+         int n;
+         uint8_t * buf_old;
+         uint8_t * buf_new;
++        float local_progress;
+ 
+         buf_old = qemu_malloc(IO_BUF_SIZE);
+         buf_new = qemu_malloc(IO_BUF_SIZE);
+ 
+         bdrv_get_geometry(bs, &num_sectors);
+ 
++        local_progress = (float)100 /
++            (num_sectors / MIN(num_sectors, (IO_BUF_SIZE / 512)));
+         for (sector = 0; sector < num_sectors; sector += n) {
+ 
+             /* How many sectors can we handle with the next read? */
+@@ -1323,6 +1354,7 @@ static int img_rebase(int argc, char **argv)
+ 
+                 written += pnum;
+             }
++            qemu_progress_print(local_progress, 100);
+         }
+ 
+         qemu_free(buf_old);
+@@ -1343,6 +1375,7 @@ static int img_rebase(int argc, char **argv)
+             out_baseimg, strerror(-ret));
+     }
+ 
++    qemu_progress_print(100, 0);
+     /*
+      * TODO At this point it is possible to check if any clusters that are
+      * allocated in the COW file are the same in the backing file. If so, they
+@@ -1350,6 +1383,7 @@ static int img_rebase(int argc, char **argv)
+      * backing file, in case of a crash this would lead to corruption.
+      */
+ out:
++    qemu_progress_end();
+     /* Cleanup */
+     if (!unsafe) {
+         bdrv_delete(bs_old_backing);
+diff --git a/qemu-progress.c b/qemu-progress.c
+new file mode 100644
+index 0000000..656e065
+--- /dev/null
++++ b/qemu-progress.c
+@@ -0,0 +1,89 @@
++/*
++ * QEMU progress printing utility functions
++ *
++ * Copyright (C) 2011 Jes Sorensen <Jes.Sorensen@redhat.com>
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
++ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ */
++
++#include "qemu-common.h"
++#include "osdep.h"
++#include "sysemu.h"
++#include <stdio.h>
++
++struct progress_state {
++    int enabled;
++    float current;
++    float last_print;
++    float min_skip;
++};
++
++static struct progress_state state;
++
++/*
++ * Simple progress print function.
++ * @percent relative percent of current operation
++ * @max percent of total operation
++ */
++static void progress_simple_print(void)
++{
++    if (state.enabled) {
++        printf("    (%3.2f/100%%)\r", state.current);
++        fflush(stdout);
++    }
++}
++
++static void progress_simple_end(void)
++{
++    if (state.enabled) {
++        printf("\n");
++    }
++}
++
++void qemu_progress_init(int enabled, float min_skip)
++{
++    state.enabled = enabled;
++    state.min_skip = min_skip;
++}
++
++void qemu_progress_end(void)
++{
++    progress_simple_end();
++}
++
++void qemu_progress_print(float percent, int max)
++{
++    float current;
++
++    if (max == 0) {
++        current = percent;
++    } else {
++        current = state.current + percent / 100 * max;
++    }
++    if (current > 100) {
++        current = 100;
++    }
++    state.current = current;
++
++    if (current > (state.last_print + state.min_skip) ||
++        (current == 100) || (current == 0)) {
++        state.last_print = state.current;
++        progress_simple_print();
++    }
++}
+-- 
+1.7.3.2
+
