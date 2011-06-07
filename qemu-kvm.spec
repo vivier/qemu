@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.163
+%define pkgrelease 2.164
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2559,6 +2559,12 @@ Patch2143: kvm-qemu-img.c-Remove-superfluous-parenthesis.patch
 Patch2144: kvm-Add-documentation-for-qemu_progress_-init-print.patch
 # For bz#655719 - no error pops when change cd to non-exist file
 Patch2145: kvm-Add-qerror-message-if-the-change-target-filename-can.patch
+# For bz#684127 - e1000:Execute multiple netperf clients caused system call interrupted
+Patch2146: kvm-e1000-check-buffer-availability.patch
+# For bz#680378 - no error message when loading zero size internal snapshot
+Patch2147: kvm-Add-error-message-for-loading-snapshot-without-VM-st.patch
+# For bz#710046 - qemu-kvm prints warning "Using CPU model [...]" (with patch)
+Patch2148: kvm-BZ710046-qemu-kvm-prints-warning-Using-CPU-model.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3811,6 +3817,9 @@ ApplyOptionalPatch()
 %patch2143 -p1
 %patch2144 -p1
 %patch2145 -p1
+%patch2146 -p1
+%patch2147 -p1
+%patch2148 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -4032,6 +4041,17 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jun 07 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.164.el6
+- kvm-e1000-check-buffer-availability.patch [bz#684127]
+- kvm-Add-error-message-for-loading-snapshot-without-VM-st.patch [bz#680378]
+- kvm-BZ710046-qemu-kvm-prints-warning-Using-CPU-model.patch [bz#710046]
+- Resolves: bz#680378
+  (no error message when loading zero size internal snapshot)
+- Resolves: bz#684127
+  (e1000:Execute multiple netperf clients caused system call interrupted)
+- Resolves: bz#710046
+  (qemu-kvm prints warning "Using CPU model [...]" (with patch))
+
 * Mon Jun 06 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.163.el6
 - kvm-qemu-img-Initial-progress-printing-support.patch [bz#621482]
 - kvm-Add-dd-style-SIGUSR1-progress-reporting.patch [bz#621482]

@@ -1,0 +1,69 @@
+From b6330c6cc3668956537780d40f26df551440d910 Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Sun, 27 Mar 2011 15:22:52 -0300
+Subject: [RHEL6 qemu-kvm PATCH 1/3] e1000: check buffer availability
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <20110327152252.GA14594@redhat.com>
+Patchwork-id: 20666
+O-Subject: [PATCH RHEL6.2] e1000: check buffer availability
+Bugzilla: 684127
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Reduce spurious packet drops on RX ring empty
+by verifying that we have at least 1 buffer
+ahead of the time.
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=684127
+Brew: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=3208085
+Upstream: posted
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ hw/e1000.c |   16 ++++++++--------
+ 1 files changed, 8 insertions(+), 8 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/e1000.c |   16 ++++++++--------
+ 1 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/hw/e1000.c b/hw/e1000.c
+index 001b4b3..708416a 100644
+--- a/hw/e1000.c
++++ b/hw/e1000.c
+@@ -619,14 +619,6 @@ e1000_set_link_status(VLANClientState *nc)
+         set_ics(s, 0, E1000_ICR_LSC);
+ }
+ 
+-static int
+-e1000_can_receive(VLANClientState *nc)
+-{
+-    E1000State *s = DO_UPCAST(NICState, nc, nc)->opaque;
+-
+-    return (s->mac_reg[RCTL] & E1000_RCTL_EN);
+-}
+-
+ static bool e1000_has_rxbufs(E1000State *s, size_t total_size)
+ {
+     int bufs;
+@@ -645,6 +637,14 @@ static bool e1000_has_rxbufs(E1000State *s, size_t total_size)
+     return total_size <= bufs * s->rxbuf_size;
+ }
+ 
++static int
++e1000_can_receive(VLANClientState *nc)
++{
++    E1000State *s = DO_UPCAST(NICState, nc, nc)->opaque;
++
++    return (s->mac_reg[RCTL] & E1000_RCTL_EN) && e1000_has_rxbufs(s, 1);
++}
++
+ static ssize_t
+ e1000_receive(VLANClientState *nc, const uint8_t *buf, size_t size)
+ {
+-- 
+1.7.3.2
+

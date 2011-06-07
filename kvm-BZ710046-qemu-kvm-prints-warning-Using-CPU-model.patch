@@ -1,0 +1,44 @@
+From 21ff013c979756568c2ba55973e2557a319f56db Mon Sep 17 00:00:00 2001
+From: Richard Jones <rjones@redhat.com>
+Date: Thu, 2 Jun 2011 11:32:57 -0300
+Subject: [RHEL6 qemu-kvm PATCH 3/3] BZ710046 qemu-kvm prints warning "Using CPU model [...]"
+
+RH-Author: Richard Jones <rjones@redhat.com>
+Message-id: <20110602113257.GA15712@amd.home.annexia.org>
+Patchwork-id: 26259
+O-Subject: [RHEL6.2 PATCH] BZ710046 qemu-kvm prints warning "Using CPU model [...]"
+Bugzilla: 710046
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jiri Denemark <jdenemar@redhat.com>
+
+https://bugzilla.redhat.com/show_bug.cgi?id=710046
+
+When qemu-kvm runs, it prints an unnecessary warning, eg:
+
+  Using CPU model "cpu64-rhel6"
+
+This simple patch removes the fprintf statement.  With this patch, the
+code in that function now matches what is in upstream qemu.
+
+Signed-off-by: Richard W.M. Jones <rjones@redhat.com>
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ target-i386/helper.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+diff --git a/target-i386/helper.c b/target-i386/helper.c
+index ab2062a..9cf6e90 100644
+--- a/target-i386/helper.c
++++ b/target-i386/helper.c
+@@ -2304,7 +2304,6 @@ CPUX86State *cpu_x86_init(const char *cpu_model)
+     env = qemu_mallocz(sizeof(CPUX86State));
+     cpu_exec_init(env);
+     env->cpu_model_str = cpu_model;
+-    fprintf(stderr, "Using CPU model \"%s\"\n", cpu_model);
+ 
+     /* init various static tables */
+     if (!inited) {
+-- 
+1.7.3.2
+

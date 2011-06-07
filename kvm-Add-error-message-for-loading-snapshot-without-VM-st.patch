@@ -1,0 +1,51 @@
+From 7c9a1a358aa06c3049029c62618c0f501efd54f1 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Thu, 31 Mar 2011 14:27:08 -0300
+Subject: [RHEL6 qemu-kvm PATCH 2/3] Add error message for loading snapshot without VM state
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1301581628-16786-1-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 21046
+O-Subject: [PATCH RHEL6.2 qemu-kvm] Add error message for loading snapshot without VM state
+Bugzilla: 680378
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+It already fails, but it didn't tell the user why.
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=680378
+Manual'back'port of upstream e11480db7ff15a9e878f6b3cc1199b439bf7c825
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+---
+ savevm.c |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ savevm.c |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
+
+diff --git a/savevm.c b/savevm.c
+index 161bb70..e85e630 100644
+--- a/savevm.c
++++ b/savevm.c
+@@ -2067,8 +2067,11 @@ int load_vmstate(const char *name)
+ 
+     /* Don't even try to load empty VM states */
+     ret = bdrv_snapshot_find(bs, &sn, name);
+-    if ((ret >= 0) && (sn.vm_state_size == 0))
++    if ((ret >= 0) && (sn.vm_state_size == 0)) {
++        error_report("This is a disk-only snapshot. Revert to it offline "
++            "using qemu-img.");
+         return -EINVAL;
++    }
+ 
+     /* restore the VM state */
+     f = qemu_fopen_bdrv(bs, 0);
+-- 
+1.7.3.2
+
