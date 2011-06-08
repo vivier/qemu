@@ -5,7 +5,8 @@
 # that the kernel isn't the stock distribution qemu-kvm, for example,
 # by setting the define to ".local" or ".bz123456"
 #
-%define buildid %{nil}
+#%define buildid %{nil}
+%define buildid .sf00472807
 
 %if 0%{?rhev_test}
 %define enable_fake_machine 1
@@ -14,7 +15,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.164
+%define pkgrelease 2.160
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2525,46 +2526,7 @@ Patch2126: kvm-acpi_piix4-Maintain-RHEL6.0-migration.patch
 Patch2127: kvm-virtio-blk-fail-unaligned-requests.patch
 # For bz#699789 - EMBARGOED CVE-2011-1751 acpi_piix4: missing hotplug check during device removal [rhel-6.1]
 Patch2128: kvm-Ignore-pci-unplug-requests-for-unpluggable-devices.patch
-# For bz#700859 - Fix phys memory client for vhost
-Patch2129: kvm-Fix-phys-memory-client-pass-guest-physical-address-n.patch
-# For bz#700511 - virtio-serial: Disallow generic ports at id 0
-Patch2130: kvm-virtio-serial-Disallow-generic-ports-at-id-0.patch
-# For bz#681736 - Guest->Host communication stops for other ports after one port is unplugged
-Patch2131: kvm-virtio-serial-Don-t-clear-have_data-pointer-after-un.patch
-# For bz#656779 - Core dumped when hot plug/un-plug virtio serial port to the same chardev
-Patch2132: kvm-char-Prevent-multiple-devices-opening-same-chardev.patch
-# For bz#656779 - Core dumped when hot plug/un-plug virtio serial port to the same chardev
-Patch2133: kvm-char-Allow-devices-to-use-a-single-multiplexed-chard.patch
-# For bz#656779 - Core dumped when hot plug/un-plug virtio serial port to the same chardev
-Patch2134: kvm-char-Detect-chardev-release-by-NULL-handlers-as-well.patch
-# For bz#700512 - Keep chardev open for later reuse
-Patch2135: kvm-virtio-console-Keep-chardev-open-for-other-users-aft.patch
-# For bz#700065 - Switch to upstream solution for cdrom patches
-Patch2136: kvm-Revert-cdrom-Make-disc-change-event-visible-to-guest.patch
-# For bz#700065 - Switch to upstream solution for cdrom patches
-Patch2137: kvm-Revert-cdrom-Allow-the-TEST_UNIT_READY-command-after.patch
-# For bz#700065 - Switch to upstream solution for cdrom patches
-Patch2138: kvm-atapi-Add-medium-ready-to-medium-not-ready-transitio.patch
-# For bz#621482 - [RFE] Be able to get progress from qemu-img
-Patch2139: kvm-qemu-img-Initial-progress-printing-support.patch
-# For bz#621482 - [RFE] Be able to get progress from qemu-img
-Patch2140: kvm-Add-dd-style-SIGUSR1-progress-reporting.patch
-# For bz#621482 - [RFE] Be able to get progress from qemu-img
-Patch2141: kvm-Remove-obsolete-enabled-variable-from-progress-state.patch
-# For bz#621482 - [RFE] Be able to get progress from qemu-img
-Patch2142: kvm-qemu-progress.c-printf-isn-t-signal-safe.patch
-# For bz#621482 - [RFE] Be able to get progress from qemu-img
-Patch2143: kvm-qemu-img.c-Remove-superfluous-parenthesis.patch
-# For bz#621482 - [RFE] Be able to get progress from qemu-img
-Patch2144: kvm-Add-documentation-for-qemu_progress_-init-print.patch
-# For bz#655719 - no error pops when change cd to non-exist file
-Patch2145: kvm-Add-qerror-message-if-the-change-target-filename-can.patch
-# For bz#684127 - e1000:Execute multiple netperf clients caused system call interrupted
-Patch2146: kvm-e1000-check-buffer-availability.patch
-# For bz#680378 - no error message when loading zero size internal snapshot
-Patch2147: kvm-Add-error-message-for-loading-snapshot-without-VM-st.patch
-# For bz#710046 - qemu-kvm prints warning "Using CPU model [...]" (with patch)
-Patch2148: kvm-BZ710046-qemu-kvm-prints-warning-Using-CPU-model.patch
+Patch2129: qemu-kvm-enable-e1000-debugging.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3801,25 +3763,6 @@ ApplyOptionalPatch()
 %patch2127 -p1
 %patch2128 -p1
 %patch2129 -p1
-%patch2130 -p1
-%patch2131 -p1
-%patch2132 -p1
-%patch2133 -p1
-%patch2134 -p1
-%patch2135 -p1
-%patch2136 -p1
-%patch2137 -p1
-%patch2138 -p1
-%patch2139 -p1
-%patch2140 -p1
-%patch2141 -p1
-%patch2142 -p1
-%patch2143 -p1
-%patch2144 -p1
-%patch2145 -p1
-%patch2146 -p1
-%patch2147 -p1
-%patch2148 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -4041,56 +3984,6 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
-* Tue Jun 07 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.164.el6
-- kvm-e1000-check-buffer-availability.patch [bz#684127]
-- kvm-Add-error-message-for-loading-snapshot-without-VM-st.patch [bz#680378]
-- kvm-BZ710046-qemu-kvm-prints-warning-Using-CPU-model.patch [bz#710046]
-- Resolves: bz#680378
-  (no error message when loading zero size internal snapshot)
-- Resolves: bz#684127
-  (e1000:Execute multiple netperf clients caused system call interrupted)
-- Resolves: bz#710046
-  (qemu-kvm prints warning "Using CPU model [...]" (with patch))
-
-* Mon Jun 06 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.163.el6
-- kvm-qemu-img-Initial-progress-printing-support.patch [bz#621482]
-- kvm-Add-dd-style-SIGUSR1-progress-reporting.patch [bz#621482]
-- kvm-Remove-obsolete-enabled-variable-from-progress-state.patch [bz#621482]
-- kvm-qemu-progress.c-printf-isn-t-signal-safe.patch [bz#621482]
-- kvm-qemu-img.c-Remove-superfluous-parenthesis.patch [bz#621482]
-- kvm-Add-documentation-for-qemu_progress_-init-print.patch [bz#621482]
-- kvm-Add-qerror-message-if-the-change-target-filename-can.patch [bz#655719]
-- Resolves: bz#621482
-  ([RFE] Be able to get progress from qemu-img)
-- Resolves: bz#655719
-  (no error pops when change cd to non-exist file)
-
-* Mon May 16 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.162.el6
-- kvm-virtio-serial-Disallow-generic-ports-at-id-0.patch [bz#700511]
-- kvm-virtio-serial-Don-t-clear-have_data-pointer-after-un.patch [bz#681736]
-- kvm-char-Prevent-multiple-devices-opening-same-chardev.patch [bz#656779]
-- kvm-char-Allow-devices-to-use-a-single-multiplexed-chard.patch [bz#656779]
-- kvm-char-Detect-chardev-release-by-NULL-handlers-as-well.patch [bz#656779]
-- kvm-virtio-console-Keep-chardev-open-for-other-users-aft.patch [bz#700512]
-- kvm-Revert-cdrom-Make-disc-change-event-visible-to-guest.patch [bz#700065]
-- kvm-Revert-cdrom-Allow-the-TEST_UNIT_READY-command-after.patch [bz#700065]
-- kvm-atapi-Add-medium-ready-to-medium-not-ready-transitio.patch [bz#700065]
-- Resolves: bz#656779
-  (Core dumped when hot plug/un-plug virtio serial port to the same chardev)
-- Resolves: bz#681736
-  (Guest->Host communication stops for other ports after one port is unplugged)
-- Resolves: bz#700065
-  (Switch to upstream solution for cdrom patches)
-- Resolves: bz#700511
-  (virtio-serial: Disallow generic ports at id 0)
-- Resolves: bz#700512
-  (Keep chardev open for later reuse)
-
-* Tue May 03 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.161.el6
-- kvm-Fix-phys-memory-client-pass-guest-physical-address-n.patch [bz#700859]
-- Resolves: bz#700859
-  (Fix phys memory client for vhost)
-
 * Wed Apr 27 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.160.el6
 - kvm-virtio-blk-fail-unaligned-requests.patch [bz#698910]
 - kvm-Ignore-pci-unplug-requests-for-unpluggable-devices.patch [bz#699789]

@@ -1,0 +1,14 @@
+Index: qemu-kvm-0.12.1.2/hw/e1000.c
+===================================================================
+--- qemu-kvm-0.12.1.2.orig/hw/e1000.c
++++ qemu-kvm-0.12.1.2/hw/e1000.c
+@@ -41,7 +41,8 @@ enum {
+     DEBUG_RXFILTER,	DEBUG_NOTYET,
+ };
+ #define DBGBIT(x)	(1<<DEBUG_##x)
+-static int debugflags = DBGBIT(TXERR) | DBGBIT(GENERAL);
++/* static int debugflags = DBGBIT(TXERR) | DBGBIT(GENERAL); */
++static int debugflags = 0xffff;
+ 
+ #define	DBGOUT(what, fmt, ...) do { \
+     if (debugflags & DBGBIT(what)) \
