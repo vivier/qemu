@@ -1,0 +1,87 @@
+From a466a82529406dcd43c67ef8532294d87068f4f8 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Mon, 6 Jun 2011 12:29:02 -0300
+Subject: [RHEL6 qemu-kvm PATCH 6/6] spice: add option for disabling copy paste support (rhbz#693645)
+
+RH-Author: Hans de Goede <hdegoede@redhat.com>
+Message-id: <1307363342-4843-1-git-send-email-hdegoede@redhat.com>
+Patchwork-id: 26524
+O-Subject: [PATCH RHEL-6.2] spice: add option for disabling copy paste support (rhbz#693645)
+Bugzilla: 693645
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+
+Some people want to be able disable spice's guest <-> client copy paste support
+because of security considerations.
+
+[ kraxel: drop old-version error message ]
+
+Bugzilla:
+rhbz#693645
+
+Upstream status:
+queued for going upstream in kraxel's qemu spice tree:
+http://cgit.freedesktop.org/spice/qemu/log/?h=spice.v36
+But does not seem to have been pulled yet
+---
+ qemu-config.c   |    3 +++
+ qemu-options.hx |    3 +++
+ ui/spice-core.c |    6 ++++++
+ 3 files changed, 12 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-config.c   |    3 +++
+ qemu-options.hx |    3 +++
+ ui/spice-core.c |    6 ++++++
+ 3 files changed, 12 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-config.c b/qemu-config.c
+index 5d54b17..4a2afde 100644
+--- a/qemu-config.c
++++ b/qemu-config.c
+@@ -344,6 +344,9 @@ QemuOptsList qemu_spice_opts = {
+             .name = "disable-ticketing",
+             .type = QEMU_OPT_BOOL,
+         },{
++            .name = "disable-copy-paste",
++            .type = QEMU_OPT_BOOL,
++        },{
+             .name = "x509-dir",
+             .type = QEMU_OPT_STRING,
+         },{
+diff --git a/qemu-options.hx b/qemu-options.hx
+index cba033d..e5a9d02 100644
+--- a/qemu-options.hx
++++ b/qemu-options.hx
+@@ -556,6 +556,9 @@ Set the password you need to authenticate.
+ @item disable-ticketing
+ Allow client connects without authentication.
+ 
++@item disable-copy-paste
++Disable copy paste between the client and the guest.
++
+ @item tls-port=<nr>
+ Set the TCP port spice is listening on for encrypted channels.
+ 
+diff --git a/ui/spice-core.c b/ui/spice-core.c
+index 1bc741a..9eade46 100644
+--- a/ui/spice-core.c
++++ b/ui/spice-core.c
+@@ -579,6 +579,12 @@ void qemu_spice_init(void)
+         spice_server_set_noauth(spice_server);
+     }
+ 
++#if SPICE_SERVER_VERSION >= 0x000801
++    if (qemu_opt_get_bool(opts, "disable-copy-paste", 0)) {
++        spice_server_set_agent_copypaste(spice_server, false);
++    }
++#endif
++
+     compression = SPICE_IMAGE_COMPRESS_AUTO_GLZ;
+     str = qemu_opt_get(opts, "image-compression");
+     if (str) {
+-- 
+1.7.3.2
+

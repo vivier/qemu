@@ -1,0 +1,55 @@
+From 948d426cacf00b0cf76c4260f3f5c61fe7282e71 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Thu, 5 May 2011 09:34:47 -0300
+Subject: [RHEL6 qemu-kvm PATCH 3/6] ide: cleanup warnings
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1304588087-6055-4-git-send-email-kwolf@redhat.com>
+Patchwork-id: 23639
+O-Subject: [RHEL-6.2 qemu-kvm PATCH 3/3] ide: cleanup warnings
+Bugzilla: 701775
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Andrea Arcangeli <aarcange@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+Bugzilla: 701775
+Upstream: Submitted
+
+Add \n.
+
+Signed-off-by: Andrea Arcangeli <aarcange@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+
+Conflicts:
+
+	hw/ide/pci.c
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ hw/ide/pci.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/ide/pci.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/hw/ide/pci.c b/hw/ide/pci.c
+index d5d6088..352b41d 100644
+--- a/hw/ide/pci.c
++++ b/hw/ide/pci.c
+@@ -55,9 +55,9 @@ void bmdma_cmd_writeb(void *opaque, uint32_t addr, uint32_t val)
+ 	if (bm->aiocb) {
+ 		qemu_aio_flush();
+ 		if (bm->aiocb)
+-			printf("ide_dma_cancel: aiocb still pending");
++			printf("ide_dma_cancel: aiocb still pending\n");
+ 		if (bm->status & BM_STATUS_DMAING)
+-			printf("ide_dma_cancel: BM_STATUS_DMAING still pending");
++			printf("ide_dma_cancel: BM_STATUS_DMAING still pending\n");
+ 	}
+         bm->cmd = val & 0x09;
+     } else {
+-- 
+1.7.3.2
+

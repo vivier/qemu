@@ -1,0 +1,50 @@
+From 3ba1b368ab446cccbf47463cc0747c41cdc97e30 Mon Sep 17 00:00:00 2001
+From: Xiao Wang <jasowang@redhat.com>
+Date: Thu, 2 Jun 2011 05:10:34 -0300
+Subject: [RHEL6 qemu-kvm PATCH 4/6] virtio: correctly initialize vm_running
+
+RH-Author: Xiao Wang <jasowang@redhat.com>
+Message-id: <20110602051033.28670.89880.stgit@dhcp-91-7.nay.redhat.com.englab.nay.redhat.com>
+Patchwork-id: 26204
+O-Subject: [RHEL6.2 qemu-kvm PATCH] virtio: correctly initialize vm_running
+Bugzilla: 701442
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Glauber Costa <glommer@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=701442
+Upstream: In Michael's tree
+Brew: https://brewweb.devel.redhat.com/taskinfo?taskID=3365129
+Test status: Tested in my local desktop.
+
+Current vm_running was not explicitly initialized and its value was changed by
+vm state notifier, this may confuse the virtio device being hotplugged such as
+virtio-net with vhost backend as it may think the vm was not running. Solve this
+by initialize this value explicitly in virtio_common_init().
+
+Signed-off-by: Jason Wang <jasowang@redhat.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry picked from commit b1484f8b6fed87dbf1cda9cd9747218c74ad3e35)
+---
+ 0 files changed, 0 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio.c b/hw/virtio.c
+index d5013b6..0b6344e 100644
+--- a/hw/virtio.c
++++ b/hw/virtio.c
+@@ -773,6 +773,7 @@ VirtIODevice *virtio_common_init(const char *name, uint16_t device_id,
+     vdev->queue_sel = 0;
+     vdev->config_vector = VIRTIO_NO_VECTOR;
+     vdev->vq = qemu_mallocz(sizeof(VirtQueue) * VIRTIO_PCI_QUEUE_MAX);
++    vdev->vm_running = vm_running;
+     for(i = 0; i < VIRTIO_PCI_QUEUE_MAX; i++) {
+         vdev->vq[i].vector = VIRTIO_NO_VECTOR;
+         vdev->vq[i].vdev = vdev;
+-- 
+1.7.3.2
+

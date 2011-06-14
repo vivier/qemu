@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.164
+%define pkgrelease 2.165
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2565,6 +2565,18 @@ Patch2146: kvm-e1000-check-buffer-availability.patch
 Patch2147: kvm-Add-error-message-for-loading-snapshot-without-VM-st.patch
 # For bz#710046 - qemu-kvm prints warning "Using CPU model [...]" (with patch)
 Patch2148: kvm-BZ710046-qemu-kvm-prints-warning-Using-CPU-model.patch
+# For bz#701775 - KVM: stdio is flooded
+Patch2149: kvm-ide-Factor-ide_dma_set_inactive-out.patch
+# For bz#701775 - KVM: stdio is flooded
+Patch2150: kvm-ide-Set-bus-master-inactive-on-error.patch
+# For bz#701775 - KVM: stdio is flooded
+Patch2151: kvm-ide-cleanup-warnings.patch
+# For bz#701442 - vhost-net not enabled on hotplug
+Patch2152: kvm-virtio-correctly-initialize-vm_running.patch
+# For bz#710349 - Backport serial number support for virtio-blk devices
+Patch2153: kvm-Add-virtio-disk-identification-support.patch
+# For bz#693645 - RFE: add spice option to enable/disable copy paste
+Patch2154: kvm-spice-add-option-for-disabling-copy-paste-support-rh.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3820,6 +3832,12 @@ ApplyOptionalPatch()
 %patch2146 -p1
 %patch2147 -p1
 %patch2148 -p1
+%patch2149 -p1
+%patch2150 -p1
+%patch2151 -p1
+%patch2152 -p1
+%patch2153 -p1
+%patch2154 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -4041,6 +4059,22 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jun 14 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.165.el6
+- kvm-ide-Factor-ide_dma_set_inactive-out.patch [bz#701775]
+- kvm-ide-Set-bus-master-inactive-on-error.patch [bz#701775]
+- kvm-ide-cleanup-warnings.patch [bz#701775]
+- kvm-virtio-correctly-initialize-vm_running.patch [bz#701442]
+- kvm-Add-virtio-disk-identification-support.patch [bz#710349]
+- kvm-spice-add-option-for-disabling-copy-paste-support-rh.patch [bz#693645]
+- Resolves: bz#693645
+  (RFE: add spice option to enable/disable copy paste)
+- Resolves: bz#701442
+  (vhost-net not enabled on hotplug)
+- Resolves: bz#701775
+  (KVM: stdio is flooded)
+- Resolves: bz#710349
+  (Backport serial number support for virtio-blk devices)
+
 * Tue Jun 07 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.164.el6
 - kvm-e1000-check-buffer-availability.patch [bz#684127]
 - kvm-Add-error-message-for-loading-snapshot-without-VM-st.patch [bz#680378]

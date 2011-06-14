@@ -1,0 +1,108 @@
+From 96fedd2a17aec894372e61b08f685b6511b3e075 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 3 Jun 2011 08:41:39 -0300
+Subject: [RHEL6 qemu-kvm PATCH 5/6] Add virtio disk identification support
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <dd59d1b2e1b5c964f3e26773e3d9b38381261759.1307090495.git.amit.shah@redhat.com>
+Patchwork-id: 26338
+O-Subject: [RHEL6.2 PATCH 1/1] Add virtio disk identification support
+Bugzilla: 710349
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: john cooper <john.cooper@redhat.com>
+
+This patch adds the final missing bits for support of
+passing a serial/id string to a virtio-blk guest driver.
+
+The guest-side component already exists in the virtio
+driver, and has recently been reworked by Ryan to export
+a /sys interface for retrieval of the id from guest userland.
+
+Signed-off-by: john cooper <john.cooper@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 2930b313dd602d67a568815b0b031b824916cec9)
+
+Conflicts:
+
+	hw/virtio-blk.c
+
+Bugzilla: 710349
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-blk.c |   14 ++++++++++++++
+ hw/virtio-blk.h |    3 +++
+ 2 files changed, 17 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-blk.c |   14 ++++++++++++++
+ hw/virtio-blk.h |    3 +++
+ 2 files changed, 17 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index 6737c6b..8329bf3 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -29,6 +29,7 @@ typedef struct VirtIOBlock
+     QEMUBH *bh;
+     BlockConf *conf;
+     unsigned short sector_mask;
++    char sn[BLOCK_SERIAL_STRLEN];
+     DeviceState *qdev;
+ } VirtIOBlock;
+ 
+@@ -355,6 +356,12 @@ static void virtio_blk_handle_request(VirtIOBlockReq *req,
+             req, &mrb->old_bs);
+     } else if (req->out->type & VIRTIO_BLK_T_SCSI_CMD) {
+         virtio_blk_handle_scsi(req);
++    } else if (req->out->type & VIRTIO_BLK_T_GET_ID) {
++        VirtIOBlock *s = req->dev;
++
++        memcpy(req->elem.in_sg[0].iov_base, s->sn,
++               MIN(req->elem.in_sg[0].iov_len, sizeof(s->sn)));
++        virtio_blk_req_complete(req, VIRTIO_BLK_S_OK);
+     } else if (req->out->type & VIRTIO_BLK_T_OUT) {
+         qemu_iovec_init_external(&req->qiov, &req->elem.out_sg[1],
+                                  req->elem.out_num - 1);
+@@ -533,6 +540,7 @@ VirtIODevice *virtio_blk_init(DeviceState *dev, BlockConf *conf)
+     VirtIOBlock *s;
+     int cylinders, heads, secs;
+     static int virtio_blk_id;
++    DriveInfo *dinfo;
+ 
+     s = (VirtIOBlock *)virtio_common_init("virtio-blk", VIRTIO_ID_BLOCK,
+                                           sizeof(struct virtio_blk_config),
+@@ -548,6 +556,12 @@ VirtIODevice *virtio_blk_init(DeviceState *dev, BlockConf *conf)
+     bdrv_guess_geometry(s->bs, &cylinders, &heads, &secs);
+     bdrv_set_geometry_hint(s->bs, cylinders, heads, secs);
+ 
++    /* NB: per existing s/n string convention the string is terminated
++     * by '\0' only when less than sizeof (s->sn)
++     */
++    dinfo = drive_get_by_blockdev(s->bs);
++    strncpy(s->sn, dinfo->serial, sizeof (s->sn));
++
+     s->vq = virtio_add_queue(&s->vdev, 128, virtio_blk_handle_output);
+ 
+     qemu_add_vm_change_state_handler(virtio_blk_dma_restart_cb, s);
+diff --git a/hw/virtio-blk.h b/hw/virtio-blk.h
+index 7a7ece3..fff46da 100644
+--- a/hw/virtio-blk.h
++++ b/hw/virtio-blk.h
+@@ -59,6 +59,9 @@ struct virtio_blk_config
+ /* Flush the volatile write cache */
+ #define VIRTIO_BLK_T_FLUSH      4
+ 
++/* return the device ID string */
++#define VIRTIO_BLK_T_GET_ID     8
++
+ /* Barrier before this op. */
+ #define VIRTIO_BLK_T_BARRIER    0x80000000
+ 
+-- 
+1.7.3.2
+

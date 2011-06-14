@@ -1,0 +1,47 @@
+From f4ec97eef9b3b736f0612514c9cd9b9d9b9136c2 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Thu, 5 May 2011 09:34:46 -0300
+Subject: [RHEL6 qemu-kvm PATCH 2/6] ide: Set bus master inactive on error
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1304588087-6055-3-git-send-email-kwolf@redhat.com>
+Patchwork-id: 23638
+O-Subject: [RHEL-6.2 qemu-kvm PATCH 2/3] ide: Set bus master inactive on error
+Bugzilla: 701775
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Andrea Arcangeli <aarcange@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+Bugzilla: 701775
+
+BMIDEA in the status register must be cleared on error. This makes FreeBSD
+respond (more) correctly to I/O errors.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Reviewed-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+(cherry picked from commit e3982b3cf6d17fbba6839d5252f5f757a8d585dc)
+---
+ hw/ide/core.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/ide/core.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 9807398..3e133f1 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -486,6 +486,8 @@ void ide_dma_error(IDEState *s)
+     ide_transfer_stop(s);
+     s->error = ABRT_ERR;
+     s->status = READY_STAT | ERR_STAT;
++    ide_dma_set_inactive(s->bus->bmdma);
++    s->bus->bmdma->status |= BM_STATUS_INT;
+     ide_set_irq(s->bus);
+ }
+ 
+-- 
+1.7.3.2
+
