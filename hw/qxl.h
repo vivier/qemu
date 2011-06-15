@@ -55,6 +55,10 @@ typedef struct PCIQXLDevice {
     } guest_surfaces;
     QXLPHYSICAL        guest_cursor;
 
+    /* thread signaling */
+    pthread_t          main;
+    int                pipe[2];
+
     /* ram pci bar */
     QXLRam             *ram;
     VGACommonState     vga;

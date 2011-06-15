@@ -395,27 +395,6 @@ static DisplayChangeListener display_listener = {
     .dpy_refresh = display_refresh,
 };
 
-void qxl_create_server_to_iothread_pipe(SimpleSpiceDisplay *ssd,
-    IOHandler *pipe_read)
-{
-    if (pipe(ssd->pipe) < 0) {
-        fprintf(stderr, "%s: pipe creation failed\n", __FUNCTION__);
-        return;
-    }
-
-#ifdef CONFIG_IOTHREAD
-    fcntl(ssd->pipe[0], F_SETFL, O_NONBLOCK);
-#else
-    fcntl(ssd->pipe[0], F_SETFL, O_NONBLOCK /* | O_ASYNC */);
-#endif
-    fcntl(ssd->pipe[1], F_SETFL, O_NONBLOCK);
-
-    fcntl(ssd->pipe[0], F_SETOWN, getpid());
-
-    qemu_set_fd_handler(ssd->pipe[0], pipe_read, NULL, ssd);
-    ssd->main = pthread_self();
-}
-
 void qemu_spice_display_init(DisplayState *ds)
 {
     assert(sdpy.ds == NULL);
