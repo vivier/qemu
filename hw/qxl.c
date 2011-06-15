@@ -1527,4 +1527,66 @@ static void qxl_register(void)
     pci_qdev_register(&qxl_info_secondary);
 }
 
+int rhel6_qxl_screendump(const char *id, const char *filename)
+{
+    DeviceState *dev;
+    PCIQXLDevice *qxl;
+    QXLSurfaceCreate *sc;
+    DisplaySurface surface;
+    QXLRect dirty, update;
+
+    dev = qdev_find_by_id(id);
+    if (NULL == dev) {
+        error_report("Device \"%s\" not found.", id);
+        return -1;
+    }
+    if (dev->info != &qxl_info_secondary.qdev &&
+        dev->info != &qxl_info_primary.qdev) {
+        error_report("Device \"%s\" is not a qxl device.", id);
+        return -1;
+    }
+    qxl = DO_UPCAST(PCIQXLDevice, pci.qdev, dev);
+    sc  = &qxl->guest_primary.surface;
+
+    if (qxl->mode != QXL_MODE_COMPAT &&
+        qxl->mode != QXL_MODE_NATIVE) {
+        error_report("QXL device \"%s\" is not used by the guest.", id);
+        return -1;
+    }
+
+    surface.width    = le32_to_cpu(sc->width);
+    surface.height   = le32_to_cpu(sc->height);
+    surface.linesize = le32_to_cpu(sc->stride);
+    surface.data     = qxl_phys2virt(qxl, le64_to_cpu(sc->mem), MEMSLOT_GROUP_GUEST);
+    if (surface.linesize < 0) {
+        surface.data += -surface.linesize * (surface.height - 1);
+    }
+
+    switch (le32_to_cpu(sc->format)) {
+    case SPICE_SURFACE_FMT_16_565:
+        surface.pf = qemu_default_pixelformat(16);
+        break;
+    case SPICE_SURFACE_FMT_32_xRGB:
+    case SPICE_SURFACE_FMT_32_ARGB:
+        surface.pf = qemu_default_pixelformat(32);
+        break;
+    default:
+        error_report("Can't handle spice surface format %d.", le32_to_cpu(sc->format));
+        return -1;
+    }
+
+    update.left   = 0;
+    update.right  = surface.width;
+    update.top    = 0;
+    update.bottom = surface.height;
+    memset(&dirty, 0, sizeof(dirty));
+
+    fprintf(stderr, "%s: %dx%d, fmt %d, linesize %d\n", __FUNCTION__,
+            surface.width, surface.height, le32_to_cpu(sc->format), surface.linesize);
+
+    qxl->ssd.worker->update_area(qxl->ssd.worker, 0, &update, &dirty, 1, 1);
+    ppm_save(filename, &surface);
+    return 0;
+}
+
 device_init(qxl_register);

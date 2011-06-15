@@ -291,6 +291,20 @@ Save screen into PPM image @var{filename}.
 ETEXI
 
     {
+        .name       = RFQDN_REDHAT "qxl_screendump",
+        .args_type  = "id:s,filename:F",
+        .params     = "id filename",
+        .help       = "save screen from qxl device 'id' into PPM image 'filename'",
+        .mhandler.cmd_new = rhel6_qxl_do_screen_dump,
+    },
+
+STEXI
+@item __com.redhat_screendump @var{id} @var{filename}
+@findex __com.redhat_screendump
+Save screen from qxl device @var{id} into PPM image @var{filename}.
+ETEXI
+
+    {
         .name       = "logfile",
         .args_type  = "filename:F",
         .params     = "filename",

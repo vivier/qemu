@@ -106,3 +106,6 @@ void qxl_log_command(PCIQXLDevice *qxl, const char *ring, QXLCommandExt *ext);
 void qxl_render_resize(PCIQXLDevice *qxl);
 void qxl_render_update(PCIQXLDevice *qxl);
 void qxl_render_cursor(PCIQXLDevice *qxl, QXLCommandExt *ext);
+
+/* rhel6 only */
+int rhel6_qxl_screendump(const char *id, const char *filename);

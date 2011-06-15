@@ -30,6 +30,7 @@
 #include "hw/pci.h"
 #include "hw/watchdog.h"
 #include "hw/loader.h"
+#include "hw/qxl.h"
 #include "gdbstub.h"
 #include "net.h"
 #include "net/slirp.h"
@@ -1303,6 +1304,19 @@ static int redhat_spice_migrate_info(Monitor *mon, const QDict *qdict, QObject *
 static void do_screen_dump(Monitor *mon, const QDict *qdict)
 {
     vga_hw_screen_dump(qdict_get_str(qdict, "filename"));
+}
+
+static int rhel6_qxl_do_screen_dump(Monitor *mon, const QDict *qdict, QObject **ret_data)
+{
+    int ret;
+
+    ret = rhel6_qxl_screendump(qdict_get_str(qdict, "id"),
+                               qdict_get_str(qdict, "filename"));
+    if (ret != 0) {
+        qerror_report(QERR_UNDEFINED_ERROR);
+        return -1;
+    }
+    return 0;
 }
 
 static void do_logfile(Monitor *mon, const QDict *qdict)
