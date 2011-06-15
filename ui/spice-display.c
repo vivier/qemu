@@ -63,14 +63,7 @@ void qemu_spice_rect_union(QXLRect *dest, const QXLRect *r)
     dest->right = MAX(dest->right, r->right);
 }
 
-/*
- * Called from spice server thread context (via interface_get_command).
- *
- * We must aquire the global qemu mutex here to make sure the
- * DisplayState (+DisplaySurface) we are accessing doesn't change
- * underneath us.
- */
-SimpleSpiceUpdate *qemu_spice_create_update(SimpleSpiceDisplay *ssd)
+static SimpleSpiceUpdate *qemu_spice_create_update(SimpleSpiceDisplay *ssd)
 {
     SimpleSpiceUpdate *update;
     QXLDrawable *drawable;
@@ -79,9 +72,7 @@ SimpleSpiceUpdate *qemu_spice_create_update(SimpleSpiceDisplay *ssd)
     uint8_t *src, *dst;
     int by, bw, bh;
 
-    qemu_mutex_lock_iothread();
     if (qemu_spice_rect_is_empty(&ssd->dirty)) {
-        qemu_mutex_unlock_iothread();
         return NULL;
     };
 
@@ -142,7 +133,6 @@ SimpleSpiceUpdate *qemu_spice_create_update(SimpleSpiceDisplay *ssd)
     cmd->data = (intptr_t)drawable;
 
     memset(&ssd->dirty, 0, sizeof(ssd->dirty));
-    qemu_mutex_unlock_iothread();
     return update;
 }
 
@@ -242,6 +232,12 @@ void qemu_spice_display_resize(SimpleSpiceDisplay *ssd)
     qemu_pf_conv_put(ssd->conv);
     ssd->conv = NULL;
 
+    qemu_mutex_lock(&ssd->lock);
+    if (ssd->update != NULL) {
+        qemu_spice_destroy_update(ssd, ssd->update);
+        ssd->update = NULL;
+    }
+    qemu_mutex_unlock(&ssd->lock);
     qemu_spice_destroy_host_primary(ssd);
     qemu_spice_create_host_primary(ssd);
 
@@ -253,6 +249,14 @@ void qemu_spice_display_refresh(SimpleSpiceDisplay *ssd)
 {
     dprint(3, "%s:\n", __FUNCTION__);
     vga_hw_update();
+
+    qemu_mutex_lock(&ssd->lock);
+    if (ssd->update == NULL) {
+        ssd->update = qemu_spice_create_update(ssd);
+        ssd->notify++;
+    }
+    qemu_mutex_unlock(&ssd->lock);
+
     if (ssd->notify) {
         ssd->notify = 0;
         ssd->worker->wakeup(ssd->worker);
@@ -299,14 +303,20 @@ static int interface_get_command(QXLInstance *sin, struct QXLCommandExt *ext)
 {
     SimpleSpiceDisplay *ssd = container_of(sin, SimpleSpiceDisplay, qxl);
     SimpleSpiceUpdate *update;
+    int ret = false;
 
     dprint(3, "%s:\n", __FUNCTION__);
-    update = qemu_spice_create_update(ssd);
-    if (update == NULL) {
-        return false;
+
+    qemu_mutex_lock(&ssd->lock);
+    if (ssd->update != NULL) {
+        update = ssd->update;
+        ssd->update = NULL;
+        *ext = update->ext;
+        ret = true;
     }
-    *ext = update->ext;
-    return true;
+    qemu_mutex_unlock(&ssd->lock);
+
+    return ret;
 }
 
 static int interface_req_cmd_notification(QXLInstance *sin)
@@ -399,6 +409,7 @@ void qemu_spice_display_init(DisplayState *ds)
 {
     assert(sdpy.ds == NULL);
     sdpy.ds = ds;
+    qemu_mutex_init(&sdpy.lock);
     sdpy.bufsize = (16 * 1024 * 1024);
     sdpy.buf = qemu_malloc(sdpy.bufsize);
     register_displaychangelistener(ds, &display_listener);
