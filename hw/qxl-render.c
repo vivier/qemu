@@ -178,6 +178,7 @@ fail:
     return NULL;
 }
 
+
 /* called from spice server thread context only */
 void qxl_render_cursor(PCIQXLDevice *qxl, QXLCommandExt *ext)
 {
@@ -208,26 +209,18 @@ void qxl_render_cursor(PCIQXLDevice *qxl, QXLCommandExt *ext)
         if (c == NULL) {
             c = cursor_builtin_left_ptr();
         }
-        qxl_server_request_cursor_set(qxl, c, x, y);
+        qemu_mutex_lock_iothread();
+        qxl->ssd.ds->cursor_define(c);
+        qxl->ssd.ds->mouse_set(x, y, 1);
+        qemu_mutex_unlock_iothread();
+        cursor_put(c);
         break;
     case QXL_CURSOR_MOVE:
         x = cmd->u.position.x;
         y = cmd->u.position.y;
-        qxl_server_request_cursor_move(qxl, x, y);
+        qemu_mutex_lock_iothread();
+        qxl->ssd.ds->mouse_set(x, y, 1);
+        qemu_mutex_unlock_iothread();
         break;
     }
-}
-
-/* called from iothread only (via qxl.c:pipe_read) */
-void qxl_render_cursor_set(SimpleSpiceDisplay *ssd, QEMUCursor *c, int x, int y)
-{
-    ssd->ds->cursor_define(c);
-    ssd->ds->mouse_set(x, y, 1);
-    cursor_put(c);
-}
-
-/* called from iothread only (via qxl.c:pipe_read) */
-void qxl_render_cursor_move(SimpleSpiceDisplay *ssd, int x, int y)
-{
-    ssd->ds->mouse_set(x, y, 1);
 }
