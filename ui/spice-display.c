@@ -295,39 +295,18 @@ static void interface_get_init_info(QXLInstance *sin, QXLDevInitInfo *info)
     info->n_surfaces = NUM_SURFACES;
 }
 
-/* Called from spice server thread context (via interface_get_command) */
-int qxl_vga_mode_get_command(
-    SimpleSpiceDisplay *ssd, struct QXLCommandExt *ext)
-{
-    SimpleSpiceUpdate *update;
-    unsigned char req;
-    int r;
-
-    update = ssd->update;
-    if (update != NULL) {
-        ssd->waiting_for_update = 0;
-        ssd->update = NULL;
-        if (update != QXL_EMPTY_UPDATE) {
-            *ext = update->ext;
-            return true;
-        }
-    } else {
-        if (!ssd->waiting_for_update) {
-            ssd->waiting_for_update = 1;
-            req = QXL_SERVER_CREATE_UPDATE;
-            r = write(ssd->pipe[1], &req , 1);
-            assert(r == 1);
-        }
-    }
-    return false;
-}
-
 static int interface_get_command(QXLInstance *sin, struct QXLCommandExt *ext)
 {
     SimpleSpiceDisplay *ssd = container_of(sin, SimpleSpiceDisplay, qxl);
+    SimpleSpiceUpdate *update;
 
     dprint(3, "%s:\n", __FUNCTION__);
-    return qxl_vga_mode_get_command(ssd, ext);
+    update = qemu_spice_create_update(ssd);
+    if (update == NULL) {
+        return false;
+    }
+    *ext = update->ext;
+    return true;
 }
 
 static int interface_req_cmd_notification(QXLInstance *sin)
@@ -416,45 +395,6 @@ static DisplayChangeListener display_listener = {
     .dpy_refresh = display_refresh,
 };
 
-static void pipe_read(void *opaque)
-{
-    SimpleSpiceDisplay *ssd = opaque;
-    unsigned char cmd;
-    int len, create_update = 0;
-
-    while (1) {
-        cmd = 0;
-        len = read(ssd->pipe[0], &cmd, sizeof(cmd));
-        if (len < 0) {
-            if (errno == EINTR) {
-                continue;
-            }
-            if (errno == EAGAIN) {
-                break;
-            }
-            perror("qxl: pipe_read: read failed");
-            break;
-        }
-        switch (cmd) {
-        case QXL_SERVER_CREATE_UPDATE:
-            create_update = 1;
-            break;
-        default:
-            fprintf(stderr, "%s: unknown cmd %u\n", __FUNCTION__, cmd);
-            abort();
-        }
-    }
-    /* no need to do this more than once */
-    if (create_update) {
-        assert(ssd->update == NULL);
-        ssd->update = qemu_spice_create_update(ssd);
-        if (ssd->update == NULL) {
-            ssd->update = QXL_EMPTY_UPDATE;
-        }
-        ssd->worker->wakeup(ssd->worker);
-    }
-}
-
 void qxl_create_server_to_iothread_pipe(SimpleSpiceDisplay *ssd,
     IOHandler *pipe_read)
 {
@@ -488,7 +428,6 @@ void qemu_spice_display_init(DisplayState *ds)
     qemu_spice_add_interface(&sdpy.qxl.base);
     assert(sdpy.worker);
 
-    qxl_create_server_to_iothread_pipe(&sdpy, pipe_read);
     qemu_add_vm_change_state_handler(qemu_spice_vm_change_state_handler, &sdpy);
     qemu_spice_create_host_memslot(&sdpy);
     qemu_spice_create_host_primary(&sdpy);
