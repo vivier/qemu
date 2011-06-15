@@ -136,6 +136,8 @@ BlockDriverState *qdev_init_bdrv(DeviceState *dev, BlockInterfaceType type);
 
 BusState *qdev_get_child_bus(DeviceState *dev, const char *name);
 
+DeviceState *qdev_find_by_id(const char *id);
+
 /*** Device API.  ***/
 
 typedef int (*qdev_initfn)(DeviceState *dev, DeviceInfo *info);

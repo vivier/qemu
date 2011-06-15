@@ -493,6 +493,11 @@ static DeviceState *qdev_find_recursive(BusState *bus, const char *id)
     return NULL;
 }
 
+DeviceState *qdev_find_by_id(const char *id)
+{
+    return qdev_find_recursive(main_system_bus, id);
+}
+
 static void qbus_list_bus(DeviceState *dev)
 {
     BusState *child;
