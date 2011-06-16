@@ -570,7 +570,7 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
     } else if (ro == 1) {
         if (type != IF_SCSI && type != IF_VIRTIO && type != IF_FLOPPY && type != IF_NONE) {
             error_report("readonly not supported by this bus type");
-            return NULL;
+            goto err;
         }
     }
     bdrv_flags |= ro ? 0 : BDRV_O_RDWR;
@@ -581,12 +581,20 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
     dinfo->opened = 1;
 
     if (drive_open(dinfo) < 0) {
-        return NULL;
+        goto err;
     }
 
     if (bdrv_key_required(dinfo->bdrv))
         autostart = 0;
     return dinfo;
+
+err:
+    bdrv_delete(dinfo->bdrv);
+    qemu_free(dinfo->id);
+    QTAILQ_REMOVE(&drives, dinfo, next);
+    qemu_free(dinfo->file);
+    qemu_free(dinfo);
+    return NULL;
 }
 
 void do_commit(Monitor *mon, const QDict *qdict)
