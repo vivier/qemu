@@ -2269,8 +2269,7 @@ int drives_reopen(void)
     return 0;
 }
 
-DriveInfo *drive_init(QemuOpts *opts, void *opaque,
-                      int *fatal_error)
+DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi, int *fatal_error)
 {
     const char *buf;
     const char *file = NULL;
@@ -2282,7 +2281,6 @@ DriveInfo *drive_init(QemuOpts *opts, void *opaque,
     int bus_id, unit_id;
     int cyls, heads, secs, translation;
     BlockDriver *drv = NULL;
-    QEMUMachine *machine = opaque;
     int max_devs;
     int index;
     int ro = 0;
@@ -2297,7 +2295,7 @@ DriveInfo *drive_init(QemuOpts *opts, void *opaque,
 
     translation = BIOS_ATA_TRANSLATION_AUTO;
 
-    if (machine && machine->use_scsi) {
+    if (default_to_scsi) {
         type = IF_SCSI;
         max_devs = MAX_SCSI_DEVS;
         pstrcpy(devname, sizeof(devname), "scsi");
@@ -2648,10 +2646,10 @@ DriveInfo *drive_init(QemuOpts *opts, void *opaque,
 
 static int drive_init_func(QemuOpts *opts, void *opaque)
 {
-    QEMUMachine *machine = opaque;
+    int *use_scsi = opaque;
     int fatal_error = 0;
 
-    if (drive_init(opts, machine, &fatal_error) == NULL) {
+    if (drive_init(opts, *use_scsi, &fatal_error) == NULL) {
         if (fatal_error)
             return 1;
     }
@@ -6565,7 +6563,7 @@ int main(int argc, char **argv, char **envp)
     /* open the virtual block devices */
     if (snapshot)
         qemu_opts_foreach(&qemu_drive_opts, drive_enable_snapshot, NULL, 0);
-    if (qemu_opts_foreach(&qemu_drive_opts, drive_init_func, machine, 1) != 0)
+    if (qemu_opts_foreach(&qemu_drive_opts, drive_init_func, &machine->use_scsi, 1) != 0)
         exit(1);
 
     vmstate_register(NULL, 0, &vmstate_timers ,&timers_state);

@@ -39,7 +39,7 @@ DriveInfo *add_init_drive(const char *optstr)
     if (!opts)
         return NULL;
 
-    dinfo = drive_init(opts, current_machine, &fatal_error);
+    dinfo = drive_init(opts, current_machine->use_scsi, &fatal_error);
     if (!dinfo) {
         qemu_opts_del(opts);
         return NULL;
@@ -94,7 +94,7 @@ int simple_drive_add(Monitor *mon, const QDict *qdict, QObject **ret_data)
         return -1;
     }
     qemu_opt_set(opts, "if", "none");
-    dinfo = drive_init(opts, current_machine, &fatal_error);
+    dinfo = drive_init(opts, current_machine->use_scsi, &fatal_error);
     if (!dinfo && fatal_error) {
         qerror_report(QERR_DEVICE_INIT_FAILED, /* close enough */
                       qemu_opts_id(opts));
