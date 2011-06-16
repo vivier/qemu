@@ -24,11 +24,6 @@ typedef enum {
     IF_COUNT
 } BlockInterfaceType;
 
-typedef enum {
-    BLOCK_ERR_REPORT, BLOCK_ERR_IGNORE, BLOCK_ERR_STOP_ENOSPC,
-    BLOCK_ERR_STOP_ANY
-} BlockInterfaceErrorAction;
-
 typedef struct DriveInfo {
     BlockDriverState *bdrv;
     char *id;
@@ -38,8 +33,6 @@ typedef struct DriveInfo {
     int unit;
     int auto_del;               /* see blockdev_mark_auto_del() */
     QemuOpts *opts;
-    BlockInterfaceErrorAction on_read_error;
-    BlockInterfaceErrorAction on_write_error;
     char serial[BLOCK_SERIAL_STRLEN + 1];
     QTAILQ_ENTRY(DriveInfo) next;
     int opened;
@@ -61,9 +54,6 @@ extern int drive_get_max_bus(BlockInterfaceType type);
 extern void drive_uninit(DriveInfo *dinfo);
 extern DriveInfo *drive_get_by_blockdev(BlockDriverState *bs);
 extern const char *drive_get_serial(BlockDriverState *bdrv);
-
-extern BlockInterfaceErrorAction drive_get_on_error(
-    BlockDriverState *bdrv, int is_read);
 
 extern QemuOpts *drive_add(const char *file, const char *fmt, ...);
 extern DriveInfo *drive_init(QemuOpts *arg, int default_to_scsi,
