@@ -5,6 +5,8 @@
 #include "block.h"
 #include "block_int.h"
 
+#define MAX_SCSI_DEVS	255
+
 #define SCSI_CMD_BUF_SIZE     16
 
 /* scsi-disk.c */

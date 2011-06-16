@@ -41,9 +41,6 @@ typedef struct DriveInfo {
     BlockDriver *drv;
 } DriveInfo;
 
-#define MAX_IDE_DEVS	2
-#define MAX_SCSI_DEVS	7
-
 extern QTAILQ_HEAD(drivelist, DriveInfo) drives;
 extern QTAILQ_HEAD(driveoptlist, DriveOpt) driveopts;
 extern DriveInfo *extboot_drive;
