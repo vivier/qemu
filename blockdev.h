@@ -48,6 +48,7 @@ extern DriveInfo *extboot_drive;
 
 extern DriveInfo *drive_get(BlockInterfaceType type, int bus, int unit);
 extern DriveInfo *drive_get_by_id(const char *id);
+DriveInfo *drive_get_by_index(BlockInterfaceType type, int index);
 extern int drive_get_max_bus(BlockInterfaceType type);
 extern void drive_uninit(DriveInfo *dinfo);
 extern DriveInfo *drive_get_by_blockdev(BlockDriverState *bs);
