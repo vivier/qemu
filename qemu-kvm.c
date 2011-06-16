@@ -702,6 +702,41 @@ int kvm_get_dirty_pages_range(kvm_context_t kvm, unsigned long phys_addr,
     return 0;
 }
 
+#if defined(KVM_CAP_MCE) && defined(TARGET_I386)
+typedef struct HWPoisonPage {
+    ram_addr_t ram_addr;
+    QLIST_ENTRY(HWPoisonPage) list;
+} HWPoisonPage;
+
+static QLIST_HEAD(, HWPoisonPage) hwpoison_page_list =
+    QLIST_HEAD_INITIALIZER(hwpoison_page_list);
+
+static void kvm_unpoison_all(void *param)
+{
+    HWPoisonPage *page, *next_page;
+
+    QLIST_FOREACH_SAFE(page, &hwpoison_page_list, list, next_page) {
+        QLIST_REMOVE(page, list);
+        qemu_ram_remap(page->ram_addr, TARGET_PAGE_SIZE);
+        qemu_free(page);
+    }
+}
+
+static void kvm_hwpoison_page_add(ram_addr_t ram_addr)
+{
+    HWPoisonPage *page;
+
+    QLIST_FOREACH(page, &hwpoison_page_list, list) {
+        if (page->ram_addr == ram_addr) {
+            return;
+        }
+    }
+    page = qemu_malloc(sizeof(HWPoisonPage));
+    page->ram_addr = ram_addr;
+    QLIST_INSERT_HEAD(&hwpoison_page_list, page, list);
+}
+#endif
+
 #ifdef KVM_CAP_IRQCHIP
 
 int kvm_set_irq_level(kvm_context_t kvm, int irq, int level, int *status)
@@ -1506,6 +1541,7 @@ static void sigbus_handler(int n, struct qemu_signalfd_siginfo *siginfo,
         status = MCI_STATUS_VAL | MCI_STATUS_UC | MCI_STATUS_EN
             | MCI_STATUS_MISCV | MCI_STATUS_ADDRV | MCI_STATUS_S
             | 0xc0;
+        kvm_hwpoison_page_add(ram_addr);
         kvm_inject_x86_mce(first_cpu, 9, status,
                            MCG_STATUS_MCIP | MCG_STATUS_RIPV, paddr,
                            (MCM_ADDR_PHYS << 6) | 0xc, 1);
@@ -1753,6 +1789,7 @@ static void kvm_on_sigbus(CPUState *env, siginfo_t *siginfo)
                 hardware_memory_error();
         }
         mce.addr = paddr;
+        kvm_hwpoison_page_add(ram_addr);
         r = kvm_set_mce(env, &mce);
         if (r < 0) {
             fprintf(stderr, "kvm_set_mce: %s\n", strerror(errno));
@@ -2028,6 +2065,9 @@ int kvm_init_ap(void)
     action.sa_sigaction = (void (*)(int, siginfo_t*, void*))sigbus_handler;
     sigaction(SIGBUS, &action, NULL);
     prctl(PR_MCE_KILL, 1, 1, 0, 0);
+#if defined(KVM_CAP_MCE) && defined(TARGET_I386)
+    qemu_register_reset(kvm_unpoison_all, NULL);
+#endif
     return 0;
 }
 
