@@ -30,6 +30,7 @@
 #include "pci.h"
 #include "pci_host.h"
 #include "apb_pci.h"
+#include "sysemu.h"
 
 /* debug APB */
 //#define DEBUG_APB

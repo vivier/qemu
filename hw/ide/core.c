@@ -27,8 +27,6 @@
 #include <hw/pci.h>
 #include <hw/scsi.h>
 #include <hw/sh.h>
-#include "block.h"
-#include "block_int.h"
 #include "qemu-error.h"
 #include "qemu-timer.h"
 #include "sysemu.h"

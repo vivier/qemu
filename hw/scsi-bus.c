@@ -2,7 +2,6 @@
 #include "qemu-error.h"
 #include "scsi.h"
 #include "scsi-defs.h"
-#include "block.h"
 #include "qdev.h"
 
 static char *scsibus_get_fw_dev_path(DeviceState *dev);

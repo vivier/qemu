@@ -158,72 +158,8 @@ extern unsigned int nb_prom_envs;
 #endif
 #endif
 
-typedef enum {
-    IF_NONE,
-    IF_IDE, IF_SCSI, IF_FLOPPY, IF_PFLASH, IF_MTD, IF_SD, IF_VIRTIO, IF_XEN,
-    IF_COUNT
-} BlockInterfaceType;
-
-typedef enum {
-    BLOCK_ERR_REPORT, BLOCK_ERR_IGNORE, BLOCK_ERR_STOP_ENOSPC,
-    BLOCK_ERR_STOP_ANY
-} BlockInterfaceErrorAction;
-
-void blockdev_mark_auto_del(BlockDriverState *bs);
-void blockdev_auto_del(BlockDriverState *bs);
-
-#define BLOCK_SERIAL_STRLEN 20
-
-typedef struct DriveInfo {
-    BlockDriverState *bdrv;
-    char *id;
-    const char *devaddr;
-    BlockInterfaceType type;
-    int bus;
-    int unit;
-    int auto_del;               /* see blockdev_mark_auto_del() */
-    QemuOpts *opts;
-    BlockInterfaceErrorAction on_read_error;
-    BlockInterfaceErrorAction on_write_error;
-    char serial[BLOCK_SERIAL_STRLEN + 1];
-    QTAILQ_ENTRY(DriveInfo) next;
-    int opened;
-    int bdrv_flags;
-    char *file;
-    BlockDriver *drv;
-} DriveInfo;
-
-#define MAX_IDE_DEVS	2
-#define MAX_SCSI_DEVS	7
-
-extern QTAILQ_HEAD(drivelist, DriveInfo) drives;
-extern QTAILQ_HEAD(driveoptlist, DriveOpt) driveopts;
-extern DriveInfo *extboot_drive;
-
-extern DriveInfo *drive_get(BlockInterfaceType type, int bus, int unit);
-extern DriveInfo *drive_get_by_id(const char *id);
-extern int drive_get_max_bus(BlockInterfaceType type);
-extern void drive_uninit(DriveInfo *dinfo);
-extern DriveInfo *drive_get_by_blockdev(BlockDriverState *bs);
-extern const char *drive_get_serial(BlockDriverState *bdrv);
-
-extern BlockInterfaceErrorAction drive_get_on_error(
-    BlockDriverState *bdrv, int is_read);
-
-extern QemuOpts *drive_add(const char *file, const char *fmt, ...);
-extern DriveInfo *drive_init(QemuOpts *arg, int default_to_scsi,
-                             int *fatal_error);
-
-extern int drives_reopen(void);
-
 /* acpi */
 void qemu_system_cpu_hot_add(int cpu, int state);
-
-/* device-hotplug */
-
-DriveInfo *add_init_drive(const char *opts);
-int simple_drive_add(Monitor *mon, const QDict *qdict, QObject **ret_data);
-int do_drive_del(Monitor *mon, const QDict *qdict, QObject **ret_data);
 
 /* pci-hotplug */
 void pci_device_hot_add(Monitor *mon, const QDict *qdict);

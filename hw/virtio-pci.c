@@ -23,7 +23,6 @@
 #include "qemu-error.h"
 #include "msix.h"
 #include "net.h"
-#include "block_int.h"
 #include "loader.h"
 #include "kvm.h"
 
