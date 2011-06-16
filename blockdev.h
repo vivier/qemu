@@ -19,6 +19,7 @@ void blockdev_auto_del(BlockDriverState *bs);
 #define BLOCK_SERIAL_STRLEN 20
 
 typedef enum {
+    IF_DEFAULT = -1,            /* for use with drive_add() only */
     IF_NONE,
     IF_IDE, IF_SCSI, IF_FLOPPY, IF_PFLASH, IF_MTD, IF_SD, IF_VIRTIO, IF_XEN,
     IF_COUNT
@@ -52,7 +53,12 @@ extern void drive_uninit(DriveInfo *dinfo);
 extern DriveInfo *drive_get_by_blockdev(BlockDriverState *bs);
 extern const char *drive_get_serial(BlockDriverState *bdrv);
 
-extern QemuOpts *drive_add(const char *file, const char *fmt, ...);
+QemuOpts *drive_def(const char *optstr);
+QemuOpts *drive_add(BlockInterfaceType type, int index, const char *file,
+                    const char *fmt, ...) /*GCC_FMT_ATTR(4, 5)*/;
+    /* GCC_FMT_ATTR() commented out to avoid the (pretty useless)
+     * "zero-length gnu_printf format string" warning we insist to
+     * enable */
 extern DriveInfo *drive_init(QemuOpts *arg, int default_to_scsi,
                              int *fatal_error);
 
