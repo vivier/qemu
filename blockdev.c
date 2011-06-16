@@ -545,7 +545,7 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi, int *fatal_error)
     case IF_COUNT:
         abort();
     }
-    if (!file) {
+    if (!file || !*file) {
         *fatal_error = 0;
         return NULL;
     }
