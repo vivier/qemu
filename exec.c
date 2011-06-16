@@ -2564,7 +2564,6 @@ static void *file_ram_alloc(RAMBlock *block,
     int flags;
 #endif
     unsigned long hpagesize;
-    extern int mem_prealloc;
 
     if (!path) {
         return NULL;

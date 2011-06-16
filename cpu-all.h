@@ -867,6 +867,8 @@ typedef struct RAMList {
 } RAMList;
 extern RAMList ram_list;
 
+extern int mem_prealloc;
+
 /* physical memory access */
 
 /* MMIO pages are identified by a combination of an IO device index and
