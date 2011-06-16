@@ -29,7 +29,6 @@
 
 DriveInfo *add_init_drive(const char *optstr)
 {
-    int fatal_error;
     DriveInfo *dinfo;
     QemuOpts *opts;
 
@@ -37,7 +36,7 @@ DriveInfo *add_init_drive(const char *optstr)
     if (!opts)
         return NULL;
 
-    dinfo = drive_init(opts, current_machine->use_scsi, &fatal_error);
+    dinfo = drive_init(opts, current_machine->use_scsi);
     if (!dinfo) {
         qemu_opts_del(opts);
         return NULL;
@@ -72,7 +71,7 @@ static void check_parm(const char *key, QObject *obj, void *opaque)
 
 int simple_drive_add(Monitor *mon, const QDict *qdict, QObject **ret_data)
 {
-    int stopped, fatal_error;
+    int stopped;
     QemuOpts *opts;
     DriveInfo *dinfo;
 
@@ -92,17 +91,11 @@ int simple_drive_add(Monitor *mon, const QDict *qdict, QObject **ret_data)
         return -1;
     }
     qemu_opt_set(opts, "if", "none");
-    dinfo = drive_init(opts, current_machine->use_scsi, &fatal_error);
-    if (!dinfo && fatal_error) {
+    dinfo = drive_init(opts, current_machine->use_scsi);
+    if (!dinfo) {
         qerror_report(QERR_DEVICE_INIT_FAILED, /* close enough */
                       qemu_opts_id(opts));
-        /* drive_init() can leave an empty drive behind, reap it */
-        dinfo = drive_get_by_id(qemu_opts_id(opts));
-        if (dinfo) {
-            drive_uninit(dinfo);
-        } else {
-            qemu_opts_del(opts);
-        }
+        qemu_opts_del(opts);
         return -1;
     }
 

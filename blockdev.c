@@ -252,7 +252,7 @@ int drives_reopen(void)
     return 0;
 }
 
-DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi, int *fatal_error)
+DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
 {
     const char *buf;
     const char *file = NULL;
@@ -273,8 +273,6 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi, int *fatal_error)
     DriveInfo *dinfo;
     int is_extboot = 0;
     int snapshot = 0;
-
-    *fatal_error = 1;
 
     translation = BIOS_ATA_TRANSLATION_AUTO;
 
@@ -557,8 +555,7 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi, int *fatal_error)
         abort();
     }
     if (!file || !*file) {
-        *fatal_error = 0;
-        return NULL;
+        return dinfo;
     }
     if (snapshot) {
         /* always use write-back with snapshot */
@@ -583,13 +580,11 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi, int *fatal_error)
     dinfo->opened = 1;
 
     if (drive_open(dinfo) < 0) {
-        *fatal_error = 1;
         return NULL;
     }
 
     if (bdrv_key_required(dinfo->bdrv))
         autostart = 0;
-    *fatal_error = 0;
     return dinfo;
 }
 
