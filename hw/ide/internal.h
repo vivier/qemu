@@ -457,6 +457,8 @@ struct IDEBus {
     uint8_t unit;
     uint8_t cmd;
     qemu_irq irq;
+
+    int error_status;
 };
 
 struct IDEDevice {
@@ -477,10 +479,16 @@ struct IDEDeviceInfo {
 #define BM_STATUS_DMAING 0x01
 #define BM_STATUS_ERROR  0x02
 #define BM_STATUS_INT    0x04
+
+/* FIXME These are not status register bits */
 #define BM_STATUS_DMA_RETRY  0x08
 #define BM_STATUS_PIO_RETRY  0x10
 #define BM_STATUS_RETRY_READ  0x20
 #define BM_STATUS_RETRY_FLUSH 0x40
+
+#define BM_MIGRATION_COMPAT_STATUS_BITS \
+        (BM_STATUS_DMA_RETRY | BM_STATUS_PIO_RETRY | \
+        BM_STATUS_RETRY_READ | BM_STATUS_RETRY_FLUSH)
 
 #define BM_CMD_START     0x01
 #define BM_CMD_READ      0x08
@@ -504,6 +512,10 @@ struct BMDMAState {
     int64_t sector_num;
     uint32_t nsector;
     QEMUBH *bh;
+
+    /* Bit 0-2 and 7:   BM status register
+     * Bit 3-6:         bus->error_status */
+    uint8_t migration_compat_status;
 };
 
 static inline IDEState *idebus_active_if(IDEBus *bus)

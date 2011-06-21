@@ -502,7 +502,7 @@ static int ide_handle_rw_error(IDEState *s, int error, int op)
     if ((error == ENOSPC && action == BLOCK_ERR_STOP_ENOSPC)
             || action == BLOCK_ERR_STOP_ANY) {
         s->bus->bmdma->unit = s->unit;
-        s->bus->bmdma->status |= op;
+        s->bus->error_status = op;
         bdrv_mon_event(s->bs, BDRV_ACTION_STOP, error, is_read);
         vm_stop(0);
     } else {
@@ -677,27 +677,33 @@ static void ide_sector_write(IDEState *s)
     }
 }
 
+/* TODO This should be common IDE code */
 static void ide_dma_restart_bh(void *opaque)
 {
     BMDMAState *bm = opaque;
+    IDEBus *bus = bm->bus;
     int is_read;
 
     qemu_bh_delete(bm->bh);
     bm->bh = NULL;
 
-    is_read = !!(bm->status & BM_STATUS_RETRY_READ);
+    if (bm->unit == (uint8_t) -1) {
+        return;
+    }
 
-    if (bm->status & BM_STATUS_DMA_RETRY) {
-        bm->status &= ~(BM_STATUS_DMA_RETRY | BM_STATUS_RETRY_READ);
+    is_read = !!(bus->error_status & BM_STATUS_RETRY_READ);
+
+    if (bus->error_status & BM_STATUS_DMA_RETRY) {
+        bus->error_status &= ~(BM_STATUS_DMA_RETRY | BM_STATUS_RETRY_READ);
         ide_dma_restart(bmdma_active_if(bm), is_read);
-    } else if (bm->status & BM_STATUS_PIO_RETRY) {
-        bm->status &= ~(BM_STATUS_PIO_RETRY | BM_STATUS_RETRY_READ);
+    } else if (bus->error_status & BM_STATUS_PIO_RETRY) {
+        bus->error_status &= ~(BM_STATUS_PIO_RETRY | BM_STATUS_RETRY_READ);
         if (is_read) {
             ide_sector_read(bmdma_active_if(bm));
         } else {
             ide_sector_write(bmdma_active_if(bm));
         }
-    } else if (bm->status & BM_STATUS_RETRY_FLUSH) {
+    } else if (bus->error_status & BM_STATUS_RETRY_FLUSH) {
         ide_flush_cache(bmdma_active_if(bm));
     }
 }
@@ -2985,6 +2991,13 @@ static bool ide_atapi_gesn_needed(void *opaque)
     return s->events.new_media || s->events.eject_request;
 }
 
+static bool ide_error_needed(void *opaque)
+{
+    IDEBus *bus = opaque;
+
+    return (bus->error_status != 0);
+}
+
 /* Fields for GET_EVENT_STATUS_NOTIFICATION ATAPI command */
 const VMStateDescription vmstate_ide_atapi_gesn_state = {
     .name ="ide_drive/atapi/gesn_state",
@@ -3059,6 +3072,17 @@ const VMStateDescription vmstate_ide_drive = {
     }
 };
 
+const VMStateDescription vmstate_ide_error_status = {
+    .name ="ide_bus/error",
+    .version_id = 1,
+    .minimum_version_id = 1,
+    .minimum_version_id_old = 1,
+    .fields = (VMStateField []) {
+        VMSTATE_INT32(error_status, IDEBus),
+        VMSTATE_END_OF_LIST()
+    }
+};
+
 const VMStateDescription vmstate_ide_bus = {
     .name = "ide_bus",
     .version_id = 1,
@@ -3068,6 +3092,14 @@ const VMStateDescription vmstate_ide_bus = {
         VMSTATE_UINT8(cmd, IDEBus),
         VMSTATE_UINT8(unit, IDEBus),
         VMSTATE_END_OF_LIST()
+    },
+    .subsections = (VMStateSubsection []) {
+        {
+            .vmsd = &vmstate_ide_error_status,
+            .needed = ide_error_needed,
+        }, {
+            /* empty */
+        }
     }
 };
 
