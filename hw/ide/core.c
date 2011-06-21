@@ -683,6 +683,7 @@ static void ide_dma_restart_bh(void *opaque)
     BMDMAState *bm = opaque;
     IDEBus *bus = bm->bus;
     int is_read;
+    int error_status;
 
     qemu_bh_delete(bm->bh);
     bm->bh = NULL;
@@ -693,17 +694,21 @@ static void ide_dma_restart_bh(void *opaque)
 
     is_read = !!(bus->error_status & BM_STATUS_RETRY_READ);
 
-    if (bus->error_status & BM_STATUS_DMA_RETRY) {
-        bus->error_status &= ~(BM_STATUS_DMA_RETRY | BM_STATUS_RETRY_READ);
+    /* The error status must be cleared before resubmitting the request: The
+     * request may fail again, and this case can only be distinguished if the
+     * called function can set a new error status. */
+    error_status = bus->error_status;
+    bus->error_status = 0;
+
+    if (error_status & BM_STATUS_DMA_RETRY) {
         ide_dma_restart(bmdma_active_if(bm), is_read);
-    } else if (bus->error_status & BM_STATUS_PIO_RETRY) {
-        bus->error_status &= ~(BM_STATUS_PIO_RETRY | BM_STATUS_RETRY_READ);
+    } else if (error_status & BM_STATUS_PIO_RETRY) {
         if (is_read) {
             ide_sector_read(bmdma_active_if(bm));
         } else {
             ide_sector_write(bmdma_active_if(bm));
         }
-    } else if (bus->error_status & BM_STATUS_RETRY_FLUSH) {
+    } else if (error_status & BM_STATUS_RETRY_FLUSH) {
         ide_flush_cache(bmdma_active_if(bm));
     }
 }
