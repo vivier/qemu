@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.14.0
-Release: 8%{?dist}
+Release: 9%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -69,6 +69,7 @@ BuildRequires: rsync
 BuildRequires: pciutils-devel
 BuildRequires: pulseaudio-libs-devel
 BuildRequires: ncurses-devel
+BuildRequires: libattr-devel
 BuildRequires: texinfo
 %ifarch x86_64
 BuildRequires: spice-protocol >= 0.6.0
@@ -560,6 +561,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Jun 22 2011 Richard W.M. Jones <rjones@redhat.com> - 2:0.14.0-9
+- Add BR libattr-devel.  This caused the -fstype option to be disabled.
+  https://www.redhat.com/archives/libvir-list/2011-June/thread.html#01017
+
 * Mon May  2 2011 Hans de Goede <hdegoede@redhat.com> - 2:0.14.0-8
 - Fix a bug in the spice flow control patches which breaks the tcp chardev
 
