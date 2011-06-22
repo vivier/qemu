@@ -1,14 +1,14 @@
-From 197c54b0c63088d3c883e892379db563456e83c3 Mon Sep 17 00:00:00 2001
-From: Michael S. Tsirkin <mst@redhat.com>
+From 86d9d8d4d9626101c7597d6fae40ba0a2431ea30 Mon Sep 17 00:00:00 2001
+From: "Michael S. Tsirkin" <mst@redhat.com>
 Date: Mon, 2 May 2011 21:59:50 -0300
-Subject: [PATCH] Fix phys memory client - pass guest physical address not
+Subject: [PATCH 1/2] Fix phys memory client - pass guest physical address not
  region offset
 
 RH-Author: Michael S. Tsirkin <mst@redhat.com>
-Message-id: <20110502215949.GA27599@redhat.com>
-Patchwork-id: 23364
+Message-id: <patch-23364-clone-for-rhel61-rhel61>
+Patchwork-id: 23425
 O-Subject: [PATCH RHEL 6.1.z/6.2] Fix phys memory client - pass guest physical address not region offset
-Bugzilla: 700859
+Bugzilla: 701771
 RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
 RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
 RH-Acked-by: Markus Armbruster <armbru@redhat.com>
@@ -94,5 +94,5 @@ index 22ca4c4..57db142 100644
  }
  
 -- 
-1.7.5.141.g791a
+1.7.6.rc2.11.g13b7
 

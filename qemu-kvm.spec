@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.161
+%define pkgrelease 2.160
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2525,8 +2525,10 @@ Patch2126: kvm-acpi_piix4-Maintain-RHEL6.0-migration.patch
 Patch2127: kvm-virtio-blk-fail-unaligned-requests.patch
 # For bz#699789 - EMBARGOED CVE-2011-1751 acpi_piix4: missing hotplug check during device removal [rhel-6.1]
 Patch2128: kvm-Ignore-pci-unplug-requests-for-unpluggable-devices.patch
-# For bz#700859 - Fix phys memory client for vhost
+# For bz#701771 - Fix phys memory client for vhost
 Patch2129: kvm-Fix-phys-memory-client-pass-guest-physical-address-n.patch
+# For bz#713592 - EMBARGOED CVE-2011-2212 virtqueue: too-large indirect descriptor buffer overflow [rhel-6.1.z]
+Patch2130: kvm-virtio-prevent-indirect-descriptor-buffer-overflow.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3763,6 +3765,7 @@ ApplyOptionalPatch()
 %patch2127 -p1
 %patch2128 -p1
 %patch2129 -p1
+%patch2130 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3984,10 +3987,13 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
-* Tue May 03 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.161.el6
-- kvm-Fix-phys-memory-client-pass-guest-physical-address-n.patch [bz#700859]
-- Resolves: bz#700859
+* Wed Jun 22 2011 Luiz Capitulino <lcapitulino@redhat.com> - qemu-kvm-0.12.1.2-2.160.el6_1
+- kvm-Fix-phys-memory-client-pass-guest-physical-address-n.patch [bz#701771]
+- kvm-virtio-prevent-indirect-descriptor-buffer-overflow.patch [bz#713592]
+- Resolves: bz#701771
   (Fix phys memory client for vhost)
+- Resolves: bz#713592
+  (EMBARGOED CVE-2011-2212 virtqueue: too-large indirect descriptor buffer overflow [rhel-6.1.z])
 
 * Wed Apr 27 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.160.el6
 - kvm-virtio-blk-fail-unaligned-requests.patch [bz#698910]
