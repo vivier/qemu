@@ -1239,6 +1239,15 @@ static void pc_init1(ram_addr_t ram_size,
         }
     }
 
+    /*
+     * sga does not suppress normal vga output. So a machine can have both a
+     * vga card and sga manually enabled. Output will be seen on both.
+     * For nographic case, sga is enabled at all times
+     */
+    if (display_type == DT_NOGRAPHIC) {
+        isa_create_simple("sga");
+    }
+
     rtc_state = rtc_init(2000);
 
     qemu_register_boot_set(pc_boot_set, rtc_state);
