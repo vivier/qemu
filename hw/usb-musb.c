@@ -250,10 +250,12 @@
 
 static void musb_attach(USBPort *port);
 static void musb_detach(USBPort *port);
+static void musb_schedule_cb(USBDevice *dev, USBPacket *p);
 
 static USBPortOps musb_port_ops = {
     .attach = musb_attach,
     .detach = musb_detach,
+    .complete = musb_schedule_cb,
 };
 
 typedef struct MUSBPacket MUSBPacket;
@@ -500,9 +502,11 @@ static inline void musb_cb_tick1(void *opaque)
 
 #define musb_cb_tick	(dir ? musb_cb_tick1 : musb_cb_tick0)
 
-static inline void musb_schedule_cb(USBPacket *packey, void *opaque, int dir)
+static inline void musb_schedule_cb(USBDevice *dev, USBPacket *packey)
 {
-    MUSBEndPoint *ep = (MUSBEndPoint *) opaque;
+    MUSBPacket *p = container_of(packey, MUSBPacket, p);
+    MUSBEndPoint *ep = p->ep;
+    int dir = p->dir;
     int timeout = 0;
 
     if (ep->status[dir] == USB_RET_NAK)
@@ -510,23 +514,13 @@ static inline void musb_schedule_cb(USBPacket *packey, void *opaque, int dir)
     else if (ep->interrupt[dir])
         timeout = 8;
     else
-        return musb_cb_tick(opaque);
+        return musb_cb_tick(ep);
 
     if (!ep->intv_timer[dir])
-        ep->intv_timer[dir] = qemu_new_timer(vm_clock, musb_cb_tick, opaque);
+        ep->intv_timer[dir] = qemu_new_timer(vm_clock, musb_cb_tick, ep);
 
     qemu_mod_timer(ep->intv_timer[dir], qemu_get_clock(vm_clock) +
                    muldiv64(timeout, get_ticks_per_sec(), 8000));
-}
-
-static void musb_schedule0_cb(USBPacket *packey, void *opaque)
-{
-    return musb_schedule_cb(packey, opaque, 0);
-}
-
-static void musb_schedule1_cb(USBPacket *packey, void *opaque)
-{
-    return musb_schedule_cb(packey, opaque, 1);
 }
 
 static int musb_timeout(int ttype, int speed, int val)
@@ -585,7 +579,6 @@ static inline void musb_packet(MUSBState *s, MUSBEndPoint *ep,
                     ep->type[idx] >> 6, ep->interval[idx]);
     ep->interrupt[dir] = ttype == USB_ENDPOINT_XFER_INT;
     ep->delayed_cb[dir] = cb;
-    cb = dir ? musb_schedule1_cb : musb_schedule0_cb;
 
     ep->packey[dir].p.pid = pid;
     /* A wild guess on the FADDR semantics... */
@@ -593,8 +586,6 @@ static inline void musb_packet(MUSBState *s, MUSBEndPoint *ep,
     ep->packey[dir].p.devep = ep->type[idx] & 0xf;
     ep->packey[dir].p.data = (void *) ep->buf[idx];
     ep->packey[dir].p.len = len;
-    ep->packey[dir].p.complete_cb = cb;
-    ep->packey[dir].p.complete_opaque = ep;
     ep->packey[dir].ep = ep;
     ep->packey[dir].dir = dir;
 
@@ -609,7 +600,7 @@ static inline void musb_packet(MUSBState *s, MUSBEndPoint *ep,
     }
 
     ep->status[dir] = ret;
-    usb_packet_complete(&ep->packey[dir].p);
+    usb_packet_complete(s->port.dev, &ep->packey[dir].p);
 }
 
 static void musb_tx_packet_complete(USBPacket *packey, void *opaque)

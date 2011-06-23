@@ -346,8 +346,8 @@ static void async_complete(void *opaque)
                 break;
             }
 
-            usb_packet_complete(p);
-	}
+            usb_packet_complete(&s->dev, p);
+        }
 
         async_free(aurb);
     }

@@ -584,7 +584,7 @@ static void ohci_copy_iso_td(OHCIState *ohci,
 
 static void ohci_process_lists(OHCIState *ohci, int completion);
 
-static void ohci_async_complete_packet(USBPacket *packet, void *opaque)
+static void ohci_async_complete_packet(USBDevice *dev, USBPacket *packet)
 {
     OHCIState *ohci = container_of(packet, OHCIState, usb_packet);
 #ifdef DEBUG_PACKET
@@ -749,8 +749,6 @@ static int ohci_service_iso_td(OHCIState *ohci, struct ohci_ed *ed,
             ohci->usb_packet.devep = OHCI_BM(ed->flags, ED_EN);
             ohci->usb_packet.data = ohci->usb_buf;
             ohci->usb_packet.len = len;
-            ohci->usb_packet.complete_cb = ohci_async_complete_packet;
-            ohci->usb_packet.complete_opaque = ohci;
             ret = dev->info->handle_packet(dev, &ohci->usb_packet);
             if (ret != USB_RET_NODEV)
                 break;
@@ -939,8 +937,6 @@ static int ohci_service_td(OHCIState *ohci, struct ohci_ed *ed)
             ohci->usb_packet.devep = OHCI_BM(ed->flags, ED_EN);
             ohci->usb_packet.data = ohci->usb_buf;
             ohci->usb_packet.len = len;
-            ohci->usb_packet.complete_cb = ohci_async_complete_packet;
-            ohci->usb_packet.complete_opaque = ohci;
             ret = dev->info->handle_packet(dev, &ohci->usb_packet);
             if (ret != USB_RET_NODEV)
                 break;
@@ -1659,6 +1655,7 @@ static CPUWriteMemoryFunc * const ohci_writefn[3]={
 static USBPortOps ohci_port_ops = {
     .attach = ohci_attach,
     .detach = ohci_detach,
+    .complete = ohci_async_complete_packet,
 };
 
 static void usb_ohci_init(OHCIState *ohci, DeviceState *dev,
