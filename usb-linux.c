@@ -366,7 +366,7 @@ static int usb_host_claim_interfaces(USBHostDevice *dev, int configuration)
 {
     const char *op = NULL;
     int dev_descr_len, config_descr_len;
-    int interface, nb_interfaces, nb_configurations;
+    int interface, nb_interfaces;
     int ret, i;
 
     if (configuration == 0) /* address state - ignore */
@@ -376,9 +376,10 @@ static int usb_host_claim_interfaces(USBHostDevice *dev, int configuration)
 
     i = 0;
     dev_descr_len = dev->descr[0];
-    if (dev_descr_len > dev->descr_len)
-        goto fail;
-    nb_configurations = dev->descr[17];
+    if (dev_descr_len > dev->descr_len) {
+        fprintf(stderr, "husb: update iface failed. descr too short\n");
+        return 0;
+    }
 
     i += dev_descr_len;
     while (i < dev->descr_len) {
@@ -402,8 +403,9 @@ static int usb_host_claim_interfaces(USBHostDevice *dev, int configuration)
     }
 
     if (i >= dev->descr_len) {
-        fprintf(stderr, "husb: update iface failed. no matching configuration\n");
-        goto fail;
+        fprintf(stderr,
+                "husb: update iface failed. no matching configuration\n");
+        return 0;
     }
     nb_interfaces = dev->descr[i + 4];
 
