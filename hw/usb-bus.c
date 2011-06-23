@@ -110,7 +110,7 @@ USBDevice *usb_create_simple(USBBus *bus, const char *name)
 }
 
 void usb_register_port(USBBus *bus, USBPort *port, void *opaque, int index,
-                       USBDevice *pdev, USBPortOps *ops)
+                       USBDevice *pdev, USBPortOps *ops, int speedmask)
 {
     port->opaque = opaque;
     port->index = index;
@@ -118,6 +118,7 @@ void usb_register_port(USBBus *bus, USBPort *port, void *opaque, int index,
     port->opaque = opaque;
     port->index = index;
     port->ops = ops;
+    port->speedmask = speedmask;
     QTAILQ_INSERT_TAIL(&bus->free, port, next);
     bus->nfree++;
 }
