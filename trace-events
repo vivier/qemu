@@ -82,5 +82,10 @@ disable apic_reset_irq_delivered(int apic_irq_delivered) "old coalescing %d"
 disable apic_get_irq_delivered(int apic_irq_delivered) "returning coalescing %d"
 disable apic_set_irq(int apic_irq_delivered) "coalescing %d"
 
+# hw/usb-desc.c
+disable usb_desc_device(int addr, int len, int ret) "dev %d query device, len %d, ret %d"
+disable usb_desc_config(int addr, int index, int len, int ret) "dev %d query config %d, len %d, ret %d"
+disable usb_desc_string(int addr, int index, int len, int ret) "dev %d query string %d, len %d, ret %d"
+
 # vl.c
 disable vm_state_notify(int running, int reason) "running %d reason %d"
