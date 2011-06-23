@@ -128,6 +128,7 @@
 #define USB_ENDPOINT_XFER_INT		3
 
 typedef struct USBBus USBBus;
+typedef struct USBBusOps USBBusOps;
 typedef struct USBPort USBPort;
 typedef struct USBDevice USBDevice;
 typedef struct USBDeviceInfo USBDeviceInfo;
@@ -319,6 +320,7 @@ void musb_set_size(MUSBState *s, int epnum, int size, int is_tx);
 
 struct USBBus {
     BusState qbus;
+    USBBusOps *ops;
     int busnr;
     int nfree;
     int nused;
@@ -327,7 +329,11 @@ struct USBBus {
     QTAILQ_ENTRY(USBBus) next;
 };
 
-void usb_bus_new(USBBus *bus, DeviceState *host);
+struct USBBusOps {
+    void (*device_destroy)(USBBus *bus, USBDevice *dev);
+};
+
+void usb_bus_new(USBBus *bus, USBBusOps *ops, DeviceState *host);
 USBBus *usb_bus_find(int busnr);
 void usb_qdev_register(USBDeviceInfo *info);
 void usb_qdev_register_many(USBDeviceInfo *info);
