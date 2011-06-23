@@ -632,7 +632,6 @@ struct rndis_response {
 typedef struct USBNetState {
     USBDevice dev;
 
-    unsigned int rndis;
     enum rndis_state rndis_state;
     uint32_t medium;
     uint32_t speed;
@@ -652,6 +651,11 @@ typedef struct USBNetState {
     NICConf conf;
     QTAILQ_HEAD(rndis_resp_head, rndis_response) rndis_resp;
 } USBNetState;
+
+static int is_rndis(USBNetState *s)
+{
+    return s->dev.config->bConfigurationValue == DEV_RNDIS_CONFIG_VALUE;
+}
 
 static int ndis_query(USBNetState *s, uint32_t oid,
                       uint8_t *inbuf, unsigned int inlen, uint8_t *outbuf,
@@ -1083,8 +1087,9 @@ static int usb_net_handle_control(USBDevice *dev, int request, int value,
         break;
 
     case ClassInterfaceOutRequest | USB_CDC_SEND_ENCAPSULATED_COMMAND:
-        if (!s->rndis || value || index != 0)
+        if (!is_rndis(s) || value || index != 0) {
             goto fail;
+        }
 #ifdef TRAFFIC_DEBUG
         {
             unsigned int i;
@@ -1101,8 +1106,9 @@ static int usb_net_handle_control(USBDevice *dev, int request, int value,
         break;
 
     case ClassInterfaceRequest | USB_CDC_GET_ENCAPSULATED_RESPONSE:
-        if (!s->rndis || value || index != 0)
+        if (!is_rndis(s) || value || index != 0) {
             goto fail;
+        }
         ret = rndis_get_response(s, data);
         if (!ret) {
             data[0] = 0;
@@ -1120,27 +1126,6 @@ static int usb_net_handle_control(USBDevice *dev, int request, int value,
             fprintf(stderr, "\n\n");
         }
 #endif
-        break;
-
-    case DeviceRequest | USB_REQ_GET_CONFIGURATION:
-        data[0] = s->rndis ? DEV_RNDIS_CONFIG_VALUE : DEV_CONFIG_VALUE;
-        ret = 1;
-        break;
-
-    case DeviceOutRequest | USB_REQ_SET_CONFIGURATION:
-        switch (value & 0xff) {
-        case DEV_CONFIG_VALUE:
-            s->rndis = 0;
-            break;
-
-        case DEV_RNDIS_CONFIG_VALUE:
-            s->rndis = 1;
-            break;
-
-        default:
-            goto fail;
-        }
-        ret = 0;
         break;
 
     case DeviceRequest | USB_REQ_GET_INTERFACE:
@@ -1213,7 +1198,7 @@ static int usb_net_handle_datain(USBNetState *s, USBPacket *p)
     memcpy(p->data, &s->in_buf[s->in_ptr], ret);
     s->in_ptr += ret;
     if (s->in_ptr >= s->in_len &&
-                    (s->rndis || (s->in_len & (64 - 1)) || !ret)) {
+                    (is_rndis(s) || (s->in_len & (64 - 1)) || !ret)) {
         /* no short packet necessary */
         s->in_ptr = s->in_len = 0;
     }
@@ -1262,7 +1247,7 @@ static int usb_net_handle_dataout(USBNetState *s, USBPacket *p)
     memcpy(&s->out_buf[s->out_ptr], p->data, sz);
     s->out_ptr += sz;
 
-    if (!s->rndis) {
+    if (!is_rndis(s)) {
         if (ret < 64) {
             qemu_send_packet(&s->nic->nc, s->out_buf, s->out_ptr);
             s->out_ptr = 0;
@@ -1333,7 +1318,7 @@ static ssize_t usbnet_receive(VLANClientState *nc, const uint8_t *buf, size_t si
     USBNetState *s = DO_UPCAST(NICState, nc, nc)->opaque;
     struct rndis_packet_msg_type *msg;
 
-    if (s->rndis) {
+    if (is_rndis(s)) {
         msg = (struct rndis_packet_msg_type *) s->in_buf;
         if (!s->rndis_state == RNDIS_DATA_INITIALIZED)
             return -1;
@@ -1369,8 +1354,9 @@ static int usbnet_can_receive(VLANClientState *nc)
 {
     USBNetState *s = DO_UPCAST(NICState, nc, nc)->opaque;
 
-    if (s->rndis && !s->rndis_state == RNDIS_DATA_INITIALIZED)
+    if (is_rndis(s) && !s->rndis_state == RNDIS_DATA_INITIALIZED) {
         return 1;
+    }
 
     return !s->in_len;
 }
@@ -1403,9 +1389,8 @@ static int usb_net_initfn(USBDevice *dev)
 {
     USBNetState *s = DO_UPCAST(USBNetState, dev, dev);
 
-    s->dev.speed  = USB_SPEED_FULL;
+    usb_desc_init(dev);
 
-    s->rndis = 1;
     s->rndis_state = RNDIS_UNINITIALIZED;
     QTAILQ_INIT(&s->rndis_resp);
 

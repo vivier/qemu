@@ -160,6 +160,8 @@ struct USBDevice {
     int setup_index;
 
     QLIST_HEAD(, USBDescString) strings;
+    const USBDescDevice *device;
+    const USBDescConfig *config;
 };
 
 struct USBDeviceInfo {

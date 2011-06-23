@@ -254,13 +254,6 @@ static int usb_serial_handle_control(USBDevice *dev, int request, int value,
         }
         ret = 0;
         break;
-    case DeviceRequest | USB_REQ_GET_CONFIGURATION:
-        data[0] = 1;
-        ret = 1;
-        break;
-    case DeviceOutRequest | USB_REQ_SET_CONFIGURATION:
-        ret = 0;
-        break;
     case DeviceRequest | USB_REQ_GET_INTERFACE:
         data[0] = 0;
         ret = 1;
@@ -513,7 +506,8 @@ static const QemuChrHandlers usb_serial_handlers = {
 static int usb_serial_initfn(USBDevice *dev)
 {
     USBSerialState *s = DO_UPCAST(USBSerialState, dev, dev);
-    s->dev.speed = USB_SPEED_FULL;
+
+    usb_desc_init(dev);
 
     if (!s->cs) {
         error_report("Property chardev is required");
