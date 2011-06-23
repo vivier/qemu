@@ -334,9 +334,9 @@ static void async_complete(void *opaque)
     }
 }
 
-static void async_cancel(USBPacket *p, void *opaque)
+static void usb_host_async_cancel(USBDevice *dev, USBPacket *p)
 {
-    USBHostDevice *s = opaque;
+    USBHostDevice *s = DO_UPCAST(USBHostDevice, dev, dev);
     AsyncURB *aurb;
 
     QLIST_FOREACH(aurb, &s->aurbs, next) {
@@ -733,7 +733,6 @@ static int usb_host_handle_data(USBDevice *dev, USBPacket *p)
         }
     }
 
-    usb_defer_packet(p, async_cancel, s);
     return USB_RET_ASYNC;
 }
 
@@ -864,7 +863,6 @@ static int usb_host_handle_control(USBDevice *dev, USBPacket *p,
         }
     }
 
-    usb_defer_packet(p, async_cancel, s);
     return USB_RET_ASYNC;
 }
 
@@ -1185,6 +1183,7 @@ static struct USBDeviceInfo usb_host_dev_info = {
     .qdev.size      = sizeof(USBHostDevice),
     .init           = usb_host_initfn,
     .handle_packet  = usb_generic_handle_packet,
+    .cancel_packet  = usb_host_async_cancel,
     .handle_data    = usb_host_handle_data,
     .handle_control = usb_host_handle_control,
     .handle_reset   = usb_host_handle_reset,
