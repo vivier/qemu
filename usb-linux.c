@@ -268,6 +268,14 @@ static void async_free(AsyncURB *aurb)
     qemu_free(aurb);
 }
 
+static void do_disconnect(USBHostDevice *s)
+{
+    printf("husb: device %d.%d disconnected\n",
+           s->bus_num, s->addr);
+    usb_host_close(s);
+    usb_host_auto_check(NULL);
+}
+
 static void async_complete(void *opaque)
 {
     USBHostDevice *s = opaque;
@@ -282,9 +290,7 @@ static void async_complete(void *opaque)
                 return;
 
             if (errno == ENODEV && !s->closing) {
-                printf("husb: device %d.%d disconnected\n", s->bus_num, s->addr);
-                usb_host_close(s);
-                usb_host_auto_check(NULL);
+                do_disconnect(s);
                 return;
             }
 
@@ -358,6 +364,7 @@ static void usb_host_async_cancel(USBDevice *dev, USBPacket *p)
 
 static int usb_host_claim_interfaces(USBHostDevice *dev, int configuration)
 {
+    const char *op = NULL;
     int dev_descr_len, config_descr_len;
     int interface, nb_interfaces, nb_configurations;
     int ret, i;
@@ -408,9 +415,9 @@ static int usb_host_claim_interfaces(USBHostDevice *dev, int configuration)
             ctrl.ioctl_code = USBDEVFS_DISCONNECT;
             ctrl.ifno = interface;
             ctrl.data = 0;
+            op = "USBDEVFS_DISCONNECT";
             ret = ioctl(dev->fd, USBDEVFS_IOCTL, &ctrl);
             if (ret < 0 && errno != ENODATA) {
-                perror("USBDEVFS_DISCONNECT");
                 goto fail;
             }
         }
@@ -419,6 +426,7 @@ static int usb_host_claim_interfaces(USBHostDevice *dev, int configuration)
 
     /* XXX: only grab if all interfaces are free */
     for (interface = 0; interface < nb_interfaces; interface++) {
+        op = "USBDEVFS_CLAIMINTERFACE";
         ret = ioctl(dev->fd, USBDEVFS_CLAIMINTERFACE, &interface);
         if (ret < 0) {
             if (errno == EBUSY) {
@@ -426,8 +434,7 @@ static int usb_host_claim_interfaces(USBHostDevice *dev, int configuration)
             } else {
                 perror("husb: failed to claim interface");
             }
-        fail:
-            return 0;
+            goto fail;
         }
     }
 
@@ -437,6 +444,13 @@ static int usb_host_claim_interfaces(USBHostDevice *dev, int configuration)
     dev->ninterfaces   = nb_interfaces;
     dev->configuration = configuration;
     return 1;
+
+fail:
+    if (errno == ENODEV) {
+        do_disconnect(dev);
+    }
+    perror(op);
+    return 0;
 }
 
 static int usb_host_release_interfaces(USBHostDevice *s)
