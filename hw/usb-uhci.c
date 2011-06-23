@@ -113,7 +113,7 @@ static void dump_data(const uint8_t *data, int len) {}
  */
 typedef struct UHCIAsync {
     USBPacket packet;
-    struct UHCIAsync *next;
+    QTAILQ_ENTRY(UHCIAsync) next;
     uint32_t  td;
     uint32_t  token;
     int8_t    valid;
@@ -143,8 +143,7 @@ typedef struct UHCIState {
     uint32_t pending_int_mask;
 
     /* Active packets */
-    UHCIAsync *async_pending;
-    UHCIAsync *async_pool;
+    QTAILQ_HEAD(,UHCIAsync) async_pending;
     uint8_t num_ports_vmstate;
 } UHCIState;
 
@@ -169,7 +168,6 @@ static UHCIAsync *uhci_async_alloc(UHCIState *s)
     async->td    = 0;
     async->token = 0;
     async->done  = 0;
-    async->next  = NULL;
 
     return async;
 }
@@ -181,24 +179,12 @@ static void uhci_async_free(UHCIState *s, UHCIAsync *async)
 
 static void uhci_async_link(UHCIState *s, UHCIAsync *async)
 {
-    async->next = s->async_pending;
-    s->async_pending = async;
+    QTAILQ_INSERT_HEAD(&s->async_pending, async, next);
 }
 
 static void uhci_async_unlink(UHCIState *s, UHCIAsync *async)
 {
-    UHCIAsync *curr = s->async_pending;
-    UHCIAsync **prev = &s->async_pending;
-
-    while (curr) {
-	if (curr == async) {
-            *prev = curr->next;
-            return;
-        }
-
-        prev = &curr->next;
-        curr = curr->next;
-    }
+    QTAILQ_REMOVE(&s->async_pending, async, next);
 }
 
 static void uhci_async_cancel(UHCIState *s, UHCIAsync *async)
@@ -217,11 +203,10 @@ static void uhci_async_cancel(UHCIState *s, UHCIAsync *async)
  */
 static UHCIAsync *uhci_async_validate_begin(UHCIState *s)
 {
-    UHCIAsync *async = s->async_pending;
+    UHCIAsync *async;
 
-    while (async) {
+    QTAILQ_FOREACH(async, &s->async_pending, next) {
         async->valid--;
-        async = async->next;
     }
     return NULL;
 }
@@ -231,47 +216,30 @@ static UHCIAsync *uhci_async_validate_begin(UHCIState *s)
  */
 static void uhci_async_validate_end(UHCIState *s)
 {
-    UHCIAsync *curr = s->async_pending;
-    UHCIAsync **prev = &s->async_pending;
-    UHCIAsync *next;
+    UHCIAsync *curr, *n;
 
-    while (curr) {
+    QTAILQ_FOREACH_SAFE(curr, &s->async_pending, next, n) {
         if (curr->valid > 0) {
-            prev = &curr->next;
-            curr = curr->next;
             continue;
         }
-
-        next = curr->next;
-
-        /* Unlink */
-        *prev = next;
-
+        uhci_async_unlink(s, curr);
         uhci_async_cancel(s, curr);
-
-        curr = next;
     }
 }
 
 static void uhci_async_cancel_all(UHCIState *s)
 {
-    UHCIAsync *curr = s->async_pending;
-    UHCIAsync *next;
+    UHCIAsync *curr, *n;
 
-    while (curr) {
-        next = curr->next;
-
+    QTAILQ_FOREACH_SAFE(curr, &s->async_pending, next, n) {
+        uhci_async_unlink(s, curr);
         uhci_async_cancel(s, curr);
-
-        curr = next;
     }
-
-    s->async_pending = NULL;
 }
 
 static UHCIAsync *uhci_async_find_td(UHCIState *s, uint32_t addr, uint32_t token)
 {
-    UHCIAsync *async = s->async_pending;
+    UHCIAsync *async;
     UHCIAsync *match = NULL;
     int count = 0;
 
@@ -288,7 +256,7 @@ static UHCIAsync *uhci_async_find_td(UHCIState *s, uint32_t addr, uint32_t token
      * If we ever do we'd want to optimize this algorithm.
      */
 
-    while (async) {
+    QTAILQ_FOREACH(async, &s->async_pending, next) {
         if (async->token == token) {
             /* Good match */
             match = async;
@@ -298,8 +266,6 @@ static UHCIAsync *uhci_async_find_td(UHCIState *s, uint32_t addr, uint32_t token
                 break;
             }
         }
-
-        async = async->next;
         count++;
     }
 
@@ -1095,6 +1061,7 @@ static int usb_uhci_common_initfn(UHCIState *s)
     }
     s->frame_timer = qemu_new_timer(vm_clock, uhci_frame_timer, s);
     s->num_ports_vmstate = NB_PORTS;
+    QTAILQ_INIT(&s->async_pending);
 
     qemu_register_reset(uhci_reset, s);
 
