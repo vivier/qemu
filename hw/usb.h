@@ -190,6 +190,11 @@ struct USBDeviceInfo {
     void (*handle_destroy)(USBDevice *dev);
 
     /*
+     * Attach the device
+     */
+    void (*handle_attach)(USBDevice *dev);
+
+    /*
      * Reset the device
      */
     void (*handle_reset)(USBDevice *dev);
