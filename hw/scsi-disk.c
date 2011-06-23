@@ -358,8 +358,7 @@ static int scsi_disk_emulate_inquiry(SCSIRequest *req, uint8_t *outbuf)
 
         case 0x80: /* Device serial number, optional */
         {
-            const char *serial = req->dev->conf.dinfo->serial ?
-                req->dev->conf.dinfo->serial : "0";
+            const char *serial = drive_get_serial(s->bs);
             int l = strlen(serial);
 
             if (l > req->cmd.xfer)
@@ -1031,7 +1030,8 @@ static int scsi_disk_initfn(SCSIDevice *dev)
     s->bs = s->qdev.conf.bs;
 
     if (bdrv_get_type_hint(s->bs) == BDRV_TYPE_CDROM) {
-        s->qdev.blocksize = 2048;
+        error_report("scsi-disk: cdrom emulation is not supported");
+        return -1;
     } else {
         s->qdev.blocksize = s->qdev.conf.logical_block_size;
     }
@@ -1045,7 +1045,6 @@ static int scsi_disk_initfn(SCSIDevice *dev)
         nb_sectors--;
     s->max_lba = nb_sectors;
     qemu_add_vm_change_state_handler(scsi_dma_restart_cb, s);
-    bdrv_set_removable(s->bs, is_cd);
     add_boot_device_path(s->qdev.conf.bootindex, &dev->qdev, ",0");
     return 0;
 }
