@@ -152,6 +152,7 @@ struct USBDevice {
     DeviceState qdev;
     USBDeviceInfo *info;
     USBPort *port;
+    char *port_path;
     void *opaque;
 
     int speed;
