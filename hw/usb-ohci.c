@@ -1661,6 +1661,10 @@ static CPUWriteMemoryFunc * const ohci_writefn[3]={
     ohci_mem_write
 };
 
+static USBPortOps ohci_port_ops = {
+    .attach = ohci_attach,
+};
+
 static void usb_ohci_init(OHCIState *ohci, DeviceState *dev,
                           int num_ports, int devfn,
                           qemu_irq irq, enum ohci_type type,
@@ -1694,7 +1698,7 @@ static void usb_ohci_init(OHCIState *ohci, DeviceState *dev,
     usb_bus_new(&ohci->bus, dev);
     ohci->num_ports = num_ports;
     for (i = 0; i < num_ports; i++) {
-        usb_register_port(&ohci->bus, &ohci->rhport[i].port, ohci, i, NULL, ohci_attach);
+        usb_register_port(&ohci->bus, &ohci->rhport[i].port, ohci, i, NULL, &ohci_port_ops);
     }
 
     ohci->async_td = 0;
