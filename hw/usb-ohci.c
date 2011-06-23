@@ -586,7 +586,7 @@ static void ohci_process_lists(OHCIState *ohci, int completion);
 
 static void ohci_async_complete_packet(USBPacket *packet, void *opaque)
 {
-    OHCIState *ohci = opaque;
+    OHCIState *ohci = container_of(packet, OHCIState, usb_packet);
 #ifdef DEBUG_PACKET
     dprintf("Async packet complete\n");
 #endif
