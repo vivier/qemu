@@ -1637,6 +1637,7 @@ static int usb_host_auto_scan(void *opaque, int bus_num, int addr, char *port,
             return 0;
 
         usb_host_open(s, bus_num, addr, port, product_name, speed);
+        break;
     }
 
     return 0;
