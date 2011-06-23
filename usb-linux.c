@@ -116,7 +116,7 @@ typedef struct USBHostDevice {
     USBDevice dev;
     int       fd;
 
-    uint8_t   descr[1024];
+    uint8_t   descr[8192];
     int       descr_len;
     int       configuration;
     int       ninterfaces;
