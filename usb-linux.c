@@ -1052,10 +1052,9 @@ static int usb_linux_update_endp_table(USBHostDevice *s)
 }
 
 static int usb_host_open(USBHostDevice *dev, int bus_num,
-                         int addr, char *port, const char *prod_name)
+                        int addr, char *port, const char *prod_name, int speed)
 {
     int fd = -1, ret;
-    struct usbdevfs_connectinfo ci;
     char buf[1024];
 
     if (dev->fd != -1)
@@ -1108,22 +1107,28 @@ static int usb_host_open(USBHostDevice *dev, int bus_num,
     if (!usb_host_claim_interfaces(dev, -1))
         goto fail;
 
-    ret = ioctl(fd, USBDEVFS_CONNECTINFO, &ci);
-    if (ret < 0) {
-        perror("usb_host_device_open: USBDEVFS_CONNECTINFO");
-        goto fail;
-    }
-
-    printf("husb: grabbed usb device %d.%d\n", bus_num, addr);
-
     ret = usb_linux_update_endp_table(dev);
     if (ret)
         goto fail;
 
-    if (ci.slow)
-        dev->dev.speed = USB_SPEED_LOW;
-    else
-        dev->dev.speed = USB_SPEED_HIGH;
+    if (speed == -1) {
+        struct usbdevfs_connectinfo ci;
+
+        ret = ioctl(fd, USBDEVFS_CONNECTINFO, &ci);
+        if (ret < 0) {
+            perror("usb_host_device_open: USBDEVFS_CONNECTINFO");
+            goto fail;
+        }
+
+        if (ci.slow) {
+            speed = USB_SPEED_LOW;
+        } else {
+            speed = USB_SPEED_HIGH;
+        }
+    }
+    dev->dev.speed = speed;
+
+    printf("husb: grabbed usb device %d.%d\n", bus_num, addr);
 
     if (!prod_name || prod_name[0] == '\0')
         snprintf(dev->dev.product_desc, sizeof(dev->dev.product_desc),
@@ -1333,7 +1338,8 @@ static int usb_host_scan_dev(void *opaque, USBScanFunc *func)
     }
 
     device_count = 0;
-    bus_num = addr = speed = class_id = product_id = vendor_id = 0;
+    bus_num = addr = class_id = product_id = vendor_id = 0;
+    speed = -1; /* Can't get the speed from /[proc|dev]/bus/usb/devices */
     for(;;) {
         if (fgets(line, sizeof(line), f) == NULL)
             break;
@@ -1614,7 +1620,7 @@ static int usb_host_auto_scan(void *opaque, int bus_num, int addr, char *port,
         if (s->fd != -1)
             return 0;
 
-        usb_host_open(s, bus_num, addr, port, product_name);
+        usb_host_open(s, bus_num, addr, port, product_name, speed);
     }
 
     return 0;
