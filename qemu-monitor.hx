@@ -997,10 +997,10 @@ ETEXI
 #if defined(TARGET_I386)
     {
         .name       = "nmi",
-        .args_type  = "cpu_index:i",
-        .params     = "cpu",
-        .help       = "inject an NMI on the given CPU",
-        .mhandler.cmd = do_inject_nmi,
+        .args_type  = "",
+        .params     = "",
+        .help       = "inject an NMI on all guest's CPUs",
+        .mhandler.cmd = do_inject_nmi_hmp,
     },
 #endif
 STEXI
@@ -1015,7 +1015,7 @@ ETEXI
         .params     = "",
         .help       = "",
         .user_print = monitor_user_noop,
-        .mhandler.cmd_new = do_inject_nmi_all,
+        .mhandler.cmd_new = do_inject_nmi,
     },
 
 SQMP
