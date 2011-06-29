@@ -1,0 +1,66 @@
+From 08501600214fcd2c25951598a1d5c77b35be2fe8 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 16 Jun 2011 08:47:30 -0300
+Subject: [RHEL6 qemu-kvm PATCH 14/23] blockdev: New drive_get_by_index()
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1308214055-31837-14-git-send-email-armbru@redhat.com>
+Patchwork-id: 27233
+O-Subject: [PATCH RHEL-6.2 v2 13/18] blockdev: New drive_get_by_index()
+Bugzilla: 627585
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit f1bd51ac2b6e6ccd3d13dfd52c1c381a68bf261c)
+
+Conflicts:
+
+	blockdev.c
+	blockdev.h
+---
+ blockdev.c |    7 +++++++
+ blockdev.h |    1 +
+ 2 files changed, 8 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ blockdev.c |    7 +++++++
+ blockdev.h |    1 +
+ 2 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/blockdev.c b/blockdev.c
+index 3f7e083..775a12b 100644
+--- a/blockdev.c
++++ b/blockdev.c
+@@ -150,6 +150,13 @@ DriveInfo *drive_get_by_id(const char *id)
+     return NULL;
+ }
+ 
++DriveInfo *drive_get_by_index(BlockInterfaceType type, int index)
++{
++    return drive_get(type,
++                     drive_index_to_bus_id(type, index),
++                     drive_index_to_unit_id(type, index));
++}
++
+ int drive_get_max_bus(BlockInterfaceType type)
+ {
+     int max_bus;
+diff --git a/blockdev.h b/blockdev.h
+index 68dcc43..c76533f 100644
+--- a/blockdev.h
++++ b/blockdev.h
+@@ -48,6 +48,7 @@ extern DriveInfo *extboot_drive;
+ 
+ extern DriveInfo *drive_get(BlockInterfaceType type, int bus, int unit);
+ extern DriveInfo *drive_get_by_id(const char *id);
++DriveInfo *drive_get_by_index(BlockInterfaceType type, int index);
+ extern int drive_get_max_bus(BlockInterfaceType type);
+ extern void drive_uninit(DriveInfo *dinfo);
+ extern DriveInfo *drive_get_by_blockdev(BlockDriverState *bs);
+-- 
+1.7.3.2
+

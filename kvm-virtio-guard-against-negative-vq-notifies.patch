@@ -1,0 +1,98 @@
+From f2e49bb91854240284a7cf86469f7e03fd936fc5 Mon Sep 17 00:00:00 2001
+From: Xiao Wang <jasowang@redhat.com>
+Date: Thu, 2 Jun 2011 05:12:07 -0300
+Subject: [RHEL6 qemu-kvm PATCH 01/23] virtio: guard against negative vq notifies
+
+RH-Author: Xiao Wang <jasowang@redhat.com>
+Message-id: <20110602051207.28777.15475.stgit@dhcp-91-7.nay.redhat.com.englab.nay.redhat.com>
+Patchwork-id: 26205
+O-Subject: [RHEL6.2/RHEL6.1Z qemu-kvm PATCH] virtio: guard against negative vq notifies
+Bugzilla: 707094
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Amos Kong <akong@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=707094
+Upstream: in Michael's tree
+Brew: https://brewweb.devel.redhat.com/taskinfo?taskID=3365023
+Test status: Just make sure virtio works as normal in my local desktop.
+
+The virtio_queue_notify() function checks that the virtqueue number is
+less than the maximum number of virtqueues.  A signed comparison is used
+but the virtqueue number could be negative if a buggy or malicious guest
+is run.  This results in memory accesses outside of the virtqueue array.
+
+It is risky doing input validation in common code instead of at the
+guest<->host boundary.  Note that virtio_queue_set_addr(),
+virtio_queue_get_addr(), virtio_queue_get_num(), and many other virtio
+functions do *not* validate the virtqueue number argument.
+
+Instead of fixing the comparison in virtio_queue_notify(), move the
+comparison to the virtio bindings (just like VIRTIO_PCI_QUEUE_SEL) where
+we have a uint32_t value and can avoid ever calling into common virtio
+code if the virtqueue number is invalid.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry picked from commit 3eb9904855739be82c439c8a5067d71877f85473)
+---
+ 0 files changed, 0 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/syborg_virtio.c |    4 +++-
+ hw/virtio-pci.c    |    4 +++-
+ hw/virtio.c        |    4 +---
+ 3 files changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/hw/syborg_virtio.c b/hw/syborg_virtio.c
+index dd0a87b..9acb715 100644
+--- a/hw/syborg_virtio.c
++++ b/hw/syborg_virtio.c
+@@ -147,7 +147,9 @@ static void syborg_virtio_writel(void *opaque, target_phys_addr_t offset,
+             vdev->queue_sel = value;
+         break;
+     case SYBORG_VIRTIO_QUEUE_NOTIFY:
+-        virtio_queue_notify(vdev, value);
++        if (value < VIRTIO_PCI_QUEUE_MAX) {
++            virtio_queue_notify(vdev, value);
++        }
+         break;
+     case SYBORG_VIRTIO_STATUS:
+         virtio_set_status(vdev, value);
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index f9eb9ec..3098d34 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -345,7 +345,9 @@ static void virtio_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+             vdev->queue_sel = val;
+         break;
+     case VIRTIO_PCI_QUEUE_NOTIFY:
+-        virtio_queue_notify(vdev, val);
++        if (val < VIRTIO_PCI_QUEUE_MAX) {
++            virtio_queue_notify(vdev, val);
++        }
+         break;
+     case VIRTIO_PCI_STATUS:
+         if (!(val & VIRTIO_CONFIG_S_DRIVER_OK)) {
+diff --git a/hw/virtio.c b/hw/virtio.c
+index 0b6344e..786b6fe 100644
+--- a/hw/virtio.c
++++ b/hw/virtio.c
+@@ -585,9 +585,7 @@ void virtio_queue_notify_vq(VirtQueue *vq)
+ 
+ void virtio_queue_notify(VirtIODevice *vdev, int n)
+ {
+-    if (n < VIRTIO_PCI_QUEUE_MAX) {
+-        virtio_queue_notify_vq(&vdev->vq[n]);
+-    }
++    virtio_queue_notify_vq(&vdev->vq[n]);
+ }
+ 
+ uint16_t virtio_queue_vector(VirtIODevice *vdev, int n)
+-- 
+1.7.3.2
+

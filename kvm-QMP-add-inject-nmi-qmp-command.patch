@@ -1,0 +1,112 @@
+From f9bccb35713b95e9f214cd2e5b82e82671fd6a1e Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 27 Jun 2011 20:20:21 -0300
+Subject: [RHEL6 qemu-kvm PATCH 22/23] QMP: add inject-nmi qmp command
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1309206022-3551-3-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 28239
+O-Subject: [PATCH 2/3] QMP: add inject-nmi qmp command
+Bugzilla: 644919
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Lai Jiangshan <laijs@cn.fujitsu.com>
+
+inject-nmi command injects an NMI on all CPUs of guest.
+It is only supported for x86 guest currently, it will
+returns "Unsupported" error for non-x86 guest.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+(cherry picked from commit a404666457b54142d6cfe8302bcded9be4cda379)
+
+Conflicts:
+
+	qemu-monitor.hx
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c       |   21 +++++++++++++++++++++
+ qemu-monitor.hx |   27 +++++++++++++++++++++++++++
+ 2 files changed, 48 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c       |   21 +++++++++++++++++++++
+ qemu-monitor.hx |   27 +++++++++++++++++++++++++++
+ 2 files changed, 48 insertions(+), 0 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index ef6fd6a..8f61c3a 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -2363,6 +2363,27 @@ static void do_inject_nmi(Monitor *mon, const QDict *qdict)
+             break;
+         }
+ }
++
++static int do_inject_nmi_all(Monitor *mon, const QDict *qdict, QObject **ret_data)
++{
++    CPUState *env;
++
++    for (env = first_cpu; env != NULL; env = env->next_cpu) {
++        if (kvm_enabled()) {
++            kvm_inject_interrupt(env, CPU_INTERRUPT_NMI);
++        } else {
++            cpu_interrupt(env, CPU_INTERRUPT_NMI);
++        }
++    }
++
++    return 0;
++}
++#else
++static int do_inject_nmi_all(Monitor *mon, const QDict *qdict, QObject **ret_data)
++{
++    qerror_report(QERR_UNSUPPORTED);
++    return -1;
++}
+ #endif
+ 
+ static void do_info_status_print(Monitor *mon, const QObject *data)
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index e66540c..e44dd46 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -1010,6 +1010,33 @@ Inject an NMI on the given CPU (x86 only).
+ ETEXI
+ 
+     {
++        .name       = "inject-nmi",
++        .args_type  = "",
++        .params     = "",
++        .help       = "",
++        .user_print = monitor_user_noop,
++        .mhandler.cmd_new = do_inject_nmi_all,
++    },
++
++SQMP
++inject-nmi
++----------
++
++Inject an NMI on guest's CPUs.
++
++Arguments: None.
++
++Example:
++
++-> { "execute": "inject-nmi" }
++<- { "return": {} }
++
++Note: inject-nmi is only supported for x86 guest currently, it will
++      returns "Unsupported" error for non-x86 guest.
++
++EQMP
++
++    {
+         .name       = "migrate",
+         .args_type  = "detach:-d,blk:-b,inc:-i,uri:s",
+         .params     = "[-d] [-b] [-i] uri",
+-- 
+1.7.3.2
+

@@ -1,0 +1,53 @@
+From 2cd1fb8a951bbeaf4f94c90a1b26ca4f670f6fd1 Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Tue, 21 Jun 2011 17:39:33 -0300
+Subject: [RHEL6 qemu-kvm PATCH 20/23] vhost: fix double free on device stop
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <20110621173933.GA17396@redhat.com>
+Patchwork-id: 27728
+O-Subject: [PATCHv2 RHEL6.2/6.1.z] vhost: fix double free on device stop
+Bugzilla: 699635
+RH-Acked-by: Chris Wright <chrisw@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Xiao Wang <jasowang@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Amos Kong <akong@redhat.com>
+
+vhost dev stop failed to clear the log field.
+Typically not an issue as dev start overwrites this field,
+but if logging gets disabled before the following start,
+it doesn't so this causes a double free.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+
+Upstream: posted
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=699635
+Brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=3416654
+---
+
+Changes from v1:
+Addressed comments by Chris, Markus.
+
+ hw/vhost.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/vhost.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/hw/vhost.c b/hw/vhost.c
+index 6dffa2b..63a4ef4 100644
+--- a/hw/vhost.c
++++ b/hw/vhost.c
+@@ -735,5 +735,6 @@ void vhost_dev_stop(struct vhost_dev *hdev, VirtIODevice *vdev)
+ 
+     hdev->started = false;
+     qemu_free(hdev->log);
++    hdev->log = NULL;
+     hdev->log_size = 0;
+ }
+-- 
+1.7.3.2
+

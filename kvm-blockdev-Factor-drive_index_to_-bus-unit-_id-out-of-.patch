@@ -1,0 +1,69 @@
+From a1be7af996a83fb7d2e6d08e5a22080ef3de0d38 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 16 Jun 2011 08:47:29 -0300
+Subject: [RHEL6 qemu-kvm PATCH 13/23] blockdev: Factor drive_index_to_{bus, unit}_id out of drive_init()
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1308214055-31837-13-git-send-email-armbru@redhat.com>
+Patchwork-id: 27232
+O-Subject: [PATCH RHEL-6.2 v2 12/18] blockdev: Factor drive_index_to_{bus, unit}_id out of drive_init()
+Bugzilla: 627585
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 505a7fb1b1bfa732117d526a8d3a0f27741155d6)
+---
+ blockdev.c |   22 ++++++++++++++--------
+ 1 files changed, 14 insertions(+), 8 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ blockdev.c |   22 ++++++++++++++--------
+ 1 files changed, 14 insertions(+), 8 deletions(-)
+
+diff --git a/blockdev.c b/blockdev.c
+index 00a728c..3f7e083 100644
+--- a/blockdev.c
++++ b/blockdev.c
+@@ -77,6 +77,18 @@ void blockdev_auto_del(BlockDriverState *bs)
+     }
+ }
+ 
++static int drive_index_to_bus_id(BlockInterfaceType type, int index)
++{
++    int max_devs = if_max_devs[type];
++    return max_devs ? index / max_devs : 0;
++}
++
++static int drive_index_to_unit_id(BlockInterfaceType type, int index)
++{
++    int max_devs = if_max_devs[type];
++    return max_devs ? index % max_devs : index;
++}
++
+ QemuOpts *drive_def(const char *optstr)
+ {
+     return qemu_opts_parse(&qemu_drive_opts, optstr, 0);
+@@ -437,14 +449,8 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi, int *fatal_error)
+             error_report("index cannot be used with bus and unit");
+             return NULL;
+         }
+-        if (max_devs == 0)
+-        {
+-            unit_id = index;
+-            bus_id = 0;
+-        } else {
+-            unit_id = index % max_devs;
+-            bus_id = index / max_devs;
+-        }
++        bus_id = drive_index_to_bus_id(type, index);
++        unit_id = drive_index_to_unit_id(type, index);
+     }
+ 
+     /* if user doesn't specify a unit_id,
+-- 
+1.7.3.2
+

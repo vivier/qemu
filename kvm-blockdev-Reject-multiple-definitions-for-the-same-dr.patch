@@ -1,0 +1,144 @@
+From 7f27ecf0dcad56a9c81457aaad0f1ea1cb7b2ea2 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 16 Jun 2011 08:47:31 -0300
+Subject: [RHEL6 qemu-kvm PATCH 15/23] blockdev: Reject multiple definitions for the same drive
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1308214055-31837-15-git-send-email-armbru@redhat.com>
+Patchwork-id: 27239
+O-Subject: [PATCH RHEL-6.2 v2 14/18] blockdev: Reject multiple definitions for the same drive
+Bugzilla: 627585
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+We silently ignore multiple definitions for the same drive:
+
+    $ qemu-system-x86_64 -nodefaults -vnc :1 -S -monitor stdio -drive if=ide,index=1,file=tmp.qcow2 -drive if=ide,index=1,file=nonexistant
+    QEMU 0.13.50 monitor - type 'help' for more information
+    (qemu) info block
+    ide0-hd1: type=hd removable=0 file=tmp.qcow2 backing_file=tmp.img ro=0 drv=qcow2 encrypted=0
+
+With if=none, this can become quite confusing:
+
+    $ qemu-system-x86_64 -nodefaults -vnc :1 -S -monitor stdio -drive if=none,index=1,file=tmp.qcow2,id=eins -drive if=none,index=1,file=nonexistant,id=zwei -device ide-drive,drive=eins -device ide-drive,drive=zwei
+    qemu-system-x86_64: -device ide-drive,drive=zwei: Property 'ide-drive.drive' can't find value 'zwei'
+
+The second -device fails, because it refers to drive zwei, which got
+silently ignored.
+
+Make multiple drive definitions fail cleanly.
+
+Unfortunately, there's code that relies on multiple drive definitions
+being silently ignored: main() merrily adds default drives even when
+the user already defined these drives.  Fix that up.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 4e5d9b578f5d5ffbf7ef7e26abed23a0548a853a)
+
+Conflicts:
+
+	vl.c
+---
+ blockdev.c |    5 +++--
+ vl.c       |   45 ++++++++++++++++++++++++++++++---------------
+ 2 files changed, 33 insertions(+), 17 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ blockdev.c |    5 +++--
+ vl.c       |   45 ++++++++++++++++++++++++++++++---------------
+ 2 files changed, 33 insertions(+), 17 deletions(-)
+
+diff --git a/blockdev.c b/blockdev.c
+index 775a12b..0363c68 100644
+--- a/blockdev.c
++++ b/blockdev.c
+@@ -484,11 +484,12 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi, int *fatal_error)
+     }
+ 
+     /*
+-     * ignore multiple definitions
++     * catch multiple definitions
+      */
+ 
+     if (drive_get(type, bus_id, unit_id) != NULL) {
+-        *fatal_error = 0;
++        error_report("drive with bus=%d, unit=%d (index=%d) exists",
++                     bus_id, unit_id, index);
+         return NULL;
+     }
+ 
+diff --git a/vl.c b/vl.c
+index 7a319b7..8789491 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2101,6 +2101,29 @@ static int drive_enable_snapshot(QemuOpts *opts, void *opaque)
+     return 0;
+ }
+ 
++static void default_drive(int enable, int snapshot, int use_scsi,
++                          BlockInterfaceType type, int index,
++                          const char *optstr)
++{
++    QemuOpts *opts;
++
++    if (type == IF_DEFAULT) {
++        type = use_scsi ? IF_SCSI : IF_IDE;
++    }
++
++    if (!enable || drive_get_by_index(type, index)) {
++        return;
++    }
++
++    opts = drive_add(type, index, NULL, optstr);
++    if (snapshot) {
++        drive_enable_snapshot(opts, NULL);
++    }
++    if (drive_init_func(opts, &use_scsi)) {
++        exit(1);
++    }
++}
++
+ void qemu_register_boot_set(QEMUBootSetHandler *func, void *opaque)
+ {
+     boot_set_handler = func;
+@@ -5984,27 +6007,19 @@ int main(int argc, char **argv, char **envp)
+ 
+     blk_mig_init();
+ 
+-    if (default_cdrom) {
+-        /* we always create the cdrom drive, even if no disk is there */
+-        drive_add(IF_DEFAULT, 2, NULL, CDROM_OPTS);
+-    }
+-
+-    if (default_floppy) {
+-        /* we always create at least one floppy */
+-        drive_add(IF_FLOPPY, 0, NULL, FD_OPTS);
+-    }
+-
+-    if (default_sdcard) {
+-        /* we always create one sd slot, even if no card is in it */
+-        drive_add(IF_SD, 0, NULL, SD_OPTS);
+-    }
+-
+     /* open the virtual block devices */
+     if (snapshot)
+         qemu_opts_foreach(&qemu_drive_opts, drive_enable_snapshot, NULL, 0);
+     if (qemu_opts_foreach(&qemu_drive_opts, drive_init_func, &machine->use_scsi, 1) != 0)
+         exit(1);
+ 
++    default_drive(default_cdrom, snapshot, machine->use_scsi,
++                  IF_DEFAULT, 2, CDROM_OPTS);
++    default_drive(default_floppy, snapshot, machine->use_scsi,
++                  IF_FLOPPY, 0, FD_OPTS);
++    default_drive(default_sdcard, snapshot, machine->use_scsi,
++                  IF_SD, 0, SD_OPTS);
++
+     vmstate_register(NULL, 0, &vmstate_timers ,&timers_state);
+     register_savevm_live(NULL, "ram", 0, 4, NULL, ram_save_live, NULL,
+                          ram_load, NULL);
+-- 
+1.7.3.2
+

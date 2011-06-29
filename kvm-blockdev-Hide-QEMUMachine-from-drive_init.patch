@@ -1,0 +1,143 @@
+From dc5ac70a6c2b2753906d971d466a46c312203fd9 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 16 Jun 2011 08:47:19 -0300
+Subject: [RHEL6 qemu-kvm PATCH 03/23] blockdev: Hide QEMUMachine from drive_init()
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1308214055-31837-3-git-send-email-armbru@redhat.com>
+Patchwork-id: 27225
+O-Subject: [PATCH RHEL-6.2 v2 02/18] blockdev: Hide QEMUMachine from drive_init()
+Bugzilla: 627585
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+To pave the way for moving it out of vl.c.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit a803cb8eb8ada1add74f1b393b8a553a7e7f3acf)
+
+Conflicts:
+
+	vl.c
+---
+ hw/device-hotplug.c |    4 ++--
+ hw/usb-msd.c        |    2 +-
+ sysemu.h            |    3 ++-
+ vl.c                |   12 +++++-------
+ 4 files changed, 10 insertions(+), 11 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-hotplug.c |    4 ++--
+ hw/usb-msd.c        |    2 +-
+ sysemu.h            |    3 ++-
+ vl.c                |   12 +++++-------
+ 4 files changed, 10 insertions(+), 11 deletions(-)
+
+diff --git a/hw/device-hotplug.c b/hw/device-hotplug.c
+index fd86a2c..8705654 100644
+--- a/hw/device-hotplug.c
++++ b/hw/device-hotplug.c
+@@ -39,7 +39,7 @@ DriveInfo *add_init_drive(const char *optstr)
+     if (!opts)
+         return NULL;
+ 
+-    dinfo = drive_init(opts, current_machine, &fatal_error);
++    dinfo = drive_init(opts, current_machine->use_scsi, &fatal_error);
+     if (!dinfo) {
+         qemu_opts_del(opts);
+         return NULL;
+@@ -94,7 +94,7 @@ int simple_drive_add(Monitor *mon, const QDict *qdict, QObject **ret_data)
+         return -1;
+     }
+     qemu_opt_set(opts, "if", "none");
+-    dinfo = drive_init(opts, current_machine, &fatal_error);
++    dinfo = drive_init(opts, current_machine->use_scsi, &fatal_error);
+     if (!dinfo && fatal_error) {
+         qerror_report(QERR_DEVICE_INIT_FAILED, /* close enough */
+                       qemu_opts_id(opts));
+diff --git a/hw/usb-msd.c b/hw/usb-msd.c
+index 51de68d..7ca2a0c 100644
+--- a/hw/usb-msd.c
++++ b/hw/usb-msd.c
+@@ -596,7 +596,7 @@ static USBDevice *usb_msd_init(const char *filename)
+     qemu_opt_set(opts, "if", "none");
+ 
+     /* create host drive */
+-    dinfo = drive_init(opts, NULL, &fatal_error);
++    dinfo = drive_init(opts, 0, &fatal_error);
+     if (!dinfo) {
+         qemu_opts_del(opts);
+         return NULL;
+diff --git a/sysemu.h b/sysemu.h
+index b342453..d2e48d6 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -213,7 +213,8 @@ extern BlockInterfaceErrorAction drive_get_on_error(
+ BlockDriverState *qdev_init_bdrv(DeviceState *dev, BlockInterfaceType type);
+ 
+ extern QemuOpts *drive_add(const char *file, const char *fmt, ...);
+-extern DriveInfo *drive_init(QemuOpts *arg, void *machine, int *fatal_error);
++extern DriveInfo *drive_init(QemuOpts *arg, int default_to_scsi,
++                             int *fatal_error);
+ 
+ extern int drives_reopen(void);
+ 
+diff --git a/vl.c b/vl.c
+index 2e68234..158a584 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2269,8 +2269,7 @@ int drives_reopen(void)
+     return 0;
+ }
+ 
+-DriveInfo *drive_init(QemuOpts *opts, void *opaque,
+-                      int *fatal_error)
++DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi, int *fatal_error)
+ {
+     const char *buf;
+     const char *file = NULL;
+@@ -2282,7 +2281,6 @@ DriveInfo *drive_init(QemuOpts *opts, void *opaque,
+     int bus_id, unit_id;
+     int cyls, heads, secs, translation;
+     BlockDriver *drv = NULL;
+-    QEMUMachine *machine = opaque;
+     int max_devs;
+     int index;
+     int ro = 0;
+@@ -2297,7 +2295,7 @@ DriveInfo *drive_init(QemuOpts *opts, void *opaque,
+ 
+     translation = BIOS_ATA_TRANSLATION_AUTO;
+ 
+-    if (machine && machine->use_scsi) {
++    if (default_to_scsi) {
+         type = IF_SCSI;
+         max_devs = MAX_SCSI_DEVS;
+         pstrcpy(devname, sizeof(devname), "scsi");
+@@ -2648,10 +2646,10 @@ DriveInfo *drive_init(QemuOpts *opts, void *opaque,
+ 
+ static int drive_init_func(QemuOpts *opts, void *opaque)
+ {
+-    QEMUMachine *machine = opaque;
++    int *use_scsi = opaque;
+     int fatal_error = 0;
+ 
+-    if (drive_init(opts, machine, &fatal_error) == NULL) {
++    if (drive_init(opts, *use_scsi, &fatal_error) == NULL) {
+         if (fatal_error)
+             return 1;
+     }
+@@ -6565,7 +6563,7 @@ int main(int argc, char **argv, char **envp)
+     /* open the virtual block devices */
+     if (snapshot)
+         qemu_opts_foreach(&qemu_drive_opts, drive_enable_snapshot, NULL, 0);
+-    if (qemu_opts_foreach(&qemu_drive_opts, drive_init_func, machine, 1) != 0)
++    if (qemu_opts_foreach(&qemu_drive_opts, drive_init_func, &machine->use_scsi, 1) != 0)
+         exit(1);
+ 
+     vmstate_register(NULL, 0, &vmstate_timers ,&timers_state);
+-- 
+1.7.3.2
+

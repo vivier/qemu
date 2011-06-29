@@ -1,0 +1,140 @@
+From 001027b7849eb4b5713de48e9918d540519ca5a1 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 16 Jun 2011 08:47:27 -0300
+Subject: [RHEL6 qemu-kvm PATCH 11/23] blockdev: Fix regression in -drive if=scsi, index=N
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1308214055-31837-11-git-send-email-armbru@redhat.com>
+Patchwork-id: 27229
+O-Subject: [PATCH RHEL-6.2 v2 10/18] blockdev: Fix regression in -drive if=scsi, index=N
+Bugzilla: 627585
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Before commit 622b520f, index=12 meant bus=1,unit=5.
+
+Since the commit, it means bus=0,unit=12.  The drive is created, but
+not the guest device.  That's because the controllers we use with
+if=scsi drives (lsi53c895a and esp) support only 7 units, and
+scsi_bus_legacy_handle_cmdline() ignores drives with unit numbers
+exceeding that limit.
+
+Changing the mapping of index to bus, unit is a regression.  Breaking
+-drive invocations that used to work just makes it worse.
+
+Revert the part of commit 622b520f that causes this, and clean up
+some.
+
+Note that the fix only affects if=scsi.  You can still put more than 7
+units on a SCSI bus with -device & friends.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 27d6bf40edc346a61ade6d4c5d4f27f6b40acc81)
+
+Conflicts:
+
+	blockdev.h
+	hw/ide/ahci.c
+---
+ blockdev.c |   18 ++++++++++++++++--
+ blockdev.h |    3 ---
+ hw/ide.h   |    2 ++
+ hw/scsi.h  |    2 ++
+ savevm.c   |    1 -
+ 5 files changed, 20 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ blockdev.c |   18 ++++++++++++++++--
+ blockdev.h |    3 ---
+ hw/ide.h   |    2 ++
+ hw/scsi.h  |    2 ++
+ savevm.c   |    1 -
+ 5 files changed, 20 insertions(+), 6 deletions(-)
+
+diff --git a/blockdev.c b/blockdev.c
+index 45734b9..f8fadff 100644
+--- a/blockdev.c
++++ b/blockdev.c
+@@ -34,8 +34,22 @@ static const char *const if_name[IF_COUNT] = {
+ };
+ 
+ static const int if_max_devs[IF_COUNT] = {
+-    [IF_IDE] = MAX_IDE_DEVS,
+-    [IF_SCSI] = MAX_SCSI_DEVS,
++    /*
++     * Do not change these numbers!  They govern how drive option
++     * index maps to unit and bus.  That mapping is ABI.
++     *
++     * All controllers used to imlement if=T drives need to support
++     * if_max_devs[T] units, for any T with if_max_devs[T] != 0.
++     * Otherwise, some index values map to "impossible" bus, unit
++     * values.
++     *
++     * For instance, if you change [IF_SCSI] to 255, -drive
++     * if=scsi,index=12 no longer means bus=1,unit=5, but
++     * bus=0,unit=12.  With an lsi53c895a controller (7 units max),
++     * the drive can't be set up.  Regression.
++     */
++    [IF_IDE] = 2,
++    [IF_SCSI] = 7,
+ };
+ 
+ /*
+diff --git a/blockdev.h b/blockdev.h
+index 6494fde..54cccda 100644
+--- a/blockdev.h
++++ b/blockdev.h
+@@ -41,9 +41,6 @@ typedef struct DriveInfo {
+     BlockDriver *drv;
+ } DriveInfo;
+ 
+-#define MAX_IDE_DEVS	2
+-#define MAX_SCSI_DEVS	7
+-
+ extern QTAILQ_HEAD(drivelist, DriveInfo) drives;
+ extern QTAILQ_HEAD(driveoptlist, DriveOpt) driveopts;
+ extern DriveInfo *extboot_drive;
+diff --git a/hw/ide.h b/hw/ide.h
+index 0e7d540..9eb5031 100644
+--- a/hw/ide.h
++++ b/hw/ide.h
+@@ -3,6 +3,8 @@
+ 
+ #include "qdev.h"
+ 
++#define MAX_IDE_DEVS	2
++
+ /* ide-isa.c */
+ int isa_ide_init(int iobase, int iobase2, int isairq,
+                  DriveInfo *hd0, DriveInfo *hd1);
+diff --git a/hw/scsi.h b/hw/scsi.h
+index 8ca3c2d..07ddca3 100644
+--- a/hw/scsi.h
++++ b/hw/scsi.h
+@@ -5,6 +5,8 @@
+ #include "block.h"
+ #include "block_int.h"
+ 
++#define MAX_SCSI_DEVS	255
++
+ #define SCSI_CMD_BUF_SIZE     16
+ 
+ /* scsi-disk.c */
+diff --git a/savevm.c b/savevm.c
+index 9205e51..9e1b951 100644
+--- a/savevm.c
++++ b/savevm.c
+@@ -78,7 +78,6 @@
+ #include "sysemu.h"
+ #include "qemu-timer.h"
+ #include "qemu-char.h"
+-#include "blockdev.h"
+ #include "audio/audio.h"
+ #include "migration.h"
+ #include "qemu_socket.h"
+-- 
+1.7.3.2
+

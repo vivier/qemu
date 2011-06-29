@@ -1,0 +1,70 @@
+From 3a594b4c0b3ee2fdf88d4a85a737329c2a212d6c Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 16 Jun 2011 08:47:35 -0300
+Subject: [RHEL6 qemu-kvm PATCH 19/23] blockdev: Plug memory leak in drive_init() error paths
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1308214055-31837-19-git-send-email-armbru@redhat.com>
+Patchwork-id: 27238
+O-Subject: [PATCH RHEL-6.2 v2 18/18] blockdev: Plug memory leak in drive_init() error paths
+Bugzilla: 627585
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Should have spotted this when doing commit 319ae529.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit a9ae2bffea62ce5158be7475fe41e5fba6d026c1)
+
+Conflicts:
+
+	blockdev.c
+---
+ blockdev.c |   12 ++++++++++--
+ 1 files changed, 10 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ blockdev.c |   12 ++++++++++--
+ 1 files changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/blockdev.c b/blockdev.c
+index 92ab9e4..66e7cd0 100644
+--- a/blockdev.c
++++ b/blockdev.c
+@@ -570,7 +570,7 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
+     } else if (ro == 1) {
+         if (type != IF_SCSI && type != IF_VIRTIO && type != IF_FLOPPY && type != IF_NONE) {
+             error_report("readonly not supported by this bus type");
+-            return NULL;
++            goto err;
+         }
+     }
+     bdrv_flags |= ro ? 0 : BDRV_O_RDWR;
+@@ -581,12 +581,20 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
+     dinfo->opened = 1;
+ 
+     if (drive_open(dinfo) < 0) {
+-        return NULL;
++        goto err;
+     }
+ 
+     if (bdrv_key_required(dinfo->bdrv))
+         autostart = 0;
+     return dinfo;
++
++err:
++    bdrv_delete(dinfo->bdrv);
++    qemu_free(dinfo->id);
++    QTAILQ_REMOVE(&drives, dinfo, next);
++    qemu_free(dinfo->file);
++    qemu_free(dinfo);
++    return NULL;
+ }
+ 
+ void do_commit(Monitor *mon, const QDict *qdict)
+-- 
+1.7.3.2
+

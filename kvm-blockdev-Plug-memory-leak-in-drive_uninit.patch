@@ -1,0 +1,43 @@
+From 707a75032a7251d04851d788cb9d6c3bc5848a22 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 16 Jun 2011 08:47:34 -0300
+Subject: [RHEL6 qemu-kvm PATCH 18/23] blockdev: Plug memory leak in drive_uninit()
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1308214055-31837-18-git-send-email-armbru@redhat.com>
+Patchwork-id: 27236
+O-Subject: [PATCH RHEL-6.2 v2 17/18] blockdev: Plug memory leak in drive_uninit()
+Bugzilla: 627585
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Started leaking in commit 1dae12e6.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 2753d4a5fa44d980cc6a279f323a12ca8d172972)
+---
+ blockdev.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ blockdev.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/blockdev.c b/blockdev.c
+index b6565e1..92ab9e4 100644
+--- a/blockdev.c
++++ b/blockdev.c
+@@ -198,6 +198,7 @@ void drive_uninit(DriveInfo *dinfo)
+ {
+     qemu_opts_del(dinfo->opts);
+     bdrv_delete(dinfo->bdrv);
++    qemu_free(dinfo->id);
+     QTAILQ_REMOVE(&drives, dinfo, next);
+     qemu_free(dinfo->file);
+     qemu_free(dinfo);
+-- 
+1.7.3.2
+

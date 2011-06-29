@@ -1,0 +1,115 @@
+From 00a9c3df6119988ae6a12f7a6b30648b4a5e4438 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 16 Jun 2011 08:47:26 -0300
+Subject: [RHEL6 qemu-kvm PATCH 10/23] blockdev: Put BlockInterfaceType names and max_devs in tables
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1308214055-31837-10-git-send-email-armbru@redhat.com>
+Patchwork-id: 27230
+O-Subject: [PATCH RHEL-6.2 v2 09/18] blockdev: Put BlockInterfaceType names and max_devs in tables
+Bugzilla: 627585
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Turns drive_init()'s lengthy conditional into a concise loop, and
+makes the data available elsewhere.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 1960966d1b57628f730b66fe33cd2005846092e0)
+---
+ blockdev.c |   51 +++++++++++++++++++++------------------------------
+ 1 files changed, 21 insertions(+), 30 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ blockdev.c |   51 +++++++++++++++++++++------------------------------
+ 1 files changed, 21 insertions(+), 30 deletions(-)
+
+diff --git a/blockdev.c b/blockdev.c
+index 9520e7a..45734b9 100644
+--- a/blockdev.c
++++ b/blockdev.c
+@@ -21,6 +21,23 @@ struct drivelist drives = QTAILQ_HEAD_INITIALIZER(drives);
+ struct driveoptlist driveopts = QTAILQ_HEAD_INITIALIZER(driveopts);
+ DriveInfo *extboot_drive = NULL;
+ 
++static const char *const if_name[IF_COUNT] = {
++    [IF_NONE] = "none",
++    [IF_IDE] = "ide",
++    [IF_SCSI] = "scsi",
++    [IF_FLOPPY] = "floppy",
++    [IF_PFLASH] = "pflash",
++    [IF_MTD] = "mtd",
++    [IF_SD] = "sd",
++    [IF_VIRTIO] = "virtio",
++    [IF_XEN] = "xen",
++};
++
++static const int if_max_devs[IF_COUNT] = {
++    [IF_IDE] = MAX_IDE_DEVS,
++    [IF_SCSI] = MAX_SCSI_DEVS,
++};
++
+ /*
+  * We automatically delete the drive when a device using it gets
+  * unplugged.  Questionable feature, but we can't just drop it.
+@@ -222,11 +239,9 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi, int *fatal_error)
+ 
+     if (default_to_scsi) {
+         type = IF_SCSI;
+-        max_devs = MAX_SCSI_DEVS;
+         pstrcpy(devname, sizeof(devname), "scsi");
+     } else {
+         type = IF_IDE;
+-        max_devs = MAX_IDE_DEVS;
+         pstrcpy(devname, sizeof(devname), "ide");
+     }
+     media = MEDIA_DISK;
+@@ -248,38 +263,14 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi, int *fatal_error)
+ 
+     if ((buf = qemu_opt_get(opts, "if")) != NULL) {
+         pstrcpy(devname, sizeof(devname), buf);
+-        if (!strcmp(buf, "ide")) {
+-	    type = IF_IDE;
+-            max_devs = MAX_IDE_DEVS;
+-        } else if (!strcmp(buf, "scsi")) {
+-	    type = IF_SCSI;
+-            max_devs = MAX_SCSI_DEVS;
+-        } else if (!strcmp(buf, "floppy")) {
+-	    type = IF_FLOPPY;
+-            max_devs = 0;
+-        } else if (!strcmp(buf, "pflash")) {
+-	    type = IF_PFLASH;
+-            max_devs = 0;
+-	} else if (!strcmp(buf, "mtd")) {
+-	    type = IF_MTD;
+-            max_devs = 0;
+-	} else if (!strcmp(buf, "sd")) {
+-	    type = IF_SD;
+-            max_devs = 0;
+-        } else if (!strcmp(buf, "virtio")) {
+-            type = IF_VIRTIO;
+-            max_devs = 0;
+-	} else if (!strcmp(buf, "xen")) {
+-	    type = IF_XEN;
+-            max_devs = 0;
+-	} else if (!strcmp(buf, "none")) {
+-	    type = IF_NONE;
+-            max_devs = 0;
+-	} else {
++        for (type = 0; type < IF_COUNT && strcmp(buf, if_name[type]); type++)
++            ;
++        if (type == IF_COUNT) {
+             error_report("unsupported bus type '%s'", buf);
+             return NULL;
+ 	}
+     }
++    max_devs = if_max_devs[type];
+ 
+     if (cyls || heads || secs) {
+         if (cyls < 1 || (type == IF_IDE && cyls > 16383)) {
+-- 
+1.7.3.2
+

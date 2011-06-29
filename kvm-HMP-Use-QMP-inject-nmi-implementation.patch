@@ -1,0 +1,124 @@
+From 033f74848c205ff8eb443313558240a2e21f0921 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 27 Jun 2011 20:20:22 -0300
+Subject: [RHEL6 qemu-kvm PATCH 23/23] HMP: Use QMP inject nmi implementation
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1309206022-3551-4-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 28238
+O-Subject: [PATCH 3/3] HMP: Use QMP inject nmi implementation
+Bugzilla: 644919
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+This **CHANGES** the human monitor "nmi" command behavior.
+
+Currently it accepts an CPU argument which, when provided, will send
+the NMI to the specified CPU. This feature is of discussable value
+though and HMP shouldn't have more features than QMP, so let's use
+QMP's instead (it's also simpler).
+
+NOTE: Unfortunately, this patch is a bit different from upstream
+      due to conflicts.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+(cherry picked from commit e9b4b432e781863869b074d46966bfa0bd672b8f)
+
+Conflicts:
+
+	qmp-commands.hx
+	hmp-commands.hx
+	monitor.c
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ monitor.c       |   24 +++++++-----------------
+ qemu-monitor.hx |   10 +++++-----
+ 2 files changed, 12 insertions(+), 22 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ monitor.c       |   24 +++++++-----------------
+ qemu-monitor.hx |   10 +++++-----
+ 2 files changed, 12 insertions(+), 22 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 8f61c3a..b116827 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -2349,22 +2349,7 @@ static void do_wav_capture(Monitor *mon, const QDict *qdict)
+ #endif
+ 
+ #if defined(TARGET_I386)
+-static void do_inject_nmi(Monitor *mon, const QDict *qdict)
+-{
+-    CPUState *env;
+-    int cpu_index = qdict_get_int(qdict, "cpu_index");
+-
+-    for (env = first_cpu; env != NULL; env = env->next_cpu)
+-        if (env->cpu_index == cpu_index) {
+-            if (kvm_enabled())
+-                kvm_inject_interrupt(env, CPU_INTERRUPT_NMI);
+-            else
+-                cpu_interrupt(env, CPU_INTERRUPT_NMI);
+-            break;
+-        }
+-}
+-
+-static int do_inject_nmi_all(Monitor *mon, const QDict *qdict, QObject **ret_data)
++static int do_inject_nmi(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     CPUState *env;
+ 
+@@ -2379,13 +2364,18 @@ static int do_inject_nmi_all(Monitor *mon, const QDict *qdict, QObject **ret_dat
+     return 0;
+ }
+ #else
+-static int do_inject_nmi_all(Monitor *mon, const QDict *qdict, QObject **ret_data)
++static int do_inject_nmi(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     qerror_report(QERR_UNSUPPORTED);
+     return -1;
+ }
+ #endif
+ 
++static void do_inject_nmi_hmp(Monitor *mon, const QDict *qdict)
++{
++    do_inject_nmi(mon, qdict, NULL);
++}
++
+ static void do_info_status_print(Monitor *mon, const QObject *data)
+ {
+     QDict *qdict;
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index e44dd46..c1e9ba7 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -997,10 +997,10 @@ ETEXI
+ #if defined(TARGET_I386)
+     {
+         .name       = "nmi",
+-        .args_type  = "cpu_index:i",
+-        .params     = "cpu",
+-        .help       = "inject an NMI on the given CPU",
+-        .mhandler.cmd = do_inject_nmi,
++        .args_type  = "",
++        .params     = "",
++        .help       = "inject an NMI on all guest's CPUs",
++        .mhandler.cmd = do_inject_nmi_hmp,
+     },
+ #endif
+ STEXI
+@@ -1015,7 +1015,7 @@ ETEXI
+         .params     = "",
+         .help       = "",
+         .user_print = monitor_user_noop,
+-        .mhandler.cmd_new = do_inject_nmi_all,
++        .mhandler.cmd_new = do_inject_nmi,
+     },
+ 
+ SQMP
+-- 
+1.7.3.2
+

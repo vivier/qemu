@@ -1,0 +1,46 @@
+From 8f388b64577b3e643316b986a112ee1d928a2225 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 16 Jun 2011 08:47:22 -0300
+Subject: [RHEL6 qemu-kvm PATCH 06/23] Fix regression for "-drive file="
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1308214055-31837-6-git-send-email-armbru@redhat.com>
+Patchwork-id: 27226
+O-Subject: [PATCH RHEL-6.2 v2 05/18] Fix regression for "-drive file="
+Bugzilla: 627585
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Empty file used to create an empty drive (no media).  Since commit
+9dfd7c7a, it's an error: "qemu: could not open disk image : No such
+file or directory".  Older versions of libvirt can choke on this.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit dd5b0d71d660a4e31bdf8bd0d130ce582833db9f)
+---
+ blockdev.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ blockdev.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/blockdev.c b/blockdev.c
+index 16aafa7..6c47d01 100644
+--- a/blockdev.c
++++ b/blockdev.c
+@@ -545,7 +545,7 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi, int *fatal_error)
+     case IF_COUNT:
+         abort();
+     }
+-    if (!file) {
++    if (!file || !*file) {
+         *fatal_error = 0;
+         return NULL;
+     }
+-- 
+1.7.3.2
+

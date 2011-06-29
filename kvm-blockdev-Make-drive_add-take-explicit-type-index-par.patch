@@ -1,0 +1,255 @@
+From fa5c77d517f7d8c26120a6b018cfb23ae096f330 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 16 Jun 2011 08:47:28 -0300
+Subject: [RHEL6 qemu-kvm PATCH 12/23] blockdev: Make drive_add() take explicit type, index parameters
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1308214055-31837-12-git-send-email-armbru@redhat.com>
+Patchwork-id: 27235
+O-Subject: [PATCH RHEL-6.2 v2 11/18] blockdev: Make drive_add() take explicit type, index parameters
+Bugzilla: 627585
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Before, type & index were hidden in printf-like fmt, ... parameters,
+which get expanded into an option string.  Rather inconvenient for
+uses later in this series.
+
+New IF_DEFAULT to ask for the machine's default interface.  Before,
+that was done by having no option "if" in the option string.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 2292ddaeab3467c68efd9e07e17ca0c9fc510fdc)
+
+Conflicts:
+
+	blockdev.c
+	blockdev.h
+---
+ blockdev.c          |   20 +++++++++++++++++---
+ blockdev.h          |    8 +++++++-
+ hw/device-hotplug.c |    2 +-
+ vl.c                |   43 +++++++++++++++++++++++--------------------
+ 4 files changed, 48 insertions(+), 25 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ blockdev.c          |   20 +++++++++++++++++---
+ blockdev.h          |    8 +++++++-
+ hw/device-hotplug.c |    2 +-
+ vl.c                |   43 +++++++++++++++++++++++--------------------
+ 4 files changed, 48 insertions(+), 25 deletions(-)
+
+diff --git a/blockdev.c b/blockdev.c
+index f8fadff..00a728c 100644
+--- a/blockdev.c
++++ b/blockdev.c
+@@ -77,20 +77,34 @@ void blockdev_auto_del(BlockDriverState *bs)
+     }
+ }
+ 
+-QemuOpts *drive_add(const char *file, const char *fmt, ...)
++QemuOpts *drive_def(const char *optstr)
++{
++    return qemu_opts_parse(&qemu_drive_opts, optstr, 0);
++}
++
++QemuOpts *drive_add(BlockInterfaceType type, int index, const char *file,
++                    const char *fmt, ...)
+ {
+     va_list ap;
+     char optstr[1024];
+     QemuOpts *opts;
++    char buf[32];
+ 
+     va_start(ap, fmt);
+     vsnprintf(optstr, sizeof(optstr), fmt, ap);
+     va_end(ap);
+ 
+-    opts = qemu_opts_parse(&qemu_drive_opts, optstr, 0);
++    opts = drive_def(optstr);
+     if (!opts) {
+         return NULL;
+     }
++    if (type != IF_DEFAULT) {
++        qemu_opt_set(opts, "if", if_name[type]);
++    }
++    if (index >= 0) {
++        snprintf(buf, sizeof(buf), "%d", index);
++        qemu_opt_set(opts, "index", buf);
++    }
+     if (file)
+         qemu_opt_set(opts, "file", file);
+     return opts;
+@@ -531,7 +545,7 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi, int *fatal_error)
+         if (devaddr)
+             qemu_opt_set(opts, "addr", devaddr);
+         break;
+-    case IF_COUNT:
++    default:
+         abort();
+     }
+     if (!file || !*file) {
+diff --git a/blockdev.h b/blockdev.h
+index 54cccda..68dcc43 100644
+--- a/blockdev.h
++++ b/blockdev.h
+@@ -19,6 +19,7 @@ void blockdev_auto_del(BlockDriverState *bs);
+ #define BLOCK_SERIAL_STRLEN 20
+ 
+ typedef enum {
++    IF_DEFAULT = -1,            /* for use with drive_add() only */
+     IF_NONE,
+     IF_IDE, IF_SCSI, IF_FLOPPY, IF_PFLASH, IF_MTD, IF_SD, IF_VIRTIO, IF_XEN,
+     IF_COUNT
+@@ -52,7 +53,12 @@ extern void drive_uninit(DriveInfo *dinfo);
+ extern DriveInfo *drive_get_by_blockdev(BlockDriverState *bs);
+ extern const char *drive_get_serial(BlockDriverState *bdrv);
+ 
+-extern QemuOpts *drive_add(const char *file, const char *fmt, ...);
++QemuOpts *drive_def(const char *optstr);
++QemuOpts *drive_add(BlockInterfaceType type, int index, const char *file,
++                    const char *fmt, ...) /*GCC_FMT_ATTR(4, 5)*/;
++    /* GCC_FMT_ATTR() commented out to avoid the (pretty useless)
++     * "zero-length gnu_printf format string" warning we insist to
++     * enable */
+ extern DriveInfo *drive_init(QemuOpts *arg, int default_to_scsi,
+                              int *fatal_error);
+ 
+diff --git a/hw/device-hotplug.c b/hw/device-hotplug.c
+index a6d3867..36d6400 100644
+--- a/hw/device-hotplug.c
++++ b/hw/device-hotplug.c
+@@ -33,7 +33,7 @@ DriveInfo *add_init_drive(const char *optstr)
+     DriveInfo *dinfo;
+     QemuOpts *opts;
+ 
+-    opts = drive_add(NULL, "%s", optstr);
++    opts = drive_def(optstr);
+     if (!opts)
+         return NULL;
+ 
+diff --git a/vl.c b/vl.c
+index 20c1190..7a319b7 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2073,12 +2073,13 @@ static int bt_parse(const char *opt)
+ /***********************************************************/
+ /* QEMU Block devices */
+ 
+-#define HD_ALIAS "index=%d,media=disk"
+-#define CDROM_ALIAS "index=2,media=cdrom"
+-#define FD_ALIAS "index=%d,if=floppy"
+-#define PFLASH_ALIAS "if=pflash"
+-#define MTD_ALIAS "if=mtd"
+-#define SD_ALIAS "index=0,if=sd"
++/* Any % in the following strings must be escaped as %% */
++#define HD_OPTS "media=disk"
++#define CDROM_OPTS "media=cdrom"
++#define FD_OPTS ""
++#define PFLASH_OPTS ""
++#define MTD_OPTS ""
++#define SD_OPTS ""
+ 
+ static int drive_init_func(QemuOpts *opts, void *opaque)
+ {
+@@ -5014,7 +5015,7 @@ int main(int argc, char **argv, char **envp)
+         if (optind >= argc)
+             break;
+         if (argv[optind][0] != '-') {
+-	    hda_opts = drive_add(argv[optind++], HD_ALIAS, 0);
++	    hda_opts = drive_add(IF_DEFAULT, 0, argv[optind++], HD_OPTS);
+         } else {
+             const QEMUOption *popt;
+ 
+@@ -5055,11 +5056,11 @@ int main(int argc, char **argv, char **envp)
+                 break;
+             case QEMU_OPTION_hda:
+                 if (cyls == 0)
+-                    hda_opts = drive_add(optarg, HD_ALIAS, 0);
++                    hda_opts = drive_add(IF_DEFAULT, 0, optarg, HD_OPTS);
+                 else
+-                    hda_opts = drive_add(optarg, HD_ALIAS
++                    hda_opts = drive_add(IF_DEFAULT, 0, optarg, HD_OPTS
+ 			     ",cyls=%d,heads=%d,secs=%d%s",
+-                             0, cyls, heads, secs,
++                             cyls, heads, secs,
+                              translation == BIOS_ATA_TRANSLATION_LBA ?
+                                  ",trans=lba" :
+                              translation == BIOS_ATA_TRANSLATION_NONE ?
+@@ -5068,10 +5069,11 @@ int main(int argc, char **argv, char **envp)
+             case QEMU_OPTION_hdb:
+             case QEMU_OPTION_hdc:
+             case QEMU_OPTION_hdd:
+-                drive_add(optarg, HD_ALIAS, popt->index - QEMU_OPTION_hda);
++                drive_add(IF_DEFAULT, popt->index - QEMU_OPTION_hda, optarg,
++                          HD_OPTS);
+                 break;
+             case QEMU_OPTION_drive:
+-                drive_add(NULL, "%s", optarg);
++                drive_def(optarg);
+ 	        break;
+             case QEMU_OPTION_set:
+                 if (qemu_set_option(optarg) != 0)
+@@ -5082,13 +5084,13 @@ int main(int argc, char **argv, char **envp)
+                     exit(1);
+ 	        break;
+             case QEMU_OPTION_mtdblock:
+-                drive_add(optarg, MTD_ALIAS);
++                drive_add(IF_MTD, -1, optarg, MTD_OPTS);
+                 break;
+             case QEMU_OPTION_sd:
+-                drive_add(optarg, SD_ALIAS);
++                drive_add(IF_SD, 0, optarg, SD_OPTS);
+                 break;
+             case QEMU_OPTION_pflash:
+-                drive_add(optarg, PFLASH_ALIAS);
++                drive_add(IF_PFLASH, -1, optarg, PFLASH_OPTS);
+                 break;
+             case QEMU_OPTION_snapshot:
+                 snapshot = 1;
+@@ -5167,7 +5169,7 @@ int main(int argc, char **argv, char **envp)
+                 kernel_cmdline = optarg;
+                 break;
+             case QEMU_OPTION_cdrom:
+-                drive_add(optarg, CDROM_ALIAS);
++                drive_add(IF_DEFAULT, 2, optarg, CDROM_OPTS);
+                 break;
+             case QEMU_OPTION_boot:
+                 {
+@@ -5220,7 +5222,8 @@ int main(int argc, char **argv, char **envp)
+                 break;
+             case QEMU_OPTION_fda:
+             case QEMU_OPTION_fdb:
+-                drive_add(optarg, FD_ALIAS, popt->index - QEMU_OPTION_fda);
++                drive_add(IF_FLOPPY, popt->index - QEMU_OPTION_fda,
++                          optarg, FD_OPTS);
+                 break;
+ #ifdef TARGET_I386
+             case QEMU_OPTION_no_fd_bootchk:
+@@ -5983,17 +5986,17 @@ int main(int argc, char **argv, char **envp)
+ 
+     if (default_cdrom) {
+         /* we always create the cdrom drive, even if no disk is there */
+-        drive_add(NULL, CDROM_ALIAS);
++        drive_add(IF_DEFAULT, 2, NULL, CDROM_OPTS);
+     }
+ 
+     if (default_floppy) {
+         /* we always create at least one floppy */
+-        drive_add(NULL, FD_ALIAS, 0);
++        drive_add(IF_FLOPPY, 0, NULL, FD_OPTS);
+     }
+ 
+     if (default_sdcard) {
+         /* we always create one sd slot, even if no card is in it */
+-        drive_add(NULL, SD_ALIAS);
++        drive_add(IF_SD, 0, NULL, SD_OPTS);
+     }
+ 
+     /* open the virtual block devices */
+-- 
+1.7.3.2
+

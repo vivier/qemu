@@ -1,0 +1,122 @@
+From 748d21e9d37e46f3cf7f4b3e5c5040685ba2ebc7 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 16 Jun 2011 08:47:32 -0300
+Subject: [RHEL6 qemu-kvm PATCH 16/23] blockdev: Replace drive_add()'s fmt, ... by optstr parameter
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1308214055-31837-16-git-send-email-armbru@redhat.com>
+Patchwork-id: 27234
+O-Subject: [PATCH RHEL-6.2 v2 15/18] blockdev: Replace drive_add()'s fmt, ... by optstr parameter
+Bugzilla: 627585
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Let the callers build the optstr.  Only one wants to.  All the others
+become simpler, because they don't have to worry about escaping '%'.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 5645b0f4f2185437d8df03810ce9c102cc4c90db)
+
+Conflicts:
+
+	blockdev.h
+---
+ blockdev.c |    8 +-------
+ blockdev.h |    5 +----
+ vl.c       |   23 +++++++++++++----------
+ 3 files changed, 15 insertions(+), 21 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ blockdev.c |    8 +-------
+ blockdev.h |    5 +----
+ vl.c       |   23 +++++++++++++----------
+ 3 files changed, 15 insertions(+), 21 deletions(-)
+
+diff --git a/blockdev.c b/blockdev.c
+index 0363c68..e5c1589 100644
+--- a/blockdev.c
++++ b/blockdev.c
+@@ -95,17 +95,11 @@ QemuOpts *drive_def(const char *optstr)
+ }
+ 
+ QemuOpts *drive_add(BlockInterfaceType type, int index, const char *file,
+-                    const char *fmt, ...)
++                    const char *optstr)
+ {
+-    va_list ap;
+-    char optstr[1024];
+     QemuOpts *opts;
+     char buf[32];
+ 
+-    va_start(ap, fmt);
+-    vsnprintf(optstr, sizeof(optstr), fmt, ap);
+-    va_end(ap);
+-
+     opts = drive_def(optstr);
+     if (!opts) {
+         return NULL;
+diff --git a/blockdev.h b/blockdev.h
+index c76533f..511ce13 100644
+--- a/blockdev.h
++++ b/blockdev.h
+@@ -56,10 +56,7 @@ extern const char *drive_get_serial(BlockDriverState *bdrv);
+ 
+ QemuOpts *drive_def(const char *optstr);
+ QemuOpts *drive_add(BlockInterfaceType type, int index, const char *file,
+-                    const char *fmt, ...) /*GCC_FMT_ATTR(4, 5)*/;
+-    /* GCC_FMT_ATTR() commented out to avoid the (pretty useless)
+-     * "zero-length gnu_printf format string" warning we insist to
+-     * enable */
++                    const char *optstr);
+ extern DriveInfo *drive_init(QemuOpts *arg, int default_to_scsi,
+                              int *fatal_error);
+ 
+diff --git a/vl.c b/vl.c
+index 8789491..82a7e2f 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2073,7 +2073,6 @@ static int bt_parse(const char *opt)
+ /***********************************************************/
+ /* QEMU Block devices */
+ 
+-/* Any % in the following strings must be escaped as %% */
+ #define HD_OPTS "media=disk"
+ #define CDROM_OPTS "media=cdrom"
+ #define FD_OPTS ""
+@@ -5078,17 +5077,21 @@ int main(int argc, char **argv, char **envp)
+                 initrd_filename = optarg;
+                 break;
+             case QEMU_OPTION_hda:
+-                if (cyls == 0)
+-                    hda_opts = drive_add(IF_DEFAULT, 0, optarg, HD_OPTS);
+-                else
+-                    hda_opts = drive_add(IF_DEFAULT, 0, optarg, HD_OPTS
+-			     ",cyls=%d,heads=%d,secs=%d%s",
+-                             cyls, heads, secs,
+-                             translation == BIOS_ATA_TRANSLATION_LBA ?
++                {
++                    char buf[256];
++                    if (cyls == 0)
++                        snprintf(buf, sizeof(buf), "%s", HD_OPTS);
++                    else
++                        snprintf(buf, sizeof(buf),
++                                 "%s,cyls=%d,heads=%d,secs=%d%s",
++                                 HD_OPTS , cyls, heads, secs,
++                                 translation == BIOS_ATA_TRANSLATION_LBA ?
+                                  ",trans=lba" :
+-                             translation == BIOS_ATA_TRANSLATION_NONE ?
++                                 translation == BIOS_ATA_TRANSLATION_NONE ?
+                                  ",trans=none" : "");
+-                 break;
++                    drive_add(IF_DEFAULT, 0, optarg, buf);
++                    break;
++                }
+             case QEMU_OPTION_hdb:
+             case QEMU_OPTION_hdc:
+             case QEMU_OPTION_hdd:
+-- 
+1.7.3.2
+

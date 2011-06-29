@@ -1,0 +1,238 @@
+From 9635c726b37d64db5c655daf5eac29cd29f4eebb Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 16 Jun 2011 08:47:33 -0300
+Subject: [RHEL6 qemu-kvm PATCH 17/23] blockdev: Fix drive_add for drives without media
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1308214055-31837-17-git-send-email-armbru@redhat.com>
+Patchwork-id: 27231
+O-Subject: [PATCH RHEL-6.2 v2 16/18] blockdev: Fix drive_add for drives without media
+Bugzilla: 627585
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Watch this:
+
+    (qemu) drive_add 0 if=none
+    (qemu) info block
+    none0: type=hd removable=0 [not inserted]
+    (qemu) drive_del none0
+    Segmentation fault (core dumped)
+
+add_init_drive() is confused about drive_init()'s failure modes, and
+cleans up when it shouldn't.  This leaves the DriveInfo with member
+opts dangling.  drive_del attempts to free it, and dies.
+
+drive_init() behaves as follows:
+
+* If it created a drive with media, it returns its DriveInfo.
+
+* If it created a drive without media, it clears *fatal_error and
+  returns NULL.
+
+* If it couldn't create a drive, it sets *fatal_error and returns
+  NULL.
+
+Of its three callers:
+
+* drive_init_func() is correct.
+
+* usb_msd_init() assumes drive_init() failed when it returns NULL.
+  This is correct only because it always passes option "file", and
+  "drive without media" can't happen then.
+
+* add_init_drive() assumes drive_init() failed when it returns NULL.
+  This is incorrect.
+
+Clean up drive_init() to return NULL on failure and only on failure.
+Drop its parameter fatal_error.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 319ae529b8d55ea60b1036809aaab2130048d0e1)
+
+Conflicts:
+
+	blockdev.c
+	blockdev.h
+---
+ blockdev.c          |    9 ++-------
+ blockdev.h          |    3 +--
+ hw/device-hotplug.c |   17 +++++------------
+ hw/usb-msd.c        |    3 +--
+ vl.c                |    9 ++-------
+ 5 files changed, 11 insertions(+), 30 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ blockdev.c          |    9 ++-------
+ blockdev.h          |    3 +--
+ hw/device-hotplug.c |   17 +++++------------
+ hw/usb-msd.c        |    3 +--
+ vl.c                |    9 ++-------
+ 5 files changed, 11 insertions(+), 30 deletions(-)
+
+diff --git a/blockdev.c b/blockdev.c
+index e5c1589..b6565e1 100644
+--- a/blockdev.c
++++ b/blockdev.c
+@@ -252,7 +252,7 @@ int drives_reopen(void)
+     return 0;
+ }
+ 
+-DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi, int *fatal_error)
++DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
+ {
+     const char *buf;
+     const char *file = NULL;
+@@ -274,8 +274,6 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi, int *fatal_error)
+     int is_extboot = 0;
+     int snapshot = 0;
+ 
+-    *fatal_error = 1;
+-
+     translation = BIOS_ATA_TRANSLATION_AUTO;
+ 
+     if (default_to_scsi) {
+@@ -557,8 +555,7 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi, int *fatal_error)
+         abort();
+     }
+     if (!file || !*file) {
+-        *fatal_error = 0;
+-        return NULL;
++        return dinfo;
+     }
+     if (snapshot) {
+         /* always use write-back with snapshot */
+@@ -583,13 +580,11 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi, int *fatal_error)
+     dinfo->opened = 1;
+ 
+     if (drive_open(dinfo) < 0) {
+-        *fatal_error = 1;
+         return NULL;
+     }
+ 
+     if (bdrv_key_required(dinfo->bdrv))
+         autostart = 0;
+-    *fatal_error = 0;
+     return dinfo;
+ }
+ 
+diff --git a/blockdev.h b/blockdev.h
+index 511ce13..244a14c 100644
+--- a/blockdev.h
++++ b/blockdev.h
+@@ -57,8 +57,7 @@ extern const char *drive_get_serial(BlockDriverState *bdrv);
+ QemuOpts *drive_def(const char *optstr);
+ QemuOpts *drive_add(BlockInterfaceType type, int index, const char *file,
+                     const char *optstr);
+-extern DriveInfo *drive_init(QemuOpts *arg, int default_to_scsi,
+-                             int *fatal_error);
++DriveInfo *drive_init(QemuOpts *arg, int default_to_scsi);
+ 
+ extern int drives_reopen(void);
+ 
+diff --git a/hw/device-hotplug.c b/hw/device-hotplug.c
+index 36d6400..1dc6fcb 100644
+--- a/hw/device-hotplug.c
++++ b/hw/device-hotplug.c
+@@ -29,7 +29,6 @@
+ 
+ DriveInfo *add_init_drive(const char *optstr)
+ {
+-    int fatal_error;
+     DriveInfo *dinfo;
+     QemuOpts *opts;
+ 
+@@ -37,7 +36,7 @@ DriveInfo *add_init_drive(const char *optstr)
+     if (!opts)
+         return NULL;
+ 
+-    dinfo = drive_init(opts, current_machine->use_scsi, &fatal_error);
++    dinfo = drive_init(opts, current_machine->use_scsi);
+     if (!dinfo) {
+         qemu_opts_del(opts);
+         return NULL;
+@@ -72,7 +71,7 @@ static void check_parm(const char *key, QObject *obj, void *opaque)
+ 
+ int simple_drive_add(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+-    int stopped, fatal_error;
++    int stopped;
+     QemuOpts *opts;
+     DriveInfo *dinfo;
+ 
+@@ -92,17 +91,11 @@ int simple_drive_add(Monitor *mon, const QDict *qdict, QObject **ret_data)
+         return -1;
+     }
+     qemu_opt_set(opts, "if", "none");
+-    dinfo = drive_init(opts, current_machine->use_scsi, &fatal_error);
+-    if (!dinfo && fatal_error) {
++    dinfo = drive_init(opts, current_machine->use_scsi);
++    if (!dinfo) {
+         qerror_report(QERR_DEVICE_INIT_FAILED, /* close enough */
+                       qemu_opts_id(opts));
+-        /* drive_init() can leave an empty drive behind, reap it */
+-        dinfo = drive_get_by_id(qemu_opts_id(opts));
+-        if (dinfo) {
+-            drive_uninit(dinfo);
+-        } else {
+-            qemu_opts_del(opts);
+-        }
++        qemu_opts_del(opts);
+         return -1;
+     }
+ 
+diff --git a/hw/usb-msd.c b/hw/usb-msd.c
+index 4cf4ce3..4a53b1e 100644
+--- a/hw/usb-msd.c
++++ b/hw/usb-msd.c
+@@ -566,7 +566,6 @@ static USBDevice *usb_msd_init(const char *filename)
+     QemuOpts *opts;
+     DriveInfo *dinfo;
+     USBDevice *dev;
+-    int fatal_error;
+     const char *p1;
+     char fmt[32];
+ 
+@@ -596,7 +595,7 @@ static USBDevice *usb_msd_init(const char *filename)
+     qemu_opt_set(opts, "if", "none");
+ 
+     /* create host drive */
+-    dinfo = drive_init(opts, 0, &fatal_error);
++    dinfo = drive_init(opts, 0);
+     if (!dinfo) {
+         qemu_opts_del(opts);
+         return NULL;
+diff --git a/vl.c b/vl.c
+index 82a7e2f..3c8cb46 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2083,13 +2083,8 @@ static int bt_parse(const char *opt)
+ static int drive_init_func(QemuOpts *opts, void *opaque)
+ {
+     int *use_scsi = opaque;
+-    int fatal_error = 0;
+ 
+-    if (drive_init(opts, *use_scsi, &fatal_error) == NULL) {
+-        if (fatal_error)
+-            return 1;
+-    }
+-    return 0;
++    return drive_init(opts, *use_scsi) == NULL;
+ }
+ 
+ static int drive_enable_snapshot(QemuOpts *opts, void *opaque)
+@@ -2118,7 +2113,7 @@ static void default_drive(int enable, int snapshot, int use_scsi,
+     if (snapshot) {
+         drive_enable_snapshot(opts, NULL);
+     }
+-    if (drive_init_func(opts, &use_scsi)) {
++    if (!drive_init(opts, use_scsi)) {
+         exit(1);
+     }
+ }
+-- 
+1.7.3.2
+

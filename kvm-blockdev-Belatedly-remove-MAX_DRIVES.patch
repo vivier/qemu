@@ -1,0 +1,58 @@
+From f06cee52548289176d305ba8f70a0061e3e24c70 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 16 Jun 2011 08:47:18 -0300
+Subject: [RHEL6 qemu-kvm PATCH 02/23] blockdev: Belatedly remove MAX_DRIVES
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1308214055-31837-2-git-send-email-armbru@redhat.com>
+Patchwork-id: 27223
+O-Subject: [PATCH RHEL-6.2 v2 01/18] blockdev: Belatedly remove MAX_DRIVES
+Bugzilla: 627585
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Unused since commit 751c6a17.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 1a43782e34e148a00a0bb8f5de56f2d93a0f0320)
+---
+ sysemu.h |    1 -
+ vl.c     |    2 --
+ 2 files changed, 0 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ sysemu.h |    1 -
+ vl.c     |    2 --
+ 2 files changed, 0 insertions(+), 3 deletions(-)
+
+diff --git a/sysemu.h b/sysemu.h
+index 13520db..b342453 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -195,7 +195,6 @@ typedef struct DriveInfo {
+ 
+ #define MAX_IDE_DEVS	2
+ #define MAX_SCSI_DEVS	7
+-#define MAX_DRIVES 32
+ 
+ extern QTAILQ_HEAD(drivelist, DriveInfo) drives;
+ extern QTAILQ_HEAD(driveoptlist, DriveOpt) driveopts;
+diff --git a/vl.c b/vl.c
+index 4e800b2..2e68234 100644
+--- a/vl.c
++++ b/vl.c
+@@ -185,8 +185,6 @@ int main(int argc, char **argv)
+ 
+ static const char *data_dir;
+ const char *bios_name = NULL;
+-/* Note: drives_table[MAX_DRIVES] is a dummy block driver if none available
+-   to store the VM snapshots */
+ struct drivelist drives = QTAILQ_HEAD_INITIALIZER(drives);
+ struct driveoptlist driveopts = QTAILQ_HEAD_INITIALIZER(driveopts);
+ DriveInfo *extboot_drive = NULL;
+-- 
+1.7.3.2
+

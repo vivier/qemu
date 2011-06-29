@@ -1,0 +1,63 @@
+From 74d34a35c4e5ac94f54887fba7ebbf88cef28ce4 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Mon, 27 Jun 2011 20:20:20 -0300
+Subject: [RHEL6 qemu-kvm PATCH 21/23] QMP: QError: New QERR_UNSUPPORTED
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1309206022-3551-2-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 28237
+O-Subject: [PATCH 1/3] QMP: QError: New QERR_UNSUPPORTED
+Bugzilla: 644919
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Lai Jiangshan <laijs@cn.fujitsu.com>
+
+New QERR_UNSUPPORTED for unsupported commands or requests.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+(cherry picked from commit 4c5a1e4db7c68b0e7edf5687dc10beeb776bad9f)
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qerror.c |    4 ++++
+ qerror.h |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/qerror.c b/qerror.c
+index f2b2ab7..f4fc78e 100644
+--- a/qerror.c
++++ b/qerror.c
+@@ -201,6 +201,10 @@ static const QErrorStringTable qerror_table[] = {
+         .desc      = "An undefined error has ocurred",
+     },
+     {
++        .error_fmt = QERR_UNSUPPORTED,
++        .desc      = "this feature or command is not currently supported",
++    },
++    {
+         .error_fmt = QERR_UNKNOWN_BLOCK_FORMAT_FEATURE,
+         .desc      = "'%(device)' uses a %(format) feature which is not "
+                      "supported by this qemu version: %(feature)",
+diff --git a/qerror.h b/qerror.h
+index 779f455..80b5c3f 100644
+--- a/qerror.h
++++ b/qerror.h
+@@ -167,6 +167,9 @@ QError *qobject_to_qerror(const QObject *obj);
+ #define QERR_UNDEFINED_ERROR \
+     "{ 'class': 'UndefinedError', 'data': {} }"
+ 
++#define QERR_UNSUPPORTED \
++    "{ 'class': 'Unsupported', 'data': {} }"
++
+ #define QERR_UNKNOWN_BLOCK_FORMAT_FEATURE \
+     "{ 'class': 'UnknownBlockFormatFeature', 'data': { 'device': %s, 'format': %s, 'feature': %s } }"
+ 
+-- 
+1.7.3.2
+

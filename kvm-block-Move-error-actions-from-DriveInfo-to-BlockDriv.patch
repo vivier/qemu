@@ -1,0 +1,230 @@
+From 098bea471cb50423817458f8224ecb20b96549f5 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 16 Jun 2011 08:47:23 -0300
+Subject: [RHEL6 qemu-kvm PATCH 07/23] block: Move error actions from DriveInfo to BlockDriverState
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1308214055-31837-7-git-send-email-armbru@redhat.com>
+Patchwork-id: 27224
+O-Subject: [PATCH RHEL-6.2 v2 06/18] block: Move error actions from DriveInfo to BlockDriverState
+Bugzilla: 627585
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+That's where they belong semantically (block device host part), even
+though the actions are actually executed by guest device code.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit abd7f68d081ef5adb425f659c7449149987bf89e)
+
+Conflicts:
+
+	block.c
+	block.h
+	blockdev.h
+---
+ block.c         |   12 ++++++++++++
+ block.h         |    8 ++++++++
+ block_int.h     |    1 +
+ blockdev.c      |   17 ++---------------
+ blockdev.h      |   10 ----------
+ hw/ide/core.c   |    2 +-
+ hw/scsi-disk.c  |    2 +-
+ hw/virtio-blk.c |    3 +--
+ 8 files changed, 26 insertions(+), 29 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c         |   12 ++++++++++++
+ block.h         |    8 ++++++++
+ block_int.h     |    1 +
+ blockdev.c      |   17 ++---------------
+ blockdev.h      |   10 ----------
+ hw/ide/core.c   |    2 +-
+ hw/scsi-disk.c  |    2 +-
+ hw/virtio-blk.c |    3 +--
+ 8 files changed, 26 insertions(+), 29 deletions(-)
+
+diff --git a/block.c b/block.c
+index 2152e6d..8839254 100644
+--- a/block.c
++++ b/block.c
+@@ -1286,6 +1286,18 @@ int bdrv_get_translation_hint(BlockDriverState *bs)
+     return bs->translation;
+ }
+ 
++void bdrv_set_on_error(BlockDriverState *bs, BlockErrorAction on_read_error,
++                       BlockErrorAction on_write_error)
++{
++    bs->on_read_error = on_read_error;
++    bs->on_write_error = on_write_error;
++}
++
++BlockErrorAction bdrv_get_on_error(BlockDriverState *bs, int is_read)
++{
++    return is_read ? bs->on_read_error : bs->on_write_error;
++}
++
+ void bdrv_set_removable(BlockDriverState *bs, int removable)
+ {
+     bs->removable = removable;
+diff --git a/block.h b/block.h
+index 9f9d6eb..4a87ea2 100644
+--- a/block.h
++++ b/block.h
+@@ -41,6 +41,11 @@ typedef struct QEMUSnapshotInfo {
+ #define BDRV_SECTOR_MASK   ~(BDRV_SECTOR_SIZE - 1);
+ 
+ typedef enum {
++    BLOCK_ERR_REPORT, BLOCK_ERR_IGNORE, BLOCK_ERR_STOP_ENOSPC,
++    BLOCK_ERR_STOP_ANY
++} BlockErrorAction;
++
++typedef enum {
+     BDRV_ACTION_REPORT, BDRV_ACTION_IGNORE, BDRV_ACTION_STOP
+ } BlockMonEventAction;
+ 
+@@ -165,6 +170,9 @@ void bdrv_get_geometry_hint(BlockDriverState *bs,
+                             int *pcyls, int *pheads, int *psecs);
+ int bdrv_get_type_hint(BlockDriverState *bs);
+ int bdrv_get_translation_hint(BlockDriverState *bs);
++void bdrv_set_on_error(BlockDriverState *bs, BlockErrorAction on_read_error,
++                       BlockErrorAction on_write_error);
++BlockErrorAction bdrv_get_on_error(BlockDriverState *bs, int is_read);
+ void bdrv_set_removable(BlockDriverState *bs, int removable);
+ int bdrv_is_removable(BlockDriverState *bs);
+ int bdrv_is_read_only(BlockDriverState *bs);
+diff --git a/block_int.h b/block_int.h
+index ca4d2f8..f8b7c29 100644
+--- a/block_int.h
++++ b/block_int.h
+@@ -190,6 +190,7 @@ struct BlockDriverState {
+        drivers. They are not used by the block driver */
+     int cyls, heads, secs, translation;
+     int type;
++    BlockErrorAction on_read_error, on_write_error;
+     char device_name[32];
+     unsigned long *dirty_bitmap;
+     QTAILQ_ENTRY(BlockDriverState) list;
+diff --git a/blockdev.c b/blockdev.c
+index 6c47d01..69a65e1 100644
+--- a/blockdev.c
++++ b/blockdev.c
+@@ -131,19 +131,6 @@ const char *drive_get_serial(BlockDriverState *bdrv)
+     return "\0";
+ }
+ 
+-BlockInterfaceErrorAction drive_get_on_error(
+-    BlockDriverState *bdrv, int is_read)
+-{
+-    DriveInfo *dinfo;
+-
+-    QTAILQ_FOREACH(dinfo, &drives, next) {
+-        if (dinfo->bdrv == bdrv)
+-            return is_read ? dinfo->on_read_error : dinfo->on_write_error;
+-    }
+-
+-    return is_read ? BLOCK_ERR_REPORT : BLOCK_ERR_STOP_ENOSPC;
+-}
+-
+ static void bdrv_format_print(void *opaque, const char *name)
+ {
+     fprintf(stderr, " %s", name);
+@@ -498,8 +485,6 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi, int *fatal_error)
+     dinfo->type = type;
+     dinfo->bus = bus_id;
+     dinfo->unit = unit_id;
+-    dinfo->on_read_error = on_read_error;
+-    dinfo->on_write_error = on_write_error;
+     dinfo->opts = opts;
+     if (serial)
+         strncpy(dinfo->serial, serial, sizeof(dinfo->serial) - 1);
+@@ -508,6 +493,8 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi, int *fatal_error)
+         extboot_drive = dinfo;
+     }
+ 
++    bdrv_set_on_error(dinfo->bdrv, on_read_error, on_write_error);
++
+     switch(type) {
+     case IF_IDE:
+     case IF_SCSI:
+diff --git a/blockdev.h b/blockdev.h
+index bc48cc3..6494fde 100644
+--- a/blockdev.h
++++ b/blockdev.h
+@@ -24,11 +24,6 @@ typedef enum {
+     IF_COUNT
+ } BlockInterfaceType;
+ 
+-typedef enum {
+-    BLOCK_ERR_REPORT, BLOCK_ERR_IGNORE, BLOCK_ERR_STOP_ENOSPC,
+-    BLOCK_ERR_STOP_ANY
+-} BlockInterfaceErrorAction;
+-
+ typedef struct DriveInfo {
+     BlockDriverState *bdrv;
+     char *id;
+@@ -38,8 +33,6 @@ typedef struct DriveInfo {
+     int unit;
+     int auto_del;               /* see blockdev_mark_auto_del() */
+     QemuOpts *opts;
+-    BlockInterfaceErrorAction on_read_error;
+-    BlockInterfaceErrorAction on_write_error;
+     char serial[BLOCK_SERIAL_STRLEN + 1];
+     QTAILQ_ENTRY(DriveInfo) next;
+     int opened;
+@@ -62,9 +55,6 @@ extern void drive_uninit(DriveInfo *dinfo);
+ extern DriveInfo *drive_get_by_blockdev(BlockDriverState *bs);
+ extern const char *drive_get_serial(BlockDriverState *bdrv);
+ 
+-extern BlockInterfaceErrorAction drive_get_on_error(
+-    BlockDriverState *bdrv, int is_read);
+-
+ extern QemuOpts *drive_add(const char *file, const char *fmt, ...);
+ extern DriveInfo *drive_init(QemuOpts *arg, int default_to_scsi,
+                              int *fatal_error);
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 07141bb..9a2274b 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -492,7 +492,7 @@ void ide_dma_error(IDEState *s)
+ static int ide_handle_rw_error(IDEState *s, int error, int op)
+ {
+     int is_read = (op & BM_STATUS_RETRY_READ);
+-    BlockInterfaceErrorAction action = drive_get_on_error(s->bs, is_read);
++    BlockErrorAction action = bdrv_get_on_error(s->bs, is_read);
+ 
+     if (action == BLOCK_ERR_IGNORE) {
+         bdrv_mon_event(s->bs, BDRV_ACTION_IGNORE, error, is_read);
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index 2391e23..55b4e9f 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -180,7 +180,7 @@ static void scsi_read_data(SCSIDevice *d, uint32_t tag)
+ static int scsi_handle_write_error(SCSIDiskReq *r, int error)
+ {
+     SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, r->req.dev);
+-    BlockInterfaceErrorAction action = drive_get_on_error(s->bs, 0);
++    BlockErrorAction action = bdrv_get_on_error(s->bs, 0);
+ 
+     if (action == BLOCK_ERR_IGNORE) {
+         bdrv_mon_event(s->bs, BDRV_ACTION_IGNORE, error, 0);
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index 7e97e83..644f5ba 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -63,8 +63,7 @@ static void virtio_blk_req_complete(VirtIOBlockReq *req, int status)
+ static int virtio_blk_handle_rw_error(VirtIOBlockReq *req, int error,
+     int is_read)
+ {
+-    BlockInterfaceErrorAction action =
+-        drive_get_on_error(req->dev->bs, is_read);
++    BlockErrorAction action = bdrv_get_on_error(req->dev->bs, is_read);
+     VirtIOBlock *s = req->dev;
+ 
+     if (action == BLOCK_ERR_IGNORE) {
+-- 
+1.7.3.2
+

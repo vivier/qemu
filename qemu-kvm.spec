@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.165
+%define pkgrelease 2.166
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2577,6 +2577,52 @@ Patch2152: kvm-virtio-correctly-initialize-vm_running.patch
 Patch2153: kvm-Add-virtio-disk-identification-support.patch
 # For bz#693645 - RFE: add spice option to enable/disable copy paste
 Patch2154: kvm-spice-add-option-for-disabling-copy-paste-support-rh.patch
+# For bz#707094 - qemu-kvm: OOB memory access caused by negative vq notifies [rhel-6.2]
+Patch2155: kvm-virtio-guard-against-negative-vq-notifies.patch
+# For bz#627585 - Improve error messages for bad options in -drive and -device
+Patch2156: kvm-blockdev-Belatedly-remove-MAX_DRIVES.patch
+# For bz#627585 - Improve error messages for bad options in -drive and -device
+Patch2157: kvm-blockdev-Hide-QEMUMachine-from-drive_init.patch
+# For bz#627585 - Improve error messages for bad options in -drive and -device
+Patch2158: kvm-qdev-Move-declaration-of-qdev_init_bdrv-into-qdev.h.patch
+# For bz#627585 - Improve error messages for bad options in -drive and -device
+Patch2159: kvm-blockdev-Collect-block-device-code-in-new-blockdev.c.patch
+# For bz#627585 - Improve error messages for bad options in -drive and -device
+Patch2160: kvm-Fix-regression-for-drive-file.patch
+# For bz#627585 - Improve error messages for bad options in -drive and -device
+Patch2161: kvm-block-Move-error-actions-from-DriveInfo-to-BlockDriv.patch
+# For bz#627585 - Improve error messages for bad options in -drive and -device
+Patch2162: kvm-blockdev-Fix-error-message-for-invalid-drive-CHS.patch
+# For bz#627585 - Improve error messages for bad options in -drive and -device
+Patch2163: kvm-blockdev-Make-drive_init-use-error_report.patch
+# For bz#627585 - Improve error messages for bad options in -drive and -device
+Patch2164: kvm-blockdev-Put-BlockInterfaceType-names-and-max_devs-i.patch
+# For bz#627585 - Improve error messages for bad options in -drive and -device
+Patch2165: kvm-blockdev-Fix-regression-in-drive-if-scsi-index-N.patch
+# For bz#627585 - Improve error messages for bad options in -drive and -device
+Patch2166: kvm-blockdev-Make-drive_add-take-explicit-type-index-par.patch
+# For bz#627585 - Improve error messages for bad options in -drive and -device
+Patch2167: kvm-blockdev-Factor-drive_index_to_-bus-unit-_id-out-of-.patch
+# For bz#627585 - Improve error messages for bad options in -drive and -device
+Patch2168: kvm-blockdev-New-drive_get_by_index.patch
+# For bz#627585 - Improve error messages for bad options in -drive and -device
+Patch2169: kvm-blockdev-Reject-multiple-definitions-for-the-same-dr.patch
+# For bz#627585 - Improve error messages for bad options in -drive and -device
+Patch2170: kvm-blockdev-Replace-drive_add-s-fmt-.-by-optstr-paramet.patch
+# For bz#627585 - Improve error messages for bad options in -drive and -device
+Patch2171: kvm-blockdev-Fix-drive_add-for-drives-without-media.patch
+# For bz#627585 - Improve error messages for bad options in -drive and -device
+Patch2172: kvm-blockdev-Plug-memory-leak-in-drive_uninit.patch
+# For bz#627585 - Improve error messages for bad options in -drive and -device
+Patch2173: kvm-blockdev-Plug-memory-leak-in-drive_init-error-paths.patch
+# For bz#699635 - [REG][6.1] After executing virsh dump with --live option and the completion, the subsequent virsh dump command to the same domain behaves abnormally
+Patch2174: kvm-vhost-fix-double-free-on-device-stop.patch
+# For bz#644919 - RFE: QMP command to trigger an NMI in the guest
+Patch2175: kvm-QMP-QError-New-QERR_UNSUPPORTED.patch
+# For bz#644919 - RFE: QMP command to trigger an NMI in the guest
+Patch2176: kvm-QMP-add-inject-nmi-qmp-command.patch
+# For bz#644919 - RFE: QMP command to trigger an NMI in the guest
+Patch2177: kvm-HMP-Use-QMP-inject-nmi-implementation.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3838,6 +3884,29 @@ ApplyOptionalPatch()
 %patch2152 -p1
 %patch2153 -p1
 %patch2154 -p1
+%patch2155 -p1
+%patch2156 -p1
+%patch2157 -p1
+%patch2158 -p1
+%patch2159 -p1
+%patch2160 -p1
+%patch2161 -p1
+%patch2162 -p1
+%patch2163 -p1
+%patch2164 -p1
+%patch2165 -p1
+%patch2166 -p1
+%patch2167 -p1
+%patch2168 -p1
+%patch2169 -p1
+%patch2170 -p1
+%patch2171 -p1
+%patch2172 -p1
+%patch2173 -p1
+%patch2174 -p1
+%patch2175 -p1
+%patch2176 -p1
+%patch2177 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -4059,6 +4128,39 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Jun 29 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.166.el6
+- kvm-virtio-guard-against-negative-vq-notifies.patch [bz#707094]
+- kvm-blockdev-Belatedly-remove-MAX_DRIVES.patch [bz#627585]
+- kvm-blockdev-Hide-QEMUMachine-from-drive_init.patch [bz#627585]
+- kvm-qdev-Move-declaration-of-qdev_init_bdrv-into-qdev.h.patch [bz#627585]
+- kvm-blockdev-Collect-block-device-code-in-new-blockdev.c.patch [bz#627585]
+- kvm-Fix-regression-for-drive-file.patch [bz#627585]
+- kvm-block-Move-error-actions-from-DriveInfo-to-BlockDriv.patch [bz#627585]
+- kvm-blockdev-Fix-error-message-for-invalid-drive-CHS.patch [bz#627585]
+- kvm-blockdev-Make-drive_init-use-error_report.patch [bz#627585]
+- kvm-blockdev-Put-BlockInterfaceType-names-and-max_devs-i.patch [bz#627585]
+- kvm-blockdev-Fix-regression-in-drive-if-scsi-index-N.patch [bz#627585]
+- kvm-blockdev-Make-drive_add-take-explicit-type-index-par.patch [bz#627585]
+- kvm-blockdev-Factor-drive_index_to_-bus-unit-_id-out-of-.patch [bz#627585]
+- kvm-blockdev-New-drive_get_by_index.patch [bz#627585]
+- kvm-blockdev-Reject-multiple-definitions-for-the-same-dr.patch [bz#627585]
+- kvm-blockdev-Replace-drive_add-s-fmt-.-by-optstr-paramet.patch [bz#627585]
+- kvm-blockdev-Fix-drive_add-for-drives-without-media.patch [bz#627585]
+- kvm-blockdev-Plug-memory-leak-in-drive_uninit.patch [bz#627585]
+- kvm-blockdev-Plug-memory-leak-in-drive_init-error-paths.patch [bz#627585]
+- kvm-vhost-fix-double-free-on-device-stop.patch [bz#699635]
+- kvm-QMP-QError-New-QERR_UNSUPPORTED.patch [bz#644919]
+- kvm-QMP-add-inject-nmi-qmp-command.patch [bz#644919]
+- kvm-HMP-Use-QMP-inject-nmi-implementation.patch [bz#644919]
+- Resolves: bz#627585
+  (Improve error messages for bad options in -drive and -device)
+- Resolves: bz#644919
+  (RFE: QMP command to trigger an NMI in the guest)
+- Resolves: bz#699635
+  ([REG][6.1] After executing virsh dump with --live option and the completion, the subsequent virsh dump command to the same domain behaves abnormally)
+- Resolves: bz#707094
+  (qemu-kvm: OOB memory access caused by negative vq notifies [rhel-6.2])
+
 * Tue Jun 14 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.165.el6
 - kvm-ide-Factor-ide_dma_set_inactive-out.patch [bz#701775]
 - kvm-ide-Set-bus-master-inactive-on-error.patch [bz#701775]
