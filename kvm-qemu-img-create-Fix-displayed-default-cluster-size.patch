@@ -1,0 +1,116 @@
+From 72728e964b6af6e3e768c241234d8ec14d959996 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 14 Jun 2011 10:12:25 -0300
+Subject: [RHEL6 qemu-kvm PATCH 1/2] qemu-img create: Fix displayed default cluster size
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1308046345-16512-1-git-send-email-kwolf@redhat.com>
+Patchwork-id: 27057
+O-Subject: [RHEL-6.2 qemu-kvm PATCH] qemu-img create: Fix displayed default cluster size
+Bugzilla: 570830
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Bugzilla: 570830
+
+When not specifying a cluster size on the command line, qemu-img printed
+a cluster size of 0:
+
+    Formatting '/tmp/test.qcow2', fmt=qcow2 size=67108864
+    encryption=off cluster_size=0
+
+This patch adds the default cluster size to the QEMUOptionParameter list, so
+that it displays the default value that is used.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 99cce9fa4e091fd7ead1926e1c0db016ef293f36)
+
+Conflicts:
+
+	block/qed.c
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block/qcow2.c |    5 +++--
+ block/qcow2.h |    2 ++
+ block/vdi.c   |    6 ++++--
+ 3 files changed, 9 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2.c |    5 +++--
+ block/qcow2.h |    2 ++
+ block/vdi.c   |    6 ++++--
+ 3 files changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/block/qcow2.c b/block/qcow2.c
+index bf25813..c59ff2e 100644
+--- a/block/qcow2.c
++++ b/block/qcow2.c
+@@ -1208,7 +1208,7 @@ static int qcow2_create(const char *filename, QEMUOptionParameter *options)
+     const char *backing_fmt = NULL;
+     uint64_t sectors = 0;
+     int flags = 0;
+-    size_t cluster_size = 65536;
++    size_t cluster_size = DEFAULT_CLUSTER_SIZE;
+     int prealloc = 0;
+ 
+     /* Read out options */
+@@ -1472,7 +1472,8 @@ static QEMUOptionParameter qcow2_create_options[] = {
+     {
+         .name = BLOCK_OPT_CLUSTER_SIZE,
+         .type = OPT_SIZE,
+-        .help = "qcow2 cluster size"
++        .help = "qcow2 cluster size",
++        .value = { .n = DEFAULT_CLUSTER_SIZE },
+     },
+     {
+         .name = BLOCK_OPT_PREALLOC,
+diff --git a/block/qcow2.h b/block/qcow2.h
+index bc3a4db..79cfe18 100644
+--- a/block/qcow2.h
++++ b/block/qcow2.h
+@@ -55,6 +55,8 @@
+ /* Must be at least 4 to cover all cases of refcount table growth */
+ #define REFCOUNT_CACHE_SIZE 4
+ 
++#define DEFAULT_CLUSTER_SIZE 65536
++
+ typedef struct QCowHeader {
+     uint32_t magic;
+     uint32_t version;
+diff --git a/block/vdi.c b/block/vdi.c
+index 1367ec8..812fdfc 100644
+--- a/block/vdi.c
++++ b/block/vdi.c
+@@ -87,6 +87,7 @@ void uuid_unparse(const uuid_t uu, char *out);
+ #define MiB     (KiB * KiB)
+ 
+ #define SECTOR_SIZE 512
++#define DEFAULT_CLUSTER_SIZE (1 * MiB)
+ 
+ #if defined(CONFIG_VDI_DEBUG)
+ #define logout(fmt, ...) \
+@@ -787,7 +788,7 @@ static int vdi_create(const char *filename, QEMUOptionParameter *options)
+     int result = 0;
+     uint64_t bytes = 0;
+     uint32_t blocks;
+-    size_t block_size = 1 * MiB;
++    size_t block_size = DEFAULT_CLUSTER_SIZE;
+     uint32_t image_type = VDI_TYPE_DYNAMIC;
+     VdiHeader header;
+     size_t i;
+@@ -899,7 +900,8 @@ static QEMUOptionParameter vdi_create_options[] = {
+     {
+         .name = BLOCK_OPT_CLUSTER_SIZE,
+         .type = OPT_SIZE,
+-        .help = "VDI cluster (block) size"
++        .help = "VDI cluster (block) size",
++        .value = { .n = DEFAULT_CLUSTER_SIZE },
+     },
+ #endif
+ #if defined(CONFIG_VDI_STATIC_IMAGE)
+-- 
+1.7.3.2
+

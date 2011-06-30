@@ -1,0 +1,57 @@
+From 9a08b990404d8227118c4a3dd385470142405e7f Mon Sep 17 00:00:00 2001
+From: Amos Kong <akong@redhat.com>
+Date: Thu, 23 Jun 2011 10:04:38 -0300
+Subject: [RHEL6 qemu-kvm PATCH 2/2] Fix the RARP protocol ID
+
+RH-Author: Amos Kong <akong@redhat.com>
+Message-id: <20110623100438.31378.28334.stgit@t>
+Patchwork-id: 27840
+O-Subject: [RHEL-6.2 PATCH] Fix the RARP protocol ID
+Bugzilla: 715141
+RH-Acked-by: Eric Blake <eblake@redhat.com>
+RH-Acked-by: Xiao Wang <jasowang@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+From: Stefan Berger <stefanb@us.ibm.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=715141
+Brew: https://brewweb.devel.redhat.com/taskinfo?taskID=3423836
+Test status: Tested in my local machine
+
+The packet(s) sent out after migration are supposed to be RAPR type of
+packets. If they are supposed to go anywhere useful, the RAPR ethernet
+identifier needs to be fix.
+
+Also see http://www.iana.org/assignments/ethernet-numbers for 0x8035 for
+RARP.
+
+(Cherry-picked from upstream f8778a7785d530515b0db395606f327fd5f94a92)
+
+Signed-off-by: Stefan Berger <stefanb@us.ibm.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Amos Kong <akong@redhat.com>
+---
+ savevm.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ savevm.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/savevm.c b/savevm.c
+index 9e1b951..a669a6e 100644
+--- a/savevm.c
++++ b/savevm.c
+@@ -89,7 +89,7 @@ static BlockDriverState *bs_snapshots;
+ #define SELF_ANNOUNCE_ROUNDS 5
+ 
+ #ifndef ETH_P_RARP
+-#define ETH_P_RARP 0x0835
++#define ETH_P_RARP 0x8035
+ #endif
+ #define ARP_HTYPE_ETH 0x0001
+ #define ARP_PTYPE_IP 0x0800
+-- 
+1.7.3.2
+

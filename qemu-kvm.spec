@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.166
+%define pkgrelease 2.167
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2623,6 +2623,10 @@ Patch2175: kvm-QMP-QError-New-QERR_UNSUPPORTED.patch
 Patch2176: kvm-QMP-add-inject-nmi-qmp-command.patch
 # For bz#644919 - RFE: QMP command to trigger an NMI in the guest
 Patch2177: kvm-HMP-Use-QMP-inject-nmi-implementation.patch
+# For bz#570830 - The 'cluster_size' shows wrong size to zero when creating a qcow2 without specify the option
+Patch2178: kvm-qemu-img-create-Fix-displayed-default-cluster-size.patch
+# For bz#715141 - Wrong Ethertype for RARP
+Patch2179: kvm-Fix-the-RARP-protocol-ID.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3907,6 +3911,8 @@ ApplyOptionalPatch()
 %patch2175 -p1
 %patch2176 -p1
 %patch2177 -p1
+%patch2178 -p1
+%patch2179 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -4128,6 +4134,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Jun 30 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.167.el6
+- kvm-qemu-img-create-Fix-displayed-default-cluster-size.patch [bz#570830]
+- kvm-Fix-the-RARP-protocol-ID.patch [bz#715141]
+- Resolves: bz#570830
+  (The 'cluster_size' shows wrong size to zero when creating a qcow2 without specify the option)
+- Resolves: bz#715141
+  (Wrong Ethertype for RARP)
+
 * Wed Jun 29 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.166.el6
 - kvm-virtio-guard-against-negative-vq-notifies.patch [bz#707094]
 - kvm-blockdev-Belatedly-remove-MAX_DRIVES.patch [bz#627585]
