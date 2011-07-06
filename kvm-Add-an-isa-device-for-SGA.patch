@@ -1,0 +1,147 @@
+From da364ba2c25c7325c32df20492fd6f8ec2694f1e Mon Sep 17 00:00:00 2001
+From: Glauber Costa <glommer@redhat.com>
+Date: Wed, 22 Jun 2011 14:21:15 -0300
+Subject: [RHEL6 qemu-kvm PATCH 2/3] Add an isa device for SGA
+
+RH-Author: Glauber Costa <glommer@redhat.com>
+Message-id: <1308752475-27865-1-git-send-email-glommer@redhat.com>
+Patchwork-id: 27783
+O-Subject: [PATCH RHEL6.2] Add an isa device for SGA
+Bugzilla: 684949
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+RH-Author: Glauber Costa <glommer@redhat.com>
+RH-Upstream-status: uq/master, a90d4690074526f54ad0851fce19fa6783f06803
+RH-Bugzilla: 684949
+
+RH-Notes: For this to work, we need to add a new package in RHEL6. The
+new package request is being tracked at #712993. However, there is no
+penalty in having the patch early in our tree, since it is only effective
+if we enable it using -device sga commandline. And having it early will
+allow libvirt people to start working on support for it.
+
+This patch adds a dummy legacy ISA device whose responsibility is to
+deploy sgabios, an option rom for a serial graphics adapter.
+The proposal is that this device is always-on when -nographics,
+but can otherwise be enable in any setup when -device sga is used.
+
+[v2: suggestions on qdev by Markus ]
+[v3: cleanups and documentation, per list suggestions ]
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+ Makefile.target |    2 +-
+ hw/pc.c         |    9 ++++++++
+ hw/sga.c        |   56 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 66 insertions(+), 1 deletions(-)
+ create mode 100644 hw/sga.c
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile.target |    2 +-
+ hw/pc.c         |    9 ++++++++
+ hw/sga.c        |   56 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 66 insertions(+), 1 deletions(-)
+ create mode 100644 hw/sga.c
+
+diff --git a/Makefile.target b/Makefile.target
+index 2a087d2..355c238 100644
+--- a/Makefile.target
++++ b/Makefile.target
+@@ -231,7 +231,7 @@ obj-i386-y = ide/core.o ide/qdev.o ide/isa.o ide/pci.o ide/piix.o
+ obj-i386-y += pckbd.o $(sound-obj-y) dma.o
+ obj-i386-y += vga.o vga-pci.o vga-isa.o
+ obj-i386-y += fdc.o mc146818rtc.o serial.o i8259.o i8254.o pcspk.o pc.o
+-obj-i386-y += cirrus_vga.o apic.o ioapic.o parallel.o acpi.o piix_pci.o
++obj-i386-y += cirrus_vga.o apic.o ioapic.o parallel.o acpi.o piix_pci.o sga.o
+ obj-i386-y += usb-uhci.o hpet.o
+ obj-i386-y += device-hotplug.o smbios.o wdt_ib700.o
+ obj-i386-y += extboot.o
+diff --git a/hw/pc.c b/hw/pc.c
+index 76152f3..de7ab85 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -1239,6 +1239,15 @@ static void pc_init1(ram_addr_t ram_size,
+         }
+     }
+ 
++    /*
++     * sga does not suppress normal vga output. So a machine can have both a
++     * vga card and sga manually enabled. Output will be seen on both.
++     * For nographic case, sga is enabled at all times
++     */
++    if (display_type == DT_NOGRAPHIC) {
++        isa_create_simple("sga");
++    }
++
+     rtc_state = rtc_init(2000);
+ 
+     qemu_register_boot_set(pc_boot_set, rtc_state);
+diff --git a/hw/sga.c b/hw/sga.c
+new file mode 100644
+index 0000000..7ef750a
+--- /dev/null
++++ b/hw/sga.c
+@@ -0,0 +1,56 @@
++/*
++ * QEMU dummy ISA device for loading sgabios option rom.
++ *
++ * Copyright (c) 2011 Glauber Costa, Red Hat Inc.
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
++ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ *
++ * sgabios code originally available at code.google.com/p/sgabios
++ *
++ */
++#include "pci.h"
++#include "pc.h"
++#include "loader.h"
++#include "sysemu.h"
++
++#define SGABIOS_FILENAME "sgabios.bin"
++
++typedef struct ISAGAState {
++    ISADevice dev;
++} ISASGAState;
++
++static int isa_cirrus_vga_initfn(ISADevice *dev)
++{
++    rom_add_vga(SGABIOS_FILENAME);
++    return 0;
++}
++
++static ISADeviceInfo sga_info = {
++    .qdev.name    = "sga",
++    .qdev.desc    = "Serial Graphics Adapter",
++    .qdev.size    = sizeof(ISASGAState),
++    .init         = isa_cirrus_vga_initfn,
++};
++
++static void sga_register(void)
++{
++      isa_qdev_register(&sga_info);
++}
++
++device_init(sga_register);
+-- 
+1.7.3.2
+

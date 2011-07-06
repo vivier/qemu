@@ -1,0 +1,86 @@
+From 1e7d304b8a45cb0cce778d274707c5a3c00dd0cf Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Thu, 30 Jun 2011 17:15:59 -0300
+Subject: [RHEL6 qemu-kvm PATCH 3/3] pc: add rhel 6.2 pc and make it the default
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <20110630171559.GA11173@redhat.com>
+Patchwork-id: 28571
+O-Subject: [PATCH RHEL6.2] pc: add rhel 6.2 pc and make it the default
+Bugzilla: 716906
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amos Kong <akong@redhat.com>
+RH-Acked-by: Xiao Wang <jasowang@redhat.com>
+
+This will allow adding guest-visible features incompatible
+with rhel6.1 and back.
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=716906
+Brew: https://brewweb.devel.redhat.com/taskinfo?taskID=3448019
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ hw/pc.c |   24 ++++++++++++++++++++++--
+ 1 files changed, 22 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pc.c |   24 ++++++++++++++++++++++--
+ 1 files changed, 22 insertions(+), 2 deletions(-)
+
+diff --git a/hw/pc.c b/hw/pc.c
+index de7ab85..0551ff4 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -1558,6 +1558,27 @@ static void rhel_common_init(const char *type1_version,
+                      strlen(buf) + 1, buf);
+ }
+ 
++static void pc_init_rhel620(ram_addr_t ram_size,
++                            const char *boot_device,
++                            const char *kernel_filename,
++                            const char *kernel_cmdline,
++                            const char *initrd_filename,
++                            const char *cpu_model)
++{
++    rhel_common_init("RHEL 6.2.0 PC", 0);
++    pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
++                initrd_filename, setdef_cpu_model(cpu_model, "cpu64-rhel6"));
++}
++
++static QEMUMachine pc_machine_rhel620 = {
++    .name = "rhel6.2.0",
++    .alias = "pc",
++    .desc = "RHEL 6.2.0 PC",
++    .init = pc_init_rhel620,
++    .max_cpus = 255,
++    .is_default = 1,
++};
++
+ static void pc_init_rhel610(ram_addr_t ram_size,
+                             const char *boot_device,
+                             const char *kernel_filename,
+@@ -1572,11 +1593,9 @@ static void pc_init_rhel610(ram_addr_t ram_size,
+ 
+ static QEMUMachine pc_machine_rhel610 = {
+     .name = "rhel6.1.0",
+-    .alias = "pc",
+     .desc = "RHEL 6.1.0 PC",
+     .init = pc_init_rhel610,
+     .max_cpus = 255,
+-    .is_default = 1,
+ };
+ 
+ static void pc_init_rhel600(ram_addr_t ram_size,
+@@ -1716,6 +1735,7 @@ static QEMUMachine pc_machine_rhel540 = {
+ 
+ static void rhel_machine_init(void)
+ {
++    qemu_register_machine(&pc_machine_rhel620);
+     qemu_register_machine(&pc_machine_rhel610);
+     qemu_register_machine(&pc_machine_rhel600);
+     qemu_register_machine(&pc_machine_rhel550);
+-- 
+1.7.3.2
+

@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.167
+%define pkgrelease 2.168
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2627,6 +2627,12 @@ Patch2177: kvm-HMP-Use-QMP-inject-nmi-implementation.patch
 Patch2178: kvm-qemu-img-create-Fix-displayed-default-cluster-size.patch
 # For bz#715141 - Wrong Ethertype for RARP
 Patch2179: kvm-Fix-the-RARP-protocol-ID.patch
+# For bz#599306 - Some strange behaviors on key's appearance viewed by using vnc
+Patch2180: kvm-vnc-fix-numlock-capslock-tracking.patch
+# For bz#684949 - [RFE] Ability to display VM BIOS messages on boot
+Patch2181: kvm-Add-an-isa-device-for-SGA.patch
+# For bz#716906 - add 6.2 machine type
+Patch2182: kvm-pc-add-rhel-6.2-pc-and-make-it-the-default.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3913,6 +3919,9 @@ ApplyOptionalPatch()
 %patch2177 -p1
 %patch2178 -p1
 %patch2179 -p1
+%patch2180 -p1
+%patch2181 -p1
+%patch2182 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -4134,6 +4143,17 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Jul 06 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.168.el6
+- kvm-vnc-fix-numlock-capslock-tracking.patch [bz#599306]
+- kvm-Add-an-isa-device-for-SGA.patch [bz#684949]
+- kvm-pc-add-rhel-6.2-pc-and-make-it-the-default.patch [bz#716906]
+- Resolves: bz#599306
+  (Some strange behaviors on key's appearance viewed by using vnc)
+- Resolves: bz#684949
+  ([RFE] Ability to display VM BIOS messages on boot)
+- Resolves: bz#716906
+  (add 6.2 machine type)
+
 * Thu Jun 30 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.167.el6
 - kvm-qemu-img-create-Fix-displayed-default-cluster-size.patch [bz#570830]
 - kvm-Fix-the-RARP-protocol-ID.patch [bz#715141]
