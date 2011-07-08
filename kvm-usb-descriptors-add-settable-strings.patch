@@ -1,0 +1,182 @@
+From b65e14b9937891298185645e14ae114665fdf816 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:40:53 -0300
+Subject: [RHEL6 qemu-kvm PATCH 020/115] usb descriptors: add settable strings.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-18-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27879
+O-Subject: [RHEL-6.2 kvm PATCH 017/115] usb descriptors: add settable strings.
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+This patch allows to set usb descriptor strings per device instance.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 132a3f55f05dff4eedde0d23d844ecdedef8ba68)
+---
+ hw/usb-bus.c  |    1 +
+ hw/usb-desc.c |   52 ++++++++++++++++++++++++++++++++++++++++++++--------
+ hw/usb-desc.h |    4 +++-
+ hw/usb.h      |    9 +++++++++
+ 4 files changed, 57 insertions(+), 9 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-bus.c  |    1 +
+ hw/usb-desc.c |   52 ++++++++++++++++++++++++++++++++++++++++++++--------
+ hw/usb-desc.h |    4 +++-
+ hw/usb.h      |    9 +++++++++
+ 4 files changed, 57 insertions(+), 9 deletions(-)
+
+diff --git a/hw/usb-bus.c b/hw/usb-bus.c
+index b1d69d9..13cf375 100644
+--- a/hw/usb-bus.c
++++ b/hw/usb-bus.c
+@@ -48,6 +48,7 @@ static int usb_qdev_init(DeviceState *qdev, DeviceInfo *base)
+     pstrcpy(dev->product_desc, sizeof(dev->product_desc), info->product_desc);
+     dev->info = info;
+     dev->auto_attach = 1;
++    QLIST_INIT(&dev->strings);
+     rc = dev->info->init(dev);
+     if (rc == 0 && dev->auto_attach)
+         usb_device_attach(dev);
+diff --git a/hw/usb-desc.c b/hw/usb-desc.c
+index 559ced7..69ab207 100644
+--- a/hw/usb-desc.c
++++ b/hw/usb-desc.c
+@@ -151,9 +151,42 @@ int usb_desc_other(const USBDescOther *desc, uint8_t *dest, size_t len)
+     return bLength;
+ }
+ 
+-int usb_desc_string(const char* const *str, int index, uint8_t *dest, size_t len)
++/* ------------------------------------------------------------------ */
++
++void usb_desc_set_string(USBDevice *dev, uint8_t index, const char *str)
++{
++    USBDescString *s;
++
++    QLIST_FOREACH(s, &dev->strings, next) {
++        if (s->index == index) {
++            break;
++        }
++    }
++    if (s == NULL) {
++        s = qemu_mallocz(sizeof(*s));
++        s->index = index;
++        QLIST_INSERT_HEAD(&dev->strings, s, next);
++    }
++    qemu_free(s->str);
++    s->str = qemu_strdup(str);
++}
++
++const char *usb_desc_get_string(USBDevice *dev, uint8_t index)
++{
++    USBDescString *s;
++
++    QLIST_FOREACH(s, &dev->strings, next) {
++        if (s->index == index) {
++            return s->str;
++        }
++    }
++    return NULL;
++}
++
++int usb_desc_string(USBDevice *dev, int index, uint8_t *dest, size_t len)
+ {
+     uint8_t bLength, pos, i;
++    const char *str;
+ 
+     if (len < 4) {
+         return -1;
+@@ -168,22 +201,25 @@ int usb_desc_string(const char* const *str, int index, uint8_t *dest, size_t len
+         return 4;
+     }
+ 
+-    if (str[index] == NULL) {
+-        return 0;
++    str = usb_desc_get_string(dev, index);
++    if (str == NULL) {
++        str = dev->info->usb_desc->str[index];
++        if (str == NULL) {
++            return 0;
++        }
+     }
+-    bLength = strlen(str[index]) * 2 + 2;
++
++    bLength = strlen(str) * 2 + 2;
+     dest[0] = bLength;
+     dest[1] = USB_DT_STRING;
+     i = 0; pos = 2;
+     while (pos+1 < bLength && pos+1 < len) {
+-        dest[pos++] = str[index][i++];
++        dest[pos++] = str[i++];
+         dest[pos++] = 0;
+     }
+     return pos;
+ }
+ 
+-/* ------------------------------------------------------------------ */
+-
+ int usb_desc_get_descriptor(USBDevice *dev, int value, uint8_t *dest, size_t len)
+ {
+     const USBDesc *desc = dev->info->usb_desc;
+@@ -204,7 +240,7 @@ int usb_desc_get_descriptor(USBDevice *dev, int value, uint8_t *dest, size_t len
+         trace_usb_desc_config(dev->addr, index, len, ret);
+         break;
+     case USB_DT_STRING:
+-        ret = usb_desc_string(desc->str, index, buf, sizeof(buf));
++        ret = usb_desc_string(dev, index, buf, sizeof(buf));
+         trace_usb_desc_string(dev->addr, index, len, ret);
+         break;
+     default:
+diff --git a/hw/usb-desc.h b/hw/usb-desc.h
+index d80efdb..20fc400 100644
+--- a/hw/usb-desc.h
++++ b/hw/usb-desc.h
+@@ -76,9 +76,11 @@ int usb_desc_config(const USBDescConfig *conf, uint8_t *dest, size_t len);
+ int usb_desc_iface(const USBDescIface *iface, uint8_t *dest, size_t len);
+ int usb_desc_endpoint(const USBDescEndpoint *ep, uint8_t *dest, size_t len);
+ int usb_desc_other(const USBDescOther *desc, uint8_t *dest, size_t len);
+-int usb_desc_string(const char* const *str, int index, uint8_t *dest, size_t len);
+ 
+ /* control message emulation helpers */
++void usb_desc_set_string(USBDevice *dev, uint8_t index, const char *str);
++const char *usb_desc_get_string(USBDevice *dev, uint8_t index);
++int usb_desc_string(USBDevice *dev, int index, uint8_t *dest, size_t len);
+ int usb_desc_get_descriptor(USBDevice *dev, int value, uint8_t *dest, size_t len);
+ int usb_desc_handle_control(USBDevice *dev, int request, int value,
+                             int index, int length, uint8_t *data);
+diff --git a/hw/usb.h b/hw/usb.h
+index d6fe079..6cd2a58 100644
+--- a/hw/usb.h
++++ b/hw/usb.h
+@@ -131,6 +131,13 @@ typedef struct USBDescConfig USBDescConfig;
+ typedef struct USBDescIface USBDescIface;
+ typedef struct USBDescEndpoint USBDescEndpoint;
+ typedef struct USBDescOther USBDescOther;
++typedef struct USBDescString USBDescString;
++
++struct USBDescString {
++    uint8_t index;
++    char *str;
++    QLIST_ENTRY(USBDescString) next;
++};
+ 
+ /* definition of a USB device */
+ struct USBDevice {
+@@ -151,6 +158,8 @@ struct USBDevice {
+     int setup_state;
+     int setup_len;
+     int setup_index;
++
++    QLIST_HEAD(, USBDescString) strings;
+ };
+ 
+ struct USBDeviceInfo {
+-- 
+1.7.3.2
+

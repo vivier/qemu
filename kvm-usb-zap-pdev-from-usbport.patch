@@ -1,0 +1,131 @@
+From edc9bfbd0832ff16f7d2e09b256912b3da836335 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:17 -0300
+Subject: [RHEL6 qemu-kvm PATCH 044/115] usb: zap pdev from usbport
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-42-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27886
+O-Subject: [RHEL-6.2 kvm PATCH 041/115] usb: zap pdev from usbport
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+It isn't needed any more.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit ace1318b8ea95efa332fb3e8e159924d4f928753)
+---
+ hw/usb-bus.c  |    3 +--
+ hw/usb-hub.c  |    2 +-
+ hw/usb-musb.c |    2 +-
+ hw/usb-ohci.c |    2 +-
+ hw/usb-uhci.c |    2 +-
+ hw/usb.h      |    3 +--
+ 6 files changed, 6 insertions(+), 8 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-bus.c  |    3 +--
+ hw/usb-hub.c  |    2 +-
+ hw/usb-musb.c |    2 +-
+ hw/usb-ohci.c |    2 +-
+ hw/usb-uhci.c |    2 +-
+ hw/usb.h      |    3 +--
+ 6 files changed, 6 insertions(+), 8 deletions(-)
+
+diff --git a/hw/usb-bus.c b/hw/usb-bus.c
+index 79a493e..0f1961d 100644
+--- a/hw/usb-bus.c
++++ b/hw/usb-bus.c
+@@ -117,11 +117,10 @@ USBDevice *usb_create_simple(USBBus *bus, const char *name)
+ }
+ 
+ void usb_register_port(USBBus *bus, USBPort *port, void *opaque, int index,
+-                       USBDevice *pdev, USBPortOps *ops, int speedmask)
++                       USBPortOps *ops, int speedmask)
+ {
+     port->opaque = opaque;
+     port->index = index;
+-    port->pdev = pdev;
+     port->opaque = opaque;
+     port->index = index;
+     port->ops = ops;
+diff --git a/hw/usb-hub.c b/hw/usb-hub.c
+index 6e5cb5b..5200c1a 100644
+--- a/hw/usb-hub.c
++++ b/hw/usb-hub.c
+@@ -536,7 +536,7 @@ static int usb_hub_initfn(USBDevice *dev)
+     for (i = 0; i < NUM_PORTS; i++) {
+         port = &s->ports[i];
+         usb_register_port(usb_bus_from_device(dev),
+-                          &port->port, s, i, &s->dev, &usb_hub_port_ops,
++                          &port->port, s, i, &usb_hub_port_ops,
+                           USB_SPEED_MASK_LOW | USB_SPEED_MASK_FULL);
+         port->wPortStatus = PORT_STAT_POWER;
+         port->wPortChange = 0;
+diff --git a/hw/usb-musb.c b/hw/usb-musb.c
+index 04109af..42f05e2 100644
+--- a/hw/usb-musb.c
++++ b/hw/usb-musb.c
+@@ -338,7 +338,7 @@ struct MUSBState {
+     }
+ 
+     usb_bus_new(&s->bus, NULL /* FIXME */);
+-    usb_register_port(&s->bus, &s->port, s, 0, NULL, &musb_port_ops,
++    usb_register_port(&s->bus, &s->port, s, 0, &musb_port_ops,
+                       USB_SPEED_MASK_LOW | USB_SPEED_MASK_FULL);
+     usb_port_location(&s->port, NULL, 1);
+ 
+diff --git a/hw/usb-ohci.c b/hw/usb-ohci.c
+index 7371b0d..be3dbd9 100644
+--- a/hw/usb-ohci.c
++++ b/hw/usb-ohci.c
+@@ -1694,7 +1694,7 @@ static void usb_ohci_init(OHCIState *ohci, DeviceState *dev,
+     usb_bus_new(&ohci->bus, dev);
+     ohci->num_ports = num_ports;
+     for (i = 0; i < num_ports; i++) {
+-        usb_register_port(&ohci->bus, &ohci->rhport[i].port, ohci, i, NULL, &ohci_port_ops,
++        usb_register_port(&ohci->bus, &ohci->rhport[i].port, ohci, i, &ohci_port_ops,
+                           USB_SPEED_MASK_LOW | USB_SPEED_MASK_FULL);
+         usb_port_location(&ohci->rhport[i].port, NULL, i+1);
+     }
+diff --git a/hw/usb-uhci.c b/hw/usb-uhci.c
+index 7a2f5c0..8767fd8 100644
+--- a/hw/usb-uhci.c
++++ b/hw/usb-uhci.c
+@@ -1089,7 +1089,7 @@ static int usb_uhci_common_initfn(UHCIState *s)
+ 
+     usb_bus_new(&s->bus, &s->dev.qdev);
+     for(i = 0; i < NB_PORTS; i++) {
+-        usb_register_port(&s->bus, &s->ports[i].port, s, i, NULL, &uhci_port_ops,
++        usb_register_port(&s->bus, &s->ports[i].port, s, i, &uhci_port_ops,
+                           USB_SPEED_MASK_LOW | USB_SPEED_MASK_FULL);
+         usb_port_location(&s->ports[i].port, NULL, i+1);
+     }
+diff --git a/hw/usb.h b/hw/usb.h
+index 4a095ab..a678571 100644
+--- a/hw/usb.h
++++ b/hw/usb.h
+@@ -240,7 +240,6 @@ struct USBPort {
+     char path[16];
+     USBPortOps *ops;
+     void *opaque;
+-    USBDevice *pdev;
+     int index; /* internal port index, may be used with the opaque */
+     QTAILQ_ENTRY(USBPort) next;
+ };
+@@ -351,7 +350,7 @@ USBDevice *usb_create(USBBus *bus, const char *name);
+ USBDevice *usb_create_simple(USBBus *bus, const char *name);
+ USBDevice *usbdevice_create(const char *cmdline);
+ void usb_register_port(USBBus *bus, USBPort *port, void *opaque, int index,
+-                       USBDevice *pdev, USBPortOps *ops, int speedmask);
++                       USBPortOps *ops, int speedmask);
+ void usb_port_location(USBPort *downstream, USBPort *upstream, int portnr);
+ void usb_unregister_port(USBBus *bus, USBPort *port);
+ int usb_device_attach(USBDevice *dev);
+-- 
+1.7.3.2
+

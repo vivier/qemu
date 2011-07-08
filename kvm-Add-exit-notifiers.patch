@@ -1,0 +1,104 @@
+From 4eb7c541653ff989ee0d40aa0e8d62076beb6141 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:40:38 -0300
+Subject: [RHEL6 qemu-kvm PATCH 005/115] Add exit notifiers.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-3-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27852
+O-Subject: [RHEL-6.2 kvm PATCH 002/115] Add exit notifiers.
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Hook up any cleanup work which needs to be done here.  Advantages over
+using atexit(3):
+
+  (1) You get passed in a pointer to the notifier.  If you embed that
+      into your state struct you can use container_of() to get get your
+      state info.
+  (2) You can unregister, say when un-plugging a device.
+
+[ v2: move code out of #ifndef _WIN32 ]
+
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit fd42deeb4cb42f90084046e3ebdb4383953195e3)
+
+Conflicts:
+
+	sysemu.h
+	vl.c
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ sysemu.h |    2 ++
+ vl.c     |   19 +++++++++++++++++++
+ 2 files changed, 21 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ sysemu.h |    2 ++
+ vl.c     |   19 +++++++++++++++++++
+ 2 files changed, 21 insertions(+), 0 deletions(-)
+
+diff --git a/sysemu.h b/sysemu.h
+index b84a2a2..77fed5d 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -54,6 +54,8 @@ extern qemu_irq qemu_system_powerdown;
+ void qemu_system_reset(void);
+ 
+ void qemu_add_machine_init_done_notifier(Notifier *notify);
++void qemu_add_exit_notifier(Notifier *notify);
++void qemu_remove_exit_notifier(Notifier *notify);
+ 
+ void do_savevm(Monitor *mon, const QDict *qdict);
+ int load_vmstate(const char *name);
+diff --git a/vl.c b/vl.c
+index 3c8cb46..26138d4 100644
+--- a/vl.c
++++ b/vl.c
+@@ -303,6 +303,9 @@ uint8_t qemu_uuid[16];
+ static QEMUBootSetHandler *boot_set_handler;
+ static void *boot_set_opaque;
+ 
++static NotifierList exit_notifiers =
++    NOTIFIER_LIST_INITIALIZER(exit_notifiers);
++
+ int kvm_allowed = -1;
+ uint32_t xen_domid;
+ enum xen_mode xen_mode = XEN_EMULATE;
+@@ -4809,6 +4812,21 @@ static void qemu_run_machine_init_done_notifiers(void)
+     notifier_list_notify(&machine_init_done_notifiers);
+ }
+ 
++void qemu_add_exit_notifier(Notifier *notify)
++{
++    notifier_list_add(&exit_notifiers, notify);
++}
++
++void qemu_remove_exit_notifier(Notifier *notify)
++{
++    notifier_list_remove(&exit_notifiers, notify);
++}
++
++static void qemu_run_exit_notifiers(void)
++{
++    notifier_list_notify(&exit_notifiers);
++}
++
+ static const QEMUOption *lookup_opt(int argc, char **argv,
+                                     const char **poptarg, int *poptind)
+ {
+@@ -4884,6 +4902,7 @@ int main(int argc, char **argv, char **envp)
+     int defconfig = 1;
+     int defconfig_verbose = 0;
+ 
++    atexit(qemu_run_exit_notifiers);
+     error_set_progname(argv[0]);
+ 
+     init_clocks();
+-- 
+1.7.3.2
+

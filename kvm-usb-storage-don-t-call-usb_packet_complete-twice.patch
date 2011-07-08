@@ -1,0 +1,47 @@
+From 422ecfdfe01a01210be5dc14aea00258225b3c01 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:59 -0300
+Subject: [RHEL6 qemu-kvm PATCH 084/115] usb-storage: don't call usb_packet_complete twice
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-84-git-send-email-kraxel@redhat.com>
+Patchwork-id: 28402
+O-Subject: [RHEL-6.2 kvm PATCH 083/115] usb-storage: don't call usb_packet_complete twice
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+usb_msd_copy_data() may cause a recursive call to
+usb_msd_command_complete() which in turn may complete
+the packet, setting s->packet to NULL in case it does.
+Recheck s->packet before calling usb_packet_complete()
+to fix the double call.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit ebd669a19f00d0ff8370e1edfb6232f50e42110d)
+---
+ hw/usb-msd.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-msd.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/hw/usb-msd.c b/hw/usb-msd.c
+index 8c8d070..8a1696b 100644
+--- a/hw/usb-msd.c
++++ b/hw/usb-msd.c
+@@ -251,7 +251,7 @@ static void usb_msd_command_complete(SCSIBus *bus, int reason, uint32_t tag,
+     s->scsi_buf = s->scsi_dev->info->get_buf(s->scsi_dev, tag);
+     if (p) {
+         usb_msd_copy_data(s);
+-        if (s->usb_len == 0) {
++        if (s->packet && s->usb_len == 0) {
+             /* Set s->packet to NULL before calling usb_packet_complete
+                because another request may be issued before
+                usb_packet_complete returns.  */
+-- 
+1.7.3.2
+

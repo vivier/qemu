@@ -1,0 +1,111 @@
+From f9033acd79b0c696530e469ca6277bdd30137f92 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:42:08 -0300
+Subject: [RHEL6 qemu-kvm PATCH 093/115] usb-ehci: improve mmio tracing
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-93-git-send-email-kraxel@redhat.com>
+Patchwork-id: 28415
+O-Subject: [RHEL-6.2 kvm PATCH 092/115] usb-ehci: improve mmio tracing
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Add a separate tracepoint to log how register values change in response
+to a mmio write.  Especially useful for registers which have read-only
+or clear-on-write bits in them.
+
+No change in behavior.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit c4f8e21165036a2f5422cd5faa507ccdf91aa945)
+---
+ hw/usb-ehci.c |   16 ++++++----------
+ trace-events  |    3 ++-
+ 2 files changed, 8 insertions(+), 11 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-ehci.c |   16 ++++++----------
+ trace-events  |    3 ++-
+ 2 files changed, 8 insertions(+), 11 deletions(-)
+
+diff --git a/hw/usb-ehci.c b/hw/usb-ehci.c
+index db1bb31..f8a8388 100644
+--- a/hw/usb-ehci.c
++++ b/hw/usb-ehci.c
+@@ -719,10 +719,6 @@ static void handle_port_status_write(EHCIState *s, int port, uint32_t val)
+     int rwc;
+     USBDevice *dev = s->ports[port].dev;
+ 
+-    DPRINTF("port_status_write: "
+-            "PORTSC (port %d) curr %08X new %08X rw-clear %08X rw %08X\n",
+-            port, *portsc, val, (val & PORTSC_RWC_MASK), val & PORTSC_RO_MASK);
+-
+     rwc = val & PORTSC_RWC_MASK;
+     val &= PORTSC_RO_MASK;
+ 
+@@ -744,8 +740,6 @@ static void handle_port_status_write(EHCIState *s, int port, uint32_t val)
+         }
+ 
+         if (s->ports[port].dev) {
+-            DPRINTF("port_status_write: "
+-                    "Device was connected before reset, clearing CSC bit\n");
+             *portsc &= ~PORTSC_CSC;
+         }
+ 
+@@ -760,16 +754,16 @@ static void handle_port_status_write(EHCIState *s, int port, uint32_t val)
+ 
+     *portsc &= ~PORTSC_RO_MASK;
+     *portsc |= val;
+-    DPRINTF("port_status_write: Port %d status set to 0x%08x\n", port, *portsc);
+ }
+ 
+ static void ehci_mem_writel(void *ptr, target_phys_addr_t addr, uint32_t val)
+ {
+     EHCIState *s = ptr;
++    uint32_t *mmio = (uint32_t *)(&s->mmio[addr]);
++    uint32_t old = *mmio;
+     int i;
+ 
+-    trace_usb_ehci_mmio_writel(addr, addr2str(addr), val,
+-                               *(uint32_t *)(&s->mmio[addr]));
++    trace_usb_ehci_mmio_writel(addr, addr2str(addr), val);
+ 
+     /* Only aligned reads are allowed on OHCI */
+     if (addr & 3) {
+@@ -780,6 +774,7 @@ static void ehci_mem_writel(void *ptr, target_phys_addr_t addr, uint32_t val)
+ 
+     if (addr >= PORTSC && addr < PORTSC + 4 * NB_PORTS) {
+         handle_port_status_write(s, (addr-PORTSC)/4, val);
++        trace_usb_ehci_mmio_change(addr, addr2str(addr), *mmio, old);
+         return;
+     }
+ 
+@@ -858,7 +853,8 @@ static void ehci_mem_writel(void *ptr, target_phys_addr_t addr, uint32_t val)
+         break;
+     }
+ 
+-    *(uint32_t *)(&s->mmio[addr]) = val;
++    *mmio = val;
++    trace_usb_ehci_mmio_change(addr, addr2str(addr), *mmio, old);
+ }
+ 
+ 
+diff --git a/trace-events b/trace-events
+index 341c2b4..c11e9a1 100644
+--- a/trace-events
++++ b/trace-events
+@@ -85,7 +85,8 @@ disable apic_set_irq(int apic_irq_delivered) "coalescing %d"
+ # hw/usb-ehci.c
+ disable usb_ehci_reset(void) "=== RESET ==="
+ disable usb_ehci_mmio_readl(uint32_t addr, const char *str, uint32_t val) "rd mmio %04x [%s] = %x"
+-disable usb_ehci_mmio_writel(uint32_t addr, const char *str, uint32_t val, uint32_t oldval) "wr mmio %04x [%s] = %x (old: %x)"
++disable usb_ehci_mmio_writel(uint32_t addr, const char *str, uint32_t val) "wr mmio %04x [%s] = %x"
++disable usb_ehci_mmio_change(uint32_t addr, const char *str, uint32_t new, uint32_t old) "ch mmio %04x [%s] = %x (old: %x)"
+ disable usb_ehci_usbsts(const char *sts, int state) "usbsts %s %d"
+ disable usb_ehci_state(const char *schedule, const char *state) "%s schedule %s"
+ disable usb_ehci_qh(uint32_t addr, uint32_t next, uint32_t c_qtd, uint32_t n_qtd, uint32_t a_qtd, int rl, int mplen, int eps, int ep, int devaddr, int c, int h, int dtc, int i) "QH @ %08x: next %08x qtds %08x,%08x,%08x - rl %d, mplen %d, eps %d, ep %d, dev %d, c %d, h %d, dtc %d, i %d"
+-- 
+1.7.3.2
+

@@ -1,0 +1,79 @@
+From 8cdc56d74200b4bfa9aeec6b162432761a3535bf Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:35 -0300
+Subject: [RHEL6 qemu-kvm PATCH 060/115] usb-linux: Refuse packets for endpoints which are not in the usb descriptor
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-60-git-send-email-kraxel@redhat.com>
+Patchwork-id: 28384
+O-Subject: [RHEL-6.2 kvm PATCH 059/115] usb-linux: Refuse packets for endpoints which are not in the usb descriptor
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+From: Hans de Goede <hdegoede@redhat.com>
+
+If an endpoint is not in the usb descriptor we've no idea what kind of
+endpoint it is and thus how to handle it, refuse packages in this case.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+(cherry picked from commit a0b5fece8afe7deca08cbca97e2a4015d7f0038e)
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ usb-linux.c |   13 +++++++++++++
+ 1 files changed, 13 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ usb-linux.c |   13 +++++++++++++
+ 1 files changed, 13 insertions(+), 0 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index a5fe6c1..d3a56f6 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -94,6 +94,7 @@ static int usb_fs_type;
+ /* endpoint association data */
+ #define ISO_FRAME_DESC_PER_URB 32
+ #define ISO_URB_COUNT 3
++#define INVALID_EP_TYPE 255
+ 
+ typedef struct AsyncURB AsyncURB;
+ 
+@@ -168,6 +169,11 @@ static int is_isoc(USBHostDevice *s, int ep)
+     return s->endp_table[ep - 1].type == USBDEVFS_URB_TYPE_ISO;
+ }
+ 
++static int is_valid(USBHostDevice *s, int ep)
++{
++    return s->endp_table[ep - 1].type != INVALID_EP_TYPE;
++}
++
+ static int is_halted(USBHostDevice *s, int ep)
+ {
+     return s->endp_table[ep - 1].halted;
+@@ -607,6 +613,10 @@ static int usb_host_handle_data(USBHostDevice *s, USBPacket *p)
+     int ret;
+     uint8_t ep;
+ 
++    if (!is_valid(s, p->devep)) {
++        return USB_RET_NAK;
++    }
++
+     if (p->pid == USB_TOKEN_IN) {
+         ep = p->devep | 0x80;
+     } else {
+@@ -1053,6 +1063,9 @@ static int usb_linux_update_endp_table(USBHostDevice *s)
+     uint8_t devep, type, configuration, alt_interface;
+     int interface, length, i;
+ 
++    for (i = 0; i < MAX_ENDPOINTS; i++)
++        s->endp_table[i].type = INVALID_EP_TYPE;
++
+     i = usb_linux_get_configuration(s);
+     if (i < 0)
+         return 1;
+-- 
+1.7.3.2
+

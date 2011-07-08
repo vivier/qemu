@@ -1,0 +1,63 @@
+From b1c9b164c110bf03242e02448b12205107a1fdd6 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:03 -0300
+Subject: [RHEL6 qemu-kvm PATCH 030/115] usb: hub: remote wakeup support.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-28-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27866
+O-Subject: [RHEL-6.2 kvm PATCH 027/115] usb: hub: remote wakeup support.
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+This patch makes the usb hub handle remote wakeup requests from devices
+properly by updating the port status register and forwarding the wakeup
+to the upstream port.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 34239c7bc972735391ca84283f8c8ad908dc61ef)
+---
+ hw/usb-hub.c |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-hub.c |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
+
+diff --git a/hw/usb-hub.c b/hw/usb-hub.c
+index 74b9ceb..431c08c 100644
+--- a/hw/usb-hub.c
++++ b/hw/usb-hub.c
+@@ -245,6 +245,17 @@ static void usb_hub_detach(USBPort *port1)
+     }
+ }
+ 
++static void usb_hub_wakeup(USBDevice *dev)
++{
++    USBHubState *s = dev->port->opaque;
++    USBHubPort *port = &s->ports[dev->port->index];
++
++    if (port->wPortStatus & PORT_STAT_SUSPEND) {
++        port->wPortChange |= PORT_STAT_C_SUSPEND;
++        usb_wakeup(&s->dev);
++    }
++}
++
+ static void usb_hub_handle_reset(USBDevice *dev)
+ {
+     /* XXX: do it */
+@@ -502,6 +513,7 @@ static void usb_hub_handle_destroy(USBDevice *dev)
+ static USBPortOps usb_hub_port_ops = {
+     .attach = usb_hub_attach,
+     .detach = usb_hub_detach,
++    .wakeup = usb_hub_wakeup,
+ };
+ 
+ static int usb_hub_initfn(USBDevice *dev)
+-- 
+1.7.3.2
+

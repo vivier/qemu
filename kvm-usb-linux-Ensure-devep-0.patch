@@ -1,0 +1,47 @@
+From 68470cc2ca40c31c6a09f18e55f58c275bd21518 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:42:26 -0300
+Subject: [RHEL6 qemu-kvm PATCH 110/115] usb-linux: Ensure devep != 0
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-111-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27911
+O-Subject: [RHEL-6.2 kvm PATCH 110/115] usb-linux: Ensure devep != 0
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Hans de Goede <hdegoede@redhat.com>
+
+So that we don't index endp_table with a negative index.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 130314f83dc43fc3cc2f431d8cfa1595209673fe)
+---
+ usb-linux.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ usb-linux.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index 964ccdc..971aa9a 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -1026,6 +1026,11 @@ static int usb_linux_update_endp_table(USBHostDevice *s)
+                 break;
+ 
+             devep = descriptors[i + 2];
++            if ((devep & 0x0f) == 0) {
++                fprintf(stderr, "usb-linux: invalid ep descriptor, ep == 0\n");
++                return 1;
++            }
++
+             switch (descriptors[i + 3] & 0x3) {
+             case 0x00:
+                 type = USBDEVFS_URB_TYPE_CONTROL;
+-- 
+1.7.3.2
+

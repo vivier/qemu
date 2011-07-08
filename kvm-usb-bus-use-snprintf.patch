@@ -1,0 +1,70 @@
+From cd952bf77ee12ebd26a120d3137d7d3272eaaad7 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:27 -0300
+Subject: [RHEL6 qemu-kvm PATCH 052/115] usb-bus: use snprintf
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-52-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27900
+O-Subject: [RHEL-6.2 kvm PATCH 051/115] usb-bus: use snprintf
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Blue Swirl <blauwirbel@gmail.com>
+
+Avoid this warning from OpenBSD linker:
+  LINK  i386-softmmu/qemu
+../usb-bus.o(.text+0x27c): In function `usb_get_fw_dev_path':
+/src/qemu/hw/usb-bus.c:294: warning: sprintf() is often misused,
+please use snprintf()
+
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit ea87e95f8fda609fa665c2abd33c30ae65e6fae2)
+---
+ hw/usb-bus.c |   12 +++++++-----
+ 1 files changed, 7 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-bus.c |   12 +++++++-----
+ 1 files changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/hw/usb-bus.c b/hw/usb-bus.c
+index a559b1d..f4c4faf 100644
+--- a/hw/usb-bus.c
++++ b/hw/usb-bus.c
+@@ -295,20 +295,22 @@ static char *usb_get_fw_dev_path(DeviceState *qdev)
+ {
+     USBDevice *dev = DO_UPCAST(USBDevice, qdev, qdev);
+     char *fw_path, *in;
+-    int pos = 0;
++    ssize_t pos = 0, fw_len;
+     long nr;
+ 
+-    fw_path = qemu_malloc(32 + strlen(dev->port->path) * 6);
++    fw_len = 32 + strlen(dev->port->path) * 6;
++    fw_path = qemu_malloc(fw_len);
+     in = dev->port->path;
+-    while (true) {
++    while (fw_len - pos > 0) {
+         nr = strtol(in, &in, 10);
+         if (in[0] == '.') {
+             /* some hub between root port and device */
+-            pos += sprintf(fw_path + pos, "hub@%ld/", nr);
++            pos += snprintf(fw_path + pos, fw_len - pos, "hub@%ld/", nr);
+             in++;
+         } else {
+             /* the device itself */
+-            pos += sprintf(fw_path + pos, "%s@%ld", qdev_fw_name(qdev), nr);
++            pos += snprintf(fw_path + pos, fw_len - pos, "%s@%ld",
++                            qdev_fw_name(qdev), nr);
+             break;
+         }
+     }
+-- 
+1.7.3.2
+

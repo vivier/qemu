@@ -1,0 +1,460 @@
+From 7525bc814d80282b86bfece0ea83a1abac1fd5a7 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:00 -0300
+Subject: [RHEL6 qemu-kvm PATCH 027/115] usb: rework attach/detach workflow
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-25-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27896
+O-Subject: [RHEL-6.2 kvm PATCH 024/115] usb: rework attach/detach workflow
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Add separate detach callback to USBPortOps, split
+uhci/ohci/musb/usbhub attach functions into two.
+
+Move common code to the usb_attach() function, only
+the hardware-specific bits remain in the attach/detach
+callbacks.
+
+Keep track of the port it is attached to for each usb device.
+
+[ v3: fix tyops in usb-musb.c ]
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 618c169b577db64ac6589ad48825d2e11760d1a6)
+
+Conflicts:
+
+	hw/usb-musb.c
+	hw/usb-ohci.c
+---
+ hw/usb-hub.c  |   46 ++++++++++++++------------------
+ hw/usb-musb.c |   36 ++++++++-----------------
+ hw/usb-ohci.c |   80 +++++++++++++++++++++++++++------------------------------
+ hw/usb-uhci.c |   69 +++++++++++++++++++++---------------------------
+ hw/usb.c      |   20 +++++++++++++-
+ hw/usb.h      |    4 ++-
+ 6 files changed, 122 insertions(+), 133 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-hub.c  |   46 ++++++++++++++------------------
+ hw/usb-musb.c |   36 ++++++++-----------------
+ hw/usb-ohci.c |   80 +++++++++++++++++++++++++++------------------------------
+ hw/usb-uhci.c |   69 +++++++++++++++++++++---------------------------
+ hw/usb.c      |   20 +++++++++++++-
+ hw/usb.h      |    4 ++-
+ 6 files changed, 122 insertions(+), 133 deletions(-)
+
+diff --git a/hw/usb-hub.c b/hw/usb-hub.c
+index 7c2e184..74b9ceb 100644
+--- a/hw/usb-hub.c
++++ b/hw/usb-hub.c
+@@ -218,37 +218,30 @@ static const uint8_t qemu_hub_hub_descriptor[] =
+         /* DeviceRemovable and PortPwrCtrlMask patched in later */
+ };
+ 
+-static void usb_hub_attach(USBPort *port1, USBDevice *dev)
++static void usb_hub_attach(USBPort *port1)
+ {
+     USBHubState *s = port1->opaque;
+     USBHubPort *port = &s->ports[port1->index];
+ 
+-    if (dev) {
+-        if (port->port.dev)
+-            usb_attach(port1, NULL);
+-
+-        port->wPortStatus |= PORT_STAT_CONNECTION;
+-        port->wPortChange |= PORT_STAT_C_CONNECTION;
+-        if (dev->speed == USB_SPEED_LOW)
+-            port->wPortStatus |= PORT_STAT_LOW_SPEED;
+-        else
+-            port->wPortStatus &= ~PORT_STAT_LOW_SPEED;
+-        port->port.dev = dev;
+-        /* send the attach message */
+-        usb_send_msg(dev, USB_MSG_ATTACH);
++    port->wPortStatus |= PORT_STAT_CONNECTION;
++    port->wPortChange |= PORT_STAT_C_CONNECTION;
++    if (port->port.dev->speed == USB_SPEED_LOW) {
++        port->wPortStatus |= PORT_STAT_LOW_SPEED;
+     } else {
+-        dev = port->port.dev;
+-        if (dev) {
+-            port->wPortStatus &= ~PORT_STAT_CONNECTION;
+-            port->wPortChange |= PORT_STAT_C_CONNECTION;
+-            if (port->wPortStatus & PORT_STAT_ENABLE) {
+-                port->wPortStatus &= ~PORT_STAT_ENABLE;
+-                port->wPortChange |= PORT_STAT_C_ENABLE;
+-            }
+-            /* send the detach message */
+-            usb_send_msg(dev, USB_MSG_DETACH);
+-            port->port.dev = NULL;
+-        }
++        port->wPortStatus &= ~PORT_STAT_LOW_SPEED;
++    }
++}
++
++static void usb_hub_detach(USBPort *port1)
++{
++    USBHubState *s = port1->opaque;
++    USBHubPort *port = &s->ports[port1->index];
++
++    port->wPortStatus &= ~PORT_STAT_CONNECTION;
++    port->wPortChange |= PORT_STAT_C_CONNECTION;
++    if (port->wPortStatus & PORT_STAT_ENABLE) {
++        port->wPortStatus &= ~PORT_STAT_ENABLE;
++        port->wPortChange |= PORT_STAT_C_ENABLE;
+     }
+ }
+ 
+@@ -508,6 +501,7 @@ static void usb_hub_handle_destroy(USBDevice *dev)
+ 
+ static USBPortOps usb_hub_port_ops = {
+     .attach = usb_hub_attach,
++    .detach = usb_hub_detach,
+ };
+ 
+ static int usb_hub_initfn(USBDevice *dev)
+diff --git a/hw/usb-musb.c b/hw/usb-musb.c
+index ef592aa..6cf95be 100644
+--- a/hw/usb-musb.c
++++ b/hw/usb-musb.c
+@@ -248,10 +248,12 @@
+ #define MGC_M_ULPI_REGCTL_COMPLETE	0x02
+ #define MGC_M_ULPI_REGCTL_REG		0x01
+ 
+-static void musb_attach(USBPort *port, USBDevice *dev);
++static void musb_attach(USBPort *port);
++static void musb_detach(USBPort *port);
+ 
+ static USBPortOps musb_port_ops = {
+     .attach = musb_attach,
++    .detach = musb_detach,
+ };
+ 
+ typedef struct {
+@@ -453,34 +455,20 @@ static void musb_session_update(MUSBState *s, int prev_dev, int prev_sess)
+ }
+ 
+ /* Attach or detach a device on our only port.  */
+-static void musb_attach(USBPort *port, USBDevice *dev)
++static void musb_attach(USBPort *port)
+ {
+     MUSBState *s = (MUSBState *) port->opaque;
+-    USBDevice *curr;
+ 
+-    port = &s->port;
+-    curr = port->dev;
+-
+-    if (dev) {
+-        if (curr) {
+-            usb_attach(port, NULL);
+-            /* TODO: signal some interrupts */
+-        }
+-
+-        musb_intr_set(s, musb_irq_vbus_request, 1);
+-
+-        /* Send the attach message to device */
+-        usb_send_msg(dev, USB_MSG_ATTACH);
+-    } else if (curr) {
+-        /* Send the detach message */
+-        usb_send_msg(curr, USB_MSG_DETACH);
+-
+-        musb_intr_set(s, musb_irq_disconnect, 1);
+-    }
++    musb_intr_set(s, musb_irq_vbus_request, 1);
++    musb_session_update(s, 0, s->session);
++}
+ 
+-    port->dev = dev;
++static void musb_detach(USBPort *port)
++{
++    MUSBState *s = (MUSBState *) port->opaque;
+ 
+-    musb_session_update(s, !!curr, s->session);
++    musb_intr_set(s, musb_irq_disconnect, 1);
++    musb_session_update(s, 1, s->session);
+ }
+ 
+ static inline void musb_cb_tick0(void *opaque)
+diff --git a/hw/usb-ohci.c b/hw/usb-ohci.c
+index cb6369f..bc9463a 100644
+--- a/hw/usb-ohci.c
++++ b/hw/usb-ohci.c
+@@ -329,52 +329,46 @@ static inline void ohci_set_interrupt(OHCIState *ohci, uint32_t intr)
+ }
+ 
+ /* Attach or detach a device on a root hub port.  */
+-static void ohci_attach(USBPort *port1, USBDevice *dev)
++static void ohci_attach(USBPort *port1)
+ {
+     OHCIState *s = port1->opaque;
+     OHCIPort *port = &s->rhport[port1->index];
+-    uint32_t old_state = port->ctrl;
+ 
+-    if (dev) {
+-        if (port->port.dev) {
+-            usb_attach(port1, NULL);
+-        }
+-        /* set connect status */
+-        port->ctrl |= OHCI_PORT_CCS | OHCI_PORT_CSC;
+-
+-        /* update speed */
+-        if (dev->speed == USB_SPEED_LOW)
+-            port->ctrl |= OHCI_PORT_LSDA;
+-        else
+-            port->ctrl &= ~OHCI_PORT_LSDA;
+-        port->port.dev = dev;
+-
+-        /* notify of remote-wakeup */
+-        if ((s->ctl & OHCI_CTL_HCFS) == OHCI_USB_SUSPEND)
+-            ohci_set_interrupt(s, OHCI_INTR_RD);
+-
+-        /* send the attach message */
+-        usb_send_msg(dev, USB_MSG_ATTACH);
+-        dprintf("usb-ohci: Attached port %d\n", port1->index);
++    /* set connect status */
++    port->ctrl |= OHCI_PORT_CCS | OHCI_PORT_CSC;
++
++    /* update speed */
++    if (port->port.dev->speed == USB_SPEED_LOW) {
++        port->ctrl |= OHCI_PORT_LSDA;
+     } else {
+-        /* set connect status */
+-        if (port->ctrl & OHCI_PORT_CCS) {
+-            port->ctrl &= ~OHCI_PORT_CCS;
+-            port->ctrl |= OHCI_PORT_CSC;
+-        }
+-        /* disable port */
+-        if (port->ctrl & OHCI_PORT_PES) {
+-            port->ctrl &= ~OHCI_PORT_PES;
+-            port->ctrl |= OHCI_PORT_PESC;
+-        }
+-        dev = port->port.dev;
+-        if (dev) {
+-            /* send the detach message */
+-            usb_send_msg(dev, USB_MSG_DETACH);
+-        }
+-        port->port.dev = NULL;
+-        dprintf("usb-ohci: Detached port %d\n", port1->index);
++        port->ctrl &= ~OHCI_PORT_LSDA;
++    }
++
++    /* notify of remote-wakeup */
++    if ((s->ctl & OHCI_CTL_HCFS) == OHCI_USB_SUSPEND) {
++        ohci_set_interrupt(s, OHCI_INTR_RD);
++    }
++
++    DPRINTF("usb-ohci: Attached port %d\n", port1->index);
++}
++
++static void ohci_detach(USBPort *port1)
++{
++    OHCIState *s = port1->opaque;
++    OHCIPort *port = &s->rhport[port1->index];
++    uint32_t old_state = port->ctrl;
++
++    /* set connect status */
++    if (port->ctrl & OHCI_PORT_CCS) {
++        port->ctrl &= ~OHCI_PORT_CCS;
++        port->ctrl |= OHCI_PORT_CSC;
++    }
++    /* disable port */
++    if (port->ctrl & OHCI_PORT_PES) {
++        port->ctrl &= ~OHCI_PORT_PES;
++        port->ctrl |= OHCI_PORT_PESC;
+     }
++    DPRINTF("usb-ohci: Detached port %d\n", port1->index);
+ 
+     if (old_state != port->ctrl)
+         ohci_set_interrupt(s, OHCI_INTR_RHSC);
+@@ -420,8 +414,9 @@ static void ohci_reset(void *opaque)
+       {
+         port = &ohci->rhport[i];
+         port->ctrl = 0;
+-        if (port->port.dev)
+-            ohci_attach(&port->port, port->port.dev);
++        if (port->port.dev) {
++            usb_attach(&port->port, port->port.dev);
++        }
+       }
+     if (ohci->async_td) {
+         usb_cancel_packet(&ohci->usb_packet);
+@@ -1663,6 +1658,7 @@ static CPUWriteMemoryFunc * const ohci_writefn[3]={
+ 
+ static USBPortOps ohci_port_ops = {
+     .attach = ohci_attach,
++    .detach = ohci_detach,
+ };
+ 
+ static void usb_ohci_init(OHCIState *ohci, DeviceState *dev,
+diff --git a/hw/usb-uhci.c b/hw/usb-uhci.c
+index a64c458..0751134 100644
+--- a/hw/usb-uhci.c
++++ b/hw/usb-uhci.c
+@@ -304,8 +304,6 @@ static UHCIAsync *uhci_async_find_td(UHCIState *s, uint32_t addr, uint32_t token
+     return match;
+ }
+ 
+-static void uhci_attach(USBPort *port1, USBDevice *dev);
+-
+ static void uhci_update_irq(UHCIState *s)
+ {
+     int level;
+@@ -345,8 +343,9 @@ static void uhci_reset(void *opaque)
+     for(i = 0; i < NB_PORTS; i++) {
+         port = &s->ports[i];
+         port->ctrl = 0x0080;
+-        if (port->port.dev)
+-            uhci_attach(&port->port, port->port.dev);
++        if (port->port.dev) {
++            usb_attach(&port->port, port->port.dev);
++        }
+     }
+ 
+     uhci_async_cancel_all(s);
+@@ -589,50 +588,41 @@ static void uhci_resume (void *opaque)
+     }
+ }
+ 
+-static void uhci_attach(USBPort *port1, USBDevice *dev)
++static void uhci_attach(USBPort *port1)
+ {
+     UHCIState *s = port1->opaque;
+     UHCIPort *port = &s->ports[port1->index];
+ 
+-    if (dev) {
+-        if (port->port.dev) {
+-            usb_attach(port1, NULL);
+-        }
+-        /* set connect status */
+-        port->ctrl |= UHCI_PORT_CCS | UHCI_PORT_CSC;
++    /* set connect status */
++    port->ctrl |= UHCI_PORT_CCS | UHCI_PORT_CSC;
+ 
+-        /* update speed */
+-        if (dev->speed == USB_SPEED_LOW)
+-            port->ctrl |= UHCI_PORT_LSDA;
+-        else
+-            port->ctrl &= ~UHCI_PORT_LSDA;
+-
+-        uhci_resume(s);
+-
+-        port->port.dev = dev;
+-        /* send the attach message */
+-        usb_send_msg(dev, USB_MSG_ATTACH);
++    /* update speed */
++    if (port->port.dev->speed == USB_SPEED_LOW) {
++        port->ctrl |= UHCI_PORT_LSDA;
+     } else {
+-        /* set connect status */
+-        if (port->ctrl & UHCI_PORT_CCS) {
+-            port->ctrl &= ~UHCI_PORT_CCS;
+-            port->ctrl |= UHCI_PORT_CSC;
+-        }
+-        /* disable port */
+-        if (port->ctrl & UHCI_PORT_EN) {
+-            port->ctrl &= ~UHCI_PORT_EN;
+-            port->ctrl |= UHCI_PORT_ENC;
+-        }
++        port->ctrl &= ~UHCI_PORT_LSDA;
++    }
+ 
+-        uhci_resume(s);
++    uhci_resume(s);
++}
+ 
+-        dev = port->port.dev;
+-        if (dev) {
+-            /* send the detach message */
+-            usb_send_msg(dev, USB_MSG_DETACH);
+-        }
+-        port->port.dev = NULL;
++static void uhci_detach(USBPort *port1)
++{
++    UHCIState *s = port1->opaque;
++    UHCIPort *port = &s->ports[port1->index];
++
++    /* set connect status */
++    if (port->ctrl & UHCI_PORT_CCS) {
++        port->ctrl &= ~UHCI_PORT_CCS;
++        port->ctrl |= UHCI_PORT_CSC;
+     }
++    /* disable port */
++    if (port->ctrl & UHCI_PORT_EN) {
++        port->ctrl &= ~UHCI_PORT_EN;
++        port->ctrl |= UHCI_PORT_ENC;
++    }
++
++    uhci_resume(s);
+ }
+ 
+ static int uhci_broadcast_packet(UHCIState *s, USBPacket *p)
+@@ -1063,6 +1053,7 @@ static void uhci_map(PCIDevice *pci_dev, int region_num,
+ 
+ static USBPortOps uhci_port_ops = {
+     .attach = uhci_attach,
++    .detach = uhci_detach,
+ };
+ 
+ static int usb_uhci_common_initfn(UHCIState *s)
+diff --git a/hw/usb.c b/hw/usb.c
+index 39d29f3..2eda86a 100644
+--- a/hw/usb.c
++++ b/hw/usb.c
+@@ -28,7 +28,25 @@
+ 
+ void usb_attach(USBPort *port, USBDevice *dev)
+ {
+-    port->ops->attach(port, dev);
++    if (dev != NULL) {
++        /* attach */
++        if (port->dev) {
++            usb_attach(port, NULL);
++        }
++        dev->port = port;
++        port->dev = dev;
++        port->ops->attach(port);
++        usb_send_msg(dev, USB_MSG_ATTACH);
++    } else {
++        /* detach */
++        dev = port->dev;
++        port->ops->detach(port);
++        if (dev) {
++            usb_send_msg(dev, USB_MSG_DETACH);
++            dev->port = NULL;
++            port->dev = NULL;
++        }
++    }
+ }
+ 
+ /**********************/
+diff --git a/hw/usb.h b/hw/usb.h
+index 7e441f2..4363dc8 100644
+--- a/hw/usb.h
++++ b/hw/usb.h
+@@ -143,6 +143,7 @@ struct USBDescString {
+ struct USBDevice {
+     DeviceState qdev;
+     USBDeviceInfo *info;
++    USBPort *port;
+     void *opaque;
+ 
+     int speed;
+@@ -213,7 +214,8 @@ struct USBDeviceInfo {
+ };
+ 
+ typedef struct USBPortOps {
+-    void (*attach)(USBPort *port, USBDevice *dev);
++    void (*attach)(USBPort *port);
++    void (*detach)(USBPort *port);
+ } USBPortOps;
+ 
+ /* USB port on which a device can be connected */
+-- 
+1.7.3.2
+

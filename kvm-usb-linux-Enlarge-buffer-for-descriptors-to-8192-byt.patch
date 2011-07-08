@@ -1,0 +1,46 @@
+From 353339b927e9457981c3418b350e5a2aae2f3bdc Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:42:29 -0300
+Subject: [RHEL6 qemu-kvm PATCH 113/115] usb-linux: Enlarge buffer for descriptors to 8192 bytes
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-114-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27917
+O-Subject: [RHEL-6.2 kvm PATCH 113/115] usb-linux: Enlarge buffer for descriptors to 8192 bytes
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Hans de Goede <hdegoede@redhat.com>
+
+1024 bytes is way to small, one hd UVC webcam I have over here has so
+many resolutions its descriptors take op close to 4k. Hopefully 8k will
+be enough for all devices.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit f8ddbfbcda3ed83b57df537f2457db25de2cc572)
+---
+ usb-linux.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ usb-linux.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index 04c2851..72e41a2 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -116,7 +116,7 @@ typedef struct USBHostDevice {
+     USBDevice dev;
+     int       fd;
+ 
+-    uint8_t   descr[1024];
++    uint8_t   descr[8192];
+     int       descr_len;
+     int       configuration;
+     int       ninterfaces;
+-- 
+1.7.3.2
+

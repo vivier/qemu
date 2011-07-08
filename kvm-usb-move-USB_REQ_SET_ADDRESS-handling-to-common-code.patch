@@ -1,0 +1,183 @@
+From c1bd8acb61541e6c6bbfdd268307361fb488901a Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:40:56 -0300
+Subject: [RHEL6 qemu-kvm PATCH 023/115] usb: move USB_REQ_SET_ADDRESS handling to common code
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-21-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27882
+O-Subject: [RHEL-6.2 kvm PATCH 020/115] usb: move USB_REQ_SET_ADDRESS handling to common code
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+USB_REQ_SET_ADDRESS handling is identical in *all* emulated devices.
+Move it to common code.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 41c6abbdeb5a86a135ee80a30541ecf52ffd3e23)
+---
+ hw/usb-bt.c     |    4 ----
+ hw/usb-desc.c   |    6 ++++++
+ hw/usb-hid.c    |    4 ----
+ hw/usb-hub.c    |    4 ----
+ hw/usb-msd.c    |    4 ----
+ hw/usb-net.c    |    5 -----
+ hw/usb-serial.c |    4 ----
+ hw/usb-wacom.c  |    4 ----
+ trace-events    |    1 +
+ 9 files changed, 7 insertions(+), 29 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-bt.c     |    4 ----
+ hw/usb-desc.c   |    6 ++++++
+ hw/usb-hid.c    |    4 ----
+ hw/usb-hub.c    |    4 ----
+ hw/usb-msd.c    |    4 ----
+ hw/usb-net.c    |    5 -----
+ hw/usb-serial.c |    4 ----
+ hw/usb-wacom.c  |    4 ----
+ trace-events    |    1 +
+ 9 files changed, 7 insertions(+), 29 deletions(-)
+
+diff --git a/hw/usb-bt.c b/hw/usb-bt.c
+index d7959ad..c0bfc35 100644
+--- a/hw/usb-bt.c
++++ b/hw/usb-bt.c
+@@ -413,10 +413,6 @@ static int usb_bt_handle_control(USBDevice *dev, int request, int value,
+         }
+         ret = 0;
+         break;
+-    case DeviceOutRequest | USB_REQ_SET_ADDRESS:
+-        dev->addr = value;
+-        ret = 0;
+-        break;
+     case DeviceRequest | USB_REQ_GET_CONFIGURATION:
+         data[0] = 1;
+         ret = 1;
+diff --git a/hw/usb-desc.c b/hw/usb-desc.c
+index 69ab207..3e87f46 100644
+--- a/hw/usb-desc.c
++++ b/hw/usb-desc.c
+@@ -266,6 +266,12 @@ int usb_desc_handle_control(USBDevice *dev, int request, int value,
+ 
+     assert(desc != NULL);
+     switch(request) {
++    case DeviceOutRequest | USB_REQ_SET_ADDRESS:
++        dev->addr = value;
++        trace_usb_set_addr(dev->addr);
++        ret = 0;
++        break;
++
+     case DeviceRequest | USB_REQ_GET_DESCRIPTOR:
+         ret = usb_desc_get_descriptor(dev, value, data, length);
+         break;
+diff --git a/hw/usb-hid.c b/hw/usb-hid.c
+index 05c3c45..0c3fb95 100644
+--- a/hw/usb-hid.c
++++ b/hw/usb-hid.c
+@@ -729,10 +729,6 @@ static int usb_hid_handle_control(USBDevice *dev, int request, int value,
+         }
+         ret = 0;
+         break;
+-    case DeviceOutRequest | USB_REQ_SET_ADDRESS:
+-        dev->addr = value;
+-        ret = 0;
+-        break;
+     case DeviceRequest | USB_REQ_GET_CONFIGURATION:
+         data[0] = 1;
+         ret = 1;
+diff --git a/hw/usb-hub.c b/hw/usb-hub.c
+index 16336fa..b3592e4 100644
+--- a/hw/usb-hub.c
++++ b/hw/usb-hub.c
+@@ -297,10 +297,6 @@ static int usb_hub_handle_control(USBDevice *dev, int request, int value,
+         }
+         ret = 0;
+         break;
+-    case DeviceOutRequest | USB_REQ_SET_ADDRESS:
+-        dev->addr = value;
+-        ret = 0;
+-        break;
+     case DeviceRequest | USB_REQ_GET_CONFIGURATION:
+         data[0] = 1;
+         ret = 1;
+diff --git a/hw/usb-msd.c b/hw/usb-msd.c
+index 5d610d6..dc0590b 100644
+--- a/hw/usb-msd.c
++++ b/hw/usb-msd.c
+@@ -260,10 +260,6 @@ static int usb_msd_handle_control(USBDevice *dev, int request, int value,
+         }
+         ret = 0;
+         break;
+-    case DeviceOutRequest | USB_REQ_SET_ADDRESS:
+-        dev->addr = value;
+-        ret = 0;
+-        break;
+     case DeviceRequest | USB_REQ_GET_CONFIGURATION:
+         data[0] = 1;
+         ret = 1;
+diff --git a/hw/usb-net.c b/hw/usb-net.c
+index de9a9fb..d1a4d98 100644
+--- a/hw/usb-net.c
++++ b/hw/usb-net.c
+@@ -1082,11 +1082,6 @@ static int usb_net_handle_control(USBDevice *dev, int request, int value,
+         ret = 0;
+         break;
+ 
+-    case DeviceOutRequest | USB_REQ_SET_ADDRESS:
+-        dev->addr = value;
+-        ret = 0;
+-        break;
+-
+     case ClassInterfaceOutRequest | USB_CDC_SEND_ENCAPSULATED_COMMAND:
+         if (!s->rndis || value || index != 0)
+             goto fail;
+diff --git a/hw/usb-serial.c b/hw/usb-serial.c
+index ac9107c..48030c6 100644
+--- a/hw/usb-serial.c
++++ b/hw/usb-serial.c
+@@ -254,10 +254,6 @@ static int usb_serial_handle_control(USBDevice *dev, int request, int value,
+         }
+         ret = 0;
+         break;
+-    case DeviceOutRequest | USB_REQ_SET_ADDRESS:
+-        dev->addr = value;
+-        ret = 0;
+-        break;
+     case DeviceRequest | USB_REQ_GET_CONFIGURATION:
+         data[0] = 1;
+         ret = 1;
+diff --git a/hw/usb-wacom.c b/hw/usb-wacom.c
+index ffe6ac7..ad1c3ae 100644
+--- a/hw/usb-wacom.c
++++ b/hw/usb-wacom.c
+@@ -284,10 +284,6 @@ static int usb_wacom_handle_control(USBDevice *dev, int request, int value,
+         }
+         ret = 0;
+         break;
+-    case DeviceOutRequest | USB_REQ_SET_ADDRESS:
+-        dev->addr = value;
+-        ret = 0;
+-        break;
+     case DeviceRequest | USB_REQ_GET_CONFIGURATION:
+         data[0] = 1;
+         ret = 1;
+diff --git a/trace-events b/trace-events
+index abdbd64..d1688da 100644
+--- a/trace-events
++++ b/trace-events
+@@ -86,6 +86,7 @@ disable apic_set_irq(int apic_irq_delivered) "coalescing %d"
+ disable usb_desc_device(int addr, int len, int ret) "dev %d query device, len %d, ret %d"
+ disable usb_desc_config(int addr, int index, int len, int ret) "dev %d query config %d, len %d, ret %d"
+ disable usb_desc_string(int addr, int index, int len, int ret) "dev %d query string %d, len %d, ret %d"
++disable usb_set_addr(int addr) "dev %d"
+ 
+ # vl.c
+ disable vm_state_notify(int running, int reason) "running %d reason %d"
+-- 
+1.7.3.2
+

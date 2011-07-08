@@ -1,0 +1,153 @@
+From accc6c6f8ea267443f9858509d8a5dda90dad0c3 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:06 -0300
+Subject: [RHEL6 qemu-kvm PATCH 033/115] usb: add speed mask to ports
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-31-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27870
+O-Subject: [RHEL-6.2 kvm PATCH 030/115] usb: add speed mask to ports
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Add a field to usb ports indicating the speed(s) they are
+able to handle.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 843d4e0c633824a11c4067d0e84bd683520b5d39)
+---
+ hw/usb-bus.c  |    3 ++-
+ hw/usb-hub.c  |    3 ++-
+ hw/usb-musb.c |    3 ++-
+ hw/usb-ohci.c |    3 ++-
+ hw/usb-uhci.c |    3 ++-
+ hw/usb.h      |    9 ++++++++-
+ 6 files changed, 18 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-bus.c  |    3 ++-
+ hw/usb-hub.c  |    3 ++-
+ hw/usb-musb.c |    3 ++-
+ hw/usb-ohci.c |    3 ++-
+ hw/usb-uhci.c |    3 ++-
+ hw/usb.h      |    9 ++++++++-
+ 6 files changed, 18 insertions(+), 6 deletions(-)
+
+diff --git a/hw/usb-bus.c b/hw/usb-bus.c
+index 47123cf..a00a473 100644
+--- a/hw/usb-bus.c
++++ b/hw/usb-bus.c
+@@ -110,7 +110,7 @@ USBDevice *usb_create_simple(USBBus *bus, const char *name)
+ }
+ 
+ void usb_register_port(USBBus *bus, USBPort *port, void *opaque, int index,
+-                       USBDevice *pdev, USBPortOps *ops)
++                       USBDevice *pdev, USBPortOps *ops, int speedmask)
+ {
+     port->opaque = opaque;
+     port->index = index;
+@@ -118,6 +118,7 @@ void usb_register_port(USBBus *bus, USBPort *port, void *opaque, int index,
+     port->opaque = opaque;
+     port->index = index;
+     port->ops = ops;
++    port->speedmask = speedmask;
+     QTAILQ_INSERT_TAIL(&bus->free, port, next);
+     bus->nfree++;
+ }
+diff --git a/hw/usb-hub.c b/hw/usb-hub.c
+index 431c08c..b18cc5f 100644
+--- a/hw/usb-hub.c
++++ b/hw/usb-hub.c
+@@ -526,7 +526,8 @@ static int usb_hub_initfn(USBDevice *dev)
+     for (i = 0; i < NUM_PORTS; i++) {
+         port = &s->ports[i];
+         usb_register_port(usb_bus_from_device(dev),
+-                          &port->port, s, i, &s->dev, &usb_hub_port_ops);
++                          &port->port, s, i, &s->dev, &usb_hub_port_ops,
++                          USB_SPEED_MASK_LOW | USB_SPEED_MASK_FULL);
+         port->wPortStatus = PORT_STAT_POWER;
+         port->wPortChange = 0;
+     }
+diff --git a/hw/usb-musb.c b/hw/usb-musb.c
+index 6cf95be..b7bd68e 100644
+--- a/hw/usb-musb.c
++++ b/hw/usb-musb.c
+@@ -338,7 +338,8 @@ struct MUSBState {
+     }
+ 
+     usb_bus_new(&s->bus, NULL /* FIXME */);
+-    usb_register_port(&s->bus, &s->port, s, 0, NULL, &musb_port_ops);
++    usb_register_port(&s->bus, &s->port, s, 0, NULL, &musb_port_ops,
++                      USB_SPEED_MASK_LOW | USB_SPEED_MASK_FULL);
+ 
+     return s;
+ }
+diff --git a/hw/usb-ohci.c b/hw/usb-ohci.c
+index bc9463a..5c7831d 100644
+--- a/hw/usb-ohci.c
++++ b/hw/usb-ohci.c
+@@ -1694,7 +1694,8 @@ static void usb_ohci_init(OHCIState *ohci, DeviceState *dev,
+     usb_bus_new(&ohci->bus, dev);
+     ohci->num_ports = num_ports;
+     for (i = 0; i < num_ports; i++) {
+-        usb_register_port(&ohci->bus, &ohci->rhport[i].port, ohci, i, NULL, &ohci_port_ops);
++        usb_register_port(&ohci->bus, &ohci->rhport[i].port, ohci, i, NULL, &ohci_port_ops,
++                          USB_SPEED_MASK_LOW | USB_SPEED_MASK_FULL);
+     }
+ 
+     ohci->async_td = 0;
+diff --git a/hw/usb-uhci.c b/hw/usb-uhci.c
+index a3dc6bd..e8493ec 100644
+--- a/hw/usb-uhci.c
++++ b/hw/usb-uhci.c
+@@ -1089,7 +1089,8 @@ static int usb_uhci_common_initfn(UHCIState *s)
+ 
+     usb_bus_new(&s->bus, &s->dev.qdev);
+     for(i = 0; i < NB_PORTS; i++) {
+-        usb_register_port(&s->bus, &s->ports[i].port, s, i, NULL, &uhci_port_ops);
++        usb_register_port(&s->bus, &s->ports[i].port, s, i, NULL, &uhci_port_ops,
++                          USB_SPEED_MASK_LOW | USB_SPEED_MASK_FULL);
+     }
+     s->frame_timer = qemu_new_timer(vm_clock, uhci_frame_timer, s);
+     s->num_ports_vmstate = NB_PORTS;
+diff --git a/hw/usb.h b/hw/usb.h
+index 5e54e1f..5408910 100644
+--- a/hw/usb.h
++++ b/hw/usb.h
+@@ -44,6 +44,12 @@
+ #define USB_SPEED_LOW   0
+ #define USB_SPEED_FULL  1
+ #define USB_SPEED_HIGH  2
++#define USB_SPEED_SUPER 3
++
++#define USB_SPEED_MASK_LOW   (1 << USB_SPEED_LOW)
++#define USB_SPEED_MASK_FULL  (1 << USB_SPEED_FULL)
++#define USB_SPEED_MASK_HIGH  (1 << USB_SPEED_HIGH)
++#define USB_SPEED_MASK_SUPER (1 << USB_SPEED_SUPER)
+ 
+ #define USB_STATE_NOTATTACHED 0
+ #define USB_STATE_ATTACHED    1
+@@ -222,6 +228,7 @@ typedef struct USBPortOps {
+ /* USB port on which a device can be connected */
+ struct USBPort {
+     USBDevice *dev;
++    int speedmask;
+     USBPortOps *ops;
+     void *opaque;
+     USBDevice *pdev;
+@@ -335,7 +342,7 @@ USBDevice *usb_create(USBBus *bus, const char *name);
+ USBDevice *usb_create_simple(USBBus *bus, const char *name);
+ USBDevice *usbdevice_create(const char *cmdline);
+ void usb_register_port(USBBus *bus, USBPort *port, void *opaque, int index,
+-                       USBDevice *pdev, USBPortOps *ops);
++                       USBDevice *pdev, USBPortOps *ops, int speedmask);
+ void usb_unregister_port(USBBus *bus, USBPort *port);
+ int usb_device_attach(USBDevice *dev);
+ int usb_device_detach(USBDevice *dev);
+-- 
+1.7.3.2
+

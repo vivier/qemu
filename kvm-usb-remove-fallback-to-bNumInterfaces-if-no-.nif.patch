@@ -1,0 +1,57 @@
+From 35fbe98b3e6c5bdcce101b903c9ae1db8e0e6283 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:48 -0300
+Subject: [RHEL6 qemu-kvm PATCH 073/115] usb: remove fallback to bNumInterfaces if no .nif
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-73-git-send-email-kraxel@redhat.com>
+Patchwork-id: 28396
+O-Subject: [RHEL-6.2 kvm PATCH 072/115] usb: remove fallback to bNumInterfaces if no .nif
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Brad Hards <bradh@frogmouth.net>
+
+All callers have been updated.
+
+Signed-off-by: Brad Hards <bradh@frogmouth.net>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit fef13fa8e4de9255cad32192ff76e007568cf1b3)
+---
+ hw/usb-desc.c |    5 ++---
+ 1 files changed, 2 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-desc.c |    5 ++---
+ 1 files changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/hw/usb-desc.c b/hw/usb-desc.c
+index 62591f2..a784155 100644
+--- a/hw/usb-desc.c
++++ b/hw/usb-desc.c
+@@ -76,7 +76,7 @@ int usb_desc_config(const USBDescConfig *conf, uint8_t *dest, size_t len)
+ {
+     uint8_t  bLength = 0x09;
+     uint16_t wTotalLength = 0;
+-    int i, rc, count;
++    int i, rc;
+ 
+     if (len < bLength) {
+         return -1;
+@@ -91,8 +91,7 @@ int usb_desc_config(const USBDescConfig *conf, uint8_t *dest, size_t len)
+     dest[0x08] = conf->bMaxPower;
+     wTotalLength += bLength;
+ 
+-    count = conf->nif ? conf->nif : conf->bNumInterfaces;
+-    for (i = 0; i < count; i++) {
++    for (i = 0; i < conf->nif; i++) {
+         rc = usb_desc_iface(conf->ifs + i, dest + wTotalLength, len - wTotalLength);
+         if (rc < 0) {
+             return rc;
+-- 
+1.7.3.2
+

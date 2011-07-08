@@ -1,0 +1,73 @@
+From 6ce51196c9febf79ead9665cf4b4d2bc955e846a Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:01 -0300
+Subject: [RHEL6 qemu-kvm PATCH 028/115] usb: add usb_wakeup() + wakeup callback to port ops
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-26-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27884
+O-Subject: [RHEL-6.2 kvm PATCH 025/115] usb: add usb_wakeup() + wakeup callback to port ops
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Add wakeup callback to port ops for remote wakeup handling.
+Also add a usb_wakeup() function for devices which want
+trigger a remote wakeup.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 01eacab6e95267fd894d0c1013aa5bf55c320dc8)
+---
+ hw/usb.c |    7 +++++++
+ hw/usb.h |    2 ++
+ 2 files changed, 9 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb.c |    7 +++++++
+ hw/usb.h |    2 ++
+ 2 files changed, 9 insertions(+), 0 deletions(-)
+
+diff --git a/hw/usb.c b/hw/usb.c
+index 2eda86a..ba720b4 100644
+--- a/hw/usb.c
++++ b/hw/usb.c
+@@ -49,6 +49,13 @@ void usb_attach(USBPort *port, USBDevice *dev)
+     }
+ }
+ 
++void usb_wakeup(USBDevice *dev)
++{
++    if (dev->remote_wakeup && dev->port && dev->port->ops->wakeup) {
++        dev->port->ops->wakeup(dev);
++    }
++}
++
+ /**********************/
+ 
+ /* generic USB device helpers (you are not forced to use them when
+diff --git a/hw/usb.h b/hw/usb.h
+index 4363dc8..5e54e1f 100644
+--- a/hw/usb.h
++++ b/hw/usb.h
+@@ -216,6 +216,7 @@ struct USBDeviceInfo {
+ typedef struct USBPortOps {
+     void (*attach)(USBPort *port);
+     void (*detach)(USBPort *port);
++    void (*wakeup)(USBDevice *dev);
+ } USBPortOps;
+ 
+ /* USB port on which a device can be connected */
+@@ -271,6 +272,7 @@ static inline void usb_cancel_packet(USBPacket * p)
+ }
+ 
+ void usb_attach(USBPort *port, USBDevice *dev);
++void usb_wakeup(USBDevice *dev);
+ int usb_generic_handle_packet(USBDevice *s, USBPacket *p);
+ int set_usb_string(uint8_t *buf, const char *str);
+ void usb_send_msg(USBDevice *dev, int msg);
+-- 
+1.7.3.2
+

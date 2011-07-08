@@ -1,0 +1,145 @@
+From d715c569aa9e8b0421c9fda8716a9995286ca809 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:42:00 -0300
+Subject: [RHEL6 qemu-kvm PATCH 085/115] usb: add usb_handle_packet
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-85-git-send-email-kraxel@redhat.com>
+Patchwork-id: 28403
+O-Subject: [RHEL-6.2 kvm PATCH 084/115] usb: add usb_handle_packet
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Add a usb_handle_packet function, put it into use everywhere.
+Right now it just calls dev->info->handle_packet(), that will
+change in future patches though.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 53aa8c0e2af473050fa765533a8d69f3450788ab)
+---
+ hw/usb-hub.c  |    2 +-
+ hw/usb-musb.c |    2 +-
+ hw/usb-ohci.c |    4 ++--
+ hw/usb-uhci.c |    2 +-
+ hw/usb.c      |   17 +++++++++++++++--
+ hw/usb.h      |    2 ++
+ 6 files changed, 22 insertions(+), 7 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-hub.c  |    2 +-
+ hw/usb-musb.c |    2 +-
+ hw/usb-ohci.c |    4 ++--
+ hw/usb-uhci.c |    2 +-
+ hw/usb.c      |   17 +++++++++++++++--
+ hw/usb.h      |    2 ++
+ 6 files changed, 22 insertions(+), 7 deletions(-)
+
+diff --git a/hw/usb-hub.c b/hw/usb-hub.c
+index f040e8a..b8c33be 100644
+--- a/hw/usb-hub.c
++++ b/hw/usb-hub.c
+@@ -495,7 +495,7 @@ static int usb_hub_broadcast_packet(USBHubState *s, USBPacket *p)
+         port = &s->ports[i];
+         dev = port->port.dev;
+         if (dev && (port->wPortStatus & PORT_STAT_ENABLE)) {
+-            ret = dev->info->handle_packet(dev, p);
++            ret = usb_handle_packet(dev, p);
+             if (ret != USB_RET_NODEV) {
+                 return ret;
+             }
+diff --git a/hw/usb-musb.c b/hw/usb-musb.c
+index 4a0f53d..cbda6b8 100644
+--- a/hw/usb-musb.c
++++ b/hw/usb-musb.c
+@@ -590,7 +590,7 @@ static inline void musb_packet(MUSBState *s, MUSBEndPoint *ep,
+     ep->packey[dir].dir = dir;
+ 
+     if (s->port.dev)
+-        ret = s->port.dev->info->handle_packet(s->port.dev, &ep->packey[dir].p);
++        ret = usb_handle_packet(s->port.dev, &ep->packey[dir].p);
+     else
+         ret = USB_RET_NODEV;
+ 
+diff --git a/hw/usb-ohci.c b/hw/usb-ohci.c
+index 16a23e5..40643b5 100644
+--- a/hw/usb-ohci.c
++++ b/hw/usb-ohci.c
+@@ -749,7 +749,7 @@ static int ohci_service_iso_td(OHCIState *ohci, struct ohci_ed *ed,
+             ohci->usb_packet.devep = OHCI_BM(ed->flags, ED_EN);
+             ohci->usb_packet.data = ohci->usb_buf;
+             ohci->usb_packet.len = len;
+-            ret = dev->info->handle_packet(dev, &ohci->usb_packet);
++            ret = usb_handle_packet(dev, &ohci->usb_packet);
+             if (ret != USB_RET_NODEV)
+                 break;
+         }
+@@ -937,7 +937,7 @@ static int ohci_service_td(OHCIState *ohci, struct ohci_ed *ed)
+             ohci->usb_packet.devep = OHCI_BM(ed->flags, ED_EN);
+             ohci->usb_packet.data = ohci->usb_buf;
+             ohci->usb_packet.len = len;
+-            ret = dev->info->handle_packet(dev, &ohci->usb_packet);
++            ret = usb_handle_packet(dev, &ohci->usb_packet);
+             if (ret != USB_RET_NODEV)
+                 break;
+         }
+diff --git a/hw/usb-uhci.c b/hw/usb-uhci.c
+index 1505fac..d36f7d3 100644
+--- a/hw/usb-uhci.c
++++ b/hw/usb-uhci.c
+@@ -628,7 +628,7 @@ static int uhci_broadcast_packet(UHCIState *s, USBPacket *p)
+         USBDevice *dev = port->port.dev;
+ 
+         if (dev && (port->ctrl & UHCI_PORT_EN))
+-            ret = dev->info->handle_packet(dev, p);
++            ret = usb_handle_packet(dev, p);
+     }
+ 
+     dprintf("uhci: packet exit. ret %d len %d\n", ret, p->len);
+diff --git a/hw/usb.c b/hw/usb.c
+index 60027c6..966cb0f 100644
+--- a/hw/usb.c
++++ b/hw/usb.c
+@@ -297,9 +297,22 @@ int set_usb_string(uint8_t *buf, const char *str)
+ void usb_send_msg(USBDevice *dev, int msg)
+ {
+     USBPacket p;
++    int ret;
++
+     memset(&p, 0, sizeof(p));
+     p.pid = msg;
+-    dev->info->handle_packet(dev, &p);
+-
++    ret = usb_handle_packet(dev, &p);
+     /* This _must_ be synchronous */
++    assert(ret != USB_RET_ASYNC);
++}
++
++/* Hand over a packet to a device for processing.  Return value
++   USB_RET_ASYNC indicates the processing isn't finished yet, the
++   driver will call usb_packet_complete() when done processing it. */
++int usb_handle_packet(USBDevice *dev, USBPacket *p)
++{
++    int ret;
++
++    ret = dev->info->handle_packet(dev, p);
++    return ret;
+ }
+diff --git a/hw/usb.h b/hw/usb.h
+index 7246953..ab1590d 100644
+--- a/hw/usb.h
++++ b/hw/usb.h
+@@ -262,6 +262,8 @@ struct USBPacket {
+     void *cancel_opaque;
+ };
+ 
++int usb_handle_packet(USBDevice *dev, USBPacket *p);
++
+ /* Defer completion of a USB packet.  The hadle_packet routine should then
+    return USB_RET_ASYNC.  Packets that complete immediately (before
+    handle_packet returns) should not call this method.  */
+-- 
+1.7.3.2
+

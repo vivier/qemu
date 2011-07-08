@@ -1,0 +1,112 @@
+From 5d6426d2d2ac835fdcda16d82761fa39f66d45e5 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:42:22 -0300
+Subject: [RHEL6 qemu-kvm PATCH 106/115] usb-ehci: split trace calls to handle arg count limits
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-107-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27915
+O-Subject: [RHEL-6.2 kvm PATCH 106/115] usb-ehci: split trace calls to handle arg count limits
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 025b168ca674e42896c573fdbddf3090c6dc0d8f)
+---
+ hw/usb-ehci.c |   48 +++++++++++++++++++++++++++---------------------
+ trace-events  |    8 ++++++--
+ 2 files changed, 33 insertions(+), 23 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-ehci.c |   48 +++++++++++++++++++++++++++---------------------
+ trace-events  |    8 ++++++--
+ 2 files changed, 33 insertions(+), 23 deletions(-)
+
+diff --git a/hw/usb-ehci.c b/hw/usb-ehci.c
+index cf92bb7..7d4478a 100644
+--- a/hw/usb-ehci.c
++++ b/hw/usb-ehci.c
+@@ -600,31 +600,37 @@ static int ehci_get_fetch_addr(EHCIState *s, int async)
+ 
+ static void ehci_trace_qh(EHCIQueue *q, target_phys_addr_t addr, EHCIqh *qh)
+ {
+-    trace_usb_ehci_qh(q, addr, qh->next,
+-                      qh->current_qtd, qh->next_qtd, qh->altnext_qtd,
+-                      get_field(qh->epchar, QH_EPCHAR_RL),
+-                      get_field(qh->epchar, QH_EPCHAR_MPLEN),
+-                      get_field(qh->epchar, QH_EPCHAR_EPS),
+-                      get_field(qh->epchar, QH_EPCHAR_EP),
+-                      get_field(qh->epchar, QH_EPCHAR_DEVADDR),
+-                      (bool)(qh->epchar & QH_EPCHAR_C),
+-                      (bool)(qh->epchar & QH_EPCHAR_H),
+-                      (bool)(qh->epchar & QH_EPCHAR_DTC),
+-                      (bool)(qh->epchar & QH_EPCHAR_I));
++    /* need three here due to argument count limits */
++    trace_usb_ehci_qh_ptrs(q, addr, qh->next,
++                           qh->current_qtd, qh->next_qtd, qh->altnext_qtd);
++    trace_usb_ehci_qh_fields(addr,
++                             get_field(qh->epchar, QH_EPCHAR_RL),
++                             get_field(qh->epchar, QH_EPCHAR_MPLEN),
++                             get_field(qh->epchar, QH_EPCHAR_EPS),
++                             get_field(qh->epchar, QH_EPCHAR_EP),
++                             get_field(qh->epchar, QH_EPCHAR_DEVADDR));
++    trace_usb_ehci_qh_bits(addr,
++                           (bool)(qh->epchar & QH_EPCHAR_C),
++                           (bool)(qh->epchar & QH_EPCHAR_H),
++                           (bool)(qh->epchar & QH_EPCHAR_DTC),
++                           (bool)(qh->epchar & QH_EPCHAR_I));
+ }
+ 
+ static void ehci_trace_qtd(EHCIQueue *q, target_phys_addr_t addr, EHCIqtd *qtd)
+ {
+-    trace_usb_ehci_qtd(q, addr, qtd->next, qtd->altnext,
+-                       get_field(qtd->token, QTD_TOKEN_TBYTES),
+-                       get_field(qtd->token, QTD_TOKEN_CPAGE),
+-                       get_field(qtd->token, QTD_TOKEN_CERR),
+-                       get_field(qtd->token, QTD_TOKEN_PID),
+-                       (bool)(qtd->token & QTD_TOKEN_IOC),
+-                       (bool)(qtd->token & QTD_TOKEN_ACTIVE),
+-                       (bool)(qtd->token & QTD_TOKEN_HALT),
+-                       (bool)(qtd->token & QTD_TOKEN_BABBLE),
+-                       (bool)(qtd->token & QTD_TOKEN_XACTERR));
++    /* need three here due to argument count limits */
++    trace_usb_ehci_qtd_ptrs(q, addr, qtd->next, qtd->altnext);
++    trace_usb_ehci_qtd_fields(addr,
++                              get_field(qtd->token, QTD_TOKEN_TBYTES),
++                              get_field(qtd->token, QTD_TOKEN_CPAGE),
++                              get_field(qtd->token, QTD_TOKEN_CERR),
++                              get_field(qtd->token, QTD_TOKEN_PID));
++    trace_usb_ehci_qtd_bits(addr,
++                            (bool)(qtd->token & QTD_TOKEN_IOC),
++                            (bool)(qtd->token & QTD_TOKEN_ACTIVE),
++                            (bool)(qtd->token & QTD_TOKEN_HALT),
++                            (bool)(qtd->token & QTD_TOKEN_BABBLE),
++                            (bool)(qtd->token & QTD_TOKEN_XACTERR));
+ }
+ 
+ static void ehci_trace_itd(EHCIState *s, target_phys_addr_t addr, EHCIitd *itd)
+diff --git a/trace-events b/trace-events
+index f30da5a..fcc50b5 100644
+--- a/trace-events
++++ b/trace-events
+@@ -89,8 +89,12 @@ disable usb_ehci_mmio_writel(uint32_t addr, const char *str, uint32_t val) "wr m
+ disable usb_ehci_mmio_change(uint32_t addr, const char *str, uint32_t new, uint32_t old) "ch mmio %04x [%s] = %x [old: %x]"
+ disable usb_ehci_usbsts(const char *sts, int state) "usbsts %s %d"
+ disable usb_ehci_state(const char *schedule, const char *state) "%s schedule %s"
+-disable usb_ehci_qh(void *q, uint32_t addr, uint32_t next, uint32_t c_qtd, uint32_t n_qtd, uint32_t a_qtd, int rl, int mplen, int eps, int ep, int devaddr, int c, int h, int dtc, int i) "q %p - QH @ %08x: next %08x qtds %08x,%08x,%08x - rl %d, mplen %d, eps %d, ep %d, dev %d, c %d, h %d, dtc %d, i %d"
+-disable usb_ehci_qtd(void *q, uint32_t addr, uint32_t next, uint32_t altnext, int tbytes, int cpage, int cerr, int pid, int ioc, int active, int halt, int babble, int xacterr) "q %p - QTD @ %08x: next %08x altnext %08x - tbytes %d, cpage %d, cerr %d, pid %d, ioc %d, active %d, halt %d, babble %d, xacterr %d"
++disable usb_ehci_qh_ptrs(void *q, uint32_t addr, uint32_t next, uint32_t c_qtd, uint32_t n_qtd, uint32_t a_qtd) "q %p - QH @ %08x: next %08x qtds %08x,%08x,%08x"
++disable usb_ehci_qh_fields(uint32_t addr, int rl, int mplen, int eps, int ep, int devaddr) "QH @ %08x - rl %d, mplen %d, eps %d, ep %d, dev %d"
++disable usb_ehci_qh_bits(uint32_t addr, int c, int h, int dtc, int i) "QH @ %08x - c %d, h %d, dtc %d, i %d"
++disable usb_ehci_qtd_ptrs(void *q, uint32_t addr, uint32_t next, uint32_t altnext) "q %p - QTD @ %08x: next %08x altnext %08x"
++disable usb_ehci_qtd_fields(uint32_t addr, int tbytes, int cpage, int cerr, int pid) "QTD @ %08x - tbytes %d, cpage %d, cerr %d, pid %d"
++disable usb_ehci_qtd_bits(uint32_t addr, int ioc, int active, int halt, int babble, int xacterr) "QTD @ %08x - ioc %d, active %d, halt %d, babble %d, xacterr %d"
+ disable usb_ehci_itd(uint32_t addr, uint32_t next, uint32_t mplen, uint32_t mult, uint32_t ep, uint32_t devaddr) "ITD @ %08x: next %08x - mplen %d, mult %d, ep %d, dev %d"
+ disable usb_ehci_port_attach(uint32_t port, const char *device) "attach port #%d - %s"
+ disable usb_ehci_port_detach(uint32_t port) "detach port #%d"
+-- 
+1.7.3.2
+

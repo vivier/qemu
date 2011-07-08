@@ -1,0 +1,53 @@
+From 4582ea204c026f43371258435f1b92e2b952b45b Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:28 -0300
+Subject: [RHEL6 qemu-kvm PATCH 053/115] Add bootindex handling into usb storage device.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-53-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27905
+O-Subject: [RHEL-6.2 kvm PATCH 052/115] Add bootindex handling into usb storage device.
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Gleb Natapov <gleb@redhat.com>
+
+Signed-off-by: Gleb Natapov <gleb@redhat.com>
+Signed-off-by: Gleb Natapov <gleb@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit cf8ce30d03339861a46c31aa44c11279c282f2b0)
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/usb-msd.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-msd.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/hw/usb-msd.c b/hw/usb-msd.c
+index 21126e5..ba6dc46 100644
+--- a/hw/usb-msd.c
++++ b/hw/usb-msd.c
+@@ -529,6 +529,7 @@ static int usb_msd_initfn(USBDevice *dev)
+         }
+     }
+ 
++    add_boot_device_path(s->conf.bootindex, &dev->qdev, "/disk@0,0");
+     return 0;
+ }
+ 
+@@ -589,6 +590,7 @@ static USBDevice *usb_msd_init(const char *filename)
+ static struct USBDeviceInfo msd_info = {
+     .product_desc   = "QEMU USB MSD",
+     .qdev.name      = "usb-storage",
++    .qdev.fw_name      = "storage",
+     .qdev.size      = sizeof(MSDState),
+     .usb_desc       = &desc,
+     .init           = usb_msd_initfn,
+-- 
+1.7.3.2
+

@@ -1,0 +1,76 @@
+From f41b9cb78b30b700ff54b1191e1aed5290d4ba78 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:40:43 -0300
+Subject: [RHEL6 qemu-kvm PATCH 010/115] usb-linux: Get the active configuration from sysfs rather then asking the dev
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-8-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27856
+O-Subject: [RHEL-6.2 kvm PATCH 007/115] usb-linux: Get the active configuration from sysfs rather then asking the dev
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Hans de Goede <hdegoede@redhat.com>
+
+Some devices seem to choke on receiving a USB_REQ_GET_CONFIGURATION ctrl msg
+(witnessed with a digital picture frame usb id 1908:1320).
+When usb_fs_type == USB_FS_SYS, the active configuration can be read directly
+from sysfs, which allows using this device through qemu's usb redirection.
+More in general it seems a good idea to not send needless control msg's to
+devices, esp. as the code in question is called every time a set_interface
+is done. Which happens multiple times during virtual machine startup, and
+when device drivers are activating the usb device.
+
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 2cc59d8cb0ebcfa9cf3476c0528e50478997ab0c)
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ usb-linux.c |   19 +++++++++++++++++++
+ 1 files changed, 19 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ usb-linux.c |   19 +++++++++++++++++++
+ 1 files changed, 19 insertions(+), 0 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index 446bc58..8ad0d66 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -152,6 +152,8 @@ static QTAILQ_HEAD(, USBHostDevice) hostdevs = QTAILQ_HEAD_INITIALIZER(hostdevs)
+ static int usb_host_close(USBHostDevice *dev);
+ static int parse_filter(const char *spec, struct USBAutoFilter *f);
+ static void usb_host_auto_check(void *unused);
++static int usb_host_read_file(char *line, size_t line_size,
++                            const char *device_file, const char *device_name);
+ 
+ static int is_isoc(USBHostDevice *s, int ep)
+ {
+@@ -762,6 +764,23 @@ static int usb_linux_get_configuration(USBHostDevice *s)
+     struct usb_ctrltransfer ct;
+     int ret;
+ 
++    if (usb_fs_type == USB_FS_SYS) {
++        char device_name[32], line[1024];
++        int configuration;
++
++        sprintf(device_name, "%d-%d", s->bus_num, s->devpath);
++
++        if (!usb_host_read_file(line, sizeof(line), "bConfigurationValue",
++                                device_name)) {
++            goto usbdevfs;
++        }
++        if (sscanf(line, "%d", &configuration) != 1) {
++            goto usbdevfs;
++        }
++        return configuration;
++    }
++
++usbdevfs:
+     ct.bRequestType = USB_DIR_IN;
+     ct.bRequest = USB_REQ_GET_CONFIGURATION;
+     ct.wValue = 0;
+-- 
+1.7.3.2
+

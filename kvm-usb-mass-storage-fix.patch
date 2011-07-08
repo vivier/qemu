@@ -1,0 +1,46 @@
+From d744daaff71a332fdce2b86a35a7e4ad7a9a893e Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:13 -0300
+Subject: [RHEL6 qemu-kvm PATCH 040/115] usb: mass storage fix
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-38-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27872
+O-Subject: [RHEL-6.2 kvm PATCH 037/115] usb: mass storage fix
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Initialize scsi_len with zero when starting a new request, so any
+stuff leftover from the previous request is cleared out.  This may
+happen in case the data returned by the scsi command doesn't fit
+into the buffer provided by the guest.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit ef0bdf77d7070494692cbccd80c4c8f08c85c240)
+---
+ hw/usb-msd.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-msd.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/hw/usb-msd.c b/hw/usb-msd.c
+index f56595e..21126e5 100644
+--- a/hw/usb-msd.c
++++ b/hw/usb-msd.c
+@@ -363,6 +363,7 @@ static int usb_msd_handle_data(USBDevice *dev, USBPacket *p)
+             DPRINTF("Command tag 0x%x flags %08x len %d data %d\n",
+                     s->tag, cbw.flags, cbw.cmd_len, s->data_len);
+             s->residue = 0;
++            s->scsi_len = 0;
+             s->scsi_dev->info->send_command(s->scsi_dev, s->tag, cbw.cmd, 0);
+             /* ??? Should check that USB and SCSI data transfer
+                directions match.  */
+-- 
+1.7.3.2
+

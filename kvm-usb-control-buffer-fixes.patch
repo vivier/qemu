@@ -1,0 +1,69 @@
+From 7162acfc0b59441bcce6a5c903e5ce86e73a6aa8 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:39 -0300
+Subject: [RHEL6 qemu-kvm PATCH 064/115] usb: control buffer fixes
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-64-git-send-email-kraxel@redhat.com>
+Patchwork-id: 28386
+O-Subject: [RHEL-6.2 kvm PATCH 063/115] usb: control buffer fixes
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Hans de Goede <hdegoede@redhat.com>
+
+Windows allows control transfers to pass up to 4k of data, so raise our
+control buffer size to 4k. For control out transfers the usb core code copies
+the control request data to a buffer before calling the device's handle_control
+callback. Add a check for overflowing the buffer before copying the data.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+(cherry picked from commit 19f3322379c25a235eb1ec6335676549109fa625)
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/usb.c |    6 ++++++
+ hw/usb.h |    2 +-
+ 2 files changed, 7 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb.c |    6 ++++++
+ hw/usb.h |    2 +-
+ 2 files changed, 7 insertions(+), 1 deletions(-)
+
+diff --git a/hw/usb.c b/hw/usb.c
+index 82a6217..d8c0a75 100644
+--- a/hw/usb.c
++++ b/hw/usb.c
+@@ -93,6 +93,12 @@ static int do_token_setup(USBDevice *s, USBPacket *p)
+             s->setup_len = ret;
+         s->setup_state = SETUP_STATE_DATA;
+     } else {
++        if (s->setup_len > sizeof(s->data_buf)) {
++            fprintf(stderr,
++                "usb_generic_handle_packet: ctrl buffer too small (%d > %zu)\n",
++                s->setup_len, sizeof(s->data_buf));
++            return USB_RET_STALL;
++        }
+         if (s->setup_len == 0)
+             s->setup_state = SETUP_STATE_ACK;
+         else
+diff --git a/hw/usb.h b/hw/usb.h
+index 74f4fae..4504fdf 100644
+--- a/hw/usb.h
++++ b/hw/usb.h
+@@ -163,7 +163,7 @@ struct USBDevice {
+ 
+     int32_t state;
+     uint8_t setup_buf[8];
+-    uint8_t data_buf[1024];
++    uint8_t data_buf[4096];
+     int32_t remote_wakeup;
+     int32_t setup_state;
+     int32_t setup_len;
+-- 
+1.7.3.2
+

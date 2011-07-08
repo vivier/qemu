@@ -1,0 +1,55 @@
+From 3ca7d75e23d412fd1c69760bfbedbd4523c6ab68 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:29 -0300
+Subject: [RHEL6 qemu-kvm PATCH 054/115] usb: trivial spelling fixes
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-54-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27898
+O-Subject: [RHEL-6.2 kvm PATCH 053/115] usb: trivial spelling fixes
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Brad Hards <bradh@frogmouth.net>
+
+Signed-off-by: Brad Hards <bradh@frogmouth.net>
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+(cherry picked from commit 94843f66ab06f45240d2afa7a648c5722da14dfb)
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/usb-msd.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-msd.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/hw/usb-msd.c b/hw/usb-msd.c
+index ba6dc46..b8e5dca 100644
+--- a/hw/usb-msd.c
++++ b/hw/usb-msd.c
+@@ -32,7 +32,7 @@ do { printf("usb-msd: " fmt , ## __VA_ARGS__); } while (0)
+ 
+ enum USBMSDMode {
+     USB_MSDM_CBW, /* Command Block.  */
+-    USB_MSDM_DATAOUT, /* Tranfer data to device.  */
++    USB_MSDM_DATAOUT, /* Transfer data to device.  */
+     USB_MSDM_DATAIN, /* Transfer data from device.  */
+     USB_MSDM_CSW /* Command Status.  */
+ };
+@@ -251,7 +251,7 @@ static void usb_msd_command_complete(SCSIBus *bus, int reason, uint32_t tag,
+         usb_msd_copy_data(s);
+         if (s->usb_len == 0) {
+             /* Set s->packet to NULL before calling usb_packet_complete
+-               because annother request may be issued before
++               because another request may be issued before
+                usb_packet_complete returns.  */
+             DPRINTF("Packet complete %p\n", p);
+             s->packet = NULL;
+-- 
+1.7.3.2
+

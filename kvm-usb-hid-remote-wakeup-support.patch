@@ -1,0 +1,44 @@
+From 354907727ea12a34c5936cba5090155fb339b61c Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:04 -0300
+Subject: [RHEL6 qemu-kvm PATCH 031/115] usb: hid: remote wakeup support.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-29-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27871
+O-Subject: [RHEL-6.2 kvm PATCH 028/115] usb: hid: remote wakeup support.
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Add usb_wakeup() call to the hid driver so remote wakeup actually works.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit ac57bbb614ace4f7b8b965562826a7f7fda00cdc)
+---
+ hw/usb-hid.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-hid.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/hw/usb-hid.c b/hw/usb-hid.c
+index c41771b..57b49d1 100644
+--- a/hw/usb-hid.c
++++ b/hw/usb-hid.c
+@@ -439,6 +439,8 @@ static void usb_hid_changed(USBHIDState *hs)
+ 
+     if (hs->datain)
+         hs->datain(hs->datain_opaque);
++
++    usb_wakeup(&hs->dev);
+ }
+ 
+ static void usb_pointer_event_clear(USBPointerEvent *e, int buttons) {
+-- 
+1.7.3.2
+

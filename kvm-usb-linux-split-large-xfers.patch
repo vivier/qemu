@@ -1,0 +1,157 @@
+From f36fc86a5730383f2bfa2beb72e430cef4f63557 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:57 -0300
+Subject: [RHEL6 qemu-kvm PATCH 082/115] usb-linux: split large xfers
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-82-git-send-email-kraxel@redhat.com>
+Patchwork-id: 28404
+O-Subject: [RHEL-6.2 kvm PATCH 081/115] usb-linux: split large xfers
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Add support for splitting large transfers into multiple smaller ones.
+This is needed for the upcoming EHCI emulation which allows guests
+to submit requests up to 20k in size.  The linux kernel allows 16k
+max size though.
+
+Based on a patch from David Ahern, see
+http://www.mail-archive.com/qemu-devel@nongnu.org/msg30337.html
+
+Cc: David Ahern <daahern@cisco.com>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 71138531d3b19a211d63170d78592513f14ae59b)
+
+Conflicts:
+
+	usb-linux.c
+---
+ usb-linux.c |   67 +++++++++++++++++++++++++++++++++++++---------------------
+ 1 files changed, 43 insertions(+), 24 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ usb-linux.c |   67 +++++++++++++++++++++++++++++++++++++---------------------
+ 1 files changed, 43 insertions(+), 24 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index 5ea0b79..9cf7c11 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -89,6 +89,9 @@ static int usb_fs_type;
+ #define ISO_URB_COUNT 3
+ #define INVALID_EP_TYPE 255
+ 
++/* devio.c limits single requests to 16k */
++#define MAX_USBFS_BUFFER_SIZE 16384
++
+ typedef struct AsyncURB AsyncURB;
+ 
+ struct endp_data {
+@@ -229,6 +232,7 @@ struct AsyncURB
+ 
+     /* For regular async urbs */
+     USBPacket     *packet;
++    int more; /* large transfer, more urbs follow */
+ 
+     /* For buffered iso handling */
+     int iso_frame_idx; /* -1 means in flight */
+@@ -290,7 +294,7 @@ static void async_complete(void *opaque)
+         if (p) {
+             switch (aurb->urb.status) {
+             case 0:
+-                p->len = aurb->urb.actual_length;
++                p->len += aurb->urb.actual_length;
+                 break;
+ 
+             case -EPIPE:
+@@ -305,7 +309,7 @@ static void async_complete(void *opaque)
+ 
+             if (aurb->urb.type == USBDEVFS_URB_TYPE_CONTROL) {
+                 usb_generic_async_ctrl_complete(&s->dev, p);
+-            } else {
++            } else if (!aurb->more) {
+                 usb_packet_complete(&s->dev, p);
+             }
+         }
+@@ -643,7 +647,8 @@ static int usb_host_handle_data(USBDevice *dev, USBPacket *p)
+     USBHostDevice *s = DO_UPCAST(USBHostDevice, dev, dev);
+     struct usbdevfs_urb *urb;
+     AsyncURB *aurb;
+-    int ret;
++    int ret, rem;
++    uint8_t *pbuf;
+     uint8_t ep;
+ 
+     if (!is_valid(s, p->devep)) {
+@@ -670,31 +675,45 @@ static int usb_host_handle_data(USBDevice *dev, USBPacket *p)
+         return usb_host_handle_iso_data(s, p, p->pid == USB_TOKEN_IN);
+     }
+ 
+-    aurb = async_alloc(s);
+-    aurb->packet = p;
+-
+-    urb = &aurb->urb;
+-
+-    urb->endpoint      = ep;
+-    urb->buffer        = p->data;
+-    urb->buffer_length = p->len;
+-    urb->type          = USBDEVFS_URB_TYPE_BULK;
+-    urb->usercontext   = s;
++    rem = p->len;
++    pbuf = p->data;
++    p->len = 0;
++    while (rem) {
++        aurb = async_alloc(s);
++        aurb->packet = p;
++
++        urb = &aurb->urb;
++        urb->endpoint      = ep;
++        urb->type          = USBDEVFS_URB_TYPE_BULK;
++        urb->usercontext   = s;
++        urb->buffer        = pbuf;
++
++        if (rem > MAX_USBFS_BUFFER_SIZE) {
++            urb->buffer_length = MAX_USBFS_BUFFER_SIZE;
++            aurb->more         = 1;
++        } else {
++            urb->buffer_length = rem;
++            aurb->more         = 0;
++        }
++        pbuf += urb->buffer_length;
++        rem  -= urb->buffer_length;
+ 
+-    ret = ioctl(s->fd, USBDEVFS_SUBMITURB, urb);
++        ret = ioctl(s->fd, USBDEVFS_SUBMITURB, urb);
+ 
+-    DPRINTF("husb: data submit. ep 0x%x len %u aurb %p\n", urb->endpoint, p->len, aurb);
++        DPRINTF("husb: data submit: ep 0x%x, len %u, more %d, packet %p, aurb %p\n",
++                urb->endpoint, urb->buffer_length, aurb->more, p, aurb);
+ 
+-    if (ret < 0) {
+-        DPRINTF("husb: submit failed. errno %d\n", errno);
+-        async_free(aurb);
++        if (ret < 0) {
++            DPRINTF("husb: submit failed. errno %d\n", errno);
++            async_free(aurb);
+ 
+-        switch(errno) {
+-        case ETIMEDOUT:
+-            return USB_RET_NAK;
+-        case EPIPE:
+-        default:
+-            return USB_RET_STALL;
++            switch(errno) {
++            case ETIMEDOUT:
++                return USB_RET_NAK;
++            case EPIPE:
++            default:
++                return USB_RET_STALL;
++            }
+         }
+     }
+ 
+-- 
+1.7.3.2
+

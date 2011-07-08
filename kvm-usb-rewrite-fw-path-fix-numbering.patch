@@ -1,0 +1,128 @@
+From 17a4b72dfadd3d3ef541c9ba27a1f44e469eace4 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:16 -0300
+Subject: [RHEL6 qemu-kvm PATCH 043/115] usb: rewrite fw path, fix numbering
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-41-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27877
+O-Subject: [RHEL-6.2 kvm PATCH 040/115] usb: rewrite fw path, fix numbering
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+This patch rewrites the firmware path code to use the physical port
+location tracking just added to the qemu usb core.  It also fixes the
+port numbering to start with "1" in the firmware path.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 70d31cb22cb67745741b2bb349c9c7c3a184f88b)
+---
+ hw/usb-bus.c |   68 ++++++++++++++++++++++-----------------------------------
+ 1 files changed, 26 insertions(+), 42 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-bus.c |   68 ++++++++++++++++++++++-----------------------------------
+ 1 files changed, 26 insertions(+), 42 deletions(-)
+
+diff --git a/hw/usb-bus.c b/hw/usb-bus.c
+index 8888732..79a493e 100644
+--- a/hw/usb-bus.c
++++ b/hw/usb-bus.c
+@@ -7,14 +7,14 @@
+ static void usb_bus_dev_print(Monitor *mon, DeviceState *qdev, int indent);
+ 
+ static char *usb_get_dev_path(DeviceState *dev);
+-static char *usbbus_get_fw_dev_path(DeviceState *dev);
++static char *usb_get_fw_dev_path(DeviceState *qdev);
+ 
+ static struct BusInfo usb_bus_info = {
+     .name      = "USB",
+     .size      = sizeof(USBBus),
+     .print_dev = usb_bus_dev_print,
+     .get_dev_path = usb_get_dev_path,
+-    .get_fw_dev_path = usbbus_get_fw_dev_path,
++    .get_fw_dev_path = usb_get_fw_dev_path,
+     .props      = (Property[]) {
+         DEFINE_PROP_STRING("port", USBDevice, port_path),
+         DEFINE_PROP_END_OF_LIST()
+@@ -276,6 +276,30 @@ static char *usb_get_dev_path(DeviceState *qdev)
+     return qemu_strdup(dev->port->path);
+ }
+ 
++static char *usb_get_fw_dev_path(DeviceState *qdev)
++{
++    USBDevice *dev = DO_UPCAST(USBDevice, qdev, qdev);
++    char *fw_path, *in;
++    int pos = 0;
++    long nr;
++
++    fw_path = qemu_malloc(32 + strlen(dev->port->path) * 6);
++    in = dev->port->path;
++    while (true) {
++        nr = strtol(in, &in, 10);
++        if (in[0] == '.') {
++            /* some hub between root port and device */
++            pos += sprintf(fw_path + pos, "hub@%ld/", nr);
++            in++;
++        } else {
++            /* the device itself */
++            pos += sprintf(fw_path + pos, "%s@%ld", qdev_fw_name(qdev), nr);
++            break;
++        }
++    }
++    return fw_path;
++}
++
+ void usb_info(Monitor *mon)
+ {
+     USBBus *bus;
+@@ -346,43 +370,3 @@ USBDevice *usbdevice_create(const char *cmdline)
+     }
+     return usb->usbdevice_init(params);
+ }
+-
+-static int usbbus_get_fw_dev_path_helper(USBDevice *d, USBBus *bus, char *p,
+-                                         int len)
+-{
+-    int l = 0;
+-    USBPort *port;
+-
+-    QTAILQ_FOREACH(port, &bus->used, next) {
+-        if (port->dev == d) {
+-            if (port->pdev) {
+-                l = usbbus_get_fw_dev_path_helper(port->pdev, bus, p, len);
+-            }
+-            l += snprintf(p + l, len - l, "%s@%x/", qdev_fw_name(&d->qdev),
+-                          port->index);
+-            break;
+-        }
+-    }
+-
+-    return l;
+-}
+-
+-static char *usbbus_get_fw_dev_path(DeviceState *dev)
+-{
+-    USBDevice *d = (USBDevice*)dev;
+-    USBBus *bus = usb_bus_from_device(d);
+-    char path[100];
+-    int l;
+-
+-    assert(d->attached != 0);
+-
+-    l = usbbus_get_fw_dev_path_helper(d, bus, path, sizeof(path));
+-
+-    if (l == 0) {
+-        abort();
+-    }
+-
+-    path[l-1] = '\0';
+-
+-    return strdup(path);
+-}
+-- 
+1.7.3.2
+

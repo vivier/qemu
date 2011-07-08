@@ -1,0 +1,56 @@
+From 55b7bf5e03e858df130025036cc117c9fe4473c1 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:40:54 -0300
+Subject: [RHEL6 qemu-kvm PATCH 021/115] usb storage: serial number support
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-19-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27875
+O-Subject: [RHEL-6.2 kvm PATCH 018/115] usb storage: serial number support
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+If a serial number is present for the drive fill it into the usb
+serialnumber string descriptor.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 4a1e1bc416e99254dcc59a689b3806775ae8dabd)
+---
+ hw/usb-msd.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-msd.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+diff --git a/hw/usb-msd.c b/hw/usb-msd.c
+index 8fbd04f..5d610d6 100644
+--- a/hw/usb-msd.c
++++ b/hw/usb-msd.c
+@@ -481,6 +481,7 @@ static int usb_msd_initfn(USBDevice *dev)
+ {
+     MSDState *s = DO_UPCAST(MSDState, dev, dev);
+     BlockDriverState *bs = s->conf.bs;
++    DriveInfo *dinfo;
+ 
+     if (!bs) {
+         error_report("usb-msd: drive property not set");
+@@ -499,6 +500,11 @@ static int usb_msd_initfn(USBDevice *dev)
+     bdrv_detach(bs, &s->dev.qdev);
+     s->conf.bs = NULL;
+ 
++    dinfo = drive_get_by_blockdev(bs);
++    if (dinfo && dinfo->serial) {
++        usb_desc_set_string(dev, STR_SERIALNUMBER, dinfo->serial);
++    }
++
+     s->dev.speed = USB_SPEED_FULL;
+     scsi_bus_new(&s->bus, &s->dev.qdev, 0, 1, usb_msd_command_complete);
+     s->scsi_dev = scsi_bus_legacy_add_drive(&s->bus, bs, 0);
+-- 
+1.7.3.2
+

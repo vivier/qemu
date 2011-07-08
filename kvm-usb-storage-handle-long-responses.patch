@@ -1,0 +1,59 @@
+From 4ed3daa54193670c2e6158e726e99857934e2d6d Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:12 -0300
+Subject: [RHEL6 qemu-kvm PATCH 039/115] usb storage: handle long responses
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-37-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27869
+O-Subject: [RHEL-6.2 kvm PATCH 036/115] usb storage: handle long responses
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+The scsi layer may return us more data than the guests wants to have.
+Handle this by just ignoring the extra bytes and calling the
+{read,write}_data callback to finish the request.
+
+Seen happening in real life with some extended inquiry command.
+With this patch applied the linux kernel stops reseting the device
+once at boot.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit fa7935c1e1f84b600fcb1983485352b8d99e01d3)
+---
+ hw/usb-msd.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-msd.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/hw/usb-msd.c b/hw/usb-msd.c
+index fbf7dc9..f56595e 100644
+--- a/hw/usb-msd.c
++++ b/hw/usb-msd.c
+@@ -186,7 +186,7 @@ static void usb_msd_copy_data(MSDState *s)
+     s->usb_buf += len;
+     s->scsi_buf += len;
+     s->data_len -= len;
+-    if (s->scsi_len == 0) {
++    if (s->scsi_len == 0 || s->data_len == 0) {
+         if (s->mode == USB_MSDM_DATAIN) {
+             s->scsi_dev->info->read_data(s->scsi_dev, s->tag);
+         } else if (s->mode == USB_MSDM_DATAOUT) {
+@@ -434,7 +434,7 @@ static int usb_msd_handle_data(USBDevice *dev, USBPacket *p)
+             break;
+ 
+         case USB_MSDM_DATAIN:
+-            DPRINTF("Data in %d/%d\n", len, s->data_len);
++            DPRINTF("Data in %d/%d, scsi_len %d\n", len, s->data_len, s->scsi_len);
+             if (len > s->data_len)
+                 len = s->data_len;
+             s->usb_buf = data;
+-- 
+1.7.3.2
+

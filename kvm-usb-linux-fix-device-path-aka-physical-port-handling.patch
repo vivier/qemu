@@ -1,0 +1,199 @@
+From b0f4073779ddc7babb834bc86e803af579701e19 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:53 -0300
+Subject: [RHEL6 qemu-kvm PATCH 078/115] usb-linux: fix device path aka physical port handling
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-78-git-send-email-kraxel@redhat.com>
+Patchwork-id: 28392
+O-Subject: [RHEL-6.2 kvm PATCH 077/115] usb-linux: fix device path aka physical port handling
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+The device path isn't just a number.  It specifies the physical port
+the device is connected to and in case the device is connected via
+usb hub you'll have two numbers there, like this: "5.1".  The first
+specifies the root port where the hub is plugged into, the second
+specifies the port number of the hub where the device is plugged in.
+With multiple hubs chained the string can become longer.
+
+This patch renames devpath to port and makes it a string.   It also
+adapts the sysfs parsing code accordingly.  The parser code is also more
+strict now and skips the root hubs (which can't be assigned anyway).
+
+The "info usbhost" monitor command now prints bus number, (os-assigned)
+device address and physical port for each device.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 5557d820817028603d8a1446b0ddb62f7d267510)
+---
+ usb-linux.c |   42 ++++++++++++++++++++----------------------
+ 1 files changed, 20 insertions(+), 22 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ usb-linux.c |   42 ++++++++++++++++++++----------------------
+ 1 files changed, 20 insertions(+), 22 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index 72fd371..a90b3bd 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -54,7 +54,7 @@ struct usb_ctrltransfer {
+     void *data;
+ };
+ 
+-typedef int USBScanFunc(void *opaque, int bus_num, int addr, int devpath,
++typedef int USBScanFunc(void *opaque, int bus_num, int addr, char *port,
+                         int class_id, int vendor_id, int product_id,
+                         const char *product_name, int speed);
+ 
+@@ -71,6 +71,7 @@ typedef int USBScanFunc(void *opaque, int bus_num, int addr, int devpath,
+ #define USBPROCBUS_PATH "/proc/bus/usb"
+ #define PRODUCT_NAME_SZ 32
+ #define MAX_ENDPOINTS 15
++#define MAX_PORTLEN 16
+ #define USBDEVBUS_PATH "/dev/bus/usb"
+ #define USBSYSBUS_PATH "/sys/bus/usb"
+ 
+@@ -123,7 +124,7 @@ typedef struct USBHostDevice {
+     /* Host side address */
+     int bus_num;
+     int addr;
+-    int devpath;
++    char port[MAX_PORTLEN];
+     struct USBAutoFilter match;
+ 
+     QTAILQ_ENTRY(USBHostDevice) next;
+@@ -831,7 +832,7 @@ static int usb_linux_get_configuration(USBHostDevice *s)
+         char device_name[32], line[1024];
+         int configuration;
+ 
+-        sprintf(device_name, "%d-%d", s->bus_num, s->devpath);
++        sprintf(device_name, "%d-%s", s->bus_num, s->port);
+ 
+         if (!usb_host_read_file(line, sizeof(line), "bConfigurationValue",
+                                 device_name)) {
+@@ -877,7 +878,7 @@ static uint8_t usb_linux_get_alt_setting(USBHostDevice *s,
+         char device_name[64], line[1024];
+         int alt_setting;
+ 
+-        sprintf(device_name, "%d-%d:%d.%d", s->bus_num, s->devpath,
++        sprintf(device_name, "%d-%s:%d.%d", s->bus_num, s->port,
+                 (int)configuration, (int)interface);
+ 
+         if (!usb_host_read_file(line, sizeof(line), "bAlternateSetting",
+@@ -994,7 +995,7 @@ static int usb_linux_update_endp_table(USBHostDevice *s)
+ }
+ 
+ static int usb_host_open(USBHostDevice *dev, int bus_num,
+-                         int addr, int devpath, const char *prod_name)
++                         int addr, char *port, const char *prod_name)
+ {
+     int fd = -1, ret;
+     struct usbdevfs_connectinfo ci;
+@@ -1020,7 +1021,7 @@ static int usb_host_open(USBHostDevice *dev, int bus_num,
+ 
+     dev->bus_num = bus_num;
+     dev->addr = addr;
+-    dev->devpath = devpath;
++    strcpy(dev->port, port);
+     dev->fd = fd;
+ 
+     /* read the device description */
+@@ -1373,8 +1374,9 @@ static int usb_host_scan_sys(void *opaque, USBScanFunc *func)
+ {
+     DIR *dir = NULL;
+     char line[1024];
+-    int bus_num, addr, devpath, speed, class_id, product_id, vendor_id;
++    int bus_num, addr, speed, class_id, product_id, vendor_id;
+     int ret = 0;
++    char port[MAX_PORTLEN];
+     char product_name[512];
+     struct dirent *de;
+ 
+@@ -1386,12 +1388,8 @@ static int usb_host_scan_sys(void *opaque, USBScanFunc *func)
+ 
+     while ((de = readdir(dir))) {
+         if (de->d_name[0] != '.' && !strchr(de->d_name, ':')) {
+-            char *tmpstr = de->d_name;
+-            if (!strncmp(de->d_name, "usb", 3)) {
+-                tmpstr += 3;
+-            }
+-            if (sscanf(tmpstr, "%d-%d", &bus_num, &devpath) < 1) {
+-                goto the_end;
++            if (sscanf(de->d_name, "%d-%7[0-9.]", &bus_num, port) < 2) {
++                continue;
+             }
+ 
+             if (!usb_host_read_file(line, sizeof(line), "devnum", de->d_name))
+@@ -1434,7 +1432,7 @@ static int usb_host_scan_sys(void *opaque, USBScanFunc *func)
+             else
+                 speed = USB_SPEED_FULL;
+ 
+-            ret = func(opaque, bus_num, addr, devpath, class_id, vendor_id,
++            ret = func(opaque, bus_num, addr, port, class_id, vendor_id,
+                        product_id, product_name, speed);
+             if (ret)
+                 goto the_end;
+@@ -1521,7 +1519,7 @@ static int usb_host_scan(void *opaque, USBScanFunc *func)
+ 
+ static QEMUTimer *usb_auto_timer;
+ 
+-static int usb_host_auto_scan(void *opaque, int bus_num, int addr, int devpath,
++static int usb_host_auto_scan(void *opaque, int bus_num, int addr, char *port,
+                               int class_id, int vendor_id, int product_id,
+                               const char *product_name, int speed)
+ {
+@@ -1553,7 +1551,7 @@ static int usb_host_auto_scan(void *opaque, int bus_num, int addr, int devpath,
+         if (s->fd != -1)
+             return 0;
+ 
+-        usb_host_open(s, bus_num, addr, devpath, product_name);
++        usb_host_open(s, bus_num, addr, port, product_name);
+     }
+ 
+     return 0;
+@@ -1669,8 +1667,8 @@ static const char *usb_class_str(uint8_t class)
+     return p->class_name;
+ }
+ 
+-static void usb_info_device(Monitor *mon, int bus_num, int addr, int class_id,
+-                            int vendor_id, int product_id,
++static void usb_info_device(Monitor *mon, int bus_num, int addr, char *port,
++                            int class_id, int vendor_id, int product_id,
+                             const char *product_name,
+                             int speed)
+ {
+@@ -1691,8 +1689,8 @@ static void usb_info_device(Monitor *mon, int bus_num, int addr, int class_id,
+         break;
+     }
+ 
+-    monitor_printf(mon, "  Device %d.%d, speed %s Mb/s\n",
+-                bus_num, addr, speed_str);
++    monitor_printf(mon, "  Bus %d, Addr %d, Port %s, Speed %s Mb/s\n",
++                   bus_num, addr, port, speed_str);
+     class_str = usb_class_str(class_id);
+     if (class_str)
+         monitor_printf(mon, "    %s:", class_str);
+@@ -1705,14 +1703,14 @@ static void usb_info_device(Monitor *mon, int bus_num, int addr, int class_id,
+ }
+ 
+ static int usb_host_info_device(void *opaque, int bus_num, int addr,
+-                                int devpath, int class_id,
++                                char *path, int class_id,
+                                 int vendor_id, int product_id,
+                                 const char *product_name,
+                                 int speed)
+ {
+     Monitor *mon = opaque;
+ 
+-    usb_info_device(mon, bus_num, addr, class_id, vendor_id, product_id,
++    usb_info_device(mon, bus_num, addr, path, class_id, vendor_id, product_id,
+                     product_name, speed);
+     return 0;
+ }
+-- 
+1.7.3.2
+

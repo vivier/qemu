@@ -1,0 +1,58 @@
+From 9efcbbbb1e86c67fc19218cef88bed0fad64581c Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:42:19 -0300
+Subject: [RHEL6 qemu-kvm PATCH 103/115] Fix USB mouse Set_Protocol behavior
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-104-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27914
+O-Subject: [RHEL-6.2 kvm PATCH 103/115] Fix USB mouse Set_Protocol behavior
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Kevin O'Connor <kevin@koconnor.net>
+
+The QEMU USB mouse claims to support the "boot" protocol
+(bInterfaceSubClass is 1).  However, the mouse rejects the
+Set_Protocol command.
+
+The qemu mouse does support the "boot" protocol specification, so a
+simple fix is to enable the Set_Protocol request.
+
+Signed-off-by: Kevin O'Connor <kevin@koconnor.net>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 46115ac4c4f211b5b9b4d22f7af6ebe91c79a05c)
+---
+ hw/usb-hid.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-hid.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/hw/usb-hid.c b/hw/usb-hid.c
+index 6aa265a..56698c7 100644
+--- a/hw/usb-hid.c
++++ b/hw/usb-hid.c
+@@ -782,13 +782,13 @@ static int usb_hid_handle_control(USBDevice *dev, USBPacket *p,
+             goto fail;
+         break;
+     case GET_PROTOCOL:
+-        if (s->kind != USB_KEYBOARD)
++        if (s->kind != USB_KEYBOARD && s->kind != USB_MOUSE)
+             goto fail;
+         ret = 1;
+         data[0] = s->protocol;
+         break;
+     case SET_PROTOCOL:
+-        if (s->kind != USB_KEYBOARD)
++        if (s->kind != USB_KEYBOARD && s->kind != USB_MOUSE)
+             goto fail;
+         ret = 0;
+         s->protocol = value;
+-- 
+1.7.3.2
+

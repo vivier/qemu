@@ -1,0 +1,127 @@
+From 3a68fc4e6faa6c1eb1b65d2c60ca2123076f570d Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:47 -0300
+Subject: [RHEL6 qemu-kvm PATCH 072/115] usb: update config descriptors to identify number of interfaces
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-72-git-send-email-kraxel@redhat.com>
+Patchwork-id: 28394
+O-Subject: [RHEL-6.2 kvm PATCH 071/115] usb: update config descriptors to identify number of interfaces
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Brad Hards <bradh@frogmouth.net>
+
+Previously we relied on the .bNumInterfaces, but that won't always be
+accurate after the introduction of grouped interfaces.
+
+Signed-off-by: Brad Hards <bradh@frogmouth.net>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit add750882f327db813af0795727efe5e4579ca5c)
+---
+ hw/usb-hid.c    |    3 +++
+ hw/usb-hub.c    |    1 +
+ hw/usb-msd.c    |    2 ++
+ hw/usb-serial.c |    1 +
+ hw/usb-wacom.c  |    1 +
+ 5 files changed, 8 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-hid.c    |    3 +++
+ hw/usb-hub.c    |    1 +
+ hw/usb-msd.c    |    2 ++
+ hw/usb-serial.c |    1 +
+ hw/usb-wacom.c  |    1 +
+ 5 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/hw/usb-hid.c b/hw/usb-hid.c
+index f9d9ca4..fb8c630 100644
+--- a/hw/usb-hid.c
++++ b/hw/usb-hid.c
+@@ -211,6 +211,7 @@ static const USBDescDevice desc_device_mouse = {
+             .iConfiguration        = STR_CONFIG_MOUSE,
+             .bmAttributes          = 0xa0,
+             .bMaxPower             = 50,
++            .nif = 1,
+             .ifs = &desc_iface_mouse,
+         },
+     },
+@@ -227,6 +228,7 @@ static const USBDescDevice desc_device_tablet = {
+             .iConfiguration        = STR_CONFIG_TABLET,
+             .bmAttributes          = 0xa0,
+             .bMaxPower             = 50,
++            .nif = 1,
+             .ifs = &desc_iface_tablet,
+         },
+     },
+@@ -243,6 +245,7 @@ static const USBDescDevice desc_device_keyboard = {
+             .iConfiguration        = STR_CONFIG_KEYBOARD,
+             .bmAttributes          = 0xa0,
+             .bMaxPower             = 50,
++            .nif = 1,
+             .ifs = &desc_iface_keyboard,
+         },
+     },
+diff --git a/hw/usb-hub.c b/hw/usb-hub.c
+index 09cb179..4e3d6db 100644
+--- a/hw/usb-hub.c
++++ b/hw/usb-hub.c
+@@ -119,6 +119,7 @@ static const USBDescDevice desc_device_hub = {
+             .bNumInterfaces        = 1,
+             .bConfigurationValue   = 1,
+             .bmAttributes          = 0xe0,
++            .nif = 1,
+             .ifs = &desc_iface_hub,
+         },
+     },
+diff --git a/hw/usb-msd.c b/hw/usb-msd.c
+index 3474115..1f6606a 100644
+--- a/hw/usb-msd.c
++++ b/hw/usb-msd.c
+@@ -117,6 +117,7 @@ static const USBDescDevice desc_device_full = {
+             .bConfigurationValue   = 1,
+             .iConfiguration        = STR_CONFIG_FULL,
+             .bmAttributes          = 0xc0,
++            .nif = 1,
+             .ifs = &desc_iface_full,
+         },
+     },
+@@ -151,6 +152,7 @@ static const USBDescDevice desc_device_high = {
+             .bConfigurationValue   = 1,
+             .iConfiguration        = STR_CONFIG_HIGH,
+             .bmAttributes          = 0xc0,
++            .nif = 1,
+             .ifs = &desc_iface_high,
+         },
+     },
+diff --git a/hw/usb-serial.c b/hw/usb-serial.c
+index 862f159..c2f3868 100644
+--- a/hw/usb-serial.c
++++ b/hw/usb-serial.c
+@@ -146,6 +146,7 @@ static const USBDescDevice desc_device = {
+             .bConfigurationValue   = 1,
+             .bmAttributes          = 0x80,
+             .bMaxPower             = 50,
++            .nif = 1,
+             .ifs = &desc_iface0,
+         },
+     },
+diff --git a/hw/usb-wacom.c b/hw/usb-wacom.c
+index 16be7a2..57041a1 100644
+--- a/hw/usb-wacom.c
++++ b/hw/usb-wacom.c
+@@ -108,6 +108,7 @@ static const USBDescDevice desc_device_wacom = {
+             .bConfigurationValue   = 1,
+             .bmAttributes          = 0x80,
+             .bMaxPower             = 40,
++            .nif = 1,
+             .ifs = &desc_iface_wacom,
+         },
+     },
+-- 
+1.7.3.2
+

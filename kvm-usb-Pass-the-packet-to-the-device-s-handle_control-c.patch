@@ -1,0 +1,340 @@
+From 765509e18c82a03f80544b00b501b75acd92888f Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:51 -0300
+Subject: [RHEL6 qemu-kvm PATCH 076/115] usb: Pass the packet to the device's handle_control callback
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-76-git-send-email-kraxel@redhat.com>
+Patchwork-id: 28399
+O-Subject: [RHEL-6.2 kvm PATCH 075/115] usb: Pass the packet to the device's handle_control callback
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+From: Hans de Goede <hdegoede@redhat.com>
+
+This allows using the generic usb_generic_handle_packet function from
+device code which does ASYNC control requests (such as the linux host
+pass through code).
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+(cherry picked from commit 007fd62f4d3959f2a61abe61a34a54c9f99560b0)
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/bt-hid.c     |    6 +++---
+ hw/usb-bt.c     |    6 +++---
+ hw/usb-ccid.c   |    4 ++--
+ hw/usb-desc.c   |    4 ++--
+ hw/usb-desc.h   |    4 ++--
+ hw/usb-hid.c    |    6 +++---
+ hw/usb-hub.c    |    6 +++---
+ hw/usb-msd.c    |    6 +++---
+ hw/usb-net.c    |    6 +++---
+ hw/usb-serial.c |    6 +++---
+ hw/usb-wacom.c  |    6 +++---
+ hw/usb.c        |   11 +++++++----
+ hw/usb.h        |    2 +-
+ usb-bsd.c       |    1 +
+ 14 files changed, 39 insertions(+), 35 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/bt-hid.c     |    6 +++---
+ hw/usb-bt.c     |    6 +++---
+ hw/usb-ccid.c   |    4 ++--
+ hw/usb-desc.c   |    4 ++--
+ hw/usb-desc.h   |    4 ++--
+ hw/usb-hid.c    |    6 +++---
+ hw/usb-hub.c    |    6 +++---
+ hw/usb-msd.c    |    6 +++---
+ hw/usb-net.c    |    6 +++---
+ hw/usb-serial.c |    6 +++---
+ hw/usb-wacom.c  |    6 +++---
+ hw/usb.c        |   11 +++++++----
+ hw/usb.h        |    2 +-
+ usb-bsd.c       |    1 +
+ 14 files changed, 39 insertions(+), 35 deletions(-)
+
+diff --git a/hw/bt-hid.c b/hw/bt-hid.c
+index abdfd35..09120af 100644
+--- a/hw/bt-hid.c
++++ b/hw/bt-hid.c
+@@ -323,7 +323,7 @@ static void bt_hid_control_transaction(struct bt_hid_device_s *s,
+             break;
+         }
+         s->proto = parameter;
+-        s->usbdev->info->handle_control(s->usbdev, SET_PROTOCOL, s->proto, 0, 0,
++        s->usbdev->info->handle_control(s->usbdev, NULL, SET_PROTOCOL, s->proto, 0, 0,
+                                         NULL);
+         ret = BT_HS_SUCCESSFUL;
+         break;
+@@ -333,7 +333,7 @@ static void bt_hid_control_transaction(struct bt_hid_device_s *s,
+             ret = BT_HS_ERR_INVALID_PARAMETER;
+             break;
+         }
+-        s->usbdev->info->handle_control(s->usbdev, GET_IDLE, 0, 0, 1,
++        s->usbdev->info->handle_control(s->usbdev, NULL, GET_IDLE, 0, 0, 1,
+                         s->control->sdu_out(s->control, 1));
+         s->control->sdu_submit(s->control);
+         break;
+@@ -346,7 +346,7 @@ static void bt_hid_control_transaction(struct bt_hid_device_s *s,
+ 
+         /* We don't need to know about the Idle Rate here really,
+          * so just pass it on to the device.  */
+-        ret = s->usbdev->info->handle_control(s->usbdev,
++        ret = s->usbdev->info->handle_control(s->usbdev, NULL,
+                         SET_IDLE, data[1], 0, 0, NULL) ?
+                 BT_HS_SUCCESSFUL : BT_HS_ERR_INVALID_PARAMETER;
+         /* XXX: Does this generate a handshake? */
+diff --git a/hw/usb-bt.c b/hw/usb-bt.c
+index 22e6845..baae487 100644
+--- a/hw/usb-bt.c
++++ b/hw/usb-bt.c
+@@ -372,13 +372,13 @@ static void usb_bt_handle_reset(USBDevice *dev)
+     s->altsetting = 0;
+ }
+ 
+-static int usb_bt_handle_control(USBDevice *dev, int request, int value,
+-                int index, int length, uint8_t *data)
++static int usb_bt_handle_control(USBDevice *dev, USBPacket *p,
++               int request, int value, int index, int length, uint8_t *data)
+ {
+     struct USBBtState *s = (struct USBBtState *) dev->opaque;
+     int ret;
+ 
+-    ret = usb_desc_handle_control(dev, request, value, index, length, data);
++    ret = usb_desc_handle_control(dev, p, request, value, index, length, data);
+     if (ret >= 0) {
+         switch (request) {
+         case DeviceRequest | USB_REQ_GET_CONFIGURATION:
+diff --git a/hw/usb-ccid.c b/hw/usb-ccid.c
+index 723b2e3..80e72ff 100644
+--- a/hw/usb-ccid.c
++++ b/hw/usb-ccid.c
+@@ -602,8 +602,8 @@ static void ccid_handle_reset(USBDevice *dev)
+     ccid_reset(s);
+ }
+ 
+-static int ccid_handle_control(USBDevice *dev, int request, int value,
+-                                  int index, int length, uint8_t *data)
++static int ccid_handle_control(USBDevice *dev, USBPacket *p, int request,
++                               int value, int index, int length, uint8_t *data)
+ {
+     USBCCIDState *s = DO_UPCAST(USBCCIDState, dev, dev);
+     int ret = 0;
+diff --git a/hw/usb-desc.c b/hw/usb-desc.c
+index 8367c45..e4a4680 100644
+--- a/hw/usb-desc.c
++++ b/hw/usb-desc.c
+@@ -390,8 +390,8 @@ int usb_desc_get_descriptor(USBDevice *dev, int value, uint8_t *dest, size_t len
+     return ret;
+ }
+ 
+-int usb_desc_handle_control(USBDevice *dev, int request, int value,
+-                            int index, int length, uint8_t *data)
++int usb_desc_handle_control(USBDevice *dev, USBPacket *p,
++        int request, int value, int index, int length, uint8_t *data)
+ {
+     const USBDesc *desc = dev->info->usb_desc;
+     int i, ret = -1;
+diff --git a/hw/usb-desc.h b/hw/usb-desc.h
+index a612515..9d7ed59 100644
+--- a/hw/usb-desc.h
++++ b/hw/usb-desc.h
+@@ -106,7 +106,7 @@ void usb_desc_set_string(USBDevice *dev, uint8_t index, const char *str);
+ const char *usb_desc_get_string(USBDevice *dev, uint8_t index);
+ int usb_desc_string(USBDevice *dev, int index, uint8_t *dest, size_t len);
+ int usb_desc_get_descriptor(USBDevice *dev, int value, uint8_t *dest, size_t len);
+-int usb_desc_handle_control(USBDevice *dev, int request, int value,
+-                            int index, int length, uint8_t *data);
++int usb_desc_handle_control(USBDevice *dev, USBPacket *p,
++        int request, int value, int index, int length, uint8_t *data);
+ 
+ #endif /* QEMU_HW_USB_DESC_H */
+diff --git a/hw/usb-hid.c b/hw/usb-hid.c
+index fb8c630..6aa265a 100644
+--- a/hw/usb-hid.c
++++ b/hw/usb-hid.c
+@@ -727,13 +727,13 @@ static void usb_hid_set_next_idle(USBHIDState *s, int64_t curtime)
+     s->next_idle_clock = curtime + (get_ticks_per_sec() * s->idle * 4) / 1000;
+ }
+ 
+-static int usb_hid_handle_control(USBDevice *dev, int request, int value,
+-                                  int index, int length, uint8_t *data)
++static int usb_hid_handle_control(USBDevice *dev, USBPacket *p,
++               int request, int value, int index, int length, uint8_t *data)
+ {
+     USBHIDState *s = (USBHIDState *)dev;
+     int ret;
+ 
+-    ret = usb_desc_handle_control(dev, request, value, index, length, data);
++    ret = usb_desc_handle_control(dev, p, request, value, index, length, data);
+     if (ret >= 0) {
+         return ret;
+     }
+diff --git a/hw/usb-hub.c b/hw/usb-hub.c
+index 4e3d6db..f040e8a 100644
+--- a/hw/usb-hub.c
++++ b/hw/usb-hub.c
+@@ -285,13 +285,13 @@ static void usb_hub_handle_reset(USBDevice *dev)
+     /* XXX: do it */
+ }
+ 
+-static int usb_hub_handle_control(USBDevice *dev, int request, int value,
+-                                  int index, int length, uint8_t *data)
++static int usb_hub_handle_control(USBDevice *dev, USBPacket *p,
++               int request, int value, int index, int length, uint8_t *data)
+ {
+     USBHubState *s = (USBHubState *)dev;
+     int ret;
+ 
+-    ret = usb_desc_handle_control(dev, request, value, index, length, data);
++    ret = usb_desc_handle_control(dev, p, request, value, index, length, data);
+     if (ret >= 0) {
+         return ret;
+     }
+diff --git a/hw/usb-msd.c b/hw/usb-msd.c
+index 1f6606a..8c8d070 100644
+--- a/hw/usb-msd.c
++++ b/hw/usb-msd.c
+@@ -270,13 +270,13 @@ static void usb_msd_handle_reset(USBDevice *dev)
+     s->mode = USB_MSDM_CBW;
+ }
+ 
+-static int usb_msd_handle_control(USBDevice *dev, int request, int value,
+-                                  int index, int length, uint8_t *data)
++static int usb_msd_handle_control(USBDevice *dev, USBPacket *p,
++               int request, int value, int index, int length, uint8_t *data)
+ {
+     MSDState *s = (MSDState *)dev;
+     int ret;
+ 
+-    ret = usb_desc_handle_control(dev, request, value, index, length, data);
++    ret = usb_desc_handle_control(dev, p, request, value, index, length, data);
+     if (ret >= 0) {
+         return ret;
+     }
+diff --git a/hw/usb-net.c b/hw/usb-net.c
+index f66ece2..3937190 100644
+--- a/hw/usb-net.c
++++ b/hw/usb-net.c
+@@ -1048,13 +1048,13 @@ static void usb_net_handle_reset(USBDevice *dev)
+ {
+ }
+ 
+-static int usb_net_handle_control(USBDevice *dev, int request, int value,
+-                int index, int length, uint8_t *data)
++static int usb_net_handle_control(USBDevice *dev, USBPacket *p,
++               int request, int value, int index, int length, uint8_t *data)
+ {
+     USBNetState *s = (USBNetState *) dev;
+     int ret;
+ 
+-    ret = usb_desc_handle_control(dev, request, value, index, length, data);
++    ret = usb_desc_handle_control(dev, p, request, value, index, length, data);
+     if (ret >= 0) {
+         return ret;
+     }
+diff --git a/hw/usb-serial.c b/hw/usb-serial.c
+index c2f3868..7133467 100644
+--- a/hw/usb-serial.c
++++ b/hw/usb-serial.c
+@@ -219,14 +219,14 @@ static uint8_t usb_get_modem_lines(USBSerialState *s)
+     return ret;
+ }
+ 
+-static int usb_serial_handle_control(USBDevice *dev, int request, int value,
+-                                  int index, int length, uint8_t *data)
++static int usb_serial_handle_control(USBDevice *dev, USBPacket *p,
++               int request, int value, int index, int length, uint8_t *data)
+ {
+     USBSerialState *s = (USBSerialState *)dev;
+     int ret;
+ 
+     DPRINTF("got control %x, value %x\n",request, value);
+-    ret = usb_desc_handle_control(dev, request, value, index, length, data);
++    ret = usb_desc_handle_control(dev, p, request, value, index, length, data);
+     if (ret >= 0) {
+         return ret;
+     }
+diff --git a/hw/usb-wacom.c b/hw/usb-wacom.c
+index 57041a1..9d348e1 100644
+--- a/hw/usb-wacom.c
++++ b/hw/usb-wacom.c
+@@ -250,13 +250,13 @@ static void usb_wacom_handle_reset(USBDevice *dev)
+     s->mode = WACOM_MODE_HID;
+ }
+ 
+-static int usb_wacom_handle_control(USBDevice *dev, int request, int value,
+-                                    int index, int length, uint8_t *data)
++static int usb_wacom_handle_control(USBDevice *dev, USBPacket *p,
++               int request, int value, int index, int length, uint8_t *data)
+ {
+     USBWacomState *s = (USBWacomState *) dev;
+     int ret;
+ 
+-    ret = usb_desc_handle_control(dev, request, value, index, length, data);
++    ret = usb_desc_handle_control(dev, p, request, value, index, length, data);
+     if (ret >= 0) {
+         return ret;
+     }
+diff --git a/hw/usb.c b/hw/usb.c
+index d8c0a75..f503b7a 100644
+--- a/hw/usb.c
++++ b/hw/usb.c
+@@ -82,9 +82,9 @@ static int do_token_setup(USBDevice *s, USBPacket *p)
+     request = (s->setup_buf[0] << 8) | s->setup_buf[1];
+     value   = (s->setup_buf[3] << 8) | s->setup_buf[2];
+     index   = (s->setup_buf[5] << 8) | s->setup_buf[4];
+- 
++
+     if (s->setup_buf[0] & USB_DIR_IN) {
+-        ret = s->info->handle_control(s, request, value, index, 
++        ret = s->info->handle_control(s, p, request, value, index,
+                                       s->setup_len, s->data_buf);
+         if (ret < 0)
+             return ret;
+@@ -123,9 +123,12 @@ static int do_token_in(USBDevice *s, USBPacket *p)
+     switch(s->setup_state) {
+     case SETUP_STATE_ACK:
+         if (!(s->setup_buf[0] & USB_DIR_IN)) {
+-            s->setup_state = SETUP_STATE_IDLE;
+-            ret = s->info->handle_control(s, request, value, index,
++            ret = s->info->handle_control(s, p, request, value, index,
+                                           s->setup_len, s->data_buf);
++            if (ret == USB_RET_ASYNC) {
++                return USB_RET_ASYNC;
++            }
++            s->setup_state = SETUP_STATE_IDLE;
+             if (ret > 0)
+                 return 0;
+             return ret;
+diff --git a/hw/usb.h b/hw/usb.h
+index a8d4d71..ab59572 100644
+--- a/hw/usb.h
++++ b/hw/usb.h
+@@ -210,7 +210,7 @@ struct USBDeviceInfo {
+      *
+      * Returns length or one of the USB_RET_ codes.
+      */
+-    int (*handle_control)(USBDevice *dev, int request, int value,
++    int (*handle_control)(USBDevice *dev, USBPacket *p, int request, int value,
+                           int index, int length, uint8_t *data);
+ 
+     /*
+diff --git a/usb-bsd.c b/usb-bsd.c
+index 48567a3..a88f200 100644
+--- a/usb-bsd.c
++++ b/usb-bsd.c
+@@ -126,6 +126,7 @@ static void usb_host_handle_reset(USBDevice *dev)
+  *  and return appropriate response
+  */
+ static int usb_host_handle_control(USBDevice *dev,
++                                   USBPacket *p,
+                                    int request,
+                                    int value,
+                                    int index,
+-- 
+1.7.3.2
+

@@ -1,0 +1,61 @@
+From bf164c9d903fb939fe0c7b7d7b40202aa6f42d5c Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:19 -0300
+Subject: [RHEL6 qemu-kvm PATCH 046/115] usb-hid: modifiers should generate an event
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-44-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27887
+O-Subject: [RHEL-6.2 kvm PATCH 043/115] usb-hid: modifiers should generate an event
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Aurelien Jarno <aurelien@aurel32.net>
+
+When a modifier key is pressed or released, the USB HID keyboard still
+answers NAK, unless another key is also pressed or released.
+
+The patch fixes that by calling usb_hid_changed() when a modifier key
+is pressed or released.
+
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit 373dfc441d55fe6619929fd049ab635bdfca9e62)
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/usb-hid.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-hid.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/hw/usb-hid.c b/hw/usb-hid.c
+index bc2cd00..f0bcb7d 100644
+--- a/hw/usb-hid.c
++++ b/hw/usb-hid.c
+@@ -508,15 +508,18 @@ static void usb_keyboard_event(void *opaque, int keycode)
+     case 0xe0:
+         if (s->modifiers & (1 << 9)) {
+             s->modifiers ^= 3 << 8;
++            usb_hid_changed(hs);
+             return;
+         }
+     case 0xe1 ... 0xe7:
+         if (keycode & (1 << 7)) {
+             s->modifiers &= ~(1 << (hid_code & 0x0f));
++            usb_hid_changed(hs);
+             return;
+         }
+     case 0xe8 ... 0xef:
+         s->modifiers |= 1 << (hid_code & 0x0f);
++        usb_hid_changed(hs);
+         return;
+     }
+ 
+-- 
+1.7.3.2
+

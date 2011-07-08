@@ -1,0 +1,85 @@
+From 9ee4dbdf4a26c3de8b2f24133c847aba1a71d844 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:54 -0300
+Subject: [RHEL6 qemu-kvm PATCH 079/115] usb-linux: add hostport property
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-79-git-send-email-kraxel@redhat.com>
+Patchwork-id: 28398
+O-Subject: [RHEL-6.2 kvm PATCH 078/115] usb-linux: add hostport property
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+This patch adds a hostport property which allows to specify the host usb
+devices to pass through by bus number and physical port.  This means you
+can basically hand over one (or more) of the usb plugs on your host to
+the guest and whatever device is plugged in there will show up in the
+guest.
+
+Usage:
+
+  -device usb-host,hostbus=1,hostport=1
+
+You can figure the port numbers by plugging in some usb device, then
+find it in "info usbhost" and pick bus and port specified there.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 9056a2972a9e935198e518c37365513a199ae3d0)
+
+Conflicts:
+
+	usb-linux.c
+---
+ usb-linux.c |   10 ++++++++--
+ 1 files changed, 8 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ usb-linux.c |   10 ++++++++--
+ 1 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index a90b3bd..ce30db6 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -104,6 +104,7 @@ struct endp_data {
+ struct USBAutoFilter {
+     uint32_t bus_num;
+     uint32_t addr;
++    char     *port;
+     uint32_t vendor_id;
+     uint32_t product_id;
+ };
+@@ -1149,6 +1150,7 @@ static struct USBDeviceInfo usb_host_dev_info = {
+     .qdev.props     = (Property[]) {
+         DEFINE_PROP_UINT32("hostbus",  USBHostDevice, match.bus_num,    0),
+         DEFINE_PROP_UINT32("hostaddr", USBHostDevice, match.addr,       0),
++        DEFINE_PROP_STRING("hostport", USBHostDevice, match.port),
+         DEFINE_PROP_HEX32("vendorid",  USBHostDevice, match.vendor_id,  0),
+         DEFINE_PROP_HEX32("productid", USBHostDevice, match.product_id, 0),
+         DEFINE_PROP_END_OF_LIST(),
+@@ -1539,6 +1541,10 @@ static int usb_host_auto_scan(void *opaque, int bus_num, int addr, char *port,
+ 	if (f->addr > 0 && f->addr != addr)
+             continue;
+ 
++        if (f->port != NULL && (port == NULL || strcmp(f->port, port) != 0)) {
++            continue;
++        }
++
+ 	if (f->vendor_id > 0 && f->vendor_id != vendor_id)
+             continue;
+ 
+@@ -1748,7 +1754,7 @@ void usb_host_info(Monitor *mon)
+         dec2str(f->addr, addr, sizeof(addr));
+         hex2str(f->vendor_id, vid, sizeof(vid));
+         hex2str(f->product_id, pid, sizeof(pid));
+-        monitor_printf(mon, "    Device %s.%s ID %s:%s\n",
+-                       bus, addr, vid, pid);
++        monitor_printf(mon, "    Bus %s, Addr %s, Port %s, ID %s:%s\n",
++                       bus, addr, f->port ? f->port : "*", vid, pid);
+     }
+ }
+-- 
+1.7.3.2
+

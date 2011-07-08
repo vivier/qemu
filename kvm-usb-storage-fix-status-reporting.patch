@@ -1,0 +1,78 @@
+From f7ef0b7d7727e4c7f438ef9e6aff29f4aa263e6e Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:11 -0300
+Subject: [RHEL6 qemu-kvm PATCH 038/115] usb storage: fix status reporting
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-36-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27867
+O-Subject: [RHEL-6.2 kvm PATCH 035/115] usb storage: fix status reporting
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Change usb_msd_send_status() to take a pointer to the status packet
+instead of writing the status to s->usb_buf which might not point
+to the correct location.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit ab4797ad2ec34e63ee8751fbd3e5d0a9888eaf4a)
+---
+ hw/usb-msd.c |   13 +++++++------
+ 1 files changed, 7 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-msd.c |   13 +++++++------
+ 1 files changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/hw/usb-msd.c b/hw/usb-msd.c
+index 90e3cc4..fbf7dc9 100644
+--- a/hw/usb-msd.c
++++ b/hw/usb-msd.c
+@@ -195,15 +195,18 @@ static void usb_msd_copy_data(MSDState *s)
+     }
+ }
+ 
+-static void usb_msd_send_status(MSDState *s)
++static void usb_msd_send_status(MSDState *s, USBPacket *p)
+ {
+     struct usb_msd_csw csw;
++    int len;
+ 
+     csw.sig = cpu_to_le32(0x53425355);
+     csw.tag = cpu_to_le32(s->tag);
+     csw.residue = s->residue;
+     csw.status = s->result;
+-    memcpy(s->usb_buf, &csw, 13);
++
++    len = MIN(sizeof(csw), p->len);
++    memcpy(p->data, &csw, len);
+ }
+ 
+ static void usb_msd_command_complete(SCSIBus *bus, int reason, uint32_t tag,
+@@ -223,7 +226,7 @@ static void usb_msd_command_complete(SCSIBus *bus, int reason, uint32_t tag,
+             if (s->data_len == 0 && s->mode == USB_MSDM_DATAOUT) {
+                 /* A deferred packet with no write data remaining must be
+                    the status read packet.  */
+-                usb_msd_send_status(s);
++                usb_msd_send_status(s, p);
+                 s->mode = USB_MSDM_CBW;
+             } else {
+                 if (s->data_len) {
+@@ -425,9 +428,7 @@ static int usb_msd_handle_data(USBDevice *dev, USBPacket *p)
+             if (len < 13)
+                 goto fail;
+ 
+-            s->usb_len = len;
+-            s->usb_buf = data;
+-            usb_msd_send_status(s);
++            usb_msd_send_status(s, p);
+             s->mode = USB_MSDM_CBW;
+             ret = 13;
+             break;
+-- 
+1.7.3.2
+

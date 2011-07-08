@@ -1,0 +1,49 @@
+From 2b9341fdb1d4d8a4acd3f41c946a81e22d15d0c5 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:42:31 -0300
+Subject: [RHEL6 qemu-kvm PATCH 115/115] usb-bus: Don't detach non attached devices on device exit
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-116-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27916
+O-Subject: [RHEL-6.2 kvm PATCH 115/115] usb-bus: Don't detach non attached devices on device exit
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Hans de Goede <hdegoede@redhat.com>
+
+This causes an "Error: tried to detach unattached usb device " to be printed,
+this can happen when deleting ie a usb host qdev, which did not
+get attached (because a device matching the filter never got plugged in).
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 290a5c60a3d203a62a09c88083456ed3ad20329f)
+---
+ hw/usb-bus.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-bus.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/hw/usb-bus.c b/hw/usb-bus.c
+index 81bb49e..208640a 100644
+--- a/hw/usb-bus.c
++++ b/hw/usb-bus.c
+@@ -84,7 +84,9 @@ static int usb_qdev_exit(DeviceState *qdev)
+     USBDevice *dev = DO_UPCAST(USBDevice, qdev, qdev);
+     USBBus *bus = usb_bus_from_device(dev);
+ 
+-    usb_device_detach(dev);
++    if (dev->attached) {
++        usb_device_detach(dev);
++    }
+     bus->ops->device_destroy(bus, dev);
+     if (dev->info->handle_destroy) {
+         dev->info->handle_destroy(dev);
+-- 
+1.7.3.2
+

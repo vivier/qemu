@@ -1,0 +1,481 @@
+From 1a7b04fc7cb6ab9f8355f263d0e4478211398990 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:40:57 -0300
+Subject: [RHEL6 qemu-kvm PATCH 024/115] usb: move USB_REQ_{GET, SET}_CONFIGURATION handling to common code
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-22-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27904
+O-Subject: [RHEL-6.2 kvm PATCH 021/115] usb: move USB_REQ_{GET, SET}_CONFIGURATION handling to common code
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+This patch adds fields to the USBDevice struct for the current
+speed (hard-wired to full speed for now) and current device
+configuration.  Also a init function is added which inializes
+these fields.  This allows USB_REQ_{GET,SET}_CONFIGURATION
+handling to be moved to common code.
+
+For most drivers the conversion is trivial ad they support a single
+configuration only anyway.  One exception is bluetooth where some
+device-specific setup code runs after get/set configuration.  The
+other is usb-net which actually has two configurations so the
+the code to check for the active configuration has been adapted.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit a980a065fb5e86d6dec337e6cb6ff432f1a143c9)
+---
+ hw/usb-bt.c     |   31 ++++++++++++-------------------
+ hw/usb-desc.c   |   32 ++++++++++++++++++++++++++++----
+ hw/usb-desc.h   |    1 +
+ hw/usb-hid.c    |   10 ++--------
+ hw/usb-hub.c    |    9 +--------
+ hw/usb-msd.c    |    9 +--------
+ hw/usb-net.c    |   45 +++++++++++++++------------------------------
+ hw/usb-serial.c |   10 ++--------
+ hw/usb-wacom.c  |    9 +--------
+ hw/usb.h        |    2 ++
+ trace-events    |    1 +
+ 11 files changed, 66 insertions(+), 93 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-bt.c     |   31 ++++++++++++-------------------
+ hw/usb-desc.c   |   32 ++++++++++++++++++++++++++++----
+ hw/usb-desc.h   |    1 +
+ hw/usb-hid.c    |   10 ++--------
+ hw/usb-hub.c    |    9 +--------
+ hw/usb-msd.c    |    9 +--------
+ hw/usb-net.c    |   45 +++++++++++++++------------------------------
+ hw/usb-serial.c |   10 ++--------
+ hw/usb-wacom.c  |    9 +--------
+ hw/usb.h        |    2 ++
+ trace-events    |    1 +
+ 11 files changed, 66 insertions(+), 93 deletions(-)
+
+diff --git a/hw/usb-bt.c b/hw/usb-bt.c
+index c0bfc35..36c90a3 100644
+--- a/hw/usb-bt.c
++++ b/hw/usb-bt.c
+@@ -380,6 +380,17 @@ static int usb_bt_handle_control(USBDevice *dev, int request, int value,
+ 
+     ret = usb_desc_handle_control(dev, request, value, index, length, data);
+     if (ret >= 0) {
++        switch (request) {
++        case DeviceRequest | USB_REQ_GET_CONFIGURATION:
++            s->config = 0;
++            break;
++        case DeviceOutRequest | USB_REQ_SET_CONFIGURATION:
++            s->config = 1;
++            usb_bt_fifo_reset(&s->evt);
++            usb_bt_fifo_reset(&s->acl);
++            usb_bt_fifo_reset(&s->sco);
++            break;
++        }
+         return ret;
+     }
+ 
+@@ -413,23 +424,6 @@ static int usb_bt_handle_control(USBDevice *dev, int request, int value,
+         }
+         ret = 0;
+         break;
+-    case DeviceRequest | USB_REQ_GET_CONFIGURATION:
+-        data[0] = 1;
+-        ret = 1;
+-        s->config = 0;
+-        break;
+-    case DeviceOutRequest | USB_REQ_SET_CONFIGURATION:
+-        ret = 0;
+-        if (value != 1 && value != 0) {
+-            printf("%s: Wrong SET_CONFIGURATION request (%i)\n",
+-                            __FUNCTION__, value);
+-            goto fail;
+-        }
+-        s->config = 1;
+-        usb_bt_fifo_reset(&s->evt);
+-        usb_bt_fifo_reset(&s->acl);
+-        usb_bt_fifo_reset(&s->sco);
+-        break;
+     case InterfaceRequest | USB_REQ_GET_INTERFACE:
+         if (value != 0 || (index & ~1) || length != 1)
+             goto fail;
+@@ -544,8 +538,7 @@ static void usb_bt_handle_destroy(USBDevice *dev)
+ 
+ static int usb_bt_initfn(USBDevice *dev)
+ {
+-    struct USBBtState *s = DO_UPCAST(struct USBBtState, dev, dev);
+-    s->dev.speed = USB_SPEED_HIGH;
++    usb_desc_init(dev);
+     return 0;
+ }
+ 
+diff --git a/hw/usb-desc.c b/hw/usb-desc.c
+index 3e87f46..14c9e11 100644
+--- a/hw/usb-desc.c
++++ b/hw/usb-desc.c
+@@ -153,6 +153,16 @@ int usb_desc_other(const USBDescOther *desc, uint8_t *dest, size_t len)
+ 
+ /* ------------------------------------------------------------------ */
+ 
++void usb_desc_init(USBDevice *dev)
++{
++    const USBDesc *desc = dev->info->usb_desc;
++
++    assert(desc != NULL);
++    dev->speed  = USB_SPEED_FULL;
++    dev->device = desc->full;
++    dev->config = dev->device->confs;
++}
++
+ void usb_desc_set_string(USBDevice *dev, uint8_t index, const char *str)
+ {
+     USBDescString *s;
+@@ -230,12 +240,12 @@ int usb_desc_get_descriptor(USBDevice *dev, int value, uint8_t *dest, size_t len
+ 
+     switch(type) {
+     case USB_DT_DEVICE:
+-        ret = usb_desc_device(&desc->id, desc->full, buf, sizeof(buf));
++        ret = usb_desc_device(&desc->id, dev->device, buf, sizeof(buf));
+         trace_usb_desc_device(dev->addr, len, ret);
+         break;
+     case USB_DT_CONFIG:
+-        if (index < desc->full->bNumConfigurations) {
+-            ret = usb_desc_config(desc->full->confs + index, buf, sizeof(buf));
++        if (index < dev->device->bNumConfigurations) {
++            ret = usb_desc_config(dev->device->confs + index, buf, sizeof(buf));
+         }
+         trace_usb_desc_config(dev->addr, index, len, ret);
+         break;
+@@ -262,7 +272,7 @@ int usb_desc_handle_control(USBDevice *dev, int request, int value,
+                             int index, int length, uint8_t *data)
+ {
+     const USBDesc *desc = dev->info->usb_desc;
+-    int ret = -1;
++    int i, ret = -1;
+ 
+     assert(desc != NULL);
+     switch(request) {
+@@ -275,6 +285,20 @@ int usb_desc_handle_control(USBDevice *dev, int request, int value,
+     case DeviceRequest | USB_REQ_GET_DESCRIPTOR:
+         ret = usb_desc_get_descriptor(dev, value, data, length);
+         break;
++
++    case DeviceRequest | USB_REQ_GET_CONFIGURATION:
++        data[0] = dev->config->bConfigurationValue;
++        ret = 1;
++        break;
++    case DeviceOutRequest | USB_REQ_SET_CONFIGURATION:
++        for (i = 0; i < dev->device->bNumConfigurations; i++) {
++            if (dev->device->confs[i].bConfigurationValue == value) {
++                dev->config = dev->device->confs + i;
++                ret = 0;
++            }
++        }
++        trace_usb_set_config(dev->addr, value, ret);
++        break;
+     }
+     return ret;
+ }
+diff --git a/hw/usb-desc.h b/hw/usb-desc.h
+index 20fc400..d441725 100644
+--- a/hw/usb-desc.h
++++ b/hw/usb-desc.h
+@@ -78,6 +78,7 @@ int usb_desc_endpoint(const USBDescEndpoint *ep, uint8_t *dest, size_t len);
+ int usb_desc_other(const USBDescOther *desc, uint8_t *dest, size_t len);
+ 
+ /* control message emulation helpers */
++void usb_desc_init(USBDevice *dev);
+ void usb_desc_set_string(USBDevice *dev, uint8_t index, const char *str);
+ const char *usb_desc_get_string(USBDevice *dev, uint8_t index);
+ int usb_desc_string(USBDevice *dev, int index, uint8_t *dest, size_t len);
+diff --git a/hw/usb-hid.c b/hw/usb-hid.c
+index 0c3fb95..9f2c0c6 100644
+--- a/hw/usb-hid.c
++++ b/hw/usb-hid.c
+@@ -729,13 +729,6 @@ static int usb_hid_handle_control(USBDevice *dev, int request, int value,
+         }
+         ret = 0;
+         break;
+-    case DeviceRequest | USB_REQ_GET_CONFIGURATION:
+-        data[0] = 1;
+-        ret = 1;
+-        break;
+-    case DeviceOutRequest | USB_REQ_SET_CONFIGURATION:
+-        ret = 0;
+-        break;
+     case DeviceRequest | USB_REQ_GET_INTERFACE:
+         data[0] = 0;
+         ret = 1;
+@@ -854,7 +847,8 @@ static void usb_hid_handle_destroy(USBDevice *dev)
+ static int usb_hid_initfn(USBDevice *dev, int kind)
+ {
+     USBHIDState *s = DO_UPCAST(USBHIDState, dev, dev);
+-    s->dev.speed = USB_SPEED_FULL;
++
++    usb_desc_init(dev);
+     s->kind = kind;
+ 
+     if (s->kind == USB_MOUSE) {
+diff --git a/hw/usb-hub.c b/hw/usb-hub.c
+index b3592e4..0e60d9e 100644
+--- a/hw/usb-hub.c
++++ b/hw/usb-hub.c
+@@ -297,13 +297,6 @@ static int usb_hub_handle_control(USBDevice *dev, int request, int value,
+         }
+         ret = 0;
+         break;
+-    case DeviceRequest | USB_REQ_GET_CONFIGURATION:
+-        data[0] = 1;
+-        ret = 1;
+-        break;
+-    case DeviceOutRequest | USB_REQ_SET_CONFIGURATION:
+-        ret = 0;
+-        break;
+     case DeviceRequest | USB_REQ_GET_INTERFACE:
+         data[0] = 0;
+         ret = 1;
+@@ -541,7 +534,7 @@ static int usb_hub_initfn(USBDevice *dev)
+     USBHubPort *port;
+     int i;
+ 
+-    s->dev.speed = USB_SPEED_FULL;
++    usb_desc_init(dev);
+     for (i = 0; i < NUM_PORTS; i++) {
+         port = &s->ports[i];
+         usb_register_port(usb_bus_from_device(dev),
+diff --git a/hw/usb-msd.c b/hw/usb-msd.c
+index dc0590b..f93a7af 100644
+--- a/hw/usb-msd.c
++++ b/hw/usb-msd.c
+@@ -260,13 +260,6 @@ static int usb_msd_handle_control(USBDevice *dev, int request, int value,
+         }
+         ret = 0;
+         break;
+-    case DeviceRequest | USB_REQ_GET_CONFIGURATION:
+-        data[0] = 1;
+-        ret = 1;
+-        break;
+-    case DeviceOutRequest | USB_REQ_SET_CONFIGURATION:
+-        ret = 0;
+-        break;
+     case DeviceRequest | USB_REQ_GET_INTERFACE:
+         data[0] = 0;
+         ret = 1;
+@@ -501,7 +494,7 @@ static int usb_msd_initfn(USBDevice *dev)
+         usb_desc_set_string(dev, STR_SERIALNUMBER, dinfo->serial);
+     }
+ 
+-    s->dev.speed = USB_SPEED_FULL;
++    usb_desc_init(dev);
+     scsi_bus_new(&s->bus, &s->dev.qdev, 0, 1, usb_msd_command_complete);
+     s->scsi_dev = scsi_bus_legacy_add_drive(&s->bus, bs, 0);
+     s->bus.qbus.allow_hotplug = 0;
+diff --git a/hw/usb-net.c b/hw/usb-net.c
+index d1a4d98..7c238c4 100644
+--- a/hw/usb-net.c
++++ b/hw/usb-net.c
+@@ -632,7 +632,6 @@ struct rndis_response {
+ typedef struct USBNetState {
+     USBDevice dev;
+ 
+-    unsigned int rndis;
+     enum rndis_state rndis_state;
+     uint32_t medium;
+     uint32_t speed;
+@@ -653,6 +652,11 @@ typedef struct USBNetState {
+     QTAILQ_HEAD(rndis_resp_head, rndis_response) rndis_resp;
+ } USBNetState;
+ 
++static int is_rndis(USBNetState *s)
++{
++    return s->dev.config->bConfigurationValue == DEV_RNDIS_CONFIG_VALUE;
++}
++
+ static int ndis_query(USBNetState *s, uint32_t oid,
+                       uint8_t *inbuf, unsigned int inlen, uint8_t *outbuf,
+                       size_t outlen)
+@@ -1083,8 +1087,9 @@ static int usb_net_handle_control(USBDevice *dev, int request, int value,
+         break;
+ 
+     case ClassInterfaceOutRequest | USB_CDC_SEND_ENCAPSULATED_COMMAND:
+-        if (!s->rndis || value || index != 0)
++        if (!is_rndis(s) || value || index != 0) {
+             goto fail;
++        }
+ #ifdef TRAFFIC_DEBUG
+         {
+             unsigned int i;
+@@ -1101,8 +1106,9 @@ static int usb_net_handle_control(USBDevice *dev, int request, int value,
+         break;
+ 
+     case ClassInterfaceRequest | USB_CDC_GET_ENCAPSULATED_RESPONSE:
+-        if (!s->rndis || value || index != 0)
++        if (!is_rndis(s) || value || index != 0) {
+             goto fail;
++        }
+         ret = rndis_get_response(s, data);
+         if (!ret) {
+             data[0] = 0;
+@@ -1122,27 +1128,6 @@ static int usb_net_handle_control(USBDevice *dev, int request, int value,
+ #endif
+         break;
+ 
+-    case DeviceRequest | USB_REQ_GET_CONFIGURATION:
+-        data[0] = s->rndis ? DEV_RNDIS_CONFIG_VALUE : DEV_CONFIG_VALUE;
+-        ret = 1;
+-        break;
+-
+-    case DeviceOutRequest | USB_REQ_SET_CONFIGURATION:
+-        switch (value & 0xff) {
+-        case DEV_CONFIG_VALUE:
+-            s->rndis = 0;
+-            break;
+-
+-        case DEV_RNDIS_CONFIG_VALUE:
+-            s->rndis = 1;
+-            break;
+-
+-        default:
+-            goto fail;
+-        }
+-        ret = 0;
+-        break;
+-
+     case DeviceRequest | USB_REQ_GET_INTERFACE:
+     case InterfaceRequest | USB_REQ_GET_INTERFACE:
+         data[0] = 0;
+@@ -1213,7 +1198,7 @@ static int usb_net_handle_datain(USBNetState *s, USBPacket *p)
+     memcpy(p->data, &s->in_buf[s->in_ptr], ret);
+     s->in_ptr += ret;
+     if (s->in_ptr >= s->in_len &&
+-                    (s->rndis || (s->in_len & (64 - 1)) || !ret)) {
++                    (is_rndis(s) || (s->in_len & (64 - 1)) || !ret)) {
+         /* no short packet necessary */
+         s->in_ptr = s->in_len = 0;
+     }
+@@ -1262,7 +1247,7 @@ static int usb_net_handle_dataout(USBNetState *s, USBPacket *p)
+     memcpy(&s->out_buf[s->out_ptr], p->data, sz);
+     s->out_ptr += sz;
+ 
+-    if (!s->rndis) {
++    if (!is_rndis(s)) {
+         if (ret < 64) {
+             qemu_send_packet(&s->nic->nc, s->out_buf, s->out_ptr);
+             s->out_ptr = 0;
+@@ -1333,7 +1318,7 @@ static ssize_t usbnet_receive(VLANClientState *nc, const uint8_t *buf, size_t si
+     USBNetState *s = DO_UPCAST(NICState, nc, nc)->opaque;
+     struct rndis_packet_msg_type *msg;
+ 
+-    if (s->rndis) {
++    if (is_rndis(s)) {
+         msg = (struct rndis_packet_msg_type *) s->in_buf;
+         if (!s->rndis_state == RNDIS_DATA_INITIALIZED)
+             return -1;
+@@ -1369,8 +1354,9 @@ static int usbnet_can_receive(VLANClientState *nc)
+ {
+     USBNetState *s = DO_UPCAST(NICState, nc, nc)->opaque;
+ 
+-    if (s->rndis && !s->rndis_state == RNDIS_DATA_INITIALIZED)
++    if (is_rndis(s) && !s->rndis_state == RNDIS_DATA_INITIALIZED) {
+         return 1;
++    }
+ 
+     return !s->in_len;
+ }
+@@ -1403,9 +1389,8 @@ static int usb_net_initfn(USBDevice *dev)
+ {
+     USBNetState *s = DO_UPCAST(USBNetState, dev, dev);
+ 
+-    s->dev.speed  = USB_SPEED_FULL;
++    usb_desc_init(dev);
+ 
+-    s->rndis = 1;
+     s->rndis_state = RNDIS_UNINITIALIZED;
+     QTAILQ_INIT(&s->rndis_resp);
+ 
+diff --git a/hw/usb-serial.c b/hw/usb-serial.c
+index 48030c6..3591e78 100644
+--- a/hw/usb-serial.c
++++ b/hw/usb-serial.c
+@@ -254,13 +254,6 @@ static int usb_serial_handle_control(USBDevice *dev, int request, int value,
+         }
+         ret = 0;
+         break;
+-    case DeviceRequest | USB_REQ_GET_CONFIGURATION:
+-        data[0] = 1;
+-        ret = 1;
+-        break;
+-    case DeviceOutRequest | USB_REQ_SET_CONFIGURATION:
+-        ret = 0;
+-        break;
+     case DeviceRequest | USB_REQ_GET_INTERFACE:
+         data[0] = 0;
+         ret = 1;
+@@ -513,7 +506,8 @@ static const QemuChrHandlers usb_serial_handlers = {
+ static int usb_serial_initfn(USBDevice *dev)
+ {
+     USBSerialState *s = DO_UPCAST(USBSerialState, dev, dev);
+-    s->dev.speed = USB_SPEED_FULL;
++
++    usb_desc_init(dev);
+ 
+     if (!s->cs) {
+         error_report("Property chardev is required");
+diff --git a/hw/usb-wacom.c b/hw/usb-wacom.c
+index ad1c3ae..3a98e80 100644
+--- a/hw/usb-wacom.c
++++ b/hw/usb-wacom.c
+@@ -284,13 +284,6 @@ static int usb_wacom_handle_control(USBDevice *dev, int request, int value,
+         }
+         ret = 0;
+         break;
+-    case DeviceRequest | USB_REQ_GET_CONFIGURATION:
+-        data[0] = 1;
+-        ret = 1;
+-        break;
+-    case DeviceOutRequest | USB_REQ_SET_CONFIGURATION:
+-        ret = 0;
+-        break;
+     case DeviceRequest | USB_REQ_GET_INTERFACE:
+         data[0] = 0;
+         ret = 1;
+@@ -373,7 +366,7 @@ static void usb_wacom_handle_destroy(USBDevice *dev)
+ static int usb_wacom_initfn(USBDevice *dev)
+ {
+     USBWacomState *s = DO_UPCAST(USBWacomState, dev, dev);
+-    s->dev.speed = USB_SPEED_FULL;
++    usb_desc_init(dev);
+     s->changed = 1;
+     return 0;
+ }
+diff --git a/hw/usb.h b/hw/usb.h
+index 6cd2a58..3aff749 100644
+--- a/hw/usb.h
++++ b/hw/usb.h
+@@ -160,6 +160,8 @@ struct USBDevice {
+     int setup_index;
+ 
+     QLIST_HEAD(, USBDescString) strings;
++    const USBDescDevice *device;
++    const USBDescConfig *config;
+ };
+ 
+ struct USBDeviceInfo {
+diff --git a/trace-events b/trace-events
+index d1688da..8be62d6 100644
+--- a/trace-events
++++ b/trace-events
+@@ -87,6 +87,7 @@ disable usb_desc_device(int addr, int len, int ret) "dev %d query device, len %d
+ disable usb_desc_config(int addr, int index, int len, int ret) "dev %d query config %d, len %d, ret %d"
+ disable usb_desc_string(int addr, int index, int len, int ret) "dev %d query string %d, len %d, ret %d"
+ disable usb_set_addr(int addr) "dev %d"
++disable usb_set_config(int addr, int config, int ret) "dev %d, config %d, ret %d"
+ 
+ # vl.c
+ disable vm_state_notify(int running, int reason) "running %d reason %d"
+-- 
+1.7.3.2
+

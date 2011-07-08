@@ -1,0 +1,132 @@
+From 0613b937a6d16f9213b95cc2c8d16e63bcb1b77d Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:10 -0300
+Subject: [RHEL6 qemu-kvm PATCH 037/115] usb storage: high speed support
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-35-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27888
+O-Subject: [RHEL-6.2 kvm PATCH 034/115] usb storage: high speed support
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Add high speed support to the usb mass storage device.  With this patch
+applied the linux kernel recognises the usb storage device as highspeed
+capable device and suggests to connect it to a highspeed port instead of
+the uhci.  Tested with both uhci and (not-yet submitted) ehci.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit ca0c730df977abd7ca24afd17fa640f1af47f0b1)
+---
+ hw/usb-msd.c |   51 ++++++++++++++++++++++++++++++++++++++++++++++-----
+ 1 files changed, 46 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-msd.c |   51 ++++++++++++++++++++++++++++++++++++++++++++++-----
+ 1 files changed, 46 insertions(+), 5 deletions(-)
+
+diff --git a/hw/usb-msd.c b/hw/usb-msd.c
+index bd53c02..90e3cc4 100644
+--- a/hw/usb-msd.c
++++ b/hw/usb-msd.c
+@@ -76,15 +76,19 @@ enum {
+     STR_MANUFACTURER = 1,
+     STR_PRODUCT,
+     STR_SERIALNUMBER,
++    STR_CONFIG_FULL,
++    STR_CONFIG_HIGH,
+ };
+ 
+ static const USBDescStrings desc_strings = {
+     [STR_MANUFACTURER] = "QEMU " QEMU_VERSION,
+     [STR_PRODUCT]      = "QEMU USB HARDDRIVE",
+     [STR_SERIALNUMBER] = "1",
++    [STR_CONFIG_FULL]  = "Full speed config (usb 1.1)",
++    [STR_CONFIG_HIGH]  = "High speed config (usb 2.0)",
+ };
+ 
+-static const USBDescIface desc_iface0 = {
++static const USBDescIface desc_iface_full = {
+     .bInterfaceNumber              = 0,
+     .bNumEndpoints                 = 2,
+     .bInterfaceClass               = USB_CLASS_MASS_STORAGE,
+@@ -103,16 +107,51 @@ static const USBDescIface desc_iface0 = {
+     }
+ };
+ 
+-static const USBDescDevice desc_device = {
+-    .bcdUSB                        = 0x0100,
++static const USBDescDevice desc_device_full = {
++    .bcdUSB                        = 0x0200,
+     .bMaxPacketSize0               = 8,
+     .bNumConfigurations            = 1,
+     .confs = (USBDescConfig[]) {
+         {
+             .bNumInterfaces        = 1,
+             .bConfigurationValue   = 1,
++            .iConfiguration        = STR_CONFIG_FULL,
+             .bmAttributes          = 0xc0,
+-            .ifs = &desc_iface0,
++            .ifs = &desc_iface_full,
++        },
++    },
++};
++
++static const USBDescIface desc_iface_high = {
++    .bInterfaceNumber              = 0,
++    .bNumEndpoints                 = 2,
++    .bInterfaceClass               = USB_CLASS_MASS_STORAGE,
++    .bInterfaceSubClass            = 0x06, /* SCSI */
++    .bInterfaceProtocol            = 0x50, /* Bulk */
++    .eps = (USBDescEndpoint[]) {
++        {
++            .bEndpointAddress      = USB_DIR_IN | 0x01,
++            .bmAttributes          = USB_ENDPOINT_XFER_BULK,
++            .wMaxPacketSize        = 512,
++        },{
++            .bEndpointAddress      = USB_DIR_OUT | 0x02,
++            .bmAttributes          = USB_ENDPOINT_XFER_BULK,
++            .wMaxPacketSize        = 512,
++        },
++    }
++};
++
++static const USBDescDevice desc_device_high = {
++    .bcdUSB                        = 0x0200,
++    .bMaxPacketSize0               = 64,
++    .bNumConfigurations            = 1,
++    .confs = (USBDescConfig[]) {
++        {
++            .bNumInterfaces        = 1,
++            .bConfigurationValue   = 1,
++            .iConfiguration        = STR_CONFIG_HIGH,
++            .bmAttributes          = 0xc0,
++            .ifs = &desc_iface_high,
+         },
+     },
+ };
+@@ -126,7 +165,8 @@ static const USBDesc desc = {
+         .iProduct          = STR_PRODUCT,
+         .iSerialNumber     = STR_SERIALNUMBER,
+     },
+-    .full = &desc_device,
++    .full = &desc_device_full,
++    .high = &desc_device_high,
+     .str  = desc_strings,
+ };
+ 
+@@ -551,6 +591,7 @@ static struct USBDeviceInfo msd_info = {
+     .usb_desc       = &desc,
+     .init           = usb_msd_initfn,
+     .handle_packet  = usb_generic_handle_packet,
++    .handle_attach  = usb_desc_attach,
+     .handle_reset   = usb_msd_handle_reset,
+     .handle_control = usb_msd_handle_control,
+     .handle_data    = usb_msd_handle_data,
+-- 
+1.7.3.2
+

@@ -1,0 +1,47 @@
+From e46fcb7bb1258dc28c113d2284ad09cf02e0e718 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:30 -0300
+Subject: [RHEL6 qemu-kvm PATCH 055/115] usb: initialise data element in Linux USB_DISCONNECT ioctl
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-55-git-send-email-kraxel@redhat.com>
+Patchwork-id: 28379
+O-Subject: [RHEL-6.2 kvm PATCH 054/115] usb: initialise data element in Linux USB_DISCONNECT ioctl
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Brad Hards <bradh@frogmouth.net>
+
+This isn't used, but leaving it empty causes valgrind noise.
+
+Signed-off-by: Brad Hards <bradh@frogmouth.net>
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+(cherry picked from commit 021730f7285923460e81004c9dae74b6a1c8aa0c)
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ usb-linux.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ usb-linux.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index 8ad0d66..bb15b3d 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -340,6 +340,7 @@ static int usb_host_claim_interfaces(USBHostDevice *dev, int configuration)
+         for (interface = 0; interface < nb_interfaces; interface++) {
+             ctrl.ioctl_code = USBDEVFS_DISCONNECT;
+             ctrl.ifno = interface;
++            ctrl.data = 0;
+             ret = ioctl(dev->fd, USBDEVFS_IOCTL, &ctrl);
+             if (ret < 0 && errno != ENODATA) {
+                 perror("USBDEVFS_DISCONNECT");
+-- 
+1.7.3.2
+

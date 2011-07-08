@@ -1,0 +1,57 @@
+From 21b152b823ad72fd3bd4595c6d51731df66d27a7 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:42:14 -0300
+Subject: [RHEL6 qemu-kvm PATCH 098/115] usb-ehci: fix offset writeback in ehci_buffer_rw
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-99-git-send-email-kraxel@redhat.com>
+Patchwork-id: 28413
+O-Subject: [RHEL-6.2 kvm PATCH 098/115] usb-ehci: fix offset writeback in ehci_buffer_rw
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Two bugs at once:
+
+First the mask is backwards, so the it used to keeps the offset and
+clears the page address, which is not what we need when we update the
+offset.
+
+Second the offset calculation is wrong in case head isn't page aligned.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit ba7cb5a86ae2ad8b2b78b9367493f9a0d990bac8)
+---
+ hw/usb-ehci.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-ehci.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/hw/usb-ehci.c b/hw/usb-ehci.c
+index 71213f3..38e4992 100644
+--- a/hw/usb-ehci.c
++++ b/hw/usb-ehci.c
+@@ -1066,6 +1066,7 @@ static int ehci_buffer_rw(EHCIQueue *q, int bytes, int rw)
+         cpu_physical_memory_rw(head, q->buffer + bufpos, tail - head, rw);
+ 
+         bufpos += (tail - head);
++        offset += (tail - head);
+         bytes -= (tail - head);
+ 
+         if (bytes > 0) {
+@@ -1078,8 +1079,7 @@ static int ehci_buffer_rw(EHCIQueue *q, int bytes, int rw)
+     set_field(&q->qh.token, cpage, QTD_TOKEN_CPAGE);
+ 
+     /* save offset into cpage */
+-    offset = tail - head;
+-    q->qh.bufptr[0] &= ~QTD_BUFPTR_MASK;
++    q->qh.bufptr[0] &= QTD_BUFPTR_MASK;
+     q->qh.bufptr[0] |= offset;
+ 
+     return 0;
+-- 
+1.7.3.2
+

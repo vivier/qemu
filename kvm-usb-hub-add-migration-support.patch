@@ -1,0 +1,69 @@
+From ea1a3d4c7637a0d63043073f39ddc0f9e146f1b4 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:25 -0300
+Subject: [RHEL6 qemu-kvm PATCH 050/115] usb hub: add migration support
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-50-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27892
+O-Subject: [RHEL-6.2 kvm PATCH 049/115] usb hub: add migration support
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit d15500902adb79034ef40ee3a06bbc0a7e0d8b19)
+---
+ hw/usb-hub.c |   24 ++++++++++++++++++++++++
+ 1 files changed, 24 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-hub.c |   24 ++++++++++++++++++++++++
+ 1 files changed, 24 insertions(+), 0 deletions(-)
+
+diff --git a/hw/usb-hub.c b/hw/usb-hub.c
+index 5200c1a..ea4c6aa 100644
+--- a/hw/usb-hub.c
++++ b/hw/usb-hub.c
+@@ -544,11 +544,35 @@ static int usb_hub_initfn(USBDevice *dev)
+     return 0;
+ }
+ 
++static const VMStateDescription vmstate_usb_hub_port = {
++    .name = "usb-hub-port",
++    .version_id = 1,
++    .minimum_version_id = 1,
++    .fields = (VMStateField []) {
++        VMSTATE_UINT16(wPortStatus, USBHubPort),
++        VMSTATE_UINT16(wPortChange, USBHubPort),
++        VMSTATE_END_OF_LIST()
++    }
++};
++
++static const VMStateDescription vmstate_usb_hub = {
++    .name = "usb-hub",
++    .version_id = 1,
++    .minimum_version_id = 1,
++    .fields = (VMStateField []) {
++        VMSTATE_USB_DEVICE(dev, USBHubState),
++        VMSTATE_STRUCT_ARRAY(ports, USBHubState, NUM_PORTS, 0,
++                             vmstate_usb_hub_port, USBHubPort),
++        VMSTATE_END_OF_LIST()
++    }
++};
++
+ static struct USBDeviceInfo hub_info = {
+     .product_desc   = "QEMU USB Hub",
+     .qdev.name      = "usb-hub",
+     .qdev.fw_name    = "hub",
+     .qdev.size      = sizeof(USBHubState),
++    .qdev.vmsd      = &vmstate_usb_hub,
+     .usb_desc       = &desc_hub,
+     .init           = usb_hub_initfn,
+     .handle_packet  = usb_hub_handle_packet,
+-- 
+1.7.3.2
+

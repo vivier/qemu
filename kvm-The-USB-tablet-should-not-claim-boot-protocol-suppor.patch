@@ -1,0 +1,47 @@
+From d0624061e2998148cae62b0a990bc77e111338ee Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:42:20 -0300
+Subject: [RHEL6 qemu-kvm PATCH 104/115] The USB tablet should not claim boot protocol support.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-105-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27908
+O-Subject: [RHEL-6.2 kvm PATCH 104/115] The USB tablet should not claim boot protocol support.
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+From: Kevin O'Connor <kevin@koconnor.net>
+
+The USB tablet advertises that it supports the "boot" protocol.
+However, its reports aren't "boot" protocol compatible.  So, it
+shouldn't claim that.
+
+Signed-off-by: Kevin O'Connor <kevin@koconnor.net>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 69bf405b50ae18cdbbb7b8bf08ab1f275d4e0d75)
+---
+ hw/usb-hid.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-hid.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+diff --git a/hw/usb-hid.c b/hw/usb-hid.c
+index 56698c7..bc79903 100644
+--- a/hw/usb-hid.c
++++ b/hw/usb-hid.c
+@@ -142,7 +142,6 @@ static const USBDescIface desc_iface_tablet = {
+     .bInterfaceNumber              = 0,
+     .bNumEndpoints                 = 1,
+     .bInterfaceClass               = USB_CLASS_HID,
+-    .bInterfaceSubClass            = 0x01, /* boot */
+     .bInterfaceProtocol            = 0x02,
+     .ndesc                         = 1,
+     .descs = (USBDescOther[]) {
+-- 
+1.7.3.2
+

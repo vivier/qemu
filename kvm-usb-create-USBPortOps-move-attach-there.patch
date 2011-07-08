@@ -1,0 +1,203 @@
+From 2c6e3c558dffdf9e6fd86403593d9cc011fea704 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:40:59 -0300
+Subject: [RHEL6 qemu-kvm PATCH 026/115] usb: create USBPortOps, move attach there.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-24-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27881
+O-Subject: [RHEL-6.2 kvm PATCH 023/115] usb: create USBPortOps, move attach there.
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Create USBPortOps struct, move the attach function to that struct.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 0d86d2bebb625a222f70b76972139f6a272e3e0b)
+---
+ hw/usb-bus.c  |    6 ++++--
+ hw/usb-hub.c  |    6 +++++-
+ hw/usb-musb.c |    6 +++++-
+ hw/usb-ohci.c |    6 +++++-
+ hw/usb-uhci.c |    6 +++++-
+ hw/usb.c      |    2 +-
+ hw/usb.h      |    8 +++++---
+ 7 files changed, 30 insertions(+), 10 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-bus.c  |    6 ++++--
+ hw/usb-hub.c  |    6 +++++-
+ hw/usb-musb.c |    6 +++++-
+ hw/usb-ohci.c |    6 +++++-
+ hw/usb-uhci.c |    6 +++++-
+ hw/usb.c      |    2 +-
+ hw/usb.h      |    8 +++++---
+ 7 files changed, 30 insertions(+), 10 deletions(-)
+
+diff --git a/hw/usb-bus.c b/hw/usb-bus.c
+index 13cf375..47123cf 100644
+--- a/hw/usb-bus.c
++++ b/hw/usb-bus.c
+@@ -110,12 +110,14 @@ USBDevice *usb_create_simple(USBBus *bus, const char *name)
+ }
+ 
+ void usb_register_port(USBBus *bus, USBPort *port, void *opaque, int index,
+-                       USBDevice *pdev, usb_attachfn attach)
++                       USBDevice *pdev, USBPortOps *ops)
+ {
+     port->opaque = opaque;
+     port->index = index;
+-    port->attach = attach;
+     port->pdev = pdev;
++    port->opaque = opaque;
++    port->index = index;
++    port->ops = ops;
+     QTAILQ_INSERT_TAIL(&bus->free, port, next);
+     bus->nfree++;
+ }
+diff --git a/hw/usb-hub.c b/hw/usb-hub.c
+index 7f7da0e..7c2e184 100644
+--- a/hw/usb-hub.c
++++ b/hw/usb-hub.c
+@@ -506,6 +506,10 @@ static void usb_hub_handle_destroy(USBDevice *dev)
+     }
+ }
+ 
++static USBPortOps usb_hub_port_ops = {
++    .attach = usb_hub_attach,
++};
++
+ static int usb_hub_initfn(USBDevice *dev)
+ {
+     USBHubState *s = DO_UPCAST(USBHubState, dev, dev);
+@@ -516,7 +520,7 @@ static int usb_hub_initfn(USBDevice *dev)
+     for (i = 0; i < NUM_PORTS; i++) {
+         port = &s->ports[i];
+         usb_register_port(usb_bus_from_device(dev),
+-                          &port->port, s, i, &s->dev, usb_hub_attach);
++                          &port->port, s, i, &s->dev, &usb_hub_port_ops);
+         port->wPortStatus = PORT_STAT_POWER;
+         port->wPortChange = 0;
+     }
+diff --git a/hw/usb-musb.c b/hw/usb-musb.c
+index 89506a6..ef592aa 100644
+--- a/hw/usb-musb.c
++++ b/hw/usb-musb.c
+@@ -250,6 +250,10 @@
+ 
+ static void musb_attach(USBPort *port, USBDevice *dev);
+ 
++static USBPortOps musb_port_ops = {
++    .attach = musb_attach,
++};
++
+ typedef struct {
+     uint16_t faddr[2];
+     uint8_t haddr[2];
+@@ -332,7 +336,7 @@ struct MUSBState {
+     }
+ 
+     usb_bus_new(&s->bus, NULL /* FIXME */);
+-    usb_register_port(&s->bus, &s->port, s, 0, NULL, musb_attach);
++    usb_register_port(&s->bus, &s->port, s, 0, NULL, &musb_port_ops);
+ 
+     return s;
+ }
+diff --git a/hw/usb-ohci.c b/hw/usb-ohci.c
+index f6a3376..cb6369f 100644
+--- a/hw/usb-ohci.c
++++ b/hw/usb-ohci.c
+@@ -1661,6 +1661,10 @@ static CPUWriteMemoryFunc * const ohci_writefn[3]={
+     ohci_mem_write
+ };
+ 
++static USBPortOps ohci_port_ops = {
++    .attach = ohci_attach,
++};
++
+ static void usb_ohci_init(OHCIState *ohci, DeviceState *dev,
+                           int num_ports, int devfn,
+                           qemu_irq irq, enum ohci_type type,
+@@ -1694,7 +1698,7 @@ static void usb_ohci_init(OHCIState *ohci, DeviceState *dev,
+     usb_bus_new(&ohci->bus, dev);
+     ohci->num_ports = num_ports;
+     for (i = 0; i < num_ports; i++) {
+-        usb_register_port(&ohci->bus, &ohci->rhport[i].port, ohci, i, NULL, ohci_attach);
++        usb_register_port(&ohci->bus, &ohci->rhport[i].port, ohci, i, NULL, &ohci_port_ops);
+     }
+ 
+     ohci->async_td = 0;
+diff --git a/hw/usb-uhci.c b/hw/usb-uhci.c
+index 5bc3474..a64c458 100644
+--- a/hw/usb-uhci.c
++++ b/hw/usb-uhci.c
+@@ -1061,6 +1061,10 @@ static void uhci_map(PCIDevice *pci_dev, int region_num,
+     register_ioport_read(addr, 32, 1, uhci_ioport_readb, s);
+ }
+ 
++static USBPortOps uhci_port_ops = {
++    .attach = uhci_attach,
++};
++
+ static int usb_uhci_common_initfn(UHCIState *s)
+ {
+     uint8_t *pci_conf = s->dev.config;
+@@ -1075,7 +1079,7 @@ static int usb_uhci_common_initfn(UHCIState *s)
+ 
+     usb_bus_new(&s->bus, &s->dev.qdev);
+     for(i = 0; i < NB_PORTS; i++) {
+-        usb_register_port(&s->bus, &s->ports[i].port, s, i, NULL, uhci_attach);
++        usb_register_port(&s->bus, &s->ports[i].port, s, i, NULL, &uhci_port_ops);
+     }
+     s->frame_timer = qemu_new_timer(vm_clock, uhci_frame_timer, s);
+     s->num_ports_vmstate = NB_PORTS;
+diff --git a/hw/usb.c b/hw/usb.c
+index a326bcf..39d29f3 100644
+--- a/hw/usb.c
++++ b/hw/usb.c
+@@ -28,7 +28,7 @@
+ 
+ void usb_attach(USBPort *port, USBDevice *dev)
+ {
+-    port->attach(port, dev);
++    port->ops->attach(port, dev);
+ }
+ 
+ /**********************/
+diff --git a/hw/usb.h b/hw/usb.h
+index 3aff749..7e441f2 100644
+--- a/hw/usb.h
++++ b/hw/usb.h
+@@ -212,12 +212,14 @@ struct USBDeviceInfo {
+     USBDevice *(*usbdevice_init)(const char *params);
+ };
+ 
+-typedef void (*usb_attachfn)(USBPort *port, USBDevice *dev);
++typedef struct USBPortOps {
++    void (*attach)(USBPort *port, USBDevice *dev);
++} USBPortOps;
+ 
+ /* USB port on which a device can be connected */
+ struct USBPort {
+     USBDevice *dev;
+-    usb_attachfn attach;
++    USBPortOps *ops;
+     void *opaque;
+     USBDevice *pdev;
+     int index; /* internal port index, may be used with the opaque */
+@@ -329,7 +331,7 @@ USBDevice *usb_create(USBBus *bus, const char *name);
+ USBDevice *usb_create_simple(USBBus *bus, const char *name);
+ USBDevice *usbdevice_create(const char *cmdline);
+ void usb_register_port(USBBus *bus, USBPort *port, void *opaque, int index,
+-                       USBDevice *pdev, usb_attachfn attach);
++                       USBDevice *pdev, USBPortOps *ops);
+ void usb_unregister_port(USBBus *bus, USBPort *port);
+ int usb_device_attach(USBDevice *dev);
+ int usb_device_detach(USBDevice *dev);
+-- 
+1.7.3.2
+

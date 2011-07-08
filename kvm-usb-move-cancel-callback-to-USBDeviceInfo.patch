@@ -1,0 +1,178 @@
+From 6d81010cbe81e754d5142df9d1f44a5514ff42ac Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:42:02 -0300
+Subject: [RHEL6 qemu-kvm PATCH 087/115] usb: move cancel callback to USBDeviceInfo
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-87-git-send-email-kraxel@redhat.com>
+Patchwork-id: 28408
+O-Subject: [RHEL-6.2 kvm PATCH 086/115] usb: move cancel callback to USBDeviceInfo
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Remove the cancel callback from the USBPacket struct, move it over
+to USBDeviceInfo.  Zap usb_defer_packet() which is obsolete now.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit eb5e680ae5a72b999946e5618c501648367734a8)
+---
+ hw/usb-msd.c |    8 +++-----
+ hw/usb.c     |    2 +-
+ hw/usb.h     |   17 +++++------------
+ usb-linux.c  |    7 +++----
+ 4 files changed, 12 insertions(+), 22 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-msd.c |    8 +++-----
+ hw/usb.c     |    2 +-
+ hw/usb.h     |   17 +++++------------
+ usb-linux.c  |    7 +++----
+ 4 files changed, 12 insertions(+), 22 deletions(-)
+
+diff --git a/hw/usb-msd.c b/hw/usb-msd.c
+index 8a1696b..73058dc 100644
+--- a/hw/usb-msd.c
++++ b/hw/usb-msd.c
+@@ -314,9 +314,9 @@ static int usb_msd_handle_control(USBDevice *dev, USBPacket *p,
+     return ret;
+ }
+ 
+-static void usb_msd_cancel_io(USBPacket *p, void *opaque)
++static void usb_msd_cancel_io(USBDevice *dev, USBPacket *p)
+ {
+-    MSDState *s = opaque;
++    MSDState *s = DO_UPCAST(MSDState, dev, dev);
+     s->scsi_dev->info->cancel_io(s->scsi_dev, s->tag);
+     s->packet = NULL;
+     s->scsi_len = 0;
+@@ -397,7 +397,6 @@ static int usb_msd_handle_data(USBDevice *dev, USBPacket *p)
+             }
+             if (s->usb_len) {
+                 DPRINTF("Deferring packet %p\n", p);
+-                usb_defer_packet(p, usb_msd_cancel_io, s);
+                 s->packet = p;
+                 ret = USB_RET_ASYNC;
+             } else {
+@@ -420,7 +419,6 @@ static int usb_msd_handle_data(USBDevice *dev, USBPacket *p)
+             if (s->data_len != 0 || len < 13)
+                 goto fail;
+             /* Waiting for SCSI write to complete.  */
+-            usb_defer_packet(p, usb_msd_cancel_io, s);
+             s->packet = p;
+             ret = USB_RET_ASYNC;
+             break;
+@@ -454,7 +452,6 @@ static int usb_msd_handle_data(USBDevice *dev, USBPacket *p)
+             }
+             if (s->usb_len) {
+                 DPRINTF("Deferring packet %p\n", p);
+-                usb_defer_packet(p, usb_msd_cancel_io, s);
+                 s->packet = p;
+                 ret = USB_RET_ASYNC;
+             } else {
+@@ -597,6 +594,7 @@ static struct USBDeviceInfo msd_info = {
+     .usb_desc       = &desc,
+     .init           = usb_msd_initfn,
+     .handle_packet  = usb_generic_handle_packet,
++    .cancel_packet  = usb_msd_cancel_io,
+     .handle_attach  = usb_desc_attach,
+     .handle_reset   = usb_msd_handle_reset,
+     .handle_control = usb_msd_handle_control,
+diff --git a/hw/usb.c b/hw/usb.c
+index 8a9a7fc..4a39cbc 100644
+--- a/hw/usb.c
++++ b/hw/usb.c
+@@ -345,6 +345,6 @@ void usb_packet_complete(USBDevice *dev, USBPacket *p)
+ void usb_cancel_packet(USBPacket * p)
+ {
+     assert(p->owner != NULL);
+-    p->cancel_cb(p, p->cancel_opaque);
++    p->owner->info->cancel_packet(p->owner, p);
+     p->owner = NULL;
+ }
+diff --git a/hw/usb.h b/hw/usb.h
+index e2edc0e..a905d09 100644
+--- a/hw/usb.h
++++ b/hw/usb.h
+@@ -190,6 +190,11 @@ struct USBDeviceInfo {
+     int (*handle_packet)(USBDevice *dev, USBPacket *p);
+ 
+     /*
++     * Called when a packet is canceled.
++     */
++    void (*cancel_packet)(USBDevice *dev, USBPacket *p);
++
++    /*
+      * Called when device is destroyed.
+      */
+     void (*handle_destroy)(USBDevice *dev);
+@@ -259,24 +264,12 @@ struct USBPacket {
+     int len;
+     /* Internal use by the USB layer.  */
+     USBDevice *owner;
+-    USBCallback *cancel_cb;
+-    void *cancel_opaque;
+ };
+ 
+ int usb_handle_packet(USBDevice *dev, USBPacket *p);
+ void usb_packet_complete(USBDevice *dev, USBPacket *p);
+ void usb_cancel_packet(USBPacket * p);
+ 
+-/* Defer completion of a USB packet.  The hadle_packet routine should then
+-   return USB_RET_ASYNC.  Packets that complete immediately (before
+-   handle_packet returns) should not call this method.  */
+-static inline void usb_defer_packet(USBPacket *p, USBCallback *cancel,
+-                                    void * opaque)
+-{
+-    p->cancel_cb = cancel;
+-    p->cancel_opaque = opaque;
+-}
+-
+ void usb_attach(USBPort *port, USBDevice *dev);
+ void usb_wakeup(USBDevice *dev);
+ int usb_generic_handle_packet(USBDevice *s, USBPacket *p);
+diff --git a/usb-linux.c b/usb-linux.c
+index 0b1201b..f548ef8 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -334,9 +334,9 @@ static void async_complete(void *opaque)
+     }
+ }
+ 
+-static void async_cancel(USBPacket *p, void *opaque)
++static void usb_host_async_cancel(USBDevice *dev, USBPacket *p)
+ {
+-    USBHostDevice *s = opaque;
++    USBHostDevice *s = DO_UPCAST(USBHostDevice, dev, dev);
+     AsyncURB *aurb;
+ 
+     QLIST_FOREACH(aurb, &s->aurbs, next) {
+@@ -733,7 +733,6 @@ static int usb_host_handle_data(USBDevice *dev, USBPacket *p)
+         }
+     }
+ 
+-    usb_defer_packet(p, async_cancel, s);
+     return USB_RET_ASYNC;
+ }
+ 
+@@ -864,7 +863,6 @@ static int usb_host_handle_control(USBDevice *dev, USBPacket *p,
+         }
+     }
+ 
+-    usb_defer_packet(p, async_cancel, s);
+     return USB_RET_ASYNC;
+ }
+ 
+@@ -1185,6 +1183,7 @@ static struct USBDeviceInfo usb_host_dev_info = {
+     .qdev.size      = sizeof(USBHostDevice),
+     .init           = usb_host_initfn,
+     .handle_packet  = usb_generic_handle_packet,
++    .cancel_packet  = usb_host_async_cancel,
+     .handle_data    = usb_host_handle_data,
+     .handle_control = usb_host_handle_control,
+     .handle_reset   = usb_host_handle_reset,
+-- 
+1.7.3.2
+

@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.168
+%define pkgrelease 2.169
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -2633,6 +2633,572 @@ Patch2180: kvm-vnc-fix-numlock-capslock-tracking.patch
 Patch2181: kvm-Add-an-isa-device-for-SGA.patch
 # For bz#716906 - add 6.2 machine type
 Patch2182: kvm-pc-add-rhel-6.2-pc-and-make-it-the-default.patch
+# For bz#583922 - Guests in same vlan could not ping successfully using rtl8139 nic
+Patch2183: kvm-rtl8139-cleanup-FCS-calculation.patch
+# For bz#583922 - Guests in same vlan could not ping successfully using rtl8139 nic
+Patch2184: kvm-rtl8139-add-vlan-tag-extraction.patch
+# For bz#583922 - Guests in same vlan could not ping successfully using rtl8139 nic
+Patch2185: kvm-rtl8139-add-vlan-tag-insertion.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2186: kvm-usb-serial-Fail-instead-of-crash-when-chardev-is-mis.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2187: kvm-Add-exit-notifiers.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2188: kvm-Return-usb-device-to-host-on-usb_del-command.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2189: kvm-Return-usb-device-to-host-on-exit.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2190: kvm-usb-linux-Store-devpath-into-USBHostDevice-when-usb_.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2191: kvm-usb-linux-introduce-a-usb_linux_get_configuration-fu.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2192: kvm-usb-linux-Get-the-active-configuration-from-sysfs-ra.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2193: kvm-usb-data-structs-and-helpers-for-usb-descriptors.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2194: kvm-usb-hid-use-new-descriptor-infrastructure.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2195: kvm-usb-serial-use-new-descriptor-infrastructure.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2196: kvm-usb-storage-use-new-descriptor-infrastructure.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2197: kvm-scsi-disk-fix-build-disable-cdrom-emulation.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2198: kvm-enable-usb-storage-scsi-bus-scsi-disk.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2199: kvm-usb-wacom-use-new-descriptor-infrastructure.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2200: kvm-usb-bluetooth-use-new-descriptor-infrastructure.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2201: kvm-usb-hub-use-new-descriptor-infrastructure.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2202: kvm-usb-descriptors-add-settable-strings.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2203: kvm-usb-storage-serial-number-support.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2204: kvm-usb-network-use-new-descriptor-infrastructure.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2205: kvm-usb-move-USB_REQ_SET_ADDRESS-handling-to-common-code.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2206: kvm-usb-move-USB_REQ_-GET-SET-_CONFIGURATION-handling-to.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2207: kvm-usb-move-remote-wakeup-handling-to-common-code.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2208: kvm-usb-create-USBPortOps-move-attach-there.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2209: kvm-usb-rework-attach-detach-workflow.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2210: kvm-usb-add-usb_wakeup-wakeup-callback-to-port-ops.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2211: kvm-usb-uhci-remote-wakeup-support.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2212: kvm-usb-hub-remote-wakeup-support.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2213: kvm-usb-hid-remote-wakeup-support.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2214: kvm-usb-hid-change-serial-number-to-42.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2215: kvm-usb-add-speed-mask-to-ports.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2216: kvm-usb-add-attach-callback.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2217: kvm-usb-add-usb_desc_attach.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2218: kvm-usb-add-device-qualifier-support.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2219: kvm-usb-storage-high-speed-support.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2220: kvm-usb-storage-fix-status-reporting.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2221: kvm-usb-storage-handle-long-responses.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2222: kvm-usb-mass-storage-fix.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2223: kvm-usb-keep-track-of-physical-port-address.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2224: kvm-usb-add-port-property.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2225: kvm-usb-rewrite-fw-path-fix-numbering.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2226: kvm-usb-zap-pdev-from-usbport.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2227: kvm-USB-keyboard-emulation-key-mapping-error.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2228: kvm-usb-hid-modifiers-should-generate-an-event.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2229: kvm-usb-keyboard-add-event-event-queue.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2230: kvm-usb-hid-move-head-n-to-common-struct.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2231: kvm-usb-core-add-migration-support.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2232: kvm-usb-hub-add-migration-support.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2233: kvm-usb-hid-add-migration-support.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2234: kvm-usb-bus-use-snprintf.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2235: kvm-Add-bootindex-handling-into-usb-storage-device.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2236: kvm-usb-trivial-spelling-fixes.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2237: kvm-usb-initialise-data-element-in-Linux-USB_DISCONNECT-.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2238: kvm-usb-linux-introduce-a-usb_linux_alt_setting-function.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2239: kvm-usb-linux-Get-the-alt.-setting-from-sysfs-rather-the.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2240: kvm-usb-linux-s-dprintf-DPRINTF-to-reduce-conflicts.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2241: kvm-usb-linux-Add-support-for-buffering-iso-usb-packets.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2242: kvm-usb-linux-Refuse-packets-for-endpoints-which-are-not.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2243: kvm-usb-linux-Refuse-iso-packets-when-max-packet-size-is.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2244: kvm-usb-linux-We-only-need-to-keep-track-of-15-endpoints.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2245: kvm-usb-linux-Add-support-for-buffering-iso-out-usb-pack.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2246: kvm-usb-control-buffer-fixes.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2247: kvm-uhci-switch-to-QTAILQ-cherry-picked-from-commit-ddf6.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2248: kvm-uhci-keep-uhci-state-pointer-in-async-packet-struct.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2249: kvm-ohci-get-ohci-state-via-container_of.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2250: kvm-musb-get-musb-state-via-container_of-cherry-picked-f.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2251: kvm-usb-move-complete-callback-to-port-ops-cherry-picked.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2252: kvm-usb-linux-Add-missing-break-statement.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2253: kvm-usb-Add-Interface-Association-Descriptor-descriptor-.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2254: kvm-usb-update-config-descriptors-to-identify-number-of-.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2255: kvm-usb-remove-fallback-to-bNumInterfaces-if-no-.nif.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2256: kvm-usb-add-support-for-grouped-interfaces-and-the-Inter.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2257: kvm-Bug-757654-UHCI-fails-to-signal-stall-response-patch.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2258: kvm-usb-Pass-the-packet-to-the-device-s-handle_control-c.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2259: kvm-usb-linux-use-usb_generic_handle_packet.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2260: kvm-usb-linux-fix-device-path-aka-physical-port-handling.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2261: kvm-usb-linux-add-hostport-property.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2262: kvm-usb-linux-track-aurbs-in-list.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2263: kvm-usb-linux-walk-async-urb-list-in-cancel.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2264: kvm-usb-linux-split-large-xfers.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2265: kvm-usb-linux-fix-max_packet_size-for-highspeed.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2266: kvm-usb-storage-don-t-call-usb_packet_complete-twice.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2267: kvm-usb-add-usb_handle_packet.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2268: kvm-usb-keep-track-of-packet-owner.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2269: kvm-usb-move-cancel-callback-to-USBDeviceInfo.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2270: kvm-usb-add-ehci-adapter.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2271: kvm-usb-linux-catch-ENODEV-in-more-places.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2272: kvm-usb-ehci-trace-mmio-and-usbsts-usb-ehci-trace-mmio-a.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2273: kvm-usb-ehci-trace-state-machine-changes.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2274: kvm-usb-ehci-trace-port-state.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2275: kvm-usb-ehci-improve-mmio-tracing.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2276: kvm-ehci-trace-workaround.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2277: kvm-usb-ehci-trace-buffer-copy.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2278: kvm-usb-ehci-add-queue-data-struct.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2279: kvm-usb-ehci-multiqueue-support.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2280: kvm-usb-ehci-fix-offset-writeback-in-ehci_buffer_rw.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2281: kvm-usb-ehci-fix-error-handling.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2282: kvm-ehci-fix-a-number-of-unused-but-set-variable-warning.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2283: kvm-usb-cancel-async-packets-on-unplug.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2284: kvm-usb-ehci-drop-EXECUTING-checks.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2285: kvm-Fix-USB-mouse-Set_Protocol-behavior.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2286: kvm-The-USB-tablet-should-not-claim-boot-protocol-suppor.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2287: kvm-usb-ehci-itd-handling-fixes.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2288: kvm-usb-ehci-split-trace-calls-to-handle-arg-count-limit.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2289: kvm-usb-linux-Get-speed-from-sysfs-rather-then-from-the-.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2290: kvm-usb-linux-Teach-about-super-speed.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2291: kvm-usb-linux-Don-t-do-perror-when-errno-is-not-set.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2292: kvm-usb-linux-Ensure-devep-0.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2293: kvm-usb-linux-Don-t-try-to-open-the-same-device-twice.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2294: kvm-usb-linux-only-cleanup-in-host_close-when-host_open-.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2295: kvm-usb-linux-Enlarge-buffer-for-descriptors-to-8192-byt.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2296: kvm-usb-bus-Add-knowledge-of-USB_SPEED_SUPER-to-usb_spee.patch
+# For bz#561414 - Writes to virtual usb-storage produce I/O errors
+# For bz#632299 - higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5
+# For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2297: kvm-usb-bus-Don-t-detach-non-attached-devices-on-device-.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3922,6 +4488,121 @@ ApplyOptionalPatch()
 %patch2180 -p1
 %patch2181 -p1
 %patch2182 -p1
+%patch2183 -p1
+%patch2184 -p1
+%patch2185 -p1
+%patch2186 -p1
+%patch2187 -p1
+%patch2188 -p1
+%patch2189 -p1
+%patch2190 -p1
+%patch2191 -p1
+%patch2192 -p1
+%patch2193 -p1
+%patch2194 -p1
+%patch2195 -p1
+%patch2196 -p1
+%patch2197 -p1
+%patch2198 -p1
+%patch2199 -p1
+%patch2200 -p1
+%patch2201 -p1
+%patch2202 -p1
+%patch2203 -p1
+%patch2204 -p1
+%patch2205 -p1
+%patch2206 -p1
+%patch2207 -p1
+%patch2208 -p1
+%patch2209 -p1
+%patch2210 -p1
+%patch2211 -p1
+%patch2212 -p1
+%patch2213 -p1
+%patch2214 -p1
+%patch2215 -p1
+%patch2216 -p1
+%patch2217 -p1
+%patch2218 -p1
+%patch2219 -p1
+%patch2220 -p1
+%patch2221 -p1
+%patch2222 -p1
+%patch2223 -p1
+%patch2224 -p1
+%patch2225 -p1
+%patch2226 -p1
+%patch2227 -p1
+%patch2228 -p1
+%patch2229 -p1
+%patch2230 -p1
+%patch2231 -p1
+%patch2232 -p1
+%patch2233 -p1
+%patch2234 -p1
+%patch2235 -p1
+%patch2236 -p1
+%patch2237 -p1
+%patch2238 -p1
+%patch2239 -p1
+%patch2240 -p1
+%patch2241 -p1
+%patch2242 -p1
+%patch2243 -p1
+%patch2244 -p1
+%patch2245 -p1
+%patch2246 -p1
+%patch2247 -p1
+%patch2248 -p1
+%patch2249 -p1
+%patch2250 -p1
+%patch2251 -p1
+%patch2252 -p1
+%patch2253 -p1
+%patch2254 -p1
+%patch2255 -p1
+%patch2256 -p1
+%patch2257 -p1
+%patch2258 -p1
+%patch2259 -p1
+%patch2260 -p1
+%patch2261 -p1
+%patch2262 -p1
+%patch2263 -p1
+%patch2264 -p1
+%patch2265 -p1
+%patch2266 -p1
+%patch2267 -p1
+%patch2268 -p1
+%patch2269 -p1
+%patch2270 -p1
+%patch2271 -p1
+%patch2272 -p1
+%patch2273 -p1
+%patch2274 -p1
+%patch2275 -p1
+%patch2276 -p1
+%patch2277 -p1
+%patch2278 -p1
+%patch2279 -p1
+%patch2280 -p1
+%patch2281 -p1
+%patch2282 -p1
+%patch2283 -p1
+%patch2284 -p1
+%patch2285 -p1
+%patch2286 -p1
+%patch2287 -p1
+%patch2288 -p1
+%patch2289 -p1
+%patch2290 -p1
+%patch2291 -p1
+%patch2292 -p1
+%patch2293 -p1
+%patch2294 -p1
+%patch2295 -p1
+%patch2296 -p1
+%patch2297 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -4143,6 +4824,133 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Jul 08 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.169.el6
+- kvm-rtl8139-cleanup-FCS-calculation.patch [bz#583922]
+- kvm-rtl8139-add-vlan-tag-extraction.patch [bz#583922]
+- kvm-rtl8139-add-vlan-tag-insertion.patch [bz#583922]
+- kvm-usb-serial-Fail-instead-of-crash-when-chardev-is-mis.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-Add-exit-notifiers.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-Return-usb-device-to-host-on-usb_del-command.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-Return-usb-device-to-host-on-exit.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-Store-devpath-into-USBHostDevice-when-usb_.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-introduce-a-usb_linux_get_configuration-fu.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-Get-the-active-configuration-from-sysfs-ra.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-data-structs-and-helpers-for-usb-descriptors.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-hid-use-new-descriptor-infrastructure.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-serial-use-new-descriptor-infrastructure.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-storage-use-new-descriptor-infrastructure.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-scsi-disk-fix-build-disable-cdrom-emulation.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-enable-usb-storage-scsi-bus-scsi-disk.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-wacom-use-new-descriptor-infrastructure.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-bluetooth-use-new-descriptor-infrastructure.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-hub-use-new-descriptor-infrastructure.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-descriptors-add-settable-strings.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-storage-serial-number-support.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-network-use-new-descriptor-infrastructure.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-move-USB_REQ_SET_ADDRESS-handling-to-common-code.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-move-USB_REQ_-GET-SET-_CONFIGURATION-handling-to.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-move-remote-wakeup-handling-to-common-code.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-create-USBPortOps-move-attach-there.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-rework-attach-detach-workflow.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-add-usb_wakeup-wakeup-callback-to-port-ops.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-uhci-remote-wakeup-support.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-hub-remote-wakeup-support.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-hid-remote-wakeup-support.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-hid-change-serial-number-to-42.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-add-speed-mask-to-ports.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-add-attach-callback.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-add-usb_desc_attach.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-add-device-qualifier-support.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-storage-high-speed-support.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-storage-fix-status-reporting.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-storage-handle-long-responses.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-mass-storage-fix.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-keep-track-of-physical-port-address.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-add-port-property.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-rewrite-fw-path-fix-numbering.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-zap-pdev-from-usbport.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-USB-keyboard-emulation-key-mapping-error.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-hid-modifiers-should-generate-an-event.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-keyboard-add-event-event-queue.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-hid-move-head-n-to-common-struct.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-core-add-migration-support.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-hub-add-migration-support.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-hid-add-migration-support.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-bus-use-snprintf.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-Add-bootindex-handling-into-usb-storage-device.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-trivial-spelling-fixes.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-initialise-data-element-in-Linux-USB_DISCONNECT-.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-introduce-a-usb_linux_alt_setting-function.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-Get-the-alt.-setting-from-sysfs-rather-the.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-s-dprintf-DPRINTF-to-reduce-conflicts.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-Add-support-for-buffering-iso-usb-packets.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-Refuse-packets-for-endpoints-which-are-not.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-Refuse-iso-packets-when-max-packet-size-is.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-We-only-need-to-keep-track-of-15-endpoints.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-Add-support-for-buffering-iso-out-usb-pack.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-control-buffer-fixes.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-uhci-switch-to-QTAILQ-cherry-picked-from-commit-ddf6.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-uhci-keep-uhci-state-pointer-in-async-packet-struct.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-ohci-get-ohci-state-via-container_of.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-musb-get-musb-state-via-container_of-cherry-picked-f.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-move-complete-callback-to-port-ops-cherry-picked.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-Add-missing-break-statement.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-Add-Interface-Association-Descriptor-descriptor-.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-update-config-descriptors-to-identify-number-of-.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-remove-fallback-to-bNumInterfaces-if-no-.nif.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-add-support-for-grouped-interfaces-and-the-Inter.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-Bug-757654-UHCI-fails-to-signal-stall-response-patch.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-Pass-the-packet-to-the-device-s-handle_control-c.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-use-usb_generic_handle_packet.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-fix-device-path-aka-physical-port-handling.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-add-hostport-property.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-track-aurbs-in-list.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-walk-async-urb-list-in-cancel.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-split-large-xfers.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-fix-max_packet_size-for-highspeed.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-storage-don-t-call-usb_packet_complete-twice.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-add-usb_handle_packet.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-keep-track-of-packet-owner.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-move-cancel-callback-to-USBDeviceInfo.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-add-ehci-adapter.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-catch-ENODEV-in-more-places.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-ehci-trace-mmio-and-usbsts-usb-ehci-trace-mmio-a.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-ehci-trace-state-machine-changes.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-ehci-trace-port-state.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-ehci-improve-mmio-tracing.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-ehci-trace-workaround.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-ehci-trace-buffer-copy.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-ehci-add-queue-data-struct.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-ehci-multiqueue-support.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-ehci-fix-offset-writeback-in-ehci_buffer_rw.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-ehci-fix-error-handling.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-ehci-fix-a-number-of-unused-but-set-variable-warning.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-cancel-async-packets-on-unplug.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-ehci-drop-EXECUTING-checks.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-Fix-USB-mouse-Set_Protocol-behavior.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-The-USB-tablet-should-not-claim-boot-protocol-suppor.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-ehci-itd-handling-fixes.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-ehci-split-trace-calls-to-handle-arg-count-limit.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-Get-speed-from-sysfs-rather-then-from-the-.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-Teach-about-super-speed.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-Don-t-do-perror-when-errno-is-not-set.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-Ensure-devep-0.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-Don-t-try-to-open-the-same-device-twice.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-only-cleanup-in-host_close-when-host_open-.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-linux-Enlarge-buffer-for-descriptors-to-8192-byt.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-bus-Add-knowledge-of-USB_SPEED_SUPER-to-usb_spee.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- kvm-usb-bus-Don-t-detach-non-attached-devices-on-device-.patch [bz#561414 bz#632299 bz#645351 bz#711354]
+- Resolves: bz#561414
+  (Writes to virtual usb-storage produce I/O errors)
+- Resolves: bz#583922
+  (Guests in same vlan could not ping successfully using rtl8139 nic)
+- Resolves: bz#632299
+  (higher CPU load observed for virtualization workload on RHEL 6 than on RHEL 5.5)
+- Resolves: bz#645351
+  (Add support for USB 2.0 (EHCI) to QEMU)
+- Resolves: bz#711354
+  (Fix and enable enough of SCSI to make usb-storage work)
+
 * Wed Jul 06 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.168.el6
 - kvm-vnc-fix-numlock-capslock-tracking.patch [bz#599306]
 - kvm-Add-an-isa-device-for-SGA.patch [bz#684949]

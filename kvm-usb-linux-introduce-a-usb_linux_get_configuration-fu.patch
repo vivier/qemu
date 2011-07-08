@@ -1,0 +1,91 @@
+From ad5be6e47399d13dd5685c35f623079cf8c86ec3 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:40:42 -0300
+Subject: [RHEL6 qemu-kvm PATCH 009/115] usb-linux: introduce a usb_linux_get_configuration function
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-7-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27859
+O-Subject: [RHEL-6.2 kvm PATCH 006/115] usb-linux: introduce a usb_linux_get_configuration function
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+The next patch in this series introduces multiple ways to get the
+configuration dependent upon usb_fs_type, it is cleaner to put this
+into its own function.
+
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 71d71bbdeb39544ac1602c5e307d9e14c78f9d5d)
+
+Conflicts:
+
+	usb-linux.c
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ usb-linux.c |   31 +++++++++++++++++++++++--------
+ 1 files changed, 23 insertions(+), 8 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ usb-linux.c |   31 +++++++++++++++++++++++--------
+ 1 files changed, 23 insertions(+), 8 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index f6849dc..446bc58 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -756,13 +756,11 @@ static int usb_host_handle_packet(USBDevice *s, USBPacket *p)
+     }
+ }
+ 
+-/* returns 1 on problem encountered or 0 for success */
+-static int usb_linux_update_endp_table(USBHostDevice *s)
++static int usb_linux_get_configuration(USBHostDevice *s)
+ {
+-    uint8_t *descriptors;
+-    uint8_t devep, type, configuration, alt_interface;
++    uint8_t configuration;
+     struct usb_ctrltransfer ct;
+-    int interface, ret, length, i;
++    int ret;
+ 
+     ct.bRequestType = USB_DIR_IN;
+     ct.bRequest = USB_REQ_GET_CONFIGURATION;
+@@ -774,13 +772,30 @@ static int usb_linux_update_endp_table(USBHostDevice *s)
+ 
+     ret = ioctl(s->fd, USBDEVFS_CONTROL, &ct);
+     if (ret < 0) {
+-        perror("usb_linux_update_endp_table");
+-        return 1;
++        perror("usb_linux_get_configuration");
++        return -1;
+     }
+ 
+     /* in address state */
+-    if (configuration == 0)
++    if (configuration == 0) {
++        return -1;
++    }
++
++    return configuration;
++}
++
++/* returns 1 on problem encountered or 0 for success */
++static int usb_linux_update_endp_table(USBHostDevice *s)
++{
++    uint8_t *descriptors;
++    uint8_t devep, type, configuration, alt_interface;
++    struct usb_ctrltransfer ct;
++    int interface, ret, length, i;
++
++    i = usb_linux_get_configuration(s);
++    if (i < 0)
+         return 1;
++    configuration = i;
+ 
+     /* get the desired configuration, interface, and endpoint descriptors
+      * from device description */
+-- 
+1.7.3.2
+

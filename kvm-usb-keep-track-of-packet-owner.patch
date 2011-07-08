@@ -1,0 +1,116 @@
+From 62304736e9daf338d0d40f8f9bf4de3a3b1cf206 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:42:01 -0300
+Subject: [RHEL6 qemu-kvm PATCH 086/115] usb: keep track of packet owner.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-86-git-send-email-kraxel@redhat.com>
+Patchwork-id: 28405
+O-Subject: [RHEL-6.2 kvm PATCH 085/115] usb: keep track of packet owner.
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Keep track of the device which owns the usb packet for async processing.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 4ff658fb6c4f1cb7f771b16f808547e4f5767d02)
+---
+ hw/usb.c |   32 ++++++++++++++++++++++++++++++++
+ hw/usb.h |   18 +++---------------
+ 2 files changed, 35 insertions(+), 15 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb.c |   32 ++++++++++++++++++++++++++++++++
+ hw/usb.h |   18 +++---------------
+ 2 files changed, 35 insertions(+), 15 deletions(-)
+
+diff --git a/hw/usb.c b/hw/usb.c
+index 966cb0f..8a9a7fc 100644
+--- a/hw/usb.c
++++ b/hw/usb.c
+@@ -313,6 +313,38 @@ int usb_handle_packet(USBDevice *dev, USBPacket *p)
+ {
+     int ret;
+ 
++    assert(p->owner == NULL);
+     ret = dev->info->handle_packet(dev, p);
++    if (ret == USB_RET_ASYNC) {
++        if (p->owner == NULL) {
++            p->owner = dev;
++        } else {
++            /* We'll end up here when usb_handle_packet is called
++             * recursively due to a hub being in the chain.  Nothing
++             * to do.  Leave p->owner pointing to the device, not the
++             * hub. */;
++        }
++    }
+     return ret;
+ }
++
++/* Notify the controller that an async packet is complete.  This should only
++   be called for packets previously deferred by returning USB_RET_ASYNC from
++   handle_packet. */
++void usb_packet_complete(USBDevice *dev, USBPacket *p)
++{
++    /* Note: p->owner != dev is possible in case dev is a hub */
++    assert(p->owner != NULL);
++    dev->port->ops->complete(dev, p);
++    p->owner = NULL;
++}
++
++/* Cancel an active packet.  The packed must have been deferred by
++   returning USB_RET_ASYNC from handle_packet, and not yet
++   completed.  */
++void usb_cancel_packet(USBPacket * p)
++{
++    assert(p->owner != NULL);
++    p->cancel_cb(p, p->cancel_opaque);
++    p->owner = NULL;
++}
+diff --git a/hw/usb.h b/hw/usb.h
+index ab1590d..e2edc0e 100644
+--- a/hw/usb.h
++++ b/hw/usb.h
+@@ -258,11 +258,14 @@ struct USBPacket {
+     uint8_t *data;
+     int len;
+     /* Internal use by the USB layer.  */
++    USBDevice *owner;
+     USBCallback *cancel_cb;
+     void *cancel_opaque;
+ };
+ 
+ int usb_handle_packet(USBDevice *dev, USBPacket *p);
++void usb_packet_complete(USBDevice *dev, USBPacket *p);
++void usb_cancel_packet(USBPacket * p);
+ 
+ /* Defer completion of a USB packet.  The hadle_packet routine should then
+    return USB_RET_ASYNC.  Packets that complete immediately (before
+@@ -274,21 +277,6 @@ static inline void usb_defer_packet(USBPacket *p, USBCallback *cancel,
+     p->cancel_opaque = opaque;
+ }
+ 
+-/* Notify the controller that an async packet is complete.  This should only
+-   be called for packets previously deferred with usb_defer_packet, and
+-   should never be called from within handle_packet.  */
+-static inline void usb_packet_complete(USBDevice *dev, USBPacket *p)
+-{
+-    dev->port->ops->complete(dev, p);
+-}
+-
+-/* Cancel an active packet.  The packed must have been deferred with
+-   usb_defer_packet,  and not yet completed.  */
+-static inline void usb_cancel_packet(USBPacket * p)
+-{
+-    p->cancel_cb(p, p->cancel_opaque);
+-}
+-
+ void usb_attach(USBPort *port, USBDevice *dev);
+ void usb_wakeup(USBDevice *dev);
+ int usb_generic_handle_packet(USBDevice *s, USBPacket *p);
+-- 
+1.7.3.2
+

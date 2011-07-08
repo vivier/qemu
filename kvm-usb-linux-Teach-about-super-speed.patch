@@ -1,0 +1,86 @@
+From ba9e71f2b85d5d540d87cfe5c91ac3252c0ecc7b Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:42:24 -0300
+Subject: [RHEL6 qemu-kvm PATCH 108/115] usb-linux: Teach about super speed
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-109-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27920
+O-Subject: [RHEL-6.2 kvm PATCH 108/115] usb-linux: Teach about super speed
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit f264cfbf4a010e1be879bf2e62d323443989d72f)
+
+Conflicts:
+
+	usb-linux.c
+---
+ usb-linux.c |   24 ++++++++++++++++++------
+ 1 files changed, 18 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ usb-linux.c |   24 ++++++++++++++++++------
+ 1 files changed, 18 insertions(+), 6 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index 081fa27..84998ff 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -1361,12 +1361,17 @@ static int usb_host_scan_dev(void *opaque, USBScanFunc *func)
+             addr = atoi(buf);
+             if (get_tag_value(buf, sizeof(buf), line, "Spd=", " ") < 0)
+                 goto fail;
+-            if (!strcmp(buf, "480"))
++
++            if (!strcmp(buf, "5000")) {
++                speed = USB_SPEED_SUPER;
++            } else if (!strcmp(buf, "480")) {
+                 speed = USB_SPEED_HIGH;
+-            else if (!strcmp(buf, "1.5"))
++            } else if (!strcmp(buf, "1.5")) {
+                 speed = USB_SPEED_LOW;
+-            else
++            } else {
+                 speed = USB_SPEED_FULL;
++            }
++
+             product_name[0] = '\0';
+             class_id = 0xff;
+             device_count++;
+@@ -1490,12 +1495,16 @@ static int usb_host_scan_sys(void *opaque, USBScanFunc *func)
+ 
+             if (!usb_host_read_file(line, sizeof(line), "speed", de->d_name))
+                 goto the_end;
+-            if (!strcmp(line, "480\n"))
++
++            if (!strcmp(line, "5000\n")) {
++                speed = USB_SPEED_SUPER;
++            } else if (!strcmp(line, "480\n")) {
+                 speed = USB_SPEED_HIGH;
+-            else if (!strcmp(line, "1.5\n"))
++            } else if (!strcmp(line, "1.5\n")) {
+                 speed = USB_SPEED_LOW;
+-            else
++            } else {
+                 speed = USB_SPEED_FULL;
++            }
+ 
+             ret = func(opaque, bus_num, addr, port, class_id, vendor_id,
+                        product_id, product_name, speed);
+@@ -1753,6 +1762,9 @@ static void usb_info_device(Monitor *mon, int bus_num, int addr, char *port,
+     case USB_SPEED_HIGH:
+         speed_str = "480";
+         break;
++    case USB_SPEED_SUPER:
++        speed_str = "5000";
++        break;
+     default:
+         speed_str = "?";
+         break;
+-- 
+1.7.3.2
+

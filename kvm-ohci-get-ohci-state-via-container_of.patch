@@ -1,0 +1,42 @@
+From d3665e3b2c65ae3a754fed1dba058f4086119edd Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:42 -0300
+Subject: [RHEL6 qemu-kvm PATCH 067/115] ohci: get ohci state via container_of()
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-67-git-send-email-kraxel@redhat.com>
+Patchwork-id: 28389
+O-Subject: [RHEL-6.2 kvm PATCH 066/115] ohci: get ohci state via container_of()
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 9066df13a3db0b8c4c283fb6c6772da3d507c9b7)
+---
+ hw/usb-ohci.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-ohci.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/hw/usb-ohci.c b/hw/usb-ohci.c
+index be3dbd9..78604b3 100644
+--- a/hw/usb-ohci.c
++++ b/hw/usb-ohci.c
+@@ -586,7 +586,7 @@ static void ohci_process_lists(OHCIState *ohci, int completion);
+ 
+ static void ohci_async_complete_packet(USBPacket *packet, void *opaque)
+ {
+-    OHCIState *ohci = opaque;
++    OHCIState *ohci = container_of(packet, OHCIState, usb_packet);
+ #ifdef DEBUG_PACKET
+     dprintf("Async packet complete\n");
+ #endif
+-- 
+1.7.3.2
+

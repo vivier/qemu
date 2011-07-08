@@ -1,0 +1,156 @@
+From 08d4a0a5d4549e8c360b4fc8c1a28db508167559 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:09 -0300
+Subject: [RHEL6 qemu-kvm PATCH 036/115] usb: add device qualifier support
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-34-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27885
+O-Subject: [RHEL-6.2 kvm PATCH 033/115] usb: add device qualifier support
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Add support for device_qualifier and other_speed_config descriptors.
+These are used to query the "other speed" configuration of usb 2.0
+devices, i.e. in high-speed mode they return the full-speed
+configuration and visa versa.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 25620cba94d7ca126a24d74ce6f2ac42aa9a2fe8)
+---
+ hw/usb-desc.c |   46 ++++++++++++++++++++++++++++++++++++++++++++++
+ hw/usb-desc.h |    2 ++
+ hw/usb.h      |    2 ++
+ trace-events  |    2 ++
+ 4 files changed, 52 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-desc.c |   46 ++++++++++++++++++++++++++++++++++++++++++++++
+ hw/usb-desc.h |    2 ++
+ hw/usb.h      |    2 ++
+ trace-events  |    2 ++
+ 4 files changed, 52 insertions(+), 0 deletions(-)
+
+diff --git a/hw/usb-desc.c b/hw/usb-desc.c
+index f01e1cf..62591f2 100644
+--- a/hw/usb-desc.c
++++ b/hw/usb-desc.c
+@@ -48,6 +48,30 @@ int usb_desc_device(const USBDescID *id, const USBDescDevice *dev,
+     return bLength;
+ }
+ 
++int usb_desc_device_qualifier(const USBDescDevice *dev,
++                              uint8_t *dest, size_t len)
++{
++    uint8_t bLength = 0x0a;
++
++    if (len < bLength) {
++        return -1;
++    }
++
++    dest[0x00] = bLength;
++    dest[0x01] = USB_DT_DEVICE_QUALIFIER;
++
++    dest[0x02] = usb_lo(dev->bcdUSB);
++    dest[0x03] = usb_hi(dev->bcdUSB);
++    dest[0x04] = dev->bDeviceClass;
++    dest[0x05] = dev->bDeviceSubClass;
++    dest[0x06] = dev->bDeviceProtocol;
++    dest[0x07] = dev->bMaxPacketSize0;
++    dest[0x08] = dev->bNumConfigurations;
++    dest[0x09] = 0; /* reserved */
++
++    return bLength;
++}
++
+ int usb_desc_config(const USBDescConfig *conf, uint8_t *dest, size_t len)
+ {
+     uint8_t  bLength = 0x09;
+@@ -263,11 +287,18 @@ int usb_desc_string(USBDevice *dev, int index, uint8_t *dest, size_t len)
+ int usb_desc_get_descriptor(USBDevice *dev, int value, uint8_t *dest, size_t len)
+ {
+     const USBDesc *desc = dev->info->usb_desc;
++    const USBDescDevice *other_dev;
+     uint8_t buf[256];
+     uint8_t type = value >> 8;
+     uint8_t index = value & 0xff;
+     int ret = -1;
+ 
++    if (dev->speed == USB_SPEED_HIGH) {
++        other_dev = dev->info->usb_desc->full;
++    } else {
++        other_dev = dev->info->usb_desc->high;
++    }
++
+     switch(type) {
+     case USB_DT_DEVICE:
+         ret = usb_desc_device(&desc->id, dev->device, buf, sizeof(buf));
+@@ -283,6 +314,21 @@ int usb_desc_get_descriptor(USBDevice *dev, int value, uint8_t *dest, size_t len
+         ret = usb_desc_string(dev, index, buf, sizeof(buf));
+         trace_usb_desc_string(dev->addr, index, len, ret);
+         break;
++
++    case USB_DT_DEVICE_QUALIFIER:
++        if (other_dev != NULL) {
++            ret = usb_desc_device_qualifier(other_dev, buf, sizeof(buf));
++        }
++        trace_usb_desc_device_qualifier(dev->addr, len, ret);
++        break;
++    case USB_DT_OTHER_SPEED_CONFIG:
++        if (other_dev != NULL && index < other_dev->bNumConfigurations) {
++            ret = usb_desc_config(other_dev->confs + index, buf, sizeof(buf));
++            buf[0x01] = USB_DT_OTHER_SPEED_CONFIG;
++        }
++        trace_usb_desc_other_speed_config(dev->addr, index, len, ret);
++        break;
++
+     default:
+         fprintf(stderr, "%s: %d unknown type %d (len %zd)\n", __FUNCTION__,
+                 dev->addr, type, len);
+diff --git a/hw/usb-desc.h b/hw/usb-desc.h
+index 484c7c7..ac734ab 100644
+--- a/hw/usb-desc.h
++++ b/hw/usb-desc.h
+@@ -72,6 +72,8 @@ struct USBDesc {
+ /* generate usb packages from structs */
+ int usb_desc_device(const USBDescID *id, const USBDescDevice *dev,
+                     uint8_t *dest, size_t len);
++int usb_desc_device_qualifier(const USBDescDevice *dev,
++                              uint8_t *dest, size_t len);
+ int usb_desc_config(const USBDescConfig *conf, uint8_t *dest, size_t len);
+ int usb_desc_iface(const USBDescIface *iface, uint8_t *dest, size_t len);
+ int usb_desc_endpoint(const USBDescEndpoint *ep, uint8_t *dest, size_t len);
+diff --git a/hw/usb.h b/hw/usb.h
+index eeaf975..f04e93a 100644
+--- a/hw/usb.h
++++ b/hw/usb.h
+@@ -118,6 +118,8 @@
+ #define USB_DT_STRING			0x03
+ #define USB_DT_INTERFACE		0x04
+ #define USB_DT_ENDPOINT			0x05
++#define USB_DT_DEVICE_QUALIFIER         0x06
++#define USB_DT_OTHER_SPEED_CONFIG       0x07
+ 
+ #define USB_ENDPOINT_XFER_CONTROL	0
+ #define USB_ENDPOINT_XFER_ISOC		1
+diff --git a/trace-events b/trace-events
+index c8df37d..99cc044 100644
+--- a/trace-events
++++ b/trace-events
+@@ -84,7 +84,9 @@ disable apic_set_irq(int apic_irq_delivered) "coalescing %d"
+ 
+ # hw/usb-desc.c
+ disable usb_desc_device(int addr, int len, int ret) "dev %d query device, len %d, ret %d"
++disable usb_desc_device_qualifier(int addr, int len, int ret) "dev %d query device qualifier, len %d, ret %d"
+ disable usb_desc_config(int addr, int index, int len, int ret) "dev %d query config %d, len %d, ret %d"
++disable usb_desc_other_speed_config(int addr, int index, int len, int ret) "dev %d query config %d, len %d, ret %d"
+ disable usb_desc_string(int addr, int index, int len, int ret) "dev %d query string %d, len %d, ret %d"
+ disable usb_set_addr(int addr) "dev %d"
+ disable usb_set_config(int addr, int config, int ret) "dev %d, config %d, ret %d"
+-- 
+1.7.3.2
+

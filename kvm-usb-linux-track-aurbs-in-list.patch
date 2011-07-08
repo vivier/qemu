@@ -1,0 +1,94 @@
+From bc7805b76d75f992f212f2006f76224d59eb6a37 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:55 -0300
+Subject: [RHEL6 qemu-kvm PATCH 080/115] usb-linux: track aurbs in list
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-80-git-send-email-kraxel@redhat.com>
+Patchwork-id: 28397
+O-Subject: [RHEL-6.2 kvm PATCH 079/115] usb-linux: track aurbs in list
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+This patch adds code to track all async urbs in a linked list,
+so we can find them without having to pass around a opaque
+pointer to them.  Prerequisite for the cleanups.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 7a8fc83f3469188ef03ea0c1ac9d2ff0dcc36637)
+---
+ usb-linux.c |   18 +++++++++++-------
+ 1 files changed, 11 insertions(+), 7 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ usb-linux.c |   18 +++++++++++-------
+ 1 files changed, 11 insertions(+), 7 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index ce30db6..f3a0344 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -121,6 +121,7 @@ typedef struct USBHostDevice {
+     Notifier  exit;
+ 
+     struct endp_data endp_table[MAX_ENDPOINTS];
++    QLIST_HEAD(, AsyncURB) aurbs;
+ 
+     /* Host side address */
+     int bus_num;
+@@ -223,22 +224,27 @@ struct AsyncURB
+ {
+     struct usbdevfs_urb urb;
+     struct usbdevfs_iso_packet_desc isocpd[ISO_FRAME_DESC_PER_URB];
++    USBHostDevice *hdev;
++    QLIST_ENTRY(AsyncURB) next;
+ 
+     /* For regular async urbs */
+     USBPacket     *packet;
+-    USBHostDevice *hdev;
+ 
+     /* For buffered iso handling */
+     int iso_frame_idx; /* -1 means in flight */
+ };
+ 
+-static AsyncURB *async_alloc(void)
++static AsyncURB *async_alloc(USBHostDevice *s)
+ {
+-    return (AsyncURB *) qemu_mallocz(sizeof(AsyncURB));
++    AsyncURB *aurb = qemu_mallocz(sizeof(AsyncURB));
++    aurb->hdev = s;
++    QLIST_INSERT_HEAD(&s->aurbs, aurb, next);
++    return aurb;
+ }
+ 
+ static void async_free(AsyncURB *aurb)
+ {
++    QLIST_REMOVE(aurb, next);
+     qemu_free(aurb);
+ }
+ 
+@@ -658,8 +664,7 @@ static int usb_host_handle_data(USBDevice *dev, USBPacket *p)
+         return usb_host_handle_iso_data(s, p, p->pid == USB_TOKEN_IN);
+     }
+ 
+-    aurb = async_alloc();
+-    aurb->hdev   = s;
++    aurb = async_alloc(s);
+     aurb->packet = p;
+ 
+     urb = &aurb->urb;
+@@ -782,8 +787,7 @@ static int usb_host_handle_control(USBDevice *dev, USBPacket *p,
+         return USB_RET_STALL;
+     }
+ 
+-    aurb = async_alloc();
+-    aurb->hdev   = s;
++    aurb = async_alloc(s);
+     aurb->packet = p;
+ 
+     /* 
+-- 
+1.7.3.2
+

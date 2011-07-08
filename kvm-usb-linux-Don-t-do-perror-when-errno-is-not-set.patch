@@ -1,0 +1,73 @@
+From 766e0de4e8dab8407165f66b1dbc56aa67482317 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:42:25 -0300
+Subject: [RHEL6 qemu-kvm PATCH 109/115] usb-linux: Don't do perror when errno is not set
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-110-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27921
+O-Subject: [RHEL-6.2 kvm PATCH 109/115] usb-linux: Don't do perror when errno is not set
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Note that "op" also is not set, so before this change these error paths
+would feed NULL to perror.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 61c1117f08f4ed6f7e5cfa59cc9e02cf19c8f92d)
+
+Conflicts:
+
+	usb-linux.c
+---
+ usb-linux.c |   14 ++++++++------
+ 1 files changed, 8 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ usb-linux.c |   14 ++++++++------
+ 1 files changed, 8 insertions(+), 6 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index 84998ff..964ccdc 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -366,7 +366,7 @@ static int usb_host_claim_interfaces(USBHostDevice *dev, int configuration)
+ {
+     const char *op = NULL;
+     int dev_descr_len, config_descr_len;
+-    int interface, nb_interfaces, nb_configurations;
++    int interface, nb_interfaces;
+     int ret, i;
+ 
+     if (configuration == 0) /* address state - ignore */
+@@ -376,9 +376,10 @@ static int usb_host_claim_interfaces(USBHostDevice *dev, int configuration)
+ 
+     i = 0;
+     dev_descr_len = dev->descr[0];
+-    if (dev_descr_len > dev->descr_len)
+-        goto fail;
+-    nb_configurations = dev->descr[17];
++    if (dev_descr_len > dev->descr_len) {
++        fprintf(stderr, "husb: update iface failed. descr too short\n");
++        return 0;
++    }
+ 
+     i += dev_descr_len;
+     while (i < dev->descr_len) {
+@@ -402,8 +403,9 @@ static int usb_host_claim_interfaces(USBHostDevice *dev, int configuration)
+     }
+ 
+     if (i >= dev->descr_len) {
+-        fprintf(stderr, "husb: update iface failed. no matching configuration\n");
+-        goto fail;
++        fprintf(stderr,
++                "husb: update iface failed. no matching configuration\n");
++        return 0;
+     }
+     nb_interfaces = dev->descr[i + 4];
+ 
+-- 
+1.7.3.2
+

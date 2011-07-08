@@ -1,0 +1,196 @@
+From 4cf840a353e98c5a41886c8b7fde7d2c9f1c8e17 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:14 -0300
+Subject: [RHEL6 qemu-kvm PATCH 041/115] usb: keep track of physical port address.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-39-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27873
+O-Subject: [RHEL-6.2 kvm PATCH 038/115] usb: keep track of physical port address.
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Add a path string to USBPort.  Add usb_port_location() function to set
+the physical location of the usb port.  Update all drivers implementing
+usb ports to call it.  Update the monitor commands to print it.  Wind it
+up in qdev.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit c7a2196a4fcdaba977b99aca0b6a6de5e5e7f64a)
+---
+ hw/usb-bus.c  |   26 +++++++++++++++++++++++---
+ hw/usb-hub.c  |   11 +++++++++++
+ hw/usb-musb.c |    1 +
+ hw/usb-ohci.c |    1 +
+ hw/usb-uhci.c |    1 +
+ hw/usb.h      |    2 ++
+ 6 files changed, 39 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-bus.c  |   26 +++++++++++++++++++++++---
+ hw/usb-hub.c  |   11 +++++++++++
+ hw/usb-musb.c |    1 +
+ hw/usb-ohci.c |    1 +
+ hw/usb-uhci.c |    1 +
+ hw/usb.h      |    2 ++
+ 6 files changed, 39 insertions(+), 3 deletions(-)
+
+diff --git a/hw/usb-bus.c b/hw/usb-bus.c
+index a00a473..5901959 100644
+--- a/hw/usb-bus.c
++++ b/hw/usb-bus.c
+@@ -5,12 +5,15 @@
+ #include "monitor.h"
+ 
+ static void usb_bus_dev_print(Monitor *mon, DeviceState *qdev, int indent);
++
++static char *usb_get_dev_path(DeviceState *dev);
+ static char *usbbus_get_fw_dev_path(DeviceState *dev);
+ 
+ static struct BusInfo usb_bus_info = {
+     .name      = "USB",
+     .size      = sizeof(USBBus),
+     .print_dev = usb_bus_dev_print,
++    .get_dev_path = usb_get_dev_path,
+     .get_fw_dev_path = usbbus_get_fw_dev_path,
+ };
+ static int next_usb_bus = 0;
+@@ -123,6 +126,16 @@ void usb_register_port(USBBus *bus, USBPort *port, void *opaque, int index,
+     bus->nfree++;
+ }
+ 
++void usb_port_location(USBPort *downstream, USBPort *upstream, int portnr)
++{
++    if (upstream) {
++        snprintf(downstream->path, sizeof(downstream->path), "%s.%d",
++                 upstream->path, portnr);
++    } else {
++        snprintf(downstream->path, sizeof(downstream->path), "%d", portnr);
++    }
++}
++
+ void usb_unregister_port(USBBus *bus, USBPort *port)
+ {
+     if (port->dev)
+@@ -233,12 +246,19 @@ static void usb_bus_dev_print(Monitor *mon, DeviceState *qdev, int indent)
+     USBDevice *dev = DO_UPCAST(USBDevice, qdev, qdev);
+     USBBus *bus = usb_bus_from_device(dev);
+ 
+-    monitor_printf(mon, "%*saddr %d.%d, speed %s, name %s%s\n",
++    monitor_printf(mon, "%*saddr %d.%d, port %s, speed %s, name %s%s\n",
+                    indent, "", bus->busnr, dev->addr,
++                   dev->port ? dev->port->path : "-",
+                    usb_speed(dev->speed), dev->product_desc,
+                    dev->attached ? ", attached" : "");
+ }
+ 
++static char *usb_get_dev_path(DeviceState *qdev)
++{
++    USBDevice *dev = DO_UPCAST(USBDevice, qdev, qdev);
++    return qemu_strdup(dev->port->path);
++}
++
+ void usb_info(Monitor *mon)
+ {
+     USBBus *bus;
+@@ -255,8 +275,8 @@ void usb_info(Monitor *mon)
+             dev = port->dev;
+             if (!dev)
+                 continue;
+-            monitor_printf(mon, "  Device %d.%d, Speed %s Mb/s, Product %s\n",
+-                           bus->busnr, dev->addr, usb_speed(dev->speed),
++            monitor_printf(mon, "  Device %d.%d, Port %s, Speed %s Mb/s, Product %s\n",
++                           bus->busnr, dev->addr, port->path, usb_speed(dev->speed),
+                            dev->product_desc);
+         }
+     }
+diff --git a/hw/usb-hub.c b/hw/usb-hub.c
+index b18cc5f..6e5cb5b 100644
+--- a/hw/usb-hub.c
++++ b/hw/usb-hub.c
+@@ -256,6 +256,16 @@ static void usb_hub_wakeup(USBDevice *dev)
+     }
+ }
+ 
++static void usb_hub_handle_attach(USBDevice *dev)
++{
++    USBHubState *s = DO_UPCAST(USBHubState, dev, dev);
++    int i;
++
++    for (i = 0; i < NUM_PORTS; i++) {
++        usb_port_location(&s->ports[i].port, dev->port, i+1);
++    }
++}
++
+ static void usb_hub_handle_reset(USBDevice *dev)
+ {
+     /* XXX: do it */
+@@ -542,6 +552,7 @@ static struct USBDeviceInfo hub_info = {
+     .usb_desc       = &desc_hub,
+     .init           = usb_hub_initfn,
+     .handle_packet  = usb_hub_handle_packet,
++    .handle_attach  = usb_hub_handle_attach,
+     .handle_reset   = usb_hub_handle_reset,
+     .handle_control = usb_hub_handle_control,
+     .handle_data    = usb_hub_handle_data,
+diff --git a/hw/usb-musb.c b/hw/usb-musb.c
+index b7bd68e..04109af 100644
+--- a/hw/usb-musb.c
++++ b/hw/usb-musb.c
+@@ -340,6 +340,7 @@ struct MUSBState {
+     usb_bus_new(&s->bus, NULL /* FIXME */);
+     usb_register_port(&s->bus, &s->port, s, 0, NULL, &musb_port_ops,
+                       USB_SPEED_MASK_LOW | USB_SPEED_MASK_FULL);
++    usb_port_location(&s->port, NULL, 1);
+ 
+     return s;
+ }
+diff --git a/hw/usb-ohci.c b/hw/usb-ohci.c
+index 5c7831d..7371b0d 100644
+--- a/hw/usb-ohci.c
++++ b/hw/usb-ohci.c
+@@ -1696,6 +1696,7 @@ static void usb_ohci_init(OHCIState *ohci, DeviceState *dev,
+     for (i = 0; i < num_ports; i++) {
+         usb_register_port(&ohci->bus, &ohci->rhport[i].port, ohci, i, NULL, &ohci_port_ops,
+                           USB_SPEED_MASK_LOW | USB_SPEED_MASK_FULL);
++        usb_port_location(&ohci->rhport[i].port, NULL, i+1);
+     }
+ 
+     ohci->async_td = 0;
+diff --git a/hw/usb-uhci.c b/hw/usb-uhci.c
+index e8493ec..7a2f5c0 100644
+--- a/hw/usb-uhci.c
++++ b/hw/usb-uhci.c
+@@ -1091,6 +1091,7 @@ static int usb_uhci_common_initfn(UHCIState *s)
+     for(i = 0; i < NB_PORTS; i++) {
+         usb_register_port(&s->bus, &s->ports[i].port, s, i, NULL, &uhci_port_ops,
+                           USB_SPEED_MASK_LOW | USB_SPEED_MASK_FULL);
++        usb_port_location(&s->ports[i].port, NULL, i+1);
+     }
+     s->frame_timer = qemu_new_timer(vm_clock, uhci_frame_timer, s);
+     s->num_ports_vmstate = NB_PORTS;
+diff --git a/hw/usb.h b/hw/usb.h
+index f04e93a..21b417b 100644
+--- a/hw/usb.h
++++ b/hw/usb.h
+@@ -236,6 +236,7 @@ typedef struct USBPortOps {
+ struct USBPort {
+     USBDevice *dev;
+     int speedmask;
++    char path[16];
+     USBPortOps *ops;
+     void *opaque;
+     USBDevice *pdev;
+@@ -350,6 +351,7 @@ USBDevice *usb_create_simple(USBBus *bus, const char *name);
+ USBDevice *usbdevice_create(const char *cmdline);
+ void usb_register_port(USBBus *bus, USBPort *port, void *opaque, int index,
+                        USBDevice *pdev, USBPortOps *ops, int speedmask);
++void usb_port_location(USBPort *downstream, USBPort *upstream, int portnr);
+ void usb_unregister_port(USBBus *bus, USBPort *port);
+ int usb_device_attach(USBDevice *dev);
+ int usb_device_detach(USBDevice *dev);
+-- 
+1.7.3.2
+

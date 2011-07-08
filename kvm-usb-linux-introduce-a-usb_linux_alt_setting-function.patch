@@ -1,0 +1,102 @@
+From 0b1f2ab20aa96283459e52dcc16691b03381d940 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:31 -0300
+Subject: [RHEL6 qemu-kvm PATCH 056/115] usb-linux: introduce a usb_linux_alt_setting function
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-56-git-send-email-kraxel@redhat.com>
+Patchwork-id: 28378
+O-Subject: [RHEL-6.2 kvm PATCH 055/115] usb-linux: introduce a usb_linux_alt_setting function
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Hans de Goede <hdegoede@redhat.com>
+
+The next patch in this series introduces multiple ways to get the
+alt setting dependent upon usb_fs_type, it is cleaner to put this
+into its own function.
+
+Note that this patch also changes the assumed alt setting in case
+of an error getting the alt setting to be 0 (a sane default) rather
+then the interface numberwhich makes no sense.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+(cherry picked from commit ed3a328db9d9a027092edc2c17348068e3271cef)
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ usb-linux.c |   40 +++++++++++++++++++++++++---------------
+ 1 files changed, 25 insertions(+), 15 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ usb-linux.c |   40 +++++++++++++++++++++++++---------------
+ 1 files changed, 25 insertions(+), 15 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index bb15b3d..ae7bccc 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -804,13 +804,35 @@ usbdevfs:
+     return configuration;
+ }
+ 
++static uint8_t usb_linux_get_alt_setting(USBHostDevice *s,
++    uint8_t configuration, uint8_t interface)
++{
++    uint8_t alt_setting;
++    struct usb_ctrltransfer ct;
++    int ret;
++
++    ct.bRequestType = USB_DIR_IN | USB_RECIP_INTERFACE;
++    ct.bRequest = USB_REQ_GET_INTERFACE;
++    ct.wValue = 0;
++    ct.wIndex = interface;
++    ct.wLength = 1;
++    ct.data = &alt_setting;
++    ct.timeout = 50;
++    ret = ioctl(s->fd, USBDEVFS_CONTROL, &ct);
++    if (ret < 0) {
++        /* Assume alt 0 on error */
++        return 0;
++    }
++
++    return alt_setting;
++}
++
+ /* returns 1 on problem encountered or 0 for success */
+ static int usb_linux_update_endp_table(USBHostDevice *s)
+ {
+     uint8_t *descriptors;
+     uint8_t devep, type, configuration, alt_interface;
+-    struct usb_ctrltransfer ct;
+-    int interface, ret, length, i;
++    int interface, length, i;
+ 
+     i = usb_linux_get_configuration(s);
+     if (i < 0)
+@@ -839,19 +861,7 @@ static int usb_linux_update_endp_table(USBHostDevice *s)
+         }
+ 
+         interface = descriptors[i + 2];
+-
+-        ct.bRequestType = USB_DIR_IN | USB_RECIP_INTERFACE;
+-        ct.bRequest = USB_REQ_GET_INTERFACE;
+-        ct.wValue = 0;
+-        ct.wIndex = interface;
+-        ct.wLength = 1;
+-        ct.data = &alt_interface;
+-        ct.timeout = 50;
+-
+-        ret = ioctl(s->fd, USBDEVFS_CONTROL, &ct);
+-        if (ret < 0) {
+-            alt_interface = interface;
+-        }
++        alt_interface = usb_linux_get_alt_setting(s, configuration, interface);
+ 
+         /* the current interface descriptor is the active interface
+          * and has endpoints */
+-- 
+1.7.3.2
+

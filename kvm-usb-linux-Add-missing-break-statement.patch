@@ -1,0 +1,49 @@
+From 621659dde47ae75ae326584b6d4a80c25a09f930 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:45 -0300
+Subject: [RHEL6 qemu-kvm PATCH 070/115] usb-linux: Add missing break statement
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-70-git-send-email-kraxel@redhat.com>
+Patchwork-id: 28388
+O-Subject: [RHEL-6.2 kvm PATCH 069/115] usb-linux: Add missing break statement
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Stefan Weil <weil@mail.berlios.de>
+
+cppcheck report:
+usb-linux.c:661: warning: Redundant assignment of "len" in switch
+
+Cc: Hans de Goede <hdegoede@redhat.com>
+Cc: Gerd Hoffmann <kraxel@redhat.com>
+Signed-off-by: Stefan Weil <weil@mail.berlios.de>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 0225e254ae81c5638463cda8f5730f31619113b6)
+---
+ usb-linux.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ usb-linux.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index 791fdbc..559a60f 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -655,6 +655,7 @@ static int usb_host_handle_iso_data(USBHostDevice *s, USBPacket *p, int in)
+                         switch(errno) {
+                         case ETIMEDOUT:
+                             len = USB_RET_NAK;
++                            break;
+                         case EPIPE:
+                         default:
+                             len = USB_RET_STALL;
+-- 
+1.7.3.2
+

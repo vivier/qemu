@@ -1,0 +1,87 @@
+From f6dd0801084affbd04bb103244cd1e91cafb2a77 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:40:40 -0300
+Subject: [RHEL6 qemu-kvm PATCH 007/115] Return usb device to host on exit
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-5-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27857
+O-Subject: [RHEL-6.2 kvm PATCH 004/115] Return usb device to host on exit
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Shahar Havivi <shaharh@redhat.com>
+
+Signed-off-by: Shahar Havivi <shaharh@redhat.com>
+Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit b373a63a2eb3a8354de2f75670484bd98966ccb4)
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ usb-linux.c |   14 ++++++++++++++
+ 1 files changed, 14 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ usb-linux.c |   14 ++++++++++++++
+ 1 files changed, 14 insertions(+), 0 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index 41e2c3a..67bb50d 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -33,6 +33,7 @@
+ #include "qemu-common.h"
+ #include "qemu-timer.h"
+ #include "monitor.h"
++#include "sysemu.h"
+ 
+ #include <dirent.h>
+ #include <sys/ioctl.h>
+@@ -132,6 +133,7 @@ typedef struct USBHostDevice {
+     int       configuration;
+     int       ninterfaces;
+     int       closing;
++    Notifier  exit;
+ 
+     struct ctrl_struct ctrl;
+     struct endp_data endp_table[MAX_ENDPOINTS];
+@@ -400,6 +402,7 @@ static void usb_host_handle_destroy(USBDevice *dev)
+ 
+     usb_host_close(s);
+     QTAILQ_REMOVE(&hostdevs, s, next);
++    qemu_remove_exit_notifier(&s->exit);
+ }
+ 
+ static int usb_linux_update_endp_table(USBHostDevice *s);
+@@ -968,6 +971,15 @@ static int usb_host_close(USBHostDevice *dev)
+     return 0;
+ }
+ 
++static void usb_host_exit_notifier(struct Notifier* n)
++{
++    USBHostDevice *s = container_of(n, USBHostDevice, exit);
++
++    if (s->fd != -1) {
++        ioctl(s->fd, USBDEVFS_RESET);
++    }
++}
++
+ static int usb_host_initfn(USBDevice *dev)
+ {
+     USBHostDevice *s = DO_UPCAST(USBHostDevice, dev, dev);
+@@ -975,6 +987,8 @@ static int usb_host_initfn(USBDevice *dev)
+     dev->auto_attach = 0;
+     s->fd = -1;
+     QTAILQ_INSERT_TAIL(&hostdevs, s, next);
++    s->exit.notify = usb_host_exit_notifier;
++    qemu_add_exit_notifier(&s->exit);
+     usb_host_auto_check(NULL);
+     return 0;
+ }
+-- 
+1.7.3.2
+

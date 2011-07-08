@@ -1,0 +1,157 @@
+From dc3a9b69b9fa23de191c5bcff2a34aa31a432c8e Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:49 -0300
+Subject: [RHEL6 qemu-kvm PATCH 074/115] usb: add support for "grouped" interfaces and the Interface Association Descriptor
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-74-git-send-email-kraxel@redhat.com>
+Patchwork-id: 28400
+O-Subject: [RHEL-6.2 kvm PATCH 073/115] usb: add support for "grouped" interfaces and the Interface Association Descriptor
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Brad Hards <bradh@frogmouth.net>
+
+This is used for some devices that have multiple interfaces that form a logic
+device. An example is Video Class, which has a Control interface and a
+Streaming interface. There can be additional interfaces on the same (physical)
+devices (e.g. a microphone), and Interface Association Descriptor handles this
+case.
+
+Signed-off-by: Brad Hards <bradh@frogmouth.net>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 6e625fc70410d76f2fc0d31185a96cf667076f8b)
+---
+ hw/usb-desc.c |   47 +++++++++++++++++++++++++++++++++++++++++++++++
+ hw/usb-desc.h |   20 ++++++++++++++++++++
+ hw/usb.h      |    1 +
+ 3 files changed, 68 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-desc.c |   47 +++++++++++++++++++++++++++++++++++++++++++++++
+ hw/usb-desc.h |   20 ++++++++++++++++++++
+ hw/usb.h      |    1 +
+ 3 files changed, 68 insertions(+), 0 deletions(-)
+
+diff --git a/hw/usb-desc.c b/hw/usb-desc.c
+index a784155..8367c45 100644
+--- a/hw/usb-desc.c
++++ b/hw/usb-desc.c
+@@ -91,6 +91,18 @@ int usb_desc_config(const USBDescConfig *conf, uint8_t *dest, size_t len)
+     dest[0x08] = conf->bMaxPower;
+     wTotalLength += bLength;
+ 
++    /* handle grouped interfaces if any*/
++    for (i = 0; i < conf->nif_groups; i++) {
++        rc = usb_desc_iface_group(&(conf->if_groups[i]),
++                                  dest + wTotalLength,
++                                  len - wTotalLength);
++        if (rc < 0) {
++            return rc;
++        }
++        wTotalLength += rc;
++    }
++
++    /* handle normal (ungrouped / no IAD) interfaces if any */
+     for (i = 0; i < conf->nif; i++) {
+         rc = usb_desc_iface(conf->ifs + i, dest + wTotalLength, len - wTotalLength);
+         if (rc < 0) {
+@@ -104,6 +116,41 @@ int usb_desc_config(const USBDescConfig *conf, uint8_t *dest, size_t len)
+     return wTotalLength;
+ }
+ 
++int usb_desc_iface_group(const USBDescIfaceAssoc *iad, uint8_t *dest,
++                         size_t len)
++{
++    int pos = 0;
++    int i = 0;
++
++    /* handle interface association descriptor */
++    uint8_t bLength = 0x08;
++
++    if (len < bLength) {
++        return -1;
++    }
++
++    dest[0x00] = bLength;
++    dest[0x01] = USB_DT_INTERFACE_ASSOC;
++    dest[0x02] = iad->bFirstInterface;
++    dest[0x03] = iad->bInterfaceCount;
++    dest[0x04] = iad->bFunctionClass;
++    dest[0x05] = iad->bFunctionSubClass;
++    dest[0x06] = iad->bFunctionProtocol;
++    dest[0x07] = iad->iFunction;
++    pos += bLength;
++
++    /* handle associated interfaces in this group */
++    for (i = 0; i < iad->nif; i++) {
++        int rc = usb_desc_iface(&(iad->ifs[i]), dest + pos, len - pos);
++        if (rc < 0) {
++            return rc;
++        }
++        pos += rc;
++    }
++
++    return pos;
++}
++
+ int usb_desc_iface(const USBDescIface *iface, uint8_t *dest, size_t len)
+ {
+     uint8_t bLength = 0x09;
+diff --git a/hw/usb-desc.h b/hw/usb-desc.h
+index ac734ab..a612515 100644
+--- a/hw/usb-desc.h
++++ b/hw/usb-desc.h
+@@ -30,6 +30,24 @@ struct USBDescConfig {
+     uint8_t                   bmAttributes;
+     uint8_t                   bMaxPower;
+ 
++    /* grouped interfaces */
++    uint8_t                   nif_groups;
++    const USBDescIfaceAssoc   *if_groups;
++
++    /* "normal" interfaces */
++    uint8_t                   nif;
++    const USBDescIface        *ifs;
++};
++
++/* conceptually an Interface Association Descriptor, and releated interfaces */
++struct USBDescIfaceAssoc {
++    uint8_t                   bFirstInterface;
++    uint8_t                   bInterfaceCount;
++    uint8_t                   bFunctionClass;
++    uint8_t                   bFunctionSubClass;
++    uint8_t                   bFunctionProtocol;
++    uint8_t                   iFunction;
++
+     uint8_t                   nif;
+     const USBDescIface        *ifs;
+ };
+@@ -75,6 +93,8 @@ int usb_desc_device(const USBDescID *id, const USBDescDevice *dev,
+ int usb_desc_device_qualifier(const USBDescDevice *dev,
+                               uint8_t *dest, size_t len);
+ int usb_desc_config(const USBDescConfig *conf, uint8_t *dest, size_t len);
++int usb_desc_iface_group(const USBDescIfaceAssoc *iad, uint8_t *dest,
++                         size_t len);
+ int usb_desc_iface(const USBDescIface *iface, uint8_t *dest, size_t len);
+ int usb_desc_endpoint(const USBDescEndpoint *ep, uint8_t *dest, size_t len);
+ int usb_desc_other(const USBDescOther *desc, uint8_t *dest, size_t len);
+diff --git a/hw/usb.h b/hw/usb.h
+index c7e52dd..a8d4d71 100644
+--- a/hw/usb.h
++++ b/hw/usb.h
+@@ -137,6 +137,7 @@ typedef struct USBDesc USBDesc;
+ typedef struct USBDescID USBDescID;
+ typedef struct USBDescDevice USBDescDevice;
+ typedef struct USBDescConfig USBDescConfig;
++typedef struct USBDescIfaceAssoc USBDescIfaceAssoc;
+ typedef struct USBDescIface USBDescIface;
+ typedef struct USBDescEndpoint USBDescEndpoint;
+ typedef struct USBDescOther USBDescOther;
+-- 
+1.7.3.2
+

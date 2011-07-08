@@ -1,0 +1,76 @@
+From acde183fada5d9344922b47d6849547ac5f9f9bd Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:07 -0300
+Subject: [RHEL6 qemu-kvm PATCH 034/115] usb: add attach callback
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-32-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27874
+O-Subject: [RHEL-6.2 kvm PATCH 031/115] usb: add attach callback
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Add handle_attach() callback to USBDeviceInfo which is called by the
+generic package handler when the device is attached to the usb bus
+(i.e. plugged into a port).
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit b6f77fbe230ad3e9ec5c9115a1535137d5e5d04b)
+---
+ hw/usb.c |    7 ++++++-
+ hw/usb.h |    5 +++++
+ 2 files changed, 11 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb.c |    7 ++++++-
+ hw/usb.h |    5 +++++
+ 2 files changed, 11 insertions(+), 1 deletions(-)
+
+diff --git a/hw/usb.c b/hw/usb.c
+index ba720b4..82a6217 100644
+--- a/hw/usb.c
++++ b/hw/usb.c
+@@ -194,6 +194,9 @@ int usb_generic_handle_packet(USBDevice *s, USBPacket *p)
+     switch(p->pid) {
+     case USB_MSG_ATTACH:
+         s->state = USB_STATE_ATTACHED;
++        if (s->info->handle_attach) {
++            s->info->handle_attach(s);
++        }
+         return 0;
+ 
+     case USB_MSG_DETACH:
+@@ -204,7 +207,9 @@ int usb_generic_handle_packet(USBDevice *s, USBPacket *p)
+         s->remote_wakeup = 0;
+         s->addr = 0;
+         s->state = USB_STATE_DEFAULT;
+-        s->info->handle_reset(s);
++        if (s->info->handle_reset) {
++            s->info->handle_reset(s);
++        }
+         return 0;
+     }
+ 
+diff --git a/hw/usb.h b/hw/usb.h
+index 5408910..eeaf975 100644
+--- a/hw/usb.h
++++ b/hw/usb.h
+@@ -190,6 +190,11 @@ struct USBDeviceInfo {
+     void (*handle_destroy)(USBDevice *dev);
+ 
+     /*
++     * Attach the device
++     */
++    void (*handle_attach)(USBDevice *dev);
++
++    /*
+      * Reset the device
+      */
+     void (*handle_reset)(USBDevice *dev);
+-- 
+1.7.3.2
+

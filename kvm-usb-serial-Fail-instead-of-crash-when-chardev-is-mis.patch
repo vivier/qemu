@@ -1,0 +1,52 @@
+From 9058b853b877881e332df3f551547c02e151fe2d Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:40:37 -0300
+Subject: [RHEL6 qemu-kvm PATCH 004/115] usb-serial: Fail instead of crash when chardev is missing
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-2-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27853
+O-Subject: [RHEL-6.2 kvm PATCH 001/115] usb-serial: Fail instead of crash when chardev is missing
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit 81bf96d3d299a7f88bf3e2ece4f795a9949db5f7)
+
+Conflicts:
+
+	hw/usb-serial.c
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/usb-serial.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-serial.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+diff --git a/hw/usb-serial.c b/hw/usb-serial.c
+index 3620251..5091f52 100644
+--- a/hw/usb-serial.c
++++ b/hw/usb-serial.c
+@@ -551,6 +551,11 @@ static int usb_serial_initfn(USBDevice *dev)
+     USBSerialState *s = DO_UPCAST(USBSerialState, dev, dev);
+     s->dev.speed = USB_SPEED_FULL;
+ 
++    if (!s->cs) {
++        error_report("Property chardev is required");
++        return -1;
++    }
++
+     qemu_chr_add_handlers(s->cs, &usb_serial_handlers, s);
+     usb_serial_handle_reset(dev);
+     return 0;
+-- 
+1.7.3.2
+

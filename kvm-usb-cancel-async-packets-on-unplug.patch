@@ -1,0 +1,317 @@
+From 7d9ed98961f0070173095d6083eaf9c66a69cd7d Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:42:17 -0300
+Subject: [RHEL6 qemu-kvm PATCH 101/115] usb: cancel async packets on unplug
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-102-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27906
+O-Subject: [RHEL-6.2 kvm PATCH 101/115] usb: cancel async packets on unplug
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+This patch adds USBBusOps struct with (for now) only a single callback
+which is called when a device is about to be destroyed.  The USB Host
+adapters are implementing this callback and use it to cancel any async
+requests which might be in flight before the device actually goes away.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 07771f6fcebdb12de6dca537423f56299ed9b4b9)
+
+Conflicts:
+
+	hw/milkymist-softusb.c
+---
+ hw/usb-bus.c  |    5 ++++-
+ hw/usb-ehci.c |   25 ++++++++++++++++++++++++-
+ hw/usb-musb.c |   23 ++++++++++++++++++++++-
+ hw/usb-ohci.c |   16 +++++++++++++++-
+ hw/usb-uhci.c |   26 +++++++++++++++++++++++++-
+ hw/usb.h      |    8 +++++++-
+ 6 files changed, 97 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-bus.c  |    5 ++++-
+ hw/usb-ehci.c |   25 ++++++++++++++++++++++++-
+ hw/usb-musb.c |   23 ++++++++++++++++++++++-
+ hw/usb-ohci.c |   16 +++++++++++++++-
+ hw/usb-uhci.c |   26 +++++++++++++++++++++++++-
+ hw/usb.h      |    8 +++++++-
+ 6 files changed, 97 insertions(+), 6 deletions(-)
+
+diff --git a/hw/usb-bus.c b/hw/usb-bus.c
+index f4c4faf..e596df8 100644
+--- a/hw/usb-bus.c
++++ b/hw/usb-bus.c
+@@ -39,9 +39,10 @@ const VMStateDescription vmstate_usb_device = {
+     }
+ };
+ 
+-void usb_bus_new(USBBus *bus, DeviceState *host)
++void usb_bus_new(USBBus *bus, USBBusOps *ops, DeviceState *host)
+ {
+     qbus_create_inplace(&bus->qbus, &usb_bus_info, host, NULL);
++    bus->ops = ops;
+     bus->busnr = next_usb_bus++;
+     bus->qbus.allow_hotplug = 1; /* Yes, we can */
+     QTAILQ_INIT(&bus->free);
+@@ -81,8 +82,10 @@ static int usb_qdev_init(DeviceState *qdev, DeviceInfo *base)
+ static int usb_qdev_exit(DeviceState *qdev)
+ {
+     USBDevice *dev = DO_UPCAST(USBDevice, qdev, qdev);
++    USBBus *bus = usb_bus_from_device(dev);
+ 
+     usb_device_detach(dev);
++    bus->ops->device_destroy(bus, dev);
+     if (dev->info->handle_destroy) {
+         dev->info->handle_destroy(dev);
+     }
+diff --git a/hw/usb-ehci.c b/hw/usb-ehci.c
+index 2ea583c..7a1163c 100644
+--- a/hw/usb-ehci.c
++++ b/hw/usb-ehci.c
+@@ -685,6 +685,18 @@ static void ehci_queues_rip_unused(EHCIState *ehci)
+     }
+ }
+ 
++static void ehci_queues_rip_device(EHCIState *ehci, USBDevice *dev)
++{
++    EHCIQueue *q, *tmp;
++
++    QTAILQ_FOREACH_SAFE(q, &ehci->queues, next, tmp) {
++        if (q->packet.owner != dev) {
++            continue;
++        }
++        ehci_free_queue(q);
++    }
++}
++
+ static void ehci_queues_rip_all(EHCIState *ehci)
+ {
+     EHCIQueue *q, *tmp;
+@@ -2100,6 +2112,13 @@ static void ehci_map(PCIDevice *pci_dev, int region_num,
+     cpu_register_physical_memory(addr, size, s->mem);
+ }
+ 
++static void ehci_device_destroy(USBBus *bus, USBDevice *dev)
++{
++    EHCIState *s = container_of(bus, EHCIState, bus);
++
++    ehci_queues_rip_device(s, dev);
++}
++
+ static int usb_ehci_initfn(PCIDevice *dev);
+ 
+ static USBPortOps ehci_port_ops = {
+@@ -2108,6 +2127,10 @@ static USBPortOps ehci_port_ops = {
+     .complete = ehci_async_complete_packet,
+ };
+ 
++static USBBusOps ehci_bus_ops = {
++    .device_destroy = ehci_device_destroy,
++};
++
+ static PCIDeviceInfo ehci_info = {
+     .qdev.name    = "usb-ehci",
+     .qdev.size    = sizeof(EHCIState),
+@@ -2170,7 +2193,7 @@ static int usb_ehci_initfn(PCIDevice *dev)
+ 
+     s->irq = s->dev.irq[3];
+ 
+-    usb_bus_new(&s->bus, &s->dev.qdev);
++    usb_bus_new(&s->bus, &ehci_bus_ops, &s->dev.qdev);
+     for(i = 0; i < NB_PORTS; i++) {
+         usb_register_port(&s->bus, &s->ports[i], s, i, &ehci_port_ops,
+                           USB_SPEED_MASK_HIGH);
+diff --git a/hw/usb-musb.c b/hw/usb-musb.c
+index cbda6b8..8feec65 100644
+--- a/hw/usb-musb.c
++++ b/hw/usb-musb.c
+@@ -251,6 +251,7 @@
+ static void musb_attach(USBPort *port);
+ static void musb_detach(USBPort *port);
+ static void musb_schedule_cb(USBDevice *dev, USBPacket *p);
++static void musb_device_destroy(USBBus *bus, USBDevice *dev);
+ 
+ static USBPortOps musb_port_ops = {
+     .attach = musb_attach,
+@@ -258,6 +259,10 @@ static USBPortOps musb_port_ops = {
+     .complete = musb_schedule_cb,
+ };
+ 
++static USBBusOps musb_bus_ops = {
++    .device_destroy = musb_device_destroy,
++};
++
+ typedef struct MUSBPacket MUSBPacket;
+ typedef struct MUSBEndPoint MUSBEndPoint;
+ 
+@@ -350,7 +355,7 @@ struct MUSBState *musb_init(qemu_irq *irqs)
+         s->ep[i].epnum = i;
+     }
+ 
+-    usb_bus_new(&s->bus, NULL /* FIXME */);
++    usb_bus_new(&s->bus, &musb_bus_ops, NULL /* FIXME */);
+     usb_register_port(&s->bus, &s->port, s, 0, &musb_port_ops,
+                       USB_SPEED_MASK_LOW | USB_SPEED_MASK_FULL);
+     usb_port_location(&s->port, NULL, 1);
+@@ -767,6 +772,22 @@ static void musb_rx_packet_complete(USBPacket *packey, void *opaque)
+     musb_rx_intr_set(s, epnum, 1);
+ }
+ 
++static void musb_device_destroy(USBBus *bus, USBDevice *dev)
++{
++    MUSBState *s = container_of(bus, MUSBState, bus);
++    int ep, dir;
++
++    for (ep = 0; ep < 16; ep++) {
++        for (dir = 0; dir < 2; dir++) {
++            if (s->ep[ep].packey[dir].p.owner != dev) {
++                continue;
++            }
++            usb_cancel_packet(&s->ep[ep].packey[dir].p);
++            /* status updates needed here? */
++        }
++    }
++}
++
+ static void musb_tx_rdy(MUSBState *s, int epnum)
+ {
+     MUSBEndPoint *ep = s->ep + epnum;
+diff --git a/hw/usb-ohci.c b/hw/usb-ohci.c
+index 40643b5..3f65d2c 100644
+--- a/hw/usb-ohci.c
++++ b/hw/usb-ohci.c
+@@ -1638,6 +1638,16 @@ static void ohci_mem_write(void *ptr, target_phys_addr_t addr, uint32_t val)
+     }
+ }
+ 
++static void ohci_device_destroy(USBBus *bus, USBDevice *dev)
++{
++    OHCIState *ohci = container_of(bus, OHCIState, bus);
++
++    if (ohci->async_td && ohci->usb_packet.owner == dev) {
++        usb_cancel_packet(&ohci->usb_packet);
++        ohci->async_td = 0;
++    }
++}
++
+ /* Only dword reads are defined on OHCI register space */
+ static CPUReadMemoryFunc * const ohci_readfn[3]={
+     ohci_mem_read,
+@@ -1658,6 +1668,10 @@ static USBPortOps ohci_port_ops = {
+     .complete = ohci_async_complete_packet,
+ };
+ 
++static USBBusOps ohci_bus_ops = {
++    .device_destroy = ohci_device_destroy,
++};
++
+ static void usb_ohci_init(OHCIState *ohci, DeviceState *dev,
+                           int num_ports, int devfn,
+                           qemu_irq irq, enum ohci_type type,
+@@ -1688,7 +1702,7 @@ static void usb_ohci_init(OHCIState *ohci, DeviceState *dev,
+     ohci->irq = irq;
+     ohci->type = type;
+ 
+-    usb_bus_new(&ohci->bus, dev);
++    usb_bus_new(&ohci->bus, &ohci_bus_ops, dev);
+     ohci->num_ports = num_ports;
+     for (i = 0; i < num_ports; i++) {
+         usb_register_port(&ohci->bus, &ohci->rhport[i].port, ohci, i, &ohci_port_ops,
+diff --git a/hw/usb-uhci.c b/hw/usb-uhci.c
+index d36f7d3..c9a2ef5 100644
+--- a/hw/usb-uhci.c
++++ b/hw/usb-uhci.c
+@@ -231,6 +231,19 @@ static void uhci_async_validate_end(UHCIState *s)
+     }
+ }
+ 
++static void uhci_async_cancel_device(UHCIState *s, USBDevice *dev)
++{
++    UHCIAsync *curr, *n;
++
++    QTAILQ_FOREACH_SAFE(curr, &s->async_pending, next, n) {
++        if (curr->packet.owner != dev) {
++            continue;
++        }
++        uhci_async_unlink(s, curr);
++        uhci_async_cancel(s, curr);
++    }
++}
++
+ static void uhci_async_cancel_all(UHCIState *s)
+ {
+     UHCIAsync *curr, *n;
+@@ -1041,6 +1054,13 @@ static void uhci_map(PCIDevice *pci_dev, int region_num,
+     register_ioport_read(addr, 32, 1, uhci_ioport_readb, s);
+ }
+ 
++static void uhci_device_destroy(USBBus *bus, USBDevice *dev)
++{
++    UHCIState *s = container_of(bus, UHCIState, bus);
++
++    uhci_async_cancel_device(s, dev);
++}
++
+ static USBPortOps uhci_port_ops = {
+     .attach = uhci_attach,
+     .detach = uhci_detach,
+@@ -1048,6 +1068,10 @@ static USBPortOps uhci_port_ops = {
+     .complete = uhci_async_complete,
+ };
+ 
++static USBBusOps uhci_bus_ops = {
++    .device_destroy = uhci_device_destroy,
++};
++
+ static int usb_uhci_common_initfn(UHCIState *s)
+ {
+     uint8_t *pci_conf = s->dev.config;
+@@ -1060,7 +1084,7 @@ static int usb_uhci_common_initfn(UHCIState *s)
+     pci_conf[0x3d] = 4; // interrupt pin 3
+     pci_conf[0x60] = 0x10; // release number
+ 
+-    usb_bus_new(&s->bus, &s->dev.qdev);
++    usb_bus_new(&s->bus, &uhci_bus_ops, &s->dev.qdev);
+     for(i = 0; i < NB_PORTS; i++) {
+         usb_register_port(&s->bus, &s->ports[i].port, s, i, &uhci_port_ops,
+                           USB_SPEED_MASK_LOW | USB_SPEED_MASK_FULL);
+diff --git a/hw/usb.h b/hw/usb.h
+index a905d09..8201b8a 100644
+--- a/hw/usb.h
++++ b/hw/usb.h
+@@ -128,6 +128,7 @@
+ #define USB_ENDPOINT_XFER_INT		3
+ 
+ typedef struct USBBus USBBus;
++typedef struct USBBusOps USBBusOps;
+ typedef struct USBPort USBPort;
+ typedef struct USBDevice USBDevice;
+ typedef struct USBDeviceInfo USBDeviceInfo;
+@@ -319,6 +320,7 @@ void musb_set_size(MUSBState *s, int epnum, int size, int is_tx);
+ 
+ struct USBBus {
+     BusState qbus;
++    USBBusOps *ops;
+     int busnr;
+     int nfree;
+     int nused;
+@@ -327,7 +329,11 @@ struct USBBus {
+     QTAILQ_ENTRY(USBBus) next;
+ };
+ 
+-void usb_bus_new(USBBus *bus, DeviceState *host);
++struct USBBusOps {
++    void (*device_destroy)(USBBus *bus, USBDevice *dev);
++};
++
++void usb_bus_new(USBBus *bus, USBBusOps *ops, DeviceState *host);
+ USBBus *usb_bus_find(int busnr);
+ void usb_qdev_register(USBDeviceInfo *info);
+ void usb_qdev_register_many(USBDeviceInfo *info);
+-- 
+1.7.3.2
+

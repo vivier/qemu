@@ -1,0 +1,55 @@
+From 85ae0a096fdbc4a6f5a660bf60a74c092f9c0f7a Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:05 -0300
+Subject: [RHEL6 qemu-kvm PATCH 032/115] usb: hid: change serial number to "42".
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-30-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27868
+O-Subject: [RHEL-6.2 kvm PATCH 029/115] usb: hid: change serial number to "42".
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+It would be nice to have some way to signal our hid devices support
+remote wakeup.  There is a descriptor bit for that of course.  Problem
+with using is one is that older qemu versions used to set the bit even
+though they did *not* support remote wakeup.  Bummer.
+
+This patch changes the serial number of our hid devices from "1" to "42"
+to signal "it is safe to enable remote wakeup".  The serial number was
+choosen because it isn't used for anything and it is available in sysfs
+so it is easy to match it using udev rules like this:
+
+ACTION=="add", SUBSYSTEM=="usb", \
+	ATTR{product}=="QEMU USB Tablet", ATTR{serial}=="42", \
+	RUN+="usb_enable_autosuspend %p"
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 7b074a22dab4bdda9864b933f1bc811a3db42845)
+---
+ hw/usb-hid.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-hid.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/hw/usb-hid.c b/hw/usb-hid.c
+index 57b49d1..fc7f3e3 100644
+--- a/hw/usb-hid.c
++++ b/hw/usb-hid.c
+@@ -100,7 +100,7 @@ static const USBDescStrings desc_strings = {
+     [STR_PRODUCT_MOUSE]    = "QEMU USB Mouse",
+     [STR_PRODUCT_TABLET]   = "QEMU USB Tablet",
+     [STR_PRODUCT_KEYBOARD] = "QEMU USB Keyboard",
+-    [STR_SERIALNUMBER]     = "1",
++    [STR_SERIALNUMBER]     = "42", /* == remote wakeup works */
+     [STR_CONFIG_MOUSE]     = "HID Mouse",
+     [STR_CONFIG_TABLET]    = "HID Tablet",
+     [STR_CONFIG_KEYBOARD]  = "HID Keyboard",
+-- 
+1.7.3.2
+

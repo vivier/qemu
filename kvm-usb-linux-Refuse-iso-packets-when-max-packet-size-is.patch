@@ -1,0 +1,51 @@
+From 79e9bf0e67986641e95eeed6920172e756bd3a04 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:36 -0300
+Subject: [RHEL6 qemu-kvm PATCH 061/115] usb-linux: Refuse iso packets when max packet size is 0 (alt setting 0)
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-61-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27903
+O-Subject: [RHEL-6.2 kvm PATCH 060/115] usb-linux: Refuse iso packets when max packet size is 0 (alt setting 0)
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+From: Hans de Goede <hdegoede@redhat.com>
+
+Refuse iso usb packets when then max packet size for the endpoint is 0,
+this avoids an abort in usb_host_alloc_iso() caused by trying to qemu_malloc
+a 0 bytes large buffer.
+(cherry picked from commit 975f29984da4e25f2647d014ec3f4cf688c60e4d)
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ usb-linux.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ usb-linux.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index d3a56f6..c3547a9 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -545,7 +545,11 @@ static int urb_status_to_usb_ret(int status)
+ static int usb_host_handle_iso_data(USBHostDevice *s, USBPacket *p)
+ {
+     AsyncURB *aurb;
+-    int i, j, ret, len = 0;
++    int i, j, ret, max_packet_size, len = 0;
++
++    max_packet_size = get_max_packet_size(s, p->devep);
++    if (max_packet_size == 0)
++        return USB_RET_NAK;
+ 
+     aurb = get_iso_urb(s, p->devep);
+     if (!aurb) {
+-- 
+1.7.3.2
+

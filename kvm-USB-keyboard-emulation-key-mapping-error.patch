@@ -1,0 +1,64 @@
+From 78c89e4fefe45ef5b639bdea479b9372ab04f835 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:18 -0300
+Subject: [RHEL6 qemu-kvm PATCH 045/115] USB keyboard emulation key mapping error
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-43-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27883
+O-Subject: [RHEL-6.2 kvm PATCH 042/115] USB keyboard emulation key mapping error
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Michael Tokarev <mjt@tls.msk.ru>
+
+The USB keyboard emulation's translation table in hw/usb-hid.c doesn't
+match the codes actually sent for the Logo (a.k.a. "Windows") or Menu
+keys. This results in the guest OS not being able to receive these keys
+at all when the USB keyboard emulation is being used.
+
+In particular, both the keymap in /usr/share/kvm/keymaps/modifiers and
+the evdev table in x_keymap.c map these keys to 0xdb, 0xdc, and 0xdd,
+while usb_hid_usage_keys[] seems to be expecting them to be mapped to
+0x7d, 0x7e, and 0x7f.
+
+The attached patch seems to fix the problem, at least in my (limited)
+testing.
+
+http://bugs.debian.org/578846
+http://bugs.debian.org/600593 (cloned from the above against different pkg)
+https://bugs.launchpad.net/qemu/+bug/584139
+
+Signed-Off-By: Brad Jorsch <anomie@users.sourceforge.net>
+Signed-Off-By: Michael Tokarev <mjt@tls.msk.ru>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit a8fb7ff3fdd05ffb4cce1ab4d3ff7768a490f2f5)
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/usb-hid.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-hid.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/hw/usb-hid.c b/hw/usb-hid.c
+index fc7f3e3..bc2cd00 100644
+--- a/hw/usb-hid.c
++++ b/hw/usb-hid.c
+@@ -426,7 +426,7 @@ static const uint8_t usb_hid_usage_keys[0x100] = {
+     0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x00, 0x4a,
+     0x52, 0x4b, 0x00, 0x50, 0x00, 0x4f, 0x00, 0x4d,
+     0x51, 0x4e, 0x49, 0x4c, 0x00, 0x00, 0x00, 0x00,
+-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
++    0x00, 0x00, 0x00, 0xe3, 0xe7, 0x65, 0x00, 0x00,
+     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+-- 
+1.7.3.2
+

@@ -1,0 +1,78 @@
+From d318b28c5f0d254a75d3c5e92049eccd2d33e5c9 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:42:11 -0300
+Subject: [RHEL6 qemu-kvm PATCH 095/115] usb-ehci: trace buffer copy
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-96-git-send-email-kraxel@redhat.com>
+Patchwork-id: 28412
+O-Subject: [RHEL-6.2 kvm PATCH 095/115] usb-ehci: trace buffer copy
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Add a trace point for buffer copies and drop the DPRINTF's.
+
+No change in behavior.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit f2c88dc10e9258ba57f5edaeb3670259fb6ac2b9)
+---
+ hw/usb-ehci.c |    8 +-------
+ trace-events  |    1 +
+ 2 files changed, 2 insertions(+), 7 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-ehci.c |    8 +-------
+ trace-events  |    1 +
+ 2 files changed, 2 insertions(+), 7 deletions(-)
+
+diff --git a/hw/usb-ehci.c b/hw/usb-ehci.c
+index f8a8388..180d3a9 100644
+--- a/hw/usb-ehci.c
++++ b/hw/usb-ehci.c
+@@ -901,8 +901,6 @@ static int ehci_qh_do_overlay(EHCIState *ehci, EHCIqh *qh, EHCIqtd *qtd)
+     dtoggle = qh->token & QTD_TOKEN_DTOGGLE;
+     ping    = qh->token & QTD_TOKEN_PING;
+ 
+-    DPRINTF("setting qh.current from %08X to 0x%08X\n", qh->current_qtd,
+-            ehci->qtdaddr);
+     qh->current_qtd = ehci->qtdaddr;
+     qh->next_qtd    = qtd->next;
+     qh->altnext_qtd = qtd->altnext;
+@@ -955,8 +953,6 @@ static int ehci_buffer_rw(uint8_t *buffer, EHCIqh *qh, int bytes, int rw)
+     }
+ 
+     offset = qh->bufptr[0] & ~QTD_BUFPTR_MASK;
+-    DPRINTF("ehci_buffer_rw: %sing %d bytes %08x cpage %d offset %d\n",
+-           rw ? "writ" : "read", bytes, qh->bufptr[0], cpage, offset);
+ 
+     do {
+         /* start and end of this page */
+@@ -969,9 +965,7 @@ static int ehci_buffer_rw(uint8_t *buffer, EHCIqh *qh, int bytes, int rw)
+             tail = head + bytes;
+         }
+ 
+-        DPRINTF("DATA %s cpage:%d head:%08X tail:%08X target:%08X\n",
+-                rw ? "WRITE" : "READ ", cpage, head, tail, bufpos);
+-
++        trace_usb_ehci_data(rw, cpage, offset, head, tail-head, bufpos);
+         cpu_physical_memory_rw(head, &buffer[bufpos], tail - head, rw);
+ 
+         bufpos += (tail - head);
+diff --git a/trace-events b/trace-events
+index 16cd286..20b9b30 100644
+--- a/trace-events
++++ b/trace-events
+@@ -95,6 +95,7 @@ disable usb_ehci_itd(uint32_t addr, uint32_t next) "ITD @ %08x: next %08x"
+ disable usb_ehci_port_attach(uint32_t port, const char *device) "attach port #%d - %s"
+ disable usb_ehci_port_detach(uint32_t port) "detach port #%d"
+ disable usb_ehci_port_reset(uint32_t port, int enable) "reset port #%d - %d"
++disable usb_ehci_data(int rw, uint32_t cpage, uint32_t offset, uint32_t addr, uint32_t len, uint32_t bufpos) "write %d, cpage %d, offset 0x%03x, addr 0x%08x, len %d, bufpos %d"
+ 
+ # hw/usb-desc.c
+ disable usb_desc_device(int addr, int len, int ret) "dev %d query device, len %d, ret %d"
+-- 
+1.7.3.2
+

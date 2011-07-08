@@ -1,0 +1,101 @@
+From 89bb1c6699b41a8d4ff4ae4d28441730906885d9 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:08 -0300
+Subject: [RHEL6 qemu-kvm PATCH 035/115] usb: add usb_desc_attach
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-33-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27878
+O-Subject: [RHEL-6.2 kvm PATCH 032/115] usb: add usb_desc_attach
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Add usb_desc_attach() which sets up the device according to the speed
+the usb port is able to handle.  This function can be hooked into the
+handle_attach callback.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 32d41919784abe56b10f6d7784c00bb27e4f4d39)
+---
+ hw/usb-desc.c |   36 +++++++++++++++++++++++++++++++++---
+ hw/usb-desc.h |    1 +
+ 2 files changed, 34 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-desc.c |   36 +++++++++++++++++++++++++++++++++---
+ hw/usb-desc.h |    1 +
+ 2 files changed, 34 insertions(+), 3 deletions(-)
+
+diff --git a/hw/usb-desc.c b/hw/usb-desc.c
+index 56ef734..f01e1cf 100644
+--- a/hw/usb-desc.c
++++ b/hw/usb-desc.c
+@@ -153,16 +153,46 @@ int usb_desc_other(const USBDescOther *desc, uint8_t *dest, size_t len)
+ 
+ /* ------------------------------------------------------------------ */
+ 
+-void usb_desc_init(USBDevice *dev)
++static void usb_desc_setdefaults(USBDevice *dev)
+ {
+     const USBDesc *desc = dev->info->usb_desc;
+ 
+     assert(desc != NULL);
+-    dev->speed  = USB_SPEED_FULL;
+-    dev->device = desc->full;
++    switch (dev->speed) {
++    case USB_SPEED_LOW:
++    case USB_SPEED_FULL:
++        dev->device = desc->full;
++        break;
++    case USB_SPEED_HIGH:
++        dev->device = desc->high;
++        break;
++    }
+     dev->config = dev->device->confs;
+ }
+ 
++void usb_desc_init(USBDevice *dev)
++{
++    dev->speed = USB_SPEED_FULL;
++    usb_desc_setdefaults(dev);
++}
++
++void usb_desc_attach(USBDevice *dev)
++{
++    const USBDesc *desc = dev->info->usb_desc;
++
++    assert(desc != NULL);
++    if (desc->high && (dev->port->speedmask & USB_SPEED_MASK_HIGH)) {
++        dev->speed = USB_SPEED_HIGH;
++    } else if (desc->full && (dev->port->speedmask & USB_SPEED_MASK_FULL)) {
++        dev->speed = USB_SPEED_FULL;
++    } else {
++        fprintf(stderr, "usb: port/device speed mismatch for \"%s\"\n",
++                dev->info->product_desc);
++        return;
++    }
++    usb_desc_setdefaults(dev);
++}
++
+ void usb_desc_set_string(USBDevice *dev, uint8_t index, const char *str)
+ {
+     USBDescString *s;
+diff --git a/hw/usb-desc.h b/hw/usb-desc.h
+index d441725..484c7c7 100644
+--- a/hw/usb-desc.h
++++ b/hw/usb-desc.h
+@@ -79,6 +79,7 @@ int usb_desc_other(const USBDescOther *desc, uint8_t *dest, size_t len);
+ 
+ /* control message emulation helpers */
+ void usb_desc_init(USBDevice *dev);
++void usb_desc_attach(USBDevice *dev);
+ void usb_desc_set_string(USBDevice *dev, uint8_t index, const char *str);
+ const char *usb_desc_get_string(USBDevice *dev, uint8_t index);
+ int usb_desc_string(USBDevice *dev, int index, uint8_t *dest, size_t len);
+-- 
+1.7.3.2
+

@@ -1,0 +1,68 @@
+From d059fd0043462a9d07641f9a7237905369d36a63 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:58 -0300
+Subject: [RHEL6 qemu-kvm PATCH 083/115] usb-linux: fix max_packet_size for highspeed.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-83-git-send-email-kraxel@redhat.com>
+Patchwork-id: 28401
+O-Subject: [RHEL-6.2 kvm PATCH 082/115] usb-linux: fix max_packet_size for highspeed.
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Calculate the max packet size correctly.  Only bits 0..11 specify the size,
+bits 11+12 specify the number of (highspeed) microframes the endpoint wants
+to use.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 6dfcdccb09b98dff758b31811d1433b11cc9aaa1)
+---
+ usb-linux.c |   19 +++++++++++++++++--
+ 1 files changed, 17 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ usb-linux.c |   19 +++++++++++++++++--
+ 1 files changed, 17 insertions(+), 2 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index 9cf7c11..0b1201b 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -213,6 +213,22 @@ static int get_iso_buffer_used(USBHostDevice *s, int ep)
+     return s->endp_table[ep - 1].iso_buffer_used;
+ }
+ 
++static void set_max_packet_size(USBHostDevice *s, int ep, uint8_t *descriptor)
++{
++    int raw = descriptor[4] + (descriptor[5] << 8);
++    int size, microframes;
++
++    size = raw & 0x7ff;
++    switch ((raw >> 11) & 3) {
++    case 1:  microframes = 2; break;
++    case 2:  microframes = 3; break;
++    default: microframes = 1; break;
++    }
++    DPRINTF("husb: max packet size: 0x%x -> %d x %d\n",
++            raw, microframes, size);
++    s->endp_table[ep - 1].max_packet_size = size * microframes;
++}
++
+ static int get_max_packet_size(USBHostDevice *s, int ep)
+ {
+     return s->endp_table[ep - 1].max_packet_size;
+@@ -1002,8 +1018,7 @@ static int usb_linux_update_endp_table(USBHostDevice *s)
+                 break;
+             case 0x01:
+                 type = USBDEVFS_URB_TYPE_ISO;
+-                s->endp_table[(devep & 0xf) - 1].max_packet_size =
+-                    descriptors[i + 4] + (descriptors[i + 5] << 8);
++                set_max_packet_size(s, (devep & 0xf), descriptors + i);
+                 break;
+             case 0x02:
+                 type = USBDEVFS_URB_TYPE_BULK;
+-- 
+1.7.3.2
+

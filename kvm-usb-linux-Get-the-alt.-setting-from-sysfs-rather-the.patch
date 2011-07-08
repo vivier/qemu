@@ -1,0 +1,74 @@
+From 51099364dfa3507079b55e88af41df37914d9a89 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 23 Jun 2011 12:41:32 -0300
+Subject: [RHEL6 qemu-kvm PATCH 057/115] usb-linux: Get the alt. setting from sysfs rather then asking the dev
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308832951-8995-57-git-send-email-kraxel@redhat.com>
+Patchwork-id: 28380
+O-Subject: [RHEL-6.2 kvm PATCH 056/115] usb-linux: Get the alt. setting from sysfs rather then asking the dev
+Bugzilla: 561414 632299 645351 711354
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Hans de Goede <hdegoede@redhat.com>
+
+At least one device I have lies when receiving a USB_REQ_GET_INTERFACE,
+always returning 0 even if the alternate setting is different. This is
+likely caused because in practice this control message is never used as
+the operating system's usb stack knows which alternate setting it has
+told the device to get into, and thus this ctrl message does not get
+tested by device manufacturers.
+
+When usb_fs_type == USB_FS_SYS, the active alt. setting can be read directly
+from sysfs, which allows using this device through qemu's usb redirection.
+More in general it seems a good idea to not send needless control msg's to
+devices, esp. as the code in question is called every time a set_interface
+is done. Which happens multiple times during virtual machine startup, and
+when device drivers are activating the usb device.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+(cherry picked from commit c43831fb47e4ee51967870c7b5deb08789b0874c)
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ usb-linux.c |   18 ++++++++++++++++++
+ 1 files changed, 18 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ usb-linux.c |   18 ++++++++++++++++++
+ 1 files changed, 18 insertions(+), 0 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index ae7bccc..174727d 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -811,6 +811,24 @@ static uint8_t usb_linux_get_alt_setting(USBHostDevice *s,
+     struct usb_ctrltransfer ct;
+     int ret;
+ 
++    if (usb_fs_type == USB_FS_SYS) {
++        char device_name[64], line[1024];
++        int alt_setting;
++
++        sprintf(device_name, "%d-%d:%d.%d", s->bus_num, s->devpath,
++                (int)configuration, (int)interface);
++
++        if (!usb_host_read_file(line, sizeof(line), "bAlternateSetting",
++                                device_name)) {
++            goto usbdevfs;
++        }
++        if (sscanf(line, "%d", &alt_setting) != 1) {
++            goto usbdevfs;
++        }
++        return alt_setting;
++    }
++
++usbdevfs:
+     ct.bRequestType = USB_DIR_IN | USB_RECIP_INTERFACE;
+     ct.bRequest = USB_REQ_GET_INTERFACE;
+     ct.wValue = 0;
+-- 
+1.7.3.2
+
