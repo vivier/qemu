@@ -1,0 +1,181 @@
+From 1a0b3cb14d45174cc1b2495df1c28a638c8ae743 Mon Sep 17 00:00:00 2001
+From: Anthony Liguori <aliguori@redhat.com>
+Date: Wed, 15 Jun 2011 13:15:20 -0300
+Subject: [RHEL6 qemu-kvm PATCH 1/2] raw-posix: Linearize direct I/O on Linux NFS
+
+RH-Author: Anthony Liguori <aliguori@redhat.com>
+Message-id: <1308143720-2821-1-git-send-email-aliguori@redhat.com>
+Patchwork-id: 27170
+O-Subject: [PATCH] [PATCH RHEL6.2 qemu-kvm] raw-posix: Linearize direct I/O on Linux NFS
+Bugzilla: 711213
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+BZ: 711213
+Upstream-status: not appropriate for upstream
+
+The Linux NFS client issues separate NFS requests for vectored direct
+I/O writes.  For example, a pwritev() with 8 elements results in 8 write
+requests to the server.  This is very inefficient and a kernel-side fix
+is not trivial or likely to be available soon.
+
+This patch detects files on NFS and uses the QEMU_AIO_MISALIGNED flag to
+force requests to bounce through a linear buffer.
+
+This workaround is enabled by default but can be disabled by setting the
+QEMU_FORCE_LINEARIZE=off environment variable.  It can be set on a
+per-VM basis using the following libvirt domain XML:
+
+<domain type='kvm' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
+  ...
+  <qemu:commandline>
+    <qemu:env name='QEMU_FORCE_LINEARIZE' value='off'/>
+  </qemu:commandline>
+</domain>
+
+Khoa Huynh <khoa@us.ibm.com> reports the following ffsb benchmark
+results over 1 Gbit Ethernet:
+
+Test (threads=8)               unpatched patched
+                                  (MB/s)  (MB/s)
+Large File Creates (bs=256 KB)      20.5   112.0
+Sequential Reads (bs=256 KB)        58.7   112.0
+Large File Creates (bs=8 KB)         5.2     5.8
+Sequential Reads (bs=8 KB)          46.7    80.9
+Random Reads (bs=8 KB)               8.7    23.4
+Random Writes (bs=8 KB)             39.6    44.0
+Mail Server (bs=8 KB)               10.2    23.6
+
+Test (threads=1)               unpatched patched
+                                  (MB/s)  (MB/s)
+Large File Creates (bs=256 KB)      14.5    49.8
+Sequential Reads (bs=256 KB)        87.9    83.9
+Large File Creates (bs=8 KB)         4.8     4.8
+Sequential Reads (bs=8 KB)          23.2    23.1
+Random Reads (bs=8 KB)               4.8     4.7
+Random Writes (bs=8 KB)              9.4    12.8
+Mail Server (bs=8 KB)                5.4     7.3
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+ block/raw-posix.c |   59 +++++++++++++++++++++++++++++++++++++++++++++-------
+ 1 files changed, 51 insertions(+), 8 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/raw-posix.c |   59 +++++++++++++++++++++++++++++++++++++++++++++-------
+ 1 files changed, 51 insertions(+), 8 deletions(-)
+
+diff --git a/block/raw-posix.c b/block/raw-posix.c
+index a38ae91..c966044 100644
+--- a/block/raw-posix.c
++++ b/block/raw-posix.c
+@@ -50,8 +50,10 @@
+ #endif
+ #ifdef __linux__
+ #include <sys/ioctl.h>
++#include <sys/vfs.h>
+ #include <linux/cdrom.h>
+ #include <linux/fd.h>
++#include <linux/magic.h>
+ #endif
+ #if defined (__FreeBSD__) || defined(__FreeBSD_kernel__)
+ #include <signal.h>
+@@ -121,6 +123,7 @@ typedef struct BDRVRawState {
+ #endif
+     uint8_t *aligned_buf;
+     unsigned aligned_buf_size;
++    bool force_linearize;
+ } BDRVRawState;
+ 
+ static int fd_open(BlockDriverState *bs);
+@@ -130,6 +133,38 @@ static int64_t raw_getlength(BlockDriverState *bs);
+ static int cdrom_reopen(BlockDriverState *bs);
+ #endif
+ 
++#if defined(__linux__)
++static bool is_vectored_io_slow(int fd, int bdrv_flags)
++{
++    struct statfs stfs;
++    int ret;
++    char *env_flag = getenv("QEMU_FORCE_LINEARIZE");
++
++    if (env_flag && strcasecmp(env_flag, "off") == 0) {
++        return false;
++    }
++
++    do {
++        ret = fstatfs(fd, &stfs);
++    } while (ret != 0 && errno == EINTR);
++
++    /*
++     * Linux NFS client splits vectored direct I/O requests into separate NFS
++     * requests so it is faster to submit a single buffer instead.
++     */
++    if (!ret && stfs.f_type == NFS_SUPER_MAGIC &&
++        (bdrv_flags & BDRV_O_NOCACHE)) {
++        return true;
++    }
++    return false;
++}
++#else /* !defined(__linux__) */
++static bool is_vectored_io_slow(int fd, int bdrv_flags)
++{
++    return false;
++}
++#endif
++
+ static int raw_open_common(BlockDriverState *bs, const char *filename,
+                            int bdrv_flags, int open_flags)
+ {
+@@ -162,6 +197,7 @@ static int raw_open_common(BlockDriverState *bs, const char *filename,
+     }
+     s->fd = fd;
+     s->aligned_buf = NULL;
++    s->force_linearize = is_vectored_io_slow(fd, bdrv_flags);
+ 
+     if ((bdrv_flags & BDRV_O_NOCACHE)) {
+         /*
+@@ -528,20 +564,27 @@ static BlockDriverAIOCB *raw_aio_submit(BlockDriverState *bs,
+         return NULL;
+ 
+     /*
++     * Check if buffers need to be copied into a single linear buffer.
++     */
++    if (s->force_linearize && qiov->niov > 1) {
++        type |= QEMU_AIO_MISALIGNED;
++    }
++
++    /*
+      * If O_DIRECT is used the buffer needs to be aligned on a sector
+      * boundary.  Check if this is the case or telll the low-level
+      * driver that it needs to copy the buffer.
+      */
+-    if (s->aligned_buf) {
+-        if (!qiov_is_aligned(bs, qiov)) {
+-            type |= QEMU_AIO_MISALIGNED;
++    if (s->aligned_buf && !qiov_is_aligned(bs, qiov)) {
++        type |= QEMU_AIO_MISALIGNED;
++    }
++
+ #ifdef CONFIG_LINUX_AIO
+-        } else if (s->use_aio) {
+-            return laio_submit(bs, s->aio_ctx, s->fd, sector_num, qiov,
+-                               nb_sectors, cb, opaque, type);
+-#endif
+-        }
++    if (s->use_aio && (type & QEMU_AIO_MISALIGNED) == 0) {
++        return laio_submit(bs, s->aio_ctx, s->fd, sector_num, qiov,
++                           nb_sectors, cb, opaque, type);
+     }
++#endif
+ 
+     return paio_submit(bs, s->fd, sector_num, qiov, nb_sectors,
+                        cb, opaque, type);
+-- 
+1.7.3.2
+

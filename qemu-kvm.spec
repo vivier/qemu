@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.169
+%define pkgrelease 2.170
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3199,6 +3199,10 @@ Patch2296: kvm-usb-bus-Add-knowledge-of-USB_SPEED_SUPER-to-usb_spee.patch
 # For bz#645351 - Add support for USB 2.0 (EHCI) to QEMU
 # For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
 Patch2297: kvm-usb-bus-Don-t-detach-non-attached-devices-on-device-.patch
+# For bz#711213 - QEMU should use pass preadv/pwritev a single vector when using cache=none and NFS
+Patch2298: kvm-raw-posix-Linearize-direct-I-O-on-Linux-NFS.patch
+# For bz#720535 - (virtio serial) Guest aborted when transferring data from guest to host
+Patch2299: kvm-virtio-console-Prevent-abort-s-in-case-of-host-chard.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -4603,6 +4607,8 @@ ApplyOptionalPatch()
 %patch2295 -p1
 %patch2296 -p1
 %patch2297 -p1
+%patch2298 -p1
+%patch2299 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -4824,6 +4830,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Jul 13 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.170.el6
+- kvm-raw-posix-Linearize-direct-I-O-on-Linux-NFS.patch [bz#711213]
+- kvm-virtio-console-Prevent-abort-s-in-case-of-host-chard.patch [bz#720535]
+- Resolves: bz#711213
+  (QEMU should use pass preadv/pwritev a single vector when using cache=none and NFS)
+- Resolves: bz#720535
+  ((virtio serial) Guest aborted when transferring data from guest to host)
+
 * Fri Jul 08 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.169.el6
 - kvm-rtl8139-cleanup-FCS-calculation.patch [bz#583922]
 - kvm-rtl8139-add-vlan-tag-extraction.patch [bz#583922]
