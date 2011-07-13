@@ -15,7 +15,7 @@
 
 %define sublevel 0.12.1.2
 %define pkgrelease 2.160
-%define zrelease 2
+%define zrelease 3
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}.%{zrelease}
@@ -2532,6 +2532,8 @@ Patch2129: kvm-Fix-phys-memory-client-pass-guest-physical-address-n.patch
 Patch2130: kvm-virtio-prevent-indirect-descriptor-buffer-overflow.patch
 # For bz#717403 - qemu-kvm: OOB memory access caused by negative vq notifies [rhel-6.1.z]
 Patch2131: kvm-virtio-guard-against-negative-vq-notifies.patch
+# For bz#720999 - QEMU should use pass preadv/pwritev a single vector when using cache=none and NFS
+Patch2132: kvm-raw-posix-Linearize-direct-I-O-on-Linux-NFS.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3770,6 +3772,7 @@ ApplyOptionalPatch()
 %patch2129 -p1
 %patch2130 -p1
 %patch2131 -p1
+%patch2132 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3991,6 +3994,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Jul 13 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.160.el6_1.3
+- kvm-raw-posix-Linearize-direct-I-O-on-Linux-NFS.patch [bz#720999]
+- Resolves: bz#720999
+  (QEMU should use pass preadv/pwritev a single vector when using cache=none and NFS)
+
 * Wed Jun 29 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.160.el6_1.2
 - kvm-virtio-guard-against-negative-vq-notifies.patch [bz#717403]
 - Resolves: bz#717403
