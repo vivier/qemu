@@ -1,0 +1,113 @@
+From 5e5c6aa2b2987625d93486631db79e01e4ec99cf Mon Sep 17 00:00:00 2001
+From: Dean Nelson <dnelson@redhat.com>
+Date: Thu, 16 Jun 2011 03:07:52 -0300
+Subject: [RHEL6 qemu-kvm PATCH 1/6] Add qemu_ram_alloc_from_ptr function
+
+RH-Author: Dean Nelson <dnelson@redhat.com>
+Message-id: <20110616030752.4846.8447.email-sent-by-dnelson@localhost6.localdomain6>
+Patchwork-id: 27203
+O-Subject: [RHEL6.2 qemu-kvm PATCH 1/6] Add qemu_ram_alloc_from_ptr function
+Bugzilla: 696102
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+Resolves RHBZ 696102
+
+Backport of:
+
+commit 84b89d782f03b99770759f1d9d6e4e95a2641c35
+Author: Cam Macdonell <cam@cs.ualberta.ca>
+Date:   Mon Jul 26 18:10:57 2010 -0600
+
+    Add qemu_ram_alloc_from_ptr function
+
+    Provide a function to add an allocated region of memory to the qemu RAM.
+
+    This patch is copied from Marcelo's qemu_ram_map() in qemu-kvm and given the
+    clearer name qemu_ram_alloc_from_ptr().
+
+    Signed-off-by: Cam Macdonell <cam@cs.ualberta.ca>
+    Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+
+---
+ cpu-common.h |    2 ++
+ exec.c       |   43 +++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 45 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ cpu-common.h |    2 ++
+ exec.c       |   43 +++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 45 insertions(+), 0 deletions(-)
+
+diff --git a/cpu-common.h b/cpu-common.h
+index acb91ac..b9ae398 100644
+--- a/cpu-common.h
++++ b/cpu-common.h
+@@ -30,6 +30,8 @@ static inline void cpu_register_physical_memory(target_phys_addr_t start_addr,
+ }
+ 
+ ram_addr_t cpu_get_physical_page_desc(target_phys_addr_t addr);
++ram_addr_t qemu_ram_alloc_from_ptr(DeviceState *dev, const char *name,
++                        ram_addr_t size, void *host);
+ ram_addr_t qemu_ram_alloc(DeviceState *dev, const char *name, ram_addr_t size);
+ void qemu_ram_free(ram_addr_t addr);
+ /* This should only be used for ram local to a device.  */
+diff --git a/exec.c b/exec.c
+index 57db142..ef44f06 100644
+--- a/exec.c
++++ b/exec.c
+@@ -2688,6 +2688,49 @@ static ram_addr_t last_ram_offset(void)
+     return last;
+ }
+ 
++ram_addr_t qemu_ram_alloc_from_ptr(DeviceState *dev, const char *name,
++                        ram_addr_t size, void *host)
++{
++    RAMBlock *new_block, *block;
++
++    size = TARGET_PAGE_ALIGN(size);
++    new_block = qemu_mallocz(sizeof(*new_block));
++
++    if (dev && dev->parent_bus && dev->parent_bus->info->get_dev_path) {
++        char *id = dev->parent_bus->info->get_dev_path(dev);
++        if (id) {
++            snprintf(new_block->idstr, sizeof(new_block->idstr), "%s/", id);
++            qemu_free(id);
++        }
++    }
++    pstrcat(new_block->idstr, sizeof(new_block->idstr), name);
++
++    QLIST_FOREACH(block, &ram_list.blocks, next) {
++        if (!strcmp(block->idstr, new_block->idstr)) {
++            fprintf(stderr, "RAMBlock \"%s\" already registered, abort!\n",
++                    new_block->idstr);
++            abort();
++        }
++    }
++
++    new_block->host = host;
++
++    new_block->offset = find_ram_offset(size);
++    new_block->length = size;
++
++    QLIST_INSERT_HEAD(&ram_list.blocks, new_block, next);
++
++    ram_list.phys_dirty = qemu_realloc(ram_list.phys_dirty,
++                                       last_ram_offset() >> TARGET_PAGE_BITS);
++    memset(ram_list.phys_dirty + (new_block->offset >> TARGET_PAGE_BITS),
++           0xff, size >> TARGET_PAGE_BITS);
++
++    if (kvm_enabled())
++        kvm_setup_guest_memory(new_block->host, size);
++
++    return new_block->offset;
++}
++
+ ram_addr_t qemu_ram_alloc(DeviceState *dev, const char *name, ram_addr_t size)
+ {
+     RAMBlock *new_block, *block;
+-- 
+1.7.3.2
+

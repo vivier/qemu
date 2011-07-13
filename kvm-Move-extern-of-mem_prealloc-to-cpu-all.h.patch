@@ -1,0 +1,54 @@
+From 8fa81e6eae1f2780f035d7bb9295a46da7734b2d Mon Sep 17 00:00:00 2001
+From: Dean Nelson <dnelson@redhat.com>
+Date: Thu, 16 Jun 2011 03:08:03 -0300
+Subject: [RHEL6 qemu-kvm PATCH 3/6] Move extern of mem_prealloc to cpu-all.h
+
+RH-Author: Dean Nelson <dnelson@redhat.com>
+Message-id: <20110616030803.4846.75723.email-sent-by-dnelson@localhost6.localdomain6>
+Patchwork-id: 27205
+O-Subject: [RHEL6.2 qemu-kvm PATCH 3/6] Move extern of mem_prealloc to cpu-all.h
+Bugzilla: 696102
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+Resolves RHBZ 696102
+
+Moving the extern of mem_prealloc to cpu-all.h because that's where it
+resides upstream. This change is necessary for the next patch in this
+series to build cleanly.
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ cpu-all.h |    2 ++
+ exec.c    |    1 -
+ 2 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/cpu-all.h b/cpu-all.h
+index 07ada32..939627f 100644
+--- a/cpu-all.h
++++ b/cpu-all.h
+@@ -867,6 +867,8 @@ typedef struct RAMList {
+ } RAMList;
+ extern RAMList ram_list;
+ 
++extern int mem_prealloc;
++
+ /* physical memory access */
+ 
+ /* MMIO pages are identified by a combination of an IO device index and
+diff --git a/exec.c b/exec.c
+index 035bce5..6f02b02 100644
+--- a/exec.c
++++ b/exec.c
+@@ -2564,7 +2564,6 @@ static void *file_ram_alloc(RAMBlock *block,
+     int flags;
+ #endif
+     unsigned long hpagesize;
+-    extern int mem_prealloc;
+ 
+     if (!path) {
+         return NULL;
+-- 
+1.7.3.2
+

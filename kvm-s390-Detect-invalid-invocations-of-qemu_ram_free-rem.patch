@@ -1,0 +1,66 @@
+From 2d77fcb2feeac36566c32b4bf5a4d4fce0d65319 Mon Sep 17 00:00:00 2001
+From: Dean Nelson <dnelson@redhat.com>
+Date: Thu, 16 Jun 2011 03:08:15 -0300
+Subject: [RHEL6 qemu-kvm PATCH 5/6] s390: Detect invalid invocations of qemu_ram_free/remap
+
+RH-Author: Dean Nelson <dnelson@redhat.com>
+Message-id: <20110616030815.4846.75411.email-sent-by-dnelson@localhost6.localdomain6>
+Patchwork-id: 27207
+O-Subject: [RHEL6.2 qemu-kvm PATCH 5/6] s390: Detect invalid invocations of qemu_ram_free/remap
+Bugzilla: 696102
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+Resolves RHBZ 696102
+
+Backport of:
+
+commit fd28aa132362320f9f3a30b23f634bb14dee528e
+Author: Jan Kiszka <jan.kiszka@siemens.com>
+Date:   Tue Mar 15 12:26:14 2011 +0100
+
+    s390: Detect invalid invocations of qemu_ram_free/remap
+
+    This both detects invalid invocations of qemu_ram_free and
+    qemu_ram_remap when mem_path is non-NULL and fixes a build error on
+    s390 ("'area' may be used uninitialized in this function").
+
+    Signed-off-by: Jan Kiszka <jan.kiszka@siemens.com>
+    CC: Alexander Graf <agraf@suse.de>
+    Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+---
+ exec.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ exec.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/exec.c b/exec.c
+index 751fd60..cddd04e 100644
+--- a/exec.c
++++ b/exec.c
+@@ -2794,6 +2794,8 @@ void qemu_ram_free(ram_addr_t addr)
+                 } else {
+                     qemu_vfree(block->host);
+                 }
++#else
++                abort();
+ #endif
+             } else {
+ #if defined(TARGET_S390X) && defined(CONFIG_KVM)
+@@ -2842,6 +2844,8 @@ void qemu_ram_remap(ram_addr_t addr, ram_addr_t length)
+                         area = mmap(vaddr, length, PROT_READ | PROT_WRITE,
+                                     flags, -1, 0);
+                     }
++#else
++                    abort();
+ #endif
+                 } else {
+ #if defined(TARGET_S390X) && defined(CONFIG_KVM)
+-- 
+1.7.3.2
+

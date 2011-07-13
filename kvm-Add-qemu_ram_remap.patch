@@ -1,0 +1,192 @@
+From cd571b76520f1b0b63f82b272fa084d352508094 Mon Sep 17 00:00:00 2001
+From: Dean Nelson <dnelson@redhat.com>
+Date: Mon, 11 Jul 2011 00:28:27 -0300
+Subject: [RHEL6 qemu-kvm PATCH 4/6] Add qemu_ram_remap
+
+RH-Author: Dean Nelson <dnelson@redhat.com>
+Message-id: <20110711002826.2936.43909.email-sent-by-dnelson@localhost6.localdomain6>
+Patchwork-id: 29378
+O-Subject: [RHEL6.2 qemu-kvm PATCH 4/6 v2] Add qemu_ram_remap
+Bugzilla: 696102
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+Resolves RHBZ 696102
+
+v2 - Ensure disable_KSM is not true before doing the MADV_MERGEABLE
+     madvise() call in qemu_ram_remap().
+
+Backport of:
+
+commit cd19cfa23609dc1a35dd34f0b7554a8462337fde
+Author: Huang Ying <ying.huang@intel.com>
+Date:   Wed Mar 2 08:56:19 2011 +0100
+
+    Add qemu_ram_remap
+
+    qemu_ram_remap() unmaps the specified RAM pages, then re-maps these
+    pages again.  This is used by KVM HWPoison support to clear HWPoisoned
+    page tables across guest rebooting, so that a new page may be
+    allocated later to recover the memory error.
+
+    [ Jan: style fixlets, WIN32 fix ]
+
+    Signed-off-by: Huang Ying <ying.huang@intel.com>
+    Signed-off-by: Jan Kiszka <jan.kiszka@siemens.com>
+    Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+---
+ cpu-all.h    |    4 +++
+ cpu-common.h |    1 +
+ exec.c       |   68 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 71 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ cpu-all.h    |    4 +++
+ cpu-common.h |    1 +
+ exec.c       |   68 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 71 insertions(+), 2 deletions(-)
+
+diff --git a/cpu-all.h b/cpu-all.h
+index 939627f..334de68 100644
+--- a/cpu-all.h
++++ b/cpu-all.h
+@@ -849,10 +849,14 @@ extern int phys_ram_fd;
+ extern ram_addr_t ram_size;
+ extern uint8_t *bios_mem;
+ 
++/* RAM is pre-allocated and passed into qemu_ram_alloc_from_ptr */
++#define RAM_PREALLOC_MASK   (1 << 0)
++
+ typedef struct RAMBlock {
+     uint8_t *host;
+     ram_addr_t offset;
+     ram_addr_t length;
++    uint32_t flags;
+     char idstr[256];
+     QLIST_ENTRY(RAMBlock) next;
+ #if defined(__linux__) && !defined(TARGET_S390X)
+diff --git a/cpu-common.h b/cpu-common.h
+index b9ae398..8f1d8e4 100644
+--- a/cpu-common.h
++++ b/cpu-common.h
+@@ -34,6 +34,7 @@ ram_addr_t qemu_ram_alloc_from_ptr(DeviceState *dev, const char *name,
+                         ram_addr_t size, void *host);
+ ram_addr_t qemu_ram_alloc(DeviceState *dev, const char *name, ram_addr_t size);
+ void qemu_ram_free(ram_addr_t addr);
++void qemu_ram_remap(ram_addr_t addr, ram_addr_t length);
+ /* This should only be used for ram local to a device.  */
+ void *qemu_get_ram_ptr(ram_addr_t addr);
+ /* This should not be used by devices.  */
+diff --git a/exec.c b/exec.c
+index 6f02b02..751fd60 100644
+--- a/exec.c
++++ b/exec.c
+@@ -2637,6 +2637,7 @@ static void *file_ram_alloc(ram_addr_t memory, const char *path)
+ #endif
+ 
+ extern const char *mem_path;
++extern int disable_KSM;
+ 
+ #if defined(__linux__) && defined(__x86_64__)
+ /*
+@@ -2691,7 +2692,6 @@ ram_addr_t qemu_ram_alloc_from_ptr(DeviceState *dev, const char *name,
+                                    ram_addr_t size, void *host)
+ {
+     RAMBlock *new_block, *block;
+-    extern int disable_KSM;
+ 
+     size = TARGET_PAGE_ALIGN(size);
+     new_block = qemu_mallocz(sizeof(*new_block));
+@@ -2715,6 +2715,7 @@ ram_addr_t qemu_ram_alloc_from_ptr(DeviceState *dev, const char *name,
+ 
+     if (host) {
+         new_block->host = host;
++        new_block->flags |= RAM_PREALLOC_MASK;
+     } else {
+         new_block->host = file_ram_alloc(new_block, size, mem_path);
+         if (!new_block->host) {
+@@ -2783,7 +2784,9 @@ void qemu_ram_free(ram_addr_t addr)
+     QLIST_FOREACH(block, &ram_list.blocks, next) {
+         if (addr == block->offset) {
+             QLIST_REMOVE(block, next);
+-            if (mem_path) {
++            if (block->flags & RAM_PREALLOC_MASK) {
++                ;
++            } else if (mem_path) {
+ #if defined (__linux__) && !defined(TARGET_S390X)
+                 if (block->fd) {
+                     munmap(block->host, block->length);
+@@ -2806,6 +2809,67 @@ void qemu_ram_free(ram_addr_t addr)
+ 
+ }
+ 
++#ifndef _WIN32
++void qemu_ram_remap(ram_addr_t addr, ram_addr_t length)
++{
++    RAMBlock *block;
++    ram_addr_t offset;
++    int flags;
++    void *area, *vaddr;
++
++    QLIST_FOREACH(block, &ram_list.blocks, next) {
++        offset = addr - block->offset;
++        if (offset < block->length) {
++            vaddr = block->host + offset;
++            if (block->flags & RAM_PREALLOC_MASK) {
++                ;
++            } else {
++                flags = MAP_FIXED;
++                munmap(vaddr, length);
++                if (mem_path) {
++#if defined(__linux__) && !defined(TARGET_S390X)
++                    if (block->fd) {
++#ifdef MAP_POPULATE
++                        flags |= mem_prealloc ? MAP_POPULATE | MAP_SHARED :
++                            MAP_PRIVATE;
++#else
++                        flags |= MAP_PRIVATE;
++#endif
++                        area = mmap(vaddr, length, PROT_READ | PROT_WRITE,
++                                    flags, block->fd, offset);
++                    } else {
++                        flags |= MAP_PRIVATE | MAP_ANONYMOUS;
++                        area = mmap(vaddr, length, PROT_READ | PROT_WRITE,
++                                    flags, -1, 0);
++                    }
++#endif
++                } else {
++#if defined(TARGET_S390X) && defined(CONFIG_KVM)
++                    flags |= MAP_SHARED | MAP_ANONYMOUS;
++                    area = mmap(vaddr, length, PROT_EXEC|PROT_READ|PROT_WRITE,
++                                flags, -1, 0);
++#else
++                    flags |= MAP_PRIVATE | MAP_ANONYMOUS;
++                    area = mmap(vaddr, length, PROT_READ | PROT_WRITE,
++                                flags, -1, 0);
++#endif
++                }
++                if (area != vaddr) {
++                    fprintf(stderr, "Could not remap addr: %lx@%lx\n",
++                            length, addr);
++                    exit(1);
++                }
++#ifdef MADV_MERGEABLE
++                if (!disable_KSM)
++                    madvise(vaddr, length, MADV_MERGEABLE);
++#endif
++            }
++            return;
++        }
++    }
++}
++#endif /* !_WIN32 */
++
+ /* Return a host pointer to ram allocated with qemu_ram_alloc.
+    With the exception of the softmmu code in this file, this should
+    only be used for local memory (e.g. video ram) that the device owns,
+-- 
+1.7.3.2
+

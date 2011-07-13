@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.170
+%define pkgrelease 2.171
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3203,6 +3203,18 @@ Patch2297: kvm-usb-bus-Don-t-detach-non-attached-devices-on-device-.patch
 Patch2298: kvm-raw-posix-Linearize-direct-I-O-on-Linux-NFS.patch
 # For bz#720535 - (virtio serial) Guest aborted when transferring data from guest to host
 Patch2299: kvm-virtio-console-Prevent-abort-s-in-case-of-host-chard.patch
+# For bz#696102 - [Intel 6.2 FEAT] KVM: un-poison page when guest reboot: QEMU part
+Patch2300: kvm-Add-qemu_ram_alloc_from_ptr-function.patch
+# For bz#696102 - [Intel 6.2 FEAT] KVM: un-poison page when guest reboot: QEMU part
+Patch2301: kvm-exec-remove-code-duplication-in-qemu_ram_alloc-and-q.patch
+# For bz#696102 - [Intel 6.2 FEAT] KVM: un-poison page when guest reboot: QEMU part
+Patch2302: kvm-Move-extern-of-mem_prealloc-to-cpu-all.h.patch
+# For bz#696102 - [Intel 6.2 FEAT] KVM: un-poison page when guest reboot: QEMU part
+Patch2303: kvm-Add-qemu_ram_remap.patch
+# For bz#696102 - [Intel 6.2 FEAT] KVM: un-poison page when guest reboot: QEMU part
+Patch2304: kvm-s390-Detect-invalid-invocations-of-qemu_ram_free-rem.patch
+# For bz#696102 - [Intel 6.2 FEAT] KVM: un-poison page when guest reboot: QEMU part
+Patch2305: kvm-MCE-unpoison-memory-address-across-reboot.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -4609,6 +4621,12 @@ ApplyOptionalPatch()
 %patch2297 -p1
 %patch2298 -p1
 %patch2299 -p1
+%patch2300 -p1
+%patch2301 -p1
+%patch2302 -p1
+%patch2303 -p1
+%patch2304 -p1
+%patch2305 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -4830,6 +4848,16 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Jul 13 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.171.el6
+- kvm-Add-qemu_ram_alloc_from_ptr-function.patch [bz#696102]
+- kvm-exec-remove-code-duplication-in-qemu_ram_alloc-and-q.patch [bz#696102]
+- kvm-Move-extern-of-mem_prealloc-to-cpu-all.h.patch [bz#696102]
+- kvm-Add-qemu_ram_remap.patch [bz#696102]
+- kvm-s390-Detect-invalid-invocations-of-qemu_ram_free-rem.patch [bz#696102]
+- kvm-MCE-unpoison-memory-address-across-reboot.patch [bz#696102]
+- Resolves: bz#696102
+  ([Intel 6.2 FEAT] KVM: un-poison page when guest reboot: QEMU part)
+
 * Wed Jul 13 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.170.el6
 - kvm-raw-posix-Linearize-direct-I-O-on-Linux-NFS.patch [bz#711213]
 - kvm-virtio-console-Prevent-abort-s-in-case-of-host-chard.patch [bz#720535]

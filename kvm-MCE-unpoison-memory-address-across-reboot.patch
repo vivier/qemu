@@ -1,0 +1,137 @@
+From 906703939bd3444ec8245fb26b0551501543d6a6 Mon Sep 17 00:00:00 2001
+From: Dean Nelson <dnelson@redhat.com>
+Date: Thu, 16 Jun 2011 03:08:21 -0300
+Subject: [RHEL6 qemu-kvm PATCH 6/6] KVM, MCE, unpoison memory address across reboot
+
+RH-Author: Dean Nelson <dnelson@redhat.com>
+Message-id: <20110616030821.4846.80591.email-sent-by-dnelson@localhost6.localdomain6>
+Patchwork-id: 27208
+O-Subject: [RHEL6.2 qemu-kvm PATCH 6/6] KVM, MCE, unpoison memory address across reboot
+Bugzilla: 696102
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+Resolves RHBZ 696102
+
+Backport of:
+
+commit 3c85e74fbf9e5a39d8d13ef91a5f3dd91f0bc8a8
+Author: Huang Ying <ying.huang@intel.com>
+Date:   Wed Mar 2 08:56:20 2011 +0100
+
+    KVM, MCE, unpoison memory address across reboot
+
+    In Linux kernel HWPoison processing implementation, the virtual
+    address in processes mapping the error physical memory page is marked
+    as HWPoison.  So that, the further accessing to the virtual
+    address will kill corresponding processes with SIGBUS.
+
+    If the error physical memory page is used by a KVM guest, the SIGBUS
+    will be sent to QEMU, and QEMU will simulate a MCE to report that
+    memory error to the guest OS.  If the guest OS can not recover from
+    the error (for example, the page is accessed by kernel code), guest OS
+    will reboot the system.  But because the underlying host virtual
+    address backing the guest physical memory is still poisoned, if the
+    guest system accesses the corresponding guest physical memory even
+    after rebooting, the SIGBUS will still be sent to QEMU and MCE will be
+    simulated.  That is, guest system can not recover via rebooting.
+
+    In fact, across rebooting, the contents of guest physical memory page
+    need not to be kept.  We can allocate a new host physical page to
+    back the corresponding guest physical address.
+
+    This patch fixes this issue in QEMU-KVM via calling qemu_ram_remap()
+    to clear the corresponding page table entry, so that make it possible
+    to allocate a new page to recover the issue.
+
+    [ Jan: rebasing and tiny cleanups]
+
+    Signed-off-by: Huang Ying <ying.huang@intel.com>
+    Signed-off-by: Jan Kiszka <jan.kiszka@siemens.com>
+    Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+---
+ qemu-kvm.c |   40 ++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 40 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-kvm.c |   40 ++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 40 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-kvm.c b/qemu-kvm.c
+index be3b48c..732d6ec 100644
+--- a/qemu-kvm.c
++++ b/qemu-kvm.c
+@@ -702,6 +702,41 @@ int kvm_get_dirty_pages_range(kvm_context_t kvm, unsigned long phys_addr,
+     return 0;
+ }
+ 
++#if defined(KVM_CAP_MCE) && defined(TARGET_I386)
++typedef struct HWPoisonPage {
++    ram_addr_t ram_addr;
++    QLIST_ENTRY(HWPoisonPage) list;
++} HWPoisonPage;
++
++static QLIST_HEAD(, HWPoisonPage) hwpoison_page_list =
++    QLIST_HEAD_INITIALIZER(hwpoison_page_list);
++
++static void kvm_unpoison_all(void *param)
++{
++    HWPoisonPage *page, *next_page;
++
++    QLIST_FOREACH_SAFE(page, &hwpoison_page_list, list, next_page) {
++        QLIST_REMOVE(page, list);
++        qemu_ram_remap(page->ram_addr, TARGET_PAGE_SIZE);
++        qemu_free(page);
++    }
++}
++
++static void kvm_hwpoison_page_add(ram_addr_t ram_addr)
++{
++    HWPoisonPage *page;
++
++    QLIST_FOREACH(page, &hwpoison_page_list, list) {
++        if (page->ram_addr == ram_addr) {
++            return;
++        }
++    }
++    page = qemu_malloc(sizeof(HWPoisonPage));
++    page->ram_addr = ram_addr;
++    QLIST_INSERT_HEAD(&hwpoison_page_list, page, list);
++}
++#endif
++
+ #ifdef KVM_CAP_IRQCHIP
+ 
+ int kvm_set_irq_level(kvm_context_t kvm, int irq, int level, int *status)
+@@ -1506,6 +1541,7 @@ static void sigbus_handler(int n, struct qemu_signalfd_siginfo *siginfo,
+         status = MCI_STATUS_VAL | MCI_STATUS_UC | MCI_STATUS_EN
+             | MCI_STATUS_MISCV | MCI_STATUS_ADDRV | MCI_STATUS_S
+             | 0xc0;
++        kvm_hwpoison_page_add(ram_addr);
+         kvm_inject_x86_mce(first_cpu, 9, status,
+                            MCG_STATUS_MCIP | MCG_STATUS_RIPV, paddr,
+                            (MCM_ADDR_PHYS << 6) | 0xc, 1);
+@@ -1753,6 +1789,7 @@ static void kvm_on_sigbus(CPUState *env, siginfo_t *siginfo)
+                 hardware_memory_error();
+         }
+         mce.addr = paddr;
++        kvm_hwpoison_page_add(ram_addr);
+         r = kvm_set_mce(env, &mce);
+         if (r < 0) {
+             fprintf(stderr, "kvm_set_mce: %s\n", strerror(errno));
+@@ -2028,6 +2065,9 @@ int kvm_init_ap(void)
+     action.sa_sigaction = (void (*)(int, siginfo_t*, void*))sigbus_handler;
+     sigaction(SIGBUS, &action, NULL);
+     prctl(PR_MCE_KILL, 1, 1, 0, 0);
++#if defined(KVM_CAP_MCE) && defined(TARGET_I386)
++    qemu_register_reset(kvm_unpoison_all, NULL);
++#endif
+     return 0;
+ }
+ 
+-- 
+1.7.3.2
+
