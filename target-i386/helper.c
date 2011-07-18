@@ -141,20 +141,22 @@ static int altcmp(const char *s, const char *e, const char *altstr)
 }
 
 /* search featureset for flag *[s..e), if found set corresponding bit in
- * *pval and return success, otherwise return zero
+ * *pval and return success, otherwise return false 
  */
-static int lookup_feature(uint32_t *pval, const char *s, const char *e,
+static bool lookup_feature(uint32_t *pval, const char *s, const char *e,
     const char **featureset)
 {
     uint32_t mask;
     const char **ppc;
+    bool found = false;
 
-    for (mask = 1, ppc = featureset; mask; mask <<= 1, ++ppc)
+    for (mask = 1, ppc = featureset; mask; mask <<= 1, ++ppc) {
         if (*ppc && !altcmp(s, e, *ppc)) {
             *pval |= mask;
-            break;
+            found = true;
         }
-    return (mask ? 1 : 0);
+    }
+    return found;
 }
 
 static const char *kvm_feature_name[] = {
