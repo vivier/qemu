@@ -1,7 +1,9 @@
+%define githead 525e3df
+
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
-Version: 0.14.0
-Release: 9%{?dist}
+Version: 0.15.0
+Release: 0.1.20110718%githead%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -17,7 +19,12 @@ URL: http://www.qemu.org/
 %define _smp_mflags %{nil}
 %endif
 
-Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-kvm-%{version}.tar.gz
+# Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-kvm-%{version}.tar.gz
+# The source for this package was pulled from upstream's git.  Use the
+# following commands to generate the tarball:
+# git archive --format=tar --prefix=qemu-kvm-0.15/ 525e3df | gzip > qemu-kvm-0.15.0-525e3df.tar.gz
+Source0: qemu-kvm-%{version}-%{githead}.tar.gz
+
 Source1: qemu.init
 
 # Loads kvm kernel modules at boot
@@ -32,35 +39,6 @@ Source5: ksm.sysconfig
 Source6: ksmtuned.init
 Source7: ksmtuned
 Source8: ksmtuned.conf
-
-# This patch must be carried through F-15 to support guests created
-# with F-13/
-Patch00: pc-add-a-Fedora-13-machine-type-for-backward-compat.patch
-
-# Patches from upstream:
-Patch01: qemu-fix-non-PCI-target-build.patch
-Patch02: qemu-vhost-fix-dirty-page-handling.patch
-
-# Spice fixes
-Patch20: 0001-qxl-spice-display-move-pipe-to-ssd.patch
-Patch21: 0002-qxl-implement-get_command-in-vga-mode-without-locks.patch
-Patch22: 0003-qxl-spice-remove-qemu_mutex_-un-lock_iothread-around.patch
-Patch23: 0004-hw-qxl-render-drop-cursor-locks-replace-with-pipe.patch
-Patch24: 0005-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
-Patch25: 0006-char-Add-a-QemuChrHandlers-struct-to-initialise-char.patch
-Patch26: 0007-iohandlers-Add-enable-disable_write_fd_handler-funct.patch
-Patch27: 0008-char-Add-framework-for-a-write-unblocked-callback.patch
-Patch28: 0009-char-Update-send_all-to-handle-nonblocking-chardev-w.patch
-Patch29: 0010-char-Equip-the-unix-tcp-backend-to-handle-nonblockin.patch
-Patch30: 0011-char-Throttle-when-host-connection-is-down.patch
-Patch31: 0012-virtio-console-Enable-port-throttling-when-chardev-i.patch
-Patch32: 0013-spice-qemu-char.c-add-throttling.patch
-Patch33: 0014-spice-qemu-char.c-remove-intermediate-buffer.patch
-Patch34: 0015-chardev-Allow-frontends-to-notify-backends-of-guest-.patch
-Patch35: 0016-virtio-console-notify-backend-of-guest-open-close.patch
-Patch36: 0017-spice-chardev-listen-to-frontend-guest-open-close.patch
-Patch37: 0018-spice-qemu-char-Fix-flow-control-in-client-guest-dir.patch
-
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -235,29 +213,6 @@ such as kvm_stat.
 %prep
 %setup -q -n qemu-kvm-%{version}
 
-%patch00 -p1
-%patch01 -p1
-%patch02 -p1
-
-%patch20 -p1
-%patch21 -p1
-%patch22 -p1
-%patch23 -p1
-%patch24 -p1
-%patch25 -p1
-%patch26 -p1
-%patch27 -p1
-%patch28 -p1
-%patch29 -p1
-%patch30 -p1
-%patch31 -p1
-%patch32 -p1
-%patch33 -p1
-%patch34 -p1
-%patch35 -p1
-%patch36 -p1
-%patch37 -p1
-
 %build
 # By default we build everything, but allow x86 to build a minimal version
 # with only similar arch target support
@@ -297,6 +252,7 @@ sed -i.debug 's/"-g $CFLAGS"/"$CFLAGS"/g' configure
 %ifarch x86_64
             --enable-spice \
 %endif
+            --disable-werror \
             --disable-xen
 
 echo "config-host.mak contents:"
@@ -369,22 +325,25 @@ install -D -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} Changelog README TODO CO
 install -D -p -m 0644 qemu.sasl $RPM_BUILD_ROOT%{_sysconfdir}/sasl2/qemu.conf
 
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/pxe*bin
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/pxe*rom
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/gpxe*rom
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/vgabios*bin
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/bios.bin
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-ppc
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-sparc32
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-sparc64
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/petalogix-s3adsp1800.dtb
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/petalogix*.dtb
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/s390-zipl.rom
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/bamboo.dtb
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/slof.bin
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/spapr-rtas.bin
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/ppc_rom.bin
 
 # the pxe gpxe images will be symlinks to the images on
 # /usr/share/gpxe, as QEMU doesn't know how to look
 # for other paths, yet.
 pxe_link() {
-  ln -s ../gpxe/$2.rom %{buildroot}%{_datadir}/%{name}/pxe-$1.bin
+  ln -s ../gpxe/$2.rom %{buildroot}%{_datadir}/%{name}/pxe-$1.rom
 }
 
 pxe_link e1000 8086100e
@@ -500,17 +459,18 @@ fi
 %{_datadir}/%{name}/bios.bin
 %{_datadir}/%{name}/linuxboot.bin
 %{_datadir}/%{name}/multiboot.bin
+%{_datadir}/%{name}/mpc8544ds.dtb
 %{_datadir}/%{name}/vapic.bin
 %{_datadir}/%{name}/vgabios.bin
 %{_datadir}/%{name}/vgabios-cirrus.bin
 %{_datadir}/%{name}/vgabios-qxl.bin
 %{_datadir}/%{name}/vgabios-stdvga.bin
 %{_datadir}/%{name}/vgabios-vmware.bin
-%{_datadir}/%{name}/pxe-e1000.bin
-%{_datadir}/%{name}/pxe-virtio.bin
-%{_datadir}/%{name}/pxe-pcnet.bin
-%{_datadir}/%{name}/pxe-rtl8139.bin
-%{_datadir}/%{name}/pxe-ne2k_pci.bin
+%{_datadir}/%{name}/pxe-e1000.rom
+%{_datadir}/%{name}/pxe-virtio.rom
+%{_datadir}/%{name}/pxe-pcnet.rom
+%{_datadir}/%{name}/pxe-rtl8139.rom
+%{_datadir}/%{name}/pxe-ne2k_pci.rom
 %config(noreplace) %{_sysconfdir}/qemu/target-x86_64.conf
 
 %ifarch %{ix86} x86_64
@@ -561,6 +521,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Jul 18 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.15.0-0.1.20110718525e3df
+- Update to git snapshot as we prepare for 0.15.0 release
+
 * Wed Jun 22 2011 Richard W.M. Jones <rjones@redhat.com> - 2:0.14.0-9
 - Add BR libattr-devel.  This caused the -fstype option to be disabled.
   https://www.redhat.com/archives/libvir-list/2011-June/thread.html#01017
