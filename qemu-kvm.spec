@@ -15,7 +15,7 @@
 
 %define sublevel 0.12.1.2
 %define pkgrelease 2.160
-%define zrelease 3
+%define zrelease 4
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}.%{zrelease}
@@ -2534,6 +2534,8 @@ Patch2130: kvm-virtio-prevent-indirect-descriptor-buffer-overflow.patch
 Patch2131: kvm-virtio-guard-against-negative-vq-notifies.patch
 # For bz#720999 - QEMU should use pass preadv/pwritev a single vector when using cache=none and NFS
 Patch2132: kvm-raw-posix-Linearize-direct-I-O-on-Linux-NFS.patch
+# For bz#722582 - CVE-2011-2527 qemu: when started as root, extra groups are not dropped correctly [rhel-6.1.z]
+Patch2133: kvm-CVE-2011-2527-os-posix-set-groups-properly-for-runas.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3773,6 +3775,7 @@ ApplyOptionalPatch()
 %patch2130 -p1
 %patch2131 -p1
 %patch2132 -p1
+%patch2133 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -3994,6 +3997,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Jul 18 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.160.el6_1.4
+- kvm-CVE-2011-2527-os-posix-set-groups-properly-for-runas.patch [bz#722582]
+- Resolves: bz#722582
+  (CVE-2011-2527 qemu: when started as root, extra groups are not dropped correctly [rhel-6.1.z])
+
 * Wed Jul 13 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.160.el6_1.3
 - kvm-raw-posix-Linearize-direct-I-O-on-Linux-NFS.patch [bz#720999]
 - Resolves: bz#720999
