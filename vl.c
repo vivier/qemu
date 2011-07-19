@@ -27,7 +27,6 @@
 #include <time.h>
 #include <errno.h>
 #include <sys/time.h>
-#include <grp.h>
 #include <zlib.h>
 
 /* Needed early for CONFIG_BSD etc. */
@@ -6822,11 +6821,6 @@ int main(int argc, char **argv, char **envp)
     if (run_as) {
         if (setgid(pwd->pw_gid) < 0) {
             fprintf(stderr, "Failed to setgid(%d)\n", pwd->pw_gid);
-            exit(1);
-        }
-        if (initgroups(pwd->pw_name, pwd->pw_gid) < 0) {
-            fprintf(stderr, "Failed to initgroups(\"%s\", %d)\n",
-                    pwd->pw_name, pwd->pw_gid);
             exit(1);
         }
         if (setuid(pwd->pw_uid) < 0) {
