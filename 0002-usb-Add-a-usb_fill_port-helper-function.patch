@@ -1,0 +1,42 @@
+From dc1a2be79b202d353d320393445ccd9db6263371 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Thu, 30 Jun 2011 11:57:57 +0200
+Subject: [PATCH 02/35] usb: Add a usb_fill_port helper function
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/usb-bus.c |   10 ++++++++--
+ 1 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/hw/usb-bus.c b/hw/usb-bus.c
+index 2abce12..776974e 100644
+--- a/hw/usb-bus.c
++++ b/hw/usb-bus.c
+@@ -140,8 +140,8 @@ USBDevice *usb_create_simple(USBBus *bus, const char *name)
+     return dev;
+ }
+ 
+-void usb_register_port(USBBus *bus, USBPort *port, void *opaque, int index,
+-                       USBPortOps *ops, int speedmask)
++static void usb_fill_port(USBPort *port, void *opaque, int index,
++                          USBPortOps *ops, int speedmask)
+ {
+     port->opaque = opaque;
+     port->index = index;
+@@ -149,6 +149,12 @@ void usb_register_port(USBBus *bus, USBPort *port, void *opaque, int index,
+     port->index = index;
+     port->ops = ops;
+     port->speedmask = speedmask;
++}
++
++void usb_register_port(USBBus *bus, USBPort *port, void *opaque, int index,
++                       USBPortOps *ops, int speedmask)
++{
++    usb_fill_port(port, opaque, index, ops, speedmask);
+     QTAILQ_INSERT_TAIL(&bus->free, port, next);
+     bus->nfree++;
+ }
+-- 
+1.7.5.1
+

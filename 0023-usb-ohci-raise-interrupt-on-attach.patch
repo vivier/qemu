@@ -1,0 +1,50 @@
+From a0559e6445bf2cceba279bf3bcdc062497872db1 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 7 Jul 2011 15:18:50 +0200
+Subject: [PATCH 23/35] usb-ohci: raise interrupt on attach
+
+Got lost in commit 618c169b577db64ac6589ad48825d2e11760d1a6,
+add it back in.  Also fix codestyle while we are at it.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/usb-ohci.c |    8 +++++++-
+ 1 files changed, 7 insertions(+), 1 deletions(-)
+
+diff --git a/hw/usb-ohci.c b/hw/usb-ohci.c
+index c77a20e..8491d59 100644
+--- a/hw/usb-ohci.c
++++ b/hw/usb-ohci.c
+@@ -327,6 +327,7 @@ static void ohci_attach(USBPort *port1)
+ {
+     OHCIState *s = port1->opaque;
+     OHCIPort *port = &s->rhport[port1->index];
++    uint32_t old_state = port->ctrl;
+ 
+     /* set connect status */
+     port->ctrl |= OHCI_PORT_CCS | OHCI_PORT_CSC;
+@@ -344,6 +345,10 @@ static void ohci_attach(USBPort *port1)
+     }
+ 
+     DPRINTF("usb-ohci: Attached port %d\n", port1->index);
++
++    if (old_state != port->ctrl) {
++        ohci_set_interrupt(s, OHCI_INTR_RHSC);
++    }
+ }
+ 
+ static void ohci_detach(USBPort *port1)
+@@ -366,8 +371,9 @@ static void ohci_detach(USBPort *port1)
+     }
+     DPRINTF("usb-ohci: Detached port %d\n", port1->index);
+ 
+-    if (old_state != port->ctrl)
++    if (old_state != port->ctrl) {
+         ohci_set_interrupt(s, OHCI_INTR_RHSC);
++    }
+ }
+ 
+ static void ohci_wakeup(USBPort *port1)
+-- 
+1.7.5.1
+

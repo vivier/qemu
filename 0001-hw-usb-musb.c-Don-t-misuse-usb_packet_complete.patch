@@ -1,0 +1,32 @@
+From 5b1a8791870cbb83cce780be54da6029be4126a4 Mon Sep 17 00:00:00 2001
+From: Peter Maydell <peter.maydell@linaro.org>
+Date: Tue, 14 Jun 2011 12:24:04 +0100
+Subject: [PATCH 01/35] hw/usb-musb.c: Don't misuse usb_packet_complete()
+
+In musb_packet() handle final processing of non-asynchronous
+USB packets by directly calling musb_schedule_cb() rather than
+going through usb_packet_complete(). The latter will trigger
+an assertion because the packet doesn't belong to a device.
+
+Signed-off-by: Peter Maydell <peter.maydell@linaro.org>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/usb-musb.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/hw/usb-musb.c b/hw/usb-musb.c
+index 21f35afa..d15971f 100644
+--- a/hw/usb-musb.c
++++ b/hw/usb-musb.c
+@@ -616,7 +616,7 @@ static void musb_packet(MUSBState *s, MUSBEndPoint *ep,
+     }
+ 
+     ep->status[dir] = ret;
+-    usb_packet_complete(s->port.dev, &ep->packey[dir].p);
++    musb_schedule_cb(s->port.dev, &ep->packey[dir].p);
+ }
+ 
+ static void musb_tx_packet_complete(USBPacket *packey, void *opaque)
+-- 
+1.7.5.1
+

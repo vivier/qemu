@@ -3,7 +3,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.15.0
-Release: 0.1.20110718%githead%{?dist}
+Release: 0.2.20110718%githead%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -39,6 +39,46 @@ Source5: ksm.sysconfig
 Source6: ksmtuned.init
 Source7: ksmtuned
 Source8: ksmtuned.conf
+
+# Sync with: http://www.kraxel.org/cgit/qemu/log/?h=usb.19
+# USB patches waiting to be pulled by upstream
+Patch1:  0001-hw-usb-musb.c-Don-t-misuse-usb_packet_complete.patch
+Patch2:  0002-usb-Add-a-usb_fill_port-helper-function.patch
+Patch3:  0003-usb-Move-initial-call-of-usb_port_location-to-usb_fi.patch
+Patch4:  0004-usb-Add-a-register_companion-USB-bus-op.patch
+Patch5:  0005-usb-Make-port-wakeup-and-complete-ops-take-a-USBPort.patch
+Patch6:  0006-usb-Replace-device_destroy-bus-op-with-a-child_detac.patch
+Patch7:  0007-usb-ehci-drop-unused-num-ports-state-member.patch
+Patch8:  0008-usb-ehci-Connect-Status-bit-is-read-only-don-t-allow.patch
+Patch9:  0009-usb-ehci-cleanup-port-reset-handling.patch
+Patch10: 0010-usb-assert-on-calling-usb_attach-port-NULL-on-a-port.patch
+Patch11: 0011-usb-ehci-Fix-handling-of-PED-and-PEDC-port-status-bi.patch
+Patch12: 0012-usb-ehci-Add-support-for-registering-companion-contr.patch
+Patch13: 0013-usb-uhci-Add-support-for-being-a-companion-controlle.patch
+Patch14: 0014-usb-ohci-Add-support-for-being-a-companion-controlle.patch
+Patch15: 0015-pci-add-ich9-usb-controller-ids.patch
+Patch16: 0016-uhci-add-ich9-controllers.patch
+Patch17: 0017-ehci-fix-port-count.patch
+Patch18: 0018-ehci-add-ich9-controller.patch
+Patch19: 0019-usb-update-documentation.patch
+Patch20: 0020-usb_register_port-do-not-set-port-opaque-and-port-in.patch
+Patch21: 0021-usb-fixup-bluetooth-descriptors.patch
+Patch22: 0022-usb-hub-remove-unused-descriptor-arrays.patch
+Patch23: 0023-usb-ohci-raise-interrupt-on-attach.patch
+# Add usb-redir device, under review upstream
+Patch24: 0024-USB-add-usb-network-redirection-support.patch
+# Amit's flow control patches, waiting to glib conversion before going upstream
+Patch25: 0025-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
+Patch26: 0026-char-Add-a-QemuChrHandlers-struct-to-initialise-char.patch
+Patch27: 0027-iohandlers-Add-enable-disable_write_fd_handler-funct.patch
+Patch28: 0028-char-Add-framework-for-a-write-unblocked-callback.patch
+Patch29: 0029-char-Update-send_all-to-handle-nonblocking-chardev-w.patch
+Patch30: 0030-char-Equip-the-unix-tcp-backend-to-handle-nonblockin.patch
+Patch31: 0031-char-Throttle-when-host-connection-is-down.patch
+Patch32: 0032-virtio-console-Enable-port-throttling-when-chardev-i.patch
+Patch33: 0033-spice-qemu-char.c-add-throttling.patch
+Patch34: 0034-spice-qemu-char.c-remove-intermediate-buffer.patch
+Patch35: 0035-usb-redir-Add-flow-control-support.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -212,6 +252,41 @@ such as kvm_stat.
 
 %prep
 %setup -q -n qemu-kvm-%{version}
+%patch1 -p1
+%patch2 -p1
+%patch3 -p1
+%patch4 -p1
+%patch5 -p1
+%patch6 -p1
+%patch7 -p1
+%patch8 -p1
+%patch9 -p1
+%patch10 -p1
+%patch11 -p1
+%patch12 -p1
+%patch13 -p1
+%patch14 -p1
+%patch15 -p1
+%patch16 -p1
+%patch17 -p1
+%patch18 -p1
+%patch19 -p1
+%patch20 -p1
+%patch21 -p1
+%patch22 -p1
+%patch23 -p1
+%patch24 -p1
+%patch25 -p1
+%patch26 -p1
+%patch27 -p1
+%patch28 -p1
+%patch29 -p1
+%patch30 -p1
+%patch31 -p1
+%patch32 -p1
+%patch33 -p1
+%patch34 -p1
+%patch35 -p1
 
 %build
 # By default we build everything, but allow x86 to build a minimal version
@@ -521,6 +596,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jul 19 2011 Hans de Goede <hdegoede@redhat.com> - 2:0.15.0-0.2.20110718525e3df
+- Add support usb redirection over the network, see:
+  http://fedoraproject.org/wiki/Features/UsbNetworkRedirection
+- Restore chardev flow control patches
+
 * Mon Jul 18 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.15.0-0.1.20110718525e3df
 - Update to git snapshot as we prepare for 0.15.0 release
 
