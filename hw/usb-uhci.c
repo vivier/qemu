@@ -1082,7 +1082,6 @@ static int usb_uhci_common_initfn(UHCIState *s)
     uint8_t *pci_conf = s->dev.config;
     int i;
 
-    pci_conf[0x08] = 0x01; // revision number
     pci_conf[0x09] = 0x00;
     pci_config_set_class(pci_conf, PCI_CLASS_SERIAL_USB);
     pci_conf[PCI_HEADER_TYPE] = PCI_HEADER_TYPE_NORMAL; // header_type
@@ -1127,6 +1126,7 @@ static int usb_uhci_piix3_initfn(PCIDevice *dev)
 
     pci_config_set_vendor_id(pci_conf, PCI_VENDOR_ID_INTEL);
     pci_config_set_device_id(pci_conf, PCI_DEVICE_ID_INTEL_82371SB_2);
+    pci_conf[0x08] = 0x01; // revision number
     return usb_uhci_common_initfn(s);
 }
 
@@ -1137,8 +1137,48 @@ static int usb_uhci_piix4_initfn(PCIDevice *dev)
 
     pci_config_set_vendor_id(pci_conf, PCI_VENDOR_ID_INTEL);
     pci_config_set_device_id(pci_conf, PCI_DEVICE_ID_INTEL_82371AB_2);
+    pci_conf[0x08] = 0x01; // revision number
     return usb_uhci_common_initfn(s);
 }
+
+static int usb_uhci_ich9_1_initfn(PCIDevice *dev)
+{
+    UHCIState *s = DO_UPCAST(UHCIState, dev, dev);
+    uint8_t *pci_conf = s->dev.config;
+
+    pci_config_set_vendor_id(pci_conf, PCI_VENDOR_ID_INTEL);
+    pci_config_set_device_id(pci_conf, PCI_DEVICE_ID_INTEL_82801I_UHCI1);
+    pci_conf[0x08] = 0x03; // revision number
+    return usb_uhci_common_initfn(s);
+}
+
+static int usb_uhci_ich9_2_initfn(PCIDevice *dev)
+{
+    UHCIState *s = DO_UPCAST(UHCIState, dev, dev);
+    uint8_t *pci_conf = s->dev.config;
+
+    pci_config_set_vendor_id(pci_conf, PCI_VENDOR_ID_INTEL);
+    pci_config_set_device_id(pci_conf, PCI_DEVICE_ID_INTEL_82801I_UHCI2);
+    pci_conf[0x08] = 0x03; // revision number
+    return usb_uhci_common_initfn(s);
+}
+
+static int usb_uhci_ich9_3_initfn(PCIDevice *dev)
+{
+    UHCIState *s = DO_UPCAST(UHCIState, dev, dev);
+    uint8_t *pci_conf = s->dev.config;
+
+    pci_config_set_vendor_id(pci_conf, PCI_VENDOR_ID_INTEL);
+    pci_config_set_device_id(pci_conf, PCI_DEVICE_ID_INTEL_82801I_UHCI3);
+    pci_conf[0x08] = 0x03; // revision number
+    return usb_uhci_common_initfn(s);
+}
+
+static Property uhci_properties[] = {
+    DEFINE_PROP_STRING("masterbus", UHCIState, masterbus),
+    DEFINE_PROP_UINT32("firstport", UHCIState, firstport, 0),
+    DEFINE_PROP_END_OF_LIST(),
+};
 
 static PCIDeviceInfo uhci_info[] = {
     {
@@ -1146,21 +1186,31 @@ static PCIDeviceInfo uhci_info[] = {
         .qdev.size    = sizeof(UHCIState),
         .qdev.vmsd    = &vmstate_uhci,
         .init         = usb_uhci_piix3_initfn,
-        .qdev.props   = (Property[]) {
-            DEFINE_PROP_STRING("masterbus", UHCIState, masterbus),
-            DEFINE_PROP_UINT32("firstport", UHCIState, firstport, 0),
-            DEFINE_PROP_END_OF_LIST(),
-        },
+        .qdev.props   = uhci_properties,
     },{
         .qdev.name    = "piix4-usb-uhci",
         .qdev.size    = sizeof(UHCIState),
         .qdev.vmsd    = &vmstate_uhci,
         .init         = usb_uhci_piix4_initfn,
-        .qdev.props   = (Property[]) {
-            DEFINE_PROP_STRING("masterbus", UHCIState, masterbus),
-            DEFINE_PROP_UINT32("firstport", UHCIState, firstport, 0),
-            DEFINE_PROP_END_OF_LIST(),
-        },
+        .qdev.props   = uhci_properties,
+    },{
+        .qdev.name    = "ich9-usb-uhci1",
+        .qdev.size    = sizeof(UHCIState),
+        .qdev.vmsd    = &vmstate_uhci,
+        .init         = usb_uhci_ich9_1_initfn,
+        .qdev.props   = uhci_properties,
+    },{
+        .qdev.name    = "ich9-usb-uhci2",
+        .qdev.size    = sizeof(UHCIState),
+        .qdev.vmsd    = &vmstate_uhci,
+        .init         = usb_uhci_ich9_2_initfn,
+        .qdev.props   = uhci_properties,
+    },{
+        .qdev.name    = "ich9-usb-uhci3",
+        .qdev.size    = sizeof(UHCIState),
+        .qdev.vmsd    = &vmstate_uhci,
+        .init         = usb_uhci_ich9_3_initfn,
+        .qdev.props   = uhci_properties,
     },{
         /* end of list */
     }
