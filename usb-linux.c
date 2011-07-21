@@ -101,6 +101,7 @@ struct endp_data {
     int iso_urb_idx;
     int iso_buffer_used;
     int max_packet_size;
+    int inflight;
 };
 
 struct USBAutoFilter {
@@ -180,7 +181,19 @@ static void clear_iso_started(USBHostDevice *s, int ep)
 
 static void set_iso_started(USBHostDevice *s, int ep)
 {
-    s->endp_table[ep - 1].iso_started = 1;
+    struct endp_data *e = &s->endp_table[ep - 1];
+    if (!e->iso_started) {
+        e->iso_started = 1;
+        e->inflight = 0;
+    }
+}
+
+static int change_iso_inflight(USBHostDevice *s, int ep, int value)
+{
+    struct endp_data *e = &s->endp_table[ep - 1];
+
+    e->inflight += value;
+    return e->inflight;
 }
 
 static void set_iso_urb(USBHostDevice *s, int ep, AsyncURB *iso_urb)
@@ -280,16 +293,20 @@ static void async_complete(void *opaque)
 {
     USBHostDevice *s = opaque;
     AsyncURB *aurb;
+    int urbs = 0;
 
     while (1) {
     	USBPacket *p;
 
 	int r = ioctl(s->fd, USBDEVFS_REAPURBNDELAY, &aurb);
         if (r < 0) {
-            if (errno == EAGAIN)
+            if (errno == EAGAIN) {
+                if (urbs > 2) {
+                    fprintf(stderr, "husb: %d iso urbs finished at once\n", urbs);
+                }
                 return;
 
-            if (errno == ENODEV && !s->closing) {
+            } if (errno == ENODEV && !s->closing) {
                 do_disconnect(s);
                 return;
             }
@@ -304,10 +321,16 @@ static void async_complete(void *opaque)
         /* If this is a buffered iso urb mark it as complete and don't do
            anything else (it is handled further in usb_host_handle_iso_data) */
         if (aurb->iso_frame_idx == -1) {
+            int inflight;
             if (aurb->urb.status == -EPIPE) {
                 set_halt(s, aurb->urb.endpoint & 0xf);
             }
             aurb->iso_frame_idx = 0;
+            urbs++;
+            inflight = change_iso_inflight(s, aurb->urb.endpoint & 0xf, -1);
+            if (inflight == 0 && is_iso_started(s, aurb->urb.endpoint & 0xf)) {
+                fprintf(stderr, "husb: out of buffers for iso stream\n");
+            }
             continue;
         }
 
@@ -667,6 +690,7 @@ static int usb_host_handle_iso_data(USBHostDevice *s, USBPacket *p, int in)
                     break;
                 }
                 aurb[i].iso_frame_idx = -1;
+                change_iso_inflight(s, p->devep, +1);
             }
         }
     }
