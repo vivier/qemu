@@ -372,7 +372,6 @@ struct EHCIState {
     qemu_irq irq;
     target_phys_addr_t mem_base;
     int mem;
-    int num_ports;
 
     /* properties */
     uint32_t freq;
