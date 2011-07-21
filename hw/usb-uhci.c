@@ -131,7 +131,7 @@ typedef struct UHCIPort {
 
 struct UHCIState {
     PCIDevice dev;
-    USBBus bus;
+    USBBus bus; /* Note unused when we're a companion controller */
     uint16_t cmd; /* cmd register */
     uint16_t status;
     uint16_t intr; /* interrupt enable register */
@@ -148,6 +148,10 @@ struct UHCIState {
     /* Active packets */
     QTAILQ_HEAD(,UHCIAsync) async_pending;
     uint8_t num_ports_vmstate;
+
+    /* Properties */
+    char *masterbus;
+    uint32_t firstport;
 };
 
 typedef struct UHCI_TD {
@@ -1085,10 +1089,22 @@ static int usb_uhci_common_initfn(UHCIState *s)
     pci_conf[0x3d] = 4; // interrupt pin 3
     pci_conf[0x60] = 0x10; // release number
 
-    usb_bus_new(&s->bus, &uhci_bus_ops, &s->dev.qdev);
-    for(i = 0; i < NB_PORTS; i++) {
-        usb_register_port(&s->bus, &s->ports[i].port, s, i, &uhci_port_ops,
-                          USB_SPEED_MASK_LOW | USB_SPEED_MASK_FULL);
+    if (s->masterbus) {
+        USBPort *ports[NB_PORTS];
+        for(i = 0; i < NB_PORTS; i++) {
+            ports[i] = &s->ports[i].port;
+        }
+        if (usb_register_companion(s->masterbus, ports, NB_PORTS,
+                s->firstport, s, &uhci_port_ops,
+                USB_SPEED_MASK_LOW | USB_SPEED_MASK_FULL) != 0) {
+            return -1;
+        }
+    } else {
+        usb_bus_new(&s->bus, &uhci_bus_ops, &s->dev.qdev);
+        for (i = 0; i < NB_PORTS; i++) {
+            usb_register_port(&s->bus, &s->ports[i].port, s, i, &uhci_port_ops,
+                              USB_SPEED_MASK_LOW | USB_SPEED_MASK_FULL);
+        }
     }
     s->frame_timer = qemu_new_timer(vm_clock, uhci_frame_timer, s);
     s->num_ports_vmstate = NB_PORTS;
@@ -1130,11 +1146,21 @@ static PCIDeviceInfo uhci_info[] = {
         .qdev.size    = sizeof(UHCIState),
         .qdev.vmsd    = &vmstate_uhci,
         .init         = usb_uhci_piix3_initfn,
+        .qdev.props   = (Property[]) {
+            DEFINE_PROP_STRING("masterbus", UHCIState, masterbus),
+            DEFINE_PROP_UINT32("firstport", UHCIState, firstport, 0),
+            DEFINE_PROP_END_OF_LIST(),
+        },
     },{
         .qdev.name    = "piix4-usb-uhci",
         .qdev.size    = sizeof(UHCIState),
         .qdev.vmsd    = &vmstate_uhci,
         .init         = usb_uhci_piix4_initfn,
+        .qdev.props   = (Property[]) {
+            DEFINE_PROP_STRING("masterbus", UHCIState, masterbus),
+            DEFINE_PROP_UINT32("firstport", UHCIState, firstport, 0),
+            DEFINE_PROP_END_OF_LIST(),
+        },
     },{
         /* end of list */
     }
