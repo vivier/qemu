@@ -1596,6 +1596,22 @@ static QEMUMachine pc_machine_rhel610 = {
     .desc = "RHEL 6.1.0 PC",
     .init = pc_init_rhel610,
     .max_cpus = 255,
+    .compat_props = (GlobalProperty[]) {
+        {
+            .driver   = "usb-tablet",
+            .property = "migrate",
+            .value    = stringify(0),
+        },{
+            .driver   = "usb-mouse",
+            .property = "migrate",
+            .value    = stringify(0),
+        },{
+            .driver   = "usb-kbd",
+            .property = "migrate",
+            .value    = stringify(0),
+        },
+        { /* end of list */ }
+    },
 };
 
 static void pc_init_rhel600(ram_addr_t ram_size,
@@ -1628,6 +1644,18 @@ static QEMUMachine pc_machine_rhel600 = {
             .driver   = "virtio-serial-pci",
             .property = "flow_control",
             .value    = stringify(0),
+        },{
+            .driver   = "usb-tablet",
+            .property = "migrate",
+            .value    = stringify(0),
+        },{
+            .driver   = "usb-mouse",
+            .property = "migrate",
+            .value    = stringify(0),
+        },{
+            .driver   = "usb-kbd",
+            .property = "migrate",
+            .value    = stringify(0),
         },
         { /* end of list */ }
     },
@@ -1657,6 +1685,18 @@ static GlobalProperty compat_rhel5[] = {
         },{
             .driver   = "PCI",
             .property = "rombar",
+            .value    = stringify(0),
+        },{
+            .driver   = "usb-tablet",
+            .property = "migrate",
+            .value    = stringify(0),
+        },{
+            .driver   = "usb-mouse",
+            .property = "migrate",
+            .value    = stringify(0),
+        },{
+            .driver   = "usb-kbd",
+            .property = "migrate",
             .value    = stringify(0),
         },
 #if 0 /* depends on "ide+scsi: device versions" patches */

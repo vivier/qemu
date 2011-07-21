@@ -83,6 +83,7 @@ typedef struct USBHIDState {
     int changed;
     void *datain_opaque;
     void (*datain)(void *);
+    uint32_t migrate;
 } USBHIDState;
 
 enum {
@@ -868,6 +869,13 @@ static int usb_hid_initfn(USBDevice *dev, int kind)
                                                        1, "QEMU USB Tablet");
     }
 
+    if (!s->migrate) {
+        /* hack alert: don't send state */
+        dev->qdev.info->vmsd = NULL;
+        /* remote wakeup is unsupported */
+        usb_desc_set_string(dev, STR_SERIALNUMBER, "1");
+    }
+
     /* Force poll routine to be run and grab input the first time.  */
     s->changed = 1;
     return 0;
@@ -955,6 +963,11 @@ static const VMStateDescription vmstate_usb_kbd = {
     }
 };
 
+static Property hid_properties[] = {
+    DEFINE_PROP_UINT32("migrate", USBHIDState, migrate, 1),
+    DEFINE_PROP_END_OF_LIST(),
+};
+
 static struct USBDeviceInfo hid_info[] = {
     {
         .product_desc   = "QEMU USB Tablet",
@@ -969,6 +982,7 @@ static struct USBDeviceInfo hid_info[] = {
         .handle_control = usb_hid_handle_control,
         .handle_data    = usb_hid_handle_data,
         .handle_destroy = usb_hid_handle_destroy,
+        .qdev.props     = hid_properties,
     },{
         .product_desc   = "QEMU USB Mouse",
         .qdev.name      = "usb-mouse",
@@ -982,6 +996,7 @@ static struct USBDeviceInfo hid_info[] = {
         .handle_control = usb_hid_handle_control,
         .handle_data    = usb_hid_handle_data,
         .handle_destroy = usb_hid_handle_destroy,
+        .qdev.props     = hid_properties,
     },{
         .product_desc   = "QEMU USB Keyboard",
         .qdev.name      = "usb-kbd",
@@ -995,6 +1010,7 @@ static struct USBDeviceInfo hid_info[] = {
         .handle_control = usb_hid_handle_control,
         .handle_data    = usb_hid_handle_data,
         .handle_destroy = usb_hid_handle_destroy,
+        .qdev.props     = hid_properties,
     },{
         /* end of list */
     }
