@@ -1088,7 +1088,6 @@ static int usb_uhci_common_initfn(UHCIState *s)
     for(i = 0; i < NB_PORTS; i++) {
         usb_register_port(&s->bus, &s->ports[i].port, s, i, &uhci_port_ops,
                           USB_SPEED_MASK_LOW | USB_SPEED_MASK_FULL);
-        usb_port_location(&s->ports[i].port, NULL, i+1);
     }
     s->frame_timer = qemu_new_timer(vm_clock, uhci_frame_timer, s);
     s->num_ports_vmstate = NB_PORTS;
