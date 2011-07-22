@@ -1882,6 +1882,8 @@ static int socket_init(void)
 }
 #endif
 
+#if 0 /* Disabled for Red Hat Enterprise Linux */
+
 /***********************************************************/
 /* Bluetooth support */
 static int nb_hcis;
@@ -2072,6 +2074,8 @@ static int bt_parse(const char *opt)
     fprintf(stderr, "qemu: bad bluetooth parameter '%s'\n", opt);
     return 1;
 }
+
+#endif
 
 /***********************************************************/
 /* QEMU Block devices */
@@ -2379,9 +2383,11 @@ static int usb_device_add(const char *devname, int is_hotplug)
     /* the other ones */
     if (strstart(devname, "host:", &p)) {
         dev = usb_host_device_open(p);
+#if 0 /* Disabled for Red Hat Enterprise Linux */
     } else if (!strcmp(devname, "bt") || strstart(devname, "bt:", &p)) {
         dev = usb_bt_init(devname[2] ? hci_init(p) :
                         bt_new_hci(qemu_find_bt_vlan(0)));
+#endif
     } else {
         return -1;
     }
@@ -6009,9 +6015,11 @@ int main(int argc, char **argv, char **envp)
         exit(1);
     }
 
+#if 0 /* Disabled for Red Hat Enterprise Linux */
     /* init the bluetooth world */
     if (foreach_device_config(DEV_BT, bt_parse))
         exit(1);
+#endif
 
     /* init the memory */
     if (ram_size == 0)
