@@ -63,10 +63,18 @@ void qemu_spice_rect_union(QXLRect *dest, const QXLRect *r)
     dest->right = MAX(dest->right, r->right);
 }
 
-
-void qemu_spice_add_memslot(SimpleSpiceDisplay *ssd, QXLDevMemSlot *memslot)
+void qemu_spice_add_memslot(SimpleSpiceDisplay *ssd, QXLDevMemSlot *memslot,
+                            qxl_async_io async)
 {
-    ssd->worker->add_memslot(ssd->worker, memslot);
+    if (async != QXL_SYNC) {
+#if SPICE_INTERFACE_QXL_MINOR >= 1
+        spice_qxl_add_memslot_async(&ssd->qxl, memslot, 0);
+#else
+        abort();
+#endif
+    } else {
+        ssd->worker->add_memslot(ssd->worker, memslot);
+    }
 }
 
 void qemu_spice_del_memslot(SimpleSpiceDisplay *ssd, uint32_t gid, uint32_t sid)
@@ -75,14 +83,33 @@ void qemu_spice_del_memslot(SimpleSpiceDisplay *ssd, uint32_t gid, uint32_t sid)
 }
 
 void qemu_spice_create_primary_surface(SimpleSpiceDisplay *ssd, uint32_t id,
-                                       QXLDevSurfaceCreate *surface)
+                                       QXLDevSurfaceCreate *surface,
+                                       qxl_async_io async)
 {
-    ssd->worker->create_primary_surface(ssd->worker, id, surface);
+    if (async != QXL_SYNC) {
+#if SPICE_INTERFACE_QXL_MINOR >= 1
+        spice_qxl_create_primary_surface_async(&ssd->qxl, id, surface, 0);
+#else
+        abort();
+#endif
+    } else {
+        ssd->worker->create_primary_surface(ssd->worker, id, surface);
+    }
 }
 
-void qemu_spice_destroy_primary_surface(SimpleSpiceDisplay *ssd, uint32_t id)
+
+void qemu_spice_destroy_primary_surface(SimpleSpiceDisplay *ssd,
+                                        uint32_t id, qxl_async_io async)
 {
-    ssd->worker->destroy_primary_surface(ssd->worker, id);
+    if (async != QXL_SYNC) {
+#if SPICE_INTERFACE_QXL_MINOR >= 1
+        spice_qxl_destroy_primary_surface_async(&ssd->qxl, id, 0);
+#else
+        abort();
+#endif
+    } else {
+        ssd->worker->destroy_primary_surface(ssd->worker, id);
+    }
 }
 
 void qemu_spice_wakeup(SimpleSpiceDisplay *ssd)
@@ -194,7 +221,7 @@ void qemu_spice_create_host_memslot(SimpleSpiceDisplay *ssd)
     memset(&memslot, 0, sizeof(memslot));
     memslot.slot_group_id = MEMSLOT_GROUP_HOST;
     memslot.virt_end = ~0;
-    qemu_spice_add_memslot(ssd, &memslot);
+    qemu_spice_add_memslot(ssd, &memslot, QXL_SYNC);
 }
 
 void qemu_spice_create_host_primary(SimpleSpiceDisplay *ssd)
@@ -214,14 +241,14 @@ void qemu_spice_create_host_primary(SimpleSpiceDisplay *ssd)
     surface.mem        = (intptr_t)ssd->buf;
     surface.group_id   = MEMSLOT_GROUP_HOST;
 
-    qemu_spice_create_primary_surface(ssd, 0, &surface);
+    qemu_spice_create_primary_surface(ssd, 0, &surface, QXL_SYNC);
 }
 
 void qemu_spice_destroy_host_primary(SimpleSpiceDisplay *ssd)
 {
     dprint(1, "%s:\n", __FUNCTION__);
 
-    qemu_spice_destroy_primary_surface(ssd, 0);
+    qemu_spice_destroy_primary_surface(ssd, 0, QXL_SYNC);
 }
 
 void qemu_spice_vm_change_state_handler(void *opaque, int running, int reason)
