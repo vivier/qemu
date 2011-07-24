@@ -1546,7 +1546,6 @@ static DisplayChangeListener display_listener = {
 static int qxl_init_common(PCIQXLDevice *qxl)
 {
     uint8_t* config = qxl->pci.config;
-    uint32_t pci_device_id;
     uint32_t pci_device_rev;
     uint32_t io_size;
 
@@ -1560,21 +1559,16 @@ static int qxl_init_common(PCIQXLDevice *qxl)
 
     switch (qxl->revision) {
     case 1: /* spice 0.4 -- qxl-1 */
-        pci_device_id  = QXL_DEVICE_ID_STABLE;
         pci_device_rev = QXL_REVISION_STABLE_V04;
         break;
     case 2: /* spice 0.6 -- qxl-2 */
-        pci_device_id  = QXL_DEVICE_ID_STABLE;
+    default:
         pci_device_rev = QXL_REVISION_STABLE_V06;
-        break;
-    default: /* experimental */
-        pci_device_id  = QXL_DEVICE_ID_DEVEL;
-        pci_device_rev = 1;
         break;
     }
 
     pci_config_set_vendor_id(config, REDHAT_PCI_VENDOR_ID);
-    pci_config_set_device_id(config, pci_device_id);
+    pci_config_set_device_id(config, QXL_DEVICE_ID_STABLE);
     pci_set_byte(&config[PCI_REVISION_ID], pci_device_rev);
     pci_set_byte(&config[PCI_INTERRUPT_PIN], 1);
 
