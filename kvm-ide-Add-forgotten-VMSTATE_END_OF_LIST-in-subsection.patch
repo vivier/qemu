@@ -1,0 +1,42 @@
+From de20eae13d4b8691cdd53afa7c1107d42ff9e1af Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 21 Jun 2011 13:59:25 -0300
+Subject: [RHEL6 qemu-kvm PATCH 3/8] ide: Add forgotten VMSTATE_END_OF_LIST in subsection
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1308664766-10499-4-git-send-email-kwolf@redhat.com>
+Patchwork-id: 27718
+O-Subject: [RHEL-6.2 qemu-kvm PATCH 3/4] ide: Add forgotten VMSTATE_END_OF_LIST in subsection
+Bugzilla: 698537
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 698537
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 0754f9ecef98ad95442f16657df9721dd5682c3a)
+---
+ hw/ide/core.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/ide/core.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 7a7806d..9484891 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -3008,6 +3008,7 @@ const VMStateDescription vmstate_ide_atapi_gesn_state = {
+     .fields = (VMStateField []) {
+         VMSTATE_BOOL(events.new_media, IDEState),
+         VMSTATE_BOOL(events.eject_request, IDEState),
++        VMSTATE_END_OF_LIST()
+     }
+ };
+ 
+-- 
+1.7.3.2
+

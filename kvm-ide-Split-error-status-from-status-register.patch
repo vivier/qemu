@@ -1,0 +1,296 @@
+From 48c7c002cb9cab704d8190e61f0714c99ff06e8d Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 21 Jun 2011 13:59:23 -0300
+Subject: [RHEL6 qemu-kvm PATCH 1/8] ide: Split error status from status register
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1308664766-10499-2-git-send-email-kwolf@redhat.com>
+Patchwork-id: 27715
+O-Subject: [RHEL-6.2 qemu-kvm PATCH 1/4] ide: Split error status from status register
+Bugzilla: 698537
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 698537
+
+When adding the werror=stop mode, some flags were added to s->status
+which are used to determine what kind of operation should be restarted
+when the VM is continued.
+
+Unfortunately, it turns out that s->status is in fact a device register
+and as such is visible to the guest (some of the abused bits are even
+writable for the guest).
+
+For migration we keep on using the old VMState field (renamed to
+migration_compat_status) if the status register doesn't use any of the
+previously abused bits. If it does, we use a subsection with a clean copy of
+the status register.
+
+The error status is always sent in a subsection if there is any error. It can't
+use the old field because errors happen even without PCI.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit def93791f22a3536c3508244ec7d270098484c7d)
+
+Conflicts:
+
+	hw/ide/core.c
+	hw/ide/pci.c
+	hw/ide/pci.h
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ hw/ide/core.c     |   46 +++++++++++++++++++++++++++++++++++++------
+ hw/ide/internal.h |   12 +++++++++++
+ hw/ide/pci.c      |   55 ++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 105 insertions(+), 8 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/ide/core.c     |   46 +++++++++++++++++++++++++++++++++++++------
+ hw/ide/internal.h |   12 +++++++++++
+ hw/ide/pci.c      |   55 ++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 105 insertions(+), 8 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 9a2274b..b581880 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -502,7 +502,7 @@ static int ide_handle_rw_error(IDEState *s, int error, int op)
+     if ((error == ENOSPC && action == BLOCK_ERR_STOP_ENOSPC)
+             || action == BLOCK_ERR_STOP_ANY) {
+         s->bus->bmdma->unit = s->unit;
+-        s->bus->bmdma->status |= op;
++        s->bus->error_status = op;
+         bdrv_mon_event(s->bs, BDRV_ACTION_STOP, error, is_read);
+         vm_stop(0);
+     } else {
+@@ -677,27 +677,33 @@ static void ide_sector_write(IDEState *s)
+     }
+ }
+ 
++/* TODO This should be common IDE code */
+ static void ide_dma_restart_bh(void *opaque)
+ {
+     BMDMAState *bm = opaque;
++    IDEBus *bus = bm->bus;
+     int is_read;
+ 
+     qemu_bh_delete(bm->bh);
+     bm->bh = NULL;
+ 
+-    is_read = !!(bm->status & BM_STATUS_RETRY_READ);
++    if (bm->unit == (uint8_t) -1) {
++        return;
++    }
++
++    is_read = !!(bus->error_status & BM_STATUS_RETRY_READ);
+ 
+-    if (bm->status & BM_STATUS_DMA_RETRY) {
+-        bm->status &= ~(BM_STATUS_DMA_RETRY | BM_STATUS_RETRY_READ);
++    if (bus->error_status & BM_STATUS_DMA_RETRY) {
++        bus->error_status &= ~(BM_STATUS_DMA_RETRY | BM_STATUS_RETRY_READ);
+         ide_dma_restart(bmdma_active_if(bm), is_read);
+-    } else if (bm->status & BM_STATUS_PIO_RETRY) {
+-        bm->status &= ~(BM_STATUS_PIO_RETRY | BM_STATUS_RETRY_READ);
++    } else if (bus->error_status & BM_STATUS_PIO_RETRY) {
++        bus->error_status &= ~(BM_STATUS_PIO_RETRY | BM_STATUS_RETRY_READ);
+         if (is_read) {
+             ide_sector_read(bmdma_active_if(bm));
+         } else {
+             ide_sector_write(bmdma_active_if(bm));
+         }
+-    } else if (bm->status & BM_STATUS_RETRY_FLUSH) {
++    } else if (bus->error_status & BM_STATUS_RETRY_FLUSH) {
+         ide_flush_cache(bmdma_active_if(bm));
+     }
+ }
+@@ -2985,6 +2991,13 @@ static bool ide_atapi_gesn_needed(void *opaque)
+     return s->events.new_media || s->events.eject_request;
+ }
+ 
++static bool ide_error_needed(void *opaque)
++{
++    IDEBus *bus = opaque;
++
++    return (bus->error_status != 0);
++}
++
+ /* Fields for GET_EVENT_STATUS_NOTIFICATION ATAPI command */
+ const VMStateDescription vmstate_ide_atapi_gesn_state = {
+     .name ="ide_drive/atapi/gesn_state",
+@@ -3059,6 +3072,17 @@ const VMStateDescription vmstate_ide_drive = {
+     }
+ };
+ 
++const VMStateDescription vmstate_ide_error_status = {
++    .name ="ide_bus/error",
++    .version_id = 1,
++    .minimum_version_id = 1,
++    .minimum_version_id_old = 1,
++    .fields = (VMStateField []) {
++        VMSTATE_INT32(error_status, IDEBus),
++        VMSTATE_END_OF_LIST()
++    }
++};
++
+ const VMStateDescription vmstate_ide_bus = {
+     .name = "ide_bus",
+     .version_id = 1,
+@@ -3068,6 +3092,14 @@ const VMStateDescription vmstate_ide_bus = {
+         VMSTATE_UINT8(cmd, IDEBus),
+         VMSTATE_UINT8(unit, IDEBus),
+         VMSTATE_END_OF_LIST()
++    },
++    .subsections = (VMStateSubsection []) {
++        {
++            .vmsd = &vmstate_ide_error_status,
++            .needed = ide_error_needed,
++        }, {
++            /* empty */
++        }
+     }
+ };
+ 
+diff --git a/hw/ide/internal.h b/hw/ide/internal.h
+index cb8fd30..4c3a7c5 100644
+--- a/hw/ide/internal.h
++++ b/hw/ide/internal.h
+@@ -457,6 +457,8 @@ struct IDEBus {
+     uint8_t unit;
+     uint8_t cmd;
+     qemu_irq irq;
++
++    int error_status;
+ };
+ 
+ struct IDEDevice {
+@@ -477,11 +479,17 @@ struct IDEDeviceInfo {
+ #define BM_STATUS_DMAING 0x01
+ #define BM_STATUS_ERROR  0x02
+ #define BM_STATUS_INT    0x04
++
++/* FIXME These are not status register bits */
+ #define BM_STATUS_DMA_RETRY  0x08
+ #define BM_STATUS_PIO_RETRY  0x10
+ #define BM_STATUS_RETRY_READ  0x20
+ #define BM_STATUS_RETRY_FLUSH 0x40
+ 
++#define BM_MIGRATION_COMPAT_STATUS_BITS \
++        (BM_STATUS_DMA_RETRY | BM_STATUS_PIO_RETRY | \
++        BM_STATUS_RETRY_READ | BM_STATUS_RETRY_FLUSH)
++
+ #define BM_CMD_START     0x01
+ #define BM_CMD_READ      0x08
+ 
+@@ -504,6 +512,10 @@ struct BMDMAState {
+     int64_t sector_num;
+     uint32_t nsector;
+     QEMUBH *bh;
++
++    /* Bit 0-2 and 7:   BM status register
++     * Bit 3-6:         bus->error_status */
++    uint8_t migration_compat_status;
+ };
+ 
+ static inline IDEState *idebus_active_if(IDEBus *bus)
+diff --git a/hw/ide/pci.c b/hw/ide/pci.c
+index 352b41d..7f61ada 100644
+--- a/hw/ide/pci.c
++++ b/hw/ide/pci.c
+@@ -145,6 +145,43 @@ static bool ide_bmdma_current_needed(void *opaque)
+     return (bm->cur_prd_len != 0);
+ }
+ 
++static bool ide_bmdma_status_needed(void *opaque)
++{
++    BMDMAState *bm = opaque;
++
++    /* Older versions abused some bits in the status register for internal
++     * error state. If any of these bits are set, we must add a subsection to
++     * transfer the real status register */
++    uint8_t abused_bits = BM_MIGRATION_COMPAT_STATUS_BITS;
++
++    return ((bm->status & abused_bits) != 0);
++}
++
++static void ide_bmdma_pre_save(void *opaque)
++{
++    BMDMAState *bm = opaque;
++    uint8_t abused_bits = BM_MIGRATION_COMPAT_STATUS_BITS;
++
++    bm->migration_compat_status =
++        (bm->status & ~abused_bits) | (bm->bus->error_status & abused_bits);
++}
++
++/* This function accesses bm->bus->error_status which is loaded only after
++ * BMDMA itself. This is why the function is called from ide_pci_post_load
++ * instead of being registered with VMState where it would run too early. */
++static int ide_bmdma_post_load(void *opaque, int version_id)
++{
++    BMDMAState *bm = opaque;
++    uint8_t abused_bits = BM_MIGRATION_COMPAT_STATUS_BITS;
++
++    if (bm->status == 0) {
++        bm->status = bm->migration_compat_status & ~abused_bits;
++        bm->bus->error_status |= bm->migration_compat_status & abused_bits;
++    }
++
++    return 0;
++}
++
+ static const VMStateDescription vmstate_bmdma_current = {
+     .name = "ide bmdma_current",
+     .version_id = 1,
+@@ -159,15 +196,26 @@ static const VMStateDescription vmstate_bmdma_current = {
+     }
+ };
+ 
++const VMStateDescription vmstate_bmdma_status = {
++    .name ="ide bmdma/status",
++    .version_id = 1,
++    .minimum_version_id = 1,
++    .minimum_version_id_old = 1,
++    .fields = (VMStateField []) {
++        VMSTATE_UINT8(status, BMDMAState),
++        VMSTATE_END_OF_LIST()
++    }
++};
+ 
+ static const VMStateDescription vmstate_bmdma = {
+     .name = "ide bmdma",
+     .version_id = 3,
+     .minimum_version_id = 0,
+     .minimum_version_id_old = 0,
++    .pre_save  = ide_bmdma_pre_save,
+     .fields      = (VMStateField []) {
+         VMSTATE_UINT8(cmd, BMDMAState),
+-        VMSTATE_UINT8(status, BMDMAState),
++        VMSTATE_UINT8(migration_compat_status, BMDMAState),
+         VMSTATE_UINT32(addr, BMDMAState),
+         VMSTATE_INT64(sector_num, BMDMAState),
+         VMSTATE_UINT32(nsector, BMDMAState),
+@@ -179,6 +227,9 @@ static const VMStateDescription vmstate_bmdma = {
+             .vmsd = &vmstate_bmdma_current,
+             .needed = ide_bmdma_current_needed,
+         }, {
++            .vmsd = &vmstate_bmdma_status,
++            .needed = ide_bmdma_status_needed,
++        }, {
+             /* empty */
+         }
+     }
+@@ -193,7 +244,9 @@ static int ide_pci_post_load(void *opaque, int version_id)
+         /* current versions always store 0/1, but older version
+            stored bigger values. We only need last bit */
+         d->bmdma[i].unit &= 1;
++        ide_bmdma_post_load(&d->bmdma[i], -1);
+     }
++
+     return 0;
+ }
+ 
+-- 
+1.7.3.2
+

@@ -1,0 +1,79 @@
+From b1f852ad4fe43446c3865af4b666a0866a809e55 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 21 Jun 2011 13:59:26 -0300
+Subject: [RHEL6 qemu-kvm PATCH 4/8] ide: Clear error_status after restarting flush
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1308664766-10499-5-git-send-email-kwolf@redhat.com>
+Patchwork-id: 27719
+O-Subject: [RHEL-6.2 qemu-kvm PATCH 4/4] ide: Clear error_status after restarting flush
+Bugzilla: 698537
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 698537
+
+Clearing the error status flag was missing for restarting flushes. Now that the
+error status is separate from the BM status register, we can simply set it to 0
+after restarting the request. This ensures that we never forget to clear a bit.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit ee752da74f5d07cf441f8d42455c4241d6051ae5)
+
+Conflicts:
+
+	hw/ide/pci.c
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ hw/ide/core.c |   15 ++++++++++-----
+ 1 files changed, 10 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/ide/core.c |   15 ++++++++++-----
+ 1 files changed, 10 insertions(+), 5 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 9484891..8e262f3 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -683,6 +683,7 @@ static void ide_dma_restart_bh(void *opaque)
+     BMDMAState *bm = opaque;
+     IDEBus *bus = bm->bus;
+     int is_read;
++    int error_status;
+ 
+     qemu_bh_delete(bm->bh);
+     bm->bh = NULL;
+@@ -693,17 +694,21 @@ static void ide_dma_restart_bh(void *opaque)
+ 
+     is_read = !!(bus->error_status & BM_STATUS_RETRY_READ);
+ 
+-    if (bus->error_status & BM_STATUS_DMA_RETRY) {
+-        bus->error_status &= ~(BM_STATUS_DMA_RETRY | BM_STATUS_RETRY_READ);
++    /* The error status must be cleared before resubmitting the request: The
++     * request may fail again, and this case can only be distinguished if the
++     * called function can set a new error status. */
++    error_status = bus->error_status;
++    bus->error_status = 0;
++
++    if (error_status & BM_STATUS_DMA_RETRY) {
+         ide_dma_restart(bmdma_active_if(bm), is_read);
+-    } else if (bus->error_status & BM_STATUS_PIO_RETRY) {
+-        bus->error_status &= ~(BM_STATUS_PIO_RETRY | BM_STATUS_RETRY_READ);
++    } else if (error_status & BM_STATUS_PIO_RETRY) {
+         if (is_read) {
+             ide_sector_read(bmdma_active_if(bm));
+         } else {
+             ide_sector_write(bmdma_active_if(bm));
+         }
+-    } else if (bus->error_status & BM_STATUS_RETRY_FLUSH) {
++    } else if (error_status & BM_STATUS_RETRY_FLUSH) {
+         ide_flush_cache(bmdma_active_if(bm));
+     }
+ }
+-- 
+1.7.3.2
+

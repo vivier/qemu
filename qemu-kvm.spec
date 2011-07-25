@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.171
+%define pkgrelease 2.172
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3215,6 +3215,22 @@ Patch2303: kvm-Add-qemu_ram_remap.patch
 Patch2304: kvm-s390-Detect-invalid-invocations-of-qemu_ram_free-rem.patch
 # For bz#696102 - [Intel 6.2 FEAT] KVM: un-poison page when guest reboot: QEMU part
 Patch2305: kvm-MCE-unpoison-memory-address-across-reboot.patch
+# For bz#698537 - ide: core dump when stop/cont guest
+Patch2306: kvm-ide-Split-error-status-from-status-register.patch
+# For bz#698537 - ide: core dump when stop/cont guest
+Patch2307: kvm-ide-Fix-ide_drive_pio_state_needed.patch
+# For bz#698537 - ide: core dump when stop/cont guest
+Patch2308: kvm-ide-Add-forgotten-VMSTATE_END_OF_LIST-in-subsection.patch
+# For bz#698537 - ide: core dump when stop/cont guest
+Patch2309: kvm-ide-Clear-error_status-after-restarting-flush.patch
+# For bz#713743 - qemu-img: add cache command line option
+Patch2310: kvm-qemu-img-Add-cache-command-line-option.patch
+# For bz#709397 - virtio-serial unthrottling needs to use a bottomhalf to avoid recursion
+Patch2311: kvm-virtio-serial-bus-use-bh-for-unthrottling.patch
+# For bz#723864 - usb: compile out the crap
+Patch2312: kvm-usb-bluetooth-compile-out.patch
+# For bz#725054 - RHEL6.2: Clarify support statement in KVM help
+Patch2313: kvm-clarify-support-statement-in-KVM-help.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -4627,6 +4643,14 @@ ApplyOptionalPatch()
 %patch2303 -p1
 %patch2304 -p1
 %patch2305 -p1
+%patch2306 -p1
+%patch2307 -p1
+%patch2308 -p1
+%patch2309 -p1
+%patch2310 -p1
+%patch2311 -p1
+%patch2312 -p1
+%patch2313 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -4848,6 +4872,21 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Jul 25 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.172.el6
+- kvm-ide-Split-error-status-from-status-register.patch [bz#698537]
+- kvm-ide-Fix-ide_drive_pio_state_needed.patch [bz#698537]
+- kvm-ide-Add-forgotten-VMSTATE_END_OF_LIST-in-subsection.patch [bz#698537]
+- kvm-ide-Clear-error_status-after-restarting-flush.patch [bz#698537]
+- kvm-qemu-img-Add-cache-command-line-option.patch [bz#713743]
+- kvm-virtio-serial-bus-use-bh-for-unthrottling.patch [bz#709397]
+- kvm-usb-bluetooth-compile-out.patch [bz#723864]
+- kvm-clarify-support-statement-in-KVM-help.patch [bz#725054]
+- Resolves: bz#698537
+- Resolves: bz#709397
+- Resolves: bz#713743
+- Resolves: bz#723864
+- Resolves: bz#725054
+
 * Wed Jul 13 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.171.el6
 - kvm-Add-qemu_ram_alloc_from_ptr-function.patch [bz#696102]
 - kvm-exec-remove-code-duplication-in-qemu_ram_alloc-and-q.patch [bz#696102]

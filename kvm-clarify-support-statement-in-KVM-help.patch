@@ -1,0 +1,45 @@
+From 6addae718fd6139ced9292a8ea62a0cb99443b9b Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Mon, 25 Jul 2011 18:33:12 -0300
+Subject: [RHEL6 qemu-kvm PATCH 8/8] clarify support statement in KVM help
+
+RH-Author: Eduardo Habkost <ehabkost@redhat.com>
+Message-id: <1311618792-3969-1-git-send-email-ehabkost@redhat.com>
+Patchwork-id: 30325
+O-Subject: [RHEL6 qemu-kvm PATCH] clarify support statement in KVM help
+Bugzilla: 725054
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=725054
+
+See Bugzilla description and discussion on virt-staff list for details.
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vl.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vl.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index c55ffc8..1bd3f62 100644
+--- a/vl.c
++++ b/vl.c
+@@ -4158,9 +4158,9 @@ static void version(void)
+ 
+ static void print_rh_warning(void)
+ {
+-    printf("\nWARNING: Direct use of qemu-kvm from the command line is unsupported."
+-           "\nWARNING: Only use via libvirt."
+-           "\nWARNING: Some options listed here may not be available in future releases.\n\n");
++    printf("\nWARNING: Direct use of qemu-kvm from the command line is not recommended by Red Hat.\n"
++             "WARNING: Some command line options listed here may not be available in future releases.\n"
++             "WARNING: Red Hat recommends the use of libvirt as the stable management interface.\n\n");
+ }
+ 
+ static void help(int exitcode)
+-- 
+1.7.3.2
+

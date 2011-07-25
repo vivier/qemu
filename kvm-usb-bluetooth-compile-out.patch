@@ -1,0 +1,112 @@
+From 426ecdf5a3c7e7aaed4f8fe9479d62d4af02c282 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Fri, 22 Jul 2011 13:39:19 -0300
+Subject: [RHEL6 qemu-kvm PATCH 7/8] usb/bluetooth: compile out a bunch of devices
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1311341959-13308-1-git-send-email-kraxel@redhat.com>
+Patchwork-id: 30175
+O-Subject: [RHEL-6.2 kvm PATCH v2] usb/bluetooth: compile out
+Bugzilla: 723864
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+This patch disables a bunch of device emulations which we are not
+willing to support.  None of these has libvirt support.
+
+The following usb devices are disabled:
+ * usb-wacom-tablet (use usb-tablet instead).
+ * usb-braille (useless anyway as we don't build with brlapi).
+ * usb-serial
+ * usb-net
+ * usb-bt-dongle
+
+Together with the bluetooth dongle all other bluetooth emulation code
+is disabled too as it is is just dead code without the dongle.
+
+[ v2: change comment to match others in the tree,
+      more verbose commit message ]
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ Makefile |    6 ++----
+ vl.c     |    8 ++++++++
+ 2 files changed, 10 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile |    6 ++----
+ vl.c     |    8 ++++++++
+ 2 files changed, 10 insertions(+), 4 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 63fda6f..be11e03 100644
+--- a/Makefile
++++ b/Makefile
+@@ -177,14 +177,12 @@ obj-$(CONFIG_DS1338) += ds1338.o
+ obj-y += i2c.o smbus.o smbus_eeprom.o
+ obj-y += eeprom93xx.o
+ obj-y += cdrom.o
+-obj-y += usb.o usb-hub.o usb-$(HOST_USB).o usb-hid.o usb-wacom.o
+-obj-y += usb-serial.o usb-net.o usb-bus.o usb-desc.o
++obj-y += usb.o usb-hub.o usb-$(HOST_USB).o usb-hid.o
++obj-y += usb-bus.o usb-desc.o
+ obj-y += usb-msd.o scsi-bus.o scsi-disk.o
+ obj-$(CONFIG_SSI) += ssi.o
+ obj-$(CONFIG_SSI_SD) += ssi-sd.o
+ obj-$(CONFIG_SD) += sd.o
+-obj-y += bt.o bt-host.o bt-vhci.o bt-l2cap.o bt-sdp.o bt-hci.o bt-hid.o usb-bt.o
+-obj-y += bt-hci-csr.o
+ obj-y += buffered_file.o migration.o migration-tcp.o qemu-sockets.o
+ obj-y += qemu-char.o aio.o savevm.o
+ obj-y += msmouse.o ps2.o
+diff --git a/vl.c b/vl.c
+index 26138d4..c55ffc8 100644
+--- a/vl.c
++++ b/vl.c
+@@ -1882,6 +1882,8 @@ static int socket_init(void)
+ }
+ #endif
+ 
++#if 0 /* Disabled for Red Hat Enterprise Linux */
++
+ /***********************************************************/
+ /* Bluetooth support */
+ static int nb_hcis;
+@@ -2073,6 +2075,8 @@ static int bt_parse(const char *opt)
+     return 1;
+ }
+ 
++#endif
++
+ /***********************************************************/
+ /* QEMU Block devices */
+ 
+@@ -2379,9 +2383,11 @@ static int usb_device_add(const char *devname, int is_hotplug)
+     /* the other ones */
+     if (strstart(devname, "host:", &p)) {
+         dev = usb_host_device_open(p);
++#if 0 /* Disabled for Red Hat Enterprise Linux */
+     } else if (!strcmp(devname, "bt") || strstart(devname, "bt:", &p)) {
+         dev = usb_bt_init(devname[2] ? hci_init(p) :
+                         bt_new_hci(qemu_find_bt_vlan(0)));
++#endif
+     } else {
+         return -1;
+     }
+@@ -6009,9 +6015,11 @@ int main(int argc, char **argv, char **envp)
+         exit(1);
+     }
+ 
++#if 0 /* Disabled for Red Hat Enterprise Linux */
+     /* init the bluetooth world */
+     if (foreach_device_config(DEV_BT, bt_parse))
+         exit(1);
++#endif
+ 
+     /* init the memory */
+     if (ram_size == 0)
+-- 
+1.7.3.2
+

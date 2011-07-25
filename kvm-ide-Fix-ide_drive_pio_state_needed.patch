@@ -1,0 +1,47 @@
+From 09847f8d2226f929ca29bfa2c193ada3543906ae Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 21 Jun 2011 13:59:24 -0300
+Subject: [RHEL6 qemu-kvm PATCH 2/8] ide: Fix ide_drive_pio_state_needed()
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1308664766-10499-3-git-send-email-kwolf@redhat.com>
+Patchwork-id: 27717
+O-Subject: [RHEL-6.2 qemu-kvm PATCH 2/4] ide: Fix ide_drive_pio_state_needed()
+Bugzilla: 698537
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 698537
+
+When a failed PIO request caused the VM to stop, we still need to transfer the
+PIO state even though DRQ=0 at this point.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit fdc650d76d785ba56b1e87c260ce96d8e22c7cc8)
+---
+ hw/ide/core.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/ide/core.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index b581880..7a7806d 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -2981,7 +2981,8 @@ static bool ide_drive_pio_state_needed(void *opaque)
+ {
+     IDEState *s = opaque;
+ 
+-    return (s->status & DRQ_STAT) != 0;
++    return ((s->status & DRQ_STAT) != 0)
++        || (s->bus->error_status & BM_STATUS_PIO_RETRY);
+ }
+ 
+ static bool ide_atapi_gesn_needed(void *opaque)
+-- 
+1.7.3.2
+
