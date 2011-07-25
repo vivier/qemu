@@ -4158,9 +4158,9 @@ static void version(void)
 
 static void print_rh_warning(void)
 {
-    printf("\nWARNING: Direct use of qemu-kvm from the command line is unsupported."
-           "\nWARNING: Only use via libvirt."
-           "\nWARNING: Some options listed here may not be available in future releases.\n\n");
+    printf("\nWARNING: Direct use of qemu-kvm from the command line is not recommended by Red Hat.\n"
+             "WARNING: Some command line options listed here may not be available in future releases.\n"
+             "WARNING: Red Hat recommends the use of libvirt as the stable management interface.\n\n");
 }
 
 static void help(int exitcode)
