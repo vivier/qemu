@@ -455,7 +455,9 @@ such as kvm_stat.
            sh4-softmmu sh4eb-softmmu \
            i386-linux-user x86_64-linux-user alpha-linux-user arm-linux-user \
            armeb-linux-user cris-linux-user m68k-linux-user mips-linux-user \
-           mipsel-linux-user sh4-linux-user sh4eb-linux-user" \
+           mipsel-linux-user ppc-linux-user ppc64-linux-user ppc64abi32-linux-user \
+           sh4-linux-user sh4eb-linux-user sparc-linux-user sparc64-linux-user \
+           sparc32plus-linux-user" \
 %endif
 
 
@@ -730,8 +732,14 @@ fi
 %{_bindir}/qemu-m68k
 %{_bindir}/qemu-mips
 %{_bindir}/qemu-mipsel
+%{_bindir}/qemu-ppc
+%{_bindir}/qemu-ppc64
+%{_bindir}/qemu-ppc64abi32
 %{_bindir}/qemu-sh4
 %{_bindir}/qemu-sh4eb
+%{_bindir}/qemu-sparc
+%{_bindir}/qemu-sparc32plus
+%{_bindir}/qemu-sparc64
 %endif
 %{_datadir}/systemtap/tapset/qemu-i386.stp
 %{_datadir}/systemtap/tapset/qemu-x86_64.stp
@@ -743,8 +751,14 @@ fi
 %{_datadir}/systemtap/tapset/qemu-m68k.stp
 %{_datadir}/systemtap/tapset/qemu-mips.stp
 %{_datadir}/systemtap/tapset/qemu-mipsel.stp
+%{_datadir}/systemtap/tapset/qemu-ppc.stp
+%{_datadir}/systemtap/tapset/qemu-ppc64.stp
+%{_datadir}/systemtap/tapset/qemu-ppc64abi32.stp
 %{_datadir}/systemtap/tapset/qemu-sh4.stp
 %{_datadir}/systemtap/tapset/qemu-sh4eb.stp
+%{_datadir}/systemtap/tapset/qemu-sparc.stp
+%{_datadir}/systemtap/tapset/qemu-sparc32plus.stp
+%{_datadir}/systemtap/tapset/qemu-sparc64.stp
 %endif
 
 %files system-x86
