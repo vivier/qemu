@@ -15,7 +15,7 @@
 
 %define sublevel 0.12.1.2
 %define pkgrelease 2.160
-%define zrelease 5
+%define zrelease 6
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}.%{zrelease}
@@ -2538,6 +2538,8 @@ Patch2132: kvm-raw-posix-Linearize-direct-I-O-on-Linux-NFS.patch
 Patch2133: kvm-CVE-2011-2527-os-posix-set-groups-properly-for-runas.patch
 # For bz#722582 - CVE-2011-2527 qemu: when started as root, extra groups are not dropped correctly [rhel-6.1.z]
 Patch2134: kvm-Revert-CVE-2011-2527-os-posix-set-groups-properly-fo.patch
+# For bz#725543 - RHEL6.2: Clarify support statement in KVM help
+Patch2135: kvm-clarify-support-statement-in-KVM-help.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3779,6 +3781,7 @@ ApplyOptionalPatch()
 %patch2132 -p1
 %patch2133 -p1
 %patch2134 -p1
+%patch2135 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -4000,6 +4003,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jul 26 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.160.el6_1.6
+- kvm-clarify-support-statement-in-KVM-help.patch [bz#725543]
+- Resolves: bz#725543
+  (RHEL6.2: Clarify support statement in KVM help)
+
 * Tue Jul 19 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.160.el6_1.5
 - kvm-Revert-CVE-2011-2527-os-posix-set-groups-properly-fo.patch [bz#722582]
 - Related: bz#722582
