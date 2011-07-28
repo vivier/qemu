@@ -1,7 +1,7 @@
-From 7a78607683a3c3a25ab715d6a5e137be9cf29e66 Mon Sep 17 00:00:00 2001
+From ffef9f85d32395989a3c5845dfe34d2110ccb82b Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 20:31:45 +0100
-Subject: [PATCH 26/35] char: Add a QemuChrHandlers struct to initialise
+Subject: [PATCH 02/13] char: Add a QemuChrHandlers struct to initialise
  chardev handlers
 
 Instead of passing each handler in the qemu_add_handlers() function,
@@ -306,7 +306,7 @@ index 09090e9..5438660 100644
  
      return 0;
 diff --git a/hw/mcf_uart.c b/hw/mcf_uart.c
-index db57096..9928c11 100644
+index 905e116..bb5740c 100644
 --- a/hw/mcf_uart.c
 +++ b/hw/mcf_uart.c
 @@ -268,6 +268,12 @@ static void mcf_uart_receive(void *opaque, const uint8_t *buf, int size)
@@ -359,7 +359,7 @@ index 56c90da..4412b1b 100644
  
      return 0;
 diff --git a/hw/pl011.c b/hw/pl011.c
-index 3b94b14..7b4f3ae 100644
+index 997ce84..37ba7f6 100644
 --- a/hw/pl011.c
 +++ b/hw/pl011.c
 @@ -260,6 +260,12 @@ static const VMStateDescription vmstate_pl011 = {
@@ -386,7 +386,7 @@ index 3b94b14..7b4f3ae 100644
      vmstate_register(&dev->qdev, -1, &vmstate_pl011, s);
      return 0;
 diff --git a/hw/pxa2xx.c b/hw/pxa2xx.c
-index ac5d95d..779081c 100644
+index cf93110..18bbe48 100644
 --- a/hw/pxa2xx.c
 +++ b/hw/pxa2xx.c
 @@ -2019,6 +2019,12 @@ static int pxa2xx_fir_load(QEMUFile *f, void *opaque, int version_id)
@@ -554,7 +554,7 @@ index 2ef7175..ac68022 100644
      if (s->fifo_size <= 0) {
          fprintf(stderr, "syborg_serial: fifo too small\n");
 diff --git a/hw/usb-serial.c b/hw/usb-serial.c
-index 59cb0fb..bebd900 100644
+index c69c437..45d48ee 100644
 --- a/hw/usb-serial.c
 +++ b/hw/usb-serial.c
 @@ -476,6 +476,12 @@ static void usb_serial_event(void *opaque, int event)
@@ -581,10 +581,10 @@ index 59cb0fb..bebd900 100644
      return 0;
  }
 diff --git a/hw/virtio-console.c b/hw/virtio-console.c
-index b076331..147a467 100644
+index fe5e188..cfc3087 100644
 --- a/hw/virtio-console.c
 +++ b/hw/virtio-console.c
-@@ -74,6 +74,12 @@ static void chr_event(void *opaque, int event)
+@@ -95,6 +95,12 @@ static void chr_event(void *opaque, int event)
      }
  }
  
@@ -597,7 +597,7 @@ index b076331..147a467 100644
  static int virtconsole_initfn(VirtIOSerialPort *port)
  {
      VirtConsole *vcon = DO_UPCAST(VirtConsole, port, port);
-@@ -86,8 +92,7 @@ static int virtconsole_initfn(VirtIOSerialPort *port)
+@@ -107,8 +113,7 @@ static int virtconsole_initfn(VirtIOSerialPort *port)
      }
  
      if (vcon->chr) {
@@ -607,7 +607,7 @@ index b076331..147a467 100644
          info->have_data = flush_buf;
          info->guest_open = guest_open;
          info->guest_close = guest_close;
-@@ -105,7 +110,7 @@ static int virtconsole_exitfn(VirtIOSerialPort *port)
+@@ -126,7 +131,7 @@ static int virtconsole_exitfn(VirtIOSerialPort *port)
  	 * Instead of closing the chardev, free it so it can be used
  	 * for other purposes.
  	 */
@@ -617,11 +617,11 @@ index b076331..147a467 100644
  
      return 0;
 diff --git a/hw/xen_console.c b/hw/xen_console.c
-index c6c8163..4c39310 100644
+index 8ef104c..85e8a22 100644
 --- a/hw/xen_console.c
 +++ b/hw/xen_console.c
-@@ -201,6 +201,11 @@ static int con_init(struct XenDevice *xendev)
-     return 0;
+@@ -212,6 +212,11 @@ out:
+     return ret;
  }
  
 +static const QemuChrHandlers xencons_handlers = {
@@ -632,7 +632,7 @@ index c6c8163..4c39310 100644
  static int con_connect(struct XenDevice *xendev)
  {
      struct XenConsole *con = container_of(xendev, struct XenConsole, xendev);
-@@ -221,9 +226,9 @@ static int con_connect(struct XenDevice *xendev)
+@@ -232,9 +237,9 @@ static int con_connect(struct XenDevice *xendev)
  	return -1;
  
      xen_be_bind_evtchn(&con->xendev);
@@ -645,7 +645,7 @@ index c6c8163..4c39310 100644
  
      xen_be_printf(xendev, 1, "ring mfn %d, remote port %d, local port %d, limit %zd\n",
  		  con->ring_ref,
-@@ -237,8 +242,9 @@ static void con_disconnect(struct XenDevice *xendev)
+@@ -248,8 +253,9 @@ static void con_disconnect(struct XenDevice *xendev)
  {
      struct XenConsole *con = container_of(xendev, struct XenConsole, xendev);
  
@@ -687,10 +687,10 @@ index 9b94e98..1845577 100644
  }
  
 diff --git a/monitor.c b/monitor.c
-index a6388a9..5e7ce62 100644
+index 718935b..5b79dde 100644
 --- a/monitor.c
 +++ b/monitor.c
-@@ -5238,6 +5238,18 @@ static void monitor_event(void *opaque, int event)
+@@ -5249,6 +5249,18 @@ static void monitor_event(void *opaque, int event)
   * End:
   */
  
@@ -709,7 +709,7 @@ index a6388a9..5e7ce62 100644
  void monitor_init(CharDriverState *chr, int flags)
  {
      static int is_first_init = 1;
-@@ -5260,12 +5272,10 @@ void monitor_init(CharDriverState *chr, int flags)
+@@ -5271,12 +5283,10 @@ void monitor_init(CharDriverState *chr, int flags)
      if (monitor_ctrl_mode(mon)) {
          mon->mc = qemu_mallocz(sizeof(MonitorControl));
          /* Control mode requires special handlers */
@@ -725,10 +725,10 @@ index a6388a9..5e7ce62 100644
  
      QLIST_INSERT_HEAD(&mon_list, mon, entry);
 diff --git a/net/slirp.c b/net/slirp.c
-index e057a14..6eb0c51 100644
+index 157b80a..8eeec7e 100644
 --- a/net/slirp.c
 +++ b/net/slirp.c
-@@ -576,6 +576,11 @@ static void guestfwd_read(void *opaque, const uint8_t *buf, int size)
+@@ -577,6 +577,11 @@ static void guestfwd_read(void *opaque, const uint8_t *buf, int size)
      slirp_socket_recv(fwd->slirp, fwd->server, fwd->port, buf, size);
  }
  
@@ -740,7 +740,7 @@ index e057a14..6eb0c51 100644
  static int slirp_guestfwd(SlirpState *s, const char *config_str,
                            int legacy_format)
  {
-@@ -632,8 +637,7 @@ static int slirp_guestfwd(SlirpState *s, const char *config_str,
+@@ -633,8 +638,7 @@ static int slirp_guestfwd(SlirpState *s, const char *config_str,
      fwd->port = port;
      fwd->slirp = s->slirp;
  
@@ -751,10 +751,10 @@ index e057a14..6eb0c51 100644
  
   fail_syntax:
 diff --git a/qemu-char.c b/qemu-char.c
-index 75efa60..ee763d5 100644
+index 1701bdf..1c33828 100644
 --- a/qemu-char.c
 +++ b/qemu-char.c
-@@ -190,19 +190,26 @@ void qemu_chr_send_event(CharDriverState *s, int event)
+@@ -195,19 +195,26 @@ void qemu_chr_send_event(CharDriverState *s, int event)
          s->chr_send_event(s, event);
  }
  
@@ -789,7 +789,7 @@ index 75efa60..ee763d5 100644
      s->handler_opaque = opaque;
      if (s->chr_update_read_handler)
          s->chr_update_read_handler(s);
-@@ -440,6 +447,12 @@ static void mux_chr_event(void *opaque, int event)
+@@ -447,6 +454,12 @@ static void mux_chr_event(void *opaque, int event)
          mux_chr_send_event(d, i, event);
  }
  
@@ -802,7 +802,7 @@ index 75efa60..ee763d5 100644
  static void mux_chr_update_read_handler(CharDriverState *chr)
  {
      MuxDriver *d = chr->opaque;
-@@ -454,8 +467,7 @@ static void mux_chr_update_read_handler(CharDriverState *chr)
+@@ -461,8 +474,7 @@ static void mux_chr_update_read_handler(CharDriverState *chr)
      d->chr_event[d->mux_cnt] = chr->chr_event;
      /* Fix up the real driver with mux routines */
      if (d->mux_cnt == 0) {
@@ -813,7 +813,7 @@ index 75efa60..ee763d5 100644
      if (d->focus != -1) {
          mux_chr_send_event(d, d->focus, CHR_EVENT_MUX_OUT);
 diff --git a/qemu-char.h b/qemu-char.h
-index 892c6da..c8e3f2b 100644
+index f361c6d..b8372ea 100644
 --- a/qemu-char.h
 +++ b/qemu-char.h
 @@ -1,6 +1,7 @@
@@ -824,7 +824,7 @@ index 892c6da..c8e3f2b 100644
  #include "qemu-common.h"
  #include "qemu-queue.h"
  #include "qemu-option.h"
-@@ -76,6 +77,13 @@ struct CharDriverState {
+@@ -77,6 +78,13 @@ struct CharDriverState {
      QTAILQ_ENTRY(CharDriverState) next;
  };
  
@@ -838,7 +838,7 @@ index 892c6da..c8e3f2b 100644
  QemuOpts *qemu_chr_parse_compat(const char *label, const char *filename);
  CharDriverState *qemu_chr_open_opts(QemuOpts *opts,
                                      void (*init)(struct CharDriverState *s));
-@@ -88,10 +96,7 @@ void qemu_chr_printf(CharDriverState *s, const char *fmt, ...)
+@@ -89,10 +97,7 @@ void qemu_chr_printf(CharDriverState *s, const char *fmt, ...)
      GCC_FMT_ATTR(2, 3);
  int qemu_chr_write(CharDriverState *s, const uint8_t *buf, int len);
  void qemu_chr_send_event(CharDriverState *s, int event);

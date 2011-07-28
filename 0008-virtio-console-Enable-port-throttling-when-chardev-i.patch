@@ -1,7 +1,7 @@
-From ba203585e61d1fbe6ba45683d958d261678641ad Mon Sep 17 00:00:00 2001
+From badc85629db4d774f3b5b41070474bd5479d5be3 Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 22:06:41 +0100
-Subject: [PATCH 32/35] virtio-console: Enable port throttling when chardev is
+Subject: [PATCH 08/13] virtio-console: Enable port throttling when chardev is
  slow to consume data
 
 When a chardev indicates it can't accept more data, we tell the
@@ -16,10 +16,10 @@ Signed-off-by: Amit Shah <amit.shah@redhat.com>
  1 files changed, 11 insertions(+), 0 deletions(-)
 
 diff --git a/hw/virtio-console.c b/hw/virtio-console.c
-index 147a467..9286f6e 100644
+index cfc3087..b91f46e 100644
 --- a/hw/virtio-console.c
 +++ b/hw/virtio-console.c
-@@ -19,6 +19,16 @@ typedef struct VirtConsole {
+@@ -20,6 +20,16 @@ typedef struct VirtConsole {
      CharDriverState *chr;
  } VirtConsole;
  
@@ -36,7 +36,7 @@ index 147a467..9286f6e 100644
  
  /* Callback function that's called when the guest sends us data */
  static ssize_t flush_buf(VirtIOSerialPort *port, const uint8_t *buf, size_t len)
-@@ -78,6 +88,7 @@ static const QemuChrHandlers chr_handlers = {
+@@ -99,6 +109,7 @@ static const QemuChrHandlers chr_handlers = {
      .fd_can_read = chr_can_read,
      .fd_read = chr_read,
      .fd_event = chr_event,

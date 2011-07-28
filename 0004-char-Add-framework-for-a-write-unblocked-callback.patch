@@ -1,7 +1,7 @@
-From 59ff8a6457e82aadad7529602da68406de374a33 Mon Sep 17 00:00:00 2001
+From 66945912c4bd1bc70f3221288a4e7acc5717b336 Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 21:41:42 +0100
-Subject: [PATCH 28/35] char: Add framework for a 'write unblocked' callback
+Subject: [PATCH 04/13] char: Add framework for a 'write unblocked' callback
 
 The char layer can let users know that the driver will block on further
 input.  For users interested in not blocking, they can assign a function
@@ -16,10 +16,10 @@ Signed-off-by: Amit Shah <amit.shah@redhat.com>
  2 files changed, 7 insertions(+), 0 deletions(-)
 
 diff --git a/qemu-char.c b/qemu-char.c
-index ee763d5..830f0c3 100644
+index 1c33828..ec4eb68 100644
 --- a/qemu-char.c
 +++ b/qemu-char.c
-@@ -209,11 +209,14 @@ void qemu_chr_add_handlers(CharDriverState *s,
+@@ -214,11 +214,14 @@ void qemu_chr_add_handlers(CharDriverState *s,
      }
      s->chr_can_read = handlers->fd_can_read;
      s->chr_read = handlers->fd_read;
@@ -35,10 +35,10 @@ index ee763d5..830f0c3 100644
         also get the open event */
      if (s->opened) {
 diff --git a/qemu-char.h b/qemu-char.h
-index 7d5dc6c..e942bdf 100644
+index 9fe1b82..68e7b5b 100644
 --- a/qemu-char.h
 +++ b/qemu-char.h
-@@ -61,6 +61,9 @@ struct CharDriverState {
+@@ -62,6 +62,9 @@ struct CharDriverState {
      IOEventHandler *chr_event;
      IOCanReadHandler *chr_can_read;
      IOReadHandler *chr_read;
@@ -48,7 +48,7 @@ index 7d5dc6c..e942bdf 100644
      void *handler_opaque;
      void (*chr_send_event)(struct CharDriverState *chr, int event);
      void (*chr_close)(struct CharDriverState *chr);
-@@ -74,6 +77,7 @@ struct CharDriverState {
+@@ -75,6 +78,7 @@ struct CharDriverState {
      char *filename;
      int opened;
      int avail_connections;

@@ -1,7 +1,7 @@
-From 7322ad318ecde8669e68ef1314e97b4553a327fa Mon Sep 17 00:00:00 2001
+From 433a034b4ee87fe228be4e7f7e4399101d1e33c8 Mon Sep 17 00:00:00 2001
 From: Alon Levy <alevy@redhat.com>
 Date: Tue, 22 Mar 2011 12:27:59 +0200
-Subject: [PATCH 33/35] spice-qemu-char.c: add throttling
+Subject: [PATCH 09/13] spice-qemu-char.c: add throttling
 
 BZ: 672191
 
@@ -39,7 +39,7 @@ is reworked to use glib.
  1 files changed, 35 insertions(+), 4 deletions(-)
 
 diff --git a/spice-qemu-char.c b/spice-qemu-char.c
-index 605c241..9348f65 100644
+index 95bf6b6..0f72e91 100644
 --- a/spice-qemu-char.c
 +++ b/spice-qemu-char.c
 @@ -1,4 +1,6 @@
@@ -120,7 +120,7 @@ index 605c241..9348f65 100644
  }
  
  static void spice_chr_close(struct CharDriverState *chr)
-@@ -196,6 +226,7 @@ CharDriverState *qemu_chr_open_spice(QemuOpts *opts)
+@@ -196,6 +226,7 @@ int qemu_chr_open_spice(QemuOpts *opts, CharDriverState **_chr)
      chr->chr_close = spice_chr_close;
      chr->chr_guest_open = spice_chr_guest_open;
      chr->chr_guest_close = spice_chr_guest_close;

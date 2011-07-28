@@ -1,7 +1,7 @@
-From 8b7c5738faa2c7851ecc92182467a564bf7c9109 Mon Sep 17 00:00:00 2001
+From 7735740bd0c9f2d9585c64cc5f975dd03f2a7c11 Mon Sep 17 00:00:00 2001
 From: Alon Levy <alevy@redhat.com>
 Date: Tue, 22 Mar 2011 12:28:00 +0200
-Subject: [PATCH 34/35] spice-qemu-char.c: remove intermediate buffer
+Subject: [PATCH 10/13] spice-qemu-char.c: remove intermediate buffer
 
 BZ: 672191
 upstream: not submitted (explained below)
@@ -20,7 +20,7 @@ can't go upstream right now as explained in that patch.
  1 files changed, 6 insertions(+), 12 deletions(-)
 
 diff --git a/spice-qemu-char.c b/spice-qemu-char.c
-index 9348f65..ce75e91 100644
+index 0f72e91..2b8aec4 100644
 --- a/spice-qemu-char.c
 +++ b/spice-qemu-char.c
 @@ -23,9 +23,8 @@ typedef struct SpiceCharDriver {

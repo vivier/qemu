@@ -1,7 +1,7 @@
-From 4178a8240badad028ffd13482352510ad6a050e4 Mon Sep 17 00:00:00 2001
+From 8aab343e17b05abb051105cdb367edb4deef0c60 Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 22:00:27 +0100
-Subject: [PATCH 29/35] char: Update send_all() to handle nonblocking chardev
+Subject: [PATCH 05/13] char: Update send_all() to handle nonblocking chardev
  write requests
 
 The send_all function is modified to return to the caller in case the
@@ -37,10 +37,10 @@ index bc1bf58..a40687a 100644
  
  static ssize_t net_socket_receive_dgram(VLANClientState *nc, const uint8_t *buf, size_t size)
 diff --git a/qemu-char.c b/qemu-char.c
-index 830f0c3..88b22c3 100644
+index ec4eb68..8789627 100644
 --- a/qemu-char.c
 +++ b/qemu-char.c
-@@ -506,7 +506,7 @@ static CharDriverState *qemu_chr_open_mux(CharDriverState *drv)
+@@ -513,7 +513,7 @@ static CharDriverState *qemu_chr_open_mux(CharDriverState *drv)
  
  
  #ifdef _WIN32
@@ -49,7 +49,7 @@ index 830f0c3..88b22c3 100644
  {
      int ret, len;
  
-@@ -514,9 +514,14 @@ int send_all(int fd, const void *buf, int len1)
+@@ -521,9 +521,14 @@ int send_all(int fd, const void *buf, int len1)
      while (len > 0) {
          ret = send(fd, buf, len, 0);
          if (ret < 0) {
@@ -64,7 +64,7 @@ index 830f0c3..88b22c3 100644
              }
          } else if (ret == 0) {
              break;
-@@ -530,7 +535,7 @@ int send_all(int fd, const void *buf, int len1)
+@@ -537,7 +542,7 @@ int send_all(int fd, const void *buf, int len1)
  
  #else
  
@@ -73,7 +73,7 @@ index 830f0c3..88b22c3 100644
  {
      int ret, len;
      const uint8_t *buf = _buf;
-@@ -539,8 +544,15 @@ int send_all(int fd, const void *_buf, int len1)
+@@ -546,8 +551,15 @@ int send_all(int fd, const void *_buf, int len1)
      while (len > 0) {
          ret = write(fd, buf, len);
          if (ret < 0) {
@@ -90,7 +90,7 @@ index 830f0c3..88b22c3 100644
          } else if (ret == 0) {
              break;
          } else {
-@@ -552,6 +564,55 @@ int send_all(int fd, const void *_buf, int len1)
+@@ -559,6 +571,55 @@ int send_all(int fd, const void *_buf, int len1)
  }
  #endif /* !_WIN32 */
  
@@ -146,7 +146,7 @@ index 830f0c3..88b22c3 100644
  #ifndef _WIN32
  
  typedef struct {
-@@ -565,7 +626,7 @@ static int stdio_nb_clients = 0;
+@@ -572,7 +633,7 @@ static int stdio_nb_clients = 0;
  static int fd_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
  {
      FDCharDriver *s = chr->opaque;
@@ -155,7 +155,7 @@ index 830f0c3..88b22c3 100644
  }
  
  static int fd_chr_read_poll(void *opaque)
-@@ -881,7 +942,7 @@ static int pty_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
+@@ -897,7 +958,7 @@ static int pty_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
          pty_chr_update_read_handler(chr);
          return 0;
      }
@@ -164,7 +164,7 @@ index 830f0c3..88b22c3 100644
  }
  
  static int pty_chr_read_poll(void *opaque)
-@@ -1950,8 +2011,15 @@ static void tcp_closed(void *opaque)
+@@ -1978,8 +2039,15 @@ static void tcp_closed(void *opaque)
  static int tcp_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
  {
      TCPCharDriver *s = chr->opaque;
