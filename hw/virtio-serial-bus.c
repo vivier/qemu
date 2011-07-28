@@ -657,6 +657,7 @@ static int virtio_serial_load(QEMUFile *f, void *opaque, int version_id)
     for (i = 0; i < nr_active_ports; i++) {
         uint32_t id;
         bool host_connected;
+        VirtIOSerialPortInfo *info;
 
         id = qemu_get_be32(f);
         port = find_port_by_id(s, id);
@@ -665,6 +666,11 @@ static int virtio_serial_load(QEMUFile *f, void *opaque, int version_id)
         }
 
         port->guest_connected = qemu_get_byte(f);
+        info = DO_UPCAST(VirtIOSerialPortInfo, qdev, port->dev.info);
+        if (port->guest_connected && info->guest_open) {
+            /* replay guest open */
+            info->guest_open(port);
+        }
         host_connected = qemu_get_byte(f);
         if (host_connected != port->host_connected) {
             /*
