@@ -1,0 +1,80 @@
+From 773206687b59e520f066c9716394d4e3eb8c66b6 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Tue, 26 Jul 2011 08:10:01 -0300
+Subject: [RHEL6 qemu-kvm PATCH 3/3] Add missing documentation for qemu-img -p
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1311667801-32508-1-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 30382
+O-Subject: [PATCH RHEL6.2 qemu-kvm] Add missing documentation for qemu-img -p
+Bugzilla: 722728
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+BugZilla: 722728
+Upstream: aaf55b4795d95d87353a08710f237f88d81a3c35
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry-pick with conflicts aaf55b4795d95d87353a08710f237f88d81a3c35)
+---
+ qemu-img-cmds.hx |    4 ++--
+ qemu-img.texi    |    4 +++-
+ 2 files changed, 5 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-img-cmds.hx |    4 ++--
+ qemu-img.texi    |    4 +++-
+ 2 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/qemu-img-cmds.hx b/qemu-img-cmds.hx
+index b4fb880..cfd12e6 100644
+--- a/qemu-img-cmds.hx
++++ b/qemu-img-cmds.hx
+@@ -30,7 +30,7 @@ ETEXI
+ DEF("convert", img_convert,
+     "convert [-c] [-p] [-f fmt] [-t cache] [-O output_fmt] [-o options] filename [filename2 [...]] output_filename")
+ STEXI
+-@item convert [-c] [-f @var{fmt}] [-O @var{output_fmt}] [-o @var{options}] @var{filename} [@var{filename2} [...]] @var{output_filename}
++@item convert [-c] [-p] [-f @var{fmt}] [-O @var{output_fmt}] [-o @var{options}] @var{filename} [@var{filename2} [...]] @var{output_filename}
+ ETEXI
+ 
+ DEF("info", img_info,
+@@ -48,7 +48,7 @@ ETEXI
+ DEF("rebase", img_rebase,
+     "rebase [-f fmt] [-t cache] [-p] [-u] -b backing_file [-F backing_fmt] filename")
+ STEXI
+-@item rebase [-f @var{fmt}] [-u] -b @var{backing_file} [-F @var{backing_fmt}] @var{filename}
++@item rebase [-f @var{fmt}] [-p] [-u] -b @var{backing_file} [-F @var{backing_fmt}] @var{filename}
+ ETEXI
+ 
+ DEF("resize", img_resize,
+diff --git a/qemu-img.texi b/qemu-img.texi
+index c1b1f27..3070778 100644
+--- a/qemu-img.texi
++++ b/qemu-img.texi
+@@ -38,6 +38,8 @@ by the used format or see the format descriptions below for details.
+ indicates that target image must be compressed (qcow format only)
+ @item -h
+ with or without a command shows help and lists the supported formats
++@item -p
++display progress bar (convert and rebase commands only)
+ @end table
+ 
+ Parameters to snapshot subcommand:
+@@ -77,7 +79,7 @@ it doesn't need to be specified separately in this case.
+ 
+ Commit the changes recorded in @var{filename} in its base image.
+ 
+-@item convert [-c] [-f @var{fmt}] [-O @var{output_fmt}] [-o @var{options}] @var{filename} [@var{filename2} [...]] @var{output_filename}
++@item convert [-c] [-p] [-f @var{fmt}] [-O @var{output_fmt}] [-o @var{options}] @var{filename} [@var{filename2} [...]] @var{output_filename}
+ 
+ Convert the disk image @var{filename} to disk image @var{output_filename}
+ using format @var{output_fmt}. It can be optionally compressed (@code{-c}
+-- 
+1.7.3.2
+

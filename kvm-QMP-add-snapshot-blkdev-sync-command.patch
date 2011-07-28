@@ -1,0 +1,118 @@
+From 2414958e1933abdc0e5ae6edd0e1ac72df1934a6 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Tue, 26 Jul 2011 08:14:52 -0300
+Subject: [RHEL6 qemu-kvm PATCH 2/3] QMP: add snapshot-blkdev-sync command
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1311668092-528-3-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 30385
+O-Subject: [PATCH 2/2] QMP: add snapshot-blkdev-sync command
+Bugzilla: 676982
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Add QMP bits for snapshot_blkdev command. This is the same as
+snapshot_blkdev in the human monitor. The command is synchronous.
+
+In the future async commands and or a break down of the functionality
+into multiple commands might be added.
+
+Also change the 'snapshot_file' argument to 'snapshot-file' in
+the human monitor, so that it matches QMP.
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Luiz Capitulino <lcapitulino@gmail.com>
+(cherry-pick with conflicts d967b2f14f238c24264fa73d02e9b0dde0b19506)
+---
+ blockdev.c      |    4 ++--
+ qemu-monitor.hx |   36 +++++++++++++++++++++++++++++++++++-
+ 2 files changed, 37 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ blockdev.c      |    4 ++--
+ qemu-monitor.hx |   36 +++++++++++++++++++++++++++++++++++-
+ 2 files changed, 37 insertions(+), 3 deletions(-)
+
+diff --git a/blockdev.c b/blockdev.c
+index 66e7cd0..148e99e 100644
+--- a/blockdev.c
++++ b/blockdev.c
+@@ -615,7 +615,7 @@ void do_commit(Monitor *mon, const QDict *qdict)
+ int do_snapshot_blkdev(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     const char *device = qdict_get_str(qdict, "device");
+-    const char *filename = qdict_get_try_str(qdict, "snapshot_file");
++    const char *filename = qdict_get_try_str(qdict, "snapshot-file");
+     const char *format = qdict_get_try_str(qdict, "format");
+     BlockDriverState *bs;
+     BlockDriver *drv, *old_drv, *proto_drv;
+@@ -624,7 +624,7 @@ int do_snapshot_blkdev(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     char old_filename[1024];
+ 
+     if (!filename) {
+-        qerror_report(QERR_MISSING_PARAMETER, "snapshot_file");
++        qerror_report(QERR_MISSING_PARAMETER, "snapshot-file");
+         ret = -1;
+         goto out;
+     }
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 3c0e23d..de96f8e 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -1212,7 +1212,7 @@ EQMP
+ 
+     {
+         .name       = "snapshot_blkdev",
+-        .args_type  = "device:B,snapshot_file:s?,format:s?",
++        .args_type  = "device:B,snapshot-file:s?,format:s?",
+         .params     = "device [new-image-file] [format]",
+         .help       = "initiates a live snapshot\n\t\t\t"
+                       "of device. If a new image file is specified, the\n\t\t\t"
+@@ -1447,6 +1447,40 @@ Remove host-to-guest TCP or UDP redirection.
+ ETEXI
+ 
+     {
++        .name       = "blockdev-snapshot-sync",
++        .args_type  = "device:B,snapshot-file:s?,format:s?",
++        .params     = "device [new-image-file] [format]",
++        .user_print = monitor_user_noop,
++        .mhandler.cmd_new = do_snapshot_blkdev,
++    },
++
++SQMP
++blockdev-snapshot-sync
++----------------------
++
++Synchronous snapshot of a block device. snapshot-file specifies the
++target of the new image. If the file exists, or if it is a device, the
++snapshot will be created in the existing file/device. If does not
++exist, a new file will be created. format specifies the format of the
++snapshot image, default is qcow2.
++
++Arguments:
++
++- "device": device name to snapshot (json-string)
++- "snapshot-file": name of new image file (json-string)
++- "format": format of new image (json-string, optional)
++
++Example:
++
++-> { "execute": "blockdev-snapshot", "arguments": { "device": "ide-hd0",
++                                                    "snapshot-file":
++                                                    "/some/place/my-image",
++                                                    "format": "qcow2" } }
++<- { "return": {} }
++
++EQMP
++
++    {
+         .name       = "balloon",
+         .args_type  = "value:M",
+         .params     = "target",
+-- 
+1.7.3.2
+

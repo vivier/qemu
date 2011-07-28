@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.172
+%define pkgrelease 2.173
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3231,6 +3231,12 @@ Patch2311: kvm-virtio-serial-bus-use-bh-for-unthrottling.patch
 Patch2312: kvm-usb-bluetooth-compile-out.patch
 # For bz#725054 - RHEL6.2: Clarify support statement in KVM help
 Patch2313: kvm-clarify-support-statement-in-KVM-help.patch
+# For bz#676982 - RFE: no qmp command for live snapshot
+Patch2314: kvm-Change-snapshot_blkdev-hmp-to-use-correct-argument-t.patch
+# For bz#676982 - RFE: no qmp command for live snapshot
+Patch2315: kvm-QMP-add-snapshot-blkdev-sync-command.patch
+# For bz#722728 - Update qemu-img convert/re-base man page
+Patch2316: kvm-Add-missing-documentation-for-qemu-img-p.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -4651,6 +4657,9 @@ ApplyOptionalPatch()
 %patch2311 -p1
 %patch2312 -p1
 %patch2313 -p1
+%patch2314 -p1
+%patch2315 -p1
+%patch2316 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -4872,6 +4881,15 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Jul 28 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.173.el6
+- kvm-Change-snapshot_blkdev-hmp-to-use-correct-argument-t.patch [bz#676982]
+- kvm-QMP-add-snapshot-blkdev-sync-command.patch [bz#676982]
+- kvm-Add-missing-documentation-for-qemu-img-p.patch [bz#722728]
+- Resolves: bz#676982
+  (RFE: no qmp command for live snapshot)
+- Resolves: bz#722728
+  (Update qemu-img convert/re-base man page)
+
 * Mon Jul 25 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.172.el6
 - kvm-ide-Split-error-status-from-status-register.patch [bz#698537]
 - kvm-ide-Fix-ide_drive_pio_state_needed.patch [bz#698537]
