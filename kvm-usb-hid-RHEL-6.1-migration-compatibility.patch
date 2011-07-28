@@ -1,0 +1,156 @@
+From c05434d948c4b382949148e6362e16dc30fd14cb Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 21 Jul 2011 16:44:17 -0300
+Subject: [RHEL6 qemu-kvm PATCH] usb-hid: RHEL 6.1 migration compatibility.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1311266657-1377-2-git-send-email-kraxel@redhat.com>
+Patchwork-id: 30148
+O-Subject: [RHEL-6.2 kvm PATCH] usb-hid: RHEL 6.1 migration compatibility.
+Bugzilla: 720237
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/pc.c      |   40 ++++++++++++++++++++++++++++++++++++++++
+ hw/usb-hid.c |   16 ++++++++++++++++
+ 2 files changed, 56 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pc.c      |   40 ++++++++++++++++++++++++++++++++++++++++
+ hw/usb-hid.c |   16 ++++++++++++++++
+ 2 files changed, 56 insertions(+), 0 deletions(-)
+
+diff --git a/hw/pc.c b/hw/pc.c
+index 0551ff4..9e3807b 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -1596,6 +1596,22 @@ static QEMUMachine pc_machine_rhel610 = {
+     .desc = "RHEL 6.1.0 PC",
+     .init = pc_init_rhel610,
+     .max_cpus = 255,
++    .compat_props = (GlobalProperty[]) {
++        {
++            .driver   = "usb-tablet",
++            .property = "migrate",
++            .value    = stringify(0),
++        },{
++            .driver   = "usb-mouse",
++            .property = "migrate",
++            .value    = stringify(0),
++        },{
++            .driver   = "usb-kbd",
++            .property = "migrate",
++            .value    = stringify(0),
++        },
++        { /* end of list */ }
++    },
+ };
+ 
+ static void pc_init_rhel600(ram_addr_t ram_size,
+@@ -1628,6 +1644,18 @@ static QEMUMachine pc_machine_rhel600 = {
+             .driver   = "virtio-serial-pci",
+             .property = "flow_control",
+             .value    = stringify(0),
++        },{
++            .driver   = "usb-tablet",
++            .property = "migrate",
++            .value    = stringify(0),
++        },{
++            .driver   = "usb-mouse",
++            .property = "migrate",
++            .value    = stringify(0),
++        },{
++            .driver   = "usb-kbd",
++            .property = "migrate",
++            .value    = stringify(0),
+         },
+         { /* end of list */ }
+     },
+@@ -1658,6 +1686,18 @@ static GlobalProperty compat_rhel5[] = {
+             .driver   = "PCI",
+             .property = "rombar",
+             .value    = stringify(0),
++        },{
++            .driver   = "usb-tablet",
++            .property = "migrate",
++            .value    = stringify(0),
++        },{
++            .driver   = "usb-mouse",
++            .property = "migrate",
++            .value    = stringify(0),
++        },{
++            .driver   = "usb-kbd",
++            .property = "migrate",
++            .value    = stringify(0),
+         },
+ #if 0 /* depends on "ide+scsi: device versions" patches */
+         {
+diff --git a/hw/usb-hid.c b/hw/usb-hid.c
+index bc79903..4b8b71a 100644
+--- a/hw/usb-hid.c
++++ b/hw/usb-hid.c
+@@ -83,6 +83,7 @@ typedef struct USBHIDState {
+     int changed;
+     void *datain_opaque;
+     void (*datain)(void *);
++    uint32_t migrate;
+ } USBHIDState;
+ 
+ enum {
+@@ -868,6 +869,13 @@ static int usb_hid_initfn(USBDevice *dev, int kind)
+                                                        1, "QEMU USB Tablet");
+     }
+ 
++    if (!s->migrate) {
++        /* hack alert: don't send state */
++        dev->qdev.info->vmsd = NULL;
++        /* remote wakeup is unsupported */
++        usb_desc_set_string(dev, STR_SERIALNUMBER, "1");
++    }
++
+     /* Force poll routine to be run and grab input the first time.  */
+     s->changed = 1;
+     return 0;
+@@ -955,6 +963,11 @@ static const VMStateDescription vmstate_usb_kbd = {
+     }
+ };
+ 
++static Property hid_properties[] = {
++    DEFINE_PROP_UINT32("migrate", USBHIDState, migrate, 1),
++    DEFINE_PROP_END_OF_LIST(),
++};
++
+ static struct USBDeviceInfo hid_info[] = {
+     {
+         .product_desc   = "QEMU USB Tablet",
+@@ -969,6 +982,7 @@ static struct USBDeviceInfo hid_info[] = {
+         .handle_control = usb_hid_handle_control,
+         .handle_data    = usb_hid_handle_data,
+         .handle_destroy = usb_hid_handle_destroy,
++        .qdev.props     = hid_properties,
+     },{
+         .product_desc   = "QEMU USB Mouse",
+         .qdev.name      = "usb-mouse",
+@@ -982,6 +996,7 @@ static struct USBDeviceInfo hid_info[] = {
+         .handle_control = usb_hid_handle_control,
+         .handle_data    = usb_hid_handle_data,
+         .handle_destroy = usb_hid_handle_destroy,
++        .qdev.props     = hid_properties,
+     },{
+         .product_desc   = "QEMU USB Keyboard",
+         .qdev.name      = "usb-kbd",
+@@ -995,6 +1010,7 @@ static struct USBDeviceInfo hid_info[] = {
+         .handle_control = usb_hid_handle_control,
+         .handle_data    = usb_hid_handle_data,
+         .handle_destroy = usb_hid_handle_destroy,
++        .qdev.props     = hid_properties,
+     },{
+         /* end of list */
+     }
+-- 
+1.7.3.2
+

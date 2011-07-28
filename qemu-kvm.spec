@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.173
+%define pkgrelease 2.174
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3237,6 +3237,8 @@ Patch2314: kvm-Change-snapshot_blkdev-hmp-to-use-correct-argument-t.patch
 Patch2315: kvm-QMP-add-snapshot-blkdev-sync-command.patch
 # For bz#722728 - Update qemu-img convert/re-base man page
 Patch2316: kvm-Add-missing-documentation-for-qemu-img-p.patch
+# For bz#720237 - usb migration compatibility
+Patch2317: kvm-usb-hid-RHEL-6.1-migration-compatibility.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -4660,6 +4662,7 @@ ApplyOptionalPatch()
 %patch2314 -p1
 %patch2315 -p1
 %patch2316 -p1
+%patch2317 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -4881,6 +4884,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Jul 28 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.174.el6
+- kvm-usb-hid-RHEL-6.1-migration-compatibility.patch [bz#720237]
+- Resolves: bz#720237
+  (usb migration compatibility)
+
 * Thu Jul 28 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.173.el6
 - kvm-Change-snapshot_blkdev-hmp-to-use-correct-argument-t.patch [bz#676982]
 - kvm-QMP-add-snapshot-blkdev-sync-command.patch [bz#676982]
