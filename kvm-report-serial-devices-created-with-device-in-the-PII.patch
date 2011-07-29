@@ -1,0 +1,189 @@
+From 24662f64368da93846d60643cf2a9376b72ab99a Mon Sep 17 00:00:00 2001
+From: Paolo Bonzini <pbonzini@redhat.com>
+Date: Mon, 25 Jul 2011 15:49:45 -0300
+Subject: [RHEL6 qemu-kvm PATCH 1/2] report serial devices created with -device in the PIIX4 config space
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+RH-Author: Paolo Bonzini <pbonzini@redhat.com>
+Message-id: <1311608985-19910-1-git-send-email-pbonzini@redhat.com>
+Patchwork-id: 30315
+O-Subject: [RHEL6.2 KVM PATCH] report serial devices created with -device in the PIIX4 config space
+Bugzilla: 707130
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+Bugzilla: BZ707130
+
+Upstream: commit 6141dbfe, several changes in context due to q35
+    preparation upstream
+
+Brew build: https://brewweb.devel.redhat.com/taskinfo?taskID=3513092
+
+Serial and parallel devices created with -device are not reported in
+the PIIX4 configuration space, and are hence not picked up by the DSDT.
+This upsets Windows, which hides them altogether from the guest.
+
+To avoid this, check at the end of machine initialization whether the
+corresponding I/O ports have been registered.  The new function in
+ioport.c does this; this also requires a tweak to isa_unassign_ioport.
+
+I left the comment in piix4_pm_initfn since the registers I moved do
+seem to match the 82371AB datasheet.  There are some quirks though.
+We are setting this bit:
+
+    "Device 8 EIO Enable (EIO_EN_DEV8)—R/W. 1=Enable PCI access to the
+    device 8 enabled I/O ranges to be claimed by PIIX4 and forwarded
+    to the ISA/EIO bus. 0=Disable. The LPT_MON_EN must be set to enable
+    the decode."
+
+but not LPT_MON_EN (bit 18 at 50h):
+
+    LPT Port Enable (LPT_MON_EN)—R/W. 1=Enable accesses to parallel
+    port address range (LPT_DEC_SEL) to generate a device 8 (parallel
+    port) decode event. 0=Disable.
+
+We're also setting the LPT_DEC_SEL field (that's the 0x60 written to
+63h) to 11, which means reserved, rather than to 01 (378h-37Fh).
+
+Likewise we're not setting SA_MON_EN, SB_MON_EN (respectively bit 14
+and bit 16 at address 50h) for the serial ports.  However, we're setting
+COMA_DEC_SEL and COMB_DEC_SEL correctly, unlike the corresponding register
+for the parallel port.
+
+All these fields are left as they are, since they are probably only
+meant to be used in the DSDT.
+
+Please review for 6.2 and 6.1.z (the patch applies there with no change,
+and the issue is customer reported and a regression from RHEL5).
+
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+ hw/acpi.c |   22 +++++++++++++++++-----
+ ioport.c  |   19 +++++++++++++------
+ ioport.h  |    2 +-
+ 3 files changed, 31 insertions(+), 12 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/acpi.c |   22 +++++++++++++++++-----
+ ioport.c  |   19 +++++++++++++------
+ ioport.h  |    2 +-
+ 3 files changed, 31 insertions(+), 12 deletions(-)
+
+diff --git a/hw/acpi.c b/hw/acpi.c
+index 6488742..a2eb3de 100644
+--- a/hw/acpi.c
++++ b/hw/acpi.c
+@@ -25,6 +25,7 @@
+ #include "kvm.h"
+ #include "qemu-kvm.h"
+ #include "string.h"
++#include "ioport.h"
+ 
+ //#define DEBUG
+ 
+@@ -71,6 +72,7 @@ typedef struct PIIX4PMState {
+     qemu_irq irq;
+ 
+     uint32_t smb_io_base;
++    Notifier machine_ready;
+ 
+     /* for pci hotplug */
+     struct gpe_regs gpe;
+@@ -571,6 +573,19 @@ static void piix4_powerdown(void *opaque, int irq, int power_failing)
+ #endif
+ }
+ 
++static void piix4_pm_machine_ready(struct Notifier* n)
++{
++    PIIX4PMState *s = container_of(n, PIIX4PMState, machine_ready);
++    uint8_t *pci_conf;
++
++    pci_conf = s->dev.config;
++    pci_conf[0x5f] = (isa_is_ioport_assigned(0x378) ? 0x80 : 0) | 0x10;
++    pci_conf[0x63] = 0x60;
++    pci_conf[0x67] = (isa_is_ioport_assigned(0x3f8) ? 0x08 : 0) |
++	(isa_is_ioport_assigned(0x2f8) ? 0x90 : 0);
++
++}
++
+ static int piix4_pm_initfn(PCIDevice *dev)
+ {
+     PIIX4PMState *s = DO_UPCAST(PIIX4PMState, dev, dev);
+@@ -610,11 +625,6 @@ static int piix4_pm_initfn(PCIDevice *dev)
+ 
+     /* XXX: which specification is used ? The i82731AB has different
+        mappings */
+-    pci_conf[0x5f] = (parallel_hds[0] != NULL ? 0x80 : 0) | 0x10;
+-    pci_conf[0x63] = 0x60;
+-    pci_conf[0x67] = (serial_hds[0] != NULL ? 0x08 : 0) |
+-	(serial_hds[1] != NULL ? 0x90 : 0);
+-
+     pci_conf[0x90] = s->smb_io_base | 1;
+     pci_conf[0x91] = s->smb_io_base >> 8;
+     pci_conf[0xd2] = 0x09;
+@@ -629,6 +639,8 @@ static int piix4_pm_initfn(PCIDevice *dev)
+     vmstate_register(NULL, 0, &vmstate_acpi, s);
+ 
+     s->smbus = i2c_init_bus(NULL, "i2c");
++    s->machine_ready.notify = piix4_pm_machine_ready;
++    qemu_add_machine_init_done_notifier(&s->machine_ready);
+     qemu_register_reset(piix4_reset, s);
+ 
+     return 0;
+diff --git a/ioport.c b/ioport.c
+index ec3dc65..2239588 100644
+--- a/ioport.c
++++ b/ioport.c
+@@ -179,18 +179,25 @@ void isa_unassign_ioport(pio_addr_t start, int length)
+     int i;
+ 
+     for(i = start; i < start + length; i++) {
+-        ioport_read_table[0][i] = default_ioport_readb;
+-        ioport_read_table[1][i] = default_ioport_readw;
+-        ioport_read_table[2][i] = default_ioport_readl;
++        ioport_read_table[0][i] = NULL;
++        ioport_read_table[1][i] = NULL;
++        ioport_read_table[2][i] = NULL;
+ 
+-        ioport_write_table[0][i] = default_ioport_writeb;
+-        ioport_write_table[1][i] = default_ioport_writew;
+-        ioport_write_table[2][i] = default_ioport_writel;
++        ioport_write_table[0][i] = NULL;
++        ioport_write_table[1][i] = NULL;
++        ioport_write_table[2][i] = NULL;
+ 
+         ioport_opaque[i] = NULL;
+     }
+ }
+ 
++bool isa_is_ioport_assigned(pio_addr_t start)
++{
++    return (ioport_read_table[0][start] || ioport_write_table[0][start] ||
++	    ioport_read_table[1][start] || ioport_write_table[1][start] ||
++	    ioport_read_table[2][start] || ioport_write_table[2][start]);
++}
++
+ /***********************************************************/
+ 
+ void cpu_outb(pio_addr_t addr, uint8_t val)
+diff --git a/ioport.h b/ioport.h
+index 3d3c8a3..140267f 100644
+--- a/ioport.h
++++ b/ioport.h
+@@ -41,7 +41,7 @@ int register_ioport_read(pio_addr_t start, int length, int size,
+ int register_ioport_write(pio_addr_t start, int length, int size,
+                           IOPortWriteFunc *func, void *opaque);
+ void isa_unassign_ioport(pio_addr_t start, int length);
+-
++bool isa_is_ioport_assigned(pio_addr_t start);
+ 
+ void cpu_outb(pio_addr_t addr, uint8_t val);
+ void cpu_outw(pio_addr_t addr, uint16_t val);
+-- 
+1.7.3.2
+

@@ -1,0 +1,101 @@
+From 6c07cbdccee1d8acda01d01ae51ffdd2a441d632 Mon Sep 17 00:00:00 2001
+From: Don Dutile <ddutile@redhat.com>
+Date: Wed, 27 Jul 2011 21:21:18 -0300
+Subject: [RHEL6 qemu-kvm PATCH 2/2] device-assignment: handle device with incorrect PCIe Cap structure size
+
+RH-Author: Don Dutile <ddutile@redhat.com>
+Message-id: <4E30814E.1000601@redhat.com>
+Patchwork-id: 30529
+O-Subject: [RHEL-6.2 qemu-kvm PATCH] device-assignment: handle device with incorrect PCIe Cap structure size
+Bugzilla: 720972
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+https://bugzilla.redhat.com/show_bug.cgi?id=720972
+
+A particular tg3 device failed device re-assignment.
+
+The bcm5761 provides a PCIe Cap structure (capid=0x10)
+that is invalid, providing one that is 8 bytes shorter
+than the v2 PCIe spec defines.
+This leads to a memory corruption when mapped for device-assignment,
+because adding the correct size of 0x3c to the tg3's 0xcc base
+exceeds the config_map[] array for the device in qemu-kvm,
+corrupting it's memory.
+
+Add a check in assigned_device_pci_cap_init() to compensate for
+this hw error, and try to catch other ones and print warnings if they exists.
+
+Upstream commit id: b98579082b32c9bd72727d378fa1e053acff5b69
+Straight-forward backport of this patch, no additional changes/additions.
+
+brew build:
+https://brewweb.devel.redhat.com/taskinfo?taskID=3521808
+
+Testing:
+Had reporter test brew-built pkg, and reported
+success w/previously failing (broken) device (bcm5761).
+
+Please review & ack.
+
+- Don
+---
+ hw/device-assignment.c |   29 ++++++++++++++++++++++++-----
+ 1 files changed, 24 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/device-assignment.c |   29 ++++++++++++++++++++++++-----
+ 1 files changed, 24 insertions(+), 5 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index 8a70f66..c4916e6 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -1421,18 +1421,37 @@ static int assigned_device_pci_cap_init(PCIDevice *pci_dev)
+     }
+ 
+     if ((pos = pci_find_cap_offset(pci_dev, PCI_CAP_ID_EXP, 0))) {
+-        uint8_t version;
++        uint8_t version, size;
+         uint16_t type, devctl, lnkcap, lnksta;
+         uint32_t devcap;
+-        int size = 0x3c; /* version 2 size */
+ 
+         version = pci_get_byte(pci_dev->config + pos + PCI_EXP_FLAGS);
+         version &= PCI_EXP_FLAGS_VERS;
+         if (version == 1) {
+             size = 0x14;
+-        } else if (version > 2) {
+-            fprintf(stderr, "Unsupported PCI express capability version %d\n",
+-                    version);
++        } else if (version == 2) {
++            /*
++             * Check for non-std size, accept reduced size to 0x34,
++             * which is what bcm5761 implemented, violating the 
++             * PCIe v3.0 spec that regs should exist and be read as 0,
++             * not optionally provided and shorten the struct size.
++             */
++            size = MIN(0x3c, PCI_CONFIG_SPACE_SIZE - pos);
++            if (size < 0x34) {
++                fprintf(stderr,
++                        "%s: Invalid size PCIe cap-id 0x%x \n",
++                        __func__, PCI_CAP_ID_EXP);
++                return -EINVAL;
++            } else if (size != 0x3c) {
++                fprintf(stderr,
++                        "WARNING, %s: PCIe cap-id 0x%x has "
++                        "non-standard size 0x%x; std size should be 0x3c \n",
++                         __func__, PCI_CAP_ID_EXP, size);
++            } 
++        } else {
++            fprintf(stderr, 
++                    "%s: Unsupported PCI express capability version %d\n",
++                    __func__, version);
+             return -EINVAL;
+         }
+ 
+-- 
+1.7.3.2
+

@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.174
+%define pkgrelease 2.175
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3239,6 +3239,10 @@ Patch2315: kvm-QMP-add-snapshot-blkdev-sync-command.patch
 Patch2316: kvm-Add-missing-documentation-for-qemu-img-p.patch
 # For bz#720237 - usb migration compatibility
 Patch2317: kvm-usb-hid-RHEL-6.1-migration-compatibility.patch
+# For bz#707130 - ACPI description of serial and parallel ports incorrect with -chardev/-device
+Patch2318: kvm-report-serial-devices-created-with-device-in-the-PII.patch
+# For bz#720972 - Unable to attach PCI device on a booted virt guest
+Patch2319: kvm-device-assignment-handle-device-with-incorrect-PCIe-.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -4663,6 +4667,8 @@ ApplyOptionalPatch()
 %patch2315 -p1
 %patch2316 -p1
 %patch2317 -p1
+%patch2318 -p1
+%patch2319 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -4884,6 +4890,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Jul 29 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.175.el6
+- kvm-report-serial-devices-created-with-device-in-the-PII.patch [bz#707130]
+- kvm-device-assignment-handle-device-with-incorrect-PCIe-.patch [bz#720972]
+- Resolves: bz#707130
+  (ACPI description of serial and parallel ports incorrect with -chardev/-device)
+- Resolves: bz#720972
+  (Unable to attach PCI device on a booted virt guest)
+
 * Thu Jul 28 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.174.el6
 - kvm-usb-hid-RHEL-6.1-migration-compatibility.patch [bz#720237]
 - Resolves: bz#720237
