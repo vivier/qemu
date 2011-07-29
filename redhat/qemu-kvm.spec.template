@@ -87,6 +87,7 @@ Requires: /usr/share/gpxe/rtl8029.rom
 Requires: /usr/share/gpxe/pcnet32.rom
 Requires: /usr/share/gpxe/rtl8139.rom
 Requires: /usr/share/gpxe/virtio-net.rom
+Requires: /usr/share/sgabios/sgabios.bin
 
 # We don't provide vvfat anymore, that is used by older VDSM versions.
 Conflicts: vdsm < 4.5
@@ -302,6 +303,7 @@ ln -s ../vgabios/VGABIOS-lgpl-latest.qxl.bin %{buildroot}/%{_datadir}/%{name}/vg
 ln -s ../vgabios/VGABIOS-lgpl-latest.stdvga.bin %{buildroot}/%{_datadir}/%{name}/vgabios-stdvga.bin
 ln -s ../vgabios/VGABIOS-lgpl-latest.vmware.bin %{buildroot}/%{_datadir}/%{name}/vgabios-vmware.bin
 ln -s ../seabios/bios.bin %{buildroot}/%{_datadir}/%{name}/bios.bin
+ln -s ../sgabios/sgabios.bin %{buildroot}/%{_datadir}/%{name}/sgabios.bin
 
 cd %{buildroot}/usr/share/systemtap/tapset
 
@@ -356,6 +358,7 @@ fi
 %{_sbindir}/ksmtuned
 %config(noreplace) %{_sysconfdir}/ksmtuned.conf
 %{_datadir}/%{name}/bios.bin
+%{_datadir}/%{name}/sgabios.bin
 %{_datadir}/%{name}/linuxboot.bin
 %{_datadir}/%{name}/multiboot.bin
 %{_datadir}/%{name}/vapic.bin
