@@ -199,6 +199,7 @@ VirtIODevice *virtio_balloon_init(DeviceState *dev);
 void virtio_net_exit(VirtIODevice *vdev);
 void virtio_blk_exit(VirtIODevice *vdev);
 void virtio_serial_exit(VirtIODevice *vdev);
+void virtio_balloon_exit(VirtIODevice *vdev);
 
 #define DEFINE_VIRTIO_COMMON_FEATURES(_state, _field) \
 	DEFINE_PROP_BIT("indirect_desc", _state, _field, \
