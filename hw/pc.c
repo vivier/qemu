@@ -1558,6 +1558,44 @@ static void rhel_common_init(const char *type1_version,
                      strlen(buf) + 1, buf);
 }
 
+#define PC_RHEL6_1_COMPAT \
+        {\
+            .driver   = "usb-tablet",\
+            .property = "migrate",\
+            .value    = stringify(0),\
+        },{\
+            .driver   = "usb-mouse",\
+            .property = "migrate",\
+            .value    = stringify(0),\
+        },{\
+            .driver   = "usb-kbd",\
+            .property = "migrate",\
+            .value    = stringify(0),\
+        },{\
+            .driver   = "virtio-blk-pci",\
+            .property = "event_idx",\
+            .value    = "off",\
+        },{\
+            .driver   = "virtio-serial-pci",\
+            .property = "event_idx",\
+            .value    = "off",\
+        },{\
+            .driver   = "virtio-net-pci",\
+            .property = "event_idx",\
+            .value    = "off",\
+        },{\
+            .driver   = "virtio-balloon",\
+            .property = "event_idx",\
+            .value    = "off",\
+        }
+
+#define PC_RHEL6_0_COMPAT \
+        {\
+            .driver   = "virtio-serial-pci",\
+            .property = "flow_control",\
+            .value    = stringify(0),\
+        }, PC_RHEL6_1_COMPAT
+
 static void pc_init_rhel620(ram_addr_t ram_size,
                             const char *boot_device,
                             const char *kernel_filename,
@@ -1597,19 +1635,7 @@ static QEMUMachine pc_machine_rhel610 = {
     .init = pc_init_rhel610,
     .max_cpus = 255,
     .compat_props = (GlobalProperty[]) {
-        {
-            .driver   = "usb-tablet",
-            .property = "migrate",
-            .value    = stringify(0),
-        },{
-            .driver   = "usb-mouse",
-            .property = "migrate",
-            .value    = stringify(0),
-        },{
-            .driver   = "usb-kbd",
-            .property = "migrate",
-            .value    = stringify(0),
-        },
+        PC_RHEL6_1_COMPAT,
         { /* end of list */ }
     },
 };
@@ -1640,23 +1666,8 @@ static QEMUMachine pc_machine_rhel600 = {
             .driver   = "vmware-svga",
             .property = "rombar",
             .value    = stringify(0),
-        },{
-            .driver   = "virtio-serial-pci",
-            .property = "flow_control",
-            .value    = stringify(0),
-        },{
-            .driver   = "usb-tablet",
-            .property = "migrate",
-            .value    = stringify(0),
-        },{
-            .driver   = "usb-mouse",
-            .property = "migrate",
-            .value    = stringify(0),
-        },{
-            .driver   = "usb-kbd",
-            .property = "migrate",
-            .value    = stringify(0),
         },
+        PC_RHEL6_0_COMPAT,
         { /* end of list */ }
     },
 };
@@ -1678,25 +1689,11 @@ static GlobalProperty compat_rhel5[] = {
             .driver   = "virtio-serial-pci",
             .property = "vectors",
             .value    = stringify(0),
-        },{
-            .driver   = "virtio-serial-pci",
-            .property = "flow_control",
-            .value    = stringify(0),
-        },{
+        },
+        PC_RHEL6_0_COMPAT,
+        {
             .driver   = "PCI",
             .property = "rombar",
-            .value    = stringify(0),
-        },{
-            .driver   = "usb-tablet",
-            .property = "migrate",
-            .value    = stringify(0),
-        },{
-            .driver   = "usb-mouse",
-            .property = "migrate",
-            .value    = stringify(0),
-        },{
-            .driver   = "usb-kbd",
-            .property = "migrate",
             .value    = stringify(0),
         },
 #if 0 /* depends on "ide+scsi: device versions" patches */
