@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.175
+%define pkgrelease 2.176
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3243,6 +3243,12 @@ Patch2317: kvm-usb-hid-RHEL-6.1-migration-compatibility.patch
 Patch2318: kvm-report-serial-devices-created-with-device-in-the-PII.patch
 # For bz#720972 - Unable to attach PCI device on a booted virt guest
 Patch2319: kvm-device-assignment-handle-device-with-incorrect-PCIe-.patch
+# For bz#712046 - Qemu allocates an existed macaddress to hotpluged nic
+Patch2320: kvm-net-Consistently-use-qemu_macaddr_default_if_unset.patch
+# For bz#725965 - spice client mouse doesn't work after migration
+Patch2321: kvm-virtio-serial-bus-replay-guest_open-on-migration.patch
+# For bz#727580 - bit property doesn't print correctly
+Patch2322: kvm-qdev-Fix-printout-of-bit-device-properties-with-bit-.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -4669,6 +4675,9 @@ ApplyOptionalPatch()
 %patch2317 -p1
 %patch2318 -p1
 %patch2319 -p1
+%patch2320 -p1
+%patch2321 -p1
+%patch2322 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -4890,6 +4899,17 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Aug 03 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.176.el6
+- kvm-net-Consistently-use-qemu_macaddr_default_if_unset.patch [bz#712046]
+- kvm-virtio-serial-bus-replay-guest_open-on-migration.patch [bz#725965]
+- kvm-qdev-Fix-printout-of-bit-device-properties-with-bit-.patch [bz#727580]
+- Resolves: bz#712046
+  (Qemu allocates an existed macaddress to hotpluged nic)
+- Resolves: bz#725965
+  (spice client mouse doesn't work after migration)
+- Resolves: bz#727580
+  (bit property doesn't print correctly)
+
 * Fri Jul 29 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.175.el6
 - kvm-report-serial-devices-created-with-device-in-the-PII.patch [bz#707130]
 - kvm-device-assignment-handle-device-with-incorrect-PCIe-.patch [bz#720972]

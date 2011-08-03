@@ -1,0 +1,183 @@
+From 317bad54b85ddb68da048d39f89f5ad3021fe6b3 Mon Sep 17 00:00:00 2001
+From: Marcelo Tosatti <mtosatti@redhat.com>
+Date: Fri, 29 Jul 2011 16:48:17 -0300
+Subject: [RHEL6 qemu-kvm PATCH 1/3] net: Consistently use qemu_macaddr_default_if_unset
+
+RH-Author: Marcelo Tosatti <mtosatti@redhat.com>
+Message-id: <20110729164817.GA20646@amt.cnet>
+Patchwork-id: 30611
+O-Subject: [RHEL6.2 qemu-kvm PATCH] net: Consistently use qemu_macaddr_default_if_unset
+Bugzilla: 712046
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+BZ: https://bugzilla.redhat.com/show_bug.cgi?id=712046
+upstream commit 6eed18568d985f5e091e96205f5ebf50fb823f4e
+
+net: Consistently use qemu_macaddr_default_if_unset
+
+From: Jan Kiszka <jan.kiszka@siemens.com>
+
+Drop the open-coded MAC assignment from net_init_nic and replace it with
+standard qemu_macaddr_default_if_unset which is also used by qdev. That
+avoid creating colliding MACs when instantiating NICs via different
+mechanisms.
+
+This change requires to store the MAC as MACAddr in NICInfo, and the
+remaining nd_table users need to be updated.
+
+Based on suggestion by Peter Maydell.
+
+CC: Markus Armbruster <armbru@redhat.com>
+CC: Peter Maydell <peter.maydell@linaro.org>
+Signed-off-by: Jan Kiszka <jan.kiszka@siemens.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/dp8393x.c       |    2 +-
+ hw/etraxfs_eth.c   |    2 +-
+ hw/mcf_fec.c       |    2 +-
+ hw/mipsnet.c       |    2 +-
+ hw/qdev.c          |    2 +-
+ hw/stellaris.c     |    2 +-
+ hw/xen_devconfig.c |    4 ++--
+ net.c              |   10 ++--------
+ net.h              |    2 +-
+ 9 files changed, 11 insertions(+), 17 deletions(-)
+
+diff --git a/hw/dp8393x.c b/hw/dp8393x.c
+index e65e4d1..3a01310 100644
+--- a/hw/dp8393x.c
++++ b/hw/dp8393x.c
+@@ -898,7 +898,7 @@ void dp83932_init(NICInfo *nd, target_phys_addr_t base, int it_shift,
+     s->watchdog = qemu_new_timer(vm_clock, dp8393x_watchdog, s);
+     s->regs[SONIC_SR] = 0x0004; /* only revision recognized by Linux */
+ 
+-    memcpy(s->conf.macaddr.a, nd->macaddr, sizeof(s->conf.macaddr));
++    s->conf.macaddr = nd->macaddr;
+     s->conf.vlan = nd->vlan;
+     s->conf.peer = nd->netdev;
+ 
+diff --git a/hw/etraxfs_eth.c b/hw/etraxfs_eth.c
+index dedd107..4bbbc23 100644
+--- a/hw/etraxfs_eth.c
++++ b/hw/etraxfs_eth.c
+@@ -600,7 +600,7 @@ void *etraxfs_eth_init(NICInfo *nd, target_phys_addr_t base, int phyaddr)
+ 	eth->ethregs = cpu_register_io_memory(eth_read, eth_write, eth);
+ 	cpu_register_physical_memory (base, 0x5c, eth->ethregs);
+ 
+-	memcpy(eth->conf.macaddr.a, nd->macaddr, sizeof(nd->macaddr));
++	eth->conf.macaddr = nd->macaddr;
+ 	eth->conf.vlan = nd->vlan;
+ 	eth->conf.peer = nd->netdev;
+ 
+diff --git a/hw/mcf_fec.c b/hw/mcf_fec.c
+index 4e7fbed..22765d7 100644
+--- a/hw/mcf_fec.c
++++ b/hw/mcf_fec.c
+@@ -470,7 +470,7 @@ void mcf_fec_init(NICInfo *nd, target_phys_addr_t base, qemu_irq *irq)
+                                            mcf_fec_writefn, s);
+     cpu_register_physical_memory(base, 0x400, s->mmio_index);
+ 
+-    memcpy(s->conf.macaddr.a, nd->macaddr, sizeof(nd->macaddr));
++    s->conf.macaddr = nd->macaddr;
+     s->conf.vlan = nd->vlan;
+     s->conf.peer = nd->netdev;
+ 
+diff --git a/hw/mipsnet.c b/hw/mipsnet.c
+index a95b3ce..07b6b37 100644
+--- a/hw/mipsnet.c
++++ b/hw/mipsnet.c
+@@ -273,7 +273,7 @@ void mipsnet_init (int base, qemu_irq irq, NICInfo *nd)
+     s->irq = irq;
+ 
+     if (nd) {
+-        memcpy(s->conf.macaddr.a, nd->macaddr, sizeof(nd->macaddr));
++        s->conf.macaddr = nd->macaddr;
+         s->conf.vlan = nd->vlan;
+         s->conf.peer = nd->netdev;
+ 
+diff --git a/hw/qdev.c b/hw/qdev.c
+index 0b0c6a2..41c06d0 100644
+--- a/hw/qdev.c
++++ b/hw/qdev.c
+@@ -410,7 +410,7 @@ void qdev_connect_gpio_out(DeviceState * dev, int n, qemu_irq pin)
+ 
+ void qdev_set_nic_properties(DeviceState *dev, NICInfo *nd)
+ {
+-    qdev_prop_set_macaddr(dev, "mac", nd->macaddr);
++    qdev_prop_set_macaddr(dev, "mac", nd->macaddr.a);
+     if (nd->vlan)
+         qdev_prop_set_vlan(dev, "vlan", nd->vlan);
+     if (nd->netdev)
+diff --git a/hw/stellaris.c b/hw/stellaris.c
+index 5fbcc07..ea50cb1 100644
+--- a/hw/stellaris.c
++++ b/hw/stellaris.c
+@@ -1330,7 +1330,7 @@ static void stellaris_init(const char *kernel_filename, const char *cpu_model,
+         }
+     }
+ 
+-    stellaris_sys_init(0x400fe000, pic[28], board, nd_table[0].macaddr);
++    stellaris_sys_init(0x400fe000, pic[28], board, nd_table[0].macaddr.a);
+ 
+     for (i = 0; i < 7; i++) {
+         if (board->dc4 & (1 << i)) {
+diff --git a/hw/xen_devconfig.c b/hw/xen_devconfig.c
+index ea8f8c4..e3a1e41 100644
+--- a/hw/xen_devconfig.c
++++ b/hw/xen_devconfig.c
+@@ -124,8 +124,8 @@ int xen_config_dev_nic(NICInfo *nic)
+     char mac[20];
+ 
+     snprintf(mac, sizeof(mac), "%02x:%02x:%02x:%02x:%02x:%02x",
+-	     nic->macaddr[0], nic->macaddr[1], nic->macaddr[2],
+-	     nic->macaddr[3], nic->macaddr[4], nic->macaddr[5]);
++             nic->macaddr.a[0], nic->macaddr.a[1], nic->macaddr.a[2],
++             nic->macaddr.a[3], nic->macaddr.a[4], nic->macaddr.a[5]);
+     xen_be_printf(NULL, 1, "config nic %d: mac=\"%s\"\n", nic->vlan->id, mac);
+     xen_config_dev_dirs("vif", "qnic", nic->vlan->id, fe, be, sizeof(fe));
+ 
+diff --git a/net.c b/net.c
+index 2f498ae..27584e7 100644
+--- a/net.c
++++ b/net.c
+@@ -834,18 +834,12 @@ static int net_init_nic(QemuOpts *opts,
+         nd->devaddr = qemu_strdup(qemu_opt_get(opts, "addr"));
+     }
+ 
+-    nd->macaddr[0] = 0x52;
+-    nd->macaddr[1] = 0x54;
+-    nd->macaddr[2] = 0x00;
+-    nd->macaddr[3] = 0x12;
+-    nd->macaddr[4] = 0x34;
+-    nd->macaddr[5] = 0x56 + idx;
+-
+     if (qemu_opt_get(opts, "macaddr") &&
+-        net_parse_macaddr(nd->macaddr, qemu_opt_get(opts, "macaddr")) < 0) {
++        net_parse_macaddr(nd->macaddr.a, qemu_opt_get(opts, "macaddr")) < 0) {
+         error_report("invalid syntax for ethernet address");
+         return -1;
+     }
++    qemu_macaddr_default_if_unset(&nd->macaddr);
+ 
+     nd->nvectors = qemu_opt_get_number(opts, "vectors",
+                                        DEV_NVECTORS_UNSPECIFIED);
+diff --git a/net.h b/net.h
+index 6ceca50..540a3d1 100644
+--- a/net.h
++++ b/net.h
+@@ -127,7 +127,7 @@ int do_set_link(Monitor *mon, const QDict *qdict, QObject **ret_data);
+ #define MAX_NICS 8
+ 
+ struct NICInfo {
+-    uint8_t macaddr[6];
++    MACAddr macaddr;
+     char *model;
+     char *name;
+     char *devaddr;
+-- 
+1.7.3.2
+

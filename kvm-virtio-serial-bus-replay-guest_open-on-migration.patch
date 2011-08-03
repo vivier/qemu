@@ -1,0 +1,65 @@
+From 524886534be13012968b0091ad43843b39732b50 Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Thu, 28 Jul 2011 12:08:48 -0300
+Subject: [RHEL6 qemu-kvm PATCH 2/3] virtio-serial-bus: replay guest_open on migration
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1311854928-19510-2-git-send-email-alevy@redhat.com>
+Patchwork-id: 30578
+O-Subject: [PATCH RHEL6.2] virtio-serial-bus: replay guest_open on migration
+Bugzilla: 725965
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+When migrating a host with with a spice agent running the mouse becomes
+non operational after the migration. This is rhbz #725965.
+
+The problem is that after migration spice doesn't know the guest agent is open.
+Spice is just a char dev here. And a chardev cannot query it's device, the
+device has to let the chardev know when it is open. Right now after migration
+the chardev which is recreated is in it's default state, which assumes the
+guest is disconnected.
+
+Char devices carry no information across migration, but the virtio-serial does
+already carry the guest_connected state. This patch passes that bit to the
+chardev.
+
+Signed-off-by: Alon Levy <alevy@redhat.com>
+---
+ hw/virtio-serial-bus.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-serial-bus.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index 72ff834..69adbc4 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -657,6 +657,7 @@ static int virtio_serial_load(QEMUFile *f, void *opaque, int version_id)
+     for (i = 0; i < nr_active_ports; i++) {
+         uint32_t id;
+         bool host_connected;
++        VirtIOSerialPortInfo *info;
+ 
+         id = qemu_get_be32(f);
+         port = find_port_by_id(s, id);
+@@ -665,6 +666,11 @@ static int virtio_serial_load(QEMUFile *f, void *opaque, int version_id)
+         }
+ 
+         port->guest_connected = qemu_get_byte(f);
++        info = DO_UPCAST(VirtIOSerialPortInfo, qdev, port->dev.info);
++        if (port->guest_connected && info->guest_open) {
++            /* replay guest open */
++            info->guest_open(port);
++        }
+         host_connected = qemu_get_byte(f);
+         if (host_connected != port->host_connected) {
+             /*
+-- 
+1.7.3.2
+
