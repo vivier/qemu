@@ -1,0 +1,18 @@
+diff --git a/vl.c b/vl.c
+index 7ae549e..28fd2f3 100644
+--- a/vl.c
++++ b/vl.c
+@@ -1953,8 +1953,13 @@ static int configure_accelerator(void)
+     }
+ 
+     if (p == NULL) {
++#ifdef CONFIG_KVM
+         /* Use the default "accelerator", kvm */
+         p = "kvm";
++#else
++        /* Use the default "accelerator", tcg */
++        p = "tcg";
++#endif
+     }
+ 
+     while (!accel_initalised && *p != '\0') {

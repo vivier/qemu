@@ -3,7 +3,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.15.0
-Release: 0.2.20110728%githead%{?dist}
+Release: 0.3.20110728%githead%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -54,6 +54,9 @@ Patch10: 0010-spice-qemu-char.c-remove-intermediate-buffer.patch
 Patch11: 0011-usb-redir-Add-flow-control-support.patch
 Patch12: 0012-usb-redir-Call-qemu_chr_guest_open-close.patch
 Patch13: 0013-spice-qemu-char-Generate-chardev-open-close-events.patch
+
+# Fix for default accelerator in non-KVM builds
+Patch100: qemu-kvm-default-accelerator.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -240,6 +243,8 @@ such as kvm_stat.
 %patch11 -p1
 %patch12 -p1
 %patch13 -p1
+
+%patch100 -p1
 
 %build
 # By default we build everything, but allow x86 to build a minimal version
@@ -550,6 +555,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Aug  4 2011 Daniel P. Berrange <berrange@redhat.com> - 2:0.15.0-0.3.2011072859fadcc
+- Fix default accelerator for non-KVM builds (rhbz #724814)
+
 * Thu Jul 28 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.15.0-0.1.2011072859fadcc
 - Update to 0.15.0-rc0 as we prepare for 0.15.0 release
 
