@@ -67,6 +67,9 @@ Patch23: 0023-qxl-add-QXL_IO_FLUSH_-SURFACES-RELEASE-for-guest-S3-.patch
 Patch24: 0024-qxl-bump-pci-rev.patch
 Patch25: 0025-virtio-serial-bus-replay-guest_open-on-migration.patch
 
+# Fix for default accelerator in non-KVM builds
+Patch100: qemu-kvm-default-accelerator.patch
+
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
 BuildRequires: libaio-devel
@@ -264,6 +267,8 @@ such as kvm_stat.
 %patch23 -p1
 %patch24 -p1
 %patch25 -p1
+
+%patch100 -p1
 
 %build
 # By default we build everything, but allow x86 to build a minimal version
@@ -576,6 +581,9 @@ fi
 %changelog
 * Thu Aug 04 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.15.0-0.3.201108040af4922
 - Update to 0.15.0-rc1 as we prepare for 0.15.0 release
+
+* Thu Aug  4 2011 Daniel P. Berrange <berrange@redhat.com> - 2:0.15.0-0.3.2011072859fadcc
+- Fix default accelerator for non-KVM builds (rhbz #724814)
 
 * Thu Jul 28 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.15.0-0.1.2011072859fadcc
 - Update to 0.15.0-rc0 as we prepare for 0.15.0 release
