@@ -1,7 +1,7 @@
-From ffef9f85d32395989a3c5845dfe34d2110ccb82b Mon Sep 17 00:00:00 2001
+>From 7cda5b9b8b24b778751a402f2b5e6b7d716f1800 Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 20:31:45 +0100
-Subject: [PATCH 02/13] char: Add a QemuChrHandlers struct to initialise
+Subject: [PATCH 02/25] char: Add a QemuChrHandlers struct to initialise
  chardev handlers
 
 Instead of passing each handler in the qemu_add_handlers() function,
@@ -39,7 +39,7 @@ Signed-off-by: Amit Shah <amit.shah@redhat.com>
  27 files changed, 233 insertions(+), 83 deletions(-)
 
 diff --git a/gdbstub.c b/gdbstub.c
-index c085a5a..0ff61cb 100644
+index 27b0cfa..6639849 100644
 --- a/gdbstub.c
 +++ b/gdbstub.c
 @@ -2739,6 +2739,12 @@ static void gdb_sigterm_handler(int signal)
@@ -751,7 +751,7 @@ index 157b80a..8eeec7e 100644
  
   fail_syntax:
 diff --git a/qemu-char.c b/qemu-char.c
-index 1701bdf..1c33828 100644
+index 5682aea..52bcc0e 100644
 --- a/qemu-char.c
 +++ b/qemu-char.c
 @@ -195,19 +195,26 @@ void qemu_chr_send_event(CharDriverState *s, int event)

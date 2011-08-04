@@ -1,9 +1,9 @@
-%define githead 59fadcc
+%define githead 0af4922
 
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.15.0
-Release: 0.2.20110728%githead%{?dist}
+Release: 0.3.20110804%githead%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -22,7 +22,7 @@ URL: http://www.qemu.org/
 # Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-kvm-%{version}.tar.gz
 # The source for this package was pulled from upstream's git.  Use the
 # following commands to generate the tarball:
-# git archive --format=tar --prefix=qemu-kvm-0.15.0/ 59fadcc | gzip > qemu-kvm-0.15.0-59fadcc.tar.gz
+# git archive --format=tar --prefix=qemu-kvm-0.15.0/ 0af4922 | gzip > qemu-kvm-0.15.0-0af4922.tar.gz
 Source0: qemu-kvm-%{version}-%{githead}.tar.gz
 
 Source1: qemu.init
@@ -54,6 +54,18 @@ Patch10: 0010-spice-qemu-char.c-remove-intermediate-buffer.patch
 Patch11: 0011-usb-redir-Add-flow-control-support.patch
 Patch12: 0012-usb-redir-Call-qemu_chr_guest_open-close.patch
 Patch13: 0013-spice-qemu-char-Generate-chardev-open-close-events.patch
+Patch14: 0014-spice-add-worker-wrapper-functions.patch
+Patch15: 0015-spice-add-qemu_spice_display_init_common.patch
+Patch16: 0016-spice-qxl-move-worker-wrappers.patch
+Patch17: 0017-qxl-fix-surface-tracking-locking.patch
+Patch18: 0018-qxl-add-io_port_to_string.patch
+Patch19: 0019-qxl-error-handling-fixes-and-cleanups.patch
+Patch20: 0020-qxl-make-qxl_guest_bug-take-variable-arguments.patch
+Patch21: 0021-qxl-only-disallow-specific-io-s-in-vga-mode.patch
+Patch22: 0022-qxl-async-io-support-using-new-spice-api.patch
+Patch23: 0023-qxl-add-QXL_IO_FLUSH_-SURFACES-RELEASE-for-guest-S3-.patch
+Patch24: 0024-qxl-bump-pci-rev.patch
+Patch25: 0025-virtio-serial-bus-replay-guest_open-on-migration.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -240,6 +252,18 @@ such as kvm_stat.
 %patch11 -p1
 %patch12 -p1
 %patch13 -p1
+%patch14 -p1
+%patch15 -p1
+%patch16 -p1
+%patch17 -p1
+%patch18 -p1
+%patch19 -p1
+%patch20 -p1
+%patch21 -p1
+%patch22 -p1
+%patch23 -p1
+%patch24 -p1
+%patch25 -p1
 
 %build
 # By default we build everything, but allow x86 to build a minimal version
@@ -550,6 +574,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Aug 04 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.15.0-0.3.201108040af4922
+- Update to 0.15.0-rc1 as we prepare for 0.15.0 release
+
 * Thu Jul 28 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.15.0-0.1.2011072859fadcc
 - Update to 0.15.0-rc0 as we prepare for 0.15.0 release
 

@@ -1,7 +1,7 @@
-From 9a773de6f770bf2f05acca786e14abd79a9f930c Mon Sep 17 00:00:00 2001
+>From 569b1773afa2b30ec9c64cc71815d6c499cd02c0 Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 22:02:47 +0100
-Subject: [PATCH 06/13] char: Equip the unix/tcp backend to handle nonblocking
+Subject: [PATCH 06/25] char: Equip the unix/tcp backend to handle nonblocking
  writes#
 
 Now that the infrastructure is in place to return -EAGAIN to callers,
@@ -18,7 +18,7 @@ Signed-off-by: Amit Shah <amit.shah@redhat.com>
  1 files changed, 34 insertions(+), 0 deletions(-)
 
 diff --git a/qemu-char.c b/qemu-char.c
-index 8789627..d811f2a 100644
+index 5dbf063..f54ce04 100644
 --- a/qemu-char.c
 +++ b/qemu-char.c
 @@ -106,6 +106,19 @@
@@ -41,7 +41,7 @@ index 8789627..d811f2a 100644
  static void qemu_chr_event(CharDriverState *s, int event)
  {
      /* Keep track if the char device is open */
-@@ -2308,6 +2321,25 @@ static void tcp_chr_close(CharDriverState *chr)
+@@ -2309,6 +2322,25 @@ static void tcp_chr_close(CharDriverState *chr)
      qemu_chr_event(chr, CHR_EVENT_CLOSED);
  }
  
@@ -67,7 +67,7 @@ index 8789627..d811f2a 100644
  static int qemu_chr_open_socket(QemuOpts *opts, CharDriverState **_chr)
  {
      CharDriverState *chr = NULL;
-@@ -2364,6 +2396,8 @@ static int qemu_chr_open_socket(QemuOpts *opts, CharDriverState **_chr)
+@@ -2365,6 +2397,8 @@ static int qemu_chr_open_socket(QemuOpts *opts, CharDriverState **_chr)
      chr->chr_close = tcp_chr_close;
      chr->get_msgfd = tcp_get_msgfd;
      chr->chr_add_client = tcp_chr_add_client;

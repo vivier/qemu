@@ -1,7 +1,7 @@
-From 5149f056bd4fbeeb0ce3b850febe213a305a348b Mon Sep 17 00:00:00 2001
+>From c79ffc7e3357317bd81f2abefa4743eaf8101a4e Mon Sep 17 00:00:00 2001
 From: Hans de Goede <hdegoede@redhat.com>
 Date: Thu, 21 Jul 2011 15:36:40 +0200
-Subject: [PATCH 13/13] spice-qemu-char: Generate chardev open/close events
+Subject: [PATCH 13/25] spice-qemu-char: Generate chardev open/close events
 
 Define a state callback and make that generate chardev open/close events when
 called by the spice-server.
