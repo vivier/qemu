@@ -1,7 +1,7 @@
-From badc85629db4d774f3b5b41070474bd5479d5be3 Mon Sep 17 00:00:00 2001
+>From 06a1e88d3e4dc55e94da35928686571b56b8f7a4 Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 22:06:41 +0100
-Subject: [PATCH 08/13] virtio-console: Enable port throttling when chardev is
+Subject: [PATCH 08/25] virtio-console: Enable port throttling when chardev is
  slow to consume data
 
 When a chardev indicates it can't accept more data, we tell the

@@ -1,7 +1,7 @@
-From 7e19009aa497ae5bc2da8dfedb956f8a705698f1 Mon Sep 17 00:00:00 2001
+>From edcb78965b9cab18004c30721d46138000a2c810 Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 22:05:10 +0100
-Subject: [PATCH 07/13] char: Throttle when host connection is down#
+Subject: [PATCH 07/25] char: Throttle when host connection is down#
 
 When the host-side connection goes down, throttle the virtio-serial bus
 and later unthrottle when a connection gets established.  This helps
@@ -20,7 +20,7 @@ Signed-off-by: Amit Shah <amit.shah@redhat.com>
  1 files changed, 14 insertions(+), 0 deletions(-)
 
 diff --git a/qemu-char.c b/qemu-char.c
-index d811f2a..111fdc8 100644
+index f54ce04..8d39500 100644
 --- a/qemu-char.c
 +++ b/qemu-char.c
 @@ -140,6 +140,9 @@ static void qemu_chr_generic_open_bh(void *opaque)
@@ -33,7 +33,7 @@ index d811f2a..111fdc8 100644
      qemu_bh_delete(s->bh);
      s->bh = NULL;
  }
-@@ -2059,6 +2062,17 @@ static int tcp_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
+@@ -2060,6 +2063,17 @@ static int tcp_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
          ret = send_all(chr, s->fd, buf, len);
          if (ret == -1 && errno == EPIPE) {
              tcp_closed(chr);

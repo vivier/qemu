@@ -1,7 +1,7 @@
-From 824ab3383370291885f1a18978018a41cfac7ee8 Mon Sep 17 00:00:00 2001
+>From eea72a6f70c7b4cf632c3637e12d4689ce6ff0f5 Mon Sep 17 00:00:00 2001
 From: Hans de Goede <hdegoede@redhat.com>
 Date: Thu, 21 Jul 2011 16:28:06 +0200
-Subject: [PATCH 12/13] usb-redir: Call qemu_chr_guest_open/close
+Subject: [PATCH 12/25] usb-redir: Call qemu_chr_guest_open/close
 
 To let the chardev now we're ready start receiving data. This is necessary
 with the spicevmc chardev to get it registered with the spice-server.
