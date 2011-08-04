@@ -15,7 +15,7 @@
 
 %define sublevel 0.12.1.2
 %define pkgrelease 2.160
-%define zrelease 6
+%define zrelease 7
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}.%{zrelease}
@@ -2540,6 +2540,10 @@ Patch2133: kvm-CVE-2011-2527-os-posix-set-groups-properly-for-runas.patch
 Patch2134: kvm-Revert-CVE-2011-2527-os-posix-set-groups-properly-fo.patch
 # For bz#725543 - RHEL6.2: Clarify support statement in KVM help
 Patch2135: kvm-clarify-support-statement-in-KVM-help.patch
+# For bz#726609 - [REG][6.1] After executing virsh dump with --live option and the completion, the subsequent virsh dump command to the same domain behaves abnormally
+Patch2136: kvm-vhost-fix-double-free-on-device-stop.patch
+# For bz#727896 - ACPI description of serial and parallel ports incorrect with -chardev/-device
+Patch2137: kvm-report-serial-devices-created-with-device-in-the-PII.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3782,6 +3786,8 @@ ApplyOptionalPatch()
 %patch2133 -p1
 %patch2134 -p1
 %patch2135 -p1
+%patch2136 -p1
+%patch2137 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -4003,6 +4009,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Aug 04 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.160.el6_1.7
+- kvm-vhost-fix-double-free-on-device-stop.patch [bz#726609]
+- kvm-report-serial-devices-created-with-device-in-the-PII.patch [bz#727896]
+- Resolves: bz#726609
+  ([REG][6.1] After executing virsh dump with --live option and the completion, the subsequent virsh dump command to the same domain behaves abnormally)
+- Resolves: bz#727896
+  (ACPI description of serial and parallel ports incorrect with -chardev/-device)
+
 * Tue Jul 26 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.160.el6_1.6
 - kvm-clarify-support-statement-in-KVM-help.patch [bz#725543]
 - Resolves: bz#725543
