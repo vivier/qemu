@@ -1,0 +1,175 @@
+From 1c6074d107dff93c7c7b0edfb5da871504802946 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 15 Jun 2011 11:05:19 -0300
+Subject: [RHEL6 qemu-kvm PATCH 10/10] add qxl_screendump monitor command
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308135919-4065-11-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27153
+O-Subject: [RHEL-6.2 kvm PATCH 10/10] add qxl_screendump monitor command
+Bugzilla: 674583 705070
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Arnon Gilboa <agilboa@redhat.com>
+
+This patch adds a __com.redhat__qxl_screendump monitor command which
+allows to make screen shots of secondary qxl displays.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/qxl.c        |   62 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ hw/qxl.h        |    3 ++
+ monitor.c       |   14 ++++++++++++
+ qemu-monitor.hx |   14 ++++++++++++
+ 4 files changed, 93 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qxl.c        |   62 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ hw/qxl.h        |    3 ++
+ monitor.c       |   14 ++++++++++++
+ qemu-monitor.hx |   14 ++++++++++++
+ 4 files changed, 93 insertions(+), 0 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index d9fe765..7764e6b 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -1527,4 +1527,66 @@ static void qxl_register(void)
+     pci_qdev_register(&qxl_info_secondary);
+ }
+ 
++int rhel6_qxl_screendump(const char *id, const char *filename)
++{
++    DeviceState *dev;
++    PCIQXLDevice *qxl;
++    QXLSurfaceCreate *sc;
++    DisplaySurface surface;
++    QXLRect dirty, update;
++
++    dev = qdev_find_by_id(id);
++    if (NULL == dev) {
++        error_report("Device \"%s\" not found.", id);
++        return -1;
++    }
++    if (dev->info != &qxl_info_secondary.qdev &&
++        dev->info != &qxl_info_primary.qdev) {
++        error_report("Device \"%s\" is not a qxl device.", id);
++        return -1;
++    }
++    qxl = DO_UPCAST(PCIQXLDevice, pci.qdev, dev);
++    sc  = &qxl->guest_primary.surface;
++
++    if (qxl->mode != QXL_MODE_COMPAT &&
++        qxl->mode != QXL_MODE_NATIVE) {
++        error_report("QXL device \"%s\" is not used by the guest.", id);
++        return -1;
++    }
++
++    surface.width    = le32_to_cpu(sc->width);
++    surface.height   = le32_to_cpu(sc->height);
++    surface.linesize = le32_to_cpu(sc->stride);
++    surface.data     = qxl_phys2virt(qxl, le64_to_cpu(sc->mem), MEMSLOT_GROUP_GUEST);
++    if (surface.linesize < 0) {
++        surface.data += -surface.linesize * (surface.height - 1);
++    }
++
++    switch (le32_to_cpu(sc->format)) {
++    case SPICE_SURFACE_FMT_16_565:
++        surface.pf = qemu_default_pixelformat(16);
++        break;
++    case SPICE_SURFACE_FMT_32_xRGB:
++    case SPICE_SURFACE_FMT_32_ARGB:
++        surface.pf = qemu_default_pixelformat(32);
++        break;
++    default:
++        error_report("Can't handle spice surface format %d.", le32_to_cpu(sc->format));
++        return -1;
++    }
++
++    update.left   = 0;
++    update.right  = surface.width;
++    update.top    = 0;
++    update.bottom = surface.height;
++    memset(&dirty, 0, sizeof(dirty));
++
++    fprintf(stderr, "%s: %dx%d, fmt %d, linesize %d\n", __FUNCTION__,
++            surface.width, surface.height, le32_to_cpu(sc->format), surface.linesize);
++
++    qxl->ssd.worker->update_area(qxl->ssd.worker, 0, &update, &dirty, 1, 1);
++    ppm_save(filename, &surface);
++    return 0;
++}
++
+ device_init(qxl_register);
+diff --git a/hw/qxl.h b/hw/qxl.h
+index f6c450d..f4a5986 100644
+--- a/hw/qxl.h
++++ b/hw/qxl.h
+@@ -106,3 +106,6 @@ void qxl_log_command(PCIQXLDevice *qxl, const char *ring, QXLCommandExt *ext);
+ void qxl_render_resize(PCIQXLDevice *qxl);
+ void qxl_render_update(PCIQXLDevice *qxl);
+ void qxl_render_cursor(PCIQXLDevice *qxl, QXLCommandExt *ext);
++
++/* rhel6 only */
++int rhel6_qxl_screendump(const char *id, const char *filename);
+diff --git a/monitor.c b/monitor.c
+index b116827..be846be 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -30,6 +30,7 @@
+ #include "hw/pci.h"
+ #include "hw/watchdog.h"
+ #include "hw/loader.h"
++#include "hw/qxl.h"
+ #include "gdbstub.h"
+ #include "net.h"
+ #include "net/slirp.h"
+@@ -1305,6 +1306,19 @@ static void do_screen_dump(Monitor *mon, const QDict *qdict)
+     vga_hw_screen_dump(qdict_get_str(qdict, "filename"));
+ }
+ 
++static int rhel6_qxl_do_screen_dump(Monitor *mon, const QDict *qdict, QObject **ret_data)
++{
++    int ret;
++
++    ret = rhel6_qxl_screendump(qdict_get_str(qdict, "id"),
++                               qdict_get_str(qdict, "filename"));
++    if (ret != 0) {
++        qerror_report(QERR_UNDEFINED_ERROR);
++        return -1;
++    }
++    return 0;
++}
++
+ static void do_logfile(Monitor *mon, const QDict *qdict)
+ {
+     cpu_set_log_filename(qdict_get_str(qdict, "filename"));
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index de96f8e..1084839 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -291,6 +291,20 @@ Save screen into PPM image @var{filename}.
+ ETEXI
+ 
+     {
++        .name       = RFQDN_REDHAT "qxl_screendump",
++        .args_type  = "id:s,filename:F",
++        .params     = "id filename",
++        .help       = "save screen from qxl device 'id' into PPM image 'filename'",
++        .mhandler.cmd_new = rhel6_qxl_do_screen_dump,
++    },
++
++STEXI
++@item __com.redhat_screendump @var{id} @var{filename}
++@findex __com.redhat_screendump
++Save screen from qxl device @var{id} into PPM image @var{filename}.
++ETEXI
++
++    {
+         .name       = "logfile",
+         .args_type  = "filename:F",
+         .params     = "filename",
+-- 
+1.7.3.2
+

@@ -1,0 +1,233 @@
+From 22f46ddef40a726e1940bee7f36ccf74ab39e145 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 15 Jun 2011 11:05:14 -0300
+Subject: [RHEL6 qemu-kvm PATCH 05/10] spice: don't create updates in spice server context.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308135919-4065-6-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27154
+O-Subject: [RHEL-6.2 kvm PATCH 05/10] spice: don't create updates in spice server context.
+Bugzilla: 674583 705070
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Arnon Gilboa <agilboa@redhat.com>
+
+This patch moves the creation of spice screen updates from the spice
+server context to qemu iothread context (display refresh timer to be
+exact).  This way we avoid accessing qemu internals (display surface)
+from spice thread context which in turn allows us to simplify locking.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit e0c64d08d11736dcea7c5a6373e3e7f62db51d9e)
+---
+ hw/qxl.c           |   17 +++++++++++------
+ ui/spice-display.c |   43 +++++++++++++++++++++++++++----------------
+ ui/spice-display.h |   21 ++++++++++++++++-----
+ 3 files changed, 54 insertions(+), 27 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qxl.c           |   17 +++++++++++------
+ ui/spice-display.c |   43 +++++++++++++++++++++++++++----------------
+ ui/spice-display.h |   21 ++++++++++++++++-----
+ 3 files changed, 54 insertions(+), 27 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index 61fd1fc..2e85c29 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -343,18 +343,22 @@ static int interface_get_command(QXLInstance *sin, struct QXLCommandExt *ext)
+     SimpleSpiceUpdate *update;
+     QXLCommandRing *ring;
+     QXLCommand *cmd;
+-    int notify;
++    int notify, ret;
+ 
+     switch (qxl->mode) {
+     case QXL_MODE_VGA:
+         dprint(qxl, 2, "%s: vga\n", __FUNCTION__);
+-        update = qemu_spice_create_update(&qxl->ssd);
+-        if (update == NULL) {
+-            return false;
++        ret = false;
++        qemu_mutex_lock(&qxl->ssd.lock);
++        if (qxl->ssd.update != NULL) {
++            update = qxl->ssd.update;
++            qxl->ssd.update = NULL;
++            *ext = update->ext;
++            ret = true;
+         }
+-        *ext = update->ext;
++        qemu_mutex_unlock(&qxl->ssd.lock);
+         qxl_log_command(qxl, "vga", ext);
+-        return true;
++        return ret;
+     case QXL_MODE_COMPAT:
+     case QXL_MODE_NATIVE:
+     case QXL_MODE_UNDEFINED:
+@@ -1304,6 +1308,7 @@ static int qxl_init_primary(PCIDevice *dev)
+     vga->ds = graphic_console_init(qxl_hw_update, qxl_hw_invalidate,
+                                    qxl_hw_screen_dump, qxl_hw_text_update, qxl);
+     qxl->ssd.ds = vga->ds;
++    qemu_mutex_init(&qxl->ssd.lock);
+     qxl->ssd.bufsize = (16 * 1024 * 1024);
+     qxl->ssd.buf = qemu_malloc(qxl->ssd.bufsize);
+ 
+diff --git a/ui/spice-display.c b/ui/spice-display.c
+index 99d9fd6..c0ae366 100644
+--- a/ui/spice-display.c
++++ b/ui/spice-display.c
+@@ -63,14 +63,7 @@ void qemu_spice_rect_union(QXLRect *dest, const QXLRect *r)
+     dest->right = MAX(dest->right, r->right);
+ }
+ 
+-/*
+- * Called from spice server thread context (via interface_get_command).
+- *
+- * We must aquire the global qemu mutex here to make sure the
+- * DisplayState (+DisplaySurface) we are accessing doesn't change
+- * underneath us.
+- */
+-SimpleSpiceUpdate *qemu_spice_create_update(SimpleSpiceDisplay *ssd)
++static SimpleSpiceUpdate *qemu_spice_create_update(SimpleSpiceDisplay *ssd)
+ {
+     SimpleSpiceUpdate *update;
+     QXLDrawable *drawable;
+@@ -79,9 +72,7 @@ SimpleSpiceUpdate *qemu_spice_create_update(SimpleSpiceDisplay *ssd)
+     uint8_t *src, *dst;
+     int by, bw, bh;
+ 
+-    qemu_mutex_lock_iothread();
+     if (qemu_spice_rect_is_empty(&ssd->dirty)) {
+-        qemu_mutex_unlock_iothread();
+         return NULL;
+     };
+ 
+@@ -142,7 +133,6 @@ SimpleSpiceUpdate *qemu_spice_create_update(SimpleSpiceDisplay *ssd)
+     cmd->data = (intptr_t)drawable;
+ 
+     memset(&ssd->dirty, 0, sizeof(ssd->dirty));
+-    qemu_mutex_unlock_iothread();
+     return update;
+ }
+ 
+@@ -242,6 +232,12 @@ void qemu_spice_display_resize(SimpleSpiceDisplay *ssd)
+     qemu_pf_conv_put(ssd->conv);
+     ssd->conv = NULL;
+ 
++    qemu_mutex_lock(&ssd->lock);
++    if (ssd->update != NULL) {
++        qemu_spice_destroy_update(ssd, ssd->update);
++        ssd->update = NULL;
++    }
++    qemu_mutex_unlock(&ssd->lock);
+     qemu_spice_destroy_host_primary(ssd);
+     qemu_spice_create_host_primary(ssd);
+ 
+@@ -253,6 +249,14 @@ void qemu_spice_display_refresh(SimpleSpiceDisplay *ssd)
+ {
+     dprint(3, "%s:\n", __FUNCTION__);
+     vga_hw_update();
++
++    qemu_mutex_lock(&ssd->lock);
++    if (ssd->update == NULL) {
++        ssd->update = qemu_spice_create_update(ssd);
++        ssd->notify++;
++    }
++    qemu_mutex_unlock(&ssd->lock);
++
+     if (ssd->notify) {
+         ssd->notify = 0;
+         ssd->worker->wakeup(ssd->worker);
+@@ -299,14 +303,20 @@ static int interface_get_command(QXLInstance *sin, struct QXLCommandExt *ext)
+ {
+     SimpleSpiceDisplay *ssd = container_of(sin, SimpleSpiceDisplay, qxl);
+     SimpleSpiceUpdate *update;
++    int ret = false;
+ 
+     dprint(3, "%s:\n", __FUNCTION__);
+-    update = qemu_spice_create_update(ssd);
+-    if (update == NULL) {
+-        return false;
++
++    qemu_mutex_lock(&ssd->lock);
++    if (ssd->update != NULL) {
++        update = ssd->update;
++        ssd->update = NULL;
++        *ext = update->ext;
++        ret = true;
+     }
+-    *ext = update->ext;
+-    return true;
++    qemu_mutex_unlock(&ssd->lock);
++
++    return ret;
+ }
+ 
+ static int interface_req_cmd_notification(QXLInstance *sin)
+@@ -399,6 +409,7 @@ void qemu_spice_display_init(DisplayState *ds)
+ {
+     assert(sdpy.ds == NULL);
+     sdpy.ds = ds;
++    qemu_mutex_init(&sdpy.lock);
+     sdpy.bufsize = (16 * 1024 * 1024);
+     sdpy.buf = qemu_malloc(sdpy.bufsize);
+     register_displaychangelistener(ds, &display_listener);
+diff --git a/ui/spice-display.h b/ui/spice-display.h
+index aef0464..e0cc46e 100644
+--- a/ui/spice-display.h
++++ b/ui/spice-display.h
+@@ -19,6 +19,7 @@
+ #include <spice/enums.h>
+ #include <spice/qxl_dev.h>
+ 
++#include "qemu-thread.h"
+ #include "pflib.h"
+ 
+ #define NUM_MEMSLOTS 8
+@@ -31,7 +32,10 @@
+ 
+ #define NUM_SURFACES 1024
+ 
+-typedef struct SimpleSpiceDisplay {
++typedef struct SimpleSpiceDisplay SimpleSpiceDisplay;
++typedef struct SimpleSpiceUpdate SimpleSpiceUpdate;
++
++struct SimpleSpiceDisplay {
+     DisplayState *ds;
+     void *buf;
+     int bufsize;
+@@ -43,19 +47,26 @@ typedef struct SimpleSpiceDisplay {
+     QXLRect dirty;
+     int notify;
+     int running;
+-} SimpleSpiceDisplay;
+ 
+-typedef struct SimpleSpiceUpdate {
++    /*
++     * All struct members below this comment can be accessed from
++     * both spice server and qemu (iothread) context and any access
++     * to them must be protected by the lock.
++     */
++    QemuMutex lock;
++    SimpleSpiceUpdate *update;
++};
++
++struct SimpleSpiceUpdate {
+     QXLDrawable drawable;
+     QXLImage image;
+     QXLCommandExt ext;
+     uint8_t *bitmap;
+-} SimpleSpiceUpdate;
++};
+ 
+ int qemu_spice_rect_is_empty(const QXLRect* r);
+ void qemu_spice_rect_union(QXLRect *dest, const QXLRect *r);
+ 
+-SimpleSpiceUpdate *qemu_spice_create_update(SimpleSpiceDisplay *sdpy);
+ void qemu_spice_destroy_update(SimpleSpiceDisplay *sdpy, SimpleSpiceUpdate *update);
+ void qemu_spice_create_host_memslot(SimpleSpiceDisplay *ssd);
+ void qemu_spice_create_host_primary(SimpleSpiceDisplay *ssd);
+-- 
+1.7.3.2
+

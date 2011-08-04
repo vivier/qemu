@@ -1,0 +1,114 @@
+From 0e5a7642a8ce245a9badc2276e8b83e4c4ed73da Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 15 Jun 2011 11:05:16 -0300
+Subject: [RHEL6 qemu-kvm PATCH 07/10] spice: drop obsolete iothread locking
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308135919-4065-8-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27151
+O-Subject: [RHEL-6.2 kvm PATCH 07/10] spice: drop obsolete iothread locking
+Bugzilla: 674583 705070
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Arnon Gilboa <agilboa@redhat.com>
+
+We don't use qemu internals from spice server context any more.
+Thus we don't also need to grab the iothread mutex from spice
+server context.  And we don't have to temporarely release the
+lock to avoid deadlocks.  Drop all the calls.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 196a778428989217b82de042725dc8eb29c8f8d8)
+---
+ hw/qxl.c           |    8 --------
+ ui/spice-display.c |    6 ------
+ 2 files changed, 0 insertions(+), 14 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qxl.c           |    8 --------
+ ui/spice-display.c |    6 ------
+ 2 files changed, 0 insertions(+), 14 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index 9e03d11..d9fe765 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -666,10 +666,8 @@ static void qxl_hard_reset(PCIQXLDevice *d, int loadvm)
+     dprint(d, 1, "%s: start%s\n", __FUNCTION__,
+            loadvm ? " (loadvm)" : "");
+ 
+-    qemu_mutex_unlock_iothread();
+     d->ssd.worker->reset_cursor(d->ssd.worker);
+     d->ssd.worker->reset_image_cache(d->ssd.worker);
+-    qemu_mutex_lock_iothread();
+     qxl_reset_surfaces(d);
+     qxl_reset_memslots(d);
+ 
+@@ -799,9 +797,7 @@ static void qxl_reset_surfaces(PCIQXLDevice *d)
+ {
+     dprint(d, 1, "%s:\n", __FUNCTION__);
+     d->mode = QXL_MODE_UNDEFINED;
+-    qemu_mutex_unlock_iothread();
+     d->ssd.worker->destroy_surfaces(d->ssd.worker);
+-    qemu_mutex_lock_iothread();
+     memset(&d->guest_surfaces.cmds, 0, sizeof(d->guest_surfaces.cmds));
+ }
+ 
+@@ -870,9 +866,7 @@ static void qxl_destroy_primary(PCIQXLDevice *d)
+     dprint(d, 1, "%s\n", __FUNCTION__);
+ 
+     d->mode = QXL_MODE_UNDEFINED;
+-    qemu_mutex_unlock_iothread();
+     d->ssd.worker->destroy_primary_surface(d->ssd.worker, 0);
+-    qemu_mutex_lock_iothread();
+ }
+ 
+ static void qxl_set_mode(PCIQXLDevice *d, int modenr, int loadvm)
+@@ -942,10 +936,8 @@ static void ioport_write(void *opaque, uint32_t addr, uint32_t val)
+     case QXL_IO_UPDATE_AREA:
+     {
+         QXLRect update = d->ram->update_area;
+-        qemu_mutex_unlock_iothread();
+         d->ssd.worker->update_area(d->ssd.worker, d->ram->update_surface,
+                                    &update, NULL, 0, 0);
+-        qemu_mutex_lock_iothread();
+         break;
+     }
+     case QXL_IO_NOTIFY_CMD:
+diff --git a/ui/spice-display.c b/ui/spice-display.c
+index 76567eb..be1ed05 100644
+--- a/ui/spice-display.c
++++ b/ui/spice-display.c
+@@ -177,18 +177,14 @@ void qemu_spice_create_host_primary(SimpleSpiceDisplay *ssd)
+     surface.mem        = (intptr_t)ssd->buf;
+     surface.group_id   = MEMSLOT_GROUP_HOST;
+ 
+-    qemu_mutex_unlock_iothread();
+     ssd->worker->create_primary_surface(ssd->worker, 0, &surface);
+-    qemu_mutex_lock_iothread();
+ }
+ 
+ void qemu_spice_destroy_host_primary(SimpleSpiceDisplay *ssd)
+ {
+     dprint(1, "%s:\n", __FUNCTION__);
+ 
+-    qemu_mutex_unlock_iothread();
+     ssd->worker->destroy_primary_surface(ssd->worker, 0);
+-    qemu_mutex_lock_iothread();
+ }
+ 
+ void qemu_spice_vm_change_state_handler(void *opaque, int running, int reason)
+@@ -198,9 +194,7 @@ void qemu_spice_vm_change_state_handler(void *opaque, int running, int reason)
+     if (running) {
+         ssd->worker->start(ssd->worker);
+     } else {
+-        qemu_mutex_unlock_iothread();
+         ssd->worker->stop(ssd->worker);
+-        qemu_mutex_lock_iothread();
+     }
+     ssd->running = running;
+ }
+-- 
+1.7.3.2
+

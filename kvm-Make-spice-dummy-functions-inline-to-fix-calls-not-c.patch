@@ -1,0 +1,59 @@
+From 73016389ece5078a435e244822e4b835ba728537 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 15 Jun 2011 11:05:17 -0300
+Subject: [RHEL6 qemu-kvm PATCH 08/10] Make spice dummy functions inline to fix calls not checking return values
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308135919-4065-9-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27150
+O-Subject: [RHEL-6.2 kvm PATCH 08/10] Make spice dummy functions inline to fix calls not checking return values
+Bugzilla: 674583 705070
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Arnon Gilboa <agilboa@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+qemu_spice_set_passwd() and qemu_spice_set_pw_expire() dummy functions
+needs to be inline, in order to handle the case where they are called
+without checking the return value.
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 14da8345b2f7c21bab20fd12b755a61d6277f171)
+---
+ ui/qemu-spice.h |   12 ++++++++++--
+ 1 files changed, 10 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ ui/qemu-spice.h |   12 ++++++++++--
+ 1 files changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/ui/qemu-spice.h b/ui/qemu-spice.h
+index 916e5dc..3c6f1fe 100644
+--- a/ui/qemu-spice.h
++++ b/ui/qemu-spice.h
+@@ -47,8 +47,16 @@ CharDriverState *qemu_chr_open_spice(QemuOpts *opts);
+ #else  /* CONFIG_SPICE */
+ 
+ #define using_spice 0
+-#define qemu_spice_set_passwd(_p, _f1, _f2) (-1)
+-#define qemu_spice_set_pw_expire(_e) (-1)
++static inline int qemu_spice_set_passwd(const char *passwd,
++                                        bool fail_if_connected,
++                                        bool disconnect_if_connected)
++{
++    return -1;
++}
++static inline int qemu_spice_set_pw_expire(time_t expires)
++{
++    return -1;
++}
+ static inline int qemu_spice_migrate_info(const char *h, int p, int t, const char *s)
+ { return -1; }
+ 
+-- 
+1.7.3.2
+

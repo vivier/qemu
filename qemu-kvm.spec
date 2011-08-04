@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.176
+%define pkgrelease 2.177
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3249,6 +3249,36 @@ Patch2320: kvm-net-Consistently-use-qemu_macaddr_default_if_unset.patch
 Patch2321: kvm-virtio-serial-bus-replay-guest_open-on-migration.patch
 # For bz#727580 - bit property doesn't print correctly
 Patch2322: kvm-qdev-Fix-printout-of-bit-device-properties-with-bit-.patch
+# For bz#674583 - qemu-kvm build fails without --enable-spice
+# For bz#705070 - QMP: screendump command does not allow specification of monitor to capture
+Patch2323: kvm-Revert-hw-qxl-render-drop-cursor-locks-replace-with-.patch
+# For bz#674583 - qemu-kvm build fails without --enable-spice
+# For bz#705070 - QMP: screendump command does not allow specification of monitor to capture
+Patch2324: kvm-Revert-qxl-spice-remove-qemu_mutex_-un-lock_iothread.patch
+# For bz#674583 - qemu-kvm build fails without --enable-spice
+# For bz#705070 - QMP: screendump command does not allow specification of monitor to capture
+Patch2325: kvm-Revert-qxl-implement-get_command-in-vga-mode-without.patch
+# For bz#674583 - qemu-kvm build fails without --enable-spice
+# For bz#705070 - QMP: screendump command does not allow specification of monitor to capture
+Patch2326: kvm-Revert-qxl-spice-display-move-pipe-to-ssd.patch
+# For bz#674583 - qemu-kvm build fails without --enable-spice
+# For bz#705070 - QMP: screendump command does not allow specification of monitor to capture
+Patch2327: kvm-spice-don-t-create-updates-in-spice-server-context.patch
+# For bz#674583 - qemu-kvm build fails without --enable-spice
+# For bz#705070 - QMP: screendump command does not allow specification of monitor to capture
+Patch2328: kvm-spice-don-t-call-displaystate-callbacks-from-spice-s.patch
+# For bz#674583 - qemu-kvm build fails without --enable-spice
+# For bz#705070 - QMP: screendump command does not allow specification of monitor to capture
+Patch2329: kvm-spice-drop-obsolete-iothread-locking.patch
+# For bz#674583 - qemu-kvm build fails without --enable-spice
+# For bz#705070 - QMP: screendump command does not allow specification of monitor to capture
+Patch2330: kvm-Make-spice-dummy-functions-inline-to-fix-calls-not-c.patch
+# For bz#674583 - qemu-kvm build fails without --enable-spice
+# For bz#705070 - QMP: screendump command does not allow specification of monitor to capture
+Patch2331: kvm-add-qdev_find_by_id.patch
+# For bz#674583 - qemu-kvm build fails without --enable-spice
+# For bz#705070 - QMP: screendump command does not allow specification of monitor to capture
+Patch2332: kvm-add-qxl_screendump-monitor-command.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -4678,6 +4708,16 @@ ApplyOptionalPatch()
 %patch2320 -p1
 %patch2321 -p1
 %patch2322 -p1
+%patch2323 -p1
+%patch2324 -p1
+%patch2325 -p1
+%patch2326 -p1
+%patch2327 -p1
+%patch2328 -p1
+%patch2329 -p1
+%patch2330 -p1
+%patch2331 -p1
+%patch2332 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -4899,6 +4939,22 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Aug 04 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.177.el6
+- kvm-Revert-hw-qxl-render-drop-cursor-locks-replace-with-.patch [bz#674583 bz#705070]
+- kvm-Revert-qxl-spice-remove-qemu_mutex_-un-lock_iothread.patch [bz#674583 bz#705070]
+- kvm-Revert-qxl-implement-get_command-in-vga-mode-without.patch [bz#674583 bz#705070]
+- kvm-Revert-qxl-spice-display-move-pipe-to-ssd.patch [bz#674583 bz#705070]
+- kvm-spice-don-t-create-updates-in-spice-server-context.patch [bz#674583 bz#705070]
+- kvm-spice-don-t-call-displaystate-callbacks-from-spice-s.patch [bz#674583 bz#705070]
+- kvm-spice-drop-obsolete-iothread-locking.patch [bz#674583 bz#705070]
+- kvm-Make-spice-dummy-functions-inline-to-fix-calls-not-c.patch [bz#674583 bz#705070]
+- kvm-add-qdev_find_by_id.patch [bz#674583 bz#705070]
+- kvm-add-qxl_screendump-monitor-command.patch [bz#674583 bz#705070]
+- Resolves: bz#674583
+  (qemu-kvm build fails without --enable-spice)
+- Resolves: bz#705070
+  (QMP: screendump command does not allow specification of monitor to capture)
+
 * Wed Aug 03 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.176.el6
 - kvm-net-Consistently-use-qemu_macaddr_default_if_unset.patch [bz#712046]
 - kvm-virtio-serial-bus-replay-guest_open-on-migration.patch [bz#725965]

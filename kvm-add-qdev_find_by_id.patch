@@ -1,0 +1,61 @@
+From 90c4ccd73164b4b6aa01fbb527ecf38052df876e Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 15 Jun 2011 11:05:18 -0300
+Subject: [RHEL6 qemu-kvm PATCH 09/10] add qdev_find_by_id()
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308135919-4065-10-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27149
+O-Subject: [RHEL-6.2 kvm PATCH 09/10] add qdev_find_by_id()
+Bugzilla: 674583 705070
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Arnon Gilboa <agilboa@redhat.com>
+
+This patch adds a function to find a device by qdev id.
+Needed by the next patch in the series.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/qdev.c |    5 +++++
+ hw/qdev.h |    2 ++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qdev.c |    5 +++++
+ hw/qdev.h |    2 ++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/hw/qdev.c b/hw/qdev.c
+index 41c06d0..3b55909 100644
+--- a/hw/qdev.c
++++ b/hw/qdev.c
+@@ -493,6 +493,11 @@ static DeviceState *qdev_find_recursive(BusState *bus, const char *id)
+     return NULL;
+ }
+ 
++DeviceState *qdev_find_by_id(const char *id)
++{
++    return qdev_find_recursive(main_system_bus, id);
++}
++
+ static void qbus_list_bus(DeviceState *dev)
+ {
+     BusState *child;
+diff --git a/hw/qdev.h b/hw/qdev.h
+index 06a3b2e..7527a32 100644
+--- a/hw/qdev.h
++++ b/hw/qdev.h
+@@ -136,6 +136,8 @@ BlockDriverState *qdev_init_bdrv(DeviceState *dev, BlockInterfaceType type);
+ 
+ BusState *qdev_get_child_bus(DeviceState *dev, const char *name);
+ 
++DeviceState *qdev_find_by_id(const char *id);
++
+ /*** Device API.  ***/
+ 
+ typedef int (*qdev_initfn)(DeviceState *dev, DeviceInfo *info);
+-- 
+1.7.3.2
+

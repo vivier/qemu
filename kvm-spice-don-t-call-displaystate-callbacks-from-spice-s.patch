@@ -1,0 +1,154 @@
+From de9f4805e37c2615471fb0a082b208ee8d8e8a2e Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 15 Jun 2011 11:05:15 -0300
+Subject: [RHEL6 qemu-kvm PATCH 06/10] spice: don't call displaystate callbacks from spice server context.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1308135919-4065-7-git-send-email-kraxel@redhat.com>
+Patchwork-id: 27152
+O-Subject: [RHEL-6.2 kvm PATCH 06/10] spice: don't call displaystate callbacks from spice server context.
+Bugzilla: 674583 705070
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Arnon Gilboa <agilboa@redhat.com>
+
+This patch moves the displaystate callback calls for setting the cursor
+and the mouse pointer from spice server to qemu (iothread) context.
+This allows us to simplify locking.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 075360945860ad9bdd491921954b383bf762b0e5)
+---
+ hw/qxl-render.c    |   25 ++++++++++++-------------
+ hw/qxl.c           |    2 ++
+ ui/spice-display.c |   12 ++++++++++++
+ ui/spice-display.h |    3 +++
+ 4 files changed, 29 insertions(+), 13 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qxl-render.c    |   25 ++++++++++++-------------
+ hw/qxl.c           |    2 ++
+ ui/spice-display.c |   12 ++++++++++++
+ ui/spice-display.h |    3 +++
+ 4 files changed, 29 insertions(+), 13 deletions(-)
+
+diff --git a/hw/qxl-render.c b/hw/qxl-render.c
+index 58965e0..1316066 100644
+--- a/hw/qxl-render.c
++++ b/hw/qxl-render.c
+@@ -185,7 +185,6 @@ void qxl_render_cursor(PCIQXLDevice *qxl, QXLCommandExt *ext)
+     QXLCursorCmd *cmd = qxl_phys2virt(qxl, ext->cmd.data, ext->group_id);
+     QXLCursor *cursor;
+     QEMUCursor *c;
+-    int x = -1, y = -1;
+ 
+     if (!qxl->ssd.ds->mouse_set || !qxl->ssd.ds->cursor_define) {
+         return;
+@@ -198,8 +197,6 @@ void qxl_render_cursor(PCIQXLDevice *qxl, QXLCommandExt *ext)
+     }
+     switch (cmd->type) {
+     case QXL_CURSOR_SET:
+-        x = cmd->u.set.position.x;
+-        y = cmd->u.set.position.y;
+         cursor = qxl_phys2virt(qxl, cmd->u.set.shape, ext->group_id);
+         if (cursor->chunk.data_size != cursor->data_size) {
+             fprintf(stderr, "%s: multiple chunks\n", __FUNCTION__);
+@@ -209,18 +206,20 @@ void qxl_render_cursor(PCIQXLDevice *qxl, QXLCommandExt *ext)
+         if (c == NULL) {
+             c = cursor_builtin_left_ptr();
+         }
+-        qemu_mutex_lock_iothread();
+-        qxl->ssd.ds->cursor_define(c);
+-        qxl->ssd.ds->mouse_set(x, y, 1);
+-        qemu_mutex_unlock_iothread();
+-        cursor_put(c);
++        qemu_mutex_lock(&qxl->ssd.lock);
++        if (qxl->ssd.cursor) {
++            cursor_put(qxl->ssd.cursor);
++        }
++        qxl->ssd.cursor = c;
++        qxl->ssd.mouse_x = cmd->u.set.position.x;
++        qxl->ssd.mouse_y = cmd->u.set.position.y;
++        qemu_mutex_unlock(&qxl->ssd.lock);
+         break;
+     case QXL_CURSOR_MOVE:
+-        x = cmd->u.position.x;
+-        y = cmd->u.position.y;
+-        qemu_mutex_lock_iothread();
+-        qxl->ssd.ds->mouse_set(x, y, 1);
+-        qemu_mutex_unlock_iothread();
++        qemu_mutex_lock(&qxl->ssd.lock);
++        qxl->ssd.mouse_x = cmd->u.position.x;
++        qxl->ssd.mouse_y = cmd->u.position.y;
++        qemu_mutex_unlock(&qxl->ssd.lock);
+         break;
+     }
+ }
+diff --git a/hw/qxl.c b/hw/qxl.c
+index 2e85c29..9e03d11 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -1309,6 +1309,8 @@ static int qxl_init_primary(PCIDevice *dev)
+                                    qxl_hw_screen_dump, qxl_hw_text_update, qxl);
+     qxl->ssd.ds = vga->ds;
+     qemu_mutex_init(&qxl->ssd.lock);
++    qxl->ssd.mouse_x = -1;
++    qxl->ssd.mouse_y = -1;
+     qxl->ssd.bufsize = (16 * 1024 * 1024);
+     qxl->ssd.buf = qemu_malloc(qxl->ssd.bufsize);
+ 
+diff --git a/ui/spice-display.c b/ui/spice-display.c
+index c0ae366..76567eb 100644
+--- a/ui/spice-display.c
++++ b/ui/spice-display.c
+@@ -255,6 +255,16 @@ void qemu_spice_display_refresh(SimpleSpiceDisplay *ssd)
+         ssd->update = qemu_spice_create_update(ssd);
+         ssd->notify++;
+     }
++    if (ssd->cursor) {
++        ssd->ds->cursor_define(ssd->cursor);
++        cursor_put(ssd->cursor);
++        ssd->cursor = NULL;
++    }
++    if (ssd->mouse_x != -1 && ssd->mouse_y != -1) {
++        ssd->ds->mouse_set(ssd->mouse_x, ssd->mouse_y, 1);
++        ssd->mouse_x = -1;
++        ssd->mouse_y = -1;
++    }
+     qemu_mutex_unlock(&ssd->lock);
+ 
+     if (ssd->notify) {
+@@ -410,6 +420,8 @@ void qemu_spice_display_init(DisplayState *ds)
+     assert(sdpy.ds == NULL);
+     sdpy.ds = ds;
+     qemu_mutex_init(&sdpy.lock);
++    sdpy.mouse_x = -1;
++    sdpy.mouse_y = -1;
+     sdpy.bufsize = (16 * 1024 * 1024);
+     sdpy.buf = qemu_malloc(sdpy.bufsize);
+     register_displaychangelistener(ds, &display_listener);
+diff --git a/ui/spice-display.h b/ui/spice-display.h
+index e0cc46e..2f95f68 100644
+--- a/ui/spice-display.h
++++ b/ui/spice-display.h
+@@ -20,6 +20,7 @@
+ #include <spice/qxl_dev.h>
+ 
+ #include "qemu-thread.h"
++#include "console.h"
+ #include "pflib.h"
+ 
+ #define NUM_MEMSLOTS 8
+@@ -55,6 +56,8 @@ struct SimpleSpiceDisplay {
+      */
+     QemuMutex lock;
+     SimpleSpiceUpdate *update;
++    QEMUCursor *cursor;
++    int mouse_x, mouse_y;
+ };
+ 
+ struct SimpleSpiceUpdate {
+-- 
+1.7.3.2
+
