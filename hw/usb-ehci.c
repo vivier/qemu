@@ -2285,7 +2285,6 @@ static int usb_ehci_initfn(PCIDevice *dev)
     pci_set_byte(&pci_conf[PCI_REVISION_ID], 0x10);
     pci_set_byte(&pci_conf[PCI_CLASS_PROG], 0x20);
     pci_config_set_class(pci_conf, PCI_CLASS_SERIAL_USB);
-    pci_set_byte(&pci_conf[PCI_HEADER_TYPE], PCI_HEADER_TYPE_NORMAL);
 
     /* capabilities pointer */
     pci_set_byte(&pci_conf[PCI_CAPABILITY_LIST], 0x00);
