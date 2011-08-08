@@ -223,7 +223,14 @@ static int parse_block_error_action(const char *buf, int is_read)
 
 static int drive_open(DriveInfo *dinfo)
 {
-    int res = bdrv_open(dinfo->bdrv, dinfo->file, dinfo->bdrv_flags, dinfo->drv);
+    int res;
+    int bdrv_flags = dinfo->bdrv_flags;
+
+    if (incoming_expected) {
+        bdrv_flags |= BDRV_O_INCOMING;
+    }
+
+    res = bdrv_open(dinfo->bdrv, dinfo->file, bdrv_flags, dinfo->drv);
 
     if (res < 0) {
         error_report("could not open disk image %s: %s",
