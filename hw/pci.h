@@ -129,6 +129,10 @@ typedef struct PCIIORegion {
 enum {
     QEMU_PCI_CAP_MSIX = 0x1,
     QEMU_PCI_CAP_EXPRESS = 0x2,
+
+    /* multifunction capable device */
+#define QEMU_PCI_CAP_MULTIFUNCTION_BITNR        2
+    QEMU_PCI_CAP_MULTIFUNCTION = (1 << QEMU_PCI_CAP_MULTIFUNCTION_BITNR),
 };
 
 typedef int (*msix_mask_notifier_func)(PCIDevice *, unsigned vector,
@@ -354,6 +358,11 @@ typedef struct {
 void pci_qdev_register(PCIDeviceInfo *info);
 void pci_qdev_register_many(PCIDeviceInfo *info);
 
+PCIDevice *pci_create_multifunction(PCIBus *bus, int devfn, bool multifunction,
+                                    const char *name);
+PCIDevice *pci_create_simple_multifunction(PCIBus *bus, int devfn,
+                                           bool multifunction,
+                                           const char *name);
 PCIDevice *pci_create(PCIBus *bus, int devfn, const char *name);
 PCIDevice *pci_create_simple(PCIBus *bus, int devfn, const char *name);
 
