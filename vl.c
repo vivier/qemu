@@ -3161,7 +3161,6 @@ static int vmstop_requested;
 int qemu_no_shutdown(void)
 {
     int r = no_shutdown;
-    no_shutdown = 0;
     return r;
 }
 
@@ -4096,7 +4095,6 @@ static void main_loop(void)
             monitor_protocol_event(QEVENT_SHUTDOWN, NULL);
             if (no_shutdown) {
                 vm_stop(0);
-                no_shutdown = 0;
             } else
                 break;
         }
