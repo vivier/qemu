@@ -264,7 +264,8 @@ int pci_parse_host_devaddr(const char *addr, int *busp,
                            int *slotp, int *funcp);
 
 void pci_info(Monitor *mon);
-PCIBus *pci_bridge_init(PCIBus *bus, int devfn, uint16_t vid, uint16_t did,
+PCIBus *pci_bridge_init(PCIBus *bus, int devfn, bool multifunction,
+                        uint16_t vid, uint16_t did,
                         pci_map_irq_fn map_irq, const char *name);
 PCIDevice *pci_bridge_get_device(PCIBus *bus);
 
