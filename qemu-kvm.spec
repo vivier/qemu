@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.177
+%define pkgrelease 2.178
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3315,6 +3315,7 @@ Requires: /usr/share/gpxe/rtl8029.rom
 Requires: /usr/share/gpxe/pcnet32.rom
 Requires: /usr/share/gpxe/rtl8139.rom
 Requires: /usr/share/gpxe/virtio-net.rom
+Requires: /usr/share/sgabios/sgabios.bin
 
 # We don't provide vvfat anymore, that is used by older VDSM versions.
 Conflicts: vdsm < 4.5
@@ -4853,6 +4854,7 @@ ln -s ../vgabios/VGABIOS-lgpl-latest.qxl.bin %{buildroot}/%{_datadir}/%{name}/vg
 ln -s ../vgabios/VGABIOS-lgpl-latest.stdvga.bin %{buildroot}/%{_datadir}/%{name}/vgabios-stdvga.bin
 ln -s ../vgabios/VGABIOS-lgpl-latest.vmware.bin %{buildroot}/%{_datadir}/%{name}/vgabios-vmware.bin
 ln -s ../seabios/bios.bin %{buildroot}/%{_datadir}/%{name}/bios.bin
+ln -s ../sgabios/sgabios.bin %{buildroot}/%{_datadir}/%{name}/sgabios.bin
 
 cd %{buildroot}/usr/share/systemtap/tapset
 
@@ -4907,6 +4909,7 @@ fi
 %{_sbindir}/ksmtuned
 %config(noreplace) %{_sysconfdir}/ksmtuned.conf
 %{_datadir}/%{name}/bios.bin
+%{_datadir}/%{name}/sgabios.bin
 %{_datadir}/%{name}/linuxboot.bin
 %{_datadir}/%{name}/multiboot.bin
 %{_datadir}/%{name}/vapic.bin
@@ -4939,6 +4942,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Aug 05 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.178.el6
+- Require new sgabios package [bz#684949]
+- Resolves: bz#684949
+  ([RFE] Ability to display VM BIOS messages on boot)
+
 * Thu Aug 04 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.177.el6
 - kvm-Revert-hw-qxl-render-drop-cursor-locks-replace-with-.patch [bz#674583 bz#705070]
 - kvm-Revert-qxl-spice-remove-qemu_mutex_-un-lock_iothread.patch [bz#674583 bz#705070]
