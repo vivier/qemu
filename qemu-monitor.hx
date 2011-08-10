@@ -295,6 +295,7 @@ ETEXI
         .args_type  = "id:s,filename:F",
         .params     = "id filename",
         .help       = "save screen from qxl device 'id' into PPM image 'filename'",
+        .user_print = monitor_user_noop,
         .mhandler.cmd_new = rhel6_qxl_do_screen_dump,
     },
 
