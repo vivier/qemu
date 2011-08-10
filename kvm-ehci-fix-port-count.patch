@@ -1,0 +1,43 @@
+From 3828f665fe9d6b95b43261c2e7e9f96fee2269b4 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 21 Jul 2011 16:44:01 -0300
+Subject: [RHEL6 qemu-kvm PATCH 23/65] ehci: fix port count.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1311266648-1179-24-git-send-email-kraxel@redhat.com>
+Patchwork-id: 30134
+O-Subject: [RHEL-6.2 kvm PATCH 23/30] ehci: fix port count.
+Bugzilla: 723858 723863
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+The ICH4 EHCI controller which we emulate has six ports not four.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 5cc194caeb019cf1dae7f74ccbdf0401a56c2ac6)
+---
+ hw/usb-ehci.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-ehci.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/hw/usb-ehci.c b/hw/usb-ehci.c
+index 34ed163..0979313 100644
+--- a/hw/usb-ehci.c
++++ b/hw/usb-ehci.c
+@@ -130,7 +130,7 @@
+ #define FRAME_TIMER_USEC (1000000 / FRAME_TIMER_FREQ)
+ 
+ #define NB_MAXINTRATE    8        // Max rate at which controller issues ints
+-#define NB_PORTS         4        // Number of downstream ports
++#define NB_PORTS         6        // Number of downstream ports
+ #define BUFF_SIZE        5*4096   // Max bytes to transfer per transaction
+ #define MAX_ITERATIONS   20       // Max number of QH before we break the loop
+ #define MAX_QH           100      // Max allowable queue heads in a chain
+-- 
+1.7.3.2
+

@@ -1,0 +1,124 @@
+From d667e34d2e882528bb933d811ba1c0588c05df66 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Sat, 6 Aug 2011 19:42:16 -0300
+Subject: [RHEL6 qemu-kvm PATCH 64/65] Fix netdev name lookup in -device, device_add, netdev_del
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1312659736-3367-3-git-send-email-armbru@redhat.com>
+Patchwork-id: 31009
+O-Subject: [RHEL6 PATCH qemu-kvm 2/2] Fix netdev name lookup in -device, device_add, netdev_del
+Bugzilla: 623907
+RH-Acked-by: Xiao Wang <jasowang@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+qemu_find_netdev() looks up members of non_vlan_clients by name.  It
+happily returns the first match.  Trouble is the names need not be
+unique.
+
+non_vlan_clients contains host parts (netdevs) and guest parts (NICs).
+
+Netdevs have unique names: a netdev's name is a (mandatory)
+qemu_netdev_opts ID, and these are unique.
+
+NIC names are not unique.  If a NIC has a qdev ID (which is unique),
+that's its name.  Else, we make up a name.  The made-up names are
+unique, but they can clash with qdev IDs.  Even if NICs had unique
+names, they could still clash with netdev names.
+
+Callers of qemu_find_netdev():
+
+* net_init_nic() wants a netdev.  It happens to work because it runs
+  before NICs get added to non_vlan_clients.
+
+* do_netdev_del() wants a netdev.  If it gets a NIC, it complains and
+  fails.  Bug: a netdev with the same name that comes later in
+  non_vlan_clients can't be deleted:
+
+    $ qemu-system-x86_64 -nodefaults -vnc :0 -S -monitor stdio -netdev user,id=hostnet0 -device virtio-net-pci,netdev=hostnet0,id=virtio1
+    [...]
+    (qemu) netdev_add user,id=virtio1
+    (qemu) info network
+    Devices not on any VLAN:
+      hostnet0: net=10.0.2.0, restricted=n peer=virtio1
+      virtio1: model=virtio-net-pci,macaddr=52:54:00:12:34:56 peer=hostnet0
+      virtio1: net=10.0.2.0, restricted=n
+    (qemu) netdev_del virtio1
+    Device 'virtio1' not found
+
+* parse_netdev() wants a netdev.  If it gets a NIC, it gets confused.
+  With the test setup above:
+
+    (qemu) device_add virtio-net-pci,netdev=virtio1
+    Property 'virtio-net-pci.netdev' can't take value 'virtio1', it's in use
+
+  You can even connect two NICs to each other:
+
+    $ qemu-system-x86_64 -nodefaults -vnc :0 -S -monitor stdio -device virtio-net-pci,id=virtio1 -device e1000,netdev=virtio1
+    [...]
+    Devices not on any VLAN:
+      virtio1: model=virtio-net-pci,macaddr=52:54:00:12:34:56 peer=e1000.0
+      e1000.0: model=e1000,macaddr=52:54:00:12:34:57 peer=virtio1
+    (qemu) q
+    Segmentation fault (core dumped)
+
+* do_set_link() works fine for both netdevs and NICs.  Whether it
+  really makes sense for netdevs is debatable, but that's outside this
+  patch's scope.
+
+Change qemu_find_netdev() to return only netdevs.  This fixes the
+netdev_del and device_add/-device bugs demonstrated above.
+
+To avoid changing set_link, make do_set_link() search non_vlan_clients
+by hand instead of calling qemu_find_netdev().
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry picked from commit 85dde9a90b9d26273ef531d344b2cdfee9a6683d)
+---
+ net.c |   10 ++++++++--
+ 1 files changed, 8 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ net.c |   10 ++++++++--
+ 1 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/net.c b/net.c
+index b10f681..c5b2541 100644
+--- a/net.c
++++ b/net.c
+@@ -716,6 +716,8 @@ VLANClientState *qemu_find_netdev(const char *id)
+     VLANClientState *vc;
+ 
+     QTAILQ_FOREACH(vc, &non_vlan_clients, next) {
++        if (vc->info->type == NET_CLIENT_TYPE_NIC)
++            continue;
+         if (!strcmp(vc->name, id)) {
+             return vc;
+         }
+@@ -1265,7 +1267,7 @@ int do_netdev_del(Monitor *mon, const QDict *qdict, QObject **ret_data)
+     VLANClientState *vc;
+ 
+     vc = qemu_find_netdev(id);
+-    if (!vc || vc->info->type == NET_CLIENT_TYPE_NIC) {
++    if (!vc) {
+         qerror_report(QERR_DEVICE_NOT_FOUND, id);
+         return -1;
+     }
+@@ -1310,7 +1312,11 @@ int do_set_link(Monitor *mon, const QDict *qdict, QObject **ret_data)
+             }
+         }
+     }
+-    vc = qemu_find_netdev(name);
++    QTAILQ_FOREACH(vc, &non_vlan_clients, next) {
++        if (!strcmp(vc->name, name)) {
++            goto done;
++        }
++    }
+ done:
+ 
+     if (!vc) {
+-- 
+1.7.3.2
+

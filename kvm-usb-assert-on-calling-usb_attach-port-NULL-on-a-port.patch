@@ -1,0 +1,60 @@
+From c8833183b0f74b70cd9766f09f4243b8cfed3ca7 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 21 Jul 2011 16:43:55 -0300
+Subject: [RHEL6 qemu-kvm PATCH 17/65] usb: assert on calling usb_attach(port, NULL) on a port without a dev
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1311266648-1179-18-git-send-email-kraxel@redhat.com>
+Patchwork-id: 30150
+O-Subject: [RHEL-6.2 kvm PATCH 17/30] usb: assert on calling usb_attach(port, NULL) on a port without a dev
+Bugzilla: 723858 723863
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+From: Hans de Goede <hdegoede@redhat.com>
+
+with the "usb-ehci: cleanup port reset handling" patch in place no callers
+are calling usb_attach(port, NULL) for a port where port->dev is NULL.
+
+Doing that makes no sense as that causes the port detach op to get called
+for a port with nothing attached. Add an assert that port->dev != NULL when
+dev == NULL, and remove the check for not having a port->dev in the dev == NULL
+case.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 45b9fd348061ab793cf4521bb3621f07a5bd7bf6)
+---
+ hw/usb.c |    9 ++++-----
+ 1 files changed, 4 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb.c |    9 ++++-----
+ 1 files changed, 4 insertions(+), 5 deletions(-)
+
+diff --git a/hw/usb.c b/hw/usb.c
+index 735ffd1..27a983c 100644
+--- a/hw/usb.c
++++ b/hw/usb.c
+@@ -40,12 +40,11 @@ void usb_attach(USBPort *port, USBDevice *dev)
+     } else {
+         /* detach */
+         dev = port->dev;
++        assert(dev);
+         port->ops->detach(port);
+-        if (dev) {
+-            usb_send_msg(dev, USB_MSG_DETACH);
+-            dev->port = NULL;
+-            port->dev = NULL;
+-        }
++        usb_send_msg(dev, USB_MSG_DETACH);
++        dev->port = NULL;
++        port->dev = NULL;
+     }
+ }
+ 
+-- 
+1.7.3.2
+

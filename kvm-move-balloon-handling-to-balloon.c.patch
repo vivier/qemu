@@ -1,0 +1,390 @@
+From 1b361ef0a7f3558dd4f64278ef119f5720851756 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Mon, 1 Aug 2011 11:40:47 -0300
+Subject: [RHEL6 qemu-kvm PATCH 46/65] move balloon handling to balloon.c
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <823425848a2f98fa6ec6b7c16ac33e7ef25ebac0.1312198249.git.amit.shah@redhat.com>
+Patchwork-id: 30720
+O-Subject: [RHEL6.2 qemu PATCH 01/13] move balloon handling to balloon.c
+Bugzilla: 694378
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Paolo Bonzini <pbonzini@redhat.com>
+
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from commit 28c289737309f0a6ea6e108b2bb5e2e93c6d7233)
+
+Conflicts:
+
+	Makefile.target
+	balloon.h
+	vl.c
+(RHEL had a trace event which upstream commit didn't, kept it.  Others
+are trivial changes)
+
+Bugzilla: 694378
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ Makefile.target |    2 +-
+ balloon.c       |  148 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ balloon.h       |    6 ++
+ monitor.c       |   85 -------------------------------
+ vl.c            |   34 -------------
+ 5 files changed, 155 insertions(+), 120 deletions(-)
+ create mode 100644 balloon.c
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile.target |    2 +-
+ balloon.c       |  148 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ balloon.h       |    6 ++
+ monitor.c       |   85 -------------------------------
+ vl.c            |   34 -------------
+ 5 files changed, 155 insertions(+), 120 deletions(-)
+ create mode 100644 balloon.c
+
+diff --git a/Makefile.target b/Makefile.target
+index 355c238..a303fdb 100644
+--- a/Makefile.target
++++ b/Makefile.target
+@@ -185,7 +185,7 @@ endif #CONFIG_BSD_USER
+ # System emulator target
+ ifdef CONFIG_SOFTMMU
+ 
+-obj-y = vl.o async.o monitor.o pci.o pci_host.o pcie_host.o machine.o gdbstub.o
++obj-y = vl.o async.o monitor.o pci.o pci_host.o pcie_host.o machine.o gdbstub.o balloon.o
+ # virtio has to be here due to weird dependency between PCI and virtio-net.
+ # need to fix this properly
+ obj-y += virtio-blk.o virtio-balloon.o virtio-net.o virtio-pci.o virtio-serial-bus.o
+diff --git a/balloon.c b/balloon.c
+new file mode 100644
+index 0000000..0021fef
+--- /dev/null
++++ b/balloon.c
+@@ -0,0 +1,148 @@
++/*
++ * QEMU System Emulator
++ *
++ * Copyright (c) 2003-2008 Fabrice Bellard
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
++ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ */
++
++#include "sysemu.h"
++#include "monitor.h"
++#include "qjson.h"
++#include "qint.h"
++#include "cpu-common.h"
++#include "kvm.h"
++#include "balloon.h"
++#include "trace.h"
++
++
++static QEMUBalloonEvent *qemu_balloon_event;
++void *qemu_balloon_event_opaque;
++
++void qemu_add_balloon_handler(QEMUBalloonEvent *func, void *opaque)
++{
++    qemu_balloon_event = func;
++    qemu_balloon_event_opaque = opaque;
++}
++
++int qemu_balloon(ram_addr_t target, MonitorCompletion cb, void *opaque)
++{
++    if (qemu_balloon_event) {
++        trace_balloon_event(qemu_balloon_event_opaque, target);
++        qemu_balloon_event(qemu_balloon_event_opaque, target, cb, opaque);
++        return 1;
++    } else {
++        return 0;
++    }
++}
++
++int qemu_balloon_status(MonitorCompletion cb, void *opaque)
++{
++    if (qemu_balloon_event) {
++        qemu_balloon_event(qemu_balloon_event_opaque, 0, cb, opaque);
++        return 1;
++    } else {
++        return 0;
++    }
++}
++
++static void print_balloon_stat(const char *key, QObject *obj, void *opaque)
++{
++    Monitor *mon = opaque;
++
++    if (strcmp(key, "actual"))
++        monitor_printf(mon, ",%s=%" PRId64, key,
++                       qint_get_int(qobject_to_qint(obj)));
++}
++
++void monitor_print_balloon(Monitor *mon, const QObject *data)
++{
++    QDict *qdict;
++
++    qdict = qobject_to_qdict(data);
++    if (!qdict_haskey(qdict, "actual"))
++        return;
++
++    monitor_printf(mon, "balloon: actual=%" PRId64,
++                   qdict_get_int(qdict, "actual") >> 20);
++    qdict_iter(qdict, print_balloon_stat, mon);
++    monitor_printf(mon, "\n");
++}
++
++/**
++ * do_info_balloon(): Balloon information
++ *
++ * Make an asynchronous request for balloon info.  When the request completes
++ * a QDict will be returned according to the following specification:
++ *
++ * - "actual": current balloon value in bytes
++ * The following fields may or may not be present:
++ * - "mem_swapped_in": Amount of memory swapped in (bytes)
++ * - "mem_swapped_out": Amount of memory swapped out (bytes)
++ * - "major_page_faults": Number of major faults
++ * - "minor_page_faults": Number of minor faults
++ * - "free_mem": Total amount of free and unused memory (bytes)
++ * - "total_mem": Total amount of available memory (bytes)
++ *
++ * Example:
++ *
++ * { "actual": 1073741824, "mem_swapped_in": 0, "mem_swapped_out": 0,
++ *   "major_page_faults": 142, "minor_page_faults": 239245,
++ *   "free_mem": 1014185984, "total_mem": 1044668416 }
++ */
++int do_info_balloon(Monitor *mon, MonitorCompletion cb, void *opaque)
++{
++    int ret;
++
++    if (kvm_enabled() && !kvm_has_sync_mmu()) {
++        qerror_report(QERR_KVM_MISSING_CAP, "synchronous MMU", "balloon");
++        return -1;
++    }
++
++    ret = qemu_balloon_status(cb, opaque);
++    if (!ret) {
++        qerror_report(QERR_DEVICE_NOT_ACTIVE, "balloon");
++        return -1;
++    }
++
++    return 0;
++}
++
++/**
++ * do_balloon(): Request VM to change its memory allocation
++ */
++int do_balloon(Monitor *mon, const QDict *params,
++	       MonitorCompletion cb, void *opaque)
++{
++    int ret;
++
++    if (kvm_enabled() && !kvm_has_sync_mmu()) {
++        qerror_report(QERR_KVM_MISSING_CAP, "synchronous MMU", "balloon");
++        return -1;
++    }
++
++    ret = qemu_balloon(qdict_get_int(params, "value"), cb, opaque);
++    if (ret == 0) {
++        qerror_report(QERR_DEVICE_NOT_ACTIVE, "balloon");
++        return -1;
++    }
++
++    cb(opaque, NULL);
++    return 0;
++}
+diff --git a/balloon.h b/balloon.h
+index c3a1ad3..5916c0e 100644
+--- a/balloon.h
++++ b/balloon.h
+@@ -15,6 +15,7 @@
+ #define _QEMU_BALLOON_H
+ 
+ #include "cpu-defs.h"
++#include "monitor.h"
+ 
+ typedef void (QEMUBalloonEvent)(void *opaque, ram_addr_t target,
+                                 MonitorCompletion cb, void *cb_data);
+@@ -25,4 +26,9 @@ int qemu_balloon(ram_addr_t target, MonitorCompletion cb, void *opaque);
+ 
+ int qemu_balloon_status(MonitorCompletion cb, void *opaque);
+ 
++void monitor_print_balloon(Monitor *mon, const QObject *data);
++int do_info_balloon(Monitor *mon, MonitorCompletion cb, void *opaque);
++int do_balloon(Monitor *mon, const QDict *params,
++               MonitorCompletion cb, void *opaque);
++
+ #endif
+diff --git a/monitor.c b/monitor.c
+index be846be..98b24eb 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -2415,91 +2415,6 @@ static void do_info_status(Monitor *mon, QObject **ret_data)
+                                     vm_running, singlestep);
+ }
+ 
+-static void print_balloon_stat(const char *key, QObject *obj, void *opaque)
+-{
+-    Monitor *mon = opaque;
+-
+-    if (strcmp(key, "actual"))
+-        monitor_printf(mon, ",%s=%" PRId64, key,
+-                       qint_get_int(qobject_to_qint(obj)));
+-}
+-
+-static void monitor_print_balloon(Monitor *mon, const QObject *data)
+-{
+-    QDict *qdict;
+-
+-    qdict = qobject_to_qdict(data);
+-    if (!qdict_haskey(qdict, "actual"))
+-        return;
+-
+-    monitor_printf(mon, "balloon: actual=%" PRId64,
+-                   qdict_get_int(qdict, "actual") >> 20);
+-    qdict_iter(qdict, print_balloon_stat, mon);
+-    monitor_printf(mon, "\n");
+-}
+-
+-/**
+- * do_info_balloon(): Balloon information
+- *
+- * Make an asynchronous request for balloon info.  When the request completes
+- * a QDict will be returned according to the following specification:
+- *
+- * - "actual": current balloon value in bytes
+- * The following fields may or may not be present:
+- * - "mem_swapped_in": Amount of memory swapped in (bytes)
+- * - "mem_swapped_out": Amount of memory swapped out (bytes)
+- * - "major_page_faults": Number of major faults
+- * - "minor_page_faults": Number of minor faults
+- * - "free_mem": Total amount of free and unused memory (bytes)
+- * - "total_mem": Total amount of available memory (bytes)
+- *
+- * Example:
+- *
+- * { "actual": 1073741824, "mem_swapped_in": 0, "mem_swapped_out": 0,
+- *   "major_page_faults": 142, "minor_page_faults": 239245,
+- *   "free_mem": 1014185984, "total_mem": 1044668416 }
+- */
+-static int do_info_balloon(Monitor *mon, MonitorCompletion cb, void *opaque)
+-{
+-    int ret;
+-
+-    if (kvm_enabled() && !kvm_has_sync_mmu()) {
+-        qerror_report(QERR_KVM_MISSING_CAP, "synchronous MMU", "balloon");
+-        return -1;
+-    }
+-
+-    ret = qemu_balloon_status(cb, opaque);
+-    if (!ret) {
+-        qerror_report(QERR_DEVICE_NOT_ACTIVE, "balloon");
+-        return -1;
+-    }
+-
+-    return 0;
+-}
+-
+-/**
+- * do_balloon(): Request VM to change its memory allocation
+- */
+-static int do_balloon(Monitor *mon, const QDict *params,
+-                       MonitorCompletion cb, void *opaque)
+-{
+-    int ret;
+-
+-    if (kvm_enabled() && !kvm_has_sync_mmu()) {
+-        qerror_report(QERR_KVM_MISSING_CAP, "synchronous MMU", "balloon");
+-        return -1;
+-    }
+-
+-    ret = qemu_balloon(qdict_get_int(params, "value"), cb, opaque);
+-    if (ret == 0) {
+-        qerror_report(QERR_DEVICE_NOT_ACTIVE, "balloon");
+-        return -1;
+-    }
+-
+-    cb(opaque, NULL);
+-    return 0;
+-}
+-
+ static qemu_acl *find_acl(Monitor *mon, const char *name)
+ {
+     qemu_acl *acl = qemu_acl_find(name);
+diff --git a/vl.c b/vl.c
+index 1bd3f62..e7e6d83 100644
+--- a/vl.c
++++ b/vl.c
+@@ -153,7 +153,6 @@ int main(int argc, char **argv)
+ #include "audio/audio.h"
+ #include "migration.h"
+ #include "kvm.h"
+-#include "balloon.h"
+ #include "qemu-option.h"
+ #include "qemu-config.h"
+ #include "qemu-objects.h"
+@@ -395,39 +394,6 @@ static void set_proc_name(const char *s)
+ #endif    	
+ }
+  
+-/***************/
+-/* ballooning */
+-
+-static QEMUBalloonEvent *qemu_balloon_event;
+-void *qemu_balloon_event_opaque;
+-
+-void qemu_add_balloon_handler(QEMUBalloonEvent *func, void *opaque)
+-{
+-    qemu_balloon_event = func;
+-    qemu_balloon_event_opaque = opaque;
+-}
+-
+-int qemu_balloon(ram_addr_t target, MonitorCompletion cb, void *opaque)
+-{
+-    if (qemu_balloon_event) {
+-        trace_balloon_event(qemu_balloon_event_opaque, target);
+-        qemu_balloon_event(qemu_balloon_event_opaque, target, cb, opaque);
+-        return 1;
+-    } else {
+-        return 0;
+-    }
+-}
+-
+-int qemu_balloon_status(MonitorCompletion cb, void *opaque)
+-{
+-    if (qemu_balloon_event) {
+-        qemu_balloon_event(qemu_balloon_event_opaque, 0, cb, opaque);
+-        return 1;
+-    } else {
+-        return 0;
+-    }
+-}
+-
+ /***********************************************************/
+ /* keyboard/mouse */
+ 
+-- 
+1.7.3.2
+

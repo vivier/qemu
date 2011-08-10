@@ -1,0 +1,82 @@
+From 3d47e186fa8171fb322d4a8df3c360fc04670593 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Mon, 1 Aug 2011 11:40:50 -0300
+Subject: [RHEL6 qemu-kvm PATCH 49/65] balloon: Simplify code flow
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <a74e4c818b40302e0d9c5d6a5bc6343abc1efc5c.1312198249.git.amit.shah@redhat.com>
+Patchwork-id: 30723
+O-Subject: [RHEL6.2 qemu PATCH 04/13] balloon: Simplify code flow
+Bugzilla: 694378
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+Replace:
+  if (foo) {
+    ...
+  } else {
+    return 0;
+  }
+
+by
+
+  if (!foo) {
+    return 0;
+  }
+  ...
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Reviewed-by: Markus Armbruster <armbru@redhat.com>
+(cherry picked from commit f1ee0a0ebda763f39f8b8aa289fd771133c9971b)
+
+Bugzilla: 694378
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ balloon.c |   16 +++++++---------
+ 1 files changed, 7 insertions(+), 9 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ balloon.c |   16 +++++++---------
+ 1 files changed, 7 insertions(+), 9 deletions(-)
+
+diff --git a/balloon.c b/balloon.c
+index 980bd2c..85410fd 100644
+--- a/balloon.c
++++ b/balloon.c
+@@ -43,23 +43,21 @@ void qemu_add_balloon_handler(QEMUBalloonEvent *func, void *opaque)
+ 
+ static int qemu_balloon(ram_addr_t target, MonitorCompletion cb, void *opaque)
+ {
+-    if (balloon_event_fn) {
+-        trace_balloon_event(balloon_opaque, target);
+-        balloon_event_fn(balloon_opaque, target, cb, opaque);
+-        return 1;
+-    } else {
++    if (!balloon_event_fn) {
+         return 0;
+     }
++    trace_balloon_event(balloon_opaque, target);
++    balloon_event_fn(balloon_opaque, target, cb, opaque);
++    return 1;
+ }
+ 
+ static int qemu_balloon_status(MonitorCompletion cb, void *opaque)
+ {
+-    if (balloon_event_fn) {
+-        balloon_event_fn(balloon_opaque, 0, cb, opaque);
+-        return 1;
+-    } else {
++    if (!balloon_event_fn) {
+         return 0;
+     }
++    balloon_event_fn(balloon_opaque, 0, cb, opaque);
++    return 1;
+ }
+ 
+ static void print_balloon_stat(const char *key, QObject *obj, void *opaque)
+-- 
+1.7.3.2
+

@@ -1,0 +1,108 @@
+From e95f2e98cb33ae9908fc5fd0e2d1f5a7f43e0dc4 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 21 Jul 2011 16:43:58 -0300
+Subject: [RHEL6 qemu-kvm PATCH 20/65] usb-uhci: Add support for being a companion controller
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1311266648-1179-21-git-send-email-kraxel@redhat.com>
+Patchwork-id: 30141
+O-Subject: [RHEL-6.2 kvm PATCH 20/30] usb-uhci: Add support for being a companion controller
+Bugzilla: 723858 723863
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+To use as a companion controller set the masterbus property.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 35e4977f575a377fc1fa05d819a533b2c5c8646f)
+
+Conflicts:
+
+	hw/usb-uhci.c
+---
+ hw/usb-uhci.c |   36 +++++++++++++++++++++++++++++++-----
+ 1 files changed, 31 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-uhci.c |   36 +++++++++++++++++++++++++++++++-----
+ 1 files changed, 31 insertions(+), 5 deletions(-)
+
+diff --git a/hw/usb-uhci.c b/hw/usb-uhci.c
+index fe71261..32e1f7e 100644
+--- a/hw/usb-uhci.c
++++ b/hw/usb-uhci.c
+@@ -131,7 +131,7 @@ typedef struct UHCIPort {
+ 
+ struct UHCIState {
+     PCIDevice dev;
+-    USBBus bus;
++    USBBus bus; /* Note unused when we're a companion controller */
+     uint16_t cmd; /* cmd register */
+     uint16_t status;
+     uint16_t intr; /* interrupt enable register */
+@@ -148,6 +148,10 @@ struct UHCIState {
+     /* Active packets */
+     QTAILQ_HEAD(,UHCIAsync) async_pending;
+     uint8_t num_ports_vmstate;
++
++    /* Properties */
++    char *masterbus;
++    uint32_t firstport;
+ };
+ 
+ typedef struct UHCI_TD {
+@@ -1085,10 +1089,22 @@ static int usb_uhci_common_initfn(UHCIState *s)
+     pci_conf[0x3d] = 4; // interrupt pin 3
+     pci_conf[0x60] = 0x10; // release number
+ 
+-    usb_bus_new(&s->bus, &uhci_bus_ops, &s->dev.qdev);
+-    for(i = 0; i < NB_PORTS; i++) {
+-        usb_register_port(&s->bus, &s->ports[i].port, s, i, &uhci_port_ops,
+-                          USB_SPEED_MASK_LOW | USB_SPEED_MASK_FULL);
++    if (s->masterbus) {
++        USBPort *ports[NB_PORTS];
++        for(i = 0; i < NB_PORTS; i++) {
++            ports[i] = &s->ports[i].port;
++        }
++        if (usb_register_companion(s->masterbus, ports, NB_PORTS,
++                s->firstport, s, &uhci_port_ops,
++                USB_SPEED_MASK_LOW | USB_SPEED_MASK_FULL) != 0) {
++            return -1;
++        }
++    } else {
++        usb_bus_new(&s->bus, &uhci_bus_ops, &s->dev.qdev);
++        for (i = 0; i < NB_PORTS; i++) {
++            usb_register_port(&s->bus, &s->ports[i].port, s, i, &uhci_port_ops,
++                              USB_SPEED_MASK_LOW | USB_SPEED_MASK_FULL);
++        }
+     }
+     s->frame_timer = qemu_new_timer(vm_clock, uhci_frame_timer, s);
+     s->num_ports_vmstate = NB_PORTS;
+@@ -1130,11 +1146,21 @@ static PCIDeviceInfo uhci_info[] = {
+         .qdev.size    = sizeof(UHCIState),
+         .qdev.vmsd    = &vmstate_uhci,
+         .init         = usb_uhci_piix3_initfn,
++        .qdev.props   = (Property[]) {
++            DEFINE_PROP_STRING("masterbus", UHCIState, masterbus),
++            DEFINE_PROP_UINT32("firstport", UHCIState, firstport, 0),
++            DEFINE_PROP_END_OF_LIST(),
++        },
+     },{
+         .qdev.name    = "piix4-usb-uhci",
+         .qdev.size    = sizeof(UHCIState),
+         .qdev.vmsd    = &vmstate_uhci,
+         .init         = usb_uhci_piix4_initfn,
++        .qdev.props   = (Property[]) {
++            DEFINE_PROP_STRING("masterbus", UHCIState, masterbus),
++            DEFINE_PROP_UINT32("firstport", UHCIState, firstport, 0),
++            DEFINE_PROP_END_OF_LIST(),
++        },
+     },{
+         /* end of list */
+     }
+-- 
+1.7.3.2
+

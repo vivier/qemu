@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.178
+%define pkgrelease 2.179
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3279,6 +3279,165 @@ Patch2331: kvm-add-qdev_find_by_id.patch
 # For bz#674583 - qemu-kvm build fails without --enable-spice
 # For bz#705070 - QMP: screendump command does not allow specification of monitor to capture
 Patch2332: kvm-add-qxl_screendump-monitor-command.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2333: kvm-usb-linux-make-iso-urb-count-contigurable.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2334: kvm-usb-linux-track-inflight-iso-urb-count.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2335: kvm-ehci-add-freq-maxframes-properties.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2336: kvm-usb-bus-Don-t-allow-attaching-a-device-to-a-bus-with.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2337: kvm-usb-Proper-error-propagation-for-usb_device_attach-e.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2338: kvm-usb-Add-a-speedmask-to-devices.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2339: kvm-usb-linux-allow-compatible-high-speed-devices-to-con.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2340: kvm-usb-ignore-USB_DT_DEBUG.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2341: kvm-usb-Add-a-usb_fill_port-helper-function.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2342: kvm-usb-Move-initial-call-of-usb_port_location-to-usb_fi.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2343: kvm-usb-Add-a-register_companion-USB-bus-op.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2344: kvm-usb-Make-port-wakeup-and-complete-ops-take-a-USBPort.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2345: kvm-usb-Replace-device_destroy-bus-op-with-a-child_detac.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2346: kvm-usb-ehci-drop-unused-num-ports-state-member.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2347: kvm-usb-ehci-Connect-Status-bit-is-read-only-don-t-allow.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2348: kvm-usb-ehci-cleanup-port-reset-handling.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2349: kvm-usb-assert-on-calling-usb_attach-port-NULL-on-a-port.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2350: kvm-usb-ehci-Fix-handling-of-PED-and-PEDC-port-status-bi.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2351: kvm-usb-ehci-Add-support-for-registering-companion-contr.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2352: kvm-usb-uhci-Add-support-for-being-a-companion-controlle.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2353: kvm-pci-add-ich9-usb-controller-ids.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2354: kvm-uhci-add-ich9-controllers.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2355: kvm-ehci-fix-port-count.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2356: kvm-ehci-add-ich9-controller.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2357: kvm-usb-documentation-update.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2358: kvm-usb-fixup-bluetooth-descriptors.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2359: kvm-usb-hub-remove-unused-descriptor-arrays.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2360: kvm-usb-update-documentation.patch
+# For bz#723858 - usb: add companion controller support
+# For bz#723863 - usb: fixes various issues.
+Patch2361: kvm-usb_register_port-do-not-set-port-opaque-and-port-in.patch
+# For bz#700134 - [qemu-kvm] - qxl runs i/o requests synchronously
+Patch2362: kvm-qxl-fix-cmdlog-for-vga.patch
+# For bz#700134 - [qemu-kvm] - qxl runs i/o requests synchronously
+Patch2363: kvm-qxl-interface_get_command-fix-reported-mode.patch
+# For bz#700134 - [qemu-kvm] - qxl runs i/o requests synchronously
+Patch2364: kvm-spice-add-worker-wrapper-functions.patch
+# For bz#700134 - [qemu-kvm] - qxl runs i/o requests synchronously
+Patch2365: kvm-spice-add-qemu_spice_display_init_common.patch
+# For bz#700134 - [qemu-kvm] - qxl runs i/o requests synchronously
+Patch2366: kvm-spice-qxl-move-worker-wrappers.patch
+# For bz#700134 - [qemu-kvm] - qxl runs i/o requests synchronously
+Patch2367: kvm-qxl-fix-surface-tracking-locking.patch
+# For bz#700134 - [qemu-kvm] - qxl runs i/o requests synchronously
+Patch2368: kvm-qxl-add-io_port_to_string.patch
+# For bz#700134 - [qemu-kvm] - qxl runs i/o requests synchronously
+Patch2369: kvm-qxl-error-handling-fixes-and-cleanups.patch
+# For bz#700134 - [qemu-kvm] - qxl runs i/o requests synchronously
+Patch2370: kvm-qxl-make-qxl_guest_bug-take-variable-arguments.patch
+# For bz#700134 - [qemu-kvm] - qxl runs i/o requests synchronously
+Patch2371: kvm-qxl-put-QXL_IO_UPDATE_IRQ-into-vgamode-whitelist.patch
+# For bz#700134 - [qemu-kvm] - qxl runs i/o requests synchronously
+Patch2372: kvm-qxl-allow-QXL_IO_LOG-also-in-vga.patch
+# For bz#700134 - [qemu-kvm] - qxl runs i/o requests synchronously
+Patch2373: kvm-qxl-only-disallow-specific-io-s-in-vga-mode.patch
+# For bz#700134 - [qemu-kvm] - qxl runs i/o requests synchronously
+Patch2374: kvm-qxl-async-io-support-using-new-spice-api.patch
+# For bz#706711 - qemu-kvm process quits when windows guest doing S3 w/ qxl device
+Patch2375: kvm-qxl-add-QXL_IO_FLUSH_-SURFACES-RELEASE-for-guest-S3-.patch
+# For bz#706711 - qemu-kvm process quits when windows guest doing S3 w/ qxl device
+Patch2376: kvm-qxl-Remove-support-for-the-unused-unstable-device-ID.patch
+# For bz#706711 - qemu-kvm process quits when windows guest doing S3 w/ qxl device
+Patch2377: kvm-qxl-bump-pci-rev.patch
+# For bz#694378 - Core dump occurs when ballooning memory to 0
+Patch2378: kvm-move-balloon-handling-to-balloon.c.patch
+# For bz#694378 - Core dump occurs when ballooning memory to 0
+Patch2379: kvm-balloon-Make-functions-local-vars-static.patch
+# For bz#694378 - Core dump occurs when ballooning memory to 0
+Patch2380: kvm-balloon-Add-braces-around-if-statements.patch
+# For bz#694378 - Core dump occurs when ballooning memory to 0
+Patch2381: kvm-balloon-Simplify-code-flow.patch
+# For bz#694378 - Core dump occurs when ballooning memory to 0
+Patch2382: kvm-virtio-balloon-Separate-status-handling-into-separat.patch
+# For bz#694378 - Core dump occurs when ballooning memory to 0
+Patch2383: kvm-balloon-Separate-out-stat-and-balloon-handling.patch
+# For bz#694378 - Core dump occurs when ballooning memory to 0
+Patch2384: kvm-balloon-Fix-header-comment-add-Copyright.patch
+# For bz#694378 - Core dump occurs when ballooning memory to 0
+Patch2385: kvm-virtio-balloon-Fix-header-comment-add-Copyright.patch
+# For bz#725625 - Hot unplug one virtio balloon device cause another balloon device unavailable
+Patch2386: kvm-balloon-Don-t-allow-multiple-balloon-handler-registr.patch
+# For bz#725625 - Hot unplug one virtio balloon device cause another balloon device unavailable
+Patch2387: kvm-virtio-balloon-Check-if-balloon-registration-failed.patch
+# For bz#694373 - ballooning value reset to original value after setting a negative number
+Patch2388: kvm-balloon-Reject-negative-balloon-values.patch
+# For bz#726014 - Fix memleak on exit in virtio-balloon
+Patch2389: kvm-virtio-balloon-Add-exit-handler-fix-memleaks.patch
+# For bz#726023 - Migration after hot-unplug virtio-balloon will not succeed
+Patch2390: kvm-virtio-balloon-Unregister-savevm-section-on-device-u.patch
+# For bz#726015 - Fix memleak on exit in virtio-blk
+Patch2391: kvm-virtio-blk-Fix-memleak-on-exit.patch
+# For bz#726020 - Fix memleaks in all virtio devices
+Patch2392: kvm-virtio-net-don-t-use-vdev-after-virtio_cleanup.patch
+# For bz#726020 - Fix memleaks in all virtio devices
+Patch2393: kvm-virtio-Plug-memleak-by-freeing-vdev.patch
+# For bz#728905 - qemu-img: use larger output buffer for cache option "none"
+Patch2394: kvm-qemu-img-Use-qemu_blockalign.patch
+# For bz#623907 - device_add rejects valid netdev when NIC with same ID exists
+Patch2395: kvm-Fix-automatically-assigned-network-names-for-netdev.patch
+# For bz#623907 - device_add rejects valid netdev when NIC with same ID exists
+Patch2396: kvm-Fix-netdev-name-lookup-in-device-device_add-netdev_d.patch
+# For bz#728464 - QEMU does not honour '-no-shutdown' flag after the first shutdown attempt
+Patch2397: kvm-do-not-reset-no_shutdown-after-we-shutdown-the-vm.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -4719,6 +4878,71 @@ ApplyOptionalPatch()
 %patch2330 -p1
 %patch2331 -p1
 %patch2332 -p1
+%patch2333 -p1
+%patch2334 -p1
+%patch2335 -p1
+%patch2336 -p1
+%patch2337 -p1
+%patch2338 -p1
+%patch2339 -p1
+%patch2340 -p1
+%patch2341 -p1
+%patch2342 -p1
+%patch2343 -p1
+%patch2344 -p1
+%patch2345 -p1
+%patch2346 -p1
+%patch2347 -p1
+%patch2348 -p1
+%patch2349 -p1
+%patch2350 -p1
+%patch2351 -p1
+%patch2352 -p1
+%patch2353 -p1
+%patch2354 -p1
+%patch2355 -p1
+%patch2356 -p1
+%patch2357 -p1
+%patch2358 -p1
+%patch2359 -p1
+%patch2360 -p1
+%patch2361 -p1
+%patch2362 -p1
+%patch2363 -p1
+%patch2364 -p1
+%patch2365 -p1
+%patch2366 -p1
+%patch2367 -p1
+%patch2368 -p1
+%patch2369 -p1
+%patch2370 -p1
+%patch2371 -p1
+%patch2372 -p1
+%patch2373 -p1
+%patch2374 -p1
+%patch2375 -p1
+%patch2376 -p1
+%patch2377 -p1
+%patch2378 -p1
+%patch2379 -p1
+%patch2380 -p1
+%patch2381 -p1
+%patch2382 -p1
+%patch2383 -p1
+%patch2384 -p1
+%patch2385 -p1
+%patch2386 -p1
+%patch2387 -p1
+%patch2388 -p1
+%patch2389 -p1
+%patch2390 -p1
+%patch2391 -p1
+%patch2392 -p1
+%patch2393 -p1
+%patch2394 -p1
+%patch2395 -p1
+%patch2396 -p1
+%patch2397 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -4942,6 +5166,101 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Aug 10 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.179.el6
+- kvm-usb-linux-make-iso-urb-count-contigurable.patch [bz#723858 bz#723863]
+- kvm-usb-linux-track-inflight-iso-urb-count.patch [bz#723858 bz#723863]
+- kvm-ehci-add-freq-maxframes-properties.patch [bz#723858 bz#723863]
+- kvm-usb-bus-Don-t-allow-attaching-a-device-to-a-bus-with.patch [bz#723858 bz#723863]
+- kvm-usb-Proper-error-propagation-for-usb_device_attach-e.patch [bz#723858 bz#723863]
+- kvm-usb-Add-a-speedmask-to-devices.patch [bz#723858 bz#723863]
+- kvm-usb-linux-allow-compatible-high-speed-devices-to-con.patch [bz#723858 bz#723863]
+- kvm-usb-ignore-USB_DT_DEBUG.patch [bz#723858 bz#723863]
+- kvm-usb-Add-a-usb_fill_port-helper-function.patch [bz#723858 bz#723863]
+- kvm-usb-Move-initial-call-of-usb_port_location-to-usb_fi.patch [bz#723858 bz#723863]
+- kvm-usb-Add-a-register_companion-USB-bus-op.patch [bz#723858 bz#723863]
+- kvm-usb-Make-port-wakeup-and-complete-ops-take-a-USBPort.patch [bz#723858 bz#723863]
+- kvm-usb-Replace-device_destroy-bus-op-with-a-child_detac.patch [bz#723858 bz#723863]
+- kvm-usb-ehci-drop-unused-num-ports-state-member.patch [bz#723858 bz#723863]
+- kvm-usb-ehci-Connect-Status-bit-is-read-only-don-t-allow.patch [bz#723858 bz#723863]
+- kvm-usb-ehci-cleanup-port-reset-handling.patch [bz#723858 bz#723863]
+- kvm-usb-assert-on-calling-usb_attach-port-NULL-on-a-port.patch [bz#723858 bz#723863]
+- kvm-usb-ehci-Fix-handling-of-PED-and-PEDC-port-status-bi.patch [bz#723858 bz#723863]
+- kvm-usb-ehci-Add-support-for-registering-companion-contr.patch [bz#723858 bz#723863]
+- kvm-usb-uhci-Add-support-for-being-a-companion-controlle.patch [bz#723858 bz#723863]
+- kvm-pci-add-ich9-usb-controller-ids.patch [bz#723858 bz#723863]
+- kvm-uhci-add-ich9-controllers.patch [bz#723858 bz#723863]
+- kvm-ehci-fix-port-count.patch [bz#723858 bz#723863]
+- kvm-ehci-add-ich9-controller.patch [bz#723858 bz#723863]
+- kvm-usb-documentation-update.patch [bz#723858 bz#723863]
+- kvm-usb-fixup-bluetooth-descriptors.patch [bz#723858 bz#723863]
+- kvm-usb-hub-remove-unused-descriptor-arrays.patch [bz#723858 bz#723863]
+- kvm-usb-update-documentation.patch [bz#723858 bz#723863]
+- kvm-usb_register_port-do-not-set-port-opaque-and-port-in.patch [bz#723858 bz#723863]
+- kvm-qxl-fix-cmdlog-for-vga.patch [bz#700134]
+- kvm-qxl-interface_get_command-fix-reported-mode.patch [bz#700134]
+- kvm-spice-add-worker-wrapper-functions.patch [bz#700134]
+- kvm-spice-add-qemu_spice_display_init_common.patch [bz#700134]
+- kvm-spice-qxl-move-worker-wrappers.patch [bz#700134]
+- kvm-qxl-fix-surface-tracking-locking.patch [bz#700134]
+- kvm-qxl-add-io_port_to_string.patch [bz#700134]
+- kvm-qxl-error-handling-fixes-and-cleanups.patch [bz#700134]
+- kvm-qxl-make-qxl_guest_bug-take-variable-arguments.patch [bz#700134]
+- kvm-qxl-put-QXL_IO_UPDATE_IRQ-into-vgamode-whitelist.patch [bz#700134]
+- kvm-qxl-allow-QXL_IO_LOG-also-in-vga.patch [bz#700134]
+- kvm-qxl-only-disallow-specific-io-s-in-vga-mode.patch [bz#700134]
+- kvm-qxl-async-io-support-using-new-spice-api.patch [bz#700134]
+- kvm-qxl-add-QXL_IO_FLUSH_-SURFACES-RELEASE-for-guest-S3-.patch [bz#706711]
+- kvm-qxl-Remove-support-for-the-unused-unstable-device-ID.patch [bz#706711]
+- kvm-qxl-bump-pci-rev.patch [bz#706711]
+- kvm-move-balloon-handling-to-balloon.c.patch [bz#694378]
+- kvm-balloon-Make-functions-local-vars-static.patch [bz#694378]
+- kvm-balloon-Add-braces-around-if-statements.patch [bz#694378]
+- kvm-balloon-Simplify-code-flow.patch [bz#694378]
+- kvm-virtio-balloon-Separate-status-handling-into-separat.patch [bz#694378]
+- kvm-balloon-Separate-out-stat-and-balloon-handling.patch [bz#694378]
+- kvm-balloon-Fix-header-comment-add-Copyright.patch [bz#694378]
+- kvm-virtio-balloon-Fix-header-comment-add-Copyright.patch [bz#694378]
+- kvm-balloon-Don-t-allow-multiple-balloon-handler-registr.patch [bz#725625]
+- kvm-virtio-balloon-Check-if-balloon-registration-failed.patch [bz#725625]
+- kvm-balloon-Reject-negative-balloon-values.patch [bz#694373]
+- kvm-virtio-balloon-Add-exit-handler-fix-memleaks.patch [bz#726014]
+- kvm-virtio-balloon-Unregister-savevm-section-on-device-u.patch [bz#726023]
+- kvm-virtio-blk-Fix-memleak-on-exit.patch [bz#726015]
+- kvm-virtio-net-don-t-use-vdev-after-virtio_cleanup.patch [bz#726020]
+- kvm-virtio-Plug-memleak-by-freeing-vdev.patch [bz#726020]
+- kvm-qemu-img-Use-qemu_blockalign.patch [bz#728905]
+- kvm-Fix-automatically-assigned-network-names-for-netdev.patch [bz#623907]
+- kvm-Fix-netdev-name-lookup-in-device-device_add-netdev_d.patch [bz#623907]
+- kvm-do-not-reset-no_shutdown-after-we-shutdown-the-vm.patch [bz#728464]
+- Resolves: bz#623907
+  (device_add rejects valid netdev when NIC with same ID exists)
+- Resolves: bz#694373
+  (ballooning value reset to original value after setting a negative number)
+- Resolves: bz#694378
+  (Core dump occurs when ballooning memory to 0)
+- Resolves: bz#700134
+  ([qemu-kvm] - qxl runs i/o requests synchronously)
+- Resolves: bz#706711
+  (qemu-kvm process quits when windows guest doing S3 w/ qxl device)
+- Resolves: bz#723858
+  (usb: add companion controller support)
+- Resolves: bz#723863
+  (usb: fixes various issues.)
+- Resolves: bz#725625
+  (Hot unplug one virtio balloon device cause another balloon device unavailable)
+- Resolves: bz#726014
+  (Fix memleak on exit in virtio-balloon)
+- Resolves: bz#726015
+  (Fix memleak on exit in virtio-blk)
+- Resolves: bz#726020
+  (Fix memleaks in all virtio devices)
+- Resolves: bz#726023
+  (Migration after hot-unplug virtio-balloon will not succeed)
+- Resolves: bz#728464
+  (QEMU does not honour '-no-shutdown' flag after the first shutdown attempt)
+- Resolves: bz#728905
+  (qemu-img: use larger output buffer for cache option "none")
+
 * Fri Aug 05 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.178.el6
 - Require new sgabios package [bz#684949]
 - Resolves: bz#684949

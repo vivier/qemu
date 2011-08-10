@@ -1,0 +1,46 @@
+From b3987ac9f6e4fd6ea964f14b0132cf5f14a9ae44 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 5 Aug 2011 04:55:05 -0300
+Subject: [RHEL6 qemu-kvm PATCH 59/65] virtio-blk: Fix memleak on exit
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <9e9e7c4ccb92e1570baf5dfb5fe5431b7af78760.1312520100.git.amit.shah@redhat.com>
+Patchwork-id: 30982
+O-Subject: [RHEL6.2 qemu-kvm PATCH 1/3] virtio-blk: Fix memleak on exit
+Bugzilla: 726015
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Calling virtio_cleanup() will free up memory allocated in
+virtio_common_init().
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry picked from commit d92551f28eff7cb6572ed3147399e51f5f5dfc22)
+
+Bugzilla: 726015
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-blk.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-blk.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index 644f5ba..d5eb336 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -578,4 +578,5 @@ void virtio_blk_exit(VirtIODevice *vdev)
+ {
+     VirtIOBlock *s = to_virtio_blk(vdev);
+     unregister_savevm(s->qdev, "virtio-blk", s);
++    virtio_cleanup(vdev);
+ }
+-- 
+1.7.3.2
+

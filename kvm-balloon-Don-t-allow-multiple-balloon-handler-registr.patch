@@ -1,0 +1,81 @@
+From ca6bdf14500654407f603a714f87974fe770b2fb Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Mon, 1 Aug 2011 11:40:55 -0300
+Subject: [RHEL6 qemu-kvm PATCH 54/65] balloon: Don't allow multiple balloon handler registrations
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <5ff12328f425f03ce455a4945f34b9ef192f63cc.1312198249.git.amit.shah@redhat.com>
+Patchwork-id: 30728
+O-Subject: [RHEL6.2 qemu PATCH 09/13] balloon: Don't allow multiple balloon handler registrations
+Bugzilla: 725625
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+Multiple balloon devices don't make sense; disallow more than one
+registration attempt to register handlers.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Reviewed-by: Markus Armbruster <armbru@redhat.com>
+Acked-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry picked from commit eaa8b2778c182c8f795970dd46fef5b039fb741c)
+
+Bugzilla: 725625
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ balloon.c |   12 ++++++++++--
+ balloon.h |    4 ++--
+ 2 files changed, 12 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ balloon.c |   12 ++++++++++--
+ balloon.h |    4 ++--
+ 2 files changed, 12 insertions(+), 4 deletions(-)
+
+diff --git a/balloon.c b/balloon.c
+index 2312584..7a8a457 100644
+--- a/balloon.c
++++ b/balloon.c
+@@ -37,12 +37,20 @@ static QEMUBalloonEvent *balloon_event_fn;
+ static QEMUBalloonStatus *balloon_stat_fn;
+ static void *balloon_opaque;
+ 
+-void qemu_add_balloon_handler(QEMUBalloonEvent *event_func,
+-                              QEMUBalloonStatus *stat_func, void *opaque)
++int qemu_add_balloon_handler(QEMUBalloonEvent *event_func,
++                             QEMUBalloonStatus *stat_func, void *opaque)
+ {
++    if (balloon_event_fn || balloon_stat_fn || balloon_opaque) {
++        /* We're already registered one balloon handler.  How many can
++         * a guest really have?
++         */
++        error_report("Another balloon device already registered");
++        return -1;
++    }
+     balloon_event_fn = event_func;
+     balloon_stat_fn = stat_func;
+     balloon_opaque = opaque;
++    return 0;
+ }
+ 
+ static int qemu_balloon(ram_addr_t target)
+diff --git a/balloon.h b/balloon.h
+index 4c106a3..fe358e7 100644
+--- a/balloon.h
++++ b/balloon.h
+@@ -21,8 +21,8 @@ typedef void (QEMUBalloonEvent)(void *opaque, ram_addr_t target);
+ typedef void (QEMUBalloonStatus)(void *opaque, MonitorCompletion cb,
+                                  void *cb_data);
+ 
+-void qemu_add_balloon_handler(QEMUBalloonEvent *event_func,
+-                              QEMUBalloonStatus *stat_func, void *opaque);
++int qemu_add_balloon_handler(QEMUBalloonEvent *event_func,
++			     QEMUBalloonStatus *stat_func, void *opaque);
+ 
+ void monitor_print_balloon(Monitor *mon, const QObject *data);
+ int do_info_balloon(Monitor *mon, MonitorCompletion cb, void *opaque);
+-- 
+1.7.3.2
+

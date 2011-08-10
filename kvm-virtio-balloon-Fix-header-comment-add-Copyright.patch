@@ -1,0 +1,47 @@
+From 0ad3dd0d2ad21ff99f9581820ae9a2dc877f20a2 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Mon, 1 Aug 2011 11:40:54 -0300
+Subject: [RHEL6 qemu-kvm PATCH 53/65] virtio-balloon: Fix header comment; add Copyright
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <690ae0ba7e6176a0b4375a75cf3c0d6417f81425.1312198249.git.amit.shah@redhat.com>
+Patchwork-id: 30727
+O-Subject: [RHEL6.2 qemu PATCH 08/13] virtio-balloon: Fix header comment; add Copyright
+Bugzilla: 694378
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+(cherry picked from commit 89594593867c69f7cf63805374dda5476f17ecac)
+
+Bugzilla: 694378
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-balloon.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-balloon.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/hw/virtio-balloon.c b/hw/virtio-balloon.c
+index 5b9e05e..2be5c81 100644
+--- a/hw/virtio-balloon.c
++++ b/hw/virtio-balloon.c
+@@ -1,7 +1,9 @@
+ /*
+- * Virtio Block Device
++ * Virtio Balloon Device
+  *
+  * Copyright IBM, Corp. 2008
++ * Copyright (C) 2011 Red Hat, Inc.
++ * Copyright (C) 2011 Amit Shah <amit.shah@redhat.com>
+  *
+  * Authors:
+  *  Anthony Liguori   <aliguori@us.ibm.com>
+-- 
+1.7.3.2
+

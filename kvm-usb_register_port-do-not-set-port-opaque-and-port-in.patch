@@ -1,0 +1,44 @@
+From ae502c9d02be4263ec81bdd9a938686ea2e3349f Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 21 Jul 2011 16:44:06 -0300
+Subject: [RHEL6 qemu-kvm PATCH 29/65] usb_register_port(): do not set port->opaque and port->index twice
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1311266648-1179-29-git-send-email-kraxel@redhat.com>
+Patchwork-id: 30187
+O-Subject: [RHEL-6.2 kvm PATCH 28/30] usb_register_port(): do not set port->opaque and port->index twice
+Bugzilla: 723858 723863
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit eb3b58f96f6740ab1cc64ba514367ce1814779e4)
+---
+ hw/usb-bus.c |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-bus.c |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+diff --git a/hw/usb-bus.c b/hw/usb-bus.c
+index fb22f0f..4259db4 100644
+--- a/hw/usb-bus.c
++++ b/hw/usb-bus.c
+@@ -140,8 +140,6 @@ static void usb_fill_port(USBPort *port, void *opaque, int index,
+ {
+     port->opaque = opaque;
+     port->index = index;
+-    port->opaque = opaque;
+-    port->index = index;
+     port->ops = ops;
+     port->speedmask = speedmask;
+     usb_port_location(port, NULL, index + 1);
+-- 
+1.7.3.2
+

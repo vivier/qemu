@@ -1,0 +1,49 @@
+From 812efdc3b106ac41639616c1a8b9dd9e914f84c0 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 5 Aug 2011 04:55:06 -0300
+Subject: [RHEL6 qemu-kvm PATCH 60/65] virtio-net: don't use vdev after virtio_cleanup
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <b4714b0a31c868dbd23b7f0e122509495197f45e.1312520100.git.amit.shah@redhat.com>
+Patchwork-id: 30983
+O-Subject: [RHEL6.2 qemu-kvm PATCH 2/3] virtio-net: don't use vdev after virtio_cleanup
+Bugzilla: 726020
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+virtio_cleanup() will be changed by the following patch to remove the
+VirtIONet struct that gets allocated via virtio_common_init().  Ensure
+we don't dereference the structure after calling the cleanup function.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry picked from commit b52dfd71f33b902e612b12f6cc89f3b61e4d3e22)
+
+Bugzilla: 726020
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-net.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-net.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/hw/virtio-net.c b/hw/virtio-net.c
+index 72d37f8..0b03b57 100644
+--- a/hw/virtio-net.c
++++ b/hw/virtio-net.c
+@@ -1036,6 +1036,6 @@ void virtio_net_exit(VirtIODevice *vdev)
+         qemu_bh_delete(n->tx_bh);
+     }
+ 
+-    virtio_cleanup(&n->vdev);
+     qemu_del_vlan_client(&n->nic->nc);
++    virtio_cleanup(&n->vdev);
+ }
+-- 
+1.7.3.2
+

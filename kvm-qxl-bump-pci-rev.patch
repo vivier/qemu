@@ -1,0 +1,110 @@
+From 6fc33d6d0d2370935243a04b00abcd15d0aa8658 Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Sun, 24 Jul 2011 16:34:26 -0300
+Subject: [RHEL6 qemu-kvm PATCH 45/65] qxl: bump pci rev
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1311525266-12705-17-git-send-email-alevy@redhat.com>
+Patchwork-id: 30258
+O-Subject: [PATCH RHEL6.2 16/16] qxl: bump pci rev
+Bugzilla: 706711
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Yonit Halperin <yhalperi@redhat.com>
+RH-Acked-by: Arnon Gilboa <agilboa@redhat.com>
+
+From: Gerd Hoffmann <kraxel@redhat.com>
+
+Inform guest drivers about the new features I/O commands we have
+now (async commands, S3 support) if building with newer spice, i.e.
+if SPICE_INTERFACE_QXL_MINOR >= 1.
+
+sneaked in some 81+ column line spliting.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+Signed-off-by: Alon Levy <alevy@redhat.com>
+
+upstream: http://patchwork.ozlabs.org/patch/105619/
+ acked, slated for 0.16.0
+---
+ hw/qxl.c |   25 ++++++++++++++++++-------
+ hw/qxl.h |    6 ++++++
+ 2 files changed, 24 insertions(+), 7 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qxl.c |   25 ++++++++++++++++++-------
+ hw/qxl.h |    6 ++++++
+ 2 files changed, 24 insertions(+), 7 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index b93a520..8284a14 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -1562,9 +1562,14 @@ static int qxl_init_common(PCIQXLDevice *qxl)
+         pci_device_rev = QXL_REVISION_STABLE_V04;
+         break;
+     case 2: /* spice 0.6 -- qxl-2 */
+-    default:
+         pci_device_rev = QXL_REVISION_STABLE_V06;
+         break;
++#if SPICE_INTERFACE_QXL_MINOR >= 1
++    case 3: /* qxl-3 */
++#endif
++    default:
++        pci_device_rev = QXL_DEFAULT_REVISION;
++        break;
+     }
+ 
+     pci_config_set_vendor_id(config, REDHAT_PCI_VENDOR_ID);
+@@ -1827,9 +1832,12 @@ static PCIDeviceInfo qxl_info_primary = {
+     .config_write = qxl_write_config,
+     .romfile      = "vgabios-qxl.bin",
+     .qdev.props = (Property[]) {
+-        DEFINE_PROP_UINT32("ram_size", PCIQXLDevice, vga.vram_size, 64 * 1024 * 1024),
+-        DEFINE_PROP_UINT32("vram_size", PCIQXLDevice, vram_size, 64 * 1024 * 1024),
+-        DEFINE_PROP_UINT32("revision", PCIQXLDevice, revision, 2),
++        DEFINE_PROP_UINT32("ram_size", PCIQXLDevice, vga.vram_size,
++                           64 * 1024 * 1024),
++        DEFINE_PROP_UINT32("vram_size", PCIQXLDevice, vram_size,
++                           64 * 1024 * 1024),
++        DEFINE_PROP_UINT32("revision", PCIQXLDevice, revision,
++                           QXL_DEFAULT_REVISION),
+         DEFINE_PROP_UINT32("debug", PCIQXLDevice, debug, 0),
+         DEFINE_PROP_UINT32("guestdebug", PCIQXLDevice, guestdebug, 0),
+         DEFINE_PROP_UINT32("cmdlog", PCIQXLDevice, cmdlog, 0),
+@@ -1845,9 +1853,12 @@ static PCIDeviceInfo qxl_info_secondary = {
+     .qdev.vmsd    = &qxl_vmstate,
+     .init         = qxl_init_secondary,
+     .qdev.props = (Property[]) {
+-        DEFINE_PROP_UINT32("ram_size", PCIQXLDevice, vga.vram_size, 64 * 1024 * 1024),
+-        DEFINE_PROP_UINT32("vram_size", PCIQXLDevice, vram_size, 64 * 1024 * 1024),
+-        DEFINE_PROP_UINT32("revision", PCIQXLDevice, revision, 2),
++        DEFINE_PROP_UINT32("ram_size", PCIQXLDevice, vga.vram_size,
++                           64 * 1024 * 1024),
++        DEFINE_PROP_UINT32("vram_size", PCIQXLDevice, vram_size,
++                           64 * 1024 * 1024),
++        DEFINE_PROP_UINT32("revision", PCIQXLDevice, revision,
++                           QXL_DEFAULT_REVISION),
+         DEFINE_PROP_UINT32("debug", PCIQXLDevice, debug, 0),
+         DEFINE_PROP_UINT32("guestdebug", PCIQXLDevice, guestdebug, 0),
+         DEFINE_PROP_UINT32("cmdlog", PCIQXLDevice, cmdlog, 0),
+diff --git a/hw/qxl.h b/hw/qxl.h
+index 8c95aa5..64c0ee5 100644
+--- a/hw/qxl.h
++++ b/hw/qxl.h
+@@ -102,6 +102,12 @@ typedef struct PCIQXLDevice {
+         }                                                               \
+     } while (0)
+ 
++#if SPICE_INTERFACE_QXL_MINOR >= 1
++#define QXL_DEFAULT_REVISION QXL_REVISION_STABLE_V10
++#else
++#define QXL_DEFAULT_REVISION QXL_REVISION_STABLE_V06
++#endif
++
+ /* qxl.c */
+ void *qxl_phys2virt(PCIQXLDevice *qxl, QXLPHYSICAL phys, int group_id);
+ void qxl_guest_bug(PCIQXLDevice *qxl, const char *msg, ...);
+-- 
+1.7.3.2
+

@@ -1,0 +1,79 @@
+From b4d45b0089829fc59a40e0e60214324bc555c27f Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Sat, 6 Aug 2011 19:42:15 -0300
+Subject: [RHEL6 qemu-kvm PATCH 63/65] Fix automatically assigned network names for netdev
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1312659736-3367-2-git-send-email-armbru@redhat.com>
+Patchwork-id: 31011
+O-Subject: [RHEL6 PATCH qemu-kvm 1/2] Fix automatically assigned network names for netdev
+Bugzilla: 623907
+RH-Acked-by: Xiao Wang <jasowang@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+If a network client doesn't have a name, we make one up, with
+assign_name().  assign_name() creates a name MODEL.NUM, where MODEL is
+the client's model, and NUM is the number of MODELs that already
+exist.
+
+Bug: it misses clients that are not on a VLAN, i.e. netdevs and the
+NICs using them:
+
+    $ qemu-system-x86_64 -nodefaults -vnc :0 -S -monitor stdio -netdev user,id=hostnet0 -net nic,netdev=hostnet0 -netdev user,id=hostnet1 -net nic,netdev=hostnet1
+    QEMU 0.14.50 monitor - type 'help' for more information
+    (qemu) info network
+    Devices not on any VLAN:
+      hostnet0: net=10.0.2.0, restricted=n peer=e1000.0
+      hostnet1: net=10.0.2.0, restricted=n peer=e1000.0
+      e1000.0: model=e1000,macaddr=52:54:00:12:34:56 peer=hostnet0
+      e1000.0: model=e1000,macaddr=52:54:00:12:34:57 peer=hostnet1
+
+Fix that.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry picked from commit 53e51d85ef1fdd295c8f09792b8e7490c148f4b3)
+---
+ net.c |    9 +++++++--
+ 1 files changed, 7 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ net.c |    9 +++++++--
+ 1 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/net.c b/net.c
+index 27584e7..b10f681 100644
+--- a/net.c
++++ b/net.c
+@@ -191,12 +191,11 @@ void qemu_macaddr_default_if_unset(MACAddr *macaddr)
+ static char *assign_name(VLANClientState *vc1, const char *model)
+ {
+     VLANState *vlan;
++    VLANClientState *vc;
+     char buf[256];
+     int id = 0;
+ 
+     QTAILQ_FOREACH(vlan, &vlans, next) {
+-        VLANClientState *vc;
+-
+         QTAILQ_FOREACH(vc, &vlan->clients, next) {
+             if (vc != vc1 && strcmp(vc->model, model) == 0) {
+                 id++;
+@@ -204,6 +203,12 @@ static char *assign_name(VLANClientState *vc1, const char *model)
+         }
+     }
+ 
++    QTAILQ_FOREACH(vc, &non_vlan_clients, next) {
++        if (vc != vc1 && strcmp(vc->model, model) == 0) {
++            id++;
++        }
++    }
++
+     snprintf(buf, sizeof(buf), "%s.%d", model, id);
+ 
+     return qemu_strdup(buf);
+-- 
+1.7.3.2
+

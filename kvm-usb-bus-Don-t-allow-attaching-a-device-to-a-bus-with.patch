@@ -1,0 +1,47 @@
+From 157c50e04c9ed89701ee63594213cc2a3695936a Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 21 Jul 2011 16:43:42 -0300
+Subject: [RHEL6 qemu-kvm PATCH 04/65] usb-bus: Don't allow attaching a device to a bus with no free ports
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1311266648-1179-5-git-send-email-kraxel@redhat.com>
+Patchwork-id: 30129
+O-Subject: [RHEL-6.2 kvm PATCH 04/30] usb-bus: Don't allow attaching a device to a bus with no free ports
+Bugzilla: 723858 723863
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+From: Hans de Goede <hdegoede@redhat.com>
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit ee210d6390761bb0fd6febe0fb8f94ee0dcba0db)
+---
+ hw/usb-bus.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-bus.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+diff --git a/hw/usb-bus.c b/hw/usb-bus.c
+index 208640a..935c4ee 100644
+--- a/hw/usb-bus.c
++++ b/hw/usb-bus.c
+@@ -178,6 +178,11 @@ static void do_attach(USBDevice *dev)
+                 dev->product_desc);
+         return;
+     }
++    if (bus->nfree == 0) {
++        fprintf(stderr, "Warning: tried to attach usb device %s to a bus with no free ports\n",
++                dev->product_desc);
++        return;
++    }
+     if (dev->port_path) {
+         QTAILQ_FOREACH(port, &bus->free, next) {
+             if (strcmp(port->path, dev->port_path) == 0) {
+-- 
+1.7.3.2
+

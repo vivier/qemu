@@ -1,0 +1,61 @@
+From 9a7ae3035aedd16d968024c85d53e36172aff602 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Mon, 1 Aug 2011 11:40:49 -0300
+Subject: [RHEL6 qemu-kvm PATCH 48/65] balloon: Add braces around if statements
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <2837501a4d8aa40956d1d5ce3308d629b19bd8a0.1312198249.git.amit.shah@redhat.com>
+Patchwork-id: 30722
+O-Subject: [RHEL6.2 qemu PATCH 03/13] balloon: Add braces around if statements
+Bugzilla: 694378
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Reviewed-by: Markus Armbruster <armbru@redhat.com>
+(cherry picked from commit 3583bc031e56ae4ea90ca518dfe5322d36d44780)
+
+Bugzilla: 694378
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ balloon.c |    7 ++++---
+ 1 files changed, 4 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ balloon.c |    7 ++++---
+ 1 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/balloon.c b/balloon.c
+index f0eae0f..980bd2c 100644
+--- a/balloon.c
++++ b/balloon.c
+@@ -66,9 +66,10 @@ static void print_balloon_stat(const char *key, QObject *obj, void *opaque)
+ {
+     Monitor *mon = opaque;
+ 
+-    if (strcmp(key, "actual"))
++    if (strcmp(key, "actual")) {
+         monitor_printf(mon, ",%s=%" PRId64, key,
+                        qint_get_int(qobject_to_qint(obj)));
++    }
+ }
+ 
+ void monitor_print_balloon(Monitor *mon, const QObject *data)
+@@ -76,9 +77,9 @@ void monitor_print_balloon(Monitor *mon, const QObject *data)
+     QDict *qdict;
+ 
+     qdict = qobject_to_qdict(data);
+-    if (!qdict_haskey(qdict, "actual"))
++    if (!qdict_haskey(qdict, "actual")) {
+         return;
+-
++    }
+     monitor_printf(mon, "balloon: actual=%" PRId64,
+                    qdict_get_int(qdict, "actual") >> 20);
+     qdict_iter(qdict, print_balloon_stat, mon);
+-- 
+1.7.3.2
+

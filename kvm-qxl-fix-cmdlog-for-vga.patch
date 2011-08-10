@@ -1,0 +1,45 @@
+From c98ab7c9c29eaa52aeb2a177eff48e4d8a7113df Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Sun, 24 Jul 2011 16:34:11 -0300
+Subject: [RHEL6 qemu-kvm PATCH 30/65] qxl: fix cmdlog for vga
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1311525266-12705-2-git-send-email-alevy@redhat.com>
+Patchwork-id: 30243
+O-Subject: [PATCH RHEL6.2 01/16] qxl: fix cmdlog for vga
+Bugzilla: 700134
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Yonit Halperin <yhalperi@redhat.com>
+RH-Acked-by: Arnon Gilboa <agilboa@redhat.com>
+
+Signed-off-by: Alon Levy <alevy@redhat.com>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+
+upstream: commit 212496c98219df17913f3157a7bf85575b32384f
+---
+ hw/qxl.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qxl.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index 7764e6b..130362f 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -357,7 +357,9 @@ static int interface_get_command(QXLInstance *sin, struct QXLCommandExt *ext)
+             ret = true;
+         }
+         qemu_mutex_unlock(&qxl->ssd.lock);
+-        qxl_log_command(qxl, "vga", ext);
++        if (ret) {
++            qxl_log_command(qxl, "vga", ext);
++        }
+         return ret;
+     case QXL_MODE_COMPAT:
+     case QXL_MODE_NATIVE:
+-- 
+1.7.3.2
+

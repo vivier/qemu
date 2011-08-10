@@ -1,0 +1,44 @@
+From 89150ceccfb0a86a63381d4399c1329036bf00f3 Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Sun, 24 Jul 2011 16:34:21 -0300
+Subject: [RHEL6 qemu-kvm PATCH 40/65] qxl: allow QXL_IO_LOG also in vga
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1311525266-12705-12-git-send-email-alevy@redhat.com>
+Patchwork-id: 30253
+O-Subject: [PATCH RHEL6.2 11/16] qxl: allow QXL_IO_LOG also in vga
+Bugzilla: 700134
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Yonit Halperin <yhalperi@redhat.com>
+RH-Acked-by: Arnon Gilboa <agilboa@redhat.com>
+
+The driver may change us to vga mode and still issue a QXL_IO_LOG,
+which we can easily support.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+
+upstream: a3d14054d727efb8ff4c5060a4c3171bae2046ef
+---
+ hw/qxl.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qxl.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index dd795bc..c6b5cd4 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -1052,6 +1052,7 @@ static void ioport_write(void *opaque, uint32_t addr, uint32_t val)
+     case QXL_IO_MEMSLOT_DEL:
+     case QXL_IO_CREATE_PRIMARY:
+     case QXL_IO_UPDATE_IRQ:
++    case QXL_IO_LOG:
+         break;
+     default:
+         if (d->mode == QXL_MODE_NATIVE || d->mode == QXL_MODE_COMPAT)
+-- 
+1.7.3.2
+

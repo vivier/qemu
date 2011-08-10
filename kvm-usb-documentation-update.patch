@@ -1,0 +1,127 @@
+From 1c884a3064e57a968f229435da6aa507766f2b68 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 21 Jul 2011 16:44:03 -0300
+Subject: [RHEL6 qemu-kvm PATCH 25/65] usb: documentation update
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1311266648-1179-26-git-send-email-kraxel@redhat.com>
+Patchwork-id: 30140
+O-Subject: [RHEL-6.2 kvm PATCH 25/30] usb: documentation update
+Bugzilla: 723858 723863
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+Add some more informations to docs/usb2.txt about using usb2 (also usb1)
+devices.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit f72e502e5f0b846a4e4bffd35315e36567da68c8)
+---
+ docs/usb2.txt |   85 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 85 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ docs/usb2.txt |   85 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 85 insertions(+), 0 deletions(-)
+
+diff --git a/docs/usb2.txt b/docs/usb2.txt
+index b283c13..5950c71 100644
+--- a/docs/usb2.txt
++++ b/docs/usb2.txt
+@@ -31,6 +31,91 @@ a complete example:
+ This attaches a usb tablet to the UHCI adapter and a usb mass storage
+ device to the EHCI adapter.
+ 
++
++More USB tips & tricks
++======================
++
++Recently the usb pass through driver (also known as usb-host) and the
++qemu usb subsystem gained a few capabilities which are available only
++via qdev properties, i,e. when using '-device'.
++
++
++physical port addressing
++------------------------
++
++First you can (for all usb devices) specify the physical port where
++the device will show up in the guest.  This can be done using the
++"port" property.  UHCI has two root ports (1,2).  EHCI has four root
++ports (1-4), the emulated (1.1) USB hub has eight ports.
++
++Plugging a tablet into UHCI port 1 works like this:
++
++        -device usb-tablet,bus=usb.0,port=1
++
++Plugging a hub into UHCI port 2 works like this:
++
++        -device usb-hub,bus=usb.0,port=2
++
++Plugging a virtual usb stick into port 4 of the hub just plugged works
++this way:
++
++        -device usb-storage,bus=usb.0,port=2.4,drive=...
++
++You can do basically the same in the monitor using the device_add
++command.  If you want to unplug devices too you should specify some
++unique id which you can use to refer to the device ...
++
++        (qemu) device_add usb-tablet,bus=usb.0,port=1,id=my-tablet
++        (qemu) device_del my-tablet
++
++... when unplugging it with device_del.
++
++
++USB pass through hints
++----------------------
++
++The usb-host driver has a bunch of properties to specify the device
++which should be passed to the guest:
++
++  hostbus=<nr> -- Specifies the bus number the device must be attached
++  to.
++
++  hostaddr=<nr> -- Specifies the device address the device got
++  assigned by the guest os.
++
++  hostport=<str> -- Specifies the physical port the device is attached
++  to.
++
++  vendorid=<hexnr> -- Specifies the vendor ID of the device.
++  productid=<hexnr> -- Specifies the product ID of the device.
++
++In theory you can combine all these properties as you like.  In
++practice only a few combinations are useful:
++
++  (1) vendorid+productid -- match for a specific device, pass it to
++      the guest when it shows up somewhere in the host.
++
++  (2) hostbus+hostport -- match for a specific physical port in the
++      host, any device which is plugged in there gets passed to the
++      guest.
++
++  (3) hostbus+hostaddr -- most useful for ad-hoc pass through as the
++      hostaddr isn't stable, the next time you plug in the device it
++      gets a new one ...
++
++Note that USB 1.1 devices are handled by UHCI/OHCI and USB 2.0 by
++EHCI.  That means a device plugged into the very same physical port
++may show up on different busses depending on the speed.  The port I'm
++using for testing is bus 1 + port 1 for 2.0 devices and bus 3 + port 1
++for 1.1 devices.  Passing through any device plugged into that port
++and also assign them to the correct bus can be done this way:
++
++    qemu -M pc ${otheroptions}                           \
++        -usb                                             \
++        -device usb-ehci,id=ehci                         \
++        -device usb-host,bus=usb.0,hostbus=3,hostport=1  \
++        -device usb-host,bus=ehci.0,hostbus=1,hostport=1
++
+ enjoy,
+   Gerd
+ 
+-- 
+1.7.3.2
+

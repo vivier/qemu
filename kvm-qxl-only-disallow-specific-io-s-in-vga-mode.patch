@@ -1,0 +1,48 @@
+From cce5bd94cbbca6d1891104ee9adf6c398eba4459 Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Sun, 24 Jul 2011 16:34:22 -0300
+Subject: [RHEL6 qemu-kvm PATCH 41/65] qxl: only disallow specific io's in vga mode
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1311525266-12705-13-git-send-email-alevy@redhat.com>
+Patchwork-id: 30254
+O-Subject: [PATCH RHEL6.2 12/16] qxl: only disallow specific io's in vga mode
+Bugzilla: 700134
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Yonit Halperin <yhalperi@redhat.com>
+RH-Acked-by: Arnon Gilboa <agilboa@redhat.com>
+
+Since the driver is still in operation even after moving to UNDEFINED, i.e.
+by destroying primary in any way.
+
+Signed-off-by: Alon Levy <alevy@redhat.com>
+
+upstream: http://patchwork.ozlabs.org/patch/105640/
+ acked, slated for 0.16.0
+---
+ hw/qxl.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qxl.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index c6b5cd4..5af9265 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -1055,8 +1055,9 @@ static void ioport_write(void *opaque, uint32_t addr, uint32_t val)
+     case QXL_IO_LOG:
+         break;
+     default:
+-        if (d->mode == QXL_MODE_NATIVE || d->mode == QXL_MODE_COMPAT)
++        if (d->mode != QXL_MODE_VGA) {
+             break;
++        }
+         dprint(d, 1, "%s: unexpected port 0x%x (%s) in vga mode\n",
+             __func__, io_port, io_port_to_string(io_port));
+         return;
+-- 
+1.7.3.2
+

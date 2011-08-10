@@ -1,0 +1,93 @@
+From a81ba9b94c6c4092a957afeed167c634f60ccec8 Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Sun, 24 Jul 2011 16:34:24 -0300
+Subject: [RHEL6 qemu-kvm PATCH 43/65] qxl: add QXL_IO_FLUSH_{SURFACES, RELEASE} for guest S3&S4 support
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1311525266-12705-15-git-send-email-alevy@redhat.com>
+Patchwork-id: 30256
+O-Subject: [PATCH RHEL6.2 14/16] qxl: add QXL_IO_FLUSH_{SURFACES, RELEASE} for guest S3&S4 support
+Bugzilla: 706711
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Yonit Halperin <yhalperi@redhat.com>
+RH-Acked-by: Arnon Gilboa <agilboa@redhat.com>
+
+Add two new IOs.
+ QXL_IO_FLUSH_SURFACES - equivalent to update area for all surfaces, used
+  to reduce vmexits from NumSurfaces to 1 on guest S3, S4 and resolution change (windows
+  driver implementation is such that this is done on each of those occasions).
+ QXL_IO_FLUSH_RELEASE - used to ensure anything on last_release is put on the release ring
+  for the client to free.
+
+Signed-off-by: Yonit Halperin <yhalperi@redhat.com>
+Signed-off-by: Alon Levy <alevy@redhat.com>
+
+upstream: http://patchwork.ozlabs.org/patch/105647/
+ acked, slated for 0.16.0
+---
+ hw/qxl.c |   30 ++++++++++++++++++++++++++++++
+ 1 files changed, 30 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qxl.c |   30 ++++++++++++++++++++++++++++++
+ 1 files changed, 30 insertions(+), 0 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index 9fb13e5..642eabf 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -185,6 +185,13 @@ static void qxl_spice_destroy_surface_wait(PCIQXLDevice *qxl, uint32_t id,
+     }
+ }
+ 
++#if SPICE_INTERFACE_QXL_MINOR >= 1
++static void qxl_spice_flush_surfaces_async(PCIQXLDevice *qxl)
++{
++    spice_qxl_flush_surfaces_async(&qxl->ssd.qxl, 0);
++}
++#endif
++
+ void qxl_spice_loadvm_commands(PCIQXLDevice *qxl, struct QXLCommandExt *ext,
+                                uint32_t count)
+ {
+@@ -1184,6 +1191,8 @@ static void ioport_write(void *opaque, uint32_t addr, uint32_t val)
+         goto async_common;
+     case QXL_IO_DESTROY_ALL_SURFACES_ASYNC:
+         io_port = QXL_IO_DESTROY_ALL_SURFACES;
++        goto async_common;
++    case QXL_IO_FLUSH_SURFACES_ASYNC:
+ async_common:
+         async = QXL_ASYNC;
+         qemu_mutex_lock(&d->async_lock);
+@@ -1295,6 +1304,27 @@ async_common:
+         }
+         qxl_spice_destroy_surface_wait(d, val, async);
+         break;
++#if SPICE_INTERFACE_QXL_MINOR >= 1
++    case QXL_IO_FLUSH_RELEASE: {
++        QXLReleaseRing *ring = &d->ram->release_ring;
++        if (ring->prod - ring->cons + 1 == ring->num_items) {
++            fprintf(stderr,
++                "ERROR: no flush, full release ring [p%d,%dc]\n",
++                ring->prod, ring->cons);
++        }
++        qxl_push_free_res(d, 1 /* flush */);
++        dprint(d, 1, "QXL_IO_FLUSH_RELEASE exit (%s, s#=%d, res#=%d,%p)\n",
++            qxl_mode_to_string(d->mode), d->guest_surfaces.count,
++            d->num_free_res, d->last_release);
++        break;
++    }
++    case QXL_IO_FLUSH_SURFACES_ASYNC:
++        dprint(d, 1, "QXL_IO_FLUSH_SURFACES_ASYNC (%d) (%s, s#=%d, res#=%d)\n",
++               val, qxl_mode_to_string(d->mode), d->guest_surfaces.count,
++               d->num_free_res);
++        qxl_spice_flush_surfaces_async(d);
++        break;
++#endif
+     case QXL_IO_DESTROY_ALL_SURFACES:
+         d->mode = QXL_MODE_UNDEFINED;
+         qxl_spice_destroy_surfaces(d, async);
+-- 
+1.7.3.2
+

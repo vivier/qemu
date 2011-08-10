@@ -1,0 +1,79 @@
+From ec6724ff2e7f0ac0d68b7f757bbfdf06afb03080 Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Sun, 24 Jul 2011 16:34:25 -0300
+Subject: [RHEL6 qemu-kvm PATCH 44/65] qxl: Remove support for the unused unstable device ID.
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1311525266-12705-16-git-send-email-alevy@redhat.com>
+Patchwork-id: 30257
+O-Subject: [PATCH RHEL6.2 15/16] qxl: Remove support for the unused unstable device ID.
+Bugzilla: 706711
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Yonit Halperin <yhalperi@redhat.com>
+RH-Acked-by: Arnon Gilboa <agilboa@redhat.com>
+
+This is part of upstream 638f4e47798725cef2a5ae5bf83d508fbde36605
+  qxl: device id fixup
+
+Changes are due to the following upstream patch not in RHEL:
+
+ commit 96c05abc904c6f74b60981d956cee531920e4cdf
+ Author: Isaku Yamahata <yamahata@valinux.co.jp>
+ Date:   Wed May 25 10:58:24 2011 +0900
+
+ hw/qxl.c: convert to PCIDeviceInfo to initialize ids
+
+ use PCIDeviceInfo to initialize ids.
+
+ Signed-off-by: Isaku Yamahata <yamahata@valinux.co.jp>
+ Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+
+upstream: not in upstream (the equivalent 638f4e4779872 is there)
+---
+ hw/qxl.c |   10 ++--------
+ 1 files changed, 2 insertions(+), 8 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qxl.c |   10 ++--------
+ 1 files changed, 2 insertions(+), 8 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index 642eabf..b93a520 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -1546,7 +1546,6 @@ static DisplayChangeListener display_listener = {
+ static int qxl_init_common(PCIQXLDevice *qxl)
+ {
+     uint8_t* config = qxl->pci.config;
+-    uint32_t pci_device_id;
+     uint32_t pci_device_rev;
+     uint32_t io_size;
+ 
+@@ -1560,21 +1559,16 @@ static int qxl_init_common(PCIQXLDevice *qxl)
+ 
+     switch (qxl->revision) {
+     case 1: /* spice 0.4 -- qxl-1 */
+-        pci_device_id  = QXL_DEVICE_ID_STABLE;
+         pci_device_rev = QXL_REVISION_STABLE_V04;
+         break;
+     case 2: /* spice 0.6 -- qxl-2 */
+-        pci_device_id  = QXL_DEVICE_ID_STABLE;
++    default:
+         pci_device_rev = QXL_REVISION_STABLE_V06;
+         break;
+-    default: /* experimental */
+-        pci_device_id  = QXL_DEVICE_ID_DEVEL;
+-        pci_device_rev = 1;
+-        break;
+     }
+ 
+     pci_config_set_vendor_id(config, REDHAT_PCI_VENDOR_ID);
+-    pci_config_set_device_id(config, pci_device_id);
++    pci_config_set_device_id(config, QXL_DEVICE_ID_STABLE);
+     pci_set_byte(&config[PCI_REVISION_ID], pci_device_rev);
+     pci_set_byte(&config[PCI_INTERRUPT_PIN], 1);
+ 
+-- 
+1.7.3.2
+

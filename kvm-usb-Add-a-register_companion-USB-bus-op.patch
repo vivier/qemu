@@ -1,0 +1,100 @@
+From 2aef27dcb0fb978a2b11550e63c4368a21615379 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 21 Jul 2011 16:43:49 -0300
+Subject: [RHEL6 qemu-kvm PATCH 11/65] usb: Add a register_companion USB bus op.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1311266648-1179-12-git-send-email-kraxel@redhat.com>
+Patchwork-id: 30131
+O-Subject: [RHEL-6.2 kvm PATCH 11/30] usb: Add a register_companion USB bus op.
+Bugzilla: 723858 723863
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+From: Hans de Goede <hdegoede@redhat.com>
+
+This is a preparation patch for adding support for USB companion controllers.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit ae60fea97c78e7f855794f2770517244d93def73)
+---
+ hw/usb-bus.c |   31 +++++++++++++++++++++++++++++++
+ hw/usb.h     |    5 +++++
+ 2 files changed, 36 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-bus.c |   31 +++++++++++++++++++++++++++++++
+ hw/usb.h     |    5 +++++
+ 2 files changed, 36 insertions(+), 0 deletions(-)
+
+diff --git a/hw/usb-bus.c b/hw/usb-bus.c
+index ad091c2..4fdbf20 100644
+--- a/hw/usb-bus.c
++++ b/hw/usb-bus.c
+@@ -157,6 +157,37 @@ void usb_register_port(USBBus *bus, USBPort *port, void *opaque, int index,
+     bus->nfree++;
+ }
+ 
++int usb_register_companion(const char *masterbus, USBPort *ports[],
++                           uint32_t portcount, uint32_t firstport,
++                           void *opaque, USBPortOps *ops, int speedmask)
++{
++    USBBus *bus;
++    int i;
++
++    QTAILQ_FOREACH(bus, &busses, next) {
++        if (strcmp(bus->qbus.name, masterbus) == 0) {
++            break;
++        }
++    }
++
++    if (!bus || !bus->ops->register_companion) {
++        qerror_report(QERR_INVALID_PARAMETER_VALUE, "masterbus",
++                      "an USB masterbus");
++        if (bus) {
++            error_printf_unless_qmp(
++                "USB bus '%s' does not allow companion controllers\n",
++                masterbus);
++        }
++        return -1;
++    }
++
++    for (i = 0; i < portcount; i++) {
++        usb_fill_port(ports[i], opaque, i, ops, speedmask);
++    }
++
++    return bus->ops->register_companion(bus, ports, portcount, firstport);
++}
++
+ void usb_port_location(USBPort *downstream, USBPort *upstream, int portnr)
+ {
+     if (upstream) {
+diff --git a/hw/usb.h b/hw/usb.h
+index 7960bee..fac3f7d 100644
+--- a/hw/usb.h
++++ b/hw/usb.h
+@@ -334,6 +334,8 @@ struct USBBus {
+ };
+ 
+ struct USBBusOps {
++    int (*register_companion)(USBBus *bus, USBPort *ports[],
++                              uint32_t portcount, uint32_t firstport);
+     void (*device_destroy)(USBBus *bus, USBDevice *dev);
+ };
+ 
+@@ -346,6 +348,9 @@ USBDevice *usb_create_simple(USBBus *bus, const char *name);
+ USBDevice *usbdevice_create(const char *cmdline);
+ void usb_register_port(USBBus *bus, USBPort *port, void *opaque, int index,
+                        USBPortOps *ops, int speedmask);
++int usb_register_companion(const char *masterbus, USBPort *ports[],
++                           uint32_t portcount, uint32_t firstport,
++                           void *opaque, USBPortOps *ops, int speedmask);
+ void usb_port_location(USBPort *downstream, USBPort *upstream, int portnr);
+ void usb_unregister_port(USBBus *bus, USBPort *port);
+ int usb_device_attach(USBDevice *dev);
+-- 
+1.7.3.2
+

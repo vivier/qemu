@@ -1,0 +1,57 @@
+From 39e499c2088153c708e8cb02b4e9bd5bd12a6b9f Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 21 Jul 2011 16:43:46 -0300
+Subject: [RHEL6 qemu-kvm PATCH 08/65] usb: ignore USB_DT_DEBUG
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1311266648-1179-9-git-send-email-kraxel@redhat.com>
+Patchwork-id: 30127
+O-Subject: [RHEL-6.2 kvm PATCH 08/30] usb: ignore USB_DT_DEBUG
+Bugzilla: 723858 723863
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit a7fb71d1b2a992a0c4842f06e2b450889e2442ec)
+---
+ hw/usb-desc.c |    4 ++++
+ hw/usb.h      |    1 +
+ 2 files changed, 5 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-desc.c |    4 ++++
+ hw/usb.h      |    1 +
+ 2 files changed, 5 insertions(+), 0 deletions(-)
+
+diff --git a/hw/usb-desc.c b/hw/usb-desc.c
+index 0b9d351..bc6858f 100644
+--- a/hw/usb-desc.c
++++ b/hw/usb-desc.c
+@@ -385,6 +385,10 @@ int usb_desc_get_descriptor(USBDevice *dev, int value, uint8_t *dest, size_t len
+         trace_usb_desc_other_speed_config(dev->addr, index, len, ret);
+         break;
+ 
++    case USB_DT_DEBUG:
++        /* ignore silently */
++        break;
++
+     default:
+         fprintf(stderr, "%s: %d unknown type %d (len %zd)\n", __FUNCTION__,
+                 dev->addr, type, len);
+diff --git a/hw/usb.h b/hw/usb.h
+index 1001227..7960bee 100644
+--- a/hw/usb.h
++++ b/hw/usb.h
+@@ -120,6 +120,7 @@
+ #define USB_DT_ENDPOINT			0x05
+ #define USB_DT_DEVICE_QUALIFIER         0x06
+ #define USB_DT_OTHER_SPEED_CONFIG       0x07
++#define USB_DT_DEBUG                    0x0A
+ #define USB_DT_INTERFACE_ASSOC          0x0B
+ 
+ #define USB_ENDPOINT_XFER_CONTROL	0
+-- 
+1.7.3.2
+

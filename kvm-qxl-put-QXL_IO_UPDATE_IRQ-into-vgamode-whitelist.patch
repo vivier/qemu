@@ -1,0 +1,44 @@
+From 9fa7dfc001ac787b49300903385e1bc23ef94083 Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Sun, 24 Jul 2011 16:34:20 -0300
+Subject: [RHEL6 qemu-kvm PATCH 39/65] qxl: put QXL_IO_UPDATE_IRQ into vgamode whitelist
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1311525266-12705-11-git-send-email-alevy@redhat.com>
+Patchwork-id: 30252
+O-Subject: [PATCH RHEL6.2 10/16] qxl: put QXL_IO_UPDATE_IRQ into vgamode whitelist
+Bugzilla: 700134
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Yonit Halperin <yhalperi@redhat.com>
+RH-Acked-by: Arnon Gilboa <agilboa@redhat.com>
+
+From: Gerd Hoffmann <kraxel@redhat.com>
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+
+upstream: http://patchwork.ozlabs.org/patch/105640/
+ acked, slated for 0.16.0
+---
+ hw/qxl.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qxl.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index 90bdcf9..dd795bc 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -1051,6 +1051,7 @@ static void ioport_write(void *opaque, uint32_t addr, uint32_t val)
+     case QXL_IO_MEMSLOT_ADD:
+     case QXL_IO_MEMSLOT_DEL:
+     case QXL_IO_CREATE_PRIMARY:
++    case QXL_IO_UPDATE_IRQ:
+         break;
+     default:
+         if (d->mode == QXL_MODE_NATIVE || d->mode == QXL_MODE_COMPAT)
+-- 
+1.7.3.2
+

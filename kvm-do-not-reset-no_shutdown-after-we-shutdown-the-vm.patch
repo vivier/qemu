@@ -1,0 +1,77 @@
+From 72323dd3d971b51d2112cc3cea13443a440fa35e Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Mon, 8 Aug 2011 11:41:10 -0300
+Subject: [RHEL6 qemu-kvm PATCH 65/65] do not reset no_shutdown after we shutdown the vm
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <2b3c51f2c664f79c2a28dd81c44623983765dcaf.1312803662.git.amit.shah@redhat.com>
+Patchwork-id: 31060
+O-Subject: [RHEL6.2 qemu-kvm PATCH v2 1/1] do not reset no_shutdown after we shutdown the vm
+Bugzilla: 728464
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Arnon Gilboa <agilboa@redhat.com>
+RH-Acked-by: Amos Kong <akong@redhat.com>
+
+From: Wen Congyang <wency@cn.fujitsu.com>
+
+Daniel P. Berrange sent a libvirt's patch to support
+reboots with the QEMU driver. He implements it in
+json model like this:
+1. add -no-shutdown in the qemu's option:
+   qemu -no-shutdown xxxx
+2. shutdown the vm by monitor command system_powerdown
+3. wait for shutdown event
+4. reset the vm by monitor command system_reset
+
+no_shutdown will be reset to 0 if the vm is powered down.
+We only can reboot the vm once.
+
+If no_shutdown is not reset to 0, we can reboot the vm
+many times.
+
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit e69ae5c49af45a67ebdf6a7cf465eb91b5c8ee11)
+
+Conflicts:
+
+	vl.c
+
+[RHEL-specific: RHEL qemu-kvm has qemu_no_shutdown(), which also resets
+the no_shutdown value, so we need to remove that line as well.  Upstream
+qemu-kvm.git doesn't have this and behaves as expected.]
+
+Bugzilla: 728464
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ vl.c |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ vl.c |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index e7e6d83..afcf4db 100644
+--- a/vl.c
++++ b/vl.c
+@@ -3161,7 +3161,6 @@ static int vmstop_requested;
+ int qemu_no_shutdown(void)
+ {
+     int r = no_shutdown;
+-    no_shutdown = 0;
+     return r;
+ }
+ 
+@@ -4096,7 +4095,6 @@ static void main_loop(void)
+             monitor_protocol_event(QEVENT_SHUTDOWN, NULL);
+             if (no_shutdown) {
+                 vm_stop(0);
+-                no_shutdown = 0;
+             } else
+                 break;
+         }
+-- 
+1.7.3.2
+

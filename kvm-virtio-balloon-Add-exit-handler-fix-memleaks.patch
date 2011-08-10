@@ -1,0 +1,99 @@
+From 8afa93947a9e9b2af3dcf2076abb278178a2f90a Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Mon, 1 Aug 2011 11:40:58 -0300
+Subject: [RHEL6 qemu-kvm PATCH 57/65] virtio-balloon: Add exit handler, fix memleaks
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <7aaf0124b70540bcce5b63686058e45f81331241.1312198249.git.amit.shah@redhat.com>
+Patchwork-id: 30731
+O-Subject: [RHEL6.2 qemu PATCH 12/13] virtio-balloon: Add exit handler, fix memleaks
+Bugzilla: 726014
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+Add an exit handler that will free up RAM after a virtio-balloon device
+is unplugged.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Reviewed-by: Markus Armbruster <armbru@redhat.com>
+Acked-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry picked from commit 7e10be8c743e5f1e8a46ad0d863b4fd670e163ee)
+
+Conflicts:
+
+	hw/virtio-pci.c
+
+Bugzilla: 726014
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-balloon.c |    5 +++++
+ hw/virtio-pci.c     |   11 ++++++++++-
+ hw/virtio.h         |    1 +
+ 3 files changed, 16 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-balloon.c |    5 +++++
+ hw/virtio-pci.c     |   11 ++++++++++-
+ hw/virtio.h         |    1 +
+ 3 files changed, 16 insertions(+), 1 deletions(-)
+
+diff --git a/hw/virtio-balloon.c b/hw/virtio-balloon.c
+index cfdc44a..7c02afd 100644
+--- a/hw/virtio-balloon.c
++++ b/hw/virtio-balloon.c
+@@ -299,3 +299,8 @@ VirtIODevice *virtio_balloon_init(DeviceState *dev)
+ 
+     return &s->vdev;
+ }
++
++void virtio_balloon_exit(VirtIODevice *vdev)
++{
++    virtio_cleanup(vdev);
++}
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index 51d6adc..6966c78 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -917,6 +917,15 @@ static int virtio_balloon_init_pci(PCIDevice *pci_dev)
+     return 0;
+ }
+ 
++static int virtio_balloon_exit_pci(PCIDevice *pci_dev)
++{
++    VirtIOPCIProxy *proxy = DO_UPCAST(VirtIOPCIProxy, pci_dev, pci_dev);
++
++    virtio_pci_stop_ioeventfd(proxy);
++    virtio_balloon_exit(proxy->vdev);
++    return virtio_exit_pci(pci_dev);
++}
++
+ static PCIDeviceInfo virtio_info[] = {
+     {
+         .qdev.name = "virtio-blk-pci",
+@@ -976,7 +985,7 @@ static PCIDeviceInfo virtio_info[] = {
+         .qdev.name = "virtio-balloon-pci",
+         .qdev.size = sizeof(VirtIOPCIProxy),
+         .init      = virtio_balloon_init_pci,
+-        .exit      = virtio_exit_pci,
++        .exit      = virtio_balloon_exit_pci,
+         .qdev.props = (Property[]) {
+             DEFINE_VIRTIO_COMMON_FEATURES(VirtIOPCIProxy, host_features),
+             DEFINE_PROP_END_OF_LIST(),
+diff --git a/hw/virtio.h b/hw/virtio.h
+index 6d3d960..bce0b43 100644
+--- a/hw/virtio.h
++++ b/hw/virtio.h
+@@ -199,6 +199,7 @@ VirtIODevice *virtio_balloon_init(DeviceState *dev);
+ void virtio_net_exit(VirtIODevice *vdev);
+ void virtio_blk_exit(VirtIODevice *vdev);
+ void virtio_serial_exit(VirtIODevice *vdev);
++void virtio_balloon_exit(VirtIODevice *vdev);
+ 
+ #define DEFINE_VIRTIO_COMMON_FEATURES(_state, _field) \
+ 	DEFINE_PROP_BIT("indirect_desc", _state, _field, \
+-- 
+1.7.3.2
+

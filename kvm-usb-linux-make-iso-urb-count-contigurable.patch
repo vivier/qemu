@@ -1,0 +1,108 @@
+From 4c21d74dfdde3f36d1cf1843ffb1045fb00439eb Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 21 Jul 2011 16:43:39 -0300
+Subject: [RHEL6 qemu-kvm PATCH 01/65] usb-linux: make iso urb count contigurable
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1311266648-1179-2-git-send-email-kraxel@redhat.com>
+Patchwork-id: 30126
+O-Subject: [RHEL-6.2 kvm PATCH 01/30] usb-linux: make iso urb count contigurable
+Bugzilla: 723858 723863
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+Add a qdev property for the number of iso urbs which
+usb-linux keeps in flight, so it can be configured at
+runtime.  Make it default to four (old hardcoded value
+used to be three).
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit b81bcd8aa0f5d16e5590fdc4cf6561b57adab931)
+---
+ usb-linux.c |   15 ++++++++-------
+ 1 files changed, 8 insertions(+), 7 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ usb-linux.c |   15 ++++++++-------
+ 1 files changed, 8 insertions(+), 7 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index 72e41a2..372a722 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -86,7 +86,6 @@ static int usb_fs_type;
+ 
+ /* endpoint association data */
+ #define ISO_FRAME_DESC_PER_URB 32
+-#define ISO_URB_COUNT 3
+ #define INVALID_EP_TYPE 255
+ 
+ /* devio.c limits single requests to 16k */
+@@ -121,6 +120,7 @@ typedef struct USBHostDevice {
+     int       configuration;
+     int       ninterfaces;
+     int       closing;
++    uint32_t  iso_urb_count;
+     Notifier  exit;
+ 
+     struct endp_data endp_table[MAX_ENDPOINTS];
+@@ -502,8 +502,8 @@ static AsyncURB *usb_host_alloc_iso(USBHostDevice *s, uint8_t ep, int in)
+     AsyncURB *aurb;
+     int i, j, len = get_max_packet_size(s, ep);
+ 
+-    aurb = qemu_mallocz(ISO_URB_COUNT * sizeof(*aurb));
+-    for (i = 0; i < ISO_URB_COUNT; i++) {
++    aurb = qemu_mallocz(s->iso_urb_count * sizeof(*aurb));
++    for (i = 0; i < s->iso_urb_count; i++) {
+         aurb[i].urb.endpoint      = ep;
+         aurb[i].urb.buffer_length = ISO_FRAME_DESC_PER_URB * len;
+         aurb[i].urb.buffer        = qemu_malloc(aurb[i].urb.buffer_length);
+@@ -533,7 +533,7 @@ static void usb_host_stop_n_free_iso(USBHostDevice *s, uint8_t ep)
+         return;
+     }
+ 
+-    for (i = 0; i < ISO_URB_COUNT; i++) {
++    for (i = 0; i < s->iso_urb_count; i++) {
+         /* in flight? */
+         if (aurb[i].iso_frame_idx == -1) {
+             ret = ioctl(s->fd, USBDEVFS_DISCARDURB, &aurb[i]);
+@@ -551,7 +551,7 @@ static void usb_host_stop_n_free_iso(USBHostDevice *s, uint8_t ep)
+         async_complete(s);
+     }
+ 
+-    for (i = 0; i < ISO_URB_COUNT; i++) {
++    for (i = 0; i < s->iso_urb_count; i++) {
+         qemu_free(aurb[i].urb.buffer);
+     }
+ 
+@@ -636,7 +636,7 @@ static int usb_host_handle_iso_data(USBHostDevice *s, USBPacket *p, int in)
+         }
+         aurb[i].iso_frame_idx++;
+         if (aurb[i].iso_frame_idx == ISO_FRAME_DESC_PER_URB) {
+-            i = (i + 1) % ISO_URB_COUNT;
++            i = (i + 1) % s->iso_urb_count;
+             set_iso_urb_idx(s, p->devep, i);
+         }
+     } else {
+@@ -649,7 +649,7 @@ static int usb_host_handle_iso_data(USBHostDevice *s, USBPacket *p, int in)
+ 
+     if (is_iso_started(s, p->devep)) {
+         /* (Re)-submit all fully consumed / filled urbs */
+-        for (i = 0; i < ISO_URB_COUNT; i++) {
++        for (i = 0; i < s->iso_urb_count; i++) {
+             if (aurb[i].iso_frame_idx == ISO_FRAME_DESC_PER_URB) {
+                 ret = ioctl(s->fd, USBDEVFS_SUBMITURB, &aurb[i]);
+                 if (ret < 0) {
+@@ -1223,6 +1223,7 @@ static struct USBDeviceInfo usb_host_dev_info = {
+         DEFINE_PROP_STRING("hostport", USBHostDevice, match.port),
+         DEFINE_PROP_HEX32("vendorid",  USBHostDevice, match.vendor_id,  0),
+         DEFINE_PROP_HEX32("productid", USBHostDevice, match.product_id, 0),
++        DEFINE_PROP_UINT32("isobufs",  USBHostDevice, iso_urb_count,    4),
+         DEFINE_PROP_END_OF_LIST(),
+     },
+ };
+-- 
+1.7.3.2
+

@@ -1,0 +1,49 @@
+From 0ac53708d519d637b14e45ef63ae0edfab63c446 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Fri, 5 Aug 2011 04:55:07 -0300
+Subject: [RHEL6 qemu-kvm PATCH 61/65] virtio: Plug memleak by freeing vdev
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <157af775322762f152ce593b93423b5c79608f00.1312520100.git.amit.shah@redhat.com>
+Patchwork-id: 30984
+O-Subject: [RHEL6.2 qemu-kvm PATCH 3/3] virtio: Plug memleak by freeing vdev
+Bugzilla: 726020
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+virtio_common_init() allocates RAM for the vdev struct (and any
+additional memory, depending on the size passed to the function).  This
+memory wasn't being freed until now.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry picked from commit 845f85fa1597c72609bd10a37b9586b445c13d49)
+
+Bugzilla: 726020
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio.c b/hw/virtio.c
+index 786b6fe..1dfd508 100644
+--- a/hw/virtio.c
++++ b/hw/virtio.c
+@@ -736,6 +736,7 @@ void virtio_cleanup(VirtIODevice *vdev)
+     if (vdev->config)
+         qemu_free(vdev->config);
+     qemu_free(vdev->vq);
++    qemu_free(vdev);
+ }
+ 
+ static void virtio_vmstate_change(void *opaque, int running, int reason)
+-- 
+1.7.3.2
+

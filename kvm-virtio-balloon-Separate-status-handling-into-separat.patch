@@ -1,0 +1,112 @@
+From dc53d1a197dbf09d3474a1ef632ac08dae00d018 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Mon, 1 Aug 2011 11:40:51 -0300
+Subject: [RHEL6 qemu-kvm PATCH 50/65] virtio-balloon: Separate status handling into separate function
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <9ed5ae20dcf0990211d213f75ddd186aeef55c67.1312198249.git.amit.shah@redhat.com>
+Patchwork-id: 30724
+O-Subject: [RHEL6.2 qemu PATCH 05/13] virtio-balloon: Separate status handling into separate function
+Bugzilla: 694378
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+Separate out the code to retrieve balloon info from the code that sets
+balloon values.
+
+This will be used to separate the two callbacks from balloon.c and help
+cope with 'balloon 0' on the monitor.  Currently, 'balloon 0' causes a
+segfault in monitor_resume().
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Reviewed-by: Markus Armbruster <armbru@redhat.com>
+(cherry picked from commit 4a97e18b878afb95d2bc6a027f0d9b38e358d142)
+
+Bugzilla: 694378
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-balloon.c |   51 +++++++++++++++++++++++++++++++--------------------
+ 1 files changed, 31 insertions(+), 20 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-balloon.c |   51 +++++++++++++++++++++++++++++++--------------------
+ 1 files changed, 31 insertions(+), 20 deletions(-)
+
+diff --git a/hw/virtio-balloon.c b/hw/virtio-balloon.c
+index 92e9057..12130f1 100644
+--- a/hw/virtio-balloon.c
++++ b/hw/virtio-balloon.c
+@@ -201,36 +201,47 @@ static uint32_t virtio_balloon_get_features(VirtIODevice *vdev, uint32_t f)
+     return f;
+ }
+ 
++static void virtio_balloon_stat(void *opaque, MonitorCompletion cb,
++                                void *cb_data)
++{
++    VirtIOBalloon *dev = opaque;
++
++    /* For now, only allow one request at a time.  This restriction can be
++     * removed later by queueing callback and data pairs.
++     */
++    if (dev->stats_callback != NULL) {
++        return;
++    }
++    dev->stats_callback = cb;
++    dev->stats_opaque_callback_data = cb_data;
++
++    if (ENABLE_GUEST_STATS
++        && (dev->vdev.guest_features & (1 << VIRTIO_BALLOON_F_STATS_VQ))) {
++        virtqueue_push(dev->svq, &dev->stats_vq_elem, dev->stats_vq_offset);
++        virtio_notify(&dev->vdev, dev->svq);
++        return;
++    }
++
++    /* Stats are not supported.  Clear out any stale values that might
++     * have been set by a more featureful guest kernel.
++     */
++    reset_stats(dev);
++    complete_stats_request(dev);
++}
++
+ static void virtio_balloon_to_target(void *opaque, ram_addr_t target,
+                                      MonitorCompletion cb, void *cb_data)
+ {
+     VirtIOBalloon *dev = opaque;
+ 
+-    if (target > ram_size)
++    if (target > ram_size) {
+         target = ram_size;
+-
++    }
+     if (target) {
+         dev->num_pages = (ram_size - target) >> VIRTIO_BALLOON_PFN_SHIFT;
+         virtio_notify_config(&dev->vdev);
+     } else {
+-        /* For now, only allow one request at a time.  This restriction can be
+-         * removed later by queueing callback and data pairs.
+-         */
+-        if (dev->stats_callback != NULL) {
+-            return;
+-        }
+-        dev->stats_callback = cb;
+-        dev->stats_opaque_callback_data = cb_data; 
+-        if (ENABLE_GUEST_STATS && (dev->vdev.guest_features & (1 << VIRTIO_BALLOON_F_STATS_VQ))) {
+-            virtqueue_push(dev->svq, &dev->stats_vq_elem, dev->stats_vq_offset);
+-            virtio_notify(&dev->vdev, dev->svq);
+-        } else {
+-            /* Stats are not supported.  Clear out any stale values that might
+-             * have been set by a more featureful guest kernel.
+-             */
+-            reset_stats(dev);
+-            complete_stats_request(dev);
+-        }
++        virtio_balloon_stat(opaque, cb, cb_data);
+     }
+ }
+ 
+-- 
+1.7.3.2
+

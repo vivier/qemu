@@ -1,0 +1,78 @@
+From 864575262fa657ee94c302b227f401c46a19d6b1 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Mon, 8 Aug 2011 13:27:45 -0300
+Subject: [RHEL6 qemu-kvm PATCH 62/65] qemu-img: Use qemu_blockalign
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1312810065-28889-1-git-send-email-kwolf@redhat.com>
+Patchwork-id: 31076
+O-Subject: [RHEL-6.2 qemu-kvm PATCH] qemu-img: Use qemu_blockalign
+Bugzilla: 728905
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+Bugzilla: 728905
+Upstream status: Submitted
+
+Now that you can use cache=none for the output file in qemu-img, we should
+properly align our buffers so that raw-posix doesn't have to use its (smaller)
+bounce buffer.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ qemu-img.c |   12 ++++++------
+ 1 files changed, 6 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-img.c |   12 ++++++------
+ 1 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/qemu-img.c b/qemu-img.c
+index ced2635..2dd5e7b 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -786,7 +786,7 @@ static int img_convert(int argc, char **argv)
+     bs_i = 0;
+     bs_offset = 0;
+     bdrv_get_geometry(bs[0], &bs_sectors);
+-    buf = qemu_malloc(IO_BUF_SIZE);
++    buf = qemu_blockalign(out_bs, IO_BUF_SIZE);
+ 
+     if (compress) {
+         ret = bdrv_get_info(out_bs, &bdi);
+@@ -958,7 +958,7 @@ out:
+     qemu_progress_end();
+     free_option_parameters(create_options);
+     free_option_parameters(param);
+-    qemu_free(buf);
++    qemu_vfree(buf);
+     if (out_bs) {
+         bdrv_delete(out_bs);
+     }
+@@ -1354,8 +1354,8 @@ static int img_rebase(int argc, char **argv)
+         uint8_t * buf_new;
+         float local_progress;
+ 
+-        buf_old = qemu_malloc(IO_BUF_SIZE);
+-        buf_new = qemu_malloc(IO_BUF_SIZE);
++        buf_old = qemu_blockalign(bs, IO_BUF_SIZE);
++        buf_new = qemu_blockalign(bs, IO_BUF_SIZE);
+ 
+         bdrv_get_geometry(bs, &num_sectors);
+ 
+@@ -1411,8 +1411,8 @@ static int img_rebase(int argc, char **argv)
+             qemu_progress_print(local_progress, 100);
+         }
+ 
+-        qemu_free(buf_old);
+-        qemu_free(buf_new);
++        qemu_vfree(buf_old);
++        qemu_vfree(buf_new);
+     }
+ 
+     /*
+-- 
+1.7.3.2
+

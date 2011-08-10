@@ -1,0 +1,70 @@
+From 391355cb1300b6c819aaed59403e4f13a0a9585b Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Sun, 24 Jul 2011 16:34:19 -0300
+Subject: [RHEL6 qemu-kvm PATCH 38/65] qxl: make qxl_guest_bug take variable arguments
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1311525266-12705-10-git-send-email-alevy@redhat.com>
+Patchwork-id: 30251
+O-Subject: [PATCH RHEL6.2 09/16] qxl: make qxl_guest_bug take variable arguments
+Bugzilla: 700134
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Yonit Halperin <yhalperi@redhat.com>
+RH-Acked-by: Arnon Gilboa <agilboa@redhat.com>
+
+Signed-off-by: Alon Levy <alevy@redhat.com>
+
+upstream: http://patchwork.ozlabs.org/patch/105621/
+ acked, slated for 0.16.0
+---
+ hw/qxl.c |    9 +++++++--
+ hw/qxl.h |    2 +-
+ 2 files changed, 8 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qxl.c |    9 +++++++--
+ hw/qxl.h |    2 +-
+ 2 files changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index 4613f98..90bdcf9 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -125,13 +125,18 @@ static void qxl_reset_memslots(PCIQXLDevice *d);
+ static void qxl_reset_surfaces(PCIQXLDevice *d);
+ static void qxl_ring_set_dirty(PCIQXLDevice *qxl);
+ 
+-void qxl_guest_bug(PCIQXLDevice *qxl, const char *msg)
++void qxl_guest_bug(PCIQXLDevice *qxl, const char *msg, ...)
+ {
+ #if SPICE_INTERFACE_QXL_MINOR >= 1
+     qxl_send_events(qxl, QXL_INTERRUPT_ERROR);
+ #endif
+     if (qxl->guestdebug) {
+-        fprintf(stderr, "qxl-%d: guest bug: %s\n", qxl->id, msg);
++        va_list ap;
++        va_start(ap, msg);
++        fprintf(stderr, "qxl-%d: guest bug: ", qxl->id);
++        vfprintf(stderr, msg, ap);
++        fprintf(stderr, "\n");
++        va_end(ap);
+     }
+ }
+ 
+diff --git a/hw/qxl.h b/hw/qxl.h
+index d71b079..bab6abc 100644
+--- a/hw/qxl.h
++++ b/hw/qxl.h
+@@ -99,7 +99,7 @@ typedef struct PCIQXLDevice {
+ 
+ /* qxl.c */
+ void *qxl_phys2virt(PCIQXLDevice *qxl, QXLPHYSICAL phys, int group_id);
+-void qxl_guest_bug(PCIQXLDevice *qxl, const char *msg);
++void qxl_guest_bug(PCIQXLDevice *qxl, const char *msg, ...);
+ 
+ void qxl_spice_update_area(PCIQXLDevice *qxl, uint32_t surface_id,
+                            struct QXLRect *area, struct QXLRect *dirty_rects,
+-- 
+1.7.3.2
+

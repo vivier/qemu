@@ -1,0 +1,59 @@
+From 5c5ef46e81488f703ba3df36d4b484b1a738a4bb Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 21 Jul 2011 16:43:47 -0300
+Subject: [RHEL6 qemu-kvm PATCH 09/65] usb: Add a usb_fill_port helper function
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1311266648-1179-10-git-send-email-kraxel@redhat.com>
+Patchwork-id: 30132
+O-Subject: [RHEL-6.2 kvm PATCH 09/30] usb: Add a usb_fill_port helper function
+Bugzilla: 723858 723863
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+From: Hans de Goede <hdegoede@redhat.com>
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 090ac6425accf5d87be5ff8087080c876a2904e5)
+---
+ hw/usb-bus.c |   10 ++++++++--
+ 1 files changed, 8 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-bus.c |   10 ++++++++--
+ 1 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/hw/usb-bus.c b/hw/usb-bus.c
+index bd40668..26af1a9 100644
+--- a/hw/usb-bus.c
++++ b/hw/usb-bus.c
+@@ -137,8 +137,8 @@ USBDevice *usb_create_simple(USBBus *bus, const char *name)
+     return dev;
+ }
+ 
+-void usb_register_port(USBBus *bus, USBPort *port, void *opaque, int index,
+-                       USBPortOps *ops, int speedmask)
++static void usb_fill_port(USBPort *port, void *opaque, int index,
++                          USBPortOps *ops, int speedmask)
+ {
+     port->opaque = opaque;
+     port->index = index;
+@@ -146,6 +146,12 @@ void usb_register_port(USBBus *bus, USBPort *port, void *opaque, int index,
+     port->index = index;
+     port->ops = ops;
+     port->speedmask = speedmask;
++}
++
++void usb_register_port(USBBus *bus, USBPort *port, void *opaque, int index,
++                       USBPortOps *ops, int speedmask)
++{
++    usb_fill_port(port, opaque, index, ops, speedmask);
+     QTAILQ_INSERT_TAIL(&bus->free, port, next);
+     bus->nfree++;
+ }
+-- 
+1.7.3.2
+

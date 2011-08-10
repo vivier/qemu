@@ -1,0 +1,89 @@
+From e7e0bf3624387fa0f83058a280ea45c73dde34ac Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 21 Jul 2011 16:43:41 -0300
+Subject: [RHEL6 qemu-kvm PATCH 03/65] ehci: add freq + maxframes properties
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1311266648-1179-4-git-send-email-kraxel@redhat.com>
+Patchwork-id: 30123
+O-Subject: [RHEL-6.2 kvm PATCH 03/30] ehci: add freq + maxframes properties
+Bugzilla: 723858 723863
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+Add properties for the wakeup rate and the max number of frames ehci
+will process at once.
+
+The wakeup rate defaults to 1000 which equals the usb frame rate.  This
+can be reduced to make qemu wake up less often when ehci is active.
+
+In case the wakeup rate is reduced or the ehci timer is delayed due to
+latency issues elsewhere in qemu ehci will process multiple frames at
+once.  The maxframes property specifies the upper limit for this.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 16a2dee6b98ec0d4f60fa17f78ca989ce5c7f831)
+
+Conflicts:
+
+	hw/usb-ehci.c
+---
+ hw/usb-ehci.c |   14 ++++++++++++--
+ 1 files changed, 12 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-ehci.c |   14 ++++++++++++--
+ 1 files changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/hw/usb-ehci.c b/hw/usb-ehci.c
+index 7d4478a..3a9680a 100644
+--- a/hw/usb-ehci.c
++++ b/hw/usb-ehci.c
+@@ -373,6 +373,11 @@ struct EHCIState {
+     target_phys_addr_t mem_base;
+     int mem;
+     int num_ports;
++
++    /* properties */
++    uint32_t freq;
++    uint32_t maxframes;
++
+     /*
+      *  EHCI spec version 1.0 Section 2.3
+      *  Host Controller Operational Registers
+@@ -2048,7 +2053,7 @@ static void ehci_frame_timer(void *opaque)
+ 
+ 
+     t_now = qemu_get_clock(vm_clock);
+-    expire_time = t_now + (get_ticks_per_sec() / FRAME_TIMER_FREQ);
++    expire_time = t_now + (get_ticks_per_sec() / ehci->freq);
+     if (expire_time == t_now) {
+         expire_time++;
+     }
+@@ -2073,7 +2078,7 @@ static void ehci_frame_timer(void *opaque)
+             ehci->sofv &= 0x000003ff;
+         }
+ 
+-        if (frames - i > 10) {
++        if (frames - i > ehci->maxframes) {
+             skipped_frames++;
+         } else {
+             ehci_advance_periodic_state(ehci);
+@@ -2142,6 +2147,11 @@ static PCIDeviceInfo ehci_info = {
+     .qdev.name    = "usb-ehci",
+     .qdev.size    = sizeof(EHCIState),
+     .init         = usb_ehci_initfn,
++    .qdev.props   = (Property[]) {
++        DEFINE_PROP_UINT32("freq",      EHCIState, freq, FRAME_TIMER_FREQ),
++        DEFINE_PROP_UINT32("maxframes", EHCIState, maxframes, 128),
++        DEFINE_PROP_END_OF_LIST(),
++    },
+ };
+ 
+ static int usb_ehci_initfn(PCIDevice *dev)
+-- 
+1.7.3.2
+

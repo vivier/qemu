@@ -1,0 +1,102 @@
+From 7d25c43c82ebf7f89602c0b4aab028af7e8010fe Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Mon, 1 Aug 2011 11:40:48 -0300
+Subject: [RHEL6 qemu-kvm PATCH 47/65] balloon: Make functions, local vars static
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <1fc9738f00c80dc317f4ded84c2b5ffec1b62d9c.1312198249.git.amit.shah@redhat.com>
+Patchwork-id: 30721
+O-Subject: [RHEL6.2 qemu PATCH 02/13] balloon: Make functions, local vars static
+Bugzilla: 694378
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+balloon.h had function declarations for a couple of functions that are
+local to balloon.c.  Make them static.
+
+Drop the 'qemu_' prefix for balloon.c-local variables, and make them
+static.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Reviewed-by: Markus Armbruster <armbru@redhat.com>
+(cherry picked from commit 2798b5e1747095592e3b83b3527ef91a78364c76)
+
+Bugzilla: 694378
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ balloon.c |   22 +++++++++++-----------
+ balloon.h |    4 ----
+ 2 files changed, 11 insertions(+), 15 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ balloon.c |   22 +++++++++++-----------
+ balloon.h |    4 ----
+ 2 files changed, 11 insertions(+), 15 deletions(-)
+
+diff --git a/balloon.c b/balloon.c
+index 0021fef..f0eae0f 100644
+--- a/balloon.c
++++ b/balloon.c
+@@ -32,30 +32,30 @@
+ #include "trace.h"
+ 
+ 
+-static QEMUBalloonEvent *qemu_balloon_event;
+-void *qemu_balloon_event_opaque;
++static QEMUBalloonEvent *balloon_event_fn;
++static void *balloon_opaque;
+ 
+ void qemu_add_balloon_handler(QEMUBalloonEvent *func, void *opaque)
+ {
+-    qemu_balloon_event = func;
+-    qemu_balloon_event_opaque = opaque;
++    balloon_event_fn = func;
++    balloon_opaque = opaque;
+ }
+ 
+-int qemu_balloon(ram_addr_t target, MonitorCompletion cb, void *opaque)
++static int qemu_balloon(ram_addr_t target, MonitorCompletion cb, void *opaque)
+ {
+-    if (qemu_balloon_event) {
+-        trace_balloon_event(qemu_balloon_event_opaque, target);
+-        qemu_balloon_event(qemu_balloon_event_opaque, target, cb, opaque);
++    if (balloon_event_fn) {
++        trace_balloon_event(balloon_opaque, target);
++        balloon_event_fn(balloon_opaque, target, cb, opaque);
+         return 1;
+     } else {
+         return 0;
+     }
+ }
+ 
+-int qemu_balloon_status(MonitorCompletion cb, void *opaque)
++static int qemu_balloon_status(MonitorCompletion cb, void *opaque)
+ {
+-    if (qemu_balloon_event) {
+-        qemu_balloon_event(qemu_balloon_event_opaque, 0, cb, opaque);
++    if (balloon_event_fn) {
++        balloon_event_fn(balloon_opaque, 0, cb, opaque);
+         return 1;
+     } else {
+         return 0;
+diff --git a/balloon.h b/balloon.h
+index 5916c0e..af89d98 100644
+--- a/balloon.h
++++ b/balloon.h
+@@ -22,10 +22,6 @@ typedef void (QEMUBalloonEvent)(void *opaque, ram_addr_t target,
+ 
+ void qemu_add_balloon_handler(QEMUBalloonEvent *func, void *opaque);
+ 
+-int qemu_balloon(ram_addr_t target, MonitorCompletion cb, void *opaque);
+-
+-int qemu_balloon_status(MonitorCompletion cb, void *opaque);
+-
+ void monitor_print_balloon(Monitor *mon, const QObject *data);
+ int do_info_balloon(Monitor *mon, MonitorCompletion cb, void *opaque);
+ int do_balloon(Monitor *mon, const QDict *params,
+-- 
+1.7.3.2
+

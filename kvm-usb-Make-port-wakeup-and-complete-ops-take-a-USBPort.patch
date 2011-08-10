@@ -1,0 +1,172 @@
+From bf75125af605b276fa8a14ce370cf14b72522ca4 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Fri, 22 Jul 2011 08:47:56 -0300
+Subject: [RHEL6 qemu-kvm PATCH 12/65] usb: Make port wakeup and complete ops take a USBPort instead of a Device
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1311324476-9482-1-git-send-email-kraxel@redhat.com>
+Patchwork-id: 30165
+O-Subject: [RHEL-6.2 kvm PATCH v2 12/30] usb: Make port wakeup and complete ops take a USBPort instead of a Device
+Bugzilla: 723858 723863
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+This makes them consistent with the attach and detach ops, and in general
+it makes sense to make portops take a port as argument. This also makes
+adding support for a companion controller easier / cleaner.
+
+[ kraxel: fix usb-musb.c build ]
+
+[ v2: remove usb-{ohci,musb}.c chunks ]
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit d47e59b8b8adc96a2052f7e004cb12b6ff62edd9)
+
+Conflicts:
+
+	hw/usb-musb.c
+	hw/usb-ohci.c
+---
+ hw/usb-ehci.c |    2 +-
+ hw/usb-hub.c  |   10 +++++-----
+ hw/usb-uhci.c |   11 +++++------
+ hw/usb.c      |    4 ++--
+ hw/usb.h      |    9 +++++++--
+ 5 files changed, 20 insertions(+), 16 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-ehci.c |    2 +-
+ hw/usb-hub.c  |   10 +++++-----
+ hw/usb-uhci.c |   11 +++++------
+ hw/usb.c      |    4 ++--
+ hw/usb.h      |    9 +++++++--
+ 5 files changed, 20 insertions(+), 16 deletions(-)
+
+diff --git a/hw/usb-ehci.c b/hw/usb-ehci.c
+index bbb9fa0..3bd1f43 100644
+--- a/hw/usb-ehci.c
++++ b/hw/usb-ehci.c
+@@ -1111,7 +1111,7 @@ static int ehci_buffer_rw(EHCIQueue *q, int bytes, int rw)
+     return 0;
+ }
+ 
+-static void ehci_async_complete_packet(USBDevice *dev, USBPacket *packet)
++static void ehci_async_complete_packet(USBPort *port, USBPacket *packet)
+ {
+     EHCIQueue *q = container_of(packet, EHCIQueue, packet);
+ 
+diff --git a/hw/usb-hub.c b/hw/usb-hub.c
+index b8c33be..5e997e5 100644
+--- a/hw/usb-hub.c
++++ b/hw/usb-hub.c
+@@ -246,10 +246,10 @@ static void usb_hub_detach(USBPort *port1)
+     }
+ }
+ 
+-static void usb_hub_wakeup(USBDevice *dev)
++static void usb_hub_wakeup(USBPort *port1)
+ {
+-    USBHubState *s = dev->port->opaque;
+-    USBHubPort *port = &s->ports[dev->port->index];
++    USBHubState *s = port1->opaque;
++    USBHubPort *port = &s->ports[port1->index];
+ 
+     if (port->wPortStatus & PORT_STAT_SUSPEND) {
+         port->wPortChange |= PORT_STAT_C_SUSPEND;
+@@ -257,9 +257,9 @@ static void usb_hub_wakeup(USBDevice *dev)
+     }
+ }
+ 
+-static void usb_hub_complete(USBDevice *dev, USBPacket *packet)
++static void usb_hub_complete(USBPort *port, USBPacket *packet)
+ {
+-    USBHubState *s = dev->port->opaque;
++    USBHubState *s = port->opaque;
+ 
+     /*
+      * Just pass it along upstream for now.
+diff --git a/hw/usb-uhci.c b/hw/usb-uhci.c
+index fbd8271..5a7d86b 100644
+--- a/hw/usb-uhci.c
++++ b/hw/usb-uhci.c
+@@ -614,11 +614,10 @@ static void uhci_detach(USBPort *port1)
+     uhci_resume(s);
+ }
+ 
+-static void uhci_wakeup(USBDevice *dev)
++static void uhci_wakeup(USBPort *port1)
+ {
+-    USBBus *bus = usb_bus_from_device(dev);
+-    UHCIState *s = container_of(bus, UHCIState, bus);
+-    UHCIPort *port = s->ports + dev->port->index;
++    UHCIState *s = port1->opaque;
++    UHCIPort *port = &s->ports[port1->index];
+ 
+     if (port->ctrl & UHCI_PORT_SUSPEND && !(port->ctrl & UHCI_PORT_RD)) {
+         port->ctrl |= UHCI_PORT_RD;
+@@ -651,7 +650,7 @@ static int uhci_broadcast_packet(UHCIState *s, USBPacket *p)
+     return ret;
+ }
+ 
+-static void uhci_async_complete(USBDevice *dev, USBPacket *packet);
++static void uhci_async_complete(USBPort *port, USBPacket *packet);
+ static void uhci_process_frame(UHCIState *s);
+ 
+ /* return -1 if fatal error (frame must be stopped)
+@@ -828,7 +827,7 @@ done:
+     return len;
+ }
+ 
+-static void uhci_async_complete(USBDevice *dev, USBPacket *packet)
++static void uhci_async_complete(USBPort *port, USBPacket *packet)
+ {
+     UHCIAsync *async = container_of(packet, UHCIAsync, packet);
+     UHCIState *s = async->uhci;
+diff --git a/hw/usb.c b/hw/usb.c
+index 4a39cbc..735ffd1 100644
+--- a/hw/usb.c
++++ b/hw/usb.c
+@@ -52,7 +52,7 @@ void usb_attach(USBPort *port, USBDevice *dev)
+ void usb_wakeup(USBDevice *dev)
+ {
+     if (dev->remote_wakeup && dev->port && dev->port->ops->wakeup) {
+-        dev->port->ops->wakeup(dev);
++        dev->port->ops->wakeup(dev->port);
+     }
+ }
+ 
+@@ -335,7 +335,7 @@ void usb_packet_complete(USBDevice *dev, USBPacket *p)
+ {
+     /* Note: p->owner != dev is possible in case dev is a hub */
+     assert(p->owner != NULL);
+-    dev->port->ops->complete(dev, p);
++    dev->port->ops->complete(dev->port, p);
+     p->owner = NULL;
+ }
+ 
+diff --git a/hw/usb.h b/hw/usb.h
+index fac3f7d..9a23564 100644
+--- a/hw/usb.h
++++ b/hw/usb.h
+@@ -242,8 +242,13 @@ struct USBDeviceInfo {
+ typedef struct USBPortOps {
+     void (*attach)(USBPort *port);
+     void (*detach)(USBPort *port);
+-    void (*wakeup)(USBDevice *dev);
+-    void (*complete)(USBDevice *dev, USBPacket *p);
++    void (*wakeup)(USBPort *port);
++    /*
++     * Note that port->dev will be different then the device from which
++     * the packet originated when a hub is involved, if you want the orginating
++     * device use p->owner
++     */
++    void (*complete)(USBPort *port, USBPacket *p);
+ } USBPortOps;
+ 
+ /* USB port on which a device can be connected */
+-- 
+1.7.3.2
+

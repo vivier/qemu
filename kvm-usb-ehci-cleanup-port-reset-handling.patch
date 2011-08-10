@@ -1,0 +1,55 @@
+From bfb2dfdf70267ec42f731a1690d56851b842be36 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 21 Jul 2011 16:43:54 -0300
+Subject: [RHEL6 qemu-kvm PATCH 16/65] usb-ehci: cleanup port reset handling
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1311266648-1179-17-git-send-email-kraxel@redhat.com>
+Patchwork-id: 30142
+O-Subject: [RHEL-6.2 kvm PATCH 16/30] usb-ehci: cleanup port reset handling
+Bugzilla: 723858 723863
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+From: Hans de Goede <hdegoede@redhat.com>
+
+Doing a usb_attach when dev is NULL will just result in the
+port detach op getting called even though nothing was connected in
+the first place.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit fbf9db645765a22b796e128967bebb64c073938a)
+---
+ hw/usb-ehci.c |    7 +------
+ 1 files changed, 1 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-ehci.c |    7 +------
+ 1 files changed, 1 insertions(+), 6 deletions(-)
+
+diff --git a/hw/usb-ehci.c b/hw/usb-ehci.c
+index 779dc6a..e219d9d 100644
+--- a/hw/usb-ehci.c
++++ b/hw/usb-ehci.c
+@@ -863,14 +863,9 @@ static void handle_port_status_write(EHCIState *s, int port, uint32_t val)
+ 
+     if (!(val & PORTSC_PRESET) &&(*portsc & PORTSC_PRESET)) {
+         trace_usb_ehci_port_reset(port, 0);
+-        usb_attach(&s->ports[port], dev);
+-
+-        // TODO how to handle reset of ports with no device
+         if (dev) {
++            usb_attach(&s->ports[port], dev);
+             usb_send_msg(dev, USB_MSG_RESET);
+-        }
+-
+-        if (s->ports[port].dev) {
+             *portsc &= ~PORTSC_CSC;
+         }
+ 
+-- 
+1.7.3.2
+

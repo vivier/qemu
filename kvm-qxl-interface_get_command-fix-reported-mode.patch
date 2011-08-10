@@ -1,0 +1,99 @@
+From a21c818663794d57f0a10f72e8f57a2aa2fb9f94 Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Sun, 24 Jul 2011 16:34:12 -0300
+Subject: [RHEL6 qemu-kvm PATCH 31/65] qxl: interface_get_command: fix reported mode
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1311525266-12705-3-git-send-email-alevy@redhat.com>
+Patchwork-id: 30244
+O-Subject: [PATCH RHEL6.2 02/16] qxl: interface_get_command: fix reported mode
+Bugzilla: 700134
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Yonit Halperin <yhalperi@redhat.com>
+RH-Acked-by: Arnon Gilboa <agilboa@redhat.com>
+
+report correct mode when in undefined mode.
+introduces qxl_mode_to_string(), and uses it in other places too.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+
+upstream: commit 5b77870ce0edde6cf6dd242fa892e28f5c87b4fd
+---
+ hw/qxl.c |   25 +++++++++++++++++++++----
+ 1 files changed, 21 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qxl.c |   25 +++++++++++++++++++++----
+ 1 files changed, 21 insertions(+), 4 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index 130362f..228fa26 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -336,6 +336,21 @@ static void interface_get_init_info(QXLInstance *sin, QXLDevInitInfo *info)
+     info->n_surfaces = NUM_SURFACES;
+ }
+ 
++static const char *qxl_mode_to_string(int mode)
++{
++    switch (mode) {
++    case QXL_MODE_COMPAT:
++        return "compat";
++    case QXL_MODE_NATIVE:
++        return "native";
++    case QXL_MODE_UNDEFINED:
++        return "undefined";
++    case QXL_MODE_VGA:
++        return "vga";
++    }
++    return "INVALID";
++}
++
+ /* called from spice server thread context only */
+ static int interface_get_command(QXLInstance *sin, struct QXLCommandExt *ext)
+ {
+@@ -358,18 +373,19 @@ static int interface_get_command(QXLInstance *sin, struct QXLCommandExt *ext)
+         }
+         qemu_mutex_unlock(&qxl->ssd.lock);
+         if (ret) {
++            dprint(qxl, 2, "%s %s\n", __FUNCTION__, qxl_mode_to_string(qxl->mode));
+             qxl_log_command(qxl, "vga", ext);
+         }
+         return ret;
+     case QXL_MODE_COMPAT:
+     case QXL_MODE_NATIVE:
+     case QXL_MODE_UNDEFINED:
+-        dprint(qxl, 2, "%s: %s\n", __FUNCTION__,
+-               qxl->cmdflags ? "compat" : "native");
++        dprint(qxl, 4, "%s: %s\n", __FUNCTION__, qxl_mode_to_string(qxl->mode));
+         ring = &qxl->ram->cmd_ring;
+         if (SPICE_RING_IS_EMPTY(ring)) {
+             return false;
+         }
++        dprint(qxl, 2, "%s: %s\n", __FUNCTION__, qxl_mode_to_string(qxl->mode));
+         SPICE_RING_CONS_ITEM(ring, cmd);
+         ext->cmd      = *cmd;
+         ext->group_id = MEMSLOT_GROUP_GUEST;
+@@ -993,7 +1009,7 @@ static void ioport_write(void *opaque, uint32_t addr, uint32_t val)
+         break;
+     case QXL_IO_DESTROY_PRIMARY:
+         PANIC_ON(val != 0);
+-        dprint(d, 1, "QXL_IO_DESTROY_PRIMARY\n");
++        dprint(d, 1, "QXL_IO_DESTROY_PRIMARY (%s)\n", qxl_mode_to_string(d->mode));
+         qxl_destroy_primary(d);
+         break;
+     case QXL_IO_DESTROY_SURFACE_WAIT:
+@@ -1378,7 +1394,8 @@ static int qxl_post_load(void *opaque, int version)
+ 
+     d->modes = (QXLModes*)((uint8_t*)d->rom + d->rom->modes_offset);
+ 
+-    dprint(d, 1, "%s: restore mode\n", __FUNCTION__);
++    dprint(d, 1, "%s: restore mode (%s)\n", __FUNCTION__,
++        qxl_mode_to_string(d->mode));
+     newmode = d->mode;
+     d->mode = QXL_MODE_UNDEFINED;
+     switch (newmode) {
+-- 
+1.7.3.2
+

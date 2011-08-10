@@ -1,0 +1,236 @@
+From dfb5efd3c77aad9120212c06905bf464f5c41c29 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Fri, 22 Jul 2011 08:48:38 -0300
+Subject: [RHEL6 qemu-kvm PATCH 13/65] usb: Replace device_destroy bus op with a child_detach port op
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1311324518-9578-1-git-send-email-kraxel@redhat.com>
+Patchwork-id: 30166
+O-Subject: [RHEL-6.2 kvm PATCH v2 13/30] usb: Replace device_destroy bus op with a child_detach port op
+Bugzilla: 723858 723863
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+Note this fixes 2 things in one go, first of all the device_destroy bus
+op should be a device_detach bus op, as pending async packets from the
+device should be cancelled on detach not on destroy.
+
+Secondly having this as a bus op won't work with companion controllers, since
+then there will be 1 bus driven by the ehci controller and thus 1 set of bus
+ops, but the device being detached may be downstream of a handed over port.
+Making the detach of a downstream device a port op allows the ehci controller
+to forward this to the companion controller port for handed over ports.
+
+[ v2: remove usb-{ohci,musb}.c chunks ]
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 4706ab6cc0af86d3f38806664420cc3eb8999bd9)
+
+Conflicts:
+
+	hw/milkymist-softusb.c
+	hw/usb-musb.c
+	hw/usb-ohci.c
+---
+ hw/usb-bus.c  |    2 --
+ hw/usb-ehci.c |   18 ++++++++++--------
+ hw/usb-hub.c  |   12 ++++++++++++
+ hw/usb-uhci.c |   18 ++++++++++--------
+ hw/usb.h      |    6 +++++-
+ 5 files changed, 37 insertions(+), 19 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-bus.c  |    2 --
+ hw/usb-ehci.c |   18 ++++++++++--------
+ hw/usb-hub.c  |   12 ++++++++++++
+ hw/usb-uhci.c |   18 ++++++++++--------
+ hw/usb.h      |    6 +++++-
+ 5 files changed, 37 insertions(+), 19 deletions(-)
+
+diff --git a/hw/usb-bus.c b/hw/usb-bus.c
+index 4fdbf20..fb22f0f 100644
+--- a/hw/usb-bus.c
++++ b/hw/usb-bus.c
+@@ -82,12 +82,10 @@ static int usb_qdev_init(DeviceState *qdev, DeviceInfo *base)
+ static int usb_qdev_exit(DeviceState *qdev)
+ {
+     USBDevice *dev = DO_UPCAST(USBDevice, qdev, qdev);
+-    USBBus *bus = usb_bus_from_device(dev);
+ 
+     if (dev->attached) {
+         usb_device_detach(dev);
+     }
+-    bus->ops->device_destroy(bus, dev);
+     if (dev->info->handle_destroy) {
+         dev->info->handle_destroy(dev);
+     }
+diff --git a/hw/usb-ehci.c b/hw/usb-ehci.c
+index 3bd1f43..db50be0 100644
+--- a/hw/usb-ehci.c
++++ b/hw/usb-ehci.c
+@@ -751,6 +751,8 @@ static void ehci_detach(USBPort *port)
+ 
+     trace_usb_ehci_port_detach(port->index);
+ 
++    ehci_queues_rip_device(s, port->dev);
++
+     *portsc &= ~PORTSC_CONNECT;
+     *portsc |= PORTSC_CSC;
+ 
+@@ -764,6 +766,13 @@ static void ehci_detach(USBPort *port)
+     }
+ }
+ 
++static void ehci_child_detach(USBPort *port, USBDevice *child)
++{
++    EHCIState *s = port->opaque;
++
++    ehci_queues_rip_device(s, child);
++}
++
+ /* 4.1 host controller initialization */
+ static void ehci_reset(void *opaque)
+ {
+@@ -2124,23 +2133,16 @@ static void ehci_map(PCIDevice *pci_dev, int region_num,
+     cpu_register_physical_memory(addr, size, s->mem);
+ }
+ 
+-static void ehci_device_destroy(USBBus *bus, USBDevice *dev)
+-{
+-    EHCIState *s = container_of(bus, EHCIState, bus);
+-
+-    ehci_queues_rip_device(s, dev);
+-}
+-
+ static int usb_ehci_initfn(PCIDevice *dev);
+ 
+ static USBPortOps ehci_port_ops = {
+     .attach = ehci_attach,
+     .detach = ehci_detach,
++    .child_detach = ehci_child_detach,
+     .complete = ehci_async_complete_packet,
+ };
+ 
+ static USBBusOps ehci_bus_ops = {
+-    .device_destroy = ehci_device_destroy,
+ };
+ 
+ static PCIDeviceInfo ehci_info = {
+diff --git a/hw/usb-hub.c b/hw/usb-hub.c
+index 5e997e5..fecf01d 100644
+--- a/hw/usb-hub.c
++++ b/hw/usb-hub.c
+@@ -238,6 +238,9 @@ static void usb_hub_detach(USBPort *port1)
+     USBHubState *s = port1->opaque;
+     USBHubPort *port = &s->ports[port1->index];
+ 
++    /* Let upstream know the device on this port is gone */
++    s->dev.port->ops->child_detach(s->dev.port, port1->dev);
++
+     port->wPortStatus &= ~PORT_STAT_CONNECTION;
+     port->wPortChange |= PORT_STAT_C_CONNECTION;
+     if (port->wPortStatus & PORT_STAT_ENABLE) {
+@@ -246,6 +249,14 @@ static void usb_hub_detach(USBPort *port1)
+     }
+ }
+ 
++static void usb_hub_child_detach(USBPort *port1, USBDevice *child)
++{
++    USBHubState *s = port1->opaque;
++
++    /* Pass along upstream */
++    s->dev.port->ops->child_detach(s->dev.port, child);
++}
++
+ static void usb_hub_wakeup(USBPort *port1)
+ {
+     USBHubState *s = port1->opaque;
+@@ -537,6 +548,7 @@ static void usb_hub_handle_destroy(USBDevice *dev)
+ static USBPortOps usb_hub_port_ops = {
+     .attach = usb_hub_attach,
+     .detach = usb_hub_detach,
++    .child_detach = usb_hub_child_detach,
+     .wakeup = usb_hub_wakeup,
+     .complete = usb_hub_complete,
+ };
+diff --git a/hw/usb-uhci.c b/hw/usb-uhci.c
+index 5a7d86b..fe71261 100644
+--- a/hw/usb-uhci.c
++++ b/hw/usb-uhci.c
+@@ -600,6 +600,8 @@ static void uhci_detach(USBPort *port1)
+     UHCIState *s = port1->opaque;
+     UHCIPort *port = &s->ports[port1->index];
+ 
++    uhci_async_cancel_device(s, port1->dev);
++
+     /* set connect status */
+     if (port->ctrl & UHCI_PORT_CCS) {
+         port->ctrl &= ~UHCI_PORT_CCS;
+@@ -614,6 +616,13 @@ static void uhci_detach(USBPort *port1)
+     uhci_resume(s);
+ }
+ 
++static void uhci_child_detach(USBPort *port1, USBDevice *child)
++{
++    UHCIState *s = port1->opaque;
++
++    uhci_async_cancel_device(s, child);
++}
++
+ static void uhci_wakeup(USBPort *port1)
+ {
+     UHCIState *s = port1->opaque;
+@@ -1053,22 +1062,15 @@ static void uhci_map(PCIDevice *pci_dev, int region_num,
+     register_ioport_read(addr, 32, 1, uhci_ioport_readb, s);
+ }
+ 
+-static void uhci_device_destroy(USBBus *bus, USBDevice *dev)
+-{
+-    UHCIState *s = container_of(bus, UHCIState, bus);
+-
+-    uhci_async_cancel_device(s, dev);
+-}
+-
+ static USBPortOps uhci_port_ops = {
+     .attach = uhci_attach,
+     .detach = uhci_detach,
++    .child_detach = uhci_child_detach,
+     .wakeup = uhci_wakeup,
+     .complete = uhci_async_complete,
+ };
+ 
+ static USBBusOps uhci_bus_ops = {
+-    .device_destroy = uhci_device_destroy,
+ };
+ 
+ static int usb_uhci_common_initfn(UHCIState *s)
+diff --git a/hw/usb.h b/hw/usb.h
+index 9a23564..9a36238 100644
+--- a/hw/usb.h
++++ b/hw/usb.h
+@@ -242,6 +242,11 @@ struct USBDeviceInfo {
+ typedef struct USBPortOps {
+     void (*attach)(USBPort *port);
+     void (*detach)(USBPort *port);
++    /*
++     * This gets called when a device downstream from the device attached to
++     * the port (iow attached through a hub) gets detached.
++     */
++    void (*child_detach)(USBPort *port, USBDevice *child);
+     void (*wakeup)(USBPort *port);
+     /*
+      * Note that port->dev will be different then the device from which
+@@ -341,7 +346,6 @@ struct USBBus {
+ struct USBBusOps {
+     int (*register_companion)(USBBus *bus, USBPort *ports[],
+                               uint32_t portcount, uint32_t firstport);
+-    void (*device_destroy)(USBBus *bus, USBDevice *dev);
+ };
+ 
+ void usb_bus_new(USBBus *bus, USBBusOps *ops, DeviceState *host);
+-- 
+1.7.3.2
+

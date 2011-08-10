@@ -1,0 +1,70 @@
+From 9ae691f661c59beb177850a7bef357f3fbbf45d3 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Mon, 1 Aug 2011 11:40:59 -0300
+Subject: [RHEL6 qemu-kvm PATCH 58/65] virtio-balloon: Unregister savevm section on device unplug
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <89a33e2f40ca64fcc44739b1e75752819a10847f.1312198249.git.amit.shah@redhat.com>
+Patchwork-id: 30732
+O-Subject: [RHEL6.2 qemu PATCH 13/13] virtio-balloon: Unregister savevm section on device unplug
+Bugzilla: 726023
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+Migrating after unplugging a virtio-balloon device resulted in an error
+message on the destination:
+
+Unknown savevm section or instance '0000:00:04.0/virtio-balloon' 0
+load of migration failed
+
+Fix this by unregistering the section on device unplug.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Reviewed-by: Markus Armbruster <armbru@redhat.com>
+Acked-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry picked from commit 868aa386b825e8058b8988ec7703908661af1e22)
+
+Bugzilla: 726023
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-balloon.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/virtio-balloon.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-balloon.c b/hw/virtio-balloon.c
+index 7c02afd..7b76603 100644
+--- a/hw/virtio-balloon.c
++++ b/hw/virtio-balloon.c
+@@ -47,6 +47,7 @@ typedef struct VirtIOBalloon
+     size_t stats_vq_offset;
+     MonitorCompletion *stats_callback;
+     void *stats_opaque_callback_data;
++    DeviceState *qdev;
+ } VirtIOBalloon;
+ 
+ static VirtIOBalloon *to_virtio_balloon(VirtIODevice *vdev)
+@@ -294,6 +295,7 @@ VirtIODevice *virtio_balloon_init(DeviceState *dev)
+ 
+     reset_stats(s);
+ 
++    s->qdev = dev;
+     register_savevm(dev, "virtio-balloon", -1, 1,
+                     virtio_balloon_save, virtio_balloon_load, s);
+ 
+@@ -302,5 +304,7 @@ VirtIODevice *virtio_balloon_init(DeviceState *dev)
+ 
+ void virtio_balloon_exit(VirtIODevice *vdev)
+ {
++    VirtIOBalloon *s = DO_UPCAST(VirtIOBalloon, vdev, vdev);
++    unregister_savevm(s->qdev, "virtio-balloon", s);
+     virtio_cleanup(vdev);
+ }
+-- 
+1.7.3.2
+

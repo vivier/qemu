@@ -1,0 +1,249 @@
+From 61d169a01727bf5d55dc0b770765cc19c4a572f7 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 21 Jul 2011 16:43:44 -0300
+Subject: [RHEL6 qemu-kvm PATCH 06/65] usb: Add a speedmask to devices
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1311266648-1179-7-git-send-email-kraxel@redhat.com>
+Patchwork-id: 30130
+O-Subject: [RHEL-6.2 kvm PATCH 06/30] usb: Add a speedmask to devices
+Bugzilla: 723858 723863
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+This is used to indicate at which speed[s] the device can operate,
+so that this can be checked to match the ports capabilities when it gets
+attached to a bus.
+
+Note that currently all usb1 emulated device claim to be fullspeed, this
+seems to not cause any problems, but still seems wrong, because with real
+hardware keyboards, mice and tablets usually are lo-speed, so reporting these
+as fullspeed devices seems wrong.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit ba3f9bfba9ad8d2bbcb9a9fa9ed0f07347fc1c58)
+
+Conflicts:
+
+	usb-bsd.c
+---
+ hw/usb-ccid.c |    1 +
+ hw/usb-desc.c |   10 +++++++
+ hw/usb.h      |    3 ++
+ usb-bsd.c     |   74 ++++++++++++++++++++++++++++++--------------------------
+ usb-linux.c   |    1 +
+ 5 files changed, 55 insertions(+), 34 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-ccid.c |    1 +
+ hw/usb-desc.c |   10 +++++++
+ hw/usb.h      |    3 ++
+ usb-bsd.c     |   74 ++++++++++++++++++++++++++++++--------------------------
+ usb-linux.c   |    1 +
+ 5 files changed, 55 insertions(+), 34 deletions(-)
+
+diff --git a/hw/usb-ccid.c b/hw/usb-ccid.c
+index 80e72ff..16f703e 100644
+--- a/hw/usb-ccid.c
++++ b/hw/usb-ccid.c
+@@ -1283,6 +1283,7 @@ static int ccid_initfn(USBDevice *dev)
+     s->migration_target_ip = 0;
+     s->migration_target_port = 0;
+     s->dev.speed = USB_SPEED_FULL;
++    s->dev.speedmask = USB_SPEED_MASK_FULL;
+     s->notify_slot_change = false;
+     s->powered = true;
+     s->pending_answers_num = 0;
+diff --git a/hw/usb-desc.c b/hw/usb-desc.c
+index e4a4680..0b9d351 100644
+--- a/hw/usb-desc.c
++++ b/hw/usb-desc.c
+@@ -242,7 +242,17 @@ static void usb_desc_setdefaults(USBDevice *dev)
+ 
+ void usb_desc_init(USBDevice *dev)
+ {
++    const USBDesc *desc = dev->info->usb_desc;
++
++    assert(desc != NULL);
+     dev->speed = USB_SPEED_FULL;
++    dev->speedmask = 0;
++    if (desc->full) {
++        dev->speedmask |= USB_SPEED_MASK_FULL;
++    }
++    if (desc->high) {
++        dev->speedmask |= USB_SPEED_MASK_HIGH;
++    }
+     usb_desc_setdefaults(dev);
+ }
+ 
+diff --git a/hw/usb.h b/hw/usb.h
+index 8201b8a..1001227 100644
+--- a/hw/usb.h
++++ b/hw/usb.h
+@@ -158,7 +158,10 @@ struct USBDevice {
+     char *port_path;
+     void *opaque;
+ 
++    /* Actual connected speed */
+     int speed;
++    /* Supported speeds, not in info because it may be variable (hostdevs) */
++    int speedmask;
+     uint8_t addr;
+     char product_desc[32];
+     int auto_attach;
+diff --git a/usb-bsd.c b/usb-bsd.c
+index a88f200..c1bcc4a 100644
+--- a/usb-bsd.c
++++ b/usb-bsd.c
+@@ -39,7 +39,6 @@
+ #else
+ #include <bus/usb/usb.h>
+ #endif
+-#include <signal.h>
+ 
+ /* This value has maximum potential at 16.
+  * You should also set hw.usb.debug to gain
+@@ -307,14 +306,15 @@ USBDevice *usb_host_device_open(const char *devname)
+ {
+     struct usb_device_info bus_info, dev_info;
+     USBDevice *d = NULL;
+-    USBHostDevice *dev;
++    USBHostDevice *dev, *ret = NULL;
+     char ctlpath[PATH_MAX + 1];
+     char buspath[PATH_MAX + 1];
+     int bfd, dfd, bus, address, i;
+     int ugendebug = UGEN_DEBUG_LEVEL;
+ 
+-    if (usb_host_find_device(&bus, &address, devname) < 0)
+-        return NULL;
++    if (usb_host_find_device(&bus, &address, devname) < 0) {
++        goto fail;
++    }
+ 
+     snprintf(buspath, PATH_MAX, "/dev/usb%d", bus);
+ 
+@@ -324,7 +324,7 @@ USBDevice *usb_host_device_open(const char *devname)
+         printf("usb_host_device_open: failed to open usb bus - %s\n",
+                strerror(errno));
+ #endif
+-        return NULL;
++        goto fail;
+     }
+ 
+     bus_info.udi_addr = address;
+@@ -333,7 +333,7 @@ USBDevice *usb_host_device_open(const char *devname)
+         printf("usb_host_device_open: failed to grab bus information - %s\n",
+                strerror(errno));
+ #endif
+-        return NULL;
++        goto fail_bfd;
+     }
+ 
+ #if defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__DragonFly__)
+@@ -351,46 +351,52 @@ USBDevice *usb_host_device_open(const char *devname)
+                    ctlpath, strerror(errno));
+ #endif
+         }
++        goto fail_dfd;
+     }
+ 
+-    if (dfd >= 0) {
+-        if (ioctl(dfd, USB_GET_DEVICEINFO, &dev_info) < 0) {
++    if (ioctl(dfd, USB_GET_DEVICEINFO, &dev_info) < 0) {
+ #ifdef DEBUG
+-            printf("usb_host_device_open: failed to grab device info - %s\n",
+-                   strerror(errno));
++        printf("usb_host_device_open: failed to grab device info - %s\n",
++               strerror(errno));
+ #endif
+-            goto fail;
+-        }
++        goto fail_dfd;
++    }
+ 
+-        d = usb_create(NULL /* FIXME */, "usb-host");
+-        dev = DO_UPCAST(USBHostDevice, dev, d);
++    d = usb_create(NULL /* FIXME */, "usb-host");
++    dev = DO_UPCAST(USBHostDevice, dev, d);
+ 
+-        if (dev_info.udi_speed == 1)
+-            dev->dev.speed = USB_SPEED_LOW - 1;
+-        else
+-            dev->dev.speed = USB_SPEED_FULL - 1;
++    if (dev_info.udi_speed == 1) {
++        dev->dev.speed = USB_SPEED_LOW - 1;
++    } else {
++        dev->dev.speed = USB_SPEED_FULL - 1;
++    }
+ 
+-        if (strncmp(dev_info.udi_product, "product", 7) != 0)
+-            pstrcpy(dev->dev.product_desc, sizeof(dev->dev.product_desc),
+-                    dev_info.udi_product);
+-        else
+-            snprintf(dev->dev.product_desc, sizeof(dev->dev.product_desc),
+-                     "host:%s", devname);
++    if (strncmp(dev_info.udi_product, "product", 7) != 0) {
++        pstrcpy(dev->dev.product_desc, sizeof(dev->dev.product_desc),
++                dev_info.udi_product);
++    } else {
++        snprintf(dev->dev.product_desc, sizeof(dev->dev.product_desc),
++                 "host:%s", devname);
++    }
+ 
+-        pstrcpy(dev->devpath, sizeof(dev->devpath), "/dev/");
+-        pstrcat(dev->devpath, sizeof(dev->devpath), dev_info.udi_devnames[0]);
++    pstrcpy(dev->devpath, sizeof(dev->devpath), "/dev/");
++    pstrcat(dev->devpath, sizeof(dev->devpath), dev_info.udi_devnames[0]);
+ 
+-        /* Mark the endpoints as not yet open */
+-        for (i = 0; i < USB_MAX_ENDPOINTS; i++)
+-           dev->ep_fd[i] = -1;
++    /* Mark the endpoints as not yet open */
++    for (i = 0; i < USB_MAX_ENDPOINTS; i++) {
++        dev->ep_fd[i] = -1;
++    }
+ 
+-        ioctl(dfd, USB_SETDEBUG, &ugendebug);
++    ioctl(dfd, USB_SETDEBUG, &ugendebug);
+ 
+-        return (USBDevice *)dev;
+-    }
++    ret = (USBDevice *)dev;
+ 
++fail_dfd:
++    close(dfd);
++fail_bfd:
++    close(bfd);
+ fail:
+-    return NULL;
++    return ret;
+ }
+ 
+ static struct USBDeviceInfo usb_host_dev_info = {
+@@ -458,7 +464,7 @@ static int usb_host_scan(void *opaque, USBScanFunc *func)
+                 printf("usb_host_scan: couldn't get device information for %s - %s\n",
+                        devbuf, strerror(errno));
+ 
+-            // XXX: might need to fixup endianess of word values before copying over
++            /* XXX: might need to fixup endianness of word values before copying over */
+ 
+             vendor_id = dev_info.udi_vendorNo;
+             product_id = dev_info.udi_productNo;
+diff --git a/usb-linux.c b/usb-linux.c
+index 3b819d4..f0b2a82 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -1158,6 +1158,7 @@ static int usb_host_open(USBHostDevice *dev, int bus_num,
+         }
+     }
+     dev->dev.speed = speed;
++    dev->dev.speedmask = (1 << speed);
+ 
+     printf("husb: grabbed usb device %d.%d\n", bus_num, addr);
+ 
+-- 
+1.7.3.2
+

@@ -1,0 +1,187 @@
+From 30d82d22c85399b7ed6bdd2dc040eb0cebbcc48e Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Mon, 1 Aug 2011 11:40:52 -0300
+Subject: [RHEL6 qemu-kvm PATCH 51/65] balloon: Separate out stat and balloon handling
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <2de5f8bb7f4224c93a8c7acc88546e5a0316c7d1.1312198249.git.amit.shah@redhat.com>
+Patchwork-id: 30725
+O-Subject: [RHEL6.2 qemu PATCH 06/13] balloon: Separate out stat and balloon handling
+Bugzilla: 694378
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+Passing on '0' as ballooning target to indicate retrieval of stats is
+bad API.  It also makes 'balloon 0' in the monitor cause a segfault.
+Have two different functions handle the different functionality instead.
+
+Detailed explanation from Markus's review:
+
+1. do_info_balloon() is an info_async() method.  It receives a callback
+   with argument, to be called exactly once (callback frees the
+   argument).  It passes the callback via qemu_balloon_status() and
+   indirectly through qemu_balloon_event to virtio_balloon_to_target().
+
+   virtio_balloon_to_target() executes its balloon stats half.  It
+   stores the callback in the device state.
+
+   If it can't send a stats request, it resets stats and calls the
+   callback right away.
+
+   Else, it sends a stats request.  The device model runs the callback
+   when it receives the answer.
+
+   Works.
+
+2. do_balloon() is a cmd_async() method.  It receives a callback with
+   argument, to be called when the command completes.  do_balloon()
+   calls it right before it succeeds.  Odd, but should work.
+
+   Nevertheless, it passes the callback on via qemu_ballon() and
+   indirectly through qemu_balloon_event to virtio_balloon_to_target().
+
+   a. If the argument is non-zero, virtio_balloon_to_target() executes
+      its balloon half, which doesn't use the callback in any way.
+
+      Odd, but works.
+
+   b. If the argument is zero, virtio_balloon_to_target() executes its
+      balloon stats half, just like in 1.  It either calls the callback
+      right away, or arranges for it to be called later.
+
+      Thus, the callback runs twice: use after free and double free.
+
+Test case: start with -S -device virtio-balloon, execute "balloon 0" in
+human monitor.  Runs the callback first from virtio_balloon_to_target(),
+then again from do_balloon().
+
+Reported-by: Mike Cao <bcao@redhat.com>
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Reviewed-by: Markus Armbruster <armbru@redhat.com>
+(cherry picked from commit 1a39b0fcff1c3cc77ad21930821b43be890ba400)
+
+Bugzilla: 694378
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ balloon.c           |   17 ++++++++++-------
+ balloon.h           |    8 +++++---
+ hw/virtio-balloon.c |    7 ++-----
+ 3 files changed, 17 insertions(+), 15 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ balloon.c           |   17 ++++++++++-------
+ balloon.h           |    8 +++++---
+ hw/virtio-balloon.c |    7 ++-----
+ 3 files changed, 17 insertions(+), 15 deletions(-)
+
+diff --git a/balloon.c b/balloon.c
+index 85410fd..e934878 100644
+--- a/balloon.c
++++ b/balloon.c
+@@ -33,30 +33,33 @@
+ 
+ 
+ static QEMUBalloonEvent *balloon_event_fn;
++static QEMUBalloonStatus *balloon_stat_fn;
+ static void *balloon_opaque;
+ 
+-void qemu_add_balloon_handler(QEMUBalloonEvent *func, void *opaque)
++void qemu_add_balloon_handler(QEMUBalloonEvent *event_func,
++                              QEMUBalloonStatus *stat_func, void *opaque)
+ {
+-    balloon_event_fn = func;
++    balloon_event_fn = event_func;
++    balloon_stat_fn = stat_func;
+     balloon_opaque = opaque;
+ }
+ 
+-static int qemu_balloon(ram_addr_t target, MonitorCompletion cb, void *opaque)
++static int qemu_balloon(ram_addr_t target)
+ {
+     if (!balloon_event_fn) {
+         return 0;
+     }
+     trace_balloon_event(balloon_opaque, target);
+-    balloon_event_fn(balloon_opaque, target, cb, opaque);
++    balloon_event_fn(balloon_opaque, target);
+     return 1;
+ }
+ 
+ static int qemu_balloon_status(MonitorCompletion cb, void *opaque)
+ {
+-    if (!balloon_event_fn) {
++    if (!balloon_stat_fn) {
+         return 0;
+     }
+-    balloon_event_fn(balloon_opaque, 0, cb, opaque);
++    balloon_stat_fn(balloon_opaque, cb, opaque);
+     return 1;
+ }
+ 
+@@ -136,7 +139,7 @@ int do_balloon(Monitor *mon, const QDict *params,
+         return -1;
+     }
+ 
+-    ret = qemu_balloon(qdict_get_int(params, "value"), cb, opaque);
++    ret = qemu_balloon(qdict_get_int(params, "value"));
+     if (ret == 0) {
+         qerror_report(QERR_DEVICE_NOT_ACTIVE, "balloon");
+         return -1;
+diff --git a/balloon.h b/balloon.h
+index af89d98..4c106a3 100644
+--- a/balloon.h
++++ b/balloon.h
+@@ -17,10 +17,12 @@
+ #include "cpu-defs.h"
+ #include "monitor.h"
+ 
+-typedef void (QEMUBalloonEvent)(void *opaque, ram_addr_t target,
+-                                MonitorCompletion cb, void *cb_data);
++typedef void (QEMUBalloonEvent)(void *opaque, ram_addr_t target);
++typedef void (QEMUBalloonStatus)(void *opaque, MonitorCompletion cb,
++                                 void *cb_data);
+ 
+-void qemu_add_balloon_handler(QEMUBalloonEvent *func, void *opaque);
++void qemu_add_balloon_handler(QEMUBalloonEvent *event_func,
++                              QEMUBalloonStatus *stat_func, void *opaque);
+ 
+ void monitor_print_balloon(Monitor *mon, const QObject *data);
+ int do_info_balloon(Monitor *mon, MonitorCompletion cb, void *opaque);
+diff --git a/hw/virtio-balloon.c b/hw/virtio-balloon.c
+index 12130f1..5b9e05e 100644
+--- a/hw/virtio-balloon.c
++++ b/hw/virtio-balloon.c
+@@ -229,8 +229,7 @@ static void virtio_balloon_stat(void *opaque, MonitorCompletion cb,
+     complete_stats_request(dev);
+ }
+ 
+-static void virtio_balloon_to_target(void *opaque, ram_addr_t target,
+-                                     MonitorCompletion cb, void *cb_data)
++static void virtio_balloon_to_target(void *opaque, ram_addr_t target)
+ {
+     VirtIOBalloon *dev = opaque;
+ 
+@@ -240,8 +239,6 @@ static void virtio_balloon_to_target(void *opaque, ram_addr_t target,
+     if (target) {
+         dev->num_pages = (ram_size - target) >> VIRTIO_BALLOON_PFN_SHIFT;
+         virtio_notify_config(&dev->vdev);
+-    } else {
+-        virtio_balloon_stat(opaque, cb, cb_data);
+     }
+ }
+ 
+@@ -286,7 +283,7 @@ VirtIODevice *virtio_balloon_init(DeviceState *dev)
+     s->svq = virtio_add_queue(&s->vdev, 128, virtio_balloon_receive_stats);
+ 
+     reset_stats(s);
+-    qemu_add_balloon_handler(virtio_balloon_to_target, s);
++    qemu_add_balloon_handler(virtio_balloon_to_target, virtio_balloon_stat, s);
+ 
+     register_savevm(dev, "virtio-balloon", -1, 1,
+                     virtio_balloon_save, virtio_balloon_load, s);
+-- 
+1.7.3.2
+

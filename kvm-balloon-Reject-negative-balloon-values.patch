@@ -1,0 +1,64 @@
+From 853a67106eaf6eae188e63d0399c22daef132c46 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Mon, 1 Aug 2011 11:40:57 -0300
+Subject: [RHEL6 qemu-kvm PATCH 56/65] balloon: Reject negative balloon values
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <f0498541863aa7192837e424c51fe2e310a3ef3c.1312198249.git.amit.shah@redhat.com>
+Patchwork-id: 30730
+O-Subject: [RHEL6.2 qemu PATCH 11/13] balloon: Reject negative balloon values
+Bugzilla: 694373
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+Negative balloon values don't make sense, reject them and throw a qerror
+with QERR_INVALID_PARAMETER_VALUE.
+
+Reported-by: Mike Cao <bcao@redhat.com>
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Reviewed-by: Markus Armbruster <armbru@redhat.com>
+Acked-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry picked from commit 9843621e3b03d36aa64d57abedc6d03bde464dd3)
+
+Bugzilla: 694373
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ balloon.c |    8 +++++++-
+ 1 files changed, 7 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ balloon.c |    8 +++++++-
+ 1 files changed, 7 insertions(+), 1 deletions(-)
+
+diff --git a/balloon.c b/balloon.c
+index 7a8a457..2a6dfe6 100644
+--- a/balloon.c
++++ b/balloon.c
+@@ -141,6 +141,7 @@ int do_info_balloon(Monitor *mon, MonitorCompletion cb, void *opaque)
+ int do_balloon(Monitor *mon, const QDict *params,
+ 	       MonitorCompletion cb, void *opaque)
+ {
++    int64_t target;
+     int ret;
+ 
+     if (kvm_enabled() && !kvm_has_sync_mmu()) {
+@@ -148,7 +149,12 @@ int do_balloon(Monitor *mon, const QDict *params,
+         return -1;
+     }
+ 
+-    ret = qemu_balloon(qdict_get_int(params, "value"));
++    target = qdict_get_int(params, "value");
++    if (target <= 0) {
++        qerror_report(QERR_INVALID_PARAMETER_VALUE, "target", "a size");
++        return -1;
++    }
++    ret = qemu_balloon(target);
+     if (ret == 0) {
+         qerror_report(QERR_DEVICE_NOT_ACTIVE, "balloon");
+         return -1;
+-- 
+1.7.3.2
+
