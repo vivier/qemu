@@ -15,7 +15,7 @@
 
 %define sublevel 0.12.1.2
 %define pkgrelease 2.160
-%define zrelease 7
+%define zrelease 8
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}.%{zrelease}
@@ -2544,6 +2544,8 @@ Patch2135: kvm-clarify-support-statement-in-KVM-help.patch
 Patch2136: kvm-vhost-fix-double-free-on-device-stop.patch
 # For bz#727896 - ACPI description of serial and parallel ports incorrect with -chardev/-device
 Patch2137: kvm-report-serial-devices-created-with-device-in-the-PII.patch
+# For bz#727468 - Unable to attach PCI device on a booted virt guest
+Patch2138: kvm-device-assignment-handle-device-with-incorrect-PCIe-.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3788,6 +3790,7 @@ ApplyOptionalPatch()
 %patch2135 -p1
 %patch2136 -p1
 %patch2137 -p1
+%patch2138 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -4009,6 +4012,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Aug 10 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.160.el6_1.8
+- kvm-device-assignment-handle-device-with-incorrect-PCIe-.patch [bz#727468]
+- Resolves: bz#727468
+  (Unable to attach PCI device on a booted virt guest)
+
 * Thu Aug 04 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.160.el6_1.7
 - kvm-vhost-fix-double-free-on-device-stop.patch [bz#726609]
 - kvm-report-serial-devices-created-with-device-in-the-PII.patch [bz#727896]
