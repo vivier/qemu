@@ -2252,6 +2252,11 @@ static USBBusOps ehci_bus_ops = {
     .register_companion = ehci_register_companion,
 };
 
+static const VMStateDescription vmstate_ehci = {
+    .name = "ehci",
+    .unmigratable = 1,
+};
+
 static Property ehci_properties[] = {
     DEFINE_PROP_UINT32("freq",      EHCIState, freq, FRAME_TIMER_FREQ),
     DEFINE_PROP_UINT32("maxframes", EHCIState, maxframes, 128),
@@ -2262,11 +2267,13 @@ static PCIDeviceInfo ehci_info[] = {
     {
         .qdev.name    = "usb-ehci",
         .qdev.size    = sizeof(EHCIState),
+        .qdev.vmsd    = &vmstate_ehci,
         .init         = usb_ehci_initfn,
         .qdev.props   = ehci_properties,
     },{
         .qdev.name    = "ich9-usb-ehci1",
         .qdev.size    = sizeof(EHCIState),
+        .qdev.vmsd    = &vmstate_ehci,
         .init         = usb_ehci_initfn_ich9,
         .qdev.props   = ehci_properties,
     },{
