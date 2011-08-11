@@ -1232,6 +1232,7 @@ int vmstate_register(DeviceState *dev, int instance_id,
     se->load_state = NULL;
     se->opaque = opaque;
     se->vmsd = vmsd;
+    se->no_migrate = vmsd->unmigratable;
 
     if (dev && dev->parent_bus && dev->parent_bus->info->get_dev_path) {
         char *id = dev->parent_bus->info->get_dev_path(dev);
