@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.179
+%define pkgrelease 2.180
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3438,6 +3438,26 @@ Patch2395: kvm-Fix-automatically-assigned-network-names-for-netdev.patch
 Patch2396: kvm-Fix-netdev-name-lookup-in-device-device_add-netdev_d.patch
 # For bz#728464 - QEMU does not honour '-no-shutdown' flag after the first shutdown attempt
 Patch2397: kvm-do-not-reset-no_shutdown-after-we-shutdown-the-vm.patch
+# For bz#710943 - event index support in virtio and vhost-net
+Patch2398: kvm-virtio-event-index-support.patch
+# For bz#710943 - event index support in virtio and vhost-net
+Patch2399: kvm-pc-rhel-6.1-and-back-compat-event-idx-support.patch
+# For bz#729104 - qemu-kvm: pci needs multifunction property
+Patch2400: kvm-qdev-implement-qdev_prop_set_bit.patch
+# For bz#729104 - qemu-kvm: pci needs multifunction property
+Patch2401: kvm-pci-insert-assert-that-auto-assigned-address-functio.patch
+# For bz#729104 - qemu-kvm: pci needs multifunction property
+Patch2402: kvm-pci-introduce-multifunction-property.patch
+# For bz#729104 - qemu-kvm: pci needs multifunction property
+Patch2403: kvm-pci_bridge-make-pci-bridge-aware-of-pci-multi-functi.patch
+# For bz#729104 - qemu-kvm: pci needs multifunction property
+Patch2404: kvm-pci-set-multifunction-property-for-normal-device.patch
+# For bz#729104 - qemu-kvm: pci needs multifunction property
+Patch2405: kvm-pci-don-t-overwrite-multi-functio-bit-in-pci-header-.patch
+# For bz#729104 - qemu-kvm: pci needs multifunction property
+Patch2406: kvm-pci-set-PCI-multi-function-bit-appropriately.patch
+# For bz#705070 - QMP: screendump command does not allow specification of monitor to capture
+Patch2407: kvm-Add-user_print-handler-to-qxl_screendump-monitor-com.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -4943,6 +4963,16 @@ ApplyOptionalPatch()
 %patch2395 -p1
 %patch2396 -p1
 %patch2397 -p1
+%patch2398 -p1
+%patch2399 -p1
+%patch2400 -p1
+%patch2401 -p1
+%patch2402 -p1
+%patch2403 -p1
+%patch2404 -p1
+%patch2405 -p1
+%patch2406 -p1
+%patch2407 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -5166,6 +5196,24 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Aug 11 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.180.el6
+- kvm-virtio-event-index-support.patch [bz#710943]
+- kvm-pc-rhel-6.1-and-back-compat-event-idx-support.patch [bz#710943]
+- kvm-qdev-implement-qdev_prop_set_bit.patch [bz#729104]
+- kvm-pci-insert-assert-that-auto-assigned-address-functio.patch [bz#729104]
+- kvm-pci-introduce-multifunction-property.patch [bz#729104]
+- kvm-pci_bridge-make-pci-bridge-aware-of-pci-multi-functi.patch [bz#729104]
+- kvm-pci-set-multifunction-property-for-normal-device.patch [bz#729104]
+- kvm-pci-don-t-overwrite-multi-functio-bit-in-pci-header-.patch [bz#729104]
+- kvm-pci-set-PCI-multi-function-bit-appropriately.patch [bz#729104]
+- kvm-Add-user_print-handler-to-qxl_screendump-monitor-com.patch [bz#705070]
+- Resolves: bz#705070
+  (QMP: screendump command does not allow specification of monitor to capture)
+- Resolves: bz#710943
+  (event index support in virtio and vhost-net)
+- Resolves: bz#729104
+  (qemu-kvm: pci needs multifunction property)
+
 * Wed Aug 10 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.179.el6
 - kvm-usb-linux-make-iso-urb-count-contigurable.patch [bz#723858 bz#723863]
 - kvm-usb-linux-track-inflight-iso-urb-count.patch [bz#723858 bz#723863]

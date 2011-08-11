@@ -1,0 +1,65 @@
+From 305307851d7fc8d67781c532be0b158eb7445524 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Mon, 8 Aug 2011 18:36:30 -0300
+Subject: [RHEL6 qemu-kvm PATCH 07/10] pci: set multifunction property for normal device.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1312828592-1443-6-git-send-email-kraxel@redhat.com>
+Patchwork-id: 31120
+O-Subject: [RHEL-6.2 kvm PATCH 5/7] pci: set multifunction property for normal device.
+Bugzilla: 729104
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Amos Kong <akong@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+From: Isaku Yamahata <yamahata@valinux.co.jp>
+
+use pci_create_simple_multifunction() for normal device which sets
+multifunction bit.
+At the moment, only pc_piix.c and mips_malta.c uses multifunction
+devices with piix3/4 pci-isa bridge.
+And other boards don't populate those devices.
+
+Signed-off-by: Isaku Yamahata <yamahata@valinux.co.jp>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+(cherry picked from commit fecb93c45c749a4c994d8d12bdee17ce2012de9e)
+---
+ hw/piix4.c    |    2 +-
+ hw/piix_pci.c |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/piix4.c    |    2 +-
+ hw/piix_pci.c |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/hw/piix4.c b/hw/piix4.c
+index 8c2c1e2..087495d 100644
+--- a/hw/piix4.c
++++ b/hw/piix4.c
+@@ -105,7 +105,7 @@ int piix4_init(PCIBus *bus, int devfn)
+ {
+     PCIDevice *d;
+ 
+-    d = pci_create_simple(bus, devfn, "PIIX4");
++    d = pci_create_simple_multifunction(bus, devfn, true, "PIIX4");
+     return d->devfn;
+ }
+ 
+diff --git a/hw/piix_pci.c b/hw/piix_pci.c
+index 49d35c4..5f7a296 100644
+--- a/hw/piix_pci.c
++++ b/hw/piix_pci.c
+@@ -227,7 +227,7 @@ PCIBus *i440fx_init(PCII440FXState **pi440fx_state, int *piix3_devfn, qemu_irq *
+     *pi440fx_state = DO_UPCAST(PCII440FXState, dev, d);
+ 
+     piix3 = DO_UPCAST(PIIX3State, dev,
+-                                 pci_create_simple(b, -1, "PIIX3"));
++                      pci_create_simple_multifunction(b, -1, true, "PIIX3"));
+     piix3->pic = pic;
+     pci_bus_irqs(b, piix3_set_irq, pci_slot_get_pirq, piix3, 4);
+     (*pi440fx_state)->piix3 = piix3;
+-- 
+1.7.3.2
+

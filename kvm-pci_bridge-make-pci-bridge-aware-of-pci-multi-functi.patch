@@ -1,0 +1,76 @@
+From 77f1985c28e306aada9af6ef6ed187c34276befa Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Mon, 8 Aug 2011 18:36:29 -0300
+Subject: [RHEL6 qemu-kvm PATCH 06/10] pci_bridge: make pci bridge aware of pci multi function bit.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1312828592-1443-5-git-send-email-kraxel@redhat.com>
+Patchwork-id: 31121
+O-Subject: [RHEL-6.2 kvm PATCH 4/7] pci_bridge: make pci bridge aware of pci multi function bit.
+Bugzilla: 729104
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Amos Kong <akong@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+make pci bridge aware of pci multi function property and let pci generic
+code to set the bit.
+
+Cc: Blue Swirl <blauwirbel@gmail.com>
+Signed-off-by: Isaku Yamahata <yamahata@valinux.co.jp>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+(cherry picked from commit 7c7b829e469d9ababc0a34ab2a033db965c57a50)
+
+Conflicts:
+
+	hw/apb_pci.c
+	hw/dec_pci.c
+	hw/pci.h
+---
+ hw/pci.c |    5 +++--
+ hw/pci.h |    3 ++-
+ 2 files changed, 5 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pci.c |    5 +++--
+ hw/pci.h |    3 ++-
+ 2 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/hw/pci.c b/hw/pci.c
+index 993d42b..4bbef8d 100644
+--- a/hw/pci.c
++++ b/hw/pci.c
+@@ -1427,13 +1427,14 @@ static int pci_bridge_exitfn(PCIDevice *pci_dev)
+     return 0;
+ }
+ 
+-PCIBus *pci_bridge_init(PCIBus *bus, int devfn, uint16_t vid, uint16_t did,
++PCIBus *pci_bridge_init(PCIBus *bus, int devfn, bool multifunction,
++                        uint16_t vid, uint16_t did,
+                         pci_map_irq_fn map_irq, const char *name)
+ {
+     PCIDevice *dev;
+     PCIBridge *s;
+ 
+-    dev = pci_create(bus, devfn, "pci-bridge");
++    dev = pci_create_multifunction(bus, devfn, multifunction, "pci-bridge");
+     qdev_prop_set_uint32(&dev->qdev, "vendorid", vid);
+     qdev_prop_set_uint32(&dev->qdev, "deviceid", did);
+     qdev_init_nofail(&dev->qdev);
+diff --git a/hw/pci.h b/hw/pci.h
+index d55bde5..d921702 100644
+--- a/hw/pci.h
++++ b/hw/pci.h
+@@ -264,7 +264,8 @@ int pci_parse_host_devaddr(const char *addr, int *busp,
+                            int *slotp, int *funcp);
+ 
+ void pci_info(Monitor *mon);
+-PCIBus *pci_bridge_init(PCIBus *bus, int devfn, uint16_t vid, uint16_t did,
++PCIBus *pci_bridge_init(PCIBus *bus, int devfn, bool multifunction,
++                        uint16_t vid, uint16_t did,
+                         pci_map_irq_fn map_irq, const char *name);
+ PCIDevice *pci_bridge_get_device(PCIBus *bus);
+ 
+-- 
+1.7.3.2
+

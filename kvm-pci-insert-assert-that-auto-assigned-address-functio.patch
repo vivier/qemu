@@ -1,0 +1,71 @@
+From 4108cff670ff66eb0dd44da95921c3acba136b25 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Mon, 8 Aug 2011 18:36:27 -0300
+Subject: [RHEL6 qemu-kvm PATCH 04/10] pci: insert assert that auto-assigned-address function is single function device.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1312828592-1443-3-git-send-email-kraxel@redhat.com>
+Patchwork-id: 31116
+O-Subject: [RHEL-6.2 kvm PATCH 2/7] pci: insert assert that auto-assigned-address function is single function device.
+Bugzilla: 729104
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Amos Kong <akong@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+From: Isaku Yamahata <yamahata@valinux.co.jp>
+
+Auto-assigned-address pci function (passing devfn = -1) is always
+single function.
+This patch adds assert() to guarantee that auto-assigned-address function
+is always single function device at function = 0.
+
+Signed-off-by: Isaku Yamahata <yamahata@valinux.co.jp>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+(cherry picked from commit 6fa84913eccec4266a27c81ae88465f6790742b9)
+---
+ hw/pci.c |    3 ++-
+ hw/pci.h |    1 +
+ 2 files changed, 3 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pci.c |    3 ++-
+ hw/pci.h |    1 +
+ 2 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/hw/pci.c b/hw/pci.c
+index c268e1c..41e2139 100644
+--- a/hw/pci.c
++++ b/hw/pci.c
+@@ -211,6 +211,7 @@ void pci_bus_new_inplace(PCIBus *bus, DeviceState *parent,
+                          const char *name, int devfn_min)
+ {
+     qbus_create_inplace(&bus->qbus, &pci_bus_info, parent, name);
++    assert(PCI_FUNC(devfn_min) == 0);
+     bus->devfn_min = devfn_min;
+ 
+     /* host bridge */
+@@ -637,7 +638,7 @@ static PCIDevice *do_pci_register_device(PCIDevice *pci_dev, PCIBus *bus,
+ {
+     if (devfn < 0) {
+         for(devfn = bus->devfn_min ; devfn < ARRAY_SIZE(bus->devices);
+-            devfn += 8) {
++            devfn += PCI_FUNC_MAX) {
+             if (!bus->devices[devfn])
+                 goto found;
+         }
+diff --git a/hw/pci.h b/hw/pci.h
+index f687908..afebb64 100644
+--- a/hw/pci.h
++++ b/hw/pci.h
+@@ -20,6 +20,7 @@ extern target_phys_addr_t pci_mem_base;
+ #define PCI_DEVFN(slot, func)   ((((slot) & 0x1f) << 3) | ((func) & 0x07))
+ #define PCI_SLOT(devfn)         (((devfn) >> 3) & 0x1f)
+ #define PCI_FUNC(devfn)         ((devfn) & 0x07)
++#define PCI_FUNC_MAX            8
+ 
+ /* Class, Vendor and Device IDs from Linux's pci_ids.h */
+ #include "pci_ids.h"
+-- 
+1.7.3.2
+

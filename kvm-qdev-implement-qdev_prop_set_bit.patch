@@ -1,0 +1,63 @@
+From e6daebb069c198769ca10662cf3e78cf214bb9f1 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Mon, 8 Aug 2011 18:36:26 -0300
+Subject: [RHEL6 qemu-kvm PATCH 03/10] qdev: implement qdev_prop_set_bit().
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1312828592-1443-2-git-send-email-kraxel@redhat.com>
+Patchwork-id: 31115
+O-Subject: [RHEL-6.2 kvm PATCH 1/7] qdev: implement qdev_prop_set_bit().
+Bugzilla: 729104
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Amos Kong <akong@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+From: Isaku Yamahata <yamahata@valinux.co.jp>
+
+implement qdev_prop_set_bit().
+
+Signed-off-by: Isaku Yamahata <yamahata@valinux.co.jp>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+(cherry picked from commit f4594a3be005ea96e276a1354184258f5ef3b8da)
+---
+ hw/qdev-properties.c |    5 +++++
+ hw/qdev.h            |    1 +
+ 2 files changed, 6 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qdev-properties.c |    5 +++++
+ hw/qdev.h            |    1 +
+ 2 files changed, 6 insertions(+), 0 deletions(-)
+
+diff --git a/hw/qdev-properties.c b/hw/qdev-properties.c
+index 7e9e3a6..a484765 100644
+--- a/hw/qdev-properties.c
++++ b/hw/qdev-properties.c
+@@ -639,6 +639,11 @@ void qdev_prop_set(DeviceState *dev, const char *name, void *src, enum PropertyT
+     qdev_prop_cpy(dev, prop, src);
+ }
+ 
++void qdev_prop_set_bit(DeviceState *dev, const char *name, bool value)
++{
++    qdev_prop_set(dev, name, &value, PROP_TYPE_BIT);
++}
++
+ void qdev_prop_set_uint8(DeviceState *dev, const char *name, uint8_t value)
+ {
+     qdev_prop_set(dev, name, &value, PROP_TYPE_UINT8);
+diff --git a/hw/qdev.h b/hw/qdev.h
+index 7527a32..7265558 100644
+--- a/hw/qdev.h
++++ b/hw/qdev.h
+@@ -276,6 +276,7 @@ void *qdev_get_prop_ptr(DeviceState *dev, Property *prop);
+ int qdev_prop_exists(DeviceState *dev, const char *name);
+ int qdev_prop_parse(DeviceState *dev, const char *name, const char *value);
+ void qdev_prop_set(DeviceState *dev, const char *name, void *src, enum PropertyType type);
++void qdev_prop_set_bit(DeviceState *dev, const char *name, bool value);
+ void qdev_prop_set_uint8(DeviceState *dev, const char *name, uint8_t value);
+ void qdev_prop_set_uint16(DeviceState *dev, const char *name, uint16_t value);
+ void qdev_prop_set_uint32(DeviceState *dev, const char *name, uint32_t value);
+-- 
+1.7.3.2
+

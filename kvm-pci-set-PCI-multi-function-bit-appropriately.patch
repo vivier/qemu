@@ -1,0 +1,143 @@
+From f238cf599cfc72ba6a8573e169190274dec2571d Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Mon, 8 Aug 2011 18:36:32 -0300
+Subject: [RHEL6 qemu-kvm PATCH 09/10] pci: set PCI multi-function bit appropriately.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1312828592-1443-8-git-send-email-kraxel@redhat.com>
+Patchwork-id: 31122
+O-Subject: [RHEL-6.2 kvm PATCH 7/7] pci: set PCI multi-function bit appropriately.
+Bugzilla: 729104
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Amos Kong <akong@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+Set PCI multi-function bit according to multifunction property.
+PCI address, devfn ,is exported to users as addr property,
+so users can populate pci function(PCIDevice in qemu)
+at arbitrary devfn.
+It means each function(PCIDevice) don't know whether pci device
+(PCIDevice[8]) is multi function or not.
+So this patch allows user to set multifunction bit via property
+and checks whether multifunction bit is set correctly.
+
+Cc:  Juan Quintela <quintela@redhat.com>
+Signed-off-by: Isaku Yamahata <yamahata@valinux.co.jp>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+(cherry picked from commit 6eab3de16d36c48a983366b09d0a0029a5260bc3)
+
+Conflicts:
+
+	hw/apb_pci.c
+---
+ hw/pci.c      |   52 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ hw/piix4.c    |    2 --
+ hw/piix_pci.c |    2 --
+ 3 files changed, 52 insertions(+), 4 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pci.c      |   52 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ hw/piix4.c    |    2 --
+ hw/piix_pci.c |    2 --
+ 3 files changed, 52 insertions(+), 4 deletions(-)
+
+diff --git a/hw/pci.c b/hw/pci.c
+index 4bbef8d..421216a 100644
+--- a/hw/pci.c
++++ b/hw/pci.c
+@@ -613,6 +613,54 @@ static void pci_init_wmask_bridge(PCIDevice *d)
+     pci_set_word(d->wmask + PCI_BRIDGE_CONTROL, 0xffff);
+ }
+ 
++static int pci_init_multifunction(PCIBus *bus, PCIDevice *dev)
++{
++    uint8_t slot = PCI_SLOT(dev->devfn);
++    uint8_t func;
++
++    if (dev->cap_present & QEMU_PCI_CAP_MULTIFUNCTION) {
++        dev->config[PCI_HEADER_TYPE] |= PCI_HEADER_TYPE_MULTI_FUNCTION;
++    }
++
++    /*
++     * multifuction bit is interpreted in two ways as follows.
++     *   - all functions must set the bit to 1.
++     *     Example: Intel X53
++     *   - function 0 must set the bit, but the rest function (> 0)
++     *     is allowed to leave the bit to 0.
++     *     Example: PIIX3(also in qemu), PIIX4(also in qemu), ICH10,
++     *
++     * So OS (at least Linux) checks the bit of only function 0,
++     * and doesn't see the bit of function > 0.
++     *
++     * The below check allows both interpretation.
++     */
++    if (PCI_FUNC(dev->devfn)) {
++        PCIDevice *f0 = bus->devices[PCI_DEVFN(slot, 0)];
++        if (f0 && !(f0->cap_present & QEMU_PCI_CAP_MULTIFUNCTION)) {
++            /* function 0 should set multifunction bit */
++            error_report("PCI: single function device can't be populated "
++                         "in function %x.%x", slot, PCI_FUNC(dev->devfn));
++            return -1;
++        }
++        return 0;
++    }
++
++    if (dev->cap_present & QEMU_PCI_CAP_MULTIFUNCTION) {
++        return 0;
++    }
++    /* function 0 indicates single function, so function > 0 must be NULL */
++    for (func = 1; func < PCI_FUNC_MAX; ++func) {
++        if (bus->devices[PCI_DEVFN(slot, func)]) {
++            error_report("PCI: %x.0 indicates single function, "
++                         "but %x.%x is already populated.",
++                         slot, slot, func);
++            return -1;
++        }
++    }
++    return 0;
++}
++
+ static void pci_config_alloc(PCIDevice *pci_dev)
+ {
+     int config_size = pci_config_size(pci_dev);
+@@ -670,6 +718,10 @@ static PCIDevice *do_pci_register_device(PCIDevice *pci_dev, PCIBus *bus,
+     if (header_type == PCI_HEADER_TYPE_BRIDGE) {
+         pci_init_wmask_bridge(pci_dev);
+     }
++    if (pci_init_multifunction(bus, pci_dev)) {
++        pci_config_free(pci_dev);
++        return NULL;
++    }
+ 
+     if (!config_read)
+         config_read = pci_default_read_config;
+diff --git a/hw/piix4.c b/hw/piix4.c
+index 087495d..00da049 100644
+--- a/hw/piix4.c
++++ b/hw/piix4.c
+@@ -93,8 +93,6 @@ static int piix4_initfn(PCIDevice *d)
+     pci_config_set_vendor_id(pci_conf, PCI_VENDOR_ID_INTEL);
+     pci_config_set_device_id(pci_conf, PCI_DEVICE_ID_INTEL_82371AB_0); // 82371AB/EB/MB PIIX4 PCI-to-ISA bridge
+     pci_config_set_class(pci_conf, PCI_CLASS_BRIDGE_ISA);
+-    pci_conf[PCI_HEADER_TYPE] =
+-        PCI_HEADER_TYPE_NORMAL | PCI_HEADER_TYPE_MULTI_FUNCTION; // header_type = PCI_multifunction, generic
+ 
+     piix4_dev = d;
+     qemu_register_reset(piix4_reset, d);
+diff --git a/hw/piix_pci.c b/hw/piix_pci.c
+index a2cf606..9660f37 100644
+--- a/hw/piix_pci.c
++++ b/hw/piix_pci.c
+@@ -332,8 +332,6 @@ static int piix3_initfn(PCIDevice *dev)
+     pci_config_set_vendor_id(pci_conf, PCI_VENDOR_ID_INTEL);
+     pci_config_set_device_id(pci_conf, PCI_DEVICE_ID_INTEL_82371SB_0); // 82371SB PIIX3 PCI-to-ISA bridge (Step A1)
+     pci_config_set_class(pci_conf, PCI_CLASS_BRIDGE_ISA);
+-    pci_conf[PCI_HEADER_TYPE] =
+-        PCI_HEADER_TYPE_NORMAL | PCI_HEADER_TYPE_MULTI_FUNCTION; // header_type = PCI_multifunction, generic
+ 
+     qemu_register_reset(piix3_reset, d);
+     return 0;
+-- 
+1.7.3.2
+

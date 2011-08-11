@@ -1,0 +1,158 @@
+From 1b8edef923c858374905ca0c8c2b0617f6f0fa3c Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Tue, 2 Aug 2011 14:31:31 -0300
+Subject: [RHEL6 qemu-kvm PATCH 02/10] pc: rhel 6.1 and back compat event idx support
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <20110802143131.GA25240@redhat.com>
+Patchwork-id: 30819
+O-Subject: [PATCHv2 RHEL6.2] pc: rhel 6.1 and back compat event idx support
+Bugzilla: 710943
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Xiao Wang <jasowang@redhat.com>
+
+Disable event index for compat machine types.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+
+Note: Patch v1 was unchanged, I'm not reposting here.
+Changes from v1: rebased to master, on top of usb changes.
+
+ hw/pc.c |   89 ++++++++++++++++++++++++++++++--------------------------------
+ 1 files changed, 43 insertions(+), 46 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/pc.c |   89 ++++++++++++++++++++++++++++++--------------------------------
+ 1 files changed, 43 insertions(+), 46 deletions(-)
+
+diff --git a/hw/pc.c b/hw/pc.c
+index 9e3807b..18f405a 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -1558,6 +1558,44 @@ static void rhel_common_init(const char *type1_version,
+                      strlen(buf) + 1, buf);
+ }
+ 
++#define PC_RHEL6_1_COMPAT \
++        {\
++            .driver   = "usb-tablet",\
++            .property = "migrate",\
++            .value    = stringify(0),\
++        },{\
++            .driver   = "usb-mouse",\
++            .property = "migrate",\
++            .value    = stringify(0),\
++        },{\
++            .driver   = "usb-kbd",\
++            .property = "migrate",\
++            .value    = stringify(0),\
++        },{\
++            .driver   = "virtio-blk-pci",\
++            .property = "event_idx",\
++            .value    = "off",\
++        },{\
++            .driver   = "virtio-serial-pci",\
++            .property = "event_idx",\
++            .value    = "off",\
++        },{\
++            .driver   = "virtio-net-pci",\
++            .property = "event_idx",\
++            .value    = "off",\
++        },{\
++            .driver   = "virtio-balloon",\
++            .property = "event_idx",\
++            .value    = "off",\
++        }
++
++#define PC_RHEL6_0_COMPAT \
++        {\
++            .driver   = "virtio-serial-pci",\
++            .property = "flow_control",\
++            .value    = stringify(0),\
++        }, PC_RHEL6_1_COMPAT
++
+ static void pc_init_rhel620(ram_addr_t ram_size,
+                             const char *boot_device,
+                             const char *kernel_filename,
+@@ -1597,19 +1635,7 @@ static QEMUMachine pc_machine_rhel610 = {
+     .init = pc_init_rhel610,
+     .max_cpus = 255,
+     .compat_props = (GlobalProperty[]) {
+-        {
+-            .driver   = "usb-tablet",
+-            .property = "migrate",
+-            .value    = stringify(0),
+-        },{
+-            .driver   = "usb-mouse",
+-            .property = "migrate",
+-            .value    = stringify(0),
+-        },{
+-            .driver   = "usb-kbd",
+-            .property = "migrate",
+-            .value    = stringify(0),
+-        },
++        PC_RHEL6_1_COMPAT,
+         { /* end of list */ }
+     },
+ };
+@@ -1640,23 +1666,8 @@ static QEMUMachine pc_machine_rhel600 = {
+             .driver   = "vmware-svga",
+             .property = "rombar",
+             .value    = stringify(0),
+-        },{
+-            .driver   = "virtio-serial-pci",
+-            .property = "flow_control",
+-            .value    = stringify(0),
+-        },{
+-            .driver   = "usb-tablet",
+-            .property = "migrate",
+-            .value    = stringify(0),
+-        },{
+-            .driver   = "usb-mouse",
+-            .property = "migrate",
+-            .value    = stringify(0),
+-        },{
+-            .driver   = "usb-kbd",
+-            .property = "migrate",
+-            .value    = stringify(0),
+         },
++        PC_RHEL6_0_COMPAT,
+         { /* end of list */ }
+     },
+ };
+@@ -1678,26 +1689,12 @@ static GlobalProperty compat_rhel5[] = {
+             .driver   = "virtio-serial-pci",
+             .property = "vectors",
+             .value    = stringify(0),
+-        },{
+-            .driver   = "virtio-serial-pci",
+-            .property = "flow_control",
+-            .value    = stringify(0),
+-        },{
++        },
++        PC_RHEL6_0_COMPAT,
++        {
+             .driver   = "PCI",
+             .property = "rombar",
+             .value    = stringify(0),
+-        },{
+-            .driver   = "usb-tablet",
+-            .property = "migrate",
+-            .value    = stringify(0),
+-        },{
+-            .driver   = "usb-mouse",
+-            .property = "migrate",
+-            .value    = stringify(0),
+-        },{
+-            .driver   = "usb-kbd",
+-            .property = "migrate",
+-            .value    = stringify(0),
+         },
+ #if 0 /* depends on "ide+scsi: device versions" patches */
+         {
+-- 
+1.7.3.2
+

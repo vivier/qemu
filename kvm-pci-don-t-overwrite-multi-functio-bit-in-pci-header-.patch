@@ -1,0 +1,341 @@
+From fe01ff62791024db5f018634c6097e1c3b861de0 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Mon, 8 Aug 2011 18:36:31 -0300
+Subject: [RHEL6 qemu-kvm PATCH 08/10] pci: don't overwrite multi functio bit in pci header type.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1312828592-1443-7-git-send-email-kraxel@redhat.com>
+Patchwork-id: 31118
+O-Subject: [RHEL-6.2 kvm PATCH 6/7] pci: don't overwrite multi functio bit in pci header type.
+Bugzilla: 729104
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Amos Kong <akong@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+Don't overwrite pci header type.
+Otherwise, multi function bit which pci_init_header_type() sets
+appropriately is lost.
+Anyway PCI_HEADER_TYPE_NORMAL is zero, so it is unnecessary to zero
+which is already zero cleared.
+
+how to test:
+run qemu and issue info pci to see whether a device in question is
+normal device, not pci-to-pci bridge.
+This is handy because guest os isn't required.
+
+tested changes:
+The following files are covered by using following commands.
+sparc64-softmmu
+  apb_pci.c, vga-pci.c, cmd646.c, ne2k_pci.c, sun4u.c
+ppc-softmmu
+  grackle_pci.c, cmd646.c, ne2k_pci.c, vga-pci.c, macio.c
+ppc-softmmu -M mac99
+  unin_pci.c(uni-north, uni-north-agp)
+ppc64-softmmu
+  pci-ohci, ne2k_pci, vga-pci, unin_pci.c(u3-agp)
+x86_64-softmmu
+  acpi_piix4.c, ide/piix.c, piix_pci.c
+  -vga vmware vmware_vga.c
+  -watchdog i6300esb wdt_i6300esb.c
+  -usb usb-uhci.c
+  -sound ac97 ac97.c
+  -nic model=rtl8139 rtl8139.c
+  -nic model=pcnet pcnet.c
+  -balloon virtio virtio-pci.c:
+
+untested changes:
+The following changes aren't tested.
+prep_pci.c: ppc-softmmu -M prep should cover, but core dumped.
+unin_pci.c(uni-north-pci): the caller is commented out.
+openpic.c: the caller is commented out in ppc_prep.c
+
+Signed-off-by: Isaku Yamahata <yamahata@valinux.co.jp>
+Signed-off-by: Blue Swirl <blauwirbel@gmail.com>
+(cherry picked from commit b80d4a9887fa4b6cc63f8c3a13ab2a45054d3e5c)
+
+Conflicts:
+
+	hw/acpi_piix4.c
+	hw/apb_pci.c
+	hw/ne2000.c
+	hw/rtl8139.c
+	hw/unin_pci.c
+	hw/usb-uhci.c
+	hw/vmware_vga.c
+	hw/wdt_i6300esb.c
+---
+ hw/ac97.c         |    1 -
+ hw/apb_pci.c      |    1 -
+ hw/grackle_pci.c  |    1 -
+ hw/ide/cmd646.c   |    1 -
+ hw/ide/piix.c     |    1 -
+ hw/macio.c        |    1 -
+ hw/ne2000.c       |    1 -
+ hw/openpic.c      |    1 -
+ hw/pcnet.c        |    1 -
+ hw/piix_pci.c     |    1 -
+ hw/prep_pci.c     |    1 -
+ hw/rtl8139.c      |    1 -
+ hw/sun4u.c        |    1 -
+ hw/usb-ehci.c     |    1 -
+ hw/usb-uhci.c     |    1 -
+ hw/vga-pci.c      |    1 -
+ hw/virtio-pci.c   |    1 -
+ hw/vmware_vga.c   |    1 -
+ hw/wdt_i6300esb.c |    1 -
+ 19 files changed, 0 insertions(+), 19 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/ac97.c         |    1 -
+ hw/apb_pci.c      |    1 -
+ hw/grackle_pci.c  |    1 -
+ hw/ide/cmd646.c   |    1 -
+ hw/ide/piix.c     |    1 -
+ hw/macio.c        |    1 -
+ hw/ne2000.c       |    1 -
+ hw/openpic.c      |    1 -
+ hw/pcnet.c        |    1 -
+ hw/piix_pci.c     |    1 -
+ hw/prep_pci.c     |    1 -
+ hw/rtl8139.c      |    1 -
+ hw/sun4u.c        |    1 -
+ hw/usb-ehci.c     |    1 -
+ hw/usb-uhci.c     |    1 -
+ hw/vga-pci.c      |    1 -
+ hw/virtio-pci.c   |    1 -
+ hw/vmware_vga.c   |    1 -
+ hw/wdt_i6300esb.c |    1 -
+ 19 files changed, 0 insertions(+), 19 deletions(-)
+
+diff --git a/hw/ac97.c b/hw/ac97.c
+index 62e349a..1d62d94 100644
+--- a/hw/ac97.c
++++ b/hw/ac97.c
+@@ -1293,7 +1293,6 @@ static int ac97_initfn (PCIDevice *dev)
+     c[0x08] = 0x01;      /* rid revision ro */
+     c[0x09] = 0x00;      /* pi programming interface ro */
+     pci_config_set_class (c, PCI_CLASS_MULTIMEDIA_AUDIO); /* ro */
+-    c[PCI_HEADER_TYPE] = PCI_HEADER_TYPE_NORMAL; /* headtyp header type ro */
+ 
+     c[0x10] = 0x01;      /* nabmar native audio mixer base
+                             address rw */
+diff --git a/hw/apb_pci.c b/hw/apb_pci.c
+index 588dc6e..be4ac8a 100644
+--- a/hw/apb_pci.c
++++ b/hw/apb_pci.c
+@@ -279,7 +279,6 @@ static int pbm_pci_host_init(PCIDevice *d)
+     d->config[0x09] = 0x00; // programming i/f
+     pci_config_set_class(d->config, PCI_CLASS_BRIDGE_HOST);
+     d->config[0x0D] = 0x10; // latency_timer
+-    d->config[PCI_HEADER_TYPE] = PCI_HEADER_TYPE_NORMAL; // header_type
+     return 0;
+ }
+ 
+diff --git a/hw/grackle_pci.c b/hw/grackle_pci.c
+index 4b3aa55..9371ceb 100644
+--- a/hw/grackle_pci.c
++++ b/hw/grackle_pci.c
+@@ -140,7 +140,6 @@ static int grackle_pci_host_init(PCIDevice *d)
+     d->config[0x08] = 0x00; // revision
+     d->config[0x09] = 0x01;
+     pci_config_set_class(d->config, PCI_CLASS_BRIDGE_HOST);
+-    d->config[PCI_HEADER_TYPE] = PCI_HEADER_TYPE_NORMAL; // header_type
+     return 0;
+ }
+ 
+diff --git a/hw/ide/cmd646.c b/hw/ide/cmd646.c
+index 9ff92fd..13c30a2 100644
+--- a/hw/ide/cmd646.c
++++ b/hw/ide/cmd646.c
+@@ -213,7 +213,6 @@ static int pci_cmd646_ide_initfn(PCIDevice *dev)
+     pci_conf[0x09] = 0x8f;
+ 
+     pci_config_set_class(pci_conf, PCI_CLASS_STORAGE_IDE);
+-    pci_conf[PCI_HEADER_TYPE] = PCI_HEADER_TYPE_NORMAL; // header_type
+ 
+     pci_conf[0x51] = 0x04; // enable IDE0
+     if (d->secondary) {
+diff --git a/hw/ide/piix.c b/hw/ide/piix.c
+index 9ef6fa2..fd48d5d 100644
+--- a/hw/ide/piix.c
++++ b/hw/ide/piix.c
+@@ -119,7 +119,6 @@ static int pci_piix_ide_initfn(PCIIDEState *d)
+ 
+     pci_conf[0x09] = 0x80; // legacy ATA mode
+     pci_config_set_class(pci_conf, PCI_CLASS_STORAGE_IDE);
+-    pci_conf[PCI_HEADER_TYPE] = PCI_HEADER_TYPE_NORMAL; // header_type
+ 
+     qemu_register_reset(piix3_reset, d);
+ 
+diff --git a/hw/macio.c b/hw/macio.c
+index e92e82a..789ca55 100644
+--- a/hw/macio.c
++++ b/hw/macio.c
+@@ -110,7 +110,6 @@ void macio_init (PCIBus *bus, int device_id, int is_oldworld, int pic_mem_index,
+     pci_config_set_vendor_id(d->config, PCI_VENDOR_ID_APPLE);
+     pci_config_set_device_id(d->config, device_id);
+     pci_config_set_class(d->config, PCI_CLASS_OTHERS << 8);
+-    d->config[PCI_HEADER_TYPE] = PCI_HEADER_TYPE_NORMAL; // header_type
+ 
+     d->config[0x3d] = 0x01; // interrupt on pin 1
+ 
+diff --git a/hw/ne2000.c b/hw/ne2000.c
+index 7f514d9..9946c63 100644
+--- a/hw/ne2000.c
++++ b/hw/ne2000.c
+@@ -724,7 +724,6 @@ static int pci_ne2000_init(PCIDevice *pci_dev)
+     pci_config_set_vendor_id(pci_conf, PCI_VENDOR_ID_REALTEK);
+     pci_config_set_device_id(pci_conf, PCI_DEVICE_ID_REALTEK_8029);
+     pci_config_set_class(pci_conf, PCI_CLASS_NETWORK_ETHERNET);
+-    pci_conf[PCI_HEADER_TYPE] = PCI_HEADER_TYPE_NORMAL; // header_type
+     pci_conf[0x3d] = 1; // interrupt pin 0
+ 
+     pci_register_bar(&d->dev, 0, 0x100,
+diff --git a/hw/openpic.c b/hw/openpic.c
+index 8ffaf0e..cfd1fd6 100644
+--- a/hw/openpic.c
++++ b/hw/openpic.c
+@@ -1206,7 +1206,6 @@ qemu_irq *openpic_init (PCIBus *bus, int *pmem_index, int nb_cpus,
+         pci_config_set_vendor_id(pci_conf, PCI_VENDOR_ID_IBM);
+         pci_config_set_device_id(pci_conf, PCI_DEVICE_ID_IBM_OPENPIC2);
+         pci_config_set_class(pci_conf, PCI_CLASS_SYSTEM_OTHER); // FIXME?
+-        pci_conf[PCI_HEADER_TYPE] = PCI_HEADER_TYPE_NORMAL; // header_type
+         pci_conf[0x3d] = 0x00; // no interrupt pin
+ 
+         /* Register I/O spaces */
+diff --git a/hw/pcnet.c b/hw/pcnet.c
+index c2ad6af..7df04d2 100644
+--- a/hw/pcnet.c
++++ b/hw/pcnet.c
+@@ -1990,7 +1990,6 @@ static int pci_pcnet_init(PCIDevice *pci_dev)
+     pci_conf[0x08] = 0x10;
+     pci_conf[0x09] = 0x00;
+     pci_config_set_class(pci_conf, PCI_CLASS_NETWORK_ETHERNET);
+-    pci_conf[PCI_HEADER_TYPE] = PCI_HEADER_TYPE_NORMAL; // header_type
+ 
+     *(uint32_t *)&pci_conf[0x10] = cpu_to_le32(0x00000001);
+     *(uint32_t *)&pci_conf[0x14] = cpu_to_le32(0x00000000);
+diff --git a/hw/piix_pci.c b/hw/piix_pci.c
+index 5f7a296..a2cf606 100644
+--- a/hw/piix_pci.c
++++ b/hw/piix_pci.c
+@@ -200,7 +200,6 @@ static int i440fx_initfn(PCIDevice *dev)
+     pci_config_set_device_id(d->dev.config, PCI_DEVICE_ID_INTEL_82441);
+     d->dev.config[0x08] = 0x02; // revision
+     pci_config_set_class(d->dev.config, PCI_CLASS_BRIDGE_HOST);
+-    d->dev.config[PCI_HEADER_TYPE] = PCI_HEADER_TYPE_NORMAL; // header_type
+ 
+     d->dev.config[0x72] = 0x02; /* SMRAM */
+ 
+diff --git a/hw/prep_pci.c b/hw/prep_pci.c
+index 19f028c..71e15a3 100644
+--- a/hw/prep_pci.c
++++ b/hw/prep_pci.c
+@@ -145,7 +145,6 @@ PCIBus *pci_prep_init(qemu_irq *pic)
+     pci_config_set_class(d->config, PCI_CLASS_BRIDGE_HOST);
+     d->config[0x0C] = 0x08; // cache_line_size
+     d->config[0x0D] = 0x10; // latency_timer
+-    d->config[PCI_HEADER_TYPE] = PCI_HEADER_TYPE_NORMAL; // header_type
+     d->config[0x34] = 0x00; // capabilities_pointer
+ 
+     return s->bus;
+diff --git a/hw/rtl8139.c b/hw/rtl8139.c
+index 33d1bf8..b14586b 100644
+--- a/hw/rtl8139.c
++++ b/hw/rtl8139.c
+@@ -3428,7 +3428,6 @@ static int pci_rtl8139_init(PCIDevice *dev)
+     pci_conf[0x04] = 0x05; /* command = I/O space, Bus Master */
+     pci_conf[0x08] = RTL8139_PCI_REVID; /* PCI revision ID; >=0x20 is for 8139C+ */
+     pci_config_set_class(pci_conf, PCI_CLASS_NETWORK_ETHERNET);
+-    pci_conf[PCI_HEADER_TYPE] = PCI_HEADER_TYPE_NORMAL; /* header_type */
+     pci_conf[0x3d] = 1;    /* interrupt pin 0 */
+     pci_conf[0x34] = 0xdc;
+ 
+diff --git a/hw/sun4u.c b/hw/sun4u.c
+index b048d8a..e257366 100644
+--- a/hw/sun4u.c
++++ b/hw/sun4u.c
+@@ -388,7 +388,6 @@ pci_ebus_init1(PCIDevice *s)
+     s->config[0x09] = 0x00; // programming i/f
+     pci_config_set_class(s->config, PCI_CLASS_BRIDGE_OTHER);
+     s->config[0x0D] = 0x0a; // latency_timer
+-    s->config[PCI_HEADER_TYPE] = PCI_HEADER_TYPE_NORMAL; // header_type
+ 
+     pci_register_bar(s, 0, 0x1000000, PCI_BASE_ADDRESS_SPACE_MEMORY,
+                            ebus_mmio_mapfunc);
+diff --git a/hw/usb-ehci.c b/hw/usb-ehci.c
+index 54f092e..0e7b0be 100644
+--- a/hw/usb-ehci.c
++++ b/hw/usb-ehci.c
+@@ -2285,7 +2285,6 @@ static int usb_ehci_initfn(PCIDevice *dev)
+     pci_set_byte(&pci_conf[PCI_REVISION_ID], 0x10);
+     pci_set_byte(&pci_conf[PCI_CLASS_PROG], 0x20);
+     pci_config_set_class(pci_conf, PCI_CLASS_SERIAL_USB);
+-    pci_set_byte(&pci_conf[PCI_HEADER_TYPE], PCI_HEADER_TYPE_NORMAL);
+ 
+     /* capabilities pointer */
+     pci_set_byte(&pci_conf[PCI_CAPABILITY_LIST], 0x00);
+diff --git a/hw/usb-uhci.c b/hw/usb-uhci.c
+index 1bf38b6..939e8cc 100644
+--- a/hw/usb-uhci.c
++++ b/hw/usb-uhci.c
+@@ -1084,7 +1084,6 @@ static int usb_uhci_common_initfn(UHCIState *s)
+ 
+     pci_conf[0x09] = 0x00;
+     pci_config_set_class(pci_conf, PCI_CLASS_SERIAL_USB);
+-    pci_conf[PCI_HEADER_TYPE] = PCI_HEADER_TYPE_NORMAL; // header_type
+     pci_conf[0x3d] = 4; // interrupt pin 3
+     pci_conf[0x60] = 0x10; // release number
+ 
+diff --git a/hw/vga-pci.c b/hw/vga-pci.c
+index f6fb1b3..7569aed 100644
+--- a/hw/vga-pci.c
++++ b/hw/vga-pci.c
+@@ -92,7 +92,6 @@ static int pci_vga_initfn(PCIDevice *dev)
+      pci_config_set_vendor_id(pci_conf, PCI_VENDOR_ID_QEMU);
+      pci_config_set_device_id(pci_conf, PCI_DEVICE_ID_QEMU_VGA);
+      pci_config_set_class(pci_conf, PCI_CLASS_DISPLAY_VGA);
+-     pci_conf[PCI_HEADER_TYPE] = PCI_HEADER_TYPE_NORMAL; // header_type
+ 
+      /* XXX: VGA_RAM_SIZE must be a power of two */
+      pci_register_bar(&d->dev, 0, VGA_RAM_SIZE,
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index 6966c78..ee5d2a8 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -764,7 +764,6 @@ static void virtio_init_pci(VirtIOPCIProxy *proxy, VirtIODevice *vdev,
+ 
+     config[0x09] = pif;
+     pci_config_set_class(config, class_code);
+-    config[PCI_HEADER_TYPE] = PCI_HEADER_TYPE_NORMAL;
+ 
+     config[0x2c] = vendor & 0xFF;
+     config[0x2d] = (vendor >> 8) & 0xFF;
+diff --git a/hw/vmware_vga.c b/hw/vmware_vga.c
+index a9767a0..ea13101 100644
+--- a/hw/vmware_vga.c
++++ b/hw/vmware_vga.c
+@@ -1238,7 +1238,6 @@ static int pci_vmsvga_initfn(PCIDevice *dev)
+     pci_config_set_class(s->card.config, PCI_CLASS_DISPLAY_VGA);
+     s->card.config[0x0c]		= 0x08;		/* Cache line size */
+     s->card.config[0x0d]		= 0x40;		/* Latency timer */
+-    s->card.config[PCI_HEADER_TYPE]	= PCI_HEADER_TYPE_NORMAL;
+     s->card.config[0x2c]		= PCI_VENDOR_ID_VMWARE & 0xff;
+     s->card.config[0x2d]		= PCI_VENDOR_ID_VMWARE >> 8;
+     s->card.config[0x2e]		= SVGA_PCI_DEVICE_ID & 0xff;
+diff --git a/hw/wdt_i6300esb.c b/hw/wdt_i6300esb.c
+index 2f84267..bcf3d45 100644
+--- a/hw/wdt_i6300esb.c
++++ b/hw/wdt_i6300esb.c
+@@ -416,7 +416,6 @@ static int i6300esb_init(PCIDevice *dev)
+     pci_config_set_vendor_id(pci_conf, PCI_VENDOR_ID_INTEL);
+     pci_config_set_device_id(pci_conf, PCI_DEVICE_ID_INTEL_ESB_9);
+     pci_config_set_class(pci_conf, PCI_CLASS_SYSTEM_OTHER);
+-    pci_conf[0x0e] = 0x00;
+ 
+     pci_register_bar(&d->dev, 0, 0x10,
+                             PCI_BASE_ADDRESS_SPACE_MEMORY, i6300esb_map);
+-- 
+1.7.3.2
+
