@@ -2921,6 +2921,14 @@ static const mon_cmd_t info_cmds[] = {
         .mhandler.info = do_info_roms,
     },
     {
+        .name       = "block-jobs",
+        .args_type  = "",
+        .params     = "",
+        .help       = "show block job status",
+        .user_print = monitor_print_block_jobs,
+        .mhandler.info_new = do_info_block_jobs,
+    },
+    {
         .name       = NULL,
     },
 };
