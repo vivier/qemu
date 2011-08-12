@@ -1090,14 +1090,15 @@ static bool qed_should_set_need_check(BDRVQEDState *s)
 }
 
 /**
- * Write new data cluster
+ * Start an allocating write request or queue it
  *
- * @acb:        Write request
- * @len:        Length in bytes
+ * @ret:        true if request can proceed, false if queued
  *
- * This path is taken when writing to previously unallocated clusters.
+ * If a request is queued this function returns false and the caller should
+ * return.  When it becomes time for the request to proceed the qed_aio_next()
+ * function will be called.
  */
-static void qed_aio_write_alloc(QEDAIOCB *acb, size_t len)
+static bool qed_start_allocating_write(QEDAIOCB *acb)
 {
     BDRVQEDState *s = acb_to_s(acb);
 
@@ -1112,7 +1113,26 @@ static void qed_aio_write_alloc(QEDAIOCB *acb, size_t len)
     }
     if (acb != QSIMPLEQ_FIRST(&s->allocating_write_reqs) ||
         s->allocating_write_reqs_plugged) {
-        return; /* wait for existing request to finish */
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Write new data cluster
+ *
+ * @acb:        Write request
+ * @len:        Length in bytes
+ *
+ * This path is taken when writing to previously unallocated clusters.
+ */
+static void qed_aio_write_alloc(QEDAIOCB *acb, size_t len)
+{
+    BDRVQEDState *s = acb_to_s(acb);
+    BlockDriverCompletionFunc *cb;
+
+    if (!qed_start_allocating_write(acb)) {
+        return;
     }
 
     acb->cur_nclusters = qed_bytes_to_clusters(s,
