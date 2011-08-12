@@ -161,6 +161,10 @@ static const QErrorStringTable qerror_table[] = {
         .desc      = "No '%(bus)' bus found for device '%(device)'",
     },
     {
+        .error_fmt = QERR_NOT_SUPPORTED,
+        .desc      = "Operation is not supported",
+    },
+    {
         .error_fmt = QERR_OPEN_FILE_FAILED,
         .desc      = "Could not open '%(filename)'",
     },
@@ -212,6 +216,10 @@ static const QErrorStringTable qerror_table[] = {
     {
         .error_fmt = QERR_VNC_SERVER_FAILED,
         .desc      = "Could not start VNC server on %(target)",
+    },
+    {
+        .error_fmt = QERR_STREAMING_ERROR,
+        .desc      = "An error occurred during streaming: %(msg)",
     },
     {}
 };

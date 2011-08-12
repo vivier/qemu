@@ -137,6 +137,9 @@ QError *qobject_to_qerror(const QObject *obj);
 #define QERR_NO_BUS_FOR_DEVICE \
     "{ 'class': 'NoBusForDevice', 'data': { 'device': %s, 'bus': %s } }"
 
+#define QERR_NOT_SUPPORTED \
+    "{ 'class': 'NotSupported', 'data': {} }"
+
 #define QERR_OPEN_FILE_FAILED \
     "{ 'class': 'OpenFileFailed', 'data': { 'filename': %s } }"
 
@@ -175,5 +178,8 @@ QError *qobject_to_qerror(const QObject *obj);
 
 #define QERR_VNC_SERVER_FAILED \
     "{ 'class': 'VNCServerFailed', 'data': { 'target': %s } }"
+
+#define QERR_STREAMING_ERROR \
+    "{ 'class': 'StreamingError', 'data': { 'msg': %s } }"
 
 #endif /* QERROR_H */
