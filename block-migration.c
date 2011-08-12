@@ -236,6 +236,7 @@ static void init_blk_migration_it(void *opaque, BlockDriverState *bs)
         bmds->total_sectors = sectors;
         bmds->completed_sectors = 0;
         bmds->shared_base = block_mig_state.shared_base;
+        bdrv_set_in_use(bs, 1);
 
         block_mig_state.total_sector_sum += sectors;
 
@@ -387,6 +388,7 @@ static void blk_mig_cleanup(Monitor *mon)
 
     while ((bmds = QSIMPLEQ_FIRST(&block_mig_state.bmds_list)) != NULL) {
         QSIMPLEQ_REMOVE_HEAD(&block_mig_state.bmds_list, entry);
+        bdrv_set_in_use(bmds->bs, 0);
         qemu_free(bmds);
     }
 
