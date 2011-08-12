@@ -1182,6 +1182,25 @@ static void qed_aio_write_data(void *opaque, int ret,
 }
 
 /**
+ * Copy on read callback
+ *
+ * Write data from backing file to QED that's been read if CoR is enabled.
+ */
+static void qed_copy_on_read_cb(void *opaque, int ret)
+{
+    QEDAIOCB *acb = opaque;
+
+    trace_qed_copy_on_read_cb(acb, ret);
+
+    if (ret < 0) {
+        qed_aio_complete(acb, ret);
+        return;
+    }
+
+    qed_aio_write_alloc(acb);
+}
+
+/**
  * Read data cluster
  *
  * @opaque:     Read request
@@ -1209,6 +1228,7 @@ static void qed_aio_read_data(void *opaque, int ret,
         goto err;
     }
 
+    acb->find_cluster_ret = ret;
     qemu_iovec_copy(&acb->cur_qiov, acb->qiov, acb->qiov_offset, len);
 
     /* Handle zero cluster and backing file reads */
@@ -1217,8 +1237,17 @@ static void qed_aio_read_data(void *opaque, int ret,
         qed_aio_next_io(acb, 0);
         return;
     } else if (ret != QED_CLUSTER_FOUND) {
+        BlockDriverCompletionFunc *cb = qed_aio_next_io;
+
+        if (bs->backing_hd && (acb->flags & QED_AIOCB_COPY_ON_READ)) {
+            if (!qed_start_allocating_write(acb)) {
+                qemu_iovec_reset(&acb->cur_qiov);
+                return; /* wait for current allocating write to complete */
+            }
+            cb = qed_copy_on_read_cb;
+        }
         qed_read_backing_file(s, acb->cur_pos, &acb->cur_qiov,
-                              qed_aio_next_io, acb);
+                              cb, acb);
         return;
     }
 
@@ -1302,7 +1331,9 @@ static BlockDriverAIOCB *bdrv_qed_aio_readv(BlockDriverState *bs,
                                             BlockDriverCompletionFunc *cb,
                                             void *opaque)
 {
-    return qed_aio_setup(bs, sector_num, qiov, nb_sectors, cb, opaque, 0);
+    int flags = bs->copy_on_read ? QED_AIOCB_COPY_ON_READ : 0;
+
+    return qed_aio_setup(bs, sector_num, qiov, nb_sectors, cb, opaque, flags);
 }
 
 static BlockDriverAIOCB *bdrv_qed_aio_writev(BlockDriverState *bs,

@@ -124,7 +124,8 @@ typedef struct QEDRequest {
 } QEDRequest;
 
 enum {
-    QED_AIOCB_WRITE = 0x0001,       /* read or write? */
+    QED_AIOCB_WRITE = 0x0001,           /* read or write? */
+    QED_AIOCB_COPY_ON_READ = 0x0002,
 };
 
 typedef struct QEDAIOCB {
