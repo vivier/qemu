@@ -240,6 +240,8 @@ int bdrv_get_dirty(BlockDriverState *bs, int64_t sector);
 void bdrv_reset_dirty(BlockDriverState *bs, int64_t cur_sector,
                       int nr_sectors);
 
+void bdrv_set_in_use(BlockDriverState *bs, int in_use);
+int bdrv_in_use(BlockDriverState *bs);
 
 enum BlockAcctType {
     BDRV_ACCT_READ,

@@ -196,6 +196,7 @@ struct BlockDriverState {
     BlockErrorAction on_read_error, on_write_error;
     char device_name[32];
     unsigned long *dirty_bitmap;
+    int in_use; /* users other than guest access, eg. block migration */
     QTAILQ_ENTRY(BlockDriverState) list;
     void *private;
 };

@@ -2690,6 +2690,17 @@ bdrv_acct_done(BlockDriverState *bs, BlockAcctCookie *cookie)
     bs->total_time_ns[cookie->type] += get_clock() - cookie->start_time_ns;
 }
 
+void bdrv_set_in_use(BlockDriverState *bs, int in_use)
+{
+    assert(bs->in_use != in_use);
+    bs->in_use = in_use;
+}
+
+int bdrv_in_use(BlockDriverState *bs)
+{
+    return bs->in_use;
+}
+
 int bdrv_img_create(const char *filename, const char *fmt,
                     const char *base_filename, const char *base_fmt,
                     char *options, uint64_t img_size, int flags)
