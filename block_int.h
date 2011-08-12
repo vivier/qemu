@@ -151,6 +151,7 @@ struct BlockDriverState {
     int encrypted; /* if true, the media is encrypted */
     int valid_key; /* if true, a valid encryption key has been set */
     int sg;        /* if true, the device is a /dev/sg* */
+    int copy_on_read; /* if true, copy read backing sectors into image */
     /* event callback when inserting/removing */
     void (*change_cb)(void *opaque, int reason);
     void *change_opaque;
