@@ -74,6 +74,8 @@ struct BlockDriver {
         BlockDriverCompletionFunc *cb, void *opaque);
     BlockDriverAIOCB *(*bdrv_aio_flush)(BlockDriverState *bs,
         BlockDriverCompletionFunc *cb, void *opaque);
+    BlockDriverAIOCB *(*bdrv_aio_copy_backing)(BlockDriverState *bs,
+        int64_t sector_num, BlockDriverCopyBackingCB *cb, void *opaque);
     int (*bdrv_discard)(BlockDriverState *bs, int64_t sector_num,
                         int nb_sectors);
 
