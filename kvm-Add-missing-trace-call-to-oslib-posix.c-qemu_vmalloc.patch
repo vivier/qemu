@@ -1,0 +1,57 @@
+From 533633efb2b7b115d1b36279fe1059ef7cfa5925 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Fri, 12 Aug 2011 10:24:29 -0700
+Subject: [RHEL6 qemu-kvm PATCH 4/4] Add missing trace call to oslib-posix.c:qemu_vmalloc()
+
+RH-Author: Jes Sorensen <Jes.Sorensen@redhat.com>
+Message-id: <1313144669-26216-1-git-send-email-Jes.Sorensen@redhat.com>
+Patchwork-id: 31321
+O-Subject: [PATCH RHEL6 qemu-kvm] Add missing trace call to oslib-posix.c:qemu_vmalloc()
+Bugzilla: 714773
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Acked-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry-pick of c7f4111a06208b46c6d05934d2a1e5cfbebc0180 with conflicts)
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=714773
+Upstream: c7f4111a06208b46c6d05934d2a1e5cfbebc0180
+
+---
+ osdep.c |    7 +++++--
+ 1 files changed, 5 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ osdep.c |    7 +++++--
+ 1 files changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/osdep.c b/osdep.c
+index a094db2..cd82f8f 100644
+--- a/osdep.c
++++ b/osdep.c
+@@ -123,11 +123,14 @@ void *qemu_memalign(size_t alignment, size_t size)
+ /* alloc shared memory pages */
+ void *qemu_vmalloc(size_t size)
+ {
++    void *ptr;
+ #ifndef __ia64__
+-    return qemu_memalign(getpagesize(), size);
++    ptr = qemu_memalign(getpagesize(), size);
+ #else
+-    return qemu_memalign(65536, size);
++    ptr = qemu_memalign(65536, size);
+ #endif
++    trace_qemu_vmalloc(size, ptr);
++    return ptr;
+ }
+ 
+ void qemu_vfree(void *ptr)
+-- 
+1.7.3.2
+

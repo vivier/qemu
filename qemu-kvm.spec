@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.181
+%define pkgrelease 2.182
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3494,6 +3494,12 @@ Patch2424: kvm-qed-support-for-growing-images.patch
 Patch2425: kvm-usb-ehci-trace-rename-next-to-nxt.patch
 # For bz#729869 - qxl: primary surface not saved on migration
 Patch2426: kvm-qxl-make-sure-primary-surface-is-saved-on-migration.patch
+# For bz#682227 - qemu-kvm doesn't exit when binding to specified port fails
+Patch2427: kvm-spice-catch-spice-server-initialization-failures.patch
+# For bz#729572 - qcow2: Loading internal snapshot can corrupt image
+Patch2428: kvm-qcow2-Fix-L1-table-size-after-bdrv_snapshot_goto.patch
+# For bz#714773 - qemu missing marker for qemu.kvm.qemu_vmalloc
+Patch2430: kvm-Add-missing-trace-call-to-oslib-posix.c-qemu_vmalloc.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3503,8 +3509,8 @@ BuildRequires: pulseaudio-libs-devel
 BuildRequires: ncurses-devel
 BuildRequires: libaio-devel
 
-# require spice-server API changes from bz#672035
-BuildRequires: spice-server-devel >= 0.7.2-4.el6
+# require spice-server API changes from bz#723676
+BuildRequires: spice-server-devel >= 0.8.2-2.el6
 
 BuildRequires: systemtap-sdt-devel
 
@@ -5027,6 +5033,9 @@ ApplyOptionalPatch()
 %patch2424 -p1
 %patch2425 -p1
 %patch2426 -p1
+%patch2427 -p1
+%patch2428 -p1
+%patch2430 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -5250,6 +5259,20 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Sun Aug 14 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.182.el6
+- kvm-spice-catch-spice-server-initialization-failures.patch [bz#682227]
+- kvm-qcow2-Fix-L1-table-size-after-bdrv_snapshot_goto.patch [bz#729572]
+- spec: require spice-server-devel >= 0.8.2-2 [bz#723676]
+- kvm-Add-missing-trace-call-to-oslib-posix.c-qemu_vmalloc.patch [bz#714773]
+- Resolves: bz#682227
+  (qemu-kvm doesn't exit when binding to specified port fails)
+- Resolves: bz#714773
+  (qemu missing marker for qemu.kvm.qemu_vmalloc)
+- Related: bz#723676
+  (spice-server: update to upstream spice 0.8.2)
+- Resolves: bz#729572
+  (qcow2: Loading internal snapshot can corrupt image)
+
 * Sun Aug 14 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.181.el6
 - kvm-docs-Add-QED-image-format-specification.patch [bz#633380]
 - kvm-qed-Add-QEMU-Enhanced-Disk-image-format.patch [bz#633380]

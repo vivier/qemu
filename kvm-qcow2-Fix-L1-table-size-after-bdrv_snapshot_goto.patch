@@ -1,0 +1,80 @@
+From 01e8bcd3f4dd62ee374a1f246affcd839daff822 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Wed, 10 Aug 2011 08:48:20 -0700
+Subject: [RHEL6 qemu-kvm PATCH 2/4] qcow2: Fix L1 table size after bdrv_snapshot_goto
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1312966100-3768-1-git-send-email-kwolf@redhat.com>
+Patchwork-id: 31207
+O-Subject: [RHEL-6.2 qemu-kvm PATCH] qcow2: Fix L1 table size after bdrv_snapshot_goto
+Bugzilla: 729572
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 729572
+
+When loading an internal snapshot whose L1 table is smaller than the current L1
+table, the size of the current L1 would be shrunk to the snapshot's L1 size in
+memory, but not on disk. This lead to incorrect refcount updates and eventuelly
+to image corruption.
+
+Instead of writing the new L1 size to disk, this simply retains the bigger L1
+size that is currently in use and makes sure that the unused part is zeroed.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Tested-by: Philipp Hahn <hahn@univention.de>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 35d7ace74bd07e3d6983c1fd7cbfab4e11175689)
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ block/qcow2-snapshot.c |   16 +++++++++++-----
+ 1 files changed, 11 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qcow2-snapshot.c |   16 +++++++++++-----
+ 1 files changed, 11 insertions(+), 5 deletions(-)
+
+diff --git a/block/qcow2-snapshot.c b/block/qcow2-snapshot.c
+index e21db53..a398835 100644
+--- a/block/qcow2-snapshot.c
++++ b/block/qcow2-snapshot.c
+@@ -317,7 +317,8 @@ int qcow2_snapshot_goto(BlockDriverState *bs, const char *snapshot_id)
+ {
+     BDRVQcowState *s = bs->opaque;
+     QCowSnapshot *sn;
+-    int i, snapshot_index, l1_size2;
++    int i, snapshot_index;
++    int cur_l1_bytes, sn_l1_bytes;
+ 
+     snapshot_index = find_snapshot_by_id_or_name(bs, snapshot_id);
+     if (snapshot_index < 0)
+@@ -330,14 +331,19 @@ int qcow2_snapshot_goto(BlockDriverState *bs, const char *snapshot_id)
+     if (qcow2_grow_l1_table(bs, sn->l1_size) < 0)
+         goto fail;
+ 
+-    s->l1_size = sn->l1_size;
+-    l1_size2 = s->l1_size * sizeof(uint64_t);
++    cur_l1_bytes = s->l1_size * sizeof(uint64_t);
++    sn_l1_bytes = sn->l1_size * sizeof(uint64_t);
++
++    if (cur_l1_bytes > sn_l1_bytes) {
++        memset(s->l1_table + sn->l1_size, 0, cur_l1_bytes - sn_l1_bytes);
++    }
++
+     /* copy the snapshot l1 table to the current l1 table */
+     if (bdrv_pread(bs->file, sn->l1_table_offset,
+-                   s->l1_table, l1_size2) != l1_size2)
++                   s->l1_table, sn_l1_bytes) < 0)
+         goto fail;
+     if (bdrv_pwrite_sync(bs->file, s->l1_table_offset,
+-                    s->l1_table, l1_size2) < 0)
++                    s->l1_table, cur_l1_bytes) < 0)
+         goto fail;
+     for(i = 0;i < s->l1_size; i++) {
+         be64_to_cpus(&s->l1_table[i]);
+-- 
+1.7.3.2
+
