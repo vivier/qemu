@@ -1,7 +1,7 @@
->From b8af15fd71aa0d0eb0f7df053759eaa85176af46 Mon Sep 17 00:00:00 2001
+>From 63350d37305a8fc5b6a8fb2fbacfb8a6a91956fd Mon Sep 17 00:00:00 2001
 From: Alon Levy <alevy@redhat.com>
 Date: Tue, 22 Mar 2011 12:28:00 +0200
-Subject: [PATCH 10/25] spice-qemu-char.c: remove intermediate buffer
+Subject: [PATCH 10/28] spice-qemu-char.c: remove intermediate buffer
 
 BZ: 672191
 upstream: not submitted (explained below)

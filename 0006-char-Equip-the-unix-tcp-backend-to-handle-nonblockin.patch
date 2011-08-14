@@ -1,7 +1,7 @@
->From 569b1773afa2b30ec9c64cc71815d6c499cd02c0 Mon Sep 17 00:00:00 2001
+>From 5fc1c0fc4c8153ea927aa8580c78c484f966be64 Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 22:02:47 +0100
-Subject: [PATCH 06/25] char: Equip the unix/tcp backend to handle nonblocking
+Subject: [PATCH 06/28] char: Equip the unix/tcp backend to handle nonblocking
  writes#
 
 Now that the infrastructure is in place to return -EAGAIN to callers,

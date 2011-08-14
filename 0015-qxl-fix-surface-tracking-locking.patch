@@ -1,7 +1,7 @@
->From fc1bf5a4be15e71f87fd73f79356a5a1df5aa724 Mon Sep 17 00:00:00 2001
+>From b2b956cfda5fb144d9faa10b7c5894833feb7d30 Mon Sep 17 00:00:00 2001
 From: Gerd Hoffmann <kraxel@redhat.com>
 Date: Wed, 29 Jun 2011 10:24:05 +0200
-Subject: [PATCH 17/25] qxl: fix surface tracking & locking
+Subject: [PATCH 15/28] qxl: fix surface tracking & locking
 
 Surface tracking needs proper locking since it is used from vcpu and spice
 worker threads, add it.  Also reset the surface counter when zapping all

@@ -1,7 +1,7 @@
->From 28a0d9d78a886205765f513be2d522592b9ffd42 Mon Sep 17 00:00:00 2001
+>From c8cf564bc5c080540287ecd5bd944d85873755df Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 20:32:58 +0100
-Subject: [PATCH 03/25] iohandlers: Add enable/disable_write_fd_handler()
+Subject: [PATCH 03/28] iohandlers: Add enable/disable_write_fd_handler()
  functions
 
 These will be used to provide a cleaner API for the nonblocking case.

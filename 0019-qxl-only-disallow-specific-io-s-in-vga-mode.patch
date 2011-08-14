@@ -1,7 +1,7 @@
->From 4eb9272a4185cf47a4a4e9cb59a95cfd9939e86c Mon Sep 17 00:00:00 2001
+>From e8f481961a5fd3ad92a55dbabcccf09b037d86c9 Mon Sep 17 00:00:00 2001
 From: Alon Levy <alevy@redhat.com>
 Date: Wed, 29 Jun 2011 11:53:21 +0200
-Subject: [PATCH 21/25] qxl: only disallow specific io's in vga mode
+Subject: [PATCH 19/28] qxl: only disallow specific io's in vga mode
 
 Since the driver is still in operation even after moving to UNDEFINED, i.e.
 by destroying primary in any way.

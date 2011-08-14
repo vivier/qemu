@@ -1,7 +1,7 @@
->From 7cda5b9b8b24b778751a402f2b5e6b7d716f1800 Mon Sep 17 00:00:00 2001
+>From 9e799828d3a805184687792254c379ba4887ec60 Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 20:31:45 +0100
-Subject: [PATCH 02/25] char: Add a QemuChrHandlers struct to initialise
+Subject: [PATCH 02/28] char: Add a QemuChrHandlers struct to initialise
  chardev handlers
 
 Instead of passing each handler in the qemu_add_handlers() function,

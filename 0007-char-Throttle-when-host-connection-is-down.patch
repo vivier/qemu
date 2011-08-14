@@ -1,7 +1,7 @@
->From edcb78965b9cab18004c30721d46138000a2c810 Mon Sep 17 00:00:00 2001
+>From 5121e48706408e28c811e74d3e6da5b78aa9137d Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 22:05:10 +0100
-Subject: [PATCH 07/25] char: Throttle when host connection is down#
+Subject: [PATCH 07/28] char: Throttle when host connection is down#
 
 When the host-side connection goes down, throttle the virtio-serial bus
 and later unthrottle when a connection gets established.  This helps

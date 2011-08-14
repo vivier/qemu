@@ -1,7 +1,7 @@
->From beffb6d82668c7f8bcead447422529532cc0b4e7 Mon Sep 17 00:00:00 2001
+>From 5c0219c6cef769a5748705d489376ea618486a17 Mon Sep 17 00:00:00 2001
 From: Alon Levy <alevy@redhat.com>
 Date: Wed, 6 Jul 2011 13:40:29 +0200
-Subject: [PATCH 20/25] qxl: make qxl_guest_bug take variable arguments
+Subject: [PATCH 18/28] qxl: make qxl_guest_bug take variable arguments
 
 Signed-off-by: Alon Levy <alevy@redhat.com>
 ---

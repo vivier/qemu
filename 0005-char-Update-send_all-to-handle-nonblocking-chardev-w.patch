@@ -1,7 +1,7 @@
->From 92303bbcdb1a2877bce80e25836d47056060403d Mon Sep 17 00:00:00 2001
+>From a962453ed73a671f566cc94858dc21ab694cc85f Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 22:00:27 +0100
-Subject: [PATCH 05/25] char: Update send_all() to handle nonblocking chardev
+Subject: [PATCH 05/28] char: Update send_all() to handle nonblocking chardev
  write requests
 
 The send_all function is modified to return to the caller in case the

@@ -1,7 +1,7 @@
->From e52026748bb0b6e29f7703cc9fe8f8d6f5f345f8 Mon Sep 17 00:00:00 2001
+>From 67d29af45ebb1539eaaa2bfb599350c790306111 Mon Sep 17 00:00:00 2001
 From: Gerd Hoffmann <kraxel@redhat.com>
 Date: Fri, 17 Jun 2011 10:34:25 +0200
-Subject: [PATCH 14/25] spice: add worker wrapper functions.
+Subject: [PATCH 12/28] spice: add worker wrapper functions.
 
 Add wrapper functions for all spice worker calls.
 

@@ -1,7 +1,7 @@
->From 1de5cd33d8c1ffa35b5bcdf703d4b097284edda0 Mon Sep 17 00:00:00 2001
+>From c28ee0e7c851fc58ac6ef8f5137fc35cc55b607c Mon Sep 17 00:00:00 2001
 From: Gerd Hoffmann <kraxel@redhat.com>
 Date: Fri, 17 Jun 2011 10:42:25 +0200
-Subject: [PATCH 15/25] spice: add qemu_spice_display_init_common
+Subject: [PATCH 13/28] spice: add qemu_spice_display_init_common
 
 Factor out SimpleSpiceDisplay initialization into
 qemu_spice_display_init_common() and call it from

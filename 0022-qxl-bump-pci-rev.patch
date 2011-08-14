@@ -1,7 +1,7 @@
->From 37779d77dff7cb73d333a6440cadd1db0638516b Mon Sep 17 00:00:00 2001
+>From 81c99528614b45f2b8407418f7e2b5742559ac19 Mon Sep 17 00:00:00 2001
 From: Gerd Hoffmann <kraxel@redhat.com>
 Date: Wed, 29 Jun 2011 15:51:24 +0200
-Subject: [PATCH 24/25] qxl: bump pci rev
+Subject: [PATCH 22/28] qxl: bump pci rev
 
 Inform guest drivers about the new features I/O commands we have
 now (async commands, S3 support) if building with newer spice, i.e.

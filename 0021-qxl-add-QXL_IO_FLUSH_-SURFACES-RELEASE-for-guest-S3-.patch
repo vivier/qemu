@@ -1,7 +1,7 @@
->From b751be42f3da5666bd11d5a0acb20f225d9a4eb9 Mon Sep 17 00:00:00 2001
+>From fed782e33714e6a44bca9a8c3ab8b017393e8089 Mon Sep 17 00:00:00 2001
 From: Alon Levy <alevy@redhat.com>
 Date: Sun, 5 Jun 2011 11:01:48 +0300
-Subject: [PATCH 23/25] qxl: add QXL_IO_FLUSH_{SURFACES,RELEASE} for guest
+Subject: [PATCH 21/28] qxl: add QXL_IO_FLUSH_{SURFACES,RELEASE} for guest
  S3&S4 support
 
 Add two new IOs.
