@@ -1,7 +1,7 @@
->From cb29c060e51d2afcd9ba6ed6a115442473381d5a Mon Sep 17 00:00:00 2001
+>From 31c995f6ee18ff2e2b45dbdcf1d57f777d1e0ef9 Mon Sep 17 00:00:00 2001
 From: Alon Levy <alevy@redhat.com>
 Date: Fri, 17 Jun 2011 14:42:09 +0200
-Subject: [PATCH 18/25] qxl: add io_port_to_string
+Subject: [PATCH 16/28] qxl: add io_port_to_string
 
 Signed-off-by: Alon Levy <alevy@redhat.com>
 ---

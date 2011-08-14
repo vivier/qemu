@@ -1,7 +1,7 @@
->From c79ffc7e3357317bd81f2abefa4743eaf8101a4e Mon Sep 17 00:00:00 2001
+>From d98187ff877341b5db5ca7f9d50b238d5936052b Mon Sep 17 00:00:00 2001
 From: Hans de Goede <hdegoede@redhat.com>
 Date: Thu, 21 Jul 2011 15:36:40 +0200
-Subject: [PATCH 13/25] spice-qemu-char: Generate chardev open/close events
+Subject: [PATCH 25/28] spice-qemu-char: Generate chardev open/close events
 
 Define a state callback and make that generate chardev open/close events when
 called by the spice-server.
@@ -13,21 +13,20 @@ http://lists.freedesktop.org/archives/spice-devel/2011-July/004837.html
 
 Signed-off-by: Hans de Goede <hdegoede@redhat.com>
 ---
- spice-qemu-char.c |   46 +++++++++++++++++++++++++++++++++++++++++++++-
- 1 files changed, 45 insertions(+), 1 deletions(-)
+ spice-qemu-char.c |   35 ++++++++++++++++++++++++++++++++++-
+ 1 files changed, 34 insertions(+), 1 deletions(-)
 
 diff --git a/spice-qemu-char.c b/spice-qemu-char.c
-index 2b8aec4..1f4f1ec 100644
+index 2b8aec4..d55e74a 100644
 --- a/spice-qemu-char.c
 +++ b/spice-qemu-char.c
-@@ -89,11 +89,50 @@ static int vmc_read(SpiceCharDeviceInstance *sin, uint8_t *buf, int len)
+@@ -89,11 +89,39 @@ static int vmc_read(SpiceCharDeviceInstance *sin, uint8_t *buf, int len)
      return bytes;
  }
  
 +static void vmc_state(SpiceCharDeviceInstance *sin, int connected)
 +{
 +    SpiceCharDriver *scd = container_of(sin, SpiceCharDriver, sin);
-+    int event;
 +
 +#if SPICE_SERVER_VERSION < 0x000901
 +    /*
@@ -49,17 +48,7 @@ index 2b8aec4..1f4f1ec 100644
 +        return;
 +    }
 +
-+    if (connected) {
-+        scd->chr->opened = 1;
-+        event = CHR_EVENT_OPENED;
-+    } else {
-+        scd->chr->opened = 0;
-+        event = CHR_EVENT_CLOSED;
-+    }
-+
-+    if (scd->chr->chr_event) {
-+        scd->chr->chr_event(scd->chr->handler_opaque, event);
-+    }
++    qemu_chr_event(scd->chr, connected ? CHR_EVENT_OPENED : CHR_EVENT_CLOSED);
 +}
 +
  static SpiceCharDeviceInterface vmc_interface = {
@@ -71,7 +60,7 @@ index 2b8aec4..1f4f1ec 100644
      .write              = vmc_write,
      .read               = vmc_read,
  };
-@@ -222,7 +261,12 @@ int qemu_chr_open_spice(QemuOpts *opts, CharDriverState **_chr)
+@@ -222,7 +250,12 @@ int qemu_chr_open_spice(QemuOpts *opts, CharDriverState **_chr)
      chr->chr_guest_close = spice_chr_guest_close;
      s->unblock_timer = qemu_new_timer_ms(vm_clock, spice_chr_unblock, s);
  

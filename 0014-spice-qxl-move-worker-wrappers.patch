@@ -1,7 +1,7 @@
->From b1fef6eecf09404114ca016aa090cffa183d40f1 Mon Sep 17 00:00:00 2001
+>From 60257c766e7a39134a9db9f4d1111f2b9fea2f86 Mon Sep 17 00:00:00 2001
 From: Gerd Hoffmann <kraxel@redhat.com>
 Date: Wed, 29 Jun 2011 10:07:52 +0200
-Subject: [PATCH 16/25] spice/qxl: move worker wrappers
+Subject: [PATCH 14/28] spice/qxl: move worker wrappers
 
 Move the wrapper functions which are used by qxl only to qxl.c.
 Rename them from qemu_spice_* to qxl_spice_*.  Also pass in a

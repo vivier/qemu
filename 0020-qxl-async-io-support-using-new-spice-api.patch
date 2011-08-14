@@ -1,7 +1,7 @@
->From b25a2a169340f70b29d47d0598df1ac525a87bf9 Mon Sep 17 00:00:00 2001
+>From a1950cb3afb36a78df3ac9a545d99baf7cc93ca2 Mon Sep 17 00:00:00 2001
 From: Alon Levy <alevy@redhat.com>
 Date: Thu, 23 Jun 2011 20:02:18 +0200
-Subject: [PATCH 22/25] qxl: async io support using new spice api
+Subject: [PATCH 20/28] qxl: async io support using new spice api
 
 Some of the QXL port i/o commands are waiting for the spice server to
 complete certain actions.  Add async versions for these commands, so we

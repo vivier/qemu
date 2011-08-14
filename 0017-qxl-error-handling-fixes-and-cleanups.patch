@@ -1,7 +1,7 @@
->From 9e85acc84ed9dbaed1bb7abe83e1b2fe61905706 Mon Sep 17 00:00:00 2001
+>From 4b61f7ca2ed63deb1d35c17150b53a1661f395f7 Mon Sep 17 00:00:00 2001
 From: Gerd Hoffmann <kraxel@redhat.com>
 Date: Thu, 30 Jun 2011 10:41:36 +0200
-Subject: [PATCH 19/25] qxl: error handling fixes and cleanups.
+Subject: [PATCH 17/28] qxl: error handling fixes and cleanups.
 
 Add qxl_guest_bug() function which is supposed to be called in case
 sanity checks of guest requests fail.  It raises an error IRQ and

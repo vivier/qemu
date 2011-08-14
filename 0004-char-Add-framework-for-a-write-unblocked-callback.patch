@@ -1,7 +1,7 @@
->From 7058d42cf3e2fab291bd4c42604ef510a46bebe0 Mon Sep 17 00:00:00 2001
+>From 3ad2ca8e46ba078e69254ca5886de89b30f823bb Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 21:41:42 +0100
-Subject: [PATCH 04/25] char: Add framework for a 'write unblocked' callback
+Subject: [PATCH 04/28] char: Add framework for a 'write unblocked' callback
 
 The char layer can let users know that the driver will block on further
 input.  For users interested in not blocking, they can assign a function

@@ -1,9 +1,7 @@
-%define githead 0af4922
-
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.15.0
-Release: 0.3.20110804%githead%{?dist}
+Release: 1%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -19,11 +17,7 @@ URL: http://www.qemu.org/
 %define _smp_mflags %{nil}
 %endif
 
-# Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-kvm-%{version}.tar.gz
-# The source for this package was pulled from upstream's git.  Use the
-# following commands to generate the tarball:
-# git archive --format=tar --prefix=qemu-kvm-0.15.0/ 0af4922 | gzip > qemu-kvm-0.15.0-0af4922.tar.gz
-Source0: qemu-kvm-%{version}-%{githead}.tar.gz
+Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-kvm-%{version}.tar.gz
 
 Source1: qemu.init
 
@@ -52,23 +46,23 @@ Patch08: 0008-virtio-console-Enable-port-throttling-when-chardev-i.patch
 Patch09: 0009-spice-qemu-char.c-add-throttling.patch
 Patch10: 0010-spice-qemu-char.c-remove-intermediate-buffer.patch
 Patch11: 0011-usb-redir-Add-flow-control-support.patch
-Patch12: 0012-usb-redir-Call-qemu_chr_guest_open-close.patch
-Patch13: 0013-spice-qemu-char-Generate-chardev-open-close-events.patch
-Patch14: 0014-spice-add-worker-wrapper-functions.patch
-Patch15: 0015-spice-add-qemu_spice_display_init_common.patch
-Patch16: 0016-spice-qxl-move-worker-wrappers.patch
-Patch17: 0017-qxl-fix-surface-tracking-locking.patch
-Patch18: 0018-qxl-add-io_port_to_string.patch
-Patch19: 0019-qxl-error-handling-fixes-and-cleanups.patch
-Patch20: 0020-qxl-make-qxl_guest_bug-take-variable-arguments.patch
-Patch21: 0021-qxl-only-disallow-specific-io-s-in-vga-mode.patch
-Patch22: 0022-qxl-async-io-support-using-new-spice-api.patch
-Patch23: 0023-qxl-add-QXL_IO_FLUSH_-SURFACES-RELEASE-for-guest-S3-.patch
-Patch24: 0024-qxl-bump-pci-rev.patch
-Patch25: 0025-virtio-serial-bus-replay-guest_open-on-migration.patch
-
-# Fix for default accelerator in non-KVM builds
-Patch100: qemu-kvm-default-accelerator.patch
+Patch12: 0012-spice-add-worker-wrapper-functions.patch
+Patch13: 0013-spice-add-qemu_spice_display_init_common.patch
+Patch14: 0014-spice-qxl-move-worker-wrappers.patch
+Patch15: 0015-qxl-fix-surface-tracking-locking.patch
+Patch16: 0016-qxl-add-io_port_to_string.patch
+Patch17: 0017-qxl-error-handling-fixes-and-cleanups.patch
+Patch18: 0018-qxl-make-qxl_guest_bug-take-variable-arguments.patch
+Patch19: 0019-qxl-only-disallow-specific-io-s-in-vga-mode.patch
+Patch20: 0020-qxl-async-io-support-using-new-spice-api.patch
+Patch21: 0021-qxl-add-QXL_IO_FLUSH_-SURFACES-RELEASE-for-guest-S3-.patch
+Patch22: 0022-qxl-bump-pci-rev.patch
+Patch23: 0023-virtio-serial-bus-replay-guest_open-on-migration.patch
+Patch24: 0024-qemu-char-make-qemu_chr_event-public.patch
+Patch25: 0025-spice-qemu-char-Generate-chardev-open-close-events.patch
+Patch26: 0026-usb-redir-Call-qemu_chr_guest_open-close.patch
+Patch27: 0027-usb-redir-Device-disconnect-re-connect-robustness-fi.patch
+Patch28: 0028-usb-redir-Don-t-try-to-write-to-the-chardev-after-a-.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -267,8 +261,9 @@ such as kvm_stat.
 %patch23 -p1
 %patch24 -p1
 %patch25 -p1
-
-%patch100 -p1
+%patch26 -p1
+%patch27 -p1
+%patch28 -p1
 
 %build
 # By default we build everything, but allow x86 to build a minimal version
@@ -579,6 +574,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Sun Aug 14 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.15.0-1
+- Update to 0.15.0 stable release.
+
 * Thu Aug 04 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.15.0-0.3.201108040af4922
 - Update to 0.15.0-rc1 as we prepare for 0.15.0 release
 
