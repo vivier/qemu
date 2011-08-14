@@ -1,0 +1,55 @@
+From 88778c8027b3ef80e867705c0f55dee3136b73fd Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Mon, 8 Aug 2011 12:03:03 -0700
+Subject: [RHEL6 qemu-kvm PATCH 18/19] usb-ehci: trace: rename "next" to "nxt".
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1312804983-7581-1-git-send-email-kraxel@redhat.com>
+Patchwork-id: 31062
+O-Subject: [RHEL-6.2 kvm PATCH] usb-ehci: trace: rename "next" to "nxt".
+Bugzilla: 720979
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+"next" is reserved in systemtap thus using this as a
+trace parameter name causes trouble when trying to trace
+with systemtap.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 2e97f03ed7719d95e739c4050459b5026ef3cc6c)
+
+bugzilla: 720979 - do not use next as a variable name in qemu-kvm systemtap tapset
+---
+ trace-events |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ trace-events |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/trace-events b/trace-events
+index d0b7879..b75f6ba 100644
+--- a/trace-events
++++ b/trace-events
+@@ -89,13 +89,13 @@ disable usb_ehci_mmio_writel(uint32_t addr, const char *str, uint32_t val) "wr m
+ disable usb_ehci_mmio_change(uint32_t addr, const char *str, uint32_t new, uint32_t old) "ch mmio %04x [%s] = %x [old: %x]"
+ disable usb_ehci_usbsts(const char *sts, int state) "usbsts %s %d"
+ disable usb_ehci_state(const char *schedule, const char *state) "%s schedule %s"
+-disable usb_ehci_qh_ptrs(void *q, uint32_t addr, uint32_t next, uint32_t c_qtd, uint32_t n_qtd, uint32_t a_qtd) "q %p - QH @ %08x: next %08x qtds %08x,%08x,%08x"
++disable usb_ehci_qh_ptrs(void *q, uint32_t addr, uint32_t nxt, uint32_t c_qtd, uint32_t n_qtd, uint32_t a_qtd) "q %p - QH @ %08x: next %08x qtds %08x,%08x,%08x"
+ disable usb_ehci_qh_fields(uint32_t addr, int rl, int mplen, int eps, int ep, int devaddr) "QH @ %08x - rl %d, mplen %d, eps %d, ep %d, dev %d"
+ disable usb_ehci_qh_bits(uint32_t addr, int c, int h, int dtc, int i) "QH @ %08x - c %d, h %d, dtc %d, i %d"
+-disable usb_ehci_qtd_ptrs(void *q, uint32_t addr, uint32_t next, uint32_t altnext) "q %p - QTD @ %08x: next %08x altnext %08x"
++disable usb_ehci_qtd_ptrs(void *q, uint32_t addr, uint32_t nxt, uint32_t altnext) "q %p - QTD @ %08x: next %08x altnext %08x"
+ disable usb_ehci_qtd_fields(uint32_t addr, int tbytes, int cpage, int cerr, int pid) "QTD @ %08x - tbytes %d, cpage %d, cerr %d, pid %d"
+ disable usb_ehci_qtd_bits(uint32_t addr, int ioc, int active, int halt, int babble, int xacterr) "QTD @ %08x - ioc %d, active %d, halt %d, babble %d, xacterr %d"
+-disable usb_ehci_itd(uint32_t addr, uint32_t next, uint32_t mplen, uint32_t mult, uint32_t ep, uint32_t devaddr) "ITD @ %08x: next %08x - mplen %d, mult %d, ep %d, dev %d"
++disable usb_ehci_itd(uint32_t addr, uint32_t nxt, uint32_t mplen, uint32_t mult, uint32_t ep, uint32_t devaddr) "ITD @ %08x: next %08x - mplen %d, mult %d, ep %d, dev %d"
+ disable usb_ehci_port_attach(uint32_t port, const char *device) "attach port #%d - %s"
+ disable usb_ehci_port_detach(uint32_t port) "detach port #%d"
+ disable usb_ehci_port_reset(uint32_t port, int enable) "reset port #%d - %d"
+-- 
+1.7.3.2
+

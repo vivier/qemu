@@ -1,0 +1,59 @@
+From f46baebd140f6efb193c519ddea23c185bce446e Mon Sep 17 00:00:00 2001
+From: Anthony Liguori <aliguori@redhat.com>
+Date: Mon, 8 Aug 2011 16:13:56 -0700
+Subject: [RHEL6 qemu-kvm PATCH 13/19] qed: honor BDRV_O_INCOMING for live migration support
+
+RH-Author: Anthony Liguori <aliguori@redhat.com>
+Message-id: <1312820040-2612-14-git-send-email-aliguori@redhat.com>
+Patchwork-id: 31108
+O-Subject: [RHEL6.2 qemu PATCH 13/17] qed: honor BDRV_O_INCOMING for live migration support
+Bugzilla: 633380
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+The QED image format includes a file header bit to mark images dirty.
+QED normally checks dirty images on open and fixes inconsistent
+metadata.  This is undesirable during live migration since the dirty bit
+may be set if the source host is modifying the image file.  The check
+should be postponed until migration completes.
+
+Skip operations that modify the image file if the BDRV_O_INCOMING flag
+is set.  When migration completes block devices are reopened without the
+BDRV_O_INCOMING flag and execution resumes as normal.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Anthony Liguori <aliguori@redhat.com>
+
+Bugzilla: 633380
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qed.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/block/qed.c b/block/qed.c
+index aafd22f..86915ee 100644
+--- a/block/qed.c
++++ b/block/qed.c
+@@ -368,7 +368,7 @@ static int bdrv_qed_open(BlockDriverState *bs, int flags)
+      * feature is no longer valid.
+      */
+     if ((s->header.autoclear_features & ~QED_AUTOCLEAR_FEATURE_MASK) != 0 &&
+-        !bdrv_is_read_only(bs->file)) {
++        !bdrv_is_read_only(bs->file) && !(flags & BDRV_O_INCOMING)) {
+         s->header.autoclear_features &= QED_AUTOCLEAR_FEATURE_MASK;
+ 
+         ret = qed_write_header_sync(s);
+@@ -395,7 +395,7 @@ static int bdrv_qed_open(BlockDriverState *bs, int flags)
+          * potentially inconsistent images to be opened read-only.  This can
+          * aid data recovery from an otherwise inconsistent image.
+          */
+-        if (!bdrv_is_read_only(bs->file)) {
++        if (!bdrv_is_read_only(bs->file) && !(flags & BDRV_O_INCOMING)) {
+             BdrvCheckResult result = {0};
+ 
+             ret = qed_check(s, &result, true);
+-- 
+1.7.3.2
+

@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.180
+%define pkgrelease 2.181
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3458,6 +3458,42 @@ Patch2405: kvm-pci-don-t-overwrite-multi-functio-bit-in-pci-header-.patch
 Patch2406: kvm-pci-set-PCI-multi-function-bit-appropriately.patch
 # For bz#705070 - QMP: screendump command does not allow specification of monitor to capture
 Patch2407: kvm-Add-user_print-handler-to-qxl_screendump-monitor-com.patch
+# For bz#633380 - [6.2 FEAT] Include QED image format for KVM guests
+Patch2408: kvm-docs-Add-QED-image-format-specification.patch
+# For bz#633380 - [6.2 FEAT] Include QED image format for KVM guests
+Patch2409: kvm-qed-Add-QEMU-Enhanced-Disk-image-format.patch
+# For bz#633380 - [6.2 FEAT] Include QED image format for KVM guests
+Patch2410: kvm-qed-Table-L2-cache-and-cluster-functions.patch
+# For bz#633380 - [6.2 FEAT] Include QED image format for KVM guests
+Patch2411: kvm-qed-Read-write-support.patch
+# For bz#633380 - [6.2 FEAT] Include QED image format for KVM guests
+Patch2412: kvm-qed-Consistency-check-support.patch
+# For bz#633380 - [6.2 FEAT] Include QED image format for KVM guests
+Patch2413: kvm-docs-Fix-missing-carets-in-QED-specification.patch
+# For bz#633380 - [6.2 FEAT] Include QED image format for KVM guests
+Patch2414: kvm-qed-Refuse-to-create-images-on-block-devices.patch
+# For bz#633380 - [6.2 FEAT] Include QED image format for KVM guests
+Patch2415: kvm-qed-Images-with-backing-file-do-not-require-QED_F_NE.patch
+# For bz#633380 - [6.2 FEAT] Include QED image format for KVM guests
+Patch2416: kvm-docs-Describe-zero-data-clusters-in-QED-specificatio.patch
+# For bz#633380 - [6.2 FEAT] Include QED image format for KVM guests
+Patch2417: kvm-qed-Add-support-for-zero-clusters.patch
+# For bz#633380 - [6.2 FEAT] Include QED image format for KVM guests
+Patch2418: kvm-qed-Fix-consistency-check-on-32-bit-hosts.patch
+# For bz#633380 - [6.2 FEAT] Include QED image format for KVM guests
+Patch2419: kvm-block-add-BDRV_O_INCOMING-migration-consistency-hint.patch
+# For bz#633380 - [6.2 FEAT] Include QED image format for KVM guests
+Patch2420: kvm-qed-honor-BDRV_O_INCOMING-for-live-migration-support.patch
+# For bz#633380 - [6.2 FEAT] Include QED image format for KVM guests
+Patch2422: kvm-qemu-tool-Stub-out-qemu-timer-functions.patch
+# For bz#633380 - [6.2 FEAT] Include QED image format for KVM guests
+Patch2423: kvm-qed-Periodically-flush-and-clear-need-check-bit.patch
+# For bz#633380 - [6.2 FEAT] Include QED image format for KVM guests
+Patch2424: kvm-qed-support-for-growing-images.patch
+# For bz#720979 - do not use next  as a variable name in qemu-kvm systemtap tapset
+Patch2425: kvm-usb-ehci-trace-rename-next-to-nxt.patch
+# For bz#729869 - qxl: primary surface not saved on migration
+Patch2426: kvm-qxl-make-sure-primary-surface-is-saved-on-migration.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -4973,6 +5009,24 @@ ApplyOptionalPatch()
 %patch2405 -p1
 %patch2406 -p1
 %patch2407 -p1
+%patch2408 -p1
+%patch2409 -p1
+%patch2410 -p1
+%patch2411 -p1
+%patch2412 -p1
+%patch2413 -p1
+%patch2414 -p1
+%patch2415 -p1
+%patch2416 -p1
+%patch2417 -p1
+%patch2418 -p1
+%patch2419 -p1
+%patch2420 -p1
+%patch2422 -p1
+%patch2423 -p1
+%patch2424 -p1
+%patch2425 -p1
+%patch2426 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -5000,7 +5054,7 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
             --extra-ldflags=$extraldflags \
             --extra-cflags="$RPM_OPT_FLAGS" \
             --disable-xen \
-            --block-drv-whitelist=qcow2,raw,file,host_device,host_cdrom \
+            --block-drv-whitelist=qcow2,raw,file,host_device,host_cdrom,qed \
             --disable-debug-tcg \
             --disable-sparse \
             --enable-werror \
@@ -5196,6 +5250,33 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Sun Aug 14 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.181.el6
+- kvm-docs-Add-QED-image-format-specification.patch [bz#633380]
+- kvm-qed-Add-QEMU-Enhanced-Disk-image-format.patch [bz#633380]
+- kvm-qed-Table-L2-cache-and-cluster-functions.patch [bz#633380]
+- kvm-qed-Read-write-support.patch [bz#633380]
+- kvm-qed-Consistency-check-support.patch [bz#633380]
+- kvm-docs-Fix-missing-carets-in-QED-specification.patch [bz#633380]
+- kvm-qed-Refuse-to-create-images-on-block-devices.patch [bz#633380]
+- kvm-qed-Images-with-backing-file-do-not-require-QED_F_NE.patch [bz#633380]
+- kvm-docs-Describe-zero-data-clusters-in-QED-specificatio.patch [bz#633380]
+- kvm-qed-Add-support-for-zero-clusters.patch [bz#633380]
+- kvm-qed-Fix-consistency-check-on-32-bit-hosts.patch [bz#633380]
+- kvm-block-add-BDRV_O_INCOMING-migration-consistency-hint.patch [bz#633380]
+- kvm-qed-honor-BDRV_O_INCOMING-for-live-migration-support.patch [bz#633380]
+- spec file: spec-file-whitelist-QED-image-format [bz#633380]
+- kvm-qemu-tool-Stub-out-qemu-timer-functions.patch [bz#633380]
+- kvm-qed-Periodically-flush-and-clear-need-check-bit.patch [bz#633380]
+- kvm-qed-support-for-growing-images.patch [bz#633380]
+- kvm-usb-ehci-trace-rename-next-to-nxt.patch [bz#720979]
+- kvm-qxl-make-sure-primary-surface-is-saved-on-migration.patch [bz#729869]
+- Resolves: bz#633380
+  ([6.2 FEAT] Include QED image format for KVM guests)
+- Resolves: bz#720979
+  (do not use next  as a variable name in qemu-kvm systemtap tapset)
+- Resolves: bz#729869
+  (qxl: primary surface not saved on migration)
+
 * Thu Aug 11 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.180.el6
 - kvm-virtio-event-index-support.patch [bz#710943]
 - kvm-pc-rhel-6.1-and-back-compat-event-idx-support.patch [bz#710943]

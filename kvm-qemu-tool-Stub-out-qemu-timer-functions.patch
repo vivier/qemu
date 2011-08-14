@@ -1,0 +1,78 @@
+From 546202926b6d686b647ea83f2473539cc03a3f87 Mon Sep 17 00:00:00 2001
+From: Anthony Liguori <aliguori@redhat.com>
+Date: Mon, 8 Aug 2011 16:13:58 -0700
+Subject: [RHEL6 qemu-kvm PATCH 15/19] qemu-tool: Stub out qemu-timer functions
+
+RH-Author: Anthony Liguori <aliguori@redhat.com>
+Message-id: <1312820040-2612-16-git-send-email-aliguori@redhat.com>
+Patchwork-id: 31111
+O-Subject: [RHEL6.2 qemu PATCH 15/17] qemu-tool: Stub out qemu-timer functions
+Bugzilla: 633380
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+Block drivers may use timers for flushing metadata to disk or
+reconnecting to a network drive.  Stub out the following functions in
+qemu-tool.c:
+
+QEMUTimer *qemu_new_timer_ns(QEMUClock *clock, int scale,
+                             QEMUTimerCB *cb, void *opaque)
+void qemu_free_timer(QEMUTimer *ts)
+void qemu_del_timer(QEMUTimer *ts)
+void qemu_mod_timer(QEMUTimer *ts, int64_t expire_time)
+int64_t qemu_get_clock_ns(QEMUClock *clock)
+
+They will result in timers never firing when linked against qemu-tool.o.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@redhat.com>
+
+Bugzilla: 633380
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-tool.c |   19 +++++++++++++++++++
+ 1 files changed, 19 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-tool.c b/qemu-tool.c
+index 302bf5f..aa5e111 100644
+--- a/qemu-tool.c
++++ b/qemu-tool.c
+@@ -19,6 +19,7 @@
+ #include <sys/time.h>
+ 
+ QEMUClock *rt_clock;
++QEMUClock *vm_clock;
+ 
+ FILE *logfile;
+ 
+@@ -72,6 +73,24 @@ void monitor_protocol_event(MonitorEvent event, QObject *data)
+ {
+ }
+ 
++QEMUTimer *qemu_new_timer(QEMUClock *clock, QEMUTimerCB *cb, void *opaque)
++{
++    return qemu_malloc(1);
++}
++
++void qemu_free_timer(QEMUTimer *ts)
++{
++    qemu_free(ts);
++}
++
++void qemu_del_timer(QEMUTimer *ts)
++{
++}
++
++void qemu_mod_timer(QEMUTimer *ts, int64_t expire_time)
++{
++}
++
+ QEMUBH *qemu_bh_new(QEMUBHFunc *cb, void *opaque)
+ {
+     QEMUBH *bh;
+-- 
+1.7.3.2
+

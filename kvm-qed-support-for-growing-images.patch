@@ -1,0 +1,65 @@
+From 4557cbf9eac878f9d5cb8ae62889c51a62d5a4ab Mon Sep 17 00:00:00 2001
+From: Anthony Liguori <aliguori@redhat.com>
+Date: Mon, 8 Aug 2011 16:14:00 -0700
+Subject: [RHEL6 qemu-kvm PATCH 17/19] qed: support for growing images
+
+RH-Author: Anthony Liguori <aliguori@redhat.com>
+Message-id: <1312820040-2612-18-git-send-email-aliguori@redhat.com>
+Patchwork-id: 31112
+O-Subject: [RHEL6.2 qemu PATCH 17/17] qed: support for growing images
+Bugzilla: 633380
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+The .bdrv_truncate() operation resizes images and growing is easy to
+implement in QED.  Simply check that the new size is valid and then
+update the image_size header field to reflect the new size.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@redhat.com>
+
+Bugzilla: 633380
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qed.c |   22 +++++++++++++++++++++-
+ 1 files changed, 21 insertions(+), 1 deletions(-)
+
+diff --git a/block/qed.c b/block/qed.c
+index 5565636..827c207 100644
+--- a/block/qed.c
++++ b/block/qed.c
+@@ -1325,7 +1325,27 @@ static BlockDriverAIOCB *bdrv_qed_aio_flush(BlockDriverState *bs,
+ 
+ static int bdrv_qed_truncate(BlockDriverState *bs, int64_t offset)
+ {
+-    return -ENOTSUP;
++    BDRVQEDState *s = bs->opaque;
++    uint64_t old_image_size;
++    int ret;
++
++    if (!qed_is_image_size_valid(offset, s->header.cluster_size,
++                                 s->header.table_size)) {
++        return -EINVAL;
++    }
++
++    /* Shrinking is currently not supported */
++    if ((uint64_t)offset < s->header.image_size) {
++        return -ENOTSUP;
++    }
++
++    old_image_size = s->header.image_size;
++    s->header.image_size = offset;
++    ret = qed_write_header_sync(s);
++    if (ret < 0) {
++        s->header.image_size = old_image_size;
++    }
++    return ret;
+ }
+ 
+ static int64_t bdrv_qed_getlength(BlockDriverState *bs)
+-- 
+1.7.3.2
+

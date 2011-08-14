@@ -1,0 +1,48 @@
+From a450987d53a1fbc034fafafb6c75c1c3abe691ea Mon Sep 17 00:00:00 2001
+From: Anthony Liguori <aliguori@redhat.com>
+Date: Mon, 8 Aug 2011 16:13:50 -0700
+Subject: [RHEL6 qemu-kvm PATCH 07/19] qed: Refuse to create images on block devices
+
+RH-Author: Anthony Liguori <aliguori@redhat.com>
+Message-id: <1312820040-2612-8-git-send-email-aliguori@redhat.com>
+Patchwork-id: 31102
+O-Subject: [RHEL6.2 qemu PATCH 07/17] qed: Refuse to create images on block devices
+Bugzilla: 633380
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+QED relies on the underlying filesystem to extend the file and maintain
+its size.  Check that images are not created on a block device.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@redhat.com>
+
+Bugzilla: 633380
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qed.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+diff --git a/block/qed.c b/block/qed.c
+index 085c4f2..a46f9ef 100644
+--- a/block/qed.c
++++ b/block/qed.c
+@@ -469,6 +469,12 @@ static int qed_create(const char *filename, uint32_t cluster_size,
+         return ret;
+     }
+ 
++    /* File must start empty and grow, check truncate is supported */
++    ret = bdrv_truncate(bs, 0);
++    if (ret < 0) {
++        goto out;
++    }
++
+     if (backing_file) {
+         header.features |= QED_F_BACKING_FILE;
+         header.backing_filename_offset = sizeof(le_header);
+-- 
+1.7.3.2
+

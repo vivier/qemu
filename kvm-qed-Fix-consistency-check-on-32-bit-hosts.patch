@@ -1,0 +1,72 @@
+From fb965423e83de9942cfe4048a0db25f07b8fa855 Mon Sep 17 00:00:00 2001
+From: Anthony Liguori <aliguori@redhat.com>
+Date: Mon, 8 Aug 2011 16:13:54 -0700
+Subject: [RHEL6 qemu-kvm PATCH 11/19] qed: Fix consistency check on 32-bit hosts
+
+RH-Author: Anthony Liguori <aliguori@redhat.com>
+Message-id: <1312820040-2612-12-git-send-email-aliguori@redhat.com>
+Patchwork-id: 31105
+O-Subject: [RHEL6.2 qemu PATCH 11/17] qed: Fix consistency check on 32-bit hosts
+Bugzilla: 633380
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+The qed_bytes_to_clusters() function is normally used with size_t
+lengths.  Consistency check used it with file size length and therefore
+failed on 32-bit hosts when the image file is 4 GB or more.
+
+Make qed_bytes_to_clusters() explicitly 64-bit and update consistency
+check to keep 64-bit cluster counts.
+
+Reported-by: Michael Tokarev <mjt@tls.msk.ru>
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@redhat.com>
+
+Bugzilla: 633380
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qed-check.c |    4 ++--
+ block/qed.h       |    2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/block/qed-check.c b/block/qed-check.c
+index ea4ebc8..22cd07f 100644
+--- a/block/qed-check.c
++++ b/block/qed-check.c
+@@ -18,7 +18,7 @@ typedef struct {
+     BdrvCheckResult *result;
+     bool fix;                           /* whether to fix invalid offsets */
+ 
+-    size_t nclusters;
++    uint64_t nclusters;
+     uint32_t *used_clusters;            /* referenced cluster bitmap */
+ 
+     QEDRequest request;
+@@ -177,7 +177,7 @@ static int qed_check_l1_table(QEDCheck *check, QEDTable *table)
+ static void qed_check_for_leaks(QEDCheck *check)
+ {
+     BDRVQEDState *s = check->s;
+-    size_t i;
++    uint64_t i;
+ 
+     for (i = s->header.header_size; i < check->nclusters; i++) {
+         if (!qed_test_bit(check->used_clusters, i)) {
+diff --git a/block/qed.h b/block/qed.h
+index 3e1ab84..1d1421f 100644
+--- a/block/qed.h
++++ b/block/qed.h
+@@ -252,7 +252,7 @@ static inline uint64_t qed_offset_into_cluster(BDRVQEDState *s, uint64_t offset)
+     return offset & (s->header.cluster_size - 1);
+ }
+ 
+-static inline unsigned int qed_bytes_to_clusters(BDRVQEDState *s, size_t bytes)
++static inline uint64_t qed_bytes_to_clusters(BDRVQEDState *s, uint64_t bytes)
+ {
+     return qed_start_of_cluster(s, bytes + (s->header.cluster_size - 1)) /
+            (s->header.cluster_size - 1);
+-- 
+1.7.3.2
+

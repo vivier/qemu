@@ -1,0 +1,77 @@
+From 6edb01e90071a85edde03f2044d05e07d4257b2e Mon Sep 17 00:00:00 2001
+From: Anthony Liguori <aliguori@redhat.com>
+Date: Mon, 8 Aug 2011 16:13:51 -0700
+Subject: [RHEL6 qemu-kvm PATCH 08/19] qed: Images with backing file do not require QED_F_NEED_CHECK
+
+RH-Author: Anthony Liguori <aliguori@redhat.com>
+Message-id: <1312820040-2612-9-git-send-email-aliguori@redhat.com>
+Patchwork-id: 31103
+O-Subject: [RHEL6.2 qemu PATCH 08/17] qed: Images with backing file do not require QED_F_NEED_CHECK
+Bugzilla: 633380
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+The consistency check on open is necessary in order to fix inconsistent
+table offsets left as a result of a crash mid-operation.  Images with a
+backing file actually flush before updating table offsets and are
+therefore guaranteed to be consistent.  Do not mark these images dirty.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@redhat.com>
+
+Bugzilla: 633380
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qed.c |   24 +++++++++++++++++-------
+ 1 files changed, 17 insertions(+), 7 deletions(-)
+
+diff --git a/block/qed.c b/block/qed.c
+index a46f9ef..3273448 100644
+--- a/block/qed.c
++++ b/block/qed.c
+@@ -977,6 +977,19 @@ static void qed_aio_write_prefill(void *opaque, int ret)
+ }
+ 
+ /**
++ * Check if the QED_F_NEED_CHECK bit should be set during allocating write
++ */
++static bool qed_should_set_need_check(BDRVQEDState *s)
++{
++    /* The flush before L2 update path ensures consistency */
++    if (s->bs->backing_hd) {
++        return false;
++    }
++
++    return !(s->header.features & QED_F_NEED_CHECK);
++}
++
++/**
+  * Write new data cluster
+  *
+  * @acb:        Write request
+@@ -1001,15 +1014,12 @@ static void qed_aio_write_alloc(QEDAIOCB *acb, size_t len)
+     acb->cur_cluster = qed_alloc_clusters(s, acb->cur_nclusters);
+     qemu_iovec_copy(&acb->cur_qiov, acb->qiov, acb->qiov_offset, len);
+ 
+-    /* Write new cluster if the image is already marked dirty */
+-    if (s->header.features & QED_F_NEED_CHECK) {
++    if (qed_should_set_need_check(s)) {
++        s->header.features |= QED_F_NEED_CHECK;
++        qed_write_header(s, qed_aio_write_prefill, acb);
++    } else {
+         qed_aio_write_prefill(acb, 0);
+-        return;
+     }
+-
+-    /* Mark the image dirty before writing the new cluster */
+-    s->header.features |= QED_F_NEED_CHECK;
+-    qed_write_header(s, qed_aio_write_prefill, acb);
+ }
+ 
+ /**
+-- 
+1.7.3.2
+

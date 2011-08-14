@@ -1,0 +1,55 @@
+From 75e860c5a807bf6ae72bddf677682dc1282229b6 Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Thu, 11 Aug 2011 06:49:54 -0700
+Subject: [RHEL6 qemu-kvm PATCH 19/19] qxl: make sure primary surface is saved on migration
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1313045394-6364-2-git-send-email-alevy@redhat.com>
+Patchwork-id: 31265
+O-Subject: [PATCH RHEL6.2] qxl: make sure primary surface is saved on migration
+Bugzilla: 729869
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+From: Yonit Halperin <yhalperi@redhat.com>
+
+RHBZ #729869
+
+Upstream: 868379ce6994a72c617fbc29bcc95e8166833400
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/qxl.c |    9 ++++++---
+ 1 files changed, 6 insertions(+), 3 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qxl.c |    9 ++++++---
+ 1 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index 8284a14..f9ba097 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -1506,11 +1506,14 @@ static void qxl_vm_change_state_handler(void *opaque, int running, int reason)
+     qemu_spice_vm_change_state_handler(&qxl->ssd, running, reason);
+ 
+     if (!running && qxl->mode == QXL_MODE_NATIVE) {
+-        /* dirty all vram (which holds surfaces) to make sure it is saved */
++        /* dirty all vram (which holds surfaces) and devram (primary surface)
++         * to make sure they are saved */
+         /* FIXME #1: should go out during "live" stage */
+         /* FIXME #2: we only need to save the areas which are actually used */
+-        ram_addr_t addr = qxl->vram_offset;
+-        qxl_set_dirty(addr, addr + qxl->vram_size);
++        ram_addr_t vram_addr = qxl->vram_offset;
++        ram_addr_t surface0_addr = qxl->vga.vram_offset + qxl->shadow_rom.draw_area_offset;
++        qxl_set_dirty(vram_addr, vram_addr + qxl->vram_size);
++        qxl_set_dirty(surface0_addr, surface0_addr + qxl->shadow_rom.surface0_area_size);
+     }
+ }
+ 
+-- 
+1.7.3.2
+

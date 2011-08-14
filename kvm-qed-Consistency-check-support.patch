@@ -1,0 +1,454 @@
+From 190d28c9a41d1aecaeb051fca1a59e99e91232fd Mon Sep 17 00:00:00 2001
+From: Anthony Liguori <aliguori@redhat.com>
+Date: Mon, 8 Aug 2011 16:13:48 -0700
+Subject: [RHEL6 qemu-kvm PATCH 05/19] qed: Consistency check support
+
+RH-Author: Anthony Liguori <aliguori@redhat.com>
+Message-id: <1312820040-2612-6-git-send-email-aliguori@redhat.com>
+Patchwork-id: 31100
+O-Subject: [RHEL6.2 qemu PATCH 05/17] qed: Consistency check support
+Bugzilla: 633380
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+This patch adds support for the qemu-img check command.  It also
+introduces a dirty bit in the qed header to mark modified images as
+needing a check.  This bit is cleared when the image file is closed
+cleanly.
+
+If an image file is opened and it has the dirty bit set, a consistency
+check will run and try to fix corrupted table offsets.  These
+corruptions may occur if there is power loss while an allocating write
+is performed.  Once the image is fixed it opens as normal again.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@redhat.com>
+
+Bugzilla: 633380
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile          |    1 +
+ block/qed-check.c |  210 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ block/qed.c       |  125 +++++++++++++++++++++++++++++++-
+ block/qed.h       |    4 +
+ 4 files changed, 337 insertions(+), 3 deletions(-)
+ create mode 100644 block/qed-check.c
+
+diff --git a/Makefile b/Makefile
+index 09daafe..f3b3603 100644
+--- a/Makefile
++++ b/Makefile
+@@ -117,6 +117,7 @@ block-obj-$(CONFIG_POSIX) += compatfd.o
+ block-nested-y += raw.o cow.o qcow.o vdi.o vmdk.o cloop.o dmg.o bochs.o vpc.o vvfat.o
+ block-nested-y += qcow2.o qcow2-refcount.o qcow2-cluster.o qcow2-snapshot.o qcow2-cache.o
+ block-nested-y += qed.o qed-gencb.o qed-l2-cache.o qed-table.o qed-cluster.o
++block-nested-y += qed-check.o
+ block-nested-y += parallels.o nbd.o blkdebug.o
+ block-nested-$(CONFIG_WIN32) += raw-win32.o
+ block-nested-$(CONFIG_POSIX) += raw-posix.o
+diff --git a/block/qed-check.c b/block/qed-check.c
+new file mode 100644
+index 0000000..4600932
+--- /dev/null
++++ b/block/qed-check.c
+@@ -0,0 +1,210 @@
++/*
++ * QEMU Enhanced Disk Format Consistency Check
++ *
++ * Copyright IBM, Corp. 2010
++ *
++ * Authors:
++ *  Stefan Hajnoczi   <stefanha@linux.vnet.ibm.com>
++ *
++ * This work is licensed under the terms of the GNU LGPL, version 2 or later.
++ * See the COPYING.LIB file in the top-level directory.
++ *
++ */
++
++#include "qed.h"
++
++typedef struct {
++    BDRVQEDState *s;
++    BdrvCheckResult *result;
++    bool fix;                           /* whether to fix invalid offsets */
++
++    size_t nclusters;
++    uint32_t *used_clusters;            /* referenced cluster bitmap */
++
++    QEDRequest request;
++} QEDCheck;
++
++static bool qed_test_bit(uint32_t *bitmap, uint64_t n) {
++    return !!(bitmap[n / 32] & (1 << (n % 32)));
++}
++
++static void qed_set_bit(uint32_t *bitmap, uint64_t n) {
++    bitmap[n / 32] |= 1 << (n % 32);
++}
++
++/**
++ * Set bitmap bits for clusters
++ *
++ * @check:          Check structure
++ * @offset:         Starting offset in bytes
++ * @n:              Number of clusters
++ */
++static bool qed_set_used_clusters(QEDCheck *check, uint64_t offset,
++                                  unsigned int n)
++{
++    uint64_t cluster = qed_bytes_to_clusters(check->s, offset);
++    unsigned int corruptions = 0;
++
++    while (n-- != 0) {
++        /* Clusters should only be referenced once */
++        if (qed_test_bit(check->used_clusters, cluster)) {
++            corruptions++;
++        }
++
++        qed_set_bit(check->used_clusters, cluster);
++        cluster++;
++    }
++
++    check->result->corruptions += corruptions;
++    return corruptions == 0;
++}
++
++/**
++ * Check an L2 table
++ *
++ * @ret:            Number of invalid cluster offsets
++ */
++static unsigned int qed_check_l2_table(QEDCheck *check, QEDTable *table)
++{
++    BDRVQEDState *s = check->s;
++    unsigned int i, num_invalid = 0;
++
++    for (i = 0; i < s->table_nelems; i++) {
++        uint64_t offset = table->offsets[i];
++
++        if (!offset) {
++            continue;
++        }
++
++        /* Detect invalid cluster offset */
++        if (!qed_check_cluster_offset(s, offset)) {
++            if (check->fix) {
++                table->offsets[i] = 0;
++            } else {
++                check->result->corruptions++;
++            }
++
++            num_invalid++;
++            continue;
++        }
++
++        qed_set_used_clusters(check, offset, 1);
++    }
++
++    return num_invalid;
++}
++
++/**
++ * Descend tables and check each cluster is referenced once only
++ */
++static int qed_check_l1_table(QEDCheck *check, QEDTable *table)
++{
++    BDRVQEDState *s = check->s;
++    unsigned int i, num_invalid_l1 = 0;
++    int ret, last_error = 0;
++
++    /* Mark L1 table clusters used */
++    qed_set_used_clusters(check, s->header.l1_table_offset,
++                          s->header.table_size);
++
++    for (i = 0; i < s->table_nelems; i++) {
++        unsigned int num_invalid_l2;
++        uint64_t offset = table->offsets[i];
++
++        if (!offset) {
++            continue;
++        }
++
++        /* Detect invalid L2 offset */
++        if (!qed_check_table_offset(s, offset)) {
++            /* Clear invalid offset */
++            if (check->fix) {
++                table->offsets[i] = 0;
++            } else {
++                check->result->corruptions++;
++            }
++
++            num_invalid_l1++;
++            continue;
++        }
++
++        if (!qed_set_used_clusters(check, offset, s->header.table_size)) {
++            continue; /* skip an invalid table */
++        }
++
++        ret = qed_read_l2_table_sync(s, &check->request, offset);
++        if (ret) {
++            check->result->check_errors++;
++            last_error = ret;
++            continue;
++        }
++
++        num_invalid_l2 = qed_check_l2_table(check,
++                                            check->request.l2_table->table);
++
++        /* Write out fixed L2 table */
++        if (num_invalid_l2 > 0 && check->fix) {
++            ret = qed_write_l2_table_sync(s, &check->request, 0,
++                                          s->table_nelems, false);
++            if (ret) {
++                check->result->check_errors++;
++                last_error = ret;
++                continue;
++            }
++        }
++    }
++
++    /* Drop reference to final table */
++    qed_unref_l2_cache_entry(check->request.l2_table);
++    check->request.l2_table = NULL;
++
++    /* Write out fixed L1 table */
++    if (num_invalid_l1 > 0 && check->fix) {
++        ret = qed_write_l1_table_sync(s, 0, s->table_nelems);
++        if (ret) {
++            check->result->check_errors++;
++            last_error = ret;
++        }
++    }
++
++    return last_error;
++}
++
++/**
++ * Check for unreferenced (leaked) clusters
++ */
++static void qed_check_for_leaks(QEDCheck *check)
++{
++    BDRVQEDState *s = check->s;
++    size_t i;
++
++    for (i = s->header.header_size; i < check->nclusters; i++) {
++        if (!qed_test_bit(check->used_clusters, i)) {
++            check->result->leaks++;
++        }
++    }
++}
++
++int qed_check(BDRVQEDState *s, BdrvCheckResult *result, bool fix)
++{
++    QEDCheck check = {
++        .s = s,
++        .result = result,
++        .nclusters = qed_bytes_to_clusters(s, s->file_size),
++        .request = { .l2_table = NULL },
++        .fix = fix,
++    };
++    int ret;
++
++    check.used_clusters = qemu_mallocz(((check.nclusters + 31) / 32) *
++                                       sizeof(check.used_clusters[0]));
++
++    ret = qed_check_l1_table(&check, s->l1_table);
++    if (ret == 0) {
++        /* Only check for leaks if entire image was scanned successfully */
++        qed_check_for_leaks(&check);
++    }
++
++    qemu_free(check.used_clusters);
++    return ret;
++}
+diff --git a/block/qed.c b/block/qed.c
+index 8e65d18..085c4f2 100644
+--- a/block/qed.c
++++ b/block/qed.c
+@@ -99,6 +99,81 @@ static int qed_write_header_sync(BDRVQEDState *s)
+     return 0;
+ }
+ 
++typedef struct {
++    GenericCB gencb;
++    BDRVQEDState *s;
++    struct iovec iov;
++    QEMUIOVector qiov;
++    int nsectors;
++    uint8_t *buf;
++} QEDWriteHeaderCB;
++
++static void qed_write_header_cb(void *opaque, int ret)
++{
++    QEDWriteHeaderCB *write_header_cb = opaque;
++
++    qemu_vfree(write_header_cb->buf);
++    gencb_complete(write_header_cb, ret);
++}
++
++static void qed_write_header_read_cb(void *opaque, int ret)
++{
++    QEDWriteHeaderCB *write_header_cb = opaque;
++    BDRVQEDState *s = write_header_cb->s;
++    BlockDriverAIOCB *acb;
++
++    if (ret) {
++        qed_write_header_cb(write_header_cb, ret);
++        return;
++    }
++
++    /* Update header */
++    qed_header_cpu_to_le(&s->header, (QEDHeader *)write_header_cb->buf);
++
++    acb = bdrv_aio_writev(s->bs->file, 0, &write_header_cb->qiov,
++                          write_header_cb->nsectors, qed_write_header_cb,
++                          write_header_cb);
++    if (!acb) {
++        qed_write_header_cb(write_header_cb, -EIO);
++    }
++}
++
++/**
++ * Update header in-place (does not rewrite backing filename or other strings)
++ *
++ * This function only updates known header fields in-place and does not affect
++ * extra data after the QED header.
++ */
++static void qed_write_header(BDRVQEDState *s, BlockDriverCompletionFunc cb,
++                             void *opaque)
++{
++    /* We must write full sectors for O_DIRECT but cannot necessarily generate
++     * the data following the header if an unrecognized compat feature is
++     * active.  Therefore, first read the sectors containing the header, update
++     * them, and write back.
++     */
++
++    BlockDriverAIOCB *acb;
++    int nsectors = (sizeof(QEDHeader) + BDRV_SECTOR_SIZE - 1) /
++                   BDRV_SECTOR_SIZE;
++    size_t len = nsectors * BDRV_SECTOR_SIZE;
++    QEDWriteHeaderCB *write_header_cb = gencb_alloc(sizeof(*write_header_cb),
++                                                    cb, opaque);
++
++    write_header_cb->s = s;
++    write_header_cb->nsectors = nsectors;
++    write_header_cb->buf = qemu_blockalign(s->bs, len);
++    write_header_cb->iov.iov_base = write_header_cb->buf;
++    write_header_cb->iov.iov_len = len;
++    qemu_iovec_init_external(&write_header_cb->qiov, &write_header_cb->iov, 1);
++
++    acb = bdrv_aio_readv(s->bs->file, 0, &write_header_cb->qiov, nsectors,
++                         qed_write_header_read_cb, write_header_cb);
++    if (!acb) {
++        qed_write_header_cb(write_header_cb, -EIO);
++    }
++}
++
+ static uint64_t qed_max_image_size(uint32_t cluster_size, uint32_t table_size)
+ {
+     uint64_t table_entries;
+@@ -310,6 +385,32 @@ static int bdrv_qed_open(BlockDriverState *bs, int flags)
+ 
+     ret = qed_read_l1_table_sync(s);
+     if (ret) {
++        goto out;
++    }
++
++    /* If image was not closed cleanly, check consistency */
++    if (s->header.features & QED_F_NEED_CHECK) {
++        /* Read-only images cannot be fixed.  There is no risk of corruption
++         * since write operations are not possible.  Therefore, allow
++         * potentially inconsistent images to be opened read-only.  This can
++         * aid data recovery from an otherwise inconsistent image.
++         */
++        if (!bdrv_is_read_only(bs->file)) {
++            BdrvCheckResult result = {0};
++
++            ret = qed_check(s, &result, true);
++            if (!ret && !result.corruptions && !result.check_errors) {
++                /* Ensure fixes reach storage before clearing check bit */
++                bdrv_flush(s->bs);
++
++                s->header.features &= ~QED_F_NEED_CHECK;
++                qed_write_header_sync(s);
++            }
++        }
++    }
++
++out:
++    if (ret) {
+         qed_free_l2_cache(&s->l2_cache);
+         qemu_vfree(s->l1_table);
+     }
+@@ -320,6 +421,15 @@ static void bdrv_qed_close(BlockDriverState *bs)
+ {
+     BDRVQEDState *s = bs->opaque;
+ 
++    /* Ensure writes reach stable storage */
++    bdrv_flush(bs->file);
++
++    /* Clean shutdown, no check required on next open */
++    if (s->header.features & QED_F_NEED_CHECK) {
++        s->header.features &= ~QED_F_NEED_CHECK;
++        qed_write_header_sync(s);
++    }
++
+     qed_free_l2_cache(&s->l2_cache);
+     qemu_vfree(s->l1_table);
+ }
+@@ -885,8 +995,15 @@ static void qed_aio_write_alloc(QEDAIOCB *acb, size_t len)
+     acb->cur_cluster = qed_alloc_clusters(s, acb->cur_nclusters);
+     qemu_iovec_copy(&acb->cur_qiov, acb->qiov, acb->qiov_offset, len);
+ 
+-    /* Write new cluster */
+-    qed_aio_write_prefill(acb, 0);
++    /* Write new cluster if the image is already marked dirty */
++    if (s->header.features & QED_F_NEED_CHECK) {
++        qed_aio_write_prefill(acb, 0);
++        return;
++    }
++
++    /* Mark the image dirty before writing the new cluster */
++    s->header.features |= QED_F_NEED_CHECK;
++    qed_write_header(s, qed_aio_write_prefill, acb);
+ }
+ 
+ /**
+@@ -1172,7 +1289,9 @@ static int bdrv_qed_change_backing_file(BlockDriverState *bs,
+ 
+ static int bdrv_qed_check(BlockDriverState *bs, BdrvCheckResult *result)
+ {
+-    return -ENOTSUP;
++    BDRVQEDState *s = bs->opaque;
++
++    return qed_check(s, result, false);
+ }
+ 
+ static QEMUOptionParameter qed_create_options[] = {
+diff --git a/block/qed.h b/block/qed.h
+index 046a410..2925e37 100644
+--- a/block/qed.h
++++ b/block/qed.h
+@@ -50,11 +50,15 @@ enum {
+     /* The image supports a backing file */
+     QED_F_BACKING_FILE = 0x01,
+ 
++    /* The image needs a consistency check before use */
++    QED_F_NEED_CHECK = 0x02,
++
+     /* The backing file format must not be probed, treat as raw image */
+     QED_F_BACKING_FORMAT_NO_PROBE = 0x04,
+ 
+     /* Feature bits must be used when the on-disk format changes */
+     QED_FEATURE_MASK = QED_F_BACKING_FILE | /* supported feature bits */
++                       QED_F_NEED_CHECK |
+                        QED_F_BACKING_FORMAT_NO_PROBE,
+     QED_COMPAT_FEATURE_MASK = 0,            /* supported compat feature bits */
+     QED_AUTOCLEAR_FEATURE_MASK = 0,         /* supported autoclear feature bits */
+-- 
+1.7.3.2
+

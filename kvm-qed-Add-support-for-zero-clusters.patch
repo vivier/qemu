@@ -1,0 +1,222 @@
+From d7a71cbf0ed63fa65ceea4f6ce606a85ba469cfc Mon Sep 17 00:00:00 2001
+From: Anthony Liguori <aliguori@redhat.com>
+Date: Mon, 8 Aug 2011 16:13:53 -0700
+Subject: [RHEL6 qemu-kvm PATCH 10/19] qed: Add support for zero clusters
+
+RH-Author: Anthony Liguori <aliguori@redhat.com>
+Message-id: <1312820040-2612-11-git-send-email-aliguori@redhat.com>
+Patchwork-id: 31106
+O-Subject: [RHEL6.2 qemu PATCH 10/17] qed: Add support for zero clusters
+Bugzilla: 633380
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+From: Anthony Liguori <aliguori@us.ibm.com>
+
+Zero clusters are similar to unallocated clusters except instead of reading
+their value from a backing file when one is available, the cluster is always
+read as zero.
+
+This implements read support only.  At this stage, QED will never write a
+zero cluster.
+
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@redhat.com>
+
+Bugzilla: 633380
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qed-check.c   |    5 +++--
+ block/qed-cluster.c |   31 +++++++++++++++++++++----------
+ block/qed.c         |   20 +++++++++++++++-----
+ block/qed.h         |   26 ++++++++++++++++++++++++++
+ 4 files changed, 65 insertions(+), 17 deletions(-)
+
+diff --git a/block/qed-check.c b/block/qed-check.c
+index 4600932..ea4ebc8 100644
+--- a/block/qed-check.c
++++ b/block/qed-check.c
+@@ -72,7 +72,8 @@ static unsigned int qed_check_l2_table(QEDCheck *check, QEDTable *table)
+     for (i = 0; i < s->table_nelems; i++) {
+         uint64_t offset = table->offsets[i];
+ 
+-        if (!offset) {
++        if (qed_offset_is_unalloc_cluster(offset) ||
++            qed_offset_is_zero_cluster(offset)) {
+             continue;
+         }
+ 
+@@ -111,7 +112,7 @@ static int qed_check_l1_table(QEDCheck *check, QEDTable *table)
+         unsigned int num_invalid_l2;
+         uint64_t offset = table->offsets[i];
+ 
+-        if (!offset) {
++        if (qed_offset_is_unalloc_cluster(offset)) {
+             continue;
+         }
+ 
+diff --git a/block/qed-cluster.c b/block/qed-cluster.c
+index 0ec864b..3e19ad1 100644
+--- a/block/qed-cluster.c
++++ b/block/qed-cluster.c
+@@ -23,7 +23,8 @@
+  * @n:              Maximum number of clusters
+  * @offset:         Set to first cluster offset
+  *
+- * This function scans tables for contiguous allocated or free clusters.
++ * This function scans tables for contiguous clusters.  A contiguous run of
++ * clusters may be allocated, unallocated, or zero.
+  */
+ static unsigned int qed_count_contiguous_clusters(BDRVQEDState *s,
+                                                   QEDTable *table,
+@@ -38,9 +39,14 @@ static unsigned int qed_count_contiguous_clusters(BDRVQEDState *s,
+     *offset = last;
+ 
+     for (i = index + 1; i < end; i++) {
+-        if (last == 0) {
+-            /* Counting free clusters */
+-            if (table->offsets[i] != 0) {
++        if (qed_offset_is_unalloc_cluster(last)) {
++            /* Counting unallocated clusters */
++            if (!qed_offset_is_unalloc_cluster(table->offsets[i])) {
++                break;
++            }
++        } else if (qed_offset_is_zero_cluster(last)) {
++            /* Counting zero clusters */
++            if (!qed_offset_is_zero_cluster(table->offsets[i])) {
+                 break;
+             }
+         } else {
+@@ -87,14 +93,19 @@ static void qed_find_cluster_cb(void *opaque, int ret)
+     n = qed_count_contiguous_clusters(s, request->l2_table->table,
+                                       index, n, &offset);
+ 
+-    ret = offset ? QED_CLUSTER_FOUND : QED_CLUSTER_L2;
+-    len = MIN(find_cluster_cb->len, n * s->header.cluster_size -
+-              qed_offset_into_cluster(s, find_cluster_cb->pos));
+-
+-    if (offset && !qed_check_cluster_offset(s, offset)) {
++    if (qed_offset_is_unalloc_cluster(offset)) {
++        ret = QED_CLUSTER_L2;
++    } else if (qed_offset_is_zero_cluster(offset)) {
++        ret = QED_CLUSTER_ZERO;
++    } else if (qed_check_cluster_offset(s, offset)) {
++        ret = QED_CLUSTER_FOUND;
++    } else {
+         ret = -EINVAL;
+     }
+ 
++    len = MIN(find_cluster_cb->len, n * s->header.cluster_size -
++              qed_offset_into_cluster(s, find_cluster_cb->pos));
++
+ out:
+     find_cluster_cb->cb(find_cluster_cb->opaque, ret, offset, len);
+     qemu_free(find_cluster_cb);
+@@ -132,7 +143,7 @@ void qed_find_cluster(BDRVQEDState *s, QEDRequest *request, uint64_t pos,
+     len = MIN(len, (((pos >> s->l1_shift) + 1) << s->l1_shift) - pos);
+ 
+     l2_offset = s->l1_table->offsets[qed_l1_index(s, pos)];
+-    if (!l2_offset) {
++    if (qed_offset_is_unalloc_cluster(l2_offset)) {
+         cb(opaque, QED_CLUSTER_L1, 0, len);
+         return;
+     }
+diff --git a/block/qed.c b/block/qed.c
+index 3273448..aafd22f 100644
+--- a/block/qed.c
++++ b/block/qed.c
+@@ -566,7 +566,7 @@ static void qed_is_allocated_cb(void *opaque, int ret, uint64_t offset, size_t l
+ {
+     QEDIsAllocatedCB *cb = opaque;
+     *cb->pnum = len / BDRV_SECTOR_SIZE;
+-    cb->is_allocated = ret == QED_CLUSTER_FOUND;
++    cb->is_allocated = (ret == QED_CLUSTER_FOUND || ret == QED_CLUSTER_ZERO);
+ }
+ 
+ static int bdrv_qed_is_allocated(BlockDriverState *bs, int64_t sector_num,
+@@ -738,7 +738,10 @@ static void qed_copy_from_backing_file(BDRVQEDState *s, uint64_t pos,
+  * @table:          L2 table
+  * @index:          First cluster index
+  * @n:              Number of contiguous clusters
+- * @cluster:        First cluster byte offset in image file
++ * @cluster:        First cluster offset
++ *
++ * The cluster offset may be an allocated byte offset in the image file, the
++ * zero cluster marker, or the unallocated cluster marker.
+  */
+ static void qed_update_l2_table(BDRVQEDState *s, QEDTable *table, int index,
+                                 unsigned int n, uint64_t cluster)
+@@ -746,7 +749,10 @@ static void qed_update_l2_table(BDRVQEDState *s, QEDTable *table, int index,
+     int i;
+     for (i = index; i < index + n; i++) {
+         table->offsets[i] = cluster;
+-        cluster += s->header.cluster_size;
++        if (!qed_offset_is_unalloc_cluster(cluster) &&
++            !qed_offset_is_zero_cluster(cluster)) {
++            cluster += s->header.cluster_size;
++        }
+     }
+ }
+ 
+@@ -1107,8 +1113,12 @@ static void qed_aio_read_data(void *opaque, int ret,
+ 
+     qemu_iovec_copy(&acb->cur_qiov, acb->qiov, acb->qiov_offset, len);
+ 
+-    /* Handle backing file and unallocated sparse hole reads */
+-    if (ret != QED_CLUSTER_FOUND) {
++    /* Handle zero cluster and backing file reads */
++    if (ret == QED_CLUSTER_ZERO) {
++        qemu_iovec_memset(&acb->cur_qiov, 0, acb->cur_qiov.size);
++        qed_aio_next_io(acb, 0);
++        return;
++    } else if (ret != QED_CLUSTER_FOUND) {
+         qed_read_backing_file(s, acb->cur_pos, &acb->cur_qiov,
+                               qed_aio_next_io, acb);
+         return;
+diff --git a/block/qed.h b/block/qed.h
+index 2925e37..3e1ab84 100644
+--- a/block/qed.h
++++ b/block/qed.h
+@@ -161,6 +161,7 @@ typedef struct {
+ 
+ enum {
+     QED_CLUSTER_FOUND,         /* cluster found */
++    QED_CLUSTER_ZERO,          /* zero cluster found */
+     QED_CLUSTER_L2,            /* cluster missing in L2 */
+     QED_CLUSTER_L1,            /* cluster missing in L1 */
+ };
+@@ -298,4 +299,29 @@ static inline bool qed_check_table_offset(BDRVQEDState *s, uint64_t offset)
+            qed_check_cluster_offset(s, end_offset);
+ }
+ 
++static inline bool qed_offset_is_cluster_aligned(BDRVQEDState *s,
++                                                 uint64_t offset)
++{
++    if (qed_offset_into_cluster(s, offset)) {
++        return false;
++    }
++    return true;
++}
++
++static inline bool qed_offset_is_unalloc_cluster(uint64_t offset)
++{
++    if (offset == 0) {
++        return true;
++    }
++    return false;
++}
++
++static inline bool qed_offset_is_zero_cluster(uint64_t offset)
++{
++    if (offset == 1) {
++        return true;
++    }
++    return false;
++}
++
+ #endif /* BLOCK_QED_H */
+-- 
+1.7.3.2
+

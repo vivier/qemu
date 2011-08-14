@@ -1,0 +1,75 @@
+From cbb0018e9f8e4c3fdaf71410d5f91d43151936ce Mon Sep 17 00:00:00 2001
+From: Anthony Liguori <aliguori@redhat.com>
+Date: Mon, 8 Aug 2011 16:13:55 -0700
+Subject: [RHEL6 qemu-kvm PATCH 12/19] block: add BDRV_O_INCOMING migration consistency hint
+
+RH-Author: Anthony Liguori <aliguori@redhat.com>
+Message-id: <1312820040-2612-13-git-send-email-aliguori@redhat.com>
+Patchwork-id: 31110
+O-Subject: [RHEL6.2 qemu PATCH 12/17] block: add BDRV_O_INCOMING migration consistency hint
+Bugzilla: 633380
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+Add a flag to indicate that incoming migration is pending and care needs
+to be taken for data consistency.  Block drivers should not modify the
+image file before incoming migration is complete since the migration
+source host is still using the image file.
+
+Note that a simpler alternative would be this 1-liner:
+
+  dinfo->bdrv->read_only = incoming_expected;
+
+Unfortunately this is not possible because too many other places in QEMU
+test bdrv_is_read_only() and use it for their own evil purposes.  For
+example, ide_init_drive() will error out because read-only harddisks are
+not supported.  We're mixing guest and host side read-only concepts so
+this simpler alternative does not work.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Anthony Liguori <aliguori@redhat.com>
+
+Bugzilla: 633380
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.h    |    1 +
+ blockdev.c |    9 ++++++++-
+ 2 files changed, 9 insertions(+), 1 deletions(-)
+
+diff --git a/block.h b/block.h
+index 4a87ea2..54c5527 100644
+--- a/block.h
++++ b/block.h
+@@ -33,6 +33,7 @@ typedef struct QEMUSnapshotInfo {
+ #define BDRV_O_NATIVE_AIO  0x0080 /* use native AIO instead of the thread pool */
+ #define BDRV_O_NO_BACKING  0x0100 /* don't open the backing file */
+ #define BDRV_O_NO_FLUSH    0x0200 /* disable flushing on this disk */
++#define BDRV_O_INCOMING    0x0800 /* consistency hint for incoming migration */
+ 
+ #define BDRV_O_CACHE_MASK  (BDRV_O_NOCACHE | BDRV_O_CACHE_WB)
+ 
+diff --git a/blockdev.c b/blockdev.c
+index 148e99e..88a7c64 100644
+--- a/blockdev.c
++++ b/blockdev.c
+@@ -223,7 +223,14 @@ static int parse_block_error_action(const char *buf, int is_read)
+ 
+ static int drive_open(DriveInfo *dinfo)
+ {
+-    int res = bdrv_open(dinfo->bdrv, dinfo->file, dinfo->bdrv_flags, dinfo->drv);
++    int res;
++    int bdrv_flags = dinfo->bdrv_flags;
++
++    if (incoming_expected) {
++        bdrv_flags |= BDRV_O_INCOMING;
++    }
++
++    res = bdrv_open(dinfo->bdrv, dinfo->file, bdrv_flags, dinfo->drv);
+ 
+     if (res < 0) {
+         error_report("could not open disk image %s: %s",
+-- 
+1.7.3.2
+

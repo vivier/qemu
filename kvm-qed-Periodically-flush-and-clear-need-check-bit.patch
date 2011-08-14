@@ -1,0 +1,246 @@
+From ed1a6a8f3ebcb034c87a3fcbfb2c9b5ba7f616bb Mon Sep 17 00:00:00 2001
+From: Anthony Liguori <aliguori@redhat.com>
+Date: Mon, 8 Aug 2011 16:13:59 -0700
+Subject: [RHEL6 qemu-kvm PATCH 16/19] qed: Periodically flush and clear need check bit
+
+RH-Author: Anthony Liguori <aliguori@redhat.com>
+Message-id: <1312820040-2612-17-git-send-email-aliguori@redhat.com>
+Patchwork-id: 31109
+O-Subject: [RHEL6.2 qemu PATCH 16/17] qed: Periodically flush and clear need check bit
+Bugzilla: 633380
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+One strategy to limit the startup delay of consistency check when
+opening image files is to ensure that the file is marked dirty for as
+little time as possible.
+
+QED currently marks the image dirty when the first allocating write
+request is issued and clears the dirty bit again when the image is
+cleanly closed.  In practice that means the image is marked dirty for
+most of a guest's lifetime and prone to being in a dirty state upon
+crash or power failure.
+
+It is safe to clear the dirty bit after all allocating write requests
+have completed and a flush has been performed.  This patch adds a timer
+after the last allocating write request completes.  When the timer fires
+it will flush and then clear the dirty bit.  The timer is set to 5
+seconds and is cancelled upon arrival of a new allocating write request.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@redhat.com>
+
+Bugzilla: 633380
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block/qed.c  |  104 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ block/qed.h  |    7 ++++
+ trace-events |    3 ++
+ 3 files changed, 112 insertions(+), 2 deletions(-)
+
+diff --git a/block/qed.c b/block/qed.c
+index 86915ee..5565636 100644
+--- a/block/qed.c
++++ b/block/qed.c
+@@ -12,6 +12,8 @@
+  *
+  */
+ 
++#include "qemu-common.h"
++#include "qemu-timer.h"
+ #include "trace.h"
+ #include "qed.h"
+ 
+@@ -290,6 +292,88 @@ static CachedL2Table *qed_new_l2_table(BDRVQEDState *s)
+ 
+ static void qed_aio_next_io(void *opaque, int ret);
+ 
++static void qed_plug_allocating_write_reqs(BDRVQEDState *s)
++{
++    assert(!s->allocating_write_reqs_plugged);
++
++    s->allocating_write_reqs_plugged = true;
++}
++
++static void qed_unplug_allocating_write_reqs(BDRVQEDState *s)
++{
++    QEDAIOCB *acb;
++
++    assert(s->allocating_write_reqs_plugged);
++
++    s->allocating_write_reqs_plugged = false;
++
++    acb = QSIMPLEQ_FIRST(&s->allocating_write_reqs);
++    if (acb) {
++        qed_aio_next_io(acb, 0);
++    }
++}
++
++static void qed_finish_clear_need_check(void *opaque, int ret)
++{
++    /* Do nothing */
++}
++
++static void qed_flush_after_clear_need_check(void *opaque, int ret)
++{
++    BDRVQEDState *s = opaque;
++
++    bdrv_aio_flush(s->bs, qed_finish_clear_need_check, s);
++
++    /* No need to wait until flush completes */
++    qed_unplug_allocating_write_reqs(s);
++}
++
++static void qed_clear_need_check(void *opaque, int ret)
++{
++    BDRVQEDState *s = opaque;
++
++    if (ret) {
++        qed_unplug_allocating_write_reqs(s);
++        return;
++    }
++
++    s->header.features &= ~QED_F_NEED_CHECK;
++    qed_write_header(s, qed_flush_after_clear_need_check, s);
++}
++
++static void qed_need_check_timer_cb(void *opaque)
++{
++    BDRVQEDState *s = opaque;
++
++    /* The timer should only fire when allocating writes have drained */
++    assert(!QSIMPLEQ_FIRST(&s->allocating_write_reqs));
++
++    trace_qed_need_check_timer_cb(s);
++
++    qed_plug_allocating_write_reqs(s);
++
++    /* Ensure writes are on disk before clearing flag */
++    bdrv_aio_flush(s->bs, qed_clear_need_check, s);
++}
++
++static void qed_start_need_check_timer(BDRVQEDState *s)
++{
++    trace_qed_start_need_check_timer(s);
++
++    /* Use vm_clock so we don't alter the image file while suspended for
++     * migration.
++     */
++    qemu_mod_timer(s->need_check_timer, qemu_get_clock(vm_clock) +
++                   get_ticks_per_sec() * QED_NEED_CHECK_TIMEOUT);
++}
++
++/* It's okay to call this multiple times or when no timer is started */
++static void qed_cancel_need_check_timer(BDRVQEDState *s)
++{
++    trace_qed_cancel_need_check_timer(s);
++    qemu_del_timer(s->need_check_timer);
++}
++
+ static int bdrv_qed_open(BlockDriverState *bs, int flags)
+ {
+     BDRVQEDState *s = bs->opaque;
+@@ -399,7 +483,10 @@ static int bdrv_qed_open(BlockDriverState *bs, int flags)
+             BdrvCheckResult result = {0};
+ 
+             ret = qed_check(s, &result, true);
+-            if (!ret && !result.corruptions && !result.check_errors) {
++            if (ret) {
++                goto out;
++            }
++            if (!result.corruptions && !result.check_errors) {
+                 /* Ensure fixes reach storage before clearing check bit */
+                 bdrv_flush(s->bs);
+ 
+@@ -409,6 +496,8 @@ static int bdrv_qed_open(BlockDriverState *bs, int flags)
+         }
+     }
+ 
++    s->need_check_timer = qemu_new_timer(vm_clock, qed_need_check_timer_cb, s);
++
+ out:
+     if (ret) {
+         qed_free_l2_cache(&s->l2_cache);
+@@ -421,6 +510,9 @@ static void bdrv_qed_close(BlockDriverState *bs)
+ {
+     BDRVQEDState *s = bs->opaque;
+ 
++    qed_cancel_need_check_timer(s);
++    qemu_free_timer(s->need_check_timer);
++
+     /* Ensure writes reach stable storage */
+     bdrv_flush(bs->file);
+ 
+@@ -802,6 +894,8 @@ static void qed_aio_complete(QEDAIOCB *acb, int ret)
+         acb = QSIMPLEQ_FIRST(&s->allocating_write_reqs);
+         if (acb) {
+             qed_aio_next_io(acb, 0);
++        } else if (s->header.features & QED_F_NEED_CHECK) {
++            qed_start_need_check_timer(s);
+         }
+     }
+ }
+@@ -1007,11 +1101,17 @@ static void qed_aio_write_alloc(QEDAIOCB *acb, size_t len)
+ {
+     BDRVQEDState *s = acb_to_s(acb);
+ 
++    /* Cancel timer when the first allocating request comes in */
++    if (QSIMPLEQ_EMPTY(&s->allocating_write_reqs)) {
++        qed_cancel_need_check_timer(s);
++    }
++
+     /* Freeze this request if another allocating write is in progress */
+     if (acb != QSIMPLEQ_FIRST(&s->allocating_write_reqs)) {
+         QSIMPLEQ_INSERT_TAIL(&s->allocating_write_reqs, acb, next);
+     }
+-    if (acb != QSIMPLEQ_FIRST(&s->allocating_write_reqs)) {
++    if (acb != QSIMPLEQ_FIRST(&s->allocating_write_reqs) ||
++        s->allocating_write_reqs_plugged) {
+         return; /* wait for existing request to finish */
+     }
+ 
+diff --git a/block/qed.h b/block/qed.h
+index 1d1421f..388fdb3 100644
+--- a/block/qed.h
++++ b/block/qed.h
+@@ -78,6 +78,9 @@ enum {
+     QED_MIN_TABLE_SIZE = 1,        /* in clusters */
+     QED_MAX_TABLE_SIZE = 16,
+     QED_DEFAULT_TABLE_SIZE = 4,
++
++    /* Delay to flush and clean image after last allocating write completes */
++    QED_NEED_CHECK_TIMEOUT = 5,    /* in seconds */
+ };
+ 
+ typedef struct {
+@@ -157,6 +160,10 @@ typedef struct {
+ 
+     /* Allocating write request queue */
+     QSIMPLEQ_HEAD(, QEDAIOCB) allocating_write_reqs;
++    bool allocating_write_reqs_plugged;
++
++    /* Periodic flush and clear need check flag */
++    QEMUTimer *need_check_timer;
+ } BDRVQEDState;
+ 
+ enum {
+diff --git a/trace-events b/trace-events
+index 7890e49..d0b7879 100644
+--- a/trace-events
++++ b/trace-events
+@@ -128,6 +128,9 @@ disable qed_write_table(void *s, uint64_t offset, void *table, unsigned int inde
+ disable qed_write_table_cb(void *s, void *table, int flush, int ret) "s %p table %p flush %d ret %d"
+ 
+ # block/qed.c
++disable qed_need_check_timer_cb(void *s) "s %p"
++disable qed_start_need_check_timer(void *s) "s %p"
++disable qed_cancel_need_check_timer(void *s) "s %p"
+ disable qed_aio_complete(void *s, void *acb, int ret) "s %p acb %p ret %d"
+ disable qed_aio_setup(void *s, void *acb, int64_t sector_num, int nb_sectors, void *opaque, int is_write) "s %p acb %p sector_num %"PRId64" nb_sectors %d opaque %p is_write %d"
+ disable qed_aio_next_io(void *s, void *acb, int ret, uint64_t cur_pos) "s %p acb %p ret %d cur_pos %"PRIu64""
+-- 
+1.7.3.2
+
