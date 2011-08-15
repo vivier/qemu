@@ -1,0 +1,50 @@
+From 947b73e260d5400654b4421f5ccddb34c128df3f Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Thu, 11 Aug 2011 06:56:10 -0700
+Subject: [RHEL6 qemu-kvm PATCH 6/7] qxl: upon reset, if spice worker is stopped, the command rings can be not empty
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1313045771-7074-2-git-send-email-alevy@redhat.com>
+Patchwork-id: 31268
+O-Subject: [PATCH RHEL6.2 1/2] qxl: upon reset, if spice worker is stopped, the command rings can be not empty
+Bugzilla: 728984
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+From: Yonit Halperin <yhalperi@redhat.com>
+
+Spice worker does no longer process commands when it is stopped.
+Otherwise, it might crash during migration when attempting to process
+commands while the guest is not completely loaded.
+
+RHBZ #728984
+
+upstream: 8927cfbba232e28304734f7afd463c1b84134031
+---
+ hw/qxl.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qxl.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index f9ba097..8f4bebc 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -846,8 +846,8 @@ static void qxl_reset_state(PCIQXLDevice *d)
+     QXLRam *ram = d->ram;
+     QXLRom *rom = d->rom;
+ 
+-    assert(SPICE_RING_IS_EMPTY(&ram->cmd_ring));
+-    assert(SPICE_RING_IS_EMPTY(&ram->cursor_ring));
++    assert(!d->ssd.running || SPICE_RING_IS_EMPTY(&ram->cmd_ring));
++    assert(!d->ssd.running || SPICE_RING_IS_EMPTY(&ram->cursor_ring));
+     d->shadow_rom.update_id = cpu_to_le32(0);
+     *rom = d->shadow_rom;
+     qxl_rom_set_dirty(d);
+-- 
+1.7.3.2
+

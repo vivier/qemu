@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.182
+%define pkgrelease 2.183
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3500,6 +3500,21 @@ Patch2427: kvm-spice-catch-spice-server-initialization-failures.patch
 Patch2428: kvm-qcow2-Fix-L1-table-size-after-bdrv_snapshot_goto.patch
 # For bz#714773 - qemu missing marker for qemu.kvm.qemu_vmalloc
 Patch2430: kvm-Add-missing-trace-call-to-oslib-posix.c-qemu_vmalloc.patch
+# For bz#715582 - qemu-kvm doesn't report error when supplied negative spice port value
+# For bz#717958 - qemu-kvm start vnc even though -spice ... is supplied
+Patch2431: kvm-spice-add-sanity-check-for-spice-ports.patch
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2432: kvm-block-add-discard-support.patch
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2433: kvm-qemu-option-New-qemu_opts_reset.patch
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2434: kvm-error-New-qemu_opts_loc_restore.patch
+# For bz#711354 - Fix and enable enough of SCSI to make usb-storage work
+Patch2435: kvm-scsi-Rebase-to-upstream-v0.15.0-rc2.patch
+# For bz#728984 - Target qemu process - assertion failed during migration
+Patch2436: kvm-qxl-upon-reset-if-spice-worker-is-stopped-the-comman.patch
+# For bz#728984 - Target qemu process - assertion failed during migration
+Patch2437: kvm-qxl-allowing-the-command-rings-to-be-not-empty-when-.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -5036,6 +5051,13 @@ ApplyOptionalPatch()
 %patch2427 -p1
 %patch2428 -p1
 %patch2430 -p1
+%patch2431 -p1
+%patch2432 -p1
+%patch2433 -p1
+%patch2434 -p1
+%patch2435 -p1
+%patch2436 -p1
+%patch2437 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -5259,6 +5281,23 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Aug 15 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.183.el6
+- kvm-spice-add-sanity-check-for-spice-ports.patch [bz#715582 bz#717958]
+- kvm-block-add-discard-support.patch [bz#711354]
+- kvm-qemu-option-New-qemu_opts_reset.patch [bz#711354]
+- kvm-error-New-qemu_opts_loc_restore.patch [bz#711354]
+- kvm-scsi-Rebase-to-upstream-v0.15.0-rc2.patch [bz#711354]
+- kvm-qxl-upon-reset-if-spice-worker-is-stopped-the-comman.patch [bz#728984]
+- kvm-qxl-allowing-the-command-rings-to-be-not-empty-when-.patch [bz#728984]
+- Resolves: bz#711354
+  (Fix and enable enough of SCSI to make usb-storage work)
+- Resolves: bz#715582
+  (qemu-kvm doesn't report error when supplied negative spice port value)
+- Resolves: bz#717958
+  (qemu-kvm start vnc even though -spice ... is supplied)
+- Resolves: bz#728984
+  (Target qemu process - assertion failed during migration)
+
 * Sun Aug 14 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.182.el6
 - kvm-spice-catch-spice-server-initialization-failures.patch [bz#682227]
 - kvm-qcow2-Fix-L1-table-size-after-bdrv_snapshot_goto.patch [bz#729572]

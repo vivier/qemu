@@ -1,0 +1,58 @@
+From 65b0b3f5b629f77c5ae97352054cab04751a58d2 Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Thu, 11 Aug 2011 06:56:11 -0700
+Subject: [RHEL6 qemu-kvm PATCH 7/7] qxl: allowing the command rings to be not empty when spice worker is stopped RHBZ #728984
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1313045771-7074-3-git-send-email-alevy@redhat.com>
+Patchwork-id: 31269
+O-Subject: [PATCH RHEL6.2 2/2] qxl: allowing the command rings to be not empty when spice worker is stopped RHBZ #728984
+Bugzilla: 728984
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+From: Yonit Halperin <yhalperi@redhat.com>
+
+same as 8927cfbba232e28304734f7afd463c1b84134031, but for qxl_check_state, that was
+triggered by qxl_pre_load (which calls qxl_hard_reset, which calls qxl_soft_reset),
+and caused the migration target to crash.
+
+Upstream: queued (http://patchwork.ozlabs.org/patch/109215/)
+---
+ hw/qxl.c |    8 +++-----
+ 1 files changed, 3 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qxl.c |    8 +++-----
+ 1 files changed, 3 insertions(+), 5 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index 8f4bebc..cfbc4d8 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -837,17 +837,15 @@ static void qxl_check_state(PCIQXLDevice *d)
+ {
+     QXLRam *ram = d->ram;
+ 
+-    assert(SPICE_RING_IS_EMPTY(&ram->cmd_ring));
+-    assert(SPICE_RING_IS_EMPTY(&ram->cursor_ring));
++    assert(!d->ssd.running || SPICE_RING_IS_EMPTY(&ram->cmd_ring));
++    assert(!d->ssd.running || SPICE_RING_IS_EMPTY(&ram->cursor_ring));
+ }
+ 
+ static void qxl_reset_state(PCIQXLDevice *d)
+ {
+-    QXLRam *ram = d->ram;
+     QXLRom *rom = d->rom;
+ 
+-    assert(!d->ssd.running || SPICE_RING_IS_EMPTY(&ram->cmd_ring));
+-    assert(!d->ssd.running || SPICE_RING_IS_EMPTY(&ram->cursor_ring));
++    qxl_check_state(d);
+     d->shadow_rom.update_id = cpu_to_le32(0);
+     *rom = d->shadow_rom;
+     qxl_rom_set_dirty(d);
+-- 
+1.7.3.2
+

@@ -1,0 +1,63 @@
+From b9fe3de181da88d559c1d0bc68a80150983d193e Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Mon, 8 Aug 2011 14:15:45 -0700
+Subject: [RHEL6 qemu-kvm PATCH 3/7] qemu-option: New qemu_opts_reset()
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1312812947-8303-4-git-send-email-armbru@redhat.com>
+Patchwork-id: 31080
+O-Subject: [RHEL6 PATCH qemu-kvm 3/5] qemu-option: New qemu_opts_reset()
+Bugzilla: 711354
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit bb67ab0290b9a83d4d444e2e9a0311d3b9b54385)
+---
+ qemu-option.c |    9 +++++++++
+ qemu-option.h |    1 +
+ 2 files changed, 10 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-option.c |    9 +++++++++
+ qemu-option.h |    1 +
+ 2 files changed, 10 insertions(+), 0 deletions(-)
+
+diff --git a/qemu-option.c b/qemu-option.c
+index 9cbb090..6a8d1c4 100644
+--- a/qemu-option.c
++++ b/qemu-option.c
+@@ -699,6 +699,15 @@ QemuOpts *qemu_opts_create(QemuOptsList *list, const char *id, int fail_if_exist
+     return opts;
+ }
+ 
++void qemu_opts_reset(QemuOptsList *list)
++{
++    QemuOpts *opts, *next_opts;
++
++    QTAILQ_FOREACH_SAFE(opts, &list->head, next, next_opts) {
++        qemu_opts_del(opts);
++    }
++}
++
+ int qemu_opts_set(QemuOptsList *list, const char *id,
+                   const char *name, const char *value)
+ {
+diff --git a/qemu-option.h b/qemu-option.h
+index 02a1a86..8c8cc67 100644
+--- a/qemu-option.h
++++ b/qemu-option.h
+@@ -115,6 +115,7 @@ int qemu_opt_foreach(QemuOpts *opts, qemu_opt_loopfunc func, void *opaque,
+ 
+ QemuOpts *qemu_opts_find(QemuOptsList *list, const char *id);
+ QemuOpts *qemu_opts_create(QemuOptsList *list, const char *id, int fail_if_exists);
++void qemu_opts_reset(QemuOptsList *list);
+ int qemu_opts_set(QemuOptsList *list, const char *id,
+                   const char *name, const char *value);
+ const char *qemu_opts_id(QemuOpts *opts);
+-- 
+1.7.3.2
+
