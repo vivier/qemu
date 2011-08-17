@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.183
+%define pkgrelease 2.184
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3515,6 +3515,14 @@ Patch2435: kvm-scsi-Rebase-to-upstream-v0.15.0-rc2.patch
 Patch2436: kvm-qxl-upon-reset-if-spice-worker-is-stopped-the-comman.patch
 # For bz#728984 - Target qemu process - assertion failed during migration
 Patch2437: kvm-qxl-allowing-the-command-rings-to-be-not-empty-when-.patch
+# For bz#719818 - KVM qemu support for Supervisor Mode Execution Protection (SMEP)
+Patch2438: kvm-bz719818-KVM-qemu-support-for-SMEP.patch
+# For bz#723870 - tag devices without migration support
+Patch2439: kvm-vmstate-add-no_migrate-flag-to-VMStateDescription.patch
+# For bz#723870 - tag devices without migration support
+Patch2440: kvm-ehci-doesn-t-support-migration.patch
+# For bz#723870 - tag devices without migration support
+Patch2441: kvm-usb-storage-first-migration-support-bits.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -5058,6 +5066,10 @@ ApplyOptionalPatch()
 %patch2435 -p1
 %patch2436 -p1
 %patch2437 -p1
+%patch2438 -p1
+%patch2439 -p1
+%patch2440 -p1
+%patch2441 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -5281,6 +5293,16 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Aug 17 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.184.el6
+- kvm-bz719818-KVM-qemu-support-for-SMEP.patch [bz#719818]
+- kvm-vmstate-add-no_migrate-flag-to-VMStateDescription.patch [bz#723870]
+- kvm-ehci-doesn-t-support-migration.patch [bz#723870]
+- kvm-usb-storage-first-migration-support-bits.patch [bz#723870]
+- Resolves: bz#719818
+  (KVM qemu support for Supervisor Mode Execution Protection (SMEP))
+- Resolves: bz#723870
+  (tag devices without migration support)
+
 * Mon Aug 15 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.183.el6
 - kvm-spice-add-sanity-check-for-spice-ports.patch [bz#715582 bz#717958]
 - kvm-block-add-discard-support.patch [bz#711354]

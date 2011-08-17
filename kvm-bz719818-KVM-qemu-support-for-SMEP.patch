@@ -1,0 +1,74 @@
+From 9ae91b7fa8faef916fedab0965105ece56c4261a Mon Sep 17 00:00:00 2001
+From: ddugger@redhat.com <ddugger@redhat.com>
+Date: Fri, 8 Jul 2011 05:30:17 -0700
+Subject: [RHEL6 qemu-kvm PATCH 1/4] bz719818: KVM qemu support for SMEP
+
+RH-Author: ddugger@redhat.com
+Message-id: <1310103017-20922-1-git-send-email-ddugger@redhat.com>
+Patchwork-id: 29183
+O-Subject: [RHEL 6.2 PATCH] bz719818: KVM qemu support for SMEP
+Bugzilla: 719818
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Amos Kong <akong@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+commit f79116867ec80ed5d1d10043a3fd9ac8afd182c1
+
+    kvm: Enable CPU SMEP feature
+
+    This patchset enables a new CPU feature SMEP (Supervisor Mode Execution
+    Protection) in QEMU-KVM. SMEP prevents kernel from executing code in
+    application.  Updated Intel SDM describes this CPU feature. The document
+    will be published soon.
+
+    SMEP is identified by CPUID leaf 7 EBX[7], which is 0 before. Get the
+    right value by query KVM kernel module, so that guest can get SMEP
+    through CPUID.
+
+     Signed-off-by: Yang, Wei <wei.y.yang@intel.com>
+     Singed-off-by: Shan, Haitao <haitao.shan@intel.com>
+     Singed-off-by: Li, Xin <xin.li@intel.com>
+
+    Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+Upstream status: Accepted
+
+Testing:  Tested on IvyBridge system and demonstrated to successfully
+expose the SMEP capability to the KVM guest and allow the KVM guest
+to utilize this feature.
+
+brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=3473895
+
+Signed-off-by: Don Dugger <donald.d.dugger@intel.com>
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ target-i386/helper.c |   13 +++++++++++++
+ 1 files changed, 13 insertions(+), 0 deletions(-)
+
+diff --git a/target-i386/helper.c b/target-i386/helper.c
+index 9cf6e90..cc2cdab 100644
+--- a/target-i386/helper.c
++++ b/target-i386/helper.c
+@@ -2139,6 +2139,19 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
+         *ecx = 0;
+         *edx = 0;
+         break;
++   case 7:
++       if (kvm_enabled()) {
++           *eax = kvm_arch_get_supported_cpuid(env, 0x7, R_EAX);
++           *ebx = kvm_arch_get_supported_cpuid(env, 0x7, R_EBX);
++           *ecx = kvm_arch_get_supported_cpuid(env, 0x7, R_ECX);
++           *edx = kvm_arch_get_supported_cpuid(env, 0x7, R_EDX);
++       } else {
++           *eax = 0;
++           *ebx = 0;
++           *ecx = 0;
++           *edx = 0;
++       }
++       break;
+     case 9:
+         /* Direct Cache Access Information Leaf */
+         *eax = 0; /* Bits 0-31 in DCA_CAP MSR */
+-- 
+1.7.3.2
+

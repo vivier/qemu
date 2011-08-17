@@ -1,0 +1,59 @@
+From 9341afbb389b3eaeb11d6ae2714c97428fe82436 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 11 Aug 2011 06:46:15 -0700
+Subject: [RHEL6 qemu-kvm PATCH 4/4] usb storage: first migration support bits.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1313045175-25488-4-git-send-email-kraxel@redhat.com>
+Patchwork-id: 31261
+O-Subject: [RHEL-6.2 kvm PATCH 3/3] usb storage: first migration support bits.
+Bugzilla: 723870
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Tag vmstate as unmigratable for the time being,
+to be removed when mgration support is finished.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit f54b65630385d7dc7cf3442eb459d1a5b3d1a9c6)
+---
+ hw/usb-msd.c |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-msd.c |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
+
+diff --git a/hw/usb-msd.c b/hw/usb-msd.c
+index 6391dad..cdeac58 100644
+--- a/hw/usb-msd.c
++++ b/hw/usb-msd.c
+@@ -616,11 +616,23 @@ static USBDevice *usb_msd_init(const char *filename)
+     return dev;
+ }
+ 
++static const VMStateDescription vmstate_usb_msd = {
++    .name = "usb-storage",
++    .unmigratable = 1, /* FIXME: handle transactions which are in flight */
++    .version_id = 1,
++    .minimum_version_id = 1,
++    .fields = (VMStateField []) {
++        VMSTATE_USB_DEVICE(dev, MSDState),
++        VMSTATE_END_OF_LIST()
++    }
++};
++
+ static struct USBDeviceInfo msd_info = {
+     .product_desc   = "QEMU USB MSD",
+     .qdev.name      = "usb-storage",
+     .qdev.fw_name      = "storage",
+     .qdev.size      = sizeof(MSDState),
++    .qdev.vmsd      = &vmstate_usb_msd,
+     .usb_desc       = &desc,
+     .init           = usb_msd_initfn,
+     .handle_packet  = usb_generic_handle_packet,
+-- 
+1.7.3.2
+

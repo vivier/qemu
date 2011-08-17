@@ -1,0 +1,62 @@
+From e0d9afaa509b0f5211d64d4f1e97ef492c00cbc3 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 11 Aug 2011 06:46:14 -0700
+Subject: [RHEL6 qemu-kvm PATCH 3/4] ehci doesn't support migration
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1313045175-25488-3-git-send-email-kraxel@redhat.com>
+Patchwork-id: 31264
+O-Subject: [RHEL-6.2 kvm PATCH 2/3] ehci doesn't support migration
+Bugzilla: 723870
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 9490fb0624e67bce90297444fb960c2d9476239e)
+
+Conflicts:
+
+	hw/usb-ehci.c
+---
+ hw/usb-ehci.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/usb-ehci.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/hw/usb-ehci.c b/hw/usb-ehci.c
+index 0e7b0be..762bba8 100644
+--- a/hw/usb-ehci.c
++++ b/hw/usb-ehci.c
+@@ -2252,6 +2252,11 @@ static USBBusOps ehci_bus_ops = {
+     .register_companion = ehci_register_companion,
+ };
+ 
++static const VMStateDescription vmstate_ehci = {
++    .name = "ehci",
++    .unmigratable = 1,
++};
++
+ static Property ehci_properties[] = {
+     DEFINE_PROP_UINT32("freq",      EHCIState, freq, FRAME_TIMER_FREQ),
+     DEFINE_PROP_UINT32("maxframes", EHCIState, maxframes, 128),
+@@ -2262,11 +2267,13 @@ static PCIDeviceInfo ehci_info[] = {
+     {
+         .qdev.name    = "usb-ehci",
+         .qdev.size    = sizeof(EHCIState),
++        .qdev.vmsd    = &vmstate_ehci,
+         .init         = usb_ehci_initfn,
+         .qdev.props   = ehci_properties,
+     },{
+         .qdev.name    = "ich9-usb-ehci1",
+         .qdev.size    = sizeof(EHCIState),
++        .qdev.vmsd    = &vmstate_ehci,
+         .init         = usb_ehci_initfn_ich9,
+         .qdev.props   = ehci_properties,
+     },{
+-- 
+1.7.3.2
+
