@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.15.0
-Release: 2%{?dist}
+Release: 3%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -77,6 +77,7 @@ BuildRequires: pciutils-devel
 BuildRequires: pulseaudio-libs-devel
 BuildRequires: ncurses-devel
 BuildRequires: libattr-devel
+BuildRequires: usbredir-devel
 BuildRequires: texinfo
 %ifarch x86_64
 BuildRequires: spice-protocol >= 0.8.1
@@ -581,6 +582,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Aug 18 2011 Hans de Goede <hdegoede@redhat.com> - 2:0.15.0-3
+- Add missing BuildRequires: usbredir-devel, so that the usbredir code
+  actually gets build
+
 * Thu Aug 18 2011 Richard W.M. Jones <rjones@redhat.com> - 2:0.15.0-2
 - Add upstream qemu patch 'Allow to leave type on default in -machine'
   (2645c6dcaf6ea2a51a3b6dfa407dd203004e4d11).
