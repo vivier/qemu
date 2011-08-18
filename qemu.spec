@@ -79,8 +79,8 @@ BuildRequires: ncurses-devel
 BuildRequires: libattr-devel
 BuildRequires: texinfo
 %ifarch x86_64
-BuildRequires: spice-protocol >= 0.6.0
-BuildRequires: spice-server-devel >= 0.6.0
+BuildRequires: spice-protocol >= 0.8.1
+BuildRequires: spice-server-devel >= 0.9.0
 %endif
 Requires: %{name}-user = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-x86 = %{epoch}:%{version}-%{release}
