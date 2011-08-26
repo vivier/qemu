@@ -1,0 +1,43 @@
+From 3e4669020b2ae56a2311bbb527ba198f3c6b6925 Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Mon, 20 Jun 2011 14:32:19 +0300
+Subject: [RHEL6 qemu-kvm PATCH] virtio: prevent indirect descriptor buffer overflow
+
+We were previously allowing arbitrarily-long indirect descriptors, which
+could overflow the in_sg/out_sg arrays.
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=713593
+CVE: CVE-2011-2212
+Tested: lightly tested on my box with virtio net and block
+Brew: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=3412552
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+---
+ hw/virtio.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio.c b/hw/virtio.c
+index 54d73fc..f86a5c0 100644
+--- a/hw/virtio.c
++++ b/hw/virtio.c
+@@ -449,9 +449,17 @@ int virtqueue_pop(VirtQueue *vq, VirtQueueElement *elem)
+         struct iovec *sg;
+ 
+         if (vring_desc_flags(desc_pa, i) & VRING_DESC_F_WRITE) {
++            if (elem->in_num >= ARRAY_SIZE(elem->in_sg)) {
++                fprintf(stderr, "Too many write descriptors in indirect table");
++                exit(1);
++            }
+             elem->in_addr[elem->in_num] = vring_desc_addr(desc_pa, i);
+             sg = &elem->in_sg[elem->in_num++];
+         } else {
++            if (elem->out_num >= ARRAY_SIZE(elem->out_sg)) {
++                fprintf(stderr, "Too many read descriptors in indirect table");
++                exit(1);
++            }
+             elem->out_addr[elem->out_num] = vring_desc_addr(desc_pa, i);
+             sg = &elem->out_sg[elem->out_num++];
+         }
+-- 
+1.7.3.2
+

@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.184
+%define pkgrelease 2.185
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3523,6 +3523,8 @@ Patch2439: kvm-vmstate-add-no_migrate-flag-to-VMStateDescription.patch
 Patch2440: kvm-ehci-doesn-t-support-migration.patch
 # For bz#723870 - tag devices without migration support
 Patch2441: kvm-usb-storage-first-migration-support-bits.patch
+# For bz#713593 - EMBARGOED CVE-2011-2212 virtqueue: too-large indirect descriptor buffer overflow [rhel-6.2]
+Patch2442: kvm-virtio-prevent-indirect-descriptor-buffer-overflow.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -5070,6 +5072,7 @@ ApplyOptionalPatch()
 %patch2439 -p1
 %patch2440 -p1
 %patch2441 -p1
+%patch2442 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -5293,6 +5296,12 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Aug 26 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.185.el6
+- kvm-virtio-prevent-indirect-descriptor-buffer-overflow.patch [bz#713593]
+- Resolves: bz#713593
+  (CVE-2011-2212 virtqueue: too-large indirect descriptor buffer overflow [rhel-6.2])
+- CVE: CVE-2011-2212
+
 * Wed Aug 17 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.184.el6
 - kvm-bz719818-KVM-qemu-support-for-SMEP.patch [bz#719818]
 - kvm-vmstate-add-no_migrate-flag-to-VMStateDescription.patch [bz#723870]
