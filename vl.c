@@ -709,7 +709,7 @@ static void init_get_clock(void)
     clock_freq = freq.QuadPart;
 }
 
-static int64_t get_clock(void)
+int64_t get_clock(void)
 {
     LARGE_INTEGER ti;
     QueryPerformanceCounter(&ti);
@@ -734,7 +734,7 @@ static void init_get_clock(void)
 #endif
 }
 
-static int64_t get_clock(void)
+int64_t get_clock(void)
 {
 #if defined(__linux__) || (defined(__FreeBSD__) && __FreeBSD_version >= 500000) \
 	|| defined(__DragonFly__) || defined(__FreeBSD_kernel__)
