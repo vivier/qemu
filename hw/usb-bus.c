@@ -339,7 +339,20 @@ static void usb_bus_dev_print(Monitor *mon, DeviceState *qdev, int indent)
 static char *usb_get_dev_path(DeviceState *qdev)
 {
     USBDevice *dev = DO_UPCAST(USBDevice, qdev, qdev);
-    return qemu_strdup(dev->port->path);
+    DeviceState *hcd = qdev->parent_bus->parent;
+    char *id = NULL;
+
+    if (hcd && hcd->parent_bus && hcd->parent_bus->info->get_dev_path) {
+        id = hcd->parent_bus->info->get_dev_path(hcd);
+    }
+    if (id) {
+        int len = strlen(id)+strlen(dev->port->path)+2;
+        char *ret = qemu_malloc(len);
+        snprintf(ret, len, "%s/%s", id, dev->port->path);
+        return ret;
+    } else {
+        return qemu_strdup(dev->port->path);
+    }
 }
 
 static char *usb_get_fw_dev_path(DeviceState *qdev)
