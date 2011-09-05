@@ -1,0 +1,56 @@
+From 1964fabf12f122a506e223a3b4df131382fd8b01 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Mon, 18 Jul 2011 19:46:08 -0300
+Subject: [RHEL6 qemu-kvm PATCH 03/11] add kvmclock to its second bit (v2)
+
+RH-Author: Eduardo Habkost <ehabkost@redhat.com>
+Message-id: <1311018370-5930-3-git-send-email-ehabkost@redhat.com>
+Patchwork-id: 29968
+O-Subject: [RHEL6 qemu-kvm PATCH 2/4] add kvmclock to its second bit (v2)
+Bugzilla: 624983
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Glauber Costa <glommer@redhat.com>
+
+Upstream-Status: applied(qemu.git master), 642258c6c7f386165bc7e79dcd42040fd77df01e
+Bugzilla: 624983
+
+We have two bits that can represent kvmclock in cpuid.
+They signal the guest which msr set to use. When we tweak flags
+involving this value - specially when we use "-", we have to act on both.
+
+Besides adding it to the kvm features list, we also have to "break" the
+assumption represented by the break in lookup_feature.
+
+[ehabkost: v2: remove bogus chunk that was removing the 'break' line
+               from lookup_feature()]
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ target-i386/helper.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ target-i386/helper.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/target-i386/helper.c b/target-i386/helper.c
+index cc2cdab..b5dace4 100644
+--- a/target-i386/helper.c
++++ b/target-i386/helper.c
+@@ -158,7 +158,7 @@ static int lookup_feature(uint32_t *pval, const char *s, const char *e,
+ }
+ 
+ static const char *kvm_feature_name[] = {
+-    "kvmclock", "kvm_nopiodelay", "kvm_mmu", NULL, NULL, NULL, NULL, NULL,
++    "kvmclock", "kvm_nopiodelay", "kvm_mmu", "kvmclock", NULL, NULL, NULL, NULL,
+     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+-- 
+1.7.3.2
+

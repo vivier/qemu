@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.185
+%define pkgrelease 2.186
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3525,6 +3525,28 @@ Patch2440: kvm-ehci-doesn-t-support-migration.patch
 Patch2441: kvm-usb-storage-first-migration-support-bits.patch
 # For bz#713593 - EMBARGOED CVE-2011-2212 virtqueue: too-large indirect descriptor buffer overflow [rhel-6.2]
 Patch2442: kvm-virtio-prevent-indirect-descriptor-buffer-overflow.patch
+# For bz#658467 - kvm clock breaks migration result stability -  for unit test propose
+Patch2443: kvm-x86-Introduce-kvmclock-device-to-save-restore-it.patch
+# For bz#624983 - QEMU should support the newer set of MSRs for kvmclock
+Patch2444: kvm-use-kernel-provided-para_features-instead-of-statica.patch
+# For bz#624983 - QEMU should support the newer set of MSRs for kvmclock
+Patch2445: kvm-add-kvmclock-to-its-second-bit-v2.patch
+# For bz#624983 - QEMU should support the newer set of MSRs for kvmclock
+Patch2446: kvm-create-kvmclock-when-one-of-the-flags-are-presen.patch
+# For bz#624983 - QEMU should support the newer set of MSRs for kvmclock
+Patch2447: kvm-x86-Allow-multiple-cpu-feature-matches-of-lookup_fea.patch
+# For bz#695285 - guest quit with "Guest moved used index from 256 to 915" error when save_vm
+Patch2448: kvm-vhost-net-cleanup-host-notifiers-at-last-step.patch
+# For bz#715017 - Report disk latency (read and write) for each storage device
+Patch2449: kvm-block-include-flush-requests-in-info-blockstats.patch
+# For bz#715017 - Report disk latency (read and write) for each storage device
+Patch2450: kvm-block-explicit-I-O-accounting.patch
+# For bz#715017 - Report disk latency (read and write) for each storage device
+Patch2451: kvm-block-latency-accounting.patch
+# For bz#718664 - Migration from host RHEL6.1+ to host RHEL6.0.z failed with floppy
+Patch2452: kvm-revert-floppy-save-and-restore-DIR-register.patch
+# For bz#734860 - qemu-kvm: segfault when missing host parameter for socket chardev
+Patch2453: kvm-qemu-sockets-avoid-strlen-of-NULL-pointer.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -5073,6 +5095,17 @@ ApplyOptionalPatch()
 %patch2440 -p1
 %patch2441 -p1
 %patch2442 -p1
+%patch2443 -p1
+%patch2444 -p1
+%patch2445 -p1
+%patch2446 -p1
+%patch2447 -p1
+%patch2448 -p1
+%patch2449 -p1
+%patch2450 -p1
+%patch2451 -p1
+%patch2452 -p1
+%patch2453 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -5296,6 +5329,31 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Sep 05 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.186.el6
+- kvm-x86-Introduce-kvmclock-device-to-save-restore-it.patch [bz#658467]
+- kvm-use-kernel-provided-para_features-instead-of-statica.patch [bz#624983]
+- kvm-add-kvmclock-to-its-second-bit-v2.patch [bz#624983]
+- kvm-create-kvmclock-when-one-of-the-flags-are-presen.patch [bz#624983]
+- kvm-x86-Allow-multiple-cpu-feature-matches-of-lookup_fea.patch [bz#624983]
+- kvm-vhost-net-cleanup-host-notifiers-at-last-step.patch [bz#695285]
+- kvm-block-include-flush-requests-in-info-blockstats.patch [bz#715017]
+- kvm-block-explicit-I-O-accounting.patch [bz#715017]
+- kvm-block-latency-accounting.patch [bz#715017]
+- kvm-revert-floppy-save-and-restore-DIR-register.patch [bz#718664]
+- kvm-qemu-sockets-avoid-strlen-of-NULL-pointer.patch [bz#734860]
+- Resolves: bz#624983
+  (QEMU should support the newer set of MSRs for kvmclock)
+- Resolves: bz#658467
+  (kvm clock breaks migration result stability -  for unit test propose)
+- Resolves: bz#695285
+  (guest quit with "Guest moved used index from 256 to 915" error when save_vm)
+- Resolves: bz#715017
+  (Report disk latency (read and write) for each storage device)
+- Resolves: bz#718664
+  (Migration from host RHEL6.1+ to host RHEL6.0.z failed with floppy)
+- Resolves: bz#734860
+  (qemu-kvm: segfault when missing host parameter for socket chardev)
+
 * Fri Aug 26 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.185.el6
 - kvm-virtio-prevent-indirect-descriptor-buffer-overflow.patch [bz#713593]
 - Resolves: bz#713593

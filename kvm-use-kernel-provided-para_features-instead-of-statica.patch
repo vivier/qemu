@@ -1,0 +1,182 @@
+From 7013c77826898860e23f40c9b5cf87896c70dcf2 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Mon, 18 Jul 2011 19:46:07 -0300
+Subject: [RHEL6 qemu-kvm PATCH 02/11] use kernel-provided para_features instead of statically coming up with new capabilities
+
+RH-Author: Eduardo Habkost <ehabkost@redhat.com>
+Message-id: <1311018370-5930-2-git-send-email-ehabkost@redhat.com>
+Patchwork-id: 29965
+O-Subject: [RHEL6 qemu-kvm PATCH 1/4] use kernel-provided para_features instead of statically coming up with new capabilities
+Bugzilla: 624983
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Zachary Amsden <zamsden@redhat.com>
+
+From: Glauber Costa <glommer@redhat.com>
+
+Upstream-Status: applied(qemu.git master), 0c31b744f606d1c19b698041480eb195b8801747
+Bugzilla: 624983
+
+According to Avi's comments over my last submission, I decided to take a
+different, and more correct direction - we hope.
+
+This patch is now using the features provided by KVM_GET_SUPPORTED_CPUID directly to
+mask out features from guest-visible cpuid.
+
+The old get_para_features() mechanism is kept for older kernels that do not implement it.
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-kvm-x86.c |   90 ++++++++++++++++++++++++++++++-------------------------
+ 1 files changed, 49 insertions(+), 41 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-kvm-x86.c |   90 ++++++++++++++++++++++++++++++-------------------------
+ 1 files changed, 49 insertions(+), 41 deletions(-)
+
+diff --git a/qemu-kvm-x86.c b/qemu-kvm-x86.c
+index 8d8956d..81cb90a 100644
+--- a/qemu-kvm-x86.c
++++ b/qemu-kvm-x86.c
+@@ -661,14 +661,51 @@ static struct kvm_cpuid2 *try_get_cpuid(kvm_context_t kvm, int max)
+ #define R_EBP 5
+ #define R_ESI 6
+ #define R_EDI 7
++#endif
++
++struct kvm_para_features {
++	int cap;
++	int feature;
++} para_features[] = {
++#ifdef KVM_CAP_CLOCKSOURCE
++	{ KVM_CAP_CLOCKSOURCE, KVM_FEATURE_CLOCKSOURCE },
++#endif
++#ifdef KVM_CAP_NOP_IO_DELAY
++	{ KVM_CAP_NOP_IO_DELAY, KVM_FEATURE_NOP_IO_DELAY },
++#endif
++#ifdef KVM_CAP_PV_MMU
++	{ KVM_CAP_PV_MMU, KVM_FEATURE_MMU_OP },
++#endif
++#ifdef KVM_CAP_CR3_CACHE
++	{ KVM_CAP_CR3_CACHE, KVM_FEATURE_CR3_CACHE },
++#endif
++	{ -1, -1 }
++};
++
++static int get_para_features(kvm_context_t kvm_context)
++{
++	int i, features = 0;
++
++	for (i = 0; i < ARRAY_SIZE(para_features)-1; i++) {
++		if (kvm_check_extension(kvm_state, para_features[i].cap))
++			features |= (1 << para_features[i].feature);
++	}
++
++	return features;
++}
++
+ 
+ uint32_t kvm_get_supported_cpuid(kvm_context_t kvm, uint32_t function, int reg)
+ {
++	uint32_t ret = -1;
++	int has_kvm_features = 0;
++#ifdef KVM_CAP_EXT_CPUID
+ 	struct kvm_cpuid2 *cpuid;
+ 	int i, max;
+-	uint32_t ret = 0;
+ 	uint32_t cpuid_1_edx;
+ 
++	ret = 0;
++
+ 	if (!kvm_check_extension(kvm_state, KVM_CAP_EXT_CPUID)) {
+ 		return -1U;
+ 	}
+@@ -680,6 +717,10 @@ uint32_t kvm_get_supported_cpuid(kvm_context_t kvm, uint32_t function, int reg)
+ 
+ 	for (i = 0; i < cpuid->nent; ++i) {
+ 		if (cpuid->entries[i].function == function) {
++			if (cpuid->entries[i].function == KVM_CPUID_FEATURES) {
++				has_kvm_features = 1;
++			}
++
+ 			switch (reg) {
+ 			case R_EAX:
+ 				ret = cpuid->entries[i].eax;
+@@ -715,18 +756,15 @@ uint32_t kvm_get_supported_cpuid(kvm_context_t kvm, uint32_t function, int reg)
+ 	}
+ 
+ 	free(cpuid);
++#endif
++	/* fallback for older kernels */
++	if (!has_kvm_features && (function == KVM_CPUID_FEATURES)) {
++		ret = get_para_features(kvm);
++	}
+ 
+ 	return ret;
+ }
+ 
+-#else
+-
+-uint32_t kvm_get_supported_cpuid(kvm_context_t kvm, uint32_t function, int reg)
+-{
+-	return -1U;
+-}
+-
+-#endif
+ int kvm_qemu_create_memory_alias(uint64_t phys_start,
+                                  uint64_t len,
+                                  uint64_t target_phys)
+@@ -1240,37 +1278,6 @@ static void do_cpuid_ent(struct kvm_cpuid_entry2 *e, uint32_t function,
+     e->edx = env->regs[R_EDX];
+ }
+ 
+-struct kvm_para_features {
+-	int cap;
+-	int feature;
+-} para_features[] = {
+-#ifdef KVM_CAP_CLOCKSOURCE
+-	{ KVM_CAP_CLOCKSOURCE, KVM_FEATURE_CLOCKSOURCE },
+-#endif
+-#ifdef KVM_CAP_NOP_IO_DELAY
+-	{ KVM_CAP_NOP_IO_DELAY, KVM_FEATURE_NOP_IO_DELAY },
+-#endif
+-#ifdef KVM_CAP_PV_MMU
+-	{ KVM_CAP_PV_MMU, KVM_FEATURE_MMU_OP },
+-#endif
+-#ifdef KVM_CAP_CR3_CACHE
+-	{ KVM_CAP_CR3_CACHE, KVM_FEATURE_CR3_CACHE },
+-#endif
+-	{ -1, -1 }
+-};
+-
+-static int get_para_features(kvm_context_t kvm_context)
+-{
+-	int i, features = 0;
+-
+-	for (i = 0; i < ARRAY_SIZE(para_features)-1; i++) {
+-		if (kvm_check_extension(kvm_state, para_features[i].cap))
+-			features |= (1 << para_features[i].feature);
+-	}
+-
+-	return features;
+-}
+-
+ static void kvm_trim_features(uint32_t *features, uint32_t supported)
+ {
+     int i;
+@@ -1322,7 +1329,8 @@ int kvm_arch_init_vcpu(CPUState *cenv)
+     pv_ent = &cpuid_ent[cpuid_nent++];
+     memset(pv_ent, 0, sizeof(*pv_ent));
+     pv_ent->function = KVM_CPUID_FEATURES;
+-    pv_ent->eax = cenv->cpuid_kvm_features & get_para_features(kvm_context);
++    pv_ent->eax = cenv->cpuid_kvm_features & kvm_arch_get_supported_cpuid(cenv,
++						KVM_CPUID_FEATURES, R_EAX);
+ #endif
+ 
+     kvm_trim_features(&cenv->cpuid_features,
+-- 
+1.7.3.2
+

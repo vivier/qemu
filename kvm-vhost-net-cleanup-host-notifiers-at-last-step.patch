@@ -1,0 +1,230 @@
+From 7b1fc93e4f10eb525794b8523a267446294622ff Mon Sep 17 00:00:00 2001
+From: Michael S. Tsirkin <mst@redhat.com>
+Date: Fri, 26 Aug 2011 08:32:47 -0300
+Subject: [RHEL6 qemu-kvm PATCH 06/11] vhost-net: cleanup host notifiers at last step
+
+RH-Author: Michael S. Tsirkin <mst@redhat.com>
+Message-id: <20110826083246.GA5657@redhat.com>
+Patchwork-id: 31918
+O-Subject: [PATCH RHEL6.2/6.1.z] vhost-net: cleanup host notifiers at last step
+Bugzilla: 695285
+RH-Acked-by: Xiao Wang <jasowang@redhat.com>
+RH-Acked-by: Amos Kong <akong@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+When the vhost notifier is disabled, the userspace handler runs
+immediately: virtio_pci_set_host_notifier_internal might
+call virtio_queue_notify_vq.
+Since the VQ state and the tap backend state aren't
+recovered yet, this causes
+"Guest moved used index from XXX to YYY" assertions.
+
+The solution is to split out host notifier handling
+from vhost VQ setup and disable notifiers as our last step
+when we stop vhost-net. For symmetry enable them first thing
+on start.
+
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+
+Brew build: 3582755
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=695285
+Upstream: b0b3db79559e57db340b292621c397e7a6cdbdc5 in my pci tree
+	git://git.kernel.org/pub/scm/linux/kernel/git/mst/qemu.git
+Tested: reproduced and tested on akong's setup
+
+---
+ hw/vhost.c     |   74 +++++++++++++++++++++++++++++++++++++++++--------------
+ hw/vhost.h     |    2 +
+ hw/vhost_net.c |   16 ++++++++++--
+ 3 files changed, 70 insertions(+), 22 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/vhost.c     |   74 +++++++++++++++++++++++++++++++++++++++++--------------
+ hw/vhost.h     |    2 +
+ hw/vhost_net.c |   16 ++++++++++--
+ 3 files changed, 70 insertions(+), 22 deletions(-)
+
+diff --git a/hw/vhost.c b/hw/vhost.c
+index 63a4ef4..b16fc4c 100644
+--- a/hw/vhost.c
++++ b/hw/vhost.c
+@@ -469,11 +469,6 @@ static int vhost_virtqueue_init(struct vhost_dev *dev,
+     };
+     struct VirtQueue *vvq = virtio_get_queue(vdev, idx);
+ 
+-    if (!vdev->binding->set_host_notifier) {
+-        fprintf(stderr, "binding does not support host notifiers\n");
+-        return -ENOSYS;
+-    }
+-
+     vq->num = state.num = virtio_queue_get_num(vdev, idx);
+     r = ioctl(dev->control, VHOST_SET_VRING_NUM, &state);
+     if (r) {
+@@ -521,12 +516,6 @@ static int vhost_virtqueue_init(struct vhost_dev *dev,
+         r = -errno;
+         goto fail_alloc;
+     }
+-    r = vdev->binding->set_host_notifier(vdev->binding_opaque, idx, true);
+-    if (r < 0) {
+-        fprintf(stderr, "Error binding host notifier: %d\n", -r);
+-        goto fail_host_notifier;
+-    }
+-
+     file.fd = event_notifier_get_fd(virtio_queue_get_host_notifier(vvq));
+     r = ioctl(dev->control, VHOST_SET_VRING_KICK, &file);
+     if (r) {
+@@ -545,8 +534,6 @@ static int vhost_virtqueue_init(struct vhost_dev *dev,
+ 
+ fail_call:
+ fail_kick:
+-    vdev->binding->set_host_notifier(vdev->binding_opaque, idx, false);
+-fail_host_notifier:
+ fail_alloc:
+     cpu_physical_memory_unmap(vq->ring, virtio_queue_get_ring_size(vdev, idx),
+                               0, 0);
+@@ -572,12 +559,6 @@ static void vhost_virtqueue_cleanup(struct vhost_dev *dev,
+         .index = idx,
+     };
+     int r;
+-    r = vdev->binding->set_host_notifier(vdev->binding_opaque, idx, false);
+-    if (r < 0) {
+-        fprintf(stderr, "vhost VQ %d host cleanup failed: %d\n", idx, r);
+-        fflush(stderr);
+-    }
+-    assert (r >= 0);
+     r = ioctl(dev->control, VHOST_GET_VRING_BASE, &state);
+     if (r < 0) {
+         fprintf(stderr, "vhost VQ %d ring restore failed: %d\n", idx, r);
+@@ -649,6 +630,60 @@ bool vhost_dev_query(struct vhost_dev *hdev, VirtIODevice *vdev)
+         hdev->force;
+ }
+ 
++/* Stop processing guest IO notifications in qemu.
++ * Start processing them in vhost in kernel.
++ */
++int vhost_dev_enable_notifiers(struct vhost_dev *hdev, VirtIODevice *vdev)
++{
++    int i, r;
++    if (!vdev->binding->set_host_notifier) {
++        fprintf(stderr, "binding does not support host notifiers\n");
++        r = -ENOSYS;
++        goto fail;
++    }
++
++    for (i = 0; i < hdev->nvqs; ++i) {
++        r = vdev->binding->set_host_notifier(vdev->binding_opaque, i, true);
++        if (r < 0) {
++            fprintf(stderr, "vhost VQ %d notifier binding failed: %d\n", i, -r);
++            goto fail_vq;
++        }
++    }
++
++    return 0;
++fail_vq:
++    while (--i >= 0) {
++        r = vdev->binding->set_host_notifier(vdev->binding_opaque, i, false);
++        if (r < 0) {
++            fprintf(stderr, "vhost VQ %d notifier cleanup error: %d\n", i, -r);
++            fflush(stderr);
++        }
++        assert (r >= 0);
++    }
++fail:
++    return r;
++}
++
++/* Stop processing guest IO notifications in vhost.
++ * Start processing them in qemu.
++ * This might actually run the qemu handlers right away,
++ * so virtio in qemu must be completely setup when this is called.
++ */
++void vhost_dev_disable_notifiers(struct vhost_dev *hdev, VirtIODevice *vdev)
++{
++    int i, r;
++
++    for (i = 0; i < hdev->nvqs; ++i) {
++        r = vdev->binding->set_host_notifier(vdev->binding_opaque, i, false);
++        if (r < 0) {
++            fprintf(stderr, "vhost VQ %d notifier cleanup failed: %d\n", i, -r);
++            fflush(stderr);
++        }
++        assert (r >= 0);
++    }
++}
++
++/* Host notifiers must be enabled at this point. */
+ int vhost_dev_start(struct vhost_dev *hdev, VirtIODevice *vdev)
+ {
+     int i, r;
+@@ -714,6 +749,7 @@ fail:
+     return r;
+ }
+ 
++/* Host notifiers must be enabled at this point. */
+ void vhost_dev_stop(struct vhost_dev *hdev, VirtIODevice *vdev)
+ {
+     int i, r;
+diff --git a/hw/vhost.h b/hw/vhost.h
+index c8c595a..c9452f0 100644
+--- a/hw/vhost.h
++++ b/hw/vhost.h
+@@ -46,5 +46,7 @@ void vhost_dev_cleanup(struct vhost_dev *hdev);
+ bool vhost_dev_query(struct vhost_dev *hdev, VirtIODevice *vdev);
+ int vhost_dev_start(struct vhost_dev *hdev, VirtIODevice *vdev);
+ void vhost_dev_stop(struct vhost_dev *hdev, VirtIODevice *vdev);
++int vhost_dev_enable_notifiers(struct vhost_dev *hdev, VirtIODevice *vdev);
++void vhost_dev_disable_notifiers(struct vhost_dev *hdev, VirtIODevice *vdev);
+ 
+ #endif
+diff --git a/hw/vhost_net.c b/hw/vhost_net.c
+index 41fcf2c..869c28a 100644
+--- a/hw/vhost_net.c
++++ b/hw/vhost_net.c
+@@ -139,16 +139,22 @@ int vhost_net_start(struct vhost_net *net,
+ {
+     struct vhost_vring_file file = { };
+     int r;
++
++    net->dev.nvqs = 2;
++    net->dev.vqs = net->vqs;
++
++    r = vhost_dev_enable_notifiers(&net->dev, dev);
++    if (r < 0) {
++        goto fail_notifiers;
++    }
+     if (net->dev.acked_features & (1 << VIRTIO_NET_F_MRG_RXBUF)) {
+         tap_set_vnet_hdr_len(net->vc,
+                              sizeof(struct virtio_net_hdr_mrg_rxbuf));
+     }
+ 
+-    net->dev.nvqs = 2;
+-    net->dev.vqs = net->vqs;
+     r = vhost_dev_start(&net->dev, dev);
+     if (r < 0) {
+-        return r;
++        goto fail_start;
+     }
+ 
+     net->vc->info->poll(net->vc, false);
+@@ -173,6 +179,9 @@ fail:
+     if (net->dev.acked_features & (1 << VIRTIO_NET_F_MRG_RXBUF)) {
+         tap_set_vnet_hdr_len(net->vc, sizeof(struct virtio_net_hdr));
+     }
++fail_start:
++    vhost_dev_disable_notifiers(&net->dev, dev);
++fail_notifiers:
+     return r;
+ }
+ 
+@@ -190,6 +199,7 @@ void vhost_net_stop(struct vhost_net *net,
+     if (net->dev.acked_features & (1 << VIRTIO_NET_F_MRG_RXBUF)) {
+         tap_set_vnet_hdr_len(net->vc, sizeof(struct virtio_net_hdr));
+     }
++    vhost_dev_disable_notifiers(&net->dev, dev);
+ }
+ 
+ void vhost_net_cleanup(struct vhost_net *net)
+-- 
+1.7.3.2
+

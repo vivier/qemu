@@ -1,0 +1,54 @@
+From 2af55d0bba80695c893a1952b2540cd4919212e0 Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Thu, 1 Sep 2011 08:12:12 -0300
+Subject: [RHEL6 qemu-kvm PATCH 11/11] qemu-sockets: avoid strlen of NULL pointer
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1314864732-29437-2-git-send-email-alevy@redhat.com>
+Patchwork-id: 32147
+O-Subject: [PATCHv2 RHEL6.2] qemu-sockets: avoid strlen of NULL pointer
+Bugzilla: 734860
+RH-Acked-by: Amos Kong <akong@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+
+From: Jens Osterkamp <jens@linux.vnet.ibm.com>
+
+Fixes RHBZ# 734860
+
+If the user wants to create a chardev of type socket but forgets to give a
+host= option, qemu_opt_get returns NULL. This NULL pointer is then fed into
+strlen a few lines below without a check which results in a segfault.
+This fixes it.
+
+Signed-off-by: Jens Osterkamp <jens@linux.vnet.ibm.com>
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+(cherry picked from upstream commit e23a22e620e84f42bdbd473b82672654e7c8de73)
+---
+ qemu-sockets.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-sockets.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/qemu-sockets.c b/qemu-sockets.c
+index 23c3def..70419e9 100644
+--- a/qemu-sockets.c
++++ b/qemu-sockets.c
+@@ -130,7 +130,8 @@ int inet_listen_opts(QemuOpts *opts, int port_offset)
+     ai.ai_family = PF_UNSPEC;
+     ai.ai_socktype = SOCK_STREAM;
+ 
+-    if (qemu_opt_get(opts, "port") == NULL) {
++    if ((qemu_opt_get(opts, "host") == NULL) ||
++        (qemu_opt_get(opts, "port") == NULL)) {
+         fprintf(stderr, "%s: host and/or port not specified\n", __FUNCTION__);
+         return -1;
+     }
+-- 
+1.7.3.2
+
