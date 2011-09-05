@@ -6090,11 +6090,6 @@ int main(int argc, char **argv, char **envp)
                   kernel_filename, kernel_cmdline, initrd_filename, cpu_model);
 
 
-#ifndef _WIN32
-    /* must be after terminal init, SDL library changes signal handlers */
-    sighandler_setup();
-#endif
-
     for (env = first_cpu; env != NULL; env = env->next_cpu) {
         for (i = 0; i < nb_numa_nodes; i++) {
             if (node_cpumask[i] & (1 << env->cpu_index)) {
@@ -6155,6 +6150,11 @@ int main(int argc, char **argv, char **envp)
     default:
         break;
     }
+
+#ifndef _WIN32
+    /* must be after terminal init, SDL library changes signal handlers */
+    sighandler_setup();
+#endif
 
     /* init remote displays */
     if (vnc_display) {
