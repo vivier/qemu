@@ -1,0 +1,665 @@
+From b64383fae226652477116ba7c7e9072cf40566d4 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Tue, 6 Sep 2011 15:23:59 -0300
+Subject: [RHEL6 qemu-kvm PATCH 2/8] Revert "block: explicit I/O accounting"
+
+RH-Reverts: ece204dac1f17c29a744f7a176c1d74b71abb11e
+RH-Reverts-patchwork-id: 31921
+Bugzilla-related: 715017
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c           |   47 ++++++++++++++++++++++-------------------------
+ block.h           |   17 -----------------
+ block_int.h       |    7 +++++--
+ hw/ide/core.c     |   41 +++++++++--------------------------------
+ hw/ide/internal.h |    1 -
+ hw/ide/macio.c    |   39 +++++++++++----------------------------
+ hw/scsi-disk.c    |   17 -----------------
+ hw/virtio-blk.c   |   20 ++------------------
+ hw/xen_disk.c     |    4 ----
+ 9 files changed, 49 insertions(+), 144 deletions(-)
+
+diff --git a/block.c b/block.c
+index ff50ab8..3a5de7a 100644
+--- a/block.c
++++ b/block.c
+@@ -1708,12 +1708,12 @@ static QObject* bdrv_info_stats_bs(BlockDriverState *bs)
+                              "'wr_highest_offset': %" PRId64 ","
+                              "'flush_operations': %" PRId64
+                              "} }",
+-                             bs->nr_bytes[BDRV_ACCT_READ],
+-                             bs->nr_bytes[BDRV_ACCT_WRITE],
+-                             bs->nr_ops[BDRV_ACCT_READ],
+-                             bs->nr_ops[BDRV_ACCT_WRITE],
++                             bs->rd_bytes,
++                             bs->wr_bytes,
++                             bs->rd_ops,
++                             bs->wr_ops,
+                              bs->wr_highest_sector * 512,
+-                             bs->nr_ops[BDRV_ACCT_FLUSH]);
++                             bs->flush_ops);
+     dict  = qobject_to_qdict(res);
+ 
+     if (*bs->device_name) {
+@@ -1968,6 +1968,7 @@ char *bdrv_snapshot_dump(char *buf, int buf_size, QEMUSnapshotInfo *sn)
+     return buf;
+ }
+ 
++
+ /**************************************************************/
+ /* async I/Os */
+ 
+@@ -1976,6 +1977,7 @@ BlockDriverAIOCB *bdrv_aio_readv(BlockDriverState *bs, int64_t sector_num,
+                                  BlockDriverCompletionFunc *cb, void *opaque)
+ {
+     BlockDriver *drv = bs->drv;
++    BlockDriverAIOCB *ret;
+ 
+     trace_bdrv_aio_readv(bs, sector_num, nb_sectors, opaque);
+ 
+@@ -1984,7 +1986,16 @@ BlockDriverAIOCB *bdrv_aio_readv(BlockDriverState *bs, int64_t sector_num,
+     if (bdrv_check_request(bs, sector_num, nb_sectors))
+         return NULL;
+ 
+-    return drv->bdrv_aio_readv(bs, sector_num, qiov, nb_sectors, cb, opaque);
++    ret = drv->bdrv_aio_readv(bs, sector_num, qiov, nb_sectors,
++                              cb, opaque);
++
++    if (ret) {
++	/* Update stats even though technically transfer has not happened. */
++	bs->rd_bytes += (unsigned) nb_sectors * BDRV_SECTOR_SIZE;
++	bs->rd_ops ++;
++    }
++
++    return ret;
+ }
+ 
+ BlockDriverAIOCB *bdrv_aio_writev(BlockDriverState *bs, int64_t sector_num,
+@@ -2011,6 +2022,9 @@ BlockDriverAIOCB *bdrv_aio_writev(BlockDriverState *bs, int64_t sector_num,
+                                cb, opaque);
+ 
+     if (ret) {
++        /* Update stats even though technically transfer has not happened. */
++        bs->wr_bytes += (unsigned) nb_sectors * BDRV_SECTOR_SIZE;
++        bs->wr_ops ++;
+         if (bs->wr_highest_sector < sector_num + nb_sectors - 1) {
+             bs->wr_highest_sector = sector_num + nb_sectors - 1;
+         }
+@@ -2262,6 +2276,8 @@ BlockDriverAIOCB *bdrv_aio_flush(BlockDriverState *bs,
+ {
+     BlockDriver *drv = bs->drv;
+ 
++    bs->flush_ops++;
++
+     if (bs->open_flags & BDRV_O_NO_FLUSH) {
+         return bdrv_aio_noop_em(bs, cb, opaque);
+     }
+@@ -2657,25 +2673,6 @@ void bdrv_reset_dirty(BlockDriverState *bs, int64_t cur_sector,
+     set_dirty_bitmap(bs, cur_sector, nr_sectors, 0);
+ }
+ 
+-void
+-bdrv_acct_start(BlockDriverState *bs, BlockAcctCookie *cookie, int64_t bytes,
+-        enum BlockAcctType type)
+-{
+-    assert(type < BDRV_MAX_IOTYPE);
+-
+-    cookie->bytes = bytes;
+-    cookie->type = type;
+-}
+-
+-void
+-bdrv_acct_done(BlockDriverState *bs, BlockAcctCookie *cookie)
+-{
+-    assert(cookie->type < BDRV_MAX_IOTYPE);
+-
+-    bs->nr_bytes[cookie->type] += cookie->bytes;
+-    bs->nr_ops[cookie->type]++;
+-}
+-
+ int bdrv_img_create(const char *filename, const char *fmt,
+                     const char *base_filename, const char *base_fmt,
+                     char *options, uint64_t img_size, int flags)
+diff --git a/block.h b/block.h
+index 25c7aa2..9e0d942 100644
+--- a/block.h
++++ b/block.h
+@@ -241,22 +241,6 @@ void bdrv_reset_dirty(BlockDriverState *bs, int64_t cur_sector,
+                       int nr_sectors);
+ 
+ 
+-enum BlockAcctType {
+-    BDRV_ACCT_READ,
+-    BDRV_ACCT_WRITE,
+-    BDRV_ACCT_FLUSH,
+-    BDRV_MAX_IOTYPE,
+-};
+-
+-typedef struct BlockAcctCookie {
+-    int64_t bytes;
+-    enum BlockAcctType type;
+-} BlockAcctCookie;
+-
+-void bdrv_acct_start(BlockDriverState *bs, BlockAcctCookie *cookie,
+-        int64_t bytes, enum BlockAcctType type);
+-void bdrv_acct_done(BlockDriverState *bs, BlockAcctCookie *cookie);
+-
+ typedef enum {
+     BLKDBG_L1_UPDATE,
+ 
+@@ -309,4 +293,3 @@ typedef enum {
+ void bdrv_debug_event(BlockDriverState *bs, BlkDebugEvent event);
+ 
+ #endif
+-
+diff --git a/block_int.h b/block_int.h
+index 00f4eca..77e4211 100644
+--- a/block_int.h
++++ b/block_int.h
+@@ -174,8 +174,11 @@ struct BlockDriverState {
+     void *sync_aiocb;
+ 
+     /* I/O stats (display with "info blockstats"). */
+-    uint64_t nr_bytes[BDRV_MAX_IOTYPE];
+-    uint64_t nr_ops[BDRV_MAX_IOTYPE];
++    uint64_t rd_bytes;
++    uint64_t wr_bytes;
++    uint64_t rd_ops;
++    uint64_t wr_ops;
++    uint64_t flush_ops;
+     uint64_t wr_highest_sector;
+ 
+     /* Whether the disk can expand beyond total_sectors */
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 6e9429f..8e262f3 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -410,10 +410,7 @@ static void ide_sector_read(IDEState *s)
+ #endif
+         if (n > s->req_nb_sectors)
+             n = s->req_nb_sectors;
+-
+-        bdrv_acct_start(s->bs, &s->acct, n * BDRV_SECTOR_SIZE, BDRV_ACCT_READ);
+         ret = bdrv_read(s->bs, sector_num, s->io_buffer, n);
+-        bdrv_acct_done(s->bs, &s->acct);
+         if (ret != 0) {
+             if (ide_handle_rw_error(s, -ret,
+                 BM_STATUS_PIO_RETRY | BM_STATUS_RETRY_READ))
+@@ -598,7 +595,6 @@ static void ide_read_dma_cb(void *opaque, int ret)
+         s->status = READY_STAT | SEEK_STAT;
+         ide_set_irq(s->bus);
+     eot:
+-        bdrv_acct_done(s->bs, &s->acct);
+         bm->status |= BM_STATUS_INT;
+         ide_dma_set_inactive(bm);
+         return;
+@@ -623,8 +619,6 @@ static void ide_sector_read_dma(IDEState *s)
+     s->io_buffer_index = 0;
+     s->io_buffer_size = 0;
+     s->is_read = 1;
+-    bdrv_acct_start(s->bs, &s->acct, s->nsector * BDRV_SECTOR_SIZE,
+-                    BDRV_ACCT_READ);
+     ide_dma_start(s, ide_read_dma_cb);
+ }
+ 
+@@ -647,10 +641,7 @@ static void ide_sector_write(IDEState *s)
+     n = s->nsector;
+     if (n > s->req_nb_sectors)
+         n = s->req_nb_sectors;
+-
+-    bdrv_acct_start(s->bs, &s->acct, n * BDRV_SECTOR_SIZE, BDRV_ACCT_READ);
+     ret = bdrv_write(s->bs, sector_num, s->io_buffer, n);
+-    bdrv_acct_done(s->bs, &s->acct);
+ 
+     if (ret != 0) {
+         if (ide_handle_rw_error(s, -ret, BM_STATUS_PIO_RETRY))
+@@ -761,7 +752,6 @@ static void ide_write_dma_cb(void *opaque, int ret)
+         s->status = READY_STAT | SEEK_STAT;
+         ide_set_irq(s->bus);
+     eot:
+-        bdrv_acct_done(s->bs, &s->acct);
+         bm->status |= BM_STATUS_INT;
+         ide_dma_set_inactive(bm);
+         return;
+@@ -785,8 +775,6 @@ static void ide_sector_write_dma(IDEState *s)
+     s->io_buffer_index = 0;
+     s->io_buffer_size = 0;
+     s->is_read = 0;
+-    bdrv_acct_start(s->bs, &s->acct, s->nsector * BDRV_SECTOR_SIZE,
+-                    BDRV_ACCT_WRITE);
+     ide_dma_start(s, ide_write_dma_cb);
+ }
+ 
+@@ -833,7 +821,6 @@ static void ide_flush_cb(void *opaque, int ret)
+         }
+     }
+ 
+-    bdrv_acct_done(s->bs, &s->acct);
+     s->status = READY_STAT | SEEK_STAT;
+     ide_set_irq(s->bus);
+ }
+@@ -847,7 +834,6 @@ static void ide_flush_cache(IDEState *s)
+         return;
+     }
+ 
+-    bdrv_acct_start(s->bs, &s->acct, 0, BDRV_ACCT_FLUSH);
+     acb = bdrv_aio_flush(s->bs, ide_flush_cb, s);
+     if (acb == NULL) {
+         ide_flush_cb(s, -EIO);
+@@ -903,20 +889,17 @@ static void cd_data_to_raw(uint8_t *buf, int lba)
+     memset(buf, 0, 288);
+ }
+ 
+-static int cd_read_sector(IDEState *s, int lba, uint8_t *buf, int sector_size)
++static int cd_read_sector(BlockDriverState *bs, int lba, uint8_t *buf,
++                           int sector_size)
+ {
+     int ret;
+ 
+     switch(sector_size) {
+     case 2048:
+-        bdrv_acct_start(s->bs, &s->acct, 4 * BDRV_SECTOR_SIZE, BDRV_ACCT_READ);
+-        ret = bdrv_read(s->bs, (int64_t)lba << 2, buf, 4);
+-        bdrv_acct_done(s->bs, &s->acct);
++        ret = bdrv_read(bs, (int64_t)lba << 2, buf, 4);
+         break;
+     case 2352:
+-        bdrv_acct_start(s->bs, &s->acct, 4 * BDRV_SECTOR_SIZE, BDRV_ACCT_READ);
+-        ret = bdrv_read(s->bs, (int64_t)lba << 2, buf + 16, 4);
+-        bdrv_acct_done(s->bs, &s->acct);
++        ret = bdrv_read(bs, (int64_t)lba << 2, buf + 16, 4);
+         if (ret < 0)
+             return ret;
+         cd_data_to_raw(buf, lba);
+@@ -962,7 +945,7 @@ static void ide_atapi_cmd_reply_end(IDEState *s)
+     } else {
+         /* see if a new sector must be read */
+         if (s->lba != -1 && s->io_buffer_index >= s->cd_sector_size) {
+-            ret = cd_read_sector(s, s->lba, s->io_buffer, s->cd_sector_size);
++            ret = cd_read_sector(s->bs, s->lba, s->io_buffer, s->cd_sector_size);
+             if (ret < 0) {
+                 ide_transfer_stop(s);
+                 ide_atapi_io_error(s, ret);
+@@ -1031,7 +1014,6 @@ static void ide_atapi_cmd_reply(IDEState *s, int size, int max_size)
+     s->io_buffer_index = 0;
+ 
+     if (s->atapi_dma) {
+-        bdrv_acct_start(s->bs, &s->acct, size, BDRV_ACCT_READ);
+     	s->status = READY_STAT | SEEK_STAT | DRQ_STAT;
+ 	ide_dma_start(s, ide_atapi_cmd_read_dma_cb);
+     } else {
+@@ -1094,7 +1076,10 @@ static void ide_atapi_cmd_read_dma_cb(void *opaque, int ret)
+         s->status = READY_STAT | SEEK_STAT;
+         s->nsector = (s->nsector & ~7) | ATAPI_INT_REASON_IO | ATAPI_INT_REASON_CD;
+         ide_set_irq(s->bus);
+-        goto eot;
++    eot:
++        bm->status |= BM_STATUS_INT;
++        ide_dma_set_inactive(bm);
++        return;
+     }
+ 
+     s->io_buffer_index = 0;
+@@ -1123,12 +1108,6 @@ static void ide_atapi_cmd_read_dma_cb(void *opaque, int ret)
+                             ASC_MEDIUM_NOT_PRESENT);
+         goto eot;
+     }
+-
+-    return;
+-eot:
+-    bdrv_acct_done(s->bs, &s->acct);
+-    bm->status |= BM_STATUS_INT;
+-    ide_dma_set_inactive(bm);
+ }
+ 
+ /* start a CD-CDROM read command with DMA */
+@@ -1142,8 +1121,6 @@ static void ide_atapi_cmd_read_dma(IDEState *s, int lba, int nb_sectors,
+     s->io_buffer_size = 0;
+     s->cd_sector_size = sector_size;
+ 
+-    bdrv_acct_start(s->bs, &s->acct, s->packet_transfer_size, BDRV_ACCT_READ);
+-
+     /* XXX: check if BUSY_STAT should be set */
+     s->status = READY_STAT | SEEK_STAT | DRQ_STAT | BUSY_STAT;
+     ide_dma_start(s, ide_atapi_cmd_read_dma_cb);
+diff --git a/hw/ide/internal.h b/hw/ide/internal.h
+index 6df6558..4c3a7c5 100644
+--- a/hw/ide/internal.h
++++ b/hw/ide/internal.h
+@@ -415,7 +415,6 @@ struct IDEState {
+     int lba;
+     int cd_sector_size;
+     int atapi_dma; /* true if dma is requested for the packet cmd */
+-    BlockAcctCookie acct;
+     /* ATA DMA state */
+     int io_buffer_size;
+     QEMUSGList sg;
+diff --git a/hw/ide/macio.c b/hw/ide/macio.c
+index 5c71483..af69602 100644
+--- a/hw/ide/macio.c
++++ b/hw/ide/macio.c
+@@ -50,7 +50,8 @@ static void pmac_ide_atapi_transfer_cb(void *opaque, int ret)
+         m->aiocb = NULL;
+         qemu_sglist_destroy(&s->sg);
+         ide_atapi_io_error(s, ret);
+-        goto done;
++        io->dma_end(opaque);
++        return;
+     }
+ 
+     if (s->io_buffer_size > 0) {
+@@ -68,7 +69,8 @@ static void pmac_ide_atapi_transfer_cb(void *opaque, int ret)
+         ide_atapi_cmd_ok(s);
+ 
+     if (io->len == 0) {
+-        goto done;
++        io->dma_end(opaque);
++        return;
+     }
+ 
+     /* launch next transfer */
+@@ -88,14 +90,9 @@ static void pmac_ide_atapi_transfer_cb(void *opaque, int ret)
+         /* Note: media not present is the most likely case */
+         ide_atapi_cmd_error(s, SENSE_NOT_READY,
+                             ASC_MEDIUM_NOT_PRESENT);
+-        goto done;
++        io->dma_end(opaque);
++        return;
+     }
+-    return;
+-
+-done:
+-    bdrv_acct_done(s->bs, &s->acct);
+-    io->dma_end(opaque);
+-    return;
+ }
+ 
+ static void pmac_ide_transfer_cb(void *opaque, int ret)
+@@ -110,7 +107,8 @@ static void pmac_ide_transfer_cb(void *opaque, int ret)
+         m->aiocb = NULL;
+         qemu_sglist_destroy(&s->sg);
+ 	ide_dma_error(s);
+-        goto done;
++        io->dma_end(io);
++        return;
+     }
+ 
+     sector_num = ide_get_sector(s);
+@@ -130,8 +128,10 @@ static void pmac_ide_transfer_cb(void *opaque, int ret)
+     }
+ 
+     /* end of DMA ? */
++
+     if (io->len == 0) {
+-        goto done;
++        io->dma_end(io);
++	return;
+     }
+ 
+     /* launch next transfer */
+@@ -152,11 +152,6 @@ static void pmac_ide_transfer_cb(void *opaque, int ret)
+ 		                  pmac_ide_transfer_cb, io);
+     if (!m->aiocb)
+         pmac_ide_transfer_cb(io, -1);
+-    return;
+-done:
+-    if (s->dma_cmd == IDE_DMA_READ || s->dma_cmd == IDE_DMA_WRITE)
+-        bdrv_acct_done(s->bs, &s->acct);
+-    io->dma_end(io);
+ }
+ 
+ static void pmac_ide_transfer(DBDMA_io *io)
+@@ -166,22 +161,10 @@ static void pmac_ide_transfer(DBDMA_io *io)
+ 
+     s->io_buffer_size = 0;
+     if (s->is_cdrom) {
+-        bdrv_acct_start(s->bs, &s->acct, io->len, BDRV_ACCT_READ);
+         pmac_ide_atapi_transfer_cb(io, 0);
+         return;
+     }
+ 
+-    switch (s->dma_cmd) {
+-    case IDE_DMA_READ:
+-        bdrv_acct_start(s->bs, &s->acct, io->len, BDRV_ACCT_READ);
+-        break;
+-    case IDE_DMA_WRITE:
+-        bdrv_acct_start(s->bs, &s->acct, io->len, BDRV_ACCT_WRITE);
+-        break;
+-    default:
+-        break;
+-    }
+-
+     pmac_ide_transfer_cb(io, 0);
+ }
+ 
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index 9e3be35..a02e191 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -57,7 +57,6 @@ typedef struct SCSIDiskReq {
+     struct iovec iov;
+     QEMUIOVector qiov;
+     uint32_t status;
+-    BlockAcctCookie acct;
+ } SCSIDiskReq;
+ 
+ typedef enum { SCSI_HD, SCSI_CD } SCSIDriveKind;
+@@ -138,13 +137,10 @@ static void scsi_cancel_io(SCSIRequest *req)
+ static void scsi_read_complete(void * opaque, int ret)
+ {
+     SCSIDiskReq *r = (SCSIDiskReq *)opaque;
+-    SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, r->req.dev);
+     int n;
+ 
+     r->req.aiocb = NULL;
+ 
+-    bdrv_acct_done(s->bs, &r->acct);
+-
+     if (ret) {
+         if (scsi_handle_rw_error(r, -ret, SCSI_REQ_STATUS_RETRY_READ)) {
+             return;
+@@ -194,8 +190,6 @@ static void scsi_read_data(SCSIRequest *req)
+ 
+     r->iov.iov_len = n * 512;
+     qemu_iovec_init_external(&r->qiov, &r->iov, 1);
+-
+-    bdrv_acct_start(s->bs, &r->acct, n * BDRV_SECTOR_SIZE, BDRV_ACCT_READ);
+     r->req.aiocb = bdrv_aio_readv(s->bs, r->sector, &r->qiov, n,
+                               scsi_read_complete, r);
+     if (r->req.aiocb == NULL) {
+@@ -248,14 +242,11 @@ static int scsi_handle_rw_error(SCSIDiskReq *r, int error, int type)
+ static void scsi_write_complete(void * opaque, int ret)
+ {
+     SCSIDiskReq *r = (SCSIDiskReq *)opaque;
+-    SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, r->req.dev);
+     uint32_t len;
+     uint32_t n;
+ 
+     r->req.aiocb = NULL;
+ 
+-    bdrv_acct_done(s->bs, &r->acct);
+-
+     if (ret) {
+         if (scsi_handle_rw_error(r, -ret, SCSI_REQ_STATUS_RETRY_WRITE)) {
+             return;
+@@ -296,8 +287,6 @@ static void scsi_write_data(SCSIRequest *req)
+     n = r->iov.iov_len / 512;
+     if (n) {
+         qemu_iovec_init_external(&r->qiov, &r->iov, 1);
+-
+-        bdrv_acct_start(s->bs, &r->acct, n * BDRV_SECTOR_SIZE, BDRV_ACCT_WRITE);
+         r->req.aiocb = bdrv_aio_writev(s->bs, r->sector, &r->qiov, n,
+                                    scsi_write_complete, r);
+         if (r->req.aiocb == NULL) {
+@@ -921,19 +910,13 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r, uint8_t *outbuf)
+         buflen = 8;
+ 	break;
+     case SYNCHRONIZE_CACHE:
+-{
+-        BlockAcctCookie acct;
+-
+-        bdrv_acct_start(s->bs, &acct, 0, BDRV_ACCT_FLUSH);
+         ret = bdrv_flush(s->bs);
+-        bdrv_acct_done(s->bs, &acct);
+         if (ret < 0) {
+             if (scsi_handle_rw_error(r, -ret, SCSI_REQ_STATUS_RETRY_FLUSH)) {
+                 return -1;
+             }
+         }
+         break;
+-}
+     case GET_CONFIGURATION:
+         memset(outbuf, 0, 8);
+         /* ??? This should probably return much more information.  For now
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index 6da6f7d..d5eb336 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -45,7 +45,6 @@ typedef struct VirtIOBlockReq
+     struct virtio_scsi_inhdr *scsi;
+     QEMUIOVector qiov;
+     struct VirtIOBlockReq *next;
+-    BlockAcctCookie acct;
+ } VirtIOBlockReq;
+ 
+ static void virtio_blk_req_complete(VirtIOBlockReq *req, int status)
+@@ -57,6 +56,8 @@ static void virtio_blk_req_complete(VirtIOBlockReq *req, int status)
+     req->in->status = status;
+     virtqueue_push(s->vq, &req->elem, req->qiov.size + sizeof(*req->in));
+     virtio_notify(&s->vdev, s->vq);
++
++    qemu_free(req);
+ }
+ 
+ static int virtio_blk_handle_rw_error(VirtIOBlockReq *req, int error,
+@@ -78,8 +79,6 @@ static int virtio_blk_handle_rw_error(VirtIOBlockReq *req, int error,
+         vm_stop(0);
+     } else {
+         virtio_blk_req_complete(req, VIRTIO_BLK_S_IOERR);
+-        bdrv_acct_done(s->bs, &req->acct);
+-        qemu_free(req);
+         bdrv_mon_event(s->bs, BDRV_ACTION_REPORT, error, is_read);
+     }
+ 
+@@ -99,8 +98,6 @@ static void virtio_blk_rw_complete(void *opaque, int ret)
+     }
+ 
+     virtio_blk_req_complete(req, VIRTIO_BLK_S_OK);
+-    bdrv_acct_done(req->dev->bs, &req->acct);
+-    qemu_free(req);
+ }
+ 
+ static void virtio_blk_flush_complete(void *opaque, int ret)
+@@ -114,8 +111,6 @@ static void virtio_blk_flush_complete(void *opaque, int ret)
+     }
+ 
+     virtio_blk_req_complete(req, VIRTIO_BLK_S_OK);
+-    bdrv_acct_done(req->dev->bs, &req->acct);
+-    qemu_free(req);
+ }
+ 
+ static VirtIOBlockReq *virtio_blk_alloc_request(VirtIOBlock *s)
+@@ -158,7 +153,6 @@ static void virtio_blk_handle_scsi(VirtIOBlockReq *req)
+      */
+     if (req->elem.out_num < 2 || req->elem.in_num < 3) {
+         virtio_blk_req_complete(req, VIRTIO_BLK_S_IOERR);
+-        qemu_free(req);
+         return;
+     }
+ 
+@@ -167,7 +161,6 @@ static void virtio_blk_handle_scsi(VirtIOBlockReq *req)
+      */
+     if (req->elem.out_num > 2 && req->elem.in_num > 3) {
+         virtio_blk_req_complete(req, VIRTIO_BLK_S_UNSUPP);
+-        qemu_free(req);
+         return;
+     }
+ 
+@@ -237,13 +230,11 @@ static void virtio_blk_handle_scsi(VirtIOBlockReq *req)
+     req->scsi->data_len = hdr.dxfer_len;
+ 
+     virtio_blk_req_complete(req, status);
+-    qemu_free(req);
+ }
+ #else
+ static void virtio_blk_handle_scsi(VirtIOBlockReq *req)
+ {
+     virtio_blk_req_complete(req, VIRTIO_BLK_S_UNSUPP);
+-    qemu_free(req);
+ }
+ #endif /* __linux__ */
+ 
+@@ -267,8 +258,6 @@ static void virtio_blk_handle_flush(BlockRequest *blkreq, int *num_writes,
+ {
+     BlockDriverAIOCB *acb;
+ 
+-    bdrv_acct_start(req->dev->bs, &req->acct, 0, BDRV_ACCT_FLUSH);
+-
+     /*
+      * Make sure all outstanding writes are posted to the backing device.
+      */
+@@ -289,8 +278,6 @@ static void virtio_blk_handle_write(BlockRequest *blkreq, int *num_writes,
+ {
+     trace_virtio_blk_handle_write(req, req->out->sector, req->qiov.size / 512);
+ 
+-    bdrv_acct_start(req->dev->bs, &req->acct, req->qiov.size, BDRV_ACCT_WRITE);
+-
+     if (req->out->sector & req->dev->sector_mask) {
+         virtio_blk_rw_complete(req, -EIO);
+         return;
+@@ -322,8 +309,6 @@ static void virtio_blk_handle_read(VirtIOBlockReq *req)
+ {
+     BlockDriverAIOCB *acb;
+ 
+-    bdrv_acct_start(req->dev->bs, &req->acct, req->qiov.size, BDRV_ACCT_READ);
+-
+     if (req->out->sector & req->dev->sector_mask) {
+         virtio_blk_rw_complete(req, -EIO);
+         return;
+@@ -374,7 +359,6 @@ static void virtio_blk_handle_request(VirtIOBlockReq *req,
+         memcpy(req->elem.in_sg[0].iov_base, s->sn,
+                MIN(req->elem.in_sg[0].iov_len, sizeof(s->sn)));
+         virtio_blk_req_complete(req, VIRTIO_BLK_S_OK);
+-        qemu_free(req);
+     } else if (req->out->type & VIRTIO_BLK_T_OUT) {
+         qemu_iovec_init_external(&req->qiov, &req->elem.out_sg[1],
+                                  req->elem.out_num - 1);
+diff --git a/hw/xen_disk.c b/hw/xen_disk.c
+index 1201198..95017a1 100644
+--- a/hw/xen_disk.c
++++ b/hw/xen_disk.c
+@@ -78,7 +78,6 @@ struct ioreq {
+ 
+     struct XenBlkDev    *blkdev;
+     QLIST_ENTRY(ioreq)   list;
+-    BlockAcctCookie     acct;
+ };
+ 
+ struct XenBlkDev {
+@@ -379,7 +378,6 @@ static void qemu_aio_complete(void *opaque, int ret)
+     ioreq->status = ioreq->aio_errors ? BLKIF_RSP_ERROR : BLKIF_RSP_OKAY;
+     ioreq_unmap(ioreq);
+     ioreq_finish(ioreq);
+-    bdrv_acct_done(ioreq->blkdev->bs, &ioreq->acct);
+     qemu_bh_schedule(ioreq->blkdev->bh);
+ }
+ 
+@@ -396,7 +394,6 @@ static int ioreq_runio_qemu_aio(struct ioreq *ioreq)
+ 
+     switch (ioreq->req.operation) {
+     case BLKIF_OP_READ:
+-        bdrv_acct_start(blkdev->bs, &ioreq->acct, ioreq->v.size, BDRV_ACCT_READ);
+         ioreq->aio_inflight++;
+         bdrv_aio_readv(blkdev->bs, ioreq->start / BLOCK_SIZE,
+                        &ioreq->v, ioreq->v.size / BLOCK_SIZE,
+@@ -404,7 +401,6 @@ static int ioreq_runio_qemu_aio(struct ioreq *ioreq)
+ 	break;
+     case BLKIF_OP_WRITE:
+     case BLKIF_OP_WRITE_BARRIER:
+-        bdrv_acct_start(blkdev->bs, &ioreq->acct, ioreq->v.size, BDRV_ACCT_WRITE);
+         ioreq->aio_inflight++;
+         bdrv_aio_writev(blkdev->bs, ioreq->start / BLOCK_SIZE,
+                         &ioreq->v, ioreq->v.size / BLOCK_SIZE,
+-- 
+1.7.3.2
+

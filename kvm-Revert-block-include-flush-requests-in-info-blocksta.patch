@@ -1,0 +1,130 @@
+From 1f9ba8591ad21bfc7ef5a212ead1dad69700b2d2 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Tue, 6 Sep 2011 15:24:04 -0300
+Subject: [RHEL6 qemu-kvm PATCH 3/8] Revert "block: include flush requests in info blockstats"
+
+RH-Reverts: 575348af1f3ccd4424efb33b7e9916af61982f16
+RH-Reverts-patchwork-id: 31920
+Bugzilla-related: 715017
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c         |   18 +++++-------------
+ block_int.h     |    1 -
+ qemu-monitor.hx |    6 ------
+ 3 files changed, 5 insertions(+), 20 deletions(-)
+
+diff --git a/block.c b/block.c
+index 3a5de7a..24678cf 100644
+--- a/block.c
++++ b/block.c
+@@ -1681,13 +1681,11 @@ static void bdrv_stats_iter(QObject *data, void *opaque)
+                         " wr_bytes=%" PRId64
+                         " rd_operations=%" PRId64
+                         " wr_operations=%" PRId64
+-                        " flush_operations=%" PRId64
+                         "\n",
+                         qdict_get_int(qdict, "rd_bytes"),
+                         qdict_get_int(qdict, "wr_bytes"),
+                         qdict_get_int(qdict, "rd_operations"),
+-                        qdict_get_int(qdict, "wr_operations"),
+-                        qdict_get_int(qdict, "flush_operations"));
++                        qdict_get_int(qdict, "wr_operations"));
+ }
+ 
+ void bdrv_stats_print(Monitor *mon, const QObject *data)
+@@ -1705,15 +1703,11 @@ static QObject* bdrv_info_stats_bs(BlockDriverState *bs)
+                              "'wr_bytes': %" PRId64 ","
+                              "'rd_operations': %" PRId64 ","
+                              "'wr_operations': %" PRId64 ","
+-                             "'wr_highest_offset': %" PRId64 ","
+-                             "'flush_operations': %" PRId64
++                             "'wr_highest_offset': %" PRId64
+                              "} }",
+-                             bs->rd_bytes,
+-                             bs->wr_bytes,
+-                             bs->rd_ops,
+-                             bs->wr_ops,
+-                             bs->wr_highest_sector * 512,
+-                             bs->flush_ops);
++                             bs->rd_bytes, bs->wr_bytes,
++                             bs->rd_ops, bs->wr_ops,
++                             bs->wr_highest_sector * 512);
+     dict  = qobject_to_qdict(res);
+ 
+     if (*bs->device_name) {
+@@ -2276,8 +2270,6 @@ BlockDriverAIOCB *bdrv_aio_flush(BlockDriverState *bs,
+ {
+     BlockDriver *drv = bs->drv;
+ 
+-    bs->flush_ops++;
+-
+     if (bs->open_flags & BDRV_O_NO_FLUSH) {
+         return bdrv_aio_noop_em(bs, cb, opaque);
+     }
+diff --git a/block_int.h b/block_int.h
+index 77e4211..25bc818 100644
+--- a/block_int.h
++++ b/block_int.h
+@@ -178,7 +178,6 @@ struct BlockDriverState {
+     uint64_t wr_bytes;
+     uint64_t rd_ops;
+     uint64_t wr_ops;
+-    uint64_t flush_ops;
+     uint64_t wr_highest_sector;
+ 
+     /* Whether the disk can expand beyond total_sectors */
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 6c09002..f8fe72c 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -2195,7 +2195,6 @@ Each json-object contain the following:
+     - "wr_bytes": bytes written (json-int)
+     - "rd_operations": read operations (json-int)
+     - "wr_operations": write operations (json-int)
+-    - "flush_operations": cache flush operations (json-int)
+     - "wr_highest_offset": Highest offset of a sector written since the
+                            BlockDriverState has been opened (json-int)
+ - "parent": Contains recursively the statistics of the underlying
+@@ -2217,7 +2216,6 @@ Example:
+                   "wr_operations":751,
+                   "rd_bytes":122567168,
+                   "rd_operations":36772
+-                  "flush_operations":61,
+                }
+             },
+             "stats":{
+@@ -2226,7 +2224,6 @@ Example:
+                "wr_operations":692,
+                "rd_bytes":122739200,
+                "rd_operations":36604
+-               "flush_operations":51,
+             }
+          },
+          {
+@@ -2237,7 +2234,6 @@ Example:
+                "wr_operations":0,
+                "rd_bytes":0,
+                "rd_operations":0
+-               "flush_operations":0,
+             }
+          },
+          {
+@@ -2248,7 +2244,6 @@ Example:
+                "wr_operations":0,
+                "rd_bytes":0,
+                "rd_operations":0
+-               "flush_operations":0,
+             }
+          },
+          {
+@@ -2259,7 +2254,6 @@ Example:
+                "wr_operations":0,
+                "rd_bytes":0,
+                "rd_operations":0
+-               "flush_operations":0,
+             }
+          }
+       ]
+-- 
+1.7.3.2
+

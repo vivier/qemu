@@ -1,0 +1,48 @@
+From dcb4ebf6f2250276b659cfdbd825033ba7fcd000 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Tue, 6 Sep 2011 15:47:10 -0300
+Subject: [RHEL6 qemu-kvm PATCH 4/8] Revert "x86: Allow multiple cpu feature matches of lookup_feature (v2)"
+
+RH-Reverts: 2ba7d7c04d7a47edff95f1c446cb8126564c4f00
+RH-Reverts-patchwork-id: 29966
+Bugzilla-related: 624983
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ target-i386/helper.c |   12 +++++-------
+ 1 files changed, 5 insertions(+), 7 deletions(-)
+
+diff --git a/target-i386/helper.c b/target-i386/helper.c
+index 332884d..b5dace4 100644
+--- a/target-i386/helper.c
++++ b/target-i386/helper.c
+@@ -141,22 +141,20 @@ static int altcmp(const char *s, const char *e, const char *altstr)
+ }
+ 
+ /* search featureset for flag *[s..e), if found set corresponding bit in
+- * *pval and return success, otherwise return false 
++ * *pval and return success, otherwise return zero
+  */
+-static bool lookup_feature(uint32_t *pval, const char *s, const char *e,
++static int lookup_feature(uint32_t *pval, const char *s, const char *e,
+     const char **featureset)
+ {
+     uint32_t mask;
+     const char **ppc;
+-    bool found = false;
+ 
+-    for (mask = 1, ppc = featureset; mask; mask <<= 1, ++ppc) {
++    for (mask = 1, ppc = featureset; mask; mask <<= 1, ++ppc)
+         if (*ppc && !altcmp(s, e, *ppc)) {
+             *pval |= mask;
+-            found = true;
++            break;
+         }
+-    }
+-    return found;
++    return (mask ? 1 : 0);
+ }
+ 
+ static const char *kvm_feature_name[] = {
+-- 
+1.7.3.2
+

@@ -1,0 +1,33 @@
+From 47596c12ac85531f90d71dad9c186523ceea4673 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Tue, 6 Sep 2011 15:47:23 -0300
+Subject: [RHEL6 qemu-kvm PATCH 5/8] Revert "kvm: create kvmclock when one of the flags are present"
+
+RH-Reverts: b8426c2e542d760179e4ddd1085d3211471db19d
+RH-Reverts-patchwork-id: 29967
+Bugzilla-related: 624983
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/kvmclock.c |    6 +-----
+ 1 files changed, 1 insertions(+), 5 deletions(-)
+
+diff --git a/hw/kvmclock.c b/hw/kvmclock.c
+index 663024d..0c85ce0 100644
+--- a/hw/kvmclock.c
++++ b/hw/kvmclock.c
+@@ -89,11 +89,7 @@ static const VMStateDescription kvmclock_vmsd = {
+ void kvmclock_create(void)
+ {
+     if (kvm_enabled() && kvm_check_extension(kvm_state, KVM_CAP_ADJUST_CLOCK)  &&
+-        first_cpu->cpuid_kvm_features & ((1ULL << KVM_FEATURE_CLOCKSOURCE)
+-#ifdef KVM_FEATURE_CLOCKSOURCE2
+-        || (1ULL << KVM_FEATURE_CLOCKSOURCE2)
+-#endif
+-    )) {
++        first_cpu->cpuid_kvm_features & (1ULL << KVM_FEATURE_CLOCKSOURCE)) {
+         vmstate_register(NULL, 0, &kvmclock_vmsd, &kvmclock_state);
+     	qemu_add_vm_change_state_handler(kvmclock_vm_state_change, &kvmclock_state);
+     }
+-- 
+1.7.3.2
+

@@ -1,0 +1,223 @@
+From 26b924abd4cad0010eee726dddada940f8574e21 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Tue, 6 Sep 2011 15:47:43 -0300
+Subject: [RHEL6 qemu-kvm PATCH 8/8] Revert "kvm: x86: Introduce kvmclock device to save/restore its state"
+
+RH-Reverts: 30a80f8d4d6777b1eb2ef961097037b64bc434ec
+RH-Reverts-patchwork-id: 17930
+Bugzilla-related: 658467
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile.target |    3 +-
+ hw/kvmclock.c   |  102 -------------------------------------------------------
+ hw/pc.c         |    3 --
+ qemu-kvm-x86.c  |   35 +++++++++++++++++++
+ 4 files changed, 36 insertions(+), 107 deletions(-)
+ delete mode 100644 hw/kvmclock.c
+
+diff --git a/Makefile.target b/Makefile.target
+index 93bff38c..a303fdb 100644
+--- a/Makefile.target
++++ b/Makefile.target
+@@ -29,7 +29,7 @@ PROGS=$(QEMU_PROG)
+ 
+ LIBS+=-lm
+ 
+-kvm.o kvm-all.o kvmclock.o: QEMU_CFLAGS+=$(KVM_CFLAGS)
++kvm.o kvm-all.o: QEMU_CFLAGS+=$(KVM_CFLAGS)
+ 
+ CFLAGS += $(KVM_CFLAGS)
+ 
+@@ -237,7 +237,6 @@ obj-i386-y += device-hotplug.o smbios.o wdt_ib700.o
+ obj-i386-y += extboot.o
+ obj-i386-y += ne2000-isa.o
+ obj-i386-y += testdev.o
+-obj-i386-y += kvmclock.o
+ 
+ obj-i386-$(CONFIG_KVM_PIT) += i8254-kvm.o
+ obj-i386-$(CONFIG_KVM_DEVICE_ASSIGNMENT) += device-assignment.o
+diff --git a/hw/kvmclock.c b/hw/kvmclock.c
+deleted file mode 100644
+index 0c85ce0..0000000
+--- a/hw/kvmclock.c
++++ /dev/null
+@@ -1,102 +0,0 @@
+-/*
+- * QEMU KVM support, paravirtual clock device
+- *
+- * Copyright (C) 2011 Siemens AG
+- *
+- * Authors:
+- *  Jan Kiszka        <jan.kiszka@siemens.com>
+- *
+- * This work is licensed under the terms of the GNU GPL version 2.
+- * See the COPYING file in the top-level directory.
+- *
+- */
+-
+-#include "qemu-common.h"
+-#include "sysemu.h"
+-#include "sysbus.h"
+-#include "kvm.h"
+-#include "kvmclock.h"
+-
+-#if defined(KVM_CAP_ADJUST_CLOCK)
+-
+-#include <linux/kvm.h>
+-#include <linux/kvm_para.h>
+-
+-typedef struct KVMClockState {
+-    uint64_t clock;
+-    bool clock_valid;
+-} KVMClockState;
+-
+-static KVMClockState kvmclock_state;
+-
+-static void kvmclock_pre_save(void *opaque)
+-{
+-    KVMClockState *s = opaque;
+-    struct kvm_clock_data data;
+-    int ret;
+-
+-    if (s->clock_valid) {
+-        return;
+-    }
+-
+-    ret = kvm_vm_ioctl(kvm_state, KVM_GET_CLOCK, &data);
+-    if (ret < 0) {
+-        fprintf(stderr, "KVM_GET_CLOCK failed: %s\n", strerror(ret));
+-        data.clock = 0;
+-    }
+-    s->clock = data.clock;
+-    /*
+-     * If the VM is stopped, declare the clock state valid to avoid re-reading
+-     * it on next vmsave (which would return a different value). Will be reset
+-     * when the VM is continued.
+-     */
+-    s->clock_valid = !vm_running;
+-}
+-
+-static int kvmclock_post_load(void *opaque, int version_id)
+-{
+-    KVMClockState *s = opaque;
+-    struct kvm_clock_data data;
+-
+-    data.clock = s->clock;
+-    data.flags = 0;
+-    return kvm_vm_ioctl(kvm_state, KVM_SET_CLOCK, &data);
+-}
+-
+-static void kvmclock_vm_state_change(void *opaque, int running, int reason)
+-{
+-    KVMClockState *s = opaque;
+-
+-    if (running) {
+-        s->clock_valid = false;
+-    }
+-}
+-
+-static const VMStateDescription kvmclock_vmsd = {
+-    .name = "kvmclock",
+-    .version_id = 1,
+-    .minimum_version_id = 1,
+-    .minimum_version_id_old = 1,
+-    .pre_save = kvmclock_pre_save,
+-    .post_load = kvmclock_post_load,
+-    .fields = (VMStateField[]) {
+-        VMSTATE_UINT64(clock, KVMClockState),
+-        VMSTATE_END_OF_LIST()
+-    }
+-};
+-
+-/* Note: Must be called after VCPU initialization. */
+-void kvmclock_create(void)
+-{
+-    if (kvm_enabled() && kvm_check_extension(kvm_state, KVM_CAP_ADJUST_CLOCK)  &&
+-        first_cpu->cpuid_kvm_features & (1ULL << KVM_FEATURE_CLOCKSOURCE)) {
+-        vmstate_register(NULL, 0, &kvmclock_vmsd, &kvmclock_state);
+-    	qemu_add_vm_change_state_handler(kvmclock_vm_state_change, &kvmclock_state);
+-    }
+-}
+-
+-#else /* !(KVM_CAP_ADJUST_CLOCK) */
+-void kvmclock_create(void)
+-{
+-}
+-#endif /* !(KVM_CAP_ADJUST_CLOCK) */
+diff --git a/hw/pc.c b/hw/pc.c
+index 7a6bef8..18f405a 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -47,7 +47,6 @@
+ #include "device-assignment.h"
+ #include "qemu-kvm.h"
+ #include "ui/qemu-spice.h"
+-#include "kvmclock.h"
+ 
+ /* output Bochs bios info messages */
+ //#define DEBUG_BIOS
+@@ -1099,8 +1098,6 @@ static void pc_init1(ram_addr_t ram_size,
+ #endif
+     vmport_init();
+ 
+-    kvmclock_create();
+-
+     /* allocate RAM */
+     if (fake_machine) {
+         /* If user boots with -m 1000 We don't actually want to
+diff --git a/qemu-kvm-x86.c b/qemu-kvm-x86.c
+index 8d8956d..2d581cc 100644
+--- a/qemu-kvm-x86.c
++++ b/qemu-kvm-x86.c
+@@ -739,6 +739,37 @@ int kvm_qemu_destroy_memory_alias(uint64_t phys_start)
+ 	return kvm_destroy_memory_alias(kvm_context, phys_start);
+ }
+ 
++#ifdef KVM_CAP_ADJUST_CLOCK
++static struct kvm_clock_data kvmclock_data;
++
++static void kvmclock_pre_save(void *opaque)
++{
++    struct kvm_clock_data *cl = opaque;
++
++    kvm_vm_ioctl(kvm_state, KVM_GET_CLOCK, cl);
++}
++
++static int kvmclock_post_load(void *opaque, int version_id)
++{
++    struct kvm_clock_data *cl = opaque;
++
++    return kvm_vm_ioctl(kvm_state, KVM_SET_CLOCK, cl);
++}
++
++static const VMStateDescription vmstate_kvmclock= {
++    .name = "kvmclock",
++    .version_id = 1,
++    .minimum_version_id = 1,
++    .minimum_version_id_old = 1,
++    .pre_save = kvmclock_pre_save,
++    .post_load = kvmclock_post_load,
++    .fields      = (VMStateField []) {
++        VMSTATE_U64(clock, struct kvm_clock_data),
++        VMSTATE_END_OF_LIST()
++    }
++};
++#endif
++
+ int kvm_arch_qemu_create_context(void)
+ {
+     int i;
+@@ -760,6 +791,10 @@ int kvm_arch_qemu_create_context(void)
+             kvm_has_vm_hsave_pa = 1;
+     }
+ 
++#ifdef KVM_CAP_ADJUST_CLOCK
++    if (kvm_check_extension(kvm_state, KVM_CAP_ADJUST_CLOCK))
++        vmstate_register(NULL, 0, &vmstate_kvmclock, &kvmclock_data);
++#endif
+     return 0;
+ }
+ 
+-- 
+1.7.3.2
+

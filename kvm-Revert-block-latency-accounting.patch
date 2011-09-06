@@ -1,0 +1,213 @@
+From eac22faf4c6945ef4c2262ef66ce2338fdeada9f Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Tue, 6 Sep 2011 15:23:48 -0300
+Subject: [RHEL6 qemu-kvm PATCH 1/8] Revert "block: latency accounting"
+
+RH-Reverts: ed51d2ea50f8e7a3a89ad541d2295d3d9d2e19b7
+RH-Reverts-patchwork-id: 31988
+Bugzilla-related: 715017
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block.c         |   20 +++-----------------
+ block.h         |    1 -
+ block_int.h     |    2 --
+ qemu-monitor.hx |   18 ------------------
+ qemu-timer.h    |    2 --
+ vl.c            |    4 ++--
+ 6 files changed, 5 insertions(+), 42 deletions(-)
+
+diff --git a/block.c b/block.c
+index 32bd13d..ff50ab8 100644
+--- a/block.c
++++ b/block.c
+@@ -1682,18 +1682,12 @@ static void bdrv_stats_iter(QObject *data, void *opaque)
+                         " rd_operations=%" PRId64
+                         " wr_operations=%" PRId64
+                         " flush_operations=%" PRId64
+-                        " wr_total_time_ns=%" PRId64
+-                        " rd_total_time_ns=%" PRId64
+-                        " flush_total_time_ns=%" PRId64
+                         "\n",
+                         qdict_get_int(qdict, "rd_bytes"),
+                         qdict_get_int(qdict, "wr_bytes"),
+                         qdict_get_int(qdict, "rd_operations"),
+                         qdict_get_int(qdict, "wr_operations"),
+-                        qdict_get_int(qdict, "flush_operations"),
+-                        qdict_get_int(qdict, "wr_total_time_ns"),
+-                        qdict_get_int(qdict, "rd_total_time_ns"),
+-                        qdict_get_int(qdict, "flush_total_time_ns"));
++                        qdict_get_int(qdict, "flush_operations"));
+ }
+ 
+ void bdrv_stats_print(Monitor *mon, const QObject *data)
+@@ -1712,20 +1706,14 @@ static QObject* bdrv_info_stats_bs(BlockDriverState *bs)
+                              "'rd_operations': %" PRId64 ","
+                              "'wr_operations': %" PRId64 ","
+                              "'wr_highest_offset': %" PRId64 ","
+-                             "'flush_operations': %" PRId64 ","
+-                             "'wr_total_time_ns': %" PRId64 ","
+-                             "'rd_total_time_ns': %" PRId64 ","
+-                             "'flush_total_time_ns': %" PRId64
++                             "'flush_operations': %" PRId64
+                              "} }",
+                              bs->nr_bytes[BDRV_ACCT_READ],
+                              bs->nr_bytes[BDRV_ACCT_WRITE],
+                              bs->nr_ops[BDRV_ACCT_READ],
+                              bs->nr_ops[BDRV_ACCT_WRITE],
+                              bs->wr_highest_sector * 512,
+-                             bs->nr_ops[BDRV_ACCT_FLUSH],
+-                             bs->total_time_ns[BDRV_ACCT_WRITE],
+-                             bs->total_time_ns[BDRV_ACCT_READ],
+-                             bs->total_time_ns[BDRV_ACCT_FLUSH]);
++                             bs->nr_ops[BDRV_ACCT_FLUSH]);
+     dict  = qobject_to_qdict(res);
+ 
+     if (*bs->device_name) {
+@@ -2676,7 +2664,6 @@ bdrv_acct_start(BlockDriverState *bs, BlockAcctCookie *cookie, int64_t bytes,
+     assert(type < BDRV_MAX_IOTYPE);
+ 
+     cookie->bytes = bytes;
+-    cookie->start_time_ns = get_clock();
+     cookie->type = type;
+ }
+ 
+@@ -2687,7 +2674,6 @@ bdrv_acct_done(BlockDriverState *bs, BlockAcctCookie *cookie)
+ 
+     bs->nr_bytes[cookie->type] += cookie->bytes;
+     bs->nr_ops[cookie->type]++;
+-    bs->total_time_ns[cookie->type] += get_clock() - cookie->start_time_ns;
+ }
+ 
+ int bdrv_img_create(const char *filename, const char *fmt,
+diff --git a/block.h b/block.h
+index 59300d6..25c7aa2 100644
+--- a/block.h
++++ b/block.h
+@@ -250,7 +250,6 @@ enum BlockAcctType {
+ 
+ typedef struct BlockAcctCookie {
+     int64_t bytes;
+-    int64_t start_time_ns;
+     enum BlockAcctType type;
+ } BlockAcctCookie;
+ 
+diff --git a/block_int.h b/block_int.h
+index aece608..00f4eca 100644
+--- a/block_int.h
++++ b/block_int.h
+@@ -27,7 +27,6 @@
+ #include "block.h"
+ #include "qemu-option.h"
+ #include "qemu-queue.h"
+-#include "qemu-timer.h"
+ 
+ #define BLOCK_FLAG_ENCRYPT	1
+ #define BLOCK_FLAG_COMPAT6	4
+@@ -177,7 +176,6 @@ struct BlockDriverState {
+     /* I/O stats (display with "info blockstats"). */
+     uint64_t nr_bytes[BDRV_MAX_IOTYPE];
+     uint64_t nr_ops[BDRV_MAX_IOTYPE];
+-    uint64_t total_time_ns[BDRV_MAX_IOTYPE];
+     uint64_t wr_highest_sector;
+ 
+     /* Whether the disk can expand beyond total_sectors */
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index cb72152..6c09002 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -2196,9 +2196,6 @@ Each json-object contain the following:
+     - "rd_operations": read operations (json-int)
+     - "wr_operations": write operations (json-int)
+     - "flush_operations": cache flush operations (json-int)
+-    - "wr_total_time_ns": total time spend on writes in nano-seconds (json-int)
+-    - "rd_total_time_ns": total time spend on reads in nano-seconds (json-int)
+-    - "flush_total_time_ns": total time spend on cache flushes in nano-seconds (json-int)
+     - "wr_highest_offset": Highest offset of a sector written since the
+                            BlockDriverState has been opened (json-int)
+ - "parent": Contains recursively the statistics of the underlying
+@@ -2220,9 +2217,6 @@ Example:
+                   "wr_operations":751,
+                   "rd_bytes":122567168,
+                   "rd_operations":36772
+-                  "wr_total_times_ns":313253456
+-                  "rd_total_times_ns":3465673657
+-                  "flush_total_times_ns":49653
+                   "flush_operations":61,
+                }
+             },
+@@ -2233,9 +2227,6 @@ Example:
+                "rd_bytes":122739200,
+                "rd_operations":36604
+                "flush_operations":51,
+-               "wr_total_times_ns":313253456
+-               "rd_total_times_ns":3465673657
+-               "flush_total_times_ns":49653
+             }
+          },
+          {
+@@ -2247,9 +2238,6 @@ Example:
+                "rd_bytes":0,
+                "rd_operations":0
+                "flush_operations":0,
+-               "wr_total_times_ns":0
+-               "rd_total_times_ns":0
+-               "flush_total_times_ns":0
+             }
+          },
+          {
+@@ -2261,9 +2249,6 @@ Example:
+                "rd_bytes":0,
+                "rd_operations":0
+                "flush_operations":0,
+-               "wr_total_times_ns":0
+-               "rd_total_times_ns":0
+-               "flush_total_times_ns":0
+             }
+          },
+          {
+@@ -2275,9 +2260,6 @@ Example:
+                "rd_bytes":0,
+                "rd_operations":0
+                "flush_operations":0,
+-               "wr_total_times_ns":0
+-               "rd_total_times_ns":0
+-               "flush_total_times_ns":0
+             }
+          }
+       ]
+diff --git a/qemu-timer.h b/qemu-timer.h
+index 04062b3..e7eaa04 100644
+--- a/qemu-timer.h
++++ b/qemu-timer.h
+@@ -56,6 +56,4 @@ void ptimer_stop(ptimer_state *s);
+ void qemu_put_ptimer(QEMUFile *f, ptimer_state *s);
+ void qemu_get_ptimer(QEMUFile *f, ptimer_state *s);
+ 
+-int64_t get_clock(void);
+-
+ #endif
+diff --git a/vl.c b/vl.c
+index 5cec717..afcf4db 100644
+--- a/vl.c
++++ b/vl.c
+@@ -709,7 +709,7 @@ static void init_get_clock(void)
+     clock_freq = freq.QuadPart;
+ }
+ 
+-int64_t get_clock(void)
++static int64_t get_clock(void)
+ {
+     LARGE_INTEGER ti;
+     QueryPerformanceCounter(&ti);
+@@ -734,7 +734,7 @@ static void init_get_clock(void)
+ #endif
+ }
+ 
+-int64_t get_clock(void)
++static int64_t get_clock(void)
+ {
+ #if defined(__linux__) || (defined(__FreeBSD__) && __FreeBSD_version >= 500000) \
+ 	|| defined(__DragonFly__) || defined(__FreeBSD_kernel__)
+-- 
+1.7.3.2
+

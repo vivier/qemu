@@ -1,0 +1,29 @@
+From a0b70a23d0592cb42861eed325d833c75d222a62 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Tue, 6 Sep 2011 15:47:30 -0300
+Subject: [RHEL6 qemu-kvm PATCH 6/8] Revert "add kvmclock to its second bit (v2)"
+
+RH-Reverts: 1964fabf12f122a506e223a3b4df131382fd8b01
+RH-Reverts-patchwork-id: 29968
+Bugzilla-related: 624983
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ target-i386/helper.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/target-i386/helper.c b/target-i386/helper.c
+index b5dace4..cc2cdab 100644
+--- a/target-i386/helper.c
++++ b/target-i386/helper.c
+@@ -158,7 +158,7 @@ static int lookup_feature(uint32_t *pval, const char *s, const char *e,
+ }
+ 
+ static const char *kvm_feature_name[] = {
+-    "kvmclock", "kvm_nopiodelay", "kvm_mmu", "kvmclock", NULL, NULL, NULL, NULL,
++    "kvmclock", "kvm_nopiodelay", "kvm_mmu", NULL, NULL, NULL, NULL, NULL,
+     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+-- 
+1.7.3.2
+

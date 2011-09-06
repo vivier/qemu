@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.186
+%define pkgrelease 2.187
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3547,6 +3547,22 @@ Patch2451: kvm-block-latency-accounting.patch
 Patch2452: kvm-revert-floppy-save-and-restore-DIR-register.patch
 # For bz#734860 - qemu-kvm: segfault when missing host parameter for socket chardev
 Patch2453: kvm-qemu-sockets-avoid-strlen-of-NULL-pointer.patch
+# For bz#715017 - Report disk latency (read and write) for each storage device
+Patch2454: kvm-Revert-block-latency-accounting.patch
+# For bz#715017 - Report disk latency (read and write) for each storage device
+Patch2455: kvm-Revert-block-explicit-I-O-accounting.patch
+# For bz#715017 - Report disk latency (read and write) for each storage device
+Patch2456: kvm-Revert-block-include-flush-requests-in-info-blocksta.patch
+# For bz#624983 - QEMU should support the newer set of MSRs for kvmclock
+Patch2457: kvm-Revert-x86-Allow-multiple-cpu-feature-matches-of-loo.patch
+# For bz#624983 - QEMU should support the newer set of MSRs for kvmclock
+Patch2458: kvm-Revert-kvm-create-kvmclock-when-one-of-the-flags-are.patch
+# For bz#624983 - QEMU should support the newer set of MSRs for kvmclock
+Patch2459: kvm-Revert-add-kvmclock-to-its-second-bit-v2.patch
+# For bz#624983 - QEMU should support the newer set of MSRs for kvmclock
+Patch2460: kvm-Revert-use-kernel-provided-para_features-instead-of-.patch
+# For bz#658467 - kvm clock breaks migration result stability -  for unit test propose
+Patch2461: kvm-Revert-kvm-x86-Introduce-kvmclock-device-to-save-res.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -5106,6 +5122,14 @@ ApplyOptionalPatch()
 %patch2451 -p1
 %patch2452 -p1
 %patch2453 -p1
+%patch2454 -p1
+%patch2455 -p1
+%patch2456 -p1
+%patch2457 -p1
+%patch2458 -p1
+%patch2459 -p1
+%patch2460 -p1
+%patch2461 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -5329,6 +5353,23 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Sep 06 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.187.el6
+- Revert patches that broke the build
+- kvm-Revert-block-latency-accounting.patch [bz#715017]
+- kvm-Revert-block-explicit-I-O-accounting.patch [bz#715017]
+- kvm-Revert-block-include-flush-requests-in-info-blocksta.patch [bz#715017]
+- kvm-Revert-x86-Allow-multiple-cpu-feature-matches-of-loo.patch [bz#624983]
+- kvm-Revert-kvm-create-kvmclock-when-one-of-the-flags-are.patch [bz#624983]
+- kvm-Revert-add-kvmclock-to-its-second-bit-v2.patch [bz#624983]
+- kvm-Revert-use-kernel-provided-para_features-instead-of-.patch [bz#624983]
+- kvm-Revert-kvm-x86-Introduce-kvmclock-device-to-save-res.patch [bz#658467]
+- Related: bz#624983
+  (QEMU should support the newer set of MSRs for kvmclock)
+- Related: bz#658467
+  (kvm clock breaks migration result stability -  for unit test propose)
+- Related: bz#715017
+  (Report disk latency (read and write) for each storage device)
+
 * Mon Sep 05 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.186.el6
 - kvm-x86-Introduce-kvmclock-device-to-save-restore-it.patch [bz#658467]
 - kvm-use-kernel-provided-para_features-instead-of-statica.patch [bz#624983]
