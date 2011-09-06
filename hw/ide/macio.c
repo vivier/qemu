@@ -50,7 +50,8 @@ static void pmac_ide_atapi_transfer_cb(void *opaque, int ret)
         m->aiocb = NULL;
         qemu_sglist_destroy(&s->sg);
         ide_atapi_io_error(s, ret);
-        goto done;
+        io->dma_end(opaque);
+        return;
     }
 
     if (s->io_buffer_size > 0) {
@@ -68,7 +69,8 @@ static void pmac_ide_atapi_transfer_cb(void *opaque, int ret)
         ide_atapi_cmd_ok(s);
 
     if (io->len == 0) {
-        goto done;
+        io->dma_end(opaque);
+        return;
     }
 
     /* launch next transfer */
@@ -88,14 +90,9 @@ static void pmac_ide_atapi_transfer_cb(void *opaque, int ret)
         /* Note: media not present is the most likely case */
         ide_atapi_cmd_error(s, SENSE_NOT_READY,
                             ASC_MEDIUM_NOT_PRESENT);
-        goto done;
+        io->dma_end(opaque);
+        return;
     }
-    return;
-
-done:
-    bdrv_acct_done(s->bs, &s->acct);
-    io->dma_end(opaque);
-    return;
 }
 
 static void pmac_ide_transfer_cb(void *opaque, int ret)
@@ -110,7 +107,8 @@ static void pmac_ide_transfer_cb(void *opaque, int ret)
         m->aiocb = NULL;
         qemu_sglist_destroy(&s->sg);
 	ide_dma_error(s);
-        goto done;
+        io->dma_end(io);
+        return;
     }
 
     sector_num = ide_get_sector(s);
@@ -130,8 +128,10 @@ static void pmac_ide_transfer_cb(void *opaque, int ret)
     }
 
     /* end of DMA ? */
+
     if (io->len == 0) {
-        goto done;
+        io->dma_end(io);
+	return;
     }
 
     /* launch next transfer */
@@ -152,11 +152,6 @@ static void pmac_ide_transfer_cb(void *opaque, int ret)
 		                  pmac_ide_transfer_cb, io);
     if (!m->aiocb)
         pmac_ide_transfer_cb(io, -1);
-    return;
-done:
-    if (s->dma_cmd == IDE_DMA_READ || s->dma_cmd == IDE_DMA_WRITE)
-        bdrv_acct_done(s->bs, &s->acct);
-    io->dma_end(io);
 }
 
 static void pmac_ide_transfer(DBDMA_io *io)
@@ -166,20 +161,8 @@ static void pmac_ide_transfer(DBDMA_io *io)
 
     s->io_buffer_size = 0;
     if (s->is_cdrom) {
-        bdrv_acct_start(s->bs, &s->acct, io->len, BDRV_ACCT_READ);
         pmac_ide_atapi_transfer_cb(io, 0);
         return;
-    }
-
-    switch (s->dma_cmd) {
-    case IDE_DMA_READ:
-        bdrv_acct_start(s->bs, &s->acct, io->len, BDRV_ACCT_READ);
-        break;
-    case IDE_DMA_WRITE:
-        bdrv_acct_start(s->bs, &s->acct, io->len, BDRV_ACCT_WRITE);
-        break;
-    default:
-        break;
     }
 
     pmac_ide_transfer_cb(io, 0);

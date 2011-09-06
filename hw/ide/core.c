@@ -410,10 +410,7 @@ static void ide_sector_read(IDEState *s)
 #endif
         if (n > s->req_nb_sectors)
             n = s->req_nb_sectors;
-
-        bdrv_acct_start(s->bs, &s->acct, n * BDRV_SECTOR_SIZE, BDRV_ACCT_READ);
         ret = bdrv_read(s->bs, sector_num, s->io_buffer, n);
-        bdrv_acct_done(s->bs, &s->acct);
         if (ret != 0) {
             if (ide_handle_rw_error(s, -ret,
                 BM_STATUS_PIO_RETRY | BM_STATUS_RETRY_READ))
@@ -598,7 +595,6 @@ static void ide_read_dma_cb(void *opaque, int ret)
         s->status = READY_STAT | SEEK_STAT;
         ide_set_irq(s->bus);
     eot:
-        bdrv_acct_done(s->bs, &s->acct);
         bm->status |= BM_STATUS_INT;
         ide_dma_set_inactive(bm);
         return;
@@ -623,8 +619,6 @@ static void ide_sector_read_dma(IDEState *s)
     s->io_buffer_index = 0;
     s->io_buffer_size = 0;
     s->is_read = 1;
-    bdrv_acct_start(s->bs, &s->acct, s->nsector * BDRV_SECTOR_SIZE,
-                    BDRV_ACCT_READ);
     ide_dma_start(s, ide_read_dma_cb);
 }
 
@@ -647,10 +641,7 @@ static void ide_sector_write(IDEState *s)
     n = s->nsector;
     if (n > s->req_nb_sectors)
         n = s->req_nb_sectors;
-
-    bdrv_acct_start(s->bs, &s->acct, n * BDRV_SECTOR_SIZE, BDRV_ACCT_READ);
     ret = bdrv_write(s->bs, sector_num, s->io_buffer, n);
-    bdrv_acct_done(s->bs, &s->acct);
 
     if (ret != 0) {
         if (ide_handle_rw_error(s, -ret, BM_STATUS_PIO_RETRY))
@@ -761,7 +752,6 @@ static void ide_write_dma_cb(void *opaque, int ret)
         s->status = READY_STAT | SEEK_STAT;
         ide_set_irq(s->bus);
     eot:
-        bdrv_acct_done(s->bs, &s->acct);
         bm->status |= BM_STATUS_INT;
         ide_dma_set_inactive(bm);
         return;
@@ -785,8 +775,6 @@ static void ide_sector_write_dma(IDEState *s)
     s->io_buffer_index = 0;
     s->io_buffer_size = 0;
     s->is_read = 0;
-    bdrv_acct_start(s->bs, &s->acct, s->nsector * BDRV_SECTOR_SIZE,
-                    BDRV_ACCT_WRITE);
     ide_dma_start(s, ide_write_dma_cb);
 }
 
@@ -833,7 +821,6 @@ static void ide_flush_cb(void *opaque, int ret)
         }
     }
 
-    bdrv_acct_done(s->bs, &s->acct);
     s->status = READY_STAT | SEEK_STAT;
     ide_set_irq(s->bus);
 }
@@ -847,7 +834,6 @@ static void ide_flush_cache(IDEState *s)
         return;
     }
 
-    bdrv_acct_start(s->bs, &s->acct, 0, BDRV_ACCT_FLUSH);
     acb = bdrv_aio_flush(s->bs, ide_flush_cb, s);
     if (acb == NULL) {
         ide_flush_cb(s, -EIO);
@@ -903,20 +889,17 @@ static void cd_data_to_raw(uint8_t *buf, int lba)
     memset(buf, 0, 288);
 }
 
-static int cd_read_sector(IDEState *s, int lba, uint8_t *buf, int sector_size)
+static int cd_read_sector(BlockDriverState *bs, int lba, uint8_t *buf,
+                           int sector_size)
 {
     int ret;
 
     switch(sector_size) {
     case 2048:
-        bdrv_acct_start(s->bs, &s->acct, 4 * BDRV_SECTOR_SIZE, BDRV_ACCT_READ);
-        ret = bdrv_read(s->bs, (int64_t)lba << 2, buf, 4);
-        bdrv_acct_done(s->bs, &s->acct);
+        ret = bdrv_read(bs, (int64_t)lba << 2, buf, 4);
         break;
     case 2352:
-        bdrv_acct_start(s->bs, &s->acct, 4 * BDRV_SECTOR_SIZE, BDRV_ACCT_READ);
-        ret = bdrv_read(s->bs, (int64_t)lba << 2, buf + 16, 4);
-        bdrv_acct_done(s->bs, &s->acct);
+        ret = bdrv_read(bs, (int64_t)lba << 2, buf + 16, 4);
         if (ret < 0)
             return ret;
         cd_data_to_raw(buf, lba);
@@ -962,7 +945,7 @@ static void ide_atapi_cmd_reply_end(IDEState *s)
     } else {
         /* see if a new sector must be read */
         if (s->lba != -1 && s->io_buffer_index >= s->cd_sector_size) {
-            ret = cd_read_sector(s, s->lba, s->io_buffer, s->cd_sector_size);
+            ret = cd_read_sector(s->bs, s->lba, s->io_buffer, s->cd_sector_size);
             if (ret < 0) {
                 ide_transfer_stop(s);
                 ide_atapi_io_error(s, ret);
@@ -1031,7 +1014,6 @@ static void ide_atapi_cmd_reply(IDEState *s, int size, int max_size)
     s->io_buffer_index = 0;
 
     if (s->atapi_dma) {
-        bdrv_acct_start(s->bs, &s->acct, size, BDRV_ACCT_READ);
     	s->status = READY_STAT | SEEK_STAT | DRQ_STAT;
 	ide_dma_start(s, ide_atapi_cmd_read_dma_cb);
     } else {
@@ -1094,7 +1076,10 @@ static void ide_atapi_cmd_read_dma_cb(void *opaque, int ret)
         s->status = READY_STAT | SEEK_STAT;
         s->nsector = (s->nsector & ~7) | ATAPI_INT_REASON_IO | ATAPI_INT_REASON_CD;
         ide_set_irq(s->bus);
-        goto eot;
+    eot:
+        bm->status |= BM_STATUS_INT;
+        ide_dma_set_inactive(bm);
+        return;
     }
 
     s->io_buffer_index = 0;
@@ -1123,12 +1108,6 @@ static void ide_atapi_cmd_read_dma_cb(void *opaque, int ret)
                             ASC_MEDIUM_NOT_PRESENT);
         goto eot;
     }
-
-    return;
-eot:
-    bdrv_acct_done(s->bs, &s->acct);
-    bm->status |= BM_STATUS_INT;
-    ide_dma_set_inactive(bm);
 }
 
 /* start a CD-CDROM read command with DMA */
@@ -1141,8 +1120,6 @@ static void ide_atapi_cmd_read_dma(IDEState *s, int lba, int nb_sectors,
     s->io_buffer_index = 0;
     s->io_buffer_size = 0;
     s->cd_sector_size = sector_size;
-
-    bdrv_acct_start(s->bs, &s->acct, s->packet_transfer_size, BDRV_ACCT_READ);
 
     /* XXX: check if BUSY_STAT should be set */
     s->status = READY_STAT | SEEK_STAT | DRQ_STAT | BUSY_STAT;

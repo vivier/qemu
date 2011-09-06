@@ -415,7 +415,6 @@ struct IDEState {
     int lba;
     int cd_sector_size;
     int atapi_dma; /* true if dma is requested for the packet cmd */
-    BlockAcctCookie acct;
     /* ATA DMA state */
     int io_buffer_size;
     QEMUSGList sg;

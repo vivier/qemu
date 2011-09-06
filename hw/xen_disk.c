@@ -78,7 +78,6 @@ struct ioreq {
 
     struct XenBlkDev    *blkdev;
     QLIST_ENTRY(ioreq)   list;
-    BlockAcctCookie     acct;
 };
 
 struct XenBlkDev {
@@ -379,7 +378,6 @@ static void qemu_aio_complete(void *opaque, int ret)
     ioreq->status = ioreq->aio_errors ? BLKIF_RSP_ERROR : BLKIF_RSP_OKAY;
     ioreq_unmap(ioreq);
     ioreq_finish(ioreq);
-    bdrv_acct_done(ioreq->blkdev->bs, &ioreq->acct);
     qemu_bh_schedule(ioreq->blkdev->bh);
 }
 
@@ -396,7 +394,6 @@ static int ioreq_runio_qemu_aio(struct ioreq *ioreq)
 
     switch (ioreq->req.operation) {
     case BLKIF_OP_READ:
-        bdrv_acct_start(blkdev->bs, &ioreq->acct, ioreq->v.size, BDRV_ACCT_READ);
         ioreq->aio_inflight++;
         bdrv_aio_readv(blkdev->bs, ioreq->start / BLOCK_SIZE,
                        &ioreq->v, ioreq->v.size / BLOCK_SIZE,
@@ -404,7 +401,6 @@ static int ioreq_runio_qemu_aio(struct ioreq *ioreq)
 	break;
     case BLKIF_OP_WRITE:
     case BLKIF_OP_WRITE_BARRIER:
-        bdrv_acct_start(blkdev->bs, &ioreq->acct, ioreq->v.size, BDRV_ACCT_WRITE);
         ioreq->aio_inflight++;
         bdrv_aio_writev(blkdev->bs, ioreq->start / BLOCK_SIZE,
                         &ioreq->v, ioreq->v.size / BLOCK_SIZE,

@@ -57,7 +57,6 @@ typedef struct SCSIDiskReq {
     struct iovec iov;
     QEMUIOVector qiov;
     uint32_t status;
-    BlockAcctCookie acct;
 } SCSIDiskReq;
 
 typedef enum { SCSI_HD, SCSI_CD } SCSIDriveKind;
@@ -138,12 +137,9 @@ static void scsi_cancel_io(SCSIRequest *req)
 static void scsi_read_complete(void * opaque, int ret)
 {
     SCSIDiskReq *r = (SCSIDiskReq *)opaque;
-    SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, r->req.dev);
     int n;
 
     r->req.aiocb = NULL;
-
-    bdrv_acct_done(s->bs, &r->acct);
 
     if (ret) {
         if (scsi_handle_rw_error(r, -ret, SCSI_REQ_STATUS_RETRY_READ)) {
@@ -194,8 +190,6 @@ static void scsi_read_data(SCSIRequest *req)
 
     r->iov.iov_len = n * 512;
     qemu_iovec_init_external(&r->qiov, &r->iov, 1);
-
-    bdrv_acct_start(s->bs, &r->acct, n * BDRV_SECTOR_SIZE, BDRV_ACCT_READ);
     r->req.aiocb = bdrv_aio_readv(s->bs, r->sector, &r->qiov, n,
                               scsi_read_complete, r);
     if (r->req.aiocb == NULL) {
@@ -248,13 +242,10 @@ static int scsi_handle_rw_error(SCSIDiskReq *r, int error, int type)
 static void scsi_write_complete(void * opaque, int ret)
 {
     SCSIDiskReq *r = (SCSIDiskReq *)opaque;
-    SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, r->req.dev);
     uint32_t len;
     uint32_t n;
 
     r->req.aiocb = NULL;
-
-    bdrv_acct_done(s->bs, &r->acct);
 
     if (ret) {
         if (scsi_handle_rw_error(r, -ret, SCSI_REQ_STATUS_RETRY_WRITE)) {
@@ -296,8 +287,6 @@ static void scsi_write_data(SCSIRequest *req)
     n = r->iov.iov_len / 512;
     if (n) {
         qemu_iovec_init_external(&r->qiov, &r->iov, 1);
-
-        bdrv_acct_start(s->bs, &r->acct, n * BDRV_SECTOR_SIZE, BDRV_ACCT_WRITE);
         r->req.aiocb = bdrv_aio_writev(s->bs, r->sector, &r->qiov, n,
                                    scsi_write_complete, r);
         if (r->req.aiocb == NULL) {
@@ -921,19 +910,13 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r, uint8_t *outbuf)
         buflen = 8;
 	break;
     case SYNCHRONIZE_CACHE:
-{
-        BlockAcctCookie acct;
-
-        bdrv_acct_start(s->bs, &acct, 0, BDRV_ACCT_FLUSH);
         ret = bdrv_flush(s->bs);
-        bdrv_acct_done(s->bs, &acct);
         if (ret < 0) {
             if (scsi_handle_rw_error(r, -ret, SCSI_REQ_STATUS_RETRY_FLUSH)) {
                 return -1;
             }
         }
         break;
-}
     case GET_CONFIGURATION:
         memset(outbuf, 0, 8);
         /* ??? This should probably return much more information.  For now
