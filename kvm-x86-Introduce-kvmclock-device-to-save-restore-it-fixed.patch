@@ -1,0 +1,277 @@
+From 17ca2d292857a2a8e71573858855a0a160038a4e Mon Sep 17 00:00:00 2001
+From: Glauber Costa <glommer@redhat.com>
+Date: Wed, 9 Feb 2011 17:56:47 -0200
+Subject: [RHEL6 qemu-kvm PATCH 1/5] kvm: x86: Introduce kvmclock device to save/restore its state
+
+RH-Author: Glauber Costa <glommer@redhat.com>
+Message-id: <1297274207-9911-1-git-send-email-glommer@redhat.com>
+Patchwork-id: 17930
+O-Subject: [PATCH RHEL6.1] kvm: x86: Introduce kvmclock device to save/restore its state
+Bugzilla: 658467
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Rik van Riel <riel@redhat.com>
+
+RH-Author: Glauber Costa
+RH-Bugzilla: 658467
+RH-Upstream-Status: Posted
+
+If kvmclock is used, which implies the kernel supports it, register a
+kvmclock device with the sysbus. Its main purpose is to save and restore
+the kernel state on migration, but this will also allow to visualize it
+one day.
+
+Signed-off-by: Jan Kiszka <jan.kiszka@siemens.com>
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+---
+Upstream diff: I decided not to register a new qdev device for kvmclock,
+in order not to complicate our migration paths. Alternatively, I just got
+the code motion to hw/kvmclock.c, and the pre_save function.
+
+We also do not have the CONFIG_KVM_PARA switch in our tree.
+---
+ Makefile.target |    3 +-
+ hw/kvmclock.c   |  102 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ hw/pc.c         |    3 ++
+ qemu-kvm-x86.c  |   35 -------------------
+ 4 files changed, 107 insertions(+), 36 deletions(-)
+ create mode 100644 hw/kvmclock.c
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ Makefile.target |    3 +-
+ hw/kvmclock.c   |  102 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ hw/kvmclock.h   |   14 +++++++
+ hw/pc.c         |    3 ++
+ qemu-kvm-x86.c  |   35 -------------------
+ 5 files changed, 121 insertions(+), 36 deletions(-)
+ create mode 100644 hw/kvmclock.c
+ create mode 100644 hw/kvmclock.h
+
+diff --git a/Makefile.target b/Makefile.target
+index a303fdb..93bff38c 100644
+--- a/Makefile.target
++++ b/Makefile.target
+@@ -29,7 +29,7 @@ PROGS=$(QEMU_PROG)
+ 
+ LIBS+=-lm
+ 
+-kvm.o kvm-all.o: QEMU_CFLAGS+=$(KVM_CFLAGS)
++kvm.o kvm-all.o kvmclock.o: QEMU_CFLAGS+=$(KVM_CFLAGS)
+ 
+ CFLAGS += $(KVM_CFLAGS)
+ 
+@@ -237,6 +237,7 @@ obj-i386-y += device-hotplug.o smbios.o wdt_ib700.o
+ obj-i386-y += extboot.o
+ obj-i386-y += ne2000-isa.o
+ obj-i386-y += testdev.o
++obj-i386-y += kvmclock.o
+ 
+ obj-i386-$(CONFIG_KVM_PIT) += i8254-kvm.o
+ obj-i386-$(CONFIG_KVM_DEVICE_ASSIGNMENT) += device-assignment.o
+diff --git a/hw/kvmclock.c b/hw/kvmclock.c
+new file mode 100644
+index 0000000..0c85ce0
+--- /dev/null
++++ b/hw/kvmclock.c
+@@ -0,0 +1,102 @@
++/*
++ * QEMU KVM support, paravirtual clock device
++ *
++ * Copyright (C) 2011 Siemens AG
++ *
++ * Authors:
++ *  Jan Kiszka        <jan.kiszka@siemens.com>
++ *
++ * This work is licensed under the terms of the GNU GPL version 2.
++ * See the COPYING file in the top-level directory.
++ *
++ */
++
++#include "qemu-common.h"
++#include "sysemu.h"
++#include "sysbus.h"
++#include "kvm.h"
++#include "kvmclock.h"
++
++#if defined(KVM_CAP_ADJUST_CLOCK)
++
++#include <linux/kvm.h>
++#include <linux/kvm_para.h>
++
++typedef struct KVMClockState {
++    uint64_t clock;
++    bool clock_valid;
++} KVMClockState;
++
++static KVMClockState kvmclock_state;
++
++static void kvmclock_pre_save(void *opaque)
++{
++    KVMClockState *s = opaque;
++    struct kvm_clock_data data;
++    int ret;
++
++    if (s->clock_valid) {
++        return;
++    }
++
++    ret = kvm_vm_ioctl(kvm_state, KVM_GET_CLOCK, &data);
++    if (ret < 0) {
++        fprintf(stderr, "KVM_GET_CLOCK failed: %s\n", strerror(ret));
++        data.clock = 0;
++    }
++    s->clock = data.clock;
++    /*
++     * If the VM is stopped, declare the clock state valid to avoid re-reading
++     * it on next vmsave (which would return a different value). Will be reset
++     * when the VM is continued.
++     */
++    s->clock_valid = !vm_running;
++}
++
++static int kvmclock_post_load(void *opaque, int version_id)
++{
++    KVMClockState *s = opaque;
++    struct kvm_clock_data data;
++
++    data.clock = s->clock;
++    data.flags = 0;
++    return kvm_vm_ioctl(kvm_state, KVM_SET_CLOCK, &data);
++}
++
++static void kvmclock_vm_state_change(void *opaque, int running, int reason)
++{
++    KVMClockState *s = opaque;
++
++    if (running) {
++        s->clock_valid = false;
++    }
++}
++
++static const VMStateDescription kvmclock_vmsd = {
++    .name = "kvmclock",
++    .version_id = 1,
++    .minimum_version_id = 1,
++    .minimum_version_id_old = 1,
++    .pre_save = kvmclock_pre_save,
++    .post_load = kvmclock_post_load,
++    .fields = (VMStateField[]) {
++        VMSTATE_UINT64(clock, KVMClockState),
++        VMSTATE_END_OF_LIST()
++    }
++};
++
++/* Note: Must be called after VCPU initialization. */
++void kvmclock_create(void)
++{
++    if (kvm_enabled() && kvm_check_extension(kvm_state, KVM_CAP_ADJUST_CLOCK)  &&
++        first_cpu->cpuid_kvm_features & (1ULL << KVM_FEATURE_CLOCKSOURCE)) {
++        vmstate_register(NULL, 0, &kvmclock_vmsd, &kvmclock_state);
++    	qemu_add_vm_change_state_handler(kvmclock_vm_state_change, &kvmclock_state);
++    }
++}
++
++#else /* !(KVM_CAP_ADJUST_CLOCK) */
++void kvmclock_create(void)
++{
++}
++#endif /* !(KVM_CAP_ADJUST_CLOCK) */
+diff --git a/hw/kvmclock.h b/hw/kvmclock.h
+new file mode 100644
+index 0000000..7a83cbe
+--- /dev/null
++++ b/hw/kvmclock.h
+@@ -0,0 +1,14 @@
++/*
++ * QEMU KVM support, paravirtual clock device
++ *
++ * Copyright (C) 2011 Siemens AG
++ *
++ * Authors:
++ *  Jan Kiszka        <jan.kiszka@siemens.com>
++ *
++ * This work is licensed under the terms of the GNU GPL version 2.
++ * See the COPYING file in the top-level directory.
++ *
++ */
++
++void kvmclock_create(void);
+diff --git a/hw/pc.c b/hw/pc.c
+index 18f405a..7a6bef8 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -47,6 +47,7 @@
+ #include "device-assignment.h"
+ #include "qemu-kvm.h"
+ #include "ui/qemu-spice.h"
++#include "kvmclock.h"
+ 
+ /* output Bochs bios info messages */
+ //#define DEBUG_BIOS
+@@ -1098,6 +1099,8 @@ static void pc_init1(ram_addr_t ram_size,
+ #endif
+     vmport_init();
+ 
++    kvmclock_create();
++
+     /* allocate RAM */
+     if (fake_machine) {
+         /* If user boots with -m 1000 We don't actually want to
+diff --git a/qemu-kvm-x86.c b/qemu-kvm-x86.c
+index 2d581cc..8d8956d 100644
+--- a/qemu-kvm-x86.c
++++ b/qemu-kvm-x86.c
+@@ -739,37 +739,6 @@ int kvm_qemu_destroy_memory_alias(uint64_t phys_start)
+ 	return kvm_destroy_memory_alias(kvm_context, phys_start);
+ }
+ 
+-#ifdef KVM_CAP_ADJUST_CLOCK
+-static struct kvm_clock_data kvmclock_data;
+-
+-static void kvmclock_pre_save(void *opaque)
+-{
+-    struct kvm_clock_data *cl = opaque;
+-
+-    kvm_vm_ioctl(kvm_state, KVM_GET_CLOCK, cl);
+-}
+-
+-static int kvmclock_post_load(void *opaque, int version_id)
+-{
+-    struct kvm_clock_data *cl = opaque;
+-
+-    return kvm_vm_ioctl(kvm_state, KVM_SET_CLOCK, cl);
+-}
+-
+-static const VMStateDescription vmstate_kvmclock= {
+-    .name = "kvmclock",
+-    .version_id = 1,
+-    .minimum_version_id = 1,
+-    .minimum_version_id_old = 1,
+-    .pre_save = kvmclock_pre_save,
+-    .post_load = kvmclock_post_load,
+-    .fields      = (VMStateField []) {
+-        VMSTATE_U64(clock, struct kvm_clock_data),
+-        VMSTATE_END_OF_LIST()
+-    }
+-};
+-#endif
+-
+ int kvm_arch_qemu_create_context(void)
+ {
+     int i;
+@@ -791,10 +760,6 @@ int kvm_arch_qemu_create_context(void)
+             kvm_has_vm_hsave_pa = 1;
+     }
+ 
+-#ifdef KVM_CAP_ADJUST_CLOCK
+-    if (kvm_check_extension(kvm_state, KVM_CAP_ADJUST_CLOCK))
+-        vmstate_register(NULL, 0, &vmstate_kvmclock, &kvmclock_data);
+-#endif
+     return 0;
+ }
+ 
+-- 
+1.7.3.2
+

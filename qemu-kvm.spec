@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.187
+%define pkgrelease 2.188
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3563,6 +3563,16 @@ Patch2459: kvm-Revert-add-kvmclock-to-its-second-bit-v2.patch
 Patch2460: kvm-Revert-use-kernel-provided-para_features-instead-of-.patch
 # For bz#658467 - kvm clock breaks migration result stability -  for unit test propose
 Patch2461: kvm-Revert-kvm-x86-Introduce-kvmclock-device-to-save-res.patch
+# For bz#658467 - kvm clock breaks migration result stability -  for unit test propose
+Patch2462: kvm-x86-Introduce-kvmclock-device-to-save-restore-it-fixed.patch
+# For bz#624983 - QEMU should support the newer set of MSRs for kvmclock
+Patch2463: kvm-use-kernel-provided-para_features-instead-of-statica-take2.patch
+# For bz#624983 - QEMU should support the newer set of MSRs for kvmclock
+Patch2464: kvm-add-kvmclock-to-its-second-bit-v2-take2.patch
+# For bz#624983 - QEMU should support the newer set of MSRs for kvmclock
+Patch2465: kvm-create-kvmclock-when-one-of-the-flags-are-present-take2.patch
+# For bz#624983 - QEMU should support the newer set of MSRs for kvmclock
+Patch2466: kvm-x86-Allow-multiple-cpu-feature-matches-of-lookup_fea-take2.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -5130,6 +5140,11 @@ ApplyOptionalPatch()
 %patch2459 -p1
 %patch2460 -p1
 %patch2461 -p1
+%patch2462 -p1
+%patch2463 -p1
+%patch2464 -p1
+%patch2465 -p1
+%patch2466 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -5353,6 +5368,17 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Sep 06 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.188.el6
+- kvm-x86-Introduce-kvmclock-device-to-save-restore-it-fixed.patch [bz#658467]
+- kvm-use-kernel-provided-para_features-instead-of-statica-take2.patch [bz#624983]
+- kvm-add-kvmclock-to-its-second-bit-v2-take2.patch [bz#624983]
+- kvm-create-kvmclock-when-one-of-the-flags-are-present-take2.patch [bz#624983]
+- kvm-x86-Allow-multiple-cpu-feature-matches-of-lookup_fea-take2.patch [bz#624983]
+- Resolves: bz#624983
+  (QEMU should support the newer set of MSRs for kvmclock)
+- Resolves: bz#658467
+  (kvm clock breaks migration result stability -  for unit test propose)
+
 * Tue Sep 06 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.187.el6
 - Revert patches that broke the build
 - kvm-Revert-block-latency-accounting.patch [bz#715017]

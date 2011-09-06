@@ -1,0 +1,55 @@
+From 4f33f94381aec954001f253a4395264985c64a00 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Mon, 18 Jul 2011 19:46:09 -0300
+Subject: [RHEL6 qemu-kvm PATCH 4/5] kvm: create kvmclock when one of the flags are present
+
+RH-Author: Eduardo Habkost <ehabkost@redhat.com>
+Message-id: <1311018370-5930-4-git-send-email-ehabkost@redhat.com>
+Patchwork-id: 29967
+O-Subject: [RHEL6 qemu-kvm PATCH 3/4] kvm: create kvmclock when one of the flags are present
+Bugzilla: 624983
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Zachary Amsden <zamsden@redhat.com>
+
+From: Glauber Costa <glommer@redhat.com>
+
+Upstream-status: applied(qemu.git master), 450fb75c478aa4134bc1e6b1655791c0a39ad141
+Bugzilla: 624983
+
+kvmclock presence can be signalled by two different flags. So for
+device creation, we have to test for both.
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+Signed-off-by: Avi Kivity <avi@redhat.com>
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/kvmclock.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/kvmclock.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+diff --git a/hw/kvmclock.c b/hw/kvmclock.c
+index 0c85ce0..663024d 100644
+--- a/hw/kvmclock.c
++++ b/hw/kvmclock.c
+@@ -89,7 +89,11 @@ static const VMStateDescription kvmclock_vmsd = {
+ void kvmclock_create(void)
+ {
+     if (kvm_enabled() && kvm_check_extension(kvm_state, KVM_CAP_ADJUST_CLOCK)  &&
+-        first_cpu->cpuid_kvm_features & (1ULL << KVM_FEATURE_CLOCKSOURCE)) {
++        first_cpu->cpuid_kvm_features & ((1ULL << KVM_FEATURE_CLOCKSOURCE)
++#ifdef KVM_FEATURE_CLOCKSOURCE2
++        || (1ULL << KVM_FEATURE_CLOCKSOURCE2)
++#endif
++    )) {
+         vmstate_register(NULL, 0, &kvmclock_vmsd, &kvmclock_state);
+     	qemu_add_vm_change_state_handler(kvmclock_vm_state_change, &kvmclock_state);
+     }
+-- 
+1.7.3.2
+

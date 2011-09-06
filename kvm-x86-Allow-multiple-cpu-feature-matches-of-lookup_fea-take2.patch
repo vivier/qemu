@@ -1,0 +1,76 @@
+From f342099d0fad42bd1190f73c53ac6a7df100550c Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Mon, 18 Jul 2011 19:46:10 -0300
+Subject: [RHEL6 qemu-kvm PATCH 5/5] x86: Allow multiple cpu feature matches of lookup_feature (v2)
+
+RH-Author: Eduardo Habkost <ehabkost@redhat.com>
+Message-id: <1311018370-5930-5-git-send-email-ehabkost@redhat.com>
+Patchwork-id: 29966
+O-Subject: [RHEL6 qemu-kvm PATCH 4/4] x86: Allow multiple cpu feature matches of lookup_feature (v2)
+Bugzilla: 624983
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Gleb Natapov <gleb@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Glauber Costa <glommer@redhat.com>
+
+Upstream-status: applied(qemu.git master), e41e0fc61ae776b9235380fe9570af31ea7bbc86
+Bugzilla: 624983
+
+kvmclock is represented by two feature bits. Therefore, lookup_feature
+needs to continue its search even after the first match. Enhance it
+accordingly and switch to a bool return type at this chance.
+
+Main difference from upstream patch is that we don't have cpuid.c, but
+helper.c instead.
+
+[ehabkost: v2: rebased to v2 of "add kvmclock to its second bit"]
+
+Signed-off-by: Glauber Costa <glommer@redhat.com>
+Signed-off-by: Jan Kiszka <jan.kiszka@siemens.com>
+Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ target-i386/helper.c |   12 +++++++-----
+ 1 files changed, 7 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ target-i386/helper.c |   12 +++++++-----
+ 1 files changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/target-i386/helper.c b/target-i386/helper.c
+index b5dace4..332884d 100644
+--- a/target-i386/helper.c
++++ b/target-i386/helper.c
+@@ -141,20 +141,22 @@ static int altcmp(const char *s, const char *e, const char *altstr)
+ }
+ 
+ /* search featureset for flag *[s..e), if found set corresponding bit in
+- * *pval and return success, otherwise return zero
++ * *pval and return success, otherwise return false 
+  */
+-static int lookup_feature(uint32_t *pval, const char *s, const char *e,
++static bool lookup_feature(uint32_t *pval, const char *s, const char *e,
+     const char **featureset)
+ {
+     uint32_t mask;
+     const char **ppc;
++    bool found = false;
+ 
+-    for (mask = 1, ppc = featureset; mask; mask <<= 1, ++ppc)
++    for (mask = 1, ppc = featureset; mask; mask <<= 1, ++ppc) {
+         if (*ppc && !altcmp(s, e, *ppc)) {
+             *pval |= mask;
+-            break;
++            found = true;
+         }
+-    return (mask ? 1 : 0);
++    }
++    return found;
+ }
+ 
+ static const char *kvm_feature_name[] = {
+-- 
+1.7.3.2
+
