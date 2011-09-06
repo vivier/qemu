@@ -250,7 +250,6 @@ enum BlockAcctType {
 
 typedef struct BlockAcctCookie {
     int64_t bytes;
-    int64_t start_time_ns;
     enum BlockAcctType type;
 } BlockAcctCookie;
 

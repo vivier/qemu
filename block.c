@@ -1682,18 +1682,12 @@ static void bdrv_stats_iter(QObject *data, void *opaque)
                         " rd_operations=%" PRId64
                         " wr_operations=%" PRId64
                         " flush_operations=%" PRId64
-                        " wr_total_time_ns=%" PRId64
-                        " rd_total_time_ns=%" PRId64
-                        " flush_total_time_ns=%" PRId64
                         "\n",
                         qdict_get_int(qdict, "rd_bytes"),
                         qdict_get_int(qdict, "wr_bytes"),
                         qdict_get_int(qdict, "rd_operations"),
                         qdict_get_int(qdict, "wr_operations"),
-                        qdict_get_int(qdict, "flush_operations"),
-                        qdict_get_int(qdict, "wr_total_time_ns"),
-                        qdict_get_int(qdict, "rd_total_time_ns"),
-                        qdict_get_int(qdict, "flush_total_time_ns"));
+                        qdict_get_int(qdict, "flush_operations"));
 }
 
 void bdrv_stats_print(Monitor *mon, const QObject *data)
@@ -1712,20 +1706,14 @@ static QObject* bdrv_info_stats_bs(BlockDriverState *bs)
                              "'rd_operations': %" PRId64 ","
                              "'wr_operations': %" PRId64 ","
                              "'wr_highest_offset': %" PRId64 ","
-                             "'flush_operations': %" PRId64 ","
-                             "'wr_total_time_ns': %" PRId64 ","
-                             "'rd_total_time_ns': %" PRId64 ","
-                             "'flush_total_time_ns': %" PRId64
+                             "'flush_operations': %" PRId64
                              "} }",
                              bs->nr_bytes[BDRV_ACCT_READ],
                              bs->nr_bytes[BDRV_ACCT_WRITE],
                              bs->nr_ops[BDRV_ACCT_READ],
                              bs->nr_ops[BDRV_ACCT_WRITE],
                              bs->wr_highest_sector * 512,
-                             bs->nr_ops[BDRV_ACCT_FLUSH],
-                             bs->total_time_ns[BDRV_ACCT_WRITE],
-                             bs->total_time_ns[BDRV_ACCT_READ],
-                             bs->total_time_ns[BDRV_ACCT_FLUSH]);
+                             bs->nr_ops[BDRV_ACCT_FLUSH]);
     dict  = qobject_to_qdict(res);
 
     if (*bs->device_name) {
@@ -2676,7 +2664,6 @@ bdrv_acct_start(BlockDriverState *bs, BlockAcctCookie *cookie, int64_t bytes,
     assert(type < BDRV_MAX_IOTYPE);
 
     cookie->bytes = bytes;
-    cookie->start_time_ns = get_clock();
     cookie->type = type;
 }
 
@@ -2687,7 +2674,6 @@ bdrv_acct_done(BlockDriverState *bs, BlockAcctCookie *cookie)
 
     bs->nr_bytes[cookie->type] += cookie->bytes;
     bs->nr_ops[cookie->type]++;
-    bs->total_time_ns[cookie->type] += get_clock() - cookie->start_time_ns;
 }
 
 int bdrv_img_create(const char *filename, const char *fmt,
