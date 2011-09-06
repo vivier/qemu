@@ -89,11 +89,7 @@ static const VMStateDescription kvmclock_vmsd = {
 void kvmclock_create(void)
 {
     if (kvm_enabled() && kvm_check_extension(kvm_state, KVM_CAP_ADJUST_CLOCK)  &&
-        first_cpu->cpuid_kvm_features & ((1ULL << KVM_FEATURE_CLOCKSOURCE)
-#ifdef KVM_FEATURE_CLOCKSOURCE2
-        || (1ULL << KVM_FEATURE_CLOCKSOURCE2)
-#endif
-    )) {
+        first_cpu->cpuid_kvm_features & (1ULL << KVM_FEATURE_CLOCKSOURCE)) {
         vmstate_register(NULL, 0, &kvmclock_vmsd, &kvmclock_state);
     	qemu_add_vm_change_state_handler(kvmclock_vm_state_change, &kvmclock_state);
     }
