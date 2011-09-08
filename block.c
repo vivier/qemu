@@ -1708,12 +1708,12 @@ static QObject* bdrv_info_stats_bs(BlockDriverState *bs)
                              "'wr_highest_offset': %" PRId64 ","
                              "'flush_operations': %" PRId64
                              "} }",
-                             bs->rd_bytes,
-                             bs->wr_bytes,
-                             bs->rd_ops,
-                             bs->wr_ops,
+                             bs->nr_bytes[BDRV_ACCT_READ],
+                             bs->nr_bytes[BDRV_ACCT_WRITE],
+                             bs->nr_ops[BDRV_ACCT_READ],
+                             bs->nr_ops[BDRV_ACCT_WRITE],
                              bs->wr_highest_sector * 512,
-                             bs->flush_ops);
+                             bs->nr_ops[BDRV_ACCT_FLUSH]);
     dict  = qobject_to_qdict(res);
 
     if (*bs->device_name) {
@@ -1968,7 +1968,6 @@ char *bdrv_snapshot_dump(char *buf, int buf_size, QEMUSnapshotInfo *sn)
     return buf;
 }
 
-
 /**************************************************************/
 /* async I/Os */
 
@@ -1977,7 +1976,6 @@ BlockDriverAIOCB *bdrv_aio_readv(BlockDriverState *bs, int64_t sector_num,
                                  BlockDriverCompletionFunc *cb, void *opaque)
 {
     BlockDriver *drv = bs->drv;
-    BlockDriverAIOCB *ret;
 
     trace_bdrv_aio_readv(bs, sector_num, nb_sectors, opaque);
 
@@ -1986,16 +1984,7 @@ BlockDriverAIOCB *bdrv_aio_readv(BlockDriverState *bs, int64_t sector_num,
     if (bdrv_check_request(bs, sector_num, nb_sectors))
         return NULL;
 
-    ret = drv->bdrv_aio_readv(bs, sector_num, qiov, nb_sectors,
-                              cb, opaque);
-
-    if (ret) {
-	/* Update stats even though technically transfer has not happened. */
-	bs->rd_bytes += (unsigned) nb_sectors * BDRV_SECTOR_SIZE;
-	bs->rd_ops ++;
-    }
-
-    return ret;
+    return drv->bdrv_aio_readv(bs, sector_num, qiov, nb_sectors, cb, opaque);
 }
 
 BlockDriverAIOCB *bdrv_aio_writev(BlockDriverState *bs, int64_t sector_num,
@@ -2022,9 +2011,6 @@ BlockDriverAIOCB *bdrv_aio_writev(BlockDriverState *bs, int64_t sector_num,
                                cb, opaque);
 
     if (ret) {
-        /* Update stats even though technically transfer has not happened. */
-        bs->wr_bytes += (unsigned) nb_sectors * BDRV_SECTOR_SIZE;
-        bs->wr_ops ++;
         if (bs->wr_highest_sector < sector_num + nb_sectors - 1) {
             bs->wr_highest_sector = sector_num + nb_sectors - 1;
         }
@@ -2275,8 +2261,6 @@ BlockDriverAIOCB *bdrv_aio_flush(BlockDriverState *bs,
         BlockDriverCompletionFunc *cb, void *opaque)
 {
     BlockDriver *drv = bs->drv;
-
-    bs->flush_ops++;
 
     if (bs->open_flags & BDRV_O_NO_FLUSH) {
         return bdrv_aio_noop_em(bs, cb, opaque);
@@ -2671,6 +2655,25 @@ void bdrv_reset_dirty(BlockDriverState *bs, int64_t cur_sector,
                       int nr_sectors)
 {
     set_dirty_bitmap(bs, cur_sector, nr_sectors, 0);
+}
+
+void
+bdrv_acct_start(BlockDriverState *bs, BlockAcctCookie *cookie, int64_t bytes,
+        enum BlockAcctType type)
+{
+    assert(type < BDRV_MAX_IOTYPE);
+
+    cookie->bytes = bytes;
+    cookie->type = type;
+}
+
+void
+bdrv_acct_done(BlockDriverState *bs, BlockAcctCookie *cookie)
+{
+    assert(cookie->type < BDRV_MAX_IOTYPE);
+
+    bs->nr_bytes[cookie->type] += cookie->bytes;
+    bs->nr_ops[cookie->type]++;
 }
 
 int bdrv_img_create(const char *filename, const char *fmt,
