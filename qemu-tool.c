@@ -136,3 +136,12 @@ int64_t qemu_get_clock(QEMUClock *clock)
     qemu_gettimeofday(&tv);
     return (tv.tv_sec * 1000000000LL + (tv.tv_usec * 1000)) / 1000000;
 }
+
+/*
+ * XXX: non-functional stub, but we do not need block latency accounting
+ * in the tools anyway.
+ */
+int64_t get_clock(void)
+{
+	return 0;
+}
