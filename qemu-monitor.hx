@@ -2195,6 +2195,7 @@ Each json-object contain the following:
     - "wr_bytes": bytes written (json-int)
     - "rd_operations": read operations (json-int)
     - "wr_operations": write operations (json-int)
+    - "flush_operations": cache flush operations (json-int)
     - "wr_highest_offset": Highest offset of a sector written since the
                            BlockDriverState has been opened (json-int)
 - "parent": Contains recursively the statistics of the underlying
@@ -2216,6 +2217,7 @@ Example:
                   "wr_operations":751,
                   "rd_bytes":122567168,
                   "rd_operations":36772
+                  "flush_operations":61,
                }
             },
             "stats":{
@@ -2224,6 +2226,7 @@ Example:
                "wr_operations":692,
                "rd_bytes":122739200,
                "rd_operations":36604
+               "flush_operations":51,
             }
          },
          {
@@ -2234,6 +2237,7 @@ Example:
                "wr_operations":0,
                "rd_bytes":0,
                "rd_operations":0
+               "flush_operations":0,
             }
          },
          {
@@ -2244,6 +2248,7 @@ Example:
                "wr_operations":0,
                "rd_bytes":0,
                "rd_operations":0
+               "flush_operations":0,
             }
          },
          {
@@ -2254,6 +2259,7 @@ Example:
                "wr_operations":0,
                "rd_bytes":0,
                "rd_operations":0
+               "flush_operations":0,
             }
          }
       ]
