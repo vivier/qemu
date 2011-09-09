@@ -1304,9 +1304,10 @@ static int redhat_spice_migrate_info(Monitor *mon, const QDict *qdict, QObject *
     return 0;
 }
 
-static void do_screen_dump(Monitor *mon, const QDict *qdict)
+static int do_screen_dump(Monitor *mon, const QDict *qdict, QObject **ret_data)
 {
     vga_hw_screen_dump(qdict_get_str(qdict, "filename"));
+    return 0;
 }
 
 static int rhel6_qxl_do_screen_dump(Monitor *mon, const QDict *qdict, QObject **ret_data)
