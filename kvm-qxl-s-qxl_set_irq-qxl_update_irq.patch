@@ -1,0 +1,80 @@
+From d9a72fb1ed50b29045d67e19b6b78f5c9f0ba116 Mon Sep 17 00:00:00 2001
+From: Yonit Halperin <yhalperi@redhat.com>
+Date: Wed, 7 Sep 2011 08:16:01 -0300
+Subject: [RHEL6 qemu-kvm PATCH 3/6] qxl: s/qxl_set_irq/qxl_update_irq/
+
+RH-Author: Yonit Halperin <yhalperi@redhat.com>
+Message-id: <1315383361-32298-2-git-send-email-yhalperi@redhat.com>
+Patchwork-id: 32459
+O-Subject: [PATCH 2/2] qxl: s/qxl_set_irq/qxl_update_irq/
+Bugzilla: 732949
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Arnon Gilboa <agilboa@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+
+Signed-off-by: Yonit Halperin <yhalperi@redhat.com>
+---
+ hw/qxl.c |   12 ++++++------
+ 1 files changed, 6 insertions(+), 6 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qxl.c |   12 ++++++------
+ 1 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index cf9cf65..d669a6b 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -810,7 +810,7 @@ static void qxl_exit_vga_mode(PCIQXLDevice *d)
+     qxl_destroy_primary(d, QXL_SYNC);
+ }
+ 
+-static void qxl_set_irq(PCIQXLDevice *d)
++static void qxl_update_irq(PCIQXLDevice *d)
+ {
+     uint32_t pending = le32_to_cpu(d->ram->int_pending);
+     uint32_t mask    = le32_to_cpu(d->ram->int_mask);
+@@ -1224,7 +1224,7 @@ async_common:
+         qemu_spice_wakeup(&d->ssd);
+         break;
+     case QXL_IO_UPDATE_IRQ:
+-        qxl_set_irq(d);
++        qxl_update_irq(d);
+         break;
+     case QXL_IO_NOTIFY_OOM:
+         if (!SPICE_RING_IS_EMPTY(&d->ram->release_ring)) {
+@@ -1399,7 +1399,7 @@ static void pipe_read(void *opaque)
+     do {
+         len = read(d->pipe[0], &dummy, sizeof(dummy));
+     } while (len == sizeof(dummy));
+-    qxl_set_irq(d);
++    qxl_update_irq(d);
+ }
+ 
+ static void qxl_send_events(PCIQXLDevice *d, uint32_t events)
+@@ -1413,7 +1413,7 @@ static void qxl_send_events(PCIQXLDevice *d, uint32_t events)
+         return;
+     }
+     if (pthread_self() == d->main) {
+-        qxl_set_irq(d);
++        qxl_update_irq(d);
+     } else {
+         if (write(d->pipe[1], d, 1) != 1) {
+             dprint(d, 1, "%s: write to pipe failed\n", __FUNCTION__);
+@@ -1505,10 +1505,10 @@ static void qxl_vm_change_state_handler(void *opaque, int running, int reason)
+     if (running) {
+         /*
+          * if qxl_send_events was called from spice server context before
+-         * migration ended, qxl_set_irq for these events might not have been
++         * migration ended, qxl_update_irq for these events might not have been
+          * called
+          */
+-         qxl_set_irq(qxl);
++         qxl_update_irq(qxl);
+     } else if (qxl->mode == QXL_MODE_NATIVE) {
+         /* dirty all vram (which holds surfaces) and devram (primary surface)
+          * to make sure they are saved */
+-- 
+1.7.3.2
+

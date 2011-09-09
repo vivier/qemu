@@ -1,0 +1,200 @@
+From 8f62a267fc6b0ff04c5e91fc07cb401e43463799 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 30 Aug 2011 09:26:12 -0300
+Subject: [RHEL6 qemu-kvm PATCH 1/6] qemu-img: Require larger zero areas for sparse handling
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1314696372-11071-1-git-send-email-kwolf@redhat.com>
+Patchwork-id: 32052
+O-Subject: [RHEL-6.2 qemu-kvm PATCH] qemu-img: Require larger zero areas for sparse handling
+Bugzilla: 730587
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Bugzilla: 730587
+
+By default, require 4k of consecutive zero bytes for qemu-img to make the
+output file sparse by not issuing a write request for the zeroed parts. Add an
+-S option to allow users to tune this setting.
+
+This helps to avoid situations where a lot of zero sectors and data sectors are
+mixed and qemu-img tended to issue many tiny 512 byte writes.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit a22f123ca3d3c09a77af4341ed1fbcc175b54f1d)
+
+Conflicts:
+
+	qemu-img-cmds.hx
+	qemu-img.c
+	qemu-img.texi
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+
+This BZ is considered urgent. If you are on CC, please give it a review ASAP.
+
+ qemu-img-cmds.hx |    4 +-
+ qemu-img.c       |   61 ++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ qemu-img.texi    |    7 +++++-
+ 3 files changed, 67 insertions(+), 5 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ qemu-img-cmds.hx |    4 +-
+ qemu-img.c       |   61 ++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ qemu-img.texi    |    7 +++++-
+ 3 files changed, 67 insertions(+), 5 deletions(-)
+
+diff --git a/qemu-img-cmds.hx b/qemu-img-cmds.hx
+index cfd12e6..724d58f 100644
+--- a/qemu-img-cmds.hx
++++ b/qemu-img-cmds.hx
+@@ -28,9 +28,9 @@ STEXI
+ ETEXI
+ 
+ DEF("convert", img_convert,
+-    "convert [-c] [-p] [-f fmt] [-t cache] [-O output_fmt] [-o options] filename [filename2 [...]] output_filename")
++    "convert [-c] [-p] [-f fmt] [-t cache] [-O output_fmt] [-o options] [-S sparse_size] filename [filename2 [...]] output_filename")
+ STEXI
+-@item convert [-c] [-p] [-f @var{fmt}] [-O @var{output_fmt}] [-o @var{options}] @var{filename} [@var{filename2} [...]] @var{output_filename}
++@item convert [-c] [-p] [-f @var{fmt}] [-O @var{output_fmt}] [-o @var{options}] [-S sparse_size] @var{filename} [@var{filename2} [...]] @var{output_filename}
+ ETEXI
+ 
+ DEF("info", img_info,
+diff --git a/qemu-img.c b/qemu-img.c
+index 2dd5e7b..7621325 100644
+--- a/qemu-img.c
++++ b/qemu-img.c
+@@ -88,6 +88,8 @@ static void help(void)
+            "       rebasing in this case (useful for renaming the backing file)\n"
+            "  '-h' with or without a command shows this help and lists the supported formats\n"
+            "  '-p' show progress of command (only certain commands)\n"
++           "  '-S' indicates the consecutive number of bytes that must contain only zeros\n"
++           "       for qemu-img to create a sparse image during conversion\n"
+            "\n"
+            "Parameters to snapshot subcommand:\n"
+            "  'snapshot' is the name of the snapshot to create, apply or delete\n"
+@@ -572,6 +574,48 @@ static int is_allocated_sectors(const uint8_t *buf, int n, int *pnum)
+ }
+ 
+ /*
++ * Like is_allocated_sectors, but if the buffer starts with a used sector,
++ * up to 'min' consecutive sectors containing zeros are ignored. This avoids
++ * breaking up write requests for only small sparse areas.
++ */
++static int is_allocated_sectors_min(const uint8_t *buf, int n, int *pnum,
++    int min)
++{
++    int ret;
++    int num_checked, num_used;
++
++    if (n < min) {
++        min = n;
++    }
++
++    ret = is_allocated_sectors(buf, n, pnum);
++    if (!ret) {
++        return ret;
++    }
++
++    num_used = *pnum;
++    buf += BDRV_SECTOR_SIZE * *pnum;
++    n -= *pnum;
++    num_checked = num_used;
++
++    while (n > 0) {
++        ret = is_allocated_sectors(buf, n, pnum);
++
++        buf += BDRV_SECTOR_SIZE * *pnum;
++        n -= *pnum;
++        num_checked += *pnum;
++        if (ret) {
++            num_used = num_checked;
++        } else if (*pnum >= min) {
++            break;
++        }
++    }
++
++    *pnum = num_used;
++    return 1;
++}
++
++/*
+  * Compares two buffers sector by sector. Returns 0 if the first sector of both
+  * buffers matches, non-zero otherwise.
+  *
+@@ -619,6 +663,7 @@ static int img_convert(int argc, char **argv)
+     QEMUOptionParameter *param = NULL, *create_options = NULL;
+     char *options = NULL;
+     float local_progress;
++    int min_sparse = 8; /* Need at least 4k of zeros for sparse detection */
+ 
+     fmt = NULL;
+     out_fmt = "raw";
+@@ -626,7 +671,7 @@ static int img_convert(int argc, char **argv)
+     out_baseimg = NULL;
+     compress = 0;
+     for(;;) {
+-        c = getopt(argc, argv, "f:O:B:s:hce6o:pt:");
++        c = getopt(argc, argv, "f:O:B:s:hce6o:pS:t:");
+         if (c == -1) {
+             break;
+         }
+@@ -658,6 +703,18 @@ static int img_convert(int argc, char **argv)
+         case 'o':
+             options = optarg;
+             break;
++        case 'S':
++        {
++            int64_t sval;
++            sval = strtosz_suffix(optarg, NULL, STRTOSZ_DEFSUFFIX_B);
++            if (sval < 0) {
++                error("Invalid minimum zero buffer size for sparse output specified");
++                return 1;
++            }
++
++            min_sparse = sval / BDRV_SECTOR_SIZE;
++            break;
++        }
+         case 'p':
+             progress = 1;
+             break;
+@@ -940,7 +997,7 @@ static int img_convert(int argc, char **argv)
+                    sectors that are entirely 0, since whatever data was
+                    already there is garbage, not 0s. */
+                 if (!has_zero_init || out_baseimg ||
+-                    is_allocated_sectors(buf1, n, &n1)) {
++                    is_allocated_sectors_min(buf1, n, &n1, min_sparse)) {
+                     ret = bdrv_write(out_bs, sector_num, buf1, n1);
+                     if (ret < 0) {
+                         error("error while writing");
+diff --git a/qemu-img.texi b/qemu-img.texi
+index 3070778..8eca18b 100644
+--- a/qemu-img.texi
++++ b/qemu-img.texi
+@@ -40,6 +40,11 @@ indicates that target image must be compressed (qcow format only)
+ with or without a command shows help and lists the supported formats
+ @item -p
+ display progress bar (convert and rebase commands only)
++@item -S @var{size}
++indicates the consecutive number of bytes that must contain only zeros
++for qemu-img to create a sparse image during conversion. This value is rounded
++down to the nearest 512 bytes. You may use the common size suffixes like
++@code{k} for kilobytes.
+ @end table
+ 
+ Parameters to snapshot subcommand:
+@@ -79,7 +84,7 @@ it doesn't need to be specified separately in this case.
+ 
+ Commit the changes recorded in @var{filename} in its base image.
+ 
+-@item convert [-c] [-p] [-f @var{fmt}] [-O @var{output_fmt}] [-o @var{options}] @var{filename} [@var{filename2} [...]] @var{output_filename}
++@item convert [-c] [-p] [-f @var{fmt}] [-O @var{output_fmt}] [-o @var{options}] [-S @var{sparse_size}] @var{filename} [@var{filename2} [...]] @var{output_filename}
+ 
+ Convert the disk image @var{filename} to disk image @var{output_filename}
+ using format @var{output_fmt}. It can be optionally compressed (@code{-c}
+-- 
+1.7.3.2
+

@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.188
+%define pkgrelease 2.189
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3573,6 +3573,18 @@ Patch2464: kvm-add-kvmclock-to-its-second-bit-v2-take2.patch
 Patch2465: kvm-create-kvmclock-when-one-of-the-flags-are-present-take2.patch
 # For bz#624983 - QEMU should support the newer set of MSRs for kvmclock
 Patch2466: kvm-x86-Allow-multiple-cpu-feature-matches-of-lookup_fea-take2.patch
+# For bz#730587 - qemu-img convert takes 25m for specific images when using cache=none
+Patch2467: kvm-qemu-img-Require-larger-zero-areas-for-sparse-handli.patch
+# For bz#732949 - Guest screen becomes abnormal after migration with spice
+Patch2468: kvm-qxl-send-interrupt-after-migration-in-case-ram-int_p.patch
+# For bz#732949 - Guest screen becomes abnormal after migration with spice
+Patch2469: kvm-qxl-s-qxl_set_irq-qxl_update_irq.patch
+# For bz#715017 - Report disk latency (read and write) for each storage device
+Patch2470: kvm-block-include-flush-requests-in-info-blockstats-v2.patch
+# For bz#715017 - Report disk latency (read and write) for each storage device
+Patch2471: kvm-block-explicit-I-O-accounting-v2.patch
+# For bz#715017 - Report disk latency (read and write) for each storage device
+Patch2472: kvm-block-latency-accounting-v2.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -5145,6 +5157,12 @@ ApplyOptionalPatch()
 %patch2464 -p1
 %patch2465 -p1
 %patch2466 -p1
+%patch2467 -p1
+%patch2468 -p1
+%patch2469 -p1
+%patch2470 -p1
+%patch2471 -p1
+%patch2472 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -5368,6 +5386,20 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Sep 09 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.189.el6
+- kvm-qemu-img-Require-larger-zero-areas-for-sparse-handli.patch [bz#730587]
+- kvm-qxl-send-interrupt-after-migration-in-case-ram-int_p.patch [bz#732949]
+- kvm-qxl-s-qxl_set_irq-qxl_update_irq.patch [bz#732949]
+- kvm-block-include-flush-requests-in-info-blockstats-v2.patch [bz#715017]
+- kvm-block-explicit-I-O-accounting-v2.patch [bz#715017]
+- kvm-block-latency-accounting-v2.patch [bz#715017]
+- Resolves: bz#715017
+  (Report disk latency (read and write) for each storage device)
+- Resolves: bz#730587
+  (qemu-img convert takes 25m for specific images when using cache=none)
+- Resolves: bz#732949
+  (Guest screen becomes abnormal after migration with spice)
+
 * Tue Sep 06 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.188.el6
 - kvm-x86-Introduce-kvmclock-device-to-save-restore-it-fixed.patch [bz#658467]
 - kvm-use-kernel-provided-para_features-instead-of-statica-take2.patch [bz#624983]

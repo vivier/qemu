@@ -1,0 +1,62 @@
+From 2f8d3f8f8fe6a1cf9bd18a4b4f9a7dad9a07c1d1 Mon Sep 17 00:00:00 2001
+From: Yonit Halperin <yhalperi@redhat.com>
+Date: Wed, 7 Sep 2011 08:16:00 -0300
+Subject: [RHEL6 qemu-kvm PATCH 2/6] qxl: send interrupt after migration in case ram->int_pending != 0, RHBZ #732949
+
+RH-Author: Yonit Halperin <yhalperi@redhat.com>
+Message-id: <1315383361-32298-1-git-send-email-yhalperi@redhat.com>
+Patchwork-id: 32460
+O-Subject: [PATCH 1/2] qxl: send interrupt after migration in case ram->int_pending != 0, RHBZ #732949
+Bugzilla: 732949
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Arnon Gilboa <agilboa@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+
+if qxl_send_events was called from spice server context, and then
+migration had completed before a call to pipe_read, the target
+guest qxl driver didn't get the interrupt. In addition,
+qxl_send_events ignored further interrupts of the same kind, since
+ram->int_pending was set. As a result, the guest driver was stacked
+or very slow (when the waiting for the interrupt was with timeout).
+
+Signed-off-by: Yonit Halperin <yhalperi@redhat.com>
+---
+ hw/qxl.c |   10 ++++++++--
+ 1 files changed, 8 insertions(+), 2 deletions(-)
+
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ hw/qxl.c |   10 ++++++++--
+ 1 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index cfbc4d8..cf9cf65 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -1402,7 +1402,6 @@ static void pipe_read(void *opaque)
+     qxl_set_irq(d);
+ }
+ 
+-/* called from spice server thread context only */
+ static void qxl_send_events(PCIQXLDevice *d, uint32_t events)
+ {
+     uint32_t old_pending;
+@@ -1503,7 +1502,14 @@ static void qxl_vm_change_state_handler(void *opaque, int running, int reason)
+     PCIQXLDevice *qxl = opaque;
+     qemu_spice_vm_change_state_handler(&qxl->ssd, running, reason);
+ 
+-    if (!running && qxl->mode == QXL_MODE_NATIVE) {
++    if (running) {
++        /*
++         * if qxl_send_events was called from spice server context before
++         * migration ended, qxl_set_irq for these events might not have been
++         * called
++         */
++         qxl_set_irq(qxl);
++    } else if (qxl->mode == QXL_MODE_NATIVE) {
+         /* dirty all vram (which holds surfaces) and devram (primary surface)
+          * to make sure they are saved */
+         /* FIXME #1: should go out during "live" stage */
+-- 
+1.7.3.2
+
