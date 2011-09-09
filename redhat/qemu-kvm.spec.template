@@ -89,6 +89,9 @@ Requires: /usr/share/gpxe/rtl8139.rom
 Requires: /usr/share/gpxe/virtio-net.rom
 Requires: /usr/share/sgabios/sgabios.bin
 
+# fix for CVE-2011-2527 requires newer glibc
+Requires: glibc >= 2.12-1.40.el6
+
 # We don't provide vvfat anymore, that is used by older VDSM versions.
 Conflicts: vdsm < 4.5
 
