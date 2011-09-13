@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.15.0
-Release: 3%{?dist}
+Release: 4%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -83,6 +83,9 @@ BuildRequires: texinfo
 BuildRequires: spice-protocol >= 0.8.1
 BuildRequires: spice-server-devel >= 0.9.0
 %endif
+# We need both because the 'stap' binary is probed for by configure
+BuildRequires: systemtap
+BuildRequires: systemtap-sdt-devel
 Requires: %{name}-user = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-x86 = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-arm = %{epoch}:%{version}-%{release}
@@ -312,6 +315,7 @@ sed -i.debug 's/"-g $CFLAGS"/"$CFLAGS"/g' configure
 %ifarch x86_64
             --enable-spice \
 %endif
+            --enable-trace-backend=dtrace \
             --disable-werror \
             --disable-xen
 
@@ -321,6 +325,9 @@ cat config-host.mak
 echo "==="
 
 make V=1 %{?_smp_mflags} $buildldflags
+./scripts/tracetool --dtrace --binary %{_bindir}/qemu-kvm \
+  --target-arch x86_64 --target-type system --stap \
+  --probe-prefix qemu.kvm < ./trace-events > qemu-kvm.stp
 cp -a x86_64-softmmu/qemu-system-x86_64 qemu-kvm
 make clean
 
@@ -340,6 +347,7 @@ make clean
 %ifarch x86_64
     --enable-spice \
 %endif
+    --enable-trace-backend=dtrace \
     --disable-werror
 
 echo "config-host.mak contents:"
@@ -364,10 +372,12 @@ mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules
 mkdir -p $RPM_BUILD_ROOT%{_bindir}/
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{name}
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
+mkdir -p $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset
 
 install -m 0755 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules/kvm.modules
 install -m 0755 kvm/kvm_stat $RPM_BUILD_ROOT%{_bindir}/
 install -m 0755 qemu-kvm $RPM_BUILD_ROOT%{_bindir}/
+install -m 0644 qemu-kvm.stp $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/
 install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
 %endif
 
@@ -512,6 +522,19 @@ fi
 %{_bindir}/qemu-sh4
 %{_bindir}/qemu-sh4eb
 %endif
+%{_datadir}/systemtap/tapset/qemu-i386.stp
+%{_datadir}/systemtap/tapset/qemu-x86_64.stp
+%if !%{with_x86only}
+%{_datadir}/systemtap/tapset/qemu-alpha.stp
+%{_datadir}/systemtap/tapset/qemu-arm.stp
+%{_datadir}/systemtap/tapset/qemu-armeb.stp
+%{_datadir}/systemtap/tapset/qemu-cris.stp
+%{_datadir}/systemtap/tapset/qemu-m68k.stp
+%{_datadir}/systemtap/tapset/qemu-mips.stp
+%{_datadir}/systemtap/tapset/qemu-mipsel.stp
+%{_datadir}/systemtap/tapset/qemu-sh4.stp
+%{_datadir}/systemtap/tapset/qemu-sh4eb.stp
+%endif
 
 %files system-x86
 %defattr(-,root,root)
@@ -533,12 +556,15 @@ fi
 %{_datadir}/%{name}/pxe-rtl8139.rom
 %{_datadir}/%{name}/pxe-ne2k_pci.rom
 %config(noreplace) %{_sysconfdir}/qemu/target-x86_64.conf
+%{_datadir}/systemtap/tapset/qemu.stp
+%{_datadir}/systemtap/tapset/qemu-system-x86_64.stp
 
 %ifarch %{ix86} x86_64
 %{_datadir}/%{name}/extboot.bin
 %{_bindir}/qemu-kvm
 %{_sysconfdir}/sysconfig/modules/kvm.modules
 %{_sysconfdir}/udev/rules.d/80-kvm.rules
+%{_datadir}/systemtap/tapset/qemu-kvm.stp
 %endif
 
 %ifarch %{ix86} x86_64
@@ -552,6 +578,7 @@ fi
 %files system-arm
 %defattr(-,root,root)
 %{_bindir}/qemu-system-arm
+%{_datadir}/systemtap/tapset/qemu-system-arm.stp
 
 %files system-mips
 %defattr(-,root,root)
@@ -559,19 +586,27 @@ fi
 %{_bindir}/qemu-system-mipsel
 %{_bindir}/qemu-system-mips64
 %{_bindir}/qemu-system-mips64el
+%{_datadir}/systemtap/tapset/qemu-system-mips.stp
+%{_datadir}/systemtap/tapset/qemu-system-mipsel.stp
+%{_datadir}/systemtap/tapset/qemu-system-mips64el.stp
+%{_datadir}/systemtap/tapset/qemu-system-mips64.stp
 
 %files system-cris
 %defattr(-,root,root)
 %{_bindir}/qemu-system-cris
+%{_datadir}/systemtap/tapset/qemu-system-cris.stp
 
 %files system-m68k
 %defattr(-,root,root)
 %{_bindir}/qemu-system-m68k
+%{_datadir}/systemtap/tapset/qemu-system-m68k.stp
 
 %files system-sh4
 %defattr(-,root,root)
 %{_bindir}/qemu-system-sh4
 %{_bindir}/qemu-system-sh4eb
+%{_datadir}/systemtap/tapset/qemu-system-sh4.stp
+%{_datadir}/systemtap/tapset/qemu-system-sh4eb.stp
 
 %endif
 
@@ -582,6 +617,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Sep 13 2011 Daniel P. Berrange <berrange@redhat.com> - 2:0.15.0-4
+- Enable DTrace tracing backend for SystemTAP (rhbz #737763)
+
 * Thu Aug 18 2011 Hans de Goede <hdegoede@redhat.com> - 2:0.15.0-3
 - Add missing BuildRequires: usbredir-devel, so that the usbredir code
   actually gets build
