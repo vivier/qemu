@@ -84,7 +84,7 @@ BuildRequires: spice-protocol >= 0.8.1
 BuildRequires: spice-server-devel >= 0.9.0
 %endif
 # For network block driver
-BuildRequries: libcurl-devel
+BuildRequires: libcurl-devel
 # We need both because the 'stap' binary is probed for by configure
 BuildRequires: systemtap
 BuildRequires: systemtap-sdt-devel
