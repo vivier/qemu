@@ -83,6 +83,8 @@ BuildRequires: texinfo
 BuildRequires: spice-protocol >= 0.8.1
 BuildRequires: spice-server-devel >= 0.9.0
 %endif
+# For network block driver
+BuildRequries: libcurl-devel
 # We need both because the 'stap' binary is probed for by configure
 BuildRequires: systemtap
 BuildRequires: systemtap-sdt-devel
@@ -619,6 +621,7 @@ fi
 %changelog
 * Tue Sep 13 2011 Daniel P. Berrange <berrange@redhat.com> - 2:0.15.0-4
 - Enable DTrace tracing backend for SystemTAP (rhbz #737763)
+- Enable build with curl (rhbz #737006)
 
 * Thu Aug 18 2011 Hans de Goede <hdegoede@redhat.com> - 2:0.15.0-3
 - Add missing BuildRequires: usbredir-devel, so that the usbredir code
