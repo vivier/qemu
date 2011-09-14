@@ -1874,7 +1874,7 @@ static int all_threads_paused(void)
     return 1;
 }
 
-static void pause_all_threads(void)
+void kvm_pause_all_threads(void)
 {
     CPUState *penv = first_cpu;
 
@@ -1894,7 +1894,7 @@ static void pause_all_threads(void)
         qemu_cond_wait(&qemu_pause_cond);
 }
 
-static void resume_all_threads(void)
+void kvm_resume_all_threads(void)
 {
     CPUState *penv = first_cpu;
 
@@ -1906,14 +1906,6 @@ static void resume_all_threads(void)
         pthread_kill(penv->kvm_cpu_state.thread, SIG_IPI);
         penv = (CPUState *) penv->next_cpu;
     }
-}
-
-static void kvm_vm_state_change_handler(void *context, int running, int reason)
-{
-    if (running)
-        resume_all_threads();
-    else
-        pause_all_threads();
 }
 
 static void setup_kernel_sigmask(CPUState *env)
@@ -1937,7 +1929,7 @@ static void qemu_kvm_system_reset(void)
 {
     CPUState *penv = first_cpu;
 
-    pause_all_threads();
+    kvm_pause_all_threads();
 
     qemu_system_reset();
 
@@ -1946,7 +1938,7 @@ static void qemu_kvm_system_reset(void)
         penv = (CPUState *) penv->next_cpu;
     }
 
-    resume_all_threads();
+    kvm_resume_all_threads();
 }
 
 static void process_irqchip_events(CPUState *env)
@@ -2055,8 +2047,6 @@ void kvm_hpet_enable_kpit(void)
 int kvm_init_ap(void)
 {
     struct sigaction action;
-
-    qemu_add_vm_change_state_handler(kvm_vm_state_change_handler, NULL);
 
     signal(SIG_IPI, sig_ipi_handler);
 
@@ -2221,7 +2211,7 @@ int kvm_main_loop(void)
     }
 
     bdrv_close_all();
-    pause_all_threads();
+    kvm_pause_all_threads();
     pthread_mutex_unlock(&qemu_mutex);
 
     return 0;

@@ -1167,4 +1167,7 @@ int kvm_tpr_enable_vapic(CPUState *env);
 
 #endif
 
+void kvm_pause_all_threads(void);
+void kvm_resume_all_threads(void);
+
 #endif

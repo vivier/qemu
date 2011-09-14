@@ -3398,10 +3398,16 @@ int qemu_cpu_self(void *env)
 
 static void resume_all_vcpus(void)
 {
+    if (kvm_allowed) {
+        kvm_resume_all_threads();
+    }
 }
 
 static void pause_all_vcpus(void)
 {
+    if (kvm_allowed) {
+        kvm_pause_all_threads();
+    }
 }
 
 void qemu_cpu_kick(void *env)
