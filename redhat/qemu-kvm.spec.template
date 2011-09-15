@@ -195,8 +195,8 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
             --audio-drv-list=pa,alsa \
             --audio-card-list=ac97,es1370 \
             --disable-strip \
-            --extra-ldflags=$extraldflags \
-            --extra-cflags="$RPM_OPT_FLAGS" \
+            --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
+            --extra-cflags="$RPM_OPT_FLAGS -fPIE -DPIE" \
             --disable-xen \
             --block-drv-whitelist=qcow2,raw,file,host_device,host_cdrom,qed \
             --disable-debug-tcg \
