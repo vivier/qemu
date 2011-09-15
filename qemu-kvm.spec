@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.189
+%define pkgrelease 2.190
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3585,6 +3585,36 @@ Patch2470: kvm-block-include-flush-requests-in-info-blockstats-v2.patch
 Patch2471: kvm-block-explicit-I-O-accounting-v2.patch
 # For bz#715017 - Report disk latency (read and write) for each storage device
 Patch2472: kvm-block-latency-accounting-v2.patch
+# For bz#633370 - [6.1 FEAT] Enhance QED image format to support streaming from remote systems
+Patch2473: kvm-Add-flag-to-indicate-external-users-to-block-device.patch
+# For bz#633370 - [6.1 FEAT] Enhance QED image format to support streaming from remote systems
+Patch2474: kvm-block-enable-in_use-flag.patch
+# For bz#633370 - [6.1 FEAT] Enhance QED image format to support streaming from remote systems
+Patch2475: kvm-block-add-drive-copy-on-read-on-off.patch
+# For bz#633370 - [6.1 FEAT] Enhance QED image format to support streaming from remote systems
+Patch2476: kvm-qed-replace-is_write-with-flags-field.patch
+# For bz#633370 - [6.1 FEAT] Enhance QED image format to support streaming from remote systems
+Patch2477: kvm-qed-extract-qed_start_allocating_write.patch
+# For bz#633370 - [6.1 FEAT] Enhance QED image format to support streaming from remote systems
+Patch2478: kvm-qed-make-qed_aio_write_alloc-reusable.patch
+# For bz#633370 - [6.1 FEAT] Enhance QED image format to support streaming from remote systems
+Patch2479: kvm-qed-add-support-for-copy-on-read.patch
+# For bz#633370 - [6.1 FEAT] Enhance QED image format to support streaming from remote systems
+Patch2480: kvm-qed-avoid-deadlock-on-emulated-synchronous-I-O.patch
+# For bz#633370 - [6.1 FEAT] Enhance QED image format to support streaming from remote systems
+Patch2481: kvm-block-add-bdrv_aio_copy_backing.patch
+# For bz#633370 - [6.1 FEAT] Enhance QED image format to support streaming from remote systems
+Patch2482: kvm-qmp-add-block_stream-command.patch
+# For bz#633370 - [6.1 FEAT] Enhance QED image format to support streaming from remote systems
+Patch2483: kvm-qmp-add-block_job_cancel-command.patch
+# For bz#633370 - [6.1 FEAT] Enhance QED image format to support streaming from remote systems
+Patch2484: kvm-qmp-add-query-block-jobs-command.patch
+# For bz#633370 - [6.1 FEAT] Enhance QED image format to support streaming from remote systems
+Patch2485: kvm-qmp-add-block_job_set_speed-command.patch
+# For bz#633370 - [6.1 FEAT] Enhance QED image format to support streaming from remote systems
+Patch2486: kvm-block-add-drive-stream-on-off.patch
+# For bz#633370 - [6.1 FEAT] Enhance QED image format to support streaming from remote systems
+Patch2487: kvm-qed-intelligent-streaming-implementation.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -5163,6 +5193,21 @@ ApplyOptionalPatch()
 %patch2470 -p1
 %patch2471 -p1
 %patch2472 -p1
+%patch2473 -p1
+%patch2474 -p1
+%patch2475 -p1
+%patch2476 -p1
+%patch2477 -p1
+%patch2478 -p1
+%patch2479 -p1
+%patch2480 -p1
+%patch2481 -p1
+%patch2482 -p1
+%patch2483 -p1
+%patch2484 -p1
+%patch2485 -p1
+%patch2486 -p1
+%patch2487 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -5386,6 +5431,25 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Sep 15 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.190.el6
+- kvm-Add-flag-to-indicate-external-users-to-block-device.patch [bz#633370]
+- kvm-block-enable-in_use-flag.patch [bz#633370]
+- kvm-block-add-drive-copy-on-read-on-off.patch [bz#633370]
+- kvm-qed-replace-is_write-with-flags-field.patch [bz#633370]
+- kvm-qed-extract-qed_start_allocating_write.patch [bz#633370]
+- kvm-qed-make-qed_aio_write_alloc-reusable.patch [bz#633370]
+- kvm-qed-add-support-for-copy-on-read.patch [bz#633370]
+- kvm-qed-avoid-deadlock-on-emulated-synchronous-I-O.patch [bz#633370]
+- kvm-block-add-bdrv_aio_copy_backing.patch [bz#633370]
+- kvm-qmp-add-block_stream-command.patch [bz#633370]
+- kvm-qmp-add-block_job_cancel-command.patch [bz#633370]
+- kvm-qmp-add-query-block-jobs-command.patch [bz#633370]
+- kvm-qmp-add-block_job_set_speed-command.patch [bz#633370]
+- kvm-block-add-drive-stream-on-off.patch [bz#633370]
+- kvm-qed-intelligent-streaming-implementation.patch [bz#633370]
+- Resolves: bz#633370
+  ([6.1 FEAT] Enhance QED image format to support streaming from remote systems)
+
 * Fri Sep 09 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.189.el6
 - kvm-qemu-img-Require-larger-zero-areas-for-sparse-handli.patch [bz#730587]
 - kvm-qxl-send-interrupt-after-migration-in-case-ram-int_p.patch [bz#732949]

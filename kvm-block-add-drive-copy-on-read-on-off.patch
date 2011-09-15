@@ -1,0 +1,198 @@
+From 608ae3ded15566900ee67d5e10e6747bebe99d2f Mon Sep 17 00:00:00 2001
+From: Anthony Liguori <aliguori@redhat.com>
+Date: Fri, 12 Aug 2011 15:38:11 +0200
+Subject: [PATCH 03/15] block: add -drive copy-on-read=on|off
+
+RH-Author: Anthony Liguori <aliguori@redhat.com>
+Message-id: <1313163503-2523-4-git-send-email-aliguori@redhat.com>
+Patchwork-id: 31325
+O-Subject: [RHEL6.2 qemu PATCH 03/15] block: add -drive copy-on-read=on|off
+Bugzilla: 633370
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Daniel P. Berrange <berrange@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Orit Wasserman <owasserm@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+This patch adds the -drive copy-on-read=on|off command-line option:
+
+  copy-on-read=on|off
+  copy-on-read is "on" or "off" and enables whether to copy read backing
+  file sectors into the image file.  Copy-on-read avoids accessing the
+  same backing file sectors repeatedly and is useful when the backing file
+  is over a slow network.  By default copy-on-read is off.
+
+The new BlockDriverState.copy_on_read field indicates whether
+copy-on-read is enabled.  Block drivers can use this as a hint to copy
+sectors read from the backing file into the image file.  The point of
+copy-on-read is to avoid accessing the backing file again in the future.
+
+Block drivers that do not honor the copy-on-read hint simply read data
+without populating the image file.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Anthony Liguori <aliguori@redhat.com>
+
+Bugzilla: 633370
+
+---
+ block.c         |    5 +++++
+ block.h         |    1 +
+ block_int.h     |    1 +
+ blockdev.c      |    6 ++++++
+ qemu-config.c   |    4 ++++
+ qemu-monitor.hx |    3 ++-
+ qemu-options.hx |   10 +++++++++-
+ 7 files changed, 28 insertions(+), 2 deletions(-)
+
+Signed-off-by: Michal Novotny <mignov@gmail.com>
+---
+ block.c         |    5 +++++
+ block.h         |    1 +
+ block_int.h     |    1 +
+ blockdev.c      |    6 ++++++
+ qemu-config.c   |    4 ++++
+ qemu-monitor.hx |    3 ++-
+ qemu-options.hx |   10 +++++++++-
+ 7 files changed, 28 insertions(+), 2 deletions(-)
+
+diff --git a/block.c b/block.c
+index 22da5c7..383b62d 100644
+--- a/block.c
++++ b/block.c
+@@ -414,6 +414,11 @@ static int bdrv_open_common(BlockDriverState *bs, const char *filename,
+     /* buffer_alignment defaulted to 512, drivers can change this value */
+     bs->buffer_alignment = 512;
+ 
++    bs->copy_on_read = 0;
++    if (flags & BDRV_O_RDWR) {
++        bs->copy_on_read = !!(flags & BDRV_O_COPY_ON_READ);
++    }
++
+     pstrcpy(bs->filename, sizeof(bs->filename), filename);
+ 
+     if (use_bdrv_whitelist && !bdrv_is_whitelisted(drv)) {
+diff --git a/block.h b/block.h
+index 216b496..b47c450 100644
+--- a/block.h
++++ b/block.h
+@@ -33,6 +33,7 @@ typedef struct QEMUSnapshotInfo {
+ #define BDRV_O_NATIVE_AIO  0x0080 /* use native AIO instead of the thread pool */
+ #define BDRV_O_NO_BACKING  0x0100 /* don't open the backing file */
+ #define BDRV_O_NO_FLUSH    0x0200 /* disable flushing on this disk */
++#define BDRV_O_COPY_ON_READ 0x0400 /* copy read backing sectors into image */
+ #define BDRV_O_INCOMING    0x0800 /* consistency hint for incoming migration */
+ 
+ #define BDRV_O_CACHE_MASK  (BDRV_O_NOCACHE | BDRV_O_CACHE_WB)
+diff --git a/block_int.h b/block_int.h
+index ef162b9..3c36aa4 100644
+--- a/block_int.h
++++ b/block_int.h
+@@ -151,6 +151,7 @@ struct BlockDriverState {
+     int encrypted; /* if true, the media is encrypted */
+     int valid_key; /* if true, a valid encryption key has been set */
+     int sg;        /* if true, the device is a /dev/sg* */
++    int copy_on_read; /* if true, copy read backing sectors into image */
+     /* event callback when inserting/removing */
+     void (*change_cb)(void *opaque, int reason);
+     void *change_opaque;
+diff --git a/blockdev.c b/blockdev.c
+index 1f7ef2f..b1dc74f 100644
+--- a/blockdev.c
++++ b/blockdev.c
+@@ -279,6 +279,7 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
+     DriveInfo *dinfo;
+     int is_extboot = 0;
+     int snapshot = 0;
++    int copy_on_read;
+ 
+     translation = BIOS_ATA_TRANSLATION_AUTO;
+ 
+@@ -302,6 +303,7 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
+ 
+     snapshot = qemu_opt_get_bool(opts, "snapshot", 0);
+     ro = qemu_opt_get_bool(opts, "readonly", 0);
++    copy_on_read = qemu_opt_get_bool(opts, "copy-on-read", 0);
+ 
+     file = qemu_opt_get(opts, "file");
+     serial = qemu_opt_get(opts, "serial");
+@@ -569,6 +571,10 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
+         bdrv_flags |= (BDRV_O_SNAPSHOT|BDRV_O_CACHE_WB);
+     }
+ 
++    if (copy_on_read) {
++        bdrv_flags |= BDRV_O_COPY_ON_READ;
++    }
++
+     if (media == MEDIA_CDROM) {
+         /* mark CDROM as read-only. CDROM is fine for any interface, don't check */
+         ro = 1;
+diff --git a/qemu-config.c b/qemu-config.c
+index 4a2afde..adb9970 100644
+--- a/qemu-config.c
++++ b/qemu-config.c
+@@ -83,6 +83,10 @@ QemuOptsList qemu_drive_opts = {
+             .name = "boot",
+             .type = QEMU_OPT_BOOL,
+             .help = "make this a boot drive",
++        },{
++            .name = "copy-on-read",
++            .type = QEMU_OPT_BOOL,
++            .help = "copy read data from backing file into image file",
+         },
+         { /* end if list */ }
+     },
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index cb72152..cc70dba 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -1288,7 +1288,8 @@ EQMP
+                       "[file=file][,if=type][,bus=n]\n"
+                       "[,unit=m][,media=d][index=i]\n"
+                       "[,cyls=c,heads=h,secs=s[,trans=t]]\n"
+-                      "[snapshot=on|off][,cache=on|off]",
++                      "[snapshot=on|off][,cache=on|off]\n"
++                      "[,copy-on-read=on|off]",
+         .help       = "add drive to PCI storage controller",
+         .mhandler.cmd = drive_hot_add,
+     },
+diff --git a/qemu-options.hx b/qemu-options.hx
+index e5a9d02..78ecd2c 100644
+--- a/qemu-options.hx
++++ b/qemu-options.hx
+@@ -104,7 +104,7 @@ DEF("drive", HAS_ARG, QEMU_OPTION_drive,
+     "       [,cyls=c,heads=h,secs=s[,trans=t]][,snapshot=on|off]\n"
+     "       [,cache=writethrough|writeback|none|unsafe][,format=f]\n"
+     "       [,serial=s][,addr=A][,id=name][,aio=threads|native]\n"
+-    "       [,readonly=on|off]\n"
++    "       [,readonly=on|off][,copy-on-read=on|off]\n"
+     "                use 'file' as a drive image\n")
+ DEF("set", HAS_ARG, QEMU_OPTION_set,
+     "-set group.id.arg=value\n"
+@@ -150,6 +150,9 @@ an untrusted format header.
+ This option specifies the serial number to assign to the device.
+ @item addr=@var{addr}
+ Specify the controller's PCI address (if=virtio only).
++@item copy-on-read=@var{copy-on-read}
++@var{copy-on-read} is "on" or "off" and enables whether to copy read backing
++file sectors into the image file.
+ @end table
+ 
+ By default, writethrough caching is used for all block device.  This means that
+@@ -177,6 +180,11 @@ to the disk but can instead keeps things in cache. If anything goes wrong,
+ like your host losing power, the disk storage getting disconnected accidently,
+ etc. you're image will most probably be rendered unusable.
+ 
++Copy-on-read avoids accessing the same backing file sectors repeatedly and is
++useful when the backing file is over a slow network.  By default copy-on-read
++is off.  Note that copy-on-read is a hint and may by ignored by block drivers
++which do not support it.
++
+ Instead of @option{-cdrom} you can use:
+ @example
+ qemu -drive file=file,index=2,media=cdrom
+-- 
+1.7.4.4
+

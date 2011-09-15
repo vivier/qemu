@@ -1,0 +1,126 @@
+From dea96fbd2f41cba35e89bd4fbaba5539238256c4 Mon Sep 17 00:00:00 2001
+From: Anthony Liguori <aliguori@redhat.com>
+Date: Fri, 12 Aug 2011 15:38:14 +0200
+Subject: [PATCH 06/15] qed: make qed_aio_write_alloc() reusable
+
+RH-Author: Anthony Liguori <aliguori@redhat.com>
+Message-id: <1313163503-2523-7-git-send-email-aliguori@redhat.com>
+Patchwork-id: 31327
+O-Subject: [RHEL6.2 qemu PATCH 06/15] qed: make qed_aio_write_alloc() reusable
+Bugzilla: 633370
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Orit Wasserman <owasserm@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+Copy-on-read requests will share the allocating write code path.  This
+requires making qed_aio_write_alloc() reusable outside of a write
+request.  This patch ensures that iovec setup is performed in a common
+place before qed_aio_write_alloc() is called.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Anthony Liguori <aliguori@redhat.com>
+
+Bugzilla: 633370
+
+---
+ block/qed.c |   52 +++++++++++++++-------------------------------------
+ 1 files changed, 15 insertions(+), 37 deletions(-)
+
+Signed-off-by: Michal Novotny <mignov@gmail.com>
+---
+ block/qed.c |   52 +++++++++++++++-------------------------------------
+ 1 files changed, 15 insertions(+), 37 deletions(-)
+
+diff --git a/block/qed.c b/block/qed.c
+index 915e0d5..fcd34d4 100644
+--- a/block/qed.c
++++ b/block/qed.c
+@@ -1126,19 +1126,18 @@ static bool qed_start_allocating_write(QEDAIOCB *acb)
+  *
+  * This path is taken when writing to previously unallocated clusters.
+  */
+-static void qed_aio_write_alloc(QEDAIOCB *acb, size_t len)
++static void qed_aio_write_alloc(QEDAIOCB *acb)
+ {
+     BDRVQEDState *s = acb_to_s(acb);
+-    BlockDriverCompletionFunc *cb;
+ 
+     if (!qed_start_allocating_write(acb)) {
+-        return;
++        qemu_iovec_reset(&acb->cur_qiov);
++        return; /* wait until current allocating write completes */
+     }
+ 
+     acb->cur_nclusters = qed_bytes_to_clusters(s,
+-            qed_offset_into_cluster(s, acb->cur_pos) + len);
++            qed_offset_into_cluster(s, acb->cur_pos) + acb->cur_qiov.size);
+     acb->cur_cluster = qed_alloc_clusters(s, acb->cur_nclusters);
+-    qemu_iovec_copy(&acb->cur_qiov, acb->qiov, acb->qiov_offset, len);
+ 
+     if (qed_should_set_need_check(s)) {
+         s->header.features |= QED_F_NEED_CHECK;
+@@ -1149,25 +1148,6 @@ static void qed_aio_write_alloc(QEDAIOCB *acb, size_t len)
+ }
+ 
+ /**
+- * Write data cluster in place
+- *
+- * @acb:        Write request
+- * @offset:     Cluster offset in bytes
+- * @len:        Length in bytes
+- *
+- * This path is taken when writing to already allocated clusters.
+- */
+-static void qed_aio_write_inplace(QEDAIOCB *acb, uint64_t offset, size_t len)
+-{
+-    /* Calculate the I/O vector */
+-    acb->cur_cluster = offset;
+-    qemu_iovec_copy(&acb->cur_qiov, acb->qiov, acb->qiov_offset, len);
+-
+-    /* Do the actual write */
+-    qed_aio_write_main(acb, 0);
+-}
+-
+-/**
+  * Write data cluster
+  *
+  * @opaque:     Write request
+@@ -1185,21 +1165,19 @@ static void qed_aio_write_data(void *opaque, int ret,
+ 
+     trace_qed_aio_write_data(acb_to_s(acb), acb, ret, offset, len);
+ 
+-    acb->find_cluster_ret = ret;
+-
+-    switch (ret) {
+-    case QED_CLUSTER_FOUND:
+-        qed_aio_write_inplace(acb, offset, len);
+-        break;
++    if (ret < 0) {
++        qed_aio_complete(acb, ret);
++        return;
++    }
+ 
+-    case QED_CLUSTER_L2:
+-    case QED_CLUSTER_L1:
+-        qed_aio_write_alloc(acb, len);
+-        break;
++    acb->find_cluster_ret = ret;
++    qemu_iovec_copy(&acb->cur_qiov, acb->qiov, acb->qiov_offset, len);
+ 
+-    default:
+-        qed_aio_complete(acb, ret);
+-        break;
++    if (ret == QED_CLUSTER_FOUND) {
++        acb->cur_cluster = offset;
++        qed_aio_write_main(acb, 0);
++    } else {
++        qed_aio_write_alloc(acb);
+     }
+ }
+ 
+-- 
+1.7.4.4
+

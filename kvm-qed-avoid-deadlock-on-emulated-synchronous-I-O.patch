@@ -1,0 +1,90 @@
+From 5adff4d18ebd6e68c0e914946bab058fbc8870ee Mon Sep 17 00:00:00 2001
+From: Anthony Liguori <aliguori@redhat.com>
+Date: Fri, 12 Aug 2011 15:38:16 +0200
+Subject: [PATCH 08/15] qed: avoid deadlock on emulated synchronous I/O
+
+RH-Author: Anthony Liguori <aliguori@redhat.com>
+Message-id: <1313163503-2523-9-git-send-email-aliguori@redhat.com>
+Patchwork-id: 31332
+O-Subject: [RHEL6.2 qemu PATCH 08/15] qed: avoid deadlock on emulated synchronous I/O
+Bugzilla: 633370
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Orit Wasserman <owasserm@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+The block layer emulates synchronous bdrv_read()/bdrv_write() for
+drivers that only provide the asynchronous interfaces.  The emulation
+issues an asynchronous request inside a new "async context" and waits
+for that request to complete.  If currently outstanding requests
+complete during this time, their completion functions are not invoked
+until the async context is popped again.
+
+This can lead to deadlock if an allocating write is being processed when
+synchronous I/O emulation starts.  The emulated synchronous write will
+be queued because an existing request is being processed.  But the
+existing request on cannot complete until the async context is popped.
+The result is that qemu_aio_wait() sits in a deadlock.
+
+Address this problem in two ways:
+
+1. Add an assertion so that we instantly know if this corner case is
+   hit.  This saves us time by giving a clear failure indication.
+
+2. Ignore the copy-on-read hint for emulated synchronous reads.  This
+   allows us to do emulated synchronous reads without hitting the
+   deadlock.
+
+Keep this as a separate commit instead of merging with previous QED
+patches so it is easy to drop when coroutines are introduced and
+eliminate async contexts.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Anthony Liguori <aliguori@redhat.com>
+
+Bugzilla: 633370
+
+---
+ block/qed.c |   12 +++++++++++-
+ 1 files changed, 11 insertions(+), 1 deletions(-)
+
+Signed-off-by: Michal Novotny <mignov@gmail.com>
+---
+ block/qed.c |   12 +++++++++++-
+ 1 files changed, 11 insertions(+), 1 deletions(-)
+
+diff --git a/block/qed.c b/block/qed.c
+index b41b33b..367e87a 100644
+--- a/block/qed.c
++++ b/block/qed.c
+@@ -1113,6 +1113,14 @@ static bool qed_start_allocating_write(QEDAIOCB *acb)
+     }
+     if (acb != QSIMPLEQ_FIRST(&s->allocating_write_reqs) ||
+         s->allocating_write_reqs_plugged) {
++        /* Queuing an emulated synchronous write causes deadlock since
++         * currently outstanding requests are not in the current async context
++         * and their completion will never be invoked.  Once the block layer
++         * moves to truly asynchronous semantics this failure case will be
++         * eliminated.
++         */
++        assert(get_async_context_id() == 0);
++
+         return false;
+     }
+     return true;
+@@ -1239,7 +1247,9 @@ static void qed_aio_read_data(void *opaque, int ret,
+     } else if (ret != QED_CLUSTER_FOUND) {
+         BlockDriverCompletionFunc *cb = qed_aio_next_io;
+ 
+-        if (bs->backing_hd && (acb->flags & QED_AIOCB_COPY_ON_READ)) {
++        /* See qed_start_allocating_write() for get_async_context_id() hack */
++        if (bs->backing_hd && (acb->flags & QED_AIOCB_COPY_ON_READ) &&
++            get_async_context_id() == 0) {
+             if (!qed_start_allocating_write(acb)) {
+                 qemu_iovec_reset(&acb->cur_qiov);
+                 return; /* wait for current allocating write to complete */
+-- 
+1.7.4.4
+

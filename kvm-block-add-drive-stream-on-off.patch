@@ -1,0 +1,135 @@
+From c46b43d62c0f9384c719896217b94801e116300d Mon Sep 17 00:00:00 2001
+From: Anthony Liguori <aliguori@redhat.com>
+Date: Fri, 12 Aug 2011 15:38:22 +0200
+Subject: [PATCH 14/15] block: add -drive stream=on|off
+
+RH-Author: Anthony Liguori <aliguori@redhat.com>
+Message-id: <1313163503-2523-15-git-send-email-aliguori@redhat.com>
+Patchwork-id: 31338
+O-Subject: [RHEL6.2 qemu PATCH 14/15] block: add -drive stream=on|off
+Bugzilla: 633370
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Orit Wasserman <owasserm@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+This patch adds the -drive stream=on|off command-line option:
+
+  stream=on|off
+  stream is "on" or "off" and enables b633370ackground copying of backing file
+  contents into the image file until the backing file is no longer
+  needed.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Anthony Liguori <aliguori@redhat.com>
+
+Bugzilla: 633370
+
+---
+ blockdev.c      |   12 +++++++++++-
+ qemu-config.c   |    4 ++++
+ qemu-monitor.hx |    2 +-
+ qemu-options.hx |    5 ++++-
+ 4 files changed, 20 insertions(+), 3 deletions(-)
+
+Signed-off-by: Michal Novotny <mignov@gmail.com>
+---
+ blockdev.c      |   12 +++++++++++-
+ qemu-config.c   |    4 ++++
+ qemu-monitor.hx |    2 +-
+ qemu-options.hx |    5 ++++-
+ 4 files changed, 20 insertions(+), 3 deletions(-)
+
+diff --git a/blockdev.c b/blockdev.c
+index 6712dc6..b250a50 100644
+--- a/blockdev.c
++++ b/blockdev.c
+@@ -480,7 +480,7 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
+     DriveInfo *dinfo;
+     int is_extboot = 0;
+     int snapshot = 0;
+-    int copy_on_read;
++    int copy_on_read, stream;
+ 
+     translation = BIOS_ATA_TRANSLATION_AUTO;
+ 
+@@ -505,6 +505,7 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
+     snapshot = qemu_opt_get_bool(opts, "snapshot", 0);
+     ro = qemu_opt_get_bool(opts, "readonly", 0);
+     copy_on_read = qemu_opt_get_bool(opts, "copy-on-read", 0);
++    stream = qemu_opt_get_bool(opts, "stream", 0);
+ 
+     file = qemu_opt_get(opts, "file");
+     serial = qemu_opt_get(opts, "serial");
+@@ -796,6 +797,15 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
+         goto err;
+     }
+ 
++    if (stream) {
++        const char *device_name = bdrv_get_device_name(dinfo->bdrv);
++
++        if (!stream_start(device_name)) {
++            fprintf(stderr, "qemu: warning: stream_start failed for '%s'\n",
++                    device_name);
++        }
++    }
++
+     if (bdrv_key_required(dinfo->bdrv))
+         autostart = 0;
+     return dinfo;
+diff --git a/qemu-config.c b/qemu-config.c
+index adb9970..6171dd3 100644
+--- a/qemu-config.c
++++ b/qemu-config.c
+@@ -87,6 +87,10 @@ QemuOptsList qemu_drive_opts = {
+             .name = "copy-on-read",
+             .type = QEMU_OPT_BOOL,
+             .help = "copy read data from backing file into image file",
++        },{
++            .name = "stream",
++            .type = QEMU_OPT_BOOL,
++            .help = "copy backing file data into image file while guest runs",
+         },
+         { /* end if list */ }
+     },
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 8377df7..c01cb35 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -1446,7 +1446,7 @@ EQMP
+                       "[,unit=m][,media=d][index=i]\n"
+                       "[,cyls=c,heads=h,secs=s[,trans=t]]\n"
+                       "[snapshot=on|off][,cache=on|off]\n"
+-                      "[,copy-on-read=on|off]",
++                      "[,copy-on-read=on|off][,stream=on|off]",
+         .help       = "add drive to PCI storage controller",
+         .mhandler.cmd = drive_hot_add,
+     },
+diff --git a/qemu-options.hx b/qemu-options.hx
+index 78ecd2c..0fef1c1 100644
+--- a/qemu-options.hx
++++ b/qemu-options.hx
+@@ -104,7 +104,7 @@ DEF("drive", HAS_ARG, QEMU_OPTION_drive,
+     "       [,cyls=c,heads=h,secs=s[,trans=t]][,snapshot=on|off]\n"
+     "       [,cache=writethrough|writeback|none|unsafe][,format=f]\n"
+     "       [,serial=s][,addr=A][,id=name][,aio=threads|native]\n"
+-    "       [,readonly=on|off][,copy-on-read=on|off]\n"
++    "       [,readonly=on|off][,copy-on-read=on|off][,stream=on|off]\n"
+     "                use 'file' as a drive image\n")
+ DEF("set", HAS_ARG, QEMU_OPTION_set,
+     "-set group.id.arg=value\n"
+@@ -153,6 +153,9 @@ Specify the controller's PCI address (if=virtio only).
+ @item copy-on-read=@var{copy-on-read}
+ @var{copy-on-read} is "on" or "off" and enables whether to copy read backing
+ file sectors into the image file.
++@item stream=@var{stream}
++@var{stream} is "on" or "off" and enables background copying of backing file
++contents into the image file until the backing file is no longer needed.
+ @end table
+ 
+ By default, writethrough caching is used for all block device.  This means that
+-- 
+1.7.4.4
+

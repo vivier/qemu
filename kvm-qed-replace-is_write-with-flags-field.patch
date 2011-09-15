@@ -1,0 +1,134 @@
+From 124b91a90e3f1c3b4a8b16272a949ed95129418b Mon Sep 17 00:00:00 2001
+From: Anthony Liguori <aliguori@redhat.com>
+Date: Fri, 12 Aug 2011 15:38:12 +0200
+Subject: [PATCH 04/15] qed: replace is_write with flags field
+
+RH-Author: Anthony Liguori <aliguori@redhat.com>
+Message-id: <1313163503-2523-5-git-send-email-aliguori@redhat.com>
+Patchwork-id: 31330
+O-Subject: [RHEL6.2 qemu PATCH 04/15] qed: replace is_write with flags field
+Bugzilla: 633370
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Orit Wasserman <owasserm@redhat.com>
+RH-Acked-by: Christoph Hellwig <chellwig@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+Per-request attributes like read/write are currently implemented as bool
+fields in the QEDAIOCB struct.  This becomes unwiedly as the number of
+attributes grows.  For example, the qed_aio_setup() function would have
+to take multiple bool arguments and at call sites it would be hard to
+distinguish the meaning of each bool.
+
+Instead use a flags field with bitmask constants.  This will be used
+when the copy-on-write and check for zeroes attributes are introduced.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Anthony Liguori <aliguori@redhat.com>
+
+Bugzilla: 633370
+
+---
+ block/qed.c  |   15 ++++++++-------
+ block/qed.h  |    6 +++++-
+ trace-events |    2 +-
+ 3 files changed, 14 insertions(+), 9 deletions(-)
+
+Signed-off-by: Michal Novotny <mignov@gmail.com>
+---
+ block/qed.c  |   15 ++++++++-------
+ block/qed.h  |    6 +++++-
+ trace-events |    2 +-
+ 3 files changed, 14 insertions(+), 9 deletions(-)
+
+diff --git a/block/qed.c b/block/qed.c
+index 827c207..7f5f1e6 100644
+--- a/block/qed.c
++++ b/block/qed.c
+@@ -1246,8 +1246,8 @@ static void qed_aio_next_io(void *opaque, int ret)
+ {
+     QEDAIOCB *acb = opaque;
+     BDRVQEDState *s = acb_to_s(acb);
+-    QEDFindClusterFunc *io_fn =
+-        acb->is_write ? qed_aio_write_data : qed_aio_read_data;
++    QEDFindClusterFunc *io_fn = (acb->flags & QED_AIOCB_WRITE) ?
++                                qed_aio_write_data : qed_aio_read_data;
+ 
+     trace_qed_aio_next_io(s, acb, ret, acb->cur_pos + acb->cur_qiov.size);
+ 
+@@ -1277,14 +1277,14 @@ static BlockDriverAIOCB *qed_aio_setup(BlockDriverState *bs,
+                                        int64_t sector_num,
+                                        QEMUIOVector *qiov, int nb_sectors,
+                                        BlockDriverCompletionFunc *cb,
+-                                       void *opaque, bool is_write)
++                                       void *opaque, int flags)
+ {
+     QEDAIOCB *acb = qemu_aio_get(&qed_aio_pool, bs, cb, opaque);
+ 
+     trace_qed_aio_setup(bs->opaque, acb, sector_num, nb_sectors,
+-                         opaque, is_write);
++                        opaque, flags);
+ 
+-    acb->is_write = is_write;
++    acb->flags = flags;
+     acb->finished = NULL;
+     acb->qiov = qiov;
+     acb->qiov_offset = 0;
+@@ -1304,7 +1304,7 @@ static BlockDriverAIOCB *bdrv_qed_aio_readv(BlockDriverState *bs,
+                                             BlockDriverCompletionFunc *cb,
+                                             void *opaque)
+ {
+-    return qed_aio_setup(bs, sector_num, qiov, nb_sectors, cb, opaque, false);
++    return qed_aio_setup(bs, sector_num, qiov, nb_sectors, cb, opaque, 0);
+ }
+ 
+ static BlockDriverAIOCB *bdrv_qed_aio_writev(BlockDriverState *bs,
+@@ -1313,7 +1313,8 @@ static BlockDriverAIOCB *bdrv_qed_aio_writev(BlockDriverState *bs,
+                                              BlockDriverCompletionFunc *cb,
+                                              void *opaque)
+ {
+-    return qed_aio_setup(bs, sector_num, qiov, nb_sectors, cb, opaque, true);
++    return qed_aio_setup(bs, sector_num, qiov, nb_sectors, cb,
++                         opaque, QED_AIOCB_WRITE);
+ }
+ 
+ static BlockDriverAIOCB *bdrv_qed_aio_flush(BlockDriverState *bs,
+diff --git a/block/qed.h b/block/qed.h
+index 388fdb3..dbc00be 100644
+--- a/block/qed.h
++++ b/block/qed.h
+@@ -123,12 +123,16 @@ typedef struct QEDRequest {
+     CachedL2Table *l2_table;
+ } QEDRequest;
+ 
++enum {
++    QED_AIOCB_WRITE = 0x0001,       /* read or write? */
++};
++
+ typedef struct QEDAIOCB {
+     BlockDriverAIOCB common;
+     QEMUBH *bh;
+     int bh_ret;                     /* final return status for completion bh */
+     QSIMPLEQ_ENTRY(QEDAIOCB) next;  /* next request */
+-    bool is_write;                  /* false - read, true - write */
++    int flags;                      /* QED_AIOCB_* bits ORed together */
+     bool *finished;                 /* signal for cancel completion */
+     uint64_t end_pos;               /* request end on block device, in bytes */
+ 
+diff --git a/trace-events b/trace-events
+index 62968c8..ebc12da 100644
+--- a/trace-events
++++ b/trace-events
+@@ -141,7 +141,7 @@ disable qed_need_check_timer_cb(void *s) "s %p"
+ disable qed_start_need_check_timer(void *s) "s %p"
+ disable qed_cancel_need_check_timer(void *s) "s %p"
+ disable qed_aio_complete(void *s, void *acb, int ret) "s %p acb %p ret %d"
+-disable qed_aio_setup(void *s, void *acb, int64_t sector_num, int nb_sectors, void *opaque, int is_write) "s %p acb %p sector_num %"PRId64" nb_sectors %d opaque %p is_write %d"
++disable qed_aio_setup(void *s, void *acb, int64_t sector_num, int nb_sectors, void *opaque, int flags) "s %p acb %p sector_num %"PRId64" nb_sectors %d opaque %p flags %#x"
+ disable qed_aio_next_io(void *s, void *acb, int ret, uint64_t cur_pos) "s %p acb %p ret %d cur_pos %"PRIu64""
+ disable qed_aio_read_data(void *s, void *acb, int ret, uint64_t offset, size_t len) "s %p acb %p ret %d offset %"PRIu64" len %zu"
+ disable qed_aio_write_data(void *s, void *acb, int ret, uint64_t offset, size_t len) "s %p acb %p ret %d offset %"PRIu64" len %zu"
+-- 
+1.7.4.4
+
