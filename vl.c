@@ -4436,6 +4436,7 @@ int qemu_uuid_parse(const char *str, uint8_t *uuid)
 
 static void termsig_handler(int signal)
 {
+    no_shutdown = 0;
     qemu_system_shutdown_request();
 }
 
