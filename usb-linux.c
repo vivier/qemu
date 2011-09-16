@@ -132,6 +132,7 @@ typedef struct USBHostDevice {
     int addr;
     char port[MAX_PORTLEN];
     struct USBAutoFilter match;
+    int seen, errcount;
 
     QTAILQ_ENTRY(USBHostDevice) next;
 } USBHostDevice;
@@ -1713,12 +1714,18 @@ static int usb_host_auto_scan(void *opaque, int bus_num, int addr, char *port,
             continue;
 
         /* We got a match */
+        s->seen++;
+        if (s->errcount >= 3) {
+            return 0;
+        }
 
         /* Already attached ? */
         if (s->fd != -1)
             return 0;
 
-        usb_host_open(s, bus_num, addr, port, product_name, speed);
+        if (usb_host_open(s, bus_num, addr, port, product_name, speed) < 0) {
+            s->errcount++;
+        }
         break;
     }
 
@@ -1733,8 +1740,13 @@ static void usb_host_auto_check(void *unused)
     usb_host_scan(NULL, usb_host_auto_scan);
 
     QTAILQ_FOREACH(s, &hostdevs, next) {
-        if (s->fd == -1)
+        if (s->fd == -1) {
             unconnected++;
+        }
+        if (s->seen == 0) {
+            s->errcount = 0;
+        }
+        s->seen = 0;
     }
 
     if (unconnected == 0) {
