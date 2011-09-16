@@ -308,9 +308,11 @@ static void async_complete(void *opaque)
                     fprintf(stderr, "husb: %d iso urbs finished at once\n", urbs);
                 }
                 return;
-
-            } if (errno == ENODEV && !s->closing) {
-                do_disconnect(s);
+            }
+            if (errno == ENODEV) {
+                if (!s->closing) {
+                    do_disconnect(s);
+                }
                 return;
             }
 
