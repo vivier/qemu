@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.190
+%define pkgrelease 2.191
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3615,6 +3615,7 @@ Patch2485: kvm-qmp-add-block_job_set_speed-command.patch
 Patch2486: kvm-block-add-drive-stream-on-off.patch
 # For bz#633370 - [6.1 FEAT] Enhance QED image format to support streaming from remote systems
 Patch2487: kvm-qed-intelligent-streaming-implementation.patch
+Patch2488: kvm-CVE-2011-2527-os-posix-set-groups-properly-for-runas.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3652,6 +3653,9 @@ Requires: /usr/share/gpxe/pcnet32.rom
 Requires: /usr/share/gpxe/rtl8139.rom
 Requires: /usr/share/gpxe/virtio-net.rom
 Requires: /usr/share/sgabios/sgabios.bin
+
+# fix for CVE-2011-2527 requires newer glibc
+Requires: glibc >= 2.12-1.40.el6
 
 # We don't provide vvfat anymore, that is used by older VDSM versions.
 Conflicts: vdsm < 4.5
@@ -5208,6 +5212,7 @@ ApplyOptionalPatch()
 %patch2485 -p1
 %patch2486 -p1
 %patch2487 -p1
+%patch2488 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -5431,6 +5436,12 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Sep 19 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.191.el6
+- kvm-CVE-2011-2527-os-posix-set-groups-properly-for-runas.patch [bz#722583]
+- CVE: CVE-2011-2527
+- Resolves: bz#722583
+  (when started as root, extra groups are not dropped correctly)
+
 * Thu Sep 15 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.190.el6
 - kvm-Add-flag-to-indicate-external-users-to-block-device.patch [bz#633370]
 - kvm-block-enable-in_use-flag.patch [bz#633370]
