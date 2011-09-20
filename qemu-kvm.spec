@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.191
+%define pkgrelease 2.192
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3616,6 +3616,22 @@ Patch2486: kvm-block-add-drive-stream-on-off.patch
 # For bz#633370 - [6.1 FEAT] Enhance QED image format to support streaming from remote systems
 Patch2487: kvm-qed-intelligent-streaming-implementation.patch
 Patch2488: kvm-CVE-2011-2527-os-posix-set-groups-properly-for-runas.patch
+# For bz#697441 - JSON corruption when closing SPICE window
+Patch2489: kvm-spice-workaround-a-spice-server-bug.patch
+# For bz#736975 - Qemu-kvm fails to unregister virtio-balloon-pci device when unplugging
+Patch2490: kvm-balloon-Disassociate-handlers-from-balloon-device-on.patch
+# For bz#736975 - Qemu-kvm fails to unregister virtio-balloon-pci device when unplugging
+Patch2491: kvm-virtio-balloon-Disassociate-from-the-balloon-handler.patch
+# For bz#738019 - Memleak in virtio-serial code: VirtIOSerialBus not freed
+Patch2492: kvm-virtio-serial-Plug-memory-leak-on-qdev-exit.patch
+# For bz#733993 - migration target can crash (assert(d->ssd.running))
+Patch2493: kvm-spice-set-qxl-ssd.running-true-before-telling-spice-.patch
+# For bz#729621 - ASSERT worker->running failed on source qemu during migration with Spice session
+Patch2494: kvm-qemu-kvm-vm_stop-pause-threads-before-calling-other-.patch
+# For bz#738487 - Fix termination by signal with -no-shutdown
+Patch2495: kvm-Fix-termination-by-signal-with-no-shutdown.patch
+# For bz#738555 - Stop exposing -enable-nested
+Patch2496: kvm-qemu-option-Remove-enable-nesting-from-help-text.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -5213,6 +5229,14 @@ ApplyOptionalPatch()
 %patch2486 -p1
 %patch2487 -p1
 %patch2488 -p1
+%patch2489 -p1
+%patch2490 -p1
+%patch2491 -p1
+%patch2492 -p1
+%patch2493 -p1
+%patch2494 -p1
+%patch2495 -p1
+%patch2496 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -5436,6 +5460,30 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Sep 20 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.192.el6
+- kvm-spice-workaround-a-spice-server-bug.patch [bz#697441]
+- kvm-balloon-Disassociate-handlers-from-balloon-device-on.patch [bz#736975]
+- kvm-virtio-balloon-Disassociate-from-the-balloon-handler.patch [bz#736975]
+- kvm-virtio-serial-Plug-memory-leak-on-qdev-exit.patch [bz#738019]
+- kvm-spice-set-qxl-ssd.running-true-before-telling-spice-.patch [bz#733993]
+- kvm-qemu-kvm-vm_stop-pause-threads-before-calling-other-.patch [bz#729621]
+- kvm-Fix-termination-by-signal-with-no-shutdown.patch [bz#738487]
+- kvm-qemu-option-Remove-enable-nesting-from-help-text.patch [bz#738555]
+- Resolves: bz#697441
+  (JSON corruption when closing SPICE window)
+- Resolves: bz#729621
+  (ASSERT worker->running failed on source qemu during migration with Spice session)
+- Resolves: bz#733993
+  (migration target can crash (assert(d->ssd.running)))
+- Resolves: bz#736975
+  (Qemu-kvm fails to unregister virtio-balloon-pci device when unplugging)
+- Resolves: bz#738019
+  (Memleak in virtio-serial code: VirtIOSerialBus not freed)
+- Resolves: bz#738487
+  (Fix termination by signal with -no-shutdown)
+- Resolves: bz#738555
+  (Stop exposing -enable-nested)
+
 * Mon Sep 19 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.191.el6
 - kvm-CVE-2011-2527-os-posix-set-groups-properly-for-runas.patch [bz#722583]
 - CVE: CVE-2011-2527

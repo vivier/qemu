@@ -1,0 +1,167 @@
+From b28e394b862ec3e6c25d906a1e19001a40620081 Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Wed, 14 Sep 2011 12:01:34 +0200
+Subject: [PATCH 6/8] qemu-kvm: vm_stop: pause threads before calling other
+ vmstate handlers
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1316001694-24423-1-git-send-email-alevy@redhat.com>
+Patchwork-id: 32754
+O-Subject: [PATCH RHEL-6.2 qemu-kvm] qemu-kvm: vm_stop: pause threads before calling other vmstate handlers
+Bugzilla: 729621
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Yonit Halperin <yhalperi@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+and same for resume in vm_start.
+
+RHBZ: 729621
+
+upstream: not relevant (upstream always uses io thread since recently)
+
+There are two different paths for handling vm_stop:
+ 1. with CONFIG_IOTHREAD - not interesting since it isn't used by RHEL-6.2
+    qemu-kvm.spec
+ 2. without CONFIG_IOTHREAD.
+
+Without CONFIG_IOTHREAD:
+ during kvm_create_context (via kvm_init_ap) kvm_vm_state_change_handler
+ is registered. This handler is run after any handlers already registered.
+ It is responsible for stopping the vcpu threads (signaling the threads and
+ waiting on a condition variable).
+
+The problem:
+ kvm_vm_state_change_handler is run after qxl_state_change_handler, which
+ sets the spice worker thread to stopped state. But since the vcpus are not
+ yet stopped, an io exit then occurs, that leads to a call to the spice
+ thread, which asserts because it is stopped.
+
+Possible solutions:
+ 1. register the kvm_vm_state_change_handler before all others. This seems
+    fragile.
+ 2. Use the already existing pause_all_vcpus in vl.c (and corresponding
+    resume_all_vcpus), currenty empty when io thread is not in use, to call the
+    kvm specific functions. This is what this patch does.
+---
+ qemu-kvm.c |   20 +++++---------------
+ qemu-kvm.h |    3 +++
+ vl.c       |    6 ++++++
+ 3 files changed, 14 insertions(+), 15 deletions(-)
+
+Signed-off-by: Michal Novotny <mignov@gmail.com>
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ qemu-kvm.c |   20 +++++---------------
+ qemu-kvm.h |    3 +++
+ vl.c       |    6 ++++++
+ 3 files changed, 14 insertions(+), 15 deletions(-)
+
+diff --git a/qemu-kvm.c b/qemu-kvm.c
+index 732d6ec..6e9c400 100644
+--- a/qemu-kvm.c
++++ b/qemu-kvm.c
+@@ -1874,7 +1874,7 @@ static int all_threads_paused(void)
+     return 1;
+ }
+ 
+-static void pause_all_threads(void)
++void kvm_pause_all_threads(void)
+ {
+     CPUState *penv = first_cpu;
+ 
+@@ -1894,7 +1894,7 @@ static void pause_all_threads(void)
+         qemu_cond_wait(&qemu_pause_cond);
+ }
+ 
+-static void resume_all_threads(void)
++void kvm_resume_all_threads(void)
+ {
+     CPUState *penv = first_cpu;
+ 
+@@ -1908,14 +1908,6 @@ static void resume_all_threads(void)
+     }
+ }
+ 
+-static void kvm_vm_state_change_handler(void *context, int running, int reason)
+-{
+-    if (running)
+-        resume_all_threads();
+-    else
+-        pause_all_threads();
+-}
+-
+ static void setup_kernel_sigmask(CPUState *env)
+ {
+     sigset_t set;
+@@ -1937,7 +1929,7 @@ static void qemu_kvm_system_reset(void)
+ {
+     CPUState *penv = first_cpu;
+ 
+-    pause_all_threads();
++    kvm_pause_all_threads();
+ 
+     qemu_system_reset();
+ 
+@@ -1946,7 +1938,7 @@ static void qemu_kvm_system_reset(void)
+         penv = (CPUState *) penv->next_cpu;
+     }
+ 
+-    resume_all_threads();
++    kvm_resume_all_threads();
+ }
+ 
+ static void process_irqchip_events(CPUState *env)
+@@ -2056,8 +2048,6 @@ int kvm_init_ap(void)
+ {
+     struct sigaction action;
+ 
+-    qemu_add_vm_change_state_handler(kvm_vm_state_change_handler, NULL);
+-
+     signal(SIG_IPI, sig_ipi_handler);
+ 
+     memset(&action, 0, sizeof(action));
+@@ -2221,7 +2211,7 @@ int kvm_main_loop(void)
+     }
+ 
+     bdrv_close_all();
+-    pause_all_threads();
++    kvm_pause_all_threads();
+     pthread_mutex_unlock(&qemu_mutex);
+ 
+     return 0;
+diff --git a/qemu-kvm.h b/qemu-kvm.h
+index 1b905f8..0747a6a 100644
+--- a/qemu-kvm.h
++++ b/qemu-kvm.h
+@@ -1167,4 +1167,7 @@ int kvm_tpr_enable_vapic(CPUState *env);
+ 
+ #endif
+ 
++void kvm_pause_all_threads(void);
++void kvm_resume_all_threads(void);
++
+ #endif
+diff --git a/vl.c b/vl.c
+index 36cda95..7e1c1ff 100644
+--- a/vl.c
++++ b/vl.c
+@@ -3398,10 +3398,16 @@ int qemu_cpu_self(void *env)
+ 
+ static void resume_all_vcpus(void)
+ {
++    if (kvm_allowed) {
++        kvm_resume_all_threads();
++    }
+ }
+ 
+ static void pause_all_vcpus(void)
+ {
++    if (kvm_allowed) {
++        kvm_pause_all_threads();
++    }
+ }
+ 
+ void qemu_cpu_kick(void *env)
+-- 
+1.7.4.4
+

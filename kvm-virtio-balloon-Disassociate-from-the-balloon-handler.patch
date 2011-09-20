@@ -1,0 +1,76 @@
+From 072544d58b10e73fcc675486ee474df54ab163bf Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Mon, 12 Sep 2011 06:24:12 +0200
+Subject: [PATCH 3/8] virtio-balloon: Disassociate from the balloon handlers
+ on unplug
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <59a3aadeab6288089c4bb6324340f4dac5ac8850.1315808013.git.amit.shah@redhat.com>
+Patchwork-id: 32639
+O-Subject: [RHEL6 qemu PATCH 2/2] virtio-balloon: Disassociate from the balloon handlers on unplug
+Bugzilla: 736975
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amos Kong <akong@redhat.com>
+
+Adding a 2nd balloon device after unplugging the first one doesn't work.
+Also, the 'info balloon' command should indicate an error mentioning no
+balloon device is registered after unplug.
+
+Reproduction steps given by Shaolong Hu:
+
+(qemu) info balloon
+Device 'balloon' has not been activated by the guest
+(qemu) device_add virtio-balloon-pci,id=balloon1
+(qemu) info balloon
+balloon: actual=4096
+(qemu) balloon 2048
+(qemu) info balloon
+balloon: actual=2048
+(qemu) device_del balloon1
+(qemu) info balloon
+balloon: actual=4096
+(qemu) balloon 2048
+(qemu) info balloon
+balloon: actual=4096
+(qemu) device_del balloon1
+Device 'balloon1' not found
+(qemu) device_add virtio-balloon-pci,id=balloon1
+Another balloon device already registered
+Device 'virtio-balloon-pci' could not be initialized
+(qemu) device_add virtio-balloon-pci,id=balloon2
+Another balloon device already registered
+Device 'virtio-balloon-pci' could not be initialized
+
+Reported-by: Shaolong Hu <shu@redhat.com>
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 3b86b13ab07407fc8c6ac0efbd717fe51df1cad7)
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-balloon.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+Signed-off-by: Michal Novotny <mignov@gmail.com>
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/virtio-balloon.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-balloon.c b/hw/virtio-balloon.c
+index 7b76603..604985f 100644
+--- a/hw/virtio-balloon.c
++++ b/hw/virtio-balloon.c
+@@ -305,6 +305,8 @@ VirtIODevice *virtio_balloon_init(DeviceState *dev)
+ void virtio_balloon_exit(VirtIODevice *vdev)
+ {
+     VirtIOBalloon *s = DO_UPCAST(VirtIOBalloon, vdev, vdev);
++
++    qemu_remove_balloon_handler(s);
+     unregister_savevm(s->qdev, "virtio-balloon", s);
+     virtio_cleanup(vdev);
+ }
+-- 
+1.7.4.4
+

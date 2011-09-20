@@ -1,0 +1,47 @@
+From 71573efd46b131b8fc36a2092bbcc9277fe0a78c Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Thu, 15 Sep 2011 07:58:08 +0200
+Subject: [PATCH 7/8] Fix termination by signal with -no-shutdown
+
+RH-Author: Kevin Wolf <kwolf@redhat.com>
+Message-id: <1316073488-2821-1-git-send-email-kwolf@redhat.com>
+Patchwork-id: 32783
+O-Subject: [RHEL-6.2 qemu-kvm PATCH] Fix termination by signal with -no-shutdown
+Bugzilla: 738487
+RH-Acked-by: Jiri Denemark <jdenemar@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+Bugzilla: 738487
+Upstream status: Submitted
+
+On signals such as SIGTERM qemu should exit instead of just
+stopping the VM even with -no-shutdown.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ vl.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Michal Novotny <mignov@gmail.com>
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ vl.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index 7e1c1ff..dc01255 100644
+--- a/vl.c
++++ b/vl.c
+@@ -4436,6 +4436,7 @@ int qemu_uuid_parse(const char *str, uint8_t *uuid)
+ 
+ static void termsig_handler(int signal)
+ {
++    no_shutdown = 0;
+     qemu_system_shutdown_request();
+ }
+ 
+-- 
+1.7.4.4
+

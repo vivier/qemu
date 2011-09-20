@@ -1,0 +1,73 @@
+From 244329d1ff97ed5878e309a3cf462f2b442a8685 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Mon, 12 Sep 2011 06:24:11 +0200
+Subject: [PATCH 2/8] balloon: Disassociate handlers from balloon device on
+ unplug
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <09b20414ec76de78aa45f2fe81c90b39124c3bd2.1315808013.git.amit.shah@redhat.com>
+Patchwork-id: 32638
+O-Subject: [RHEL6 qemu PATCH 1/2] balloon: Disassociate handlers from balloon device on unplug
+Bugzilla: 736975
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Amos Kong <akong@redhat.com>
+
+When a balloon device gets unplugged, allow the balloon handlers to be
+freed.
+
+Reported-by: Shaolong Hu <shu@redhat.com>
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 8a7d552cb3684570491a5ecaa8b78818404ed2fb)
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ balloon.c |   10 ++++++++++
+ balloon.h |    1 +
+ 2 files changed, 11 insertions(+), 0 deletions(-)
+
+Signed-off-by: Michal Novotny <mignov@gmail.com>
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ balloon.c |   10 ++++++++++
+ balloon.h |    1 +
+ 2 files changed, 11 insertions(+), 0 deletions(-)
+
+diff --git a/balloon.c b/balloon.c
+index 2a6dfe6..a06a00b 100644
+--- a/balloon.c
++++ b/balloon.c
+@@ -53,6 +53,16 @@ int qemu_add_balloon_handler(QEMUBalloonEvent *event_func,
+     return 0;
+ }
+ 
++void qemu_remove_balloon_handler(void *opaque)
++{
++    if (balloon_opaque != opaque) {
++        return;
++    }
++    balloon_event_fn = NULL;
++    balloon_stat_fn = NULL;
++    balloon_opaque = NULL;
++}
++
+ static int qemu_balloon(ram_addr_t target)
+ {
+     if (!balloon_event_fn) {
+diff --git a/balloon.h b/balloon.h
+index fe358e7..7fc1dde 100644
+--- a/balloon.h
++++ b/balloon.h
+@@ -23,6 +23,7 @@ typedef void (QEMUBalloonStatus)(void *opaque, MonitorCompletion cb,
+ 
+ int qemu_add_balloon_handler(QEMUBalloonEvent *event_func,
+ 			     QEMUBalloonStatus *stat_func, void *opaque);
++void qemu_remove_balloon_handler(void *opaque);
+ 
+ void monitor_print_balloon(Monitor *mon, const QObject *data);
+ int do_info_balloon(Monitor *mon, MonitorCompletion cb, void *opaque);
+-- 
+1.7.4.4
+

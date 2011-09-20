@@ -1,0 +1,60 @@
+From f805bc286615d49ffd463e4a0d9914e2ca892065 Mon Sep 17 00:00:00 2001
+From: Yonit Halperin <yhalperi@redhat.com>
+Date: Wed, 14 Sep 2011 08:43:39 +0200
+Subject: [PATCH 5/8] spice: set qxl->ssd.running=true before telling spice to
+ start, RHBZ #733993
+
+RH-Author: Yonit Halperin <yhalperi@redhat.com>
+Message-id: <1315989819-29717-1-git-send-email-yhalperi@redhat.com>
+Patchwork-id: 32742
+O-Subject: [PATCH] spice: set qxl->ssd.running=true before telling spice to start, RHBZ #733993
+Bugzilla: 733993
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+
+If qxl->ssd.running=true is set after telling spice to start, the spice server
+thread can call qxl_send_events while qxl->ssd.running is still false. This leads to
+assert(d->ssd.running).
+
+Signed-off-by: Yonit Halperin <yhalperi@redhat.com>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 7e79cf4083efa399b43f30edf23434b137fcb197)
+
+Signed-off-by: Yonit Halperin <yhalperi@redhat.com>
+---
+Since it looks like the purpose of the assert in qxl_send_event is preventing changes
+in the guest when the vm is stopped, I think it is not necessary for ssd.running to be
+exactly synchronized with the spice server status, but just be true before
+the spice worker starts.
+
+ ui/spice-display.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+Signed-off-by: Michal Novotny <mignov@gmail.com>
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ ui/spice-display.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/ui/spice-display.c b/ui/spice-display.c
+index 64b75a9..8c76c7f 100644
+--- a/ui/spice-display.c
++++ b/ui/spice-display.c
+@@ -256,11 +256,12 @@ void qemu_spice_vm_change_state_handler(void *opaque, int running, int reason)
+     SimpleSpiceDisplay *ssd = opaque;
+ 
+     if (running) {
++        ssd->running = true;
+         qemu_spice_start(ssd);
+     } else {
+         qemu_spice_stop(ssd);
++        ssd->running = false;
+     }
+-    ssd->running = running;
+ }
+ 
+ void qemu_spice_display_init_common(SimpleSpiceDisplay *ssd, DisplayState *ds)
+-- 
+1.7.4.4
+

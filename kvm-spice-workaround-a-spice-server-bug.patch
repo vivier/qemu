@@ -1,0 +1,96 @@
+From 34f2a05f93ee726a136c9e1ff676b6086f165a4e Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 7 Sep 2011 08:25:09 +0200
+Subject: [PATCH 1/8] spice: workaround a spice server bug.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1315383909-28071-1-git-send-email-kraxel@redhat.com>
+Patchwork-id: 32461
+O-Subject: [RHEL-6.2 kvm PATCH] spice: workaround a spice server bug.
+Bugzilla: 697441
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Yonit Halperin <yhalperi@redhat.com>
+
+spice server might call the channel_event callback from spice server
+thread context.  Detect that and aquire iothread lock if needed,
+
+bugzilla: 697441 - JSON corruption when closing SPICE window
+upstream: http://patchwork.ozlabs.org/patch/113713/ (spice patch queue)
+---
+ ui/spice-core.c |   25 ++++++++++++++++++++++++-
+ 1 files changed, 24 insertions(+), 1 deletions(-)
+
+Signed-off-by: Michal Novotny <mignov@gmail.com>
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ ui/spice-core.c |   25 ++++++++++++++++++++++++-
+ 1 files changed, 24 insertions(+), 1 deletions(-)
+
+diff --git a/ui/spice-core.c b/ui/spice-core.c
+index 03167a6..e3b29d0 100644
+--- a/ui/spice-core.c
++++ b/ui/spice-core.c
+@@ -19,6 +19,7 @@
+ #include <spice-experimental.h>
+ 
+ #include <netdb.h>
++#include <pthread.h>
+ 
+ #include "qemu-common.h"
+ #include "qemu-spice.h"
+@@ -44,6 +45,8 @@ static char *auth_passwd;
+ static time_t auth_expires = TIME_MAX;
+ int using_spice = 0;
+ 
++static pthread_t me;
++
+ struct SpiceTimer {
+     QEMUTimer *timer;
+     QTAILQ_ENTRY(SpiceTimer) next;
+@@ -236,6 +239,20 @@ static void channel_event(int event, SpiceChannelEventInfo *info)
+     QDict *server, *client;
+     QObject *data;
+ 
++    /*
++     * Spice server might have called us from spice worker thread
++     * context (happens on display channel disconnects).  Spice should
++     * not do that.  It isn't that easy to fix it in spice and even
++     * when it is fixed we still should cover the already released
++     * spice versions.  So detect that we've been called from another
++     * thread and grab the iothread lock if so before calling qemu
++     * functions.
++     */
++    bool need_lock = !pthread_equal(me, pthread_self());
++    if (need_lock) {
++        qemu_mutex_lock_iothread();
++    }
++
+     client = qdict_new();
+     add_addr_info(client, &info->paddr, info->plen);
+ 
+@@ -261,6 +278,10 @@ static void channel_event(int event, SpiceChannelEventInfo *info)
+                               QOBJECT(client), QOBJECT(server));
+     monitor_protocol_event(qevent[event], data);
+     qobject_decref(data);
++
++    if (need_lock) {
++        qemu_mutex_unlock_iothread();
++    }
+ }
+ 
+ #else /* SPICE_INTERFACE_CORE_MINOR >= 3 */
+@@ -503,7 +524,9 @@ void qemu_spice_init(void)
+     spice_image_compression_t compression;
+     spice_wan_compression_t wan_compr;
+ 
+-    if (!opts) {
++    me = pthread_self();
++
++   if (!opts) {
+         return;
+     }
+     port = qemu_opt_get_number(opts, "port", 0);
+-- 
+1.7.4.4
+

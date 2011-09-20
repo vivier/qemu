@@ -1,0 +1,123 @@
+From fd44579cd58e8974df4cc35818dd9c356751d3b4 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Tue, 13 Sep 2011 16:11:09 +0200
+Subject: [PATCH 4/8] virtio-serial: Plug memory leak on qdev exit()
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <f16fc4465fbc2e45fc5d3e21efee79564e9d13fa.1315930259.git.amit.shah@redhat.com>
+Patchwork-id: 32725
+O-Subject: [PATCH 1/1] virtio-serial: Plug memory leak on qdev exit()
+Bugzilla: 738019
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Amos Kong <akong@redhat.com>
+
+From: Markus Armbruster <armbru@redhat.com>
+
+virtio_serial_init() allocates the VirtIOSerialBus dynamically, but
+virtio_serial_exit() doesn't free it.
+
+Fix by getting rid of the allocation.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+(cherry picked from commit 5e52e5f903b2648c59030637e1610b32e965d615)
+
+Bugzilla: 738019
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+---
+ hw/virtio-serial-bus.c |   27 +++++++++------------------
+ 1 files changed, 9 insertions(+), 18 deletions(-)
+
+Signed-off-by: Michal Novotny <mignov@gmail.com>
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/virtio-serial-bus.c |   27 +++++++++------------------
+ 1 files changed, 9 insertions(+), 18 deletions(-)
+
+diff --git a/hw/virtio-serial-bus.c b/hw/virtio-serial-bus.c
+index 69adbc4..6b3c100 100644
+--- a/hw/virtio-serial-bus.c
++++ b/hw/virtio-serial-bus.c
+@@ -39,7 +39,7 @@ struct VirtIOSerial {
+     /* Arrays of ivqs and ovqs: one per port */
+     VirtQueue **ivqs, **ovqs;
+ 
+-    VirtIOSerialBus *bus;
++    VirtIOSerialBus bus;
+ 
+     DeviceState *qdev;
+ 
+@@ -376,7 +376,7 @@ static void handle_control_message(VirtIOSerial *vser, void *buf, size_t len)
+     case VIRTIO_CONSOLE_DEVICE_READY:
+         if (!cpkt.value) {
+             error_report("virtio-serial-bus: Guest failure in adding device %s\n",
+-                         vser->bus->qbus.name);
++                         vser->bus.qbus.name);
+             break;
+         }
+         /*
+@@ -391,7 +391,7 @@ static void handle_control_message(VirtIOSerial *vser, void *buf, size_t len)
+     case VIRTIO_CONSOLE_PORT_READY:
+         if (!cpkt.value) {
+             error_report("virtio-serial-bus: Guest failure in adding port %u for device %s\n",
+-                         port->id, vser->bus->qbus.name);
++                         port->id, vser->bus.qbus.name);
+             break;
+         }
+         /*
+@@ -525,7 +525,7 @@ static uint32_t get_features(VirtIODevice *vdev, uint32_t features)
+ 
+     vser = DO_UPCAST(VirtIOSerial, vdev, vdev);
+ 
+-    if (vser->bus->max_nr_ports > 1) {
++    if (vser->bus.max_nr_ports > 1) {
+         features |= (1 << VIRTIO_CONSOLE_F_MULTIPORT);
+     }
+     return features;
+@@ -715,16 +715,6 @@ static struct BusInfo virtser_bus_info = {
+     .print_dev = virtser_bus_dev_print,
+ };
+ 
+-static VirtIOSerialBus *virtser_bus_new(DeviceState *dev)
+-{
+-    VirtIOSerialBus *bus;
+-
+-    bus = FROM_QBUS(VirtIOSerialBus, qbus_create(&virtser_bus_info, dev, NULL));
+-    bus->qbus.allow_hotplug = 1;
+-
+-    return bus;
+-}
+-
+ static void virtser_bus_dev_print(Monitor *mon, DeviceState *qdev, int indent)
+ {
+     VirtIOSerialDevice *dev = DO_UPCAST(VirtIOSerialDevice, qdev, qdev);
+@@ -910,11 +900,12 @@ VirtIODevice *virtio_serial_init(DeviceState *dev, virtio_serial_conf *conf)
+     vser = DO_UPCAST(VirtIOSerial, vdev, vdev);
+ 
+     /* Spawn a new virtio-serial bus on which the ports will ride as devices */
+-    vser->bus = virtser_bus_new(dev);
+-    vser->bus->vser = vser;
++    qbus_create_inplace(&vser->bus.qbus, &virtser_bus_info, dev, NULL);
++    vser->bus.qbus.allow_hotplug = 1;
++    vser->bus.vser = vser;
+     QTAILQ_INIT(&vser->ports);
+ 
+-    vser->bus->max_nr_ports = conf->max_virtserial_ports;
++    vser->bus.max_nr_ports = conf->max_virtserial_ports;
+     vser->ivqs = qemu_malloc(conf->max_virtserial_ports * sizeof(VirtQueue *));
+     vser->ovqs = qemu_malloc(conf->max_virtserial_ports * sizeof(VirtQueue *));
+ 
+@@ -934,7 +925,7 @@ VirtIODevice *virtio_serial_init(DeviceState *dev, virtio_serial_conf *conf)
+     /* control queue: guest to host */
+     vser->c_ovq = virtio_add_queue(vdev, 32, control_out);
+ 
+-    for (i = 1; i < vser->bus->max_nr_ports; i++) {
++    for (i = 1; i < vser->bus.max_nr_ports; i++) {
+         /* Add a per-port queue for host to guest transfers */
+         vser->ivqs[i] = virtio_add_queue(vdev, 128, handle_input);
+         /* Add a per-per queue for guest to host transfers */
+-- 
+1.7.4.4
+

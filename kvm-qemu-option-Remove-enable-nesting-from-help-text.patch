@@ -1,0 +1,59 @@
+From ec11420fe8396d548efa1a17cb04bf3edf6aec57 Mon Sep 17 00:00:00 2001
+From: Amos Kong <akong@redhat.com>
+Date: Fri, 16 Sep 2011 08:04:52 +0200
+Subject: [PATCH 8/8] qemu-option: Remove -enable-nesting from help text
+
+RH-Author: Amos Kong <akong@redhat.com>
+Message-id: <20110916080452.5236.50847.stgit@t>
+Patchwork-id: 32845
+O-Subject: [RHEL-6.2 qemu-kvm PATCH v2] qemu-option: Remove -enable-nesting from help text
+Bugzilla: 738555
+RH-Acked-by: Eric Blake <eblake@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+Bugzilla: 738555
+Brew: 3640782
+Upstream: only for internal
+Test status: Tested in my local machine
+
+We're not supporting nested virt and we shouldn't expose the vmx/svm
+capabilities to the guests.
+Libvirt enables nesting support silently for guest when qemu has
+"--enable-netsting" in help text and the host CPU arch has SVM
+support (only for AMD). There is no configureable option or XML
+exposed outside for user. This patch removes '-enable-nesting'
+from the help text, then libvirt will never pass this option.
+
+Changes from v1:
+- correct the option name to '-enable-nesting'
+- only remove option from help text, reserve the ability
+
+Signed-off-by: Amos Kong <akong@redhat.com>
+---
+ qemu-options.hx |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+Signed-off-by: Michal Novotny <mignov@gmail.com>
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ qemu-options.hx |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+diff --git a/qemu-options.hx b/qemu-options.hx
+index 0fef1c1..dd08256 100644
+--- a/qemu-options.hx
++++ b/qemu-options.hx
+@@ -2092,8 +2092,7 @@ DEF("pcidevice", HAS_ARG, QEMU_OPTION_pcidevice,
+     "                dma=none: don't perform any dma translations (default is to use an iommu)\n"
+     "                'string' is used in log output.\n")
+ #endif
+-DEF("enable-nesting", 0, QEMU_OPTION_enable_nesting,
+-    "-enable-nesting enable support for running a VM inside the VM (AMD only)\n")
++DEF("enable-nesting", 0, QEMU_OPTION_enable_nesting, "")
+ DEF("nvram", HAS_ARG, QEMU_OPTION_nvram,
+     "-nvram FILE          provide ia64 nvram contents\n")
+ DEF("tdf", 0, QEMU_OPTION_tdf,
+-- 
+1.7.4.4
+
