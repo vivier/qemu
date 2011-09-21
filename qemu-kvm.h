@@ -319,6 +319,34 @@ static inline int kvm_reset_mpstate(CPUState *env)
 }
 #endif
 
+#ifdef KVM_CAP_XSAVE
+/*!
+ *  * \brief Read VCPU xsave state
+ *
+ */
+int kvm_get_xsave(CPUState *env, struct kvm_xsave *xsave);
+
+/*!
+ *  * \brief Write VCPU xsave state
+ *
+ */
+int kvm_set_xsave(CPUState *env, struct kvm_xsave *xsave);
+#endif
+
+#ifdef KVM_CAP_XCRS
+/*!
+ *  * \brief Read VCPU XCRs
+ *
+ */
+int kvm_get_xcrs(CPUState *env, struct kvm_xcrs *xcrs);
+
+/*!
+ *  * \brief Write VCPU XCRs
+ *
+ */
+int kvm_set_xcrs(CPUState *env, struct kvm_xcrs *xcrs);
+#endif
+
 /*!
  * \brief Simulate an external vectored interrupt
  *
