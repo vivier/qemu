@@ -192,6 +192,9 @@ int kvm_arch_init_vcpu(CPUState *env)
         case 0xb:
         case 0xd:
             for (j = 0; ; j++) {
+                if (i == 0xd && j == 64) {
+                    break;
+                }
                 c->function = i;
                 c->flags = KVM_CPUID_FLAG_SIGNIFCANT_INDEX;
                 c->index = j;
@@ -202,7 +205,7 @@ int kvm_arch_init_vcpu(CPUState *env)
                 if (i == 0xb && !(c->ecx & 0xff00))
                     break;
                 if (i == 0xd && c->eax == 0)
-                    break;
+                    continue;
 
                 c = &cpuid_data.entries[cpuid_i++];
             }

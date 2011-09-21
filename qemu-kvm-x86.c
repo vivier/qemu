@@ -1358,7 +1358,13 @@ int kvm_arch_init_vcpu(CPUState *cenv)
     for (i = 0; i <= limit; ++i) {
         if (i == 4 || i == 0xb || i == 0xd) {
             for (j = 0; ; ++j) {
+                if (i == 0xd && j == 64)
+                    break;
+
                 do_cpuid_ent(&cpuid_ent[cpuid_nent], i, j, &copy);
+
+                if (i == 0xd && copy.regs[R_EAX] == 0)
+                    continue;
 
                 cpuid_ent[cpuid_nent].flags = KVM_CPUID_FLAG_SIGNIFCANT_INDEX;
                 cpuid_ent[cpuid_nent].index = j;
@@ -1368,8 +1374,6 @@ int kvm_arch_init_vcpu(CPUState *cenv)
                 if (i == 4 && copy.regs[R_EAX] == 0)
                     break;
                 if (i == 0xb && !(copy.regs[R_ECX] & 0xff00))
-                    break;
-                if (i == 0xd && copy.regs[R_EAX] == 0)
                     break;
             }
         } else
