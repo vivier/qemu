@@ -695,7 +695,8 @@ static int get_para_features(kvm_context_t kvm_context)
 }
 
 
-uint32_t kvm_get_supported_cpuid(kvm_context_t kvm, uint32_t function, int reg)
+uint32_t kvm_get_supported_cpuid(kvm_context_t kvm, uint32_t function,
+                                 uint32_t index, int reg)
 {
 	uint32_t ret = -1;
 	int has_kvm_features = 0;
@@ -716,7 +717,8 @@ uint32_t kvm_get_supported_cpuid(kvm_context_t kvm, uint32_t function, int reg)
 	}
 
 	for (i = 0; i < cpuid->nent; ++i) {
-		if (cpuid->entries[i].function == function) {
+		if (cpuid->entries[i].function == function &&
+		    cpuid->entries[i].index == index) {
 			if (cpuid->entries[i].function == KVM_CPUID_FEATURES) {
 				has_kvm_features = 1;
 			}
@@ -747,7 +749,7 @@ uint32_t kvm_get_supported_cpuid(kvm_context_t kvm, uint32_t function, int reg)
 				 * according to the AMD spec:
 				 */
 				if (function == 0x80000001) {
-					cpuid_1_edx = kvm_get_supported_cpuid(kvm, 1, R_EDX);
+					cpuid_1_edx = kvm_get_supported_cpuid(kvm, 1, 0, R_EDX);
 					ret |= cpuid_1_edx & 0x183f7ff;
 				}
 				break;
@@ -1330,22 +1332,22 @@ int kvm_arch_init_vcpu(CPUState *cenv)
     memset(pv_ent, 0, sizeof(*pv_ent));
     pv_ent->function = KVM_CPUID_FEATURES;
     pv_ent->eax = cenv->cpuid_kvm_features & kvm_arch_get_supported_cpuid(cenv,
-						KVM_CPUID_FEATURES, R_EAX);
+						KVM_CPUID_FEATURES, 0, R_EAX);
 #endif
 
     kvm_trim_features(&cenv->cpuid_features,
-                      kvm_arch_get_supported_cpuid(cenv, 1, R_EDX));
+                      kvm_arch_get_supported_cpuid(cenv, 1, 0, R_EDX));
 
     /* prevent the hypervisor bit from being cleared by the kernel */
     i = cenv->cpuid_ext_features & CPUID_EXT_HYPERVISOR;
     kvm_trim_features(&cenv->cpuid_ext_features,
-                      kvm_arch_get_supported_cpuid(cenv, 1, R_ECX));
+                      kvm_arch_get_supported_cpuid(cenv, 1, 0, R_ECX));
     cenv->cpuid_ext_features |= i;
 
     kvm_trim_features(&cenv->cpuid_ext2_features,
-                      kvm_arch_get_supported_cpuid(cenv, 0x80000001, R_EDX));
+                      kvm_arch_get_supported_cpuid(cenv, 0x80000001, 0, R_EDX));
     kvm_trim_features(&cenv->cpuid_ext3_features,
-                      kvm_arch_get_supported_cpuid(cenv, 0x80000001, R_ECX));
+                      kvm_arch_get_supported_cpuid(cenv, 0x80000001, 0, R_ECX));
 
     copy = *cenv;
 
@@ -1738,9 +1740,9 @@ int kvm_arch_init_irq_routing(void)
 }
 
 uint32_t kvm_arch_get_supported_cpuid(CPUState *env, uint32_t function,
-                                      int reg)
+                                      uint32_t index, int reg)
 {
-    return kvm_get_supported_cpuid(kvm_context, function, reg);
+    return kvm_get_supported_cpuid(kvm_context, function, index, reg);
 }
 
 void kvm_arch_process_irqchip_events(CPUState *env)
