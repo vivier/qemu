@@ -55,7 +55,7 @@ static const char *ext_feature_name[] = {
     NULL, "cx16", "xtpr", NULL,
     NULL, NULL, "dca", "sse4.1|sse4_1",
     "sse4.2|sse4_2", "x2apic", NULL, "popcnt",
-    NULL, "aes", NULL, NULL,
+    NULL, "aes", "xsave", "osxsave",
     NULL, NULL, NULL, "hypervisor",
 };
 static const char *ext2_feature_name[] = {
