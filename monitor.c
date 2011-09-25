@@ -1256,7 +1256,7 @@ static int redhat_set_password(Monitor *mon, const QDict *qdict, QObject **ret_d
     return 0;
 }
 
-static int client_migrate_info(Monitor *mon, const QDict *qdict, QObject **ret_data)
+static int client_migrate_info(Monitor *mon, const QDict *qdict, MonitorCompletion cb, void *opaque)
 {
     const char *protocol = qdict_get_str(qdict, "protocol");
     const char *hostname = qdict_get_str(qdict, "hostname");
@@ -1271,7 +1271,7 @@ static int client_migrate_info(Monitor *mon, const QDict *qdict, QObject **ret_d
             return -1;
         }
 
-        ret = qemu_spice_migrate_info(hostname, port, tls_port, subject);
+        ret = qemu_spice_migrate_info(hostname, port, tls_port, subject, cb, opaque);
         if (ret != 0) {
             qerror_report(QERR_UNDEFINED_ERROR);
             return -1;
@@ -1283,7 +1283,7 @@ static int client_migrate_info(Monitor *mon, const QDict *qdict, QObject **ret_d
     return -1;
 }
 
-static int redhat_spice_migrate_info(Monitor *mon, const QDict *qdict, QObject **ret_data)
+static int redhat_spice_migrate_info(Monitor *mon, const QDict *qdict, MonitorCompletion cb, void *opaque)
 {
     const char *hostname = qdict_get_str(qdict, "hostname");
     const char *subject  = qdict_get_try_str(qdict, "cert-subject");
@@ -1296,7 +1296,7 @@ static int redhat_spice_migrate_info(Monitor *mon, const QDict *qdict, QObject *
         return -1;
     }
 
-    ret = qemu_spice_migrate_info(hostname, port, tls_port, subject);
+    ret = qemu_spice_migrate_info(hostname, port, tls_port, subject, cb, opaque);
     if (ret != 0) {
         qerror_report(QERR_UNDEFINED_ERROR);
         return -1;

@@ -1332,7 +1332,8 @@ EQMP
         .params     = "protocol hostname port tls-port cert-subject",
         .help       = "send migration info to spice/vnc client",
         .user_print = monitor_user_noop,
-        .mhandler.cmd_new = client_migrate_info,
+        .mhandler.cmd_async = client_migrate_info,
+        .async      = 1,
     },
 
 SQMP
@@ -1997,7 +1998,8 @@ EQMP
         .params     = "hostname port tls-port cert-subject",
         .help       = "send migration info to spice client",
 	.user_print = monitor_user_noop,
-        .mhandler.cmd_new = redhat_spice_migrate_info,
+        .mhandler.cmd_async = redhat_spice_migrate_info,
+        .async      = 1,
     },
 
 
