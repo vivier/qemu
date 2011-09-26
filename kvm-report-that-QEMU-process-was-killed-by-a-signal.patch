@@ -1,0 +1,128 @@
+From 1668fcc34650920b91932b87da23a9af12af65cf Mon Sep 17 00:00:00 2001
+From: Gleb Natapov <gleb@redhat.com>
+Date: Mon, 5 Sep 2011 10:02:45 +0200
+Subject: [PATCH 07/13] report that QEMU process was killed by a signal
+
+RH-Author: Gleb Natapov <gleb@redhat.com>
+Message-id: <1315216966-10369-3-git-send-email-gleb@redhat.com>
+Patchwork-id: 32339
+O-Subject: [PATCH RHEL6.3 2/3] report that QEMU process was killed by a signal
+Bugzilla: 735716
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+Currently when rogue script kills QEMU process (using TERM/INT/HUP
+signal) it looks indistinguishable from system shutdown. Lets report
+that QEMU was killed and leave some clues about the killer identity.
+
+Upstream commit: f64622c401d4975a56b8559e16286231a1d2cfb8
+---
+ qemu-kvm.c |    1 +
+ sysemu.h   |    2 ++
+ vl.c       |   27 +++++++++++++++++++++++----
+ 4 files changed, 26 insertions(+), 4 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ qemu-kvm.c |    1 +
+ sysemu.h   |    2 ++
+ vl.c       |   27 +++++++++++++++++++++++----
+ 3 files changed, 26 insertions(+), 4 deletions(-)
+
+diff --git a/qemu-kvm.c b/qemu-kvm.c
+index 6e9c400..781ddfc 100644
+--- a/qemu-kvm.c
++++ b/qemu-kvm.c
+@@ -2193,6 +2193,7 @@ int kvm_main_loop(void)
+     while (1) {
+         main_loop_wait(1000);
+         if (qemu_shutdown_requested()) {
++            qemu_kill_report();
+             monitor_protocol_event(QEVENT_SHUTDOWN, NULL);
+             if (qemu_no_shutdown()) {
+                 vm_stop(0);
+diff --git a/sysemu.h b/sysemu.h
+index 77fed5d..9a43cb2 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -50,6 +50,8 @@ int qemu_no_shutdown(void);
+ int qemu_shutdown_requested(void);
+ int qemu_reset_requested(void);
+ int qemu_powerdown_requested(void);
++void qemu_system_killed(int signal, pid_t pid);
++void qemu_kill_report(void);
+ extern qemu_irq qemu_system_powerdown;
+ void qemu_system_reset(void);
+ 
+diff --git a/vl.c b/vl.c
+index da2e7f8..511f810 100644
+--- a/vl.c
++++ b/vl.c
+@@ -3154,7 +3154,8 @@ typedef struct QEMUResetEntry {
+ static QTAILQ_HEAD(reset_handlers, QEMUResetEntry) reset_handlers =
+     QTAILQ_HEAD_INITIALIZER(reset_handlers);
+ static int reset_requested;
+-static int shutdown_requested;
++static int shutdown_requested, shutdown_signal = -1;
++static pid_t shutdown_pid;
+ static int powerdown_requested;
+ static int debug_requested;
+ static int vmstop_requested;
+@@ -3172,6 +3173,15 @@ int qemu_shutdown_requested(void)
+     return r;
+ }
+ 
++void qemu_kill_report(void)
++{
++    if (shutdown_signal != -1) {
++        fprintf(stderr, "Got signal %d from pid %d\n",
++                         shutdown_signal, shutdown_pid);
++        shutdown_signal = -1;
++    }
++}
++
+ int qemu_reset_requested(void)
+ {
+     int r = reset_requested;
+@@ -3258,6 +3268,13 @@ void qemu_system_reset_request(void)
+     qemu_notify_event();
+ }
+ 
++void qemu_system_killed(int signal, pid_t pid)
++{
++    shutdown_signal = signal;
++    shutdown_pid = pid;
++    qemu_system_shutdown_request();
++}
++
+ void qemu_system_shutdown_request(void)
+ {
+     shutdown_requested = 1;
+@@ -4434,10 +4451,10 @@ int qemu_uuid_parse(const char *str, uint8_t *uuid)
+ 
+ #ifndef _WIN32
+ 
+-static void termsig_handler(int signal)
++static void termsig_handler(int signal, siginfo_t *info, void *c)
+ {
+     no_shutdown = 0;
+-    qemu_system_shutdown_request();
++    qemu_system_killed(info->si_signo, info->si_pid);
+ }
+ 
+ static void sighandler_setup(void)
+@@ -4445,7 +4462,9 @@ static void sighandler_setup(void)
+     struct sigaction act;
+ 
+     memset(&act, 0, sizeof(act));
+-    act.sa_handler = termsig_handler;
++    act.sa_sigaction = termsig_handler;
++    act.sa_flags = SA_SIGINFO;
++
+     sigaction(SIGINT,  &act, NULL);
+     sigaction(SIGHUP,  &act, NULL);
+     sigaction(SIGTERM, &act, NULL);
+-- 
+1.7.4.4
+

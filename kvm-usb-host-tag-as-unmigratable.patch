@@ -1,0 +1,53 @@
+From 16318c8a8ba0ccd74f5f2ef03d8c58f2f00ee927 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Fri, 2 Sep 2011 12:17:50 +0200
+Subject: [PATCH 04/13] usb-host: tag as unmigratable
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1314965871-32485-5-git-send-email-kraxel@redhat.com>
+Patchwork-id: 32199
+O-Subject: [RHEL-6.2 kvm PATCH 4/5] usb-host: tag as unmigratable
+Bugzilla: 723870
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Missed that one when tagging usb devices without migration support.
+
+bugzilla: 723870 - tag devices without migration support.
+upstream: queued up (http://patchwork.ozlabs.org/patch/113101/).
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ usb-linux.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ usb-linux.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index 815c3d0..0c8147c 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -1272,10 +1272,16 @@ static int usb_host_initfn(USBDevice *dev)
+     return 0;
+ }
+ 
++static const VMStateDescription vmstate_usb_host = {
++    .name = "usb-host",
++    .unmigratable = 1,
++};
++
+ static struct USBDeviceInfo usb_host_dev_info = {
+     .product_desc   = "USB Host Device",
+     .qdev.name      = "usb-host",
+     .qdev.size      = sizeof(USBHostDevice),
++    .qdev.vmsd      = &vmstate_usb_host,
+     .init           = usb_host_initfn,
+     .handle_packet  = usb_generic_handle_packet,
+     .cancel_packet  = usb_host_async_cancel,
+-- 
+1.7.4.4
+

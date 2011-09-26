@@ -1,0 +1,56 @@
+From 7ebfda8f4d0fb374940f30fa36141758daa32adf Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 15 Sep 2011 11:40:03 +0200
+Subject: [PATCH 10/13] usb-hub: need to check dev->attached
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1316086804-29287-2-git-send-email-kraxel@redhat.com>
+Patchwork-id: 32805
+O-Subject: [RHEL-6.2 kvm PATCH 1/2] usb-hub: need to check dev->attached
+Bugzilla: 734995
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+commit 891fb2cd4592b6fe76106a69e0ca40efbf82726a did that for all host
+controllers, the usb hub was left out by accident.
+
+bugzilla: 734995 - Core dump when hotplug three usb-hub into the same
+                   port under both uhci and ehci
+upstream: queued up (http://patchwork.ozlabs.org/patch/114781/)
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/usb-hub.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/usb-hub.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/hw/usb-hub.c b/hw/usb-hub.c
+index a7a80f0..319a3b3 100644
+--- a/hw/usb-hub.c
++++ b/hw/usb-hub.c
+@@ -289,7 +289,7 @@ static int usb_hub_handle_control(USBDevice *dev, USBPacket *p,
+                 port->wPortStatus |= PORT_STAT_SUSPEND;
+                 break;
+             case PORT_RESET:
+-                if (dev) {
++                if (dev && dev->attached) {
+                     usb_send_msg(dev, USB_MSG_RESET);
+                     port->wPortChange |= PORT_STAT_C_RESET;
+                     /* set enable bit */
+@@ -427,7 +427,7 @@ static int usb_hub_broadcast_packet(USBHubState *s, USBPacket *p)
+     for(i = 0; i < NUM_PORTS; i++) {
+         port = &s->ports[i];
+         dev = port->port.dev;
+-        if (dev && (port->wPortStatus & PORT_STAT_ENABLE)) {
++        if (dev && dev->attached && (port->wPortStatus & PORT_STAT_ENABLE)) {
+             ret = usb_handle_packet(dev, p);
+             if (ret != USB_RET_NODEV) {
+                 return ret;
+-- 
+1.7.4.4
+

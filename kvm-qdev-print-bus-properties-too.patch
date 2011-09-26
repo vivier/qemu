@@ -1,0 +1,55 @@
+From 1f1f922391af1f11d377c37149b2c83fd05e72a9 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Tue, 20 Sep 2011 07:55:05 +0200
+Subject: [PATCH 12/13] qdev: print bus properties too
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1316505305-2734-1-git-send-email-kraxel@redhat.com>
+Patchwork-id: 32978
+O-Subject: [RHEL-6.2 kvm PATCH] qdev: print bus properties too
+Bugzilla: 678731
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Don Dutile <ddutile@redhat.com>
+RH-Acked-by: Chris Wright <chrisw@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+Make qdev_device_help print both device and bus properties.
+Helps libvirt to figure whenever bus properties such as
+PCI.multifunction are present & supported or not.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit a8467c7a0e8b024a18608ff7db31ca2f2297e641)
+
+bugzilla: 678731 - Update qemu-kvm -device pci-assign,? properties
+Cc: Don Dutile <ddutile@redhat.com>
+Cc: Markus Armbruster <armbru@redhat.com>
+---
+ hw/qdev.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/qdev.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+diff --git a/hw/qdev.c b/hw/qdev.c
+index 3b55909..453c17f 100644
+--- a/hw/qdev.c
++++ b/hw/qdev.c
+@@ -191,6 +191,12 @@ int qdev_device_help(QemuOpts *opts)
+         }
+         error_printf("%s.%s=%s\n", info->name, prop->name, prop->info->name);
+     }
++    for (prop = info->bus_info->props; prop && prop->name; prop++) {
++        if (!prop->info->parse) {
++            continue;           /* no way to set it, don't show */
++        }
++        error_printf("%s.%s=%s\n", info->name, prop->name, prop->info->name);
++    }
+     return 1;
+ }
+ 
+-- 
+1.7.4.4
+

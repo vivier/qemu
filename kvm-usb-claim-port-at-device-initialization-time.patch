@@ -1,0 +1,502 @@
+From 320a1507f340b300635ea7528090281091105368 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Fri, 2 Sep 2011 12:17:49 +0200
+Subject: [PATCH 03/13] usb: claim port at device initialization time.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1314965871-32485-4-git-send-email-kraxel@redhat.com>
+Patchwork-id: 32201
+O-Subject: [RHEL-6.2 kvm PATCH 3/5] usb: claim port at device initialization time.
+Bugzilla: 734995
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+This patch makes qemu assign a port when creating the device, not when
+attaching it.  For most usb devices this isn't a noticable difference
+because they are in attached state all the time.
+
+The change affects usb-host devices which live in detached state while
+the real device is unplugged from the host.  They have a fixed port
+assigned all the time now instead of getting grabbing one on attach and
+releasing it at detach, i.e. they stop floating around at the usb bus.
+
+The change also allows to simplify usb-hub.  It doesn't need the
+handle_attach() callback any more to configure the downstream ports.
+This can be done at device initialitation time now.  The changed
+initialization order (first grab upstream port, then register downstream
+ports) also fixes some icky corner cases.  For example it is not possible
+any more to plug the hub into one of its own downstream ports.
+
+The usb host adapters must care too.  USBPort->dev being non-NULL
+doesn't imply any more the device is in attached state.  The host
+adapters must additionally check the USBPort->dev->attached flag.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+
+Conflicts:
+
+	trace-events
+
+bugzilla: 734995 - Core dump when hotplug three usb-hub into the same
+                   port under both uhci and ehci
+upstream: queued up (http://patchwork.ozlabs.org/patch/113124/)
+---
+ hw/usb-bus.c  |  110 +++++++++++++++++++++++++++++++++------------------------
+ hw/usb-ehci.c |   22 ++++++------
+ hw/usb-hub.c  |   12 +------
+ hw/usb-ohci.c |    4 +-
+ hw/usb-uhci.c |   11 +++---
+ hw/usb.c      |   35 ++++++++----------
+ hw/usb.h      |    5 ++-
+ trace-events  |    7 ++++
+ 8 files changed, 111 insertions(+), 95 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/usb-bus.c  |  110 +++++++++++++++++++++++++++++++++------------------------
+ hw/usb-ehci.c |   22 ++++++------
+ hw/usb-hub.c  |   12 +------
+ hw/usb-ohci.c |    4 +-
+ hw/usb-uhci.c |   11 +++---
+ hw/usb.c      |   35 ++++++++----------
+ hw/usb.h      |    5 ++-
+ trace-events  |    7 ++++
+ 8 files changed, 111 insertions(+), 95 deletions(-)
+
+diff --git a/hw/usb-bus.c b/hw/usb-bus.c
+index 87d9814..cd9f98c 100644
+--- a/hw/usb-bus.c
++++ b/hw/usb-bus.c
+@@ -3,6 +3,7 @@
+ #include "qdev.h"
+ #include "sysemu.h"
+ #include "monitor.h"
++#include "trace.h"
+ 
+ static void usb_bus_dev_print(Monitor *mon, DeviceState *qdev, int indent);
+ 
+@@ -73,9 +74,13 @@ static int usb_qdev_init(DeviceState *qdev, DeviceInfo *base)
+     dev->info = info;
+     dev->auto_attach = 1;
+     QLIST_INIT(&dev->strings);
+-    rc = dev->info->init(dev);
+-    if (rc == 0 && dev->auto_attach)
++    rc = usb_claim_port(dev);
++    if (rc == 0) {
++        rc = dev->info->init(dev);
++    }
++    if (rc == 0 && dev->auto_attach) {
+         rc = usb_device_attach(dev);
++    }
+     return rc;
+ }
+ 
+@@ -89,6 +94,9 @@ static int usb_qdev_exit(DeviceState *qdev)
+     if (dev->info->handle_destroy) {
+         dev->info->handle_destroy(dev);
+     }
++    if (dev->port) {
++        usb_release_port(dev);
++    }
+     return 0;
+ }
+ 
+@@ -202,21 +210,13 @@ void usb_unregister_port(USBBus *bus, USBPort *port)
+     bus->nfree--;
+ }
+ 
+-static int do_attach(USBDevice *dev)
++int usb_claim_port(USBDevice *dev)
+ {
+     USBBus *bus = usb_bus_from_device(dev);
+     USBPort *port;
+ 
+-    if (dev->attached) {
+-        error_report("Error: tried to attach usb device %s twice\n",
+-                dev->product_desc);
+-        return -1;
+-    }
+-    if (bus->nfree == 0) {
+-        error_report("Error: tried to attach usb device %s to a bus with no free ports\n",
+-                dev->product_desc);
+-        return -1;
+-    }
++    assert(dev->port == NULL);
++
+     if (dev->port_path) {
+         QTAILQ_FOREACH(port, &bus->free, next) {
+             if (strcmp(port->path, dev->port_path) == 0) {
+@@ -224,68 +224,86 @@ static int do_attach(USBDevice *dev)
+             }
+         }
+         if (port == NULL) {
+-            error_report("Error: usb port %s (bus %s) not found\n",
+-                    dev->port_path, bus->qbus.name);
++            error_report("Error: usb port %s (bus %s) not found (in use?)\n",
++                         dev->port_path, bus->qbus.name);
+             return -1;
+         }
+     } else {
++        if (bus->nfree == 1 && strcmp(dev->qdev.info->name, "usb-hub") != 0) {
++            /* Create a new hub and chain it on */
++            usb_create_simple(bus, "usb-hub");
++        }
++        if (bus->nfree == 0) {
++            error_report("Error: tried to attach usb device %s to a bus "
++                         "with no free ports\n", dev->product_desc);
++            return -1;
++        }
+         port = QTAILQ_FIRST(&bus->free);
+     }
+-    if (!(port->speedmask & dev->speedmask)) {
+-        error_report("Warning: speed mismatch trying to attach usb device %s to bus %s\n",
+-                dev->product_desc, bus->qbus.name);
+-        return -1;
+-    }
++    trace_usb_port_claim(bus->busnr, port->path);
+ 
+-    dev->attached++;
+     QTAILQ_REMOVE(&bus->free, port, next);
+     bus->nfree--;
+ 
+-    usb_attach(port, dev);
++    dev->port = port;
++    port->dev = dev;
+ 
+     QTAILQ_INSERT_TAIL(&bus->used, port, next);
+     bus->nused++;
+-
+     return 0;
+ }
+ 
+-int usb_device_attach(USBDevice *dev)
++void usb_release_port(USBDevice *dev)
+ {
+     USBBus *bus = usb_bus_from_device(dev);
++    USBPort *port = dev->port;
+ 
+-    if (bus->nfree == 1 && dev->port_path == NULL) {
+-        /* Create a new hub and chain it on
+-           (unless a physical port location is specified). */
+-        usb_create_simple(bus, "usb-hub");
+-    }
+-    return do_attach(dev);
++    assert(port != NULL);
++    trace_usb_port_release(bus->busnr, port->path);
++
++    QTAILQ_REMOVE(&bus->used, port, next);
++    bus->nused--;
++
++    dev->port = NULL;
++    port->dev = NULL;
++
++    QTAILQ_INSERT_TAIL(&bus->free, port, next);
++    bus->nfree++;
+ }
+ 
+-int usb_device_detach(USBDevice *dev)
++int usb_device_attach(USBDevice *dev)
+ {
+     USBBus *bus = usb_bus_from_device(dev);
+-    USBPort *port;
++    USBPort *port = dev->port;
+ 
+-    if (!dev->attached) {
+-        error_report("Error: tried to detach unattached usb device %s\n",
+-                dev->product_desc);
++    assert(port != NULL);
++    assert(!dev->attached);
++    trace_usb_port_attach(bus->busnr, port->path);
++
++    if (!(port->speedmask & dev->speedmask)) {
++        error_report("Warning: speed mismatch trying to attach "
++                     "usb device %s to bus %s\n",
++                     dev->product_desc, bus->qbus.name);
+         return -1;
+     }
+-    dev->attached--;
+ 
+-    QTAILQ_FOREACH(port, &bus->used, next) {
+-        if (port->dev == dev)
+-            break;
+-    }
+-    assert(port != NULL);
++    dev->attached++;
++    usb_attach(port);
+ 
+-    QTAILQ_REMOVE(&bus->used, port, next);
+-    bus->nused--;
++    return 0;
++}
++
++int usb_device_detach(USBDevice *dev)
++{
++    USBBus *bus = usb_bus_from_device(dev);
++    USBPort *port = dev->port;
+ 
+-    usb_attach(port, NULL);
++    assert(port != NULL);
++    assert(dev->attached);
++    trace_usb_port_detach(bus->busnr, port->path);
+ 
+-    QTAILQ_INSERT_TAIL(&bus->free, port, next);
+-    bus->nfree++;
++    usb_detach(port);
++    dev->attached--;
+     return 0;
+ }
+ 
+diff --git a/hw/usb-ehci.c b/hw/usb-ehci.c
+index 762bba8..b0378de 100644
+--- a/hw/usb-ehci.c
++++ b/hw/usb-ehci.c
+@@ -848,8 +848,8 @@ static void ehci_reset(void *opaque)
+      */
+     for(i = 0; i < NB_PORTS; i++) {
+         devs[i] = s->ports[i].dev;
+-        if (devs[i]) {
+-            usb_attach(&s->ports[i], NULL);
++        if (devs[i] && devs[i]->attached) {
++            usb_detach(&s->ports[i]);
+         }
+     }
+ 
+@@ -869,8 +869,8 @@ static void ehci_reset(void *opaque)
+         } else {
+             s->portsc[i] = PORTSC_PPOWER;
+         }
+-        if (devs[i]) {
+-            usb_attach(&s->ports[i], devs[i]);
++        if (devs[i] && devs[i]->attached) {
++            usb_attach(&s->ports[i]);
+         }
+     }
+     ehci_queues_rip_all(s);
+@@ -936,15 +936,15 @@ static void handle_port_owner_write(EHCIState *s, int port, uint32_t owner)
+         return;
+     }
+ 
+-    if (dev) {
+-        usb_attach(&s->ports[port], NULL);
++    if (dev && dev->attached) {
++        usb_detach(&s->ports[port]);
+     }
+ 
+     *portsc &= ~PORTSC_POWNER;
+     *portsc |= owner;
+ 
+-    if (dev) {
+-        usb_attach(&s->ports[port], dev);
++    if (dev && dev->attached) {
++        usb_attach(&s->ports[port]);
+     }
+ }
+ 
+@@ -968,8 +968,8 @@ static void handle_port_status_write(EHCIState *s, int port, uint32_t val)
+ 
+     if (!(val & PORTSC_PRESET) &&(*portsc & PORTSC_PRESET)) {
+         trace_usb_ehci_port_reset(port, 0);
+-        if (dev) {
+-            usb_attach(&s->ports[port], dev);
++        if (dev && dev->attached) {
++            usb_attach(&s->ports[port]);
+             usb_send_msg(dev, USB_MSG_RESET);
+             *portsc &= ~PORTSC_CSC;
+         }
+@@ -978,7 +978,7 @@ static void handle_port_status_write(EHCIState *s, int port, uint32_t val)
+          *  Table 2.16 Set the enable bit(and enable bit change) to indicate
+          *  to SW that this port has a high speed device attached
+          */
+-        if (dev && (dev->speedmask & USB_SPEED_MASK_HIGH)) {
++        if (dev && dev->attached && (dev->speedmask & USB_SPEED_MASK_HIGH)) {
+             val |= PORTSC_PED;
+         }
+     }
+diff --git a/hw/usb-hub.c b/hw/usb-hub.c
+index b49a2fe..a7a80f0 100644
+--- a/hw/usb-hub.c
++++ b/hw/usb-hub.c
+@@ -213,16 +213,6 @@ static void usb_hub_complete(USBPort *port, USBPacket *packet)
+     usb_packet_complete(&s->dev, packet);
+ }
+ 
+-static void usb_hub_handle_attach(USBDevice *dev)
+-{
+-    USBHubState *s = DO_UPCAST(USBHubState, dev, dev);
+-    int i;
+-
+-    for (i = 0; i < NUM_PORTS; i++) {
+-        usb_port_location(&s->ports[i].port, dev->port, i+1);
+-    }
+-}
+-
+ static void usb_hub_handle_reset(USBDevice *dev)
+ {
+     /* XXX: do it */
+@@ -497,6 +487,7 @@ static int usb_hub_initfn(USBDevice *dev)
+         usb_register_port(usb_bus_from_device(dev),
+                           &port->port, s, i, &usb_hub_port_ops,
+                           USB_SPEED_MASK_LOW | USB_SPEED_MASK_FULL);
++        usb_port_location(&port->port, dev->port, i+1);
+         port->wPortStatus = PORT_STAT_POWER;
+         port->wPortChange = 0;
+     }
+@@ -535,7 +526,6 @@ static struct USBDeviceInfo hub_info = {
+     .usb_desc       = &desc_hub,
+     .init           = usb_hub_initfn,
+     .handle_packet  = usb_hub_handle_packet,
+-    .handle_attach  = usb_hub_handle_attach,
+     .handle_reset   = usb_hub_handle_reset,
+     .handle_control = usb_hub_handle_control,
+     .handle_data    = usb_hub_handle_data,
+diff --git a/hw/usb-ohci.c b/hw/usb-ohci.c
+index 45bd6ff..c6700fd 100644
+--- a/hw/usb-ohci.c
++++ b/hw/usb-ohci.c
+@@ -414,8 +414,8 @@ static void ohci_reset(void *opaque)
+       {
+         port = &ohci->rhport[i];
+         port->ctrl = 0;
+-        if (port->port.dev) {
+-            usb_attach(&port->port, port->port.dev);
++        if (port->port.dev && port->port.dev->attached) {
++            usb_attach(&port->port);
+         }
+       }
+     if (ohci->async_td) {
+diff --git a/hw/usb-uhci.c b/hw/usb-uhci.c
+index 939e8cc..98ea34f 100644
+--- a/hw/usb-uhci.c
++++ b/hw/usb-uhci.c
+@@ -335,8 +335,8 @@ static void uhci_reset(void *opaque)
+     for(i = 0; i < NB_PORTS; i++) {
+         port = &s->ports[i];
+         port->ctrl = 0x0080;
+-        if (port->port.dev) {
+-            usb_attach(&port->port, port->port.dev);
++        if (port->port.dev && port->port.dev->attached) {
++            usb_attach(&port->port);
+         }
+     }
+ 
+@@ -438,7 +438,7 @@ static void uhci_ioport_writew(void *opaque, uint32_t addr, uint32_t val)
+             for(i = 0; i < NB_PORTS; i++) {
+                 port = &s->ports[i];
+                 dev = port->port.dev;
+-                if (dev) {
++                if (dev && dev->attached) {
+                     usb_send_msg(dev, USB_MSG_RESET);
+                 }
+             }
+@@ -478,7 +478,7 @@ static void uhci_ioport_writew(void *opaque, uint32_t addr, uint32_t val)
+                 return;
+             port = &s->ports[n];
+             dev = port->port.dev;
+-            if (dev) {
++            if (dev && dev->attached) {
+                 /* port reset */
+                 if ( (val & UHCI_PORT_RESET) &&
+                      !(port->ctrl & UHCI_PORT_RESET) ) {
+@@ -652,8 +652,9 @@ static int uhci_broadcast_packet(UHCIState *s, USBPacket *p)
+         UHCIPort *port = &s->ports[i];
+         USBDevice *dev = port->port.dev;
+ 
+-        if (dev && (port->ctrl & UHCI_PORT_EN))
++        if (dev && dev->attached && (port->ctrl & UHCI_PORT_EN)) {
+             ret = usb_handle_packet(dev, p);
++        }
+     }
+ 
+     dprintf("uhci: packet exit. ret %d len %d\n", ret, p->len);
+diff --git a/hw/usb.c b/hw/usb.c
+index 27a983c..7f14c46 100644
+--- a/hw/usb.c
++++ b/hw/usb.c
+@@ -26,26 +26,23 @@
+ #include "qemu-common.h"
+ #include "usb.h"
+ 
+-void usb_attach(USBPort *port, USBDevice *dev)
++void usb_attach(USBPort *port)
+ {
+-    if (dev != NULL) {
+-        /* attach */
+-        if (port->dev) {
+-            usb_attach(port, NULL);
+-        }
+-        dev->port = port;
+-        port->dev = dev;
+-        port->ops->attach(port);
+-        usb_send_msg(dev, USB_MSG_ATTACH);
+-    } else {
+-        /* detach */
+-        dev = port->dev;
+-        assert(dev);
+-        port->ops->detach(port);
+-        usb_send_msg(dev, USB_MSG_DETACH);
+-        dev->port = NULL;
+-        port->dev = NULL;
+-    }
++    USBDevice *dev = port->dev;
++
++    assert(dev != NULL);
++    assert(dev->attached);
++    port->ops->attach(port);
++    usb_send_msg(dev, USB_MSG_ATTACH);
++}
++
++void usb_detach(USBPort *port)
++{
++    USBDevice *dev = port->dev;
++
++    assert(dev != NULL);
++    port->ops->detach(port);
++    usb_send_msg(dev, USB_MSG_DETACH);
+ }
+ 
+ void usb_wakeup(USBDevice *dev)
+diff --git a/hw/usb.h b/hw/usb.h
+index 89af71a..ae1a4d1 100644
+--- a/hw/usb.h
++++ b/hw/usb.h
+@@ -289,7 +289,8 @@ int usb_handle_packet(USBDevice *dev, USBPacket *p);
+ void usb_packet_complete(USBDevice *dev, USBPacket *p);
+ void usb_cancel_packet(USBPacket * p);
+ 
+-void usb_attach(USBPort *port, USBDevice *dev);
++void usb_attach(USBPort *port);
++void usb_detach(USBPort *port);
+ void usb_wakeup(USBDevice *dev);
+ int usb_generic_handle_packet(USBDevice *s, USBPacket *p);
+ void usb_generic_async_ctrl_complete(USBDevice *s, USBPacket *p);
+@@ -366,6 +367,8 @@ int usb_register_companion(const char *masterbus, USBPort *ports[],
+                            void *opaque, USBPortOps *ops, int speedmask);
+ void usb_port_location(USBPort *downstream, USBPort *upstream, int portnr);
+ void usb_unregister_port(USBBus *bus, USBPort *port);
++int usb_claim_port(USBDevice *dev);
++void usb_release_port(USBDevice *dev);
+ int usb_device_attach(USBDevice *dev);
+ int usb_device_detach(USBDevice *dev);
+ int usb_device_delete_addr(int busnr, int addr);
+diff --git a/trace-events b/trace-events
+index 0895b83..abf9d40 100644
+--- a/trace-events
++++ b/trace-events
+@@ -91,6 +91,13 @@ disable apic_reset_irq_delivered(int apic_irq_delivered) "old coalescing %d"
+ disable apic_get_irq_delivered(int apic_irq_delivered) "returning coalescing %d"
+ disable apic_set_irq(int apic_irq_delivered) "coalescing %d"
+ 
++
++# hw/usb-bus.c
++disable usb_port_claim(int bus, const char *port) "bus %d, port %s"
++disable usb_port_attach(int bus, const char *port) "bus %d, port %s"
++disable usb_port_detach(int bus, const char *port) "bus %d, port %s"
++disable usb_port_release(int bus, const char *port) "bus %d, port %s"
++
+ # hw/usb-ehci.c
+ disable usb_ehci_reset(void) "=== RESET ==="
+ disable usb_ehci_mmio_readl(uint32_t addr, const char *str, uint32_t val) "rd mmio %04x [%s] = %x"
+-- 
+1.7.4.4
+

@@ -1,0 +1,50 @@
+From 90f625449db6c74b8fc5ea29f7d0f0e1ead22203 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Fri, 2 Sep 2011 12:17:47 +0200
+Subject: [PATCH 01/13] usb-bus: Don't allow speed mismatch while attaching
+ devices
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1314965871-32485-2-git-send-email-kraxel@redhat.com>
+Patchwork-id: 32200
+O-Subject: [RHEL-6.2 kvm PATCH 1/5] usb-bus: Don't allow speed mismatch while attaching devices
+Bugzilla: 728120
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+From: Hans de Goede <hdegoede@redhat.com>
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit bf5547f5365c1bfeba9d5c3e87653b9803a875a5)
+
+bugzilla: 728120 - print error on usb speed mismatch between device and
+                   bus/port
+---
+ hw/usb-bus.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/usb-bus.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+diff --git a/hw/usb-bus.c b/hw/usb-bus.c
+index 4259db4..6461709 100644
+--- a/hw/usb-bus.c
++++ b/hw/usb-bus.c
+@@ -231,6 +231,11 @@ static int do_attach(USBDevice *dev)
+     } else {
+         port = QTAILQ_FIRST(&bus->free);
+     }
++    if (!(port->speedmask & dev->speedmask)) {
++        error_report("Warning: speed mismatch trying to attach usb device %s to bus %s\n",
++                dev->product_desc, bus->qbus.name);
++        return -1;
++    }
+ 
+     dev->attached++;
+     QTAILQ_REMOVE(&bus->free, port, next);
+-- 
+1.7.4.4
+

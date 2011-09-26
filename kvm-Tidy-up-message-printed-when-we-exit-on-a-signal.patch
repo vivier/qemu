@@ -1,0 +1,53 @@
+From b80ddcb0b45bca8dbd5d5108c79a190ab87e7fa1 Mon Sep 17 00:00:00 2001
+From: Gleb Natapov <gleb@redhat.com>
+Date: Mon, 5 Sep 2011 10:02:46 +0200
+Subject: [PATCH 08/13] Tidy up message printed when we exit on a signal
+
+RH-Author: Gleb Natapov <gleb@redhat.com>
+Message-id: <1315216966-10369-4-git-send-email-gleb@redhat.com>
+Patchwork-id: 32336
+O-Subject: [PATCH RHEL6.3 3/3] Tidy up message printed when we exit on a signal
+Bugzilla: 735716
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+Tidy up the message printed when qemu exits due to a signal, so that
+it's clearer where the message is coming from and that it's not just
+stray debug output.
+
+Upstream commit: f1d3fb04d55f46d39073e7089a5be43a16e80aa9
+---
+ vl.c |   11 +++++++++--
+ 1 files changed, 9 insertions(+), 2 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ vl.c |   11 +++++++++--
+ 1 files changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index 511f810..2d56c0f 100644
+--- a/vl.c
++++ b/vl.c
+@@ -3176,8 +3176,15 @@ int qemu_shutdown_requested(void)
+ void qemu_kill_report(void)
+ {
+     if (shutdown_signal != -1) {
+-        fprintf(stderr, "Got signal %d from pid %d\n",
+-                         shutdown_signal, shutdown_pid);
++        fprintf(stderr, "qemu: terminating on signal %d", shutdown_signal);
++        if (shutdown_pid == 0) {
++            /* This happens for eg ^C at the terminal, so it's worth
++             * avoiding printing an odd message in that case.
++             */
++            fputc('\n', stderr);
++        } else {
++            fprintf(stderr, " from pid %d\n", shutdown_pid);
++        }
+         shutdown_signal = -1;
+     }
+ }
+-- 
+1.7.4.4
+

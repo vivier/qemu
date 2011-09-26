@@ -1,0 +1,75 @@
+From 29b10d16a6a2a37b3f9c23c81e79819303ac67f4 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Fri, 2 Sep 2011 12:17:48 +0200
+Subject: [PATCH 02/13] usb/vmstate: add parent dev path
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1314965871-32485-3-git-send-email-kraxel@redhat.com>
+Patchwork-id: 32202
+O-Subject: [RHEL-6.2 kvm PATCH 2/5] usb/vmstate: add parent dev path
+Bugzilla: 734995
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+... to make vmstate id string truely unique with multiple host
+controllers, i.e. move from "1/usb-ptr" to "0000:00:01.3/1/usb-ptr"
+(usb tabled connected to piix3 uhci).
+
+This breaks migration.
+
+Plan for upstream: merge when we break migration anyway for the new
+shiny migration protocol.
+
+Plan for RHEL-6:  Luckily we don't have any usb migration support in
+RHEL-6.1 and have code in place to handle '-M rhel6.1.0'  accordingly,
+so nothing will break in the 6.1 -> 6.2 path.  Migrating from 6.2-beta
+to 6.2-final will break though.
+
+bugzilla: 734995 - Core dump when hotplug three usb-hub into the same
+                   port under both uhci and ehci
+upstream: not yet, see above
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+
+Conflicts:
+
+	hw/usb-bus.c
+---
+ hw/usb-bus.c |   15 ++++++++++++++-
+ 1 files changed, 14 insertions(+), 1 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/usb-bus.c |   15 ++++++++++++++-
+ 1 files changed, 14 insertions(+), 1 deletions(-)
+
+diff --git a/hw/usb-bus.c b/hw/usb-bus.c
+index 6461709..87d9814 100644
+--- a/hw/usb-bus.c
++++ b/hw/usb-bus.c
+@@ -339,7 +339,20 @@ static void usb_bus_dev_print(Monitor *mon, DeviceState *qdev, int indent)
+ static char *usb_get_dev_path(DeviceState *qdev)
+ {
+     USBDevice *dev = DO_UPCAST(USBDevice, qdev, qdev);
+-    return qemu_strdup(dev->port->path);
++    DeviceState *hcd = qdev->parent_bus->parent;
++    char *id = NULL;
++
++    if (hcd && hcd->parent_bus && hcd->parent_bus->info->get_dev_path) {
++        id = hcd->parent_bus->info->get_dev_path(hcd);
++    }
++    if (id) {
++        int len = strlen(id)+strlen(dev->port->path)+2;
++        char *ret = qemu_malloc(len);
++        snprintf(ret, len, "%s/%s", id, dev->port->path);
++        return ret;
++    } else {
++        return qemu_strdup(dev->port->path);
++    }
+ }
+ 
+ static char *usb_get_fw_dev_path(DeviceState *qdev)
+-- 
+1.7.4.4
+

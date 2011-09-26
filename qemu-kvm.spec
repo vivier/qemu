@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.192
+%define pkgrelease 2.193
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3632,6 +3632,32 @@ Patch2494: kvm-qemu-kvm-vm_stop-pause-threads-before-calling-other-.patch
 Patch2495: kvm-Fix-termination-by-signal-with-no-shutdown.patch
 # For bz#738555 - Stop exposing -enable-nested
 Patch2496: kvm-qemu-option-Remove-enable-nesting-from-help-text.patch
+# For bz#728120 - print error on usb speed mismatch between device and bus/port
+Patch2497: kvm-usb-bus-Don-t-allow-speed-mismatch-while-attaching-d.patch
+# For bz#734995 - Core dump when hotplug three usb-hub into the same port under both uhci and ehci
+Patch2498: kvm-usb-vmstate-add-parent-dev-path.patch
+# For bz#734995 - Core dump when hotplug three usb-hub into the same port under both uhci and ehci
+Patch2499: kvm-usb-claim-port-at-device-initialization-time.patch
+# For bz#723870 - tag devices without migration support
+Patch2500: kvm-usb-host-tag-as-unmigratable.patch
+# For bz#733010 - core dump when issue fdisk -l in guest which has two usb-storage attached
+Patch2501: kvm-usb-storage-fix-NULL-pointer-dereference.patch
+# For bz#735716 - QEMU should report the PID of the process that sent it signals for troubleshooting purposes
+Patch2502: kvm-register-signal-handler-after-initializing-SDL.patch
+# For bz#735716 - QEMU should report the PID of the process that sent it signals for troubleshooting purposes
+Patch2503: kvm-report-that-QEMU-process-was-killed-by-a-signal.patch
+# For bz#735716 - QEMU should report the PID of the process that sent it signals for troubleshooting purposes
+Patch2504: kvm-Tidy-up-message-printed-when-we-exit-on-a-signal.patch
+# For bz#729969 - Make screendump command available in QMP
+Patch2505: kvm-Monitor-Convert-do_screen_dump-to-QObject.patch
+# For bz#734995 - Core dump when hotplug three usb-hub into the same port under both uhci and ehci
+Patch2506: kvm-usb-hub-need-to-check-dev-attached.patch
+# For bz#734995 - Core dump when hotplug three usb-hub into the same port under both uhci and ehci
+Patch2507: kvm-usb-fix-port-reset.patch
+# For bz#678731 - Update qemu-kvm -device pci-assign,?  properties
+Patch2508: kvm-qdev-print-bus-properties-too.patch
+# For bz#739480 - qemu-kvm core dumps when migration with reboot
+Patch2509: kvm-ide-link-BMDMA-and-IDEState-at-device-creation.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -5237,6 +5263,19 @@ ApplyOptionalPatch()
 %patch2494 -p1
 %patch2495 -p1
 %patch2496 -p1
+%patch2497 -p1
+%patch2498 -p1
+%patch2499 -p1
+%patch2500 -p1
+%patch2501 -p1
+%patch2502 -p1
+%patch2503 -p1
+%patch2504 -p1
+%patch2505 -p1
+%patch2506 -p1
+%patch2507 -p1
+%patch2508 -p1
+%patch2509 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -5460,6 +5499,37 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Sep 26 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.193.el6
+- kvm-usb-bus-Don-t-allow-speed-mismatch-while-attaching-d.patch [bz#728120]
+- kvm-usb-vmstate-add-parent-dev-path.patch [bz#734995]
+- kvm-usb-claim-port-at-device-initialization-time.patch [bz#734995]
+- kvm-usb-host-tag-as-unmigratable.patch [bz#723870]
+- kvm-usb-storage-fix-NULL-pointer-dereference.patch [bz#733010]
+- kvm-register-signal-handler-after-initializing-SDL.patch [bz#735716]
+- kvm-report-that-QEMU-process-was-killed-by-a-signal.patch [bz#735716]
+- kvm-Tidy-up-message-printed-when-we-exit-on-a-signal.patch [bz#735716]
+- kvm-Monitor-Convert-do_screen_dump-to-QObject.patch [bz#729969]
+- kvm-usb-hub-need-to-check-dev-attached.patch [bz#734995]
+- kvm-usb-fix-port-reset.patch [bz#734995]
+- kvm-qdev-print-bus-properties-too.patch [bz#678731]
+- kvm-ide-link-BMDMA-and-IDEState-at-device-creation.patch [bz#739480]
+- Resolves: bz#678731
+  (Update qemu-kvm -device pci-assign,?  properties)
+- Resolves: bz#723870
+  (tag devices without migration support)
+- Resolves: bz#728120
+  (print error on usb speed mismatch between device and bus/port)
+- Resolves: bz#729969
+  (Make screendump command available in QMP)
+- Resolves: bz#733010
+  (core dump when issue fdisk -l in guest which has two usb-storage attached)
+- Resolves: bz#734995
+  (Core dump when hotplug three usb-hub into the same port under both uhci and ehci)
+- Resolves: bz#735716
+  (QEMU should report the PID of the process that sent it signals for troubleshooting purposes)
+- Resolves: bz#739480
+  (qemu-kvm core dumps when migration with reboot)
+
 * Tue Sep 20 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.192.el6
 - kvm-spice-workaround-a-spice-server-bug.patch [bz#697441]
 - kvm-balloon-Disassociate-handlers-from-balloon-device-on.patch [bz#736975]

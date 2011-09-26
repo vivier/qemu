@@ -1,0 +1,69 @@
+From 632c265d151a1af86767d45c38f73b0845e039fd Mon Sep 17 00:00:00 2001
+From: Michal Privoznik <mprivozn@redhat.com>
+Date: Fri, 9 Sep 2011 13:45:57 +0200
+Subject: [PATCH 09/13] Monitor: Convert do_screen_dump() to QObject
+
+RH-Author: Michal Privoznik <mprivozn@redhat.com>
+Message-id: <1315575957-20789-1-git-send-email-mprivozn@redhat.com>
+Patchwork-id: 32574
+O-Subject: [RHEL-6.2 kvm PATCH] Monitor: Convert do_screen_dump() to QObject
+Bugzilla: 729969
+RH-Acked-by: Luiz Capitulino <lcapitulino@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+Trivial, as it never fails, doesn't have output nor return
+any data.
+
+Note that it's also available under QMP, as kvm-autotest
+needs this.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+Signed-off-by: Michal Privoznik <mprivozn@redhat.com>
+
+BZ: https://bugzilla.redhat.com/show_bug.cgi?id=729969
+upstream: f1dc58e07decfa21f6141d6c441008d4b8b83331
+---
+ monitor.c       |    3 ++-
+ qemu-monitor.hx |    3 ++-
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ monitor.c       |    3 ++-
+ qemu-monitor.hx |    3 ++-
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index a3bb9c6..f700499 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -1304,9 +1304,10 @@ static int redhat_spice_migrate_info(Monitor *mon, const QDict *qdict, QObject *
+     return 0;
+ }
+ 
+-static void do_screen_dump(Monitor *mon, const QDict *qdict)
++static int do_screen_dump(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     vga_hw_screen_dump(qdict_get_str(qdict, "filename"));
++    return 0;
+ }
+ 
+ static int rhel6_qxl_do_screen_dump(Monitor *mon, const QDict *qdict, QObject **ret_data)
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index c01cb35..e56b53d 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -438,7 +438,8 @@ EQMP
+         .args_type  = "filename:F",
+         .params     = "filename",
+         .help       = "save screen into PPM image 'filename'",
+-        .mhandler.cmd = do_screen_dump,
++        .user_print = monitor_user_noop,
++        .mhandler.cmd_new = do_screen_dump,
+     },
+ 
+ STEXI
+-- 
+1.7.4.4
+

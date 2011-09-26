@@ -1,0 +1,143 @@
+From e0f5d9f9e0238492bc17ef43e719fed0991801f0 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 15 Sep 2011 11:40:04 +0200
+Subject: [PATCH 11/13] usb: fix port reset
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1316086804-29287-3-git-send-email-kraxel@redhat.com>
+Patchwork-id: 32806
+O-Subject: [RHEL-6.2 kvm PATCH 2/2] usb: fix port reset
+Bugzilla: 734995
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+
+commit 891fb2cd4592b6fe76106a69e0ca40efbf82726a removed the implicit
+detach before (re-)attaching in usb_attach().  Some usb host controllers
+used that behavior though to do a port reset by a detach+attach
+sequence.
+
+This patch establishes old behavior by adding a new usb_reset() function
+for port resets and putting it into use, thereby also unifying port
+reset behavior of all host controllers.  The patch also adds asserts to
+usb_attach() and usb_detach() to make sure the calls are symmetrical.
+
+bugzilla: 734995 - Core dump when hotplug three usb-hub into the same
+                   port under both uhci and ehci
+upstream: queued up (http://patchwork.ozlabs.org/patch/114783/)
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/usb-ehci.c |    4 ++--
+ hw/usb-ohci.c |    2 +-
+ hw/usb-uhci.c |    2 +-
+ hw/usb.c      |   12 ++++++++++++
+ hw/usb.h      |    1 +
+ 5 files changed, 17 insertions(+), 4 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/usb-ehci.c |    4 ++--
+ hw/usb-ohci.c |    2 +-
+ hw/usb-uhci.c |    2 +-
+ hw/usb.c      |   12 ++++++++++++
+ hw/usb.h      |    1 +
+ 5 files changed, 17 insertions(+), 4 deletions(-)
+
+diff --git a/hw/usb-ehci.c b/hw/usb-ehci.c
+index b0378de..5ff9396 100644
+--- a/hw/usb-ehci.c
++++ b/hw/usb-ehci.c
+@@ -871,6 +871,7 @@ static void ehci_reset(void *opaque)
+         }
+         if (devs[i] && devs[i]->attached) {
+             usb_attach(&s->ports[i]);
++            usb_send_msg(devs[i], USB_MSG_RESET);
+         }
+     }
+     ehci_queues_rip_all(s);
+@@ -969,8 +970,7 @@ static void handle_port_status_write(EHCIState *s, int port, uint32_t val)
+     if (!(val & PORTSC_PRESET) &&(*portsc & PORTSC_PRESET)) {
+         trace_usb_ehci_port_reset(port, 0);
+         if (dev && dev->attached) {
+-            usb_attach(&s->ports[port]);
+-            usb_send_msg(dev, USB_MSG_RESET);
++            usb_reset(&s->ports[port]);
+             *portsc &= ~PORTSC_CSC;
+         }
+ 
+diff --git a/hw/usb-ohci.c b/hw/usb-ohci.c
+index c6700fd..bdeddbd 100644
+--- a/hw/usb-ohci.c
++++ b/hw/usb-ohci.c
+@@ -415,7 +415,7 @@ static void ohci_reset(void *opaque)
+         port = &ohci->rhport[i];
+         port->ctrl = 0;
+         if (port->port.dev && port->port.dev->attached) {
+-            usb_attach(&port->port);
++            usb_reset(&port->port);
+         }
+       }
+     if (ohci->async_td) {
+diff --git a/hw/usb-uhci.c b/hw/usb-uhci.c
+index 98ea34f..10ed2b8 100644
+--- a/hw/usb-uhci.c
++++ b/hw/usb-uhci.c
+@@ -336,7 +336,7 @@ static void uhci_reset(void *opaque)
+         port = &s->ports[i];
+         port->ctrl = 0x0080;
+         if (port->port.dev && port->port.dev->attached) {
+-            usb_attach(&port->port);
++            usb_reset(&port->port);
+         }
+     }
+ 
+diff --git a/hw/usb.c b/hw/usb.c
+index 7f14c46..056f6c5 100644
+--- a/hw/usb.c
++++ b/hw/usb.c
+@@ -32,6 +32,7 @@ void usb_attach(USBPort *port)
+ 
+     assert(dev != NULL);
+     assert(dev->attached);
++    assert(dev->state == USB_STATE_NOTATTACHED);
+     port->ops->attach(port);
+     usb_send_msg(dev, USB_MSG_ATTACH);
+ }
+@@ -41,10 +42,21 @@ void usb_detach(USBPort *port)
+     USBDevice *dev = port->dev;
+ 
+     assert(dev != NULL);
++    assert(dev->state != USB_STATE_NOTATTACHED);
+     port->ops->detach(port);
+     usb_send_msg(dev, USB_MSG_DETACH);
+ }
+ 
++void usb_reset(USBPort *port)
++{
++    USBDevice *dev = port->dev;
++
++    assert(dev != NULL);
++    usb_detach(port);
++    usb_attach(port);
++    usb_send_msg(dev, USB_MSG_RESET);
++}
++
+ void usb_wakeup(USBDevice *dev)
+ {
+     if (dev->remote_wakeup && dev->port && dev->port->ops->wakeup) {
+diff --git a/hw/usb.h b/hw/usb.h
+index ae1a4d1..b8f8ffd 100644
+--- a/hw/usb.h
++++ b/hw/usb.h
+@@ -291,6 +291,7 @@ void usb_cancel_packet(USBPacket * p);
+ 
+ void usb_attach(USBPort *port);
+ void usb_detach(USBPort *port);
++void usb_reset(USBPort *port);
+ void usb_wakeup(USBDevice *dev);
+ int usb_generic_handle_packet(USBDevice *s, USBPacket *p);
+ void usb_generic_async_ctrl_complete(USBDevice *s, USBPacket *p);
+-- 
+1.7.4.4
+
