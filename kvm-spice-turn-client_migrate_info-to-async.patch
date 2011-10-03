@@ -1,0 +1,164 @@
+From 4df867e5895b57fe416444bf981893f489622532 Mon Sep 17 00:00:00 2001
+From: Yonit Halperin <yhalperi@redhat.com>
+Date: Sun, 25 Sep 2011 12:35:37 +0200
+Subject: [PATCH 1/3] spice: turn client_migrate_info to async
+
+RH-Author: Yonit Halperin <yhalperi@redhat.com>
+Message-id: <1316954138-11349-2-git-send-email-yhalperi@redhat.com>
+Patchwork-id: 33243
+O-Subject: [PATCH spice 1/2] spice: turn client_migrate_info to async
+Bugzilla: 737921
+RH-Acked-by: Arnon Gilboa <agilboa@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+
+RHBZ 737921
+Spice client is required to connect to the migration target before/as migration
+starts. Since after migration starts, the target qemu is blocked and cannot accept new spice client
+we trigger the connection to the target upon client_migrate_info command.
+client_migrate_info completion cb will be called after spice client has been
+connected to the target (or a timeout). See following patches and spice patches.
+
+Signed-off-by: Yonit Halperin <yhalperi@redhat.com>
+---
+ monitor.c       |    8 ++++----
+ qemu-monitor.hx |    6 ++++--
+ ui/qemu-spice.h |   13 ++++++++++---
+ ui/spice-core.c |   10 +++++++---
+ 4 files changed, 25 insertions(+), 12 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ monitor.c       |    8 ++++----
+ qemu-monitor.hx |    6 ++++--
+ ui/qemu-spice.h |   13 ++++++++++---
+ ui/spice-core.c |   10 +++++++---
+ 4 files changed, 25 insertions(+), 12 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index f700499..3ab0927 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -1256,7 +1256,7 @@ static int redhat_set_password(Monitor *mon, const QDict *qdict, QObject **ret_d
+     return 0;
+ }
+ 
+-static int client_migrate_info(Monitor *mon, const QDict *qdict, QObject **ret_data)
++static int client_migrate_info(Monitor *mon, const QDict *qdict, MonitorCompletion cb, void *opaque)
+ {
+     const char *protocol = qdict_get_str(qdict, "protocol");
+     const char *hostname = qdict_get_str(qdict, "hostname");
+@@ -1271,7 +1271,7 @@ static int client_migrate_info(Monitor *mon, const QDict *qdict, QObject **ret_d
+             return -1;
+         }
+ 
+-        ret = qemu_spice_migrate_info(hostname, port, tls_port, subject);
++        ret = qemu_spice_migrate_info(hostname, port, tls_port, subject, cb, opaque);
+         if (ret != 0) {
+             qerror_report(QERR_UNDEFINED_ERROR);
+             return -1;
+@@ -1283,7 +1283,7 @@ static int client_migrate_info(Monitor *mon, const QDict *qdict, QObject **ret_d
+     return -1;
+ }
+ 
+-static int redhat_spice_migrate_info(Monitor *mon, const QDict *qdict, QObject **ret_data)
++static int redhat_spice_migrate_info(Monitor *mon, const QDict *qdict, MonitorCompletion cb, void *opaque)
+ {
+     const char *hostname = qdict_get_str(qdict, "hostname");
+     const char *subject  = qdict_get_try_str(qdict, "cert-subject");
+@@ -1296,7 +1296,7 @@ static int redhat_spice_migrate_info(Monitor *mon, const QDict *qdict, QObject *
+         return -1;
+     }
+ 
+-    ret = qemu_spice_migrate_info(hostname, port, tls_port, subject);
++    ret = qemu_spice_migrate_info(hostname, port, tls_port, subject, cb, opaque);
+     if (ret != 0) {
+         qerror_report(QERR_UNDEFINED_ERROR);
+         return -1;
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index e56b53d..6f56f10 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -1332,7 +1332,8 @@ EQMP
+         .params     = "protocol hostname port tls-port cert-subject",
+         .help       = "send migration info to spice/vnc client",
+         .user_print = monitor_user_noop,
+-        .mhandler.cmd_new = client_migrate_info,
++        .mhandler.cmd_async = client_migrate_info,
++        .async      = 1,
+     },
+ 
+ SQMP
+@@ -1997,7 +1998,8 @@ EQMP
+         .params     = "hostname port tls-port cert-subject",
+         .help       = "send migration info to spice client",
+ 	.user_print = monitor_user_noop,
+-        .mhandler.cmd_new = redhat_spice_migrate_info,
++        .mhandler.cmd_async = redhat_spice_migrate_info,
++        .async      = 1,
+     },
+ 
+ 
+diff --git a/ui/qemu-spice.h b/ui/qemu-spice.h
+index 3c6f1fe..187c982 100644
+--- a/ui/qemu-spice.h
++++ b/ui/qemu-spice.h
+@@ -25,6 +25,7 @@
+ #include "qemu-option.h"
+ #include "qemu-config.h"
+ #include "qemu-char.h"
++#include "monitor.h"
+ 
+ extern int using_spice;
+ 
+@@ -37,7 +38,8 @@ int qemu_spice_set_passwd(const char *passwd,
+                           bool fail_if_connected, bool disconnect_if_connected);
+ int qemu_spice_set_pw_expire(time_t expires);
+ int qemu_spice_migrate_info(const char *hostname, int port, int tls_port,
+-                            const char *subject);
++                            const char *subject,
++                            MonitorCompletion cb, void *opaque);
+ 
+ void do_info_spice_print(Monitor *mon, const QObject *data);
+ void do_info_spice(Monitor *mon, QObject **ret_data);
+@@ -57,8 +59,13 @@ static inline int qemu_spice_set_pw_expire(time_t expires)
+ {
+     return -1;
+ }
+-static inline int qemu_spice_migrate_info(const char *h, int p, int t, const char *s)
+-{ return -1; }
++
++static inline int qemu_spice_migrate_info(const char *h, int p, int t, const char *s,
++                                          MonitorCompletion cb, void *opaque)
++{
++    cb(opaque, NULL);
++    return -1;
++}
+ 
+ #endif /* CONFIG_SPICE */
+ 
+diff --git a/ui/spice-core.c b/ui/spice-core.c
+index e3b29d0..ebf4a23 100644
+--- a/ui/spice-core.c
++++ b/ui/spice-core.c
+@@ -478,10 +478,14 @@ static void migration_state_notifier(Notifier *notifier)
+ }
+ 
+ int qemu_spice_migrate_info(const char *hostname, int port, int tls_port,
+-                            const char *subject)
++                            const char *subject,
++                            MonitorCompletion *cb, void *opaque)
+ {
+-    return spice_server_migrate_info(spice_server, hostname,
+-                                     port, tls_port, subject);
++    int ret;
++    ret = spice_server_migrate_info(spice_server, hostname,
++                                    port, tls_port, subject);
++    cb(opaque, NULL);
++    return ret;
+ }
+ 
+ static int add_channel(const char *name, const char *value, void *opaque)
+-- 
+1.7.4.4
+

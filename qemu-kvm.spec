@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.193
+%define pkgrelease 2.194
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3658,6 +3658,12 @@ Patch2507: kvm-usb-fix-port-reset.patch
 Patch2508: kvm-qdev-print-bus-properties-too.patch
 # For bz#739480 - qemu-kvm core dumps when migration with reboot
 Patch2509: kvm-ide-link-BMDMA-and-IDEState-at-device-creation.patch
+# For bz#737921 - No Spice password is set on target host after migration
+Patch2510: kvm-spice-turn-client_migrate_info-to-async.patch
+# For bz#737921 - No Spice password is set on target host after migration
+Patch2511: kvm-spice-support-the-new-migration-interface-spice-0.8..patch
+# For bz#678729 - Hotplug VF/PF with invalid addr value leading to qemu-kvm process quit with core dump
+Patch2512: kvm-pci-devfn-check-device-slot-number-in-range.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -5276,6 +5282,9 @@ ApplyOptionalPatch()
 %patch2507 -p1
 %patch2508 -p1
 %patch2509 -p1
+%patch2510 -p1
+%patch2511 -p1
+%patch2512 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -5499,6 +5508,15 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Oct 03 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.194.el6
+- kvm-spice-turn-client_migrate_info-to-async.patch [bz#737921]
+- kvm-spice-support-the-new-migration-interface-spice-0.8..patch [bz#737921]
+- kvm-pci-devfn-check-device-slot-number-in-range.patch [bz#678729]
+- Resolves: bz#678729
+  (Hotplug VF/PF with invalid addr value leading to qemu-kvm process quit with core dump)
+- Resolves: bz#737921
+  (No Spice password is set on target host after migration)
+
 * Mon Sep 26 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.193.el6
 - kvm-usb-bus-Don-t-allow-speed-mismatch-while-attaching-d.patch [bz#728120]
 - kvm-usb-vmstate-add-parent-dev-path.patch [bz#734995]

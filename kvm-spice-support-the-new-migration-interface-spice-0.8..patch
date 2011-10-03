@@ -1,0 +1,124 @@
+From cb4b2112acc2176fe42a68dcdc57ed5fc58c7c1e Mon Sep 17 00:00:00 2001
+From: Yonit Halperin <yhalperi@redhat.com>
+Date: Sun, 25 Sep 2011 12:35:38 +0200
+Subject: [PATCH 2/3] spice: support the new migration interface (spice 0.8.3)
+
+RH-Author: Yonit Halperin <yhalperi@redhat.com>
+Message-id: <1316954138-11349-3-git-send-email-yhalperi@redhat.com>
+Patchwork-id: 33244
+O-Subject: [PATCH spice 2/2] spice: support the new migration interface (spice 0.8.3)
+Bugzilla: 737921
+RH-Acked-by: Arnon Gilboa <agilboa@redhat.com>
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Uri Lublin <uril@redhat.com>
+
+- call spice_server_migrate_(start|end|connect).
+- register client_migrate_info completion callback
+
+Signed-off-by: Yonit Halperin <yhalperi@redhat.com>
+---
+ ui/spice-core.c |   57 +++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 files changed, 55 insertions(+), 2 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ ui/spice-core.c |   57 +++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 files changed, 55 insertions(+), 2 deletions(-)
+
+diff --git a/ui/spice-core.c b/ui/spice-core.c
+index ebf4a23..297b7fa 100644
+--- a/ui/spice-core.c
++++ b/ui/spice-core.c
+@@ -313,6 +313,38 @@ static SpiceCoreInterface core_interface = {
+ #endif
+ };
+ 
++#ifdef SPICE_INTERFACE_MIGRATION
++typedef struct SpiceMigration {
++    SpiceMigrateInstance sin;
++    struct {
++        MonitorCompletion *cb;
++        void *opaque;
++    } connect_complete;
++} SpiceMigration;
++
++static void migrate_connect_complete_cb(SpiceMigrateInstance *sin);
++
++static const SpiceMigrateInterface migrate_interface = {
++    .base.type = SPICE_INTERFACE_MIGRATION,
++    .base.description = "migration",
++    .base.major_version = SPICE_INTERFACE_MIGRATION_MAJOR,
++    .base.minor_version = SPICE_INTERFACE_MIGRATION_MINOR,
++    .migrate_connect_complete = migrate_connect_complete_cb,
++    .migrate_end_complete = NULL,
++};
++
++static SpiceMigration spice_migrate;
++
++static void migrate_connect_complete_cb(SpiceMigrateInstance *sin)
++{
++    SpiceMigration *sm = container_of(sin, SpiceMigration, sin);
++    if (sm->connect_complete.cb) {
++        sm->connect_complete.cb(sm->connect_complete.opaque, NULL);
++    }
++    sm->connect_complete.cb = NULL;
++}
++#endif
++
+ /* config string parsing */
+ 
+ static int name2enum(const char *string, const char *table[], int entries)
+@@ -469,10 +501,19 @@ void do_info_spice(Monitor *mon, QObject **ret_data)
+ static void migration_state_notifier(Notifier *notifier)
+ {
+     int state = get_migration_state();
+-
+-    if (state == MIG_STATE_COMPLETED) {
++    if (state == MIG_STATE_ACTIVE) {
++#ifdef SPICE_INTERFACE_MIGRATION
++        spice_server_migrate_start(spice_server);
++#endif
++    } else if (state == MIG_STATE_COMPLETED) {
+ #if SPICE_SERVER_VERSION >= 0x000701 /* 0.7.1 */
++#ifndef SPICE_INTERFACE_MIGRATION
+         spice_server_migrate_switch(spice_server);
++#else
++        spice_server_migrate_end(spice_server, true);
++    } else if (state == MIG_STATE_CANCELLED || state == MIG_STATE_ERROR) {
++        spice_server_migrate_end(spice_server, false);
++#endif
+ #endif
+     }
+ }
+@@ -482,9 +523,16 @@ int qemu_spice_migrate_info(const char *hostname, int port, int tls_port,
+                             MonitorCompletion *cb, void *opaque)
+ {
+     int ret;
++#ifdef SPICE_INTERFACE_MIGRATION
++    spice_migrate.connect_complete.cb = cb;
++    spice_migrate.connect_complete.opaque = opaque;
++    ret = spice_server_migrate_connect(spice_server, hostname,
++                                       port, tls_port, subject);
++#else
+     ret = spice_server_migrate_info(spice_server, hostname,
+                                     port, tls_port, subject);
+     cb(opaque, NULL);
++#endif
+     return ret;
+ }
+ 
+@@ -667,6 +715,11 @@ void qemu_spice_init(void)
+ 
+     migration_state.notify = migration_state_notifier;
+     add_migration_state_change_notifier(&migration_state);
++#ifdef SPICE_INTERFACE_MIGRATION
++    spice_migrate.sin.base.sif = &migrate_interface.base;
++    spice_migrate.connect_complete.cb = NULL;
++    qemu_spice_add_interface(&spice_migrate.sin.base);
++#endif
+ 
+     qemu_spice_input_init();
+     qemu_spice_audio_init();
+-- 
+1.7.4.4
+

@@ -1,0 +1,82 @@
+From 06e3873d5dc53790cde0d94532bc7e87092b4d39 Mon Sep 17 00:00:00 2001
+From: Don Dutile <ddutile@redhat.com>
+Date: Tue, 27 Sep 2011 18:58:57 +0200
+Subject: [PATCH 3/3] pci-devfn: check device/slot number in range
+
+RH-Author: Don Dutile <ddutile@redhat.com>
+Message-id: <1317149937-4742-1-git-send-email-ddutile@redhat.com>
+Patchwork-id: 33373
+O-Subject: [PATCH RHEL6.2 qemu-kvm] pci-devfn: check device/slot number in range
+Bugzilla: 678729
+RH-Acked-by: Chris Wright <chrisw@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=678729
+
+ Backport of upstream qemu patch b12d1122e95f29b7d51e60dab42d9b68d5418b84
+
+ Doing a device assignment via the qemu-kvm command line directly,
+ and setting the guest PCI config device-function number to an invalid value
+ will crash the guest.
+ Since we now have to officially support qemu-kvm command line for
+ SpecVirt reasons, this has to be fixed.
+ Doing device assignment via libvirt (static guest xml definition, or
+ dynamically via 'virsh device-attach') does not fail because libvirt
+ sanity checks the valid range and cleanly prevents the guest start up,
+ or the dynamic device attach.
+
+ Fix:
+ Simply add a device/slot number check; a function number check existed,
+ so maybe the slot number check was lost sometime in the past.
+
+ Testing:
+ Did a device-assignment via qemu monitor such as:
+ #(qemu) device_add pci-assign,host=01:00.0,id=pf1,bus=pci.0,addr=abc
+ or
+ #(qemu) device_add pci-assign,host=01:00.0,id=pf1,bus=pci.0,addr=34
+
+ would cause the guest to crash, sometimes, and sometimes hang ...
+ it all depends on what memory was corrupted by using the slot-number
+ blindly to index into a pci[devfn] table in qemu.
+
+ With this patch, the above works.
+
+ Additionally, to check for regressions:
+ -- did libvirt-based testing: static guest xml device assignment &
+    dynamic virsh device-attach
+ and
+ -- did above device_add with no bus=,addr= parameters
+
+to ensure default assignment works as before.
+
+ Please review and ack.
+
+ - Don
+
+---
+
+ hw/qdev-properties.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/qdev-properties.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/hw/qdev-properties.c b/hw/qdev-properties.c
+index a484765..e625fd0 100644
+--- a/hw/qdev-properties.c
++++ b/hw/qdev-properties.c
+@@ -524,6 +524,8 @@ static int parse_pci_devfn(DeviceState *dev, Property *prop, const char *str)
+         return -EINVAL;
+     if (fn > 7)
+         return -EINVAL;
++    if (slot > 31)
++	return -EINVAL;
+     *ptr = slot << 3 | fn;
+     return 0;
+ }
+-- 
+1.7.4.4
+
