@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.194
+%define pkgrelease 2.195
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3673,8 +3673,8 @@ BuildRequires: pulseaudio-libs-devel
 BuildRequires: ncurses-devel
 BuildRequires: libaio-devel
 
-# require spice-server API changes from bz#723676
-BuildRequires: spice-server-devel >= 0.8.2-2.el6
+# require spice-server API changes from bz#737921
+BuildRequires: spice-server-devel >= 0.8.2-4.el6
 
 BuildRequires: systemtap-sdt-devel
 
@@ -5508,6 +5508,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Oct 03 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.195.el6
+- Require spice-server-devel >= 0.8.2-4 [bz#737921]
+- Resolves: bz#737921
+  (No Spice password is set on target host after migration)
+
 * Mon Oct 03 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.194.el6
 - kvm-spice-turn-client_migrate_info-to-async.patch [bz#737921]
 - kvm-spice-support-the-new-migration-interface-spice-0.8..patch [bz#737921]

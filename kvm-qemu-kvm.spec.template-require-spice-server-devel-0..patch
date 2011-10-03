@@ -1,0 +1,32 @@
+From 5ac36bf085f9cc5b3511001cffef0616ff6a6e2b Mon Sep 17 00:00:00 2001
+From: Yonit Halperin <yhalperi@redhat.com>
+Date: Sun, 2 Oct 2011 15:28:26 +0200
+Subject: [PATCH] qemu-kvm.spec.template: require spice-server-devel >=
+ 0.8.2-4
+
+RHBZ #737921
+
+Signed-off-by: Yonit Halperin <yhalperi@redhat.com>
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ redhat/qemu-kvm.spec.template |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/redhat/qemu-kvm.spec.template b/redhat/qemu-kvm.spec.template
+index 34caf39..b480bc8 100644
+--- a/redhat/qemu-kvm.spec.template
++++ b/redhat/qemu-kvm.spec.template
+@@ -60,8 +60,8 @@ BuildRequires: pulseaudio-libs-devel
+ BuildRequires: ncurses-devel
+ BuildRequires: libaio-devel
+ 
+-# require spice-server API changes from bz#723676
+-BuildRequires: spice-server-devel >= 0.8.2-2.el6
++# require spice-server API changes from bz#737921
++BuildRequires: spice-server-devel >= 0.8.2-4.el6
+ 
+ BuildRequires: systemtap-sdt-devel
+ 
+-- 
+1.7.4.4
+
