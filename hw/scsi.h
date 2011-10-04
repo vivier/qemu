@@ -123,6 +123,8 @@ extern const struct SCSISense sense_code_NO_SENSE;
 extern const struct SCSISense sense_code_LUN_NOT_READY;
 /* LUN not ready, Medium not present */
 extern const struct SCSISense sense_code_NO_MEDIUM;
+/* LUN not ready, medium removal prevented */
+extern const struct SCSISense sense_code_NOT_READY_REMOVAL_PREVENTED;
 /* Hardware error, internal target failure */
 extern const struct SCSISense sense_code_TARGET_FAILURE;
 /* Illegal request, invalid command operation code */
@@ -133,6 +135,8 @@ extern const struct SCSISense sense_code_LBA_OUT_OF_RANGE;
 extern const struct SCSISense sense_code_INVALID_FIELD;
 /* Illegal request, LUN not supported */
 extern const struct SCSISense sense_code_LUN_NOT_SUPPORTED;
+/* Illegal request, medium removal prevented */
+extern const struct SCSISense sense_code_ILLEGAL_REQ_REMOVAL_PREVENTED;
 /* Command aborted, I/O process terminated */
 extern const struct SCSISense sense_code_IO_ERROR;
 /* Command aborted, I_T Nexus loss occurred */
