@@ -95,6 +95,7 @@ typedef struct fdrive_t {
     uint8_t max_track;        /* Nb of tracks           */
     uint16_t bps;             /* Bytes per sector       */
     uint8_t ro;               /* Is read-only           */
+    uint8_t media_changed;    /* Is media changed       */
 } fdrive_t;
 
 static void fd_init (fdrive_t *drv)
@@ -1000,6 +1001,10 @@ static int fdctrl_media_changed(fdrive_t *drv)
     if (!drv->bs)
         return 0;
     ret = bdrv_media_changed(drv->bs);
+    if (ret < 0) {
+        ret = drv->media_changed;
+    }
+    drv->media_changed = 0;
     if (ret) {
         fd_revalidate(drv);
     }
@@ -1870,6 +1875,17 @@ static void fdctrl_result_timer(void *opaque)
     fdctrl_stop_transfer(fdctrl, 0x00, 0x00, 0x00);
 }
 
+static void fdctrl_change_cb(void *opaque)
+{
+    fdrive_t *drive = opaque;
+
+    drive->media_changed = 1;
+}
+
+static const BlockDevOps fdctrl_block_ops = {
+    .change_media_cb = fdctrl_change_cb,
+};
+
 /* Init functions */
 static void fdctrl_connect_drives(fdctrl_t *fdctrl)
 {
@@ -1882,7 +1898,9 @@ static void fdctrl_connect_drives(fdctrl_t *fdctrl)
         fd_init(drive);
         fd_revalidate(drive);
         if (drive->bs) {
+            drive->media_changed = 1;
             bdrv_set_removable(drive->bs, 1);
+            bdrv_set_dev_ops(drive->bs, &fdctrl_block_ops, drive);
         }
     }
 }
