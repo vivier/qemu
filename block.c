@@ -64,6 +64,9 @@ static QTAILQ_HEAD(, BlockDriverState) bdrv_states =
 static QLIST_HEAD(, BlockDriver) bdrv_drivers =
     QLIST_HEAD_INITIALIZER(bdrv_drivers);
 
+/* The device to use for VM snapshots */
+static BlockDriverState *bs_snapshots;
+
 /* If non-zero, use only whitelisted block drivers */
 static int use_bdrv_whitelist;
 
@@ -640,8 +643,12 @@ unlink_and_fail:
 void bdrv_close(BlockDriverState *bs)
 {
     if (bs->drv) {
-        if (bs->backing_hd)
+        if (bs == bs_snapshots) {
+            bs_snapshots = NULL;
+        }
+        if (bs->backing_hd) {
             bdrv_delete(bs->backing_hd);
+        }
         bs->drv->bdrv_close(bs);
         qemu_free(bs->opaque);
 #ifdef _WIN32
@@ -694,6 +701,7 @@ void bdrv_delete(BlockDriverState *bs)
         bdrv_delete(bs->file);
     }
 
+    assert(bs != bs_snapshots);
     qemu_free(bs);
 }
 
@@ -1877,6 +1885,25 @@ int bdrv_can_snapshot(BlockDriverState *bs)
 int bdrv_is_snapshot(BlockDriverState *bs)
 {
     return !!(bs->open_flags & BDRV_O_SNAPSHOT);
+}
+
+BlockDriverState *bdrv_snapshots(void)
+{
+    BlockDriverState *bs;
+
+    if (bs_snapshots)
+        return bs_snapshots;
+
+    bs = NULL;
+    while ((bs = bdrv_next(bs))) {
+        if (bdrv_can_snapshot(bs)) {
+            goto ok;
+        }
+    }
+    return NULL;
+ ok:
+    bs_snapshots = bs;
+    return bs;
 }
 
 int bdrv_snapshot_create(BlockDriverState *bs,
