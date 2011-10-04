@@ -8,6 +8,7 @@
  */
 #include <hw/ide.h>
 #include "block_int.h"
+#include "dma.h"
 
 /* debug IDE devices */
 //#define DEBUG_IDE
@@ -558,9 +559,12 @@ void ide_bus_reset(IDEBus *bus);
 int64_t ide_get_sector(IDEState *s);
 void ide_set_sector(IDEState *s, int64_t sector_num);
 
+void ide_dma_start(IDEState *s, BlockDriverCompletionFunc *dma_cb);
 void ide_dma_cancel(BMDMAState *bm);
 void ide_dma_restart_cb(void *opaque, int running, int reason);
+void ide_dma_set_inactive(BMDMAState *bm);
 void ide_dma_error(IDEState *s);
+int ide_dma_buf_rw(BMDMAState *bm, int is_write);
 void ide_dma_reset(BMDMAState *bm);
 
 void ide_atapi_cmd_ok(IDEState *s);
@@ -583,6 +587,14 @@ void ide_init2_with_non_qdev_drives(IDEBus *bus, DriveInfo *hd0,
 void ide_init_ioport(IDEBus *bus, int iobase, int iobase2);
 
 void ide_exec_cmd(IDEBus *bus, uint32_t val);
+
+void ide_transfer_start(IDEState *s, uint8_t *buf, int size,
+                        EndTransferFunc *end_transfer_func);
+void ide_transfer_stop(IDEState *s);
+
+/* hw/ide/atapic.c */
+void ide_atapi_cmd(IDEState *s);
+void ide_atapi_cmd_reply_end(IDEState *s);
 
 /* hw/ide/qdev.c */
 void ide_bus_new(IDEBus *idebus, DeviceState *dev, int bus_id);
