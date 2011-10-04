@@ -44,7 +44,6 @@ typedef struct DriveInfo {
 } DriveInfo;
 
 extern QTAILQ_HEAD(drivelist, DriveInfo) drives;
-extern QTAILQ_HEAD(driveoptlist, DriveOpt) driveopts;
 extern DriveInfo *extboot_drive;
 
 extern DriveInfo *drive_get(BlockInterfaceType type, int bus, int unit);

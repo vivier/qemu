@@ -19,7 +19,6 @@
 #include "qjson.h"
 
 struct drivelist drives = QTAILQ_HEAD_INITIALIZER(drives);
-struct driveoptlist driveopts = QTAILQ_HEAD_INITIALIZER(driveopts);
 DriveInfo *extboot_drive = NULL;
 
 static const char *const if_name[IF_COUNT] = {
