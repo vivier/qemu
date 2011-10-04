@@ -1753,6 +1753,10 @@ void ide_bus_reset(IDEBus *bus)
     ide_clear_hob(bus);
 }
 
+static const BlockDevOps ide_cd_block_ops = {
+    .change_cb = cdrom_change_cb,
+};
+
 int ide_init_drive(IDEState *s, BlockDriverState *bs, const char *version)
 {
     int cylinders, heads, secs;
@@ -1785,7 +1789,7 @@ int ide_init_drive(IDEState *s, BlockDriverState *bs, const char *version)
     s->smart_selftest_count = 0;
     if (bdrv_get_type_hint(bs) == BDRV_TYPE_CDROM) {
         s->drive_kind = IDE_CD;
-        bdrv_set_change_cb(bs, cdrom_change_cb, s);
+        bdrv_set_dev_ops(bs, &ide_cd_block_ops, s);
         s->bs->buffer_alignment = 2048;
     } else {
         if (bdrv_is_read_only(bs)) {
