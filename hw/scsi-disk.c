@@ -220,9 +220,6 @@ static int scsi_handle_rw_error(SCSIDiskReq *r, int error, int type)
         bdrv_mon_event(s->bs, BDRV_ACTION_STOP, error, is_read);
         vm_stop(0);
     } else {
-        if (type == SCSI_REQ_STATUS_RETRY_READ) {
-            scsi_req_data(&r->req, 0);
-        }
         switch (error) {
         case ENOMEM:
             scsi_command_complete(r, CHECK_CONDITION,
