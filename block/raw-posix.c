@@ -1120,7 +1120,7 @@ static int floppy_media_changed(BlockDriverState *bs)
     return ret;
 }
 
-static int floppy_eject(BlockDriverState *bs, int eject_flag)
+static void floppy_eject(BlockDriverState *bs, int eject_flag)
 {
     BDRVRawState *s = bs->opaque;
     int fd;
@@ -1135,8 +1135,6 @@ static int floppy_eject(BlockDriverState *bs, int eject_flag)
             perror("FDEJECT");
         close(fd);
     }
-
-    return 0;
 }
 
 static BlockDriver bdrv_host_floppy = {
@@ -1209,7 +1207,7 @@ static int cdrom_is_inserted(BlockDriverState *bs)
     return 0;
 }
 
-static int cdrom_eject(BlockDriverState *bs, int eject_flag)
+static void cdrom_eject(BlockDriverState *bs, int eject_flag)
 {
     BDRVRawState *s = bs->opaque;
 
@@ -1220,8 +1218,6 @@ static int cdrom_eject(BlockDriverState *bs, int eject_flag)
         if (ioctl(s->fd, CDROMCLOSETRAY, NULL) < 0)
             perror("CDROMEJECT");
     }
-
-    return 0;
 }
 
 static void cdrom_set_locked(BlockDriverState *bs, int locked)
@@ -1321,12 +1317,12 @@ static int cdrom_is_inserted(BlockDriverState *bs)
     return raw_getlength(bs) > 0;
 }
 
-static int cdrom_eject(BlockDriverState *bs, int eject_flag)
+static void cdrom_eject(BlockDriverState *bs, int eject_flag)
 {
     BDRVRawState *s = bs->opaque;
 
     if (s->fd < 0)
-        return -ENOTSUP;
+        return;
 
     (void) ioctl(s->fd, CDIOCALLOW);
 
@@ -1338,9 +1334,7 @@ static int cdrom_eject(BlockDriverState *bs, int eject_flag)
             perror("CDIOCCLOSE");
     }
 
-    if (cdrom_reopen(bs) < 0)
-        return -ENOTSUP;
-    return 0;
+    cdrom_reopen(bs);
 }
 
 static void cdrom_set_locked(BlockDriverState *bs, int locked)
