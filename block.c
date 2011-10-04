@@ -43,7 +43,7 @@
 #include <windows.h>
 #endif
 
-static void bdrv_dev_change_cb(BlockDriverState *bs, int reason);
+static void bdrv_dev_change_media_cb(BlockDriverState *bs);
 static BlockDriverAIOCB *bdrv_aio_readv_em(BlockDriverState *bs,
         int64_t sector_num, QEMUIOVector *qiov, int nb_sectors,
         BlockDriverCompletionFunc *cb, void *opaque);
@@ -627,7 +627,7 @@ int bdrv_open(BlockDriverState *bs, const char *filename, int flags,
 
     if (!bdrv_key_required(bs)) {
         bs->media_changed = 1;
-        bdrv_dev_change_cb(bs, CHANGE_MEDIA);
+        bdrv_dev_change_media_cb(bs);
     }
 
     return 0;
@@ -663,7 +663,7 @@ void bdrv_close(BlockDriverState *bs)
         }
 
         bs->media_changed = 1;
-        bdrv_dev_change_cb(bs, CHANGE_MEDIA);
+        bdrv_dev_change_media_cb(bs);
     }
 }
 
@@ -742,10 +742,17 @@ void bdrv_set_dev_ops(BlockDriverState *bs, const BlockDevOps *ops,
     bs->dev_opaque = opaque;
 }
 
-static void bdrv_dev_change_cb(BlockDriverState *bs, int reason)
+static void bdrv_dev_change_media_cb(BlockDriverState *bs)
 {
-    if (bs->dev_ops && bs->dev_ops->change_cb) {
-        bs->dev_ops->change_cb(bs->dev_opaque, reason);
+    if (bs->dev_ops && bs->dev_ops->change_media_cb) {
+        bs->dev_ops->change_media_cb(bs->dev_opaque);
+    }
+}
+
+static void bdrv_dev_resize_cb(BlockDriverState *bs)
+{
+    if (bs->dev_ops && bs->dev_ops->resize_cb) {
+        bs->dev_ops->resize_cb(bs->dev_opaque);
     }
 }
 
@@ -1135,7 +1142,7 @@ int bdrv_truncate(BlockDriverState *bs, int64_t offset)
     ret = drv->bdrv_truncate(bs, offset);
     if (ret == 0) {
         ret = refresh_total_sectors(bs, offset >> BDRV_SECTOR_BITS);
-        bdrv_dev_change_cb(bs, CHANGE_SIZE);
+        bdrv_dev_resize_cb(bs);
     }
     return ret;
 }
@@ -1398,7 +1405,7 @@ int bdrv_set_key(BlockDriverState *bs, const char *key)
         bs->valid_key = 1;
         /* call the change callback now, we skipped it on open */
         bs->media_changed = 1;
-        bdrv_dev_change_cb(bs, CHANGE_MEDIA);
+        bdrv_dev_change_media_cb(bs);
     }
     return ret;
 }
