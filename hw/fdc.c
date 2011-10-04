@@ -1903,7 +1903,6 @@ static void fdctrl_connect_drives(fdctrl_t *fdctrl)
         fd_revalidate(drive);
         if (drive->bs) {
             drive->media_changed = 1;
-            bdrv_set_removable(drive->bs, 1);
             bdrv_set_dev_ops(drive->bs, &fdctrl_block_ops, drive);
         }
     }

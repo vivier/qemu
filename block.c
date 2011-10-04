@@ -1317,8 +1317,6 @@ void bdrv_set_geometry_hint(BlockDriverState *bs,
 void bdrv_set_type_hint(BlockDriverState *bs, int type)
 {
     bs->type = type;
-    bs->removable = ((type == BDRV_TYPE_CDROM ||
-                      type == BDRV_TYPE_FLOPPY));
 }
 
 void bdrv_set_translation_hint(BlockDriverState *bs, int translation)
@@ -1354,11 +1352,6 @@ void bdrv_set_on_error(BlockDriverState *bs, BlockErrorAction on_read_error,
 BlockErrorAction bdrv_get_on_error(BlockDriverState *bs, int is_read)
 {
     return is_read ? bs->on_read_error : bs->on_write_error;
-}
-
-void bdrv_set_removable(BlockDriverState *bs, int removable)
-{
-    bs->removable = removable;
 }
 
 int bdrv_is_read_only(BlockDriverState *bs)

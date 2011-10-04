@@ -1869,7 +1869,6 @@ int ide_init_drive(IDEState *s, BlockDriverState *bs, const char *version)
         pstrcpy(s->version, sizeof(s->version), QEMU_VERSION);
     }
     ide_reset(s);
-    bdrv_set_removable(bs, s->drive_kind == IDE_CD);
     return 0;
 }
 
