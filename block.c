@@ -43,7 +43,7 @@
 #include <windows.h>
 #endif
 
-static void bdrv_dev_change_media_cb(BlockDriverState *bs);
+static void bdrv_dev_change_media_cb(BlockDriverState *bs, bool load);
 static BlockDriverAIOCB *bdrv_aio_readv_em(BlockDriverState *bs,
         int64_t sector_num, QEMUIOVector *qiov, int nb_sectors,
         BlockDriverCompletionFunc *cb, void *opaque);
@@ -626,7 +626,7 @@ int bdrv_open(BlockDriverState *bs, const char *filename, int flags,
     }
 
     if (!bdrv_key_required(bs)) {
-        bdrv_dev_change_media_cb(bs);
+        bdrv_dev_change_media_cb(bs, true);
     }
 
     return 0;
@@ -661,7 +661,7 @@ void bdrv_close(BlockDriverState *bs)
             bdrv_close(bs->file);
         }
 
-        bdrv_dev_change_media_cb(bs);
+        bdrv_dev_change_media_cb(bs, false);
     }
 }
 
@@ -743,10 +743,10 @@ void bdrv_set_dev_ops(BlockDriverState *bs, const BlockDevOps *ops,
     }
 }
 
-static void bdrv_dev_change_media_cb(BlockDriverState *bs)
+static void bdrv_dev_change_media_cb(BlockDriverState *bs, bool load)
 {
     if (bs->dev_ops && bs->dev_ops->change_media_cb) {
-        bs->dev_ops->change_media_cb(bs->dev_opaque);
+        bs->dev_ops->change_media_cb(bs->dev_opaque, load);
     }
 }
 
@@ -1414,7 +1414,7 @@ int bdrv_set_key(BlockDriverState *bs, const char *key)
     } else if (!bs->valid_key) {
         bs->valid_key = 1;
         /* call the change callback now, we skipped it on open */
-        bdrv_dev_change_media_cb(bs);
+        bdrv_dev_change_media_cb(bs, true);
     }
     return ret;
 }
