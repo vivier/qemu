@@ -165,7 +165,7 @@ static void pmac_ide_transfer(DBDMA_io *io)
     IDEState *s = idebus_active_if(&m->bus);
 
     s->io_buffer_size = 0;
-    if (s->is_cdrom) {
+    if (s->drive_kind == IDE_CD) {
         bdrv_acct_start(s->bs, &s->acct, io->len, BDRV_ACCT_READ);
         pmac_ide_atapi_transfer_cb(io, 0);
         return;
