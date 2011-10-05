@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.15.0
-Release: 4%{?dist}
+Release: 5%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -33,6 +33,9 @@ Source5: ksm.sysconfig
 Source6: ksmtuned.init
 Source7: ksmtuned
 Source8: ksmtuned.conf
+
+Source10: qemu-guest-agent.service
+Source11: 99-qemu-guest-agent.rules
 
 # Amit's flow control patches, waiting to glib conversion before going upstream
 Patch01: 0001-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
@@ -147,6 +150,43 @@ QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
 
 This package provides the common files needed by all QEMU targets
+
+%package guest-agent
+Summary: QEMU guest agent
+Group: System Environment/Daemons
+Requires(post): systemd-units
+Requires(preun): systemd-units
+Requires(postun): systemd-units
+
+%description guest-agent
+QEMU is a generic and open source processor emulator which achieves a good
+emulation speed by using dynamic translation.
+
+This package provides an agent to run inside guests, which communicates
+with the host over a virtio-serial channel named "org.qemu.guest_agent.0"
+
+This package does not need to be installed on the host OS.
+
+%post guest-agent
+if [ $1 -eq 1 ] ; then
+    # Initial installation.
+    /bin/systemctl daemon-reload >/dev/null 2>&1 || :
+fi
+
+%preun guest-agent
+if [ $1 -eq 0 ] ; then
+    # Package removal, not upgrade.
+    /bin/systemctl stop qemu-guest-agent.service > /dev/null 2>&1 || :
+fi
+
+%postun guest-agent
+/bin/systemctl daemon-reload >/dev/null 2>&1 || :
+if [ $1 -ge 1 ] ; then
+    # Package upgrade, not uninstall.
+    /bin/systemctl try-restart qemu-guest-agent.service >/dev/null 2>&1 || :
+fi
+
+
 
 %package user
 Summary: QEMU user mode emulation of qemu targets
@@ -429,6 +469,16 @@ ln -s ../vgabios/VGABIOS-lgpl-latest.qxl.bin %{buildroot}/%{_datadir}/%{name}/vg
 ln -s ../vgabios/VGABIOS-lgpl-latest.stdvga.bin %{buildroot}/%{_datadir}/%{name}/vgabios-stdvga.bin
 ln -s ../vgabios/VGABIOS-lgpl-latest.vmware.bin %{buildroot}/%{_datadir}/%{name}/vgabios-vmware.bin
 ln -s ../seabios/bios.bin %{buildroot}/%{_datadir}/%{name}/bios.bin
+
+
+# For the qemu-guest-agent subpackage install the systemd
+# service and udev rules.
+mkdir -p $RPM_BUILD_ROOT%{_unitdir}
+mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
+install -m 0644 %{SOURCE10} $RPM_BUILD_ROOT%{_unitdir}
+install -m 0644 %{SOURCE11} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
+
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
@@ -507,12 +557,18 @@ fi
 %config(noreplace) %{_sysconfdir}/ksmtuned.conf
 %dir %{_sysconfdir}/qemu
 
+%files guest-agent
+%defattr(-,root,root,-)
+%doc COPYING README
+%{_bindir}/qemu-ga
+%{_unitdir}/qemu-guest-agent.service
+%{_sysconfdir}/udev/rules.d/99-qemu-guest-agent.rules
+
 %files user
 %defattr(-,root,root)
 %{_initddir}/qemu
 %{_bindir}/qemu-i386
 %{_bindir}/qemu-x86_64
-%{_bindir}/qemu-ga
 %if !%{with_x86only}
 %{_bindir}/qemu-alpha
 %{_bindir}/qemu-arm
@@ -619,6 +675,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Oct  5 2011 Daniel P. Berrange <berrange@redhat.com> - 2:0.15.0-5
+- Create a qemu-guest-agent sub-RPM for guest installation
+
 * Tue Sep 13 2011 Daniel P. Berrange <berrange@redhat.com> - 2:0.15.0-4
 - Enable DTrace tracing backend for SystemTAP (rhbz #737763)
 - Enable build with curl (rhbz #737006)
