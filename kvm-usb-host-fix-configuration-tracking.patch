@@ -1,0 +1,195 @@
+From 7054ac71cdbec15b51f0c621f02483d59af1ca32 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Fri, 16 Sep 2011 11:17:22 +0200
+Subject: [PATCH 5/9] usb-host: fix configuration tracking.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1316171846-30450-6-git-send-email-kraxel@redhat.com>
+Patchwork-id: 32855
+O-Subject: [RHEL-6.2 kvm PATCH 5/9] usb-host: fix configuration tracking.
+Bugzilla: 733272
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Paul Moore <pmoore@redhat.com>
+
+It is perfectly fine to leave the usb device in unconfigured state
+(USBHostDevice->configuration == 0).  Just do that and wait for the
+guest to explicitly set a configuration.  This is closer to what real
+hardware does and it also simplifies the device initialization.  There
+is no need to figure how the device is configured on the host.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit eb7700bb999544151d6e4350362b9b6d9d20abe8)
+
+Conflicts:
+
+	usb-linux.c
+---
+ usb-linux.c |   83 ++++++++++++++--------------------------------------------
+ 1 files changed, 20 insertions(+), 63 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ usb-linux.c |   83 ++++++++++++++--------------------------------------------
+ 1 files changed, 20 insertions(+), 63 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index d609aa0..f58b181 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -399,8 +399,11 @@ static int usb_host_claim_interfaces(USBHostDevice *dev, int configuration)
+     int interface, nb_interfaces;
+     int ret, i;
+ 
+-    if (configuration == 0) /* address state - ignore */
++    if (configuration == 0) { /* address state - ignore */
++        dev->ninterfaces   = 0;
++        dev->configuration = 0;
+         return 1;
++    }
+ 
+     DPRINTF("husb: claiming interfaces. config %d\n", configuration);
+ 
+@@ -424,7 +427,7 @@ static int usb_host_claim_interfaces(USBHostDevice *dev, int configuration)
+ 
+ 	printf("husb: config #%d need %d\n", dev->descr[i + 5], configuration); 
+ 
+-        if (configuration < 0 || configuration == dev->descr[i + 5]) {
++        if (configuration == dev->descr[i + 5]) {
+             configuration = dev->descr[i + 5];
+             break;
+         }
+@@ -510,7 +513,7 @@ static void usb_host_handle_reset(USBDevice *dev)
+ 
+     ioctl(s->fd, USBDEVFS_RESET);
+ 
+-    usb_host_claim_interfaces(s, s->configuration);
++    usb_host_claim_interfaces(s, 0);
+     usb_linux_update_endp_table(s);
+ }
+ 
+@@ -810,6 +813,7 @@ static int usb_host_set_config(USBHostDevice *s, int config)
+         return ctrl_error();
+  
+     usb_host_claim_interfaces(s, config);
++    usb_linux_update_endp_table(s);
+     return 0;
+ }
+ 
+@@ -913,51 +917,6 @@ static int usb_host_handle_control(USBDevice *dev, USBPacket *p,
+     return USB_RET_ASYNC;
+ }
+ 
+-static int usb_linux_get_configuration(USBHostDevice *s)
+-{
+-    uint8_t configuration;
+-    struct usb_ctrltransfer ct;
+-    int ret;
+-
+-    if (usb_fs_type == USB_FS_SYS) {
+-        char device_name[32], line[1024];
+-        int configuration;
+-
+-        sprintf(device_name, "%d-%s", s->bus_num, s->port);
+-
+-        if (!usb_host_read_file(line, sizeof(line), "bConfigurationValue",
+-                                device_name)) {
+-            goto usbdevfs;
+-        }
+-        if (sscanf(line, "%d", &configuration) != 1) {
+-            goto usbdevfs;
+-        }
+-        return configuration;
+-    }
+-
+-usbdevfs:
+-    ct.bRequestType = USB_DIR_IN;
+-    ct.bRequest = USB_REQ_GET_CONFIGURATION;
+-    ct.wValue = 0;
+-    ct.wIndex = 0;
+-    ct.wLength = 1;
+-    ct.data = &configuration;
+-    ct.timeout = 50;
+-
+-    ret = ioctl(s->fd, USBDEVFS_CONTROL, &ct);
+-    if (ret < 0) {
+-        perror("usb_linux_get_configuration");
+-        return -1;
+-    }
+-
+-    /* in address state */
+-    if (configuration == 0) {
+-        return -1;
+-    }
+-
+-    return configuration;
+-}
+-
+ static uint8_t usb_linux_get_alt_setting(USBHostDevice *s,
+     uint8_t configuration, uint8_t interface)
+ {
+@@ -1003,16 +962,16 @@ usbdevfs:
+ static int usb_linux_update_endp_table(USBHostDevice *s)
+ {
+     uint8_t *descriptors;
+-    uint8_t devep, type, configuration, alt_interface;
++    uint8_t devep, type, alt_interface;
+     int interface, length, i;
+ 
+     for (i = 0; i < MAX_ENDPOINTS; i++)
+         s->endp_table[i].type = INVALID_EP_TYPE;
+ 
+-    i = usb_linux_get_configuration(s);
+-    if (i < 0)
+-        return 1;
+-    configuration = i;
++    if (s->configuration == 0) {
++        /* not configured yet -- leave all endpoints disabled */
++        return 0;
++    }
+ 
+     /* get the desired configuration, interface, and endpoint descriptors
+      * from device description */
+@@ -1021,8 +980,9 @@ static int usb_linux_update_endp_table(USBHostDevice *s)
+     i = 0;
+ 
+     if (descriptors[i + 1] != USB_DT_CONFIG ||
+-        descriptors[i + 5] != configuration) {
+-        DPRINTF("invalid descriptor data - configuration\n");
++        descriptors[i + 5] != s->configuration) {
++        fprintf(stderr, "invalid descriptor data - configuration %d\n",
++                s->configuration);
+         return 1;
+     }
+     i += descriptors[i];
+@@ -1036,7 +996,8 @@ static int usb_linux_update_endp_table(USBHostDevice *s)
+         }
+ 
+         interface = descriptors[i + 2];
+-        alt_interface = usb_linux_get_alt_setting(s, configuration, interface);
++        alt_interface = usb_linux_get_alt_setting(s, s->configuration,
++                                                  interface);
+ 
+         /* the current interface descriptor is the active interface
+          * and has endpoints */
+@@ -1172,14 +1133,10 @@ static int usb_host_open(USBHostDevice *dev, int bus_num,
+ #endif
+ 
+ 
+-    /* 
+-     * Initial configuration is -1 which makes us claim first 
+-     * available config. We used to start with 1, which does not
+-     * always work. I've seen devices where first config starts 
+-     * with 2.
+-     */
+-    if (!usb_host_claim_interfaces(dev, -1))
++    /* start unconfigured -- we'll wait for the guest to set a configuration */
++    if (!usb_host_claim_interfaces(dev, 0)) {
+         goto fail;
++    }
+ 
+     ret = usb_linux_update_endp_table(dev);
+     if (ret)
+-- 
+1.7.4.4
+

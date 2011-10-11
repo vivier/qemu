@@ -1,0 +1,105 @@
+From 8f23265135a1e8dc8eab17aee4377a45f2378b18 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Fri, 16 Sep 2011 11:17:26 +0200
+Subject: [PATCH 9/9] usb-host: handle USBDEVFS_SETCONFIGURATION returning
+ EBUSY
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1316171846-30450-10-git-send-email-kraxel@redhat.com>
+Patchwork-id: 32856
+O-Subject: [RHEL-6.2 kvm PATCH 9/9] usb-host: handle USBDEVFS_SETCONFIGURATION returning EBUSY
+Bugzilla: 733272
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Paul Moore <pmoore@redhat.com>
+
+In case the host uses the usb device usbfs will refuse to set the
+configuration due to the device being busy.  Handle this case by
+disconnection the interfaces, then trying again.
+
+upstream: queued up (http://patchwork.ozlabs.org/patch/114782/)
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+
+Conflicts:
+
+	usb-linux.c
+---
+ usb-linux.c |   45 ++++++++++++++++++++++++++++++++++++++++-----
+ 1 files changed, 40 insertions(+), 5 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ usb-linux.c |   45 ++++++++++++++++++++++++++++++++++++++++-----
+ 1 files changed, 40 insertions(+), 5 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index ed5c1aa..62d6b79 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -476,6 +476,26 @@ static int usb_host_disconnect_ifaces(USBHostDevice *dev, int nb_interfaces)
+     return 0;
+ }
+ 
++static int usb_linux_get_num_interfaces(USBHostDevice *s)
++{
++    char device_name[64], line[1024];
++    int num_interfaces = 0;
++
++    if (usb_fs_type != USB_FS_SYS) {
++        return -1;
++    }
++
++    sprintf(device_name, "%d-%s", s->bus_num, s->port);
++    if (!usb_host_read_file(line, sizeof(line), "bNumInterfaces",
++                            device_name)) {
++        return -1;
++    }
++    if (sscanf(line, "%d", &num_interfaces) != 1) {
++        return -1;
++    }
++    return num_interfaces;
++}
++
+ static int usb_host_claim_interfaces(USBHostDevice *dev, int configuration)
+ {
+     const char *op = NULL;
+@@ -877,15 +897,30 @@ static int usb_host_set_address(USBHostDevice *s, int addr)
+ 
+ static int usb_host_set_config(USBHostDevice *s, int config)
+ {
++    int ret, first = 1;
++
+     usb_host_release_interfaces(s);
+ 
+-    int ret = ioctl(s->fd, USBDEVFS_SETCONFIGURATION, &config);
+- 
++again:
++    ret = ioctl(s->fd, USBDEVFS_SETCONFIGURATION, &config);
++
+     DPRINTF("husb: ctrl set config %d ret %d errno %d\n", config, ret, errno);
+-    
+-    if (ret < 0)
++
++    if (ret < 0 && errno == EBUSY && first) {
++        /* happens if usb device is in use by host drivers */
++        int count = usb_linux_get_num_interfaces(s);
++        if (count > 0) {
++            DPRINTF("husb: busy -> disconnecting %d interfaces\n", count);
++            usb_host_disconnect_ifaces(s, count);
++            first = 0;
++            goto again;
++        }
++    }
++
++    if (ret < 0) {
+         return ctrl_error();
+- 
++    }
++
+     usb_host_claim_interfaces(s, config);
+     usb_linux_update_endp_table(s);
+     return 0;
+-- 
+1.7.4.4
+

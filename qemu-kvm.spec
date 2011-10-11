@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.195
+%define pkgrelease 2.196
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3664,6 +3664,24 @@ Patch2510: kvm-spice-turn-client_migrate_info-to-async.patch
 Patch2511: kvm-spice-support-the-new-migration-interface-spice-0.8..patch
 # For bz#678729 - Hotplug VF/PF with invalid addr value leading to qemu-kvm process quit with core dump
 Patch2512: kvm-pci-devfn-check-device-slot-number-in-range.patch
+# For bz#733272 - Usb stick passthrough failed under uhci+ehci
+Patch2513: kvm-usb-linux-add-get_endp.patch
+# For bz#733272 - Usb stick passthrough failed under uhci+ehci
+Patch2514: kvm-usb-host-reapurb-error-report-fix.patch
+# For bz#733272 - Usb stick passthrough failed under uhci+ehci
+Patch2515: kvm-usb-host-fix-halted-endpoints.patch
+# For bz#733272 - Usb stick passthrough failed under uhci+ehci
+Patch2516: kvm-usb-host-limit-open-retries.patch
+# For bz#733272 - Usb stick passthrough failed under uhci+ehci
+Patch2517: kvm-usb-host-fix-configuration-tracking.patch
+# For bz#733272 - Usb stick passthrough failed under uhci+ehci
+Patch2518: kvm-usb-host-claim-port.patch
+# For bz#733272 - Usb stick passthrough failed under uhci+ehci
+Patch2519: kvm-usb-host-endpoint-table-fixup.patch
+# For bz#733272 - Usb stick passthrough failed under uhci+ehci
+Patch2520: kvm-usb-host-factor-out-code.patch
+# For bz#733272 - Usb stick passthrough failed under uhci+ehci
+Patch2521: kvm-usb-host-handle-USBDEVFS_SETCONFIGURATION-returning-.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -5285,6 +5303,15 @@ ApplyOptionalPatch()
 %patch2510 -p1
 %patch2511 -p1
 %patch2512 -p1
+%patch2513 -p1
+%patch2514 -p1
+%patch2515 -p1
+%patch2516 -p1
+%patch2517 -p1
+%patch2518 -p1
+%patch2519 -p1
+%patch2520 -p1
+%patch2521 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -5508,6 +5535,19 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Oct 11 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.196.el6
+- kvm-usb-linux-add-get_endp.patch [bz#733272]
+- kvm-usb-host-reapurb-error-report-fix.patch [bz#733272]
+- kvm-usb-host-fix-halted-endpoints.patch [bz#733272]
+- kvm-usb-host-limit-open-retries.patch [bz#733272]
+- kvm-usb-host-fix-configuration-tracking.patch [bz#733272]
+- kvm-usb-host-claim-port.patch [bz#733272]
+- kvm-usb-host-endpoint-table-fixup.patch [bz#733272]
+- kvm-usb-host-factor-out-code.patch [bz#733272]
+- kvm-usb-host-handle-USBDEVFS_SETCONFIGURATION-returning-.patch [bz#733272]
+- Resolves: bz#733272
+  (Usb stick passthrough failed under uhci+ehci)
+
 * Mon Oct 03 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.195.el6
 - Require spice-server-devel >= 0.8.2-4 [bz#737921]
 - Resolves: bz#737921

@@ -1,0 +1,122 @@
+From a1394e30900fb568d52e43cd3637be8844ea0476 Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Fri, 16 Sep 2011 11:17:23 +0200
+Subject: [PATCH 6/9] usb-host: claim port
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1316171846-30450-7-git-send-email-kraxel@redhat.com>
+Patchwork-id: 32854
+O-Subject: [RHEL-6.2 kvm PATCH 6/9] usb-host: claim port
+Bugzilla: 733272
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Paul Moore <pmoore@redhat.com>
+
+When configured to pass through a specific host port (using hostbus and
+hostport properties), try to claim the port if supported by the kernel.
+That will avoid any kernel drivers binding to devices plugged into that
+port.  It will not stop any userspace apps (such as usb_modeswitch)
+access the device via usbfs though.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 9516bb4772815f3bbf94d4779905681a7d254850)
+
+Conflicts:
+
+	trace-events
+---
+ usb-linux.c |   55 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 55 insertions(+), 0 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ usb-linux.c |   55 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 55 insertions(+), 0 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index f58b181..ceef1e6 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -115,6 +115,7 @@ struct USBAutoFilter {
+ typedef struct USBHostDevice {
+     USBDevice dev;
+     int       fd;
++    int       hub_fd;
+ 
+     uint8_t   descr[8192];
+     int       descr_len;
+@@ -522,6 +523,9 @@ static void usb_host_handle_destroy(USBDevice *dev)
+     USBHostDevice *s = (USBHostDevice *)dev;
+ 
+     usb_host_close(s);
++    if (s->hub_fd != -1) {
++        close(s->hub_fd);
++    }
+     QTAILQ_REMOVE(&hostdevs, s, next);
+     qemu_remove_exit_notifier(&s->exit);
+ }
+@@ -1229,10 +1233,61 @@ static int usb_host_initfn(USBDevice *dev)
+ 
+     dev->auto_attach = 0;
+     s->fd = -1;
++    s->hub_fd = -1;
++
+     QTAILQ_INSERT_TAIL(&hostdevs, s, next);
+     s->exit.notify = usb_host_exit_notifier;
+     qemu_add_exit_notifier(&s->exit);
+     usb_host_auto_check(NULL);
++
++#ifdef USBDEVFS_CLAIM_PORT
++    if (s->match.bus_num != 0 && s->match.port != NULL) {
++        char *h, hub_name[64], line[1024];
++        int hub_addr, portnr, ret;
++
++        snprintf(hub_name, sizeof(hub_name), "%d-%s",
++                 s->match.bus_num, s->match.port);
++
++        /* try strip off last ".$portnr" to get hub */
++        h = strrchr(hub_name, '.');
++        if (h != NULL) {
++            portnr = atoi(h+1);
++            *h = '\0';
++        } else {
++            /* no dot in there -> it is the root hub */
++            snprintf(hub_name, sizeof(hub_name), "usb%d",
++                     s->match.bus_num);
++            portnr = atoi(s->match.port);
++        }
++
++        if (!usb_host_read_file(line, sizeof(line), "devnum",
++                                hub_name)) {
++            goto out;
++        }
++        if (sscanf(line, "%d", &hub_addr) != 1) {
++            goto out;
++        }
++
++        if (!usb_host_device_path) {
++            goto out;
++        }
++        snprintf(line, sizeof(line), "%s/%03d/%03d",
++                 usb_host_device_path, s->match.bus_num, hub_addr);
++        s->hub_fd = open(line, O_RDWR | O_NONBLOCK);
++        if (s->hub_fd < 0) {
++            goto out;
++        }
++
++        ret = ioctl(s->hub_fd, USBDEVFS_CLAIM_PORT, &portnr);
++        if (ret < 0) {
++            close(s->hub_fd);
++            s->hub_fd = -1;
++            goto out;
++        }
++    }
++out:
++#endif
++
+     return 0;
+ }
+ 
+-- 
+1.7.4.4
+

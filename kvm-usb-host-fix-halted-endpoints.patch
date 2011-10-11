@@ -1,0 +1,78 @@
+From a101da91379cf6208b8181acbef83f07d916660b Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Fri, 16 Sep 2011 11:17:20 +0200
+Subject: [PATCH 3/9] usb-host: fix halted endpoints
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1316171846-30450-4-git-send-email-kraxel@redhat.com>
+Patchwork-id: 32853
+O-Subject: [RHEL-6.2 kvm PATCH 3/9] usb-host: fix halted endpoints
+Bugzilla: 733272
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Paul Moore <pmoore@redhat.com>
+
+Two fixes for the price of one ;)
+
+First, reinitialize the endpoint table after device reset.
+This is needed anyway as the reset might have switched interfaces.
+It also clears the endpoint halted state.
+
+Second the CLEAR_HALT ioctl wants a unsigned int passed in as
+argument, not uint8_t.
+
+This gets my usb sd card reader (sandisk micromate) going.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+(cherry picked from commit 9b87e19bc7adea69bd55ae9c64b8a7fb81214726)
+---
+ usb-linux.c |    7 ++++---
+ 1 files changed, 4 insertions(+), 3 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ usb-linux.c |    7 ++++---
+ 1 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index b8d392a..5e66760 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -143,6 +143,7 @@ static int parse_filter(const char *spec, struct USBAutoFilter *f);
+ static void usb_host_auto_check(void *unused);
+ static int usb_host_read_file(char *line, size_t line_size,
+                             const char *device_file, const char *device_name);
++static int usb_linux_update_endp_table(USBHostDevice *s);
+ 
+ static struct endp_data *get_endp(USBHostDevice *s, int ep)
+ {
+@@ -509,6 +510,7 @@ static void usb_host_handle_reset(USBDevice *dev)
+     ioctl(s->fd, USBDEVFS_RESET);
+ 
+     usb_host_claim_interfaces(s, s->configuration);
++    usb_linux_update_endp_table(s);
+ }
+ 
+ static void usb_host_handle_destroy(USBDevice *dev)
+@@ -520,8 +522,6 @@ static void usb_host_handle_destroy(USBDevice *dev)
+     qemu_remove_exit_notifier(&s->exit);
+ }
+ 
+-static int usb_linux_update_endp_table(USBHostDevice *s);
+-
+ /* iso data is special, we need to keep enough urbs in flight to make sure
+    that the controller never runs out of them, otherwise the device will
+    likely suffer a buffer underrun / overrun. */
+@@ -723,7 +723,8 @@ static int usb_host_handle_data(USBDevice *dev, USBPacket *p)
+     }
+ 
+     if (is_halted(s, p->devep)) {
+-        ret = ioctl(s->fd, USBDEVFS_CLEAR_HALT, &ep);
++        unsigned int arg = ep;
++        ret = ioctl(s->fd, USBDEVFS_CLEAR_HALT, &arg);
+         if (ret < 0) {
+             DPRINTF("husb: failed to clear halt. ep 0x%x errno %d\n",
+                    ep, errno);
+-- 
+1.7.4.4
+

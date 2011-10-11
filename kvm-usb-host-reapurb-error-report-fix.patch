@@ -1,0 +1,48 @@
+From 4d1c7e168729231e9204a19a0de67385b356c3ce Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Fri, 16 Sep 2011 11:17:19 +0200
+Subject: [PATCH 2/9] usb-host: reapurb error report fix
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1316171846-30450-3-git-send-email-kraxel@redhat.com>
+Patchwork-id: 32851
+O-Subject: [RHEL-6.2 kvm PATCH 2/9] usb-host: reapurb error report fix
+Bugzilla: 733272
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Paul Moore <pmoore@redhat.com>
+
+Don't report errors on devices which are in disconnected
+and closing state.
+(cherry picked from commit 40197c359b1f06cbaae5460336bca241c35f266e)
+---
+ usb-linux.c |    8 +++++---
+ 1 files changed, 5 insertions(+), 3 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ usb-linux.c |    8 +++++---
+ 1 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/usb-linux.c b/usb-linux.c
+index 868360d..b8d392a 100644
+--- a/usb-linux.c
++++ b/usb-linux.c
+@@ -308,9 +308,11 @@ static void async_complete(void *opaque)
+                     fprintf(stderr, "husb: %d iso urbs finished at once\n", urbs);
+                 }
+                 return;
+-
+-            } if (errno == ENODEV && !s->closing) {
+-                do_disconnect(s);
++            }
++            if (errno == ENODEV) {
++                if (!s->closing) {
++                    do_disconnect(s);
++                }
+                 return;
+             }
+ 
+-- 
+1.7.4.4
+
