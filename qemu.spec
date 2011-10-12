@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.15.0
-Release: 5%{?dist}
+Release: 6%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -88,6 +88,8 @@ BuildRequires: spice-server-devel >= 0.9.0
 %endif
 # For network block driver
 BuildRequires: libcurl-devel
+# For rbd block driver
+BuildRequires: ceph-devel
 # We need both because the 'stap' binary is probed for by configure
 BuildRequires: systemtap
 BuildRequires: systemtap-sdt-devel
@@ -675,6 +677,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Oct 12 2011 Daniel P. Berrange <berrange@redhat.com> - 2:0.15.0-6
+- Add BR on ceph-devel to enable RBD block device
+
 * Wed Oct  5 2011 Daniel P. Berrange <berrange@redhat.com> - 2:0.15.0-5
 - Create a qemu-guest-agent sub-RPM for guest installation
 
