@@ -911,6 +911,10 @@ static int usb_hid_post_load(void *opaque, int version_id)
     if (s->idle) {
         usb_hid_set_next_idle(s, qemu_get_clock(vm_clock));
     }
+    if (s->kind != USB_KEYBOARD && s->dev.remote_wakeup) {
+        qemu_activate_mouse_event_handler(s->ptr.eh_entry);
+        s->ptr.mouse_grabbed = 1;
+    }
     return 0;
 }
 
