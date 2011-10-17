@@ -1,0 +1,47 @@
+From abbf45681dd7ed973e285eddebeeaca827cf70fe Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Fri, 14 Oct 2011 10:12:34 +0200
+Subject: [PATCH 8/8] usb-hub: wakeup on attach
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1318587154-22415-1-git-send-email-kraxel@redhat.com>
+Patchwork-id: 34186
+O-Subject: [RHEL-6.2 kvm PATCH] usb-hub: wakeup on attach
+Bugzilla: 733272
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+RH-Acked-by: Laszlo Ersek <lersek@redhat.com>
+RH-Acked-by: Paul Moore <pmoore@redhat.com>
+
+When attaching a new device we must send a wakeup request to the root
+hub, otherwise the guest will not notice the new device in case the
+usb hub is suspended.
+
+bugzilla: 733272 - Usb stick passthrough failed under uhci+ehci
+upstream: http://patchwork.ozlabs.org/patch/119753/
+brew: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=3709229
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/usb-hub.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/usb-hub.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/hw/usb-hub.c b/hw/usb-hub.c
+index 319a3b3..08733bd 100644
+--- a/hw/usb-hub.c
++++ b/hw/usb-hub.c
+@@ -163,6 +163,7 @@ static void usb_hub_attach(USBPort *port1)
+     } else {
+         port->wPortStatus &= ~PORT_STAT_LOW_SPEED;
+     }
++    usb_wakeup(&s->dev);
+ }
+ 
+ static void usb_hub_detach(USBPort *port1)
+-- 
+1.7.4.4
+

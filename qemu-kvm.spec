@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.196
+%define pkgrelease 2.197
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3682,6 +3682,22 @@ Patch2519: kvm-usb-host-endpoint-table-fixup.patch
 Patch2520: kvm-usb-host-factor-out-code.patch
 # For bz#733272 - Usb stick passthrough failed under uhci+ehci
 Patch2521: kvm-usb-host-handle-USBDEVFS_SETCONFIGURATION-returning-.patch
+# For bz#742080 - Device assignment of 82599 VFs no longer work after patch for v1 PCIe Capability structures
+Patch2522: kvm-device-assignment-pci_cap_init-add-82599-VF-quirk.patch
+# For bz#725565 - migration subsections are still broken
+Patch2523: kvm-savevm-teach-qemu_fill_buffer-to-do-partial-refills.patch
+# For bz#725565 - migration subsections are still broken
+Patch2524: kvm-savevm-some-coding-style-cleanups.patch
+# For bz#725565 - migration subsections are still broken
+Patch2525: kvm-savevm-define-qemu_get_byte-using-qemu_peek_byte.patch
+# For bz#725565 - migration subsections are still broken
+Patch2526: kvm-savevm-improve-subsections-detection-on-load.patch
+# For bz#725565 - migration subsections are still broken
+Patch2527: kvm-Revert-savevm-fix-corruption-in-vmstate_subsection_l.patch
+# For bz#742401 - qemu-kvm disable live snapshot support
+Patch2528: kvm-QMP-HMP-Drop-the-live-snapshot-commands.patch
+# For bz#733272 - Usb stick passthrough failed under uhci+ehci
+Patch2529: kvm-usb-hub-wakeup-on-attach.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -5312,6 +5328,14 @@ ApplyOptionalPatch()
 %patch2519 -p1
 %patch2520 -p1
 %patch2521 -p1
+%patch2522 -p1
+%patch2523 -p1
+%patch2524 -p1
+%patch2525 -p1
+%patch2526 -p1
+%patch2527 -p1
+%patch2528 -p1
+%patch2529 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -5535,6 +5559,24 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Oct 17 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.197.el6
+- kvm-device-assignment-pci_cap_init-add-82599-VF-quirk.patch [bz#742080]
+- kvm-savevm-teach-qemu_fill_buffer-to-do-partial-refills.patch [bz#725565]
+- kvm-savevm-some-coding-style-cleanups.patch [bz#725565]
+- kvm-savevm-define-qemu_get_byte-using-qemu_peek_byte.patch [bz#725565]
+- kvm-savevm-improve-subsections-detection-on-load.patch [bz#725565]
+- kvm-Revert-savevm-fix-corruption-in-vmstate_subsection_l.patch [bz#725565]
+- kvm-QMP-HMP-Drop-the-live-snapshot-commands.patch [bz#742401]
+- kvm-usb-hub-wakeup-on-attach.patch [bz#733272]
+- Resolves: bz#725565
+  (migration subsections are still broken)
+- Resolves: bz#733272
+  (Usb stick passthrough failed under uhci+ehci)
+- Resolves: bz#742080
+  (Device assignment of 82599 VFs no longer work after patch for v1 PCIe Capability structures)
+- Resolves: bz#742401
+  (qemu-kvm disable live snapshot support)
+
 * Tue Oct 11 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.196.el6
 - kvm-usb-linux-add-get_endp.patch [bz#733272]
 - kvm-usb-host-reapurb-error-report-fix.patch [bz#733272]

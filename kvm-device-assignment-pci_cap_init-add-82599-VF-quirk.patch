@@ -1,0 +1,98 @@
+From 7ff4f8409faf1993885415a9a169f32a0305a6d5 Mon Sep 17 00:00:00 2001
+From: Don Dutile <ddutile@redhat.com>
+Date: Wed, 5 Oct 2011 19:13:37 +0200
+Subject: [PATCH 1/8] device-assignment pci_cap_init: add 82599 VF quirk
+
+RH-Author: Don Dutile <ddutile@redhat.com>
+Message-id: <1317842017-20753-1-git-send-email-ddutile@redhat.com>
+Patchwork-id: 33751
+O-Subject: [PATCH RHEL6.2 qemu-kvm v2] device-assignment pci_cap_init: add 82599 VF quirk
+Bugzilla: 742080
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Chris Wright <chrisw@redhat.com>
+
+BZ 742080.
+
+v2: incorporated recommendations from upstream;
+    this is backport of upstream patch.
+
+Add check when PCIe capability structure is version 0
+and VID and DID is 82599 VF.  In this case, the size
+of the PCIe cap structure should be the same as a version 2
+cap structure.
+Documented in 82599 Errata 35, and is still marked "No Fix".
+According to Intel, it's in silicon not fw, and needs a sw workaround.
+
+Upstream status:
+Posted. Acked by mst. will post an addendum when committed and have
+relevant commit-id.
+
+Brew build:
+http://brewweb.devel.redhat.com/brew/taskinfo?taskID=3683143
+
+Testing:
+assigned & deassigned an 82599 VF to a RHEL6 guest
+half a dozen times.
+Before the patch, it would fail with:
+   assigned_device_pci_cap_init: Unsupported PCI express capability version 0
+in /var/log/libvirt/qemu/<guest-id>.log file
+after patch:
+[root] # virsh attach-device RHEL6 82599_vf.xml
+pci-stub 0000:0f:11.0: claimed by stub
+pci-stub 0000:0f:11.0: enabling device (0000 -> 0002)
+Device attached successfully
+ and
+no entry/log in /var/log/libvirt/qemu/<guest-id>.log file
+
+Please review and ack.
+
+- Don
+
+---
+ hw/device-assignment.c |   17 +++++++++++++++--
+ 1 files changed, 15 insertions(+), 2 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/device-assignment.c |   17 +++++++++++++++--
+ 1 files changed, 15 insertions(+), 2 deletions(-)
+
+diff --git a/hw/device-assignment.c b/hw/device-assignment.c
+index c4916e6..33a4b45 100644
+--- a/hw/device-assignment.c
++++ b/hw/device-assignment.c
+@@ -1421,7 +1421,7 @@ static int assigned_device_pci_cap_init(PCIDevice *pci_dev)
+     }
+ 
+     if ((pos = pci_find_cap_offset(pci_dev, PCI_CAP_ID_EXP, 0))) {
+-        uint8_t version, size;
++        uint8_t version, size = 0;
+         uint16_t type, devctl, lnkcap, lnksta;
+         uint32_t devcap;
+ 
+@@ -1448,7 +1448,20 @@ static int assigned_device_pci_cap_init(PCIDevice *pci_dev)
+                         "non-standard size 0x%x; std size should be 0x3c \n",
+                          __func__, PCI_CAP_ID_EXP, size);
+             } 
+-        } else {
++        } else if (version == 0) {
++            uint16_t vid, did;
++            vid = pci_get_word(pci_dev->config + PCI_VENDOR_ID);
++            did = pci_get_word(pci_dev->config + PCI_DEVICE_ID);
++            if (vid == PCI_VENDOR_ID_INTEL && did == 0x10ed) {
++                /*
++                 * quirk for Intel 82599 VF with invalid PCIe capability
++                 * version, should really be version 2 (same as PF)
++                 */
++                size = 0x3c;
++            }
++        }
++
++        if (size == 0) {
+             fprintf(stderr, 
+                     "%s: Unsupported PCI express capability version %d\n",
+                     __func__, version);
+-- 
+1.7.4.4
+
