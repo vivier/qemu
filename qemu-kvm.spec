@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.198
+%define pkgrelease 2.199
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3850,6 +3850,10 @@ Patch2603: kvm-block-Show-whether-the-virtual-tray-is-open-in-info-.patch
 Patch2604: kvm-block-New-change_media_cb-parameter-load.patch
 # For bz#676528 - Can't insert media after previous media was forcefully ejected
 Patch2605: kvm-ide-atapi-scsi-disk-Make-monitor-eject-f-then-change.patch
+# For bz#741878 - USB tablet mouse does not work well when migrating between 6.2<->6.2 hosts and 6.1<->6.2 hosts
+Patch2606: kvm-usb-hid-activate-usb-tablet-mouse-after-migration.patch
+# For bz#729294 - Keyboard leds/states are not synchronized after migration of guest
+Patch2607: kvm-ps2-migrate-ledstate.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -5564,6 +5568,8 @@ ApplyOptionalPatch()
 %patch2603 -p1
 %patch2604 -p1
 %patch2605 -p1
+%patch2606 -p1
+%patch2607 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -5787,6 +5793,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Oct 18 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.199.el6
+- kvm-usb-hid-activate-usb-tablet-mouse-after-migration.patch [bz#741878]
+- kvm-ps2-migrate-ledstate.patch [bz#729294]
+- Resolves: bz#729294
+  (Keyboard leds/states are not synchronized after migration of guest)
+- Resolves: bz#741878
+  (USB tablet mouse does not work well when migrating between 6.2<->6.2 hosts and 6.1<->6.2 hosts)
+
 * Tue Oct 18 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.198.el6
 - kvm-bz716261-kvm-Extend-kvm_arch_get_supported_cpuid-to-.patch [bz#716261]
 - kvm-bz716261-Enable-XSAVE-related-CPUID.patch [bz#716261]
