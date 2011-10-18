@@ -1,0 +1,53 @@
+From 16988c932ac8376350d77b3ff822185a61b6c893 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:36 +0200
+Subject: [PATCH 61/76] scsi-disk: Track tray open/close state
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-54-git-send-email-armbru@redhat.com>
+Patchwork-id: 33660
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 53/68] scsi-disk: Track tray open/close state
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+We already track it in BlockDriverState since commit 4be9762a.  As
+discussed in that commit's message, we should track it in the device
+device models instead, because it's device state.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit ece0d5e9a736df174509751980ca0613a778f8b4)
+---
+ hw/scsi-disk.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/scsi-disk.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index 93738bb..9674e3e 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -72,6 +72,7 @@ struct SCSIDiskState
+     QEMUBH *bh;
+     char *version;
+     char *serial;
++    bool tray_open;
+ };
+ 
+ static int scsi_handle_rw_error(SCSIDiskReq *r, int error, int type);
+@@ -813,6 +814,7 @@ static void scsi_disk_emulate_start_stop(SCSIDiskReq *r)
+ 
+     if (s->qdev.type == TYPE_ROM && loej) {
+         bdrv_eject(s->bs, !start);
++        s->tray_open = !start;
+     }
+ }
+ 
+-- 
+1.7.4.4
+

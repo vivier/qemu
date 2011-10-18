@@ -1,0 +1,205 @@
+From e43c31cfe9e185a19c4472406f8284aee932d2fd Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:43 +0200
+Subject: [PATCH 68/76] block: Rename bdrv_set_locked() to bdrv_lock_medium()
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-61-git-send-email-armbru@redhat.com>
+Patchwork-id: 33668
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 60/68] block: Rename bdrv_set_locked() to bdrv_lock_medium()
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+While there, make the locked parameter bool.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 025e849a50259447aad49a0b45f0133c6a0f5d16)
+
+Conflicts:
+
+	trace-events
+
+Conflicts because we don't have commit 47f08d7a trace: enable all
+events.
+---
+ block.c           |    8 ++++----
+ block.h           |    2 +-
+ block/raw-posix.c |    8 ++++----
+ block/raw.c       |    6 +++---
+ block_int.h       |    2 +-
+ hw/ide/atapi.c    |    2 +-
+ hw/scsi-disk.c    |    2 +-
+ trace-events      |    2 +-
+ 8 files changed, 16 insertions(+), 16 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ block.c           |    8 ++++----
+ block.h           |    2 +-
+ block/raw-posix.c |    8 ++++----
+ block/raw.c       |    6 +++---
+ block_int.h       |    2 +-
+ hw/ide/atapi.c    |    2 +-
+ hw/scsi-disk.c    |    2 +-
+ trace-events      |    2 +-
+ 8 files changed, 16 insertions(+), 16 deletions(-)
+
+diff --git a/block.c b/block.c
+index 0be001e..97e3fdb 100644
+--- a/block.c
++++ b/block.c
+@@ -2653,14 +2653,14 @@ void bdrv_eject(BlockDriverState *bs, int eject_flag)
+  * Lock or unlock the media (if it is locked, the user won't be able
+  * to eject it manually).
+  */
+-void bdrv_set_locked(BlockDriverState *bs, int locked)
++void bdrv_lock_medium(BlockDriverState *bs, bool locked)
+ {
+     BlockDriver *drv = bs->drv;
+ 
+-    trace_bdrv_set_locked(bs, locked);
++    trace_bdrv_lock_medium(bs, locked);
+ 
+-    if (drv && drv->bdrv_set_locked) {
+-        drv->bdrv_set_locked(bs, locked);
++    if (drv && drv->bdrv_lock_medium) {
++        drv->bdrv_lock_medium(bs, locked);
+     }
+ }
+ 
+diff --git a/block.h b/block.h
+index 8427421..b301866 100644
+--- a/block.h
++++ b/block.h
+@@ -211,7 +211,7 @@ int bdrv_is_sg(BlockDriverState *bs);
+ int bdrv_enable_write_cache(BlockDriverState *bs);
+ int bdrv_is_inserted(BlockDriverState *bs);
+ int bdrv_media_changed(BlockDriverState *bs);
+-void bdrv_set_locked(BlockDriverState *bs, int locked);
++void bdrv_lock_medium(BlockDriverState *bs, bool locked);
+ void bdrv_eject(BlockDriverState *bs, int eject_flag);
+ void bdrv_get_format(BlockDriverState *bs, char *buf, int buf_size);
+ BlockDriverState *bdrv_find(const char *name);
+diff --git a/block/raw-posix.c b/block/raw-posix.c
+index 5a76135..cc4bc76 100644
+--- a/block/raw-posix.c
++++ b/block/raw-posix.c
+@@ -1220,7 +1220,7 @@ static void cdrom_eject(BlockDriverState *bs, int eject_flag)
+     }
+ }
+ 
+-static void cdrom_set_locked(BlockDriverState *bs, int locked)
++static void cdrom_lock_medium(BlockDriverState *bs, bool locked)
+ {
+     BDRVRawState *s = bs->opaque;
+ 
+@@ -1256,7 +1256,7 @@ static BlockDriver bdrv_host_cdrom = {
+     /* removable device support */
+     .bdrv_is_inserted   = cdrom_is_inserted,
+     .bdrv_eject         = cdrom_eject,
+-    .bdrv_set_locked    = cdrom_set_locked,
++    .bdrv_lock_medium   = cdrom_lock_medium,
+ 
+     /* generic scsi device */
+     .bdrv_ioctl         = hdev_ioctl,
+@@ -1337,7 +1337,7 @@ static void cdrom_eject(BlockDriverState *bs, int eject_flag)
+     cdrom_reopen(bs);
+ }
+ 
+-static void cdrom_set_locked(BlockDriverState *bs, int locked)
++static void cdrom_lock_medium(BlockDriverState *bs, bool locked)
+ {
+     BDRVRawState *s = bs->opaque;
+ 
+@@ -1375,7 +1375,7 @@ static BlockDriver bdrv_host_cdrom = {
+     /* removable device support */
+     .bdrv_is_inserted   = cdrom_is_inserted,
+     .bdrv_eject         = cdrom_eject,
+-    .bdrv_set_locked    = cdrom_set_locked,
++    .bdrv_lock_medium   = cdrom_lock_medium,
+ };
+ #endif /* __FreeBSD__ */
+ 
+diff --git a/block/raw.c b/block/raw.c
+index ffba51a..fe46729 100644
+--- a/block/raw.c
++++ b/block/raw.c
+@@ -85,9 +85,9 @@ static void raw_eject(BlockDriverState *bs, int eject_flag)
+     bdrv_eject(bs->file, eject_flag);
+ }
+ 
+-static void raw_set_locked(BlockDriverState *bs, int locked)
++static void raw_lock_medium(BlockDriverState *bs, bool locked)
+ {
+-    bdrv_set_locked(bs->file, locked);
++    bdrv_lock_medium(bs->file, locked);
+ }
+ 
+ static int raw_ioctl(BlockDriverState *bs, unsigned long int req, void *buf)
+@@ -144,7 +144,7 @@ static BlockDriver bdrv_raw = {
+     .bdrv_is_inserted   = raw_is_inserted,
+     .bdrv_media_changed = raw_media_changed,
+     .bdrv_eject         = raw_eject,
+-    .bdrv_set_locked    = raw_set_locked,
++    .bdrv_lock_medium   = raw_lock_medium,
+ 
+     .bdrv_ioctl         = raw_ioctl,
+     .bdrv_aio_ioctl     = raw_aio_ioctl,
+diff --git a/block_int.h b/block_int.h
+index 2b43fb9..f477827 100644
+--- a/block_int.h
++++ b/block_int.h
+@@ -112,7 +112,7 @@ struct BlockDriver {
+     int (*bdrv_is_inserted)(BlockDriverState *bs);
+     int (*bdrv_media_changed)(BlockDriverState *bs);
+     void (*bdrv_eject)(BlockDriverState *bs, int eject_flag);
+-    void (*bdrv_set_locked)(BlockDriverState *bs, int locked);
++    void (*bdrv_lock_medium)(BlockDriverState *bs, bool locked);
+ 
+     /* to control generic scsi devices */
+     int (*bdrv_ioctl)(BlockDriverState *bs, unsigned long int req, void *buf);
+diff --git a/hw/ide/atapi.c b/hw/ide/atapi.c
+index 2e75f42..4cec7f6 100644
+--- a/hw/ide/atapi.c
++++ b/hw/ide/atapi.c
+@@ -830,7 +830,7 @@ static void cmd_test_unit_ready(IDEState *s, uint8_t *buf)
+ static void cmd_prevent_allow_medium_removal(IDEState *s, uint8_t* buf)
+ {
+     s->tray_locked = buf[4] & 1;
+-    bdrv_set_locked(s->bs, buf[4] & 1);
++    bdrv_lock_medium(s->bs, buf[4] & 1);
+     ide_atapi_cmd_ok(s);
+ }
+ 
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index 3aa0e4c..a3b1552 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -884,7 +884,7 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r, uint8_t *outbuf)
+         break;
+     case ALLOW_MEDIUM_REMOVAL:
+         s->tray_locked = req->cmd.buf[4] & 1;
+-        bdrv_set_locked(s->bs, req->cmd.buf[4] & 1);
++        bdrv_lock_medium(s->bs, req->cmd.buf[4] & 1);
+         break;
+     case READ_CAPACITY_10:
+         /* The normal LEN field for this command is zero.  */
+diff --git a/trace-events b/trace-events
+index 7832f5f..a44025a 100644
+--- a/trace-events
++++ b/trace-events
+@@ -53,7 +53,7 @@ disable bdrv_aio_multiwrite_earlyfail(void *mcb) "mcb %p"
+ disable bdrv_aio_multiwrite_latefail(void *mcb, int i) "mcb %p i %d"
+ disable bdrv_aio_readv(void *bs, int64_t sector_num, int nb_sectors, void *opaque) "bs %p sector_num %"PRId64" nb_sectors %d opaque %p"
+ disable bdrv_aio_writev(void *bs, int64_t sector_num, int nb_sectors, void *opaque) "bs %p sector_num %"PRId64" nb_sectors %d opaque %p"
+-disable bdrv_set_locked(void *bs, int locked) "bs %p locked %d"
++disable bdrv_lock_medium(void *bs, int locked) "bs %p locked %d"
+ 
+ # hw/virtio-blk.c
+ disable virtio_blk_req_complete(void *req, int status) "req %p status %d"
+-- 
+1.7.4.4
+

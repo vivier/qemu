@@ -1,0 +1,64 @@
+From 36916dec49abc1a2221d30cdfe88c7655827a584 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:23:46 +0200
+Subject: [PATCH 11/76] block: New bdrv_next()
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-4-git-send-email-armbru@redhat.com>
+Patchwork-id: 33601
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 03/68] block: New bdrv_next()
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+This is a more flexible alternative to bdrv_iterate().
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 2f399b0aad7d16ce53d15a79b0b2c9315ac70e11)
+---
+ block.c |    8 ++++++++
+ block.h |    1 +
+ 2 files changed, 9 insertions(+), 0 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ block.c |    8 ++++++++
+ block.h |    1 +
+ 2 files changed, 9 insertions(+), 0 deletions(-)
+
+diff --git a/block.c b/block.c
+index 622ccd1..dff305b 100644
+--- a/block.c
++++ b/block.c
+@@ -1414,6 +1414,14 @@ BlockDriverState *bdrv_find(const char *name)
+     return NULL;
+ }
+ 
++BlockDriverState *bdrv_next(BlockDriverState *bs)
++{
++    if (!bs) {
++        return QTAILQ_FIRST(&bdrv_states);
++    }
++    return QTAILQ_NEXT(bs, list);
++}
++
+ void bdrv_iterate(void (*it)(void *opaque, BlockDriverState *bs), void *opaque)
+ {
+     BlockDriverState *bs;
+diff --git a/block.h b/block.h
+index be3d63e..de6f312 100644
+--- a/block.h
++++ b/block.h
+@@ -196,6 +196,7 @@ void bdrv_set_change_cb(BlockDriverState *bs,
+                         void *opaque);
+ void bdrv_get_format(BlockDriverState *bs, char *buf, int buf_size);
+ BlockDriverState *bdrv_find(const char *name);
++BlockDriverState *bdrv_next(BlockDriverState *bs);
+ void bdrv_iterate(void (*it)(void *opaque, BlockDriverState *bs),
+                   void *opaque);
+ int bdrv_is_encrypted(BlockDriverState *bs);
+-- 
+1.7.4.4
+

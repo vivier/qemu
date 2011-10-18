@@ -1,0 +1,240 @@
+From 6373cba35fcaf98131b3117a71cec15e19989833 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:20 +0200
+Subject: [PATCH 45/76] block: Split change_cb() into change_media_cb(),
+ resize_cb()
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-38-git-send-email-armbru@redhat.com>
+Patchwork-id: 33629
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 37/68] block: Split change_cb() into change_media_cb(), resize_cb()
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Multiplexing callbacks complicates matters needlessly.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 145feb176ffe6de1db6d05af064c841d7c16633c)
+
+Conflicts:
+
+	block_int.h
+
+Trivial conflict caused by tab damage in commit 8e7cf5e1.
+---
+ block.c         |   23 +++++++++++++++--------
+ block.h         |   12 +++++++++++-
+ block_int.h     |    3 ---
+ hw/ide/core.c   |    8 ++------
+ hw/sd.c         |    8 ++------
+ hw/virtio-blk.c |    8 +++-----
+ 6 files changed, 33 insertions(+), 29 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ block.c         |   23 +++++++++++++++--------
+ block.h         |   12 +++++++++++-
+ block_int.h     |    3 ---
+ hw/ide/core.c   |    8 ++------
+ hw/sd.c         |    8 ++------
+ hw/virtio-blk.c |    8 +++-----
+ 6 files changed, 33 insertions(+), 29 deletions(-)
+
+diff --git a/block.c b/block.c
+index d402660..ec799d5 100644
+--- a/block.c
++++ b/block.c
+@@ -43,7 +43,7 @@
+ #include <windows.h>
+ #endif
+ 
+-static void bdrv_dev_change_cb(BlockDriverState *bs, int reason);
++static void bdrv_dev_change_media_cb(BlockDriverState *bs);
+ static BlockDriverAIOCB *bdrv_aio_readv_em(BlockDriverState *bs,
+         int64_t sector_num, QEMUIOVector *qiov, int nb_sectors,
+         BlockDriverCompletionFunc *cb, void *opaque);
+@@ -627,7 +627,7 @@ int bdrv_open(BlockDriverState *bs, const char *filename, int flags,
+ 
+     if (!bdrv_key_required(bs)) {
+         bs->media_changed = 1;
+-        bdrv_dev_change_cb(bs, CHANGE_MEDIA);
++        bdrv_dev_change_media_cb(bs);
+     }
+ 
+     return 0;
+@@ -663,7 +663,7 @@ void bdrv_close(BlockDriverState *bs)
+         }
+ 
+         bs->media_changed = 1;
+-        bdrv_dev_change_cb(bs, CHANGE_MEDIA);
++        bdrv_dev_change_media_cb(bs);
+     }
+ }
+ 
+@@ -742,10 +742,17 @@ void bdrv_set_dev_ops(BlockDriverState *bs, const BlockDevOps *ops,
+     bs->dev_opaque = opaque;
+ }
+ 
+-static void bdrv_dev_change_cb(BlockDriverState *bs, int reason)
++static void bdrv_dev_change_media_cb(BlockDriverState *bs)
+ {
+-    if (bs->dev_ops && bs->dev_ops->change_cb) {
+-        bs->dev_ops->change_cb(bs->dev_opaque, reason);
++    if (bs->dev_ops && bs->dev_ops->change_media_cb) {
++        bs->dev_ops->change_media_cb(bs->dev_opaque);
++    }
++}
++
++static void bdrv_dev_resize_cb(BlockDriverState *bs)
++{
++    if (bs->dev_ops && bs->dev_ops->resize_cb) {
++        bs->dev_ops->resize_cb(bs->dev_opaque);
+     }
+ }
+ 
+@@ -1135,7 +1142,7 @@ int bdrv_truncate(BlockDriverState *bs, int64_t offset)
+     ret = drv->bdrv_truncate(bs, offset);
+     if (ret == 0) {
+         ret = refresh_total_sectors(bs, offset >> BDRV_SECTOR_BITS);
+-        bdrv_dev_change_cb(bs, CHANGE_SIZE);
++        bdrv_dev_resize_cb(bs);
+     }
+     return ret;
+ }
+@@ -1398,7 +1405,7 @@ int bdrv_set_key(BlockDriverState *bs, const char *key)
+         bs->valid_key = 1;
+         /* call the change callback now, we skipped it on open */
+         bs->media_changed = 1;
+-        bdrv_dev_change_cb(bs, CHANGE_MEDIA);
++        bdrv_dev_change_media_cb(bs);
+     }
+     return ret;
+ }
+diff --git a/block.h b/block.h
+index 50825bf..0e6cc6e 100644
+--- a/block.h
++++ b/block.h
+@@ -25,8 +25,18 @@ typedef struct QEMUSnapshotInfo {
+     uint64_t vm_clock_nsec; /* VM clock relative to boot */
+ } QEMUSnapshotInfo;
+ 
++/* Callbacks for block device models */
+ typedef struct BlockDevOps {
+-    void (*change_cb)(void *opaque, int reason);
++    /*
++     * Runs when virtual media changed (monitor commands eject, change)
++     * Beware: doesn't run when a host device's physical media
++     * changes.  Sure would be useful if it did.
++     */
++    void (*change_media_cb)(void *opaque);
++    /*
++     * Runs when the size changed (e.g. monitor command block_resize)
++     */
++    void (*resize_cb)(void *opaque);
+ } BlockDevOps;
+ 
+ #define BDRV_O_RDWR        0x0002
+diff --git a/block_int.h b/block_int.h
+index 6a978e7..f44baa4 100644
+--- a/block_int.h
++++ b/block_int.h
+@@ -204,9 +204,6 @@ struct BlockDriverState {
+     void *private;
+ };
+ 
+-#define CHANGE_MEDIA	0x01
+-#define CHANGE_SIZE	0x02
+-
+ struct BlockDriverAIOCB {
+     AIOPool *pool;
+     BlockDriverState *bs;
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index afa2831..357911b 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -847,15 +847,11 @@ static void ide_cfata_metadata_write(IDEState *s)
+ }
+ 
+ /* called when the inserted state of the media has changed */
+-static void cdrom_change_cb(void *opaque, int reason)
++static void ide_cd_change_cb(void *opaque)
+ {
+     IDEState *s = opaque;
+     uint64_t nb_sectors;
+ 
+-    if (!(reason & CHANGE_MEDIA)) {
+-        return;
+-    }
+-
+     bdrv_get_geometry(s->bs, &nb_sectors);
+     s->nb_sectors = nb_sectors;
+ 
+@@ -1754,7 +1750,7 @@ void ide_bus_reset(IDEBus *bus)
+ }
+ 
+ static const BlockDevOps ide_cd_block_ops = {
+-    .change_cb = cdrom_change_cb,
++    .change_media_cb = ide_cd_change_cb,
+ };
+ 
+ int ide_init_drive(IDEState *s, BlockDriverState *bs, const char *version)
+diff --git a/hw/sd.c b/hw/sd.c
+index 87839ed..a99b0c0 100644
+--- a/hw/sd.c
++++ b/hw/sd.c
+@@ -422,14 +422,10 @@ static void sd_reset(SDState *sd, BlockDriverState *bdrv)
+     sd->pwd_len = 0;
+ }
+ 
+-static void sd_cardchange(void *opaque, int reason)
++static void sd_cardchange(void *opaque)
+ {
+     SDState *sd = opaque;
+ 
+-    if (!(reason & CHANGE_MEDIA)) {
+-        return;
+-    }
+-
+     qemu_set_irq(sd->inserted_cb, bdrv_is_inserted(sd->bdrv));
+     if (bdrv_is_inserted(sd->bdrv)) {
+         sd_reset(sd, sd->bdrv);
+@@ -438,7 +434,7 @@ static void sd_cardchange(void *opaque, int reason)
+ }
+ 
+ static const BlockDevOps sd_block_ops = {
+-    .change_cb = sd_cardchange,
++    .change_media_cb = sd_cardchange,
+ };
+ 
+ /* We do not model the chip select pin, so allow the board to select
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index 34da8e5..0bf7260 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -539,17 +539,15 @@ static int virtio_blk_load(QEMUFile *f, void *opaque, int version_id)
+     return 0;
+ }
+ 
+-static void virtio_blk_change_cb(void *opaque, int reason)
++static void virtio_blk_resize(void *opaque)
+ {
+     VirtIOBlock *s = opaque;
+ 
+-    if (reason & CHANGE_SIZE) {
+-        virtio_notify_config(&s->vdev);
+-    }
++    virtio_notify_config(&s->vdev);
+ }
+ 
+ static const BlockDevOps virtio_block_ops = {
+-    .change_cb = virtio_blk_change_cb,
++    .resize_cb = virtio_blk_resize,
+ };
+ 
+ VirtIODevice *virtio_blk_init(DeviceState *dev, BlockConf *conf)
+-- 
+1.7.4.4
+

@@ -1,0 +1,71 @@
+From 85bea7815411f72746ae56812c0cf1a0dd259d55 Mon Sep 17 00:00:00 2001
+From: ddugger@redhat.com <ddugger@redhat.com>
+Date: Wed, 21 Sep 2011 04:59:51 +0200
+Subject: [PATCH 02/76] bz716261: Enable XSAVE related CPUID
+
+RH-Author: ddugger@redhat.com
+Message-id: <1316581195-18779-3-git-send-email-ddugger@redhat.com>
+Patchwork-id: 33029
+O-Subject: [RHEL 6.2 PATCH 2/6 V3] bz716261: Enable XSAVE related CPUID
+Bugzilla: 716261
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+
+From: n0ano@n0ano.com <n0ano@n0ano.com>
+
+Upstream Commit:
+    commit e0a044f1dcbc99f04f623841915e545005736b0c
+    Author: Sheng Yang <sheng@linux.intel.com>
+    Date:   Thu Jun 10 11:31:02 2010 +0800
+
+    qemu: Enable XSAVE related CPUID
+                                                                                    We can support it in KVM now. The 0xd leaf is queried from KVM.
+                                                                                    Signed-off-by: Sheng Yang <sheng@linux.intel.com>
+    Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+Signed-off-by: Frank Arnold <farnold@redhat.com>
+Signed-off-by: Don Dugger <donald.d.dugger@intel.com>
+---
+ target-i386/helper.c |   21 +++++++++++++++++++++
+ 1 files changed, 21 insertions(+), 0 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ target-i386/helper.c |   21 +++++++++++++++++++++
+ 1 files changed, 21 insertions(+), 0 deletions(-)
+
+diff --git a/target-i386/helper.c b/target-i386/helper.c
+index 6e355b1..b1a0ae1 100644
+--- a/target-i386/helper.c
++++ b/target-i386/helper.c
+@@ -2168,6 +2168,27 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
+         *ecx = 0;
+         *edx = 0;
+         break;
++    case 0xD:
++        /* Processor Extended State */
++        if (!(env->cpuid_ext_features & CPUID_EXT_XSAVE)) {
++            *eax = 0;
++            *ebx = 0;
++            *ecx = 0;
++            *edx = 0;
++            break;
++        }
++        if (kvm_enabled()) {
++            *eax = kvm_arch_get_supported_cpuid(env, 0xd, count, R_EAX);
++            *ebx = kvm_arch_get_supported_cpuid(env, 0xd, count, R_EBX);
++            *ecx = kvm_arch_get_supported_cpuid(env, 0xd, count, R_ECX);
++            *edx = kvm_arch_get_supported_cpuid(env, 0xd, count, R_EDX);
++        } else {
++            *eax = 0;
++            *ebx = 0;
++            *ecx = 0;
++            *edx = 0;
++        }
++        break;
+     case 0x80000000:
+         *eax = env->cpuid_xlevel;
+         *ebx = env->cpuid_vendor1;
+-- 
+1.7.4.4
+

@@ -1,0 +1,121 @@
+From 80f6ee1afce1a925b5e57f1619151a0ba6d33b7c Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:32 +0200
+Subject: [PATCH 57/76] ide: Reject ATA commands specific to drive kinds
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-50-git-send-email-armbru@redhat.com>
+Patchwork-id: 33654
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 49/68] ide: Reject ATA commands specific to drive kinds
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+ACS-2 Table B.2 explicitly prohibits ATAPI devices from implementing
+WIN_RECAL, WIN_READ_EXT, WIN_READDMA_EXT, WIN_READ_NATIVE_MAX,
+WIN_MULTREAD_EXT, WIN_WRITE, WIN_WRITE_ONCE, WIN_WRITE_EXT,
+WIN_WRITEDMA_EXT, WIN_MULTWRITE_EXT, WIN_WRITE_VERIFY, WIN_VERIFY,
+WIN_VERIFY_ONCE, WIN_VERIFY_EXT, WIN_SPECIFY, WIN_MULTREAD,
+WIN_MULTWRITE, WIN_SETMULT, WIN_READDMA, WIN_READDMA_ONCE,
+WIN_WRITEDMA, WIN_WRITEDMA_ONCE, WIN_FLUSH_CACHE_EXT.  Restrict them
+to IDE_HD and IDE_CFATA.
+
+Same for CFA_WRITE_SECT_WO_ERASE, CFA_WRITE_MULTI_WO_ERASE.  Restrict
+them to IDE_CFATA, like the other CFA_ commands.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 3cfc22692ec3a60affbd8e39da75fa449cefe234)
+---
+ hw/ide/core.c |   50 +++++++++++++++++++++++++-------------------------
+ 1 files changed, 25 insertions(+), 25 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/ide/core.c |   50 +++++++++++++++++++++++++-------------------------
+ 1 files changed, 25 insertions(+), 25 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 96114fd..c880cd9 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -977,27 +977,27 @@ static const uint8_t ide_cmd_table[0x100] = {
+     [CFA_REQ_EXT_ERROR_CODE]            = CFA_OK,
+     [WIN_DSM]                           = ALL_OK,
+     [WIN_DEVICE_RESET]                  = CD_OK,
+-    [WIN_RECAL]                         = ALL_OK,
++    [WIN_RECAL]                         = HD_CFA_OK,
+     [WIN_READ]                          = ALL_OK,
+     [WIN_READ_ONCE]                     = ALL_OK,
+-    [WIN_READ_EXT]                      = ALL_OK,
+-    [WIN_READDMA_EXT]                   = ALL_OK,
+-    [WIN_READ_NATIVE_MAX_EXT]           = ALL_OK,
+-    [WIN_MULTREAD_EXT]                  = ALL_OK,
+-    [WIN_WRITE]                         = ALL_OK,
+-    [WIN_WRITE_ONCE]                    = ALL_OK,
+-    [WIN_WRITE_EXT]                     = ALL_OK,
+-    [WIN_WRITEDMA_EXT]                  = ALL_OK,
+-    [CFA_WRITE_SECT_WO_ERASE]           = ALL_OK,
+-    [WIN_MULTWRITE_EXT]                 = ALL_OK,
+-    [WIN_WRITE_VERIFY]                  = ALL_OK,
+-    [WIN_VERIFY]                        = ALL_OK,
+-    [WIN_VERIFY_ONCE]                   = ALL_OK,
+-    [WIN_VERIFY_EXT]                    = ALL_OK,
++    [WIN_READ_EXT]                      = HD_CFA_OK,
++    [WIN_READDMA_EXT]                   = HD_CFA_OK,
++    [WIN_READ_NATIVE_MAX_EXT]           = HD_CFA_OK,
++    [WIN_MULTREAD_EXT]                  = HD_CFA_OK,
++    [WIN_WRITE]                         = HD_CFA_OK,
++    [WIN_WRITE_ONCE]                    = HD_CFA_OK,
++    [WIN_WRITE_EXT]                     = HD_CFA_OK,
++    [WIN_WRITEDMA_EXT]                  = HD_CFA_OK,
++    [CFA_WRITE_SECT_WO_ERASE]           = CFA_OK,
++    [WIN_MULTWRITE_EXT]                 = HD_CFA_OK,
++    [WIN_WRITE_VERIFY]                  = HD_CFA_OK,
++    [WIN_VERIFY]                        = HD_CFA_OK,
++    [WIN_VERIFY_ONCE]                   = HD_CFA_OK,
++    [WIN_VERIFY_EXT]                    = HD_CFA_OK,
+     [WIN_SEEK]                          = HD_CFA_OK,
+     [CFA_TRANSLATE_SECTOR]              = CFA_OK,
+     [WIN_DIAGNOSE]                      = ALL_OK,
+-    [WIN_SPECIFY]                       = ALL_OK,
++    [WIN_SPECIFY]                       = HD_CFA_OK,
+     [WIN_STANDBYNOW2]                   = ALL_OK,
+     [WIN_IDLEIMMEDIATE2]                = ALL_OK,
+     [WIN_STANDBY2]                      = ALL_OK,
+@@ -1009,14 +1009,14 @@ static const uint8_t ide_cmd_table[0x100] = {
+     [WIN_SMART]                         = HD_CFA_OK,
+     [CFA_ACCESS_METADATA_STORAGE]       = CFA_OK,
+     [CFA_ERASE_SECTORS]                 = CFA_OK,
+-    [WIN_MULTREAD]                      = ALL_OK,
+-    [WIN_MULTWRITE]                     = ALL_OK,
+-    [WIN_SETMULT]                       = ALL_OK,
+-    [WIN_READDMA]                       = ALL_OK,
+-    [WIN_READDMA_ONCE]                  = ALL_OK,
+-    [WIN_WRITEDMA]                      = ALL_OK,
+-    [WIN_WRITEDMA_ONCE]                 = ALL_OK,
+-    [CFA_WRITE_MULTI_WO_ERASE]          = ALL_OK,
++    [WIN_MULTREAD]                      = HD_CFA_OK,
++    [WIN_MULTWRITE]                     = HD_CFA_OK,
++    [WIN_SETMULT]                       = HD_CFA_OK,
++    [WIN_READDMA]                       = HD_CFA_OK,
++    [WIN_READDMA_ONCE]                  = HD_CFA_OK,
++    [WIN_WRITEDMA]                      = HD_CFA_OK,
++    [WIN_WRITEDMA_ONCE]                 = HD_CFA_OK,
++    [CFA_WRITE_MULTI_WO_ERASE]          = CFA_OK,
+     [WIN_STANDBYNOW1]                   = ALL_OK,
+     [WIN_IDLEIMMEDIATE]                 = ALL_OK,
+     [WIN_STANDBY]                       = ALL_OK,
+@@ -1024,7 +1024,7 @@ static const uint8_t ide_cmd_table[0x100] = {
+     [WIN_CHECKPOWERMODE1]               = ALL_OK,
+     [WIN_SLEEPNOW1]                     = ALL_OK,
+     [WIN_FLUSH_CACHE]                   = ALL_OK,
+-    [WIN_FLUSH_CACHE_EXT]               = ALL_OK,
++    [WIN_FLUSH_CACHE_EXT]               = HD_CFA_OK,
+     [WIN_IDENTIFY]                      = ALL_OK,
+     [WIN_SETFEATURES]                   = ALL_OK,
+     [IBM_SENSE_CONDITION]               = CFA_OK,
+-- 
+1.7.4.4
+

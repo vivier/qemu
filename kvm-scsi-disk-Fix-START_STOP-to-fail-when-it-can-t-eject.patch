@@ -1,0 +1,137 @@
+From 68d79a1e47ec8a88f7dba5c45816131041af287f Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:45 +0200
+Subject: [PATCH 70/76] scsi-disk: Fix START_STOP to fail when it can't eject
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-63-git-send-email-armbru@redhat.com>
+Patchwork-id: 33649
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 62/68] scsi-disk: Fix START_STOP to fail when it can't eject
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Don't fail when tray is already open.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 68bb01f398308eb84f645e2509205a8d9dd0104f)
+
+Conflicts:
+
+	hw/scsi-bus.c
+	hw/scsi.h
+
+Conflicts because we don't have commit a872a304 scsi: add a bunch more
+common sense codes.
+---
+ hw/scsi-bus.c  |   10 ++++++++++
+ hw/scsi-disk.c |   15 +++++++++++----
+ hw/scsi.h      |    4 ++++
+ 3 files changed, 25 insertions(+), 4 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/scsi-bus.c  |   10 ++++++++++
+ hw/scsi-disk.c |   15 +++++++++++----
+ hw/scsi.h      |    4 ++++
+ 3 files changed, 25 insertions(+), 4 deletions(-)
+
+diff --git a/hw/scsi-bus.c b/hw/scsi-bus.c
+index 25a230a..7fda82e 100644
+--- a/hw/scsi-bus.c
++++ b/hw/scsi-bus.c
+@@ -462,6 +462,11 @@ const struct SCSISense sense_code_NO_MEDIUM = {
+     .key = NOT_READY, .asc = 0x3a, .ascq = 0x00
+ };
+ 
++/* LUN not ready, medium removal prevented */
++const struct SCSISense sense_code_NOT_READY_REMOVAL_PREVENTED = {
++    .key = NOT_READY, .asc = 0x53, .ascq = 0x00
++};
++
+ /* Hardware error, internal target failure */
+ const struct SCSISense sense_code_TARGET_FAILURE = {
+     .key = HARDWARE_ERROR, .asc = 0x44, .ascq = 0x00
+@@ -487,6 +492,11 @@ const struct SCSISense sense_code_LUN_NOT_SUPPORTED = {
+     .key = ILLEGAL_REQUEST, .asc = 0x25, .ascq = 0x00
+ };
+ 
++/* Illegal request, medium removal prevented */
++const struct SCSISense sense_code_ILLEGAL_REQ_REMOVAL_PREVENTED = {
++    .key = ILLEGAL_REQUEST, .asc = 0x53, .ascq = 0x00
++};
++
+ /* Command aborted, I/O process terminated */
+ const struct SCSISense sense_code_IO_ERROR = {
+     .key = ABORTED_COMMAND, .asc = 0x00, .ascq = 0x06
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index a3b1552..39a0f68 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -812,7 +812,7 @@ static int scsi_disk_emulate_read_toc(SCSIRequest *req, uint8_t *outbuf)
+     return toclen;
+ }
+ 
+-static void scsi_disk_emulate_start_stop(SCSIDiskReq *r)
++static int scsi_disk_emulate_start_stop(SCSIDiskReq *r)
+ {
+     SCSIRequest *req = &r->req;
+     SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, req->dev);
+@@ -820,12 +820,17 @@ static void scsi_disk_emulate_start_stop(SCSIDiskReq *r)
+     bool loej = req->cmd.buf[4] & 2; /* load on start, eject on !start */
+ 
+     if (s->qdev.type == TYPE_ROM && loej) {
+-        if (!start && s->tray_locked) {
+-            return;
++        if (!start && !s->tray_open && s->tray_locked) {
++            scsi_check_condition(r,
++                                 bdrv_is_inserted(s->bs)
++                                 ? SENSE_CODE(ILLEGAL_REQ_REMOVAL_PREVENTED)
++                                 : SENSE_CODE(NOT_READY_REMOVAL_PREVENTED));
++            return -1;
+         }
+         bdrv_eject(s->bs, !start);
+         s->tray_open = !start;
+     }
++    return 0;
+ }
+ 
+ static int scsi_disk_emulate_command(SCSIDiskReq *r, uint8_t *outbuf)
+@@ -880,7 +885,9 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r, uint8_t *outbuf)
+             goto illegal_request;
+         break;
+     case START_STOP:
+-        scsi_disk_emulate_start_stop(r);
++        if (scsi_disk_emulate_start_stop(r) < 0) {
++            return -1;
++        }
+         break;
+     case ALLOW_MEDIUM_REMOVAL:
+         s->tray_locked = req->cmd.buf[4] & 1;
+diff --git a/hw/scsi.h b/hw/scsi.h
+index c1cb987..94a2eab 100644
+--- a/hw/scsi.h
++++ b/hw/scsi.h
+@@ -123,6 +123,8 @@ extern const struct SCSISense sense_code_NO_SENSE;
+ extern const struct SCSISense sense_code_LUN_NOT_READY;
+ /* LUN not ready, Medium not present */
+ extern const struct SCSISense sense_code_NO_MEDIUM;
++/* LUN not ready, medium removal prevented */
++extern const struct SCSISense sense_code_NOT_READY_REMOVAL_PREVENTED;
+ /* Hardware error, internal target failure */
+ extern const struct SCSISense sense_code_TARGET_FAILURE;
+ /* Illegal request, invalid command operation code */
+@@ -133,6 +135,8 @@ extern const struct SCSISense sense_code_LBA_OUT_OF_RANGE;
+ extern const struct SCSISense sense_code_INVALID_FIELD;
+ /* Illegal request, LUN not supported */
+ extern const struct SCSISense sense_code_LUN_NOT_SUPPORTED;
++/* Illegal request, medium removal prevented */
++extern const struct SCSISense sense_code_ILLEGAL_REQ_REMOVAL_PREVENTED;
+ /* Command aborted, I/O process terminated */
+ extern const struct SCSISense sense_code_IO_ERROR;
+ /* Command aborted, I_T Nexus loss occurred */
+-- 
+1.7.4.4
+

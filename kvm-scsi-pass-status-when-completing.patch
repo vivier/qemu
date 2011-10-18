@@ -1,0 +1,200 @@
+From ef14f8319d8e19a0e6f96bbf02b0413754d619df Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:15 +0200
+Subject: [PATCH 40/76] scsi: pass status when completing
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-33-git-send-email-armbru@redhat.com>
+Patchwork-id: 33665
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 32/68] scsi: pass status when completing
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Paolo Bonzini <pbonzini@redhat.com>
+
+A small improvement in the SCSI request API.  Pass the status
+at the time the request is completed, so that we can assert that
+no request is completed twice.  This would have detected the
+problem fixed in the previous patch.
+
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 682a9b213ca3c47c4de5b0518c59c2e550299106)
+
+Note: "fixed in the previous patch" applies upstream, not here.
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ hw/scsi-bus.c     |    8 ++++----
+ hw/scsi-disk.c    |   15 ++++-----------
+ hw/scsi-generic.c |   31 ++++++++++++++++---------------
+ hw/scsi.h         |    2 +-
+ 4 files changed, 25 insertions(+), 31 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/scsi-bus.c     |    8 ++++----
+ hw/scsi-disk.c    |   15 ++++-----------
+ hw/scsi-generic.c |   31 ++++++++++++++++---------------
+ hw/scsi.h         |    2 +-
+ 4 files changed, 25 insertions(+), 31 deletions(-)
+
+diff --git a/hw/scsi-bus.c b/hw/scsi-bus.c
+index 0b0344c..0780cc2 100644
+--- a/hw/scsi-bus.c
++++ b/hw/scsi-bus.c
+@@ -682,9 +682,10 @@ void scsi_req_print(SCSIRequest *req)
+     }
+ }
+ 
+-void scsi_req_complete(SCSIRequest *req)
++void scsi_req_complete(SCSIRequest *req, int status)
+ {
+-    assert(req->status != -1);
++    assert(req->status == -1);
++    req->status = status;
+     scsi_req_ref(req);
+     scsi_req_dequeue(req);
+     req->bus->ops->complete(req, req->status);
+@@ -706,11 +707,10 @@ void scsi_req_cancel(SCSIRequest *req)
+ 
+ void scsi_req_abort(SCSIRequest *req, int status)
+ {
+-    req->status = status;
+     if (req->dev && req->dev->info->cancel_io) {
+         req->dev->info->cancel_io(req);
+     }
+-    scsi_req_complete(req);
++    scsi_req_complete(req, status);
+ }
+ 
+ void scsi_device_purge_requests(SCSIDevice *sdev)
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index 7afb356..4d5e3ea 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -103,21 +103,15 @@ static void scsi_disk_clear_sense(SCSIDiskState *s)
+     memset(&s->sense, 0, sizeof(s->sense));
+ }
+ 
+-static void scsi_req_set_status(SCSIDiskReq *r, int status, SCSISense sense)
+-{
+-    SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, r->req.dev);
+-
+-    r->req.status = status;
+-    s->sense = sense;
+-}
+-
+ /* Helper function for command completion.  */
+ static void scsi_command_complete(SCSIDiskReq *r, int status, SCSISense sense)
+ {
++    SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, r->req.dev);
++
+     DPRINTF("Command complete tag=0x%x status=%d sense=%d/%d/%d\n",
+             r->req.tag, status, sense.key, sense.asc, sense.ascq);
+-    scsi_req_set_status(r, status, sense);
+-    scsi_req_complete(&r->req);
++    s->sense = sense;
++    scsi_req_complete(&r->req, status);
+ }
+ 
+ /* Cancel a pending data transfer.  */
+@@ -986,7 +980,6 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r, uint8_t *outbuf)
+         scsi_command_complete(r, CHECK_CONDITION, SENSE_CODE(INVALID_OPCODE));
+         return -1;
+     }
+-    scsi_req_set_status(r, GOOD, SENSE_CODE(NO_SENSE));
+     return buflen;
+ 
+ not_ready:
+diff --git a/hw/scsi-generic.c b/hw/scsi-generic.c
+index 7b0026e..71cbfb0 100644
+--- a/hw/scsi-generic.c
++++ b/hw/scsi-generic.c
+@@ -115,6 +115,7 @@ static void scsi_free_request(SCSIRequest *req)
+ /* Helper function for command completion.  */
+ static void scsi_command_complete(void *opaque, int ret)
+ {
++    int status;
+     SCSIGenericReq *r = (SCSIGenericReq *)opaque;
+     SCSIGenericState *s = DO_UPCAST(SCSIGenericState, qdev, r->req.dev);
+ 
+@@ -126,36 +127,37 @@ static void scsi_command_complete(void *opaque, int ret)
+     if (ret != 0) {
+         switch (ret) {
+         case -EDOM:
+-            r->req.status = TASK_SET_FULL;
++            status = TASK_SET_FULL;
+             break;
+         case -EINVAL:
+-            r->req.status = CHECK_CONDITION;
++            status = CHECK_CONDITION;
+             scsi_set_sense(s, SENSE_CODE(INVALID_FIELD));
+             break;
+         case -ENOMEM:
+-            r->req.status = CHECK_CONDITION;
++            status = CHECK_CONDITION;
+             scsi_set_sense(s, SENSE_CODE(TARGET_FAILURE));
+             break;
+         default:
+-            r->req.status = CHECK_CONDITION;
++            status = CHECK_CONDITION;
+             scsi_set_sense(s, SENSE_CODE(IO_ERROR));
+             break;
+         }
+     } else {
+         if (s->driver_status & SG_ERR_DRIVER_TIMEOUT) {
+-            r->req.status = BUSY;
++            status = BUSY;
+             BADF("Driver Timeout\n");
+-        } else if (r->io_header.status)
+-            r->req.status = r->io_header.status;
+-        else if (s->driver_status & SG_ERR_DRIVER_SENSE)
+-            r->req.status = CHECK_CONDITION;
+-        else
+-            r->req.status = GOOD;
++        } else if (r->io_header.status) {
++            status = r->io_header.status;
++        } else if (s->driver_status & SG_ERR_DRIVER_SENSE) {
++            status = CHECK_CONDITION;
++        } else {
++            status = GOOD;
++        }
+     }
+     DPRINTF("Command complete 0x%p tag=0x%x status=%d\n",
+-            r, r->req.tag, r->req.status);
++            r, r->req.tag, status);
+ 
+-    scsi_req_complete(&r->req);
++    scsi_req_complete(&r->req, status);
+ }
+ 
+ /* Cancel a pending data transfer.  */
+@@ -341,8 +343,7 @@ static int32_t scsi_send_command(SCSIRequest *req, uint8_t *cmd)
+     if (cmd[0] != REQUEST_SENSE && req->lun != s->lun) {
+         DPRINTF("Unimplemented LUN %d\n", req->lun);
+         scsi_set_sense(s, SENSE_CODE(LUN_NOT_SUPPORTED));
+-        r->req.status = CHECK_CONDITION;
+-        scsi_req_complete(&r->req);
++        scsi_req_complete(&r->req, CHECK_CONDITION);
+         return 0;
+     }
+ 
+diff --git a/hw/scsi.h b/hw/scsi.h
+index 6b15bbc..18d3643 100644
+--- a/hw/scsi.h
++++ b/hw/scsi.h
+@@ -153,7 +153,7 @@ int scsi_req_parse(SCSIRequest *req, uint8_t *buf);
+ void scsi_req_print(SCSIRequest *req);
+ void scsi_req_continue(SCSIRequest *req);
+ void scsi_req_data(SCSIRequest *req, int len);
+-void scsi_req_complete(SCSIRequest *req);
++void scsi_req_complete(SCSIRequest *req, int status);
+ uint8_t *scsi_req_get_buf(SCSIRequest *req);
+ int scsi_req_get_sense(SCSIRequest *req, uint8_t *buf, int len);
+ void scsi_req_abort(SCSIRequest *req, int status);
+-- 
+1.7.4.4
+

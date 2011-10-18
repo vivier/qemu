@@ -1,0 +1,46 @@
+From 6c520302eaaecfedc79c37092ca346710cdfcb14 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:44 +0200
+Subject: [PATCH 69/76] ide/atapi: Don't fail eject when tray is already open
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-62-git-send-email-armbru@redhat.com>
+Patchwork-id: 33645
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 61/68] ide/atapi: Don't fail eject when tray is already open
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+MMC-5 6.40.2.6 specifies that START STOP UNIT succeeds when the drive
+already has the requested state.  cmd_start_stop_unit() fails when
+asked to eject while the tray is open and locked.  Fix that.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 48f65b3f52fdaf8fdae331248236e8b487de2b3b)
+---
+ hw/ide/atapi.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/ide/atapi.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/hw/ide/atapi.c b/hw/ide/atapi.c
+index 4cec7f6..6548c8e 100644
+--- a/hw/ide/atapi.c
++++ b/hw/ide/atapi.c
+@@ -907,7 +907,7 @@ static void cmd_start_stop_unit(IDEState *s, uint8_t* buf)
+     bool loej = buf[4] & 2;     /* load on start, eject on !start */
+ 
+     if (loej) {
+-        if (!start && s->tray_locked) {
++        if (!start && !s->tray_open && s->tray_locked) {
+             sense = bdrv_is_inserted(s->bs)
+                 ? SENSE_NOT_READY : SENSE_ILLEGAL_REQUEST;
+             ide_atapi_cmd_error(s, sense, ASC_MEDIA_REMOVAL_PREVENTED);
+-- 
+1.7.4.4
+

@@ -1,0 +1,71 @@
+From 39b237de471c1999f23fd7329fcf23034ed75ed8 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:34 +0200
+Subject: [PATCH 59/76] ide/atapi: Track tray open/close state
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-52-git-send-email-armbru@redhat.com>
+Patchwork-id: 33638
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 51/68] ide/atapi: Track tray open/close state
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+We already track it in BlockDriverState since commit 4be9762a.  As
+discussed in that commit's message, we should track it in the device
+device models instead, because it's device state.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit dd063333929f2e2a44dc900aa4f75f11dea7cb28)
+---
+ hw/ide/atapi.c    |    6 +++++-
+ hw/ide/internal.h |    1 +
+ 2 files changed, 6 insertions(+), 1 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/ide/atapi.c    |    6 +++++-
+ hw/ide/internal.h |    1 +
+ 2 files changed, 6 insertions(+), 1 deletions(-)
+
+diff --git a/hw/ide/atapi.c b/hw/ide/atapi.c
+index d97a9d2..8e01417 100644
+--- a/hw/ide/atapi.c
++++ b/hw/ide/atapi.c
+@@ -518,7 +518,7 @@ static unsigned int event_status_media(IDEState *s,
+     uint8_t event_code, media_status;
+ 
+     media_status = 0;
+-    if (s->bs->tray_open) {
++    if (s->tray_open) {
+         media_status = MS_TRAY_OPEN;
+     } else if (bdrv_is_inserted(s->bs)) {
+         media_status = MS_MEDIA_PRESENT;
+@@ -923,6 +923,10 @@ static void cmd_start_stop_unit(IDEState *s, uint8_t* buf)
+         ide_atapi_cmd_error(s, SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
+         break;
+     }
++
++    if (loej && !err) {
++        s->tray_open = !start;
++    }
+ }
+ 
+ static void cmd_mechanism_status(IDEState *s, uint8_t* buf)
+diff --git a/hw/ide/internal.h b/hw/ide/internal.h
+index 11cb4aa..29d01aa 100644
+--- a/hw/ide/internal.h
++++ b/hw/ide/internal.h
+@@ -423,6 +423,7 @@ struct IDEState {
+     struct unreported_events events;
+     uint8_t sense_key;
+     uint8_t asc;
++    bool tray_open;
+     uint8_t cdrom_changed;
+     int packet_transfer_size;
+     int elementary_transfer_size;
+-- 
+1.7.4.4
+

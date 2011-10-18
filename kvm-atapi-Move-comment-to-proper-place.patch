@@ -1,0 +1,52 @@
+From 8ca460c65e4c496c07d27cdbe5b105b674301367 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:00 +0200
+Subject: [PATCH 25/76] atapi: Move comment to proper place
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-18-git-send-email-armbru@redhat.com>
+Patchwork-id: 33608
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 17/68] atapi: Move comment to proper place
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Amit Shah <amit.shah@redhat.com>
+
+Move misplaced comment for media_is_dvd()
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit a7acf552e2cfb42ea1b27966b7f318eca2cc478a)
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ hw/ide/atapi.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/ide/atapi.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/hw/ide/atapi.c b/hw/ide/atapi.c
+index a09299e..29f30f8 100644
+--- a/hw/ide/atapi.c
++++ b/hw/ide/atapi.c
+@@ -71,12 +71,12 @@ static void lba_to_msf(uint8_t *buf, int lba)
+     buf[2] = lba % 75;
+ }
+ 
+-/* XXX: DVDs that could fit on a CD will be reported as a CD */
+ static inline int media_present(IDEState *s)
+ {
+     return (s->nb_sectors > 0);
+ }
+ 
++/* XXX: DVDs that could fit on a CD will be reported as a CD */
+ static inline int media_is_dvd(IDEState *s)
+ {
+     return (media_present(s) && s->nb_sectors > CD_MAX_SECTORS);
+-- 
+1.7.4.4
+

@@ -1,0 +1,233 @@
+From 7252c851af46085b7c23b0be237f74e57ad06a87 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:13 +0200
+Subject: [PATCH 38/76] scsi-disk: Remove 'drive_kind'
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-31-git-send-email-armbru@redhat.com>
+Patchwork-id: 33633
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 30/68] scsi-disk: Remove 'drive_kind'
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Hannes Reinecke <hare@suse.de>
+
+Instead of using its own definitions scsi-disk should
+be using the device type of the parent device.
+
+Signed-off-by: Hannes Reinecke <hare@suse.de>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit f37bd73b76e7f1e300e6acfe1bb6d3b2bc63714b)
+
+Conflicts:
+
+	hw/scsi-disk.c
+
+Conflicts because we don't have commit 95b5edcd blockdev: Store -drive
+option media in DriveInfo, and because we have commit 94b66581
+scsi-disk: fix build, disable cdrom emulation.
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ hw/scsi-defs.h |    6 +++++-
+ hw/scsi-disk.c |   50 ++++++++++++++++++++++++--------------------------
+ 2 files changed, 29 insertions(+), 27 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/scsi-defs.h |    6 +++++-
+ hw/scsi-disk.c |   50 ++++++++++++++++++++++++--------------------------
+ 2 files changed, 29 insertions(+), 27 deletions(-)
+
+diff --git a/hw/scsi-defs.h b/hw/scsi-defs.h
+index f644860..27010b7 100644
+--- a/hw/scsi-defs.h
++++ b/hw/scsi-defs.h
+@@ -164,6 +164,7 @@
+ 
+ #define TYPE_DISK           0x00
+ #define TYPE_TAPE           0x01
++#define TYPE_PRINTER        0x02
+ #define TYPE_PROCESSOR      0x03    /* HP scanners use this */
+ #define TYPE_WORM           0x04    /* Treated as ROM by our system */
+ #define TYPE_ROM            0x05
+@@ -171,6 +172,9 @@
+ #define TYPE_MOD            0x07    /* Magneto-optical disk -
+ 				     * - treated as TYPE_DISK */
+ #define TYPE_MEDIUM_CHANGER 0x08
+-#define TYPE_ENCLOSURE	    0x0d    /* Enclosure Services Device */
++#define TYPE_STORAGE_ARRAY  0x0c    /* Storage array device */
++#define TYPE_ENCLOSURE      0x0d    /* Enclosure Services Device */
++#define TYPE_RBC            0x0e    /* Simplified Direct-Access Device */
++#define TYPE_OSD            0x11    /* Object-storage Device */
+ #define TYPE_NO_LUN         0x7f
+ 
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index f4d67df..5d0cfff 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -60,8 +60,6 @@ typedef struct SCSIDiskReq {
+     BlockAcctCookie acct;
+ } SCSIDiskReq;
+ 
+-typedef enum { SCSI_HD, SCSI_CD } SCSIDriveKind;
+-
+ struct SCSIDiskState
+ {
+     SCSIDevice qdev;
+@@ -75,7 +73,6 @@ struct SCSIDiskState
+     char *version;
+     char *serial;
+     SCSISense sense;
+-    SCSIDriveKind drive_kind;
+ };
+ 
+ static int scsi_handle_rw_error(SCSIDiskReq *r, int error, int type);
+@@ -393,7 +390,7 @@ static int scsi_disk_emulate_inquiry(SCSIRequest *req, uint8_t *outbuf)
+             return -1;
+         }
+ 
+-        if (s->drive_kind == SCSI_CD) {
++        if (s->qdev.type == TYPE_ROM) {
+             outbuf[buflen++] = 5;
+         } else {
+             outbuf[buflen++] = 0;
+@@ -412,7 +409,7 @@ static int scsi_disk_emulate_inquiry(SCSIRequest *req, uint8_t *outbuf)
+             if (s->serial)
+                 outbuf[buflen++] = 0x80; // unit serial number
+             outbuf[buflen++] = 0x83; // device identification
+-            if (s->drive_kind == SCSI_HD) {
++            if (s->qdev.type == TYPE_DISK) {
+                 outbuf[buflen++] = 0xb0; // block limits
+                 outbuf[buflen++] = 0xb2; // thin provisioning
+             }
+@@ -471,7 +468,7 @@ static int scsi_disk_emulate_inquiry(SCSIRequest *req, uint8_t *outbuf)
+             unsigned int opt_io_size =
+                     s->qdev.conf.opt_io_size / s->qdev.blocksize;
+ 
+-            if (s->drive_kind == SCSI_CD) {
++            if (s->qdev.type == TYPE_ROM) {
+                 DPRINTF("Inquiry (EVPD[%02X] not supported for CDROM\n",
+                         page_code);
+                 return -1;
+@@ -541,12 +538,11 @@ static int scsi_disk_emulate_inquiry(SCSIRequest *req, uint8_t *outbuf)
+         return buflen;
+     }
+ 
+-    if (s->drive_kind == SCSI_CD) {
+-        outbuf[0] = 5;
++    outbuf[0] = s->qdev.type & 0x1f;
++    if (s->qdev.type == TYPE_ROM) {
+         outbuf[1] = 0x80;
+         memcpy(&outbuf[16], "QEMU CD-ROM     ", 16);
+     } else {
+-        outbuf[0] = 0;
+         outbuf[1] = s->removable ? 0x80 : 0;
+         memcpy(&outbuf[16], "QEMU HARDDISK   ", 16);
+     }
+@@ -672,7 +668,7 @@ static int mode_sense_page(SCSIRequest *req, int page, uint8_t *p,
+         return p[1] + 2;
+ 
+     case 0x2a: /* CD Capabilities and Mechanical Status page. */
+-        if (s->drive_kind != SCSI_CD)
++        if (s->qdev.type != TYPE_ROM)
+             return 0;
+         p[0] = 0x2a;
+         p[1] = 0x14;
+@@ -888,7 +884,7 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r, uint8_t *outbuf)
+             goto illegal_request;
+         break;
+     case START_STOP:
+-        if (s->drive_kind == SCSI_CD && (req->cmd.buf[4] & 2)) {
++        if (s->qdev.type == TYPE_ROM && (req->cmd.buf[4] & 2)) {
+             /* load/eject medium */
+             bdrv_eject(s->bs, !(req->cmd.buf[4] & 1));
+         }
+@@ -1200,12 +1196,12 @@ static void scsi_destroy(SCSIDevice *dev)
+     blockdev_mark_auto_del(s->qdev.conf.bs);
+ }
+ 
+-static int scsi_initfn(SCSIDevice *dev, SCSIDriveKind kind)
++static int scsi_initfn(SCSIDevice *dev, uint8_t scsi_type)
+ {
+     SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, dev);
+     DriveInfo *dinfo;
+ 
+-    if (kind == SCSI_CD) {
++    if (scsi_type == TYPE_ROM) {
+         error_report("scsi-disk: cdrom emulation is not supported");
+         return -1;
+     }
+@@ -1215,9 +1211,8 @@ static int scsi_initfn(SCSIDevice *dev, SCSIDriveKind kind)
+         return -1;
+     }
+     s->bs = s->qdev.conf.bs;
+-    s->drive_kind = kind;
+ 
+-    if (kind == SCSI_HD && !bdrv_is_inserted(s->bs)) {
++    if (scsi_type == TYPE_DISK && !bdrv_is_inserted(s->bs)) {
+         error_report("Device needs media, but drive is empty");
+         return -1;
+     }
+@@ -1239,43 +1234,46 @@ static int scsi_initfn(SCSIDevice *dev, SCSIDriveKind kind)
+         return -1;
+     }
+ 
+-    if (kind == SCSI_CD) {
++    if (scsi_type == TYPE_ROM) {
+         s->qdev.blocksize = 2048;
+-    } else {
++    } else if (scsi_type == TYPE_DISK) {
+         s->qdev.blocksize = s->qdev.conf.logical_block_size;
++    } else {
++        error_report("scsi-disk: Unhandled SCSI type %02x", scsi_type);
++        return -1;
+     }
+     s->cluster_size = s->qdev.blocksize / 512;
+     s->bs->buffer_alignment = s->qdev.blocksize;
+ 
+-    s->qdev.type = TYPE_DISK;
++    s->qdev.type = scsi_type;
+     qemu_add_vm_change_state_handler(scsi_dma_restart_cb, s);
+-    bdrv_set_removable(s->bs, kind == SCSI_CD);
++    bdrv_set_removable(s->bs, scsi_type == TYPE_ROM);
+     add_boot_device_path(s->qdev.conf.bootindex, &dev->qdev, ",0");
+     return 0;
+ }
+ 
+ static int scsi_hd_initfn(SCSIDevice *dev)
+ {
+-    return scsi_initfn(dev, SCSI_HD);
++    return scsi_initfn(dev, TYPE_DISK);
+ }
+ 
+ static int scsi_cd_initfn(SCSIDevice *dev)
+ {
+-    return scsi_initfn(dev, SCSI_CD);
++    return scsi_initfn(dev, TYPE_ROM);
+ }
+ 
+ static int scsi_disk_initfn(SCSIDevice *dev)
+ {
+-    SCSIDriveKind kind;
++    uint8_t scsi_type;
+ 
+     if (!dev->conf.bs) {
+-        kind = SCSI_HD;         /* will die in scsi_initfn() */
++        scsi_type = TYPE_DISK;  /* will die in scsi_initfn() */
+     } else {
+-        kind = bdrv_get_type_hint(dev->conf.bs) == BDRV_TYPE_CDROM
+-            ? SCSI_CD : SCSI_HD;
++        scsi_type = bdrv_get_type_hint(dev->conf.bs) == BDRV_TYPE_CDROM
++            ? TYPE_ROM : TYPE_DISK;
+     }
+ 
+-    return scsi_initfn(dev, kind);
++    return scsi_initfn(dev, scsi_type);
+ }
+ 
+ #define DEFINE_SCSI_DISK_PROPERTIES()                           \
+-- 
+1.7.4.4
+

@@ -1,0 +1,285 @@
+From c093270edfd6eab02b0b2d870e05fd312461cf24 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:19 +0200
+Subject: [PATCH 44/76] block: Generalize change_cb() to BlockDevOps
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-37-git-send-email-armbru@redhat.com>
+Patchwork-id: 33620
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 36/68] block: Generalize change_cb() to BlockDevOps
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+So we can more easily add device model callbacks.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 0e49de5232f47c9e58adb82c28d4f42be933d891)
+
+Conflicts:
+
+	block_int.h
+	hw/ide/core.c
+	hw/virtio-blk.c
+
+Conflicts because we lack commit 6ced55a5 ide: Turn drive serial into
+a qdev property ide-drive.serial, commit 1f56e32a ide: Split qdev
+"ide-drive" into "ide-hd" and "ide-cd", and commit a8686a9b
+virtio-blk: Turn drive serial into a qdev property.
+---
+ block.c         |   43 +++++++++++++++++++++----------------------
+ block.h         |    9 ++++++---
+ block_int.h     |    5 ++---
+ hw/ide/core.c   |    6 +++++-
+ hw/sd.c         |    6 +++++-
+ hw/virtio-blk.c |    6 +++++-
+ 6 files changed, 44 insertions(+), 31 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ block.c         |   43 +++++++++++++++++++++----------------------
+ block.h         |    9 ++++++---
+ block_int.h     |    5 ++---
+ hw/ide/core.c   |    6 +++++-
+ hw/sd.c         |    6 +++++-
+ hw/virtio-blk.c |    6 +++++-
+ 6 files changed, 44 insertions(+), 31 deletions(-)
+
+diff --git a/block.c b/block.c
+index b5477d1..d402660 100644
+--- a/block.c
++++ b/block.c
+@@ -43,6 +43,7 @@
+ #include <windows.h>
+ #endif
+ 
++static void bdrv_dev_change_cb(BlockDriverState *bs, int reason);
+ static BlockDriverAIOCB *bdrv_aio_readv_em(BlockDriverState *bs,
+         int64_t sector_num, QEMUIOVector *qiov, int nb_sectors,
+         BlockDriverCompletionFunc *cb, void *opaque);
+@@ -625,10 +626,8 @@ int bdrv_open(BlockDriverState *bs, const char *filename, int flags,
+     }
+ 
+     if (!bdrv_key_required(bs)) {
+-        /* call the change callback */
+         bs->media_changed = 1;
+-        if (bs->change_cb)
+-            bs->change_cb(bs->change_opaque, CHANGE_MEDIA);
++        bdrv_dev_change_cb(bs, CHANGE_MEDIA);
+     }
+ 
+     return 0;
+@@ -663,10 +662,8 @@ void bdrv_close(BlockDriverState *bs)
+             bdrv_close(bs->file);
+         }
+ 
+-        /* call the change callback */
+         bs->media_changed = 1;
+-        if (bs->change_cb)
+-            bs->change_cb(bs->change_opaque, CHANGE_MEDIA);
++        bdrv_dev_change_cb(bs, CHANGE_MEDIA);
+     }
+ }
+ 
+@@ -728,8 +725,8 @@ void bdrv_detach_dev(BlockDriverState *bs, void *dev)
+ {
+     assert(bs->dev == dev);
+     bs->dev = NULL;
+-    bs->change_cb = NULL;
+-    bs->change_opaque = NULL;
++    bs->dev_ops = NULL;
++    bs->dev_opaque = NULL;
+ }
+ 
+ /* TODO change to return DeviceState * when all users are qdevified */
+@@ -738,6 +735,20 @@ void *bdrv_get_attached_dev(BlockDriverState *bs)
+     return bs->dev;
+ }
+ 
++void bdrv_set_dev_ops(BlockDriverState *bs, const BlockDevOps *ops,
++                      void *opaque)
++{
++    bs->dev_ops = ops;
++    bs->dev_opaque = opaque;
++}
++
++static void bdrv_dev_change_cb(BlockDriverState *bs, int reason)
++{
++    if (bs->dev_ops && bs->dev_ops->change_cb) {
++        bs->dev_ops->change_cb(bs->dev_opaque, reason);
++    }
++}
++
+ /*
+  * Run consistency checks on an image
+  *
+@@ -1124,9 +1135,7 @@ int bdrv_truncate(BlockDriverState *bs, int64_t offset)
+     ret = drv->bdrv_truncate(bs, offset);
+     if (ret == 0) {
+         ret = refresh_total_sectors(bs, offset >> BDRV_SECTOR_BITS);
+-        if (bs->change_cb) {
+-            bs->change_cb(bs->change_opaque, CHANGE_SIZE);
+-        }
++        bdrv_dev_change_cb(bs, CHANGE_SIZE);
+     }
+     return ret;
+ }
+@@ -1351,15 +1360,6 @@ int bdrv_enable_write_cache(BlockDriverState *bs)
+     return bs->enable_write_cache;
+ }
+ 
+-/* XXX: no longer used */
+-void bdrv_set_change_cb(BlockDriverState *bs,
+-                        void (*change_cb)(void *opaque, int reason),
+-                        void *opaque)
+-{
+-    bs->change_cb = change_cb;
+-    bs->change_opaque = opaque;
+-}
+-
+ int bdrv_is_encrypted(BlockDriverState *bs)
+ {
+     if (bs->backing_hd && bs->backing_hd->encrypted)
+@@ -1398,8 +1398,7 @@ int bdrv_set_key(BlockDriverState *bs, const char *key)
+         bs->valid_key = 1;
+         /* call the change callback now, we skipped it on open */
+         bs->media_changed = 1;
+-        if (bs->change_cb)
+-            bs->change_cb(bs->change_opaque, CHANGE_MEDIA);
++        bdrv_dev_change_cb(bs, CHANGE_MEDIA);
+     }
+     return ret;
+ }
+diff --git a/block.h b/block.h
+index 73a3c49..50825bf 100644
+--- a/block.h
++++ b/block.h
+@@ -25,6 +25,10 @@ typedef struct QEMUSnapshotInfo {
+     uint64_t vm_clock_nsec; /* VM clock relative to boot */
+ } QEMUSnapshotInfo;
+ 
++typedef struct BlockDevOps {
++    void (*change_cb)(void *opaque, int reason);
++} BlockDevOps;
++
+ #define BDRV_O_RDWR        0x0002
+ #define BDRV_O_CREAT       0x0004 /* create an empty file */
+ #define BDRV_O_SNAPSHOT    0x0008 /* open the file read only and save writes in a snapshot */
+@@ -81,6 +85,8 @@ int bdrv_attach_dev(BlockDriverState *bs, void *dev);
+ void bdrv_attach_dev_nofail(BlockDriverState *bs, void *dev);
+ void bdrv_detach_dev(BlockDriverState *bs, void *dev);
+ void *bdrv_get_attached_dev(BlockDriverState *bs);
++void bdrv_set_dev_ops(BlockDriverState *bs, const BlockDevOps *ops,
++                      void *opaque);
+ int bdrv_read(BlockDriverState *bs, int64_t sector_num,
+               uint8_t *buf, int nb_sectors);
+ int bdrv_write(BlockDriverState *bs, int64_t sector_num,
+@@ -192,9 +198,6 @@ int bdrv_media_changed(BlockDriverState *bs);
+ int bdrv_is_locked(BlockDriverState *bs);
+ void bdrv_set_locked(BlockDriverState *bs, int locked);
+ int bdrv_eject(BlockDriverState *bs, int eject_flag);
+-void bdrv_set_change_cb(BlockDriverState *bs,
+-                        void (*change_cb)(void *opaque, int reason),
+-                        void *opaque);
+ void bdrv_get_format(BlockDriverState *bs, char *buf, int buf_size);
+ BlockDriverState *bdrv_find(const char *name);
+ BlockDriverState *bdrv_next(BlockDriverState *bs);
+diff --git a/block_int.h b/block_int.h
+index ab7fa1a..6a978e7 100644
+--- a/block_int.h
++++ b/block_int.h
+@@ -154,15 +154,14 @@ struct BlockDriverState {
+     int valid_key; /* if true, a valid encryption key has been set */
+     int sg;        /* if true, the device is a /dev/sg* */
+     int copy_on_read; /* if true, copy read backing sectors into image */
+-    /* event callback when inserting/removing */
+-    void (*change_cb)(void *opaque, int reason);
+-    void *change_opaque;
+ 
+     BlockDriver *drv; /* NULL means no media */
+     void *opaque;
+ 
+     void *dev;                  /* attached device model, if any */
+     /* TODO change to DeviceState when all users are qdevified */
++    const BlockDevOps *dev_ops;
++    void *dev_opaque;
+ 
+     char filename[1024];
+     char backing_file[1024]; /* if non zero, the image is a diff of
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index b40db8c..afa2831 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -1753,6 +1753,10 @@ void ide_bus_reset(IDEBus *bus)
+     ide_clear_hob(bus);
+ }
+ 
++static const BlockDevOps ide_cd_block_ops = {
++    .change_cb = cdrom_change_cb,
++};
++
+ int ide_init_drive(IDEState *s, BlockDriverState *bs, const char *version)
+ {
+     int cylinders, heads, secs;
+@@ -1785,7 +1789,7 @@ int ide_init_drive(IDEState *s, BlockDriverState *bs, const char *version)
+     s->smart_selftest_count = 0;
+     if (bdrv_get_type_hint(bs) == BDRV_TYPE_CDROM) {
+         s->drive_kind = IDE_CD;
+-        bdrv_set_change_cb(bs, cdrom_change_cb, s);
++        bdrv_set_dev_ops(bs, &ide_cd_block_ops, s);
+         s->bs->buffer_alignment = 2048;
+     } else {
+         if (bdrv_is_read_only(bs)) {
+diff --git a/hw/sd.c b/hw/sd.c
+index 785bd3c..87839ed 100644
+--- a/hw/sd.c
++++ b/hw/sd.c
+@@ -437,6 +437,10 @@ static void sd_cardchange(void *opaque, int reason)
+     }
+ }
+ 
++static const BlockDevOps sd_block_ops = {
++    .change_cb = sd_cardchange,
++};
++
+ /* We do not model the chip select pin, so allow the board to select
+    whether card should be in SSI or MMC/SD mode.  It is also up to the
+    board to ensure that ssi transfers only occur when the chip select
+@@ -452,7 +456,7 @@ SDState *sd_init(BlockDriverState *bs, int is_spi)
+     sd_reset(sd, bs);
+     if (sd->bdrv) {
+         bdrv_attach_dev_nofail(sd->bdrv, sd);
+-        bdrv_set_change_cb(sd->bdrv, sd_cardchange, sd);
++        bdrv_set_dev_ops(sd->bdrv, &sd_block_ops, sd);
+     }
+     return sd;
+ }
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index 6da6f7d..34da8e5 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -548,6 +548,10 @@ static void virtio_blk_change_cb(void *opaque, int reason)
+     }
+ }
+ 
++static const BlockDevOps virtio_block_ops = {
++    .change_cb = virtio_blk_change_cb,
++};
++
+ VirtIODevice *virtio_blk_init(DeviceState *dev, BlockConf *conf)
+ {
+     VirtIOBlock *s;
+@@ -582,7 +586,7 @@ VirtIODevice *virtio_blk_init(DeviceState *dev, BlockConf *conf)
+     register_savevm(dev, "virtio-blk", virtio_blk_id++, 2,
+                     virtio_blk_save, virtio_blk_load, s);
+     bdrv_set_removable(s->bs, 0);
+-    bdrv_set_change_cb(s->bs, virtio_blk_change_cb, s);
++    bdrv_set_dev_ops(s->bs, &virtio_block_ops, s);
+     s->bs->buffer_alignment = conf->logical_block_size;
+ 
+     add_boot_device_path(conf->bootindex, dev, "/disk@0,0");
+-- 
+1.7.4.4
+

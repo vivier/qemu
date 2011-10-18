@@ -1,0 +1,197 @@
+From 1fff2492b1c8f493190511cc13110d0c4ac19e56 Mon Sep 17 00:00:00 2001
+From: ddugger@redhat.com <ddugger@redhat.com>
+Date: Wed, 21 Sep 2011 04:59:53 +0200
+Subject: [PATCH 04/76] bz716261: Synchronize kernel headers
+
+RH-Author: ddugger@redhat.com
+Message-id: <1316581195-18779-5-git-send-email-ddugger@redhat.com>
+Patchwork-id: 33032
+O-Subject: [RHEL 6.2 PATCH 4/6 V3] bz716261: Synchronize kernel headers
+Bugzilla: 716261
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+
+From: n0ano@n0ano.com <n0ano@n0ano.com>
+
+    Synchronize kernel headers
+
+    commit e30221a8515fd6a527b3ef1640d7c649c11722ef
+
+    Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+Signed-off-by: Don Dugger <donald.d.dugger@intel.com>
+---
+ kvm/include/linux/kvm.h   |   45 ++++++++++++++++++++++++++++++++++++++++++++-
+ kvm/include/x86/asm/kvm.h |   39 ++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 82 insertions(+), 2 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ kvm/include/linux/kvm.h   |   45 ++++++++++++++++++++++++++++++++++++++++++++-
+ kvm/include/x86/asm/kvm.h |   39 ++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 82 insertions(+), 2 deletions(-)
+
+diff --git a/kvm/include/linux/kvm.h b/kvm/include/linux/kvm.h
+index 3fd3371..e61104e 100644
+--- a/kvm/include/linux/kvm.h
++++ b/kvm/include/linux/kvm.h
+@@ -103,7 +103,7 @@ struct kvm_userspace_memory_region {
+ 
+ /* for kvm_memory_region::flags */
+ #define KVM_MEM_LOG_DIRTY_PAGES  1UL
+-
++#define KVM_MEMSLOT_INVALID      (1UL << 1)
+ 
+ /* for KVM_IRQ_LINE */
+ struct kvm_irq_level {
+@@ -160,6 +160,7 @@ struct kvm_pit_config {
+ #define KVM_EXIT_DCR              15
+ #define KVM_EXIT_NMI              16
+ #define KVM_EXIT_INTERNAL_ERROR   17
++#define KVM_EXIT_OSI              18
+ 
+ /* For KVM_EXIT_INTERNAL_ERROR */
+ #define KVM_INTERNAL_ERROR_EMULATION 1
+@@ -259,6 +260,10 @@ struct kvm_run {
+ 			__u32 ndata;
+ 			__u64 data[16];
+ 		} internal;
++		/* KVM_EXIT_OSI */
++		struct {
++			__u64 gprs[32];
++		} osi;
+ 		/* Fix the size of the union. */
+ 		char padding[256];
+ 	};
+@@ -400,6 +405,15 @@ struct kvm_ioeventfd {
+ 	__u8  pad[36];
+ };
+ 
++/* for KVM_ENABLE_CAP */
++struct kvm_enable_cap {
++	/* in */
++	__u32 cap;
++	__u32 flags;
++	__u64 args[4];
++	__u8  pad[64];
++};
++
+ #define KVMIO 0xAE
+ 
+ /*
+@@ -497,6 +511,25 @@ struct kvm_ioeventfd {
+ #endif
+ #define KVM_CAP_S390_PSW 42
+ #define KVM_CAP_PPC_SEGSTATE 43
++#define KVM_CAP_HYPERV 44
++#define KVM_CAP_HYPERV_VAPIC 45
++#define KVM_CAP_HYPERV_SPIN 46
++ #define KVM_CAP_PCI_SEGMENT 47
++#define KVM_CAP_PPC_PAIRED_SINGLES 48
++#define KVM_CAP_INTR_SHADOW 49
++#ifdef __KVM_HAVE_DEBUGREGS
++#define KVM_CAP_DEBUGREGS 50
++#endif
++#define KVM_CAP_X86_ROBUST_SINGLESTEP 51
++#define KVM_CAP_PPC_OSI 52
++#define KVM_CAP_PPC_UNSET_IRQ 53
++#define KVM_CAP_ENABLE_CAP 54
++#ifdef __KVM_HAVE_XSAVE
++#define KVM_CAP_XSAVE 55
++#endif
++#ifdef __KVM_HAVE_XCRS
++#define KVM_CAP_XCRS 56
++#endif
+ 
+ #ifdef KVM_CAP_IRQ_ROUTING
+ 
+@@ -683,6 +716,16 @@ struct kvm_clock_data {
+ /* Available with KVM_CAP_VCPU_EVENTS */
+ #define KVM_GET_VCPU_EVENTS       _IOR(KVMIO,  0x9f, struct kvm_vcpu_events)
+ #define KVM_SET_VCPU_EVENTS       _IOW(KVMIO,  0xa0, struct kvm_vcpu_events)
++/* Available with KVM_CAP_DEBUGREGS */
++#define KVM_GET_DEBUGREGS         _IOR(KVMIO,  0xa1, struct kvm_debugregs)
++#define KVM_SET_DEBUGREGS         _IOW(KVMIO,  0xa2, struct kvm_debugregs)
++#define KVM_ENABLE_CAP            _IOW(KVMIO,  0xa3, struct kvm_enable_cap)
++/* Available with KVM_CAP_XSAVE */
++#define KVM_GET_XSAVE		  _IOR(KVMIO,  0xa4, struct kvm_xsave)
++#define KVM_SET_XSAVE		  _IOW(KVMIO,  0xa5, struct kvm_xsave)
++/* Available with KVM_CAP_XCRS */
++#define KVM_GET_XCRS		  _IOR(KVMIO,  0xa6, struct kvm_xcrs)
++#define KVM_SET_XCRS		  _IOW(KVMIO,  0xa7, struct kvm_xcrs)
+ 
+ #define KVM_DEV_ASSIGN_ENABLE_IOMMU	(1 << 0)
+ 
+diff --git a/kvm/include/x86/asm/kvm.h b/kvm/include/x86/asm/kvm.h
+index f46b79f..4d8dcbd 100644
+--- a/kvm/include/x86/asm/kvm.h
++++ b/kvm/include/x86/asm/kvm.h
+@@ -21,6 +21,9 @@
+ #define __KVM_HAVE_PIT_STATE2
+ #define __KVM_HAVE_XEN_HVM
+ #define __KVM_HAVE_VCPU_EVENTS
++#define __KVM_HAVE_DEBUGREGS
++#define __KVM_HAVE_XSAVE
++#define __KVM_HAVE_XCRS
+ 
+ /* Architectural interrupt line count. */
+ #define KVM_NR_INTERRUPTS 256
+@@ -257,6 +260,11 @@ struct kvm_reinject_control {
+ /* When set in flags, include corresponding fields on KVM_SET_VCPU_EVENTS */
+ #define KVM_VCPUEVENT_VALID_NMI_PENDING	0x00000001
+ #define KVM_VCPUEVENT_VALID_SIPI_VECTOR	0x00000002
++#define KVM_VCPUEVENT_VALID_SHADOW	0x00000004
++
++/* Interrupt shadow states */
++#define KVM_X86_SHADOW_INT_MOV_SS	0x01
++#define KVM_X86_SHADOW_INT_STI		0x02
+ 
+ /* for KVM_GET/SET_VCPU_EVENTS */
+ struct kvm_vcpu_events {
+@@ -271,7 +279,7 @@ struct kvm_vcpu_events {
+ 		__u8 injected;
+ 		__u8 nr;
+ 		__u8 soft;
+-		__u8 pad;
++		__u8 shadow;
+ 	} interrupt;
+ 	struct {
+ 		__u8 injected;
+@@ -284,4 +292,33 @@ struct kvm_vcpu_events {
+ 	__u32 reserved[10];
+ };
+ 
++/* for KVM_GET/SET_DEBUGREGS */
++struct kvm_debugregs {
++	__u64 db[4];
++	__u64 dr6;
++	__u64 dr7;
++	__u64 flags;
++	__u64 reserved[9];
++};
++
++/* for KVM_CAP_XSAVE */
++struct kvm_xsave {
++	__u32 region[1024];
++};
++
++#define KVM_MAX_XCRS	16
++
++struct kvm_xcr {
++	__u32 xcr;
++	__u32 reserved;
++	__u64 value;
++};
++
++struct kvm_xcrs {
++	__u32 nr_xcrs;
++	__u32 flags;
++	struct kvm_xcr xcrs[KVM_MAX_XCRS];
++	__u64 padding[16];
++};
++
+ #endif /* _ASM_X86_KVM_H */
+-- 
+1.7.4.4
+

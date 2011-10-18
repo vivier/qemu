@@ -1,0 +1,179 @@
+From 18e6c9eb70efba27632c100a1d4506ea6d53627d Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:49 +0200
+Subject: [PATCH 74/76] block: Show whether the virtual tray is open in info
+ block
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-67-git-send-email-armbru@redhat.com>
+Patchwork-id: 33647
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 66/68] block: Show whether the virtual tray is open in info block
+Bugzilla: 723270
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Need to ask the device, so this requires new BlockDevOps member
+is_tray_open().
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit e4def80b36231e161b91fa984cd0d73b45668f00)
+---
+ block.c         |   18 ++++++++++++++++--
+ block.h         |    6 ++++++
+ hw/ide/core.c   |    6 ++++++
+ hw/scsi-disk.c  |    6 ++++++
+ qemu-monitor.hx |    2 ++
+ 5 files changed, 36 insertions(+), 2 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ block.c         |   18 ++++++++++++++++--
+ block.h         |    6 ++++++
+ hw/ide/core.c   |    6 ++++++
+ hw/scsi-disk.c  |    6 ++++++
+ qemu-monitor.hx |    2 ++
+ 5 files changed, 36 insertions(+), 2 deletions(-)
+
+diff --git a/block.c b/block.c
+index dc2c4ea..0603914 100644
+--- a/block.c
++++ b/block.c
+@@ -755,6 +755,14 @@ bool bdrv_dev_has_removable_media(BlockDriverState *bs)
+     return !bs->dev || (bs->dev_ops && bs->dev_ops->change_media_cb);
+ }
+ 
++bool bdrv_dev_is_tray_open(BlockDriverState *bs)
++{
++    if (bs->dev_ops && bs->dev_ops->is_tray_open) {
++        return bs->dev_ops->is_tray_open(bs->dev_opaque);
++    }
++    return false;
++}
++
+ static void bdrv_dev_resize_cb(BlockDriverState *bs)
+ {
+     if (bs->dev_ops && bs->dev_ops->resize_cb) {
+@@ -1631,8 +1639,9 @@ static void bdrv_print_dict(QObject *obj, void *opaque)
+ 
+     if (qdict_get_bool(bs_dict, "removable")) {
+         monitor_printf(mon, " locked=%d", qdict_get_bool(bs_dict, "locked"));
++        monitor_printf(mon, " tray-open=%d",
++                       qdict_get_bool(bs_dict, "tray-open"));
+     }
+-
+     if (qdict_haskey(bs_dict, "inserted")) {
+         QDict *qdict = qobject_to_qdict(qdict_get(bs_dict, "inserted"));
+ 
+@@ -1667,16 +1676,21 @@ void bdrv_info(Monitor *mon, QObject **ret_data)
+ 
+     QTAILQ_FOREACH(bs, &bdrv_states, list) {
+         QObject *bs_obj;
++        QDict *bs_dict;
+ 
+         bs_obj = qobject_from_jsonf("{ 'device': %s, 'type': 'unknown', "
+                                     "'removable': %i, 'locked': %i }",
+                                     bs->device_name,
+                                     bdrv_dev_has_removable_media(bs),
+                                     bdrv_dev_is_medium_locked(bs));
++        bs_dict = qobject_to_qdict(bs_obj);
+ 
++        if (bdrv_dev_has_removable_media(bs)) {
++            qdict_put(bs_dict, "tray-open",
++                      qbool_from_int(bdrv_dev_is_tray_open(bs)));
++        }
+         if (bs->drv) {
+             QObject *obj;
+-            QDict *bs_dict = qobject_to_qdict(bs_obj);
+ 
+             obj = qobject_from_jsonf("{ 'file': %s, 'ro': %i, 'drv': %s, "
+                                      "'encrypted': %i }",
+diff --git a/block.h b/block.h
+index b5e73ca..a73a5dc 100644
+--- a/block.h
++++ b/block.h
+@@ -35,6 +35,11 @@ typedef struct BlockDevOps {
+      */
+     void (*change_media_cb)(void *opaque);
+     /*
++     * Is the virtual tray open?
++     * Device models implement this only when the device has a tray.
++     */
++    bool (*is_tray_open)(void *opaque);
++    /*
+      * Is the virtual medium locked into the device?
+      * Device models implement this only when device has such a lock.
+      */
+@@ -104,6 +109,7 @@ void *bdrv_get_attached_dev(BlockDriverState *bs);
+ void bdrv_set_dev_ops(BlockDriverState *bs, const BlockDevOps *ops,
+                       void *opaque);
+ bool bdrv_dev_has_removable_media(BlockDriverState *bs);
++bool bdrv_dev_is_tray_open(BlockDriverState *bs);
+ bool bdrv_dev_is_medium_locked(BlockDriverState *bs);
+ int bdrv_read(BlockDriverState *bs, int64_t sector_num,
+               uint8_t *buf, int nb_sectors);
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index cfb17c1..a65561e 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -1806,6 +1806,11 @@ void ide_bus_reset(IDEBus *bus)
+     ide_clear_hob(bus);
+ }
+ 
++static bool ide_cd_is_tray_open(void *opaque)
++{
++    return ((IDEState *)opaque)->tray_open;
++}
++
+ static bool ide_cd_is_medium_locked(void *opaque)
+ {
+     return ((IDEState *)opaque)->tray_locked;
+@@ -1813,6 +1818,7 @@ static bool ide_cd_is_medium_locked(void *opaque)
+ 
+ static const BlockDevOps ide_cd_block_ops = {
+     .change_media_cb = ide_cd_change_cb,
++    .is_tray_open = ide_cd_is_tray_open,
+     .is_medium_locked = ide_cd_is_medium_locked,
+ };
+ 
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index 8cc2b3e..fd0ee72 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -1199,6 +1199,11 @@ static void scsi_cd_change_media_cb(void *opaque)
+ {
+ }
+ 
++static bool scsi_cd_is_tray_open(void *opaque)
++{
++    return ((SCSIDiskState *)opaque)->tray_open;
++}
++
+ static bool scsi_cd_is_medium_locked(void *opaque)
+ {
+     return ((SCSIDiskState *)opaque)->tray_locked;
+@@ -1206,6 +1211,7 @@ static bool scsi_cd_is_medium_locked(void *opaque)
+ 
+ static const BlockDevOps scsi_cd_block_ops = {
+     .change_media_cb = scsi_cd_change_media_cb,
++    .is_tray_open = scsi_cd_is_tray_open,
+     .is_medium_locked = scsi_cd_is_medium_locked,
+ };
+ 
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index 0ad3ea0..72e38dc 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -2230,6 +2230,8 @@ Each json-object contain the following:
+          - Possible values: "unknown"
+ - "removable": true if the device is removable, false otherwise (json-bool)
+ - "locked": true if the device is locked, false otherwise (json-bool)
++- "tray-open": only present if removable, true if the device has a tray,
++               and it is open (json-bool)
+ - "inserted": only present if the device is inserted, it is a json-object
+    containing the following:
+          - "file": device file name (json-string)
+-- 
+1.7.4.4
+

@@ -1,0 +1,65 @@
+From 4b5d64df2062afcacc9f9a53c1485ef52d556ad2 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:23:44 +0200
+Subject: [PATCH 09/76] blockdev: Belatedly remove driveopts
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-2-git-send-email-armbru@redhat.com>
+Patchwork-id: 33600
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 01/68] blockdev: Belatedly remove driveopts
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Unused since commit 9dfd7c7a.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit f274776028ddb026f8891cabaf59bd58dbfc31bd)
+
+Conflicts:
+
+	sysemu.h
+	vl.c
+
+Conflicts because we mindlessly moved driveopts in commit 6e2c45d5.
+Should have removed it before that.
+---
+ blockdev.c |    1 -
+ blockdev.h |    1 -
+ 2 files changed, 0 insertions(+), 2 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ blockdev.c |    1 -
+ blockdev.h |    1 -
+ 2 files changed, 0 insertions(+), 2 deletions(-)
+
+diff --git a/blockdev.c b/blockdev.c
+index a6e965e..7b69aba 100644
+--- a/blockdev.c
++++ b/blockdev.c
+@@ -19,7 +19,6 @@
+ #include "qjson.h"
+ 
+ struct drivelist drives = QTAILQ_HEAD_INITIALIZER(drives);
+-struct driveoptlist driveopts = QTAILQ_HEAD_INITIALIZER(driveopts);
+ DriveInfo *extboot_drive = NULL;
+ 
+ static const char *const if_name[IF_COUNT] = {
+diff --git a/blockdev.h b/blockdev.h
+index 5b98377..11cde50 100644
+--- a/blockdev.h
++++ b/blockdev.h
+@@ -44,7 +44,6 @@ typedef struct DriveInfo {
+ } DriveInfo;
+ 
+ extern QTAILQ_HEAD(drivelist, DriveInfo) drives;
+-extern QTAILQ_HEAD(driveoptlist, DriveOpt) driveopts;
+ extern DriveInfo *extboot_drive;
+ 
+ extern DriveInfo *drive_get(BlockInterfaceType type, int bus, int unit);
+-- 
+1.7.4.4
+

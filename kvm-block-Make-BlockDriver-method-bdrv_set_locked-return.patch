@@ -1,0 +1,115 @@
+From ecf1f743624ff220b022e85829d5b29f1390375c Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:06 +0200
+Subject: [PATCH 31/76] block: Make BlockDriver method bdrv_set_locked()
+ return void
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-24-git-send-email-armbru@redhat.com>
+Patchwork-id: 33606
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 23/68] block: Make BlockDriver method bdrv_set_locked() return void
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+The only caller is bdrv_set_locked(), and it ignores the value.
+
+Callees always return 0, except for FreeBSD's cdrom_set_locked(),
+which returns -ENOTSUP when the device is in a terminally wedged
+state.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 7bf37feddcfa527304cfdc02bd2db8912ee9bf8c)
+---
+ block/raw-posix.c |   10 +++-------
+ block/raw.c       |    3 +--
+ block_int.h       |    2 +-
+ 3 files changed, 5 insertions(+), 10 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ block/raw-posix.c |   10 +++-------
+ block/raw.c       |    3 +--
+ block_int.h       |    2 +-
+ 3 files changed, 5 insertions(+), 10 deletions(-)
+
+diff --git a/block/raw-posix.c b/block/raw-posix.c
+index c966044..df9a636 100644
+--- a/block/raw-posix.c
++++ b/block/raw-posix.c
+@@ -1224,7 +1224,7 @@ static int cdrom_eject(BlockDriverState *bs, int eject_flag)
+     return 0;
+ }
+ 
+-static int cdrom_set_locked(BlockDriverState *bs, int locked)
++static void cdrom_set_locked(BlockDriverState *bs, int locked)
+ {
+     BDRVRawState *s = bs->opaque;
+ 
+@@ -1235,8 +1235,6 @@ static int cdrom_set_locked(BlockDriverState *bs, int locked)
+          */
+         /* perror("CDROM_LOCKDOOR"); */
+     }
+-
+-    return 0;
+ }
+ 
+ static BlockDriver bdrv_host_cdrom = {
+@@ -1345,12 +1343,12 @@ static int cdrom_eject(BlockDriverState *bs, int eject_flag)
+     return 0;
+ }
+ 
+-static int cdrom_set_locked(BlockDriverState *bs, int locked)
++static void cdrom_set_locked(BlockDriverState *bs, int locked)
+ {
+     BDRVRawState *s = bs->opaque;
+ 
+     if (s->fd < 0)
+-        return -ENOTSUP;
++        return;
+     if (ioctl(s->fd, (locked ? CDIOCPREVENT : CDIOCALLOW)) < 0) {
+         /*
+          * Note: an error can happen if the distribution automatically
+@@ -1358,8 +1356,6 @@ static int cdrom_set_locked(BlockDriverState *bs, int locked)
+          */
+         /* perror("CDROM_LOCKDOOR"); */
+     }
+-
+-    return 0;
+ }
+ 
+ static BlockDriver bdrv_host_cdrom = {
+diff --git a/block/raw.c b/block/raw.c
+index b0f72d6..1398a9c 100644
+--- a/block/raw.c
++++ b/block/raw.c
+@@ -80,10 +80,9 @@ static int raw_eject(BlockDriverState *bs, int eject_flag)
+     return bdrv_eject(bs->file, eject_flag);
+ }
+ 
+-static int raw_set_locked(BlockDriverState *bs, int locked)
++static void raw_set_locked(BlockDriverState *bs, int locked)
+ {
+     bdrv_set_locked(bs->file, locked);
+-    return 0;
+ }
+ 
+ static int raw_ioctl(BlockDriverState *bs, unsigned long int req, void *buf)
+diff --git a/block_int.h b/block_int.h
+index 9c709cf..fcede40 100644
+--- a/block_int.h
++++ b/block_int.h
+@@ -112,7 +112,7 @@ struct BlockDriver {
+     int (*bdrv_is_inserted)(BlockDriverState *bs);
+     int (*bdrv_media_changed)(BlockDriverState *bs);
+     int (*bdrv_eject)(BlockDriverState *bs, int eject_flag);
+-    int (*bdrv_set_locked)(BlockDriverState *bs, int locked);
++    void (*bdrv_set_locked)(BlockDriverState *bs, int locked);
+ 
+     /* to control generic scsi devices */
+     int (*bdrv_ioctl)(BlockDriverState *bs, unsigned long int req, void *buf);
+-- 
+1.7.4.4
+

@@ -1,0 +1,70 @@
+From 3f2aac60b3606167dfe3f432ec7ab26b6b0265a7 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:39 +0200
+Subject: [PATCH 64/76] ide/atapi: Track tray locked state
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-57-git-send-email-armbru@redhat.com>
+Patchwork-id: 33626
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 56/68] ide/atapi: Track tray locked state
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+We already track it in BlockDriverState.  Just like tray open/close
+state, we should track it in the device models instead, because it's
+device state.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit a0a7573b846ae9b346a34f10c4fe4e317b9eebfd)
+---
+ hw/ide/atapi.c    |    4 +++-
+ hw/ide/internal.h |    1 +
+ 2 files changed, 4 insertions(+), 1 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/ide/atapi.c    |    4 +++-
+ hw/ide/internal.h |    1 +
+ 2 files changed, 4 insertions(+), 1 deletions(-)
+
+diff --git a/hw/ide/atapi.c b/hw/ide/atapi.c
+index 48c91f5..1dcce4a 100644
+--- a/hw/ide/atapi.c
++++ b/hw/ide/atapi.c
+@@ -785,8 +785,9 @@ static void cmd_mode_sense(IDEState *s, uint8_t *buf)
+             buf[12] = 0x71;
+             buf[13] = 3 << 5;
+             buf[14] = (1 << 0) | (1 << 3) | (1 << 5);
+-            if (bdrv_is_locked(s->bs))
++            if (s->tray_locked) {
+                 buf[6] |= 1 << 1;
++            }
+             buf[15] = 0x00;
+             cpu_to_ube16(&buf[16], 706);
+             buf[18] = 0;
+@@ -828,6 +829,7 @@ static void cmd_test_unit_ready(IDEState *s, uint8_t *buf)
+ 
+ static void cmd_prevent_allow_medium_removal(IDEState *s, uint8_t* buf)
+ {
++    s->tray_locked = buf[4] & 1;
+     bdrv_set_locked(s->bs, buf[4] & 1);
+     ide_atapi_cmd_ok(s);
+ }
+diff --git a/hw/ide/internal.h b/hw/ide/internal.h
+index 29d01aa..41708e9 100644
+--- a/hw/ide/internal.h
++++ b/hw/ide/internal.h
+@@ -424,6 +424,7 @@ struct IDEState {
+     uint8_t sense_key;
+     uint8_t asc;
+     bool tray_open;
++    bool tray_locked;
+     uint8_t cdrom_changed;
+     int packet_transfer_size;
+     int elementary_transfer_size;
+-- 
+1.7.4.4
+

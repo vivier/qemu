@@ -1,0 +1,80 @@
+From cb15713657d474953fa3ee1b6b7f2ad688c4d348 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:05 +0200
+Subject: [PATCH 30/76] block/raw-win32: Drop disabled code for removable host
+ devices
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-23-git-send-email-armbru@redhat.com>
+Patchwork-id: 33614
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 22/68] block/raw-win32: Drop disabled code for removable host devices
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+It's been disabled since the start (commit 19cb3738, Aug 2006), and
+has been untouched except for spelling fixes and such.  I don't feel
+like dragging it along any further.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 02266d547a6c7b10e1ac1574ec69b92f4e28f817)
+---
+ block/raw-win32.c |   35 -----------------------------------
+ 1 files changed, 0 insertions(+), 35 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ block/raw-win32.c |   35 -----------------------------------
+ 1 files changed, 0 insertions(+), 35 deletions(-)
+
+diff --git a/block/raw-win32.c b/block/raw-win32.c
+index 5650389..f6252b5 100644
+--- a/block/raw-win32.c
++++ b/block/raw-win32.c
+@@ -370,41 +370,6 @@ static int hdev_open(BlockDriverState *bs, const char *filename, int flags)
+     return 0;
+ }
+ 
+-#if 0
+-/***********************************************/
+-/* removable device additional commands */
+-
+-static int raw_is_inserted(BlockDriverState *bs)
+-{
+-    return 1;
+-}
+-
+-static int raw_media_changed(BlockDriverState *bs)
+-{
+-    return -ENOTSUP;
+-}
+-
+-static int raw_eject(BlockDriverState *bs, int eject_flag)
+-{
+-    DWORD ret_count;
+-
+-    if (s->type == FTYPE_FILE)
+-        return -ENOTSUP;
+-    if (eject_flag) {
+-        DeviceIoControl(s->hfile, IOCTL_STORAGE_EJECT_MEDIA,
+-                        NULL, 0, NULL, 0, &lpBytesReturned, NULL);
+-    } else {
+-        DeviceIoControl(s->hfile, IOCTL_STORAGE_LOAD_MEDIA,
+-                        NULL, 0, NULL, 0, &lpBytesReturned, NULL);
+-    }
+-}
+-
+-static int raw_set_locked(BlockDriverState *bs, int locked)
+-{
+-    return -ENOTSUP;
+-}
+-#endif
+-
+ static int hdev_has_zero_init(BlockDriverState *bs)
+ {
+     return 0;
+-- 
+1.7.4.4
+

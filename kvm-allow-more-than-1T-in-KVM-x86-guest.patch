@@ -1,0 +1,94 @@
+From f5348933cccfa14a9c388a9385790bb5732be6a9 Mon Sep 17 00:00:00 2001
+From: Andrea Arcangeli <aarcange@redhat.com>
+Date: Fri, 30 Sep 2011 17:36:50 +0200
+Subject: [PATCH 08/76] allow more than 1T in KVM x86 guest
+
+RH-Author: Andrea Arcangeli <aarcange@redhat.com>
+Message-id: <20110930173650.GP7768@redhat.com>
+Patchwork-id: 33434
+O-Subject: [PATCH RHEL6.2 qemu-kvm] allow more than 1T in KVM x86 guest
+Bugzilla: 743391
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+
+Hello,
+
+This patch should be applied to the qemu-kvm rpm package at the same
+time of the other one for seabios.
+
+https://bugzilla.redhat.com/show_bug.cgi?id=630975
+
+There's a slight issue with migration, you can migrate from a host
+with 48 physical bits to one with less... but frankly migrating more
+than 1T sounds a bit hard, so we can just safely ignore it...
+
+If we get live post-copy-migration as the default we may revisit
+this. Besides it'd be silly to try to migrate 4T KVM guests to a
+destination that handles less. (swapping terabytes, while in theory
+would work isn't so fun)
+
+Basically this shows the guest the same bits of the host, more than 42
+if host allows. This 42 bit limit the comment talks about I've no clue
+what's really about and 4T in fact works just fine with this patch.
+
+===
+Subject: allow more than 1T in KVM x86 guest
+
+From: Andrea Arcangeli <aarcange@redhat.com>
+
+When host supports 48 bits of physical address reflect that in the guest cpuid
+to allow the guest to use more than 1TB of RAM.
+
+The migration code should probably be updated accordingly checking if the size
+of the guest ram is bigger than the migration target cpuid 0x80000008 limit and
+failing migration in that case.
+
+The comment below refers to a 42 bit limit on exec.c, but I didn't identify
+what the comment refers to yet. At least now guest should be able to use 4TB.
+
+Signed-off-by: Andrea Arcangeli <aarcange@redhat.com>
+---
+
+diff --git a/pc-bios/bios.bin b/pc-bios/bios.bin
+index 827327d..e1ccb67 100644
+Binary files a/pc-bios/bios.bin and b/pc-bios/bios.bin differ
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/pc.c              |    1 +
+ target-i386/helper.c |    6 ++++++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/hw/pc.c b/hw/pc.c
+index 7a6bef8..fbaa760 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -302,6 +302,7 @@ static void cmos_init(ram_addr_t ram_size, ram_addr_t above_4g_mem_size,
+         rtc_set_memory(s, 0x5b, (unsigned int)above_4g_mem_size >> 16);
+         rtc_set_memory(s, 0x5c, (unsigned int)above_4g_mem_size >> 24);
+         rtc_set_memory(s, 0x5d, (uint64_t)above_4g_mem_size >> 32);
++        rtc_set_memory(s, 0x5e, (uint64_t)above_4g_mem_size >> 40);
+     }
+ 
+     if (ram_size > (16 * 1024 * 1024))
+diff --git a/target-i386/helper.c b/target-i386/helper.c
+index 2f77061..cc59eb4 100644
+--- a/target-i386/helper.c
++++ b/target-i386/helper.c
+@@ -2273,6 +2273,12 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
+             /* 64 bit processor */
+ /* XXX: The physical address space is limited to 42 bits in exec.c. */
+             *eax = 0x00003028;	/* 48 bits virtual, 40 bits physical */
++            if (kvm_enabled()) {
++                uint32_t _eax;
++                host_cpuid(0x80000000, 0, &_eax, NULL, NULL, NULL);
++                if (_eax >= 0x80000008)
++                    host_cpuid(0x80000008, 0, eax, NULL, NULL, NULL);
++            }
+         } else {
+             if (env->cpuid_features & CPUID_PSE36)
+                 *eax = 0x00000024; /* 36 bits physical */
+-- 
+1.7.4.4
+

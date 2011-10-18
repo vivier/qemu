@@ -1,0 +1,80 @@
+From 9ddea2cf52e87752e453279ba23eca65b2b8300f Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:28 +0200
+Subject: [PATCH 53/76] savevm: Include writable devices with removable media
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-46-git-send-email-armbru@redhat.com>
+Patchwork-id: 33635
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 45/68] savevm: Include writable devices with removable media
+Bugzilla: 742484
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+savevm and loadvm silently ignore block devices with removable media,
+such as floppies and SD cards.  Rolling back a VM to a previous
+checkpoint will *not* roll back writes to block devices with removable
+media.
+
+Moreover, bdrv_is_removable() is a confused mess, and wrong in at
+least one case: it considers "-drive if=xen,media=cdrom -M xenpv"
+removable.  It'll be cleaned up later in this series.
+
+Read-only block devices are also ignored, but that's okay.
+
+Fix by ignoring only read-only block devices and empty block devices.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 07b70bfbb3f3aea9ce7a3a1da78cbfa8ae6bbce6)
+---
+ block.c  |    2 +-
+ savevm.c |    4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ block.c  |    2 +-
+ savevm.c |    4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/block.c b/block.c
+index a19a79a..1e0ac02 100644
+--- a/block.c
++++ b/block.c
+@@ -1869,7 +1869,7 @@ void bdrv_debug_event(BlockDriverState *bs, BlkDebugEvent event)
+ int bdrv_can_snapshot(BlockDriverState *bs)
+ {
+     BlockDriver *drv = bs->drv;
+-    if (!drv || bdrv_is_removable(bs) || bdrv_is_read_only(bs)) {
++    if (!drv || !bdrv_is_inserted(bs) || bdrv_is_read_only(bs)) {
+         return 0;
+     }
+ 
+diff --git a/savevm.c b/savevm.c
+index 0928e3a..eab3ed3 100644
+--- a/savevm.c
++++ b/savevm.c
+@@ -1940,7 +1940,7 @@ void do_savevm(Monitor *mon, const QDict *qdict)
+     bs = NULL;
+     while ((bs = bdrv_next(bs))) {
+ 
+-        if (bdrv_is_removable(bs) || bdrv_is_read_only(bs)) {
++        if (!bdrv_is_inserted(bs) || bdrv_is_read_only(bs)) {
+             continue;
+         }
+ 
+@@ -2035,7 +2035,7 @@ int load_vmstate(const char *name)
+     bs = NULL;
+     while ((bs = bdrv_next(bs))) {
+ 
+-        if (bdrv_is_removable(bs) || bdrv_is_read_only(bs)) {
++        if (!bdrv_is_inserted(bs) || bdrv_is_read_only(bs)) {
+             continue;
+         }
+ 
+-- 
+1.7.4.4
+

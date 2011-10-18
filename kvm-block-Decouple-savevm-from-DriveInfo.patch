@@ -1,0 +1,172 @@
+From 988f7d2bbdca87c91977c818d9194f38cd512d7e Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:23:47 +0200
+Subject: [PATCH 12/76] block: Decouple savevm from DriveInfo
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-5-git-send-email-armbru@redhat.com>
+Patchwork-id: 33611
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 04/68] block: Decouple savevm from DriveInfo
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+We find snapshots by iterating over the list of drives defined with
+drive_init().  This misses host block devices defined by other means.
+Such means don't exist now, but will be introduced later in this
+series.
+
+Iterate over all host block devices instead, with bdrv_next().
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit dbc13590f63fd04244e532e51aab3569fb525548)
+
+Note: "Such means [...] will be introduced later in this series"
+hasn't happened upstream, let alone in RHEL-6.
+---
+ savevm.c |   40 ++++++++++++++++++----------------------
+ 1 files changed, 18 insertions(+), 22 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ savevm.c |   40 ++++++++++++++++++----------------------
+ 1 files changed, 18 insertions(+), 22 deletions(-)
+
+diff --git a/savevm.c b/savevm.c
+index 7219196..6b24e9e 100644
+--- a/savevm.c
++++ b/savevm.c
+@@ -1878,12 +1878,13 @@ out:
+ static BlockDriverState *get_bs_snapshots(void)
+ {
+     BlockDriverState *bs;
+-    DriveInfo *dinfo;
+ 
+     if (bs_snapshots)
+         return bs_snapshots;
+-    QTAILQ_FOREACH(dinfo, &drives, next) {
+-        bs = dinfo->bdrv;
++    /* FIXME what if bs_snapshots gets hot-unplugged? */
++
++    bs = NULL;
++    while ((bs = bdrv_next(bs))) {
+         if (bdrv_can_snapshot(bs)) {
+             goto ok;
+         }
+@@ -1922,12 +1923,11 @@ static int bdrv_snapshot_find(BlockDriverState *bs, QEMUSnapshotInfo *sn_info,
+ static int del_existing_snapshots(Monitor *mon, const char *name)
+ {
+     BlockDriverState *bs;
+-    DriveInfo *dinfo;
+     QEMUSnapshotInfo sn1, *snapshot = &sn1;
+     int ret;
+ 
+-    QTAILQ_FOREACH(dinfo, &drives, next) {
+-        bs = dinfo->bdrv;
++    bs = NULL;
++    while ((bs = bdrv_next(bs))) {
+         if (bdrv_can_snapshot(bs) &&
+             bdrv_snapshot_find(bs, snapshot, name) >= 0)
+         {
+@@ -1946,7 +1946,6 @@ static int del_existing_snapshots(Monitor *mon, const char *name)
+ 
+ void do_savevm(Monitor *mon, const QDict *qdict)
+ {
+-    DriveInfo *dinfo;
+     BlockDriverState *bs, *bs1;
+     QEMUSnapshotInfo sn1, *sn = &sn1, old_sn1, *old_sn = &old_sn1;
+     int ret;
+@@ -1961,8 +1960,8 @@ void do_savevm(Monitor *mon, const QDict *qdict)
+     const char *name = qdict_get_try_str(qdict, "name");
+ 
+     /* Verify if there is a device that doesn't support snapshots and is writable */
+-    QTAILQ_FOREACH(dinfo, &drives, next) {
+-        bs = dinfo->bdrv;
++    bs = NULL;
++    while ((bs = bdrv_next(bs))) {
+ 
+         if (bdrv_is_removable(bs) || bdrv_is_read_only(bs)) {
+             continue;
+@@ -2030,8 +2029,8 @@ void do_savevm(Monitor *mon, const QDict *qdict)
+ 
+     /* create the snapshots */
+ 
+-    QTAILQ_FOREACH(dinfo, &drives, next) {
+-        bs1 = dinfo->bdrv;
++    bs1 = NULL;
++    while ((bs1 = bdrv_next(bs1))) {
+         if (bdrv_can_snapshot(bs1)) {
+             /* Write VM state size only to the image that contains the state */
+             sn->vm_state_size = (bs == bs1 ? vm_state_size : 0);
+@@ -2050,15 +2049,14 @@ void do_savevm(Monitor *mon, const QDict *qdict)
+ 
+ int load_vmstate(const char *name)
+ {
+-    DriveInfo *dinfo;
+     BlockDriverState *bs, *bs1;
+     QEMUSnapshotInfo sn;
+     QEMUFile *f;
+     int ret;
+ 
+     /* Verify if there is a device that doesn't support snapshots and is writable */
+-    QTAILQ_FOREACH(dinfo, &drives, next) {
+-        bs = dinfo->bdrv;
++    bs = NULL;
++    while ((bs = bdrv_next(bs))) {
+ 
+         if (bdrv_is_removable(bs) || bdrv_is_read_only(bs)) {
+             continue;
+@@ -2080,8 +2078,8 @@ int load_vmstate(const char *name)
+     /* Flush all IO requests so they don't interfere with the new state.  */
+     qemu_aio_flush();
+ 
+-    QTAILQ_FOREACH(dinfo, &drives, next) {
+-        bs1 = dinfo->bdrv;
++    bs1 = NULL;
++    while ((bs1 = bdrv_next(bs1))) {
+         if (bdrv_can_snapshot(bs1)) {
+             ret = bdrv_snapshot_goto(bs1, name);
+             if (ret < 0) {
+@@ -2134,7 +2132,6 @@ int load_vmstate(const char *name)
+ 
+ void do_delvm(Monitor *mon, const QDict *qdict)
+ {
+-    DriveInfo *dinfo;
+     BlockDriverState *bs, *bs1;
+     int ret;
+     const char *name = qdict_get_str(qdict, "name");
+@@ -2145,8 +2142,8 @@ void do_delvm(Monitor *mon, const QDict *qdict)
+         return;
+     }
+ 
+-    QTAILQ_FOREACH(dinfo, &drives, next) {
+-        bs1 = dinfo->bdrv;
++    bs1 = NULL;
++    while ((bs1 = bdrv_next(bs1))) {
+         if (bdrv_can_snapshot(bs1)) {
+             ret = bdrv_snapshot_delete(bs1, name);
+             if (ret < 0) {
+@@ -2164,7 +2161,6 @@ void do_delvm(Monitor *mon, const QDict *qdict)
+ 
+ void do_info_snapshots(Monitor *mon)
+ {
+-    DriveInfo *dinfo;
+     BlockDriverState *bs, *bs1;
+     QEMUSnapshotInfo *sn_tab, *sn;
+     int nb_sns, i;
+@@ -2176,8 +2172,8 @@ void do_info_snapshots(Monitor *mon)
+         return;
+     }
+     monitor_printf(mon, "Snapshot devices:");
+-    QTAILQ_FOREACH(dinfo, &drives, next) {
+-        bs1 = dinfo->bdrv;
++    bs1 = NULL;
++    while ((bs1 = bdrv_next(bs1))) {
+         if (bdrv_can_snapshot(bs1)) {
+             if (bs == bs1)
+                 monitor_printf(mon, " %s", bdrv_get_device_name(bs1));
+-- 
+1.7.4.4
+

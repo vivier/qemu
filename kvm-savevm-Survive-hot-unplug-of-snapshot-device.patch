@@ -1,0 +1,216 @@
+From 155aebda2944dc4b19ab932526bd90545e70c69d Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:23:48 +0200
+Subject: [PATCH 13/76] savevm: Survive hot-unplug of snapshot device
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-6-git-send-email-armbru@redhat.com>
+Patchwork-id: 33604
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 05/68] savevm: Survive hot-unplug of snapshot device
+Bugzilla: 743269
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+savevm.c keeps a pointer to the snapshot block device.  If you manage
+to get that device deleted, the pointer dangles, and the next snapshot
+operation will crash & burn.  Unplugging a guest device that uses it
+does the trick:
+
+    $ MALLOC_PERTURB_=234 qemu-system-x86_64 [...]
+    QEMU 0.12.50 monitor - type 'help' for more information
+    (qemu) info snapshots
+    No available block device supports snapshots
+    (qemu) drive_add auto if=none,file=tmp.qcow2
+    OK
+    (qemu) device_add usb-storage,id=foo,drive=none1
+    (qemu) info snapshots
+    Snapshot devices: none1
+    Snapshot list (from none1):
+    ID        TAG                 VM SIZE                DATE       VM CLOCK
+    (qemu) device_del foo
+    (qemu) info snapshots
+    Snapshot devices:
+    Segmentation fault (core dumped)
+
+Move management of that pointer to block.c, and zap it when the device
+it points becomes unusable.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit f9092b108f7b35e463e58bd3dd348ff002ba9e63)
+
+Conflicts:
+
+	block.c
+	block.h
+
+Conflicts because commit 76a4a8cf overtook this one in RHEL-6.
+---
+ block.c  |   29 ++++++++++++++++++++++++++++-
+ block.h  |    1 +
+ savevm.c |   31 ++++---------------------------
+ 3 files changed, 33 insertions(+), 28 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ block.c  |   29 ++++++++++++++++++++++++++++-
+ block.h  |    1 +
+ savevm.c |   31 ++++---------------------------
+ 3 files changed, 33 insertions(+), 28 deletions(-)
+
+diff --git a/block.c b/block.c
+index dff305b..c6c31ea 100644
+--- a/block.c
++++ b/block.c
+@@ -64,6 +64,9 @@ static QTAILQ_HEAD(, BlockDriverState) bdrv_states =
+ static QLIST_HEAD(, BlockDriver) bdrv_drivers =
+     QLIST_HEAD_INITIALIZER(bdrv_drivers);
+ 
++/* The device to use for VM snapshots */
++static BlockDriverState *bs_snapshots;
++
+ /* If non-zero, use only whitelisted block drivers */
+ static int use_bdrv_whitelist;
+ 
+@@ -640,8 +643,12 @@ unlink_and_fail:
+ void bdrv_close(BlockDriverState *bs)
+ {
+     if (bs->drv) {
+-        if (bs->backing_hd)
++        if (bs == bs_snapshots) {
++            bs_snapshots = NULL;
++        }
++        if (bs->backing_hd) {
+             bdrv_delete(bs->backing_hd);
++        }
+         bs->drv->bdrv_close(bs);
+         qemu_free(bs->opaque);
+ #ifdef _WIN32
+@@ -694,6 +701,7 @@ void bdrv_delete(BlockDriverState *bs)
+         bdrv_delete(bs->file);
+     }
+ 
++    assert(bs != bs_snapshots);
+     qemu_free(bs);
+ }
+ 
+@@ -1879,6 +1887,25 @@ int bdrv_is_snapshot(BlockDriverState *bs)
+     return !!(bs->open_flags & BDRV_O_SNAPSHOT);
+ }
+ 
++BlockDriverState *bdrv_snapshots(void)
++{
++    BlockDriverState *bs;
++
++    if (bs_snapshots)
++        return bs_snapshots;
++
++    bs = NULL;
++    while ((bs = bdrv_next(bs))) {
++        if (bdrv_can_snapshot(bs)) {
++            goto ok;
++        }
++    }
++    return NULL;
++ ok:
++    bs_snapshots = bs;
++    return bs;
++}
++
+ int bdrv_snapshot_create(BlockDriverState *bs,
+                          QEMUSnapshotInfo *sn_info)
+ {
+diff --git a/block.h b/block.h
+index de6f312..1594049 100644
+--- a/block.h
++++ b/block.h
+@@ -215,6 +215,7 @@ void bdrv_get_backing_filename(BlockDriverState *bs,
+                                char *filename, int filename_size);
+ int bdrv_can_snapshot(BlockDriverState *bs);
+ int bdrv_is_snapshot(BlockDriverState *bs);
++BlockDriverState *bdrv_snapshots(void);
+ int bdrv_snapshot_create(BlockDriverState *bs,
+                          QEMUSnapshotInfo *sn_info);
+ int bdrv_snapshot_goto(BlockDriverState *bs,
+diff --git a/savevm.c b/savevm.c
+index 6b24e9e..0928e3a 100644
+--- a/savevm.c
++++ b/savevm.c
+@@ -83,9 +83,6 @@
+ #include "qemu_socket.h"
+ #include "qemu-queue.h"
+ 
+-/* point to the block driver where the snapshots are managed */
+-static BlockDriverState *bs_snapshots;
+-
+ #define SELF_ANNOUNCE_ROUNDS 5
+ 
+ #ifndef ETH_P_RARP
+@@ -1875,26 +1872,6 @@ out:
+     return ret;
+ }
+ 
+-static BlockDriverState *get_bs_snapshots(void)
+-{
+-    BlockDriverState *bs;
+-
+-    if (bs_snapshots)
+-        return bs_snapshots;
+-    /* FIXME what if bs_snapshots gets hot-unplugged? */
+-
+-    bs = NULL;
+-    while ((bs = bdrv_next(bs))) {
+-        if (bdrv_can_snapshot(bs)) {
+-            goto ok;
+-        }
+-    }
+-    return NULL;
+- ok:
+-    bs_snapshots = bs;
+-    return bs;
+-}
+-
+ static int bdrv_snapshot_find(BlockDriverState *bs, QEMUSnapshotInfo *sn_info,
+                               const char *name)
+ {
+@@ -1974,7 +1951,7 @@ void do_savevm(Monitor *mon, const QDict *qdict)
+         }
+     }
+ 
+-    bs = get_bs_snapshots();
++    bs = bdrv_snapshots();
+     if (!bs) {
+         monitor_printf(mon, "No block device can accept snapshots\n");
+         return;
+@@ -2069,7 +2046,7 @@ int load_vmstate(const char *name)
+         }
+     }
+ 
+-    bs = get_bs_snapshots();
++    bs = bdrv_snapshots();
+     if (!bs) {
+         error_report("No block device supports snapshots");
+         return -EINVAL;
+@@ -2136,7 +2113,7 @@ void do_delvm(Monitor *mon, const QDict *qdict)
+     int ret;
+     const char *name = qdict_get_str(qdict, "name");
+ 
+-    bs = get_bs_snapshots();
++    bs = bdrv_snapshots();
+     if (!bs) {
+         monitor_printf(mon, "No block device supports snapshots\n");
+         return;
+@@ -2166,7 +2143,7 @@ void do_info_snapshots(Monitor *mon)
+     int nb_sns, i;
+     char buf[256];
+ 
+-    bs = get_bs_snapshots();
++    bs = bdrv_snapshots();
+     if (!bs) {
+         monitor_printf(mon, "No available block device supports snapshots\n");
+         return;
+-- 
+1.7.4.4
+

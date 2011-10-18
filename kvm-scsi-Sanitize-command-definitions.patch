@@ -1,0 +1,380 @@
+From 5154e26c01a25b138c68462545b9e3961d6e4dd0 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:12 +0200
+Subject: [PATCH 37/76] scsi: Sanitize command definitions
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-30-git-send-email-armbru@redhat.com>
+Patchwork-id: 33664
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 29/68] scsi: Sanitize command definitions
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Hannes Reinecke <hare@suse.de>
+
+Sanitize SCSI command definitions.
+Add _10 suffix to READ_CAPACITY, WRITE_VERIFY, VERIFY, READ_LONG,
+WRITE_LONG, and WRITE_SAME.
+Add new command definitions for LOCATE_10, UNMAP, VARLENGTH_CDB,
+WRITE_FILEMARKS_16, EXTENDED_COPY, ATA_PASSTHROUGH, ACCESS_CONTROL_IN,
+ACCESS_CONTROL_OUT, COMPARE_AND_WRITE, VERIFY_16, SYNCHRONIZE_CACHE_16,
+LOCATE_16, ERASE_16, WRITE_LONG_16, LOAD_UNLOAD, VERIFY_12.
+Remove invalid definition of WRITE_LONG_2.
+
+Signed-off-by: Hannes Reinecke <hare@suse.de>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 5e30a07d6d70d3073ff61e6db79d61c2b688502f)
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ hw/scsi-bus.c     |   69 ++++++++++++++++++++++++++++++++--------------------
+ hw/scsi-defs.h    |   54 +++++++++++++++++++++++++----------------
+ hw/scsi-disk.c    |   10 ++++----
+ hw/scsi-generic.c |    2 +-
+ 4 files changed, 81 insertions(+), 54 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/scsi-bus.c     |   69 ++++++++++++++++++++++++++++++++--------------------
+ hw/scsi-defs.h    |   54 +++++++++++++++++++++++++----------------
+ hw/scsi-disk.c    |   10 ++++----
+ hw/scsi-generic.c |    2 +-
+ 4 files changed, 81 insertions(+), 54 deletions(-)
+
+diff --git a/hw/scsi-bus.c b/hw/scsi-bus.c
+index 52a6784..0b0344c 100644
+--- a/hw/scsi-bus.c
++++ b/hw/scsi-bus.c
+@@ -223,6 +223,7 @@ static int scsi_req_length(SCSIRequest *req, uint8_t *cmd)
+ 
+     switch(cmd[0]) {
+     case TEST_UNIT_READY:
++    case REWIND:
+     case START_STOP:
+     case SEEK_6:
+     case WRITE_FILEMARKS:
+@@ -231,24 +232,24 @@ static int scsi_req_length(SCSIRequest *req, uint8_t *cmd)
+     case RELEASE:
+     case ERASE:
+     case ALLOW_MEDIUM_REMOVAL:
+-    case VERIFY:
++    case VERIFY_10:
+     case SEEK_10:
+     case SYNCHRONIZE_CACHE:
+     case LOCK_UNLOCK_CACHE:
+     case LOAD_UNLOAD:
+     case SET_CD_SPEED:
+     case SET_LIMITS:
+-    case WRITE_LONG:
++    case WRITE_LONG_10:
+     case MOVE_MEDIUM:
+     case UPDATE_BLOCK:
+         req->cmd.xfer = 0;
+         break;
+     case MODE_SENSE:
+         break;
+-    case WRITE_SAME:
++    case WRITE_SAME_10:
+         req->cmd.xfer = 1;
+         break;
+-    case READ_CAPACITY:
++    case READ_CAPACITY_10:
+         req->cmd.xfer = 8;
+         break;
+     case READ_BLOCK_LIMITS:
+@@ -264,7 +265,7 @@ static int scsi_req_length(SCSIRequest *req, uint8_t *cmd)
+         req->cmd.xfer *= 8;
+         break;
+     case WRITE_10:
+-    case WRITE_VERIFY:
++    case WRITE_VERIFY_10:
+     case WRITE_6:
+     case WRITE_12:
+     case WRITE_VERIFY_12:
+@@ -324,7 +325,7 @@ static void scsi_req_xfer_mode(SCSIRequest *req)
+     switch (req->cmd.buf[0]) {
+     case WRITE_6:
+     case WRITE_10:
+-    case WRITE_VERIFY:
++    case WRITE_VERIFY_10:
+     case WRITE_12:
+     case WRITE_VERIFY_12:
+     case WRITE_16:
+@@ -344,14 +345,13 @@ static void scsi_req_xfer_mode(SCSIRequest *req)
+     case SEARCH_HIGH:
+     case SEARCH_LOW:
+     case UPDATE_BLOCK:
+-    case WRITE_LONG:
+-    case WRITE_SAME:
++    case WRITE_LONG_10:
++    case WRITE_SAME_10:
+     case SEARCH_HIGH_12:
+     case SEARCH_EQUAL_12:
+     case SEARCH_LOW_12:
+     case MEDIUM_SCAN:
+     case SEND_VOLUME_TAG:
+-    case WRITE_LONG_2:
+     case PERSISTENT_RESERVE_OUT:
+     case MAINTENANCE_OUT:
+         req->cmd.mode = SCSI_XFER_TO_DEV;
+@@ -515,6 +515,7 @@ static const char *scsi_command_name(uint8_t cmd)
+ {
+     static const char *names[] = {
+         [ TEST_UNIT_READY          ] = "TEST_UNIT_READY",
++        [ REWIND                   ] = "REWIND",
+         [ REQUEST_SENSE            ] = "REQUEST_SENSE",
+         [ FORMAT_UNIT              ] = "FORMAT_UNIT",
+         [ READ_BLOCK_LIMITS        ] = "READ_BLOCK_LIMITS",
+@@ -539,13 +540,12 @@ static const char *scsi_command_name(uint8_t cmd)
+         [ RECEIVE_DIAGNOSTIC       ] = "RECEIVE_DIAGNOSTIC",
+         [ SEND_DIAGNOSTIC          ] = "SEND_DIAGNOSTIC",
+         [ ALLOW_MEDIUM_REMOVAL     ] = "ALLOW_MEDIUM_REMOVAL",
+-
+-        [ READ_CAPACITY            ] = "READ_CAPACITY",
++        [ READ_CAPACITY_10         ] = "READ_CAPACITY_10",
+         [ READ_10                  ] = "READ_10",
+         [ WRITE_10                 ] = "WRITE_10",
+         [ SEEK_10                  ] = "SEEK_10",
+-        [ WRITE_VERIFY             ] = "WRITE_VERIFY",
+-        [ VERIFY                   ] = "VERIFY",
++        [ WRITE_VERIFY_10          ] = "WRITE_VERIFY_10",
++        [ VERIFY_10                ] = "VERIFY_10",
+         [ SEARCH_HIGH              ] = "SEARCH_HIGH",
+         [ SEARCH_EQUAL             ] = "SEARCH_EQUAL",
+         [ SEARCH_LOW               ] = "SEARCH_LOW",
+@@ -561,11 +561,14 @@ static const char *scsi_command_name(uint8_t cmd)
+         [ WRITE_BUFFER             ] = "WRITE_BUFFER",
+         [ READ_BUFFER              ] = "READ_BUFFER",
+         [ UPDATE_BLOCK             ] = "UPDATE_BLOCK",
+-        [ READ_LONG                ] = "READ_LONG",
+-        [ WRITE_LONG               ] = "WRITE_LONG",
++        [ READ_LONG_10             ] = "READ_LONG_10",
++        [ WRITE_LONG_10            ] = "WRITE_LONG_10",
+         [ CHANGE_DEFINITION        ] = "CHANGE_DEFINITION",
+-        [ WRITE_SAME               ] = "WRITE_SAME",
++        [ WRITE_SAME_10            ] = "WRITE_SAME_10",
++        [ UNMAP                    ] = "UNMAP",
+         [ READ_TOC                 ] = "READ_TOC",
++        [ REPORT_DENSITY_SUPPORT   ] = "REPORT_DENSITY_SUPPORT",
++        [ GET_CONFIGURATION        ] = "GET_CONFIGURATION",
+         [ LOG_SELECT               ] = "LOG_SELECT",
+         [ LOG_SENSE                ] = "LOG_SENSE",
+         [ MODE_SELECT_10           ] = "MODE_SELECT_10",
+@@ -574,27 +577,39 @@ static const char *scsi_command_name(uint8_t cmd)
+         [ MODE_SENSE_10            ] = "MODE_SENSE_10",
+         [ PERSISTENT_RESERVE_IN    ] = "PERSISTENT_RESERVE_IN",
+         [ PERSISTENT_RESERVE_OUT   ] = "PERSISTENT_RESERVE_OUT",
++        [ WRITE_FILEMARKS_16       ] = "WRITE_FILEMARKS_16",
++        [ EXTENDED_COPY            ] = "EXTENDED_COPY",
++        [ ATA_PASSTHROUGH          ] = "ATA_PASSTHROUGH",
++        [ ACCESS_CONTROL_IN        ] = "ACCESS_CONTROL_IN",
++        [ ACCESS_CONTROL_OUT       ] = "ACCESS_CONTROL_OUT",
++        [ READ_16                  ] = "READ_16",
++        [ COMPARE_AND_WRITE        ] = "COMPARE_AND_WRITE",
++        [ WRITE_16                 ] = "WRITE_16",
++        [ WRITE_VERIFY_16          ] = "WRITE_VERIFY_16",
++        [ VERIFY_16                ] = "VERIFY_16",
++        [ SYNCHRONIZE_CACHE_16     ] = "SYNCHRONIZE_CACHE_16",
++        [ LOCATE_16                ] = "LOCATE_16",
++        [ WRITE_SAME_16            ] = "WRITE_SAME_16",
++        [ ERASE_16                 ] = "ERASE_16",
++        [ SERVICE_ACTION_IN        ] = "SERVICE_ACTION_IN",
++        [ WRITE_LONG_16            ] = "WRITE_LONG_16",
++        [ REPORT_LUNS              ] = "REPORT_LUNS",
++        [ BLANK                    ] = "BLANK",
++        [ MAINTENANCE_IN           ] = "MAINTENANCE_IN",
++        [ MAINTENANCE_OUT          ] = "MAINTENANCE_OUT",
+         [ MOVE_MEDIUM              ] = "MOVE_MEDIUM",
++        [ LOAD_UNLOAD              ] = "LOAD_UNLOAD",
+         [ READ_12                  ] = "READ_12",
+         [ WRITE_12                 ] = "WRITE_12",
+         [ WRITE_VERIFY_12          ] = "WRITE_VERIFY_12",
++        [ VERIFY_12                ] = "VERIFY_12",
+         [ SEARCH_HIGH_12           ] = "SEARCH_HIGH_12",
+         [ SEARCH_EQUAL_12          ] = "SEARCH_EQUAL_12",
+         [ SEARCH_LOW_12            ] = "SEARCH_LOW_12",
+         [ READ_ELEMENT_STATUS      ] = "READ_ELEMENT_STATUS",
+         [ SEND_VOLUME_TAG          ] = "SEND_VOLUME_TAG",
+-        [ WRITE_LONG_2             ] = "WRITE_LONG_2",
+-
+-        [ REPORT_DENSITY_SUPPORT   ] = "REPORT_DENSITY_SUPPORT",
+-        [ GET_CONFIGURATION        ] = "GET_CONFIGURATION",
+-        [ READ_16                  ] = "READ_16",
+-        [ WRITE_16                 ] = "WRITE_16",
+-        [ WRITE_VERIFY_16          ] = "WRITE_VERIFY_16",
+-        [ SERVICE_ACTION_IN        ] = "SERVICE_ACTION_IN",
+-        [ REPORT_LUNS              ] = "REPORT_LUNS",
+-        [ LOAD_UNLOAD              ] = "LOAD_UNLOAD",
++        [ READ_DEFECT_DATA_12      ] = "READ_DEFECT_DATA_12",
+         [ SET_CD_SPEED             ] = "SET_CD_SPEED",
+-        [ BLANK                    ] = "BLANK",
+     };
+ 
+     if (cmd >= ARRAY_SIZE(names) || names[cmd] == NULL)
+diff --git a/hw/scsi-defs.h b/hw/scsi-defs.h
+index 1f40c5c..f644860 100644
+--- a/hw/scsi-defs.h
++++ b/hw/scsi-defs.h
+@@ -25,6 +25,7 @@
+  */
+ 
+ #define TEST_UNIT_READY       0x00
++#define REWIND                0x01
+ #define REQUEST_SENSE         0x03
+ #define FORMAT_UNIT           0x04
+ #define READ_BLOCK_LIMITS     0x05
+@@ -47,13 +48,13 @@
+ #define RECEIVE_DIAGNOSTIC    0x1c
+ #define SEND_DIAGNOSTIC       0x1d
+ #define ALLOW_MEDIUM_REMOVAL  0x1e
+-
+-#define READ_CAPACITY         0x25
++#define READ_CAPACITY_10      0x25
+ #define READ_10               0x28
+ #define WRITE_10              0x2a
+ #define SEEK_10               0x2b
+-#define WRITE_VERIFY          0x2e
+-#define VERIFY                0x2f
++#define LOCATE_10             0x2b
++#define WRITE_VERIFY_10       0x2e
++#define VERIFY_10             0x2f
+ #define SEARCH_HIGH           0x30
+ #define SEARCH_EQUAL          0x31
+ #define SEARCH_LOW            0x32
+@@ -69,11 +70,14 @@
+ #define WRITE_BUFFER          0x3b
+ #define READ_BUFFER           0x3c
+ #define UPDATE_BLOCK          0x3d
+-#define READ_LONG             0x3e
+-#define WRITE_LONG            0x3f
++#define READ_LONG_10          0x3e
++#define WRITE_LONG_10         0x3f
+ #define CHANGE_DEFINITION     0x40
+-#define WRITE_SAME            0x41
++#define WRITE_SAME_10         0x41
++#define UNMAP                 0x42
+ #define READ_TOC              0x43
++#define REPORT_DENSITY_SUPPORT 0x44
++#define GET_CONFIGURATION     0x46
+ #define LOG_SELECT            0x4c
+ #define LOG_SENSE             0x4d
+ #define MODE_SELECT_10        0x55
+@@ -82,32 +86,40 @@
+ #define MODE_SENSE_10         0x5a
+ #define PERSISTENT_RESERVE_IN 0x5e
+ #define PERSISTENT_RESERVE_OUT 0x5f
++#define VARLENGTH_CDB         0x7f
++#define WRITE_FILEMARKS_16    0x80
++#define EXTENDED_COPY         0x83
++#define ATA_PASSTHROUGH       0x85
++#define ACCESS_CONTROL_IN     0x86
++#define ACCESS_CONTROL_OUT    0x87
++#define READ_16               0x88
++#define COMPARE_AND_WRITE     0x89
++#define WRITE_16              0x8a
++#define WRITE_VERIFY_16       0x8e
++#define VERIFY_16             0x8f
++#define SYNCHRONIZE_CACHE_16  0x91
++#define LOCATE_16             0x92
+ #define WRITE_SAME_16         0x93
++#define ERASE_16              0x93
++#define SERVICE_ACTION_IN     0x9e
++#define WRITE_LONG_16         0x9f
++#define REPORT_LUNS           0xa0
++#define BLANK                 0xa1
+ #define MAINTENANCE_IN        0xa3
+ #define MAINTENANCE_OUT       0xa4
+ #define MOVE_MEDIUM           0xa5
++#define LOAD_UNLOAD           0xa6
+ #define READ_12               0xa8
+ #define WRITE_12              0xaa
+ #define WRITE_VERIFY_12       0xae
++#define VERIFY_12             0xaf
+ #define SEARCH_HIGH_12        0xb0
+ #define SEARCH_EQUAL_12       0xb1
+ #define SEARCH_LOW_12         0xb2
+ #define READ_ELEMENT_STATUS   0xb8
+ #define SEND_VOLUME_TAG       0xb6
+-#define WRITE_LONG_2          0xea
+-
+-/* from hw/scsi-generic.c */
+-#define REWIND 0x01
+-#define REPORT_DENSITY_SUPPORT 0x44
+-#define GET_CONFIGURATION 0x46
+-#define READ_16 0x88
+-#define WRITE_16 0x8a
+-#define WRITE_VERIFY_16 0x8e
+-#define SERVICE_ACTION_IN 0x9e
+-#define REPORT_LUNS 0xa0
+-#define LOAD_UNLOAD 0xa6
+-#define SET_CD_SPEED 0xbb
+-#define BLANK 0xa1
++#define READ_DEFECT_DATA_12   0xb7
++#define SET_CD_SPEED          0xbb
+ 
+ /*
+  *  SAM Status codes
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index 01df96c..f4d67df 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -896,7 +896,7 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r, uint8_t *outbuf)
+     case ALLOW_MEDIUM_REMOVAL:
+         bdrv_set_locked(s->bs, req->cmd.buf[4] & 1);
+         break;
+-    case READ_CAPACITY:
++    case READ_CAPACITY_10:
+         /* The normal LEN field for this command is zero.  */
+         memset(outbuf, 0, 8);
+         bdrv_get_geometry(s->bs, &nb_sectors);
+@@ -987,7 +987,7 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r, uint8_t *outbuf)
+         outbuf[3] = 8;
+         buflen = 16;
+         break;
+-    case VERIFY:
++    case VERIFY_10:
+         break;
+     default:
+         scsi_command_complete(r, CHECK_CONDITION, SENSE_CODE(INVALID_OPCODE));
+@@ -1063,13 +1063,13 @@ static int32_t scsi_send_command(SCSIRequest *req, uint8_t *buf)
+     case RELEASE_10:
+     case START_STOP:
+     case ALLOW_MEDIUM_REMOVAL:
+-    case READ_CAPACITY:
++    case READ_CAPACITY_10:
+     case SYNCHRONIZE_CACHE:
+     case READ_TOC:
+     case GET_CONFIGURATION:
+     case SERVICE_ACTION_IN:
+     case REPORT_LUNS:
+-    case VERIFY:
++    case VERIFY_10:
+         rc = scsi_disk_emulate_command(r, outbuf);
+         if (rc < 0) {
+             return 0;
+@@ -1092,7 +1092,7 @@ static int32_t scsi_send_command(SCSIRequest *req, uint8_t *buf)
+     case WRITE_10:
+     case WRITE_12:
+     case WRITE_16:
+-    case WRITE_VERIFY:
++    case WRITE_VERIFY_10:
+     case WRITE_VERIFY_12:
+     case WRITE_VERIFY_16:
+         len = r->req.cmd.xfer / s->qdev.blocksize;
+diff --git a/hw/scsi-generic.c b/hw/scsi-generic.c
+index 63361b3..7b0026e 100644
+--- a/hw/scsi-generic.c
++++ b/hw/scsi-generic.c
+@@ -406,7 +406,7 @@ static int get_blocksize(BlockDriverState *bdrv)
+ 
+     memset(cmd, 0, sizeof(cmd));
+     memset(buf, 0, sizeof(buf));
+-    cmd[0] = READ_CAPACITY;
++    cmd[0] = READ_CAPACITY_10;
+ 
+     memset(&io_header, 0, sizeof(io_header));
+     io_header.interface_id = 'S';
+-- 
+1.7.4.4
+

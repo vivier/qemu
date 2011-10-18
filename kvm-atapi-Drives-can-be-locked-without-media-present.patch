@@ -1,0 +1,57 @@
+From 5278beb83c98fdda2a31a97db0633393d0b5322e Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:23:53 +0200
+Subject: [PATCH 18/76] atapi: Drives can be locked without media present
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-11-git-send-email-armbru@redhat.com>
+Patchwork-id: 33612
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 10/68] atapi: Drives can be locked without media present
+Bugzilla: 742469
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Amit Shah <amit.shah@redhat.com>
+
+Drivers are free to lock drives without any media present.  Such a
+condition should not result in an error condition.
+
+See Table 341 in MMC-5 spec for details.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 8aa71917f7be78151cff50b850a25f26de614b13)
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ hw/ide/core.c |    9 ++-------
+ 1 files changed, 2 insertions(+), 7 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/ide/core.c |    9 ++-------
+ 1 files changed, 2 insertions(+), 7 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 0075d5e..a68dad7 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -1557,13 +1557,8 @@ static void ide_atapi_cmd(IDEState *s)
+         ide_atapi_cmd_reply(s, 18, max_len);
+         break;
+     case GPCMD_PREVENT_ALLOW_MEDIUM_REMOVAL:
+-        if (bdrv_is_inserted(s->bs)) {
+-            bdrv_set_locked(s->bs, packet[4] & 1);
+-            ide_atapi_cmd_ok(s);
+-        } else {
+-            ide_atapi_cmd_error(s, SENSE_NOT_READY,
+-                                ASC_MEDIUM_NOT_PRESENT);
+-        }
++        bdrv_set_locked(s->bs, packet[4] & 1);
++        ide_atapi_cmd_ok(s);
+         break;
+     case GPCMD_READ_10:
+     case GPCMD_READ_12:
+-- 
+1.7.4.4
+

@@ -1,0 +1,87 @@
+From dfd8b21bd5e5901ce7abbbe593a053fa0ac5dc30 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:22 +0200
+Subject: [PATCH 47/76] ide: Clean up case label indentation in ide_exec_cmd()
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-40-git-send-email-armbru@redhat.com>
+Patchwork-id: 33623
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 39/68] ide: Clean up case label indentation in ide_exec_cmd()
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 814839c00b717743128f06e875a7f664e872c167)
+---
+ hw/ide/core.c |   12 ++++++------
+ 1 files changed, 6 insertions(+), 6 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/ide/core.c |   12 ++++++------
+ 1 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 6c7b66f..4ef1196 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -1031,7 +1031,7 @@ void ide_exec_cmd(IDEBus *bus, uint32_t val)
+         s->status = READY_STAT | SEEK_STAT;
+         ide_set_irq(s->bus);
+         break;
+-	case WIN_READ_EXT:
++    case WIN_READ_EXT:
+ 	lba48 = 1;
+     case WIN_READ:
+     case WIN_READ_ONCE:
+@@ -1041,7 +1041,7 @@ void ide_exec_cmd(IDEBus *bus, uint32_t val)
+         s->req_nb_sectors = 1;
+         ide_sector_read(s);
+         break;
+-	case WIN_WRITE_EXT:
++    case WIN_WRITE_EXT:
+ 	lba48 = 1;
+     case WIN_WRITE:
+     case WIN_WRITE_ONCE:
+@@ -1054,7 +1054,7 @@ void ide_exec_cmd(IDEBus *bus, uint32_t val)
+         ide_transfer_start(s, s->io_buffer, 512, ide_sector_write);
+         s->media_changed = 1;
+         break;
+-	case WIN_MULTREAD_EXT:
++    case WIN_MULTREAD_EXT:
+ 	lba48 = 1;
+     case WIN_MULTREAD:
+         if (!s->mult_sectors)
+@@ -1079,7 +1079,7 @@ void ide_exec_cmd(IDEBus *bus, uint32_t val)
+         ide_transfer_start(s, s->io_buffer, 512 * n, ide_sector_write);
+         s->media_changed = 1;
+         break;
+-	case WIN_READDMA_EXT:
++    case WIN_READDMA_EXT:
+ 	lba48 = 1;
+     case WIN_READDMA:
+     case WIN_READDMA_ONCE:
+@@ -1088,7 +1088,7 @@ void ide_exec_cmd(IDEBus *bus, uint32_t val)
+ 	ide_cmd_lba48_transform(s, lba48);
+         ide_sector_read_dma(s);
+         break;
+-	case WIN_WRITEDMA_EXT:
++    case WIN_WRITEDMA_EXT:
+ 	lba48 = 1;
+     case WIN_WRITEDMA:
+     case WIN_WRITEDMA_ONCE:
+@@ -1312,7 +1312,7 @@ void ide_exec_cmd(IDEBus *bus, uint32_t val)
+         ide_set_irq(s->bus);
+         break;
+ 
+-	case WIN_SMART:
++    case WIN_SMART:
+ 	if (s->drive_kind == IDE_CD)
+ 		goto abort_cmd;
+ 	if (s->hcyl != 0xc2 || s->lcyl != 0x4f)
+-- 
+1.7.4.4
+

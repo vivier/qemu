@@ -1,0 +1,55 @@
+From 5100d091507002c79b8a169fcbe6575cd354d65f Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:01 +0200
+Subject: [PATCH 26/76] atapi: Explain why we need a 'media not present' state
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-19-git-send-email-armbru@redhat.com>
+Patchwork-id: 33618
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 18/68] atapi: Explain why we need a 'media not present' state
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Amit Shah <amit.shah@redhat.com>
+
+After the re-org of the atapi code, it might not be intuitive for a
+reader of the code to understand why we're inserting a 'media not
+present' state between cd changes.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 4a737d14d0788412eead23330b554eb75900af04)
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ hw/ide/atapi.c |    8 +++++++-
+ 1 files changed, 7 insertions(+), 1 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/ide/atapi.c |    8 +++++++-
+ 1 files changed, 7 insertions(+), 1 deletions(-)
+
+diff --git a/hw/ide/atapi.c b/hw/ide/atapi.c
+index 29f30f8..085fc77 100644
+--- a/hw/ide/atapi.c
++++ b/hw/ide/atapi.c
+@@ -1114,7 +1114,13 @@ void ide_atapi_cmd(IDEState *s)
+         ide_atapi_cmd_check_status(s);
+         return;
+     }
+-
++    /*
++     * When a CD gets changed, we have to report an ejected state and
++     * then a loaded state to guests so that they detect tray
++     * open/close and media change events.  Guests that do not use
++     * GET_EVENT_STATUS_NOTIFICATION to detect such tray open/close
++     * states rely on this behavior.
++     */
+     if (bdrv_is_inserted(s->bs) && s->cdrom_changed) {
+         ide_atapi_cmd_error(s, SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
+ 
+-- 
+1.7.4.4
+

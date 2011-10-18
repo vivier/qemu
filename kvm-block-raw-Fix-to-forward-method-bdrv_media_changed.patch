@@ -1,0 +1,64 @@
+From 63a1a2b2677261f1783464e7217c836a079c8ea5 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:24 +0200
+Subject: [PATCH 49/76] block/raw: Fix to forward method bdrv_media_changed()
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-42-git-send-email-armbru@redhat.com>
+Patchwork-id: 33630
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 41/68] block/raw: Fix to forward method bdrv_media_changed()
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Block driver "raw" forwards most methods to the underlying block
+driver.  However, it doesn't implement method bdrv_media_changed().
+Makes bdrv_media_changed() always return -ENOTSUP.
+
+I believe -fda /dev/fd0 gives you raw over host_floppy, and disk
+change detection (fdc register 7 bit 7) is broken.  Testing my theory
+requires a computer museum, though.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit be32f75f4dfb4e7dead9fb9cfb8a7195b1e25ebf)
+---
+ block/raw.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ block/raw.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/block/raw.c b/block/raw.c
+index cb6203e..ffba51a 100644
+--- a/block/raw.c
++++ b/block/raw.c
+@@ -75,6 +75,11 @@ static int raw_is_inserted(BlockDriverState *bs)
+     return bdrv_is_inserted(bs->file);
+ }
+ 
++static int raw_media_changed(BlockDriverState *bs)
++{
++    return bdrv_media_changed(bs->file);
++}
++
+ static void raw_eject(BlockDriverState *bs, int eject_flag)
+ {
+     bdrv_eject(bs->file, eject_flag);
+@@ -137,8 +142,10 @@ static BlockDriver bdrv_raw = {
+     .bdrv_discard       = raw_discard,
+ 
+     .bdrv_is_inserted   = raw_is_inserted,
++    .bdrv_media_changed = raw_media_changed,
+     .bdrv_eject         = raw_eject,
+     .bdrv_set_locked    = raw_set_locked,
++
+     .bdrv_ioctl         = raw_ioctl,
+     .bdrv_aio_ioctl     = raw_aio_ioctl,
+ 
+-- 
+1.7.4.4
+

@@ -1,0 +1,61 @@
+From f6515162a6aaf007b74fa8394e1059689c186328 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:23 +0200
+Subject: [PATCH 48/76] ide: Give vmstate structs internal linkage where
+ possible
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-41-git-send-email-armbru@redhat.com>
+Patchwork-id: 33627
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 40/68] ide: Give vmstate structs internal linkage where possible
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 656fbeff92f402d6dd21a048f5e9028a32fcfd40)
+---
+ hw/ide/core.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/ide/core.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 4ef1196..beb2292 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -1972,7 +1972,7 @@ static bool ide_error_needed(void *opaque)
+ }
+ 
+ /* Fields for GET_EVENT_STATUS_NOTIFICATION ATAPI command */
+-const VMStateDescription vmstate_ide_atapi_gesn_state = {
++static const VMStateDescription vmstate_ide_atapi_gesn_state = {
+     .name ="ide_drive/atapi/gesn_state",
+     .version_id = 1,
+     .minimum_version_id = 1,
+@@ -1984,7 +1984,7 @@ const VMStateDescription vmstate_ide_atapi_gesn_state = {
+     }
+ };
+ 
+-const VMStateDescription vmstate_ide_drive_pio_state = {
++static const VMStateDescription vmstate_ide_drive_pio_state = {
+     .name = "ide_drive/pio_state",
+     .version_id = 1,
+     .minimum_version_id = 1,
+@@ -2046,7 +2046,7 @@ const VMStateDescription vmstate_ide_drive = {
+     }
+ };
+ 
+-const VMStateDescription vmstate_ide_error_status = {
++static const VMStateDescription vmstate_ide_error_status = {
+     .name ="ide_bus/error",
+     .version_id = 1,
+     .minimum_version_id = 1,
+-- 
+1.7.4.4
+

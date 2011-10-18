@@ -1,0 +1,62 @@
+From b5eed9cdce3f523d1afbf4262f18e8dde0d7acc8 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:23:52 +0200
+Subject: [PATCH 17/76] trace: Trace bdrv_set_locked()
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-10-git-send-email-armbru@redhat.com>
+Patchwork-id: 33613
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 09/68] trace: Trace bdrv_set_locked()
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+
+It can be handy to know when the guest locks/unlocks the CD-ROM tray.
+This trace event makes that possible.
+
+Signed-off-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit b8c6d0958943c96ca9401961a1200568c7ec0268)
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ block.c      |    2 ++
+ trace-events |    1 +
+ 2 files changed, 3 insertions(+), 0 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ block.c      |    2 ++
+ trace-events |    1 +
+ 2 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/block.c b/block.c
+index c6c31ea..4c71637 100644
+--- a/block.c
++++ b/block.c
+@@ -2674,6 +2674,8 @@ void bdrv_set_locked(BlockDriverState *bs, int locked)
+ {
+     BlockDriver *drv = bs->drv;
+ 
++    trace_bdrv_set_locked(bs, locked);
++
+     bs->locked = locked;
+     if (drv && drv->bdrv_set_locked) {
+         drv->bdrv_set_locked(bs, locked);
+diff --git a/trace-events b/trace-events
+index abf9d40..d044962 100644
+--- a/trace-events
++++ b/trace-events
+@@ -62,6 +62,7 @@ disable bdrv_aio_multiwrite_earlyfail(void *mcb) "mcb %p"
+ disable bdrv_aio_multiwrite_latefail(void *mcb, int i) "mcb %p i %d"
+ disable bdrv_aio_readv(void *bs, int64_t sector_num, int nb_sectors, void *opaque) "bs %p sector_num %"PRId64" nb_sectors %d opaque %p"
+ disable bdrv_aio_writev(void *bs, int64_t sector_num, int nb_sectors, void *opaque) "bs %p sector_num %"PRId64" nb_sectors %d opaque %p"
++disable bdrv_set_locked(void *bs, int locked) "bs %p locked %d"
+ 
+ # hw/virtio-blk.c
+ disable virtio_blk_req_complete(void *req, int status) "req %p status %d"
+-- 
+1.7.4.4
+

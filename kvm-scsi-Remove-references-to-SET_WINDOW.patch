@@ -1,0 +1,69 @@
+From 5db083923aaaf5453cf0fbf0126a578b1a811651 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:10 +0200
+Subject: [PATCH 35/76] scsi: Remove references to SET_WINDOW
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-28-git-send-email-armbru@redhat.com>
+Patchwork-id: 33663
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 27/68] scsi: Remove references to SET_WINDOW
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Hannes Reinecke <hare@suse.de>
+
+SET_WINDOW command is vendor-specific only.
+So we shouldn't try to emulate it.
+
+Signed-off-by: Hannes Reinecke <hare@suse.de>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 3790372c963dbc87d4efdf24f8b718c283798fa0)
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ hw/scsi-bus.c  |    2 --
+ hw/scsi-defs.h |    1 -
+ 2 files changed, 0 insertions(+), 3 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/scsi-bus.c  |    2 --
+ hw/scsi-defs.h |    1 -
+ 2 files changed, 0 insertions(+), 3 deletions(-)
+
+diff --git a/hw/scsi-bus.c b/hw/scsi-bus.c
+index 8b1a412..facc98d 100644
+--- a/hw/scsi-bus.c
++++ b/hw/scsi-bus.c
+@@ -350,7 +350,6 @@ static void scsi_req_xfer_mode(SCSIRequest *req)
+     case SEARCH_HIGH_12:
+     case SEARCH_EQUAL_12:
+     case SEARCH_LOW_12:
+-    case SET_WINDOW:
+     case MEDIUM_SCAN:
+     case SEND_VOLUME_TAG:
+     case WRITE_LONG_2:
+@@ -544,7 +543,6 @@ static const char *scsi_command_name(uint8_t cmd)
+         [ SEND_DIAGNOSTIC          ] = "SEND_DIAGNOSTIC",
+         [ ALLOW_MEDIUM_REMOVAL     ] = "ALLOW_MEDIUM_REMOVAL",
+ 
+-        [ SET_WINDOW               ] = "SET_WINDOW",
+         [ READ_CAPACITY            ] = "READ_CAPACITY",
+         [ READ_10                  ] = "READ_10",
+         [ WRITE_10                 ] = "WRITE_10",
+diff --git a/hw/scsi-defs.h b/hw/scsi-defs.h
+index 413cce0..8513983 100644
+--- a/hw/scsi-defs.h
++++ b/hw/scsi-defs.h
+@@ -49,7 +49,6 @@
+ #define SEND_DIAGNOSTIC       0x1d
+ #define ALLOW_MEDIUM_REMOVAL  0x1e
+ 
+-#define SET_WINDOW            0x24
+ #define READ_CAPACITY         0x25
+ #define READ_10               0x28
+ #define WRITE_10              0x2a
+-- 
+1.7.4.4
+

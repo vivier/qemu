@@ -1,0 +1,57 @@
+From edc4fde651fae5f01724a1b5c155169d498af616 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:38 +0200
+Subject: [PATCH 63/76] block: Drop tray status tracking, no longer used
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-56-git-send-email-armbru@redhat.com>
+Patchwork-id: 33643
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 55/68] block: Drop tray status tracking, no longer used
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Commit 4be9762a is now completely redone.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 22cf56c4d81935bf89a30c2dc0296c1f14199518)
+---
+ block.c     |    1 -
+ block_int.h |    1 -
+ 2 files changed, 0 insertions(+), 2 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ block.c     |    1 -
+ block_int.h |    1 -
+ 2 files changed, 0 insertions(+), 2 deletions(-)
+
+diff --git a/block.c b/block.c
+index 6cb51ec..66685b5 100644
+--- a/block.c
++++ b/block.c
+@@ -2643,7 +2643,6 @@ int bdrv_eject(BlockDriverState *bs, int eject_flag)
+     if (drv && drv->bdrv_eject) {
+         drv->bdrv_eject(bs, eject_flag);
+     }
+-    bs->tray_open = eject_flag;
+     return 0;
+ }
+ 
+diff --git a/block_int.h b/block_int.h
+index f2f22d8..880d6fa 100644
+--- a/block_int.h
++++ b/block_int.h
+@@ -149,7 +149,6 @@ struct BlockDriverState {
+     int open_flags; /* flags used to open the file, re-used for re-open */
+     int removable; /* if true, the media can be removed */
+     int locked;    /* if true, the media cannot temporarily be ejected */
+-    int tray_open; /* if true, the virtual tray is open */
+     int encrypted; /* if true, the media is encrypted */
+     int valid_key; /* if true, a valid encryption key has been set */
+     int sg;        /* if true, the device is a /dev/sg* */
+-- 
+1.7.4.4
+

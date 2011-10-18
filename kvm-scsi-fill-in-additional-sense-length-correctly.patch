@@ -1,0 +1,56 @@
+From 49c87bbbaa5334c885cae966c5390045b82de768 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:29 +0200
+Subject: [PATCH 54/76] scsi: fill in additional sense length correctly
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-47-git-send-email-armbru@redhat.com>
+Patchwork-id: 33637
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 46/68] scsi: fill in additional sense length correctly
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Paolo Bonzini <pbonzini@redhat.com>
+
+Even though we do not use them, we should include the last three
+bytes of sense data in the additional sense length.
+
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit eae31cb99810c362955f37f82573f2e3849bcd32)
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ hw/scsi-bus.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/scsi-bus.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/hw/scsi-bus.c b/hw/scsi-bus.c
+index 7a2a168..25a230a 100644
+--- a/hw/scsi-bus.c
++++ b/hw/scsi-bus.c
+@@ -183,6 +183,7 @@ void scsi_req_build_sense(SCSIRequest *req, SCSISense sense)
+     memset(req->sense, 0, 18);
+     req->sense[0] = 0xf0;
+     req->sense[2] = sense.key;
++    req->sense[7] = 10;
+     req->sense[12] = sense.asc;
+     req->sense[13] = sense.ascq;
+     req->sense_len = 18;
+@@ -543,7 +544,7 @@ int scsi_build_sense(uint8_t *in_buf, int in_len,
+         /* Return fixed format sense buffer */
+         buf[0] = 0xf0;
+         buf[2] = sense.key;
+-        buf[7] = 7;
++        buf[7] = 10;
+         buf[12] = sense.asc;
+         buf[13] = sense.ascq;
+         return MIN(len, 18);
+-- 
+1.7.4.4
+

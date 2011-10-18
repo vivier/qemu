@@ -1,0 +1,62 @@
+From 9672f5a39dddd493730204219fbbbfd8bf08e922 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:40 +0200
+Subject: [PATCH 65/76] scsi-disk: Track tray locked state
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-58-git-send-email-armbru@redhat.com>
+Patchwork-id: 33656
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 57/68] scsi-disk: Track tray locked state
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+We already track it in BlockDriverState.  Just like tray open/close
+state, we should track it in the device models instead, because it's
+device state.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 81b1008d50829fdcbe79aa67fa1113bb00a787d6)
+---
+ hw/scsi-disk.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/scsi-disk.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index b0d1e88..ba86767 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -73,6 +73,7 @@ struct SCSIDiskState
+     char *version;
+     char *serial;
+     bool tray_open;
++    bool tray_locked;
+ };
+ 
+ static int scsi_handle_rw_error(SCSIDiskReq *r, int error, int type);
+@@ -662,7 +663,7 @@ static int mode_sense_page(SCSIRequest *req, int page, uint8_t *p,
+         p[5] = 0xff; /* CD DA, DA accurate, RW supported,
+                         RW corrected, C2 errors, ISRC,
+                         UPC, Bar code */
+-        p[6] = 0x2d | (bdrv_is_locked(s->bs)? 2 : 0);
++        p[6] = 0x2d | (s->tray_locked ? 2 : 0);
+         /* Locking supported, jumper present, eject, tray */
+         p[7] = 0; /* no volume & mute control, no
+                      changer */
+@@ -879,6 +880,7 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r, uint8_t *outbuf)
+         scsi_disk_emulate_start_stop(r);
+         break;
+     case ALLOW_MEDIUM_REMOVAL:
++        s->tray_locked = req->cmd.buf[4] & 1;
+         bdrv_set_locked(s->bs, req->cmd.buf[4] & 1);
+         break;
+     case READ_CAPACITY_10:
+-- 
+1.7.4.4
+

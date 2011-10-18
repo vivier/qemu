@@ -1,0 +1,166 @@
+From 618fa3644ab3d95c570fb4d52e88c783884f2033 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:37 +0200
+Subject: [PATCH 62/76] block: Revert entanglement of bdrv_is_inserted() with
+ tray status
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-55-git-send-email-armbru@redhat.com>
+Patchwork-id: 33636
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 54/68] block: Revert entanglement of bdrv_is_inserted() with tray status
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Commit 4be9762a changed bdrv_is_inserted() to fail when the tray is
+open.  Unfortunately, there are two different kinds of users, with
+conflicting needs.
+
+1. Device models using bdrv_eject(), currently ide-cd and scsi-cd.
+They expect bdrv_is_inserted() to reflect the tray status.  Commit
+4be9762a makes them happy.
+
+2. Code that wants to know whether a BlockDriverState has media, such
+as find_image_format(), bdrv_flush_all().  Commit 4be9762a makes them
+unhappy.  In particular, it breaks flush on VM stop for media ejected
+by the guest.
+
+Revert the change to bdrv_is_inserted().  Check the tray status in the
+device models instead.
+
+Note on IDE: Since only ATAPI devices have a tray, and they don't
+accept ATA commands since the recent commit "ide: Reject ATA commands
+specific to drive kinds", checking in atapi.c suffices.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit a1aff5bf6786e6e8478373e4ada869a4ef2a7fc4)
+---
+ block.c        |    7 +++----
+ hw/ide/atapi.c |   15 ++++++++-------
+ hw/scsi-disk.c |   10 ++++++++--
+ 3 files changed, 19 insertions(+), 13 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ block.c        |    7 +++----
+ hw/ide/atapi.c |   15 ++++++++-------
+ hw/scsi-disk.c |   10 ++++++++--
+ 3 files changed, 19 insertions(+), 13 deletions(-)
+
+diff --git a/block.c b/block.c
+index 1e0ac02..6cb51ec 100644
+--- a/block.c
++++ b/block.c
+@@ -2607,13 +2607,12 @@ void qemu_aio_release(void *p)
+ int bdrv_is_inserted(BlockDriverState *bs)
+ {
+     BlockDriver *drv = bs->drv;
+-    int ret;
++
+     if (!drv)
+         return 0;
+     if (!drv->bdrv_is_inserted)
+-        return !bs->tray_open;
+-    ret = drv->bdrv_is_inserted(bs);
+-    return ret;
++        return 1;
++    return drv->bdrv_is_inserted(bs);
+ }
+ 
+ /**
+diff --git a/hw/ide/atapi.c b/hw/ide/atapi.c
+index 8e01417..48c91f5 100644
+--- a/hw/ide/atapi.c
++++ b/hw/ide/atapi.c
+@@ -73,7 +73,7 @@ static void lba_to_msf(uint8_t *buf, int lba)
+ 
+ static inline int media_present(IDEState *s)
+ {
+-    return (s->nb_sectors > 0);
++    return !s->tray_open && s->nb_sectors > 0;
+ }
+ 
+ /* XXX: DVDs that could fit on a CD will be reported as a CD */
+@@ -1074,20 +1074,21 @@ static const struct {
+     [ 0x03 ] = { cmd_request_sense,                 ALLOW_UA },
+     [ 0x12 ] = { cmd_inquiry,                       ALLOW_UA },
+     [ 0x1a ] = { cmd_mode_sense, /* (6) */          0 },
+-    [ 0x1b ] = { cmd_start_stop_unit,               0 },
++    [ 0x1b ] = { cmd_start_stop_unit,               0 }, /* [1] */
+     [ 0x1e ] = { cmd_prevent_allow_medium_removal,  0 },
+     [ 0x25 ] = { cmd_read_cdvd_capacity,            CHECK_READY },
+-    [ 0x28 ] = { cmd_read, /* (10) */               0 },
++    [ 0x28 ] = { cmd_read, /* (10) */               CHECK_READY },
+     [ 0x2b ] = { cmd_seek,                          CHECK_READY },
+     [ 0x43 ] = { cmd_read_toc_pma_atip,             CHECK_READY },
+     [ 0x46 ] = { cmd_get_configuration,             ALLOW_UA },
+     [ 0x4a ] = { cmd_get_event_status_notification, ALLOW_UA },
+     [ 0x5a ] = { cmd_mode_sense, /* (10) */         0 },
+-    [ 0xa8 ] = { cmd_read, /* (12) */               0 },
+-    [ 0xad ] = { cmd_read_dvd_structure,            0 },
++    [ 0xa8 ] = { cmd_read, /* (12) */               CHECK_READY },
++    [ 0xad ] = { cmd_read_dvd_structure,            CHECK_READY },
+     [ 0xbb ] = { cmd_set_speed,                     0 },
+     [ 0xbd ] = { cmd_mechanism_status,              0 },
+-    [ 0xbe ] = { cmd_read_cd,                       0 },
++    [ 0xbe ] = { cmd_read_cd,                       CHECK_READY },
++    /* [1] handler detects and reports not ready condition itself */
+ };
+ 
+ void ide_atapi_cmd(IDEState *s)
+@@ -1125,7 +1126,7 @@ void ide_atapi_cmd(IDEState *s)
+      * GET_EVENT_STATUS_NOTIFICATION to detect such tray open/close
+      * states rely on this behavior.
+      */
+-    if (bdrv_is_inserted(s->bs) && s->cdrom_changed) {
++    if (!s->tray_open && bdrv_is_inserted(s->bs) && s->cdrom_changed) {
+         ide_atapi_cmd_error(s, SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
+ 
+         s->cdrom_changed = 0;
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index 9674e3e..b0d1e88 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -177,6 +177,9 @@ static void scsi_read_data(SCSIRequest *req)
+     if (n > SCSI_DMA_BUF_SIZE / 512)
+         n = SCSI_DMA_BUF_SIZE / 512;
+ 
++    if (s->tray_open) {
++        scsi_read_complete(r, -ENOMEDIUM);
++    }
+     r->iov.iov_len = n * 512;
+     qemu_iovec_init_external(&r->qiov, &r->iov, 1);
+ 
+@@ -274,6 +277,9 @@ static void scsi_write_data(SCSIRequest *req)
+ 
+     n = r->iov.iov_len / 512;
+     if (n) {
++        if (s->tray_open) {
++            scsi_write_complete(r, -ENOMEDIUM);
++        }
+         qemu_iovec_init_external(&r->qiov, &r->iov, 1);
+ 
+         bdrv_acct_start(s->bs, &r->acct, n * BDRV_SECTOR_SIZE, BDRV_ACCT_WRITE);
+@@ -828,7 +834,7 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r, uint8_t *outbuf)
+ 
+     switch (req->cmd.buf[0]) {
+     case TEST_UNIT_READY:
+-        if (!bdrv_is_inserted(s->bs))
++        if (s->tray_open || !bdrv_is_inserted(s->bs))
+             goto not_ready;
+         break;
+     case REQUEST_SENSE:
+@@ -975,7 +981,7 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r, uint8_t *outbuf)
+     return buflen;
+ 
+ not_ready:
+-    if (!bdrv_is_inserted(s->bs)) {
++    if (s->tray_open || !bdrv_is_inserted(s->bs)) {
+         scsi_check_condition(r, SENSE_CODE(NO_MEDIUM));
+     } else {
+         scsi_check_condition(r, SENSE_CODE(LUN_NOT_READY));
+-- 
+1.7.4.4
+

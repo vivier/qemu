@@ -1,0 +1,171 @@
+From 13125f11b9eb74f98687b1996046fd65ca0194d1 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:07 +0200
+Subject: [PATCH 32/76] block: Make BlockDriver method bdrv_eject() return
+ void
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-25-git-send-email-armbru@redhat.com>
+Patchwork-id: 33619
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 24/68] block: Make BlockDriver method bdrv_eject() return void
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Callees always return 0, except for FreeBSD's cdrom_eject(), which
+returns -ENOTSUP when the device is in a terminally wedged state.
+
+The only caller is bdrv_eject(), and it maps -ENOTSUP to 0 since
+commit 4be9762a.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 822e1cd17e8fa3ae98d0481c20f042316ace3fbc)
+---
+ block.c           |   17 ++++-------------
+ block/raw-posix.c |   16 +++++-----------
+ block/raw.c       |    4 ++--
+ block_int.h       |    2 +-
+ 4 files changed, 12 insertions(+), 27 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ block.c           |   17 ++++-------------
+ block/raw-posix.c |   16 +++++-----------
+ block/raw.c       |    4 ++--
+ block_int.h       |    2 +-
+ 4 files changed, 12 insertions(+), 27 deletions(-)
+
+diff --git a/block.c b/block.c
+index 1da6cba..0025bae 100644
+--- a/block.c
++++ b/block.c
+@@ -2628,25 +2628,16 @@ int bdrv_media_changed(BlockDriverState *bs)
+ int bdrv_eject(BlockDriverState *bs, int eject_flag)
+ {
+     BlockDriver *drv = bs->drv;
+-    int ret;
+ 
+     if (bs->locked) {
+         return -EBUSY;
+     }
+ 
+-    if (!drv || !drv->bdrv_eject) {
+-        ret = -ENOTSUP;
+-    } else {
+-        ret = drv->bdrv_eject(bs, eject_flag);
+-    }
+-    if (ret == -ENOTSUP) {
+-        ret = 0;
++    if (drv && drv->bdrv_eject) {
++        drv->bdrv_eject(bs, eject_flag);
+     }
+-    if (ret >= 0) {
+-        bs->tray_open = eject_flag;
+-    }
+-
+-    return ret;
++    bs->tray_open = eject_flag;
++    return 0;
+ }
+ 
+ int bdrv_is_locked(BlockDriverState *bs)
+diff --git a/block/raw-posix.c b/block/raw-posix.c
+index df9a636..5a76135 100644
+--- a/block/raw-posix.c
++++ b/block/raw-posix.c
+@@ -1120,7 +1120,7 @@ static int floppy_media_changed(BlockDriverState *bs)
+     return ret;
+ }
+ 
+-static int floppy_eject(BlockDriverState *bs, int eject_flag)
++static void floppy_eject(BlockDriverState *bs, int eject_flag)
+ {
+     BDRVRawState *s = bs->opaque;
+     int fd;
+@@ -1135,8 +1135,6 @@ static int floppy_eject(BlockDriverState *bs, int eject_flag)
+             perror("FDEJECT");
+         close(fd);
+     }
+-
+-    return 0;
+ }
+ 
+ static BlockDriver bdrv_host_floppy = {
+@@ -1209,7 +1207,7 @@ static int cdrom_is_inserted(BlockDriverState *bs)
+     return 0;
+ }
+ 
+-static int cdrom_eject(BlockDriverState *bs, int eject_flag)
++static void cdrom_eject(BlockDriverState *bs, int eject_flag)
+ {
+     BDRVRawState *s = bs->opaque;
+ 
+@@ -1220,8 +1218,6 @@ static int cdrom_eject(BlockDriverState *bs, int eject_flag)
+         if (ioctl(s->fd, CDROMCLOSETRAY, NULL) < 0)
+             perror("CDROMEJECT");
+     }
+-
+-    return 0;
+ }
+ 
+ static void cdrom_set_locked(BlockDriverState *bs, int locked)
+@@ -1321,12 +1317,12 @@ static int cdrom_is_inserted(BlockDriverState *bs)
+     return raw_getlength(bs) > 0;
+ }
+ 
+-static int cdrom_eject(BlockDriverState *bs, int eject_flag)
++static void cdrom_eject(BlockDriverState *bs, int eject_flag)
+ {
+     BDRVRawState *s = bs->opaque;
+ 
+     if (s->fd < 0)
+-        return -ENOTSUP;
++        return;
+ 
+     (void) ioctl(s->fd, CDIOCALLOW);
+ 
+@@ -1338,9 +1334,7 @@ static int cdrom_eject(BlockDriverState *bs, int eject_flag)
+             perror("CDIOCCLOSE");
+     }
+ 
+-    if (cdrom_reopen(bs) < 0)
+-        return -ENOTSUP;
+-    return 0;
++    cdrom_reopen(bs);
+ }
+ 
+ static void cdrom_set_locked(BlockDriverState *bs, int locked)
+diff --git a/block/raw.c b/block/raw.c
+index 1398a9c..cb6203e 100644
+--- a/block/raw.c
++++ b/block/raw.c
+@@ -75,9 +75,9 @@ static int raw_is_inserted(BlockDriverState *bs)
+     return bdrv_is_inserted(bs->file);
+ }
+ 
+-static int raw_eject(BlockDriverState *bs, int eject_flag)
++static void raw_eject(BlockDriverState *bs, int eject_flag)
+ {
+-    return bdrv_eject(bs->file, eject_flag);
++    bdrv_eject(bs->file, eject_flag);
+ }
+ 
+ static void raw_set_locked(BlockDriverState *bs, int locked)
+diff --git a/block_int.h b/block_int.h
+index fcede40..d8a2962 100644
+--- a/block_int.h
++++ b/block_int.h
+@@ -111,7 +111,7 @@ struct BlockDriver {
+     /* removable device specific */
+     int (*bdrv_is_inserted)(BlockDriverState *bs);
+     int (*bdrv_media_changed)(BlockDriverState *bs);
+-    int (*bdrv_eject)(BlockDriverState *bs, int eject_flag);
++    void (*bdrv_eject)(BlockDriverState *bs, int eject_flag);
+     void (*bdrv_set_locked)(BlockDriverState *bs, int locked);
+ 
+     /* to control generic scsi devices */
+-- 
+1.7.4.4
+

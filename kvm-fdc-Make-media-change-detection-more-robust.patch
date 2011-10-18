@@ -1,0 +1,71 @@
+From 69404169fd3c7021d593ce67502f202082d84f49 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:26 +0200
+Subject: [PATCH 51/76] fdc: Make media change detection more robust
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-44-git-send-email-armbru@redhat.com>
+Patchwork-id: 33631
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 43/68] fdc: Make media change detection more robust
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+fdctrl_change_cb() gets called on a virtual media change via monitor.
+It would be nice if host device block drivers called it on physical
+media change, but they don't.
+
+bdrv_media_changed() lets you poll for media change, but it returns
+"don't know" except with block driver "host_floppy".
+
+FDrive member media_changed gets set on device initialization and by
+fdctrl_change_cb(), and cleared by fdctrl_media_changed().  Thus, it's
+set on first entry to fdctrl_media_changed() since device
+initialization or virtual media change.
+
+fdctrl_media_changed() ignores media_changed unless
+bdrv_media_changed() returns "don't know".  If we change media via
+monitor (setting media_changed), and the new media's block driver
+returns 0, we lose.  Fortunately, "host_floppy" always returns 1 on
+first call.  Brittle.  Clean it up not to rely on it.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 18d90055293adc4937c91fb7b87743b1994d8bc5)
+---
+ hw/fdc.c |   12 ++++++++----
+ 1 files changed, 8 insertions(+), 4 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/fdc.c |   12 ++++++++----
+ 1 files changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/hw/fdc.c b/hw/fdc.c
+index 2378e3f..a96244e 100644
+--- a/hw/fdc.c
++++ b/hw/fdc.c
+@@ -1000,11 +1000,15 @@ static int fdctrl_media_changed(fdrive_t *drv)
+ 
+     if (!drv->bs)
+         return 0;
+-    ret = bdrv_media_changed(drv->bs);
+-    if (ret < 0) {
+-        ret = drv->media_changed;
++    if (drv->media_changed) {
++        drv->media_changed = 0;
++        ret = 1;
++    } else {
++        ret = bdrv_media_changed(drv->bs);
++        if (ret < 0) {
++            ret = 0;            /* we don't know, assume no */
++        }
+     }
+-    drv->media_changed = 0;
+     if (ret) {
+         fd_revalidate(drv);
+     }
+-- 
+1.7.4.4
+

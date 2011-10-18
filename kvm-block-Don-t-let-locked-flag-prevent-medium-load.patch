@@ -1,0 +1,46 @@
+From 350ea04dd35d908f700fb97276818f98e6cf4c68 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:08 +0200
+Subject: [PATCH 33/76] block: Don't let locked flag prevent medium load
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-26-git-send-email-armbru@redhat.com>
+Patchwork-id: 33655
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 25/68] block: Don't let locked flag prevent medium load
+Bugzilla: 742480
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Commit aea2a33c made bdrv_eject() obey the locked flag.  Correct for
+medium eject (eject_flag set), incorrect for medium load (eject_flag
+clear).  See MMC-5 Table 341 "Actions for Lock/Unlock/Eject".
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 49aa46bb4b894ff8bdb0339ee2a5dd3fcfe93ecd)
+---
+ block.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ block.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/block.c b/block.c
+index 0025bae..90dea44 100644
+--- a/block.c
++++ b/block.c
+@@ -2629,7 +2629,7 @@ int bdrv_eject(BlockDriverState *bs, int eject_flag)
+ {
+     BlockDriver *drv = bs->drv;
+ 
+-    if (bs->locked) {
++    if (eject_flag && bs->locked) {
+         return -EBUSY;
+     }
+ 
+-- 
+1.7.4.4
+

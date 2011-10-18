@@ -1,0 +1,93 @@
+From 24e651dd3c1ae5755e631d9b6eafbfc04004b5a3 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:09 +0200
+Subject: [PATCH 34/76] scsi-disk: Codingstyle fixes
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-27-git-send-email-armbru@redhat.com>
+Patchwork-id: 33650
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 26/68] scsi-disk: Codingstyle fixes
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Hannes Reinecke <hare@suse.de>
+
+Replace tabs with spaces.
+
+Signed-off-by: Hannes Reinecke <hare@suse.de>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 5f71d32f0da4d1e578738f765b57fbfaf4bd3214)
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ hw/scsi-disk.c |   16 ++++++++--------
+ 1 files changed, 8 insertions(+), 8 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/scsi-disk.c |   16 ++++++++--------
+ 1 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index 9e3be35..470ef64 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -537,7 +537,7 @@ static int scsi_disk_emulate_inquiry(SCSIRequest *req, uint8_t *outbuf)
+     memset(outbuf, 0, buflen);
+ 
+     if (req->lun) {
+-        outbuf[0] = 0x7f;	/* LUN not supported */
++        outbuf[0] = 0x7f;       /* LUN not supported */
+         return buflen;
+     }
+ 
+@@ -847,7 +847,7 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r, uint8_t *outbuf)
+     case TEST_UNIT_READY:
+         if (!bdrv_is_inserted(s->bs))
+             goto not_ready;
+-	break;
++        break;
+     case REQUEST_SENSE:
+         if (req->cmd.xfer < 4)
+             goto illegal_request;
+@@ -859,7 +859,7 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r, uint8_t *outbuf)
+         buflen = scsi_disk_emulate_inquiry(req, outbuf);
+         if (buflen < 0)
+             goto illegal_request;
+-	break;
++        break;
+     case MODE_SENSE:
+     case MODE_SENSE_10:
+         buflen = scsi_disk_emulate_mode_sense(req, outbuf);
+@@ -892,14 +892,14 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r, uint8_t *outbuf)
+             /* load/eject medium */
+             bdrv_eject(s->bs, !(req->cmd.buf[4] & 1));
+         }
+-	break;
++        break;
+     case ALLOW_MEDIUM_REMOVAL:
+         bdrv_set_locked(s->bs, req->cmd.buf[4] & 1);
+-	break;
++        break;
+     case READ_CAPACITY:
+         /* The normal LEN field for this command is zero.  */
+-	memset(outbuf, 0, 8);
+-	bdrv_get_geometry(s->bs, &nb_sectors);
++        memset(outbuf, 0, 8);
++        bdrv_get_geometry(s->bs, &nb_sectors);
+         if (!nb_sectors)
+             goto not_ready;
+         nb_sectors /= s->cluster_size;
+@@ -919,7 +919,7 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r, uint8_t *outbuf)
+         outbuf[6] = s->cluster_size * 2;
+         outbuf[7] = 0;
+         buflen = 8;
+-	break;
++        break;
+     case SYNCHRONIZE_CACHE:
+ {
+         BlockAcctCookie acct;
+-- 
+1.7.4.4
+

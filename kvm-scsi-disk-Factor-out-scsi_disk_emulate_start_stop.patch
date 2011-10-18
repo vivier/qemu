@@ -1,0 +1,64 @@
+From ad5f61e1d5da78b73a95994023a6e6909627328c Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:35 +0200
+Subject: [PATCH 60/76] scsi-disk: Factor out scsi_disk_emulate_start_stop()
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-53-git-send-email-armbru@redhat.com>
+Patchwork-id: 33658
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 52/68] scsi-disk: Factor out scsi_disk_emulate_start_stop()
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit bfd52647adc17ec05b708e2a061f85707cbe4dcc)
+---
+ hw/scsi-disk.c |   17 +++++++++++++----
+ 1 files changed, 13 insertions(+), 4 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/scsi-disk.c |   17 +++++++++++++----
+ 1 files changed, 13 insertions(+), 4 deletions(-)
+
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index 2665b07..93738bb 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -804,6 +804,18 @@ static int scsi_disk_emulate_read_toc(SCSIRequest *req, uint8_t *outbuf)
+     return toclen;
+ }
+ 
++static void scsi_disk_emulate_start_stop(SCSIDiskReq *r)
++{
++    SCSIRequest *req = &r->req;
++    SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, req->dev);
++    bool start = req->cmd.buf[4] & 1;
++    bool loej = req->cmd.buf[4] & 2; /* load on start, eject on !start */
++
++    if (s->qdev.type == TYPE_ROM && loej) {
++        bdrv_eject(s->bs, !start);
++    }
++}
++
+ static int scsi_disk_emulate_command(SCSIDiskReq *r, uint8_t *outbuf)
+ {
+     SCSIRequest *req = &r->req;
+@@ -856,10 +868,7 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r, uint8_t *outbuf)
+             goto illegal_request;
+         break;
+     case START_STOP:
+-        if (s->qdev.type == TYPE_ROM && (req->cmd.buf[4] & 2)) {
+-            /* load/eject medium */
+-            bdrv_eject(s->bs, !(req->cmd.buf[4] & 1));
+-        }
++        scsi_disk_emulate_start_stop(r);
+         break;
+     case ALLOW_MEDIUM_REMOVAL:
+         bdrv_set_locked(s->bs, req->cmd.buf[4] & 1);
+-- 
+1.7.4.4
+

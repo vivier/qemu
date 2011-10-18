@@ -1,0 +1,91 @@
+From ceee3a15c80c034b03e834e89c9244a0323081ae Mon Sep 17 00:00:00 2001
+From: ddugger@redhat.com <ddugger@redhat.com>
+Date: Wed, 21 Sep 2011 04:59:55 +0200
+Subject: [PATCH 06/76] bz716261: Put XSAVE area in a sub-section
+
+RH-Author: ddugger@redhat.com
+Message-id: <1316581195-18779-7-git-send-email-ddugger@redhat.com>
+Patchwork-id: 33034
+O-Subject: [RHEL 6.2 PATCH 6/6 V3] bz716261: Put XSAVE area in a sub-section
+Bugzilla: 716261
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+
+From: Don Dugger <n0ano@sobek.n0ano.com>
+
+By putting the XSAVE area in a sub-section of the save file we will
+maintain forward/backward compatibility with older versions of the
+save file.
+
+Upstream status: Not applicable
+
+Signed-off-by: Don Dugger <donald.d.dugger@intel.com>
+---
+ target-i386/machine.c |   36 ++++++++++++++++++++++++++++++++----
+ 1 files changed, 32 insertions(+), 4 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ target-i386/machine.c |   36 ++++++++++++++++++++++++++++++++----
+ 1 files changed, 32 insertions(+), 4 deletions(-)
+
+diff --git a/target-i386/machine.c b/target-i386/machine.c
+index ee45073..d7ea048 100644
+--- a/target-i386/machine.c
++++ b/target-i386/machine.c
+@@ -399,6 +399,26 @@ static int cpu_post_load(void *opaque, int version_id)
+     return 0;
+ }
+ 
++static bool vmstate_xsave_needed(void *opaque)
++{
++    CPUState *cs = opaque;
++
++    return (cs->cpuid_ext_features & CPUID_EXT_XSAVE);
++}
++
++static const VMStateDescription vmstate_xsave ={
++    .name = "xsave",
++    .version_id = 1,
++    .minimum_version_id = 1,
++    .minimum_version_id_old = 1,
++    .fields      = (VMStateField []) {
++	VMSTATE_UINT64_V(xcr0, CPUState, 1),
++	VMSTATE_UINT64_V(xstate_bv, CPUState, 1),
++	VMSTATE_YMMH_REGS_VARS(ymmh_regs, CPUState, CPU_NB_REGS, 1),
++	VMSTATE_END_OF_LIST()
++    }
++};
++
+ static const VMStateDescription vmstate_cpu = {
+     .name = "cpu",
+     .version_id = CPU_SAVE_VERSION,
+@@ -496,12 +516,20 @@ static const VMStateDescription vmstate_cpu = {
+         /* KVM pvclock msr */
+         VMSTATE_UINT64_V(system_time_msr, CPUState, 11),
+         VMSTATE_UINT64_V(wall_clock_msr, CPUState, 11),
+-
+-        VMSTATE_UINT64_V(xcr0, CPUState, 12),
+-        VMSTATE_UINT64_V(xstate_bv, CPUState, 12),
+-        VMSTATE_YMMH_REGS_VARS(ymmh_regs, CPUState, CPU_NB_REGS, 12),
+         VMSTATE_END_OF_LIST()
+         /* The above list is not sorted /wrt version numbers, watch out! */
++    },
++    /*
++       Put the XSAVE state in a sub-section to allow compatibility with
++	older save files.
++     */
++    .subsections = (VMStateSubsection []) {
++	{
++	    .vmsd = &vmstate_xsave,
++	    .needed = vmstate_xsave_needed,
++	}, {
++	    /* empty */
++	}
+     }
+ };
+ 
+-- 
+1.7.4.4
+

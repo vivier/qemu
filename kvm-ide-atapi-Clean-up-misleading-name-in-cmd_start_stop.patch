@@ -1,0 +1,54 @@
+From 20b77e3c697b7239d02b9a045ee50b1c1fb327eb Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:33 +0200
+Subject: [PATCH 58/76] ide/atapi: Clean up misleading name in
+ cmd_start_stop_unit()
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-51-git-send-email-armbru@redhat.com>
+Patchwork-id: 33657
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 50/68] ide/atapi: Clean up misleading name in cmd_start_stop_unit()
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+"eject" is misleading; it means "eject" when start is clear, but
+"load" when start is set.  Rename to loej, because that's how MMC-5
+calls it, in section 6.40.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit f0776564182c37362f070b84b5fc63c2a944df6e)
+---
+ hw/ide/atapi.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/ide/atapi.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/hw/ide/atapi.c b/hw/ide/atapi.c
+index 085fc77..d97a9d2 100644
+--- a/hw/ide/atapi.c
++++ b/hw/ide/atapi.c
+@@ -900,11 +900,11 @@ static void cmd_seek(IDEState *s, uint8_t* buf)
+ 
+ static void cmd_start_stop_unit(IDEState *s, uint8_t* buf)
+ {
+-    int start, eject, sense, err = 0;
+-    start = buf[4] & 1;
+-    eject = (buf[4] >> 1) & 1;
++    int sense, err = 0;
++    bool start = buf[4] & 1;
++    bool loej = buf[4] & 2;     /* load on start, eject on !start */
+ 
+-    if (eject) {
++    if (loej) {
+         err = bdrv_eject(s->bs, !start);
+     }
+ 
+-- 
+1.7.4.4
+

@@ -1,0 +1,65 @@
+From b6c635e7fc54a7c714bfdbd77625908afe2c2ed1 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:23:54 +0200
+Subject: [PATCH 19/76] atapi: Report correct errors on guest eject request
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-12-git-send-email-armbru@redhat.com>
+Patchwork-id: 33624
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 11/68] atapi: Report correct errors on guest eject request
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Amit Shah <amit.shah@redhat.com>
+
+Table 629 of the MMC-5 spec mentions two different error conditions when
+a CDROM eject is requested: a) while a disc is inserted and b) while a
+disc is not inserted.
+
+Ensure we return the appropriate error for the present condition of the
+drive and disc status.
+
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 88f2bb58ef97ca269b29fe92bb4834f5ddbcde80)
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ hw/ide/core.c |    8 ++++++--
+ 1 files changed, 6 insertions(+), 2 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/ide/core.c |    8 ++++++--
+ 1 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index a68dad7..7baa98a 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -1631,7 +1631,7 @@ static void ide_atapi_cmd(IDEState *s)
+         break;
+     case GPCMD_START_STOP_UNIT:
+         {
+-            int start, eject, err = 0;
++            int start, eject, sense, err = 0;
+             start = packet[4] & 1;
+             eject = (packet[4] >> 1) & 1;
+ 
+@@ -1644,7 +1644,11 @@ static void ide_atapi_cmd(IDEState *s)
+                 ide_atapi_cmd_ok(s);
+                 break;
+             case -EBUSY:
+-                ide_atapi_cmd_error(s, SENSE_NOT_READY,
++                sense = SENSE_NOT_READY;
++                if (bdrv_is_inserted(s->bs)) {
++                    sense = SENSE_ILLEGAL_REQUEST;
++                }
++                ide_atapi_cmd_error(s, sense,
+                                     ASC_MEDIA_REMOVAL_PREVENTED);
+                 break;
+             default:
+-- 
+1.7.4.4
+

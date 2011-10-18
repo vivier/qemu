@@ -1,0 +1,96 @@
+From 030bfbc387a5acb05c4cff2b51196230d486f2da Mon Sep 17 00:00:00 2001
+From: ddugger@redhat.com <ddugger@redhat.com>
+Date: Wed, 21 Sep 2011 04:59:52 +0200
+Subject: [PATCH 03/76] bz716261: Fix XSAVE feature bit enumeration
+
+RH-Author: ddugger@redhat.com
+Message-id: <1316581195-18779-4-git-send-email-ddugger@redhat.com>
+Patchwork-id: 33030
+O-Subject: [RHEL 6.2 PATCH 3/6 V3] bz716261: Fix XSAVE feature bit enumeration
+Bugzilla: 716261
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+
+From: n0ano@n0ano.com <n0ano@n0ano.com>
+
+>From git://git.qemu.org/qemu.git:
+
+    commit 31e8c69697becf5e0b54a6a0cef1d27109d469e9
+    Author: Andre Przywara <andre.przywara@amd.com>
+    Date:   Fri Jun 10 15:56:28 2011 +0200
+
+    KVM: Fix XSAVE feature bit enumeration
+    When iterating through the XSAVE feature enumeration CPUID leaf (0xD)           we should not stop at the first zero EAX, but instead keep scanning
+    since there are gaps in the enumeration (ECX=1 for instance).                   This fixes the proper usage of AVX in KVM guests.
+
+    Signed-off-by: Andre Przywara <andre.przywara@amd.com>
+    Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+Signed-off-by: Frank Arnold <farnold@redhat.com>
+Signed-off-by: Don Dugger <donald.d.dugger@intel.com>
+---
+ qemu-kvm-x86.c    |    8 ++++++--
+ target-i386/kvm.c |    5 ++++-
+ 2 files changed, 10 insertions(+), 3 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ qemu-kvm-x86.c    |    8 ++++++--
+ target-i386/kvm.c |    5 ++++-
+ 2 files changed, 10 insertions(+), 3 deletions(-)
+
+diff --git a/qemu-kvm-x86.c b/qemu-kvm-x86.c
+index 3a644bf..74c413c 100644
+--- a/qemu-kvm-x86.c
++++ b/qemu-kvm-x86.c
+@@ -1358,8 +1358,14 @@ int kvm_arch_init_vcpu(CPUState *cenv)
+     for (i = 0; i <= limit; ++i) {
+         if (i == 4 || i == 0xb || i == 0xd) {
+             for (j = 0; ; ++j) {
++                if (i == 0xd && j == 64)
++                    break;
++
+                 do_cpuid_ent(&cpuid_ent[cpuid_nent], i, j, &copy);
+ 
++                if (i == 0xd && copy.regs[R_EAX] == 0)
++                    continue;
++
+                 cpuid_ent[cpuid_nent].flags = KVM_CPUID_FLAG_SIGNIFCANT_INDEX;
+                 cpuid_ent[cpuid_nent].index = j;
+ 
+@@ -1369,8 +1375,6 @@ int kvm_arch_init_vcpu(CPUState *cenv)
+                     break;
+                 if (i == 0xb && !(copy.regs[R_ECX] & 0xff00))
+                     break;
+-                if (i == 0xd && copy.regs[R_EAX] == 0)
+-                    break;
+             }
+         } else
+             do_cpuid_ent(&cpuid_ent[cpuid_nent++], i, 0, &copy);
+diff --git a/target-i386/kvm.c b/target-i386/kvm.c
+index c7cd1c0..733c22f 100644
+--- a/target-i386/kvm.c
++++ b/target-i386/kvm.c
+@@ -192,6 +192,9 @@ int kvm_arch_init_vcpu(CPUState *env)
+         case 0xb:
+         case 0xd:
+             for (j = 0; ; j++) {
++                if (i == 0xd && j == 64) {
++                    break;
++                }
+                 c->function = i;
+                 c->flags = KVM_CPUID_FLAG_SIGNIFCANT_INDEX;
+                 c->index = j;
+@@ -202,7 +205,7 @@ int kvm_arch_init_vcpu(CPUState *env)
+                 if (i == 0xb && !(c->ecx & 0xff00))
+                     break;
+                 if (i == 0xd && c->eax == 0)
+-                    break;
++                    continue;
+ 
+                 c = &cpuid_data.entries[cpuid_i++];
+             }
+-- 
+1.7.4.4
+

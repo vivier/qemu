@@ -1,0 +1,93 @@
+From 23861a3fc19492eeeb59732b87682a1109a64727 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:23:58 +0200
+Subject: [PATCH 23/76] ide/atapi: Replace bdrv_get_geometry calls by
+ s->nb_sectors
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-16-git-send-email-armbru@redhat.com>
+Patchwork-id: 33661
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 15/68] ide/atapi: Replace bdrv_get_geometry calls by s->nb_sectors
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Kevin Wolf <kwolf@redhat.com>
+
+The disk size can only change when the medium is changed, and the change
+callback takes care of updating s->nb_sectors in this case.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit e119bcaceb8dc17fe4874d6b0d2b62752639e488)
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ hw/ide/atapi.c |   21 ++++++---------------
+ 1 files changed, 6 insertions(+), 15 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/ide/atapi.c |   21 ++++++---------------
+ 1 files changed, 6 insertions(+), 15 deletions(-)
+
+diff --git a/hw/ide/atapi.c b/hw/ide/atapi.c
+index 1acebf6..9dbd4bf 100644
+--- a/hw/ide/atapi.c
++++ b/hw/ide/atapi.c
+@@ -424,10 +424,10 @@ static int ide_dvd_read_structure(IDEState *s, int format,
+                 if (layer != 0)
+                     return -ASC_INV_FIELD_IN_CMD_PACKET;
+ 
+-                bdrv_get_geometry(s->bs, &total_sectors);
+-                total_sectors >>= 2;
+-                if (total_sectors == 0)
++                total_sectors = s->nb_sectors >> 2;
++                if (total_sectors == 0) {
+                     return -ASC_MEDIUM_NOT_PRESENT;
++                }
+ 
+                 buf[4] = 1;   /* DVD-ROM, part version 1 */
+                 buf[5] = 0xf; /* 120mm disc, minimum rate unspecified */
+@@ -889,11 +889,8 @@ static void cmd_read_cd(IDEState *s, uint8_t* buf)
+ static void cmd_seek(IDEState *s, uint8_t* buf)
+ {
+     unsigned int lba;
+-    uint64_t total_sectors;
+-
+-    bdrv_get_geometry(s->bs, &total_sectors);
++    uint64_t total_sectors = s->nb_sectors >> 2;
+ 
+-    total_sectors >>= 2;
+     if (total_sectors == 0) {
+         ide_atapi_cmd_error(s, SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
+         return;
+@@ -952,12 +949,9 @@ static void cmd_mechanism_status(IDEState *s, uint8_t* buf)
+ static void cmd_read_toc_pma_atip(IDEState *s, uint8_t* buf)
+ {
+     int format, msf, start_track, len;
+-    uint64_t total_sectors;
++    uint64_t total_sectors = s->nb_sectors >> 2;
+     int max_len;
+ 
+-    bdrv_get_geometry(s->bs, &total_sectors);
+-
+-    total_sectors >>= 2;
+     if (total_sectors == 0) {
+         ide_atapi_cmd_error(s, SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
+         return;
+@@ -998,11 +992,8 @@ static void cmd_read_toc_pma_atip(IDEState *s, uint8_t* buf)
+ 
+ static void cmd_read_cdvd_capacity(IDEState *s, uint8_t* buf)
+ {
+-    uint64_t total_sectors;
+-
+-    bdrv_get_geometry(s->bs, &total_sectors);
++    uint64_t total_sectors = s->nb_sectors >> 2;
+ 
+-    total_sectors >>= 2;
+     if (total_sectors == 0) {
+         ide_atapi_cmd_error(s, SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
+         return;
+-- 
+1.7.4.4
+

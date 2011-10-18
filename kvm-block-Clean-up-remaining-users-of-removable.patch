@@ -1,0 +1,208 @@
+From ec6283f00e47eb9d936dfb93f7958355077751f2 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:47 +0200
+Subject: [PATCH 72/76] block: Clean up remaining users of "removable"
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-65-git-send-email-armbru@redhat.com>
+Patchwork-id: 33648
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 64/68] block: Clean up remaining users of "removable"
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+BlockDriverState member removable is a confused mess.  It is true when
+an ide-cd, scsi-cd or floppy qdev is attached, or when the
+BlockDriverState was created with -drive if={floppy,sd} or -drive
+if={ide,scsi,xen,none},media=cdrom ("created removable"), except when
+an ide-hd, scsi-hd, scsi-generic or virtio-blk qdev is attached.
+
+Three users remain:
+
+1. eject_device(), via bdrv_is_removable() uses it to determine
+   whether a block device can eject media.
+
+2. bdrv_info() is monitor command "info block".  QMP documentation
+   says "true if the device is removable, false otherwise".  From the
+   monitor user's point of view, the only sensible interpretation of
+   "is removable" is "can eject media with monitor commands eject and
+   change".
+
+A block device can eject media unless a device is attached that
+doesn't support it.  Switch the two users over to new
+bdrv_dev_has_removable_media() that returns exactly that.
+
+3. bdrv_getlength() uses to suppress its length cache when media can
+   change (see commit 46a4e4e6).  Media change is either monitor
+   command change (updates the length cache), monitor command eject
+   (doesn't update the length cache, easily fixable), or physical
+   media change (invalidates length cache, not so easily fixable).
+
+I'm refraining from improving anything here, because this series is
+long enough already.  Instead, I simply switch it over to
+bdrv_dev_has_removable_media() as well.
+
+This changes the behavior of the length cache and of monitor commands
+eject and change in two cases:
+
+a. drive not created removable, no device attached
+
+   The commit makes the drive removable, and defeats the length cache.
+
+   Example: -drive if=none
+
+b. drive created removable, but the attached drive is non-removable,
+   and doesn't call bdrv_set_removable(..., 0) (most devices don't)
+
+   The commit makes the drive non-removable, and enables the length
+   cache.
+
+   Example: -drive if=xen,media=cdrom -M xenpv
+
+   The other non-removable devices that don't call
+   bdrv_set_removable() can't currently use a drive created removable,
+   either because they aren't qdevified, or because they lack a drive
+   property.  Won't stay that way.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 2c6942fa7b332a95286071b92d233853e1000948)
+---
+ block.c        |   18 +++++++++++-------
+ block.h        |    3 ++-
+ blockdev.c     |    2 +-
+ hw/scsi-disk.c |    5 +++++
+ 4 files changed, 19 insertions(+), 9 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ block.c        |   18 +++++++++++-------
+ block.h        |    3 ++-
+ blockdev.c     |    2 +-
+ hw/scsi-disk.c |    5 +++++
+ 4 files changed, 19 insertions(+), 9 deletions(-)
+
+diff --git a/block.c b/block.c
+index 97e3fdb..bfe724d 100644
+--- a/block.c
++++ b/block.c
+@@ -738,6 +738,9 @@ void bdrv_set_dev_ops(BlockDriverState *bs, const BlockDevOps *ops,
+ {
+     bs->dev_ops = ops;
+     bs->dev_opaque = opaque;
++    if (bdrv_dev_has_removable_media(bs) && bs == bs_snapshots) {
++        bs_snapshots = NULL;
++    }
+ }
+ 
+ static void bdrv_dev_change_media_cb(BlockDriverState *bs)
+@@ -747,6 +750,11 @@ static void bdrv_dev_change_media_cb(BlockDriverState *bs)
+     }
+ }
+ 
++bool bdrv_dev_has_removable_media(BlockDriverState *bs)
++{
++    return !bs->dev || (bs->dev_ops && bs->dev_ops->change_media_cb);
++}
++
+ static void bdrv_dev_resize_cb(BlockDriverState *bs)
+ {
+     if (bs->dev_ops && bs->dev_ops->resize_cb) {
+@@ -1162,7 +1170,7 @@ int64_t bdrv_getlength(BlockDriverState *bs)
+     if (!drv)
+         return -ENOMEDIUM;
+ 
+-    if (bs->growable || bs->removable) {
++    if (bs->growable || bdrv_dev_has_removable_media(bs)) {
+         if (drv->bdrv_getlength) {
+             return drv->bdrv_getlength(bs);
+         }
+@@ -1353,11 +1361,6 @@ void bdrv_set_removable(BlockDriverState *bs, int removable)
+     bs->removable = removable;
+ }
+ 
+-int bdrv_is_removable(BlockDriverState *bs)
+-{
+-    return bs->removable;
+-}
+-
+ int bdrv_is_read_only(BlockDriverState *bs)
+ {
+     return bs->read_only;
+@@ -1674,7 +1677,8 @@ void bdrv_info(Monitor *mon, QObject **ret_data)
+ 
+         bs_obj = qobject_from_jsonf("{ 'device': %s, 'type': 'unknown', "
+                                     "'removable': %i, 'locked': %i }",
+-                                    bs->device_name, bs->removable,
++                                    bs->device_name,
++                                    bdrv_dev_has_removable_media(bs),
+                                     bdrv_dev_is_medium_locked(bs));
+ 
+         if (bs->drv) {
+diff --git a/block.h b/block.h
+index b301866..a75b404 100644
+--- a/block.h
++++ b/block.h
+@@ -31,6 +31,7 @@ typedef struct BlockDevOps {
+      * Runs when virtual media changed (monitor commands eject, change)
+      * Beware: doesn't run when a host device's physical media
+      * changes.  Sure would be useful if it did.
++     * Device models with removable media must implement this callback.
+      */
+     void (*change_media_cb)(void *opaque);
+     /*
+@@ -102,6 +103,7 @@ void bdrv_detach_dev(BlockDriverState *bs, void *dev);
+ void *bdrv_get_attached_dev(BlockDriverState *bs);
+ void bdrv_set_dev_ops(BlockDriverState *bs, const BlockDevOps *ops,
+                       void *opaque);
++bool bdrv_dev_has_removable_media(BlockDriverState *bs);
+ bool bdrv_dev_is_medium_locked(BlockDriverState *bs);
+ int bdrv_read(BlockDriverState *bs, int64_t sector_num,
+               uint8_t *buf, int nb_sectors);
+@@ -205,7 +207,6 @@ void bdrv_set_on_error(BlockDriverState *bs, BlockErrorAction on_read_error,
+                        BlockErrorAction on_write_error);
+ BlockErrorAction bdrv_get_on_error(BlockDriverState *bs, int is_read);
+ void bdrv_set_removable(BlockDriverState *bs, int removable);
+-int bdrv_is_removable(BlockDriverState *bs);
+ int bdrv_is_read_only(BlockDriverState *bs);
+ int bdrv_is_sg(BlockDriverState *bs);
+ int bdrv_enable_write_cache(BlockDriverState *bs);
+diff --git a/blockdev.c b/blockdev.c
+index cb2b0b6..467f018 100644
+--- a/blockdev.c
++++ b/blockdev.c
+@@ -911,7 +911,7 @@ int do_block_job_set_speed(Monitor *mon, const QDict *params,
+ 
+ static int eject_device(Monitor *mon, BlockDriverState *bs, int force)
+ {
+-    if (!bdrv_is_removable(bs)) {
++    if (!bdrv_dev_has_removable_media(bs)) {
+         qerror_report(QERR_DEVICE_NOT_REMOVABLE, bdrv_get_device_name(bs));
+         return -1;
+     }
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index 39a0f68..c93f1a0 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -1195,12 +1195,17 @@ static void scsi_destroy(SCSIDevice *dev)
+     blockdev_mark_auto_del(s->qdev.conf.bs);
+ }
+ 
++static void scsi_cd_change_media_cb(void *opaque)
++{
++}
++
+ static bool scsi_cd_is_medium_locked(void *opaque)
+ {
+     return ((SCSIDiskState *)opaque)->tray_locked;
+ }
+ 
+ static const BlockDevOps scsi_cd_block_ops = {
++    .change_media_cb = scsi_cd_change_media_cb,
+     .is_medium_locked = scsi_cd_is_medium_locked,
+ };
+ 
+-- 
+1.7.4.4
+

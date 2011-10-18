@@ -1,0 +1,281 @@
+From 2537286a66e5bb99ea308ba235c0dcc7389e4450 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:23:49 +0200
+Subject: [PATCH 14/76] ide: Replace IDEState members is_cdrom, is_cf by
+ drive_kind
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-7-git-send-email-armbru@redhat.com>
+Patchwork-id: 33605
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 06/68] ide: Replace IDEState members is_cdrom, is_cf by drive_kind
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+The two aren't independent variables.  Make that obvious.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit cd8722bb22ed41586ef489b3521173f1a80c9357)
+
+Conflicts:
+
+	hw/ide/core.c
+	hw/ide/macio.c
+
+Commit 69ce1679 makes ide_init_drive() call bdrv_set_removable()
+earlier than upstream, causing the first conflict.  Move it to where
+upstream has it.
+
+Commit 0717f642 overtook this one in RHEL-6, causing the second
+conflict.
+---
+ hw/ide/core.c       |   40 ++++++++++++++++++++--------------------
+ hw/ide/internal.h   |    5 +++--
+ hw/ide/macio.c      |    2 +-
+ hw/ide/microdrive.c |    2 +-
+ 4 files changed, 25 insertions(+), 24 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/ide/core.c       |   40 ++++++++++++++++++++--------------------
+ hw/ide/internal.h   |    5 +++--
+ hw/ide/macio.c      |    2 +-
+ hw/ide/microdrive.c |    2 +-
+ 4 files changed, 25 insertions(+), 24 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 6e9429f..7ca81f2 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -293,7 +293,7 @@ static void ide_set_signature(IDEState *s)
+     /* put signature */
+     s->nsector = 1;
+     s->sector = 1;
+-    if (s->is_cdrom) {
++    if (s->drive_kind == IDE_CD) {
+         s->lcyl = 0x14;
+         s->hcyl = 0xeb;
+     } else if (s->bs) {
+@@ -2046,15 +2046,15 @@ void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+ 
+         switch(val) {
+         case WIN_IDENTIFY:
+-            if (s->bs && !s->is_cdrom) {
+-                if (!s->is_cf)
++            if (s->bs && s->drive_kind != IDE_CD) {
++                if (s->drive_kind != IDE_CFATA)
+                     ide_identify(s);
+                 else
+                     ide_cfata_identify(s);
+                 s->status = READY_STAT | SEEK_STAT;
+                 ide_transfer_start(s, s->io_buffer, 512, ide_transfer_stop);
+             } else {
+-                if (s->is_cdrom) {
++                if (s->drive_kind == IDE_CD) {
+                     ide_set_signature(s);
+                 }
+                 ide_abort_command(s);
+@@ -2068,7 +2068,7 @@ void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+             ide_set_irq(s->bus);
+             break;
+         case WIN_SETMULT:
+-            if (s->is_cf && s->nsector == 0) {
++            if (s->drive_kind == IDE_CFATA && s->nsector == 0) {
+                 /* Disable Read and Write Multiple */
+                 s->mult_sectors = 0;
+                 s->status = READY_STAT | SEEK_STAT;
+@@ -2249,7 +2249,7 @@ void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+             ide_set_irq(s->bus);
+             break;
+         case WIN_SEEK:
+-            if(s->is_cdrom)
++            if(s->drive_kind == IDE_CD)
+                 goto abort_cmd;
+             /* XXX: Check that seek is within bounds */
+             s->status = READY_STAT | SEEK_STAT;
+@@ -2257,7 +2257,7 @@ void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+             break;
+             /* ATAPI commands */
+         case WIN_PIDENTIFY:
+-            if (s->is_cdrom) {
++            if (s->drive_kind == IDE_CD) {
+                 ide_atapi_identify(s);
+                 s->status = READY_STAT | SEEK_STAT;
+                 ide_transfer_start(s, s->io_buffer, 512, ide_transfer_stop);
+@@ -2268,7 +2268,7 @@ void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+             break;
+         case WIN_DIAGNOSE:
+             ide_set_signature(s);
+-            if (s->is_cdrom)
++            if (s->drive_kind == IDE_CD)
+                 s->status = 0; /* ATAPI spec (v6) section 9.10 defines packet
+                                 * devices to return a clear status register
+                                 * with READY_STAT *not* set. */
+@@ -2280,14 +2280,14 @@ void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+             ide_set_irq(s->bus);
+             break;
+         case WIN_SRST:
+-            if (!s->is_cdrom)
++            if (s->drive_kind != IDE_CD)
+                 goto abort_cmd;
+             ide_set_signature(s);
+             s->status = 0x00; /* NOTE: READY is _not_ set */
+             s->error = 0x01;
+             break;
+         case WIN_PACKETCMD:
+-            if (!s->is_cdrom)
++            if (s->drive_kind != IDE_CD)
+                 goto abort_cmd;
+             /* overlapping commands not supported */
+             if (s->feature & 0x02)
+@@ -2300,7 +2300,7 @@ void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+             break;
+         /* CF-ATA commands */
+         case CFA_REQ_EXT_ERROR_CODE:
+-            if (!s->is_cf)
++            if (s->drive_kind != IDE_CFATA)
+                 goto abort_cmd;
+             s->error = 0x09;    /* miscellaneous error */
+             s->status = READY_STAT | SEEK_STAT;
+@@ -2308,7 +2308,7 @@ void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+             break;
+         case CFA_ERASE_SECTORS:
+         case CFA_WEAR_LEVEL:
+-            if (!s->is_cf)
++            if (s->drive_kind != IDE_CFATA)
+                 goto abort_cmd;
+             if (val == CFA_WEAR_LEVEL)
+                 s->nsector = 0;
+@@ -2319,7 +2319,7 @@ void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+             ide_set_irq(s->bus);
+             break;
+         case CFA_TRANSLATE_SECTOR:
+-            if (!s->is_cf)
++            if (s->drive_kind != IDE_CFATA)
+                 goto abort_cmd;
+             s->error = 0x00;
+             s->status = READY_STAT | SEEK_STAT;
+@@ -2339,7 +2339,7 @@ void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+             ide_set_irq(s->bus);
+             break;
+         case CFA_ACCESS_METADATA_STORAGE:
+-            if (!s->is_cf)
++            if (s->drive_kind != IDE_CFATA)
+                 goto abort_cmd;
+             switch (s->feature) {
+             case 0x02:	/* Inquiry Metadata Storage */
+@@ -2359,7 +2359,7 @@ void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+             ide_set_irq(s->bus);
+             break;
+         case IBM_SENSE_CONDITION:
+-            if (!s->is_cf)
++            if (s->drive_kind != IDE_CFATA)
+                 goto abort_cmd;
+             switch (s->feature) {
+             case 0x01:  /* sense temperature in device */
+@@ -2373,7 +2373,7 @@ void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+             break;
+ 
+ 	case WIN_SMART:
+-	    if (s->is_cdrom)
++	    if (s->drive_kind == IDE_CD)
+ 		goto abort_cmd;
+ 	    if (s->hcyl != 0xc2 || s->lcyl != 0x4f)
+ 		goto abort_cmd;
+@@ -2654,7 +2654,7 @@ void ide_cmd_write(void *opaque, uint32_t addr, uint32_t val)
+         /* high to low */
+         for(i = 0;i < 2; i++) {
+             s = &bus->ifs[i];
+-            if (s->is_cdrom)
++            if (s->drive_kind == IDE_CD)
+                 s->status = 0x00; /* NOTE: READY is _not_ set */
+             else
+                 s->status = READY_STAT | SEEK_STAT;
+@@ -2756,7 +2756,7 @@ static void ide_reset(IDEState *s)
+ #ifdef DEBUG_IDE
+     printf("ide: reset\n");
+ #endif
+-    if (s->is_cf)
++    if (s->drive_kind == IDE_CFATA)
+         s->mult_sectors = 0;
+     else
+         s->mult_sectors = MAX_MULT_SECTORS;
+@@ -2841,7 +2841,7 @@ int ide_init_drive(IDEState *s, BlockDriverState *bs, const char *version)
+     s->smart_errors = 0;
+     s->smart_selftest_count = 0;
+     if (bdrv_get_type_hint(bs) == BDRV_TYPE_CDROM) {
+-        s->is_cdrom = 1;
++        s->drive_kind = IDE_CD;
+         bdrv_set_change_cb(bs, cdrom_change_cb, s);
+         s->bs->buffer_alignment = 2048;
+     } else {
+@@ -2850,7 +2850,6 @@ int ide_init_drive(IDEState *s, BlockDriverState *bs, const char *version)
+             return -1;
+         }
+     }
+-    bdrv_set_removable(s->bs, s->is_cdrom);
+     strncpy(s->drive_serial_str, drive_get_serial(s->bs),
+             sizeof(s->drive_serial_str));
+     
+@@ -2864,6 +2863,7 @@ int ide_init_drive(IDEState *s, BlockDriverState *bs, const char *version)
+         pstrcpy(s->version, sizeof(s->version), QEMU_VERSION);
+     }
+     ide_reset(s);
++    bdrv_set_removable(bs, s->drive_kind == IDE_CD);
+     return 0;
+ }
+ 
+diff --git a/hw/ide/internal.h b/hw/ide/internal.h
+index d9c5ff6..321af78 100644
+--- a/hw/ide/internal.h
++++ b/hw/ide/internal.h
+@@ -362,6 +362,8 @@ typedef struct BMDMAState BMDMAState;
+ #define SMART_DISABLE         0xd9
+ #define SMART_STATUS          0xda
+ 
++typedef enum { IDE_HD, IDE_CD, IDE_CFATA } IDEDriveKind;
++
+ typedef void EndTransferFunc(IDEState *);
+ 
+ struct unreported_events {
+@@ -374,8 +376,7 @@ struct IDEState {
+     IDEBus *bus;
+     uint8_t unit;
+     /* ide config */
+-    int is_cdrom;
+-    int is_cf;
++    IDEDriveKind drive_kind;
+     int cylinders, heads, sectors;
+     int64_t nb_sectors;
+     int mult_sectors;
+diff --git a/hw/ide/macio.c b/hw/ide/macio.c
+index 5c71483..a9268cc 100644
+--- a/hw/ide/macio.c
++++ b/hw/ide/macio.c
+@@ -165,7 +165,7 @@ static void pmac_ide_transfer(DBDMA_io *io)
+     IDEState *s = idebus_active_if(&m->bus);
+ 
+     s->io_buffer_size = 0;
+-    if (s->is_cdrom) {
++    if (s->drive_kind == IDE_CD) {
+         bdrv_acct_start(s->bs, &s->acct, io->len, BDRV_ACCT_READ);
+         pmac_ide_atapi_transfer_cb(io, 0);
+         return;
+diff --git a/hw/ide/microdrive.c b/hw/ide/microdrive.c
+index 8e20e74..2ceeb87 100644
+--- a/hw/ide/microdrive.c
++++ b/hw/ide/microdrive.c
+@@ -541,7 +541,7 @@ PCMCIACardState *dscm1xxxx_init(DriveInfo *bdrv)
+ 
+     ide_init2_with_non_qdev_drives(&md->bus, bdrv, NULL,
+                                    qemu_allocate_irqs(md_set_irq, md, 1)[0]);
+-    md->bus.ifs[0].is_cf = 1;
++    md->bus.ifs[0].drive_kind = IDE_CFATA;
+     md->bus.ifs[0].mdata_size = METADATA_SIZE;
+     md->bus.ifs[0].mdata_storage = (uint8_t *) qemu_mallocz(METADATA_SIZE);
+ 
+-- 
+1.7.4.4
+

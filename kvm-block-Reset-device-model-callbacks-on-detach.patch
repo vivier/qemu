@@ -1,0 +1,49 @@
+From 105a6e9c0604df70df9b0e97ee0eeaedffc23ef7 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:04 +0200
+Subject: [PATCH 29/76] block: Reset device model callbacks on detach
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-22-git-send-email-armbru@redhat.com>
+Patchwork-id: 33616
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 21/68] block: Reset device model callbacks on detach
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+BlockDriverState members change_cb and change_opaque are initially
+null.  The device model may set them, with bdrv_set_change_cb().  If
+the device model gets detached (hot unplug), they're left dangling.
+Only safe because device hot unplug automatically destroys the
+BlockDriverState.  But that's a questionable feature, best not to rely
+on it.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit a19712b0dbe43016fb17ec48bfff2f360225fe97)
+---
+ block.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ block.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/block.c b/block.c
+index 62923bd..1da6cba 100644
+--- a/block.c
++++ b/block.c
+@@ -718,6 +718,8 @@ void bdrv_detach(BlockDriverState *bs, DeviceState *qdev)
+ {
+     assert(bs->peer == qdev);
+     bs->peer = NULL;
++    bs->change_cb = NULL;
++    bs->change_opaque = NULL;
+ }
+ 
+ DeviceState *bdrv_get_attached(BlockDriverState *bs)
+-- 
+1.7.4.4
+

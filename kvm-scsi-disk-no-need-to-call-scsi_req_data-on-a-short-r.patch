@@ -1,0 +1,55 @@
+From e52552af8fd22df6c73988d796a3cc7e2adab0e9 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:14 +0200
+Subject: [PATCH 39/76] scsi-disk: no need to call scsi_req_data on a short
+ read
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-32-git-send-email-armbru@redhat.com>
+Patchwork-id: 33651
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 31/68] scsi-disk: no need to call scsi_req_data on a short read
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Paolo Bonzini <pbonzini@redhat.com>
+
+In fact, if the HBA's transfer_data callback goes on with scsi_req_continue
+the request will be completed successfully instead of showing a failure.
+It can even cause a segmentation fault.
+
+An easy way to trigger it is "eject -f cd" during installation (during media
+test if the installer does something like that).
+
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit e44089c79da29ba026d0083e1428b4e82763eeab)
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ hw/scsi-disk.c |    3 ---
+ 1 files changed, 0 insertions(+), 3 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/scsi-disk.c |    3 ---
+ 1 files changed, 0 insertions(+), 3 deletions(-)
+
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index 5d0cfff..7afb356 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -220,9 +220,6 @@ static int scsi_handle_rw_error(SCSIDiskReq *r, int error, int type)
+         bdrv_mon_event(s->bs, BDRV_ACTION_STOP, error, is_read);
+         vm_stop(0);
+     } else {
+-        if (type == SCSI_REQ_STATUS_RETRY_READ) {
+-            scsi_req_data(&r->req, 0);
+-        }
+         switch (error) {
+         case ENOMEM:
+             scsi_command_complete(r, CHECK_CONDITION,
+-- 
+1.7.4.4
+

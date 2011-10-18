@@ -1,0 +1,332 @@
+From c6fcad6c4c382d6bf0c2bcb258c54c12138224d2 Mon Sep 17 00:00:00 2001
+From: ddugger@redhat.com <ddugger@redhat.com>
+Date: Wed, 21 Sep 2011 04:59:54 +0200
+Subject: [PATCH 05/76] bz716261: kvm: Enable XSAVE live migration support
+
+RH-Author: ddugger@redhat.com
+Message-id: <1316581195-18779-6-git-send-email-ddugger@redhat.com>
+Patchwork-id: 33033
+O-Subject: [RHEL 6.2 PATCH 5/6 V3] bz716261: kvm: Enable XSAVE live migration support
+Bugzilla: 716261
+RH-Acked-by: Marcelo Tosatti <mtosatti@redhat.com>
+RH-Acked-by: Eduardo Habkost <ehabkost@redhat.com>
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+
+From: n0ano@n0ano.com <n0ano@n0ano.com>
+
+    qemu: kvm: Enable XSAVE live migration support
+
+    commit 2e4a8d2a0a199883454564d4ecde5feb02ad9b3f
+
+    Signed-off-by: Sheng Yang <sheng@linux.intel.com>
+    Signed-off-by: Marcelo Tosatti <mtosatti@redhat.com>
+
+Signed-off-by: Don dugger <donald.d.dugger@intel.com>
+---
+ qemu-kvm-x86.c        |  109 ++++++++++++++++++++++++++++++++++++++++---------
+ qemu-kvm.c            |   24 +++++++++++
+ qemu-kvm.h            |   28 +++++++++++++
+ target-i386/cpu.h     |    5 ++
+ target-i386/kvm.c     |    2 +
+ target-i386/machine.c |   20 +++++++++
+ 6 files changed, 169 insertions(+), 19 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ qemu-kvm-x86.c        |  109 ++++++++++++++++++++++++++++++++++++++++---------
+ qemu-kvm.c            |   24 +++++++++++
+ qemu-kvm.h            |   28 +++++++++++++
+ target-i386/cpu.h     |    5 ++
+ target-i386/kvm.c     |    2 +
+ target-i386/machine.c |   20 +++++++++
+ 6 files changed, 169 insertions(+), 19 deletions(-)
+
+diff --git a/qemu-kvm-x86.c b/qemu-kvm-x86.c
+index 74c413c..c9e7df4 100644
+--- a/qemu-kvm-x86.c
++++ b/qemu-kvm-x86.c
+@@ -923,10 +923,20 @@ static void get_seg(SegmentCache *lhs, const struct kvm_segment *rhs)
+ 	| (rhs->avl * DESC_AVL_MASK);
+ }
+ 
++#define XSAVE_CWD_RIP     2
++#define XSAVE_CWD_RDP     4
++#define XSAVE_MXCSR       6
++#define XSAVE_ST_SPACE    8
++#define XSAVE_XMM_SPACE   40
++#define XSAVE_XSTATE_BV   128
++#define XSAVE_YMMH_SPACE  144
++
+ void kvm_arch_load_regs(CPUState *env)
+ {
+     struct kvm_regs regs;
+     struct kvm_fpu fpu;
++    struct kvm_xsave* xsave;
++    struct kvm_xcrs xcrs;
+     struct kvm_sregs sregs;
+     struct kvm_msr_entry msrs[100];
+     int rc, n, i;
+@@ -955,16 +965,47 @@ void kvm_arch_load_regs(CPUState *env)
+ 
+     kvm_set_regs(env, &regs);
+ 
+-    memset(&fpu, 0, sizeof fpu);
+-    fpu.fsw = env->fpus & ~(7 << 11);
+-    fpu.fsw |= (env->fpstt & 7) << 11;
+-    fpu.fcw = env->fpuc;
+-    for (i = 0; i < 8; ++i)
+-	fpu.ftwx |= (!env->fptags[i]) << i;
+-    memcpy(fpu.fpr, env->fpregs, sizeof env->fpregs);
+-    memcpy(fpu.xmm, env->xmm_regs, sizeof env->xmm_regs);
+-    fpu.mxcsr = env->mxcsr;
+-    kvm_set_fpu(env, &fpu);
++    if (kvm_check_extension(kvm_state, KVM_CAP_XSAVE)) {
++        uint16_t cwd, swd, twd, fop;
++
++        xsave = qemu_memalign(4096, sizeof(struct kvm_xsave));
++        memset(xsave, 0, sizeof(struct kvm_xsave));
++        cwd = swd = twd = fop = 0;
++        swd = env->fpus & ~(7 << 11);
++        swd |= (env->fpstt & 7) << 11;
++        cwd = env->fpuc;
++        for (i = 0; i < 8; ++i)
++            twd |= (!env->fptags[i]) << i;
++        xsave->region[0] = (uint32_t)(swd << 16) + cwd;
++        xsave->region[1] = (uint32_t)(fop << 16) + twd;
++        memcpy(&xsave->region[XSAVE_ST_SPACE], env->fpregs,
++                sizeof env->fpregs);
++        memcpy(&xsave->region[XSAVE_XMM_SPACE], env->xmm_regs,
++                sizeof env->xmm_regs);
++        xsave->region[XSAVE_MXCSR] = env->mxcsr;
++        *(uint64_t *)&xsave->region[XSAVE_XSTATE_BV] = env->xstate_bv;
++        memcpy(&xsave->region[XSAVE_YMMH_SPACE], env->ymmh_regs,
++                sizeof env->ymmh_regs);
++        kvm_set_xsave(env, xsave);
++        if (kvm_check_extension(kvm_state, KVM_CAP_XCRS)) {
++            xcrs.nr_xcrs = 1;
++            xcrs.flags = 0;
++            xcrs.xcrs[0].xcr = 0;
++            xcrs.xcrs[0].value = env->xcr0;
++            kvm_set_xcrs(env, &xcrs);
++        }
++    } else {
++        memset(&fpu, 0, sizeof fpu);
++        fpu.fsw = env->fpus & ~(7 << 11);
++        fpu.fsw |= (env->fpstt & 7) << 11;
++        fpu.fcw = env->fpuc;
++        for (i = 0; i < 8; ++i)
++            fpu.ftwx |= (!env->fptags[i]) << i;
++        memcpy(fpu.fpr, env->fpregs, sizeof env->fpregs);
++        memcpy(fpu.xmm, env->xmm_regs, sizeof env->xmm_regs);
++        fpu.mxcsr = env->mxcsr;
++        kvm_set_fpu(env, &fpu);
++    }
+ 
+     memset(sregs.interrupt_bitmap, 0, sizeof(sregs.interrupt_bitmap));
+     if (env->interrupt_injected >= 0) {
+@@ -1098,6 +1139,8 @@ void kvm_arch_save_regs(CPUState *env)
+ {
+     struct kvm_regs regs;
+     struct kvm_fpu fpu;
++    struct kvm_xsave* xsave;
++    struct kvm_xcrs xcrs;
+     struct kvm_sregs sregs;
+     struct kvm_msr_entry msrs[100];
+     uint32_t hflags;
+@@ -1127,15 +1170,43 @@ void kvm_arch_save_regs(CPUState *env)
+     env->eflags = regs.rflags;
+     env->eip = regs.rip;
+ 
+-    kvm_get_fpu(env, &fpu);
+-    env->fpstt = (fpu.fsw >> 11) & 7;
+-    env->fpus = fpu.fsw;
+-    env->fpuc = fpu.fcw;
+-    for (i = 0; i < 8; ++i)
+-	env->fptags[i] = !((fpu.ftwx >> i) & 1);
+-    memcpy(env->fpregs, fpu.fpr, sizeof env->fpregs);
+-    memcpy(env->xmm_regs, fpu.xmm, sizeof env->xmm_regs);
+-    env->mxcsr = fpu.mxcsr;
++    if (kvm_check_extension(kvm_state, KVM_CAP_XSAVE)) {
++        uint16_t cwd, swd, twd, fop;
++        xsave = qemu_memalign(4096, sizeof(struct kvm_xsave));
++        kvm_get_xsave(env, xsave);
++        cwd = (uint16_t)xsave->region[0];
++        swd = (uint16_t)(xsave->region[0] >> 16);
++        twd = (uint16_t)xsave->region[1];
++        fop = (uint16_t)(xsave->region[1] >> 16);
++        env->fpstt = (swd >> 11) & 7;
++        env->fpus = swd;
++        env->fpuc = cwd;
++        for (i = 0; i < 8; ++i)
++            env->fptags[i] = !((twd >> i) & 1);
++        env->mxcsr = xsave->region[XSAVE_MXCSR];
++        memcpy(env->fpregs, &xsave->region[XSAVE_ST_SPACE],
++                sizeof env->fpregs);
++        memcpy(env->xmm_regs, &xsave->region[XSAVE_XMM_SPACE],
++                sizeof env->xmm_regs);
++        env->xstate_bv = *(uint64_t *)&xsave->region[XSAVE_XSTATE_BV];
++        memcpy(env->ymmh_regs, &xsave->region[XSAVE_YMMH_SPACE],
++                sizeof env->ymmh_regs);
++        if (kvm_check_extension(kvm_state, KVM_CAP_XCRS)) {
++            kvm_get_xcrs(env, &xcrs);
++            if (xcrs.xcrs[0].xcr == 0)
++                env->xcr0 = xcrs.xcrs[0].value;
++        }
++    } else {
++        kvm_get_fpu(env, &fpu);
++        env->fpstt = (fpu.fsw >> 11) & 7;
++        env->fpus = fpu.fsw;
++        env->fpuc = fpu.fcw;
++        for (i = 0; i < 8; ++i)
++            env->fptags[i] = !((fpu.ftwx >> i) & 1);
++        memcpy(env->fpregs, fpu.fpr, sizeof env->fpregs);
++        memcpy(env->xmm_regs, fpu.xmm, sizeof env->xmm_regs);
++        env->mxcsr = fpu.mxcsr;
++    }
+ 
+     kvm_get_sregs(env, &sregs);
+ 
+diff --git a/qemu-kvm.c b/qemu-kvm.c
+index 781ddfc..7112f56 100644
+--- a/qemu-kvm.c
++++ b/qemu-kvm.c
+@@ -855,6 +855,30 @@ int kvm_set_mpstate(CPUState *env, struct kvm_mp_state *mp_state)
+ }
+ #endif
+ 
++#ifdef KVM_CAP_XSAVE
++int kvm_get_xsave(CPUState *env, struct kvm_xsave *xsave)
++{
++    return kvm_vcpu_ioctl(env, KVM_GET_XSAVE, xsave);
++}
++
++int kvm_set_xsave(CPUState *env, struct kvm_xsave *xsave)
++{
++    return kvm_vcpu_ioctl(env, KVM_SET_XSAVE, xsave);
++}
++#endif
++
++#ifdef KVM_CAP_XCRS
++int kvm_get_xcrs(CPUState *env, struct kvm_xcrs *xcrs)
++{
++    return kvm_vcpu_ioctl(env, KVM_GET_XCRS, xcrs);
++}
++
++int kvm_set_xcrs(CPUState *env, struct kvm_xcrs *xcrs)
++{
++    return kvm_vcpu_ioctl(env, KVM_SET_XCRS, xcrs);
++}
++#endif
++
+ static int handle_mmio(CPUState *env)
+ {
+     unsigned long addr = env->kvm_run->mmio.phys_addr;
+diff --git a/qemu-kvm.h b/qemu-kvm.h
+index 3e55ab4..1717e4a 100644
+--- a/qemu-kvm.h
++++ b/qemu-kvm.h
+@@ -319,6 +319,34 @@ static inline int kvm_reset_mpstate(CPUState *env)
+ }
+ #endif
+ 
++#ifdef KVM_CAP_XSAVE
++/*!
++ *  * \brief Read VCPU xsave state
++ *
++ */
++int kvm_get_xsave(CPUState *env, struct kvm_xsave *xsave);
++
++/*!
++ *  * \brief Write VCPU xsave state
++ *
++ */
++int kvm_set_xsave(CPUState *env, struct kvm_xsave *xsave);
++#endif
++
++#ifdef KVM_CAP_XCRS
++/*!
++ *  * \brief Read VCPU XCRs
++ *
++ */
++int kvm_get_xcrs(CPUState *env, struct kvm_xcrs *xcrs);
++
++/*!
++ *  * \brief Write VCPU XCRs
++ *
++ */
++int kvm_set_xcrs(CPUState *env, struct kvm_xcrs *xcrs);
++#endif
++
+ /*!
+  * \brief Simulate an external vectored interrupt
+  *
+diff --git a/target-i386/cpu.h b/target-i386/cpu.h
+index 47de043..2f3d2fb 100644
+--- a/target-i386/cpu.h
++++ b/target-i386/cpu.h
+@@ -738,6 +738,11 @@ typedef struct CPUX86State {
+     uint16_t fpregs_format_vmstate;
+ 
+     int update_vapic;
++
++    uint64_t xstate_bv;
++    XMMReg ymmh_regs[CPU_NB_REGS];
++
++    uint64_t xcr0;
+ } CPUX86State;
+ 
+ CPUX86State *cpu_x86_init(const char *cpu_model);
+diff --git a/target-i386/kvm.c b/target-i386/kvm.c
+index 733c22f..ee14949 100644
+--- a/target-i386/kvm.c
++++ b/target-i386/kvm.c
+@@ -251,6 +251,8 @@ void kvm_arch_reset_vcpu(CPUState *env)
+     env->interrupt_injected = -1;
+     env->nmi_injected = 0;
+     env->nmi_pending = 0;
++    /* Legal xcr0 for loading */
++    env->xcr0 = 1;
+ }
+ #ifdef KVM_UPSTREAM
+ 
+diff --git a/target-i386/machine.c b/target-i386/machine.c
+index 0b8a33a..ee45073 100644
+--- a/target-i386/machine.c
++++ b/target-i386/machine.c
+@@ -48,6 +48,22 @@ static const VMStateDescription vmstate_xmm_reg = {
+ #define VMSTATE_XMM_REGS(_field, _state, _n)                         \
+     VMSTATE_STRUCT_ARRAY(_field, _state, _n, 0, vmstate_xmm_reg, XMMReg)
+ 
++/* YMMH format is the same as XMM */
++static const VMStateDescription vmstate_ymmh_reg = {
++    .name = "ymmh_reg",
++    .version_id = 1,
++    .minimum_version_id = 1,
++    .minimum_version_id_old = 1,
++    .fields      = (VMStateField []) {
++        VMSTATE_UINT64(XMM_Q(0), XMMReg),
++        VMSTATE_UINT64(XMM_Q(1), XMMReg),
++        VMSTATE_END_OF_LIST()
++    }
++};
++
++#define VMSTATE_YMMH_REGS_VARS(_field, _state, _n, _v)                         \
++    VMSTATE_STRUCT_ARRAY(_field, _state, _n, _v, vmstate_ymmh_reg, XMMReg)
++
+ static const VMStateDescription vmstate_mtrr_var = {
+     .name = "mtrr_var",
+     .version_id = 1,
+@@ -480,6 +496,10 @@ static const VMStateDescription vmstate_cpu = {
+         /* KVM pvclock msr */
+         VMSTATE_UINT64_V(system_time_msr, CPUState, 11),
+         VMSTATE_UINT64_V(wall_clock_msr, CPUState, 11),
++
++        VMSTATE_UINT64_V(xcr0, CPUState, 12),
++        VMSTATE_UINT64_V(xstate_bv, CPUState, 12),
++        VMSTATE_YMMH_REGS_VARS(ymmh_regs, CPUState, CPU_NB_REGS, 12),
+         VMSTATE_END_OF_LIST()
+         /* The above list is not sorted /wrt version numbers, watch out! */
+     }
+-- 
+1.7.4.4
+

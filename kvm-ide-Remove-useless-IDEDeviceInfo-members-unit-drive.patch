@@ -1,0 +1,42 @@
+From e6926885ee802e07501d0af2857fd7698edb62de Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:23:45 +0200
+Subject: [PATCH 10/76] ide: Remove useless IDEDeviceInfo members unit, drive
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-3-git-send-email-armbru@redhat.com>
+Patchwork-id: 33603
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 02/68] ide: Remove useless IDEDeviceInfo members unit, drive
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 124964b54e0c50706385691142795b6e43dad817)
+---
+ hw/ide/internal.h |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/ide/internal.h |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+diff --git a/hw/ide/internal.h b/hw/ide/internal.h
+index 6df6558..d9c5ff6 100644
+--- a/hw/ide/internal.h
++++ b/hw/ide/internal.h
+@@ -473,8 +473,6 @@ typedef int (*ide_qdev_initfn)(IDEDevice *dev);
+ struct IDEDeviceInfo {
+     DeviceInfo qdev;
+     ide_qdev_initfn init;
+-    uint32_t unit;
+-    DriveInfo *drive;
+ };
+ 
+ #define BM_STATUS_DMAING 0x01
+-- 
+1.7.4.4
+

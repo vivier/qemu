@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.197
+%define pkgrelease 2.198
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3698,6 +3698,158 @@ Patch2527: kvm-Revert-savevm-fix-corruption-in-vmstate_subsection_l.patch
 Patch2528: kvm-QMP-HMP-Drop-the-live-snapshot-commands.patch
 # For bz#733272 - Usb stick passthrough failed under uhci+ehci
 Patch2529: kvm-usb-hub-wakeup-on-attach.patch
+# For bz#716261 - [Intel 6.2 FEAT] Add support for XSAVE/XRSTOR qemu-kvm changes
+Patch2530: kvm-bz716261-kvm-Extend-kvm_arch_get_supported_cpuid-to-.patch
+# For bz#716261 - [Intel 6.2 FEAT] Add support for XSAVE/XRSTOR qemu-kvm changes
+Patch2531: kvm-bz716261-Enable-XSAVE-related-CPUID.patch
+# For bz#716261 - [Intel 6.2 FEAT] Add support for XSAVE/XRSTOR qemu-kvm changes
+Patch2532: kvm-bz716261-Fix-XSAVE-feature-bit-enumeration.patch
+# For bz#716261 - [Intel 6.2 FEAT] Add support for XSAVE/XRSTOR qemu-kvm changes
+Patch2533: kvm-bz716261-Synchronize-kernel-headers.patch
+# For bz#716261 - [Intel 6.2 FEAT] Add support for XSAVE/XRSTOR qemu-kvm changes
+Patch2534: kvm-bz716261-kvm-Enable-XSAVE-live-migration-support.patch
+# For bz#716261 - [Intel 6.2 FEAT] Add support for XSAVE/XRSTOR qemu-kvm changes
+Patch2535: kvm-bz716261-Put-XSAVE-area-in-a-sub-section.patch
+# For bz#716261 - [Intel 6.2 FEAT] Add support for XSAVE/XRSTOR qemu-kvm changes
+Patch2536: kvm-bz716261-Enable-xsave-as-a-cpu-flag.patch
+# For bz#743391 - KVM guest limited to 40bit of physical address space
+Patch2537: kvm-allow-more-than-1T-in-KVM-x86-guest.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2538: kvm-blockdev-Belatedly-remove-driveopts.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2539: kvm-ide-Remove-useless-IDEDeviceInfo-members-unit-drive.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2540: kvm-block-New-bdrv_next.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2541: kvm-block-Decouple-savevm-from-DriveInfo.patch
+# For bz#743269 - Hot unplug of snapshot device crashes
+Patch2542: kvm-savevm-Survive-hot-unplug-of-snapshot-device.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2543: kvm-ide-Replace-IDEState-members-is_cdrom-is_cf-by-drive.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2544: kvm-ide-split-ide-command-interpretation-off.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2545: kvm-ide-fix-whitespace-gap-in-ide_exec_cmd.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2546: kvm-trace-Trace-bdrv_set_locked.patch
+# For bz#742469 - Drives can not be locked without media present
+Patch2547: kvm-atapi-Drives-can-be-locked-without-media-present.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2548: kvm-atapi-Report-correct-errors-on-guest-eject-request.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2549: kvm-ide-Split-atapi.c-out.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2550: kvm-ide-atapi-Factor-commands-out.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2551: kvm-ide-atapi-Use-table-instead-of-switch-for-commands.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2552: kvm-ide-atapi-Replace-bdrv_get_geometry-calls-by-s-nb_se.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2553: kvm-ide-atapi-Introduce-CHECK_READY-flag-for-commands.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2554: kvm-atapi-Move-comment-to-proper-place.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2555: kvm-atapi-Explain-why-we-need-a-media-not-present-state.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2556: kvm-block-QMP-Deprecate-query-block-s-type-drop-info-blo.patch
+# For bz#742476 - Make eject fail for non-removable drives even with -f
+Patch2557: kvm-blockdev-Make-eject-fail-for-non-removable-drives-ev.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2558: kvm-block-Reset-device-model-callbacks-on-detach.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2559: kvm-block-raw-win32-Drop-disabled-code-for-removable-hos.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2560: kvm-block-Make-BlockDriver-method-bdrv_set_locked-return.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2561: kvm-block-Make-BlockDriver-method-bdrv_eject-return-void.patch
+# For bz#742480 - Don't let locked flag prevent medium load
+Patch2562: kvm-block-Don-t-let-locked-flag-prevent-medium-load.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2563: kvm-scsi-disk-Codingstyle-fixes.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2564: kvm-scsi-Remove-references-to-SET_WINDOW.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2565: kvm-scsi-Remove-REZERO_UNIT-emulation.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2566: kvm-scsi-Sanitize-command-definitions.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2567: kvm-scsi-disk-Remove-drive_kind.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2568: kvm-scsi-disk-no-need-to-call-scsi_req_data-on-a-short-r.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2569: kvm-scsi-pass-status-when-completing.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2570: kvm-trace-Fix-harmless-mismerge-of-hw-scsi-bus.c-events.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2571: kvm-scsi-move-sense-handling-to-generic-code.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2572: kvm-block-Attach-non-qdev-devices-as-well.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2573: kvm-block-Generalize-change_cb-to-BlockDevOps.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2574: kvm-block-Split-change_cb-into-change_media_cb-resize_cb.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2575: kvm-ide-Update-command-code-definitions-as-per-ACS-2-Tab.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2576: kvm-ide-Clean-up-case-label-indentation-in-ide_exec_cmd.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2577: kvm-ide-Give-vmstate-structs-internal-linkage-where-poss.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2578: kvm-block-raw-Fix-to-forward-method-bdrv_media_changed.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2579: kvm-block-Leave-tracking-media-change-to-device-models.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2580: kvm-fdc-Make-media-change-detection-more-robust.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2581: kvm-block-Clean-up-bdrv_flush_all.patch
+# For bz#742484 - should be also have  snapshot on floppy
+Patch2582: kvm-savevm-Include-writable-devices-with-removable-media.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2583: kvm-scsi-fill-in-additional-sense-length-correctly.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2584: kvm-ide-Fix-ATA-command-READ-to-set-ATAPI-signature-for-.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2585: kvm-ide-Use-a-table-to-declare-which-drive-kinds-accept-.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2586: kvm-ide-Reject-ATA-commands-specific-to-drive-kinds.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2587: kvm-ide-atapi-Clean-up-misleading-name-in-cmd_start_stop.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2588: kvm-ide-atapi-Track-tray-open-close-state.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2589: kvm-scsi-disk-Factor-out-scsi_disk_emulate_start_stop.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2590: kvm-scsi-disk-Track-tray-open-close-state.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2591: kvm-block-Revert-entanglement-of-bdrv_is_inserted-with-t.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2592: kvm-block-Drop-tray-status-tracking-no-longer-used.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2593: kvm-ide-atapi-Track-tray-locked-state.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2594: kvm-scsi-disk-Track-tray-locked-state.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2595: kvm-block-Leave-enforcing-tray-lock-to-device-models.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2596: kvm-block-Drop-medium-lock-tracking-ask-device-models-in.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2597: kvm-block-Rename-bdrv_set_locked-to-bdrv_lock_medium.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2598: kvm-ide-atapi-Don-t-fail-eject-when-tray-is-already-open.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2599: kvm-scsi-disk-Fix-START_STOP-to-fail-when-it-can-t-eject.patch
+# For bz#743342 - IDE CD-ROM tray state gets lost on migration
+Patch2600: kvm-ide-atapi-Preserve-tray-state-on-migration.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2601: kvm-block-Clean-up-remaining-users-of-removable.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2602: kvm-block-Drop-BlockDriverState-member-removable.patch
+# For bz#723270 - Report cdrom tray status in a monitor command such as info block
+Patch2603: kvm-block-Show-whether-the-virtual-tray-is-open-in-info-.patch
+# For bz#742458 - Tracker Bug:Big block layer backport
+Patch2604: kvm-block-New-change_media_cb-parameter-load.patch
+# For bz#676528 - Can't insert media after previous media was forcefully ejected
+Patch2605: kvm-ide-atapi-scsi-disk-Make-monitor-eject-f-then-change.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -5336,6 +5488,82 @@ ApplyOptionalPatch()
 %patch2527 -p1
 %patch2528 -p1
 %patch2529 -p1
+%patch2530 -p1
+%patch2531 -p1
+%patch2532 -p1
+%patch2533 -p1
+%patch2534 -p1
+%patch2535 -p1
+%patch2536 -p1
+%patch2537 -p1
+%patch2538 -p1
+%patch2539 -p1
+%patch2540 -p1
+%patch2541 -p1
+%patch2542 -p1
+%patch2543 -p1
+%patch2544 -p1
+%patch2545 -p1
+%patch2546 -p1
+%patch2547 -p1
+%patch2548 -p1
+%patch2549 -p1
+%patch2550 -p1
+%patch2551 -p1
+%patch2552 -p1
+%patch2553 -p1
+%patch2554 -p1
+%patch2555 -p1
+%patch2556 -p1
+%patch2557 -p1
+%patch2558 -p1
+%patch2559 -p1
+%patch2560 -p1
+%patch2561 -p1
+%patch2562 -p1
+%patch2563 -p1
+%patch2564 -p1
+%patch2565 -p1
+%patch2566 -p1
+%patch2567 -p1
+%patch2568 -p1
+%patch2569 -p1
+%patch2570 -p1
+%patch2571 -p1
+%patch2572 -p1
+%patch2573 -p1
+%patch2574 -p1
+%patch2575 -p1
+%patch2576 -p1
+%patch2577 -p1
+%patch2578 -p1
+%patch2579 -p1
+%patch2580 -p1
+%patch2581 -p1
+%patch2582 -p1
+%patch2583 -p1
+%patch2584 -p1
+%patch2585 -p1
+%patch2586 -p1
+%patch2587 -p1
+%patch2588 -p1
+%patch2589 -p1
+%patch2590 -p1
+%patch2591 -p1
+%patch2592 -p1
+%patch2593 -p1
+%patch2594 -p1
+%patch2595 -p1
+%patch2596 -p1
+%patch2597 -p1
+%patch2598 -p1
+%patch2599 -p1
+%patch2600 -p1
+%patch2601 -p1
+%patch2602 -p1
+%patch2603 -p1
+%patch2604 -p1
+%patch2605 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -5559,6 +5787,106 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Oct 18 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.198.el6
+- kvm-bz716261-kvm-Extend-kvm_arch_get_supported_cpuid-to-.patch [bz#716261]
+- kvm-bz716261-Enable-XSAVE-related-CPUID.patch [bz#716261]
+- kvm-bz716261-Fix-XSAVE-feature-bit-enumeration.patch [bz#716261]
+- kvm-bz716261-Synchronize-kernel-headers.patch [bz#716261]
+- kvm-bz716261-kvm-Enable-XSAVE-live-migration-support.patch [bz#716261]
+- kvm-bz716261-Put-XSAVE-area-in-a-sub-section.patch [bz#716261]
+- kvm-bz716261-Enable-xsave-as-a-cpu-flag.patch [bz#716261]
+- kvm-allow-more-than-1T-in-KVM-x86-guest.patch [bz#743391]
+- kvm-blockdev-Belatedly-remove-driveopts.patch [bz#742458]
+- kvm-ide-Remove-useless-IDEDeviceInfo-members-unit-drive.patch [bz#742458]
+- kvm-block-New-bdrv_next.patch [bz#742458]
+- kvm-block-Decouple-savevm-from-DriveInfo.patch [bz#742458]
+- kvm-savevm-Survive-hot-unplug-of-snapshot-device.patch [bz#743269]
+- kvm-ide-Replace-IDEState-members-is_cdrom-is_cf-by-drive.patch [bz#742458]
+- kvm-ide-split-ide-command-interpretation-off.patch [bz#742458]
+- kvm-ide-fix-whitespace-gap-in-ide_exec_cmd.patch [bz#742458]
+- kvm-trace-Trace-bdrv_set_locked.patch [bz#742458]
+- kvm-atapi-Drives-can-be-locked-without-media-present.patch [bz#742469]
+- kvm-atapi-Report-correct-errors-on-guest-eject-request.patch [bz#742458]
+- kvm-ide-Split-atapi.c-out.patch [bz#742458]
+- kvm-ide-atapi-Factor-commands-out.patch [bz#742458]
+- kvm-ide-atapi-Use-table-instead-of-switch-for-commands.patch [bz#742458]
+- kvm-ide-atapi-Replace-bdrv_get_geometry-calls-by-s-nb_se.patch [bz#742458]
+- kvm-ide-atapi-Introduce-CHECK_READY-flag-for-commands.patch [bz#742458]
+- kvm-atapi-Move-comment-to-proper-place.patch [bz#742458]
+- kvm-atapi-Explain-why-we-need-a-media-not-present-state.patch [bz#742458]
+- kvm-block-QMP-Deprecate-query-block-s-type-drop-info-blo.patch [bz#742458]
+- kvm-blockdev-Make-eject-fail-for-non-removable-drives-ev.patch [bz#742476]
+- kvm-block-Reset-device-model-callbacks-on-detach.patch [bz#742458]
+- kvm-block-raw-win32-Drop-disabled-code-for-removable-hos.patch [bz#742458]
+- kvm-block-Make-BlockDriver-method-bdrv_set_locked-return.patch [bz#742458]
+- kvm-block-Make-BlockDriver-method-bdrv_eject-return-void.patch [bz#742458]
+- kvm-block-Don-t-let-locked-flag-prevent-medium-load.patch [bz#742480]
+- kvm-scsi-disk-Codingstyle-fixes.patch [bz#742458]
+- kvm-scsi-Remove-references-to-SET_WINDOW.patch [bz#742458]
+- kvm-scsi-Remove-REZERO_UNIT-emulation.patch [bz#742458]
+- kvm-scsi-Sanitize-command-definitions.patch [bz#742458]
+- kvm-scsi-disk-Remove-drive_kind.patch [bz#742458]
+- kvm-scsi-disk-no-need-to-call-scsi_req_data-on-a-short-r.patch [bz#742458]
+- kvm-scsi-pass-status-when-completing.patch [bz#742458]
+- kvm-trace-Fix-harmless-mismerge-of-hw-scsi-bus.c-events.patch [bz#742458]
+- kvm-scsi-move-sense-handling-to-generic-code.patch [bz#742458]
+- kvm-block-Attach-non-qdev-devices-as-well.patch [bz#742458]
+- kvm-block-Generalize-change_cb-to-BlockDevOps.patch [bz#742458]
+- kvm-block-Split-change_cb-into-change_media_cb-resize_cb.patch [bz#742458]
+- kvm-ide-Update-command-code-definitions-as-per-ACS-2-Tab.patch [bz#742458]
+- kvm-ide-Clean-up-case-label-indentation-in-ide_exec_cmd.patch [bz#742458]
+- kvm-ide-Give-vmstate-structs-internal-linkage-where-poss.patch [bz#742458]
+- kvm-block-raw-Fix-to-forward-method-bdrv_media_changed.patch [bz#742458]
+- kvm-block-Leave-tracking-media-change-to-device-models.patch [bz#742458]
+- kvm-fdc-Make-media-change-detection-more-robust.patch [bz#742458]
+- kvm-block-Clean-up-bdrv_flush_all.patch [bz#742458]
+- kvm-savevm-Include-writable-devices-with-removable-media.patch [bz#742484]
+- kvm-scsi-fill-in-additional-sense-length-correctly.patch [bz#742458]
+- kvm-ide-Fix-ATA-command-READ-to-set-ATAPI-signature-for-.patch [bz#742458]
+- kvm-ide-Use-a-table-to-declare-which-drive-kinds-accept-.patch [bz#742458]
+- kvm-ide-Reject-ATA-commands-specific-to-drive-kinds.patch [bz#742458]
+- kvm-ide-atapi-Clean-up-misleading-name-in-cmd_start_stop.patch [bz#742458]
+- kvm-ide-atapi-Track-tray-open-close-state.patch [bz#742458]
+- kvm-scsi-disk-Factor-out-scsi_disk_emulate_start_stop.patch [bz#742458]
+- kvm-scsi-disk-Track-tray-open-close-state.patch [bz#742458]
+- kvm-block-Revert-entanglement-of-bdrv_is_inserted-with-t.patch [bz#742458]
+- kvm-block-Drop-tray-status-tracking-no-longer-used.patch [bz#742458]
+- kvm-ide-atapi-Track-tray-locked-state.patch [bz#742458]
+- kvm-scsi-disk-Track-tray-locked-state.patch [bz#742458]
+- kvm-block-Leave-enforcing-tray-lock-to-device-models.patch [bz#742458]
+- kvm-block-Drop-medium-lock-tracking-ask-device-models-in.patch [bz#742458]
+- kvm-block-Rename-bdrv_set_locked-to-bdrv_lock_medium.patch [bz#742458]
+- kvm-ide-atapi-Don-t-fail-eject-when-tray-is-already-open.patch [bz#742458]
+- kvm-scsi-disk-Fix-START_STOP-to-fail-when-it-can-t-eject.patch [bz#742458]
+- kvm-ide-atapi-Preserve-tray-state-on-migration.patch [bz#743342]
+- kvm-block-Clean-up-remaining-users-of-removable.patch [bz#742458]
+- kvm-block-Drop-BlockDriverState-member-removable.patch [bz#742458]
+- kvm-block-Show-whether-the-virtual-tray-is-open-in-info-.patch [bz#723270]
+- kvm-block-New-change_media_cb-parameter-load.patch [bz#742458]
+- kvm-ide-atapi-scsi-disk-Make-monitor-eject-f-then-change.patch [bz#676528]
+- Resolves: bz#676528
+  (Can't insert media after previous media was forcefully ejected)
+- Resolves: bz#716261
+  ([Intel 6.2 FEAT] Add support for XSAVE/XRSTOR qemu-kvm changes)
+- Resolves: bz#723270
+  (Report cdrom tray status in a monitor command such as info block)
+- Resolves: bz#742458
+  (Tracker Bug:Big block layer backport)
+- Resolves: bz#742469
+  (Drives can not be locked without media present)
+- Resolves: bz#742476
+  (Make eject fail for non-removable drives even with -f)
+- Resolves: bz#742480
+  (Don't let locked flag prevent medium load)
+- Resolves: bz#742484
+  (should be also have  snapshot on floppy)
+- Resolves: bz#743269
+  (Hot unplug of snapshot device crashes)
+- Resolves: bz#743342
+  (IDE CD-ROM tray state gets lost on migration)
+- Resolves: bz#743391
+  (KVM guest limited to 40bit of physical address space)
+
 * Mon Oct 17 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.197.el6
 - kvm-device-assignment-pci_cap_init-add-82599-VF-quirk.patch [bz#742080]
 - kvm-savevm-teach-qemu_fill_buffer-to-do-partial-refills.patch [bz#725565]

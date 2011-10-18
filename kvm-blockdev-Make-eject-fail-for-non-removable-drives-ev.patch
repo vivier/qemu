@@ -1,0 +1,62 @@
+From 582a67d03ee553e3c94d728d1448f1f8c850d125 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:03 +0200
+Subject: [PATCH 28/76] blockdev: Make eject fail for non-removable drives
+ even with -f
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-21-git-send-email-armbru@redhat.com>
+Patchwork-id: 33615
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 20/68] blockdev: Make eject fail for non-removable drives even with -f
+Bugzilla: 742476
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Ejecting hard disk platters can only end in tears.
+
+If you need to revoke access to an image, use drive_del, not eject -f.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit ea8f942fe46dd10e0946f02ab9d698fb41e958f7)
+---
+ blockdev.c |   17 +++++++----------
+ 1 files changed, 7 insertions(+), 10 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ blockdev.c |   17 +++++++----------
+ 1 files changed, 7 insertions(+), 10 deletions(-)
+
+diff --git a/blockdev.c b/blockdev.c
+index 7b69aba..0578a58 100644
+--- a/blockdev.c
++++ b/blockdev.c
+@@ -912,16 +912,13 @@ int do_block_job_set_speed(Monitor *mon, const QDict *params,
+ 
+ static int eject_device(Monitor *mon, BlockDriverState *bs, int force)
+ {
+-    if (!force) {
+-        if (!bdrv_is_removable(bs)) {
+-            qerror_report(QERR_DEVICE_NOT_REMOVABLE,
+-                           bdrv_get_device_name(bs));
+-            return -1;
+-        }
+-        if (bdrv_is_locked(bs)) {
+-            qerror_report(QERR_DEVICE_LOCKED, bdrv_get_device_name(bs));
+-            return -1;
+-        }
++    if (!bdrv_is_removable(bs)) {
++        qerror_report(QERR_DEVICE_NOT_REMOVABLE, bdrv_get_device_name(bs));
++        return -1;
++    }
++    if (!force && bdrv_is_locked(bs)) {
++        qerror_report(QERR_DEVICE_LOCKED, bdrv_get_device_name(bs));
++        return -1;
+     }
+     bdrv_close(bs);
+     return 0;
+-- 
+1.7.4.4
+

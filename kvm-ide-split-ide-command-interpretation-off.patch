@@ -1,0 +1,104 @@
+From f5ea7d78d148ec7aff954bb3fd421413198ca4be Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:23:50 +0200
+Subject: [PATCH 15/76] ide: split ide command interpretation off
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-8-git-send-email-armbru@redhat.com>
+Patchwork-id: 33602
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 07/68] ide: split ide command interpretation off
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+From: Alexander Graf <agraf@suse.de>
+
+The ATA command interpretation code can be used for PATA and SATA
+interfaces alike. So let's split it out into a separate function.
+
+Signed-off-by: Alexander Graf <agraf@suse.de>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 7cff87ff6ab117799e32e42c2e4dc4c0588e583a)
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ hw/ide/core.c     |   20 ++++++++++++++------
+ hw/ide/internal.h |    2 ++
+ 2 files changed, 16 insertions(+), 6 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/ide/core.c     |   20 ++++++++++++++------
+ hw/ide/internal.h |    2 ++
+ 2 files changed, 16 insertions(+), 6 deletions(-)
+
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 7ca81f2..1117581 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -1969,9 +1969,6 @@ static void ide_clear_hob(IDEBus *bus)
+ void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+ {
+     IDEBus *bus = opaque;
+-    IDEState *s;
+-    int n;
+-    int lba48 = 0;
+ 
+ #ifdef DEBUG_IDE
+     printf("IDE: write addr=0x%x val=0x%02x\n", addr, val);
+@@ -2032,17 +2029,29 @@ void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+     default:
+     case 7:
+         /* command */
++        ide_exec_cmd(bus, val);
++        break;
++    }
++}
++
++
++void ide_exec_cmd(IDEBus *bus, uint32_t val)
++{
++    IDEState *s;
++    int n;
++    int lba48 = 0;
++
+ #if defined(DEBUG_IDE)
+         printf("ide: CMD=%02x\n", val);
+ #endif
+         s = idebus_active_if(bus);
+         /* ignore commands to non existant slave */
+         if (s != bus->ifs && !s->bs)
+-            break;
++            return;
+ 
+         /* Only DEVICE RESET is allowed while BSY or/and DRQ are set */
+         if ((s->status & (BUSY_STAT|DRQ_STAT)) && val != WIN_DEVICE_RESET)
+-            break;
++            return;
+ 
+         switch(val) {
+         case WIN_IDENTIFY:
+@@ -2533,7 +2542,6 @@ void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val)
+             ide_set_irq(s->bus);
+             break;
+         }
+-    }
+ }
+ 
+ uint32_t ide_ioport_read(void *opaque, uint32_t addr1)
+diff --git a/hw/ide/internal.h b/hw/ide/internal.h
+index 321af78..ada0b0a 100644
+--- a/hw/ide/internal.h
++++ b/hw/ide/internal.h
+@@ -582,6 +582,8 @@ void ide_init2_with_non_qdev_drives(IDEBus *bus, DriveInfo *hd0,
+                                     DriveInfo *hd1, qemu_irq irq);
+ void ide_init_ioport(IDEBus *bus, int iobase, int iobase2);
+ 
++void ide_exec_cmd(IDEBus *bus, uint32_t val);
++
+ /* hw/ide/qdev.c */
+ void ide_bus_new(IDEBus *idebus, DeviceState *dev, int bus_id);
+ IDEDevice *ide_create_drive(IDEBus *bus, int unit, DriveInfo *drive);
+-- 
+1.7.4.4
+

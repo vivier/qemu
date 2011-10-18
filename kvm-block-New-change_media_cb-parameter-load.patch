@@ -1,0 +1,164 @@
+From ec0eb1dfd6286dece5cfdb670f728230d2278aa8 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:50 +0200
+Subject: [PATCH 75/76] block: New change_media_cb() parameter load
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-68-git-send-email-armbru@redhat.com>
+Patchwork-id: 33644
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 67/68] block: New change_media_cb() parameter load
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+To let device models distinguish between eject and load.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 7d4b4ba5c2bae99d44f265884b567ae63947bb4a)
+---
+ block.c        |   12 ++++++------
+ block.h        |    3 ++-
+ hw/fdc.c       |    2 +-
+ hw/ide/core.c  |    2 +-
+ hw/scsi-disk.c |    2 +-
+ hw/sd.c        |    2 +-
+ 6 files changed, 12 insertions(+), 11 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ block.c        |   12 ++++++------
+ block.h        |    3 ++-
+ hw/fdc.c       |    2 +-
+ hw/ide/core.c  |    2 +-
+ hw/scsi-disk.c |    2 +-
+ hw/sd.c        |    2 +-
+ 6 files changed, 12 insertions(+), 11 deletions(-)
+
+diff --git a/block.c b/block.c
+index 0603914..680dd8f 100644
+--- a/block.c
++++ b/block.c
+@@ -43,7 +43,7 @@
+ #include <windows.h>
+ #endif
+ 
+-static void bdrv_dev_change_media_cb(BlockDriverState *bs);
++static void bdrv_dev_change_media_cb(BlockDriverState *bs, bool load);
+ static BlockDriverAIOCB *bdrv_aio_readv_em(BlockDriverState *bs,
+         int64_t sector_num, QEMUIOVector *qiov, int nb_sectors,
+         BlockDriverCompletionFunc *cb, void *opaque);
+@@ -626,7 +626,7 @@ int bdrv_open(BlockDriverState *bs, const char *filename, int flags,
+     }
+ 
+     if (!bdrv_key_required(bs)) {
+-        bdrv_dev_change_media_cb(bs);
++        bdrv_dev_change_media_cb(bs, true);
+     }
+ 
+     return 0;
+@@ -661,7 +661,7 @@ void bdrv_close(BlockDriverState *bs)
+             bdrv_close(bs->file);
+         }
+ 
+-        bdrv_dev_change_media_cb(bs);
++        bdrv_dev_change_media_cb(bs, false);
+     }
+ }
+ 
+@@ -743,10 +743,10 @@ void bdrv_set_dev_ops(BlockDriverState *bs, const BlockDevOps *ops,
+     }
+ }
+ 
+-static void bdrv_dev_change_media_cb(BlockDriverState *bs)
++static void bdrv_dev_change_media_cb(BlockDriverState *bs, bool load)
+ {
+     if (bs->dev_ops && bs->dev_ops->change_media_cb) {
+-        bs->dev_ops->change_media_cb(bs->dev_opaque);
++        bs->dev_ops->change_media_cb(bs->dev_opaque, load);
+     }
+ }
+ 
+@@ -1414,7 +1414,7 @@ int bdrv_set_key(BlockDriverState *bs, const char *key)
+     } else if (!bs->valid_key) {
+         bs->valid_key = 1;
+         /* call the change callback now, we skipped it on open */
+-        bdrv_dev_change_media_cb(bs);
++        bdrv_dev_change_media_cb(bs, true);
+     }
+     return ret;
+ }
+diff --git a/block.h b/block.h
+index a73a5dc..8ea13de 100644
+--- a/block.h
++++ b/block.h
+@@ -29,11 +29,12 @@ typedef struct QEMUSnapshotInfo {
+ typedef struct BlockDevOps {
+     /*
+      * Runs when virtual media changed (monitor commands eject, change)
++     * Argument load is true on load and false on eject.
+      * Beware: doesn't run when a host device's physical media
+      * changes.  Sure would be useful if it did.
+      * Device models with removable media must implement this callback.
+      */
+-    void (*change_media_cb)(void *opaque);
++    void (*change_media_cb)(void *opaque, bool load);
+     /*
+      * Is the virtual tray open?
+      * Device models implement this only when the device has a tray.
+diff --git a/hw/fdc.c b/hw/fdc.c
+index 9d0a764..3c28c52 100644
+--- a/hw/fdc.c
++++ b/hw/fdc.c
+@@ -1879,7 +1879,7 @@ static void fdctrl_result_timer(void *opaque)
+     fdctrl_stop_transfer(fdctrl, 0x00, 0x00, 0x00);
+ }
+ 
+-static void fdctrl_change_cb(void *opaque)
++static void fdctrl_change_cb(void *opaque, bool load)
+ {
+     fdrive_t *drive = opaque;
+ 
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index a65561e..3e8ceda 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -847,7 +847,7 @@ static void ide_cfata_metadata_write(IDEState *s)
+ }
+ 
+ /* called when the inserted state of the media has changed */
+-static void ide_cd_change_cb(void *opaque)
++static void ide_cd_change_cb(void *opaque, bool load)
+ {
+     IDEState *s = opaque;
+     uint64_t nb_sectors;
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index fd0ee72..9463c82 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -1195,7 +1195,7 @@ static void scsi_destroy(SCSIDevice *dev)
+     blockdev_mark_auto_del(s->qdev.conf.bs);
+ }
+ 
+-static void scsi_cd_change_media_cb(void *opaque)
++static void scsi_cd_change_media_cb(void *opaque, bool load)
+ {
+ }
+ 
+diff --git a/hw/sd.c b/hw/sd.c
+index a99b0c0..23c67e2 100644
+--- a/hw/sd.c
++++ b/hw/sd.c
+@@ -422,7 +422,7 @@ static void sd_reset(SDState *sd, BlockDriverState *bdrv)
+     sd->pwd_len = 0;
+ }
+ 
+-static void sd_cardchange(void *opaque)
++static void sd_cardchange(void *opaque, bool load)
+ {
+     SDState *sd = opaque;
+ 
+-- 
+1.7.4.4
+

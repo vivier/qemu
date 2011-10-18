@@ -1,0 +1,138 @@
+From c2595bd870e6c73aac9c6f164c070a052f7ee27e Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:41 +0200
+Subject: [PATCH 66/76] block: Leave enforcing tray lock to device models
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-59-git-send-email-armbru@redhat.com>
+Patchwork-id: 33646
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 58/68] block: Leave enforcing tray lock to device models
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+The device model knows best when to accept the guest's eject command.
+No need to detour through the block layer.
+
+bdrv_eject() can't fail anymore.  Make it void.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit fdec4404ddfaf9e121bef84eac1303a8a0e47d75)
+---
+ block.c        |    7 +------
+ block.h        |    2 +-
+ hw/ide/atapi.c |   29 +++++++++--------------------
+ hw/scsi-disk.c |    3 +++
+ 4 files changed, 14 insertions(+), 27 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ block.c        |    7 +------
+ block.h        |    2 +-
+ hw/ide/atapi.c |   29 +++++++++--------------------
+ hw/scsi-disk.c |    3 +++
+ 4 files changed, 14 insertions(+), 27 deletions(-)
+
+diff --git a/block.c b/block.c
+index 66685b5..9de3600 100644
+--- a/block.c
++++ b/block.c
+@@ -2632,18 +2632,13 @@ int bdrv_media_changed(BlockDriverState *bs)
+ /**
+  * If eject_flag is TRUE, eject the media. Otherwise, close the tray
+  */
+-int bdrv_eject(BlockDriverState *bs, int eject_flag)
++void bdrv_eject(BlockDriverState *bs, int eject_flag)
+ {
+     BlockDriver *drv = bs->drv;
+ 
+-    if (eject_flag && bs->locked) {
+-        return -EBUSY;
+-    }
+-
+     if (drv && drv->bdrv_eject) {
+         drv->bdrv_eject(bs, eject_flag);
+     }
+-    return 0;
+ }
+ 
+ int bdrv_is_locked(BlockDriverState *bs)
+diff --git a/block.h b/block.h
+index 0e6cc6e..cfce2d3 100644
+--- a/block.h
++++ b/block.h
+@@ -207,7 +207,7 @@ int bdrv_is_inserted(BlockDriverState *bs);
+ int bdrv_media_changed(BlockDriverState *bs);
+ int bdrv_is_locked(BlockDriverState *bs);
+ void bdrv_set_locked(BlockDriverState *bs, int locked);
+-int bdrv_eject(BlockDriverState *bs, int eject_flag);
++void bdrv_eject(BlockDriverState *bs, int eject_flag);
+ void bdrv_get_format(BlockDriverState *bs, char *buf, int buf_size);
+ BlockDriverState *bdrv_find(const char *name);
+ BlockDriverState *bdrv_next(BlockDriverState *bs);
+diff --git a/hw/ide/atapi.c b/hw/ide/atapi.c
+index 1dcce4a..2e75f42 100644
+--- a/hw/ide/atapi.c
++++ b/hw/ide/atapi.c
+@@ -902,33 +902,22 @@ static void cmd_seek(IDEState *s, uint8_t* buf)
+ 
+ static void cmd_start_stop_unit(IDEState *s, uint8_t* buf)
+ {
+-    int sense, err = 0;
++    int sense;
+     bool start = buf[4] & 1;
+     bool loej = buf[4] & 2;     /* load on start, eject on !start */
+ 
+     if (loej) {
+-        err = bdrv_eject(s->bs, !start);
+-    }
+-
+-    switch (err) {
+-    case 0:
+-        ide_atapi_cmd_ok(s);
+-        break;
+-    case -EBUSY:
+-        sense = SENSE_NOT_READY;
+-        if (bdrv_is_inserted(s->bs)) {
+-            sense = SENSE_ILLEGAL_REQUEST;
++        if (!start && s->tray_locked) {
++            sense = bdrv_is_inserted(s->bs)
++                ? SENSE_NOT_READY : SENSE_ILLEGAL_REQUEST;
++            ide_atapi_cmd_error(s, sense, ASC_MEDIA_REMOVAL_PREVENTED);
++            return;
+         }
+-        ide_atapi_cmd_error(s, sense, ASC_MEDIA_REMOVAL_PREVENTED);
+-        break;
+-    default:
+-        ide_atapi_cmd_error(s, SENSE_NOT_READY, ASC_MEDIUM_NOT_PRESENT);
+-        break;
+-    }
+-
+-    if (loej && !err) {
++        bdrv_eject(s->bs, !start);
+         s->tray_open = !start;
+     }
++
++    ide_atapi_cmd_ok(s);
+ }
+ 
+ static void cmd_mechanism_status(IDEState *s, uint8_t* buf)
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index ba86767..59f62dc 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -820,6 +820,9 @@ static void scsi_disk_emulate_start_stop(SCSIDiskReq *r)
+     bool loej = req->cmd.buf[4] & 2; /* load on start, eject on !start */
+ 
+     if (s->qdev.type == TYPE_ROM && loej) {
++        if (!start && s->tray_locked) {
++            return;
++        }
+         bdrv_eject(s->bs, !start);
+         s->tray_open = !start;
+     }
+-- 
+1.7.4.4
+

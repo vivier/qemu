@@ -1,0 +1,141 @@
+From 0a89e2e97d886b49947044079f19084492534ca6 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:02 +0200
+Subject: [PATCH 27/76] block QMP: Deprecate query-block's "type", drop info
+ block's "type="
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-20-git-send-email-armbru@redhat.com>
+Patchwork-id: 33610
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 19/68] block QMP: Deprecate query-block's "type", drop info block's "type="
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+query-block's specification documents response member "type" with
+values "hd", "cdrom", "floppy", "unknown".
+
+Its value is unreliable: a block device used as floppy has type
+"floppy" if created with if=floppy, but type "hd" if created with
+if=none.
+
+That's because with if=none, the type is at best a declaration of
+intent: the drive can be connected to any guest device.  Its type is
+really the guest device's business.  Reporting it here is wrong.
+
+No known user of QMP uses "type".  It's unlikely that any unknown
+users exist, because its value is useless unless you know how the
+block device was created.  But then you also know the true value.
+
+Fixing the broken value risks breaking (hypothetical!) clients that
+somehow rely on the current behavior.  Not fixing the value risks
+breaking (hypothetical!) clients that rely on the value to be
+accurate.  Can't entirely avoid hypothetical lossage.  Change the
+value to be always "unknown".
+
+This makes "info block" always report "type=unknown".  Pointless.
+Change it to not report the type.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit d8aeeb31d53a07a0cce36c7bcf53684953c2e445)
+---
+ block.c         |   20 +++-----------------
+ qemu-monitor.hx |   11 ++++++-----
+ 2 files changed, 9 insertions(+), 22 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ block.c         |   20 +++-----------------
+ qemu-monitor.hx |   11 ++++++-----
+ 2 files changed, 9 insertions(+), 22 deletions(-)
+
+diff --git a/block.c b/block.c
+index 4c71637..62923bd 100644
+--- a/block.c
++++ b/block.c
+@@ -1606,9 +1606,8 @@ static void bdrv_print_dict(QObject *obj, void *opaque)
+ 
+     bs_dict = qobject_to_qdict(obj);
+ 
+-    monitor_printf(mon, "%s: type=%s removable=%d",
++    monitor_printf(mon, "%s: removable=%d",
+                         qdict_get_str(bs_dict, "device"),
+-                        qdict_get_str(bs_dict, "type"),
+                         qdict_get_bool(bs_dict, "removable"));
+ 
+     if (qdict_get_bool(bs_dict, "removable")) {
+@@ -1649,23 +1648,10 @@ void bdrv_info(Monitor *mon, QObject **ret_data)
+ 
+     QTAILQ_FOREACH(bs, &bdrv_states, list) {
+         QObject *bs_obj;
+-        const char *type = "unknown";
+-
+-        switch(bs->type) {
+-        case BDRV_TYPE_HD:
+-            type = "hd";
+-            break;
+-        case BDRV_TYPE_CDROM:
+-            type = "cdrom";
+-            break;
+-        case BDRV_TYPE_FLOPPY:
+-            type = "floppy";
+-            break;
+-        }
+ 
+-        bs_obj = qobject_from_jsonf("{ 'device': %s, 'type': %s, "
++        bs_obj = qobject_from_jsonf("{ 'device': %s, 'type': 'unknown', "
+                                     "'removable': %i, 'locked': %i }",
+-                                    bs->device_name, type, bs->removable,
++                                    bs->device_name, bs->removable,
+                                     bs->locked);
+ 
+         if (bs->drv) {
+diff --git a/qemu-monitor.hx b/qemu-monitor.hx
+index cd5751b..0ad3ea0 100644
+--- a/qemu-monitor.hx
++++ b/qemu-monitor.hx
+@@ -2226,7 +2226,8 @@ Each json-object contain the following:
+ 
+ - "device": device name (json-string)
+ - "type": device type (json-string)
+-         - Possible values: "hd", "cdrom", "floppy", "unknown"
++         - deprecated, retained for backward compatibility
++         - Possible values: "unknown"
+ - "removable": true if the device is removable, false otherwise (json-bool)
+ - "locked": true if the device is locked, false otherwise (json-bool)
+ - "inserted": only present if the device is inserted, it is a json-object
+@@ -2257,25 +2258,25 @@ Example:
+                "encrypted":false,
+                "file":"disks/test.img"
+             },
+-            "type":"hd"
++            "type":"unknown"
+          },
+          {
+             "device":"ide1-cd0",
+             "locked":false,
+             "removable":true,
+-            "type":"cdrom"
++            "type":"unknown"
+          },
+          {
+             "device":"floppy0",
+             "locked":false,
+             "removable":true,
+-            "type": "floppy"
++            "type":"unknown"
+          },
+          {
+             "device":"sd0",
+             "locked":false,
+             "removable":true,
+-            "type":"floppy"
++            "type":"unknown"
+          }
+       ]
+    }
+-- 
+1.7.4.4
+

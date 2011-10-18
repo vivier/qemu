@@ -1,0 +1,67 @@
+From 2c813efd4c5a303f275d6d084d0fe41d37301ed7 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:16 +0200
+Subject: [PATCH 41/76] trace: Fix harmless mismerge of hw/scsi-bus.c events
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-34-git-send-email-armbru@redhat.com>
+Patchwork-id: 33662
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 33/68] trace: Fix harmless mismerge of hw/scsi-bus.c events
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Commit b6ad069c "scsi: Rebase to upstream v0.15.0-rc2" created a minor
+conflict magnet by putting the trace events in the wrong place.  Move
+them.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+---
+ trace-events |   18 +++++++++---------
+ 1 files changed, 9 insertions(+), 9 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ trace-events |   18 +++++++++---------
+ 1 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/trace-events b/trace-events
+index d044962..fe6533e 100644
+--- a/trace-events
++++ b/trace-events
+@@ -38,15 +38,6 @@ disable qemu_memalign(size_t alignment, size_t size, void *ptr) "alignment %zu s
+ disable qemu_vmalloc(size_t size, void *ptr) "size %zu ptr %p"
+ disable qemu_vfree(void *ptr) "ptr %p"
+ 
+-# hw/scsi-bus.c
+-disable scsi_req_alloc(int target, int lun, int tag) "target %d lun %d tag %d"
+-disable scsi_req_data(int target, int lun, int tag, int len) "target %d lun %d tag %d len %d"
+-disable scsi_req_dequeue(int target, int lun, int tag) "target %d lun %d tag %d"
+-disable scsi_req_continue(int target, int lun, int tag) "target %d lun %d tag %d"
+-disable scsi_req_parsed(int target, int lun, int tag, int cmd, int mode, int xfer) "target %d lun %d tag %d command %d dir %d length %d"
+-disable scsi_req_parsed_lba(int target, int lun, int tag, int cmd, uint64_t lba) "target %d lun %d tag %d command %d lba %"PRIu64""
+-disable scsi_req_parse_bad(int target, int lun, int tag, int cmd) "target %d lun %d tag %d command %d"
+-
+ # hw/virtio.c
+ disable virtqueue_fill(void *vq, const void *elem, unsigned int len, unsigned int idx) "vq %p elem %p len %u idx %u"
+ disable virtqueue_flush(void *vq, unsigned int count) "vq %p count %u"
+@@ -130,6 +121,15 @@ disable usb_set_config(int addr, int config, int ret) "dev %d, config %d, ret %d
+ disable usb_clear_device_feature(int addr, int feature, int ret) "dev %d, feature %d, ret %d"
+ disable usb_set_device_feature(int addr, int feature, int ret) "dev %d, feature %d, ret %d"
+ 
++# hw/scsi-bus.c
++disable scsi_req_alloc(int target, int lun, int tag) "target %d lun %d tag %d"
++disable scsi_req_data(int target, int lun, int tag, int len) "target %d lun %d tag %d len %d"
++disable scsi_req_dequeue(int target, int lun, int tag) "target %d lun %d tag %d"
++disable scsi_req_continue(int target, int lun, int tag) "target %d lun %d tag %d"
++disable scsi_req_parsed(int target, int lun, int tag, int cmd, int mode, int xfer) "target %d lun %d tag %d command %d dir %d length %d"
++disable scsi_req_parsed_lba(int target, int lun, int tag, int cmd, uint64_t lba) "target %d lun %d tag %d command %d lba %"PRIu64""
++disable scsi_req_parse_bad(int target, int lun, int tag, int cmd) "target %d lun %d tag %d command %d"
++
+ # vl.c
+ disable vm_state_notify(int running, int reason) "running %d reason %d"
+ 
+-- 
+1.7.4.4
+

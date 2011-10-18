@@ -1,0 +1,79 @@
+From 16c721976417a8e9f34396cd6ddd82d44901b171 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:51 +0200
+Subject: [PATCH 76/76] ide/atapi scsi-disk: Make monitor eject -f, then
+ change work
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-69-git-send-email-armbru@redhat.com>
+Patchwork-id: 33632
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 68/68] ide/atapi scsi-disk: Make monitor eject -f, then change work
+Bugzilla: 676528
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+change fails while the tray is locked by the guest.  eject -f forces
+it open and removes any media.  Unfortunately, the tray closes again
+instantly.  Since the lock remains as it is, there is no way to insert
+another medium unless the guest voluntarily unlocks.
+
+Fix by leaving the tray open after monitor eject.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 25ad22bc4e9c946df694fa7343027b1050b2946b)
+---
+ blockdev.c     |    3 ++-
+ hw/ide/core.c  |    1 +
+ hw/scsi-disk.c |    1 +
+ 3 files changed, 4 insertions(+), 1 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ blockdev.c     |    3 ++-
+ hw/ide/core.c  |    1 +
+ hw/scsi-disk.c |    1 +
+ 3 files changed, 4 insertions(+), 1 deletions(-)
+
+diff --git a/blockdev.c b/blockdev.c
+index 467f018..542fc6d 100644
+--- a/blockdev.c
++++ b/blockdev.c
+@@ -915,7 +915,8 @@ static int eject_device(Monitor *mon, BlockDriverState *bs, int force)
+         qerror_report(QERR_DEVICE_NOT_REMOVABLE, bdrv_get_device_name(bs));
+         return -1;
+     }
+-    if (!force && bdrv_dev_is_medium_locked(bs)) {
++    if (!force && !bdrv_dev_is_tray_open(bs)
++        && bdrv_dev_is_medium_locked(bs)) {
+         qerror_report(QERR_DEVICE_LOCKED, bdrv_get_device_name(bs));
+         return -1;
+     }
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 3e8ceda..c059855 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -852,6 +852,7 @@ static void ide_cd_change_cb(void *opaque, bool load)
+     IDEState *s = opaque;
+     uint64_t nb_sectors;
+ 
++    s->tray_open = !load;
+     bdrv_get_geometry(s->bs, &nb_sectors);
+     s->nb_sectors = nb_sectors;
+ 
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index 9463c82..d522695 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -1197,6 +1197,7 @@ static void scsi_destroy(SCSIDevice *dev)
+ 
+ static void scsi_cd_change_media_cb(void *opaque, bool load)
+ {
++    ((SCSIDiskState *)opaque)->tray_open = !load;
+ }
+ 
+ static bool scsi_cd_is_tray_open(void *opaque)
+-- 
+1.7.4.4
+

@@ -1,0 +1,67 @@
+From e5c1e717ec2350cfb9394e18ae4b4dd17477b42d Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Tue, 4 Oct 2011 16:24:27 +0200
+Subject: [PATCH 52/76] block: Clean up bdrv_flush_all()
+
+RH-Author: Markus Armbruster <armbru@redhat.com>
+Message-id: <1317745491-18401-45-git-send-email-armbru@redhat.com>
+Patchwork-id: 33622
+O-Subject: [PATCH RHEL-6.2 qemu-kvm 44/68] block: Clean up bdrv_flush_all()
+Bugzilla: 742458
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Amit Shah <amit.shah@redhat.com>
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+
+Change (!bdrv_is_removable(bs) || bdrv_is_inserted(bs)) to just
+bdrv_is_inserted().  Rationale:
+
+    The value of bdrv_is_removable(bs) matters only when
+    bdrv_is_inserted(bs) is false.
+
+    bdrv_is_inserted(bs) is true when bs is open (bs->drv != NULL) and
+    not an empty host drive (CD-ROM or floppy).
+
+    Therefore, bdrv_is_removable(bs) matters only when:
+
+    1. bs is not open
+       old: may call bdrv_flush(bs), which does nothing
+       new: won't call
+
+    2. bs is an empty host drive
+       old: may call bdrv_flush(bs), which calls driver method
+            raw_flush(), which calls fdatasync() or equivalent, which
+            can't do anything useful while the drive is empty
+       new: won't call
+
+Result is bs->drv && !bdrv_is_read_only(bs) && bdrv_is_inserted(bs).
+bdrv_is_inserted(bs) implies bs->drv.  Drop the redundant test.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit c602a489f9685407d93beab3b121408811d20ce4)
+---
+ block.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ block.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+diff --git a/block.c b/block.c
+index 99d5e9f..a19a79a 100644
+--- a/block.c
++++ b/block.c
+@@ -1488,8 +1488,7 @@ void bdrv_flush_all(void)
+     BlockDriverState *bs;
+ 
+     QTAILQ_FOREACH(bs, &bdrv_states, list) {
+-        if (bs->drv && !bdrv_is_read_only(bs) &&
+-            (!bdrv_is_removable(bs) || bdrv_is_inserted(bs))) {
++        if (!bdrv_is_read_only(bs) && bdrv_is_inserted(bs)) {
+             bdrv_flush(bs);
+         }
+     }
+-- 
+1.7.4.4
+
