@@ -193,7 +193,6 @@ const char* keyboard_layout = NULL;
 ram_addr_t ram_size;
 int nb_nics;
 NICInfo nd_table[MAX_NICS];
-int vm_running;
 int autostart;
 static int rtc_utc = 1;
 static int rtc_date_offset = -1; /* -1 means no change */
@@ -441,6 +440,11 @@ void runstate_set(RunState new_state)
     }
 
     current_run_state = new_state;
+}
+
+int runstate_is_running(void)
+{
+    return runstate_check(RSTATE_RUNNING);
 }
 
 /***********************************************************/
@@ -1014,7 +1018,7 @@ static void icount_adjust(void)
     int64_t delta;
     static int64_t last_delta;
     /* If the VM is not running, then do nothing.  */
-    if (!vm_running)
+    if (!runstate_is_running())
         return;
 
     cur_time = cpu_get_clock();
@@ -3217,9 +3221,8 @@ static void pause_all_vcpus(void);
 
 void vm_start(void)
 {
-    if (!vm_running) {
+    if (!runstate_is_running()) {
         cpu_enable_ticks();
-        vm_running = 1;
         runstate_set(RSTATE_RUNNING);
         vm_state_notify(1, RSTATE_RUNNING);
         qemu_rearm_alarm_timer(alarm_timer);
@@ -3304,9 +3307,8 @@ static RunState qemu_vmstop_requested(void)
 
 static void do_vm_stop(RunState state)
 {
-    if (vm_running) {
+    if (runstate_is_running()) {
         cpu_disable_ticks();
-        vm_running = 0;
         pause_all_vcpus();
         runstate_set(state);
         vm_state_notify(0, state);
@@ -3995,7 +3997,7 @@ void main_loop_wait(int timeout)
     }
 
     /* vm time timers */
-    if (vm_running) {
+    if (runstate_is_running()) {
         if (!cur_cpu || likely(!(cur_cpu->singlestep_enabled & SSTEP_NOTIMER)))
             qemu_run_timers(&active_timers[QEMU_CLOCK_VIRTUAL],
                             qemu_get_clock(vm_clock));
@@ -4063,7 +4065,7 @@ static void tcg_cpu_exec(void)
     for (; next_cpu != NULL; next_cpu = next_cpu->next_cpu) {
         CPUState *env = cur_cpu = next_cpu;
 
-        if (!vm_running)
+        if (!runstate_is_running())
             break;
         if (timer_alarm_pending) {
             timer_alarm_pending = 0;
@@ -4110,7 +4112,7 @@ static int qemu_calculate_timeout(void)
 #ifndef CONFIG_IOTHREAD
     int timeout;
 
-    if (!vm_running)
+    if (!runstate_is_running())
         timeout = 5000;
     else if (tcg_has_work())
         timeout = 0;

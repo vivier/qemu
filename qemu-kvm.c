@@ -1731,7 +1731,7 @@ int kvm_cpu_exec(CPUState *env)
 
 static int is_cpu_stopped(CPUState *env)
 {
-    return !vm_running || env->stopped;
+    return !runstate_is_running() || env->stopped;
 }
 
 static void flush_queued_work(CPUState *env)

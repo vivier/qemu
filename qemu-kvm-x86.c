@@ -1297,7 +1297,7 @@ void kvm_arch_save_regs(CPUState *env)
 
     if (!env->tsc_valid) {
         msrs[n++].index = MSR_IA32_TSC;
-        env->tsc_valid = !vm_running;
+        env->tsc_valid = !runstate_is_running();
     }
 
     if (kvm_has_vm_hsave_pa)
