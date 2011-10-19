@@ -66,6 +66,9 @@ pthread_cond_t qemu_pause_cond = PTHREAD_COND_INITIALIZER;
 pthread_cond_t qemu_work_cond = PTHREAD_COND_INITIALIZER;
 __thread CPUState *current_env;
 
+/* minovotn: Copied from hw/pc.h since file excluded because of conflicts */
+void apic_deliver_nmi(struct APICState *d);
+
 static int qemu_system_ready;
 
 #define SIG_IPI (SIGRTMIN+4)
@@ -1630,7 +1633,11 @@ void kvm_cpu_synchronize_state(CPUState *env)
 
 static void inject_interrupt(void *data)
 {
-    cpu_interrupt(current_env, (long) data);
+    if (!current_env->apic_state || (long)data != CPU_INTERRUPT_NMI) {
+        cpu_interrupt(current_env, (long) data);
+    } else {
+        apic_deliver_nmi(current_env->apic_state);
+    }
 }
 
 void kvm_inject_interrupt(CPUState *env, int mask)
