@@ -8,6 +8,7 @@
  */
 #include <hw/ide.h>
 #include "block_int.h"
+#include "sysemu.h"
 #include "dma.h"
 
 /* debug IDE devices */
@@ -576,7 +577,7 @@ void ide_set_sector(IDEState *s, int64_t sector_num);
 
 void ide_dma_start(IDEState *s, BlockDriverCompletionFunc *dma_cb);
 void ide_dma_cancel(BMDMAState *bm);
-void ide_dma_restart_cb(void *opaque, int running, int reason);
+void ide_dma_restart_cb(void *opaque, int running, RunState state);
 void ide_dma_set_inactive(BMDMAState *bm);
 void ide_dma_error(IDEState *s);
 int ide_dma_buf_rw(BMDMAState *bm, int is_write);

@@ -13,6 +13,21 @@
 #endif
 
 /* vl.c */
+
+typedef enum {
+    RSTATE_NO_STATE,
+    RSTATE_DEBUG,          /* qemu is running under gdb */
+    RSTATE_PANICKED,       /* paused due to an internal error */
+    RSTATE_IO_ERROR,       /* paused due to an I/O error */
+    RSTATE_PAUSED,         /* paused by the user (ie. the 'stop' command) */
+    RSTATE_PRE_MIGRATE,    /* paused preparing to finish migrate */
+    RSTATE_RESTORE,        /* paused restoring the VM state */
+    RSTATE_RUNNING,        /* qemu is running */
+    RSTATE_SAVEVM,         /* paused saving VM state */
+    RSTATE_SHUTDOWN,       /* guest shut down and -no-shutdown is in use */
+    RSTATE_WATCHDOG        /* watchdog fired and qemu is configured to pause */
+} RunState;
+
 extern const char *bios_name;
 
 #define QEMU_FILE_TYPE_BIOS   0
@@ -26,14 +41,14 @@ int qemu_uuid_parse(const char *str, uint8_t *uuid);
 #define UUID_FMT "%02hhx%02hhx%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx"
 
 typedef struct vm_change_state_entry VMChangeStateEntry;
-typedef void VMChangeStateHandler(void *opaque, int running, int reason);
+typedef void VMChangeStateHandler(void *opaque, int running, RunState state);
 
 VMChangeStateEntry *qemu_add_vm_change_state_handler(VMChangeStateHandler *cb,
                                                      void *opaque);
 void qemu_del_vm_change_state_handler(VMChangeStateEntry *e);
 
 void vm_start(void);
-void vm_stop(int reason);
+void vm_stop(RunState state);
 
 uint64_t ram_bytes_remaining(void);
 uint64_t ram_bytes_transferred(void);

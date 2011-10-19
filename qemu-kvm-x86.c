@@ -1364,7 +1364,7 @@ static void kvm_trim_features(uint32_t *features, uint32_t supported)
     }
 }
 
-static void cpu_update_state(void *opaque, int running, int reason)
+static void cpu_update_state(void *opaque, int running, RunState state)
 {
     CPUState *env = opaque;
 

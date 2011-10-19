@@ -3117,14 +3117,14 @@ void qemu_del_vm_change_state_handler(VMChangeStateEntry *e)
     qemu_free (e);
 }
 
-static void vm_state_notify(int running, int reason)
+static void vm_state_notify(int running, RunState state)
 {
     VMChangeStateEntry *e;
 
-    trace_vm_state_notify(running, reason);
+    trace_vm_state_notify(running, state);
 
     for (e = vm_change_state_head.lh_first; e; e = e->entries.le_next) {
-        e->cb(e->opaque, running, reason);
+        e->cb(e->opaque, running, state);
     }
 }
 
@@ -3136,7 +3136,7 @@ void vm_start(void)
     if (!vm_running) {
         cpu_enable_ticks();
         vm_running = 1;
-        vm_state_notify(1, 0);
+        vm_state_notify(1, RSTATE_RUNNING);
         qemu_rearm_alarm_timer(alarm_timer);
         resume_all_vcpus();
         monitor_protocol_event(QEVENT_RESUME, NULL);
@@ -3158,7 +3158,7 @@ static int shutdown_requested, shutdown_signal = -1;
 static pid_t shutdown_pid;
 static int powerdown_requested;
 static int debug_requested;
-static int vmstop_requested;
+static int vmstop_requested = RSTATE_NO_STATE;
 
 int qemu_no_shutdown(void)
 {
@@ -3210,20 +3210,20 @@ static int qemu_debug_requested(void)
     return r;
 }
 
-static int qemu_vmstop_requested(void)
+static RunState qemu_vmstop_requested(void)
 {
     int r = vmstop_requested;
-    vmstop_requested = 0;
+    vmstop_requested = RSTATE_NO_STATE;
     return r;
 }
 
-static void do_vm_stop(int reason)
+static void do_vm_stop(RunState state)
 {
     if (vm_running) {
         cpu_disable_ticks();
         vm_running = 0;
         pause_all_vcpus();
-        vm_state_notify(0, reason);
+        vm_state_notify(0, state);
         monitor_protocol_event(QEVENT_STOP, NULL);
     }
 }
@@ -3457,9 +3457,9 @@ void qemu_mutex_lock_iothread(void) {}
 void qemu_mutex_unlock_iothread(void) {}
 #endif
 
-void vm_stop(int reason)
+void vm_stop(RunState state)
 {
-    do_vm_stop(reason);
+    do_vm_stop(state);
 }
 
 #else /* CONFIG_IOTHREAD */
@@ -3762,7 +3762,7 @@ void qemu_notify_event(void)
     qemu_event_increment();
 }
 
-void vm_stop(int reason)
+void vm_stop(RunState reason)
 {
     QemuThread me;
     qemu_thread_self(&me);
@@ -4089,7 +4089,7 @@ qemu_irq qemu_system_powerdown;
 
 static void main_loop(void)
 {
-    int r;
+    RunState r;
 
     if (kvm_enabled()) {
         kvm_main_loop();
@@ -4120,12 +4120,12 @@ static void main_loop(void)
         } while (vm_can_run());
 
         if (qemu_debug_requested()) {
-            vm_stop(EXCP_DEBUG);
+            vm_stop(RSTATE_DEBUG);
         }
         if (qemu_shutdown_requested()) {
             monitor_protocol_event(QEVENT_SHUTDOWN, NULL);
             if (no_shutdown) {
-                vm_stop(0);
+                vm_stop(RSTATE_SHUTDOWN);
             } else
                 break;
         }

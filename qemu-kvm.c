@@ -958,7 +958,7 @@ static int kvm_handle_internal_error(kvm_context_t kvm,
     kvm_show_regs(env);
     if (run->internal.suberror == KVM_INTERNAL_ERROR_EMULATION)
         fprintf(stderr, "emulation failure, check dmesg for details\n");
-    vm_stop(0);
+    vm_stop(RSTATE_PANICKED);
     return 1;
 }
 
@@ -1723,7 +1723,7 @@ int kvm_cpu_exec(CPUState *env)
     r = kvm_run(env);
     if (r < 0) {
         printf("kvm_run returned %d\n", r);
-        vm_stop(0);
+        vm_stop(RSTATE_PANICKED);
     }
 
     return 0;
@@ -2220,7 +2220,7 @@ int kvm_main_loop(void)
             qemu_kill_report();
             monitor_protocol_event(QEVENT_SHUTDOWN, NULL);
             if (qemu_no_shutdown()) {
-                vm_stop(0);
+                vm_stop(RSTATE_SHUTDOWN);
             } else
                 break;
         } else if (qemu_powerdown_requested()) {
@@ -2230,7 +2230,7 @@ int kvm_main_loop(void)
             qemu_kvm_system_reset();
         } else if (kvm_debug_cpu_requested) {
             gdb_set_stop_cpu(kvm_debug_cpu_requested);
-            vm_stop(EXCP_DEBUG);
+            vm_stop(RSTATE_DEBUG);
             kvm_debug_cpu_requested = NULL;
         }
     }

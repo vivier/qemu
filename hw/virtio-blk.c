@@ -75,7 +75,7 @@ static int virtio_blk_handle_rw_error(VirtIOBlockReq *req, int error,
         req->next = s->rq;
         s->rq = req;
         bdrv_mon_event(s->bs, BDRV_ACTION_STOP, error, is_read);
-        vm_stop(0);
+        vm_stop(RSTATE_IO_ERROR);
     } else {
         virtio_blk_req_complete(req, VIRTIO_BLK_S_IOERR);
         bdrv_acct_done(s->bs, &req->acct);
@@ -435,7 +435,7 @@ static void virtio_blk_dma_restart_bh(void *opaque)
     }
 }
 
-static void virtio_blk_dma_restart_cb(void *opaque, int running, int reason)
+static void virtio_blk_dma_restart_cb(void *opaque, int running, RunState state)
 {
     VirtIOBlock *s = opaque;
 

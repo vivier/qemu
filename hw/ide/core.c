@@ -478,7 +478,7 @@ static int ide_handle_rw_error(IDEState *s, int error, int op)
         s->bus->bmdma->unit = s->unit;
         s->bus->error_status = op;
         bdrv_mon_event(s->bs, BDRV_ACTION_STOP, error, is_read);
-        vm_stop(0);
+        vm_stop(RSTATE_IO_ERROR);
     } else {
         if (op & BM_STATUS_DMA_RETRY) {
             dma_buf_commit(s, 0);
@@ -693,7 +693,7 @@ static void ide_dma_restart_bh(void *opaque)
     }
 }
 
-void ide_dma_restart_cb(void *opaque, int running, int reason)
+void ide_dma_restart_cb(void *opaque, int running, RunState state)
 {
     BMDMAState *bm = opaque;
 
