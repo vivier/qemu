@@ -1538,8 +1538,12 @@ int qemu_savevm_state_iterate(Monitor *mon, QEMUFile *f)
         if (se->save_live_state == NULL)
             continue;
 
-        if (qemu_file_rate_limit(f))
+        ret = qemu_file_rate_limit(f);
+        if (ret < 0) {
+            return ret;
+        } else if (ret == 1) {
             return 0;
+        }
 
         /* Section type */
         qemu_put_byte(f, QEMU_VM_SECTION_PART);
