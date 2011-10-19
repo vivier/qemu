@@ -203,7 +203,7 @@ static int mig_save_device_bulk(Monitor *mon, QEMUFile *f,
 
 error:
     monitor_printf(mon, "Error reading sector %" PRId64 "\n", cur_sector);
-    qemu_file_set_error(f);
+    qemu_file_set_error(f, -EIO);
     qemu_free(blk->buf);
     qemu_free(blk);
     return 0;
@@ -310,11 +310,12 @@ static void blk_mig_save_dirty_blocks(Monitor *mon, QEMUFile *f)
     QSIMPLEQ_FOREACH(bmds, &block_mig_state.bmds_list, entry) {
         for (sector = 0; sector < bmds->cur_sector;) {
             if (bdrv_get_dirty(bmds->bs, sector)) {
-                if (bdrv_read(bmds->bs, sector, blk.buf,
-                              BDRV_SECTORS_PER_DIRTY_CHUNK) < 0) {
+                int ret = bdrv_read(bmds->bs, sector, blk.buf,
+                                    BDRV_SECTORS_PER_DIRTY_CHUNK);
+                if (ret < 0) {
                     monitor_printf(mon, "Error reading sector %" PRId64 "\n",
                                    sector);
-                    qemu_file_set_error(f);
+                    qemu_file_set_error(f, ret);
                     qemu_free(blk.buf);
                     return;
                 }
@@ -345,7 +346,7 @@ static void flush_blks(QEMUFile* f)
             break;
         }
         if (blk->ret < 0) {
-            qemu_file_set_error(f);
+            qemu_file_set_error(f, blk->ret);
             break;
         }
         blk_send(f, blk);
