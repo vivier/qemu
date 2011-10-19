@@ -391,7 +391,6 @@ void migrate_fd_put_ready(void *opaque)
 
     DPRINTF("iterate\n");
     if (qemu_savevm_state_iterate(s->mon, s->file) == 1) {
-        int state;
         int old_vm_running = runstate_is_running();
 
         DPRINTF("done iterating\n");
@@ -403,11 +402,8 @@ void migrate_fd_put_ready(void *opaque)
             if (old_vm_running) {
                 vm_start();
             }
-            state = MIG_STATE_ERROR;
-        } else {
-            state = MIG_STATE_COMPLETED;
+            s->state = MIG_STATE_ERROR;
         }
-        s->state = state;
 	STOP_MIGRATION_CLOCK();
 	DPRINTF("ended after %lu milliseconds\n", stop);
 
@@ -415,8 +411,10 @@ void migrate_fd_put_ready(void *opaque)
             if (old_vm_running) {
                 vm_start();
             }
+            s->state = MIG_STATE_ERROR;
         }
-        if (state == MIG_STATE_COMPLETED) {
+        if (s->state == MIG_STATE_ACTIVE) {
+            s->state = MIG_STATE_COMPLETED;
             runstate_set(RUN_STATE_POSTMIGRATE);
         }
         notifier_list_notify(&migration_state_notifiers);
