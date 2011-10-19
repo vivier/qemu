@@ -359,6 +359,21 @@ static int default_driver_check(QemuOpts *opts, void *opaque)
 target_phys_addr_t isa_mem_base = 0;
 PicState2 *isa_pic;
 
+/* QEMU state */
+
+static RunState current_run_state = RSTATE_NO_STATE;
+
+bool runstate_check(RunState state)
+{
+    return current_run_state == state;
+}
+
+void runstate_set(RunState new_state)
+{
+    assert(new_state < RSTATE_MAX);
+    current_run_state = new_state;
+}
+
 /***********************************************************/
 void hw_error(const char *fmt, ...)
 {
@@ -3136,6 +3151,7 @@ void vm_start(void)
     if (!vm_running) {
         cpu_enable_ticks();
         vm_running = 1;
+        runstate_set(RSTATE_RUNNING);
         vm_state_notify(1, RSTATE_RUNNING);
         qemu_rearm_alarm_timer(alarm_timer);
         resume_all_vcpus();
@@ -3223,6 +3239,7 @@ static void do_vm_stop(RunState state)
         cpu_disable_ticks();
         vm_running = 0;
         pause_all_vcpus();
+        runstate_set(state);
         vm_state_notify(0, state);
         monitor_protocol_event(QEVENT_STOP, NULL);
     }
@@ -6240,6 +6257,7 @@ int main(int argc, char **argv, char **envp)
     }
 
     if (incoming) {
+        runstate_set(RSTATE_IN_MIGRATE);
         int ret = qemu_start_incoming_migration(incoming);
         if (ret < 0) {
             fprintf(stderr, "Migration failed. Exit code %s(%d), exiting.\n",
@@ -6248,6 +6266,8 @@ int main(int argc, char **argv, char **envp)
         }
     } else if (autostart) {
         vm_start();
+    } else {
+        runstate_set(RSTATE_PRE_LAUNCH);
     }
 
 #ifndef _WIN32
