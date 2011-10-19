@@ -456,10 +456,15 @@ void runstate_init(void)
 /* This function will abort() on invalid state transitions */
 void runstate_set(RunState new_state)
 {
-    if (new_state >= RUN_STATE_MAX ||
-        !runstate_valid_transitions[current_run_state][new_state]) {
-        fprintf(stderr, "invalid runstate transition\n");
-        abort();
+    assert(new_state < RUN_STATE_MAX);
+
+    if (!runstate_valid_transitions[current_run_state][new_state]) {
+        fprintf(stderr, "invalid runstate transition: %s -> %s\n",
+                runstate_name_tbl[current_run_state],
+                runstate_name_tbl[new_state]);
+        /* We've decided to disable this check in RHEL6 because we're not
+           confident enough that we've captured all valid transitions */
+        // abort();
     }
 
     current_run_state = new_state;
