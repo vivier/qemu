@@ -2402,6 +2402,7 @@ static void do_inject_nmi_hmp(Monitor *mon, const QDict *qdict)
 static void do_info_status_print(Monitor *mon, const QObject *data)
 {
     QDict *qdict;
+    const char *status;
 
     qdict = qobject_to_qdict(data);
 
@@ -2413,6 +2414,11 @@ static void do_info_status_print(Monitor *mon, const QObject *data)
         }
     } else {
         monitor_printf(mon, "paused");
+    }
+
+    status = qdict_get_str(qdict, "status");
+    if (strcmp(status, "paused") && strcmp(status, "running")) {
+        monitor_printf(mon, " (%s)", status);
     }
 
     monitor_printf(mon, "\n");
