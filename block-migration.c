@@ -482,6 +482,7 @@ static int block_load(QEMUFile *f, void *opaque, int version_id)
     int64_t addr;
     BlockDriverState *bs;
     uint8_t *buf;
+    int ret;
 
     do {
         addr = qemu_get_be64(f);
@@ -520,8 +521,9 @@ static int block_load(QEMUFile *f, void *opaque, int version_id)
             fprintf(stderr, "Unknown flags\n");
             return -EINVAL;
         }
-        if (qemu_file_get_error(f)) {
-            return -EIO;
+        ret = qemu_file_get_error(f);
+        if (ret != 0) {
+            return ret;
         }
     } while (!(flags & BLK_MIG_FLAG_EOS));
 
