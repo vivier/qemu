@@ -378,16 +378,20 @@ static const RunStateTransition runstate_transitions_def[] = {
     { RUN_STATE_INMIGRATE, RUN_STATE_PRELAUNCH },
 
     { RUN_STATE_INTERNAL_ERROR, RUN_STATE_PAUSED },
+    { RUN_STATE_INTERNAL_ERROR, RUN_STATE_FINISH_MIGRATE },
 
     { RUN_STATE_IO_ERROR, RUN_STATE_RUNNING },
+    { RUN_STATE_IO_ERROR, RUN_STATE_FINISH_MIGRATE },
 
     { RUN_STATE_PAUSED, RUN_STATE_RUNNING },
-    { RUN_STATE_PAUSED, RUN_STATE_POSTMIGRATE },
+    { RUN_STATE_PAUSED, RUN_STATE_FINISH_MIGRATE },
 
     { RUN_STATE_POSTMIGRATE, RUN_STATE_RUNNING },
+    { RUN_STATE_POSTMIGRATE, RUN_STATE_FINISH_MIGRATE },
 
     { RUN_STATE_PRELAUNCH, RUN_STATE_RUNNING },
-    { RUN_STATE_PRELAUNCH, RUN_STATE_POSTMIGRATE },
+    { RUN_STATE_PRELAUNCH, RUN_STATE_FINISH_MIGRATE },
+    { RUN_STATE_PRELAUNCH, RUN_STATE_INMIGRATE },
 
     { RUN_STATE_FINISH_MIGRATE, RUN_STATE_RUNNING },
     { RUN_STATE_FINISH_MIGRATE, RUN_STATE_POSTMIGRATE },
@@ -407,8 +411,10 @@ static const RunStateTransition runstate_transitions_def[] = {
     { RUN_STATE_SAVE_VM, RUN_STATE_RUNNING },
 
     { RUN_STATE_SHUTDOWN, RUN_STATE_PAUSED },
+    { RUN_STATE_SHUTDOWN, RUN_STATE_FINISH_MIGRATE },
 
     { RUN_STATE_WATCHDOG, RUN_STATE_RUNNING },
+    { RUN_STATE_WATCHDOG, RUN_STATE_FINISH_MIGRATE },
 
     { RUN_STATE_MAX, RUN_STATE_MAX },
 };
@@ -3572,6 +3578,17 @@ void qemu_mutex_unlock_iothread(void) {}
 void vm_stop(RunState state)
 {
     do_vm_stop(state);
+}
+
+/* does a state transition even if the VM is already stopped,
+   current state is forgotten forever */
+void vm_stop_force_state(RunState state)
+{
+    if (runstate_is_running()) {
+         vm_stop(state);
+    } else {
+        runstate_set(state);
+    }
 }
 
 #else /* CONFIG_IOTHREAD */

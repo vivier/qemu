@@ -395,7 +395,7 @@ void migrate_fd_put_ready(void *opaque)
         int old_vm_running = runstate_is_running();
 
         dprintf("done iterating\n");
-        vm_stop(RUN_STATE_FINISH_MIGRATE);
+        vm_stop_force_state(RUN_STATE_FINISH_MIGRATE);
 
         qemu_aio_flush();
         bdrv_flush_all();
