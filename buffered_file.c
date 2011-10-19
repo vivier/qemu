@@ -28,7 +28,6 @@ typedef struct QEMUFileBuffered
     BufferedCloseFunc *close;
     void *opaque;
     QEMUFile *file;
-    int has_error;
     int freeze_output;
     size_t bytes_xfer;
     size_t xfer_limit;
@@ -74,7 +73,7 @@ static void buffered_flush(QEMUFileBuffered *s)
 {
     size_t offset = 0;
 
-    if (s->has_error) {
+    if (qemu_file_has_error(s->file)) {
         DPRINTF("flush when error, bailing\n");
         return;
     }
@@ -94,7 +93,7 @@ static void buffered_flush(QEMUFileBuffered *s)
 
         if (ret <= 0) {
             DPRINTF("error flushing data, %zd\n", ret);
-            s->has_error = 1;
+            qemu_file_set_error(s->file);
             break;
         } else {
             DPRINTF("flushed %zd byte(s)\n", ret);
@@ -115,7 +114,7 @@ static int buffered_put_buffer(void *opaque, const uint8_t *buf, int64_t pos, in
 
     DPRINTF("putting %d bytes at %" PRId64 "\n", size, pos);
 
-    if (s->has_error) {
+    if (qemu_file_has_error(s->file)) {
         DPRINTF("flush when error, bailing\n");
         return -EINVAL;
     }
@@ -140,7 +139,7 @@ static int buffered_put_buffer(void *opaque, const uint8_t *buf, int64_t pos, in
 
         if (ret <= 0) {
             DPRINTF("error putting\n");
-            s->has_error = 1;
+            qemu_file_set_error(s->file);
             offset = -EINVAL;
             break;
         }
@@ -174,7 +173,7 @@ static int buffered_close(void *opaque)
 
     DPRINTF("closing\n");
 
-    while (!s->has_error && s->buffer_size) {
+    while (!qemu_file_has_error(s->file) && s->buffer_size) {
         buffered_flush(s);
         if (s->freeze_output)
             s->wait_for_unfreeze(s->opaque);
@@ -200,7 +199,7 @@ static int buffered_rate_limit(void *opaque)
 {
     QEMUFileBuffered *s = opaque;
 
-    if (s->has_error) {
+    if (qemu_file_has_error(s->file)) {
         return -1;
     }
     if (s->freeze_output)
@@ -216,7 +215,7 @@ static size_t buffered_set_rate_limit(void *opaque, size_t new_rate)
 {
     QEMUFileBuffered *s = opaque;
 
-    if (s->has_error)
+    if (qemu_file_has_error(s->file))
         goto out;
 
     s->xfer_limit = new_rate / 10;
@@ -236,7 +235,7 @@ static void buffered_rate_tick(void *opaque)
 {
     QEMUFileBuffered *s = opaque;
 
-    if (s->has_error) {
+    if (qemu_file_has_error(s->file)) {
         buffered_close(s);
         return;
     }
