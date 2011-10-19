@@ -2228,6 +2228,10 @@ int kvm_main_loop(void)
             qemu_irq_raise(qemu_system_powerdown);
         } else if (qemu_reset_requested()) {
             qemu_kvm_system_reset();
+            if (runstate_check(RSTATE_PANICKED) ||
+                runstate_check(RSTATE_SHUTDOWN)) {
+                runstate_set(RSTATE_PAUSED);
+            }
         } else if (kvm_debug_cpu_requested) {
             gdb_set_stop_cpu(kvm_debug_cpu_requested);
             vm_stop(RSTATE_DEBUG);
