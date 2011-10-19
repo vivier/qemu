@@ -85,7 +85,7 @@ void process_incoming_migration(QEMUFile *f)
     if (autostart) {
         vm_start();
     } else {
-        runstate_set(RSTATE_PRE_LAUNCH);
+        runstate_set(RUN_STATE_PRELAUNCH);
     }
 }
 
@@ -395,7 +395,7 @@ void migrate_fd_put_ready(void *opaque)
         int old_vm_running = runstate_is_running();
 
         dprintf("done iterating\n");
-        vm_stop(RSTATE_PRE_MIGRATE);
+        vm_stop(RUN_STATE_FINISH_MIGRATE);
 
         qemu_aio_flush();
         bdrv_flush_all();
@@ -417,7 +417,7 @@ void migrate_fd_put_ready(void *opaque)
             }
         }
         if (state == MIG_STATE_COMPLETED) {
-            runstate_set(RSTATE_POST_MIGRATE);
+            runstate_set(RUN_STATE_POSTMIGRATE);
         }
         notifier_list_notify(&migration_state_notifiers);
     }

@@ -425,7 +425,7 @@ static int drive_open(DriveInfo *dinfo)
     int res;
     int bdrv_flags = dinfo->bdrv_flags;
 
-    if (runstate_check(RSTATE_IN_MIGRATE)) {
+    if (runstate_check(RUN_STATE_INMIGRATE)) {
         bdrv_flags |= BDRV_O_INCOMING;
     }
 

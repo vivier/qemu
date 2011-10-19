@@ -1627,7 +1627,7 @@ static int qemu_savevm_state(Monitor *mon, QEMUFile *f)
     int ret;
 
     saved_vm_running = runstate_is_running();
-    vm_stop(RSTATE_SAVEVM);
+    vm_stop(RUN_STATE_SAVE_VM);
 
     bdrv_flush_all();
 
@@ -1960,7 +1960,7 @@ void do_savevm(Monitor *mon, const QDict *qdict)
     qemu_aio_flush();
 
     saved_vm_running = runstate_is_running();
-    vm_stop(RSTATE_SAVEVM);
+    vm_stop(RUN_STATE_SAVE_VM);
 
     memset(sn, 0, sizeof(*sn));
     if (name) {

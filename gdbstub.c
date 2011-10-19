@@ -2125,14 +2125,14 @@ static void gdb_vm_state_change(void *opaque, int running, RunState state)
     const char *type;
     int ret;
 
-    if (running || (state != RSTATE_DEBUG && state != RSTATE_PAUSED) ||
+    if (running || (state != RUN_STATE_DEBUG && state != RUN_STATE_PAUSED) ||
         s->state == RS_INACTIVE || s->state == RS_SYSCALL)
         return;
 
     /* disable single step if it was enable */
     cpu_single_step(env, 0);
 
-    if (state == RSTATE_DEBUG) {
+    if (state == RUN_STATE_DEBUG) {
         if (env->watchpoint_hit) {
             switch (env->watchpoint_hit->flags & BP_MEM_ACCESS) {
             case BP_MEM_READ:
@@ -2183,7 +2183,7 @@ void gdb_do_syscall(gdb_syscall_complete_cb cb, const char *fmt, ...)
     gdb_current_syscall_cb = cb;
     s->state = RS_SYSCALL;
 #ifndef CONFIG_USER_ONLY
-    vm_stop(RSTATE_DEBUG);
+    vm_stop(RUN_STATE_DEBUG);
 #endif
     s->state = RS_IDLE;
     va_start(va, fmt);
@@ -2257,7 +2257,7 @@ static void gdb_read_byte(GDBState *s, int ch)
     if (runstate_is_running()) {
         /* when the CPU is running, we cannot do anything except stop
            it when receiving a char */
-        vm_stop(RSTATE_PAUSED);
+        vm_stop(RUN_STATE_PAUSED);
     } else
 #endif
     {
@@ -2507,7 +2507,7 @@ static void gdb_chr_event(void *opaque, int event)
 {
     switch (event) {
     case CHR_EVENT_OPENED:
-        vm_stop(RSTATE_PAUSED);
+        vm_stop(RUN_STATE_PAUSED);
         gdb_has_xml = 0;
         break;
     default:
@@ -2548,7 +2548,7 @@ static int gdb_monitor_write(CharDriverState *chr, const uint8_t *buf, int len)
 static void gdb_sigterm_handler(int signal)
 {
     if (runstate_is_running()) {
-        vm_stop(RSTATE_PAUSED);
+        vm_stop(RUN_STATE_PAUSED);
     }
 }
 #endif

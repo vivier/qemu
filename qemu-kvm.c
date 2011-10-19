@@ -958,7 +958,7 @@ static int kvm_handle_internal_error(kvm_context_t kvm,
     kvm_show_regs(env);
     if (run->internal.suberror == KVM_INTERNAL_ERROR_EMULATION)
         fprintf(stderr, "emulation failure, check dmesg for details\n");
-    vm_stop(RSTATE_PANICKED);
+    vm_stop(RUN_STATE_INTERNAL_ERROR);
     return 1;
 }
 
@@ -1723,7 +1723,7 @@ int kvm_cpu_exec(CPUState *env)
     r = kvm_run(env);
     if (r < 0) {
         printf("kvm_run returned %d\n", r);
-        vm_stop(RSTATE_PANICKED);
+        vm_stop(RUN_STATE_INTERNAL_ERROR);
     }
 
     return 0;
@@ -2220,7 +2220,7 @@ int kvm_main_loop(void)
             qemu_kill_report();
             monitor_protocol_event(QEVENT_SHUTDOWN, NULL);
             if (qemu_no_shutdown()) {
-                vm_stop(RSTATE_SHUTDOWN);
+                vm_stop(RUN_STATE_SHUTDOWN);
             } else
                 break;
         } else if (qemu_powerdown_requested()) {
@@ -2228,13 +2228,13 @@ int kvm_main_loop(void)
             qemu_irq_raise(qemu_system_powerdown);
         } else if (qemu_reset_requested()) {
             qemu_kvm_system_reset();
-            if (runstate_check(RSTATE_PANICKED) ||
-                runstate_check(RSTATE_SHUTDOWN)) {
-                runstate_set(RSTATE_PAUSED);
+            if (runstate_check(RUN_STATE_INTERNAL_ERROR) ||
+                runstate_check(RUN_STATE_SHUTDOWN)) {
+                runstate_set(RUN_STATE_PAUSED);
             }
         } else if (kvm_debug_cpu_requested) {
             gdb_set_stop_cpu(kvm_debug_cpu_requested);
-            vm_stop(RSTATE_DEBUG);
+            vm_stop(RUN_STATE_DEBUG);
             kvm_debug_cpu_requested = NULL;
         }
     }
