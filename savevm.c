@@ -1623,11 +1623,7 @@ void qemu_savevm_state_cancel(Monitor *mon, QEMUFile *f)
 
 static int qemu_savevm_state(Monitor *mon, QEMUFile *f)
 {
-    int saved_vm_running;
     int ret;
-
-    saved_vm_running = runstate_is_running();
-    vm_stop(RUN_STATE_SAVE_VM);
 
     bdrv_flush_all();
 
@@ -1651,9 +1647,6 @@ static int qemu_savevm_state(Monitor *mon, QEMUFile *f)
 out:
     if (qemu_file_has_error(f))
         ret = -EIO;
-
-    if (!ret && saved_vm_running)
-        vm_start();
 
     return ret;
 }
