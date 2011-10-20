@@ -1,0 +1,46 @@
+From b58ca49012bbdb86b5637548272d39895f5828d9 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Wed, 19 Oct 2011 14:53:56 +0200
+Subject: [PATCH 10/13] runstate: Allow to transition from paused to
+ postmigrate
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1319036039-4358-11-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 34414
+O-Subject: [PATCH RHEL6.2 qemu-kvm v3 10/13] runstate: Allow to transition from paused to postmigrate
+Bugzilla: 617889
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+The user may already have paused the VM before starting the
+migration process. If s/he does that, then the state will be
+'paused' when we finish the migration process. In that case
+we want to transition from 'paused' to 'postmigrate' as the
+latter is now the real reason why the VM is stopped.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ vl.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ vl.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index 4fcca63..6886fe1 100644
+--- a/vl.c
++++ b/vl.c
+@@ -382,6 +382,7 @@ static const RunStateTransition runstate_transitions_def[] = {
+     { RUN_STATE_IO_ERROR, RUN_STATE_RUNNING },
+ 
+     { RUN_STATE_PAUSED, RUN_STATE_RUNNING },
++    { RUN_STATE_PAUSED, RUN_STATE_POSTMIGRATE },
+ 
+     { RUN_STATE_POSTMIGRATE, RUN_STATE_RUNNING },
+ 
+-- 
+1.7.4.4
+

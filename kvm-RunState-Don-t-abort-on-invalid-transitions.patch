@@ -1,0 +1,59 @@
+From 9d265fb9e4a8b04f8c2cd645cef541e91c3c53d8 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Wed, 19 Oct 2011 14:53:59 +0200
+Subject: [PATCH 13/13] RunState: Don't abort on invalid transitions
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1319036039-4358-14-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 34415
+O-Subject: [PATCH RHEL6.2 qemu-kvm v3 13/13] RunState: Don't abort on invalid transitions
+Bugzilla: 617889
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+This commit disables the abort() call which is triggered on invalid
+transitions. After discussing this with Markus we concluded that
+we're not confident enough that the current transition table captures
+all the possible valid transions.
+
+This commit also changes runstate_set() to print a nice warning
+message when an invalid transition is made.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ vl.c |   13 +++++++++----
+ 1 files changed, 9 insertions(+), 4 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ vl.c |   13 +++++++++----
+ 1 files changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/vl.c b/vl.c
+index cb7aa30..7906af0 100644
+--- a/vl.c
++++ b/vl.c
+@@ -456,10 +456,15 @@ void runstate_init(void)
+ /* This function will abort() on invalid state transitions */
+ void runstate_set(RunState new_state)
+ {
+-    if (new_state >= RUN_STATE_MAX ||
+-        !runstate_valid_transitions[current_run_state][new_state]) {
+-        fprintf(stderr, "invalid runstate transition\n");
+-        abort();
++    assert(new_state < RUN_STATE_MAX);
++
++    if (!runstate_valid_transitions[current_run_state][new_state]) {
++        fprintf(stderr, "invalid runstate transition: %s -> %s\n",
++                runstate_name_tbl[current_run_state],
++                runstate_name_tbl[new_state]);
++        /* We've decided to disable this check in RHEL6 because we're not
++           confident enough that we've captured all valid transitions */
++        // abort();
+     }
+ 
+     current_run_state = new_state;
+-- 
+1.7.4.4
+

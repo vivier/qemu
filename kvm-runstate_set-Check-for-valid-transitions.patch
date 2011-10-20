@@ -1,0 +1,158 @@
+From 864530ac93c85fa62137e5236bbb79a602cb4ffa Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Wed, 19 Oct 2011 14:53:49 +0200
+Subject: [PATCH 03/13] runstate_set(): Check for valid transitions
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1319036039-4358-4-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 34407
+O-Subject: [PATCH RHEL6.2 qemu-kvm v3 03/13] runstate_set(): Check for valid transitions
+Bugzilla: 617889
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+This commit could have been folded with the previous one, however
+doing it separately will allow for easy bisect and revert if needed.
+
+Checking and testing all valid transitions wasn't trivial, chances
+are this will need broader testing to become more stable.
+
+This is a transition table as suggested by Lluís Vilanova.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+(cherry picked from commit 5db9d4d18612bd5852bf663a40cf7bcf1ddc1b03)
+
+Conflicts:
+
+	vl.c
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ sysemu.h |    1 +
+ vl.c     |   74 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 74 insertions(+), 1 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ sysemu.h |    1 +
+ vl.c     |   74 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 74 insertions(+), 1 deletions(-)
+
+diff --git a/sysemu.h b/sysemu.h
+index c82934b..b32603a 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -44,6 +44,7 @@ extern uint8_t qemu_uuid[];
+ int qemu_uuid_parse(const char *str, uint8_t *uuid);
+ #define UUID_FMT "%02hhx%02hhx%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx"
+ 
++void runstate_init(void);
+ bool runstate_check(RunState state);
+ void runstate_set(RunState new_state);
+ typedef struct vm_change_state_entry VMChangeStateEntry;
+diff --git a/vl.c b/vl.c
+index a1016a4..d8dc0dc 100644
+--- a/vl.c
++++ b/vl.c
+@@ -363,14 +363,84 @@ PicState2 *isa_pic;
+ 
+ static RunState current_run_state = RSTATE_NO_STATE;
+ 
++typedef struct {
++    RunState from;
++    RunState to;
++} RunStateTransition;
++
++static const RunStateTransition runstate_transitions_def[] = {
++    /*     from      ->     to      */
++    { RSTATE_NO_STATE, RSTATE_RUNNING },
++    { RSTATE_NO_STATE, RSTATE_IN_MIGRATE },
++    { RSTATE_NO_STATE, RSTATE_PRE_LAUNCH },
++
++    { RSTATE_DEBUG, RSTATE_RUNNING },
++
++    { RSTATE_IN_MIGRATE, RSTATE_RUNNING },
++    { RSTATE_IN_MIGRATE, RSTATE_PRE_LAUNCH },
++
++    { RSTATE_PANICKED, RSTATE_PAUSED },
++
++    { RSTATE_IO_ERROR, RSTATE_RUNNING },
++
++    { RSTATE_PAUSED, RSTATE_RUNNING },
++
++    { RSTATE_POST_MIGRATE, RSTATE_RUNNING },
++
++    { RSTATE_PRE_LAUNCH, RSTATE_RUNNING },
++    { RSTATE_PRE_LAUNCH, RSTATE_POST_MIGRATE },
++
++    { RSTATE_PRE_MIGRATE, RSTATE_RUNNING },
++    { RSTATE_PRE_MIGRATE, RSTATE_POST_MIGRATE },
++
++    { RSTATE_RESTORE, RSTATE_RUNNING },
++
++    { RSTATE_RUNNING, RSTATE_DEBUG },
++    { RSTATE_RUNNING, RSTATE_PANICKED },
++    { RSTATE_RUNNING, RSTATE_IO_ERROR },
++    { RSTATE_RUNNING, RSTATE_PAUSED },
++    { RSTATE_RUNNING, RSTATE_PRE_MIGRATE },
++    { RSTATE_RUNNING, RSTATE_RESTORE },
++    { RSTATE_RUNNING, RSTATE_SAVEVM },
++    { RSTATE_RUNNING, RSTATE_SHUTDOWN },
++    { RSTATE_RUNNING, RSTATE_WATCHDOG },
++
++    { RSTATE_SAVEVM, RSTATE_RUNNING },
++
++    { RSTATE_SHUTDOWN, RSTATE_PAUSED },
++
++    { RSTATE_WATCHDOG, RSTATE_RUNNING },
++
++    { RSTATE_MAX, RSTATE_MAX },
++};
++
++static bool runstate_valid_transitions[RSTATE_MAX][RSTATE_MAX];
++
+ bool runstate_check(RunState state)
+ {
+     return current_run_state == state;
+ }
+ 
++void runstate_init(void)
++{
++    const RunStateTransition *p;
++
++    memset(&runstate_valid_transitions, 0, sizeof(runstate_valid_transitions));
++
++    for (p = &runstate_transitions_def[0]; p->from != RSTATE_MAX; p++) {
++        runstate_valid_transitions[p->from][p->to] = true;
++    }
++}
++
++/* This function will abort() on invalid state transitions */
+ void runstate_set(RunState new_state)
+ {
+-    assert(new_state < RSTATE_MAX);
++    if (new_state >= RSTATE_MAX ||
++        !runstate_valid_transitions[current_run_state][new_state]) {
++        fprintf(stderr, "invalid runstate transition\n");
++        abort();
++    }
++
+     current_run_state = new_state;
+ }
+ 
+@@ -4926,6 +4996,8 @@ int main(int argc, char **argv, char **envp)
+     atexit(qemu_run_exit_notifiers);
+     error_set_progname(argv[0]);
+ 
++    runstate_init();
++
+     init_clocks();
+ 
+     qemu_cache_utils_init(envp);
+-- 
+1.7.4.4
+

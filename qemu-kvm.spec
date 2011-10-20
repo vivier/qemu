@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.199
+%define pkgrelease 2.200
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3854,6 +3854,32 @@ Patch2605: kvm-ide-atapi-scsi-disk-Make-monitor-eject-f-then-change.patch
 Patch2606: kvm-usb-hid-activate-usb-tablet-mouse-after-migration.patch
 # For bz#729294 - Keyboard leds/states are not synchronized after migration of guest
 Patch2607: kvm-ps2-migrate-ledstate.patch
+# For bz#617889 - QMP: provide VM stop reason
+Patch2608: kvm-Introduce-the-RunState-type.patch
+# For bz#617889 - QMP: provide VM stop reason
+Patch2609: kvm-RunState-Add-additional-states.patch
+# For bz#617889 - QMP: provide VM stop reason
+Patch2610: kvm-runstate_set-Check-for-valid-transitions.patch
+# For bz#617889 - QMP: provide VM stop reason
+Patch2611: kvm-Drop-the-incoming_expected-global-variable.patch
+# For bz#617889 - QMP: provide VM stop reason
+Patch2612: kvm-Drop-the-vm_running-global-variable.patch
+# For bz#617889 - QMP: provide VM stop reason
+Patch2613: kvm-Monitor-QMP-Don-t-allow-cont-on-bad-VM-state.patch
+# For bz#617889 - QMP: provide VM stop reason
+Patch2614: kvm-QMP-query-status-Introduce-status-key.patch
+# For bz#617889 - QMP: provide VM stop reason
+Patch2615: kvm-HMP-info-status-Print-the-VM-state.patch
+# For bz#617889 - QMP: provide VM stop reason
+Patch2616: kvm-RunState-Rename-enum-values.patch
+# For bz#617889 - QMP: provide VM stop reason
+Patch2617: kvm-runstate-Allow-to-transition-from-paused-to-postmigr.patch
+# For bz#617889 - QMP: provide VM stop reason
+Patch2618: kvm-savevm-qemu_savevm_state-Drop-stop-VM-logic.patch
+# For bz#617889 - QMP: provide VM stop reason
+Patch2619: kvm-runstate-Allow-user-to-migrate-twice.patch
+# For bz#617889 - QMP: provide VM stop reason
+Patch2620: kvm-RunState-Don-t-abort-on-invalid-transitions.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -5570,6 +5596,19 @@ ApplyOptionalPatch()
 %patch2605 -p1
 %patch2606 -p1
 %patch2607 -p1
+%patch2608 -p1
+%patch2609 -p1
+%patch2610 -p1
+%patch2611 -p1
+%patch2612 -p1
+%patch2613 -p1
+%patch2614 -p1
+%patch2615 -p1
+%patch2616 -p1
+%patch2617 -p1
+%patch2618 -p1
+%patch2619 -p1
+%patch2620 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -5793,6 +5832,23 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Oct 20 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.200.el6
+- kvm-Introduce-the-RunState-type.patch [bz#617889]
+- kvm-RunState-Add-additional-states.patch [bz#617889]
+- kvm-runstate_set-Check-for-valid-transitions.patch [bz#617889]
+- kvm-Drop-the-incoming_expected-global-variable.patch [bz#617889]
+- kvm-Drop-the-vm_running-global-variable.patch [bz#617889]
+- kvm-Monitor-QMP-Don-t-allow-cont-on-bad-VM-state.patch [bz#617889]
+- kvm-QMP-query-status-Introduce-status-key.patch [bz#617889]
+- kvm-HMP-info-status-Print-the-VM-state.patch [bz#617889]
+- kvm-RunState-Rename-enum-values.patch [bz#617889]
+- kvm-runstate-Allow-to-transition-from-paused-to-postmigr.patch [bz#617889]
+- kvm-savevm-qemu_savevm_state-Drop-stop-VM-logic.patch [bz#617889]
+- kvm-runstate-Allow-user-to-migrate-twice.patch [bz#617889]
+- kvm-RunState-Don-t-abort-on-invalid-transitions.patch [bz#617889]
+- Resolves: bz#617889
+  (QMP: provide VM stop reason)
+
 * Tue Oct 18 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.199.el6
 - kvm-usb-hid-activate-usb-tablet-mouse-after-migration.patch [bz#741878]
 - kvm-ps2-migrate-ledstate.patch [bz#729294]

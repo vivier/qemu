@@ -1,0 +1,69 @@
+From e26dc75a722337b0b035efee9f6ee01aaab44f1a Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Wed, 19 Oct 2011 14:53:57 +0200
+Subject: [PATCH 11/13] savevm: qemu_savevm_state(): Drop stop VM logic
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1319036039-4358-12-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 34417
+O-Subject: [PATCH RHEL6.2 qemu-kvm v3 11/13] savevm: qemu_savevm_state(): Drop stop VM logic
+Bugzilla: 617889
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+qemu_savevm_state() has some logic to stop the VM and to (or not to)
+resume it. But this seems to be a big noop, as qemu_savevm_state()
+is only called by do_savevm() when the VM is already stopped.
+
+So, let's drop qemu_savevm_state()'s stop VM logic.
+
+Reviewed-by: Michael Roth <mdroth@linux.vnet.ibm.com>
+Reviewed-by: Kevin Wolf <kwolf@redhat.com>
+Reviewed-by: Juan Quintela <quintela@redhat.com>
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+Conflicts:
+
+	savevm.c
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ savevm.c |    7 -------
+ 1 files changed, 0 insertions(+), 7 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ savevm.c |    7 -------
+ 1 files changed, 0 insertions(+), 7 deletions(-)
+
+diff --git a/savevm.c b/savevm.c
+index 1a8c189..9ba63df 100644
+--- a/savevm.c
++++ b/savevm.c
+@@ -1623,12 +1623,8 @@ void qemu_savevm_state_cancel(Monitor *mon, QEMUFile *f)
+ 
+ static int qemu_savevm_state(Monitor *mon, QEMUFile *f)
+ {
+-    int saved_vm_running;
+     int ret;
+ 
+-    saved_vm_running = runstate_is_running();
+-    vm_stop(RUN_STATE_SAVE_VM);
+-
+     bdrv_flush_all();
+ 
+     if (qemu_savevm_state_blocked(mon)) {
+@@ -1652,9 +1648,6 @@ out:
+     if (qemu_file_has_error(f))
+         ret = -EIO;
+ 
+-    if (!ret && saved_vm_running)
+-        vm_start();
+-
+     return ret;
+ }
+ 
+-- 
+1.7.4.4
+

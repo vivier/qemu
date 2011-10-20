@@ -1,0 +1,168 @@
+From f5ac8c9711b223c0c5ddb6fc9dbee1e67596ac4b Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Wed, 19 Oct 2011 14:53:48 +0200
+Subject: [PATCH 02/13] RunState: Add additional states
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1319036039-4358-3-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 34406
+O-Subject: [PATCH RHEL6.2 qemu-kvm v3 02/13] RunState: Add additional states
+Bugzilla: 617889
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Currently, only vm_start() and vm_stop() change the VM state.
+That's, the state is only changed when starting or stopping the VM.
+
+This commit adds the runstate_set() function, which makes it possible
+to also do state transitions when the VM is stopped or running.
+
+Additional states are also added and the current state is stored.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+(cherry picked from commit f5bbfba1ebe8c877ebfe846fc1e73e90da423884)
+
+Conflicts:
+
+	cpus.c
+	migration.c
+	vl.c
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ migration.c |    8 +++++++-
+ sysemu.h    |    8 +++++++-
+ vl.c        |   20 ++++++++++++++++++++
+ 3 files changed, 34 insertions(+), 2 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ migration.c |    8 +++++++-
+ sysemu.h    |    8 +++++++-
+ vl.c        |   20 ++++++++++++++++++++
+ 3 files changed, 34 insertions(+), 2 deletions(-)
+
+diff --git a/migration.c b/migration.c
+index 6b4b032..8abfbfd 100644
+--- a/migration.c
++++ b/migration.c
+@@ -84,8 +84,11 @@ void process_incoming_migration(QEMUFile *f)
+         exit(1);
+     }
+ 
+-    if (autostart)
++    if (autostart) {
+         vm_start();
++    } else {
++        runstate_set(RSTATE_PRE_LAUNCH);
++    }
+ }
+ 
+ int do_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data)
+@@ -415,6 +418,9 @@ void migrate_fd_put_ready(void *opaque)
+                 vm_start();
+             }
+         }
++        if (state == MIG_STATE_COMPLETED) {
++            runstate_set(RSTATE_POST_MIGRATE);
++        }
+         notifier_list_notify(&migration_state_notifiers);
+     }
+ }
+diff --git a/sysemu.h b/sysemu.h
+index a13bbb9..c82934b 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -17,15 +17,19 @@
+ typedef enum {
+     RSTATE_NO_STATE,
+     RSTATE_DEBUG,          /* qemu is running under gdb */
++    RSTATE_IN_MIGRATE,     /* paused waiting for an incoming migration */
+     RSTATE_PANICKED,       /* paused due to an internal error */
+     RSTATE_IO_ERROR,       /* paused due to an I/O error */
+     RSTATE_PAUSED,         /* paused by the user (ie. the 'stop' command) */
++    RSTATE_POST_MIGRATE,   /* paused following a successful migration */
++    RSTATE_PRE_LAUNCH,     /* qemu was started with -S and haven't started */
+     RSTATE_PRE_MIGRATE,    /* paused preparing to finish migrate */
+     RSTATE_RESTORE,        /* paused restoring the VM state */
+     RSTATE_RUNNING,        /* qemu is running */
+     RSTATE_SAVEVM,         /* paused saving VM state */
+     RSTATE_SHUTDOWN,       /* guest shut down and -no-shutdown is in use */
+-    RSTATE_WATCHDOG        /* watchdog fired and qemu is configured to pause */
++    RSTATE_WATCHDOG,       /* watchdog fired and qemu is configured to pause */
++    RSTATE_MAX
+ } RunState;
+ 
+ extern const char *bios_name;
+@@ -40,6 +44,8 @@ extern uint8_t qemu_uuid[];
+ int qemu_uuid_parse(const char *str, uint8_t *uuid);
+ #define UUID_FMT "%02hhx%02hhx%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx"
+ 
++bool runstate_check(RunState state);
++void runstate_set(RunState new_state);
+ typedef struct vm_change_state_entry VMChangeStateEntry;
+ typedef void VMChangeStateHandler(void *opaque, int running, RunState state);
+ 
+diff --git a/vl.c b/vl.c
+index b4f4669..a1016a4 100644
+--- a/vl.c
++++ b/vl.c
+@@ -359,6 +359,21 @@ static int default_driver_check(QemuOpts *opts, void *opaque)
+ target_phys_addr_t isa_mem_base = 0;
+ PicState2 *isa_pic;
+ 
++/* QEMU state */
++
++static RunState current_run_state = RSTATE_NO_STATE;
++
++bool runstate_check(RunState state)
++{
++    return current_run_state == state;
++}
++
++void runstate_set(RunState new_state)
++{
++    assert(new_state < RSTATE_MAX);
++    current_run_state = new_state;
++}
++
+ /***********************************************************/
+ void hw_error(const char *fmt, ...)
+ {
+@@ -3136,6 +3151,7 @@ void vm_start(void)
+     if (!vm_running) {
+         cpu_enable_ticks();
+         vm_running = 1;
++        runstate_set(RSTATE_RUNNING);
+         vm_state_notify(1, RSTATE_RUNNING);
+         qemu_rearm_alarm_timer(alarm_timer);
+         resume_all_vcpus();
+@@ -3223,6 +3239,7 @@ static void do_vm_stop(RunState state)
+         cpu_disable_ticks();
+         vm_running = 0;
+         pause_all_vcpus();
++        runstate_set(state);
+         vm_state_notify(0, state);
+         monitor_protocol_event(QEVENT_STOP, NULL);
+     }
+@@ -6240,6 +6257,7 @@ int main(int argc, char **argv, char **envp)
+     }
+ 
+     if (incoming) {
++        runstate_set(RSTATE_IN_MIGRATE);
+         int ret = qemu_start_incoming_migration(incoming);
+         if (ret < 0) {
+             fprintf(stderr, "Migration failed. Exit code %s(%d), exiting.\n",
+@@ -6248,6 +6266,8 @@ int main(int argc, char **argv, char **envp)
+         }
+     } else if (autostart) {
+         vm_start();
++    } else {
++        runstate_set(RSTATE_PRE_LAUNCH);
+     }
+ 
+ #ifndef _WIN32
+-- 
+1.7.4.4
+

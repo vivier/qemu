@@ -1,0 +1,129 @@
+From 4c510e8ebaf7f87bd71732a15288e9cda8f535c9 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Wed, 19 Oct 2011 14:53:58 +0200
+Subject: [PATCH 12/13] runstate: Allow user to migrate twice
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1319036039-4358-13-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 34416
+O-Subject: [PATCH RHEL6.2 qemu-kvm v3 12/13] runstate: Allow user to migrate twice
+Bugzilla: 617889
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+It should be a matter of allowing the transition POSTMIGRATE ->
+FINISH_MIGRATE, but it turns out that the VM won't do the
+transition the second time because it's already stopped.
+
+So this commit also adds vm_stop_force_state() which performs
+the transition even if the VM is already stopped.
+
+While there also allow other states to migrate.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+
+Conflicts:
+
+	cpus.c
+	migration.c
+	vl.c
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ migration.c |    2 +-
+ sysemu.h    |    1 +
+ vl.c        |   21 +++++++++++++++++++--
+ 3 files changed, 21 insertions(+), 3 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ migration.c |    2 +-
+ sysemu.h    |    1 +
+ vl.c        |   21 +++++++++++++++++++--
+ 3 files changed, 21 insertions(+), 3 deletions(-)
+
+diff --git a/migration.c b/migration.c
+index 869d47e..a1c2877 100644
+--- a/migration.c
++++ b/migration.c
+@@ -395,7 +395,7 @@ void migrate_fd_put_ready(void *opaque)
+         int old_vm_running = runstate_is_running();
+ 
+         dprintf("done iterating\n");
+-        vm_stop(RUN_STATE_FINISH_MIGRATE);
++        vm_stop_force_state(RUN_STATE_FINISH_MIGRATE);
+ 
+         qemu_aio_flush();
+         bdrv_flush_all();
+diff --git a/sysemu.h b/sysemu.h
+index 0d4f597..45fd915 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -57,6 +57,7 @@ void qemu_del_vm_change_state_handler(VMChangeStateEntry *e);
+ 
+ void vm_start(void);
+ void vm_stop(RunState state);
++void vm_stop_force_state(RunState state);
+ 
+ uint64_t ram_bytes_remaining(void);
+ uint64_t ram_bytes_transferred(void);
+diff --git a/vl.c b/vl.c
+index 6886fe1..cb7aa30 100644
+--- a/vl.c
++++ b/vl.c
+@@ -378,16 +378,20 @@ static const RunStateTransition runstate_transitions_def[] = {
+     { RUN_STATE_INMIGRATE, RUN_STATE_PRELAUNCH },
+ 
+     { RUN_STATE_INTERNAL_ERROR, RUN_STATE_PAUSED },
++    { RUN_STATE_INTERNAL_ERROR, RUN_STATE_FINISH_MIGRATE },
+ 
+     { RUN_STATE_IO_ERROR, RUN_STATE_RUNNING },
++    { RUN_STATE_IO_ERROR, RUN_STATE_FINISH_MIGRATE },
+ 
+     { RUN_STATE_PAUSED, RUN_STATE_RUNNING },
+-    { RUN_STATE_PAUSED, RUN_STATE_POSTMIGRATE },
++    { RUN_STATE_PAUSED, RUN_STATE_FINISH_MIGRATE },
+ 
+     { RUN_STATE_POSTMIGRATE, RUN_STATE_RUNNING },
++    { RUN_STATE_POSTMIGRATE, RUN_STATE_FINISH_MIGRATE },
+ 
+     { RUN_STATE_PRELAUNCH, RUN_STATE_RUNNING },
+-    { RUN_STATE_PRELAUNCH, RUN_STATE_POSTMIGRATE },
++    { RUN_STATE_PRELAUNCH, RUN_STATE_FINISH_MIGRATE },
++    { RUN_STATE_PRELAUNCH, RUN_STATE_INMIGRATE },
+ 
+     { RUN_STATE_FINISH_MIGRATE, RUN_STATE_RUNNING },
+     { RUN_STATE_FINISH_MIGRATE, RUN_STATE_POSTMIGRATE },
+@@ -407,8 +411,10 @@ static const RunStateTransition runstate_transitions_def[] = {
+     { RUN_STATE_SAVE_VM, RUN_STATE_RUNNING },
+ 
+     { RUN_STATE_SHUTDOWN, RUN_STATE_PAUSED },
++    { RUN_STATE_SHUTDOWN, RUN_STATE_FINISH_MIGRATE },
+ 
+     { RUN_STATE_WATCHDOG, RUN_STATE_RUNNING },
++    { RUN_STATE_WATCHDOG, RUN_STATE_FINISH_MIGRATE },
+ 
+     { RUN_STATE_MAX, RUN_STATE_MAX },
+ };
+@@ -3574,6 +3580,17 @@ void vm_stop(RunState state)
+     do_vm_stop(state);
+ }
+ 
++/* does a state transition even if the VM is already stopped,
++   current state is forgotten forever */
++void vm_stop_force_state(RunState state)
++{
++    if (runstate_is_running()) {
++         vm_stop(state);
++    } else {
++        runstate_set(state);
++    }
++}
++
+ #else /* CONFIG_IOTHREAD */
+ 
+ #include "qemu-thread.h"
+-- 
+1.7.4.4
+

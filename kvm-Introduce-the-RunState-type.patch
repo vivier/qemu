@@ -1,0 +1,621 @@
+From 1b6b2f5d5876b79a517cb53e8b23707efa19d6d6 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Wed, 19 Oct 2011 14:53:47 +0200
+Subject: [PATCH 01/13] Introduce the RunState type
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1319036039-4358-2-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 34405
+O-Subject: [PATCH RHEL6.2 qemu-kvm v3 01/13] Introduce the RunState type
+Bugzilla: 617889
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+The RunState type is a proper way of having a qemu-wide state. Next
+commits will introduce ways of doing state transitions.
+
+This is the RHEL6.2 version of upstream commits:
+
+e07bbac542d45cb246f393f343eb3b867fed4de1
+1dfb4dd993f7122353fb2894f09dfcba894cd7d5
+
+In upstream the RunState type replaced the VMSTOP macros (introduced
+by e07bbac5). In RHEL6 we don't have the VMSTOP macros, because
+qemu-kvm was forked before they were introduced.
+
+One way of doing this work would be to first backport the VMSTOP macros
+and then backport commit 1dfb4dd993 on top. I've tried it, but I got too
+many conflicts for backporting something which is just going to be
+replaced right after (not mentioning that replacing also got several
+conflicts).
+
+So I decided to do a RHEL6-only commit which skips the introduction
+of the VMSTOP macros.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ audio/audio.c      |    2 +-
+ gdbstub.c          |   14 +++++++-------
+ hw/ide/core.c      |    4 ++--
+ hw/ide/internal.h  |    3 ++-
+ hw/kvmclock.c      |    2 +-
+ hw/qxl.c           |    5 +++--
+ hw/scsi-disk.c     |    4 ++--
+ hw/virtio-blk.c    |    4 ++--
+ hw/virtio.c        |    2 +-
+ hw/watchdog.c      |    2 +-
+ kvm-all.c          |    2 +-
+ migration.c        |    2 +-
+ monitor.c          |    4 ++--
+ qemu-kvm-x86.c     |    2 +-
+ qemu-kvm.c         |    8 ++++----
+ savevm.c           |    4 ++--
+ sysemu.h           |   19 +++++++++++++++++--
+ ui/spice-display.c |    3 ++-
+ ui/spice-display.h |    4 +++-
+ vl.c               |   30 +++++++++++++++---------------
+ 20 files changed, 70 insertions(+), 50 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ audio/audio.c      |    2 +-
+ gdbstub.c          |   14 +++++++-------
+ hw/ide/core.c      |    4 ++--
+ hw/ide/internal.h  |    3 ++-
+ hw/kvmclock.c      |    2 +-
+ hw/qxl.c           |    5 +++--
+ hw/scsi-disk.c     |    4 ++--
+ hw/virtio-blk.c    |    4 ++--
+ hw/virtio.c        |    2 +-
+ hw/watchdog.c      |    2 +-
+ kvm-all.c          |    2 +-
+ migration.c        |    2 +-
+ monitor.c          |    4 ++--
+ qemu-kvm-x86.c     |    2 +-
+ qemu-kvm.c         |    8 ++++----
+ savevm.c           |    4 ++--
+ sysemu.h           |   19 +++++++++++++++++--
+ ui/spice-display.c |    3 ++-
+ ui/spice-display.h |    4 +++-
+ vl.c               |   30 +++++++++++++++---------------
+ 20 files changed, 70 insertions(+), 50 deletions(-)
+
+diff --git a/audio/audio.c b/audio/audio.c
+index f0e772f..49d76bb 100644
+--- a/audio/audio.c
++++ b/audio/audio.c
+@@ -1737,7 +1737,7 @@ static int audio_driver_init (AudioState *s, struct audio_driver *drv)
+ }
+ 
+ static void audio_vm_change_state_handler (void *opaque, int running,
+-                                           int reason)
++                                           RunState state)
+ {
+     AudioState *s = opaque;
+     HWVoiceOut *hwo = NULL;
+diff --git a/gdbstub.c b/gdbstub.c
+index 81846bc..1261c6f 100644
+--- a/gdbstub.c
++++ b/gdbstub.c
+@@ -2117,7 +2117,7 @@ void gdb_set_stop_cpu(CPUState *env)
+ }
+ 
+ #ifndef CONFIG_USER_ONLY
+-static void gdb_vm_state_change(void *opaque, int running, int reason)
++static void gdb_vm_state_change(void *opaque, int running, RunState state)
+ {
+     GDBState *s = gdbserver_state;
+     CPUState *env = s->c_cpu;
+@@ -2125,14 +2125,14 @@ static void gdb_vm_state_change(void *opaque, int running, int reason)
+     const char *type;
+     int ret;
+ 
+-    if (running || (reason != EXCP_DEBUG && reason != EXCP_INTERRUPT) ||
++    if (running || (state != RSTATE_DEBUG && state != RSTATE_PAUSED) ||
+         s->state == RS_INACTIVE || s->state == RS_SYSCALL)
+         return;
+ 
+     /* disable single step if it was enable */
+     cpu_single_step(env, 0);
+ 
+-    if (reason == EXCP_DEBUG) {
++    if (state == RSTATE_DEBUG) {
+         if (env->watchpoint_hit) {
+             switch (env->watchpoint_hit->flags & BP_MEM_ACCESS) {
+             case BP_MEM_READ:
+@@ -2183,7 +2183,7 @@ void gdb_do_syscall(gdb_syscall_complete_cb cb, const char *fmt, ...)
+     gdb_current_syscall_cb = cb;
+     s->state = RS_SYSCALL;
+ #ifndef CONFIG_USER_ONLY
+-    vm_stop(EXCP_DEBUG);
++    vm_stop(RSTATE_DEBUG);
+ #endif
+     s->state = RS_IDLE;
+     va_start(va, fmt);
+@@ -2257,7 +2257,7 @@ static void gdb_read_byte(GDBState *s, int ch)
+     if (vm_running) {
+         /* when the CPU is running, we cannot do anything except stop
+            it when receiving a char */
+-        vm_stop(EXCP_INTERRUPT);
++        vm_stop(RSTATE_PAUSED);
+     } else
+ #endif
+     {
+@@ -2507,7 +2507,7 @@ static void gdb_chr_event(void *opaque, int event)
+ {
+     switch (event) {
+     case CHR_EVENT_OPENED:
+-        vm_stop(EXCP_INTERRUPT);
++        vm_stop(RSTATE_PAUSED);
+         gdb_has_xml = 0;
+         break;
+     default:
+@@ -2548,7 +2548,7 @@ static int gdb_monitor_write(CharDriverState *chr, const uint8_t *buf, int len)
+ static void gdb_sigterm_handler(int signal)
+ {
+     if (vm_running)
+-        vm_stop(EXCP_INTERRUPT);
++        vm_stop(RSTATE_PAUSED);
+ }
+ #endif
+ 
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index c059855..24bdbc9 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -478,7 +478,7 @@ static int ide_handle_rw_error(IDEState *s, int error, int op)
+         s->bus->bmdma->unit = s->unit;
+         s->bus->error_status = op;
+         bdrv_mon_event(s->bs, BDRV_ACTION_STOP, error, is_read);
+-        vm_stop(0);
++        vm_stop(RSTATE_IO_ERROR);
+     } else {
+         if (op & BM_STATUS_DMA_RETRY) {
+             dma_buf_commit(s, 0);
+@@ -693,7 +693,7 @@ static void ide_dma_restart_bh(void *opaque)
+     }
+ }
+ 
+-void ide_dma_restart_cb(void *opaque, int running, int reason)
++void ide_dma_restart_cb(void *opaque, int running, RunState state)
+ {
+     BMDMAState *bm = opaque;
+ 
+diff --git a/hw/ide/internal.h b/hw/ide/internal.h
+index 41708e9..d0bfc7d 100644
+--- a/hw/ide/internal.h
++++ b/hw/ide/internal.h
+@@ -8,6 +8,7 @@
+  */
+ #include <hw/ide.h>
+ #include "block_int.h"
++#include "sysemu.h"
+ #include "dma.h"
+ 
+ /* debug IDE devices */
+@@ -576,7 +577,7 @@ void ide_set_sector(IDEState *s, int64_t sector_num);
+ 
+ void ide_dma_start(IDEState *s, BlockDriverCompletionFunc *dma_cb);
+ void ide_dma_cancel(BMDMAState *bm);
+-void ide_dma_restart_cb(void *opaque, int running, int reason);
++void ide_dma_restart_cb(void *opaque, int running, RunState state);
+ void ide_dma_set_inactive(BMDMAState *bm);
+ void ide_dma_error(IDEState *s);
+ int ide_dma_buf_rw(BMDMAState *bm, int is_write);
+diff --git a/hw/kvmclock.c b/hw/kvmclock.c
+index 663024d..cac0222 100644
+--- a/hw/kvmclock.c
++++ b/hw/kvmclock.c
+@@ -63,7 +63,7 @@ static int kvmclock_post_load(void *opaque, int version_id)
+     return kvm_vm_ioctl(kvm_state, KVM_SET_CLOCK, &data);
+ }
+ 
+-static void kvmclock_vm_state_change(void *opaque, int running, int reason)
++static void kvmclock_vm_state_change(void *opaque, int running, RunState state)
+ {
+     KVMClockState *s = opaque;
+ 
+diff --git a/hw/qxl.c b/hw/qxl.c
+index d669a6b..35938de 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -1497,10 +1497,11 @@ static void qxl_hw_text_update(void *opaque, console_ch_t *chardata)
+     }
+ }
+ 
+-static void qxl_vm_change_state_handler(void *opaque, int running, int reason)
++static void qxl_vm_change_state_handler(void *opaque, int running,
++                                        RunState state)
+ {
+     PCIQXLDevice *qxl = opaque;
+-    qemu_spice_vm_change_state_handler(&qxl->ssd, running, reason);
++    qemu_spice_vm_change_state_handler(&qxl->ssd, running, state);
+ 
+     if (running) {
+         /*
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index d522695..29256ec 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -210,7 +210,7 @@ static int scsi_handle_rw_error(SCSIDiskReq *r, int error, int type)
+         r->status |= SCSI_REQ_STATUS_RETRY | type;
+ 
+         bdrv_mon_event(s->bs, BDRV_ACTION_STOP, error, is_read);
+-        vm_stop(0);
++        vm_stop(RSTATE_IO_ERROR);
+     } else {
+         switch (error) {
+         case ENOMEM:
+@@ -330,7 +330,7 @@ static void scsi_dma_restart_bh(void *opaque)
+     }
+ }
+ 
+-static void scsi_dma_restart_cb(void *opaque, int running, int reason)
++static void scsi_dma_restart_cb(void *opaque, int running, RunState state)
+ {
+     SCSIDiskState *s = opaque;
+ 
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index 241f973..ddce871 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -75,7 +75,7 @@ static int virtio_blk_handle_rw_error(VirtIOBlockReq *req, int error,
+         req->next = s->rq;
+         s->rq = req;
+         bdrv_mon_event(s->bs, BDRV_ACTION_STOP, error, is_read);
+-        vm_stop(0);
++        vm_stop(RSTATE_IO_ERROR);
+     } else {
+         virtio_blk_req_complete(req, VIRTIO_BLK_S_IOERR);
+         bdrv_acct_done(s->bs, &req->acct);
+@@ -435,7 +435,7 @@ static void virtio_blk_dma_restart_bh(void *opaque)
+     }
+ }
+ 
+-static void virtio_blk_dma_restart_cb(void *opaque, int running, int reason)
++static void virtio_blk_dma_restart_cb(void *opaque, int running, RunState state)
+ {
+     VirtIOBlock *s = opaque;
+ 
+diff --git a/hw/virtio.c b/hw/virtio.c
+index f86a5c0..9c075ac 100644
+--- a/hw/virtio.c
++++ b/hw/virtio.c
+@@ -821,7 +821,7 @@ void virtio_cleanup(VirtIODevice *vdev)
+     qemu_free(vdev);
+ }
+ 
+-static void virtio_vmstate_change(void *opaque, int running, int reason)
++static void virtio_vmstate_change(void *opaque, int running, RunState state)
+ {
+     VirtIODevice *vdev = opaque;
+     bool backend_run = running && (vdev->status & VIRTIO_CONFIG_S_DRIVER_OK);
+diff --git a/hw/watchdog.c b/hw/watchdog.c
+index aebb08a..4e92b06 100644
+--- a/hw/watchdog.c
++++ b/hw/watchdog.c
+@@ -132,7 +132,7 @@ void watchdog_perform_action(void)
+ 
+     case WDT_PAUSE:             /* same as 'stop' command in monitor */
+         watchdog_mon_event("pause");
+-        vm_stop(0);
++        vm_stop(RSTATE_WATCHDOG);
+         break;
+ 
+     case WDT_DEBUG:
+diff --git a/kvm-all.c b/kvm-all.c
+index 9607717..dea1abf 100644
+--- a/kvm-all.c
++++ b/kvm-all.c
+@@ -696,7 +696,7 @@ int kvm_cpu_exec(CPUState *env)
+ #ifdef KVM_CAP_SET_GUEST_DEBUG
+             if (kvm_arch_debug(&run->debug.arch)) {
+                 gdb_set_stop_cpu(env);
+-                vm_stop(EXCP_DEBUG);
++                vm_stop(RSTATE_DEBUG);
+                 env->exception_index = EXCP_DEBUG;
+                 return 0;
+             }
+diff --git a/migration.c b/migration.c
+index 515f697..6b4b032 100644
+--- a/migration.c
++++ b/migration.c
+@@ -394,7 +394,7 @@ void migrate_fd_put_ready(void *opaque)
+         int old_vm_running = vm_running;
+ 
+         dprintf("done iterating\n");
+-        vm_stop(0);
++        vm_stop(RSTATE_PRE_MIGRATE);
+ 
+         qemu_aio_flush();
+         bdrv_flush_all();
+diff --git a/monitor.c b/monitor.c
+index 3ab0927..e6490ad 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -1362,7 +1362,7 @@ static void do_singlestep(Monitor *mon, const QDict *qdict)
+  */
+ static int do_stop(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+-    vm_stop(EXCP_INTERRUPT);
++    vm_stop(RSTATE_PAUSED);
+     return 0;
+ }
+ 
+@@ -2606,7 +2606,7 @@ static void do_loadvm(Monitor *mon, const QDict *qdict)
+     int saved_vm_running  = vm_running;
+     const char *name = qdict_get_str(qdict, "name");
+ 
+-    vm_stop(0);
++    vm_stop(RSTATE_RESTORE);
+ 
+     if (load_vmstate(name) >= 0 && saved_vm_running)
+         vm_start();
+diff --git a/qemu-kvm-x86.c b/qemu-kvm-x86.c
+index c9e7df4..e4e3053 100644
+--- a/qemu-kvm-x86.c
++++ b/qemu-kvm-x86.c
+@@ -1364,7 +1364,7 @@ static void kvm_trim_features(uint32_t *features, uint32_t supported)
+     }
+ }
+ 
+-static void cpu_update_state(void *opaque, int running, int reason)
++static void cpu_update_state(void *opaque, int running, RunState state)
+ {
+     CPUState *env = opaque;
+ 
+diff --git a/qemu-kvm.c b/qemu-kvm.c
+index 7112f56..8e37286 100644
+--- a/qemu-kvm.c
++++ b/qemu-kvm.c
+@@ -958,7 +958,7 @@ static int kvm_handle_internal_error(kvm_context_t kvm,
+     kvm_show_regs(env);
+     if (run->internal.suberror == KVM_INTERNAL_ERROR_EMULATION)
+         fprintf(stderr, "emulation failure, check dmesg for details\n");
+-    vm_stop(0);
++    vm_stop(RSTATE_PANICKED);
+     return 1;
+ }
+ 
+@@ -1723,7 +1723,7 @@ int kvm_cpu_exec(CPUState *env)
+     r = kvm_run(env);
+     if (r < 0) {
+         printf("kvm_run returned %d\n", r);
+-        vm_stop(0);
++        vm_stop(RSTATE_PANICKED);
+     }
+ 
+     return 0;
+@@ -2220,7 +2220,7 @@ int kvm_main_loop(void)
+             qemu_kill_report();
+             monitor_protocol_event(QEVENT_SHUTDOWN, NULL);
+             if (qemu_no_shutdown()) {
+-                vm_stop(0);
++                vm_stop(RSTATE_SHUTDOWN);
+             } else
+                 break;
+         } else if (qemu_powerdown_requested()) {
+@@ -2230,7 +2230,7 @@ int kvm_main_loop(void)
+             qemu_kvm_system_reset();
+         } else if (kvm_debug_cpu_requested) {
+             gdb_set_stop_cpu(kvm_debug_cpu_requested);
+-            vm_stop(EXCP_DEBUG);
++            vm_stop(RSTATE_DEBUG);
+             kvm_debug_cpu_requested = NULL;
+         }
+     }
+diff --git a/savevm.c b/savevm.c
+index eab3ed3..358acbd 100644
+--- a/savevm.c
++++ b/savevm.c
+@@ -1627,7 +1627,7 @@ static int qemu_savevm_state(Monitor *mon, QEMUFile *f)
+     int ret;
+ 
+     saved_vm_running = vm_running;
+-    vm_stop(0);
++    vm_stop(RSTATE_SAVEVM);
+ 
+     bdrv_flush_all();
+ 
+@@ -1960,7 +1960,7 @@ void do_savevm(Monitor *mon, const QDict *qdict)
+     qemu_aio_flush();
+ 
+     saved_vm_running = vm_running;
+-    vm_stop(0);
++    vm_stop(RSTATE_SAVEVM);
+ 
+     memset(sn, 0, sizeof(*sn));
+     if (name) {
+diff --git a/sysemu.h b/sysemu.h
+index 9a43cb2..a13bbb9 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -13,6 +13,21 @@
+ #endif
+ 
+ /* vl.c */
++
++typedef enum {
++    RSTATE_NO_STATE,
++    RSTATE_DEBUG,          /* qemu is running under gdb */
++    RSTATE_PANICKED,       /* paused due to an internal error */
++    RSTATE_IO_ERROR,       /* paused due to an I/O error */
++    RSTATE_PAUSED,         /* paused by the user (ie. the 'stop' command) */
++    RSTATE_PRE_MIGRATE,    /* paused preparing to finish migrate */
++    RSTATE_RESTORE,        /* paused restoring the VM state */
++    RSTATE_RUNNING,        /* qemu is running */
++    RSTATE_SAVEVM,         /* paused saving VM state */
++    RSTATE_SHUTDOWN,       /* guest shut down and -no-shutdown is in use */
++    RSTATE_WATCHDOG        /* watchdog fired and qemu is configured to pause */
++} RunState;
++
+ extern const char *bios_name;
+ 
+ #define QEMU_FILE_TYPE_BIOS   0
+@@ -26,14 +41,14 @@ int qemu_uuid_parse(const char *str, uint8_t *uuid);
+ #define UUID_FMT "%02hhx%02hhx%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx"
+ 
+ typedef struct vm_change_state_entry VMChangeStateEntry;
+-typedef void VMChangeStateHandler(void *opaque, int running, int reason);
++typedef void VMChangeStateHandler(void *opaque, int running, RunState state);
+ 
+ VMChangeStateEntry *qemu_add_vm_change_state_handler(VMChangeStateHandler *cb,
+                                                      void *opaque);
+ void qemu_del_vm_change_state_handler(VMChangeStateEntry *e);
+ 
+ void vm_start(void);
+-void vm_stop(int reason);
++void vm_stop(RunState state);
+ 
+ uint64_t ram_bytes_remaining(void);
+ uint64_t ram_bytes_transferred(void);
+diff --git a/ui/spice-display.c b/ui/spice-display.c
+index 8c76c7f..402d04c 100644
+--- a/ui/spice-display.c
++++ b/ui/spice-display.c
+@@ -251,7 +251,8 @@ void qemu_spice_destroy_host_primary(SimpleSpiceDisplay *ssd)
+     qemu_spice_destroy_primary_surface(ssd, 0, QXL_SYNC);
+ }
+ 
+-void qemu_spice_vm_change_state_handler(void *opaque, int running, int reason)
++void qemu_spice_vm_change_state_handler(void *opaque, int running,
++                                        RunState state)
+ {
+     SimpleSpiceDisplay *ssd = opaque;
+ 
+diff --git a/ui/spice-display.h b/ui/spice-display.h
+index 1388641..019baad 100644
+--- a/ui/spice-display.h
++++ b/ui/spice-display.h
+@@ -21,6 +21,7 @@
+ 
+ #include "qemu-thread.h"
+ #include "console.h"
++#include "sysemu.h"
+ #include "pflib.h"
+ 
+ #define NUM_MEMSLOTS 8
+@@ -88,7 +89,8 @@ void qemu_spice_destroy_update(SimpleSpiceDisplay *sdpy, SimpleSpiceUpdate *upda
+ void qemu_spice_create_host_memslot(SimpleSpiceDisplay *ssd);
+ void qemu_spice_create_host_primary(SimpleSpiceDisplay *ssd);
+ void qemu_spice_destroy_host_primary(SimpleSpiceDisplay *ssd);
+-void qemu_spice_vm_change_state_handler(void *opaque, int running, int reason);
++void qemu_spice_vm_change_state_handler(void *opaque, int running,
++                                        RunState state);
+ void qemu_spice_display_init_common(SimpleSpiceDisplay *ssd, DisplayState *ds);
+ 
+ void qemu_spice_display_update(SimpleSpiceDisplay *ssd,
+diff --git a/vl.c b/vl.c
+index 2d56c0f..b4f4669 100644
+--- a/vl.c
++++ b/vl.c
+@@ -3117,14 +3117,14 @@ void qemu_del_vm_change_state_handler(VMChangeStateEntry *e)
+     qemu_free (e);
+ }
+ 
+-static void vm_state_notify(int running, int reason)
++static void vm_state_notify(int running, RunState state)
+ {
+     VMChangeStateEntry *e;
+ 
+-    trace_vm_state_notify(running, reason);
++    trace_vm_state_notify(running, state);
+ 
+     for (e = vm_change_state_head.lh_first; e; e = e->entries.le_next) {
+-        e->cb(e->opaque, running, reason);
++        e->cb(e->opaque, running, state);
+     }
+ }
+ 
+@@ -3136,7 +3136,7 @@ void vm_start(void)
+     if (!vm_running) {
+         cpu_enable_ticks();
+         vm_running = 1;
+-        vm_state_notify(1, 0);
++        vm_state_notify(1, RSTATE_RUNNING);
+         qemu_rearm_alarm_timer(alarm_timer);
+         resume_all_vcpus();
+         monitor_protocol_event(QEVENT_RESUME, NULL);
+@@ -3158,7 +3158,7 @@ static int shutdown_requested, shutdown_signal = -1;
+ static pid_t shutdown_pid;
+ static int powerdown_requested;
+ static int debug_requested;
+-static int vmstop_requested;
++static int vmstop_requested = RSTATE_NO_STATE;
+ 
+ int qemu_no_shutdown(void)
+ {
+@@ -3210,20 +3210,20 @@ static int qemu_debug_requested(void)
+     return r;
+ }
+ 
+-static int qemu_vmstop_requested(void)
++static RunState qemu_vmstop_requested(void)
+ {
+     int r = vmstop_requested;
+-    vmstop_requested = 0;
++    vmstop_requested = RSTATE_NO_STATE;
+     return r;
+ }
+ 
+-static void do_vm_stop(int reason)
++static void do_vm_stop(RunState state)
+ {
+     if (vm_running) {
+         cpu_disable_ticks();
+         vm_running = 0;
+         pause_all_vcpus();
+-        vm_state_notify(0, reason);
++        vm_state_notify(0, state);
+         monitor_protocol_event(QEVENT_STOP, NULL);
+     }
+ }
+@@ -3457,9 +3457,9 @@ void qemu_mutex_lock_iothread(void) {}
+ void qemu_mutex_unlock_iothread(void) {}
+ #endif
+ 
+-void vm_stop(int reason)
++void vm_stop(RunState state)
+ {
+-    do_vm_stop(reason);
++    do_vm_stop(state);
+ }
+ 
+ #else /* CONFIG_IOTHREAD */
+@@ -3762,7 +3762,7 @@ void qemu_notify_event(void)
+     qemu_event_increment();
+ }
+ 
+-void vm_stop(int reason)
++void vm_stop(RunState reason)
+ {
+     QemuThread me;
+     qemu_thread_self(&me);
+@@ -4089,7 +4089,7 @@ qemu_irq qemu_system_powerdown;
+ 
+ static void main_loop(void)
+ {
+-    int r;
++    RunState r;
+ 
+     if (kvm_enabled()) {
+         kvm_main_loop();
+@@ -4120,12 +4120,12 @@ static void main_loop(void)
+         } while (vm_can_run());
+ 
+         if (qemu_debug_requested()) {
+-            vm_stop(EXCP_DEBUG);
++            vm_stop(RSTATE_DEBUG);
+         }
+         if (qemu_shutdown_requested()) {
+             monitor_protocol_event(QEVENT_SHUTDOWN, NULL);
+             if (no_shutdown) {
+-                vm_stop(0);
++                vm_stop(RSTATE_SHUTDOWN);
+             } else
+                 break;
+         }
+-- 
+1.7.4.4
+

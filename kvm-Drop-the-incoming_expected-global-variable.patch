@@ -1,0 +1,106 @@
+From 39189ccde9304ad7ac05484403ff3bede7bd54c2 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Wed, 19 Oct 2011 14:53:50 +0200
+Subject: [PATCH 04/13] Drop the incoming_expected global variable
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1319036039-4358-5-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 34408
+O-Subject: [PATCH RHEL6.2 qemu-kvm v3 04/13] Drop the incoming_expected global variable
+Bugzilla: 617889
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Test against RSTATE_IN_MIGRATE instead.
+
+Please, note that the RSTATE_IN_MIGRATE state is only set when all the
+initial VM setup is done, while 'incoming_expected' was set right in
+the beginning when parsing command-line options. Shouldn't be a problem
+as far as I could check.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+(cherry picked from commit 1bcef683bf840a928d633755031ac572d5fdb851)
+
+Conflicts:
+
+	migration.c
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ blockdev.c  |    2 +-
+ migration.c |    2 --
+ monitor.c   |    2 +-
+ vl.c        |    2 --
+ 4 files changed, 2 insertions(+), 6 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ blockdev.c  |    2 +-
+ migration.c |    2 --
+ monitor.c   |    2 +-
+ vl.c        |    2 --
+ 4 files changed, 2 insertions(+), 6 deletions(-)
+
+diff --git a/blockdev.c b/blockdev.c
+index 542fc6d..6c79a24 100644
+--- a/blockdev.c
++++ b/blockdev.c
+@@ -425,7 +425,7 @@ static int drive_open(DriveInfo *dinfo)
+     int res;
+     int bdrv_flags = dinfo->bdrv_flags;
+ 
+-    if (incoming_expected) {
++    if (runstate_check(RSTATE_IN_MIGRATE)) {
+         bdrv_flags |= BDRV_O_INCOMING;
+     }
+ 
+diff --git a/migration.c b/migration.c
+index 8abfbfd..003dcfd 100644
+--- a/migration.c
++++ b/migration.c
+@@ -77,8 +77,6 @@ void process_incoming_migration(QEMUFile *f)
+     qemu_announce_self();
+     dprintf("successfully loaded vm state\n");
+ 
+-    incoming_expected = false;
+-
+     if (drives_reopen() != 0) {
+         fprintf(stderr, "reopening of drives failed\n");
+         exit(1);
+diff --git a/monitor.c b/monitor.c
+index e6490ad..ed51783 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -1380,7 +1380,7 @@ static int do_cont(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     struct bdrv_iterate_context context = { mon, 0 };
+ 
+-    if (incoming_expected) {
++    if (runstate_check(RSTATE_IN_MIGRATE)) {
+         qerror_report(QERR_MIGRATION_EXPECTED);
+         return -1;
+     }
+diff --git a/vl.c b/vl.c
+index d8dc0dc..f184780 100644
+--- a/vl.c
++++ b/vl.c
+@@ -195,7 +195,6 @@ int nb_nics;
+ NICInfo nd_table[MAX_NICS];
+ int vm_running;
+ int autostart;
+-int incoming_expected; /* Started with -incoming and waiting for incoming */
+ static int rtc_utc = 1;
+ static int rtc_date_offset = -1; /* -1 means no change */
+ QEMUClock *rtc_clock;
+@@ -5819,7 +5818,6 @@ int main(int argc, char **argv, char **envp)
+                 break;
+             case QEMU_OPTION_incoming:
+                 incoming = optarg;
+-                incoming_expected = true;
+                 break;
+             case QEMU_OPTION_nodefaults:
+                 default_serial = 0;
+-- 
+1.7.4.4
+

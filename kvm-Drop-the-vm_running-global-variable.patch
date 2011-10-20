@@ -1,0 +1,336 @@
+From c673a7c60f0a4daa6b2b716d0a0b15fb4394c5e6 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Wed, 19 Oct 2011 14:53:51 +0200
+Subject: [PATCH 05/13] Drop the vm_running global variable
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1319036039-4358-6-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 34409
+O-Subject: [PATCH RHEL6.2 qemu-kvm v3 05/13] Drop the vm_running global variable
+Bugzilla: 617889
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Use runstate_is_running() instead, which is introduced by this commit.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+(cherry picked from commit 1354869c380cf4560fa3f0520e914cb5ee380ac8)
+
+Conflicts:
+
+	cpus.c
+	gdbstub.c
+	hw/virtio.c
+	qemu-timer.c
+	sysemu.h
+	target-i386/kvm.c
+	xen-all.c
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+---
+ gdbstub.c        |    5 +++--
+ hw/etraxfs_dma.c |    2 +-
+ hw/kvmclock.c    |    2 +-
+ hw/virtio.c      |    2 +-
+ migration.c      |    2 +-
+ monitor.c        |    4 ++--
+ qemu-kvm-x86.c   |    2 +-
+ qemu-kvm.c       |    2 +-
+ savevm.c         |    4 ++--
+ sdl.c            |    6 +++---
+ sysemu.h         |    2 +-
+ vl.c             |   20 +++++++++++---------
+ 12 files changed, 28 insertions(+), 25 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ gdbstub.c        |    5 +++--
+ hw/etraxfs_dma.c |    2 +-
+ hw/kvmclock.c    |    2 +-
+ hw/virtio.c      |    2 +-
+ migration.c      |    2 +-
+ monitor.c        |    4 ++--
+ qemu-kvm-x86.c   |    2 +-
+ qemu-kvm.c       |    2 +-
+ savevm.c         |    4 ++--
+ sdl.c            |    6 +++---
+ sysemu.h         |    2 +-
+ vl.c             |   20 +++++++++++---------
+ 12 files changed, 28 insertions(+), 25 deletions(-)
+
+diff --git a/gdbstub.c b/gdbstub.c
+index 1261c6f..d8d5bcd 100644
+--- a/gdbstub.c
++++ b/gdbstub.c
+@@ -2254,7 +2254,7 @@ static void gdb_read_byte(GDBState *s, int ch)
+         if (ch != '$')
+             return;
+     }
+-    if (vm_running) {
++    if (runstate_is_running()) {
+         /* when the CPU is running, we cannot do anything except stop
+            it when receiving a char */
+         vm_stop(RSTATE_PAUSED);
+@@ -2547,8 +2547,9 @@ static int gdb_monitor_write(CharDriverState *chr, const uint8_t *buf, int len)
+ #ifndef _WIN32
+ static void gdb_sigterm_handler(int signal)
+ {
+-    if (vm_running)
++    if (runstate_is_running()) {
+         vm_stop(RSTATE_PAUSED);
++    }
+ }
+ #endif
+ 
+diff --git a/hw/etraxfs_dma.c b/hw/etraxfs_dma.c
+index 15c8ad3..e78fc73 100644
+--- a/hw/etraxfs_dma.c
++++ b/hw/etraxfs_dma.c
+@@ -732,7 +732,7 @@ static void DMA_run(void *opaque)
+     struct fs_dma_ctrl *etraxfs_dmac = opaque;
+     int p = 1;
+ 
+-    if (vm_running)
++    if (runstate_is_running())
+         p = etraxfs_dmac_run(etraxfs_dmac);
+ 
+     if (p)
+diff --git a/hw/kvmclock.c b/hw/kvmclock.c
+index cac0222..39dffb2 100644
+--- a/hw/kvmclock.c
++++ b/hw/kvmclock.c
+@@ -50,7 +50,7 @@ static void kvmclock_pre_save(void *opaque)
+      * it on next vmsave (which would return a different value). Will be reset
+      * when the VM is continued.
+      */
+-    s->clock_valid = !vm_running;
++    s->clock_valid = !runstate_is_running();
+ }
+ 
+ static int kvmclock_post_load(void *opaque, int version_id)
+diff --git a/hw/virtio.c b/hw/virtio.c
+index 9c075ac..445db6e 100644
+--- a/hw/virtio.c
++++ b/hw/virtio.c
+@@ -854,7 +854,7 @@ VirtIODevice *virtio_common_init(const char *name, uint16_t device_id,
+     vdev->queue_sel = 0;
+     vdev->config_vector = VIRTIO_NO_VECTOR;
+     vdev->vq = qemu_mallocz(sizeof(VirtQueue) * VIRTIO_PCI_QUEUE_MAX);
+-    vdev->vm_running = vm_running;
++    vdev->vm_running = runstate_is_running();
+     for(i = 0; i < VIRTIO_PCI_QUEUE_MAX; i++) {
+         vdev->vq[i].vector = VIRTIO_NO_VECTOR;
+         vdev->vq[i].vdev = vdev;
+diff --git a/migration.c b/migration.c
+index 003dcfd..fc26024 100644
+--- a/migration.c
++++ b/migration.c
+@@ -392,7 +392,7 @@ void migrate_fd_put_ready(void *opaque)
+     dprintf("iterate\n");
+     if (qemu_savevm_state_iterate(s->mon, s->file) == 1) {
+         int state;
+-        int old_vm_running = vm_running;
++        int old_vm_running = runstate_is_running();
+ 
+         dprintf("done iterating\n");
+         vm_stop(RSTATE_PRE_MIGRATE);
+diff --git a/monitor.c b/monitor.c
+index ed51783..95fc9da 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -2416,7 +2416,7 @@ static void do_info_status_print(Monitor *mon, const QObject *data)
+ static void do_info_status(Monitor *mon, QObject **ret_data)
+ {
+     *ret_data = qobject_from_jsonf("{ 'running': %i, 'singlestep': %i }",
+-                                    vm_running, singlestep);
++                                    runstate_is_running(), singlestep);
+ }
+ 
+ static qemu_acl *find_acl(Monitor *mon, const char *name)
+@@ -2603,7 +2603,7 @@ static int do_closefd(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ 
+ static void do_loadvm(Monitor *mon, const QDict *qdict)
+ {
+-    int saved_vm_running  = vm_running;
++    int saved_vm_running  = runstate_is_running();
+     const char *name = qdict_get_str(qdict, "name");
+ 
+     vm_stop(RSTATE_RESTORE);
+diff --git a/qemu-kvm-x86.c b/qemu-kvm-x86.c
+index e4e3053..a09d506 100644
+--- a/qemu-kvm-x86.c
++++ b/qemu-kvm-x86.c
+@@ -1297,7 +1297,7 @@ void kvm_arch_save_regs(CPUState *env)
+ 
+     if (!env->tsc_valid) {
+         msrs[n++].index = MSR_IA32_TSC;
+-        env->tsc_valid = !vm_running;
++        env->tsc_valid = !runstate_is_running();
+     }
+ 
+     if (kvm_has_vm_hsave_pa)
+diff --git a/qemu-kvm.c b/qemu-kvm.c
+index 8e37286..8aac6d9 100644
+--- a/qemu-kvm.c
++++ b/qemu-kvm.c
+@@ -1731,7 +1731,7 @@ int kvm_cpu_exec(CPUState *env)
+ 
+ static int is_cpu_stopped(CPUState *env)
+ {
+-    return !vm_running || env->stopped;
++    return !runstate_is_running() || env->stopped;
+ }
+ 
+ static void flush_queued_work(CPUState *env)
+diff --git a/savevm.c b/savevm.c
+index 358acbd..b3656d6 100644
+--- a/savevm.c
++++ b/savevm.c
+@@ -1626,7 +1626,7 @@ static int qemu_savevm_state(Monitor *mon, QEMUFile *f)
+     int saved_vm_running;
+     int ret;
+ 
+-    saved_vm_running = vm_running;
++    saved_vm_running = runstate_is_running();
+     vm_stop(RSTATE_SAVEVM);
+ 
+     bdrv_flush_all();
+@@ -1959,7 +1959,7 @@ void do_savevm(Monitor *mon, const QDict *qdict)
+     /* ??? Should this occur after vm_stop?  */
+     qemu_aio_flush();
+ 
+-    saved_vm_running = vm_running;
++    saved_vm_running = runstate_is_running();
+     vm_stop(RSTATE_SAVEVM);
+ 
+     memset(sn, 0, sizeof(*sn));
+diff --git a/sdl.c b/sdl.c
+index d2e8c42..ca114e7 100644
+--- a/sdl.c
++++ b/sdl.c
+@@ -412,7 +412,7 @@ static void sdl_update_caption(void)
+     char icon_title[1024];
+     const char *status = "";
+ 
+-    if (!vm_running)
++    if (!runstate_is_running())
+         status = " [Stopped]";
+     else if (gui_grab) {
+         if (alt_grab)
+@@ -549,8 +549,8 @@ static void sdl_refresh(DisplayState *ds)
+     int mod_state;
+     int buttonstate = SDL_GetMouseState(NULL, NULL);
+ 
+-    if (last_vm_running != vm_running) {
+-        last_vm_running = vm_running;
++    if (last_vm_running != runstate_is_running()) {
++        last_vm_running = runstate_is_running();
+         sdl_update_caption();
+     }
+ 
+diff --git a/sysemu.h b/sysemu.h
+index b32603a..1231280 100644
+--- a/sysemu.h
++++ b/sysemu.h
+@@ -38,7 +38,6 @@ extern const char *bios_name;
+ #define QEMU_FILE_TYPE_KEYMAP 1
+ char *qemu_find_file(int type, const char *name);
+ 
+-extern int vm_running;
+ extern const char *qemu_name;
+ extern uint8_t qemu_uuid[];
+ int qemu_uuid_parse(const char *str, uint8_t *uuid);
+@@ -47,6 +46,7 @@ int qemu_uuid_parse(const char *str, uint8_t *uuid);
+ void runstate_init(void);
+ bool runstate_check(RunState state);
+ void runstate_set(RunState new_state);
++int runstate_is_running(void);
+ typedef struct vm_change_state_entry VMChangeStateEntry;
+ typedef void VMChangeStateHandler(void *opaque, int running, RunState state);
+ 
+diff --git a/vl.c b/vl.c
+index f184780..7b88d71 100644
+--- a/vl.c
++++ b/vl.c
+@@ -193,7 +193,6 @@ const char* keyboard_layout = NULL;
+ ram_addr_t ram_size;
+ int nb_nics;
+ NICInfo nd_table[MAX_NICS];
+-int vm_running;
+ int autostart;
+ static int rtc_utc = 1;
+ static int rtc_date_offset = -1; /* -1 means no change */
+@@ -443,6 +442,11 @@ void runstate_set(RunState new_state)
+     current_run_state = new_state;
+ }
+ 
++int runstate_is_running(void)
++{
++    return runstate_check(RSTATE_RUNNING);
++}
++
+ /***********************************************************/
+ void hw_error(const char *fmt, ...)
+ {
+@@ -1014,7 +1018,7 @@ static void icount_adjust(void)
+     int64_t delta;
+     static int64_t last_delta;
+     /* If the VM is not running, then do nothing.  */
+-    if (!vm_running)
++    if (!runstate_is_running())
+         return;
+ 
+     cur_time = cpu_get_clock();
+@@ -3217,9 +3221,8 @@ static void pause_all_vcpus(void);
+ 
+ void vm_start(void)
+ {
+-    if (!vm_running) {
++    if (!runstate_is_running()) {
+         cpu_enable_ticks();
+-        vm_running = 1;
+         runstate_set(RSTATE_RUNNING);
+         vm_state_notify(1, RSTATE_RUNNING);
+         qemu_rearm_alarm_timer(alarm_timer);
+@@ -3304,9 +3307,8 @@ static RunState qemu_vmstop_requested(void)
+ 
+ static void do_vm_stop(RunState state)
+ {
+-    if (vm_running) {
++    if (runstate_is_running()) {
+         cpu_disable_ticks();
+-        vm_running = 0;
+         pause_all_vcpus();
+         runstate_set(state);
+         vm_state_notify(0, state);
+@@ -3995,7 +3997,7 @@ void main_loop_wait(int timeout)
+     }
+ 
+     /* vm time timers */
+-    if (vm_running) {
++    if (runstate_is_running()) {
+         if (!cur_cpu || likely(!(cur_cpu->singlestep_enabled & SSTEP_NOTIMER)))
+             qemu_run_timers(&active_timers[QEMU_CLOCK_VIRTUAL],
+                             qemu_get_clock(vm_clock));
+@@ -4063,7 +4065,7 @@ static void tcg_cpu_exec(void)
+     for (; next_cpu != NULL; next_cpu = next_cpu->next_cpu) {
+         CPUState *env = cur_cpu = next_cpu;
+ 
+-        if (!vm_running)
++        if (!runstate_is_running())
+             break;
+         if (timer_alarm_pending) {
+             timer_alarm_pending = 0;
+@@ -4110,7 +4112,7 @@ static int qemu_calculate_timeout(void)
+ #ifndef CONFIG_IOTHREAD
+     int timeout;
+ 
+-    if (!vm_running)
++    if (!runstate_is_running())
+         timeout = 5000;
+     else if (tcg_has_work())
+         timeout = 0;
+-- 
+1.7.4.4
+

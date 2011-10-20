@@ -1,0 +1,74 @@
+From 051a8596bcbd786fdbf500784f25d1cf4b811eb8 Mon Sep 17 00:00:00 2001
+From: Luiz Capitulino <lcapitulino@redhat.com>
+Date: Wed, 19 Oct 2011 14:53:54 +0200
+Subject: [PATCH 08/13] HMP: info status: Print the VM state
+
+RH-Author: Luiz Capitulino <lcapitulino@redhat.com>
+Message-id: <1319036039-4358-9-git-send-email-lcapitulino@redhat.com>
+Patchwork-id: 34412
+O-Subject: [PATCH RHEL6.2 qemu-kvm v3 08/13] HMP: info status: Print the VM state
+Bugzilla: 617889
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+Today our printf format for the "info status" command is:
+
+  VM status: %s
+
+Where the string can be "running", "running (single step mode)" or
+"paused".
+
+This commit extends it to:
+
+ VM status: %s (%s)
+
+The second string corresponds to the "status" field as returned
+by the query-status QMP command and it's only printed if "status"
+is not "running" or "paused".
+
+Example:
+
+ VM status: paused (shutdown)
+
+PS: libvirt uses "info status" when using HMP, but the new format
+    should not break it.
+
+Signed-off-by: Luiz Capitulino <lcapitulino@redhat.com>
+(cherry picked from commit 6e0ca8820dddd04056c43327f3b3699f572d03d4)
+---
+ monitor.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ monitor.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+diff --git a/monitor.c b/monitor.c
+index 535a330..63920ed 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -2402,6 +2402,7 @@ static void do_inject_nmi_hmp(Monitor *mon, const QDict *qdict)
+ static void do_info_status_print(Monitor *mon, const QObject *data)
+ {
+     QDict *qdict;
++    const char *status;
+ 
+     qdict = qobject_to_qdict(data);
+ 
+@@ -2415,6 +2416,11 @@ static void do_info_status_print(Monitor *mon, const QObject *data)
+         monitor_printf(mon, "paused");
+     }
+ 
++    status = qdict_get_str(qdict, "status");
++    if (strcmp(status, "paused") && strcmp(status, "running")) {
++        monitor_printf(mon, " (%s)", status);
++    }
++
+     monitor_printf(mon, "\n");
+ }
+ 
+-- 
+1.7.4.4
+
