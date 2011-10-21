@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
-Version: 0.15.0
-Release: 6%{?dist}
+Version: 0.15.1
+Release: 1%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -19,7 +19,7 @@ URL: http://www.qemu.org/
 
 Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-kvm-%{version}.tar.gz
 
-Source1: qemu.init
+Source1: qemu.binfmt
 
 # Loads kvm kernel modules at boot
 Source2: kvm.modules
@@ -28,11 +28,12 @@ Source2: kvm.modules
 Source3: 80-kvm.rules
 
 # KSM control scripts
-Source4: ksm.init
+Source4: ksm.service
 Source5: ksm.sysconfig
-Source6: ksmtuned.init
-Source7: ksmtuned
-Source8: ksmtuned.conf
+Source6: ksmctl.c
+Source7: ksmtuned.service
+Source8: ksmtuned
+Source9: ksmtuned.conf
 
 Source10: qemu-guest-agent.service
 Source11: 99-qemu-guest-agent.rules
@@ -210,7 +211,7 @@ Requires: %{name}-common = %{epoch}:%{version}-%{release}
 Provides: kvm = 85
 Obsoletes: kvm < 85
 Requires: vgabios >= 0.6c-2
-Requires: seabios-bin
+Requires: seabios-bin >= 0.6.0-2
 Requires: /usr/share/gpxe/8086100e.rom
 Requires: /usr/share/gpxe/rtl8029.rom
 Requires: /usr/share/gpxe/pcnet32.rom
@@ -354,8 +355,8 @@ sed -i.debug 's/"-g $CFLAGS"/"$CFLAGS"/g' configure
             --sysconfdir=%{_sysconfdir} \
             --audio-drv-list=pa,sdl,alsa,oss \
             --disable-strip \
-            --extra-ldflags=$extraldflags \
-            --extra-cflags="%{optflags}" \
+            --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
+            --extra-cflags="%{optflags} -fPIE -DPIE" \
 %ifarch x86_64
             --enable-spice \
 %endif
@@ -385,8 +386,8 @@ make clean
     --audio-drv-list=pa,sdl,alsa,oss \
     --disable-kvm \
     --disable-strip \
-    --extra-ldflags=$extraldflags \
-    --extra-cflags="%{optflags}" \
+    --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
+    --extra-cflags="%{optflags} -fPIE -DPIE" \
     --disable-xen \
 %ifarch x86_64
     --enable-spice \
@@ -401,15 +402,19 @@ echo "==="
 
 make V=1 %{?_smp_mflags} $buildldflags
 
+gcc %{SOURCE6} -O2 -g -o ksmctl
+
+
 %install
 rm -rf $RPM_BUILD_ROOT
 
-install -D -p -m 0755 %{SOURCE4} $RPM_BUILD_ROOT%{_initddir}/ksm
+install -D -p -m 0755 %{SOURCE4} $RPM_BUILD_ROOT/lib/systemd/system/ksm.service
 install -D -p -m 0644 %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/ksm
+install -D -p -m 0755 ksmctl $RPM_BUILD_ROOT/lib/systemd/ksmctl
 
-install -D -p -m 0755 %{SOURCE6} $RPM_BUILD_ROOT%{_initddir}/ksmtuned
-install -D -p -m 0755 %{SOURCE7} $RPM_BUILD_ROOT%{_sbindir}/ksmtuned
-install -D -p -m 0644 %{SOURCE8} $RPM_BUILD_ROOT%{_sysconfdir}/ksmtuned.conf
+install -D -p -m 0755 %{SOURCE7} $RPM_BUILD_ROOT/lib/systemd/system/ksmtuned.service
+install -D -p -m 0755 %{SOURCE8} $RPM_BUILD_ROOT%{_sbindir}/ksmtuned
+install -D -p -m 0644 %{SOURCE9} $RPM_BUILD_ROOT%{_sysconfdir}/ksmtuned.conf
 
 %ifarch %{ix86} x86_64
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules
@@ -433,7 +438,6 @@ make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
      datadir="${RPM_BUILD_ROOT}%{_datadir}/%{name}" \
      sysconfdir="${RPM_BUILD_ROOT}%{_sysconfdir}" install
 chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
-install -D -p -m 0755 %{SOURCE1} $RPM_BUILD_ROOT%{_initddir}/qemu
 install -D -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} Changelog README TODO COPYING COPYING.LIB LICENSE
 
 install -D -p -m 0644 qemu.sasl $RPM_BUILD_ROOT%{_sysconfdir}/sasl2/qemu.conf
@@ -472,6 +476,30 @@ ln -s ../vgabios/VGABIOS-lgpl-latest.stdvga.bin %{buildroot}/%{_datadir}/%{name}
 ln -s ../vgabios/VGABIOS-lgpl-latest.vmware.bin %{buildroot}/%{_datadir}/%{name}/vgabios-vmware.bin
 ln -s ../seabios/bios.bin %{buildroot}/%{_datadir}/%{name}/bios.bin
 
+mkdir -p $RPM_BUILD_ROOT%{_exec_prefix}/lib/binfmt.d
+for i in dummy \
+%ifnarch %{ix86} x86_64
+    qemu-i386 \
+%endif
+%if !%{with_x86only}
+%ifnarch arm
+    qemu-arm \
+%endif
+%ifnarch ppc ppc64
+    qemu-ppc \
+%endif
+%ifnarch sparc sparc64
+    qemu-sparc \
+%endif
+%ifnarch sh4
+    qemu-sh4 \
+%endif
+%endif
+; do
+  test $i = dummy && continue
+  grep /$i:\$ %{SOURCE1} > $RPM_BUILD_ROOT%{_exec_prefix}/lib/binfmt.d/$i.conf
+  chmod 644 $RPM_BUILD_ROOT%{_exec_prefix}/lib/binfmt.d/$i.conf
+done < %{SOURCE1}
 
 # For the qemu-guest-agent subpackage install the systemd
 # service and udev rules.
@@ -498,36 +526,28 @@ getent passwd qemu >/dev/null || \
   useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
     -c "qemu user" qemu
 
-/sbin/chkconfig --add ksm
-/sbin/chkconfig --add ksmtuned
+/bin/systemctl --global enable ksm.service
+/bin/systemctl --global enable ksmtuned.service
 
 %preun common
 if [ $1 -eq 0 ]; then
-    /sbin/service ksmtuned stop &>/dev/null || :
-    /sbin/chkconfig --del ksmtuned
-    /sbin/service ksm stop &>/dev/null || :
-    /sbin/chkconfig --del ksm
+    /bin/systemctl --system stop ksmtuned.service &>/dev/null || :
+    /bin/systemctl --system stop ksm.service &>/dev/null || :
+    /bin/systemctl --global disable ksmtuned.service
+    /bin/systemctl --global disable ksm.service
 fi
 
 %postun common
 if [ $1 -ge 1 ]; then
-    /sbin/service ksm condrestart &>/dev/null || :
-    /sbin/service ksmtuned condrestart &>/dev/null || :
+    /bin/systemctl --system try-restart ksm.service &>/dev/null || :
+    /bin/systemctl --system try-restart ksmtuned.service &>/dev/null || :
 fi
 
 %post user
-/sbin/chkconfig --add qemu
-
-%preun user
-if [ $1 -eq 0 ]; then
-    /sbin/service qemu stop &>/dev/null || :
-    /sbin/chkconfig --del qemu
-fi
+/bin/systemctl --system try-restart systemd-binfmt.service &>/dev/null || :
 
 %postun user
-if [ $1 -ge 1 ]; then
-    /sbin/service qemu condrestart &>/dev/null || :
-fi
+/bin/systemctl --system try-restart systemd-binfmt.service &>/dev/null || :
 
 %files
 %defattr(-,root,root)
@@ -552,9 +572,10 @@ fi
 %{_mandir}/man8/qemu-nbd.8*
 %{_bindir}/qemu-nbd
 %config(noreplace) %{_sysconfdir}/sasl2/qemu.conf
-%{_initddir}/ksm
+/lib/systemd/system/ksm.service
+/lib/systemd/ksmctl
 %config(noreplace) %{_sysconfdir}/sysconfig/ksm
-%{_initddir}/ksmtuned
+/lib/systemd/system/ksmtuned.service
 %{_sbindir}/ksmtuned
 %config(noreplace) %{_sysconfdir}/ksmtuned.conf
 %dir %{_sysconfdir}/qemu
@@ -568,7 +589,7 @@ fi
 
 %files user
 %defattr(-,root,root)
-%{_initddir}/qemu
+%{_exec_prefix}/lib/binfmt.d/qemu-*.conf
 %{_bindir}/qemu-i386
 %{_bindir}/qemu-x86_64
 %if !%{with_x86only}
@@ -677,6 +698,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Oct 21 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.15.1-1
+- Require seabios-bin >= 0.6.0-2 (#741992)
+- Replace init scripts with systemd units (#741920)
+- Update to 0.15.1 stable upstream
+  
+* Fri Oct 21 2011 Paul Moore <pmoore@redhat.com>
+- Enable full relro and PIE (rhbz #738812)
+
 * Wed Oct 12 2011 Daniel P. Berrange <berrange@redhat.com> - 2:0.15.0-6
 - Add BR on ceph-devel to enable RBD block device
 
