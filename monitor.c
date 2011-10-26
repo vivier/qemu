@@ -2380,11 +2380,7 @@ static int do_inject_nmi(Monitor *mon, const QDict *qdict, QObject **ret_data)
         if (kvm_enabled()) {
             kvm_inject_interrupt(env, CPU_INTERRUPT_NMI);
         } else {
-            if (!env->apic_state) {
-                cpu_interrupt(env, CPU_INTERRUPT_NMI);
-            } else {
-                apic_deliver_nmi(env->apic_state);
-            }
+            cpu_interrupt(env, CPU_INTERRUPT_NMI);
         }
     }
 

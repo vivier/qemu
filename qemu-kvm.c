@@ -18,7 +18,6 @@
 #include "compatfd.h"
 #include "gdbstub.h"
 #include "monitor.h"
-#include "hw/pc.h"
 
 #include "qemu-kvm.h"
 #include "libkvm.h"
@@ -1631,11 +1630,7 @@ void kvm_cpu_synchronize_state(CPUState *env)
 
 static void inject_interrupt(void *data)
 {
-    if (!current_env->apic_state || (long)data != CPU_INTERRUPT_NMI) {
-        cpu_interrupt(current_env, (long) data);
-    } else {
-        apic_deliver_nmi(current_env->apic_state);
-    }
+    cpu_interrupt(current_env, (long) data);
 }
 
 void kvm_inject_interrupt(CPUState *env, int mask)
