@@ -1,0 +1,69 @@
+From 44962753ec388d9aa78b6a281e382484de06e186 Mon Sep 17 00:00:00 2001
+From: Paolo Bonzini <pbonzini@redhat.com>
+Date: Wed, 19 Oct 2011 15:42:46 +0200
+Subject: [PATCH 18/19] scsi: fix accounting of writes
+
+RH-Author: Paolo Bonzini <pbonzini@redhat.com>
+Message-id: <1319038967-26901-2-git-send-email-pbonzini@redhat.com>
+Patchwork-id: 34420
+O-Subject: [RHEL 6.2 KVM PATCH v2 1/2] scsi: fix accounting of writes
+Bugzilla: 744780
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+
+Writes go through scsi_write_complete at least twice, the first time
+to get some data without having actually written anything.  Because
+of this, the first time scsi_write_complete is called it will call
+bdrv_acct_done and account a read incorrectly.  Fix this by looking
+at the aiocb.  I am doing the same in scsi_read_complete for symmetry,
+but it is only needed in the (bogus) case of bdrv_aio_readv returning
+NULL.
+
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 8e321cc622a5583243b7641c84a5aeef66c07bb3)
+---
+ hw/scsi-disk.c |   14 ++++++++------
+ 1 files changed, 8 insertions(+), 6 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/scsi-disk.c |   14 ++++++++------
+ 1 files changed, 8 insertions(+), 6 deletions(-)
+
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index 4df2306..87e9724 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -126,9 +126,10 @@ static void scsi_read_complete(void * opaque, int ret)
+     SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, r->req.dev);
+     int n;
+ 
+-    r->req.aiocb = NULL;
+-
+-    bdrv_acct_done(s->bs, &r->acct);
++    if (r->req.aiocb != NULL) {
++        r->req.aiocb = NULL;
++        bdrv_acct_done(s->bs, &r->acct);
++    }
+ 
+     if (ret) {
+         if (scsi_handle_rw_error(r, -ret, SCSI_REQ_STATUS_RETRY_READ)) {
+@@ -235,9 +236,10 @@ static void scsi_write_complete(void * opaque, int ret)
+     uint32_t len;
+     uint32_t n;
+ 
+-    r->req.aiocb = NULL;
+-
+-    bdrv_acct_done(s->bs, &r->acct);
++    if (r->req.aiocb != NULL) {
++        r->req.aiocb = NULL;
++        bdrv_acct_done(s->bs, &r->acct);
++    }
+ 
+     if (ret) {
+         if (scsi_handle_rw_error(r, -ret, SCSI_REQ_STATUS_RETRY_WRITE)) {
+-- 
+1.7.4.4
+

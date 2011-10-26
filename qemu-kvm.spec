@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.200
+%define pkgrelease 2.201
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3880,6 +3880,44 @@ Patch2618: kvm-savevm-qemu_savevm_state-Drop-stop-VM-logic.patch
 Patch2619: kvm-runstate-Allow-user-to-migrate-twice.patch
 # For bz#617889 - QMP: provide VM stop reason
 Patch2620: kvm-RunState-Don-t-abort-on-invalid-transitions.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2621: kvm-migration-s-dprintf-DPRINTF.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2622: kvm-migration-simplify-state-assignmente.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2623: kvm-migration-Check-that-migration-is-active-before-canc.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2624: kvm-Reorganize-and-fix-monitor-resume-after-migration.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2625: kvm-migration-add-error-handling-to-migrate_fd_put_notif.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2626: kvm-migration-If-there-is-one-error-it-makes-no-sense-to.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2627: kvm-buffered_file-Use-right-opaque.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2628: kvm-buffered_file-reuse-QEMUFile-has_error-field.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2629: kvm-migration-don-t-write-when-migration-is-not-active.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2630: kvm-migration-set-error-if-select-return-one-error.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2631: kvm-migration-change-has_error-to-contain-errno-values.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2632: kvm-migration-return-real-error-code.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2633: kvm-migration-rename-qemu_file_has_error-to-qemu_file_ge.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2634: kvm-savevm-Rename-has_error-to-last_error-field.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2635: kvm-migration-use-qemu_file_get_error-return-value-when-.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2636: kvm-migration-make-save_live-return-errors.patch
+# For bz#738565 - [FJ6.2 Bug]: Failed to capture kdump due to redundant NMIs
+Patch2637: kvm-qemu-kvm-fix-improper-nmi-emulation.patch
+# For bz#744780 - use-after-free in QEMU SCSI target code
+Patch2638: kvm-scsi-fix-accounting-of-writes.patch
+# For bz#744780 - use-after-free in QEMU SCSI target code
+Patch2639: kvm-scsi-disk-bump-SCSIRequest-reference-count-until-aio.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -5609,6 +5647,25 @@ ApplyOptionalPatch()
 %patch2618 -p1
 %patch2619 -p1
 %patch2620 -p1
+%patch2621 -p1
+%patch2622 -p1
+%patch2623 -p1
+%patch2624 -p1
+%patch2625 -p1
+%patch2626 -p1
+%patch2627 -p1
+%patch2628 -p1
+%patch2629 -p1
+%patch2630 -p1
+%patch2631 -p1
+%patch2632 -p1
+%patch2633 -p1
+%patch2634 -p1
+%patch2635 -p1
+%patch2636 -p1
+%patch2637 -p1
+%patch2638 -p1
+%patch2639 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -5832,6 +5889,33 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Oct 26 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.201.el6
+- kvm-migration-s-dprintf-DPRINTF.patch [bz#669581]
+- kvm-migration-simplify-state-assignmente.patch [bz#669581]
+- kvm-migration-Check-that-migration-is-active-before-canc.patch [bz#669581]
+- kvm-Reorganize-and-fix-monitor-resume-after-migration.patch [bz#669581]
+- kvm-migration-add-error-handling-to-migrate_fd_put_notif.patch [bz#669581]
+- kvm-migration-If-there-is-one-error-it-makes-no-sense-to.patch [bz#669581]
+- kvm-buffered_file-Use-right-opaque.patch [bz#669581]
+- kvm-buffered_file-reuse-QEMUFile-has_error-field.patch [bz#669581]
+- kvm-migration-don-t-write-when-migration-is-not-active.patch [bz#669581]
+- kvm-migration-set-error-if-select-return-one-error.patch [bz#669581]
+- kvm-migration-change-has_error-to-contain-errno-values.patch [bz#669581]
+- kvm-migration-return-real-error-code.patch [bz#669581]
+- kvm-migration-rename-qemu_file_has_error-to-qemu_file_ge.patch [bz#669581]
+- kvm-savevm-Rename-has_error-to-last_error-field.patch [bz#669581]
+- kvm-migration-use-qemu_file_get_error-return-value-when-.patch [bz#669581]
+- kvm-migration-make-save_live-return-errors.patch [bz#669581]
+- kvm-qemu-kvm-fix-improper-nmi-emulation.patch [bz#738565]
+- kvm-scsi-fix-accounting-of-writes.patch [bz#744780]
+- kvm-scsi-disk-bump-SCSIRequest-reference-count-until-aio.patch [bz#744780]
+- Resolves: bz#669581
+  (Migration Never end while Use firewall reject migration tcp port)
+- Resolves: bz#738565
+  ([FJ6.2 Bug]: Failed to capture kdump due to redundant NMIs)
+- Resolves: bz#744780
+  (use-after-free in QEMU SCSI target code)
+
 * Thu Oct 20 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.200.el6
 - kvm-Introduce-the-RunState-type.patch [bz#617889]
 - kvm-RunState-Add-additional-states.patch [bz#617889]

@@ -1,0 +1,158 @@
+From f9adb8428857737d17d4be3048eaa0632a920fad Mon Sep 17 00:00:00 2001
+From: Paolo Bonzini <pbonzini@redhat.com>
+Date: Wed, 19 Oct 2011 15:42:47 +0200
+Subject: [PATCH 19/19] scsi-disk: bump SCSIRequest reference count until aio
+ completion runs
+
+RH-Author: Paolo Bonzini <pbonzini@redhat.com>
+Message-id: <1319038967-26901-3-git-send-email-pbonzini@redhat.com>
+Patchwork-id: 34421
+O-Subject: [RHEL 6.2 KVM PATCH v2 2/2] scsi-disk: bump SCSIRequest reference count until aio completion runs
+Bugzilla: 744780
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+
+In some cases a request may be canceled before the completion callback
+runs.  Keep a reference to the request between starting an AIO operation
+and the corresponding scsi_*_complete.  Similarly, when a request
+has to be retried, keep a reference between scsi_handle_rw_error and
+scsi_dma_restart_bh.
+
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+---
+ hw/scsi-disk.c |   36 ++++++++++++++++++++++++++++++++++--
+ 1 files changed, 34 insertions(+), 2 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/scsi-disk.c |   36 ++++++++++++++++++++++++++++++++++--
+ 1 files changed, 34 insertions(+), 2 deletions(-)
+
+diff --git a/hw/scsi-disk.c b/hw/scsi-disk.c
+index 87e9724..73c6750 100644
+--- a/hw/scsi-disk.c
++++ b/hw/scsi-disk.c
+@@ -118,6 +118,12 @@ static void scsi_cancel_io(SCSIRequest *req)
+         bdrv_aio_cancel(r->req.aiocb);
+     }
+     r->req.aiocb = NULL;
++    if (r->status & SCSI_REQ_STATUS_RETRY) {
++        r->status &= ~(SCSI_REQ_STATUS_RETRY | SCSI_REQ_STATUS_RETRY_TYPE_MASK);
++
++        /* This reference was left in by scsi_handle_rw_error.  */
++        scsi_req_unref(&r->req);
++    }
+ }
+ 
+ static void scsi_read_complete(void * opaque, int ret)
+@@ -133,7 +139,7 @@ static void scsi_read_complete(void * opaque, int ret)
+ 
+     if (ret) {
+         if (scsi_handle_rw_error(r, -ret, SCSI_REQ_STATUS_RETRY_READ)) {
+-            return;
++            goto done;
+         }
+     }
+ 
+@@ -143,6 +149,9 @@ static void scsi_read_complete(void * opaque, int ret)
+     r->sector += n;
+     r->sector_count -= n;
+     scsi_req_data(&r->req, r->iov.iov_len);
++
++done:
++    scsi_req_unref(&r->req);
+ }
+ 
+ 
+@@ -169,6 +178,8 @@ static void scsi_read_data(SCSIRequest *req)
+     /* No data transfer may already be in progress */
+     assert(r->req.aiocb == NULL);
+ 
++    /* Save a ref for scsi_read_complete, in case r is canceled.  */
++    scsi_req_ref(&r->req);
+     if (r->req.cmd.mode == SCSI_XFER_TO_DEV) {
+         DPRINTF("Data transfer direction invalid\n");
+         scsi_read_complete(r, -EINVAL);
+@@ -181,7 +192,9 @@ static void scsi_read_data(SCSIRequest *req)
+ 
+     if (s->tray_open) {
+         scsi_read_complete(r, -ENOMEDIUM);
++        return;
+     }
++
+     r->iov.iov_len = n * 512;
+     qemu_iovec_init_external(&r->qiov, &r->iov, 1);
+ 
+@@ -193,6 +206,13 @@ static void scsi_read_data(SCSIRequest *req)
+     }
+ }
+ 
++/*
++ * scsi_handle_rw_error has two return values.  0 means that the error
++ * must be ignored, 1 means that the error has been processed and the
++ * caller should not do anything else for this request.  Note that
++ * scsi_handle_rw_error always manages its reference counts, independent
++ * of the return value.
++ */
+ static int scsi_handle_rw_error(SCSIDiskReq *r, int error, int type)
+ {
+     int is_read = (type == SCSI_REQ_STATUS_RETRY_READ);
+@@ -212,6 +232,10 @@ static int scsi_handle_rw_error(SCSIDiskReq *r, int error, int type)
+ 
+         bdrv_mon_event(s->bs, BDRV_ACTION_STOP, error, is_read);
+         vm_stop(RUN_STATE_IO_ERROR);
++
++        /* Keep a reference until the request completes; the corresponding
++         * unref is in scsi_dma_restart_bh and scsi_cancel_io.  */
++        scsi_req_ref(&r->req);
+     } else {
+         switch (error) {
+         case ENOMEM:
+@@ -243,7 +267,7 @@ static void scsi_write_complete(void * opaque, int ret)
+ 
+     if (ret) {
+         if (scsi_handle_rw_error(r, -ret, SCSI_REQ_STATUS_RETRY_WRITE)) {
+-            return;
++            goto done;
+         }
+     }
+ 
+@@ -261,6 +285,9 @@ static void scsi_write_complete(void * opaque, int ret)
+         DPRINTF("Write complete tag=0x%x more=%d\n", r->req.tag, len);
+         scsi_req_data(&r->req, len);
+     }
++
++done:
++    scsi_req_unref(&r->req);
+ }
+ 
+ static void scsi_write_data(SCSIRequest *req)
+@@ -272,6 +299,8 @@ static void scsi_write_data(SCSIRequest *req)
+     /* No data transfer may already be in progress */
+     assert(r->req.aiocb == NULL);
+ 
++    /* Save a ref for scsi_write_complete, in case r is canceled.  */
++    scsi_req_ref(&r->req);
+     if (r->req.cmd.mode != SCSI_XFER_TO_DEV) {
+         DPRINTF("Data transfer direction invalid\n");
+         scsi_write_complete(r, -EINVAL);
+@@ -282,6 +311,7 @@ static void scsi_write_data(SCSIRequest *req)
+     if (n) {
+         if (s->tray_open) {
+             scsi_write_complete(r, -ENOMEDIUM);
++            return;
+         }
+         qemu_iovec_init_external(&r->qiov, &r->iov, 1);
+ 
+@@ -328,6 +358,8 @@ static void scsi_dma_restart_bh(void *opaque)
+                     scsi_req_complete(&r->req, GOOD);
+                 }
+             }
++            /* This reference was left in by scsi_handle_rw_error.  */
++            scsi_req_unref(&r->req);
+         }
+     }
+ }
+-- 
+1.7.4.4
+
