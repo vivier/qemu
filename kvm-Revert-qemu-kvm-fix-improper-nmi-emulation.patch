@@ -1,0 +1,115 @@
+From 0cd0c7e8e1f3426c3eee2295818665a18deedd33 Mon Sep 17 00:00:00 2001
+From: Michal Novotny <minovotn@redhat.com>
+Date: Wed, 26 Oct 2011 13:34:26 +0200
+Subject: [PATCH] Revert "qemu-kvm: fix improper nmi emulation"
+
+RH-Reverts: 07142917053337254ca43dadddc95354eacb2e82
+RH-Reverts-patchwork-id: 34398
+Bugzilla-related: 738565
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/apic.c  |   31 -------------------------------
+ hw/pc.h    |    1 -
+ monitor.c  |    6 +-----
+ qemu-kvm.c |    7 +------
+ 4 files changed, 2 insertions(+), 43 deletions(-)
+
+diff --git a/hw/apic.c b/hw/apic.c
+index 7546ea6..383eeae 100644
+--- a/hw/apic.c
++++ b/hw/apic.c
+@@ -208,37 +208,6 @@ void apic_deliver_pic_intr(CPUState *env, int level)
+     }
+ }
+ 
+-static inline uint32_t kapic_reg(struct kvm_lapic_state *kapic, int reg_id);
+-
+-static void kvm_irqchip_deliver_nmi(void *p)
+-{
+-    APICState *s = p;
+-    struct kvm_lapic_state klapic;
+-    uint32_t lvt;
+-
+-    kvm_get_lapic(s->cpu_env, &klapic);
+-    lvt = kapic_reg(&klapic, 0x32 + APIC_LVT_LINT1);
+-
+-    if (lvt & APIC_LVT_MASKED) {
+-        return;
+-    }
+-
+-    if (((lvt >> 8) & 7) != APIC_DM_NMI) {
+-        return;
+-    }
+-
+-    kvm_vcpu_ioctl(s->cpu_env, KVM_NMI);
+-}
+-
+-void apic_deliver_nmi(APICState *s)
+-{
+-    if (kvm_irqchip_in_kernel()) {
+-        kvm_irqchip_deliver_nmi(s);
+-    } else {
+-        apic_local_deliver(s->cpu_env, APIC_LVT_LINT1);
+-    }
+-}
+-
+ #define foreach_apic(apic, deliver_bitmask, code) \
+ {\
+     int __i, __j, __mask;\
+diff --git a/hw/pc.h b/hw/pc.h
+index 916a595..8547516 100644
+--- a/hw/pc.h
++++ b/hw/pc.h
+@@ -44,7 +44,6 @@ void apic_deliver_irq(uint8_t dest, uint8_t dest_mode,
+ int apic_init(CPUState *env);
+ int apic_accept_pic_intr(CPUState *env);
+ void apic_deliver_pic_intr(CPUState *env, int level);
+-void apic_deliver_nmi(struct APICState *d);
+ int apic_get_interrupt(CPUState *env);
+ qemu_irq *ioapic_init(void);
+ void ioapic_set_irq(void *opaque, int vector, int level);
+diff --git a/monitor.c b/monitor.c
+index 3273914..f5ee250 100644
+--- a/monitor.c
++++ b/monitor.c
+@@ -2380,11 +2380,7 @@ static int do_inject_nmi(Monitor *mon, const QDict *qdict, QObject **ret_data)
+         if (kvm_enabled()) {
+             kvm_inject_interrupt(env, CPU_INTERRUPT_NMI);
+         } else {
+-            if (!env->apic_state) {
+-                cpu_interrupt(env, CPU_INTERRUPT_NMI);
+-            } else {
+-                apic_deliver_nmi(env->apic_state);
+-            }
++            cpu_interrupt(env, CPU_INTERRUPT_NMI);
+         }
+     }
+ 
+diff --git a/qemu-kvm.c b/qemu-kvm.c
+index c3e3d6d..34e9916 100644
+--- a/qemu-kvm.c
++++ b/qemu-kvm.c
+@@ -18,7 +18,6 @@
+ #include "compatfd.h"
+ #include "gdbstub.h"
+ #include "monitor.h"
+-#include "hw/pc.h"
+ 
+ #include "qemu-kvm.h"
+ #include "libkvm.h"
+@@ -1631,11 +1630,7 @@ void kvm_cpu_synchronize_state(CPUState *env)
+ 
+ static void inject_interrupt(void *data)
+ {
+-    if (!current_env->apic_state || (long)data != CPU_INTERRUPT_NMI) {
+-        cpu_interrupt(current_env, (long) data);
+-    } else {
+-        apic_deliver_nmi(current_env->apic_state);
+-    }
++    cpu_interrupt(current_env, (long) data);
+ }
+ 
+ void kvm_inject_interrupt(CPUState *env, int mask)
+-- 
+1.7.4.4
+
