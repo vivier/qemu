@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.202
+%define pkgrelease 2.203
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3920,6 +3920,8 @@ Patch2638: kvm-scsi-fix-accounting-of-writes.patch
 Patch2639: kvm-scsi-disk-bump-SCSIRequest-reference-count-until-aio.patch
 # For bz#738565 - [FJ6.2 Bug]: Failed to capture kdump due to redundant NMIs
 Patch2640: kvm-Revert-qemu-kvm-fix-improper-nmi-emulation.patch
+# For bz#738565 - [FJ6.2 Bug]: Failed to capture kdump due to redundant NMIs
+Patch2641: kvm-qemu-kvm-fix-improper-nmi-emulation-2.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -5669,6 +5671,7 @@ ApplyOptionalPatch()
 %patch2638 -p1
 %patch2639 -p1
 %patch2640 -p1
+%patch2641 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -5892,6 +5895,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Oct 26 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.203.el6
+- kvm-qemu-kvm-fix-improper-nmi-emulation-2.patch [bz#738565]
+- Resolves: bz#738565
+  ([FJ6.2 Bug]: Failed to capture kdump due to redundant NMIs)
+
 * Wed Oct 26 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.202.el6
 - kvm-Revert-qemu-kvm-fix-improper-nmi-emulation.patch [bz#738565]
 - Related: bz#738565
