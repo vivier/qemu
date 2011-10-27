@@ -1,0 +1,85 @@
+From 570fd4cb8da29eb0d59a41ea0363f8a1e9860150 Mon Sep 17 00:00:00 2001
+From: Yonit Halperin <yhalperi@redhat.com>
+Date: Wed, 26 Oct 2011 14:28:24 +0200
+Subject: [PATCH 1/3] qxl: fix guest cursor tracking
+
+RH-Author: Yonit Halperin <yhalperi@redhat.com>
+Message-id: <1319639304-5867-1-git-send-email-yhalperi@redhat.com>
+Patchwork-id: 34666
+O-Subject: [PATCH qemu-kvm RHEL-6.2] qxl: fix guest cursor tracking
+Bugzilla: 744518
+RH-Acked-by: Alon Levy <alevy@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+(1) If the guest cursor command is empty, don't reload it after migration.
+(2) Cleaning the guest cursor when it is released by
+    the spice server. In addition, explicitly reset the
+    cursor in spice upon destroying the primary surface
+    (was done by spice-server implicitly). This will prevent
+    access to pci memory that was released.
+
+RHBZ: 744518
+
+Signed-off-by: Yonit Halperin <yhalperi@redhat.com>
+---
+ hw/qxl.c |   16 ++++++++++++----
+ 1 files changed, 12 insertions(+), 4 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/qxl.c |   16 ++++++++++++----
+ 1 files changed, 12 insertions(+), 4 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index 35938de..8b74355 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -238,6 +238,9 @@ void qxl_spice_reset_image_cache(PCIQXLDevice *qxl)
+ void qxl_spice_reset_cursor(PCIQXLDevice *qxl)
+ {
+     qxl->ssd.worker->reset_cursor(qxl->ssd.worker);
++    qemu_mutex_lock(&qxl->track_lock);
++    qxl->guest_cursor = 0;
++    qemu_mutex_unlock(&qxl->track_lock);
+ }
+ 
+ 
+@@ -404,7 +407,9 @@ static void qxl_track_command(PCIQXLDevice *qxl, struct QXLCommandExt *ext)
+     {
+         QXLCursorCmd *cmd = qxl_phys2virt(qxl, ext->cmd.data, ext->group_id);
+         if (cmd->type == QXL_CURSOR_SET) {
++            qemu_mutex_lock(&qxl->track_lock);
+             qxl->guest_cursor = ext->cmd.data;
++            qemu_mutex_unlock(&qxl->track_lock);
+         }
+         break;
+     }
+@@ -1083,6 +1088,7 @@ static int qxl_destroy_primary(PCIQXLDevice *d, qxl_async_io async)
+ 
+     d->mode = QXL_MODE_UNDEFINED;
+     qemu_spice_destroy_primary_surface(&d->ssd, 0, async);
++    qxl_spice_reset_cursor(d);
+     return 1;
+ }
+ 
+@@ -1752,10 +1758,12 @@ static int qxl_post_load(void *opaque, int version)
+             cmds[out].group_id = MEMSLOT_GROUP_GUEST;
+             out++;
+         }
+-        cmds[out].cmd.data = d->guest_cursor;
+-        cmds[out].cmd.type = QXL_CMD_CURSOR;
+-        cmds[out].group_id = MEMSLOT_GROUP_GUEST;
+-        out++;
++        if (d->guest_cursor) {
++            cmds[out].cmd.data = d->guest_cursor;
++            cmds[out].cmd.type = QXL_CMD_CURSOR;
++            cmds[out].group_id = MEMSLOT_GROUP_GUEST;
++            out++;
++        }
+         qxl_spice_loadvm_commands(d, cmds, out);
+         qemu_free(cmds);
+ 
+-- 
+1.7.4.4
+

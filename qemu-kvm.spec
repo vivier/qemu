@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.204
+%define pkgrelease 2.205
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3924,6 +3924,12 @@ Patch2640: kvm-Revert-qemu-kvm-fix-improper-nmi-emulation.patch
 Patch2641: kvm-qemu-kvm-fix-improper-nmi-emulation-2.patch
 # For bz#669581 - Migration Never end while Use firewall reject migration tcp port
 Patch2642: kvm-savevm-qemu_fille_buffer-used-to-return-one-error-fo.patch
+# For bz#744518 - qemu-kvm core dumps when qxl-linux guest migrate with reboot
+Patch2643: kvm-qxl-fix-guest-cursor-tracking.patch
+# For bz#740547 - qxl: migrating when not in native mode causes a "panic: virtual address out of range"
+Patch2644: kvm-qxl-create-slots-on-post_load-in-vga-state.patch
+# For bz#690427 - qemu-kvm crashes when update/roll back of qxl driver in WindowsXP guest
+Patch2645: kvm-qxl-reset-update_surface.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -5675,6 +5681,9 @@ ApplyOptionalPatch()
 %patch2640 -p1
 %patch2641 -p1
 %patch2642 -p1
+%patch2643 -p1
+%patch2644 -p1
+%patch2645 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -5898,6 +5907,17 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Oct 27 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.205.el6
+- kvm-qxl-fix-guest-cursor-tracking.patch [bz#744518]
+- kvm-qxl-create-slots-on-post_load-in-vga-state.patch [bz#740547]
+- kvm-qxl-reset-update_surface.patch [bz#690427]
+- Resolves: bz#690427
+  (qemu-kvm crashes when update/roll back of qxl driver in WindowsXP guest)
+- Resolves: bz#740547
+  (qxl: migrating when not in native mode causes a "panic: virtual address out of range")
+- Resolves: bz#744518
+  (qemu-kvm core dumps when qxl-linux guest migrate with reboot)
+
 * Wed Oct 26 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.204.el6
 - kvm-savevm-qemu_fille_buffer-used-to-return-one-error-fo.patch [bz#669581]
 - Resolves: bz#669581

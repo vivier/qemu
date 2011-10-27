@@ -1,0 +1,53 @@
+From 9db6e499a89b9fffdb1e009c46e502892794bcf4 Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Wed, 26 Oct 2011 22:16:54 +0200
+Subject: [PATCH 3/3] qxl: reset update_surface
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1319667414-15963-1-git-send-email-alevy@redhat.com>
+Patchwork-id: 34685
+O-Subject: [PATCH RHEL-6.2 qemu-kvm] qxl: reset update_surface
+Bugzilla: 690427
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Yonit Halperin <yhalperi@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+update init_qxl_ram to reset update_surface to 0. This fixes one case
+of breakage when installing an old driver in a vm that had a new driver
+installed. The newer driver would know about surface creation and would
+change update_surface to !=0, then a reset would happen, all surfaces
+are destroyed, then the old driver is initialized and issues an
+UPDATE_AREA, and spice server aborts on invalid surface.
+
+RHBZ: 690427
+
+upstream: http://patchwork.ozlabs.org/patch/121678/
+
+Signed-off-by: Alon Levy <alevy@redhat.com>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=3747183
+
+ hw/qxl.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/qxl.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index a8e05ae..3d9ddd7 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -333,6 +333,7 @@ static void init_qxl_ram(PCIQXLDevice *d)
+     d->ram->magic       = cpu_to_le32(QXL_RAM_MAGIC);
+     d->ram->int_pending = cpu_to_le32(0);
+     d->ram->int_mask    = cpu_to_le32(0);
++    d->ram->update_surface = 0;
+     SPICE_RING_INIT(&d->ram->cmd_ring);
+     SPICE_RING_INIT(&d->ram->cursor_ring);
+     SPICE_RING_INIT(&d->ram->release_ring);
+-- 
+1.7.4.4
+

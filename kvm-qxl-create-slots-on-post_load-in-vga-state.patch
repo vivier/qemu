@@ -1,0 +1,110 @@
+From b030f6da8d5694cc3327e4fe8983317b59f6d447 Mon Sep 17 00:00:00 2001
+From: Alon Levy <alevy@redhat.com>
+Date: Wed, 26 Oct 2011 21:58:16 +0200
+Subject: [PATCH 2/3] qxl: create slots on post_load in vga state
+
+RH-Author: Alon Levy <alevy@redhat.com>
+Message-id: <1319666296-3180-1-git-send-email-alevy@redhat.com>
+Patchwork-id: 34684
+O-Subject: [PATCH RHEL-6.2 qemu-kvm] qxl: create slots on post_load in vga state
+Bugzilla: 740547
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Yonit Halperin <yhalperi@redhat.com>
+RH-Acked-by: Hans de Goede <hdegoede@redhat.com>
+
+RHBZ 740547
+
+If we migrate when the device is in vga state the guest
+still believes the slots are created, and will cause operations
+that reference the slots, causing a "panic: virtual address out of range"
+on the first of them. Easy to see by migrating in vga mode with
+a driver loaded, for instance windows cmd window in full screen mode,
+and then exiting vga mode back to native mode will cause said panic.
+
+Fixed by doing the slot recreation in post_load for vga mode as well.
+Note that compat does not require any changes because it creates it's
+only slot by a side effect of QXL_IO_SET_MODE.
+
+Signed-off-by: Alon Levy <alevy@redhat.com>
+
+upstream: http://patchwork.ozlabs.org/patch/121684/
+---
+Not yet reviewed upstream by Gerd, but I addressed his previous comments,
+it no longer touches COMPAT, only VGA.
+
+brew-build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=3747158
+
+ hw/qxl.c |   26 +++++++++++++++++++-------
+ 1 files changed, 19 insertions(+), 7 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/qxl.c |   26 +++++++++++++++++++-------
+ 1 files changed, 19 insertions(+), 7 deletions(-)
+
+diff --git a/hw/qxl.c b/hw/qxl.c
+index 8b74355..a8e05ae 100644
+--- a/hw/qxl.c
++++ b/hw/qxl.c
+@@ -1710,12 +1710,25 @@ static int qxl_pre_load(void *opaque)
+     return 0;
+ }
+ 
++static void qxl_create_memslots(PCIQXLDevice *d)
++{
++    int i;
++
++    for (i = 0; i < NUM_MEMSLOTS; i++) {
++        if (!d->guest_slots[i].active) {
++            continue;
++        }
++        dprint(d, 1, "%s: restoring guest slot %d\n", __func__, i);
++        qxl_add_memslot(d, i, 0, QXL_SYNC);
++    }
++}
++
+ static int qxl_post_load(void *opaque, int version)
+ {
+     PCIQXLDevice* d = opaque;
+     uint8_t *ram_start = d->vga.vram_ptr;
+     QXLCommandExt *cmds;
+-    int in, out, i, newmode;
++    int in, out, newmode;
+ 
+     dprint(d, 1, "%s: start\n", __FUNCTION__);
+ 
+@@ -1732,19 +1745,16 @@ static int qxl_post_load(void *opaque, int version)
+         qxl_mode_to_string(d->mode));
+     newmode = d->mode;
+     d->mode = QXL_MODE_UNDEFINED;
++
+     switch (newmode) {
+     case QXL_MODE_UNDEFINED:
+         break;
+     case QXL_MODE_VGA:
++        qxl_create_memslots(d);
+         qxl_enter_vga_mode(d);
+         break;
+     case QXL_MODE_NATIVE:
+-        for (i = 0; i < NUM_MEMSLOTS; i++) {
+-            if (!d->guest_slots[i].active) {
+-                continue;
+-            }
+-            qxl_add_memslot(d, i, 0, QXL_SYNC);
+-        }
++        qxl_create_memslots(d);
+         qxl_create_guest_primary(d, 1, QXL_SYNC);
+ 
+         /* replay surface-create and cursor-set commands */
+@@ -1769,6 +1779,8 @@ static int qxl_post_load(void *opaque, int version)
+ 
+         break;
+     case QXL_MODE_COMPAT:
++        /* note: no need to call qxl_create_memslots, qxl_set_mode
++         * creates the mem slot. */
+         qxl_set_mode(d, d->shadow_rom.mode, 1);
+         break;
+     }
+-- 
+1.7.4.4
+
