@@ -3055,7 +3055,6 @@ static int ram_load(QEMUFile *f, void *opaque, int version_id)
 {
     ram_addr_t addr;
     int flags;
-    int error;
 
     if (version_id < 3 || version_id > 4)
         return -EINVAL;
@@ -3132,9 +3131,8 @@ static int ram_load(QEMUFile *f, void *opaque, int version_id)
 
             qemu_get_buffer(f, host, TARGET_PAGE_SIZE);
         }
-        error = qemu_file_get_error(f);
-        if (error) {
-            return error;
+        if (qemu_file_get_error(f)) {
+            return -EIO;
         }
     } while (!(flags & RAM_SAVE_FLAG_EOS));
 

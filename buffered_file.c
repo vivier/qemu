@@ -72,11 +72,9 @@ static void buffered_append(QEMUFileBuffered *s,
 static void buffered_flush(QEMUFileBuffered *s)
 {
     size_t offset = 0;
-    int error;
 
-    error = qemu_file_get_error(s->file);
-    if (error != 0) {
-        DPRINTF("flush when error, bailing: %s\n", strerror(-error));
+    if (qemu_file_get_error(s->file)) {
+        DPRINTF("flush when error, bailing\n");
         return;
     }
 
@@ -111,15 +109,14 @@ static void buffered_flush(QEMUFileBuffered *s)
 static int buffered_put_buffer(void *opaque, const uint8_t *buf, int64_t pos, int size)
 {
     QEMUFileBuffered *s = opaque;
-    int offset = 0, error;
+    int offset = 0;
     ssize_t ret;
 
     DPRINTF("putting %d bytes at %" PRId64 "\n", size, pos);
 
-    error = qemu_file_get_error(s->file);
-    if (error) {
-        DPRINTF("flush when error, bailing: %s\n", strerror(-error));
-        return error;
+    if (qemu_file_get_error(s->file)) {
+        DPRINTF("flush when error, bailing\n");
+        return -EINVAL;
     }
 
     DPRINTF("unfreezing output\n");
@@ -196,16 +193,14 @@ static int buffered_close(void *opaque)
  * The meaning of the return values is:
  *   0: We can continue sending
  *   1: Time to stop
- *   negative: There has been an error
+ *  -1: There has been an error
  */
 static int buffered_rate_limit(void *opaque)
 {
     QEMUFileBuffered *s = opaque;
-    int ret;
 
-    ret = qemu_file_get_error(s->file);
-    if (ret) {
-        return ret;
+    if (qemu_file_get_error(s->file)) {
+        return -1;
     }
     if (s->freeze_output)
         return 1;

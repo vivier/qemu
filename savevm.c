@@ -1866,8 +1866,8 @@ out:
         qemu_free(le);
     }
 
-    if (ret == 0) {
-        ret = qemu_file_get_error(f);
+    if (qemu_file_get_error(f)) {
+        ret = -EIO;
     }
 
     return ret;
