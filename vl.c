@@ -2929,7 +2929,6 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
     uint64_t t0;
     double bwidth = 0;
     int i;
-    int ret;
 
     if (stage < 0) {
         cpu_physical_memory_set_dirty_tracking(0);
@@ -2938,7 +2937,7 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
 
     if (cpu_physical_sync_dirty_bitmap(0, TARGET_PHYS_ADDR_MAX) != 0) {
         qemu_file_set_error(f, -EINVAL);
-        return -EINVAL;
+        return 0;
     }
 
     if (stage == 1) {
@@ -2973,7 +2972,9 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
     t0 = get_clock();
 
     i = 0;
-    while ((ret = qemu_file_rate_limit(f)) == 0) {
+    while (!qemu_file_rate_limit(f)) {
+        int ret;
+
         ret = ram_save_block(f);
         bytes_transferred += ret * TARGET_PAGE_SIZE;
         if (ret == 0) /* no more blocks */
@@ -2990,10 +2991,6 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
             }
         }
         i++;
-    }
-
-    if (ret < 0) {
-        return ret;
     }
 
     t0 = get_clock() - t0;

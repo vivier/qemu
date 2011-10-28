@@ -1519,11 +1519,7 @@ int qemu_savevm_state_begin(Monitor *mon, QEMUFile *f, int blk_enable,
         qemu_put_be32(f, se->instance_id);
         qemu_put_be32(f, se->version_id);
 
-        ret = se->save_live_state(mon, f, QEMU_VM_SECTION_START, se->opaque);
-        if (ret < 0) {
-            qemu_savevm_state_cancel(mon, f);
-            return ret;
-        }
+        se->save_live_state(mon, f, QEMU_VM_SECTION_START, se->opaque);
     }
     ret = qemu_file_get_error(f);
     if (ret != 0) {
@@ -1561,7 +1557,7 @@ int qemu_savevm_state_iterate(Monitor *mon, QEMUFile *f)
         qemu_put_be32(f, se->section_id);
 
         ret = se->save_live_state(mon, f, QEMU_VM_SECTION_PART, se->opaque);
-        if (ret <= 0) {
+        if (!ret) {
             /* Do not proceed to the next vmstate before this one reported
                completion of the current stage. This serializes the migration
                and reduces the probability that a faster changing state is
@@ -1582,7 +1578,6 @@ int qemu_savevm_state_iterate(Monitor *mon, QEMUFile *f)
 int qemu_savevm_state_complete(Monitor *mon, QEMUFile *f)
 {
     SaveStateEntry *se;
-    int ret;
 
     QTAILQ_FOREACH(se, &savevm_handlers, entry) {
         if (se->save_live_state == NULL)
@@ -1592,10 +1587,7 @@ int qemu_savevm_state_complete(Monitor *mon, QEMUFile *f)
         qemu_put_byte(f, QEMU_VM_SECTION_END);
         qemu_put_be32(f, se->section_id);
 
-        ret = se->save_live_state(mon, f, QEMU_VM_SECTION_END, se->opaque);
-        if (ret < 0) {
-            return ret;
-        }
+        se->save_live_state(mon, f, QEMU_VM_SECTION_END, se->opaque);
     }
 
     QTAILQ_FOREACH(se, &savevm_handlers, entry) {
