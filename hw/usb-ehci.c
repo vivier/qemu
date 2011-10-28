@@ -1178,14 +1178,14 @@ static int ehci_buffer_rw(EHCIQueue *q, int bytes, int rw)
     }
 
     cpage = get_field(q->qh.token, QTD_TOKEN_CPAGE);
-    if (cpage > 4) {
-        fprintf(stderr, "cpage out of range (%d)\n", cpage);
-        return USB_RET_PROCERR;
-    }
-
     offset = q->qh.bufptr[0] & ~QTD_BUFPTR_MASK;
 
     do {
+        if (cpage > 4) {
+            fprintf(stderr, "cpage out of range (%d)\n", cpage);
+            return USB_RET_PROCERR;
+        }
+
         /* start and end of this page */
         head = q->qh.bufptr[cpage] & QTD_BUFPTR_MASK;
         tail = head + ~QTD_BUFPTR_MASK + 1;
