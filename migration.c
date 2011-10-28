@@ -310,16 +310,17 @@ int migrate_fd_cleanup(FdMigrationState *s)
             s->state = MIG_STATE_ERROR;
         }
         s->file = NULL;
-    } else {
-        if (s->mon) {
-            monitor_resume(s->mon);
-        }
     }
 
-    if (s->fd != -1) {
+    if (s->fd != -1)
         close(s->fd);
-        s->fd = -1;
+
+    /* Don't resume monitor until we've flushed all of the buffers */
+    if (s->mon) {
+        monitor_resume(s->mon);
     }
+
+    s->fd = -1;
 
     return ret;
 }
@@ -347,6 +348,9 @@ ssize_t migrate_fd_put_buffer(void *opaque, const void *data, size_t size)
     if (ret == -EAGAIN) {
         qemu_set_fd_handler2(s->fd, NULL, NULL, migrate_fd_put_notify, s);
     } else if (ret < 0) {
+        if (s->mon) {
+            monitor_resume(s->mon);
+        }
         s->state = MIG_STATE_ERROR;
         notifier_list_notify(&migration_state_notifiers);
     }
@@ -476,9 +480,6 @@ int migrate_fd_close(void *opaque)
 {
     FdMigrationState *s = opaque;
 
-    if (s->mon) {
-        monitor_resume(s->mon);
-    }
     qemu_set_fd_handler2(s->fd, NULL, NULL, NULL, NULL);
     return s->close(s);
 }
