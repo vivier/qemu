@@ -1,0 +1,87 @@
+From 1ed53ee1adaaf3d40003696bae14b8a5f75e5325 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Fri, 28 Oct 2011 14:22:16 -0200
+Subject: [RHEL6 qemu-kvm PATCH 04/17] Revert "savevm: Rename has_error to last_error field"
+
+RH-Reverts: 1a7824094556063bd1185b2459740394799eca2a
+RH-Reverts-patchwork-id: 34440
+Bugzilla-related: 669581
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ savevm.c |   16 ++++++++--------
+ 1 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/savevm.c b/savevm.c
+index 86d3279..be16a17 100644
+--- a/savevm.c
++++ b/savevm.c
+@@ -173,7 +173,7 @@ struct QEMUFile {
+     int buf_size; /* 0 when writing */
+     uint8_t buf[IO_BUF_SIZE];
+ 
+-    int last_error;
++    int has_error;
+ };
+ 
+ typedef struct QEMUFileStdio
+@@ -427,12 +427,12 @@ QEMUFile *qemu_fopen_ops(void *opaque, QEMUFilePutBufferFunc *put_buffer,
+ 
+ int qemu_file_get_error(QEMUFile *f)
+ {
+-    return f->last_error;
++    return f->has_error;
+ }
+ 
+ void qemu_file_set_error(QEMUFile *f, int ret)
+ {
+-    f->last_error = ret;
++    f->has_error = ret;
+ }
+ 
+ void qemu_fflush(QEMUFile *f)
+@@ -447,7 +447,7 @@ void qemu_fflush(QEMUFile *f)
+         if (len > 0)
+             f->buf_offset += f->buf_index;
+         else
+-            f->last_error = -EINVAL;
++            f->has_error = -EINVAL;
+         f->buf_index = 0;
+     }
+ }
+@@ -476,7 +476,7 @@ static void qemu_fill_buffer(QEMUFile *f)
+         f->buf_size += len;
+         f->buf_offset += len;
+     } else if (len != -EAGAIN)
+-        f->last_error = len;
++        f->has_error = len;
+ }
+ 
+ int qemu_fclose(QEMUFile *f)
+@@ -498,13 +498,13 @@ void qemu_put_buffer(QEMUFile *f, const uint8_t *buf, int size)
+ {
+     int l;
+ 
+-    if (!f->last_error && f->is_write == 0 && f->buf_index > 0) {
++    if (!f->has_error && f->is_write == 0 && f->buf_index > 0) {
+         fprintf(stderr,
+                 "Attempted to write to buffer while read buffer is not empty\n");
+         abort();
+     }
+ 
+-    while (!f->last_error && size > 0) {
++    while (!f->has_error && size > 0) {
+         l = IO_BUF_SIZE - f->buf_index;
+         if (l > size)
+             l = size;
+@@ -520,7 +520,7 @@ void qemu_put_buffer(QEMUFile *f, const uint8_t *buf, int size)
+ 
+ void qemu_put_byte(QEMUFile *f, int v)
+ {
+-    if (!f->last_error && f->is_write == 0 && f->buf_index > 0) {
++    if (!f->has_error && f->is_write == 0 && f->buf_index > 0) {
+         fprintf(stderr,
+                 "Attempted to write to buffer while read buffer is not empty\n");
+         abort();
+-- 
+1.7.3.2
+

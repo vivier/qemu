@@ -1,0 +1,31 @@
+From a7d946a3d5be08915b822af921ff7214497deedd Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Fri, 28 Oct 2011 14:22:29 -0200
+Subject: [RHEL6 qemu-kvm PATCH 09/17] Revert "migration: don't "write" when migration is not active"
+
+RH-Reverts: eed5b8fe481b39f3d4b69a6398a7d48a19b859a4
+RH-Reverts-patchwork-id: 34435
+Bugzilla-related: 669581
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ migration.c |    4 ----
+ 1 files changed, 0 insertions(+), 4 deletions(-)
+
+diff --git a/migration.c b/migration.c
+index dd65bf7..ff60b3b 100644
+--- a/migration.c
++++ b/migration.c
+@@ -340,10 +340,6 @@ ssize_t migrate_fd_put_buffer(void *opaque, const void *data, size_t size)
+     FdMigrationState *s = opaque;
+     ssize_t ret;
+ 
+-    if (s->state != MIG_STATE_ACTIVE) {
+-        return -EIO;
+-    }
+-
+     do {
+         ret = s->write(s, data, size);
+     } while (ret == -1 && ((s->get_error(s)) == EINTR));
+-- 
+1.7.3.2
+

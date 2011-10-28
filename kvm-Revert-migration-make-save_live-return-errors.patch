@@ -1,0 +1,158 @@
+From c14221da68560c9fcefd8f3167d2b6e092be69bd Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Fri, 28 Oct 2011 14:22:11 -0200
+Subject: [RHEL6 qemu-kvm PATCH 02/17] Revert "migration: make *save_live return errors"
+
+RH-Reverts: 02f3d7916ee98bdd77193833f06501c02deb47f0
+RH-Reverts-patchwork-id: 34442
+Bugzilla-related: 669581
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block-migration.c |   17 ++++++-----------
+ savevm.c          |   14 +++-----------
+ vl.c              |   11 ++++-------
+ 3 files changed, 13 insertions(+), 29 deletions(-)
+
+diff --git a/block-migration.c b/block-migration.c
+index 15e8b53..1628def 100644
+--- a/block-migration.c
++++ b/block-migration.c
+@@ -406,8 +406,6 @@ static void blk_mig_cleanup(Monitor *mon)
+ 
+ static int block_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
+ {
+-    int ret;
+-
+     DPRINTF("Enter save live stage %d submitted %d transferred %d\n",
+             stage, block_mig_state.submitted, block_mig_state.transferred);
+ 
+@@ -431,10 +429,9 @@ static int block_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
+ 
+     flush_blks(f);
+ 
+-    ret = qemu_file_get_error(f);
+-    if (ret) {
++    if (qemu_file_get_error(f)) {
+         blk_mig_cleanup(mon);
+-        return ret;
++        return 0;
+     }
+ 
+     /* control the rate of transfer */
+@@ -449,10 +446,9 @@ static int block_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
+ 
+     flush_blks(f);
+ 
+-    ret = qemu_file_get_error(f);
+-    if (ret) {
++    if (qemu_file_get_error(f)) {
+         blk_mig_cleanup(mon);
+-        return ret;
++        return 0;
+     }
+ 
+     if (stage == 3) {
+@@ -466,9 +462,8 @@ static int block_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
+         /* report completion */
+         qemu_put_be64(f, (100 << BDRV_SECTOR_BITS) | BLK_MIG_FLAG_PROGRESS);
+ 
+-        ret = qemu_file_get_error(f);
+-        if (ret) {
+-            return ret;
++        if (qemu_file_get_error(f)) {
++            return 0;
+         }
+ 
+         monitor_printf(mon, "Block migration completed\n");
+diff --git a/savevm.c b/savevm.c
+index c995d28..4306144 100644
+--- a/savevm.c
++++ b/savevm.c
+@@ -1519,11 +1519,7 @@ int qemu_savevm_state_begin(Monitor *mon, QEMUFile *f, int blk_enable,
+         qemu_put_be32(f, se->instance_id);
+         qemu_put_be32(f, se->version_id);
+ 
+-        ret = se->save_live_state(mon, f, QEMU_VM_SECTION_START, se->opaque);
+-        if (ret < 0) {
+-            qemu_savevm_state_cancel(mon, f);
+-            return ret;
+-        }
++        se->save_live_state(mon, f, QEMU_VM_SECTION_START, se->opaque);
+     }
+     ret = qemu_file_get_error(f);
+     if (ret != 0) {
+@@ -1561,7 +1557,7 @@ int qemu_savevm_state_iterate(Monitor *mon, QEMUFile *f)
+         qemu_put_be32(f, se->section_id);
+ 
+         ret = se->save_live_state(mon, f, QEMU_VM_SECTION_PART, se->opaque);
+-        if (ret <= 0) {
++        if (!ret) {
+             /* Do not proceed to the next vmstate before this one reported
+                completion of the current stage. This serializes the migration
+                and reduces the probability that a faster changing state is
+@@ -1582,7 +1578,6 @@ int qemu_savevm_state_iterate(Monitor *mon, QEMUFile *f)
+ int qemu_savevm_state_complete(Monitor *mon, QEMUFile *f)
+ {
+     SaveStateEntry *se;
+-    int ret;
+ 
+     QTAILQ_FOREACH(se, &savevm_handlers, entry) {
+         if (se->save_live_state == NULL)
+@@ -1592,10 +1587,7 @@ int qemu_savevm_state_complete(Monitor *mon, QEMUFile *f)
+         qemu_put_byte(f, QEMU_VM_SECTION_END);
+         qemu_put_be32(f, se->section_id);
+ 
+-        ret = se->save_live_state(mon, f, QEMU_VM_SECTION_END, se->opaque);
+-        if (ret < 0) {
+-            return ret;
+-        }
++        se->save_live_state(mon, f, QEMU_VM_SECTION_END, se->opaque);
+     }
+ 
+     QTAILQ_FOREACH(se, &savevm_handlers, entry) {
+diff --git a/vl.c b/vl.c
+index 5087b7e..3aee379 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2929,7 +2929,6 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
+     uint64_t t0;
+     double bwidth = 0;
+     int i;
+-    int ret;
+ 
+     if (stage < 0) {
+         cpu_physical_memory_set_dirty_tracking(0);
+@@ -2938,7 +2937,7 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
+ 
+     if (cpu_physical_sync_dirty_bitmap(0, TARGET_PHYS_ADDR_MAX) != 0) {
+         qemu_file_set_error(f, -EINVAL);
+-        return -EINVAL;
++        return 0;
+     }
+ 
+     if (stage == 1) {
+@@ -2973,7 +2972,9 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
+     t0 = get_clock();
+ 
+     i = 0;
+-    while ((ret = qemu_file_rate_limit(f)) == 0) {
++    while (!qemu_file_rate_limit(f)) {
++        int ret;
++
+         ret = ram_save_block(f);
+         bytes_transferred += ret * TARGET_PAGE_SIZE;
+         if (ret == 0) /* no more blocks */
+@@ -2992,10 +2993,6 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
+         i++;
+     }
+ 
+-    if (ret < 0) {
+-        return ret;
+-    }
+-
+     t0 = get_clock() - t0;
+     bwidth = (bytes_transferred - bytes_transferred_last) / t0;
+ 
+-- 
+1.7.3.2
+

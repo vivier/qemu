@@ -1,0 +1,140 @@
+From b6c7e718d3205ebc33f07822366bb5fa73d7839a Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Fri, 28 Oct 2011 14:22:13 -0200
+Subject: [RHEL6 qemu-kvm PATCH 03/17] Revert "migration: use qemu_file_get_error() return value when possible"
+
+RH-Reverts: 2505ef179b7472cc0327c300d53f5cbafae51130
+RH-Reverts-patchwork-id: 34441
+Bugzilla-related: 669581
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block-migration.c |    6 ++----
+ buffered_file.c   |   23 +++++++++--------------
+ savevm.c          |    4 ++--
+ vl.c              |    6 ++----
+ 4 files changed, 15 insertions(+), 24 deletions(-)
+
+diff --git a/block-migration.c b/block-migration.c
+index 1628def..122f561 100644
+--- a/block-migration.c
++++ b/block-migration.c
+@@ -482,7 +482,6 @@ static int block_load(QEMUFile *f, void *opaque, int version_id)
+     int64_t addr;
+     BlockDriverState *bs;
+     uint8_t *buf;
+-    int ret;
+ 
+     do {
+         addr = qemu_get_be64(f);
+@@ -521,9 +520,8 @@ static int block_load(QEMUFile *f, void *opaque, int version_id)
+             fprintf(stderr, "Unknown flags\n");
+             return -EINVAL;
+         }
+-        ret = qemu_file_get_error(f);
+-        if (ret != 0) {
+-            return ret;
++        if (qemu_file_get_error(f)) {
++            return -EIO;
+         }
+     } while (!(flags & BLK_MIG_FLAG_EOS));
+ 
+diff --git a/buffered_file.c b/buffered_file.c
+index dd1f172..14f7a24 100644
+--- a/buffered_file.c
++++ b/buffered_file.c
+@@ -72,11 +72,9 @@ static void buffered_append(QEMUFileBuffered *s,
+ static void buffered_flush(QEMUFileBuffered *s)
+ {
+     size_t offset = 0;
+-    int error;
+ 
+-    error = qemu_file_get_error(s->file);
+-    if (error != 0) {
+-        DPRINTF("flush when error, bailing: %s\n", strerror(-error));
++    if (qemu_file_get_error(s->file)) {
++        DPRINTF("flush when error, bailing\n");
+         return;
+     }
+ 
+@@ -111,15 +109,14 @@ static void buffered_flush(QEMUFileBuffered *s)
+ static int buffered_put_buffer(void *opaque, const uint8_t *buf, int64_t pos, int size)
+ {
+     QEMUFileBuffered *s = opaque;
+-    int offset = 0, error;
++    int offset = 0;
+     ssize_t ret;
+ 
+     DPRINTF("putting %d bytes at %" PRId64 "\n", size, pos);
+ 
+-    error = qemu_file_get_error(s->file);
+-    if (error) {
+-        DPRINTF("flush when error, bailing: %s\n", strerror(-error));
+-        return error;
++    if (qemu_file_get_error(s->file)) {
++        DPRINTF("flush when error, bailing\n");
++        return -EINVAL;
+     }
+ 
+     DPRINTF("unfreezing output\n");
+@@ -196,16 +193,14 @@ static int buffered_close(void *opaque)
+  * The meaning of the return values is:
+  *   0: We can continue sending
+  *   1: Time to stop
+- *   negative: There has been an error
++ *  -1: There has been an error
+  */
+ static int buffered_rate_limit(void *opaque)
+ {
+     QEMUFileBuffered *s = opaque;
+-    int ret;
+ 
+-    ret = qemu_file_get_error(s->file);
+-    if (ret) {
+-        return ret;
++    if (qemu_file_get_error(s->file)) {
++        return -1;
+     }
+     if (s->freeze_output)
+         return 1;
+diff --git a/savevm.c b/savevm.c
+index 4306144..86d3279 100644
+--- a/savevm.c
++++ b/savevm.c
+@@ -1866,8 +1866,8 @@ out:
+         qemu_free(le);
+     }
+ 
+-    if (ret == 0) {
+-        ret = qemu_file_get_error(f);
++    if (qemu_file_get_error(f)) {
++        ret = -EIO;
+     }
+ 
+     return ret;
+diff --git a/vl.c b/vl.c
+index 3aee379..547be13 100644
+--- a/vl.c
++++ b/vl.c
+@@ -3055,7 +3055,6 @@ static int ram_load(QEMUFile *f, void *opaque, int version_id)
+ {
+     ram_addr_t addr;
+     int flags;
+-    int error;
+ 
+     if (version_id < 3 || version_id > 4)
+         return -EINVAL;
+@@ -3132,9 +3131,8 @@ static int ram_load(QEMUFile *f, void *opaque, int version_id)
+ 
+             qemu_get_buffer(f, host, TARGET_PAGE_SIZE);
+         }
+-        error = qemu_file_get_error(f);
+-        if (error) {
+-            return error;
++        if (qemu_file_get_error(f)) {
++            return -EIO;
+         }
+     } while (!(flags & RAM_SAVE_FLAG_EOS));
+ 
+-- 
+1.7.3.2
+

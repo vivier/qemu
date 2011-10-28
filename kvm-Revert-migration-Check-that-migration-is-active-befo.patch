@@ -1,0 +1,31 @@
+From 5e91bfb06b1215809770b23946431227619e2611 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Fri, 28 Oct 2011 14:22:44 -0200
+Subject: [RHEL6 qemu-kvm PATCH 15/17] Revert "migration: Check that migration is active before cancel it"
+
+RH-Reverts: 764f59dd9f4914dc23ef15869515fb3713e05a86
+RH-Reverts-patchwork-id: 34428
+Bugzilla-related: 669581
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ migration.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+diff --git a/migration.c b/migration.c
+index 4913557..d40005d 100644
+--- a/migration.c
++++ b/migration.c
+@@ -148,9 +148,8 @@ int do_migrate_cancel(Monitor *mon, const QDict *qdict, QObject **ret_data)
+ {
+     MigrationState *s = current_migration;
+ 
+-    if (s && s->get_status(s) == MIG_STATE_ACTIVE) {
++    if (s)
+         s->cancel(s);
+-    }
+ 
+     STOP_MIGRATION_CLOCK();
+     DPRINTF("canceled after %lu milliseconds\n", stop);
+-- 
+1.7.3.2
+

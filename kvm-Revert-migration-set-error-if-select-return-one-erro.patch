@@ -1,0 +1,31 @@
+From dbef5b5f6601dbef76ea4a3f2c1c80abe2ff47ad Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Fri, 28 Oct 2011 14:22:26 -0200
+Subject: [RHEL6 qemu-kvm PATCH 08/17] Revert "migration: set error if select return one error"
+
+RH-Reverts: 41c3b5f18febda870940ae1b89c9b4437df4414a
+RH-Reverts-patchwork-id: 34437
+Bugzilla-related: 669581
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ migration.c |    4 ----
+ 1 files changed, 0 insertions(+), 4 deletions(-)
+
+diff --git a/migration.c b/migration.c
+index e35cb41..dd65bf7 100644
+--- a/migration.c
++++ b/migration.c
+@@ -474,10 +474,6 @@ void migrate_fd_wait_for_unfreeze(void *opaque)
+ 
+         ret = select(s->fd + 1, NULL, &wfds, NULL, NULL);
+     } while (ret == -1 && (s->get_error(s)) == EINTR);
+-
+-    if (ret == -1) {
+-        qemu_file_set_error(s->file);
+-    }
+ }
+ 
+ int migrate_fd_close(void *opaque)
+-- 
+1.7.3.2
+

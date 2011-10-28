@@ -1,0 +1,126 @@
+From 793fddfd92f4237f2d240f255f0c3976eef8f95d Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Fri, 28 Oct 2011 14:22:21 -0200
+Subject: [RHEL6 qemu-kvm PATCH 06/17] Revert "migration: return real error code"
+
+RH-Reverts: 17db52515e6ff95be762991e8658d8536d14de55
+RH-Reverts-patchwork-id: 34438
+Bugzilla-related: 669581
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ migration.c |    6 +-----
+ savevm.c    |   39 ++++++++++++++++++---------------------
+ 2 files changed, 19 insertions(+), 26 deletions(-)
+
+diff --git a/migration.c b/migration.c
+index 8710c38..f0e65a8 100644
+--- a/migration.c
++++ b/migration.c
+@@ -384,7 +384,6 @@ void migrate_fd_connect(FdMigrationState *s)
+ void migrate_fd_put_ready(void *opaque)
+ {
+     FdMigrationState *s = opaque;
+-    int ret;
+ 
+     if (s->state != MIG_STATE_ACTIVE) {
+         DPRINTF("put_ready returning because of non-active state\n");
+@@ -392,10 +391,7 @@ void migrate_fd_put_ready(void *opaque)
+     }
+ 
+     DPRINTF("iterate\n");
+-    ret = qemu_savevm_state_iterate(s->mon, s->file);
+-    if (ret < 0) {
+-        migrate_fd_error(s);
+-    } else if (ret == 1) {
++    if (qemu_savevm_state_iterate(s->mon, s->file) == 1) {
+         int old_vm_running = runstate_is_running();
+ 
+         DPRINTF("done iterating\n");
+diff --git a/savevm.c b/savevm.c
+index fd67fbc..d5fd9cb 100644
+--- a/savevm.c
++++ b/savevm.c
+@@ -1489,7 +1489,6 @@ int qemu_savevm_state_begin(Monitor *mon, QEMUFile *f, int blk_enable,
+                             int shared)
+ {
+     SaveStateEntry *se;
+-    int ret;
+ 
+     QTAILQ_FOREACH(se, &savevm_handlers, entry) {
+         if(se->set_params == NULL) {
+@@ -1521,21 +1520,15 @@ int qemu_savevm_state_begin(Monitor *mon, QEMUFile *f, int blk_enable,
+ 
+         se->save_live_state(mon, f, QEMU_VM_SECTION_START, se->opaque);
+     }
+-    ret = qemu_file_has_error(f);
+-    if (ret != 0) {
++
++    if (qemu_file_has_error(f)) {
+         qemu_savevm_state_cancel(mon, f);
++        return -EIO;
+     }
+ 
+-    return ret;
+-
++    return 0;
+ }
+ 
+-/*
+- * this funtion has three return values:
+- *   negative: there was one error, and we have -errno.
+- *   0 : We haven't finished, caller have to go again
+- *   1 : We have finished, we can go to complete phase
+- */
+ int qemu_savevm_state_iterate(Monitor *mon, QEMUFile *f)
+ {
+     SaveStateEntry *se;
+@@ -1565,14 +1558,16 @@ int qemu_savevm_state_iterate(Monitor *mon, QEMUFile *f)
+             break;
+         }
+     }
+-    if (ret != 0) {
+-        return ret;
+-    }
+-    ret = qemu_file_has_error(f);
+-    if (ret != 0) {
++
++    if (ret)
++        return 1;
++
++    if (qemu_file_has_error(f)) {
+         qemu_savevm_state_cancel(mon, f);
++        return -EIO;
+     }
+-    return ret;
++
++    return 0;
+ }
+ 
+ int qemu_savevm_state_complete(Monitor *mon, QEMUFile *f)
+@@ -1613,7 +1608,10 @@ int qemu_savevm_state_complete(Monitor *mon, QEMUFile *f)
+ 
+     qemu_put_byte(f, QEMU_VM_EOF);
+ 
+-    return qemu_file_has_error(f);
++    if (qemu_file_has_error(f))
++        return -EIO;
++
++    return 0;
+ }
+ 
+ void qemu_savevm_state_cancel(Monitor *mon, QEMUFile *f)
+@@ -1651,9 +1649,8 @@ static int qemu_savevm_state(Monitor *mon, QEMUFile *f)
+     ret = qemu_savevm_state_complete(mon, f);
+ 
+ out:
+-    if (ret == 0) {
+-        ret = qemu_file_has_error(f);
+-    }
++    if (qemu_file_has_error(f))
++        ret = -EIO;
+ 
+     return ret;
+ }
+-- 
+1.7.3.2
+

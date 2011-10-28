@@ -1,0 +1,100 @@
+From 7096bed17c60f868f836474bd76d5d2ae3689d8d Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Fri, 28 Oct 2011 14:22:31 -0200
+Subject: [RHEL6 qemu-kvm PATCH 10/17] Revert "buffered_file: reuse QEMUFile has_error field"
+
+RH-Reverts: 912d2adb51b84174c679bed189f5a9f92fc2eabe
+RH-Reverts-patchwork-id: 34433
+Bugzilla-related: 669581
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ buffered_file.c |   17 +++++++++--------
+ 1 files changed, 9 insertions(+), 8 deletions(-)
+
+diff --git a/buffered_file.c b/buffered_file.c
+index fab9a41..d62bc37 100644
+--- a/buffered_file.c
++++ b/buffered_file.c
+@@ -28,6 +28,7 @@ typedef struct QEMUFileBuffered
+     BufferedCloseFunc *close;
+     void *opaque;
+     QEMUFile *file;
++    int has_error;
+     int freeze_output;
+     size_t bytes_xfer;
+     size_t xfer_limit;
+@@ -73,7 +74,7 @@ static void buffered_flush(QEMUFileBuffered *s)
+ {
+     size_t offset = 0;
+ 
+-    if (qemu_file_has_error(s->file)) {
++    if (s->has_error) {
+         DPRINTF("flush when error, bailing\n");
+         return;
+     }
+@@ -93,7 +94,7 @@ static void buffered_flush(QEMUFileBuffered *s)
+ 
+         if (ret <= 0) {
+             DPRINTF("error flushing data, %zd\n", ret);
+-            qemu_file_set_error(s->file);
++            s->has_error = 1;
+             break;
+         } else {
+             DPRINTF("flushed %zd byte(s)\n", ret);
+@@ -114,7 +115,7 @@ static int buffered_put_buffer(void *opaque, const uint8_t *buf, int64_t pos, in
+ 
+     DPRINTF("putting %d bytes at %" PRId64 "\n", size, pos);
+ 
+-    if (qemu_file_has_error(s->file)) {
++    if (s->has_error) {
+         DPRINTF("flush when error, bailing\n");
+         return -EINVAL;
+     }
+@@ -139,7 +140,7 @@ static int buffered_put_buffer(void *opaque, const uint8_t *buf, int64_t pos, in
+ 
+         if (ret <= 0) {
+             DPRINTF("error putting\n");
+-            qemu_file_set_error(s->file);
++            s->has_error = 1;
+             offset = -EINVAL;
+             break;
+         }
+@@ -173,7 +174,7 @@ static int buffered_close(void *opaque)
+ 
+     DPRINTF("closing\n");
+ 
+-    while (!qemu_file_has_error(s->file) && s->buffer_size) {
++    while (!s->has_error && s->buffer_size) {
+         buffered_flush(s);
+         if (s->freeze_output)
+             s->wait_for_unfreeze(s->opaque);
+@@ -199,7 +200,7 @@ static int buffered_rate_limit(void *opaque)
+ {
+     QEMUFileBuffered *s = opaque;
+ 
+-    if (qemu_file_has_error(s->file)) {
++    if (s->has_error) {
+         return -1;
+     }
+     if (s->freeze_output)
+@@ -215,7 +216,7 @@ static size_t buffered_set_rate_limit(void *opaque, size_t new_rate)
+ {
+     QEMUFileBuffered *s = opaque;
+ 
+-    if (qemu_file_has_error(s->file))
++    if (s->has_error)
+         goto out;
+ 
+     s->xfer_limit = new_rate / 10;
+@@ -235,7 +236,7 @@ static void buffered_rate_tick(void *opaque)
+ {
+     QEMUFileBuffered *s = opaque;
+ 
+-    if (qemu_file_has_error(s->file)) {
++    if (s->has_error) {
+         buffered_close(s);
+         return;
+     }
+-- 
+1.7.3.2
+

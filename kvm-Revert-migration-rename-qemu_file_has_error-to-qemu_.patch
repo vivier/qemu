@@ -1,0 +1,220 @@
+From 0e75b9092606243d4c6273a6ee6d9d8b045ffce4 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Fri, 28 Oct 2011 14:22:19 -0200
+Subject: [RHEL6 qemu-kvm PATCH 05/17] Revert "migration: rename qemu_file_has_error to qemu_file_get_error"
+
+RH-Reverts: e7aa99991f990b494fa8830ccbab5e9ff7a05477
+RH-Reverts-patchwork-id: 34439
+Bugzilla-related: 669581
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ block-migration.c |    8 ++++----
+ buffered_file.c   |   13 ++++++-------
+ hw/hw.h           |    2 +-
+ migration.c       |    2 +-
+ savevm.c          |   13 ++++++-------
+ vl.c              |    2 +-
+ 6 files changed, 19 insertions(+), 21 deletions(-)
+
+diff --git a/block-migration.c b/block-migration.c
+index 122f561..776df6d 100644
+--- a/block-migration.c
++++ b/block-migration.c
+@@ -429,7 +429,7 @@ static int block_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
+ 
+     flush_blks(f);
+ 
+-    if (qemu_file_get_error(f)) {
++    if (qemu_file_has_error(f)) {
+         blk_mig_cleanup(mon);
+         return 0;
+     }
+@@ -446,7 +446,7 @@ static int block_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
+ 
+     flush_blks(f);
+ 
+-    if (qemu_file_get_error(f)) {
++    if (qemu_file_has_error(f)) {
+         blk_mig_cleanup(mon);
+         return 0;
+     }
+@@ -462,7 +462,7 @@ static int block_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
+         /* report completion */
+         qemu_put_be64(f, (100 << BDRV_SECTOR_BITS) | BLK_MIG_FLAG_PROGRESS);
+ 
+-        if (qemu_file_get_error(f)) {
++        if (qemu_file_has_error(f)) {
+             return 0;
+         }
+ 
+@@ -520,7 +520,7 @@ static int block_load(QEMUFile *f, void *opaque, int version_id)
+             fprintf(stderr, "Unknown flags\n");
+             return -EINVAL;
+         }
+-        if (qemu_file_get_error(f)) {
++        if (qemu_file_has_error(f)) {
+             return -EIO;
+         }
+     } while (!(flags & BLK_MIG_FLAG_EOS));
+diff --git a/buffered_file.c b/buffered_file.c
+index 14f7a24..a855a88 100644
+--- a/buffered_file.c
++++ b/buffered_file.c
+@@ -73,7 +73,7 @@ static void buffered_flush(QEMUFileBuffered *s)
+ {
+     size_t offset = 0;
+ 
+-    if (qemu_file_get_error(s->file)) {
++    if (qemu_file_has_error(s->file)) {
+         DPRINTF("flush when error, bailing\n");
+         return;
+     }
+@@ -114,7 +114,7 @@ static int buffered_put_buffer(void *opaque, const uint8_t *buf, int64_t pos, in
+ 
+     DPRINTF("putting %d bytes at %" PRId64 "\n", size, pos);
+ 
+-    if (qemu_file_get_error(s->file)) {
++    if (qemu_file_has_error(s->file)) {
+         DPRINTF("flush when error, bailing\n");
+         return -EINVAL;
+     }
+@@ -173,7 +173,7 @@ static int buffered_close(void *opaque)
+ 
+     DPRINTF("closing\n");
+ 
+-    while (!qemu_file_get_error(s->file) && s->buffer_size) {
++    while (!qemu_file_has_error(s->file) && s->buffer_size) {
+         buffered_flush(s);
+         if (s->freeze_output)
+             s->wait_for_unfreeze(s->opaque);
+@@ -199,7 +199,7 @@ static int buffered_rate_limit(void *opaque)
+ {
+     QEMUFileBuffered *s = opaque;
+ 
+-    if (qemu_file_get_error(s->file)) {
++    if (qemu_file_has_error(s->file)) {
+         return -1;
+     }
+     if (s->freeze_output)
+@@ -215,9 +215,8 @@ static size_t buffered_set_rate_limit(void *opaque, size_t new_rate)
+ {
+     QEMUFileBuffered *s = opaque;
+ 
+-    if (qemu_file_get_error(s->file)) {
++    if (qemu_file_has_error(s->file))
+         goto out;
+-    }
+ 
+     s->xfer_limit = new_rate / 10;
+     
+@@ -236,7 +235,7 @@ static void buffered_rate_tick(void *opaque)
+ {
+     QEMUFileBuffered *s = opaque;
+ 
+-    if (qemu_file_get_error(s->file)) {
++    if (qemu_file_has_error(s->file)) {
+         buffered_close(s);
+         return;
+     }
+diff --git a/hw/hw.h b/hw/hw.h
+index 479a9f2..aae4bb6 100644
+--- a/hw/hw.h
++++ b/hw/hw.h
+@@ -87,7 +87,7 @@ uint64_t qemu_get_be64(QEMUFile *f);
+ int qemu_file_rate_limit(QEMUFile *f);
+ size_t qemu_file_set_rate_limit(QEMUFile *f, size_t new_rate);
+ size_t qemu_file_get_rate_limit(QEMUFile *f);
+-int qemu_file_get_error(QEMUFile *f);
++int qemu_file_has_error(QEMUFile *f);
+ void qemu_file_set_error(QEMUFile *f, int error);
+ 
+ /* Try to send any outstanding data.  This function is useful when output is
+diff --git a/migration.c b/migration.c
+index d61188d..8710c38 100644
+--- a/migration.c
++++ b/migration.c
+@@ -330,7 +330,7 @@ void migrate_fd_put_notify(void *opaque)
+ 
+     qemu_set_fd_handler2(s->fd, NULL, NULL, NULL, NULL);
+     qemu_file_put_notify(s->file);
+-    if (qemu_file_get_error(s->file)) {
++    if (qemu_file_has_error(s->file)) {
+         migrate_fd_error(s);
+     }
+ }
+diff --git a/savevm.c b/savevm.c
+index be16a17..fd67fbc 100644
+--- a/savevm.c
++++ b/savevm.c
+@@ -425,7 +425,7 @@ QEMUFile *qemu_fopen_ops(void *opaque, QEMUFilePutBufferFunc *put_buffer,
+     return f;
+ }
+ 
+-int qemu_file_get_error(QEMUFile *f)
++int qemu_file_has_error(QEMUFile *f)
+ {
+     return f->has_error;
+ }
+@@ -1521,7 +1521,7 @@ int qemu_savevm_state_begin(Monitor *mon, QEMUFile *f, int blk_enable,
+ 
+         se->save_live_state(mon, f, QEMU_VM_SECTION_START, se->opaque);
+     }
+-    ret = qemu_file_get_error(f);
++    ret = qemu_file_has_error(f);
+     if (ret != 0) {
+         qemu_savevm_state_cancel(mon, f);
+     }
+@@ -1568,7 +1568,7 @@ int qemu_savevm_state_iterate(Monitor *mon, QEMUFile *f)
+     if (ret != 0) {
+         return ret;
+     }
+-    ret = qemu_file_get_error(f);
++    ret = qemu_file_has_error(f);
+     if (ret != 0) {
+         qemu_savevm_state_cancel(mon, f);
+     }
+@@ -1613,7 +1613,7 @@ int qemu_savevm_state_complete(Monitor *mon, QEMUFile *f)
+ 
+     qemu_put_byte(f, QEMU_VM_EOF);
+ 
+-    return qemu_file_get_error(f);
++    return qemu_file_has_error(f);
+ }
+ 
+ void qemu_savevm_state_cancel(Monitor *mon, QEMUFile *f)
+@@ -1652,7 +1652,7 @@ static int qemu_savevm_state(Monitor *mon, QEMUFile *f)
+ 
+ out:
+     if (ret == 0) {
+-        ret = qemu_file_get_error(f);
++        ret = qemu_file_has_error(f);
+     }
+ 
+     return ret;
+@@ -1866,9 +1866,8 @@ out:
+         qemu_free(le);
+     }
+ 
+-    if (qemu_file_get_error(f)) {
++    if (qemu_file_has_error(f))
+         ret = -EIO;
+-    }
+ 
+     return ret;
+ }
+diff --git a/vl.c b/vl.c
+index 547be13..fc0a57e 100644
+--- a/vl.c
++++ b/vl.c
+@@ -3131,7 +3131,7 @@ static int ram_load(QEMUFile *f, void *opaque, int version_id)
+ 
+             qemu_get_buffer(f, host, TARGET_PAGE_SIZE);
+         }
+-        if (qemu_file_get_error(f)) {
++        if (qemu_file_has_error(f)) {
+             return -EIO;
+         }
+     } while (!(flags & RAM_SAVE_FLAG_EOS));
+-- 
+1.7.3.2
+

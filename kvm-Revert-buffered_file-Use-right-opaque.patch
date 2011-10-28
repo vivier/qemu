@@ -1,0 +1,29 @@
+From a7e688c0aada590c94309488c1571d852fe9a09d Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Fri, 28 Oct 2011 14:22:34 -0200
+Subject: [RHEL6 qemu-kvm PATCH 11/17] Revert "buffered_file: Use right "opaque""
+
+RH-Reverts: 4248b345d7d480c06c6dd8771977923ef02d3ad2
+RH-Reverts-patchwork-id: 34434
+Bugzilla-related: 669581
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ buffered_file.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/buffered_file.c b/buffered_file.c
+index d62bc37..4731623 100644
+--- a/buffered_file.c
++++ b/buffered_file.c
+@@ -177,7 +177,7 @@ static int buffered_close(void *opaque)
+     while (!s->has_error && s->buffer_size) {
+         buffered_flush(s);
+         if (s->freeze_output)
+-            s->wait_for_unfreeze(s->opaque);
++            s->wait_for_unfreeze(s);
+     }
+ 
+     ret = s->close(s->opaque);
+-- 
+1.7.3.2
+

@@ -1,0 +1,65 @@
+From 5b7deed64d077e992aad11c8c11242afbfa9c6ce Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Fri, 28 Oct 2011 14:22:42 -0200
+Subject: [RHEL6 qemu-kvm PATCH 14/17] Revert "Reorganize and fix monitor resume after migration"
+
+RH-Reverts: 3980f0b9bd25ba09590c24c751e2e1972f90fcc9
+RH-Reverts-patchwork-id: 34429
+Bugzilla-related: 669581
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ migration.c |   19 ++++++++++---------
+ 1 files changed, 10 insertions(+), 9 deletions(-)
+
+diff --git a/migration.c b/migration.c
+index ee517a8..4913557 100644
+--- a/migration.c
++++ b/migration.c
+@@ -310,17 +310,18 @@ int migrate_fd_cleanup(FdMigrationState *s)
+             s->state = MIG_STATE_ERROR;
+         }
+         s->file = NULL;
+-    } else {
+-        if (s->mon) {
+-            monitor_resume(s->mon);
+-        }
+     }
+ 
+-    if (s->fd != -1) {
++    if (s->fd != -1)
+         close(s->fd);
+-        s->fd = -1;
++
++    /* Don't resume monitor until we've flushed all of the buffers */
++    if (s->mon) {
++        monitor_resume(s->mon);
+     }
+ 
++    s->fd = -1;
++
+     return ret;
+ }
+ 
+@@ -347,6 +348,9 @@ ssize_t migrate_fd_put_buffer(void *opaque, const void *data, size_t size)
+     if (ret == -EAGAIN) {
+         qemu_set_fd_handler2(s->fd, NULL, NULL, migrate_fd_put_notify, s);
+     } else if (ret < 0) {
++        if (s->mon) {
++            monitor_resume(s->mon);
++        }
+         s->state = MIG_STATE_ERROR;
+         notifier_list_notify(&migration_state_notifiers);
+     }
+@@ -476,9 +480,6 @@ int migrate_fd_close(void *opaque)
+ {
+     FdMigrationState *s = opaque;
+ 
+-    if (s->mon) {
+-        monitor_resume(s->mon);
+-    }
+     qemu_set_fd_handler2(s->fd, NULL, NULL, NULL, NULL);
+     return s->close(s);
+ }
+-- 
+1.7.3.2
+

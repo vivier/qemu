@@ -1,0 +1,62 @@
+From 6661b893be3e0eb11a85e31bf616f4d47e7b22f6 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Fri, 28 Oct 2011 14:22:37 -0200
+Subject: [RHEL6 qemu-kvm PATCH 12/17] Revert "migration: If there is one error, it makes no sense to continue"
+
+RH-Reverts: 65a77906e54f850fe512dcea2f2c189dc5d1e8ec
+RH-Reverts-patchwork-id: 34432
+Bugzilla-related: 669581
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ buffered_file.c |   12 +++---------
+ savevm.c        |    6 +-----
+ 2 files changed, 4 insertions(+), 14 deletions(-)
+
+diff --git a/buffered_file.c b/buffered_file.c
+index 4731623..1836e7e 100644
+--- a/buffered_file.c
++++ b/buffered_file.c
+@@ -190,19 +190,13 @@ static int buffered_close(void *opaque)
+     return ret;
+ }
+ 
+-/*
+- * The meaning of the return values is:
+- *   0: We can continue sending
+- *   1: Time to stop
+- *  -1: There has been an error
+- */
+ static int buffered_rate_limit(void *opaque)
+ {
+     QEMUFileBuffered *s = opaque;
+ 
+-    if (s->has_error) {
+-        return -1;
+-    }
++    if (s->has_error)
++        return 0;
++
+     if (s->freeze_output)
+         return 1;
+ 
+diff --git a/savevm.c b/savevm.c
+index afa37a6..9ba63df 100644
+--- a/savevm.c
++++ b/savevm.c
+@@ -1538,12 +1538,8 @@ int qemu_savevm_state_iterate(Monitor *mon, QEMUFile *f)
+         if (se->save_live_state == NULL)
+             continue;
+ 
+-        ret = qemu_file_rate_limit(f);
+-        if (ret < 0) {
+-            return ret;
+-        } else if (ret == 1) {
++        if (qemu_file_rate_limit(f))
+             return 0;
+-        }
+ 
+         /* Section type */
+         qemu_put_byte(f, QEMU_VM_SECTION_PART);
+-- 
+1.7.3.2
+

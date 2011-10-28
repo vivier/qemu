@@ -1,0 +1,29 @@
+From 3efea8e19eaf671f054d9df2baa8ab69e63b9e32 Mon Sep 17 00:00:00 2001
+From: Eduardo Habkost <ehabkost@redhat.com>
+Date: Fri, 28 Oct 2011 14:22:08 -0200
+Subject: [RHEL6 qemu-kvm PATCH 01/17] Revert "savevm: qemu_fille_buffer() used to return one error for reads of size 0."
+
+RH-Reverts: 4366a409b5e30a53dbd4fa91bfcb9b31de0bb39e
+RH-Reverts-patchwork-id: 34642
+Bugzilla-related: 669581
+Signed-off-by: Eduardo Habkost <ehabkost@redhat.com>
+---
+ savevm.c |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+diff --git a/savevm.c b/savevm.c
+index db43dab..c995d28 100644
+--- a/savevm.c
++++ b/savevm.c
+@@ -475,8 +475,6 @@ static void qemu_fill_buffer(QEMUFile *f)
+     if (len > 0) {
+         f->buf_size += len;
+         f->buf_offset += len;
+-    } else if (len == 0) {
+-        f->last_error = -EIO;
+     } else if (len != -EAGAIN)
+         f->last_error = len;
+ }
+-- 
+1.7.3.2
+
