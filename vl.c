@@ -2840,7 +2840,7 @@ static int ram_save_block(QEMUFile *f)
             r = kvm_update_dirty_pages_log();
             if (r) {
                 fprintf(stderr, "%s: update dirty pages log failed %d\n", __FUNCTION__, r);
-                qemu_file_set_error(f, -EINVAL);
+                qemu_file_set_error(f);
                 return 0;
             }
         }
@@ -2936,7 +2936,7 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
     }
 
     if (cpu_physical_sync_dirty_bitmap(0, TARGET_PHYS_ADDR_MAX) != 0) {
-        qemu_file_set_error(f, -EINVAL);
+        qemu_file_set_error(f);
         return 0;
     }
 
