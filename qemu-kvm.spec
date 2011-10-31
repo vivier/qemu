@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.206
+%define pkgrelease 2.207
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -3964,6 +3964,43 @@ Patch2660: kvm-Revert-migration-Check-that-migration-is-active-befo.patch
 Patch2661: kvm-Revert-migration-simplify-state-assignmente.patch
 # For bz#669581 - Migration Never end while Use firewall reject migration tcp port
 Patch2662: kvm-Revert-migration-s-dprintf-DPRINTF.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2663: kvm-migration-s-dprintf-DPRINTF-v2.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2664: kvm-migration-simplify-state-assignmente-v2.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2665: vm-migration-Check-that-migration-is-active-before-canc-v2.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2666: kvm-Reorganize-and-fix-monitor-resume-after-migration-v2.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2667: kvm-migration-add-error-handling-to-migrate_fd_put_notif-v2.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2668: kvm-migration-If-there-is-one-error-it-makes-no-sense-to-v2.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2669: kvm-buffered_file-Use-right-opaque-v2.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2670: kvm-buffered_file-reuse-QEMUFile-has_error-field-v2.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2671: kvm-migration-don-t-write-when-migration-is-not-active-v2.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2672: kvm-migration-set-error-if-select-return-one-error-v2.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2673: kvm-migration-change-has_error-to-contain-errno-values-v2.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2674: kvm-migration-return-real-error-code-v2.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2675: kvm-migration-rename-qemu_file_has_error-to-qemu_file_ge-v2.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2676: kvm-savevm-Rename-has_error-to-last_error-field-v2.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2677: kvm-migration-use-qemu_file_get_error-return-value-when--v2.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2678: kvm-migration-make-save_live-return-errors-v2.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+Patch2679: kvm-savevm-qemu_fille_buffer-used-to-return-one-error-fo-v2.patch
+# For bz#669581 - Migration Never end while Use firewall reject migration tcp port
+# For bz#749806 - Migration segfault on migrate_fd_put_notify()/qemu_file_get_error()
+Patch2680: kvm-Fix-segfault-on-migration-completion.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -5735,6 +5772,24 @@ ApplyOptionalPatch()
 %patch2660 -p1
 %patch2661 -p1
 %patch2662 -p1
+%patch2663 -p1
+%patch2664 -p1
+%patch2665 -p1
+%patch2666 -p1
+%patch2667 -p1
+%patch2668 -p1
+%patch2669 -p1
+%patch2670 -p1
+%patch2671 -p1
+%patch2672 -p1
+%patch2673 -p1
+%patch2674 -p1
+%patch2675 -p1
+%patch2676 -p1
+%patch2677 -p1
+%patch2678 -p1
+%patch2679 -p1
+%patch2680 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -5958,6 +6013,30 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Oct 31 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.207.el6
+- kvm-migration-s-dprintf-DPRINTF-v2.patch [bz#669581]
+- kvm-migration-simplify-state-assignmente-v2.patch [bz#669581]
+- vm-migration-Check-that-migration-is-active-before-canc-v2.patch [bz#669581]
+- kvm-Reorganize-and-fix-monitor-resume-after-migration-v2.patch [bz#669581]
+- kvm-migration-add-error-handling-to-migrate_fd_put_notif-v2.patch [bz#669581]
+- kvm-migration-If-there-is-one-error-it-makes-no-sense-to-v2.patch [bz#669581]
+- kvm-buffered_file-Use-right-opaque-v2.patch [bz#669581]
+- kvm-buffered_file-reuse-QEMUFile-has_error-field-v2.patch [bz#669581]
+- kvm-migration-don-t-write-when-migration-is-not-active-v2.patch [bz#669581]
+- kvm-migration-set-error-if-select-return-one-error-v2.patch [bz#669581]
+- kvm-migration-change-has_error-to-contain-errno-values-v2.patch [bz#669581]
+- kvm-migration-return-real-error-code-v2.patch [bz#669581]
+- kvm-migration-rename-qemu_file_has_error-to-qemu_file_ge-v2.patch [bz#669581]
+- kvm-savevm-Rename-has_error-to-last_error-field-v2.patch [bz#669581]
+- kvm-migration-use-qemu_file_get_error-return-value-when--v2.patch [bz#669581]
+- kvm-migration-make-save_live-return-errors-v2.patch [bz#669581]
+- kvm-savevm-qemu_fille_buffer-used-to-return-one-error-fo-v2.patch [bz#669581]
+- kvm-Fix-segfault-on-migration-completion.patch [bz#669581 bz#749806]
+- Resolves: bz#669581
+  (Migration Never end while Use firewall reject migration tcp port)
+- Resolves: bz#749806
+  (Migration segfault on migrate_fd_put_notify()/qemu_file_get_error())
+
 * Fri Oct 28 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.206.el6
 - kvm-Revert-savevm-qemu_fille_buffer-used-to-return-one-e.patch [bz#669581]
 - kvm-Revert-migration-make-save_live-return-errors.patch [bz#669581]
