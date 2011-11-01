@@ -1,0 +1,99 @@
+From 38cf95e0faf265b6ac8b1a3f1d869fce53d91b8c Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Thu, 27 Oct 2011 11:11:16 +0200
+Subject: [PATCH] migration: flush migration data to disk.
+
+RH-Author: Gerd Hoffmann <kraxel@redhat.com>
+Message-id: <1319713876-25239-1-git-send-email-kraxel@redhat.com>
+Patchwork-id: 34691
+O-Subject: [RHEL-6.2 kvm PATCH] migration: flush migration data to disk.
+Bugzilla: 721114
+RH-Acked-by: Juan Quintela <quintela@redhat.com>
+RH-Acked-by: Avi Kivity <avi@redhat.com>
+RH-Acked-by: Orit Wasserman <owasserm@redhat.com>
+
+This patch increases robustness when migrating to a file with
+two little changes:
+
+ (1) Before closing the migration file handle checks if it happens to be
+     a regular file and if so it issues a fsync.  This way the data is
+     flushed to disk before qemu sends the migration completed event.
+ (2) It adds error checking.  In case either fsync or close syscall
+     fails pass up the error (and fail migration).
+
+[ v2: return -errno instead of -1 ]
+
+Cc: Juan Quintela <quintela@redhat.com>
+Cc: Jiri Denemark <jdenemar@redhat.com>
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+
+upstream: http://patchwork.ozlabs.org/patch/122074/
+bugzilla: 721114 - qemu fails to restore guests that were previously
+                   suspended on host shutdown
+
+Extra note:  It is not clear yet why this patch actually helps.  It is
+certainly a good thing to do from a rubustness perspective.  But unless
+disk errors or power failures are involved it should make no difference
+in theory, the data should land savely on disk no matter what.  In
+practice it does make a difference for not yet known reasons.
+
+scratch build #1 (used by Jiri for the tests, includes instrumentation):
+  http://brewweb.devel.redhat.com/brew/taskinfo?taskID=3743586
+  http://git.engineering.redhat.com/?p=users/ghoffman/rhel6/qemu-kvm.git;a=shortlog;h=bz721114-loadvm-failure
+
+scratch build #2 (just this patch):
+  http://brewweb.devel.redhat.com/brew/taskinfo?taskID=3748758
+  http://git.engineering.redhat.com/?p=users/ghoffman/rhel6/qemu-kvm.git;a=shortlog;h=bz721114-loadvm-failure-backport
+
+Conflicts:
+
+	migration-fd.c
+---
+ migration-fd.c |   23 ++++++++++++++++++++++-
+ 1 files changed, 22 insertions(+), 1 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ migration-fd.c |   23 ++++++++++++++++++++++-
+ 1 files changed, 22 insertions(+), 1 deletions(-)
+
+diff --git a/migration-fd.c b/migration-fd.c
+index 9feb8cd..0f0bdc4 100644
+--- a/migration-fd.c
++++ b/migration-fd.c
+@@ -43,10 +43,31 @@ static int fd_write(FdMigrationState *s, const void * buf, size_t size)
+ 
+ static int fd_close(FdMigrationState *s)
+ {
++    struct stat st;
++    int ret;
++
+     DPRINTF("fd_close\n");
+     if (s->fd != -1) {
+-        close(s->fd);
++        ret = fstat(s->fd, &st);
++        if (ret == 0 && S_ISREG(st.st_mode)) {
++            /*
++             * If the file handle is a regular file make sure the
++             * data is flushed to disk before signaling success.
++             */
++            ret = fsync(s->fd);
++            if (ret != 0) {
++                ret = -errno;
++                perror("migration-fd: fsync");
++                return ret;
++            }
++        }
++        ret = close(s->fd);
+         s->fd = -1;
++        if (ret != 0) {
++            ret = -errno;
++            perror("migration-fd: close");
++            return ret;
++        }
+     }
+     return 0;
+ }
+-- 
+1.7.4.4
+

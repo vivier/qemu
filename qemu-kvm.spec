@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.207
+%define pkgrelease 2.208
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -4001,6 +4001,8 @@ Patch2679: kvm-savevm-qemu_fille_buffer-used-to-return-one-error-fo-v2.patch
 # For bz#669581 - Migration Never end while Use firewall reject migration tcp port
 # For bz#749806 - Migration segfault on migrate_fd_put_notify()/qemu_file_get_error()
 Patch2680: kvm-Fix-segfault-on-migration-completion.patch
+# For bz#721114 - qemu fails to restore guests that were previously suspended on host shutdown
+Patch2681: kvm-migration-flush-migration-data-to-disk.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -5790,6 +5792,7 @@ ApplyOptionalPatch()
 %patch2678 -p1
 %patch2679 -p1
 %patch2680 -p1
+%patch2681 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -6013,6 +6016,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Nov 01 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.208.el6
+- kvm-migration-flush-migration-data-to-disk.patch [bz#721114]
+- Resolves: bz#721114
+  (qemu fails to restore guests that were previously suspended on host shutdown)
+
 * Mon Oct 31 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.207.el6
 - kvm-migration-s-dprintf-DPRINTF-v2.patch [bz#669581]
 - kvm-migration-simplify-state-assignmente-v2.patch [bz#669581]
