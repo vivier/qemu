@@ -14,7 +14,7 @@
 %endif
 
 %define sublevel 0.12.1.2
-%define pkgrelease 2.208
+%define pkgrelease 2.209
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -4003,6 +4003,11 @@ Patch2679: kvm-savevm-qemu_fille_buffer-used-to-return-one-error-fo-v2.patch
 Patch2680: kvm-Fix-segfault-on-migration-completion.patch
 # For bz#721114 - qemu fails to restore guests that were previously suspended on host shutdown
 Patch2681: kvm-migration-flush-migration-data-to-disk.patch
+# For bz#740493 - audio playing doesn't work when sound recorder is opened
+Patch2682: kvm-hda-do-not-mix-output-and-input-streams-RHBZ-740493-v2.patch
+# For bz#740493 - audio playing doesn't work when sound recorder is opened
+Patch2683: kvm-hda-do-not-mix-output-and-input-stream-states-RHBZ-740493-v2.patch
+Patch2684: kvm-intel-hda-fix-stream-search.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -5793,6 +5798,9 @@ ApplyOptionalPatch()
 %patch2679 -p1
 %patch2680 -p1
 %patch2681 -p1
+%patch2682 -p1
+%patch2683 -p1
+%patch2684 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -6016,6 +6024,13 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Nov 02 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.209.el6
+- kvm-hda-do-not-mix-output-and-input-streams-RHBZ-740493-v2.patch [bz#740493]
+- kvm-hda-do-not-mix-output-and-input-stream-states-RHBZ-740493-v2.patch [bz#740493]
+- kvm-intel-hda-fix-stream-search.patch [bz#740493]
+- Resolves: bz#740493
+  (audio playing doesn't work when sound recorder is opened)
+
 * Tue Nov 01 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.208.el6
 - kvm-migration-flush-migration-data-to-disk.patch [bz#721114]
 - Resolves: bz#721114
