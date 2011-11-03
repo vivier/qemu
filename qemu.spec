@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.15.1
-Release: 1%{?dist}
+Release: 2%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -526,15 +526,15 @@ getent passwd qemu >/dev/null || \
   useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
     -c "qemu user" qemu
 
-/bin/systemctl --global enable ksm.service
-/bin/systemctl --global enable ksmtuned.service
+/bin/systemctl enable ksm.service
+/bin/systemctl enable ksmtuned.service
 
 %preun common
 if [ $1 -eq 0 ]; then
     /bin/systemctl --system stop ksmtuned.service &>/dev/null || :
     /bin/systemctl --system stop ksm.service &>/dev/null || :
-    /bin/systemctl --global disable ksmtuned.service
-    /bin/systemctl --global disable ksm.service
+    /bin/systemctl disable ksmtuned.service
+    /bin/systemctl disable ksm.service
 fi
 
 %postun common
@@ -698,6 +698,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Nov 03 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.15.1-2
+- Fix POSTIN scriplet failure (#748281)
+
 * Fri Oct 21 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.15.1-1
 - Require seabios-bin >= 0.6.0-2 (#741992)
 - Replace init scripts with systemd units (#741920)
