@@ -1,0 +1,34 @@
+From bff2789dbbb07d1bb2f2f51df12922d72d18a534 Mon Sep 17 00:00:00 2001
+From: Markus Armbruster <armbru@redhat.com>
+Date: Thu, 10 Nov 2011 14:02:05 +0100
+Subject: [PATCH] ccid: Fix buffer overrun in handling of VSC_ATR message
+
+ATR size exceeding the limit is diagnosed, but then we merrily use it
+anyway, overrunning card->atr[].
+
+The message is read from a character device.  Obvious security
+implications unless the other end of the character device is trusted.
+
+Spotted by Coverity.
+
+Signed-off-by: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/ccid-card-passthru.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/hw/ccid-card-passthru.c b/hw/ccid-card-passthru.c
+index cad870e..d713026 100644
+--- a/hw/ccid-card-passthru.c
++++ b/hw/ccid-card-passthru.c
+@@ -150,6 +150,7 @@ static void ccid_card_vscard_handle_message(PassthruState *card,
+             error_report("ATR size exceeds spec, ignoring");
+             ccid_card_vscard_send_error(card, scr_msg_header->reader_id,
+                                         VSC_GENERAL_ERROR);
++            break;
+         }
+         memcpy(card->atr, data, scr_msg_header->length);
+         card->atr_length = scr_msg_header->length;
+-- 
+1.7.4.4
+

@@ -15,7 +15,7 @@
 
 %define sublevel 0.12.1.2
 %define pkgrelease 2.160
-%define zrelease 8
+%define zrelease 9
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}.%{zrelease}
@@ -2546,6 +2546,7 @@ Patch2136: kvm-vhost-fix-double-free-on-device-stop.patch
 Patch2137: kvm-report-serial-devices-created-with-device-in-the-PII.patch
 # For bz#727468 - Unable to attach PCI device on a booted virt guest
 Patch2138: kvm-device-assignment-handle-device-with-incorrect-PCIe-.patch
+Patch2139: kvm-ccid-Fix-buffer-overrun-in-handling-of-VSC_ATR-messa.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -3791,6 +3792,7 @@ ApplyOptionalPatch()
 %patch2136 -p1
 %patch2137 -p1
 %patch2138 -p1
+%patch2139 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -4012,6 +4014,12 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Nov 14 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.160.el6_1.9
+- kvm-ccid-Fix-buffer-overrun-in-handling-of-VSC_ATR-messa.patch [bz#751311]
+- CVE: CVE-2011-4111
+- Resolves: bz#751311
+  (CVE-2011-4111 qemu: ccid: buffer overflow in handling of VSC_ATR message [rhel-6.1.z])
+
 * Wed Aug 10 2011 Eduardo Habkost <ehabkost@redhat.com> - qemu-kvm-0.12.1.2-2.160.el6_1.8
 - kvm-device-assignment-handle-device-with-incorrect-PCIe-.patch [bz#727468]
 - Resolves: bz#727468
