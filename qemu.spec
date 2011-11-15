@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.15.1
-Release: 2%{?dist}
+Release: 3%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -83,7 +83,7 @@ BuildRequires: ncurses-devel
 BuildRequires: libattr-devel
 BuildRequires: usbredir-devel
 BuildRequires: texinfo
-%ifarch x86_64
+%ifarch %{ix86} x86_64
 BuildRequires: spice-protocol >= 0.8.1
 BuildRequires: spice-server-devel >= 0.9.0
 %endif
@@ -357,9 +357,7 @@ sed -i.debug 's/"-g $CFLAGS"/"$CFLAGS"/g' configure
             --disable-strip \
             --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
             --extra-cflags="%{optflags} -fPIE -DPIE" \
-%ifarch x86_64
             --enable-spice \
-%endif
             --enable-trace-backend=dtrace \
             --disable-werror \
             --disable-xen
@@ -389,7 +387,7 @@ make clean
     --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
     --extra-cflags="%{optflags} -fPIE -DPIE" \
     --disable-xen \
-%ifarch x86_64
+%ifarch %{ix86} x86_64
     --enable-spice \
 %endif
     --enable-trace-backend=dtrace \
@@ -698,6 +696,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Nov 15 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.15.1-3
+- Enable spice for i686 users as well
+
 * Thu Nov 03 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.15.1-2
 - Fix POSTIN scriplet failure (#748281)
 
