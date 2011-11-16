@@ -15,9 +15,10 @@
 
 %define sublevel 0.12.1.2
 %define pkgrelease 2.209
+%define zrelease 1
 
 %define rpmversion %{sublevel}
-%define full_release %{pkgrelease}%{?dist}%{?buildid}
+%define full_release %{pkgrelease}%{?dist}%{?buildid}.%{zrelease}
 
 %if %{enable_fake_machine}
 Summary: Userspace component of KVM (testing only)
@@ -4008,6 +4009,7 @@ Patch2682: kvm-hda-do-not-mix-output-and-input-streams-RHBZ-740493-v2.patch
 # For bz#740493 - audio playing doesn't work when sound recorder is opened
 Patch2683: kvm-hda-do-not-mix-output-and-input-stream-states-RHBZ-740493-v2.patch
 Patch2684: kvm-intel-hda-fix-stream-search.patch
+Patch2685: kvm-ccid-Fix-buffer-overrun-in-handling-of-VSC_ATR-messa.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -5801,6 +5803,7 @@ ApplyOptionalPatch()
 %patch2682 -p1
 %patch2683 -p1
 %patch2684 -p1
+%patch2685 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -6024,6 +6027,12 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Nov 16 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.209.el6_2.1
+- kvm-ccid-Fix-buffer-overrun-in-handling-of-VSC_ATR-messa.patch [bz#751312]
+- CVE: CVE-2011-4111
+- Resolves: bz#751312
+  (CVE-2011-4111 qemu: ccid: buffer overflow in handling of VSC_ATR message [rhel-6.2.z])
+
 * Wed Nov 02 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.209.el6
 - kvm-hda-do-not-mix-output-and-input-streams-RHBZ-740493-v2.patch [bz#740493]
 - kvm-hda-do-not-mix-output-and-input-stream-states-RHBZ-740493-v2.patch [bz#740493]
