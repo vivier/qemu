@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.15.1
-Release: 2%{?dist}
+Release: 3%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -37,6 +37,9 @@ Source9: ksmtuned.conf
 
 Source10: qemu-guest-agent.service
 Source11: 99-qemu-guest-agent.rules
+
+# Add compatibility to fedora-13 machine type, to be removed fir F17
+Patch00: pc-add-a-Fedora-13-machine-type-for-backward-compat.patch
 
 # Amit's flow control patches, waiting to glib conversion before going upstream
 Patch01: 0001-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
@@ -290,6 +293,7 @@ such as kvm_stat.
 
 %prep
 %setup -q -n qemu-kvm-%{version}
+%patch00 -p1
 %patch01 -p1
 %patch02 -p1
 %patch03 -p1
@@ -520,14 +524,16 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules
 %endif
 
 %post common
-getent group kvm >/dev/null || groupadd -g 36 -r kvm
-getent group qemu >/dev/null || groupadd -g 107 -r qemu
-getent passwd qemu >/dev/null || \
-  useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
-    -c "qemu user" qemu
+if [ $1 -eq 1 ] ; then
+    getent group kvm >/dev/null || groupadd -g 36 -r kvm
+    getent group qemu >/dev/null || groupadd -g 107 -r qemu
+    getent passwd qemu >/dev/null || \
+        useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
+        -c "qemu user" qemu
 
-/bin/systemctl enable ksm.service
-/bin/systemctl enable ksmtuned.service
+    /bin/systemctl enable ksm.service
+    /bin/systemctl enable ksmtuned.service
+fi
 
 %preun common
 if [ $1 -eq 0 ]; then
@@ -698,6 +704,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Nov 18 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.15.1-3
+- Enable support for fedora-13 machine type (#748218)
+- don't force ksm enable on updates (#754946)
+
 * Thu Nov 03 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.15.1-2
 - Fix POSTIN scriplet failure (#748281)
 
