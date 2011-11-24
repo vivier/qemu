@@ -2600,6 +2600,7 @@ static void unmap_linear_vram(CirrusVGAState *s)
          cpu_register_physical_memory(s->vga.lfb_addr, s->vga.vram_size,
                                       s->cirrus_linear_io_addr);
     }
+    s->vga.lfb_vram_mapped = 0;
     cpu_register_physical_memory(isa_mem_base + 0xa0000, 0x20000,
                                  s->vga.vga_io_memory);
 
