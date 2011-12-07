@@ -1497,8 +1497,12 @@ out:
     qemu_progress_end();
     /* Cleanup */
     if (!unsafe) {
-        bdrv_delete(bs_old_backing);
-        bdrv_delete(bs_new_backing);
+        if (bs_old_backing != NULL) {
+            bdrv_delete(bs_old_backing);
+        }
+        if (bs_new_backing != NULL) {
+            bdrv_delete(bs_new_backing);
+        }
     }
 
     bdrv_delete(bs);
