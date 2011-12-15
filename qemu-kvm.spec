@@ -15,7 +15,7 @@
 
 %define sublevel 0.12.1.2
 %define pkgrelease 2.209
-%define zrelease 1
+%define zrelease 2
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}.%{zrelease}
@@ -4010,6 +4010,8 @@ Patch2682: kvm-hda-do-not-mix-output-and-input-streams-RHBZ-740493-v2.patch
 Patch2683: kvm-hda-do-not-mix-output-and-input-stream-states-RHBZ-740493-v2.patch
 Patch2684: kvm-intel-hda-fix-stream-search.patch
 Patch2685: kvm-ccid-Fix-buffer-overrun-in-handling-of-VSC_ATR-messa.patch
+# For bz#767721 - EMBARGOED CVE-2011-4127 kernel: possible privilege escalation via SG_IO ioctl
+Patch2686: kvm-virtio-blk-refuse-SG_IO-requests-with-scsi-off.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -5804,6 +5806,7 @@ ApplyOptionalPatch()
 %patch2683 -p1
 %patch2684 -p1
 %patch2685 -p1
+%patch2686 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -5828,8 +5831,8 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
             --audio-drv-list=pa,alsa \
             --audio-card-list=ac97,es1370 \
             --disable-strip \
-            --extra-ldflags=$extraldflags \
-            --extra-cflags="$RPM_OPT_FLAGS" \
+            --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
+            --extra-cflags="$RPM_OPT_FLAGS -fPIE -DPIE" \
             --disable-xen \
             --block-drv-whitelist=qcow2,raw,file,host_device,host_cdrom,qed \
             --disable-debug-tcg \
@@ -6027,6 +6030,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Dec 14 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.209.el6_2.2
+- kvm-virtio-blk-refuse-SG_IO-requests-with-scsi-off.patch [bz#752375]
+- CVE: CVE-2011-4127
+- Resolves: bz#767721
+  (EMBARGOED qemu-kvm: virtio-blk: refuse SG_IO requests with scsi=off (CVE-2011-4127 mitigation) [rhel-6.3])
+- Resolves: bz#767906
+  (qemu-kvm should be built with full relro and PIE support)
+
 * Wed Nov 16 2011 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.209.el6_2.1
 - kvm-ccid-Fix-buffer-overrun-in-handling-of-VSC_ATR-messa.patch [bz#751312]
 - CVE: CVE-2011-4111
