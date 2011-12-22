@@ -116,6 +116,8 @@ static const QemuChrHandlers chr_handlers_no_flow_control = {
 static int generic_port_init(VirtConsole *vcon, VirtIOSerialPort *port)
 {
     static const QemuChrHandlers *handlers;
+    VirtIOSerialPortInfo *info = DO_UPCAST(VirtIOSerialPortInfo, qdev,
+                                           vcon->port.dev.info);
 
     if (vcon->chr) {
         handlers = &chr_handlers;
@@ -123,9 +125,9 @@ static int generic_port_init(VirtConsole *vcon, VirtIOSerialPort *port)
             handlers = &chr_handlers_no_flow_control;
         }
         qemu_chr_add_handlers(vcon->chr, handlers, vcon);
-        vcon->port.info->have_data = flush_buf;
-        vcon->port.info->guest_open = guest_open;
-        vcon->port.info->guest_close = guest_close;
+        info->have_data = flush_buf;
+        info->guest_open = guest_open;
+        info->guest_close = guest_close;
     }
     return 0;
 }
