@@ -36,6 +36,10 @@ static ssize_t flush_buf(VirtIOSerialPort *port, const uint8_t *buf, size_t len)
     VirtConsole *vcon = DO_UPCAST(VirtConsole, port, port);
     ssize_t ret;
 
+    if (!vcon->chr) {
+        /* If there's no backend, we can just say we consumed all data. */
+        return len;
+    }
     ret = qemu_chr_write(vcon->chr, buf, len);
     if (ret < 0 && ret != -EAGAIN) {
         /*
@@ -59,6 +63,9 @@ static void guest_open(VirtIOSerialPort *port)
 {
     VirtConsole *vcon = DO_UPCAST(VirtConsole, port, port);
 
+    if (!vcon->chr) {
+        return;
+    }
     return qemu_chr_guest_open(vcon->chr);
 }
 
@@ -67,6 +74,9 @@ static void guest_close(VirtIOSerialPort *port)
 {
     VirtConsole *vcon = DO_UPCAST(VirtConsole, port, port);
 
+    if (!vcon->chr) {
+        return;
+    }
     return qemu_chr_guest_close(vcon->chr);
 }
 
