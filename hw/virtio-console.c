@@ -113,11 +113,9 @@ static const QemuChrHandlers chr_handlers_no_flow_control = {
     .fd_event = chr_event,
 };
 
-static int generic_port_init(VirtConsole *vcon, VirtIOSerialDevice *dev)
+static int generic_port_init(VirtConsole *vcon, VirtIOSerialPort *port)
 {
     static const QemuChrHandlers *handlers;
-
-    vcon->port.info = dev->info;
 
     if (vcon->chr) {
         handlers = &chr_handlers;
@@ -133,18 +131,16 @@ static int generic_port_init(VirtConsole *vcon, VirtIOSerialDevice *dev)
 }
 
 /* Virtio Console Ports */
-static int virtconsole_initfn(VirtIOSerialDevice *dev)
+static int virtconsole_initfn(VirtIOSerialPort *port)
 {
-    VirtIOSerialPort *port = DO_UPCAST(VirtIOSerialPort, dev, &dev->qdev);
     VirtConsole *vcon = DO_UPCAST(VirtConsole, port, port);
 
     port->is_console = true;
-    return generic_port_init(vcon, dev);
+    return generic_port_init(vcon, port);
 }
 
-static int virtconsole_exitfn(VirtIOSerialDevice *dev)
+static int virtconsole_exitfn(VirtIOSerialPort *port)
 {
-    VirtIOSerialPort *port = DO_UPCAST(VirtIOSerialPort, dev, &dev->qdev);
     VirtConsole *vcon = DO_UPCAST(VirtConsole, port, port);
 
     if (vcon->chr) {
@@ -179,9 +175,8 @@ static void virtconsole_register(void)
 device_init(virtconsole_register)
 
 /* Generic Virtio Serial Ports */
-static int virtserialport_initfn(VirtIOSerialDevice *dev)
+static int virtserialport_initfn(VirtIOSerialPort *port)
 {
-    VirtIOSerialPort *port = DO_UPCAST(VirtIOSerialPort, dev, &dev->qdev);
     VirtConsole *vcon = DO_UPCAST(VirtConsole, port, port);
 
     if (port->id == 0) {
@@ -192,7 +187,7 @@ static int virtserialport_initfn(VirtIOSerialDevice *dev)
         error_report("Port number 0 on virtio-serial devices reserved for virtconsole devices for backward compatibility.");
         return -1;
     }
-    return generic_port_init(vcon, dev);
+    return generic_port_init(vcon, port);
 }
 
 static VirtIOSerialPortInfo virtserialport_info = {
