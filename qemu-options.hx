@@ -301,6 +301,13 @@ a suffix of ``M'' or ``G'' can be used to signify a value in megabytes or
 gigabytes respectively.
 ETEXI
 
+DEF("redhat-disable-KSM", 0, QEMU_OPTION_disable_KSM,
+    "-redhat-disable-KSM  disable KSM on guest physical memory\n")
+STEXI
+@item -redhat-disable-KSM
+Disable KSM on the virtual RAM.
+ETEXI
+
 DEF("k", HAS_ARG, QEMU_OPTION_k,
     "-k language     use keyboard layout (for example 'fr' for French)\n")
 STEXI
@@ -2112,6 +2119,3 @@ DEF("fake-machine", 0, QEMU_OPTION_fake_machine,
     "-fake-machine        create a fake machine incapable of running guest code\n"
     "                     mimimal resource use, use for scalability testing")
 #endif
-
-DEF("redhat-disable-KSM", 0, QEMU_OPTION_disable_KSM,
-    "-redhat-disable-KSM  disable KSM on guest physical memory\n")
