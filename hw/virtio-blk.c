@@ -149,6 +149,12 @@ static void virtio_blk_handle_scsi(VirtIOBlockReq *req)
     int status;
     int i;
 
+    if ((req->dev->vdev.guest_features & (1 << VIRTIO_BLK_F_SCSI)) == 0) {
+        virtio_blk_req_complete(req, VIRTIO_BLK_S_UNSUPP);
+        qemu_free(req);
+        return;
+    }
+
     /*
      * We require at least one output segment each for the virtio_blk_outhdr
      * and the SCSI command block.
