@@ -1261,7 +1261,7 @@ static int scsi_initfn(SCSIDevice *dev, uint8_t scsi_type)
     }
 
     if (!s->qdev.conf.bs) {
-        error_report("scsi-disk: drive property not set");
+        error_report("drive property not set");
         return -1;
     }
     s->bs = s->qdev.conf.bs;
@@ -1284,7 +1284,7 @@ static int scsi_initfn(SCSIDevice *dev, uint8_t scsi_type)
     }
 
     if (bdrv_is_sg(s->bs)) {
-        error_report("scsi-disk: unwanted /dev/sg*");
+        error_report("unwanted /dev/sg*");
         return -1;
     }
 
