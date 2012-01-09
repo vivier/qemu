@@ -1858,6 +1858,10 @@ int ide_init_drive(IDEState *s, BlockDriverState *bs, const char *version)
         bdrv_set_dev_ops(bs, &ide_cd_block_ops, s);
         s->bs->buffer_alignment = 2048;
     } else {
+        if (!bdrv_is_inserted(s->bs)) {
+            error_report("Device needs media, but drive is empty");
+            return -1;
+        }
         if (bdrv_is_read_only(bs)) {
             error_report("Can't use a read-only drive");
             return -1;
