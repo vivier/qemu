@@ -148,6 +148,25 @@ static int usb_host_read_file(char *line, size_t line_size,
                             const char *device_file, const char *device_name);
 static int usb_linux_update_endp_table(USBHostDevice *s);
 
+static int usb_host_do_reset(USBHostDevice *dev)
+{
+    struct timeval s, e;
+    uint32_t usecs;
+    int ret;
+
+    gettimeofday(&s, NULL);
+    ret = ioctl(dev->fd, USBDEVFS_RESET);
+    gettimeofday(&e, NULL);
+    usecs = (e.tv_sec  - s.tv_sec) * 1000000;
+    usecs += e.tv_usec - s.tv_usec;
+    if (usecs > 1000000) {
+        /* more than a second, something is fishy, broken usb device? */
+        fprintf(stderr, "husb: device %d:%d reset took %d.%06d seconds\n",
+                dev->bus_num, dev->addr, usecs / 1000000, usecs % 1000000);
+    }
+    return ret;
+}
+
 static struct endp_data *get_endp(USBHostDevice *s, int pid, int ep)
 {
     struct endp_data *eps = pid == USB_TOKEN_IN ? s->ep_in : s->ep_out;
@@ -602,7 +621,7 @@ static void usb_host_handle_reset(USBDevice *dev)
 
     DPRINTF("husb: reset device %u.%u\n", s->bus_num, s->addr);
 
-    ioctl(s->fd, USBDEVFS_RESET);
+    usb_host_do_reset(s);;
 
     usb_host_claim_interfaces(s, 0);
     usb_linux_update_endp_table(s);
@@ -1332,7 +1351,7 @@ static int usb_host_close(USBHostDevice *dev)
     if (dev->dev.attached) {
         usb_device_detach(&dev->dev);
     }
-    ioctl(dev->fd, USBDEVFS_RESET);
+    usb_host_do_reset(dev);
     close(dev->fd);
     dev->fd = -1;
     return 0;
@@ -1343,7 +1362,7 @@ static void usb_host_exit_notifier(struct Notifier* n)
     USBHostDevice *s = container_of(n, USBHostDevice, exit);
 
     if (s->fd != -1) {
-        ioctl(s->fd, USBDEVFS_RESET);
+        usb_host_do_reset(s);;
     }
 }
 
