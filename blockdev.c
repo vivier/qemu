@@ -832,6 +832,7 @@ void do_commit(Monitor *mon, const QDict *qdict)
     }
 }
 
+#ifdef CONFIG_LIVE_SNAPSHOTS
 int do_snapshot_blkdev(Monitor *mon, const QDict *qdict, QObject **ret_data)
 {
     const char *device = qdict_get_str(qdict, "device");
@@ -910,6 +911,7 @@ out:
 
     return ret;
 }
+#endif 
 
 static void monitor_print_block_stream(Monitor *mon, const QObject *data)
 {
