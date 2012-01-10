@@ -1384,6 +1384,7 @@ Example:
 
 EQMP
 
+#ifdef CONFIG_LIVE_SNAPSHOTS
     {
         .name       = "snapshot_blkdev",
         .args_type  = "device:B,snapshot-file:s?,format:s?",
@@ -1396,6 +1397,7 @@ EQMP
                       "snapshot will be internal! (currently unsupported)",
         .mhandler.cmd_new = do_snapshot_blkdev,
     },
+#endif
 
 STEXI
 @item snapshot_blkdev
@@ -1621,6 +1623,7 @@ STEXI
 Remove host-to-guest TCP or UDP redirection.
 ETEXI
 
+#ifdef CONFIG_LIVE_SNAPSHOTS
     {
         .name       = "blockdev-snapshot-sync",
         .args_type  = "device:B,snapshot-file:s?,format:s?",
@@ -1628,6 +1631,7 @@ ETEXI
         .user_print = monitor_user_noop,
         .mhandler.cmd_new = do_snapshot_blkdev,
     },
+#endif
 
 SQMP
 blockdev-snapshot-sync
