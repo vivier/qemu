@@ -1385,6 +1385,25 @@ Example:
 EQMP
 
     {
+        .name       = "snapshot_blkdev",
+        .args_type  = "device:B,snapshot-file:s?,format:s?",
+        .params     = "device [new-image-file] [format]",
+        .help       = "initiates a live snapshot\n\t\t\t"
+                      "of device. If a new image file is specified, the\n\t\t\t"
+                      "new image file will become the new root image.\n\t\t\t"
+                      "If format is specified, the snapshot file will\n\t\t\t"
+                      "be created in that format. Otherwise the\n\t\t\t"
+                      "snapshot will be internal! (currently unsupported)",
+        .mhandler.cmd_new = do_snapshot_blkdev,
+    },
+
+STEXI
+@item snapshot_blkdev
+@findex snapshot_blkdev
+Snapshot device, using snapshot file as target if provided
+ETEXI
+
+    {
         .name       = "block_resize",
         .args_type  = "device:B,size:o",
         .params     = "device size",
@@ -1601,6 +1620,40 @@ STEXI
 @findex hostfwd_remove
 Remove host-to-guest TCP or UDP redirection.
 ETEXI
+
+    {
+        .name       = "blockdev-snapshot-sync",
+        .args_type  = "device:B,snapshot-file:s?,format:s?",
+        .params     = "device [new-image-file] [format]",
+        .user_print = monitor_user_noop,
+        .mhandler.cmd_new = do_snapshot_blkdev,
+    },
+
+SQMP
+blockdev-snapshot-sync
+----------------------
+
+Synchronous snapshot of a block device. snapshot-file specifies the
+target of the new image. If the file exists, or if it is a device, the
+snapshot will be created in the existing file/device. If does not
+exist, a new file will be created. format specifies the format of the
+snapshot image, default is qcow2.
+
+Arguments:
+
+- "device": device name to snapshot (json-string)
+- "snapshot-file": name of new image file (json-string)
+- "format": format of new image (json-string, optional)
+
+Example:
+
+-> { "execute": "blockdev-snapshot", "arguments": { "device": "ide-hd0",
+                                                    "snapshot-file":
+                                                    "/some/place/my-image",
+                                                    "format": "qcow2" } }
+<- { "return": {} }
+
+EQMP
 
     {
         .name       = "balloon",
