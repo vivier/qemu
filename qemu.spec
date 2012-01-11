@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
-Version: 0.15.1
-Release: 3%{?dist}
+Version: 1.0
+Release: 1%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -38,40 +38,36 @@ Source9: ksmtuned.conf
 Source10: qemu-guest-agent.service
 Source11: 99-qemu-guest-agent.rules
 
-# Amit's flow control patches, waiting to glib conversion before going upstream
-Patch01: 0001-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
-Patch02: 0002-char-Add-a-QemuChrHandlers-struct-to-initialise-char.patch
-Patch03: 0003-iohandlers-Add-enable-disable_write_fd_handler-funct.patch
-Patch04: 0004-char-Add-framework-for-a-write-unblocked-callback.patch
-Patch05: 0005-char-Update-send_all-to-handle-nonblocking-chardev-w.patch
-Patch06: 0006-char-Equip-the-unix-tcp-backend-to-handle-nonblockin.patch
-Patch07: 0007-char-Throttle-when-host-connection-is-down.patch
-Patch08: 0008-virtio-console-Enable-port-throttling-when-chardev-i.patch
-Patch09: 0009-spice-qemu-char.c-add-throttling.patch
-Patch10: 0010-spice-qemu-char.c-remove-intermediate-buffer.patch
-Patch11: 0011-usb-redir-Add-flow-control-support.patch
-Patch12: 0012-spice-add-worker-wrapper-functions.patch
-Patch13: 0013-spice-add-qemu_spice_display_init_common.patch
-Patch14: 0014-spice-qxl-move-worker-wrappers.patch
-Patch15: 0015-qxl-fix-surface-tracking-locking.patch
-Patch16: 0016-qxl-add-io_port_to_string.patch
-Patch17: 0017-qxl-error-handling-fixes-and-cleanups.patch
-Patch18: 0018-qxl-make-qxl_guest_bug-take-variable-arguments.patch
-Patch19: 0019-qxl-only-disallow-specific-io-s-in-vga-mode.patch
-Patch20: 0020-qxl-async-io-support-using-new-spice-api.patch
-Patch21: 0021-qxl-add-QXL_IO_FLUSH_-SURFACES-RELEASE-for-guest-S3-.patch
-Patch22: 0022-qxl-bump-pci-rev.patch
-Patch23: 0023-virtio-serial-bus-replay-guest_open-on-migration.patch
-Patch24: 0024-qemu-char-make-qemu_chr_event-public.patch
-Patch25: 0025-spice-qemu-char-Generate-chardev-open-close-events.patch
-Patch26: 0026-usb-redir-Call-qemu_chr_guest_open-close.patch
-Patch27: 0027-usb-redir-Device-disconnect-re-connect-robustness-fi.patch
-Patch28: 0028-usb-redir-Don-t-try-to-write-to-the-chardev-after-a-.patch
+# Patches queued for 1.0.1 stable
+Patch01: 0001-malta-Fix-regression-i8259-interrupts-did-not-work.patch
+Patch02: 0002-exec.c-Fix-subpage-memory-access-to-RAM-MemoryRegion.patch
+Patch03: 0003-hw-9pfs-Improve-portability-to-older-systems.patch
+Patch04: 0004-hw-9pfs-use-migration-blockers-to-prevent-live-migra.patch
+Patch05: 0005-hw-9pfs-Reset-server-state-during-TVERSION.patch
+Patch06: 0006-hw-9pfs-Add-qdev.reset-callback-for-virtio-9p-pci-de.patch
+Patch07: 0007-hw-9pfs-Use-the-correct-file-descriptor-in-Fsdriver-.patch
+Patch08: 0008-hw-9pfs-replace-iovec-manipulation-with-QEMUIOVector.patch
+Patch09: 0009-hw-9pfs-Use-the-correct-signed-type-for-different-va.patch
+Patch10: 0010-target-i386-fix-cmpxchg-instruction-emulation.patch
+Patch11: 0011-configure-Enable-build-by-default-PIE-read-only-relo.patch
+Patch12: 0012-cris-Handle-conditional-stores-on-CRISv10.patch
+Patch13: 0013-pc-add-pc-0.15.patch
+Patch14: 0014-pc-fix-event_idx-compatibility-for-virtio-devices.patch
+Patch15: 0015-Fix-parse-of-usb-device-description-with-multiple-co.patch
+Patch16: 0016-usb-storage-cancel-I-O-on-reset.patch
+Patch17: 0017-usb-host-properly-release-port-on-unplug-exit.patch
+Patch18: 0018-usb-ohci-td.cbp-incorrectly-updated-near-page-end.patch
+Patch19: 0019-target-sh4-ignore-ocbp-and-ocbwb-instructions.patch
+Patch20: 0020-PPC-Fix-linker-scripts-on-ppc-hosts.patch
+Patch21: 0021-qiov-prevent-double-free-or-use-after-free.patch
+Patch22: 0022-coroutine-switch-per-thread-free-pool-to-a-global-po.patch
+Patch23: 0023-qemu-img-rebase-Fix-for-undersized-backing-files.patch
+Patch24: 0024-Documentation-Add-qemu-img-t-parameter-in-man-page.patch
+Patch25: 0025-rbd-always-set-out-parameter-in-qemu_rbd_snap_list.patch
+Patch26: virtio-blk_refuse_SG_IO_requests_with_scsi_off.patch
 
-# Allow -machine parameter to be used without specifying a machine type.
-# Upstream in qemu but apparently not in qemu-kvm yet.
-# qemu commit 2645c6dcaf6ea2a51a3b6dfa407dd203004e4d11
-Patch100: qemu-Allow-to-leave-type-on-default-in-machine.patch
+# General bug fixes
+Patch201: Fix_save-restore_of_in-kernel_i8259.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -212,6 +208,7 @@ Provides: kvm = 85
 Obsoletes: kvm < 85
 Requires: vgabios >= 0.6c-2
 Requires: seabios-bin >= 0.6.0-2
+Requires: sgabios-bin
 Requires: /usr/share/gpxe/8086100e.rom
 Requires: /usr/share/gpxe/rtl8029.rom
 Requires: /usr/share/gpxe/pcnet32.rom
@@ -316,10 +313,8 @@ such as kvm_stat.
 %patch24 -p1
 %patch25 -p1
 %patch26 -p1
-%patch27 -p1
-%patch28 -p1
 
-%patch100 -p1
+%patch201 -p1
 
 %build
 # By default we build everything, but allow x86 to build a minimal version
@@ -454,6 +449,7 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/bamboo.dtb
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/slof.bin
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/spapr-rtas.bin
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/ppc_rom.bin
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/sgabios.bin
 
 # the pxe gpxe images will be symlinks to the images on
 # /usr/share/gpxe, as QEMU doesn't know how to look
@@ -473,6 +469,7 @@ ln -s ../vgabios/VGABIOS-lgpl-latest.qxl.bin %{buildroot}/%{_datadir}/%{name}/vg
 ln -s ../vgabios/VGABIOS-lgpl-latest.stdvga.bin %{buildroot}/%{_datadir}/%{name}/vgabios-stdvga.bin
 ln -s ../vgabios/VGABIOS-lgpl-latest.vmware.bin %{buildroot}/%{_datadir}/%{name}/vgabios-vmware.bin
 ln -s ../seabios/bios.bin %{buildroot}/%{_datadir}/%{name}/bios.bin
+ln -s ../sgabios/sgabios.bin %{buildroot}/%{_datadir}/%{name}/sgabios.bin
 
 mkdir -p $RPM_BUILD_ROOT%{_exec_prefix}/lib/binfmt.d
 for i in dummy \
@@ -604,6 +601,7 @@ fi
 %{_datadir}/systemtap/tapset/qemu-i386.stp
 %{_datadir}/systemtap/tapset/qemu-x86_64.stp
 %if !%{with_x86only}
+%{_datadir}/%{name}/palcode-clipper
 %{_datadir}/systemtap/tapset/qemu-alpha.stp
 %{_datadir}/systemtap/tapset/qemu-arm.stp
 %{_datadir}/systemtap/tapset/qemu-armeb.stp
@@ -617,9 +615,10 @@ fi
 
 %files system-x86
 %defattr(-,root,root)
-%{_bindir}/qemu
+%{_bindir}/qemu-system-i386
 %{_bindir}/qemu-system-x86_64
 %{_datadir}/%{name}/bios.bin
+%{_datadir}/%{name}/sgabios.bin
 %{_datadir}/%{name}/linuxboot.bin
 %{_datadir}/%{name}/multiboot.bin
 %{_datadir}/%{name}/mpc8544ds.dtb
@@ -635,11 +634,10 @@ fi
 %{_datadir}/%{name}/pxe-rtl8139.rom
 %{_datadir}/%{name}/pxe-ne2k_pci.rom
 %config(noreplace) %{_sysconfdir}/qemu/target-x86_64.conf
-%{_datadir}/systemtap/tapset/qemu.stp
+%{_datadir}/systemtap/tapset/qemu-system-i386.stp
 %{_datadir}/systemtap/tapset/qemu-system-x86_64.stp
 
 %ifarch %{ix86} x86_64
-%{_datadir}/%{name}/extboot.bin
 %{_bindir}/qemu-kvm
 %{_sysconfdir}/sysconfig/modules/kvm.modules
 %{_sysconfdir}/udev/rules.d/80-kvm.rules
@@ -696,6 +694,12 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Jan 11 2012 Justin M. Forbes <jforbes@redhat.com> - 2:1.0-1
+- Add patches from 1.0.1 queue
+
+* Fri Dec 16 2011 Justin M. Forbes <jforbes@redhat.com> - 2:1.0-1
+- Update to qemu 1.0
+
 * Tue Nov 15 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.15.1-3
 - Enable spice for i686 users as well
 
