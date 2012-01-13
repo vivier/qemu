@@ -489,6 +489,7 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/slof.bin
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/spapr-rtas.bin
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/ppc_rom.bin
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/sgabios.bin
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/palcode-clipper
 
 # the pxe gpxe images will be symlinks to the images on
 # /usr/share/gpxe, as QEMU doesn't know how to look
