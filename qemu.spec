@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.0
-Release: 1%{?dist}
+Release: 2%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -65,6 +65,26 @@ Patch23: 0023-qemu-img-rebase-Fix-for-undersized-backing-files.patch
 Patch24: 0024-Documentation-Add-qemu-img-t-parameter-in-man-page.patch
 Patch25: 0025-rbd-always-set-out-parameter-in-qemu_rbd_snap_list.patch
 Patch26: virtio-blk_refuse_SG_IO_requests_with_scsi_off.patch
+
+# USB Redirect patches should go upstream soon!
+Patch101: 0101-usb-redir-Clear-iso-irq-error-when-stopping-the-stre.patch
+Patch102: 0102-usb-redir-Dynamically-adjust-iso-buffering-size-base.patch
+Patch103: 0103-usb-redir-Pre-fill-our-isoc-input-buffer-before-send.patch
+Patch104: 0104-usb-redir-Try-to-keep-our-buffer-size-near-the-targe.patch
+Patch105: 0105-usb-redir-Improve-some-debugging-messages.patch
+Patch106: 0106-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
+Patch107: 0107-char-Add-a-QemuChrHandlers-struct-to-initialise-char.patch
+Patch108: 0108-iohandlers-Add-enable-disable_write_fd_handler-funct.patch
+Patch109: 0109-char-Add-framework-for-a-write-unblocked-callback.patch
+Patch110: 0110-char-Update-send_all-to-handle-nonblocking-chardev-w.patch
+Patch111: 0111-char-Equip-the-unix-tcp-backend-to-handle-nonblockin.patch
+Patch112: 0112-char-Throttle-when-host-connection-is-down.patch
+Patch113: 0113-virtio-console-Enable-port-throttling-when-chardev-i.patch
+Patch114: 0114-spice-qemu-char.c-add-throttling.patch
+Patch115: 0115-spice-qemu-char.c-remove-intermediate-buffer.patch
+Patch116: 0116-usb-redir-Add-flow-control-support.patch
+Patch117: 0117-virtio-serial-bus-replay-guest_open-on-migration.patch
+Patch118: 0118-char-Disable-write-callback-if-throttled-chardev-is-.patch
 
 # General bug fixes
 Patch201: Fix_save-restore_of_in-kernel_i8259.patch
@@ -313,6 +333,25 @@ such as kvm_stat.
 %patch24 -p1
 %patch25 -p1
 %patch26 -p1
+
+%patch101 -p1
+%patch102 -p1
+%patch103 -p1
+%patch104 -p1
+%patch105 -p1
+%patch106 -p1
+%patch107 -p1
+%patch108 -p1
+%patch109 -p1
+%patch110 -p1
+%patch111 -p1
+%patch112 -p1
+%patch113 -p1
+%patch114 -p1
+%patch115 -p1
+%patch116 -p1
+%patch117 -p1
+%patch118 -p1
 
 %patch201 -p1
 
@@ -601,7 +640,6 @@ fi
 %{_datadir}/systemtap/tapset/qemu-i386.stp
 %{_datadir}/systemtap/tapset/qemu-x86_64.stp
 %if !%{with_x86only}
-%{_datadir}/%{name}/palcode-clipper
 %{_datadir}/systemtap/tapset/qemu-alpha.stp
 %{_datadir}/systemtap/tapset/qemu-arm.stp
 %{_datadir}/systemtap/tapset/qemu-armeb.stp
@@ -694,6 +732,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Jan 13 2012 Justin M. Forbes <jforbes@redhat.com> - 2:1.0-2
+- Add patches for USB redirect bits
+- Remove palcode-clipper, we don't build it
+
 * Wed Jan 11 2012 Justin M. Forbes <jforbes@redhat.com> - 2:1.0-1
 - Add patches from 1.0.1 queue
 
