@@ -28,7 +28,6 @@ typedef struct VirtIOBlock
     BlockConf *conf;
     unsigned short sector_mask;
     char sn[BLOCK_SERIAL_STRLEN];
-    uint32_t host_features;
     DeviceState *qdev;
 } VirtIOBlock;
 
@@ -149,12 +148,6 @@ static void virtio_blk_handle_scsi(VirtIOBlockReq *req)
     int ret, size = 0;
     int status;
     int i;
-
-    if ((req->dev->host_features & VIRTIO_BLK_F_SCSI) == 0) {
-        virtio_blk_req_complete(req, VIRTIO_BLK_S_UNSUPP);
-        qemu_free(req);
-        return;
-    }
 
     /*
      * We require at least one output segment each for the virtio_blk_outhdr
@@ -505,7 +498,6 @@ static uint32_t virtio_blk_get_features(VirtIODevice *vdev, uint32_t features)
     if (bdrv_is_read_only(s->bs))
         features |= 1 << VIRTIO_BLK_F_RO;
 
-    s->host_features = features;
     return features;
 }
 
