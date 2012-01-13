@@ -1,0 +1,45 @@
+From cdcfc3abfbeb6198c36aeba26d06d037100da435 Mon Sep 17 00:00:00 2001
+From: Paolo Bonzini <pbonzini@redhat.com>
+Date: Thu, 5 Jan 2012 11:08:26 +0100
+Subject: [PATCH 2/2] virtio-blk: refuse SG_IO requests with scsi=off
+
+Bugzilla: 752375
+
+Upstream status: submitted
+
+Brew build: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=3850485
+
+RHEL6 qemu-kvm does have a "scsi" option (to be used like -device
+virtio-blk-pci,drive=foo,scsi=off).  However, it only masks the feature
+bit, and does not reject the command if a malicious guest disregards
+the feature bits and issues a request.
+
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+Please-review: Petr Matousek <pmatouse@redhat.com>
+Please-review: Laszlo Ersek <lersek@redhat.com>
+Please-review: Markus Armbruster <armbru@redhat.com>
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/virtio-blk.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+diff --git a/hw/virtio-blk.c b/hw/virtio-blk.c
+index 0e56611..45cf63f 100644
+--- a/hw/virtio-blk.c
++++ b/hw/virtio-blk.c
+@@ -149,6 +149,12 @@ static void virtio_blk_handle_scsi(VirtIOBlockReq *req)
+     int status;
+     int i;
+ 
++    if ((req->dev->vdev.guest_features & (1 << VIRTIO_BLK_F_SCSI)) == 0) {
++        virtio_blk_req_complete(req, VIRTIO_BLK_S_UNSUPP);
++        qemu_free(req);
++        return;
++    }
++
+     /*
+      * We require at least one output segment each for the virtio_blk_outhdr
+      * and the SCSI command block.
+-- 
+1.7.7.4
+
