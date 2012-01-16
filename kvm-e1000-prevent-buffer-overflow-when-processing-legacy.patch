@@ -1,0 +1,55 @@
+From cc973bc51ea38d2d31ecce61a076ff169f5a234a Mon Sep 17 00:00:00 2001
+From: Jason Wang <jasowang@redhat.com>
+Date: Mon, 16 Jan 2012 13:00:53 +0800
+Subject: [PATCH] e1000: prevent buffer overflow when processing legacy
+ descriptors
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=772086
+          https://bugzilla.redhat.com/show_bug.cgi?id=772081 (6.2z)
+Upstream: N/A (The embargo lift date is 2012-01-23)
+Test status:
+This issuse is originally reproduced through upstream qtest. For
+RHEL6, I have the guest e1000 driver by: 1) Clear the EOP flag for
+every packet. 2) Fill 0xFFFF for the descriptor length. By using this
+"malicious" driver, before applying this patch I get 2 segfaults of
+qemu after 3 times guest booting. After applying this patch, I get
+zero segfault for 3 times guest booting.
+
+There isn't proper checking in legacy mode packets such that if two
+large packets arrive back to back without the EOP flag set in the
+first packet, you can easily overrun your buffer.
+
+Because data is written to the packets after the packet is processed,
+this could allow a heap overflow which is exploitable.
+
+Add a check before copy to solve this issue.
+
+Signed-off-by: Jason Wang <jasowang@redhat.com>
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hw/e1000.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/hw/e1000.c b/hw/e1000.c
+index 708416a..9cf66ca 100644
+--- a/hw/e1000.c
++++ b/hw/e1000.c
+@@ -466,6 +466,7 @@ process_tx_desc(E1000State *s, struct e1000_tx_desc *dp)
+             bytes = split_size;
+             if (tp->size + bytes > msh)
+                 bytes = msh - tp->size;
++            bytes = MIN(sizeof(tp->data) - tp->size, bytes);
+             cpu_physical_memory_read(addr, tp->data + tp->size, bytes);
+             if ((sz = tp->size + bytes) >= hdr && tp->size < hdr)
+                 memmove(tp->header, tp->data, hdr);
+@@ -481,6 +482,7 @@ process_tx_desc(E1000State *s, struct e1000_tx_desc *dp)
+         // context descriptor TSE is not set, while data descriptor TSE is set
+         DBGOUT(TXERR, "TCP segmentaion Error\n");
+     } else {
++        split_size = MIN(sizeof(tp->data) - tp->size, split_size);
+         cpu_physical_memory_read(addr, tp->data + tp->size, split_size);
+         tp->size += split_size;
+     }
+-- 
+1.7.7.4
+

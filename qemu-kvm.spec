@@ -15,7 +15,7 @@
 
 %define sublevel 0.12.1.2
 %define pkgrelease 2.209
-%define zrelease 3
+%define zrelease 4
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}.%{zrelease}
@@ -4015,6 +4015,8 @@ Patch2686: kvm-virtio-blk-refuse-SG_IO-requests-with-scsi-off.patch
 Patch2687: kvm-Revert-virtio-blk-refuse-SG_IO-requests-with-scsi-of.patch
 # For bz#752375 - CVE-2011-4127 kernel: possible privilege escalation via SG_IO ioctl
 Patch2688: kvm-virtio-blk-refuse-SG_IO-requests-with-scsi-off-v2.patch
+# For bz#772086 - EMBARGOED CVE-2012-0029 qemu-kvm: e1000: process_tx_desc legacy mode packets heap overflow [rhel-6.3]
+Patch2689: kvm-e1000-prevent-buffer-overflow-when-processing-legacy.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -5812,6 +5814,7 @@ ApplyOptionalPatch()
 %patch2686 -p1
 %patch2687 -p1
 %patch2688 -p1
+%patch2689 -p1
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
@@ -6035,6 +6038,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Jan 16 2012 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.209.el6_2.4
+- kvm-e1000-prevent-buffer-overflow-when-processing-legacy.patch [bz#772081]
+- Resolves: bz#772081
+  (EMBARGOED CVE-2012-0029 qemu-kvm: e1000: process_tx_desc legacy mode packets heap overflow [rhel-6.2.z])
+
 * Fri Jan 13 2012 Michal Novotny <minovotn@redhat.com> - qemu-kvm-0.12.1.2-2.209.el6_2.3
 - kvm-Revert-virtio-blk-refuse-SG_IO-requests-with-scsi-of.patch [for bz#767721]
 - kvm-virtio-blk-refuse-SG_IO-requests-with-scsi-off-v2.patch [bz#767721]
