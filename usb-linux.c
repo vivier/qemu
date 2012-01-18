@@ -1501,6 +1501,7 @@ int usb_host_device_close(const char *devname)
     return -1;
 }
 
+#if 0 /* Disabled for Red Hat Enterprise Linux */
 static int get_tag_value(char *buf, int buf_size,
                          const char *str, const char *tag,
                          const char *stopchars)
@@ -1616,6 +1617,7 @@ static int usb_host_scan_dev(void *opaque, USBScanFunc *func)
         fclose(f);
     return ret;
 }
+#endif
 
 /*
  * Read sys file-system device file
@@ -1753,6 +1755,7 @@ static int usb_host_scan(void *opaque, USBScanFunc *func)
             DPRINTF(USBDBG_DEVOPENED, USBSYSBUS_PATH);
             goto found_devices;
         }
+#if 0 /* Disabled for Red Hat Enterprise Linux */
         f = fopen(USBPROCBUS_PATH "/devices", "r");
         if (f) {
             /* devices found in /proc/bus/usb/ */
@@ -1772,6 +1775,9 @@ static int usb_host_scan(void *opaque, USBScanFunc *func)
             DPRINTF(USBDBG_DEVOPENED, USBDEVBUS_PATH);
             goto found_devices;
         }
+#else
+        (void)f;
+#endif
     found_devices:
         if (!usb_fs_type) {
             if (mon)
@@ -1788,10 +1794,12 @@ static int usb_host_scan(void *opaque, USBScanFunc *func)
     }
 
     switch (usb_fs_type) {
+#if 0 /* Disabled for Red Hat Enterprise Linux */
     case USB_FS_PROC:
     case USB_FS_DEV:
         ret = usb_host_scan_dev(opaque, func);
         break;
+#endif
     case USB_FS_SYS:
         ret = usb_host_scan_sys(opaque, func);
         break;
