@@ -1004,6 +1004,7 @@ static void console_putchar(TextConsole *s, int ch)
                     }
                     break;
                 }
+                break;
             case 'K':
                 switch (s->esc_params[0]) {
                 case 0:
