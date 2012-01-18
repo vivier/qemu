@@ -97,8 +97,9 @@ static int qcow2_read_extensions(BlockDriverState *bs, uint64_t start_offset,
 #endif
 
         if (bdrv_pread(bs->file, offset, &ext, sizeof(ext)) != sizeof(ext)) {
-            fprintf(stderr, "qcow2_handle_extension: ERROR: pread fail from offset %llu\n",
-                    (unsigned long long)offset);
+            fprintf(stderr, "qcow2_handle_extension: ERROR: "
+                    "pread fail from offset %" PRIu64 "\n",
+                    offset);
             return 1;
         }
         be32_to_cpus(&ext.magic);
@@ -1413,7 +1414,8 @@ static void dump_refcounts(BlockDriverState *bs)
         k++;
         while (k < nb_clusters && get_refcount(bs, k) == refcount)
             k++;
-        printf("%lld: refcount=%d nb=%lld\n", k, refcount, k - k1);
+        printf("%" PRId64 ": refcount=%d nb=%" PRId64 "\n", k, refcount,
+               k - k1);
     }
 }
 #endif
