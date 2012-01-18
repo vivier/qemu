@@ -2654,7 +2654,7 @@ extern int disable_KSM;
 static ram_addr_t find_ram_offset(ram_addr_t size)
 {
     RAMBlock *block, *next_block;
-    ram_addr_t offset = 0, mingap = ULONG_MAX;
+    ram_addr_t offset = ULONG_MAX, mingap = ULONG_MAX;
 
     if (QLIST_EMPTY(&ram_list.blocks))
         return 0;
@@ -2670,10 +2670,17 @@ static ram_addr_t find_ram_offset(ram_addr_t size)
             }
         }
         if (next - end >= size && next - end < mingap) {
-            offset =  end;
+            offset = end;
             mingap = next - end;
         }
     }
+
+    if (offset == ULONG_MAX) {
+        fprintf(stderr, "Failed to find gap of requested size: %" PRIu64 "\n",
+                (uint64_t)size);
+        abort();
+    }
+
     return offset;
 }
 
