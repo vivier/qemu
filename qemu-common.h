@@ -172,6 +172,31 @@ void qemu_free(void *ptr);
 char *qemu_strdup(const char *str);
 char *qemu_strndup(const char *str, size_t size);
 
+/* Red Hat Enterprise Linux malloc shims to simplify backporting */
+
+static inline void *g_malloc(size_t sz)
+{
+    return sz ? qemu_malloc(sz) : NULL;
+}
+
+static inline void *g_malloc0(size_t sz)
+{
+    return sz ? qemu_mallocz(sz) : NULL;
+}
+
+static inline void *g_realloc(void *ptr, size_t sz)
+{
+    if (!sz) {
+        free(ptr);
+        return NULL;
+    }
+    return qemu_realloc(ptr, sz);
+}
+#define g_free(ptr) qemu_free((ptr))
+#define g_strdup(str) qemu_strdup((str))
+
+/* end of malloc shims */
+
 void *get_mmap_addr(unsigned long size);
 
 
