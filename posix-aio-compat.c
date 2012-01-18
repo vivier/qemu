@@ -630,6 +630,7 @@ int paio_init(void)
     s->fd = qemu_signalfd(&mask);
     if (s->fd == -1) {
         fprintf(stderr, "failed to create signalfd\n");
+        qemu_free(s);
         return -1;
     }
 
