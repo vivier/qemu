@@ -305,10 +305,9 @@ void qemu_iovec_memset_skip(QEMUIOVector *qiov, int c, size_t count,
 
 /*
  * Convert string to bytes, allowing either B/b for bytes, K/k for KB,
- * M/m for MB, G/g for GB or T/t for TB. Default without any postfix
- * is MB. End pointer will be returned in *end, if not NULL. A valid
- * value must be terminated by whitespace, ',' or '\0'. Return -1 on
- * error.
+ * M/m for MB, G/g for GB or T/t for TB. End pointer will be returned
+ * in *end, if not NULL. A valid value must be terminated by
+ * whitespace, ',' or '\0'. Return -1 on error.
  */
 int64_t strtosz_suffix(const char *nptr, char **end, const char default_suffix)
 {
@@ -336,11 +335,7 @@ int64_t strtosz_suffix(const char *nptr, char **end, const char default_suffix)
     d = c;
     if (qemu_isspace(c) || c == '\0' || c == ',') {
         c = 0;
-        if (default_suffix) {
-            d = default_suffix;
-        } else {
-            d = c;
-        }
+        d = default_suffix;
     }
     switch (qemu_toupper(d)) {
     case STRTOSZ_DEFSUFFIX_B:
@@ -352,10 +347,6 @@ int64_t strtosz_suffix(const char *nptr, char **end, const char default_suffix)
     case STRTOSZ_DEFSUFFIX_KB:
         mul = 1 << 10;
         break;
-    case 0:
-        if (mul_required) {
-            goto fail;
-        }
     case STRTOSZ_DEFSUFFIX_MB:
         mul = 1ULL << 20;
         break;
