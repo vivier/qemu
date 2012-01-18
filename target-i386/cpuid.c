@@ -538,7 +538,7 @@ static int cpu_x86_find_by_name(x86_def_t *x86_cpu_def, const char *cpu_model)
     unsigned int i;
     x86_def_t *def;
 
-    char *s = strdup(cpu_model);
+    char *s = g_strdup(cpu_model);
     char *featurestr, *name = strtok(s, ",");
     uint32_t plus_features = 0, plus_ext_features = 0, plus_ext2_features = 0, plus_ext3_features = 0, plus_kvm_features = 0;
     uint32_t minus_features = 0, minus_ext_features = 0, minus_ext2_features = 0, minus_ext3_features = 0, minus_kvm_features = 0;
@@ -656,11 +656,11 @@ static int cpu_x86_find_by_name(x86_def_t *x86_cpu_def, const char *cpu_model)
     x86_cpu_def->ext2_features &= ~minus_ext2_features;
     x86_cpu_def->ext3_features &= ~minus_ext3_features;
     x86_cpu_def->kvm_features &= ~minus_kvm_features;
-    free(s);
+    g_free(s);
     return 0;
 
 error:
-    free(s);
+    g_free(s);
     return -1;
 }
 
@@ -864,7 +864,7 @@ static int cpudef_setfield(const char *name, const char *str, void *opaque)
     int err = 0;
 
     if (!strcmp(name, "name")) {
-        def->name = strdup(str);
+        def->name = g_strdup(str);
     } else if (!strcmp(name, "model_id")) {
         strncpy(def->model_id, str, sizeof (def->model_id));
     } else if (!strcmp(name, "level")) {
