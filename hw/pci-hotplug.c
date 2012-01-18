@@ -103,7 +103,7 @@ void drive_hot_add(Monitor *mon, const QDict *qdict)
 {
     int dom, pci_bus;
     unsigned slot;
-    int type, bus;
+    int type;
     PCIDevice *dev;
     DriveInfo *dinfo = NULL;
     const char *pci_addr = qdict_get_str(qdict, "pci_addr");
@@ -117,7 +117,6 @@ void drive_hot_add(Monitor *mon, const QDict *qdict)
         goto err;
     }
     type = dinfo->type;
-    bus = drive_get_max_bus (type);
 
     switch (type) {
     case IF_SCSI:

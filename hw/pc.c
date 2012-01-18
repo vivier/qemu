@@ -1058,9 +1058,7 @@ static void pc_init1(ram_addr_t ram_size,
     ram_addr_t below_4g_mem_size, above_4g_mem_size = 0;
     int bios_size, isa_bios_size;
     PCIBus *pci_bus;
-    ISADevice *isa_dev;
     int piix3_devfn = -1;
-    CPUState *env;
     qemu_irq *cpu_irq;
     qemu_irq *isa_irq;
     qemu_irq *i8259;
@@ -1090,7 +1088,7 @@ static void pc_init1(ram_addr_t ram_size,
         kvm_set_boot_cpu_id(0);
     }
     for (i = 0; i < smp_cpus; i++) {
-        env = pc_new_cpu(cpu_model);
+        pc_new_cpu(cpu_model);
     }
 
 #if TARGET_PHYS_ADDR_BITS == 32
@@ -1313,7 +1311,7 @@ static void pc_init1(ram_addr_t ram_size,
         }
     }
 
-    isa_dev = isa_create_simple("i8042");
+    isa_create_simple("i8042");
     DMA_init(0);
 #ifdef HAS_AUDIO
     audio_init(pci_enabled ? pci_bus : NULL, isa_irq);
