@@ -254,6 +254,7 @@ obj-i386-y += extboot.o
 obj-i386-y += ne2000-isa.o
 obj-i386-y += testdev.o
 obj-i386-y += kvmclock.o
+obj-i386-y += debugcon.o
 
 obj-i386-$(CONFIG_KVM_PIT) += i8254-kvm.o
 obj-i386-$(CONFIG_KVM_DEVICE_ASSIGNMENT) += device-assignment.o
