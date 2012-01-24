@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.0
-Release: 2%{?dist}
+Release: 3%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -64,7 +64,8 @@ Patch22: 0022-coroutine-switch-per-thread-free-pool-to-a-global-po.patch
 Patch23: 0023-qemu-img-rebase-Fix-for-undersized-backing-files.patch
 Patch24: 0024-Documentation-Add-qemu-img-t-parameter-in-man-page.patch
 Patch25: 0025-rbd-always-set-out-parameter-in-qemu_rbd_snap_list.patch
-Patch26: virtio-blk_refuse_SG_IO_requests_with_scsi_off.patch
+Patch26: 0026-e1000-bounds-packet-size-against-buffer-size.patch
+Patch27: virtio-blk_refuse_SG_IO_requests_with_scsi_off.patch
 
 # USB Redirect patches should go upstream soon!
 Patch101: 0101-usb-redir-Clear-iso-irq-error-when-stopping-the-stre.patch
@@ -88,6 +89,9 @@ Patch118: 0118-char-Disable-write-callback-if-throttled-chardev-is-.patch
 
 # General bug fixes
 Patch201: Fix_save-restore_of_in-kernel_i8259.patch
+
+# Feature patches, should be in 1.1 before release
+Patch301: enable_architectural_PMU_cpuid_leaf.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -333,6 +337,7 @@ such as kvm_stat.
 %patch24 -p1
 %patch25 -p1
 %patch26 -p1
+%patch27 -p1
 
 %patch101 -p1
 %patch102 -p1
@@ -354,6 +359,8 @@ such as kvm_stat.
 %patch118 -p1
 
 %patch201 -p1
+
+%patch301 -p1
 
 %build
 # By default we build everything, but allow x86 to build a minimal version
@@ -733,6 +740,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jan 24 2012 Justin M. Forbes <jforbes@redhat.com> - 2:1.0-3
+- Add support for vPMU
+- e1000: bounds packet size against buffer size CVE-2012-0029
+
 * Fri Jan 13 2012 Justin M. Forbes <jforbes@redhat.com> - 2:1.0-2
 - Add patches for USB redirect bits
 - Remove palcode-clipper, we don't build it
