@@ -1,0 +1,195 @@
+From a6b957c3dbc67e674f457d6c9738076f47ad8bd9 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Thu, 20 Oct 2011 16:37:26 +0200
+Subject: [PATCH] pc: Fix floppy drives with if=none
+
+Commit 63ffb564 broke floppy devices specified on the command line like
+-drive file=...,if=none,id=floppy -global isa-fdc.driveA=floppy because it
+relies on drive_get() which works only with -fda/-drive if=floppy.
+
+This patch resembles what we're already doing for IDE, i.e. remember the floppy
+device that was created and use that to extract the BlockDriverStates where
+needed.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Reviewed-by: Markus Armbruster <armbru@redhat.com>
+---
+ hw/fdc.c     |   12 ++++++++++++
+ hw/fdc.h     |    9 +++++++--
+ hw/pc.c      |   25 ++++++++++++++-----------
+ hw/pc.h      |    3 ++-
+ hw/pc_piix.c |    5 +++--
+ 5 files changed, 38 insertions(+), 16 deletions(-)
+
+diff --git a/hw/fdc.c b/hw/fdc.c
+index ec99c78..4bd6abf 100644
+--- a/hw/fdc.c
++++ b/hw/fdc.c
+@@ -1913,6 +1913,18 @@ static int sun4m_fdc_init1(SysBusDevice *dev)
+     return fdctrl_init_common(fdctrl);
+ }
+ 
++void fdc_get_bs(BlockDriverState *bs[], ISADevice *dev)
++{
++    FDCtrlISABus *isa = DO_UPCAST(FDCtrlISABus, busdev, dev);
++    FDCtrl *fdctrl = &isa->state;
++    int i;
++
++    for (i = 0; i < MAX_FD; i++) {
++        bs[i] = fdctrl->drives[i].bs;
++    }
++}
++
++
+ static const VMStateDescription vmstate_isa_fdc ={
+     .name = "fdc",
+     .version_id = 2,
+diff --git a/hw/fdc.h b/hw/fdc.h
+index 09f73c6..506feb6 100644
+--- a/hw/fdc.h
++++ b/hw/fdc.h
+@@ -7,14 +7,15 @@
+ /* fdc.c */
+ #define MAX_FD 2
+ 
+-static inline void fdctrl_init_isa(DriveInfo **fds)
++static inline ISADevice *fdctrl_init_isa(DriveInfo **fds)
+ {
+     ISADevice *dev;
+ 
+     dev = isa_try_create("isa-fdc");
+     if (!dev) {
+-        return;
++        return NULL;
+     }
++
+     if (fds[0]) {
+         qdev_prop_set_drive_nofail(&dev->qdev, "driveA", fds[0]->bdrv);
+     }
+@@ -22,10 +23,14 @@ static inline void fdctrl_init_isa(DriveInfo **fds)
+         qdev_prop_set_drive_nofail(&dev->qdev, "driveB", fds[1]->bdrv);
+     }
+     qdev_init_nofail(&dev->qdev);
++
++    return dev;
+ }
+ 
+ void fdctrl_init_sysbus(qemu_irq irq, int dma_chann,
+                         target_phys_addr_t mmio_base, DriveInfo **fds);
+ void sun4m_fdctrl_init(qemu_irq irq, target_phys_addr_t io_base,
+                        DriveInfo **fds, qemu_irq *fdc_tc);
++void fdc_get_bs(BlockDriverState *bs[], ISADevice *dev);
++
+ #endif
+diff --git a/hw/pc.c b/hw/pc.c
+index a3e8539..4903803 100644
+--- a/hw/pc.c
++++ b/hw/pc.c
+@@ -333,12 +333,12 @@ static void pc_cmos_init_late(void *opaque)
+ 
+ void pc_cmos_init(ram_addr_t ram_size, ram_addr_t above_4g_mem_size,
+                   const char *boot_device,
+-                  BusState *idebus0, BusState *idebus1,
++                  ISADevice *floppy, BusState *idebus0, BusState *idebus1,
+                   ISADevice *s)
+ {
+     int val, nb, nb_heads, max_track, last_sect, i;
+     FDriveType fd_type[2];
+-    DriveInfo *fd[2];
++    BlockDriverState *fd[MAX_FD];
+     static pc_cmos_init_late_arg arg;
+ 
+     /* various important CMOS locations needed by PC/Bochs bios */
+@@ -380,14 +380,16 @@ void pc_cmos_init(ram_addr_t ram_size, ram_addr_t above_4g_mem_size,
+     }
+ 
+     /* floppy type */
+-    for (i = 0; i < 2; i++) {
+-        fd[i] = drive_get(IF_FLOPPY, 0, i);
+-        if (fd[i] && bdrv_is_inserted(fd[i]->bdrv)) {
+-            bdrv_get_floppy_geometry_hint(fd[i]->bdrv, &nb_heads, &max_track,
+-                                          &last_sect, FDRIVE_DRV_NONE,
+-                                          &fd_type[i]);
+-        } else {
+-            fd_type[i] = FDRIVE_DRV_NONE;
++    if (floppy) {
++        fdc_get_bs(fd, floppy);
++        for (i = 0; i < 2; i++) {
++            if (fd[i] && bdrv_is_inserted(fd[i])) {
++                bdrv_get_floppy_geometry_hint(fd[i], &nb_heads, &max_track,
++                                              &last_sect, FDRIVE_DRV_NONE,
++                                              &fd_type[i]);
++            } else {
++                fd_type[i] = FDRIVE_DRV_NONE;
++            }
+         }
+     }
+     val = (cmos_get_fd_drive_type(fd_type[0]) << 4) |
+@@ -1092,6 +1094,7 @@ static void cpu_request_exit(void *opaque, int irq, int level)
+ 
+ void pc_basic_device_init(qemu_irq *isa_irq,
+                           ISADevice **rtc_state,
++                          ISADevice **floppy,
+                           bool no_vmport)
+ {
+     int i;
+@@ -1156,7 +1159,7 @@ void pc_basic_device_init(qemu_irq *isa_irq,
+     for(i = 0; i < MAX_FD; i++) {
+         fd[i] = drive_get(IF_FLOPPY, 0, i);
+     }
+-    fdctrl_init_isa(fd);
++    *floppy = fdctrl_init_isa(fd);
+ }
+ 
+ void pc_pci_device_init(PCIBus *pci_bus)
+diff --git a/hw/pc.h b/hw/pc.h
+index 6d5730b..24b7fe2 100644
+--- a/hw/pc.h
++++ b/hw/pc.h
+@@ -138,11 +138,12 @@ qemu_irq *pc_allocate_cpu_irq(void);
+ void pc_vga_init(PCIBus *pci_bus);
+ void pc_basic_device_init(qemu_irq *isa_irq,
+                           ISADevice **rtc_state,
++                          ISADevice **floppy,
+                           bool no_vmport);
+ void pc_init_ne2k_isa(NICInfo *nd);
+ void pc_cmos_init(ram_addr_t ram_size, ram_addr_t above_4g_mem_size,
+                   const char *boot_device,
+-                  BusState *ide0, BusState *ide1,
++                  ISADevice *floppy, BusState *ide0, BusState *ide1,
+                   ISADevice *s);
+ void pc_pci_device_init(PCIBus *pci_bus);
+ 
+diff --git a/hw/pc_piix.c b/hw/pc_piix.c
+index c5c16b4..a634860 100644
+--- a/hw/pc_piix.c
++++ b/hw/pc_piix.c
+@@ -89,6 +89,7 @@ static void pc_init1(ram_addr_t ram_size,
+     DriveInfo *hd[MAX_IDE_BUS * MAX_IDE_DEVS];
+     BusState *idebus[MAX_IDE_BUS];
+     ISADevice *rtc_state;
++    ISADevice *floppy;
+ 
+     global_cpu_model = cpu_model;
+ 
+@@ -141,7 +142,7 @@ static void pc_init1(ram_addr_t ram_size,
+     }
+ 
+     /* init basic PC hardware */
+-    pc_basic_device_init(isa_irq, &rtc_state, xen_enabled());
++    pc_basic_device_init(isa_irq, &rtc_state, &floppy, xen_enabled());
+ 
+     for(i = 0; i < nb_nics; i++) {
+         NICInfo *nd = &nd_table[i];
+@@ -170,7 +171,7 @@ static void pc_init1(ram_addr_t ram_size,
+     audio_init(isa_irq, pci_enabled ? pci_bus : NULL);
+ 
+     pc_cmos_init(below_4g_mem_size, above_4g_mem_size, boot_device,
+-                 idebus[0], idebus[1], rtc_state);
++                 floppy, idebus[0], idebus[1], rtc_state);
+ 
+     if (pci_enabled && usb_enabled) {
+         usb_uhci_piix3_init(pci_bus, piix3_devfn + 2);
+-- 
+1.7.7.5
+

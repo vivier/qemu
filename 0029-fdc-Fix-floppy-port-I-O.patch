@@ -1,0 +1,38 @@
+From 8175ec8e0fee5f110d91209096e77159ad6404f7 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Tue, 18 Oct 2011 16:41:45 +0200
+Subject: [PATCH 1/2] fdc: Fix floppy port I/O
+
+The floppy device was broken by commit 212ec7ba (fdc: Convert to
+isa_register_portio_list). While the old interface provided the port number
+relative to the floppy drive's io_base, the new one provides the real port
+number, so we need to apply a bitmask now to get the register number.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ hw/fdc.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/hw/fdc.c b/hw/fdc.c
+index 9fdbc75..ec99c78 100644
+--- a/hw/fdc.c
++++ b/hw/fdc.c
+@@ -433,6 +433,7 @@ static uint32_t fdctrl_read (void *opaque, uint32_t reg)
+     FDCtrl *fdctrl = opaque;
+     uint32_t retval;
+ 
++    reg &= 7;
+     switch (reg) {
+     case FD_REG_SRA:
+         retval = fdctrl_read_statusA(fdctrl);
+@@ -470,6 +471,7 @@ static void fdctrl_write (void *opaque, uint32_t reg, uint32_t value)
+ 
+     FLOPPY_DPRINTF("write reg%d: 0x%02x\n", reg & 7, value);
+ 
++    reg &= 7;
+     switch (reg) {
+     case FD_REG_DOR:
+         fdctrl_write_dor(fdctrl, value);
+-- 
+1.7.7.5
+

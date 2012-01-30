@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.15.1
-Release: 3%{?dist}
+Release: 4%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -70,11 +70,18 @@ Patch25: 0025-spice-qemu-char-Generate-chardev-open-close-events.patch
 Patch26: 0026-usb-redir-Call-qemu_chr_guest_open-close.patch
 Patch27: 0027-usb-redir-Device-disconnect-re-connect-robustness-fi.patch
 Patch28: 0028-usb-redir-Don-t-try-to-write-to-the-chardev-after-a-.patch
+Patch29: 0029-fdc-Fix-floppy-port-I-O.patch
+Patch30: 0030-dma-Avoid-reentrancy-in-DMA-transfer-handlers.patch
+Patch31: 0031-pc-Fix-floppy-drives-with-if-none.patch
+
 
 # Allow -machine parameter to be used without specifying a machine type.
 # Upstream in qemu but apparently not in qemu-kvm yet.
 # qemu commit 2645c6dcaf6ea2a51a3b6dfa407dd203004e4d11
 Patch100: qemu-Allow-to-leave-type-on-default-in-machine.patch
+
+# Upstream patches from 1.0
+Patch101: 0101-usb-hub-dont_trigger_assert_on_packet_completion.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -322,8 +329,12 @@ such as kvm_stat.
 %patch26 -p1
 %patch27 -p1
 %patch28 -p1
+%patch29 -p1
+%patch30 -p1
+%patch31 -p1
 
 %patch100 -p1
+%patch101 -p1
 
 %build
 # By default we build everything, but allow x86 to build a minimal version
@@ -704,6 +715,13 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Jan 30 2012 Justin M. Forbes <jforbes@redhat.com> - 2:0.15.1-4
+- Add vhost-net to kvm.modules
+- Fix USB passthrough assert on packet completion (#769625)
+- 
+* Thu Jan  5 2012 Christophe Fergeau <cfergeau@redhat.com> - 2:0.15.1-3.1
+- Backport patches from qemu 1.0 to fix floppy drives (#753863)
+
 * Fri Nov 18 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.15.1-3
 - Enable support for fedora-13 machine type (#748218)
 - don't force ksm enable on updates (#754946)

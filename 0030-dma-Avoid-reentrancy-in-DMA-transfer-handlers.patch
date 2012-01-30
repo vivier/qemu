@@ -1,0 +1,52 @@
+From 86f1e4e2f57af82aae0944ed704ab91dc36fc9b7 Mon Sep 17 00:00:00 2001
+From: Kevin Wolf <kwolf@redhat.com>
+Date: Fri, 28 Oct 2011 05:28:13 -0400
+Subject: [PATCH 2/2] dma: Avoid reentrancy in DMA transfer handlers
+
+With the conversion of the block layer to coroutines, bdrv_read/write
+have changed to run a nested event loop that calls qemu_bh_poll.
+Consequently a scheduled BH can be called while a DMA transfer handler
+runs and this means that DMA_run becomes reentrant.
+
+Devices haven't been designed to cope with that, so instead of running a
+nested transfer handler just wait for the next invocation of the BH from the
+main loop.
+
+This fixes some problems with the floppy device.
+
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+---
+ hw/dma.c |   10 ++++++++++
+ 1 files changed, 10 insertions(+), 0 deletions(-)
+
+diff --git a/hw/dma.c b/hw/dma.c
+index 8a7302a..0a9322d 100644
+--- a/hw/dma.c
++++ b/hw/dma.c
+@@ -358,6 +358,14 @@ static void DMA_run (void)
+     struct dma_cont *d;
+     int icont, ichan;
+     int rearm = 0;
++    static int running = 0;
++
++    if (running) {
++        rearm = 1;
++        goto out;
++    } else {
++        running = 1;
++    }
+ 
+     d = dma_controllers;
+ 
+@@ -374,6 +382,8 @@ static void DMA_run (void)
+         }
+     }
+ 
++    running = 0;
++out:
+     if (rearm)
+         qemu_bh_schedule_idle(dma_bh);
+ }
+-- 
+1.7.7.5
+
