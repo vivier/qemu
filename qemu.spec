@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.0
-Release: 3%{?dist}
+Release: 4%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -92,6 +92,7 @@ Patch201: Fix_save-restore_of_in-kernel_i8259.patch
 
 # Feature patches, should be in 1.1 before release
 Patch301: enable_architectural_PMU_cpuid_leaf.patch
+Patch302: qemu_virtio-scsi_support.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -361,6 +362,7 @@ such as kvm_stat.
 %patch201 -p1
 
 %patch301 -p1
+%patch302 -p1
 
 %build
 # By default we build everything, but allow x86 to build a minimal version
@@ -740,6 +742,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Feb 07 2012 Justin M. Forbes <jforbes@redhat.com> - 2:1.0-4
+- Add support for virtio-scsi
+
 * Tue Jan 24 2012 Justin M. Forbes <jforbes@redhat.com> - 2:1.0-3
 - Add support for vPMU
 - e1000: bounds packet size against buffer size CVE-2012-0029
