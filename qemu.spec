@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.0
-Release: 4%{?dist}
+Release: 5%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -157,6 +157,12 @@ will install qemu-system-x86
 %package  img
 Summary: QEMU command line tool for manipulating disk images
 Group: Development/Tools
+# librbd (from ceph) added new symbol rbd_flush recently.  If you
+# update qemu-img without updating librdb you get:
+# qemu-img: undefined symbol: rbd_flush
+# ** NB ** This can be removed after Fedora 17 is released.
+Requires: ceph >= 0.37-2
+
 %description img
 This package provides a command line tool for manipulating disk images
 
@@ -742,8 +748,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
-* Tue Feb 07 2012 Justin M. Forbes <jforbes@redhat.com> - 2:1.0-4
+* Tue Feb 07 2012 Justin M. Forbes <jforbes@redhat.com> - 2:1.0-5
 - Add support for virtio-scsi
+
+* Sun Feb  5 2012 Richard W.M. Jones <rjones@redhat.com> - 2:1.0-4
+- Require updated ceph for latest librbd with rbd_flush symbol.
 
 * Tue Jan 24 2012 Justin M. Forbes <jforbes@redhat.com> - 2:1.0-3
 - Add support for vPMU
