@@ -513,6 +513,9 @@ again:
     }
 }
 
+static uint32_t merge_bits(uint32_t val, uint32_t mval, uint8_t addr,
+                           int len, uint8_t pos, uint32_t mask);
+
 static uint32_t assigned_dev_pci_read_config(PCIDevice *d, uint32_t address,
                                              int len)
 {
@@ -566,6 +569,10 @@ do_log:
         else if (address == 6)
             val &= ~0x10;
     }
+
+    /* Use emulated multifunction header type bit */
+    val = merge_bits(val, pci_get_long(d->config + address), address,
+                     len, PCI_HEADER_TYPE, PCI_HEADER_TYPE_MULTI_FUNCTION);
 
     return val;
 }
@@ -710,6 +717,13 @@ again:
         if (errno == EINTR || errno == EAGAIN)
             goto again;
         fprintf(stderr, "%s: read failed, errno = %d\n", __func__, errno);
+    }
+
+    /* Restore or clear multifunction, this is always controlled by qemu */
+    if (pci_dev->dev.cap_present & QEMU_PCI_CAP_MULTIFUNCTION) {
+        pci_dev->dev.config[PCI_HEADER_TYPE] |= PCI_HEADER_TYPE_MULTI_FUNCTION;
+    } else {
+        pci_dev->dev.config[PCI_HEADER_TYPE] &= ~PCI_HEADER_TYPE_MULTI_FUNCTION;
     }
 
     /* Clear host resource mapping info.  If we choose not to register a
