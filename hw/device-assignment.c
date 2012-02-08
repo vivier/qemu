@@ -636,8 +636,9 @@ static int assigned_dev_register_regions(PCIRegion *io_regions,
              * kernels return EIO.  New kernels only allow 1/2/4 byte reads
              * so should return EINVAL for a 3 byte read */
             ret = pread(pci_dev->v_addrs[i].region->resource_fd, &val, 3, 0);
-            if (ret == 3) {
-                fprintf(stderr, "I/O port resource supports 3 byte read?!\n");
+            if (ret >= 0) {
+                fprintf(stderr, "Unexpected return from I/O port read: %d\n",
+                        ret);
                 abort();
             } else if (errno != EINVAL) {
                 fprintf(stderr, "Using raw in/out ioport access (sysfs - %s)\n",
@@ -1422,8 +1423,8 @@ static int assigned_device_pci_cap_init(PCIDevice *pci_dev)
 
     if ((pos = pci_find_cap_offset(pci_dev, PCI_CAP_ID_EXP, 0))) {
         uint8_t version, size = 0;
-        uint16_t type, devctl, lnkcap, lnksta;
-        uint32_t devcap;
+        uint16_t type, devctl, lnksta;
+        uint32_t devcap, lnkcap;
 
         version = pci_get_byte(pci_dev->config + pos + PCI_EXP_FLAGS);
         version &= PCI_EXP_FLAGS_VERS;
@@ -1474,7 +1475,7 @@ static int assigned_device_pci_cap_init(PCIDevice *pci_dev)
         }
 
         type = pci_get_word(pci_dev->config + pos + PCI_EXP_FLAGS);
-        type = (type & PCI_EXP_FLAGS_TYPE) >> 8;
+        type = (type & PCI_EXP_FLAGS_TYPE) >> 4;
         if (type != PCI_EXP_TYPE_ENDPOINT &&
             type != PCI_EXP_TYPE_LEG_END && type != PCI_EXP_TYPE_RC_END) {
             fprintf(stderr,
@@ -1492,7 +1493,7 @@ static int assigned_device_pci_cap_init(PCIDevice *pci_dev)
         pci_set_long(pci_dev->config + pos + PCI_EXP_DEVCAP, devcap);
 
         /* device control: clear all error reporting enable bits, leaving
-         *                 leaving only a few host values.  Note, these are
+         *                 only a few host values.  Note, these are
          *                 all writable, but not passed to hw.
          */
         devctl = pci_get_word(pci_dev->config + pos + PCI_EXP_DEVCTL);
@@ -1506,15 +1507,11 @@ static int assigned_device_pci_cap_init(PCIDevice *pci_dev)
         pci_set_word(pci_dev->config + pos + PCI_EXP_DEVSTA, 0);
 
         /* Link capabilities, expose links and latencues, clear reporting */
-        lnkcap = pci_get_word(pci_dev->config + pos + PCI_EXP_LNKCAP);
+        lnkcap = pci_get_long(pci_dev->config + pos + PCI_EXP_LNKCAP);
         lnkcap &= (PCI_EXP_LNKCAP_SLS | PCI_EXP_LNKCAP_MLW |
                    PCI_EXP_LNKCAP_ASPMS | PCI_EXP_LNKCAP_L0SEL |
                    PCI_EXP_LNKCAP_L1EL);
-        pci_set_word(pci_dev->config + pos + PCI_EXP_LNKCAP, lnkcap);
-        pci_set_word(pci_dev->wmask + pos + PCI_EXP_LNKCAP,
-                     PCI_EXP_LNKCTL_ASPMC | PCI_EXP_LNKCTL_RCB |
-                     PCI_EXP_LNKCTL_CCC | PCI_EXP_LNKCTL_ES |
-                     PCI_EXP_LNKCTL_CLKREQ_EN | PCI_EXP_LNKCTL_HAWD);
+        pci_set_long(pci_dev->config + pos + PCI_EXP_LNKCAP, lnkcap);
 
         /* Link control, pass existing read-only copy.  Should be writable? */
 
