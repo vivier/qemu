@@ -249,11 +249,9 @@ static void assigned_dev_iomem_map_slow(PCIDevice *pci_dev, int region_num,
     AssignedDevice *r_dev = container_of(pci_dev, AssignedDevice, dev);
     AssignedDevRegion *region = &r_dev->v_addrs[region_num];
     PCIRegion *real_region = &r_dev->real_device.regions[region_num];
-    int m;
 
     DEBUG("%s", "slow map\n");
-    m = cpu_register_io_memory(slow_bar_read, slow_bar_write, region);
-    cpu_register_physical_memory(e_phys, e_size, m);
+    cpu_register_physical_memory(e_phys, e_size, region->mmio_index);
 
     /* MSI-X MMIO page */
     if ((e_size > 0) &&
@@ -604,6 +602,16 @@ static int assigned_dev_register_regions(PCIRegion *io_regions,
                         i, (unsigned long long)cur_region->base_addr,
                         cur_region->size);
                 slow_map = 1;
+
+                pci_dev->v_addrs[i].mmio_index =
+                                 cpu_register_io_memory(slow_bar_read,
+                                                        slow_bar_write,
+                                                        &pci_dev->v_addrs[i]);
+                if (pci_dev->v_addrs[i].mmio_index < 0) {
+                    fprintf(stderr, "%s: Error registering IO memory\n",
+                            __func__);
+                    return -1;
+                }
             }
 
             /* map physical memory */
@@ -619,6 +627,12 @@ static int assigned_dev_register_regions(PCIRegion *io_regions,
                 fprintf(stderr, "%s: Error: Couldn't mmap 0x%x!"
                         "\n", __func__,
                         (uint32_t) (cur_region->base_addr));
+
+                if (slow_map) {
+                    cpu_unregister_io_memory(pci_dev->v_addrs[i].mmio_index);
+                    pci_dev->v_addrs[i].mmio_index = -1;
+                }
+
                 return -1;
             }
 
@@ -767,6 +781,7 @@ again:
         rp->base_addr = start;
         rp->size = size;
         pci_dev->v_addrs[r].region = rp;
+        pci_dev->v_addrs[r].mmio_index = -1;
         DEBUG("region %d size %d start 0x%llx type %d resource_fd %d\n",
               r, rp->size, start, rp->type, rp->resource_fd);
     }
@@ -866,6 +881,10 @@ static void free_assigned_device(AssignedDevice *dev)
                         kvm_destroy_phys_mem(kvm_context, region->e_physbase,
                                              TARGET_PAGE_ALIGN(region->e_size));
                     }
+                }
+
+                if (region->mmio_index >= 0) {
+                    cpu_unregister_io_memory(region->mmio_index);
                 }
 
                 if (region->u.r_virtbase) {
