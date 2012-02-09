@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.15.1
-Release: 3%{?dist}
+Release: 3.1%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -708,6 +708,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Feb 09 2012 Eduardo Habkost <ehabkost@redhat.com> - 2:0.15.1-3.1
+- Set ExclusiveArch: x86_64 to build it only on x86_64
+- Resolves: bz#786911
+
 * Fri Nov 18 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.15.1-3
 - Enable support for fedora-13 machine type (#748218)
 - don't force ksm enable on updates (#754946)
