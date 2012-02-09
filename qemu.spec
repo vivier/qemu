@@ -7,6 +7,10 @@ Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
 Group: Development/Tools
 URL: http://www.qemu.org/
+# RHEL will build Qemu only on x86_64:
+%if 0%{?rhel}
+ExclusiveArch: x86_64
+%endif
 
 # Allow one off builds to be minimalized without foreign
 # architecture support (--with x86only):
