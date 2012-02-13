@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.0
-Release: 5%{?dist}
+Release: 6%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -115,6 +115,24 @@ BuildRequires: ceph-devel
 # We need both because the 'stap' binary is probed for by configure
 BuildRequires: systemtap
 BuildRequires: systemtap-sdt-devel
+# For smartcard NSS support
+BuildRequires: nss-devel
+# For XFS discard support in raw-posix.c
+BuildRequires: xfsprogs-devel
+# For VNC JPEG support
+BuildRequires: libjpeg-devel
+# For VNC PNG support
+BuildRequires: libpng-devel
+# For uuid generation
+BuildRequires: libuuid-devel
+# For BlueZ device support
+BuildRequires: bluez-libs-devel
+# For Braille device support
+BuildRequires: brlapi-devel
+# For FDT device tree support
+BuildRequires: libfdt-devel
+# For test suite
+BuildRequires: check-devel
 Requires: %{name}-user = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-x86 = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-arm = %{epoch}:%{version}-%{release}
@@ -558,6 +576,8 @@ mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
 install -m 0644 %{SOURCE10} $RPM_BUILD_ROOT%{_unitdir}
 install -m 0644 %{SOURCE11} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
 
+%check
+make check
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -748,6 +768,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Feb 13 2012 Daniel P. Berrange <berrange@redhat.com> - 2:1.0-6
+- Add many more missing BRs for misc QEMU features
+- Enable running of test suite during build
+
 * Tue Feb 07 2012 Justin M. Forbes <jforbes@redhat.com> - 2:1.0-5
 - Add support for virtio-scsi
 
