@@ -720,6 +720,7 @@ typedef struct CPUX86State {
     uint32_t sipi_vector;
     uint32_t cpuid_kvm_features;
     bool tsc_valid;
+    void *kvm_xsave_buf;
 
     /* in order to simplify APIC support, we leave this pointer to the
        user */
