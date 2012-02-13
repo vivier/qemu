@@ -994,6 +994,7 @@ void kvm_arch_load_regs(CPUState *env)
             xcrs.xcrs[0].value = env->xcr0;
             kvm_set_xcrs(env, &xcrs);
         }
+        qemu_free(xsave);
     } else {
         memset(&fpu, 0, sizeof fpu);
         fpu.fsw = env->fpus & ~(7 << 11);
@@ -1196,6 +1197,7 @@ void kvm_arch_save_regs(CPUState *env)
             if (xcrs.xcrs[0].xcr == 0)
                 env->xcr0 = xcrs.xcrs[0].value;
         }
+        qemu_free(xsave);
     } else {
         kvm_get_fpu(env, &fpu);
         env->fpstt = (fpu.fsw >> 11) & 7;
