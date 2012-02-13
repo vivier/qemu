@@ -2649,6 +2649,13 @@ extern int disable_KSM;
  * it even without NPT/EPT).
  */
 #define PREFERRED_RAM_ALIGN (2*1024*1024)
+#define CONFIG_VALGRIND
+#endif
+
+#if defined(CONFIG_VALGRIND)
+static int running_on_valgrind = -1;
+#else
+#  define running_on_valgrind 0
 #endif
 
 static ram_addr_t find_ram_offset(ram_addr_t size)
@@ -2700,6 +2707,15 @@ ram_addr_t qemu_ram_alloc_from_ptr(DeviceState *dev, const char *name,
 {
     RAMBlock *new_block, *block;
 
+#if defined(CONFIG_VALGRIND)
+    if (running_on_valgrind < 0) {
+        /* First call, test whether we are running on Valgrind.
+           This is a substitute for RUNNING_ON_VALGRIND from valgrind.h. */
+        const char *ld = getenv("LD_PRELOAD");
+        running_on_valgrind = (ld != NULL && strstr(ld, "vgpreload"));
+    }
+#endif
+
     size = TARGET_PAGE_ALIGN(size);
     new_block = qemu_mallocz(sizeof(*new_block));
 
@@ -2734,6 +2750,9 @@ ram_addr_t qemu_ram_alloc_from_ptr(DeviceState *dev, const char *name,
 #else
 #ifdef PREFERRED_RAM_ALIGN
 	    if (size >= PREFERRED_RAM_ALIGN)
+                if (running_on_valgrind)
+		    new_block->host = qemu_vmalloc(size);
+                else
 		    new_block->host = qemu_memalign(PREFERRED_RAM_ALIGN, size);
 	    else
 #endif 
