@@ -935,7 +935,7 @@ void kvm_arch_load_regs(CPUState *env)
 {
     struct kvm_regs regs;
     struct kvm_fpu fpu;
-    struct kvm_xsave* xsave;
+    struct kvm_xsave* xsave = env->kvm_xsave_buf;
     struct kvm_xcrs xcrs;
     struct kvm_sregs sregs;
     struct kvm_msr_entry msrs[100];
@@ -965,10 +965,9 @@ void kvm_arch_load_regs(CPUState *env)
 
     kvm_set_regs(env, &regs);
 
-    if (kvm_check_extension(kvm_state, KVM_CAP_XSAVE)) {
+    if (xsave) {
         uint16_t cwd, swd, twd, fop;
 
-        xsave = qemu_memalign(4096, sizeof(struct kvm_xsave));
         memset(xsave, 0, sizeof(struct kvm_xsave));
         cwd = swd = twd = fop = 0;
         swd = env->fpus & ~(7 << 11);
@@ -994,7 +993,6 @@ void kvm_arch_load_regs(CPUState *env)
             xcrs.xcrs[0].value = env->xcr0;
             kvm_set_xcrs(env, &xcrs);
         }
-        qemu_free(xsave);
     } else {
         memset(&fpu, 0, sizeof fpu);
         fpu.fsw = env->fpus & ~(7 << 11);
@@ -1140,7 +1138,7 @@ void kvm_arch_save_regs(CPUState *env)
 {
     struct kvm_regs regs;
     struct kvm_fpu fpu;
-    struct kvm_xsave* xsave;
+    struct kvm_xsave* xsave = env->kvm_xsave_buf;
     struct kvm_xcrs xcrs;
     struct kvm_sregs sregs;
     struct kvm_msr_entry msrs[100];
@@ -1171,9 +1169,8 @@ void kvm_arch_save_regs(CPUState *env)
     env->eflags = regs.rflags;
     env->eip = regs.rip;
 
-    if (kvm_check_extension(kvm_state, KVM_CAP_XSAVE)) {
+    if (xsave) {
         uint16_t cwd, swd, twd, fop;
-        xsave = qemu_memalign(4096, sizeof(struct kvm_xsave));
         kvm_get_xsave(env, xsave);
         cwd = (uint16_t)xsave->region[0];
         swd = (uint16_t)(xsave->region[0] >> 16);
@@ -1197,7 +1194,6 @@ void kvm_arch_save_regs(CPUState *env)
             if (xcrs.xcrs[0].xcr == 0)
                 env->xcr0 = xcrs.xcrs[0].value;
         }
-        qemu_free(xsave);
     } else {
         kvm_get_fpu(env, &fpu);
         env->fpstt = (fpu.fsw >> 11) & 7;
@@ -1489,6 +1485,10 @@ int kvm_arch_init_vcpu(CPUState *cenv)
 #endif
 
     qemu_add_vm_change_state_handler(cpu_update_state, cenv);
+
+    if (kvm_check_extension(kvm_state, KVM_CAP_XSAVE)) {
+        cenv->kvm_xsave_buf = qemu_memalign(4096, sizeof(struct kvm_xsave));
+    }
 
     return 0;
 }
