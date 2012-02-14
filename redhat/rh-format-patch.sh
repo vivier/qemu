@@ -107,9 +107,9 @@ check_patch_part()
             if [ "x$cl" == "x1" ] || [ "x$cl_has_info" == "x1" ]; then
                 return 0
             fi
-            echo "Missing $part in $file and overall $part is not present in the cover letter"
+            echo "... missing $part (not in cover letter)"
         else
-            echo "Missing $part in $file"
+            echo "... missing $part"
         fi
 
         if [ "x$interactive" == "x0" ]; then
@@ -476,12 +476,12 @@ validate_files() {
    do
      echo "Validating $file ..."
      if [ ! -f "$file" ]; then
-       bail "File $file does not exist"
+       bail "... does not exist!"
      fi
      if check_patch $file; then
-         echo "File $file validated successfully"
+         echo "... ok"
      else
-         echo "There were errors during validation of $file"
+         echo "... errors!"
          was_error=1
      fi
    done
