@@ -390,7 +390,7 @@ typedef struct QCowAIOCB {
 
 static void qcow2_aio_cancel(BlockDriverAIOCB *blockacb)
 {
-    QCowAIOCB *acb = (QCowAIOCB *)blockacb;
+    QCowAIOCB *acb = container_of(blockacb, QCowAIOCB, common);
     if (acb->hd_aiocb)
         bdrv_aio_cancel(acb->hd_aiocb);
     qemu_aio_release(acb);
