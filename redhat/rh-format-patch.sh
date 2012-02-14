@@ -579,15 +579,13 @@ files=$(git format-patch --subject-prefix="$subject_prefix" $params --output-dir
 cd $tempdir
 
 if [ "x$is_series" == "x1" ]; then
-    if [ "x$interactive" == "x1" ]; then
-        echo "Opening editor ($EDITOR) for cover-letter"
-        tmp=( $files )
-        $EDITOR ${tmp[0]}
-    else
-        echo "Interactive mode disabled. Please edit your cover-letter manually."
-        echo "Patch directory: $tempdir"
-        exit 0
-    fi
+    # For series, force interactive mode from now on since they have to edit
+    # the cover letter anyway
+    interactive=1
 fi
+
+echo "Opening editor ($EDITOR) for cover-letter"
+tmp=( $files )
+$EDITOR ${tmp[0]}
 
 validate_files "$tempdir" "$files"
