@@ -144,7 +144,9 @@ static int bochs_open(BlockDriverState *bs, const char *filename, int flags)
       bs->total_sectors = le64_to_cpu(bochs.extra.redolog.disk) / 512;
     }
 
-    lseek(s->fd, le32_to_cpu(bochs.header), SEEK_SET);
+    if (lseek(s->fd, le32_to_cpu(bochs.header), SEEK_SET) == (off_t)-1) {
+        goto fail;
+    }
 
     s->catalog_size = le32_to_cpu(bochs.extra.redolog.catalog);
     s->catalog_bitmap = qemu_malloc(s->catalog_size * 4);
@@ -195,7 +197,10 @@ static inline int seek_to_sector(BlockDriverState *bs, int64_t sector_num)
 //	bitmap_offset, block_offset);
 
     // read in bitmap for current extent
-    lseek(s->fd, bitmap_offset + (extent_offset / 8), SEEK_SET);
+    if (lseek(s->fd, bitmap_offset + (extent_offset / 8), SEEK_SET) ==
+        (off_t)-1) {
+        return -1;
+    }
 
     if (read(s->fd, &bitmap_entry, 1) != 1)
         return -1;
@@ -207,7 +212,9 @@ static inline int seek_to_sector(BlockDriverState *bs, int64_t sector_num)
 	return -1; // not allocated
     }
 
-    lseek(s->fd, block_offset, SEEK_SET);
+    if (lseek(s->fd, block_offset, SEEK_SET) == (off_t)-1) {
+        return -1;
+    }
 
     return 0;
 }
