@@ -678,6 +678,18 @@ static int vmdk_write(BlockDriverState *bs, int64_t sector_num,
     return 0;
 }
 
+static coroutine_fn int vmdk_co_write(BlockDriverState *bs, int64_t sector_num,
+                                      const uint8_t *buf, int nb_sectors)
+{
+    int ret;
+    BDRVVmdkState *s = bs->opaque;
+    qemu_co_mutex_lock(&s->lock);
+    ret = vmdk_write(bs, sector_num, buf, nb_sectors);
+    qemu_co_mutex_unlock(&s->lock);
+    return ret;
+}
+
+
 static int vmdk_create(const char *filename, QEMUOptionParameter *options)
 {
     int fd, i;
@@ -868,7 +880,7 @@ static BlockDriver bdrv_vmdk = {
     .bdrv_probe		= vmdk_probe,
     .bdrv_open      = vmdk_open,
     .bdrv_read      = vmdk_co_read,
-    .bdrv_write		= vmdk_write,
+    .bdrv_write     = vmdk_co_write,
     .bdrv_close		= vmdk_close,
     .bdrv_create	= vmdk_create,
     .bdrv_flush		= vmdk_flush,
