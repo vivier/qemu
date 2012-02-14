@@ -474,19 +474,13 @@ send_patches()
     local files="$3"
     local dryrun=
 
-    if [ -z "$files" ]; then
-        patches="*.patch"
-    else
-        patches="$files"
-    fi
-
     if [ "$send" == 0 ]; then
         dryrun=--dry-run
     fi
     if [ -z "$LISTADDRESS" ]; then
-        git send-email $patches --suppress-cc=all --no-format-patch $dryrun
+        git send-email $files --suppress-cc=all --no-format-patch $dryrun
     else
-        git send-email $patches --suppress-cc=all --no-format-patch $dryrun \
+        git send-email $files --suppress-cc=all --no-format-patch $dryrun \
           --to=$LISTADDRESS
     fi
 
@@ -653,6 +647,6 @@ if [ "x$was_error" == "x1" ]; then
     bail "Error(s) occured, please check the output. Messages can be found in $tempdir"
 fi
 
-send_patches "$send" "$tempdir"
+send_patches "$send" "$tempdir" "$files"
 
 echo "All done"
