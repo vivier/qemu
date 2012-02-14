@@ -72,6 +72,8 @@ static int coroutine_fn bdrv_co_writev_em(BlockDriverState *bs,
                                          int64_t sector_num, int nb_sectors,
                                          QEMUIOVector *iov);
 static int coroutine_fn bdrv_co_flush_em(BlockDriverState *bs);
+static int coroutine_fn bdrv_co_do_readv(BlockDriverState *bs,
+    int64_t sector_num, int nb_sectors, QEMUIOVector *qiov);
 
 static QTAILQ_HEAD(, BlockDriverState) bdrv_states =
     QTAILQ_HEAD_INITIALIZER(bdrv_states);
@@ -1202,12 +1204,13 @@ int bdrv_pwrite_sync(BlockDriverState *bs, int64_t offset,
     return 0;
 }
 
-int coroutine_fn bdrv_co_readv(BlockDriverState *bs, int64_t sector_num,
-    int nb_sectors, QEMUIOVector *qiov)
+/*
+ * Handle a read request in coroutine context
+ */
+static int coroutine_fn bdrv_co_do_readv(BlockDriverState *bs,
+    int64_t sector_num, int nb_sectors, QEMUIOVector *qiov)
 {
     BlockDriver *drv = bs->drv;
-
-    trace_bdrv_co_readv(bs, sector_num, nb_sectors);
 
     if (!drv) {
         return -ENOMEDIUM;
@@ -1219,12 +1222,21 @@ int coroutine_fn bdrv_co_readv(BlockDriverState *bs, int64_t sector_num,
     return drv->bdrv_co_readv(bs, sector_num, nb_sectors, qiov);
 }
 
-int coroutine_fn bdrv_co_writev(BlockDriverState *bs, int64_t sector_num,
+int coroutine_fn bdrv_co_readv(BlockDriverState *bs, int64_t sector_num,
     int nb_sectors, QEMUIOVector *qiov)
 {
-    BlockDriver *drv = bs->drv;
+    trace_bdrv_co_readv(bs, sector_num, nb_sectors);
 
-    trace_bdrv_co_writev(bs, sector_num, nb_sectors);
+    return bdrv_co_do_readv(bs, sector_num, nb_sectors, qiov);
+}
+
+/*
+ * Handle a write request in coroutine context
+ */
+static int coroutine_fn bdrv_co_do_writev(BlockDriverState *bs,
+    int64_t sector_num, int nb_sectors, QEMUIOVector *qiov)
+{
+    BlockDriver *drv = bs->drv;
 
     if (!bs->drv) {
         return -ENOMEDIUM;
@@ -1245,6 +1257,14 @@ int coroutine_fn bdrv_co_writev(BlockDriverState *bs, int64_t sector_num,
     }
 
     return drv->bdrv_co_writev(bs, sector_num, nb_sectors, qiov);
+}
+
+int coroutine_fn bdrv_co_writev(BlockDriverState *bs, int64_t sector_num,
+    int nb_sectors, QEMUIOVector *qiov)
+{
+    trace_bdrv_co_writev(bs, sector_num, nb_sectors);
+
+    return bdrv_co_do_writev(bs, sector_num, nb_sectors, qiov);
 }
 
 /**
