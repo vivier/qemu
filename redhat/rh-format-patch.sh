@@ -94,40 +94,24 @@ check_patch_part()
 
     if ! $funcname "$file"; then
         if [ "x$is_series" == "x1" ]; then
-            if [ "x$cl" == "x0" ] && [ "x$cl_has_info" == "x0" ]; then
-                echo "Missing $part in $file and overall $part is not present in the cover letter"
-
-                if [ "x$interactive" == "x1" ]; then
-                    q=$(askuser_bool "Do you want to manually edit the file?" "y")
-                    if [ "x$q" == "x1" ]; then
-                        $EDITOR $file
-                        check_patch $file $is_series $interactive
-                    else
-                        was_error=1
-                    fi
-                else
-                    was_error=1
-                fi
+            if [ "x$cl" == "x1" ] || [ "x$cl_has_info" == "x1" ]; then
+                return
             fi
-            ok=1
+            echo "Missing $part in $file and overall $part is not present in the cover letter"
         else
-            ok=0
+            echo "Missing $part in $file"
         fi
 
-        if [ "x$ok" != "x1" ]; then
-            echo "Missing $part in $file"
-
-            if [ "x$interactive" == "x1" ]; then
-                q=$(askuser_bool "Do you want to manually edit the file?" "y")
-                if [ "x$q" == "x1" ]; then
-                    $EDITOR $file
-                    check_patch $file $is_series $interactive
-                else
-                    was_error=1
-                fi
+        if [ "x$interactive" == "x1" ]; then
+            q=$(askuser_bool "Do you want to manually edit the file?" "y")
+            if [ "x$q" == "x1" ]; then
+                $EDITOR $file
+                check_patch $file $is_series $interactive
             else
                 was_error=1
             fi
+        else
+            was_error=1
         fi
     else
         if [ "x$is_series" == "x1" ]; then
