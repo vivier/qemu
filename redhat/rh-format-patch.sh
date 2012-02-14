@@ -187,23 +187,14 @@ get_component_git()
 
 get_subject_prefix()
 {
-    local patch=false
     local tag=false
     local product=false
     local package=false
     local fmt=$FORMAT
     local ver=$1
+    local top_commit=$2
 
-    if [ "x$data" == "x" ]; then
-      data="${passthru_params[@]}"
-    fi
-    if [ "x$data" == "x" ]; then
-      data="-$num_patches"
-    fi
-
-    # I had to rewrite it as the version was not valid since we don't have RHEL-6.7 yet
-    patch=$(git format-patch --stdout "$data" | awk 'NR==1{print $2}')
-    tag=$(git describe --tags --match '*.el*'  | awk '{ split($0, a, "el"); split(a[2], b, "-"); print a[1]"el"b[1] }')
+    tag=$(git describe $top_commit --tags --match '*.el*'  | awk '{ split($0, a, "el"); split(a[2], b, "-"); print a[1]"el"b[1] }')
     product=`echo $tag | sed '
         s,.*el,RHEL-,;                 # remove package name
         s,\..*,,;                      # remove z-stream version
@@ -605,6 +596,7 @@ if test "${#validate_file[@]}" -gt 0; then
 fi
 
 num_patches=$(git format-patch --stdout ${passthru_params[@]} |  grep -c '^From [^:]* [0-9][0-9]:[0-9][0-9]:[0-9][0-9] [0-9][0-9][0-9]')
+top_commit=$(git format-patch --cover-letter --stdout ${passthru_params[@]} | awk 'NR==1{print $2}')
 if [ "x$debug" = "x1" ]; then
     echo "Num patches: $num_patches"
 fi
@@ -641,7 +633,7 @@ if [ "x$bz" != "x" -a "x$skip_query" != "x1" ]; then
 fi
 
 if [ -z "$subject_prefix" ]; then
-    get_subject_prefix $version
+    get_subject_prefix $version $top_commit
 fi
 
 if [ "x$interactive" == "x1" ]; then
@@ -658,7 +650,7 @@ fi
 
 tempdir=$(mktemp -d)
 
-files=$(git format-patch --subject-prefix="$subject_prefix" $params --output-directory=$tempdir -$num_patches)
+files=$(git format-patch --subject-prefix="$subject_prefix" $params --output-directory=$tempdir -$num_patches $top_commit)
 cd $tempdir
 
 if [ "x$is_series" == "x1" ]; then
