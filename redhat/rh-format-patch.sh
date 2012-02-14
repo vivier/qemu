@@ -410,30 +410,6 @@ usage()
     exit 0
 }
 
-split_parts() {
-    local str="$1"
-    local num=0
-    local i
-
-    arr=( $str )
-
-    SAVEIFS=$IFS
-    IFS="-"
-    arr=( $str )
-    IFS=$SAVEIFS
-
-    for i in "${arr[@]}"
-    do
-        let "num=$num+1"
-
-        if [ "x$num" == "x1" ]; then
-           part_min=$i
-        elif [ "x$num" == "x2" ]; then
-           part_max=$i
-        fi
-    done
-}
-
 parse_params()
 {
     local array=( "$@" )
