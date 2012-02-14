@@ -599,8 +599,9 @@ if test "${#validate_file[@]}" -gt 0; then
 
    if [ "x$exitVal" != "x0" ]; then
      echo "Errors occurred while validating files. Please fix them first"
+   else
+     send_patches "$send" "" "$files"
    fi
-   send_patches "$send" "" "$files"
    exit "$exitVal"
 fi
 
