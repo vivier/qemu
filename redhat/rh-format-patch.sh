@@ -95,24 +95,22 @@ check_patch_part()
     if ! $funcname "$file"; then
         if [ "x$is_series" == "x1" ]; then
             if [ "x$cl" == "x1" ] || [ "x$cl_has_info" == "x1" ]; then
-                return
+                return 0
             fi
             echo "Missing $part in $file and overall $part is not present in the cover letter"
         else
             echo "Missing $part in $file"
         fi
 
-        if [ "x$interactive" == "x1" ]; then
-            q=$(askuser_bool "Do you want to manually edit the file?" "y")
-            if [ "x$q" == "x1" ]; then
-                $EDITOR $file
-                check_patch $file $is_series $interactive
-            else
-                was_error=1
-            fi
-        else
-            was_error=1
+        if [ "x$interactive" == "x0" ]; then
+            return 1
         fi
+        q=$(askuser_bool "Do you want to manually edit the file?" "y")
+        if [ "x$q" == "x" ]; then
+            return 1
+        fi
+        $EDITOR $file
+        check_patch $file $is_series $interactive
     else
         if [ "x$is_series" == "x1" ]; then
             if [ "x$cl" == "x1" ]; then
@@ -120,6 +118,7 @@ check_patch_part()
                  eval $tmp=1
             fi
         fi
+        return 0
     fi
 }
 
@@ -128,15 +127,16 @@ check_patch()
     local file="$1"
     local is_series="$2"
     local interactive=$3
+    local was_error=0
 
-    # Check for bugzilla number information
-    check_patch_part $file $is_series $interactive "check_bugzilla_number" "bugzilla number" "bz"
+    check_patch_part $file $is_series $interactive "check_bugzilla_number" "bugzilla number" "bz" || was_error=1
+    if test $interactive = 1 && test $was_error = 1; then return 1; fi
 
-    # Check for upstream relationship
-    check_patch_part $file $is_series $interactive "check_upstream_relationship" "upstream relationship" "upstream"
+    check_patch_part $file $is_series $interactive "check_upstream_relationship" "upstream relationship" "upstream" || was_error=1
+    if test $interactive = 1 && test $was_error = 1; then return 1; fi
 
-    # Check for brew
-    check_patch_part $file $is_series $interactive "check_brew_id" "brew information" "brew_id"
+    check_patch_part $file $is_series $interactive "check_brew_id" "brew information" "brew_id" || was_error=1
+    return $was_error
 }
 
 get_component_git()
@@ -466,7 +466,6 @@ send_patches()
 }
 
 send=0
-was_error=0
 is_series=0
 cl_has_bz=0
 cl_has_upstream=0
@@ -500,29 +499,28 @@ if test "${#validate_file[@]}" -gt 0; then
    if test "${#validate_file[@]}" -gt 1; then
      is_series=1
    fi
-   exitVal=0
 
+   was_error=0
    for file in ${validate_file[@]}
    do
      echo "Validating $file ..."
      if [ ! -f "$file" ]; then
        bail "File $file does not exist"
      fi
-     check_patch $file $is_series $interactive
-     if [ "x$was_error" == "x1" ]; then
-         echo "There were errors during validation of $file"
-         exitVal=1
-     else
+     if check_patch $file $is_series $interactive; then
          echo "File $file validated successfully"
+     else
+         echo "There were errors during validation of $file"
+         was_error=1
      fi
    done
 
-   if [ "x$exitVal" != "x0" ]; then
+   if [ "x$was_error" != "x0" ]; then
      echo "Errors occurred while validating files. Please fix them first"
    else
      send_patches "$send" "" "${validate_file[*]}"
    fi
-   exit "$exitVal"
+   exit $?
 fi
 
 num_patches=$(git format-patch --stdout ${passthru_params[@]} |  grep -c '^From [^:]* [0-9][0-9]:[0-9][0-9]:[0-9][0-9] [0-9][0-9][0-9]')
@@ -594,9 +592,12 @@ if [ "x$is_series" == "x1" ]; then
     fi
 fi
 
+was_error=0
 for file in $files
 do
-    check_patch $file $is_series $interactive
+    if check_patch $file $is_series $interactive; then
+        was_error=1
+    fi
 done
 
 if [ "x$was_error" == "x1" ]; then
