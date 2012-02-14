@@ -538,14 +538,6 @@ send=0
 was_error=0
 parse_params "$@"
 
-if [ ${#validate_file[@]} -gt 0 -a "x$send" == "x0" -a "x$interactive" != "x" ]; then
-    q=$(askuser_bool "File validation and sending are supposed to be used together. Would you like to enable both?" "y")
-
-    if [ "x$q" == "x1" ]; then
-        send=1
-    fi
-fi
-
 if [ "x$interactive" == "x" ]; then
     interactive=0
 fi
