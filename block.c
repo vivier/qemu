@@ -2184,7 +2184,7 @@ static void multiwrite_user_cb(MultiwriteCB *mcb)
             qemu_iovec_destroy(mcb->callbacks[i].free_qiov);
         }
         qemu_free(mcb->callbacks[i].free_qiov);
-        qemu_free(mcb->callbacks[i].free_buf);
+        qemu_vfree(mcb->callbacks[i].free_buf);
     }
 }
 
