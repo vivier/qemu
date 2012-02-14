@@ -849,9 +849,9 @@ static void vmdk_close(BlockDriverState *bs)
     g_free(s->l2_cache);
 }
 
-static int vmdk_flush(BlockDriverState *bs)
+static coroutine_fn int vmdk_co_flush(BlockDriverState *bs)
 {
-    return bdrv_flush(bs->file);
+    return bdrv_co_flush(bs->file);
 }
 
 
@@ -883,7 +883,7 @@ static BlockDriver bdrv_vmdk = {
     .bdrv_write     = vmdk_co_write,
     .bdrv_close		= vmdk_close,
     .bdrv_create	= vmdk_create,
-    .bdrv_flush		= vmdk_flush,
+    .bdrv_co_flush  = vmdk_co_flush,
     .bdrv_is_allocated	= vmdk_is_allocated,
 
     .create_options = vmdk_create_options,
