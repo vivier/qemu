@@ -632,10 +632,24 @@ static void raw_close(BlockDriverState *bs)
 static int raw_truncate(BlockDriverState *bs, int64_t offset)
 {
     BDRVRawState *s = bs->opaque;
-    if (s->type != FTYPE_FILE)
-        return -ENOTSUP;
-    if (ftruncate(s->fd, offset) < 0)
+    struct stat st;
+
+    if (fstat(s->fd, &st)) {
         return -errno;
+    }
+
+    if (S_ISREG(st.st_mode)) {
+        if (ftruncate(s->fd, offset) < 0) {
+            return -errno;
+        }
+    } else if (S_ISCHR(st.st_mode) || S_ISBLK(st.st_mode)) {
+       if (offset > raw_getlength(bs)) {
+           return -EINVAL;
+       }
+    } else {
+        return -ENOTSUP;
+    }
+
     return 0;
 }
 
@@ -1060,6 +1074,7 @@ static BlockDriver bdrv_host_device = {
 
     .bdrv_read          = raw_read,
     .bdrv_write         = raw_write,
+    .bdrv_truncate      = raw_truncate,
     .bdrv_getlength	= raw_getlength,
 
     /* generic scsi device */
@@ -1156,6 +1171,7 @@ static BlockDriver bdrv_host_floppy = {
 
     .bdrv_read          = raw_read,
     .bdrv_write         = raw_write,
+    .bdrv_truncate      = raw_truncate,
     .bdrv_getlength	= raw_getlength,
 
     /* removable device support */
@@ -1252,6 +1268,7 @@ static BlockDriver bdrv_host_cdrom = {
 
     .bdrv_read          = raw_read,
     .bdrv_write         = raw_write,
+    .bdrv_truncate      = raw_truncate,
     .bdrv_getlength     = raw_getlength,
 
     /* removable device support */
@@ -1371,6 +1388,7 @@ static BlockDriver bdrv_host_cdrom = {
 
     .bdrv_read          = raw_read,
     .bdrv_write         = raw_write,
+    .bdrv_truncate      = raw_truncate,
     .bdrv_getlength     = raw_getlength,
 
     /* removable device support */
