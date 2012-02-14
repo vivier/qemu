@@ -112,21 +112,18 @@ check_patch_part()
             else
                 # BZ number is not in the cover-letter, check each patch in series
                 if [ "x$info_not_in_cl" == "x1" ]; then
-                    st=$($funcname $file $is_series)
-                    if [ "x$st" != "x0" ]; then
-                        echo "Missing $part in $file and overall $part is not present in the cover letter"
+                    echo "Missing $part in $file and overall $part is not present in the cover letter"
 
-                        if [ "x$interactive" == "x1" ]; then
-                            q=$(askuser_bool "Do you want to manually edit the file?" "y")
-                            if [ "x$q" == "x1" ]; then
-                                $EDITOR $file
-                                check_patch $file $is_series $interactive
-                            else
-                                was_error=1
-                            fi
+                    if [ "x$interactive" == "x1" ]; then
+                        q=$(askuser_bool "Do you want to manually edit the file?" "y")
+                        if [ "x$q" == "x1" ]; then
+                            $EDITOR $file
+                            check_patch $file $is_series $interactive
                         else
                             was_error=1
                         fi
+                    else
+                        was_error=1
                     fi
                 fi
                 ok=1
