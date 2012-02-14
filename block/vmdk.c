@@ -75,6 +75,8 @@ typedef struct BDRVVmdkState {
     uint32_t l2_cache_counts[L2_CACHE_SIZE];
 
     unsigned int cluster_sectors;
+
+    CoMutex lock;
     uint32_t parent_cid;
 } BDRVVmdkState;
 
@@ -425,6 +427,7 @@ static int vmdk_open(BlockDriverState *bs, int flags)
     }
 
     s->l2_cache = g_malloc(s->l2_size * L2_CACHE_SIZE * sizeof(uint32_t));
+    qemu_co_mutex_init(&s->lock);
     return 0;
  fail:
     g_free(s->l1_backup_table);

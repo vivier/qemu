@@ -34,6 +34,7 @@
 #include <unistd.h>
 
 typedef struct BDRVNBDState {
+    CoMutex lock;
     int sock;
     off_t size;
     size_t blocksize;
@@ -92,6 +93,8 @@ static int nbd_open(BlockDriverState *bs, const char* filename, int flags)
     s->sock = sock;
     s->size = size;
     s->blocksize = blocksize;
+
+    qemu_co_mutex_init(&s->lock);
 
     return 0;
 }
