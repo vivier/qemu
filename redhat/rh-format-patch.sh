@@ -21,6 +21,7 @@ if [ "x$EDITOR" == "x" ]; then
 fi
 
 # Global variables for communication with functions
+passthru_params=( )
 send=0
 is_series=0
 interactive=0
@@ -420,7 +421,7 @@ parse_params()
         elif [ "x$var" == "x--help" ]; then
             usage
         else
-            idarray=( "${idarray[@]}" "$var" )
+            passthru_params=( "${idarray[@]}" "$var" )
         fi
 
         let num=$num+$inc
@@ -428,8 +429,6 @@ parse_params()
             break
         fi
     done
-
-    passthru_params=${idarray[@]}
 }
 
 send_patches()
