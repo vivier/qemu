@@ -53,7 +53,7 @@ check_brew_id()
 
 askuser_bool()
 {
-    local ret=0
+    local ret ret2 opts a1 a2
     local question="$1"
     local default="$2"
 
@@ -72,11 +72,11 @@ askuser_bool()
     fi
 
     read -p "$question ($opts) " ui
-    if [ "x$ui" == "x$a1" -o "x$ui" == "x$a2" ]; then
-        ret=$ret2
+    if [ "$ui" == "$a1" ] || [ "$ui" == "$a2" ]; then
+        return $ret
+    else
+        return $ret2
     fi
-
-    echo $ret
 }
 
 check_patch_part()
@@ -111,8 +111,7 @@ check_patch_part()
         if [ "x$interactive" == "x0" ]; then
             return 1
         fi
-        q=$(askuser_bool "Do you want to manually edit the file?" "y")
-        if [ "x$q" == "x" ]; then
+        if ! askuser_bool "Do you want to manually edit the file?" "y"; then
             return 1
         fi
         $EDITOR $file
@@ -228,8 +227,7 @@ access_bz_login()
             bail "You have to set up your bugzilla username and password in the interactive mode (run with --interactive flag)"
         fi
 
-        q=$(askuser_bool "Do you want to create it?" "n")
-        if [ "x$q" == "x1" ]; then
+        if askuser_bool "Do you want to create it?" "n"; then
             echo -e "url=https://bugzilla.redhat.com\nusername=<your-bugzilla-username>\npassword=<your-password>" > $config
             $EDITOR $config
         else
@@ -322,8 +320,7 @@ check_patch_count()
 {
     local num="$1"
 
-    q=$(askuser_bool "Detected patch count is $num. Is that correct?" "y")
-    if [ "x$q" == "x0" ]; then
+    if ! askuser_bool "Detected patch count is $num. Is that correct?" "y"; then
         read -p "Please enter a valid number (q for quit): " num
 
         if [ "x$num" == "xq" ]; then
@@ -553,8 +550,7 @@ if [ "x$interactive" == "x1" ]; then
         echo "Bug number: $bz"
     fi
 
-    qbz=$(askuser_bool "Do you want to query bugzilla for information?" "y")
-    if [ "x$qbz" == "x0" ]; then
+    if ! askuser_bool "Do you want to query bugzilla for information?" "y"; then
         skip_query=1
     fi
 
