@@ -1272,6 +1272,13 @@ static int qcow2_make_empty(BlockDriverState *bs)
     return 0;
 }
 
+static int qcow2_discard(BlockDriverState *bs, int64_t sector_num,
+    int nb_sectors)
+{
+    return qcow2_discard_clusters(bs, sector_num << BDRV_SECTOR_BITS,
+        nb_sectors);
+}
+
 /* XXX: put compressed sectors first, then all the cluster aligned
    tables to avoid losing bytes in alignment */
 static int qcow2_write_compressed(BlockDriverState *bs, int64_t sector_num,
@@ -1501,6 +1508,7 @@ static BlockDriver bdrv_qcow2 = {
     .bdrv_aio_writev    = qcow2_aio_writev,
     .bdrv_aio_flush     = qcow2_aio_flush,
 
+    .bdrv_discard           = qcow2_discard,
     .bdrv_truncate          = qcow2_truncate,
     .bdrv_write_compressed  = qcow2_write_compressed,
 
