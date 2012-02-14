@@ -468,6 +468,33 @@ send_patches()
     fi
 }
 
+validate_files() {
+   local tempdir="$1"
+   local files="$2"
+   local was_error=0
+
+   for file in $files
+   do
+     echo "Validating $file ..."
+     if [ ! -f "$file" ]; then
+       bail "File $file does not exist"
+     fi
+     if check_patch $file; then
+         echo "File $file validated successfully"
+     else
+         echo "There were errors during validation of $file"
+         was_error=1
+     fi
+   done
+
+   if [ "x$was_error" != "x0" ]; then
+     echo "Errors occurred while validating files. Please fix them first"
+     return 1
+   else
+     send_patches "$tempdir" "$files"
+   fi
+}
+
 parse_params "$@"
 
 if [ "x$interactive" == "x" ]; then
@@ -498,26 +525,7 @@ if test "${#validate_file[@]}" -gt 0; then
      is_series=1
    fi
 
-   was_error=0
-   for file in ${validate_file[@]}
-   do
-     echo "Validating $file ..."
-     if [ ! -f "$file" ]; then
-       bail "File $file does not exist"
-     fi
-     if check_patch $file; then
-         echo "File $file validated successfully"
-     else
-         echo "There were errors during validation of $file"
-         was_error=1
-     fi
-   done
-
-   if [ "x$was_error" != "x0" ]; then
-     echo "Errors occurred while validating files. Please fix them first"
-   else
-     send_patches "" "${validate_file[*]}"
-   fi
+   validate_files "" "${validate_file[*]}"
    exit $?
 fi
 
@@ -590,18 +598,4 @@ if [ "x$is_series" == "x1" ]; then
     fi
 fi
 
-was_error=0
-for file in $files
-do
-    if check_patch $file; then
-        was_error=1
-    fi
-done
-
-if [ "x$was_error" == "x1" ]; then
-    bail "Error(s) occured, please check the output. Messages can be found in $tempdir"
-fi
-
-send_patches "$tempdir" "$files"
-
-echo "All done"
+validate_files "$tempdir" "$files"
