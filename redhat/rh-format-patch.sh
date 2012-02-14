@@ -22,9 +22,12 @@ fi
 
 # Global variables for communication with functions
 passthru_params=( )
+debug=0
+skip_query=0
 send=0
 is_series=0
 interactive=0
+version=1
 cl_has_bz=0
 cl_has_upstream=0
 cl_has_brew_id=0
@@ -493,15 +496,6 @@ validate_files() {
 
 parse_params "$@"
 
-if [ "x$interactive" == "x" ]; then
-    interactive=0
-fi
-
-# If version is not set then override to version 1
-if [ "x$version" == "x" ]; then
-    version="1"
-fi
-
 if [ "x$debug" == "x1" ]; then
     echo "Passthru params: ${passthru_params[@]}"
     echo "Interactive: $interactive"
@@ -554,6 +548,9 @@ if [ "x$interactive" == "x1" ]; then
     fi
 
     read -p "Enter the patch version (def. to 1): " version
+    if [ -z "$version" ]; then
+        version=1
+    fi
 fi
 
 if [ "x$bz" != "x" -a "x$skip_query" != "x1" ]; then
