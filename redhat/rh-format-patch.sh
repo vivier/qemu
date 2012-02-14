@@ -467,6 +467,10 @@ send_patches()
 
 send=0
 was_error=0
+is_series=0
+cl_has_bz=0
+cl_has_upstream=0
+cl_has_brew_id=0
 parse_params "$@"
 
 if [ "x$interactive" == "x" ]; then
@@ -491,17 +495,11 @@ if [ "x$total_params" == "x0" ]; then
     usage
 fi
 
-exitVal="-1"
 # Validate file(s)
 if test "${#validate_file[@]}" -gt 0; then
    if test "${#validate_file[@]}" -gt 1; then
      is_series=1
-   else
-     is_series=0
    fi
-   cl_has_bz=0
-   cl_has_upstream=0
-   cl_has_brew_id=0
    exitVal=0
 
    files=""
@@ -536,7 +534,6 @@ if [ "x$debug" = "x1" ]; then
 fi
 
 # Check for patch series
-is_series=0
 if [ "$num_patches" -gt 1 ]; then
     params="--numbered --cover-letter"
     is_series=1
@@ -599,9 +596,6 @@ if [ "x$is_series" == "x1" ]; then
     fi
 fi
 
-cl_has_bz=0
-cl_has_upstream=0
-cl_has_brew_id=0
 for file in $files
 do
     check_patch $file $is_series $interactive
