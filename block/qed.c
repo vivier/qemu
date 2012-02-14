@@ -1169,14 +1169,6 @@ static bool qed_start_allocating_write(QEDAIOCB *acb)
     }
     if (acb != QSIMPLEQ_FIRST(&s->allocating_write_reqs) ||
         s->allocating_write_reqs_plugged) {
-        /* Queuing an emulated synchronous write causes deadlock since
-         * currently outstanding requests are not in the current async context
-         * and their completion will never be invoked.  Once the block layer
-         * moves to truly asynchronous semantics this failure case will be
-         * eliminated.
-         */
-        assert(get_async_context_id() == 0);
-
         return false;
     }
     return true;
@@ -1311,9 +1303,7 @@ static void qed_aio_read_data(void *opaque, int ret,
     } else if (ret != QED_CLUSTER_FOUND) {
         BlockDriverCompletionFunc *cb = qed_aio_next_io;
 
-        /* See qed_start_allocating_write() for get_async_context_id() hack */
-        if (bs->backing_hd && (acb->flags & QED_AIOCB_COPY_ON_READ) &&
-            get_async_context_id() == 0) {
+        if (bs->backing_hd && (acb->flags & QED_AIOCB_COPY_ON_READ)) {
             if (!qed_start_allocating_write(acb)) {
                 qemu_iovec_reset(&acb->cur_qiov);
                 return; /* wait for current allocating write to complete */
