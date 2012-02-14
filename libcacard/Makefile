@@ -1,4 +1,5 @@
 -include ../config-host.mak
+-include $(SRC_PATH)/Makefile.objs
 -include $(SRC_PATH)/rules.mak
 
 # TODO: duplicate from Makefile, to be removed once Makefile.objs lands.
