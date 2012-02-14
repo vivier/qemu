@@ -20,6 +20,14 @@ if [ "x$EDITOR" == "x" ]; then
     EDITOR=$DEFAULT_EDITOR
 fi
 
+# Global variables for communication with functions
+send=0
+is_series=0
+interactive=0
+cl_has_bz=0
+cl_has_upstream=0
+cl_has_brew_id=0
+
 bail()
 {
     echo "Error: $1"
@@ -74,11 +82,9 @@ askuser_bool()
 check_patch_part()
 {
     local file=$1
-    local is_series=$2
-    local interactive=$3
-    local funcname="$4"
-    local part="$5"
-    local suffix=$6
+    local funcname="$2"
+    local part="$3"
+    local suffix=$4
     local cl=0
     local cl_has_info=0
 
@@ -110,7 +116,7 @@ check_patch_part()
             return 1
         fi
         $EDITOR $file
-        check_patch $file $is_series $interactive
+        check_patch $file
     else
         if [ "x$is_series" == "x1" ]; then
             if [ "x$cl" == "x1" ]; then
@@ -125,17 +131,15 @@ check_patch_part()
 check_patch()
 {
     local file="$1"
-    local is_series="$2"
-    local interactive=$3
     local was_error=0
 
-    check_patch_part $file $is_series $interactive "check_bugzilla_number" "bugzilla number" "bz" || was_error=1
+    check_patch_part $file "check_bugzilla_number" "bugzilla number" "bz" || was_error=1
     if test $interactive = 1 && test $was_error = 1; then return 1; fi
 
-    check_patch_part $file $is_series $interactive "check_upstream_relationship" "upstream relationship" "upstream" || was_error=1
+    check_patch_part $file "check_upstream_relationship" "upstream relationship" "upstream" || was_error=1
     if test $interactive = 1 && test $was_error = 1; then return 1; fi
 
-    check_patch_part $file $is_series $interactive "check_brew_id" "brew information" "brew_id" || was_error=1
+    check_patch_part $file "check_brew_id" "brew information" "brew_id" || was_error=1
     return $was_error
 }
 
@@ -433,9 +437,8 @@ parse_params()
 
 send_patches()
 {
-    local send="$1"
-    local tempdir="$2"
-    local files="$3"
+    local tempdir="$1"
+    local files="$2"
     local dryrun=
 
     if [ "$send" == 0 ]; then
@@ -465,11 +468,6 @@ send_patches()
     fi
 }
 
-send=0
-is_series=0
-cl_has_bz=0
-cl_has_upstream=0
-cl_has_brew_id=0
 parse_params "$@"
 
 if [ "x$interactive" == "x" ]; then
@@ -507,7 +505,7 @@ if test "${#validate_file[@]}" -gt 0; then
      if [ ! -f "$file" ]; then
        bail "File $file does not exist"
      fi
-     if check_patch $file $is_series $interactive; then
+     if check_patch $file; then
          echo "File $file validated successfully"
      else
          echo "There were errors during validation of $file"
@@ -518,7 +516,7 @@ if test "${#validate_file[@]}" -gt 0; then
    if [ "x$was_error" != "x0" ]; then
      echo "Errors occurred while validating files. Please fix them first"
    else
-     send_patches "$send" "" "${validate_file[*]}"
+     send_patches "" "${validate_file[*]}"
    fi
    exit $?
 fi
@@ -595,7 +593,7 @@ fi
 was_error=0
 for file in $files
 do
-    if check_patch $file $is_series $interactive; then
+    if check_patch $file; then
         was_error=1
     fi
 done
@@ -604,6 +602,6 @@ if [ "x$was_error" == "x1" ]; then
     bail "Error(s) occured, please check the output. Messages can be found in $tempdir"
 fi
 
-send_patches "$send" "$tempdir" "$files"
+send_patches "$tempdir" "$files"
 
 echo "All done"
