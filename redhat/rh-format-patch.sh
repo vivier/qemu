@@ -172,7 +172,7 @@ check_patch()
     check_patch_part $file $is_series $interactive "check_upstream_relationship" "upstream relationship" "upstream"
 
     # Check for brew
-    check_patch_part $file $is_series $interactive "check_brew_id" "brew information" "brew"
+    check_patch_part $file $is_series $interactive "check_brew_id" "brew information" "brew_id"
 }
 
 get_component_git()
