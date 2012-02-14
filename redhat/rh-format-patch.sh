@@ -505,6 +505,7 @@ send_patches()
     local send="$1"
     local tempdir="$2"
     local files="$3"
+    local dryrun=
 
     if [ -z "$files" ]; then
         patches="*.patch"
@@ -512,25 +513,30 @@ send_patches()
         patches="$files"
     fi
 
-    if [ "$send" == 1 ]; then
-        if [ -z "$LISTADDRESS" ]; then
-            git send-email $patches --suppress-cc=all --no-format-patch --quiet
-        else
-            git send-email $patches --suppress-cc=all --no-format-patch --quiet \
-              --to=$LISTADDRESS
-        fi
+    if [ "$send" == 0 ]; then
+        dryrun=--dry-run
+    fi
+    if [ -z "$LISTADDRESS" ]; then
+        git send-email $patches --suppress-cc=all --no-format-patch $dryrun
+    else
+        git send-email $patches --suppress-cc=all --no-format-patch $dryrun \
+          --to=$LISTADDRESS
+    fi
 
-        if [ "x$?" != "x0" ]; then
-            bail "Error while sending patches"
-        fi
+    if [ "x$?" != "x0" ]; then
+        bail "Error while sending patches"
+    fi
 
+    if [ "$send" == 0 ]; then
         if [ ! -z "$tempdir" ]; then
             rm -rf $tempdir
         fi
 
         echo "Messages sent to $LISTADDRESS."
     else
-        echo "All OK. Message files saved to $tempdir"
+        if [ ! -z "$tempdir" ]; then
+            echo "All OK. Message files saved to $tempdir"
+        fi
     fi
 }
 
