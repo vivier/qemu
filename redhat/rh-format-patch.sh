@@ -80,11 +80,11 @@ check_patch_part()
     local part="$5"
     local suffix=$6
     local cl=0
-    local info_not_in_cl=-1
+    local cl_has_info=0
 
     if [ "x$is_series" == "x1" ]; then
         # Read relevant information if series
-        eval info_not_in_cl=$(echo \$clinfo_$suffix)
+        eval cl_has_info=$(echo \$cl_has_$suffix)
     fi
 
     # Check whether file is a cover-letter
@@ -96,11 +96,9 @@ check_patch_part()
         if [ "x$is_series" == "x1" ]; then
             if [ "x$cl" == "x1" ]; then
                 ok=1
-
-                info_not_in_cl=1
             else
                 # BZ number is not in the cover-letter, check each patch in series
-                if [ "x$info_not_in_cl" == "x1" ]; then
+                if [ "x$cl_has_info" == "x0" ]; then
                     echo "Missing $part in $file and overall $part is not present in the cover letter"
 
                     if [ "x$interactive" == "x1" ]; then
@@ -136,12 +134,13 @@ check_patch_part()
                 was_error=1
             fi
         fi
-    fi
-
-    if [ "x$is_series" == "x1" ]; then
-        # Write relevant information if series
-        tmp="clinfo_$suffix"
-        eval $tmp=$(echo $info_not_in_cl)
+    else
+        if [ "x$is_series" == "x1" ]; then
+            if [ "x$cl" == "x1" ]; then
+                 tmp="cl_has_$suffix"
+                 eval $tmp=1
+            fi
+        fi
     fi
 }
 
@@ -521,9 +520,9 @@ if test "${#validate_file[@]}" -gt 0; then
    else
      is_series=0
    fi
-   clinfo_bz=0
-   clinfo_upstream=0
-   clinfo_brew_id=0
+   cl_has_bz=0
+   cl_has_upstream=0
+   cl_has_brew_id=0
    exitVal=0
 
    files=""
@@ -621,9 +620,9 @@ if [ "x$is_series" == "x1" ]; then
     fi
 fi
 
-clinfo_bz=0
-clinfo_upstream=0
-clinfo_brew_id=0
+cl_has_bz=0
+cl_has_upstream=0
+cl_has_brew_id=0
 for file in $files
 do
     check_patch $file $is_series $interactive
