@@ -30,7 +30,7 @@ check_bugzilla_number()
 {
     local file="$1"
 
-    egrep -i '(Bugzilla|BZ)' $file > /dev/null
+    egrep -i "(Bugzilla|BZ).*$bz" $file > /dev/null
     echo $?
 }
 
