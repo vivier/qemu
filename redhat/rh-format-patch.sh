@@ -558,7 +558,6 @@ if [ "x$debug" == "x1" ]; then
     echo "Interactive: $interactive"
     echo "Bugzilla: $bz"
     echo "Send: $send"
-    echo "Num patches: $num_patches"
     echo "Params: $params"
     echo "Subject prefix: $subject_prefix"
 fi
@@ -606,6 +605,9 @@ if test "${#validate_file[@]}" -gt 0; then
 fi
 
 num_patches=$(git format-patch --stdout ${passthru_params[@]} |  grep -c '^From [^:]* [0-9][0-9]:[0-9][0-9]:[0-9][0-9] [0-9][0-9][0-9]')
+if [ "x$debug" = "x1" ]; then
+    echo "Num patches: $num_patches"
+fi
 
 # Check for patch series
 is_series=0
