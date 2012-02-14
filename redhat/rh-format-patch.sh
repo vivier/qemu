@@ -16,7 +16,7 @@ LISTADDRESS="minovotn@redhat.com"
 # Default editor when in interactive mode
 DEFAULT_EDITOR="vim"
 
-if [ "x$EDITOR" == "x" ]; then
+if [ -z "$EDITOR" ]; then
     EDITOR=$DEFAULT_EDITOR
 fi
 
@@ -58,25 +58,25 @@ check_brew_id()
 askuser_bool()
 {
     local ret ret2 opts a1 a2
-    local question="$1"
-    local default="$2"
+    local question=$1
+    local default=$2
 
-    if [ "x$default" == "xy" ]; then
-        a1="n"
-        a2="no"
+    if [ "$default" = y ]; then
+        a1=n
+        a2=no
         ret=1
         ret2=0
-        opts="Y/n"
+        opts=Y/n
     else
-        a1="y"
-        a2="yes"
+        a1=y
+        a2=yes
         ret=0
         ret2=1
-        opts="y/N"
+        opts=y/N
     fi
 
     read -p "$question ($opts) " ui
-    if [ "$ui" == "$a1" ] || [ "$ui" == "$a2" ]; then
+    if [ "$ui" = $a1 ] || [ "$ui" = $a2 ]; then
         return $ret
     else
         return $ret2
@@ -86,13 +86,13 @@ askuser_bool()
 check_patch_part()
 {
     local file=$1
-    local funcname="$2"
-    local part="$3"
+    local funcname=$2
+    local part=$3
     local suffix=$4
     local cl=0
     local cl_has_info=0
 
-    if [ "x$is_series" == "x1" ]; then
+    if [ $is_series = 1 ]; then
         # Read relevant information if series
         eval cl_has_info=$(echo \$cl_has_$suffix)
     fi
@@ -103,8 +103,8 @@ check_patch_part()
     fi
 
     if ! $funcname "$file"; then
-        if [ "x$is_series" == "x1" ]; then
-            if [ "x$cl" == "x1" ] || [ "x$cl_has_info" == "x1" ]; then
+        if [ $is_series = 1 ]; then
+            if [ $cl = 1 ] || [ $cl_has_info = 1 ]; then
                 return 0
             fi
             echo "... missing $part (not in cover letter)"
@@ -112,7 +112,7 @@ check_patch_part()
             echo "... missing $part"
         fi
 
-        if [ "x$interactive" == "x0" ]; then
+        if [ $interactive = 0 ]; then
             return 1
         fi
         if ! askuser_bool "Do you want to manually edit the file?" "y"; then
@@ -121,10 +121,9 @@ check_patch_part()
         $EDITOR $file
         check_patch $file
     else
-        if [ "x$is_series" == "x1" ]; then
-            if [ "x$cl" == "x1" ]; then
-                 tmp="cl_has_$suffix"
-                 eval $tmp=1
+        if [ $is_series = 1 ]; then
+            if [ $cl = 1 ]; then
+                eval cl_has_$suffix=1
             fi
         fi
         return 0
@@ -133,7 +132,7 @@ check_patch_part()
 
 check_patch()
 {
-    local file="$1"
+    local file=$1
     local was_error=0
 
     check_patch_part $file "check_bugzilla_number" "bugzilla number" "bz" || was_error=1
@@ -161,7 +160,6 @@ get_subject_prefix()
     local tag=false
     local product=false
     local package=false
-    local fmt=$FORMAT
     local ver=$1
     local top_commit=$2
 
@@ -174,7 +172,7 @@ get_subject_prefix()
 
     get_component_git
 
-    subject_prefix=${fmt//%PACKAGE%/$component_git}
+    subject_prefix=${FORMAT//%PACKAGE%/$component_git}
     subject_prefix=${subject_prefix//%PRODUCT%/$product}
     if [ "$ver" -gt 1 ]; then
         subject_prefix=${subject_prefix//%VERSION%/"v$ver "}
@@ -185,8 +183,7 @@ get_subject_prefix()
 
 access_pbz()
 {
-    local fmt="$FORMAT"
-    local bug="$1"
+    local bug=$1
     local ver=$2
 
     tmp=$(bugzilla query --oneline --bug_id=$bug | awk '/#/ { split($0, a, " "); if (substr(a[9], 0, 4) == "rhel") print a[4],"|",substr(a[9], 6, 10); }')
@@ -196,19 +193,19 @@ access_pbz()
 
     tmpArr=(${tmp//|/ })
 
-    bzcomp="${tmpArr[0]}"
-    bzproduct="${tmpArr[1]}"
+    bzcomp=${tmpArr[0]}
+    bzproduct=${tmpArr[1]}
 
     major=`echo $bzproduct | awk '{ split($0, x, "."); print x[1] }'`
     minor=`echo $bzproduct | awk '{ split($0, x, "."); print x[2] }'`
     is_zstream=`echo $bzproduct | awk '{ split($0, x, "."); print match(x[3], '/z/') }'`
 
-    if [ "x$is_zstream" == "x1" ]; then
-        append=".z"
+    if [ $is_zstream = 1 ]; then
+        append=.z
     fi
 
-    product="RHEL-$major.$minor$append"
-    subject_prefix=${fmt//%PACKAGE%/$bzcomp}
+    product=RHEL-$major.$minor$append
+    subject_prefix=${FORMAT//%PACKAGE%/$bzcomp}
     subject_prefix=${subject_prefix//%PRODUCT%/$product}
     if [ $ver -gt 1 ]; then
         subject_prefix=${subject_prefix//%VERSION%/"v$ver "}
@@ -221,7 +218,7 @@ access_pbz()
 
 access_bz_login()
 {
-    local bz="$1"
+    local bz=$1
 
     config=$HOME/.rh-bugzilla-login
     if [ ! -f $config ]; then
@@ -242,9 +239,8 @@ access_bz_login()
 
 access_dbz()
 {
-    local bz="$1"
-    local ver="$2"
-    local fmt="$FORMAT"
+    local bz=$1
+    local ver=$2
 
     access_bz_login "$1"
 
@@ -273,15 +269,15 @@ access_dbz()
         bail "Bug $bz refers to component $component_bz but git repository says it's for $component_git."
     fi
 
-    if [ "x$is_zstream" == "x1" ]; then
-        append=".z"
+    if [ $is_zstream = 1 ]; then
+        append=.z
     fi
 
-    product="RHEL-$major.$minor$append"
+    product=RHEL-$major.$minor$append
 
     rm -f $tmpfile
 
-    subject_prefix=${fmt//%PACKAGE%/$component_bz}
+    subject_prefix=${FORMAT//%PACKAGE%/$component_bz}
     subject_prefix=${subject_prefix//%PRODUCT%/$product}
     if [ "$ver" -gt 1 ]; then
         subject_prefix=${subject_prefix//%VERSION%/"v$ver "}
@@ -297,13 +293,13 @@ has_python_bugzilla() {
 
 access_bz()
 {
-    local bug="$1"
-    local ver="$2"
+    local bug=$1
+    local ver=$2
 
     if has_python_bugzilla; then
-        func="access_pbz"
+        func=access_pbz
     else
-        func="access_dbz";
+        func=access_dbz
     fi
 
     if [ ! -z "$func" ]; then
@@ -313,8 +309,8 @@ access_bz()
 
 get_bz_info()
 {
-    local bz="$1"
-    local ver="$2"
+    local bz=$1
+    local ver=$2
 
     echo "Accessing bugzilla information. This may take some time..."
     subject_prefix=$(access_bz "$bz" "$ver")
@@ -322,12 +318,12 @@ get_bz_info()
 
 check_patch_count()
 {
-    local num="$1"
+    local num=$1
 
     if ! askuser_bool "Detected patch count is $num. Is that correct?" "y"; then
         read -p "Please enter a valid number (q for quit): " num
 
-        if [ "x$num" == "xq" ]; then
+        if [ "$num" = q ]; then
             bail "Terminated by user"
         fi
 
@@ -388,18 +384,19 @@ parse_params()
     local min=0
 
     total_params=${#array[@]}
-    while [ "$num" -lt "$total_params" ]; do
+    while [ $num -lt $total_params ]; do
         var=${array[$num]}
         param=${array[$num+1]}
 
         inc=1
-        if [ "x$var" == "x--bug" ]; then
-            bz="$param"
-            inc=2
-        elif [ "x$var" == "x--validate-file" ]; then
+        case $var in
+        --bug)
+            bz=$param
+            inc=2 ;;
+        --validate-file)
             validate_file=( )
             let num=$num+1;
-            while [ "$num" -lt "$total_params" ]; do
+            while [ $num -lt $total_params ]; do
                 next=${array[$num]}
                 validate_file=( "${validate_file[@]}" "$next" )
                 let num=$num+1;
@@ -407,40 +404,38 @@ parse_params()
             if test "${#validate_file[@]}" = 0; then
               bail "Missing argument for --validate-file"
             fi
-            continue
-
-            let inc=$num+1
-        elif [ "x$var" == "x--interactive" ]; then
-            interactive=1
-        elif [ "x$var" == "x--version" ]; then
-            version="$param"
-            inc=2
-        elif [ "x$var" == "x--skip-bugzilla-query" ]; then
-            skip_query=1
-        elif [ "x$var" == "x--debug" ]; then
-            debug=1
-        elif [ "x$var" == "x--send" ]; then
-            send=1
-        elif [ "x$var" == "x--help" ]; then
-            usage
-        else
-            passthru_params=( "${idarray[@]}" "$var" )
-        fi
+            continue ;;
+        --interactive)
+            interactive=1 ;;
+        --version)
+            version=$param
+            inc=2 ;;
+        --skip-bugzilla-query)
+            skip_query=1 ;;
+        --debug)
+            debug=1 ;;
+        --send)
+            send=1 ;;
+        --help)
+            usage ;;
+        *)
+            passthru_params=( "${idarray[@]}" "$var" ) ;;
+        esac
 
         let num=$num+$inc
-        if [ "$num" -gt "$total_params" ]; then
-            break
+        if [ $num -gt $total_params ]; then
+            usage
         fi
     done
 }
 
 send_patches()
 {
-    local tempdir="$1"
-    local files="$2"
+    local tempdir=$1
+    local files=$2
     local dryrun=
 
-    if [ "$send" == 0 ]; then
+    if [ $send = 0 ]; then
         dryrun=--dry-run
     fi
     if [ -z "$LISTADDRESS" ]; then
@@ -454,28 +449,28 @@ send_patches()
         bail "Error while sending patches"
     fi
 
-    if [ "$send" == 0 ]; then
-        if [ ! -z "$tempdir" ]; then
+    if [ $send = 0 ]; then
+        if [ -n "$tempdir" ]; then
             rm -rf $tempdir
         fi
 
         echo "Messages sent to $LISTADDRESS."
     else
-        if [ ! -z "$tempdir" ]; then
+        if [ -n "$tempdir" ]; then
             echo "All OK. Message files saved to $tempdir"
         fi
     fi
 }
 
 validate_files() {
-   local tempdir="$1"
-   local files="$2"
+   local tempdir=$1
+   local files=$2
    local was_error=0
 
    for file in $files
    do
      echo "Validating $file ..."
-     if [ ! -f "$file" ]; then
+     if ! [ -f "$file" ]; then
        bail "... does not exist!"
      fi
      if check_patch $file; then
@@ -486,7 +481,7 @@ validate_files() {
      fi
    done
 
-   if [ "x$was_error" != "x0" ]; then
+   if [ $was_error != 0 ]; then
      echo "Errors occurred while validating files. Please fix them first"
      return 1
    else
@@ -496,7 +491,7 @@ validate_files() {
 
 parse_params "$@"
 
-if [ "x$debug" == "x1" ]; then
+if [ $debug = 1 ]; then
     echo "Passthru params: ${passthru_params[@]}"
     echo "Interactive: $interactive"
     echo "Bugzilla: $bz"
@@ -505,7 +500,7 @@ if [ "x$debug" == "x1" ]; then
     echo "Subject prefix: $subject_prefix"
 fi
 
-if [ "x$total_params" == "x0" ]; then
+if [ $total_params = 0 ]; then
     usage
 fi
 
@@ -521,22 +516,22 @@ fi
 
 num_patches=$(git format-patch --stdout ${passthru_params[@]} |  grep -c '^From [^:]* [0-9][0-9]:[0-9][0-9]:[0-9][0-9] [0-9][0-9][0-9]')
 top_commit=$(git format-patch --cover-letter --stdout ${passthru_params[@]} | awk 'NR==1{print $2}')
-if [ "x$debug" = "x1" ]; then
+if [ $debug = 1 ]; then
     echo "Num patches: $num_patches"
 fi
 
 # Check for patch series
-if [ "$num_patches" -gt 1 ]; then
+if [ $num_patches -gt 1 ]; then
     params="--numbered --cover-letter"
     is_series=1
 fi
 
-if [ "x$interactive" == "x1" ]; then
-    if [ "x$bz" == "x" ]; then
+if [ $interactive = 1 ]; then
+    if [ -z "$bz" ]; then
         read -p "Enter bugzilla number: " bz
 
         let "bz=$bz+0"
-        if [ "x$bz" == "x0" ]; then
+        if [ $bz = 0 ]; then
             bail "Invalid bugzilla number"
         fi
     else
@@ -553,7 +548,7 @@ if [ "x$interactive" == "x1" ]; then
     fi
 fi
 
-if [ "x$bz" != "x" -a "x$skip_query" != "x1" ]; then
+if [ -z "$bz" ] && [ $skip_query != 1 ]; then
     get_bz_info $bz $version
 fi
 
@@ -561,10 +556,10 @@ if [ -z "$subject_prefix" ]; then
     get_subject_prefix $version $top_commit
 fi
 
-if [ "x$interactive" == "x1" ]; then
+if [ $interactive = 1 ]; then
     check_patch_count $num_patches
 
-    if [ "x$patch_count_override" != "x" ]; then
+    if [ -n "$patch_count_override" ]; then
         num_patches=$patch_count_override
     fi
 fi
@@ -578,7 +573,7 @@ tempdir=$(mktemp -d)
 files=$(git format-patch --subject-prefix="$subject_prefix" $params --output-directory=$tempdir -$num_patches $top_commit)
 cd $tempdir
 
-if [ "x$is_series" == "x1" ]; then
+if [ $is_series = 1 ]; then
     # For series, force interactive mode from now on since they have to edit
     # the cover letter anyway
     interactive=1
