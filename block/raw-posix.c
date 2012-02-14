@@ -406,8 +406,12 @@ static int raw_pread(BlockDriverState *bs, int64_t offset,
                     size = s->aligned_buf_size;
 
                 ret = raw_pread_aligned(bs, offset, s->aligned_buf, size);
-                if (ret < 0)
+                if (ret < 0) {
                     return ret;
+                } else if (ret == 0) {
+                    fprintf(stderr, "raw_pread: read beyond end of file\n");
+                    abort();
+                }
 
                 size = ret;
                 if (size > count)
