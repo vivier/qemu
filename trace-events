@@ -159,3 +159,8 @@ disable qed_aio_write_data(void *s, void *acb, int ret, uint64_t offset, size_t 
 disable qed_aio_write_prefill(void *s, void *acb, uint64_t start, size_t len, uint64_t offset) "s %p acb %p start %"PRIu64" len %zu offset %"PRIu64""
 disable qed_aio_write_postfill(void *s, void *acb, uint64_t start, size_t len, uint64_t offset) "s %p acb %p start %"PRIu64" len %zu offset %"PRIu64""
 disable qed_aio_write_main(void *s, void *acb, int ret, uint64_t offset, size_t len) "s %p acb %p ret %d offset %"PRIu64" len %zu"
+
+# qemu-coroutine.c
+disable qemu_coroutine_enter(void *from, void *to, void *opaque) "from %p to %p opaque %p"
+disable qemu_coroutine_yield(void *from, void *to) "from %p to %p"
+disable qemu_coroutine_terminate(void *co) "self %p"
