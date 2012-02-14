@@ -28,28 +28,19 @@ bail()
 
 check_bugzilla_number()
 {
-    local file="$1"
-
-    egrep -i "(Bugzilla|BZ).*$bz" $file > /dev/null
-    echo $?
+    egrep -i "(Bugzilla|BZ).*$bz" "$1" > /dev/null
 }
 
 check_upstream_relationship()
 {
-    local file="$1"
-
     egrep -ie cherry \
-            -e '^Upstream( status:| relationship:| commit:)?' $file \
+            -e '^Upstream( status:| relationship:| commit:)?' "$1" \
          > /dev/null
-    echo $?
 }
 
 check_brew_id()
 {
-    local file="$1"
-
-    grep -i Brew $file > /dev/null
-    echo $?
+    grep -i Brew "$1" > /dev/null
 }
 
 askuser_bool()
@@ -97,13 +88,11 @@ check_patch_part()
     fi
 
     # Check whether file is a cover-letter
-    grep -i "^Subject: .*PATCH[^]]*00*/" $file > /dev/null; st=$?
-    if [ "x$st" == "x0" ]; then
+    if grep -i "^Subject: .*PATCH[^]]*00*/" $file > /dev/null; then
         cl=1
     fi
 
-    st=$($funcname $file $is_series)
-    if [ "x$st" != "x0" ]; then
+    if ! $funcname "$file"; then
         if [ "x$is_series" == "x1" ]; then
             if [ "x$cl" == "x1" ]; then
                 ok=1
