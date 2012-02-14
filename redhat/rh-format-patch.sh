@@ -502,7 +502,6 @@ if test "${#validate_file[@]}" -gt 0; then
    fi
    exitVal=0
 
-   files=""
    for file in ${validate_file[@]}
    do
      echo "Validating $file ..."
@@ -515,14 +514,13 @@ if test "${#validate_file[@]}" -gt 0; then
          exitVal=1
      else
          echo "File $file validated successfully"
-         files="$files $file"
      fi
    done
 
    if [ "x$exitVal" != "x0" ]; then
      echo "Errors occurred while validating files. Please fix them first"
    else
-     send_patches "$send" "" "$files"
+     send_patches "$send" "" "${validate_file[*]}"
    fi
    exit "$exitVal"
 fi
