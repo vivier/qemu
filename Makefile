@@ -164,7 +164,8 @@ trace-dtrace.o: trace-dtrace.dtrace $(GENERATED_HEADERS)
 
 ######################################################################
 
-qemu-img.o: qemu-img-cmds.h config-host.h
+qemu-img.o: qemu-img-cmds.h
+qemu-img.o qemu-tool.o qemu-nbd.o qemu-io.o: $(GENERATED_HEADERS)
 
 TOOLS_OBJ=qemu-tool.o $(shared-obj-y) $(trace-obj-y)
 
