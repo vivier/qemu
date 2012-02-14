@@ -27,6 +27,7 @@
 #include "block.h"
 #include "qemu-option.h"
 #include "qemu-queue.h"
+#include "qemu-coroutine.h"
 #include "qemu-timer.h"
 
 #define BLOCK_FLAG_ENCRYPT	1
@@ -78,6 +79,11 @@ struct BlockDriver {
         int64_t sector_num, BlockDriverCopyBackingCB *cb, void *opaque);
     int (*bdrv_discard)(BlockDriverState *bs, int64_t sector_num,
                         int nb_sectors);
+
+    int coroutine_fn (*bdrv_co_readv)(BlockDriverState *bs,
+        int64_t sector_num, int nb_sectors, QEMUIOVector *qiov);
+    int coroutine_fn (*bdrv_co_writev)(BlockDriverState *bs,
+        int64_t sector_num, int nb_sectors, QEMUIOVector *qiov);
 
     int (*bdrv_aio_multiwrite)(BlockDriverState *bs, BlockRequest *reqs,
         int num_reqs);
