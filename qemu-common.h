@@ -197,9 +197,6 @@ static inline void *g_realloc(void *ptr, size_t sz)
 
 /* end of malloc shims */
 
-void *get_mmap_addr(unsigned long size);
-
-
 void qemu_mutex_lock_iothread(void);
 void qemu_mutex_unlock_iothread(void);
 
