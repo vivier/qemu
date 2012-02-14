@@ -62,6 +62,8 @@ struct BlockDriver {
     void (*bdrv_close)(BlockDriverState *bs);
     int (*bdrv_create)(const char *filename, QEMUOptionParameter *options);
     int (*bdrv_flush)(BlockDriverState *bs);
+    int (*bdrv_discard)(BlockDriverState *bs, int64_t sector_num,
+                        int nb_sectors);
     int (*bdrv_is_allocated)(BlockDriverState *bs, int64_t sector_num,
                              int nb_sectors, int *pnum);
     int (*bdrv_set_key)(BlockDriverState *bs, const char *key);
@@ -75,16 +77,19 @@ struct BlockDriver {
         BlockDriverCompletionFunc *cb, void *opaque);
     BlockDriverAIOCB *(*bdrv_aio_flush)(BlockDriverState *bs,
         BlockDriverCompletionFunc *cb, void *opaque);
+    BlockDriverAIOCB *(*bdrv_aio_discard)(BlockDriverState *bs,
+        int64_t sector_num, int nb_sectors,
+        BlockDriverCompletionFunc *cb, void *opaque);
     BlockDriverAIOCB *(*bdrv_aio_copy_backing)(BlockDriverState *bs,
         int64_t sector_num, BlockDriverCopyBackingCB *cb, void *opaque);
-    int (*bdrv_discard)(BlockDriverState *bs, int64_t sector_num,
-                        int nb_sectors);
 
     int coroutine_fn (*bdrv_co_readv)(BlockDriverState *bs,
         int64_t sector_num, int nb_sectors, QEMUIOVector *qiov);
     int coroutine_fn (*bdrv_co_writev)(BlockDriverState *bs,
         int64_t sector_num, int nb_sectors, QEMUIOVector *qiov);
     int coroutine_fn (*bdrv_co_flush)(BlockDriverState *bs);
+    int coroutine_fn (*bdrv_co_discard)(BlockDriverState *bs,
+        int64_t sector_num, int nb_sectors);
 
     int (*bdrv_aio_multiwrite)(BlockDriverState *bs, BlockRequest *reqs,
         int num_reqs);
