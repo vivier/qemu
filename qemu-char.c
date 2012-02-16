@@ -122,6 +122,16 @@ static void char_write_unblocked(void *opaque)
 
 static void qemu_chr_event(CharDriverState *s, int event)
 {
+    /* Keep track if the char device is open */
+    switch (event) {
+        case CHR_EVENT_OPENED:
+            s->opened = 1;
+            break;
+        case CHR_EVENT_CLOSED:
+            s->opened = 0;
+            break;
+    }
+
     if (!s->chr_event)
         return;
     s->chr_event(s->handler_opaque, event);
@@ -228,6 +238,12 @@ void qemu_chr_add_handlers(CharDriverState *s,
         s->chr_update_read_handler(s);
 
     s->write_blocked = false;
+
+    /* We're connecting to an already opened device, so let's make sure we
+       also get the open event */
+    if (s->opened) {
+        qemu_chr_generic_open(s);
+    }
 }
 
 static int null_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
@@ -508,6 +524,9 @@ static CharDriverState *qemu_chr_open_mux(CharDriverState *drv)
     /* Frontend guest-open / -close notification is not support with muxes */
     chr->chr_guest_open = NULL;
     chr->chr_guest_close = NULL;
+
+    /* Muxes are always open on creation */
+    qemu_chr_generic_open(chr);
 
     return chr;
 }
