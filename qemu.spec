@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.15.1
-Release: 3.1%{?dist}
+Release: 3.2%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -96,8 +96,10 @@ BuildRequires: spice-server-devel >= 0.9.0
 %endif
 # For network block driver
 BuildRequires: libcurl-devel
+%if !0%{?rhel}
 # For rbd block driver
 BuildRequires: ceph-devel
+%endif
 # We need both because the 'stap' binary is probed for by configure
 BuildRequires: systemtap
 BuildRequires: systemtap-sdt-devel
@@ -367,6 +369,9 @@ sed -i.debug 's/"-g $CFLAGS"/"$CFLAGS"/g' configure
             --extra-cflags="%{optflags} -fPIE -DPIE" \
 %ifarch x86_64
             --enable-spice \
+%endif
+%if 0%{?rhel}
+            --disable-rbd \
 %endif
             --enable-trace-backend=dtrace \
             --disable-werror \
@@ -708,6 +713,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Feb 16 2012 Eduardo Habkost <ehabkost@redhat.com> - 2:0.15.1-3.2
+- Disable RBD support on RHEL builds
+- Resolves: bz#786927
+
 * Thu Feb 09 2012 Eduardo Habkost <ehabkost@redhat.com> - 2:0.15.1-3.1
 - Set ExclusiveArch: x86_64 to build it only on x86_64
 - Resolves: bz#786911
