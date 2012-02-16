@@ -77,6 +77,7 @@ struct CharDriverState {
     /* Are we in a blocked state? */
     bool write_blocked;
     int avail_connections;
+    int opened;
     QTAILQ_ENTRY(CharDriverState) next;
 };
 
