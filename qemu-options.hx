@@ -782,6 +782,19 @@ empty, with a @code{deny} policy. Thus no one will be allowed to
 use the VNC server until the ACLs have been loaded. This can be
 achieved using the @code{acl} monitor command.
 
+@item share=[allow-exclusive|force-shared|ignore]
+
+Set display sharing policy.  'allow-exclusive' allows clients to ask
+for exclusive access.  As suggested by the rfb spec this is
+implemented by dropping other connections.  Connecting multiple
+clients in parallel requires all clients asking for a shared session
+(vncviewer: -shared switch).  This is the default.  'force-shared'
+disables exclusive client access.  Useful for shared desktop sessions,
+where you don't want someone forgetting specify -shared disconnect
+everybody else.  'ignore' completely ignores the shared flag and
+allows everybody connect unconditionally.  Doesn't conform to the rfb
+spec but is traditional qemu behavior.
+
 @end table
 ETEXI
 
