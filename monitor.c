@@ -30,7 +30,9 @@
 #include "hw/pci.h"
 #include "hw/watchdog.h"
 #include "hw/loader.h"
+#ifdef CONFIG_SPICE
 #include "hw/qxl.h"
+#endif
 #include "gdbstub.h"
 #include "net.h"
 #include "net/slirp.h"
@@ -1314,8 +1316,12 @@ static int rhel6_qxl_do_screen_dump(Monitor *mon, const QDict *qdict, QObject **
 {
     int ret;
 
+#ifdef CONFIG_SPICE
     ret = rhel6_qxl_screendump(qdict_get_str(qdict, "id"),
                                qdict_get_str(qdict, "filename"));
+#else
+    ret = -1;
+#endif
     if (ret != 0) {
         qerror_report(QERR_UNDEFINED_ERROR);
         return -1;
