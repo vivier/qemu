@@ -1511,7 +1511,7 @@ static void qxl_dirty_surfaces(PCIQXLDevice *qxl)
     intptr_t vram_base;
     ram_addr_t vram_addr;
 
-    if (qxl->mode != QXL_MODE_NATIVE) {
+    if (qxl->mode != QXL_MODE_NATIVE && qxl->mode != QXL_MODE_COMPAT) {
         return;
     }
     surface0_addr = qxl->vga.vram_offset + qxl->shadow_rom.draw_area_offset;
