@@ -43,7 +43,7 @@ struct DeviceState {
     qemu_irq *gpio_in;
     QLIST_HEAD(, BusState) child_bus;
     int num_child_bus;
-    QLIST_ENTRY(DeviceState) sibling;
+    QTAILQ_ENTRY(DeviceState) sibling;
 };
 
 typedef void (*bus_dev_printfn)(Monitor *mon, DeviceState *dev, int indent);
@@ -70,7 +70,7 @@ struct BusState {
     const char *name;
     int allow_hotplug;
     int qdev_allocated;
-    QLIST_HEAD(, DeviceState) children;
+    QTAILQ_HEAD(, DeviceState) children;
     QLIST_ENTRY(BusState) sibling;
 };
 
