@@ -51,6 +51,8 @@ struct SCSIRequest {
     size_t            resid;
     SCSICommand       cmd;
     BlockDriverAIOCB  *aiocb;
+    QEMUSGList        *sg;
+    bool              dma_started;
     uint8_t sense[SCSI_SENSE_BUF_SIZE];
     uint32_t sense_len;
     bool enqueued;
@@ -111,6 +113,7 @@ struct SCSIBusInfo {
     void (*transfer_data)(SCSIRequest *req, uint32_t arg);
     void (*complete)(SCSIRequest *req, uint32_t arg, int32_t len);
     void (*cancel)(SCSIRequest *req);
+    QEMUSGList *(*get_sg_list)(SCSIRequest *req);
 };
 
 struct SCSIBus {
