@@ -259,6 +259,9 @@ static int scsi_handle_rw_error(SCSIDiskReq *r, int error, int type)
         scsi_req_ref(&r->req);
     } else {
         switch (error) {
+        case ENOMEDIUM:
+            scsi_check_condition(r, SENSE_CODE(NO_MEDIUM));
+            break;
         case ENOMEM:
             scsi_check_condition(r, SENSE_CODE(TARGET_FAILURE));
             break;
