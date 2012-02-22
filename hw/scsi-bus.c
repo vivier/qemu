@@ -582,7 +582,7 @@ static int scsi_req_length(SCSICommand *cmd, SCSIDevice *dev, uint8_t *buf)
 {
     switch (buf[0] >> 5) {
     case 0:
-        cmd->xfer = buf[4];
+        cmd->xfer = (uint64_t) buf[4];
         cmd->len = 6;
         /* length 0 means 256 blocks */
         if (cmd->xfer == 0) {
@@ -591,15 +591,17 @@ static int scsi_req_length(SCSICommand *cmd, SCSIDevice *dev, uint8_t *buf)
         break;
     case 1:
     case 2:
-        cmd->xfer = buf[8] | (buf[7] << 8);
+        cmd->xfer = (uint64_t) buf[8] | ((uint64_t) buf[7] << 8);
         cmd->len = 10;
         break;
     case 4:
-        cmd->xfer = buf[13] | (buf[12] << 8) | (buf[11] << 16) | (buf[10] << 24);
+        cmd->xfer = (uint64_t) buf[13] | ((uint64_t) buf[12] << 8) |
+		    ((uint64_t) buf[11] << 16) | ((uint64_t) buf[10] << 24);
         cmd->len = 16;
         break;
     case 5:
-        cmd->xfer = buf[9] | (buf[8] << 8) | (buf[7] << 16) | (buf[6] << 24);
+        cmd->xfer = (uint64_t) buf[9] | ((uint64_t) buf[8] << 8) |
+		    ((uint64_t) buf[7] << 16) | ((uint64_t) buf[6] << 24);
         cmd->len = 12;
         break;
     default:
