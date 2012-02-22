@@ -265,6 +265,7 @@ typedef struct SSIBus SSIBus;
 typedef struct EventNotifier EventNotifier;
 typedef struct VirtIODevice VirtIODevice;
 typedef struct BlockDriver BlockDriver;
+typedef struct QEMUSGList QEMUSGList;
 
 /* CPU save/load.  */
 void cpu_save(QEMUFile *f, void *opaque);

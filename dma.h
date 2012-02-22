@@ -17,18 +17,18 @@
 
 typedef struct ScatterGatherEntry ScatterGatherEntry;
 
+struct QEMUSGList {
+    ScatterGatherEntry *sg;
+    int nsg;
+    int nalloc;
+    size_t size;
+};
+
 #if defined(TARGET_PHYS_ADDR_BITS)
 struct ScatterGatherEntry {
     target_phys_addr_t base;
     target_phys_addr_t len;
 };
-
-typedef struct {
-    ScatterGatherEntry *sg;
-    int nsg;
-    int nalloc;
-    target_phys_addr_t size;
-} QEMUSGList;
 
 void qemu_sglist_init(QEMUSGList *qsg, int alloc_hint);
 void qemu_sglist_add(QEMUSGList *qsg, target_phys_addr_t base,
