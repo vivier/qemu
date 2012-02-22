@@ -1768,6 +1768,15 @@ static SCSIRequest *scsi_block_new_request(SCSIDevice *d, uint32_t tag,
     case WRITE_VERIFY_10:
     case WRITE_VERIFY_12:
     case WRITE_VERIFY_16:
+        /* If we are not using O_DIRECT, we might read stale data from the
+         * host cache if writes were made using other commands than these
+         * ones (such as WRITE SAME or EXTENDED COPY, etc.).  So, without
+         * O_DIRECT everything must go through SG_IO.
+         */
+        if (!(s->qdev.conf.bs->open_flags & BDRV_O_NOCACHE)) {
+            break;
+        }
+
         /* MMC writing cannot be done via pread/pwrite, because it sometimes
          * involves writing beyond the maximum LBA or to negative LBA (lead-in).
          * And once you do these writes, reading from the block device is
