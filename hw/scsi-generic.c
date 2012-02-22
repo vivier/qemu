@@ -175,10 +175,16 @@ static void scsi_read_complete(void * opaque, int ret)
         if (r->req.cmd.buf[0] == READ_CAPACITY_10) {
             s->blocksize = (r->buf[4] << 24) | (r->buf[5] << 16) |
                            (r->buf[6] << 8) | r->buf[7];
+            s->max_lba = ((uint64_t) r->buf[0] << 24) | ((uint64_t) r->buf[1] << 16) |
+                         ((uint64_t) r->buf[2] << 8) | (uint64_t) r->buf[3];
         } else if (r->req.cmd.buf[0] == SERVICE_ACTION_IN_16 &&
                    (r->req.cmd.buf[1] & 31) == SAI_READ_CAPACITY_16) {
             s->blocksize = (r->buf[8] << 24) | (r->buf[9] << 16) |
                            (r->buf[10] << 8) | r->buf[11];
+            s->max_lba = ((uint64_t) r->buf[0] << 56) | ((uint64_t) r->buf[1] << 48) |
+                         ((uint64_t) r->buf[2] << 40) | ((uint64_t) r->buf[3] << 32) | 
+                         ((uint64_t) r->buf[4] << 24) | ((uint64_t) r->buf[5] << 16) |
+                         ((uint64_t) r->buf[6] << 8) | (uint64_t) r->buf[7];
         }
         s->conf.bs->buffer_alignment = s->blocksize;
 
