@@ -64,9 +64,6 @@ typedef struct SCSIDiskReq {
 struct SCSIDiskState
 {
     SCSIDevice qdev;
-    /* The qemu block layer uses a fixed 512 byte sector size.
-       This is the number of 512 byte blocks in a single scsi sector.  */
-    int cluster_size;
     uint32_t removable;
     uint64_t max_lba;
     bool media_changed;
@@ -904,7 +901,7 @@ static int mode_sense_page(SCSIDiskState *s, int page, uint8_t **p_outbuf,
         bdrv_guess_geometry(bdrv, &cylinders, &heads, &secs);
         p[4] = heads & 0xff;
         p[5] = secs & 0xff;
-        p[6] = s->cluster_size * 2;
+        p[6] = s->qdev.blocksize >> 8;
         p[8] = (cylinders >> 8) & 0xff;
         p[9] = cylinders & 0xff;
         /* Write precomp start cylinder, disabled */
@@ -1033,7 +1030,7 @@ static int scsi_disk_emulate_mode_sense(SCSIDiskReq *r, uint8_t *outbuf)
         } else { /* MODE_SENSE_10 */
             outbuf[7] = 8; /* Block descriptor length  */
         }
-        nb_sectors /= s->cluster_size;
+        nb_sectors /= (s->qdev.blocksize / 512);
         if (nb_sectors > 0xffffff) {
             nb_sectors = 0;
         }
@@ -1043,7 +1040,7 @@ static int scsi_disk_emulate_mode_sense(SCSIDiskReq *r, uint8_t *outbuf)
         p[3] = nb_sectors & 0xff;
         p[4] = 0; /* reserved */
         p[5] = 0; /* bytes 5-7 are the sector size in bytes */
-        p[6] = s->cluster_size * 2;
+        p[6] = s->qdev.blocksize >> 8;
         p[7] = 0;
         p += 8;
     }
@@ -1091,7 +1088,7 @@ static int scsi_disk_emulate_read_toc(SCSIRequest *req, uint8_t *outbuf)
     start_track = req->cmd.buf[6];
     bdrv_get_geometry(s->qdev.conf.bs, &nb_sectors);
     DPRINTF("Read TOC (track %d format %d msf %d)\n", start_track, format, msf >> 1);
-    nb_sectors /= s->cluster_size;
+    nb_sectors /= s->qdev.blocksize / 512;
     switch (format) {
     case 0:
         toclen = cdrom_read_toc(nb_sectors, outbuf, msf, start_track);
@@ -1223,7 +1220,7 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r)
         if ((req->cmd.buf[8] & 1) == 0 && req->cmd.lba) {
             goto illegal_request;
         }
-        nb_sectors /= s->cluster_size;
+        nb_sectors /= s->qdev.blocksize / 512;
         /* Returned value is the address of the last sector.  */
         nb_sectors--;
         /* Remember the new size for read/write sanity checking. */
@@ -1238,7 +1235,7 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r)
         outbuf[3] = nb_sectors & 0xff;
         outbuf[4] = 0;
         outbuf[5] = 0;
-        outbuf[6] = s->cluster_size * 2;
+        outbuf[6] = s->qdev.blocksize >> 8;
         outbuf[7] = 0;
         buflen = 8;
         break;
@@ -1278,7 +1275,7 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r)
             if ((req->cmd.buf[14] & 1) == 0 && req->cmd.lba) {
                 goto illegal_request;
             }
-            nb_sectors /= s->cluster_size;
+            nb_sectors /= s->qdev.blocksize / 512;
             /* Returned value is the address of the last sector.  */
             nb_sectors--;
             /* Remember the new size for read/write sanity checking. */
@@ -1293,7 +1290,7 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r)
             outbuf[7] = nb_sectors & 0xff;
             outbuf[8] = 0;
             outbuf[9] = 0;
-            outbuf[10] = s->cluster_size * 2;
+            outbuf[10] = s->qdev.blocksize >> 8;
             outbuf[11] = 0;
             outbuf[12] = 0;
             outbuf[13] = get_physical_block_exp(&s->qdev.conf);
@@ -1403,8 +1400,8 @@ static int32_t scsi_send_command(SCSIRequest *req, uint8_t *buf)
         if (r->req.cmd.lba > s->max_lba) {
             goto illegal_lba;
         }
-        r->sector = r->req.cmd.lba * s->cluster_size;
-        r->sector_count = len * s->cluster_size;
+        r->sector = r->req.cmd.lba * (s->qdev.blocksize / 512);
+        r->sector_count = len * (s->qdev.blocksize / 512);
         break;
     case WRITE_6:
     case WRITE_10:
@@ -1420,8 +1417,8 @@ static int32_t scsi_send_command(SCSIRequest *req, uint8_t *buf)
         if (r->req.cmd.lba > s->max_lba) {
             goto illegal_lba;
         }
-        r->sector = r->req.cmd.lba * s->cluster_size;
-        r->sector_count = len * s->cluster_size;
+        r->sector = r->req.cmd.lba * (s->qdev.blocksize / 512);
+        r->sector_count = len * (s->qdev.blocksize / 512);
         break;
     case MODE_SELECT:
         DPRINTF("Mode Select(6) (len %lu)\n", (long)r->req.cmd.xfer);
@@ -1464,8 +1461,9 @@ static int32_t scsi_send_command(SCSIRequest *req, uint8_t *buf)
             goto fail;
         }
 
-        rc = bdrv_discard(s->qdev.conf.bs, r->req.cmd.lba * s->cluster_size,
-                          len * s->cluster_size);
+        rc = bdrv_discard(s->qdev.conf.bs,
+                          r->req.cmd.lba * (s->qdev.blocksize / 512),
+                          len * (s->qdev.blocksize / 512));
         if (rc < 0) {
             /* XXX: better error code ?*/
             goto fail;
@@ -1507,7 +1505,7 @@ static void scsi_disk_reset(DeviceState *dev)
     scsi_device_purge_requests(&s->qdev, SENSE_CODE(RESET));
 
     bdrv_get_geometry(s->qdev.conf.bs, &nb_sectors);
-    nb_sectors /= s->cluster_size;
+    nb_sectors /= s->qdev.blocksize / 512;
     if (nb_sectors) {
         nb_sectors--;
     }
@@ -1620,7 +1618,6 @@ static int scsi_initfn(SCSIDevice *dev, uint8_t scsi_type)
         error_report("scsi-disk: Unhandled SCSI type %02x", scsi_type);
         return -1;
     }
-    s->cluster_size = s->qdev.blocksize / 512;
     s->qdev.conf.bs->buffer_alignment = s->qdev.blocksize;
 
     s->qdev.type = scsi_type;
