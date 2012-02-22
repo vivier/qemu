@@ -82,6 +82,16 @@ struct SCSIDevice
     uint64_t max_lba;
 };
 
+extern const VMStateDescription vmstate_scsi_device;
+
+#define VMSTATE_SCSI_DEVICE(_field, _state) {                        \
+    .name       = (stringify(_field)),                               \
+    .size       = sizeof(SCSIDevice),                                \
+    .vmsd       = &vmstate_scsi_device,                              \
+    .flags      = VMS_STRUCT,                                        \
+    .offset     = vmstate_offset_value(_state, _field, SCSIDevice),  \
+}
+
 /* cdrom.c */
 int cdrom_read_toc(int nb_sectors, uint8_t *buf, int msf, int start_track);
 int cdrom_read_toc_raw(int nb_sectors, uint8_t *buf, int msf, int session_num);
@@ -95,6 +105,9 @@ struct SCSIReqOps {
     void (*write_data)(SCSIRequest *req);
     void (*cancel_io)(SCSIRequest *req);
     uint8_t *(*get_buf)(SCSIRequest *req);
+
+    void (*save_request)(QEMUFile *f, SCSIRequest *req);
+    void (*load_request)(QEMUFile *f, SCSIRequest *req);
 };
 
 typedef int (*scsi_qdev_initfn)(SCSIDevice *dev);
@@ -114,6 +127,9 @@ struct SCSIBusInfo {
     void (*complete)(SCSIRequest *req, uint32_t arg, int32_t len);
     void (*cancel)(SCSIRequest *req);
     QEMUSGList *(*get_sg_list)(SCSIRequest *req);
+
+    void (*save_request)(QEMUFile *f, SCSIRequest *req);
+    void *(*load_request)(QEMUFile *f, SCSIRequest *req);
 };
 
 struct SCSIBus {
