@@ -530,7 +530,7 @@ void do_info_spice(Monitor *mon, QObject **ret_data)
     *ret_data = QOBJECT(server);
 }
 
-static void migration_state_notifier(Notifier *notifier)
+static void migration_state_notifier(Notifier *notifier, void *data)
 {
     int state = get_migration_state();
     if (state == MIG_STATE_ACTIVE) {
