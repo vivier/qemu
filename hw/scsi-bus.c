@@ -97,6 +97,10 @@ static int scsi_qdev_init(DeviceState *qdev, DeviceInfo *base)
         error_report("bad scsi device id: %d", dev->id);
         goto err;
     }
+    if (dev->lun != -1 && dev->lun > bus->info->max_lun) {
+        error_report("bad scsi device lun: %d", dev->lun);
+        goto err;
+    }
 
     if (dev->id == -1) {
         int id = -1;
@@ -105,8 +109,8 @@ static int scsi_qdev_init(DeviceState *qdev, DeviceInfo *base)
         }
         do {
             d = scsi_device_find(bus, dev->channel, ++id, dev->lun);
-        } while (d && d->lun == dev->lun && id <= bus->info->max_target);
-        if (id > bus->info->max_target) {
+        } while (d && d->lun == dev->lun && id < bus->info->max_target);
+        if (d && d->lun == dev->lun) {
             error_report("no free target");
             goto err;
         }
@@ -116,14 +120,15 @@ static int scsi_qdev_init(DeviceState *qdev, DeviceInfo *base)
         do {
             d = scsi_device_find(bus, dev->channel, dev->id, ++lun);
         } while (d && d->lun == lun && lun < bus->info->max_lun);
-        if (lun > bus->info->max_lun) {
+        if (d && d->lun == lun) {
             error_report("no free lun");
             goto err;
         }
         dev->lun = lun;
     } else {
         d = scsi_device_find(bus, dev->channel, dev->id, dev->lun);
-        if (dev->lun == d->lun && dev != d) {
+        assert(d);
+        if (d->lun == dev->lun && dev != d) {
             qdev_free(&d->qdev);
         }
     }
@@ -194,7 +199,7 @@ int scsi_bus_legacy_handle_cmdline(SCSIBus *bus)
     int res = 0, unit;
 
     loc_push_none(&loc);
-    for (unit = 0; unit < bus->info->max_target; unit++) {
+    for (unit = 0; unit <= bus->info->max_target; unit++) {
         dinfo = drive_get(IF_SCSI, bus->busnr, unit);
         if (dinfo == NULL) {
             continue;
