@@ -64,6 +64,7 @@ struct SCSIDevice
     BlockConf conf;
     SCSIDeviceInfo *info;
     SCSISense unit_attention;
+    bool sense_is_ua;
     uint8_t sense[SCSI_SENSE_BUF_SIZE];
     uint32_t sense_len;
     QTAILQ_HEAD(, SCSIRequest) requests;
@@ -95,6 +96,7 @@ struct SCSIDeviceInfo {
     void (*destroy)(SCSIDevice *s);
     SCSIRequest *(*alloc_req)(SCSIDevice *s, uint32_t tag, uint32_t lun,
                               void *hba_private);
+    void (*unit_attention_reported)(SCSIDevice *s);
     SCSIReqOps reqops;
 };
 
