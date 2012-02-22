@@ -703,6 +703,16 @@ const struct SCSISense sense_code_LUN_NOT_SUPPORTED = {
     .key = ILLEGAL_REQUEST, .asc = 0x25, .ascq = 0x00
 };
 
+/* Illegal request, Saving parameters not supported */
+const struct SCSISense sense_code_SAVING_PARAMS_NOT_SUPPORTED = {
+    .key = ILLEGAL_REQUEST, .asc = 0x39, .ascq = 0x00
+};
+
+/* Illegal request, Incompatible medium installed */
+const struct SCSISense sense_code_INCOMPATIBLE_MEDIUM = {
+    .key = ILLEGAL_REQUEST, .asc = 0x30, .ascq = 0x00
+};
+
 /* Illegal request, medium removal prevented */
 const struct SCSISense sense_code_ILLEGAL_REQ_REMOVAL_PREVENTED = {
     .key = ILLEGAL_REQUEST, .asc = 0x53, .ascq = 0x00
@@ -721,6 +731,26 @@ const struct SCSISense sense_code_I_T_NEXUS_LOSS = {
 /* Command aborted, Logical Unit failure */
 const struct SCSISense sense_code_LUN_FAILURE = {
     .key = ABORTED_COMMAND, .asc = 0x3e, .ascq = 0x01
+};
+
+/* Unit attention, Power on, reset or bus device reset occurred */
+const struct SCSISense sense_code_RESET = {
+    .key = UNIT_ATTENTION, .asc = 0x29, .ascq = 0x00
+};
+
+/* Unit attention, Medium may have changed */
+const struct SCSISense sense_code_MEDIUM_CHANGED = {
+    .key = UNIT_ATTENTION, .asc = 0x28, .ascq = 0x00
+};
+
+/* Unit attention, Reported LUNs data has changed */
+const struct SCSISense sense_code_REPORTED_LUNS_CHANGED = {
+    .key = UNIT_ATTENTION, .asc = 0x3f, .ascq = 0x0e
+};
+
+/* Unit attention, Device internal reset */
+const struct SCSISense sense_code_DEVICE_INTERNAL_RESET = {
+    .key = UNIT_ATTENTION, .asc = 0x29, .ascq = 0x04
 };
 
 /*
