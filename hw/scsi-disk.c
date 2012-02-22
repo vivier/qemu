@@ -143,6 +143,30 @@ done:
     }
 }
 
+static void scsi_flush_complete(void * opaque, int ret)
+{
+    SCSIDiskReq *r = (SCSIDiskReq *)opaque;
+    SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, r->req.dev);
+
+    if (r->req.aiocb != NULL) {
+        r->req.aiocb = NULL;
+        bdrv_acct_done(s->bs, &r->acct);
+    }
+
+    if (ret < 0) {
+        if (scsi_handle_rw_error(r, -ret, SCSI_REQ_STATUS_RETRY_FLUSH)) {
+            goto done;
+        }
+    }
+
+    scsi_req_complete(&r->req, GOOD);
+
+done:
+    if (!r->req.io_canceled) {
+        scsi_req_unref(&r->req);
+    }
+}
+
 /* Read more data from scsi device into buffer.  */
 static void scsi_read_data(SCSIRequest *req)
 {
@@ -857,7 +881,6 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r, uint8_t *outbuf)
     SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, req->dev);
     uint64_t nb_sectors;
     int buflen = 0;
-    int ret;
 
     switch (req->cmd.buf[0]) {
     case TEST_UNIT_READY:
@@ -929,20 +952,6 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r, uint8_t *outbuf)
         outbuf[7] = 0;
         buflen = 8;
         break;
-    case SYNCHRONIZE_CACHE:
-{
-        BlockAcctCookie acct;
-
-        bdrv_acct_start(s->bs, &acct, 0, BDRV_ACCT_FLUSH);
-        ret = bdrv_flush(s->bs);
-        bdrv_acct_done(s->bs, &acct);
-        if (ret < 0) {
-            if (scsi_handle_rw_error(r, -ret, SCSI_REQ_STATUS_RETRY_FLUSH)) {
-                return -1;
-            }
-        }
-        break;
-}
     case GET_CONFIGURATION:
         memset(outbuf, 0, 8);
         /* ??? This should probably return much more information.  For now
@@ -1050,7 +1059,6 @@ static int32_t scsi_send_command(SCSIRequest *req, uint8_t *buf)
     case START_STOP:
     case ALLOW_MEDIUM_REMOVAL:
     case READ_CAPACITY_10:
-    case SYNCHRONIZE_CACHE:
     case READ_TOC:
     case GET_CONFIGURATION:
     case SERVICE_ACTION_IN:
@@ -1062,6 +1070,15 @@ static int32_t scsi_send_command(SCSIRequest *req, uint8_t *buf)
 
         r->iov.iov_len = rc;
         break;
+    case SYNCHRONIZE_CACHE:
+        /* The request is used as the AIO opaque value, so add a ref.  */
+        scsi_req_ref(&r->req);
+        bdrv_acct_start(s->qdev.conf.bs, &r->acct, 0, BDRV_ACCT_FLUSH);
+        r->req.aiocb = bdrv_aio_flush(s->qdev.conf.bs, scsi_flush_complete, r);
+        if (r->req.aiocb == NULL) {
+            scsi_flush_complete(r, -EIO);
+        }
+        return 0;
     case READ_6:
     case READ_10:
     case READ_12:
