@@ -1258,11 +1258,6 @@ static int scsi_initfn(SCSIDevice *dev, uint8_t scsi_type)
     SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, dev);
     DriveInfo *dinfo;
 
-    if (scsi_type == TYPE_ROM) {
-        error_report("scsi-disk: cdrom emulation is not supported");
-        return -1;
-    }
-
     if (!s->qdev.conf.bs) {
         error_report("drive property not set");
         return -1;
