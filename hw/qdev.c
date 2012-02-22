@@ -309,6 +309,20 @@ int qdev_unplug(DeviceState *dev)
     return dev->info->unplug(dev);
 }
 
+static int qdev_reset_one(DeviceState *dev, void *opaque)
+{
+    if (dev->info->reset) {
+        dev->info->reset(dev);
+    }
+
+    return 0;
+}
+
+void qdev_reset_all(DeviceState *dev)
+{
+    qdev_walk_children(dev, qdev_reset_one, NULL, NULL);
+}
+
 /* can be used as ->unplug() callback for the simple cases */
 int qdev_simple_unplug_cb(DeviceState *dev)
 {
