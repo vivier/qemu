@@ -217,7 +217,10 @@ void qemu_iovec_destroy(QEMUIOVector *qiov)
 {
     assert(qiov->nalloc != -1);
 
+    qemu_iovec_reset(qiov);
     qemu_free(qiov->iov);
+    qiov->nalloc = 0;
+    qiov->iov = NULL;
 }
 
 void qemu_iovec_reset(QEMUIOVector *qiov)
