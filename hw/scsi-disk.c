@@ -111,17 +111,46 @@ static void scsi_cancel_io(SCSIRequest *req)
     r->req.aiocb = NULL;
 }
 
-static uint32_t scsi_init_iovec(SCSIDiskReq *r)
+static uint32_t scsi_init_iovec(SCSIDiskReq *r, size_t size)
 {
     SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, r->req.dev);
 
     if (!r->iov.iov_base) {
-        r->buflen = SCSI_DMA_BUF_SIZE;
+        r->buflen = size;
         r->iov.iov_base = qemu_blockalign(s->qdev.conf.bs, r->buflen);
     }
     r->iov.iov_len = MIN(r->sector_count * 512, r->buflen);
     qemu_iovec_init_external(&r->qiov, &r->iov, 1);
     return r->qiov.size / 512;
+}
+
+static void scsi_disk_save_request(QEMUFile *f, SCSIRequest *req)
+{
+    SCSIDiskReq *r = DO_UPCAST(SCSIDiskReq, req, req);
+
+    qemu_put_be64s(f, &r->sector);
+    qemu_put_be32s(f, &r->sector_count);
+    qemu_put_be32s(f, &r->buflen);
+    if (r->buflen && r->req.cmd.mode == SCSI_XFER_TO_DEV) {
+        qemu_put_buffer(f, r->iov.iov_base, r->iov.iov_len);
+    }
+}
+
+static void scsi_disk_load_request(QEMUFile *f, SCSIRequest *req)
+{
+    SCSIDiskReq *r = DO_UPCAST(SCSIDiskReq, req, req);
+
+    qemu_get_be64s(f, &r->sector);
+    qemu_get_be32s(f, &r->sector_count);
+    qemu_get_be32s(f, &r->buflen);
+    if (r->buflen) {
+        scsi_init_iovec(r, r->buflen);
+        if (r->req.cmd.mode == SCSI_XFER_TO_DEV) {
+            qemu_get_buffer(f, r->iov.iov_base, r->iov.iov_len);
+        }
+    }
+
+    qemu_iovec_init_external(&r->qiov, &r->iov, 1);
 }
 
 static void scsi_dma_complete(void * opaque, int ret)
@@ -241,7 +270,7 @@ static void scsi_read_data(SCSIRequest *req)
         r->req.aiocb = dma_bdrv_read(s->qdev.conf.bs, r->req.sg, r->sector,
                                      scsi_dma_complete, r);
     } else {
-        n = scsi_init_iovec(r);
+        n = scsi_init_iovec(r, SCSI_DMA_BUF_SIZE);
         bdrv_acct_start(s->qdev.conf.bs, &r->acct, n * BDRV_SECTOR_SIZE, BDRV_ACCT_READ);
         r->req.aiocb = bdrv_aio_readv(s->qdev.conf.bs, r->sector, &r->qiov, n,
                                       scsi_read_complete, r);
@@ -318,7 +347,7 @@ static void scsi_write_complete(void * opaque, int ret)
     if (r->sector_count == 0) {
         scsi_req_complete(&r->req, GOOD);
     } else {
-        scsi_init_iovec(r);
+        scsi_init_iovec(r, SCSI_DMA_BUF_SIZE);
         DPRINTF("Write complete tag=0x%x more=%d\n", r->req.tag, r->qiov.size);
         scsi_req_data(&r->req, r->qiov.size);
     }
@@ -1635,6 +1664,8 @@ static const SCSIReqOps scsi_disk_reqops = {
     .write_data   = scsi_write_data,
     .cancel_io    = scsi_cancel_io,
     .get_buf      = scsi_get_buf,
+    .load_request = scsi_disk_load_request,
+    .save_request = scsi_disk_save_request,
 };
 
 static SCSIRequest *scsi_new_request(SCSIDevice *d, uint32_t tag, uint32_t lun,
@@ -1763,6 +1794,22 @@ static SCSIRequest *scsi_block_new_request(SCSIDevice *d, uint32_t tag,
     DEFINE_PROP_STRING("ver",  SCSIDiskState, version),         \
     DEFINE_PROP_STRING("serial",  SCSIDiskState, serial)
 
+static const VMStateDescription vmstate_scsi_disk_state = {
+    .name = "scsi-disk",
+    .version_id = 1,
+    .minimum_version_id = 1,
+    .minimum_version_id_old = 1,
+    .fields = (VMStateField[]) {
+        VMSTATE_SCSI_DEVICE(qdev, SCSIDiskState),
+        VMSTATE_BOOL(media_changed, SCSIDiskState),
+        VMSTATE_BOOL(media_event, SCSIDiskState),
+        VMSTATE_BOOL(eject_request, SCSIDiskState),
+        VMSTATE_BOOL(tray_open, SCSIDiskState),
+        VMSTATE_BOOL(tray_locked, SCSIDiskState),
+        VMSTATE_END_OF_LIST()
+    }
+};
+
 static SCSIDeviceInfo scsi_disk_info[] = {
     {
         .qdev.name    = "scsi-hd",
@@ -1770,6 +1817,7 @@ static SCSIDeviceInfo scsi_disk_info[] = {
         .qdev.desc    = "virtual SCSI disk",
         .qdev.size    = sizeof(SCSIDiskState),
         .qdev.reset   = scsi_disk_reset,
+        .qdev.vmsd    = &vmstate_scsi_disk_state,
         .init         = scsi_hd_initfn,
         .destroy      = scsi_destroy,
         .alloc_req    = scsi_new_request,
@@ -1785,6 +1833,7 @@ static SCSIDeviceInfo scsi_disk_info[] = {
         .qdev.desc    = "virtual SCSI CD-ROM",
         .qdev.size    = sizeof(SCSIDiskState),
         .qdev.reset   = scsi_disk_reset,
+        .qdev.vmsd    = &vmstate_scsi_disk_state,
         .init         = scsi_cd_initfn,
         .destroy      = scsi_destroy,
         .alloc_req    = scsi_new_request,
@@ -1800,6 +1849,7 @@ static SCSIDeviceInfo scsi_disk_info[] = {
         .qdev.desc    = "SCSI block device passthrough",
         .qdev.size    = sizeof(SCSIDiskState),
         .qdev.reset   = scsi_disk_reset,
+        .qdev.vmsd    = &vmstate_scsi_disk_state,
         .init         = scsi_block_initfn,
         .destroy      = scsi_destroy,
         .alloc_req    = scsi_block_new_request,
@@ -1814,6 +1864,7 @@ static SCSIDeviceInfo scsi_disk_info[] = {
         .qdev.desc    = "virtual SCSI disk or CD-ROM (legacy)",
         .qdev.size    = sizeof(SCSIDiskState),
         .qdev.reset   = scsi_disk_reset,
+        .qdev.vmsd    = &vmstate_scsi_disk_state,
         .init         = scsi_disk_initfn,
         .destroy      = scsi_destroy,
         .alloc_req    = scsi_new_request,
