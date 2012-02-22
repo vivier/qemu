@@ -19,6 +19,7 @@
 #include "virtio-blk.h"
 #include "virtio-net.h"
 #include "virtio-serial.h"
+#include "virtio-scsi.h"
 #include "pci.h"
 #include "qemu-error.h"
 #include "msix.h"
@@ -105,6 +106,7 @@ typedef struct {
     uint32_t nvectors;
     BlockConf block;
     NICConf nic;
+    VirtIOSCSIConf scsi;
     uint32_t host_features;
     virtio_serial_conf serial;
     virtio_net_conf net;
@@ -924,6 +926,36 @@ static int virtio_balloon_exit_pci(PCIDevice *pci_dev)
     return virtio_exit_pci(pci_dev);
 }
 
+static int virtio_scsi_init_pci(PCIDevice *pci_dev)
+{
+    VirtIOPCIProxy *proxy = DO_UPCAST(VirtIOPCIProxy, pci_dev, pci_dev);
+    VirtIODevice *vdev;
+
+    vdev = virtio_scsi_init(&pci_dev->qdev, &proxy->scsi);
+    if (!vdev) {
+        return -EINVAL;
+    }
+
+    vdev->nvectors = proxy->nvectors;
+    virtio_init_pci(proxy, vdev,
+                    PCI_VENDOR_ID_REDHAT_QUMRANET,
+                    PCI_DEVICE_ID_VIRTIO_SCSI,
+                    PCI_CLASS_STORAGE_SCSI,
+                    0x00);
+
+    /* make the actual value visible */
+    proxy->nvectors = vdev->nvectors;
+    return 0;
+}
+
+static int virtio_scsi_exit_pci(PCIDevice *pci_dev)
+{
+    VirtIOPCIProxy *proxy = DO_UPCAST(VirtIOPCIProxy, pci_dev, pci_dev);
+
+    virtio_scsi_exit(proxy->vdev);
+    return virtio_exit_pci(pci_dev);
+}
+
 static PCIDeviceInfo virtio_info[] = {
     {
         .qdev.name = "virtio-blk-pci",
@@ -990,6 +1022,17 @@ static PCIDeviceInfo virtio_info[] = {
         },
         .qdev.reset = virtio_pci_reset,
     },{
+        .qdev.name = "virtio-scsi-pci",
+        .qdev.alias = "virtio-scsi",
+        .qdev.size = sizeof(VirtIOPCIProxy),
+        .init      = virtio_scsi_init_pci,
+        .exit      = virtio_scsi_exit_pci,
+        .qdev.props = (Property[]) {
+            DEFINE_PROP_UINT32("vectors", VirtIOPCIProxy, nvectors, 2),
+            DEFINE_VIRTIO_SCSI_PROPERTIES(VirtIOPCIProxy, host_features, scsi),
+            DEFINE_PROP_END_OF_LIST(),
+        },
+    }, {
         /* end of list */
     }
 };
