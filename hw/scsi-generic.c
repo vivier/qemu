@@ -113,6 +113,9 @@ static void scsi_command_complete(void *opaque, int ret)
             r, r->req.tag, status);
 
     scsi_req_complete(&r->req, status);
+    if (!r->req.io_canceled) {
+        scsi_req_unref(&r->req);
+    }
 }
 
 /* Cancel a pending data transfer.  */
@@ -123,6 +126,11 @@ static void scsi_cancel_io(SCSIRequest *req)
     DPRINTF("Cancel tag=0x%x\n", req->tag);
     if (r->req.aiocb) {
         bdrv_aio_cancel(r->req.aiocb);
+
+        /* This reference was left in by scsi_*_data.  We take ownership of
+         * it independent of whether bdrv_aio_cancel completes the request
+         * or not.  */
+        scsi_req_unref(&r->req);
     }
     r->req.aiocb = NULL;
 }
@@ -189,6 +197,9 @@ static void scsi_read_complete(void * opaque, int ret)
         s->conf.bs->buffer_alignment = s->blocksize;
 
         scsi_req_data(&r->req, len);
+        if (!r->req.io_canceled) {
+            scsi_req_unref(&r->req);
+        }
     }
 }
 
@@ -200,6 +211,9 @@ static void scsi_read_data(SCSIRequest *req)
     int ret;
 
     DPRINTF("scsi_read_data 0x%x\n", req->tag);
+
+    /* The request is used as the AIO opaque value, so add a ref.  */
+    scsi_req_ref(&r->req);
     if (r->len == -1) {
         scsi_command_complete(r, 0);
         return;
@@ -248,6 +262,8 @@ static void scsi_write_data(SCSIRequest *req)
         return;
     }
 
+    /* The request is used as the AIO opaque value, so add a ref.  */
+    scsi_req_ref(&r->req);
     ret = execute_command(s->conf.bs, r, SG_DXFER_TO_DEV, scsi_write_complete);
     if (ret < 0) {
         scsi_command_complete(r, ret);
@@ -291,6 +307,8 @@ static int32_t scsi_send_command(SCSIRequest *req, uint8_t *cmd)
             qemu_free(r->buf);
         r->buflen = 0;
         r->buf = NULL;
+        /* The request is used as the AIO opaque value, so add a ref.  */
+        scsi_req_ref(&r->req);
         ret = execute_command(s->conf.bs, r, SG_DXFER_NONE, scsi_command_complete);
         if (ret < 0) {
             scsi_command_complete(r, ret);
