@@ -38,6 +38,13 @@ enum USBMSDMode {
     USB_MSDM_CSW /* Command Status.  */
 };
 
+struct usb_msd_csw {
+    uint32_t sig;
+    uint32_t tag;
+    uint32_t residue;
+    uint8_t status;
+};
+
 typedef struct {
     USBDevice dev;
     enum USBMSDMode mode;
@@ -48,6 +55,7 @@ typedef struct {
     uint32_t data_len;
     uint32_t residue;
     uint32_t tag;
+    struct usb_msd_csw csw;
     SCSIRequest *req;
     SCSIBus bus;
     BlockConf conf;
@@ -67,13 +75,6 @@ struct usb_msd_cbw {
     uint8_t lun;
     uint8_t cmd_len;
     uint8_t cmd[16];
-};
-
-struct usb_msd_csw {
-    uint32_t sig;
-    uint32_t tag;
-    uint32_t residue;
-    uint8_t status;
 };
 
 enum {
@@ -199,18 +200,15 @@ static void usb_msd_copy_data(MSDState *s)
 
 static void usb_msd_send_status(MSDState *s, USBPacket *p)
 {
-    struct usb_msd_csw csw;
     int len;
 
     DPRINTF("Command status %d tag 0x%x, len %zd\n",
-            s->result, s->tag, p->len);
-    csw.sig = cpu_to_le32(0x53425355);
-    csw.tag = cpu_to_le32(s->tag);
-    csw.residue = s->residue;
-    csw.status = s->result;
+            s->csw.status, s->csw.tag, p->len);
 
-    len = MIN(sizeof(csw), p->len);
-    memcpy(p->data, &csw, len);
+    assert(s->csw.sig == 0x53425355);
+    len = MIN(sizeof(s->csw), p->len);
+    memcpy(p->data, &s->csw, len);
+    memset(&s->csw, 0, sizeof(s->csw));
 }
 
 static void usb_msd_transfer_data(SCSIRequest *req, uint32_t len)
@@ -242,6 +240,12 @@ static void usb_msd_command_complete(SCSIRequest *req, uint32_t status)
     DPRINTF("Command complete %d\n", status);
     s->residue = s->data_len;
     s->result = status != 0;
+
+    s->csw.sig = cpu_to_le32(0x53425355);
+    s->csw.tag = cpu_to_le32(s->tag);
+    s->csw.residue = s->residue;
+    s->csw.status = s->result;
+
     if (s->packet) {
         if (s->data_len == 0 && s->mode == USB_MSDM_DATAOUT) {
             /* A deferred packet with no write data remaining must be
@@ -265,6 +269,7 @@ static void usb_msd_command_complete(SCSIRequest *req, uint32_t status)
     } else if (s->data_len == 0) {
         s->mode = USB_MSDM_CSW;
     }
+
     scsi_req_unref(req);
     s->req = NULL;
 }
