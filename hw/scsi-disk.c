@@ -1167,7 +1167,7 @@ static void scsi_disk_reset(DeviceState *dev)
     SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev.qdev, dev);
     uint64_t nb_sectors;
 
-    scsi_device_purge_requests(&s->qdev);
+    scsi_device_purge_requests(&s->qdev, SENSE_CODE(RESET));
 
     bdrv_get_geometry(s->bs, &nb_sectors);
     nb_sectors /= s->cluster_size;
@@ -1181,7 +1181,7 @@ static void scsi_destroy(SCSIDevice *dev)
 {
     SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, dev);
 
-    scsi_device_purge_requests(&s->qdev);
+    scsi_device_purge_requests(&s->qdev, SENSE_CODE(NO_SENSE));
     blockdev_mark_auto_del(s->qdev.conf.bs);
 }
 
