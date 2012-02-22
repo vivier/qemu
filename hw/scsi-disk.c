@@ -1319,6 +1319,12 @@ static int scsi_disk_initfn(SCSIDevice *dev)
 
 static SCSIReqOps scsi_disk_reqops = {
     .size         = sizeof(SCSIDiskReq),
+    .free_req     = scsi_free_request,
+    .send_command = scsi_send_command,
+    .read_data    = scsi_read_data,
+    .write_data   = scsi_write_data,
+    .cancel_io    = scsi_cancel_io,
+    .get_buf      = scsi_get_buf,
 };
 
 static SCSIRequest *scsi_new_request(SCSIDevice *d, uint32_t tag,
@@ -1349,12 +1355,6 @@ static SCSIDeviceInfo scsi_disk_info[] = {
         .init         = scsi_hd_initfn,
         .destroy      = scsi_destroy,
         .alloc_req    = scsi_new_request,
-        .free_req     = scsi_free_request,
-        .send_command = scsi_send_command,
-        .read_data    = scsi_read_data,
-        .write_data   = scsi_write_data,
-        .cancel_io    = scsi_cancel_io,
-        .get_buf      = scsi_get_buf,
         .qdev.props   = (Property[]) {
             DEFINE_SCSI_DISK_PROPERTIES(),
             DEFINE_PROP_BIT("removable", SCSIDiskState, removable, 0, false),
@@ -1369,12 +1369,6 @@ static SCSIDeviceInfo scsi_disk_info[] = {
         .init         = scsi_cd_initfn,
         .destroy      = scsi_destroy,
         .alloc_req    = scsi_new_request,
-        .free_req     = scsi_free_request,
-        .send_command = scsi_send_command,
-        .read_data    = scsi_read_data,
-        .write_data   = scsi_write_data,
-        .cancel_io    = scsi_cancel_io,
-        .get_buf      = scsi_get_buf,
         .qdev.props   = (Property[]) {
             DEFINE_SCSI_DISK_PROPERTIES(),
             DEFINE_PROP_END_OF_LIST(),
@@ -1388,12 +1382,6 @@ static SCSIDeviceInfo scsi_disk_info[] = {
         .init         = scsi_disk_initfn,
         .destroy      = scsi_destroy,
         .alloc_req    = scsi_new_request,
-        .free_req     = scsi_free_request,
-        .send_command = scsi_send_command,
-        .read_data    = scsi_read_data,
-        .write_data   = scsi_write_data,
-        .cancel_io    = scsi_cancel_io,
-        .get_buf      = scsi_get_buf,
         .qdev.props   = (Property[]) {
             DEFINE_SCSI_DISK_PROPERTIES(),
             DEFINE_PROP_BIT("removable", SCSIDiskState, removable, 0, false),
