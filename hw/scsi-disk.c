@@ -101,16 +101,16 @@ static void scsi_cancel_io(SCSIRequest *req)
     SCSIDiskReq *r = DO_UPCAST(SCSIDiskReq, req, req);
 
     DPRINTF("Cancel tag=0x%x\n", req->tag);
+    r->status &= ~(SCSI_REQ_STATUS_RETRY | SCSI_REQ_STATUS_RETRY_TYPE_MASK);
     if (r->req.aiocb) {
         bdrv_aio_cancel(r->req.aiocb);
-    }
-    r->req.aiocb = NULL;
-    if (r->status & SCSI_REQ_STATUS_RETRY) {
-        r->status &= ~(SCSI_REQ_STATUS_RETRY | SCSI_REQ_STATUS_RETRY_TYPE_MASK);
 
-        /* This reference was left in by scsi_handle_rw_error.  */
+        /* This reference was left in by scsi_*_data.  We take ownership of
+         * it the moment scsi_req_cancel is called, independent of whether
+         * bdrv_aio_cancel completes the request or not.  */
         scsi_req_unref(&r->req);
     }
+    r->req.aiocb = NULL;
 }
 
 static void scsi_read_complete(void * opaque, int ret)
@@ -138,9 +138,10 @@ static void scsi_read_complete(void * opaque, int ret)
     scsi_req_data(&r->req, r->iov.iov_len);
 
 done:
-    scsi_req_unref(&r->req);
+    if (!r->req.io_canceled) {
+        scsi_req_unref(&r->req);
+    }
 }
-
 
 /* Read more data from scsi device into buffer.  */
 static void scsi_read_data(SCSIRequest *req)
@@ -165,7 +166,7 @@ static void scsi_read_data(SCSIRequest *req)
     /* No data transfer may already be in progress */
     assert(r->req.aiocb == NULL);
 
-    /* Save a ref for scsi_read_complete, in case r is canceled.  */
+    /* The request is used as the AIO opaque value, so add a ref.  */
     scsi_req_ref(&r->req);
     if (r->req.cmd.mode == SCSI_XFER_TO_DEV) {
         DPRINTF("Data transfer direction invalid\n");
@@ -274,7 +275,9 @@ static void scsi_write_complete(void * opaque, int ret)
     }
 
 done:
-    scsi_req_unref(&r->req);
+    if (!r->req.io_canceled) {
+        scsi_req_unref(&r->req);
+    }
 }
 
 static void scsi_write_data(SCSIRequest *req)
@@ -286,7 +289,7 @@ static void scsi_write_data(SCSIRequest *req)
     /* No data transfer may already be in progress */
     assert(r->req.aiocb == NULL);
 
-    /* Save a ref for scsi_write_complete, in case r is canceled.  */
+    /* The request is used as the AIO opaque value, so add a ref.  */
     scsi_req_ref(&r->req);
     if (r->req.cmd.mode != SCSI_XFER_TO_DEV) {
         DPRINTF("Data transfer direction invalid\n");
@@ -345,7 +348,6 @@ static void scsi_dma_restart_bh(void *opaque)
                     scsi_req_complete(&r->req, GOOD);
                 }
             }
-            /* This reference was left in by scsi_handle_rw_error.  */
             scsi_req_unref(&r->req);
         }
     }
