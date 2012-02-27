@@ -202,6 +202,7 @@ struct BlockDriverState {
     int cyls, heads, secs, translation;
     int type;
     BlockErrorAction on_read_error, on_write_error;
+    BlockIOStatus iostatus;
     char device_name[32];
     unsigned long *dirty_bitmap;
     int in_use; /* users other than guest access, eg. block migration */
