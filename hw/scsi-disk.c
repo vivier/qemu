@@ -303,6 +303,7 @@ static int scsi_handle_rw_error(SCSIDiskReq *r, int error)
 
         bdrv_mon_event(s->qdev.conf.bs, BDRV_ACTION_STOP, error, is_read);
         vm_stop(RUN_STATE_IO_ERROR);
+        bdrv_iostatus_set_err(s->qdev.conf.bs, error);
         scsi_req_retry(&r->req);
     } else {
         switch (error) {
@@ -1622,6 +1623,7 @@ static int scsi_initfn(SCSIDevice *dev)
     }
     s->qdev.conf.bs->buffer_alignment = s->qdev.blocksize;
 
+    bdrv_iostatus_enable(s->qdev.conf.bs);
     add_boot_device_path(s->qdev.conf.bootindex, &dev->qdev, NULL);
     return 0;
 }
