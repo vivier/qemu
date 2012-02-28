@@ -2837,6 +2837,12 @@ void qemu_ram_free(ram_addr_t addr)
 
 }
 
+void qemu_flush_coalesced_mmio_buffer(void)
+{
+    if (kvm_enabled())
+        kvm_flush_coalesced_mmio_buffer();
+}
+
 #ifndef _WIN32
 void qemu_ram_remap(ram_addr_t addr, ram_addr_t length)
 {
