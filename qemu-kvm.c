@@ -970,6 +970,12 @@ static int kvm_handle_internal_error(kvm_context_t kvm,
 void kvm_flush_coalesced_mmio_buffer(void)
 {
 #if defined(KVM_CAP_COALESCED_MMIO)
+    if (kvm_state->coalesced_flush_in_progress) {
+        return;
+    }
+
+    kvm_state->coalesced_flush_in_progress = true;
+
     if (kvm_state->coalesced_mmio) {
         struct kvm_coalesced_mmio_ring *ring = kvm_state->coalesced_mmio_ring;
         while (ring->first != ring->last) {
@@ -980,6 +986,8 @@ void kvm_flush_coalesced_mmio_buffer(void)
             ring->first = (ring->first + 1) % KVM_COALESCED_MMIO_MAX;
         }
     }
+
+    kvm_state->coalesced_flush_in_progress = false;
 #endif
 }
 
