@@ -60,6 +60,8 @@ int kvm_has_vcpu_events(void);
 int kvm_put_vcpu_events(CPUState *env);
 int kvm_get_vcpu_events(CPUState *env);
 
+void kvm_flush_coalesced_mmio_buffer(void);
+
 #ifdef KVM_UPSTREAM
 
 void kvm_setup_guest_memory(void *start, size_t size);

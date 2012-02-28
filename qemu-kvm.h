@@ -1173,6 +1173,9 @@ typedef struct KVMState {
     int fd;
     int vmfd;
     int coalesced_mmio;
+#ifdef KVM_CAP_COALESCED_MMIO
+    struct kvm_coalesced_mmio_ring *coalesced_mmio_ring;
+#endif
     int broken_set_mem_region;
     int migration_log;
     int vcpu_events;
