@@ -65,6 +65,7 @@ struct KVMState
 #ifdef KVM_CAP_COALESCED_MMIO
     struct kvm_coalesced_mmio_ring *coalesced_mmio_ring;
 #endif
+    bool coalesced_flush_in_progress;
     int broken_set_mem_region;
     int migration_log;
     int vcpu_events;
@@ -602,6 +603,13 @@ void kvm_flush_coalesced_mmio_buffer(void)
 {
 #ifdef KVM_CAP_COALESCED_MMIO
     KVMState *s = kvm_state;
+
+    if (s->coalesced_flush_in_progress) {
+        return;
+    }
+
+    s->coalesced_flush_in_progress = true;
+
     if (s->coalesced_mmio_ring) {
         struct kvm_coalesced_mmio_ring *ring = s->coalesced_mmio_ring;
         while (ring->first != ring->last) {
@@ -614,6 +622,8 @@ void kvm_flush_coalesced_mmio_buffer(void)
             ring->first = (ring->first + 1) % KVM_COALESCED_MMIO_MAX;
         }
     }
+
+    s->coalesced_flush_in_progress = false;
 #endif
 }
 
