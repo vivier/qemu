@@ -922,6 +922,8 @@ void post_kvm_run(kvm_context_t kvm, CPUState *env)
     pthread_mutex_lock(&qemu_mutex);
     kvm_arch_post_run(env, env->kvm_run);
     cpu_single_env = env;
+
+    kvm_flush_coalesced_mmio_buffer();
 }
 
 int pre_kvm_run(kvm_context_t kvm, CPUState *env)
@@ -1012,8 +1014,6 @@ int kvm_run(CPUState *env)
     }
 
     post_kvm_run(kvm, env);
-
-    kvm_flush_coalesced_mmio_buffer();
 
 #if !defined(__s390__)
     if (r == -1) {
