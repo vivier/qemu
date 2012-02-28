@@ -60,8 +60,8 @@ BuildRequires: pulseaudio-libs-devel
 BuildRequires: ncurses-devel
 BuildRequires: libaio-devel
 
-# require spice-server API changes from bz#737921
-BuildRequires: spice-server-devel >= 0.8.2-4.el6
+# require spice-server API changes from bz#788444
+BuildRequires: spice-server-devel >= 0.10.1-2.el6
 
 BuildRequires: systemtap-sdt-devel
 
