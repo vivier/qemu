@@ -162,7 +162,7 @@ int qemu_create_pidfile(const char *filename)
         return -1;
     }
 
-    close(fd);
+    /* keep pidfile open & locked forever */
 #else
     HANDLE file;
     DWORD flags;
