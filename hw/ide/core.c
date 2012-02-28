@@ -1129,6 +1129,9 @@ void ide_exec_cmd(IDEBus *bus, uint32_t val)
             ide_set_signature(s); /* odd, but ATA4 8.27.5.2 requires it */
             goto abort_cmd;
         }
+        if (!s->bs) {
+            goto abort_cmd;
+        }
 	ide_cmd_lba48_transform(s, lba48);
         s->req_nb_sectors = 1;
         ide_sector_read(s);
@@ -1139,6 +1142,9 @@ void ide_exec_cmd(IDEBus *bus, uint32_t val)
     case WIN_WRITE_ONCE:
     case CFA_WRITE_SECT_WO_ERASE:
     case WIN_WRITE_VERIFY:
+        if (!s->bs) {
+            goto abort_cmd;
+        }
 	ide_cmd_lba48_transform(s, lba48);
         s->error = 0;
         s->status = SEEK_STAT | READY_STAT;
@@ -1149,8 +1155,12 @@ void ide_exec_cmd(IDEBus *bus, uint32_t val)
     case WIN_MULTREAD_EXT:
 	lba48 = 1;
     case WIN_MULTREAD:
-        if (!s->mult_sectors)
+        if (!s->bs) {
             goto abort_cmd;
+        }
+        if (!s->mult_sectors) {
+            goto abort_cmd;
+        }
 	ide_cmd_lba48_transform(s, lba48);
         s->req_nb_sectors = s->mult_sectors;
         ide_sector_read(s);
@@ -1159,8 +1169,12 @@ void ide_exec_cmd(IDEBus *bus, uint32_t val)
 	lba48 = 1;
     case WIN_MULTWRITE:
     case CFA_WRITE_MULTI_WO_ERASE:
-        if (!s->mult_sectors)
+        if (!s->bs) {
             goto abort_cmd;
+        }
+        if (!s->mult_sectors) {
+            goto abort_cmd;
+        }
 	ide_cmd_lba48_transform(s, lba48);
         s->error = 0;
         s->status = SEEK_STAT | READY_STAT;
@@ -1175,8 +1189,9 @@ void ide_exec_cmd(IDEBus *bus, uint32_t val)
 	lba48 = 1;
     case WIN_READDMA:
     case WIN_READDMA_ONCE:
-        if (!s->bs)
+        if (!s->bs) {
             goto abort_cmd;
+        }
 	ide_cmd_lba48_transform(s, lba48);
         ide_sector_read_dma(s);
         break;
@@ -1184,8 +1199,9 @@ void ide_exec_cmd(IDEBus *bus, uint32_t val)
 	lba48 = 1;
     case WIN_WRITEDMA:
     case WIN_WRITEDMA_ONCE:
-        if (!s->bs)
+        if (!s->bs) {
             goto abort_cmd;
+        }
 	ide_cmd_lba48_transform(s, lba48);
         ide_sector_write_dma(s);
         s->media_changed = 1;
