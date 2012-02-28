@@ -171,7 +171,7 @@ static int channel_list_del(SpiceChannelEventInfo *info)
     return 0;
 }
 
-static void add_addr_info(QDict *dict, struct sockaddr *addr, int len)
+static void do_add_addr_info(QDict *dict, struct sockaddr *addr, int len)
 {
     char host[NI_MAXHOST], port[NI_MAXSERV];
     const char *family;
@@ -183,6 +183,38 @@ static void add_addr_info(QDict *dict, struct sockaddr *addr, int len)
     qdict_put(dict, "host", qstring_from_str(host));
     qdict_put(dict, "port", qstring_from_str(port));
     qdict_put(dict, "family", qstring_from_str(family));
+}
+
+static void add_addr_info(QDict *dict, SpiceChannelEventInfo *info,
+                          int is_client)
+{
+    struct sockaddr *addr;
+    int addr_len;
+
+#ifdef SPICE_CHANNEL_EVENT_FLAG_ADDR_EXT
+    if (info->flags & SPICE_CHANNEL_EVENT_FLAG_ADDR_EXT) {
+        if (is_client) {
+            addr = (struct sockaddr *)&info->paddr_ext;
+            addr_len = info->plen_ext;
+        } else {
+            addr = (struct sockaddr *)&info->laddr_ext;
+            addr_len = info->llen_ext;
+        }
+    } else {
+        fprintf(stderr, "spice: %s, extended address is expected\n",
+                        __func__);
+#endif
+        if (is_client) {
+            addr = &info->paddr;
+            addr_len = info->plen;
+        } else {
+            addr = &info->laddr;
+            addr_len = info->llen;
+        }
+#ifdef SPICE_CHANNEL_EVENT_FLAG_ADDR_EXT
+    }
+#endif
+    do_add_addr_info(dict, addr, addr_len);
 }
 
 static void add_channel_info(QDict *dict, SpiceChannelEventInfo *info)
@@ -204,7 +236,7 @@ static QList *channel_list_get(void)
     list = qlist_new();
     QTAILQ_FOREACH(item, &channel_list, link) {
         dict = qdict_new();
-        add_addr_info(dict, &item->info->paddr, item->info->plen);
+        add_addr_info(dict, item->info, true);
         add_channel_info(dict, item->info);
         qlist_append(list, dict);
     }
@@ -217,10 +249,10 @@ static void redhat_channel_event(int qevent, SpiceChannelEventInfo *info)
     QObject *data;
 
     client = qdict_new();
-    add_addr_info(client, &info->paddr, info->plen);
+    add_addr_info(client, info, true);
 
     server = qdict_new();
-    add_addr_info(server, &info->laddr, info->llen);
+    add_addr_info(server, info, false);
     qdict_put(server, "auth", qstring_from_str(auth));
 
     data = qobject_from_jsonf("{ 'client': %p, 'server': %p }",
@@ -254,10 +286,10 @@ static void channel_event(int event, SpiceChannelEventInfo *info)
     }
 
     client = qdict_new();
-    add_addr_info(client, &info->paddr, info->plen);
+    add_addr_info(client, info, true);
 
     server = qdict_new();
-    add_addr_info(server, &info->laddr, info->llen);
+    add_addr_info(server, info, false);
 
     if (event == SPICE_CHANNEL_EVENT_INITIALIZED) {
         qdict_put(server, "auth", qstring_from_str(auth));
