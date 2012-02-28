@@ -650,6 +650,8 @@ int kvm_cpu_exec(CPUState *env)
         qemu_mutex_lock_iothread();
         kvm_arch_post_run(env, run);
 
+        kvm_flush_coalesced_mmio_buffer();
+
         if (ret == -EINTR || ret == -EAGAIN) {
             dprintf("io window exit\n");
             ret = 0;
@@ -660,8 +662,6 @@ int kvm_cpu_exec(CPUState *env)
             dprintf("kvm run failed %s\n", strerror(-ret));
             abort();
         }
-
-        kvm_flush_coalesced_mmio_buffer();
 
         ret = 0; /* exit loop */
         switch (run->exit_reason) {
