@@ -764,6 +764,77 @@ void bdrv_set_dev_ops(BlockDriverState *bs, const BlockDevOps *ops,
     }
 }
 
+#define BDRV_REASON_KEY RFQDN_REDHAT "reason"
+
+/* RHEL6 vendor extension */
+static void bdrv_put_rhel6_reason(QDict *event, int error)
+{
+    const char *reason;
+
+    switch (error) {
+    case ENOSPC:
+        reason = "enospc";
+        break;
+    case EPERM:
+        reason = "eperm";
+        break;
+    case EIO:
+        reason = "eio";
+        break;
+    default:
+        reason = "eother";
+        break;
+    }
+
+    qdict_put(event, BDRV_REASON_KEY, qstring_from_str(reason));
+}
+
+#define BDRV_DEBUG_KEY  RFQDN_REDHAT "debug_info"
+
+/* RHEL6 vendor extension */
+static void bdrv_put_rhel6_debug_info(QDict *event, int error)
+{
+    QObject *info;
+
+    info = qobject_from_jsonf("{ 'errno': %d, 'message': %s }", error,
+                               strerror(error));
+    qdict_put_obj(event, BDRV_DEBUG_KEY, info);
+}
+
+void bdrv_emit_qmp_error_event(const BlockDriverState *bdrv,
+                    BlockQMPEventAction action, int error, int is_read)
+{
+    QObject *data;
+    const char *action_str;
+
+    switch (action) {
+    case BDRV_ACTION_REPORT:
+        action_str = "report";
+        break;
+    case BDRV_ACTION_IGNORE:
+        action_str = "ignore";
+        break;
+    case BDRV_ACTION_STOP:
+        action_str = "stop";
+        break;
+    default:
+        abort();
+    }
+
+    fprintf(stderr, "block I/O error in device '%s': %s (%d)\n",
+                     bdrv->device_name, strerror(error), error);
+
+    data = qobject_from_jsonf("{ 'device': %s, 'action': %s, 'operation': %s }",
+                              bdrv->device_name,
+                              action_str,
+                              is_read ? "read" : "write");
+    bdrv_put_rhel6_reason(qobject_to_qdict(data), error);
+    bdrv_put_rhel6_debug_info(qobject_to_qdict(data), error);
+    monitor_protocol_event(QEVENT_BLOCK_IO_ERROR, data);
+
+    qobject_decref(data);
+}
+
 static void bdrv_dev_change_media_cb(BlockDriverState *bs, bool load)
 {
     if (bs->dev_ops && bs->dev_ops->change_media_cb) {
@@ -1636,77 +1707,6 @@ int bdrv_is_allocated(BlockDriverState *bs, int64_t sector_num, int nb_sectors,
         return 1;
     }
     return bs->drv->bdrv_is_allocated(bs, sector_num, nb_sectors, pnum);
-}
-
-#define BDRV_REASON_KEY RFQDN_REDHAT "reason"
-
-/* RHEL6 vendor extension */
-static void bdrv_put_rhel6_reason(QDict *event, int error)
-{
-    const char *reason;
-
-    switch (error) {
-    case ENOSPC:
-        reason = "enospc";
-        break;
-    case EPERM:
-        reason = "eperm";
-        break;
-    case EIO:
-        reason = "eio";
-        break;
-    default:
-        reason = "eother";
-        break;
-    }
-
-    qdict_put(event, BDRV_REASON_KEY, qstring_from_str(reason));
-}
-
-#define BDRV_DEBUG_KEY  RFQDN_REDHAT "debug_info"
-
-/* RHEL6 vendor extension */
-static void bdrv_put_rhel6_debug_info(QDict *event, int error)
-{
-    QObject *info;
-
-    info = qobject_from_jsonf("{ 'errno': %d, 'message': %s }", error,
-                               strerror(error));
-    qdict_put_obj(event, BDRV_DEBUG_KEY, info);
-}
-
-void bdrv_mon_event(const BlockDriverState *bdrv,
-                    BlockMonEventAction action, int error, int is_read)
-{
-    QObject *data;
-    const char *action_str;
-
-    switch (action) {
-    case BDRV_ACTION_REPORT:
-        action_str = "report";
-        break;
-    case BDRV_ACTION_IGNORE:
-        action_str = "ignore";
-        break;
-    case BDRV_ACTION_STOP:
-        action_str = "stop";
-        break;
-    default:
-        abort();
-    }
-
-    fprintf(stderr, "block I/O error in device '%s': %s (%d)\n",
-                     bdrv->device_name, strerror(error), error);
-
-    data = qobject_from_jsonf("{ 'device': %s, 'action': %s, 'operation': %s }",
-                              bdrv->device_name,
-                              action_str,
-                              is_read ? "read" : "write");
-    bdrv_put_rhel6_reason(qobject_to_qdict(data), error);
-    bdrv_put_rhel6_debug_info(qobject_to_qdict(data), error);
-    monitor_protocol_event(QEVENT_BLOCK_IO_ERROR, data);
-
-    qobject_decref(data);
 }
 
 static void bdrv_print_dict(QObject *obj, void *opaque)

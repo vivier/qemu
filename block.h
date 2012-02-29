@@ -85,7 +85,7 @@ typedef enum {
 
 typedef enum {
     BDRV_ACTION_REPORT, BDRV_ACTION_IGNORE, BDRV_ACTION_STOP
-} BlockMonEventAction;
+} BlockQMPEventAction;
 
 typedef enum {
     BDRV_IOS_INVAL, BDRV_IOS_OK, BDRV_IOS_FAILED, BDRV_IOS_ENOSPC,
@@ -97,8 +97,8 @@ void bdrv_iostatus_reset(BlockDriverState *bs);
 void bdrv_iostatus_disable(BlockDriverState *bs);
 bool bdrv_iostatus_is_enabled(const BlockDriverState *bs);
 void bdrv_iostatus_set_err(BlockDriverState *bs, int error);
-void bdrv_mon_event(const BlockDriverState *bdrv,
-                    BlockMonEventAction action, int error, int is_read);
+void bdrv_emit_qmp_error_event(const BlockDriverState *bdrv,
+                    BlockQMPEventAction action, int error, int is_read);
 void bdrv_info_print(Monitor *mon, const QObject *data);
 void bdrv_info(Monitor *mon, QObject **ret_data);
 void bdrv_stats_print(Monitor *mon, const QObject *data);

@@ -294,14 +294,14 @@ static int scsi_handle_rw_error(SCSIDiskReq *r, int error)
     BlockErrorAction action = bdrv_get_on_error(s->qdev.conf.bs, is_read);
 
     if (action == BLOCK_ERR_IGNORE) {
-        bdrv_mon_event(s->qdev.conf.bs, BDRV_ACTION_IGNORE, error, is_read);
+        bdrv_emit_qmp_error_event(s->qdev.conf.bs, BDRV_ACTION_IGNORE, error, is_read);
         return 0;
     }
 
     if ((error == ENOSPC && action == BLOCK_ERR_STOP_ENOSPC)
             || action == BLOCK_ERR_STOP_ANY) {
 
-        bdrv_mon_event(s->qdev.conf.bs, BDRV_ACTION_STOP, error, is_read);
+        bdrv_emit_qmp_error_event(s->qdev.conf.bs, BDRV_ACTION_STOP, error, is_read);
         vm_stop(RUN_STATE_IO_ERROR);
         bdrv_iostatus_set_err(s->qdev.conf.bs, error);
         scsi_req_retry(&r->req);
@@ -320,7 +320,7 @@ static int scsi_handle_rw_error(SCSIDiskReq *r, int error)
             scsi_check_condition(r, SENSE_CODE(IO_ERROR));
             break;
         }
-        bdrv_mon_event(s->qdev.conf.bs, BDRV_ACTION_REPORT, error, is_read);
+        bdrv_emit_qmp_error_event(s->qdev.conf.bs, BDRV_ACTION_REPORT, error, is_read);
     }
     return 1;
 }
