@@ -614,13 +614,17 @@ static int virtio_serial_load(QEMUFile *f, void *opaque, int version_id)
     size_t ports_map_size;
     uint32_t max_nr_ports, nr_active_ports, *ports_map;
     unsigned int i;
+    int ret;
 
     if (version_id > 3) {
         return -EINVAL;
     }
 
     /* The virtio device */
-    virtio_load(&s->vdev, f);
+    ret = virtio_load(&s->vdev, f);
+    if (ret) {
+        return ret;
+    }
 
     if (version_id < 2) {
         return 0;
