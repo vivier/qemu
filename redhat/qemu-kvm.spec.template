@@ -59,6 +59,7 @@ BuildRequires: pciutils-devel
 BuildRequires: pulseaudio-libs-devel
 BuildRequires: ncurses-devel
 BuildRequires: libaio-devel
+BuildRequires: usbredir-devel
 
 # require spice-server API changes from bz#788444
 BuildRequires: spice-server-devel >= 0.10.1-2.el6
@@ -220,6 +221,7 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
             --trace-backend=dtrace \
             --enable-smartcard \
             --disable-smartcard-nss \
+            --enable-usb-redir \
             %{fake_machine_arg}
 
 echo "config-host.mak contents:"
