@@ -105,6 +105,7 @@ common-obj-$(CONFIG_SPICE) += ui/spice-core.o ui/spice-input.o ui/spice-display.
 
 common-obj-$(CONFIG_SMARTCARD) += usb-ccid.o ccid-card-passthru.o
 common-obj-$(CONFIG_SMARTCARD_NSS) += ccid-card-emulated.o
+common-obj-$(CONFIG_USB_REDIR) += usb-redir.o
 
 audio-obj-y = audio.o noaudio.o wavaudio.o mixeng.o
 audio-obj-$(CONFIG_SDL) += sdlaudio.o

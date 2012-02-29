@@ -283,6 +283,7 @@ spice=""
 smartcard=""
 smartcard_nss=""
 live_snapshots="yes"
+usb_redir=""
 
 # OS specific
 if check_define __linux__ ; then
@@ -681,6 +682,10 @@ for opt do
   ;;
   --enable-live-snapshots) live_snapshots="yes"
   ;;
+  --disable-usb-redir) usb_redir="no"
+  ;;
+  --enable-usb-redir) usb_redir="yes"
+  ;;
   *) echo "ERROR: unknown option $opt"; show_help="yes"
   ;;
   esac
@@ -854,6 +859,8 @@ echo "  --disable-smartcard-nss  disable smartcard nss support"
 echo "  --enable-smartcard-nss   enable smartcard nss support"
 echo "  --disable-live-snapshots disable live block device snapshot support"
 echo "  --enable-live-snapshots  enable live block device snapshot support"
+echo "  --disable-usb-redir      disable usb network redirection support"
+echo "  --enable-usb-redir       enable usb network redirection support"
 echo ""
 echo "NOTE: The object files are built at the place where configure is launched"
 exit 1
@@ -2033,6 +2040,22 @@ if test "$smartcard" == "no" ; then
     smartcard_nss="no"
 fi
 
+# check for usbredirparser for usb network redirection support
+if test "$usb_redir" != "no" ; then
+    if pkg-config libusbredirparser >/dev/null 2>&1 ; then
+        usb_redir="yes"
+        usb_redir_cflags=$(pkg-config --cflags libusbredirparser 2>/dev/null)
+        usb_redir_libs=$(pkg-config --libs libusbredirparser 2>/dev/null)
+        QEMU_CFLAGS="$QEMU_CFLAGS $usb_redir_cflags"
+        LIBS="$LIBS $usb_redir_libs"
+    else
+        if test "$usb_redir" = "yes"; then
+            feature_not_found "usb-redir"
+        fi
+        usb_redir="no"
+    fi
+fi
+
 ##########################################
 
 ##########################################
@@ -2231,6 +2254,7 @@ echo "spice support     $spice"
 echo "nss used          $smartcard_nss"
 echo "Live snapshots    $live_snapshots"
 echo "xfsctl support    $xfs"
+echo "usb net redir     $usb_redir"
 
 if test $sdl_too_old = "yes"; then
 echo "-> Your SDL version is too old - please upgrade to have SDL support"
@@ -2481,6 +2505,10 @@ fi
 
 if test "$live_snapshots" = "yes" ; then
   echo "CONFIG_LIVE_SNAPSHOTS=y" >> $config_host_mak
+fi
+
+if test "$usb_redir" = "yes" ; then
+  echo "CONFIG_USB_REDIR=y" >> $config_host_mak
 fi
 
 # XXX: suppress that
