@@ -705,7 +705,10 @@ static void usbredir_open_close_bh(void *opaque)
     }
 
     if (dev->cs->opened) {
-        dev->parser = qemu_oom_check(usbredirparser_create());
+        dev->parser = usbredirparser_create();
+        if (dev->parser == NULL) {
+            abort();
+        }
         dev->parser->priv = dev;
         dev->parser->log_func = usbredir_log;
         dev->parser->read_func = usbredir_read;
@@ -786,6 +789,12 @@ static void usbredir_chardev_event(void *opaque, int event)
  * init + destroy
  */
 
+static QemuChrHandlers usbredir_handlers = {
+    .fd_can_read = usbredir_chardev_can_read,
+    .fd_read = usbredir_chardev_read,
+    .fd_event = usbredir_chardev_event,
+};
+
 static int usbredir_initfn(USBDevice *udev)
 {
     USBRedirDevice *dev = DO_UPCAST(USBRedirDevice, dev, udev);
@@ -797,7 +806,7 @@ static int usbredir_initfn(USBDevice *udev)
     }
 
     dev->open_close_bh = qemu_bh_new(usbredir_open_close_bh, dev);
-    dev->attach_timer = qemu_new_timer_ms(vm_clock, usbredir_do_attach, dev);
+    dev->attach_timer = qemu_new_timer(vm_clock, usbredir_do_attach, dev);
 
     QTAILQ_INIT(&dev->asyncq);
     for (i = 0; i < MAX_ENDPOINTS; i++) {
@@ -807,8 +816,7 @@ static int usbredir_initfn(USBDevice *udev)
     /* We'll do the attach once we receive the speed from the usb-host */
     udev->auto_attach = 0;
 
-    qemu_chr_add_handlers(dev->cs, usbredir_chardev_can_read,
-                          usbredir_chardev_read, usbredir_chardev_event, dev);
+    qemu_chr_add_handlers(dev->cs, &usbredir_handlers, dev);
 
     return 0;
 }
@@ -910,7 +918,8 @@ static void usbredir_device_disconnect(void *priv)
          * Delay next usb device attach to give the guest a chance to see
          * see the detach / attach in case of quick close / open succession
          */
-        dev->next_attach_time = qemu_get_clock_ms(vm_clock) + 200;
+        dev->next_attach_time = qemu_get_clock(vm_clock)
+            + get_ticks_per_sec() * 200 / 1000; /* 200 ms */
     }
 }
 
