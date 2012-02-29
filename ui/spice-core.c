@@ -503,7 +503,7 @@ void do_info_spice(Monitor *mon, QObject **ret_data)
     const char *addr;
     int port, tls_port;
 
-    if (!spice_server) {
+    if (!spice_server || !opts) {
         *ret_data = qobject_from_jsonf("{ 'enabled': false }");
         return;
     }
