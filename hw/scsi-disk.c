@@ -1132,8 +1132,11 @@ static int scsi_disk_emulate_start_stop(SCSIDiskReq *r)
                                  : SENSE_CODE(NOT_READY_REMOVAL_PREVENTED));
             return -1;
         }
-        bdrv_eject(s->qdev.conf.bs, !start);
-        s->tray_open = !start;
+
+        if (s->tray_open != !start) {
+            bdrv_eject(s->qdev.conf.bs, !start);
+            s->tray_open = !start;
+        }
     }
     return 0;
 }
