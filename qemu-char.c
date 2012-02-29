@@ -120,7 +120,7 @@ static void char_write_unblocked(void *opaque)
     chr->chr_write_unblocked(chr->handler_opaque);
 }
 
-static void qemu_chr_event(CharDriverState *s, int event)
+void qemu_chr_event(CharDriverState *s, int event)
 {
     /* Keep track if the char device is open */
     switch (event) {
