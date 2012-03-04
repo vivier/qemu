@@ -386,6 +386,10 @@ static void async_complete(void *opaque)
 		p->len = USB_RET_STALL;
                 break;
 
+            case -EOVERFLOW:
+                p->len = USB_RET_BABBLE;
+                break;
+
             default:
                 p->len = USB_RET_NAK;
                 break;
@@ -725,6 +729,8 @@ static int urb_status_to_usb_ret(int status)
     switch (status) {
     case -EPIPE:
         return USB_RET_STALL;
+    case -EOVERFLOW:
+        return USB_RET_BABBLE;
     default:
         return USB_RET_NAK;
     }
@@ -760,7 +766,7 @@ static int usb_host_handle_iso_data(USBHostDevice *s, USBPacket *p, int in)
             /* Check the frame fits */
             } else if (aurb[i].urb.iso_frame_desc[j].actual_length > p->len) {
                 printf("husb: received iso data is larger then packet\n");
-                len = USB_RET_NAK;
+                len = USB_RET_BABBLE;
             /* All good copy data over */
             } else {
                 len = aurb[i].urb.iso_frame_desc[j].actual_length;
