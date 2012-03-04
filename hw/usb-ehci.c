@@ -686,7 +686,7 @@ static EHCIQueue *ehci_find_queue_by_qh(EHCIState *ehci, uint32_t addr,
     return NULL;
 }
 
-static void ehci_queues_rip_unused(EHCIState *ehci, int async)
+static void ehci_queues_rip_unused(EHCIState *ehci, int async, int flush)
 {
     EHCIQueueHead *head = async ? &ehci->aqueues : &ehci->pqueues;
     EHCIQueue *q, *tmp;
@@ -697,7 +697,7 @@ static void ehci_queues_rip_unused(EHCIState *ehci, int async)
             q->ts = ehci->last_run_usec;
             continue;
         }
-        if (ehci->last_run_usec < q->ts + 250000) {
+        if (!flush && ehci->last_run_usec < q->ts + 250000) {
             /* allow 0.25 sec idle */
             continue;
         }
@@ -1556,7 +1556,7 @@ static int ehci_state_waitlisthead(EHCIState *ehci,  int async)
         ehci_set_usbsts(ehci, USBSTS_REC);
     }
 
-    ehci_queues_rip_unused(ehci, async);
+    ehci_queues_rip_unused(ehci, async, 0);
 
     /*  Find the head of the list (4.9.1.1) */
     for(i = 0; i < MAX_QH; i++) {
@@ -2076,18 +2076,7 @@ static void ehci_advance_async_state(EHCIState *ehci)
             break;
         }
 
-        /* If the doorbell is set, the guest wants to make a change to the
-         * schedule. The host controller needs to release cached data.
-         * (section 4.8.2)
-         */
-        if (ehci->usbcmd & USBCMD_IAAD) {
-            DPRINTF("ASYNC: doorbell request acknowledged\n");
-            ehci->usbcmd &= ~USBCMD_IAAD;
-            ehci_set_interrupt(ehci, USBSTS_IAA);
-            break;
-        }
-
-        /* make sure guest has acknowledged */
+        /* make sure guest has acknowledged the doorbell interrupt */
         /* TO-DO: is this really needed? */
         if (ehci->usbsts & USBSTS_IAA) {
             DPRINTF("IAA status bit still set.\n");
@@ -2101,6 +2090,18 @@ static void ehci_advance_async_state(EHCIState *ehci)
 
         ehci_set_state(ehci, async, EST_WAITLISTHEAD);
         ehci_advance_state(ehci, async);
+
+        /* If the doorbell is set, the guest wants to make a change to the
+         * schedule. The host controller needs to release cached data.
+         * (section 4.8.2)
+         */
+        if (ehci->usbcmd & USBCMD_IAAD) {
+            /* Remove all unseen qhs from the async qhs queue */
+            ehci_queues_rip_unused(ehci, async, 1);
+            DPRINTF("ASYNC: doorbell request acknowledged\n");
+            ehci->usbcmd &= ~USBCMD_IAAD;
+            ehci_set_interrupt(ehci, USBSTS_IAA);
+        }
         break;
 
     default:
@@ -2150,7 +2151,7 @@ static void ehci_advance_periodic_state(EHCIState *ehci)
         ehci_set_fetch_addr(ehci, async,entry);
         ehci_set_state(ehci, async, EST_FETCHENTRY);
         ehci_advance_state(ehci, async);
-        ehci_queues_rip_unused(ehci, async);
+        ehci_queues_rip_unused(ehci, async, 0);
         break;
 
     default:
