@@ -1489,6 +1489,10 @@ static int ehci_process_itd(EHCIState *ehci,
                     itd->transact[i] |= ITD_XACT_BABBLE;
                     ehci_record_interrupt(ehci, USBSTS_ERRINT);
                     break;
+                case USB_RET_ASYNC:
+                    /* ISO endpoints are never ASYNC, not an iso endpoint? */
+                    usb_cancel_packet(&ehci->ipacket);
+                    /* Treat this as a NAK (fall through) */
                 case USB_RET_NAK:
                     /* no data for us, so do a zero-length transfer */
                     ret = 0;
