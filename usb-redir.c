@@ -457,7 +457,7 @@ static int usbredir_handle_iso_data(USBRedirDevice *dev, USBPacket *p,
             ERROR("received iso data is larger then packet ep %02X (%d > %d)\n",
                   ep, len, (int)p->len);
             bufp_free(dev, isop, ep);
-            return USB_RET_NAK;
+            return USB_RET_BABBLE;
         }
         memcpy(p->data, isop->data, len);
         bufp_free(dev, isop, ep);
@@ -571,7 +571,7 @@ static int usbredir_handle_interrupt_data(USBRedirDevice *dev,
         if (len > p->len) {
             ERROR("received int data is larger then packet ep %02X\n", ep);
             bufp_free(dev, intp, ep);
-            return USB_RET_NAK;
+            return USB_RET_BABBLE;
         }
         memcpy(p->data, intp->data, len);
         bufp_free(dev, intp, ep);
