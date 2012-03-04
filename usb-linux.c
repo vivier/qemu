@@ -391,7 +391,7 @@ static void async_complete(void *opaque)
                 break;
 
             default:
-                p->len = USB_RET_NAK;
+                p->len = USB_RET_IOERROR;
                 break;
             }
 
@@ -732,7 +732,7 @@ static int urb_status_to_usb_ret(int status)
     case -EOVERFLOW:
         return USB_RET_BABBLE;
     default:
-        return USB_RET_NAK;
+        return USB_RET_IOERROR;
     }
 }
 
