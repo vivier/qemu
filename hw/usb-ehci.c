@@ -1471,11 +1471,28 @@ static int ehci_process_itd(EHCIState *ehci,
                 }
             }
 
-            if (ret == USB_RET_NAK) {
-                /* no data for us, so do a zero-length transfer */
-                ret = 0;
+            if (ret < 0) {
+                switch (ret) {
+                default: 
+                    fprintf(stderr, "Unexpected iso usb result: %d\n", ret);
+                    /* Fall through */
+                case USB_RET_NODEV:
+                    /* 3.3.2: XACTERR is only allowed on IN transactions */
+                    if (dir) {
+                        itd->transact[i] |= ITD_XACT_XACTERR;
+                        ehci_record_interrupt(ehci, USBSTS_ERRINT);
+                    }
+                    break;
+                case USB_RET_BABBLE:
+                    itd->transact[i] |= ITD_XACT_BABBLE;
+                    ehci_record_interrupt(ehci, USBSTS_ERRINT);
+                    break;
+                case USB_RET_NAK:
+                    /* no data for us, so do a zero-length transfer */
+                    ret = 0;
+                    break;
+                }
             }
-
             if (ret >= 0) {
                 if (!dir) {
                     /* OUT */
@@ -1497,23 +1514,6 @@ static int ehci_process_itd(EHCIState *ehci,
                         cpu_physical_memory_rw(ptr2, &ehci->ibuffer[len1], len2, 1);
                     }
                     set_field(&itd->transact[i], ret, ITD_XACT_LENGTH);
-                }
-            } else {
-                switch (ret) {
-                default:
-                    fprintf(stderr, "Unexpected iso usb result: %d\n", ret);
-                    /* Fall through */
-                case USB_RET_NODEV:
-                    /* 3.3.2: XACTERR is only allowed on IN transactions */
-                    if (dir) {
-                        itd->transact[i] |= ITD_XACT_XACTERR;
-                        ehci_record_interrupt(ehci, USBSTS_ERRINT);
-                    }
-                    break;
-                case USB_RET_BABBLE:
-                    itd->transact[i] |= ITD_XACT_BABBLE;
-                    ehci_record_interrupt(ehci, USBSTS_ERRINT);
-                    break;
                 }
             }
             if (itd->transact[i] & ITD_XACT_IOC) {
