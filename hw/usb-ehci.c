@@ -1266,6 +1266,7 @@ static void ehci_execute_complete(EHCIQueue *q)
 
     if (q->usb_status < 0) {
         switch(q->usb_status) {
+        case USB_RET_IOERROR:
         case USB_RET_NODEV:
             q->qh.token |= (QTD_TOKEN_HALT | QTD_TOKEN_XACTERR);
             set_field(&q->qh.token, 0, QTD_TOKEN_CERR);
@@ -1476,6 +1477,7 @@ static int ehci_process_itd(EHCIState *ehci,
                 default: 
                     fprintf(stderr, "Unexpected iso usb result: %d\n", ret);
                     /* Fall through */
+                case USB_RET_IOERROR:
                 case USB_RET_NODEV:
                     /* 3.3.2: XACTERR is only allowed on IN transactions */
                     if (dir) {
