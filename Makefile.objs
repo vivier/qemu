@@ -185,5 +185,11 @@ hw-obj-$(CONFIG_ESP) += esp.o
 hw-obj-y += dma-helpers.o sysbus.o isa-bus.o
 hw-obj-$(CONFIG_QDEV_ADDR) += qdev-addr.o
 
+######################################################################
+# qapi
+
+qapi-nested-y = qapi-visit-core.o
+qapi-obj-y = $(addprefix qapi/, $(qapi-nested-y))
+
 all: $(HWLIB)
 vl.o: QEMU_CFLAGS+=$(GLIB_CFLAGS)
