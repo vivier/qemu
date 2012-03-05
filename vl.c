@@ -3000,7 +3000,7 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
     }
 
     t0 = get_clock() - t0;
-    bwidth = (bytes_transferred - bytes_transferred_last) / t0;
+    bwidth = ((double)bytes_transferred - bytes_transferred_last) / t0;
 
     /* if we haven't transferred anything this round, force expected_time to a
      * a very high value, but without crashing */
