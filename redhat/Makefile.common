@@ -28,7 +28,7 @@ TARSHA256:=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 TARBALL:=$(REDHAT)/$(TARFILE)
 TESTPATCH:=$(REDHAT)/$(COMMON_NAME)-test.patch
 
-EXTRA_SOURCES = ksmtuned.conf ksmtuned ksmtuned.init ksm.sysconfig ksm.init 80-kvm.rules kvm.modules blacklist-kvm.conf
+EXTRA_SOURCES = ksmtuned.conf ksmtuned ksmtuned.init ksm.sysconfig ksm.init 80-kvm.rules kvm.modules blacklist-kvm.conf qemu-ga.init qemu-ga.sysconfig
 
 SUBLEVEL := $(shell echo $(MARKER) | cut -f 3 -d '-')
 #RCREV := $(shell echo $(MARKER) | cut -f 2 -d '-' -s | sed -e "s/rc//")
