@@ -28,6 +28,7 @@ typedef struct DeviceState DeviceState;
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <assert.h>
+#include <glib.h>
 
 #ifndef O_LARGEFILE
 #define O_LARGEFILE 0
@@ -164,37 +165,6 @@ void *qemu_mallocz(size_t size);
 void qemu_free(void *ptr);
 char *qemu_strdup(const char *str);
 char *qemu_strndup(const char *str, size_t size);
-
-/* Emulation of g_malloc and friends */
-static inline void *g_malloc(unsigned long n_bytes)
-{
-    return n_bytes ? qemu_malloc(n_bytes) : NULL;
-}
-
-static inline void *g_malloc0(unsigned long n_bytes)
-{
-    return n_bytes ? qemu_mallocz(n_bytes) : NULL;
-}
-
-static inline void g_free(void *mem)
-{
-    qemu_free(mem);
-}
-
-static inline void *g_realloc(void *mem, unsigned long n_bytes)
-{
-    if (n_bytes == 0) {
-        g_free(mem);
-        return NULL;
-    }
-
-    return qemu_realloc(mem, n_bytes);
-}
-
-static inline char *g_strdup(const char *str)
-{
-    return qemu_strdup(str);
-}
 
 void qemu_mutex_lock_iothread(void);
 void qemu_mutex_unlock_iothread(void);
