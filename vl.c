@@ -2985,7 +2985,7 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
        */
         if ((i & 63) == 0) {
             uint64_t t1 = (get_clock() - t0) / 1000000;
-            if (t1 > 50000000) { /* 50 ms */
+            if (t1 > 50) { /* 50 ms */
                break;
             }
         }
