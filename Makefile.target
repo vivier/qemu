@@ -229,6 +229,7 @@ adlib.o fmopl.o: QEMU_CFLAGS += -DBUILD_Y8950=0
 
 QEMU_CFLAGS += $(VNC_TLS_CFLAGS)
 QEMU_CFLAGS += $(VNC_SASL_CFLAGS)
+QEMU_CFLAGS += $(GLIB_CFLAGS)
 
 # xen backend driver support
 obj-$(CONFIG_XEN) += xen_machine_pv.o xen_domainbuild.o
