@@ -193,4 +193,4 @@ qapi-nested-y += qmp-registry.o qmp-dispatch.o
 qapi-obj-y = $(addprefix qapi/, $(qapi-nested-y))
 
 all: $(HWLIB)
-vl.o: QEMU_CFLAGS+=$(GLIB_CFLAGS)
+QEMU_CFLAGS+=$(GLIB_CFLAGS)
