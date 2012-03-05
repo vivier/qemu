@@ -465,6 +465,9 @@ void monitor_protocol_event(MonitorEvent event, QObject *data)
         case QEVENT_SPICE_DISCONNECTED:
             event_name = "SPICE_DISCONNECTED";
             break;
+        case QEVENT_DEVICE_TRAY_MOVED:
+             event_name = "DEVICE_TRAY_MOVED";
+            break;
         case QEVENT_RH_SPICE_INITIALIZED:
             event_name = RFQDN_REDHAT "SPICE_INITIALIZED";
             break;
