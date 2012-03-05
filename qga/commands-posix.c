@@ -30,6 +30,10 @@
 #include "qerror.h"
 #include "qemu-queue.h"
 
+/* file-* commands are compile-time disabled for RHEL/RHEV.
+ * To enable, set to '1' */
+#define QGA_FILE_OPS 0
+
 static GAState *ga_state;
 
 static void reopen_fd_to_null(int fd)
@@ -95,6 +99,7 @@ static struct {
     QTAILQ_HEAD(, GuestFileHandle) filehandles;
 } guest_file_state;
 
+#if (QGA_FILE_OPS)
 static void guest_file_handle_add(FILE *fh)
 {
     GuestFileHandle *gfh;
@@ -118,9 +123,11 @@ static GuestFileHandle *guest_file_handle_find(int64_t id)
 
     return NULL;
 }
+#endif
 
 int64_t qmp_guest_file_open(const char *path, bool has_mode, const char *mode, Error **err)
 {
+#if (QGA_FILE_OPS)
     FILE *fh;
     int fd;
     int64_t ret = -1;
@@ -150,10 +157,15 @@ int64_t qmp_guest_file_open(const char *path, bool has_mode, const char *mode, E
     guest_file_handle_add(fh);
     slog("guest-file-open, handle: %d", fd);
     return fd;
+#else
+    error_set(err, QERR_UNSUPPORTED);
+    return 0;
+#endif
 }
 
 void qmp_guest_file_close(int64_t handle, Error **err)
 {
+#if (QGA_FILE_OPS)
     GuestFileHandle *gfh = guest_file_handle_find(handle);
     int ret;
 
@@ -171,11 +183,15 @@ void qmp_guest_file_close(int64_t handle, Error **err)
 
     QTAILQ_REMOVE(&guest_file_state.filehandles, gfh, next);
     qemu_free(gfh);
+#else
+    error_set(err, QERR_UNSUPPORTED);
+#endif
 }
 
 struct GuestFileRead *qmp_guest_file_read(int64_t handle, bool has_count,
                                           int64_t count, Error **err)
 {
+#if (QGA_FILE_OPS)
     GuestFileHandle *gfh = guest_file_handle_find(handle);
     GuestFileRead *read_data = NULL;
     guchar *buf;
@@ -213,11 +229,16 @@ struct GuestFileRead *qmp_guest_file_read(int64_t handle, bool has_count,
     clearerr(fh);
 
     return read_data;
+#else
+    error_set(err, QERR_UNSUPPORTED);
+    return 0;
+#endif
 }
 
 GuestFileWrite *qmp_guest_file_write(int64_t handle, const char *buf_b64,
                                      bool has_count, int64_t count, Error **err)
 {
+#if (QGA_FILE_OPS)
     GuestFileWrite *write_data = NULL;
     guchar *buf;
     gsize buf_len;
@@ -254,11 +275,16 @@ GuestFileWrite *qmp_guest_file_write(int64_t handle, const char *buf_b64,
     clearerr(fh);
 
     return write_data;
+#else
+    error_set(err, QERR_UNSUPPORTED);
+    return 0;
+#endif
 }
 
 struct GuestFileSeek *qmp_guest_file_seek(int64_t handle, int64_t offset,
                                           int64_t whence, Error **err)
 {
+#if (QGA_FILE_OPS)
     GuestFileHandle *gfh = guest_file_handle_find(handle);
     GuestFileSeek *seek_data = NULL;
     FILE *fh;
@@ -281,10 +307,15 @@ struct GuestFileSeek *qmp_guest_file_seek(int64_t handle, int64_t offset,
     clearerr(fh);
 
     return seek_data;
+#else
+    error_set(err, QERR_UNSUPPORTED);
+    return 0;
+#endif
 }
 
 void qmp_guest_file_flush(int64_t handle, Error **err)
 {
+#if (QGA_FILE_OPS)
     GuestFileHandle *gfh = guest_file_handle_find(handle);
     FILE *fh;
     int ret;
@@ -299,6 +330,9 @@ void qmp_guest_file_flush(int64_t handle, Error **err)
     if (ret == EOF) {
         error_set(err, QERR_QGA_COMMAND_FAILED, strerror(errno));
     }
+#else
+    error_set(err, QERR_UNSUPPORTED);
+#endif
 }
 
 static void guest_file_init(void)
