@@ -219,7 +219,7 @@ test-qmp-commands: test-qmp-commands.o qfloat.o qint.o qdict.o qstring.o qlist.o
 
 QGALIB_GEN=$(addprefix $(qapi-dir)/, qga-qapi-types.c qga-qapi-types.h qga-qapi-visit.c qga-qmp-marshal.c)
 $(QGALIB_GEN): $(GENERATED_HEADERS)
-$(qga-obj-y) qemu-ga.o: $(QGALIB_GEN)
+$(QGALIB) qemu-ga.o: $(QGALIB_GEN) $(qapi-obj-y)
 
 qemu-ga$(EXESUF): qemu-ga.o $(qga-obj-y) $(qapi-obj-y) $(trace-obj-y) $(qobject-obj-y) $(version-obj-y) $(addprefix $(qapi-dir)/, qga-qapi-visit.o qga-qapi-types.o qga-qmp-marshal.o)
 
