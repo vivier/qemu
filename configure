@@ -3048,6 +3048,7 @@ if test "$source_path_used" = "yes" ; then
     DIRS="$DIRS roms/seabios roms/vgabios"
     DIRS="$DIRS ui"
 	DIRS="$DIRS qapi"
+	DIRS="$DIRS qga"
     FILES="Makefile tests/Makefile"
     FILES="$FILES tests/cris/Makefile tests/cris/.gdbinit"
     FILES="$FILES tests/test-mmap.c"
