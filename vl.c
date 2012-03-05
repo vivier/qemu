@@ -2827,7 +2827,7 @@ static int ram_save_block(QEMUFile *f)
     RAMBlock *block = last_block;
     ram_addr_t offset = last_offset;
     ram_addr_t current_addr;
-    int found = 0;
+    int bytes_sent = 0;
 
     if (!block)
         block = QLIST_FIRST(&ram_list.blocks);
@@ -2862,6 +2862,7 @@ static int ram_save_block(QEMUFile *f)
                                     strlen(block->idstr));
                 }
                 qemu_put_byte(f, *p);
+                bytes_sent = 1;
             } else {
                 qemu_put_be64(f, offset | cont | RAM_SAVE_FLAG_PAGE);
                 if (!cont) {
@@ -2870,9 +2871,9 @@ static int ram_save_block(QEMUFile *f)
                                     strlen(block->idstr));
                 }
                 qemu_put_buffer(f, p, TARGET_PAGE_SIZE);
+                bytes_sent = TARGET_PAGE_SIZE;
             }
 
-            found = 1;
             break;
         }
 
@@ -2891,7 +2892,7 @@ static int ram_save_block(QEMUFile *f)
     last_block = block;
     last_offset = offset;
 
-    return found;
+    return bytes_sent;
 }
 
 static uint64_t bytes_transferred;
@@ -2974,9 +2975,11 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
 
     i = 0;
     while ((ret = qemu_file_rate_limit(f)) == 0) {
-        ret = ram_save_block(f);
-        bytes_transferred += ret * TARGET_PAGE_SIZE;
-        if (ret == 0) /* no more blocks */
+        int bytes_sent;
+
+        bytes_sent = ram_save_block(f);
+        bytes_transferred += bytes_sent;
+        if (bytes_sent == 0) /* no more blocks */
             break;
        /* we want to check in the 1st loop, just in case it was the 1st time
            and we had to sync the dirty bitmap.
@@ -3006,9 +3009,11 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
 
     /* try transferring iterative blocks of memory */
     if (stage == 3) {
+        int bytes_sent;
+
         /* flush all remaining blocks regardless of rate limiting */
-        while (ram_save_block(f) != 0) {
-            bytes_transferred += TARGET_PAGE_SIZE;
+        while ((bytes_sent = ram_save_block(f)) != 0) {
+            bytes_transferred += bytes_sent;
         }
         cpu_physical_memory_set_dirty_tracking(0);
     }
