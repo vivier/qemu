@@ -71,7 +71,7 @@ committed_memory () {
     # calculate how much memory is committed to running qemu processes
     local progname
     progname=${1:-qemu-kvm}
-    ps -C "$progname" -o vsz= | awk '{ sum += $1 }; END { print sum }'
+    ps -C "$progname" -o rsz= | awk '{ sum += $1 }; END { print sum }'
 }
 
 free_memory () {
