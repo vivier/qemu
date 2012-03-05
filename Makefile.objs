@@ -2,7 +2,7 @@
 # QObject
 qobject-obj-y = qint.o qstring.o qdict.o qlist.o qfloat.o qbool.o
 qobject-obj-y += qjson.o json-lexer.o json-streamer.o json-parser.o
-qobject-obj-y += qerror.o
+qobject-obj-y += qerror.o error.o
 
 #######################################################################
 # coroutines
@@ -63,7 +63,7 @@ shared-obj-y = qemu-error.o $(block-obj-y) $(qobject-obj-y)
 
 common-obj-y = $(shared-obj-y)
 common-obj-y += qemu-thread.o
-common-obj-y += blockdev.o error.o
+common-obj-y += blockdev.o
 common-obj-y += $(net-obj-y)
 common-obj-y += readline.o console.o cursor.o
 
