@@ -175,8 +175,6 @@
 
 #define CIRRUS_PNPMMIO_SIZE         0x1000
 
-#define ABS(a) ((signed)(a) > 0 ? a : -a)
-
 #define BLTUNSAFE(s) \
     ( \
         ( /* check dst is within bounds */ \
