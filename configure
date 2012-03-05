@@ -53,6 +53,7 @@ libs_tools=""
 audio_pt_int=""
 audio_win_int=""
 pkg_config="pkg-config"
+libs_qga=""
 
 # parse CC options first
 for opt do
@@ -1491,6 +1492,7 @@ if $pkg_config --modversion glib-2.0 > /dev/null 2>&1 ; then
     glib_libs=`$pkg_config --libs glib-2.0 2>/dev/null`
     LIBS="$glib_libs $LIBS"
     LIBS="$glib_libs $LIBS"
+    libs_qga="$glib_libs $libs_qga"
 else
     echo "glib-2.0 required to compile QEMU"
     exit 1
@@ -2612,6 +2614,7 @@ echo "ARLIBS_END=$arlibs_end" >> $config_host_mak
 echo "LIBS+=$LIBS" >> $config_host_mak
 echo "LIBS_TOOLS+=$libs_tools" >> $config_host_mak
 echo "EXESUF=$EXESUF" >> $config_host_mak
+echo "LIBS_QGA+=$libs_qga" >> $config_host_mak
 
 # generate list of library paths for linker script
 
