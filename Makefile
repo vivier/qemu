@@ -167,7 +167,7 @@ trace-dtrace.o: trace-dtrace.dtrace $(GENERATED_HEADERS)
 qemu-img.o: qemu-img-cmds.h
 qemu-img.o qemu-tool.o qemu-nbd.o qemu-io.o: $(GENERATED_HEADERS)
 
-TOOLS_OBJ=qemu-tool.o $(shared-obj-y) $(trace-obj-y)
+TOOLS_OBJ=qemu-tool.o qerror.o $(shared-obj-y) $(trace-obj-y)
 
 qemu-img$(EXESUF): qemu-img.o $(TOOLS_OBJ)
 
@@ -178,12 +178,12 @@ qemu-io$(EXESUF): qemu-io.o cmd.o $(TOOLS_OBJ)
 qemu-img-cmds.h: $(SRC_PATH)/qemu-img-cmds.hx
 	$(call quiet-command,sh $(SRC_PATH)/hxtool -h < $< > $@,"  GEN   $@")
 
-check-qint: check-qint.o qint.o qemu-malloc.o
-check-qstring: check-qstring.o qstring.o qemu-malloc.o
-check-qdict: check-qdict.o qdict.o qfloat.o qint.o qstring.o qbool.o qemu-malloc.o qlist.o
-check-qlist: check-qlist.o qlist.o qint.o qemu-malloc.o
-check-qfloat: check-qfloat.o qfloat.o qemu-malloc.o
-check-qjson: check-qjson.o qfloat.o qint.o qdict.o qstring.o qlist.o qbool.o qjson.o json-streamer.o json-lexer.o json-parser.o qemu-malloc.o
+check-qint: check-qint.o qint.o qemu-malloc.o qemu-tool.o
+check-qstring: check-qstring.o qstring.o qemu-malloc.o qemu-tool.o
+check-qdict: check-qdict.o qdict.o qfloat.o qint.o qstring.o qbool.o qemu-malloc.o qlist.o qemu-tool.o
+check-qlist: check-qlist.o qlist.o qint.o qemu-malloc.o qemu-tool.o
+check-qfloat: check-qfloat.o qfloat.o qemu-malloc.o qemu-tool.o
+check-qjson: check-qjson.o qfloat.o qint.o qdict.o qstring.o qlist.o qbool.o qjson.o json-streamer.o json-lexer.o json-parser.o qemu-malloc.o error.o qerror.o qemu-error.o qemu-tool.o
 
 QEMULIBS=libhw32 libhw64 libuser
 
