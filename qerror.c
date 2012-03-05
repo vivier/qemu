@@ -231,6 +231,14 @@ static const QErrorStringTable qerror_table[] = {
         .desc      = "Could not start VNC server on %(target)",
     },
     {
+        .error_fmt = QERR_QGA_LOGGING_FAILED,
+        .desc      = "Guest agent failed to log non-optional log statement",
+    },
+    {
+        .error_fmt = QERR_QGA_COMMAND_FAILED,
+        .desc      = "Guest agent command failed, error was '%(message)'",
+    },
+    {
         .error_fmt = QERR_STREAMING_ERROR,
         .desc      = "An error occurred during streaming: %(msg)",
     },

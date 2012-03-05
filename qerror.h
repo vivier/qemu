@@ -195,4 +195,10 @@ QError *qobject_to_qerror(const QObject *obj);
 #define QERR_STREAMING_ERROR \
     "{ 'class': 'StreamingError', 'data': { 'msg': %s } }"
 
+#define QERR_QGA_LOGGING_FAILED \
+    "{ 'class': 'QgaLoggingFailed', 'data': {} }"
+
+#define QERR_QGA_COMMAND_FAILED \
+    "{ 'class': 'QgaCommandFailed', 'data': { 'message': %s } }"
+
 #endif /* QERROR_H */
