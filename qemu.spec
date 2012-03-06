@@ -137,8 +137,10 @@ BuildRequires: spice-server-devel >= 0.9.0
 %endif
 # For network block driver
 BuildRequires: libcurl-devel
+%if !0%{?rhel}
 # For rbd block driver
 BuildRequires: ceph-devel
+%endif
 # We need both because the 'stap' binary is probed for by configure
 BuildRequires: systemtap
 BuildRequires: systemtap-sdt-devel
@@ -475,6 +477,9 @@ sed -i.debug 's/"-g $CFLAGS"/"$CFLAGS"/g' configure
             --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
             --extra-cflags="%{optflags} -fPIE -DPIE" \
             --enable-spice \
+%if 0%{?rhel}
+            --disable-rbd \
+%endif
             --enable-trace-backend=dtrace \
             --disable-werror \
             --disable-xen
@@ -506,6 +511,9 @@ make clean
     --disable-xen \
 %ifarch %{ix86} x86_64
     --enable-spice \
+%endif
+%if 0%{?rhel}
+    --disable-rbd \
 %endif
     --enable-trace-backend=dtrace \
     --disable-werror
