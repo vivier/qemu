@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 0.15.1
-Release: 3.2%{?dist}
+Release: 3.3%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -716,6 +716,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Mar 06 2012 Eduardo Habkost <ehabkost@redhat.com> - 2:0.15.1-3.3.el7
+- Use --disable-rbd on second ./configure call too
+- Related: bz#786927
+
 * Thu Feb 16 2012 Eduardo Habkost <ehabkost@redhat.com> - 2:0.15.1-3.2
 - Disable RBD support on RHEL builds
 - Resolves: bz#786927
