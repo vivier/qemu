@@ -405,6 +405,9 @@ make clean
 %ifarch x86_64
     --enable-spice \
 %endif
+%if 0%{?rhel}
+    --disable-rbd \
+%endif
     --enable-trace-backend=dtrace \
     --disable-werror
 
