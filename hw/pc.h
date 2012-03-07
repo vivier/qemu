@@ -101,7 +101,6 @@ typedef struct RTCState RTCState;
 RTCState *rtc_init(int base_year);
 void rtc_set_memory(RTCState *s, int addr, int val);
 void rtc_set_date(RTCState *s, const struct tm *tm);
-void cmos_set_s3_resume(void);
 
 /* pc.c */
 extern int fd_bootchk;
