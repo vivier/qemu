@@ -4563,29 +4563,6 @@ int qemu_uuid_parse(const char *str, uint8_t *uuid)
     return 0;
 }
 
-#ifndef _WIN32
-
-static void termsig_handler(int signal, siginfo_t *info, void *c)
-{
-    no_shutdown = 0;
-    qemu_system_killed(info->si_signo, info->si_pid);
-}
-
-static void sighandler_setup(void)
-{
-    struct sigaction act;
-
-    memset(&act, 0, sizeof(act));
-    act.sa_sigaction = termsig_handler;
-    act.sa_flags = SA_SIGINFO;
-
-    sigaction(SIGINT,  &act, NULL);
-    sigaction(SIGHUP,  &act, NULL);
-    sigaction(SIGTERM, &act, NULL);
-}
-
-#endif
-
 #ifdef _WIN32
 /* Look for support files in the same directory as the executable.  */
 static char *find_datadir(const char *argv0)
@@ -6282,10 +6259,8 @@ int main(int argc, char **argv, char **envp)
         break;
     }
 
-#ifndef _WIN32
     /* must be after terminal init, SDL library changes signal handlers */
-    sighandler_setup();
-#endif
+    os_setup_signal_handling();
 
     /* init remote displays */
     if (vnc_display) {
