@@ -572,7 +572,7 @@ static void piix4_powerdown(void *opaque, int irq, int power_failing)
 #endif
 }
 
-static void piix4_pm_machine_ready(struct Notifier* n)
+static void piix4_pm_machine_ready(struct Notifier* n, void *data)
 {
     PIIX4PMState *s = container_of(n, PIIX4PMState, machine_ready);
     uint8_t *pci_conf;
