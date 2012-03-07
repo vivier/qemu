@@ -197,12 +197,13 @@ qapi-obj-y = $(addprefix qapi/, $(qapi-nested-y))
 ######################################################################
 # guest agent
 
-qga-nested-y = commands.o commands-posix.o guest-agent-command-state.o
-qga-nested-y += channel-posix.o
+qga-nested-y = commands.o guest-agent-command-state.o
+qga-nested-$(CONFIG_POSIX) += commands-posix.o channel-posix.o
+qga-nested-$(CONFIG_WIN32) += commands-win32.o
 qga-obj-y = $(addprefix qga/, $(qga-nested-y))
-qga-obj-y += qemu-ga.o qemu-tool.o qemu-error.o qemu-sockets.o module.o qemu-option.o cutils.o osdep.o
+qga-obj-y += qemu-ga.o qemu-tool.o qemu-error.o module.o cutils.o osdep.o
 qga-obj-$(CONFIG_WIN32) += qemu-malloc.o
-qga-obj-$(CONFIG_POSIX) += qemu-malloc.o
+qga-obj-$(CONFIG_POSIX) += qemu-malloc.o qemu-sockets.o qemu-option.o
 
 vl.o: QEMU_CFLAGS+=$(GPROF_CFLAGS)
 
