@@ -432,6 +432,7 @@ static void rtc_update_second2(void *opaque)
              rtc_from_bcd(s, s->cmos_data[RTC_HOURS_ALARM]) == s->current_tm.tm_hour)) {
 
             s->cmos_data[RTC_REG_C] |= 0xa0;
+            qemu_system_wakeup_request(QEMU_WAKEUP_REASON_RTC);
             rtc_irq_raise(s->irq);
         }
     }
