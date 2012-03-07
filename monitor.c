@@ -1414,6 +1414,12 @@ static int do_cont(Monitor *mon, const QDict *qdict, QObject **ret_data)
     }
 }
 
+static int do_system_wakeup(Monitor *mon, const QDict *qdict, QObject **ret_data)
+{
+    qemu_system_wakeup_request(QEMU_WAKEUP_REASON_OTHER);
+    return 0;
+}
+
 static void bdrv_key_cb(void *opaque, int err)
 {
     Monitor *mon = opaque;
