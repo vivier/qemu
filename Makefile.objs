@@ -163,6 +163,7 @@ hw-obj-y += usb-ehci.o
 hw-obj-$(CONFIG_ECC) += ecc.o
 hw-obj-$(CONFIG_NAND) += nand.o
 hw-obj-$(CONFIG_WIN32) += os-win32.o
+hw-obj-$(CONFIG_POSIX) += os-posix.o
 
 hw-obj-$(CONFIG_M48T59) += m48t59.o
 hw-obj-$(CONFIG_ESCC) += escc.o
