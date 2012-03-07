@@ -70,6 +70,7 @@ void cpu_disable_ticks(void);
 typedef enum WakeupReason {
     QEMU_WAKEUP_REASON_OTHER = 0,
     QEMU_WAKEUP_REASON_RTC,
+    QEMU_WAKEUP_REASON_PMTIMER,
 } WakeupReason;
 
 void qemu_system_reset_request(void);

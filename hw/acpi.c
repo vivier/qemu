@@ -84,6 +84,7 @@ typedef struct PIIX4PMState {
 #define RSM_STS (1 << 15)
 #define RTC_STS (1 << 10)
 #define PWRBTN_STS (1 << 8)
+#define TMROF_STS (1 << 0)
 #define RTC_EN (1 << 10)
 #define PWRBTN_EN (1 << 8)
 #define GBL_EN (1 << 5)
@@ -144,6 +145,7 @@ static void pm_update_sci(PIIX4PMState *s)
 static void pm_tmr_timer(void *opaque)
 {
     PIIX4PMState *s = opaque;
+    qemu_system_wakeup_request(QEMU_WAKEUP_REASON_PMTIMER);
     pm_update_sci(s);
 }
 
@@ -155,6 +157,9 @@ static void acpi_notify_wakeup(Notifier *notifier, void *data)
     switch (*reason) {
     case QEMU_WAKEUP_REASON_RTC:
         s->pmsts |= (RSM_STS | RTC_STS);
+        break;
+    case QEMU_WAKEUP_REASON_PMTIMER:
+        s->pmsts |= (RSM_STS | TMROF_STS);
         break;
     case QEMU_WAKEUP_REASON_OTHER:
     default:
@@ -188,6 +193,7 @@ static void pm_ioport_writew(void *opaque, uint32_t addr, uint32_t val)
     case 0x02:
         s->pmen = val;
         qemu_system_wakeup_enable(QEMU_WAKEUP_REASON_RTC, val & RTC_EN);
+        qemu_system_wakeup_enable(QEMU_WAKEUP_REASON_PMTIMER, val & TMROF_EN);
         pm_update_sci(s);
         break;
     case 0x04:
