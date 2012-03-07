@@ -611,6 +611,21 @@ Example:
 EQMP
 
     {
+        .name       = "system_wakeup",
+        .args_type  = "",
+        .params     = "",
+        .help       = "wakeup guest from suspend",
+        .user_print = monitor_user_noop,
+        .mhandler.cmd_new = do_system_wakeup,
+    },
+
+STEXI
+@item system_wakeup
+@findex system_wakeup
+Wakeup guest from suspend.
+ETEXI
+
+    {
         .name       = "gdbserver",
         .args_type  = "device:s?",
         .params     = "[device]",
