@@ -2242,7 +2242,9 @@ int kvm_main_loop(void)
 
     while (1) {
         main_loop_wait(1000);
-        if (qemu_shutdown_requested()) {
+        if (qemu_suspend_requested()) {
+            qemu_system_suspend();
+        } else if (qemu_shutdown_requested()) {
             qemu_kill_report();
             monitor_protocol_event(QEVENT_SHUTDOWN, NULL);
             if (qemu_no_shutdown()) {
