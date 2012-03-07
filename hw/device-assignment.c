@@ -826,6 +826,8 @@ again:
 }
 
 static QLIST_HEAD(, AssignedDevice) devs = QLIST_HEAD_INITIALIZER(devs);
+static Notifier suspend_notifier;
+static QEMUBH *suspend_bh;
 
 #ifdef KVM_CAP_IRQ_ROUTING
 static void free_dev_irq_entries(AssignedDevice *dev)
@@ -1742,6 +1744,16 @@ static void reset_assigned_device(DeviceState *dev)
     assigned_dev_pci_write_config(pci_dev, PCI_COMMAND, 0, 2);
 }
 
+static void assigned_suspend_notify(Notifier *notifier, void *data)
+{
+    qemu_bh_schedule(suspend_bh);
+}
+
+static void assigned_suspend_bh(void *opaque)
+{
+    qemu_system_wakeup_request(QEMU_WAKEUP_REASON_OTHER);
+}
+
 static int assigned_initfn(struct PCIDevice *pci_dev)
 {
     AssignedDevice *dev = DO_UPCAST(AssignedDevice, dev, pci_dev);
@@ -1813,6 +1825,12 @@ static int assigned_initfn(struct PCIDevice *pci_dev)
             goto assigned_out;
 
     assigned_dev_load_option_rom(dev);
+
+    if (QLIST_EMPTY(&devs)) {
+        suspend_notifier.notify = assigned_suspend_notify;
+        qemu_register_suspend_notifier(&suspend_notifier);
+        suspend_bh = qemu_bh_new(assigned_suspend_bh, dev);
+    }
     QLIST_INSERT_HEAD(&devs, dev, next);
 
     add_boot_device_path(dev->bootindex, &pci_dev->qdev, NULL);
@@ -1821,6 +1839,7 @@ static int assigned_initfn(struct PCIDevice *pci_dev)
     vmstate_register(&dev->dev.qdev, 0, &vmstate_assigned_device, dev);
     register_device_unmigratable(&dev->dev.qdev,
                                  vmstate_assigned_device.name, dev);
+
 
     return 0;
 
@@ -1837,6 +1856,10 @@ static int assigned_exitfn(struct PCIDevice *pci_dev)
 
     vmstate_unregister(&dev->dev.qdev, &vmstate_assigned_device, dev);
     QLIST_REMOVE(dev, next);
+    if (QLIST_EMPTY(&devs)) {
+        qemu_bh_delete(suspend_bh);
+        qemu_unregister_suspend_notifier(&suspend_notifier);
+    }
     deassign_device(dev);
     free_assigned_device(dev);
     return 0;
