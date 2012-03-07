@@ -552,7 +552,7 @@ static void check_mode_change(void)
 
     if (is_absolute != current_is_absolute ||
         has_absolute != current_has_absolute) {
-        notifier_list_notify(&mouse_mode_notifiers);
+        notifier_list_notify(&mouse_mode_notifiers, NULL);
     }
 
     current_is_absolute = is_absolute;
@@ -4971,7 +4971,7 @@ void qemu_add_machine_init_done_notifier(Notifier *notify)
 
 static void qemu_run_machine_init_done_notifiers(void)
 {
-    notifier_list_notify(&machine_init_done_notifiers);
+    notifier_list_notify(&machine_init_done_notifiers, NULL);
 }
 
 void qemu_add_exit_notifier(Notifier *notify)
@@ -4986,7 +4986,7 @@ void qemu_remove_exit_notifier(Notifier *notify)
 
 static void qemu_run_exit_notifiers(void)
 {
-    notifier_list_notify(&exit_notifiers);
+    notifier_list_notify(&exit_notifiers, NULL);
 }
 
 static const QEMUOption *lookup_opt(int argc, char **argv,
