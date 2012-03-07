@@ -3440,6 +3440,11 @@ void qemu_register_suspend_notifier(Notifier *notifier)
     notifier_list_add(&suspend_notifiers, notifier);
 }
 
+void qemu_unregister_suspend_notifier(Notifier *notifier)
+{
+    notifier_list_remove(&suspend_notifiers, notifier);
+}
+
 void qemu_system_wakeup_request(WakeupReason reason)
 {
     if (!is_suspended) {
