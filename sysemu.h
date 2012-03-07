@@ -67,17 +67,28 @@ int64_t cpu_get_ticks(void);
 void cpu_enable_ticks(void);
 void cpu_disable_ticks(void);
 
+typedef enum WakeupReason {
+    QEMU_WAKEUP_REASON_OTHER = 0,
+} WakeupReason;
+
 void qemu_system_reset_request(void);
+void qemu_system_suspend_request(void);
+void qemu_register_suspend_notifier(Notifier *notifier);
+void qemu_system_wakeup_request(WakeupReason reason);
+void qemu_system_wakeup_enable(WakeupReason reason, bool enabled);
+void qemu_register_wakeup_notifier(Notifier *notifier);
 void qemu_system_shutdown_request(void);
 void qemu_system_powerdown_request(void);
 int qemu_no_shutdown(void);
 int qemu_shutdown_requested(void);
 int qemu_reset_requested(void);
+int qemu_suspend_requested(void);
 int qemu_powerdown_requested(void);
 void qemu_system_killed(int signal, pid_t pid);
 void qemu_kill_report(void);
 extern qemu_irq qemu_system_powerdown;
 void qemu_system_reset(void);
+void qemu_system_suspend(void);
 
 void qemu_add_machine_init_done_notifier(Notifier *notify);
 void qemu_add_exit_notifier(Notifier *notify);
