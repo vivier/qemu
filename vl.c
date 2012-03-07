@@ -4563,92 +4563,6 @@ int qemu_uuid_parse(const char *str, uint8_t *uuid)
     return 0;
 }
 
-#ifdef _WIN32
-/* Look for support files in the same directory as the executable.  */
-static char *find_datadir(const char *argv0)
-{
-    char *p;
-    char buf[MAX_PATH];
-    DWORD len;
-
-    len = GetModuleFileName(NULL, buf, sizeof(buf) - 1);
-    if (len == 0) {
-        return NULL;
-    }
-
-    buf[len] = 0;
-    p = buf + len - 1;
-    while (p != buf && *p != '\\')
-        p--;
-    *p = 0;
-    if (access(buf, R_OK) == 0) {
-        return qemu_strdup(buf);
-    }
-    return NULL;
-}
-#else /* !_WIN32 */
-
-/* Find a likely location for support files using the location of the binary.
-   For installed binaries this will be "$bindir/../share/qemu".  When
-   running from the build tree this will be "$bindir/../pc-bios".  */
-#define SHARE_SUFFIX "/share/qemu-kvm"
-#define BUILD_SUFFIX "/pc-bios"
-static char *find_datadir(const char *argv0)
-{
-    char *dir;
-    char *p = NULL;
-    char *res;
-    char buf[PATH_MAX];
-    size_t max_len;
-
-#if defined(__linux__)
-    {
-        int len;
-        len = readlink("/proc/self/exe", buf, sizeof(buf) - 1);
-        if (len > 0) {
-            buf[len] = 0;
-            p = buf;
-        }
-    }
-#elif defined(__FreeBSD__)
-    {
-        int len;
-        len = readlink("/proc/curproc/file", buf, sizeof(buf) - 1);
-        if (len > 0) {
-            buf[len] = 0;
-            p = buf;
-        }
-    }
-#endif
-    /* If we don't have any way of figuring out the actual executable
-       location then try argv[0].  */
-    if (!p) {
-        p = realpath(argv0, buf);
-        if (!p) {
-            return NULL;
-        }
-    }
-    dir = dirname(p);
-    dir = dirname(dir);
-
-    max_len = strlen(dir) +
-        MAX(strlen(SHARE_SUFFIX), strlen(BUILD_SUFFIX)) + 1;
-    res = qemu_mallocz(max_len);
-    snprintf(res, max_len, "%s%s", dir, SHARE_SUFFIX);
-    if (access(res, R_OK)) {
-        snprintf(res, max_len, "%s%s", dir, BUILD_SUFFIX);
-        if (access(res, R_OK)) {
-            qemu_free(res);
-            res = NULL;
-        }
-    }
-
-    return res;
-}
-#undef SHARE_SUFFIX
-#undef BUILD_SUFFIX
-#endif
-
 char *qemu_find_file(int type, const char *name)
 {
     int len;
@@ -5886,7 +5800,7 @@ int main(int argc, char **argv, char **envp)
     /* If no data_dir is specified then try to find it relative to the
        executable path.  */
     if (!data_dir) {
-        data_dir = find_datadir(argv[0]);
+        data_dir = os_find_datadir(argv[0]);
     }
     /* If all else fails use the install patch specified when building.  */
     if (!data_dir) {
