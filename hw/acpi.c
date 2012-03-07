@@ -73,6 +73,7 @@ typedef struct PIIX4PMState {
 
     uint32_t smb_io_base;
     Notifier machine_ready;
+    Notifier wakeup;
 
     /* for pci hotplug */
     struct gpe_regs gpe;
@@ -145,6 +146,21 @@ static void pm_tmr_timer(void *opaque)
     pm_update_sci(s);
 }
 
+static void acpi_notify_wakeup(Notifier *notifier, void *data)
+{
+    PIIX4PMState *s = container_of(notifier, PIIX4PMState, wakeup);
+    WakeupReason *reason = data;
+
+    switch (*reason) {
+    case QEMU_WAKEUP_REASON_OTHER:
+    default:
+        /* RSM_STS should be set on resume. Pretend that resume
+           was caused by power button */
+        s->pmsts |= (RSM_STS | PWRBTN_STS);
+        break;
+    }
+}
+
 static void pm_ioport_writew(void *opaque, uint32_t addr, uint32_t val)
 {
     PIIX4PMState *s = opaque;
@@ -181,13 +197,8 @@ static void pm_ioport_writew(void *opaque, uint32_t addr, uint32_t val)
                     qemu_system_shutdown_request();
                     break;
                 case 1:
-                    /* RSM_STS should be set on resume. Pretend that resume
-                       was caused by power button */
-                    s->pmsts |= (RSM_STS | PWRBTN_STS);
-                    qemu_system_reset_request();
-#if defined(TARGET_I386)
-                    cmos_set_s3_resume();
-#endif
+                    qemu_system_suspend_request();
+                    break;
                 default:
                     break;
                 }
@@ -640,6 +651,8 @@ static int piix4_pm_initfn(PCIDevice *dev)
     s->smbus = i2c_init_bus(NULL, "i2c");
     s->machine_ready.notify = piix4_pm_machine_ready;
     qemu_add_machine_init_done_notifier(&s->machine_ready);
+    s->wakeup.notify = acpi_notify_wakeup;
+    qemu_register_wakeup_notifier(&s->wakeup);
     qemu_register_reset(piix4_reset, s);
 
     return 0;

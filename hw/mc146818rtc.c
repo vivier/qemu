@@ -84,7 +84,16 @@ struct RTCState {
     QEMUTimer *coalesced_timer;
     QEMUTimer *second_timer;
     QEMUTimer *second_timer2;
+    Notifier suspend_notifier;
 };
+
+/* set CMOS shutdown status register (index 0xF) as S3_resume(0xFE)
+   BIOS will read it and start S3 resume at POST Entry */
+static void rtc_notify_suspend(Notifier *notifier, void *data)
+{
+    RTCState *s = container_of(notifier, RTCState, suspend_notifier);
+    rtc_set_memory(s, 0xF, 0xFE);
+}
 
 static void rtc_irq_raise(qemu_irq irq)
 {
@@ -599,6 +608,9 @@ static int rtc_initfn(ISADevice *dev)
 #endif
     s->second_timer = qemu_new_timer(rtc_clock, rtc_update_second, s);
     s->second_timer2 = qemu_new_timer(rtc_clock, rtc_update_second2, s);
+
+    s->suspend_notifier.notify = rtc_notify_suspend;
+    qemu_register_suspend_notifier(&s->suspend_notifier);
 
     s->next_second_time =
         qemu_get_clock(rtc_clock) + (get_ticks_per_sec() * 99) / 100;
