@@ -477,6 +477,12 @@ void monitor_protocol_event(MonitorEvent event, QObject *data)
         case QEVENT_BLOCK_JOB_COMPLETED:
             event_name = "BLOCK_JOB_COMPLETED";
             break;
+        case QEVENT_SUSPEND:
+            event_name = "SUSPEND";
+            break;
+        case QEVENT_WAKEUP:
+            event_name = "WAKEUP";
+            break;
         default:
             abort();
             break;
