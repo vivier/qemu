@@ -984,6 +984,8 @@ static void get_cpuid_vendor(CPUX86State *env, uint32_t *ebx,
     }
 }
 
+static bool cpuid_leaf10_disabled;
+
 void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
                    uint32_t *eax, uint32_t *ebx,
                    uint32_t *ecx, uint32_t *edx)
@@ -1092,10 +1094,17 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
         break;
     case 0xA:
         /* Architectural Performance Monitoring Leaf */
-        *eax = 0;
-        *ebx = 0;
-        *ecx = 0;
-        *edx = 0;
+        if (kvm_enabled() && !cpuid_leaf10_disabled) {
+            *eax = kvm_arch_get_supported_cpuid(env, 0xA, count, R_EAX);
+            *ebx = kvm_arch_get_supported_cpuid(env, 0xA, count, R_EBX);
+            *ecx = kvm_arch_get_supported_cpuid(env, 0xA, count, R_ECX);
+            *edx = kvm_arch_get_supported_cpuid(env, 0xA, count, R_EDX);
+        } else {
+            *eax = 0;
+            *ebx = 0;
+            *ecx = 0;
+            *edx = 0;
+        }
         break;
     case 0xD:
         /* Processor Extended State */
@@ -1235,4 +1244,15 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
         *edx = 0;
         break;
     }
+}
+
+/* Called from hw/pc.c but there is no header
+ * both files include to put this into.
+ * Put it here to silence compiler warning.
+ */
+void disable_cpuid_leaf10(void);
+
+void disable_cpuid_leaf10(void)
+{
+	cpuid_leaf10_disabled = true;
 }
