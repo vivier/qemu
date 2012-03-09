@@ -211,9 +211,9 @@ $(qga-obj-y): $(qapi-dir)/qga-qapi-types.h $(qapi-dir)/qga-qapi-visit.h $(qapi-d
 test-visitor.o test-qmp-commands.o qemu-ga$(EXESUF): QEMU_CFLAGS += -I $(qapi-dir)
 qemu-ga$(EXESUF): LIBS = $(LIBS_QGA)
 
-gen-out-type = $(subst .,-,$@)
+gen-out-type = $(subst .,-,$(suffix $@))
 
-qga-suspend-dep-$(CONFIG_POSIX) = $(qga-nested-api-y .o=.c) qga-suspend-qapi-types.h qga-suspend-qmp-commands.h
+qga-suspend-dep-$(CONFIG_POSIX) = $(qga-nested-api-y .o=.c) qga-suspend-qapi-types.h qga-suspend-qmp-commands.h qga-suspend-qapi-visit.h 
 
 $(qapi-dir)/test-qapi-types.c $(qapi-dir)/test-qapi-types.h :\
 $(SRC_PATH)/qapi-schema-test.json $(SRC_PATH)/scripts/qapi-types.py
