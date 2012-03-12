@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.0
-Release: 6%{?dist}
+Release: 7%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -86,6 +86,28 @@ Patch115: 0115-spice-qemu-char.c-remove-intermediate-buffer.patch
 Patch116: 0116-usb-redir-Add-flow-control-support.patch
 Patch117: 0117-virtio-serial-bus-replay-guest_open-on-migration.patch
 Patch118: 0118-char-Disable-write-callback-if-throttled-chardev-is-.patch
+Patch119: 0119-usb-ehci-Clear-the-portstatus-powner-bit-on-device-d.patch
+Patch120: 0120-usb-redir-Add-the-posibility-to-filter-out-certain-d.patch
+Patch121: 0121-usb-redir-Fix-printing-of-device-version.patch
+Patch122: 0122-usb-redir-Always-clear-device-state-on-filter-reject.patch
+Patch123: 0123-usb-redir-Let-the-usb-host-know-about-our-device-fil.patch
+Patch124: 0124-usb-redir-Limit-return-values-returned-by-iso-packet.patch
+Patch125: 0125-usb-redir-Return-USB_RET_NAK-when-we-ve-no-data-for-.patch
+Patch126: 0126-usb-ehci-Handle-ISO-packets-failing-with-an-error-ot.patch
+Patch127: 0127-usb-ehci-Never-follow-table-entries-with-the-T-bit-s.patch
+Patch128: 0128-usb-ehci-split-our-qh-queue-into-async-and-periodic-.patch
+Patch129: 0129-usb-ehci-always-call-ehci_queues_rip_unused-for-peri.patch
+Patch130: 0130-usb-ehci-Drop-cached-qhs-when-the-doorbell-gets-rung.patch
+Patch131: 0131-usb-ehci-Rip-the-queues-when-the-async-or-period-sch.patch
+Patch132: 0132-usb-ehci-Any-packet-completion-except-for-NAK-should.patch
+Patch133: 0133-usb-ehci-Fix-cerr-tracking.patch
+Patch134: 0134-usb-ehci-Remove-dead-nakcnt-code.patch
+Patch135: 0135-usb-ehci-Fix-and-simplify-nakcnt-handling.patch
+Patch136: 0136-usb-ehci-Remove-dead-isoch_pause-code.patch
+Patch137: 0137-usb-return-BABBLE-rather-then-NAK-when-we-receive-to.patch
+Patch138: 0138-usb-add-USB_RET_IOERROR.patch
+Patch139: 0139-usb-ehci-fix-reset.patch
+Patch140: 0140-usb-ehci-sanity-check-iso-xfers.patch
 
 # General bug fixes
 Patch201: Fix_save-restore_of_in-kernel_i8259.patch
@@ -382,6 +404,28 @@ such as kvm_stat.
 %patch116 -p1
 %patch117 -p1
 %patch118 -p1
+%patch119 -p1
+%patch120 -p1
+%patch121 -p1
+%patch122 -p1
+%patch123 -p1
+%patch124 -p1
+%patch125 -p1
+%patch126 -p1
+%patch127 -p1
+%patch128 -p1
+%patch129 -p1
+%patch130 -p1
+%patch131 -p1
+%patch132 -p1
+%patch133 -p1
+%patch134 -p1
+%patch135 -p1
+%patch136 -p1
+%patch137 -p1
+%patch138 -p1
+%patch139 -p1
+%patch140 -p1
 
 %patch201 -p1
 
@@ -768,6 +812,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Mar  9 2012 Hans de Goede <hdegoede@redhat.com> - 2:1.0-7
+- Add a whole bunch of USB bugfixes from upstream
+
 * Mon Feb 13 2012 Daniel P. Berrange <berrange@redhat.com> - 2:1.0-6
 - Add many more missing BRs for misc QEMU features
 - Enable running of test suite during build
