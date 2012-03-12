@@ -972,9 +972,6 @@ void cpu_disable_ticks(void)
 struct QEMUClock {
     int type;
     /* XXX: add frequency */
-
-    NotifierList reset_notifiers;
-    int64_t last;
 };
 
 struct QEMUTimer {
@@ -1208,14 +1205,8 @@ static QEMUTimer *active_timers[QEMU_NUM_CLOCKS];
 static QEMUClock *qemu_new_clock(int type)
 {
     QEMUClock *clock;
-
     clock = qemu_mallocz(sizeof(QEMUClock));
     clock->type = type;
-    notifier_list_init(&clock->reset_notifiers);
-    /* required to detect & report backward jumps */
-    if (type == QEMU_CLOCK_HOST) {
-        clock->last = get_clock_realtime();
-    }
     return clock;
 }
 
@@ -1326,8 +1317,6 @@ static void qemu_run_timers(QEMUTimer **ptimer_head, int64_t current_time)
 
 int64_t qemu_get_clock(QEMUClock *clock)
 {
-    int64_t now, last;
-
     switch(clock->type) {
     case QEMU_CLOCK_REALTIME:
         return get_clock() / 1000000;
@@ -1339,24 +1328,8 @@ int64_t qemu_get_clock(QEMUClock *clock)
             return cpu_get_clock();
         }
     case QEMU_CLOCK_HOST:
-        now = get_clock_realtime();
-        last = clock->last;
-        clock->last = now;
-        if (now < last) {
-            notifier_list_notify(&clock->reset_notifiers, &now);
-        }
-        return now;
+        return get_clock_realtime();
     }
-}
-
-void qemu_register_clock_reset_notifier(QEMUClock *clock, Notifier *notifier)
-{
-    notifier_list_add(&clock->reset_notifiers, notifier);
-}
-
-void qemu_unregister_clock_reset_notifier(QEMUClock *clock, Notifier *notifier)
-{
-    notifier_list_remove(&clock->reset_notifiers, notifier);
 }
 
 static void init_clocks(void)
