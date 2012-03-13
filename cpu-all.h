@@ -1101,4 +1101,7 @@ extern int64_t dev_time;
 void cpu_inject_x86_mce(CPUState *cenv, int bank, uint64_t status,
                         uint64_t mcg_status, uint64_t addr, uint64_t misc);
 
+void resume_all_vcpus(void);
+void pause_all_vcpus(void);
+
 #endif /* CPU_ALL_H */
