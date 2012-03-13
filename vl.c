@@ -3280,9 +3280,6 @@ static void vm_state_notify(int running, RunState state)
     }
 }
 
-static void resume_all_vcpus(void);
-static void pause_all_vcpus(void);
-
 void vm_start(void)
 {
     if (!runstate_is_running()) {
@@ -3646,14 +3643,14 @@ int qemu_cpu_self(void *env)
     return 1;
 }
 
-static void resume_all_vcpus(void)
+void resume_all_vcpus(void)
 {
     if (kvm_allowed) {
         kvm_resume_all_threads();
     }
 }
 
-static void pause_all_vcpus(void)
+void pause_all_vcpus(void)
 {
     if (kvm_allowed) {
         kvm_pause_all_threads();
@@ -3919,7 +3916,7 @@ static int all_vcpus_paused(void)
     return 1;
 }
 
-static void pause_all_vcpus(void)
+void pause_all_vcpus(void)
 {
     CPUState *penv = first_cpu;
 
@@ -3940,7 +3937,7 @@ static void pause_all_vcpus(void)
     }
 }
 
-static void resume_all_vcpus(void)
+void resume_all_vcpus(void)
 {
     CPUState *penv = first_cpu;
 
