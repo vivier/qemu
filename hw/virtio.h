@@ -95,6 +95,7 @@ typedef struct {
     int (*load_config)(void * opaque, QEMUFile *f);
     int (*load_queue)(void * opaque, int n, QEMUFile *f);
     unsigned (*get_features)(void * opaque);
+    void (*force_features)(void * opaque, uint32_t features);
     bool (*query_guest_notifiers)(void * opaque);
     int (*set_guest_notifiers)(void * opaque, bool assigned);
     int (*set_host_notifier)(void * opaque, int n, bool assigned);
@@ -159,6 +160,8 @@ void virtio_notify(VirtIODevice *vdev, VirtQueue *vq);
 void virtio_save(VirtIODevice *vdev, QEMUFile *f);
 
 int virtio_load(VirtIODevice *vdev, QEMUFile *f);
+int virtio_load_with_features(VirtIODevice *vdev, QEMUFile *f,
+                              uint32_t supported_features);
 
 void virtio_cleanup(VirtIODevice *vdev);
 
