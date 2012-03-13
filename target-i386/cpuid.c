@@ -42,7 +42,7 @@ static const char *feature_name[] = {
     "ht" /* Intel htt */, "tm", "ia64", "pbe",
 };
 static const char *ext_feature_name[] = {
-    "pni|sse3" /* Intel,AMD sse3 */, "pclmuldq", NULL, "monitor",
+    "pni|sse3" /* Intel,AMD sse3 */, "pclmulqdq|pclmuldq", NULL, "monitor",
     "ds_cpl", "vmx", NULL /* Linux smx */, "est",
     "tm2", "ssse3", "cid", NULL,
     NULL, "cx16", "xtpr", NULL,
@@ -58,7 +58,7 @@ static const char *ext2_feature_name[] = {
     "mtrr", "pge", "mca", "cmov",
     "pat", "pse36", NULL, NULL /* Linux mp */,
     "nx|xd", NULL, "mmxext", "mmx",
-    "fxsr", "fxsr_opt" /* AMD ffxsr */, "pdpe1gb" /* AMD Page1GB */, "rdtscp",
+    "fxsr", "fxsr_opt|ffxsr" /* AMD ffxsr */, "pdpe1gb" /* AMD Page1GB */, "rdtscp",
     NULL, "lm|i64", "3dnowext", "3dnow",
 };
 static const char *ext3_feature_name[] = {
