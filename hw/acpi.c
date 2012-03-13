@@ -40,6 +40,8 @@
 #define PCI_EJ_BASE 0xae08
 #define PCI_RMV_BASE 0xae0c
 
+#define PIIX4_CPU_HOTPLUG_STATUS 4
+
 struct gpe_regs {
     uint16_t sts; /* status */
     uint16_t en;  /* enabled */
@@ -903,14 +905,14 @@ void piix4_acpi_system_hot_add_init(PCIBus *bus, const char *cpu_model)
 #if defined(TARGET_I386)
 static void enable_processor(struct gpe_regs *g, int cpu)
 {
-    g->sts |= 4;
-    g->cpus_sts[cpu/8] |= (1 << (cpu%8));
+    g->sts |= PIIX4_CPU_HOTPLUG_STATUS;
+    g->cpus_sts[cpu / 8] |= (1 << (cpu % 8));
 }
 
 static void disable_processor(struct gpe_regs *g, int cpu)
 {
-    g->sts |= 4;
-    g->cpus_sts[cpu/8] &= ~(1 << (cpu%8));
+    g->sts |= PIIX4_CPU_HOTPLUG_STATUS;
+    g->cpus_sts[cpu / 8] &= ~(1 << (cpu % 8));
 }
 
 void qemu_system_cpu_hot_add(int cpu, int state)
