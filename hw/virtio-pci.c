@@ -557,6 +557,12 @@ static unsigned virtio_pci_get_features(void *opaque)
     return proxy->host_features;
 }
 
+static void virtio_pci_force_features(void *opaque, uint32_t extra_features)
+{
+    VirtIOPCIProxy *proxy = opaque;
+    proxy->host_features |= extra_features;
+}
+
 static void virtio_pci_guest_notifier_read(void *opaque)
 {
     VirtQueue *vq = opaque;
@@ -743,6 +749,7 @@ static const VirtIOBindings virtio_pci_bindings = {
     .save_queue = virtio_pci_save_queue,
     .load_queue = virtio_pci_load_queue,
     .get_features = virtio_pci_get_features,
+    .force_features = virtio_pci_force_features,
     .query_guest_notifiers = virtio_pci_query_guest_notifiers,
     .set_host_notifier = virtio_pci_set_host_notifier,
     .set_guest_notifiers = virtio_pci_set_guest_notifiers,
