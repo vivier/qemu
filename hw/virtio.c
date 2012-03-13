@@ -761,12 +761,12 @@ void virtio_save(VirtIODevice *vdev, QEMUFile *f)
     }
 }
 
-int virtio_load(VirtIODevice *vdev, QEMUFile *f)
+int virtio_load_with_features(VirtIODevice *vdev, QEMUFile *f,
+                              uint32_t extra_features)
 {
     int num, i, ret;
     uint32_t features;
-    uint32_t supported_features =
-        vdev->binding->get_features(vdev->binding_opaque);
+    uint32_t supported_features;
 
     if (vdev->binding->load_config) {
         ret = vdev->binding->load_config(vdev->binding_opaque, f);
@@ -778,6 +778,10 @@ int virtio_load(VirtIODevice *vdev, QEMUFile *f)
     qemu_get_8s(f, &vdev->isr);
     qemu_get_be16s(f, &vdev->queue_sel);
     qemu_get_be32s(f, &features);
+
+    vdev->binding->force_features(vdev->binding_opaque,
+                                  features & extra_features);
+    supported_features = vdev->binding->get_features(vdev->binding_opaque);
     if (features & ~supported_features) {
         fprintf(stderr, "Features 0x%x unsupported. Allowed features: 0x%x\n",
                 features, supported_features);
@@ -810,6 +814,11 @@ int virtio_load(VirtIODevice *vdev, QEMUFile *f)
 
     virtio_notify_vector(vdev, VIRTIO_NO_VECTOR);
     return 0;
+}
+
+int virtio_load(VirtIODevice *vdev, QEMUFile *f)
+{
+    return virtio_load_with_features(vdev, f, 0);
 }
 
 void virtio_cleanup(VirtIODevice *vdev)

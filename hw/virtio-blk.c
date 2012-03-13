@@ -545,7 +545,18 @@ static int virtio_blk_load(QEMUFile *f, void *opaque, int version_id)
     if (version_id != 2)
         return -EINVAL;
 
-    ret = virtio_load(&s->vdev, f);
+    /* RHEL only.  Upstream we will fix this by ensuring that VIRTIO_BLK_F_SCSI
+     * is always set.  This however will cause migration from new QEMU to old
+     * QEMU to fail if both have scsi=off.  We cannot use compatibility
+     * properties because the scsi property is being overridden by management
+     * (libvirt).
+     *
+     * If RHEL7->RHEL6 migration will be supported, we'll have to disable
+     * VIRTIO_BLK_F_SCSI in the migration stream when running on a rhel6.x.0
+     * machine type with scsi=off.  Otherwise SG_IO will magically start
+     * working on the destination.
+     */
+    ret = virtio_load_with_features(&s->vdev, f, 1 << VIRTIO_BLK_F_SCSI);
     if (ret) {
         return ret;
     }
