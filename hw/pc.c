@@ -990,6 +990,10 @@ CPUState *pc_new_cpu(const char *cpu_model)
 {
     CPUState *env;
 
+    if (runstate_is_running()) {
+        pause_all_vcpus();
+    }
+
     env = cpu_init(cpu_model);
     if (!env) {
         fprintf(stderr, "Unable to support requested x86 CPU definition\n");
@@ -1008,6 +1012,11 @@ CPUState *pc_new_cpu(const char *cpu_model)
      * it can access invalid state and crash.
      */
     qemu_init_vcpu(env);
+
+    if (runstate_is_running()) {
+        resume_all_vcpus();
+    }
+
     return env;
 }
 
