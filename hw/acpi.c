@@ -133,7 +133,9 @@ static void pm_update_sci(PIIX4PMState *s)
 
     pmsts = get_pmsts(s);
     sci_level = (((pmsts & s->pmen) &
-                  (RTC_EN | PWRBTN_EN | GBL_EN | TMROF_EN)) != 0);
+                  (RTC_EN | PWRBTN_EN | GBL_EN | TMROF_EN)) != 0) ||
+        (((s->gpe.sts & s->gpe.en) & PIIX4_CPU_HOTPLUG_STATUS) != 0);
+
     qemu_set_irq(s->irq, sci_level);
     /* schedule a timer interruption if needed */
     if ((s->pmen & TMROF_EN) && !(pmsts & TMROF_EN)) {
@@ -932,10 +934,8 @@ void qemu_system_cpu_hot_add(int cpu, int state)
         enable_processor(&pm_state->gpe, cpu);
     else
         disable_processor(&pm_state->gpe, cpu);
-    if (pm_state->gpe.en & 4) {
-        qemu_set_irq(pm_state->irq, 1);
-        qemu_set_irq(pm_state->irq, 0);
-    }
+
+    pm_update_sci(pm_state);
 }
 #endif
 
