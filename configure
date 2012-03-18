@@ -1287,6 +1287,7 @@ audio_drv_probe()
     exp=$4
     cfl=$5
         cat > $TMPC << EOF
+#include <unistd.h>
 #include <$hdr>
 int main(void) { $exp }
 EOF
