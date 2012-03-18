@@ -138,8 +138,6 @@ static void watch_remove(SpiceWatch *watch)
     qemu_free(watch);
 }
 
-#if SPICE_INTERFACE_CORE_MINOR >= 3
-
 typedef struct ChannelList ChannelList;
 struct ChannelList {
     SpiceChannelEventInfo *info;
@@ -316,15 +314,6 @@ static void channel_event(int event, SpiceChannelEventInfo *info)
     }
 }
 
-#else /* SPICE_INTERFACE_CORE_MINOR >= 3 */
-
-static QList *channel_list_get(void)
-{
-    return NULL;
-}
-
-#endif /* SPICE_INTERFACE_CORE_MINOR >= 3 */
-
 static SpiceCoreInterface core_interface = {
     .base.type          = SPICE_INTERFACE_CORE,
     .base.description   = "qemu core services",
@@ -340,9 +329,7 @@ static SpiceCoreInterface core_interface = {
     .watch_update_mask  = watch_update_mask,
     .watch_remove       = watch_remove,
 
-#if SPICE_INTERFACE_CORE_MINOR >= 3
     .channel_event      = channel_event,
-#endif
 };
 
 #ifdef SPICE_INTERFACE_MIGRATION
@@ -538,14 +525,12 @@ static void migration_state_notifier(Notifier *notifier, void *data)
         spice_server_migrate_start(spice_server);
 #endif
     } else if (state == MIG_STATE_COMPLETED) {
-#if SPICE_SERVER_VERSION >= 0x000701 /* 0.7.1 */
 #ifndef SPICE_INTERFACE_MIGRATION
         spice_server_migrate_switch(spice_server);
 #else
         spice_server_migrate_end(spice_server, true);
     } else if (state == MIG_STATE_CANCELLED || state == MIG_STATE_ERROR) {
         spice_server_migrate_end(spice_server, false);
-#endif
 #endif
     }
 }
@@ -695,11 +680,9 @@ void qemu_spice_init(void)
         spice_server_set_noauth(spice_server);
     }
 
-#if SPICE_SERVER_VERSION >= 0x000801
     if (qemu_opt_get_bool(opts, "disable-copy-paste", 0)) {
         spice_server_set_agent_copypaste(spice_server, false);
     }
-#endif
 
     compression = SPICE_IMAGE_COMPRESS_AUTO_GLZ;
     str = qemu_opt_get(opts, "image-compression");
