@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.0
-Release: 7%{?dist}
+Release: 8%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -517,6 +517,8 @@ gcc %{SOURCE6} -O2 -g -o ksmctl
 %install
 rm -rf $RPM_BUILD_ROOT
 
+%define _udevdir /lib/udev/rules.d
+
 install -D -p -m 0755 %{SOURCE4} $RPM_BUILD_ROOT/lib/systemd/system/ksm.service
 install -D -p -m 0644 %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/ksm
 install -D -p -m 0755 ksmctl $RPM_BUILD_ROOT/lib/systemd/ksmctl
@@ -529,14 +531,14 @@ install -D -p -m 0644 %{SOURCE9} $RPM_BUILD_ROOT%{_sysconfdir}/ksmtuned.conf
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules
 mkdir -p $RPM_BUILD_ROOT%{_bindir}/
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{name}
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
+mkdir -p $RPM_BUILD_ROOT%{_udevdir}
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset
 
 install -m 0755 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules/kvm.modules
 install -m 0755 kvm/kvm_stat $RPM_BUILD_ROOT%{_bindir}/
 install -m 0755 qemu-kvm $RPM_BUILD_ROOT%{_bindir}/
 install -m 0644 qemu-kvm.stp $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/
-install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
+install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_udevdir}
 %endif
 
 make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
@@ -616,9 +618,9 @@ done < %{SOURCE1}
 # For the qemu-guest-agent subpackage install the systemd
 # service and udev rules.
 mkdir -p $RPM_BUILD_ROOT%{_unitdir}
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
+mkdir -p $RPM_BUILD_ROOT%{_udevdir}
 install -m 0644 %{SOURCE10} $RPM_BUILD_ROOT%{_unitdir}
-install -m 0644 %{SOURCE11} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
+install -m 0644 %{SOURCE11} $RPM_BUILD_ROOT%{_udevdir}
 
 %check
 make check
@@ -699,7 +701,7 @@ fi
 %doc COPYING README
 %{_bindir}/qemu-ga
 %{_unitdir}/qemu-guest-agent.service
-%{_sysconfdir}/udev/rules.d/99-qemu-guest-agent.rules
+%{_udevdir}/99-qemu-guest-agent.rules
 
 %files user
 %defattr(-,root,root)
@@ -758,7 +760,7 @@ fi
 %ifarch %{ix86} x86_64
 %{_bindir}/qemu-kvm
 %{_sysconfdir}/sysconfig/modules/kvm.modules
-%{_sysconfdir}/udev/rules.d/80-kvm.rules
+%{_udevdir}/80-kvm.rules
 %{_datadir}/systemtap/tapset/qemu-kvm.stp
 %endif
 
@@ -812,6 +814,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Mar 19 2012 Daniel P. Berrange <berrange@redhat.com> - 2:1.0-8
+- Move udev rules to /lib/udev/rules.d (rhbz #748207)
+
 * Fri Mar  9 2012 Hans de Goede <hdegoede@redhat.com> - 2:1.0-7
 - Add a whole bunch of USB bugfixes from upstream
 
