@@ -1282,6 +1282,11 @@ static int client_migrate_info(Monitor *mon, const QDict *qdict, MonitorCompleti
             return -1;
         }
 
+        if (port == -1 && tls_port == -1) {
+            qerror_report(QERR_MISSING_PARAMETER, "port/tls-port");
+            return -1;
+        }
+
         ret = qemu_spice_migrate_info(hostname, port, tls_port, subject, cb, opaque);
         if (ret != 0) {
             qerror_report(QERR_UNDEFINED_ERROR);
@@ -1304,6 +1309,11 @@ static int redhat_spice_migrate_info(Monitor *mon, const QDict *qdict, MonitorCo
 
     if (!using_spice) {
         qerror_report(QERR_DEVICE_NOT_ACTIVE, "spice");
+        return -1;
+    }
+
+    if (port == -1 && tls_port == -1) {
+        qerror_report(QERR_MISSING_PARAMETER, "port/tls-port");
         return -1;
     }
 
