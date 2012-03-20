@@ -1638,6 +1638,7 @@ STEXI
 Remove host-to-guest TCP or UDP redirection.
 ETEXI
 
+#ifdef CONFIG_LIVE_SNAPSHOTS
     {
         .name       = "blockdev-group-snapshot-sync",
         .args_type  = "devlist:O",
@@ -1645,6 +1646,7 @@ ETEXI
         .user_print = monitor_user_noop,
         .mhandler.cmd_new = qmp_marshal_input_blockdev_group_snapshot_sync,
     },
+#endif
 
 SQMP
 blockdev-group-snapshot-sync

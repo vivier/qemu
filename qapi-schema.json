@@ -2,6 +2,7 @@
 #
 # QAPI Schema
 
+#ifdef CONFIG_LIVE_SNAPSHOTS
 ##
 # @SnapshotDev
 #
@@ -39,3 +40,4 @@
 ##
 { 'command': 'blockdev-group-snapshot-sync',
   'data': { 'devlist': [ 'SnapshotDev' ] } }
+#endif
