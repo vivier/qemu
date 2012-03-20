@@ -50,6 +50,7 @@ const char *qdict_get_str(const QDict *qdict, const char *key);
 int64_t qdict_get_try_int(const QDict *qdict, const char *key,
                           int64_t def_value);
 int qdict_get_try_bool(const QDict *qdict, const char *key, int def_value);
+int qdict_get_try_bool_or_int(const QDict *qdict, const char *key, int def_value);
 const char *qdict_get_try_str(const QDict *qdict, const char *key);
 
 #endif /* QDICT_H */
