@@ -62,6 +62,7 @@
 #include "exec-all.h"
 #include "qemu-kvm.h"
 #include "ui/qemu-spice.h"
+#include "qmp-commands.h"
 
 //#define DEBUG
 //#define DEBUG_COMPLETION
