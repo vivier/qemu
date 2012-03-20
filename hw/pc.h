@@ -97,6 +97,7 @@ void i8042_mm_init(qemu_irq kbd_irq, qemu_irq mouse_irq,
 /* mc146818rtc.c */
 
 typedef struct RTCState RTCState;
+extern RTCState *rtc_state;
 
 RTCState *rtc_init(int base_year);
 void rtc_set_memory(RTCState *s, int addr, int val);
