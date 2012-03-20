@@ -4673,7 +4673,7 @@ static void handle_qmp_command(JSONMessageParser *parser, QList *tokens)
     Monitor *mon = cur_mon;
     const char *cmd_name, *info_item;
 
-    args = NULL;
+    args = input = NULL;
 
     obj = json_parser_parse(tokens, NULL);
     if (!obj) {
@@ -4694,7 +4694,7 @@ static void handle_qmp_command(JSONMessageParser *parser, QList *tokens)
     cmd_name = qdict_get_str(input, "execute");
     if (invalid_qmp_mode(mon, cmd_name)) {
         qerror_report(QERR_COMMAND_NOT_FOUND, cmd_name);
-        goto err_input;
+        goto err_out;
     }
 
     /*
@@ -4703,7 +4703,7 @@ static void handle_qmp_command(JSONMessageParser *parser, QList *tokens)
      */
     if (compare_cmd(cmd_name, "info")) {
         qerror_report(QERR_COMMAND_NOT_FOUND, cmd_name);
-        goto err_input;
+        goto err_out;
     } else if (strstart(cmd_name, "query-", &info_item)) {
         cmd = monitor_find_command("info");
         qdict_put_obj(input, "arguments",
@@ -4712,7 +4712,7 @@ static void handle_qmp_command(JSONMessageParser *parser, QList *tokens)
         cmd = monitor_find_command(cmd_name);
         if (!cmd || !monitor_handler_ported(cmd)) {
             qerror_report(QERR_COMMAND_NOT_FOUND, cmd_name);
-            goto err_input;
+            goto err_out;
         }
     }
 
@@ -4723,8 +4723,6 @@ static void handle_qmp_command(JSONMessageParser *parser, QList *tokens)
         args = qobject_to_qdict(obj);
         QINCREF(args);
     }
-
-    QDECREF(input);
 
     err = qmp_check_client_args(cmd, args);
     if (err < 0) {
@@ -4740,13 +4738,13 @@ static void handle_qmp_command(JSONMessageParser *parser, QList *tokens)
     } else {
         monitor_call_handler(mon, cmd, args);
     }
+
     goto out;
 
-err_input:
-    QDECREF(input);
 err_out:
     monitor_protocol_emitter(mon, NULL);
 out:
+    QDECREF(input);
     QDECREF(args);
 }
 
