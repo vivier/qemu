@@ -4483,7 +4483,8 @@ static int check_client_args_type(const QDict *client_args,
             break;
         case 'b':
         case '-':
-            if (qobject_type(client_arg) != QTYPE_QBOOL) {
+            if (qobject_type(client_arg) != QTYPE_QBOOL &&
+                qobject_type(client_arg) != QTYPE_QINT ) {
                 qerror_report(QERR_INVALID_PARAMETER_TYPE, client_arg_name,
                               "bool");
                return -1; 

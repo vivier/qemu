@@ -326,6 +326,27 @@ int qdict_get_try_bool(const QDict *qdict, const char *key, int def_value)
 }
 
 /**
+ * qdict_get_try_bool_or_int(): Try to get a bool or int mapped by 'key'
+ *
+ * Return bool or int mapped by 'key', if it is not present in the
+ * dictionary or if the stored object is not of QBool or QInt type
+ * 'def_value' will be returned.
+ */
+int qdict_get_try_bool_or_int(const QDict *qdict, const char *key, int def_value)
+{
+    QObject *obj;
+
+    obj = qdict_get(qdict, key);
+
+    if (obj && qobject_type(obj) == QTYPE_QBOOL) {
+        return qbool_get_int(qobject_to_qbool(obj));
+    } else if (obj && qobject_type(obj) == QTYPE_QINT) {
+        return qint_get_int(qobject_to_qint(obj));
+    }
+    return def_value;
+}
+
+/**
  * qdict_get_try_str(): Try to get a pointer to the stored string
  * mapped by 'key'
  *
