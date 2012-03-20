@@ -174,7 +174,7 @@ EQMP
         .help       = "Stop an active block streaming operation",
         .user_print = monitor_user_noop,
         .mhandler.cmd_async = do_block_job_cancel,
-        .async      = 1,
+        .flags      = MONITOR_CMD_ASYNC,
     },
 
 STEXI
@@ -1348,7 +1348,7 @@ EQMP
         .help       = "send migration info to spice/vnc client",
         .user_print = monitor_user_noop,
         .mhandler.cmd_async = client_migrate_info,
-        .async      = 1,
+        .flags      = MONITOR_CMD_ASYNC,
     },
 
 SQMP
@@ -1681,7 +1681,7 @@ EQMP
         .help       = "request VM to change its memory allocation (in MB)",
         .user_print = monitor_user_noop,
         .mhandler.cmd_async = do_balloon,
-        .async      = 1,
+        .flags      = MONITOR_CMD_ASYNC,
     },
 
 STEXI
@@ -2018,7 +2018,7 @@ EQMP
         .help       = "send migration info to spice client",
 	.user_print = monitor_user_noop,
         .mhandler.cmd_async = redhat_spice_migrate_info,
-        .async      = 1,
+        .flags      = MONITOR_CMD_ASYNC,
     },
 
 
