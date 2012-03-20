@@ -904,6 +904,20 @@ void piix4_acpi_system_hot_add_init(PCIBus *bus, const char *cpu_model)
     pci_bus_hotplug(bus, piix4_device_hotplug);
 }
 
+static int acpi_online_cpu_count(void)
+{
+    int i, j, online_cpu_count = 0;
+    struct gpe_regs *gpe = &pm_state->gpe;
+
+    /* count plugged in cpus in cpus_sts bitmap */
+    for (i = 0; i < sizeof(gpe->cpus_sts); ++i) {
+        for (j = 0; j < 8; ++j)
+            if ((gpe->cpus_sts[i] >> j) & 1)
+                ++online_cpu_count;
+    }
+    return online_cpu_count;
+}
+
 #if defined(TARGET_I386)
 static void enable_processor(struct gpe_regs *g, int cpu)
 {
@@ -934,6 +948,9 @@ void qemu_system_cpu_hot_add(int cpu, int state)
         enable_processor(&pm_state->gpe, cpu);
     else
         disable_processor(&pm_state->gpe, cpu);
+
+    /* update number of cpus in cmos, to allow BIOS see it on reboot */
+    rtc_set_memory(rtc_state, 0x5f, acpi_online_cpu_count() - 1);
 
     pm_update_sci(pm_state);
 }
