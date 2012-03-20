@@ -93,9 +93,9 @@ int do_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data)
 {
     MigrationState *s = NULL;
     const char *p;
-    int detach = qdict_get_try_bool(qdict, "detach", 0);
-    int blk = qdict_get_try_bool(qdict, "blk", 0);
-    int inc = qdict_get_try_bool(qdict, "inc", 0);
+    int detach = qdict_get_try_bool_or_int(qdict, "detach", 0);
+    int blk = qdict_get_try_bool_or_int(qdict, "blk", 0);
+    int inc = qdict_get_try_bool_or_int(qdict, "inc", 0);
     const char *uri = qdict_get_str(qdict, "uri");
 
     if (current_migration &&
