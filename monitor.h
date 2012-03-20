@@ -18,6 +18,9 @@ extern Monitor *default_mon;
 /* Red Hat Monitor's prefix (reversed fully qualified domain) */
 #define RFQDN_REDHAT "__com.redhat_"
 
+/* flags for monitor commands */
+#define MONITOR_CMD_ASYNC       0x0001
+
 /* QMP events */
 typedef enum MonitorEvent {
     QEVENT_SHUTDOWN,
