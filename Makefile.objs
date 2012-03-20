@@ -192,9 +192,16 @@ hw-obj-$(CONFIG_QDEV_ADDR) += qdev-addr.o
 
 qapi-nested-y = qapi-visit-core.o qmp-input-visitor.o qmp-output-visitor.o qapi-dealloc-visitor.o
 qapi-nested-y += qmp-registry.o qmp-dispatch.o
+
+ifeq ($(CONFIG_LIVE_SNAPSHOTS),y)
+qapi-generated-y += rhev-qapi-visit.o rhev-qapi-types.o rhev-qmp-marshal.o
+else
+qapi-generated-y += rhel-qapi-visit.o rhel-qapi-types.o rhel-qmp-marshal.o
+endif
+
 qapi-obj-y = $(addprefix qapi/, $(qapi-nested-y))
 
-common-obj-y += qmp-marshal.o qapi-visit.o qapi-types.o $(qapi-obj-y)
+common-obj-y += $(qapi-obj-y) $(qapi-generated-y)
 
 ######################################################################
 # guest agent
@@ -207,6 +214,7 @@ qga-obj-y = $(addprefix qga/, $(qga-nested-y))
 qga-obj-y += qemu-ga.o qemu-tool.o qemu-error.o module.o cutils.o osdep.o
 qga-obj-$(CONFIG_WIN32) += qemu-malloc.o
 qga-obj-$(CONFIG_POSIX) += qemu-malloc.o qemu-sockets.o qemu-option.o $(qga-nested-qapi-y)
+
 
 vl.o: QEMU_CFLAGS+=$(GPROF_CFLAGS)
 

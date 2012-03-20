@@ -914,6 +914,7 @@ out:
 }
 #endif 
 
+#ifdef CONFIG_LIVE_SNAPSHOTS
 /* New and old BlockDriverState structs for group snapshots */
 typedef struct BlkGroupSnapshotStates {
     BlockDriverState *old_bs;
@@ -1042,6 +1043,7 @@ exit:
     }
     return;
 }
+#endif
 
 
 static void monitor_print_block_stream(Monitor *mon, const QObject *data)
