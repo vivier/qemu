@@ -1305,9 +1305,10 @@ EQMP
         .args_type  = "pci_addr:s,opts:s",
         .params     = "[[<domain>:]<bus>:]<slot>\n"
                       "[file=file][,if=type][,bus=n]\n"
-                      "[,unit=m][,media=d][index=i]\n"
+                      "[,unit=m][,media=d][,index=i]\n"
                       "[,cyls=c,heads=h,secs=s[,trans=t]]\n"
-                      "[snapshot=on|off][,cache=on|off]",
+                      "[,snapshot=on|off][,cache=on|off]",
+                      "[,readonly=on|off][,copy-on-read=on|off]",
         .help       = "add drive to PCI storage controller",
         .mhandler.cmd = drive_hot_add,
     },
@@ -2018,6 +2019,7 @@ Arguments:
 - "werror": What to do on write error (json-string, optional)
 - "serial": Drive serial number (json-string, optional)
 - "snapshot": Enable snapshot mode (json-bool, optional)
+- "copy-on-read": Enable copy-on-read mode (json-bool, optional)
 
 Example:
 

@@ -83,6 +83,10 @@ QemuOptsList qemu_drive_opts = {
             .name = "boot",
             .type = QEMU_OPT_BOOL,
             .help = "make this a boot drive",
+        },{
+            .name = "copy-on-read",
+            .type = QEMU_OPT_BOOL,
+            .help = "copy read data from backing file into image file",
         },
         { /* end if list */ }
     },
