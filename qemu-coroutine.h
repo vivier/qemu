@@ -125,6 +125,11 @@ void coroutine_fn qemu_co_queue_wait(CoQueue *queue);
 bool qemu_co_queue_next(CoQueue *queue);
 
 /**
+ * Restarts all coroutines in the CoQueue and leaves the queue empty.
+ */
+void qemu_co_queue_restart_all(CoQueue *queue);
+
+/**
  * Checks if the CoQueue is empty.
  */
 bool qemu_co_queue_empty(CoQueue *queue);
