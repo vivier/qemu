@@ -537,17 +537,6 @@ static int img_commit(int argc, char **argv)
     return 0;
 }
 
-static int is_not_zero(const uint8_t *sector, int len)
-{
-    int i;
-    len >>= 2;
-    for(i = 0;i < len; i++) {
-        if (((uint32_t *)sector)[i] != 0)
-            return 1;
-    }
-    return 0;
-}
-
 /*
  * Returns true iff the first sector pointed to by 'buf' contains at least
  * a non-NUL byte.
@@ -557,20 +546,22 @@ static int is_not_zero(const uint8_t *sector, int len)
  */
 static int is_allocated_sectors(const uint8_t *buf, int n, int *pnum)
 {
-    int v, i;
+    bool is_zero;
+    int i;
 
     if (n <= 0) {
         *pnum = 0;
         return 0;
     }
-    v = is_not_zero(buf, 512);
+    is_zero = buffer_is_zero(buf, 512);
     for(i = 1; i < n; i++) {
         buf += 512;
-        if (v != is_not_zero(buf, 512))
+        if (is_zero != buffer_is_zero(buf, 512)) {
             break;
+        }
     }
     *pnum = i;
-    return v;
+    return !is_zero;
 }
 
 /*
@@ -914,7 +905,7 @@ static int img_convert(int argc, char **argv)
             if (n < cluster_sectors) {
                 memset(buf + n * 512, 0, cluster_size - n * 512);
             }
-            if (is_not_zero(buf, cluster_size)) {
+            if (!buffer_is_zero(buf, cluster_size)) {
                 ret = bdrv_write_compressed(out_bs, sector_num, buf,
                                             cluster_sectors);
                 if (ret != 0) {
