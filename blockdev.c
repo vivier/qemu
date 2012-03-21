@@ -479,7 +479,7 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
     DriveInfo *dinfo;
     int is_extboot = 0;
     int snapshot = 0;
-    int copy_on_read, stream;
+    int copy_on_read;
 
     translation = BIOS_ATA_TRANSLATION_AUTO;
 
@@ -504,7 +504,6 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
     snapshot = qemu_opt_get_bool(opts, "snapshot", 0);
     ro = qemu_opt_get_bool(opts, "readonly", 0);
     copy_on_read = qemu_opt_get_bool(opts, "copy-on-read", 0);
-    stream = qemu_opt_get_bool(opts, "stream", 0);
 
     file = qemu_opt_get(opts, "file");
     serial = qemu_opt_get(opts, "serial");
@@ -794,15 +793,6 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
 
     if (drive_open(dinfo) < 0) {
         goto err;
-    }
-
-    if (stream) {
-        const char *device_name = bdrv_get_device_name(dinfo->bdrv);
-
-        if (!stream_start(device_name)) {
-            fprintf(stderr, "qemu: warning: stream_start failed for '%s'\n",
-                    device_name);
-        }
     }
 
     if (bdrv_key_required(dinfo->bdrv))
