@@ -570,14 +570,16 @@ static uint64_t get_cluster_offset(BlockDriverState *bs, VmdkMetaData *m_data,
     return cluster_offset;
 }
 
-static int vmdk_is_allocated(BlockDriverState *bs, int64_t sector_num,
-                             int nb_sectors, int *pnum)
+static int coroutine_fn vmdk_co_is_allocated(BlockDriverState *bs,
+        int64_t sector_num, int nb_sectors, int *pnum)
 {
     BDRVVmdkState *s = bs->opaque;
     int index_in_cluster, n;
     uint64_t cluster_offset;
 
+    qemu_co_mutex_lock(&s->lock);
     cluster_offset = get_cluster_offset(bs, NULL, sector_num << 9, 0);
+    qemu_co_mutex_unlock(&s->lock);
     index_in_cluster = sector_num % s->cluster_sectors;
     n = s->cluster_sectors - index_in_cluster;
     if (n > nb_sectors)
@@ -884,7 +886,7 @@ static BlockDriver bdrv_vmdk = {
     .bdrv_close		= vmdk_close,
     .bdrv_create	= vmdk_create,
     .bdrv_co_flush  = vmdk_co_flush,
-    .bdrv_is_allocated	= vmdk_is_allocated,
+    .bdrv_co_is_allocated   = vmdk_co_is_allocated,
 
     .create_options = vmdk_create_options,
 };
