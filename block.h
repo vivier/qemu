@@ -147,6 +147,8 @@ int coroutine_fn bdrv_co_readv(BlockDriverState *bs, int64_t sector_num,
     int nb_sectors, QEMUIOVector *qiov);
 int coroutine_fn bdrv_co_writev(BlockDriverState *bs, int64_t sector_num,
     int nb_sectors, QEMUIOVector *qiov);
+int coroutine_fn bdrv_co_is_allocated(BlockDriverState *bs, int64_t sector_num,
+    int nb_sectors, int *pnum);
 int bdrv_truncate(BlockDriverState *bs, int64_t offset);
 int64_t bdrv_getlength(BlockDriverState *bs);
 void bdrv_get_geometry(BlockDriverState *bs, uint64_t *nb_sectors_ptr);
