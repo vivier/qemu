@@ -438,11 +438,6 @@ static int bdrv_open_common(BlockDriverState *bs, const char *filename,
     /* buffer_alignment defaulted to 512, drivers can change this value */
     bs->buffer_alignment = 512;
 
-    bs->copy_on_read = 0;
-    if (flags & BDRV_O_RDWR) {
-        bs->copy_on_read = !!(flags & BDRV_O_COPY_ON_READ);
-    }
-
     pstrcpy(bs->filename, sizeof(bs->filename), filename);
 
     if (use_bdrv_whitelist && !bdrv_is_whitelisted(drv)) {
