@@ -268,7 +268,7 @@ static void *virtio_scsi_load_request(QEMUFile *f, SCSIRequest *sreq)
 
 static void virtio_scsi_do_tmf(VirtIOSCSI *s, VirtIOSCSIReq *req)
 {
-    SCSIDevice *d = virtio_scsi_device_find(s, req->req.cmd->lun);
+    SCSIDevice *d = virtio_scsi_device_find(s, req->req.tmf->lun);
     SCSIRequest *r, *next;
     DeviceState *qdev;
     int target;
@@ -282,11 +282,11 @@ static void virtio_scsi_do_tmf(VirtIOSCSI *s, VirtIOSCSIReq *req)
         if (!d) {
             goto fail;
         }
-        if (d->lun != virtio_scsi_get_lun(req->req.cmd->lun)) {
+        if (d->lun != virtio_scsi_get_lun(req->req.tmf->lun)) {
             goto incorrect_lun;
         }
         QTAILQ_FOREACH_SAFE(r, &d->requests, next, next) {
-            if (r->tag == req->req.cmd->tag) {
+            if (r->tag == req->req.tmf->tag) {
                 break;
             }
         }
@@ -306,7 +306,7 @@ static void virtio_scsi_do_tmf(VirtIOSCSI *s, VirtIOSCSIReq *req)
         if (!d) {
             goto fail;
         }
-        if (d->lun != virtio_scsi_get_lun(req->req.cmd->lun)) {
+        if (d->lun != virtio_scsi_get_lun(req->req.tmf->lun)) {
             goto incorrect_lun;
         }
         s->resetting++;
@@ -320,7 +320,7 @@ static void virtio_scsi_do_tmf(VirtIOSCSI *s, VirtIOSCSIReq *req)
         if (!d) {
             goto fail;
         }
-        if (d->lun != virtio_scsi_get_lun(req->req.cmd->lun)) {
+        if (d->lun != virtio_scsi_get_lun(req->req.tmf->lun)) {
             goto incorrect_lun;
         }
         QTAILQ_FOREACH_SAFE(r, &d->requests, next, next) {
@@ -339,7 +339,7 @@ static void virtio_scsi_do_tmf(VirtIOSCSI *s, VirtIOSCSIReq *req)
         break;
 
     case VIRTIO_SCSI_T_TMF_I_T_NEXUS_RESET:
-        target = req->req.cmd->lun[1];
+        target = req->req.tmf->lun[1];
         s->resetting++;
         QTAILQ_FOREACH(qdev, &s->bus.qbus.children, sibling) {
              d = DO_UPCAST(SCSIDevice, qdev, qdev);
