@@ -400,7 +400,7 @@ void migrate_fd_put_ready(void *opaque)
         qemu_system_wakeup_request(QEMU_WAKEUP_REASON_OTHER);
         vm_stop_force_state(RUN_STATE_FINISH_MIGRATE);
 
-        qemu_aio_flush();
+        bdrv_drain_all();
         bdrv_flush_all();
         if ((qemu_savevm_state_complete(s->mon, s->file)) < 0) {
             if (old_vm_running) {
