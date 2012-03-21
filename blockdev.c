@@ -15,7 +15,6 @@
 #include "qemu-config.h"
 #include "sysemu.h"
 #include "block_int.h"
-#include "qjson.h"
 #include "qmp-commands.h"
 
 struct drivelist drives = QTAILQ_HEAD_INITIALIZER(drives);
@@ -51,137 +50,6 @@ static const int if_max_devs[IF_COUNT] = {
     [IF_IDE] = 2,
     [IF_SCSI] = 7,
 };
-
-typedef struct StreamState {
-    int64_t offset;             /* current position in block device */
-    BlockDriverState *bs;
-    QEMUTimer *timer;
-    QLIST_ENTRY(StreamState) list;
-} StreamState;
-
-static QLIST_HEAD(, StreamState) block_streams =
-    QLIST_HEAD_INITIALIZER(block_streams);
-
-static QObject *stream_get_qobject(StreamState *s)
-{
-    const char *name = bdrv_get_device_name(s->bs);
-    int64_t len = bdrv_getlength(s->bs);
-
-    return qobject_from_jsonf("{ 'device': %s, 'type': 'stream', "
-                              "'offset': %" PRId64 ", 'len': %" PRId64 ", "
-                              "'speed': %" PRId64 " }",
-                              name, s->offset, len, (int64_t)0);
-}
-
-static void stream_mon_event(StreamState *s, int ret)
-{
-    QObject *data = stream_get_qobject(s);
-
-    if (ret < 0) {
-        QDict *qdict = qobject_to_qdict(data);
-
-        qdict_put(qdict, "error", qstring_from_str(strerror(-ret)));
-    }
-
-    monitor_protocol_event(QEVENT_BLOCK_JOB_COMPLETED, data);
-    qobject_decref(data);
-}
-
-static void stream_free(StreamState *s)
-{
-    QLIST_REMOVE(s, list);
-
-    bdrv_set_in_use(s->bs, 0);
-    qemu_del_timer(s->timer);
-    qemu_free_timer(s->timer);
-    qemu_free(s);
-}
-
-static void stream_complete(StreamState *s, int ret)
-{
-    stream_mon_event(s, ret);
-    stream_free(s);
-}
-
-static void stream_cb(void *opaque, int nb_sectors)
-{
-    StreamState *s = opaque;
-
-    if (nb_sectors < 0) {
-        stream_complete(s, nb_sectors);
-        return;
-    }
-
-    s->offset += nb_sectors * BDRV_SECTOR_SIZE;
-
-    if (s->offset == bdrv_getlength(s->bs)) {
-        bdrv_change_backing_file(s->bs, NULL, NULL);
-        stream_complete(s, 0);
-    } else {
-        qemu_mod_timer(s->timer, qemu_get_clock(rt_clock));
-    }
-}
-
-/* We can't call bdrv_aio_stream() directly from the callback because that
- * makes qemu_aio_flush() not complete until the streaming is completed.
- * By delaying with a timer, we give qemu_aio_flush() a chance to complete.
- */
-static void stream_next_iteration(void *opaque)
-{
-    StreamState *s = opaque;
-
-    bdrv_aio_copy_backing(s->bs, s->offset / BDRV_SECTOR_SIZE, stream_cb, s);
-}
-
-static StreamState *stream_find(const char *device)
-{
-    StreamState *s;
-
-    QLIST_FOREACH(s, &block_streams, list) {
-        if (strcmp(bdrv_get_device_name(s->bs), device) == 0) {
-            return s;
-        }
-    }
-    return NULL;
-}
-
-static StreamState *stream_start(const char *device)
-{
-    StreamState *s;
-    BlockDriverAIOCB *acb;
-    BlockDriverState *bs;
-
-    s = stream_find(device);
-    if (s) {
-        qerror_report(QERR_DEVICE_IN_USE, device);
-        return NULL;
-    }
-
-    bs = bdrv_find(device);
-    if (!bs) {
-        qerror_report(QERR_DEVICE_NOT_FOUND, device);
-        return NULL;
-    }
-    if (bdrv_in_use(bs)) {
-        qerror_report(QERR_DEVICE_IN_USE, device);
-        return NULL;
-    }
-    bdrv_set_in_use(bs, 1);
-
-    s = qemu_mallocz(sizeof(*s));
-    s->bs = bs;
-    s->timer = qemu_new_timer(rt_clock, stream_next_iteration, s);
-    QLIST_INSERT_HEAD(&block_streams, s, list);
-
-    acb = bdrv_aio_copy_backing(s->bs, s->offset / BDRV_SECTOR_SIZE,
-                                stream_cb, s);
-    if (acb == NULL) {
-        stream_free(s);
-        qerror_report(QERR_NOT_SUPPORTED);
-        return NULL;
-    }
-    return s;
-}
 
 /*
  * We automatically delete the drive when a device using it gets
@@ -965,13 +833,6 @@ exit:
     return;
 }
 #endif
-
-int do_block_stream(Monitor *mon, const QDict *params, QObject **ret_data)
-{
-    const char *device = qdict_get_str(params, "device");
-
-    return stream_start(device) ? 0 : -1;
-}
 
 static int eject_device(Monitor *mon, BlockDriverState *bs, int force)
 {
