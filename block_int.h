@@ -77,8 +77,6 @@ struct BlockDriver {
     BlockDriverAIOCB *(*bdrv_aio_discard)(BlockDriverState *bs,
         int64_t sector_num, int nb_sectors,
         BlockDriverCompletionFunc *cb, void *opaque);
-    BlockDriverAIOCB *(*bdrv_aio_copy_backing)(BlockDriverState *bs,
-        int64_t sector_num, BlockDriverCopyBackingCB *cb, void *opaque);
 
     int coroutine_fn (*bdrv_co_readv)(BlockDriverState *bs,
         int64_t sector_num, int nb_sectors, QEMUIOVector *qiov);
