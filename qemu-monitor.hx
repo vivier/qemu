@@ -2991,6 +2991,25 @@ show device tree
 show qdev device model list
 @item info roms
 show roms
+@item info block-jobs
+show long-running block device operations
+ETEXI
+
+SQMP
+query-block-jobs
+----------------
+
+Return a list of block job objects for each active block job containing the
+following fields:
+
+- type: the job type (json-string, 'stream' for image streaming)
+- device: the block device name (json-string)
+- len: the maximum progress value (json-int)
+- offset: the current progress value (json-int)
+- speed: the rate limit, bytes per second (json-int)
+EQMP
+
+STEXI
 @end table
 ETEXI
 
