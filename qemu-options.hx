@@ -104,7 +104,7 @@ DEF("drive", HAS_ARG, QEMU_OPTION_drive,
     "       [,cyls=c,heads=h,secs=s[,trans=t]][,snapshot=on|off]\n"
     "       [,cache=writethrough|writeback|none|unsafe][,format=f]\n"
     "       [,serial=s][,addr=A][,id=name][,aio=threads|native]\n"
-    "       [,readonly=on|off][,copy-on-read=on|off][,stream=on|off]\n"
+    "       [,readonly=on|off][,copy-on-read=on|off]\n"
     "                use 'file' as a drive image\n")
 DEF("set", HAS_ARG, QEMU_OPTION_set,
     "-set group.id.arg=value\n"
@@ -153,9 +153,6 @@ Specify the controller's PCI address (if=virtio only).
 @item copy-on-read=@var{copy-on-read}
 @var{copy-on-read} is "on" or "off" and enables whether to copy read backing
 file sectors into the image file.
-@item stream=@var{stream}
-@var{stream} is "on" or "off" and enables background copying of backing file
-contents into the image file until the backing file is no longer needed.
 @end table
 
 By default, writethrough caching is used for all block device.  This means that
