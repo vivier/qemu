@@ -2076,6 +2076,7 @@ Nothing on success.
 If streaming is already active on this device, DeviceInUse.
 If device does not exist, DeviceNotFound.
 If image streaming is not supported by this device, NotSupported.
+If base does not exist, BaseNotFound
 
 EQMP
 
