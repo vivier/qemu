@@ -12,7 +12,6 @@
 
 #include "block.h"
 #include "qemu-queue.h"
-#include "monitor.h"
 
 void blockdev_mark_auto_del(BlockDriverState *bs);
 void blockdev_auto_del(BlockDriverState *bs);
@@ -73,7 +72,5 @@ int do_change_block(Monitor *mon, const char *device,
 int simple_drive_add(Monitor *mon, const QDict *qdict, QObject **ret_data);
 int do_drive_del(Monitor *mon, const QDict *qdict, QObject **ret_data);
 int do_block_stream(Monitor *mon, const QDict *params, QObject **ret_data);
-int do_block_job_cancel(Monitor *mon, const QDict *params,
-                        MonitorCompletion cb, void *opaque);
 
 #endif

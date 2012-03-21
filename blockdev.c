@@ -53,8 +53,6 @@ static const int if_max_devs[IF_COUNT] = {
 };
 
 typedef struct StreamState {
-    MonitorCompletion *cancel_cb;
-    void *cancel_opaque;
     int64_t offset;             /* current position in block device */
     BlockDriverState *bs;
     QEMUTimer *timer;
@@ -93,10 +91,6 @@ static void stream_free(StreamState *s)
 {
     QLIST_REMOVE(s, list);
 
-    if (s->cancel_cb) {
-        s->cancel_cb(s->cancel_opaque, NULL);
-    }
-
     bdrv_set_in_use(s->bs, 0);
     qemu_del_timer(s->timer);
     qemu_free_timer(s->timer);
@@ -123,8 +117,6 @@ static void stream_cb(void *opaque, int nb_sectors)
     if (s->offset == bdrv_getlength(s->bs)) {
         bdrv_change_backing_file(s->bs, NULL, NULL);
         stream_complete(s, 0);
-    } else if (s->cancel_cb) {
-        stream_free(s);
     } else {
         qemu_mod_timer(s->timer, qemu_get_clock(rt_clock));
     }
@@ -189,24 +181,6 @@ static StreamState *stream_start(const char *device)
         return NULL;
     }
     return s;
-}
-
-static int stream_stop(const char *device, MonitorCompletion *cb, void *opaque)
-{
-    StreamState *s = stream_find(device);
-
-    if (!s) {
-        qerror_report(QERR_DEVICE_NOT_ACTIVE, device);
-        return -1;
-    }
-    if (s->cancel_cb) {
-        qerror_report(QERR_DEVICE_IN_USE, device);
-        return -1;
-    }
-
-    s->cancel_cb = cb;
-    s->cancel_opaque = opaque;
-    return 0;
 }
 
 /*
@@ -997,14 +971,6 @@ int do_block_stream(Monitor *mon, const QDict *params, QObject **ret_data)
     const char *device = qdict_get_str(params, "device");
 
     return stream_start(device) ? 0 : -1;
-}
-
-int do_block_job_cancel(Monitor *mon, const QDict *params,
-                        MonitorCompletion cb, void *opaque)
-{
-    const char *device = qdict_get_str(params, "device");
-
-    return stream_stop(device, cb, opaque);
 }
 
 static int eject_device(Monitor *mon, BlockDriverState *bs, int force)
