@@ -2121,6 +2121,52 @@ Example:
     "arguments": { "device": "virtio0", "value": 1024 } }
 EQMP
 
+    {
+        .name       = "block_job_cancel",
+        .args_type  = "device:B",
+        .params     = "device",
+        .help       = "stop an active block streaming operation",
+        .user_print = monitor_user_noop,
+        .mhandler.cmd_new = do_block_job_cancel,
+    },
+
+STEXI
+@item block_job_cancel
+@findex block_job_cancel
+Stop an active block streaming operation.
+ETEXI
+
+SQMP
+block_job_cancel
+----------------
+
+Stop an active block streaming operation.
+
+This command returns immediately after marking the active block streaming
+operation for cancellation.  It is an error to call this command if no
+operation is in progress.
+
+The operation will cancel as soon as possible and then emit the
+BLOCK_JOB_CANCELLED event.  Before that happens the job is still visible when
+enumerated using query-block-jobs.
+
+The image file retains its backing file unless the streaming operation happens
+to complete just as it is being cancelled.
+
+A new block streaming operation can be started at a later time to finish
+copying all data from the backing file.
+
+Arguments:
+
+- device: the device name
+
+Returns:
+
+Nothing on success
+If streaming is not active on this device, DeviceNotActive
+If cancellation already in progress, DeviceInUse
+EQMP
+
 HXCOMM Keep the 'info' command at the end!
 HXCOMM This is required for the QMP documentation layout.
 
