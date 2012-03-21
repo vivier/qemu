@@ -278,7 +278,6 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
     DriveInfo *dinfo;
     int is_extboot = 0;
     int snapshot = 0;
-    int copy_on_read;
 
     translation = BIOS_ATA_TRANSLATION_AUTO;
 
@@ -302,7 +301,6 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
 
     snapshot = qemu_opt_get_bool(opts, "snapshot", 0);
     ro = qemu_opt_get_bool(opts, "readonly", 0);
-    copy_on_read = qemu_opt_get_bool(opts, "copy-on-read", 0);
 
     file = qemu_opt_get(opts, "file");
     serial = qemu_opt_get(opts, "serial");
@@ -568,10 +566,6 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
         /* always use write-back with snapshot */
         bdrv_flags &= ~BDRV_O_CACHE_MASK;
         bdrv_flags |= (BDRV_O_SNAPSHOT|BDRV_O_CACHE_WB);
-    }
-
-    if (copy_on_read) {
-        bdrv_flags |= BDRV_O_COPY_ON_READ;
     }
 
     if (media == MEDIA_CDROM) {

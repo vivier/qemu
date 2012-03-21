@@ -104,7 +104,7 @@ DEF("drive", HAS_ARG, QEMU_OPTION_drive,
     "       [,cyls=c,heads=h,secs=s[,trans=t]][,snapshot=on|off]\n"
     "       [,cache=writethrough|writeback|none|unsafe][,format=f]\n"
     "       [,serial=s][,addr=A][,id=name][,aio=threads|native]\n"
-    "       [,readonly=on|off][,copy-on-read=on|off]\n"
+    "       [,readonly=on|off]\n"
     "                use 'file' as a drive image\n")
 DEF("set", HAS_ARG, QEMU_OPTION_set,
     "-set group.id.arg=value\n"
@@ -150,9 +150,6 @@ an untrusted format header.
 This option specifies the serial number to assign to the device.
 @item addr=@var{addr}
 Specify the controller's PCI address (if=virtio only).
-@item copy-on-read=@var{copy-on-read}
-@var{copy-on-read} is "on" or "off" and enables whether to copy read backing
-file sectors into the image file.
 @end table
 
 By default, writethrough caching is used for all block device.  This means that
@@ -179,11 +176,6 @@ cache=unsafe. This option tells qemu that it never needs to write any data
 to the disk but can instead keeps things in cache. If anything goes wrong,
 like your host losing power, the disk storage getting disconnected accidently,
 etc. you're image will most probably be rendered unusable.
-
-Copy-on-read avoids accessing the same backing file sectors repeatedly and is
-useful when the backing file is over a slow network.  By default copy-on-read
-is off.  Note that copy-on-read is a hint and may by ignored by block drivers
-which do not support it.
 
 Instead of @option{-cdrom} you can use:
 @example
