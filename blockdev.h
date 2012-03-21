@@ -75,5 +75,7 @@ int do_block_stream(Monitor *mon, const QDict *qdict, QObject **ret_data);
 int do_block_job_set_speed(Monitor *mon, const QDict *params,
                            QObject **ret_data);
 int do_block_job_cancel(Monitor *mon, const QDict *params, QObject **ret_data);
+void monitor_print_block_jobs(Monitor *mon, const QObject *data);
+void do_info_block_jobs(Monitor *mon, QObject **ret_data);
 
 #endif
