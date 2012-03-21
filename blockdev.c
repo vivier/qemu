@@ -1116,3 +1116,59 @@ int do_block_job_cancel(Monitor *mon, const QDict *params, QObject **ret_data)
     block_job_cancel(job);
     return 0;
 }
+
+static void monitor_print_block_jobs_one(QObject *info, void *opaque)
+{
+    QDict *stream = qobject_to_qdict(info);
+    Monitor *mon = opaque;
+
+    if (strcmp(qdict_get_str(stream, "type"), "stream") == 0) {
+        monitor_printf(mon, "Streaming device %s: Completed %" PRId64
+                " of %" PRId64 " bytes, speed limit %" PRId64
+                " bytes/s\n",
+                qdict_get_str(stream, "device"),
+                qdict_get_int(stream, "offset"),
+                qdict_get_int(stream, "len"),
+                qdict_get_int(stream, "speed"));
+    } else {
+        monitor_printf(mon, "Type %s, device %s: Completed %" PRId64
+                " of %" PRId64 " bytes, speed limit %" PRId64
+                " bytes/s\n",
+                qdict_get_str(stream, "type"),
+                qdict_get_str(stream, "device"),
+                qdict_get_int(stream, "offset"),
+                qdict_get_int(stream, "len"),
+                qdict_get_int(stream, "speed"));
+    }
+}
+
+void monitor_print_block_jobs(Monitor *mon, const QObject *data)
+{
+    QList *list = qobject_to_qlist(data);
+
+    assert(list);
+
+    if (qlist_empty(list)) {
+        monitor_printf(mon, "No active jobs\n");
+        return;
+    }
+
+    qlist_iter(list, monitor_print_block_jobs_one, mon);
+}
+
+static void do_info_block_jobs_one(void *opaque, BlockDriverState *bs)
+{
+    QList *list = opaque;
+    BlockJob *job = bs->job;
+
+    if (job) {
+        qlist_append_obj(list, qobject_from_block_job(job));
+    }
+}
+
+void do_info_block_jobs(Monitor *mon, QObject **ret_data)
+{
+    QList *list = qlist_new();
+    bdrv_iterate(do_info_block_jobs_one, list);
+    *ret_data = QOBJECT(list);
+}
