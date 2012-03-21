@@ -2079,6 +2079,48 @@ If image streaming is not supported by this device, NotSupported.
 
 EQMP
 
+    {
+        .name       = "block_job_set_speed",
+        .args_type  = "device:B,value:o",
+        .params     = "device value",
+        .help       = "set maximum speed for a background block operation",
+        .user_print = monitor_user_noop,
+        .mhandler.cmd_new = do_block_job_set_speed,
+    },
+
+STEXI
+@item block_job_set_stream
+@findex block_job_set_stream
+Set maximum speed for a background block operation.
+ETEXI
+
+SQMP
+block_job_set_speed
+-------------------
+
+Set maximum speed for a background block operation.
+
+This command can only be issued when there is an active block job.
+
+Throttling can be disabled by setting the speed to 0.
+
+Arguments:
+
+- device: the device name
+- value:  the maximum speed, in bytes per second
+
+Returns:
+
+Nothing on success
+If the job type does not support throttling, NotSupported
+If streaming is not active on this device, DeviceNotActive
+
+Example:
+
+-> { "execute": "block_job_set_speed",
+    "arguments": { "device": "virtio0", "value": 1024 } }
+EQMP
+
 HXCOMM Keep the 'info' command at the end!
 HXCOMM This is required for the QMP documentation layout.
 

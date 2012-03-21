@@ -1067,3 +1067,33 @@ int do_block_stream(Monitor *mon, const QDict *params, QObject **ret_data)
     trace_do_block_stream(bs, bs->job);
     return 0;
 }
+
+static BlockJob *find_block_job(const char *device)
+{
+    BlockDriverState *bs;
+
+    bs = bdrv_find(device);
+    if (!bs || !bs->job) {
+        return NULL;
+    }
+    return bs->job;
+}
+
+int do_block_job_set_speed(Monitor *mon, const QDict *params,
+                           QObject **ret_data)
+{
+    const char *device = qdict_get_str(params, "device");
+    int64_t value = qdict_get_int(params, "value");
+    BlockJob *job = find_block_job(device);
+
+    if (!job) {
+        qerror_report(QERR_DEVICE_NOT_ACTIVE, device);
+        return -1;
+    }
+
+    if (block_job_set_speed(job, value) < 0) {
+        qerror_report(QERR_NOT_SUPPORTED);
+        return -1;
+    }
+    return 0;
+}
