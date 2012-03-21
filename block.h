@@ -171,7 +171,6 @@ typedef struct BlockDriverAIOCB BlockDriverAIOCB;
 typedef void BlockDriverCompletionFunc(void *opaque, int ret);
 typedef void BlockDriverDirtyHandler(BlockDriverState *bs, int64_t sector,
 				     int sector_num);
-typedef void BlockDriverCopyBackingCB(void *opaque, int nb_sectors);
 BlockDriverAIOCB *bdrv_aio_readv(BlockDriverState *bs, int64_t sector_num,
                                  QEMUIOVector *iov, int nb_sectors,
                                  BlockDriverCompletionFunc *cb, void *opaque);
@@ -180,10 +179,6 @@ BlockDriverAIOCB *bdrv_aio_writev(BlockDriverState *bs, int64_t sector_num,
                                   BlockDriverCompletionFunc *cb, void *opaque);
 BlockDriverAIOCB *bdrv_aio_flush(BlockDriverState *bs,
 				 BlockDriverCompletionFunc *cb, void *opaque);
-BlockDriverAIOCB *bdrv_aio_copy_backing(BlockDriverState *bs,
-                                        int64_t sector_num,
-                                        BlockDriverCopyBackingCB *cb,
-                                        void *opaque);
 BlockDriverAIOCB *bdrv_aio_discard(BlockDriverState *bs,
                                    int64_t sector_num, int nb_sectors,
                                    BlockDriverCompletionFunc *cb, void *opaque);
