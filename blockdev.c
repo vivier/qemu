@@ -1042,6 +1042,7 @@ int do_block_stream(Monitor *mon, const QDict *params, QObject **ret_data)
     const char *device = qdict_get_str(params, "device");
     const char *base = qdict_get_try_str(params, "base");
     BlockDriverState *bs;
+    BlockDriverState *base_bs = NULL;
     int ret;
 
     bs = bdrv_find(device);
@@ -1050,13 +1051,15 @@ int do_block_stream(Monitor *mon, const QDict *params, QObject **ret_data)
         return -1;
     }
 
-    /* Base device not supported */
     if (base) {
-        qerror_report(QERR_NOT_SUPPORTED);
-        return -1;
+        base_bs = bdrv_find_backing_image(bs, base);
+        if (base_bs == NULL) {
+            qerror_report(QERR_BASE_NOT_FOUND, base);
+            return -1;
+        }
     }
 
-    ret = stream_start(bs, NULL, block_stream_cb, bs);
+    ret = stream_start(bs, base_bs, base, block_stream_cb, bs);
     if (ret < 0) {
         switch (ret) {
         case -EBUSY:
