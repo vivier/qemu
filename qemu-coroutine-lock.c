@@ -75,6 +75,13 @@ bool qemu_co_queue_next(CoQueue *queue)
     return (next != NULL);
 }
 
+void qemu_co_queue_restart_all(CoQueue *queue)
+{
+    while (qemu_co_queue_next(queue)) {
+        /* Do nothing */
+    }
+}
+
 bool qemu_co_queue_empty(CoQueue *queue)
 {
     return (QTAILQ_FIRST(&queue->entries) == NULL);
