@@ -1,6 +1,7 @@
 #ifndef QEMU_TIMER_H
 #define QEMU_TIMER_H
 
+#include "qemu-common.h"
 #include "notify.h"
 
 /* timers */

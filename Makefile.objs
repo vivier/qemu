@@ -7,6 +7,7 @@ qobject-obj-y += qerror.o error.o
 #######################################################################
 # coroutines
 coroutine-obj-y = qemu-coroutine.o qemu-coroutine-lock.o
+coroutine-obj-y += qemu-coroutine-sleep.o
 coroutine-obj-$(CONFIG_POSIX) += coroutine-ucontext.o
 coroutine-obj-$(CONFIG_WIN32) += coroutine-win32.o
 

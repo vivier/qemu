@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include "qemu-queue.h"
+#include "qemu-timer.h"
 
 /**
  * Coroutines are a mechanism for stack switching and can be used for
@@ -160,5 +161,18 @@ void coroutine_fn qemu_co_mutex_lock(CoMutex *mutex);
  * lock to be run.
  */
 void coroutine_fn qemu_co_mutex_unlock(CoMutex *mutex);
+
+/**
+ * Yield the coroutine for a given duration
+ *
+ * Note this function uses timers and hence only works when a main loop is in
+ * use.  See main-loop.h and do not use from qemu-tool programs.
+ *
+ * RHEL does not have nanosecond qemu-timer.h functions like upstream.  Instead
+ * it uses per-clock time units as was previously the case upstream.  Therefore
+ * the unit of the n argument depends on the clock and the function name does
+ * not include "_ns".
+ */
+void coroutine_fn co_sleep(QEMUClock *clock, int64_t n);
 
 #endif /* QEMU_COROUTINE_H */
