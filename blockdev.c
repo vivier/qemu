@@ -52,20 +52,12 @@ static const int if_max_devs[IF_COUNT] = {
     [IF_SCSI] = 7,
 };
 
-enum {
-    SLICE_TIME_MS = 100,  /* 100 ms rate-limiting slice time */
-};
-
 typedef struct StreamState {
     MonitorCompletion *cancel_cb;
     void *cancel_opaque;
     int64_t offset;             /* current position in block device */
     BlockDriverState *bs;
     QEMUTimer *timer;
-    int64_t bytes_per_sec;      /* rate limit */
-    int64_t bytes_per_slice;    /* rate limit scaled to slice */
-    int64_t slice_end_time;     /* when this slice finishes */
-    int64_t slice_start_offset; /* offset when slice started */
     QLIST_ENTRY(StreamState) list;
 } StreamState;
 
@@ -80,7 +72,7 @@ static QObject *stream_get_qobject(StreamState *s)
     return qobject_from_jsonf("{ 'device': %s, 'type': 'stream', "
                               "'offset': %" PRId64 ", 'len': %" PRId64 ", "
                               "'speed': %" PRId64 " }",
-                              name, s->offset, len, s->bytes_per_sec);
+                              name, s->offset, len, (int64_t)0);
 }
 
 static void stream_mon_event(StreamState *s, int ret)
@@ -117,27 +109,6 @@ static void stream_complete(StreamState *s, int ret)
     stream_free(s);
 }
 
-static void stream_schedule_next_iteration(StreamState *s)
-{
-    int64_t next = qemu_get_clock(rt_clock);
-
-    /* New slice */
-    if (next >= s->slice_end_time) {
-        s->slice_end_time = next + SLICE_TIME_MS;
-        s->slice_start_offset = s->offset;
-    }
-
-    /* Throttle */
-    if (s->bytes_per_slice &&
-        s->offset - s->slice_start_offset >= s->bytes_per_slice) {
-        next = s->slice_end_time;
-        s->slice_end_time = next + SLICE_TIME_MS;
-        s->slice_start_offset += s->bytes_per_slice;
-    }
-
-    qemu_mod_timer(s->timer, next);
-}
-
 static void stream_cb(void *opaque, int nb_sectors)
 {
     StreamState *s = opaque;
@@ -155,7 +126,7 @@ static void stream_cb(void *opaque, int nb_sectors)
     } else if (s->cancel_cb) {
         stream_free(s);
     } else {
-        stream_schedule_next_iteration(s);
+        qemu_mod_timer(s->timer, qemu_get_clock(rt_clock));
     }
 }
 
@@ -235,20 +206,6 @@ static int stream_stop(const char *device, MonitorCompletion *cb, void *opaque)
 
     s->cancel_cb = cb;
     s->cancel_opaque = opaque;
-    return 0;
-}
-
-static int stream_set_speed(const char *device, int64_t bytes_per_sec)
-{
-    StreamState *s = stream_find(device);
-
-    if (!s) {
-        qerror_report(QERR_DEVICE_NOT_ACTIVE, device);
-        return -1;
-    }
-
-    s->bytes_per_sec = bytes_per_sec;
-    s->bytes_per_slice = bytes_per_sec * SLICE_TIME_MS / 1000LL;
     return 0;
 }
 
@@ -1048,7 +1005,7 @@ static void monitor_print_block_stream(Monitor *mon, const QObject *data)
                    qdict_get_str(stream, "device"),
                    qdict_get_int(stream, "offset"),
                    qdict_get_int(stream, "len"),
-                   qdict_get_int(stream, "speed"));
+                   (int64_t)0);
 }
 
 static void monitor_print_block_job(QObject *obj, void *opaque)
@@ -1097,20 +1054,6 @@ int do_block_job_cancel(Monitor *mon, const QDict *params,
     const char *device = qdict_get_str(params, "device");
 
     return stream_stop(device, cb, opaque);
-}
-
-int do_block_job_set_speed(Monitor *mon, const QDict *params,
-                           QObject **ret_data)
-{
-    const char *device = qdict_get_str(params, "device");
-    int64_t value;
-
-    value = qdict_get_int(params, "value");
-    if (value < 0) {
-        value = 0;
-    }
-
-    return stream_set_speed(device, value);
 }
 
 static int eject_device(Monitor *mon, BlockDriverState *bs, int force)
