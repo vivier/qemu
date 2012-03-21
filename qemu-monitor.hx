@@ -2975,42 +2975,8 @@ show device tree
 show qdev device model list
 @item info roms
 show roms
-@item info block-jobs
-show progress of background block device operations
 @end table
 ETEXI
-
-SQMP
-query-block-jobs
-----------------
-
-Show progress of ongoing block device operations.
-
-Return a json-array of all block device operations.  If no operation is
-active then return an empty array.  Each operation is a json-object with the
-following data:
-
-- type:     job type ("stream" for image streaming, json-string)
-- device:   device name (json-string)
-- end:      maximum progress value (json-int)
-- position: current progress value (json-int)
-- speed:    rate limit, bytes per second (json-int)
-
-Progress can be observed as position increases and it reaches end when
-the operation completes.  Position and end have undefined units but can be
-used to calculate a percentage indicating the progress that has been made.
-
-Example:
-
--> { "execute": "query-block-jobs" }
-<- { "return":[
-      { "type": "stream", "device": "virtio0",
-        "end": 10737418240, "position": 709632,
-        "speed": 0 }
-   ]
- }
-
-EQMP
 
 HXCOMM DO NOT add new commands after 'info', move your addition before it!
 

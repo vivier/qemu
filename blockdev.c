@@ -992,55 +992,6 @@ exit:
 }
 #endif
 
-
-static void monitor_print_block_stream(Monitor *mon, const QObject *data)
-{
-    QDict *stream;
-
-    assert(data);
-    stream = qobject_to_qdict(data);
-
-    monitor_printf(mon, "Streaming device %s: Completed %" PRId64 " of %"
-                   PRId64 " bytes, speed limit %" PRId64 " bytes/s\n",
-                   qdict_get_str(stream, "device"),
-                   qdict_get_int(stream, "offset"),
-                   qdict_get_int(stream, "len"),
-                   (int64_t)0);
-}
-
-static void monitor_print_block_job(QObject *obj, void *opaque)
-{
-    monitor_print_block_stream((Monitor *)opaque, obj);
-}
-
-void monitor_print_block_jobs(Monitor *mon, const QObject *data)
-{
-    QList *streams;
-
-    assert(data);
-    streams = qobject_to_qlist(data);
-    assert(streams); /* we pass a list of stream objects to ourselves */
-
-    if (qlist_empty(streams)) {
-        monitor_printf(mon, "No active jobs\n");
-        return;
-    }
-
-    qlist_iter(streams, monitor_print_block_job, mon);
-}
-
-void do_info_block_jobs(Monitor *mon, QObject **ret_data)
-{
-    QList *streams;
-    StreamState *s;
-
-    streams = qlist_new();
-    QLIST_FOREACH(s, &block_streams, list) {
-        qlist_append_obj(streams, stream_get_qobject(s));
-    }
-    *ret_data = QOBJECT(streams);
-}
-
 int do_block_stream(Monitor *mon, const QDict *params, QObject **ret_data)
 {
     const char *device = qdict_get_str(params, "device");
