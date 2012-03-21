@@ -2036,6 +2036,49 @@ Example:
 
 EQMP
 
+    {
+        .name       = "block_stream",
+        .args_type  = "device:B,base:s?",
+        .params     = "device [base]",
+        .help       = "background copy backing file into a block device",
+        .user_print = monitor_user_noop,
+        .mhandler.cmd_new = do_block_stream,
+    },
+
+SQMP
+block_stream
+------------
+
+Copy data from a backing file into a block device.
+
+The block streaming operation is performed in the background until the entire
+backing file has been copied.  This command returns immediately once streaming
+has started.  The status of ongoing block streaming operations can be checked
+with query-block-jobs.  The operation can be stopped before it has completed
+using the block_job_cancel command.
+
+If a base file is specified then sectors are not copied from that base file and
+its backing chain.  When streaming completes the image file will have the base
+file as its backing file.  This can be used to stream a subset of the backing
+file chain instead of flattening the entire image.
+
+On successful completion the image file is updated to drop the backing file
+and the BLOCK_JOB_COMPLETED event is emitted.
+
+Arguments:
+
+- device: the device name (json-string)
+- base:   the common backing file name (json-string, optional)
+
+Returns:
+
+Nothing on success.
+If streaming is already active on this device, DeviceInUse.
+If device does not exist, DeviceNotFound.
+If image streaming is not supported by this device, NotSupported.
+
+EQMP
+
 HXCOMM Keep the 'info' command at the end!
 HXCOMM This is required for the QMP documentation layout.
 
