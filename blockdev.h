@@ -71,5 +71,6 @@ int do_change_block(Monitor *mon, const char *device,
                     const char *filename, const char *fmt);
 int simple_drive_add(Monitor *mon, const QDict *qdict, QObject **ret_data);
 int do_drive_del(Monitor *mon, const QDict *qdict, QObject **ret_data);
+int do_block_stream(Monitor *mon, const QDict *qdict, QObject **ret_data);
 
 #endif

@@ -13,9 +13,11 @@
 #include "qerror.h"
 #include "qemu-option.h"
 #include "qemu-config.h"
+#include "qemu-objects.h"
 #include "sysemu.h"
 #include "block_int.h"
 #include "qmp-commands.h"
+#include "trace.h"
 
 struct drivelist drives = QTAILQ_HEAD_INITIALIZER(drives);
 DriveInfo *extboot_drive = NULL;
@@ -996,5 +998,72 @@ int do_block_resize(Monitor *mon, const QDict *qdict, QObject **ret_data)
         return -1;
     }
 
+    return 0;
+}
+
+static QObject *qobject_from_block_job(BlockJob *job)
+{
+    return qobject_from_jsonf("{ 'type': %s,"
+                              "'device': %s,"
+                              "'len': %" PRId64 ","
+                              "'offset': %" PRId64 ","
+                              "'speed': %" PRId64 " }",
+                              job->job_type->job_type,
+                              bdrv_get_device_name(job->bs),
+                              job->len,
+                              job->offset,
+                              job->speed);
+}
+
+static void block_stream_cb(void *opaque, int ret)
+{
+    BlockDriverState *bs = opaque;
+    QObject *obj;
+
+    trace_block_stream_cb(bs, bs->job, ret);
+
+    assert(bs->job);
+    obj = qobject_from_block_job(bs->job);
+    if (ret < 0) {
+        QDict *dict = qobject_to_qdict(obj);
+        qdict_put(dict, "error", qstring_from_str(strerror(-ret)));
+    }
+
+    monitor_protocol_event(QEVENT_BLOCK_JOB_COMPLETED, obj);
+    qobject_decref(obj);
+}
+
+int do_block_stream(Monitor *mon, const QDict *params, QObject **ret_data)
+{
+    const char *device = qdict_get_str(params, "device");
+    const char *base = qdict_get_try_str(params, "base");
+    BlockDriverState *bs;
+    int ret;
+
+    bs = bdrv_find(device);
+    if (!bs) {
+        qerror_report(QERR_DEVICE_NOT_FOUND, device);
+        return -1;
+    }
+
+    /* Base device not supported */
+    if (base) {
+        qerror_report(QERR_NOT_SUPPORTED);
+        return -1;
+    }
+
+    ret = stream_start(bs, NULL, block_stream_cb, bs);
+    if (ret < 0) {
+        switch (ret) {
+        case -EBUSY:
+            qerror_report(QERR_DEVICE_IN_USE, device);
+            return -1;
+        default:
+            qerror_report(QERR_NOT_SUPPORTED);
+            return -1;
+        }
+    }
+
+    trace_do_block_stream(bs, bs->job);
     return 0;
 }
