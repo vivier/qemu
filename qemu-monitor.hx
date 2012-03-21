@@ -168,53 +168,6 @@ Examples:
 EQMP
 
     {
-        .name       = "block_job_cancel",
-        .args_type  = "device:B",
-        .params     = "device",
-        .help       = "Stop an active block streaming operation",
-        .user_print = monitor_user_noop,
-        .mhandler.cmd_async = do_block_job_cancel,
-        .flags      = MONITOR_CMD_ASYNC,
-    },
-
-STEXI
-@item block_job_cancel
-@findex block_job_cancel
-Stop an active block streaming operation.
-ETEXI
-SQMP
-
-block_job_cancel
-----------------
-
-Stop an active block streaming operation.
-
-This command returns once the active block streaming operation has been
-stopped.  It is an error to call this command if no operation is in progress.
-
-The image file retains its backing file unless the streaming operation happens
-to complete just as it is being cancelled.
-
-A new block streaming operation can be started at a later time to finish
-copying all data from the backing file.
-
-Arguments:
-
-- device: device name (json-string)
-
-Errors:
-
-DeviceNotActive: streaming is not active on this device
-DeviceInUse:     cancellation already in progress
-
-Examples:
-
--> { "execute": "block_job_cancel", "arguments": { "device": "virtio0" } }
-<- { "return":  {} }
-
-EQMP
-
-    {
         .name       = "q|quit",
         .args_type  = "",
         .params     = "",
