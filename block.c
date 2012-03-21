@@ -420,6 +420,22 @@ static int refresh_total_sectors(BlockDriverState *bs, int64_t hint)
     return 0;
 }
 
+/**
+ * The copy-on-read flag is actually a reference count so multiple users may
+ * use the feature without worrying about clobbering its previous state.
+ * Copy-on-read stays enabled until all users have called to disable it.
+ */
+void bdrv_enable_copy_on_read(BlockDriverState *bs)
+{
+    bs->copy_on_read++;
+}
+
+void bdrv_disable_copy_on_read(BlockDriverState *bs)
+{
+    assert(bs->copy_on_read > 0);
+    bs->copy_on_read--;
+}
+
 /*
  * Common part for opening disk images and files
  */
@@ -437,6 +453,11 @@ static int bdrv_open_common(BlockDriverState *bs, const char *filename,
     bs->open_flags = flags;
     /* buffer_alignment defaulted to 512, drivers can change this value */
     bs->buffer_alignment = 512;
+
+    assert(bs->copy_on_read == 0); /* bdrv_new() and bdrv_close() make it so */
+    if ((flags & BDRV_O_RDWR) && (flags & BDRV_O_COPY_ON_READ)) {
+        bdrv_enable_copy_on_read(bs);
+    }
 
     pstrcpy(bs->filename, sizeof(bs->filename), filename);
 
@@ -671,6 +692,7 @@ void bdrv_close(BlockDriverState *bs)
 #endif
         bs->opaque = NULL;
         bs->drv = NULL;
+        bs->copy_on_read = 0;
 
         if (bs->file != NULL) {
             bdrv_close(bs->file);
