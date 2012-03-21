@@ -301,6 +301,12 @@ static inline uint8_t from_bcd(uint8_t val)
     return ((val >> 4) * 10) + (val & 0x0f);
 }
 
+/* Round number down to multiple */
+#define QEMU_ALIGN_DOWN(n, m) ((n) / (m) * (m))
+
+/* Round number up to multiple */
+#define QEMU_ALIGN_UP(n, m) QEMU_ALIGN_DOWN((n) + (m) - 1, (m))
+
 #include "module.h"
 
 #endif /* dyngen-exec.h hack */
