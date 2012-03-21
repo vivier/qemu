@@ -615,10 +615,16 @@ void do_commit(Monitor *mon, const QDict *qdict)
 
     all_devices = !strcmp(device, "all");
     QTAILQ_FOREACH(dinfo, &drives, next) {
+        int ret;
+
         if (!all_devices)
             if (strcmp(bdrv_get_device_name(dinfo->bdrv), device))
                 continue;
-        bdrv_commit(dinfo->bdrv);
+        ret = bdrv_commit(dinfo->bdrv);
+        if (ret == -EBUSY) {
+            qerror_report(QERR_DEVICE_IN_USE, device);
+            return;
+        }
     }
 }
 
@@ -643,6 +649,11 @@ int do_snapshot_blkdev(Monitor *mon, const QDict *qdict, QObject **ret_data)
     bs = bdrv_find(device);
     if (!bs) {
         qerror_report(QERR_DEVICE_NOT_FOUND, device);
+        ret = -1;
+        goto out;
+    }
+    if (bdrv_in_use(bs)) {
+        qerror_report(QERR_DEVICE_IN_USE, device);
         ret = -1;
         goto out;
     }
@@ -836,6 +847,10 @@ exit:
 
 static int eject_device(Monitor *mon, BlockDriverState *bs, int force)
 {
+    if (bdrv_in_use(bs)) {
+        qerror_report(QERR_DEVICE_IN_USE, bdrv_get_device_name(bs));
+        return -1;
+    }
     if (!bdrv_dev_has_removable_media(bs)) {
         qerror_report(QERR_DEVICE_NOT_REMOVABLE, bdrv_get_device_name(bs));
         return -1;
