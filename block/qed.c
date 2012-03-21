@@ -1117,18 +1117,19 @@ static bool qed_start_allocating_write(QEDAIOCB *acb)
  *
  * This path is taken when writing to previously unallocated clusters.
  */
-static void qed_aio_write_alloc(QEDAIOCB *acb)
+static void qed_aio_write_alloc(QEDAIOCB *acb, size_t len)
 {
     BDRVQEDState *s = acb_to_s(acb);
+    BlockDriverCompletionFunc *cb;
 
     if (!qed_start_allocating_write(acb)) {
-        qemu_iovec_reset(&acb->cur_qiov);
-        return; /* wait until current allocating write completes */
+        return;
     }
 
     acb->cur_nclusters = qed_bytes_to_clusters(s,
-            qed_offset_into_cluster(s, acb->cur_pos) + acb->cur_qiov.size);
+            qed_offset_into_cluster(s, acb->cur_pos) + len);
     acb->cur_cluster = qed_alloc_clusters(s, acb->cur_nclusters);
+    qemu_iovec_copy(&acb->cur_qiov, acb->qiov, acb->qiov_offset, len);
 
     if (qed_should_set_need_check(s)) {
         s->header.features |= QED_F_NEED_CHECK;
@@ -1136,6 +1137,25 @@ static void qed_aio_write_alloc(QEDAIOCB *acb)
     } else {
         qed_aio_write_prefill(acb, 0);
     }
+}
+
+/**
+ * Write data cluster in place
+ *
+ * @acb:        Write request
+ * @offset:     Cluster offset in bytes
+ * @len:        Length in bytes
+ *
+ * This path is taken when writing to already allocated clusters.
+ */
+static void qed_aio_write_inplace(QEDAIOCB *acb, uint64_t offset, size_t len)
+{
+    /* Calculate the I/O vector */
+    acb->cur_cluster = offset;
+    qemu_iovec_copy(&acb->cur_qiov, acb->qiov, acb->qiov_offset, len);
+
+    /* Do the actual write */
+    qed_aio_write_main(acb, 0);
 }
 
 /**
@@ -1156,19 +1176,21 @@ static void qed_aio_write_data(void *opaque, int ret,
 
     trace_qed_aio_write_data(acb_to_s(acb), acb, ret, offset, len);
 
-    if (ret < 0) {
-        qed_aio_complete(acb, ret);
-        return;
-    }
-
     acb->find_cluster_ret = ret;
-    qemu_iovec_copy(&acb->cur_qiov, acb->qiov, acb->qiov_offset, len);
 
-    if (ret == QED_CLUSTER_FOUND) {
-        acb->cur_cluster = offset;
-        qed_aio_write_main(acb, 0);
-    } else {
-        qed_aio_write_alloc(acb);
+    switch (ret) {
+    case QED_CLUSTER_FOUND:
+        qed_aio_write_inplace(acb, offset, len);
+        break;
+
+    case QED_CLUSTER_L2:
+    case QED_CLUSTER_L1:
+        qed_aio_write_alloc(acb, len);
+        break;
+
+    default:
+        qed_aio_complete(acb, ret);
+        break;
     }
 }
 
