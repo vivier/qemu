@@ -1168,9 +1168,7 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r)
     outbuf = r->iov.iov_base;
     switch (req->cmd.buf[0]) {
     case TEST_UNIT_READY:
-        if (s->tray_open || !bdrv_is_inserted(s->qdev.conf.bs)) {
-            goto not_ready;
-        }
+        assert(!s->tray_open && bdrv_is_inserted(s->qdev.conf.bs));
         break;
     case INQUIRY:
         buflen = scsi_disk_emulate_inquiry(req, outbuf);
@@ -1225,7 +1223,8 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r)
         memset(outbuf, 0, 8);
         bdrv_get_geometry(s->qdev.conf.bs, &nb_sectors);
         if (!nb_sectors) {
-            goto not_ready;
+            scsi_check_condition(r, SENSE_CODE(LUN_NOT_READY));
+            return -1;
         }
         if ((req->cmd.buf[8] & 1) == 0 && req->cmd.lba) {
             goto illegal_request;
@@ -1285,7 +1284,8 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r)
             memset(outbuf, 0, req->cmd.xfer);
             bdrv_get_geometry(s->qdev.conf.bs, &nb_sectors);
             if (!nb_sectors) {
-                goto not_ready;
+                scsi_check_condition(r, SENSE_CODE(LUN_NOT_READY));
+                return -1;
             }
             if ((req->cmd.buf[14] & 1) == 0 && req->cmd.lba) {
                 goto illegal_request;
@@ -1330,14 +1330,6 @@ static int scsi_disk_emulate_command(SCSIDiskReq *r)
     buflen = MIN(buflen, req->cmd.xfer);
     return buflen;
 
-not_ready:
-    if (s->tray_open || !bdrv_is_inserted(s->qdev.conf.bs)) {
-        scsi_check_condition(r, SENSE_CODE(NO_MEDIUM));
-    } else {
-        scsi_check_condition(r, SENSE_CODE(LUN_NOT_READY));
-    }
-    return -1;
-
 illegal_request:
     if (r->req.status == -1) {
         scsi_check_condition(r, SENSE_CODE(INVALID_FIELD));
@@ -1370,6 +1362,30 @@ static int32_t scsi_send_command(SCSIRequest *req, uint8_t *buf)
         printf("\n");
     }
 #endif
+
+    switch (command) {
+    case INQUIRY:
+    case MODE_SENSE:
+    case MODE_SENSE_10:
+    case RESERVE:
+    case RESERVE_10:
+    case RELEASE:
+    case RELEASE_10:
+    case START_STOP:
+    case ALLOW_MEDIUM_REMOVAL:
+    case GET_CONFIGURATION:
+    case GET_EVENT_STATUS_NOTIFICATION:
+    case MECHANISM_STATUS:
+    case REQUEST_SENSE:
+        break;
+
+    default:
+        if (s->tray_open || !bdrv_is_inserted(s->qdev.conf.bs)) {
+            scsi_check_condition(r, SENSE_CODE(NO_MEDIUM));
+            return 0;
+        }
+        break;
+    }
 
     switch (command) {
     case TEST_UNIT_READY:
