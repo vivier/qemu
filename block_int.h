@@ -283,7 +283,8 @@ void block_job_cancel(BlockJob *job);
 bool block_job_is_cancelled(BlockJob *job);
 
 int stream_start(BlockDriverState *bs, BlockDriverState *base,
-                 BlockDriverCompletionFunc *cb, void *opaque);
+                 const char *base_id, BlockDriverCompletionFunc *cb,
+                 void *opaque);
 
 typedef struct BlockConf {
     BlockDriverState *bs;
