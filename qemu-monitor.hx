@@ -215,47 +215,6 @@ Examples:
 EQMP
 
     {
-        .name       = "block_job_set_speed",
-        .args_type  = "device:B,value:o",
-        .params     = "device value",
-        .help       = "Set the maximum speed for a background block operation",
-        .user_print = monitor_user_noop,
-        .mhandler.cmd_new = do_block_job_set_speed,
-    },
-
-STEXI
-@item block_job_set_speed @var{device} @var{value}
-@findex block_job_set_speed
-Set the maximum speed for a background block operation.
-ETEXI
-SQMP
-block_job_set_speed
--------------------
-
-Set maximum speed for a background block operation.
-
-This is a per-block device command that can only be issued
-when there is an active block job.
-
-Throttling can be disabled by setting the speed to 0.
-
-Arguments:
-
-- device: device name (json-string)
-- value:  maximum speed, in bytes per second (json-int)
-
-Errors:
-DeviceNotActive: streaming is not active on this device
-NotSupported:    job type does not support speed setting
-
-Example:
-
--> { "execute": "block_job_set_speed",
-    "arguments": { "device": "virtio0", "value": 1024 } }
-
-EQMP
-
-    {
         .name       = "q|quit",
         .args_type  = "",
         .params     = "",
