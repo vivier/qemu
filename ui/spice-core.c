@@ -559,6 +559,12 @@ static int add_channel(const char *name, const char *value, void *opaque)
     int rc;
 
     if (strcmp(name, "tls-channel") == 0) {
+        int *tls_port = opaque;
+        if (!*tls_port) {
+            error_report("spice: tried to setup tls-channel"
+                         " without specifying a TLS port");
+            exit(1);
+        }
         security = SPICE_CHANNEL_SECURITY_SSL;
     }
     if (strcmp(name, "plaintext-channel") == 0) {
@@ -720,7 +726,7 @@ void qemu_spice_init(void)
 
 #endif /* >= 0.6.0 */
 
-    qemu_opt_foreach(opts, add_channel, NULL, 0);
+    qemu_opt_foreach(opts, add_channel, &tls_port, 0);
 
     if (0 != spice_server_init(spice_server, &core_interface)) {
         fprintf(stderr, "failed to initialize spice server");
