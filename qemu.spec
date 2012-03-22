@@ -7,10 +7,6 @@ Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
 Group: Development/Tools
 URL: http://www.qemu.org/
-# RHEL will build Qemu only on x86_64:
-%if 0%{?rhel}
-ExclusiveArch: x86_64
-%endif
 
 # Allow one off builds to be minimalized without foreign
 # architecture support (--with x86only):
@@ -362,7 +358,6 @@ such as kvm_stat.
 
 %prep
 %setup -q -n qemu-kvm-%{version}
-%patch00 -p1
 %patch01 -p1
 %patch02 -p1
 %patch03 -p1
