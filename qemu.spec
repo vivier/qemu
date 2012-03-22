@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.0
-Release: 8%{?dist}
+Release: 9%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -111,6 +111,7 @@ Patch140: 0140-usb-ehci-sanity-check-iso-xfers.patch
 
 # General bug fixes
 Patch201: Fix_save-restore_of_in-kernel_i8259.patch
+Patch202: qemu-virtio-9p-noatime.patch
 
 # Feature patches, should be in 1.1 before release
 Patch301: enable_architectural_PMU_cpuid_leaf.patch
@@ -428,6 +429,7 @@ such as kvm_stat.
 %patch140 -p1
 
 %patch201 -p1
+%patch202 -p1
 
 %patch301 -p1
 %patch302 -p1
@@ -814,6 +816,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Mar 22 2012 Daniel P. Berrange <berrange@redhat.com> - 2:1.0-9
+- Remove O_NOATIME for 9p filesystems
+
 * Mon Mar 19 2012 Daniel P. Berrange <berrange@redhat.com> - 2:1.0-8
 - Move udev rules to /lib/udev/rules.d (rhbz #748207)
 
