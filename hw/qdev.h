@@ -6,6 +6,7 @@
 #include "qemu-queue.h"
 #include "qemu-char.h"
 #include "qemu-option.h"
+#include "qapi/qapi-visit-core.h"
 
 typedef struct Property Property;
 
