@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
-Version: 0.15.1
-Release: 3.3%{?dist}
+Version: 1.0
+Release: 8%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -42,43 +42,83 @@ Source9: ksmtuned.conf
 Source10: qemu-guest-agent.service
 Source11: 99-qemu-guest-agent.rules
 
-# Add compatibility to fedora-13 machine type, to be removed fir F17
-Patch00: pc-add-a-Fedora-13-machine-type-for-backward-compat.patch
+# Patches queued for 1.0.1 stable
+Patch01: 0001-malta-Fix-regression-i8259-interrupts-did-not-work.patch
+Patch02: 0002-exec.c-Fix-subpage-memory-access-to-RAM-MemoryRegion.patch
+Patch03: 0003-hw-9pfs-Improve-portability-to-older-systems.patch
+Patch04: 0004-hw-9pfs-use-migration-blockers-to-prevent-live-migra.patch
+Patch05: 0005-hw-9pfs-Reset-server-state-during-TVERSION.patch
+Patch06: 0006-hw-9pfs-Add-qdev.reset-callback-for-virtio-9p-pci-de.patch
+Patch07: 0007-hw-9pfs-Use-the-correct-file-descriptor-in-Fsdriver-.patch
+Patch08: 0008-hw-9pfs-replace-iovec-manipulation-with-QEMUIOVector.patch
+Patch09: 0009-hw-9pfs-Use-the-correct-signed-type-for-different-va.patch
+Patch10: 0010-target-i386-fix-cmpxchg-instruction-emulation.patch
+Patch11: 0011-configure-Enable-build-by-default-PIE-read-only-relo.patch
+Patch12: 0012-cris-Handle-conditional-stores-on-CRISv10.patch
+Patch13: 0013-pc-add-pc-0.15.patch
+Patch14: 0014-pc-fix-event_idx-compatibility-for-virtio-devices.patch
+Patch15: 0015-Fix-parse-of-usb-device-description-with-multiple-co.patch
+Patch16: 0016-usb-storage-cancel-I-O-on-reset.patch
+Patch17: 0017-usb-host-properly-release-port-on-unplug-exit.patch
+Patch18: 0018-usb-ohci-td.cbp-incorrectly-updated-near-page-end.patch
+Patch19: 0019-target-sh4-ignore-ocbp-and-ocbwb-instructions.patch
+Patch20: 0020-PPC-Fix-linker-scripts-on-ppc-hosts.patch
+Patch21: 0021-qiov-prevent-double-free-or-use-after-free.patch
+Patch22: 0022-coroutine-switch-per-thread-free-pool-to-a-global-po.patch
+Patch23: 0023-qemu-img-rebase-Fix-for-undersized-backing-files.patch
+Patch24: 0024-Documentation-Add-qemu-img-t-parameter-in-man-page.patch
+Patch25: 0025-rbd-always-set-out-parameter-in-qemu_rbd_snap_list.patch
+Patch26: 0026-e1000-bounds-packet-size-against-buffer-size.patch
+Patch27: virtio-blk_refuse_SG_IO_requests_with_scsi_off.patch
 
-# Amit's flow control patches, waiting to glib conversion before going upstream
-Patch01: 0001-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
-Patch02: 0002-char-Add-a-QemuChrHandlers-struct-to-initialise-char.patch
-Patch03: 0003-iohandlers-Add-enable-disable_write_fd_handler-funct.patch
-Patch04: 0004-char-Add-framework-for-a-write-unblocked-callback.patch
-Patch05: 0005-char-Update-send_all-to-handle-nonblocking-chardev-w.patch
-Patch06: 0006-char-Equip-the-unix-tcp-backend-to-handle-nonblockin.patch
-Patch07: 0007-char-Throttle-when-host-connection-is-down.patch
-Patch08: 0008-virtio-console-Enable-port-throttling-when-chardev-i.patch
-Patch09: 0009-spice-qemu-char.c-add-throttling.patch
-Patch10: 0010-spice-qemu-char.c-remove-intermediate-buffer.patch
-Patch11: 0011-usb-redir-Add-flow-control-support.patch
-Patch12: 0012-spice-add-worker-wrapper-functions.patch
-Patch13: 0013-spice-add-qemu_spice_display_init_common.patch
-Patch14: 0014-spice-qxl-move-worker-wrappers.patch
-Patch15: 0015-qxl-fix-surface-tracking-locking.patch
-Patch16: 0016-qxl-add-io_port_to_string.patch
-Patch17: 0017-qxl-error-handling-fixes-and-cleanups.patch
-Patch18: 0018-qxl-make-qxl_guest_bug-take-variable-arguments.patch
-Patch19: 0019-qxl-only-disallow-specific-io-s-in-vga-mode.patch
-Patch20: 0020-qxl-async-io-support-using-new-spice-api.patch
-Patch21: 0021-qxl-add-QXL_IO_FLUSH_-SURFACES-RELEASE-for-guest-S3-.patch
-Patch22: 0022-qxl-bump-pci-rev.patch
-Patch23: 0023-virtio-serial-bus-replay-guest_open-on-migration.patch
-Patch24: 0024-qemu-char-make-qemu_chr_event-public.patch
-Patch25: 0025-spice-qemu-char-Generate-chardev-open-close-events.patch
-Patch26: 0026-usb-redir-Call-qemu_chr_guest_open-close.patch
-Patch27: 0027-usb-redir-Device-disconnect-re-connect-robustness-fi.patch
-Patch28: 0028-usb-redir-Don-t-try-to-write-to-the-chardev-after-a-.patch
+# USB Redirect patches should go upstream soon!
+Patch101: 0101-usb-redir-Clear-iso-irq-error-when-stopping-the-stre.patch
+Patch102: 0102-usb-redir-Dynamically-adjust-iso-buffering-size-base.patch
+Patch103: 0103-usb-redir-Pre-fill-our-isoc-input-buffer-before-send.patch
+Patch104: 0104-usb-redir-Try-to-keep-our-buffer-size-near-the-targe.patch
+Patch105: 0105-usb-redir-Improve-some-debugging-messages.patch
+Patch106: 0106-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
+Patch107: 0107-char-Add-a-QemuChrHandlers-struct-to-initialise-char.patch
+Patch108: 0108-iohandlers-Add-enable-disable_write_fd_handler-funct.patch
+Patch109: 0109-char-Add-framework-for-a-write-unblocked-callback.patch
+Patch110: 0110-char-Update-send_all-to-handle-nonblocking-chardev-w.patch
+Patch111: 0111-char-Equip-the-unix-tcp-backend-to-handle-nonblockin.patch
+Patch112: 0112-char-Throttle-when-host-connection-is-down.patch
+Patch113: 0113-virtio-console-Enable-port-throttling-when-chardev-i.patch
+Patch114: 0114-spice-qemu-char.c-add-throttling.patch
+Patch115: 0115-spice-qemu-char.c-remove-intermediate-buffer.patch
+Patch116: 0116-usb-redir-Add-flow-control-support.patch
+Patch117: 0117-virtio-serial-bus-replay-guest_open-on-migration.patch
+Patch118: 0118-char-Disable-write-callback-if-throttled-chardev-is-.patch
+Patch119: 0119-usb-ehci-Clear-the-portstatus-powner-bit-on-device-d.patch
+Patch120: 0120-usb-redir-Add-the-posibility-to-filter-out-certain-d.patch
+Patch121: 0121-usb-redir-Fix-printing-of-device-version.patch
+Patch122: 0122-usb-redir-Always-clear-device-state-on-filter-reject.patch
+Patch123: 0123-usb-redir-Let-the-usb-host-know-about-our-device-fil.patch
+Patch124: 0124-usb-redir-Limit-return-values-returned-by-iso-packet.patch
+Patch125: 0125-usb-redir-Return-USB_RET_NAK-when-we-ve-no-data-for-.patch
+Patch126: 0126-usb-ehci-Handle-ISO-packets-failing-with-an-error-ot.patch
+Patch127: 0127-usb-ehci-Never-follow-table-entries-with-the-T-bit-s.patch
+Patch128: 0128-usb-ehci-split-our-qh-queue-into-async-and-periodic-.patch
+Patch129: 0129-usb-ehci-always-call-ehci_queues_rip_unused-for-peri.patch
+Patch130: 0130-usb-ehci-Drop-cached-qhs-when-the-doorbell-gets-rung.patch
+Patch131: 0131-usb-ehci-Rip-the-queues-when-the-async-or-period-sch.patch
+Patch132: 0132-usb-ehci-Any-packet-completion-except-for-NAK-should.patch
+Patch133: 0133-usb-ehci-Fix-cerr-tracking.patch
+Patch134: 0134-usb-ehci-Remove-dead-nakcnt-code.patch
+Patch135: 0135-usb-ehci-Fix-and-simplify-nakcnt-handling.patch
+Patch136: 0136-usb-ehci-Remove-dead-isoch_pause-code.patch
+Patch137: 0137-usb-return-BABBLE-rather-then-NAK-when-we-receive-to.patch
+Patch138: 0138-usb-add-USB_RET_IOERROR.patch
+Patch139: 0139-usb-ehci-fix-reset.patch
+Patch140: 0140-usb-ehci-sanity-check-iso-xfers.patch
 
-# Allow -machine parameter to be used without specifying a machine type.
-# Upstream in qemu but apparently not in qemu-kvm yet.
-# qemu commit 2645c6dcaf6ea2a51a3b6dfa407dd203004e4d11
-Patch100: qemu-Allow-to-leave-type-on-default-in-machine.patch
+# General bug fixes
+Patch201: Fix_save-restore_of_in-kernel_i8259.patch
+
+# Feature patches, should be in 1.1 before release
+Patch301: enable_architectural_PMU_cpuid_leaf.patch
+Patch302: qemu_virtio-scsi_support.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -90,19 +130,35 @@ BuildRequires: ncurses-devel
 BuildRequires: libattr-devel
 BuildRequires: usbredir-devel
 BuildRequires: texinfo
-%ifarch x86_64
+%ifarch %{ix86} x86_64
 BuildRequires: spice-protocol >= 0.8.1
 BuildRequires: spice-server-devel >= 0.9.0
 %endif
 # For network block driver
 BuildRequires: libcurl-devel
-%if !0%{?rhel}
 # For rbd block driver
 BuildRequires: ceph-devel
-%endif
 # We need both because the 'stap' binary is probed for by configure
 BuildRequires: systemtap
 BuildRequires: systemtap-sdt-devel
+# For smartcard NSS support
+BuildRequires: nss-devel
+# For XFS discard support in raw-posix.c
+BuildRequires: xfsprogs-devel
+# For VNC JPEG support
+BuildRequires: libjpeg-devel
+# For VNC PNG support
+BuildRequires: libpng-devel
+# For uuid generation
+BuildRequires: libuuid-devel
+# For BlueZ device support
+BuildRequires: bluez-libs-devel
+# For Braille device support
+BuildRequires: brlapi-devel
+# For FDT device tree support
+BuildRequires: libfdt-devel
+# For test suite
+BuildRequires: check-devel
 Requires: %{name}-user = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-x86 = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-arm = %{epoch}:%{version}-%{release}
@@ -145,6 +201,12 @@ will install qemu-system-x86
 %package  img
 Summary: QEMU command line tool for manipulating disk images
 Group: Development/Tools
+# librbd (from ceph) added new symbol rbd_flush recently.  If you
+# update qemu-img without updating librdb you get:
+# qemu-img: undefined symbol: rbd_flush
+# ** NB ** This can be removed after Fedora 17 is released.
+Requires: ceph >= 0.37-2
+
 %description img
 This package provides a command line tool for manipulating disk images
 
@@ -221,6 +283,7 @@ Provides: kvm = 85
 Obsoletes: kvm < 85
 Requires: vgabios >= 0.6c-2
 Requires: seabios-bin >= 0.6.0-2
+Requires: sgabios-bin
 Requires: /usr/share/gpxe/8086100e.rom
 Requires: /usr/share/gpxe/rtl8029.rom
 Requires: /usr/share/gpxe/pcnet32.rom
@@ -327,9 +390,52 @@ such as kvm_stat.
 %patch25 -p1
 %patch26 -p1
 %patch27 -p1
-%patch28 -p1
 
-%patch100 -p1
+%patch101 -p1
+%patch102 -p1
+%patch103 -p1
+%patch104 -p1
+%patch105 -p1
+%patch106 -p1
+%patch107 -p1
+%patch108 -p1
+%patch109 -p1
+%patch110 -p1
+%patch111 -p1
+%patch112 -p1
+%patch113 -p1
+%patch114 -p1
+%patch115 -p1
+%patch116 -p1
+%patch117 -p1
+%patch118 -p1
+%patch119 -p1
+%patch120 -p1
+%patch121 -p1
+%patch122 -p1
+%patch123 -p1
+%patch124 -p1
+%patch125 -p1
+%patch126 -p1
+%patch127 -p1
+%patch128 -p1
+%patch129 -p1
+%patch130 -p1
+%patch131 -p1
+%patch132 -p1
+%patch133 -p1
+%patch134 -p1
+%patch135 -p1
+%patch136 -p1
+%patch137 -p1
+%patch138 -p1
+%patch139 -p1
+%patch140 -p1
+
+%patch201 -p1
+
+%patch301 -p1
+%patch302 -p1
 
 %build
 # By default we build everything, but allow x86 to build a minimal version
@@ -367,12 +473,7 @@ sed -i.debug 's/"-g $CFLAGS"/"$CFLAGS"/g' configure
             --disable-strip \
             --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
             --extra-cflags="%{optflags} -fPIE -DPIE" \
-%ifarch x86_64
             --enable-spice \
-%endif
-%if 0%{?rhel}
-            --disable-rbd \
-%endif
             --enable-trace-backend=dtrace \
             --disable-werror \
             --disable-xen
@@ -402,11 +503,8 @@ make clean
     --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
     --extra-cflags="%{optflags} -fPIE -DPIE" \
     --disable-xen \
-%ifarch x86_64
+%ifarch %{ix86} x86_64
     --enable-spice \
-%endif
-%if 0%{?rhel}
-    --disable-rbd \
 %endif
     --enable-trace-backend=dtrace \
     --disable-werror
@@ -424,6 +522,8 @@ gcc %{SOURCE6} -O2 -g -o ksmctl
 %install
 rm -rf $RPM_BUILD_ROOT
 
+%define _udevdir /lib/udev/rules.d
+
 install -D -p -m 0755 %{SOURCE4} $RPM_BUILD_ROOT/lib/systemd/system/ksm.service
 install -D -p -m 0644 %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/ksm
 install -D -p -m 0755 ksmctl $RPM_BUILD_ROOT/lib/systemd/ksmctl
@@ -436,14 +536,14 @@ install -D -p -m 0644 %{SOURCE9} $RPM_BUILD_ROOT%{_sysconfdir}/ksmtuned.conf
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules
 mkdir -p $RPM_BUILD_ROOT%{_bindir}/
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{name}
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
+mkdir -p $RPM_BUILD_ROOT%{_udevdir}
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset
 
 install -m 0755 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules/kvm.modules
 install -m 0755 kvm/kvm_stat $RPM_BUILD_ROOT%{_bindir}/
 install -m 0755 qemu-kvm $RPM_BUILD_ROOT%{_bindir}/
 install -m 0644 qemu-kvm.stp $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/
-install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
+install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_udevdir}
 %endif
 
 make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
@@ -472,6 +572,8 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/bamboo.dtb
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/slof.bin
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/spapr-rtas.bin
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/ppc_rom.bin
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/sgabios.bin
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/palcode-clipper
 
 # the pxe gpxe images will be symlinks to the images on
 # /usr/share/gpxe, as QEMU doesn't know how to look
@@ -491,6 +593,7 @@ ln -s ../vgabios/VGABIOS-lgpl-latest.qxl.bin %{buildroot}/%{_datadir}/%{name}/vg
 ln -s ../vgabios/VGABIOS-lgpl-latest.stdvga.bin %{buildroot}/%{_datadir}/%{name}/vgabios-stdvga.bin
 ln -s ../vgabios/VGABIOS-lgpl-latest.vmware.bin %{buildroot}/%{_datadir}/%{name}/vgabios-vmware.bin
 ln -s ../seabios/bios.bin %{buildroot}/%{_datadir}/%{name}/bios.bin
+ln -s ../sgabios/sgabios.bin %{buildroot}/%{_datadir}/%{name}/sgabios.bin
 
 mkdir -p $RPM_BUILD_ROOT%{_exec_prefix}/lib/binfmt.d
 for i in dummy \
@@ -520,10 +623,12 @@ done < %{SOURCE1}
 # For the qemu-guest-agent subpackage install the systemd
 # service and udev rules.
 mkdir -p $RPM_BUILD_ROOT%{_unitdir}
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
+mkdir -p $RPM_BUILD_ROOT%{_udevdir}
 install -m 0644 %{SOURCE10} $RPM_BUILD_ROOT%{_unitdir}
-install -m 0644 %{SOURCE11} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
+install -m 0644 %{SOURCE11} $RPM_BUILD_ROOT%{_udevdir}
 
+%check
+make check
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -536,16 +641,14 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules
 %endif
 
 %post common
-if [ $1 -eq 1 ] ; then
-    getent group kvm >/dev/null || groupadd -g 36 -r kvm
-    getent group qemu >/dev/null || groupadd -g 107 -r qemu
-    getent passwd qemu >/dev/null || \
-        useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
-        -c "qemu user" qemu
+getent group kvm >/dev/null || groupadd -g 36 -r kvm
+getent group qemu >/dev/null || groupadd -g 107 -r qemu
+getent passwd qemu >/dev/null || \
+  useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
+    -c "qemu user" qemu
 
-    /bin/systemctl enable ksm.service
-    /bin/systemctl enable ksmtuned.service
-fi
+/bin/systemctl enable ksm.service
+/bin/systemctl enable ksmtuned.service
 
 %preun common
 if [ $1 -eq 0 ]; then
@@ -603,7 +706,7 @@ fi
 %doc COPYING README
 %{_bindir}/qemu-ga
 %{_unitdir}/qemu-guest-agent.service
-%{_sysconfdir}/udev/rules.d/99-qemu-guest-agent.rules
+%{_udevdir}/99-qemu-guest-agent.rules
 
 %files user
 %defattr(-,root,root)
@@ -637,9 +740,10 @@ fi
 
 %files system-x86
 %defattr(-,root,root)
-%{_bindir}/qemu
+%{_bindir}/qemu-system-i386
 %{_bindir}/qemu-system-x86_64
 %{_datadir}/%{name}/bios.bin
+%{_datadir}/%{name}/sgabios.bin
 %{_datadir}/%{name}/linuxboot.bin
 %{_datadir}/%{name}/multiboot.bin
 %{_datadir}/%{name}/mpc8544ds.dtb
@@ -655,14 +759,13 @@ fi
 %{_datadir}/%{name}/pxe-rtl8139.rom
 %{_datadir}/%{name}/pxe-ne2k_pci.rom
 %config(noreplace) %{_sysconfdir}/qemu/target-x86_64.conf
-%{_datadir}/systemtap/tapset/qemu.stp
+%{_datadir}/systemtap/tapset/qemu-system-i386.stp
 %{_datadir}/systemtap/tapset/qemu-system-x86_64.stp
 
 %ifarch %{ix86} x86_64
-%{_datadir}/%{name}/extboot.bin
 %{_bindir}/qemu-kvm
 %{_sysconfdir}/sysconfig/modules/kvm.modules
-%{_sysconfdir}/udev/rules.d/80-kvm.rules
+%{_udevdir}/80-kvm.rules
 %{_datadir}/systemtap/tapset/qemu-kvm.stp
 %endif
 
@@ -716,21 +819,38 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
-* Tue Mar 06 2012 Eduardo Habkost <ehabkost@redhat.com> - 2:0.15.1-3.3.el7
-- Use --disable-rbd on second ./configure call too
-- Related: bz#786927
+* Mon Mar 19 2012 Daniel P. Berrange <berrange@redhat.com> - 2:1.0-8
+- Move udev rules to /lib/udev/rules.d (rhbz #748207)
 
-* Thu Feb 16 2012 Eduardo Habkost <ehabkost@redhat.com> - 2:0.15.1-3.2
-- Disable RBD support on RHEL builds
-- Resolves: bz#786927
+* Fri Mar  9 2012 Hans de Goede <hdegoede@redhat.com> - 2:1.0-7
+- Add a whole bunch of USB bugfixes from upstream
 
-* Thu Feb 09 2012 Eduardo Habkost <ehabkost@redhat.com> - 2:0.15.1-3.1
-- Set ExclusiveArch: x86_64 to build it only on x86_64
-- Resolves: bz#786911
+* Mon Feb 13 2012 Daniel P. Berrange <berrange@redhat.com> - 2:1.0-6
+- Add many more missing BRs for misc QEMU features
+- Enable running of test suite during build
 
-* Fri Nov 18 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.15.1-3
-- Enable support for fedora-13 machine type (#748218)
-- don't force ksm enable on updates (#754946)
+* Tue Feb 07 2012 Justin M. Forbes <jforbes@redhat.com> - 2:1.0-5
+- Add support for virtio-scsi
+
+* Sun Feb  5 2012 Richard W.M. Jones <rjones@redhat.com> - 2:1.0-4
+- Require updated ceph for latest librbd with rbd_flush symbol.
+
+* Tue Jan 24 2012 Justin M. Forbes <jforbes@redhat.com> - 2:1.0-3
+- Add support for vPMU
+- e1000: bounds packet size against buffer size CVE-2012-0029
+
+* Fri Jan 13 2012 Justin M. Forbes <jforbes@redhat.com> - 2:1.0-2
+- Add patches for USB redirect bits
+- Remove palcode-clipper, we don't build it
+
+* Wed Jan 11 2012 Justin M. Forbes <jforbes@redhat.com> - 2:1.0-1
+- Add patches from 1.0.1 queue
+
+* Fri Dec 16 2011 Justin M. Forbes <jforbes@redhat.com> - 2:1.0-1
+- Update to qemu 1.0
+
+* Tue Nov 15 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.15.1-3
+- Enable spice for i686 users as well
 
 * Thu Nov 03 2011 Justin M. Forbes <jforbes@redhat.com> - 2:0.15.1-2
 - Fix POSTIN scriplet failure (#748281)

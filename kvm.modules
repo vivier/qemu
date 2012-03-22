@@ -1,11 +1,10 @@
 #!/bin/sh
 
-if [ $(grep -c vmx /proc/cpuinfo) -ne 0 ]; then 
-    modprobe -b kvm-intel >/dev/null 2>&1
-    modprobe -b virtio-net >/dev/null 2>&1
-fi
+case "$(</proc/cpuinfo)" in
+    *vmx*) vmx=1 ;;
+    *svm*) svm=1 ;;
+esac
 
-if [ $(grep -c svm /proc/cpuinfo) -ne 0 ]; then 
-    modprobe -b kvm-amd >/dev/null 2>&1
-    modprobe -b virtio-net >/dev/null 2>&1
-fi
+[ "$vmx" ] && modprobe -b kvm-intel >/dev/null 2>&1
+[ "$svm" ] && modprobe -b kvm-amd >/dev/null 2>&1
+[ "$vmx" -o "$svm" ] && modprobe -b vhost-net >/dev/null 2>&1
