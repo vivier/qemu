@@ -971,11 +971,6 @@ int do_drive_del(Monitor *mon, const QDict *qdict, QObject **ret_data)
     return 0;
 }
 
-/*
- * XXX: replace the QERR_UNDEFINED_ERROR errors with real values once the
- * existing QERR_ macro mess is cleaned up.  A good example for better
- * error reports can be found in the qemu-img resize code.
- */
 int do_block_resize(Monitor *mon, const QDict *qdict, QObject **ret_data)
 {
     const char *device = qdict_get_str(qdict, "device");
@@ -989,11 +984,26 @@ int do_block_resize(Monitor *mon, const QDict *qdict, QObject **ret_data)
     }
 
     if (size < 0) {
-        qerror_report(QERR_UNDEFINED_ERROR);
+        qerror_report(QERR_INVALID_PARAMETER_VALUE, "size", "a >0 size");
         return -1;
     }
 
-    if (bdrv_truncate(bs, size)) {
+    switch (bdrv_truncate(bs, size)) {
+    case 0:
+        break;
+    case -ENOMEDIUM:
+        qerror_report(QERR_DEVICE_HAS_NO_MEDIUM, device);
+        return -1;
+    case -ENOTSUP:
+        qerror_report(QERR_UNSUPPORTED);
+        return -1;
+    case -EACCES:
+        qerror_report(QERR_DEVICE_IS_READ_ONLY, device);
+        return -1;
+    case -EBUSY:
+        qerror_report(QERR_DEVICE_IN_USE, device);
+        return -1;
+    default:
         qerror_report(QERR_UNDEFINED_ERROR);
         return -1;
     }
