@@ -662,6 +662,21 @@ void qmp_blockdev_snapshot_sync(const char *device, const char *snapshot_file,
 #endif 
 
 #ifdef CONFIG_LIVE_SNAPSHOTS
+void qmp___com_redhat_drive_mirror(const char *device, const char *target,
+                      bool has_format, const char *format,
+                      bool has_mode, enum NewImageMode mode, Error **errp)
+{
+    BlockdevMirror mirror = {
+        .device = (char *) device,
+        .target = (char *) target,
+        .has_format = has_format,
+        .format = (char *) format,
+        .has_mode = has_mode,
+        .mode = mode,
+    };
+    blockdev_do_action(BLOCKDEV_ACTION_KIND___COM_REDHAT_DRIVE_MIRROR, &mirror, errp);
+}
+
 /* New and old BlockDriverState structs for group snapshots */
 typedef struct BlkTransactionStates {
     BlockDriverState *old_bs;

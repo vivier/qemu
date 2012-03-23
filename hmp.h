@@ -20,6 +20,7 @@
 #include "rhev-qapi-types.h"
 
 void hmp_snapshot_blkdev(Monitor *mon, const QDict *qdict);
+void hmp_drive_mirror(Monitor *mon, const QDict *qdict);
 #endif
 
 #endif
