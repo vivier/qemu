@@ -72,6 +72,9 @@ QError *qobject_to_qerror(const QObject *obj);
 #define QERR_DEVICE_ENCRYPTED \
     "{ 'class': 'DeviceEncrypted', 'data': { 'device': %s } }"
 
+#define QERR_DEVICE_HAS_NO_MEDIUM \
+    "{ 'class': 'DeviceHasNoMedium', 'data': { 'device': %s } }"
+
 #define QERR_DEVICE_INIT_FAILED \
     "{ 'class': 'DeviceInitFailed', 'data': { 'device': %s } }"
 
@@ -81,6 +84,9 @@ QError *qobject_to_qerror(const QObject *obj);
 
 #define QERR_DEVICE_IN_USE \
     "{ 'class': 'DeviceInUse', 'data': { 'device': %s } }"
+
+#define QERR_DEVICE_IS_READ_ONLY \
+    "{ 'class': 'DeviceIsReadOnly', 'data': { 'device': %s } }"
 
 #define QERR_DEVICE_LOCKED \
     "{ 'class': 'DeviceLocked', 'data': { 'device': %s } }"
