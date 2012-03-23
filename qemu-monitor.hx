@@ -1253,7 +1253,7 @@ EQMP
                       "If format is specified, the snapshot file will\n\t\t\t"
                       "be created in that format. Otherwise the\n\t\t\t"
                       "snapshot will be internal! (currently unsupported)",
-        .mhandler.cmd_new = do_snapshot_blkdev,
+        .mhandler.cmd = hmp_snapshot_blkdev,
     },
 #endif
 
@@ -1527,10 +1527,10 @@ EQMP
 #ifdef CONFIG_LIVE_SNAPSHOTS
     {
         .name       = "blockdev-snapshot-sync",
-        .args_type  = "device:B,snapshot-file:s?,format:s?",
+        .args_type  = "device:B,snapshot-file:s,format:s?",
         .params     = "device [new-image-file] [format]",
         .user_print = monitor_user_noop,
-        .mhandler.cmd_new = do_snapshot_blkdev,
+        .mhandler.cmd_new = qmp_marshal_input_blockdev_snapshot_sync,
     },
 #endif
 
