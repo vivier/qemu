@@ -106,13 +106,6 @@ DEF("drive", HAS_ARG, QEMU_OPTION_drive,
     "       [,serial=s][,addr=A][,id=name][,aio=threads|native]\n"
     "       [,readonly=on|off][,copy-on-read=on|off]\n"
     "                use 'file' as a drive image\n")
-DEF("set", HAS_ARG, QEMU_OPTION_set,
-    "-set group.id.arg=value\n"
-    "                set <arg> parameter for item <id> of type <group>\n"
-    "                i.e. -set drive.$id.file=/path/to/image\n")
-DEF("global", HAS_ARG, QEMU_OPTION_global,
-    "-global driver.property=value\n"
-    "                set a global default for a driver property\n")
 STEXI
 @item -drive @var{option}[,@var{option}[,@var{option}[,...]]]
 
@@ -228,6 +221,27 @@ is interpreted like:
 @example
 qemu -hda a -hdb b
 @end example
+ETEXI
+
+DEF("set", HAS_ARG, QEMU_OPTION_set,
+    "-set group.id.arg=value\n"
+    "                set <arg> parameter for item <id> of type <group>\n"
+    "                i.e. -set drive.$id.file=/path/to/image\n")
+DEF("global", HAS_ARG, QEMU_OPTION_global,
+    "-global driver.prop=value\n"
+    "                set a global default for a driver property\n")
+STEXI
+@item -global @var{driver}.@var{prop}=@var{value}
+@findex -global
+Set default value of @var{driver}'s property @var{prop} to @var{value}, e.g.:
+
+@example
+qemu -global ide-drive.physical_block_size=4096 -drive file=file,if=ide,index=0,media=disk
+@end example
+
+In particular, you can use this to set driver properties for devices which are 
+created automatically by the machine model. To create a device which is not
+created automatically and set properties on it, use -@option{device}.
 ETEXI
 
 DEF("mtdblock", HAS_ARG, QEMU_OPTION_mtdblock,
