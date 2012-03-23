@@ -7,6 +7,10 @@ Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
 Group: Development/Tools
 URL: http://www.qemu.org/
+# RHEL will build Qemu only on x86_64:
+%if 0%{?rhel}
+ExclusiveArch: x86_64
+%endif
 
 # Allow one off builds to be minimalized without foreign
 # architecture support (--with x86only):
@@ -133,8 +137,10 @@ BuildRequires: spice-server-devel >= 0.9.0
 %endif
 # For network block driver
 BuildRequires: libcurl-devel
+%if !0%{?rhel}
 # For rbd block driver
 BuildRequires: ceph-devel
+%endif
 # We need both because the 'stap' binary is probed for by configure
 BuildRequires: systemtap
 BuildRequires: systemtap-sdt-devel
@@ -471,6 +477,9 @@ sed -i.debug 's/"-g $CFLAGS"/"$CFLAGS"/g' configure
             --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
             --extra-cflags="%{optflags} -fPIE -DPIE" \
             --enable-spice \
+%if 0%{?rhel}
+            --disable-rbd \
+%endif
             --enable-trace-backend=dtrace \
             --disable-werror \
             --disable-xen
@@ -502,6 +511,9 @@ make clean
     --disable-xen \
 %ifarch %{ix86} x86_64
     --enable-spice \
+%endif
+%if 0%{?rhel}
+    --disable-rbd \
 %endif
     --enable-trace-backend=dtrace \
     --disable-werror
