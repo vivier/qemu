@@ -14,10 +14,12 @@
 # @absolute-paths: QEMU should create a new image with absolute paths
 # for the backing file.
 #
+# @no-backing-file: QEMU should create a new image with no backing file.
+#
 # Since: 1.1
 ##
 { 'enum': 'NewImageMode'
-  'data': [ 'existing', 'absolute-paths' ] }
+  'data': [ 'existing', 'absolute-paths', 'no-backing-file' ] }
 
 ##
 # @BlockdevSnapshot
@@ -36,6 +38,23 @@
             '*mode': 'NewImageMode' } }
 
 ##
+# @BlockdevMirror
+#
+# @device:  the name of the device to start mirroring.
+#
+# @target: the image that will start receiving writes for @device. A new
+#          file will be created unless @mode is "existing".
+#
+# @format: #optional the format of the target image, default is 'qcow2'.
+#
+# @mode: #optional whether and how QEMU should create a new image, default is
+# 'absolute-paths'.
+##
+{ 'type': 'BlockdevMirror',
+  'data': { 'device': 'str', 'target': 'str', '*format': 'str',
+            '*mode': 'NewImageMode' } }
+
+##
 # @BlockdevAction
 #
 # A discriminated record of operations that can be performed with
@@ -44,6 +63,7 @@
 { 'union': 'BlockdevAction',
   'data': {
        'blockdev-snapshot-sync': 'BlockdevSnapshot',
+       '__com.redhat_drive-mirror': 'BlockdevMirror',
    } }
 
 ##
