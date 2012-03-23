@@ -73,6 +73,10 @@ static const QErrorStringTable qerror_table[] = {
         .desc      = "Device '%(device)' is encrypted",
     },
     {
+        .error_fmt = QERR_DEVICE_HAS_NO_MEDIUM,
+        .desc      = "Device '%(device)' has no medium",
+    },
+    {
         .error_fmt = QERR_DEVICE_INIT_FAILED,
         .desc      = "Device '%(device)' could not be initialized",
     },
@@ -83,6 +87,10 @@ static const QErrorStringTable qerror_table[] = {
     {
         .error_fmt = QERR_DEVICE_IN_USE,
         .desc      = "Device '%(device)' is in use",
+    },
+    {
+        .error_fmt = QERR_DEVICE_IS_READ_ONLY,
+        .desc      = "Device '%(device)' is read only",
     },
     {
         .error_fmt = QERR_DEVICE_LOCKED,
