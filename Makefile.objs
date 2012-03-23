@@ -204,6 +204,7 @@ endif
 qapi-obj-y = $(addprefix qapi/, $(qapi-nested-y))
 
 common-obj-y += $(qapi-obj-y) $(qapi-generated-y)
+common-obj-y += hmp.o
 
 ######################################################################
 # guest agent
