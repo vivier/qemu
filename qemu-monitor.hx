@@ -1245,14 +1245,17 @@ EQMP
 #ifdef CONFIG_LIVE_SNAPSHOTS
     {
         .name       = "snapshot_blkdev",
-        .args_type  = "device:B,snapshot-file:s?,format:s?",
-        .params     = "device [new-image-file] [format]",
+        .args_type  = "reuse:-n,device:B,snapshot-file:s?,format:s?",
+        .params     = "[-n] device [new-image-file] [format]",
         .help       = "initiates a live snapshot\n\t\t\t"
                       "of device. If a new image file is specified, the\n\t\t\t"
                       "new image file will become the new root image.\n\t\t\t"
                       "If format is specified, the snapshot file will\n\t\t\t"
                       "be created in that format. Otherwise the\n\t\t\t"
-                      "snapshot will be internal! (currently unsupported)",
+                      "snapshot will be internal! (currently unsupported).\n\t\t\t"
+                      "The default format is qcow2.  The -n flag requests QEMU\n\t\t\t"
+                      "to reuse the image found in new-image-file, instead of\n\t\t\t"
+                      "recreating it from scratch.",
         .mhandler.cmd = hmp_snapshot_blkdev,
     },
 #endif
@@ -1541,8 +1544,8 @@ EQMP
 #ifdef CONFIG_LIVE_SNAPSHOTS
     {
         .name       = "blockdev-snapshot-sync",
-        .args_type  = "device:B,snapshot-file:s,format:s?",
-        .params     = "device [new-image-file] [format]",
+        .args_type  = "device:B,snapshot-file:s,mode:s?,format:s?",
+        .params     = "device [new-image-file] [mode] [format]",
         .user_print = monitor_user_noop,
         .mhandler.cmd_new = qmp_marshal_input_blockdev_snapshot_sync,
     },
@@ -1562,6 +1565,8 @@ Arguments:
 
 - "device": device name to snapshot (json-string)
 - "snapshot-file": name of new image file (json-string)
+- "mode": whether and how QEMU should create the snapshot file
+  (NewImageMode, optional, default "absolute-paths")
 - "format": format of new image (json-string, optional)
 
 Example:
