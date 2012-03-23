@@ -73,4 +73,15 @@ void hmp_snapshot_blkdev(Monitor *mon, const QDict *qdict)
                                true, mode, &errp);
     hmp_handle_error(mon, &errp);
 }
+
+void hmp_drive_reopen(Monitor *mon, const QDict *qdict)
+{
+    const char *device = qdict_get_str(qdict, "device");
+    const char *filename = qdict_get_str(qdict, "new-image-file");
+    const char *format = qdict_get_try_str(qdict, "format");
+    Error *errp = NULL;
+
+    qmp___com_redhat_drive_reopen(device, filename, !!format, format, &errp);
+    hmp_handle_error(mon, &errp);
+}
 #endif
