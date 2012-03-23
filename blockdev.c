@@ -631,6 +631,71 @@ void do_commit(Monitor *mon, const QDict *qdict)
 }
 
 #ifdef CONFIG_LIVE_SNAPSHOTS
+void qmp___com_redhat_drive_reopen(const char *device, const char *new_image_file,
+                      bool has_format, const char *format, Error **errp)
+{
+    BlockDriverState *bs;
+    BlockDriver *drv, *old_drv, *proto_drv;
+    int ret = 0;
+    int flags;
+    char old_filename[1024];
+
+    bs = bdrv_find(device);
+    if (!bs) {
+        error_set(errp, QERR_DEVICE_NOT_FOUND, device);
+        return;
+    }
+    if (bdrv_in_use(bs)) {
+        error_set(errp, QERR_DEVICE_IN_USE, device);
+        return;
+    }
+
+    pstrcpy(old_filename, sizeof(old_filename), bs->filename);
+
+    old_drv = bs->drv;
+    flags = bs->open_flags;
+
+    if (has_format) {
+        drv = bdrv_find_format(format);
+        if (!drv) {
+            error_set(errp, QERR_INVALID_BLOCK_FORMAT, format);
+            return;
+        }
+    } else {
+        drv = NULL;
+    }
+
+    proto_drv = bdrv_find_protocol(new_image_file);
+    if (!proto_drv) {
+        error_set(errp, QERR_INVALID_BLOCK_FORMAT, format);
+        return;
+    }
+
+    qemu_aio_flush();
+    if (!bdrv_is_read_only(bs) && bdrv_is_inserted(bs)) {
+        if (bdrv_flush(bs)) {
+            error_set(errp, QERR_IO_ERROR);
+            return;
+        }
+    }
+
+    bdrv_close(bs);
+    ret = bdrv_open(bs, new_image_file, flags, drv);
+    /*
+     * If reopening the image file we just created fails, fall back
+     * and try to re-open the original image. If that fails too, we
+     * are in serious trouble.
+     */
+    if (ret != 0) {
+        ret = bdrv_open(bs, old_filename, flags, old_drv);
+        if (ret != 0) {
+            error_set(errp, QERR_OPEN_FILE_FAILED, old_filename);
+        } else {
+            error_set(errp, QERR_OPEN_FILE_FAILED, new_image_file);
+        }
+    }
+}
+
 static void blockdev_do_action(int kind, void *data, Error **errp)
 {
     BlockdevAction action;

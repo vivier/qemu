@@ -121,6 +121,28 @@
             '*mode': 'NewImageMode'} }
 
 ##
+# @__com.redhat_drive-reopen
+#
+# Assigns a new image file to a device.
+#
+# @device: the name of the device for which we are changing the image file.
+#
+# @new-image-file: the target of the new image. If the file doesn't exists the
+#                  command will fail.
+#
+# @format: #optional the format of the new image, default is 'qcow2'.
+#
+# Returns: nothing on success
+#          If @device is not a valid block device, DeviceNotFound
+#          If @new-image-file can't be opened, OpenFileFailed
+#          If @format is invalid, InvalidBlockFormat
+#
+# Since 1.1
+##
+{ 'command': '__com.redhat_drive-reopen',
+  'data': { 'device': 'str', 'new-image-file': 'str', '*format': 'str' } }
+
+##
 # @__com.redhat_drive-mirror
 #
 # Start mirroring a block device's writes to a new destination.
