@@ -10,20 +10,25 @@
 . /etc/init.d/functions
 
 # Check that we're a privileged user
-[ `id -u` = 0 ] || exit 0
+[ `id -u` = 0 ] || exit 4
 
 [ -f /etc/sysconfig/qemu-ga ] && . /etc/sysconfig/qemu-ga
 
-# Check the device/path exists
-if [ ! -z "$DEVPATH" -a ! -f "$DEVPATH" ] || exit 0
 
 prog="qemu-ga"
 
-[ -f /usr/bin/qemu-ga ] || exit 0
 
 RETVAL=0
+lockfile=/var/lock/subsys/$prog
 
 start() {
+
+    # Check if binary is installed & executable
+    [ -f /usr/bin/$prog ] && [ -x /usr/bin/$prog ] || exit 5
+
+    # Check the device/path exists
+    [ -n "$DEVPATH" ] && [ -e "$DEVPATH" ] || exit 6
+
     echo -n $"Starting $prog: "
     ARGS="--daemonize"
     [ ! -z "$TRANSPORT_METHOD" ] && ARGS="$ARGS --method $TRANSPORT_METHOD"
@@ -31,19 +36,19 @@ start() {
     [ ! -z "$LOGFILE" ] && ARGS="$ARGS --logfile $LOGFILE"
     [ ! -z "$PIDFILE" ] && ARGS="$ARGS --pidfile $PIDFILE"
     [ ! -z "$BLACKLIST_RPC" ] && ARGS="$ARGS --blacklist $BLACKLIST_RPC"
-    daemon /usr/bin/qemu-ga $ARGS
+    daemon /usr/bin/$prog $ARGS
     RETVAL=$?
     echo
-    [ $RETVAL -eq 0 ] && touch /var/lock/subsys/qemu-ga
+    [ $RETVAL -eq 0 ] && touch $lockfile
     return $RETVAL
 }
 
 stop() {
     echo -n $"Stopping $prog: "
-    killproc qemu-ga
+    killproc $prog
     RETVAL=$?
     echo
-    [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/qemu-ga
+    [ $RETVAL -eq 0 ] && rm -f $lockfile
     return $RETVAL
 }
 
@@ -67,11 +72,11 @@ case "$1" in
         restart
         ;;
   condrestart|try-restart)
-        [ -f /var/lock/subsys/qemu-ga ] && restart || :
+        [ -f $lockfile ] && restart || :
         ;;
   *)
         echo $"Usage: $0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload}"
-        exit 1
+        exit 2
 esac
 
 exit $?
