@@ -1,3 +1,39 @@
+# build-time settings that support --with or --without:
+#
+# = x86only =
+# Build only x86 Qemu targets.
+#
+# Disabled by default.
+#
+# = exclusive_x86_64 =
+# ExclusiveArch: x86_64
+#
+# Disabled by default, except on RHEL.
+#
+# = rbd =
+# Enable rbd support.
+#
+# Enable by default, except on RHEL.
+#
+# = fdt =
+# Enable fdt support.
+#
+# Enabled by default, except on RHEL.
+
+
+%if 0%{?rhel}
+# RHEL-specific defaults:
+%bcond_without exclusive_x86_64
+%bcond_with    rbd
+%bcond_with    fdt
+%else
+# General defaults:
+%bcond_without exclusive_x86_64
+%bcond_without rbd
+%bcond_without fdt
+%endif
+
+
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.0
@@ -8,13 +44,9 @@ License: GPLv2+ and LGPLv2+ and BSD
 Group: Development/Tools
 URL: http://www.qemu.org/
 # RHEL will build Qemu only on x86_64:
-%if 0%{?rhel}
+%if %{with exclusive_x86_64}
 ExclusiveArch: x86_64
 %endif
-
-# Allow one off builds to be minimalized without foreign
-# architecture support (--with x86only):
-%define with_x86only  %{?_with_x86only:     1} %{?!_with_x86only:     0}
 
 # OOM killer breaks builds with parallel make on s390(x)
 %ifarch s390 s390x
@@ -137,7 +169,7 @@ BuildRequires: spice-server-devel >= 0.9.0
 %endif
 # For network block driver
 BuildRequires: libcurl-devel
-%if !0%{?rhel}
+%if %{with rbd}
 # For rbd block driver
 BuildRequires: ceph-devel
 %endif
@@ -158,14 +190,14 @@ BuildRequires: libuuid-devel
 BuildRequires: bluez-libs-devel
 # For Braille device support
 BuildRequires: brlapi-devel
-%if !0%{?rhel}
+%if %{with fdt}
 # For FDT device tree support
 BuildRequires: libfdt-devel
 %endif
 # For test suite
 BuildRequires: check-devel
 Requires: %{name}-user = %{epoch}:%{version}-%{release}
-%if !%{with_x86only}
+%if %{without x86only}
 Requires: %{name}-system-x86 = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-arm = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-cris = %{epoch}:%{version}-%{release}
@@ -301,7 +333,7 @@ This package provides the system emulator for x86. When being run in a x86
 machine that supports it, this package also provides the KVM virtualization
 platform.
 
-%if !%{with_x86only}
+%if %{without x86only}
 %package system-arm
 Summary: QEMU system emulator for arm
 Group: Development/Tools
@@ -443,7 +475,7 @@ such as kvm_stat.
 %build
 # By default we build everything, but allow x86 to build a minimal version
 # with only similar arch target support
-%if %{with_x86only}
+%if %{with x86only}
     buildarch="i386-softmmu x86_64-softmmu i386-linux-user x86_64-linux-user"
 %else
     buildarch="i386-softmmu x86_64-softmmu arm-softmmu cris-softmmu m68k-softmmu \
@@ -477,8 +509,10 @@ sed -i.debug 's/"-g $CFLAGS"/"$CFLAGS"/g' configure
             --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
             --extra-cflags="%{optflags} -fPIE -DPIE" \
             --enable-spice \
-%if 0%{?rhel}
+%if %{without rbd}
             --disable-rbd \
+%endif
+%if %{without fdt}
             --disable-fdt \
 %endif
             --enable-trace-backend=dtrace \
@@ -513,8 +547,10 @@ make clean
 %ifarch %{ix86} x86_64
     --enable-spice \
 %endif
-%if 0%{?rhel}
+%if %{without rbd}
     --disable-rbd \
+%endif
+%if %{without fdt}
     --disable-fdt \
 %endif
     --enable-trace-backend=dtrace \
@@ -611,7 +647,7 @@ for i in dummy \
 %ifnarch %{ix86} x86_64
     qemu-i386 \
 %endif
-%if !%{with_x86only}
+%if %{without x86only}
 %ifnarch arm
     qemu-arm \
 %endif
@@ -721,12 +757,12 @@ fi
 
 %files user
 %defattr(-,root,root)
-%if !%{with_x86only}
+%if %{without x86only}
 %{_exec_prefix}/lib/binfmt.d/qemu-*.conf
 %endif
 %{_bindir}/qemu-i386
 %{_bindir}/qemu-x86_64
-%if !%{with_x86only}
+%if %{without x86only}
 %{_bindir}/qemu-alpha
 %{_bindir}/qemu-arm
 %{_bindir}/qemu-armeb
@@ -739,7 +775,7 @@ fi
 %endif
 %{_datadir}/systemtap/tapset/qemu-i386.stp
 %{_datadir}/systemtap/tapset/qemu-x86_64.stp
-%if !%{with_x86only}
+%if %{without x86only}
 %{_datadir}/systemtap/tapset/qemu-alpha.stp
 %{_datadir}/systemtap/tapset/qemu-arm.stp
 %{_datadir}/systemtap/tapset/qemu-armeb.stp
@@ -788,7 +824,7 @@ fi
 %{_bindir}/kvm_stat
 %endif
 
-%if !%{with_x86only}
+%if %{without x86only}
 
 %files system-arm
 %defattr(-,root,root)
