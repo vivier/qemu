@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.0
-Release: 9.1%{?dist}
+Release: 9.2%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -831,6 +831,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Mar 26 2012 Eduardo Habkost <ehabkost@redhat.com> - 2:1.0-9.2.el7
+- Don't enable FDT support on RHEL
+
 * Fri Mar 23 2012 Eduardo Habkost <ehabkost@redhat.com> - 2:1.0-9.1.el7
 - Redo RHEL-specific build settings
 
