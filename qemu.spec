@@ -158,8 +158,10 @@ BuildRequires: libuuid-devel
 BuildRequires: bluez-libs-devel
 # For Braille device support
 BuildRequires: brlapi-devel
+%if !0%{?rhel}
 # For FDT device tree support
 BuildRequires: libfdt-devel
+%endif
 # For test suite
 BuildRequires: check-devel
 Requires: %{name}-user = %{epoch}:%{version}-%{release}
@@ -479,6 +481,7 @@ sed -i.debug 's/"-g $CFLAGS"/"$CFLAGS"/g' configure
             --enable-spice \
 %if 0%{?rhel}
             --disable-rbd \
+            --disable-fdt \
 %endif
             --enable-trace-backend=dtrace \
             --disable-werror \
