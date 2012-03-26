@@ -517,6 +517,7 @@ make clean
 %endif
 %if 0%{?rhel}
     --disable-rbd \
+    --disable-fdt \
 %endif
     --enable-trace-backend=dtrace \
     --disable-werror
