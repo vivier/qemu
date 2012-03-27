@@ -1592,7 +1592,9 @@ EQMP
 #ifdef CONFIG_LIVE_SNAPSHOTS
     {
         .name       = "__com.redhat_drive-mirror",
-        .args_type  = "device:B,snapshot-file:s,mode:s?,format:s?",
+        .args_type  = "device:B,target:s,mode:s?,format:s?",
+        .params     = "device destination-image-file [mode] [format]",
+        .user_print = monitor_user_noop,
         .mhandler.cmd_new = qmp_marshal_input___com_redhat_drive_mirror,
     },
 #endif
