@@ -40,6 +40,7 @@
 #define PCI_EJ_BASE 0xae08
 #define PCI_RMV_BASE 0xae0c
 
+#define PIIX4_PCI_HOTPLUG_STATUS 2
 #define PIIX4_CPU_HOTPLUG_STATUS 4
 
 struct gpe_regs {
@@ -958,13 +959,13 @@ void qemu_system_cpu_hot_add(int cpu, int state)
 
 static void enable_device(struct pci_status *p, struct gpe_regs *g, int slot)
 {
-    g->sts |= 2;
+    g->sts |= PIIX4_PCI_HOTPLUG_STATUS;
     p->up |= (1 << slot);
 }
 
 static void disable_device(struct pci_status *p, struct gpe_regs *g, int slot)
 {
-    g->sts |= 2;
+    g->sts |= PIIX4_PCI_HOTPLUG_STATUS;
     p->down |= (1 << slot);
 }
 
