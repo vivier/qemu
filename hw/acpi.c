@@ -135,7 +135,8 @@ static void pm_update_sci(PIIX4PMState *s)
     pmsts = get_pmsts(s);
     sci_level = (((pmsts & s->pmen) &
                   (RTC_EN | PWRBTN_EN | GBL_EN | TMROF_EN)) != 0) ||
-        (((s->gpe.sts & s->gpe.en) & PIIX4_CPU_HOTPLUG_STATUS) != 0);
+        (((s->gpe.sts & s->gpe.en) &
+          (PIIX4_CPU_HOTPLUG_STATUS | PIIX4_PCI_HOTPLUG_STATUS)) != 0);
 
     qemu_set_irq(s->irq, sci_level);
     /* schedule a timer interruption if needed */
@@ -784,7 +785,9 @@ static void gpe_writeb(void *opaque, uint32_t addr, uint32_t val)
             break;
         default:
             break;
-   }
+    }
+
+    pm_update_sci(pm_state);
 
 #if defined(DEBUG)
     printf("gpe write %x <== %d\n", addr, val);
@@ -979,10 +982,9 @@ static int piix4_device_hotplug(PCIDevice *dev, int state)
         enable_device(&pm_state->pci0_status, &pm_state->gpe, slot);
     else
         disable_device(&pm_state->pci0_status, &pm_state->gpe, slot);
-    if (pm_state->gpe.en & 2) {
-        qemu_set_irq(pm_state->irq, 1);
-        qemu_set_irq(pm_state->irq, 0);
-    }
+
+    pm_update_sci(pm_state);
+
     return 0;
 }
 
