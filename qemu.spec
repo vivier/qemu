@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.0
-Release: 9%{?dist}
+Release: 10%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -281,11 +281,7 @@ Obsoletes: kvm < 85
 Requires: vgabios >= 0.6c-2
 Requires: seabios-bin >= 0.6.0-2
 Requires: sgabios-bin
-Requires: /usr/share/gpxe/8086100e.rom
-Requires: /usr/share/gpxe/rtl8029.rom
-Requires: /usr/share/gpxe/pcnet32.rom
-Requires: /usr/share/gpxe/rtl8139.rom
-Requires: /usr/share/gpxe/virtio-net.rom
+Requires: ipxe-roms-qemu
 
 %description system-x86
 QEMU is a generic and open source processor emulator which achieves a good
@@ -573,17 +569,17 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/sgabios.bin
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/palcode-clipper
 
 # the pxe gpxe images will be symlinks to the images on
-# /usr/share/gpxe, as QEMU doesn't know how to look
+# /usr/share/ipxe, as QEMU doesn't know how to look
 # for other paths, yet.
 pxe_link() {
-  ln -s ../gpxe/$2.rom %{buildroot}%{_datadir}/%{name}/pxe-$1.rom
+  ln -s ../ipxe/$2.rom %{buildroot}%{_datadir}/%{name}/pxe-$1.rom
 }
 
 pxe_link e1000 8086100e
-pxe_link ne2k_pci rtl8029
-pxe_link pcnet pcnet32
-pxe_link rtl8139 rtl8139
-pxe_link virtio virtio-net
+pxe_link ne2k_pci 10ec8029
+pxe_link pcnet 10222000
+pxe_link rtl8139 10ec8139
+pxe_link virtio 1af41000
 ln -s ../vgabios/VGABIOS-lgpl-latest.bin  %{buildroot}/%{_datadir}/%{name}/vgabios.bin
 ln -s ../vgabios/VGABIOS-lgpl-latest.cirrus.bin %{buildroot}/%{_datadir}/%{name}/vgabios-cirrus.bin
 ln -s ../vgabios/VGABIOS-lgpl-latest.qxl.bin %{buildroot}/%{_datadir}/%{name}/vgabios-qxl.bin
@@ -816,6 +812,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Mar 28 2012 Daniel P. Berrange <berrange@redhat.com> - 2:1.0-10
+- Switch to use iPXE for netboot ROMs
+
 * Thu Mar 22 2012 Daniel P. Berrange <berrange@redhat.com> - 2:1.0-9
 - Remove O_NOATIME for 9p filesystems
 
