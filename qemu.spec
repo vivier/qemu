@@ -37,7 +37,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.0
-Release: 10%{?dist}
+Release: 11%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -868,6 +868,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Mar 28 2012 Eduardo Habkost <ehabkost@redhat.com> - 2:1.0-11
+- Use --with variables for build-time settings
+
 * Wed Mar 28 2012 Daniel P. Berrange <berrange@redhat.com> - 2:1.0-10
 - Switch to use iPXE for netboot ROMs
 
