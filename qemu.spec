@@ -157,12 +157,14 @@ BuildRequires: libfdt-devel
 # For test suite
 BuildRequires: check-devel
 Requires: %{name}-user = %{epoch}:%{version}-%{release}
+%if !%{with_x86only}
 Requires: %{name}-system-x86 = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-arm = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-cris = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-sh4 = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-m68k = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-mips = %{epoch}:%{version}-%{release}
+%endif
 Requires: %{name}-img = %{epoch}:%{version}-%{release}
 
 Obsoletes: %{name}-system-ppc
@@ -703,7 +705,9 @@ fi
 
 %files user
 %defattr(-,root,root)
+%if !%{with_x86only}
 %{_exec_prefix}/lib/binfmt.d/qemu-*.conf
+%endif
 %{_bindir}/qemu-i386
 %{_bindir}/qemu-x86_64
 %if !%{with_x86only}
