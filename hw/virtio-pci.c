@@ -89,6 +89,15 @@
 #define VIRTIO_PCI_FLAG_USE_IOEVENTFD_BIT 1
 #define VIRTIO_PCI_FLAG_USE_IOEVENTFD   (1 << VIRTIO_PCI_FLAG_USE_IOEVENTFD_BIT)
 
+/* Enabled work-arounds for migration with macvtap backend */
+#define VIRTIO_PCI_FLAG_MACVTAP_BIT 2
+#define VIRTIO_PCI_FLAG_MACVTAP (1 << VIRTIO_PCI_FLAG_MACVTAP_BIT)
+
+/* Enabled compatibility for migration for rhel6.2.0 and older */
+#define VIRTIO_PCI_FLAG_RHEL620_BIT 3
+#define VIRTIO_PCI_FLAG_RHEL620 (1 << VIRTIO_PCI_FLAG_RHEL620_BIT)
+
+
 /* QEMU doesn't strictly need write barriers since everything runs in
  * lock-step.  We'll leave the calls to wmb() in though to make it obvious for
  * KVM or if kqemu gets SMP support.
@@ -884,6 +893,11 @@ static int virtio_net_init_pci(PCIDevice *pci_dev)
     VirtIOPCIProxy *proxy = DO_UPCAST(VirtIOPCIProxy, pci_dev, pci_dev);
     VirtIODevice *vdev;
 
+    /* Set rhel6.2 or older compatibility mode for macvtap. */
+    proxy->net.macvtap_rhel620_compat =
+        (proxy->flags & VIRTIO_PCI_FLAG_RHEL620) &&
+        (proxy->flags & VIRTIO_PCI_FLAG_MACVTAP);
+
     vdev = virtio_net_init(&pci_dev->qdev, &proxy->nic, &proxy->net);
 
     vdev->nvectors = proxy->nvectors;
@@ -989,6 +1003,10 @@ static PCIDeviceInfo virtio_info[] = {
         .qdev.props = (Property[]) {
             DEFINE_PROP_BIT("ioeventfd", VirtIOPCIProxy, flags,
                             VIRTIO_PCI_FLAG_USE_IOEVENTFD_BIT, false),
+            DEFINE_PROP_BIT("__com_redhat_macvtap_compat", VirtIOPCIProxy,
+                            flags, VIRTIO_PCI_FLAG_MACVTAP_BIT, false),
+            DEFINE_PROP_BIT("x-__com_redhat_rhel620_compat", VirtIOPCIProxy,
+                            flags, VIRTIO_PCI_FLAG_RHEL620_BIT, false),
             DEFINE_PROP_UINT32("vectors", VirtIOPCIProxy, nvectors, 3),
             DEFINE_VIRTIO_NET_FEATURES(VirtIOPCIProxy, host_features),
             DEFINE_NIC_PROPERTIES(VirtIOPCIProxy, nic),
