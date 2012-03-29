@@ -1561,6 +1561,12 @@ static void rhel_common_init(const char *type1_version,
                      strlen(buf) + 1, buf);
 }
 
+#define PC_RHEL6_2_COMPAT \
+        {\
+            .driver   = "virtio-net-pci",\
+            .property = "x-__com_redhat_rhel620_compat",\
+            .value    = "on",\
+        }
 #define PC_RHEL6_1_COMPAT \
         {\
             .driver   = "usb-tablet",\
@@ -1590,7 +1596,7 @@ static void rhel_common_init(const char *type1_version,
             .driver   = "virtio-balloon",\
             .property = "event_idx",\
             .value    = "off",\
-        }
+        }, PC_RHEL6_2_COMPAT
 
 #define PC_RHEL6_0_COMPAT \
         {\
@@ -1638,6 +1644,10 @@ static QEMUMachine pc_machine_rhel620 = {
     .desc = "RHEL 6.2.0 PC",
     .init = pc_init_rhel620,
     .max_cpus = 255,
+    .compat_props = (GlobalProperty[]) {
+        PC_RHEL6_2_COMPAT,
+        { /* end of list */ }
+    },
 };
 
 static void pc_init_rhel610(ram_addr_t ram_size,
