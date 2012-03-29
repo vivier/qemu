@@ -38,7 +38,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.0
-Release: 11%{?dist}
+Release: 12%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -869,6 +869,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Mar 29 2012 Eduardo Habkost <ehabkost@redhat.com> - 2:1.0-12
+- Fix ExclusiveArch mistake that disabled all non-x86_64 builds on Fedora
+
 * Wed Mar 28 2012 Eduardo Habkost <ehabkost@redhat.com> - 2:1.0-11
 - Use --with variables for build-time settings
 
