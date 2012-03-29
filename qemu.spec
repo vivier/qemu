@@ -20,17 +20,18 @@
 #
 # Enabled by default, except on RHEL.
 
-
 %if 0%{?rhel}
 # RHEL-specific defaults:
-%bcond_without exclusive_x86_64
-%bcond_with    rbd
-%bcond_with    fdt
+%bcond_with    x86only          # disabled
+%bcond_without exclusive_x86_64 # enabled
+%bcond_with    rbd              # disabled
+%bcond_with    fdt              # disabled
 %else
 # General defaults:
-%bcond_without exclusive_x86_64
-%bcond_without rbd
-%bcond_without fdt
+%bcond_with    x86only          # disabled
+%bcond_with    exclusive_x86_64 # disabled
+%bcond_without rbd              # enabled
+%bcond_without fdt              # enabled
 %endif
 
 
