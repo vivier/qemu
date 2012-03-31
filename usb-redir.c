@@ -39,6 +39,7 @@
 #include "hw/usb.h"
 
 #define MAX_ENDPOINTS 32
+#define NO_INTERFACE_INFO 255 /* Valid interface_count always <= 32 */
 #define EP2I(ep_address) (((ep_address & 0x80) >> 3) | (ep_address & 0x0f))
 #define I2EP(i) (((i & 0x10) << 3) | (i & 0x0f))
 
@@ -984,7 +985,7 @@ static void usbredir_handle_destroy(USBDevice *udev)
 
 static int usbredir_check_filter(USBRedirDevice *dev)
 {
-    if (dev->interface_info.interface_count == 0) {
+    if (dev->interface_info.interface_count == NO_INTERFACE_INFO) {
         ERROR("No interface info for device\n");
         goto error;
     }
@@ -1148,7 +1149,7 @@ static void usbredir_device_disconnect(void *priv)
     for (i = 0; i < MAX_ENDPOINTS; i++) {
         QTAILQ_INIT(&dev->endpoint[i].bufpq);
     }
-    dev->interface_info.interface_count = 0;
+    dev->interface_info.interface_count = NO_INTERFACE_INFO;
 }
 
 static void usbredir_interface_info(void *priv,
