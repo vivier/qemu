@@ -607,11 +607,24 @@ ln -s ../sgabios/sgabios.bin %{buildroot}/%{_datadir}/%{name}/sgabios.bin
 mkdir -p $RPM_BUILD_ROOT%{_exec_prefix}/lib/binfmt.d
 for i in dummy \
 %ifnarch %{ix86} x86_64
-    qemu-i386 \
+    qemu-i386 qemu-i486 \
 %endif
 %if !%{with_x86only}
+%ifnarch alpha
+    qemu-alpha \
+%endif
 %ifnarch arm
     qemu-arm \
+%endif
+    qemu-armeb \
+%ifnarch mips
+    qemu-mips qemu-mipsn32 qemu-mips64 \
+%endif
+%ifnarch mipsel
+    qemu-mipsel qemu-mipsn32el qemu-mips64el \
+%endif
+%ifnarch m68k
+    qemu-m68k \
 %endif
 %ifnarch ppc ppc64
     qemu-ppc \
@@ -619,9 +632,13 @@ for i in dummy \
 %ifnarch sparc sparc64
     qemu-sparc \
 %endif
+%ifnarch s390 s390x
+    qemu-s390x \
+%endif
 %ifnarch sh4
     qemu-sh4 \
 %endif
+    qemu-sh4eb \
 %endif
 ; do
   test $i = dummy && continue
