@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.0
-Release: 11%{?dist}
+Release: 12%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -859,6 +859,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Apr 6 2012 Paolo Bonzini <pbonzini@redhat.com> - 2:1.0-12
+- Add back PPC and SPARC user emulators
+- Update binfmt rules from upstream
+
 * Mon Apr  2 2012 Hans de Goede <hdegoede@redhat.com> - 2:1.0-11
 - Some more USB bugfixes from upstream
 
