@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.0
-Release: 10%{?dist}
+Release: 11%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -108,6 +108,12 @@ Patch137: 0137-usb-return-BABBLE-rather-then-NAK-when-we-receive-to.patch
 Patch138: 0138-usb-add-USB_RET_IOERROR.patch
 Patch139: 0139-usb-ehci-fix-reset.patch
 Patch140: 0140-usb-ehci-sanity-check-iso-xfers.patch
+Patch141: 0141-usb-ehci-frindex-always-is-a-14-bits-counter.patch
+Patch142: 0142-usb-ehci-Drop-unused-sofv-value.patch
+Patch143: 0143-usb-redir-Notify-our-peer-when-we-reject-a-device-du.patch
+Patch144: 0144-usb-redir-An-interface-count-of-0-is-a-valid-value.patch
+Patch145: 0145-usb-redir-Reset-device-address-and-speed-on-disconne.patch
+Patch146: 0146-usb-redir-Not-finding-an-async-urb-id-is-not-an-erro.patch
 
 # General bug fixes
 Patch201: Fix_save-restore_of_in-kernel_i8259.patch
@@ -425,6 +431,12 @@ such as kvm_stat.
 %patch138 -p1
 %patch139 -p1
 %patch140 -p1
+%patch141 -p1
+%patch142 -p1
+%patch143 -p1
+%patch144 -p1
+%patch145 -p1
+%patch146 -p1
 
 %patch201 -p1
 %patch202 -p1
@@ -816,6 +828,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Apr  2 2012 Hans de Goede <hdegoede@redhat.com> - 2:1.0-11
+- Some more USB bugfixes from upstream
+
 * Wed Mar 28 2012 Daniel P. Berrange <berrange@redhat.com> - 2:1.0-10
 - Switch to use iPXE for netboot ROMs
 
