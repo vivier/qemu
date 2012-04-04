@@ -24,6 +24,14 @@
 # - confname: "conf suffix", name for config file directories, data directories, etc.
 # - progname: name of the qemu-kvm binary on /usr/libexec
 
+# RHEV-specific changes:
+%if 0%{?rhev}
+# will add Provides: lines to match RHEL package capabilities
+%define addprovides  1
+%define providesname qemu-kvm
+%define pkgsuffix    -rhev
+%endif
+
 %define confname qemu-kvm
 %define progname qemu-kvm
 %define pkgname      qemu-kvm%{?pkgsuffix}
