@@ -6,13 +6,16 @@
 %define enable_fake_machine 0
 %endif
 
-# build qemu-guest-agent subpackage
-%bcond_without guest_agent  # enabled
+# --with/--without variables:
+# - guest_agent: build qemu-guest-agent subpackage
+# - live_snapshots: enable live-snapshots on configure
 
 %if 0%{?rhev}
 %bcond_without  live_snapshots  # enabled
+%bcond_with     guest_agent     # disabled
 %else
 %bcond_with     live_snapshots  # disabled
+%bcond_without  guest_agent     # enabled
 %endif
 
 # Package name and path configuration variables:
