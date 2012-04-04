@@ -6,6 +6,9 @@
 %define enable_fake_machine 0
 %endif
 
+# build qemu-guest-agent subpackage
+%bcond_without guest_agent  # enabled
+
 %if 0%{?rhev}
 %bcond_without  live_snapshots  # enabled
 %else
@@ -146,12 +149,14 @@ Group: Development/Tools
 This package contains some diagnostics and debugging tools for KVM,
 such as kvm_stat.
 
+%if %{with guest_agent}
 %package -n qemu-guest-agent
 Summary: QEMU Guest Agent
 Group: Development/Tools
 %description -n qemu-guest-agent
 This package provides a qemu guest agent daemon to be running inside of
 linux guests to provide the guest information.
+%endif # guest_agent
 
 %prep
 %setup -q -n qemu-kvm-%{version}
@@ -279,8 +284,10 @@ install -D -p -m 0755 %{SOURCE6} $RPM_BUILD_ROOT%{_initddir}/ksmtuned
 install -D -p -m 0755 %{SOURCE7} $RPM_BUILD_ROOT%{_sbindir}/ksmtuned
 install -D -p -m 0644 %{SOURCE8} $RPM_BUILD_ROOT%{_sysconfdir}/ksmtuned.conf
 
+%if %{with guest_agent}
 install -D -p -m 0755 %{SOURCE10} $RPM_BUILD_ROOT%{_initddir}/qemu-ga
 install -D -p -m 0644 %{SOURCE11} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/qemu-ga
+%endif # guest_agent
 
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules
 mkdir -p $RPM_BUILD_ROOT%{_bindir}/
@@ -306,6 +313,9 @@ make DESTDIR="${RPM_BUILD_ROOT}" \
 
 rm -rf ${RPM_BUILD_ROOT}%{_bindir}/qemu-nbd
 rm -rf ${RPM_BUILD_ROOT}%{_mandir}/man8/qemu-nbd.8*
+%if %{without guest_agent}
+rm -f $RPM_BUILD_ROOT%{_bindir}/qemu-ga
+%endif
 
 chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
 install -D -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} Changelog README TODO COPYING COPYING.LIB LICENSE
@@ -358,9 +368,11 @@ getent passwd qemu >/dev/null || \
 /sbin/chkconfig --add ksm
 /sbin/chkconfig --add ksmtuned
 
+%if %{with guest_agent}
 %post -n qemu-guest-agent
 /sbin/chkconfig --add qemu-ga
 /sbin/chkconfig qemu-ga off
+%endif # guest_agent
 
 # load kvm modules now, so we can make sure no reboot is needed.
 # If there's already a kvm module installed, we don't mess with it
@@ -374,11 +386,13 @@ if [ $1 -eq 0 ]; then
     /sbin/chkconfig --del ksm
 fi
 
+%if %{with guest_agent}
 %preun -n qemu-guest-agent
 if [ $1 -eq 0 ]; then
     /sbin/service qemu-ga stop &>/dev/null || :
     /sbin/chkconfig --del qemu-ga
 fi
+%endif # guest_agent
 
 %postun
 if [ $1 -ge 1 ]; then
@@ -428,11 +442,13 @@ fi
 %{cpumodeldir}/cpu-x86_64.conf
 %config(noreplace) %{_sysconfdir}/modprobe.d/blacklist-kvm.conf
 
+%if %{with guest_agent}
 %files -n qemu-guest-agent
 %defattr(-,root,root,-)
 %{_bindir}/qemu-ga
 %{_initddir}/qemu-ga
 %config(noreplace) %{_sysconfdir}/sysconfig/qemu-ga
+%endif # guest_agent
 
 %files -n qemu-kvm-tools
 %defattr(-,root,root,-)
