@@ -15,6 +15,19 @@
 %bcond_with     live_snapshots  # disabled
 %endif
 
+# Package name and path configuration variables:
+# - pkgname: the package name (qemu-kvm or qemu-kvm-rhev)
+# - pkgsuffix: suffix for package names that are not "qemu-kvm-*" (e.g.
+#   qemu-img and qemu-guest-agent). optional.
+# - addprovides/providesname: add "Provides:" lines to each package, with
+#   the original name without %{pkgsuffix}. optional.
+# - confname: "conf suffix", name for config file directories, data directories, etc.
+# - progname: name of the qemu-kvm binary on /usr/libexec
+
+%define confname qemu-kvm
+%define progname qemu-kvm
+%define pkgname      qemu-kvm%{?pkgsuffix}
+
 # Versions of various parts:
 
 # Polite request for people who spin their own qemu-kvm rpms:
@@ -35,7 +48,7 @@ Summary: Userspace component of KVM (testing only)
 %else
 Summary: Userspace component of KVM
 %endif
-Name: qemu-kvm
+Name: %{pkgname}
 Version: %{rpmversion}
 Release: %{full_release}
 # Epoch because we pushed a qemu-1.0 package
@@ -96,6 +109,9 @@ Requires(preun): /sbin/service /sbin/chkconfig
 Requires(postun): /sbin/service
 
 Provides: kvm = 85
+%if 0%{?addprovides}
+Provides: %{providesname} = %{version}-%{release}
+%endif
 Obsoletes: kvm < 85
 Requires: vgabios
 Requires: vgabios-qxl
@@ -115,10 +131,10 @@ Requires: glibc >= 2.12-1.40.el6
 # We don't provide vvfat anymore, that is used by older VDSM versions.
 Conflicts: vdsm < 4.5
 
-Requires: qemu-img = %{epoch}:%{version}-%{release}
+Requires: qemu-img%{?pkgsuffix} = %{epoch}:%{version}-%{release}
 
 %define qemudocdir %{_docdir}/%{name}-%{version}
-%define cpumodeldir %{_datadir}/%{name}/cpu-model
+%define cpumodeldir %{_datadir}/%{confname}/cpu-model
 
 %description
 KVM (for Kernel-based Virtual Machine) is a full virtualization solution
@@ -135,25 +151,36 @@ management code, not to run actual virtual machines.
 %endif
 
 
-%package -n qemu-img
+%package -n qemu-img%{?pkgsuffix}
 Summary: QEMU command line tool for manipulating disk images
 Group: Development/Tools
-%description -n qemu-img
+%if 0%{?addprovides}
+Provides: qemu-img = %{version}-%{release}
+%endif
+
+%description -n qemu-img%{?pkgsuffix}
 This package provides a command line tool for manipulating disk images
 
-%package -n qemu-kvm-tools
+%package -n %{pkgname}-tools
 Summary: KVM debugging and diagnostics tools
 Group: Development/Tools
+%if 0%{?addprovides}
+Provides: %{providesname}-tools = %{version}-%{release}
+%endif
 
-%description -n qemu-kvm-tools
+%description -n %{pkgname}-tools
 This package contains some diagnostics and debugging tools for KVM,
 such as kvm_stat.
 
 %if %{with guest_agent}
-%package -n qemu-guest-agent
+%package -n qemu-guest-agent%{?pkgsuffix}
 Summary: QEMU Guest Agent
 Group: Development/Tools
-%description -n qemu-guest-agent
+%if 0%{?addprovides}
+Provides: qemu-guest-agent = %{version}-%{release}
+%endif
+
+%description -n qemu-guest-agent%{?pkgsuffix}
 This package provides a qemu guest agent daemon to be running inside of
 linux guests to provide the guest information.
 %endif # guest_agent
@@ -271,7 +298,7 @@ make x86_64-softmmu/config-devices.mak
 # disable vmware_vga on the config:
 sed -i -e '/CONFIG_VMWARE_VGA=y/d' x86_64-softmmu/config-devices.mak
 
-make V=1 QEMU_PROG=qemu-kvm QEMU_BINDIR="%{_prefix}/libexec" \
+make V=1 QEMU_PROG=%{progname} QEMU_BINDIR="%{_prefix}/libexec" \
      %{?_smp_mflags} $buildldflags
 
 %install
@@ -307,7 +334,7 @@ make DESTDIR="${RPM_BUILD_ROOT}" \
      datadir="%{_datadir}/%{name}" \
      cpuconfdir="%{cpumodeldir}" \
      sysconfdir="%{_sysconfdir}" \
-     QEMU_PROG=qemu-kvm \
+     QEMU_PROG=%{progname} \
      QEMU_BINDIR="%{_prefix}/libexec" \
      install
 
@@ -369,7 +396,7 @@ getent passwd qemu >/dev/null || \
 /sbin/chkconfig --add ksmtuned
 
 %if %{with guest_agent}
-%post -n qemu-guest-agent
+%post -n qemu-guest-agent%{?pkgsuffix}
 /sbin/chkconfig --add qemu-ga
 /sbin/chkconfig qemu-ga off
 %endif # guest_agent
@@ -387,7 +414,7 @@ if [ $1 -eq 0 ]; then
 fi
 
 %if %{with guest_agent}
-%preun -n qemu-guest-agent
+%preun -n qemu-guest-agent%{?pkgsuffix}
 if [ $1 -eq 0 ]; then
     /sbin/service qemu-ga stop &>/dev/null || :
     /sbin/chkconfig --del qemu-ga
@@ -412,7 +439,7 @@ fi
 %doc %{qemudocdir}/LICENSE
 %dir %{_datadir}/%{name}/
 %{_datadir}/%{name}/keymaps/
-%{_mandir}/man1/qemu-kvm.1*
+%{_mandir}/man1/%{progname}.1*
 %config(noreplace) %{_sysconfdir}/sasl2/qemu-kvm.conf
 %{_initddir}/ksm
 %config(noreplace) %{_sysconfdir}/sysconfig/ksm
@@ -435,26 +462,26 @@ fi
 %{_datadir}/%{name}/pxe-rtl8139.bin
 %{_datadir}/%{name}/pxe-ne2k_pci.bin
 %{_datadir}/%{name}/extboot.bin
-%{_datadir}/systemtap/tapset/qemu-kvm.stp
-%{_libexecdir}/qemu-kvm
+%{_datadir}/systemtap/tapset/%{progname}.stp
+%{_libexecdir}/%{progname}
 %{_sysconfdir}/sysconfig/modules/kvm.modules
 %{_sysconfdir}/udev/rules.d/80-kvm.rules
 %{cpumodeldir}/cpu-x86_64.conf
 %config(noreplace) %{_sysconfdir}/modprobe.d/blacklist-kvm.conf
 
 %if %{with guest_agent}
-%files -n qemu-guest-agent
+%files -n qemu-guest-agent%{?pkgsuffix}
 %defattr(-,root,root,-)
 %{_bindir}/qemu-ga
 %{_initddir}/qemu-ga
 %config(noreplace) %{_sysconfdir}/sysconfig/qemu-ga
 %endif # guest_agent
 
-%files -n qemu-kvm-tools
+%files -n %{pkgname}-tools
 %defattr(-,root,root,-)
 %{_bindir}/kvm_stat
 
-%files -n qemu-img
+%files -n qemu-img%{?pkgsuffix}
 %defattr(-,root,root)
 %{_bindir}/qemu-img
 %{_bindir}/qemu-io
