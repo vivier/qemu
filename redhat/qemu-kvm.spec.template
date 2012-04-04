@@ -1,7 +1,16 @@
 # Define rhev as the first variable
 %define rhev 0
 
-# Versions of various parts
+# build-time settings:
+
+%if 0%{?rhev_test}
+%define enable_fake_machine 1
+%else
+%define enable_fake_machine 0
+%endif
+
+
+# Versions of various parts:
 
 # Polite request for people who spin their own qemu-kvm rpms:
 # please modify the "buildid" define in a way that identifies
@@ -9,12 +18,6 @@
 # by setting the define to ".local" or ".bz123456"
 #
 %define buildid %{nil}%%BUILDID%%
-
-%if 0%{?rhev_test}
-%define enable_fake_machine 1
-%else
-%define enable_fake_machine 0
-%endif
 
 %define sublevel 0.12.1.2
 %define pkgrelease 2.269
