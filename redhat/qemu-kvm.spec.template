@@ -6,6 +6,11 @@
 %define enable_fake_machine 0
 %endif
 
+%if 0%{?rhev}
+%bcond_without  live_snapshots  # enabled
+%else
+%bcond_with     live_snapshots  # disabled
+%endif
 
 # Versions of various parts:
 
@@ -204,7 +209,7 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
 %define fake_machine_arg %{nil}
 %endif
 
-%if 0%{?rhev}
+%if %{with live_snapshots}
 %define disable_live_snapshots_arg %{nil}
 %else
 %define disable_live_snapshots_arg --disable-live-snapshots
