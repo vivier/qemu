@@ -1,3 +1,6 @@
+# Define rhev as the first variable
+%define rhev 0
+
 # Versions of various parts
 
 # Polite request for people who spin their own qemu-kvm rpms:
@@ -7,10 +10,14 @@
 #
 %define buildid %{nil}%%BUILDID%%
 
+%if 0%{?rhev_test}
+%define enable_fake_machine 1
+%else
 %define enable_fake_machine 0
+%endif
 
-%define sublevel %%SUBLEVEL%%
-%define pkgrelease %%PKGRELEASE%%
+%define sublevel 0.12.1.2
+%define pkgrelease 2.269
 
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
@@ -126,11 +133,11 @@ Group: Development/Tools
 %description -n qemu-img
 This package provides a command line tool for manipulating disk images
 
-%package tools
+%package -n qemu-kvm-tools
 Summary: KVM debugging and diagnostics tools
 Group: Development/Tools
 
-%description tools
+%description -n qemu-kvm-tools
 This package contains some diagnostics and debugging tools for KVM,
 such as kvm_stat.
 
@@ -197,6 +204,12 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
 %define fake_machine_arg %{nil}
 %endif
 
+%if %{rhev}
+%define disable_live_snapshots_arg %{nil}
+%else
+%define disable_live_snapshots_arg --disable-live-snapshots
+%endif
+
 # sdl outputs to alsa or pulseaudio depending on system config, but it's broken (#495964)
 # alsa works, but causes huge CPU load due to bugs
 # oss works, but is very problematic because it grabs exclusive control of the device causing other apps to go haywire
@@ -233,7 +246,8 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
             --enable-smartcard \
             --disable-smartcard-nss \
             --enable-usb-redir \
-            %{fake_machine_arg}
+            %{fake_machine_arg} \
+            %{disable_live_snapshots_arg}
 
 echo "config-host.mak contents:"
 echo "==="
@@ -367,11 +381,6 @@ if [ $1 -ge 1 ]; then
     /sbin/service ksmtuned condrestart &>/dev/null || :
 fi
 
-%postun -n qemu-guest-agent
-if [ $1 -ge 1 ]; then
-    /sbin/service qemu-ga condrestart &>/dev/null || :
-fi
-
 %files
 %defattr(-,root,root)
 %doc %{qemudocdir}/Changelog
@@ -420,7 +429,7 @@ fi
 %{_initddir}/qemu-ga
 %config(noreplace) %{_sysconfdir}/sysconfig/qemu-ga
 
-%files tools
+%files -n qemu-kvm-tools
 %defattr(-,root,root,-)
 %{_bindir}/kvm_stat
 
