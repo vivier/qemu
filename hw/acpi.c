@@ -935,14 +935,20 @@ static void disable_processor(struct gpe_regs *g, int cpu)
     g->cpus_sts[cpu / 8] &= ~(1 << (cpu % 8));
 }
 
-void qemu_system_cpu_hot_add(int cpu, int state)
+void qemu_system_cpu_hot_add(int cpu, int state, Monitor *mon)
 {
     CPUState *env;
+
+    if ((cpu < 1) || (cpu > max_cpus - 1)) {
+        monitor_printf(mon, "cpu id[%d] must be in range [1..%d]\n",
+            cpu, max_cpus - 1);
+        return;
+    }
 
     if (state && !qemu_get_cpu(cpu)) {
         env = pc_new_cpu(model);
         if (!env) {
-            fprintf(stderr, "cpu %d creation failed\n", cpu);
+            monitor_printf(mon, "cpu %d creation failed\n", cpu);
             return;
         }
         env->cpuid_apic_id = cpu;

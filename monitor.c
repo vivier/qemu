@@ -1017,7 +1017,7 @@ static void do_cpu_set_nr(Monitor *mon, const QDict *qdict)
         return;
     }
 #if defined(TARGET_I386) || defined(TARGET_X86_64)
-    qemu_system_cpu_hot_add(value, state);
+    qemu_system_cpu_hot_add(value, state, mon);
 #endif
 }
 
