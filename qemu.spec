@@ -1,7 +1,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.0
-Release: 9.2%{?dist}
+Release: 9.3%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -210,7 +210,9 @@ Group: Development/Tools
 # update qemu-img without updating librdb you get:
 # qemu-img: undefined symbol: rbd_flush
 # ** NB ** This can be removed after Fedora 17 is released.
+%if !0%{?rhel}
 Requires: ceph >= 0.37-2
+%endif
 
 %description img
 This package provides a command line tool for manipulating disk images
@@ -832,6 +834,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Apr 11 2012 Daniel Mach <dmach@redhat.com> - 2:1.0-9.3
+- Disable ceph dependency on RHEL
+
 * Mon Mar 26 2012 Eduardo Habkost <ehabkost@redhat.com> - 2:1.0-9.2.el7
 - Don't enable FDT support on RHEL
 
