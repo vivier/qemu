@@ -3608,16 +3608,16 @@ int bdrv_img_create(const char *filename, const char *fmt,
     if (get_option_parameter(param, BLOCK_OPT_SIZE)->value.n == -1) {
         if (backing_file && backing_file->value.s) {
             uint64_t size;
-            const char *fmt = NULL;
             char buf[32];
+            int back_flags;
 
-            if (backing_fmt && backing_fmt->value.s) {
-                fmt = backing_fmt->value.s;
-            }
+            /* backing files always opened read-only */
+            back_flags =
+                flags & ~(BDRV_O_RDWR | BDRV_O_SNAPSHOT | BDRV_O_NO_BACKING);
 
             bs = bdrv_new("");
 
-            ret = bdrv_open(bs, backing_file->value.s, flags, backing_drv);
+            ret = bdrv_open(bs, backing_file->value.s, back_flags, backing_drv);
             if (ret < 0) {
                 error_report("Could not open '%s'", backing_file->value.s);
                 goto out;
