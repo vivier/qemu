@@ -254,6 +254,7 @@ struct BlockDriverState {
     BlockIOStatus iostatus;
     char device_name[32];
     unsigned long *dirty_bitmap;
+    int64_t dirty_count;
     int in_use; /* users other than guest access, eg. block migration */
     QTAILQ_ENTRY(BlockDriverState) list;
     void *private;

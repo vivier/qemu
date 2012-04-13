@@ -1383,9 +1383,15 @@ static void set_dirty_bitmap(BlockDriverState *bs, int64_t sector_num,
         bit = start % (sizeof(unsigned long) * 8);
         val = bs->dirty_bitmap[idx];
         if (dirty) {
-            val |= 1 << bit;
+            if (!(val & (1 << bit))) {
+                bs->dirty_count++;
+                val |= 1 << bit;
+            }
         } else {
-            val &= ~(1 << bit);
+            if (val & (1 << bit)) {
+                bs->dirty_count--;
+                val &= ~(1 << bit);
+            }
         }
         bs->dirty_bitmap[idx] = val;
     }
@@ -3412,6 +3418,7 @@ void bdrv_set_dirty_tracking(BlockDriverState *bs, int enable)
 {
     int64_t bitmap_size;
 
+    bs->dirty_count = 0;
     if (enable) {
         if (!bs->dirty_bitmap) {
             bitmap_size = (bdrv_getlength(bs) >> BDRV_SECTOR_BITS) +
@@ -3445,6 +3452,11 @@ void bdrv_reset_dirty(BlockDriverState *bs, int64_t cur_sector,
                       int nr_sectors)
 {
     set_dirty_bitmap(bs, cur_sector, nr_sectors, 0);
+}
+
+int64_t bdrv_get_dirty_count(BlockDriverState *bs)
+{
+    return bs->dirty_count;
 }
 
 void bdrv_iostatus_enable(BlockDriverState *bs)
