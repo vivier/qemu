@@ -317,6 +317,13 @@ int stream_start(BlockDriverState *bs, BlockDriverState *base,
                  const char *base_id, BlockDriverCompletionFunc *cb,
                  void *opaque);
 
+int mirror_start(BlockDriverState *bs,
+                 const char *target, BlockDriver *drv, int flags,
+                 BlockDriverCompletionFunc *cb,
+                 void *opaque, bool full);
+void mirror_abort(BlockDriverState *bs);
+void mirror_commit(BlockDriverState *bs);
+
 typedef struct BlockConf {
     BlockDriverState *bs;
     uint16_t physical_block_size;
