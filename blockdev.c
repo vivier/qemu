@@ -693,6 +693,9 @@ void qmp___com_redhat_drive_reopen(const char *device, const char *new_image_fil
         error_set(errp, QERR_DEVICE_NOT_FOUND, device);
         return;
     }
+    if (bs->job) {
+        block_job_cancel_sync(bs->job);
+    }
     if (bdrv_in_use(bs)) {
         error_set(errp, QERR_DEVICE_IN_USE, device);
         return;
