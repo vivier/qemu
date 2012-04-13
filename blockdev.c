@@ -680,13 +680,24 @@ void do_commit(Monitor *mon, const QDict *qdict)
 
 #ifdef CONFIG_LIVE_SNAPSHOTS
 void qmp___com_redhat_drive_reopen(const char *device, const char *new_image_file,
-                      bool has_format, const char *format, Error **errp)
+                      bool has_format, const char *format,
+                      bool has_witness, const char *witness,
+                      Error **errp)
 {
     BlockDriverState *bs;
     BlockDriver *drv, *old_drv, *proto_drv;
+    int fd = -1;
     int ret = 0;
     int flags;
     char old_filename[1024];
+
+    if (has_witness) {
+        fd = monitor_get_fd(cur_mon, witness);
+        if (fd == -1) {
+            error_set(errp, QERR_FD_NOT_FOUND, witness);
+            return;
+        }
+    }
 
     bs = bdrv_find(device);
     if (!bs) {
@@ -732,6 +743,16 @@ void qmp___com_redhat_drive_reopen(const char *device, const char *new_image_fil
 
     bdrv_close(bs);
     ret = bdrv_open(bs, new_image_file, flags, drv);
+
+    if (ret == 0 && fd != -1) {
+        ret = write(fd, "", 1) == 1 ? 0 : -1;
+        qemu_fdatasync(fd);
+        close(fd);
+        if (ret < 0) {
+            bdrv_close(bs);
+        }
+    }
+
     /*
      * If reopening the image file we just created fails, fall back
      * and try to re-open the original image. If that fails too, we
