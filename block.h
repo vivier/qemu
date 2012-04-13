@@ -310,8 +310,9 @@ int bdrv_img_create(const char *filename, const char *fmt,
 
 void bdrv_set_dirty_tracking(BlockDriverState *bs, int enable);
 int bdrv_get_dirty(BlockDriverState *bs, int64_t sector);
-void bdrv_reset_dirty(BlockDriverState *bs, int64_t cur_sector,
-                      int nr_sectors);
+void bdrv_set_dirty(BlockDriverState *bs, int64_t cur_sector, int nr_sectors);
+void bdrv_reset_dirty(BlockDriverState *bs, int64_t cur_sector, int nr_sectors);
+int64_t bdrv_get_next_dirty(BlockDriverState *bs, int64_t sector);
 int64_t bdrv_get_dirty_count(BlockDriverState *bs);
 
 void bdrv_enable_copy_on_read(BlockDriverState *bs);
