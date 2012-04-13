@@ -132,6 +132,13 @@
 #
 # @format: #optional the format of the new image, default is 'qcow2'.
 #
+# @witness: A file descriptor name that was passed via getfd.  QEMU will write
+#   a single byte to this file descriptor before completing the command
+#   successfully.  If the byte is not written to the file, it is
+#   guaranteed that the guest has not issued any I/O to the new image.
+#   Failure to write the byte is fatal just like failure to open the new
+#   image, and will cause the guest to revert to the currently open file.
+#
 # Returns: nothing on success
 #          If @device is not a valid block device, DeviceNotFound
 #          If @new-image-file can't be opened, OpenFileFailed
@@ -140,7 +147,8 @@
 # Since 1.1
 ##
 { 'command': '__com.redhat_drive-reopen',
-  'data': { 'device': 'str', 'new-image-file': 'str', '*format': 'str' } }
+  'data': { 'device': 'str', 'new-image-file': 'str', '*format': 'str',
+            '*witness': 'str' } }
 
 ##
 # @__com.redhat_drive-mirror
