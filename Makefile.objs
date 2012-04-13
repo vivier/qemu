@@ -65,7 +65,7 @@ shared-obj-y = qemu-error.o $(block-obj-y) $(qobject-obj-y)
 
 common-obj-y = $(shared-obj-y)
 common-obj-y += qemu-thread.o
-common-obj-y += blockdev.o block/blkmirror.o
+common-obj-y += blockdev.o
 common-obj-y += $(net-obj-y)
 common-obj-y += readline.o console.o cursor.o
 
