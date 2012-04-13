@@ -14,12 +14,10 @@
 # @absolute-paths: QEMU should create a new image with absolute paths
 # for the backing file.
 #
-# @no-backing-file: QEMU should create a new image with no backing file.
-#
 # Since: 1.1
 ##
 { 'enum': 'NewImageMode'
-  'data': [ 'existing', 'absolute-paths', 'no-backing-file' ] }
+  'data': [ 'existing', 'absolute-paths' ] }
 
 ##
 # @BlockdevSnapshot
@@ -49,10 +47,13 @@
 #
 # @mode: #optional whether and how QEMU should create a new image, default is
 # 'absolute-paths'.
+#
+# @full: whether the whole disk should be copied to the destination, or
+#        only the topmost image.
 ##
 { 'type': 'BlockdevMirror',
   'data': { 'device': 'str', 'target': 'str', '*format': 'str',
-            '*mode': 'NewImageMode' } }
+            '*full': 'bool', '*mode': 'NewImageMode' } }
 
 ##
 # @BlockdevAction
@@ -166,6 +167,9 @@
 # @mode: #optional whether and how QEMU should create a new image, default is
 # 'absolute-paths'.
 #
+# @full: whether the whole disk should be copied to the destination, or
+#        only the topmost image.
+#
 # Returns: nothing on success
 #          If @device is not a valid block device, DeviceNotFound
 #          If @target can't be opened, OpenFileFailed
@@ -175,5 +179,5 @@
 ##
 { 'command': '__com.redhat_drive-mirror',
   'data': { 'device': 'str', 'target': 'str', '*format': 'str',
-            '*mode': 'NewImageMode'} }
+            '*full': 'bool', '*mode': 'NewImageMode'} }
 #endif
