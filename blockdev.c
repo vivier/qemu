@@ -21,6 +21,7 @@
 
 struct drivelist drives = QTAILQ_HEAD_INITIALIZER(drives);
 DriveInfo *extboot_drive = NULL;
+static void block_job_cb(void *opaque, int ret);
 
 static const char *const if_name[IF_COUNT] = {
     [IF_NONE] = "none",
@@ -801,6 +802,7 @@ void qmp_blockdev_snapshot_sync(const char *device, const char *snapshot_file,
 #ifdef CONFIG_LIVE_SNAPSHOTS
 void qmp___com_redhat_drive_mirror(const char *device, const char *target,
                       bool has_format, const char *format,
+                      bool has_full, bool full,
                       bool has_mode, enum NewImageMode mode, Error **errp)
 {
     BlockdevMirror mirror = {
@@ -810,12 +812,15 @@ void qmp___com_redhat_drive_mirror(const char *device, const char *target,
         .format = (char *) format,
         .has_mode = has_mode,
         .mode = mode,
+        .has_full = has_full,
+        .full = full,
     };
     blockdev_do_action(BLOCKDEV_ACTION_KIND___COM_REDHAT_DRIVE_MIRROR, &mirror, errp);
 }
 
 /* New and old BlockDriverState structs for group snapshots */
 typedef struct BlkTransactionStates {
+    enum BlockdevActionKind kind;
     BlockDriverState *old_bs;
     BlockDriverState *new_bs;
     QSIMPLEQ_ENTRY(BlkTransactionStates) entry;
@@ -831,7 +836,6 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
     int ret = 0;
     BlockdevActionList *dev_entry = dev_list;
     BlkTransactionStates *states, *next;
-    char *new_source = NULL;
 
     QSIMPLEQ_HEAD(snap_bdrv_states, BlkTransactionStates) snap_bdrv_states;
     QSIMPLEQ_INIT(&snap_bdrv_states);
@@ -842,21 +846,23 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
     /* We don't do anything in this loop that commits us to the snapshot */
     while (NULL != dev_entry) {
         BlockdevAction *dev_info = NULL;
+        BlockDriverState *source;
         BlockDriver *proto_drv;
-        BlockDriver *target_drv;
         BlockDriver *drv = NULL;
         int flags;
         enum NewImageMode mode;
         const char *new_image_file;
         const char *device;
-        const char *format = "qcow2";
+        const char *format = NULL;
         uint64_t size;
+        bool full;
 
         dev_info = dev_entry->value;
         dev_entry = dev_entry->next;
 
         states = g_malloc0(sizeof(BlkTransactionStates));
         QSIMPLEQ_INSERT_TAIL(&snap_bdrv_states, states, entry);
+        states->kind = dev_info->kind;
 
         switch (dev_info->kind) {
         case BLOCKDEV_ACTION_KIND_BLOCKDEV_SNAPSHOT_SYNC:
@@ -869,12 +875,12 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
                 format = dev_info->blockdev_snapshot_sync->format;
             }
             mode = dev_info->blockdev_snapshot_sync->mode;
-            new_source = g_strdup(new_image_file);
+            source = states->old_bs;
+            full = false;
             break;
 
         case BLOCKDEV_ACTION_KIND___COM_REDHAT_DRIVE_MIRROR:
             device = dev_info->__com_redhat_drive_mirror->device;
-            drv = bdrv_find_format("blkmirror");
             if (!dev_info->__com_redhat_drive_mirror->has_mode) {
                 dev_info->__com_redhat_drive_mirror->mode = NEW_IMAGE_MODE_ABSOLUTE_PATHS;
             }
@@ -883,21 +889,23 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
                 format = dev_info->__com_redhat_drive_mirror->format;
             }
             mode = dev_info->__com_redhat_drive_mirror->mode;
-            new_source = g_strdup_printf("blkmirror:%s:%s", format,
-                                         dev_info->__com_redhat_drive_mirror->target);
+            full = dev_info->__com_redhat_drive_mirror->has_full
+                && dev_info->__com_redhat_drive_mirror->full;
             break;
 
         default:
             abort();
         }
 
-        target_drv = bdrv_find_format(format);
-        if (!target_drv) {
-            error_set(errp, QERR_INVALID_BLOCK_FORMAT, format);
-            goto delete_and_fail;
+        if (!format && mode != NEW_IMAGE_MODE_EXISTING) {
+            format = "qcow2";
         }
-        if (!drv) {
-            drv = target_drv;
+        if (format) {
+            drv = bdrv_find_format(format);
+            if (!drv) {
+                error_set(errp, QERR_INVALID_BLOCK_FORMAT, format);
+                goto delete_and_fail;
+            }
         }
 
         states->old_bs = bdrv_find(device);
@@ -916,16 +924,24 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
             goto delete_and_fail;
         }
 
-        if (!bdrv_is_read_only(states->old_bs)) {
-            if (bdrv_flush(states->old_bs)) {
-                error_set(errp, QERR_IO_ERROR);
-                goto delete_and_fail;
+        if (dev_info->kind == BLOCKDEV_ACTION_KIND_BLOCKDEV_SNAPSHOT_SYNC) {
+            if (!bdrv_is_read_only(states->old_bs)) {
+                if (bdrv_flush(states->old_bs)) {
+                    error_set(errp, QERR_IO_ERROR);
+                    goto delete_and_fail;
+                }
+            }
+
+            source = states->old_bs;
+        } else {
+            source = states->old_bs->backing_hd;
+            if (!source) {
+                full = true;
             }
         }
-
         flags = states->old_bs->open_flags;
 
-        proto_drv = bdrv_find_protocol(new_source);
+        proto_drv = bdrv_find_protocol(new_image_file);
         if (!proto_drv) {
             error_set(errp, QERR_INVALID_BLOCK_FORMAT, format);
             goto delete_and_fail;
@@ -936,26 +952,28 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
             goto delete_and_fail;
         }
 
-        /* create new image w/backing file */
-        switch (mode) {
+        if (full && mode != NEW_IMAGE_MODE_EXISTING) {
+            assert(format && drv);
+            bdrv_get_geometry(states->old_bs, &size);
+            size *= 512;
+            ret = bdrv_img_create(new_image_file, format,
+                                  NULL, NULL, NULL, size, flags);
+        } else {
+            /* create new image w/backing file */
+            switch (mode) {
             case NEW_IMAGE_MODE_EXISTING:
                 ret = 0;
                 break;
             case NEW_IMAGE_MODE_ABSOLUTE_PATHS:
                 ret = bdrv_img_create(new_image_file, format,
-                                      states->old_bs->filename,
-                                      states->old_bs->drv->format_name,
+                                      source->filename,
+                                      source->drv->format_name,
                                       NULL, -1, flags);
-                break;
-            case NEW_IMAGE_MODE_NO_BACKING_FILE:
-                bdrv_get_geometry(states->old_bs, &size);
-                size *= 512;
-                ret = bdrv_img_create(new_image_file, format,
-                                      NULL, NULL, NULL, size, flags);
                 break;
             default:
                 ret = -1;
                 break;
+            }
         }
 
         if (ret) {
@@ -964,23 +982,53 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
         }
 
         /* We will manually add the backing_hd field to the bs later */
-        states->new_bs = bdrv_new("");
-        ret = bdrv_open(states->new_bs, new_source,
-                        flags | BDRV_O_NO_BACKING, drv);
+        switch (dev_info->kind) {
+        case BLOCKDEV_ACTION_KIND_BLOCKDEV_SNAPSHOT_SYNC:
+            states->new_bs = bdrv_new("");
+            ret = bdrv_open(states->new_bs, new_image_file,
+                            flags | BDRV_O_NO_BACKING, drv);
+            break;
+
+        case BLOCKDEV_ACTION_KIND___COM_REDHAT_DRIVE_MIRROR:
+            /* Grab a reference so hotplug does not delete the BlockDriverState
+             * from underneath us.
+             */
+            drive_get_ref(drive_get_by_blockdev(states->old_bs));
+            ret = mirror_start(states->old_bs, new_image_file, drv, flags,
+                               block_job_cb, states->old_bs, full);
+            if (ret == 0) {
+                /* A marker for the abort action  */
+                states->new_bs = states->old_bs;
+            }
+            break;
+
+        default:
+            abort();
+        }
+
         if (ret != 0) {
-            error_set(errp, QERR_OPEN_FILE_FAILED, new_source);
+            error_set(errp, QERR_OPEN_FILE_FAILED, new_image_file);
             goto delete_and_fail;
         }
-        g_free(new_source);
-        new_source = NULL;
     }
 
 
     /* Now we are going to do the actual pivot.  Everything up to this point
      * is reversible, but we are committed at this point */
     QSIMPLEQ_FOREACH(states, &snap_bdrv_states, entry) {
-        /* This removes our old bs from the bdrv_states, and adds the new bs */
-        bdrv_append(states->new_bs, states->old_bs);
+        switch (states->kind) {
+        case BLOCKDEV_ACTION_KIND_BLOCKDEV_SNAPSHOT_SYNC:
+            /* This removes our old bs from the bdrv_states, and adds the new bs */
+            bdrv_append(states->new_bs, states->old_bs);
+            break;
+
+        case BLOCKDEV_ACTION_KIND___COM_REDHAT_DRIVE_MIRROR:
+            mirror_commit(states->old_bs);
+            break;
+
+        default:
+            abort();
+        }
     }
 
     /* success */
@@ -992,15 +1040,29 @@ delete_and_fail:
     * the original bs for all images
     */
     QSIMPLEQ_FOREACH(states, &snap_bdrv_states, entry) {
-        if (states->new_bs) {
-             bdrv_delete(states->new_bs);
+        switch (states->kind) {
+        case BLOCKDEV_ACTION_KIND_BLOCKDEV_SNAPSHOT_SYNC:
+            if (states->new_bs) {
+                bdrv_delete(states->new_bs);
+            }
+            break;
+
+        case BLOCKDEV_ACTION_KIND___COM_REDHAT_DRIVE_MIRROR:
+            /* This will still invoke the callback and release the
+             * reference.  */
+            if (states->new_bs) {
+                mirror_abort(states->old_bs);
+            }
+            break;
+
+        default:
+            abort();
         }
     }
 exit:
     QSIMPLEQ_FOREACH_SAFE(states, &snap_bdrv_states, entry, next) {
         g_free(states);
     }
-    g_free(new_source);
     return;
 }
 #endif
@@ -1183,12 +1245,12 @@ static QObject *qobject_from_block_job(BlockJob *job)
                               job->speed);
 }
 
-static void block_stream_cb(void *opaque, int ret)
+static void block_job_cb(void *opaque, int ret)
 {
     BlockDriverState *bs = opaque;
     QObject *obj;
 
-    trace_block_stream_cb(bs, bs->job, ret);
+    trace_block_job_cb(bs, bs->job, ret);
 
     assert(bs->job);
     obj = qobject_from_block_job(bs->job);
@@ -1229,7 +1291,7 @@ int do_block_stream(Monitor *mon, const QDict *params, QObject **ret_data)
         }
     }
 
-    ret = stream_start(bs, base_bs, base, block_stream_cb, bs);
+    ret = stream_start(bs, base_bs, base, block_job_cb, bs);
     if (ret < 0) {
         switch (ret) {
         case -EBUSY:
