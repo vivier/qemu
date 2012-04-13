@@ -1533,6 +1533,8 @@ actions array:
       - "device": device name to snapshot (json-string)
       - "target": name of destination image file (json-string)
       - "format": format of new image (json-string, optional)
+      - "full": whether the mirror should include all images or
+        just the topmost (json-bool)
       - "mode": how QEMU should look for an existing image file
         (NewImageMode, optional, default "absolute-paths")
 
@@ -1577,6 +1579,8 @@ Arguments:
 - "snapshot-file": name of new image file (json-string)
 - "mode": whether and how QEMU should create the snapshot file
   (NewImageMode, optional, default "absolute-paths")
+- "full": whether the whole disk should be copied to the destination,
+  or only the topmost image (json-bool)
 - "format": format of new image (json-string, optional)
 
 Example:
@@ -1584,6 +1588,7 @@ Example:
 -> { "execute": "blockdev-snapshot", "arguments": { "device": "ide-hd0",
                                                     "snapshot-file":
                                                     "/some/place/my-image",
+                                                    "full": false,
                                                     "format": "qcow2" } }
 <- { "return": {} }
 
@@ -1592,7 +1597,7 @@ EQMP
 #ifdef CONFIG_LIVE_SNAPSHOTS
     {
         .name       = "__com.redhat_drive-mirror",
-        .args_type  = "device:B,target:s,mode:s?,format:s?",
+        .args_type  = "full:-f,device:B,target:s,mode:s?,format:s?",
         .params     = "device destination-image-file [mode] [format]",
         .user_print = monitor_user_noop,
         .mhandler.cmd_new = qmp_marshal_input___com_redhat_drive_mirror,
@@ -1607,7 +1612,7 @@ Start mirroring a block device's writes to a new destination. target
 specifies the target of the new image. If the file exists, or if it is
 a device, it will be used as the new destination for writes. If does not
 exist, a new file will be created. format specifies the format of the
-mirror image, default is qcow2.
+mirror image, default is to probe if mode='existing', else qcow2.
 
 Arguments:
 

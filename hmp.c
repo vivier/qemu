@@ -29,7 +29,7 @@ void hmp_drive_mirror(Monitor *mon, const QDict *qdict)
     const char *filename = qdict_get_try_str(qdict, "target");
     const char *format = qdict_get_try_str(qdict, "format");
     int reuse = qdict_get_try_bool(qdict, "reuse", 0);
-    int no_backing = qdict_get_try_bool(qdict, "no-backing", 0);
+    int full = qdict_get_try_bool(qdict, "full", 0);
     enum NewImageMode mode;
     Error *errp = NULL;
 
@@ -41,13 +41,12 @@ void hmp_drive_mirror(Monitor *mon, const QDict *qdict)
 
     if (reuse) {
         mode = NEW_IMAGE_MODE_EXISTING;
-    } else if (no_backing) {
-        mode = NEW_IMAGE_MODE_NO_BACKING_FILE;
     } else {
         mode = NEW_IMAGE_MODE_ABSOLUTE_PATHS;
     }
 
-    qmp___com_redhat_drive_mirror(device, filename, !!format, format, true, mode, &errp);
+    qmp___com_redhat_drive_mirror(device, filename, !!format, format,
+				  true, full, true, mode, &errp);
     hmp_handle_error(mon, &errp);
 }
 
