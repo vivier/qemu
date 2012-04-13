@@ -330,7 +330,7 @@ install -D -p -m 0644 %{SOURCE11} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/qemu-g
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules
 mkdir -p $RPM_BUILD_ROOT%{_bindir}/
 mkdir -p $RPM_BUILD_ROOT%{_libexecdir}/
-mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{name}
+mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{confname}
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/modprobe.d
 
@@ -341,8 +341,8 @@ install -m 0644 %{SOURCE9} $RPM_BUILD_ROOT%{_sysconfdir}/modprobe.d/blacklist-kv
 
 make DESTDIR="${RPM_BUILD_ROOT}" \
      docdir="%{_docdir}/%{name}-%{version}" \
-     sharedir="%{_datadir}/%{name}" \
-     datadir="%{_datadir}/%{name}" \
+     sharedir="%{_datadir}/%{confname}" \
+     datadir="%{_datadir}/%{confname}" \
      cpuconfdir="%{cpumodeldir}" \
      sysconfdir="%{_sysconfdir}" \
      QEMU_PROG=%{progname} \
@@ -360,22 +360,22 @@ install -D -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} Changelog README TODO CO
 
 install -D -p -m 0644 qemu.sasl $RPM_BUILD_ROOT%{_sysconfdir}/sasl2/qemu-kvm.conf
 
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/pxe*bin
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/vgabios*bin
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/bios.bin
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-ppc
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-sparc32
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-sparc64
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/petalogix-s3adsp1800.dtb
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/video.x
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/bamboo.dtb
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/ppc_rom.bin
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{confname}/pxe*bin
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{confname}/vgabios*bin
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{confname}/bios.bin
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{confname}/openbios-ppc
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{confname}/openbios-sparc32
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{confname}/openbios-sparc64
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{confname}/petalogix-s3adsp1800.dtb
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{confname}/video.x
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{confname}/bamboo.dtb
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{confname}/ppc_rom.bin
 
 # the pxe gpxe images will be symlinks to the images on
 # /usr/share/gpxe, as QEMU doesn't know how to look
 # for other paths, yet.
 pxe_link() {
-  ln -s ../gpxe/$2.rom %{buildroot}%{_datadir}/%{name}/pxe-$1.bin
+  ln -s ../gpxe/$2.rom %{buildroot}%{_datadir}/%{confname}/pxe-$1.bin
 }
 
 pxe_link e1000 e1000-0x100e
@@ -383,13 +383,13 @@ pxe_link ne2k_pci rtl8029
 pxe_link pcnet pcnet32
 pxe_link rtl8139 rtl8139
 pxe_link virtio virtio-net
-ln -s ../vgabios/VGABIOS-lgpl-latest.bin  %{buildroot}/%{_datadir}/%{name}/vgabios.bin
-ln -s ../vgabios/VGABIOS-lgpl-latest.cirrus.bin %{buildroot}/%{_datadir}/%{name}/vgabios-cirrus.bin
-ln -s ../vgabios/VGABIOS-lgpl-latest.qxl.bin %{buildroot}/%{_datadir}/%{name}/vgabios-qxl.bin
-ln -s ../vgabios/VGABIOS-lgpl-latest.stdvga.bin %{buildroot}/%{_datadir}/%{name}/vgabios-stdvga.bin
-ln -s ../vgabios/VGABIOS-lgpl-latest.vmware.bin %{buildroot}/%{_datadir}/%{name}/vgabios-vmware.bin
-ln -s ../seabios/bios.bin %{buildroot}/%{_datadir}/%{name}/bios.bin
-ln -s ../sgabios/sgabios.bin %{buildroot}/%{_datadir}/%{name}/sgabios.bin
+ln -s ../vgabios/VGABIOS-lgpl-latest.bin  %{buildroot}/%{_datadir}/%{confname}/vgabios.bin
+ln -s ../vgabios/VGABIOS-lgpl-latest.cirrus.bin %{buildroot}/%{_datadir}/%{confname}/vgabios-cirrus.bin
+ln -s ../vgabios/VGABIOS-lgpl-latest.qxl.bin %{buildroot}/%{_datadir}/%{confname}/vgabios-qxl.bin
+ln -s ../vgabios/VGABIOS-lgpl-latest.stdvga.bin %{buildroot}/%{_datadir}/%{confname}/vgabios-stdvga.bin
+ln -s ../vgabios/VGABIOS-lgpl-latest.vmware.bin %{buildroot}/%{_datadir}/%{confname}/vgabios-vmware.bin
+ln -s ../seabios/bios.bin %{buildroot}/%{_datadir}/%{confname}/bios.bin
+ln -s ../sgabios/sgabios.bin %{buildroot}/%{_datadir}/%{confname}/sgabios.bin
 
 cd %{buildroot}/usr/share/systemtap/tapset
 
@@ -448,8 +448,8 @@ fi
 %doc %{qemudocdir}/COPYING
 %doc %{qemudocdir}/COPYING.LIB
 %doc %{qemudocdir}/LICENSE
-%dir %{_datadir}/%{name}/
-%{_datadir}/%{name}/keymaps/
+%dir %{_datadir}/%{confname}/
+%{_datadir}/%{confname}/keymaps/
 %{_mandir}/man1/%{progname}.1*
 %config(noreplace) %{_sysconfdir}/sasl2/qemu-kvm.conf
 %{_initddir}/ksm
@@ -457,22 +457,22 @@ fi
 %{_initddir}/ksmtuned
 %{_sbindir}/ksmtuned
 %config(noreplace) %{_sysconfdir}/ksmtuned.conf
-%{_datadir}/%{name}/bios.bin
-%{_datadir}/%{name}/sgabios.bin
-%{_datadir}/%{name}/linuxboot.bin
-%{_datadir}/%{name}/multiboot.bin
-%{_datadir}/%{name}/vapic.bin
-%{_datadir}/%{name}/vgabios.bin
-%{_datadir}/%{name}/vgabios-cirrus.bin
-%{_datadir}/%{name}/vgabios-qxl.bin
-%{_datadir}/%{name}/vgabios-stdvga.bin
-%{_datadir}/%{name}/vgabios-vmware.bin
-%{_datadir}/%{name}/pxe-e1000.bin
-%{_datadir}/%{name}/pxe-virtio.bin
-%{_datadir}/%{name}/pxe-pcnet.bin
-%{_datadir}/%{name}/pxe-rtl8139.bin
-%{_datadir}/%{name}/pxe-ne2k_pci.bin
-%{_datadir}/%{name}/extboot.bin
+%{_datadir}/%{confname}/bios.bin
+%{_datadir}/%{confname}/sgabios.bin
+%{_datadir}/%{confname}/linuxboot.bin
+%{_datadir}/%{confname}/multiboot.bin
+%{_datadir}/%{confname}/vapic.bin
+%{_datadir}/%{confname}/vgabios.bin
+%{_datadir}/%{confname}/vgabios-cirrus.bin
+%{_datadir}/%{confname}/vgabios-qxl.bin
+%{_datadir}/%{confname}/vgabios-stdvga.bin
+%{_datadir}/%{confname}/vgabios-vmware.bin
+%{_datadir}/%{confname}/pxe-e1000.bin
+%{_datadir}/%{confname}/pxe-virtio.bin
+%{_datadir}/%{confname}/pxe-pcnet.bin
+%{_datadir}/%{confname}/pxe-rtl8139.bin
+%{_datadir}/%{confname}/pxe-ne2k_pci.bin
+%{_datadir}/%{confname}/extboot.bin
 %{_datadir}/systemtap/tapset/%{progname}.stp
 %{_libexecdir}/%{progname}
 %{_sysconfdir}/sysconfig/modules/kvm.modules
