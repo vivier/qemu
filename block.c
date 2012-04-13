@@ -3763,7 +3763,15 @@ int block_job_set_speed(BlockJob *job, int64_t value)
 
 void block_job_cancel(BlockJob *job)
 {
+    /* Complete all guest I/O before cancelling the job, so that if the
+     * job chooses to complete itself it will do so with a consistent
+     * view of the disk.
+     */
+    bdrv_drain_all();
     job->cancelled = true;
+    if (job->co && !job->busy) {
+        qemu_coroutine_enter(job->co, NULL);
+    }
 }
 
 bool block_job_is_cancelled(BlockJob *job)
