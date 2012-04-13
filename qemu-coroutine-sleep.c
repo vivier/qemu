@@ -23,7 +23,6 @@ static void co_sleep_cb(void *opaque)
 {
     CoSleepCB *sleep_cb = opaque;
 
-    qemu_free_timer(sleep_cb->ts);
     qemu_coroutine_enter(sleep_cb->co, NULL);
 }
 
@@ -35,4 +34,6 @@ void coroutine_fn co_sleep(QEMUClock *clock, int64_t n)
     sleep_cb.ts = qemu_new_timer(clock, co_sleep_cb, &sleep_cb);
     qemu_mod_timer(sleep_cb.ts, qemu_get_clock(clock) + n);
     qemu_coroutine_yield();
+    qemu_del_timer(sleep_cb.ts);
+    qemu_free_timer(sleep_cb.ts);
 }
