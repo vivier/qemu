@@ -69,7 +69,27 @@ typedef struct BlockJobType {
 struct BlockJob {
     const BlockJobType *job_type;
     BlockDriverState *bs;
+
+    /**
+     * The coroutine that executes the job.  If not NULL, it is
+     * reentered when busy is false and the job is cancelled.
+     */
+    Coroutine *co;
+
+    /**
+     * Set to true if the job should cancel itself.  The flag must
+     * always be tested just before toggling the busy flag from false
+     * to true.  After a job has detected that the cancelled flag is
+     * true, it should not anymore issue any I/O operation to the
+     * block device.
+     */
     bool cancelled;
+
+    /**
+     * Set to false by the job while it is in a quiescent state, where
+     * no I/O is pending and the job goes to sleep on any condition
+     * that is not detected by #qemu_aio_wait, such as a timer.
+     */
     bool busy;
 
     /* These fields are published by the query-block-jobs QMP API */
