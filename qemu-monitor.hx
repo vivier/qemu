@@ -2136,7 +2136,7 @@ Example:
 EQMP
 
     {
-        .name       = "block_stream",
+        .name       = "block-stream",
         .args_type  = "device:B,base:s?",
         .params     = "device [base]",
         .help       = "background copy backing file into a block device",
@@ -2145,7 +2145,7 @@ EQMP
     },
 
 SQMP
-block_stream
+block-stream
 ------------
 
 Copy data from a backing file into a block device.
@@ -2154,7 +2154,7 @@ The block streaming operation is performed in the background until the entire
 backing file has been copied.  This command returns immediately once streaming
 has started.  The status of ongoing block streaming operations can be checked
 with query-block-jobs.  The operation can be stopped before it has completed
-using the block_job_cancel command.
+using the block-job-cancel command.
 
 If a base file is specified then sectors are not copied from that base file and
 its backing chain.  When streaming completes the image file will have the base
@@ -2180,7 +2180,7 @@ If base does not exist, BaseNotFound
 EQMP
 
     {
-        .name       = "block_job_set_speed",
+        .name       = "block-job-set-speed",
         .args_type  = "device:B,value:o",
         .params     = "device value",
         .help       = "set maximum speed for a background block operation",
@@ -2189,13 +2189,13 @@ EQMP
     },
 
 STEXI
-@item block_job_set_stream
-@findex block_job_set_stream
+@item block-job-set-speed
+@findex block-job-set-speed
 Set maximum speed for a background block operation.
 ETEXI
 
 SQMP
-block_job_set_speed
+block-job-set-speed
 -------------------
 
 Set maximum speed for a background block operation.
@@ -2217,12 +2217,12 @@ If streaming is not active on this device, DeviceNotActive
 
 Example:
 
--> { "execute": "block_job_set_speed",
+-> { "execute": "block-job-set-speed",
     "arguments": { "device": "virtio0", "value": 1024 } }
 EQMP
 
     {
-        .name       = "block_job_cancel",
+        .name       = "block-job-cancel",
         .args_type  = "device:B",
         .params     = "device",
         .help       = "stop an active block streaming operation",
@@ -2231,13 +2231,13 @@ EQMP
     },
 
 STEXI
-@item block_job_cancel
-@findex block_job_cancel
+@item block-job-cancel
+@findex block-job-cancel
 Stop an active block streaming operation.
 ETEXI
 
 SQMP
-block_job_cancel
+block-job-cancel
 ----------------
 
 Stop an active block streaming operation.
