@@ -694,6 +694,7 @@ void bdrv_close(BlockDriverState *bs)
         }
         if (bs->backing_hd) {
             bdrv_delete(bs->backing_hd);
+            bs->backing_hd = NULL;
         }
         bs->drv->bdrv_close(bs);
         g_free(bs->opaque);
