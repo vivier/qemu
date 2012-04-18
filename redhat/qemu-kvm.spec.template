@@ -28,6 +28,8 @@
 #   qemu-img and qemu-guest-agent). optional.
 # - addprovides/providesname: add "Provides:" lines to each package, with
 #   the original name without %{pkgsuffix}. optional.
+# - obsoletes_ver: version that packages will obsolete. Used to make the qemu-kvm-rhev
+#   package obsolete old qemu-kvm packages that were present on RHEV
 # - confname: "conf suffix", name for config file directories, data directories, etc.
 # - progname: name of the qemu-kvm binary on /usr/libexec
 
@@ -36,6 +38,8 @@
 # will add Provides: lines to match RHEL package capabilities
 %define addprovides  1
 %define providesname qemu-kvm
+# 0.12.1.2-2.270.el6 is when the -rhev split happened
+%define obsoletes_ver 2:0.12.1.2-2.270.el6
 %define pkgsuffix    -rhev
 %endif
 
@@ -126,6 +130,9 @@ Requires(postun): /sbin/service
 Provides: kvm = 85
 %if 0%{?addprovides}
 Provides: %{providesname} = %{epoch}:%{version}-%{release}
+%if 0%{?obsoletes_ver:1}
+Obsoletes: %{providesname} < %{obsoletes_ver}
+%endif
 %endif
 Obsoletes: kvm < 85
 Requires: vgabios
@@ -171,6 +178,9 @@ Summary: QEMU command line tool for manipulating disk images
 Group: Development/Tools
 %if 0%{?addprovides}
 Provides: qemu-img = %{epoch}:%{version}-%{release}
+%if 0%{?obsoletes_ver:1}
+Obsoletes: qemu-img < %{obsoletes_ver}
+%endif
 %endif
 
 %description -n qemu-img%{?pkgsuffix}
@@ -181,6 +191,9 @@ Summary: KVM debugging and diagnostics tools
 Group: Development/Tools
 %if 0%{?addprovides}
 Provides: %{providesname}-tools = %{epoch}:%{version}-%{release}
+%if 0%{?obsoletes_ver:1}
+Obsoletes: %{providesname}-tools < %{obsoletes_ver}
+%endif
 %endif
 
 %description -n %{pkgname}-tools
@@ -193,6 +206,9 @@ Summary: QEMU Guest Agent
 Group: Development/Tools
 %if 0%{?addprovides}
 Provides: qemu-guest-agent = %{epoch}:%{version}-%{release}
+%if 0%{?obsoletes_ver:1}
+Obsoletes: qemu-guest-agent < %{obsoletes_ver}
+%endif
 %endif
 
 %description -n qemu-guest-agent%{?pkgsuffix}
