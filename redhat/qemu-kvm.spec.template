@@ -125,7 +125,7 @@ Requires(postun): /sbin/service
 
 Provides: kvm = 85
 %if 0%{?addprovides}
-Provides: %{providesname} = %{version}-%{release}
+Provides: %{providesname} = %{epoch}:%{version}-%{release}
 %endif
 Obsoletes: kvm < 85
 Requires: vgabios
@@ -170,7 +170,7 @@ management code, not to run actual virtual machines.
 Summary: QEMU command line tool for manipulating disk images
 Group: Development/Tools
 %if 0%{?addprovides}
-Provides: qemu-img = %{version}-%{release}
+Provides: qemu-img = %{epoch}:%{version}-%{release}
 %endif
 
 %description -n qemu-img%{?pkgsuffix}
@@ -180,7 +180,7 @@ This package provides a command line tool for manipulating disk images
 Summary: KVM debugging and diagnostics tools
 Group: Development/Tools
 %if 0%{?addprovides}
-Provides: %{providesname}-tools = %{version}-%{release}
+Provides: %{providesname}-tools = %{epoch}:%{version}-%{release}
 %endif
 
 %description -n %{pkgname}-tools
@@ -192,7 +192,7 @@ such as kvm_stat.
 Summary: QEMU Guest Agent
 Group: Development/Tools
 %if 0%{?addprovides}
-Provides: qemu-guest-agent = %{version}-%{release}
+Provides: qemu-guest-agent = %{epoch}:%{version}-%{release}
 %endif
 
 %description -n qemu-guest-agent%{?pkgsuffix}
