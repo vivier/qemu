@@ -286,6 +286,7 @@ spice=""
 smartcard=""
 smartcard_nss=""
 live_snapshots="yes"
+block_stream="yes"
 usb_redir=""
 
 # OS specific
@@ -686,9 +687,21 @@ for opt do
   ;;
   --enable-live-snapshots) live_snapshots="yes"
   ;;
+  --disable-block-stream) block_stream="no"
+  ;;
+  --enable-block-stream) block_stream="yes"
+  ;;
   --disable-usb-redir) usb_redir="no"
   ;;
   --enable-usb-redir) usb_redir="yes"
+  ;;
+  --disable-rhev-features)
+       live_snapshots="no";
+       block_stream="no";
+  ;;
+  --enable-rhev-features)
+       live_snapshots="yes";
+       block_stream="yes";
   ;;
   *) echo "ERROR: unknown option $opt"; show_help="yes"
   ;;
@@ -863,8 +876,12 @@ echo "  --disable-smartcard-nss  disable smartcard nss support"
 echo "  --enable-smartcard-nss   enable smartcard nss support"
 echo "  --disable-live-snapshots disable live block device snapshot support"
 echo "  --enable-live-snapshots  enable live block device snapshot support"
+echo "  --disable-block-stream   disable block streaming support"
+echo "  --enable-block-stream    enable block streaming support"
 echo "  --disable-usb-redir      disable usb network redirection support"
 echo "  --enable-usb-redir       enable usb network redirection support"
+echo "  --disable-rhev-features  disable RHEV-only features"
+echo "  --enable-rhev-features   enable RHEV-only features"
 echo ""
 echo "NOTE: The object files are built at the place where configure is launched"
 exit 1
@@ -2271,6 +2288,7 @@ echo "Trace backend     $trace_backend"
 echo "spice support     $spice"
 echo "nss used          $smartcard_nss"
 echo "Live snapshots    $live_snapshots"
+echo "Block streaming   $block_stream"
 echo "xfsctl support    $xfs"
 echo "usb net redir     $usb_redir"
 
@@ -2524,6 +2542,10 @@ fi
 
 if test "$live_snapshots" = "yes" ; then
   echo "CONFIG_LIVE_SNAPSHOTS=y" >> $config_host_mak
+fi
+
+if test "$block_stream" = "yes" ; then
+  echo "CONFIG_BLOCK_STREAM=y" >> $config_host_mak
 fi
 
 if test "$usb_redir" = "yes" ; then

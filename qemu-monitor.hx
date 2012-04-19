@@ -2150,6 +2150,7 @@ Example:
 
 EQMP
 
+#ifdef CONFIG_BLOCK_STREAM
     {
         .name       = "block-stream",
         .args_type  = "device:B,base:s?",
@@ -2158,6 +2159,7 @@ EQMP
         .user_print = monitor_user_noop,
         .mhandler.cmd_new = do_block_stream,
     },
+#endif
 
 SQMP
 block-stream
