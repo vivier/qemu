@@ -38,7 +38,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.0
-Release: 14%{?dist}
+Release: 15%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -104,7 +104,7 @@ Patch25: 0025-rbd-always-set-out-parameter-in-qemu_rbd_snap_list.patch
 Patch26: 0026-e1000-bounds-packet-size-against-buffer-size.patch
 Patch27: virtio-blk_refuse_SG_IO_requests_with_scsi_off.patch
 
-# USB Redirect patches should go upstream soon!
+# USB-redir patches all upstream for 1.1 except for the chardev flowcontrol set
 Patch101: 0101-usb-redir-Clear-iso-irq-error-when-stopping-the-stre.patch
 Patch102: 0102-usb-redir-Dynamically-adjust-iso-buffering-size-base.patch
 Patch103: 0103-usb-redir-Pre-fill-our-isoc-input-buffer-before-send.patch
@@ -151,6 +151,7 @@ Patch143: 0143-usb-redir-Notify-our-peer-when-we-reject-a-device-du.patch
 Patch144: 0144-usb-redir-An-interface-count-of-0-is-a-valid-value.patch
 Patch145: 0145-usb-redir-Reset-device-address-and-speed-on-disconne.patch
 Patch146: 0146-usb-redir-Not-finding-an-async-urb-id-is-not-an-erro.patch
+Patch147: 0147-usb-ehci-Ensure-frindex-writes-leave-a-valid-frindex.patch
 
 # General bug fixes
 Patch201: Fix_save-restore_of_in-kernel_i8259.patch
@@ -159,6 +160,53 @@ Patch202: qemu-virtio-9p-noatime.patch
 # Feature patches, should be in 1.1 before release
 Patch301: enable_architectural_PMU_cpuid_leaf.patch
 Patch302: qemu_virtio-scsi_support.patch
+
+# QXL fixes backports, all are upstream for 1.1
+Patch401: 0401-qxl-Slot-sanity-check-in-qxl_phys2virt-is-off-by-one.patch
+Patch402: 0402-input-send-kbd-mouse-events-only-to-running-guests.patch
+Patch403: 0403-qxl-fix-warnings-on-32bit.patch
+Patch404: 0404-qxl-don-t-render-stuff-when-the-vm-is-stopped.patch
+Patch405: 0405-qxl-set-only-off-screen-surfaces-dirty-instead-of-th.patch
+Patch406: 0406-qxl-make-sure-primary-surface-is-saved-on-migration-.patch
+Patch407: 0407-Add-SPICE-support-to-add_client-monitor-command.patch
+Patch408: 0408-spice-support-ipv6-channel-address-in-monitor-events.patch
+Patch409: 0409-qxl-drop-vram-bar-minimum-size.patch
+Patch410: 0410-qxl-move-ram-size-init-to-new-function.patch
+Patch411: 0411-qxl-add-user-friendly-bar-size-properties.patch
+Patch412: 0412-qxl-fix-spice-sdl-no-cursor-regression.patch
+Patch413: 0413-sdl-remove-NULL-check-g_malloc0-can-t-fail.patch
+Patch414: 0414-qxl-drop-qxl_spice_update_area_async-definition.patch
+Patch415: 0415-qxl-require-spice-0.8.2.patch
+Patch416: 0416-qxl-remove-flipped.patch
+Patch417: 0417-qxl-introduce-QXLCookie.patch
+Patch418: 0418-qxl-make-qxl_render_update-async.patch
+Patch419: 0419-spice-use-error_report-to-report-errors.patch
+Patch420: 0420-Error-out-when-tls-channel-option-is-used-without-TL.patch
+Patch421: 0421-qxl-properly-handle-upright-and-non-shared-surfaces.patch
+Patch422: 0422-spice-set-spice-uuid-and-name.patch
+Patch423: 0423-monitor-fix-client_migrate_info-error-handling.patch
+Patch424: 0424-qxl-init_pipe_signaling-exit-on-failure.patch
+Patch425: 0425-qxl-switch-qxl.c-to-trace-events.patch
+Patch426: 0426-qxl-qxl_render.c-add-trace-events.patch
+Patch427: 0427-hw-qxl.c-Fix-compilation-failures-on-32-bit-hosts.patch
+Patch428: 0428-spice-fix-broken-initialization.patch
+Patch429: 0429-ui-spice-display.c-Fix-compilation-warnings-on-32-bi.patch
+Patch430: 0430-ui-spice-display-use-uintptr_t-when-casting-qxl-phys.patch
+Patch431: 0431-qxl-add-optinal-64bit-vram-bar.patch
+Patch432: 0432-qxl-set-default-values-of-vram-_size_mb-to-1.patch
+Patch433: 0433-qxl-render-fix-broken-vnc-spice-since-commit-f934493.patch
+Patch434: 0434-qxl-don-t-assert-on-guest-create_guest_primary.patch
+
+# Spice volume control backports, all are upstream for 1.1
+Patch501: 0501-audio-add-VOICE_VOLUME-ctl.patch
+Patch502: 0502-audio-don-t-apply-volume-effect-if-backend-has-VOICE.patch
+Patch503: 0503-hw-ac97-remove-USE_MIXER-code.patch
+Patch504: 0504-hw-ac97-the-volume-mask-is-not-only-0x1f.patch
+Patch505: 0505-hw-ac97-add-support-for-volume-control.patch
+Patch506: 0506-audio-spice-add-support-for-volume-control.patch
+Patch507: 0507-Do-not-use-pa_simple-PulseAudio-API.patch
+Patch508: 0508-configure-pa_simple-is-not-needed-anymore.patch
+Patch509: 0509-Allow-controlling-volume-with-PulseAudio-backend.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -478,12 +526,59 @@ such as kvm_stat.
 %patch144 -p1
 %patch145 -p1
 %patch146 -p1
+%patch147 -p1
 
 %patch201 -p1
 %patch202 -p1
 
 %patch301 -p1
 %patch302 -p1
+
+%patch401 -p1
+%patch402 -p1
+%patch403 -p1
+%patch404 -p1
+%patch405 -p1
+%patch406 -p1
+%patch407 -p1
+%patch408 -p1
+%patch409 -p1
+%patch410 -p1
+%patch411 -p1
+%patch412 -p1
+%patch413 -p1
+%patch414 -p1
+%patch415 -p1
+%patch416 -p1
+%patch417 -p1
+%patch418 -p1
+%patch419 -p1
+%patch420 -p1
+%patch421 -p1
+%patch422 -p1
+%patch423 -p1
+%patch424 -p1
+%patch425 -p1
+%patch426 -p1
+%patch427 -p1
+%patch428 -p1
+%patch429 -p1
+%patch430 -p1
+%patch431 -p1
+%patch432 -p1
+%patch433 -p1
+%patch434 -p1
+
+%patch501 -p1
+%patch502 -p1
+%patch503 -p1
+%patch504 -p1
+%patch505 -p1
+%patch506 -p1
+%patch507 -p1
+%patch508 -p1
+%patch509 -p1
+
 
 %build
 # By default we build everything, but allow x86 to build a minimal version
@@ -524,6 +619,7 @@ sed -i.debug 's/"-g $CFLAGS"/"$CFLAGS"/g' configure
             --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
             --extra-cflags="%{optflags} -fPIE -DPIE" \
             --enable-spice \
+            --enable-mixemu \
 %if %{without rbd}
             --disable-rbd \
 %endif
@@ -561,6 +657,7 @@ make clean
     --disable-xen \
 %ifarch %{ix86} x86_64
     --enable-spice \
+    --enable-mixemu \
 %endif
 %if %{without rbd}
     --disable-rbd \
@@ -912,6 +1009,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Apr 19 2012 Hans de Goede <hdegoede@redhat.com> - 2:1.0-15
+- Add a couple of backported QXL/Spice bugfixes
+- Add spice volume control patches
+
 * Fri Apr 6 2012 Paolo Bonzini <pbonzini@redhat.com> - 2:1.0-12
 - Add back PPC and SPARC user emulators
 - Update binfmt rules from upstream
