@@ -8,13 +8,17 @@
 
 # --with/--without variables:
 # - guest_agent: build qemu-guest-agent subpackage
-# - live_snapshots: enable live-snapshots on configure
+# - rhev_features: enable rhev features on configure, such as
+#                  - live snapshots,
+#                  - streaming,
+#                  - mirror,
+#                  - etc.
 
 %if 0%{?rhev}
-%bcond_without  live_snapshots  # enabled
+%bcond_without  rhev_features   # enabled
 %bcond_with     guest_agent     # disabled
 %else
-%bcond_with     live_snapshots  # disabled
+%bcond_with     rhev_features   # disabled
 %bcond_without  guest_agent     # enabled
 %endif
 
@@ -252,10 +256,10 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
 %define fake_machine_arg %{nil}
 %endif
 
-%if %{with live_snapshots}
-%define disable_live_snapshots_arg %{nil}
+%if %{with rhev_features}
+%define disable_rhev_features_arg %{nil}
 %else
-%define disable_live_snapshots_arg --disable-live-snapshots
+%define disable_rhev_features_arg --disable-rhev-features
 %endif
 
 # sdl outputs to alsa or pulseaudio depending on system config, but it's broken (#495964)
@@ -295,7 +299,7 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
             --disable-smartcard-nss \
             --enable-usb-redir \
             %{fake_machine_arg} \
-            %{disable_live_snapshots_arg}
+            %{disable_rhev_features_arg}
 
 echo "config-host.mak contents:"
 echo "==="
