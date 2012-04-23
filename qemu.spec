@@ -38,7 +38,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.0
-Release: 16%{?dist}
+Release: 17%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -757,7 +757,7 @@ ln -s ../sgabios/sgabios.bin %{buildroot}/%{_datadir}/%{name}/sgabios.bin
 mkdir -p $RPM_BUILD_ROOT%{_exec_prefix}/lib/binfmt.d
 for i in dummy \
 %ifnarch %{ix86} x86_64
-    qemu-i386 qemu-i486 \
+    qemu-i386 \
 %endif
 %if %{without x86only}
 %ifnarch alpha
@@ -1009,6 +1009,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Apr 23 2012 Paolo Bonzini <pbonzini@redhat.com> - 2:1.0-17
+- Fix install failure due to set -e (rhbz #815272)
+
 * Mon Apr 23 2012 Paolo Bonzini <pbonzini@redhat.com> - 2:1.0-16
 - Fix kvm.modules to exit successfully on non-KVM capable systems (rhbz #814932)
 
