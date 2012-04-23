@@ -38,7 +38,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.0
-Release: 15%{?dist}
+Release: 16%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1009,6 +1009,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Apr 23 2012 Paolo Bonzini <pbonzini@redhat.com> - 2:1.0-16
+- Fix kvm.modules to exit successfully on non-KVM capable systems (rhbz #814932)
+
 * Thu Apr 19 2012 Hans de Goede <hdegoede@redhat.com> - 2:1.0-15
 - Add a couple of backported QXL/Spice bugfixes
 - Add spice volume control patches
