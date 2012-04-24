@@ -706,7 +706,15 @@ void qmp___com_redhat_drive_reopen(const char *device, const char *new_image_fil
         return;
     }
     if (bs->job) {
-        block_job_cancel_sync(bs->job);
+        int ret = block_job_cancel_sync(bs->job);
+
+        /* Do not complete the switch if the job had an I/O error or
+         * was canceled (for mirroring, the target was not synchronized
+         * completely).
+         */
+        if (ret != 0) {
+            error_set(errp, QERR_DEVICE_IN_USE, device);
+        }
     }
     if (bdrv_in_use(bs)) {
         error_set(errp, QERR_DEVICE_IN_USE, device);
