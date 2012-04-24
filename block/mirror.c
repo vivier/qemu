@@ -166,7 +166,6 @@ static void coroutine_fn mirror_run(void *opaque)
              * used to pivot to the mirroring target.
              */
             synced = true;
-            sector_num = -1;
             s->common.offset = end * BDRV_SECTOR_SIZE;
         }
 
