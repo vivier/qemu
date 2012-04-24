@@ -312,7 +312,7 @@ void block_job_complete(BlockJob *job, int ret);
 int block_job_set_speed(BlockJob *job, int64_t value);
 void block_job_cancel(BlockJob *job);
 bool block_job_is_cancelled(BlockJob *job);
-void block_job_cancel_sync(BlockJob *job);
+int block_job_cancel_sync(BlockJob *job);
 void block_job_sleep(BlockJob *job, QEMUClock *clock, int64_t ms);
 
 int stream_start(BlockDriverState *bs, BlockDriverState *base,
