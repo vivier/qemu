@@ -883,6 +883,9 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
                 format = dev_info->blockdev_snapshot_sync->format;
             }
             mode = dev_info->blockdev_snapshot_sync->mode;
+            if (!format && mode != NEW_IMAGE_MODE_EXISTING) {
+                format = "qcow2";
+            }
             source = states->old_bs;
             full = false;
             break;
@@ -905,9 +908,6 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
             abort();
         }
 
-        if (!format && mode != NEW_IMAGE_MODE_EXISTING) {
-            format = "qcow2";
-        }
         if (format) {
             drv = bdrv_find_format(format);
             if (!drv) {
@@ -932,6 +932,10 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
             goto delete_and_fail;
         }
 
+        if (!format && mode != NEW_IMAGE_MODE_EXISTING) {
+            format = states->old_bs->drv->format_name;
+            drv = states->old_bs->drv;
+        }
         if (dev_info->kind == BLOCKDEV_ACTION_KIND_BLOCKDEV_SNAPSHOT_SYNC) {
             if (!bdrv_is_read_only(states->old_bs)) {
                 if (bdrv_flush(states->old_bs)) {

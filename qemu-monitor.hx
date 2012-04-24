@@ -1621,6 +1621,8 @@ Arguments:
 - "format": format of new image (json-string, optional)
 - "mode": how an image file should be created into the target
   file/device (NewImageMode, optional, default 'absolute-paths')
+- "full": whether the whole disk should be copied to the destination,
+  or only the topmost image (json-bool)
 
 Example:
 
