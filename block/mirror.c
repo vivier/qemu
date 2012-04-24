@@ -156,8 +156,9 @@ static void coroutine_fn mirror_run(void *opaque)
 
     sector_num = -1;
     for (;;) {
+        uint64_t delay_ms;
         int64_t cnt;
-        s->common.busy = true;
+
         if (bdrv_get_dirty_count(bs) == 0) {
             /* Switch out of the streaming phase.  From now on, if the
              * job is cancelled we will actually complete all pending
@@ -197,8 +198,8 @@ static void coroutine_fn mirror_run(void *opaque)
         cnt = bdrv_get_dirty_count(bs);
         if (synced) {
             if (!block_job_is_cancelled(&s->common)) {
-                s->common.busy = false;
-                co_sleep(rt_clock, cnt == 0 ? SLICE_TIME : 0);
+                delay_ms = (cnt == 0 ? SLICE_TIME : 0);
+                block_job_sleep(&s->common, rt_clock, delay_ms);
             } else if (cnt == 0) {
                 /* The two disks are in sync.  Exit and report successful
                  * completion.
@@ -214,8 +215,6 @@ static void coroutine_fn mirror_run(void *opaque)
              * exiting.
              */
         } else {
-            uint64_t delay_ms;
-
             /* Publish progress */
             s->common.offset = end * BDRV_SECTOR_SIZE - cnt * BLOCK_SIZE;
 
@@ -228,8 +227,7 @@ static void coroutine_fn mirror_run(void *opaque)
             /* Note that even when no rate limit is applied we need to yield
              * with no pending I/O here so that qemu_aio_flush() returns.
              */
-            s->common.busy = false;
-            co_sleep(rt_clock, delay_ms);
+            block_job_sleep(&s->common, rt_clock, delay_ms);
             if (block_job_is_cancelled(&s->common)) {
                 break;
             }
