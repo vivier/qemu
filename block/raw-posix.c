@@ -50,8 +50,10 @@
 #endif
 #ifdef __linux__
 #include <sys/ioctl.h>
+#include <sys/vfs.h>
 #include <linux/cdrom.h>
 #include <linux/fd.h>
+#include <linux/magic.h>
 #endif
 #if defined (__FreeBSD__) || defined(__FreeBSD_kernel__)
 #include <signal.h>
@@ -125,6 +127,7 @@ typedef struct BDRVRawState {
 #endif
     uint8_t *aligned_buf;
     unsigned aligned_buf_size;
+    bool force_linearize;
 #ifdef CONFIG_XFS
     bool is_xfs : 1;
 #endif
@@ -135,6 +138,38 @@ static int64_t raw_getlength(BlockDriverState *bs);
 
 #if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
 static int cdrom_reopen(BlockDriverState *bs);
+#endif
+
+#if defined(__linux__)
+static bool is_vectored_io_slow(int fd, int bdrv_flags)
+{
+    struct statfs stfs;
+    int ret;
+    char *env_flag = getenv("QEMU_FORCE_LINEARIZE");
+
+    if (env_flag && strcasecmp(env_flag, "off") == 0) {
+        return false;
+    }
+
+    do {
+        ret = fstatfs(fd, &stfs);
+    } while (ret != 0 && errno == EINTR);
+
+    /*
+     * Linux NFS client splits vectored direct I/O requests into separate NFS
+     * requests so it is faster to submit a single buffer instead.
+     */
+    if (!ret && stfs.f_type == NFS_SUPER_MAGIC &&
+        (bdrv_flags & BDRV_O_NOCACHE)) {
+        return true;
+    }
+    return false;
+}
+#else /* !defined(__linux__) */
+static bool is_vectored_io_slow(int fd, int bdrv_flags)
+{
+    return false;
+}
 #endif
 
 static int raw_open_common(BlockDriverState *bs, const char *filename,
@@ -169,6 +204,7 @@ static int raw_open_common(BlockDriverState *bs, const char *filename,
     }
     s->fd = fd;
     s->aligned_buf = NULL;
+    s->force_linearize = is_vectored_io_slow(fd, bdrv_flags);
 
     if ((bdrv_flags & BDRV_O_NOCACHE)) {
         /*
@@ -274,20 +310,27 @@ static BlockDriverAIOCB *raw_aio_submit(BlockDriverState *bs,
         return NULL;
 
     /*
+     * Check if buffers need to be copied into a single linear buffer.
+     */
+    if (s->force_linearize && qiov->niov > 1) {
+        type |= QEMU_AIO_MISALIGNED;
+    }
+
+    /*
      * If O_DIRECT is used the buffer needs to be aligned on a sector
      * boundary.  Check if this is the case or telll the low-level
      * driver that it needs to copy the buffer.
      */
-    if (s->aligned_buf) {
-        if (!qiov_is_aligned(bs, qiov)) {
-            type |= QEMU_AIO_MISALIGNED;
-#ifdef CONFIG_LINUX_AIO
-        } else if (s->use_aio) {
-            return laio_submit(bs, s->aio_ctx, s->fd, sector_num, qiov,
-                               nb_sectors, cb, opaque, type);
-#endif
-        }
+    if (s->aligned_buf && !qiov_is_aligned(bs, qiov)) {
+        type |= QEMU_AIO_MISALIGNED;
     }
+
+#ifdef CONFIG_LINUX_AIO
+    if (s->use_aio && (type & QEMU_AIO_MISALIGNED) == 0) {
+        return laio_submit(bs, s->aio_ctx, s->fd, sector_num, qiov,
+                           nb_sectors, cb, opaque, type);
+    }
+#endif
 
     return paio_submit(bs, s->fd, sector_num, qiov, nb_sectors,
                        cb, opaque, type);
