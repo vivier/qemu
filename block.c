@@ -798,6 +798,7 @@ void bdrv_append(BlockDriverState *bs_new, BlockDriverState *bs_top)
     /* dirty bitmap */
     tmp.dirty_bitmap      = bs_top->dirty_bitmap;
     tmp.dirty_count       = bs_top->dirty_count;
+    assert(bs_new->dirty_bitmap == NULL);
 
     /* job */
     tmp.in_use            = bs_top->in_use;
