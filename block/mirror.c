@@ -169,17 +169,6 @@ static void coroutine_fn mirror_run(void *opaque)
             s->common.offset = end * BDRV_SECTOR_SIZE;
         }
 
-        if (synced && block_job_is_cancelled(&s->common)) {
-            /* The dirty bitmap is not updated while operations are pending.
-             * If we're about to exit, wait for pending operations or we may
-             * exit while the source has dirty data to copy!
-             */
-            while (bdrv_get_dirty_count(bs) == 0 &&
-                   !QLIST_EMPTY(&bs->tracked_requests)) {
-                qemu_aio_wait();
-            }
-        }
-
         if (bdrv_get_dirty_count(bs) != 0) {
             int nb_sectors;
             sector_num = bdrv_get_next_dirty(bs, sector_num);
@@ -192,16 +181,29 @@ static void coroutine_fn mirror_run(void *opaque)
             }
         }
 
+        if (synced && block_job_is_cancelled(&s->common)) {
+            /* The dirty bitmap is not updated while operations are pending.
+             * If we're about to exit, wait for pending operations before
+             * calling bdrv_get_dirty_count(bs), or we may exit while the
+             * source has dirty data to copy!
+             *
+             * Note that I/O can be submitted by the guest while
+             * mirror_populate runs.
+             */
+            bdrv_drain_all();
+        }
+
         ret = 0;
         cnt = bdrv_get_dirty_count(bs);
         if (synced) {
             if (!block_job_is_cancelled(&s->common)) {
                 s->common.busy = false;
                 co_sleep(rt_clock, cnt == 0 ? SLICE_TIME : 0);
-            } else if (cnt == 0 && QLIST_EMPTY(&bs->tracked_requests)) {
+            } else if (cnt == 0) {
                 /* The two disks are in sync.  Exit and report successful
-                 * successful completion.
+                 * completion.
                  */
+                assert(QLIST_EMPTY(&bs->tracked_requests));
                 s->common.cancelled = false;
                 break;
             }
