@@ -131,7 +131,8 @@
 # @new-image-file: the target of the new image. If the file doesn't exists the
 #                  command will fail.
 #
-# @format: #optional the format of the new image, default is 'qcow2'.
+# @format: #optional the format of the new image, default is to probe the
+#          image file
 #
 # @witness: A file descriptor name that was passed via getfd.  QEMU will write
 #   a single byte to this file descriptor before completing the command
