@@ -3749,6 +3749,7 @@ void *block_job_create(const BlockJobType *job_type, BlockDriverState *bs,
     job->bs            = bs;
     job->cb            = cb;
     job->opaque        = opaque;
+    job->busy          = true;
     bs->job = job;
     return job;
 }
@@ -3799,5 +3800,15 @@ void block_job_cancel_sync(BlockJob *job)
     block_job_cancel(job);
     while (bs->job != NULL && bs->job->busy) {
         qemu_aio_wait();
+    }
+}
+
+void block_job_sleep(BlockJob *job, QEMUClock *clock, int64_t ticks)
+{
+    /* Check cancellation *before* setting busy = false, too!  */
+    if (!block_job_is_cancelled(job)) {
+        job->busy = false;
+        co_sleep(clock, ticks);
+        job->busy = true;
     }
 }
