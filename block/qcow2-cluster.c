@@ -711,12 +711,12 @@ int qcow2_alloc_cluster_offset(BlockDriverState *bs, uint64_t offset,
     unsigned int nb_clusters, i = 0;
     QCowL2Meta *old_alloc;
 
+again:
     ret = get_cluster_table(bs, offset, &l2_table, &l2_offset, &l2_index);
     if (ret < 0) {
         return ret;
     }
 
-again:
     nb_clusters = size_to_clusters(s, n_end << 9);
 
     nb_clusters = MIN(nb_clusters, s->l2_size - l2_index);
@@ -732,6 +732,11 @@ again:
         cluster_offset &= ~QCOW_OFLAG_COPIED;
         m->nb_clusters = 0;
         m->depends_on = NULL;
+
+        ret = qcow2_cache_put(bs, s->l2_table_cache, (void**) &l2_table);
+        if (ret < 0) {
+            return ret;
+        }
 
         goto out;
     }
@@ -764,6 +769,11 @@ again:
     }
     assert(i <= nb_clusters);
     nb_clusters = i;
+
+    ret = qcow2_cache_put(bs, s->l2_table_cache, (void**) &l2_table);
+    if (ret < 0) {
+        return ret;
+    }
 
     /*
      * Check if there already is an AIO write request in flight which allocates
@@ -818,11 +828,6 @@ again:
     m->nb_clusters = nb_clusters;
 
 out:
-    ret = qcow2_cache_put(bs, s->l2_table_cache, (void**) &l2_table);
-    if (ret < 0) {
-        goto fail_put;
-    }
-
     m->nb_available = MIN(nb_clusters << (s->cluster_bits - 9), n_end);
     m->cluster_offset = cluster_offset;
 
@@ -831,8 +836,6 @@ out:
     return 0;
 
 fail:
-    qcow2_cache_put(bs, s->l2_table_cache, (void**) &l2_table);
-fail_put:
     QLIST_REMOVE(m, next_in_flight);
     return ret;
 }
