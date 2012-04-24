@@ -959,11 +959,6 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
             goto delete_and_fail;
         }
 
-        if (!bdrv_is_inserted(states->old_bs)) {
-            error_set(errp, QERR_DEVICE_HAS_NO_MEDIUM, device);
-            goto delete_and_fail;
-        }
-
         if (full && mode != NEW_IMAGE_MODE_EXISTING) {
             assert(format && drv);
             bdrv_get_geometry(states->old_bs, &size);
