@@ -163,7 +163,8 @@
 #          is a device, the existing file/device will be used as the new
 #          destination.  If it does not exist, a new file will be created.
 #
-# @format: #optional the format of the new destination, default is 'qcow2'.
+# @format: #optional the format of the new destination, default is the
+#          format of the source
 #
 # @mode: #optional whether and how QEMU should create a new image, default is
 # 'absolute-paths'.
