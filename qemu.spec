@@ -299,9 +299,7 @@ Group: Development/Tools
 # update qemu-img without updating librdb you get:
 # qemu-img: undefined symbol: rbd_flush
 # ** NB ** This can be removed after Fedora 17 is released.
-%if !0%{?rhel}
 Requires: ceph >= 0.37-2
-%endif
 
 %description img
 This package provides a command line tool for manipulating disk images
@@ -665,10 +663,6 @@ make clean
     --disable-rbd \
 %endif
 %if %{without fdt}
-    --disable-fdt \
-%endif
-%if 0%{?rhel}
-    --disable-rbd \
     --disable-fdt \
 %endif
     --enable-trace-backend=dtrace \
