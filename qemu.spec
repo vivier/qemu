@@ -1,20 +1,53 @@
+# build-time settings that support --with or --without:
+#
+# = x86only =
+# Build only x86 Qemu targets.
+#
+# Disabled by default.
+#
+# = exclusive_x86_64 =
+# ExclusiveArch: x86_64
+#
+# Disabled by default, except on RHEL.
+#
+# = rbd =
+# Enable rbd support.
+#
+# Enable by default, except on RHEL.
+#
+# = fdt =
+# Enable fdt support.
+#
+# Enabled by default, except on RHEL.
+
+%if 0%{?rhel}
+# RHEL-specific defaults:
+%bcond_with    x86only          # disabled
+%bcond_without exclusive_x86_64 # enabled
+%bcond_with    rbd              # disabled
+%bcond_with    fdt              # disabled
+%else
+# General defaults:
+%bcond_with    x86only          # disabled
+%bcond_with    exclusive_x86_64 # disabled
+%bcond_without rbd              # enabled
+%bcond_without fdt              # enabled
+%endif
+
+
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.0
-Release: 9.3%{?dist}
+Release: 17%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
 Group: Development/Tools
 URL: http://www.qemu.org/
 # RHEL will build Qemu only on x86_64:
-%if 0%{?rhel}
+%if %{with exclusive_x86_64}
 ExclusiveArch: x86_64
 %endif
-
-# Allow one off builds to be minimalized without foreign
-# architecture support (--with x86only):
-%define with_x86only  %{?_with_x86only:     1} %{?!_with_x86only:     0}
 
 # OOM killer breaks builds with parallel make on s390(x)
 %ifarch s390 s390x
@@ -71,7 +104,7 @@ Patch25: 0025-rbd-always-set-out-parameter-in-qemu_rbd_snap_list.patch
 Patch26: 0026-e1000-bounds-packet-size-against-buffer-size.patch
 Patch27: virtio-blk_refuse_SG_IO_requests_with_scsi_off.patch
 
-# USB Redirect patches should go upstream soon!
+# USB-redir patches all upstream for 1.1 except for the chardev flowcontrol set
 Patch101: 0101-usb-redir-Clear-iso-irq-error-when-stopping-the-stre.patch
 Patch102: 0102-usb-redir-Dynamically-adjust-iso-buffering-size-base.patch
 Patch103: 0103-usb-redir-Pre-fill-our-isoc-input-buffer-before-send.patch
@@ -112,6 +145,13 @@ Patch137: 0137-usb-return-BABBLE-rather-then-NAK-when-we-receive-to.patch
 Patch138: 0138-usb-add-USB_RET_IOERROR.patch
 Patch139: 0139-usb-ehci-fix-reset.patch
 Patch140: 0140-usb-ehci-sanity-check-iso-xfers.patch
+Patch141: 0141-usb-ehci-frindex-always-is-a-14-bits-counter.patch
+Patch142: 0142-usb-ehci-Drop-unused-sofv-value.patch
+Patch143: 0143-usb-redir-Notify-our-peer-when-we-reject-a-device-du.patch
+Patch144: 0144-usb-redir-An-interface-count-of-0-is-a-valid-value.patch
+Patch145: 0145-usb-redir-Reset-device-address-and-speed-on-disconne.patch
+Patch146: 0146-usb-redir-Not-finding-an-async-urb-id-is-not-an-erro.patch
+Patch147: 0147-usb-ehci-Ensure-frindex-writes-leave-a-valid-frindex.patch
 
 # General bug fixes
 Patch201: Fix_save-restore_of_in-kernel_i8259.patch
@@ -120,6 +160,53 @@ Patch202: qemu-virtio-9p-noatime.patch
 # Feature patches, should be in 1.1 before release
 Patch301: enable_architectural_PMU_cpuid_leaf.patch
 Patch302: qemu_virtio-scsi_support.patch
+
+# QXL fixes backports, all are upstream for 1.1
+Patch401: 0401-qxl-Slot-sanity-check-in-qxl_phys2virt-is-off-by-one.patch
+Patch402: 0402-input-send-kbd-mouse-events-only-to-running-guests.patch
+Patch403: 0403-qxl-fix-warnings-on-32bit.patch
+Patch404: 0404-qxl-don-t-render-stuff-when-the-vm-is-stopped.patch
+Patch405: 0405-qxl-set-only-off-screen-surfaces-dirty-instead-of-th.patch
+Patch406: 0406-qxl-make-sure-primary-surface-is-saved-on-migration-.patch
+Patch407: 0407-Add-SPICE-support-to-add_client-monitor-command.patch
+Patch408: 0408-spice-support-ipv6-channel-address-in-monitor-events.patch
+Patch409: 0409-qxl-drop-vram-bar-minimum-size.patch
+Patch410: 0410-qxl-move-ram-size-init-to-new-function.patch
+Patch411: 0411-qxl-add-user-friendly-bar-size-properties.patch
+Patch412: 0412-qxl-fix-spice-sdl-no-cursor-regression.patch
+Patch413: 0413-sdl-remove-NULL-check-g_malloc0-can-t-fail.patch
+Patch414: 0414-qxl-drop-qxl_spice_update_area_async-definition.patch
+Patch415: 0415-qxl-require-spice-0.8.2.patch
+Patch416: 0416-qxl-remove-flipped.patch
+Patch417: 0417-qxl-introduce-QXLCookie.patch
+Patch418: 0418-qxl-make-qxl_render_update-async.patch
+Patch419: 0419-spice-use-error_report-to-report-errors.patch
+Patch420: 0420-Error-out-when-tls-channel-option-is-used-without-TL.patch
+Patch421: 0421-qxl-properly-handle-upright-and-non-shared-surfaces.patch
+Patch422: 0422-spice-set-spice-uuid-and-name.patch
+Patch423: 0423-monitor-fix-client_migrate_info-error-handling.patch
+Patch424: 0424-qxl-init_pipe_signaling-exit-on-failure.patch
+Patch425: 0425-qxl-switch-qxl.c-to-trace-events.patch
+Patch426: 0426-qxl-qxl_render.c-add-trace-events.patch
+Patch427: 0427-hw-qxl.c-Fix-compilation-failures-on-32-bit-hosts.patch
+Patch428: 0428-spice-fix-broken-initialization.patch
+Patch429: 0429-ui-spice-display.c-Fix-compilation-warnings-on-32-bi.patch
+Patch430: 0430-ui-spice-display-use-uintptr_t-when-casting-qxl-phys.patch
+Patch431: 0431-qxl-add-optinal-64bit-vram-bar.patch
+Patch432: 0432-qxl-set-default-values-of-vram-_size_mb-to-1.patch
+Patch433: 0433-qxl-render-fix-broken-vnc-spice-since-commit-f934493.patch
+Patch434: 0434-qxl-don-t-assert-on-guest-create_guest_primary.patch
+
+# Spice volume control backports, all are upstream for 1.1
+Patch501: 0501-audio-add-VOICE_VOLUME-ctl.patch
+Patch502: 0502-audio-don-t-apply-volume-effect-if-backend-has-VOICE.patch
+Patch503: 0503-hw-ac97-remove-USE_MIXER-code.patch
+Patch504: 0504-hw-ac97-the-volume-mask-is-not-only-0x1f.patch
+Patch505: 0505-hw-ac97-add-support-for-volume-control.patch
+Patch506: 0506-audio-spice-add-support-for-volume-control.patch
+Patch507: 0507-Do-not-use-pa_simple-PulseAudio-API.patch
+Patch508: 0508-configure-pa_simple-is-not-needed-anymore.patch
+Patch509: 0509-Allow-controlling-volume-with-PulseAudio-backend.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
@@ -137,7 +224,7 @@ BuildRequires: spice-server-devel >= 0.9.0
 %endif
 # For network block driver
 BuildRequires: libcurl-devel
-%if !0%{?rhel}
+%if %{with rbd}
 # For rbd block driver
 BuildRequires: ceph-devel
 %endif
@@ -158,19 +245,21 @@ BuildRequires: libuuid-devel
 BuildRequires: bluez-libs-devel
 # For Braille device support
 BuildRequires: brlapi-devel
-%if !0%{?rhel}
+%if %{with fdt}
 # For FDT device tree support
 BuildRequires: libfdt-devel
 %endif
 # For test suite
 BuildRequires: check-devel
 Requires: %{name}-user = %{epoch}:%{version}-%{release}
+%if %{without x86only}
 Requires: %{name}-system-x86 = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-arm = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-cris = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-sh4 = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-m68k = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-mips = %{epoch}:%{version}-%{release}
+%endif
 Requires: %{name}-img = %{epoch}:%{version}-%{release}
 
 Obsoletes: %{name}-system-ppc
@@ -291,11 +380,7 @@ Obsoletes: kvm < 85
 Requires: vgabios >= 0.6c-2
 Requires: seabios-bin >= 0.6.0-2
 Requires: sgabios-bin
-Requires: /usr/share/gpxe/8086100e.rom
-Requires: /usr/share/gpxe/rtl8029.rom
-Requires: /usr/share/gpxe/pcnet32.rom
-Requires: /usr/share/gpxe/rtl8139.rom
-Requires: /usr/share/gpxe/virtio-net.rom
+Requires: ipxe-roms-qemu
 
 %description system-x86
 QEMU is a generic and open source processor emulator which achieves a good
@@ -305,7 +390,7 @@ This package provides the system emulator for x86. When being run in a x86
 machine that supports it, this package also provides the KVM virtualization
 platform.
 
-%if !%{with_x86only}
+%if %{without x86only}
 %package system-arm
 Summary: QEMU system emulator for arm
 Group: Development/Tools
@@ -437,6 +522,13 @@ such as kvm_stat.
 %patch138 -p1
 %patch139 -p1
 %patch140 -p1
+%patch141 -p1
+%patch142 -p1
+%patch143 -p1
+%patch144 -p1
+%patch145 -p1
+%patch146 -p1
+%patch147 -p1
 
 %patch201 -p1
 %patch202 -p1
@@ -444,10 +536,56 @@ such as kvm_stat.
 %patch301 -p1
 %patch302 -p1
 
+%patch401 -p1
+%patch402 -p1
+%patch403 -p1
+%patch404 -p1
+%patch405 -p1
+%patch406 -p1
+%patch407 -p1
+%patch408 -p1
+%patch409 -p1
+%patch410 -p1
+%patch411 -p1
+%patch412 -p1
+%patch413 -p1
+%patch414 -p1
+%patch415 -p1
+%patch416 -p1
+%patch417 -p1
+%patch418 -p1
+%patch419 -p1
+%patch420 -p1
+%patch421 -p1
+%patch422 -p1
+%patch423 -p1
+%patch424 -p1
+%patch425 -p1
+%patch426 -p1
+%patch427 -p1
+%patch428 -p1
+%patch429 -p1
+%patch430 -p1
+%patch431 -p1
+%patch432 -p1
+%patch433 -p1
+%patch434 -p1
+
+%patch501 -p1
+%patch502 -p1
+%patch503 -p1
+%patch504 -p1
+%patch505 -p1
+%patch506 -p1
+%patch507 -p1
+%patch508 -p1
+%patch509 -p1
+
+
 %build
 # By default we build everything, but allow x86 to build a minimal version
 # with only similar arch target support
-%if %{with_x86only}
+%if %{with x86only}
     buildarch="i386-softmmu x86_64-softmmu i386-linux-user x86_64-linux-user"
 %else
     buildarch="i386-softmmu x86_64-softmmu arm-softmmu cris-softmmu m68k-softmmu \
@@ -455,7 +593,9 @@ such as kvm_stat.
            sh4-softmmu sh4eb-softmmu \
            i386-linux-user x86_64-linux-user alpha-linux-user arm-linux-user \
            armeb-linux-user cris-linux-user m68k-linux-user mips-linux-user \
-           mipsel-linux-user sh4-linux-user sh4eb-linux-user" \
+           mipsel-linux-user ppc-linux-user ppc64-linux-user ppc64abi32-linux-user \
+           sh4-linux-user sh4eb-linux-user sparc-linux-user sparc64-linux-user \
+           sparc32plus-linux-user" \
 %endif
 
 
@@ -481,8 +621,11 @@ sed -i.debug 's/"-g $CFLAGS"/"$CFLAGS"/g' configure
             --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
             --extra-cflags="%{optflags} -fPIE -DPIE" \
             --enable-spice \
-%if 0%{?rhel}
+            --enable-mixemu \
+%if %{without rbd}
             --disable-rbd \
+%endif
+%if %{without fdt}
             --disable-fdt \
 %endif
             --enable-trace-backend=dtrace \
@@ -516,6 +659,13 @@ make clean
     --disable-xen \
 %ifarch %{ix86} x86_64
     --enable-spice \
+    --enable-mixemu \
+%endif
+%if %{without rbd}
+    --disable-rbd \
+%endif
+%if %{without fdt}
+    --disable-fdt \
 %endif
 %if 0%{?rhel}
     --disable-rbd \
@@ -591,17 +741,17 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/sgabios.bin
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/palcode-clipper
 
 # the pxe gpxe images will be symlinks to the images on
-# /usr/share/gpxe, as QEMU doesn't know how to look
+# /usr/share/ipxe, as QEMU doesn't know how to look
 # for other paths, yet.
 pxe_link() {
-  ln -s ../gpxe/$2.rom %{buildroot}%{_datadir}/%{name}/pxe-$1.rom
+  ln -s ../ipxe/$2.rom %{buildroot}%{_datadir}/%{name}/pxe-$1.rom
 }
 
 pxe_link e1000 8086100e
-pxe_link ne2k_pci rtl8029
-pxe_link pcnet pcnet32
-pxe_link rtl8139 rtl8139
-pxe_link virtio virtio-net
+pxe_link ne2k_pci 10ec8029
+pxe_link pcnet 10222000
+pxe_link rtl8139 10ec8139
+pxe_link virtio 1af41000
 ln -s ../vgabios/VGABIOS-lgpl-latest.bin  %{buildroot}/%{_datadir}/%{name}/vgabios.bin
 ln -s ../vgabios/VGABIOS-lgpl-latest.cirrus.bin %{buildroot}/%{_datadir}/%{name}/vgabios-cirrus.bin
 ln -s ../vgabios/VGABIOS-lgpl-latest.qxl.bin %{buildroot}/%{_datadir}/%{name}/vgabios-qxl.bin
@@ -615,9 +765,22 @@ for i in dummy \
 %ifnarch %{ix86} x86_64
     qemu-i386 \
 %endif
-%if !%{with_x86only}
+%if %{without x86only}
+%ifnarch alpha
+    qemu-alpha \
+%endif
 %ifnarch arm
     qemu-arm \
+%endif
+    qemu-armeb \
+%ifnarch mips
+    qemu-mips qemu-mipsn32 qemu-mips64 \
+%endif
+%ifnarch mipsel
+    qemu-mipsel qemu-mipsn32el qemu-mips64el \
+%endif
+%ifnarch m68k
+    qemu-m68k \
 %endif
 %ifnarch ppc ppc64
     qemu-ppc \
@@ -625,9 +788,13 @@ for i in dummy \
 %ifnarch sparc sparc64
     qemu-sparc \
 %endif
+%ifnarch s390 s390x
+    qemu-s390x \
+%endif
 %ifnarch sh4
     qemu-sh4 \
 %endif
+    qemu-sh4eb \
 %endif
 ; do
   test $i = dummy && continue
@@ -725,10 +892,12 @@ fi
 
 %files user
 %defattr(-,root,root)
+%if %{without x86only}
 %{_exec_prefix}/lib/binfmt.d/qemu-*.conf
+%endif
 %{_bindir}/qemu-i386
 %{_bindir}/qemu-x86_64
-%if !%{with_x86only}
+%if %{without x86only}
 %{_bindir}/qemu-alpha
 %{_bindir}/qemu-arm
 %{_bindir}/qemu-armeb
@@ -736,12 +905,18 @@ fi
 %{_bindir}/qemu-m68k
 %{_bindir}/qemu-mips
 %{_bindir}/qemu-mipsel
+%{_bindir}/qemu-ppc
+%{_bindir}/qemu-ppc64
+%{_bindir}/qemu-ppc64abi32
 %{_bindir}/qemu-sh4
 %{_bindir}/qemu-sh4eb
+%{_bindir}/qemu-sparc
+%{_bindir}/qemu-sparc32plus
+%{_bindir}/qemu-sparc64
 %endif
 %{_datadir}/systemtap/tapset/qemu-i386.stp
 %{_datadir}/systemtap/tapset/qemu-x86_64.stp
-%if !%{with_x86only}
+%if %{without x86only}
 %{_datadir}/systemtap/tapset/qemu-alpha.stp
 %{_datadir}/systemtap/tapset/qemu-arm.stp
 %{_datadir}/systemtap/tapset/qemu-armeb.stp
@@ -749,8 +924,14 @@ fi
 %{_datadir}/systemtap/tapset/qemu-m68k.stp
 %{_datadir}/systemtap/tapset/qemu-mips.stp
 %{_datadir}/systemtap/tapset/qemu-mipsel.stp
+%{_datadir}/systemtap/tapset/qemu-ppc.stp
+%{_datadir}/systemtap/tapset/qemu-ppc64.stp
+%{_datadir}/systemtap/tapset/qemu-ppc64abi32.stp
 %{_datadir}/systemtap/tapset/qemu-sh4.stp
 %{_datadir}/systemtap/tapset/qemu-sh4eb.stp
+%{_datadir}/systemtap/tapset/qemu-sparc.stp
+%{_datadir}/systemtap/tapset/qemu-sparc32plus.stp
+%{_datadir}/systemtap/tapset/qemu-sparc64.stp
 %endif
 
 %files system-x86
@@ -790,7 +971,7 @@ fi
 %{_bindir}/kvm_stat
 %endif
 
-%if !%{with_x86only}
+%if %{without x86only}
 
 %files system-arm
 %defattr(-,root,root)
@@ -834,14 +1015,31 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
-* Wed Apr 11 2012 Daniel Mach <dmach@redhat.com> - 2:1.0-9.3
-- Disable ceph dependency on RHEL
+* Mon Apr 23 2012 Paolo Bonzini <pbonzini@redhat.com> - 2:1.0-17
+- Fix install failure due to set -e (rhbz #815272)
 
-* Mon Mar 26 2012 Eduardo Habkost <ehabkost@redhat.com> - 2:1.0-9.2.el7
-- Don't enable FDT support on RHEL
+* Mon Apr 23 2012 Paolo Bonzini <pbonzini@redhat.com> - 2:1.0-16
+- Fix kvm.modules to exit successfully on non-KVM capable systems (rhbz #814932)
 
-* Fri Mar 23 2012 Eduardo Habkost <ehabkost@redhat.com> - 2:1.0-9.1.el7
-- Redo RHEL-specific build settings
+* Thu Apr 19 2012 Hans de Goede <hdegoede@redhat.com> - 2:1.0-15
+- Add a couple of backported QXL/Spice bugfixes
+- Add spice volume control patches
+
+* Fri Apr 6 2012 Paolo Bonzini <pbonzini@redhat.com> - 2:1.0-12
+- Add back PPC and SPARC user emulators
+- Update binfmt rules from upstream
+
+* Mon Apr  2 2012 Hans de Goede <hdegoede@redhat.com> - 2:1.0-11
+- Some more USB bugfixes from upstream
+
+* Thu Mar 29 2012 Eduardo Habkost <ehabkost@redhat.com> - 2:1.0-12
+- Fix ExclusiveArch mistake that disabled all non-x86_64 builds on Fedora
+
+* Wed Mar 28 2012 Eduardo Habkost <ehabkost@redhat.com> - 2:1.0-11
+- Use --with variables for build-time settings
+
+* Wed Mar 28 2012 Daniel P. Berrange <berrange@redhat.com> - 2:1.0-10
+- Switch to use iPXE for netboot ROMs
 
 * Thu Mar 22 2012 Daniel P. Berrange <berrange@redhat.com> - 2:1.0-9
 - Remove O_NOATIME for 9p filesystems

@@ -1,10 +1,14 @@
 #!/bin/sh
 
-case "$(</proc/cpuinfo)" in
-    *vmx*) vmx=1 ;;
-    *svm*) svm=1 ;;
-esac
+grep vmx /proc/cpuinfo >/dev/null 2>&1 && vmx=1
+grep svm /proc/cpuinfo >/dev/null 2>&1 && svm=1
 
-[ "$vmx" ] && modprobe -b kvm-intel >/dev/null 2>&1
-[ "$svm" ] && modprobe -b kvm-amd >/dev/null 2>&1
-[ "$vmx" -o "$svm" ] && modprobe -b vhost-net >/dev/null 2>&1
+if [ "$vmx" ] || [ "$svm" ]; then
+  [ "$vmx" ] && modprobe -b kvm-intel >/dev/null 2>&1
+  [ "$svm" ] && modprobe -b kvm-amd >/dev/null 2>&1
+
+  # no reason why vhost should not work with TCG, but currently it does not
+  modprobe -b vhost-net >/dev/null 2>&1
+else
+  exit 0
+fi
