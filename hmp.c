@@ -30,6 +30,7 @@ void hmp_drive_mirror(Monitor *mon, const QDict *qdict)
     const char *format = qdict_get_try_str(qdict, "format");
     int reuse = qdict_get_try_bool(qdict, "reuse", 0);
     int full = qdict_get_try_bool(qdict, "full", 0);
+    int speed = qdict_get_try_int(qdict, "speed", 0);
     enum NewImageMode mode;
     Error *errp = NULL;
 
@@ -46,7 +47,7 @@ void hmp_drive_mirror(Monitor *mon, const QDict *qdict)
     }
 
     qmp___com_redhat_drive_mirror(device, filename, !!format, format,
-				  true, full, true, mode, &errp);
+				  qdict_haskey(qdict, "speed"), speed, true, full, true, mode, &errp);
     hmp_handle_error(mon, &errp);
 }
 
