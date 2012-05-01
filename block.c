@@ -3765,16 +3765,16 @@ void block_job_complete(BlockJob *job, int ret)
     bdrv_set_in_use(bs, 0);
 }
 
-int block_job_set_speed(BlockJob *job, int64_t value)
+int block_job_set_speed(BlockJob *job, int64_t speed)
 {
     int rc;
 
     if (!job->job_type->set_speed) {
         return -ENOTSUP;
     }
-    rc = job->job_type->set_speed(job, value);
+    rc = job->job_type->set_speed(job, speed);
     if (rc == 0) {
-        job->speed = value;
+        job->speed = speed;
     }
     return rc;
 }
