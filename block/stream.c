@@ -279,12 +279,12 @@ static BlockJobType stream_job_type = {
 };
 
 int stream_start(BlockDriverState *bs, BlockDriverState *base,
-                 const char *base_id, BlockDriverCompletionFunc *cb,
-                 void *opaque)
+                 const char *base_id, int64_t speed, 
+                 BlockDriverCompletionFunc *cb, void *opaque)
 {
     StreamBlockJob *s;
 
-    s = block_job_create(&stream_job_type, bs, cb, opaque);
+    s = block_job_create(&stream_job_type, bs, speed, cb, opaque);
     if (!s) {
         return -EBUSY; /* bs must already be in use */
     }

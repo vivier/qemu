@@ -810,6 +810,7 @@ void qmp_blockdev_snapshot_sync(const char *device, const char *snapshot_file,
 #ifdef CONFIG_LIVE_SNAPSHOTS
 void qmp___com_redhat_drive_mirror(const char *device, const char *target,
                       bool has_format, const char *format,
+                      bool has_speed, int64_t speed,
                       bool has_full, bool full,
                       bool has_mode, enum NewImageMode mode, Error **errp)
 {
@@ -822,6 +823,8 @@ void qmp___com_redhat_drive_mirror(const char *device, const char *target,
         .mode = mode,
         .has_full = has_full,
         .full = full,
+        .has_speed = has_speed,
+        .speed = speed,
     };
     blockdev_do_action(BLOCKDEV_ACTION_KIND___COM_REDHAT_DRIVE_MIRROR, &mirror, errp);
 }
@@ -864,6 +867,7 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
         const char *format = NULL;
         uint64_t size;
         bool full;
+        int64_t speed=0;
 
         dev_info = dev_entry->value;
         dev_entry = dev_entry->next;
@@ -902,6 +906,9 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
             mode = dev_info->__com_redhat_drive_mirror->mode;
             full = dev_info->__com_redhat_drive_mirror->has_full
                 && dev_info->__com_redhat_drive_mirror->full;
+            if (dev_info->__com_redhat_drive_mirror->has_speed) {
+                speed = dev_info->__com_redhat_drive_mirror->speed;
+            }
             break;
 
         default:
@@ -1002,7 +1009,7 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
              */
             drive_get_ref(drive_get_by_blockdev(states->old_bs));
             ret = mirror_start(states->old_bs, new_image_file, drv, flags,
-                               block_job_cb, states->old_bs, full);
+                               speed, block_job_cb, states->old_bs, full);
             if (ret == 0) {
                 /* A marker for the abort action  */
                 states->new_bs = states->old_bs;
@@ -1280,6 +1287,7 @@ int do_block_stream(Monitor *mon, const QDict *params, QObject **ret_data)
 {
     const char *device = qdict_get_str(params, "device");
     const char *base = qdict_get_try_str(params, "base");
+    const int64_t speed = qdict_get_try_int(params, "speed", 0);
     BlockDriverState *bs;
     BlockDriverState *base_bs = NULL;
     int ret;
@@ -1298,7 +1306,7 @@ int do_block_stream(Monitor *mon, const QDict *params, QObject **ret_data)
         }
     }
 
-    ret = stream_start(bs, base_bs, base, block_job_cb, bs);
+    ret = stream_start(bs, base_bs, base, speed, block_job_cb, bs);
     if (ret < 0) {
         switch (ret) {
         case -EBUSY:

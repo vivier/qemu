@@ -259,13 +259,13 @@ static BlockJobType mirror_job_type = {
 
 int mirror_start(BlockDriverState *bs,
                  const char *target, BlockDriver *drv, int flags,
-                 BlockDriverCompletionFunc *cb,
+                 int64_t speed, BlockDriverCompletionFunc *cb,
                  void *opaque, bool full)
 {
     MirrorBlockJob *s;
     int ret;
 
-    s = block_job_create(&mirror_job_type, bs, cb, opaque);
+    s = block_job_create(&mirror_job_type, bs, speed, cb, opaque);
     if (!s) {
         return -EBUSY; /* bs must already be in use */
     }
