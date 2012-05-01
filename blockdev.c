@@ -1334,7 +1334,7 @@ int do_block_job_set_speed(Monitor *mon, const QDict *params,
                            QObject **ret_data)
 {
     const char *device = qdict_get_str(params, "device");
-    int64_t value = qdict_get_int(params, "value");
+    int64_t speed = qdict_get_int(params, "speed");
     BlockJob *job = find_block_job(device);
 
     if (!job) {
@@ -1342,7 +1342,7 @@ int do_block_job_set_speed(Monitor *mon, const QDict *params,
         return -1;
     }
 
-    if (block_job_set_speed(job, value) < 0) {
+    if (block_job_set_speed(job, speed) < 0) {
         qerror_report(QERR_NOT_SUPPORTED);
         return -1;
     }

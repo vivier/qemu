@@ -2200,8 +2200,8 @@ EQMP
 
     {
         .name       = "block-job-set-speed",
-        .args_type  = "device:B,value:o",
-        .params     = "device value",
+        .args_type  = "device:B,speed:o",
+        .params     = "device speed",
         .help       = "set maximum speed for a background block operation",
         .user_print = monitor_user_noop,
         .mhandler.cmd_new = do_block_job_set_speed,
