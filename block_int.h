@@ -307,7 +307,8 @@ int is_windows_drive(const char *filename);
 #endif
 
 void *block_job_create(const BlockJobType *job_type, BlockDriverState *bs,
-                       BlockDriverCompletionFunc *cb, void *opaque);
+                       int64_t speed, BlockDriverCompletionFunc *cb,
+                       void *opaque);
 void block_job_complete(BlockJob *job, int ret);
 int block_job_set_speed(BlockJob *job, int64_t speed);
 void block_job_cancel(BlockJob *job);
@@ -316,12 +317,12 @@ int block_job_cancel_sync(BlockJob *job);
 void block_job_sleep(BlockJob *job, QEMUClock *clock, int64_t ms);
 
 int stream_start(BlockDriverState *bs, BlockDriverState *base,
-                 const char *base_id, BlockDriverCompletionFunc *cb,
-                 void *opaque);
+                 const char *base_id, int64_t speed,
+                 BlockDriverCompletionFunc *cb, void *opaque);
 
 int mirror_start(BlockDriverState *bs,
                  const char *target, BlockDriver *drv, int flags,
-                 BlockDriverCompletionFunc *cb,
+                 int64_t speed, BlockDriverCompletionFunc *cb,
                  void *opaque, bool full);
 void mirror_abort(BlockDriverState *bs);
 void mirror_commit(BlockDriverState *bs);

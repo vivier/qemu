@@ -45,6 +45,8 @@
 #
 # @format: #optional the format of the target image, default is 'qcow2'.
 #
+# @speed:  #optional the maximum speed, in bytes per second
+#
 # @mode: #optional whether and how QEMU should create a new image, default is
 # 'absolute-paths'.
 #
@@ -53,7 +55,7 @@
 ##
 { 'type': 'BlockdevMirror',
   'data': { 'device': 'str', 'target': 'str', '*format': 'str',
-            '*full': 'bool', '*mode': 'NewImageMode' } }
+            '*speed': 'int', '*full': 'bool', '*mode': 'NewImageMode' } }
 
 ##
 # @BlockdevAction
@@ -166,6 +168,8 @@
 # @format: #optional the format of the new destination, default is the
 #          format of the source
 #
+# @speed:  #optional the maximum speed, in bytes per second
+#
 # @mode: #optional whether and how QEMU should create a new image, default is
 # 'absolute-paths'.
 #
@@ -181,5 +185,5 @@
 ##
 { 'command': '__com.redhat_drive-mirror',
   'data': { 'device': 'str', 'target': 'str', '*format': 'str',
-            '*full': 'bool', '*mode': 'NewImageMode'} }
+            '*speed': 'int', '*full': 'bool', '*mode': 'NewImageMode'} }
 #endif

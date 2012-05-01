@@ -1597,8 +1597,8 @@ EQMP
 #ifdef CONFIG_LIVE_SNAPSHOTS
     {
         .name       = "__com.redhat_drive-mirror",
-        .args_type  = "full:-f,device:B,target:s,mode:s?,format:s?",
-        .params     = "device destination-image-file [mode] [format]",
+        .args_type  = "full:-f,device:B,target:s,mode:s?,format:s?,speed:o?",
+        .params     = "device destination-image-file [mode] [format] [speed]",
         .user_print = monitor_user_noop,
         .mhandler.cmd_new = qmp_marshal_input___com_redhat_drive_mirror,
     },
@@ -1619,6 +1619,7 @@ Arguments:
 - "device": device name to operate on (json-string)
 - "target": name of new image file (json-string)
 - "format": format of new image (json-string, optional)
+- "speed": the maximum speed, in bytes per second (json-int, optional)
 - "mode": how an image file should be created into the target
   file/device (NewImageMode, optional, default 'absolute-paths')
 - "full": whether the whole disk should be copied to the destination,
@@ -2155,8 +2156,8 @@ EQMP
 #ifdef CONFIG_BLOCK_STREAM
     {
         .name       = "block-stream",
-        .args_type  = "device:B,base:s?",
-        .params     = "device [base]",
+        .args_type  = "device:B,speed:o?,base:s?",
+        .params     = "device [speed [base]]",
         .help       = "background copy backing file into a block device",
         .user_print = monitor_user_noop,
         .mhandler.cmd_new = do_block_stream,
@@ -2186,6 +2187,7 @@ and the BLOCK_JOB_COMPLETED event is emitted.
 Arguments:
 
 - device: the device name (json-string)
+- speed:  the rate limit, bytes per second (json-int, optional)
 - base:   the common backing file name (json-string, optional)
 
 Returns:
