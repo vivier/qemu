@@ -261,14 +261,14 @@ wait:
     block_job_complete(&s->common, ret);
 }
 
-static int stream_set_speed(BlockJob *job, int64_t value)
+static int stream_set_speed(BlockJob *job, int64_t speed)
 {
     StreamBlockJob *s = container_of(job, StreamBlockJob, common);
 
-    if (value < 0) {
+    if (speed < 0) {
         return -EINVAL;
     }
-    ratelimit_set_speed(&s->limit, value / BDRV_SECTOR_SIZE);
+    ratelimit_set_speed(&s->limit, speed / BDRV_SECTOR_SIZE);
     return 0;
 }
 

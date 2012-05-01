@@ -60,7 +60,7 @@ typedef struct BlockJobType {
     const char *job_type;
 
     /** Optional callback for job types that support setting a speed limit */
-    int (*set_speed)(BlockJob *job, int64_t value);
+    int (*set_speed)(BlockJob *job, int64_t speed);
 } BlockJobType;
 
 /**
@@ -309,7 +309,7 @@ int is_windows_drive(const char *filename);
 void *block_job_create(const BlockJobType *job_type, BlockDriverState *bs,
                        BlockDriverCompletionFunc *cb, void *opaque);
 void block_job_complete(BlockJob *job, int ret);
-int block_job_set_speed(BlockJob *job, int64_t value);
+int block_job_set_speed(BlockJob *job, int64_t speed);
 void block_job_cancel(BlockJob *job);
 bool block_job_is_cancelled(BlockJob *job);
 int block_job_cancel_sync(BlockJob *job);
