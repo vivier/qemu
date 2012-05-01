@@ -553,6 +553,22 @@ static void set_config(VirtIODevice *vdev, const uint8_t *config_data)
     memcpy(&config, config_data, sizeof(config));
 }
 
+static void guest_reset(VirtIOSerial *vser)
+{
+    VirtIOSerialPort *port;
+    VirtIOSerialPortInfo *info;
+
+    QTAILQ_FOREACH(port, &vser->ports, next) {
+        info = DO_UPCAST(VirtIOSerialPortInfo, qdev, port->dev.info);
+        if (port->guest_connected) {
+            port->guest_connected = false;
+
+            if (info->guest_close)
+                info->guest_close(port);
+        }
+    }
+}
+
 static void set_status(VirtIODevice *vdev, uint8_t status)
 {
     VirtIOSerial *vser;
@@ -571,6 +587,17 @@ static void set_status(VirtIODevice *vdev, uint8_t status)
          */
         port->guest_connected = true;
     }
+    if (!(status & VIRTIO_CONFIG_S_DRIVER_OK)) {
+        guest_reset(vser);
+    }
+}
+
+static void vser_reset(VirtIODevice *vdev)
+{
+    VirtIOSerial *vser;
+
+    vser = DO_UPCAST(VirtIOSerial, vdev, vdev);
+    guest_reset(vser);
 }
 
 static void virtio_serial_save(QEMUFile *f, void *opaque)
@@ -972,6 +999,7 @@ VirtIODevice *virtio_serial_init(DeviceState *dev, virtio_serial_conf *conf)
     vser->vdev.get_config = get_config;
     vser->vdev.set_config = set_config;
     vser->vdev.set_status = set_status;
+    vser->vdev.reset = vser_reset;
 
     vser->qdev = dev;
 
