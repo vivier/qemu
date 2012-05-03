@@ -38,8 +38,10 @@
 # will add Provides: lines to match RHEL package capabilities
 %define addprovides  1
 %define providesname qemu-kvm
-# 0.12.1.2-2.270.el6 is when the -rhev split happened
-%define obsoletes_ver 2:0.12.1.2-2.270.el6
+# Obsolete all qemu-kvm versions[1], so users with both RHEL and RHEV channels
+# will get the qemu-kvm-rhev package.
+# [1] unless one day we want to revert it, then qemu-kvm Epoch should be increased to 10
+%define obsoletes_ver 10:0-0
 %define pkgsuffix    -rhev
 %endif
 
