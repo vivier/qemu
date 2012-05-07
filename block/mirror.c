@@ -289,12 +289,11 @@ int mirror_start(BlockDriverState *bs,
 
 void mirror_abort(BlockDriverState *bs)
 {
-    MirrorBlockJob *s = container_of(bs->job, MirrorBlockJob, common);
-
-    if (s) {
+    if (bs->job) {
+        MirrorBlockJob *s = container_of(bs->job, MirrorBlockJob, common);
         block_job_cancel(&s->common);
+        qemu_coroutine_enter(s->common.co, s);
     }
-    qemu_coroutine_enter(s->common.co, s);
 }
 
 void mirror_commit(BlockDriverState *bs)
