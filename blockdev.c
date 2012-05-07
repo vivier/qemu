@@ -714,6 +714,7 @@ void qmp___com_redhat_drive_reopen(const char *device, const char *new_image_fil
          */
         if (ret != 0) {
             error_set(errp, QERR_DEVICE_IN_USE, device);
+            return;
         }
     }
     if (bdrv_in_use(bs)) {
