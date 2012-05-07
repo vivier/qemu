@@ -38,7 +38,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.0
-Release: 17%{?dist}
+Release: 17.1%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1011,6 +1011,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon May 7 2012 Eduardo Habkost <ehabkost@redhat.com> - 2:1.0-17.1
+- Don't depend on ceph if building without rbd support
+- Related: bz#819391
+
 * Mon Apr 23 2012 Paolo Bonzini <pbonzini@redhat.com> - 2:1.0-17
 - Fix install failure due to set -e (rhbz #815272)
 
