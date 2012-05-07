@@ -292,6 +292,7 @@ char *bdrv_snapshot_dump(char *buf, int buf_size, QEMUSnapshotInfo *sn);
 
 char *get_human_readable_size(char *buf, int buf_size, int64_t size);
 int path_is_absolute(const char *path);
+int path_has_protocol(const char *path);
 void path_combine(char *dest, int dest_size,
                   const char *base_path,
                   const char *filename);

@@ -112,7 +112,7 @@ int is_windows_drive(const char *filename)
 #endif
 
 /* check if the path starts with "<protocol>:" */
-static int path_has_protocol(const char *path)
+int path_has_protocol(const char *path)
 {
     const char *p;
 
