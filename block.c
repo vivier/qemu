@@ -706,6 +706,8 @@ void bdrv_close(BlockDriverState *bs)
         bs->opaque = NULL;
         bs->drv = NULL;
         bs->copy_on_read = 0;
+        bs->backing_file[0] = '\0';
+        bs->backing_format[0] = '\0';
 
         if (bs->file != NULL) {
             bdrv_close(bs->file);
