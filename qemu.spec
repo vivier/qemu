@@ -295,11 +295,13 @@ will install qemu-system-x86
 %package  img
 Summary: QEMU command line tool for manipulating disk images
 Group: Development/Tools
+%if %{with rbd}
 # librbd (from ceph) added new symbol rbd_flush recently.  If you
 # update qemu-img without updating librdb you get:
 # qemu-img: undefined symbol: rbd_flush
 # ** NB ** This can be removed after Fedora 17 is released.
 Requires: ceph >= 0.37-2
+%endif
 
 %description img
 This package provides a command line tool for manipulating disk images
