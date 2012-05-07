@@ -1139,11 +1139,18 @@ static int img_info(int argc, char **argv)
     }
     bdrv_get_backing_filename(bs, backing_filename, sizeof(backing_filename));
     if (backing_filename[0] != '\0') {
-        path_combine(backing_filename2, sizeof(backing_filename2),
-                     filename, backing_filename);
-        printf("backing file: %s (actual path: %s)\n",
-               backing_filename,
-               backing_filename2);
+        if (path_has_protocol(backing_filename)) {
+            pstrcpy(backing_filename2, sizeof(backing_filename2),
+                    backing_filename);
+        } else {
+            path_combine(backing_filename2, sizeof(backing_filename2),
+                         filename, backing_filename);
+        }
+        printf("backing file: %s", backing_filename);
+        if (strcmp(backing_filename, backing_filename2) != 0) {
+            printf(" (actual path: %s)", backing_filename2);
+        }
+        putchar('\n');
     }
     dump_snapshots(bs);
     bdrv_delete(bs);
