@@ -1676,13 +1676,16 @@ static int qxl_init_common(PCIQXLDevice *qxl)
     switch (qxl->revision) {
     case 1: /* spice 0.4 -- qxl-1 */
         pci_device_rev = QXL_REVISION_STABLE_V04;
+        io_size = 8;
         break;
     case 2: /* spice 0.6 -- qxl-2 */
         pci_device_rev = QXL_REVISION_STABLE_V06;
+        io_size = 16;
         break;
     case 3: /* qxl-3 */
     default:
         pci_device_rev = QXL_DEFAULT_REVISION;
+        io_size = msb_mask(QXL_IO_RANGE_SIZE * 2 - 1);
         break;
     }
 
@@ -1704,11 +1707,6 @@ static int qxl_init_common(PCIQXLDevice *qxl)
     }
     qxl->vram_size = msb_mask(qxl->vram_size * 2 - 1);
     qxl->vram_offset = qemu_ram_alloc(&qxl->pci.qdev, "qxl.vram", qxl->vram_size);
-
-    io_size = msb_mask(QXL_IO_RANGE_SIZE * 2 - 1);
-    if (qxl->revision == 1) {
-        io_size = 8;
-    }
 
     pci_register_bar(&qxl->pci, QXL_IO_RANGE_INDEX,
                      io_size, PCI_BASE_ADDRESS_SPACE_IO, qxl_map);
