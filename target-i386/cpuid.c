@@ -186,6 +186,8 @@ typedef struct x86_def_t {
     char model_id[48];
     int vendor_override;
     uint32_t flags;
+    /* The feature bits on CPUID[EAX=7,ECX=0].EBX */
+    uint32_t cpuid_7_0_ebx_features;
 } x86_def_t;
 
 #define I486_FEATURES (CPUID_FP87 | CPUID_VME | CPUID_PSE)
@@ -444,6 +446,12 @@ static int cpu_x86_fill_host(x86_def_t *x86_cpu_def)
     x86_cpu_def->stepping = eax & 0x0F;
     x86_cpu_def->ext_features = ecx;
     x86_cpu_def->features = edx;
+
+    if (kvm_enabled() && x86_cpu_def->level >= 7) {
+        x86_cpu_def->cpuid_7_0_ebx_features = kvm_arch_get_supported_cpuid(kvm_state, 0x7, 0, R_EBX);
+    } else {
+        x86_cpu_def->cpuid_7_0_ebx_features = 0;
+    }
 
     host_cpuid(0x80000000, 0, &eax, &ebx, &ecx, &edx);
     x86_cpu_def->xlevel = eax;
@@ -786,6 +794,7 @@ int cpu_x86_register (CPUX86State *env, const char *cpu_model)
     env->cpuid_ext2_features = def->ext2_features;
     env->cpuid_xlevel = def->xlevel;
     env->cpuid_ext3_features = def->ext3_features;
+    env->cpuid_7_0_ebx = def->cpuid_7_0_ebx_features;
     env->cpuid_kvm_features = def->kvm_features;
     {
         const char *model_id = def->model_id;
@@ -1073,12 +1082,12 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
         *edx = 0;
         break;
    case 7:
-       if (kvm_enabled()) {
-           KVMState *s = env->kvm_state;
-           *eax = kvm_arch_get_supported_cpuid(s, 0x7, 0, R_EAX);
-           *ebx = kvm_arch_get_supported_cpuid(s, 0x7, 0, R_EBX);
-           *ecx = kvm_arch_get_supported_cpuid(s, 0x7, 0, R_ECX);
-           *edx = kvm_arch_get_supported_cpuid(s, 0x7, 0, R_EDX);
+        /* Structured Extended Feature Flags Enumeration Leaf */
+        if (count == 0) {
+            *eax = 0; /* Maximum ECX value for sub-leaves */
+            *ebx = env->cpuid_7_0_ebx; /* Feature flags */
+            *ecx = 0; /* Reserved */
+            *edx = 0; /* Reserved */
        } else {
            *eax = 0;
            *ebx = 0;
