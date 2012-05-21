@@ -471,6 +471,7 @@ struct HDAAudioState {
 
     /* properties */
     uint32_t debug;
+    uint32_t mcompat;
 };
 
 static void hda_audio_input_cb(void *opaque, int avail)
@@ -768,6 +769,8 @@ static void hda_audio_stream(HDACodecDevice *hda, uint32_t stnr, bool running, b
     }
 }
 
+extern const VMStateDescription vmstate_hda_audio_v1;
+
 static int hda_audio_init(HDACodecDevice *hda, const struct desc_codec *desc)
 {
     HDAAudioState *a = DO_UPCAST(HDAAudioState, hda, hda);
@@ -779,6 +782,10 @@ static int hda_audio_init(HDACodecDevice *hda, const struct desc_codec *desc)
     a->desc = desc;
     a->name = a->hda.qdev.info->name;
     dprint(a, 1, "%s: cad %d\n", __FUNCTION__, a->hda.cad);
+
+    if (a->mcompat) {
+        hda->qdev.info->vmsd = &vmstate_hda_audio_v1;
+    }
 
     AUD_register_card("hda", &a->card);
     for (i = 0; i < a->desc->nnodes; i++) {
@@ -877,6 +884,19 @@ static const VMStateDescription vmstate_hda_audio_stream = {
     }
 };
 
+const VMStateDescription vmstate_hda_audio_v1 = {
+    .name = "hda-audio",
+    .version_id = 1,
+    .post_load = hda_audio_post_load,
+    .fields = (VMStateField []) {
+        VMSTATE_STRUCT_ARRAY(st, HDAAudioState, 4, 0,
+                             vmstate_hda_audio_stream,
+                             HDAAudioStream),
+        VMSTATE_BOOL_ARRAY(running_compat, HDAAudioState, 16),
+        VMSTATE_END_OF_LIST()
+    }
+};
+
 static const VMStateDescription vmstate_hda_audio = {
     .name = "hda-audio",
     .version_id = 2,
@@ -892,7 +912,8 @@ static const VMStateDescription vmstate_hda_audio = {
 };
 
 static Property hda_audio_properties[] = {
-    DEFINE_PROP_UINT32("debug", HDAAudioState, debug, 0),
+    DEFINE_PROP_UINT32("debug",   HDAAudioState, debug,   0),
+    DEFINE_PROP_UINT32("mcompat", HDAAudioState, mcompat, 0),
     DEFINE_PROP_END_OF_LIST(),
 };
 
