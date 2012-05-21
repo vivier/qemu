@@ -1581,6 +1581,14 @@ static void rhel_common_init(const char *type1_version,
             .property = "migrate",\
             .value    = stringify(0),\
         },{\
+            .driver   = "hda-output",\
+            .property = "mcompat",\
+            .value    = stringify(1),\
+        },{\
+            .driver   = "hda-duplex",\
+            .property = "mcompat",\
+            .value    = stringify(1),\
+        },{\
             .driver   = "virtio-blk-pci",\
             .property = "event_idx",\
             .value    = "off",\
