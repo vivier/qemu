@@ -1143,7 +1143,8 @@ static inline void cpu_synchronize_state(CPUState *env)
     }
 }
 
-uint32_t kvm_arch_get_supported_cpuid(CPUState *env, uint32_t function,
+struct KVMState;
+uint32_t kvm_arch_get_supported_cpuid(struct KVMState *env, uint32_t function,
                                       uint32_t index, int reg);
 
 

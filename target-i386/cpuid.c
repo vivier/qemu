@@ -493,7 +493,7 @@ static void summary_cpuid_features(CPUX86State *env, x86_def_t *hd)
         for (p = fmap; p->pfeat; ++p) {
             if (p->mask) {
                 *p->pfeat |= p->mask &
-                    kvm_arch_get_supported_cpuid(env, p->cmd, 0, p->reg);
+                    kvm_arch_get_supported_cpuid(env->kvm_state, p->cmd, 0, p->reg);
             }
         }
     }
@@ -1074,10 +1074,11 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
         break;
    case 7:
        if (kvm_enabled()) {
-           *eax = kvm_arch_get_supported_cpuid(env, 0x7, 0, R_EAX);
-           *ebx = kvm_arch_get_supported_cpuid(env, 0x7, 0, R_EBX);
-           *ecx = kvm_arch_get_supported_cpuid(env, 0x7, 0, R_ECX);
-           *edx = kvm_arch_get_supported_cpuid(env, 0x7, 0, R_EDX);
+           KVMState *s = env->kvm_state;
+           *eax = kvm_arch_get_supported_cpuid(s, 0x7, 0, R_EAX);
+           *ebx = kvm_arch_get_supported_cpuid(s, 0x7, 0, R_EBX);
+           *ecx = kvm_arch_get_supported_cpuid(s, 0x7, 0, R_ECX);
+           *edx = kvm_arch_get_supported_cpuid(s, 0x7, 0, R_EDX);
        } else {
            *eax = 0;
            *ebx = 0;
@@ -1095,10 +1096,11 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
     case 0xA:
         /* Architectural Performance Monitoring Leaf */
         if (kvm_enabled() && !cpuid_leaf10_disabled) {
-            *eax = kvm_arch_get_supported_cpuid(env, 0xA, count, R_EAX);
-            *ebx = kvm_arch_get_supported_cpuid(env, 0xA, count, R_EBX);
-            *ecx = kvm_arch_get_supported_cpuid(env, 0xA, count, R_ECX);
-            *edx = kvm_arch_get_supported_cpuid(env, 0xA, count, R_EDX);
+            KVMState *s = env->kvm_state;
+            *eax = kvm_arch_get_supported_cpuid(s, 0xA, count, R_EAX);
+            *ebx = kvm_arch_get_supported_cpuid(s, 0xA, count, R_EBX);
+            *ecx = kvm_arch_get_supported_cpuid(s, 0xA, count, R_ECX);
+            *edx = kvm_arch_get_supported_cpuid(s, 0xA, count, R_EDX);
         } else {
             *eax = 0;
             *ebx = 0;
@@ -1116,10 +1118,12 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
             break;
         }
         if (kvm_enabled()) {
-            *eax = kvm_arch_get_supported_cpuid(env, 0xd, count, R_EAX);
-            *ebx = kvm_arch_get_supported_cpuid(env, 0xd, count, R_EBX);
-            *ecx = kvm_arch_get_supported_cpuid(env, 0xd, count, R_ECX);
-            *edx = kvm_arch_get_supported_cpuid(env, 0xd, count, R_EDX);
+            KVMState *s = env->kvm_state;
+
+            *eax = kvm_arch_get_supported_cpuid(s, 0xd, count, R_EAX);
+            *ebx = kvm_arch_get_supported_cpuid(s, 0xd, count, R_EBX);
+            *ecx = kvm_arch_get_supported_cpuid(s, 0xd, count, R_ECX);
+            *edx = kvm_arch_get_supported_cpuid(s, 0xd, count, R_EDX);
         } else {
             *eax = 0;
             *ebx = 0;

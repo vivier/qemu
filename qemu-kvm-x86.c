@@ -1400,23 +1400,23 @@ int kvm_arch_init_vcpu(CPUState *cenv)
     pv_ent = &cpuid_ent[cpuid_nent++];
     memset(pv_ent, 0, sizeof(*pv_ent));
     pv_ent->function = KVM_CPUID_FEATURES;
-    pv_ent->eax = cenv->cpuid_kvm_features & kvm_arch_get_supported_cpuid(cenv,
+    pv_ent->eax = cenv->cpuid_kvm_features & kvm_arch_get_supported_cpuid(cenv->kvm_state,
 						KVM_CPUID_FEATURES, 0, R_EAX);
 #endif
 
     kvm_trim_features(&cenv->cpuid_features,
-                      kvm_arch_get_supported_cpuid(cenv, 1, 0, R_EDX));
+                      kvm_arch_get_supported_cpuid(cenv->kvm_state, 1, 0, R_EDX));
 
     /* prevent the hypervisor bit from being cleared by the kernel */
     i = cenv->cpuid_ext_features & CPUID_EXT_HYPERVISOR;
     kvm_trim_features(&cenv->cpuid_ext_features,
-                      kvm_arch_get_supported_cpuid(cenv, 1, 0, R_ECX));
+                      kvm_arch_get_supported_cpuid(cenv->kvm_state, 1, 0, R_ECX));
     cenv->cpuid_ext_features |= i;
 
     kvm_trim_features(&cenv->cpuid_ext2_features,
-                      kvm_arch_get_supported_cpuid(cenv, 0x80000001, 0, R_EDX));
+                      kvm_arch_get_supported_cpuid(cenv->kvm_state, 0x80000001, 0, R_EDX));
     kvm_trim_features(&cenv->cpuid_ext3_features,
-                      kvm_arch_get_supported_cpuid(cenv, 0x80000001, 0, R_ECX));
+                      kvm_arch_get_supported_cpuid(cenv->kvm_state, 0x80000001, 0, R_ECX));
 
     copy = *cenv;
 
@@ -1816,7 +1816,7 @@ int kvm_arch_init_irq_routing(void)
     return 0;
 }
 
-uint32_t kvm_arch_get_supported_cpuid(CPUState *env, uint32_t function,
+uint32_t kvm_arch_get_supported_cpuid(KVMState *env, uint32_t function,
                                       uint32_t index, int reg)
 {
     return kvm_get_supported_cpuid(kvm_context, function, index, reg);
