@@ -263,28 +263,34 @@ int mirror_start(BlockDriverState *bs,
                  void *opaque, bool full)
 {
     MirrorBlockJob *s;
-    int ret;
+    BlockDriverState *target_bs;
+    int ret = 0;
 
-    s = block_job_create(&mirror_job_type, bs, speed, cb, opaque);
-    if (!s) {
-        return -EBUSY; /* bs must already be in use */
-    }
 
-    s->target = bdrv_new("");
-    ret = bdrv_open(s->target, target,
+    target_bs = bdrv_new("");
+    ret = bdrv_open(target_bs, target,
                     flags | BDRV_O_NO_BACKING | BDRV_O_NO_FLUSH | BDRV_O_CACHE_WB,
                     drv);
 
     if (ret < 0) {
-        bdrv_delete(s->target);
-        return ret;
+        bdrv_delete(target_bs);
+        goto exit;
     }
 
+    s = block_job_create(&mirror_job_type, bs, speed, cb, opaque);
+    if (!s) {
+        bdrv_delete(target_bs);
+        ret = -EBUSY; /* bs must already be in use */
+        goto exit;
+    }
+
+    s->target = target_bs;
     s->full = full;
     bdrv_set_dirty_tracking(bs, true);
     s->common.co = qemu_coroutine_create(mirror_run);
     trace_mirror_start(bs, s, s->common.co, opaque);
-    return 0;
+exit:
+    return ret;
 }
 
 void mirror_abort(BlockDriverState *bs)
