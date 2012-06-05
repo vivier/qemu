@@ -26,7 +26,6 @@
 #include <sys/wait.h>
 #include "qga/guest-agent-core.h"
 #include "qga-qmp-commands.h"
-#include "qga-suspend-qmp-commands.h"
 #include "qerror.h"
 #include "qemu-queue.h"
 
