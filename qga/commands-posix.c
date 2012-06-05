@@ -39,6 +39,8 @@
  * To enable, set to '1' */
 #define QGA_FILE_OPS 0
 
+#if defined(__linux__)
+/* TODO: use this in place of all post-fork() fclose(std*) callers */
 static void reopen_fd_to_null(int fd)
 {
     int nullfd;
@@ -54,6 +56,7 @@ static void reopen_fd_to_null(int fd)
         close(nullfd);
     }
 }
+#endif /* defined(__linux__) */
 
 void qmp_guest_shutdown(bool has_mode, const char *mode, Error **err)
 {
@@ -343,7 +346,11 @@ static void guest_file_init(void)
     QTAILQ_INIT(&guest_file_state.filehandles);
 }
 
+/* linux-specific implementations. avoid this if at all possible. */
+#if defined(__linux__)
+
 #if defined(CONFIG_FSFREEZE)
+
 static void disable_logging(void)
 {
     ga_disable_logging(ga_state);
@@ -539,38 +546,7 @@ static void guest_fsfreeze_cleanup(void)
         }
     }
 }
-#else
-/*
- * Return status of freeze/thaw
- */
-GuestFsfreezeStatus qmp_guest_fsfreeze_status(Error **err)
-{
-    error_set(err, QERR_UNSUPPORTED);
-
-    return 0;
-}
-
-/*
- * Walk list of mounted file systems in the guest, and freeze the ones which
- * are real local file systems.
- */
-int64_t qmp_guest_fsfreeze_freeze(Error **err)
-{
-    error_set(err, QERR_UNSUPPORTED);
-
-    return 0;
-}
-
-/*
- * Walk list of frozen file systems in the guest, and thaw them.
- */
-int64_t qmp_guest_fsfreeze_thaw(Error **err)
-{
-    error_set(err, QERR_UNSUPPORTED);
-
-    return 0;
-}
-#endif
+#endif /* CONFIG_FSFREEZE */
 
 #define LINUX_SYS_STATE_FILE "/sys/power/state"
 #define SUSPEND_SUPPORTED 0
@@ -937,6 +913,52 @@ error:
     qapi_free_GuestNetworkInterfaceList(head);
     return NULL;
 }
+
+#else /* defined(__linux__) */
+
+GuestFsfreezeStatus qmp_guest_fsfreeze_status(Error **err)
+{
+    error_set(err, QERR_UNSUPPORTED);
+
+    return 0;
+}
+
+int64_t qmp_guest_fsfreeze_freeze(Error **err)
+{
+    error_set(err, QERR_UNSUPPORTED);
+
+    return 0;
+}
+
+int64_t qmp_guest_fsfreeze_thaw(Error **err)
+{
+    error_set(err, QERR_UNSUPPORTED);
+
+    return 0;
+}
+
+void qmp_guest_suspend_disk(Error **err)
+{
+    error_set(err, QERR_UNSUPPORTED);
+}
+
+void qmp_guest_suspend_ram(Error **err)
+{
+    error_set(err, QERR_UNSUPPORTED);
+}
+
+void qmp_guest_suspend_hybrid(Error **err)
+{
+    error_set(err, QERR_UNSUPPORTED);
+}
+
+GuestNetworkInterfaceList *qmp_guest_network_get_interfaces(Error **errp)
+{
+    error_set(errp, QERR_UNSUPPORTED);
+    return NULL;
+}
+
+#endif
 
 /* register init/cleanup routines for stateful command groups */
 void ga_command_state_init(GAState *s, GACommandState *cs)
