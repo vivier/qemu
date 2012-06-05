@@ -384,9 +384,9 @@ static int guest_fsfreeze_build_mount_list(void)
 
     QTAILQ_FOREACH_SAFE(mount, &guest_fsfreeze_state.mount_list, next, temp) {
         QTAILQ_REMOVE(&guest_fsfreeze_state.mount_list, mount, next);
-        qemu_free(mount->dirname);
-        qemu_free(mount->devtype);
-        qemu_free(mount);
+        g_free(mount->dirname);
+        g_free(mount->devtype);
+        g_free(mount);
     }
 
     fp = setmntent(mtab, "r");
@@ -408,9 +408,9 @@ static int guest_fsfreeze_build_mount_list(void)
             continue;
         }
 
-        mount = qemu_mallocz(sizeof(GuestFsfreezeMount));
-        mount->dirname = qemu_strdup(ment->mnt_dir);
-        mount->devtype = qemu_strdup(ment->mnt_type);
+        mount = g_malloc0(sizeof(GuestFsfreezeMount));
+        mount->dirname = g_strdup(ment->mnt_dir);
+        mount->devtype = g_strdup(ment->mnt_type);
 
         QTAILQ_INSERT_TAIL(&guest_fsfreeze_state.mount_list, mount, next);
     }
