@@ -41,8 +41,9 @@
 
 void qmp_guest_shutdown(bool has_mode, const char *mode, Error **err)
 {
-    int ret;
     const char *shutdown_flag;
+    int ret, status;
+    pid_t rpid, pid;
 
     slog("guest-shutdown called, mode: %s", mode);
     if (!has_mode || strcmp(mode, "powerdown") == 0) {
@@ -57,8 +58,8 @@ void qmp_guest_shutdown(bool has_mode, const char *mode, Error **err)
         return;
     }
 
-    ret = fork();
-    if (ret == 0) {
+    pid = fork();
+    if (pid == 0) {
         /* child, start the shutdown */
         setsid();
         fclose(stdin);
@@ -71,9 +72,19 @@ void qmp_guest_shutdown(bool has_mode, const char *mode, Error **err)
             slog("guest-shutdown failed: %s", strerror(errno));
         }
         exit(!!ret);
-    } else if (ret < 0) {
-        error_set(err, QERR_UNDEFINED_ERROR);
+    } else if (pid < 0) {
+        goto exit_err;
     }
+
+    do {
+        rpid = waitpid(pid, &status, 0);
+    } while (rpid == -1 && errno == EINTR);
+    if (rpid == pid && WIFEXITED(status) && !WEXITSTATUS(status)) {
+        return;
+    }
+
+exit_err:
+    error_set(err, QERR_UNDEFINED_ERROR);
 }
 
 typedef struct GuestFileHandle {
