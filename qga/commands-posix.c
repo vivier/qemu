@@ -809,8 +809,8 @@ GuestNetworkInterfaceList *qmp_guest_network_get_interfaces(Error **errp)
         info = guest_find_interface(head, ifa->ifa_name);
 
         if (!info) {
-            info = g_malloc0(sizeof(*info));
-            info->value = g_malloc0(sizeof(*info->value));
+            info = qemu_mallocz(sizeof(*info));
+            info->value = qemu_mallocz(sizeof(*info->value));
             info->value->name = g_strdup(ifa->ifa_name);
 
             if (!cur_item) {
@@ -863,8 +863,8 @@ GuestNetworkInterfaceList *qmp_guest_network_get_interfaces(Error **errp)
         if (ifa->ifa_addr &&
             ifa->ifa_addr->sa_family == AF_INET) {
             /* interface with IPv4 address */
-            address_item = g_malloc0(sizeof(*address_item));
-            address_item->value = g_malloc0(sizeof(*address_item->value));
+            address_item = qemu_mallocz(sizeof(*address_item));
+            address_item->value = qemu_mallocz(sizeof(*address_item->value));
             p = &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
             if (!inet_ntop(AF_INET, p, addr4, sizeof(addr4))) {
                 snprintf(err_msg, sizeof(err_msg),
@@ -885,8 +885,8 @@ GuestNetworkInterfaceList *qmp_guest_network_get_interfaces(Error **errp)
         } else if (ifa->ifa_addr &&
                    ifa->ifa_addr->sa_family == AF_INET6) {
             /* interface with IPv6 address */
-            address_item = g_malloc0(sizeof(*address_item));
-            address_item->value = g_malloc0(sizeof(*address_item->value));
+            address_item = qemu_mallocz(sizeof(*address_item));
+            address_item->value = qemu_mallocz(sizeof(*address_item->value));
             p = &((struct sockaddr_in6 *)ifa->ifa_addr)->sin6_addr;
             if (!inet_ntop(AF_INET6, p, addr6, sizeof(addr6))) {
                 snprintf(err_msg, sizeof(err_msg),
