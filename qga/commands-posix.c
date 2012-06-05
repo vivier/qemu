@@ -35,6 +35,10 @@
 #include "qemu-queue.h"
 #include "host-utils.h"
 
+#ifndef CONFIG_HAS_ENVIRON
+extern char **environ;
+#endif
+
 /* file-* commands are compile-time disabled for RHEL/RHEV.
  * To enable, set to '1' */
 #define QGA_FILE_OPS 0
