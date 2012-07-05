@@ -82,9 +82,9 @@ Patch2:   0002-qemu-kvm-virtio-Do-not-register-mask-notifiers-witho.patch
 # Speculative patch to fix msi and virtio-pci modules in build (not upstream).
 Patch3:   0001-buildsys-Move-msi-x-and-virtio-pci-from-Makefile.obj.patch
 
-# Hack to use siginfo_t instead of siginfo with glibc from Rawhide.
-# XXX This patch is highly UNlikely to be correct. (RWMJ)
-Patch4:   qemu-kvm-1.1.0-siginfo_t.patch
+# Use siginfo_t instead of struct siginfo, for glibc in Rawhide.
+# Sent upstream 2012-07-05.
+Patch4:   0001-Replace-struct-siginfo-with-siginfo_t.patch
 
 # The infamous chardev flow control patches
 Patch101: 0101-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
