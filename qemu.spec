@@ -38,7 +38,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.1.0
-Release: 2%{?dist}
+Release: 3%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -146,6 +146,8 @@ BuildRequires: libfdt-devel
 %endif
 # For test suite
 BuildRequires: check-devel
+# For virtfs
+BuildRequires: libcap-devel
 Requires: %{name}-user = %{epoch}:%{version}-%{release}
 %if %{without x86only}
 Requires: %{name}-system-x86 = %{epoch}:%{version}-%{release}
@@ -657,8 +659,11 @@ fi
 %dir %{_datadir}/%{name}/
 %{_datadir}/%{name}/keymaps/
 %{_mandir}/man1/qemu.1*
+%{_mandir}/man1/virtfs-proxy-helper.1*
 %{_mandir}/man8/qemu-nbd.8*
 %{_bindir}/qemu-nbd
+%{_bindir}/virtfs-proxy-helper
+%{_libexecdir}/qemu-bridge-helper
 %config(noreplace) %{_sysconfdir}/sasl2/qemu.conf
 /lib/systemd/system/ksm.service
 /lib/systemd/ksmctl
@@ -750,7 +755,6 @@ fi
 %{_sysconfdir}/sysconfig/modules/kvm.modules
 %{_udevdir}/80-kvm.rules
 %{_datadir}/systemtap/tapset/qemu-kvm.stp
-%{_libexecdir}/qemu-bridge-helper
 %endif
 
 %ifarch %{ix86} x86_64
@@ -803,7 +807,7 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
-* Thu Jul  5 2012 Richard W.M. Jones <rjones@redhat.com> - 2:1.1.0-2
+* Thu Jul  5 2012 Richard W.M. Jones <rjones@redhat.com> - 2:1.1.0-3
 - Add a hack for glibc from Rawhide, only affects linux-user.
 - Disable tests since they hang intermittently.
 - Add kvmvapic.bin (replaces vapic.bin).
@@ -811,6 +815,7 @@ fi
   as an empty file.
 - Add qemu-icon.bmp.
 - Add qemu-bridge-helper.
+- Build and include virtfs-proxy-helper + man page (thanks Hans de Goede).
 
 * Wed Jul  4 2012 Hans de Goede <hdegoede@redhat.com> - 2:1.1.0-1
 - New upstream release 1.1.0
