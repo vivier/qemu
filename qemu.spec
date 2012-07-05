@@ -38,7 +38,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.1.0
-Release: 3%{?dist}
+Release: 4%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -79,8 +79,8 @@ Source11: 99-qemu-guest-agent.rules
 Patch1:   0001-qemu-kvm-Add-missing-default-machine-options.patch
 Patch2:   0002-qemu-kvm-virtio-Do-not-register-mask-notifiers-witho.patch
 
-# Speculative patch to fix msi and virtio-pci modules in build (not upstream).
-Patch3:   0001-buildsys-Move-msi-x-and-virtio-pci-from-Makefile.obj.patch
+# Upstream patch to fix build of msi/virtio-pci.
+Patch3:   0001-kvm-Enable-use-of-kvm_irqchip_in_kernel-in-hwlib-cod.patch
 
 # Use siginfo_t instead of struct siginfo, for glibc in Rawhide.
 # Sent upstream 2012-07-05.
@@ -807,8 +807,7 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
-* Thu Jul  5 2012 Richard W.M. Jones <rjones@redhat.com> - 2:1.1.0-3
-- Add a hack for glibc from Rawhide, only affects linux-user.
+* Thu Jul  5 2012 Richard W.M. Jones <rjones@redhat.com> - 2:1.1.0-4
 - Disable tests since they hang intermittently.
 - Add kvmvapic.bin (replaces vapic.bin).
 - Add cpus-x86_64.conf.  qemu now creates /etc/qemu/target-x86_64.conf
