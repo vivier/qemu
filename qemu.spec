@@ -38,7 +38,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.1.0
-Release: 3%{?dist}
+Release: 2%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -82,9 +82,9 @@ Patch2:   0002-qemu-kvm-virtio-Do-not-register-mask-notifiers-witho.patch
 # Speculative patch to fix msi and virtio-pci modules in build (not upstream).
 Patch3:   0001-buildsys-Move-msi-x-and-virtio-pci-from-Makefile.obj.patch
 
-# Fix for build system (upstream, but not in stable-1.1).
-%global _default_patch_fuzz 2
-Patch4:   0001-build-move-user-objects-to-nested-Makefile.objs.patch
+# Hack to use siginfo_t instead of siginfo with glibc from Rawhide.
+# XXX This patch is highly UNlikely to be correct. (RWMJ)
+Patch4:   qemu-kvm-1.1.0-siginfo_t.patch
 
 # The infamous chardev flow control patches
 Patch101: 0101-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
@@ -803,14 +803,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
-* Thu Jul  5 2012 Richard W.M. Jones <rjones@redhat.com> - 2:1.1.0-3
+* Thu Jul  5 2012 Richard W.M. Jones <rjones@redhat.com> - 2:1.1.0-2
+- Add a hack for glibc from Rawhide, only affects linux-user.
 - Disable tests since they hang intermittently.
 - Add kvmvapic.bin (replaces vapic.bin).
 - Add cpus-x86_64.conf.  qemu now creates /etc/qemu/target-x86_64.conf
   as an empty file.
 - Add qemu-icon.bmp.
 - Add qemu-bridge-helper.
-- Cherry pick patch from upstream which fixes build system.
 
 * Wed Jul  4 2012 Hans de Goede <hdegoede@redhat.com> - 2:1.1.0-1
 - New upstream release 1.1.0
