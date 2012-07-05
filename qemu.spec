@@ -37,8 +37,8 @@
 
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
-Version: 1.0
-Release: 17%{?dist}
+Version: 1.1.0
+Release: 1%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -75,140 +75,28 @@ Source9: ksmtuned.conf
 Source10: qemu-guest-agent.service
 Source11: 99-qemu-guest-agent.rules
 
-# Patches queued for 1.0.1 stable
-Patch01: 0001-malta-Fix-regression-i8259-interrupts-did-not-work.patch
-Patch02: 0002-exec.c-Fix-subpage-memory-access-to-RAM-MemoryRegion.patch
-Patch03: 0003-hw-9pfs-Improve-portability-to-older-systems.patch
-Patch04: 0004-hw-9pfs-use-migration-blockers-to-prevent-live-migra.patch
-Patch05: 0005-hw-9pfs-Reset-server-state-during-TVERSION.patch
-Patch06: 0006-hw-9pfs-Add-qdev.reset-callback-for-virtio-9p-pci-de.patch
-Patch07: 0007-hw-9pfs-Use-the-correct-file-descriptor-in-Fsdriver-.patch
-Patch08: 0008-hw-9pfs-replace-iovec-manipulation-with-QEMUIOVector.patch
-Patch09: 0009-hw-9pfs-Use-the-correct-signed-type-for-different-va.patch
-Patch10: 0010-target-i386-fix-cmpxchg-instruction-emulation.patch
-Patch11: 0011-configure-Enable-build-by-default-PIE-read-only-relo.patch
-Patch12: 0012-cris-Handle-conditional-stores-on-CRISv10.patch
-Patch13: 0013-pc-add-pc-0.15.patch
-Patch14: 0014-pc-fix-event_idx-compatibility-for-virtio-devices.patch
-Patch15: 0015-Fix-parse-of-usb-device-description-with-multiple-co.patch
-Patch16: 0016-usb-storage-cancel-I-O-on-reset.patch
-Patch17: 0017-usb-host-properly-release-port-on-unplug-exit.patch
-Patch18: 0018-usb-ohci-td.cbp-incorrectly-updated-near-page-end.patch
-Patch19: 0019-target-sh4-ignore-ocbp-and-ocbwb-instructions.patch
-Patch20: 0020-PPC-Fix-linker-scripts-on-ppc-hosts.patch
-Patch21: 0021-qiov-prevent-double-free-or-use-after-free.patch
-Patch22: 0022-coroutine-switch-per-thread-free-pool-to-a-global-po.patch
-Patch23: 0023-qemu-img-rebase-Fix-for-undersized-backing-files.patch
-Patch24: 0024-Documentation-Add-qemu-img-t-parameter-in-man-page.patch
-Patch25: 0025-rbd-always-set-out-parameter-in-qemu_rbd_snap_list.patch
-Patch26: 0026-e1000-bounds-packet-size-against-buffer-size.patch
-Patch27: virtio-blk_refuse_SG_IO_requests_with_scsi_off.patch
+# Fixes from qemu-kvm git stable-1.1 branch
+Patch1:   0001-qemu-kvm-Add-missing-default-machine-options.patch
+Patch2:   0002-qemu-kvm-virtio-Do-not-register-mask-notifiers-witho.patch
 
-# USB-redir patches all upstream for 1.1 except for the chardev flowcontrol set
-Patch101: 0101-usb-redir-Clear-iso-irq-error-when-stopping-the-stre.patch
-Patch102: 0102-usb-redir-Dynamically-adjust-iso-buffering-size-base.patch
-Patch103: 0103-usb-redir-Pre-fill-our-isoc-input-buffer-before-send.patch
-Patch104: 0104-usb-redir-Try-to-keep-our-buffer-size-near-the-targe.patch
-Patch105: 0105-usb-redir-Improve-some-debugging-messages.patch
-Patch106: 0106-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
-Patch107: 0107-char-Add-a-QemuChrHandlers-struct-to-initialise-char.patch
-Patch108: 0108-iohandlers-Add-enable-disable_write_fd_handler-funct.patch
-Patch109: 0109-char-Add-framework-for-a-write-unblocked-callback.patch
-Patch110: 0110-char-Update-send_all-to-handle-nonblocking-chardev-w.patch
-Patch111: 0111-char-Equip-the-unix-tcp-backend-to-handle-nonblockin.patch
-Patch112: 0112-char-Throttle-when-host-connection-is-down.patch
-Patch113: 0113-virtio-console-Enable-port-throttling-when-chardev-i.patch
-Patch114: 0114-spice-qemu-char.c-add-throttling.patch
-Patch115: 0115-spice-qemu-char.c-remove-intermediate-buffer.patch
-Patch116: 0116-usb-redir-Add-flow-control-support.patch
-Patch117: 0117-virtio-serial-bus-replay-guest_open-on-migration.patch
-Patch118: 0118-char-Disable-write-callback-if-throttled-chardev-is-.patch
-Patch119: 0119-usb-ehci-Clear-the-portstatus-powner-bit-on-device-d.patch
-Patch120: 0120-usb-redir-Add-the-posibility-to-filter-out-certain-d.patch
-Patch121: 0121-usb-redir-Fix-printing-of-device-version.patch
-Patch122: 0122-usb-redir-Always-clear-device-state-on-filter-reject.patch
-Patch123: 0123-usb-redir-Let-the-usb-host-know-about-our-device-fil.patch
-Patch124: 0124-usb-redir-Limit-return-values-returned-by-iso-packet.patch
-Patch125: 0125-usb-redir-Return-USB_RET_NAK-when-we-ve-no-data-for-.patch
-Patch126: 0126-usb-ehci-Handle-ISO-packets-failing-with-an-error-ot.patch
-Patch127: 0127-usb-ehci-Never-follow-table-entries-with-the-T-bit-s.patch
-Patch128: 0128-usb-ehci-split-our-qh-queue-into-async-and-periodic-.patch
-Patch129: 0129-usb-ehci-always-call-ehci_queues_rip_unused-for-peri.patch
-Patch130: 0130-usb-ehci-Drop-cached-qhs-when-the-doorbell-gets-rung.patch
-Patch131: 0131-usb-ehci-Rip-the-queues-when-the-async-or-period-sch.patch
-Patch132: 0132-usb-ehci-Any-packet-completion-except-for-NAK-should.patch
-Patch133: 0133-usb-ehci-Fix-cerr-tracking.patch
-Patch134: 0134-usb-ehci-Remove-dead-nakcnt-code.patch
-Patch135: 0135-usb-ehci-Fix-and-simplify-nakcnt-handling.patch
-Patch136: 0136-usb-ehci-Remove-dead-isoch_pause-code.patch
-Patch137: 0137-usb-return-BABBLE-rather-then-NAK-when-we-receive-to.patch
-Patch138: 0138-usb-add-USB_RET_IOERROR.patch
-Patch139: 0139-usb-ehci-fix-reset.patch
-Patch140: 0140-usb-ehci-sanity-check-iso-xfers.patch
-Patch141: 0141-usb-ehci-frindex-always-is-a-14-bits-counter.patch
-Patch142: 0142-usb-ehci-Drop-unused-sofv-value.patch
-Patch143: 0143-usb-redir-Notify-our-peer-when-we-reject-a-device-du.patch
-Patch144: 0144-usb-redir-An-interface-count-of-0-is-a-valid-value.patch
-Patch145: 0145-usb-redir-Reset-device-address-and-speed-on-disconne.patch
-Patch146: 0146-usb-redir-Not-finding-an-async-urb-id-is-not-an-erro.patch
-Patch147: 0147-usb-ehci-Ensure-frindex-writes-leave-a-valid-frindex.patch
+# The infamous chardev flow control patches
+Patch101: 0101-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
+Patch102: 0102-char-Add-a-QemuChrHandlers-struct-to-initialise-char.patch
+Patch103: 0103-iohandlers-Add-enable-disable_write_fd_handler-funct.patch
+Patch104: 0104-char-Add-framework-for-a-write-unblocked-callback.patch
+Patch105: 0105-char-Update-send_all-to-handle-nonblocking-chardev-w.patch
+Patch106: 0106-char-Equip-the-unix-tcp-backend-to-handle-nonblockin.patch
+Patch107: 0107-char-Throttle-when-host-connection-is-down.patch
+Patch108: 0108-virtio-console-Enable-port-throttling-when-chardev-i.patch
+Patch109: 0109-spice-qemu-char.c-add-throttling.patch
+Patch110: 0110-spice-qemu-char.c-remove-intermediate-buffer.patch
+Patch111: 0111-usb-redir-Add-flow-control-support.patch
+Patch112: 0112-virtio-serial-bus-replay-guest_open-on-migration.patch
+Patch113: 0113-char-Disable-write-callback-if-throttled-chardev-is-.patch
 
-# General bug fixes
-Patch201: Fix_save-restore_of_in-kernel_i8259.patch
-Patch202: qemu-virtio-9p-noatime.patch
+# USB-redir bugfixes
+Patch201: 0201-usb-redir-Correctly-handle-the-usb_redir_babble-usbr.patch
 
-# Feature patches, should be in 1.1 before release
-Patch301: enable_architectural_PMU_cpuid_leaf.patch
-Patch302: qemu_virtio-scsi_support.patch
-
-# QXL fixes backports, all are upstream for 1.1
-Patch401: 0401-qxl-Slot-sanity-check-in-qxl_phys2virt-is-off-by-one.patch
-Patch402: 0402-input-send-kbd-mouse-events-only-to-running-guests.patch
-Patch403: 0403-qxl-fix-warnings-on-32bit.patch
-Patch404: 0404-qxl-don-t-render-stuff-when-the-vm-is-stopped.patch
-Patch405: 0405-qxl-set-only-off-screen-surfaces-dirty-instead-of-th.patch
-Patch406: 0406-qxl-make-sure-primary-surface-is-saved-on-migration-.patch
-Patch407: 0407-Add-SPICE-support-to-add_client-monitor-command.patch
-Patch408: 0408-spice-support-ipv6-channel-address-in-monitor-events.patch
-Patch409: 0409-qxl-drop-vram-bar-minimum-size.patch
-Patch410: 0410-qxl-move-ram-size-init-to-new-function.patch
-Patch411: 0411-qxl-add-user-friendly-bar-size-properties.patch
-Patch412: 0412-qxl-fix-spice-sdl-no-cursor-regression.patch
-Patch413: 0413-sdl-remove-NULL-check-g_malloc0-can-t-fail.patch
-Patch414: 0414-qxl-drop-qxl_spice_update_area_async-definition.patch
-Patch415: 0415-qxl-require-spice-0.8.2.patch
-Patch416: 0416-qxl-remove-flipped.patch
-Patch417: 0417-qxl-introduce-QXLCookie.patch
-Patch418: 0418-qxl-make-qxl_render_update-async.patch
-Patch419: 0419-spice-use-error_report-to-report-errors.patch
-Patch420: 0420-Error-out-when-tls-channel-option-is-used-without-TL.patch
-Patch421: 0421-qxl-properly-handle-upright-and-non-shared-surfaces.patch
-Patch422: 0422-spice-set-spice-uuid-and-name.patch
-Patch423: 0423-monitor-fix-client_migrate_info-error-handling.patch
-Patch424: 0424-qxl-init_pipe_signaling-exit-on-failure.patch
-Patch425: 0425-qxl-switch-qxl.c-to-trace-events.patch
-Patch426: 0426-qxl-qxl_render.c-add-trace-events.patch
-Patch427: 0427-hw-qxl.c-Fix-compilation-failures-on-32-bit-hosts.patch
-Patch428: 0428-spice-fix-broken-initialization.patch
-Patch429: 0429-ui-spice-display.c-Fix-compilation-warnings-on-32-bi.patch
-Patch430: 0430-ui-spice-display-use-uintptr_t-when-casting-qxl-phys.patch
-Patch431: 0431-qxl-add-optinal-64bit-vram-bar.patch
-Patch432: 0432-qxl-set-default-values-of-vram-_size_mb-to-1.patch
-Patch433: 0433-qxl-render-fix-broken-vnc-spice-since-commit-f934493.patch
-Patch434: 0434-qxl-don-t-assert-on-guest-create_guest_primary.patch
-
-# Spice volume control backports, all are upstream for 1.1
-Patch501: 0501-audio-add-VOICE_VOLUME-ctl.patch
-Patch502: 0502-audio-don-t-apply-volume-effect-if-backend-has-VOICE.patch
-Patch503: 0503-hw-ac97-remove-USE_MIXER-code.patch
-Patch504: 0504-hw-ac97-the-volume-mask-is-not-only-0x1f.patch
-Patch505: 0505-hw-ac97-add-support-for-volume-control.patch
-Patch506: 0506-audio-spice-add-support-for-volume-control.patch
-Patch507: 0507-Do-not-use-pa_simple-PulseAudio-API.patch
-Patch508: 0508-configure-pa_simple-is-not-needed-anymore.patch
-Patch509: 0509-Allow-controlling-volume-with-PulseAudio-backend.patch
-
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
 BuildRequires: libaio-devel
 BuildRequires: rsync
@@ -265,7 +153,7 @@ Requires: %{name}-img = %{epoch}:%{version}-%{release}
 Obsoletes: %{name}-system-ppc
 Obsoletes: %{name}-system-sparc
 
-%define qemudocdir %{_docdir}/%{name}-%{version}
+%define qemudocdir %{_docdir}/%{name}
 
 %description
 QEMU is a generic and open source processor emulator which achieves a good
@@ -454,33 +342,8 @@ such as kvm_stat.
 
 %prep
 %setup -q -n qemu-kvm-%{version}
-%patch01 -p1
-%patch02 -p1
-%patch03 -p1
-%patch04 -p1
-%patch05 -p1
-%patch06 -p1
-%patch07 -p1
-%patch08 -p1
-%patch09 -p1
-%patch10 -p1
-%patch11 -p1
-%patch12 -p1
-%patch13 -p1
-%patch14 -p1
-%patch15 -p1
-%patch16 -p1
-%patch17 -p1
-%patch18 -p1
-%patch19 -p1
-%patch20 -p1
-%patch21 -p1
-%patch22 -p1
-%patch23 -p1
-%patch24 -p1
-%patch25 -p1
-%patch26 -p1
-%patch27 -p1
+%patch1 -p1
+%patch2 -p1
 
 %patch101 -p1
 %patch102 -p1
@@ -495,91 +358,8 @@ such as kvm_stat.
 %patch111 -p1
 %patch112 -p1
 %patch113 -p1
-%patch114 -p1
-%patch115 -p1
-%patch116 -p1
-%patch117 -p1
-%patch118 -p1
-%patch119 -p1
-%patch120 -p1
-%patch121 -p1
-%patch122 -p1
-%patch123 -p1
-%patch124 -p1
-%patch125 -p1
-%patch126 -p1
-%patch127 -p1
-%patch128 -p1
-%patch129 -p1
-%patch130 -p1
-%patch131 -p1
-%patch132 -p1
-%patch133 -p1
-%patch134 -p1
-%patch135 -p1
-%patch136 -p1
-%patch137 -p1
-%patch138 -p1
-%patch139 -p1
-%patch140 -p1
-%patch141 -p1
-%patch142 -p1
-%patch143 -p1
-%patch144 -p1
-%patch145 -p1
-%patch146 -p1
-%patch147 -p1
 
 %patch201 -p1
-%patch202 -p1
-
-%patch301 -p1
-%patch302 -p1
-
-%patch401 -p1
-%patch402 -p1
-%patch403 -p1
-%patch404 -p1
-%patch405 -p1
-%patch406 -p1
-%patch407 -p1
-%patch408 -p1
-%patch409 -p1
-%patch410 -p1
-%patch411 -p1
-%patch412 -p1
-%patch413 -p1
-%patch414 -p1
-%patch415 -p1
-%patch416 -p1
-%patch417 -p1
-%patch418 -p1
-%patch419 -p1
-%patch420 -p1
-%patch421 -p1
-%patch422 -p1
-%patch423 -p1
-%patch424 -p1
-%patch425 -p1
-%patch426 -p1
-%patch427 -p1
-%patch428 -p1
-%patch429 -p1
-%patch430 -p1
-%patch431 -p1
-%patch432 -p1
-%patch433 -p1
-%patch434 -p1
-
-%patch501 -p1
-%patch502 -p1
-%patch503 -p1
-%patch504 -p1
-%patch505 -p1
-%patch506 -p1
-%patch507 -p1
-%patch508 -p1
-%patch509 -p1
 
 
 %build
@@ -638,12 +418,11 @@ cat config-host.mak
 echo "==="
 
 make V=1 %{?_smp_mflags} $buildldflags
-./scripts/tracetool --dtrace --binary %{_bindir}/qemu-kvm \
-  --target-arch x86_64 --target-type system --stap \
+./scripts/tracetool.py --backend dtrace --format stap \
+  --binary %{_bindir}/qemu-kvm --target-arch x86_64 --target-type system \
   --probe-prefix qemu.kvm < ./trace-events > qemu-kvm.stp
 cp -a x86_64-softmmu/qemu-system-x86_64 qemu-kvm
 make clean
-
 %endif
 
 ./configure \
@@ -681,7 +460,6 @@ gcc %{SOURCE6} -O2 -g -o ksmctl
 
 
 %install
-rm -rf $RPM_BUILD_ROOT
 
 %define _udevdir /lib/udev/rules.d
 
@@ -701,19 +479,13 @@ mkdir -p $RPM_BUILD_ROOT%{_udevdir}
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset
 
 install -m 0755 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules/kvm.modules
-install -m 0755 kvm/kvm_stat $RPM_BUILD_ROOT%{_bindir}/
+install -m 0755 scripts/kvm/kvm_stat $RPM_BUILD_ROOT%{_bindir}/
 install -m 0755 qemu-kvm $RPM_BUILD_ROOT%{_bindir}/
 install -m 0644 qemu-kvm.stp $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/
 install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_udevdir}
 %endif
 
-make prefix="${RPM_BUILD_ROOT}%{_prefix}" \
-     bindir="${RPM_BUILD_ROOT}%{_bindir}" \
-     sharedir="${RPM_BUILD_ROOT}%{_datadir}/%{name}" \
-     mandir="${RPM_BUILD_ROOT}%{_mandir}" \
-     docdir="${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}" \
-     datadir="${RPM_BUILD_ROOT}%{_datadir}/%{name}" \
-     sysconfdir="${RPM_BUILD_ROOT}%{_sysconfdir}" install
+make DESTDIR=$RPM_BUILD_ROOT install
 chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
 install -D -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} Changelog README TODO COPYING COPYING.LIB LICENSE
 
@@ -807,9 +579,6 @@ install -m 0644 %{SOURCE11} $RPM_BUILD_ROOT%{_udevdir}
 
 %check
 make check
-
-%clean
-rm -rf $RPM_BUILD_ROOT
 
 %post system-x86
 %ifarch %{ix86} x86_64
@@ -1011,6 +780,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Jul  4 2012 Hans de Goede <hdegoede@redhat.com> - 2:1.1.0-1
+- New upstream release 1.1.0
+- Drop about a 100 spice + USB patches, which are all upstream
+
 * Mon Apr 23 2012 Paolo Bonzini <pbonzini@redhat.com> - 2:1.0-17
 - Fix install failure due to set -e (rhbz #815272)
 
