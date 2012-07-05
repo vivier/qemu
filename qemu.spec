@@ -79,6 +79,9 @@ Source11: 99-qemu-guest-agent.rules
 Patch1:   0001-qemu-kvm-Add-missing-default-machine-options.patch
 Patch2:   0002-qemu-kvm-virtio-Do-not-register-mask-notifiers-witho.patch
 
+# Speculative patch to fix msi and virtio-pci modules in build (not upstream).
+Patch3:   0001-buildsys-Move-msi-x-and-virtio-pci-from-Makefile.obj.patch
+
 # The infamous chardev flow control patches
 Patch101: 0101-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
 Patch102: 0102-char-Add-a-QemuChrHandlers-struct-to-initialise-char.patch
@@ -344,6 +347,7 @@ such as kvm_stat.
 %setup -q -n qemu-kvm-%{version}
 %patch1 -p1
 %patch2 -p1
+%patch3 -p1
 
 %patch101 -p1
 %patch102 -p1
@@ -708,7 +712,6 @@ fi
 %{_datadir}/%{name}/linuxboot.bin
 %{_datadir}/%{name}/multiboot.bin
 %{_datadir}/%{name}/mpc8544ds.dtb
-%{_datadir}/%{name}/vapic.bin
 %{_datadir}/%{name}/vgabios.bin
 %{_datadir}/%{name}/vgabios-cirrus.bin
 %{_datadir}/%{name}/vgabios-qxl.bin
