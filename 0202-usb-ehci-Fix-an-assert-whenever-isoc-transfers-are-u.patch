@@ -1,0 +1,30 @@
+From 050146c8b005683cbc36a837844d2d637b27100c Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Fri, 6 Jul 2012 12:04:15 +0200
+Subject: [PATCH] usb-ehci: Fix an assert whenever isoc transfers are used
+
+hcd-ehci.c is missing an usb_packet_init() call for the ipacket UsbPacket
+it uses for isoc transfers, triggering an assert (taking the entire vm down)
+in usb_packet_setup as soon as any isoc transfers are done by a high speed
+USB device.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ hw/usb/hcd-ehci.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/hw/usb/hcd-ehci.c b/hw/usb/hcd-ehci.c
+index e759c99..eaa3ddd 100644
+--- a/hw/usb/hcd-ehci.c
++++ b/hw/usb/hcd-ehci.c
+@@ -2300,6 +2300,7 @@ static int usb_ehci_initfn(PCIDevice *dev)
+     s->frame_timer = qemu_new_timer_ns(vm_clock, ehci_frame_timer, s);
+     QTAILQ_INIT(&s->aqueues);
+     QTAILQ_INIT(&s->pqueues);
++    usb_packet_init(&s->ipacket);
+ 
+     qemu_register_reset(ehci_reset, s);
+ 
+-- 
+1.7.10.4
+

@@ -38,7 +38,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.1.0
-Release: 4%{?dist}
+Release: 5%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -103,6 +103,7 @@ Patch113: 0113-char-Disable-write-callback-if-throttled-chardev-is-.patch
 
 # USB-redir bugfixes
 Patch201: 0201-usb-redir-Correctly-handle-the-usb_redir_babble-usbr.patch
+Patch202: 0202-usb-ehci-Fix-an-assert-whenever-isoc-transfers-are-u.patch
 
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
 BuildRequires: libaio-devel
@@ -371,6 +372,7 @@ such as kvm_stat.
 %patch113 -p1
 
 %patch201 -p1
+%patch202 -p1
 
 
 %build
@@ -807,6 +809,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Jul  6 2012 Hans de Goede <hdegoede@redhat.com> - 2:1.1.0-5
+- Fix qemu crashing (on an assert) whenever USB-2.0 isoc transfers are used
+
 * Thu Jul  5 2012 Richard W.M. Jones <rjones@redhat.com> - 2:1.1.0-4
 - Disable tests since they hang intermittently.
 - Add kvmvapic.bin (replaces vapic.bin).
