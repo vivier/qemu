@@ -437,6 +437,8 @@ static void uhci_ioport_writew(void *opaque, uint32_t addr, uint32_t val)
     case 0x00:
         if ((val & UHCI_CMD_RS) && !(s->cmd & UHCI_CMD_RS)) {
             /* start frame processing */
+            s->expire_time = qemu_get_clock(vm_clock) +
+                (get_ticks_per_sec() / FRAME_TIMER_FREQ);
             qemu_mod_timer(s->frame_timer, qemu_get_clock(vm_clock));
             s->status &= ~UHCI_STS_HCHALTED;
         } else if (!(val & UHCI_CMD_RS)) {
@@ -1158,8 +1160,6 @@ static int usb_uhci_common_initfn(UHCIState *s)
         }
     }
     s->frame_timer = qemu_new_timer(vm_clock, uhci_frame_timer, s);
-    s->expire_time = qemu_get_clock(vm_clock) +
-        (get_ticks_per_sec() / FRAME_TIMER_FREQ);
     s->num_ports_vmstate = NB_PORTS;
     QTAILQ_INIT(&s->async_pending);
 
