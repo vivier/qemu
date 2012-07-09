@@ -120,6 +120,7 @@ typedef struct UHCIAsync {
     uint32_t  td;
     uint32_t  token;
     int8_t    valid;
+    uint8_t   isoc;
     uint8_t   done;
     uint8_t   buffer[2048];
 } UHCIAsync;
@@ -139,6 +140,7 @@ struct UHCIState {
     uint32_t fl_base_addr; /* frame list base address */
     uint8_t sof_timing;
     uint8_t status2; /* bit 0 and 1 are used to generate UHCI_STS_USBINT */
+    int64_t expire_time;
     QEMUTimer *frame_timer;
     UHCIPort ports[NB_PORTS];
 
@@ -176,6 +178,7 @@ static UHCIAsync *uhci_async_alloc(UHCIState *s)
     async->td    = 0;
     async->token = 0;
     async->done  = 0;
+    async->isoc  = 0;
 
     return async;
 }
@@ -772,13 +775,25 @@ static int uhci_handle_td(UHCIState *s, uint32_t addr, UHCI_TD *td, uint32_t *in
 {
     UHCIAsync *async;
     int len = 0, max_len;
-    uint8_t pid;
+    uint8_t pid, isoc;
+    uint32_t token;
 
     /* Is active ? */
     if (!(td->ctrl & TD_CTRL_ACTIVE))
         return 1;
 
-    async = uhci_async_find_td(s, addr, td->token);
+    /* token field is not unique for isochronous requests,
+     * so use the destination buffer 
+     */
+    if (td->ctrl & TD_CTRL_IOS) {
+        token = td->buffer;
+        isoc = 1;
+    } else {
+        token = td->token;
+        isoc = 0;
+    }
+
+    async = uhci_async_find_td(s, addr, token);
     if (async) {
         /* Already submitted */
         async->valid = 32;
@@ -795,9 +810,13 @@ static int uhci_handle_td(UHCIState *s, uint32_t addr, UHCI_TD *td, uint32_t *in
     if (!async)
         return 1;
 
-    async->valid = 10;
+    /* valid needs to be large enough to handle 10 frame delay
+     * for initial isochronous requests
+     */
+    async->valid = 32;
     async->td    = addr;
-    async->token = td->token;
+    async->token = token;
+    async->isoc  = isoc;
 
     max_len = ((td->token >> 21) + 1) & 0x7ff;
     pid = td->token & 0xff;
@@ -849,9 +868,31 @@ static void uhci_async_complete(USBPort *port, USBPacket *packet)
 
     DPRINTF("uhci: async complete. td 0x%x token 0x%x\n", async->td, async->token);
 
-    async->done = 1;
+    if (async->isoc) {
+        UHCI_TD td;
+        uint32_t link = async->td;
+        uint32_t int_mask = 0, val;
+        int len;
+ 
+        cpu_physical_memory_read(link & ~0xf, (uint8_t *) &td, sizeof(td));
+        le32_to_cpus(&td.link);
+        le32_to_cpus(&td.ctrl);
+        le32_to_cpus(&td.token);
+        le32_to_cpus(&td.buffer);
 
-    uhci_process_frame(s);
+        uhci_async_unlink(s, async);
+        len = uhci_complete_td(s, &td, async, &int_mask);
+        s->pending_int_mask |= int_mask;
+
+        /* update the status bits of the TD */
+        val = cpu_to_le32(td.ctrl);
+        cpu_physical_memory_write((link & ~0xf) + 4,
+                                  (const uint8_t *)&val, sizeof(val));
+        uhci_async_free(s, async);
+    } else {
+        async->done = 1;
+        uhci_process_frame(s);
+    }
 }
 
 static int is_valid(uint32_t link)
@@ -1013,13 +1054,15 @@ static void uhci_process_frame(UHCIState *s)
         /* go to the next entry */
     }
 
-    s->pending_int_mask = int_mask;
+    s->pending_int_mask |= int_mask;
 }
 
 static void uhci_frame_timer(void *opaque)
 {
     UHCIState *s = opaque;
-    int64_t expire_time;
+
+    /* prepare the timer for the next frame */
+    s->expire_time += (get_ticks_per_sec() / FRAME_TIMER_FREQ);
 
     if (!(s->cmd & UHCI_CMD_RS)) {
         /* Full stop */
@@ -1037,6 +1080,7 @@ static void uhci_frame_timer(void *opaque)
         s->status  |= UHCI_STS_USBINT;
         uhci_update_irq(s);
     }
+    s->pending_int_mask = 0;
 
     /* Start new frame */
     s->frnum = (s->frnum + 1) & 0x7ff;
@@ -1049,10 +1093,7 @@ static void uhci_frame_timer(void *opaque)
 
     uhci_async_validate_end(s);
 
-    /* prepare the timer for the next frame */
-    expire_time = qemu_get_clock(vm_clock) +
-        (get_ticks_per_sec() / FRAME_TIMER_FREQ);
-    qemu_mod_timer(s->frame_timer, expire_time);
+    qemu_mod_timer(s->frame_timer, s->expire_time);
 }
 
 static void uhci_map(PCIDevice *pci_dev, int region_num,
@@ -1107,6 +1148,8 @@ static int usb_uhci_common_initfn(UHCIState *s)
         }
     }
     s->frame_timer = qemu_new_timer(vm_clock, uhci_frame_timer, s);
+    s->expire_time = qemu_get_clock(vm_clock) +
+        (get_ticks_per_sec() / FRAME_TIMER_FREQ);
     s->num_ports_vmstate = NB_PORTS;
     QTAILQ_INIT(&s->async_pending);
 
