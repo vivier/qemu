@@ -353,6 +353,15 @@ static void uhci_pre_save(void *opaque)
     uhci_async_cancel_all(s);
 }
 
+static int uhci_post_load(void *opaque, int version_id)
+{
+    UHCIState *s = opaque;
+
+    s->expire_time = qemu_get_clock(vm_clock) +
+        (get_ticks_per_sec() / FRAME_TIMER_FREQ);
+    return 0;
+}
+
 static const VMStateDescription vmstate_uhci_port = {
     .name = "uhci port",
     .version_id = 1,
@@ -370,6 +379,7 @@ static const VMStateDescription vmstate_uhci = {
     .minimum_version_id = 1,
     .minimum_version_id_old = 1,
     .pre_save = uhci_pre_save,
+    .post_load = uhci_post_load,
     .fields      = (VMStateField []) {
         VMSTATE_PCI_DEVICE(dev, UHCIState),
         VMSTATE_UINT8_EQUAL(num_ports_vmstate, UHCIState),
