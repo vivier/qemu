@@ -38,7 +38,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.1.0
-Release: 6%{?dist}
+Release: 7%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -76,7 +76,7 @@ Source10: qemu-guest-agent.service
 Source11: 99-qemu-guest-agent.rules
 
 # Fixes from qemu-kvm git stable-1.1 branch
-Patch1:   0001-qemu-kvm-Add-missing-default-machine-options.patch
+#Patch1:   0001-qemu-kvm-Add-missing-default-machine-options.patch
 Patch2:   0002-qemu-kvm-virtio-Do-not-register-mask-notifiers-witho.patch
 
 # Upstream patch to fix build of msi/virtio-pci.
@@ -357,7 +357,7 @@ such as kvm_stat.
 
 %prep
 %setup -q -n qemu-kvm-%{version}
-%patch1 -p1
+#%patch1 -p1
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
@@ -815,9 +815,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
-* Tue Jul 10 2012 Richard W.M. Jones <rjones@redhat.com> - 2:1.1.0-6
+* Tue Jul 10 2012 Richard W.M. Jones <rjones@redhat.com> - 2:1.1.0-7
 - Add patch to fix default machine options.  This fixes libvirt
   detection of qemu.
+- Back out patch 1 which conflicts.
 
 * Fri Jul  6 2012 Hans de Goede <hdegoede@redhat.com> - 2:1.1.0-5
 - Fix qemu crashing (on an assert) whenever USB-2.0 isoc transfers are used
