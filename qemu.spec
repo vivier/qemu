@@ -38,7 +38,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.1.0
-Release: 5%{?dist}
+Release: 6%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -85,6 +85,11 @@ Patch3:   0001-kvm-Enable-use-of-kvm_irqchip_in_kernel-in-hwlib-cod.patch
 # Use siginfo_t instead of struct siginfo, for glibc in Rawhide.
 # Sent upstream 2012-07-05.
 Patch4:   0001-Replace-struct-siginfo-with-siginfo_t.patch
+
+# Patch to fix default machine options.
+# http://www.spinics.net/lists/kvm/msg75509.html
+# Sent upstream by danpb on 2012-07-06.
+Patch5:   0001-qemu-kvm-Add-missing-default-machine-options.patch
 
 # The infamous chardev flow control patches
 Patch101: 0101-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
@@ -356,6 +361,7 @@ such as kvm_stat.
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
+%patch5 -p1
 
 %patch101 -p1
 %patch102 -p1
@@ -809,6 +815,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jul 10 2012 Richard W.M. Jones <rjones@redhat.com> - 2:1.1.0-6
+- Add patch to fix default machine options.  This fixes libvirt
+  detection of qemu.
+
 * Fri Jul  6 2012 Hans de Goede <hdegoede@redhat.com> - 2:1.1.0-5
 - Fix qemu crashing (on an assert) whenever USB-2.0 isoc transfers are used
 
