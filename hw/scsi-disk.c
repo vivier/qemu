@@ -28,9 +28,6 @@ do { printf("scsi-disk: " fmt , ## __VA_ARGS__); } while (0)
 #define DPRINTF(fmt, ...) do {} while(0)
 #endif
 
-#define BADF(fmt, ...) \
-do { fprintf(stderr, "scsi-disk: " fmt , ## __VA_ARGS__); } while (0)
-
 #include "qemu-common.h"
 #include "qemu-error.h"
 #include "scsi.h"
@@ -415,12 +412,6 @@ static int scsi_disk_emulate_inquiry(SCSIRequest *req, uint8_t *outbuf)
     SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, req->dev);
     int buflen = 0;
 
-    if (req->cmd.buf[1] & 0x2) {
-        /* Command support data - optional, not implemented */
-        BADF("optional INQUIRY command support request not implemented\n");
-        return -1;
-    }
-
     if (req->cmd.buf[1] & 0x1) {
         /* Vital product data */
         uint8_t page_code = req->cmd.buf[2];
@@ -538,8 +529,6 @@ static int scsi_disk_emulate_inquiry(SCSIRequest *req, uint8_t *outbuf)
             break;
         }
         default:
-            BADF("Error: unsupported Inquiry (EVPD[%02X]) "
-                 "buffer size %zd\n", page_code, req->cmd.xfer);
             return -1;
         }
         /* done with EVPD */
@@ -548,8 +537,6 @@ static int scsi_disk_emulate_inquiry(SCSIRequest *req, uint8_t *outbuf)
 
     /* Standard INQUIRY data */
     if (req->cmd.buf[2] != 0) {
-        BADF("Error: Inquiry (STANDARD) page or code "
-             "is non-zero [%02X]\n", req->cmd.buf[2]);
         return -1;
     }
 
