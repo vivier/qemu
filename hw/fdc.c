@@ -159,8 +159,12 @@ static int fd_seek (fdrive_t *drv, uint8_t head, uint8_t track, uint8_t sect,
         }
 #endif
         drv->head = head;
-        if (drv->track != track)
+        if (drv->track != track) {
+            if (drv->bs != NULL && bdrv_is_inserted(drv->bs)) {
+                drv->media_changed = 0;
+            }
             ret = 1;
+        }
         drv->track = track;
         drv->sect = sect;
     }
@@ -176,9 +180,7 @@ static int fd_seek (fdrive_t *drv, uint8_t head, uint8_t track, uint8_t sect,
 static void fd_recalibrate (fdrive_t *drv)
 {
     FLOPPY_DPRINTF("recalibrate\n");
-    drv->head = 0;
-    drv->track = 0;
-    drv->sect = 1;
+    fd_seek(drv, 0, 0, 1, 1);
 }
 
 /* Recognize floppy formats */
@@ -1059,7 +1061,10 @@ static void fdctrl_unimplemented (fdctrl_t *fdctrl, int direction)
     fdctrl_set_fifo(fdctrl, 1, 0);
 }
 
-/* Seek to next sector */
+/* Seek to next sector
+ * returns 0 when end of track reached (for DBL_SIDES on head 1)
+ * otherwise returns 1
+ */
 static int fdctrl_seek_to_next_sect (fdctrl_t *fdctrl, fdrive_t *cur_drv)
 {
     FLOPPY_DPRINTF("seek to next sector (%d %02x %02x => %d)\n",
@@ -1067,30 +1072,39 @@ static int fdctrl_seek_to_next_sect (fdctrl_t *fdctrl, fdrive_t *cur_drv)
                    fd_sector(cur_drv));
     /* XXX: cur_drv->sect >= cur_drv->last_sect should be an
        error in fact */
-    if (cur_drv->sect >= cur_drv->last_sect ||
-        cur_drv->sect == fdctrl->eot) {
-        cur_drv->sect = 1;
+    uint8_t new_head = cur_drv->head;
+    uint8_t new_track = cur_drv->track;
+    uint8_t new_sect = cur_drv->sect;
+
+    int ret = 1;
+
+    if (new_sect >= cur_drv->last_sect ||
+        new_sect == fdctrl->eot) {
+        new_sect = 1;
         if (FD_MULTI_TRACK(fdctrl->data_state)) {
-            if (cur_drv->head == 0 &&
+            if (new_head == 0 &&
                 (cur_drv->flags & FDISK_DBL_SIDES) != 0) {
-                cur_drv->head = 1;
+                new_head = 1;
             } else {
-                cur_drv->head = 0;
-                cur_drv->track++;
-                if ((cur_drv->flags & FDISK_DBL_SIDES) == 0)
-                    return 0;
+                new_head = 0;
+                new_track++;
+                if ((cur_drv->flags & FDISK_DBL_SIDES) == 0) {
+                    ret = 0;
+                }
             }
         } else {
-            cur_drv->track++;
-            return 0;
+            new_track++;
+            ret = 0;
         }
-        FLOPPY_DPRINTF("seek to next track (%d %02x %02x => %d)\n",
-                       cur_drv->head, cur_drv->track,
-                       cur_drv->sect, fd_sector(cur_drv));
+        if (ret == 1) {
+            FLOPPY_DPRINTF("seek to next track (%d %02x %02x => %d)\n",
+                    new_head, new_track, new_sect, fd_sector(cur_drv));
+        }
     } else {
-        cur_drv->sect++;
+        new_sect++;
     }
-    return 1;
+    fd_seek(cur_drv, new_head, new_track, new_sect, 1);
+    return ret;
 }
 
 /* Callback for transfer end (stop or abort) */
@@ -1659,13 +1673,12 @@ static void fdctrl_handle_seek (fdctrl_t *fdctrl, int direction)
     SET_CUR_DRV(fdctrl, fdctrl->fifo[1] & FD_DOR_SELMASK);
     cur_drv = get_cur_drv(fdctrl);
     fdctrl_reset_fifo(fdctrl);
-    if (fdctrl->fifo[2] > cur_drv->max_track) {
-        fdctrl_raise_irq(fdctrl, FD_SR0_ABNTERM | FD_SR0_SEEK);
-    } else {
-        cur_drv->track = fdctrl->fifo[2];
-        /* Raise Interrupt */
-        fdctrl_raise_irq(fdctrl, FD_SR0_SEEK);
-    }
+    /* The seek command just sends step pulses to the drive and doesn't care if
+     * there is a medium inserted of if it's banging the head against the drive.
+     */
+    fd_seek(cur_drv, cur_drv->head, fdctrl->fifo[2], cur_drv->sect, 1);
+    /* Raise Interrupt */
+    fdctrl_raise_irq(fdctrl, FD_SR0_SEEK);
 }
 
 static void fdctrl_handle_perpendicular_mode (fdctrl_t *fdctrl, int direction)
@@ -1721,32 +1734,35 @@ static void fdctrl_handle_drive_specification_command (fdctrl_t *fdctrl, int dir
     }
 }
 
-static void fdctrl_handle_relative_seek_out (fdctrl_t *fdctrl, int direction)
+static void fdctrl_handle_relative_seek_in(fdctrl_t *fdctrl, int direction)
 {
     fdrive_t *cur_drv;
 
     SET_CUR_DRV(fdctrl, fdctrl->fifo[1] & FD_DOR_SELMASK);
     cur_drv = get_cur_drv(fdctrl);
     if (fdctrl->fifo[2] + cur_drv->track >= cur_drv->max_track) {
-        cur_drv->track = cur_drv->max_track - 1;
+        fd_seek(cur_drv, cur_drv->head, cur_drv->max_track - 1,
+                cur_drv->sect, 1);
     } else {
-        cur_drv->track += fdctrl->fifo[2];
+        fd_seek(cur_drv, cur_drv->head,
+                cur_drv->track + fdctrl->fifo[2], cur_drv->sect, 1);
     }
     fdctrl_reset_fifo(fdctrl);
     /* Raise Interrupt */
     fdctrl_raise_irq(fdctrl, FD_SR0_SEEK);
 }
 
-static void fdctrl_handle_relative_seek_in (fdctrl_t *fdctrl, int direction)
+static void fdctrl_handle_relative_seek_out(fdctrl_t *fdctrl, int direction)
 {
     fdrive_t *cur_drv;
 
     SET_CUR_DRV(fdctrl, fdctrl->fifo[1] & FD_DOR_SELMASK);
     cur_drv = get_cur_drv(fdctrl);
     if (fdctrl->fifo[2] > cur_drv->track) {
-        cur_drv->track = 0;
+        fd_seek(cur_drv, cur_drv->head, 0, cur_drv->sect, 1);
     } else {
-        cur_drv->track -= fdctrl->fifo[2];
+        fd_seek(cur_drv, cur_drv->head,
+                cur_drv->track - fdctrl->fifo[2], cur_drv->sect, 1);
     }
     fdctrl_reset_fifo(fdctrl);
     /* Raise Interrupt */
