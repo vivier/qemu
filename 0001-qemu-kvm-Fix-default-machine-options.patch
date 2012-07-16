@@ -12,10 +12,10 @@ kernel_irqchip=on that is now enable by default in upstream.
  1 file changed, 16 insertions(+), 7 deletions(-)
 
 diff --git a/hw/pc_piix.c b/hw/pc_piix.c
-index 98a06fa..5860d52 100644
+index 4e8a280..50e108a 100644
 --- a/hw/pc_piix.c
 +++ b/hw/pc_piix.c
-@@ -353,6 +353,12 @@ static void pc_xen_hvm_init(ram_addr_t ram_size,
+@@ -355,6 +355,12 @@ static void pc_xen_hvm_init(ram_addr_t ram_size,
  }
  #endif
  
@@ -25,10 +25,10 @@ index 98a06fa..5860d52 100644
 +#define KVM_MACHINE_OPTIONS ""
 +#endif
 +
- static QEMUMachine pc_machine_v1_2 = {
-     .name = "pc-1.2",
+ static QEMUMachine pc_machine_v1_1 = {
+     .name = "pc-1.1",
      .alias = "pc",
-@@ -360,7 +366,7 @@ static QEMUMachine pc_machine_v1_2 = {
+@@ -362,7 +368,7 @@ static QEMUMachine pc_machine_v1_1 = {
      .init = pc_init_pci,
      .max_cpus = 255,
      .is_default = 1,
@@ -36,32 +36,26 @@ index 98a06fa..5860d52 100644
 +    .default_machine_opts = KVM_MACHINE_OPTIONS,
  };
  
- #define PC_COMPAT_1_1 \
-@@ -387,6 +393,7 @@ static QEMUMachine pc_machine_v1_1 = {
+ #define PC_COMPAT_1_0 \
+@@ -393,7 +399,7 @@ static QEMUMachine pc_machine_v1_0 = {
      .desc = "Standard PC",
      .init = pc_init_pci,
      .max_cpus = 255,
-+    .default_machine_opts = KVM_MACHINE_OPTIONS,
-     .compat_props = (GlobalProperty[]) {
-         PC_COMPAT_1_1,
-         { /* end of list */ }
-@@ -422,6 +429,7 @@ static QEMUMachine pc_machine_v1_0 = {
-     .desc = "Standard PC",
-     .init = pc_init_pci,
-     .max_cpus = 255,
+-    .default_machine_opts = "accel=kvm,kernel_irqchip=on",
 +    .default_machine_opts = KVM_MACHINE_OPTIONS,
      .compat_props = (GlobalProperty[]) {
          PC_COMPAT_1_0,
          { /* end of list */ }
-@@ -437,6 +445,7 @@ static QEMUMachine pc_machine_v0_15 = {
+@@ -408,7 +414,7 @@ static QEMUMachine pc_machine_v0_15 = {
      .desc = "Standard PC",
      .init = pc_init_pci,
      .max_cpus = 255,
+-    .default_machine_opts = "accel=kvm,kernel_irqchip=on",
 +    .default_machine_opts = KVM_MACHINE_OPTIONS,
      .compat_props = (GlobalProperty[]) {
          PC_COMPAT_0_15,
          { /* end of list */ }
-@@ -469,7 +478,7 @@ static QEMUMachine pc_machine_v0_14 = {
+@@ -440,7 +446,7 @@ static QEMUMachine pc_machine_v0_14 = {
      .desc = "Standard PC",
      .init = pc_init_pci,
      .max_cpus = 255,
@@ -70,7 +64,7 @@ index 98a06fa..5860d52 100644
      .compat_props = (GlobalProperty[]) {
          PC_COMPAT_0_14, 
          {
-@@ -503,7 +512,7 @@ static QEMUMachine pc_machine_v0_13 = {
+@@ -473,7 +479,7 @@ static QEMUMachine pc_machine_v0_13 = {
      .desc = "Standard PC",
      .init = pc_init_pci_no_kvmclock,
      .max_cpus = 255,
@@ -79,7 +73,7 @@ index 98a06fa..5860d52 100644
      .compat_props = (GlobalProperty[]) {
          PC_COMPAT_0_13,
          {
-@@ -541,7 +550,7 @@ static QEMUMachine pc_machine_v0_12 = {
+@@ -510,7 +516,7 @@ static QEMUMachine pc_machine_v0_12 = {
      .desc = "Standard PC",
      .init = pc_init_pci_no_kvmclock,
      .max_cpus = 255,
@@ -88,7 +82,7 @@ index 98a06fa..5860d52 100644
      .compat_props = (GlobalProperty[]) {
          PC_COMPAT_0_12,
          {
-@@ -575,7 +584,7 @@ static QEMUMachine pc_machine_v0_11 = {
+@@ -543,7 +549,7 @@ static QEMUMachine pc_machine_v0_11 = {
      .desc = "Standard PC, qemu 0.11",
      .init = pc_init_pci_no_kvmclock,
      .max_cpus = 255,
@@ -97,7 +91,7 @@ index 98a06fa..5860d52 100644
      .compat_props = (GlobalProperty[]) {
          PC_COMPAT_0_11,
          {
-@@ -597,7 +606,7 @@ static QEMUMachine pc_machine_v0_10 = {
+@@ -564,7 +570,7 @@ static QEMUMachine pc_machine_v0_10 = {
      .desc = "Standard PC, qemu 0.10",
      .init = pc_init_pci_no_kvmclock,
      .max_cpus = 255,
@@ -106,7 +100,7 @@ index 98a06fa..5860d52 100644
      .compat_props = (GlobalProperty[]) {
          PC_COMPAT_0_11,
          {
-@@ -631,7 +640,7 @@ static QEMUMachine isapc_machine = {
+@@ -597,7 +603,7 @@ static QEMUMachine isapc_machine = {
      .desc = "ISA-only PC",
      .init = pc_init_isa,
      .max_cpus = 1,
@@ -115,6 +109,3 @@ index 98a06fa..5860d52 100644
      .compat_props = (GlobalProperty[]) {
          {
              .driver   = "pc-sysfw",
--- 
-1.7.10.4
-

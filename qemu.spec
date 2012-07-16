@@ -38,7 +38,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.1.0
-Release: 7%{?dist}
+Release: 8%{?dist}
 # Epoch because we pushed a qemu-1.0 package
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -76,7 +76,7 @@ Source10: qemu-guest-agent.service
 Source11: 99-qemu-guest-agent.rules
 
 # Fixes from qemu-kvm git stable-1.1 branch
-#Patch1:   0001-qemu-kvm-Add-missing-default-machine-options.patch
+Patch1:   0001-qemu-kvm-Add-missing-default-machine-options.patch
 Patch2:   0002-qemu-kvm-virtio-Do-not-register-mask-notifiers-witho.patch
 
 # Upstream patch to fix build of msi/virtio-pci.
@@ -89,7 +89,7 @@ Patch4:   0001-Replace-struct-siginfo-with-siginfo_t.patch
 # Patch to fix default machine options.
 # http://www.spinics.net/lists/kvm/msg75509.html
 # Sent upstream by danpb on 2012-07-06.
-Patch5:   0001-qemu-kvm-Add-missing-default-machine-options.patch
+Patch5:   0001-qemu-kvm-Fix-default-machine-options.patch
 
 # The infamous chardev flow control patches
 Patch101: 0101-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
@@ -357,7 +357,7 @@ such as kvm_stat.
 
 %prep
 %setup -q -n qemu-kvm-%{version}
-#%patch1 -p1
+%patch1 -p1
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
@@ -815,6 +815,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Jul 10 2012 Richard W.M. Jones <rjones@redhat.com> - 2:1.1.0-8
+- Re-diff previous patch so that it applies and actually apply it
+
 * Tue Jul 10 2012 Richard W.M. Jones <rjones@redhat.com> - 2:1.1.0-7
 - Add patch to fix default machine options.  This fixes libvirt
   detection of qemu.
