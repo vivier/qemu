@@ -398,6 +398,9 @@ enum {
 };
 
 enum {
+    FD_SR0_DS0      = 0x01,
+    FD_SR0_DS1      = 0x02,
+    FD_SR0_HEAD     = 0x04,
     FD_SR0_EQPMT    = 0x10,
     FD_SR0_SEEK     = 0x20,
     FD_SR0_ABNTERM  = 0x40,
@@ -1043,14 +1046,15 @@ static void fdctrl_reset_fifo (fdctrl_t *fdctrl)
 }
 
 /* Set FIFO status for the host to read */
-static void fdctrl_set_fifo (fdctrl_t *fdctrl, int fifo_len, int do_irq)
+static void fdctrl_set_fifo(fdctrl_t *fdctrl, int fifo_len, uint8_t status0)
 {
     fdctrl->data_dir = FD_DIR_READ;
     fdctrl->data_len = fifo_len;
     fdctrl->data_pos = 0;
     fdctrl->msr |= FD_MSR_CMDBUSY | FD_MSR_RQM | FD_MSR_DIO;
-    if (do_irq)
-        fdctrl_raise_irq(fdctrl, 0x00);
+    if (status0) {
+        fdctrl_raise_irq(fdctrl, status0);
+    }
 }
 
 /* Set an error: unimplemented/unknown command */
@@ -1114,10 +1118,12 @@ static void fdctrl_stop_transfer (fdctrl_t *fdctrl, uint8_t status0,
     fdrive_t *cur_drv;
 
     cur_drv = get_cur_drv(fdctrl);
+    fdctrl->status0 = status0 | FD_SR0_SEEK | (cur_drv->head << 2) |
+                      GET_CUR_DRV(fdctrl);
+
     FLOPPY_DPRINTF("transfer status: %02x %02x %02x (%02x)\n",
-                   status0, status1, status2,
-                   status0 | (cur_drv->head << 2) | GET_CUR_DRV(fdctrl));
-    fdctrl->fifo[0] = status0 | (cur_drv->head << 2) | GET_CUR_DRV(fdctrl);
+                   status0, status1, status2, fdctrl->status0);
+    fdctrl->fifo[0] = fdctrl->status0;
     fdctrl->fifo[1] = status1;
     fdctrl->fifo[2] = status2;
     fdctrl->fifo[3] = cur_drv->track;
@@ -1130,7 +1136,7 @@ static void fdctrl_stop_transfer (fdctrl_t *fdctrl, uint8_t status0,
     }
     fdctrl->msr |= FD_MSR_RQM | FD_MSR_DIO;
     fdctrl->msr &= ~FD_MSR_NONDMA;
-    fdctrl_set_fifo(fdctrl, 7, 1);
+    fdctrl_set_fifo(fdctrl, 7, fdctrl->status0);
 }
 
 /* Prepare a data transfer (either DMA or FIFO) */
@@ -1230,7 +1236,7 @@ static void fdctrl_start_transfer (fdctrl_t *fdctrl, int direction)
     if (direction != FD_DIR_WRITE)
         fdctrl->msr |= FD_MSR_DIO;
     /* IO based transfer: calculate len */
-    fdctrl_raise_irq(fdctrl, 0x00);
+    fdctrl_raise_irq(fdctrl, FD_SR0_SEEK);
 
     return;
 }
@@ -1648,16 +1654,18 @@ static void fdctrl_handle_sense_interrupt_status (fdctrl_t *fdctrl, int directio
 {
     fdrive_t *cur_drv = get_cur_drv(fdctrl);
 
-    if(fdctrl->reset_sensei > 0) {
+    if (fdctrl->reset_sensei > 0) {
         fdctrl->fifo[0] =
             FD_SR0_RDYCHG + FD_RESET_SENSEI_COUNT - fdctrl->reset_sensei;
         fdctrl->reset_sensei--;
+    } else if (!(fdctrl->sra & FD_SRA_INTPEND)) {
+        fdctrl->fifo[0] = FD_SR0_INVCMD;
+        fdctrl_set_fifo(fdctrl, 1, 0);
+        return;
     } else {
-        /* XXX: status0 handling is broken for read/write
-           commands, so we do this hack. It should be suppressed
-           ASAP */
         fdctrl->fifo[0] =
-            FD_SR0_SEEK | (cur_drv->head << 2) | GET_CUR_DRV(fdctrl);
+                (fdctrl->status0 & ~(FD_SR0_HEAD | FD_SR0_DS1 | FD_SR0_DS0))
+                | GET_CUR_DRV(fdctrl);
     }
 
     fdctrl->fifo[1] = cur_drv->track;
