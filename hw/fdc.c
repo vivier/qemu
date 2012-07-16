@@ -165,6 +165,10 @@ static int fd_seek (fdrive_t *drv, uint8_t head, uint8_t track, uint8_t sect,
         drv->sect = sect;
     }
 
+    if (drv->bs == NULL || !bdrv_is_inserted(drv->bs)) {
+        ret = 2;
+    }
+
     return ret;
 }
 
