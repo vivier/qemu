@@ -243,7 +243,7 @@ static void fd_revalidate (fdrive_t *drv)
     int nb_heads, max_track, last_sect, ro;
 
     FLOPPY_DPRINTF("revalidate\n");
-    if (drv->bs != NULL && bdrv_is_inserted(drv->bs)) {
+    if (drv->bs != NULL) {
         ro = bdrv_is_read_only(drv->bs);
         bdrv_get_geometry_hint(drv->bs, &nb_heads, &max_track, &last_sect);
         if (nb_heads != 0 && max_track != 0 && last_sect != 0) {
@@ -280,8 +280,12 @@ static void fd_revalidate (fdrive_t *drv)
             max_track = parse->max_track;
             last_sect = parse->last_sect;
             drv->drive = parse->drive;
-            FLOPPY_DPRINTF("%s floppy disk (%d h %d t %d s) %s\n", parse->str,
-                           nb_heads, max_track, last_sect, ro ? "ro" : "rw");
+            if (bdrv_is_inserted(drv->bs)) {
+                FLOPPY_DPRINTF("%s floppy disk (%d h %d t %d s) %s\n", parse->str,
+                               nb_heads, max_track, last_sect, ro ? "ro" : "rw");
+            } else {
+                FLOPPY_DPRINTF("No disk in drive\n");
+            }
         }
         if (nb_heads == 1) {
             drv->flags &= ~FDISK_DBL_SIDES;
@@ -292,7 +296,7 @@ static void fd_revalidate (fdrive_t *drv)
         drv->last_sect = last_sect;
         drv->ro = ro;
     } else {
-        FLOPPY_DPRINTF("No disk in drive\n");
+        FLOPPY_DPRINTF("No drive connected\n");
         drv->last_sect = 0;
         drv->max_track = 0;
         drv->flags &= ~FDISK_DBL_SIDES;
@@ -787,7 +791,7 @@ static void fdctrl_raise_irq (fdctrl_t *fdctrl, uint8_t status0)
         fdrive_t *cur_drv;
         /* A seek clears the disk change line (if a disk is inserted) */
         cur_drv = get_cur_drv(fdctrl);
-        if (cur_drv->max_track) {
+        if (cur_drv->bs != NULL && bdrv_is_inserted(cur_drv->bs)) {
             cur_drv->media_changed = 0;
         }
     }
@@ -1891,7 +1895,7 @@ static void fdctrl_connect_drives(fdctrl_t *fdctrl)
         drive = &fdctrl->drives[i];
 
         fd_init(drive);
-        fd_revalidate(drive);
+        fdctrl_change_cb(drive, 0);
         if (drive->bs) {
             bdrv_set_dev_ops(drive->bs, &fdctrl_block_ops, drive);
         }
