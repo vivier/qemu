@@ -1,0 +1,111 @@
+From ad47ffe7134fc7cd6a74fd3cdc0470723b883b93 Mon Sep 17 00:00:00 2001
+From: "Daniel P. Berrange" <berrange@redhat.com>
+Date: Tue, 10 Jul 2012 10:54:55 +0100
+Subject: [PATCH] qemu-kvm: Fix default machine options
+
+qemu-kvm-specific machine defaults were missing for pc-0.15 to pc-1.1.
+Then Daniel noted that --disable-kvm caused problems as the generated
+binaries would be unable to run. As we are at it, we can drop the
+kernel_irqchip=on that is now enable by default in upstream.
+---
+ hw/pc_piix.c |   23 ++++++++++++++++-------
+ 1 file changed, 16 insertions(+), 7 deletions(-)
+
+diff --git a/hw/pc_piix.c b/hw/pc_piix.c
+index 4e8a280..50e108a 100644
+--- a/hw/pc_piix.c
++++ b/hw/pc_piix.c
+@@ -355,6 +355,12 @@ static void pc_xen_hvm_init(ram_addr_t ram_size,
+ }
+ #endif
+ 
++#ifdef CONFIG_KVM_OPTIONS
++#define KVM_MACHINE_OPTIONS "accel=kvm"
++#else
++#define KVM_MACHINE_OPTIONS ""
++#endif
++
+ static QEMUMachine pc_machine_v1_1 = {
+     .name = "pc-1.1",
+     .alias = "pc",
+@@ -362,7 +368,7 @@ static QEMUMachine pc_machine_v1_1 = {
+     .init = pc_init_pci,
+     .max_cpus = 255,
+     .is_default = 1,
+-    .default_machine_opts = "accel=kvm,kernel_irqchip=on",
++    .default_machine_opts = KVM_MACHINE_OPTIONS,
+ };
+ 
+ #define PC_COMPAT_1_0 \
+@@ -393,7 +399,7 @@ static QEMUMachine pc_machine_v1_0 = {
+     .desc = "Standard PC",
+     .init = pc_init_pci,
+     .max_cpus = 255,
+-    .default_machine_opts = "accel=kvm,kernel_irqchip=on",
++    .default_machine_opts = KVM_MACHINE_OPTIONS,
+     .compat_props = (GlobalProperty[]) {
+         PC_COMPAT_1_0,
+         { /* end of list */ }
+@@ -408,7 +414,7 @@ static QEMUMachine pc_machine_v0_15 = {
+     .desc = "Standard PC",
+     .init = pc_init_pci,
+     .max_cpus = 255,
+-    .default_machine_opts = "accel=kvm,kernel_irqchip=on",
++    .default_machine_opts = KVM_MACHINE_OPTIONS,
+     .compat_props = (GlobalProperty[]) {
+         PC_COMPAT_0_15,
+         { /* end of list */ }
+@@ -440,7 +446,7 @@ static QEMUMachine pc_machine_v0_14 = {
+     .desc = "Standard PC",
+     .init = pc_init_pci,
+     .max_cpus = 255,
+-    .default_machine_opts = "accel=kvm,kernel_irqchip=on",
++    .default_machine_opts = KVM_MACHINE_OPTIONS,
+     .compat_props = (GlobalProperty[]) {
+         PC_COMPAT_0_14, 
+         {
+@@ -473,7 +479,7 @@ static QEMUMachine pc_machine_v0_13 = {
+     .desc = "Standard PC",
+     .init = pc_init_pci_no_kvmclock,
+     .max_cpus = 255,
+-    .default_machine_opts = "accel=kvm,kernel_irqchip=on",
++    .default_machine_opts = KVM_MACHINE_OPTIONS,
+     .compat_props = (GlobalProperty[]) {
+         PC_COMPAT_0_13,
+         {
+@@ -510,7 +516,7 @@ static QEMUMachine pc_machine_v0_12 = {
+     .desc = "Standard PC",
+     .init = pc_init_pci_no_kvmclock,
+     .max_cpus = 255,
+-    .default_machine_opts = "accel=kvm,kernel_irqchip=on",
++    .default_machine_opts = KVM_MACHINE_OPTIONS,
+     .compat_props = (GlobalProperty[]) {
+         PC_COMPAT_0_12,
+         {
+@@ -543,7 +549,7 @@ static QEMUMachine pc_machine_v0_11 = {
+     .desc = "Standard PC, qemu 0.11",
+     .init = pc_init_pci_no_kvmclock,
+     .max_cpus = 255,
+-    .default_machine_opts = "accel=kvm,kernel_irqchip=on",
++    .default_machine_opts = KVM_MACHINE_OPTIONS,
+     .compat_props = (GlobalProperty[]) {
+         PC_COMPAT_0_11,
+         {
+@@ -564,7 +570,7 @@ static QEMUMachine pc_machine_v0_10 = {
+     .desc = "Standard PC, qemu 0.10",
+     .init = pc_init_pci_no_kvmclock,
+     .max_cpus = 255,
+-    .default_machine_opts = "accel=kvm,kernel_irqchip=on",
++    .default_machine_opts = KVM_MACHINE_OPTIONS,
+     .compat_props = (GlobalProperty[]) {
+         PC_COMPAT_0_11,
+         {
+@@ -597,7 +603,7 @@ static QEMUMachine isapc_machine = {
+     .desc = "ISA-only PC",
+     .init = pc_init_isa,
+     .max_cpus = 1,
+-    .default_machine_opts = "accel=kvm,kernel_irqchip=on",
++    .default_machine_opts = KVM_MACHINE_OPTIONS,
+     .compat_props = (GlobalProperty[]) {
+         {
+             .driver   = "pc-sysfw",
