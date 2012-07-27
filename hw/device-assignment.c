@@ -1136,10 +1136,9 @@ static int assigned_dev_update_msix_mmio(PCIDevice *pci_dev)
     AssignedDevice *adev = container_of(pci_dev, AssignedDevice, dev);
     uint16_t entries_nr = 0, entries_max_nr;
     int pos = 0, i, r = 0;
-    uint32_t msg_addr, msg_upper_addr, msg_data, msg_ctrl;
     struct kvm_assigned_msix_nr msix_nr;
     struct kvm_assigned_msix_entry msix_entry;
-    void *va = adev->msix_table_page;
+    MSIXTableEntry *entry = adev->msix_table;
 
     pos = pci_find_capability(pci_dev, PCI_CAP_ID_MSIX);
 
@@ -1148,12 +1147,11 @@ static int assigned_dev_update_msix_mmio(PCIDevice *pci_dev)
     entries_max_nr += 1;
 
     /* Get the usable entry number for allocating */
-    for (i = 0; i < entries_max_nr; i++) {
-        memcpy(&msg_ctrl, va + i * 16 + 12, 4);
-        memcpy(&msg_data, va + i * 16 + 8, 4);
+    for (i = 0; i < entries_max_nr; i++, entry++) {
         /* Ignore unused entry even it's unmasked */
-        if (msg_data == 0)
+        if (entry->data == 0) {
             continue;
+        }
         entries_nr ++;
     }
 
@@ -1181,16 +1179,13 @@ static int assigned_dev_update_msix_mmio(PCIDevice *pci_dev)
 
     msix_entry.assigned_dev_id = msix_nr.assigned_dev_id;
     entries_nr = 0;
-    for (i = 0; i < entries_max_nr; i++) {
+    entry = adev->msix_table;
+    for (i = 0; i < entries_max_nr; i++, entry++) {
         if (entries_nr >= msix_nr.entry_nr)
             break;
-        memcpy(&msg_ctrl, va + i * 16 + 12, 4);
-        memcpy(&msg_data, va + i * 16 + 8, 4);
-        if (msg_data == 0)
+        if (entry->data == 0) {
             continue;
-
-        memcpy(&msg_addr, va + i * 16, 4);
-        memcpy(&msg_upper_addr, va + i * 16 + 4, 4);
+        }
 
         r = kvm_get_irq_route_gsi(kvm_context);
         if (r < 0)
@@ -1199,10 +1194,11 @@ static int assigned_dev_update_msix_mmio(PCIDevice *pci_dev)
         adev->entry[entries_nr].gsi = r;
         adev->entry[entries_nr].type = KVM_IRQ_ROUTING_MSI;
         adev->entry[entries_nr].flags = 0;
-        adev->entry[entries_nr].u.msi.address_lo = msg_addr;
-        adev->entry[entries_nr].u.msi.address_hi = msg_upper_addr;
-        adev->entry[entries_nr].u.msi.data = msg_data;
-        DEBUG("MSI-X data 0x%x, MSI-X addr_lo 0x%x\n!", msg_data, msg_addr);
+        adev->entry[entries_nr].u.msi.address_lo = entry->addr_lo;
+        adev->entry[entries_nr].u.msi.address_hi = entry->addr_hi;
+        adev->entry[entries_nr].u.msi.data = entry->data;
+        DEBUG("MSI-X data 0x%x, MSI-X addr_lo 0x%x\n!",
+              entry->data, entry->addr_lo);
 	kvm_add_routing_entry(kvm_context, &adev->entry[entries_nr]);
 
         msix_entry.gsi = adev->entry[entries_nr].gsi;
@@ -1621,10 +1617,9 @@ static uint32_t msix_mmio_readl(void *opaque, target_phys_addr_t addr)
 {
     AssignedDevice *adev = opaque;
     unsigned int offset = addr & 0xfff;
-    void *page = adev->msix_table_page;
     uint32_t val = 0;
 
-    memcpy(&val, (void *)((char *)page + offset), 4);
+    memcpy(&val, (void *)((uint8_t *)adev->msix_table + offset), 4);
 
     return val;
 }
@@ -1646,11 +1641,11 @@ static void msix_mmio_writel(void *opaque,
 {
     AssignedDevice *adev = opaque;
     unsigned int offset = addr & 0xfff;
-    void *page = adev->msix_table_page;
 
     DEBUG("write to MSI-X entry table mmio offset 0x%lx, val 0x%x\n",
 		    addr, val);
-    memcpy((void *)((char *)page + offset), &val, 4);
+
+    memcpy((void *)((uint8_t *)adev->msix_table + offset), &val, 4);
 }
 
 static void msix_mmio_writew(void *opaque,
@@ -1677,15 +1672,13 @@ static CPUReadMemoryFunc *msix_mmio_read[] = {
 
 static int assigned_dev_register_msix_mmio(AssignedDevice *dev)
 {
-    dev->msix_table_page = mmap(NULL, 0x1000,
-                                PROT_READ|PROT_WRITE,
-                                MAP_ANONYMOUS|MAP_PRIVATE, 0, 0);
-    if (dev->msix_table_page == MAP_FAILED) {
-        fprintf(stderr, "fail allocate msix_table_page! %s\n",
-                strerror(errno));
+    dev->msix_table = mmap(NULL, 0x1000, PROT_READ|PROT_WRITE,
+                           MAP_ANONYMOUS|MAP_PRIVATE, 0, 0);
+    if (dev->msix_table == MAP_FAILED) {
+        fprintf(stderr, "fail allocate msix_table! %s\n", strerror(errno));
         return -EFAULT;
     }
-    memset(dev->msix_table_page, 0, 0x1000);
+    memset(dev->msix_table, 0, 0x1000);
     dev->mmio_index = cpu_register_io_memory(
                         msix_mmio_read, msix_mmio_write, dev);
     return 0;
@@ -1693,17 +1686,18 @@ static int assigned_dev_register_msix_mmio(AssignedDevice *dev)
 
 static void assigned_dev_unregister_msix_mmio(AssignedDevice *dev)
 {
-    if (!dev->msix_table_page)
+    if (!dev->msix_table) {
         return;
+    }
 
     cpu_unregister_io_memory(dev->mmio_index);
     dev->mmio_index = 0;
 
-    if (munmap(dev->msix_table_page, 0x1000) == -1) {
-        fprintf(stderr, "error unmapping msix_table_page! %s\n",
+    if (munmap(dev->msix_table, 0x1000) == -1) {
+        fprintf(stderr, "error unmapping msix_table! %s\n",
                 strerror(errno));
     }
-    dev->msix_table_page = NULL;
+    dev->msix_table = NULL;
 }
 
 static const VMStateDescription vmstate_assigned_device = {
