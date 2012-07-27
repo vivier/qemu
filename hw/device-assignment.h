@@ -108,6 +108,7 @@ typedef struct AssignedDevice {
     struct kvm_irq_routing_entry *entry;
     MSIXTableEntry *msix_table;
     target_phys_addr_t msix_table_addr;
+    uint16_t msix_max;
     int mmio_index;
     int need_emulate_cmd;
     char *configfd_name;
