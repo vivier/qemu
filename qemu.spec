@@ -37,9 +37,9 @@
 
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
-Version: 1.1.0
-Release: 9%{?dist}
-# Epoch because we pushed a qemu-1.0 package
+Version: 1.1.1
+Release: 1%{?dist}
+# Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
 Group: Development/Tools
@@ -75,10 +75,6 @@ Source9: ksmtuned.conf
 Source10: qemu-guest-agent.service
 Source11: 99-qemu-guest-agent.rules
 
-# Fixes from qemu-kvm git stable-1.1 branch
-Patch1:   0001-qemu-kvm-Add-missing-default-machine-options.patch
-Patch2:   0002-qemu-kvm-virtio-Do-not-register-mask-notifiers-witho.patch
-
 # Upstream patch to fix build of msi/virtio-pci.
 Patch3:   0001-kvm-Enable-use-of-kvm_irqchip_in_kernel-in-hwlib-cod.patch
 
@@ -110,6 +106,9 @@ Patch113: 0113-char-Disable-write-callback-if-throttled-chardev-is-.patch
 Patch201: 0201-usb-redir-Correctly-handle-the-usb_redir_babble-usbr.patch
 Patch202: 0202-usb-ehci-Fix-an-assert-whenever-isoc-transfers-are-u.patch
 
+# Fix VNC audio tunnelling (bz 840653)
+Patch203: %{name}-fix-vnc-audio.patch
+
 BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
 BuildRequires: libaio-devel
 BuildRequires: rsync
@@ -117,7 +116,7 @@ BuildRequires: pciutils-devel
 BuildRequires: pulseaudio-libs-devel
 BuildRequires: ncurses-devel
 BuildRequires: libattr-devel
-BuildRequires: usbredir-devel
+BuildRequires: usbredir-devel >= 0.4.1
 BuildRequires: texinfo
 %ifarch %{ix86} x86_64
 BuildRequires: spice-protocol >= 0.8.1
@@ -168,6 +167,13 @@ Requires: %{name}-img = %{epoch}:%{version}-%{release}
 Obsoletes: %{name}-system-ppc
 Obsoletes: %{name}-system-sparc
 
+# Needed for F14->F16+ upgrade
+# https://bugzilla.redhat.com/show_bug.cgi?id=694802
+Obsoletes: openbios-common
+Obsoletes: openbios-ppc
+Obsoletes: openbios-sparc32
+Obsoletes: openbios-sparc64
+
 %define qemudocdir %{_docdir}/%{name}
 
 %description
@@ -215,9 +221,9 @@ Group: Development/Tools
 Requires(post): /usr/bin/getent
 Requires(post): /usr/sbin/groupadd
 Requires(post): /usr/sbin/useradd
-Requires(post): /sbin/chkconfig
-Requires(preun): /sbin/service /sbin/chkconfig
-Requires(postun): /sbin/service
+Requires(post): systemd-units
+Requires(preun): systemd-units
+Requires(postun): systemd-units
 %description common
 QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
@@ -265,9 +271,8 @@ fi
 Summary: QEMU user mode emulation of qemu targets
 Group: Development/Tools
 Requires: %{name}-common = %{epoch}:%{version}-%{release}
-Requires(post): /sbin/chkconfig
-Requires(preun): /sbin/service /sbin/chkconfig
-Requires(postun): /sbin/service
+Requires(post): systemd-units
+Requires(postun): systemd-units
 %description user
 QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
@@ -357,8 +362,6 @@ such as kvm_stat.
 
 %prep
 %setup -q -n qemu-kvm-%{version}
-%patch1 -p1
-%patch2 -p1
 %patch3 -p1
 %patch4 -p1
 %patch5 -p1
@@ -379,6 +382,8 @@ such as kvm_stat.
 
 %patch201 -p1
 %patch202 -p1
+
+%patch203 -p1
 
 
 %build
@@ -614,38 +619,46 @@ install -m 0644 %{SOURCE11} $RPM_BUILD_ROOT%{_udevdir}
 %ifarch %{ix86} x86_64
 # load kvm modules now, so we can make sure no reboot is needed.
 # If there's already a kvm module installed, we don't mess with it
-sh %{_sysconfdir}/sysconfig/modules/kvm.modules
+sh %{_sysconfdir}/sysconfig/modules/kvm.modules || :
 %endif
 
 %post common
+if [ $1 -eq 1 ] ; then
+    # Initial installation
+    /bin/systemctl enable ksm.service >/dev/null 2>&1 || :
+    /bin/systemctl enable ksmtuned.service >/dev/null 2>&1 || :
+fi
+
 getent group kvm >/dev/null || groupadd -g 36 -r kvm
 getent group qemu >/dev/null || groupadd -g 107 -r qemu
 getent passwd qemu >/dev/null || \
   useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
     -c "qemu user" qemu
 
-/bin/systemctl enable ksm.service
-/bin/systemctl enable ksmtuned.service
-
 %preun common
-if [ $1 -eq 0 ]; then
-    /bin/systemctl --system stop ksmtuned.service &>/dev/null || :
-    /bin/systemctl --system stop ksm.service &>/dev/null || :
-    /bin/systemctl disable ksmtuned.service
-    /bin/systemctl disable ksm.service
+if [ $1 -eq 0 ] ; then
+    # Package removal, not upgrade
+    /bin/systemctl --no-reload disable ksmtuned.service > /dev/null 2>&1 || :
+    /bin/systemctl --no-reload disable ksm.service > /dev/null 2>&1 || :
+    /bin/systemctl stop ksmtuned.service > /dev/null 2>&1 || :
+    /bin/systemctl stop ksm.service > /dev/null 2>&1 || :
 fi
 
 %postun common
-if [ $1 -ge 1 ]; then
-    /bin/systemctl --system try-restart ksm.service &>/dev/null || :
-    /bin/systemctl --system try-restart ksmtuned.service &>/dev/null || :
+/bin/systemctl daemon-reload >/dev/null 2>&1 || :
+if [ $1 -ge 1 ] ; then
+    # Package upgrade, not uninstall
+    /bin/systemctl try-restart ksmtuned.service >/dev/null 2>&1 || :
+    /bin/systemctl try-restart ksm.service >/dev/null 2>&1 || :
 fi
+
 
 %post user
 /bin/systemctl --system try-restart systemd-binfmt.service &>/dev/null || :
 
 %postun user
 /bin/systemctl --system try-restart systemd-binfmt.service &>/dev/null || :
+
 
 %files
 %defattr(-,root,root)
@@ -661,6 +674,7 @@ fi
 %doc %{qemudocdir}/TODO
 %doc %{qemudocdir}/qemu-doc.html
 %doc %{qemudocdir}/qemu-tech.html
+%doc %{qemudocdir}/qmp-commands.txt
 %doc %{qemudocdir}/COPYING
 %doc %{qemudocdir}/COPYING.LIB
 %doc %{qemudocdir}/LICENSE
@@ -815,6 +829,15 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Sun Jul 29 2012 Cole Robinson <crobinso@redhat.com> - 1.1.1-1
+- Upstream stable release 1.1.1
+- Fix systemtap tapsets (bz 831763)
+- Fix VNC audio tunnelling (bz 840653)
+- Don't renable ksm on update (bz 815156)
+- Bump usbredir dep (bz 812097)
+- Fix RPM install error on non-virt machines (bz 660629)
+- Obsolete openbios to fix upgrade dependency issues (bz 694802)
+
 * Sat Jul 21 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2:1.1.0-9
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
 
