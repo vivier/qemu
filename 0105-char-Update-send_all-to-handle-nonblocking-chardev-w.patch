@@ -1,8 +1,8 @@
-From 6a36990b303dc64709931e16783e2f2e0a54b9d6 Mon Sep 17 00:00:00 2001
+From 8d1503b20a6a8f011b292c0f543acd98b4fc922e Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 22:00:27 +0100
-Subject: [PATCH 105/114] char: Update send_all() to handle nonblocking
- chardev write requests
+Subject: [PATCH] char: Update send_all() to handle nonblocking chardev write
+ requests
 
 The send_all function is modified to return to the caller in case the
 driver cannot handle any more data.  It returns -EAGAIN or
@@ -16,16 +16,16 @@ commits will add such capability.
 
 Signed-off-by: Amit Shah <amit.shah@redhat.com>
 ---
- net/socket.c  |    4 ++--
- qemu-char.c   |   69 ++++++++++++++++++++++++++++++++++++++++++++++++++++-----
- qemu_socket.h |    2 +-
+ net/socket.c  |  4 ++--
+ qemu-char.c   | 69 +++++++++++++++++++++++++++++++++++++++++++++++++++++------
+ qemu_socket.h |  2 +-
  3 files changed, 66 insertions(+), 9 deletions(-)
 
 diff --git a/net/socket.c b/net/socket.c
-index 0bcf229..c21bb60 100644
+index c172c24..aa7c99e 100644
 --- a/net/socket.c
 +++ b/net/socket.c
-@@ -56,8 +56,8 @@ static ssize_t net_socket_receive(VLANClientState *nc, const uint8_t *buf, size_
+@@ -53,8 +53,8 @@ static ssize_t net_socket_receive(NetClientState *nc, const uint8_t *buf, size_t
      uint32_t len;
      len = htonl(size);
  
@@ -35,9 +35,9 @@ index 0bcf229..c21bb60 100644
 +    return send_all(NULL, s->fd, buf, size);
  }
  
- static ssize_t net_socket_receive_dgram(VLANClientState *nc, const uint8_t *buf, size_t size)
+ static ssize_t net_socket_receive_dgram(NetClientState *nc, const uint8_t *buf, size_t size)
 diff --git a/qemu-char.c b/qemu-char.c
-index 88cbbd0..d8059ff 100644
+index 1b70447..fbb6f5f 100644
 --- a/qemu-char.c
 +++ b/qemu-char.c
 @@ -508,7 +508,7 @@ static CharDriverState *qemu_chr_open_mux(CharDriverState *drv)
@@ -184,5 +184,5 @@ index 4689ff3..3d780ce 100644
  /* New, ipv6-ready socket helper functions, see qemu-sockets.c */
  int inet_listen_opts(QemuOpts *opts, int port_offset, Error **errp);
 -- 
-1.7.10.4
+1.7.11.2
 

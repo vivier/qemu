@@ -34,11 +34,13 @@
 %bcond_without fdt              # enabled
 %endif
 
+%global gitdate 20120806
+%global gitcommit 3e430569
 
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
-Version: 1.1.1
-Release: 1%{?dist}
+Version: 1.2
+Release: 0.1.%{gitdate}git%{gitcommit}%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -54,7 +56,14 @@ ExclusiveArch: x86_64
 %define _smp_mflags %{nil}
 %endif
 
-Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-kvm-%{version}.tar.gz
+# There aren't any 1.2 releases yet, so we have to pull from git:
+#
+# git clone git://git.kernel.org/pub/scm/virt/kvm/qemu-kvm.git
+# cd qemu-kvm
+# git archive -o ../qemu-kvm-%{version}-%{gitcommit}.tar.gz \
+#     --prefix=qemu-kvm-%{version}/ %{gitcommit}
+Source0: qemu-kvm-%{version}-%{gitcommit}.tar.gz
+#Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-kvm-%{version}.tar.gz
 
 Source1: qemu.binfmt
 
@@ -75,17 +84,8 @@ Source9: ksmtuned.conf
 Source10: qemu-guest-agent.service
 Source11: 99-qemu-guest-agent.rules
 
-# Upstream patch to fix build of msi/virtio-pci.
-Patch3:   0001-kvm-Enable-use-of-kvm_irqchip_in_kernel-in-hwlib-cod.patch
-
-# Use siginfo_t instead of struct siginfo, for glibc in Rawhide.
-# Sent upstream 2012-07-05.
-Patch4:   0001-Replace-struct-siginfo-with-siginfo_t.patch
-
-# Patch to fix default machine options.
-# http://www.spinics.net/lists/kvm/msg75509.html
-# Sent upstream by danpb on 2012-07-06.
-Patch5:   0001-qemu-kvm-Fix-default-machine-options.patch
+# Non upstream build fix
+Patch1: 0001-mips-Fix-link-error-with-piix4_pm_init.patch
 
 # The infamous chardev flow control patches
 Patch101: 0101-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
@@ -102,14 +102,13 @@ Patch111: 0111-usb-redir-Add-flow-control-support.patch
 Patch112: 0112-virtio-serial-bus-replay-guest_open-on-migration.patch
 Patch113: 0113-char-Disable-write-callback-if-throttled-chardev-is-.patch
 
-# USB-redir bugfixes
-Patch201: 0201-usb-redir-Correctly-handle-the-usb_redir_babble-usbr.patch
-Patch202: 0202-usb-ehci-Fix-an-assert-whenever-isoc-transfers-are-u.patch
-
-# Fix VNC audio tunnelling (bz 840653)
-Patch203: %{name}-fix-vnc-audio.patch
-
-BuildRequires: SDL-devel zlib-devel which texi2html gnutls-devel cyrus-sasl-devel
+BuildRequires: SDL-devel
+BuildRequires: zlib-devel
+BuildRequires: which
+BuildRequires: texi2html
+BuildRequires: gnutls-devel
+BuildRequires: cyrus-sasl-devel
+BuildRequires: libtool
 BuildRequires: libaio-devel
 BuildRequires: rsync
 BuildRequires: pciutils-devel
@@ -362,9 +361,8 @@ such as kvm_stat.
 
 %prep
 %setup -q -n qemu-kvm-%{version}
-%patch3 -p1
-%patch4 -p1
-%patch5 -p1
+
+%patch1 -p1
 
 %patch101 -p1
 %patch102 -p1
@@ -379,11 +377,6 @@ such as kvm_stat.
 %patch111 -p1
 %patch112 -p1
 %patch113 -p1
-
-%patch201 -p1
-%patch202 -p1
-
-%patch203 -p1
 
 
 %build
@@ -754,7 +747,6 @@ fi
 %{_datadir}/%{name}/sgabios.bin
 %{_datadir}/%{name}/linuxboot.bin
 %{_datadir}/%{name}/multiboot.bin
-%{_datadir}/%{name}/mpc8544ds.dtb
 %{_datadir}/%{name}/kvmvapic.bin
 %{_datadir}/%{name}/vgabios.bin
 %{_datadir}/%{name}/vgabios-cirrus.bin
@@ -826,9 +818,13 @@ fi
 %defattr(-,root,root)
 %{_bindir}/qemu-img
 %{_bindir}/qemu-io
+%{_bindir}/vscclient
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Aug 06 2012 Cole Robinson <crobinso@redhat.com> - 1.2-0.1.20120806git3e430569.fc18
+- Update to git snapshot
+
 * Sun Jul 29 2012 Cole Robinson <crobinso@redhat.com> - 1.1.1-1
 - Upstream stable release 1.1.1
 - Fix systemtap tapsets (bz 831763)

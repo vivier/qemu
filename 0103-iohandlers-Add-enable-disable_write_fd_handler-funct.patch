@@ -1,15 +1,14 @@
-From 32876859aeee3722398d98abfb6b6307e701091f Mon Sep 17 00:00:00 2001
+From 4ab66ef979faf3ad59fbf2bb8406117b657f966b Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 20:32:58 +0100
-Subject: [PATCH 103/114] iohandlers: Add enable/disable_write_fd_handler()
- functions
+Subject: [PATCH] iohandlers: Add enable/disable_write_fd_handler() functions
 
 These will be used to provide a cleaner API for the nonblocking case.
 
 Signed-off-by: Amit Shah <amit.shah@redhat.com>
 ---
- iohandler.c |   35 +++++++++++++++++++++++++++++++++++
- main-loop.h |    3 +++
+ iohandler.c | 35 +++++++++++++++++++++++++++++++++++
+ main-loop.h |  3 +++
  2 files changed, 38 insertions(+)
 
 diff --git a/iohandler.c b/iohandler.c
@@ -73,5 +72,5 @@ index dce1cd9..eb31273 100644
   * qemu_set_fd_handler2: Register a file descriptor with the main loop
   *
 -- 
-1.7.10.4
+1.7.11.2
 

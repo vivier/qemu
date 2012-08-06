@@ -1,8 +1,8 @@
-From bccdec085744256038f35b243853d7142b85cddb Mon Sep 17 00:00:00 2001
+From 7eab128ea16406bf450e0e53d9d629c290b317d7 Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 22:02:47 +0100
-Subject: [PATCH 106/114] char: Equip the unix/tcp backend to handle
- nonblocking writes#
+Subject: [PATCH] char: Equip the unix/tcp backend to handle nonblocking
+ writes#
 
 Now that the infrastructure is in place to return -EAGAIN to callers,
 individual char drivers can set their update_fd_handlers() function to
@@ -14,11 +14,11 @@ users of chardevs know that a driver became writable again.
 
 Signed-off-by: Amit Shah <amit.shah@redhat.com>
 ---
- qemu-char.c |   34 ++++++++++++++++++++++++++++++++++
+ qemu-char.c | 34 ++++++++++++++++++++++++++++++++++
  1 file changed, 34 insertions(+)
 
 diff --git a/qemu-char.c b/qemu-char.c
-index d8059ff..ed306e5 100644
+index fbb6f5f..cdc7f5c 100644
 --- a/qemu-char.c
 +++ b/qemu-char.c
 @@ -106,6 +106,19 @@
@@ -77,5 +77,5 @@ index d8059ff..ed306e5 100644
      if (is_listen) {
          s->listen_fd = fd;
 -- 
-1.7.10.4
+1.7.11.2
 

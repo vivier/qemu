@@ -1,16 +1,15 @@
-From 5b79aa329a378537ec939cee75df10ca073b367f Mon Sep 17 00:00:00 2001
+From 618a5f8a10c69813dddd86d966ff1778f22ab456 Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 21:57:47 +0100
-Subject: [PATCH 101/114] char: Split out tcp socket close code in a separate
- function
+Subject: [PATCH] char: Split out tcp socket close code in a separate function
 
 Signed-off-by: Amit Shah <amit.shah@redhat.com>
 ---
- qemu-char.c |   25 ++++++++++++++++---------
+ qemu-char.c | 25 ++++++++++++++++---------
  1 file changed, 16 insertions(+), 9 deletions(-)
 
 diff --git a/qemu-char.c b/qemu-char.c
-index fe1126f..78d2a69 100644
+index c2aaaee..132ac08 100644
 --- a/qemu-char.c
 +++ b/qemu-char.c
 @@ -2141,6 +2141,21 @@ typedef struct {
@@ -53,5 +52,5 @@ index fe1126f..78d2a69 100644
          if (s->do_telnetopt)
              tcp_chr_process_IAC_bytes(chr, s, buf, &size);
 -- 
-1.7.10.4
+1.7.11.2
 
