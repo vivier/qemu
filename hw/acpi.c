@@ -36,7 +36,8 @@
 
 #define GPE_BASE 0xafe0
 #define PROC_BASE 0xaf00
-#define PCI_BASE 0xae00
+#define PCI_UP_BASE 0xae00
+#define PCI_DOWN_BASE 0xae04
 #define PCI_EJ_BASE 0xae08
 #define PCI_RMV_BASE 0xae0c
 
@@ -794,42 +795,26 @@ static void gpe_writeb(void *opaque, uint32_t addr, uint32_t val)
 #endif
 }
 
-static uint32_t pcihotplug_read(void *opaque, uint32_t addr)
+static uint32_t pci_up_read(void *opaque, uint32_t addr)
 {
-    uint32_t val = 0;
-    struct pci_status *g = opaque;
-    switch (addr) {
-        case PCI_BASE:
-            val = g->up;
-            break;
-        case PCI_BASE + 4:
-            val = g->down;
-            break;
-        default:
-            break;
-    }
+    PIIX4PMState *s = opaque;
+    uint32_t val = s->pci0_status.up;
 
 #if defined(DEBUG)
-    printf("pcihotplug read %x == %x\n", addr, val);
+    printf("pci_up_read %x\n", val);
 #endif
     return val;
 }
 
-static void pcihotplug_write(void *opaque, uint32_t addr, uint32_t val)
+static uint32_t pci_down_read(void *opaque, uint32_t addr)
 {
-    struct pci_status *g = opaque;
-    switch (addr) {
-        case PCI_BASE:
-            g->up = val;
-            break;
-        case PCI_BASE + 4:
-            g->down = val;
-            break;
-   }
+    PIIX4PMState *s = opaque;
+    uint32_t val = s->pci0_status.down;
 
 #if defined(DEBUG)
-    printf("pcihotplug write %x <== %d\n", addr, val);
+    printf("pci_down_read %x\n", val);
 #endif
+    return val;
 }
 
 static uint32_t pciej_read(void *opaque, uint32_t addr)
@@ -882,7 +867,6 @@ void piix4_acpi_system_hot_add_init(PCIBus *bus, const char *cpu_model)
 {
     int i = 0, cpus = smp_cpus;
     struct gpe_regs *gpe = &pm_state->gpe;
-    struct pci_status *pci0_status = &pm_state->pci0_status;
 
     while (cpus > 0) {
         gpe->cpus_sts[i++] = (cpus < 8) ? (1 << cpus) - 1 : 0xff;
@@ -894,8 +878,8 @@ void piix4_acpi_system_hot_add_init(PCIBus *bus, const char *cpu_model)
     register_ioport_write(PROC_BASE, 32, 1, gpe_writeb, gpe);
     register_ioport_read(PROC_BASE, 32, 1,  gpe_readb, gpe);
 
-    register_ioport_write(PCI_BASE, 8, 4, pcihotplug_write, pci0_status);
-    register_ioport_read(PCI_BASE, 8, 4,  pcihotplug_read, pci0_status);
+    register_ioport_read(PCI_UP_BASE, 4, 4, pci_up_read, pm_state);
+    register_ioport_read(PCI_DOWN_BASE, 4, 4, pci_down_read, pm_state);
 
     register_ioport_write(PCI_EJ_BASE, 4, 4, pciej_write, bus);
     register_ioport_read(PCI_EJ_BASE, 4, 4,  pciej_read, bus);
