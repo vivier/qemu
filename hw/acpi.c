@@ -886,11 +886,6 @@ static uint32_t pcirmv_read(void *opaque, uint32_t addr)
     return s->pci0_hotplug_enable;
 }
 
-static void pcirmv_write(void *opaque, uint32_t addr, uint32_t val)
-{
-    return;
-}
-
 static const char *model;
 
 static int piix4_device_hotplug(PCIDevice *dev, int state);
@@ -916,7 +911,6 @@ void piix4_acpi_system_hot_add_init(PCIBus *bus, const char *cpu_model)
     register_ioport_write(PCI_EJ_BASE, 4, 4, pciej_write, pm_state);
     register_ioport_read(PCI_EJ_BASE, 4, 4,  pciej_read, pm_state);
 
-    register_ioport_write(PCI_RMV_BASE, 4, 4, pcirmv_write, pm_state);
     register_ioport_read(PCI_RMV_BASE, 4, 4,  pcirmv_read, pm_state);
 
     model = cpu_model;
