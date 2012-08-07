@@ -569,6 +569,7 @@ static void acpi_piix_eject_slot(PIIX4PMState *s, unsigned slots)
     DeviceState *qdev, *next;
     BusState *bus = qdev_get_parent_bus(&s->dev.qdev);
     int slot = ffs(slots) - 1;
+    bool slot_free = true;
 
     /* Mark request as complete */
     s->pci0_status.down &= ~(1U << slot);
@@ -576,10 +577,16 @@ static void acpi_piix_eject_slot(PIIX4PMState *s, unsigned slots)
     QTAILQ_FOREACH_SAFE(qdev, &bus->children, sibling, next) {
         PCIDevice *dev = DO_UPCAST(PCIDevice, qdev, qdev);
         PCIDeviceInfo *info = container_of(qdev->info, PCIDeviceInfo, qdev);
-        if (PCI_SLOT(dev->devfn) == slot && !info->no_hotplug) {
-            s->pci0_slot_device_present &= ~(1U << slot);
-            qdev_free(qdev);
+        if (PCI_SLOT(dev->devfn) == slot) {
+            if (info->no_hotplug) {
+                slot_free = false;
+            } else {
+                qdev_free(qdev);
+            }
         }
+    }
+    if (slot_free) {
+        s->pci0_slot_device_present &= ~(1U << slot);
     }
 
 }
