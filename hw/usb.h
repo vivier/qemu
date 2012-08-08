@@ -162,6 +162,7 @@ struct USBDevice {
     USBDeviceInfo *info;
     USBPort *port;
     char *port_path;
+    uint32_t create_unique_serial;
     void *opaque;
 
     /* Actual connected speed */
