@@ -503,6 +503,7 @@ static int usb_hub_initfn(USBDevice *dev)
     USBHubPort *port;
     int i;
 
+    usb_desc_create_serial(dev);
     usb_desc_init(dev);
     for (i = 0; i < NUM_PORTS; i++) {
         port = &s->ports[i];
