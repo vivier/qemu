@@ -249,6 +249,9 @@ static void usb_msd_command_complete(SCSIRequest *req, uint32_t status, int32_t 
                the status read packet.  */
             usb_msd_send_status(s, p);
             s->mode = USB_MSDM_CBW;
+        } else if (s->mode == USB_MSDM_CSW) {
+            usb_msd_send_status(s, p);
+            s->mode = USB_MSDM_CBW;
         } else {
             if (s->data_len) {
                 s->data_len -= s->usb_len;
