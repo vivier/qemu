@@ -1,7 +1,7 @@
-From 3def2c629b31cfc6dfe54a1a5464bb35359c3b10 Mon Sep 17 00:00:00 2001
+From 73426a9cec4f1a32553b122c78d083a297412cf4 Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 21:41:42 +0100
-Subject: [PATCH 104/114] char: Add framework for a 'write unblocked' callback
+Subject: [PATCH] char: Add framework for a 'write unblocked' callback
 
 The char layer can let users know that the driver will block on further
 input.  For users interested in not blocking, they can assign a function
@@ -11,12 +11,12 @@ future patches will enable the nonblocking and callback functionality.
 
 Signed-off-by: Amit Shah <amit.shah@redhat.com>
 ---
- qemu-char.c |    3 +++
- qemu-char.h |    4 ++++
+ qemu-char.c | 3 +++
+ qemu-char.h | 4 ++++
  2 files changed, 7 insertions(+)
 
 diff --git a/qemu-char.c b/qemu-char.c
-index 86bdabf..88cbbd0 100644
+index 5c5ae1e..1b70447 100644
 --- a/qemu-char.c
 +++ b/qemu-char.c
 @@ -211,11 +211,14 @@ void qemu_chr_add_handlers(CharDriverState *s,
@@ -57,5 +57,5 @@ index dfa8c2d..b5e23a4 100644
  };
  
 -- 
-1.7.10.4
+1.7.11.2
 

@@ -1,7 +1,7 @@
-From 484eac58fb0cf9b0ba6d31db868a549ee8799437 Mon Sep 17 00:00:00 2001
+From 3229d4b7de0d2611db5d4282b5d720861e63a085 Mon Sep 17 00:00:00 2001
 From: Alon Levy <alevy@redhat.com>
 Date: Tue, 22 Mar 2011 12:27:59 +0200
-Subject: [PATCH 109/114] spice-qemu-char.c: add throttling
+Subject: [PATCH] spice-qemu-char.c: add throttling
 
 BZ: 672191
 
@@ -35,7 +35,7 @@ This patch relies on Amit's series to expose throttling to chardev's, which
 was not accepted upstream, and will not be accepted upstream until the mainloop
 is reworked to use glib.
 ---
- spice-qemu-char.c |   39 +++++++++++++++++++++++++++++++++++----
+ spice-qemu-char.c | 39 +++++++++++++++++++++++++++++++++++----
  1 file changed, 35 insertions(+), 4 deletions(-)
 
 diff --git a/spice-qemu-char.c b/spice-qemu-char.c
@@ -129,5 +129,5 @@ index 09aa22d..fba2bfb 100644
  #if SPICE_SERVER_VERSION < 0x000901
      /* See comment in vmc_state() */
 -- 
-1.7.10.4
+1.7.11.2
 

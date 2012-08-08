@@ -1,8 +1,8 @@
-From 738da364d19bd99b70c79cb1174eef0e19f8e368 Mon Sep 17 00:00:00 2001
+From 596c901c52b211425afe4d40e361d3ee1e5ec4bc Mon Sep 17 00:00:00 2001
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 22:06:41 +0100
-Subject: [PATCH 108/114] virtio-console: Enable port throttling when chardev
- is slow to consume data
+Subject: [PATCH] virtio-console: Enable port throttling when chardev is slow
+ to consume data
 
 When a chardev indicates it can't accept more data, we tell the
 virtio-serial code to stop sending us any more data till we tell
@@ -12,7 +12,7 @@ As soon as the chardev indicates it can accept more data, start pushing!
 
 Signed-off-by: Amit Shah <amit.shah@redhat.com>
 ---
- hw/virtio-console.c |   11 +++++++++++
+ hw/virtio-console.c | 11 +++++++++++
  1 file changed, 11 insertions(+)
 
 diff --git a/hw/virtio-console.c b/hw/virtio-console.c
@@ -45,5 +45,5 @@ index 066590c..2b5e515 100644
  
  static int virtconsole_initfn(VirtIOSerialPort *port)
 -- 
-1.7.10.4
+1.7.11.2
 

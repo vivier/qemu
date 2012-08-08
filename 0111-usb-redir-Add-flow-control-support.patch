@@ -1,18 +1,18 @@
-From 2f61a7bed440164c35c739fcef10d19edef3f8ea Mon Sep 17 00:00:00 2001
+From 76cccf228dca6c73afabd7a82a576993bd15b3f1 Mon Sep 17 00:00:00 2001
 From: Hans de Goede <hdegoede@redhat.com>
 Date: Tue, 19 Jul 2011 10:56:19 +0200
-Subject: [PATCH 111/114] usb-redir: Add flow control support
+Subject: [PATCH] usb-redir: Add flow control support
 
 Signed-off-by: Hans de Goede <hdegoede@redhat.com>
 ---
- hw/usb/redirect.c |   26 ++++++++++++++++++++++++--
+ hw/usb/redirect.c | 26 ++++++++++++++++++++++++--
  1 file changed, 24 insertions(+), 2 deletions(-)
 
 diff --git a/hw/usb/redirect.c b/hw/usb/redirect.c
-index 6e8180e..5f55d78 100644
+index ecb2cd4..1460515 100644
 --- a/hw/usb/redirect.c
 +++ b/hw/usb/redirect.c
-@@ -238,12 +238,22 @@ static int usbredir_read(void *priv, uint8_t *data, int count)
+@@ -236,12 +236,22 @@ static int usbredir_read(void *priv, uint8_t *data, int count)
  static int usbredir_write(void *priv, uint8_t *data, int count)
  {
      USBRedirDevice *dev = priv;
@@ -37,7 +37,7 @@ index 6e8180e..5f55d78 100644
  }
  
  /*
-@@ -890,10 +900,22 @@ static void usbredir_chardev_event(void *opaque, int event)
+@@ -892,10 +902,22 @@ static void usbredir_chardev_event(void *opaque, int event)
      }
  }
  
@@ -61,5 +61,5 @@ index 6e8180e..5f55d78 100644
  
  /*
 -- 
-1.7.10.4
+1.7.11.2
 
