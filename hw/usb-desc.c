@@ -321,6 +321,10 @@ void usb_desc_create_serial(USBDevice *dev)
     char serial[64];
     int dst;
 
+    if (!dev->create_unique_serial) {
+        return;
+    }
+
     assert(index != 0 && desc->str[index] != NULL);
     dst = snprintf(serial, sizeof(serial), "%s", desc->str[index]);
     if (hcd && hcd->parent_bus && hcd->parent_bus->info->get_dev_path) {

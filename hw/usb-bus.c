@@ -19,6 +19,7 @@ static struct BusInfo usb_bus_info = {
     .get_fw_dev_path = usb_get_fw_dev_path,
     .props      = (Property[]) {
         DEFINE_PROP_STRING("port", USBDevice, port_path),
+        DEFINE_PROP_UINT32("create_unique_serial", USBDevice, create_unique_serial, 1),
         DEFINE_PROP_END_OF_LIST()
     },
 };
