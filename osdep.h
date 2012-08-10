@@ -3,6 +3,7 @@
 
 #include <stdarg.h>
 #include <stddef.h>
+#include <stdbool.h>
 #ifdef __OpenBSD__
 #include <sys/types.h>
 #include <sys/signal.h>
@@ -112,5 +113,8 @@ int qemu_gettimeofday(qemu_timeval *tp);
 typedef struct timeval qemu_timeval;
 #define qemu_gettimeofday(tp) gettimeofday(tp, NULL);
 #endif /* !_WIN32 */
+
+void fips_set_state(bool requested);
+bool fips_get_state(void);
 
 #endif

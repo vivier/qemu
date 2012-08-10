@@ -6007,6 +6007,7 @@ int main(int argc, char **argv, char **envp)
             }
         }
     }
+    fips_set_state(true);
     loc_set_none();
 
     /* If no data_dir is specified then try to find it relative to the

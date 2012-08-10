@@ -37,6 +37,7 @@
 
 #include "vnc_keysym.h"
 #include "d3des.h"
+#include "osdep.h"
 
 #define count_bits(c, v) { \
     for (c = 0; v; v >>= 1) \
@@ -2675,6 +2676,15 @@ int vnc_display_open(DisplayState *ds, const char *display)
     while ((options = strchr(options, ','))) {
         options++;
         if (strncmp(options, "password", 8) == 0) {
+            if (fips_get_state()) {
+                fprintf(stderr,
+                        "VNC password auth disabled due to FIPS mode, "
+                        "consider using the VeNCrypt or SASL authentication "
+                        "methods as an alternative\n");
+                qemu_free(vs->display);
+                vs->display = NULL;
+                return -1;
+            }
             password = 1; /* Require password auth */
         } else if (strncmp(options, "reverse", 7) == 0) {
             reverse = 1;

@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
@@ -48,6 +49,8 @@
 #include "trace.h"
 #include "sysemu.h"
 #include "qemu_socket.h"
+
+static bool fips_enabled = false;
 
 #if !defined(_POSIX_C_SOURCE) || defined(_WIN32) || defined(__sun__)
 static void *oom_check(void *ptr)
@@ -381,3 +384,30 @@ int qemu_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 
     return ret;
 }
+
+void fips_set_state(bool requested)
+{
+#ifdef __linux__
+    if (requested) {
+        FILE *fds = fopen("/proc/sys/crypto/fips_enabled", "r");
+        if (fds != NULL) {
+            fips_enabled = (fgetc(fds) == '1');
+            fclose(fds);
+        }
+    }
+#else
+    fips_enabled = false;
+#endif /* __linux__ */
+
+#ifdef _FIPS_DEBUG
+    fprintf(stderr, "FIPS mode %s (requested %s)\n",
+            (fips_enabled ? "enabled" : "disabled"),
+            (requested ? "enabled" : "disabled"));
+#endif
+}
+
+bool fips_get_state(void)
+{
+    return fips_enabled;
+}
+
