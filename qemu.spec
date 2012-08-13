@@ -154,17 +154,16 @@ BuildRequires: check-devel
 BuildRequires: libcap-devel
 Requires: %{name}-user = %{epoch}:%{version}-%{release}
 %if %{without x86only}
-Requires: %{name}-system-x86 = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-arm = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-cris = %{epoch}:%{version}-%{release}
-Requires: %{name}-system-sh4 = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-m68k = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-mips = %{epoch}:%{version}-%{release}
+Requires: %{name}-system-ppc = %{epoch}:%{version}-%{release}
+Requires: %{name}-system-sh4 = %{epoch}:%{version}-%{release}
+Requires: %{name}-system-sparc = %{epoch}:%{version}-%{release}
+Requires: %{name}-system-x86 = %{epoch}:%{version}-%{release}
 %endif
 Requires: %{name}-img = %{epoch}:%{version}-%{release}
-
-Obsoletes: %{name}-system-ppc
-Obsoletes: %{name}-system-sparc
 
 %define qemudocdir %{_docdir}/%{name}
 
@@ -340,6 +339,29 @@ QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
 
 This package provides the system emulator for sh4
+
+%package system-sparc
+Summary: QEMU system emulator for sparc
+Group: Development/Tools
+Requires: %{name}-common = %{epoch}:%{version}-%{release}
+Requires: openbios
+%description system-sparc
+QEMU is a generic and open source processor emulator which achieves a good
+emulation speed by using dynamic translation.
+
+This package provides the system emulator for sparc and sparc64
+
+%package system-ppc
+Summary: QEMU system emulator for PPC
+Group: Development/Tools
+Requires: %{name}-common = %{epoch}:%{version}-%{release}
+Requires: openbios
+Requires: SLOF
+%description system-ppc
+QEMU is a generic and open source processor emulator which achieves a good
+emulation speed by using dynamic translation.
+
+This package provides the system emulator for ppc
 %endif
 
 %ifarch %{ix86} x86_64
@@ -375,7 +397,8 @@ such as kvm_stat.
 %build
 buildarch="i386-softmmu x86_64-softmmu arm-softmmu cris-softmmu \
     m68k-softmmu mips-softmmu mipsel-softmmu mips64-softmmu \
-    mips64el-softmmu sh4-softmmu sh4eb-softmmu \
+    mips64el-softmmu sh4-softmmu sh4eb-softmmu sparc-softmmu sparc64-softmmu \
+    ppc-softmmu ppcemb-softmmu ppc64-softmmu \
     i386-linux-user x86_64-linux-user alpha-linux-user arm-linux-user \
     armeb-linux-user cris-linux-user m68k-linux-user mips-linux-user \
     mipsel-linux-user ppc-linux-user ppc64-linux-user \
@@ -387,9 +410,7 @@ buildarch="i386-softmmu x86_64-softmmu arm-softmmu cris-softmmu \
 
 # Targets we don't build as of qemu 1.1.50
 # alpha-softmmu lm32-softmmu microblaze-softmmu microblazeel-softmmu
-# or32-softmmu ppc-softmmu ppcemb-softmmu ppc64-softmmu
-# sparc-softmmu sparc64-softmmu s390x-softmmu xtensa-softmmu xtensaeb-softmmu
-# unicore32-softmmu
+# or32-softmmu s390x-softmmu xtensa-softmmu xtensaeb-softmmu unicore32-softmmu
 # alpha-linux-user microblaze-linux-user microblazeel-linux-user
 # or32-linux-user unicore32-linux-user s390x-linux-user
 
@@ -502,8 +523,6 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-sparc32
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-sparc64
 # Provided by package SLOF
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/slof.bin
-# Used by PPC pSeries. We 'build' this, but it's not needed ATM
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/spapr-rtas.bin
 
 # The following aren't provided by any Fedora package
 
@@ -512,10 +531,6 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/s390-zipl.rom
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/palcode-clipper
 # Binary device trees for microblaze target
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/petalogix*.dtb
-# openhackware, used by PPC prep
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/ppc_rom.bin
-# Binary device tree for PPC bamboo target
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/bamboo.dtb
 
 
 # the pxe gpxe images will be symlinks to the images on
@@ -809,6 +824,25 @@ fi
 %{_bindir}/qemu-system-sh4eb
 %{_datadir}/systemtap/tapset/qemu-system-sh4.stp
 %{_datadir}/systemtap/tapset/qemu-system-sh4eb.stp
+
+%files system-sparc
+%defattr(-,root,root)
+%{_bindir}/qemu-system-sparc
+%{_bindir}/qemu-system-sparc64
+%{_datadir}/systemtap/tapset/qemu-system-sparc.stp
+%{_datadir}/systemtap/tapset/qemu-system-sparc64.stp
+
+%files system-ppc
+%defattr(-,root,root)
+%{_bindir}/qemu-system-ppc
+%{_bindir}/qemu-system-ppc64
+%{_bindir}/qemu-system-ppcemb
+%{_datadir}/%{name}/bamboo.dtb
+%{_datadir}/%{name}/ppc_rom.bin
+%{_datadir}/%{name}/spapr-rtas.bin
+%{_datadir}/systemtap/tapset/qemu-system-ppc.stp
+%{_datadir}/systemtap/tapset/qemu-system-ppc64.stp
+%{_datadir}/systemtap/tapset/qemu-system-ppcemb.stp
 
 %endif
 
