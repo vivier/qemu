@@ -166,13 +166,6 @@ Requires: %{name}-img = %{epoch}:%{version}-%{release}
 Obsoletes: %{name}-system-ppc
 Obsoletes: %{name}-system-sparc
 
-# Needed for F14->F16+ upgrade
-# https://bugzilla.redhat.com/show_bug.cgi?id=694802
-Obsoletes: openbios-common
-Obsoletes: openbios-ppc
-Obsoletes: openbios-sparc32
-Obsoletes: openbios-sparc64
-
 %define qemudocdir %{_docdir}/%{name}
 
 %description
@@ -380,23 +373,28 @@ such as kvm_stat.
 
 
 %build
-# By default we build everything, but allow x86 to build a minimal version
-# with only similar arch target support
+buildarch="i386-softmmu x86_64-softmmu arm-softmmu cris-softmmu \
+    m68k-softmmu mips-softmmu mipsel-softmmu mips64-softmmu \
+    mips64el-softmmu sh4-softmmu sh4eb-softmmu \
+    i386-linux-user x86_64-linux-user alpha-linux-user arm-linux-user \
+    armeb-linux-user cris-linux-user m68k-linux-user mips-linux-user \
+    mipsel-linux-user ppc-linux-user ppc64-linux-user \
+    ppc64abi32-linux-user sh4-linux-user sh4eb-linux-user \
+    sparc-linux-user sparc64-linux-user sparc32plus-linux-user"
 %if %{with x86only}
     buildarch="i386-softmmu x86_64-softmmu i386-linux-user x86_64-linux-user"
-%else
-    buildarch="i386-softmmu x86_64-softmmu arm-softmmu cris-softmmu m68k-softmmu \
-           mips-softmmu mipsel-softmmu mips64-softmmu mips64el-softmmu \
-           sh4-softmmu sh4eb-softmmu \
-           i386-linux-user x86_64-linux-user alpha-linux-user arm-linux-user \
-           armeb-linux-user cris-linux-user m68k-linux-user mips-linux-user \
-           mipsel-linux-user ppc-linux-user ppc64-linux-user ppc64abi32-linux-user \
-           sh4-linux-user sh4eb-linux-user sparc-linux-user sparc64-linux-user \
-           sparc32plus-linux-user" \
 %endif
 
+# Targets we don't build as of qemu 1.1.50
+# alpha-softmmu lm32-softmmu microblaze-softmmu microblazeel-softmmu
+# or32-softmmu ppc-softmmu ppcemb-softmmu ppc64-softmmu
+# sparc-softmmu sparc64-softmmu s390x-softmmu xtensa-softmmu xtensaeb-softmmu
+# unicore32-softmmu
+# alpha-linux-user microblaze-linux-user microblazeel-linux-user
+# or32-linux-user unicore32-linux-user s390x-linux-user
 
-# --build-id option is used fedora 8 onwards for giving info to the debug packages.
+
+# --build-id option is used for giving info to the debug packages.
 extraldflags="-Wl,--build-id";
 buildldflags="VL_LDFLAGS=-Wl,--build-id"
 
@@ -406,35 +404,43 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
 sed -i.debug 's/"-g $CFLAGS"/"$CFLAGS"/g' configure
 %endif
 
+
+dobuild() {
+    ./configure \
+        --prefix=%{_prefix} \
+        --sysconfdir=%{_sysconfdir} \
+        --audio-drv-list=pa,sdl,alsa,oss \
+        --disable-strip \
+        --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
+        --extra-cflags="%{optflags} -fPIE -DPIE" \
 %ifarch %{ix86} x86_64
-# sdl outputs to alsa or pulseaudio depending on system config, but it's broken (#495964)
-# alsa works, but causes huge CPU load due to bugs
-# oss works, but is very problematic because it grabs exclusive control of the device causing other apps to go haywire
-./configure --target-list=x86_64-softmmu \
-            --prefix=%{_prefix} \
-            --sysconfdir=%{_sysconfdir} \
-            --audio-drv-list=pa,sdl,alsa,oss \
-            --disable-strip \
-            --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
-            --extra-cflags="%{optflags} -fPIE -DPIE" \
-            --enable-spice \
-            --enable-mixemu \
+        --enable-spice \
+        --enable-mixemu \
+%endif
 %if %{without rbd}
-            --disable-rbd \
+        --disable-rbd \
 %endif
 %if %{without fdt}
-            --disable-fdt \
+        --disable-fdt \
 %endif
-            --enable-trace-backend=dtrace \
-            --disable-werror \
-            --disable-xen
+        --enable-trace-backend=dtrace \
+        --disable-werror \
+        --disable-xen \
+        "$@"
 
-echo "config-host.mak contents:"
-echo "==="
-cat config-host.mak
-echo "==="
+    echo "config-host.mak contents:"
+    echo "==="
+    cat config-host.mak
+    echo "==="
 
-make V=1 %{?_smp_mflags} $buildldflags
+    make V=1 %{?_smp_mflags} $buildldflags
+}
+
+
+# KVM enabled builds
+%ifarch %{ix86} x86_64
+dobuild --target-list=x86_64-softmmu
+
 ./scripts/tracetool.py --backend dtrace --format stap \
   --binary %{_bindir}/qemu-kvm --target-arch x86_64 --target-type system \
   --probe-prefix qemu.kvm < ./trace-events > qemu-kvm.stp
@@ -442,36 +448,10 @@ cp -a x86_64-softmmu/qemu-system-x86_64 qemu-kvm
 make clean
 %endif
 
-./configure \
-    --target-list="$buildarch" \
-    --prefix=%{_prefix} \
-    --sysconfdir=%{_sysconfdir} \
+# KVM disabled builds
+dobuild --target-list="$buildarch" \
     --interp-prefix=%{_prefix}/qemu-%%M \
-    --audio-drv-list=pa,sdl,alsa,oss \
-    --disable-kvm \
-    --disable-strip \
-    --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
-    --extra-cflags="%{optflags} -fPIE -DPIE" \
-    --disable-xen \
-%ifarch %{ix86} x86_64
-    --enable-spice \
-    --enable-mixemu \
-%endif
-%if %{without rbd}
-    --disable-rbd \
-%endif
-%if %{without fdt}
-    --disable-fdt \
-%endif
-    --enable-trace-backend=dtrace \
-    --disable-werror
-
-echo "config-host.mak contents:"
-echo "==="
-cat config-host.mak
-echo "==="
-
-make V=1 %{?_smp_mflags} $buildldflags
+    --disable-kvm
 
 gcc %{SOURCE6} -O2 -g -o ksmctl
 
@@ -508,22 +488,35 @@ install -D -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} Changelog README TODO CO
 
 install -D -p -m 0644 qemu.sasl $RPM_BUILD_ROOT%{_sysconfdir}/sasl2/qemu.conf
 
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/pxe*bin
+# Provided by package ipxe
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/pxe*rom
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/gpxe*rom
+# Provided by package vgabios
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/vgabios*bin
+# Provided by package seabios
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/bios.bin
+# Provided by package sgabios
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/sgabios.bin
+# Provided by package openbios
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-ppc
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-sparc32
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-sparc64
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/petalogix*.dtb
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/s390-zipl.rom
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/bamboo.dtb
+# Provided by package SLOF
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/slof.bin
+# Used by PPC pSeries. We 'build' this, but it's not needed ATM
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/spapr-rtas.bin
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/ppc_rom.bin
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/sgabios.bin
+
+# The following aren't provided by any Fedora package
+
+# Used by target s390/s390x
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/s390-zipl.rom
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/palcode-clipper
+# Binary device trees for microblaze target
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/petalogix*.dtb
+# openhackware, used by PPC prep
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/ppc_rom.bin
+# Binary device tree for PPC bamboo target
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/bamboo.dtb
+
 
 # the pxe gpxe images will be symlinks to the images on
 # /usr/share/ipxe, as QEMU doesn't know how to look
@@ -537,13 +530,18 @@ pxe_link ne2k_pci 10ec8029
 pxe_link pcnet 10222000
 pxe_link rtl8139 10ec8139
 pxe_link virtio 1af41000
-ln -s ../vgabios/VGABIOS-lgpl-latest.bin  %{buildroot}/%{_datadir}/%{name}/vgabios.bin
-ln -s ../vgabios/VGABIOS-lgpl-latest.cirrus.bin %{buildroot}/%{_datadir}/%{name}/vgabios-cirrus.bin
-ln -s ../vgabios/VGABIOS-lgpl-latest.qxl.bin %{buildroot}/%{_datadir}/%{name}/vgabios-qxl.bin
-ln -s ../vgabios/VGABIOS-lgpl-latest.stdvga.bin %{buildroot}/%{_datadir}/%{name}/vgabios-stdvga.bin
-ln -s ../vgabios/VGABIOS-lgpl-latest.vmware.bin %{buildroot}/%{_datadir}/%{name}/vgabios-vmware.bin
-ln -s ../seabios/bios.bin %{buildroot}/%{_datadir}/%{name}/bios.bin
-ln -s ../sgabios/sgabios.bin %{buildroot}/%{_datadir}/%{name}/sgabios.bin
+
+rom_link() {
+    ln -s $1 %{buildroot}%{_datadir}/%{name}/$2
+}
+
+rom_link ../vgabios/VGABIOS-lgpl-latest.bin vgabios.bin
+rom_link ../vgabios/VGABIOS-lgpl-latest.cirrus.bin vgabios-cirrus.bin
+rom_link ../vgabios/VGABIOS-lgpl-latest.qxl.bin vgabios-qxl.bin
+rom_link ../vgabios/VGABIOS-lgpl-latest.stdvga.bin vgabios-stdvga.bin
+rom_link ../vgabios/VGABIOS-lgpl-latest.vmware.bin vgabios-vmware.bin
+rom_link ../seabios/bios.bin bios.bin
+rom_link ../sgabios/sgabios.bin sgabios.bin
 
 mkdir -p $RPM_BUILD_ROOT%{_exec_prefix}/lib/binfmt.d
 for i in dummy \
