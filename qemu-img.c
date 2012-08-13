@@ -722,6 +722,9 @@ static int img_convert(int argc, char **argv)
 
     out_filename = argv[argc - 1];
 
+    /* Initialize before goto out */
+    qemu_progress_init(progress, 2.0);
+
     if (options && !strcmp(options, "?")) {
         ret = print_block_option_help(out_filename, out_fmt);
         goto out;
@@ -732,8 +735,7 @@ static int img_convert(int argc, char **argv)
         ret = -1;
         goto out;
     }
-        
-    qemu_progress_init(progress, 2.0);
+
     qemu_progress_print(0, 100);
 
     bs = qemu_mallocz(bs_n * sizeof(BlockDriverState *));
