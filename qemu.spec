@@ -40,7 +40,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.2
-Release: 0.1.%{gitdate}git%{gitcommit}%{?dist}
+Release: 0.2.%{gitdate}git%{gitcommit}%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -822,6 +822,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Aug 14 2012 Eduardo Habkost <ehabkost@redhat.com> - qemu-1.2-0.2.20120806git3e430569.el7
+- Don't build non-x86 qemu targets on RHEL
+- Resolves: bz#821913
+  (don't build non-x86 qemu targets)
+
 * Mon Aug 06 2012 Cole Robinson <crobinso@redhat.com> - 1.2-0.1.20120806git3e430569.fc18
 - Update to git snapshot
 
