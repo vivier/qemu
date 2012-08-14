@@ -867,6 +867,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Aug 14 2012 Cole Robinson <crobinso@redhat.com> - 1.2-0.2.20120806git3e430569
+- Revive qemu-system-{ppc*, sparc*} (bz 844502)
+- Enable KVM support for all targets (bz 844503)
+
 * Mon Aug 06 2012 Cole Robinson <crobinso@redhat.com> - 1.2-0.1.20120806git3e430569.fc18
 - Update to git snapshot
 
