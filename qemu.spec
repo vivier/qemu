@@ -22,7 +22,7 @@
 
 %if 0%{?rhel}
 # RHEL-specific defaults:
-%bcond_with    x86only          # disabled
+%bcond_without x86only          # enabled
 %bcond_without exclusive_x86_64 # enabled
 %bcond_with    rbd              # disabled
 %bcond_with    fdt              # disabled
