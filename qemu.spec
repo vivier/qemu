@@ -87,6 +87,10 @@ Source11: 99-qemu-guest-agent.rules
 # Non upstream build fix
 Patch1: 0001-mips-Fix-link-error-with-piix4_pm_init.patch
 
+# Add ./configure --disable-kvm-options
+# Sent upstream on August 13 2012
+Patch2: 0002-configure-Add-disable-kvm-options.patch
+
 # The infamous chardev flow control patches
 Patch101: 0101-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
 Patch102: 0102-char-Add-a-QemuChrHandlers-struct-to-initialise-char.patch
@@ -378,6 +382,7 @@ such as kvm_stat.
 %setup -q -n qemu-kvm-%{version}
 
 %patch1 -p1
+%patch2 -p1
 
 %patch101 -p1
 %patch102 -p1
@@ -393,7 +398,6 @@ such as kvm_stat.
 %patch112 -p1
 %patch113 -p1
 
-
 %build
 buildarch="i386-softmmu x86_64-softmmu arm-softmmu cris-softmmu \
     m68k-softmmu mips-softmmu mipsel-softmmu mips64-softmmu \
@@ -405,7 +409,7 @@ buildarch="i386-softmmu x86_64-softmmu arm-softmmu cris-softmmu \
     ppc64abi32-linux-user sh4-linux-user sh4eb-linux-user \
     sparc-linux-user sparc64-linux-user sparc32plus-linux-user"
 %if %{with x86only}
-    buildarch="i386-softmmu x86_64-softmmu i386-linux-user x86_64-linux-user"
+    buildarch="i386-linux-user x86_64-linux-user"
 %endif
 
 # Targets we don't build as of qemu 1.1.50
@@ -430,6 +434,7 @@ dobuild() {
     ./configure \
         --prefix=%{_prefix} \
         --sysconfdir=%{_sysconfdir} \
+        --interp-prefix=%{_prefix}/qemu-%%M \
         --audio-drv-list=pa,sdl,alsa,oss \
         --disable-strip \
         --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
@@ -447,6 +452,7 @@ dobuild() {
         --enable-trace-backend=dtrace \
         --disable-werror \
         --disable-xen \
+        --enable-kvm \
         "$@"
 
     echo "config-host.mak contents:"
@@ -457,11 +463,21 @@ dobuild() {
     make V=1 %{?_smp_mflags} $buildldflags
 }
 
+# This is kind of confusing. We run ./configure + make twice here to
+# preserve some back compat: if on x86, we want to provide a qemu-kvm
+# binary that defaults to KVM=on. All other qemu-system* should be
+# able to use KVM, but default to KVM=off (upstream qemu semantics).
+#
+# Once qemu-kvm and qemu fully merge, and we base off qemu releases,
+# all qemu-system-* will default to KVM=off, so we hopefully won't need
+# to do these double builds. But then I'm not sure how we are going to
+# generate a back compat qemu-kvm binary...
 
-# KVM enabled builds
 %ifarch %{ix86} x86_64
+# Build qemu-kvm back compat binary
 dobuild --target-list=x86_64-softmmu
 
+# Setup back compat qemu-kvm binary which defaults to KVM=on
 ./scripts/tracetool.py --backend dtrace --format stap \
   --binary %{_bindir}/qemu-kvm --target-arch x86_64 --target-type system \
   --probe-prefix qemu.kvm < ./trace-events > qemu-kvm.stp
@@ -469,11 +485,8 @@ cp -a x86_64-softmmu/qemu-system-x86_64 qemu-kvm
 make clean
 %endif
 
-# KVM disabled builds
-dobuild --target-list="$buildarch" \
-    --interp-prefix=%{_prefix}/qemu-%%M \
-    --disable-kvm
-
+# Build qemu-system-* with consistent default of kvm=off
+dobuild --target-list="$buildarch" --disable-kvm-options
 gcc %{SOURCE6} -O2 -g -o ksmctl
 
 
