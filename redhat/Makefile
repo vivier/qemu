@@ -149,6 +149,9 @@ rh-$(COMMON_NAME)-%: rh-sources
 rh-prep: rh-sources
 	$(RPMBUILD) $(RPMBUILD_DEFS) --nodeps --target $(MACH) -bp $(RPM)/SOURCES/$(SPECFILE)
 
+rh-local:
+	@./localbuild.sh
+
 # we could just print the version number to stderr, but make dumps too much junk
 # to stdout to make it usable, so a 'verrel' file is created
 rh-verrel:
@@ -192,6 +195,7 @@ rh-help:
 	@echo  '		  uses a known stable RHEL6 distro as the default'
 	@echo  '		  use TASK=None to use a non-scratch build based on RELEASE string'
 	@echo  '		  see output for possible override options (USER_ID,DISTRO,FAMILY,..)'
+	@echo  '  rh-local      - Make a local build of qemu-kvm'
 	@echo  '  rh-brew-test  - Calls rh-brew and passes the task number into an RHTS test. See rh-test for more'
 	@echo  '  rh-rpms	- Create the binary RPMS for the $(COMMON_NAME)'
 	@echo  '  rh-$(COMMON_NAME)-<type> - Create  binary RPMS for a particular $(COMMON_NAME) type'
