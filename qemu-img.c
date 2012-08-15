@@ -652,6 +652,7 @@ static int img_convert(int argc, char **argv)
     const uint8_t *buf1;
     BlockDriverInfo bdi;
     QEMUOptionParameter *param = NULL, *create_options = NULL;
+    QEMUOptionParameter *out_baseimg_param;
     char *options = NULL;
     float local_progress;
     int min_sparse = 8; /* Need at least 4k of zeros for sparse detection */
@@ -787,6 +788,12 @@ static int img_convert(int argc, char **argv)
     ret = add_old_style_options(out_fmt, param, out_baseimg, NULL);
     if (ret < 0) {
         goto out;
+    }
+
+    /* Get backing file name if -o backing_file was used */
+    out_baseimg_param = get_option_parameter(param, BLOCK_OPT_BACKING_FILE);
+    if (out_baseimg_param) {
+        out_baseimg = out_baseimg_param->value.s;
     }
 
     /* Check if compression is supported */
