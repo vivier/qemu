@@ -408,6 +408,7 @@ struct EHCIState {
     USBPort ports[NB_PORTS];
     USBPort *companion_ports[NB_PORTS];
     uint32_t usbsts_pending;
+    uint32_t usbsts_frindex; /* unused, for upstream migration compatibility */
     EHCIQueueHead aqueues;
     EHCIQueueHead pqueues;
 
@@ -566,7 +567,11 @@ static inline void ehci_set_interrupt(EHCIState *s, int intr)
 
 static inline void ehci_record_interrupt(EHCIState *s, int intr)
 {
-    s->usbsts_pending |= intr;
+    if (intr & (USBSTS_PCD | USBSTS_FLR | USBSTS_HSE)) {
+        ehci_set_interrupt(s, intr);
+    } else {
+        s->usbsts_pending |= intr;
+    }
 }
 
 static inline void ehci_commit_interrupt(EHCIState *s)
@@ -2251,6 +2256,8 @@ static int usb_ehci_post_load(void *opaque, int version_id)
 static const VMStateDescription vmstate_ehci = {
     .name        = "ehci",
     .version_id  = 1,
+    .version_id  = 2,
+    .minimum_version_id  = 1,
     .pre_save    = usb_ehci_pre_save,
     .post_load   = usb_ehci_post_load,
     .fields      = (VMStateField[]) {
@@ -2258,6 +2265,8 @@ static const VMStateDescription vmstate_ehci = {
         /* mmio registers */
         VMSTATE_UINT32(usbcmd, EHCIState),
         VMSTATE_UINT32(usbsts, EHCIState),
+        VMSTATE_UINT32_V(usbsts_pending, EHCIState, 2),
+        VMSTATE_UINT32_V(usbsts_frindex, EHCIState, 2),
         VMSTATE_UINT32(usbintr, EHCIState),
         VMSTATE_UINT32(frindex, EHCIState),
         VMSTATE_UINT32(ctrldssegment, EHCIState),
