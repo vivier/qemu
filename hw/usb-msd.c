@@ -48,8 +48,8 @@ struct usb_msd_csw {
 typedef struct {
     USBDevice dev;
     enum USBMSDMode mode;
+    uint32_t scsi_off;
     uint32_t scsi_len;
-    uint8_t *scsi_buf;
     uint32_t usb_len;
     uint8_t *usb_buf;
     uint32_t data_len;
@@ -181,14 +181,14 @@ static void usb_msd_copy_data(MSDState *s)
     if (len > s->scsi_len)
         len = s->scsi_len;
     if (s->mode == USB_MSDM_DATAIN) {
-        memcpy(s->usb_buf, s->scsi_buf, len);
+        memcpy(s->usb_buf, scsi_req_get_buf(s->req) + s->scsi_off, len);
     } else {
-        memcpy(s->scsi_buf, s->usb_buf, len);
+        memcpy(scsi_req_get_buf(s->req) + s->scsi_off, s->usb_buf, len);
     }
     s->usb_len -= len;
     s->scsi_len -= len;
     s->usb_buf += len;
-    s->scsi_buf += len;
+    s->scsi_off += len;
     s->data_len -= len;
     if (s->scsi_len == 0 || s->data_len == 0) {
         scsi_req_continue(s->req);
@@ -227,7 +227,7 @@ static void usb_msd_transfer_data(SCSIRequest *req, uint32_t len)
 
     assert((s->mode == USB_MSDM_DATAOUT) == (req->cmd.mode == SCSI_XFER_TO_DEV));
     s->scsi_len = len;
-    s->scsi_buf = scsi_req_get_buf(req);
+    s->scsi_off = 0;
     if (p) {
         usb_msd_copy_data(s);
         if (s->packet && s->usb_len == 0) {
