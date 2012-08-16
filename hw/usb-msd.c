@@ -199,8 +199,8 @@ static void usb_msd_send_status(MSDState *s, USBPacket *p)
 {
     int len;
 
-    DPRINTF("Command status %d tag 0x%x, len %zd\n",
-            s->csw.status, le32_to_cpu(s->csw.tag), p->iov.size);
+    DPRINTF("Command status %d tag 0x%x, len %d\n",
+            s->csw.status, le32_to_cpu(s->csw.tag), p->len);
 
     assert(s->csw.sig == cpu_to_le32(0x53425355));
     len = MIN(sizeof(s->csw), p->len);
