@@ -1996,8 +1996,6 @@ static void ehci_advance_state(EHCIState *ehci,
         }
     }
     while (again);
-
-    ehci_commit_interrupt(ehci);
 }
 
 static void ehci_advance_async_state(EHCIState *ehci)
@@ -2170,6 +2168,7 @@ static void ehci_frame_timer(void *opaque)
     qemu_bh_schedule(ehci->async_bh);
 
     qemu_mod_timer(ehci->frame_timer, expire_time);
+    ehci_commit_interrupt(ehci);
 }
 
 static void ehci_async_bh(void *opaque)
