@@ -53,7 +53,6 @@ typedef struct {
     uint32_t usb_len;
     uint8_t *usb_buf;
     uint32_t data_len;
-    uint32_t residue;
     struct usb_msd_csw csw;
     SCSIRequest *req;
     SCSIBus bus;
@@ -236,11 +235,10 @@ static void usb_msd_command_complete(SCSIRequest *req, uint32_t status, int32_t 
     USBPacket *p = s->packet;
 
     DPRINTF("Command complete %d tag 0x%x\n", status, req->tag);
-    s->residue = s->data_len;
 
     s->csw.sig = cpu_to_le32(0x53425355);
     s->csw.tag = cpu_to_le32(req->tag);
-    s->csw.residue = cpu_to_le32(s->residue);
+    s->csw.residue = cpu_to_le32(s->data_len);
     s->csw.status = status != 0;
 
     if (s->packet) {
@@ -402,7 +400,7 @@ static int usb_msd_handle_data(USBDevice *dev, USBPacket *p)
             }
             DPRINTF("Command tag 0x%x flags %08x len %d data %d\n",
                     tag, cbw.flags, cbw.cmd_len, s->data_len);
-            s->residue = 0;
+            assert(le32_to_cpu(s->csw.residue) == 0);
             s->scsi_len = 0;
             s->req = scsi_req_new(s->scsi_dev, tag, 0, cbw.cmd, NULL);
             scsi_req_enqueue(s->req);
@@ -422,7 +420,7 @@ static int usb_msd_handle_data(USBDevice *dev, USBPacket *p)
             if (s->scsi_len) {
                 usb_msd_copy_data(s);
             }
-            if (s->residue && s->usb_len) {
+            if (le32_to_cpu(s->csw.residue) && s->usb_len) {
                 s->data_len -= s->usb_len;
                 if (s->data_len == 0)
                     s->mode = USB_MSDM_CSW;
@@ -480,7 +478,7 @@ static int usb_msd_handle_data(USBDevice *dev, USBPacket *p)
             if (s->scsi_len) {
                 usb_msd_copy_data(s);
             }
-            if (s->residue && s->usb_len) {
+            if (le32_to_cpu(s->csw.residue) && s->usb_len) {
                 s->data_len -= s->usb_len;
                 memset(s->usb_buf, 0, s->usb_len);
                 if (s->data_len == 0)
