@@ -40,7 +40,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.2
-Release: 0.2.%{gitdate}git%{gitcommit}%{?dist}
+Release: 0.3.%{gitdate}git%{gitcommit}%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -86,6 +86,13 @@ Source11: 99-qemu-guest-agent.rules
 
 # Non upstream build fix
 Patch1: 0001-mips-Fix-link-error-with-piix4_pm_init.patch
+
+# Add ./configure --disable-kvm-options
+# Sent upstream on August 13 2012
+Patch2: 0002-configure-Add-disable-kvm-options.patch
+
+# Fix broken vhost-net (upstream).
+Patch3: 0001-virtio-fix-vhost-handling.patch
 
 # The infamous chardev flow control patches
 Patch101: 0101-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
@@ -154,24 +161,16 @@ BuildRequires: check-devel
 BuildRequires: libcap-devel
 Requires: %{name}-user = %{epoch}:%{version}-%{release}
 %if %{without x86only}
-Requires: %{name}-system-x86 = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-arm = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-cris = %{epoch}:%{version}-%{release}
-Requires: %{name}-system-sh4 = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-m68k = %{epoch}:%{version}-%{release}
 Requires: %{name}-system-mips = %{epoch}:%{version}-%{release}
+Requires: %{name}-system-ppc = %{epoch}:%{version}-%{release}
+Requires: %{name}-system-sh4 = %{epoch}:%{version}-%{release}
+Requires: %{name}-system-sparc = %{epoch}:%{version}-%{release}
+Requires: %{name}-system-x86 = %{epoch}:%{version}-%{release}
 %endif
 Requires: %{name}-img = %{epoch}:%{version}-%{release}
-
-Obsoletes: %{name}-system-ppc
-Obsoletes: %{name}-system-sparc
-
-# Needed for F14->F16+ upgrade
-# https://bugzilla.redhat.com/show_bug.cgi?id=694802
-Obsoletes: openbios-common
-Obsoletes: openbios-ppc
-Obsoletes: openbios-sparc32
-Obsoletes: openbios-sparc64
 
 %define qemudocdir %{_docdir}/%{name}
 
@@ -347,6 +346,29 @@ QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
 
 This package provides the system emulator for sh4
+
+%package system-sparc
+Summary: QEMU system emulator for sparc
+Group: Development/Tools
+Requires: %{name}-common = %{epoch}:%{version}-%{release}
+Requires: openbios
+%description system-sparc
+QEMU is a generic and open source processor emulator which achieves a good
+emulation speed by using dynamic translation.
+
+This package provides the system emulator for sparc and sparc64
+
+%package system-ppc
+Summary: QEMU system emulator for PPC
+Group: Development/Tools
+Requires: %{name}-common = %{epoch}:%{version}-%{release}
+Requires: openbios
+Requires: SLOF
+%description system-ppc
+QEMU is a generic and open source processor emulator which achieves a good
+emulation speed by using dynamic translation.
+
+This package provides the system emulator for ppc
 %endif
 
 %ifarch %{ix86} x86_64
@@ -363,6 +385,8 @@ such as kvm_stat.
 %setup -q -n qemu-kvm-%{version}
 
 %patch1 -p1
+%patch2 -p1
+%patch3 -p1
 
 %patch101 -p1
 %patch102 -p1
@@ -378,25 +402,28 @@ such as kvm_stat.
 %patch112 -p1
 %patch113 -p1
 
-
 %build
-# By default we build everything, but allow x86 to build a minimal version
-# with only similar arch target support
+buildarch="i386-softmmu x86_64-softmmu arm-softmmu cris-softmmu \
+    m68k-softmmu mips-softmmu mipsel-softmmu mips64-softmmu \
+    mips64el-softmmu sh4-softmmu sh4eb-softmmu sparc-softmmu sparc64-softmmu \
+    ppc-softmmu ppcemb-softmmu ppc64-softmmu \
+    i386-linux-user x86_64-linux-user alpha-linux-user arm-linux-user \
+    armeb-linux-user cris-linux-user m68k-linux-user mips-linux-user \
+    mipsel-linux-user ppc-linux-user ppc64-linux-user \
+    ppc64abi32-linux-user sh4-linux-user sh4eb-linux-user \
+    sparc-linux-user sparc64-linux-user sparc32plus-linux-user"
 %if %{with x86only}
-    buildarch="i386-softmmu x86_64-softmmu i386-linux-user x86_64-linux-user"
-%else
-    buildarch="i386-softmmu x86_64-softmmu arm-softmmu cris-softmmu m68k-softmmu \
-           mips-softmmu mipsel-softmmu mips64-softmmu mips64el-softmmu \
-           sh4-softmmu sh4eb-softmmu \
-           i386-linux-user x86_64-linux-user alpha-linux-user arm-linux-user \
-           armeb-linux-user cris-linux-user m68k-linux-user mips-linux-user \
-           mipsel-linux-user ppc-linux-user ppc64-linux-user ppc64abi32-linux-user \
-           sh4-linux-user sh4eb-linux-user sparc-linux-user sparc64-linux-user \
-           sparc32plus-linux-user" \
+    buildarch="i386-linux-user x86_64-linux-user"
 %endif
 
+# Targets we don't build as of qemu 1.1.50
+# alpha-softmmu lm32-softmmu microblaze-softmmu microblazeel-softmmu
+# or32-softmmu s390x-softmmu xtensa-softmmu xtensaeb-softmmu unicore32-softmmu
+# alpha-linux-user microblaze-linux-user microblazeel-linux-user
+# or32-linux-user unicore32-linux-user s390x-linux-user
 
-# --build-id option is used fedora 8 onwards for giving info to the debug packages.
+
+# --build-id option is used for giving info to the debug packages.
 extraldflags="-Wl,--build-id";
 buildldflags="VL_LDFLAGS=-Wl,--build-id"
 
@@ -406,35 +433,55 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
 sed -i.debug 's/"-g $CFLAGS"/"$CFLAGS"/g' configure
 %endif
 
+
+dobuild() {
+    ./configure \
+        --prefix=%{_prefix} \
+        --sysconfdir=%{_sysconfdir} \
+        --interp-prefix=%{_prefix}/qemu-%%M \
+        --audio-drv-list=pa,sdl,alsa,oss \
+        --disable-strip \
+        --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
+        --extra-cflags="%{optflags} -fPIE -DPIE" \
 %ifarch %{ix86} x86_64
-# sdl outputs to alsa or pulseaudio depending on system config, but it's broken (#495964)
-# alsa works, but causes huge CPU load due to bugs
-# oss works, but is very problematic because it grabs exclusive control of the device causing other apps to go haywire
-./configure --target-list=x86_64-softmmu \
-            --prefix=%{_prefix} \
-            --sysconfdir=%{_sysconfdir} \
-            --audio-drv-list=pa,sdl,alsa,oss \
-            --disable-strip \
-            --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
-            --extra-cflags="%{optflags} -fPIE -DPIE" \
-            --enable-spice \
-            --enable-mixemu \
+        --enable-spice \
+        --enable-mixemu \
+%endif
 %if %{without rbd}
-            --disable-rbd \
+        --disable-rbd \
 %endif
 %if %{without fdt}
-            --disable-fdt \
+        --disable-fdt \
 %endif
-            --enable-trace-backend=dtrace \
-            --disable-werror \
-            --disable-xen
+        --enable-trace-backend=dtrace \
+        --disable-werror \
+        --disable-xen \
+        --enable-kvm \
+        "$@"
 
-echo "config-host.mak contents:"
-echo "==="
-cat config-host.mak
-echo "==="
+    echo "config-host.mak contents:"
+    echo "==="
+    cat config-host.mak
+    echo "==="
 
-make V=1 %{?_smp_mflags} $buildldflags
+    make V=1 %{?_smp_mflags} $buildldflags
+}
+
+# This is kind of confusing. We run ./configure + make twice here to
+# preserve some back compat: if on x86, we want to provide a qemu-kvm
+# binary that defaults to KVM=on. All other qemu-system* should be
+# able to use KVM, but default to KVM=off (upstream qemu semantics).
+#
+# Once qemu-kvm and qemu fully merge, and we base off qemu releases,
+# all qemu-system-* will default to KVM=off, so we hopefully won't need
+# to do these double builds. But then I'm not sure how we are going to
+# generate a back compat qemu-kvm binary...
+
+%ifarch %{ix86} x86_64
+# Build qemu-kvm back compat binary
+dobuild --target-list=x86_64-softmmu
+
+# Setup back compat qemu-kvm binary which defaults to KVM=on
 ./scripts/tracetool.py --backend dtrace --format stap \
   --binary %{_bindir}/qemu-kvm --target-arch x86_64 --target-type system \
   --probe-prefix qemu.kvm < ./trace-events > qemu-kvm.stp
@@ -442,37 +489,8 @@ cp -a x86_64-softmmu/qemu-system-x86_64 qemu-kvm
 make clean
 %endif
 
-./configure \
-    --target-list="$buildarch" \
-    --prefix=%{_prefix} \
-    --sysconfdir=%{_sysconfdir} \
-    --interp-prefix=%{_prefix}/qemu-%%M \
-    --audio-drv-list=pa,sdl,alsa,oss \
-    --disable-kvm \
-    --disable-strip \
-    --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
-    --extra-cflags="%{optflags} -fPIE -DPIE" \
-    --disable-xen \
-%ifarch %{ix86} x86_64
-    --enable-spice \
-    --enable-mixemu \
-%endif
-%if %{without rbd}
-    --disable-rbd \
-%endif
-%if %{without fdt}
-    --disable-fdt \
-%endif
-    --enable-trace-backend=dtrace \
-    --disable-werror
-
-echo "config-host.mak contents:"
-echo "==="
-cat config-host.mak
-echo "==="
-
-make V=1 %{?_smp_mflags} $buildldflags
-
+# Build qemu-system-* with consistent default of kvm=off
+dobuild --target-list="$buildarch" --disable-kvm-options
 gcc %{SOURCE6} -O2 -g -o ksmctl
 
 
@@ -508,22 +526,29 @@ install -D -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} Changelog README TODO CO
 
 install -D -p -m 0644 qemu.sasl $RPM_BUILD_ROOT%{_sysconfdir}/sasl2/qemu.conf
 
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/pxe*bin
+# Provided by package ipxe
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/pxe*rom
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/gpxe*rom
+# Provided by package vgabios
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/vgabios*bin
+# Provided by package seabios
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/bios.bin
+# Provided by package sgabios
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/sgabios.bin
+# Provided by package openbios
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-ppc
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-sparc32
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-sparc64
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/petalogix*.dtb
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/s390-zipl.rom
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/bamboo.dtb
+# Provided by package SLOF
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/slof.bin
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/spapr-rtas.bin
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/ppc_rom.bin
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/sgabios.bin
+
+# The following aren't provided by any Fedora package
+
+# Used by target s390/s390x
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/s390-zipl.rom
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/palcode-clipper
+# Binary device trees for microblaze target
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/petalogix*.dtb
+
 
 # the pxe gpxe images will be symlinks to the images on
 # /usr/share/ipxe, as QEMU doesn't know how to look
@@ -537,13 +562,18 @@ pxe_link ne2k_pci 10ec8029
 pxe_link pcnet 10222000
 pxe_link rtl8139 10ec8139
 pxe_link virtio 1af41000
-ln -s ../vgabios/VGABIOS-lgpl-latest.bin  %{buildroot}/%{_datadir}/%{name}/vgabios.bin
-ln -s ../vgabios/VGABIOS-lgpl-latest.cirrus.bin %{buildroot}/%{_datadir}/%{name}/vgabios-cirrus.bin
-ln -s ../vgabios/VGABIOS-lgpl-latest.qxl.bin %{buildroot}/%{_datadir}/%{name}/vgabios-qxl.bin
-ln -s ../vgabios/VGABIOS-lgpl-latest.stdvga.bin %{buildroot}/%{_datadir}/%{name}/vgabios-stdvga.bin
-ln -s ../vgabios/VGABIOS-lgpl-latest.vmware.bin %{buildroot}/%{_datadir}/%{name}/vgabios-vmware.bin
-ln -s ../seabios/bios.bin %{buildroot}/%{_datadir}/%{name}/bios.bin
-ln -s ../sgabios/sgabios.bin %{buildroot}/%{_datadir}/%{name}/sgabios.bin
+
+rom_link() {
+    ln -s $1 %{buildroot}%{_datadir}/%{name}/$2
+}
+
+rom_link ../vgabios/VGABIOS-lgpl-latest.bin vgabios.bin
+rom_link ../vgabios/VGABIOS-lgpl-latest.cirrus.bin vgabios-cirrus.bin
+rom_link ../vgabios/VGABIOS-lgpl-latest.qxl.bin vgabios-qxl.bin
+rom_link ../vgabios/VGABIOS-lgpl-latest.stdvga.bin vgabios-stdvga.bin
+rom_link ../vgabios/VGABIOS-lgpl-latest.vmware.bin vgabios-vmware.bin
+rom_link ../seabios/bios.bin bios.bin
+rom_link ../sgabios/sgabios.bin sgabios.bin
 
 mkdir -p $RPM_BUILD_ROOT%{_exec_prefix}/lib/binfmt.d
 for i in dummy \
@@ -812,6 +842,25 @@ fi
 %{_datadir}/systemtap/tapset/qemu-system-sh4.stp
 %{_datadir}/systemtap/tapset/qemu-system-sh4eb.stp
 
+%files system-sparc
+%defattr(-,root,root)
+%{_bindir}/qemu-system-sparc
+%{_bindir}/qemu-system-sparc64
+%{_datadir}/systemtap/tapset/qemu-system-sparc.stp
+%{_datadir}/systemtap/tapset/qemu-system-sparc64.stp
+
+%files system-ppc
+%defattr(-,root,root)
+%{_bindir}/qemu-system-ppc
+%{_bindir}/qemu-system-ppc64
+%{_bindir}/qemu-system-ppcemb
+%{_datadir}/%{name}/bamboo.dtb
+%{_datadir}/%{name}/ppc_rom.bin
+%{_datadir}/%{name}/spapr-rtas.bin
+%{_datadir}/systemtap/tapset/qemu-system-ppc.stp
+%{_datadir}/systemtap/tapset/qemu-system-ppc64.stp
+%{_datadir}/systemtap/tapset/qemu-system-ppcemb.stp
+
 %endif
 
 %files img
@@ -822,10 +871,15 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
-* Tue Aug 14 2012 Eduardo Habkost <ehabkost@redhat.com> - qemu-1.2-0.2.20120806git3e430569.el7
-- Don't build non-x86 qemu targets on RHEL
-- Resolves: bz#821913
-  (don't build non-x86 qemu targets)
+* Mon Aug 20 2012 Richard W.M. Jones <rjones@redhat.com> - 1.2-0.3.20120806git3e430569
+- Backport Bonzini's vhost-net fix (RHBZ#848400).
+
+* Tue Aug 14 2012 Cole Robinson <crobinso@redhat.com> - 1.2-0.2.20120806git3e430569
+- Bump release number, previous build forgot but the dist bump helped us out
+
+* Tue Aug 14 2012 Cole Robinson <crobinso@redhat.com> - 1.2-0.1.20120806git3e430569
+- Revive qemu-system-{ppc*, sparc*} (bz 844502)
+- Enable KVM support for all targets (bz 844503)
 
 * Mon Aug 06 2012 Cole Robinson <crobinso@redhat.com> - 1.2-0.1.20120806git3e430569.fc18
 - Update to git snapshot
