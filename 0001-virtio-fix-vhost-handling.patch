@@ -1,0 +1,134 @@
+From 26b9b5fe17cc1b6be2e8bf8b9d16094f420bb8ad Mon Sep 17 00:00:00 2001
+From: Paolo Bonzini <pbonzini@redhat.com>
+Date: Mon, 6 Aug 2012 15:26:14 +0200
+Subject: [PATCH] virtio: fix vhost handling
+
+Commit b1f416aa8d870fab71030abc9401cfc77b948e8e breaks vhost_net
+because it always registers the virtio_pci_host_notifier_read() handler
+function on the ioeventfd, even when vhost_net.ko is using the ioeventfd.
+The result is both QEMU and vhost_net.ko polling on the same eventfd
+and the virtio_net.ko guest driver seeing inconsistent results:
+
+  # ifconfig eth0 192.168.0.1 netmask 255.255.255.0
+  virtio_net virtio0: output:id 0 is not a head!
+
+To fix this, proceed the same as we do for irqfd: add a parameter to
+virtio_queue_set_host_notifier_fd_handler and in that case only set
+the notifier, not the handler.
+
+Cc: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Tested-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Reviewed-by: Stefan Hajnoczi <stefanha@linux.vnet.ibm.com>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+---
+ hw/virtio-pci.c |   14 +++++++-------
+ hw/virtio.c     |    7 +++++--
+ hw/virtio.h     |    3 ++-
+ 3 files changed, 14 insertions(+), 10 deletions(-)
+
+diff --git a/hw/virtio-pci.c b/hw/virtio-pci.c
+index 3ab9747..125eded 100644
+--- a/hw/virtio-pci.c
++++ b/hw/virtio-pci.c
+@@ -160,7 +160,7 @@ static int virtio_pci_load_queue(void * opaque, int n, QEMUFile *f)
+ }
+ 
+ static int virtio_pci_set_host_notifier_internal(VirtIOPCIProxy *proxy,
+-                                                 int n, bool assign)
++                                                 int n, bool assign, bool set_handler)
+ {
+     VirtQueue *vq = virtio_get_queue(proxy->vdev, n);
+     EventNotifier *notifier = virtio_queue_get_host_notifier(vq);
+@@ -173,13 +173,13 @@ static int virtio_pci_set_host_notifier_internal(VirtIOPCIProxy *proxy,
+                          __func__, r);
+             return r;
+         }
+-        virtio_queue_set_host_notifier_fd_handler(vq, true);
++        virtio_queue_set_host_notifier_fd_handler(vq, true, set_handler);
+         memory_region_add_eventfd(&proxy->bar, VIRTIO_PCI_QUEUE_NOTIFY, 2,
+                                   true, n, notifier);
+     } else {
+         memory_region_del_eventfd(&proxy->bar, VIRTIO_PCI_QUEUE_NOTIFY, 2,
+                                   true, n, notifier);
+-        virtio_queue_set_host_notifier_fd_handler(vq, false);
++        virtio_queue_set_host_notifier_fd_handler(vq, false, false);
+         event_notifier_cleanup(notifier);
+     }
+     return r;
+@@ -200,7 +200,7 @@ static void virtio_pci_start_ioeventfd(VirtIOPCIProxy *proxy)
+             continue;
+         }
+ 
+-        r = virtio_pci_set_host_notifier_internal(proxy, n, true);
++        r = virtio_pci_set_host_notifier_internal(proxy, n, true, true);
+         if (r < 0) {
+             goto assign_error;
+         }
+@@ -214,7 +214,7 @@ assign_error:
+             continue;
+         }
+ 
+-        r = virtio_pci_set_host_notifier_internal(proxy, n, false);
++        r = virtio_pci_set_host_notifier_internal(proxy, n, false, false);
+         assert(r >= 0);
+     }
+     proxy->ioeventfd_started = false;
+@@ -235,7 +235,7 @@ static void virtio_pci_stop_ioeventfd(VirtIOPCIProxy *proxy)
+             continue;
+         }
+ 
+-        r = virtio_pci_set_host_notifier_internal(proxy, n, false);
++        r = virtio_pci_set_host_notifier_internal(proxy, n, false, false);
+         assert(r >= 0);
+     }
+     proxy->ioeventfd_started = false;
+@@ -683,7 +683,7 @@ static int virtio_pci_set_host_notifier(void *opaque, int n, bool assign)
+      * currently only stops on status change away from ok,
+      * reset, vmstop and such. If we do add code to start here,
+      * need to check vmstate, device state etc. */
+-    return virtio_pci_set_host_notifier_internal(proxy, n, assign);
++    return virtio_pci_set_host_notifier_internal(proxy, n, assign, false);
+ }
+ 
+ static void virtio_pci_vmstate_change(void *opaque, bool running)
+diff --git a/hw/virtio.c b/hw/virtio.c
+index d146f86..209c763 100644
+--- a/hw/virtio.c
++++ b/hw/virtio.c
+@@ -1021,13 +1021,16 @@ static void virtio_queue_host_notifier_read(EventNotifier *n)
+     }
+ }
+ 
+-void virtio_queue_set_host_notifier_fd_handler(VirtQueue *vq, bool assign)
++void virtio_queue_set_host_notifier_fd_handler(VirtQueue *vq, bool assign,
++                                               bool set_handler)
+ {
+-    if (assign) {
++    if (assign && set_handler) {
+         event_notifier_set_handler(&vq->host_notifier,
+                                    virtio_queue_host_notifier_read);
+     } else {
+         event_notifier_set_handler(&vq->host_notifier, NULL);
++    }
++    if (!assign) {
+         /* Test and clear notifier before after disabling event,
+          * in case poll callback didn't have time to run. */
+         virtio_queue_host_notifier_read(&vq->host_notifier);
+diff --git a/hw/virtio.h b/hw/virtio.h
+index f8b5535..7a4f564 100644
+--- a/hw/virtio.h
++++ b/hw/virtio.h
+@@ -233,7 +233,8 @@ EventNotifier *virtio_queue_get_guest_notifier(VirtQueue *vq);
+ void virtio_queue_set_guest_notifier_fd_handler(VirtQueue *vq, bool assign,
+                                                 bool with_irqfd);
+ EventNotifier *virtio_queue_get_host_notifier(VirtQueue *vq);
+-void virtio_queue_set_host_notifier_fd_handler(VirtQueue *vq, bool assign);
++void virtio_queue_set_host_notifier_fd_handler(VirtQueue *vq, bool assign,
++                                               bool set_handler);
+ void virtio_queue_notify_vq(VirtQueue *vq);
+ void virtio_irq(VirtQueue *vq);
+ #endif
+-- 
+1.7.10.4
+

@@ -40,7 +40,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.2
-Release: 0.2.%{gitdate}git%{gitcommit}%{?dist}
+Release: 0.3.%{gitdate}git%{gitcommit}%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -90,6 +90,9 @@ Patch1: 0001-mips-Fix-link-error-with-piix4_pm_init.patch
 # Add ./configure --disable-kvm-options
 # Sent upstream on August 13 2012
 Patch2: 0002-configure-Add-disable-kvm-options.patch
+
+# Fix broken vhost-net (upstream).
+Patch3: 0001-virtio-fix-vhost-handling.patch
 
 # The infamous chardev flow control patches
 Patch101: 0101-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
@@ -383,6 +386,7 @@ such as kvm_stat.
 
 %patch1 -p1
 %patch2 -p1
+%patch3 -p1
 
 %patch101 -p1
 %patch102 -p1
@@ -867,6 +871,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Mon Aug 20 2012 Richard W.M. Jones <rjones@redhat.com> - 1.2-0.3.20120806git3e430569
+- Backport Bonzini's vhost-net fix (RHBZ#848400).
+
 * Tue Aug 14 2012 Cole Robinson <crobinso@redhat.com> - 1.2-0.2.20120806git3e430569
 - Bump release number, previous build forgot but the dist bump helped us out
 
