@@ -2260,6 +2260,8 @@ int kvm_main_loop(void)
                 runstate_check(RUN_STATE_SHUTDOWN)) {
                 runstate_set(RUN_STATE_PAUSED);
             }
+        } else if (qemu_wakeup_requested()) {
+            qemu_kvm_system_reset(VMRESET_SILENT);
         } else if (kvm_debug_cpu_requested) {
             gdb_set_stop_cpu(kvm_debug_cpu_requested);
             vm_stop(RUN_STATE_DEBUG);
