@@ -3334,7 +3334,7 @@ void qemu_unregister_reset(QEMUResetHandler *func, void *opaque)
     }
 }
 
-void qemu_system_reset(void)
+void qemu_system_reset(bool report)
 {
     QEMUResetEntry *re, *nre;
 
@@ -3342,7 +3342,9 @@ void qemu_system_reset(void)
     QTAILQ_FOREACH_SAFE(re, &reset_handlers, entry, nre) {
         re->func(re->opaque);
     }
-    monitor_protocol_event(QEVENT_RESET, NULL);
+    if (report) {
+        monitor_protocol_event(QEVENT_RESET, NULL);
+    }
 }
 
 void qemu_system_reset_request(void)
@@ -4241,7 +4243,7 @@ static void main_loop(void)
         }
         if (qemu_reset_requested()) {
             pause_all_vcpus();
-            qemu_system_reset();
+            qemu_system_reset(VMRESET_REPORT);
             resume_all_vcpus();
             if (runstate_check(RUN_STATE_INTERNAL_ERROR) ||
                 runstate_check(RUN_STATE_SHUTDOWN)) {
@@ -6336,7 +6338,7 @@ int main(int argc, char **argv, char **envp)
 
     qemu_run_machine_init_done_notifiers();
 
-    qemu_system_reset();
+    qemu_system_reset(VMRESET_SILENT);
     if (loadvm) {
         if (load_vmstate(loadvm) < 0) {
             autostart = 0;
