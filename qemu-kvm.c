@@ -2262,6 +2262,7 @@ int kvm_main_loop(void)
             }
         } else if (qemu_wakeup_requested()) {
             qemu_kvm_system_reset(VMRESET_SILENT);
+            monitor_protocol_event(QEVENT_WAKEUP, NULL);
         } else if (kvm_debug_cpu_requested) {
             gdb_set_stop_cpu(kvm_debug_cpu_requested);
             vm_stop(RUN_STATE_DEBUG);
