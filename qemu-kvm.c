@@ -1969,13 +1969,13 @@ static void setup_kernel_sigmask(CPUState *env)
     kvm_set_signal_mask(env, &set);
 }
 
-static void qemu_kvm_system_reset(void)
+static void qemu_kvm_system_reset(bool report)
 {
     CPUState *penv = first_cpu;
 
     kvm_pause_all_threads();
 
-    qemu_system_reset();
+    qemu_system_reset(report);
 
     while (penv) {
         kvm_arch_cpu_reset(penv);
@@ -2255,7 +2255,7 @@ int kvm_main_loop(void)
             monitor_protocol_event(QEVENT_POWERDOWN, NULL);
             qemu_irq_raise(qemu_system_powerdown);
         } else if (qemu_reset_requested()) {
-            qemu_kvm_system_reset();
+            qemu_kvm_system_reset(VMRESET_REPORT);
             if (runstate_check(RUN_STATE_INTERNAL_ERROR) ||
                 runstate_check(RUN_STATE_SHUTDOWN)) {
                 runstate_set(RUN_STATE_PAUSED);

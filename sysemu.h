@@ -60,6 +60,9 @@ VMChangeStateEntry *qemu_add_vm_change_state_handler(VMChangeStateHandler *cb,
                                                      void *opaque);
 void qemu_del_vm_change_state_handler(VMChangeStateEntry *e);
 
+#define VMRESET_SILENT   false
+#define VMRESET_REPORT   true
+
 void vm_start(void);
 void vm_stop(RunState state);
 void vm_stop_force_state(RunState state);
@@ -95,7 +98,7 @@ int qemu_powerdown_requested(void);
 void qemu_system_killed(int signal, pid_t pid);
 void qemu_kill_report(void);
 extern qemu_irq qemu_system_powerdown;
-void qemu_system_reset(void);
+void qemu_system_reset(bool report);
 void qemu_system_suspend(void);
 
 void qemu_add_machine_init_done_notifier(Notifier *notify);
