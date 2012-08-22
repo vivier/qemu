@@ -3408,7 +3408,6 @@ void qemu_system_wakeup_request(WakeupReason reason)
     if (!(wakeup_reason_mask & (1 << reason))) {
         return;
     }
-    monitor_protocol_event(QEVENT_WAKEUP, NULL);
     notifier_list_notify(&wakeup_notifiers, &reason);
     wakeup_requested = 1;
     qemu_notify_event();
@@ -4262,6 +4261,7 @@ static void main_loop(void)
             pause_all_vcpus();
             qemu_system_reset(VMRESET_SILENT);
             resume_all_vcpus();
+            monitor_protocol_event(QEVENT_WAKEUP, NULL);
         }
         if (qemu_powerdown_requested()) {
             monitor_protocol_event(QEVENT_POWERDOWN, NULL);
