@@ -179,4 +179,6 @@ void extboot_init(BlockDriverState *bs, int cmd);
 int cpu_is_bsp(CPUState *env);
 
 void disable_cpuid_leaf10(void);
+
+void disable_kvm_pv_eoi(void);
 #endif
