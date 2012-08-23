@@ -23,6 +23,7 @@
 
 #include "cpu.h"
 #include "kvm.h"
+#include "asm/kvm_para.h"
 
 #include "qemu-option.h"
 #include "qemu-config.h"
@@ -541,6 +542,8 @@ static int check_features_against_host(CPUX86State *env, x86_def_t *guest_def)
     return rv;
 }
 
+static bool kvm_pv_eoi_disabled;
+
 static int cpu_x86_find_by_name(x86_def_t *x86_cpu_def, const char *cpu_model)
 {
     unsigned int i;
@@ -565,6 +568,11 @@ static int cpu_x86_find_by_name(x86_def_t *x86_cpu_def, const char *cpu_model)
     }
 
     plus_kvm_features = ~0; /* not supported bits will be filtered out later */
+    /* Disable PV EOI for old machine types.
+     * Feature flags can still override. */
+    if (kvm_pv_eoi_disabled) {
+        plus_kvm_features &= ~(0x1 << KVM_FEATURE_PV_EOI);
+    }
 
     add_flagname_to_bitmaps("hypervisor", &plus_features,
         &plus_ext_features, &plus_ext2_features, &plus_ext3_features,
@@ -1268,4 +1276,15 @@ void disable_cpuid_leaf10(void);
 void disable_cpuid_leaf10(void)
 {
 	cpuid_leaf10_disabled = true;
+}
+
+/* Called from hw/pc.c but there is no header
+ * both files include to put this into.
+ * Put it here to silence compiler warning.
+ */
+void disable_kvm_pv_eoi(void);
+
+void disable_kvm_pv_eoi(void)
+{
+	kvm_pv_eoi_disabled = true;
 }
