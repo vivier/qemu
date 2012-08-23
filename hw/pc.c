@@ -1629,6 +1629,16 @@ static void rhel_common_init(const char *type1_version,
             .value    = stringify(0),\
         }, PC_RHEL6_1_COMPAT
 
+static void pc_rhel630_compat(void)
+{
+}
+
+static void pc_rhel620_compat(void)
+{
+    pc_rhel630_compat();
+    disable_cpuid_leaf10();
+}
+
 static void pc_init_rhel640(ram_addr_t ram_size,
                             const char *boot_device,
                             const char *kernel_filename,
@@ -1658,6 +1668,7 @@ static void pc_init_rhel630(ram_addr_t ram_size,
                             const char *cpu_model)
 {
     rhel_common_init("RHEL 6.3.0 PC", 0);
+    pc_rhel630_compat();
     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
                 initrd_filename, setdef_cpu_model(cpu_model, "cpu64-rhel6"));
 }
@@ -1681,7 +1692,7 @@ static void pc_init_rhel620(ram_addr_t ram_size,
                             const char *cpu_model)
 {
     rhel_common_init("RHEL 6.2.0 PC", 0);
-    disable_cpuid_leaf10();
+    pc_rhel620_compat();
     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
                 initrd_filename, setdef_cpu_model(cpu_model, "cpu64-rhel6"));
 }
@@ -1705,7 +1716,7 @@ static void pc_init_rhel610(ram_addr_t ram_size,
                             const char *cpu_model)
 {
     rhel_common_init("RHEL 6.1.0 PC", 0);
-    disable_cpuid_leaf10();
+    pc_rhel620_compat();
     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
                 initrd_filename, setdef_cpu_model(cpu_model, "cpu64-rhel6"));
 }
@@ -1729,7 +1740,7 @@ static void pc_init_rhel600(ram_addr_t ram_size,
                             const char *cpu_model)
 {
     rhel_common_init("RHEL 6.0.0 PC", 0);
-    disable_cpuid_leaf10();
+    pc_rhel620_compat();
     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
                 initrd_filename, setdef_cpu_model(cpu_model, "cpu64-rhel6"));
 }
@@ -1800,7 +1811,7 @@ static void pc_init_rhel550(ram_addr_t ram_size,
                             const char *cpu_model)
 {
     rhel_common_init("RHEL 5.5.0 PC", 1);
-    disable_cpuid_leaf10();
+    pc_rhel620_compat();
     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
                 initrd_filename, setdef_cpu_model(cpu_model, "cpu64-rhel5"));
 }
@@ -1821,7 +1832,7 @@ static void pc_init_rhel544(ram_addr_t ram_size,
                             const char *cpu_model)
 {
     rhel_common_init("RHEL 5.4.4 PC", 1);
-    disable_cpuid_leaf10();
+    pc_rhel620_compat();
     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
                 initrd_filename, setdef_cpu_model(cpu_model, "cpu64-rhel5"));
 }
@@ -1842,7 +1853,7 @@ static void pc_init_rhel540(ram_addr_t ram_size,
                             const char *cpu_model)
 {
     rhel_common_init("RHEL 5.4.0 PC", 1);
-    disable_cpuid_leaf10();
+    pc_rhel620_compat();
     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
                 initrd_filename, setdef_cpu_model(cpu_model, "cpu64-rhel5"));
 }
