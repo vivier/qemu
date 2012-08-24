@@ -413,7 +413,7 @@ buildarch="i386-softmmu x86_64-softmmu arm-softmmu cris-softmmu \
     ppc64abi32-linux-user sh4-linux-user sh4eb-linux-user \
     sparc-linux-user sparc64-linux-user sparc32plus-linux-user"
 %if %{with x86only}
-    buildarch="i386-linux-user x86_64-linux-user"
+    buildarch="i386-softmmu x86_64-softmmu i386-linux-user x86_64-linux-user"
 %endif
 
 # Targets we don't build as of qemu 1.1.50
