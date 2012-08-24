@@ -40,7 +40,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu
 Version: 1.2
-Release: 0.3.%{gitdate}git%{gitcommit}%{?dist}
+Release: 0.4.%{gitdate}git%{gitcommit}%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -871,6 +871,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Aug 24 2012 Eduardo Habkost <ehabkost@redhat.com> - 1.2-0.4.20120806git3e430569
+- Fix x86only build to build *-softmmu binaries too
+- Resolves: bz#851594
+
 * Mon Aug 20 2012 Richard W.M. Jones <rjones@redhat.com> - 1.2-0.3.20120806git3e430569
 - Backport Bonzini's vhost-net fix (RHBZ#848400).
 
