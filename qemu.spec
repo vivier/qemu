@@ -541,6 +541,13 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-sparc64
 # Provided by package SLOF
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/slof.bin
 
+# remove unpackaged files on x86only:
+%if %{with x86only}
+rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}/bamboo.dtb
+rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}/ppc_rom.bin
+rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}/spapr-rtas.bin
+%endif
+
 # The following aren't provided by any Fedora package
 
 # Used by target s390/s390x
