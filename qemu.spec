@@ -880,6 +880,7 @@ fi
 %changelog
 * Fri Aug 24 2012 Eduardo Habkost <ehabkost@redhat.com> - 1.2-0.4.20120806git3e430569
 - Fix x86only build to build *-softmmu binaries too
+- Remove unpackaged non-x86 bios files on x86only build
 - Resolves: bz#851594
 
 * Mon Aug 20 2012 Richard W.M. Jones <rjones@redhat.com> - 1.2-0.3.20120806git3e430569
