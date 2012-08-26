@@ -35,6 +35,7 @@
 #include "migration.h"
 #include "monitor.h"
 #include "hw/hw.h"
+#include "sysemu.h"
 
 /* core bits */
 
@@ -585,6 +586,19 @@ static int add_channel(const char *name, const char *value, void *opaque)
     return 0;
 }
 
+static void vm_change_state_handler(void *opaque, int running,
+                                    RunState state)
+{
+#if SPICE_SERVER_VERSION >= 0x000b02 /* 0.11.2 */
+    if (running) {
+        spice_server_vm_start(spice_server);
+    } else {
+        spice_server_vm_stop(spice_server);
+    }
+#endif
+}
+
+
 void qemu_spice_init(void)
 {
     QemuOpts *opts = QTAILQ_FIRST(&qemu_spice_opts.head);
@@ -744,6 +758,8 @@ void qemu_spice_init(void)
 
     qemu_spice_input_init();
     qemu_spice_audio_init();
+
+    qemu_add_vm_change_state_handler(vm_change_state_handler, &spice_server);
 
     qemu_free(x509_key_file);
     qemu_free(x509_cert_file);
