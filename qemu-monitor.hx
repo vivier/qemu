@@ -2882,6 +2882,8 @@ as a json-array of json-objects.
 The main json-object contains the following:
 
 - "enabled": true or false (json-bool)
+- "migrated": true if migration occured and has completed, and spice has completed
+              its migration as well (json-bool)
 - "host": server's IP address (json-string)
 - "port": server's port number (json-int, optional)
 - "tls-port": server's port number (json-int, optional)
@@ -2910,6 +2912,7 @@ Example:
 <- {
       "return": {
          "enabled": true,
+         "migrated": false,
          "auth": "spice",
          "port": 5920,
          "tls-port": 5921,

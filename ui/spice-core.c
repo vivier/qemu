@@ -45,6 +45,7 @@ static Notifier migration_state;
 static const char *auth = "spice";
 static char *auth_passwd;
 static time_t auth_expires = TIME_MAX;
+static int spice_migration_completed;
 int using_spice = 0;
 
 static pthread_t me;
@@ -369,6 +370,7 @@ static void migrate_connect_complete_cb(SpiceMigrateInstance *sin)
 static void migrate_end_complete_cb(SpiceMigrateInstance *sin)
 {
     monitor_protocol_event(QEVENT_SPICE_MIGRATE_COMPLETED, NULL);
+    spice_migration_completed = true;
 }
 
 #endif
@@ -472,6 +474,11 @@ void do_info_spice_print(Monitor *mon, const QObject *data)
     }
 
     monitor_printf(mon, "Server:\n");
+    if (qdict_get_bool(server, "migrated")) {
+        monitor_printf(mon, "     migrated: true\n");
+    } else {
+        monitor_printf(mon, "     migrated: false\n");
+    }
     host = qdict_get_str(server, "host");
     port = qdict_get_try_int(server, "port", -1);
     if (port != -1) {
@@ -511,6 +518,7 @@ void do_info_spice(Monitor *mon, QObject **ret_data)
 
     server = qdict_new();
     qdict_put(server, "enabled", qbool_from_int(true));
+    qdict_put(server, "migrated", qbool_from_int(spice_migration_completed));
     qdict_put(server, "auth", qstring_from_str(auth));
     qdict_put(server, "host", qstring_from_str(addr ? addr : "0.0.0.0"));
     if (port) {
@@ -537,6 +545,7 @@ static void migration_state_notifier(Notifier *notifier, void *data)
 #ifndef SPICE_INTERFACE_MIGRATION
         spice_server_migrate_switch(spice_server);
         monitor_protocol_event(QEVENT_SPICE_MIGRATE_COMPLETED, NULL);
+        spice_migration_completed = true;
 #else
         spice_server_migrate_end(spice_server, true);
     } else if (state == MIG_STATE_CANCELLED || state == MIG_STATE_ERROR) {
