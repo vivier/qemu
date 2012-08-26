@@ -45,6 +45,7 @@ typedef enum MonitorEvent {
     QEVENT_RH_SPICE_DISCONNECTED,
     QEVENT_SUSPEND,
     QEVENT_WAKEUP,
+    QEVENT_SPICE_MIGRATE_COMPLETED,
     QEVENT_MAX,
 } MonitorEvent;
 

@@ -476,6 +476,9 @@ void monitor_protocol_event(MonitorEvent event, QObject *data)
         case QEVENT_SPICE_DISCONNECTED:
             event_name = "SPICE_DISCONNECTED";
             break;
+        case QEVENT_SPICE_MIGRATE_COMPLETED:
+            event_name = "SPICE_MIGRATE_COMPLETED";
+            break;
         case QEVENT_DEVICE_TRAY_MOVED:
              event_name = "DEVICE_TRAY_MOVED";
             break;
