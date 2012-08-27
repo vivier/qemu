@@ -64,6 +64,7 @@ struct SCSIDiskState
     bool media_changed;
     bool media_event;
     bool eject_request;
+    uint64_t wwn;
     QEMUBH *bh;
     char *version;
     char *serial;
@@ -550,9 +551,23 @@ static int scsi_disk_emulate_inquiry(SCSIRequest *req, uint8_t *outbuf)
             outbuf[buflen++] = 0;   // not officially assigned
             outbuf[buflen++] = 0;   // reserved
             outbuf[buflen++] = id_len; // length of data following
-
             memcpy(outbuf+buflen, str, id_len);
             buflen += id_len;
+
+            if (s->wwn) {
+                outbuf[buflen++] = 0x1; // Binary
+                outbuf[buflen++] = 0x3; // NAA
+                outbuf[buflen++] = 0;   // reserved
+                outbuf[buflen++] = 8;
+		outbuf[buflen++] = (s->wwn >> 56) & 255;
+		outbuf[buflen++] = (s->wwn >> 48) & 255;
+		outbuf[buflen++] = (s->wwn >> 40) & 255;
+		outbuf[buflen++] = (s->wwn >> 32) & 255;
+		outbuf[buflen++] = (s->wwn >> 24) & 255;
+		outbuf[buflen++] = (s->wwn >> 16) & 255;
+		outbuf[buflen++] = (s->wwn >> 8) & 255;
+		outbuf[buflen++] = s->wwn & 255;
+            }
             break;
         }
         case 0xb0: /* block limits */
@@ -1879,7 +1894,8 @@ static SCSIRequest *scsi_block_new_request(SCSIDevice *d, uint32_t tag,
 #define DEFINE_SCSI_DISK_PROPERTIES()                           \
     DEFINE_BLOCK_PROPERTIES(SCSIDiskState, qdev.conf),          \
     DEFINE_PROP_STRING("ver",  SCSIDiskState, version),         \
-    DEFINE_PROP_STRING("serial",  SCSIDiskState, serial)
+    DEFINE_PROP_STRING("serial",  SCSIDiskState, serial),       \
+    DEFINE_PROP_HEX64("wwn", SCSIDiskState, wwn, 0)
 
 static const VMStateDescription vmstate_scsi_disk_state = {
     .name = "scsi-disk",
