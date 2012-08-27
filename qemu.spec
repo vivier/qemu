@@ -708,8 +708,8 @@ fi
 %doc %{qemudocdir}/COPYING
 %doc %{qemudocdir}/COPYING.LIB
 %doc %{qemudocdir}/LICENSE
-%dir %{_datadir}/%{name}/
-%{_datadir}/%{name}/keymaps/
+%dir %{_datadir}/qemu
+%{_datadir}/qemu/keymaps/
 %{_mandir}/man1/qemu.1*
 %{_mandir}/man1/virtfs-proxy-helper.1*
 %{_mandir}/man8/qemu-nbd.8*
