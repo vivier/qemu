@@ -535,26 +535,26 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/bios.bin
 # Provided by package sgabios
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/sgabios.bin
 # Provided by package openbios
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-ppc
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-sparc32
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-sparc64
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemu/openbios-ppc
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemu/openbios-sparc32
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemu/openbios-sparc64
 # Provided by package SLOF
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/slof.bin
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemu/slof.bin
 
 # remove unpackaged files on x86only:
 %if %{with x86only}
-rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}/bamboo.dtb
-rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}/ppc_rom.bin
-rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}/spapr-rtas.bin
+rm -f ${RPM_BUILD_ROOT}%{_datadir}/qemu/bamboo.dtb
+rm -f ${RPM_BUILD_ROOT}%{_datadir}/qemu/ppc_rom.bin
+rm -f ${RPM_BUILD_ROOT}%{_datadir}/qemu/spapr-rtas.bin
 %endif
 
 # The following aren't provided by any Fedora package
 
 # Used by target s390/s390x
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/s390-zipl.rom
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/palcode-clipper
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemu/s390-zipl.rom
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemu/palcode-clipper
 # Binary device trees for microblaze target
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/petalogix*.dtb
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemu/petalogix*.dtb
 
 
 # the pxe gpxe images will be symlinks to the images on
@@ -780,21 +780,21 @@ fi
 %defattr(-,root,root)
 %{_bindir}/qemu-system-i386
 %{_bindir}/qemu-system-x86_64
-%{_datadir}/qemu/bios.bin
-%{_datadir}/qemu/sgabios.bin
+%{_datadir}/qemu-kvm/bios.bin
+%{_datadir}/qemu-kvm/sgabios.bin
 %{_datadir}/qemu/linuxboot.bin
 %{_datadir}/qemu/multiboot.bin
 %{_datadir}/qemu/kvmvapic.bin
-%{_datadir}/qemu/vgabios.bin
-%{_datadir}/qemu/vgabios-cirrus.bin
-%{_datadir}/qemu/vgabios-qxl.bin
-%{_datadir}/qemu/vgabios-stdvga.bin
-%{_datadir}/qemu/vgabios-vmware.bin
-%{_datadir}/qemu/pxe-e1000.rom
-%{_datadir}/qemu/pxe-virtio.rom
-%{_datadir}/qemu/pxe-pcnet.rom
-%{_datadir}/qemu/pxe-rtl8139.rom
-%{_datadir}/qemu/pxe-ne2k_pci.rom
+%{_datadir}/qemu-kvm/vgabios.bin
+%{_datadir}/qemu-kvm/vgabios-cirrus.bin
+%{_datadir}/qemu-kvm/vgabios-qxl.bin
+%{_datadir}/qemu-kvm/vgabios-stdvga.bin
+%{_datadir}/qemu-kvm/vgabios-vmware.bin
+%{_datadir}/qemu-kvm/pxe-e1000.rom
+%{_datadir}/qemu-kvm/pxe-virtio.rom
+%{_datadir}/qemu-kvm/pxe-pcnet.rom
+%{_datadir}/qemu-kvm/pxe-rtl8139.rom
+%{_datadir}/qemu-kvm/pxe-ne2k_pci.rom
 %{_datadir}/qemu/cpus-x86_64.conf
 %{_datadir}/qemu/qemu-icon.bmp
 %config(noreplace) %{_sysconfdir}/qemu/target-x86_64.conf
@@ -861,9 +861,9 @@ fi
 %{_bindir}/qemu-system-ppc
 %{_bindir}/qemu-system-ppc64
 %{_bindir}/qemu-system-ppcemb
-%{_datadir}/%{name}/bamboo.dtb
-%{_datadir}/%{name}/ppc_rom.bin
-%{_datadir}/%{name}/spapr-rtas.bin
+%{_datadir}/qemu/bamboo.dtb
+%{_datadir}/qemu/ppc_rom.bin
+%{_datadir}/qemu/spapr-rtas.bin
 %{_datadir}/systemtap/tapset/qemu-system-ppc.stp
 %{_datadir}/systemtap/tapset/qemu-system-ppc64.stp
 %{_datadir}/systemtap/tapset/qemu-system-ppcemb.stp
