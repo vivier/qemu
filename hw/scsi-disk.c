@@ -1488,6 +1488,14 @@ static int32_t scsi_send_command(SCSIRequest *req, uint8_t *buf)
     case WRITE_VERIFY_10:
     case WRITE_VERIFY_12:
     case WRITE_VERIFY_16:
+        if (bdrv_is_read_only(s->qdev.conf.bs)) {
+            scsi_check_condition(r, SENSE_CODE(WRITE_PROTECTED));
+            return 0;
+        }
+        /* fallthrough */
+    case VERIFY_10:
+    case VERIFY_12:
+    case VERIFY_16:
         len = r->req.cmd.xfer / s->qdev.blocksize;
         DPRINTF("Write %s(sector %" PRId64 ", count %d)\n",
                 (command & 0xe) == 0xe ? "And Verify " : "",
