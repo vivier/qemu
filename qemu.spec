@@ -797,6 +797,20 @@ fi
 %{_datadir}/qemu-kvm/pxe-ne2k_pci.rom
 %{_datadir}/qemu/cpus-x86_64.conf
 %{_datadir}/qemu/qemu-icon.bmp
+# To make it compile after rename
+%{_datadir}/qemu/bios.bin
+%{_datadir}/qemu/pxe-e1000.rom
+%{_datadir}/qemu/pxe-eepro100.rom
+%{_datadir}/qemu/pxe-ne2k_pci.rom
+%{_datadir}/qemu/pxe-pcnet.rom
+%{_datadir}/qemu/pxe-rtl8139.rom
+%{_datadir}/qemu/pxe-virtio.rom
+%{_datadir}/qemu/sgabios.bin
+%{_datadir}/qemu/vgabios-cirrus.bin
+%{_datadir}/qemu/vgabios-qxl.bin
+%{_datadir}/qemu/vgabios-stdvga.bin
+%{_datadir}/qemu/vgabios-vmware.bin
+%{_datadir}/qemu/vgabios.bin
 %config(noreplace) %{_sysconfdir}/qemu/target-x86_64.conf
 %{_datadir}/systemtap/tapset/qemu-system-i386.stp
 %{_datadir}/systemtap/tapset/qemu-system-x86_64.stp
