@@ -172,7 +172,7 @@ Requires: %{name}-system-x86 = %{epoch}:%{version}-%{release}
 %endif
 Requires: %{name}-img = %{epoch}:%{version}-%{release}
 
-%define qemudocdir %{_docdir}/%{name}
+%define qemudocdir %{_docdir}/qemu
 
 %description
 QEMU is a generic and open source processor emulator which achieves a good
