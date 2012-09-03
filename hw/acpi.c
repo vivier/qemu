@@ -84,6 +84,10 @@ typedef struct PIIX4PMState {
     struct pci_status pci0_status;
     uint32_t pci0_hotplug_enable;
     uint32_t pci0_slot_device_present;
+
+    uint8_t disable_s3;
+    uint8_t disable_s4;
+    uint8_t s4_val;
 } PIIX4PMState;
 
 #define RSM_STS (1 << 15)
@@ -219,6 +223,9 @@ static void pm_ioport_writew(void *opaque, uint32_t addr, uint32_t val)
                     qemu_system_suspend_request();
                     break;
                 default:
+                    if (sus_typ == s->s4_val) { /* S4 request */
+                        qemu_system_shutdown_request();
+                    }
                     break;
                 }
             }
@@ -726,7 +733,7 @@ static int piix4_pm_initfn(PCIDevice *dev)
 }
 
 i2c_bus *piix4_pm_init(PCIBus *bus, int devfn, uint32_t smb_io_base,
-                       qemu_irq sci_irq)
+                       qemu_irq sci_irq, void *fw_cfg)
 {
     PCIDevice *dev;
     PIIX4PMState *s;
@@ -738,6 +745,14 @@ i2c_bus *piix4_pm_init(PCIBus *bus, int devfn, uint32_t smb_io_base,
     s->irq = sci_irq;
 
     qdev_init_nofail(&dev->qdev);
+
+    if (fw_cfg) {
+        uint8_t suspend[6] = {128, 0, 0, 129, 128, 128};
+        suspend[3] = 1 | ((!s->disable_s3) << 7);
+        suspend[4] = s->s4_val | ((!s->disable_s4) << 7);
+
+        fw_cfg_add_file(fw_cfg, "etc/system-states", g_memdup(suspend, 6), 6);
+    }
 
     return s->smbus;
 }
@@ -752,6 +767,9 @@ static PCIDeviceInfo piix4_pm_info = {
     .config_write       = pm_write_config,
     .qdev.props         = (Property[]) {
         DEFINE_PROP_UINT32("smb_io_base", PIIX4PMState, smb_io_base, 0),
+        DEFINE_PROP_UINT8("disable_s3", PIIX4PMState, disable_s3, 0),
+        DEFINE_PROP_UINT8("disable_s4", PIIX4PMState, disable_s4, 0),
+        DEFINE_PROP_UINT8("s4_val", PIIX4PMState, s4_val, 2),
         DEFINE_PROP_END_OF_LIST(),
     }
 };
