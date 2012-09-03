@@ -1343,7 +1343,7 @@ static void pc_init1(ram_addr_t ram_size,
 
         /* TODO: Populate SPD eeprom data.  */
         smbus = piix4_pm_init(pci_bus, piix3_devfn + 3, 0xb100,
-                              isa_reserve_irq(9));
+                              isa_reserve_irq(9), fw_cfg);
         for (i = 0; i < 8; i++) {
             DeviceState *eeprom;
             eeprom = qdev_create((BusState *)smbus, "smbus-eeprom");
