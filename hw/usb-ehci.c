@@ -1390,6 +1390,7 @@ static int ehci_execute(EHCIQueue *q)
         q->packet.devep = endp;
         q->packet.data = q->buffer;
         q->packet.len = q->tbytes;
+        q->packet.id = q->qtdaddr;
 
         ret = usb_handle_packet(dev, &q->packet);
 
@@ -1414,7 +1415,8 @@ static int ehci_execute(EHCIQueue *q)
  */
 
 static int ehci_process_itd(EHCIState *ehci,
-                            EHCIitd *itd)
+                            EHCIitd *itd,
+                            uint32_t addr)
 {
     USBPort *port;
     USBDevice *dev;
@@ -1480,6 +1482,7 @@ static int ehci_process_itd(EHCIState *ehci,
                 ehci->ipacket.devep = endp;
                 ehci->ipacket.data = ehci->ibuffer;
                 ehci->ipacket.len = len;
+                ehci->ipacket.id = addr;
 
                 ret = usb_handle_packet(dev, &ehci->ipacket);
 
@@ -1725,7 +1728,7 @@ static int ehci_state_fetchitd(EHCIState *ehci, int async)
                sizeof(EHCIitd) >> 2);
     ehci_trace_itd(ehci, entry, &itd);
 
-    if (ehci_process_itd(ehci, &itd) != 0) {
+    if (ehci_process_itd(ehci, &itd, entry) != 0) {
         return -1;
     }
 
