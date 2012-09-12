@@ -415,7 +415,8 @@ static const char *stream_video_names[] = {
     [ SPICE_STREAM_VIDEO_FILTER ] = "filter",
 };
 #define parse_stream_video(_name) \
-    name2enum(_name, stream_video_names, ARRAY_SIZE(stream_video_names))
+    parse_name(_name, "stream video control", \
+               stream_video_names, ARRAY_SIZE(stream_video_names))
 
 #endif /* >= 0.6.0 */
 
