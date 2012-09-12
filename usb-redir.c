@@ -1156,6 +1156,8 @@ static void usbredir_device_disconnect(void *priv)
         QTAILQ_INIT(&dev->endpoint[i].bufpq);
     }
     dev->interface_info.interface_count = NO_INTERFACE_INFO;
+    dev->dev.addr = 0;
+    dev->dev.speed = 0;
 }
 
 static void usbredir_interface_info(void *priv,
