@@ -44,6 +44,7 @@
 #define I2EP(i) (((i & 0x10) << 3) | (i & 0x0f))
 
 typedef struct AsyncURB AsyncURB;
+typedef struct Cancelled Cancelled;
 typedef struct USBRedirDevice USBRedirDevice;
 
 /* Struct to hold buffered packets (iso or int input packets) */
@@ -85,8 +86,8 @@ struct USBRedirDevice {
     int64_t next_attach_time;
     struct usbredirparser *parser;
     struct endp_data endpoint[MAX_ENDPOINTS];
-    uint32_t packet_id;
     QTAILQ_HEAD(, AsyncURB) asyncq;
+    QTAILQ_HEAD(, Cancelled) cancelled;
     /* Data for device filtering */
     struct usb_redir_device_connect_header device_info;
     struct usb_redir_interface_info_header interface_info;
@@ -96,8 +97,12 @@ struct USBRedirDevice {
 
 struct AsyncURB {
     USBPacket *packet;
-    uint32_t packet_id;
     QTAILQ_ENTRY(AsyncURB)next;
+};
+
+struct Cancelled {
+    uint64_t id;
+    QTAILQ_ENTRY(Cancelled)next;
 };
 
 static void usbredir_hello(void *priv, struct usb_redir_hello_header *h);
@@ -249,18 +254,14 @@ static int usbredir_write(void *priv, uint8_t *data, int count)
 }
 
 /*
- * Async and buffered packets helpers
+ * Async, cancelled and buffered packets helpers
  */
 
-static AsyncURB *async_alloc(USBRedirDevice *dev, USBPacket *p)
+static void async_alloc(USBRedirDevice *dev, USBPacket *p)
 {
     AsyncURB *aurb = (AsyncURB *) qemu_mallocz(sizeof(AsyncURB));
     aurb->packet = p;
-    aurb->packet_id = dev->packet_id;
     QTAILQ_INSERT_TAIL(&dev->asyncq, aurb, next);
-    dev->packet_id++;
-
-    return aurb;
 }
 
 static void async_free(USBRedirDevice *dev, AsyncURB *aurb)
@@ -269,16 +270,16 @@ static void async_free(USBRedirDevice *dev, AsyncURB *aurb)
     qemu_free(aurb);
 }
 
-static AsyncURB *async_find(USBRedirDevice *dev, uint32_t packet_id)
+static AsyncURB *async_find_by_packet(USBRedirDevice *dev, USBPacket *p)
 {
     AsyncURB *aurb;
 
     QTAILQ_FOREACH(aurb, &dev->asyncq, next) {
-        if (aurb->packet_id == packet_id) {
+        if (aurb->packet == p) {
             return aurb;
         }
     }
-    ERROR("could not find async urb for packet_id %u\n", packet_id);
+    ERROR("could not find async urb for packet %p id %"PRIu64"\n", p, p->id);
     return NULL;
 }
 
@@ -286,20 +287,59 @@ static void usbredir_cancel_packet(USBDevice *udev, USBPacket *p)
 {
     USBRedirDevice *dev = DO_UPCAST(USBRedirDevice, dev, udev);
     AsyncURB *aurb;
+    Cancelled *c;
+
+    aurb = async_find_by_packet(dev, p);
+    if (aurb == NULL) {
+        ERROR("could not cancel packet with id %"PRIu64"\n", p->id);
+        return;
+    }
+
+    DPRINTF("async cancel id %"PRIu64"\n", aurb->packet->id);
+
+    c = qemu_mallocz(sizeof(Cancelled));
+    c->id = aurb->packet->id;
+    QTAILQ_INSERT_TAIL(&dev->cancelled, c, next);
+
+    usbredirparser_send_cancel_data_packet(dev->parser, aurb->packet->id);
+    usbredirparser_do_write(dev->parser);
+
+    async_free(dev, aurb);
+}
+
+static int usbredir_is_cancelled(USBRedirDevice *dev, uint64_t id)
+{
+    Cancelled *c;
+
+    if (!dev->dev.attached) {
+        return 1; /* Treat everything as cancelled after a disconnect */
+    }
+
+    QTAILQ_FOREACH(c, &dev->cancelled, next) {
+        if (c->id == id) {
+            QTAILQ_REMOVE(&dev->cancelled, c, next);
+            qemu_free(c);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static AsyncURB *async_find(USBRedirDevice *dev, uint64_t id)
+{
+    AsyncURB *aurb;
+
+    if (usbredir_is_cancelled(dev, id)) {
+        return NULL;
+    }
 
     QTAILQ_FOREACH(aurb, &dev->asyncq, next) {
-        if (p != aurb->packet) {
-            continue;
+        if (aurb->packet->id == id) {
+            return aurb;
         }
-
-        DPRINTF("async cancel id %u\n", aurb->packet_id);
-        usbredirparser_send_cancel_data_packet(dev->parser, aurb->packet_id);
-        usbredirparser_do_write(dev->parser);
-
-        /* Mark it as dead */
-        aurb->packet = NULL;
-        break;
     }
+    ERROR("could not find async urb for id %"PRIu64"\n", id);
+    return NULL;
 }
 
 static void bufp_alloc(USBRedirDevice *dev,
@@ -493,21 +533,22 @@ static void usbredir_stop_iso_stream(USBRedirDevice *dev, uint8_t ep)
 static int usbredir_handle_bulk_data(USBRedirDevice *dev, USBPacket *p,
                                       uint8_t ep)
 {
-    AsyncURB *aurb = async_alloc(dev, p);
     struct usb_redir_bulk_packet_header bulk_packet;
 
-    DPRINTF("bulk-out ep %02X len %d id %u\n", ep, p->len, aurb->packet_id);
+    DPRINTF("bulk-out ep %02X len %d id %"PRIu64"\n", ep, p->len, p->id);
+
+    async_alloc(dev, p);
 
     bulk_packet.endpoint  = ep;
     bulk_packet.length    = p->len;
     bulk_packet.stream_id = 0;
 
     if (ep & USB_DIR_IN) {
-        usbredirparser_send_bulk_packet(dev->parser, aurb->packet_id,
+        usbredirparser_send_bulk_packet(dev->parser, p->id,
                                         &bulk_packet, NULL, 0);
     } else {
         usbredir_log_data(dev, "bulk data out:", p->data, p->len);
-        usbredirparser_send_bulk_packet(dev->parser, aurb->packet_id,
+        usbredirparser_send_bulk_packet(dev->parser, p->id,
                                         &bulk_packet, p->data, p->len);
     }
     usbredirparser_do_write(dev->parser);
@@ -570,17 +611,18 @@ static int usbredir_handle_interrupt_data(USBRedirDevice *dev,
         return len;
     } else {
         /* Output interrupt endpoint, normal async operation */
-        AsyncURB *aurb = async_alloc(dev, p);
         struct usb_redir_interrupt_packet_header interrupt_packet;
 
-        DPRINTF("interrupt-out ep %02X len %d id %u\n", ep, p->len,
-                aurb->packet_id);
+        DPRINTF("interrupt-out ep %02X len %d id %"PRIu64"\n", ep, p->len,
+                p->id);
+
+        async_alloc(dev, p);
 
         interrupt_packet.endpoint  = ep;
         interrupt_packet.length    = p->len;
 
         usbredir_log_data(dev, "interrupt data out:", p->data, p->len);
-        usbredirparser_send_interrupt_packet(dev->parser, aurb->packet_id,
+        usbredirparser_send_interrupt_packet(dev->parser, p->id,
                                         &interrupt_packet, p->data, p->len);
         usbredirparser_do_write(dev->parser);
         return USB_RET_ASYNC;
@@ -634,10 +676,11 @@ static int usbredir_set_config(USBRedirDevice *dev, USBPacket *p,
                                 int config)
 {
     struct usb_redir_set_configuration_header set_config;
-    AsyncURB *aurb = async_alloc(dev, p);
     int i;
 
-    DPRINTF("set config %d id %u\n", config, aurb->packet_id);
+    DPRINTF("set config %d id %"PRIu64"\n", config, p->id);
+
+    async_alloc(dev, p);
 
     for (i = 0; i < MAX_ENDPOINTS; i++) {
         switch (dev->endpoint[i].type) {
@@ -654,19 +697,17 @@ static int usbredir_set_config(USBRedirDevice *dev, USBPacket *p,
     }
 
     set_config.configuration = config;
-    usbredirparser_send_set_configuration(dev->parser, aurb->packet_id,
-                                          &set_config);
+    usbredirparser_send_set_configuration(dev->parser, p->id, &set_config);
     usbredirparser_do_write(dev->parser);
     return USB_RET_ASYNC;
 }
 
 static int usbredir_get_config(USBRedirDevice *dev, USBPacket *p)
 {
-    AsyncURB *aurb = async_alloc(dev, p);
+    DPRINTF("get config id %"PRIu64"\n", p->id);
 
-    DPRINTF("get config id %u\n", aurb->packet_id);
-
-    usbredirparser_send_get_configuration(dev->parser, aurb->packet_id);
+    async_alloc(dev, p);
+    usbredirparser_send_get_configuration(dev->parser, p->id);
     usbredirparser_do_write(dev->parser);
     return USB_RET_ASYNC;
 }
@@ -675,11 +716,12 @@ static int usbredir_set_interface(USBRedirDevice *dev, USBPacket *p,
                                    int interface, int alt)
 {
     struct usb_redir_set_alt_setting_header set_alt;
-    AsyncURB *aurb = async_alloc(dev, p);
     int i;
 
-    DPRINTF("set interface %d alt %d id %u\n", interface, alt,
-            aurb->packet_id);
+    DPRINTF("set interface %d alt %d id %"PRIu64"\n", interface, alt,
+            p->id);
+
+    async_alloc(dev, p);
 
     for (i = 0; i < MAX_ENDPOINTS; i++) {
         if (dev->endpoint[i].interface == interface) {
@@ -699,8 +741,7 @@ static int usbredir_set_interface(USBRedirDevice *dev, USBPacket *p,
 
     set_alt.interface = interface;
     set_alt.alt = alt;
-    usbredirparser_send_set_alt_setting(dev->parser, aurb->packet_id,
-                                        &set_alt);
+    usbredirparser_send_set_alt_setting(dev->parser, p->id, &set_alt);
     usbredirparser_do_write(dev->parser);
     return USB_RET_ASYNC;
 }
@@ -709,13 +750,12 @@ static int usbredir_get_interface(USBRedirDevice *dev, USBPacket *p,
                                    int interface)
 {
     struct usb_redir_get_alt_setting_header get_alt;
-    AsyncURB *aurb = async_alloc(dev, p);
 
-    DPRINTF("get interface %d id %u\n", interface, aurb->packet_id);
+    DPRINTF("get interface %d id %"PRIu64"\n", interface, p->id);
 
+    async_alloc(dev, p);
     get_alt.interface = interface;
-    usbredirparser_send_get_alt_setting(dev->parser, aurb->packet_id,
-                                        &get_alt);
+    usbredirparser_send_get_alt_setting(dev->parser, p->id, &get_alt);
     usbredirparser_do_write(dev->parser);
     return USB_RET_ASYNC;
 }
@@ -725,7 +765,6 @@ static int usbredir_handle_control(USBDevice *udev, USBPacket *p,
 {
     USBRedirDevice *dev = DO_UPCAST(USBRedirDevice, dev, udev);
     struct usb_redir_control_packet_header control_packet;
-    AsyncURB *aurb;
 
     /* Special cases for certain standard device requests */
     switch (request) {
@@ -744,12 +783,12 @@ static int usbredir_handle_control(USBDevice *udev, USBPacket *p,
     }
 
     /* "Normal" ctrl requests */
-    aurb = async_alloc(dev, p);
+    async_alloc(dev, p);
 
     /* Note request is (bRequestType << 8) | bRequest */
-    DPRINTF("ctrl-out type 0x%x req 0x%x val 0x%x index %d len %d id %u\n",
-            request >> 8, request & 0xff, value, index, length,
-            aurb->packet_id);
+    DPRINTF(
+        "ctrl-out type 0x%x req 0x%x val 0x%x index %d len %d id %"PRIu64"\n",
+        request >> 8, request & 0xff, value, index, length, p->id);
 
     control_packet.request     = request & 0xFF;
     control_packet.requesttype = request >> 8;
@@ -759,11 +798,11 @@ static int usbredir_handle_control(USBDevice *udev, USBPacket *p,
     control_packet.length      = length;
 
     if (control_packet.requesttype & USB_DIR_IN) {
-        usbredirparser_send_control_packet(dev->parser, aurb->packet_id,
+        usbredirparser_send_control_packet(dev->parser, p->id,
                                            &control_packet, NULL, 0);
     } else {
         usbredir_log_data(dev, "ctrl data out:", data, length);
-        usbredirparser_send_control_packet(dev->parser, aurb->packet_id,
+        usbredirparser_send_control_packet(dev->parser, p->id,
                                            &control_packet, data, length);
     }
     usbredirparser_do_write(dev->parser);
@@ -934,6 +973,7 @@ static int usbredir_initfn(USBDevice *udev)
     dev->attach_timer = qemu_new_timer(vm_clock, usbredir_do_attach, dev);
 
     QTAILQ_INIT(&dev->asyncq);
+    QTAILQ_INIT(&dev->cancelled);
     for (i = 0; i < MAX_ENDPOINTS; i++) {
         QTAILQ_INIT(&dev->endpoint[i].bufpq);
     }
@@ -951,10 +991,15 @@ static int usbredir_initfn(USBDevice *udev)
 static void usbredir_cleanup_device_queues(USBRedirDevice *dev)
 {
     AsyncURB *aurb, *next_aurb;
+    Cancelled *c, *next_c;
     int i;
 
     QTAILQ_FOREACH_SAFE(aurb, &dev->asyncq, next, next_aurb) {
         async_free(dev, aurb);
+    }
+    QTAILQ_FOREACH_SAFE(c, &dev->cancelled, next, next_c) {
+        QTAILQ_REMOVE(&dev->cancelled, c, next);
+        qemu_free(c);
     }
     for (i = 0; i < MAX_ENDPOINTS; i++) {
         usbredir_free_bufpq(dev, I2EP(i));
@@ -1220,10 +1265,7 @@ static void usbredir_configuration_status(void *priv, uint32_t id,
             config_status->configuration, id);
 
     aurb = async_find(dev, id);
-    if (!aurb) {
-        return;
-    }
-    if (aurb->packet) {
+    if (aurb) {
         if (dev->dev.setup_buf[0] & USB_DIR_IN) {
             dev->dev.data_buf[0] = config_status->configuration;
             len = 1;
@@ -1231,8 +1273,8 @@ static void usbredir_configuration_status(void *priv, uint32_t id,
         aurb->packet->len =
             usbredir_handle_status(dev, config_status->status, len);
         usb_generic_async_ctrl_complete(&dev->dev, aurb->packet);
+        async_free(dev, aurb);
     }
-    async_free(dev, aurb);
 }
 
 static void usbredir_alt_setting_status(void *priv, uint32_t id,
@@ -1248,10 +1290,7 @@ static void usbredir_alt_setting_status(void *priv, uint32_t id,
             alt_setting_status->alt, id);
 
     aurb = async_find(dev, id);
-    if (!aurb) {
-        return;
-    }
-    if (aurb->packet) {
+    if (aurb) {
         if (dev->dev.setup_buf[0] & USB_DIR_IN) {
             dev->dev.data_buf[0] = alt_setting_status->alt;
             len = 1;
@@ -1259,8 +1298,8 @@ static void usbredir_alt_setting_status(void *priv, uint32_t id,
         aurb->packet->len =
             usbredir_handle_status(dev, alt_setting_status->status, len);
         usb_generic_async_ctrl_complete(&dev->dev, aurb->packet);
+        async_free(dev, aurb);
     }
-    async_free(dev, aurb);
 }
 
 static void usbredir_iso_stream_status(void *priv, uint32_t id,
@@ -1322,12 +1361,7 @@ static void usbredir_control_packet(void *priv, uint32_t id,
             len, id);
 
     aurb = async_find(dev, id);
-    if (!aurb) {
-        free(data);
-        return;
-    }
-
-    if (aurb->packet) {
+    if (aurb) {
         len = usbredir_handle_status(dev, control_packet->status, len);
         if (len > 0) {
             usbredir_log_data(dev, "ctrl data in:", data, data_len);
@@ -1341,8 +1375,8 @@ static void usbredir_control_packet(void *priv, uint32_t id,
         }
         aurb->packet->len = len;
         usb_generic_async_ctrl_complete(&dev->dev, aurb->packet);
+        async_free(dev, aurb);
     }
-    async_free(dev, aurb);
     free(data);
 }
 
@@ -1359,12 +1393,7 @@ static void usbredir_bulk_packet(void *priv, uint32_t id,
             ep, len, id);
 
     aurb = async_find(dev, id);
-    if (!aurb) {
-        free(data);
-        return;
-    }
-
-    if (aurb->packet) {
+    if (aurb) {
         len = usbredir_handle_status(dev, bulk_packet->status, len);
         if (len > 0) {
             usbredir_log_data(dev, "bulk data in:", data, data_len);
@@ -1378,8 +1407,8 @@ static void usbredir_bulk_packet(void *priv, uint32_t id,
         }
         aurb->packet->len = len;
         usb_packet_complete(&dev->dev, aurb->packet);
+        async_free(dev, aurb);
     }
-    async_free(dev, aurb);
     free(data);
 }
 
@@ -1438,16 +1467,12 @@ static void usbredir_interrupt_packet(void *priv, uint32_t id,
         int len = interrupt_packet->length;
 
         AsyncURB *aurb = async_find(dev, id);
-        if (!aurb) {
-            return;
-        }
-
-        if (aurb->packet) {
+        if (aurb) {
             aurb->packet->len = usbredir_handle_status(dev,
                                                interrupt_packet->status, len);
             usb_packet_complete(&dev->dev, aurb->packet);
+            async_free(dev, aurb);
         }
-        async_free(dev, aurb);
     }
 }
 
