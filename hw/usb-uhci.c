@@ -831,6 +831,7 @@ static int uhci_handle_td(UHCIState *s, uint32_t addr, UHCI_TD *td, uint32_t *in
     async->packet.devep   = (td->token >> 15) & 0xf;
     async->packet.data    = async->buffer;
     async->packet.len     = max_len;
+    async->packet.id      = addr;
 
     switch(pid) {
     case USB_TOKEN_OUT:
