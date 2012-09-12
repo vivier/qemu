@@ -1400,9 +1400,9 @@ static void usbredir_bulk_packet(void *priv, uint32_t id,
             if (data_len <= aurb->packet->len) {
                 memcpy(aurb->packet->data, data, data_len);
             } else {
-                ERROR("bulk buffer too small (%d > %d)\n", data_len,
-                      aurb->packet->len);
-                len = USB_RET_STALL;
+                ERROR("bulk got more data then requested (%d > %d)\n",
+                      data_len, aurb->packet->len);
+                len = USB_RET_BABBLE;
             }
         }
         aurb->packet->len = len;
