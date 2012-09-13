@@ -125,6 +125,18 @@ Example:
 { "event": "SHUTDOWN",
     "timestamp": { "seconds": 1267041730, "microseconds": 281295 } }
 
+SUSPEND
+-------
+
+Emitted when guest enters S3 state.
+
+Data: None.
+
+Example:
+
+{ "event": "SUSPEND",
+     "timestamp": { "seconds": 1344456160, "microseconds": 309119 } }
+
 VNC_CONNECTED
 -------------
 
