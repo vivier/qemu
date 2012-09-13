@@ -141,14 +141,9 @@ static int coroutine_fn is_allocated_base(BlockDriverState *top,
      */
     intermediate = top->backing_hd;
 
-    while (intermediate) {
+    while (intermediate != base) {
         int pnum_inter;
 
-        /* reached base */
-        if (intermediate == base) {
-            *pnum = n;
-            return 1;
-        }
         ret = bdrv_co_is_allocated(intermediate, sector_num, nb_sectors,
                                    &pnum_inter);
         if (ret < 0) {
@@ -171,6 +166,7 @@ static int coroutine_fn is_allocated_base(BlockDriverState *top,
         intermediate = intermediate->backing_hd;
     }
 
+    *pnum = n;
     return 1;
 }
 
@@ -181,7 +177,7 @@ static void coroutine_fn stream_run(void *opaque)
     BlockDriverState *base = s->base;
     int64_t sector_num, end;
     int ret = 0;
-    int n;
+    int n = 0;
     void *buf;
 
     s->common.len = bdrv_getlength(bs);
@@ -214,14 +210,8 @@ wait:
             break;
         }
 
-        if (base) {
-            ret = is_allocated_base(bs, base, sector_num,
-                                    STREAM_BUFFER_SIZE / BDRV_SECTOR_SIZE, &n);
-        } else {
-            ret = bdrv_co_is_allocated(bs, sector_num,
-                                       STREAM_BUFFER_SIZE / BDRV_SECTOR_SIZE,
-                                       &n);
-        }
+        ret = is_allocated_base(bs, base, sector_num,
+                                STREAM_BUFFER_SIZE / BDRV_SECTOR_SIZE, &n);
         trace_stream_one_iteration(s, sector_num, n, ret);
         if (ret == 0) {
             if (s->common.speed) {
