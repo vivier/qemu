@@ -27,6 +27,7 @@
 #include "string.h"
 #include "ioport.h"
 #include "fw_cfg.h"
+#include "monitor.h"
 
 //#define DEBUG
 
@@ -225,6 +226,7 @@ static void pm_ioport_writew(void *opaque, uint32_t addr, uint32_t val)
                     break;
                 default:
                     if (sus_typ == s->s4_val) { /* S4 request */
+                        monitor_protocol_event(QEVENT_SUSPEND_DISK, NULL);
                         qemu_system_shutdown_request();
                     }
                     break;
