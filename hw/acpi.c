@@ -26,6 +26,7 @@
 #include "qemu-kvm.h"
 #include "string.h"
 #include "ioport.h"
+#include "fw_cfg.h"
 
 //#define DEBUG
 
