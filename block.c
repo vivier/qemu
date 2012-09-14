@@ -29,6 +29,7 @@
 #include "module.h"
 #include "qemu-objects.h"
 #include "qemu-coroutine.h"
+#include "sysemu.h"
 
 #ifdef CONFIG_BSD
 #include <sys/types.h>
@@ -695,7 +696,9 @@ int bdrv_open(BlockDriverState *bs, const char *filename, int flags,
     }
 
     if (!bdrv_key_required(bs)) {
-        bdrv_dev_change_media_cb(bs, true);
+        if (!runstate_check(RUN_STATE_INMIGRATE)) {
+            bdrv_dev_change_media_cb(bs, true);
+        }
     }
 
     return 0;
@@ -739,7 +742,9 @@ void bdrv_close(BlockDriverState *bs)
             bdrv_close(bs->file);
         }
 
-        bdrv_dev_change_media_cb(bs, false);
+        if (!runstate_check(RUN_STATE_INMIGRATE)) {
+            bdrv_dev_change_media_cb(bs, false);
+        }
     }
 }
 
