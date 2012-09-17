@@ -2178,7 +2178,7 @@ static void ehci_frame_timer(void *opaque)
     /*  Async is not inside loop since it executes everything it can once
      *  called
      */
-    qemu_bh_schedule(ehci->async_bh);
+    ehci_advance_async_state(ehci);
 
     qemu_mod_timer(ehci->frame_timer, expire_time);
     ehci_commit_interrupt(ehci);
