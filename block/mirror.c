@@ -14,14 +14,8 @@
 #include "trace.h"
 #include "block_int.h"
 
-enum {
-    /*
-     * Size of data buffer for populating the image file.  This should be large
-     * enough to process multiple clusters in a single call, so that populating
-     * contiguous regions of the image is efficient.
-     */
-    BLOCK_SIZE = 512 * BDRV_SECTORS_PER_DIRTY_CHUNK, /* in bytes */
-};
+#define BLOCK_SIZE                       (1 << 20)
+#define BDRV_SECTORS_PER_DIRTY_CHUNK     (BLOCK_SIZE >> BDRV_SECTOR_BITS)
 
 #define SLICE_TIME 100ULL /* ms */
 
@@ -242,7 +236,7 @@ static void coroutine_fn mirror_run(void *opaque)
     }
 
 immediate_exit:
-    bdrv_set_dirty_tracking(bs, false);
+    bdrv_set_dirty_tracking(bs, 0);
     bdrv_close(s->target);
     bdrv_delete(s->target);
     block_job_complete(&s->common, ret);
@@ -294,7 +288,7 @@ int mirror_start(BlockDriverState *bs,
 
     s->target = target_bs;
     s->full = full;
-    bdrv_set_dirty_tracking(bs, true);
+    bdrv_set_dirty_tracking(bs, BDRV_SECTORS_PER_DIRTY_CHUNK);
     s->common.co = qemu_coroutine_create(mirror_run);
     trace_mirror_start(bs, s, s->common.co, opaque);
 exit:
