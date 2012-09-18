@@ -223,7 +223,7 @@ static void coroutine_fn mirror_run(void *opaque)
              */
         } else {
             /* Publish progress */
-            s->common.offset = end * BDRV_SECTOR_SIZE - cnt * BLOCK_SIZE;
+            s->common.offset = (end - cnt) * BDRV_SECTOR_SIZE;
 
             if (s->common.speed) {
                 delay_ms = ratelimit_calculate_delay(&s->limit, BDRV_SECTORS_PER_DIRTY_CHUNK);
