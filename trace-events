@@ -66,6 +66,7 @@ disable bdrv_co_do_copy_on_readv(void *bs, int64_t sector_num, int nb_sectors, i
 # block/mirror.c
 disable mirror_one_iteration(void *s, int64_t sector_num) "s %p sector_num %"PRId64""
 disable mirror_start(void *bs, void *s, void *co, void *opaque) "bs %p s %p co %p opaque %p"
+disable mirror_restart_iter(void *s, int64_t cnt) "s %p dirty count %"PRId64
 
 # block/stream.c
 disable stream_one_iteration(void *s, int64_t sector_num, int nb_sectors, int is_allocated) "s %p sector_num %"PRId64" nb_sectors %d is_allocated %d"

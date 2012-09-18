@@ -58,6 +58,7 @@ typedef struct MirrorBlockJob {
     RateLimit limit;
     BlockDriverState *target;
     bool full;
+    HBitmapIter hbi;
 } MirrorBlockJob;
 
 static int coroutine_fn mirror_populate(BlockDriverState *source,
@@ -154,7 +155,7 @@ static void coroutine_fn mirror_run(void *opaque)
         block_job_complete(&s->common, ret);
     }
 
-    sector_num = -1;
+    bdrv_dirty_iter_init(bs, &s->hbi);
     for (;;) {
         uint64_t delay_ms;
         int64_t cnt;
@@ -171,7 +172,14 @@ static void coroutine_fn mirror_run(void *opaque)
 
         if (bdrv_get_dirty_count(bs) != 0) {
             int nb_sectors;
-            sector_num = bdrv_get_next_dirty(bs, sector_num);
+            sector_num = hbitmap_iter_next(&s->hbi);
+            if (sector_num < 0) {
+                bdrv_dirty_iter_init(bs, &s->hbi);
+                sector_num = hbitmap_iter_next(&s->hbi);
+                trace_mirror_restart_iter(s, bdrv_get_dirty_count(bs));
+                assert(sector_num >= 0);
+            }
+
             nb_sectors = MIN(BDRV_SECTORS_PER_DIRTY_CHUNK, end - sector_num);
             trace_mirror_one_iteration(s, sector_num);
             bdrv_reset_dirty(bs, sector_num, BDRV_SECTORS_PER_DIRTY_CHUNK);
