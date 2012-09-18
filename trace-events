@@ -203,3 +203,8 @@ disable qemu_co_mutex_lock_entry(void *mutex, void *self) "mutex %p self %p"
 disable qemu_co_mutex_lock_return(void *mutex, void *self) "mutex %p self %p"
 disable qemu_co_mutex_unlock_entry(void *mutex, void *self) "mutex %p self %p"
 disable qemu_co_mutex_unlock_return(void *mutex, void *self) "mutex %p self %p"
+
+# hbitmap.c
+disable hbitmap_iter_skip_words(const void *hb, void *hbi, uint64_t pos, unsigned long cur) "hb %p hbi %p pos %"PRId64" cur 0x%lx" 
+disable hbitmap_reset(void *hb, uint64_t start, uint64_t count, uint64_t sbit, uint64_t ebit) "hb %p items %"PRIu64",%"PRIu64" bits %"PRIu64"..%"PRIu64
+disable hbitmap_set(void *hb, uint64_t start, uint64_t count, uint64_t sbit, uint64_t ebit) "hb %p items %"PRIu64",%"PRIu64" bits %"PRIu64"..%"PRIu64
