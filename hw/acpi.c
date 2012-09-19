@@ -770,8 +770,8 @@ static PCIDeviceInfo piix4_pm_info = {
     .config_write       = pm_write_config,
     .qdev.props         = (Property[]) {
         DEFINE_PROP_UINT32("smb_io_base", PIIX4PMState, smb_io_base, 0),
-        DEFINE_PROP_UINT8("disable_s3", PIIX4PMState, disable_s3, 0),
-        DEFINE_PROP_UINT8("disable_s4", PIIX4PMState, disable_s4, 0),
+        DEFINE_PROP_UINT8("disable_s3", PIIX4PMState, disable_s3, 1),
+        DEFINE_PROP_UINT8("disable_s4", PIIX4PMState, disable_s4, 1),
         DEFINE_PROP_UINT8("s4_val", PIIX4PMState, s4_val, 2),
         DEFINE_PROP_END_OF_LIST(),
     }
