@@ -112,7 +112,7 @@ BuildRequires: pciutils-devel
 BuildRequires: pulseaudio-libs-devel
 BuildRequires: ncurses-devel
 BuildRequires: libaio-devel
-BuildRequires: usbredir-devel
+BuildRequires: usbredir-devel >= 0.5
 
 # require spice-server API changes from bz#788444
 BuildRequires: spice-server-devel >= 0.10.1-2.el6
