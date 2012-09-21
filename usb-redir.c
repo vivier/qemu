@@ -906,6 +906,7 @@ static void usbredir_chardev_close_bh(void *opaque)
     usbredir_device_disconnect(dev);
 
     if (dev->parser) {
+        DPRINTF("destroying usbredirparser\n");
         usbredirparser_destroy(dev->parser);
         dev->parser = NULL;
     }
@@ -919,6 +920,8 @@ static void usbredir_chardev_open(USBRedirDevice *dev)
     /* Make sure any pending closes are handled (no-op if none pending) */
     usbredir_chardev_close_bh(dev);
     qemu_bh_cancel(dev->chardev_close_bh);
+
+    DPRINTF("creating usbredirparser\n");
 
     dev->parser = usbredirparser_create();
     if (dev->parser == NULL) {
@@ -1020,9 +1023,11 @@ static void usbredir_chardev_event(void *opaque, int event)
 
     switch (event) {
     case CHR_EVENT_OPENED:
+        DPRINTF("chardev open\n");
         usbredir_chardev_open(dev);
         break;
     case CHR_EVENT_CLOSED:
+        DPRINTF("chardev close\n");
         qemu_bh_schedule(dev->chardev_close_bh);
         break;
     }
@@ -1288,6 +1293,7 @@ static void usbredir_device_disconnect(void *priv)
     qemu_del_timer(dev->attach_timer);
 
     if (dev->dev.attached) {
+        DPRINTF("detaching device\n");
         usb_device_detach(&dev->dev);
         /*
          * Delay next usb device attach to give the guest a chance to see
