@@ -1911,12 +1911,14 @@ out:
 
 static int ehci_state_writeback(EHCIQueue *q, int async)
 {
+    uint32_t *qtd, addr;
     int again = 0;
 
     /*  Write back the QTD from the QH area */
     ehci_trace_qtd(q, NLPTR_GET(q->qtdaddr), (EHCIqtd*) &q->qh.next_qtd);
-    put_dwords(NLPTR_GET(q->qtdaddr),(uint32_t *) &q->qh.next_qtd,
-                sizeof(EHCIqtd) >> 2);
+    qtd = (uint32_t *) &q->qh.next_qtd;
+    addr = NLPTR_GET(q->qtdaddr);
+    put_dwords(addr + 2 * sizeof(uint32_t), qtd + 2, 2);
 
     /*
      * EHCI specs say go horizontal here.
