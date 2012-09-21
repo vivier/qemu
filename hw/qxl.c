@@ -518,9 +518,9 @@ static int interface_get_command(QXLInstance *sin, struct QXLCommandExt *ext)
         dprint(qxl, 2, "%s: vga\n", __FUNCTION__);
         ret = false;
         qemu_mutex_lock(&qxl->ssd.lock);
-        if (qxl->ssd.update != NULL) {
-            update = qxl->ssd.update;
-            qxl->ssd.update = NULL;
+        update = QTAILQ_FIRST(&qxl->ssd.updates);
+        if (update != NULL) {
+            QTAILQ_REMOVE(&qxl->ssd.updates, update, next);
             *ext = update->ext;
             ret = true;
         }
