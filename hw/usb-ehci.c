@@ -418,7 +418,6 @@ struct EHCIState {
 
     USBPacket ipacket;
     uint8_t ibuffer[BUFF_SIZE];
-    int isoch_pause;
 
     uint32_t last_run_usec;
     uint32_t frame_end_usec;
@@ -887,7 +886,6 @@ static void ehci_reset(void *opaque)
 
     s->astate = EST_INACTIVE;
     s->pstate = EST_INACTIVE;
-    s->isoch_pause = -1;
     s->attach_poll_counter = 0;
 
     for(i = 0; i < NB_PORTS; i++) {
@@ -2143,9 +2141,7 @@ static void ehci_frame_timer(void *opaque)
 
     for (i = 0; i < frames; i++) {
         if ( !(ehci->usbsts & USBSTS_HALT)) {
-            if (ehci->isoch_pause <= 0) {
-                ehci->frindex += 8;
-            }
+            ehci->frindex += 8;
 
             if (ehci->frindex == 0x00002000) {
                 ehci_set_interrupt(ehci, USBSTS_FLR);
