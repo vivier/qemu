@@ -1064,6 +1064,14 @@ static void ehci_mem_writel(void *ptr, target_phys_addr_t addr, uint32_t val)
             ehci_set_usbsts(s, USBSTS_HALT);
         }
 
+        if ((val & USBCMD_IAAD) && (val & USBCMD_RUNSTOP)) {
+            /*
+             * Process IAAD immediately, otherwise the Linux IAAD watchdog may
+             * trigger and re-use a qh without us seeing the unlink.
+             */
+            qemu_bh_schedule(s->async_bh);
+        }
+
         /* not supporting dynamic frame list size at the moment */
         if ((val & USBCMD_FLS) && !(s->usbcmd & USBCMD_FLS)) {
             fprintf(stderr, "attempt to set frame list size -- value %d\n",
