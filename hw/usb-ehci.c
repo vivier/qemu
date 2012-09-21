@@ -473,6 +473,9 @@ static const char *ehci_mmio_names[] = {
     [ CONFIGFLAG ]       = "CONFIGFLAG",
 };
 
+static int ehci_state_executing(EHCIQueue *q, int async);
+static int ehci_state_writeback(EHCIQueue *q, int async);
+
 static const char *nr2str(const char **n, size_t len, uint32_t nr)
 {
     if (nr < len && n[nr] != NULL) {
@@ -674,6 +677,14 @@ static void ehci_free_queue(EHCIQueue *q, int async)
     trace_usb_ehci_queue_action(q, "free");
     if (q->async == EHCI_ASYNC_INFLIGHT) {
         usb_cancel_packet(&q->packet);
+    }
+    if (q->async == EHCI_ASYNC_FINISHED) {
+        int state = ehci_get_state(q->ehci, async);
+        /* This is a normal, but rare condition (cancel racing completion) */
+        fprintf(stderr, "EHCI: Warning packet completed but not processed\n");
+        ehci_state_executing(q, async);
+        ehci_state_writeback(q, async);
+        ehci_set_state(q->ehci, async, state);
     }
     QTAILQ_REMOVE(head, q, next);
     qemu_free(q);
