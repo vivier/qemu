@@ -40,7 +40,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu-kvm
 Version: 1.2
-Release: 0.6.%{gitdate}git%{gitcommit}%{?dist}
+Release: 0.6.%{gitdate}git%{gitcommit}.1%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -892,6 +892,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Sep 21 2012 Daniel Mach <dmach@redhat.com> - 2:1.2-0.6.20120806git3e430569.1
+- Rebuild for usbredir
+
 * Mon Aug 27 2012 Michal Novotny <minovotn@redhat.com> - 1.2-0.6.20120806git3e430569
 - Rename spec file to qemu-kvm.spec as asked by rel-eng
 - Resolves: bz#817565
