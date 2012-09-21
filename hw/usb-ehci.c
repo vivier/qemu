@@ -1046,6 +1046,12 @@ static void ehci_mem_writel(void *ptr, target_phys_addr_t addr, uint32_t val)
     /* Do any register specific pre-write processing here.  */
     switch(addr) {
     case USBCMD:
+        if (val & USBCMD_HCRESET) {
+            ehci_reset(s);
+            val = s->usbcmd;
+            break;
+        }
+
         if ((val & USBCMD_RUNSTOP) && !(s->usbcmd & USBCMD_RUNSTOP)) {
             qemu_mod_timer(s->frame_timer, qemu_get_clock(vm_clock));
             SET_LAST_RUN_CLOCK(s);
@@ -1058,11 +1064,6 @@ static void ehci_mem_writel(void *ptr, target_phys_addr_t addr, uint32_t val)
             ehci_queues_rip_all(s, 0);
             ehci_queues_rip_all(s, 1);
             ehci_set_usbsts(s, USBSTS_HALT);
-        }
-
-        if (val & USBCMD_HCRESET) {
-            ehci_reset(s);
-            val = s->usbcmd;
         }
 
         /* not supporting dynamic frame list size at the moment */
