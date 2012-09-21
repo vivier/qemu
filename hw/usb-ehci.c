@@ -1882,16 +1882,7 @@ out:
 
 static int ehci_state_executing(EHCIQueue *q, int async)
 {
-    int again = 0;
-
     ehci_execute_complete(q);
-    if (q->usb_status == USB_RET_ASYNC) {
-        goto out;
-    }
-    if (q->usb_status == USB_RET_PROCERR) {
-        again = -1;
-        goto out;
-    }
 
     // 4.10.3
     if (!async) {
@@ -1909,11 +1900,8 @@ static int ehci_state_executing(EHCIQueue *q, int async)
         ehci_set_state(q->ehci, async, EST_WRITEBACK);
     }
 
-    again = 1;
-
-out:
     ehci_flush_qh(q);
-    return again;
+    return 1;
 }
 
 
