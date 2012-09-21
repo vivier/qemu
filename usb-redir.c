@@ -99,6 +99,7 @@ struct USBRedirDevice {
     struct endp_data endpoint[MAX_ENDPOINTS];
     QTAILQ_HEAD(, AsyncURB) asyncq;
     struct PacketIdQueue cancelled;
+    struct PacketIdQueue already_in_flight;
     /* Data for device filtering */
     struct usb_redir_device_connect_header device_info;
     struct usb_redir_interface_info_header interface_info;
@@ -370,6 +371,25 @@ static int usbredir_is_cancelled(USBRedirDevice *dev, uint64_t id)
     return packet_id_queue_remove(&dev->cancelled, id);
 }
 
+static void usbredir_fill_already_in_flight(USBRedirDevice *dev)
+{
+    AsyncURB *aurb;
+
+    QTAILQ_FOREACH(aurb, &dev->asyncq, next) {
+        packet_id_queue_add(&dev->already_in_flight, aurb->packet->id);
+    }
+}
+
+static int usbredir_already_in_flight(USBRedirDevice *dev, USBPacket *p)
+{
+    if (packet_id_queue_remove(&dev->already_in_flight, p->id)) {
+        /* RHEL-6: so that we can find the packet when we get the completion */
+        async_alloc(dev, p);
+        return 1;
+    }
+    return 0;
+}
+
 static AsyncURB *async_find(USBRedirDevice *dev, uint64_t id)
 {
     AsyncURB *aurb;
@@ -582,6 +602,10 @@ static int usbredir_handle_bulk_data(USBRedirDevice *dev, USBPacket *p,
 
     DPRINTF("bulk-out ep %02X len %d id %"PRIu64"\n", ep, p->len, p->id);
 
+    if (usbredir_already_in_flight(dev, p)) {
+        return USB_RET_ASYNC;
+    }
+
     async_alloc(dev, p);
 
     bulk_packet.endpoint  = ep;
@@ -660,6 +684,10 @@ static int usbredir_handle_interrupt_data(USBRedirDevice *dev,
 
         DPRINTF("interrupt-out ep %02X len %d id %"PRIu64"\n", ep, p->len,
                 p->id);
+
+        if (usbredir_already_in_flight(dev, p)) {
+            return USB_RET_ASYNC;
+        }
 
         async_alloc(dev, p);
 
@@ -810,6 +838,10 @@ static int usbredir_handle_control(USBDevice *udev, USBPacket *p,
 {
     USBRedirDevice *dev = DO_UPCAST(USBRedirDevice, dev, udev);
     struct usb_redir_control_packet_header control_packet;
+
+    if (usbredir_already_in_flight(dev, p)) {
+        return USB_RET_ASYNC;
+    }
 
     /* Special cases for certain standard device requests */
     switch (request) {
@@ -1026,6 +1058,7 @@ static int usbredir_initfn(USBDevice *udev)
 
     QTAILQ_INIT(&dev->asyncq);
     packet_id_queue_init(&dev->cancelled, dev, "cancelled");
+    packet_id_queue_init(&dev->already_in_flight, dev, "already-in-flight");
     for (i = 0; i < MAX_ENDPOINTS; i++) {
         QTAILQ_INIT(&dev->endpoint[i].bufpq);
     }
@@ -1049,6 +1082,7 @@ static void usbredir_cleanup_device_queues(USBRedirDevice *dev)
         async_free(dev, aurb);
     }
     packet_id_queue_empty(&dev->cancelled);
+    packet_id_queue_empty(&dev->already_in_flight);
     for (i = 0; i < MAX_ENDPOINTS; i++) {
         usbredir_free_bufpq(dev, I2EP(i));
     }
