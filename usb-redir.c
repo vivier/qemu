@@ -44,7 +44,6 @@
 #define I2EP(i) (((i & 0x10) << 3) | (i & 0x0f))
 
 typedef struct AsyncURB AsyncURB;
-typedef struct Cancelled Cancelled;
 typedef struct USBRedirDevice USBRedirDevice;
 
 /* Struct to hold buffered packets (iso or int input packets) */
@@ -70,6 +69,18 @@ struct endp_data {
     int bufpq_target_size;
 };
 
+struct PacketIdQueueEntry {
+    uint64_t id;
+    QTAILQ_ENTRY(PacketIdQueueEntry)next;
+};
+
+struct PacketIdQueue {
+    USBRedirDevice *dev;
+    const char *name;
+    QTAILQ_HEAD(, PacketIdQueueEntry) head;
+    int size;
+};
+
 struct USBRedirDevice {
     USBDevice dev;
     /* Properties */
@@ -87,7 +98,7 @@ struct USBRedirDevice {
     struct usbredirparser *parser;
     struct endp_data endpoint[MAX_ENDPOINTS];
     QTAILQ_HEAD(, AsyncURB) asyncq;
-    QTAILQ_HEAD(, Cancelled) cancelled;
+    struct PacketIdQueue cancelled;
     /* Data for device filtering */
     struct usb_redir_device_connect_header device_info;
     struct usb_redir_interface_info_header interface_info;
@@ -98,11 +109,6 @@ struct USBRedirDevice {
 struct AsyncURB {
     USBPacket *packet;
     QTAILQ_ENTRY(AsyncURB)next;
-};
-
-struct Cancelled {
-    uint64_t id;
-    QTAILQ_ENTRY(Cancelled)next;
 };
 
 static void usbredir_hello(void *priv, struct usb_redir_hello_header *h);
@@ -283,11 +289,64 @@ static AsyncURB *async_find_by_packet(USBRedirDevice *dev, USBPacket *p)
     return NULL;
 }
 
+static void packet_id_queue_init(struct PacketIdQueue *q,
+    USBRedirDevice *dev, const char *name)
+{
+    q->dev = dev;
+    q->name = name;
+    QTAILQ_INIT(&q->head);
+    q->size = 0;
+}
+
+static void packet_id_queue_add(struct PacketIdQueue *q, uint64_t id)
+{
+    USBRedirDevice *dev = q->dev;
+    struct PacketIdQueueEntry *e;
+
+    DPRINTF("adding packet id %"PRIu64" to %s queue\n", id, q->name);
+
+    e = qemu_mallocz(sizeof(struct PacketIdQueueEntry));
+    e->id = id;
+    QTAILQ_INSERT_TAIL(&q->head, e, next);
+    q->size++;
+}
+
+static int packet_id_queue_remove(struct PacketIdQueue *q, uint64_t id)
+{
+    USBRedirDevice *dev = q->dev;
+    struct PacketIdQueueEntry *e;
+
+    QTAILQ_FOREACH(e, &q->head, next) {
+        if (e->id == id) {
+            DPRINTF("removing packet id %"PRIu64" from %s queue\n",
+                    id, q->name);
+            QTAILQ_REMOVE(&q->head, e, next);
+            q->size--;
+            qemu_free(e);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static void packet_id_queue_empty(struct PacketIdQueue *q)
+{
+    USBRedirDevice *dev = q->dev;
+    struct PacketIdQueueEntry *e, *next_e;
+
+    DPRINTF("removing %d packet-ids from %s queue\n", q->size, q->name);
+
+    QTAILQ_FOREACH_SAFE(e, &q->head, next, next_e) {
+        QTAILQ_REMOVE(&q->head, e, next);
+        qemu_free(e);
+    }
+    q->size = 0;
+}
+
 static void usbredir_cancel_packet(USBDevice *udev, USBPacket *p)
 {
     USBRedirDevice *dev = DO_UPCAST(USBRedirDevice, dev, udev);
     AsyncURB *aurb;
-    Cancelled *c;
 
     aurb = async_find_by_packet(dev, p);
     if (aurb == NULL) {
@@ -295,12 +354,7 @@ static void usbredir_cancel_packet(USBDevice *udev, USBPacket *p)
         return;
     }
 
-    DPRINTF("async cancel id %"PRIu64"\n", aurb->packet->id);
-
-    c = qemu_mallocz(sizeof(Cancelled));
-    c->id = aurb->packet->id;
-    QTAILQ_INSERT_TAIL(&dev->cancelled, c, next);
-
+    packet_id_queue_add(&dev->cancelled, aurb->packet->id);
     usbredirparser_send_cancel_data_packet(dev->parser, aurb->packet->id);
     usbredirparser_do_write(dev->parser);
 
@@ -309,20 +363,11 @@ static void usbredir_cancel_packet(USBDevice *udev, USBPacket *p)
 
 static int usbredir_is_cancelled(USBRedirDevice *dev, uint64_t id)
 {
-    Cancelled *c;
-
     if (!dev->dev.attached) {
         return 1; /* Treat everything as cancelled after a disconnect */
     }
 
-    QTAILQ_FOREACH(c, &dev->cancelled, next) {
-        if (c->id == id) {
-            QTAILQ_REMOVE(&dev->cancelled, c, next);
-            qemu_free(c);
-            return 1;
-        }
-    }
-    return 0;
+    return packet_id_queue_remove(&dev->cancelled, id);
 }
 
 static AsyncURB *async_find(USBRedirDevice *dev, uint64_t id)
@@ -980,7 +1025,7 @@ static int usbredir_initfn(USBDevice *udev)
     dev->attach_timer = qemu_new_timer(vm_clock, usbredir_do_attach, dev);
 
     QTAILQ_INIT(&dev->asyncq);
-    QTAILQ_INIT(&dev->cancelled);
+    packet_id_queue_init(&dev->cancelled, dev, "cancelled");
     for (i = 0; i < MAX_ENDPOINTS; i++) {
         QTAILQ_INIT(&dev->endpoint[i].bufpq);
     }
@@ -998,16 +1043,12 @@ static int usbredir_initfn(USBDevice *udev)
 static void usbredir_cleanup_device_queues(USBRedirDevice *dev)
 {
     AsyncURB *aurb, *next_aurb;
-    Cancelled *c, *next_c;
     int i;
 
     QTAILQ_FOREACH_SAFE(aurb, &dev->asyncq, next, next_aurb) {
         async_free(dev, aurb);
     }
-    QTAILQ_FOREACH_SAFE(c, &dev->cancelled, next, next_c) {
-        QTAILQ_REMOVE(&dev->cancelled, c, next);
-        qemu_free(c);
-    }
+    packet_id_queue_empty(&dev->cancelled);
     for (i = 0; i < MAX_ENDPOINTS; i++) {
         usbredir_free_bufpq(dev, I2EP(i));
     }
