@@ -670,6 +670,7 @@ typedef struct CPUX86State {
 #endif
     uint64_t system_time_msr;
     uint64_t wall_clock_msr;
+    uint64_t pv_eoi_en_msr;
 
     uint64_t tsc;
 
