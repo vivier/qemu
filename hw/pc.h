@@ -181,5 +181,6 @@ int cpu_is_bsp(CPUState *env);
 /* machine-type CPU compatibility functions: */
 void set_pmu_passthrough(bool enable);
 void disable_kvm_pv_eoi(void);
+void disable_tsc_deadline(void);
 
 #endif

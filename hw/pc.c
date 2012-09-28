@@ -1633,6 +1633,7 @@ static void pc_rhel630_compat(void)
 {
     disable_kvm_pv_eoi();
     set_pmu_passthrough(true);
+    disable_tsc_deadline();
 }
 
 static void pc_rhel620_compat(void)

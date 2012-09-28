@@ -90,6 +90,7 @@ int enforce_cpuid = 0;
 /* machine-type compatibility settings: */
 static bool kvm_pv_eoi_disabled;
 static bool pmu_passthrough_enabled;
+static bool tsc_deadline_disabled;
 
 static void host_cpuid(uint32_t function, uint32_t count, uint32_t *eax,
                        uint32_t *ebx, uint32_t *ecx, uint32_t *edx);
@@ -573,7 +574,8 @@ static x86_def_t builtin_x86_defs[] = {
         .ext_features = CPUID_EXT_AVX | CPUID_EXT_XSAVE | CPUID_EXT_AES |
              CPUID_EXT_POPCNT | CPUID_EXT_X2APIC | CPUID_EXT_SSE42 |
              CPUID_EXT_SSE41 | CPUID_EXT_CX16 | CPUID_EXT_SSSE3 |
-             CPUID_EXT_PCLMULQDQ | CPUID_EXT_SSE3,
+             CPUID_EXT_PCLMULQDQ | CPUID_EXT_SSE3 |
+             CPUID_EXT_TSC_DEADLINE_TIMER,
         .ext2_features = CPUID_EXT2_LM | CPUID_EXT2_NX | CPUID_EXT2_SYSCALL,
         .ext3_features = CPUID_EXT3_LAHF_LM,
         .xlevel = 0x8000000A,
@@ -851,6 +853,9 @@ static int cpu_x86_find_by_name(x86_def_t *x86_cpu_def, const char *cpu_model)
     }
     if (pmu_passthrough_enabled) {
         x86_cpu_def->pmu_passthrough = true;
+    }
+    if (tsc_deadline_disabled) {
+        x86_cpu_def->ext_features &= ~CPUID_EXT_TSC_DEADLINE_TIMER;
     }
 
     /* end of machine-type compatibility bits */
@@ -1406,6 +1411,7 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
  */
 void set_pmu_passthrough(bool enable);
 void disable_kvm_pv_eoi(void);
+void disable_tsc_deadline(void);
 
 void set_pmu_passthrough(bool enable)
 {
@@ -1415,4 +1421,9 @@ void set_pmu_passthrough(bool enable)
 void disable_kvm_pv_eoi(void)
 {
 	kvm_pv_eoi_disabled = true;
+}
+
+void disable_tsc_deadline(void)
+{
+    tsc_deadline_disabled = true;
 }
