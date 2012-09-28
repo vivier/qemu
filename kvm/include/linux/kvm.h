@@ -530,6 +530,7 @@ struct kvm_enable_cap {
 #ifdef __KVM_HAVE_XCRS
 #define KVM_CAP_XCRS 56
 #endif
+#define KVM_CAP_TSC_DEADLINE_TIMER 72
 #define KVM_CAP_KVMCLOCK_CTRL 76
 
 #ifdef KVM_CAP_IRQ_ROUTING
