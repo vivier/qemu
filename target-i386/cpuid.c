@@ -89,7 +89,7 @@ int enforce_cpuid = 0;
 
 /* machine-type compatibility settings: */
 static bool kvm_pv_eoi_disabled;
-static bool cpuid_leaf10_disabled;
+static bool pmu_passthrough_enabled = true;
 
 static void host_cpuid(uint32_t function, uint32_t count, uint32_t *eax,
                        uint32_t *ebx, uint32_t *ecx, uint32_t *edx);
@@ -1232,7 +1232,7 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
         break;
     case 0xA:
         /* Architectural Performance Monitoring Leaf */
-        if (kvm_enabled() && !cpuid_leaf10_disabled) {
+        if (kvm_enabled() && pmu_passthrough_enabled) {
             KVMState *s = env->kvm_state;
             *eax = kvm_arch_get_supported_cpuid(s, 0xA, count, R_EAX);
             *ebx = kvm_arch_get_supported_cpuid(s, 0xA, count, R_EBX);
@@ -1393,12 +1393,12 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
  * both files include to put this into.
  * Put it here to silence compiler warning.
  */
-void disable_cpuid_leaf10(void);
+void set_pmu_passthrough(bool enable);
 void disable_kvm_pv_eoi(void);
 
-void disable_cpuid_leaf10(void)
+void set_pmu_passthrough(bool enable)
 {
-	cpuid_leaf10_disabled = true;
+	pmu_passthrough_enabled = enable;
 }
 
 void disable_kvm_pv_eoi(void)

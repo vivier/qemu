@@ -1637,7 +1637,7 @@ static void pc_rhel630_compat(void)
 static void pc_rhel620_compat(void)
 {
     pc_rhel630_compat();
-    disable_cpuid_leaf10();
+    set_pmu_passthrough(false);
 }
 
 static void pc_init_rhel640(ram_addr_t ram_size,
