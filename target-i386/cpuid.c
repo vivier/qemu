@@ -1055,20 +1055,6 @@ int cpu_x86_register (CPUX86State *env, const char *cpu_model)
     return 0;
 }
 
-#if !defined(CONFIG_LINUX_USER)
-/* interpret radix and convert from string to arbitrary scalar,
- * otherwise flag failure
- */
-#define setscalar(pval, str, perr)                      \
-{                                                       \
-    char *pend;                                         \
-    unsigned long ul;                                   \
-                                                        \
-    ul = strtoul(str, &pend, 0);                        \
-    *str && !*pend ? (*pval = ul) : (*perr = 1);        \
-}
-#endif	/* !CONFIG_LINUX_USER */
-
 /* Initialize list of CPU models, filling some non-static fields if necessary
  */
 void x86_cpudef_setup(void)
