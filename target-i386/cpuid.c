@@ -470,7 +470,7 @@ static x86_def_t builtin_x86_defs[] = {
     },
     {
         .name = "Conroe",
-        .level = 2,
+        .level = 4,
         .vendor1 = CPUID_VENDOR_INTEL_1,
         .vendor2 = CPUID_VENDOR_INTEL_2,
         .vendor3 = CPUID_VENDOR_INTEL_3,
@@ -490,7 +490,7 @@ static x86_def_t builtin_x86_defs[] = {
     },
     {
         .name = "Penryn",
-        .level = 2,
+        .level = 4,
         .vendor1 = CPUID_VENDOR_INTEL_1,
         .vendor2 = CPUID_VENDOR_INTEL_2,
         .vendor3 = CPUID_VENDOR_INTEL_3,
@@ -511,7 +511,7 @@ static x86_def_t builtin_x86_defs[] = {
     },
     {
         .name = "Nehalem",
-        .level = 2,
+        .level = 4,
         .vendor1 = CPUID_VENDOR_INTEL_1,
         .vendor2 = CPUID_VENDOR_INTEL_2,
         .vendor3 = CPUID_VENDOR_INTEL_3,

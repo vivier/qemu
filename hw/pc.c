@@ -1631,6 +1631,9 @@ static void rhel_common_init(const char *type1_version,
 
 static void pc_rhel630_compat(void)
 {
+    set_cpu_model_level("Conroe", 2);
+    set_cpu_model_level("Penryn", 2);
+    set_cpu_model_level("Nehalem", 2);
     disable_kvm_pv_eoi();
     set_pmu_passthrough(true);
     disable_tsc_deadline();
