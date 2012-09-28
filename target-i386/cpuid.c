@@ -87,6 +87,10 @@ typedef struct model_features_t {
 int check_cpuid = 0;
 int enforce_cpuid = 0;
 
+/* machine-type compatibility settings: */
+static bool kvm_pv_eoi_disabled;
+static bool cpuid_leaf10_disabled;
+
 static void host_cpuid(uint32_t function, uint32_t count, uint32_t *eax,
                        uint32_t *ebx, uint32_t *ecx, uint32_t *edx);
 
@@ -811,8 +815,6 @@ static int check_features_against_host(CPUX86State *env, x86_def_t *guest_def)
     return rv;
 }
 
-static bool kvm_pv_eoi_disabled;
-
 static int cpu_x86_find_by_name(x86_def_t *x86_cpu_def, const char *cpu_model)
 {
     unsigned int i;
@@ -1120,8 +1122,6 @@ static void get_cpuid_vendor(CPUX86State *env, uint32_t *ebx,
         host_cpuid(0, 0, NULL, ebx, ecx, edx);
     }
 }
-
-static bool cpuid_leaf10_disabled;
 
 void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
                    uint32_t *eax, uint32_t *ebx,
