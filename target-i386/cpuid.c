@@ -1412,6 +1412,7 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
 void set_pmu_passthrough(bool enable);
 void disable_kvm_pv_eoi(void);
 void disable_tsc_deadline(void);
+void set_cpu_model_level(const char *name, int level);
 
 void set_pmu_passthrough(bool enable)
 {
@@ -1426,4 +1427,14 @@ void disable_kvm_pv_eoi(void)
 void disable_tsc_deadline(void)
 {
     tsc_deadline_disabled = true;
+}
+
+void set_cpu_model_level(const char *name, int level)
+{
+    x86_def_t *def;
+    for (def = x86_defs; def; def = def->next) {
+        if (!strcmp(name, def->name)) {
+            def->level = level;
+        }
+    }
 }
