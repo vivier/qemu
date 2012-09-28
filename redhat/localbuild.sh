@@ -2,7 +2,6 @@
 
 prefix="/usr"
 sysconfdir="/etc"
-cpuconfdir="/usr/share/qemu-kvm/cpu-model"
 filename="qemu-kvm.spec.template"
 binname="x86_64-softmmu/qemu-system-x86_64"
 
@@ -48,7 +47,6 @@ cfg=${cfg/\%\{fake_machine_arg\}/}
 cfg=${cfg/\%\{disable_rhev_features_arg\}/}
 cfg=${cfg/\%\{_prefix\}/$prefix}
 cfg=${cfg/\%\{_sysconfdir\}/$sysconfdir}
-cfg=${cfg/\%\{cpumodeldir\}/$cpuconfdir}
 cfg=${cfg/\$RPM_OPT_FLAGS/-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector --param=ssp-buffer-size=4 -m64 -mtune=generic}
 cfg=${cfg/\$extraldflags/-Wl,--build-id -pie -Wl,-z,relro -Wl,-z,now}
 

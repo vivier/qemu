@@ -158,7 +158,6 @@ Conflicts: vdsm < 4.5
 Requires: qemu-img%{?pkgsuffix} = %{epoch}:%{version}-%{release}
 
 %define qemudocdir %{_docdir}/%{name}-%{version}
-%define cpumodeldir %{_datadir}/%{confname}/cpu-model
 
 %description
 KVM (for Kernel-based Virtual Machine) is a full virtualization solution
@@ -286,7 +285,6 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
 ./configure --target-list=x86_64-softmmu \
             --prefix=%{_prefix} \
             --sysconfdir=%{_sysconfdir} \
-            --cpuconfdir=%{cpumodeldir} \
             --audio-drv-list=pa,alsa \
             --audio-card-list=ac97,es1370 \
             --disable-strip \
@@ -365,7 +363,6 @@ make DESTDIR="${RPM_BUILD_ROOT}" \
      docdir="%{_docdir}/%{name}-%{version}" \
      sharedir="%{_datadir}/%{confname}" \
      datadir="%{_datadir}/%{confname}" \
-     cpuconfdir="%{cpumodeldir}" \
      sysconfdir="%{_sysconfdir}" \
      QEMU_PROG=%{progname} \
      QEMU_BINDIR="%{_prefix}/libexec" \
@@ -499,7 +496,6 @@ fi
 %{_libexecdir}/%{progname}
 %{_sysconfdir}/sysconfig/modules/kvm.modules
 %{_sysconfdir}/udev/rules.d/80-kvm.rules
-%{cpumodeldir}/cpu-x86_64.conf
 %config(noreplace) %{_sysconfdir}/modprobe.d/blacklist-kvm.conf
 
 %if %{with guest_agent}
