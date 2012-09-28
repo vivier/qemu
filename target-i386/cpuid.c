@@ -1170,9 +1170,10 @@ void x86_cpudef_setup(void)
     int i;
 
     for (i = 0; i < ARRAY_SIZE(builtin_x86_defs); ++i) {
-        builtin_x86_defs[i].next = x86_defs;
-        builtin_x86_defs[i].flags = 1;
-        x86_defs = &builtin_x86_defs[i];
+        x86_def_t *def = &builtin_x86_defs[i];
+        def->next = x86_defs;
+        def->flags = 1;
+        x86_defs = def;
     }
 #if !defined(CONFIG_LINUX_USER)
     qemu_opts_foreach(&qemu_cpudef_opts, cpudef_register, NULL, 0);
