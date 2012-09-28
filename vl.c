@@ -5121,14 +5121,6 @@ int main(int argc, char **argv, char **envp)
         }
     }
 
-    /* load local cpu config
-     */
-    if (qemu_read_config_file(
-        CONFIG_QEMU_CPUCONFDIR "/cpu-" TARGET_ARCH ".conf",
-        defconfig_verbose) == -EINVAL) {
-            exit(1);
-    }
-
     /* second pass of CLI options -- bring in any -readconfig flags
      */
     optind = 1;
