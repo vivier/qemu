@@ -1420,9 +1420,14 @@ int kvm_arch_init_vcpu(CPUState *cenv)
 
     /* prevent the hypervisor bit from being cleared by the kernel */
     i = cenv->cpuid_ext_features & CPUID_EXT_HYPERVISOR;
+    j = cenv->cpuid_ext_features & CPUID_EXT_TSC_DEADLINE_TIMER;
     kvm_trim_features(&cenv->cpuid_ext_features,
                       kvm_arch_get_supported_cpuid(cenv->kvm_state, 1, 0, R_ECX));
     cenv->cpuid_ext_features |= i;
+    if (j && kvm_irqchip_in_kernel() &&
+        kvm_check_extension(cenv->kvm_state, KVM_CAP_TSC_DEADLINE_TIMER)) {
+        cenv->cpuid_ext_features |= CPUID_EXT_TSC_DEADLINE_TIMER;
+    }
 
     kvm_trim_features(&cenv->cpuid_ext2_features,
                       kvm_arch_get_supported_cpuid(cenv->kvm_state, 0x80000001, 0, R_EDX));
