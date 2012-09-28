@@ -1387,22 +1387,19 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
     }
 }
 
+/* machine-type compatibility hacks below: */
+
 /* Called from hw/pc.c but there is no header
  * both files include to put this into.
  * Put it here to silence compiler warning.
  */
 void disable_cpuid_leaf10(void);
+void disable_kvm_pv_eoi(void);
 
 void disable_cpuid_leaf10(void)
 {
 	cpuid_leaf10_disabled = true;
 }
-
-/* Called from hw/pc.c but there is no header
- * both files include to put this into.
- * Put it here to silence compiler warning.
- */
-void disable_kvm_pv_eoi(void);
 
 void disable_kvm_pv_eoi(void)
 {
