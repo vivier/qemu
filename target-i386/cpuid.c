@@ -89,7 +89,7 @@ int enforce_cpuid = 0;
 
 /* machine-type compatibility settings: */
 static bool kvm_pv_eoi_disabled;
-static bool pmu_passthrough_enabled = true;
+static bool pmu_passthrough_enabled;
 
 static void host_cpuid(uint32_t function, uint32_t count, uint32_t *eax,
                        uint32_t *ebx, uint32_t *ecx, uint32_t *edx);
@@ -192,6 +192,7 @@ typedef struct x86_def_t {
     int vendor_override;
     /* The feature bits on CPUID[EAX=7,ECX=0].EBX */
     uint32_t cpuid_7_0_ebx_features;
+    bool pmu_passthrough;
 } x86_def_t;
 
 #define I486_FEATURES (CPUID_FP87 | CPUID_VME | CPUID_PSE)
@@ -735,6 +736,7 @@ static int cpu_x86_fill_host(x86_def_t *x86_cpu_def)
     x86_cpu_def->ext3_features = ecx;
     cpu_x86_fill_model_id(x86_cpu_def->model_id);
     x86_cpu_def->vendor_override = 0;
+    x86_cpu_def->pmu_passthrough = true;
 
     return 0;
 }
@@ -839,11 +841,19 @@ static int cpu_x86_find_by_name(x86_def_t *x86_cpu_def, const char *cpu_model)
     }
 
     plus_kvm_features = ~0; /* not supported bits will be filtered out later */
+
+    /* machine-type compatibility bits: */
+
     /* Disable PV EOI for old machine types.
      * Feature flags can still override. */
     if (kvm_pv_eoi_disabled) {
         plus_kvm_features &= ~(0x1 << KVM_FEATURE_PV_EOI);
     }
+    if (pmu_passthrough_enabled) {
+        x86_cpu_def->pmu_passthrough = true;
+    }
+
+    /* end of machine-type compatibility bits */
 
     add_flagname_to_bitmaps("hypervisor", &plus_features,
         &plus_ext_features, &plus_ext2_features, &plus_ext3_features,
@@ -1036,6 +1046,7 @@ int cpu_x86_register (CPUX86State *env, const char *cpu_model)
     env->cpuid_ext3_features = def->ext3_features;
     env->cpuid_7_0_ebx = def->cpuid_7_0_ebx_features;
     env->cpuid_kvm_features = def->kvm_features;
+    env->cpuid_pmu_passthrough = def->pmu_passthrough;
     {
         const char *model_id = def->model_id;
         int c, len, i;
@@ -1232,7 +1243,7 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
         break;
     case 0xA:
         /* Architectural Performance Monitoring Leaf */
-        if (kvm_enabled() && pmu_passthrough_enabled) {
+        if (kvm_enabled() && env->cpuid_pmu_passthrough) {
             KVMState *s = env->kvm_state;
             *eax = kvm_arch_get_supported_cpuid(s, 0xA, count, R_EAX);
             *ebx = kvm_arch_get_supported_cpuid(s, 0xA, count, R_EBX);
