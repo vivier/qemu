@@ -5369,6 +5369,8 @@ int main(int argc, char **argv, char **envp)
                                 exit(1);
                             }
                         }
+                        qemu_opts_parse(qemu_find_opts("boot-opts"),
+                                        optarg, 0);
                     }
                 }
                 break;
