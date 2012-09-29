@@ -419,6 +419,26 @@ QemuOptsList qemu_option_rom_opts = {
     },
 };
 
+QemuOptsList qemu_boot_opts = {
+    .name = "boot-opts",
+    .head = QTAILQ_HEAD_INITIALIZER(qemu_boot_opts.head),
+    .desc = {
+        /* the three names below are not used now */
+        {
+            .name = "order",
+            .type = QEMU_OPT_STRING,
+        }, {
+            .name = "once",
+            .type = QEMU_OPT_STRING,
+        }, {
+            .name = "menu",
+            .type = QEMU_OPT_STRING,
+        /* following are really used */
+        },
+        { /*End of list */ }
+    },
+};
+
 static QemuOptsList *vm_config_groups[] = {
     &qemu_drive_opts,
     &qemu_simple_drive_opts,
@@ -432,6 +452,7 @@ static QemuOptsList *vm_config_groups[] = {
     &qemu_cpudef_opts,
     &qemu_spice_opts,
     &qemu_option_rom_opts,
+    &qemu_boot_opts,
     NULL,
 };
 
