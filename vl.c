@@ -5326,7 +5326,8 @@ int main(int argc, char **argv, char **envp)
             case QEMU_OPTION_boot:
                 {
                     static const char * const params[] = {
-                        "order", "once", "menu", NULL
+                        "order", "once", "menu",
+                        "reboot-timeout", NULL
                     };
                     char buf[sizeof(boot_devices)];
                     char *standard_boot_devices;
