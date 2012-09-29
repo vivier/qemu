@@ -434,6 +434,9 @@ QemuOptsList qemu_boot_opts = {
             .name = "menu",
             .type = QEMU_OPT_STRING,
         /* following are really used */
+        }, {
+            .name = "reboot-timeout",
+            .type = QEMU_OPT_STRING,
         },
         { /*End of list */ }
     },
