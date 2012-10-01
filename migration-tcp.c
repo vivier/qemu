@@ -85,6 +85,7 @@ MigrationState *tcp_start_outgoing_migration(Monitor *mon,
                                              Error **errp)
 {
     FdMigrationState *s;
+    bool in_progress;
 
     s = qemu_mallocz(sizeof(*s));
 
@@ -106,30 +107,21 @@ MigrationState *tcp_start_outgoing_migration(Monitor *mon,
         migrate_fd_monitor_suspend(s, mon);
     }
 
-    s->fd = inet_connect(host_port, false, NULL, errp);
+    s->fd = inet_connect(host_port, false, &in_progress, errp);
+    if (error_is_set(errp)) {
+        migrate_fd_error(s);
+        qemu_free(s);
+        return NULL;
+    }
 
-    if (!error_is_set(errp)) {
-        migrate_fd_connect(s);
-    } else if (error_is_type(*errp, QERR_SOCKET_CONNECT_IN_PROGRESS)) {
+    if (in_progress) {
         DPRINTF("connect in progress\n");
         qemu_set_fd_handler2(s->fd, NULL, NULL, tcp_wait_for_connect, s);
-    } else if (error_is_type(*errp, QERR_SOCKET_CREATE_FAILED)) {
-        DPRINTF("connect failed\n");
-        goto err;
-    } else if (error_is_type(*errp, QERR_SOCKET_CONNECT_FAILED)) {
-        DPRINTF("connect failed\n");
-        migrate_fd_error(s);
-        goto err;
     } else {
-        DPRINTF("unknown error\n");
-        goto err;
+        migrate_fd_connect(s);
     }
 
     return &s->mig_state;
-
-err:
-    qemu_free(s);
-    return NULL;
 }
 
 static void tcp_accept_incoming_migration(void *opaque)
