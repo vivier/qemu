@@ -106,7 +106,7 @@ MigrationState *tcp_start_outgoing_migration(Monitor *mon,
         migrate_fd_monitor_suspend(s, mon);
     }
 
-    s->fd = inet_connect(host_port, false, errp);
+    s->fd = inet_connect(host_port, false, NULL, errp);
 
     if (!error_is_set(errp)) {
         migrate_fd_connect(s);

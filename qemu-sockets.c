@@ -206,7 +206,7 @@ listen:
     return slisten;
 }
 
-int inet_connect_opts(QemuOpts *opts, Error **errp)
+int inet_connect_opts(QemuOpts *opts, bool *in_progress, Error **errp)
 {
     struct addrinfo ai,*res,*e;
     const char *addr;
@@ -220,6 +220,10 @@ int inet_connect_opts(QemuOpts *opts, Error **errp)
     ai.ai_flags = AI_CANONNAME | AI_ADDRCONFIG;
     ai.ai_family = PF_UNSPEC;
     ai.ai_socktype = SOCK_STREAM;
+
+    if (in_progress) {
+        *in_progress = false;
+    }
 
     addr = qemu_opt_get(opts, "host");
     port = qemu_opt_get(opts, "port");
@@ -274,6 +278,10 @@ int inet_connect_opts(QemuOpts *opts, Error **errp)
   #else
         if (!block && (rc == -EINPROGRESS)) {
   #endif
+            if (in_progress) {
+                *in_progress = true;
+            }
+
             error_set(errp, QERR_SOCKET_CONNECT_IN_PROGRESS);
         } else if (rc < 0) {
             if (NULL == e->ai_next)
@@ -484,7 +492,7 @@ int inet_listen(const char *str, char *ostr, int olen,
     return sock;
 }
 
-int inet_connect(const char *str, bool block, Error **errp)
+int inet_connect(const char *str, bool block, bool *in_progress, Error **errp)
 {
     QemuOpts *opts;
     int sock = -1;
@@ -494,7 +502,7 @@ int inet_connect(const char *str, bool block, Error **errp)
         if (block) {
             qemu_opt_set(opts, "block", "on");
         }
-        sock = inet_connect_opts(opts, errp);
+        sock = inet_connect_opts(opts, in_progress, errp);
     } else {
         error_set(errp, QERR_SOCKET_CREATE_FAILED);
     }
