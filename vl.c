@@ -6358,8 +6358,13 @@ int main(int argc, char **argv, char **envp)
 
     if (incoming) {
         runstate_set(RUN_STATE_INMIGRATE);
-        int ret = qemu_start_incoming_migration(incoming);
+        Error *errp = NULL;
+        int ret = qemu_start_incoming_migration(incoming, &errp);
         if (ret < 0) {
+            if (error_is_set(&errp)) {
+                fprintf(stderr, "Migrate: %s\n", error_get_pretty(errp));
+                error_free(errp);
+            }
             fprintf(stderr, "Migration failed. Exit code %s(%d), exiting.\n",
                     incoming, ret);
             exit(ret);
