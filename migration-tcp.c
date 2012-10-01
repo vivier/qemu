@@ -107,7 +107,7 @@ MigrationState *tcp_start_outgoing_migration(Monitor *mon,
         migrate_fd_monitor_suspend(s, mon);
     }
 
-    s->fd = inet_connect(host_port, false, &in_progress, errp);
+    s->fd = inet_nonblocking_connect(host_port, &in_progress, errp);
     if (error_is_set(errp)) {
         migrate_fd_error(s);
         qemu_free(s);
