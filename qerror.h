@@ -214,9 +214,6 @@ QError *qobject_to_qerror(const QObject *obj);
 #define QERR_QGA_COMMAND_FAILED \
     "{ 'class': 'QgaCommandFailed', 'data': { 'message': %s } }"
 
-#define QERR_SOCKET_CONNECT_IN_PROGRESS \
-    "{ 'class': 'SockConnectInprogress', 'data': {} }"
-
 #define QERR_SOCKET_CONNECT_FAILED \
     "{ 'class': 'SockConnectFailed', 'data': {} }"
 
