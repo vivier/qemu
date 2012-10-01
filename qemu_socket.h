@@ -43,8 +43,8 @@ int send_all(CharDriverState *chr, int fd, const void *buf, int len1);
 int inet_listen_opts(QemuOpts *opts, int port_offset, Error **errp);
 int inet_listen(const char *str, char *ostr, int olen,
                 int socktype, int port_offset, Error **errp);
-int inet_connect_opts(QemuOpts *opts, Error **errp);
-int inet_connect(const char *str, bool block, Error **errp);
+int inet_connect_opts(QemuOpts *opts, bool *in_progress, Error **errp);
+int inet_connect(const char *str, bool block, bool *in_progress, Error **errp);
 int inet_dgram_opts(QemuOpts *opts);
 const char *inet_strfamily(int family);
 
