@@ -49,30 +49,18 @@ static int tcp_close(FdMigrationState *s)
     return 0;
 }
 
-
-static void tcp_wait_for_connect(void *opaque)
+static void tcp_wait_for_connect(int fd, void *opaque)
 {
     FdMigrationState *s = opaque;
-    int val, ret;
-    socklen_t valsize = sizeof(val);
 
-    DPRINTF("connect completed\n");
-    do {
-        ret = getsockopt(s->fd, SOL_SOCKET, SO_ERROR, (void *) &val, &valsize);
-    } while (ret == -1 && (s->get_error(s)) == EINTR);
-
-    if (ret < 0) {
+    if (fd < 0) {
+        DPRINTF("migrate connect error\n");
+        s->fd = -1;
         migrate_fd_error(s);
-        return;
-    }
-
-    qemu_set_fd_handler2(s->fd, NULL, NULL, NULL, NULL);
-
-    if (val == 0)
+    } else {
+        DPRINTF("migrate connect success\n");
+        s->fd = fd;
         migrate_fd_connect(s);
-    else {
-        DPRINTF("error connecting %d\n", val);
-        migrate_fd_error(s);
     }
 }
 
@@ -85,7 +73,6 @@ MigrationState *tcp_start_outgoing_migration(Monitor *mon,
                                              Error **errp)
 {
     FdMigrationState *s;
-    bool in_progress;
 
     s = qemu_mallocz(sizeof(*s));
 
@@ -107,18 +94,12 @@ MigrationState *tcp_start_outgoing_migration(Monitor *mon,
         migrate_fd_monitor_suspend(s, mon);
     }
 
-    s->fd = inet_nonblocking_connect(host_port, &in_progress, errp);
+    s->fd = inet_nonblocking_connect(host_port, tcp_wait_for_connect, s,
+                                     errp);
     if (error_is_set(errp)) {
         migrate_fd_error(s);
         qemu_free(s);
         return NULL;
-    }
-
-    if (in_progress) {
-        DPRINTF("connect in progress\n");
-        qemu_set_fd_handler2(s->fd, NULL, NULL, tcp_wait_for_connect, s);
-    } else {
-        migrate_fd_connect(s);
     }
 
     return &s->mig_state;
