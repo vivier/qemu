@@ -33,6 +33,8 @@ static int kvm_has_vm_hsave_pa;
 
 static int lm_capable_kernel;
 
+static bool has_msr_pv_eoi_en;
+
 int kvm_set_tss_addr(kvm_context_t kvm, unsigned long addr)
 {
 #ifdef KVM_CAP_SET_TSS_ADDR
@@ -852,6 +854,9 @@ static int get_msr_entry(struct kvm_msr_entry *entry, CPUState *env)
         case MSR_KVM_WALL_CLOCK:
             env->wall_clock_msr = entry->data;
             break;
+        case MSR_KVM_PV_EOI_EN:
+            env->pv_eoi_en_msr = entry->data;
+            break;
 #ifdef KVM_CAP_MCE
         case MSR_MCG_STATUS:
             env->mcg_status = entry->data;
@@ -1075,6 +1080,9 @@ void kvm_arch_load_regs(CPUState *env)
 #endif
     set_msr_entry(&msrs[n++], MSR_KVM_SYSTEM_TIME,  env->system_time_msr);
     set_msr_entry(&msrs[n++], MSR_KVM_WALL_CLOCK,  env->wall_clock_msr);
+    if (has_msr_pv_eoi_en) {
+        set_msr_entry(&msrs[n++], MSR_KVM_PV_EOI_EN, env->pv_eoi_en_msr);
+    }
 
 #ifdef KVM_CAP_MCE
     if (env->mcg_cap) {
@@ -1310,6 +1318,9 @@ void kvm_arch_save_regs(CPUState *env)
 #endif
     msrs[n++].index = MSR_KVM_SYSTEM_TIME;
     msrs[n++].index = MSR_KVM_WALL_CLOCK;
+    if (has_msr_pv_eoi_en) {
+        msrs[n++].index = MSR_KVM_PV_EOI_EN;
+    }
 
 #ifdef KVM_CAP_MCE
     if (env->mcg_cap) {
@@ -1424,6 +1435,8 @@ int kvm_arch_init_vcpu(CPUState *cenv)
                       kvm_arch_get_supported_cpuid(cenv->kvm_state, 0x80000001, 0, R_ECX));
 
     copy = *cenv;
+
+    has_msr_pv_eoi_en = pv_ent->eax & (1 << KVM_FEATURE_PV_EOI);
 
     copy.regs[R_EAX] = 0;
     qemu_kvm_cpuid_on_env(&copy);
