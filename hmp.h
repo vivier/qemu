@@ -25,4 +25,6 @@ void hmp_drive_mirror(Monitor *mon, const QDict *qdict);
 void hmp_drive_reopen(Monitor *mon, const QDict *qdict);
 #endif
 
+void hmp_dump_guest_memory(Monitor *mon, const QDict *qdict);
+
 #endif
