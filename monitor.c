@@ -353,6 +353,11 @@ static inline bool monitor_cmd_user_only(const mon_cmd_t *cmd)
     return (cmd->flags & MONITOR_CMD_USER_ONLY);
 }
 
+static inline bool cmd_is_qmp_only(const mon_cmd_t *cmd)
+{
+    return cmd->flags & MONITOR_CMD_QMP_ONLY;
+}
+
 static inline int monitor_has_error(const Monitor *mon)
 {
     return mon->error != NULL;
@@ -603,6 +608,9 @@ static void help_cmd_dump(Monitor *mon, const mon_cmd_t *cmds,
     const mon_cmd_t *cmd;
 
     for(cmd = cmds; cmd->name != NULL; cmd++) {
+        if (cmd_is_qmp_only(cmd)) {
+            continue;
+        }
         if (!name || !strcmp(name, cmd->name))
             monitor_printf(mon, "%s%s %s -- %s\n", prefix, cmd->name,
                            cmd->params, cmd->help);
@@ -3717,13 +3725,27 @@ static int is_valid_option(const char *c, const char *typestr)
     return (typestr != NULL);
 }
 
-static const mon_cmd_t *search_dispatch_table(const mon_cmd_t *disp_table,
-                                              const char *cmdname)
+static const mon_cmd_t *hmp_search_dispatch_table(const mon_cmd_t *disp_table,
+                                                  const char *cmdname)
 {
     const mon_cmd_t *cmd;
 
     for (cmd = disp_table; cmd->name != NULL; cmd++) {
-        if (compare_cmd(cmdname, cmd->name)) {
+        if (compare_cmd(cmdname, cmd->name) && !cmd_is_qmp_only(cmd)) {
+            return cmd;
+        }
+    }
+
+    return NULL;
+}
+
+static const mon_cmd_t *qmp_search_dispatch_table(const mon_cmd_t *disp_table,
+                                                  const char *cmdname)
+{
+    const mon_cmd_t *cmd;
+
+    for (cmd = disp_table; cmd->name != NULL; cmd++) {
+        if (compare_cmd(cmdname, cmd->name) && !monitor_cmd_user_only(cmd)) {
             return cmd;
         }
     }
@@ -3733,17 +3755,17 @@ static const mon_cmd_t *search_dispatch_table(const mon_cmd_t *disp_table,
 
 static const mon_cmd_t *monitor_find_command(const char *cmdname)
 {
-    return search_dispatch_table(mon_cmds, cmdname);
+    return hmp_search_dispatch_table(mon_cmds, cmdname);
 }
 
 static const mon_cmd_t *qmp_find_query_cmd(const char *info_item)
 {
-    return search_dispatch_table(info_cmds, info_item);
+    return qmp_search_dispatch_table(info_cmds, info_item);
 }
 
 static const mon_cmd_t *qmp_find_cmd(const char *cmdname)
 {
-    return search_dispatch_table(mon_cmds, cmdname);
+    return qmp_search_dispatch_table(mon_cmds, cmdname);
 }
 
 static const mon_cmd_t *monitor_parse_command(Monitor *mon,
@@ -4380,7 +4402,9 @@ static void monitor_find_completion(const char *cmdline)
             cmdname = args[0];
         readline_set_completion_index(cur_mon->rs, strlen(cmdname));
         for(cmd = mon_cmds; cmd->name != NULL; cmd++) {
-            cmd_completion(cmdname, cmd->name);
+            if (!cmd_is_qmp_only(cmd)) {
+                cmd_completion(cmdname, cmd->name);
+            }
         }
     } else {
         /* find the command */
@@ -4434,7 +4458,9 @@ static void monitor_find_completion(const char *cmdline)
             } else if (!strcmp(cmd->name, "help|?")) {
                 readline_set_completion_index(cur_mon->rs, strlen(str));
                 for (cmd = mon_cmds; cmd->name != NULL; cmd++) {
-                    cmd_completion(str, cmd->name);
+                    if (!cmd_is_qmp_only(cmd)) {
+                        cmd_completion(str, cmd->name);
+                    }
                 }
             }
             break;
