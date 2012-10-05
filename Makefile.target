@@ -216,6 +216,7 @@ obj-y += msix.o
 obj-$(CONFIG_ISA_MMIO) += isa_mmio.o
 obj-y += memory_mapping.o
 obj-$(CONFIG_HAVE_GET_MEMORY_MAPPING) += arch_memory_mapping.o
+obj-$(CONFIG_HAVE_CORE_DUMP) += arch_dump.o
 LIBS+=-lz
 
 sound-obj-y =
