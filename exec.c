@@ -4232,4 +4232,15 @@ void dump_exec_info(FILE *f,
 
 #undef env
 
+bool cpu_physical_memory_is_io(target_phys_addr_t phys_addr)
+{
+    PhysPageDesc *p;
+    unsigned long pd;
+
+    p = phys_page_find(phys_addr >> TARGET_PAGE_BITS);
+    pd = !p ? IO_MEM_UNASSIGNED : p->phys_offset;
+
+    return (pd & ~TARGET_PAGE_MASK) > IO_MEM_ROM && !(pd & IO_MEM_ROMD);
+}
+
 #endif
