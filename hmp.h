@@ -15,6 +15,7 @@
 #define HMP_H
 
 #include "qemu-common.h"
+#include "qdict.h"
 
 #ifdef CONFIG_LIVE_SNAPSHOTS
 #include "rhev-qapi-types.h"
