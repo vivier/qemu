@@ -21,6 +21,7 @@
 
 #include "qemu-common.h"
 #include "cpu-common.h"
+#include "memory_mapping.h"
 
 /* some important defines:
  *
@@ -1103,5 +1104,15 @@ void cpu_inject_x86_mce(CPUState *cenv, int bank, uint64_t status,
 
 void resume_all_vcpus(void);
 void pause_all_vcpus(void);
+
+#if defined(CONFIG_HAVE_GET_MEMORY_MAPPING)
+int cpu_get_memory_mapping(MemoryMappingList *list, CPUArchState *env);
+#else
+static inline int cpu_get_memory_mapping(MemoryMappingList *list,
+                                         CPUArchState *env)
+{
+    return -1;
+}
+#endif
 
 #endif /* CPU_ALL_H */
