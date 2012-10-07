@@ -29,6 +29,11 @@
 
 #include "qxl.h"
 
+#ifndef CONFIG_QXL_IO_MONITORS_CONFIG_ASYNC
+/* spice-protocol is too old, add missing definitions */
+#define QXL_IO_MONITORS_CONFIG_ASYNC (QXL_IO_FLUSH_RELEASE + 1)
+#endif
+
 /*
  * NOTE: SPICE_RING_PROD_ITEM accesses memory on the pci bar and as
  * such can be changed by the guest, so to avoid a guest trigerrable
@@ -255,6 +260,39 @@ static void qxl_spice_destroy_surfaces(PCIQXLDevice *qxl, qxl_async_io async)
         qxl->ssd.worker->destroy_surfaces(qxl->ssd.worker);
         qxl_spice_destroy_surfaces_complete(qxl);
     }
+}
+
+static void qxl_spice_monitors_config_async(PCIQXLDevice *qxl, int replay)
+{
+    trace_qxl_spice_monitors_config(qxl->id);
+/* 0x000b01 == 0.11.1 */
+#if SPICE_SERVER_VERSION >= 0x000b01 && \
+    defined(CONFIG_QXL_IO_MONITORS_CONFIG_ASYNC)
+    if (replay) {
+        /*
+         * don't use QXL_COOKIE_TYPE_IO:
+         *  - we are not running yet (post_load), we will assert
+         *    in send_events
+         *  - this is not a guest io, but a reply, so async_io isn't set.
+         */
+        spice_qxl_monitors_config_async(&qxl->ssd.qxl,
+                qxl->guest_monitors_config,
+                MEMSLOT_GROUP_GUEST,
+                (uintptr_t)qxl_cookie_new(
+                    QXL_COOKIE_TYPE_POST_LOAD_MONITORS_CONFIG,
+                    0));
+    } else {
+        qxl->guest_monitors_config = qxl->ram->monitors_config;
+        spice_qxl_monitors_config_async(&qxl->ssd.qxl,
+                qxl->ram->monitors_config,
+                MEMSLOT_GROUP_GUEST,
+                (uintptr_t)qxl_cookie_new(QXL_COOKIE_TYPE_IO,
+                                          QXL_IO_MONITORS_CONFIG_ASYNC));
+    }
+#else
+    fprintf(stderr, "qxl: too old spice-protocol/spice-server for "
+            "QXL_IO_MONITORS_CONFIG_ASYNC\n");
+#endif
 }
 
 void qxl_spice_reset_image_cache(PCIQXLDevice *qxl)
@@ -551,6 +589,7 @@ static const char *io_port_to_string(uint32_t io_port)
                                         = "QXL_IO_DESTROY_ALL_SURFACES_ASYNC",
         [QXL_IO_FLUSH_SURFACES_ASYNC]   = "QXL_IO_FLUSH_SURFACES_ASYNC",
         [QXL_IO_FLUSH_RELEASE]          = "QXL_IO_FLUSH_RELEASE",
+        [QXL_IO_MONITORS_CONFIG_ASYNC]  = "QXL_IO_MONITORS_CONFIG_ASYNC",
     };
     return io_port_to_string[io_port];
 }
@@ -827,6 +866,7 @@ static void interface_async_complete_io(PCIQXLDevice *qxl, QXLCookie *cookie)
     case QXL_IO_DESTROY_PRIMARY_ASYNC:
     case QXL_IO_UPDATE_AREA_ASYNC:
     case QXL_IO_FLUSH_SURFACES_ASYNC:
+    case QXL_IO_MONITORS_CONFIG_ASYNC:
         break;
     case QXL_IO_CREATE_PRIMARY_ASYNC:
         qxl_create_guest_primary_complete(qxl);
@@ -901,6 +941,8 @@ static void interface_async_complete(QXLInstance *sin, uint64_t cookie_token)
         break;
     case QXL_COOKIE_TYPE_RENDER_UPDATE_AREA:
         qxl_render_update_area_done(qxl, cookie);
+        break;
+    case QXL_COOKIE_TYPE_POST_LOAD_MONITORS_CONFIG:
         break;
     default:
         fprintf(stderr, "qxl: %s: unexpected cookie type %d\n",
@@ -1336,6 +1378,13 @@ static void ioport_write(void *opaque, uint32_t addr, uint32_t val)
         return;
     }
 
+    if (d->revision <= QXL_REVISION_STABLE_V10 &&
+        io_port >= QXL_IO_FLUSH_SURFACES_ASYNC) {
+        qxl_set_guest_bug(d, "unsupported io %d for revision %d\n",
+            io_port, d->revision);
+        return;
+    }
+
     switch (io_port) {
     case QXL_IO_RESET:
     case QXL_IO_SET_MODE:
@@ -1355,7 +1404,7 @@ static void ioport_write(void *opaque, uint32_t addr, uint32_t val)
             io_port, io_port_to_string(io_port));
         /* be nice to buggy guest drivers */
         if (io_port >= QXL_IO_UPDATE_AREA_ASYNC &&
-            io_port <= QXL_IO_DESTROY_ALL_SURFACES_ASYNC) {
+            io_port < QXL_IO_RANGE_SIZE) {
             qxl_send_events(d, QXL_INTERRUPT_IO_CMD);
         }
         return;
@@ -1383,6 +1432,7 @@ static void ioport_write(void *opaque, uint32_t addr, uint32_t val)
         io_port = QXL_IO_DESTROY_ALL_SURFACES;
         goto async_common;
     case QXL_IO_FLUSH_SURFACES_ASYNC:
+    case QXL_IO_MONITORS_CONFIG_ASYNC:
 async_common:
         async = QXL_ASYNC;
         qemu_mutex_lock(&d->async_lock);
@@ -1526,6 +1576,9 @@ async_common:
     case QXL_IO_DESTROY_ALL_SURFACES:
         d->mode = QXL_MODE_UNDEFINED;
         qxl_spice_destroy_surfaces(d, async);
+        break;
+    case QXL_IO_MONITORS_CONFIG_ASYNC:
+        qxl_spice_monitors_config_async(d, 0);
         break;
     default:
         qxl_set_guest_bug(d, "%s: unexpected ioport=0x%x\n", __func__, io_port);
@@ -1816,9 +1869,17 @@ static int qxl_init_common(PCIQXLDevice *qxl)
         io_size = 16;
         break;
     case 3: /* qxl-3 */
-        pci_device_rev = QXL_DEFAULT_REVISION;
+        pci_device_rev = QXL_REVISION_STABLE_V10;
+        io_size = 32; /* PCI region size must be pow2 */
+        break;
+/* 0x000b01 == 0.11.1 */
+#if SPICE_SERVER_VERSION >= 0x000b01 && \
+        defined(CONFIG_QXL_IO_MONITORS_CONFIG_ASYNC)
+    case 4: /* qxl-4 */
+        pci_device_rev = QXL_REVISION_STABLE_V12;
         io_size = msb_mask(QXL_IO_RANGE_SIZE * 2 - 1);
         break;
+#endif
     default:
         error_report("Invalid revision %d for qxl device (max %d)",
                      qxl->revision, QXL_DEFAULT_REVISION);
@@ -2007,7 +2068,9 @@ static int qxl_post_load(void *opaque, int version)
         }
         qxl_spice_loadvm_commands(d, cmds, out);
         qemu_free(cmds);
-
+        if (d->guest_monitors_config) {
+            qxl_spice_monitors_config_async(d, 1);
+        }
         break;
     case QXL_MODE_COMPAT:
         /* note: no need to call qxl_create_memslots, qxl_set_mode
@@ -2019,6 +2082,14 @@ static int qxl_post_load(void *opaque, int version)
 }
 
 #define QXL_SAVE_VERSION 21
+
+static bool qxl_monitors_config_needed(void *opaque)
+{
+    PCIQXLDevice *qxl = opaque;
+
+    return qxl->guest_monitors_config != 0;
+}
+
 
 static VMStateDescription qxl_memslot = {
     .name               = "qxl-memslot",
@@ -2050,6 +2121,16 @@ static VMStateDescription qxl_surface = {
     }
 };
 
+static VMStateDescription qxl_vmstate_monitors_config = {
+    .name               = "qxl/monitors-config",
+    .version_id         = 1,
+    .minimum_version_id = 1,
+    .fields = (VMStateField[]) {
+        VMSTATE_UINT64(guest_monitors_config, PCIQXLDevice),
+        VMSTATE_END_OF_LIST()
+    },
+};
+
 static VMStateDescription qxl_vmstate = {
     .name               = "qxl",
     .version_id         = QXL_SAVE_VERSION,
@@ -2057,7 +2138,7 @@ static VMStateDescription qxl_vmstate = {
     .pre_save           = qxl_pre_save,
     .pre_load           = qxl_pre_load,
     .post_load          = qxl_post_load,
-    .fields = (VMStateField []) {
+    .fields = (VMStateField[]) {
         VMSTATE_PCI_DEVICE(pci, PCIQXLDevice),
         VMSTATE_STRUCT(vga, PCIQXLDevice, 0, vmstate_vga_common, VGACommonState),
         VMSTATE_UINT32(shadow_rom.mode, PCIQXLDevice),
@@ -2076,6 +2157,14 @@ static VMStateDescription qxl_vmstate = {
         VMSTATE_UINT64(guest_cursor, PCIQXLDevice),
         VMSTATE_END_OF_LIST()
     },
+    .subsections = (VMStateSubsection[]) {
+        {
+            .vmsd = &qxl_vmstate_monitors_config,
+            .needed = qxl_monitors_config_needed,
+        }, {
+            /* empty */
+        }
+    }
 };
 
 static PCIDeviceInfo qxl_info_primary = {
