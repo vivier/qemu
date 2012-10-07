@@ -66,6 +66,8 @@ typedef struct PCIQXLDevice {
     } guest_surfaces;
     QXLPHYSICAL        guest_cursor;
 
+    QXLPHYSICAL        guest_monitors_config;
+
     QemuMutex          track_lock;
 
     /* thread signaling */
