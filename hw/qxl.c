@@ -144,6 +144,7 @@ static void qxl_ring_set_dirty(PCIQXLDevice *qxl);
 void qxl_set_guest_bug(PCIQXLDevice *qxl, const char *msg, ...)
 {
     qxl_send_events(qxl, QXL_INTERRUPT_ERROR);
+    qxl->guest_bug = 1;
     if (qxl->guestdebug) {
         va_list ap;
         va_start(ap, msg);
@@ -154,6 +155,10 @@ void qxl_set_guest_bug(PCIQXLDevice *qxl, const char *msg, ...)
     }
 }
 
+static void qxl_clear_guest_bug(PCIQXLDevice *qxl)
+{
+    qxl->guest_bug = 0;
+}
 
 void qxl_spice_update_area(PCIQXLDevice *qxl, uint32_t surface_id,
                            struct QXLRect *area, struct QXLRect *dirty_rects,
@@ -581,7 +586,7 @@ static int interface_get_command(QXLInstance *sin, struct QXLCommandExt *ext)
     case QXL_MODE_NATIVE:
     case QXL_MODE_UNDEFINED:
         ring = &qxl->ram->cmd_ring;
-        if (SPICE_RING_IS_EMPTY(ring)) {
+        if (qxl->guest_bug || SPICE_RING_IS_EMPTY(ring)) {
             return false;
         }
         SPICE_RING_CONS_ITEM(qxl, ring, cmd);
@@ -1025,6 +1030,7 @@ static void qxl_soft_reset(PCIQXLDevice *d)
 {
     trace_qxl_soft_reset(d->id);
     qxl_check_state(d);
+    qxl_clear_guest_bug(d);
 
     if (d->id == 0) {
         qxl_enter_vga_mode(d);
@@ -1324,6 +1330,10 @@ static void ioport_write(void *opaque, uint32_t addr, uint32_t val)
     uint32_t io_port = addr - d->io_base;
     qxl_async_io async = QXL_SYNC;
     uint32_t orig_io_port = io_port;
+
+    if (d->guest_bug && !io_port == QXL_IO_RESET) {
+        return;
+    }
 
     switch (io_port) {
     case QXL_IO_RESET:
@@ -1781,6 +1791,7 @@ static int qxl_init_common(PCIQXLDevice *qxl)
     qemu_mutex_init(&qxl->track_lock);
     qemu_mutex_init(&qxl->async_lock);
     qxl->current_async = QXL_UNDEFINED_IO;
+    qxl->guest_bug = 0;
 
     switch (qxl->revision) {
     case 1: /* spice 0.4 -- qxl-1 */
