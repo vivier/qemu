@@ -2042,6 +2042,8 @@ EOF
     spice="yes"
     libs_softmmu="$libs_softmmu $spice_libs"
     QEMU_CFLAGS="$QEMU_CFLAGS $spice_cflags"
+    spice_protocol_version=$($pkg_config --modversion spice-protocol)
+    spice_server_version=$($pkg_config --modversion spice-server)
     if $pkg_config --atleast-version=0.12.0 spice-protocol >/dev/null 2>&1; then
         spice_qxl_io_monitors_config_async="yes"
     fi
@@ -2306,7 +2308,7 @@ echo "uuid support      $uuid"
 echo "vhost-net support $vhost_net"
 echo "-fake-machine     $fake_machine"
 echo "Trace backend     $trace_backend"
-echo "spice support     $spice"
+echo "spice support     $spice ($spice_protocol_version/$spice_server_version)"
 echo "nss used          $smartcard_nss"
 echo "Live snapshots    $live_snapshots"
 echo "Block streaming   $block_stream"
