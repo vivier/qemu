@@ -388,6 +388,7 @@
 #define CPUID_EXT_TM2      (1 << 8)
 #define CPUID_EXT_SSSE3    (1 << 9)
 #define CPUID_EXT_CID      (1 << 10)
+#define CPUID_EXT_FMA      (1 << 12)
 #define CPUID_EXT_CX16     (1 << 13)
 #define CPUID_EXT_XTPR     (1 << 14)
 #define CPUID_EXT_PDCM     (1 << 15)
@@ -447,7 +448,18 @@
 #define CPUID_EXT3_SKINIT  (1 << 12)
 #define CPUID_EXT3_FMA4    (1 << 16)
 
+
+#define CPUID_7_0_EBX_FSGSBASE (1 << 0)
+#define CPUID_7_0_EBX_BMI1     (1 << 3)
+#define CPUID_7_0_EBX_HLE      (1 << 4)
+#define CPUID_7_0_EBX_AVX2     (1 << 5)
 #define CPUID_7_0_EBX_SMEP     (1 << 7)
+#define CPUID_7_0_EBX_BMI2     (1 << 8)
+#define CPUID_7_0_EBX_ERMS     (1 << 9)
+#define CPUID_7_0_EBX_INVPCID  (1 << 10)
+#define CPUID_7_0_EBX_RTM      (1 << 11)
+#define CPUID_7_0_EBX_RDSEED   (1 << 18)
+#define CPUID_7_0_EBX_ADX      (1 << 19)
 #define CPUID_7_0_EBX_SMAP     (1 << 20)
 
 #define CPUID_VENDOR_INTEL_1 0x756e6547 /* "Genu" */
