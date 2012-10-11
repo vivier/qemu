@@ -1744,7 +1744,7 @@ static int do_memory_save(Monitor *mon, const QDict *qdict, QObject **ret_data)
 
     f = fopen(filename, "wb");
     if (!f) {
-        qerror_report(QERR_OPEN_FILE_FAILED, filename);
+        qerror_report(QERR_OPEN_FILE_FAILED, filename, "");
         return -1;
     }
     while (size != 0) {
@@ -1780,7 +1780,7 @@ static int do_physical_memory_save(Monitor *mon, const QDict *qdict,
 
     f = fopen(filename, "wb");
     if (!f) {
-        qerror_report(QERR_OPEN_FILE_FAILED, filename);
+        qerror_report(QERR_OPEN_FILE_FAILED, filename, "");
         return -1;
     }
     while (size != 0) {
