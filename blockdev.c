@@ -1147,6 +1147,7 @@ int do_change_block(Monitor *mon, const char *device,
     BlockDriverState *bs;
     BlockDriver *drv = NULL;
     int bdrv_flags;
+    int ret;
 
     bs = bdrv_find(device);
     if (!bs) {
@@ -1165,8 +1166,9 @@ int do_change_block(Monitor *mon, const char *device,
     }
     bdrv_flags = bdrv_get_type_hint(bs) == BDRV_TYPE_CDROM ? 0 : BDRV_O_RDWR;
     bdrv_flags |= bdrv_is_snapshot(bs) ? BDRV_O_SNAPSHOT : 0;
-    if (bdrv_open(bs, filename, bdrv_flags, drv)) {
-        qerror_report(QERR_OPEN_FILE_FAILED, filename, "");
+    ret = bdrv_open(bs, filename, bdrv_flags, drv);
+    if (ret < 0) {
+        qerror_report(QERR_OPEN_FILE_FAILED, filename, strerror(-ret));
         return -1;
     }
     return monitor_read_bdrv_key_start(mon, bs, NULL, NULL);
