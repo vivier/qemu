@@ -992,7 +992,8 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
         }
 
         if (ret) {
-            error_set(errp, QERR_OPEN_FILE_FAILED, new_image_file, "");
+            error_set(errp, QERR_OPEN_FILE_FAILED, new_image_file,
+                      strerror(-ret));
             goto delete_and_fail;
         }
 
@@ -1022,7 +1023,8 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
         }
 
         if (ret != 0) {
-            error_set(errp, QERR_OPEN_FILE_FAILED, new_image_file, "");
+            error_set(errp, QERR_OPEN_FILE_FAILED, new_image_file,
+                      strerror(-ret));
             goto delete_and_fail;
         }
     }
