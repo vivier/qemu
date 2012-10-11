@@ -769,11 +769,14 @@ void qmp___com_redhat_drive_reopen(const char *device, const char *new_image_fil
      * are in serious trouble.
      */
     if (ret != 0) {
-        ret = bdrv_open(bs, old_filename, flags, old_drv);
-        if (ret != 0) {
-            error_set(errp, QERR_OPEN_FILE_FAILED, old_filename, "");
+        int ret2;
+        ret2 = bdrv_open(bs, old_filename, flags, old_drv);
+        if (ret2 != 0) {
+            error_set(errp, QERR_OPEN_FILE_FAILED, old_filename,
+                      strerror(-ret2));
         } else {
-            error_set(errp, QERR_OPEN_FILE_FAILED, new_image_file, "");
+            error_set(errp, QERR_OPEN_FILE_FAILED, new_image_file,
+                      strerror(-ret));
         }
     }
 }
