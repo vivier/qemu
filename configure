@@ -2037,8 +2037,8 @@ int main(void) { spice_server_new(); return 0; }
 EOF
   spice_cflags=$(pkg-config --cflags spice-protocol spice-server 2>/dev/null)
   spice_libs=$(pkg-config --libs spice-protocol spice-server 2>/dev/null)
-  if pkg-config --atleast-version=0.8.2 spice-server >/dev/null 2>&1 && \
-     compile_prog "$spice_cflags" "$spice_libs" ; then
+  if pkg-config --atleast-version=0.12.0 spice-server >/dev/null 2>&1 && \
+     pkg-config --atleast-version=0.12.2 spice-protocol >/dev/null 2>&1; then
     spice="yes"
     libs_softmmu="$libs_softmmu $spice_libs"
     QEMU_CFLAGS="$QEMU_CFLAGS $spice_cflags"
