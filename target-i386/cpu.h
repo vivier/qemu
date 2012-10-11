@@ -447,6 +447,9 @@
 #define CPUID_EXT3_SKINIT  (1 << 12)
 #define CPUID_EXT3_FMA4    (1 << 16)
 
+#define CPUID_7_0_EBX_SMEP     (1 << 7)
+#define CPUID_7_0_EBX_SMAP     (1 << 20)
+
 #define CPUID_VENDOR_INTEL_1 0x756e6547 /* "Genu" */
 #define CPUID_VENDOR_INTEL_2 0x49656e69 /* "ineI" */
 #define CPUID_VENDOR_INTEL_3 0x6c65746e /* "ntel" */
@@ -729,7 +732,7 @@ typedef struct CPUX86State {
     uint32_t cpuid_ext2_features;
     uint32_t cpuid_ext3_features;
     /* Flags from CPUID[EAX=7,ECX=0].EBX */
-    uint32_t cpuid_7_0_ebx;
+    uint32_t cpuid_7_0_ebx_features;
     uint32_t cpuid_apic_id;
     /* Enables direct passthrough of PMU CPUID leaf (0xA) from the kernel */
     bool cpuid_pmu_passthrough;
