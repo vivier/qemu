@@ -771,9 +771,9 @@ void qmp___com_redhat_drive_reopen(const char *device, const char *new_image_fil
     if (ret != 0) {
         ret = bdrv_open(bs, old_filename, flags, old_drv);
         if (ret != 0) {
-            error_set(errp, QERR_OPEN_FILE_FAILED, old_filename);
+            error_set(errp, QERR_OPEN_FILE_FAILED, old_filename, "");
         } else {
-            error_set(errp, QERR_OPEN_FILE_FAILED, new_image_file);
+            error_set(errp, QERR_OPEN_FILE_FAILED, new_image_file, "");
         }
     }
 }
@@ -992,7 +992,7 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
         }
 
         if (ret) {
-            error_set(errp, QERR_OPEN_FILE_FAILED, new_image_file);
+            error_set(errp, QERR_OPEN_FILE_FAILED, new_image_file, "");
             goto delete_and_fail;
         }
 
@@ -1022,7 +1022,7 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
         }
 
         if (ret != 0) {
-            error_set(errp, QERR_OPEN_FILE_FAILED, new_image_file);
+            error_set(errp, QERR_OPEN_FILE_FAILED, new_image_file, "");
             goto delete_and_fail;
         }
     }
@@ -1166,7 +1166,7 @@ int do_change_block(Monitor *mon, const char *device,
     bdrv_flags = bdrv_get_type_hint(bs) == BDRV_TYPE_CDROM ? 0 : BDRV_O_RDWR;
     bdrv_flags |= bdrv_is_snapshot(bs) ? BDRV_O_SNAPSHOT : 0;
     if (bdrv_open(bs, filename, bdrv_flags, drv)) {
-        qerror_report(QERR_OPEN_FILE_FAILED, filename);
+        qerror_report(QERR_OPEN_FILE_FAILED, filename, "");
         return -1;
     }
     return monitor_read_bdrv_key_start(mon, bs, NULL, NULL);

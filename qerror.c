@@ -191,7 +191,7 @@ static const QErrorStringTable qerror_table[] = {
     },
     {
         .error_fmt = QERR_OPEN_FILE_FAILED,
-        .desc      = "Could not open '%(filename)'",
+        .desc      = "Could not open '%(filename)': %(__com.redhat_error_message)",
     },
     {
         .error_fmt = QERR_PROPERTY_NOT_FOUND,

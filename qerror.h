@@ -164,7 +164,7 @@ QError *qobject_to_qerror(const QObject *obj);
     "{ 'class': 'NotSupported', 'data': {} }"
 
 #define QERR_OPEN_FILE_FAILED \
-    "{ 'class': 'OpenFileFailed', 'data': { 'filename': %s } }"
+    "{ 'class': 'OpenFileFailed', 'data': { 'filename': %s, '__com.redhat_error_message': %s } }"
 
 #define QERR_PROPERTY_NOT_FOUND \
     "{ 'class': 'PropertyNotFound', 'data': { 'device': %s, 'property': %s } }"

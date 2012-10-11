@@ -135,7 +135,7 @@ int64_t qmp_guest_file_open(const char *path, bool has_mode, const char *mode, E
     slog("guest-file-open called, filepath: %s, mode: %s", path, mode);
     fh = fopen(path, mode);
     if (!fh) {
-        error_set(err, QERR_OPEN_FILE_FAILED, path);
+        error_set(err, QERR_OPEN_FILE_FAILED, path, "");
         return -1;
     }
 
