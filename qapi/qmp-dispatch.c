@@ -109,6 +109,14 @@ static QObject *do_qmp_dispatch(QObject *request, Error **errp)
     return ret;
 }
 
+QObject *qmp_build_error_object(Error *errp)
+{
+    return qobject_from_jsonf("{ 'class': %s, 'desc': %s, 'data': %p }",
+                              error_get_field(errp, "class"),
+                              error_get_pretty(errp),
+                              error_get_data(errp));
+}
+
 QObject *qmp_dispatch(QObject *request)
 {
     Error *err = NULL;
@@ -119,7 +127,7 @@ QObject *qmp_dispatch(QObject *request)
 
     rsp = qdict_new();
     if (err) {
-        qdict_put_obj(rsp, "error", error_get_qobject(err));
+        qdict_put_obj(rsp, "error", qmp_build_error_object(err));
         error_free(err);
     } else if (ret) {
         qdict_put_obj(rsp, "return", ret);
