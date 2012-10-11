@@ -1566,6 +1566,14 @@ static void rhel_common_init(const char *type1_version,
             .driver   = "USB",\
             .property = "create_unique_serial",\
             .value    = "0",\
+        },{\
+            .driver   = "qxl-vga",\
+            .property = "revision",\
+            .value    = stringify(3),\
+        },{\
+            .driver   = "qxl",\
+            .property = "revision",\
+            .value    = stringify(3),\
         }
 
 #define PC_RHEL6_2_COMPAT \
