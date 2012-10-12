@@ -1896,6 +1896,16 @@ Enable KVM full virtualization support. This option is only available
 if KVM support is enabled when compiling.
 ETEXI
 
+DEF("machine", HAS_ARG, QEMU_OPTION_machine, \
+    "-machine accel=accel1[:accel2]    use an accelerator (kvm,tcg), default is kvm:tcg\n")
+STEXI
+@item -machine accel=@var{accels}
+@findex -machine
+This is use to enable an accelerator, in kvm,tcg.
+By default, it use only kvm. If there a more than one accelerator
+specified, the next one is used if the first don't work.
+ETEXI
+
 #ifdef CONFIG_XEN
 DEF("xen-domid", HAS_ARG, QEMU_OPTION_xen_domid,
     "-xen-domid id   specify xen guest domain id\n")
