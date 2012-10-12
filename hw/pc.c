@@ -1567,6 +1567,14 @@ static void rhel_common_init(const char *type1_version,
             .property = "create_unique_serial",\
             .value    = "0",\
         },{\
+            .driver   = "virtio-scsi-pci",\
+            .property = "hotplug",\
+            .value    = "off",\
+        },{\
+            .driver   = "virtio-scsi-pci",\
+            .property = "param_change",\
+            .value    = "off",\
+        },{\
             .driver   = "qxl-vga",\
             .property = "revision",\
             .value    = stringify(3),\
