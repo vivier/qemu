@@ -143,8 +143,23 @@ static int scsi_qdev_init(DeviceState *qdev, DeviceInfo *base)
                                                          dev);
     }
 
+    if (bus->info->hotplug) {
+        bus->info->hotplug(bus, dev);
+    }
+
 err:
     return rc;
+}
+
+static int scsi_qdev_unplug(DeviceState *qdev)
+{
+    SCSIDevice *dev = DO_UPCAST(SCSIDevice, qdev, qdev);
+    SCSIBus *bus = DO_UPCAST(SCSIBus, qbus, dev->qdev.parent_bus);
+
+    if (bus->info->hot_unplug) {
+        bus->info->hot_unplug(bus, dev);
+    }
+    return qdev_simple_unplug_cb(qdev);
 }
 
 static int scsi_qdev_exit(DeviceState *qdev)
@@ -164,7 +179,7 @@ void scsi_qdev_register(SCSIDeviceInfo *info)
 {
     info->qdev.bus_info = &scsi_bus_info;
     info->qdev.init     = scsi_qdev_init;
-    info->qdev.unplug   = qdev_simple_unplug_cb;
+    info->qdev.unplug   = scsi_qdev_unplug;
     info->qdev.exit     = scsi_qdev_exit;
     qdev_register(&info->qdev);
 }
