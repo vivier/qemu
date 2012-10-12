@@ -43,10 +43,10 @@ static const char *feature_name[] = {
     "ht" /* Intel htt */, "tm", "ia64", "pbe",
 };
 static const char *ext_feature_name[] = {
-    "pni|sse3" /* Intel,AMD sse3 */, "pclmulqdq|pclmuldq", NULL, "monitor",
-    "ds_cpl", "vmx", NULL /* Linux smx */, "est",
+    "pni|sse3" /* Intel,AMD sse3 */, "pclmulqdq|pclmuldq", "dtes64", "monitor",
+    "ds_cpl", "vmx", "smx", "est",
     "tm2", "ssse3", "cid", NULL,
-    NULL, "cx16", "xtpr", NULL,
+    "fma", "cx16", "xtpr", "pdcm",
     NULL, NULL, "dca", "sse4.1|sse4_1",
     "sse4.2|sse4_2", "x2apic", "movbe", "popcnt",
     "tsc-deadline", "aes", "xsave", "osxsave",
@@ -65,9 +65,9 @@ static const char *ext2_feature_name[] = {
 static const char *ext3_feature_name[] = {
     "lahf_lm" /* AMD LahfSahf */, "cmp_legacy", "svm", "extapic" /* AMD ExtApicSpace */,
     "cr8legacy" /* AMD AltMovCr8 */, "abm", "sse4a", "misalignsse",
-    "3dnowprefetch", "osvw", NULL, "xop",
+    "3dnowprefetch", "osvw", "ibs", "xop",
     "skinit", "wdt", NULL, NULL,
-    "fma4", NULL, NULL, NULL,
+    "fma4", NULL, "cvt16", "nodeid_msr",
     NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,
