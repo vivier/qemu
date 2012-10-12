@@ -5730,12 +5730,10 @@ int main(int argc, char **argv, char **envp)
 #ifdef CONFIG_KVM
             case QEMU_OPTION_enable_kvm:
                 olist = qemu_find_opts("machine");
-                qemu_opts_reset(olist);
                 qemu_opts_parse(olist, "accel=kvm", 0);
                 break;
             case QEMU_OPTION_no_kvm:
                 olist = qemu_find_opts("machine");
-                qemu_opts_reset(olist);
                 qemu_opts_parse(olist, "accel=tcg", 0);
                 break;
 	    case QEMU_OPTION_no_kvm_irqchip: {
@@ -5768,7 +5766,6 @@ int main(int argc, char **argv, char **envp)
 #endif
             case QEMU_OPTION_machine:
                 olist = qemu_find_opts("machine");
-                qemu_opts_reset(olist);
                 opts = qemu_opts_parse(olist, optarg, 1);
                 if (!opts) {
                     fprintf(stderr, "parse error: %s\n", optarg);
