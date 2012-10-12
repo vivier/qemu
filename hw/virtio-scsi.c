@@ -411,6 +411,10 @@ static void virtio_scsi_handle_ctrl(VirtIODevice *vdev, VirtQueue *vq)
     }
 }
 
+static void virtio_scsi_handle_event(VirtIODevice *vdev, VirtQueue *vq)
+{
+}
+
 static void virtio_scsi_command_complete(SCSIRequest *r, uint32_t status,
                                          int32_t resid)
 {
@@ -613,7 +617,7 @@ VirtIODevice *virtio_scsi_init(DeviceState *dev, VirtIOSCSIConf *proxyconf)
     s->ctrl_vq = virtio_add_queue(&s->vdev, VIRTIO_SCSI_VQ_SIZE,
                                    virtio_scsi_handle_ctrl);
     s->event_vq = virtio_add_queue(&s->vdev, VIRTIO_SCSI_VQ_SIZE,
-                                   NULL);
+                                   virtio_scsi_handle_event);
     s->cmd_vq = virtio_add_queue(&s->vdev, VIRTIO_SCSI_VQ_SIZE,
                                    virtio_scsi_handle_cmd);
 
