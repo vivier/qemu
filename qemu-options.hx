@@ -1897,13 +1897,20 @@ if KVM support is enabled when compiling.
 ETEXI
 
 DEF("machine", HAS_ARG, QEMU_OPTION_machine, \
-    "-machine accel=accel1[:accel2]    use an accelerator (kvm,tcg), default is kvm:tcg\n")
+    "-machine [type=]name[,prop[=value][,...]]\n"
+    "                selects emulated machine (-machine ? for list)\n"
+    "                property accel=accel1[:accel2[:...]] selects accelerator\n"
+    "                supported accelerators are kvm, tcg (default: kvm:tcg)\n")
 STEXI
-@item -machine accel=@var{accels}
+@item -machine [type=]@var{name}[,prop=@var{value}[,...]]
 @findex -machine
-This is use to enable an accelerator, in kvm,tcg.
-By default, it use only kvm. If there a more than one accelerator
-specified, the next one is used if the first don't work.
+Select the emulated machine by @var{name}. Use @code{-machine ?} to list
+available machines. Supported machine properties are:
+@table @option
+@item accel=@var{accels1}[:@var{accels2}[:...]]
+This is used to enable an accelerator. Depending on the target architecture,
+kvm or tcg can be available. By default, kvm is used if available, else tcg.
+@end table
 ETEXI
 
 #ifdef CONFIG_XEN
