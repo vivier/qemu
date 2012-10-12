@@ -1900,7 +1900,8 @@ DEF("machine", HAS_ARG, QEMU_OPTION_machine, \
     "-machine [type=]name[,prop[=value][,...]]\n"
     "                selects emulated machine (-machine ? for list)\n"
     "                property accel=accel1[:accel2[:...]] selects accelerator\n"
-    "                supported accelerators are kvm, tcg (default: kvm:tcg)\n")
+    "                supported accelerators are kvm, tcg (default: kvm:tcg)\n"
+    "                dump-guest-core=on|off include guest memory in a core dump (default=on)\n")
 STEXI
 @item -machine [type=]@var{name}[,prop=@var{value}[,...]]
 @findex -machine
@@ -1910,6 +1911,8 @@ available machines. Supported machine properties are:
 @item accel=@var{accels1}[:@var{accels2}[:...]]
 This is used to enable an accelerator. Depending on the target architecture,
 kvm or tcg can be available. By default, kvm is used if available, else tcg.
+@item dump-guest-core=on|off
+Include guest memory in a core dump. The default is on.
 @end table
 ETEXI
 
