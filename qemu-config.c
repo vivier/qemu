@@ -433,6 +433,10 @@ static QemuOptsList qemu_machine_opts = {
             .name = "accel",
             .type = QEMU_OPT_STRING,
             .help = "accelerator list",
+        }, {
+            .name = "dump-guest-core",
+            .type = QEMU_OPT_BOOL,
+            .help = "Include guest memory in  a core dump",
         },
         { /* End of list */ }
     },
