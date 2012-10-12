@@ -693,12 +693,17 @@ QemuOpts *qemu_opts_create(QemuOptsList *list, const char *id, int fail_if_exist
     if (id) {
         opts = qemu_opts_find(list, id);
         if (opts != NULL) {
-            if (fail_if_exists) {
+            if (fail_if_exists && !list->merge_lists) {
                 qerror_report(QERR_DUPLICATE_ID, id, list->name);
                 return NULL;
             } else {
                 return opts;
             }
+        }
+    } else if (list->merge_lists) {
+        opts = qemu_opts_find(list, NULL);
+        if (opts) {
+            return opts;
         }
     }
     opts = qemu_mallocz(sizeof(*opts));
