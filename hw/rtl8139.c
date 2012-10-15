@@ -162,7 +162,7 @@ enum IntrStatusBits {
     PCIErr = 0x8000,
     PCSTimeout = 0x4000,
     RxFIFOOver = 0x40,
-    RxUnderrun = 0x20,
+    RxUnderrun = 0x20, /* Packet Underrun / Link Change */
     RxOverflow = 0x10,
     TxErr = 0x08,
     TxOK = 0x04,
@@ -2914,7 +2914,8 @@ static uint32_t rtl8139_io_readb(void *opaque, uint8_t addr)
             break;
 
         case MediaStatus:
-            ret = 0xd0;
+            /* The LinkDown bit of MediaStatus is inverse with link status */
+            ret = 0xd0 | (~s->BasicModeStatus & 0x04);
             DEBUG_PRINT(("RTL8139: MediaStatus read 0x%x\n", ret));
             break;
 
@@ -3179,6 +3180,10 @@ static int rtl8139_post_load(void *opaque, int version_id)
         s->cplus_enabled = s->CpCmd != 0;
     }
 
+    /* nc.link_down can't be migrated, so infer link_down according
+     * to link status bit in BasicModeStatus */
+    s->nic->nc.link_down = (s->BasicModeStatus & 0x04) == 0;
+
     return 0;
 }
 
@@ -3409,12 +3414,27 @@ static int pci_rtl8139_uninit(PCIDevice *dev)
     return 0;
 }
 
+static void rtl8139_set_link_status(VLANClientState *nc)
+{
+    RTL8139State *s = DO_UPCAST(NICState, nc, nc)->opaque;
+
+    if (nc->link_down) {
+        s->BasicModeStatus &= ~0x04;
+    } else {
+        s->BasicModeStatus |= 0x04;
+    }
+
+    s->IntrStatus |= RxUnderrun;
+    rtl8139_update_irq(s);
+}
+
 static NetClientInfo net_rtl8139_info = {
     .type = NET_CLIENT_TYPE_NIC,
     .size = sizeof(NICState),
     .can_receive = rtl8139_can_receive,
     .receive = rtl8139_receive,
     .cleanup = rtl8139_cleanup,
+    .link_status_changed = rtl8139_set_link_status,
 };
 
 static int pci_rtl8139_init(PCIDevice *dev)
