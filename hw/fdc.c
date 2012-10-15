@@ -649,8 +649,9 @@ static CPUWriteMemoryFunc * const fdctrl_mem_write_strict[3] = {
 
 static bool fdrive_media_changed_needed(void *opaque)
 {
-    /* Do not send the subsection to maintain the compatibility */
-    return 0;
+    fdrive_t *drive = opaque;
+
+    return (drive->bs != NULL && drive->media_changed != 1);
 }
 
 static const VMStateDescription vmstate_fdrive_media_changed = {
@@ -659,7 +660,7 @@ static const VMStateDescription vmstate_fdrive_media_changed = {
     .minimum_version_id = 1,
     .minimum_version_id_old = 1,
     .fields      = (VMStateField[]) {
-        VMSTATE_UNUSED(1), /* for compatibility */
+        VMSTATE_UINT8(media_changed, fdrive_t),
         VMSTATE_END_OF_LIST()
     }
 };
