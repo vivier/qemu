@@ -1037,13 +1037,6 @@ void kvm_arch_load_regs(CPUState *env)
 	    set_seg(&sregs.fs, &env->segs[R_FS]);
 	    set_seg(&sregs.gs, &env->segs[R_GS]);
 	    set_seg(&sregs.ss, &env->segs[R_SS]);
-
-	    if (env->cr[0] & CR0_PE_MASK) {
-		/* force ss cpl to cs cpl */
-		sregs.ss.selector = (sregs.ss.selector & ~3) |
-			(sregs.cs.selector & 3);
-		sregs.ss.dpl = sregs.ss.selector & 3;
-	    }
     }
 
     set_seg(&sregs.tr, &env->tr);
