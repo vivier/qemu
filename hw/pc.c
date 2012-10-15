@@ -1582,6 +1582,10 @@ static void rhel_common_init(const char *type1_version,
             .driver   = "qxl",\
             .property = "revision",\
             .value    = stringify(3),\
+        },{\
+            .driver   = "isa-fdc",\
+            .property = "migrate_dir",\
+            .value    = "0",\
         }
 
 #define PC_RHEL6_2_COMPAT \

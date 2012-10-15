@@ -34,6 +34,7 @@
 #include "sysbus.h"
 #include "qdev-addr.h"
 #include "sysemu.h"
+#include "block_int.h"
 
 /********************************************************/
 /* debug Floppy devices */
@@ -82,6 +83,7 @@ typedef enum fdisk_flags_t {
 
 typedef struct fdrive_t {
     BlockDriverState *bs;
+    fdctrl_t *fdctrl;
     /* Drive status */
     fdrive_type_t drive;
     uint8_t perpendicular;    /* 2.88 MB access mode    */
@@ -503,6 +505,7 @@ struct fdctrl_t {
     uint8_t status0;
     uint8_t status1;
     uint8_t status2;
+    uint8_t migrate_dir;
     /* Command FIFO */
     uint8_t *fifo;
     int32_t fifo_size;
@@ -651,7 +654,11 @@ static bool fdrive_media_changed_needed(void *opaque)
 {
     fdrive_t *drive = opaque;
 
-    return (drive->bs != NULL && drive->media_changed != 1);
+    if (drive->fdctrl->migrate_dir) {
+        return (drive->bs != NULL && drive->media_changed != 1);
+    }
+
+    return 0;
 }
 
 static const VMStateDescription vmstate_fdrive_media_changed = {
@@ -1922,6 +1929,7 @@ static void fdctrl_connect_drives(fdctrl_t *fdctrl)
 
     for (i = 0; i < MAX_FD; i++) {
         drive = &fdctrl->drives[i];
+        drive->fdctrl = fdctrl;
 
         fd_init(drive);
         fdctrl_change_cb(drive, 0);
@@ -2104,6 +2112,7 @@ static ISADeviceInfo isa_fdc_info = {
         DEFINE_PROP_DRIVE("driveB", fdctrl_isabus_t, state.drives[1].bs),
         DEFINE_PROP_INT32("bootindexA", fdctrl_isabus_t, bootindexA, -1),
         DEFINE_PROP_INT32("bootindexB", fdctrl_isabus_t, bootindexB, -1),
+        DEFINE_PROP_UINT8("migrate_dir", fdctrl_isabus_t, state.migrate_dir, 1),
         DEFINE_PROP_END_OF_LIST(),
     },
 };
