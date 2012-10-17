@@ -6,6 +6,7 @@
 #include "qemu-option.h"
 #include "qemu-coroutine.h"
 #include "qobject.h"
+#include "error.h"
 
 /* block.c */
 typedef struct BlockDriverInfo {
@@ -93,6 +94,15 @@ typedef enum {
     BDRV_IOS_MAX
 } BlockIOStatus;
 
+typedef QSIMPLEQ_HEAD(BlockReopenQueue, BlockReopenQueueEntry) BlockReopenQueue;
+
+typedef struct BDRVReopenState {
+    BlockDriverState *bs;
+    int flags;
+    void *opaque;
+} BDRVReopenState;
+
+
 void bdrv_iostatus_enable(BlockDriverState *bs);
 void bdrv_iostatus_reset(BlockDriverState *bs);
 void bdrv_iostatus_disable(BlockDriverState *bs);
@@ -124,6 +134,14 @@ void bdrv_delete(BlockDriverState *bs);
 int bdrv_file_open(BlockDriverState **pbs, const char *filename, int flags);
 int bdrv_open(BlockDriverState *bs, const char *filename, int flags,
               BlockDriver *drv);
+BlockReopenQueue *bdrv_reopen_queue(BlockReopenQueue *bs_queue,
+                                    BlockDriverState *bs, int flags);
+int bdrv_reopen_multiple(BlockReopenQueue *bs_queue, Error **errp);
+int bdrv_reopen(BlockDriverState *bs, int bdrv_flags, Error **errp);
+int bdrv_reopen_prepare(BDRVReopenState *reopen_state,
+                        BlockReopenQueue *queue, Error **errp);
+void bdrv_reopen_commit(BDRVReopenState *reopen_state);
+void bdrv_reopen_abort(BDRVReopenState *reopen_state);
 void bdrv_close(BlockDriverState *bs);
 int bdrv_attach_dev(BlockDriverState *bs, void *dev);
 void bdrv_attach_dev_nofail(BlockDriverState *bs, void *dev);
