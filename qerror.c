@@ -149,6 +149,10 @@ static const QErrorStringTable qerror_table[] = {
         .desc      = "Invalid parameter type, expected: %(expected)",
     },
     {
+        .error_fmt = QERR_INVALID_PARAMETER_COMBINATION,
+        .desc      = "Invalid parameter combination",
+    },
+    {
         .error_fmt = QERR_INVALID_PARAMETER_VALUE,
         .desc      = "Parameter '%(name)' expects %(expected)",
     },
