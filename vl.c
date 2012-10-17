@@ -1517,21 +1517,6 @@ static uint64_t qemu_next_deadline_dyntick(void)
 
 #ifndef _WIN32
 
-/* Sets a specific flag */
-static int fcntl_setfl(int fd, int flag)
-{
-    int flags;
-
-    flags = fcntl(fd, F_GETFL);
-    if (flags == -1)
-        return -errno;
-
-    if (fcntl(fd, F_SETFL, flags | flag) == -1)
-        return -errno;
-
-    return 0;
-}
-
 #if defined(__linux__)
 
 #define RTC_FREQ 1024
