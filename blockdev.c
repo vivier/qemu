@@ -1361,16 +1361,6 @@ void qmp___com_redhat_block_commit(const char *device,
         error_set(errp, QERR_DEVICE_NOT_FOUND, device);
         return;
     }
-    if (base && has_base) {
-        base_bs = bdrv_find_backing_image(bs, base);
-    } else {
-        base_bs = bdrv_find_base(bs);
-    }
-
-    if (base_bs == NULL) {
-        error_set(errp, QERR_BASE_NOT_FOUND, base ? base : "NULL");
-        return;
-    }
 
     /* default top_bs is the active layer */
     top_bs = bs;
@@ -1383,6 +1373,17 @@ void qmp___com_redhat_block_commit(const char *device,
 
     if (top_bs == NULL) {
         error_set(errp, QERR_TOP_NOT_FOUND, top ? top : "NULL");
+        return;
+    }
+
+    if (has_base && base) {
+        base_bs = bdrv_find_backing_image(top_bs, base);
+    } else {
+        base_bs = bdrv_find_base(top_bs);
+    }
+
+    if (base_bs == NULL) {
+        error_set(errp, QERR_BASE_NOT_FOUND, base ? base : "NULL");
         return;
     }
 
