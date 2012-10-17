@@ -127,6 +127,9 @@ QError *qobject_to_qerror(const QObject *obj);
 #define QERR_INVALID_PARAMETER \
     "{ 'class': 'InvalidParameter', 'data': { 'name': %s } }"
 
+#define QERR_INVALID_PARAMETER_COMBINATION \
+    "{ 'class': 'InvalidParameterCombination', 'data': {} }"
+
 #define QERR_INVALID_PARAMETER_TYPE \
     "{ 'class': 'InvalidParameterType', 'data': { 'name': %s,'expected': %s } }"
 
