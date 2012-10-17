@@ -51,6 +51,7 @@ typedef struct {
     uint32_t magic;
     uint32_t len;
 } QCowExtension;
+
 #define  QCOW2_EXT_MAGIC_END 0
 #define  QCOW2_EXT_MAGIC_BACKING_FORMAT 0xE2792ACA
 
@@ -364,6 +365,14 @@ static int qcow2_set_key(BlockDriverState *bs, const char *key)
         printf("\n");
     }
 #endif
+    return 0;
+}
+
+/* We have nothing to do for QCOW2 reopen, stubs just return
+ * success */
+static int qcow2_reopen_prepare(BDRVReopenState *state,
+                                BlockReopenQueue *queue, Error **errp)
+{
     return 0;
 }
 
@@ -1436,6 +1445,7 @@ static BlockDriver bdrv_qcow2 = {
     .bdrv_probe         = qcow2_probe,
     .bdrv_open          = qcow2_open,
     .bdrv_close         = qcow2_close,
+    .bdrv_reopen_prepare  = qcow2_reopen_prepare,
     .bdrv_create        = qcow2_create,
     .bdrv_co_is_allocated = qcow2_co_is_allocated,
     .bdrv_set_key       = qcow2_set_key,
