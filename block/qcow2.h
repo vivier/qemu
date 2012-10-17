@@ -88,6 +88,13 @@ typedef struct QCowSnapshot {
 struct Qcow2Cache;
 typedef struct Qcow2Cache Qcow2Cache;
 
+typedef struct Qcow2UnknownHeaderExtension {
+    uint32_t magic;
+    uint32_t len;
+    QLIST_ENTRY(Qcow2UnknownHeaderExtension) next;
+    uint8_t data[];
+} Qcow2UnknownHeaderExtension;
+
 typedef struct BDRVQcowState {
     int cluster_bits;
     int cluster_size;
@@ -126,6 +133,8 @@ typedef struct BDRVQcowState {
     int snapshots_size;
     int nb_snapshots;
     QCowSnapshot *snapshots;
+
+    QLIST_HEAD(, Qcow2UnknownHeaderExtension) unknown_header_ext;
 } BDRVQcowState;
 
 /* XXX: use std qcow open function ? */
