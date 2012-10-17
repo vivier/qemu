@@ -2968,6 +2968,22 @@ BlockDriverState *bdrv_find_backing_image(BlockDriverState *bs,
     return NULL;
 }
 
+BlockDriverState *bdrv_find_base(BlockDriverState *bs)
+{
+    BlockDriverState *curr_bs = NULL;
+
+    if (!bs) {
+        return NULL;
+    }
+
+    curr_bs = bs;
+
+    while (curr_bs->backing_hd) {
+        curr_bs = curr_bs->backing_hd;
+    }
+    return curr_bs;
+}
+
 #define NB_SUFFIXES 4
 
 char *get_human_readable_size(char *buf, int buf_size, int64_t size)
