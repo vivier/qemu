@@ -57,6 +57,10 @@ QError *qobject_to_qerror(const QObject *obj);
 
 #define QERR_BASE_NOT_FOUND \
     "{ 'class': 'BaseNotFound', 'data': { 'base': %s } }"
+
+#define QERR_BASE_NOT_REACHABLE \
+    "{ 'class': 'GenericError', 'data': { 'base': %s, 'top': %s } }"
+
 #define QERR_BUS_NOT_FOUND \
     "{ 'class': 'BusNotFound', 'data': { 'bus': %s } }"
 
@@ -198,6 +202,17 @@ QError *qobject_to_qerror(const QObject *obj);
 
 #define QERR_TOO_MANY_FILES \
     "{ 'class': 'TooManyFiles', 'data': {} }"
+
+#define QERR_TOP_AND_BASE_IDENTICAL \
+    "{ 'class': 'GenericError', 'data': {} }"
+
+/* Note: the extra space after the '}' and before the '"' is intentional
+ *       so that it is different from QERR_TOP_AND_BASE_IDENTICAL */
+#define QERR_TOP_IS_ACTIVE \
+    "{ 'class': 'GenericError', 'data': {} } "
+
+#define QERR_TOP_NOT_FOUND \
+    "{ 'class': 'GenericError', 'data': { 'top': %s } }"
 
 #define QERR_UNDEFINED_ERROR \
     "{ 'class': 'UndefinedError', 'data': {} }"
