@@ -1,0 +1,14 @@
+--- qemu-kvm-1.2.0/qemu-char.c~	2012-09-12 19:46:36.491936229 +0100
++++ qemu-kvm-1.2.0/qemu-char.c	2012-09-12 19:47:33.349972760 +0100
+@@ -2268,9 +2268,8 @@
+         }
+         return ret;
+     } else {
+-        /* (Re-)connect for unconnected writing */
+-        tcp_chr_connect(chr);
+-        return 0;
++        /* XXX: indicate an error ? */
++        return len;
+     }
+ }
+ 

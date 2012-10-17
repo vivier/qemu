@@ -1,0 +1,54 @@
+From 3efd9345ea643cf6f15776425213a92a442dd217 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Wed, 5 Sep 2012 15:56:57 +0200
+Subject: [PATCH 365/365] usb-redir: Add chardev open / close debug logging
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ hw/usb/redirect.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/hw/usb/redirect.c b/hw/usb/redirect.c
+index 812096e..b03c412 100644
+--- a/hw/usb/redirect.c
++++ b/hw/usb/redirect.c
+@@ -864,6 +864,7 @@ static void usbredir_chardev_close_bh(void *opaque)
+     usbredir_device_disconnect(dev);
+ 
+     if (dev->parser) {
++        DPRINTF("destroying usbredirparser\n");
+         usbredirparser_destroy(dev->parser);
+         dev->parser = NULL;
+     }
+@@ -879,6 +880,8 @@ static void usbredir_chardev_open(USBRedirDevice *dev)
+     usbredir_chardev_close_bh(dev);
+     qemu_bh_cancel(dev->chardev_close_bh);
+ 
++    DPRINTF("creating usbredirparser\n");
++
+     strcpy(version, "qemu usb-redir guest ");
+     pstrcat(version, sizeof(version), qemu_get_version());
+ 
+@@ -990,9 +993,11 @@ static void usbredir_chardev_event(void *opaque, int event)
+ 
+     switch (event) {
+     case CHR_EVENT_OPENED:
++        DPRINTF("chardev open\n");
+         usbredir_chardev_open(dev);
+         break;
+     case CHR_EVENT_CLOSED:
++        DPRINTF("chardev close\n");
+         qemu_bh_schedule(dev->chardev_close_bh);
+         break;
+     }
+@@ -1255,6 +1260,7 @@ static void usbredir_device_disconnect(void *priv)
+     qemu_del_timer(dev->attach_timer);
+ 
+     if (dev->dev.attached) {
++        DPRINTF("detaching device\n");
+         usb_device_detach(&dev->dev);
+         /*
+          * Delay next usb device attach to give the guest a chance to see
+-- 
+1.7.12
+

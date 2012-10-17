@@ -1,20 +1,23 @@
-From 618a5f8a10c69813dddd86d966ff1778f22ab456 Mon Sep 17 00:00:00 2001
+From 90a59d545ad6759c105b0bfcfca70f574482584f Mon Sep 17 00:00:00 2001
+Message-Id: <90a59d545ad6759c105b0bfcfca70f574482584f.1346162949.git.crobinso@redhat.com>
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 21:57:47 +0100
-Subject: [PATCH] char: Split out tcp socket close code in a separate function
+Subject: [PATCH 101/114] char: Split out tcp socket close code in a separate
+ function
 
 Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Signed-off-by: Cole Robinson <crobinso@redhat.com>
 ---
  qemu-char.c | 25 ++++++++++++++++---------
  1 file changed, 16 insertions(+), 9 deletions(-)
 
 diff --git a/qemu-char.c b/qemu-char.c
-index c2aaaee..132ac08 100644
+index 398baf1..8c53c05 100644
 --- a/qemu-char.c
 +++ b/qemu-char.c
-@@ -2141,6 +2141,21 @@ typedef struct {
+@@ -2143,6 +2143,21 @@ static void tcp_chr_accept(void *opaque);
  
- static void tcp_chr_accept(void *opaque);
+ static void tcp_chr_connect(void *opaque);
  
 +static void tcp_closed(void *opaque)
 +{
@@ -34,7 +37,7 @@ index c2aaaee..132ac08 100644
  static int tcp_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
  {
      TCPCharDriver *s = chr->opaque;
-@@ -2291,15 +2306,7 @@ static void tcp_chr_read(void *opaque)
+@@ -2302,15 +2317,7 @@ static void tcp_chr_read(void *opaque)
          len = s->max_size;
      size = tcp_chr_recv(chr, (void *)buf, len);
      if (size == 0) {

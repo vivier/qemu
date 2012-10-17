@@ -1,8 +1,11 @@
-From 8d1503b20a6a8f011b292c0f543acd98b4fc922e Mon Sep 17 00:00:00 2001
+From 1af0111d871f088f25e7854fe61302e1909ba4c4 Mon Sep 17 00:00:00 2001
+Message-Id: <1af0111d871f088f25e7854fe61302e1909ba4c4.1346162949.git.crobinso@redhat.com>
+In-Reply-To: <90a59d545ad6759c105b0bfcfca70f574482584f.1346162949.git.crobinso@redhat.com>
+References: <90a59d545ad6759c105b0bfcfca70f574482584f.1346162949.git.crobinso@redhat.com>
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 22:00:27 +0100
-Subject: [PATCH] char: Update send_all() to handle nonblocking chardev write
- requests
+Subject: [PATCH 105/114] char: Update send_all() to handle nonblocking
+ chardev write requests
 
 The send_all function is modified to return to the caller in case the
 driver cannot handle any more data.  It returns -EAGAIN or
@@ -15,6 +18,7 @@ Currently there's no driver or caller that supports this.  Future
 commits will add such capability.
 
 Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Signed-off-by: Cole Robinson <crobinso@redhat.com>
 ---
  net/socket.c  |  4 ++--
  qemu-char.c   | 69 +++++++++++++++++++++++++++++++++++++++++++++++++++++------
@@ -37,7 +41,7 @@ index c172c24..aa7c99e 100644
  
  static ssize_t net_socket_receive_dgram(NetClientState *nc, const uint8_t *buf, size_t size)
 diff --git a/qemu-char.c b/qemu-char.c
-index 1b70447..fbb6f5f 100644
+index 2c573fb..c2a3138 100644
 --- a/qemu-char.c
 +++ b/qemu-char.c
 @@ -508,7 +508,7 @@ static CharDriverState *qemu_chr_open_mux(CharDriverState *drv)
@@ -153,7 +157,7 @@ index 1b70447..fbb6f5f 100644
  }
  
  static int pty_chr_read_poll(void *opaque)
-@@ -2174,8 +2224,15 @@ static void tcp_closed(void *opaque)
+@@ -2176,8 +2226,15 @@ static void tcp_closed(void *opaque)
  static int tcp_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
  {
      TCPCharDriver *s = chr->opaque;
@@ -168,10 +172,10 @@ index 1b70447..fbb6f5f 100644
 +        }
 +        return ret;
      } else {
-         /* XXX: indicate an error ? */
-         return len;
+         /* (Re-)connect for unconnected writing */
+         tcp_chr_connect(chr);
 diff --git a/qemu_socket.h b/qemu_socket.h
-index 4689ff3..3d780ce 100644
+index 30ae6af..fc58c8d 100644
 --- a/qemu_socket.h
 +++ b/qemu_socket.h
 @@ -36,7 +36,7 @@ int qemu_accept(int s, struct sockaddr *addr, socklen_t *addrlen);

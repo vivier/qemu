@@ -1,0 +1,66 @@
+From fec70ddafe1632f40608ef6917760a7f946f278a Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Wed, 5 Sep 2012 12:07:10 +0200
+Subject: [PATCH 359/366] ehci: Walk async schedule before and after migration
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ hw/usb/hcd-ehci.c | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+diff --git a/hw/usb/hcd-ehci.c b/hw/usb/hcd-ehci.c
+index 6f48132..30d2b56 100644
+--- a/hw/usb/hcd-ehci.c
++++ b/hw/usb/hcd-ehci.c
+@@ -34,6 +34,7 @@
+ #include "monitor.h"
+ #include "trace.h"
+ #include "dma.h"
++#include "sysemu.h"
+ 
+ #define EHCI_DEBUG   0
+ 
+@@ -2558,6 +2559,32 @@ static int usb_ehci_post_load(void *opaque, int version_id)
+     return 0;
+ }
+ 
++static void usb_ehci_vm_state_change(void *opaque, int running, RunState state)
++{
++    EHCIState *ehci = opaque;
++
++    /*
++     * We don't migrate the EHCIQueue-s, instead we rebuild them for the
++     * schedule in guest memory. We must do the rebuilt ASAP, so that
++     * USB-devices which have async handled packages have a packet in the
++     * ep queue to match the completion with.
++     */
++    if (state == RUN_STATE_RUNNING) {
++        ehci_advance_async_state(ehci);
++    }
++
++    /*
++     * The schedule rebuilt from guest memory could cause the migration dest
++     * to miss a QH unlink, and fail to cancel packets, since the unlinked QH
++     * will never have existed on the destination. Therefor we must flush the
++     * async schedule on savevm to catch any not yet noticed unlinks.
++     */
++    if (state == RUN_STATE_SAVE_VM) {
++        ehci_advance_async_state(ehci);
++        ehci_queues_rip_unseen(ehci, 1);
++    }
++}
++
+ static const VMStateDescription vmstate_ehci = {
+     .name        = "ehci",
+     .version_id  = 2,
+@@ -2707,6 +2734,7 @@ static int usb_ehci_initfn(PCIDevice *dev)
+     usb_packet_init(&s->ipacket);
+ 
+     qemu_register_reset(ehci_reset, s);
++    qemu_add_vm_change_state_handler(usb_ehci_vm_state_change, s);
+ 
+     memory_region_init(&s->mem, "ehci", MMIO_SIZE);
+     memory_region_init_io(&s->mem_caps, &ehci_mmio_caps_ops, s,
+-- 
+1.7.12
+

@@ -1,0 +1,39 @@
+From 53adf697ca70ee8298b6abeb05ebf5a0ebebdc1c Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Wed, 29 Aug 2012 12:54:59 +0200
+Subject: [PATCH 337/366] xhci: add trace_usb_xhci_ep_set_dequeue
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/usb/hcd-xhci.c | 2 +-
+ trace-events      | 1 +
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/hw/usb/hcd-xhci.c b/hw/usb/hcd-xhci.c
+index ab32a7b..5cdaf76 100644
+--- a/hw/usb/hcd-xhci.c
++++ b/hw/usb/hcd-xhci.c
+@@ -1145,7 +1145,7 @@ static TRBCCode xhci_set_ep_dequeue(XHCIState *xhci, unsigned int slotid,
+         return CC_TRB_ERROR;
+     }
+ 
+-    DPRINTF("xhci_set_ep_dequeue(%d, %d, %016"PRIx64")\n", slotid, epid, pdequeue);
++    trace_usb_xhci_ep_set_dequeue(slotid, epid, pdequeue);
+     dequeue = xhci_mask64(pdequeue);
+ 
+     slot = &xhci->slots[slotid-1];
+diff --git a/trace-events b/trace-events
+index 27d59cd..a894689 100644
+--- a/trace-events
++++ b/trace-events
+@@ -323,6 +323,7 @@ usb_xhci_slot_evaluate(uint32_t slotid) "slotid %d"
+ usb_xhci_slot_reset(uint32_t slotid) "slotid %d"
+ usb_xhci_ep_enable(uint32_t slotid, uint32_t epid) "slotid %d, epid %d"
+ usb_xhci_ep_disable(uint32_t slotid, uint32_t epid) "slotid %d, epid %d"
++usb_xhci_ep_set_dequeue(uint32_t slotid, uint32_t epid, uint64_t param) "slotid %d, epid %d, ptr %016" PRIx64
+ usb_xhci_ep_kick(uint32_t slotid, uint32_t epid) "slotid %d, epid %d"
+ usb_xhci_ep_stop(uint32_t slotid, uint32_t epid) "slotid %d, epid %d"
+ usb_xhci_ep_reset(uint32_t slotid, uint32_t epid) "slotid %d, epid %d"
+-- 
+1.7.12
+

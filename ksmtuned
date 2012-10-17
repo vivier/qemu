@@ -28,7 +28,6 @@ debug() {
     fi
 }
 
-
 KSM_MONITOR_INTERVAL=${KSM_MONITOR_INTERVAL:-60}
 KSM_NPAGES_BOOST=${KSM_NPAGES_BOOST:-300}
 KSM_NPAGES_DECAY=${KSM_NPAGES_DECAY:--50}
@@ -72,7 +71,7 @@ committed_memory () {
     # calculate how much memory is committed to running qemu processes
     local progname
     progname=${1:-qemu-kvm}
-    ps -C "$progname" -o rsz | awk '{ sum += $1 }; END { print sum }'
+    ps -C "$progname" -o rsz= | awk '{ sum += $1 }; END { print sum }'
 }
 
 free_memory () {

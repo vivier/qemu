@@ -1,8 +1,11 @@
-From 7eab128ea16406bf450e0e53d9d629c290b317d7 Mon Sep 17 00:00:00 2001
+From 2fa4be9d3b84d214f4ea9da8513ef664f412ad09 Mon Sep 17 00:00:00 2001
+Message-Id: <2fa4be9d3b84d214f4ea9da8513ef664f412ad09.1346162949.git.crobinso@redhat.com>
+In-Reply-To: <90a59d545ad6759c105b0bfcfca70f574482584f.1346162949.git.crobinso@redhat.com>
+References: <90a59d545ad6759c105b0bfcfca70f574482584f.1346162949.git.crobinso@redhat.com>
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 22:02:47 +0100
-Subject: [PATCH] char: Equip the unix/tcp backend to handle nonblocking
- writes#
+Subject: [PATCH 106/114] char: Equip the unix/tcp backend to handle
+ nonblocking writes#
 
 Now that the infrastructure is in place to return -EAGAIN to callers,
 individual char drivers can set their update_fd_handlers() function to
@@ -13,12 +16,13 @@ A generic callback routine is used for unblocking writes and letting
 users of chardevs know that a driver became writable again.
 
 Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Signed-off-by: Cole Robinson <crobinso@redhat.com>
 ---
  qemu-char.c | 34 ++++++++++++++++++++++++++++++++++
  1 file changed, 34 insertions(+)
 
 diff --git a/qemu-char.c b/qemu-char.c
-index fbb6f5f..cdc7f5c 100644
+index c2a3138..5e136fd 100644
 --- a/qemu-char.c
 +++ b/qemu-char.c
 @@ -106,6 +106,19 @@
@@ -41,7 +45,7 @@ index fbb6f5f..cdc7f5c 100644
  void qemu_chr_be_event(CharDriverState *s, int event)
  {
      /* Keep track if the char device is open */
-@@ -2493,6 +2506,25 @@ static void tcp_chr_close(CharDriverState *chr)
+@@ -2504,6 +2517,25 @@ static void tcp_chr_close(CharDriverState *chr)
      qemu_chr_be_event(chr, CHR_EVENT_CLOSED);
  }
  
@@ -67,7 +71,7 @@ index fbb6f5f..cdc7f5c 100644
  static CharDriverState *qemu_chr_open_socket(QemuOpts *opts)
  {
      CharDriverState *chr = NULL;
-@@ -2547,6 +2579,8 @@ static CharDriverState *qemu_chr_open_socket(QemuOpts *opts)
+@@ -2558,6 +2590,8 @@ static CharDriverState *qemu_chr_open_socket(QemuOpts *opts)
      chr->chr_close = tcp_chr_close;
      chr->get_msgfd = tcp_get_msgfd;
      chr->chr_add_client = tcp_chr_add_client;

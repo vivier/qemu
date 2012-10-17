@@ -1,0 +1,32 @@
+From 25968a7c7947b7e215e351b159a5f4ebf4609aab Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Tue, 4 Sep 2012 14:48:03 +0200
+Subject: [PATCH 354/366] xhci: allow bytewise capability register reads
+
+Some guests need this according to
+Alejandro Martinez Ruiz <alex@securiforest.com>
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+---
+ hw/usb/hcd-xhci.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/hw/usb/hcd-xhci.c b/hw/usb/hcd-xhci.c
+index 500892d..2918e64 100644
+--- a/hw/usb/hcd-xhci.c
++++ b/hw/usb/hcd-xhci.c
+@@ -2748,8 +2748,10 @@ static void xhci_doorbell_write(void *ptr, target_phys_addr_t reg,
+ 
+ static const MemoryRegionOps xhci_cap_ops = {
+     .read = xhci_cap_read,
+-    .valid.min_access_size = 4,
++    .valid.min_access_size = 1,
+     .valid.max_access_size = 4,
++    .impl.min_access_size = 4,
++    .impl.max_access_size = 4,
+     .endianness = DEVICE_LITTLE_ENDIAN,
+ };
+ 
+-- 
+1.7.12
+

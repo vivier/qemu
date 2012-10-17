@@ -1,18 +1,23 @@
-From 4ab66ef979faf3ad59fbf2bb8406117b657f966b Mon Sep 17 00:00:00 2001
+From 1980701650660459d35db0f956f536c8790e2056 Mon Sep 17 00:00:00 2001
+Message-Id: <1980701650660459d35db0f956f536c8790e2056.1346162949.git.crobinso@redhat.com>
+In-Reply-To: <90a59d545ad6759c105b0bfcfca70f574482584f.1346162949.git.crobinso@redhat.com>
+References: <90a59d545ad6759c105b0bfcfca70f574482584f.1346162949.git.crobinso@redhat.com>
 From: Amit Shah <amit.shah@redhat.com>
 Date: Mon, 21 Mar 2011 20:32:58 +0100
-Subject: [PATCH] iohandlers: Add enable/disable_write_fd_handler() functions
+Subject: [PATCH 103/114] iohandlers: Add enable/disable_write_fd_handler()
+ functions
 
 These will be used to provide a cleaner API for the nonblocking case.
 
 Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Signed-off-by: Cole Robinson <crobinso@redhat.com>
 ---
  iohandler.c | 35 +++++++++++++++++++++++++++++++++++
  main-loop.h |  3 +++
  2 files changed, 38 insertions(+)
 
 diff --git a/iohandler.c b/iohandler.c
-index 3c74de6..250fd0e 100644
+index dea4355..e663f83 100644
 --- a/iohandler.c
 +++ b/iohandler.c
 @@ -45,6 +45,41 @@ typedef struct IOHandlerRecord {

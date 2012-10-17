@@ -1,7 +1,10 @@
-From 6ed4b7c0b0ed061925036744f60e376194cd67a3 Mon Sep 17 00:00:00 2001
+From 452bc9fd704b7f51a63effb05c9283a9aaf7bc99 Mon Sep 17 00:00:00 2001
+Message-Id: <452bc9fd704b7f51a63effb05c9283a9aaf7bc99.1346162949.git.crobinso@redhat.com>
+In-Reply-To: <90a59d545ad6759c105b0bfcfca70f574482584f.1346162949.git.crobinso@redhat.com>
+References: <90a59d545ad6759c105b0bfcfca70f574482584f.1346162949.git.crobinso@redhat.com>
 From: Alon Levy <alevy@redhat.com>
 Date: Thu, 28 Jul 2011 15:08:48 +0300
-Subject: [PATCH] virtio-serial-bus: replay guest_open on migration
+Subject: [PATCH 112/114] virtio-serial-bus: replay guest_open on migration
 
 When migrating a host with with a spice agent running the mouse becomes
 non operational after the migration. This is rhbz #725965.
@@ -17,6 +20,7 @@ already carry the guest_connected state. This patch passes that bit to the
 chardev.
 
 Signed-off-by: Alon Levy <alevy@redhat.com>
+Signed-off-by: Cole Robinson <crobinso@redhat.com>
 ---
  hw/virtio-serial-bus.c | 6 ++++++
  1 file changed, 6 insertions(+)

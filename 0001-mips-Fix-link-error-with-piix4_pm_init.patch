@@ -1,4 +1,4 @@
-From 2852820d9d765141c9bae0f586c9b782258fb07d Mon Sep 17 00:00:00 2001
+From 4ba58730950a376dfb9f0424acb2b2cc3fbeda4f Mon Sep 17 00:00:00 2001
 From: Cole Robinson <crobinso@redhat.com>
 Date: Mon, 6 Aug 2012 17:12:40 -0400
 Subject: [PATCH] mips: Fix link error with 'piix4_pm_init'
@@ -7,6 +7,8 @@ Subject: [PATCH] mips: Fix link error with 'piix4_pm_init'
   LINK  m68k-softmmu/qemu-system-m68k
 hw/mips/../mips_malta.o: In function `mips_malta_init':
 /home/crobinso/qemu-kvm/hw/mips/../mips_malta.c:961: undefined reference to `piix4_pm_init'
+
+Signed-off-by: Cole Robinson <crobinso@redhat.com>
 ---
  hw/mips/Makefile.objs | 1 +
  1 file changed, 1 insertion(+)

@@ -1,7 +1,10 @@
-From 5b6e021bc56ffa305bfd68a23d7709df6856ec08 Mon Sep 17 00:00:00 2001
+From 682f29243b10ace00a42fed9920a94938abe2706 Mon Sep 17 00:00:00 2001
+Message-Id: <682f29243b10ace00a42fed9920a94938abe2706.1346162949.git.crobinso@redhat.com>
+In-Reply-To: <90a59d545ad6759c105b0bfcfca70f574482584f.1346162949.git.crobinso@redhat.com>
+References: <90a59d545ad6759c105b0bfcfca70f574482584f.1346162949.git.crobinso@redhat.com>
 From: Alon Levy <alevy@redhat.com>
 Date: Tue, 22 Mar 2011 12:28:00 +0200
-Subject: [PATCH] spice-qemu-char.c: remove intermediate buffer
+Subject: [PATCH 110/114] spice-qemu-char.c: remove intermediate buffer
 
 BZ: 672191
 upstream: not submitted (explained below)
@@ -15,6 +18,8 @@ Also make datalen int and not ssize_t (to fit spice_chr_write signature).
 
 This relied on the previous patch that introduces throttling, which
 can't go upstream right now as explained in that patch.
+
+Signed-off-by: Cole Robinson <crobinso@redhat.com>
 ---
  spice-qemu-char.c | 18 ++++++------------
  1 file changed, 6 insertions(+), 12 deletions(-)

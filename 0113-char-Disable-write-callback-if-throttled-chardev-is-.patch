@@ -1,7 +1,10 @@
-From 131729b07be897a363d8d769ecc056dabe2ed7da Mon Sep 17 00:00:00 2001
+From 34b7ca715ee45925b76fbeb23a24c16015adba33 Mon Sep 17 00:00:00 2001
+Message-Id: <34b7ca715ee45925b76fbeb23a24c16015adba33.1346162949.git.crobinso@redhat.com>
+In-Reply-To: <90a59d545ad6759c105b0bfcfca70f574482584f.1346162949.git.crobinso@redhat.com>
+References: <90a59d545ad6759c105b0bfcfca70f574482584f.1346162949.git.crobinso@redhat.com>
 From: Amit Shah <amit.shah@redhat.com>
 Date: Fri, 2 Dec 2011 15:42:55 +0530
-Subject: [PATCH] char: Disable write callback if throttled chardev is
+Subject: [PATCH 113/114] char: Disable write callback if throttled chardev is
  detached
 
 If a throttled chardev is detached from the frontend device, all future
@@ -11,12 +14,13 @@ Bugzilla: 745758
 Upstream: Not applicable, since throttling is a RHEL6-only feature.
 
 Signed-off-by: Amit Shah <amit.shah@redhat.com>
+Signed-off-by: Cole Robinson <crobinso@redhat.com>
 ---
  qemu-char.c | 5 +++++
  1 file changed, 5 insertions(+)
 
 diff --git a/qemu-char.c b/qemu-char.c
-index caa2efb..7f24878 100644
+index d86ee88..9defbec 100644
 --- a/qemu-char.c
 +++ b/qemu-char.c
 @@ -223,6 +223,11 @@ void qemu_chr_add_handlers(CharDriverState *s,
