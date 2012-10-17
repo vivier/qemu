@@ -351,7 +351,7 @@ static BlockDriverAIOCB *raw_aio_submit(BlockDriverState *bs,
      * boundary.  Check if this is the case or telll the low-level
      * driver that it needs to copy the buffer.
      */
-    if (s->aligned_buf && !qiov_is_aligned(bs, qiov)) {
+    if ((bs->open_flags & BDRV_O_NOCACHE) && !qiov_is_aligned(bs, qiov)) {
         type |= QEMU_AIO_MISALIGNED;
     }
 
