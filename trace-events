@@ -71,6 +71,8 @@ disable mirror_restart_iter(void *s, int64_t cnt) "s %p dirty count %"PRId64
 # block/stream.c
 disable stream_one_iteration(void *s, int64_t sector_num, int nb_sectors, int is_allocated) "s %p sector_num %"PRId64" nb_sectors %d is_allocated %d"
 disable stream_start(void *bs, void *base, void *s, void *co, void *opaque) "bs %p base %p s %p co %p opaque %p"
+disable commit_one_iteration(void *s, int64_t sector_num, int nb_sectors, int is_allocated) "s %p sector_num %"PRId64" nb_sectors %d is_allocated %d"
+disable commit_start(void *bs, void *base, void *top, void *s, void *co, void *opaque) "bs %p base %p top %p s %p co %p opaque %p"
 
 # blockdev.c
 disable do_block_job_cancel(void *job) "job %p"
