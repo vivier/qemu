@@ -1977,7 +1977,7 @@ static SCSIDeviceInfo scsi_disk_info[] = {
         .destroy      = scsi_destroy,
         .alloc_req    = scsi_block_new_request,
         .qdev.props   = (Property[]) {
-            DEFINE_SCSI_DISK_PROPERTIES(),
+            DEFINE_PROP_DRIVE("drive", SCSIDiskState, qdev.conf.bs),
             DEFINE_PROP_END_OF_LIST(),
         },
 #endif
