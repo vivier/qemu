@@ -1978,6 +1978,7 @@ static SCSIDeviceInfo scsi_disk_info[] = {
         .alloc_req    = scsi_block_new_request,
         .qdev.props   = (Property[]) {
             DEFINE_PROP_DRIVE("drive", SCSIDiskState, qdev.conf.bs),
+            DEFINE_PROP_INT32("bootindex", SCSIDiskState, qdev.conf.bootindex, -1),
             DEFINE_PROP_END_OF_LIST(),
         },
 #endif
