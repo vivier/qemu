@@ -122,6 +122,11 @@ typedef struct E1000State_st {
     } eecd_state;
 
     QEMUTimer *autoneg_timer;
+
+/* Enabled compatibility for migration to/from rhel6.3.0 and older */
+#define E1000_FLAG_RHEL630_BIT 0
+#define E1000_FLAG_RHEL630 (1 << E1000_FLAG_RHEL630_BIT)
+    uint32_t compat_flags;
 } E1000State;
 
 #define	defreg(x)	x = (E1000_##x>>2)
@@ -1220,8 +1225,13 @@ static int pci_e1000_init(PCIDevice *pci_dev)
 
     pci_config_set_vendor_id(pci_conf, PCI_VENDOR_ID_INTEL);
     pci_config_set_device_id(pci_conf, E1000_DEVID);
-    /* TODO: we have no capabilities, so why is this bit set? */
-    pci_set_word(pci_conf + PCI_STATUS, PCI_STATUS_CAP_LIST);
+    if (d->compat_flags & E1000_FLAG_RHEL630) {
+        /*
+         * We have no capabilities, so capability list bit should normally be 0.
+         * Keep it on for compat machine types to avoid breaking migration.
+         */
+        pci_set_word(pci_conf + PCI_STATUS, PCI_STATUS_CAP_LIST);
+    }
     pci_conf[PCI_REVISION_ID] = 0x03;
     pci_config_set_class(pci_conf, PCI_CLASS_NETWORK_ETHERNET);
     /* TODO: RST# value should be 0, PCI spec 6.2.4 */
@@ -1278,6 +1288,8 @@ static PCIDeviceInfo e1000_info = {
     .romfile    = "pxe-e1000.bin",
     .qdev.props = (Property[]) {
         DEFINE_NIC_PROPERTIES(E1000State, conf),
+        DEFINE_PROP_BIT("x-__com_redhat_rhel630_compat", E1000State,
+                        compat_flags, E1000_FLAG_RHEL630_BIT, false),
         DEFINE_PROP_END_OF_LIST(),
     }
 };

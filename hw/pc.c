@@ -1586,6 +1586,10 @@ static void rhel_common_init(const char *type1_version,
             .driver   = "isa-fdc",\
             .property = "migrate_dir",\
             .value    = "0",\
+        },{\
+            .driver   = "e1000",\
+            .property = "x-__com_redhat_rhel630_compat",\
+            .value    = "on",\
         }
 
 #define PC_RHEL6_2_COMPAT \
