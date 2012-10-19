@@ -403,6 +403,8 @@
 #define CPUID_EXT_XSAVE    (1 << 26)
 #define CPUID_EXT_OSXSAVE  (1 << 27)
 #define CPUID_EXT_AVX      (1 << 28)
+#define CPUID_EXT_F16C     (1 << 29)
+#define CPUID_EXT_RDRAND   (1 << 30)
 #define CPUID_EXT_HYPERVISOR  (1 << 31)
 
 #define CPUID_EXT2_FPU     (1 << 0)
@@ -446,7 +448,15 @@
 #define CPUID_EXT3_IBS     (1 << 10)
 #define CPUID_EXT3_XOP     (1 << 11)
 #define CPUID_EXT3_SKINIT  (1 << 12)
+#define CPUID_EXT3_WDT     (1 << 13)
+#define CPUID_EXT3_LWP     (1 << 15)
 #define CPUID_EXT3_FMA4    (1 << 16)
+#define CPUID_EXT3_TCE     (1 << 17)
+#define CPUID_EXT3_NODEID  (1 << 19)
+#define CPUID_EXT3_TBM     (1 << 21)
+#define CPUID_EXT3_TOPOEXT (1 << 22)
+#define CPUID_EXT3_PERFCORE (1 << 23)
+#define CPUID_EXT3_PERFNB  (1 << 24)
 
 
 #define CPUID_7_0_EBX_FSGSBASE (1 << 0)
