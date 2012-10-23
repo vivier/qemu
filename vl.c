@@ -5522,7 +5522,8 @@ int main(int argc, char **argv, char **envp)
                     fprintf(stderr, "qemu: at most 2047 MB RAM can be simulated\n");
                     exit(1);
                 }
-                sz = QEMU_ALIGN_UP((uint64_t)value, 2 * 1024 * 1024);
+                sz = QEMU_ALIGN_UP((uint64_t)value, 4096);
+                sz = MAX(sz, 2 * 1024 * 1024);
                 ram_size = sz;
                 if (ram_size != sz) {
                     fprintf(stderr, "qemu: ram size too large\n");
