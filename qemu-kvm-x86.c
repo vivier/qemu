@@ -764,6 +764,14 @@ uint32_t kvm_get_supported_cpuid(kvm_context_t kvm, uint32_t function,
 		 * GET_SUPPORTED_CPUID
 		 */
 		ret |= CPUID_EXT_HYPERVISOR;
+		/* tsc-deadline flag is not returned by GET_SUPPORTED_CPUID, but it
+		 * can be enabled if the kernel has KVM_CAP_TSC_DEADLINE_TIMER,
+		 * and the irqchip is in the kernel.
+		 */
+		if (kvm_irqchip_in_kernel() &&
+				kvm_check_extension(kvm_state, KVM_CAP_TSC_DEADLINE_TIMER)) {
+			ret |= CPUID_EXT_TSC_DEADLINE_TIMER;
+		}
 	}
 
 
@@ -1434,14 +1442,8 @@ int kvm_arch_init_vcpu(CPUState *cenv)
                       kvm_arch_get_supported_cpuid(cenv->kvm_state, 1, 0, R_EDX));
 
     /* prevent the hypervisor bit from being cleared by the kernel */
-    j = cenv->cpuid_ext_features & CPUID_EXT_TSC_DEADLINE_TIMER;
     kvm_trim_features(&cenv->cpuid_ext_features,
                       kvm_arch_get_supported_cpuid(cenv->kvm_state, 1, 0, R_ECX));
-    if (j && kvm_irqchip_in_kernel() &&
-        kvm_check_extension(cenv->kvm_state, KVM_CAP_TSC_DEADLINE_TIMER)) {
-        cenv->cpuid_ext_features |= CPUID_EXT_TSC_DEADLINE_TIMER;
-    }
-
     kvm_trim_features(&cenv->cpuid_ext2_features,
                       kvm_arch_get_supported_cpuid(cenv->kvm_state, 0x80000001, 0, R_EDX));
     kvm_trim_features(&cenv->cpuid_ext3_features,
