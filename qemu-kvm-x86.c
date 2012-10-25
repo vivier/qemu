@@ -772,6 +772,13 @@ uint32_t kvm_get_supported_cpuid(kvm_context_t kvm, uint32_t function,
 				kvm_check_extension(kvm_state, KVM_CAP_TSC_DEADLINE_TIMER)) {
 			ret |= CPUID_EXT_TSC_DEADLINE_TIMER;
 		}
+
+		/* x2apic is reported by GET_SUPPORTED_CPUID, but it can't be enabled
+		 * without the in-kernel irqchip
+		 */
+		if (!kvm_irqchip_in_kernel()) {
+			ret &= ~CPUID_EXT_X2APIC;
+		}
 	}
 
 
