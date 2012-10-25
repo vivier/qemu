@@ -744,7 +744,7 @@ static int cpu_x86_fill_model_id(char *str)
     return 0;
 }
 
-static int cpu_x86_fill_host(x86_def_t *x86_cpu_def)
+static void cpu_x86_fill_host(x86_def_t *x86_cpu_def)
 {
     uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
 
@@ -777,8 +777,6 @@ static int cpu_x86_fill_host(x86_def_t *x86_cpu_def)
     cpu_x86_fill_model_id(x86_cpu_def->model_id);
     x86_cpu_def->vendor_override = 0;
     x86_cpu_def->pmu_passthrough = true;
-
-    return 0;
 }
 
 static int unavailable_host_feature(struct model_features_t *f, uint32_t mask)
