@@ -156,9 +156,6 @@ Patch1: 0001-mips-Fix-link-error-with-piix4_pm_init.patch
 # keep: Carrying locally until qemu-kvm is fully merged into qemu.git
 Patch2: 0002-configure-Add-disable-kvm-options.patch
 
-# Fix broken vhost-net (upstream).
-Patch3: 0001-virtio-fix-vhost-handling.patch
-
 # The infamous chardev flow control patches
 Patch101: 0101-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
 Patch102: 0102-char-Add-a-QemuChrHandlers-struct-to-initialise-char.patch
@@ -605,7 +602,6 @@ such as kvm_stat.
 
 %patch1 -p1
 %patch2 -p1
-%patch3 -p1
 
 %patch101 -p1
 %patch102 -p1
