@@ -1124,6 +1124,10 @@ fi
 %if %{without kvmonly}
 %{_bindir}/qemu-system-i386
 %{_bindir}/qemu-system-x86_64
+{_datadir}/systemtap/tapset/qemu-system-i386.stp
+%{_datadir}/systemtap/tapset/qemu-system-x86_64.stp
+%endif
+%config(noreplace) %{_sysconfdir}/qemu/target-x86_64.conf
 %{_datadir}/qemu-kvm/bios.bin
 %{_datadir}/qemu-kvm/sgabios.bin
 %{_datadir}/qemu/linuxboot.bin
@@ -1155,10 +1159,6 @@ fi
 %{_datadir}/qemu/vgabios-stdvga.bin
 %{_datadir}/qemu/vgabios-vmware.bin
 %{_datadir}/qemu/vgabios.bin
-%config(noreplace) %{_sysconfdir}/qemu/target-x86_64.conf
-%{_datadir}/systemtap/tapset/qemu-system-i386.stp
-%{_datadir}/systemtap/tapset/qemu-system-x86_64.stp
-%endif
 %ifarch %{ix86} x86_64
 %{?kvm_files:}
 %{?qemu_kvm_files:}
