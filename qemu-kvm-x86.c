@@ -738,25 +738,30 @@ uint32_t kvm_get_supported_cpuid(kvm_context_t kvm, uint32_t function,
 				break;
 			case R_EDX:
 				ret = cpuid->entries[i].edx;
-                                if (function == 1) {
-                                    /* kvm misreports the following features
-                                     */
-                                    ret |= 1 << 12; /* MTRR */
-                                    ret |= 1 << 16; /* PAT */
-                                    ret |= 1 << 7;  /* MCE */
-                                    ret |= 1 << 14; /* MCA */
-                                }
-
-				/* On Intel, kvm returns cpuid according to
-				 * the Intel spec, so add missing bits
-				 * according to the AMD spec:
-				 */
-				if (function == 0x80000001) {
-					cpuid_1_edx = kvm_get_supported_cpuid(kvm, 1, 0, R_EDX);
-					ret |= cpuid_1_edx & 0x183f7ff;
-				}
 				break;
 			}
+		}
+	}
+
+	/* Fixups for the data returned by KVM, below */
+
+	if (reg == R_EDX) {
+		if (function == 1) {
+			/* kvm misreports the following features
+			 */
+			ret |= 1 << 12; /* MTRR */
+			ret |= 1 << 16; /* PAT */
+			ret |= 1 << 7;  /* MCE */
+			ret |= 1 << 14; /* MCA */
+		}
+
+		/* On Intel, kvm returns cpuid according to
+		 * the Intel spec, so add missing bits
+		 * according to the AMD spec:
+		 */
+		if (function == 0x80000001) {
+			cpuid_1_edx = kvm_get_supported_cpuid(kvm, 1, 0, R_EDX);
+			ret |= cpuid_1_edx & 0x183f7ff;
 		}
 	}
 
