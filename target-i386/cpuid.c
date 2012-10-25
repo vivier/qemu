@@ -744,9 +744,16 @@ static int cpu_x86_fill_model_id(char *str)
     return 0;
 }
 
-static void cpu_x86_fill_host(x86_def_t *x86_cpu_def)
+/* Fill a x86_def_t struct with information about the host CPU, and
+ * the CPU features supported by the host hardware + host kernel
+ *
+ * This function may be called only if KVM is enabled.
+ */
+static void kvm_cpu_fill_host(x86_def_t *x86_cpu_def)
 {
     uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
+
+    assert(kvm_enabled());
 
     x86_cpu_def->name = "host";
     host_cpuid(0x0, 0, &eax, &ebx, &ecx, &edx);
@@ -762,7 +769,7 @@ static void cpu_x86_fill_host(x86_def_t *x86_cpu_def)
     x86_cpu_def->ext_features = ecx;
     x86_cpu_def->features = edx;
 
-    if (kvm_enabled() && x86_cpu_def->level >= 7) {
+    if (x86_cpu_def->level >= 7) {
         x86_cpu_def->cpuid_7_0_ebx_features = kvm_arch_get_supported_cpuid(kvm_state, 0x7, 0, R_EBX);
     } else {
         x86_cpu_def->cpuid_7_0_ebx_features = 0;
@@ -810,7 +817,7 @@ static void summary_cpuid_features(CPUX86State *env, x86_def_t *hd)
             {&hd->ext3_features, 0x80000001, R_ECX, 0},
             {NULL}}, *p;
 
-    cpu_x86_fill_host(hd);
+    kvm_cpu_fill_host(hd);
     if (kvm_enabled()) {
         for (p = fmap; p->pfeat; ++p) {
             if (p->mask) {
@@ -824,7 +831,7 @@ static void summary_cpuid_features(CPUX86State *env, x86_def_t *hd)
 /* inform the user of any requested cpu features (both explicitly requested
  * flags and implicit cpu model flags) not making their way to the guest
  */
-static int check_features_against_host(CPUX86State *env, x86_def_t *guest_def)
+static int kvm_check_features_against_host(CPUX86State *env, x86_def_t *guest_def)
 {
     x86_def_t host_def;
     uint32_t mask;
@@ -843,6 +850,8 @@ static int check_features_against_host(CPUX86State *env, x86_def_t *guest_def)
             ~0, kvm_nested ? 0 : CPUID_EXT3_SVM,
             ext3_feature_name, "8000_0001:ecx"},
         {NULL}}, *p;
+
+    assert(kvm_enabled());
 
     summary_cpuid_features(env, &host_def);
     for (rv = 0, p = ft; p->guest_feat; ++p)
@@ -872,7 +881,7 @@ static int cpu_x86_find_by_name(x86_def_t *x86_cpu_def, const char *cpu_model)
         if (name && !strcmp(name, def->name))
             break;
     if (kvm_enabled() && name && strcmp(name, "host") == 0) {
-        cpu_x86_fill_host(x86_cpu_def);
+        kvm_cpu_fill_host(x86_cpu_def);
     } else if (!def) {
         fprintf(stderr, "Unknown cpu model: %s\n", name);
         goto error;
@@ -1115,8 +1124,8 @@ int cpu_x86_register (CPUX86State *env, const char *cpu_model)
             env->cpuid_model[i >> 2] |= c << (8 * (i & 3));
         }
     }
-    if (check_cpuid) {
-        if (check_features_against_host(env, def) && enforce_cpuid)
+    if (kvm_enabled() && check_cpuid) {
+        if (kvm_check_features_against_host(env, def) && enforce_cpuid)
             return -1;
     }
     return 0;
