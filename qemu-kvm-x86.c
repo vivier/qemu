@@ -759,7 +759,13 @@ uint32_t kvm_get_supported_cpuid(kvm_context_t kvm, uint32_t function,
 		 */
 		cpuid_1_edx = kvm_get_supported_cpuid(kvm, 1, 0, R_EDX);
 		ret |= cpuid_1_edx & 0x183f7ff;
+	} else if (function == 1 && reg == R_ECX) {
+		/* We can set the hypervisor flag, even if KVM does not return it on
+		 * GET_SUPPORTED_CPUID
+		 */
+		ret |= CPUID_EXT_HYPERVISOR;
 	}
+
 
 	free(cpuid);
 #endif
@@ -1428,11 +1434,9 @@ int kvm_arch_init_vcpu(CPUState *cenv)
                       kvm_arch_get_supported_cpuid(cenv->kvm_state, 1, 0, R_EDX));
 
     /* prevent the hypervisor bit from being cleared by the kernel */
-    i = cenv->cpuid_ext_features & CPUID_EXT_HYPERVISOR;
     j = cenv->cpuid_ext_features & CPUID_EXT_TSC_DEADLINE_TIMER;
     kvm_trim_features(&cenv->cpuid_ext_features,
                       kvm_arch_get_supported_cpuid(cenv->kvm_state, 1, 0, R_ECX));
-    cenv->cpuid_ext_features |= i;
     if (j && kvm_irqchip_in_kernel() &&
         kvm_check_extension(cenv->kvm_state, KVM_CAP_TSC_DEADLINE_TIMER)) {
         cenv->cpuid_ext_features |= CPUID_EXT_TSC_DEADLINE_TIMER;
