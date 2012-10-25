@@ -108,7 +108,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu-kvm
 Version: 1.2.0
-Release: 15%{?dist}
+Release: 16%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -382,20 +382,6 @@ emulation speed by using dynamic translation. QEMU has two operating modes:
 
 As QEMU requires no host kernel patches to run, it is safe and easy to use.
 
-%if %{without kvmonly}
-%ifarch %{kvm_archs}
-%package kvm
-Summary: QEMU metapackage for KVM support
-Group: Development/Tools
-Requires: qemu-%{kvm_package} = %{epoch}:%{version}-%{release}
-
-%description kvm
-This is a meta-package that provides a qemu-system-<arch> package for native
-architectures where kvm can be enabled. For example, in an x86 system, this
-will install qemu-system-x86
-%endif
-%endif
-
 %package  img
 Summary: QEMU command line tool for manipulating disk images
 Group: Development/Tools
@@ -588,11 +574,11 @@ This package provides the system emulator for ppc
 %endif
 
 %ifarch %{kvm_archs}
-%package kvm-tools
+%package tools
 Summary: KVM debugging and diagnostics tools
 Group: Development/Tools
 
-%description kvm-tools
+%description tools
 This package contains some diagnostics and debugging tools for KVM,
 such as kvm_stat.
 %endif
@@ -807,7 +793,7 @@ dobuild --target-list=%{kvm_target}-softmmu
 
 # Setup back compat qemu-kvm binary which defaults to KVM=on
 ./scripts/tracetool.py --backend dtrace --format stap \
-  --binary %{_bindir}/qemu-kvm --target-arch %{kvm_target} --target-type system \
+  --binary %{_libexecdir}/qemu-kvm --target-arch %{kvm_target} --target-type system \
   --probe-prefix qemu.kvm < ./trace-events > qemu-kvm.stp
 
 cp -a %{kvm_target}-softmmu/qemu-system-%{kvm_target} qemu-kvm
@@ -838,6 +824,7 @@ install -D -p -m 0644 %{SOURCE9} $RPM_BUILD_ROOT%{_sysconfdir}/ksmtuned.conf
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{name}
 mkdir -p $RPM_BUILD_ROOT%{_bindir}/
+mkdir -p $RPM_BUILD_ROOT%{_libexecdir}/
 mkdir -p $RPM_BUILD_ROOT%{_udevdir}
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset
 
@@ -852,7 +839,7 @@ make DESTDIR=$RPM_BUILD_ROOT install
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{name}
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset
 
-install -m 0755 qemu-kvm $RPM_BUILD_ROOT%{_bindir}/
+install -m 0755 qemu-kvm $RPM_BUILD_ROOT%{_libexecdir}/
 install -m 0644 qemu-kvm.stp $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/
 install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_udevdir}
 %endif
@@ -1030,16 +1017,8 @@ fi
 
 %if 0%{?need_qemu_kvm}
 %global qemu_kvm_files \
-%{_bindir}/qemu-kvm \
+%{_libexecdir}/qemu-kvm \
 %{_datadir}/systemtap/tapset/qemu-kvm.stp
-%endif
-
-%files
-%defattr(-,root,root)
-
-%ifarch %{kvm_archs}
-%files kvm
-%defattr(-,root,root)
 %endif
 
 %files common
@@ -1082,23 +1061,23 @@ fi
 %files %{user}
 %defattr(-,root,root)
 %{_exec_prefix}/lib/binfmt.d/qemu-*.conf
-%{_bindir}/qemu-i386
-%{_bindir}/qemu-x86_64
-%{_bindir}/qemu-alpha
-%{_bindir}/qemu-arm
-%{_bindir}/qemu-armeb
-%{_bindir}/qemu-cris
-%{_bindir}/qemu-m68k
-%{_bindir}/qemu-mips
-%{_bindir}/qemu-mipsel
-%{_bindir}/qemu-ppc
-%{_bindir}/qemu-ppc64
-%{_bindir}/qemu-ppc64abi32
-%{_bindir}/qemu-sh4
-%{_bindir}/qemu-sh4eb
-%{_bindir}/qemu-sparc
-%{_bindir}/qemu-sparc32plus
-%{_bindir}/qemu-sparc64
+%{_libexecdir}/qemu-i386
+%{_libexecdir}/qemu-x86_64
+%{_libexecdir}/qemu-alpha
+%{_libexecdir}/qemu-arm
+%{_libexecdir}/qemu-armeb
+%{_libexecdir}/qemu-cris
+%{_libexecdir}/qemu-m68k
+%{_libexecdir}/qemu-mips
+%{_libexecdir}/qemu-mipsel
+%{_libexecdir}/qemu-ppc
+%{_libexecdir}/qemu-ppc64
+%{_libexecdir}/qemu-ppc64abi32
+%{_libexecdir}/qemu-sh4
+%{_libexecdir}/qemu-sh4eb
+%{_libexecdir}/qemu-sparc
+%{_libexecdir}/qemu-sparc32plus
+%{_libexecdir}/qemu-sparc64
 %{_datadir}/systemtap/tapset/qemu-i386.stp
 %{_datadir}/systemtap/tapset/qemu-x86_64.stp
 %{_datadir}/systemtap/tapset/qemu-alpha.stp
@@ -1119,11 +1098,11 @@ fi
 %endif
 
 %if 0%{?system_x86:1}
-%files %{system_x86}
+%files
 %defattr(-,root,root)
 %if %{without kvmonly}
-%{_bindir}/qemu-system-i386
-%{_bindir}/qemu-system-x86_64
+%{_libexecdir}/qemu-system-i386
+%{_libexecdir}/qemu-system-x86_64
 {_datadir}/systemtap/tapset/qemu-system-i386.stp
 %{_datadir}/systemtap/tapset/qemu-system-x86_64.stp
 %endif
@@ -1166,7 +1145,7 @@ fi
 %endif
 
 %ifarch %{kvm_archs}
-%files kvm-tools
+%files tools
 %defattr(-,root,root,-)
 %{_bindir}/kvm_stat
 %endif
@@ -1174,17 +1153,17 @@ fi
 %if 0%{?system_arm:1}
 %files %{system_arm}
 %defattr(-,root,root)
-%{_bindir}/qemu-system-arm
+%{_libexecdir}/qemu-system-arm
 %{_datadir}/systemtap/tapset/qemu-system-arm.stp
 %endif
 
 %if 0%{?system_mips:1}
 %files %{system_mips}
 %defattr(-,root,root)
-%{_bindir}/qemu-system-mips
-%{_bindir}/qemu-system-mipsel
-%{_bindir}/qemu-system-mips64
-%{_bindir}/qemu-system-mips64el
+%{_libexecdir}/qemu-system-mips
+%{_libexecdir}/qemu-system-mipsel
+%{_libexecdir}/qemu-system-mips64
+%{_libexecdir}/qemu-system-mips64el
 %{_datadir}/systemtap/tapset/qemu-system-mips.stp
 %{_datadir}/systemtap/tapset/qemu-system-mipsel.stp
 %{_datadir}/systemtap/tapset/qemu-system-mips64el.stp
@@ -1194,22 +1173,22 @@ fi
 %if 0%{?system_cris:1}
 %files %{system_cris}
 %defattr(-,root,root)
-%{_bindir}/qemu-system-cris
+%{_libexecdir}/qemu-system-cris
 %{_datadir}/systemtap/tapset/qemu-system-cris.stp
 %endif
 
 %if 0%{?system_m68k:1}
 %files %{system_m68k}
 %defattr(-,root,root)
-%{_bindir}/qemu-system-m68k
+%{_libexecdir}/qemu-system-m68k
 %{_datadir}/systemtap/tapset/qemu-system-m68k.stp
 %endif
 
 %if 0%{?system_sh4:1}
 %files %{system_sh4}
 %defattr(-,root,root)
-%{_bindir}/qemu-system-sh4
-%{_bindir}/qemu-system-sh4eb
+%{_libexecdir}/qemu-system-sh4
+%{_libexecdir}/qemu-system-sh4eb
 %{_datadir}/systemtap/tapset/qemu-system-sh4.stp
 %{_datadir}/systemtap/tapset/qemu-system-sh4eb.stp
 %endif
@@ -1217,8 +1196,8 @@ fi
 %if 0%{?system_sparc:1}
 %files %{system_sparc}
 %defattr(-,root,root)
-%{_bindir}/qemu-system-sparc
-%{_bindir}/qemu-system-sparc64
+%{_libexecdir}/qemu-system-sparc
+%{_libexecdir}/qemu-system-sparc64
 %{_datadir}/systemtap/tapset/qemu-system-sparc.stp
 %{_datadir}/systemtap/tapset/qemu-system-sparc64.stp
 %endif
@@ -1227,9 +1206,9 @@ fi
 %files %{system_ppc}
 %defattr(-,root,root)
 %if %{without kvmonly}
-%{_bindir}/qemu-system-ppc
-%{_bindir}/qemu-system-ppc64
-%{_bindir}/qemu-system-ppcemb
+%{_libexecdir}/qemu-system-ppc
+%{_libexecdir}/qemu-system-ppc64
+%{_libexecdir}/qemu-system-ppcemb
 %{_datadir}/systemtap/tapset/qemu-system-ppc.stp
 %{_datadir}/systemtap/tapset/qemu-system-ppc64.stp
 %{_datadir}/systemtap/tapset/qemu-system-ppcemb.stp
@@ -1251,6 +1230,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Thu Oct 25 2012 Michal Novotny <minovotn@redhat.com> - 2:1.2.0-16
+- Move qemu-kvm to /usr/libexec [bz#817566]
+- Resolves: bz#817566
+
 * Wed Oct 17 2012 Michal Novotny <minovotn@redhat.com> - 2:1.2.0-15
 - Rename package to qemu-kvm
 - Resolves: bz#817565
