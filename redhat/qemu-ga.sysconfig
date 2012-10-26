@@ -1,0 +1,24 @@
+# Transport method may be one of following:
+#   * unix-listen
+#   * virtio-serial
+#   * isa-serial
+# Default: virtio-serial
+TRANSPORT_METHOD="virtio-serial"
+
+# You also can override the device/socket path
+# Default: /dev/virtio-ports/org.qemu.guest_agent.0
+DEVPATH="/dev/virtio-ports/org.qemu.guest_agent.0"
+
+# If logfile is unset it defaults to stderr but the daemon
+# function of init script redirects stderr to /dev/null
+LOGFILE="/var/log/qemu-ga.log"
+
+# Override pidfile name
+# Default: /var/run/qemu-ga.pid
+PIDFILE="/var/run/qemu-ga.pid"
+
+# Comma-separated blacklist of RPCs to disable or empty list to enable all
+# Tip: You can get the list of RPC commands using `qemu-ga --blacklist ?`
+# Default: blank list to enable all RPCs
+# Note: There should be no spaces between commas and commands in the blacklist
+BLACKLIST_RPC="guest-file-open,guest-file-close,guest-file-read,guest-file-write,guest-file-seek,guest-file-flush"

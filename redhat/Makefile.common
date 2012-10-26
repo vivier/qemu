@@ -1,0 +1,47 @@
+RPMBUILD := $(shell if [ -x "/usr/bin/rpmbuild" ]; then echo rpmbuild; \
+                   else echo rpm; fi)
+MACH :=  $(shell uname -m)
+
+# just used to define the other name variables
+COMMON_NAME=qemu-kvm
+
+
+KVERSION:=1.2.0
+# marker is git tag
+MARKER:=$(COMMON_NAME)-$(KVERSION)
+SPECFILE:=$(COMMON_NAME).spec
+REDHAT:=$(shell pwd)
+RPM:=$(REDHAT)/rpm
+SRPMS:=$(RPM)/SRPMS
+SOURCES:=$(RPM)/SOURCES
+BUILD:=17
+PREBUILD=2.
+DIST=.el7
+PKGNAME=$(COMMON_NAME)
+
+#TARFILE:=$(subst _,.,$(MARKER)).tar.bz2
+TARFILE:=$(COMMON_NAME)-$(KVERSION).tar.gz
+#TARURL:=http://downloads.sourceforge.net/sourceforge/kvm/$(COMMON_NAME)-$(KVERSION).tar.gz
+#TARSHA1:=dee7359094757af77ea839bbfd9dca8826edcbd2
+TARSHA256:=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+
+TARBALL:=$(REDHAT)/$(TARFILE)
+TESTPATCH:=$(REDHAT)/$(COMMON_NAME)-test.patch
+
+EXTRA_SOURCES = ksmtuned.conf ksmtuned ksmtuned.init ksm.sysconfig ksm.init 80-kvm.rules kvm.modules blacklist-kvm.conf qemu-ga.init qemu-ga.sysconfig 99-qemu-guest-agent.rules qemu-guest-agent.service ksmtuned.service  ksmctl.c ksm.service qemu.binfmt
+
+SUBLEVEL := $(shell echo $(MARKER) | cut -f 3 -d '-')
+#RCREV := $(shell echo $(MARKER) | cut -f 2 -d '-' -s | sed -e "s/rc//")
+RCREV := 
+GITREV := $(shell echo $(MARKER) | cut -f 4 -d '-' -s | sed -e "s/git//")
+
+ifneq ($(RCREV),)
+	RELEASED_KERNEL := 0
+	STAMP_VERSION := $(shell echo $(MARKER) | cut -f 1 -d '-' | sed -e "s/v//")
+else
+	RELEASED_KERNEL := 1
+	STAMP_VERSION := $(KVERSION)
+endif
+RC_PATCH := patch-$(SUBLEVEL)-rc$(RCREV).gz
+GIT_PATCH := patch-$(SUBLEVEL)-rc$(RCREV)-git$(GITREV).gz
+

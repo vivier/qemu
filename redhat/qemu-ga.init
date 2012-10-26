@@ -1,0 +1,82 @@
+#! /bin/sh
+#
+# qemu-ga       Start/Stop qemu-ga daemon
+#
+# chkconfig: 345 30 30
+# description: qemu guest agent daemon
+# processname: qemu-ga
+
+# Source function library.
+. /etc/init.d/functions
+
+# Check that we're a privileged user
+[ `id -u` = 0 ] || exit 4
+
+[ -f /etc/sysconfig/qemu-ga ] && . /etc/sysconfig/qemu-ga
+
+
+prog="qemu-ga"
+
+
+RETVAL=0
+lockfile=/var/lock/subsys/$prog
+
+start() {
+
+    # Check if binary is installed & executable
+    [ -f /usr/bin/$prog ] && [ -x /usr/bin/$prog ] || exit 5
+
+    # Check the device/path exists
+    [ -n "$DEVPATH" ] && [ -e "$DEVPATH" ] || exit 6
+
+    echo -n $"Starting $prog: "
+    ARGS="--daemonize"
+    [ ! -z "$TRANSPORT_METHOD" ] && ARGS="$ARGS --method $TRANSPORT_METHOD"
+    [ ! -z "$DEVPATH" ] && ARGS="$ARGS --path $DEVPATH"
+    [ ! -z "$LOGFILE" ] && ARGS="$ARGS --logfile $LOGFILE"
+    [ ! -z "$PIDFILE" ] && ARGS="$ARGS --pidfile $PIDFILE"
+    [ ! -z "$BLACKLIST_RPC" ] && ARGS="$ARGS --blacklist $BLACKLIST_RPC"
+    daemon /usr/bin/$prog $ARGS
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && touch $lockfile
+    return $RETVAL
+}
+
+stop() {
+    echo -n $"Stopping $prog: "
+    killproc $prog
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && rm -f $lockfile
+    return $RETVAL
+}
+
+restart() {
+    stop
+    start
+}
+
+# See how we were called.
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  status)
+        status $prog
+        ;;
+  restart|reload|force-reload)
+        restart
+        ;;
+  condrestart|try-restart)
+        [ -f $lockfile ] && restart || :
+        ;;
+  *)
+        echo $"Usage: $0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload}"
+        exit 2
+esac
+
+exit $?
