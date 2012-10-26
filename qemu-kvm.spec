@@ -108,7 +108,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu-kvm
 Version: 1.2.0
-Release: 16%{?dist}
+Release: 17%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -361,9 +361,6 @@ Requires: %{name}-%{system_sh4} = %{epoch}:%{version}-%{release}
 %endif
 %if 0%{?system_sparc:1}
 Requires: %{name}-%{system_sparc} = %{epoch}:%{version}-%{release}
-%endif
-%if 0%{?system_x86:1}
-Requires: %{name}-%{system_x86} = %{epoch}:%{version}-%{release}
 %endif
 Requires: %{name}-img = %{epoch}:%{version}-%{release}
 
@@ -1230,6 +1227,10 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Fri Oct 26 2012 Michal Novotny <minovotn@redhat.com> - 2.1.2.0-17
+- Fix dependencies [bz#870343]
+- Resolves: bz#870343
+
 * Thu Oct 25 2012 Michal Novotny <minovotn@redhat.com> - 2:1.2.0-16
 - Move qemu-kvm to /usr/libexec [bz#817566]
 - Resolves: bz#817566
