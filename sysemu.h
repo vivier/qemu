@@ -163,6 +163,8 @@ extern int alt_grab;
 extern int ctrl_grab;
 extern int usb_enabled;
 extern int smp_cpus;
+extern int smp_cores;
+extern int smp_threads;
 extern int max_cpus;
 extern int cursor_hide;
 extern int graphic_rotate;
