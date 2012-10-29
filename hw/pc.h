@@ -109,6 +109,7 @@ extern int fd_bootchk;
 void ioport_set_a20(int enable);
 int ioport_get_a20(void);
 CPUState *pc_new_cpu(const char *cpu_model);
+uint32_t apic_id_for_cpu(int cpu_index);
 
 /* acpi.c */
 extern int acpi_enabled;
