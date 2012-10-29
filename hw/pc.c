@@ -455,6 +455,21 @@ static void bochs_bios_write(void *opaque, uint32_t addr, uint32_t val)
     }
 }
 
+/* Calculates initial APIC ID for a specific CPU index
+ *
+ * Currently we need to be able to calculate the APIC ID from the CPU index
+ * alone (without requiring a CPU object), as the QEMU<->Seabios interfaces have
+ * no concept of "CPU index", and the NUMA tables on fw_cfg need the APIC ID of
+ * all CPUs up to max_cpus.
+ */
+uint32_t apic_id_for_cpu(int cpu_index)
+{
+    /* right now APIC ID == CPU index. this will eventually change to use
+     * the CPU topology configuration properly
+     */
+    return cpu_index;
+}
+
 static void *bochs_bios_init(void)
 {
     void *fw_cfg;
@@ -1002,7 +1017,8 @@ CPUState *pc_new_cpu(const char *cpu_model)
     }
     env->kvm_cpu_state.regs_modified = 1;
     if ((env->cpuid_features & CPUID_APIC) || smp_cpus > 1) {
-        env->cpuid_apic_id = env->cpu_index;
+        env->cpuid_apic_id = apic_id_for_cpu(env->cpu_index);
+
         /* APIC reset callback resets cpu */
         apic_init(env);
     } else {
