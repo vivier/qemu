@@ -978,6 +978,7 @@ static void disable_processor(struct gpe_regs *g, int cpu)
 void qemu_system_cpu_hot_add(int cpu, int state, Monitor *mon)
 {
     CPUState *env;
+    uint32_t apic_id;
 
     if ((cpu < 1) || (cpu > max_cpus - 1)) {
         monitor_printf(mon, "cpu id[%d] must be in range [1..%d]\n",
@@ -985,19 +986,20 @@ void qemu_system_cpu_hot_add(int cpu, int state, Monitor *mon)
         return;
     }
 
+    apic_id = apic_id_for_cpu(cpu);
     if (state && !qemu_get_cpu(cpu)) {
         env = pc_new_cpu(model);
         if (!env) {
             monitor_printf(mon, "cpu %d creation failed\n", cpu);
             return;
         }
-        env->cpuid_apic_id = cpu;
+        env->cpuid_apic_id = apic_id;
     }
 
     if (state)
-        enable_processor(&pm_state->gpe, cpu);
+        enable_processor(&pm_state->gpe, apic_id);
     else
-        disable_processor(&pm_state->gpe, cpu);
+        disable_processor(&pm_state->gpe, apic_id);
 
     /* update number of cpus in cmos, to allow BIOS see it on reboot */
     rtc_set_memory(rtc_state, 0x5f, acpi_online_cpu_count() - 1);
