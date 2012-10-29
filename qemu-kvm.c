@@ -2023,7 +2023,7 @@ static void *ap_main_loop(void *_env)
     env->thread_id = kvm_get_thread_id();
     sigfillset(&signals);
     sigprocmask(SIG_BLOCK, &signals, NULL);
-    kvm_create_vcpu(env, env->cpu_index);
+    kvm_create_vcpu(env, kvm_arch_vcpu_id(env));
 
 #ifdef CONFIG_KVM_DEVICE_ASSIGNMENT
     /* do ioperm for io ports of assigned devices */

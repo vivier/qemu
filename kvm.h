@@ -27,6 +27,10 @@ void kvm_flush_coalesced_mmio_buffer(void);
 
 void kvm_arch_reset_vcpu(CPUState *env);
 
+/* Returns VCPU ID to be used on KVM_CREATE_VCPU ioctl() */
+unsigned long kvm_arch_vcpu_id(CPUArchState *env);
+
+
 int kvm_has_many_ioeventfds(void);
 
 #if defined(KVM_IOEVENTFD) && defined(CONFIG_KVM)
