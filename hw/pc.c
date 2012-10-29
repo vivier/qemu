@@ -49,6 +49,7 @@
 #include "ui/qemu-spice.h"
 #include "kvmclock.h"
 #include "bitmap.h"
+#include "topology.h"
 
 /* output Bochs bios info messages */
 //#define DEBUG_BIOS
@@ -455,6 +456,14 @@ static void bochs_bios_write(void *opaque, uint32_t addr, uint32_t val)
     }
 }
 
+
+/* Enable compatibility (buggy) APIC ID generation, that keep APIC IDs
+ * contiguous
+ */
+static bool compat_contiguous_apic_ids;
+/* Warning message about incorrect APIC ID was shown */
+static bool apic_id_warned;
+
 /* Calculates initial APIC ID for a specific CPU index
  *
  * Currently we need to be able to calculate the APIC ID from the CPU index
@@ -464,10 +473,19 @@ static void bochs_bios_write(void *opaque, uint32_t addr, uint32_t val)
  */
 uint32_t apic_id_for_cpu(int cpu_index)
 {
-    /* right now APIC ID == CPU index. this will eventually change to use
-     * the CPU topology configuration properly
-     */
-    return cpu_index;
+    uint32_t correct_id;
+
+    correct_id = topo_apicid_for_cpu(smp_cores, smp_threads, cpu_index);
+    if (compat_contiguous_apic_ids) {
+        if (cpu_index != correct_id && !apic_id_warned) {
+            error_report("APIC IDs set in compatibility mode, "
+                         "CPU topology won't match the configuration");
+            apic_id_warned = true;
+        }
+        return cpu_index;
+    } else {
+        return correct_id;
+    }
 }
 
 /* Returns the limit to APIC ID values
@@ -1705,6 +1723,7 @@ static void pc_rhel630_compat(void)
     disable_kvm_pv_eoi();
     set_pmu_passthrough(true);
     disable_tsc_deadline();
+    compat_contiguous_apic_ids = true;
 }
 
 static void pc_rhel620_compat(void)
