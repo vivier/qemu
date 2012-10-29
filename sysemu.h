@@ -175,9 +175,10 @@ extern QEMUClock *rtc_clock;
 extern long hpagesize;
 
 #define MAX_NODES 64
+#define MAX_CPUMASK_BITS 255
 extern int nb_numa_nodes;
 extern uint64_t node_mem[MAX_NODES];
-extern uint64_t node_cpumask[MAX_NODES];
+extern unsigned long *node_cpumask[MAX_NODES];
 
 #define MAX_OPTION_ROMS 16
 typedef struct QEMUOptionRom {
