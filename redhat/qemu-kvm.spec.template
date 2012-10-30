@@ -141,7 +141,9 @@ Requires: vgabios
 Requires: vgabios-qxl
 Requires: vgabios-stdvga
 Requires: vgabios-vmware
-Requires: seabios
+# The fix for qemu-kvm bz#733720 requires a seabios version with the patches
+# for seabios bz#851245
+Requires: seabios >= 0.6.1.2-20.el6
 Requires: /usr/share/gpxe/e1000-0x100e.rom
 Requires: /usr/share/gpxe/rtl8029.rom
 Requires: /usr/share/gpxe/pcnet32.rom
