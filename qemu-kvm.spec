@@ -108,7 +108,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu-kvm
 Version: 1.2.0
-Release: 17%{?dist}
+Release: 18%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -362,7 +362,20 @@ Requires: %{name}-%{system_sh4} = %{epoch}:%{version}-%{release}
 %if 0%{?system_sparc:1}
 Requires: %{name}-%{system_sparc} = %{epoch}:%{version}-%{release}
 %endif
+
+%if %{with exclusive_x86_64}
 Requires: %{name}-img = %{epoch}:%{version}-%{release}
+Requires: %{name}-common = %{epoch}:%{version}-%{release}
+Provides: kvm = 85
+Obsoletes: kvm < 85
+Requires: vgabios >= 0.6c-2
+Requires: seabios-bin >= 0.6.0-2
+Requires: sgabios-bin
+Requires: ipxe-roms-qemu
+%if 0%{?have_seccomp:1}
+Requires: libseccomp >= 1.0.0
+%endif
+%endif
 
 %define qemudocdir %{_docdir}/qemu
 
@@ -1227,7 +1240,12 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
-* Fri Oct 26 2012 Michal Novotny <minovotn@redhat.com> - 2.1.2.0-17
+* Wed Nov 07 2012 Michal Novotny <minovotn@redhat.com> - 2:1.2.0-18
+- Fix dependency issue for exlusive arch of x86_64
+- Resolves: b#871800
+  (virt-install with option --vnc fails: qemu-kvm: Could not read keymap file: 'en-us')
+
+* Fri Oct 26 2012 Michal Novotny <minovotn@redhat.com> - 2:1.2.0-17
 - Fix dependencies [bz#870343]
 - Resolves: bz#870343
 
