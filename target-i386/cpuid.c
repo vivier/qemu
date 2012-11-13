@@ -746,7 +746,7 @@ static x86_def_t builtin_x86_defs[] = {
              CPUID_EXT_AES | CPUID_EXT_POPCNT | CPUID_EXT_SSE42 |
              CPUID_EXT_SSE41 | CPUID_EXT_CX16 | CPUID_EXT_FMA |
              CPUID_EXT_SSSE3 | CPUID_EXT_PCLMULQDQ | CPUID_EXT_SSE3,
-        .ext2_features = CPUID_EXT2_LM | CPUID_EXT2_RDTSCP |
+        .ext2_features = CPUID_EXT2_LM |
              CPUID_EXT2_PDPE1GB | CPUID_EXT2_FXSR | CPUID_EXT2_MMX |
              CPUID_EXT2_NX | CPUID_EXT2_PSE36 | CPUID_EXT2_PAT |
              CPUID_EXT2_CMOV | CPUID_EXT2_MCA | CPUID_EXT2_PGE |
