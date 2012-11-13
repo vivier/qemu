@@ -6,6 +6,9 @@ LANG=C
 BUILD_DEFAULT_TARGET = RHEL-6-test
 BUILD_SCRATCH_TARGET = RHEL-6-test
 
+# This is invoked when build target above is failing
+DEFAULT_RELEASE_VERSION = 4
+
 #ifeq ($(shell git diff --quiet HEAD && git describe --exact-match 2>/dev/null && echo ok),)
 BUILD_TARGET ?= --scratch $(BUILD_SCRATCH_TARGET)
 #else
@@ -13,6 +16,8 @@ BUILD_TARGET ?= --scratch $(BUILD_SCRATCH_TARGET)
 #endif
 
 RELEASE:=$(shell sed -ne 's/^[^\#]*define release \(.*\)%.*%.*/\1/p' $(REDHAT)/$(SPECFILE).template)
+BTARGET:=$(shell git branch | grep "*" | awk '{split($$0, a, " "); split(a[2], b, "/"); if (substr(b[1], 6, 2) != "") print "rhel-"substr(b[1], 5, 1)"."substr(b[1], 6, 2)"-candidate"; else print \
+	"rhel-"substr(b[1], 5, 1)".$(DEFAULT_RELEASE_VERSION)-candidate";}')
 
 # create an empty localversion file if you don't want a local buildid
 ifneq ($(wildcard $(LOCVERFILE)),)
@@ -179,6 +184,9 @@ rh-koji : BUILD_FLAGS ?= $(KOJI_FLAGS) $(TEST_FLAGS)
 rh-brew rh-koji: rh-%: rh-srpm
 	$* build $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)
 
+rh-brew-new: rh-%-new: rh-srpm
+	$* build --scratch $(BTARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)
+
 rh-help:
 	@echo  'Cleaning targets:'
 	@echo  '  rh-clean-sources    - Clean the redhat/rpm/SOURCES/ directory'
@@ -190,6 +198,7 @@ rh-help:
 	@echo  '  rh-srpm	- Create a source RPM and put it into the redhat/rpm/SRPMS/ directory'
 	@echo  '  rh-brew	- Create a $(COMMON_NAME) SRPM and then call brew to build the created SRPM'
 	@echo  '  rh-koji	- Create a $(COMMON_NAME) SRPM and then call koji to build the created SRPM'
+	@echo  '  rh-brew-new   - Create a $(COMMON_NAME) SRPM and then call brew to build the created SRPM using the scratch rhel-6.x-candidate target'
 	@echo  '  rh-test	- Pass in brew task number, TASK=1234 make rh-test, to use for an RHTS test'
 	@echo  '		  setup ./tests to use a test from redhat/tests (minus the .xml)'
 	@echo  '		  uses a known stable RHEL6 distro as the default'
