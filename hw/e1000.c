@@ -934,38 +934,11 @@ static bool is_version_1(void *opaque, int version_id)
     return version_id == 1;
 }
 
-static void e1000_pre_save(void *opaque)
-{
-    E1000State *d = opaque;
-    uint8_t *pci_conf = d->dev.config;
-    uint16_t status = pci_get_word(pci_conf + PCI_STATUS);
-    /*
-     * We have no capabilities, so capability list bit should normally be 0.
-     * It was set by mistake in RHEL6.3 and older, so set it here to avoid
-     * breaking migration.
-     */
-    pci_set_word(pci_conf + PCI_STATUS, status | PCI_STATUS_CAP_LIST);
-}
-
-static int e1000_post_load(void *opaque, int version_id)
-{
-    E1000State *d = opaque;
-    uint8_t *pci_conf = d->dev.config;
-    uint16_t status = pci_get_word(pci_conf + PCI_STATUS);
-    /*
-     * We have no capabilities, so capability list bit should be 0.
-     */
-    pci_set_word(pci_conf + PCI_STATUS, status & ~PCI_STATUS_CAP_LIST);
-    return 0;
-}
-
 static const VMStateDescription vmstate_e1000 = {
     .name = "e1000",
     .version_id = 2,
     .minimum_version_id = 1,
     .minimum_version_id_old = 1,
-    .post_load = e1000_post_load,
-    .pre_save = e1000_pre_save,
     .fields      = (VMStateField []) {
         VMSTATE_PCI_DEVICE(dev, E1000State),
         VMSTATE_UNUSED_TEST(is_version_1, 4), /* was instance id */
@@ -1158,6 +1131,8 @@ static int pci_e1000_init(PCIDevice *pci_dev)
 
     pci_config_set_vendor_id(pci_conf, PCI_VENDOR_ID_INTEL);
     pci_config_set_device_id(pci_conf, E1000_DEVID);
+    /* TODO: we have no capabilities, so why is this bit set? */
+    pci_set_word(pci_conf + PCI_STATUS, PCI_STATUS_CAP_LIST);
     pci_conf[PCI_REVISION_ID] = 0x03;
     pci_config_set_class(pci_conf, PCI_CLASS_NETWORK_ETHERNET);
     /* TODO: RST# value should be 0, PCI spec 6.2.4 */
