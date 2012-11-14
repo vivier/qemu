@@ -392,6 +392,7 @@
 #define CPUID_EXT_CX16     (1 << 13)
 #define CPUID_EXT_XTPR     (1 << 14)
 #define CPUID_EXT_PDCM     (1 << 15)
+#define CPUID_EXT_PCID     (1 << 17)
 #define CPUID_EXT_DCA      (1 << 18)
 #define CPUID_EXT_SSE41    (1 << 19)
 #define CPUID_EXT_SSE42    (1 << 20)
