@@ -1857,6 +1857,7 @@ static int usb_host_scan(void *opaque, USBScanFunc *func)
 }
 
 static QEMUTimer *usb_auto_timer;
+static VMChangeStateEntry *usb_vmstate;
 
 static int usb_host_auto_scan(void *opaque, int bus_num, int addr, char *port,
                               int class_id, int vendor_id, int product_id,
@@ -1907,6 +1908,13 @@ static int usb_host_auto_scan(void *opaque, int bus_num, int addr, char *port,
     return 0;
 }
 
+static void usb_host_vm_state(void *unused, int running, RunState state)
+{
+    if (running) {
+        usb_host_auto_check(unused);
+    }
+}
+
 static void usb_host_auto_check(void *unused)
 {
     struct USBHostDevice *s;
@@ -1934,6 +1942,9 @@ static void usb_host_auto_check(void *unused)
         }
     }
 
+    if (!usb_vmstate) {
+        usb_vmstate = qemu_add_vm_change_state_handler(usb_host_vm_state, NULL);
+    }
     if (!usb_auto_timer) {
         usb_auto_timer = qemu_new_timer(rt_clock, usb_host_auto_check, NULL);
         if (!usb_auto_timer)
