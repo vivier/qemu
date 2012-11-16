@@ -1010,7 +1010,7 @@ static void qxl_enter_vga_mode(PCIQXLDevice *d)
     trace_qxl_enter_vga_mode(d->id);
     qemu_spice_create_host_primary(&d->ssd);
     d->mode = QXL_MODE_VGA;
-    memset(&d->ssd.dirty, 0, sizeof(d->ssd.dirty));
+    dpy_resize(d->ssd.ds);
 }
 
 static void qxl_exit_vga_mode(PCIQXLDevice *d)
