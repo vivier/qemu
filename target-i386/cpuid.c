@@ -27,6 +27,7 @@
 
 #include "qemu-option.h"
 #include "qemu-config.h"
+#include "hyperv.h"
 
 /* feature flags taken from "Intel Processor Identification and the CPUID
  * Instruction" and AMD's "CPUID Specification".  In cases of disagreement
@@ -1030,6 +1031,8 @@ static int cpu_x86_find_by_name(x86_def_t *x86_cpu_def, const char *cpu_model)
             check_cpuid = 1;
         } else if (!strcmp(featurestr, "enforce")) {
             check_cpuid = enforce_cpuid = 1;
+        } else if (!strcmp(featurestr, "hv_relaxed")) {
+                hyperv_enable_relaxed_timing(true);
         } else {
             fprintf(stderr, "feature string `%s' not in format (+feature|-feature|feature=xyz)\n", featurestr);
             goto error;
