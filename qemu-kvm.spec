@@ -108,7 +108,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu-kvm
 Version: 1.2.0
-Release: 18%{?dist}
+Release: 19%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -127,9 +127,7 @@ ExclusiveArch: %{kvm_archs}
 %define _smp_mflags %{nil}
 %endif
 
-# This is generated from the git qemu-kvm-1.2.0 tag, replace with proper
-# upstream tarbal once available
-Source0: qemu-kvm-%{version}.tar.gz
+Source0: http://downloads.sourceforge.net/project/kvm/qemu-kvm/1.2.0/qemu-kvm-1.2.0.tar.gz
 Source1: qemu.binfmt
 
 # Loads kvm kernel modules at boot
@@ -1240,6 +1238,9 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Tue Nov 20 2012 Michal Novotny <minovotn@redhat.com> - 2:1.2.0-19
+- Fix location of upstream tarball
+
 * Wed Nov 07 2012 Michal Novotny <minovotn@redhat.com> - 2:1.2.0-18
 - Fix dependency issue for exlusive arch of x86_64
 - Resolves: b#871800
