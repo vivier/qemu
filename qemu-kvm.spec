@@ -108,9 +108,9 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu-kvm
 Version: 1.2.0
-Release: 19%{?dist}
+Release: 20%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
-Epoch: 2
+Epoch: 3
 License: GPLv2+ and LGPLv2+ and BSD
 Group: Development/Tools
 URL: http://www.qemu.org/
@@ -362,7 +362,7 @@ Requires: %{name}-%{system_sparc} = %{epoch}:%{version}-%{release}
 %endif
 
 %if %{with exclusive_x86_64}
-Requires: %{name}-img = %{epoch}:%{version}-%{release}
+Requires: qemu-img = %{epoch}:%{version}-%{release}
 Requires: %{name}-common = %{epoch}:%{version}-%{release}
 Provides: kvm = 85
 Obsoletes: kvm < 85
@@ -390,7 +390,7 @@ emulation speed by using dynamic translation. QEMU has two operating modes:
 
 As QEMU requires no host kernel patches to run, it is safe and easy to use.
 
-%package  img
+%package -n qemu-img
 Summary: QEMU command line tool for manipulating disk images
 Group: Development/Tools
 %if %{with rbd}
@@ -401,7 +401,7 @@ Group: Development/Tools
 Requires: ceph >= 0.37-2
 %endif
 
-%description img
+%description -n qemu-img
 This package provides a command line tool for manipulating disk images
 
 %package  common
@@ -419,14 +419,14 @@ emulation speed by using dynamic translation.
 
 This package provides the common files needed by all QEMU targets
 
-%package guest-agent
+%package -n qemu-guest-agent
 Summary: QEMU guest agent
 Group: System Environment/Daemons
 Requires(post): systemd-units
 Requires(preun): systemd-units
 Requires(postun): systemd-units
 
-%description guest-agent
+%description -n qemu-guest-agent
 QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
 
@@ -435,19 +435,19 @@ with the host over a virtio-serial channel named "org.qemu.guest_agent.0"
 
 This package does not need to be installed on the host OS.
 
-%post guest-agent
+%post -n qemu-guest-agent
 if [ $1 -eq 1 ] ; then
     # Initial installation.
     /bin/systemctl daemon-reload >/dev/null 2>&1 || :
 fi
 
-%preun guest-agent
+%preun -n qemu-guest-agent
 if [ $1 -eq 0 ] ; then
     # Package removal, not upgrade.
     /bin/systemctl stop qemu-guest-agent.service > /dev/null 2>&1 || :
 fi
 
-%postun guest-agent
+%postun -n qemu-guest-agent
 /bin/systemctl daemon-reload >/dev/null 2>&1 || :
 if [ $1 -ge 1 ] ; then
     # Package upgrade, not uninstall.
@@ -1058,7 +1058,7 @@ fi
 %config(noreplace) %{_sysconfdir}/ksmtuned.conf
 %dir %{_sysconfdir}/qemu
 
-%files guest-agent
+%files -n qemu-guest-agent
 %defattr(-,root,root,-)
 %doc COPYING README
 %{_bindir}/qemu-ga
@@ -1230,7 +1230,7 @@ fi
 %endif
 %endif
 
-%files img
+%files -n qemu-img
 %defattr(-,root,root)
 %{_bindir}/qemu-img
 %{_bindir}/qemu-io
@@ -1238,6 +1238,14 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Nov 21 2012 Michal Novotny <minovotn@redhat.com> - 2:1.2.0-20
+- Rename subpackages to qemu-guest-agent and qemu-img [bz#866744]
+- Increment Epoch number to 3 [bz#818626]
+- Resolves: bz#866744
+  (weirdness in package renaming)
+- Resolves; bz#818626
+  (qemu-kvm version is obsoleted by RHEL6 qemu-kvm-rhev package)
+
 * Tue Nov 20 2012 Michal Novotny <minovotn@redhat.com> - 2:1.2.0-19
 - Fix location of upstream tarball
 
