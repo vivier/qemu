@@ -110,7 +110,7 @@ Name: qemu-kvm
 Version: 1.2.0
 Release: 20%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
-Epoch: 3
+Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
 Group: Development/Tools
 URL: http://www.qemu.org/
