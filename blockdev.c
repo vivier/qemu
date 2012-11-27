@@ -1340,6 +1340,7 @@ int do_block_stream(Monitor *mon, const QDict *params, QObject **ret_data)
     return 0;
 }
 
+#ifdef CONFIG_LIVE_SNAPSHOTS
 void qmp___com_redhat_block_commit(const char *device,
                       bool has_base, const char *base, const char *top,
                       bool has_speed, int64_t speed,
@@ -1398,6 +1399,7 @@ void qmp___com_redhat_block_commit(const char *device,
      */
     drive_get_ref(drive_get_by_blockdev(bs));
 }
+#endif
 
 static BlockJob *find_block_job(const char *device)
 {

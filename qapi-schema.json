@@ -2,6 +2,7 @@
 #
 # QAPI Schema
 
+#ifdef CONFIG_LIVE_SNAPSHOTS
 ##
 # @__com.redhat_block-commit
 #
@@ -37,7 +38,6 @@
   'data': { 'device': 'str', '*base': 'str', 'top': 'str',
             '*speed': 'int' } }
 
-#ifdef CONFIG_LIVE_SNAPSHOTS
 ##
 # @NewImageMode
 #

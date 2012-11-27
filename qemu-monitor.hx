@@ -2262,12 +2262,14 @@ If base does not exist, BaseNotFound
 
 EQMP
 
+#ifdef CONFIG_LIVE_SNAPSHOTS
     {
         .name       = "__com.redhat_block-commit",
         .args_type  = "device:B,base:s?,top:s,speed:o?",
         .user_print = monitor_user_noop,
         .mhandler.cmd_new = qmp_marshal_input___com_redhat_block_commit,
     },
+#endif
 
     {
         .name       = "block-job-set-speed",
