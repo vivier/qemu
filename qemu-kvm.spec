@@ -752,7 +752,7 @@ dobuild() {
         --prefix=%{_prefix} \
         --sysconfdir=%{_sysconfdir} \
         --interp-prefix=%{_prefix}/qemu-%%M \
-        --audio-drv-list=pa,sdl,alsa,oss \
+        --audio-drv-list=pa,alsa,oss \
         --disable-strip \
         --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
         --extra-cflags="%{optflags} -fPIE -DPIE" \
