@@ -108,7 +108,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu-kvm
 Version: 1.2.0
-Release: 20%{?dist}
+Release: 21%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -756,6 +756,7 @@ dobuild() {
         --disable-strip \
         --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
         --extra-cflags="%{optflags} -fPIE -DPIE" \
+        --disable-sdl \
 %if 0%{?have_spice:1}
         --enable-spice \
 %endif
@@ -1238,6 +1239,11 @@ fi
 %{_mandir}/man1/qemu-img.1*
 
 %changelog
+* Wed Nov 28 2012 Michal Novotny <minovotn@redhat.com> - 2:1.2.0-21
+- Add configuration option to disable SDL (bz#880152)
+- Resolves: bz#880152
+  (qemu-kvm should emulate video device by default)
+
 * Wed Nov 21 2012 Michal Novotny <minovotn@redhat.com> - 2:1.2.0-20
 - Rename subpackages to qemu-guest-agent and qemu-img [bz#866744]
 - Increment Epoch number to 3 [bz#818626]
