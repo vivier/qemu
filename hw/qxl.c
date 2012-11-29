@@ -2040,6 +2040,7 @@ static int qxl_post_load(void *opaque, int version)
 
     switch (newmode) {
     case QXL_MODE_UNDEFINED:
+        qxl_create_memslots(d);
         break;
     case QXL_MODE_VGA:
         qxl_create_memslots(d);
