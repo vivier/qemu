@@ -54,11 +54,6 @@ void vty_putchars(VIOsPAPRDevice *sdev, uint8_t *buf, int len)
     qemu_chr_fe_write(dev->chardev, buf, len);
 }
 
-static const QemuChrHandlers vty_handlers = {
-    .fd_can_read = vty_can_receive,
-    .fd_read = vty_receive,
-};
-
 static int spapr_vty_init(VIOsPAPRDevice *sdev)
 {
     VIOsPAPRVTYDevice *dev = (VIOsPAPRVTYDevice *)sdev;
@@ -68,13 +63,14 @@ static int spapr_vty_init(VIOsPAPRDevice *sdev)
         exit(1);
     }
 
-    qemu_chr_add_handlers(dev->chardev, &vty_handlers, dev);
+    qemu_chr_add_handlers(dev->chardev, vty_can_receive,
+                          vty_receive, NULL, dev);
 
     return 0;
 }
 
 /* Forward declaration */
-static target_ulong h_put_term_char(CPUPPCState *env, sPAPREnvironment *spapr,
+static target_ulong h_put_term_char(PowerPCCPU *cpu, sPAPREnvironment *spapr,
                                     target_ulong opcode, target_ulong *args)
 {
     target_ulong reg = args[0];
@@ -101,7 +97,7 @@ static target_ulong h_put_term_char(CPUPPCState *env, sPAPREnvironment *spapr,
     return H_SUCCESS;
 }
 
-static target_ulong h_get_term_char(CPUPPCState *env, sPAPREnvironment *spapr,
+static target_ulong h_get_term_char(PowerPCCPU *cpu, sPAPREnvironment *spapr,
                                     target_ulong opcode, target_ulong *args)
 {
     target_ulong reg = args[0];

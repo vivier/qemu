@@ -40,19 +40,13 @@
 #define ACPI_DBG_IO_ADDR  0xb044
 
 #define GPE_BASE 0xafe0
-#define PROC_BASE 0xaf00
 #define GPE_LEN 4
 #define PCI_UP_BASE 0xae00
 #define PCI_DOWN_BASE 0xae04
 #define PCI_EJ_BASE 0xae08
 #define PCI_RMV_BASE 0xae0c
 
-#define PIIX4_CPU_HOTPLUG_STATUS 4
 #define PIIX4_PCI_HOTPLUG_STATUS 2
-
-struct gpe_regs {
-    uint8_t cpus_sts[32];
-};
 
 struct pci_status {
     uint32_t up; /* deprecated, maintained for migration compatibility */
@@ -73,9 +67,9 @@ typedef struct PIIX4PMState {
     qemu_irq smi_irq;
     int kvm_enabled;
     Notifier machine_ready;
+    Notifier powerdown_notifier;
 
     /* for pci hotplug */
-    struct gpe_regs gpe_cpu;
     struct pci_status pci0_status;
     uint32_t pci0_hotplug_enable;
     uint32_t pci0_slot_device_present;
@@ -272,11 +266,54 @@ static const VMStateDescription vmstate_pci_status = {
     }
 };
 
+static int acpi_load_old(QEMUFile *f, void *opaque, int version_id)
+{
+    PIIX4PMState *s = opaque;
+    int ret, i;
+    uint16_t temp;
+
+    ret = pci_device_load(&s->dev, f);
+    if (ret < 0) {
+        return ret;
+    }
+    qemu_get_be16s(f, &s->ar.pm1.evt.sts);
+    qemu_get_be16s(f, &s->ar.pm1.evt.en);
+    qemu_get_be16s(f, &s->ar.pm1.cnt.cnt);
+
+    ret = vmstate_load_state(f, &vmstate_apm, opaque, 1);
+    if (ret) {
+        return ret;
+    }
+
+    qemu_get_timer(f, s->ar.tmr.timer);
+    qemu_get_sbe64s(f, &s->ar.tmr.overflow_time);
+
+    qemu_get_be16s(f, (uint16_t *)s->ar.gpe.sts);
+    for (i = 0; i < 3; i++) {
+        qemu_get_be16s(f, &temp);
+    }
+
+    qemu_get_be16s(f, (uint16_t *)s->ar.gpe.en);
+    for (i = 0; i < 3; i++) {
+        qemu_get_be16s(f, &temp);
+    }
+
+    ret = vmstate_load_state(f, &vmstate_pci_status, opaque, 1);
+    return ret;
+}
+
+/* qemu-kvm 1.2 uses version 3 but advertised as 2
+ * To support incoming qemu-kvm 1.2 migration, change version_id
+ * and minimum_version_id to 2 below (which breaks migration from
+ * qemu 1.2).
+ *
+ */
 static const VMStateDescription vmstate_acpi = {
     .name = "piix4_pm",
-    .version_id = 2,
-    .minimum_version_id = 1,
+    .version_id = 3,
+    .minimum_version_id = 3,
     .minimum_version_id_old = 1,
+    .load_state_old = acpi_load_old,
     .post_load = vmstate_acpi_post_load,
     .fields      = (VMStateField []) {
         VMSTATE_PCI_DEVICE(dev, PIIX4PMState),
@@ -368,9 +405,9 @@ static void piix4_reset(void *opaque)
     piix4_update_hotplug(s);
 }
 
-static void piix4_powerdown(void *opaque, int irq, int power_failing)
+static void piix4_pm_powerdown_req(Notifier *n, void *opaque)
 {
-    PIIX4PMState *s = opaque;
+    PIIX4PMState *s = container_of(n, PIIX4PMState, powerdown_notifier);
 
     assert(s != NULL);
     acpi_pm1_evt_power_down(&s->ar);
@@ -389,15 +426,10 @@ static void piix4_pm_machine_ready(Notifier *n, void *opaque)
 
 }
 
-static PIIX4PMState *global_piix4_pm_state; /* cpu hotadd */
-
 static int piix4_pm_initfn(PCIDevice *dev)
 {
     PIIX4PMState *s = DO_UPCAST(PIIX4PMState, dev, dev);
     uint8_t *pci_conf;
-
-    /* for cpu hotadd */
-    global_piix4_pm_state = s;
 
     pci_conf = s->dev.config;
     pci_conf[0x06] = 0x80;
@@ -427,7 +459,8 @@ static int piix4_pm_initfn(PCIDevice *dev)
     acpi_pm_tmr_init(&s->ar, pm_tmr_timer);
     acpi_gpe_init(&s->ar, GPE_LEN);
 
-    qemu_system_powerdown = *qemu_allocate_irqs(piix4_powerdown, s, 1);
+    s->powerdown_notifier.notify = piix4_pm_powerdown_req;
+    qemu_register_powerdown_notifier(&s->powerdown_notifier);
 
     pm_smbus_init(&s->dev.qdev, &s->smb);
     s->machine_ready.notify = piix4_pm_machine_ready;
@@ -510,16 +543,7 @@ type_init(piix4_pm_register_types)
 static uint32_t gpe_readb(void *opaque, uint32_t addr)
 {
     PIIX4PMState *s = opaque;
-    uint32_t val = 0;
-    struct gpe_regs *g = &s->gpe_cpu;
-
-    switch (addr) {
-        case PROC_BASE ... PROC_BASE+31:
-            val = g->cpus_sts[addr - PROC_BASE];
-            break;
-        default:
-            val = acpi_gpe_ioport_readb(&s->ar, addr);
-    }
+    uint32_t val = acpi_gpe_ioport_readb(&s->ar, addr);
 
     PIIX4_DPRINTF("gpe read %x == %x\n", addr, val);
     return val;
@@ -578,26 +602,15 @@ static uint32_t pcirmv_read(void *opaque, uint32_t addr)
     return s->pci0_hotplug_enable;
 }
 
-extern const char *global_cpu_model;
-
 static int piix4_device_hotplug(DeviceState *qdev, PCIDevice *dev,
                                 PCIHotplugState state);
 
 static void piix4_acpi_system_hot_add_init(PCIBus *bus, PIIX4PMState *s)
 {
-    int i = 0, cpus = smp_cpus;
-
-    while (cpus > 0) {
-        s->gpe_cpu.cpus_sts[i++] = (cpus < 8) ? (1 << cpus) - 1 : 0xff;
-        cpus -= 8;
-    }
 
     register_ioport_write(GPE_BASE, GPE_LEN, 1, gpe_writeb, s);
     register_ioport_read(GPE_BASE, GPE_LEN, 1,  gpe_readb, s);
     acpi_gpe_blk(&s->ar, GPE_BASE);
-
-    register_ioport_write(PROC_BASE, 32, 1, gpe_writeb, s);
-    register_ioport_read(PROC_BASE, 32, 1,  gpe_readb, s);
 
     register_ioport_read(PCI_UP_BASE, 4, 4, pci_up_read, s);
     register_ioport_read(PCI_DOWN_BASE, 4, 4, pci_down_read, s);
@@ -609,48 +622,6 @@ static void piix4_acpi_system_hot_add_init(PCIBus *bus, PIIX4PMState *s)
 
     pci_bus_hotplug(bus, piix4_device_hotplug, &s->dev.qdev);
 }
-
-#if defined(TARGET_I386)
-static void enable_processor(PIIX4PMState *s, int cpu)
-{
-    struct gpe_regs *g = &s->gpe_cpu;
-    ACPIGPE *gpe = &s->ar.gpe;
-
-    *gpe->sts = *gpe->sts | PIIX4_CPU_HOTPLUG_STATUS;
-    g->cpus_sts[cpu/8] |= (1 << (cpu%8));
-}
-
-static void disable_processor(PIIX4PMState *s, int cpu)
-{
-    struct gpe_regs *g = &s->gpe_cpu;
-    ACPIGPE *gpe = &s->ar.gpe;
-
-    *gpe->sts = *gpe->sts | PIIX4_CPU_HOTPLUG_STATUS;
-    g->cpus_sts[cpu/8] &= ~(1 << (cpu%8));
-}
-
-void qemu_system_cpu_hot_add(int cpu, int state)
-{
-    X86CPU *env;
-    PIIX4PMState *s = global_piix4_pm_state;
-
-    if (state && !qemu_get_cpu(cpu)) {
-        env = pc_new_cpu(global_cpu_model);
-        if (!env) {
-            fprintf(stderr, "cpu %d creation failed\n", cpu);
-            return;
-        }
-        env->env.cpuid_apic_id = cpu;
-    }
-
-    if (state)
-        enable_processor(s, cpu);
-    else
-        disable_processor(s, cpu);
-
-    pm_update_sci(s);
-}
-#endif
 
 static void enable_device(PIIX4PMState *s, int slot)
 {

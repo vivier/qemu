@@ -1,6 +1,8 @@
 /*
  * QEMU ISA VGA Emulator.
  *
+ * see docs/specs/standard-vga.txt for virtual hardware specs.
+ *
  * Copyright (c) 2003 Fabrice Bellard
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -70,7 +72,7 @@ static int vga_initfn(ISADevice *dev)
 }
 
 static Property vga_isa_properties[] = {
-    DEFINE_PROP_UINT32("vgamem_mb", ISAVGAState, state.vram_size_mb, 16),
+    DEFINE_PROP_UINT32("vgamem_mb", ISAVGAState, state.vram_size_mb, 8),
     DEFINE_PROP_END_OF_LIST(),
 };
 

@@ -151,7 +151,7 @@ static void grlib_apbuart_event(void *opaque, int event)
 }
 
 
-static uint64_t grlib_apbuart_read(void *opaque, target_phys_addr_t addr,
+static uint64_t grlib_apbuart_read(void *opaque, hwaddr addr,
                                    unsigned size)
 {
     UART     *uart = opaque;
@@ -181,7 +181,7 @@ static uint64_t grlib_apbuart_read(void *opaque, target_phys_addr_t addr,
     }
 }
 
-static void grlib_apbuart_write(void *opaque, target_phys_addr_t addr,
+static void grlib_apbuart_write(void *opaque, hwaddr addr,
                                 uint64_t value, unsigned size)
 {
     UART          *uart = opaque;
@@ -222,17 +222,15 @@ static const MemoryRegionOps grlib_apbuart_ops = {
     .endianness = DEVICE_NATIVE_ENDIAN,
 };
 
-static const QemuChrHandlers grlib_handlers = {
-    .fd_can_read = grlib_apbuart_can_receive,
-    .fd_read = grlib_apbuart_receive,
-    .fd_event = grlib_apbuart_event,
-};
-
 static int grlib_apbuart_init(SysBusDevice *dev)
 {
     UART *uart = FROM_SYSBUS(typeof(*uart), dev);
 
-    qemu_chr_add_handlers(uart->chr, &grlib_handlers, uart);
+    qemu_chr_add_handlers(uart->chr,
+                          grlib_apbuart_can_receive,
+                          grlib_apbuart_receive,
+                          grlib_apbuart_event,
+                          uart);
 
     sysbus_init_irq(dev, &uart->irq);
 

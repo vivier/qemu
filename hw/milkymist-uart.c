@@ -78,7 +78,7 @@ static void uart_update_irq(MilkymistUartState *s)
     }
 }
 
-static uint64_t uart_read(void *opaque, target_phys_addr_t addr,
+static uint64_t uart_read(void *opaque, hwaddr addr,
                           unsigned size)
 {
     MilkymistUartState *s = opaque;
@@ -107,7 +107,7 @@ static uint64_t uart_read(void *opaque, target_phys_addr_t addr,
     return r;
 }
 
-static void uart_write(void *opaque, target_phys_addr_t addr, uint64_t value,
+static void uart_write(void *opaque, hwaddr addr, uint64_t value,
                        unsigned size)
 {
     MilkymistUartState *s = opaque;
@@ -189,12 +189,6 @@ static void milkymist_uart_reset(DeviceState *d)
     s->regs[R_STAT] = STAT_THRE;
 }
 
-static const QemuChrHandlers uart_handlers = {
-    .fd_can_read = uart_can_rx,
-    .fd_read = uart_rx,
-    .fd_event = uart_event,
-};
-
 static int milkymist_uart_init(SysBusDevice *dev)
 {
     MilkymistUartState *s = FROM_SYSBUS(typeof(*s), dev);
@@ -207,7 +201,7 @@ static int milkymist_uart_init(SysBusDevice *dev)
 
     s->chr = qemu_char_get_next_serial();
     if (s->chr) {
-        qemu_chr_add_handlers(s->chr, &uart_handlers, s);
+        qemu_chr_add_handlers(s->chr, uart_can_rx, uart_rx, uart_event, s);
     }
 
     return 0;

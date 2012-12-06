@@ -30,7 +30,8 @@
 #include <sys/wait.h>
 #endif
 #include "net.h"
-#include "net/hub.h"
+#include "clients.h"
+#include "hub.h"
 #include "monitor.h"
 #include "qemu_socket.h"
 #include "slirp/libslirp.h"
@@ -135,7 +136,7 @@ static int net_slirp_init(NetClientState *peer, const char *model,
                           const char *vhostname, const char *tftp_export,
                           const char *bootfile, const char *vdhcp_start,
                           const char *vnameserver, const char *smb_export,
-                          const char *vsmbserver)
+                          const char *vsmbserver, const char **dnssearch)
 {
     /* default settings according to historic slirp */
     struct in_addr net  = { .s_addr = htonl(0x0a000200) }; /* 10.0.2.0 */
@@ -241,7 +242,7 @@ static int net_slirp_init(NetClientState *peer, const char *model,
     s = DO_UPCAST(SlirpState, nc, nc);
 
     s->slirp = slirp_init(restricted, net, mask, host, vhostname,
-                          tftp_export, bootfile, dhcp, dns, s);
+                          tftp_export, bootfile, dhcp, dns, dnssearch, s);
     QTAILQ_INSERT_TAIL(&slirp_stacks, s, entry);
 
     for (config = slirp_configs; config; config = config->next) {
@@ -593,11 +594,6 @@ static void guestfwd_read(void *opaque, const uint8_t *buf, int size)
     slirp_socket_recv(fwd->slirp, fwd->server, fwd->port, buf, size);
 }
 
-static const QemuChrHandlers guestfwd_handlers = {
-    .fd_can_read = guestfwd_can_read,
-    .fd_read = guestfwd_read,
-};
-
 static int slirp_guestfwd(SlirpState *s, const char *config_str,
                           int legacy_format)
 {
@@ -663,7 +659,8 @@ static int slirp_guestfwd(SlirpState *s, const char *config_str,
         fwd->port = port;
         fwd->slirp = s->slirp;
 
-        qemu_chr_add_handlers(fwd->hd, &guestfwd_handlers, fwd);
+        qemu_chr_add_handlers(fwd->hd, guestfwd_can_read, guestfwd_read,
+                              NULL, fwd);
     }
     return 0;
 
@@ -702,6 +699,31 @@ net_init_slirp_configs(const StringList *fwd, int flags)
     }
 }
 
+static const char **slirp_dnssearch(const StringList *dnsname)
+{
+    const StringList *c = dnsname;
+    size_t i = 0, num_opts = 0;
+    const char **ret;
+
+    while (c) {
+        num_opts++;
+        c = c->next;
+    }
+
+    if (num_opts == 0) {
+        return NULL;
+    }
+
+    ret = g_malloc((num_opts + 1) * sizeof(*ret));
+    c = dnsname;
+    while (c) {
+        ret[i++] = c->value->str;
+        c = c->next;
+    }
+    ret[i] = NULL;
+    return ret;
+}
+
 int net_init_slirp(const NetClientOptions *opts, const char *name,
                    NetClientState *peer)
 {
@@ -709,6 +731,7 @@ int net_init_slirp(const NetClientOptions *opts, const char *name,
     char *vnet;
     int ret;
     const NetdevUserOptions *user;
+    const char **dnssearch;
 
     assert(opts->kind == NET_CLIENT_OPTIONS_KIND_USER);
     user = opts->user;
@@ -716,6 +739,8 @@ int net_init_slirp(const NetClientOptions *opts, const char *name,
     vnet = user->has_net ? g_strdup(user->net) :
            user->has_ip  ? g_strdup_printf("%s/24", user->ip) :
            NULL;
+
+    dnssearch = slirp_dnssearch(user->dnssearch);
 
     /* all optional fields are initialized to "all bits zero" */
 
@@ -725,7 +750,7 @@ int net_init_slirp(const NetClientOptions *opts, const char *name,
     ret = net_slirp_init(peer, "user", name, user->q_restrict, vnet,
                          user->host, user->hostname, user->tftp,
                          user->bootfile, user->dhcpstart, user->dns, user->smb,
-                         user->smbserver);
+                         user->smbserver, dnssearch);
 
     while (slirp_configs) {
         config = slirp_configs;
@@ -734,6 +759,7 @@ int net_init_slirp(const NetClientOptions *opts, const char *name,
     }
 
     g_free(vnet);
+    g_free(dnssearch);
 
     return ret;
 }

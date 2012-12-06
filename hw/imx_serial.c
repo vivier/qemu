@@ -183,7 +183,7 @@ static void imx_serial_reset_at_boot(DeviceState *dev)
 
 }
 
-static uint64_t imx_serial_read(void *opaque, target_phys_addr_t offset,
+static uint64_t imx_serial_read(void *opaque, hwaddr offset,
                                 unsigned size)
 {
     IMXSerialState *s = (IMXSerialState *)opaque;
@@ -244,7 +244,7 @@ static uint64_t imx_serial_read(void *opaque, target_phys_addr_t offset,
     }
 }
 
-static void imx_serial_write(void *opaque, target_phys_addr_t offset,
+static void imx_serial_write(void *opaque, hwaddr offset,
                       uint64_t value, unsigned size)
 {
     IMXSerialState *s = (IMXSerialState *)opaque;
@@ -381,12 +381,6 @@ static const struct MemoryRegionOps imx_serial_ops = {
     .endianness = DEVICE_NATIVE_ENDIAN,
 };
 
-static const QemuChrHandlers imx_handlers = {
-    .fd_can_read = imx_can_receive,
-    .fd_read = imx_receive,
-    .fd_event = imx_event,
-};
-
 static int imx_serial_init(SysBusDevice *dev)
 {
     IMXSerialState *s = FROM_SYSBUS(IMXSerialState, dev);
@@ -397,7 +391,8 @@ static int imx_serial_init(SysBusDevice *dev)
     sysbus_init_irq(dev, &s->irq);
 
     if (s->chr) {
-        qemu_chr_add_handlers(s->chr, &imx_handlers, s);
+        qemu_chr_add_handlers(s->chr, imx_can_receive, imx_receive,
+                              imx_event, s);
     } else {
         DPRINTF("No char dev for uart at 0x%lx\n",
                 (unsigned long)s->iomem.ram_addr);
@@ -406,7 +401,7 @@ static int imx_serial_init(SysBusDevice *dev)
     return 0;
 }
 
-void imx_serial_create(int uart, const target_phys_addr_t addr, qemu_irq irq)
+void imx_serial_create(int uart, const hwaddr addr, qemu_irq irq)
 {
     DeviceState *dev;
     SysBusDevice *bus;
@@ -432,7 +427,7 @@ void imx_serial_create(int uart, const target_phys_addr_t addr, qemu_irq irq)
     qdev_prop_set_chr(dev, "chardev", chr);
     bus = sysbus_from_qdev(dev);
     qdev_init_nofail(dev);
-    if (addr != (target_phys_addr_t)-1) {
+    if (addr != (hwaddr)-1) {
         sysbus_mmio_map(bus, 0, addr);
     }
     sysbus_connect_irq(bus, 0, irq);

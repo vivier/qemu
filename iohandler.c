@@ -26,6 +26,7 @@
 #include "qemu-common.h"
 #include "qemu-char.h"
 #include "qemu-queue.h"
+#include "qemu-aio.h"
 #include "main-loop.h"
 
 #ifndef _WIN32
@@ -45,41 +46,6 @@ typedef struct IOHandlerRecord {
 static QLIST_HEAD(, IOHandlerRecord) io_handlers =
     QLIST_HEAD_INITIALIZER(io_handlers);
 
-static IOHandlerRecord *find_iohandler(int fd)
-{
-    IOHandlerRecord *ioh;
-
-    QLIST_FOREACH(ioh, &io_handlers, next) {
-        if (ioh->fd == fd) {
-            return ioh;
-        }
-    }
-    return NULL;
-}
-
-void enable_write_fd_handler(int fd, IOHandler *fd_write)
-{
-    IOHandlerRecord *ioh;
-
-    ioh = find_iohandler(fd);
-    if (!ioh) {
-        return;
-    }
-
-    ioh->fd_write = fd_write;
-}
-
-void disable_write_fd_handler(int fd)
-{
-    IOHandlerRecord *ioh;
-
-    ioh = find_iohandler(fd);
-    if (!ioh) {
-        return;
-    }
-
-    ioh->fd_write = NULL;
-}
 
 /* XXX: fd_read_poll should be suppressed, but an API change is
    necessary in the character devices to suppress fd_can_read(). */
@@ -90,6 +56,8 @@ int qemu_set_fd_handler2(int fd,
                          void *opaque)
 {
     IOHandlerRecord *ioh;
+
+    assert(fd >= 0);
 
     if (!fd_read && !fd_write) {
         QLIST_FOREACH(ioh, &io_handlers, next) {

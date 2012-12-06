@@ -110,19 +110,13 @@ static void juart_reset(DeviceState *d)
     s->jrx = 0;
 }
 
-static const QemuChrHandlers juart_handlers = {
-    .fd_can_read = juart_can_rx,
-    .fd_read = juart_rx,
-    .fd_event = juart_event,
-};
-
 static int lm32_juart_init(SysBusDevice *dev)
 {
     LM32JuartState *s = FROM_SYSBUS(typeof(*s), dev);
 
     s->chr = qemu_char_get_next_serial();
     if (s->chr) {
-        qemu_chr_add_handlers(s->chr, &juart_handlers, s);
+        qemu_chr_add_handlers(s->chr, juart_can_rx, juart_rx, juart_event, s);
     }
 
     return 0;

@@ -354,12 +354,12 @@ static void uart_read_rx_fifo(UartState *s, uint32_t *c)
     uart_update_status(s);
 }
 
-static void uart_write(void *opaque, target_phys_addr_t offset,
+static void uart_write(void *opaque, hwaddr offset,
                           uint64_t value, unsigned size)
 {
     UartState *s = (UartState *)opaque;
 
-    DB_PRINT(" offset:%x data:%08x\n", offset, (unsigned)value);
+    DB_PRINT(" offset:%x data:%08x\n", (unsigned)offset, (unsigned)value);
     offset >>= 2;
     switch (offset) {
     case R_IER: /* ier (wts imr) */
@@ -397,20 +397,23 @@ static void uart_write(void *opaque, target_phys_addr_t offset,
     }
 }
 
-static uint64_t uart_read(void *opaque, target_phys_addr_t offset,
+static uint64_t uart_read(void *opaque, hwaddr offset,
         unsigned size)
 {
     UartState *s = (UartState *)opaque;
     uint32_t c = 0;
 
     offset >>= 2;
-    if (offset > R_MAX) {
-        return 0;
+    if (offset >= R_MAX) {
+        c = 0;
     } else if (offset == R_TX_RX) {
         uart_read_rx_fifo(s, &c);
-        return c;
+    } else {
+       c = s->r[offset];
     }
-    return s->r[offset];
+
+    DB_PRINT(" offset:%x data:%08x\n", (unsigned)(offset << 2), (unsigned)c);
+    return c;
 }
 
 static const MemoryRegionOps uart_ops = {
@@ -435,12 +438,6 @@ static void cadence_uart_reset(UartState *s)
     s->rx_wpos = 0;
 }
 
-static const QemuChrHandlers cadence_uart_handlers = {
-    .fd_can_read = uart_can_receive,
-    .fd_read = uart_receive,
-    .fd_event = uart_event,
-};
-
 static int cadence_uart_init(SysBusDevice *dev)
 {
     UartState *s = FROM_SYSBUS(UartState, dev);
@@ -462,7 +459,8 @@ static int cadence_uart_init(SysBusDevice *dev)
     cadence_uart_reset(s);
 
     if (s->chr) {
-        qemu_chr_add_handlers(s->chr, &cadence_uart_handlers, s);
+        qemu_chr_add_handlers(s->chr, uart_can_receive, uart_receive,
+                              uart_event, s);
     }
 
     return 0;

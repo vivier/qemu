@@ -416,13 +416,6 @@ static void qtest_event(void *opaque, int event)
     }
 }
 
-static const QemuChrHandlers test_handlers = {
-    .fd_can_read = qtest_can_read,
-    .fd_read = qtest_read,
-    .fd_event = qtest_event,
-};
-
-
 int qtest_init(void)
 {
     CharDriverState *chr;
@@ -432,7 +425,7 @@ int qtest_init(void)
     configure_icount("0");
     chr = qemu_chr_new("qtest", qtest_chrdev, NULL);
 
-    qemu_chr_add_handlers(chr, &test_handlers, chr);
+    qemu_chr_add_handlers(chr, qtest_can_read, qtest_read, qtest_event, chr);
     qemu_chr_fe_set_echo(chr, true);
 
     inbuf = g_string_new("");

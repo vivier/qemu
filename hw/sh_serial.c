@@ -78,7 +78,7 @@ static void sh_serial_clear_fifo(sh_serial_state * s)
     s->rx_tail = 0;
 }
 
-static void sh_serial_write(void *opaque, target_phys_addr_t offs,
+static void sh_serial_write(void *opaque, hwaddr offs,
                             uint64_t val, unsigned size)
 {
     sh_serial_state *s = opaque;
@@ -187,11 +187,11 @@ static void sh_serial_write(void *opaque, target_phys_addr_t offs,
     }
 
     fprintf(stderr, "sh_serial: unsupported write to 0x%02"
-            TARGET_PRIxPHYS "\n", offs);
+            HWADDR_PRIx "\n", offs);
     abort();
 }
 
-static uint64_t sh_serial_read(void *opaque, target_phys_addr_t offs,
+static uint64_t sh_serial_read(void *opaque, hwaddr offs,
                                unsigned size)
 {
     sh_serial_state *s = opaque;
@@ -289,7 +289,7 @@ static uint64_t sh_serial_read(void *opaque, target_phys_addr_t offs,
 
     if (ret & ~((1 << 16) - 1)) {
         fprintf(stderr, "sh_serial: unsupported read from 0x%02"
-                TARGET_PRIxPHYS "\n", offs);
+                HWADDR_PRIx "\n", offs);
         abort();
     }
 
@@ -352,14 +352,8 @@ static const MemoryRegionOps sh_serial_ops = {
     .endianness = DEVICE_NATIVE_ENDIAN,
 };
 
-static const QemuChrHandlers sh_serial_handlers = {
-    .fd_can_read = sh_serial_can_receive1,
-    .fd_read = sh_serial_receive1,
-    .fd_event = sh_serial_event,
-};
-
 void sh_serial_init(MemoryRegion *sysmem,
-                    target_phys_addr_t base, int feat,
+                    hwaddr base, int feat,
                     uint32_t freq, CharDriverState *chr,
                     qemu_irq eri_source,
                     qemu_irq rxi_source,
@@ -402,9 +396,9 @@ void sh_serial_init(MemoryRegion *sysmem,
 
     s->chr = chr;
 
-    if (chr) {
-        qemu_chr_add_handlers(chr, &sh_serial_handlers, s);
-    }
+    if (chr)
+        qemu_chr_add_handlers(chr, sh_serial_can_receive1, sh_serial_receive1,
+			      sh_serial_event, s);
 
     s->eri = eri_source;
     s->rxi = rxi_source;

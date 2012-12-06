@@ -463,7 +463,7 @@ static void escc_update_parameters(ChannelState *s)
     qemu_chr_fe_ioctl(s->chr, CHR_IOCTL_SERIAL_SET_PARAMS, &ssp);
 }
 
-static void escc_mem_write(void *opaque, target_phys_addr_t addr,
+static void escc_mem_write(void *opaque, hwaddr addr,
                            uint64_t val, unsigned size)
 {
     SerialState *serial = opaque;
@@ -565,7 +565,7 @@ static void escc_mem_write(void *opaque, target_phys_addr_t addr,
     }
 }
 
-static uint64_t escc_mem_read(void *opaque, target_phys_addr_t addr,
+static uint64_t escc_mem_read(void *opaque, hwaddr addr,
                               unsigned size)
 {
     SerialState *serial = opaque;
@@ -683,7 +683,7 @@ static const VMStateDescription vmstate_escc = {
     }
 };
 
-MemoryRegion *escc_init(target_phys_addr_t base, qemu_irq irqA, qemu_irq irqB,
+MemoryRegion *escc_init(hwaddr base, qemu_irq irqA, qemu_irq irqB,
               CharDriverState *chrA, CharDriverState *chrB,
               int clock, int it_shift)
 {
@@ -846,7 +846,7 @@ static void sunmouse_event(void *opaque,
     put_queue(s, 0);
 }
 
-void slavio_serial_ms_kbd_init(target_phys_addr_t base, qemu_irq irq,
+void slavio_serial_ms_kbd_init(hwaddr base, qemu_irq irq,
                                int disabled, int clock, int it_shift)
 {
     DeviceState *dev;
@@ -867,12 +867,6 @@ void slavio_serial_ms_kbd_init(target_phys_addr_t base, qemu_irq irq,
     sysbus_mmio_map(s, 0, base);
 }
 
-static const QemuChrHandlers serial_handlers = {
-    .fd_can_read = serial_can_receive,
-    .fd_read = serial_receive1,
-    .fd_event = serial_event,
-};
-
 static int escc_init1(SysBusDevice *dev)
 {
     SerialState *s = FROM_SYSBUS(SerialState, dev);
@@ -885,7 +879,8 @@ static int escc_init1(SysBusDevice *dev)
         s->chn[i].chn = 1 - i;
         s->chn[i].clock = s->frequency / 2;
         if (s->chn[i].chr) {
-            qemu_chr_add_handlers(s->chn[i].chr, &serial_handlers, &s->chn[i]);
+            qemu_chr_add_handlers(s->chn[i].chr, serial_can_receive,
+                                  serial_receive1, serial_event, &s->chn[i]);
         }
     }
     s->chn[0].otherchn = &s->chn[1];

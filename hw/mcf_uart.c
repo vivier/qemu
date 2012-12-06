@@ -66,7 +66,7 @@ static void mcf_uart_update(mcf_uart_state *s)
     qemu_set_irq(s->irq, (s->isr & s->imr) != 0);
 }
 
-uint64_t mcf_uart_read(void *opaque, target_phys_addr_t addr,
+uint64_t mcf_uart_read(void *opaque, hwaddr addr,
                        unsigned size)
 {
     mcf_uart_state *s = (mcf_uart_state *)opaque;
@@ -185,7 +185,7 @@ static void mcf_do_command(mcf_uart_state *s, uint8_t cmd)
     }
 }
 
-void mcf_uart_write(void *opaque, target_phys_addr_t addr,
+void mcf_uart_write(void *opaque, hwaddr addr,
                     uint64_t val, unsigned size)
 {
     mcf_uart_state *s = (mcf_uart_state *)opaque;
@@ -272,12 +272,6 @@ static void mcf_uart_receive(void *opaque, const uint8_t *buf, int size)
     mcf_uart_push_byte(s, buf[0]);
 }
 
-static const QemuChrHandlers mcf_uart_handlers = {
-    .fd_can_read = mcf_uart_can_receive,
-    .fd_read = mcf_uart_receive,
-    .fd_event = mcf_uart_event,
-};
-
 void *mcf_uart_init(qemu_irq irq, CharDriverState *chr)
 {
     mcf_uart_state *s;
@@ -286,7 +280,8 @@ void *mcf_uart_init(qemu_irq irq, CharDriverState *chr)
     s->chr = chr;
     s->irq = irq;
     if (chr) {
-        qemu_chr_add_handlers(chr, &mcf_uart_handlers, s);
+        qemu_chr_add_handlers(chr, mcf_uart_can_receive, mcf_uart_receive,
+                              mcf_uart_event, s);
     }
     mcf_uart_reset(s);
     return s;
@@ -299,7 +294,7 @@ static const MemoryRegionOps mcf_uart_ops = {
 };
 
 void mcf_uart_mm_init(MemoryRegion *sysmem,
-                      target_phys_addr_t base,
+                      hwaddr base,
                       qemu_irq irq,
                       CharDriverState *chr)
 {

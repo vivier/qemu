@@ -84,7 +84,7 @@ static void uart_update_status(struct xlx_uartlite *s)
 }
 
 static uint64_t
-uart_read(void *opaque, target_phys_addr_t addr, unsigned int size)
+uart_read(void *opaque, hwaddr addr, unsigned int size)
 {
     struct xlx_uartlite *s = opaque;
     uint32_t r = 0;
@@ -109,7 +109,7 @@ uart_read(void *opaque, target_phys_addr_t addr, unsigned int size)
 }
 
 static void
-uart_write(void *opaque, target_phys_addr_t addr,
+uart_write(void *opaque, hwaddr addr,
            uint64_t val64, unsigned int size)
 {
     struct xlx_uartlite *s = opaque;
@@ -195,12 +195,6 @@ static void uart_event(void *opaque, int event)
 
 }
 
-static const QemuChrHandlers uart_handlers = {
-    .fd_can_read = uart_can_rx,
-    .fd_read = uart_rx,
-    .fd_event = uart_event,
-};
-
 static int xilinx_uartlite_init(SysBusDevice *dev)
 {
     struct xlx_uartlite *s = FROM_SYSBUS(typeof (*s), dev);
@@ -213,9 +207,8 @@ static int xilinx_uartlite_init(SysBusDevice *dev)
     sysbus_init_mmio(dev, &s->mmio);
 
     s->chr = qemu_char_get_next_serial();
-    if (s->chr) {
-        qemu_chr_add_handlers(s->chr, &uart_handlers, s);
-    }
+    if (s->chr)
+        qemu_chr_add_handlers(s->chr, uart_can_rx, uart_rx, uart_event, s);
     return 0;
 }
 

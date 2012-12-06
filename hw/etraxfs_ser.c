@@ -75,7 +75,7 @@ static void ser_update_irq(struct etrax_serial *s)
 }
 
 static uint64_t
-ser_read(void *opaque, target_phys_addr_t addr, unsigned int size)
+ser_read(void *opaque, hwaddr addr, unsigned int size)
 {
     struct etrax_serial *s = opaque;
     D(CPUCRISState *env = s->env);
@@ -110,7 +110,7 @@ ser_read(void *opaque, target_phys_addr_t addr, unsigned int size)
 }
 
 static void
-ser_write(void *opaque, target_phys_addr_t addr,
+ser_write(void *opaque, hwaddr addr,
           uint64_t val64, unsigned int size)
 {
     struct etrax_serial *s = opaque;
@@ -208,12 +208,6 @@ static void etraxfs_ser_reset(DeviceState *d)
 
 }
 
-static const QemuChrHandlers serial_handlers = {
-    .fd_can_read = serial_can_receive,
-    .fd_read = serial_receive,
-    .fd_event = serial_event,
-};
-
 static int etraxfs_ser_init(SysBusDevice *dev)
 {
     struct etrax_serial *s = FROM_SYSBUS(typeof (*s), dev);
@@ -223,9 +217,10 @@ static int etraxfs_ser_init(SysBusDevice *dev)
     sysbus_init_mmio(dev, &s->mmio);
 
     s->chr = qemu_char_get_next_serial();
-    if (s->chr) {
-        qemu_chr_add_handlers(s->chr, &serial_handlers, s);
-    }
+    if (s->chr)
+        qemu_chr_add_handlers(s->chr,
+                      serial_can_receive, serial_receive,
+                      serial_event, s);
     return 0;
 }
 
