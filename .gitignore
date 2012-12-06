@@ -49,6 +49,8 @@ qemu-monitor.texi
 *.vr
 *.d
 *.o
+*.swp
+*.orig
 .pc
 patches
 pc-bios/bios-pq/status
@@ -58,3 +60,4 @@ pc-bios/optionrom/multiboot.raw
 pc-bios/optionrom/extboot.bin
 .stgit-*
 cscope.*
+tags
