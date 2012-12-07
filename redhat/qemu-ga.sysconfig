@@ -17,6 +17,15 @@ LOGFILE="/var/log/qemu-ga.log"
 # Default: /var/run/qemu-ga.pid
 PIDFILE="/var/run/qemu-ga.pid"
 
+# SELinux note:
+#  About guest arbitrary file read/write
+#
+# A new selinux policy is introduced on RHEL-6.4 to deny qemu-ga to
+# read/write arbitrary guest files except the device file used to talk
+# with host processes, LOGFILE and PIDFILE.
+#
+# You can disable this policy by "restorecon -R -v /usr/bin/qemu-ga"
+
 # Comma-separated blacklist of RPCs to disable or empty list to enable all
 # Tip: You can get the list of RPC commands using `qemu-ga --blacklist ?`
 # Default: blank list to enable all RPCs
