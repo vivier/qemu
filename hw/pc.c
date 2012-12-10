@@ -1655,14 +1655,16 @@ static void rhel_common_init(const char *type1_version,
         }
 
 #define PC_RHEL6_2_COMPAT \
-        {\
+        PC_RHEL6_3_COMPAT \
+        ,{\
             .driver   = "virtio-net-pci",\
             .property = "x-__com_redhat_rhel620_compat",\
             .value    = "on",\
-        }, PC_RHEL6_3_COMPAT
+        }
 
 #define PC_RHEL6_1_COMPAT \
-        {\
+        PC_RHEL6_2_COMPAT \
+        ,{\
             .driver   = "usb-tablet",\
             .property = "migrate",\
             .value    = stringify(0),\
@@ -1706,14 +1708,15 @@ static void rhel_common_init(const char *type1_version,
             .driver   = "virtio-balloon",\
             .property = "event_idx",\
             .value    = "off",\
-        }, PC_RHEL6_2_COMPAT
+        }
 
 #define PC_RHEL6_0_COMPAT \
-        {\
+        PC_RHEL6_1_COMPAT \
+        ,{\
             .driver   = "virtio-serial-pci",\
             .property = "flow_control",\
             .value    = stringify(0),\
-        }, PC_RHEL6_1_COMPAT
+        }
 
 static void pc_rhel630_compat(void)
 {
