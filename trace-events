@@ -274,6 +274,10 @@ disable qxl_render_blit(int32_t stride, int32_t left, int32_t right, int32_t top
 disable qxl_render_guest_primary_resized(int32_t width, int32_t height, int32_t stride, int32_t bytes_pp, int32_t bits_pp) "%dx%d, stride %d, bpp %d, depth %d"
 disable qxl_render_update_area_done(void *cookie) "%p"
 
+# monitor.c
+disable handle_qmp_command(void *mon, const char *cmd_name) "mon %p cmd_name \"%s\""
+disable monitor_protocol_emitter(void *mon) "mon %p"
+
 # hbitmap.c
 disable hbitmap_iter_skip_words(const void *hb, void *hbi, uint64_t pos, unsigned long cur) "hb %p hbi %p pos %"PRId64" cur 0x%lx" 
 disable hbitmap_reset(void *hb, uint64_t start, uint64_t count, uint64_t sbit, uint64_t ebit) "hb %p items %"PRIu64",%"PRIu64" bits %"PRIu64"..%"PRIu64
