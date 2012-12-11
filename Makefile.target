@@ -208,7 +208,7 @@ obj-y += virtio-blk.o virtio-balloon.o virtio-net.o virtio-pci.o virtio-serial-b
 obj-y += virtio-scsi.o event_notifier.o
 obj-y += vhost_net.o
 obj-$(CONFIG_VHOST_NET) += vhost.o
-obj-$(CONFIG_KVM) += kvm.o kvm-all.o hyperv.o
+obj-$(CONFIG_KVM) += kvm.o kvm-all.o
 # MSI-X depends on kvm for interrupt injection,
 # so moved it from Makefile.hw to Makefile.target for now
 obj-y += msix.o

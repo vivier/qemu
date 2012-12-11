@@ -23,7 +23,6 @@
 
 #include "kvm.h"
 #include "hw/pc.h"
-#include "hyperv.h"
 
 #define MSR_IA32_TSC		0x10
 
@@ -883,12 +882,6 @@ static int get_msr_entry(struct kvm_msr_entry *entry, CPUState *env)
         case MSR_KVM_WALL_CLOCK:
             env->wall_clock_msr = entry->data;
             break;
-        case HV_X64_MSR_GUEST_OS_ID:
-            env->hyperv_guest_os_id = entry->data;
-            break;
-        case HV_X64_MSR_HYPERCALL:
-            env->hyperv_hypercall = entry->data;
-            break;
         case MSR_KVM_PV_EOI_EN:
             env->pv_eoi_en_msr = entry->data;
             break;
@@ -1110,9 +1103,6 @@ void kvm_arch_load_regs(CPUState *env)
 #endif
     set_msr_entry(&msrs[n++], MSR_KVM_SYSTEM_TIME,  env->system_time_msr);
     set_msr_entry(&msrs[n++], MSR_KVM_WALL_CLOCK,  env->wall_clock_msr);
-    set_msr_entry(&msrs[n++], HV_X64_MSR_GUEST_OS_ID,  env->hyperv_guest_os_id);
-    set_msr_entry(&msrs[n++], HV_X64_MSR_HYPERCALL,  env->hyperv_hypercall);
-
     if (has_msr_pv_eoi_en) {
         set_msr_entry(&msrs[n++], MSR_KVM_PV_EOI_EN, env->pv_eoi_en_msr);
     }
@@ -1353,8 +1343,6 @@ void kvm_arch_save_regs(CPUState *env)
 #endif
     msrs[n++].index = MSR_KVM_SYSTEM_TIME;
     msrs[n++].index = MSR_KVM_WALL_CLOCK;
-    msrs[n++].index = HV_X64_MSR_GUEST_OS_ID;
-    msrs[n++].index = HV_X64_MSR_HYPERCALL;
     if (has_msr_pv_eoi_en) {
         msrs[n++].index = MSR_KVM_PV_EOI_EN;
     }
@@ -1446,9 +1434,6 @@ int kvm_arch_init_vcpu(CPUState *cenv)
     memset(pv_ent, 0, sizeof(*pv_ent));
     pv_ent->function = KVM_CPUID_SIGNATURE;
     pv_ent->eax = 0;
-    if (hyperv_relaxed_timing_enabled()) {
-        pv_ent->eax = HYPERV_CPUID_ENLIGHTMENT_INFO;
-    }
     pv_ent->ebx = signature[0];
     pv_ent->ecx = signature[1];
     pv_ent->edx = signature[2];
@@ -1458,17 +1443,6 @@ int kvm_arch_init_vcpu(CPUState *cenv)
     pv_ent->function = KVM_CPUID_FEATURES;
     pv_ent->eax = cenv->cpuid_kvm_features & kvm_arch_get_supported_cpuid(cenv->kvm_state,
 						KVM_CPUID_FEATURES, 0, R_EAX);
-
-    if (hyperv_relaxed_timing_enabled()) {
-        memcpy(signature, "Hv#1\0\0\0\0\0\0\0\0", 12);
-        pv_ent->eax = signature[0];
-
-        pv_ent = &cpuid_ent[cpuid_nent++];
-        memset(pv_ent, 0, sizeof(*pv_ent));
-        pv_ent->function = HYPERV_CPUID_ENLIGHTMENT_INFO;
-        pv_ent->eax |= HV_X64_RELAXED_TIMING_RECOMMENDED;
-    }
-
 #endif
 
     kvm_trim_features(&cenv->cpuid_features,
