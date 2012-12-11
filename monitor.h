@@ -48,6 +48,10 @@ typedef enum MonitorEvent {
     QEVENT_SUSPEND_DISK,
     QEVENT_WAKEUP,
     QEVENT_SPICE_MIGRATE_COMPLETED,
+
+    /* Add to 'monitor_event_names' array in monitor.c when
+     * defining new events here */
+
     QEVENT_MAX,
 } MonitorEvent;
 
