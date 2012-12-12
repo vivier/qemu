@@ -30,6 +30,4 @@ int do_info_balloon(Monitor *mon, MonitorCompletion cb, void *opaque);
 int do_balloon(Monitor *mon, const QDict *params,
                MonitorCompletion cb, void *opaque);
 
-void qemu_balloon_changed(int64_t actual);
-
 #endif
