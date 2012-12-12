@@ -208,11 +208,6 @@ disable qemu_co_mutex_unlock_return(void *mutex, void *self) "mutex %p self %p"
 # monitor.c
 disable handle_qmp_command(void *mon, const char *cmd_name) "mon %p cmd_name \"%s\""
 disable monitor_protocol_emitter(void *mon) "mon %p"
-disable monitor_protocol_event(uint32_t event, const char *evname, void *data) "event=%d name \"%s\" data %p"
-disable monitor_protocol_event_handler(uint32_t event, void *data, uint64_t last, uint64_t now) "event=%d data=%p last=%" PRId64 " now=%" PRId64
-disable monitor_protocol_event_emit(uint32_t event, void *data) "event=%d data=%p"
-disable monitor_protocol_event_queue(uint32_t event, void *data, uint64_t rate, uint64_t last, uint64_t now) "event=%d data=%p rate=%" PRId64 " last=%" PRId64 " now=%" PRId64
-disable monitor_protocol_event_throttle(uint32_t event, uint64_t rate) "event=%d rate=%" PRId64
 
 # hbitmap.c
 disable hbitmap_iter_skip_words(const void *hb, void *hbi, uint64_t pos, unsigned long cur) "hb %p hbi %p pos %"PRId64" cur 0x%lx" 
