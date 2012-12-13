@@ -276,6 +276,8 @@ static void vmmouse_reset(void *opaque)
 
     s->status = 0xffff;
     s->queue_size = VMMOUSE_QUEUE_SIZE;
+
+    vmmouse_disable(s);
 }
 
 void *vmmouse_init(void *m)
