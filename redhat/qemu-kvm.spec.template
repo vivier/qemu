@@ -1,5 +1,8 @@
 # build-time settings:
 
+# Uncomment for RHEV build:
+# %define rhev 0
+
 %if 0%{?rhev_test}
 %define enable_fake_machine 1
 %else
@@ -22,6 +25,23 @@
 %bcond_without  guest_agent     # enabled
 %endif
 
+%if %{with guest_agent}
+%define build_arches i686 x86_64
+%else
+%define build_arches x86_64
+%endif
+
+%ifarch i686
+%bcond_with     qemu_kvm              # disabled
+%bcond_with     guest_agent_win32     # disabled - mingw is only available for
+                                      #            x86_64
+%else
+%bcond_without  qemu_kvm              # enabled
+%if %{with guest_agent}
+%bcond_without  guest_agent_win32     # enabled
+%endif # with guest_agent
+%endif
+
 # Package name and path configuration variables:
 # - pkgname: the package name (qemu-kvm or qemu-kvm-rhev)
 # - pkgsuffix: suffix for package names that are not "qemu-kvm-*" (e.g.
@@ -41,13 +61,21 @@
 # Obsolete all qemu-kvm versions[1], so users with both RHEL and RHEV channels
 # will get the qemu-kvm-rhev package.
 # [1] unless one day we want to revert it, then qemu-kvm Epoch should be increased to 10
-%define obsoletes_ver 10:0-0
-%define pkgsuffix    -rhev
+%define obsoletes_ver   10:0-0
+%define pkgsuffix       -rhev
+%define conflicts       qemu-kvm
+%define conflicts_img   qemu-img
+%else
+%define conflicts       qemu-kvm-rhev
+%define conflicts_img   qemu-img-rhev
 %endif
 
 %define confname qemu-kvm
 %define progname qemu-kvm
 %define pkgname      qemu-kvm%{?pkgsuffix}
+
+
+
 
 # Versions of various parts:
 
@@ -77,11 +105,12 @@ Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
 Group: Development/Tools
 URL: http://www.linux-kvm.org
-ExclusiveArch: x86_64
+ExclusiveArch: %{build_arches}
+Conflicts: %{conflicts}
 
 Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-kvm-%{version}.tar.gz
 
-# Loads kvm kernel modules at boot
+# Loads kvm qemu_kvm kernel modules at boot
 Source2: kvm.modules
 
 # Creates /dev/kvm
@@ -101,6 +130,9 @@ Source9: blacklist-kvm.conf
 Source10: qemu-ga.init
 Source11: qemu-ga.sysconfig
 
+# Windows guest agent installation docs
+Source12: README-qemu-ga-win32.txt
+
 %%CONFIGS%%
 
 %%PATCH_LIST%%
@@ -112,15 +144,23 @@ BuildRequires: pciutils-devel
 BuildRequires: pulseaudio-libs-devel
 BuildRequires: ncurses-devel
 BuildRequires: libaio-devel
+%if %{with qemu_kvm}
 BuildRequires: usbredir-devel >= 0.5
 
 # seamless spice migration needs a recent spice server version
 BuildRequires: spice-server-devel >= 0.12.0
+%endif
 
 BuildRequires: systemtap-sdt-devel
 
 # 'stap' binary is required by configure detection of systemtap:
 BuildRequires: systemtap
+
+# If we are building the guest agent, we also are building it for
+# windows
+%if %{with guest_agent_win32}
+BuildRequires: mingw32-gcc mingw32-zlib mingw32-glib2
+%endif
 
 Requires(post): /usr/bin/getent
 Requires(post): /usr/sbin/groupadd
@@ -137,6 +177,7 @@ Obsoletes: %{providesname} < %{obsoletes_ver}
 %endif
 %endif
 Obsoletes: kvm < 85
+%if %{with qemu_kvm}
 Requires: vgabios
 Requires: vgabios-qxl
 Requires: vgabios-stdvga
@@ -150,6 +191,7 @@ Requires: /usr/share/gpxe/pcnet32.rom
 Requires: /usr/share/gpxe/rtl8139.rom
 Requires: /usr/share/gpxe/virtio-net.rom
 Requires: /usr/share/sgabios/sgabios.bin
+%endif
 
 # fix for CVE-2011-2527 requires newer glibc
 Requires: glibc >= 2.12-1.40.el6
@@ -176,6 +218,7 @@ management code, not to run actual virtual machines.
 %endif
 
 
+%if %{with qemu_kvm}
 %package -n qemu-img%{?pkgsuffix}
 Summary: QEMU command line tool for manipulating disk images
 Group: Development/Tools
@@ -184,6 +227,7 @@ Provides: qemu-img = %{epoch}:%{version}-%{release}
 %if 0%{?obsoletes_ver:1}
 Obsoletes: qemu-img < %{obsoletes_ver}
 %endif
+Conflicts: %{conflicts_img}
 %endif
 
 %description -n qemu-img%{?pkgsuffix}
@@ -203,6 +247,8 @@ Obsoletes: %{providesname}-tools < %{obsoletes_ver}
 This package contains some diagnostics and debugging tools for KVM,
 such as kvm_stat.
 
+%endif # with qemu_kvm
+
 %if %{with guest_agent}
 %package -n qemu-guest-agent%{?pkgsuffix}
 Summary: QEMU Guest Agent
@@ -217,6 +263,23 @@ Obsoletes: qemu-guest-agent < %{obsoletes_ver}
 %description -n qemu-guest-agent%{?pkgsuffix}
 This package provides a qemu guest agent daemon to be running inside of
 linux guests to provide the guest information.
+
+%if %{with guest_agent_win32}
+%package -n qemu-guest-agent-win32%{?pkgsuffix}
+Summary: QEMU Guest Agent for Windows
+Group: Development/Tools
+%if 0%{?addprovides}
+Provides: qemu-guest-agent-win32 = %{epoch}:%{version}-%{release}
+%if 0%{?obsoletes_ver:1}
+Obsoletes: qemu-guest-agent-win32 < %{obsoletes_ver}
+%endif
+%endif
+
+%description -n qemu-guest-agent-win32%{?pkgsuffix}
+This package provides a qemu guest agent daemon to be running inside of
+Windows guests to provide the guest information.
+%endif # with guest_agent_win32
+
 %endif # guest_agent
 
 %prep
@@ -281,10 +344,37 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
 %define disable_rhev_features_arg --disable-rhev-features
 %endif
 
+%define qemu_ga_build_flags --prefix=%{_prefix} \\\
+             --localstatedir=%{_localstatedir} \\\
+             --sysconfdir=%{_sysconfdir} \\\
+             --disable-strip \\\
+             --disable-xen \\\
+             --block-drv-whitelist=qcow2,raw,file,host_device,host_cdrom,qed \\\
+             --disable-debug-tcg \\\
+             --disable-sparse \\\
+             --disable-sdl \\\
+             --disable-curses \\\
+             --disable-curl \\\
+             --disable-check-utests \\\
+             --disable-brlapi \\\
+             --disable-bluez \\\
+             --enable-docs \\\
+             --disable-vde \\\
+             --disable-spice \\\
+             --trace-backend=nop \\\
+             --enable-smartcard \\\
+             --disable-smartcard-nss
+
+mkdir qemu-kvm-x86_64-build
+cd qemu-kvm-x86_64-build
+
+%if %{with qemu_kvm}
+# we are building in a separate build directory, so that we can build for both linux x86_64
+# and windows (for the guest agent).
 # sdl outputs to alsa or pulseaudio depending on system config, but it's broken (#495964)
 # alsa works, but causes huge CPU load due to bugs
 # oss works, but is very problematic because it grabs exclusive control of the device causing other apps to go haywire
-./configure --target-list=x86_64-softmmu \
+../configure --target-list=x86_64-softmmu \
             --prefix=%{_prefix} \
             --localstatedir=%{_localstatedir} \
             --sysconfdir=%{_sysconfdir} \
@@ -324,8 +414,32 @@ echo "config-host.mak contents:"
 echo "==="
 cat config-host.mak
 echo "==="
+%endif # with qemu_kvm
 
+%if %{with guest_agent}
+# Now configure for the windows guest agent build, using mingw32-
+cd ..
+mkdir qemu-kvm-win32-build
+%if %{with guest_agent_win32}
+cd qemu-kvm-win32-build
 
+../configure --target-list=x86_64-softmmu \
+             --cross-prefix=i686-pc-mingw32- \
+             %{qemu_ga_build_flags}
+
+cd ..
+%endif # with guest_agent_win32
+# Now configure for the Linux guest agent build
+mkdir qemu-kvm-qemu-ga-build
+cd qemu-kvm-qemu-ga-build
+
+../configure --target-list=x86_64-softmmu \
+             %{qemu_ga_build_flags}
+
+cd ../qemu-kvm-x86_64-build
+%endif
+
+%if %{with qemu_kvm}
 # generate the default config:
 make x86_64-softmmu/config-devices.mak
 
@@ -334,21 +448,31 @@ sed -i -e '/CONFIG_VMWARE_VGA=y/d' x86_64-softmmu/config-devices.mak
 
 make V=1 QEMU_PROG=%{progname} QEMU_BINDIR="%{_prefix}/libexec" \
      %{?_smp_mflags} $buildldflags
+%endif # with qemu_kvm
+
+%if %{with guest_agent}
+%if %{with guest_agent_win32}
+# build the windows guest agent
+cd ../qemu-kvm-win32-build
+make V=1 %{?_smp_mflags} $buildldflags qemu-ga.exe
+%endif # with guest_agent_win32
+# build the linux guest agent
+cd ../qemu-kvm-qemu-ga-build
+make V=1 %{?_smp_mflags} $buildldflags qemu-ga
+%endif
+cd ..   # we are now in the parent dir of all the build dirs
 
 %install
+cd qemu-kvm-x86_64-build
 rm -rf $RPM_BUILD_ROOT
 
+%if %{with qemu_kvm}
 install -D -p -m 0755 %{SOURCE4} $RPM_BUILD_ROOT%{_initddir}/ksm
 install -D -p -m 0644 %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/ksm
 
 install -D -p -m 0755 %{SOURCE6} $RPM_BUILD_ROOT%{_initddir}/ksmtuned
 install -D -p -m 0755 %{SOURCE7} $RPM_BUILD_ROOT%{_sbindir}/ksmtuned
 install -D -p -m 0644 %{SOURCE8} $RPM_BUILD_ROOT%{_sysconfdir}/ksmtuned.conf
-
-%if %{with guest_agent}
-install -D -p -m 0755 %{SOURCE10} $RPM_BUILD_ROOT%{_initddir}/qemu-ga
-install -D -p -m 0644 %{SOURCE11} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/qemu-ga
-%endif # guest_agent
 
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules
 mkdir -p $RPM_BUILD_ROOT%{_bindir}/
@@ -358,7 +482,7 @@ mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/modprobe.d
 
 install -m 0755 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules/kvm.modules
-install -m 0755 kvm/kvm_stat $RPM_BUILD_ROOT%{_bindir}/
+install -m 0755 ../kvm/kvm_stat $RPM_BUILD_ROOT%{_bindir}/
 install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
 install -m 0644 %{SOURCE9} $RPM_BUILD_ROOT%{_sysconfdir}/modprobe.d/blacklist-kvm.conf
 
@@ -370,6 +494,13 @@ make DESTDIR="${RPM_BUILD_ROOT}" \
      QEMU_PROG=%{progname} \
      QEMU_BINDIR="%{_prefix}/libexec" \
      install
+%endif # with qemu_kvm
+
+%if %{with guest_agent}
+install -D -p -m 0755 ../qemu-kvm-qemu-ga-build/qemu-ga $RPM_BUILD_ROOT%{_bindir}/qemu-ga
+install -D -p -m 0755 %{SOURCE10} $RPM_BUILD_ROOT%{_initddir}/qemu-ga
+install -D -p -m 0644 %{SOURCE11} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/qemu-ga
+%endif # guest_agent
 
 rm -rf ${RPM_BUILD_ROOT}%{_bindir}/qemu-nbd
 rm -rf ${RPM_BUILD_ROOT}%{_mandir}/man8/qemu-nbd.8*
@@ -377,10 +508,11 @@ rm -rf ${RPM_BUILD_ROOT}%{_mandir}/man8/qemu-nbd.8*
 rm -f $RPM_BUILD_ROOT%{_bindir}/qemu-ga
 %endif
 
+%if %{with qemu_kvm}
 chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
-install -D -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} Changelog README TODO COPYING COPYING.LIB LICENSE
+install -D -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} ../Changelog ../README ../TODO ../COPYING ../COPYING.LIB ../LICENSE
 
-install -D -p -m 0644 qemu.sasl $RPM_BUILD_ROOT%{_sysconfdir}/sasl2/qemu-kvm.conf
+install -D -p -m 0644 ../qemu.sasl $RPM_BUILD_ROOT%{_sysconfdir}/sasl2/qemu-kvm.conf
 
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{confname}/pxe*bin
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{confname}/vgabios*bin
@@ -412,8 +544,18 @@ ln -s ../vgabios/VGABIOS-lgpl-latest.stdvga.bin %{buildroot}/%{_datadir}/%{confn
 ln -s ../vgabios/VGABIOS-lgpl-latest.vmware.bin %{buildroot}/%{_datadir}/%{confname}/vgabios-vmware.bin
 ln -s ../seabios/bios.bin %{buildroot}/%{_datadir}/%{confname}/bios.bin
 ln -s ../sgabios/sgabios.bin %{buildroot}/%{_datadir}/%{confname}/sgabios.bin
+%endif # with qemu_kvm
 
+%if %{with guest_agent_win32}
+mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{confname}/qemu-ga-win32/
+install -m 0755 ../qemu-kvm-win32-build/qemu-ga.exe $RPM_BUILD_ROOT%{_datadir}/%{confname}/qemu-ga-win32/
+install -D -p -m 0444 %{SOURCE12} $RPM_BUILD_ROOT%{_datadir}/%{confname}/qemu-ga-win32/README.txt
+%endif # with guest_agent_win32
+
+
+%if %{with qemu_kvm}
 cd %{buildroot}/usr/share/systemtap/tapset
+%endif # with qemu_kvm
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -428,16 +570,19 @@ getent passwd qemu >/dev/null || \
 /sbin/chkconfig --add ksm
 /sbin/chkconfig --add ksmtuned
 
+%if %{with qemu_kvm}
+# load kvm modules now, so we can make sure no reboot is needed.
+# If there's already a kvm module installed, we don't mess with it
+sh %{_sysconfdir}/sysconfig/modules/kvm.modules
+%endif
+
 %if %{with guest_agent}
 %post -n qemu-guest-agent%{?pkgsuffix}
 /sbin/chkconfig --add qemu-ga
 /sbin/chkconfig qemu-ga off
 %endif # guest_agent
 
-# load kvm modules now, so we can make sure no reboot is needed.
-# If there's already a kvm module installed, we don't mess with it
-sh %{_sysconfdir}/sysconfig/modules/kvm.modules
-
+%if %{with qemu_kvm}
 %preun
 if [ $1 -eq 0 ]; then
     /sbin/service ksmtuned stop &>/dev/null || :
@@ -445,6 +590,7 @@ if [ $1 -eq 0 ]; then
     /sbin/service ksm stop &>/dev/null || :
     /sbin/chkconfig --del ksm
 fi
+%endif # with qemu_kvm
 
 %if %{with guest_agent}
 %preun -n qemu-guest-agent%{?pkgsuffix}
@@ -454,12 +600,15 @@ if [ $1 -eq 0 ]; then
 fi
 %endif # guest_agent
 
+%if %{with qemu_kvm}
 %postun
 if [ $1 -ge 1 ]; then
     /sbin/service ksm condrestart &>/dev/null || :
     /sbin/service ksmtuned condrestart &>/dev/null || :
 fi
+%endif # with qemu_kvm
 
+%if %{with qemu_kvm}
 %files
 %defattr(-,root,root)
 %doc %{qemudocdir}/Changelog
@@ -500,6 +649,7 @@ fi
 %{_sysconfdir}/sysconfig/modules/kvm.modules
 %{_sysconfdir}/udev/rules.d/80-kvm.rules
 %config(noreplace) %{_sysconfdir}/modprobe.d/blacklist-kvm.conf
+%endif # with qemu_kvm
 
 %if %{with guest_agent}
 %files -n qemu-guest-agent%{?pkgsuffix}
@@ -507,8 +657,17 @@ fi
 %{_bindir}/qemu-ga
 %{_initddir}/qemu-ga
 %config(noreplace) %{_sysconfdir}/sysconfig/qemu-ga
+
+%if %{with guest_agent_win32}
+%files -n qemu-guest-agent-win32%{?pkgsuffix}
+%defattr(-,root,root,-)
+%{_datadir}/%{confname}/qemu-ga-win32/
+%{_datadir}/%{confname}/qemu-ga-win32/qemu-ga.exe
+%{_datadir}/%{confname}/qemu-ga-win32/README.txt
+%endif # with guest_agent_win32
 %endif # guest_agent
 
+%if %{with qemu_kvm}
 %files -n %{pkgname}-tools
 %defattr(-,root,root,-)
 %{_bindir}/kvm_stat
@@ -518,6 +677,7 @@ fi
 %{_bindir}/qemu-img
 %{_bindir}/qemu-io
 %{_mandir}/man1/qemu-img.1*
+%endif # with qemu_kvm
 
 %changelog
 %%CHANGELOG%%
