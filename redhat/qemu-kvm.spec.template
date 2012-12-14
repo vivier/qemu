@@ -434,6 +434,8 @@ mkdir qemu-kvm-qemu-ga-build
 cd qemu-kvm-qemu-ga-build
 
 ../configure --target-list=x86_64-softmmu \
+             --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
+             --extra-cflags="$RPM_OPT_FLAGS -fPIE -DPIE" \
              %{qemu_ga_build_flags}
 
 cd ../qemu-kvm-x86_64-build
