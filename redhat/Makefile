@@ -6,10 +6,15 @@ LANG=C
 BUILD_DEFAULT_TARGET = RHEL-6-test
 BUILD_SCRATCH_TARGET = rhel-6.4-candidate
 
+BUILD_DEFAULT_TARGET_RHEV = RHEL-6-test
+BUILD_SCRATCH_TARGET_RHEV = rhevh-rhel-6.4-candidate
+
 #ifeq ($(shell git diff --quiet HEAD && git describe --exact-match 2>/dev/null && echo ok),)
 BUILD_TARGET ?= --scratch $(BUILD_SCRATCH_TARGET)
+BUILD_TARGET_RHEV ?= --scratch $(BUILD_SCRATCH_TARGET_RHEV)
 #else
 #BUILD_TARGET ?= $(BUILD_DEFAULT_TARGET)
+#BUILD_TARGET_RHEV ?= $(BUILD_DEFAULT_TARGET_RHEV)
 #endif
 
 RELEASE:=$(shell sed -ne 's/^[^\#]*define release \(.*\)%.*%.*/\1/p' $(REDHAT)/$(SPECFILE).template)
@@ -40,6 +45,7 @@ endif
 PKGRELEASE=$(PREBUILD)$(BUILD)
 PKG_FULL_VR = $(STAMP_VERSION)-$(PKGRELEASE)$(DIST)$(BUILDID)
 PKG_FULL_NVR = $(PKGNAME)-$(PKG_FULL_VR)
+PKG_FULL_NVR_RHEV = $(PKGNAME)-rhev-$(PKG_FULL_VR)
 
 RPMBUILD_DEFS = --define "_sourcedir $(SOURCES)" --define "_builddir $(RPM)/BUILD" --define "_srcrpmdir $(RPM)/SRPMS" --define "_rpmdir $(RPM)/RPMS" --define "_specdir $(RPM)/SPECS" --define "dist $(DIST)"
 
@@ -140,7 +146,14 @@ rh-all-rpms: rh-sources
 	$(RPMBUILD) $(RPMBUILD_DEFS) --target $(MACH) -ba $(RPM)/SOURCES/$(SPECFILE)
 
 rh-srpm: rh-sources
+	sed "s/# %define rhev 1//" $(RPM)/SOURCES/$(SPECFILE) > $(RPM)/SOURCES/$(SPECFILE).tmp
+	cp $(RPM)/SOURCES/$(SPECFILE).tmp $(RPM)/SOURCES/$(SPECFILE)
 	$(RPMBUILD) $(RPMBUILD_DEFS) --nodeps -bs $(RPM)/SOURCES/$(SPECFILE)
+
+rh-srpm-rhev: rh-sources
+	sed "s/# %define rhev 1/%define rhev 1/" $(RPM)/SOURCES/$(SPECFILE) > $(RPM)/SOURCES/$(SPECFILE).tmp
+	cp $(RPM)/SOURCES/$(SPECFILE).tmp $(RPM)/SOURCES/$(SPECFILE)
+	$(RPMBUILD) $(RPMBUILD_DEFS) --define "rhev 1" --nodeps -bs $(RPM)/SOURCES/$(SPECFILE)
 
 rh-rpms: rh-sources
 	$(RPMBUILD) $(RPMBUILD_DEFS) --target $(MACH) -bb $(RPM)/SOURCES/$(SPECFILE)
@@ -180,6 +193,8 @@ rh-brew : BUILD_FLAGS ?= $(BREW_FLAGS) $(TEST_FLAGS)
 rh-koji : BUILD_FLAGS ?= $(KOJI_FLAGS) $(TEST_FLAGS)
 rh-brew rh-koji: rh-%: rh-srpm
 	$* build $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)
+rh-brew-rhev rh-koji-rhev: rh-%-rhev: rh-srpm-rhev
+	$* build $(BUILD_FLAGS) $(BUILD_TARGET_RHEV) $(SRPMS)/$(PKG_FULL_NVR_RHEV).src.rpm $(OUTPUT_FILE)
 
 rh-help:
 	@echo  'Cleaning targets:'
@@ -192,6 +207,8 @@ rh-help:
 	@echo  '  rh-srpm	- Create a source RPM and put it into the redhat/rpm/SRPMS/ directory'
 	@echo  '  rh-brew	- Create a $(COMMON_NAME) SRPM and then call brew to build the created SRPM'
 	@echo  '  rh-koji	- Create a $(COMMON_NAME) SRPM and then call koji to build the created SRPM'
+	@echo  '  rh-brew-rhev  - Create a $(COMMON_NAME)-rhev SRPM and then call brew to build the created SRPM'
+	@echo  '  rh-koji-rhev  - Create a $(COMMON_NAME)-rhev SRPM and then call koji to build the created SRPM'
 	@echo  '  rh-test	- Pass in brew task number, TASK=1234 make rh-test, to use for an RHTS test'
 	@echo  '		  setup ./tests to use a test from redhat/tests (minus the .xml)'
 	@echo  '		  uses a known stable RHEL6 distro as the default'
