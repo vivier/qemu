@@ -550,7 +550,7 @@ static void release_chr(Object *obj, const char *name, void *opaque)
     CharDriverState **ptr = qdev_get_prop_ptr(dev, prop);
 
     if (*ptr) {
-        qemu_chr_add_handlers(*ptr, NULL, NULL, NULL, NULL);
+        qemu_chr_add_handlers(*ptr, NULL, NULL);
     }
 }
 

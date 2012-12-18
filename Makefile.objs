@@ -211,11 +211,12 @@ $(trace-obj-y): $(GENERATED_HEADERS)
 ######################################################################
 # smartcard
 
-libcacard-y += libcacard/cac.o libcacard/event.o
-libcacard-y += libcacard/vcard.o libcacard/vreader.o
-libcacard-y += libcacard/vcard_emul_nss.o
-libcacard-y += libcacard/vcard_emul_type.o
-libcacard-y += libcacard/card_7816.o
+libcacard-base-y += cac.o event.o
+libcacard-base-y += vcard.o vreader.o
+libcacard-base-y += vcard_emul_nss.o
+libcacard-base-y += vcard_emul_type.o
+libcacard-base-y += card_7816.o
+libcacard-y = $(addprefix libcacard/,$(libcacard-base-y))
 
 common-obj-$(CONFIG_SMARTCARD_NSS) += $(libcacard-y)
 

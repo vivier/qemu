@@ -641,6 +641,7 @@ static void virtio_serial_post_load_timer_cb(void *opaque)
     VirtIOSerial *s = opaque;
     VirtIOSerialPort *port;
     uint8_t host_connected;
+    VirtIOSerialPortClass *vsc;
 
     for (i = 0 ; i < s->post_load.nr_active_ports; ++i) {
         port = s->post_load.connected[i].port;
@@ -652,6 +653,11 @@ static void virtio_serial_post_load_timer_cb(void *opaque)
              */
             send_control_event(port, VIRTIO_CONSOLE_PORT_OPEN,
                                port->host_connected);
+        }
+        vsc = VIRTIO_SERIAL_PORT_GET_CLASS(port);
+        if (port->guest_connected && vsc->guest_open) {
+            /* replay guest open */
+            vsc->guest_open(port);
         }
     }
     g_free(s->post_load.connected);

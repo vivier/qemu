@@ -133,6 +133,13 @@ static void rng_egd_cancel_requests(RngBackend *b)
     rng_egd_free_requests(s);
 }
 
+static const QemuChrHandlers rng_egd_handlers = {
+    .fd_can_read = rng_egd_chr_can_read,
+    .fd_read = rng_egd_chr_read,
+    .fd_event = NULL,
+};
+
+
 static void rng_egd_opened(RngBackend *b, Error **errp)
 {
     RngEgd *s = RNG_EGD(b);
@@ -150,8 +157,7 @@ static void rng_egd_opened(RngBackend *b, Error **errp)
     }
 
     /* FIXME we should resubmit pending requests when the CDS reconnects. */
-    qemu_chr_add_handlers(s->chr, rng_egd_chr_can_read, rng_egd_chr_read,
-                          NULL, s);
+    qemu_chr_add_handlers(s->chr, &rng_egd_handlers, s);
 }
 
 static void rng_egd_set_chardev(Object *obj, const char *value, Error **errp)
@@ -190,7 +196,7 @@ static void rng_egd_finalize(Object *obj)
     RngEgd *s = RNG_EGD(obj);
 
     if (s->chr) {
-        qemu_chr_add_handlers(s->chr, NULL, NULL, NULL, NULL);
+        qemu_chr_add_handlers(s->chr, NULL, NULL);
     }
 
     g_free(s->chr_name);

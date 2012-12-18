@@ -414,7 +414,7 @@ static void usb_serial_handle_destroy(USBDevice *dev)
 {
     USBSerialState *s = (USBSerialState *)dev;
 
-    qemu_chr_add_handlers(s->cs, NULL, NULL, NULL, NULL);
+    qemu_chr_add_handlers(s->cs, NULL, NULL);
 }
 
 static int usb_serial_can_read(void *opaque)
@@ -478,6 +478,12 @@ static void usb_serial_event(void *opaque, int event)
     }
 }
 
+static const QemuChrHandlers usb_serial_handlers = {
+    .fd_can_read = usb_serial_can_read,
+    .fd_read = usb_serial_read,
+    .fd_event = usb_serial_event,
+};
+
 static int usb_serial_initfn(USBDevice *dev)
 {
     USBSerialState *s = DO_UPCAST(USBSerialState, dev, dev);
@@ -491,8 +497,7 @@ static int usb_serial_initfn(USBDevice *dev)
         return -1;
     }
 
-    qemu_chr_add_handlers(s->cs, usb_serial_can_read, usb_serial_read,
-                          usb_serial_event, s);
+    qemu_chr_add_handlers(s->cs, &usb_serial_handlers, s);
     usb_serial_handle_reset(dev);
 
     if (s->cs->opened && !dev->attached) {

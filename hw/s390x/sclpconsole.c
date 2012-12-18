@@ -240,6 +240,12 @@ static void trigger_ascii_console_data(void *env, int n, int level)
     sclp_service_interrupt(0);
 }
 
+static const QemuChrHandlers sclp_chr_handlers = {
+    .fd_can_read = chr_can_read,
+    .fd_read = chr_read,
+    .fd_event = chr_event,
+};
+
 /* qemu object creation and initialization functions */
 
 /* tell character layer our call-back functions */
@@ -256,8 +262,7 @@ static int console_init(SCLPEvent *event)
     console_available = true;
     event->event_type = SCLP_EVENT_ASCII_CONSOLE_DATA;
     if (scon->chr) {
-        qemu_chr_add_handlers(scon->chr, chr_can_read,
-                              chr_read, chr_event, scon);
+        qemu_chr_add_handlers(scon->chr, &sclp_chr_handlers, scon);
     }
     scon->irq_read_vt220 = *qemu_allocate_irqs(trigger_ascii_console_data,
                                                NULL, 1);

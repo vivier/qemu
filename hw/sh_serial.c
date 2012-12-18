@@ -352,6 +352,12 @@ static const MemoryRegionOps sh_serial_ops = {
     .endianness = DEVICE_NATIVE_ENDIAN,
 };
 
+static const QemuChrHandlers sh_serial_handlers = {
+    .fd_can_read = sh_serial_can_receive1,
+    .fd_read = sh_serial_receive1,
+    .fd_event = sh_serial_event,
+};
+
 void sh_serial_init(MemoryRegion *sysmem,
                     hwaddr base, int feat,
                     uint32_t freq, CharDriverState *chr,
@@ -396,9 +402,9 @@ void sh_serial_init(MemoryRegion *sysmem,
 
     s->chr = chr;
 
-    if (chr)
-        qemu_chr_add_handlers(chr, sh_serial_can_receive1, sh_serial_receive1,
-			      sh_serial_event, s);
+    if (chr) {
+        qemu_chr_add_handlers(chr, &sh_serial_handlers, s);
+    }
 
     s->eri = eri_source;
     s->rxi = rxi_source;

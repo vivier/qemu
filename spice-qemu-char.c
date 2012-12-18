@@ -1,4 +1,6 @@
 #include "config-host.h"
+#include "qemu-common.h"
+#include "qemu-timer.h"
 #include "trace.h"
 #include "ui/qemu-spice.h"
 #include <spice.h>
@@ -21,10 +23,10 @@ typedef struct SpiceCharDriver {
     SpiceCharDeviceInstance     sin;
     char                  *subtype;
     bool                  active;
-    uint8_t               *buffer;
-    uint8_t               *datapos;
-    ssize_t               bufsize, datalen;
+    const uint8_t         *datapos;
+    int                   datalen;
     uint32_t              debug;
+    QEMUTimer             *unblock_timer;
 } SpiceCharDriver;
 
 static int vmc_write(SpiceCharDeviceInstance *sin, const uint8_t *buf, int len)
@@ -50,20 +52,38 @@ static int vmc_write(SpiceCharDeviceInstance *sin, const uint8_t *buf, int len)
     return out;
 }
 
+static void spice_chr_unblock(void *opaque)
+{
+    SpiceCharDriver *scd = opaque;
+
+    if (scd->chr->chr_write_unblocked == NULL) {
+        dprintf(scd, 1, "%s: backend doesn't support unthrottling.\n", __func__);
+        return;
+    }
+    scd->chr->chr_write_unblocked(scd->chr->handler_opaque);
+}
+
 static int vmc_read(SpiceCharDeviceInstance *sin, uint8_t *buf, int len)
 {
     SpiceCharDriver *scd = container_of(sin, SpiceCharDriver, sin);
     int bytes = MIN(len, scd->datalen);
 
-    dprintf(scd, 2, "%s: %p %d/%d/%zd\n", __func__, scd->datapos, len, bytes, scd->datalen);
+    dprintf(scd, 2, "%s: %p %d/%d/%d\n", __func__, scd->datapos, len, bytes, scd->datalen);
     if (bytes > 0) {
         memcpy(buf, scd->datapos, bytes);
         scd->datapos += bytes;
         scd->datalen -= bytes;
         assert(scd->datalen >= 0);
-        if (scd->datalen == 0) {
-            scd->datapos = 0;
-        }
+    }
+    if (scd->datalen == 0 && scd->chr->write_blocked) {
+        dprintf(scd, 1, "%s: unthrottling (%d)\n", __func__, bytes);
+        scd->chr->write_blocked = false;
+        /*
+         * set a timer instead of calling scd->chr->chr_write_unblocked directly,
+         * because that will call back into spice_chr_write (see
+         * virtio-console.c:chr_write_unblocked), which is unwanted.
+         */
+        qemu_mod_timer(scd->unblock_timer, 0);
     }
     trace_spice_vmc_read(bytes, len);
     return bytes;
@@ -135,19 +155,23 @@ static void vmc_unregister_interface(SpiceCharDriver *scd)
 static int spice_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
 {
     SpiceCharDriver *s = chr->opaque;
+    int read_bytes;
 
     dprintf(s, 2, "%s: %d\n", __func__, len);
     vmc_register_interface(s);
     assert(s->datalen == 0);
-    if (s->bufsize < len) {
-        s->bufsize = len;
-        s->buffer = g_realloc(s->buffer, s->bufsize);
-    }
-    memcpy(s->buffer, buf, len);
-    s->datapos = s->buffer;
+    s->datapos = buf;
     s->datalen = len;
     spice_server_char_device_wakeup(&s->sin);
-    return len;
+    read_bytes = len - s->datalen;
+    if (read_bytes != len) {
+        dprintf(s, 1, "%s: throttling: %d < %d\n", __func__,
+                read_bytes, len);
+        s->chr->write_blocked = true;
+        /* We'll get passed in the unconsumed data with the next call */
+        s->datalen = 0;
+    }
+    return read_bytes;
 }
 
 static void spice_chr_close(struct CharDriverState *chr)
@@ -225,6 +249,7 @@ CharDriverState *qemu_chr_open_spice(QemuOpts *opts)
     chr->chr_close = spice_chr_close;
     chr->chr_guest_open = spice_chr_guest_open;
     chr->chr_guest_close = spice_chr_guest_close;
+    s->unblock_timer = qemu_new_timer_ms(vm_clock, spice_chr_unblock, s);
 
 #if SPICE_SERVER_VERSION < 0x000901
     /* See comment in vmc_state() */

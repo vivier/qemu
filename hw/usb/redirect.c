@@ -239,8 +239,9 @@ static int usbredir_read(void *priv, uint8_t *data, int count)
 static int usbredir_write(void *priv, uint8_t *data, int count)
 {
     USBRedirDevice *dev = priv;
+    int r;
 
-    if (!dev->cs->opened) {
+    if (!dev->cs->opened || dev->cs->write_blocked) {
         return 0;
     }
 
@@ -249,7 +250,16 @@ static int usbredir_write(void *priv, uint8_t *data, int count)
         return 0;
     }
 
-    return qemu_chr_fe_write(dev->cs, data, count);
+    r - qemu_chr_fe_write(dev->cs, data, count);
+
+    if (r < 0) {
+        if (dev->cs->write_blocked) {
+           return 0;
+        }
+        return -1;
+    }
+
+    return r;
 }
 
 /*
@@ -1037,6 +1047,20 @@ static void usbredir_chardev_event(void *opaque, int event)
     }
 }
 
+static void usbredir_chardev_write_unblocked(void *opaque)
+{
+    USBRedirDevice *dev = opaque;
+
+    usbredirparser_do_write(dev->parser);
+}
+
+static const QemuChrHandlers usbredir_chr_handlers = {
+    .fd_can_read = usbredir_chardev_can_read,
+    .fd_read = usbredir_chardev_read,
+    .fd_event = usbredir_chardev_event,
+    .fd_write_unblocked = usbredir_chardev_write_unblocked,
+};
+
 /*
  * init + destroy
  */
@@ -1088,8 +1112,7 @@ static int usbredir_initfn(USBDevice *udev)
 
     /* Let the backend know we are ready */
     qemu_chr_fe_open(dev->cs);
-    qemu_chr_add_handlers(dev->cs, usbredir_chardev_can_read,
-                          usbredir_chardev_read, usbredir_chardev_event, dev);
+    qemu_chr_add_handlers(dev->cs, &usbredir_chr_handlers, dev);
 
     qemu_add_vm_change_state_handler(usbredir_vm_state_change, dev);
     add_boot_device_path(dev->bootindex, &udev->qdev, NULL);

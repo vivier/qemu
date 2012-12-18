@@ -1962,6 +1962,12 @@ static int pxa2xx_fir_load(QEMUFile *f, void *opaque, int version_id)
     return 0;
 }
 
+static const QemuChrHandlers pxa2xx_handlers = {
+    .fd_can_read = pxa2xx_fir_is_empty,
+    .fd_read = pxa2xx_fir_rx,
+    .fd_event = pxa2xx_fir_event,
+};
+
 static PXA2xxFIrState *pxa2xx_fir_init(MemoryRegion *sysmem,
                 hwaddr base,
                 qemu_irq irq, qemu_irq rx_dma, qemu_irq tx_dma,
@@ -1980,10 +1986,9 @@ static PXA2xxFIrState *pxa2xx_fir_init(MemoryRegion *sysmem,
     memory_region_init_io(&s->iomem, &pxa2xx_fir_ops, s, "pxa2xx-fir", 0x1000);
     memory_region_add_subregion(sysmem, base, &s->iomem);
 
-    if (chr)
-        qemu_chr_add_handlers(chr, pxa2xx_fir_is_empty,
-                        pxa2xx_fir_rx, pxa2xx_fir_event, s);
-
+    if (chr) {
+        qemu_chr_add_handlers(chr, &pxa2xx_handlers, s);
+    }
     register_savevm(NULL, "pxa2xx_fir", 0, 0, pxa2xx_fir_save,
                     pxa2xx_fir_load, s);
 

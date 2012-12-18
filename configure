@@ -3136,7 +3136,7 @@ if test "$softmmu" = yes ; then
     fi
   fi
   if test "$smartcard_nss" = "yes" ; then
-    tools="vscclient\$(EXESUF) $tools"
+    tools="libcacard/vscclient\$(EXESUF) $tools"
   fi
 fi
 

@@ -208,6 +208,12 @@ static void etraxfs_ser_reset(DeviceState *d)
 
 }
 
+static const QemuChrHandlers serial_handlers = {
+    .fd_can_read = serial_can_receive,
+    .fd_read = serial_receive,
+    .fd_event = serial_event,
+};
+
 static int etraxfs_ser_init(SysBusDevice *dev)
 {
     struct etrax_serial *s = FROM_SYSBUS(typeof (*s), dev);
@@ -217,10 +223,9 @@ static int etraxfs_ser_init(SysBusDevice *dev)
     sysbus_init_mmio(dev, &s->mmio);
 
     s->chr = qemu_char_get_next_serial();
-    if (s->chr)
-        qemu_chr_add_handlers(s->chr,
-                      serial_can_receive, serial_receive,
-                      serial_event, s);
+    if (s->chr) {
+        qemu_chr_add_handlers(s->chr, &serial_handlers, s);
+    }
     return 0;
 }
 

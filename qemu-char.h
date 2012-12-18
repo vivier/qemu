@@ -63,6 +63,9 @@ struct CharDriverState {
     IOEventHandler *chr_event;
     IOCanReadHandler *chr_can_read;
     IOReadHandler *chr_read;
+    IOHandler *chr_write_unblocked;
+    void (*chr_enable_write_fd_handler)(struct CharDriverState *chr);
+    void (*chr_disable_write_fd_handler)(struct CharDriverState *chr);
     void *handler_opaque;
     void (*chr_close)(struct CharDriverState *chr);
     void (*chr_accept_input)(struct CharDriverState *chr);
@@ -75,6 +78,7 @@ struct CharDriverState {
     char *filename;
     int opened;
     int avail_connections;
+    bool write_blocked; /* Are we in a blocked state? */
     QTAILQ_ENTRY(CharDriverState) next;
 };
 
@@ -223,10 +227,15 @@ void qemu_chr_be_write(CharDriverState *s, uint8_t *buf, int len);
  */
 void qemu_chr_be_event(CharDriverState *s, int event);
 
-void qemu_chr_add_handlers(CharDriverState *s,
-                           IOCanReadHandler *fd_can_read,
-                           IOReadHandler *fd_read,
-                           IOEventHandler *fd_event,
+
+typedef struct QemuChrHandlers {
+    IOCanReadHandler *fd_can_read;
+    IOReadHandler *fd_read;
+    IOHandler *fd_write_unblocked;
+    IOEventHandler *fd_event;
+} QemuChrHandlers;
+
+void qemu_chr_add_handlers(CharDriverState *s, const QemuChrHandlers *handlers,
                            void *opaque);
 
 void qemu_chr_generic_open(CharDriverState *s);

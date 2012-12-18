@@ -197,8 +197,8 @@ qemu-io$(EXESUF): qemu-io.o cmd.o $(tools-obj-y) $(block-obj-y) libqemustub.a
 
 qemu-bridge-helper$(EXESUF): qemu-bridge-helper.o
 
-vscclient$(EXESUF): $(libcacard-y) $(oslib-obj-y) $(trace-obj-y) libcacard/vscclient.o libqemustub.a
-	$(call quiet-command,$(CC) $(LDFLAGS) -o $@ $^ $(libcacard_libs) $(LIBS),"  LINK  $@")
+libcacard/vscclient$(EXESUF): $(libcacard-y) $(oslib-obj-y) $(trace-obj-y) iov.o cutils.o qemu-user.o libcacard/vscclient.o libqemustub.a
+libcacard/vscclient$(EXESUF): LIBS += $(libcacard_libs)
 
 fsdev/virtfs-proxy-helper$(EXESUF): fsdev/virtfs-proxy-helper.o fsdev/virtio-9p-marshal.o oslib-posix.o $(trace-obj-y)
 fsdev/virtfs-proxy-helper$(EXESUF): LIBS += -lcap

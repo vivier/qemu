@@ -381,6 +381,12 @@ static const struct MemoryRegionOps imx_serial_ops = {
     .endianness = DEVICE_NATIVE_ENDIAN,
 };
 
+static const QemuChrHandlers imx_handlers = {
+    .fd_can_read = imx_can_receive,
+    .fd_read = imx_receive,
+    .fd_event = imx_event,
+};
+
 static int imx_serial_init(SysBusDevice *dev)
 {
     IMXSerialState *s = FROM_SYSBUS(IMXSerialState, dev);
@@ -391,8 +397,7 @@ static int imx_serial_init(SysBusDevice *dev)
     sysbus_init_irq(dev, &s->irq);
 
     if (s->chr) {
-        qemu_chr_add_handlers(s->chr, imx_can_receive, imx_receive,
-                              imx_event, s);
+        qemu_chr_add_handlers(s->chr, &imx_handlers, s);
     } else {
         DPRINTF("No char dev for uart at 0x%lx\n",
                 (unsigned long)s->iomem.ram_addr);

@@ -7,7 +7,7 @@ libcacard_includedir=$(includedir)/cacard
 $(call set-vpath, $(SRC_PATH))
 
 # objects linked into a shared library, built with libtool with -fPIC if required
-QEMU_OBJS=$(oslib-obj-y) qemu-timer-common.o $(trace-obj-y) $(stub-obj-y)
+QEMU_OBJS=$(oslib-obj-y) qemu-timer-common.o iov.o cutils.o qemu-user.o $(trace-obj-y) $(stub-obj-y)
 QEMU_OBJS_LIB=$(patsubst %.o,%.lo,$(QEMU_OBJS))
 
 QEMU_CFLAGS+=-I../
@@ -47,6 +47,10 @@ libcacard.pc: $(libcacard_srcpath)/libcacard.pc.in
 		< $(libcacard_srcpath)/libcacard.pc.in > libcacard.pc,\
 	"  GEN   $@")
 
+VSCCLIENT_QEMU_OBJS=$(addprefix ../,$(oslib-obj-y) $(trace-obj-y) qemu-timer-common.o iov.o cutils.o qemu-user.o)
+vscclient$(EXESUF): $(VSCCLIENT_QEMU_OBJS) $(libcacard-base-y) vscclient.o
+vscclient$(EXESUF): LIBS += $(libcacard_libs)
+
 .PHONY: install-libcacard
 
 install-libcacard: libcacard.pc libcacard.la vscclient
@@ -54,7 +58,7 @@ install-libcacard: libcacard.pc libcacard.la vscclient
 	$(INSTALL_DIR) "$(DESTDIR)$(libdir)/pkgconfig"
 	$(INSTALL_DIR) "$(DESTDIR)$(libcacard_includedir)"
 	$(INSTALL_DIR) "$(DESTDIR)$(bindir)"
-	$(LIBTOOL) --mode=install $(INSTALL_PROG) vscclient "$(DESTDIR)$(bindir)"
+	$(LIBTOOL) --mode=install $(INSTALL_PROG) vscclient$(EXESUF) "$(DESTDIR)$(bindir)"
 	$(LIBTOOL) --mode=install $(INSTALL_DATA) libcacard.la "$(DESTDIR)$(libdir)"
 	$(LIBTOOL) --mode=install $(INSTALL_DATA) libcacard.pc "$(DESTDIR)$(libdir)/pkgconfig"
 	for inc in *.h; do \

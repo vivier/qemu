@@ -174,7 +174,7 @@ rh-update-changelog:
 rh-brew : BUILD_FLAGS ?= $(BREW_FLAGS) $(TEST_FLAGS)
 rh-koji : BUILD_FLAGS ?= $(KOJI_FLAGS) $(TEST_FLAGS)
 rh-brew rh-koji: rh-%: rh-srpm
-	$* build $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)
+	$* build --arch-override=x86_64 $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)
 
 rh-help:
 	@echo  'Cleaning targets:'
