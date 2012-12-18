@@ -1,0 +1,69 @@
+From 4e6a76dd0e35b00e9592a53afc8cffac4cc35951 Mon Sep 17 00:00:00 2001
+Message-Id: <4e6a76dd0e35b00e9592a53afc8cffac4cc35951.1354903384.git.crobinso@redhat.com>
+In-Reply-To: <9f0944a25bc1094fa7a74ac9df14e184e2c5c82d.1354903384.git.crobinso@redhat.com>
+References: <9f0944a25bc1094fa7a74ac9df14e184e2c5c82d.1354903384.git.crobinso@redhat.com>
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Tue, 19 Jul 2011 10:56:19 +0200
+Subject: [PATCH] usb-redir: Add flow control support
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+Signed-off-by: Cole Robinson <crobinso@redhat.com>
+---
+ hw/usb/redirect.c | 22 ++++++++++++++++++++--
+ 1 file changed, 20 insertions(+), 2 deletions(-)
+
+diff --git a/hw/usb/redirect.c b/hw/usb/redirect.c
+index c921d2d..dfb1773 100644
+--- a/hw/usb/redirect.c
++++ b/hw/usb/redirect.c
+@@ -239,8 +239,9 @@ static int usbredir_read(void *priv, uint8_t *data, int count)
+ static int usbredir_write(void *priv, uint8_t *data, int count)
+ {
+     USBRedirDevice *dev = priv;
++    int r;
+ 
+-    if (!dev->cs->opened) {
++    if (!dev->cs->opened || dev->cs->write_blocked) {
+         return 0;
+     }
+ 
+@@ -249,7 +250,16 @@ static int usbredir_write(void *priv, uint8_t *data, int count)
+         return 0;
+     }
+ 
+-    return qemu_chr_fe_write(dev->cs, data, count);
++    r - qemu_chr_fe_write(dev->cs, data, count);
++
++    if (r < 0) {
++        if (dev->cs->write_blocked) {
++           return 0;
++        }
++        return -1;
++    }
++
++    return r;
+ }
+ 
+ /*
+@@ -1037,10 +1047,18 @@ static void usbredir_chardev_event(void *opaque, int event)
+     }
+ }
+ 
++static void usbredir_chardev_write_unblocked(void *opaque)
++{
++    USBRedirDevice *dev = opaque;
++
++    usbredirparser_do_write(dev->parser);
++}
++
+ static const QemuChrHandlers usbredir_chr_handlers = {
+     .fd_can_read = usbredir_chardev_can_read,
+     .fd_read = usbredir_chardev_read,
+     .fd_event = usbredir_chardev_event,
++    .fd_write_unblocked = usbredir_chardev_write_unblocked,
+ };
+ 
+ /*
+-- 
+1.8.0
+
