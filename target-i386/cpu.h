@@ -723,6 +723,9 @@ typedef struct CPUX86State {
     uint64_t wall_clock_msr;
     uint64_t pv_eoi_en_msr;
 
+    uint64_t hyperv_guest_os_id;
+    uint64_t hyperv_hypercall;
+
     uint64_t tsc;
     uint64_t tsc_deadline;
 

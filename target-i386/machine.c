@@ -455,6 +455,25 @@ static const VMStateDescription vmstate_msr_tscdeadline = {
     }
 };
 
+static bool hyperv_hypercall_needed(void *opaque)
+{
+    CPUState *env = opaque;
+
+    return env->hyperv_guest_os_id != 0;
+}
+
+static const VMStateDescription vmstate_msr_hyperv_hypercall = {
+    .name = "cpu/msr_hyperv_hypercall",
+    .version_id = 1,
+    .minimum_version_id = 1,
+    .minimum_version_id_old = 1,
+    .fields      = (VMStateField []) {
+        VMSTATE_UINT64(hyperv_guest_os_id, CPUState),
+        VMSTATE_UINT64(hyperv_hypercall, CPUState),
+        VMSTATE_END_OF_LIST()
+    }
+};
+
 static const VMStateDescription vmstate_cpu = {
     .name = "cpu",
     .version_id = CPU_SAVE_VERSION,
@@ -569,6 +588,9 @@ static const VMStateDescription vmstate_cpu = {
         }, {
             .vmsd = &vmstate_msr_tscdeadline,
             .needed = tscdeadline_needed,
+        }, {
+            .vmsd = &vmstate_msr_hyperv_hypercall,
+            .needed = hyperv_hypercall_needed,
         }, {
 	    /* empty */
 	}
