@@ -1665,6 +1665,14 @@ static void rhel_common_init(const char *type1_version,
 #define PC_RHEL6_1_COMPAT \
         PC_RHEL6_2_COMPAT \
         ,{\
+            .driver   = "PIIX4_PM",\
+            .property = "disable_s3",\
+            .value    = "0",\
+        },{\
+            .driver   = "PIIX4_PM",\
+            .property = "disable_s4",\
+            .value    = "0",\
+        },{\
             .driver   = "usb-tablet",\
             .property = "migrate",\
             .value    = stringify(0),\
