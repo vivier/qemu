@@ -213,6 +213,36 @@ void qemu_iovec_concat(QEMUIOVector *dst, QEMUIOVector *src, size_t size)
     qemu_iovec_copy(dst, src, 0, size);
 }
 
+/*
+ * Concatenates (partial) iovecs from src_iov to the end of dst.
+ * It starts copying after skipping `soffset' bytes at the
+ * beginning of src and adds individual vectors from src to
+ * dst copies up to `sbytes' bytes total, or up to the end
+ * of src_iov if it comes first.  This way, it is okay to specify
+ * very large value for `sbytes' to indicate "up to the end
+ * of src".
+ * Only vector pointers are processed, not the actual data buffers.
+ */
+void qemu_iovec_concat_iov(QEMUIOVector *dst,
+                           struct iovec *src_iov, unsigned int src_cnt,
+                           size_t soffset, size_t sbytes)
+{
+    int i;
+    size_t done;
+    assert(dst->nalloc != -1);
+    for (i = 0, done = 0; done < sbytes && i < src_cnt; i++) {
+        if (soffset < src_iov[i].iov_len) {
+            size_t len = MIN(src_iov[i].iov_len - soffset, sbytes - done);
+            qemu_iovec_add(dst, src_iov[i].iov_base + soffset, len);
+            done += len;
+            soffset = 0;
+        } else {
+            soffset -= src_iov[i].iov_len;
+        }
+    }
+    assert(soffset == 0); /* offset beyond end of src */
+}
+
 void qemu_iovec_destroy(QEMUIOVector *qiov)
 {
     assert(qiov->nalloc != -1);
