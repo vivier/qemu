@@ -992,6 +992,10 @@ static PCIDeviceInfo virtio_info[] = {
             DEFINE_PROP_STRING("serial", VirtIOPCIProxy, blk.serial),
             DEFINE_PROP_BIT("ioeventfd", VirtIOPCIProxy, flags,
                             VIRTIO_PCI_FLAG_USE_IOEVENTFD_BIT, true),
+#ifdef CONFIG_VIRTIO_BLK_DATA_PLANE
+            DEFINE_PROP_BIT("x-data-plane", VirtIOPCIProxy, blk.data_plane, 0,
+                            false),
+#endif
             DEFINE_PROP_UINT32("vectors", VirtIOPCIProxy, nvectors, 2),
             DEFINE_VIRTIO_BLK_FEATURES(VirtIOPCIProxy, host_features),
             DEFINE_PROP_END_OF_LIST(),
