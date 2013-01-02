@@ -826,6 +826,8 @@ static int virtio_blk_init_pci(PCIDevice *pci_dev)
         proxy->class_code != PCI_CLASS_STORAGE_OTHER)
         proxy->class_code = PCI_CLASS_STORAGE_SCSI;
 
+    proxy->blk.scsi = !!(proxy->host_features & (1 << VIRTIO_BLK_F_SCSI));
+
     vdev = virtio_blk_init(&pci_dev->qdev, &proxy->blk);
     if (!vdev) {
         return -1;
