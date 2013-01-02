@@ -95,6 +95,12 @@ disable cpu_out(unsigned int addr, unsigned int val) "addr %#x value %u"
 # Since requests are raised via monitor, not many tracepoints are needed.
 disable balloon_event(void *opaque, unsigned long addr) "opaque %p addr %lu"
 
+# hw/dataplane/virtio-blk.c
+disable virtio_blk_data_plane_start(void *s) "dataplane %p"
+disable virtio_blk_data_plane_stop(void *s) "dataplane %p"
+disable virtio_blk_data_plane_process_request(void *s, unsigned int out_num, unsigned int in_num, unsigned int head) "dataplane %p out_num %u in_num %u head %u"
+disable virtio_blk_data_plane_complete_request(void *s, unsigned int head, int ret) "dataplane %p head %u ret %d"
+
 # hw/dataplane/vring.c
 disable vring_setup(uint64_t physical, void *desc, void *avail, void *used) "vring physical %#"PRIx64" desc %p avail %p used %p"
 

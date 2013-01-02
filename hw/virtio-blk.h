@@ -102,6 +102,7 @@ struct VirtIOBlkConf
     BlockConf conf;
     char *serial;
     uint32_t scsi;
+    uint32_t data_plane;
 };
 
 #ifdef __linux__
