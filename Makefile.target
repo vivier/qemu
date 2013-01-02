@@ -209,6 +209,7 @@ obj-y += virtio-scsi.o event_notifier.o
 obj-y += vhost_net.o
 obj-$(CONFIG_VHOST_NET) += vhost.o
 obj-$(CONFIG_KVM) += kvm.o kvm-all.o hyperv.o
+obj-$(CONFIG_VIRTIO_BLK_DATA_PLANE) += dataplane/hostmem.o
 # MSI-X depends on kvm for interrupt injection,
 # so moved it from Makefile.hw to Makefile.target for now
 obj-y += msix.o
@@ -423,7 +424,7 @@ qemu-monitor.h: $(SRC_PATH)/qemu-monitor.hx
 
 clean:
 	rm -f *.o *.a *~ $(PROGS) nwfpe/*.o fpu/*.o
-	rm -f *.d */*.d tcg/*.o ide/*.o
+	rm -f *.d */*.d tcg/*.o ide/*.o dataplane/*.o
 	rm -f qemu-options.def qemu-monitor.h gdbstub-xml.c
 ifdef CONFIG_SYSTEMTAP_TRACE
 	rm -f *.stp
