@@ -95,6 +95,9 @@ disable cpu_out(unsigned int addr, unsigned int val) "addr %#x value %u"
 # Since requests are raised via monitor, not many tracepoints are needed.
 disable balloon_event(void *opaque, unsigned long addr) "opaque %p addr %lu"
 
+# hw/dataplane/vring.c
+disable vring_setup(uint64_t physical, void *desc, void *avail, void *used) "vring physical %#"PRIx64" desc %p avail %p used %p"
+
 # hw/apic.c
 disable apic_local_deliver(int vector, uint32_t lvt) "vector %d delivery mode %d"
 disable apic_deliver_irq(uint8_t dest, uint8_t dest_mode, uint8_t delivery_mode, uint8_t vector_num, uint8_t polarity, uint8_t trigger_mode) "dest %d dest_mode %d delivery_mode %d vector %d polarity %d trigger_mode %d"
