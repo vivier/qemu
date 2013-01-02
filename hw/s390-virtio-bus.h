@@ -39,6 +39,7 @@ typedef struct VirtIOS390Device {
     uint8_t feat_len;
     VirtIODevice *vdev;
     BlockConf block;
+    char *block_serial;
     NICConf nic;
     uint32_t host_features;
     /* Max. number of ports we can have for a the virtio-serial device */
