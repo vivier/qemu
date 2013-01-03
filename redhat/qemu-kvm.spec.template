@@ -1,10 +1,6 @@
 # build-time settings:
 
-# Uncomment for RHEV build:
-# %define rhev 0
-
-# Uncomment for RHEV build:
-# %define rhev 1
+### PLACEHOLDER
 
 %if 0%{?rhev_test}
 %define enable_fake_machine 1

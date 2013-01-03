@@ -137,6 +137,9 @@ sources-rh: $(TARBALL) $(RC_PATCH) $(GIT_PATCH) $(REDHAT)/create-patches.sh Make
 
 rh-sources: setup-source sources-rh
 
+rh-sources-rhev: rh-sources
+	sed -i "s/### PLACEHOLDER/%define rhev 1/" $(RPM)/SOURCES/$(SPECFILE) $(RPM)/SOURCES/$(SPECFILE)
+
 rh-test-patch:
 	git diff --no-renames HEAD > $(TESTPATCH);
 	filterdiff -x '*redhat/*' -x '*/.gitignore' -x '*/makefile' $(TESTPATCH) >$(TESTPATCH).tmp;
@@ -146,16 +149,15 @@ rh-all-rpms: rh-sources
 	$(RPMBUILD) $(RPMBUILD_DEFS) --target $(MACH) -ba $(RPM)/SOURCES/$(SPECFILE)
 
 rh-srpm: rh-sources
-	sed "s/# %define rhev 1//" $(RPM)/SOURCES/$(SPECFILE) > $(RPM)/SOURCES/$(SPECFILE).tmp
-	cp $(RPM)/SOURCES/$(SPECFILE).tmp $(RPM)/SOURCES/$(SPECFILE)
 	$(RPMBUILD) $(RPMBUILD_DEFS) --nodeps -bs $(RPM)/SOURCES/$(SPECFILE)
 
-rh-srpm-rhev: rh-sources
-	sed "s/# %define rhev 1/%define rhev 1/" $(RPM)/SOURCES/$(SPECFILE) > $(RPM)/SOURCES/$(SPECFILE).tmp
-	cp $(RPM)/SOURCES/$(SPECFILE).tmp $(RPM)/SOURCES/$(SPECFILE)
-	$(RPMBUILD) $(RPMBUILD_DEFS) --define "rhev 1" --nodeps -bs $(RPM)/SOURCES/$(SPECFILE)
+rh-srpm-rhev: rh-sources-rhev
+	$(RPMBUILD) $(RPMBUILD_DEFS) --nodeps -bs $(RPM)/SOURCES/$(SPECFILE)
 
 rh-rpms: rh-sources
+	$(RPMBUILD) $(RPMBUILD_DEFS) --target $(MACH) -bb $(RPM)/SOURCES/$(SPECFILE)
+
+rh-rpms-rhev: rh-sources-rhev
 	$(RPMBUILD) $(RPMBUILD_DEFS) --target $(MACH) -bb $(RPM)/SOURCES/$(SPECFILE)
 
 rh-$(COMMON_NAME)-%: rh-sources
@@ -205,6 +207,7 @@ rh-help:
 	@echo  ' All RPM/SRPM files will be put under the redhat/rpm/ directory'
 	@echo  ''
 	@echo  '  rh-srpm	- Create a source RPM and put it into the redhat/rpm/SRPMS/ directory'
+	@echo  '  rh-srpm-rhev  - Create a source RPM for $(COMMON_NAME)-rhev and put it into redhat/rpm/SRPMS/ directory'
 	@echo  '  rh-brew	- Create a $(COMMON_NAME) SRPM and then call brew to build the created SRPM'
 	@echo  '  rh-koji	- Create a $(COMMON_NAME) SRPM and then call koji to build the created SRPM'
 	@echo  '  rh-brew-rhev  - Create a $(COMMON_NAME)-rhev SRPM and then call brew to build the created SRPM'
