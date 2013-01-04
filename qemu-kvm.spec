@@ -20,6 +20,8 @@
 #
 # Disabled by default, except on EPEL.
 
+%define rhel 1
+
 %if 0%{?rhel}
 # RHEL-specific defaults:
 %bcond_without kvmonly          # enabled
