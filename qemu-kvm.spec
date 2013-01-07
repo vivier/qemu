@@ -122,7 +122,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu-kvm
 Version: 1.3.0
-Release: 2%{?dist}
+Release: 3%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -277,16 +277,13 @@ Requires: %{name}-%{system_sparc} = %{epoch}:%{version}-%{release}
 %if 0%{?system_unicore32:1}
 Requires: %{name}-%{system_unicore32} = %{epoch}:%{version}-%{release}
 %endif
-%if 0%{?system_x86:1}
-Requires: %{name}-%{system_x86} = %{epoch}:%{version}-%{release}
-%endif
 %if 0%{?system_xtensa:1}
 Requires: %{name}-%{system_xtensa} = %{epoch}:%{version}-%{release}
 %endif
 %if %{without separate_kvm}
-Requires: %{name}-img = %{epoch}:%{version}-%{release}
+Requires: qemu-img = %{epoch}:%{version}-%{release}
 %else
-Requires: %{name}-img
+Requires: qemu-img
 %endif
 
 %define qemudocdir %{_docdir}/qemu
@@ -303,20 +300,6 @@ emulation speed by using dynamic translation. QEMU has two operating modes:
    for one CPU on another CPU.
 
 As QEMU requires no host kernel patches to run, it is safe and easy to use.
-
-%if %{without kvmonly}
-%ifarch %{kvm_archs}
-%package kvm
-Summary: QEMU metapackage for KVM support
-Group: Development/Tools
-Requires: qemu-%{kvm_package} = %{epoch}:%{version}-%{release}
-
-%description kvm
-This is a meta-package that provides a qemu-system-<arch> package for native
-architectures where kvm can be enabled. For example, in an x86 system, this
-will install qemu-system-x86
-%endif
-%endif
 
 %package -n qemu-img
 Summary: QEMU command line tool for manipulating disk images
@@ -396,30 +379,6 @@ QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
 
 This package provides the user mode emulation of qemu targets
-%endif
-
-%if 0%{?system_x86:1}
-%package %{system_x86}
-Summary: QEMU system emulator for x86
-Group: Development/Tools
-Requires: %{name}-common = %{epoch}:%{version}-%{release}
-Provides: kvm = 85
-Obsoletes: kvm < 85
-Requires: vgabios >= 0.6c-2
-Requires: seabios-bin >= 0.6.0-2
-Requires: sgabios-bin
-Requires: ipxe-roms-qemu
-%if 0%{?have_seccomp:1}
-Requires: libseccomp >= 1.0.0
-%endif
-
-%description %{system_x86}
-QEMU is a generic and open source processor emulator which achieves a good
-emulation speed by using dynamic translation.
-
-This package provides the system emulator for x86. When being run in a x86
-machine that supports it, this package also provides the KVM virtualization
-platform.
 %endif
 
 %if 0%{?system_alpha:1}
@@ -810,7 +769,6 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemu/bios.bin
 # Provided by package sgabios
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemu/sgabios.bin
 
-%if 0%{?system_x86:1}
 # the pxe gpxe images will be symlinks to the images on
 # /usr/share/ipxe, as QEMU doesn't know how to look
 # for other paths, yet.
@@ -835,7 +793,6 @@ rom_link() {
 #rom_link ../vgabios/VGABIOS-lgpl-latest.vmware.bin vgabios-vmware.bin
 rom_link ../seabios/bios.bin bios.bin
 rom_link ../sgabios/sgabios.bin sgabios.bin
-%endif
 
 %if 0%{?user:1}
 mkdir -p $RPM_BUILD_ROOT%{_exec_prefix}/lib/binfmt.d
@@ -915,7 +872,7 @@ find $RPM_BUILD_ROOT -name "libcacard.so*" -exec chmod +x \{\} \;
 #make check
 
 %ifarch %{kvm_archs}
-%post %{kvm_package}
+%post
 # load kvm modules now, so we can make sure no reboot is needed.
 # If there's already a kvm module installed, we don't mess with it
 sh %{_sysconfdir}/sysconfig/modules/kvm.modules || :
@@ -975,11 +932,6 @@ fi
 
 %files
 %defattr(-,root,root)
-
-%ifarch %{kvm_archs}
-%files kvm
-%defattr(-,root,root)
-%endif
 
 %files common
 %defattr(-,root,root)
@@ -1070,8 +1022,7 @@ fi
 %{_datadir}/systemtap/tapset/qemu-unicore32.stp
 %endif
 
-%if 0%{?system_x86:1}
-%files %{system_x86}
+%files
 %defattr(-,root,root)
 %if %{without kvmonly}
 %{_libexecdir}/qemu-system-i386
@@ -1100,7 +1051,6 @@ fi
 %ifarch %{ix86} x86_64
 %{?kvm_files:}
 %{?qemu_kvm_files:}
-%endif
 %endif
 %endif
 
@@ -1268,6 +1218,11 @@ fi
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Mon Jan 07 2013 Michal Novotny <minovotn@redhat.com> - 2:1.3.0-3
+- Remove dependency on bogus qemu-kvm-kvm package [bz#870343]
+- Resolves: bz#870343
+  (qemu-kvm-1.2.0-16.el7 cant be installed)
+
 * Tue Dec 18 2012 Michal Novotny <minovotn@redhat.com> - 2:1.3.0-2
 - Rename qemu to qemu-kvm
 - Move qemu-kvm to libexecdir
