@@ -1139,6 +1139,19 @@ static bool msix_masked(MSIXTableEntry *entry)
     return (entry->ctrl & cpu_to_le32(0x1)) != 0;
 }
 
+/*
+ * When MSI-X is first enabled the vector table typically has all the
+ * vectors masked, so we can't use that as the obvious test to figure out
+ * how many vectors to initially enable.  Instead we look at the data field
+ * because this is what worked for pci-assign for a long time.  This makes
+ * sure the physical MSI-X state tracks the guest's view, which is important
+ * for some VF/PF and PF/fw communication channels.
+ */
+static bool msix_skipped(MSIXTableEntry *entry)
+{
+    return !entry->data;
+}
+
 static int assigned_dev_update_msix_mmio(PCIDevice *pci_dev)
 {
     AssignedDevice *adev = container_of(pci_dev, AssignedDevice, dev);
@@ -1150,7 +1163,7 @@ static int assigned_dev_update_msix_mmio(PCIDevice *pci_dev)
 
     /* Get the usable entry number for allocating */
     for (i = 0; i < adev->msix_max; i++, entry++) {
-        if (msix_masked(entry)) {
+        if (msix_skipped(entry)) {
             continue;
         }
         entries_nr++;
@@ -1185,7 +1198,7 @@ static int assigned_dev_update_msix_mmio(PCIDevice *pci_dev)
     msix_entry.assigned_dev_id = msix_nr.assigned_dev_id;
     entry = adev->msix_table;
     for (i = 0; i < adev->msix_max; i++, entry++) {
-        if (msix_masked(entry)) {
+        if (msix_skipped(entry)) {
             continue;
         }
 
