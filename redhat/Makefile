@@ -155,7 +155,13 @@ rh-srpm-rhev: rh-sources-rhev
 	$(RPMBUILD) $(RPMBUILD_DEFS) --nodeps -bs $(RPM)/SOURCES/$(SPECFILE)
 
 rh-rpms: rh-sources
+	sed "s/# %define rhev 1//" $(RPM)/SOURCES/$(SPECFILE) > $(RPM)/SOURCES/$(SPECFILE).tmp
+	cp $(RPM)/SOURCES/$(SPECFILE).tmp $(RPM)/SOURCES/$(SPECFILE)
 	$(RPMBUILD) $(RPMBUILD_DEFS) --target $(MACH) -bb $(RPM)/SOURCES/$(SPECFILE)
+rh-rpms-rhev: rh-sources
+	sed "s/# %define rhev 1/%define rhev 1/" $(RPM)/SOURCES/$(SPECFILE) > $(RPM)/SOURCES/$(SPECFILE).tmp
+	cp $(RPM)/SOURCES/$(SPECFILE).tmp $(RPM)/SOURCES/$(SPECFILE)
+	$(RPMBUILD) $(RPMBUILD_DEFS) --define "rhev 1" --target $(MACH) -bb $(RPM)/SOURCES/$(SPECFILE)
 
 rh-rpms-rhev: rh-sources-rhev
 	$(RPMBUILD) $(RPMBUILD_DEFS) --target $(MACH) -bb $(RPM)/SOURCES/$(SPECFILE)
