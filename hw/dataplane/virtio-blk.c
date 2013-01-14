@@ -128,6 +128,22 @@ static void do_get_id_cmd(VirtIOBlockDataPlane *s,
     complete_request_early(s, head, inhdr, VIRTIO_BLK_S_OK);
 }
 
+static int do_rdwr_cmd(VirtIOBlockDataPlane *s, bool read,
+                       struct iovec *iov, unsigned int iov_cnt,
+                       long long offset, unsigned int head,
+                       QEMUIOVector *inhdr)
+{
+    struct iocb *iocb;
+
+    iocb = ioq_rdwr(&s->ioqueue, read, iov, iov_cnt, offset);
+
+    /* Fill in virtio block metadata needed for completion */
+    VirtIOBlockRequest *req = container_of(iocb, VirtIOBlockRequest, iocb);
+    req->head = head;
+    req->inhdr = inhdr;
+    return 0;
+}
+
 static int process_request(IOQueue *ioq, struct iovec iov[],
                            unsigned int out_num, unsigned int in_num,
                            unsigned int head)
@@ -137,7 +153,6 @@ static int process_request(IOQueue *ioq, struct iovec iov[],
     struct virtio_blk_outhdr outhdr;
     QEMUIOVector *inhdr;
     size_t in_size;
-    struct iocb *iocb;
 
     /* Copy in outhdr */
     if (unlikely(iov_to_buf(iov, out_num, &outhdr, 0,
@@ -165,12 +180,12 @@ static int process_request(IOQueue *ioq, struct iovec iov[],
 
     switch (outhdr.type) {
     case VIRTIO_BLK_T_IN:
-        iocb = ioq_rdwr(ioq, true, in_iov, in_num, outhdr.sector * 512);
-        break;
+        do_rdwr_cmd(s, true, in_iov, in_num, outhdr.sector * 512, head, inhdr);
+        return 0;
 
     case VIRTIO_BLK_T_OUT:
-        iocb = ioq_rdwr(ioq, false, iov, out_num, outhdr.sector * 512);
-        break;
+        do_rdwr_cmd(s, false, iov, out_num, outhdr.sector * 512, head, inhdr);
+        return 0;
 
     case VIRTIO_BLK_T_SCSI_CMD:
         /* TODO support SCSI commands */
@@ -196,12 +211,6 @@ static int process_request(IOQueue *ioq, struct iovec iov[],
         qemu_free(inhdr);
         return -EFAULT;
     }
-
-    /* Fill in virtio block metadata needed for completion */
-    VirtIOBlockRequest *req = container_of(iocb, VirtIOBlockRequest, iocb);
-    req->head = head;
-    req->inhdr = inhdr;
-    return 0;
 }
 
 static void handle_notify(EventHandler *handler)
