@@ -412,22 +412,6 @@ static void raw_reopen_abort(BDRVReopenState *state)
 #endif
 */
 
-/*
- * Check if all memory in this vector is sector aligned.
- */
-static int qiov_is_aligned(BlockDriverState *bs, QEMUIOVector *qiov)
-{
-    int i;
-
-    for (i = 0; i < qiov->niov; i++) {
-        if ((uintptr_t) qiov->iov[i].iov_base % bs->buffer_alignment) {
-            return 0;
-        }
-    }
-
-    return 1;
-}
-
 static BlockDriverAIOCB *raw_aio_submit(BlockDriverState *bs,
         int64_t sector_num, QEMUIOVector *qiov, int nb_sectors,
         BlockDriverCompletionFunc *cb, void *opaque, int type)
@@ -449,7 +433,7 @@ static BlockDriverAIOCB *raw_aio_submit(BlockDriverState *bs,
      * boundary.  Check if this is the case or telll the low-level
      * driver that it needs to copy the buffer.
      */
-    if ((bs->open_flags & BDRV_O_NOCACHE) && !qiov_is_aligned(bs, qiov)) {
+    if ((bs->open_flags & BDRV_O_NOCACHE) && !bdrv_qiov_is_aligned(bs, qiov)) {
         type |= QEMU_AIO_MISALIGNED;
     }
 
