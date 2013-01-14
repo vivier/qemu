@@ -34,6 +34,8 @@ typedef struct {
     struct iocb iocb;               /* Linux AIO control block */
     QEMUIOVector *inhdr;            /* iovecs for virtio_blk_inhdr */
     unsigned int head;              /* vring descriptor index */
+    struct iovec *bounce_iov;       /* used if guest buffers are unaligned */
+    QEMUIOVector *read_qiov;        /* for read completion /w bounce buffer */
 } VirtIOBlockRequest;
 
 struct VirtIOBlockDataPlane {
@@ -87,6 +89,18 @@ static void complete_request(struct iocb *iocb, ssize_t ret, void *opaque)
 
     trace_virtio_blk_data_plane_complete_request(s, req->head, ret);
 
+    if (req->read_qiov) {
+        assert(req->bounce_iov);
+        qemu_iovec_from_buffer(req->read_qiov, req->bounce_iov->iov_base, len);
+        qemu_iovec_destroy(req->read_qiov);
+        qemu_free(req->read_qiov);
+    }
+
+    if (req->bounce_iov) {
+        qemu_vfree(req->bounce_iov->iov_base);
+        qemu_free(req->bounce_iov);
+    }
+
     qemu_iovec_from_buffer(req->inhdr, &hdr, sizeof(hdr));
     qemu_iovec_destroy(req->inhdr);
     qemu_free(req->inhdr);
@@ -134,6 +148,30 @@ static int do_rdwr_cmd(VirtIOBlockDataPlane *s, bool read,
                        QEMUIOVector *inhdr)
 {
     struct iocb *iocb;
+    QEMUIOVector qiov;
+    struct iovec *bounce_iov = NULL;
+    QEMUIOVector *read_qiov = NULL;
+
+    qemu_iovec_init_external(&qiov, iov, iov_cnt);
+    if (!bdrv_qiov_is_aligned(s->blk->conf.bs, &qiov)) {
+        void *bounce_buffer = qemu_blockalign(s->blk->conf.bs, qiov.size);
+
+        if (read) {
+            /* Need to copy back from bounce buffer on completion */
+            read_qiov = qemu_malloc(sizeof(*read_qiov));
+            qemu_iovec_init(read_qiov, iov_cnt);
+            qemu_iovec_concat_iov(read_qiov, iov, iov_cnt, 0, qiov.size);
+        } else {
+            qemu_iovec_to_buffer(&qiov, bounce_buffer);
+        }
+
+        /* Redirect I/O to aligned bounce buffer */
+        bounce_iov = qemu_malloc(sizeof(*bounce_iov));
+        bounce_iov->iov_base = bounce_buffer;
+        bounce_iov->iov_len = qiov.size;
+        iov = bounce_iov;
+        iov_cnt = 1;
+    }
 
     iocb = ioq_rdwr(&s->ioqueue, read, iov, iov_cnt, offset);
 
@@ -141,6 +179,8 @@ static int do_rdwr_cmd(VirtIOBlockDataPlane *s, bool read,
     VirtIOBlockRequest *req = container_of(iocb, VirtIOBlockRequest, iocb);
     req->head = head;
     req->inhdr = inhdr;
+    req->bounce_iov = bounce_iov;
+    req->read_qiov = read_qiov;
     return 0;
 }
 
