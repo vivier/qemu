@@ -1379,7 +1379,7 @@ static void ioport_write(void *opaque, uint32_t addr, uint32_t val)
     }
 
     if (d->revision <= QXL_REVISION_STABLE_V10 &&
-        io_port >= QXL_IO_FLUSH_SURFACES_ASYNC) {
+        io_port > QXL_IO_FLUSH_RELEASE) {
         qxl_set_guest_bug(d, "unsupported io %d for revision %d\n",
             io_port, d->revision);
         return;
