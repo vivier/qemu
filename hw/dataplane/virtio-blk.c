@@ -40,6 +40,7 @@ typedef struct {
 
 struct VirtIOBlockDataPlane {
     bool started;
+    bool stopping;
     QEMUBH *start_bh;
     pthread_t thread;
 
@@ -355,7 +356,7 @@ static void *data_plane_thread(void *opaque)
 
     do {
         event_poll(&s->event_poll);
-    } while (s->started || s->num_reqs > 0);
+    } while (!s->stopping || s->num_reqs > 0);
     return NULL;
 }
 
@@ -476,10 +477,10 @@ void virtio_blk_data_plane_start(VirtIOBlockDataPlane *s)
 
 void virtio_blk_data_plane_stop(VirtIOBlockDataPlane *s)
 {
-    if (!s->started) {
+    if (!s->started || s->stopping) {
         return;
     }
-    s->started = false;
+    s->stopping = true;
     trace_virtio_blk_data_plane_stop(s);
 
     /* Stop thread or cancel pending thread creation BH */
@@ -501,4 +502,6 @@ void virtio_blk_data_plane_stop(VirtIOBlockDataPlane *s)
     s->vdev->binding->set_guest_notifiers(s->vdev->binding_opaque, false);
 
     vring_teardown(&s->vring);
+    s->started = false;
+    s->stopping = false;
 }
