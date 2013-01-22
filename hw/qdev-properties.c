@@ -564,6 +564,40 @@ PropertyInfo qdev_prop_pci_devfn = {
     .print = print_pci_devfn,
 };
 
+/* --- blocksize --- */
+
+static int parse_blocksize(DeviceState *dev, Property *prop, const char *str)
+{
+    int16_t *ptr = qdev_get_prop_ptr(dev, prop);
+    unsigned long value;
+    char *end;
+
+    /* accept both hex and decimal */
+    value = strtoul(str, &end, 0);
+    if ((*end != '\0') || (end == str)) {
+        return -EINVAL;
+    }
+    if (value < 512 || value > 65024) {
+        return -EINVAL;
+    }
+
+    /* We rely on power-of-2 blocksizes for bitmasks */
+    if ((value & (value - 1)) != 0) {
+        return -EINVAL;
+    }
+
+    *ptr = value;
+    return 0;
+}
+
+PropertyInfo qdev_prop_blocksize = {
+    .name  = "blocksize",
+    .type  = PROP_TYPE_BLOCKSIZE,
+    .size  = sizeof(uint16_t),
+    .parse = parse_blocksize,
+    .print = print_uint16,
+};
+
 /* --- public helpers --- */
 
 static Property *qdev_prop_walk(Property *props, const char *name)

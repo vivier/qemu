@@ -99,6 +99,7 @@ enum PropertyType {
     PROP_TYPE_VLAN,
     PROP_TYPE_PTR,
     PROP_TYPE_BIT,
+    PROP_TYPE_BLOCKSIZE,
 };
 
 struct PropertyInfo {
@@ -226,6 +227,7 @@ extern PropertyInfo qdev_prop_drive;
 extern PropertyInfo qdev_prop_netdev;
 extern PropertyInfo qdev_prop_vlan;
 extern PropertyInfo qdev_prop_pci_devfn;
+extern PropertyInfo qdev_prop_blocksize;
 
 #define DEFINE_PROP(_name, _state, _field, _prop, _type) { \
         .name      = (_name),                                    \
@@ -280,6 +282,8 @@ extern PropertyInfo qdev_prop_pci_devfn;
     DEFINE_PROP(_n, _s, _f, qdev_prop_drive, BlockDriverState *)
 #define DEFINE_PROP_MACADDR(_n, _s, _f)         \
     DEFINE_PROP(_n, _s, _f, qdev_prop_macaddr, MACAddr)
+#define DEFINE_PROP_BLOCKSIZE(_n, _s, _f, _d) \
+    DEFINE_PROP_DEFAULT(_n, _s, _f, _d, qdev_prop_blocksize, uint16_t)
 
 #define DEFINE_PROP_END_OF_LIST()               \
     {}
