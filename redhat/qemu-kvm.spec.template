@@ -45,8 +45,6 @@
 # - pkgname: the package name (qemu-kvm or qemu-kvm-rhev)
 # - pkgsuffix: suffix for package names that are not "qemu-kvm-*" (e.g.
 #   qemu-img and qemu-guest-agent). optional.
-# - addprovides/providesname: add "Provides:" lines to each package, with
-#   the original name without %{pkgsuffix}. optional.
 # - obsoletes_ver: version that packages will obsolete. Used to make the qemu-kvm-rhev
 #   package obsolete old qemu-kvm packages that were present on RHEV
 # - confname: "conf suffix", name for config file directories, data directories, etc.
@@ -54,19 +52,26 @@
 
 # RHEV-specific changes:
 %if 0%{?rhev}
-# will add Provides: lines to match RHEL package capabilities
-%define addprovides  1
-%define providesname qemu-kvm
-# Obsolete all qemu-kvm versions[1], so users with both RHEL and RHEV channels
-# will get the qemu-kvm-rhev package.
-# [1] unless one day we want to revert it, then qemu-kvm Epoch should be increased to 10
+# RHEV package:
+# we will add qemu-kvm/qemu-img/etc as provides
+%define extra_provides_suffix %{nil}
+# Obsolete all qemu-kvm/qemu-img/etc versions[1], so users with both RHEL and
+# RHEV channels will get the qemu-kvm-rhev package.
+# [1] unless one day we want to revert it, then qemu-kvm Epoch should be
+# increased to 10
 %define obsoletes_ver   10:0-0
 %define pkgsuffix       -rhev
-%define conflicts       qemu-kvm
-%define conflicts_img   qemu-img
+# conflict with RHEL packages:
+%define conflicts_suffix -rhel
+# older RHEL packages didn't have the qemu-kvm-rhel/qemu-img-rhel provides:
+%define old_conflict_ver 0.12.1.2-2.352.el6
 %else
-%define conflicts       qemu-kvm-rhev
-%define conflicts_img   qemu-img-rhev
+# RHEL package:
+# conflict with RHEV packages:
+%define conflicts_suffix -rhev
+# We will provide "qemu-kvm-rhel" and "qemu-img-rhel" as well, to make
+# it possible for the RHEV package to add a Conflicts line
+%define extra_provides_suffix -rhel
 %endif
 
 %define confname qemu-kvm
@@ -91,6 +96,35 @@
 %define rpmversion %{sublevel}
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
 
+# rhel_rhev_conflicts:
+# reusable macro for the many conflicts/provides/obsoletes settings
+# that are present on multiple subpackages
+# Parameters:
+#   %1 - package name (e.g qemu-kvm, qemu-img)
+%define rhel_rhev_conflicts()                                                  \
+%if 0%{?conflicts_suffix:1}                                                    \
+# this is used to make *-rhev conflict with *-rhel and vice-versa              \
+Conflicts: %1%{conflicts_suffix}                                               \
+%endif                                                                         \
+%if 0%{?old_conflict_ver:1}                                                    \
+# Older qemu-kvm versions from RHEL didn't provide qemu-kvm-rhel, so           \
+# we conflict with the qemu-kvm name directly                                  \
+Conflicts: %1 <= %{old_conflict_ver}                                           \
+%endif                                                                         \
+%if 0%{?extra_provides_suffix:1}                                               \
+# - qemu-kvm will provide qemu-kvm-rhel to make it easier for the RHEV         \
+#   package to conflict with it                                                \
+# - qemu-kvm-rhev will provide qemu-kvm, so all other packages that            \
+#   reference qemu-kvm will accept it                                          \
+Provides: %1%{extra_provides_suffix} = %{epoch}:%{version}-%{release}          \
+%endif                                                                         \
+%if 0%{?obsoletes_ver:1}                                                       \
+# qemu-kvm-rhev will obsolete all older qemu-kvm packages, up to               \
+# %{obsoletes_ver}                                                             \
+Obsoletes: %1 < %{obsoletes_ver}                                               \
+%endif
+
+
 %if %{enable_fake_machine}
 Summary: Userspace component of KVM (testing only)
 %else
@@ -105,7 +139,7 @@ License: GPLv2+ and LGPLv2+ and BSD
 Group: Development/Tools
 URL: http://www.linux-kvm.org
 ExclusiveArch: %{build_arches}
-Conflicts: %{conflicts}
+%rhel_rhev_conflicts qemu-kvm
 
 Source0: http://downloads.sourceforge.net/sourceforge/kvm/qemu-kvm-%{version}.tar.gz
 
@@ -169,12 +203,6 @@ Requires(preun): /sbin/service /sbin/chkconfig
 Requires(postun): /sbin/service
 
 Provides: kvm = 85
-%if 0%{?addprovides}
-Provides: %{providesname} = %{epoch}:%{version}-%{release}
-%if 0%{?obsoletes_ver:1}
-Obsoletes: %{providesname} < %{obsoletes_ver}
-%endif
-%endif
 Obsoletes: kvm < 85
 %if %{with qemu_kvm}
 Requires: vgabios
@@ -221,13 +249,7 @@ management code, not to run actual virtual machines.
 %package -n qemu-img%{?pkgsuffix}
 Summary: QEMU command line tool for manipulating disk images
 Group: Development/Tools
-%if 0%{?addprovides}
-Provides: qemu-img = %{epoch}:%{version}-%{release}
-%if 0%{?obsoletes_ver:1}
-Obsoletes: qemu-img < %{obsoletes_ver}
-%endif
-Conflicts: %{conflicts_img}
-%endif
+%rhel_rhev_conflicts qemu-img
 
 %description -n qemu-img%{?pkgsuffix}
 This package provides a command line tool for manipulating disk images
@@ -235,12 +257,7 @@ This package provides a command line tool for manipulating disk images
 %package -n %{pkgname}-tools
 Summary: KVM debugging and diagnostics tools
 Group: Development/Tools
-%if 0%{?addprovides}
-Provides: %{providesname}-tools = %{epoch}:%{version}-%{release}
-%if 0%{?obsoletes_ver:1}
-Obsoletes: %{providesname}-tools < %{obsoletes_ver}
-%endif
-%endif
+%rhel_rhev_conflicts qemu-kvm-tools
 
 %description -n %{pkgname}-tools
 This package contains some diagnostics and debugging tools for KVM,
@@ -252,12 +269,7 @@ such as kvm_stat.
 %package -n qemu-guest-agent%{?pkgsuffix}
 Summary: QEMU Guest Agent
 Group: Development/Tools
-%if 0%{?addprovides}
-Provides: qemu-guest-agent = %{epoch}:%{version}-%{release}
-%if 0%{?obsoletes_ver:1}
-Obsoletes: qemu-guest-agent < %{obsoletes_ver}
-%endif
-%endif
+%rhel_rhev_conflicts qemu-guest-agent
 
 %description -n qemu-guest-agent%{?pkgsuffix}
 This package provides a qemu guest agent daemon to be running inside of
@@ -267,12 +279,7 @@ linux guests to provide the guest information.
 %package -n qemu-guest-agent-win32%{?pkgsuffix}
 Summary: QEMU Guest Agent for Windows
 Group: Development/Tools
-%if 0%{?addprovides}
-Provides: qemu-guest-agent-win32 = %{epoch}:%{version}-%{release}
-%if 0%{?obsoletes_ver:1}
-Obsoletes: qemu-guest-agent-win32 < %{obsoletes_ver}
-%endif
-%endif
+%rhel_rhev_conflicts qemu-guest-agent-win32
 
 %description -n qemu-guest-agent-win32%{?pkgsuffix}
 This package provides a qemu guest agent daemon to be running inside of
