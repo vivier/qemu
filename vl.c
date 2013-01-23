@@ -6203,6 +6203,9 @@ int main(int argc, char **argv, char **envp)
     socket_init();
 #endif
 
+    /* clean up network at qemu process termination */
+    atexit(&net_cleanup);
+
     if (net_init_clients() < 0) {
         exit(1);
     }
@@ -6526,7 +6529,6 @@ int main(int argc, char **argv, char **envp)
 
     main_loop();
     quit_timers();
-    net_cleanup();
 
     return 0;
 }
