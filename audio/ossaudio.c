@@ -746,7 +746,8 @@ static int oss_run_in (HWVoiceIn *hw)
                            hw->info.align + 1);
                 }
                 read_samples += nread >> hwshift;
-                hw->conv (hw->conv_buf + bufs[i].add, p, nread >> hwshift);
+                hw->conv (hw->conv_buf + bufs[i].add, p, nread >> hwshift,
+                          &nominal_volume);
             }
 
             if (bufs[i].len - nread) {

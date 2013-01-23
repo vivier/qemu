@@ -268,10 +268,11 @@ static int line_in_run (HWVoiceIn *hw)
         len[1] = 0;
     }
 
-    hw->conv (hw->conv_buf + hw->wpos, samples, len[0]);
+    hw->conv (hw->conv_buf + hw->wpos, samples, len[0], &nominal_volume);
 
     if (len[1]) {
-        hw->conv (hw->conv_buf, samples + len[0], len[1]);
+        hw->conv (hw->conv_buf, samples + len[0], len[1],
+                  &nominal_volume);
     }
 
     hw->wpos = (hw->wpos + num_samples) % hw->samples;

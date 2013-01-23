@@ -1058,7 +1058,7 @@ static int alsa_run_in (HWVoiceIn *hw)
                 }
             }
 
-            hw->conv (dst, src, nread);
+            hw->conv (dst, src, nread, &nominal_volume);
 
             src = advance (src, nread << hwshift);
             dst += nread;
