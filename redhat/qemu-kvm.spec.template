@@ -64,7 +64,7 @@
 # conflict with RHEL packages:
 %define conflicts_suffix -rhel
 # older RHEL packages didn't have the qemu-kvm-rhel/qemu-img-rhel provides:
-%define old_conflict_ver 0.12.1.2-2.352.el6
+%define old_conflict_ver 2:0.12.1.2-2.352.el6
 %else
 # RHEL package:
 # conflict with RHEV packages:
