@@ -24,8 +24,8 @@ function get_configure()
 {
 	local fn="$1"
 
-	sln=$(grep -n "./configure" "$fn" | awk '{ split($0, a, ":"); print a[1] }')
-	if [ -z $sln ]; then
+	sln=$(grep -n "./configure" "$fn" | awk '{ split($0, a, ":"); if (NR == 1) print a[1] }')
+	if [ -z "$sln" ]; then
 		return
 	fi
 
@@ -49,6 +49,7 @@ cfg=${cfg/\%\{_prefix\}/$prefix}
 cfg=${cfg/\%\{_sysconfdir\}/$sysconfdir}
 cfg=${cfg/\$RPM_OPT_FLAGS/-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector --param=ssp-buffer-size=4 -m64 -mtune=generic}
 cfg=${cfg/\$extraldflags/-Wl,--build-id -pie -Wl,-z,relro -Wl,-z,now}
+cfg=${cfg/..\/configure/.\/configure}
 
 let j=$(get_core_count)+1
 
