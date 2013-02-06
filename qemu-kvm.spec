@@ -730,7 +730,6 @@ rm $RPM_BUILD_ROOT%{_bindir}/qemu-system-%{kvm_target}
 rm $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/qemu-system-%{kvm_target}.stp
 %endif
 
-chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
 install -D -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} Changelog README TODO COPYING COPYING.LIB LICENSE
 
 install -D -p -m 0644 qemu.sasl $RPM_BUILD_ROOT%{_sysconfdir}/sasl2/qemu.conf
