@@ -733,6 +733,13 @@ rm $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/qemu-system-%{kvm_target}.stp
 mkdir -p $RPM_BUILD_ROOT%{qemudocdir}
 install -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} Changelog README TODO COPYING COPYING.LIB LICENSE
 
+mkdir -p %{RPM_BUILD_ROOT}%{_mandir}/man1
+mkdir -p %{RPM_BUILD_ROOT}%{_mandir}/man8
+install -p -m 0644 -t ${RPM_BUILD_ROOT}%{_mandir}/man1/ qemu.1 qemu-img.1
+install -p -m 0644 -t ${RPM_BUILD_ROOT}%{_mandir}/man8/ qemu-nbd.8
+chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
+chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man8/*
+
 install -D -p -m 0644 qemu.sasl $RPM_BUILD_ROOT%{_sysconfdir}/sasl2/qemu.conf
 
 # Provided by package openbios
