@@ -90,11 +90,12 @@
 #
 %define buildid %{nil}%%BUILDID%%
 
+%define zrelease %%ZRELEASE%
 %define sublevel %%SUBLEVEL%%
 %define pkgrelease %%PKGRELEASE%%
 
 %define rpmversion %{sublevel}
-%define full_release %{pkgrelease}%{?dist}%{?buildid}
+%define full_release %{pkgrelease}%{?dist}_4.%{?zrelease}%{?buildid}
 
 # rhel_rhev_conflicts:
 # reusable macro for the many conflicts/provides/obsoletes settings

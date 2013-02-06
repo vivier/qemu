@@ -35,6 +35,7 @@ GITREV=$(echo $MARKER | cut -f 4 -d '-' -s | sed -e "s/git//")
 LASTCOMMIT=$(cat lastcommit);
 #STAMP=$(echo $MARKER | cut -f 1 -d '-' | sed -e "s/v//");
 STAMP=$(echo $MARKER | cut -f 3 -d '-')
+ZRELEASE=1
 if [ -n "$RCREV" ]; then
 	RELEASED_KERNEL="0";
 	SUBLEVEL=$(($SUBLEVEL - 1));
@@ -316,6 +317,7 @@ test -n "$SPECFILE" &&
 	s/%%BUILD%%/$BUILD/
 	s/%%BUILDID%%/$BUILDID/
 	s/%%PKGRELEASE%%/$PKGRELEASE/
+        s/%%ZRELEASE%%/$ZRELEASE/
 	s/%%SUBLEVEL%%/$SUBLEVEL/
 	s/%%RCREV%%/$RCREV/
 	s/%%GITREV%%/$GITREV/
