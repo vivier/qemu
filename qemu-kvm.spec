@@ -122,7 +122,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu-kvm
 Version: 1.3.0
-Release: 3%{?dist}
+Release: 4%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -158,6 +158,7 @@ Patch13: 0109-spice-qemu-char.c-remove-intermediate-buffer.patch
 Patch14: 0110-usb-redir-Add-flow-control-support.patch
 Patch15: 0111-char-Disable-write-callback-if-throttled-chardev-is-.patch
 Patch16: 0112-hw-virtio-serial-bus-replay-guest-open-on-destinatio.patch
+Patch17: 0113-libcacard-fix-missing-symbol-in-libcacard.so.patch
 
 Source1: qemu.binfmt
 
@@ -603,6 +604,7 @@ CAC emulation development files.
 %patch14 -p1
 %patch15 -p1
 %patch16 -p1
+%patch17 -p1
 
 
 %build
@@ -1218,6 +1220,10 @@ fi
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Wed Feb 06 2013 Alon Levy <alevy@redhat.com> - 2:1.3.0-4
+- Add patch from f19 package for libcacard missing error_set symbol.
+- Resolves: bz#891552
+
 * Mon Jan 07 2013 Michal Novotny <minovotn@redhat.com> - 2:1.3.0-3
 - Remove dependency on bogus qemu-kvm-kvm package [bz#870343]
 - Resolves: bz#870343
