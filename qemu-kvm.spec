@@ -235,6 +235,9 @@ BuildRequires: check-devel
 BuildRequires: libcap-devel
 # Hard requirement for version >= 1.3
 BuildRequires: pixman-devel
+# Documentation requirement
+BuildRequires: perl-podlators
+BuildRequires: texinfo
 
 %if 0%{?user:1}
 Requires: %{name}-%{user} = %{epoch}:%{version}-%{release}
@@ -666,6 +669,7 @@ dobuild() {
         --disable-werror \
         --disable-xen \
         --enable-kvm \
+        --enable-docs \
         "$@"
 
     echo "config-host.mak contents:"
