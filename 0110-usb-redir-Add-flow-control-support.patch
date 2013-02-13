@@ -32,7 +32,7 @@ index c921d2d..dfb1773 100644
      }
  
 -    return qemu_chr_fe_write(dev->cs, data, count);
-+    r - qemu_chr_fe_write(dev->cs, data, count);
++    r = qemu_chr_fe_write(dev->cs, data, count);
 +
 +    if (r < 0) {
 +        if (dev->cs->write_blocked) {
