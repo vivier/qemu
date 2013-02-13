@@ -122,7 +122,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu-kvm
 Version: 1.3.0
-Release: 4%{?dist}
+Release: 5%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 2
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1231,6 +1231,11 @@ fi
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Wed Feb 13 2013 Michal Novotny <minovotn@redhat.com> - 2:1.3.0-5
+- Fix patch contents for usb-redir (bz#895491)
+- Resolves: bz#895491
+  (PATCH: 0110-usb-redir-Add-flow-control-support.patch has been mangled on rebase !!)
+
 * Wed Feb 06 2013 Alon Levy <alevy@redhat.com> - 2:1.3.0-4
 - Add patch from f19 package for libcacard missing error_set symbol.
 - Resolves: bz#891552
