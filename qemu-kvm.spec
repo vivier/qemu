@@ -577,6 +577,8 @@ Common Access Card (CAC) emulation library.
 Summary:        CAC Emulation tools
 Group:          Development/Libraries
 Requires:       libcacard = %{epoch}:%{version}-%{release}
+# older qemu-img has vscclient which is now in libcacard-tools
+Requires:       qemu-img >= 3:1.3.0-5
 
 %description -n libcacard-tools
 CAC emulation tools.
