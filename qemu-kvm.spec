@@ -122,7 +122,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu-kvm
 Version: 1.3.0
-Release: 5%{?dist}
+Release: 6%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 3
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1233,6 +1233,12 @@ fi
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Fri Feb 22 2013 Alon Levy <alevy@redhat.com> - 3:1.3.0-6
+- Bump epoch back to 3 since there has already been a 3 package release:
+  3:1.2.0-20.el7 https://brewweb.devel.redhat.com/buildinfo?buildID=244866
+- Mark explicit libcacard dependency on new enough qemu-img to avoid conflict
+  since /usr/bin/vscclient was moved from qemu-img to libcacard subpackage.
+
 * Wed Feb 13 2013 Michal Novotny <minovotn@redhat.com> - 2:1.3.0-5
 - Fix patch contents for usb-redir (bz#895491)
 - Resolves: bz#895491
