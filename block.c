@@ -964,10 +964,9 @@ void bdrv_close(BlockDriverState *bs)
             bdrv_close(bs->file);
         }
 
-    }
-
-    if (!runstate_check(RUN_STATE_INMIGRATE)) {
-        bdrv_dev_change_media_cb(bs, false);
+        if (!runstate_check(RUN_STATE_INMIGRATE)) {
+            bdrv_dev_change_media_cb(bs, false);
+        }
     }
 }
 
