@@ -122,7 +122,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu-kvm
 Version: 1.3.0
-Release: 7%{?dist}
+Release: 8%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 3
 License: GPLv2+ and LGPLv2+ and BSD
@@ -132,12 +132,8 @@ URL: http://www.qemu.org/
 %if %{with kvmonly}
 ExclusiveArch: %{kvm_archs}
 Requires: seabios
-Requires: /usr/share/ipxe/8086100e.rom
-Requires: /usr/share/ipxe/10ec8029.rom
-Requires: /usr/share/ipxe/10222000.rom
-Requires: /usr/share/ipxe/10ec8139.rom
-Requires: /usr/share/ipxe/1af41000.rom
-Requires: /usr/share/sgabios/sgabios.bin
+Requires: sgabios
+Requires: ipxe
 %endif
 
 # OOM killer breaks builds with parallel make on s390(x)
@@ -1240,7 +1236,7 @@ fi
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
-* Mon Feb 25 2013 Michal Novotny <minovotn@redhat.com> - 3:1.3.0-7
+* Mon Feb 25 2013 Michal Novotny <minovotn@redhat.com> - 3:1.3.0-8
 - Missing package qemu-system-x86 in hardware certification kvm testing (bz#912433)
 - Resolves: bz#912433
   (Missing package qemu-system-x86 in hardware certification kvm testing)
