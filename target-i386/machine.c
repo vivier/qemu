@@ -509,6 +509,24 @@ static const VMStateDescription vmstate_msr_hyperv_hypercall = {
     }
 };
 
+static bool steal_time_msr_needed(void *opaque)
+{
+    CPUState *env = opaque;
+
+    return env->steal_time_msr != 0;
+}
+
+static const VMStateDescription vmstate_steal_time_msr = {
+    .name = "cpu/steal_time_msr",
+    .version_id = 1,
+    .minimum_version_id = 1,
+    .minimum_version_id_old = 1,
+    .fields      = (VMStateField []) {
+        VMSTATE_UINT64(steal_time_msr, CPUState),
+        VMSTATE_END_OF_LIST()
+    }
+};
+
 static const VMStateDescription vmstate_cpu = {
     .name = "cpu",
     .version_id = CPU_SAVE_VERSION,
@@ -627,6 +645,9 @@ static const VMStateDescription vmstate_cpu = {
             .vmsd = &vmstate_msr_hyperv_hypercall,
             .needed = hyperv_hypercall_needed,
         }, {
+            .vmsd = &vmstate_steal_time_msr,
+            .needed = steal_time_msr_needed, 
+        } , {
 	    /* empty */
 	}
     }
