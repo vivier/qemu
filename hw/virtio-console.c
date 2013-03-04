@@ -20,6 +20,16 @@ typedef struct VirtConsole {
     CharDriverState *chr;
 } VirtConsole;
 
+/*
+ * Callback function that's called from chardevs when backend becomes
+ * writable.
+ */
+static void chr_write_unblocked(void *opaque)
+{
+    VirtConsole *vcon = opaque;
+
+    virtio_serial_throttle_port(&vcon->port, false);
+}
 
 /* Callback function that's called when the guest sends us data */
 static ssize_t flush_buf(VirtIOSerialPort *port, const uint8_t *buf, size_t len)
@@ -110,6 +120,7 @@ static const QemuChrHandlers chr_handlers = {
     .fd_can_read = chr_can_read,
     .fd_read = chr_read,
     .fd_event = chr_event,
+    .fd_write_unblocked = chr_write_unblocked,
 };
 
 static int virtconsole_initfn(VirtIOSerialPort *port)
