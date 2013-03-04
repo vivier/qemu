@@ -2155,6 +2155,21 @@ typedef struct {
 
 static void tcp_chr_accept(void *opaque);
 
+static void tcp_closed(void *opaque)
+{
+    CharDriverState *chr = opaque;
+    TCPCharDriver *s = chr->opaque;
+
+    s->connected = 0;
+    if (s->listen_fd >= 0) {
+        qemu_set_fd_handler2(s->listen_fd, NULL, tcp_chr_accept, NULL, chr);
+    }
+    qemu_set_fd_handler2(s->fd, NULL, NULL, NULL, NULL);
+    closesocket(s->fd);
+    s->fd = -1;
+    qemu_chr_be_event(chr, CHR_EVENT_CLOSED);
+}
+
 static int tcp_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
 {
     TCPCharDriver *s = chr->opaque;
@@ -2313,15 +2328,7 @@ static void tcp_chr_read(void *opaque)
         len = s->max_size;
     size = tcp_chr_recv(chr, (void *)buf, len);
     if (size == 0) {
-        /* connection closed */
-        s->connected = 0;
-        if (s->listen_fd >= 0) {
-            qemu_set_fd_handler2(s->listen_fd, NULL, tcp_chr_accept, NULL, chr);
-        }
-        qemu_set_fd_handler2(s->fd, NULL, NULL, NULL, NULL);
-        closesocket(s->fd);
-        s->fd = -1;
-        qemu_chr_be_event(chr, CHR_EVENT_CLOSED);
+        tcp_closed(chr);
     } else if (size > 0) {
         if (s->do_telnetopt)
             tcp_chr_process_IAC_bytes(chr, s, buf, &size);
