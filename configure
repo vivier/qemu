@@ -335,7 +335,9 @@ tpm="yes"
 libssh2=""
 vhdx=""
 quorum=""
+live_block_migration="no"
 numa=""
+
 
 # parse CC options first
 for opt do
@@ -1134,6 +1136,10 @@ for opt do
   ;;
   --enable-numa) numa="yes"
   ;;
+  --disable-live-block-migration) live_block_migration="no"
+  ;;
+  --enable-live-block-migration) live_block_migration="yes"
+  ;;
   *)
       echo "ERROR: unknown option $opt"
       echo "Try '$0 --help' for more information"
@@ -1405,6 +1411,8 @@ Advanced options (experts only):
   --enable-vhdx            enable support for the Microsoft VHDX image format
   --disable-quorum         disable quorum block filter support
   --enable-quorum          enable quorum block filter support
+  --disable-live-block-migration disable live block migration
+  --enable-live-block-migration  enable live block migration
   --disable-numa           disable libnuma support
   --enable-numa            enable libnuma support
 
@@ -4440,6 +4448,7 @@ echo "Quorum            $quorum"
 echo "lzo support       $lzo"
 echo "snappy support    $snappy"
 echo "bzip2 support     $bzip2"
+echo "Live block migration $live_block_migration"
 echo "NUMA host support $numa"
 
 if test "$sdl_too_old" = "yes"; then
@@ -4905,6 +4914,10 @@ fi
 
 if test "$vhdx" = "yes" ; then
   echo "CONFIG_VHDX=y" >> $config_host_mak
+fi
+
+if test "$live_block_migration" = "yes" ; then
+  echo "CONFIG_LIVE_BLOCK_MIGRATION=y" >> $config_host_mak
 fi
 
 # USB host support

@@ -455,6 +455,13 @@ void qmp_migrate(const char *uri, bool has_blk, bool blk,
     params.blk = has_blk && blk;
     params.shared = has_inc && inc;
 
+#ifndef CONFIG_LIVE_BLOCK_MIGRATION
+    if (params.blk || params.shared) {
+        error_set(errp, QERR_UNSUPPORTED);
+        return;
+    }
+#endif
+
     if (s->state == MIGRATION_STATUS_ACTIVE ||
         s->state == MIGRATION_STATUS_SETUP ||
         s->state == MIGRATION_STATUS_CANCELLING) {
