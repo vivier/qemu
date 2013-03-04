@@ -223,6 +223,11 @@ void qemu_chr_add_handlers(CharDriverState *s,
         ++s->avail_connections;
     }
     if (!handlers) {
+        if (s->write_blocked) {
+            /* Ensure we disable the callback if we were throttled */
+            s->chr_disable_write_fd_handler(s);
+            /* s->write_blocked is cleared below */
+        }
         handlers = &null_handlers;
     }
     s->chr_can_read = handlers->fd_can_read;
