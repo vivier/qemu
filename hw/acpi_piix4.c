@@ -265,8 +265,8 @@ static int acpi_load_old(QEMUFile *f, void *opaque, int version_id)
  */
 static const VMStateDescription vmstate_acpi = {
     .name = "piix4_pm",
-    .version_id = 3,
-    .minimum_version_id = 3,
+    .version_id = 2,
+    .minimum_version_id = 2,
     .minimum_version_id_old = 1,
     .load_state_old = acpi_load_old,
     .post_load = vmstate_acpi_post_load,
