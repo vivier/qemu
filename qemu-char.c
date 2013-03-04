@@ -139,6 +139,9 @@ static void qemu_chr_fire_open_event(void *opaque)
 {
     CharDriverState *s = opaque;
     qemu_chr_be_event(s, CHR_EVENT_OPENED);
+    if (s->write_blocked) {
+        char_write_unblocked(s);
+    }
     qemu_free_timer(s->open_timer);
     s->open_timer = NULL;
 }
@@ -2258,6 +2261,17 @@ static int tcp_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
         ret = send_all(chr, s->fd, buf, len);
         if (ret == -1 && errno == EPIPE) {
             tcp_closed(chr);
+
+            if (chr->chr_enable_write_fd_handler && chr->chr_write_unblocked) {
+                /*
+                 * Since we haven't written out anything, let's say
+                 * we're throttled.  This will prevent any output from
+                 * the guest getting lost if host-side chardev goes
+                 * down.  Unthrottle when we re-connect.
+                 */
+                chr->write_blocked = true;
+                return 0;
+            }
         }
         return ret;
     } else {
