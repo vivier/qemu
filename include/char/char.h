@@ -63,6 +63,9 @@ struct CharDriverState {
     IOEventHandler *chr_event;
     IOCanReadHandler *chr_can_read;
     IOReadHandler *chr_read;
+    IOHandler *chr_write_unblocked;
+    void (*chr_enable_write_fd_handler)(struct CharDriverState *chr);
+    void (*chr_disable_write_fd_handler)(struct CharDriverState *chr);
     void *handler_opaque;
     void (*chr_close)(struct CharDriverState *chr);
     void (*chr_accept_input)(struct CharDriverState *chr);
@@ -76,6 +79,7 @@ struct CharDriverState {
     int opened;
     int avail_connections;
     QemuOpts *opts;
+    bool write_blocked; /* Are we in a blocked state? */
     QTAILQ_ENTRY(CharDriverState) next;
 };
 
