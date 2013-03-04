@@ -1,0 +1,48 @@
+RPMBUILD := $(shell if [ -x "/usr/bin/rpmbuild" ]; then echo rpmbuild; \
+                   else echo rpm; fi)
+MACH :=  $(shell uname -m)
+
+# just used to define the other name variables
+UPSTREAM_NAME=qemu
+COMMON_NAME=qemu-kvm
+
+
+KVERSION:=2.0.0
+# marker is git tag
+MARKER:=$(UPSTREAM_NAME)-$(KVERSION)
+SPECFILE:=$(COMMON_NAME).spec
+REDHAT:=$(shell pwd)
+RPM:=$(REDHAT)/rpm
+SRPMS:=$(RPM)/SRPMS
+SOURCES:=$(RPM)/SOURCES
+BUILD:=0
+PREBUILD=
+DIST=.el7
+PKGNAME=$(COMMON_NAME)
+
+#TARFILE:=$(subst _,.,$(MARKER)).tar.bz2
+TARFILE:=$(UPSTREAM_NAME)-$(KVERSION).tar.bz2
+TARURL:= http://wiki.qemu.org/download/$(TARFILE)
+#TARSHA1:=ed56e8717308a56f51a6ed4c18a4335e5aacae83
+TARSHA256:=
+
+TARBALL:=$(REDHAT)/$(TARFILE)
+TESTPATCH:=$(REDHAT)/$(COMMON_NAME)-test.patch
+
+EXTRA_SOURCES = ksmtuned.conf ksmtuned ksm.sysconfig 80-kvm.rules kvm.modules 99-qemu-guest-agent.rules qemu-guest-agent.service ksmtuned.service  ksmctl.c ksm.service qemu.binfmt
+
+SUBLEVEL:=$(shell echo $(MARKER) | cut -f 2 -d '-')
+#RCREV := $(shell echo $(MARKER) | cut -f 2 -d '-' -s | sed -e "s/rc//")
+RCREV:= 
+GITREV:=$(shell echo $(MARKER) | cut -f 3 -d '-' -s | sed -e "s/git//")
+
+ifneq ($(RCREV),)
+	RELEASED_KERNEL := 0
+	STAMP_VERSION := $(shell echo $(MARKER) | cut -f 1 -d '-' | sed -e "s/v//")
+else
+	RELEASED_KERNEL := 1
+	STAMP_VERSION := $(KVERSION)
+endif
+RC_PATCH := patch-$(SUBLEVEL)-rc$(RCREV).gz
+GIT_PATCH := patch-$(SUBLEVEL)-rc$(RCREV)-git$(GITREV).gz
+
