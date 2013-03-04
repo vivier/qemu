@@ -29,6 +29,7 @@ int inet_aton(const char *cp, struct in_addr *ia);
 #include "qemu/option.h"
 #include "qapi/error.h"
 #include "qapi/qmp/qerror.h"
+#include "char/char.h"
 
 /* misc helpers */
 int qemu_socket(int domain, int type, int protocol);
@@ -36,7 +37,7 @@ int qemu_accept(int s, struct sockaddr *addr, socklen_t *addrlen);
 int socket_set_cork(int fd, int v);
 void socket_set_block(int fd);
 void socket_set_nonblock(int fd);
-int send_all(int fd, const void *buf, int len1);
+int send_all(CharDriverState *chr, int fd, const void *buf, int len1);
 
 /* callback function for nonblocking connect
  * valid fd on success, negative error code on failure
