@@ -243,6 +243,12 @@ static void uart_reset(DeviceState *d)
     s->regs[R_LSR] = LSR_THRE | LSR_TEMT;
 }
 
+static const QemuChrHandlers uart_handlers = {
+    .fd_can_read = uart_can_rx,
+    .fd_read = uart_rx,
+    .fd_event = uart_event,
+};
+
 static int lm32_uart_init(SysBusDevice *dev)
 {
     LM32UartState *s = FROM_SYSBUS(typeof(*s), dev);
@@ -254,7 +260,7 @@ static int lm32_uart_init(SysBusDevice *dev)
 
     s->chr = qemu_char_get_next_serial();
     if (s->chr) {
-        qemu_chr_add_handlers(s->chr, uart_can_rx, uart_rx, uart_event, s);
+        qemu_chr_add_handlers(s->chr, &uart_handlers, s);
     }
 
     return 0;

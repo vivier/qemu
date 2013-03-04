@@ -261,6 +261,12 @@ static const VMStateDescription vmstate_pl011 = {
     }
 };
 
+static const QemuChrHandlers pl011_handlers = {
+    .fd_can_read = pl011_can_receive,
+    .fd_read = pl011_receive,
+    .fd_event = pl011_event,
+};
+
 static int pl011_init(SysBusDevice *dev, const unsigned char *id)
 {
     pl011_state *s = FROM_SYSBUS(pl011_state, dev);
@@ -276,8 +282,7 @@ static int pl011_init(SysBusDevice *dev, const unsigned char *id)
     s->cr = 0x300;
     s->flags = 0x90;
     if (s->chr) {
-        qemu_chr_add_handlers(s->chr, pl011_can_receive, pl011_receive,
-                              pl011_event, s);
+        qemu_chr_add_handlers(s->chr, &pl011_handlers, s);
     }
     vmstate_register(&dev->qdev, -1, &vmstate_pl011, s);
     return 0;

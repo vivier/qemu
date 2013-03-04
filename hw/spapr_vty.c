@@ -54,6 +54,11 @@ void vty_putchars(VIOsPAPRDevice *sdev, uint8_t *buf, int len)
     qemu_chr_fe_write(dev->chardev, buf, len);
 }
 
+static const QemuChrHandlers vty_handlers = {
+    .fd_can_read = vty_can_receive,
+    .fd_read = vty_receive,
+};
+
 static int spapr_vty_init(VIOsPAPRDevice *sdev)
 {
     VIOsPAPRVTYDevice *dev = (VIOsPAPRVTYDevice *)sdev;
@@ -63,8 +68,7 @@ static int spapr_vty_init(VIOsPAPRDevice *sdev)
         exit(1);
     }
 
-    qemu_chr_add_handlers(dev->chardev, vty_can_receive,
-                          vty_receive, NULL, dev);
+    qemu_chr_add_handlers(dev->chardev, &vty_handlers, dev);
 
     return 0;
 }

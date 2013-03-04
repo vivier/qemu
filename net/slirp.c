@@ -595,6 +595,11 @@ static void guestfwd_read(void *opaque, const uint8_t *buf, int size)
     slirp_socket_recv(fwd->slirp, fwd->server, fwd->port, buf, size);
 }
 
+static const QemuChrHandlers guestfwd_handlers = {
+    .fd_can_read = guestfwd_can_read,
+    .fd_read = guestfwd_read,
+};
+
 static int slirp_guestfwd(SlirpState *s, const char *config_str,
                           int legacy_format)
 {
@@ -660,8 +665,7 @@ static int slirp_guestfwd(SlirpState *s, const char *config_str,
         fwd->port = port;
         fwd->slirp = s->slirp;
 
-        qemu_chr_add_handlers(fwd->hd, guestfwd_can_read, guestfwd_read,
-                              NULL, fwd);
+        qemu_chr_add_handlers(fwd->hd, &guestfwd_handlers, fwd);
     }
     return 0;
 

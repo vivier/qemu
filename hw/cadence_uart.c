@@ -439,6 +439,12 @@ static void cadence_uart_reset(UartState *s)
     s->rx_wpos = 0;
 }
 
+static const QemuChrHandlers cadence_uart_handlers = {
+    .fd_can_read = uart_can_receive,
+    .fd_read = uart_receive,
+    .fd_event = uart_event,
+};
+
 static int cadence_uart_init(SysBusDevice *dev)
 {
     UartState *s = FROM_SYSBUS(UartState, dev);
@@ -460,8 +466,7 @@ static int cadence_uart_init(SysBusDevice *dev)
     cadence_uart_reset(s);
 
     if (s->chr) {
-        qemu_chr_add_handlers(s->chr, uart_can_receive, uart_receive,
-                              uart_event, s);
+        qemu_chr_add_handlers(s->chr, &cadence_uart_handlers, s);
     }
 
     return 0;

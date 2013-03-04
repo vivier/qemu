@@ -535,6 +535,13 @@ static void hostdev_event(void *opaque, int event)
     }
 }
 
+static const QemuChrHandlers ipoctal_chr_handlers = {
+    .fd_can_read = hostdev_can_receive,
+    .fd_read = hostdev_receive,
+    .fd_event = hostdev_event,
+};
+
+
 static int ipoctal_init(IPackDevice *ip)
 {
     IPOctalState *s = IPOCTAL(ip);
@@ -556,8 +563,7 @@ static int ipoctal_init(IPackDevice *ip)
 
             if (ch->dev) {
                 index++;
-                qemu_chr_add_handlers(ch->dev, hostdev_can_receive,
-                                      hostdev_receive, hostdev_event, ch);
+                qemu_chr_add_handlers(ch->dev, &ipoctal_chr_handlers, ch);
                 DPRINTF("Redirecting channel %u to %s (%s)\n",
                         i, ch->devpath, label);
             } else {

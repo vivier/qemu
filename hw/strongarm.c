@@ -1200,6 +1200,12 @@ static const MemoryRegionOps strongarm_uart_ops = {
     .endianness = DEVICE_NATIVE_ENDIAN,
 };
 
+static const QemuChrHandlers strongarm_uart_handlers = {
+    .fd_can_read = strongarm_uart_can_receive,
+    .fd_read = strongarm_uart_receive,
+    .fd_event = strongarm_uart_event,
+};
+
 static int strongarm_uart_init(SysBusDevice *dev)
 {
     StrongARMUARTState *s = FROM_SYSBUS(StrongARMUARTState, dev);
@@ -1212,11 +1218,7 @@ static int strongarm_uart_init(SysBusDevice *dev)
     s->tx_timer = qemu_new_timer_ns(vm_clock, strongarm_uart_tx, s);
 
     if (s->chr) {
-        qemu_chr_add_handlers(s->chr,
-                        strongarm_uart_can_receive,
-                        strongarm_uart_receive,
-                        strongarm_uart_event,
-                        s);
+        qemu_chr_add_handlers(s->chr, &strongarm_uart_handlers, s);
     }
 
     return 0;

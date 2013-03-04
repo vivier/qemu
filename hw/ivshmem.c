@@ -278,6 +278,18 @@ static void fake_irqfd(void *opaque, const uint8_t *buf, int size) {
     msix_notify(pdev, entry->vector);
 }
 
+static const QemuChrHandlers ivshmem_handlers = {
+    .fd_can_read = ivshmem_can_receive,
+    .fd_read = ivshmem_receive,
+    .fd_event = ivshmem_event,
+};
+
+static const QemuChrHandlers ivshmem_msi_handlers = {
+    .fd_can_read = ivshmem_can_receive,
+    .fd_read = fake_irqfd,
+    .fd_event = ivshmem_event,
+};
+
 static CharDriverState* create_eventfd_chr_device(void * opaque, EventNotifier *n,
                                                   int vector)
 {
@@ -298,11 +310,10 @@ static CharDriverState* create_eventfd_chr_device(void * opaque, EventNotifier *
         s->eventfd_table[vector].pdev = &s->dev;
         s->eventfd_table[vector].vector = vector;
 
-        qemu_chr_add_handlers(chr, ivshmem_can_receive, fake_irqfd,
-                      ivshmem_event, &s->eventfd_table[vector]);
+        qemu_chr_add_handlers(chr, &ivshmem_msi_handlers,
+                              &s->eventfd_table[vector]);
     } else {
-        qemu_chr_add_handlers(chr, ivshmem_can_receive, ivshmem_receive,
-                      ivshmem_event, s);
+        qemu_chr_add_handlers(chr, &ivshmem_handlers, s);
     }
 
     return chr;
@@ -636,6 +647,12 @@ static void ivshmem_write_config(PCIDevice *pci_dev, uint32_t address,
     msix_write_config(pci_dev, address, val, len);
 }
 
+static const QemuChrHandlers ivshmem_server_handlers = {
+    .fd_can_read = ivshmem_can_receive,
+    .fd_read = ivshmem_read,
+    .fd_event = ivshmem_event,
+};
+
 static int pci_ivshmem_init(PCIDevice *dev)
 {
     IVShmemState *s = DO_UPCAST(IVShmemState, dev, dev);
@@ -726,8 +743,7 @@ static int pci_ivshmem_init(PCIDevice *dev)
 
         s->eventfd_chr = g_malloc0(s->vectors * sizeof(CharDriverState *));
 
-        qemu_chr_add_handlers(s->server_chr, ivshmem_can_receive, ivshmem_read,
-                     ivshmem_event, s);
+        qemu_chr_add_handlers(s->server_chr, &ivshmem_server_handlers, s);
     } else {
         /* just map the file immediately, we're not using a server */
         int fd;

@@ -674,6 +674,12 @@ static void serial_reset(void *opaque)
     qemu_irq_lower(s->irq);
 }
 
+static const QemuChrHandlers serial_handlers = {
+    .fd_can_read = serial_can_receive1,
+    .fd_read = serial_receive1,
+    .fd_event = serial_event,
+};
+
 void serial_init_core(SerialState *s)
 {
     if (!s->chr) {
@@ -688,13 +694,12 @@ void serial_init_core(SerialState *s)
 
     qemu_register_reset(serial_reset, s);
 
-    qemu_chr_add_handlers(s->chr, serial_can_receive1, serial_receive1,
-                          serial_event, s);
+    qemu_chr_add_handlers(s->chr, &serial_handlers, s);
 }
 
 void serial_exit_core(SerialState *s)
 {
-    qemu_chr_add_handlers(s->chr, NULL, NULL, NULL, NULL);
+    qemu_chr_add_handlers(s->chr, NULL, NULL);
     qemu_unregister_reset(serial_reset, s);
 }
 

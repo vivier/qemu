@@ -106,6 +106,12 @@ static void chr_event(void *opaque, int event)
     }
 }
 
+static const QemuChrHandlers chr_handlers = {
+    .fd_can_read = chr_can_read,
+    .fd_read = chr_read,
+    .fd_event = chr_event,
+};
+
 static int virtconsole_initfn(VirtIOSerialPort *port)
 {
     VirtConsole *vcon = DO_UPCAST(VirtConsole, port, port);
@@ -117,8 +123,7 @@ static int virtconsole_initfn(VirtIOSerialPort *port)
     }
 
     if (vcon->chr) {
-        qemu_chr_add_handlers(vcon->chr, chr_can_read, chr_read, chr_event,
-                              vcon);
+        qemu_chr_add_handlers(vcon->chr, &chr_handlers, vcon);
     }
 
     return 0;

@@ -625,6 +625,12 @@ DeviceState *exynos4210_uart_create(hwaddr addr,
     return dev;
 }
 
+static const QemuChrHandlers exynos4210_handlers = {
+    .fd_can_read = exynos4210_uart_can_receive,
+    .fd_read     = exynos4210_uart_receive,
+    .fd_event    = exynos4210_uart_event,
+};
+
 static int exynos4210_uart_init(SysBusDevice *dev)
 {
     Exynos4210UartState *s = FROM_SYSBUS(Exynos4210UartState, dev);
@@ -636,8 +642,7 @@ static int exynos4210_uart_init(SysBusDevice *dev)
 
     sysbus_init_irq(dev, &s->irq);
 
-    qemu_chr_add_handlers(s->chr, exynos4210_uart_can_receive,
-                          exynos4210_uart_receive, exynos4210_uart_event, s);
+    qemu_chr_add_handlers(s->chr, &exynos4210_handlers, s);
 
     return 0;
 }

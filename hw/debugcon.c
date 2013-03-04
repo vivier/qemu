@@ -88,7 +88,7 @@ static void debugcon_init_core(DebugconState *s)
         exit(1);
     }
 
-    qemu_chr_add_handlers(s->chr, NULL, NULL, NULL, s);
+    qemu_chr_add_handlers(s->chr, NULL, s);
 }
 
 static int debugcon_isa_initfn(ISADevice *dev)

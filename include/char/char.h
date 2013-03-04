@@ -225,10 +225,15 @@ void qemu_chr_be_write(CharDriverState *s, uint8_t *buf, int len);
  */
 void qemu_chr_be_event(CharDriverState *s, int event);
 
-void qemu_chr_add_handlers(CharDriverState *s,
-                           IOCanReadHandler *fd_can_read,
-                           IOReadHandler *fd_read,
-                           IOEventHandler *fd_event,
+
+typedef struct QemuChrHandlers {
+    IOCanReadHandler *fd_can_read;
+    IOReadHandler *fd_read;
+    IOHandler *fd_write_unblocked;
+    IOEventHandler *fd_event;
+} QemuChrHandlers;
+
+void qemu_chr_add_handlers(CharDriverState *s, const QemuChrHandlers *handlers,
                            void *opaque);
 
 void qemu_chr_generic_open(CharDriverState *s);
