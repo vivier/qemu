@@ -133,7 +133,7 @@ URL: http://www.qemu.org/
 ExclusiveArch: %{kvm_archs}
 Requires: seabios
 Requires: sgabios
-Requires: ipxe
+Requires: ipxe-roms-qemu
 %endif
 
 # OOM killer breaks builds with parallel make on s390(x)
