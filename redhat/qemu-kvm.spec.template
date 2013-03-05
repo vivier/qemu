@@ -1268,6 +1268,9 @@ fi
 
 %changelog
 %%CHANGELOG%%
+* Tue Mar 05 2013 Miroslav Rezanina <mrezanin@redhat.com> - 3:1.4.0-1
+- Rebase to qemu-1.4
+
 * Mon Feb 25 2013 Michal Novotny <minovotn@redhat.com> - 3:1.3.0-8
 - Missing package qemu-system-x86 in hardware certification kvm testing (bz#912433)
 - Resolves: bz#912433
