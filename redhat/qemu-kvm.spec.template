@@ -153,6 +153,7 @@ ExclusiveArch: %{kvm_archs}
 Requires: seabios
 Requires: sgabios
 Requires: ipxe
+Requires: %{name}-common = %{epoch}:%{version}-%{release}
 %endif
 
 # OOM killer breaks builds with parallel make on s390(x)
