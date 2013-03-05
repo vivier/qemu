@@ -116,8 +116,6 @@ sources-rh: $(TARBALL) $(RC_PATCH) $(GIT_PATCH) $(REDHAT)/create-patches.sh Make
 	@rm $(TESTPATCH).tmp
 	@mkdir -p $(SOURCES)
 	@cp $(TARBALL) $(SOURCES)/$(TARFILE)
-	#@if [ ! -f "$(TARFILE)" ]; then wget -q -O $(TARFILE) $(TARURL); tar -xjf $(TARBALL); mv qemu-$(KVERSION) qemu-kvm-$(KVERSION); tar -cjf $(SOURCES)/$(TARFILE) qemu-kvm-$(KVERSION); ls $(SOURCES); fi
-	#@cp "$(SOURCES)/$(TARFILE)" "$(SOURCES)/qemu-$(KVERSION).tar.bz2"
 	@cp $(TARBALL) $(SOURCES)/$(TARFILE)
 	@cp *.patch $(SOURCES)
 	@cp bridge.conf $(SOURCES)
@@ -125,10 +123,8 @@ sources-rh: $(TARBALL) $(RC_PATCH) $(GIT_PATCH) $(REDHAT)/create-patches.sh Make
 	@cp $(SOURCES)/$(SPECFILE) $(SOURCES)/../SPECS
 	@cp $(TESTPATCH) $(SOURCES)/$(COMMON_NAME)-test.patch
 	@cp ../sysconfigs/target/target-x86_64.conf $(SOURCES)
-#	@cp configs/Makefile $(SOURCES)/Makefile.config
 	@cp Makefile.common $(SOURCES)/
 	@cp $(EXTRA_SOURCES) $(SOURCES)/
-#	@cp genkey perf Makefile.common kabi/{find-provides,kabitool,check-kabi} kabi/Module.kabi_{i686,ppc64,s390x,x86_64} configs/{config-*,merge.pl} extrakeys.pub $(SOURCES)/
 
 rh-sources: setup-source sources-rh
 
