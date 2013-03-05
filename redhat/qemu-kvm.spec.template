@@ -152,7 +152,7 @@ URL: http://www.qemu.org/
 ExclusiveArch: %{kvm_archs}
 Requires: seabios
 Requires: sgabios
-Requires: ipxe
+Requires: ipxe-roms-qemu
 Requires: %{name}-common = %{epoch}:%{version}-%{release}
 %endif
 
