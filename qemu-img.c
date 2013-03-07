@@ -23,6 +23,7 @@
  */
 #include "qemu-common.h"
 #include "qemu-option.h"
+#include "qemu-error.h"
 #include "osdep.h"
 #include "block_int.h"
 #include <stdio.h>
@@ -39,16 +40,6 @@ typedef struct img_cmd_t {
 /* Default to cache=writeback as data integrity is not important for qemu-tcg. */
 #define BDRV_O_FLAGS BDRV_O_CACHE_WB
 #define BDRV_DEFAULT_CACHE "writeback"
-
-static void error(const char *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-    fprintf(stderr, "qemu-img: ");
-    vfprintf(stderr, fmt, ap);
-    fprintf(stderr, "\n");
-    va_end(ap);
-}
 
 static void format_print(void *opaque, const char *name)
 {
@@ -227,13 +218,13 @@ static int print_block_option_help(const char *filename, const char *fmt)
     /* Find driver and parse its options */
     drv = bdrv_find_format(fmt);
     if (!drv) {
-        error("Unknown file format '%s'", fmt);
+        error_report("Unknown file format '%s'", fmt);
         return 1;
     }
 
     proto_drv = bdrv_find_protocol(filename);
     if (!proto_drv) {
-        error("Unknown protocol '%s'", filename);
+        error_report("Unknown protocol '%s'", filename);
         return 1;
     }
 
@@ -256,30 +247,30 @@ static BlockDriverState *bdrv_new_open(const char *filename,
 
     bs = bdrv_new("");
     if (!bs) {
-        error("Not enough memory");
+        error_report("Not enough memory");
         goto fail;
     }
     if (fmt) {
         drv = bdrv_find_format(fmt);
         if (!drv) {
-            error("Unknown file format '%s'", fmt);
+            error_report("Unknown file format '%s'", fmt);
             goto fail;
         }
     } else {
         drv = NULL;
     }
     if (bdrv_open(bs, filename, flags, drv) < 0) {
-        error("Could not open '%s'", filename);
+        error_report("Could not open '%s'", filename);
         goto fail;
     }
     if (bdrv_is_encrypted(bs)) {
         printf("Disk image '%s' is encrypted.\n", filename);
         if (read_password(password, sizeof(password)) < 0) {
-            error("No password given");
+            error_report("No password given");
             goto fail;
         }
         if (bdrv_set_key(bs, password) < 0) {
-            error("invalid password");
+            error_report("invalid password");
             goto fail;
         }
     }
@@ -297,13 +288,15 @@ static int add_old_style_options(const char *fmt, QEMUOptionParameter *list,
 {
     if (base_filename) {
         if (set_option_parameter(list, BLOCK_OPT_BACKING_FILE, base_filename)) {
-            error("Backing file not supported for file format '%s'", fmt);
+            error_report("Backing file not supported for file format '%s'",
+                         fmt);
             return -1;
         }
     }
     if (base_fmt) {
         if (set_option_parameter(list, BLOCK_OPT_BACKING_FMT, base_fmt)) {
-            error("Backing file format not supported for file format '%s'", fmt);
+            error_report("Backing file format not supported for file "
+                         "format '%s'", fmt);
             return -1;
         }
     }
@@ -340,11 +333,11 @@ static int img_create(int argc, char **argv)
             fmt = optarg;
             break;
         case 'e':
-            error("qemu-img: option -e is deprecated, please use \'-o "
+            error_report("qemu-img: option -e is deprecated, please use \'-o "
                   "encryption\' instead!");
             return 1;
         case '6':
-            error("qemu-img: option -6 is deprecated, please use \'-o "
+            error_report("qemu-img: option -6 is deprecated, please use \'-o "
                   "compat6\' instead!");
             return 1;
         case 'o':
@@ -364,9 +357,9 @@ static int img_create(int argc, char **argv)
         int64_t sval;
         sval = strtosz_suffix(argv[optind++], NULL, STRTOSZ_DEFSUFFIX_B);
         if (sval < 0) {
-            error("Invalid image size specified! You may use k, M, G or "
+            error_report("Invalid image size specified! You may use k, M, G or "
                   "T suffixes for ");
-            error("kilobytes, megabytes, gigabytes and terabytes.");
+            error_report("kilobytes, megabytes, gigabytes and terabytes.");
             ret = -1;
             goto out;
         }
@@ -444,7 +437,7 @@ static int img_check(int argc, char **argv)
 
     if (ret == -ENOTSUP) {
         bdrv_delete(bs);
-        error("This image format does not support checks");
+        error_report("This image format does not support checks");
         return 1;
     }
 
@@ -543,7 +536,7 @@ static int img_commit(int argc, char **argv)
     flags = BDRV_O_RDWR;
     ret = set_cache_flag(cache, &flags);
     if (ret < 0) {
-        error("Invalid cache option: %s\n", cache);
+        error_report("Invalid cache option: %s\n", cache);
         return -1;
     }
 
@@ -557,16 +550,16 @@ static int img_commit(int argc, char **argv)
         printf("Image committed.\n");
         break;
     case -ENOENT:
-        error("No disk inserted");
+        error_report("No disk inserted");
         break;
     case -EACCES:
-        error("Image is read-only");
+        error_report("Image is read-only");
         break;
     case -ENOTSUP:
-        error("Image is already committed");
+        error_report("Image is already committed");
         break;
     default:
-        error("Error while committing image");
+        error_report("Error while committing image");
         break;
     }
 
@@ -725,11 +718,11 @@ static int img_convert(int argc, char **argv)
             compress = 1;
             break;
         case 'e':
-            error("qemu-img: option -e is deprecated, please use \'-o "
+            error_report("qemu-img: option -e is deprecated, please use \'-o "
                   "encryption\' instead!");
             return 1;
         case '6':
-            error("qemu-img: option -6 is deprecated, please use \'-o "
+            error_report("qemu-img: option -6 is deprecated, please use \'-o "
                   "compat6\' instead!");
             return 1;
         case 'o':
@@ -740,7 +733,7 @@ static int img_convert(int argc, char **argv)
             int64_t sval;
             sval = strtosz_suffix(optarg, NULL, STRTOSZ_DEFSUFFIX_B);
             if (sval < 0) {
-                error("Invalid minimum zero buffer size for sparse output specified");
+                error_report("Invalid minimum zero buffer size for sparse output specified");
                 return 1;
             }
 
@@ -772,7 +765,8 @@ static int img_convert(int argc, char **argv)
     }
 
     if (bs_n > 1 && out_baseimg) {
-        error("-B makes no sense when concatenating multiple input images");
+        error_report("-B makes no sense when concatenating multiple input "
+                     "images");
         ret = -1;
         goto out;
     }
@@ -785,7 +779,7 @@ static int img_convert(int argc, char **argv)
     for (bs_i = 0; bs_i < bs_n; bs_i++) {
         bs[bs_i] = bdrv_new_open(argv[optind + bs_i], fmt, BDRV_O_FLAGS);
         if (!bs[bs_i]) {
-            error("Could not open '%s'", argv[optind + bs_i]);
+            error_report("Could not open '%s'", argv[optind + bs_i]);
             ret = -1;
             goto out;
         }
@@ -796,14 +790,14 @@ static int img_convert(int argc, char **argv)
     /* Find driver and parse its options */
     drv = bdrv_find_format(out_fmt);
     if (!drv) {
-        error("Unknown file format '%s'", out_fmt);
+        error_report("Unknown file format '%s'", out_fmt);
         ret = -1;
         goto out;
     }
 
     proto_drv = bdrv_find_protocol(out_filename);
     if (!proto_drv) {
-        error("Unknown protocol '%s'", out_filename);
+        error_report("Unknown protocol '%s'", out_filename);
         ret = -1;
         goto out;
     }
@@ -816,7 +810,7 @@ static int img_convert(int argc, char **argv)
     if (options) {
         param = parse_option_parameters(options, create_options, param);
         if (param == NULL) {
-            error("Invalid options for file format '%s'.", out_fmt);
+            error_report("Invalid options for file format '%s'.", out_fmt);
             ret = -1;
             goto out;
         }
@@ -842,13 +836,14 @@ static int img_convert(int argc, char **argv)
             get_option_parameter(param, BLOCK_OPT_ENCRYPT);
 
         if (!drv->bdrv_write_compressed) {
-            error("Compression not supported for this file format");
+            error_report("Compression not supported for this file format");
             ret = -1;
             goto out;
         }
 
         if (encryption && encryption->value.n) {
-            error("Compression and encryption not supported at the same time");
+            error_report("Compression and encryption not supported at "
+                         "the same time");
             ret = -1;
             goto out;
         }
@@ -858,11 +853,14 @@ static int img_convert(int argc, char **argv)
     ret = bdrv_create(drv, out_filename, param);
     if (ret < 0) {
         if (ret == -ENOTSUP) {
-            error("Formatting not supported for file format '%s'", out_fmt);
+            error_report("Formatting not supported for file format '%s'",
+                         out_fmt);
         } else if (ret == -EFBIG) {
-            error("The image size is too large for file format '%s'", out_fmt);
+            error_report("The image size is too large for file format '%s'",
+                         out_fmt);
         } else {
-            error("%s: error while converting %s: %s", out_filename, out_fmt, strerror(-ret));
+            error_report("%s: error while converting %s: %s",
+                         out_filename, out_fmt, strerror(-ret));
         }
         goto out;
     }
@@ -870,7 +868,7 @@ static int img_convert(int argc, char **argv)
     flags = BDRV_O_RDWR;
     ret = set_cache_flag(cache, &flags);
     if (ret < 0) {
-        error("Invalid cache option: %s\n", cache);
+        error_report("Invalid cache option: %s\n", cache);
         return -1;
     }
 
@@ -888,12 +886,12 @@ static int img_convert(int argc, char **argv)
     if (compress) {
         ret = bdrv_get_info(out_bs, &bdi);
         if (ret < 0) {
-            error("could not get block driver info");
+            error_report("could not get block driver info");
             goto out;
         }
         cluster_size = bdi.cluster_size;
         if (cluster_size <= 0 || cluster_size > IO_BUF_SIZE) {
-            error("invalid cluster size");
+            error_report("invalid cluster size");
             ret = -1;
             goto out;
         }
@@ -939,8 +937,8 @@ static int img_convert(int argc, char **argv)
 
                 ret = bdrv_read(bs[bs_i], bs_num, buf2, nlow);
                 if (ret < 0) {
-                    error("error while reading sector %" PRId64 ": %s",
-                          bs_num, strerror(-ret));
+                    error_report("error while reading sector %" PRId64 ": %s",
+                                 bs_num, strerror(-ret));
                     goto out;
                 }
 
@@ -958,8 +956,8 @@ static int img_convert(int argc, char **argv)
                 ret = bdrv_write_compressed(out_bs, sector_num, buf,
                                             cluster_sectors);
                 if (ret != 0) {
-                    error("error while compressing sector %" PRId64
-                          ": %s", sector_num, strerror(-ret));
+                    error_report("error while compressing sector %" PRId64
+                                 ": %s", sector_num, strerror(-ret));
                     goto out;
                 }
             }
@@ -1022,8 +1020,8 @@ static int img_convert(int argc, char **argv)
 
             ret = bdrv_read(bs[bs_i], sector_num - bs_offset, buf, n);
             if (ret < 0) {
-                error("error while reading sector %" PRId64 ": %s",
-                      sector_num - bs_offset, strerror(-ret));
+                error_report("error while reading sector %" PRId64 ": %s",
+                             sector_num - bs_offset, strerror(-ret));
                 goto out;
             }
             /* NOTE: at the same time we convert, we do not write zero
@@ -1042,8 +1040,8 @@ static int img_convert(int argc, char **argv)
                     is_allocated_sectors_min(buf1, n, &n1, min_sparse)) {
                     ret = bdrv_write(out_bs, sector_num, buf1, n1);
                     if (ret < 0) {
-                        error("error while writing sector %" PRId64
-                              ": %s", sector_num, strerror(-ret));
+                        error_report("error while writing sector %" PRId64
+                                     ": %s", sector_num, strerror(-ret));
                         goto out;
                     }
                 }
@@ -1294,7 +1292,7 @@ static int img_snapshot(int argc, char **argv)
 
         ret = bdrv_snapshot_create(bs, &sn);
         if (ret) {
-            error("Could not create snapshot '%s': %d (%s)",
+            error_report("Could not create snapshot '%s': %d (%s)",
                 snapshot_name, ret, strerror(-ret));
         }
         break;
@@ -1302,7 +1300,7 @@ static int img_snapshot(int argc, char **argv)
     case SNAPSHOT_APPLY:
         ret = bdrv_snapshot_goto(bs, snapshot_name);
         if (ret) {
-            error("Could not apply snapshot '%s': %d (%s)",
+            error_report("Could not apply snapshot '%s': %d (%s)",
                 snapshot_name, ret, strerror(-ret));
         }
         break;
@@ -1310,7 +1308,7 @@ static int img_snapshot(int argc, char **argv)
     case SNAPSHOT_DELETE:
         ret = bdrv_snapshot_delete(bs, snapshot_name);
         if (ret) {
-            error("Could not delete snapshot '%s': %d (%s)",
+            error_report("Could not delete snapshot '%s': %d (%s)",
                 snapshot_name, ret, strerror(-ret));
         }
         break;
@@ -1381,7 +1379,7 @@ static int img_rebase(int argc, char **argv)
     flags = BDRV_O_RDWR | (unsafe ? BDRV_O_NO_BACKING : 0);
     ret = set_cache_flag(cache, &flags);
     if (ret < 0) {
-        error("Invalid cache option: %s\n", cache);
+        error_report("Invalid cache option: %s\n", cache);
         return -1;
     }
 
@@ -1403,7 +1401,7 @@ static int img_rebase(int argc, char **argv)
     if (!unsafe && bs->backing_format[0] != '\0') {
         old_backing_drv = bdrv_find_format(bs->backing_format);
         if (old_backing_drv == NULL) {
-            error("Invalid format name: '%s'", bs->backing_format);
+            error_report("Invalid format name: '%s'", bs->backing_format);
             ret = -1;
             goto out;
         }
@@ -1412,7 +1410,7 @@ static int img_rebase(int argc, char **argv)
     if (out_basefmt != NULL) {
         new_backing_drv = bdrv_find_format(out_basefmt);
         if (new_backing_drv == NULL) {
-            error("Invalid format name: '%s'", out_basefmt);
+            error_report("Invalid format name: '%s'", out_basefmt);
             ret = -1;
             goto out;
         }
@@ -1431,7 +1429,7 @@ static int img_rebase(int argc, char **argv)
         ret = bdrv_open(bs_old_backing, backing_name, BDRV_O_FLAGS,
                         old_backing_drv);
         if (ret) {
-            error("Could not open old backing file '%s'", backing_name);
+            error_report("Could not open old backing file '%s'", backing_name);
             goto out;
         }
 
@@ -1439,7 +1437,7 @@ static int img_rebase(int argc, char **argv)
         ret = bdrv_open(bs_new_backing, out_baseimg, BDRV_O_FLAGS,
                         new_backing_drv);
         if (ret) {
-            error("Could not open new backing file '%s'", out_baseimg);
+            error_report("Could not open new backing file '%s'", out_baseimg);
             goto out;
         }
     }
@@ -1500,7 +1498,7 @@ static int img_rebase(int argc, char **argv)
 
                 ret = bdrv_read(bs_old_backing, sector, buf_old, n);
                 if (ret < 0) {
-                    error("error while reading from old backing file");
+                    error_report("error while reading from old backing file");
                     goto out;
                 }
             }
@@ -1514,7 +1512,7 @@ static int img_rebase(int argc, char **argv)
 
                 ret = bdrv_read(bs_new_backing, sector, buf_new, n);
                 if (ret < 0) {
-                    error("error while reading from new backing file");
+                    error_report("error while reading from new backing file");
                     goto out;
                 }
             }
@@ -1531,7 +1529,7 @@ static int img_rebase(int argc, char **argv)
                     ret = bdrv_write(bs, sector + written,
                         buf_old + written * 512, pnum);
                     if (ret < 0) {
-                        error("Error while writing to COW image: %s",
+                        error_report("Error while writing to COW image: %s",
                             strerror(-ret));
                         goto out;
                     }
@@ -1553,10 +1551,10 @@ static int img_rebase(int argc, char **argv)
      */
     ret = bdrv_change_backing_file(bs, out_baseimg, out_basefmt);
     if (ret == -ENOSPC) {
-        error("Could not change the backing file to '%s': No space left in "
-            "the file header", out_baseimg);
+        error_report("Could not change the backing file to '%s': No "
+                     "space left in the file header", out_baseimg);
     } else if (ret < 0) {
-        error("Could not change the backing file to '%s': %s",
+        error_report("Could not change the backing file to '%s': %s",
             out_baseimg, strerror(-ret));
     }
 
@@ -1661,7 +1659,7 @@ static int img_resize(int argc, char **argv)
         total_size = n;
     }
     if (total_size <= 0) {
-        error("New image size must be positive");
+        error_report("New image size must be positive");
         ret = -1;
         goto out;
     }
@@ -1672,13 +1670,13 @@ static int img_resize(int argc, char **argv)
         printf("Image resized.\n");
         break;
     case -ENOTSUP:
-        error("This image format does not support resize");
+        error_report("This image format does not support resize");
         break;
     case -EACCES:
-        error("Image is read-only");
+        error_report("Image is read-only");
         break;
     default:
-        error("Error resizing image (%d)", -ret);
+        error_report("Error resizing image (%d)", -ret);
         break;
     }
 out:
