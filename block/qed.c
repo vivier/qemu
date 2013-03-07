@@ -1533,11 +1533,12 @@ static int bdrv_qed_change_backing_file(BlockDriverState *bs,
     return ret;
 }
 
-static int bdrv_qed_check(BlockDriverState *bs, BdrvCheckResult *result)
+static int bdrv_qed_check(BlockDriverState *bs, BdrvCheckResult *result,
+                          BdrvCheckMode fix)
 {
     BDRVQEDState *s = bs->opaque;
 
-    return qed_check(s, result, false);
+    return qed_check(s, result, !!fix);
 }
 
 static QEMUOptionParameter qed_create_options[] = {
