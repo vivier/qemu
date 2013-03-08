@@ -1,22 +1,19 @@
-From 4e6a76dd0e35b00e9592a53afc8cffac4cc35951 Mon Sep 17 00:00:00 2001
-Message-Id: <4e6a76dd0e35b00e9592a53afc8cffac4cc35951.1354903384.git.crobinso@redhat.com>
-In-Reply-To: <9f0944a25bc1094fa7a74ac9df14e184e2c5c82d.1354903384.git.crobinso@redhat.com>
-References: <9f0944a25bc1094fa7a74ac9df14e184e2c5c82d.1354903384.git.crobinso@redhat.com>
-From: Hans de Goede <hdegoede@redhat.com>
-Date: Tue, 19 Jul 2011 10:56:19 +0200
-Subject: [PATCH] usb-redir: Add flow control support
+commit 3e1e60a2dbfac2c1a886d60235b263db6d74aa9f
+Author: Miroslav Rezanina <mrezanin@redhat.com>
+Date:   Mon Mar 4 09:16:10 2013 +0100
 
-Signed-off-by: Hans de Goede <hdegoede@redhat.com>
-Signed-off-by: Cole Robinson <crobinso@redhat.com>
----
- hw/usb/redirect.c | 22 ++++++++++++++++++++--
- 1 file changed, 20 insertions(+), 2 deletions(-)
+    usb-redir: Add flow control support
+    
+    Message-Id: <4e6a76dd0e35b00e9592a53afc8cffac4cc35951.1354903384.git.crobinso@redhat.com>
+    
+    Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+    Signed-off-by: Cole Robinson <crobinso@redhat.com>
 
 diff --git a/hw/usb/redirect.c b/hw/usb/redirect.c
-index c921d2d..dfb1773 100644
+index bb07c62..4d23b66 100644
 --- a/hw/usb/redirect.c
 +++ b/hw/usb/redirect.c
-@@ -239,8 +239,9 @@ static int usbredir_read(void *priv, uint8_t *data, int count)
+@@ -257,8 +257,9 @@ static int usbredir_read(void *priv, uint8_t *data, int count)
  static int usbredir_write(void *priv, uint8_t *data, int count)
  {
      USBRedirDevice *dev = priv;
@@ -27,7 +24,7 @@ index c921d2d..dfb1773 100644
          return 0;
      }
  
-@@ -249,7 +250,16 @@ static int usbredir_write(void *priv, uint8_t *data, int count)
+@@ -267,7 +268,16 @@ static int usbredir_write(void *priv, uint8_t *data, int count)
          return 0;
      }
  
@@ -45,7 +42,7 @@ index c921d2d..dfb1773 100644
  }
  
  /*
-@@ -1037,10 +1047,18 @@ static void usbredir_chardev_event(void *opaque, int event)
+@@ -1227,10 +1237,18 @@ static void usbredir_chardev_event(void *opaque, int event)
      }
  }
  
@@ -64,6 +61,3 @@ index c921d2d..dfb1773 100644
  };
  
  /*
--- 
-1.8.0
-

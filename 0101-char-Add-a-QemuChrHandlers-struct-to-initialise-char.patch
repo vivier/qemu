@@ -1,55 +1,19 @@
-From 501ffec04b2b5104ef854624027f0cd769d5d314 Mon Sep 17 00:00:00 2001
-Message-Id: <501ffec04b2b5104ef854624027f0cd769d5d314.1354903384.git.crobinso@redhat.com>
-In-Reply-To: <9f0944a25bc1094fa7a74ac9df14e184e2c5c82d.1354903384.git.crobinso@redhat.com>
-References: <9f0944a25bc1094fa7a74ac9df14e184e2c5c82d.1354903384.git.crobinso@redhat.com>
-From: Amit Shah <amit.shah@redhat.com>
-Date: Mon, 21 Mar 2011 20:31:45 +0100
-Subject: [PATCH] char: Add a QemuChrHandlers struct to initialise chardev
- handlers
+commit c1ca510ac42b5e5bb79515d7d7a24dd96fd88107
+Author: Miroslav Rezanina <mrezanin@redhat.com>
+Date:   Mon Mar 4 12:37:10 2013 +0100
 
-Instead of passing each handler in the qemu_add_handlers() function,
-create a struct of handlers that can be passed to the function instead.
-
-Signed-off-by: Amit Shah <amit.shah@redhat.com>
-Signed-off-by: Cole Robinson <crobinso@redhat.com>
----
- backends/rng-egd.c      | 12 +++++++++---
- gdbstub.c               |  9 +++++++--
- hw/cadence_uart.c       |  9 +++++++--
- hw/ccid-card-passthru.c | 11 +++++++----
- hw/debugcon.c           |  2 +-
- hw/escc.c               |  9 +++++++--
- hw/etraxfs_ser.c        | 13 +++++++++----
- hw/exynos4210_uart.c    |  9 +++++++--
- hw/grlib_apbuart.c      | 12 +++++++-----
- hw/imx_serial.c         |  9 +++++++--
- hw/ivshmem.c            | 28 ++++++++++++++++++++++------
- hw/lm32_juart.c         |  8 +++++++-
- hw/lm32_uart.c          |  8 +++++++-
- hw/mcf_uart.c           |  9 +++++++--
- hw/milkymist-uart.c     |  8 +++++++-
- hw/pl011.c              |  9 +++++++--
- hw/pxa2xx.c             | 13 +++++++++----
- hw/qdev-properties.c    |  2 +-
- hw/s390x/sclpconsole.c  |  9 +++++++--
- hw/serial.c             | 11 ++++++++---
- hw/sh_serial.c          | 12 +++++++++---
- hw/spapr_vty.c          |  8 ++++++--
- hw/strongarm.c          | 12 +++++++-----
- hw/usb/dev-serial.c     | 11 ++++++++---
- hw/usb/redirect.c       |  9 +++++++--
- hw/virtio-console.c     |  9 +++++++--
- hw/xen_console.c        | 16 +++++++++++-----
- hw/xilinx_uartlite.c    | 11 +++++++++--
- monitor.c               | 18 ++++++++++++++----
- net/slirp.c             |  8 ++++++--
- qemu-char.c             | 32 ++++++++++++++++++++++----------
- qemu-char.h             | 13 +++++++++----
- qtest.c                 |  9 ++++++++-
- 33 files changed, 273 insertions(+), 95 deletions(-)
+    char: Add a QemuChrHandlers struct to initialise chardev handlers
+    
+    Message-Id: <501ffec04b2b5104ef854624027f0cd769d5d314.1354903384.git.crobins
+    
+    Instead of passing each handler in the qemu_add_handlers() function,
+    create a struct of handlers that can be passed to the function instead.
+    
+    Signed-off-by: Amit Shah <amit.shah@redhat.com>
+    Signed-off-by: Cole Robinson <crobinso@redhat.com>
 
 diff --git a/backends/rng-egd.c b/backends/rng-egd.c
-index ad84737..30194be 100644
+index 5e012e9..b09876a 100644
 --- a/backends/rng-egd.c
 +++ b/backends/rng-egd.c
 @@ -133,6 +133,13 @@ static void rng_egd_cancel_requests(RngBackend *b)
@@ -86,10 +50,10 @@ index ad84737..30194be 100644
  
      g_free(s->chr_name);
 diff --git a/gdbstub.c b/gdbstub.c
-index d02ec75..5d93d20 100644
+index 6cd26f1..2da07e9 100644
 --- a/gdbstub.c
 +++ b/gdbstub.c
-@@ -2973,6 +2973,12 @@ static void gdb_sigterm_handler(int signal)
+@@ -2992,6 +2992,12 @@ static void gdb_sigterm_handler(int signal)
  }
  #endif
  
@@ -102,7 +66,7 @@ index d02ec75..5d93d20 100644
  int gdbserver_start(const char *device)
  {
      GDBState *s;
-@@ -3002,8 +3008,7 @@ int gdbserver_start(const char *device)
+@@ -3021,8 +3027,7 @@ int gdbserver_start(const char *device)
          if (!chr)
              return -1;
  
@@ -113,10 +77,10 @@ index d02ec75..5d93d20 100644
  
      s = gdbserver_state;
 diff --git a/hw/cadence_uart.c b/hw/cadence_uart.c
-index 686e617..36ad620 100644
+index 5766d38..dd1a7d6 100644
 --- a/hw/cadence_uart.c
 +++ b/hw/cadence_uart.c
-@@ -438,6 +438,12 @@ static void cadence_uart_reset(UartState *s)
+@@ -439,6 +439,12 @@ static void cadence_uart_reset(UartState *s)
      s->rx_wpos = 0;
  }
  
@@ -129,7 +93,7 @@ index 686e617..36ad620 100644
  static int cadence_uart_init(SysBusDevice *dev)
  {
      UartState *s = FROM_SYSBUS(UartState, dev);
-@@ -459,8 +465,7 @@ static int cadence_uart_init(SysBusDevice *dev)
+@@ -460,8 +466,7 @@ static int cadence_uart_init(SysBusDevice *dev)
      cadence_uart_reset(s);
  
      if (s->chr) {
@@ -140,7 +104,7 @@ index 686e617..36ad620 100644
  
      return 0;
 diff --git a/hw/ccid-card-passthru.c b/hw/ccid-card-passthru.c
-index bd6c777..fb32107 100644
+index 984bd0b..0dde761 100644
 --- a/hw/ccid-card-passthru.c
 +++ b/hw/ccid-card-passthru.c
 @@ -274,6 +274,12 @@ static const uint8_t *passthru_get_atr(CCIDCardState *base, uint32_t *len)
@@ -169,10 +133,10 @@ index bd6c777..fb32107 100644
      } else {
          error_report("missing chardev");
 diff --git a/hw/debugcon.c b/hw/debugcon.c
-index 14ab326..7887fd2 100644
+index 81b2bb0..58e1f90 100644
 --- a/hw/debugcon.c
 +++ b/hw/debugcon.c
-@@ -73,7 +73,7 @@ static void debugcon_init_core(DebugconState *s)
+@@ -88,7 +88,7 @@ static void debugcon_init_core(DebugconState *s)
          exit(1);
      }
  
@@ -182,7 +146,7 @@ index 14ab326..7887fd2 100644
  
  static int debugcon_isa_initfn(ISADevice *dev)
 diff --git a/hw/escc.c b/hw/escc.c
-index a356613..3f26f45 100644
+index 18c0292..a29784a 100644
 --- a/hw/escc.c
 +++ b/hw/escc.c
 @@ -867,6 +867,12 @@ void slavio_serial_ms_kbd_init(hwaddr base, qemu_irq irq,
@@ -209,7 +173,7 @@ index a356613..3f26f45 100644
      }
      s->chn[0].otherchn = &s->chn[1];
 diff --git a/hw/etraxfs_ser.c b/hw/etraxfs_ser.c
-index ee0d72b..64552cc 100644
+index 72c8868..eb93166 100644
 --- a/hw/etraxfs_ser.c
 +++ b/hw/etraxfs_ser.c
 @@ -208,6 +208,12 @@ static void etraxfs_ser_reset(DeviceState *d)
@@ -240,7 +204,7 @@ index ee0d72b..64552cc 100644
  }
  
 diff --git a/hw/exynos4210_uart.c b/hw/exynos4210_uart.c
-index 20dcd9f..f2949aa 100644
+index bdf797a..8419deb 100644
 --- a/hw/exynos4210_uart.c
 +++ b/hw/exynos4210_uart.c
 @@ -625,6 +625,12 @@ DeviceState *exynos4210_uart_create(hwaddr addr,
@@ -267,7 +231,7 @@ index 20dcd9f..f2949aa 100644
      return 0;
  }
 diff --git a/hw/grlib_apbuart.c b/hw/grlib_apbuart.c
-index 0865764..fb0e703 100644
+index 760bed0..7ede2be 100644
 --- a/hw/grlib_apbuart.c
 +++ b/hw/grlib_apbuart.c
 @@ -222,15 +222,17 @@ static const MemoryRegionOps grlib_apbuart_ops = {
@@ -294,7 +258,7 @@ index 0865764..fb0e703 100644
      sysbus_init_irq(dev, &uart->irq);
  
 diff --git a/hw/imx_serial.c b/hw/imx_serial.c
-index dcd125f..5347ec8 100644
+index 2d8253e..b0401a1 100644
 --- a/hw/imx_serial.c
 +++ b/hw/imx_serial.c
 @@ -381,6 +381,12 @@ static const struct MemoryRegionOps imx_serial_ops = {
@@ -320,11 +284,39 @@ index dcd125f..5347ec8 100644
      } else {
          DPRINTF("No char dev for uart at 0x%lx\n",
                  (unsigned long)s->iomem.ram_addr);
+diff --git a/hw/ipoctal232.c b/hw/ipoctal232.c
+index c1e3b19..098957e 100644
+--- a/hw/ipoctal232.c
++++ b/hw/ipoctal232.c
+@@ -535,6 +535,13 @@ static void hostdev_event(void *opaque, int event)
+     }
+ }
+ 
++static const QemuChrHandlers ipoctal_chr_handlers = {
++    .fd_can_read = hostdev_can_receive,
++    .fd_read = hostdev_receive,
++    .fd_event = hostdev_event,
++};
++
++
+ static int ipoctal_init(IPackDevice *ip)
+ {
+     IPOctalState *s = IPOCTAL(ip);
+@@ -556,8 +563,7 @@ static int ipoctal_init(IPackDevice *ip)
+ 
+             if (ch->dev) {
+                 index++;
+-                qemu_chr_add_handlers(ch->dev, hostdev_can_receive,
+-                                      hostdev_receive, hostdev_event, ch);
++                qemu_chr_add_handlers(ch->dev, &ipoctal_chr_handlers, ch);
+                 DPRINTF("Redirecting channel %u to %s (%s)\n",
+                         i, ch->devpath, label);
+             } else {
 diff --git a/hw/ivshmem.c b/hw/ivshmem.c
-index f6dbb21..0e56a97 100644
+index afaf9b3..7577307 100644
 --- a/hw/ivshmem.c
 +++ b/hw/ivshmem.c
-@@ -274,6 +274,18 @@ static void fake_irqfd(void *opaque, const uint8_t *buf, int size) {
+@@ -278,6 +278,18 @@ static void fake_irqfd(void *opaque, const uint8_t *buf, int size) {
      msix_notify(pdev, entry->vector);
  }
  
@@ -343,7 +335,7 @@ index f6dbb21..0e56a97 100644
  static CharDriverState* create_eventfd_chr_device(void * opaque, EventNotifier *n,
                                                    int vector)
  {
-@@ -294,11 +306,10 @@ static CharDriverState* create_eventfd_chr_device(void * opaque, EventNotifier *
+@@ -298,11 +310,10 @@ static CharDriverState* create_eventfd_chr_device(void * opaque, EventNotifier *
          s->eventfd_table[vector].pdev = &s->dev;
          s->eventfd_table[vector].vector = vector;
  
@@ -358,7 +350,7 @@ index f6dbb21..0e56a97 100644
      }
  
      return chr;
-@@ -632,6 +643,12 @@ static void ivshmem_write_config(PCIDevice *pci_dev, uint32_t address,
+@@ -636,6 +647,12 @@ static void ivshmem_write_config(PCIDevice *pci_dev, uint32_t address,
      msix_write_config(pci_dev, address, val, len);
  }
  
@@ -371,7 +363,7 @@ index f6dbb21..0e56a97 100644
  static int pci_ivshmem_init(PCIDevice *dev)
  {
      IVShmemState *s = DO_UPCAST(IVShmemState, dev, dev);
-@@ -722,8 +739,7 @@ static int pci_ivshmem_init(PCIDevice *dev)
+@@ -726,8 +743,7 @@ static int pci_ivshmem_init(PCIDevice *dev)
  
          s->eventfd_chr = g_malloc0(s->vectors * sizeof(CharDriverState *));
  
@@ -382,7 +374,7 @@ index f6dbb21..0e56a97 100644
          /* just map the file immediately, we're not using a server */
          int fd;
 diff --git a/hw/lm32_juart.c b/hw/lm32_juart.c
-index f07ed39..d4daeb8 100644
+index 8c82c85..840f588 100644
 --- a/hw/lm32_juart.c
 +++ b/hw/lm32_juart.c
 @@ -110,13 +110,19 @@ static void juart_reset(DeviceState *d)
@@ -407,7 +399,7 @@ index f07ed39..d4daeb8 100644
  
      return 0;
 diff --git a/hw/lm32_uart.c b/hw/lm32_uart.c
-index adb9287..e581bea 100644
+index 9c89cca..19cfd01 100644
 --- a/hw/lm32_uart.c
 +++ b/hw/lm32_uart.c
 @@ -243,6 +243,12 @@ static void uart_reset(DeviceState *d)
@@ -433,7 +425,7 @@ index adb9287..e581bea 100644
  
      return 0;
 diff --git a/hw/mcf_uart.c b/hw/mcf_uart.c
-index d1655f8..8ead254 100644
+index c443443..fc491f1 100644
 --- a/hw/mcf_uart.c
 +++ b/hw/mcf_uart.c
 @@ -272,6 +272,12 @@ static void mcf_uart_receive(void *opaque, const uint8_t *buf, int size)
@@ -460,7 +452,7 @@ index d1655f8..8ead254 100644
      mcf_uart_reset(s);
      return s;
 diff --git a/hw/milkymist-uart.c b/hw/milkymist-uart.c
-index aefa8c7..0c924f2 100644
+index e73eb84..3e03c5c 100644
 --- a/hw/milkymist-uart.c
 +++ b/hw/milkymist-uart.c
 @@ -189,6 +189,12 @@ static void milkymist_uart_reset(DeviceState *d)
@@ -486,7 +478,7 @@ index aefa8c7..0c924f2 100644
  
      return 0;
 diff --git a/hw/pl011.c b/hw/pl011.c
-index 1f7ce2f..7f44c55 100644
+index 002a50e..3224bc9 100644
 --- a/hw/pl011.c
 +++ b/hw/pl011.c
 @@ -261,6 +261,12 @@ static const VMStateDescription vmstate_pl011 = {
@@ -513,7 +505,7 @@ index 1f7ce2f..7f44c55 100644
      vmstate_register(&dev->qdev, -1, &vmstate_pl011, s);
      return 0;
 diff --git a/hw/pxa2xx.c b/hw/pxa2xx.c
-index e616979..f9ca062 100644
+index d303320..06f43d5 100644
 --- a/hw/pxa2xx.c
 +++ b/hw/pxa2xx.c
 @@ -1962,6 +1962,12 @@ static int pxa2xx_fir_load(QEMUFile *f, void *opaque, int version_id)
@@ -543,11 +535,11 @@ index e616979..f9ca062 100644
      register_savevm(NULL, "pxa2xx_fir", 0, 0, pxa2xx_fir_save,
                      pxa2xx_fir_load, s);
  
-diff --git a/hw/qdev-properties.c b/hw/qdev-properties.c
-index 81d901c..9e2b893 100644
---- a/hw/qdev-properties.c
-+++ b/hw/qdev-properties.c
-@@ -550,7 +550,7 @@ static void release_chr(Object *obj, const char *name, void *opaque)
+diff --git a/hw/qdev-properties-system.c b/hw/qdev-properties-system.c
+index ce3af22..dd37f58 100644
+--- a/hw/qdev-properties-system.c
++++ b/hw/qdev-properties-system.c
+@@ -138,7 +138,7 @@ static void release_chr(Object *obj, const char *name, void *opaque)
      CharDriverState **ptr = qdev_get_prop_ptr(dev, prop);
  
      if (*ptr) {
@@ -557,10 +549,10 @@ index 81d901c..9e2b893 100644
  }
  
 diff --git a/hw/s390x/sclpconsole.c b/hw/s390x/sclpconsole.c
-index 0ec5623..b3d1d6b 100644
+index effe511..7a77d64 100644
 --- a/hw/s390x/sclpconsole.c
 +++ b/hw/s390x/sclpconsole.c
-@@ -240,6 +240,12 @@ static void trigger_ascii_console_data(void *env, int n, int level)
+@@ -238,6 +238,12 @@ static void trigger_ascii_console_data(void *env, int n, int level)
      sclp_service_interrupt(0);
  }
  
@@ -573,7 +565,7 @@ index 0ec5623..b3d1d6b 100644
  /* qemu object creation and initialization functions */
  
  /* tell character layer our call-back functions */
-@@ -256,8 +262,7 @@ static int console_init(SCLPEvent *event)
+@@ -254,8 +260,7 @@ static int console_init(SCLPEvent *event)
      console_available = true;
      event->event_type = SCLP_EVENT_ASCII_CONSOLE_DATA;
      if (scon->chr) {
@@ -584,10 +576,10 @@ index 0ec5623..b3d1d6b 100644
      scon->irq_read_vt220 = *qemu_allocate_irqs(trigger_ascii_console_data,
                                                 NULL, 1);
 diff --git a/hw/serial.c b/hw/serial.c
-index 60283ea..9134d01 100644
+index f0ce9b0..589c18a 100644
 --- a/hw/serial.c
 +++ b/hw/serial.c
-@@ -676,6 +676,12 @@ static void serial_reset(void *opaque)
+@@ -674,6 +674,12 @@ static void serial_reset(void *opaque)
      qemu_irq_lower(s->irq);
  }
  
@@ -600,7 +592,7 @@ index 60283ea..9134d01 100644
  void serial_init_core(SerialState *s)
  {
      if (!s->chr) {
-@@ -690,13 +696,12 @@ void serial_init_core(SerialState *s)
+@@ -688,13 +694,12 @@ void serial_init_core(SerialState *s)
  
      qemu_register_reset(serial_reset, s);
  
@@ -617,7 +609,7 @@ index 60283ea..9134d01 100644
  }
  
 diff --git a/hw/sh_serial.c b/hw/sh_serial.c
-index 9da5d08..260185d 100644
+index 21c5b13..1cae7e9 100644
 --- a/hw/sh_serial.c
 +++ b/hw/sh_serial.c
 @@ -352,6 +352,12 @@ static const MemoryRegionOps sh_serial_ops = {
@@ -647,7 +639,7 @@ index 9da5d08..260185d 100644
      s->eri = eri_source;
      s->rxi = rxi_source;
 diff --git a/hw/spapr_vty.c b/hw/spapr_vty.c
-index 14f862f..9fbe7dd 100644
+index 5c63eaa..af2173a 100644
 --- a/hw/spapr_vty.c
 +++ b/hw/spapr_vty.c
 @@ -54,6 +54,11 @@ void vty_putchars(VIOsPAPRDevice *sdev, uint8_t *buf, int len)
@@ -673,10 +665,10 @@ index 14f862f..9fbe7dd 100644
      return 0;
  }
 diff --git a/hw/strongarm.c b/hw/strongarm.c
-index 4385515..3567218 100644
+index ab736e3..9099a06 100644
 --- a/hw/strongarm.c
 +++ b/hw/strongarm.c
-@@ -1199,6 +1199,12 @@ static const MemoryRegionOps strongarm_uart_ops = {
+@@ -1200,6 +1200,12 @@ static const MemoryRegionOps strongarm_uart_ops = {
      .endianness = DEVICE_NATIVE_ENDIAN,
  };
  
@@ -689,7 +681,7 @@ index 4385515..3567218 100644
  static int strongarm_uart_init(SysBusDevice *dev)
  {
      StrongARMUARTState *s = FROM_SYSBUS(StrongARMUARTState, dev);
-@@ -1211,11 +1217,7 @@ static int strongarm_uart_init(SysBusDevice *dev)
+@@ -1212,11 +1218,7 @@ static int strongarm_uart_init(SysBusDevice *dev)
      s->tx_timer = qemu_new_timer_ns(vm_clock, strongarm_uart_tx, s);
  
      if (s->chr) {
@@ -703,7 +695,7 @@ index 4385515..3567218 100644
  
      return 0;
 diff --git a/hw/usb/dev-serial.c b/hw/usb/dev-serial.c
-index 99b19df..7307ad2 100644
+index 47ac8c9..2f8757f 100644
 --- a/hw/usb/dev-serial.c
 +++ b/hw/usb/dev-serial.c
 @@ -414,7 +414,7 @@ static void usb_serial_handle_destroy(USBDevice *dev)
@@ -739,10 +731,10 @@ index 99b19df..7307ad2 100644
  
      if (s->cs->opened && !dev->attached) {
 diff --git a/hw/usb/redirect.c b/hw/usb/redirect.c
-index 490c90f..c921d2d 100644
+index 8c0ead0..bb07c62 100644
 --- a/hw/usb/redirect.c
 +++ b/hw/usb/redirect.c
-@@ -1037,6 +1037,12 @@ static void usbredir_chardev_event(void *opaque, int event)
+@@ -1227,6 +1227,12 @@ static void usbredir_chardev_event(void *opaque, int event)
      }
  }
  
@@ -755,7 +747,7 @@ index 490c90f..c921d2d 100644
  /*
   * init + destroy
   */
-@@ -1088,8 +1094,7 @@ static int usbredir_initfn(USBDevice *udev)
+@@ -1288,8 +1294,7 @@ static int usbredir_initfn(USBDevice *udev)
  
      /* Let the backend know we are ready */
      qemu_chr_fe_open(dev->cs);
@@ -766,7 +758,7 @@ index 490c90f..c921d2d 100644
      qemu_add_vm_change_state_handler(usbredir_vm_state_change, dev);
      add_boot_device_path(dev->bootindex, &udev->qdev, NULL);
 diff --git a/hw/virtio-console.c b/hw/virtio-console.c
-index cffee3d..066590c 100644
+index 46072a0..dd6f614 100644
 --- a/hw/virtio-console.c
 +++ b/hw/virtio-console.c
 @@ -106,6 +106,12 @@ static void chr_event(void *opaque, int event)
@@ -793,10 +785,10 @@ index cffee3d..066590c 100644
  
      return 0;
 diff --git a/hw/xen_console.c b/hw/xen_console.c
-index 9426d73..e9fcadc 100644
+index 44141f8..db1eea5 100644
 --- a/hw/xen_console.c
 +++ b/hw/xen_console.c
-@@ -211,6 +211,11 @@ out:
+@@ -215,6 +215,11 @@ out:
      return ret;
  }
  
@@ -808,7 +800,7 @@ index 9426d73..e9fcadc 100644
  static int con_initialise(struct XenDevice *xendev)
  {
      struct XenConsole *con = container_of(xendev, struct XenConsole, xendev);
-@@ -231,9 +236,9 @@ static int con_initialise(struct XenDevice *xendev)
+@@ -241,9 +246,9 @@ static int con_initialise(struct XenDevice *xendev)
  	return -1;
  
      xen_be_bind_evtchn(&con->xendev);
@@ -821,7 +813,7 @@ index 9426d73..e9fcadc 100644
  
      xen_be_printf(xendev, 1, "ring mfn %d, remote port %d, local port %d, limit %zd\n",
  		  con->ring_ref,
-@@ -250,8 +255,9 @@ static void con_disconnect(struct XenDevice *xendev)
+@@ -260,8 +265,9 @@ static void con_disconnect(struct XenDevice *xendev)
      if (!xendev->dev) {
          return;
      }
@@ -834,10 +826,10 @@ index 9426d73..e9fcadc 100644
  
      if (con->sring) {
 diff --git a/hw/xilinx_uartlite.c b/hw/xilinx_uartlite.c
-index d20fc41..6605fb1 100644
+index 9963982..f5e4cde 100644
 --- a/hw/xilinx_uartlite.c
 +++ b/hw/xilinx_uartlite.c
-@@ -195,6 +195,12 @@ static void uart_event(void *opaque, int event)
+@@ -192,6 +192,12 @@ static void uart_event(void *opaque, int event)
  
  }
  
@@ -850,7 +842,7 @@ index d20fc41..6605fb1 100644
  static int xilinx_uartlite_init(SysBusDevice *dev)
  {
      struct xlx_uartlite *s = FROM_SYSBUS(typeof (*s), dev);
-@@ -207,8 +213,9 @@ static int xilinx_uartlite_init(SysBusDevice *dev)
+@@ -204,8 +210,9 @@ static int xilinx_uartlite_init(SysBusDevice *dev)
      sysbus_init_mmio(dev, &s->mmio);
  
      s->chr = qemu_char_get_next_serial();
@@ -862,11 +854,35 @@ index d20fc41..6605fb1 100644
      return 0;
  }
  
+diff --git a/include/char/char.h b/include/char/char.h
+index c91ce3c..3027cc1 100644
+--- a/include/char/char.h
++++ b/include/char/char.h
+@@ -225,10 +225,15 @@ void qemu_chr_be_write(CharDriverState *s, uint8_t *buf, int len);
+  */
+ void qemu_chr_be_event(CharDriverState *s, int event);
+ 
+-void qemu_chr_add_handlers(CharDriverState *s,
+-                           IOCanReadHandler *fd_can_read,
+-                           IOReadHandler *fd_read,
+-                           IOEventHandler *fd_event,
++
++typedef struct QemuChrHandlers {
++    IOCanReadHandler *fd_can_read;
++    IOReadHandler *fd_read;
++    IOHandler *fd_write_unblocked;
++    IOEventHandler *fd_event;
++} QemuChrHandlers;
++
++void qemu_chr_add_handlers(CharDriverState *s, const QemuChrHandlers *handlers,
+                            void *opaque);
+ 
+ void qemu_chr_generic_open(CharDriverState *s);
 diff --git a/monitor.c b/monitor.c
-index c0e32d6..ce0c90a 100644
+index 20bd19b..be83dd6 100644
 --- a/monitor.c
 +++ b/monitor.c
-@@ -4685,6 +4685,18 @@ static void sortcmdlist(void)
+@@ -4701,6 +4701,18 @@ static void sortcmdlist(void)
   * End:
   */
  
@@ -885,7 +901,7 @@ index c0e32d6..ce0c90a 100644
  void monitor_init(CharDriverState *chr, int flags)
  {
      static int is_first_init = 1;
-@@ -4707,14 +4719,12 @@ void monitor_init(CharDriverState *chr, int flags)
+@@ -4723,14 +4735,12 @@ void monitor_init(CharDriverState *chr, int flags)
      if (monitor_ctrl_mode(mon)) {
          mon->mc = g_malloc0(sizeof(MonitorControl));
          /* Control mode requires special handlers */
@@ -903,10 +919,10 @@ index c0e32d6..ce0c90a 100644
  
      QLIST_INSERT_HEAD(&mon_list, mon, entry);
 diff --git a/net/slirp.c b/net/slirp.c
-index afb52c3..07ae92f 100644
+index 4df550f..2868229 100644
 --- a/net/slirp.c
 +++ b/net/slirp.c
-@@ -594,6 +594,11 @@ static void guestfwd_read(void *opaque, const uint8_t *buf, int size)
+@@ -595,6 +595,11 @@ static void guestfwd_read(void *opaque, const uint8_t *buf, int size)
      slirp_socket_recv(fwd->slirp, fwd->server, fwd->port, buf, size);
  }
  
@@ -918,7 +934,7 @@ index afb52c3..07ae92f 100644
  static int slirp_guestfwd(SlirpState *s, const char *config_str,
                            int legacy_format)
  {
-@@ -659,8 +664,7 @@ static int slirp_guestfwd(SlirpState *s, const char *config_str,
+@@ -660,8 +665,7 @@ static int slirp_guestfwd(SlirpState *s, const char *config_str,
          fwd->port = port;
          fwd->slirp = s->slirp;
  
@@ -929,10 +945,10 @@ index afb52c3..07ae92f 100644
      return 0;
  
 diff --git a/qemu-char.c b/qemu-char.c
-index 77776dc..97247fb 100644
+index d7fa7e6..5abb8b9 100644
 --- a/qemu-char.c
 +++ b/qemu-char.c
-@@ -193,19 +193,26 @@ void qemu_chr_fe_printf(CharDriverState *s, const char *fmt, ...)
+@@ -192,19 +192,26 @@ void qemu_chr_fe_printf(CharDriverState *s, const char *fmt, ...)
      va_end(ap);
  }
  
@@ -967,7 +983,7 @@ index 77776dc..97247fb 100644
      s->handler_opaque = opaque;
      if (s->chr_update_read_handler)
          s->chr_update_read_handler(s);
-@@ -443,6 +450,12 @@ static void mux_chr_event(void *opaque, int event)
+@@ -442,6 +449,12 @@ static void mux_chr_event(void *opaque, int event)
          mux_chr_send_event(d, i, event);
  }
  
@@ -980,7 +996,7 @@ index 77776dc..97247fb 100644
  static void mux_chr_update_read_handler(CharDriverState *chr)
  {
      MuxDriver *d = chr->opaque;
-@@ -457,8 +470,7 @@ static void mux_chr_update_read_handler(CharDriverState *chr)
+@@ -456,8 +469,7 @@ static void mux_chr_update_read_handler(CharDriverState *chr)
      d->chr_event[d->mux_cnt] = chr->chr_event;
      /* Fix up the real driver with mux routines */
      if (d->mux_cnt == 0) {
@@ -990,32 +1006,8 @@ index 77776dc..97247fb 100644
      }
      if (d->focus != -1) {
          mux_chr_send_event(d, d->focus, CHR_EVENT_MUX_OUT);
-diff --git a/qemu-char.h b/qemu-char.h
-index a121e04..ff206cb 100644
---- a/qemu-char.h
-+++ b/qemu-char.h
-@@ -223,10 +223,15 @@ void qemu_chr_be_write(CharDriverState *s, uint8_t *buf, int len);
-  */
- void qemu_chr_be_event(CharDriverState *s, int event);
- 
--void qemu_chr_add_handlers(CharDriverState *s,
--                           IOCanReadHandler *fd_can_read,
--                           IOReadHandler *fd_read,
--                           IOEventHandler *fd_event,
-+
-+typedef struct QemuChrHandlers {
-+    IOCanReadHandler *fd_can_read;
-+    IOReadHandler *fd_read;
-+    IOHandler *fd_write_unblocked;
-+    IOEventHandler *fd_event;
-+} QemuChrHandlers;
-+
-+void qemu_chr_add_handlers(CharDriverState *s, const QemuChrHandlers *handlers,
-                            void *opaque);
- 
- void qemu_chr_generic_open(CharDriverState *s);
 diff --git a/qtest.c b/qtest.c
-index fbfab4e..4ab5b69 100644
+index 4663a38..eb8e7ef 100644
 --- a/qtest.c
 +++ b/qtest.c
 @@ -416,6 +416,13 @@ static void qtest_event(void *opaque, int event)
@@ -1041,6 +1033,3 @@ index fbfab4e..4ab5b69 100644
      qemu_chr_fe_set_echo(chr, true);
  
      inbuf = g_string_new("");
--- 
-1.8.0
-

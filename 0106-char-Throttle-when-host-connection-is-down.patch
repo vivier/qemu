@@ -1,33 +1,29 @@
-From c2ddb156db52808a89d91edf5bb1449f226d3ecd Mon Sep 17 00:00:00 2001
-Message-Id: <c2ddb156db52808a89d91edf5bb1449f226d3ecd.1354903384.git.crobinso@redhat.com>
-In-Reply-To: <9f0944a25bc1094fa7a74ac9df14e184e2c5c82d.1354903384.git.crobinso@redhat.com>
-References: <9f0944a25bc1094fa7a74ac9df14e184e2c5c82d.1354903384.git.crobinso@redhat.com>
-From: Amit Shah <amit.shah@redhat.com>
-Date: Mon, 21 Mar 2011 22:05:10 +0100
-Subject: [PATCH] char: Throttle when host connection is down#
+commit b89fc871caabe2fc40db5815a828179a358d724b
+Author: Miroslav Rezanina <mrezanin@redhat.com>
+Date:   Mon Mar 4 09:10:57 2013 +0100
 
-When the host-side connection goes down, throttle the virtio-serial bus
-and later unthrottle when a connection gets established.  This helps
-prevent any lost IO (guest->host) while the host connection was down.
-
-Bugzilla: 621484
-
-This commit actually helps the bug mentioned above as no writes will now
-get lost because of the throttling done here.  With just the patches
-sent earlier for that bug, one write will end up getting lost in the
-worst case (host d/c, guest write, host connect).
-
-Signed-off-by: Amit Shah <amit.shah@redhat.com>
-Signed-off-by: Cole Robinson <crobinso@redhat.com>
----
- qemu-char.c | 14 ++++++++++++++
- 1 file changed, 14 insertions(+)
+    char: Throttle when host connection is down
+    
+    Message-id: <c2ddb156db52808a89d91edf5bb1449f226d3ecd.1354903384.git.crobinso@redhat.com>
+    Bugzilla: 621484
+    
+    When the host-side connection goes down, throttle the virtio-serial bus
+    and later unthrottle when a connection gets established.  This helps
+    prevent any lost IO (guest->host) while the host connection was down.
+    
+    This commit actually helps the bug mentioned above as no writes will now
+    get lost because of the throttling done here.  With just the patches
+    sent earlier for that bug, one write will end up getting lost in the
+    worst case (host d/c, guest write, host connect).
+    
+    Signed-off-by: Amit Shah <amit.shah@redhat.com>
+    Signed-off-by: Cole Robinson <crobinso@redhat.com>
 
 diff --git a/qemu-char.c b/qemu-char.c
-index e7cd42a..5c71f0c 100644
+index a5cdc9d..52ddc16 100644
 --- a/qemu-char.c
 +++ b/qemu-char.c
-@@ -140,6 +140,9 @@ static void qemu_chr_fire_open_event(void *opaque)
+@@ -139,6 +139,9 @@ static void qemu_chr_fire_open_event(void *opaque)
  {
      CharDriverState *s = opaque;
      qemu_chr_be_event(s, CHR_EVENT_OPENED);
@@ -37,7 +33,7 @@ index e7cd42a..5c71f0c 100644
      qemu_free_timer(s->open_timer);
      s->open_timer = NULL;
  }
-@@ -2249,6 +2252,17 @@ static int tcp_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
+@@ -2258,6 +2261,17 @@ static int tcp_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
          ret = send_all(chr, s->fd, buf, len);
          if (ret == -1 && errno == EPIPE) {
              tcp_closed(chr);
@@ -55,6 +51,3 @@ index e7cd42a..5c71f0c 100644
          }
          return ret;
      } else {
--- 
-1.8.0
-

@@ -121,8 +121,8 @@
 
 Summary: QEMU is a FAST! processor emulator
 Name: qemu-kvm
-Version: 1.3.0
-Release: 8%{?dist}
+Version: 1.4.0
+Release: 1%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 3
 License: GPLv2+ and LGPLv2+ and BSD
@@ -134,6 +134,7 @@ ExclusiveArch: %{kvm_archs}
 Requires: seabios
 Requires: sgabios
 Requires: ipxe-roms-qemu
+Requires: qemu-kvm-common = %{epoch}:%{version}-%{release}
 %endif
 
 # OOM killer breaks builds with parallel make on s390(x)
@@ -142,26 +143,6 @@ Requires: ipxe-roms-qemu
 %endif
 
 Source0: http://wiki.qemu-project.org/download/qemu-%{version}.tar.bz2
-# libcacard build fixes (heading upstream)
-Patch1: 0000-libcacard-fix-missing-symbols-in-libcacard.so.patch
-Patch2: 0001-configure-move-vscclient-binary-under-libcacard.patch
-# Fix migration from qemu-kvm 1.2 to qemu 1.3
-Patch3: 0002-Fix-migration-from-qemu-kvm-1.2.patch
-# Flow control series
-Patch4: 0100-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
-Patch5: 0101-char-Add-a-QemuChrHandlers-struct-to-initialise-char.patch
-Patch6: 0102-iohandlers-Add-enable-disable_write_fd_handler-funct.patch
-Patch7: 0103-char-Add-framework-for-a-write-unblocked-callback.patch
-Patch8: 0104-char-Update-send_all-to-handle-nonblocking-chardev-w.patch
-Patch9: 0105-char-Equip-the-unix-tcp-backend-to-handle-nonblockin.patch
-Patch10: 0106-char-Throttle-when-host-connection-is-down.patch
-Patch11: 0107-virtio-console-Enable-port-throttling-when-chardev-i.patch
-Patch12: 0108-spice-qemu-char.c-add-throttling.patch
-Patch13: 0109-spice-qemu-char.c-remove-intermediate-buffer.patch
-Patch14: 0110-usb-redir-Add-flow-control-support.patch
-Patch15: 0111-char-Disable-write-callback-if-throttled-chardev-is-.patch
-Patch16: 0112-hw-virtio-serial-bus-replay-guest-open-on-destinatio.patch
-Patch17: 0113-libcacard-fix-missing-symbol-in-libcacard.so.patch
 
 Source1: qemu.binfmt
 
@@ -182,6 +163,29 @@ Source9: ksmtuned.conf
 Source10: qemu-guest-agent.service
 Source11: 99-qemu-guest-agent.rules
 Source12: bridge.conf
+
+# libcacard build fixes (heading upstream)
+Patch1: 0000-libcacard-fix-missing-symbols-in-libcacard.so.patch
+# Patch2: 0001-configure-move-vscclient-binary-under-libcacard.patch
+
+# Fix migration from qemu-kvm 1.2 to qemu 1.3
+Patch3: 0002-Fix-migration-from-qemu-kvm-1.2.patch
+
+# Flow control series
+Patch4: 0100-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
+Patch5: 0101-char-Add-a-QemuChrHandlers-struct-to-initialise-char.patch
+Patch6: 0102-iohandlers-Add-enable-disable_write_fd_handler-funct.patch
+Patch7: 0103-char-Add-framework-for-a-write-unblocked-callback.patch
+Patch8: 0104-char-Update-send_all-to-handle-nonblocking-chardev-w.patch
+Patch9: 0105-char-Equip-the-unix-tcp-backend-to-handle-nonblockin.patch
+Patch10: 0106-char-Throttle-when-host-connection-is-down.patch
+Patch11: 0107-virtio-console-Enable-port-throttling-when-chardev-i.patch
+Patch12: 0108-spice-qemu-char.c-add-throttling.patch
+Patch13: 0109-spice-qemu-char.c-remove-intermediate-buffer.patch
+Patch14: 0110-usb-redir-Add-flow-control-support.patch
+Patch15: 0111-char-Disable-write-callback-if-throttled-chardev-is-.patch
+Patch16: 0112-hw-virtio-serial-bus-replay-guest-open-on-destinatio.patch
+# Patch17: 0113-libcacard-fix-missing-symbol-in-libcacard.so.patch
 
 BuildRequires: SDL-devel
 BuildRequires: zlib-devel
@@ -597,7 +601,7 @@ CAC emulation development files.
 %prep
 %setup -q -n qemu-%{version}
 %patch1 -p1
-%patch2 -p1
+# %patch2 -p1
 %patch3 -p1
 %patch4 -p1
 %patch5 -p1
@@ -612,7 +616,7 @@ CAC emulation development files.
 %patch14 -p1
 %patch15 -p1
 %patch16 -p1
-%patch17 -p1
+# %patch17 -p1
 
 
 %build
@@ -683,8 +687,6 @@ dobuild() {
     echo "==="
 
     make V=1 %{?_smp_mflags} $buildldflags
-    make V=1 %{?_smp_mflags} $buildldflags libcacard.la
-    make V=1 %{?_smp_mflags} $buildldflags libcacard/vscclient
 }
 
 dobuild --target-list="$buildarch"
@@ -1064,6 +1066,8 @@ fi
 %{_datadir}/qemu/pxe-rtl8139.rom
 %{_datadir}/qemu/pxe-ne2k_pci.rom
 %{_datadir}/qemu/qemu-icon.bmp
+%{_datadir}/qemu/acpi-dsdt.aml
+%{_datadir}/qemu/q35-acpi-dsdt.aml
 %config(noreplace) %{_sysconfdir}/qemu/target-x86_64.conf
 %if %{without separate_kvm}
 %ifarch %{ix86} x86_64
@@ -1236,6 +1240,9 @@ fi
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Thu Mar 07 2013 Miroslav Rezanina <mrezanin@redhat.com> - 3:1.4.0-1
+- Rebase to 1.4.0
+
 * Mon Feb 25 2013 Michal Novotny <minovotn@redhat.com> - 3:1.3.0-8
 - Missing package qemu-system-x86 in hardware certification kvm testing (bz#912433)
 - Resolves: bz#912433

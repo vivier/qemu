@@ -1,26 +1,23 @@
-From 94afb78477a5b078449e5d48b38e74aac3fa5ac4 Mon Sep 17 00:00:00 2001
-Message-Id: <94afb78477a5b078449e5d48b38e74aac3fa5ac4.1354903384.git.crobinso@redhat.com>
-From: Alon Levy <alevy@redhat.com>
-Date: Wed, 28 Nov 2012 16:38:43 +0200
-Subject: [PATCH] libcacard: fix missing symbols in libcacard.so
+commit 3811a25ed342e783a78ea8bd39a1af066e694f01
+Author: Miroslav Rezanina <mrezanin@redhat.com>
+Date:   Mon Mar 4 09:43:01 2013 +0100
 
----
- libcacard/Makefile | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+    libcacard: fix missing symbols in libcacard.so
+    
+    Message-Id:  <94afb78477a5b078449e5d48b38e74aac3fa5ac4.1354903384.git.crobinso@redhat.com>
+    
+    Signed-off-by: Alon Levy <alevy@redhat.com>
 
 diff --git a/libcacard/Makefile b/libcacard/Makefile
-index c26aac6..49a9729 100644
+index 47827a0..29e85b6 100644
 --- a/libcacard/Makefile
 +++ b/libcacard/Makefile
-@@ -7,7 +7,7 @@ libcacard_includedir=$(includedir)/cacard
- $(call set-vpath, $(SRC_PATH))
+@@ -4,7 +4,7 @@ TOOLS += vscclient$(EXESUF)
  
  # objects linked into a shared library, built with libtool with -fPIC if required
--QEMU_OBJS=$(oslib-obj-y) qemu-timer-common.o $(trace-obj-y) $(stub-obj-y)
-+QEMU_OBJS=$(oslib-obj-y) qemu-timer-common.o iov.o cutils.o qemu-user.o $(trace-obj-y) $(stub-obj-y)
- QEMU_OBJS_LIB=$(patsubst %.o,%.lo,$(QEMU_OBJS))
- 
- QEMU_CFLAGS+=-I../
--- 
-1.8.0
-
+ libcacard-obj-y = $(stub-obj-y) $(libcacard-y)
+-libcacard-obj-y += util/osdep.o util/cutils.o util/qemu-timer-common.o util/error.o
++libcacard-obj-y += util/osdep.o util/iov.o util/cutils.o util/qemu-timer-common.o util/error.o
+ libcacard-obj-$(CONFIG_WIN32) += util/oslib-win32.o util/qemu-thread-win32.o
+ libcacard-obj-$(CONFIG_POSIX) += util/oslib-posix.o util/qemu-thread-posix.o
+ libcacard-obj-y += $(filter trace/%, $(util-obj-y))

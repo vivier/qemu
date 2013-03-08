@@ -1,31 +1,27 @@
-From 26139c9fd71229699c6d59c31631a539ac3830fd Mon Sep 17 00:00:00 2001
-Message-Id: <26139c9fd71229699c6d59c31631a539ac3830fd.1354903384.git.crobinso@redhat.com>
-In-Reply-To: <9f0944a25bc1094fa7a74ac9df14e184e2c5c82d.1354903384.git.crobinso@redhat.com>
-References: <9f0944a25bc1094fa7a74ac9df14e184e2c5c82d.1354903384.git.crobinso@redhat.com>
-From: Amit Shah <amit.shah@redhat.com>
-Date: Mon, 21 Mar 2011 22:02:47 +0100
-Subject: [PATCH] char: Equip the unix/tcp backend to handle nonblocking
- writes#
+commit fd559a2d368118b387657ac30bccf79e79da2dc8
+Author: Miroslav Rezanina <mrezanin@redhat.com>
+Date:   Mon Mar 4 10:42:59 2013 +0100
 
-Now that the infrastructure is in place to return -EAGAIN to callers,
-individual char drivers can set their update_fd_handlers() function to
-set or remove an fd's write handler.  This handler checks if the driver
-became writable.
-
-A generic callback routine is used for unblocking writes and letting
-users of chardevs know that a driver became writable again.
-
-Signed-off-by: Amit Shah <amit.shah@redhat.com>
-Signed-off-by: Cole Robinson <crobinso@redhat.com>
----
- qemu-char.c | 34 ++++++++++++++++++++++++++++++++++
- 1 file changed, 34 insertions(+)
+    char: Equip the unix/tcp backend to handle nonblocking writes
+    
+    Message-Id: <26139c9fd71229699c6d59c31631a539ac3830fd.1354903384.git.crobinso@redhat.com>
+    
+    Now that the infrastructure is in place to return -EAGAIN to callers,
+    individual char drivers can set their update_fd_handlers() function to
+    set or remove an fd's write handler.  This handler checks if the driver
+    became writable.
+    
+    A generic callback routine is used for unblocking writes and letting
+    users of chardevs know that a driver became writable again.
+    
+    Signed-off-by: Amit Shah <amit.shah@redhat.com>
+    Signed-off-by: Cole Robinson <crobinso@redhat.com>
 
 diff --git a/qemu-char.c b/qemu-char.c
-index 53803a3..e7cd42a 100644
+index 3d6e2f8..a5cdc9d 100644
 --- a/qemu-char.c
 +++ b/qemu-char.c
-@@ -106,6 +106,19 @@
+@@ -105,6 +105,19 @@
  static QTAILQ_HEAD(CharDriverStateHead, CharDriverState) chardevs =
      QTAILQ_HEAD_INITIALIZER(chardevs);
  
@@ -45,7 +41,7 @@ index 53803a3..e7cd42a 100644
  void qemu_chr_be_event(CharDriverState *s, int event)
  {
      /* Keep track if the char device is open */
-@@ -2508,6 +2521,25 @@ static void tcp_chr_close(CharDriverState *chr)
+@@ -2517,6 +2530,25 @@ static void tcp_chr_close(CharDriverState *chr)
      qemu_chr_be_event(chr, CHR_EVENT_CLOSED);
  }
  
@@ -68,10 +64,10 @@ index 53803a3..e7cd42a 100644
 +    disable_write_fd_handler(s->fd);
 +}
 +
- static CharDriverState *qemu_chr_open_socket(QemuOpts *opts)
- {
-     CharDriverState *chr = NULL;
-@@ -2563,6 +2595,8 @@ static CharDriverState *qemu_chr_open_socket(QemuOpts *opts)
+ static CharDriverState *qemu_chr_open_socket_fd(int fd, bool do_nodelay,
+                                                 bool is_listen, bool is_telnet,
+                                                 bool is_waitconnect,
+@@ -2573,6 +2605,8 @@ static CharDriverState *qemu_chr_open_socket_fd(int fd, bool do_nodelay,
      chr->chr_close = tcp_chr_close;
      chr->get_msgfd = tcp_get_msgfd;
      chr->chr_add_client = tcp_chr_add_client;
@@ -80,6 +76,3 @@ index 53803a3..e7cd42a 100644
  
      if (is_listen) {
          s->listen_fd = fd;
--- 
-1.8.0
-
