@@ -686,6 +686,7 @@ dobuild() {
         --enable-trace-backend=dtrace \
         --disable-werror \
         --disable-xen \
+        --disable-virtfs \
         --enable-kvm \
 %if 0%{?have_spice:1}
         --enable-spice \
@@ -987,8 +988,6 @@ getent passwd qemu >/dev/null || \
 %dir %{_datadir}/%{name}/
 %{_datadir}/qemu/keymaps/
 %{_mandir}/man1/qemu.1*
-%{_mandir}/man1/virtfs-proxy-helper.1*
-%{_bindir}/virtfs-proxy-helper
 %{_libexecdir}/qemu-bridge-helper
 %config(noreplace) %{_sysconfdir}/sasl2/qemu.conf
 %if %{without separate_kvm}
