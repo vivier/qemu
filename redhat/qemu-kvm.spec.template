@@ -679,6 +679,7 @@ dobuild() {
         --sysconfdir=%{_sysconfdir} \
         --interp-prefix=%{_prefix}/qemu-%%M \
         --audio-drv-list=pa,sdl,alsa,oss \
+        --audio-card-list=ac97,hda \
         --localstatedir=%{_localstatedir} \
         --libexecdir=%{_libexecdir} \
         --disable-strip \
