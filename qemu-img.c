@@ -818,7 +818,7 @@ static int img_convert(int argc, char **argv)
     out_baseimg = NULL;
     compress = 0;
     for(;;) {
-        c = getopt(argc, argv, "f:O:B:s:hce6o:pS:t:");
+        c = getopt(argc, argv, "f:O:B:hce6o:pS:t:");
         if (c == -1) {
             break;
         }
