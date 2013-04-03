@@ -331,6 +331,13 @@ static QEMUMachine pc_machine_v1_3 = {
     DEFAULT_MACHINE_OPTIONS,
 };
 
+#ifdef CONFIG_MIGRATE_FROM_QEMU_KVM
+/* qemu-kvm defaulted to 16MB video memory since 0.15 at least. */
+# define OLD_VGA_MEM stringify(16)
+#else
+# define OLD_VGA_MEM stringify(8)
+#endif
+
 #define PC_COMPAT_1_2 \
         PC_COMPAT_1_3,\
         {\
@@ -354,6 +361,10 @@ static QEMUMachine pc_machine_v1_3 = {
             .property = "revision",\
             .value    = stringify(3),\
         },{\
+            .driver   = "cirrus-vga",\
+            .property = "vgamem_mb",\
+            .value    = OLD_VGA_MEM,\
+        },{\
             .driver   = "VGA",\
             .property = "mmio",\
             .value    = "off",\
@@ -371,6 +382,7 @@ static QEMUMachine pc_machine_v1_2 = {
     DEFAULT_MACHINE_OPTIONS,
 };
 
+
 #define PC_COMPAT_1_1 \
         PC_COMPAT_1_2,\
         {\
@@ -384,19 +396,19 @@ static QEMUMachine pc_machine_v1_2 = {
         },{\
             .driver   = "VGA",\
             .property = "vgamem_mb",\
-            .value    = stringify(8),\
+            .value    = OLD_VGA_MEM,\
         },{\
             .driver   = "vmware-svga",\
             .property = "vgamem_mb",\
-            .value    = stringify(8),\
+            .value    = OLD_VGA_MEM,\
         },{\
             .driver   = "qxl-vga",\
             .property = "vgamem_mb",\
-            .value    = stringify(8),\
+            .value    = OLD_VGA_MEM,\
         },{\
             .driver   = "qxl",\
             .property = "vgamem_mb",\
-            .value    = stringify(8),\
+            .value    = OLD_VGA_MEM,\
         },{\
             .driver   = "virtio-blk-pci",\
             .property = "config-wce",\
