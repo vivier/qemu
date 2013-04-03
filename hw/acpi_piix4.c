@@ -257,16 +257,19 @@ static int acpi_load_old(QEMUFile *f, void *opaque, int version_id)
     return ret;
 }
 
-/* qemu-kvm 1.2 uses version 3 but advertised as 2
- * To support incoming qemu-kvm 1.2 migration, change version_id
- * and minimum_version_id to 2 below (which breaks migration from
- * qemu 1.2).
- *
- */
 static const VMStateDescription vmstate_acpi = {
     .name = "piix4_pm",
     .version_id = 2,
+#ifdef CONFIG_MIGRATE_FROM_QEMU_KVM
+    /*
+     * qemu-kvm 1.2 uses qemu.git version 3 format, but advertised as 2.
+     * This allows incoming migration from qemu-kvm, but breaks incoming
+     * migration from qemu < 1.3.
+     */
     .minimum_version_id = 2,
+#else
+    .minimum_version_id = 3,
+#endif
     .minimum_version_id_old = 1,
     .load_state_old = acpi_load_old,
     .post_load = vmstate_acpi_post_load,
