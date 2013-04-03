@@ -384,11 +384,11 @@ int main(int argc, char **argv)
 
     qtest_add_func("/rtc/bcd/check-time", bcd_check_time);
     qtest_add_func("/rtc/dec/check-time", dec_check_time);
-    qtest_add_func("/rtc/alarm-time", alarm_time);
+    qtest_add_func("/rtc/alarm/alarm-time", alarm_time);
     qtest_add_func("/rtc/set-year/20xx", set_year_20xx);
     qtest_add_func("/rtc/set-year/1980", set_year_1980);
-    qtest_add_func("/rtc/register_b_set_flag", register_b_set_flag);
-    qtest_add_func("/rtc/fuzz-registers", fuzz_registers);
+    qtest_add_func("/rtc/misc/register_b_set_flag", register_b_set_flag);
+    qtest_add_func("/rtc/misc/fuzz-registers", fuzz_registers);
     ret = g_test_run();
 
     if (s) {
