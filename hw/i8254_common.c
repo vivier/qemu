@@ -275,7 +275,15 @@ static const VMStateDescription vmstate_pit_common = {
     .pre_save = pit_dispatch_pre_save,
     .post_load = pit_dispatch_post_load,
     .fields = (VMStateField[]) {
+#ifdef CONFIG_MIGRATE_FROM_QEMU_KVM
+        /* qemu-kvm version_id=2 had 'flags' here which is equivalent
+         * This fixes incoming migration from qemu-kvm 1.0, but breaks
+         * incoming migration from qemu < 1.1
+         */
+        VMSTATE_UINT32(channels[0].irq_disabled, PITCommonState),
+#else
         VMSTATE_UINT32_V(channels[0].irq_disabled, PITCommonState, 3),
+#endif
         VMSTATE_STRUCT_ARRAY(channels, PITCommonState, 3, 2,
                              vmstate_pit_channel, PITChannelState),
         VMSTATE_INT64(channels[0].next_transition_time,
