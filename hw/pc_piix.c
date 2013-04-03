@@ -317,6 +317,14 @@ static QEMUMachine pc_i440fx_machine_v1_4 = {
             .driver   = "virtio-net-pci", \
             .property = "mq", \
             .value    = "off", \
+        },{ \
+            .driver   = "qxl", \
+            .property = "rom_size", \
+            .value    = stringify(16384), \
+        },{\
+            .driver   = "qxl-vga", \
+            .property = "rom_size", \
+            .value    = stringify(16384), \
         }
 
 static QEMUMachine pc_machine_v1_3 = {
@@ -413,6 +421,14 @@ static QEMUMachine pc_machine_v1_2 = {
             .driver   = "virtio-blk-pci",\
             .property = "config-wce",\
             .value    = "off",\
+        },{ \
+            .driver   = "qxl", \
+            .property = "rom_size", \
+            .value    = stringify(8192), \
+        },{\
+            .driver   = "qxl-vga", \
+            .property = "rom_size", \
+            .value    = stringify(8192), \
         }
 
 static QEMUMachine pc_machine_v1_1 = {

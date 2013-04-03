@@ -302,16 +302,14 @@ static inline uint32_t msb_mask(uint32_t val)
     return mask;
 }
 
-static ram_addr_t qxl_rom_size(void)
+static void check_qxl_rom_size(PCIQXLDevice *d)
 {
     uint32_t required_rom_size = sizeof(QXLRom) + sizeof(QXLModes) +
                                  sizeof(qxl_modes);
-    uint32_t rom_size = 8192; /* two pages */
 
     required_rom_size = MAX(required_rom_size, TARGET_PAGE_SIZE);
     required_rom_size = msb_mask(required_rom_size * 2 - 1);
-    assert(required_rom_size <= rom_size);
-    return rom_size;
+    assert(required_rom_size <= d->rom_size);
 }
 
 static void init_qxl_rom(PCIQXLDevice *d)
@@ -1979,7 +1977,7 @@ static int qxl_init_common(PCIQXLDevice *qxl)
     pci_set_byte(&config[PCI_REVISION_ID], pci_device_rev);
     pci_set_byte(&config[PCI_INTERRUPT_PIN], 1);
 
-    qxl->rom_size = qxl_rom_size();
+    check_qxl_rom_size(qxl);
     memory_region_init_ram(&qxl->rom_bar, "qxl.vrom", qxl->rom_size);
     vmstate_register_ram(&qxl->rom_bar, &qxl->pci.qdev);
     init_qxl_rom(qxl);
@@ -2296,6 +2294,7 @@ static Property qxl_properties[] = {
         DEFINE_PROP_UINT32("vram64_size_mb", PCIQXLDevice, vram_size_mb, -1),
         DEFINE_PROP_UINT32("vgamem_mb", PCIQXLDevice, vgamem_size_mb, 16),
         DEFINE_PROP_INT32("surfaces", PCIQXLDevice, ssd.num_surfaces, 1024),
+        DEFINE_PROP_UINT32("rom_size", PCIQXLDevice, rom_size, 8192),
         DEFINE_PROP_END_OF_LIST(),
 };
 
