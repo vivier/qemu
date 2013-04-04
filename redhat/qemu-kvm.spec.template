@@ -730,13 +730,13 @@ gcc %{SOURCE6} -O2 -g -o ksmctl
 
 %install
 
-%define _udevdir /lib/udev/rules.d
+%define _udevdir %{_libdir}/udev/rules.d
 
-install -D -p -m 0755 %{SOURCE4} $RPM_BUILD_ROOT/lib/systemd/system/ksm.service
+install -D -p -m 0755 %{SOURCE4} $RPM_BUILD_ROOT%{_libdir}/systemd/system/ksm.service
 install -D -p -m 0644 %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/ksm
-install -D -p -m 0755 ksmctl $RPM_BUILD_ROOT/lib/systemd/ksmctl
+install -D -p -m 0755 ksmctl $RPM_BUILD_ROOT%{_libdir}/systemd/ksmctl
 
-install -D -p -m 0755 %{SOURCE7} $RPM_BUILD_ROOT/lib/systemd/system/ksmtuned.service
+install -D -p -m 0755 %{SOURCE7} $RPM_BUILD_ROOT%{_libdir}/systemd/system/ksmtuned.service
 install -D -p -m 0755 %{SOURCE8} $RPM_BUILD_ROOT%{_sbindir}/ksmtuned
 install -D -p -m 0644 %{SOURCE9} $RPM_BUILD_ROOT%{_sysconfdir}/ksmtuned.conf
 
@@ -840,7 +840,7 @@ rom_link ../seabios/bios.bin bios.bin
 rom_link ../sgabios/sgabios.bin sgabios.bin
 
 %if 0%{?user:1}
-mkdir -p $RPM_BUILD_ROOT%{_exec_prefix}/lib/binfmt.d
+mkdir -p $RPM_BUILD_ROOT%{_libdir}/binfmt.d
 for i in dummy \
 %ifnarch %{ix86} x86_64
     qemu-i386 \
@@ -876,8 +876,8 @@ for i in dummy \
     qemu-sh4eb \
 ; do
   test $i = dummy && continue
-  grep /$i:\$ %{SOURCE1} > $RPM_BUILD_ROOT%{_exec_prefix}/lib/binfmt.d/$i.conf
-  chmod 644 $RPM_BUILD_ROOT%{_exec_prefix}/lib/binfmt.d/$i.conf
+  grep /$i:\$ %{SOURCE1} > $RPM_BUILD_ROOT%{_libdir}/binfmt.d/$i.conf
+  chmod 644 $RPM_BUILD_ROOT%{_libdir}/binfmt.d/$i.conf
 done < %{SOURCE1}
 %endif
 
@@ -991,10 +991,10 @@ getent passwd qemu >/dev/null || \
 %{_libexecdir}/qemu-bridge-helper
 %config(noreplace) %{_sysconfdir}/sasl2/qemu.conf
 %if %{without separate_kvm}
-/lib/systemd/system/ksm.service
-/lib/systemd/ksmctl
+%{_libdir}/systemd/system/ksm.service
+%{_libdir}/systemd/ksmctl
 %config(noreplace) %{_sysconfdir}/sysconfig/ksm
-/lib/systemd/system/ksmtuned.service
+%{_libdir}/systemd/system/ksmtuned.service
 %{_sbindir}/ksmtuned
 %config(noreplace) %{_sysconfdir}/ksmtuned.conf
 %endif
@@ -1013,7 +1013,7 @@ getent passwd qemu >/dev/null || \
 %if 0%{?user:1}
 %files %{user}
 %defattr(-,root,root)
-%{_exec_prefix}/lib/binfmt.d/qemu-*.conf
+%{_libdir}/binfmt.d/qemu-*.conf
 %{_libexecdir}/qemu-i386
 %{_libexecdir}/qemu-x86_64
 %{_libexecdir}/qemu-alpha
