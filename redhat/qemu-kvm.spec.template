@@ -698,7 +698,7 @@ dobuild() {
         --extra-cflags="%{optflags} -fPIE -DPIE" \
         --enable-mixemu \
         --enable-trace-backend=dtrace \
-        --disable-werror \
+        --enable-werror \
         --disable-xen \
         --disable-virtfs \
         --enable-kvm \
