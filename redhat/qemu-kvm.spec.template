@@ -212,7 +212,7 @@ BuildRequires: libiscsi-devel
 BuildRequires: ncurses-devel
 BuildRequires: libattr-devel
 %if 0%{?have_usbredir:1}
-BuildRequires: usbredir-devel >= 0.5.2
+BuildRequires: usbredir-devel >= 0.6
 %endif
 BuildRequires: texinfo
 %if 0%{?have_spice:1}
