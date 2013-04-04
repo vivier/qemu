@@ -2615,7 +2615,7 @@ static int configure_accelerator(void)
 
     if (p == NULL) {
         /* Use the default "accelerator", tcg */
-        p = "tcg";
+        p = "kvm:tcg";
     }
 
     while (!accel_initialised && *p != '\0') {
