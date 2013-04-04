@@ -696,7 +696,7 @@ dobuild() {
         --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
         --extra-cflags="%{optflags} -fPIE -DPIE" \
         --enable-trace-backend=dtrace \
-        --disable-werror \
+        --enable-werror \
         --disable-xen \
         --disable-virtfs \
         --enable-kvm \
