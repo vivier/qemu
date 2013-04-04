@@ -1724,6 +1724,14 @@ static void rhel_common_init(const char *type1_version,
             .driver   = "virtio-serial-pci",\
             .property = "flow_control",\
             .value    = stringify(0),\
+        },{\
+            .driver   = "qxl-vga",\
+            .property = "revision",\
+            .value    = stringify(1),\
+        },{\
+            .driver   = "qxl",\
+            .property = "revision",\
+            .value    = stringify(1),\
         }
 
 static void pc_rhel630_compat(void)
