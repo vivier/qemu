@@ -2727,7 +2727,7 @@ static int configure_accelerator(QEMUMachine *machine)
     p = qemu_opt_get(qemu_get_machine_opts(), "accel");
     if (p == NULL) {
         /* Use the default "accelerator", tcg */
-        p = "tcg";
+        p = "kvm:tcg";
     }
 
     while (!accel_initialised && *p != '\0') {
