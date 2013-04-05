@@ -729,10 +729,9 @@ int qcow2_update_snapshot_refcount(BlockDriverState *bs,
             l1_table = NULL;
         }
         l1_allocated = 1;
-        if (bdrv_pread(bs->file, l1_table_offset,
-                       l1_table, l1_size2) != l1_size2)
-        {
-            ret = -EIO;
+
+        ret = bdrv_pread(bs->file, l1_table_offset, l1_table, l1_size2);
+        if (ret < 0) {
             goto fail;
         }
 
@@ -787,7 +786,7 @@ int qcow2_update_snapshot_refcount(BlockDriverState *bs,
                         }
 
                         if (refcount < 0) {
-                            ret = -EIO;
+                            ret = refcount;
                             goto fail;
                         }
                     }
@@ -818,7 +817,7 @@ int qcow2_update_snapshot_refcount(BlockDriverState *bs,
                 refcount = get_refcount(bs, l2_offset >> s->cluster_bits);
             }
             if (refcount < 0) {
-                ret = -EIO;
+                ret = refcount;
                 goto fail;
             } else if (refcount == 1) {
                 l2_offset |= QCOW_OFLAG_COPIED;
