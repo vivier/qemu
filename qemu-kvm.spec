@@ -29,6 +29,7 @@
 %bcond_with    rbd              # disabled
 %bcond_without spice            # enabled
 %bcond_without seccomp          # enabled
+%bcond_with    xfsprogs         # disabled
 %bcond_with    separate_kvm     # disabled - for EPEL
 %else
 # General defaults:
@@ -37,6 +38,7 @@
 %bcond_without rbd              # enabled
 %bcond_without spice            # enabled
 %bcond_without seccomp          # enabled
+%bcond_without xfsprogs         # enabled
 %bcond_with    separate_kvm     # disabled
 %endif
 
@@ -51,6 +53,7 @@
 %global kvm_archs x86_64
 %endif
 
+%global have_usbredir 1
 
 %ifarch %{ix86} x86_64
 %if %{with seccomp}
@@ -58,6 +61,10 @@
 %endif
 %if %{with spice}
 %global have_spice   1
+%endif
+%else
+%if 0%{?rhel}
+%global have_usbredir 0
 %endif
 %endif
 
@@ -122,7 +129,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu-kvm
 Version: 1.4.0
-Release: 1.1%{?dist}
+Release: 2%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 3
 License: GPLv2+ and LGPLv2+ and BSD
@@ -131,10 +138,14 @@ URL: http://www.qemu.org/
 # RHEL will build Qemu only on x86_64:
 %if %{with kvmonly}
 ExclusiveArch: %{kvm_archs}
-Requires: seabios
-Requires: sgabios
+Requires: seabios-bin
+Requires: sgabios-bin
+Requires: seavgabios-bin
 Requires: ipxe-roms-qemu
-Requires: qemu-kvm-common = %{epoch}:%{version}-%{release}
+Requires: %{name}-common = %{epoch}:%{version}-%{release}
+%if 0%{?have_seccomp:1}
+Requires: libseccomp >= 1.0.0
+%endif
 %endif
 
 # OOM killer breaks builds with parallel make on s390(x)
@@ -166,7 +177,6 @@ Source12: bridge.conf
 
 # libcacard build fixes (heading upstream)
 Patch1: 0000-libcacard-fix-missing-symbols-in-libcacard.so.patch
-# Patch2: 0001-configure-move-vscclient-binary-under-libcacard.patch
 
 # Fix migration from qemu-kvm 1.2 to qemu 1.3
 Patch3: 0002-Fix-migration-from-qemu-kvm-1.2.patch
@@ -185,7 +195,18 @@ Patch13: 0109-spice-qemu-char.c-remove-intermediate-buffer.patch
 Patch14: 0110-usb-redir-Add-flow-control-support.patch
 Patch15: 0111-char-Disable-write-callback-if-throttled-chardev-is-.patch
 Patch16: 0112-hw-virtio-serial-bus-replay-guest-open-on-destinatio.patch
-# Patch17: 0113-libcacard-fix-missing-symbol-in-libcacard.so.patch
+
+# Migration compatibility
+Patch17: configure-add-enable-migration-from-qemu-kvm.patch
+Patch18: acpi_piix4-condition-on-minimum_version_id.patch
+Patch19: i8254-fix-migration-from-qemu-kvm-1.1.patch
+Patch20: pc_piix-add-compat-handling-for-qemu-kvm-vga-mem-size.patch
+Patch21: qxl-add-rom_size-compat-property.patch
+Patch22: docs-fix-generating-qemu-doc.html-with-texinfo5.patch
+Patch23: rtc-test-Fix-test-failures-with-recent-glib.patch
+Patch24: iscsi-look-for-pkg-config-file-too.patch
+Patch25: tcg-fix-occcasional-tcg-broken-problem.patch
+Patch26: qxl-better-vga-init-in-enter_vga_mode.patch
 
 BuildRequires: SDL-devel
 BuildRequires: zlib-devel
@@ -198,9 +219,12 @@ BuildRequires: libaio-devel
 BuildRequires: rsync
 BuildRequires: pciutils-devel
 BuildRequires: pulseaudio-libs-devel
+BuildRequires: libiscsi-devel
 BuildRequires: ncurses-devel
 BuildRequires: libattr-devel
+%if 0%{?have_usbredir:1}
 BuildRequires: usbredir-devel >= 0.5.2
+%endif
 BuildRequires: texinfo
 %if 0%{?have_spice:1}
 BuildRequires: spice-protocol >= 0.12.2
@@ -221,7 +245,9 @@ BuildRequires: systemtap-sdt-devel
 # For smartcard NSS support
 BuildRequires: nss-devel
 # For XFS discard support in raw-posix.c
+%if %{with xfsprogs}
 BuildRequires: xfsprogs-devel
+%endif
 # For VNC JPEG support
 BuildRequires: libjpeg-devel
 # For VNC PNG support
@@ -315,13 +341,6 @@ As QEMU requires no host kernel patches to run, it is safe and easy to use.
 %package -n qemu-img
 Summary: QEMU command line tool for manipulating disk images
 Group: Development/Tools
-%if %{with rbd}
-# librbd (from ceph) added new symbol rbd_flush recently.  If you
-# update qemu-img without updating librdb you get:
-# qemu-img: undefined symbol: rbd_flush
-# ** NB ** This can be removed after Fedora 17 is released.
-Conflicts: ceph < 0.37-2
-%endif
 
 %description -n qemu-img
 This package provides a command line tool for manipulating disk images
@@ -358,24 +377,13 @@ with the host over a virtio-serial channel named "org.qemu.guest_agent.0"
 This package does not need to be installed on the host OS.
 
 %post -n qemu-guest-agent
-if [ $1 -eq 1 ] ; then
-    # Initial installation.
-    /bin/systemctl daemon-reload >/dev/null 2>&1 || :
-fi
+%systemd_post qemu-guest-agent.service
 
 %preun -n qemu-guest-agent
-if [ $1 -eq 0 ] ; then
-    # Package removal, not upgrade.
-    /bin/systemctl stop qemu-guest-agent.service > /dev/null 2>&1 || :
-fi
+%systemd_preun qemu-guest-agent.service
 
 %postun -n qemu-guest-agent
-/bin/systemctl daemon-reload >/dev/null 2>&1 || :
-if [ $1 -ge 1 ] ; then
-    # Package upgrade, not uninstall.
-    /bin/systemctl try-restart qemu-guest-agent.service >/dev/null 2>&1 || :
-fi
-
+%systemd_postun_with_restart qemu-guest-agent.service
 
 
 %if 0%{?user:1}
@@ -573,6 +581,7 @@ This package contains some diagnostics and debugging tools for KVM,
 such as kvm_stat.
 %endif
 
+%if %{without separate_kvm}
 %package -n libcacard
 Summary:        Common Access Card (CAC) Emulation
 Group:          Development/Libraries
@@ -597,6 +606,7 @@ Requires:       libcacard = %{epoch}:%{version}-%{release}
 
 %description -n libcacard-devel
 CAC emulation development files.
+%endif
 
 %prep
 %setup -q -n qemu-%{version}
@@ -616,7 +626,16 @@ CAC emulation development files.
 %patch14 -p1
 %patch15 -p1
 %patch16 -p1
-# %patch17 -p1
+%patch17 -p1
+%patch18 -p1
+%patch19 -p1
+%patch20 -p1
+%patch21 -p1
+%patch22 -p1
+%patch23 -p1
+%patch24 -p1
+%patch25 -p1
+%patch26 -p1
 
 
 %build
@@ -656,13 +675,20 @@ dobuild() {
         --sysconfdir=%{_sysconfdir} \
         --interp-prefix=%{_prefix}/qemu-%%M \
         --audio-drv-list=pa,sdl,alsa,oss \
+        --localstatedir=%{_localstatedir} \
+        --libexecdir=%{_libexecdir} \
         --disable-strip \
         --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
         --extra-cflags="%{optflags} -fPIE -DPIE" \
+        --enable-mixemu \
+        --enable-trace-backend=dtrace \
+        --disable-werror \
+        --disable-xen \
+        --enable-kvm \
+        --enable-migration-from-qemu-kvm \
 %if 0%{?have_spice:1}
         --enable-spice \
 %endif
-        --enable-mixemu \
 %if 0%{?have_seccomp:1}
         --enable-seccomp \
 %endif
@@ -674,10 +700,6 @@ dobuild() {
 %else
         --disable-fdt \
 %endif
-        --enable-trace-backend=dtrace \
-        --disable-werror \
-        --disable-xen \
-        --enable-kvm \
         --enable-docs \
         "$@"
 
@@ -750,6 +772,7 @@ install -p -m 0644 -t $RPM_BUILD_ROOT%{_mandir}/man1/ qemu.1 qemu-img.1
 install -p -m 0644 -t $RPM_BUILD_ROOT%{_mandir}/man8/ qemu-nbd.8
 chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
 chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man8/*
+install -D -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} Changelog README TODO COPYING COPYING.LIB LICENSE
 
 install -D -p -m 0644 qemu.sasl $RPM_BUILD_ROOT%{_sysconfdir}/sasl2/qemu.conf
 
@@ -783,7 +806,7 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemu/s390-zipl.rom
 # Provided by package ipxe
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemu/pxe*rom
 # Provided by package vgabios
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemuvgabios*bin
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemu/vgabios*bin
 # Provided by package seabios
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemu/bios.bin
 # Provided by package sgabios
@@ -806,11 +829,11 @@ rom_link() {
     ln -s $1 %{buildroot}%{_datadir}/qemu/$2
 }
 
-#rom_link ../vgabios/VGABIOS-lgpl-latest.bin vgabios.bin
-#rom_link ../vgabios/VGABIOS-lgpl-latest.cirrus.bin vgabios-cirrus.bin
-#rom_link ../vgabios/VGABIOS-lgpl-latest.qxl.bin vgabios-qxl.bin
-#rom_link ../vgabios/VGABIOS-lgpl-latest.stdvga.bin vgabios-stdvga.bin
-#rom_link ../vgabios/VGABIOS-lgpl-latest.vmware.bin vgabios-vmware.bin
+rom_link ../seavgabios/vgabios-isavga.bin vgabios.bin
+rom_link ../seavgabios/vgabios-cirrus.bin vgabios-cirrus.bin
+rom_link ../seavgabios/vgabios-qxl.bin vgabios-qxl.bin
+rom_link ../seavgabios/vgabios-stdvga.bin vgabios-stdvga.bin
+rom_link ../seavgabios/vgabios-vmware.bin vgabios-vmware.bin
 rom_link ../seabios/bios.bin bios.bin
 rom_link ../sgabios/sgabios.bin sgabios.bin
 
@@ -868,44 +891,49 @@ install -m 0644 %{SOURCE12} $RPM_BUILD_ROOT%{_sysconfdir}/qemu
 chmod u+s $RPM_BUILD_ROOT%{_libexecdir}/qemu-bridge-helper
 
 %if %{with separate_kvm}
-rm $RPM_BUILD_ROOT%{_bindir}/qemu-img
-rm $RPM_BUILD_ROOT%{_bindir}/qemu-io
-rm $RPM_BUILD_ROOT%{_bindir}/qemu-nbd
-rm $RPM_BUILD_ROOT%{_mandir}/man1/qemu-img.1*
-rm $RPM_BUILD_ROOT%{_mandir}/man8/qemu-nbd.8*
+rm -f $RPM_BUILD_ROOT%{_bindir}/qemu-kvm
+rm -f $RPM_BUILD_ROOT%{_bindir}/qemu-img
+rm -f $RPM_BUILD_ROOT%{_bindir}/qemu-io
+rm -f $RPM_BUILD_ROOT%{_bindir}/qemu-nbd
+rm -f $RPM_BUILD_ROOT%{_mandir}/man1/qemu-img.1*
+rm -f $RPM_BUILD_ROOT%{_mandir}/man8/qemu-nbd.8*
 
-rm $RPM_BUILD_ROOT%{_bindir}/qemu-ga
-rm $RPM_BUILD_ROOT%{_unitdir}/qemu-guest-agent.service
-rm $RPM_BUILD_ROOT%{_udevdir}/99-qemu-guest-agent.rules
+rm -f $RPM_BUILD_ROOT%{_sbindir}/ksmtuned
+rm -f $RPM_BUILD_ROOT%{_sysconfdir}/ksmtuned.conf
+rm -f $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/ksm
+rm -f $RPM_BUILD_ROOT/lib/systemd/ksmctl
+rm -f $RPM_BUILD_ROOT/lib/systemd/system/ksm.service
+rm -f $RPM_BUILD_ROOT/lib/systemd/system/ksmtuned.service
+
+rm -f $RPM_BUILD_ROOT%{_bindir}/qemu-ga
+rm -f $RPM_BUILD_ROOT%{_unitdir}/qemu-guest-agent.service
+rm -f $RPM_BUILD_ROOT%{_udevdir}/99-qemu-guest-agent.rules
+
+rm -f $RPM_BUILD_ROOT%{_bindir}/vscclient
+rm -f $RPM_BUILD_ROOT%{_libdir}/libcacard*
+rm -f $RPM_BUILD_ROOT%{_libdir}/pkgconfig/libcacard.pc
+rm -rf $RPM_BUILD_ROOT%{_includedir}/cacard
 %endif
+
 make %{?_smp_mflags} $buildldflags DESTDIR=$RPM_BUILD_ROOT install-libcacard
 find $RPM_BUILD_ROOT -name '*.la' -or -name '*.a' | xargs rm -f
 find $RPM_BUILD_ROOT -name "libcacard.so*" -exec chmod +x \{\} \;
 
 %check
-# qemu 1.3 tests fail on i686:
-# GTESTER check-qtest-i386
-# **
-# ERROR:tests/rtc-test.c:209:set_year_20xx: assertion failed (cmos_read(RTC_HOURS) == 0x02): (25 == 2)
-# GTester: last random seed: R02S3c33904d728a7716fb49ee76edbb6e40
-
-#make check
+make check
 
 %ifarch %{kvm_archs}
 %post
 # load kvm modules now, so we can make sure no reboot is needed.
 # If there's already a kvm module installed, we don't mess with it
 sh %{_sysconfdir}/sysconfig/modules/kvm.modules || :
-udevadm trigger --sysname-match=kvm || :
+udevadm trigger --subsystem-match=misc --sysname-match=kvm --action=add || :
 %endif
 
 %if %{without separate_kvm}
 %post common
-if [ $1 -eq 1 ] ; then
-    # Initial installation
-    /bin/systemctl enable ksm.service >/dev/null 2>&1 || :
-    /bin/systemctl enable ksmtuned.service >/dev/null 2>&1 || :
-fi
+%systemd_post ksm.service
+%systemd_post ksmtuned.service
 
 getent group kvm >/dev/null || groupadd -g 36 -r kvm
 getent group qemu >/dev/null || groupadd -g 107 -r qemu
@@ -914,21 +942,12 @@ getent passwd qemu >/dev/null || \
     -c "qemu user" qemu
 
 %preun common
-if [ $1 -eq 0 ] ; then
-    # Package removal, not upgrade
-    /bin/systemctl --no-reload disable ksmtuned.service > /dev/null 2>&1 || :
-    /bin/systemctl --no-reload disable ksm.service > /dev/null 2>&1 || :
-    /bin/systemctl stop ksmtuned.service > /dev/null 2>&1 || :
-    /bin/systemctl stop ksm.service > /dev/null 2>&1 || :
-fi
+%systemd_preun ksm.service
+%systemd_preun ksmtuned.service
 
 %postun common
-/bin/systemctl daemon-reload >/dev/null 2>&1 || :
-if [ $1 -ge 1 ] ; then
-    # Package upgrade, not uninstall
-    /bin/systemctl try-restart ksmtuned.service >/dev/null 2>&1 || :
-    /bin/systemctl try-restart ksm.service >/dev/null 2>&1 || :
-fi
+%systemd_postun_with_restart ksm.service
+%systemd_postun_with_restart ksmtuned.service
 %endif
 
 
@@ -1050,6 +1069,8 @@ fi
 %{_datadir}/systemtap/tapset/qemu-system-i386.stp
 %{_datadir}/systemtap/tapset/qemu-system-x86_64.stp
 %endif
+%{_datadir}/qemu/acpi-dsdt.aml
+%{_datadir}/qemu/q35-acpi-dsdt.aml
 %{_datadir}/qemu/bios.bin
 %{_datadir}/qemu/sgabios.bin
 %{_datadir}/qemu/linuxboot.bin
@@ -1066,8 +1087,6 @@ fi
 %{_datadir}/qemu/pxe-rtl8139.rom
 %{_datadir}/qemu/pxe-ne2k_pci.rom
 %{_datadir}/qemu/qemu-icon.bmp
-%{_datadir}/qemu/acpi-dsdt.aml
-%{_datadir}/qemu/q35-acpi-dsdt.aml
 %config(noreplace) %{_sysconfdir}/qemu/target-x86_64.conf
 %if %{without separate_kvm}
 %ifarch %{ix86} x86_64
@@ -1240,6 +1259,9 @@ fi
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Fri Apr 05 2013 Miroslav Rezanina <mrezanin@redhat.com> - 3:1.4.0-2
+- Synchronization with Fedora 19 package version 2:1.4.0-8
+
 * Wed Apr 03 2013 Daniel Mach <dmach@redhat.com> - 3:1.4.0-1.1
 - Rebuild for libseccomp
 
@@ -1646,7 +1668,7 @@ fi
 * Thu Apr 15 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.3-5
 - Update virtio console patches from upstream
 
-* Mon Mar 11 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.3-4
+* Thu Mar 11 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.3-4
 - Detect cdrom via ioctl (#473154)
 - re add increased buffer for USB control requests (#546483)
 
@@ -1683,7 +1705,7 @@ fi
 * Mon Jan 25 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.2-1
 - Update to 0.12.2 upstream
 
-* Fri Jan 10 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.1.2-3
+* Sun Jan 10 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.1.2-3
 - Point to seabios instead of bochs, and add a requires for seabios
 
 * Mon Jan  4 2010 Justin M. Forbes <jforbes@redhat.com> - 2:0.12.1.2-2
@@ -2131,7 +2153,7 @@ fi
 - Update to 0.7.0
 - Fix dyngen for PPC functions which end in unconditional branch
 
-* Fri Apr  7 2005 Michael Schwendt <mschwendt[AT]users.sf.net>
+* Thu Apr  7 2005 Michael Schwendt <mschwendt[AT]users.sf.net>
 - rebuilt
 
 * Sun Feb 13 2005 David Woodhouse <dwmw2@infradead.org> 0.6.1-2
@@ -2143,13 +2165,13 @@ fi
 * Tue Jul 20 2004 David Woodhouse <dwmw2@redhat.com> 0.6.0-2
 - Compile fix from qemu CVS, add x86_64 host support
 
-* Mon May 12 2004 David Woodhouse <dwmw2@redhat.com> 0.6.0-1
+* Wed May 12 2004 David Woodhouse <dwmw2@redhat.com> 0.6.0-1
 - Update to 0.6.0.
 
 * Sat May 8 2004 David Woodhouse <dwmw2@redhat.com> 0.5.5-1
 - Update to 0.5.5.
 
-* Thu May 2 2004 David Woodhouse <dwmw2@redhat.com> 0.5.4-1
+* Sun May 2 2004 David Woodhouse <dwmw2@redhat.com> 0.5.4-1
 - Update to 0.5.4.
 
 * Thu Apr 22 2004 David Woodhouse <dwmw2@redhat.com> 0.5.3-1
