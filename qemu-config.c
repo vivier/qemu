@@ -460,6 +460,9 @@ QemuOptsList qemu_boot_opts = {
         }, {
             .name = "reboot-timeout",
             .type = QEMU_OPT_STRING,
+        }, {
+            .name = "strict",
+            .type = QEMU_OPT_STRING,
         },
         { /*End of list */ }
     },

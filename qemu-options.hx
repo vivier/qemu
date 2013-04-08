@@ -268,11 +268,11 @@ ETEXI
 
 DEF("boot", HAS_ARG, QEMU_OPTION_boot,
     "-boot [order=drives][,once=drives][,menu=on|off]\n"
-    "      [,reboot-timeout=rb_time]\n"
+    "      [,reboot-timeout=rb_time][,strict=on|off]\n"
     "                'drives': floppy (a), hard disk (c), CD-ROM (d), network (n)\n"
     "                'rb_timeout': the timeout before guest reboot when boot failed, unit is ms\n")
 STEXI
-@item -boot [order=@var{drives}][,once=@var{drives}][,menu=on|off][,reboot-timeout=@var{rb_timeout}]
+@item -boot [order=@var{drives}][,once=@var{drives}][,menu=on|off][,reboot-timeout=@var{rb_timeout}][,strict=on|off]
 @findex -boot
 Specify boot order @var{drives} as a string of drive letters. Valid
 drive letters depend on the target achitecture. The x86 PC uses: a, b
@@ -288,6 +288,10 @@ A timeout could be passed to bios, guest will pause for @var{rb_timeout} ms
 when boot failed, then reboot. If @var{rb_timeout} is '-1', guest will not
 reboot, qemu passes '-1' to bios by default. Currently Seabios for X86
 system support it.
+
+Do strict boot via @option{strict=on} as far as firmware/BIOS
+supports it. This only effects when boot priority is changed by
+bootindex options. The default is non-strict boot.
 
 @example
 # try to boot from network first, then from hard disk
