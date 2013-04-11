@@ -312,7 +312,7 @@ Requires: qemu-img = %{epoch}:%{version}-%{release}
 Requires: qemu-img
 %endif
 
-%define qemudocdir %{_docdir}/qemu
+%define qemudocdir %{_docdir}/%{name}
 
 %description
 QEMU is a generic and open source processor emulator which achieves a good
@@ -678,6 +678,7 @@ dobuild() {
         --sysconfdir=%{_sysconfdir} \
         --interp-prefix=%{_prefix}/qemu-%%M \
         --audio-drv-list=pa,alsa \
+        --with-confsuffix=/%{name} \
         --localstatedir=%{_localstatedir} \
         --libexecdir=%{_libexecdir} \
         --disable-strip \
@@ -770,7 +771,10 @@ install -m 0755 scripts/kvm/kvm_stat $RPM_BUILD_ROOT%{_bindir}/
 install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_udevdir}
 %endif
 
-make DESTDIR=$RPM_BUILD_ROOT install
+make DESTDIR=$RPM_BUILD_ROOT \
+     sharedir="%{_datadir}/%{name}" \
+     datadir="%{_datadir}/%{name}" \
+     install
 
 %if 0%{?need_qemu_kvm}
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{name}
@@ -788,17 +792,21 @@ rm $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/qemu-system-%{kvm_target}.stp
 mkdir -p $RPM_BUILD_ROOT%{qemudocdir}
 install -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} Changelog README COPYING COPYING.LIB LICENSE
 
+mv ${RPM_BUILD_ROOT}%{_docdir}/qemu/qemu-doc.html $RPM_BUILD_ROOT%{qemudocdir}
+mv ${RPM_BUILD_ROOT}%{_docdir}/qemu/qemu-tech.html $RPM_BUILD_ROOT%{qemudocdir}
+mv ${RPM_BUILD_ROOT}%{_docdir}/qemu/qmp-commands.txt $RPM_BUILD_ROOT%{qemudocdir}
+
 chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
 chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man8/*
 
-install -D -p -m 0644 qemu.sasl $RPM_BUILD_ROOT%{_sysconfdir}/sasl2/qemu.conf
+install -D -p -m 0644 qemu.sasl $RPM_BUILD_ROOT%{_sysconfdir}/sasl2/%{name}.conf
 
 # Provided by package openbios
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemu/openbios-ppc
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemu/openbios-sparc32
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemu/openbios-sparc64
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-ppc
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-sparc32
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-sparc64
 # Provided by package SLOF
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemu/slof.bin
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/slof.bin
 
 # Remove possibly unpackaged files.  Unlike others that are removed
 # unconditionally, these firmware files are still distributed as a binary
@@ -806,34 +814,34 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemu/slof.bin
 # to a separate package...  Discussed here on the packaging list:
 # https://lists.fedoraproject.org/pipermail/packaging/2012-July/008563.html
 %if 0%{!?system_alpha:1}
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemu/palcode-clipper
+  rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/palcode-clipper
 %endif
 %if 0%{!?system_microblaze:1}
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemu/petalogix*.dtb
+  rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/petalogix*.dtb
 %endif
 %if 0%{!?system_ppc:1}
-rm -f ${RPM_BUILD_ROOT}%{_datadir}/qemu/bamboo.dtb
-rm -f ${RPM_BUILD_ROOT}%{_datadir}/qemu/ppc_rom.bin
-rm -f ${RPM_BUILD_ROOT}%{_datadir}/qemu/spapr-rtas.bin
+  rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}/bamboo.dtb
+  rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}/ppc_rom.bin
+  rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}/spapr-rtas.bin
 %endif
 %if 0%{!?system_s390x:1}
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemu/s390-zipl.rom
+  rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/s390-zipl.rom
 %endif
 
 # Provided by package ipxe
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemu/pxe*rom
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/pxe*rom
 # Provided by package vgabios
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemu/vgabios*bin
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/vgabios*bin
 # Provided by package seabios
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemu/bios.bin
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/bios.bin
 # Provided by package sgabios
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/qemu/sgabios.bin
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/sgabios.bin
 
 # the pxe gpxe images will be symlinks to the images on
 # /usr/share/ipxe, as QEMU doesn't know how to look
 # for other paths, yet.
 pxe_link() {
-  ln -s ../ipxe/$2.rom %{buildroot}%{_datadir}/qemu/pxe-$1.rom
+  ln -s ../ipxe/$2.rom %{buildroot}%{_datadir}/%{name}/pxe-$1.rom
 }
 
 pxe_link e1000 8086100e
@@ -843,7 +851,7 @@ pxe_link rtl8139 10ec8139
 pxe_link virtio 1af41000
 
 rom_link() {
-    ln -s $1 %{buildroot}%{_datadir}/qemu/$2
+    ln -s $1 %{buildroot}%{_datadir}/%{name}/$2
 }
 
 rom_link ../seavgabios/vgabios-isavga.bin vgabios.bin
@@ -904,7 +912,7 @@ install -m 0644 %{SOURCE10} $RPM_BUILD_ROOT%{_unitdir}
 install -m 0644 %{SOURCE11} $RPM_BUILD_ROOT%{_udevdir}
 
 # Install rules to use the bridge helper with libvirt's virbr0
-install -m 0644 %{SOURCE12} $RPM_BUILD_ROOT%{_sysconfdir}/qemu
+install -m 0644 %{SOURCE12} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}
 chmod u+s $RPM_BUILD_ROOT%{_libexecdir}/qemu-bridge-helper
 
 %if %{with separate_kvm}
@@ -1002,10 +1010,10 @@ getent passwd qemu >/dev/null || \
 %doc %{qemudocdir}/COPYING.LIB
 %doc %{qemudocdir}/LICENSE
 %dir %{_datadir}/%{name}/
-%{_datadir}/qemu/keymaps/
-%{_mandir}/man1/qemu-kvm.1*
+%{_datadir}/%{name}/keymaps/
+%{_mandir}/man1/%{name}.1*
 %{_libexecdir}/qemu-bridge-helper
-%config(noreplace) %{_sysconfdir}/sasl2/qemu.conf
+%config(noreplace) %{_sysconfdir}/sasl2/%{name}.conf
 %if %{without separate_kvm}
 %{_libdir}/systemd/system/ksm.service
 %{_libdir}/systemd/ksmctl
@@ -1014,8 +1022,8 @@ getent passwd qemu >/dev/null || \
 %{_sbindir}/ksmtuned
 %config(noreplace) %{_sysconfdir}/ksmtuned.conf
 %endif
-%dir %{_sysconfdir}/qemu
-%config(noreplace) %{_sysconfdir}/qemu/bridge.conf
+%dir %{_sysconfdir}/%{name}
+%config(noreplace) %{_sysconfdir}/%{name}/bridge.conf
 
 %if %{without separate_kvm}
 %files -n qemu-guest-agent
@@ -1084,37 +1092,37 @@ getent passwd qemu >/dev/null || \
 %{_datadir}/systemtap/tapset/qemu-system-i386.stp
 %{_datadir}/systemtap/tapset/qemu-system-x86_64.stp
 %endif
-%{_datadir}/qemu/acpi-dsdt.aml
-%{_datadir}/qemu/q35-acpi-dsdt.aml
-%{_datadir}/qemu/bios.bin
-%{_datadir}/qemu/bios-256k.bin
-%{_datadir}/qemu/sgabios.bin
-%{_datadir}/qemu/linuxboot.bin
-%{_datadir}/qemu/multiboot.bin
-%{_datadir}/qemu/kvmvapic.bin
-%{_datadir}/qemu/vgabios.bin
-%{_datadir}/qemu/vgabios-cirrus.bin
-%{_datadir}/qemu/vgabios-qxl.bin
-%{_datadir}/qemu/vgabios-stdvga.bin
-%{_datadir}/qemu/vgabios-vmware.bin
-%{_datadir}/qemu/pxe-e1000.rom
-%{_datadir}/qemu/pxe-virtio.rom
-%{_datadir}/qemu/pxe-pcnet.rom
-%{_datadir}/qemu/pxe-rtl8139.rom
-%{_datadir}/qemu/pxe-ne2k_pci.rom
-%{_datadir}/qemu/qemu-icon.bmp
-%{_datadir}/qemu/efi-e1000.rom
-%{_datadir}/qemu/efi-eepro100.rom
-%{_datadir}/qemu/efi-ne2k_pci.rom
-%{_datadir}/qemu/efi-pcnet.rom
-%{_datadir}/qemu/efi-rtl8139.rom
-%{_datadir}/qemu/efi-virtio.rom
-%{_datadir}/qemu/s390-ccw.img
-%{_datadir}/qemu/QEMU,tcx.bin
-%{_datadir}/qemu/QEMU,cgthree.bin
-%{_datadir}/qemu/qemu_logo_no_text.svg
+%{_datadir}/%{name}/acpi-dsdt.aml
+%{_datadir}/%{name}/q35-acpi-dsdt.aml
+%{_datadir}/%{name}/bios.bin
+%{_datadir}/%{name}/bios-256k.bin
+%{_datadir}/%{name}/sgabios.bin
+%{_datadir}/%{name}/linuxboot.bin
+%{_datadir}/%{name}/multiboot.bin
+%{_datadir}/%{name}/kvmvapic.bin
+%{_datadir}/%{name}/vgabios.bin
+%{_datadir}/%{name}/vgabios-cirrus.bin
+%{_datadir}/%{name}/vgabios-qxl.bin
+%{_datadir}/%{name}/vgabios-stdvga.bin
+%{_datadir}/%{name}/vgabios-vmware.bin
+%{_datadir}/%{name}/pxe-e1000.rom
+%{_datadir}/%{name}/pxe-virtio.rom
+%{_datadir}/%{name}/pxe-pcnet.rom
+%{_datadir}/%{name}/pxe-rtl8139.rom
+%{_datadir}/%{name}/pxe-ne2k_pci.rom
+%{_datadir}/%{name}/qemu-icon.bmp
+%{_datadir}/%{name}/efi-e1000.rom
+%{_datadir}/%{name}/efi-eepro100.rom
+%{_datadir}/%{name}/efi-ne2k_pci.rom
+%{_datadir}/%{name}/efi-pcnet.rom
+%{_datadir}/%{name}/efi-rtl8139.rom
+%{_datadir}/%{name}/efi-virtio.rom
+%{_datadir}/%{name}/s390-ccw.img
+%{_datadir}/%{name}/QEMU,tcx.bin
+%{_datadir}/%{name}/QEMU,cgthree.bin
+%{_datadir}/%{name}/qemu_logo_no_text.svg
 
-%config(noreplace) %{_sysconfdir}/qemu/target-x86_64.conf
+%config(noreplace) %{_sysconfdir}/%{name}/target-x86_64.conf
 %if %{without separate_kvm}
 %ifarch %{ix86} x86_64
 %{?kvm_files:}
@@ -1235,9 +1243,9 @@ getent passwd qemu >/dev/null || \
 %{_datadir}/systemtap/tapset/qemu-system-ppc64.stp
 %{_datadir}/systemtap/tapset/qemu-system-ppcemb.stp
 %endif
-%{_datadir}/qemu/bamboo.dtb
-%{_datadir}/qemu/ppc_rom.bin
-%{_datadir}/qemu/spapr-rtas.bin
+%{_datadir}/%{name}/bamboo.dtb
+%{_datadir}/%{name}/ppc_rom.bin
+%{_datadir}/%{name}/spapr-rtas.bin
 %ifarch ppc64
 %{?kvm_files:}
 %{?qemu_kvm_files:}
