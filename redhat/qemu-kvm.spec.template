@@ -1285,6 +1285,10 @@ getent passwd qemu >/dev/null || \
 
 %changelog
 %%CHANGELOG%%
+* Fri Apr 12 2013 Miroslav Rezanina <mrezanin@Redhat.com> - 3:1.4.0-3.rc2
+ - Enable/disable features to conform RHEL7 requirements
+ - Change qemu pathes to qemu-kvm
+
 * Fri Apr 05 2013 Miroslav Rezanina <mrezanin@redhat.com> - 3:1.4.0-2
 - Synchronization with Fedora 19 package version 2:1.4.0-8
 
