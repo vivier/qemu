@@ -328,6 +328,7 @@ static int img_create(int argc, char **argv)
     const char *filename;
     const char *base_filename = NULL;
     char *options = NULL;
+    Error *local_err = NULL;
 
     for(;;) {
         c = getopt(argc, argv, "F:b:f:he6o:");
@@ -387,8 +388,14 @@ static int img_create(int argc, char **argv)
         goto out;
     }
 
-    ret = bdrv_img_create(filename, fmt, base_filename, base_fmt,
-                          options, img_size, BDRV_O_FLAGS, NULL);
+    bdrv_img_create(filename, fmt, base_filename, base_fmt,
+                    options, img_size, BDRV_O_FLAGS, &local_err);
+    if (error_is_set(&local_err)) {
+        error_report("%s", error_get_pretty(local_err));
+        error_free(local_err);
+        ret = -1;
+    }
+
 out:
     if (ret) {
         return 1;
