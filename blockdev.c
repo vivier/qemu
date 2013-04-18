@@ -975,7 +975,7 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
             bdrv_get_geometry(states->old_bs, &size);
             size *= 512;
             ret = bdrv_img_create(new_image_file, format,
-                                  NULL, NULL, NULL, size, flags);
+                                  NULL, NULL, NULL, size, flags, NULL);
         } else {
             /* create new image w/backing file */
             switch (mode) {
@@ -986,7 +986,7 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
                 ret = bdrv_img_create(new_image_file, format,
                                       source->filename,
                                       source->drv->format_name,
-                                      NULL, -1, flags);
+                                      NULL, -1, flags, NULL);
                 break;
             default:
                 ret = -1;
