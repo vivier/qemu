@@ -129,7 +129,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu-kvm
 Version: 1.4.0
-Release: 2%{?dist}
+Release: 2.1%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 3
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1259,6 +1259,9 @@ getent passwd qemu >/dev/null || \
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Fri Apr 19 2013 Daniel Mach <dmach@redhat.com> - 3:1.4.0-2.1
+- Rebuild for cyrus-sasl
+
 * Fri Apr 05 2013 Miroslav Rezanina <mrezanin@redhat.com> - 3:1.4.0-2
 - Synchronization with Fedora 19 package version 2:1.4.0-8
 
