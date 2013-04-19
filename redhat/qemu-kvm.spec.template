@@ -508,6 +508,18 @@ make DESTDIR="${RPM_BUILD_ROOT}" \
 install -D -p -m 0755 ../qemu-kvm-qemu-ga-build/qemu-ga $RPM_BUILD_ROOT%{_bindir}/qemu-ga
 install -D -p -m 0755 %{SOURCE10} $RPM_BUILD_ROOT%{_initddir}/qemu-ga
 install -D -p -m 0644 %{SOURCE11} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/qemu-ga
+
+%define qga_src_stem ../scripts/qemu-guest-agent/fsfreeze-hook
+%define qga_libexec_stem $RPM_BUILD_ROOT%{_libexecdir}/qemu-ga/fsfreeze-hook
+%define qga_samples_stem $RPM_BUILD_ROOT%{_datadir}/%{confname}/qemu-ga/fsfreeze-hook
+
+# install fsfreeze hook script and directory for user scripts
+mkdir -p -v                              %{qga_libexec_stem}.d
+install -D -p -m 0755 -v %{qga_src_stem} %{qga_libexec_stem}
+
+# install fsfreeze script samples
+mkdir -p -v                                         %{qga_samples_stem}.d/
+install -D -p -m 0644 -v %{qga_src_stem}.d/*.sample %{qga_samples_stem}.d/
 %endif # guest_agent
 
 rm -rf ${RPM_BUILD_ROOT}%{_bindir}/qemu-nbd
@@ -664,6 +676,8 @@ fi
 %defattr(-,root,root,-)
 %{_bindir}/qemu-ga
 %{_initddir}/qemu-ga
+%{_libexecdir}/qemu-ga
+%{_datadir}/%{confname}/qemu-ga
 %config(noreplace) %{_sysconfdir}/sysconfig/qemu-ga
 
 %if %{with guest_agent_win32}
