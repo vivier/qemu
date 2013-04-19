@@ -31,3 +31,14 @@ PIDFILE="/var/run/qemu-ga.pid"
 # Default: blank list to enable all RPCs
 # Note: There should be no spaces between commas and commands in the blacklist
 BLACKLIST_RPC="guest-file-open,guest-file-close,guest-file-read,guest-file-write,guest-file-seek,guest-file-flush"
+
+# Enable fsfreeze hook. See the --fsfreeze-hook option in "qemu-ga --help".
+FSFREEZE_HOOK_ENABLE=0
+
+# Set the option argument for --fsfreeze-hook, which is the full pathname of
+# the hook script. An empty or unset value designates the default script
+# (invoke "qemu-ga --help" to interrogate).
+#
+# This setting (independently of value) takes effect only when
+# FSFREEZE_HOOK_ENABLE is nonzero.
+FSFREEZE_HOOK_PATHNAME=/usr/libexec/qemu-ga/fsfreeze-hook

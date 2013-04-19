@@ -36,6 +36,14 @@ start() {
     [ ! -z "$LOGFILE" ] && ARGS="$ARGS --logfile $LOGFILE"
     [ ! -z "$PIDFILE" ] && ARGS="$ARGS --pidfile $PIDFILE"
     [ ! -z "$BLACKLIST_RPC" ] && ARGS="$ARGS --blacklist $BLACKLIST_RPC"
+
+    if [ "$FSFREEZE_HOOK_ENABLE" -ne 0 ] 2>/dev/null; then
+        ARGS="$ARGS --fsfreeze-hook"
+        if [ -n "$FSFREEZE_HOOK_PATHNAME" ]; then
+            ARGS="$ARGS=$FSFREEZE_HOOK_PATHNAME"
+        fi
+    fi
+
     daemon /usr/bin/$prog $ARGS
     RETVAL=$?
     echo
