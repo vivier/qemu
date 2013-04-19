@@ -334,7 +334,6 @@ As QEMU requires no host kernel patches to run, it is safe and easy to use.
 Common Access Card (CAC) emulation library.
 %endif
 
-%if 0%{!?build_only_sub:1}
 %package -n qemu-img
 Summary: QEMU command line tool for manipulating disk images
 Group: Development/Tools
@@ -342,6 +341,7 @@ Group: Development/Tools
 %description -n qemu-img
 This package provides a command line tool for manipulating disk images
 
+%if 0%{!?build_only_sub:1}
 %package  common
 Summary: QEMU common files needed by all QEMU targets
 Group: Development/Tools
@@ -749,7 +749,11 @@ dobuild() {
 
    make libcacard.la %{?_smp_mflags} $buildldflags
    make vscclient
-
+   make qemu-img
+   make qemu-io
+   make qemu-nbd
+   make qemu-img.1
+   make qemu-nbd.8
 %endif
 }
 
@@ -975,7 +979,17 @@ find $RPM_BUILD_ROOT -name '*.la' -or -name '*.a' | xargs rm -f
 find $RPM_BUILD_ROOT -name "libcacard.so*" -exec chmod +x \{\} \;
 %if 0%{?build_only_sub}
     mkdir -p $RPM_BUILD_ROOT%{_bindir}
+    mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1/*
+    mkdir -p $RPM_BUILD_ROOT%{_mandir}/man8/*
     install -m 0755 vscclient $RPM_BUILD_ROOT%{_bindir}/vscclient
+    install -m 0755 qemu-img $RPM_BUILD_ROOT%{_bindir}/qemu-img
+    install -m 0755 qemu-io $RPM_BUILD_ROOT%{_bindir}/qemu-io
+    install -m 0755 qemu-nbd $RPM_BUILD_ROOT%{_bindir}/qemu-nbd
+    install -c -m 0644 qemu-img.1 ${RPM_BUILD_ROOT}%{_mandir}/man1/qemu-img.1
+    install -c -m 0644 qemu-nbd.8 ${RPM_BUILD_ROOT}%{_mandir}/man8/qemu-nbd.8
+    chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
+    chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man8/*
+
 %endif
 
 # Disabled as do not work anymore
@@ -1306,16 +1320,16 @@ find $RPM_BUILD_ROOT -name "libcacard.so*" -exec chmod +x \{\} \;
         %{_datadir}/systemtap/tapset/qemu-system-xtensa.stp
         %{_datadir}/systemtap/tapset/qemu-system-xtensaeb.stp
     %endif
+%endif
 
-    %if %{without separate_kvm}
+%if %{without separate_kvm}
 %files -n qemu-img
-        %defattr(-,root,root)
-        %{_bindir}/qemu-img
-        %{_bindir}/qemu-io
-        %{_bindir}/qemu-nbd
-        %{_mandir}/man1/qemu-img.1*
-        %{_mandir}/man8/qemu-nbd.8*
-    %endif
+    %defattr(-,root,root)
+    %{_bindir}/qemu-img
+    %{_bindir}/qemu-io
+    %{_bindir}/qemu-nbd
+    %{_mandir}/man1/qemu-img.1*
+    %{_mandir}/man8/qemu-nbd.8*
 %endif
 
 %files -n libcacard
