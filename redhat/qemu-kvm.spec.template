@@ -356,6 +356,7 @@ QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
 
 This package provides the common files needed by all QEMU targets
+%endif
 
 %package -n qemu-guest-agent
 Summary: QEMU guest agent
@@ -382,6 +383,7 @@ This package does not need to be installed on the host OS.
 %postun -n qemu-guest-agent
 %systemd_postun_with_restart qemu-guest-agent.service
 
+%if 0%{!?build_only_sub:1}
 %if 0%{?user:1}
 %package %{user}
 Summary: QEMU user mode emulation of qemu targets
@@ -754,6 +756,7 @@ dobuild() {
    make qemu-nbd
    make qemu-img.1
    make qemu-nbd.8
+   make qemu-ga
 %endif
 }
 
@@ -783,9 +786,9 @@ dobuild --target-list="$buildarch"
 %endif
 
 %install
-%if 0%{!?build_only_sub:1}
 %define _udevdir %{_libdir}/udev/rules.d
 
+%if 0%{!?build_only_sub:1}
     install -D -p -m 0755 %{SOURCE4} $RPM_BUILD_ROOT%{_libdir}/systemd/system/ksm.service
     install -D -p -m 0644 %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/ksm
     install -D -p -m 0755 ksmctl $RPM_BUILD_ROOT%{_libdir}/systemd/ksmctl
@@ -936,14 +939,14 @@ dobuild --target-list="$buildarch"
     done < %{SOURCE1}
 %endif
 
-%if 0%{!?build_only_sub:1}
-    # For the qemu-guest-agent subpackage install the systemd
-    # service and udev rules.
-    mkdir -p $RPM_BUILD_ROOT%{_unitdir}
-    mkdir -p $RPM_BUILD_ROOT%{_udevdir}
-    install -m 0644 %{SOURCE10} $RPM_BUILD_ROOT%{_unitdir}
-    install -m 0644 %{SOURCE11} $RPM_BUILD_ROOT%{_udevdir}
+# For the qemu-guest-agent subpackage install the systemd
+# service and udev rules.
+mkdir -p $RPM_BUILD_ROOT%{_unitdir}
+mkdir -p $RPM_BUILD_ROOT%{_udevdir}
+install -m 0644 %{SOURCE10} $RPM_BUILD_ROOT%{_unitdir}
+install -m 0644 %{SOURCE11} $RPM_BUILD_ROOT%{_udevdir}
 
+%if 0%{!?build_only_sub:1}
     # Install rules to use the bridge helper with libvirt's virbr0
     install -m 0644 %{SOURCE12} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}
     chmod u+s $RPM_BUILD_ROOT%{_libexecdir}/qemu-bridge-helper
@@ -987,9 +990,9 @@ find $RPM_BUILD_ROOT -name "libcacard.so*" -exec chmod +x \{\} \;
     install -m 0755 qemu-nbd $RPM_BUILD_ROOT%{_bindir}/qemu-nbd
     install -c -m 0644 qemu-img.1 ${RPM_BUILD_ROOT}%{_mandir}/man1/qemu-img.1
     install -c -m 0644 qemu-nbd.8 ${RPM_BUILD_ROOT}%{_mandir}/man8/qemu-nbd.8
+    install -c -m 0755  qemu-ga ${RPM_BUILD_ROOT}%{_bindir}/qemu-ga
     chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
     chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man8/*
-
 %endif
 
 # Disabled as do not work anymore
@@ -1075,17 +1078,19 @@ find $RPM_BUILD_ROOT -name "libcacard.so*" -exec chmod +x \{\} \;
     %endif
     %dir %{_sysconfdir}/%{name}
     %config(noreplace) %{_sysconfdir}/%{name}/bridge.conf
+%endif
 
     %if %{without separate_kvm}
 %files -n qemu-guest-agent
-        %defattr(-,root,root,-)
-        %doc COPYING README
-        %{_bindir}/qemu-ga
-        %{_unitdir}/qemu-guest-agent.service
-        %{_udevdir}/99-qemu-guest-agent.rules
-    %endif
+    %defattr(-,root,root,-)
+    %doc COPYING README
+    %{_bindir}/qemu-ga
+    %{_unitdir}/qemu-guest-agent.service
+    %{_udevdir}/99-qemu-guest-agent.rules
 %endif
+#%endif
 
+%if 0%{!?build_only_sub:1}
 %if 0%{?user:1}
 %files %{user}
    %defattr(-,root,root)
@@ -1136,7 +1141,6 @@ find $RPM_BUILD_ROOT -name "libcacard.so*" -exec chmod +x \{\} \;
    %{_datadir}/systemtap/tapset/qemu-unicore32.stp
 %endif
 
-%if 0%{!?build_only_sub:1}
 %files
     %defattr(-,root,root)
     %if %{without kvmonly}
