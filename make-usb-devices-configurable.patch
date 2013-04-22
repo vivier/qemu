@@ -1,0 +1,251 @@
+From ef4282ace58e44c47349cbc9a6805cd5096bc2fc Mon Sep 17 00:00:00 2001
+From: Gerd Hoffmann <kraxel@redhat.com>
+Date: Fri, 1 Feb 2013 10:49:43 +0100
+Subject: make usb devices configurable
+
+Leave the core usb devices (usb hub, tablet, mouse, keyboard)
+enabled unconditionally.  Make the other ones configurable.
+
+Exceptions:
+  - bluetooth: not qdevified yet, has a vl.c dependency because
+    of that, thus disabling isn't as easy as not linking the
+    object file.
+  - smardcard: ccid-card-emulated depends on that one *and*
+    CONFIG_SMARTCARD_NSS.  So it isn't a one-liner and comes
+    as separate patch because of that.
+
+Signed-off-by: Gerd Hoffmann <kraxel@redhat.com>
+
+diff --git a/default-configs/alpha-softmmu.mak b/default-configs/alpha-softmmu.mak
+index 501dd41..2dbee94 100644
+--- a/default-configs/alpha-softmmu.mak
++++ b/default-configs/alpha-softmmu.mak
+@@ -1,6 +1,7 @@
+ # Default configuration for alpha-softmmu
+ 
+ include pci.mak
++include usb.mak
+ CONFIG_SERIAL=y
+ CONFIG_I8254=y
+ CONFIG_PCKBD=y
+diff --git a/default-configs/arm-softmmu.mak b/default-configs/arm-softmmu.mak
+index 2f1a5c9..b40f7b0 100644
+--- a/default-configs/arm-softmmu.mak
++++ b/default-configs/arm-softmmu.mak
+@@ -1,6 +1,7 @@
+ # Default configuration for arm-softmmu
+ 
+ include pci.mak
++include usb.mak
+ CONFIG_GDBSTUB_XML=y
+ CONFIG_VGA=y
+ CONFIG_ISA_MMIO=y
+diff --git a/default-configs/i386-softmmu.mak b/default-configs/i386-softmmu.mak
+index 2c78175..1b23025 100644
+--- a/default-configs/i386-softmmu.mak
++++ b/default-configs/i386-softmmu.mak
+@@ -1,6 +1,7 @@
+ # Default configuration for i386-softmmu
+ 
+ include pci.mak
++include usb.mak
+ CONFIG_VGA=y
+ CONFIG_VGA_PCI=y
+ CONFIG_VGA_ISA=y
+diff --git a/default-configs/m68k-softmmu.mak b/default-configs/m68k-softmmu.mak
+index 3e2ec37..778ea82 100644
+--- a/default-configs/m68k-softmmu.mak
++++ b/default-configs/m68k-softmmu.mak
+@@ -1,5 +1,6 @@
+ # Default configuration for m68k-softmmu
+ 
+ include pci.mak
++include usb.mak
+ CONFIG_GDBSTUB_XML=y
+ CONFIG_PTIMER=y
+diff --git a/default-configs/mips-softmmu.mak b/default-configs/mips-softmmu.mak
+index a271b1c..4f04a33 100644
+--- a/default-configs/mips-softmmu.mak
++++ b/default-configs/mips-softmmu.mak
+@@ -1,6 +1,7 @@
+ # Default configuration for mips-softmmu
+ 
+ include pci.mak
++include usb.mak
+ CONFIG_ISA_MMIO=y
+ CONFIG_ESP=y
+ CONFIG_VGA=y
+diff --git a/default-configs/mips64-softmmu.mak b/default-configs/mips64-softmmu.mak
+index 0510bb6..a5b6c3c 100644
+--- a/default-configs/mips64-softmmu.mak
++++ b/default-configs/mips64-softmmu.mak
+@@ -1,6 +1,7 @@
+ # Default configuration for mips64-softmmu
+ 
+ include pci.mak
++include usb.mak
+ CONFIG_ISA_MMIO=y
+ CONFIG_ESP=y
+ CONFIG_VGA=y
+diff --git a/default-configs/mips64el-softmmu.mak b/default-configs/mips64el-softmmu.mak
+index ed3bed3..a0e6de8 100644
+--- a/default-configs/mips64el-softmmu.mak
++++ b/default-configs/mips64el-softmmu.mak
+@@ -1,6 +1,7 @@
+ # Default configuration for mips64el-softmmu
+ 
+ include pci.mak
++include usb.mak
+ CONFIG_ISA_MMIO=y
+ CONFIG_ESP=y
+ CONFIG_VGA=y
+diff --git a/default-configs/mipsel-softmmu.mak b/default-configs/mipsel-softmmu.mak
+index fa3a2ca..753dd76 100644
+--- a/default-configs/mipsel-softmmu.mak
++++ b/default-configs/mipsel-softmmu.mak
+@@ -1,6 +1,7 @@
+ # Default configuration for mipsel-softmmu
+ 
+ include pci.mak
++include usb.mak
+ CONFIG_ISA_MMIO=y
+ CONFIG_ESP=y
+ CONFIG_VGA=y
+diff --git a/default-configs/ppc-softmmu.mak b/default-configs/ppc-softmmu.mak
+index 1f4a1cf..f9f8a81 100644
+--- a/default-configs/ppc-softmmu.mak
++++ b/default-configs/ppc-softmmu.mak
+@@ -1,6 +1,7 @@
+ # Default configuration for ppc-softmmu
+ 
+ include pci.mak
++include usb.mak
+ CONFIG_GDBSTUB_XML=y
+ CONFIG_ISA_MMIO=y
+ CONFIG_ESCC=y
+diff --git a/default-configs/ppc64-softmmu.mak b/default-configs/ppc64-softmmu.mak
+index 5ff406c..dc44294 100644
+--- a/default-configs/ppc64-softmmu.mak
++++ b/default-configs/ppc64-softmmu.mak
+@@ -1,6 +1,7 @@
+ # Default configuration for ppc64-softmmu
+ 
+ include pci.mak
++include usb.mak
+ CONFIG_GDBSTUB_XML=y
+ CONFIG_ISA_MMIO=y
+ CONFIG_ESCC=y
+diff --git a/default-configs/ppcemb-softmmu.mak b/default-configs/ppcemb-softmmu.mak
+index aaa9cdc..1c6bcf9 100644
+--- a/default-configs/ppcemb-softmmu.mak
++++ b/default-configs/ppcemb-softmmu.mak
+@@ -1,6 +1,7 @@
+ # Default configuration for ppcemb-softmmu
+ 
+ include pci.mak
++include usb.mak
+ CONFIG_GDBSTUB_XML=y
+ CONFIG_ISA_MMIO=y
+ CONFIG_ESCC=y
+diff --git a/default-configs/sh4-softmmu.mak b/default-configs/sh4-softmmu.mak
+index 5c69acc..e08b2ee 100644
+--- a/default-configs/sh4-softmmu.mak
++++ b/default-configs/sh4-softmmu.mak
+@@ -1,6 +1,7 @@
+ # Default configuration for sh4-softmmu
+ 
+ include pci.mak
++include usb.mak
+ CONFIG_SERIAL=y
+ CONFIG_PTIMER=y
+ CONFIG_PFLASH_CFI02=y
+diff --git a/default-configs/sh4eb-softmmu.mak b/default-configs/sh4eb-softmmu.mak
+index 7cdc122..3a84535 100644
+--- a/default-configs/sh4eb-softmmu.mak
++++ b/default-configs/sh4eb-softmmu.mak
+@@ -1,6 +1,7 @@
+ # Default configuration for sh4eb-softmmu
+ 
+ include pci.mak
++include usb.mak
+ CONFIG_SERIAL=y
+ CONFIG_PTIMER=y
+ CONFIG_PFLASH_CFI02=y
+diff --git a/default-configs/sparc64-softmmu.mak b/default-configs/sparc64-softmmu.mak
+index 03e8b42..2145b6b 100644
+--- a/default-configs/sparc64-softmmu.mak
++++ b/default-configs/sparc64-softmmu.mak
+@@ -1,6 +1,7 @@
+ # Default configuration for sparc64-softmmu
+ 
+ include pci.mak
++include usb.mak
+ CONFIG_ISA_MMIO=y
+ CONFIG_M48T59=y
+ CONFIG_PTIMER=y
+diff --git a/default-configs/usb.mak b/default-configs/usb.mak
+new file mode 100644
+index 0000000..1bf9075
+--- /dev/null
++++ b/default-configs/usb.mak
+@@ -0,0 +1,8 @@
++CONFIG_USB_TABLET_WACOM=y
++CONFIG_USB_STORAGE_BOT=y
++CONFIG_USB_STORAGE_UAS=y
++CONFIG_USB_SMARTCARD=y
++CONFIG_USB_AUDIO=y
++CONFIG_USB_SERIAL=y
++CONFIG_USB_NETWORK=y
++CONFIG_USB_BLUETOOTH=y
+diff --git a/default-configs/x86_64-softmmu.mak b/default-configs/x86_64-softmmu.mak
+index 233a856..3392f5a 100644
+--- a/default-configs/x86_64-softmmu.mak
++++ b/default-configs/x86_64-softmmu.mak
+@@ -1,6 +1,7 @@
+ # Default configuration for x86_64-softmmu
+ 
+ include pci.mak
++include usb.mak
+ CONFIG_VGA=y
+ CONFIG_VGA_PCI=y
+ CONFIG_VGA_ISA=y
+diff --git a/hw/usb/Makefile.objs b/hw/usb/Makefile.objs
+index d1bbbc0..64f4be0 100644
+--- a/hw/usb/Makefile.objs
++++ b/hw/usb/Makefile.objs
+@@ -1,14 +1,28 @@
++common-obj-y += core.o combined-packet.o bus.o desc.o
++common-obj-y += libhw.o
++
+ common-obj-$(CONFIG_USB_UHCI) += hcd-uhci.o
+ common-obj-$(CONFIG_USB_OHCI) += hcd-ohci.o
+ common-obj-$(CONFIG_USB_EHCI) += hcd-ehci.o hcd-ehci-pci.o hcd-ehci-sysbus.o
+ common-obj-$(CONFIG_USB_XHCI) += hcd-xhci.o
+-common-obj-y += libhw.o
+ 
++# emulated usb devices
++common-obj-y += dev-hub.o
++common-obj-y += dev-hid.o
++common-obj-$(CONFIG_USB_TABLET_WACOM) += dev-wacom.o
++common-obj-$(CONFIG_USB_STORAGE_BOT)  += dev-storage.o
++common-obj-$(CONFIG_USB_STORAGE_UAS)  += dev-uas.o
++common-obj-$(CONFIG_USB_AUDIO)        += dev-audio.o
++common-obj-$(CONFIG_USB_SERIAL)       += dev-serial.o
++common-obj-$(CONFIG_USB_NETWORK)      += dev-network.o
++
++# FIXME: make configurable too
++CONFIG_USB_BLUETOOTH := y
++CONFIG_USB_SMARTCARD := y
++common-obj-$(CONFIG_USB_BLUETOOTH)    += dev-bluetooth.o
++common-obj-$(CONFIG_USB_SMARTCARD)    += dev-smartcard-reader.o
++
++# usb redirection
+ common-obj-$(CONFIG_USB_REDIR) += redirect.o quirks.o
+ 
+-common-obj-y += core.o combined-packet.o bus.o desc.o dev-hub.o
+-common-obj-y += host-$(HOST_USB).o dev-bluetooth.o
+-common-obj-y += dev-hid.o dev-storage.o dev-wacom.o
+-common-obj-y += dev-serial.o dev-network.o dev-audio.o
+-common-obj-y += dev-smartcard-reader.o
+-common-obj-y += dev-uas.o
++common-obj-y += host-$(HOST_USB).o

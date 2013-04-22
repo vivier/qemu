@@ -1,0 +1,24 @@
+From b9c249bd36d49eb335f78e263064dc79d6ca348e Mon Sep 17 00:00:00 2001
+From: Miroslav Rezanina <mrezanin@redhat.com>
+Date: Thu, 4 Apr 2013 11:00:41 +0200
+Subject: Use kvm by default
+
+Bugzilla: 906185
+
+RHEL uses kvm accelerator by default, if available.
+
+Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
+
+diff --git a/vl.c b/vl.c
+index 1355f69..0c04b71 100644
+--- a/vl.c
++++ b/vl.c
+@@ -2615,7 +2615,7 @@ static int configure_accelerator(void)
+ 
+     if (p == NULL) {
+         /* Use the default "accelerator", tcg */
+-        p = "tcg";
++        p = "kvm:tcg";
+     }
+ 
+     while (!accel_initialised && *p != '\0') {

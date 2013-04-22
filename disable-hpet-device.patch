@@ -1,0 +1,33 @@
+From 7066da78d8c39d2baf0e72a84ed0756e844ec2dc Mon Sep 17 00:00:00 2001
+From: Miroslav Rezanina <mrezanin@redhat.com>
+Date: Thu, 4 Apr 2013 05:25:23 -0400
+Subject: Disable HPET device
+
+Bugzilla: 947441
+
+We do not support HPET, disabling it.
+
+Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
+
+diff --git a/default-configs/i386-softmmu.mak b/default-configs/i386-softmmu.mak
+index 52c0e6a..226f556 100644
+--- a/default-configs/i386-softmmu.mak
++++ b/default-configs/i386-softmmu.mak
+@@ -20,6 +20,5 @@ CONFIG_IDE_ISA=y
+ CONFIG_IDE_PIIX=y
+ CONFIG_PIIX_PCI=y
+ CONFIG_SOUND=y
+-CONFIG_HPET=y
+ CONFIG_I8259=y
+ CONFIG_PFLASH_CFI01=y
+diff --git a/default-configs/x86_64-softmmu.mak b/default-configs/x86_64-softmmu.mak
+index 7c3b203..87ced5b 100644
+--- a/default-configs/x86_64-softmmu.mak
++++ b/default-configs/x86_64-softmmu.mak
+@@ -20,6 +20,5 @@ CONFIG_IDE_ISA=y
+ CONFIG_IDE_PIIX=y
+ CONFIG_PIIX_PCI=y
+ CONFIG_SOUND=y
+-CONFIG_HPET=y
+ CONFIG_I8259=y
+ CONFIG_PFLASH_CFI01=y

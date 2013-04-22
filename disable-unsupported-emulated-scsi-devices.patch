@@ -1,0 +1,37 @@
+From efb33e58e2860c037a6422281fd1a93557de73d9 Mon Sep 17 00:00:00 2001
+From: Miroslav Rezanina <mrezanin@redhat.com>
+Date: Tue, 19 Mar 2013 07:56:02 -0400
+Subject: Disable unsupported emulated SCSI devices
+
+Bugzilla: 903918
+
+We do not support following device so it has to be disabled:
+- lsi53c895a
+- am53c974
+- dc390
+- esp
+- megasas
+
+Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
+
+diff --git a/default-configs/pci.mak b/default-configs/pci.mak
+index b0b6ca3..d99896e 100644
+--- a/default-configs/pci.mak
++++ b/default-configs/pci.mak
+@@ -8,16 +8,12 @@ CONFIG_NE2000_PCI=y
+ CONFIG_EEPRO100_PCI=y
+ CONFIG_PCNET_PCI=y
+ CONFIG_PCNET_COMMON=y
+-CONFIG_LSI_SCSI_PCI=y
+-CONFIG_MEGASAS_SCSI_PCI=y
+ CONFIG_RTL8139_PCI=y
+ CONFIG_E1000_PCI=y
+ CONFIG_IDE_CORE=y
+ CONFIG_IDE_QDEV=y
+ CONFIG_IDE_PCI=y
+ CONFIG_AHCI=y
+-CONFIG_ESP=y
+-CONFIG_ESP_PCI=y
+ CONFIG_SERIAL=y
+ CONFIG_SERIAL_PCI=y
+ CONFIG_IPACK=y
