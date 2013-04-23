@@ -722,7 +722,7 @@ dobuild() {
         --enable-vnc-ws \
         --enable-uuid \
         --enable-guest-agent \
-	--disable-glusterfs \
+        --disable-glusterfs \
         --block-drv-whitelist=qcow2,raw,file,host_device,host_cdrom,vmdk \
         "$@"
 
@@ -814,18 +814,18 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/slof.bin
 # to a separate package...  Discussed here on the packaging list:
 # https://lists.fedoraproject.org/pipermail/packaging/2012-July/008563.html
 %if 0%{!?system_alpha:1}
-  rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/palcode-clipper
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/palcode-clipper
 %endif
 %if 0%{!?system_microblaze:1}
-  rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/petalogix*.dtb
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/petalogix*.dtb
 %endif
 %if 0%{!?system_ppc:1}
-  rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}/bamboo.dtb
-  rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}/ppc_rom.bin
-  rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}/spapr-rtas.bin
+rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}/bamboo.dtb
+rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}/ppc_rom.bin
+rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}/spapr-rtas.bin
 %endif
 %if 0%{!?system_s390x:1}
-  rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/s390-zipl.rom
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/s390-zipl.rom
 %endif
 
 # Provided by package ipxe
@@ -1295,6 +1295,13 @@ getent passwd qemu >/dev/null || \
 
 %changelog
 %%CHANGELOG%%
+* Tue Apr 23 2013 Miroslav Rezanina <mrezanin@redhat.com> - 3:1.4.0-3
+  - Enable/disable features supported by rhel7
+  - Use qemu-kvm instead of qemu in filenames and pathes
+
+* Fri Apr 19 2013 Daniel Mach <dmach@redhat.com> - 3:1.4.0-2.1
+- Rebuild for cyrus-sasl
+
 * Fri Apr 05 2013 Miroslav Rezanina <mrezanin@redhat.com> - 3:1.4.0-2
 - Synchronization with Fedora 19 package version 2:1.4.0-8
 
