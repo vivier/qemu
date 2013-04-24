@@ -12,6 +12,7 @@
 
 #include "qemu-char.h"
 #include "qemu-error.h"
+#include "trace.h"
 #include "virtio-serial.h"
 
 typedef struct VirtConsole {
@@ -43,6 +44,7 @@ static ssize_t flush_buf(VirtIOSerialPort *port, const uint8_t *buf, size_t len)
         return len;
     }
     ret = qemu_chr_fe_write(vcon->chr, buf, len);
+    trace_virtio_console_flush_buf(port->id, len, ret);
 
     if (ret <= 0) {
         VirtIOSerialPortInfo *info = DO_UPCAST(VirtIOSerialPortInfo, qdev,
@@ -99,6 +101,7 @@ static void chr_read(void *opaque, const uint8_t *buf, int size)
 {
     VirtConsole *vcon = opaque;
 
+    trace_virtio_console_chr_read(vcon->port.id, size);
     virtio_serial_write(&vcon->port, buf, size);
 }
 
@@ -106,6 +109,7 @@ static void chr_event(void *opaque, int event)
 {
     VirtConsole *vcon = opaque;
 
+    trace_virtio_console_chr_event(vcon->port.id, event);
     switch (event) {
     case CHR_EVENT_OPENED:
         virtio_serial_open(&vcon->port);
