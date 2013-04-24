@@ -2590,7 +2590,7 @@ int gdbserver_start(const char *device)
         monitor_init(mon_chr, 0);
     } else {
         if (s->chr)
-            qemu_chr_close(s->chr);
+            qemu_chr_delete(s->chr);
         mon_chr = s->mon_chr;
         memset(s, 0, sizeof(GDBState));
     }

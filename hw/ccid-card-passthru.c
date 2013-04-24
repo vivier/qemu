@@ -199,7 +199,7 @@ static void ccid_card_vscard_handle_message(PassthruState *card,
 
 static void ccid_card_vscard_drop_connection(PassthruState *card)
 {
-    qemu_chr_close(card->cs);
+    qemu_chr_delete(card->cs);
     card->vscard_in_pos = card->vscard_in_hdr = 0;
 }
 
