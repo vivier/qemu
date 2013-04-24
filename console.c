@@ -1099,21 +1099,6 @@ static int console_puts(CharDriverState *chr, const uint8_t *buf, int len)
     return len;
 }
 
-static void console_send_event(CharDriverState *chr, int event)
-{
-    TextConsole *s = chr->opaque;
-    int i;
-
-    if (event == CHR_EVENT_FOCUS) {
-        for(i = 0; i < nb_consoles; i++) {
-            if (consoles[i] == s) {
-                console_select(i);
-                break;
-            }
-        }
-    }
-}
-
 static void kbd_send_chars(void *opaque)
 {
     TextConsole *s = opaque;
@@ -1348,7 +1333,6 @@ static void text_console_do_init(CharDriverState *chr, DisplayState *ds, QemuOpt
     }
     chr->opaque = s;
     chr->chr_write = console_puts;
-    chr->chr_send_event = console_send_event;
 
     s->chr = chr;
     s->out_fifo.buf = s->out_fifo_buf;
