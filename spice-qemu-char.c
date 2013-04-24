@@ -90,8 +90,8 @@ static void vmc_state(SpiceCharDeviceInstance *sin, int connected)
         return;
     }
 
-    qemu_chr_event(scd->chr,
-                   connected ? CHR_EVENT_OPENED : CHR_EVENT_CLOSED);
+    qemu_chr_be_event(scd->chr,
+                      connected ? CHR_EVENT_OPENED : CHR_EVENT_CLOSED);
 }
 
 static SpiceCharDeviceInterface vmc_interface = {
