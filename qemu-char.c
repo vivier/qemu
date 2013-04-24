@@ -965,7 +965,7 @@ static void pty_chr_close(struct CharDriverState *chr)
     close(s->fd);
     qemu_del_timer(s->timer);
     qemu_free_timer(s->timer);
-    qemu_free(s);
+    g_free(s);
     qemu_chr_be_event(chr, CHR_EVENT_CLOSED);
 }
 
@@ -974,7 +974,7 @@ static CharDriverState *qemu_chr_open_pty(QemuOpts *opts)
     CharDriverState *chr;
     PtyCharDriver *s;
     struct termios tty;
-    int slave_fd, len;
+    int master_fd, slave_fd, len;
 #if defined(__OpenBSD__) || defined(__DragonFly__)
     char pty_name[PATH_MAX];
 #define q_ptsname(x) pty_name
@@ -983,10 +983,7 @@ static CharDriverState *qemu_chr_open_pty(QemuOpts *opts)
 #define q_ptsname(x) ptsname(x)
 #endif
 
-    chr = qemu_mallocz(sizeof(CharDriverState));
-    s = qemu_mallocz(sizeof(PtyCharDriver));
-
-    if (openpty(&s->fd, &slave_fd, pty_name, NULL, NULL) < 0) {
+    if (openpty(&master_fd, &slave_fd, pty_name, NULL, NULL) < 0) {
         return NULL;
     }
 
@@ -996,12 +993,15 @@ static CharDriverState *qemu_chr_open_pty(QemuOpts *opts)
     tcsetattr(slave_fd, TCSAFLUSH, &tty);
     close(slave_fd);
 
-    len = strlen(q_ptsname(s->fd)) + 5;
-    chr->filename = qemu_malloc(len);
-    snprintf(chr->filename, len, "pty:%s", q_ptsname(s->fd));
-    qemu_opt_set(opts, "path", q_ptsname(s->fd));
-    fprintf(stderr, "char device redirected to %s\n", q_ptsname(s->fd));
+    chr = g_malloc0(sizeof(CharDriverState));
 
+    len = strlen(q_ptsname(master_fd)) + 5;
+    chr->filename = g_malloc(len);
+    snprintf(chr->filename, len, "pty:%s", q_ptsname(master_fd));
+    qemu_opt_set(opts, "path", q_ptsname(master_fd));
+    fprintf(stderr, "char device redirected to %s\n", q_ptsname(master_fd));
+
+    s = g_malloc0(sizeof(PtyCharDriver));
     chr->opaque = s;
     chr->chr_write = pty_chr_write;
     chr->chr_update_read_handler = pty_chr_update_read_handler;
