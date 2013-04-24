@@ -165,8 +165,7 @@ struct Monitor {
     int reset_seen;
     int flags;
     int suspend_cnt;
-    uint8_t outbuf[1024];
-    int outbuf_index;
+    QString *outbuf;
     ReadLineState *rs;
     MonitorControl *mc;
     CPUState *mon_cpu;
@@ -274,24 +273,31 @@ static gboolean monitor_unblocked(GIOChannel *chan, GIOCondition cond,
 void monitor_flush(Monitor *mon)
 {
     int rc;
+    size_t len;
+    const char *buf;
 
-    if (mon && mon->outbuf_index != 0 && !mon->mux_out) {
-        rc = qemu_chr_fe_write(mon->chr, mon->outbuf, mon->outbuf_index);
-        if (rc == mon->outbuf_index) {
+    buf = qstring_get_str(mon->outbuf);
+    len = qstring_get_length(mon->outbuf);
+
+    if (mon && len && !mon->mux_out) {
+        rc = qemu_chr_fe_write(mon->chr, (const uint8_t *) buf, len);
+        if (rc == len) {
             /* all flushed */
-            mon->outbuf_index = 0;
+            QDECREF(mon->outbuf);
+            mon->outbuf = qstring_new();
             return;
         }
         if (rc > 0) {
             /* partinal write */
-            memmove(mon->outbuf, mon->outbuf + rc, mon->outbuf_index - rc);
-            mon->outbuf_index -= rc;
+            QString *tmp = qstring_from_str(buf + rc);
+            QDECREF(mon->outbuf);
+            mon->outbuf = tmp;
         }
         qemu_chr_fe_add_watch(mon->chr, G_IO_OUT, monitor_unblocked, mon);
     }
 }
 
-/* flush at every end of line or if the buffer is full */
+/* flush at every end of line */
 static void monitor_puts(Monitor *mon, const char *str)
 {
     char c;
@@ -300,18 +306,19 @@ static void monitor_puts(Monitor *mon, const char *str)
         c = *str++;
         if (c == '\0')
             break;
-        if (c == '\n')
-            mon->outbuf[mon->outbuf_index++] = '\r';
-        mon->outbuf[mon->outbuf_index++] = c;
-        if (mon->outbuf_index >= (sizeof(mon->outbuf) - 1)
-            || c == '\n')
+        if (c == '\n') {
+            qstring_append_chr(mon->outbuf, '\r');
+        }
+        qstring_append_chr(mon->outbuf, c);
+        if (c == '\n') {
             monitor_flush(mon);
+        }
     }
 }
 
 void monitor_vprintf(Monitor *mon, const char *fmt, va_list ap)
 {
-    char buf[4096];
+    char *buf;
 
     if (!mon)
         return;
@@ -322,8 +329,9 @@ void monitor_vprintf(Monitor *mon, const char *fmt, va_list ap)
         return;
     }
 
-    vsnprintf(buf, sizeof(buf), fmt, ap);
+    buf = g_strdup_vprintf(fmt, ap);
     monitor_puts(mon, buf);
+    g_free(buf);
 }
 
 void monitor_printf(Monitor *mon, const char *fmt, ...)
@@ -678,6 +686,8 @@ static int do_hmp_passthrough(Monitor *mon, const QDict *params,
     }
 
     memset(&hmp, 0, sizeof(hmp));
+    hmp.outbuf = qstring_new();
+
     qemu_chr_init_mem(&mchar);
     hmp.chr = &mchar;
 
@@ -701,6 +711,7 @@ static int do_hmp_passthrough(Monitor *mon, const QDict *params,
     }
 
 out:
+    QDECREF(hmp.outbuf);
     qemu_chr_close_mem(hmp.chr);
     return ret;
 }
@@ -5127,7 +5138,8 @@ void monitor_init(CharDriverState *chr, int flags)
         is_first_init = 0;
     }
 
-    mon = qemu_mallocz(sizeof(*mon));
+    mon = g_malloc0(sizeof(*mon));
+    mon->outbuf = qstring_new();
 
     mon->chr = chr;
     mon->flags = flags;
