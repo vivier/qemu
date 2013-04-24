@@ -243,9 +243,8 @@ static int usbredir_read(void *priv, uint8_t *data, int count)
 static int usbredir_write(void *priv, uint8_t *data, int count)
 {
     USBRedirDevice *dev = priv;
-    int r;
 
-    if (!dev->cs->opened || dev->cs->write_blocked) {
+    if (!dev->cs->opened) {
         return 0;
     }
 
@@ -253,17 +252,7 @@ static int usbredir_write(void *priv, uint8_t *data, int count)
     if (!runstate_check(RUN_STATE_RUNNING)) {
         return 0;
     }
-
-    r = qemu_chr_write(dev->cs, data, count);
-
-    if (r < 0) {
-        if (dev->cs->write_blocked) {
-            return 0;
-        }
-        return -1;
-    }
-
-    return r;
+    return qemu_chr_write(dev->cs, data, count);
 }
 
 /*
@@ -1032,17 +1021,6 @@ static void usbredir_chardev_event(void *opaque, int event)
     }
 }
 
-static void usbredir_chardev_write_unblocked(void *opaque)
-{
-    USBRedirDevice *dev = opaque;
-
-    if (dev->parser == NULL) {
-        /* usbredir_open_close_bh hasn't handled the open event yet */
-        return;
-    }
-    usbredirparser_do_write(dev->parser);
-}
-
 /*
  * init + destroy
  */
@@ -1051,7 +1029,6 @@ static QemuChrHandlers usbredir_handlers = {
     .fd_can_read = usbredir_chardev_can_read,
     .fd_read = usbredir_chardev_read,
     .fd_event = usbredir_chardev_event,
-    .fd_write_unblocked = usbredir_chardev_write_unblocked,
 };
 
 static void usbredir_vm_state_change(void *priv, int running, RunState state)
