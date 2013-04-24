@@ -13,9 +13,8 @@ typedef struct SpiceCharDriver {
     char                  *subtype;
     bool                  active;
     bool                  blocked;
-    uint8_t               *buffer;
-    uint8_t               *datapos;
-    ssize_t               bufsize, datalen;
+    const uint8_t         *datapos;
+    int                   datalen;
 } SpiceCharDriver;
 
 typedef struct SpiceCharSource {
@@ -174,12 +173,7 @@ static int spice_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
 
     vmc_register_interface(s);
     assert(s->datalen == 0);
-    if (s->bufsize < len) {
-        s->bufsize = len;
-        s->buffer = qemu_realloc(s->buffer, s->bufsize);
-    }
-    memcpy(s->buffer, buf, len);
-    s->datapos = s->buffer;
+    s->datapos = buf;
     s->datalen = len;
     spice_server_char_device_wakeup(&s->sin);
     read_bytes = len - s->datalen;
