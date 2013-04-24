@@ -43,20 +43,23 @@ static ssize_t flush_buf(VirtIOSerialPort *port, const uint8_t *buf, size_t len)
         return len;
     }
     ret = qemu_chr_fe_write(vcon->chr, buf, len);
-    if (ret < 0 && ret != -EAGAIN) {
+
+    if (ret <= 0) {
+        VirtIOSerialPortInfo *info = DO_UPCAST(VirtIOSerialPortInfo, qdev,
+                                               vcon->port.dev.info);
+
         /*
          * Ideally we'd get a better error code than just -1, but
          * that's what the chardev interface gives us right now.  If
          * we had a finer-grained message, like -EPIPE, we could close
-         * this connection.  Absent such error messages, the most we
-         * can do is to return 0 here.
-         *
-         * This will prevent stray -1 values to go to
-         * virtio-serial-bus.c and cause abort()s in
-         * do_flush_queued_data().
+         * this connection.
          */
         ret = 0;
-        qemu_chr_fe_add_watch(vcon->chr, G_IO_OUT, chr_write_unblocked, vcon);
+        if (!info->is_console) {
+            virtio_serial_throttle_port(port, true);
+            qemu_chr_fe_add_watch(vcon->chr, G_IO_OUT, chr_write_unblocked,
+                                  vcon);
+        }
     }
     return ret;
 }
