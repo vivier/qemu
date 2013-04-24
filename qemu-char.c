@@ -1941,15 +1941,8 @@ static void tcp_closed(void *opaque)
 static int tcp_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
 {
     TCPCharDriver *s = chr->opaque;
-
     if (s->connected) {
-        int ret;
-
-        ret = send_all(s->fd, buf, len);
-        if (ret == -1 && errno == EPIPE) {
-            tcp_closed(chr);
-        }
-        return ret;
+        return send_all(s->fd, buf, len);
     } else {
         /* XXX: indicate an error ? */
         return len;
