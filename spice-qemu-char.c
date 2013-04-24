@@ -5,14 +5,6 @@
 
 #include "osdep.h"
 
-#define dprintf(_scd, _level, _fmt, ...)                                \
-    do {                                                                \
-        static unsigned __dprintf_counter = 0;                          \
-        if (_scd->debug >= _level) {                                    \
-            fprintf(stderr, "scd: %3d: " _fmt, ++__dprintf_counter, ## __VA_ARGS__);\
-        }                                                               \
-    } while (0)
-
 #define VMC_MAX_HOST_WRITE    2048
 
 typedef struct SpiceCharDriver {
@@ -23,7 +15,6 @@ typedef struct SpiceCharDriver {
     uint8_t               *buffer;
     uint8_t               *datapos;
     ssize_t               bufsize, datalen;
-    uint32_t              debug;
 } SpiceCharDriver;
 
 static int vmc_write(SpiceCharDeviceInstance *sin, const uint8_t *buf, int len)
@@ -44,7 +35,6 @@ static int vmc_write(SpiceCharDeviceInstance *sin, const uint8_t *buf, int len)
         p += last_out;
     }
 
-    dprintf(scd, 3, "%s: %lu/%zd\n", __func__, out, len + out);
     return out;
 }
 
@@ -53,7 +43,6 @@ static int vmc_read(SpiceCharDeviceInstance *sin, uint8_t *buf, int len)
     SpiceCharDriver *scd = container_of(sin, SpiceCharDriver, sin);
     int bytes = MIN(len, scd->datalen);
 
-    dprintf(scd, 2, "%s: %p %d/%d/%zd\n", __func__, scd->datapos, len, bytes, scd->datalen);
     if (bytes > 0) {
         memcpy(buf, scd->datapos, bytes);
         scd->datapos += bytes;
@@ -110,7 +99,6 @@ static void vmc_register_interface(SpiceCharDriver *scd)
     if (scd->active) {
         return;
     }
-    dprintf(scd, 1, "%s\n", __func__);
     scd->sin.base.sif = &vmc_interface.base;
     qemu_spice_add_interface(&scd->sin.base);
     scd->active = true;
@@ -121,7 +109,6 @@ static void vmc_unregister_interface(SpiceCharDriver *scd)
     if (!scd->active) {
         return;
     }
-    dprintf(scd, 1, "%s\n", __func__);
     spice_server_remove_interface(&scd->sin.base);
     scd->active = false;
 }
@@ -131,7 +118,6 @@ static int spice_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
 {
     SpiceCharDriver *s = chr->opaque;
 
-    dprintf(s, 2, "%s: %d\n", __func__, len);
     vmc_register_interface(s);
     assert(s->datalen == 0);
     if (s->bufsize < len) {
@@ -149,7 +135,6 @@ static void spice_chr_close(struct CharDriverState *chr)
 {
     SpiceCharDriver *s = chr->opaque;
 
-    printf("%s\n", __func__);
     vmc_unregister_interface(s);
     qemu_free(s);
 }
@@ -188,7 +173,6 @@ CharDriverState *qemu_chr_open_spice(QemuOpts *opts)
     CharDriverState *chr;
     SpiceCharDriver *s;
     const char* name = qemu_opt_get(opts, "name");
-    uint32_t debug = qemu_opt_get_number(opts, "debug", 0);
     const char** psubtype = spice_server_char_device_recognized_subtypes();
     const char *subtype = NULL;
 
@@ -212,7 +196,6 @@ CharDriverState *qemu_chr_open_spice(QemuOpts *opts)
     chr = qemu_mallocz(sizeof(CharDriverState));
     s = qemu_mallocz(sizeof(SpiceCharDriver));
     s->chr = chr;
-    s->debug = debug;
     s->active = false;
     s->sin.subtype = subtype;
     chr->opaque = s;
