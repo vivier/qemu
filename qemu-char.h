@@ -1,7 +1,6 @@
 #ifndef QEMU_CHAR_H
 #define QEMU_CHAR_H
 
-#include <stdbool.h>
 #include "qemu-common.h"
 #include "qemu-queue.h"
 #include "qemu-option.h"
@@ -77,13 +76,6 @@ struct CharDriverState {
     QTAILQ_ENTRY(CharDriverState) next;
 };
 
-typedef struct QemuChrHandlers {
-    IOCanRWHandler *fd_can_read;
-    IOReadHandler *fd_read;
-    IOHandler *fd_write_unblocked;
-    IOEventHandler *fd_event;
-} QemuChrHandlers;
-
 QemuOpts *qemu_chr_parse_compat(const char *label, const char *filename);
 CharDriverState *qemu_chr_open_opts(QemuOpts *opts,
                                     void (*init)(struct CharDriverState *s));
@@ -95,7 +87,10 @@ void qemu_chr_close(CharDriverState *chr);
 void qemu_chr_printf(CharDriverState *s, const char *fmt, ...);
 int qemu_chr_write(CharDriverState *s, const uint8_t *buf, int len);
 void qemu_chr_send_event(CharDriverState *s, int event);
-void qemu_chr_add_handlers(CharDriverState *s, const QemuChrHandlers *handlers,
+void qemu_chr_add_handlers(CharDriverState *s,
+                           IOCanRWHandler *fd_can_read,
+                           IOReadHandler *fd_read,
+                           IOEventHandler *fd_event,
                            void *opaque);
 void qemu_chr_event(CharDriverState *s, int event);
 int qemu_chr_ioctl(CharDriverState *s, int cmd, void *arg);

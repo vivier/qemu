@@ -1025,12 +1025,6 @@ static void usbredir_chardev_event(void *opaque, int event)
  * init + destroy
  */
 
-static QemuChrHandlers usbredir_handlers = {
-    .fd_can_read = usbredir_chardev_can_read,
-    .fd_read = usbredir_chardev_read,
-    .fd_event = usbredir_chardev_event,
-};
-
 static void usbredir_vm_state_change(void *priv, int running, RunState state)
 {
     USBRedirDevice *dev = priv;
@@ -1075,7 +1069,8 @@ static int usbredir_initfn(USBDevice *udev)
 
     /* Let the backend know we are ready */
     qemu_chr_guest_open(dev->cs);
-    qemu_chr_add_handlers(dev->cs, &usbredir_handlers, dev);
+    qemu_chr_add_handlers(dev->cs, usbredir_chardev_can_read,
+                          usbredir_chardev_read, usbredir_chardev_event, dev);
 
     qemu_add_vm_change_state_handler(usbredir_vm_state_change, dev);
     return 0;

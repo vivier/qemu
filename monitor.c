@@ -5097,18 +5097,6 @@ static void monitor_event(void *opaque, int event)
  * End:
  */
 
-static const QemuChrHandlers monitor_handlers = {
-    .fd_can_read = monitor_can_read,
-    .fd_read = monitor_read,
-    .fd_event = monitor_event,
-};
-
-static const QemuChrHandlers monitor_control_handlers = {
-    .fd_can_read = monitor_can_read,
-    .fd_read = monitor_control_read,
-    .fd_event = monitor_control_event,
-};
-
 void monitor_init(CharDriverState *chr, int flags)
 {
     static int is_first_init = 1;
@@ -5131,12 +5119,13 @@ void monitor_init(CharDriverState *chr, int flags)
 
     if (monitor_ctrl_mode(mon)) {
         mon->mc = qemu_mallocz(sizeof(MonitorControl));
-
         /* Control mode requires special handlers */
-        qemu_chr_add_handlers(chr, &monitor_control_handlers, mon);
+        qemu_chr_add_handlers(chr, monitor_can_read, monitor_control_read,
+                              monitor_control_event, mon);
         qemu_chr_set_echo(chr, true);
     } else {
-        qemu_chr_add_handlers(chr, &monitor_handlers, mon);
+        qemu_chr_add_handlers(chr, monitor_can_read, monitor_read,
+                              monitor_event, mon);
     }
 
     QLIST_INSERT_HEAD(&mon_list, mon, entry);

@@ -2544,12 +2544,6 @@ static void gdb_sigterm_handler(int signal)
 }
 #endif
 
-static const QemuChrHandlers gdb_handlers = {
-    .fd_can_read = gdb_chr_can_receive,
-    .fd_read = gdb_chr_receive,
-    .fd_event = gdb_chr_event,
-};
-
 int gdbserver_start(const char *device)
 {
     GDBState *s;
@@ -2579,7 +2573,8 @@ int gdbserver_start(const char *device)
         if (!chr)
             return -1;
 
-        qemu_chr_add_handlers(chr, &gdb_handlers, NULL);
+        qemu_chr_add_handlers(chr, gdb_chr_can_receive, gdb_chr_receive,
+                              gdb_chr_event, NULL);
     }
 
     s = gdbserver_state;
