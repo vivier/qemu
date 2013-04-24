@@ -1068,7 +1068,7 @@ static int usbredir_initfn(USBDevice *udev)
     udev->auto_attach = 0;
 
     /* Let the backend know we are ready */
-    qemu_chr_guest_open(dev->cs);
+    qemu_chr_fe_open(dev->cs);
     qemu_chr_add_handlers(dev->cs, usbredir_chardev_can_read,
                           usbredir_chardev_read, usbredir_chardev_event, dev);
 

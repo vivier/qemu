@@ -2575,7 +2575,7 @@ CharDriverState *qemu_chr_open(const char *label, const char *filename, void (*i
     return chr;
 }
 
-void qemu_chr_guest_open(struct CharDriverState *chr)
+void qemu_chr_fe_open(struct CharDriverState *chr)
 {
     if (chr->chr_guest_open) {
         chr->chr_guest_open(chr);
