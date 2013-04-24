@@ -46,6 +46,15 @@ static ssize_t flush_buf(VirtIOSerialPort *port,
         /* If there's no backend, we can just say we consumed all data. */
         return len;
     }
+
+    if (!virtio_serial_flow_control_enabled(port)) {
+        ret = qemu_chr_fe_write_all(vcon->chr, buf, len);
+        if (ret < 0) {
+            ret = 0;
+        }
+        return ret;
+    }
+
     ret = qemu_chr_fe_write(vcon->chr, buf, len);
     trace_virtio_console_flush_buf(port->id, len, ret);
 
