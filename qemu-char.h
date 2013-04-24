@@ -85,7 +85,7 @@ void qemu_chr_guest_close(struct CharDriverState *chr);
 void qemu_chr_set_echo(struct CharDriverState *chr, bool echo);
 void qemu_chr_close(CharDriverState *chr);
 void qemu_chr_printf(CharDriverState *s, const char *fmt, ...);
-int qemu_chr_write(CharDriverState *s, const uint8_t *buf, int len);
+int qemu_chr_fe_write(CharDriverState *s, const uint8_t *buf, int len);
 void qemu_chr_send_event(CharDriverState *s, int event);
 void qemu_chr_add_handlers(CharDriverState *s,
                            IOCanRWHandler *fd_can_read,

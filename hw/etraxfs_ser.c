@@ -102,7 +102,7 @@ ser_writel (void *opaque, target_phys_addr_t addr, uint32_t value)
     switch (addr)
     {
         case RW_DOUT:
-            qemu_chr_write(s->chr, &ch, 1);
+            qemu_chr_fe_write(s->chr, &ch, 1);
             s->regs[R_INTR] |= 1;
             s->pending_tx = 1;
             s->regs[addr] = value;

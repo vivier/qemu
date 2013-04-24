@@ -30,7 +30,7 @@ static ssize_t flush_buf(VirtIOSerialPort *port, const uint8_t *buf, size_t len)
         /* If there's no backend, we can just say we consumed all data. */
         return len;
     }
-    ret = qemu_chr_write(vcon->chr, buf, len);
+    ret = qemu_chr_fe_write(vcon->chr, buf, len);
     if (ret < 0 && ret != -EAGAIN) {
         /*
          * Ideally we'd get a better error code than just -1, but

@@ -369,7 +369,7 @@ static int usb_serial_handle_data(USBDevice *dev, USBPacket *p)
     case USB_TOKEN_OUT:
         if (devep != 2)
             goto fail;
-        qemu_chr_write(s->cs, data, len);
+        qemu_chr_fe_write(s->cs, data, len);
         break;
 
     case USB_TOKEN_IN:
