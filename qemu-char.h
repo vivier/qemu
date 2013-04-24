@@ -61,9 +61,6 @@ struct CharDriverState {
     IOEventHandler *chr_event;
     IOCanRWHandler *chr_can_read;
     IOReadHandler *chr_read;
-    IOHandler *chr_write_unblocked;
-    void (*chr_enable_write_fd_handler)(struct CharDriverState *chr);
-    void (*chr_disable_write_fd_handler)(struct CharDriverState *chr);
     void *handler_opaque;
     void (*chr_send_event)(struct CharDriverState *chr, int event);
     void (*chr_close)(struct CharDriverState *chr);
@@ -75,8 +72,6 @@ struct CharDriverState {
     QEMUBH *bh;
     char *label;
     char *filename;
-    /* Are we in a blocked state? */
-    bool write_blocked;
     int avail_connections;
     int opened;
     QTAILQ_ENTRY(CharDriverState) next;
