@@ -97,7 +97,7 @@ int qemu_chr_fe_ioctl(CharDriverState *s, int cmd, void *arg);
 void qemu_chr_generic_open(CharDriverState *s);
 int qemu_chr_be_can_write(CharDriverState *s);
 void qemu_chr_be_write(CharDriverState *s, uint8_t *buf, int len);
-int qemu_chr_get_msgfd(CharDriverState *s);
+int qemu_chr_fe_get_msgfd(CharDriverState *s);
 void qemu_chr_accept_input(CharDriverState *s);
 void qemu_chr_info_print(Monitor *mon, const QObject *ret_data);
 void qemu_chr_info(Monitor *mon, QObject **ret_data);
