@@ -18,6 +18,7 @@
 typedef struct VirtConsole {
     VirtIOSerialPort port;
     CharDriverState *chr;
+    guint watch;
 } VirtConsole;
 
 /*
@@ -29,6 +30,7 @@ static gboolean chr_write_unblocked(GIOChannel *chan, GIOCondition cond,
 {
     VirtConsole *vcon = opaque;
 
+    vcon->watch = 0;
     virtio_serial_throttle_port(&vcon->port, false);
     return FALSE;
 }
@@ -61,8 +63,10 @@ static ssize_t flush_buf(VirtIOSerialPort *port,
             ret = 0;
         if (!info->is_console) {
             virtio_serial_throttle_port(port, true);
-            qemu_chr_fe_add_watch(vcon->chr, G_IO_OUT, chr_write_unblocked,
-                                  vcon);
+            if (!vcon->watch) {
+                vcon->watch = qemu_chr_fe_add_watch(vcon->chr, G_IO_OUT,
+                                                    chr_write_unblocked, vcon);
+            }
         }
     }
     return ret;
@@ -117,6 +121,10 @@ static void chr_event(void *opaque, int event)
         virtio_serial_open(&vcon->port);
         break;
     case CHR_EVENT_CLOSED:
+        if (vcon->watch) {
+            g_source_remove(vcon->watch);
+            vcon->watch = 0;
+        }
         virtio_serial_close(&vcon->port);
         break;
     }
@@ -140,11 +148,23 @@ static int virtconsole_initfn(VirtIOSerialPort *port)
     return 0;
 }
 
+static int virtconsole_exitfn(VirtIOSerialPort *port)
+{
+    VirtConsole *vcon = DO_UPCAST(VirtConsole, port, port);
+
+    if (vcon->watch) {
+        g_source_remove(vcon->watch);
+    }
+
+    return 0;
+}
+
 static VirtIOSerialPortInfo virtconsole_info = {
     .qdev.name     = "virtconsole",
     .qdev.size     = sizeof(VirtConsole),
     .is_console    = true,
     .init          = virtconsole_initfn,
+    .exit          = virtconsole_exitfn,
     .have_data     = flush_buf,
     .guest_open    = guest_open,
     .guest_close   = guest_close,
@@ -164,6 +184,7 @@ static VirtIOSerialPortInfo virtserialport_info = {
     .qdev.name     = "virtserialport",
     .qdev.size     = sizeof(VirtConsole),
     .init          = virtconsole_initfn,
+    .exit          = virtconsole_exitfn,
     .have_data     = flush_buf,
     .guest_open    = guest_open,
     .guest_close   = guest_close,
