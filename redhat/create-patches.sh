@@ -8,7 +8,8 @@ PKGRELEASE=$4
 # BUILD* are legacy variables: please use PKGRELEASE instead
 PREBUILD=$5
 BUILD=$6
-BUILDID=$7
+ZRELEASE=$7
+BUILDID=$8
 
 PATCHF="$SOURCES/Patch.include"
 patchf="$SOURCES/patch.include"
@@ -35,7 +36,6 @@ GITREV=$(echo $MARKER | cut -f 4 -d '-' -s | sed -e "s/git//")
 LASTCOMMIT=$(cat lastcommit);
 #STAMP=$(echo $MARKER | cut -f 1 -d '-' | sed -e "s/v//");
 STAMP=$(echo $MARKER | cut -f 3 -d '-')
-ZRELEASE=1
 if [ -n "$RCREV" ]; then
 	RELEASED_KERNEL="0";
 	SUBLEVEL=$(($SUBLEVEL - 1));
