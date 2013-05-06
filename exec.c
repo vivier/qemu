@@ -2583,18 +2583,16 @@ static void *file_ram_alloc(RAMBlock *block,
         return NULL;
     }
 
-    if (asprintf(&filename, "%s/kvm.XXXXXX", path) == -1) {
-	return NULL;
-    }
+    filename = g_strdup_printf("%s/kvm.XXXXXX", path);
 
     fd = mkstemp(filename);
     if (fd < 0) {
 	perror("mkstemp");
-	free(filename);
+	g_free(filename);
 	return NULL;
     }
     unlink(filename);
-    free(filename);
+    g_free(filename);
 
     memory = (memory+hpagesize-1) & ~(hpagesize-1);
 
