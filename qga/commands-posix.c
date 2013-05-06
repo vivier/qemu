@@ -103,7 +103,7 @@ static void guest_file_handle_add(FILE *fh)
 {
     GuestFileHandle *gfh;
 
-    gfh = qemu_mallocz(sizeof(GuestFileHandle));
+    gfh = g_malloc0(sizeof(GuestFileHandle));
     gfh->id = fileno(fh);
     gfh->fh = fh;
     QTAILQ_INSERT_TAIL(&guest_file_state.filehandles, gfh, next);
@@ -174,7 +174,7 @@ void qmp_guest_file_close(int64_t handle, Error **err)
     }
 
     QTAILQ_REMOVE(&guest_file_state.filehandles, gfh, next);
-    qemu_free(gfh);
+    g_free(gfh);
 }
 
 struct GuestFileRead *qmp_guest_file_read(int64_t handle, bool has_count,
@@ -199,21 +199,21 @@ struct GuestFileRead *qmp_guest_file_read(int64_t handle, bool has_count,
     }
 
     fh = gfh->fh;
-    buf = qemu_mallocz(count+1);
+    buf = g_malloc0(count+1);
     read_count = fread(buf, 1, count, fh);
     if (ferror(fh)) {
         slog("guest-file-read failed, handle: %ld", handle);
         error_set(err, QERR_QGA_COMMAND_FAILED, "fread() failed");
     } else {
         buf[read_count] = 0;
-        read_data = qemu_mallocz(sizeof(GuestFileRead));
+        read_data = g_malloc0(sizeof(GuestFileRead));
         read_data->count = read_count;
         read_data->eof = feof(fh);
         if (read_count) {
             read_data->buf_b64 = g_base64_encode(buf, read_count);
         }
     }
-    qemu_free(buf);
+    g_free(buf);
     clearerr(fh);
 
     return read_data;
@@ -240,7 +240,7 @@ GuestFileWrite *qmp_guest_file_write(int64_t handle, const char *buf_b64,
     if (!has_count) {
         count = buf_len;
     } else if (count < 0 || count > buf_len) {
-        qemu_free(buf);
+        g_free(buf);
         error_set(err, QERR_INVALID_PARAMETER, "count");
         return NULL;
     }
@@ -250,11 +250,11 @@ GuestFileWrite *qmp_guest_file_write(int64_t handle, const char *buf_b64,
         slog("guest-file-write failed, handle: %ld", handle);
         error_set(err, QERR_QGA_COMMAND_FAILED, "fwrite() error");
     } else {
-        write_data = qemu_mallocz(sizeof(GuestFileWrite));
+        write_data = g_malloc0(sizeof(GuestFileWrite));
         write_data->count = write_count;
         write_data->eof = feof(fh);
     }
-    qemu_free(buf);
+    g_free(buf);
     clearerr(fh);
 
     return write_data;
@@ -278,7 +278,7 @@ struct GuestFileSeek *qmp_guest_file_seek(int64_t handle, int64_t offset,
     if (ret == -1) {
         error_set(err, QERR_QGA_COMMAND_FAILED, strerror(errno));
     } else {
-        seek_data = qemu_mallocz(sizeof(GuestFileRead));
+        seek_data = g_malloc0(sizeof(GuestFileRead));
         seek_data->position = ftell(fh);
         seek_data->eof = feof(fh);
     }
@@ -741,8 +741,8 @@ GuestNetworkInterfaceList *qmp_guest_network_get_interfaces(Error **errp)
         info = guest_find_interface(head, ifa->ifa_name);
 
         if (!info) {
-            info = qemu_mallocz(sizeof(*info));
-            info->value = qemu_mallocz(sizeof(*info->value));
+            info = g_malloc0(sizeof(*info));
+            info->value = g_malloc0(sizeof(*info->value));
             info->value->name = g_strdup(ifa->ifa_name);
 
             if (!cur_item) {
@@ -795,8 +795,8 @@ GuestNetworkInterfaceList *qmp_guest_network_get_interfaces(Error **errp)
         if (ifa->ifa_addr &&
             ifa->ifa_addr->sa_family == AF_INET) {
             /* interface with IPv4 address */
-            address_item = qemu_mallocz(sizeof(*address_item));
-            address_item->value = qemu_mallocz(sizeof(*address_item->value));
+            address_item = g_malloc0(sizeof(*address_item));
+            address_item->value = g_malloc0(sizeof(*address_item->value));
             p = &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
             if (!inet_ntop(AF_INET, p, addr4, sizeof(addr4))) {
                 snprintf(err_msg, sizeof(err_msg),
@@ -817,8 +817,8 @@ GuestNetworkInterfaceList *qmp_guest_network_get_interfaces(Error **errp)
         } else if (ifa->ifa_addr &&
                    ifa->ifa_addr->sa_family == AF_INET6) {
             /* interface with IPv6 address */
-            address_item = qemu_mallocz(sizeof(*address_item));
-            address_item->value = qemu_mallocz(sizeof(*address_item->value));
+            address_item = g_malloc0(sizeof(*address_item));
+            address_item->value = g_malloc0(sizeof(*address_item->value));
             p = &((struct sockaddr_in6 *)ifa->ifa_addr)->sin6_addr;
             if (!inet_ntop(AF_INET6, p, addr6, sizeof(addr6))) {
                 snprintf(err_msg, sizeof(err_msg),
