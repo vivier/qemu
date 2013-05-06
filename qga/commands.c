@@ -47,7 +47,7 @@ void qmp_guest_ping(Error **err)
 
 struct GuestAgentInfo *qmp_guest_info(Error **err)
 {
-    GuestAgentInfo *info = qemu_mallocz(sizeof(GuestAgentInfo));
+    GuestAgentInfo *info = g_malloc0(sizeof(GuestAgentInfo));
     GuestAgentCommandInfo *cmd_info;
     GuestAgentCommandInfoList *cmd_info_list;
     char **cmd_list_head, **cmd_list;
