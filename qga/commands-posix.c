@@ -139,7 +139,8 @@ int64_t qmp_guest_file_open(const char *path, bool has_mode, const char *mode, E
     slog("guest-file-open called, filepath: %s, mode: %s", path, mode);
     fh = fopen(path, mode);
     if (!fh) {
-        error_set(err, QERR_OPEN_FILE_FAILED, path, strerror(errno));
+        error_setg_errno(err, errno, "failed to open file '%s' (mode: '%s')",
+                         path, mode);
         return -1;
     }
 
@@ -150,7 +151,8 @@ int64_t qmp_guest_file_open(const char *path, bool has_mode, const char *mode, E
     ret = fcntl(fd, F_GETFL);
     ret = fcntl(fd, F_SETFL, ret | O_NONBLOCK);
     if (ret == -1) {
-        error_set(err, QERR_QGA_COMMAND_FAILED, "fcntl() failed");
+        error_setg_errno(err, errno, "failed to make file '%s' non-blocking",
+                         path);
         fclose(fh);
         return -1;
     }
@@ -172,7 +174,7 @@ void qmp_guest_file_close(int64_t handle, Error **err)
 
     ret = fclose(gfh->fh);
     if (ret == EOF) {
-        error_set(err, QERR_QGA_COMMAND_FAILED, "fclose() failed");
+        error_setg_errno(err, errno, "failed to close handle");
         return;
     }
 
@@ -196,7 +198,8 @@ struct GuestFileRead *qmp_guest_file_read(int64_t handle, bool has_count,
     if (!has_count) {
         count = QGA_READ_COUNT_DEFAULT;
     } else if (count < 0) {
-        error_set(err, QERR_INVALID_PARAMETER, "count");
+        error_setg(err, "value '%" PRId64 "' is invalid for argument count",
+                   count);
         return NULL;
     }
 
@@ -204,8 +207,8 @@ struct GuestFileRead *qmp_guest_file_read(int64_t handle, bool has_count,
     buf = g_malloc0(count+1);
     read_count = fread(buf, 1, count, fh);
     if (ferror(fh)) {
+        error_setg_errno(err, errno, "failed to read file");
         slog("guest-file-read failed, handle: %ld", handle);
-        error_set(err, QERR_QGA_COMMAND_FAILED, "fread() failed");
     } else {
         buf[read_count] = 0;
         read_data = g_malloc0(sizeof(GuestFileRead));
@@ -241,15 +244,16 @@ GuestFileWrite *qmp_guest_file_write(int64_t handle, const char *buf_b64,
     if (!has_count) {
         count = buf_len;
     } else if (count < 0 || count > buf_len) {
+        error_setg(err, "value '%" PRId64 "' is invalid for argument count",
+                   count);
         g_free(buf);
-        error_set(err, QERR_INVALID_PARAMETER, "count");
         return NULL;
     }
 
     write_count = fwrite(buf, 1, count, fh);
     if (ferror(fh)) {
+        error_setg_errno(err, errno, "failed to write to file");
         slog("guest-file-write failed, handle: %ld", handle);
-        error_set(err, QERR_QGA_COMMAND_FAILED, "fwrite() error");
     } else {
         write_data = g_malloc0(sizeof(GuestFileWrite));
         write_data->count = write_count;
@@ -276,7 +280,7 @@ struct GuestFileSeek *qmp_guest_file_seek(int64_t handle, int64_t offset,
     fh = gfh->fh;
     ret = fseek(fh, offset, whence);
     if (ret == -1) {
-        error_set(err, QERR_QGA_COMMAND_FAILED, strerror(errno));
+        error_setg_errno(err, errno, "failed to seek file");
     } else {
         seek_data = g_malloc0(sizeof(GuestFileRead));
         seek_data->position = ftell(fh);
@@ -300,7 +304,7 @@ void qmp_guest_file_flush(int64_t handle, Error **err)
     fh = gfh->fh;
     ret = fflush(fh);
     if (ret == EOF) {
-        error_set(err, QERR_QGA_COMMAND_FAILED, strerror(errno));
+        error_setg_errno(err, errno, "failed to flush file");
     }
 }
 
