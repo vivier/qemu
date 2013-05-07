@@ -121,7 +121,7 @@ void qmp_guest_shutdown(bool has_mode, const char *mode, Error **err)
         return;
     }
 
-    /* succeeded */
+    /* succeded */
 }
 
 int64_t qmp_guest_get_time(Error **errp)
