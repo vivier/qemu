@@ -85,7 +85,6 @@ static const char *ga_freeze_whitelist[] = {
     "guest-ping",
     "guest-info",
     "guest-sync",
-    "guest-sync-delimited",
     "guest-fsfreeze-status",
     "guest-fsfreeze-thaw",
     NULL
