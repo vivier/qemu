@@ -430,6 +430,7 @@ int64_t qmp_guest_fsfreeze_freeze(Error **err)
     struct FsMount *mount;
     Error *local_err = NULL;
     int fd;
+    char err_msg[512];
 
     slog("guest-fsfreeze called");
 
@@ -446,7 +447,9 @@ int64_t qmp_guest_fsfreeze_freeze(Error **err)
     QTAILQ_FOREACH(mount, &mounts, next) {
         fd = qemu_open(mount->dirname, O_RDONLY);
         if (fd == -1) {
-            error_setg_errno(err, errno, "failed to open %s", mount->dirname);
+            sprintf(err_msg, "failed to open %s, %s", mount->dirname,
+                    strerror(errno));
+            error_set(err, QERR_QGA_COMMAND_FAILED, err_msg);
             goto error;
         }
 
@@ -462,8 +465,9 @@ int64_t qmp_guest_fsfreeze_freeze(Error **err)
         ret = ioctl(fd, FIFREEZE);
         if (ret == -1) {
             if (errno != EOPNOTSUPP) {
-                error_setg_errno(err, errno, "failed to freeze %s",
-                                 mount->dirname);
+                sprintf(err_msg, "failed to freeze %s, %s",
+                        mount->dirname, strerror(errno));
+                error_set(err, QERR_QGA_COMMAND_FAILED, err_msg);
                 close(fd);
                 goto error;
             }
