@@ -368,7 +368,7 @@ static void free_fs_mount_list(FsMountList *mounts)
 /*
  * Walk the mount table and build a list of local file systems
  */
-static void build_fs_mount_list(FsMountList *mounts, Error **err)
+static int build_fs_mount_list(FsMountList *mounts)
 {
     struct mntent *ment;
     FsMount *mount;
@@ -377,8 +377,8 @@ static void build_fs_mount_list(FsMountList *mounts, Error **err)
 
     fp = setmntent(mtab, "r");
     if (!fp) {
-        error_setg(err, "failed to open mtab file: '%s'", mtab);
-        return;
+        g_warning("fsfreeze: unable to read mtab");
+        return -1;
     }
 
     while ((ment = getmntent(fp))) {
@@ -402,6 +402,8 @@ static void build_fs_mount_list(FsMountList *mounts, Error **err)
     }
 
     endmntent(fp);
+
+    return 0;
 }
 #endif
 
@@ -428,17 +430,15 @@ int64_t qmp_guest_fsfreeze_freeze(Error **err)
     int ret = 0, i = 0;
     FsMountList mounts;
     struct FsMount *mount;
-    Error *local_err = NULL;
     int fd;
     char err_msg[512];
 
     slog("guest-fsfreeze called");
 
     QTAILQ_INIT(&mounts);
-    build_fs_mount_list(&mounts, &local_err);
-    if (error_is_set(&local_err)) {
-        error_propagate(err, local_err);
-        return -1;
+    ret = build_fs_mount_list(&mounts);
+    if (ret < 0) {
+        return ret;
     }
 
     /* cannot risk guest agent blocking itself on a write in this state */
@@ -495,12 +495,12 @@ int64_t qmp_guest_fsfreeze_thaw(Error **err)
     FsMountList mounts;
     FsMount *mount;
     int fd, i = 0, logged;
-    Error *local_err = NULL;
 
     QTAILQ_INIT(&mounts);
-    build_fs_mount_list(&mounts, &local_err);
-    if (error_is_set(&local_err)) {
-        error_propagate(err, local_err);
+    ret = build_fs_mount_list(&mounts);
+    if (ret) {
+        error_set(err, QERR_QGA_COMMAND_FAILED,
+                  "failed to enumerate filesystems");
         return 0;
     }
 
@@ -565,7 +565,6 @@ void qmp_guest_fstrim(bool has_minimum, int64_t minimum, Error **err)
     FsMountList mounts;
     struct FsMount *mount;
     int fd;
-    Error *local_err = NULL;
     char err_msg[512];
     struct fstrim_range r = {
         .start = 0,
@@ -576,9 +575,8 @@ void qmp_guest_fstrim(bool has_minimum, int64_t minimum, Error **err)
     slog("guest-fstrim called");
 
     QTAILQ_INIT(&mounts);
-    build_fs_mount_list(&mounts, &local_err);
-    if (error_is_set(&local_err)) {
-        error_propagate(err, local_err);
+    ret = build_fs_mount_list(&mounts);
+    if (ret < 0) {
         return;
     }
 
