@@ -604,7 +604,7 @@ static x86_def_t builtin_x86_defs[] = {
         .stepping = 1,
         .features = CPUID_SSE2 | CPUID_SSE | CPUID_FXSR | CPUID_MMX |
              CPUID_CLFLUSH | CPUID_PSE36 | CPUID_PAT | CPUID_CMOV | CPUID_MCA |
-             CPUID_PGE | CPUID_MTRR | CPUID_APIC | CPUID_CX8 |
+             CPUID_PGE | CPUID_MTRR | CPUID_SEP | CPUID_APIC | CPUID_CX8 |
              CPUID_MCE | CPUID_PAE | CPUID_MSR | CPUID_TSC | CPUID_PSE |
              CPUID_DE | CPUID_FP87,
         .ext_features = CPUID_EXT_AVX | CPUID_EXT_XSAVE | CPUID_EXT_AES |
