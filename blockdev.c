@@ -851,7 +851,6 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
     int ret = 0;
     BlockdevActionList *dev_entry = dev_list;
     BlkTransactionStates *states, *next;
-    Error *local_err = NULL;
 
     QSIMPLEQ_HEAD(snap_bdrv_states, BlkTransactionStates) snap_bdrv_states;
     QSIMPLEQ_INIT(&snap_bdrv_states);
@@ -975,28 +974,29 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
             assert(format && drv);
             bdrv_get_geometry(states->old_bs, &size);
             size *= 512;
-            bdrv_img_create(new_image_file, format,
-                            NULL, NULL, NULL, size, flags, &local_err);
+            ret = bdrv_img_create(new_image_file, format,
+                                  NULL, NULL, NULL, size, flags, NULL);
         } else {
             /* create new image w/backing file */
             switch (mode) {
             case NEW_IMAGE_MODE_EXISTING:
+                ret = 0;
                 break;
             case NEW_IMAGE_MODE_ABSOLUTE_PATHS:
-                bdrv_img_create(new_image_file, format,
-                                source->filename,
-                                source->drv->format_name,
-                                NULL, -1, flags, &local_err);
+                ret = bdrv_img_create(new_image_file, format,
+                                      source->filename,
+                                      source->drv->format_name,
+                                      NULL, -1, flags, NULL);
                 break;
             default:
-                error_setg(&local_err, "%s: invalid NewImageMode %u",
-                           __FUNCTION__, (unsigned)mode);
+                ret = -1;
                 break;
             }
         }
 
-        if (error_is_set(&local_err)) {
-            error_propagate(errp, local_err);
+        if (ret) {
+            error_set(errp, QERR_OPEN_FILE_FAILED, new_image_file,
+                      strerror(-ret));
             goto delete_and_fail;
         }
 
