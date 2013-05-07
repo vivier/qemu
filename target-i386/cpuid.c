@@ -99,6 +99,7 @@ int enforce_cpuid = 0;
 static bool kvm_pv_eoi_disabled;
 static bool pmu_passthrough_enabled;
 static bool tsc_deadline_disabled;
+static bool kvm_sep_disabled;
 
 static void host_cpuid(uint32_t function, uint32_t count, uint32_t *eax,
                        uint32_t *ebx, uint32_t *ecx, uint32_t *edx);
@@ -942,6 +943,11 @@ static int cpu_x86_find_by_name(x86_def_t *x86_cpu_def, const char *cpu_model)
         x86_cpu_def->ext_features &= ~CPUID_EXT_TSC_DEADLINE_TIMER;
     }
 
+    /* RHEL 6.4 and below machine types have SEP disabled */
+    if (kvm_sep_disabled) {
+	    x86_cpu_def->features &= ~CPUID_SEP;
+    }
+
     /* end of machine-type compatibility bits */
 
     add_flagname_to_bitmaps("hypervisor", &plus_features,
@@ -1509,6 +1515,8 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
 void set_pmu_passthrough(bool enable);
 void disable_kvm_pv_eoi(void);
 void disable_tsc_deadline(void);
+void disable_kvm_sep(void);
+
 void set_cpu_model_level(const char *name, int level);
 
 void set_pmu_passthrough(bool enable)
@@ -1524,6 +1532,11 @@ void disable_kvm_pv_eoi(void)
 void disable_tsc_deadline(void)
 {
     tsc_deadline_disabled = true;
+}
+
+void disable_kvm_sep(void)
+{
+	kvm_sep_disabled = true;
 }
 
 void set_cpu_model_level(const char *name, int level)

@@ -1734,8 +1734,14 @@ static void rhel_common_init(const char *type1_version,
             .value    = stringify(1),\
         }
 
+static void pc_rhel640_compat(void)
+{
+    disable_kvm_sep();
+}
+
 static void pc_rhel630_compat(void)
 {
+    pc_rhel640_compat();
     set_cpu_model_level("Conroe", 2);
     set_cpu_model_level("Penryn", 2);
     set_cpu_model_level("Nehalem", 2);
@@ -1780,6 +1786,7 @@ static void pc_init_rhel640(ram_addr_t ram_size,
                             const char *cpu_model)
 {
     rhel_common_init("RHEL 6.4.0 PC", 0);
+    pc_rhel640_compat();
     pc_init_pci(ram_size, boot_device, kernel_filename, kernel_cmdline,
                 initrd_filename, setdef_cpu_model(cpu_model, "cpu64-rhel6"));
 }
