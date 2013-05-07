@@ -181,23 +181,11 @@ static gboolean ga_channel_open(GAChannel *c, const gchar *path, GAChannelMethod
         break;
     }
     case GA_CHANNEL_UNIX_LISTEN: {
-        Error *local_err = NULL;
-        int fd = unix_listen(path, NULL, strlen(path), &local_err);
-        if (local_err != NULL) {
-            g_critical("%s", error_get_pretty(local_err));
-            error_free(local_err);
-            return false;
-        }
-
-        /* FIXME: keep the following "if" temporarily in RHEL-6, in order to
-         * avoid error reporting / logic regression due to out-of-order
-         * backports.
-         */
+        int fd = unix_listen(path, NULL, strlen(path), NULL);
         if (fd == -1) {
             g_critical("error opening path: %s", strerror(errno));
             return false;
         }
-
         ga_channel_listen_add(c, fd, true);
         break;
     }
