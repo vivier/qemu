@@ -13,6 +13,7 @@
 #include "qapi/qmp-core.h"
 #include "qemu-common.h"
 
+#define QGA_VERSION "1.0"
 #define QGA_READ_COUNT_DEFAULT 4096
 
 typedef struct GAState GAState;
