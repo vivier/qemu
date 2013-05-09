@@ -853,6 +853,7 @@ static void summary_cpuid_features(CPUX86State *env, x86_def_t *hd)
             {&hd->ext_features, 0x00000001, R_ECX, CPUID_EXT_X2APIC},
             {&hd->ext2_features, 0x80000001, R_EDX, 0},
             {&hd->ext3_features, 0x80000001, R_ECX, 0},
+            {&hd->cpuid_7_0_ebx_features, 0x7, R_EBX, 0},
             {NULL}}, *p;
 
     kvm_cpu_fill_host(hd);
@@ -887,6 +888,9 @@ static int kvm_check_features_against_host(CPUX86State *env, x86_def_t *guest_de
         {&guest_def->ext3_features, &host_def.ext3_features,
             ~0, kvm_nested ? 0 : CPUID_EXT3_SVM,
             ext3_feature_name, "8000_0001:ecx"},
+        {&guest_def->cpuid_7_0_ebx_features, &host_def.cpuid_7_0_ebx_features,
+            ~0, 0,
+            cpuid_7_0_ebx_feature_name, "EAX=7,ECX=0:ebx"},
         {NULL}}, *p;
 
     assert(kvm_enabled());
