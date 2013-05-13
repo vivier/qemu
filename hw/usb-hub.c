@@ -503,6 +503,11 @@ static int usb_hub_initfn(USBDevice *dev)
     USBHubPort *port;
     int i;
 
+    if (dev->port->hubcount == 5) {
+        error_report("usb hub chain too deep");
+        return -1;
+    }
+
     usb_desc_create_serial(dev);
     usb_desc_init(dev);
     for (i = 0; i < NUM_PORTS; i++) {
