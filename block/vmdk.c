@@ -1409,7 +1409,6 @@ static int vmdk_create(const char *filename, QEMUOptionParameter *options)
             bdrv_delete(bs);
             return -EINVAL;
         }
-        filesize = bdrv_getlength(bs);
         parent_cid = vmdk_read_cid(bs, 0);
         bdrv_delete(bs);
         relative_path(parent_filename, sizeof(parent_filename),
