@@ -1434,6 +1434,7 @@ static int vmdk_create(const char *filename, QEMUOptionParameter *options)
     int fd, idx = 0;
     char desc[BUF_SIZE];
     int64_t total_size = 0, filesize;
+    const char *adapter_type = NULL;
     const char *backing_file = NULL;
     const char *fmt = NULL;
     int flags = 0;
@@ -1445,6 +1446,7 @@ static int vmdk_create(const char *filename, QEMUOptionParameter *options)
     const char *desc_extent_line;
     char parent_desc_line[BUF_SIZE] = "";
     uint32_t parent_cid = 0xffffffff;
+    uint32_t number_heads = 16;
     const char desc_template[] =
         "# Disk DescriptorFile\n"
         "version=1\n"
@@ -1461,9 +1463,9 @@ static int vmdk_create(const char *filename, QEMUOptionParameter *options)
         "\n"
         "ddb.virtualHWVersion = \"%d\"\n"
         "ddb.geometry.cylinders = \"%" PRId64 "\"\n"
-        "ddb.geometry.heads = \"16\"\n"
+        "ddb.geometry.heads = \"%d\"\n"
         "ddb.geometry.sectors = \"63\"\n"
-        "ddb.adapterType = \"ide\"\n";
+        "ddb.adapterType = \"%s\"\n";
 
     if (filename_decompose(filename, path, prefix, postfix, PATH_MAX)) {
         return -EINVAL;
@@ -1472,6 +1474,8 @@ static int vmdk_create(const char *filename, QEMUOptionParameter *options)
     while (options && options->name) {
         if (!strcmp(options->name, BLOCK_OPT_SIZE)) {
             total_size = options->value.n;
+        } else if (!strcmp(options->name, BLOCK_OPT_ADAPTER_TYPE)) {
+            adapter_type = options->value.s;
         } else if (!strcmp(options->name, BLOCK_OPT_BACKING_FILE)) {
             backing_file = options->value.s;
         } else if (!strcmp(options->name, BLOCK_OPT_COMPAT6)) {
@@ -1480,6 +1484,20 @@ static int vmdk_create(const char *filename, QEMUOptionParameter *options)
             fmt = options->value.s;
         }
         options++;
+    }
+    if (!adapter_type) {
+        adapter_type = "ide";
+    } else if (strcmp(adapter_type, "ide") &&
+               strcmp(adapter_type, "buslogic") &&
+               strcmp(adapter_type, "lsilogic") &&
+               strcmp(adapter_type, "legacyESX")) {
+        fprintf(stderr, "VMDK: Unknown adapter type: '%s'.\n", adapter_type);
+        return -EINVAL;
+    }
+    if (strcmp(adapter_type, "ide") != 0) {
+        /* that's the number of heads with which vmware operates when
+           creating, exporting, etc. vmdk files with a non-ide adapter type */
+        number_heads = 255;
     }
     if (!fmt) {
         /* Default format to monolithicSparse */
@@ -1568,7 +1586,8 @@ static int vmdk_create(const char *filename, QEMUOptionParameter *options)
             parent_desc_line,
             ext_desc_lines,
             (flags & BLOCK_FLAG_COMPAT6 ? 6 : 4),
-            total_size / (int64_t)(63 * 16 * 512));
+            total_size / (int64_t)(63 * number_heads * 512), number_heads,
+                adapter_type);
     if (split || flat) {
         fd = open(
                 filename,
@@ -1648,6 +1667,12 @@ static QEMUOptionParameter vmdk_create_options[] = {
         .name = BLOCK_OPT_SIZE,
         .type = OPT_SIZE,
         .help = "Virtual disk size"
+    },
+    {
+        .name = BLOCK_OPT_ADAPTER_TYPE,
+        .type = OPT_STRING,
+        .help = "Virtual adapter type, can be one of "
+                "ide (default), lsilogic, buslogic or legacyESX"
     },
     {
         .name = BLOCK_OPT_BACKING_FILE,

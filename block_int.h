@@ -43,6 +43,7 @@
 #define BLOCK_OPT_TABLE_SIZE    "table_size"
 #define BLOCK_OPT_PREALLOC      "preallocation"
 #define BLOCK_OPT_SUBFMT        "subformat"
+#define BLOCK_OPT_ADAPTER_TYPE  "adapter_type"
 
 typedef struct BdrvTrackedRequest BdrvTrackedRequest;
 
