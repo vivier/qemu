@@ -552,7 +552,8 @@ static int vmdk_open_desc_file(BlockDriverState *bs, int flags)
     if (vmdk_parse_description(buf, "createType", ct, sizeof(ct))) {
         return -EINVAL;
     }
-    if (strcmp(ct, "monolithicFlat")) {
+    if (strcmp(ct, "monolithicFlat") &&
+        strcmp(ct, "twoGbMaxExtentFlat")) {
         fprintf(stderr,
                 "VMDK: Not supported image type \"%s\""".\n", ct);
         return -ENOTSUP;
@@ -675,6 +676,7 @@ static int get_cluster_offset(BlockDriverState *bs,
         return 0;
     }
 
+    offset -= (extent->end_sector - extent->sectors) * SECTOR_SIZE;
     l1_index = (offset >> 9) / extent->l1_entry_sectors;
     if (l1_index >= extent->l1_size) {
         return -1;
