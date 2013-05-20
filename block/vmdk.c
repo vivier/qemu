@@ -1316,6 +1316,29 @@ static coroutine_fn int vmdk_co_flush(BlockDriverState *bs)
     return ret;
 }
 
+static int64_t vmdk_get_allocated_file_size(BlockDriverState *bs)
+{
+    int i;
+    int64_t ret = 0;
+    int64_t r;
+    BDRVVmdkState *s = bs->opaque;
+
+    ret = bdrv_get_allocated_file_size(bs->file);
+    if (ret < 0) {
+        return ret;
+    }
+    for (i = 0; i < s->num_extents; i++) {
+        if (s->extents[i].file == bs->file) {
+            continue;
+        }
+        r = bdrv_get_allocated_file_size(s->extents[i].file);
+        if (r < 0) {
+            return r;
+        }
+        ret += r;
+    }
+    return ret;
+}
 
 static QEMUOptionParameter vmdk_create_options[] = {
     {
@@ -1354,6 +1377,7 @@ static BlockDriver bdrv_vmdk = {
     .bdrv_create    = vmdk_create,
     .bdrv_co_flush  = vmdk_co_flush,
     .bdrv_co_is_allocated   = vmdk_co_is_allocated,
+    .bdrv_get_allocated_file_size  = vmdk_get_allocated_file_size,
 
     .create_options = vmdk_create_options,
 };
