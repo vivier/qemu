@@ -27,6 +27,7 @@
 #include "block_int.h"
 #include "module.h"
 #include <zlib.h>
+#include "qerror.h"
 
 #define VMDK3_MAGIC (('C' << 24) | ('O' << 16) | ('W' << 8) | 'D')
 #define VMDK4_MAGIC (('K' << 24) | ('D' << 16) | ('M' << 8) | 'V')
@@ -296,6 +297,39 @@ static int vmdk_is_cid_valid(BlockDriverState *bs)
 #endif
     /* CID valid */
     return 1;
+}
+
+/* Queue extents, if any, for reopen() */
+static int vmdk_reopen_prepare(BDRVReopenState *state,
+                               BlockReopenQueue *queue, Error **errp)
+{
+    BDRVVmdkState *s;
+    int ret = -1;
+    int i;
+    VmdkExtent *e;
+
+    assert(state != NULL);
+    assert(state->bs != NULL);
+
+    if (queue == NULL) {
+        error_set(errp, QERR_INVALID_PARAMETER, "queue");
+        goto exit;
+    }
+
+    s = state->bs->opaque;
+
+    assert(s != NULL);
+
+    for (i = 0; i < s->num_extents; i++) {
+        e = &s->extents[i];
+        if (e->file != state->bs->file) {
+            bdrv_reopen_queue(queue, e->file, state->flags);
+        }
+    }
+    ret = 0;
+
+exit:
+    return ret;
 }
 
 static int vmdk_parent_open(BlockDriverState *bs)
@@ -1635,6 +1669,7 @@ static BlockDriver bdrv_vmdk = {
     .instance_size  = sizeof(BDRVVmdkState),
     .bdrv_probe     = vmdk_probe,
     .bdrv_open      = vmdk_open,
+    .bdrv_reopen_prepare = vmdk_reopen_prepare,
     .bdrv_read      = vmdk_co_read,
     .bdrv_write     = vmdk_co_write,
     .bdrv_close     = vmdk_close,
