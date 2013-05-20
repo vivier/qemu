@@ -791,11 +791,11 @@ dobuild --target-list="$buildarch"
 %define _udevdir %(pkg-config --variable=udevdir udev)/rules.d
 
 %if 0%{!?build_only_sub:1}
-    install -D -p -m 0755 %{SOURCE4} $RPM_BUILD_ROOT%{_libdir}/systemd/system/ksm.service
+    install -D -p -m 0644 %{SOURCE4} $RPM_BUILD_ROOT%{_libdir}/systemd/system/ksm.service
     install -D -p -m 0644 %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/ksm
     install -D -p -m 0755 ksmctl $RPM_BUILD_ROOT%{_libdir}/systemd/ksmctl
 
-    install -D -p -m 0755 %{SOURCE7} $RPM_BUILD_ROOT%{_libdir}/systemd/system/ksmtuned.service
+    install -D -p -m 0644 %{SOURCE7} $RPM_BUILD_ROOT%{_libdir}/systemd/system/ksmtuned.service
     install -D -p -m 0755 %{SOURCE8} $RPM_BUILD_ROOT%{_sbindir}/ksmtuned
     install -D -p -m 0644 %{SOURCE9} $RPM_BUILD_ROOT%{_sysconfdir}/ksmtuned.conf
 
