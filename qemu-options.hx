@@ -1835,6 +1835,18 @@ STEXI
 Do not start CPU at startup (you must type 'c' in the monitor).
 ETEXI
 
+DEF("realtime", HAS_ARG, QEMU_OPTION_realtime, \
+    "-realtime [mlock=on|off]\n" \
+    "                run qemu with realtime features\n" \
+    "                mlock=on|off controls mlock support (default: on)\n")
+STEXI
+@item -realtime mlock=on|off
+@findex -realtime
+Run qemu with realtime features.
+mlocking qemu and guest memory can be enabled via @option{mlock=on}
+(enabled by default).
+ETEXI
+
 DEF("gdb", HAS_ARG, QEMU_OPTION_gdb, \
     "-gdb dev        wait for gdb connection on 'dev'\n")
 STEXI

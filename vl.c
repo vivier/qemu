@@ -2482,6 +2482,20 @@ static void smp_parse(const char *optarg)
         max_cpus = smp_cpus;
 }
 
+static void configure_realtime(QemuOpts *opts)
+{
+    bool enable_mlock;
+
+    enable_mlock = qemu_opt_get_bool(opts, "mlock", true);
+
+    if (enable_mlock) {
+        if (os_mlock() < 0) {
+            fprintf(stderr, "qemu: locking memory failed\n");
+            exit(1);
+        }
+    }
+}
+
 /***********************************************************/
 /* USB devices */
 
@@ -6075,6 +6089,13 @@ int main(int argc, char **argv, char **envp)
                 fake_machine = 1;
                 break;
 #endif
+            case QEMU_OPTION_realtime:
+                opts = qemu_opts_parse(qemu_find_opts("realtime"), optarg, 0);
+                if (!opts) {
+                    exit(1);
+                }
+                configure_realtime(opts);
+                break;
             }
         }
     }

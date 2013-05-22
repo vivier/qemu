@@ -468,6 +468,18 @@ QemuOptsList qemu_boot_opts = {
     },
 };
 
+QemuOptsList qemu_realtime_opts = {
+    .name = "realtime",
+    .head = QTAILQ_HEAD_INITIALIZER(qemu_realtime_opts.head),
+    .desc = {
+        {
+            .name = "mlock",
+            .type = QEMU_OPT_BOOL,
+        },
+        { /* end of list */ }
+    },
+};
+
 static QemuOptsList *vm_config_groups[] = {
     &qemu_drive_opts,
     &qemu_simple_drive_opts,
@@ -483,6 +495,7 @@ static QemuOptsList *vm_config_groups[] = {
     &qemu_option_rom_opts,
     &qemu_machine_opts,
     &qemu_boot_opts,
+    &qemu_realtime_opts,
     NULL,
 };
 
