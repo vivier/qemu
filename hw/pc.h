@@ -87,6 +87,9 @@ void *vmmouse_init(void *m);
 #define vmmouse_init(m) do { } while (0)
 #endif
 
+/* pvpanic.c */
+int pvpanic_init(void);
+
 /* pckbd.c */
 
 void i8042_init(qemu_irq kbd_irq, qemu_irq mouse_irq, uint32_t io_base);

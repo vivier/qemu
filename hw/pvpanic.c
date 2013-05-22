@@ -21,6 +21,7 @@
 #include "qemu-log.h"
 
 #include "hw/fw_cfg.h"
+#include "hw/pc.h"
 
 /* The bit of supported pv event */
 #define PVPANIC_F_PANICKED      0
@@ -87,6 +88,12 @@ static int pvpanic_isa_init(ISADevice *dev)
         port_configured = true;
     }
 
+    return 0;
+}
+
+int pvpanic_init(void)
+{
+    isa_create_simple("pvpanic");
     return 0;
 }
 
