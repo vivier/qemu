@@ -2256,8 +2256,7 @@ int kvm_main_loop(void)
             qemu_irq_raise(qemu_system_powerdown);
         } else if (qemu_reset_requested()) {
             qemu_kvm_system_reset(VMRESET_REPORT);
-            if (runstate_check(RUN_STATE_INTERNAL_ERROR) ||
-                runstate_check(RUN_STATE_SHUTDOWN)) {
+            if (runstate_needs_reset()) {
                 runstate_set(RUN_STATE_PAUSED);
             }
         } else if (qemu_wakeup_requested()) {

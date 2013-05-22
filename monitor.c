@@ -1600,8 +1600,7 @@ static int do_cont(Monitor *mon, const QDict *qdict, QObject **ret_data)
     if (runstate_check(RUN_STATE_INMIGRATE)) {
         qerror_report(QERR_MIGRATION_EXPECTED);
         return -1;
-    } else if (runstate_check(RUN_STATE_INTERNAL_ERROR) ||
-               runstate_check(RUN_STATE_SHUTDOWN)) {
+    } else if (runstate_needs_reset()) {
         qerror_report(QERR_RESET_REQUIRED);
         return -1;
     }
