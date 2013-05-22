@@ -279,6 +279,7 @@ obj-i386-$(CONFIG_SPICE) += qxl.o qxl-logger.o qxl-render.o
 obj-i386-$(CONFIG_VMWARE_VGA) += vmware_vga.o
 obj-i386-$(CONFIG_VMMOUSE) += vmmouse.o
 obj-i386-$(CONFIG_VMPORT) += vmport.o
+obj-i386-$(CONFIG_PVPANIC) += pvpanic.o
 
 # shared objects
 obj-ppc-y = ppc.o ide/core.o ide/atapi.o ide/qdev.o ide/isa.o ide/pci.o ide/macio.o
