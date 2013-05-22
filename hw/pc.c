@@ -1247,7 +1247,7 @@ static void pc_init1(ram_addr_t ram_size,
                                  bios_size, bios_offset | IO_MEM_ROM);
 
     fw_cfg = bochs_bios_init();
-    rom_set_fw(fw_cfg);
+    fw_set_global(fw_cfg);
 
     if (linux_boot) {
         load_linux(fw_cfg, kernel_filename, initrd_filename, kernel_cmdline, below_4g_mem_size);
