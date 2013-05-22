@@ -20,6 +20,8 @@
 #include "sysemu.h"
 #include "qemu-log.h"
 
+#include "hw/fw_cfg.h"
+
 /* The bit of supported pv event */
 #define PVPANIC_F_PANICKED      0
 
@@ -73,9 +75,18 @@ static void pvpanic_ioport_write(void *opaque, uint32_t address, uint32_t data)
 static int pvpanic_isa_init(ISADevice *dev)
 {
     PVPanicState *s = DO_UPCAST(PVPanicState, isa_dev, dev);
+    static bool port_configured;
 
     register_ioport_read(s->ioport, 1, 1, &pvpanic_ioport_read, s);
     register_ioport_write(s->ioport, 1, 1, &pvpanic_ioport_write, s);
+
+    if (!port_configured && fw_get_global()) {
+        fw_cfg_add_file(fw_get_global(), "etc/pvpanic-port",
+                        g_memdup(&s->ioport, sizeof(s->ioport)),
+                        sizeof(s->ioport));
+        port_configured = true;
+    }
+
     return 0;
 }
 
