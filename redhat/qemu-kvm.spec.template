@@ -209,6 +209,7 @@ BuildRequires: pulseaudio-libs-devel
 BuildRequires: libiscsi-devel
 BuildRequires: ncurses-devel
 BuildRequires: libattr-devel
+BuildRequires: libusbx-devel
 %if 0%{?have_usbredir:1}
 BuildRequires: usbredir-devel >= 0.6
 %endif
@@ -700,6 +701,7 @@ dobuild() {
         --disable-xen \
         --disable-virtfs \
         --enable-kvm \
+        --enable-libusb \
 %if 0%{?have_spice:1}
         --enable-spice \
 %endif
