@@ -1,21 +1,20 @@
-commit adebfdb499647fbc26cbd79086dc3fdf89915bbe
-Author: Miroslav Rezanina <mrezanin@redhat.com>
-Date:   Wed Apr 3 08:38:49 2013 +0200
+From 38901ad366a489af31a2602c2962c80b5ed686a1 Mon Sep 17 00:00:00 2001
+From: Miroslav Rezanina <mrezanin@redhat.com>
+Date: Wed, 3 Apr 2013 08:38:49 +0200
+Subject: i8254: Fix migration from qemu-kvm < 1.1
 
-    i8254: Fix migration from qemu-kvm < 1.1
-    
-    qemu-kvm commit 81bdec908fb2be0ccaff1d4ee67956c509e440ad did this,
-    but the logic can't be carried unconditionally in qemu.git without
-    breaking migration from qemu < 1.1.
-    
-    Conditionalize it with --enable-migrate-from-qemu-kvm
-    
-    Signed-off-by: Cole Robinson <crobinso@redhat.com>
+qemu-kvm commit 81bdec908fb2be0ccaff1d4ee67956c509e440ad did this,
+but the logic can't be carried unconditionally in qemu.git without
+breaking migration from qemu < 1.1.
 
-diff --git a/hw/i8254_common.c b/hw/i8254_common.c
-index 8c2e45a..072fa09 100644
---- a/hw/i8254_common.c
-+++ b/hw/i8254_common.c
+Conditionalize it with --enable-migrate-from-qemu-kvm
+
+Signed-off-by: Cole Robinson <crobinso@redhat.com>
+
+diff --git a/hw/timer/i8254_common.c b/hw/timer/i8254_common.c
+index 5342df4..e74afe3 100644
+--- a/hw/timer/i8254_common.c
++++ b/hw/timer/i8254_common.c
 @@ -275,7 +275,15 @@ static const VMStateDescription vmstate_pit_common = {
      .pre_save = pit_dispatch_pre_save,
      .post_load = pit_dispatch_post_load,

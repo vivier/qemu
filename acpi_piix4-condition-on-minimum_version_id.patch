@@ -1,18 +1,17 @@
-commit 7c1a1da0a96f34ae2552c6bc807140489a3f12ea
-Author: Miroslav Rezanina <mrezanin@redhat.com>
-Date:   Wed Apr 3 08:36:16 2013 +0200
+From 781f5a688bfcc8294e6a1d0eb000aaa520bb0321 Mon Sep 17 00:00:00 2001
+From: Miroslav Rezanina <mrezanin@redhat.com>
+Date: Wed, 3 Apr 2013 08:36:16 +0200
+Subject: acpi_piix4: Condition on  minimum_version_id to handle qemu-kvm
 
-    acpi_piix4: Condition on  minimum_version_id to handle qemu-kvm migration
-    
-    Modify handling migration version to depend on "migrate from qemu-kvm" switch.
-    
-    Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
+Modify handling migration version to depend on "migrate from qemu-kvm" switch.
 
-diff --git a/hw/acpi_piix4.c b/hw/acpi_piix4.c
-index 46eac7b..5b97c50 100644
---- a/hw/acpi_piix4.c
-+++ b/hw/acpi_piix4.c
-@@ -257,16 +257,19 @@ static int acpi_load_old(QEMUFile *f, void *opaque, int version_id)
+Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
+
+diff --git a/hw/acpi/piix4.c b/hw/acpi/piix4.c
+index 3192f87..3a099ed 100644
+--- a/hw/acpi/piix4.c
++++ b/hw/acpi/piix4.c
+@@ -269,16 +269,19 @@ static int acpi_load_old(QEMUFile *f, void *opaque, int version_id)
      return ret;
  }
  

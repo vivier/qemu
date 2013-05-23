@@ -1,4 +1,4 @@
-From c2add716da7803c461f77c0a6c9b1dd0894cfa6d Mon Sep 17 00:00:00 2001
+From ca2d050f0de557b4955f019402428487176925b6 Mon Sep 17 00:00:00 2001
 From: Miroslav Rezanina <mrezanin@redhat.com>
 Date: Mon, 22 Apr 2013 14:38:38 +0200
 Subject: Disable unsupported usb devices
@@ -15,7 +15,7 @@ Patch deactivates device we do not support in RHEL7:
 - pci-ohci
 
 diff --git a/default-configs/pci.mak b/default-configs/pci.mak
-index ee2d18d..b0b6ca3 100644
+index d557eab..78f1579 100644
 --- a/default-configs/pci.mak
 +++ b/default-configs/pci.mak
 @@ -2,7 +2,6 @@ CONFIG_PCI=y

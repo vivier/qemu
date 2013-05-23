@@ -1,20 +1,19 @@
-commit c282e508d53c29c4ad96b38e816ce692967b92ee
-Author: Miroslav Rezanina <mrezanin@redhat.com>
-Date:   Mon Mar 4 09:03:35 2013 +0100
+From cbb08ac0dea392b26bc463685dd2881ea433436f Mon Sep 17 00:00:00 2001
+From: Miroslav Rezanina <mrezanin@redhat.com>
+Date: Mon, 4 Mar 2013 09:03:35 +0100
+Subject: Fix migration from qemu-kvm 1.2
 
-    Fix migration from qemu-kvm 1.2
-    
-    Message-Id: <633ff09ae5702676d0f33cba80db45ff5bdbde0f.1354903384.git.crobinso@redhat.com>
-    
-    As suggested by Marcelo
-    
-    Signed-off-by: Cole Robinson <crobinso@redhat.com>
+Message-Id: <633ff09ae5702676d0f33cba80db45ff5bdbde0f.1354903384.git.crobinso@redhat.com>
 
-diff --git a/hw/acpi_piix4.c b/hw/acpi_piix4.c
-index 65b2601..46eac7b 100644
---- a/hw/acpi_piix4.c
-+++ b/hw/acpi_piix4.c
-@@ -265,8 +265,8 @@ static int acpi_load_old(QEMUFile *f, void *opaque, int version_id)
+As suggested by Marcelo
+
+Signed-off-by: Cole Robinson <crobinso@redhat.com>
+
+diff --git a/hw/acpi/piix4.c b/hw/acpi/piix4.c
+index c4af1cc..3192f87 100644
+--- a/hw/acpi/piix4.c
++++ b/hw/acpi/piix4.c
+@@ -277,8 +277,8 @@ static int acpi_load_old(QEMUFile *f, void *opaque, int version_id)
   */
  static const VMStateDescription vmstate_acpi = {
      .name = "piix4_pm",

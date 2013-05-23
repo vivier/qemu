@@ -1,6 +1,6 @@
-From 06af3ca4f2727cbd7118611366b712b9ef57610e Mon Sep 17 00:00:00 2001
+From 79b7ddc06f610199104fbb77fded7ed250056624 Mon Sep 17 00:00:00 2001
 From: Miroslav Rezanina <mrezanin@redhat.com>
-Date: Tue, 19 Mar 2013 08:08:42 -0400
+Date: Wed, 22 May 2013 11:59:23 +0200
 Subject: Disable unsupported emulated network devices
 
 Bugzilla: 921974
@@ -9,77 +9,75 @@ Disable following network devices as they are not supported:
 - ne2k_isa
 - ne2k_pci
 - pcnet
+- vmxnet3
 
 Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
 
-Conflicts:
-	default-configs/pci.mak
-
 diff --git a/default-configs/i386-softmmu.mak b/default-configs/i386-softmmu.mak
-index eec14d2..52c0e6a 100644
+index b208e10..fb6caaf 100644
 --- a/default-configs/i386-softmmu.mak
 +++ b/default-configs/i386-softmmu.mak
-@@ -18,7 +18,6 @@ CONFIG_APM=y
- CONFIG_DMA=y
+@@ -20,7 +20,6 @@ CONFIG_APM=y
+ CONFIG_I8257=y
  CONFIG_IDE_ISA=y
  CONFIG_IDE_PIIX=y
 -CONFIG_NE2000_ISA=y
  CONFIG_PIIX_PCI=y
- CONFIG_SOUND=y
  CONFIG_HPET=y
+ CONFIG_I8259=y
 diff --git a/default-configs/mips-softmmu.mak b/default-configs/mips-softmmu.mak
-index 3abef29..b72dfee 100644
+index 4fed1ca..3c5fb43 100644
 --- a/default-configs/mips-softmmu.mak
 +++ b/default-configs/mips-softmmu.mak
-@@ -21,7 +21,6 @@ CONFIG_DMA=y
+@@ -22,7 +22,6 @@ CONFIG_I8257=y
  CONFIG_PIIX4=y
  CONFIG_IDE_ISA=y
  CONFIG_IDE_PIIX=y
 -CONFIG_NE2000_ISA=y
- CONFIG_SOUND=y
  CONFIG_RC4030=y
  CONFIG_DP8393X=y
+ CONFIG_DS1225Y=y
 diff --git a/default-configs/mips64-softmmu.mak b/default-configs/mips64-softmmu.mak
-index 9e67da4..5cbed08 100644
+index 5e4e758..c05d44a 100644
 --- a/default-configs/mips64-softmmu.mak
 +++ b/default-configs/mips64-softmmu.mak
-@@ -21,7 +21,6 @@ CONFIG_DMA=y
+@@ -22,7 +22,6 @@ CONFIG_I8257=y
  CONFIG_PIIX4=y
  CONFIG_IDE_ISA=y
  CONFIG_IDE_PIIX=y
 -CONFIG_NE2000_ISA=y
- CONFIG_SOUND=y
  CONFIG_RC4030=y
  CONFIG_DP8393X=y
+ CONFIG_DS1225Y=y
 diff --git a/default-configs/mips64el-softmmu.mak b/default-configs/mips64el-softmmu.mak
-index 123cfea..2bdad44 100644
+index cc54619..40aaea5 100644
 --- a/default-configs/mips64el-softmmu.mak
 +++ b/default-configs/mips64el-softmmu.mak
-@@ -22,7 +22,6 @@ CONFIG_PIIX4=y
+@@ -23,7 +23,6 @@ CONFIG_PIIX4=y
  CONFIG_IDE_ISA=y
  CONFIG_IDE_PIIX=y
  CONFIG_IDE_VIA=y
 -CONFIG_NE2000_ISA=y
- CONFIG_SOUND=y
  CONFIG_RC4030=y
  CONFIG_DP8393X=y
+ CONFIG_DS1225Y=y
 diff --git a/default-configs/mipsel-softmmu.mak b/default-configs/mipsel-softmmu.mak
-index a0c609e..7dca366 100644
+index 1e59e68..ca44d0e 100644
 --- a/default-configs/mipsel-softmmu.mak
 +++ b/default-configs/mipsel-softmmu.mak
-@@ -21,7 +21,6 @@ CONFIG_DMA=y
+@@ -22,7 +22,6 @@ CONFIG_I8257=y
  CONFIG_PIIX4=y
  CONFIG_IDE_ISA=y
  CONFIG_IDE_PIIX=y
 -CONFIG_NE2000_ISA=y
- CONFIG_SOUND=y
  CONFIG_RC4030=y
  CONFIG_DP8393X=y
+ CONFIG_DS1225Y=y
 diff --git a/default-configs/pci.mak b/default-configs/pci.mak
-index 2772224..389ff16 100644
+index a5dee5d..c0fb0ae 100644
 --- a/default-configs/pci.mak
 +++ b/default-configs/pci.mak
-@@ -4,10 +4,7 @@ CONFIG_VIRTIO=y
+@@ -4,15 +4,11 @@ CONFIG_VIRTIO=y
  CONFIG_USB_UHCI=y
  CONFIG_USB_EHCI=y
  CONFIG_USB_XHCI=y
@@ -87,54 +85,71 @@ index 2772224..389ff16 100644
  CONFIG_EEPRO100_PCI=y
 -CONFIG_PCNET_PCI=y
 -CONFIG_PCNET_COMMON=y
+ CONFIG_AC97=y
+ CONFIG_HDA=y
  CONFIG_RTL8139_PCI=y
  CONFIG_E1000_PCI=y
+-CONFIG_VMXNET3_PCI=y
  CONFIG_IDE_CORE=y
+ CONFIG_IDE_QDEV=y
+ CONFIG_IDE_PCI=y
 diff --git a/default-configs/ppc-softmmu.mak b/default-configs/ppc-softmmu.mak
-index f9f8a81..12ec96d 100644
+index cc3587f..5f70181 100644
 --- a/default-configs/ppc-softmmu.mak
 +++ b/default-configs/ppc-softmmu.mak
-@@ -33,7 +33,6 @@ CONFIG_PPCE500_PCI=y
+@@ -34,7 +34,6 @@ CONFIG_PPCE500_PCI=y
  CONFIG_IDE_ISA=y
  CONFIG_IDE_CMD646=y
  CONFIG_IDE_MACIO=y
 -CONFIG_NE2000_ISA=y
- CONFIG_SOUND=y
  CONFIG_PFLASH_CFI01=y
  CONFIG_PFLASH_CFI02=y
+ CONFIG_PTIMER=y
 diff --git a/default-configs/ppc64-softmmu.mak b/default-configs/ppc64-softmmu.mak
-index dc44294..34b4bb3 100644
+index 884ea8a..0e8ff62 100644
 --- a/default-configs/ppc64-softmmu.mak
 +++ b/default-configs/ppc64-softmmu.mak
-@@ -33,7 +33,6 @@ CONFIG_PPCE500_PCI=y
+@@ -34,7 +34,6 @@ CONFIG_PPCE500_PCI=y
  CONFIG_IDE_ISA=y
  CONFIG_IDE_CMD646=y
  CONFIG_IDE_MACIO=y
 -CONFIG_NE2000_ISA=y
- CONFIG_SOUND=y
  CONFIG_PFLASH_CFI01=y
  CONFIG_PFLASH_CFI02=y
+ CONFIG_PTIMER=y
 diff --git a/default-configs/ppcemb-softmmu.mak b/default-configs/ppcemb-softmmu.mak
-index 1c6bcf9..78cb1a7 100644
+index be93e03..a8ab6e3 100644
 --- a/default-configs/ppcemb-softmmu.mak
 +++ b/default-configs/ppcemb-softmmu.mak
-@@ -28,7 +28,6 @@ CONFIG_PPCE500_PCI=y
+@@ -29,7 +29,6 @@ CONFIG_PPCE500_PCI=y
  CONFIG_IDE_ISA=y
  CONFIG_IDE_CMD646=y
  CONFIG_IDE_MACIO=y
 -CONFIG_NE2000_ISA=y
- CONFIG_SOUND=y
  CONFIG_PFLASH_CFI01=y
  CONFIG_PFLASH_CFI02=y
+ CONFIG_PTIMER=y
+diff --git a/default-configs/sparc-softmmu.mak b/default-configs/sparc-softmmu.mak
+index 8fc93dd..ddba71d 100644
+--- a/default-configs/sparc-softmmu.mak
++++ b/default-configs/sparc-softmmu.mak
+@@ -7,7 +7,6 @@ CONFIG_M48T59=y
+ CONFIG_PTIMER=y
+ CONFIG_FDC=y
+ CONFIG_EMPTY_SLOT=y
+-CONFIG_PCNET_COMMON=y
+ CONFIG_LANCE=y
+ CONFIG_TCX=y
+ CONFIG_SLAVIO=y
 diff --git a/default-configs/x86_64-softmmu.mak b/default-configs/x86_64-softmmu.mak
-index fea6c62..7c3b203 100644
+index bd3a533..69cdda0 100644
 --- a/default-configs/x86_64-softmmu.mak
 +++ b/default-configs/x86_64-softmmu.mak
-@@ -18,7 +18,6 @@ CONFIG_APM=y
- CONFIG_DMA=y
+@@ -20,7 +20,6 @@ CONFIG_APM=y
+ CONFIG_I8257=y
  CONFIG_IDE_ISA=y
  CONFIG_IDE_PIIX=y
 -CONFIG_NE2000_ISA=y
  CONFIG_PIIX_PCI=y
- CONFIG_SOUND=y
  CONFIG_HPET=y
+ CONFIG_I8259=y

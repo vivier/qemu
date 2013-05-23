@@ -134,8 +134,8 @@
 
 Summary: QEMU is a FAST! processor emulator
 Name: qemu-kvm
-Version: 1.4.0
-Release: 4%{?dist}
+Version: 1.5.0
+Release: 1%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 3
 License: GPLv2+ and LGPLv2+ and BSD
@@ -183,19 +183,19 @@ Patch1: 0000-libcacard-fix-missing-symbols-in-libcacard.so.patch
 Patch3: 0002-Fix-migration-from-qemu-kvm-1.2.patch
 
 # Flow control series
-Patch4: 0100-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
-Patch5: 0101-char-Add-a-QemuChrHandlers-struct-to-initialise-char.patch
-Patch6: 0102-iohandlers-Add-enable-disable_write_fd_handler-funct.patch
-Patch7: 0103-char-Add-framework-for-a-write-unblocked-callback.patch
-Patch8: 0104-char-Update-send_all-to-handle-nonblocking-chardev-w.patch
-Patch9: 0105-char-Equip-the-unix-tcp-backend-to-handle-nonblockin.patch
-Patch10: 0106-char-Throttle-when-host-connection-is-down.patch
-Patch11: 0107-virtio-console-Enable-port-throttling-when-chardev-i.patch
-Patch12: 0108-spice-qemu-char.c-add-throttling.patch
-Patch13: 0109-spice-qemu-char.c-remove-intermediate-buffer.patch
-Patch14: 0110-usb-redir-Add-flow-control-support.patch
-Patch15: 0111-char-Disable-write-callback-if-throttled-chardev-is-.patch
-Patch16: 0112-hw-virtio-serial-bus-replay-guest-open-on-destinatio.patch
+#Patch4: 0100-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
+#Patch5: 0101-char-Add-a-QemuChrHandlers-struct-to-initialise-char.patch
+#Patch6: 0102-iohandlers-Add-enable-disable_write_fd_handler-funct.patch
+#Patch7: 0103-char-Add-framework-for-a-write-unblocked-callback.patch
+#Patch8: 0104-char-Update-send_all-to-handle-nonblocking-chardev-w.patch
+#Patch9: 0105-char-Equip-the-unix-tcp-backend-to-handle-nonblockin.patch
+#Patch10: 0106-char-Throttle-when-host-connection-is-down.patch
+#Patch11: 0107-virtio-console-Enable-port-throttling-when-chardev-i.patch
+#Patch12: 0108-spice-qemu-char.c-add-throttling.patch
+#Patch13: 0109-spice-qemu-char.c-remove-intermediate-buffer.patch
+#Patch14: 0110-usb-redir-Add-flow-control-support.patch
+#Patch15: 0111-char-Disable-write-callback-if-throttled-chardev-is-.patch
+#Patch16: 0112-hw-virtio-serial-bus-replay-guest-open-on-destinatio.patch
 
 # Migration compatibility
 Patch17: configure-add-enable-migration-from-qemu-kvm.patch
@@ -203,23 +203,24 @@ Patch18: acpi_piix4-condition-on-minimum_version_id.patch
 Patch19: i8254-fix-migration-from-qemu-kvm-1.1.patch
 Patch20: pc_piix-add-compat-handling-for-qemu-kvm-vga-mem-size.patch
 Patch21: qxl-add-rom_size-compat-property.patch
-Patch22: docs-fix-generating-qemu-doc.html-with-texinfo5.patch
-Patch23: rtc-test-Fix-test-failures-with-recent-glib.patch
-Patch24: iscsi-look-for-pkg-config-file-too.patch
-Patch25: tcg-fix-occcasional-tcg-broken-problem.patch
-Patch26: qxl-better-vga-init-in-enter_vga_mode.patch
+#Patch22: docs-fix-generating-qemu-doc.html-with-texinfo5.patch
+#Patch23: rtc-test-Fix-test-failures-with-recent-glib.patch
+#Patch24: iscsi-look-for-pkg-config-file-too.patch
+#Patch25: tcg-fix-occcasional-tcg-broken-problem.patch
+#Patch26: qxl-better-vga-init-in-enter_vga_mode.patch
 
 # Enable/disable supported features
-Patch27: make-usb-devices-configurable.patch
-Patch28: fix-scripts-make_device_config-sh.patch
+#Patch27: make-usb-devices-configurable.patch
+#Patch28: fix-scripts-make_device_config-sh.patch
 Patch29: disable-unsupported-usb-devices.patch
 Patch30: disable-unsupported-emulated-scsi-devices.patch
 Patch31: disable-various-unsupported-devices.patch
-Patch32: disable-unsupported-emulated-network-devices.patch
-Patch33: use-kvm-by-default.patch
-Patch34: disable-hpet-device.patch
-Patch35: rename-man-page-to-qemu-kvm.patch
-Patch36: change-path-from-qemu-to-qemu-kvm.patch
+Patch32: disable-unsupported-audio-devices.patch
+Patch33: disable-unsupported-emulated-network-devices.patch
+Patch34: use-kvm-by-default.patch
+Patch35: disable-hpet-device.patch
+Patch36: rename-man-page-to-qemu-kvm.patch
+Patch37: change-path-from-qemu-to-qemu-kvm.patch
 
 BuildRequires: zlib-devel
 BuildRequires: SDL-devel
@@ -638,31 +639,31 @@ CAC emulation development files.
 %patch1 -p1
 # %patch2 -p1
 %patch3 -p1
-%patch4 -p1
-%patch5 -p1
-%patch6 -p1
-%patch7 -p1
-%patch8 -p1
-%patch9 -p1
-%patch10 -p1
-%patch11 -p1
-%patch12 -p1
-%patch13 -p1
-%patch14 -p1
-%patch15 -p1
-%patch16 -p1
+# %patch4 -p1
+# %patch5 -p1
+# %patch6 -p1
+# %patch7 -p1
+# %patch8 -p1
+# %patch9 -p1
+# %patch10 -p1
+# %patch11 -p1
+# %patch12 -p1
+# %patch13 -p1
+# %patch14 -p1
+# %patch15 -p1
+# %patch16 -p1
 %patch17 -p1
 %patch18 -p1
 %patch19 -p1
 %patch20 -p1
 %patch21 -p1
-%patch22 -p1
-%patch23 -p1
-%patch24 -p1
-%patch25 -p1
-%patch26 -p1
-%patch27 -p1
-%patch28 -p1
+# %patch22 -p1
+# %patch23 -p1
+# %patch24 -p1
+# %patch25 -p1
+# %patch26 -p1
+# %patch27 -p1
+# %patch28 -p1
 %patch29 -p1
 %patch30 -p1
 %patch31 -p1
@@ -671,6 +672,7 @@ CAC emulation development files.
 %patch34 -p1
 %patch35 -p1
 %patch36 -p1
+%patch37 -p1
 
 %build
 %if %{with kvmonly}
@@ -711,7 +713,6 @@ dobuild() {
         --interp-prefix=%{_prefix}/qemu-%%M \
         --audio-drv-list=pa,alsa \
         --with-confsuffix=/%{name} \
-        --audio-card-list=ac97,hda \
         --localstatedir=%{_localstatedir} \
         --libexecdir=%{_libexecdir} \
         --disable-strip \
@@ -842,7 +843,7 @@ dobuild --target-list="$buildarch"
     %endif
 
     mkdir -p $RPM_BUILD_ROOT%{qemudocdir}
-    install -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} Changelog README TODO COPYING COPYING.LIB LICENSE
+    install -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} Changelog README COPYING COPYING.LIB LICENSE
     mv ${RPM_BUILD_ROOT}%{_docdir}/qemu/qemu-doc.html $RPM_BUILD_ROOT%{qemudocdir}
     mv ${RPM_BUILD_ROOT}%{_docdir}/qemu/qemu-tech.html $RPM_BUILD_ROOT%{qemudocdir}
     mv ${RPM_BUILD_ROOT}%{_docdir}/qemu/qmp-commands.txt $RPM_BUILD_ROOT%{qemudocdir}
@@ -1072,7 +1073,6 @@ make check
     %dir %{qemudocdir}
     %doc %{qemudocdir}/Changelog
     %doc %{qemudocdir}/README
-    %doc %{qemudocdir}/TODO
     %doc %{qemudocdir}/qemu-doc.html
     %doc %{qemudocdir}/qemu-tech.html
     %doc %{qemudocdir}/qmp-commands.txt
@@ -1183,6 +1183,13 @@ make check
     %{_datadir}/%{name}/pxe-rtl8139.rom
     %{_datadir}/%{name}/pxe-ne2k_pci.rom
     %{_datadir}/%{name}/qemu-icon.bmp
+    %{_datadir}/%{name}/efi-e1000.rom
+    %{_datadir}/%{name}/efi-eepro100.rom
+    %{_datadir}/%{name}/efi-ne2k_pci.rom
+    %{_datadir}/%{name}/efi-pcnet.rom
+    %{_datadir}/%{name}/efi-rtl8139.rom
+    %{_datadir}/%{name}/efi-virtio.rom
+    %{_datadir}/%{name}/s390-ccw.img
     %config(noreplace) %{_sysconfdir}/%{name}/target-x86_64.conf
     %if %{without separate_kvm}
         %ifarch %{ix86} x86_64
@@ -1356,6 +1363,9 @@ make check
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Thu May 23 2013 Miroslav Rezanina <mrezanin@redhat.com> - 3:1.5.0-1
+- Rebase to 1.5.0
+
 * Tue Apr 23 2013 Miroslav Rezanina <mrezanin@redhat.com> - 3:1.4.0-4
   - Enable build of libcacard subpackage for non-x86_64 archs (bz #873174)
   - Enable build of qemu-img subpackage for non-x86_64 archs (bz #873174)

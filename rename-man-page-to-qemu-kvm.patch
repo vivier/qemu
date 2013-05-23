@@ -1,4 +1,4 @@
-From f0f193202be4811d03eb1171ab6a7fbcca2f27e8 Mon Sep 17 00:00:00 2001
+From 97decea4dd4ad5017ba64b5921030032108fa574 Mon Sep 17 00:00:00 2001
 From: Miroslav Rezanina <mrezanin@redhat.com>
 Date: Thu, 11 Apr 2013 10:28:14 +0200
 Subject: Rename man page qemu(1) to qemu-kvm(1).
@@ -10,10 +10,10 @@ We rename qemu binary to qemu-kvm so we need to change man page name accordingly
 Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
 
 diff --git a/Makefile b/Makefile
-index 0d9099a..d20fdb1 100644
+index 7dc0204..621e0df 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -282,7 +282,8 @@ install-doc: $(DOCS)
+@@ -306,7 +306,8 @@ install-doc: $(DOCS)
  	$(INSTALL_DATA) QMP/qmp-commands.txt "$(DESTDIR)$(qemu_docdir)"
  ifdef CONFIG_POSIX
  	$(INSTALL_DIR) "$(DESTDIR)$(mandir)/man1"
@@ -24,4 +24,4 @@ index 0d9099a..d20fdb1 100644
  	$(INSTALL_DATA) qemu-nbd.8 "$(DESTDIR)$(mandir)/man8"
  endif
 diff --git a/redhat/qemu-kvm.spec.template b/redhat/qemu-kvm.spec.template
-index 29126c0..c1a39f4 100644
+index 26975cd..84088eb 100644
