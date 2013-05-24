@@ -788,7 +788,7 @@ dobuild --target-list="$buildarch"
 %endif
 
 %install
-%define _udevdir %{_libdir}/udev/rules.d
+%define _udevdir %(pkg-config --variable=udevdir udev)/rules.d
 
 %if 0%{!?build_only_sub:1}
     install -D -p -m 0755 %{SOURCE4} $RPM_BUILD_ROOT%{_libdir}/systemd/system/ksm.service
