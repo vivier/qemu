@@ -736,7 +736,7 @@ dobuild() {
         --enable-uuid \
         --enable-guest-agent \
         --disable-glusterfs \
-        --block-drv-whitelist=qcow2,raw,file,host_device,host_cdrom,vmdk \
+        --block-drv-whitelist=qcow2,raw,file,host_device,host_cdrom,vmdk,nbd \
         "$@"
 
     echo "config-host.mak contents:"
