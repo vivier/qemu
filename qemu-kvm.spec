@@ -64,6 +64,7 @@
 %endif
 
 %global need_qemu_kvm %{with kvmonly}
+%global need_kvm_modfile 0
 
 %if 0%{?rhel}
     %ifnarch x86_64
@@ -93,11 +94,13 @@
     %global system_ppc    kvm
     %global kvm_package   system-ppc
     %global kvm_target    ppc64
+    %global need_kvm_modfile 1
 %endif
 %ifarch s390x
     %global system_s390x  kvm
     %global kvm_package   system-s390x
     %global kvm_target    s390x
+    %global need_kvm_modfile 1
 %endif
 
 %if %{with kvmonly}
@@ -135,7 +138,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu-kvm
 Version: 1.5.0
-Release: 1%{?dist}
+Release: 2%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 3
 License: GPLv2+ and LGPLv2+ and BSD
@@ -236,6 +239,7 @@ BuildRequires: pulseaudio-libs-devel
 BuildRequires: libiscsi-devel
 BuildRequires: ncurses-devel
 BuildRequires: libattr-devel
+BuildRequires: libusbx-devel
 %if 0%{?have_usbredir:1}
 BuildRequires: usbredir-devel >= 0.6
 %endif
@@ -720,10 +724,11 @@ dobuild() {
         --extra-cflags="%{optflags} -fPIE -DPIE" \
         --enable-mixemu \
         --enable-trace-backend=dtrace \
-        --disable-werror \
+        --enable-werror \
         --disable-xen \
         --disable-virtfs \
         --enable-kvm \
+        --enable-libusb \
         --enable-migration-from-qemu-kvm \
 %if 0%{?have_spice:1}
         --enable-spice \
@@ -759,7 +764,7 @@ dobuild() {
         --enable-uuid \
         --enable-guest-agent \
         --disable-glusterfs \
-        --block-drv-whitelist=qcow2,raw,file,host_device,host_cdrom,vmdk \
+        --block-drv-whitelist=qcow2,raw,file,host_device,host_cdrom,vmdk,nbd \
         "$@"
 
     echo "config-host.mak contents:"
@@ -775,13 +780,13 @@ dobuild() {
                --target-list= --cpu=%{_arch}
 
    make libcacard.la %{?_smp_mflags} $buildldflags
-   make vscclient
-   make qemu-img
-   make qemu-io
-   make qemu-nbd
-   make qemu-img.1
-   make qemu-nbd.8
-   make qemu-ga
+   make vscclient %{?_smp_mflags} $buildldflags
+   make qemu-img %{?_smp_mflags} $buildldflags
+   make qemu-io %{?_smp_mflags} $buildldflags
+   make qemu-nbd %{?_smp_mflags} $buildldflags
+   make qemu-img.1 %{?_smp_mflags} $buildldflags
+   make qemu-nbd.8 %{?_smp_mflags} $buildldflags
+   make qemu-ga %{?_smp_mflags} $buildldflags
 %endif
 }
 
@@ -803,23 +808,25 @@ dobuild --target-list="$buildarch"
 %endif
 
 %install
-%define _udevdir %{_libdir}/udev/rules.d
+%define _udevdir %(pkg-config --variable=udevdir udev)/rules.d
 
 %if 0%{!?build_only_sub:1}
-    install -D -p -m 0755 %{SOURCE4} $RPM_BUILD_ROOT%{_libdir}/systemd/system/ksm.service
+    install -D -p -m 0644 %{SOURCE4} $RPM_BUILD_ROOT%{_libdir}/systemd/system/ksm.service
     install -D -p -m 0644 %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/ksm
     install -D -p -m 0755 ksmctl $RPM_BUILD_ROOT%{_libdir}/systemd/ksmctl
 
-    install -D -p -m 0755 %{SOURCE7} $RPM_BUILD_ROOT%{_libdir}/systemd/system/ksmtuned.service
+    install -D -p -m 0644 %{SOURCE7} $RPM_BUILD_ROOT%{_libdir}/systemd/system/ksmtuned.service
     install -D -p -m 0755 %{SOURCE8} $RPM_BUILD_ROOT%{_sbindir}/ksmtuned
     install -D -p -m 0644 %{SOURCE9} $RPM_BUILD_ROOT%{_sysconfdir}/ksmtuned.conf
 
     %ifarch %{kvm_archs}
-        mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules
+        %if 0%{?need_kvm_modfile}
+            mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules
+            install -m 0755 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules/kvm.modules
+        %endif
         mkdir -p $RPM_BUILD_ROOT%{_bindir}/
         mkdir -p $RPM_BUILD_ROOT%{_udevdir}
 
-        install -m 0755 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules/kvm.modules
         install -m 0755 scripts/kvm/kvm_stat $RPM_BUILD_ROOT%{_bindir}/
         install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_udevdir}
     %endif
@@ -1019,7 +1026,7 @@ make check
 %post
 # load kvm modules now, so we can make sure no reboot is needed.
 # If there's already a kvm module installed, we don't mess with it
-    sh %{_sysconfdir}/sysconfig/modules/kvm.modules || :
+    sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     udevadm trigger --subsystem-match=misc --sysname-match=kvm --action=add || :
 %endif
 
@@ -1055,7 +1062,9 @@ make check
 %endif
 
 %global kvm_files \
-%{_sysconfdir}/sysconfig/modules/kvm.modules \
+%if 0%{?need_kvm_modfile} \
+    %{_sysconfdir}/sysconfig/modules/kvm.modules \
+%endif \
 %{_udevdir}/80-kvm.rules
 
 %if 0%{?need_qemu_kvm}
@@ -1363,6 +1372,15 @@ make check
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Fri May 24 2013 Miroslav Rezanina <mrezanin@redhat.com> - 3:1.5.0-2
+- Enable werror (bz #948290)
+- Enable nbd driver (bz #875871)
+- Fix udev rules file location (bz #958860)
+- Remove +x bit from systemd unit files (bz #965000)
+- Drop unneeded kvm.modules on x86 (bz #963642)
+- Fix build flags
+- Enable libusb
+
 * Thu May 23 2013 Miroslav Rezanina <mrezanin@redhat.com> - 3:1.5.0-1
 - Rebase to 1.5.0
 
