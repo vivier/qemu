@@ -750,13 +750,13 @@ dobuild() {
                --target-list= --cpu=%{_arch}
 
    make libcacard.la %{?_smp_mflags} $buildldflags
-   make vscclient
-   make qemu-img
-   make qemu-io
-   make qemu-nbd
-   make qemu-img.1
-   make qemu-nbd.8
-   make qemu-ga
+   make vscclient %{?_smp_mflags} $buildldflags
+   make qemu-img %{?_smp_mflags} $buildldflags
+   make qemu-io %{?_smp_mflags} $buildldflags
+   make qemu-nbd %{?_smp_mflags} $buildldflags
+   make qemu-img.1 %{?_smp_mflags} $buildldflags
+   make qemu-nbd.8 %{?_smp_mflags} $buildldflags
+   make qemu-ga %{?_smp_mflags} $buildldflags
 %endif
 }
 
