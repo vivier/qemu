@@ -1351,6 +1351,15 @@ make check
 
 %changelog
 %%CHANGELOG%%
+* Fri May 24 2013 Miroslav Rezanina <mrezanin@redhat.com> - 3:1.5.0-2
+- Enable werror (bz #948290)
+- Enable nbd driver (bz #875871)
+- Fix udev rules file location (bz #958860)
+- Remove +x bit from systemd unit files (bz #965000)
+- Drop unneeded kvm.modules on x86 (bz #963642)
+- Fix build flags
+- Enable libusb
+
 * Thu May 23 2013 Miroslav Rezanina <mrezanin@redhat.com> - 3:1.5.0-1
 - Rebase to 1.5.0
 
