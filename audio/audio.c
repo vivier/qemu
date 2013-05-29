@@ -2058,3 +2058,18 @@ void AUD_set_volume_in (SWVoiceIn *sw, int mute, uint8_t lvol, uint8_t rvol)
         sw->vol.r = nominal_volume.r * rvol / 255;
     }
 }
+#ifdef CONFIG_MIXEMU
+static bool mixemu_disabled = false;
+#else
+static bool mixemu_disabled = true;
+#endif
+
+void disable_mixemu (void)
+{
+    mixemu_disabled = true;
+}
+
+bool get_mixemu_disabled (void)
+{
+    return mixemu_disabled;
+}

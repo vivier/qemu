@@ -6119,6 +6119,9 @@ int main(int argc, char **argv, char **envp)
     if (machine->no_sdcard) {
         default_sdcard = 0;
     }
+    if (machine->no_mixemu) {
+        disable_mixemu();
+    }
 
     if (display_type == DT_NOGRAPHIC) {
         if (default_parallel)
