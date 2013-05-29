@@ -1796,6 +1796,7 @@ static QEMUMachine pc_machine_rhel640 = {
     .desc = "RHEL 6.4.0 PC",
     .init = pc_init_rhel640,
     .max_cpus = 255,
+    .no_mixemu = 1,
 };
 
 static void pc_init_rhel630(ram_addr_t ram_size,
@@ -1816,6 +1817,7 @@ static QEMUMachine pc_machine_rhel630 = {
     .desc = "RHEL 6.3.0 PC",
     .init = pc_init_rhel630,
     .max_cpus = 255,
+    .no_mixemu = 1,
     .compat_props = (GlobalProperty[]) {
         PC_RHEL6_3_COMPAT,
         { /* end of list */ }
@@ -1840,6 +1842,7 @@ static QEMUMachine pc_machine_rhel620 = {
     .desc = "RHEL 6.2.0 PC",
     .init = pc_init_rhel620,
     .max_cpus = 255,
+    .no_mixemu = 1,
     .compat_props = (GlobalProperty[]) {
         PC_RHEL6_2_COMPAT,
         { /* end of list */ }
@@ -1864,6 +1867,7 @@ static QEMUMachine pc_machine_rhel610 = {
     .desc = "RHEL 6.1.0 PC",
     .init = pc_init_rhel610,
     .max_cpus = 255,
+    .no_mixemu = 1,
     .compat_props = (GlobalProperty[]) {
         PC_RHEL6_1_COMPAT,
         { /* end of list */ }
@@ -1888,6 +1892,7 @@ static QEMUMachine pc_machine_rhel600 = {
     .desc = "RHEL 6.0.0 PC",
     .init = pc_init_rhel600,
     .max_cpus = 255,
+    .no_mixemu = 1,
     .compat_props = (GlobalProperty[]) {
         {
             .driver   = "VGA",
@@ -1959,6 +1964,7 @@ static QEMUMachine pc_machine_rhel550 = {
     .desc = "RHEL 5.5.0 PC",
     .init = pc_init_rhel550,
     .max_cpus = 255,
+    .no_mixemu = 1,
     .compat_props = compat_rhel5,
 };
 
@@ -1980,6 +1986,7 @@ static QEMUMachine pc_machine_rhel544 = {
     .desc = "RHEL 5.4.4 PC",
     .init = pc_init_rhel544,
     .max_cpus = 255,
+    .no_mixemu = 1,
     .compat_props = compat_rhel5,
 };
 
@@ -2001,6 +2008,7 @@ static QEMUMachine pc_machine_rhel540 = {
     .desc = "RHEL 5.4.0 PC",
     .init = pc_init_rhel540,
     .max_cpus = 255,
+    .no_mixemu = 1,
     .compat_props = compat_rhel5,
 };
 
