@@ -369,7 +369,8 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
              --disable-spice \\\
              --trace-backend=nop \\\
              --enable-smartcard \\\
-             --disable-smartcard-nss
+             --disable-smartcard-nss \\\
+             --enable-mixemu
 
 mkdir qemu-kvm-x86_64-build
 cd qemu-kvm-x86_64-build
@@ -413,6 +414,7 @@ cd qemu-kvm-x86_64-build
             --enable-smartcard \
             --disable-smartcard-nss \
             --enable-usb-redir \
+            --enable-mixemu \
             %{fake_machine_arg} \
             %{disable_rhev_features_arg}
 
