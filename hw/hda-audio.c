@@ -1082,8 +1082,15 @@ static HDACodecDeviceInfo hda_audio_info_micro = {
 
 static void hda_audio_register(void)
 {
-    hda_codec_register(&hda_audio_info_output);
-    hda_codec_register(&hda_audio_info_duplex);
-    hda_codec_register(&hda_audio_info_micro);
+#ifdef CONFIG_MIXEMU
+    if (!get_mixemu_disabled())
+#else
+    if (get_mixemu_disabled())
+#endif
+    {
+        hda_codec_register(&hda_audio_info_output);
+        hda_codec_register(&hda_audio_info_duplex);
+        hda_codec_register(&hda_audio_info_micro);
+    }
 }
 device_init(hda_audio_register);
