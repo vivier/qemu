@@ -1554,6 +1554,7 @@ static void kbd_leds(void *opaque, int ledstate)
 {
     VncState *vs = opaque;
     int caps, num, scr;
+    bool has_changed = (ledstate != current_led_state(vs));
 
     caps = ledstate & QEMU_CAPS_LOCK_LED ? 1 : 0;
     num  = ledstate & QEMU_NUM_LOCK_LED  ? 1 : 0;
@@ -1570,7 +1571,7 @@ static void kbd_leds(void *opaque, int ledstate)
     }
 
     /* Sending the current led state message to the client */
-    if (ledstate != current_led_state(vs)) {
+    if (has_changed) {
         vnc_led_state_change(vs);
     }
 }
