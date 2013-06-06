@@ -355,7 +355,8 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
              --sysconfdir=%{_sysconfdir} \\\
              --disable-strip \\\
              --disable-xen \\\
-             --block-drv-whitelist=qcow2,raw,file,host_device,host_cdrom,qed \\\
+             --block-drv-rw-whitelist=qcow2,raw,file,host_device,host_cdrom,qed \\\
+             --block-drv-ro-whitelist=vmdk \\\
              --disable-debug-tcg \\\
              --disable-sparse \\\
              --disable-sdl \\\
