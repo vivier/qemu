@@ -452,7 +452,7 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
            error_printf("\n");
            return NULL;
         }
-        drv = bdrv_find_whitelisted_format(buf);
+        drv = bdrv_find_whitelisted_format(buf, ro);
         if (!drv) {
             error_report("'%s' invalid format", buf);
             return NULL;
@@ -1165,7 +1165,7 @@ int do_change_block(Monitor *mon, const char *device,
         return -1;
     }
     if (fmt) {
-        drv = bdrv_find_whitelisted_format(fmt);
+        drv = bdrv_find_whitelisted_format(fmt, bs->read_only);
         if (!drv) {
             qerror_report(QERR_INVALID_BLOCK_FORMAT, fmt);
             return -1;
