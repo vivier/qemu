@@ -381,7 +381,14 @@ ifdef CONFIG_POSIX
 	$(INSTALL_DATA) qemu-nbd.8 "$(DESTDIR)$(mandir)/man8"
 endif
 
-install: all $(if $(BUILD_DOCS),install-doc)
+install-localstatedir:
+ifdef CONFIG_POSIX
+ifneq (,$(findstring qemu-ga,$(TOOLS)))
+	$(INSTALL_DIR) "$(DESTDIR)$(qemu_localstatedir)"/run
+endif
+endif
+
+install: all $(if $(BUILD_DOCS),install-doc) install-localstatedir
 	$(INSTALL_DIR) "$(DESTDIR)$(bindir)"
 ifneq ($(TOOLS),)
 	$(INSTALL_PROG) $(STRIP_OPT) $(TOOLS) "$(DESTDIR)$(bindir)"
