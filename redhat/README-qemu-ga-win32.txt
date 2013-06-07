@@ -5,9 +5,12 @@ The QEMU Guest Agent for Windows is contained in the single executable
 file, qemu-ga.exe.  In addition to this executable, the guest agent
 also relies on the following DLLs:
 
-   libglib-2.0-0.dll
-   iconv.dll
-   libintl-8.dll
+  DLL                RHEL-6 package  directory with DLL after RPM installation
+  -----------------  --------------  -----------------------------------------
+  libglib-2.0-0.dll  mingw32-glib2   /usr/i686-pc-mingw32/sys-root/mingw/bin
+  libiconv-2.dll     mingw32-iconv   /usr/i686-pc-mingw32/sys-root/mingw/bin
+  libintl-8.dll      mingw32-gettext /usr/i686-pc-mingw32/sys-root/mingw/bin
+  libssp-0.dll       mingw32-gcc     /usr/lib64/gcc/i686-pc-mingw32/bin
 
 To install the guest agent:
 
