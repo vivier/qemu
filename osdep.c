@@ -39,16 +39,21 @@
 
 #ifdef _WIN32
 #include <windows.h>
-#elif defined(CONFIG_BSD)
-#include <stdlib.h>
+#include <glib.h>
 #else
 #include <malloc.h>
+#include <glib/gprintf.h>
 #endif
 
 #include "qemu-common.h"
 #include "trace.h"
 #include "sysemu.h"
 #include "qemu_socket.h"
+
+#ifdef _WIN32
+/* this must come after including "trace.h" */
+#include <shlobj.h>
+#endif
 
 static bool fips_enabled = false;
 
@@ -411,3 +416,24 @@ bool fips_get_state(void)
     return fips_enabled;
 }
 
+char *
+qemu_get_local_state_pathname(const char *relative_pathname)
+{
+#ifdef _WIN32
+    HRESULT result;
+    char base_path[MAX_PATH+1] = "";
+
+    result = SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL,
+                             /* SHGFP_TYPE_CURRENT */ 0, base_path);
+    if (result != S_OK) {
+        /* misconfigured environment */
+        g_critical("CSIDL_COMMON_APPDATA unavailable: %ld", (long)result);
+        abort();
+    }
+    return g_strdup_printf("%s" G_DIR_SEPARATOR_S "%s", base_path,
+                           relative_pathname);
+#else
+    return g_strdup_printf("%s/%s", CONFIG_QEMU_LOCALSTATEDIR,
+                           relative_pathname);
+#endif
+}
