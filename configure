@@ -796,7 +796,7 @@ echo "  --make=MAKE              use specified make [$make]"
 echo "  --install=INSTALL        use specified install [$install]"
 echo "  --static                 enable static build [$static]"
 echo "  --sysconfdir=PATH        install config in PATH"
-echo "  --localstatedir=PATH     install local state in PATH"
+echo "  --localstatedir=PATH     install local state in PATH (set at runtime on win32)"
 echo "  --enable-debug-tcg       enable TCG debugging"
 echo "  --disable-debug-tcg      disable TCG debugging (default)"
 echo "  --enable-debug           enable common debug build options"
@@ -2231,9 +2231,8 @@ if test "$mingw32" = "yes" ; then
   if test -z "$sysconfdir" ; then
       sysconfdir="${prefix}"
   fi
-  if test -z "$local_statedir" ; then
-      local_statedir="${prefix}"
-  fi
+  # no need to set a fixed default local_statedir on Win32, the value depends
+  # on the runtime environment
 else
   if test -z "$prefix" ; then
       prefix="/usr/local"
@@ -2268,8 +2267,11 @@ echo "Install prefix    $prefix"
 echo "BIOS directory    $prefix$datasuffix"
 echo "binary directory  $prefix$binsuffix"
 if test "$mingw32" = "no" ; then
+echo "local state directory   `eval echo $local_statedir`"
 echo "Manual directory  $prefix$mansuffix"
 echo "ELF interp prefix $interp_prefix"
+else
+echo "local state directory   queried at runtime"
 fi
 echo "Source path       $source_path"
 echo "C compiler        $cc"
@@ -2672,7 +2674,9 @@ echo "bindir=\${prefix}$binsuffix" >> $config_host_mak
 echo "mandir=\${prefix}$mansuffix" >> $config_host_mak
 echo "datadir=\${prefix}$datasuffix" >> $config_host_mak
 echo "sysconfdir=$sysconfdir" >> $config_host_mak
-echo "qemu_localstatedir=$local_statedir" >> $config_host_mak
+if test "$mingw32" = "no" ; then
+  echo "qemu_localstatedir=$local_statedir" >> $config_host_mak
+fi
 echo "docdir=\${prefix}$docsuffix" >> $config_host_mak
 echo "MAKE=$make" >> $config_host_mak
 echo "INSTALL=$install" >> $config_host_mak
