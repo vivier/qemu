@@ -34,6 +34,12 @@
 #define BLOCK_FLAG_ENCRYPT	1
 #define BLOCK_FLAG_COMPAT6	4
 
+#define BLOCK_IO_LIMIT_READ     0
+#define BLOCK_IO_LIMIT_WRITE    1
+#define BLOCK_IO_LIMIT_TOTAL    2
+
+#define BLOCK_IO_SLICE_TIME     100000000
+
 #define BLOCK_OPT_SIZE          "size"
 #define BLOCK_OPT_ENCRYPT       "encryption"
 #define BLOCK_OPT_COMPAT6       "compat6"
@@ -104,6 +110,15 @@ struct BlockJob {
     BlockDriverCompletionFunc *cb;
     void *opaque;
 };
+typedef struct BlockIOLimit {
+    int64_t bps[3];
+    int64_t iops[3];
+} BlockIOLimit;
+
+typedef struct BlockIOBaseValue {
+    uint64_t bytes[2];
+    uint64_t ios[2];
+} BlockIOBaseValue;
 
 struct BlockDriver {
     const char *format_name;
@@ -263,6 +278,16 @@ struct BlockDriverState {
 
     void *sync_aiocb;
 
+    /* the time for latest disk I/O */
+    int64_t slice_time;
+    int64_t slice_start;
+    int64_t slice_end;
+    BlockIOLimit io_limits;
+    BlockIOBaseValue  io_base;
+    CoQueue      throttled_reqs;
+    QEMUTimer    *block_timer;
+    bool         io_limits_enabled;
+
     /* I/O stats (display with "info blockstats"). */
     uint64_t nr_bytes[BDRV_MAX_IOTYPE];
     uint64_t nr_ops[BDRV_MAX_IOTYPE];
@@ -312,6 +337,8 @@ void *qemu_aio_get(AIOPool *pool, BlockDriverState *bs,
 void qemu_aio_release(void *p);
 
 void *qemu_blockalign(BlockDriverState *bs, size_t size);
+void bdrv_set_io_limits(BlockDriverState *bs,
+                        BlockIOLimit *io_limits);
 
 #ifdef _WIN32
 int is_windows_drive(const char *filename);

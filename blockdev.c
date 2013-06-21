@@ -307,6 +307,26 @@ int drives_reopen(void)
     return 0;
 }
 
+static bool do_check_io_limits(BlockIOLimit *io_limits)
+{
+    bool bps_flag;
+    bool iops_flag;
+
+    assert(io_limits);
+
+    bps_flag  = (io_limits->bps[BLOCK_IO_LIMIT_TOTAL] != 0)
+                 && ((io_limits->bps[BLOCK_IO_LIMIT_READ] != 0)
+                 || (io_limits->bps[BLOCK_IO_LIMIT_WRITE] != 0));
+    iops_flag = (io_limits->iops[BLOCK_IO_LIMIT_TOTAL] != 0)
+                 && ((io_limits->iops[BLOCK_IO_LIMIT_READ] != 0)
+                 || (io_limits->iops[BLOCK_IO_LIMIT_WRITE] != 0));
+    if (bps_flag || iops_flag) {
+        return false;
+    }
+
+    return true;
+}
+
 DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
 {
     const char *buf;
@@ -327,6 +347,7 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
     const char *devaddr;
     DriveInfo *dinfo;
     int is_extboot = 0;
+    BlockIOLimit io_limits;
     int snapshot = 0;
     bool copy_on_read;
 
@@ -465,6 +486,26 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
         return NULL;
     }
 
+    /* disk I/O throttling */
+    io_limits.bps[BLOCK_IO_LIMIT_TOTAL]  =
+                           qemu_opt_get_number(opts, "bps", 0);
+    io_limits.bps[BLOCK_IO_LIMIT_READ]   =
+                           qemu_opt_get_number(opts, "bps_rd", 0);
+    io_limits.bps[BLOCK_IO_LIMIT_WRITE]  =
+                           qemu_opt_get_number(opts, "bps_wr", 0);
+    io_limits.iops[BLOCK_IO_LIMIT_TOTAL] =
+                           qemu_opt_get_number(opts, "iops", 0);
+    io_limits.iops[BLOCK_IO_LIMIT_READ]  =
+                           qemu_opt_get_number(opts, "iops_rd", 0);
+    io_limits.iops[BLOCK_IO_LIMIT_WRITE] =
+                           qemu_opt_get_number(opts, "iops_wr", 0);
+
+    if (!do_check_io_limits(&io_limits)) {
+        error_report("bps(iops) and bps_rd/bps_wr(iops_rd/iops_wr) "
+                     "cannot be used at the same time");
+        return NULL;
+    }
+
     on_write_error = BLOCK_ERR_STOP_ENOSPC;
     if ((buf = qemu_opt_get(opts, "werror")) != NULL) {
         if (type != IF_IDE && type != IF_SCSI && type != IF_VIRTIO && type != IF_NONE) {
@@ -574,6 +615,9 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
     }
 
     bdrv_set_on_error(dinfo->bdrv, on_read_error, on_write_error);
+
+    /* disk I/O throttling */
+    bdrv_set_io_limits(dinfo->bdrv, &io_limits);
 
     switch(type) {
     case IF_IDE:
