@@ -150,10 +150,6 @@ void bdrv_io_limits_enable(BlockDriverState *bs)
 {
     qemu_co_queue_init(&bs->throttled_reqs);
     bs->block_timer = qemu_new_timer(vm_clock, bdrv_block_timer, bs);
-    bs->slice_time  = 5 * BLOCK_IO_SLICE_TIME;
-    bs->slice_start = qemu_get_clock(vm_clock);
-    bs->slice_end   = bs->slice_start + bs->slice_time;
-    memset(&bs->io_base, 0, sizeof(bs->io_base));
     bs->io_limits_enabled = true;
 }
 
