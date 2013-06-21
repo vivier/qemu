@@ -283,6 +283,10 @@ static const QErrorStringTable qerror_table[] = {
         .desc      = "Guest agent command failed, error was '%(message)'",
     },
     {
+        .error_fmt = QERR_INVALID_PARAMETER_COMBINATION,
+        .desc      = "Invalid paramter combination",
+    },
+    {
         .error_fmt = QERR_SOCKET_CONNECT_FAILED,
         .desc      = "Failed to connect to socket",
     },

@@ -1997,6 +1997,21 @@ Example:
 
 EQMP
 
+STEXI
+@item block_set_io_throttle @var{device} @var{bps} @var{bps_rd} @var{bps_wr} @var{iops} @var{iops_rd} @var{iops_wr}
+@findex block_set_io_throttle
+Change I/O throttle limits for a block drive to @var{bps} @var{bps_rd} @var{bps_wr} @var{iops} @var{iops_rd} @var{iops_wr}
+ETEXI
+
+    {
+        .name       = "block_set_io_throttle",
+        .args_type  = "device:B,bps:l,bps_rd:l,bps_wr:l,iops:l,iops_rd:l,iops_wr:l",
+        .params     = "device bps bps_rd bps_wr iops iops_rd iops_wr",
+        .help       = "change I/O throttle limits for a block drive",
+        .user_print = monitor_user_noop,
+        .mhandler.cmd_new = do_block_set_io_throttle,
+    },
+
     {
         .name       = "cpu_set",
         .args_type  = "cpu:i,state:s",
@@ -2565,6 +2580,13 @@ Each json-object contain the following:
                                 "tftp", "vdi", "vmdk", "vpc", "vvfat"
          - "backing_file": backing file name (json-string, optional)
          - "encrypted": true if encrypted, false otherwise (json-bool)
+         - "bps": limit total bytes per second (json-int)
+         - "bps_rd": limit read bytes per second (json-int)
+         - "bps_wr": limit write bytes per second (json-int)
+         - "iops": limit total I/O operations per second (json-int)
+         - "iops_rd": limit read operations per second (json-int)
+         - "iops_wr": limit write operations per second (json-int)
+
 - "io-status": I/O operation status, only present if the device supports it
                and the VM is configured to stop on errors. It's always reset
                to "ok" when the "cont" command is issued (json_string, optional)
@@ -2584,7 +2606,13 @@ Example:
                "ro":false,
                "drv":"qcow2",
                "encrypted":false,
-               "file":"disks/test.img"
+               "file":"disks/test.img",
+               "bps":1000000,
+               "bps_rd":0,
+               "bps_wr":0,
+               "iops":1000000,
+               "iops_rd":0,
+               "iops_wr":0,
             },
             "type":"unknown"
          },
