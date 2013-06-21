@@ -1272,7 +1272,6 @@ int do_block_set_io_throttle(Monitor *mon,
     }
 
     bs->io_limits = io_limits;
-    bs->slice_time = BLOCK_IO_SLICE_TIME;
 
     if (!bs->io_limits_enabled && bdrv_io_limits_enabled(bs)) {
         bdrv_io_limits_enable(bs);

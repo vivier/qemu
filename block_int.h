@@ -280,7 +280,6 @@ struct BlockDriverState {
     void *sync_aiocb;
 
     /* the time for latest disk I/O */
-    int64_t slice_time;
     int64_t slice_start;
     int64_t slice_end;
     BlockIOLimit io_limits;
