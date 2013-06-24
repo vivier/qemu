@@ -280,4 +280,7 @@ int qemu_set_fd_handler(int fd,
 /* msmouse */
 CharDriverState *qemu_chr_open_msmouse(void);
 
+/* baum.c */
+CharDriverState *chr_baum_init(void);
+
 #endif

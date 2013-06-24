@@ -482,7 +482,8 @@
                                        'pty'    : 'ChardevDummy',
                                        'null'   : 'ChardevDummy',
                                        'mux'    : 'ChardevMux',
-                                       'msmouse': 'ChardevDummy' } }
+                                       'msmouse': 'ChardevDummy',
+                                       'braille': 'ChardevDummy' } }
 
 ##
 # @ChardevReturn:
