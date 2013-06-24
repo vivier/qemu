@@ -913,6 +913,7 @@ int socket_connect(SocketAddress *addr, Error **errp,
             break;
         }
         if (callback) {
+            socket_set_nonblock(fd);
             callback(fd, opaque);
         }
         break;
