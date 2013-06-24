@@ -29,7 +29,6 @@
 #include "qemu-timer.h"
 #include "qemu-char.h"
 #include "hw/usb.h"
-#include "hw/msmouse.h"
 #include "qemu-objects.h"
 #include "qapi-visit.h"
 #include "qmp-commands.h"
@@ -2009,6 +2008,7 @@ static CharDriverState *qemu_chr_open_win_file_out(QemuOpts *opts)
 }
 #endif /* !_WIN32 */
 
+
 /***********************************************************/
 /* UDP Net console */
 
@@ -3222,7 +3222,6 @@ static void register_types(void)
     register_char_driver("null", qemu_chr_open_null);
     register_char_driver("socket", qemu_chr_open_socket);
     register_char_driver("udp", qemu_chr_open_udp);
-    register_char_driver("msmouse", qemu_chr_open_msmouse);
     register_char_driver("vc", text_console_init);
 #ifdef _WIN32
     register_char_driver("file", qemu_chr_open_win_file_out);
