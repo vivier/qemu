@@ -1049,6 +1049,7 @@ static gboolean pty_chr_timer(gpointer opaque)
     pty_chr_update_read_handler(chr);
 
 out:
+    s->timer_tag = 0;
     return FALSE;
 }
 
@@ -2410,6 +2411,7 @@ static gboolean tcp_chr_accept(GIOChannel *channel, GIOCondition cond, void *opa
 	}
         fd = qemu_accept(s->listen_fd, addr, &len);
         if (fd < 0 && errno != EINTR) {
+            s->listen_tag = 0;
             return FALSE;
         } else if (fd >= 0) {
             if (s->do_telnetopt)
