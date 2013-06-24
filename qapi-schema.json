@@ -409,6 +409,19 @@
     'fd': 'String' } }
 
 ##
+## @ChardevFile:
+#
+# Configuration info for file chardevs.
+#
+# @in:  #optional The name of the input file
+# @out: The name of the output file
+#
+# Since: 1.4
+##
+{ 'type': 'ChardevFile', 'data': { '*in' : 'str',
+                                   'out' : 'str' } }
+
+##
 # @ChardevBackend:
 #
 # Configuration info for the new chardev backend.
@@ -417,7 +430,8 @@
 ##
 { 'type': 'ChardevDummy', 'data': { } }
 
-{ 'union': 'ChardevBackend', 'data': { 'null' : 'ChardevDummy' } }
+{ 'union': 'ChardevBackend', 'data': { 'file' : 'ChardevFile',
+                                       'null' : 'ChardevDummy' } }
 
 ##
 # @ChardevReturn:
