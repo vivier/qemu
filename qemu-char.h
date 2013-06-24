@@ -7,6 +7,7 @@
 #include "qemu-config.h"
 #include "qobject.h"
 #include "qstring.h"
+#include "qerror.h"
 
 /* character device */
 
@@ -89,7 +90,8 @@ QemuOpts *qemu_chr_parse_compat(const char *label, const char *filename);
  * Returns: a new character backend
  */
 CharDriverState *qemu_chr_new_from_opts(QemuOpts *opts,
-                                    void (*init)(struct CharDriverState *s));
+                                    void (*init)(struct CharDriverState *s),
+                                    Error **errp);
 
 /**
  * @qemu_chr_new:
