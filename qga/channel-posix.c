@@ -200,15 +200,6 @@ static gboolean ga_channel_open(GAChannel *c, const gchar *path, GAChannelMethod
             return false;
         }
 
-        /* FIXME: keep the following "if" temporarily in RHEL-6, in order to
-         * avoid error reporting / logic regression due to out-of-order
-         * backports.
-         */
-        if (fd == -1) {
-            g_critical("error opening path: %s", strerror(errno));
-            return false;
-        }
-
         ga_channel_listen_add(c, fd, true);
         break;
     }
