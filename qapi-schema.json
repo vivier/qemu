@@ -343,3 +343,15 @@
 { 'command': 'dump-guest-memory',
   'data': { 'paging': 'bool', 'protocol': 'str', '*begin': 'int',
             '*length': 'int' } }
+
+##
+# @String
+#
+# A fat type wrapping 'str', to be embedded in lists.
+#
+# Since 1.2
+##
+{ 'type': 'String',
+  'data': {
+    'str': 'str' } }
+
