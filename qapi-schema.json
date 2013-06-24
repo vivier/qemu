@@ -456,6 +456,17 @@
                                      '*telnet'  : 'bool' } }
 
 ##
+# @ChardevMux:
+#
+# Configuration info for mux chardevs.
+#
+# @chardev: name of the base chardev.
+#
+# Since: 1.5
+##
+{ 'type': 'ChardevMux', 'data': { 'chardev' : 'str' } }
+
+##
 # @ChardevBackend:
 #
 # Configuration info for the new chardev backend.
@@ -469,7 +480,8 @@
                                        'parallel': 'ChardevHostdev',
                                        'socket' : 'ChardevSocket',
                                        'pty'    : 'ChardevDummy',
-                                       'null'   : 'ChardevDummy' } }
+                                       'null'   : 'ChardevDummy',
+                                       'mux'    : 'ChardevMux' } }
 
 ##
 # @ChardevReturn:
