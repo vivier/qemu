@@ -1549,7 +1549,7 @@ ETEXI
 #ifdef CONFIG_LIVE_SNAPSHOTS
     {
         .name       = "transaction",
-        .args_type  = "actions:O",
+        .args_type  = "actions:q",
         .user_print = monitor_user_noop,
         .mhandler.cmd_new = qmp_marshal_input_transaction,
     },
