@@ -26,6 +26,9 @@
 #include "../qemu-char.h"
 #include "../console.h"
 
+#include "qapi-visit.h"
+#include "qemu-char-qapi.h"
+
 #define MSMOUSE_LO6(n) ((n) & 0x3f)
 #define MSMOUSE_HI2(n) (((n) & 0xc0) >> 6)
 
@@ -63,7 +66,7 @@ static void msmouse_chr_close (struct CharDriverState *chr)
     qemu_free (chr);
 }
 
-static CharDriverState *qemu_chr_open_msmouse(QemuOpts *opts)
+CharDriverState *qemu_chr_open_msmouse(void)
 {
     CharDriverState *chr;
 
@@ -78,7 +81,7 @@ static CharDriverState *qemu_chr_open_msmouse(QemuOpts *opts)
 
 static void register_types(void)
 {
-    register_char_driver("msmouse", qemu_chr_open_msmouse);
+    register_char_driver_qapi("msmouse", CHARDEV_BACKEND_KIND_MSMOUSE, NULL);
 }
 
 machine_init(register_types);
