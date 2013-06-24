@@ -80,6 +80,8 @@ struct CharDriverState {
 
 QemuOpts *qemu_chr_parse_compat(const char *label, const char *filename);
 
+void register_char_driver(const char *name, CharDriverState *(*open)(QemuOpts *));
+
 /**
  * @qemu_chr_new_from_opts:
  *
