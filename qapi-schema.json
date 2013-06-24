@@ -437,7 +437,7 @@
 ##
 # @ChardevSocket:
 #
-# Configuration info for socket chardevs.
+# Configuration info for (stream) socket chardevs.
 #
 # @addr: socket address to listen on (server=true)
 #        or connect to (server=false)
@@ -454,6 +454,19 @@
                                      '*wait'    : 'bool',
                                      '*nodelay' : 'bool',
                                      '*telnet'  : 'bool' } }
+
+##
+# @ChardevDgram:
+#
+# Configuration info for datagram socket chardevs.
+#
+# @remote: remote address
+# @local: #optional local address
+#
+# Since: 1.5
+##
+{ 'type': 'ChardevDgram', 'data': { 'remote' : 'SocketAddress',
+                                    '*local' : 'SocketAddress' } }
 
 ##
 # @ChardevMux:
@@ -543,6 +556,7 @@
                                        'parallel': 'ChardevHostdev',
                                        'pipe'   : 'ChardevHostdev',
                                        'socket' : 'ChardevSocket',
+                                       'dgram'  : 'ChardevDgram',
                                        'pty'    : 'ChardevDummy',
                                        'null'   : 'ChardevDummy',
                                        'mux'    : 'ChardevMux',
