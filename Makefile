@@ -193,10 +193,10 @@ trace-dtrace.o: trace-dtrace.dtrace $(GENERATED_HEADERS)
 qemu-img.o: qemu-img-cmds.h
 qemu-img.o qemu-tool.o qemu-nbd.o qemu-io.o: $(GENERATED_HEADERS)
 
-TOOLS_OBJ=qemu-tool.o qerror.o $(shared-obj-y) $(trace-obj-y)
+TOOLS_OBJ=qemu-tool.o qerror.o $(shared-obj-y) $(trace-obj-y) \
+	$(qapi-obj-y) $(rhel_rhev_qapi_visit.o) $(rhel_rhev_qapi_types.o)
 
-qemu-img$(EXESUF): qemu-img.o $(TOOLS_OBJ) $(qapi-obj-y) \
-                              $(rhel_rhev_qapi_visit.o) $(rhel_rhev_qapi_types.o)
+qemu-img$(EXESUF): qemu-img.o $(TOOLS_OBJ)
 
 qemu-nbd$(EXESUF): qemu-nbd.o $(TOOLS_OBJ)
 
@@ -321,7 +321,7 @@ $(QGALIB_GEN): $(GENERATED_HEADERS)
 $(QGALIB) qemu-ga.o: $(QGALIB_GEN) $(qapi-obj-y)
 
 
-qemu-ga$(EXESUF): qemu-ga.o $(qga-obj-y) $(qapi-obj-y) $(trace-obj-y) $(qobject-obj-y) $(version-obj-y) $(addprefix $(qapi-dir)/, qga-qapi-visit.o qga-qapi-types.o qga-qmp-marshal.o)
+qemu-ga$(EXESUF): qemu-ga.o $(qga-obj-y) $(qapi-obj-y) $(rhel_rhev_qapi_visit.o) $(rhel_rhev_qapi_types.o) $(trace-obj-y) $(qobject-obj-y) $(version-obj-y) $(addprefix $(qapi-dir)/, qga-qapi-visit.o qga-qapi-types.o qga-qmp-marshal.o)
 
 QEMULIBS=libhw32 libhw64 libuser
 
