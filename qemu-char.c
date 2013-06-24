@@ -935,7 +935,7 @@ static void qemu_chr_close_stdio(struct CharDriverState *chr)
     fd_chr_close(chr);
 }
 
-static CharDriverState *qemu_chr_open_stdio(QemuOpts *opts)
+static CharDriverState *qemu_chr_open_stdio(ChardevStdio *opts)
 {
     CharDriverState *chr;
 
@@ -947,8 +947,10 @@ static CharDriverState *qemu_chr_open_stdio(QemuOpts *opts)
     chr = qemu_chr_open_fd(0, 1);
     chr->chr_close = qemu_chr_close_stdio;
     chr->chr_set_echo = qemu_chr_set_echo_stdio;
-    stdio_allow_signal = qemu_opt_get_bool(opts, "signal",
-                                           display_type != DT_NOGRAPHIC);
+    stdio_allow_signal = display_type != DT_NOGRAPHIC;
+    if (opts->has_signal) {
+        stdio_allow_signal = opts->signal;
+    }
     qemu_chr_fe_set_echo(chr, false);
 
     return chr;
@@ -2798,6 +2800,15 @@ static void qemu_chr_parse_file_out(QemuOpts *opts, ChardevBackend *backend,
     backend->file->out = g_strdup(path);
 }
 
+static void qemu_chr_parse_stdio(QemuOpts *opts, ChardevBackend *backend,
+                                 Error **errp)
+{
+    backend->stdio = g_new0(ChardevStdio, 1);
+    backend->stdio->has_signal = true;
+    backend->stdio->signal =
+        qemu_opt_get_bool(opts, "signal", display_type != DT_NOGRAPHIC);
+}
+
 typedef struct CharDriver {
     const char *name;
     /* old, pre qapi */
@@ -3257,6 +3268,9 @@ ChardevReturn *qmp_chardev_add(const char *id, ChardevBackend *backend,
         chr = chr_baum_init();
         break;
 #endif
+    case CHARDEV_BACKEND_KIND_STDIO:
+        chr = qemu_chr_open_stdio(backend->stdio);
+        break;
     default:
         error_setg(errp, "unknown chardev backend (%d)", backend->kind);
         break;
@@ -3301,14 +3315,14 @@ static void register_types(void)
     register_char_driver("udp", qemu_chr_open_udp);
     register_char_driver_qapi("file", CHARDEV_BACKEND_KIND_FILE,
                               qemu_chr_parse_file_out);
+    register_char_driver_qapi("stdio", CHARDEV_BACKEND_KIND_STDIO,
+                              qemu_chr_parse_stdio);
 #ifdef _WIN32
     register_char_driver("pipe", qemu_chr_open_win_pipe);
     register_char_driver("console", qemu_chr_open_win_con);
     register_char_driver("serial", qemu_chr_open_win);
-    register_char_driver("stdio", qemu_chr_open_win_stdio);
 #else
     register_char_driver("pipe", qemu_chr_open_pipe);
-    register_char_driver("stdio", qemu_chr_open_stdio);
 #endif
 #ifdef HAVE_CHARDEV_TTY
     register_char_driver("tty", qemu_chr_open_tty);
