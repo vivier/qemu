@@ -3279,6 +3279,11 @@ ChardevReturn *qmp_chardev_add(const char *id, ChardevBackend *backend,
         chr = qemu_chr_open_win_con();
         break;
 #endif
+#ifdef CONFIG_SPICE
+    case CHARDEV_BACKEND_KIND_SPICEVMC:
+        chr = qemu_chr_open_spice_vmc(backend->spicevmc->type);
+        break;
+#endif
     default:
         error_setg(errp, "unknown chardev backend (%d)", backend->kind);
         break;

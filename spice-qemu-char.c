@@ -5,6 +5,9 @@
 
 #include "osdep.h"
 
+#include "qapi-visit.h"
+#include "qemu-char-qapi.h"
+
 #define VMC_MAX_HOST_WRITE    2048
 
 typedef struct SpiceCharDriver {
@@ -223,27 +226,24 @@ static void print_allowed_subtypes(void)
     fprintf(stderr, "\n");
 }
 
-CharDriverState *qemu_chr_open_spice(QemuOpts *opts)
+CharDriverState *qemu_chr_open_spice_vmc(const char *type)
 {
     CharDriverState *chr;
     SpiceCharDriver *s;
-    const char* name = qemu_opt_get(opts, "name");
-    const char** psubtype = spice_server_char_device_recognized_subtypes();
-    const char *subtype = NULL;
+    const char **psubtype = spice_server_char_device_recognized_subtypes();
 
-    if (name == NULL) {
+    if (type == NULL) {
         fprintf(stderr, "spice-qemu-char: missing name parameter\n");
         print_allowed_subtypes();
         return NULL;
     }
-    for(;*psubtype != NULL; ++psubtype) {
-        if (strcmp(name, *psubtype) == 0) {
-            subtype = *psubtype;
+    for (; *psubtype != NULL; ++psubtype) {
+        if (strcmp(type, *psubtype) == 0) {
             break;
         }
     }
-    if (subtype == NULL) {
-        fprintf(stderr, "spice-qemu-char: unsupported name\n");
+    if (*psubtype == NULL) {
+        fprintf(stderr, "spice-qemu-char: unsupported type: %s\n", type);
         print_allowed_subtypes();
         return NULL;
     }
@@ -252,7 +252,7 @@ CharDriverState *qemu_chr_open_spice(QemuOpts *opts)
     s = qemu_mallocz(sizeof(SpiceCharDriver));
     s->chr = chr;
     s->active = false;
-    s->sin.subtype = subtype;
+    s->sin.subtype = *psubtype;
     chr->opaque = s;
     chr->chr_write = spice_chr_write;
     chr->chr_add_watch = spice_chr_add_watch;
@@ -262,7 +262,7 @@ CharDriverState *qemu_chr_open_spice(QemuOpts *opts)
 
 #if SPICE_SERVER_VERSION < 0x000901
     /* See comment in vmc_state() */
-    if (strcmp(subtype, "vdagent") == 0) {
+    if (strcmp(type, "vdagent") == 0) {
         qemu_chr_generic_open(chr);
     }
 #endif
@@ -270,9 +270,23 @@ CharDriverState *qemu_chr_open_spice(QemuOpts *opts)
     return chr;
 }
 
+static void qemu_chr_parse_spice_vmc(QemuOpts *opts, ChardevBackend *backend,
+                                     Error **errp)
+{
+    const char *name = qemu_opt_get(opts, "name");
+
+    if (name == NULL) {
+        error_setg(errp, "chardev: spice channel: no name given");
+        return;
+    }
+    backend->spicevmc = g_new0(ChardevSpiceChannel, 1);
+    backend->spicevmc->type = g_strdup(name);
+}
+
 static void register_types(void)
 {
-    register_char_driver("spicevmc", qemu_chr_open_spice);
+    register_char_driver_qapi("spicevmc", CHARDEV_BACKEND_KIND_SPICEVMC,
+                              qemu_chr_parse_spice_vmc);
 }
 
 machine_init(register_types);
