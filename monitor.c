@@ -1264,8 +1264,11 @@ static int do_change_vnc(Monitor *mon, const char *target, const char *arg)
             return monitor_read_password(mon, change_vnc_password_cb, NULL);
         }
     } else {
-        if (vnc_display_open(NULL, target) < 0) {
-            qerror_report(QERR_VNC_SERVER_FAILED, target);
+        Error *local_err = NULL;
+        vnc_display_open(NULL, target, &local_err);
+        if (error_is_set(&local_err)) {
+            qerror_report_err(local_err);
+            error_free(local_err);
             return -1;
         }
     }
