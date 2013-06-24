@@ -32,6 +32,8 @@
 #include "hw/baum.h"
 #include "hw/msmouse.h"
 #include "qemu-objects.h"
+#include "qapi-visit.h"
+#include "qmp-commands.h"
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -2975,4 +2977,57 @@ CharDriverState *qemu_chr_find(const char *name)
         return chr;
     }
     return NULL;
+}
+
+ChardevReturn *qmp_chardev_add(const char *id, ChardevBackend *backend,
+                               Error **errp)
+{
+    ChardevReturn *ret = g_new0(ChardevReturn, 1);
+    CharDriverState *chr = NULL;
+
+    chr = qemu_chr_find(id);
+    if (chr) {
+        error_setg(errp, "Chardev '%s' already exists", id);
+        g_free(ret);
+        return NULL;
+    }
+
+    switch (backend->kind) {
+    case CHARDEV_BACKEND_KIND_NULL:
+        chr = qemu_chr_open_null(NULL);
+        break;
+    default:
+        error_setg(errp, "unknown chardev backend (%d)", backend->kind);
+        break;
+    }
+
+    if (chr == NULL && !error_is_set(errp)) {
+        error_setg(errp, "Failed to create chardev");
+    }
+    if (chr) {
+        chr->label = g_strdup(id);
+        chr->avail_connections = 1;
+        QTAILQ_INSERT_TAIL(&chardevs, chr, next);
+        return ret;
+    } else {
+        g_free(ret);
+        return NULL;
+    }
+}
+
+void qmp_chardev_remove(const char *id, Error **errp)
+{
+    CharDriverState *chr;
+
+    chr = qemu_chr_find(id);
+    if (NULL == chr) {
+        error_setg(errp, "Chardev '%s' not found", id);
+        return;
+    }
+    if (chr->chr_can_read || chr->chr_read ||
+        chr->chr_event || chr->handler_opaque) {
+        error_setg(errp, "Chardev '%s' is busy", id);
+        return;
+    }
+    qemu_chr_delete(chr);
 }
