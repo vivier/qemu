@@ -634,7 +634,7 @@ int unix_listen_opts(QemuOpts *opts, Error **errp)
 
     sock = qemu_socket(PF_UNIX, SOCK_STREAM, 0);
     if (sock < 0) {
-        perror("socket(unix)");
+        error_setg_errno(errp, errno, "socket create failed");
         return -1;
     }
 
@@ -659,11 +659,11 @@ int unix_listen_opts(QemuOpts *opts, Error **errp)
 
     unlink(un.sun_path);
     if (bind(sock, (struct sockaddr*) &un, sizeof(un)) < 0) {
-        fprintf(stderr, "bind(unix:%s): %s\n", un.sun_path, strerror(errno));
+        error_setg_errno(errp, errno, "socket bind failed");
         goto err;
     }
     if (listen(sock, 1) < 0) {
-        fprintf(stderr, "listen(unix:%s): %s\n", un.sun_path, strerror(errno));
+        error_setg_errno(errp, errno, "socket listen failed");
         goto err;
     }
 
@@ -683,13 +683,13 @@ int unix_connect_opts(QemuOpts *opts, Error **errp,
     int sock, rc;
 
     if (NULL == path) {
-        fprintf(stderr, "unix connect: no path specified\n");
+        error_setg(errp, "unix connect: no path specified\n");
         return -1;
     }
 
     sock = qemu_socket(PF_UNIX, SOCK_STREAM, 0);
     if (sock < 0) {
-        perror("socket(unix)");
+        error_setg_errno(errp, errno, "socket create failed");
         return -1;
     }
     if (callback != NULL) {
@@ -724,7 +724,7 @@ int unix_connect_opts(QemuOpts *opts, Error **errp,
     }
 
     if (rc < 0) {
-        fprintf(stderr, "connect(unix:%s): %s\n", path, strerror(errno));
+        error_setg_errno(errp, -rc, "socket connect failed");
         close(sock);
         sock = -1;
     }
@@ -737,7 +737,7 @@ int unix_connect_opts(QemuOpts *opts, Error **errp,
 
 int unix_listen_opts(QemuOpts *opts, Error **errp)
 {
-    fprintf(stderr, "unix sockets are not available on windows\n");
+    error_setg(errp, "unix sockets are not available on windows");
     errno = ENOTSUP;
     return -1;
 }
@@ -745,7 +745,7 @@ int unix_listen_opts(QemuOpts *opts, Error **errp)
 int unix_connect_opts(QemuOpts *opts, Error **errp,
                       NonBlockingConnectHandler *callback, void *opaque)
 {
-    fprintf(stderr, "unix sockets are not available on windows\n");
+    error_setg(errp, "unix sockets are not available on windows");
     errno = ENOTSUP;
     return -1;
 }
