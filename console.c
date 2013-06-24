@@ -1608,3 +1608,10 @@ void defaultallocator_free_displaysurface(DisplaySurface *surface)
         qemu_free(surface->data);
     qemu_free(surface);
 }
+
+static void register_types(void)
+{
+    register_char_driver("vc", text_console_init);
+}
+
+machine_init(register_types);
