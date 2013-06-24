@@ -720,11 +720,11 @@ static void serial_reset(void *opaque)
     qemu_irq_lower(s->irq);
 }
 
-static void serial_init_core(SerialState *s)
+static int serial_init_core(SerialState *s)
 {
     if (!s->chr) {
-        fprintf(stderr, "Can't create serial device, empty char device\n");
-	exit(1);
+        error_report("Can't create serial device, empty char device");
+        return -1;
     }
 
     s->modem_status_poll = qemu_new_timer(vm_clock, (QEMUTimerCB *) serial_update_msl, s);
@@ -736,6 +736,7 @@ static void serial_init_core(SerialState *s)
 
     qemu_chr_add_handlers(s->chr, serial_can_receive1, serial_receive1,
                           serial_event, s);
+    return 0;
 }
 
 static void serial_exit_core(SerialState *s)
@@ -772,7 +773,8 @@ static int serial_isa_initfn(ISADevice *dev)
 
     s->baudbase = 115200;
     isa_init_irq(dev, &s->irq, isa->isairq);
-    serial_init_core(s);
+    if (serial_init_core(s) < 0)
+        return -1;
     vmstate_register(&dev->qdev, isa->iobase, &vmstate_serial, s);
 
     register_ioport_write(isa->iobase, 8, 1, serial_ioport_write, s);
@@ -803,7 +805,10 @@ SerialState *serial_init(int base, qemu_irq irq, int baudbase,
     s->irq = irq;
     s->baudbase = baudbase;
     s->chr = chr;
-    serial_init_core(s);
+    if (serial_init_core(s) < 0) {
+        free(s);
+        return NULL;
+    }
 
     vmstate_register(NULL, base, &vmstate_serial, s);
 
@@ -898,7 +903,10 @@ SerialState *serial_mm_init (target_phys_addr_t base, int it_shift,
     s->baudbase = baudbase;
     s->chr = chr;
 
-    serial_init_core(s);
+    if (serial_init_core(s) < 0) {
+        qemu_free(s);
+        return NULL;
+    }
     vmstate_register(NULL, base, &vmstate_serial, s);
 
     if (ioregister) {
@@ -951,7 +959,8 @@ static int serial_pci_init(PCIDevice *dev)
     SerialState *s = &pci->state;
 
     s->baudbase = 115200;
-    serial_init_core(s);
+    if (serial_init_core(s) < 0)
+        return -1;
 
     pci_config_set_vendor_id(pci->dev.config, PCI_VENDOR_ID_REDHAT);
     pci_config_set_device_id(pci->dev.config, PCI_DEVICE_ID_REDHAT_SERIAL);
