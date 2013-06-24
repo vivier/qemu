@@ -874,7 +874,7 @@ void qmp___com_redhat_drive_mirror(const char *device, const char *target,
         .has_speed = has_speed,
         .speed = speed,
     };
-    blockdev_do_action(BLOCKDEV_ACTION_KIND___COM_REDHAT_DRIVE_MIRROR, &mirror, errp);
+    blockdev_do_action(BLOCKDEV_ACTION_KIND_COM_REDHAT_DRIVE_MIRROR, &mirror, errp);
 }
 
 /* New and old BlockDriverState structs for group snapshots */
@@ -943,7 +943,7 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
             full = false;
             break;
 
-        case BLOCKDEV_ACTION_KIND___COM_REDHAT_DRIVE_MIRROR:
+        case BLOCKDEV_ACTION_KIND_COM_REDHAT_DRIVE_MIRROR:
             device = dev_info->__com_redhat_drive_mirror->device;
             if (!dev_info->__com_redhat_drive_mirror->has_mode) {
                 dev_info->__com_redhat_drive_mirror->mode = NEW_IMAGE_MODE_ABSOLUTE_PATHS;
@@ -1052,7 +1052,7 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
                             flags | BDRV_O_NO_BACKING, drv);
             break;
 
-        case BLOCKDEV_ACTION_KIND___COM_REDHAT_DRIVE_MIRROR:
+        case BLOCKDEV_ACTION_KIND_COM_REDHAT_DRIVE_MIRROR:
             /* Grab a reference so hotplug does not delete the BlockDriverState
              * from underneath us.
              */
@@ -1091,7 +1091,7 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
                         NULL);
             break;
 
-        case BLOCKDEV_ACTION_KIND___COM_REDHAT_DRIVE_MIRROR:
+        case BLOCKDEV_ACTION_KIND_COM_REDHAT_DRIVE_MIRROR:
             mirror_commit(states->old_bs);
             break;
 
@@ -1116,7 +1116,7 @@ delete_and_fail:
             }
             break;
 
-        case BLOCKDEV_ACTION_KIND___COM_REDHAT_DRIVE_MIRROR:
+        case BLOCKDEV_ACTION_KIND_COM_REDHAT_DRIVE_MIRROR:
             /* This will still invoke the callback and release the
              * reference.  */
             if (states->new_bs) {
