@@ -2401,6 +2401,11 @@ Example:
                      "backend" : { "type" : "null", "data" : {} } } }
 <- { "return": {} }
 
+-> { "execute" : "chardev-add",
+     "arguments" : { "id" : "baz",
+                     "backend" : { "type" : "pty", "data" : {} } } }
+<- { "return": { "pty" : "/dev/pty/42" } }
+
 EQMP
 
     {
