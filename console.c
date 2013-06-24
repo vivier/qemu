@@ -25,6 +25,9 @@
 #include "console.h"
 #include "qemu-timer.h"
 
+#include "qapi-visit.h"
+#include "qemu-char-qapi.h"
+
 //#define DEBUG_CONSOLE
 #define DEFAULT_BACKSCROLL 512
 #define MAX_CONSOLES 12
@@ -1362,12 +1365,12 @@ static void text_console_do_init(CharDriverState *chr, DisplayState *ds)
         chr->init(chr);
 }
 
-CharDriverState *text_console_init(QemuOpts *opts)
+CharDriverState *text_console_init(ChardevVC *vc)
 {
     CharDriverState *chr;
     TextConsole *s;
-    unsigned width;
-    unsigned height;
+    unsigned width = 0;
+    unsigned height = 0;
 
     chr = qemu_mallocz(sizeof(CharDriverState));
 
@@ -1377,13 +1380,17 @@ CharDriverState *text_console_init(QemuOpts *opts)
     }
     text_consoles[n_text_consoles] = chr;
 
-    width = qemu_opt_get_number(opts, "width", 0);
-    if (width == 0)
-        width = qemu_opt_get_number(opts, "cols", 0) * FONT_WIDTH;
+    if (vc->has_width) {
+        width = vc->width;
+    } else if (vc->has_cols) {
+        width = vc->cols * FONT_WIDTH;
+    }
 
-    height = qemu_opt_get_number(opts, "height", 0);
-    if (height == 0)
-        height = qemu_opt_get_number(opts, "rows", 0) * FONT_HEIGHT;
+    if (vc->has_height) {
+        height = vc->height;
+    } else if (vc->has_rows) {
+        height = vc->rows * FONT_HEIGHT;
+    }
 
     if (width == 0 || height == 0) {
         s = new_console(NULL, TEXT_CONSOLE);
@@ -1611,9 +1618,42 @@ void defaultallocator_free_displaysurface(DisplaySurface *surface)
     qemu_free(surface);
 }
 
+static void qemu_chr_parse_vc(QemuOpts *opts, ChardevBackend *backend,
+                              Error **errp)
+{
+    int val;
+
+    backend->vc = g_new0(ChardevVC, 1);
+
+    val = qemu_opt_get_number(opts, "width", 0);
+    if (val != 0) {
+        backend->vc->has_width = true;
+        backend->vc->width = val;
+    }
+
+    val = qemu_opt_get_number(opts, "height", 0);
+    if (val != 0) {
+        backend->vc->has_height = true;
+        backend->vc->height = val;
+    }
+
+    val = qemu_opt_get_number(opts, "cols", 0);
+    if (val != 0) {
+        backend->vc->has_cols = true;
+        backend->vc->cols = val;
+    }
+
+    val = qemu_opt_get_number(opts, "rows", 0);
+    if (val != 0) {
+        backend->vc->has_rows = true;
+        backend->vc->rows = val;
+    }
+}
+
 static void register_types(void)
 {
-    register_char_driver("vc", text_console_init);
+    register_char_driver_qapi("vc", CHARDEV_BACKEND_KIND_VC,
+                              qemu_chr_parse_vc);
 }
 
 machine_init(register_types);
