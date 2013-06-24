@@ -497,7 +497,8 @@
                                        'mux'    : 'ChardevMux',
                                        'msmouse': 'ChardevDummy',
                                        'braille': 'ChardevDummy',
-                                       'stdio'  : 'ChardevStdio' } }
+                                       'stdio'  : 'ChardevStdio',
+                                       'console': 'ChardevDummy' } }
 
 ##
 # @ChardevReturn:
