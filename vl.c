@@ -133,7 +133,6 @@ int main(int argc, char **argv)
 #include "hw/pc.h"
 #include "hw/audiodev.h"
 #include "hw/isa.h"
-#include "hw/baum.h"
 #include "hw/bt.h"
 #include "hw/watchdog.h"
 #include "hw/smbios.h"
