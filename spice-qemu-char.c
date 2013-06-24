@@ -269,3 +269,10 @@ CharDriverState *qemu_chr_open_spice(QemuOpts *opts)
 
     return chr;
 }
+
+static void register_types(void)
+{
+    register_char_driver("spicevmc", qemu_chr_open_spice);
+}
+
+machine_init(register_types);
