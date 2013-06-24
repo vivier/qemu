@@ -36,6 +36,11 @@ void qemu_service_io(void)
 
 Monitor *cur_mon;
 
+int monitor_get_fd(Monitor *mon, const char *name)
+{
+    return -1;
+}
+
 int monitor_cur_is_qmp(void)
 {
     return 0;

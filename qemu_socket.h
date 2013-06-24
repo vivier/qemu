@@ -30,6 +30,7 @@ int inet_aton(const char *cp, struct in_addr *ia);
 #endif /* !_WIN32 */
 
 #include "qemu-option.h"
+#include "qapi-visit.h"
 #include "error.h"
 #include "qerror.h"
 
@@ -65,6 +66,11 @@ int unix_connect(const char *path, Error **errp);
 int unix_nonblocking_connect(const char *str,
                              NonBlockingConnectHandler *callback,
                              void *opaque, Error **errp);
+
+SocketAddress *socket_parse(const char *str, Error **errp);
+int socket_connect(SocketAddress *addr, Error **errp,
+                   NonBlockingConnectHandler *callback, void *opaque);
+int socket_listen(SocketAddress *addr, Error **errp);
 
 /* Old, ipv4 only bits.  Don't use for new code. */
 int parse_host_port(struct sockaddr_in *saddr, const char *str);
