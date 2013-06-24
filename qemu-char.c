@@ -2123,12 +2123,13 @@ static CharDriverState *qemu_chr_open_udp(QemuOpts *opts)
 {
     CharDriverState *chr = NULL;
     NetCharDriver *s = NULL;
+    Error *local_err = NULL;
     int fd = -1;
 
     chr = qemu_mallocz(sizeof(CharDriverState));
     s = qemu_mallocz(sizeof(NetCharDriver));
 
-    fd = inet_dgram_opts(opts, NULL);
+    fd = inet_dgram_opts(opts, &local_err);
     if (fd < 0) {
         goto return_err;
     }
@@ -2144,12 +2145,15 @@ static CharDriverState *qemu_chr_open_udp(QemuOpts *opts)
     return chr;
 
 return_err:
-    if (chr)
-        free(chr);
-    if (s)
-        free(s);
-    if (fd >= 0)
+    if (local_err) {
+        qerror_report_err(local_err);
+        error_free(local_err);
+    }
+    g_free(chr);
+    g_free(s);
+    if (fd >= 0) {
         closesocket(fd);
+    }
     return NULL;
 }
 
@@ -2463,6 +2467,7 @@ static CharDriverState *qemu_chr_open_socket(QemuOpts *opts)
 {
     CharDriverState *chr = NULL;
     TCPCharDriver *s = NULL;
+    Error *local_err = NULL;
     int fd = -1;
     int is_listen;
     int is_waitconnect;
@@ -2483,15 +2488,15 @@ static CharDriverState *qemu_chr_open_socket(QemuOpts *opts)
 
     if (is_unix) {
         if (is_listen) {
-            fd = unix_listen_opts(opts, NULL);
+            fd = unix_listen_opts(opts, &local_err);
         } else {
-            fd = unix_connect_opts(opts, NULL, NULL, NULL);
+            fd = unix_connect_opts(opts, &local_err, NULL, NULL);
         }
     } else {
         if (is_listen) {
-            fd = inet_listen_opts(opts, 0, NULL);
+            fd = inet_listen_opts(opts, 0, &local_err);
         } else {
-            fd = inet_connect_opts(opts, NULL, NULL, NULL);
+            fd = inet_connect_opts(opts, &local_err, NULL, NULL);
         }
     }
     if (fd < 0)
@@ -2553,10 +2558,15 @@ static CharDriverState *qemu_chr_open_socket(QemuOpts *opts)
     return chr;
 
  fail:
-    if (fd >= 0)
+    if (local_err) {
+        qerror_report_err(local_err);
+        error_free(local_err);
+    }
+    if (fd >= 0) {
         closesocket(fd);
-    qemu_free(s);
-    qemu_free(chr);
+    }
+    g_free(s);
+    g_free(chr);
     return NULL;
 }
 
