@@ -869,17 +869,6 @@ static CharDriverState *qemu_chr_open_fd(int fd_in, int fd_out)
     return chr;
 }
 
-static CharDriverState *qemu_chr_open_file_out(QemuOpts *opts)
-{
-    int fd_out;
-
-    TFR(fd_out = qemu_open(qemu_opt_get(opts, "path"),
-                      O_WRONLY | O_TRUNC | O_CREAT | O_BINARY, 0666));
-    if (fd_out < 0)
-        return NULL;
-    return qemu_chr_open_fd(-1, fd_out);
-}
-
 static CharDriverState *qemu_chr_open_pipe(QemuOpts *opts)
 {
     int fd_in, fd_out;
@@ -1995,18 +1984,6 @@ static CharDriverState *qemu_chr_open_win_con(QemuOpts *opts)
     return qemu_chr_open_win_file(GetStdHandle(STD_OUTPUT_HANDLE));
 }
 
-static CharDriverState *qemu_chr_open_win_file_out(QemuOpts *opts)
-{
-    const char *file_out = qemu_opt_get(opts, "path");
-    HANDLE fd_out;
-
-    fd_out = CreateFile(file_out, GENERIC_WRITE, FILE_SHARE_READ, NULL,
-                        OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (fd_out == INVALID_HANDLE_VALUE)
-        return NULL;
-
-    return qemu_chr_open_win_file(fd_out);
-}
 #endif /* !_WIN32 */
 
 
@@ -2808,6 +2785,19 @@ static CharDriverState *qemu_chr_open_pp(QemuOpts *opts)
 
 #endif
 
+static void qemu_chr_parse_file_out(QemuOpts *opts, ChardevBackend *backend,
+                                    Error **errp)
+{
+    const char *path = qemu_opt_get(opts, "path");
+
+    if (path == NULL) {
+        error_setg(errp, "chardev: file: no filename given");
+        return;
+    }
+    backend->file = g_new0(ChardevFile, 1);
+    backend->file->out = g_strdup(path);
+}
+
 typedef struct CharDriver {
     const char *name;
     /* old, pre qapi */
@@ -3309,14 +3299,14 @@ static void register_types(void)
     register_char_driver_qapi("null", CHARDEV_BACKEND_KIND_NULL, NULL);
     register_char_driver("socket", qemu_chr_open_socket);
     register_char_driver("udp", qemu_chr_open_udp);
+    register_char_driver_qapi("file", CHARDEV_BACKEND_KIND_FILE,
+                              qemu_chr_parse_file_out);
 #ifdef _WIN32
-    register_char_driver("file", qemu_chr_open_win_file_out);
     register_char_driver("pipe", qemu_chr_open_win_pipe);
     register_char_driver("console", qemu_chr_open_win_con);
     register_char_driver("serial", qemu_chr_open_win);
     register_char_driver("stdio", qemu_chr_open_win_stdio);
 #else
-    register_char_driver("file", qemu_chr_open_file_out);
     register_char_driver("pipe", qemu_chr_open_pipe);
     register_char_driver("stdio", qemu_chr_open_stdio);
 #endif
