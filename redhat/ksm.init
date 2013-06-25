@@ -69,6 +69,8 @@ status() {
         echo $"$prog is running"
         RETVAL=0
     fi; fi
+
+    return $RETVAL
 }
 
 restart() {
