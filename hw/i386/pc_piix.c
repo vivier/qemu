@@ -246,6 +246,8 @@ static void pc_init_pci(QEMUMachineInitArgs *args)
              initrd_filename, cpu_model, 1, 1);
 }
 
+#if 0 /* Disabled for Red Hat Enterprise Linux */
+
 static void pc_init_pci_1_4(QEMUMachineInitArgs *args)
 {
     has_pvpanic = false;
@@ -750,3 +752,30 @@ static void pc_machine_init(void)
 }
 
 machine_init(pc_machine_init);
+
+#endif  /* Disabled for Red Hat Enterprise Linux */
+
+/* Red Hat Enterprise Linux machine types */
+
+static void pc_init_rhel700(QEMUMachineInitArgs *args)
+{
+    pc_init_pci(args);
+}
+
+static QEMUMachine pc_machine_rhel700 = {
+    .name = "pc-i440fx-rhel7.0.0",
+    .alias = "pc",
+    .desc = "RHEL 7.0.0 PC (i440FX + PIIX, 1996)",
+    .init = pc_init_rhel700,
+    .hot_add_cpu = pc_hot_add_cpu,
+    .max_cpus = 255,
+    .is_default = 1,
+    DEFAULT_MACHINE_OPTIONS,
+};
+
+static void rhel_machine_init(void)
+{
+    qemu_register_machine(&pc_machine_rhel700);
+}
+
+machine_init(rhel_machine_init);
