@@ -240,6 +240,7 @@ static void pc_q35_init(QEMUMachineInitArgs *args)
     }
 }
 
+#if 0 /* Disabled for Red Hat Enterprise Linux */
 static void pc_compat_1_7(QEMUMachineInitArgs *args)
 {
     smbios_type1_defaults = false;
@@ -366,3 +367,29 @@ static void pc_q35_machine_init(void)
 }
 
 machine_init(pc_q35_machine_init);
+
+#endif  /* Disabled for Red Hat Enterprise Linux */
+
+/* Red Hat Enterprise Linux machine types */
+
+static void pc_q35_init_rhel700(QEMUMachineInitArgs *args)
+{
+    pc_q35_init(args);
+}
+
+static QEMUMachine pc_q35_machine_rhel700 = {
+    PC_DEFAULT_MACHINE_OPTIONS,
+    .name = "pc-q35-rhel7.0.0",
+    .alias = "q35",
+    .desc = "RHEL-7.0.0 PC (Q35 + ICH9, 2009)",
+    .init = pc_q35_init_rhel700,
+    .hot_add_cpu = pc_hot_add_cpu,
+    .max_cpus = 255,
+};
+
+static void rhel_pc_q35_machine_init(void)
+{
+    qemu_register_machine(&pc_q35_machine_rhel700);
+}
+
+machine_init(rhel_pc_q35_machine_init);
