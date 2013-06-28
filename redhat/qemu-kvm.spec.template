@@ -156,7 +156,7 @@ Name: %{pkgname}
 Version: %{rpmversion}
 Release: %{full_release}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
-Epoch: 3
+Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
 Group: Development/Tools
 URL: http://www.qemu.org/
@@ -767,25 +767,14 @@ dobuild() {
 
 dobuild --target-list="$buildarch"
 
-%if 0%{?need_qemu_kvm}
-    %if 0%{?need_qemu_kvm}
-        # Setup back compat qemu-kvm binary
-        ./scripts/tracetool.py --backend dtrace --format stap \
-          --binary %{_libexecdir}/qemu-kvm --target-name %{kvm_target} 
-          --target-type system --probe-prefix \
-          qemu.kvm < ./trace-events > qemu-kvm.stp
-
-   cp -a %{kvm_target}-softmmu/qemu-system-%{kvm_target} qemu-kvm
 %if 0%{!?build_only_sub:1}
         # Setup back compat qemu-kvm binary
         ./scripts/tracetool.py --backend dtrace --format stap \
-          --binary %{_libexecdir}/qemu-kvm --target-arch %{kvm_target} \
+          --binary %{_libexecdir}/qemu-kvm --target-name %{kvm_target} \
           --target-type system --probe-prefix \
           qemu.kvm < ./trace-events > qemu-kvm.stp
 
         cp -a %{kvm_target}-softmmu/qemu-system-%{kvm_target} qemu-kvm
-
-    %endif
 
     gcc %{SOURCE6} -O2 -g -o ksmctl
 %endif
