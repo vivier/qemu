@@ -137,10 +137,10 @@
 
 Summary: QEMU is a FAST! processor emulator
 Name: qemu-kvm
-Version: 1.5.0
-Release: 2%{?dist}
+Version: 1.5.1
+Release: 1%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
-Epoch: 3
+Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
 Group: Development/Tools
 URL: http://www.qemu.org/
@@ -1372,6 +1372,10 @@ make check
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Fri Jun 28 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.1-1
+- Rebase to 1.5.1
+- Change epoch to 10 to obsolete RHEL-6 qemu-kvm-rhev package (bz #818626)
+
 * Fri May 24 2013 Miroslav Rezanina <mrezanin@redhat.com> - 3:1.5.0-2
 - Enable werror (bz #948290)
 - Enable nbd driver (bz #875871)
