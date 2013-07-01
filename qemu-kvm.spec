@@ -224,7 +224,6 @@ Patch34: use-kvm-by-default.patch
 Patch35: disable-hpet-device.patch
 Patch36: rename-man-page-to-qemu-kvm.patch
 Patch37: change-path-from-qemu-to-qemu-kvm.patch
-Patch38: mytest.patch
 
 BuildRequires: zlib-devel
 BuildRequires: SDL-devel
@@ -678,7 +677,6 @@ CAC emulation development files.
 %patch35 -p1
 %patch36 -p1
 %patch37 -p1
-%patch38 -p1
 
 %build
 %if %{with kvmonly}
