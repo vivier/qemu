@@ -1,0 +1,27 @@
+From 19e5e5072346a0b3a22a334e16b1dd6c87f9fb34 Mon Sep 17 00:00:00 2001
+Message-Id: <19e5e5072346a0b3a22a334e16b1dd6c87f9fb34.1372679804.git.minovotn@redhat.com>
+From: Michal Novotny <minovotn@redhat.com>
+Date: Mon, 1 Jul 2013 13:56:41 +0200
+Subject: [PATCH] test2
+
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ hmp.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/hmp.h b/hmp.h
+index 95fe76e..35009e2 100644
+--- a/hmp.h
++++ b/hmp.h
+@@ -5,6 +5,7 @@
+  *
+  * Authors:
+  *  Anthony Liguori   <aliguori@us.ibm.com>
++ *  Somebody @ somewhere :-)))
+  *
+  * This work is licensed under the terms of the GNU GPL, version 2.  See
+  * the COPYING file in the top-level directory.
+-- 
+1.7.11.7
+
