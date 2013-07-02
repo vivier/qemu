@@ -696,6 +696,7 @@ dobuild() {
         --with-confsuffix=/%{name} \
         --localstatedir=%{_localstatedir} \
         --libexecdir=%{_libexecdir} \
+        --with-pkgversion=%{name}-%{version}-%{release} \
         --disable-strip \
         --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
         --extra-cflags="%{optflags} -fPIE -DPIE" \
@@ -751,6 +752,7 @@ dobuild() {
 %else
    ./configure --prefix=%{_prefix} \
                --libdir=%{_libdir} \
+               --with-pkgversion=%{name}-%{version}-%{release} \
                --disable-guest-agent \
                --target-list= --cpu=%{_arch}
 
@@ -1350,6 +1352,33 @@ find $RPM_BUILD_ROOT -name "libcacard.so*" -exec chmod +x \{\} \;
 
 %changelog
 %%CHANGELOG%%
+* Tue Jul 02 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.1-2
+- Fix package package version info (bz #952996)
+- pc: Replace upstream machine types by RHEL-7 types (bz #977864)
+- target-i386: Update model values on Conroe/Penryn/Nehalem CPU model (bz #861210)
+- target-i386: Set level=4 on Conroe/Penryn/Nehalem (bz #861210)
+
+* Fri Jun 28 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.1-1
+- Rebase to 1.5.1
+- Change epoch to 10 to obsolete RHEL-6 qemu-kvm-rhev package (bz #818626)
+
+* Fri May 24 2013 Miroslav Rezanina <mrezanin@redhat.com> - 3:1.5.0-2
+- Enable werror (bz #948290)
+- Enable nbd driver (bz #875871)
+- Fix udev rules file location (bz #958860)
+- Remove +x bit from systemd unit files (bz #965000)
+- Drop unneeded kvm.modules on x86 (bz #963642)
+- Fix build flags
+- Enable libusb
+
+* Thu May 23 2013 Miroslav Rezanina <mrezanin@redhat.com> - 3:1.5.0-1
+- Rebase to 1.5.0
+
+* Tue Apr 23 2013 Miroslav Rezanina <mrezanin@redhat.com> - 3:1.4.0-4
+  - Enable build of libcacard subpackage for non-x86_64 archs (bz #873174)
+  - Enable build of qemu-img subpackage for non-x86_64 archs (bz #873174)
+  - Enable build of qemu-guest-agent subpackage for non-x86_64 archs (bz #873174)
+
 * Tue Apr 23 2013 Miroslav Rezanina <mrezanin@redhat.com> - 3:1.4.0-3
   - Enable/disable features supported by rhel7
   - Use qemu-kvm instead of qemu in filenames and pathes
