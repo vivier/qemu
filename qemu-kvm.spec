@@ -138,7 +138,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: qemu-kvm
 Version: 1.5.1
-Release: 1%{?dist}
+Release: 2%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -224,6 +224,11 @@ Patch34: use-kvm-by-default.patch
 Patch35: disable-hpet-device.patch
 Patch36: rename-man-page-to-qemu-kvm.patch
 Patch37: change-path-from-qemu-to-qemu-kvm.patch
+
+# Fix CPUID model/level values on Conroe/Penryn/Nehalem CPU models 
+Patch38: pc-replace-upstream-machine-types-by-rhel7-types.patch
+Patch39: target-i386-update-model-values-on-conroe-penryn-nehalem-cpu-models.patch
+Patch40: target-i386-set-level-4-on-conroe-penryn-nehalem.patch
 
 BuildRequires: zlib-devel
 BuildRequires: SDL-devel
@@ -678,6 +683,11 @@ CAC emulation development files.
 %patch36 -p1
 %patch37 -p1
 
+# Fix CPUID model/level values on Conroe/Penryn/Nehalem CPU models
+%patch38 -p1
+%patch39 -p1
+%patch40 -p1
+
 %build
 %if %{with kvmonly}
     buildarch="%{kvm_target}-softmmu"
@@ -719,6 +729,7 @@ dobuild() {
         --with-confsuffix=/%{name} \
         --localstatedir=%{_localstatedir} \
         --libexecdir=%{_libexecdir} \
+        --with-pkgversion=%{name}-%{version}-%{release} \
         --disable-strip \
         --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
         --extra-cflags="%{optflags} -fPIE -DPIE" \
@@ -776,6 +787,7 @@ dobuild() {
 %else
    ./configure --prefix=%{_prefix} \
                --libdir=%{_libdir} \
+               --with-pkgversion=%{name}-%{version}-%{release} \
                --disable-guest-agent \
                --target-list= --cpu=%{_arch}
 
@@ -1372,6 +1384,12 @@ make check
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Tue Jul 02 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.1-2
+- Fix package package version info (bz #952996)
+- pc: Replace upstream machine types by RHEL-7 types (bz #977864)
+- target-i386: Update model values on Conroe/Penryn/Nehalem CPU model (bz #861210)
+- target-i386: Set level=4 on Conroe/Penryn/Nehalem (bz #861210)
+
 * Fri Jun 28 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.1-1
 - Rebase to 1.5.1
 - Change epoch to 10 to obsolete RHEL-6 qemu-kvm-rhev package (bz #818626)
