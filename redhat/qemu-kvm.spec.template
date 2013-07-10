@@ -181,7 +181,7 @@ BuildRequires: libaio-devel
 BuildRequires: usbredir-devel >= 0.5
 
 # seamless spice migration needs a recent spice server version
-BuildRequires: spice-server-devel >= 0.12.0
+BuildRequires: spice-server-devel >= 0.12.3
 %endif
 
 BuildRequires: systemtap-sdt-devel
