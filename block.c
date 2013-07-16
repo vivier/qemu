@@ -136,7 +136,6 @@ void bdrv_io_limits_disable(BlockDriverState *bs)
     bs->slice_start = 0;
     bs->slice_end   = 0;
     bs->slice_time  = 0;
-    memset(&bs->io_base, 0, sizeof(bs->io_base));
 }
 
 static void bdrv_block_timer(void *opaque)
@@ -1161,8 +1160,8 @@ void bdrv_append(BlockDriverState *bs_new, BlockDriverState *bs_top)
     tmp.slice_time        = bs_top->slice_time;
     tmp.slice_start       = bs_top->slice_start;
     tmp.slice_end         = bs_top->slice_end;
+    tmp.slice_submitted   = bs_top->slice_submitted;
     tmp.io_limits         = bs_top->io_limits;
-    tmp.io_base           = bs_top->io_base;
     tmp.throttled_reqs    = bs_top->throttled_reqs;
     tmp.block_timer       = bs_top->block_timer;
     tmp.io_limits_enabled = bs_top->io_limits_enabled;
@@ -1219,7 +1218,7 @@ void bdrv_append(BlockDriverState *bs_new, BlockDriverState *bs_top)
     bs_new->dirty_bitmap       = NULL;
 
     qemu_co_queue_init(&bs_new->throttled_reqs);
-    memset(&bs_new->io_base,   0, sizeof(bs_new->io_base));
+    memset(&bs_new->slice_submitted, 0, sizeof(bs_new->slice_submitted));
     memset(&bs_new->io_limits, 0, sizeof(bs_new->io_limits));
     bdrv_iostatus_disable(bs_new);
 
@@ -3622,9 +3621,9 @@ static bool bdrv_exceed_bps_limits(BlockDriverState *bs, int nb_sectors,
     slice_time = bs->slice_end - bs->slice_start;
     slice_time /= (NANOSECONDS_PER_SECOND);
     bytes_limit = bps_limit * slice_time;
-    bytes_base  = bs->nr_bytes[is_write] - bs->io_base.bytes[is_write];
+    bytes_base  = bs->slice_submitted.bytes[is_write];
     if (bs->io_limits.bps[BLOCK_IO_LIMIT_TOTAL]) {
-        bytes_base += bs->nr_bytes[!is_write] - bs->io_base.bytes[!is_write];
+        bytes_base += bs->slice_submitted.bytes[!is_write];
     }
 
     /* bytes_base: the bytes of data which have been read/written; and
@@ -3682,9 +3681,9 @@ static bool bdrv_exceed_iops_limits(BlockDriverState *bs, bool is_write,
     slice_time = bs->slice_end - bs->slice_start;
     slice_time /= (NANOSECONDS_PER_SECOND);
     ios_limit  = iops_limit * slice_time;
-    ios_base   = bs->nr_ops[is_write] - bs->io_base.ios[is_write];
+    ios_base   = bs->slice_submitted.ios[is_write];
     if (bs->io_limits.iops[BLOCK_IO_LIMIT_TOTAL]) {
-        ios_base += bs->nr_ops[!is_write] - bs->io_base.ios[!is_write];
+        ios_base += bs->slice_submitted.ios[!is_write];
     }
 
     if (ios_base + 1 <= ios_limit) {
@@ -3729,11 +3728,7 @@ static bool bdrv_exceed_io_limits(BlockDriverState *bs, int nb_sectors,
         bs->slice_start = now;
         bs->slice_end   = now + bs->slice_time;
 
-        bs->io_base.bytes[is_write]  = bs->nr_bytes[is_write];
-        bs->io_base.bytes[!is_write] = bs->nr_bytes[!is_write];
-
-        bs->io_base.ios[is_write]    = bs->nr_ops[is_write];
-        bs->io_base.ios[!is_write]   = bs->nr_ops[!is_write];
+        memset(&bs->slice_submitted, 0, sizeof(bs->slice_submitted));
     }
 
     elapsed_time  = now - bs->slice_start;
@@ -3760,6 +3755,10 @@ static bool bdrv_exceed_io_limits(BlockDriverState *bs, int nb_sectors,
     if (wait) {
         *wait = 0;
     }
+
+    bs->slice_submitted.bytes[is_write] += (int64_t)nb_sectors *
+                                           BDRV_SECTOR_SIZE;
+    bs->slice_submitted.ios[is_write]++;
 
     return false;
 }
