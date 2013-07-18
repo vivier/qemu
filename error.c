@@ -31,6 +31,7 @@ void error_set(Error **errp, const char *fmt, ...)
     if (errp == NULL) {
         return;
     }
+    assert(*errp == NULL);
 
     err = qemu_mallocz(sizeof(*err));
 
@@ -156,7 +157,7 @@ bool error_is_type(Error *err, const char *fmt)
 
 void error_propagate(Error **dst_err, Error *local_err)
 {
-    if (dst_err) {
+    if (dst_err && !*dst_err) {
         *dst_err = local_err;
     } else if (local_err) {
         error_free(local_err);
