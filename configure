@@ -707,10 +707,12 @@ for opt do
   --disable-rhev-features)
        live_snapshots="no";
        block_stream="no";
+       io_throttling="no"
   ;;
   --enable-rhev-features)
        live_snapshots="yes";
        block_stream="yes";
+       io_throttling="yes"
   ;;
   --disable-virtio-blk-data-plane) virtio_blk_data_plane="no"
   ;;
