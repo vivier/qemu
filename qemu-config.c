@@ -88,6 +88,7 @@ QemuOptsList qemu_drive_opts = {
             .name = "copy-on-read",
             .type = QEMU_OPT_BOOL,
             .help = "copy read data from backing file into image file",
+#ifdef CONFIG_BLOCK_IO_THROTTLING
         },{
             .name = "iops",
             .type = QEMU_OPT_NUMBER,
@@ -112,6 +113,7 @@ QemuOptsList qemu_drive_opts = {
             .name = "bps_wr",
             .type = QEMU_OPT_NUMBER,
             .help = "limit write bytes per second",
+#endif
         },
         { /* end if list */ }
     },

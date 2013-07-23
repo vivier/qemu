@@ -2003,6 +2003,7 @@ STEXI
 Change I/O throttle limits for a block drive to @var{bps} @var{bps_rd} @var{bps_wr} @var{iops} @var{iops_rd} @var{iops_wr}
 ETEXI
 
+#ifdef CONFIG_BLOCK_IO_THROTTLING
     {
         .name       = "block_set_io_throttle",
         .args_type  = "device:B,bps:l,bps_rd:l,bps_wr:l,iops:l,iops_rd:l,iops_wr:l",
@@ -2011,7 +2012,7 @@ ETEXI
         .user_print = monitor_user_noop,
         .mhandler.cmd_new = do_block_set_io_throttle,
     },
-
+#endif
     {
         .name       = "cpu_set",
         .args_type  = "cpu:i,state:s",

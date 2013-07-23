@@ -2833,6 +2833,7 @@ static void bdrv_print_dict(QObject *obj, void *opaque)
                             qdict_get_str(qdict, "drv"),
                             qdict_get_bool(qdict, "encrypted"));
 
+#if CONFIG_BLOCK_IO_THROTTLING
         monitor_printf(mon, " bps=%" PRId64 " bps_rd=%" PRId64
                 " bps_wr=%" PRId64 " iops=%" PRId64
                 " iops_rd=%" PRId64 " iops_wr=%" PRId64,
@@ -2842,6 +2843,7 @@ static void bdrv_print_dict(QObject *obj, void *opaque)
                 qdict_get_int(qdict, "iops"),
                 qdict_get_int(qdict, "iops_rd"),
                 qdict_get_int(qdict, "iops_wr"));
+#endif
 
     } else {
         monitor_printf(mon, " [not inserted]");
@@ -2892,6 +2894,7 @@ void bdrv_info(Monitor *mon, QObject **ret_data)
         if (bs->drv) {
             QObject *obj;
 
+#ifdef CONFIG_BLOCK_IO_THROTTLING
             obj = qobject_from_jsonf("{ 'file': %s, 'ro': %i, 'drv': %s, "
                                      "'encrypted': %i, "
                                      "'bps': %" PRId64 ", 'bps_rd': %" PRId64
@@ -2908,6 +2911,14 @@ void bdrv_info(Monitor *mon, QObject **ret_data)
                                      bs->io_limits.iops[BLOCK_IO_LIMIT_READ],
                                      bs->io_limits.iops[BLOCK_IO_LIMIT_WRITE]
                                      );
+#else
+            obj = qobject_from_jsonf("{ 'file': %s, 'ro': %i, 'drv': %s, "
+                                     "'encrypted': %i }",
+                                     bs->filename, bs->read_only,
+                                     bs->drv->format_name,
+                                     bdrv_is_encrypted(bs));
+#endif
+
             if (bs->backing_file[0] != '\0') {
                 QDict *qdict = qobject_to_qdict(obj);
                 qdict_put(qdict, "backing_file",

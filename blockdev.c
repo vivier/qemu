@@ -486,6 +486,7 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
         return NULL;
     }
 
+#if CONFIG_BLOCK_IO_THROTTLING
     /* disk I/O throttling */
     io_limits.bps[BLOCK_IO_LIMIT_TOTAL]  =
                            qemu_opt_get_number(opts, "bps", 0);
@@ -505,6 +506,7 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
                      "cannot be used at the same time");
         return NULL;
     }
+#endif
 
     on_write_error = BLOCK_ERR_STOP_ENOSPC;
     if ((buf = qemu_opt_get(opts, "werror")) != NULL) {
