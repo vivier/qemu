@@ -356,6 +356,23 @@ static void cpu_pre_save(void *opaque)
 #else
     env->fpregs_format_vmstate = 1;
 #endif
+
+    /*
+     * Real mode guest segments register DPL should be zero.
+     * Older KVM version were setting it wrongly.
+     * Fixing it will allow live migration to host with unrestricted guest
+     * support (otherwise the migration will fail with invalid guest state
+     * error).
+     */
+    if (!(env->cr[0] & CR0_PE_MASK) &&
+        (env->segs[R_CS].flags >> DESC_DPL_SHIFT & 3) != 0) {
+        env->segs[R_CS].flags &= ~(env->segs[R_CS].flags & DESC_DPL_MASK);
+        env->segs[R_DS].flags &= ~(env->segs[R_DS].flags & DESC_DPL_MASK);
+        env->segs[R_ES].flags &= ~(env->segs[R_ES].flags & DESC_DPL_MASK);
+        env->segs[R_FS].flags &= ~(env->segs[R_FS].flags & DESC_DPL_MASK);
+        env->segs[R_GS].flags &= ~(env->segs[R_GS].flags & DESC_DPL_MASK);
+        env->segs[R_SS].flags &= ~(env->segs[R_SS].flags & DESC_DPL_MASK);
+    }
 }
 
 static int cpu_pre_load(void *opaque)
