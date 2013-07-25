@@ -1629,8 +1629,16 @@ static void rhel_common_init(const char *type1_version,
                      strlen(buf) + 1, buf);
 }
 
-#define PC_RHEL6_3_COMPAT \
+#define PC_RHEL6_4_COMPAT \
         {\
+            .driver   = "virtio-scsi-pci",\
+            .property = "vectors",\
+            .value    = stringify(2),\
+        }
+
+#define PC_RHEL6_3_COMPAT \
+        PC_RHEL6_4_COMPAT \
+        ,{\
             .driver   = "USB",\
             .property = "create_unique_serial",\
             .value    = "0",\
@@ -1804,6 +1812,10 @@ static QEMUMachine pc_machine_rhel640 = {
     .init = pc_init_rhel640,
     .max_cpus = 255,
     .no_mixemu = 1,
+    .compat_props = (GlobalProperty[]) {
+        PC_RHEL6_4_COMPAT,
+        { /* end of list */ }
+    },
 };
 
 static void pc_init_rhel630(ram_addr_t ram_size,
