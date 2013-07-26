@@ -708,7 +708,6 @@ dobuild() {
         --disable-virtfs \
         --enable-kvm \
         --enable-libusb \
-        --enable-migration-from-qemu-kvm \
 %if 0%{?have_spice:1}
         --enable-spice \
 %endif
@@ -1353,6 +1352,9 @@ make check
 
 %changelog
 %%CHANGELOG%%
+* Tue Jul 02 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.2-1
+- Rebase to 1.5.2
+
 * Tue Jul 02 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.1-2
 - Fix package package version info (bz #952996)
 - pc: Replace upstream machine types by RHEL-7 types (bz #977864)
