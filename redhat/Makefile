@@ -1,3 +1,4 @@
+all: rh-help
 include Makefile.common
 include Makefile.test
 
