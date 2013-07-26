@@ -137,8 +137,8 @@
 
 Summary: QEMU is a FAST! processor emulator
 Name: qemu-kvm
-Version: 1.5.1
-Release: 2%{?dist}
+Version: 1.5.2
+Release: 1%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -183,7 +183,7 @@ Source12: bridge.conf
 Patch1: 0000-libcacard-fix-missing-symbols-in-libcacard.so.patch
 
 # Fix migration from qemu-kvm 1.2 to qemu 1.3
-Patch3: 0002-Fix-migration-from-qemu-kvm-1.2.patch
+#Patch3: 0002-Fix-migration-from-qemu-kvm-1.2.patch
 
 # Flow control series
 #Patch4: 0100-char-Split-out-tcp-socket-close-code-in-a-separate-f.patch
@@ -201,11 +201,11 @@ Patch3: 0002-Fix-migration-from-qemu-kvm-1.2.patch
 #Patch16: 0112-hw-virtio-serial-bus-replay-guest-open-on-destinatio.patch
 
 # Migration compatibility
-Patch17: configure-add-enable-migration-from-qemu-kvm.patch
-Patch18: acpi_piix4-condition-on-minimum_version_id.patch
-Patch19: i8254-fix-migration-from-qemu-kvm-1.1.patch
-Patch20: pc_piix-add-compat-handling-for-qemu-kvm-vga-mem-size.patch
-Patch21: qxl-add-rom_size-compat-property.patch
+#Patch17: configure-add-enable-migration-from-qemu-kvm.patch
+#Patch18: acpi_piix4-condition-on-minimum_version_id.patch
+#Patch19: i8254-fix-migration-from-qemu-kvm-1.1.patch
+#Patch20: pc_piix-add-compat-handling-for-qemu-kvm-vga-mem-size.patch
+#Patch21: qxl-add-rom_size-compat-property.patch
 #Patch22: docs-fix-generating-qemu-doc.html-with-texinfo5.patch
 #Patch23: rtc-test-Fix-test-failures-with-recent-glib.patch
 #Patch24: iscsi-look-for-pkg-config-file-too.patch
@@ -647,7 +647,7 @@ CAC emulation development files.
 %setup -q -n qemu-%{version}
 %patch1 -p1
 # %patch2 -p1
-%patch3 -p1
+#%patch3 -p1
 # %patch4 -p1
 # %patch5 -p1
 # %patch6 -p1
@@ -661,11 +661,11 @@ CAC emulation development files.
 # %patch14 -p1
 # %patch15 -p1
 # %patch16 -p1
-%patch17 -p1
-%patch18 -p1
-%patch19 -p1
-%patch20 -p1
-%patch21 -p1
+#%patch17 -p1
+#%patch18 -p1
+#%patch19 -p1
+#%patch20 -p1
+#%patch21 -p1
 # %patch22 -p1
 # %patch23 -p1
 # %patch24 -p1
@@ -740,7 +740,6 @@ dobuild() {
         --disable-virtfs \
         --enable-kvm \
         --enable-libusb \
-        --enable-migration-from-qemu-kvm \
 %if 0%{?have_spice:1}
         --enable-spice \
 %endif
@@ -1384,6 +1383,9 @@ make check
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Tue Jul 02 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.2-1
+- Rebase to 1.5.2
+
 * Tue Jul 02 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.1-2
 - Fix package package version info (bz #952996)
 - pc: Replace upstream machine types by RHEL-7 types (bz #977864)
