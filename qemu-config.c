@@ -201,6 +201,9 @@ QemuOptsList qemu_chardev_opts = {
         },{
             .name = "debug",
             .type = QEMU_OPT_NUMBER,
+        },{
+            .name = "chardev",
+            .type = QEMU_OPT_STRING,
         },
         { /* end if list */ }
     },
