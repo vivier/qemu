@@ -36,6 +36,10 @@ void error_setg_errno(Error **errp, int os_errno, const char *fmt, ...)
     __attribute__((format(printf, 3, 4)));
 void error_setg(Error **errp, const char *fmt, ...)
     __attribute__((format(printf, 2, 3)));
+static inline void error_setg_file_open(Error **errp, int os_errno, const char *filename)
+{
+    error_setg_errno(errp, os_errno, "Could not open '%s'", filename);
+}
 
 /**
  * Returns true if an indirect pointer to an error is pointing to a valid
