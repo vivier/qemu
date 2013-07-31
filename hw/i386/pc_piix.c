@@ -1012,14 +1012,6 @@ static QEMUMachine pc_machine_rhel700 = {
         .property = "use_broken_id",\
         .value    = stringify(1),\
     },{\
-        .driver   = "virtio-serial-pci",\
-        .property = "max_ports",\
-        .value    = stringify(1),\
-    },{\
-        .driver   = "virtio-serial-pci",\
-        .property = "vectors",\
-        .value    = stringify(0),\
-    },{\
         .driver   = "VGA",\
         .property = "rombar",\
         .value    = stringify(0),\
