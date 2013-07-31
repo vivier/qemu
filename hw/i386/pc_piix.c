@@ -932,20 +932,10 @@ static QEMUMachine pc_machine_rhel700 = {
 
 static void pc_init_rhel600(QEMUMachineInitArgs *args)
 {
-    ram_addr_t ram_size = args->ram_size;
-    const char *cpu_model = args->cpu_model;
-    const char *kernel_filename = args->kernel_filename;
-    const char *kernel_cmdline = args->kernel_cmdline;
-    const char *initrd_filename = args->initrd_filename;
-    const char *boot_device = args->boot_device;
     has_pvpanic = false;
     disable_kvm_pv_eoi();
     enable_compat_apic_id_mode();
-    pc_init1(get_system_memory(),
-             get_system_io(),
-             ram_size, boot_device,
-             kernel_filename, kernel_cmdline,
-             initrd_filename, cpu_model, 1, 0);
+    pc_init_rhel700(args);
 }
 
 static QEMUMachine pc_machine_rhel600 = {
