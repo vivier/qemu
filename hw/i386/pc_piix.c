@@ -778,7 +778,7 @@ static QEMUMachine pc_machine_rhel700 = {
     DEFAULT_MACHINE_OPTIONS,
 };
 
-#define PC_RHEL6_1_COMPAT \
+#define PC_RHEL6_2_COMPAT \
     {\
         .driver   = "Conroe-" TYPE_X86_CPU,\
         .property = "model",\
@@ -871,11 +871,11 @@ static QEMUMachine pc_machine_rhel700 = {
     },{\
         .driver   = "qxl",\
         .property = "revision",\
-        .value    = stringify(2),\
+        .value    = stringify(3),\
     },{\
         .driver   = "qxl-vga",\
         .property = "revision",\
-        .value    = stringify(2),\
+        .value    = stringify(3),\
     },{\
         .driver   = "VGA",\
         .property = "mmio",\
@@ -901,6 +901,46 @@ static QEMUMachine pc_machine_rhel700 = {
         .property = "class",\
         .value    = stringify(PCI_CLASS_MEMORY_RAM),\
     },{\
+        .driver   = TYPE_PCI_DEVICE,\
+        .property = "command_serr_enable",\
+        .value    = "off",\
+    },{\
+        .driver   = "AC97",\
+        .property = "use_broken_id",\
+        .value    = stringify(1),\
+    }
+
+static void pc_init_rhel620(QEMUMachineInitArgs *args)
+{
+    has_pvpanic = false;
+    disable_kvm_pv_eoi();
+    enable_compat_apic_id_mode();
+    pc_init_rhel700(args);
+}
+
+static QEMUMachine pc_machine_rhel620 = {
+    .name = "rhel6.2.0",
+    .desc = "RHEL 6.2.0 PC",
+    .init = pc_init_rhel620,
+    .max_cpus = 255,
+    .compat_props = (GlobalProperty[]) {
+        PC_RHEL6_2_COMPAT,
+        { /* end of list */ }
+    },
+    DEFAULT_MACHINE_OPTIONS,
+};
+
+#define PC_RHEL6_1_COMPAT \
+    PC_RHEL6_2_COMPAT,\
+    {\
+        .driver   = "qxl",\
+        .property = "revision",\
+        .value    = stringify(2),\
+    },{\
+        .driver   = "qxl-vga",\
+        .property = "revision",\
+        .value    = stringify(2),\
+    },{\
         .driver   = "virtio-blk-pci",\
         .property = "event_idx",\
         .value    = "off",\
@@ -916,22 +956,11 @@ static QEMUMachine pc_machine_rhel700 = {
         .driver   = "virtio-balloon-pci",\
         .property = "event_idx",\
         .value    = "off",\
-    },{\
-        .driver   = TYPE_PCI_DEVICE,\
-        .property = "command_serr_enable",\
-        .value    = "off",\
-    },{\
-        .driver   = "AC97",\
-        .property = "use_broken_id",\
-        .value    = stringify(1),\
     }
 
 static void pc_init_rhel610(QEMUMachineInitArgs *args)
 {
-    has_pvpanic = false;
-    disable_kvm_pv_eoi();
-    enable_compat_apic_id_mode();
-    pc_init_rhel700(args);
+    pc_init_rhel620(args);
 }
 
 static QEMUMachine pc_machine_rhel610 = {
@@ -982,6 +1011,7 @@ static QEMUMachine pc_machine_rhel600 = {
 static void rhel_machine_init(void)
 {
     qemu_register_machine(&pc_machine_rhel700);
+    qemu_register_machine(&pc_machine_rhel620);
     qemu_register_machine(&pc_machine_rhel610);
     qemu_register_machine(&pc_machine_rhel600);
 }
