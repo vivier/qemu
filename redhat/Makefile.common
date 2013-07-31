@@ -28,8 +28,9 @@ TARSHA1:=f5f9eefa8fece7dead0487a2cca25f90e3dab3d9
 TARSHA256:=
 
 TARBALL:=$(REDHAT)/$(TARFILE)
-TESTPATCH:=$(REDHAT)/$(COMMON_NAME)-test.pa
-EXTRA_SOURCES = ksmtuned.conf ksmtuned ksm.sysconfig 80-kvm.rules kvm.modules 99-qemu-guest-agent.rules qemu-guest-agent.service ksmtuned.service  ksmctl.c ksm.service qemu.binfmt
+TESTPATCH:=$(REDHAT)/$(COMMON_NAME)-test.patch
+
+EXTRA_SOURCES = ksmtuned.conf ksmtuned ksm.sysconfig 80-kvm.rules kvm.modules 99-qemu-guest-agent.rules qemu-guest-agent.service ksmtuned.service  ksmctl.c ksm.service qemu.binfmt qemu-ga.sysconfig
 
 SUBLEVEL:=$(shell echo $(MARKER) | cut -f 2 -d '-')
 #RCREV := $(shell echo $(MARKER) | cut -f 2 -d '-' -s | sed -e "s/rc//")
