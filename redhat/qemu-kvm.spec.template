@@ -12,18 +12,16 @@
 %global have_usbredir 1
 
 %ifarch %{ix86} x86_64
-        %global have_seccomp 1
-        %global have_spice   1
+    %global have_seccomp 1
+    %global have_spice   1
 %else
-        %global have_usbredir 0
+    %global have_usbredir 0
 %endif
 
 %ifnarch x86_64
     %global build_only_sub 1
     %global debug_package %{nil}
 %endif
-
-%global kvm_package   qemu-kvm
 
 %ifarch %{ix86}
     %global kvm_target    i386
@@ -707,6 +705,18 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Jul 31 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.2-2
+- SPEC file prepared for RHEL/RHEV split (rhbz #987165)
+- RHEL guest( sata disk ) can not boot up (rhbz #981723)
+- Kill the "use flash device for BIOS unless KVM" misfeature (rhbz #963280)
+- Provide RHEL-6 machine types (rhbz #983991)
+- Change s3/s4 default to "disable". (rhbz #980840)  
+- Support Virtual Memory Disk Format in qemu (rhbz #836675)
+- Glusterfs backend for QEMU (rhbz #805139)
+
+* Tue Jul 02 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.2-1
+- Rebase to 1.5.2
+
 * Tue Jul 02 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.1-2
 - Fix package package version info (bz #952996)
 - pc: Replace upstream machine types by RHEL-7 types (bz #977864)
