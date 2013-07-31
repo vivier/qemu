@@ -2925,7 +2925,7 @@ static void isa_cirrus_vga_realizefn(DeviceState *dev, Error **errp)
 
 static Property isa_cirrus_vga_properties[] = {
     DEFINE_PROP_UINT32("vgamem_mb", struct ISACirrusVGAState,
-                       cirrus_vga.vga.vram_size_mb, 8),
+                       cirrus_vga.vga.vram_size_mb, 16),
     DEFINE_PROP_END_OF_LIST(),
 };
 
@@ -2987,7 +2987,7 @@ static int pci_cirrus_vga_initfn(PCIDevice *dev)
 
 static Property pci_vga_cirrus_properties[] = {
     DEFINE_PROP_UINT32("vgamem_mb", struct PCICirrusVGAState,
-                       cirrus_vga.vga.vram_size_mb, 8),
+                       cirrus_vga.vga.vram_size_mb, 16),
     DEFINE_PROP_END_OF_LIST(),
 };
 

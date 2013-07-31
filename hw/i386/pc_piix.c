@@ -972,18 +972,6 @@ static QEMUMachine pc_machine_rhel700 = {
         .property = "param_change",\
         .value    = "off",\
     },{\
-        .driver   = "VGA",\
-        .property = "vgamem_mb",\
-        .value    = stringify(8),\
-    },{\
-        .driver   = "qxl-vga",\
-        .property = "vgamem_mb",\
-        .value    = stringify(8),\
-    },{\
-        .driver   = "qxl",\
-        .property = "vgamem_mb",\
-        .value    = stringify(8),\
-    },{\
         .driver   = "virtio-blk-pci",\
         .property = "config-wce",\
         .value    = "off",\
