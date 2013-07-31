@@ -861,7 +861,7 @@ static QEMUMachine pc_machine_rhel700 = {
     .is_default = 1,
 };
 
-#define PC_RHEL6_2_COMPAT \
+#define PC_RHEL6_3_COMPAT \
     {\
         .driver   = "Conroe-" TYPE_X86_CPU,\
         .property = "model",\
@@ -993,11 +993,31 @@ static QEMUMachine pc_machine_rhel700 = {
         .value    = stringify(1),\
     }
 
-static void pc_init_rhel620(QEMUMachineInitArgs *args)
+static void pc_init_rhel630(QEMUMachineInitArgs *args)
 {
     x86_cpu_compat_disable_kvm_features(FEAT_KVM, KVM_FEATURE_PV_EOI);
     enable_compat_apic_id_mode();
     pc_init_rhel700(args);
+}
+
+static QEMUMachine pc_machine_rhel630 = {
+    PC_DEFAULT_MACHINE_OPTIONS,
+    .name = "rhel6.3.0",
+    .desc = "RHEL 6.3.0 PC",
+    .init = pc_init_rhel630,
+    .max_cpus = 255,
+    .compat_props = (GlobalProperty[]) {
+        PC_RHEL6_3_COMPAT,
+        { /* end of list */ }
+    },
+};
+
+#define PC_RHEL6_2_COMPAT \
+    PC_RHEL6_3_COMPAT
+
+static void pc_init_rhel620(QEMUMachineInitArgs *args)
+{
+    pc_init_rhel630(args);
 }
 
 static QEMUMachine pc_machine_rhel620 = {
@@ -1093,6 +1113,7 @@ static QEMUMachine pc_machine_rhel600 = {
 static void rhel_machine_init(void)
 {
     qemu_register_machine(&pc_machine_rhel700);
+    qemu_register_machine(&pc_machine_rhel630);
     qemu_register_machine(&pc_machine_rhel620);
     qemu_register_machine(&pc_machine_rhel610);
     qemu_register_machine(&pc_machine_rhel600);
