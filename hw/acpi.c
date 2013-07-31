@@ -969,6 +969,11 @@ void qemu_system_cpu_hot_add(int cpu, int state, Monitor *mon)
     CPUState *env;
     uint32_t apic_id;
 
+    if (!acpi_enabled) {
+        monitor_printf(mon, "CPU hot add is disabled by -no-acpi option\n");
+        return;
+    }
+
     if ((cpu < 1) || (cpu > max_cpus - 1)) {
         monitor_printf(mon, "cpu id[%d] must be in range [1..%d]\n",
             cpu, max_cpus - 1);
