@@ -107,6 +107,7 @@ Source9: ksmtuned.conf
 Source10: qemu-guest-agent.service
 Source11: 99-qemu-guest-agent.rules
 Source12: bridge.conf
+Source13: qemu-ga.sysconfig
 
 %%CONFIGS%%
 
@@ -538,12 +539,16 @@ dobuild --target-list="$buildarch"
 %endif
 
 %if %{with guest_agent}
-    # For the qemu-guest-agent subpackage install the systemd
-    # service and udev rules.
+    # For the qemu-guest-agent subpackage, install:
+    # - the systemd service file and the udev rules:
     mkdir -p $RPM_BUILD_ROOT%{_unitdir}
     mkdir -p $RPM_BUILD_ROOT%{_udevdir}
     install -m 0644 %{SOURCE10} $RPM_BUILD_ROOT%{_unitdir}
     install -m 0644 %{SOURCE11} $RPM_BUILD_ROOT%{_udevdir}
+
+    # - the environment file for the systemd service:
+    install -D -p -m 0644 %{SOURCE13} \
+      $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/qemu-ga
 %endif
 
 %if 0%{!?build_only_sub:1}
@@ -641,6 +646,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %{_bindir}/qemu-ga
     %{_unitdir}/qemu-guest-agent.service
     %{_udevdir}/99-qemu-guest-agent.rules
+    %{_sysconfdir}/sysconfig/qemu-ga
 %endif
 
 %if 0%{!?build_only_sub:1}
