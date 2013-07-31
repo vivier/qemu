@@ -778,32 +778,8 @@ static QEMUMachine pc_machine_rhel700 = {
     DEFAULT_MACHINE_OPTIONS,
 };
 
-#define PC_RHEL6_3_COMPAT \
+#define PC_RHEL6_4_COMPAT \
     {\
-        .driver   = "Conroe-" TYPE_X86_CPU,\
-        .property = "model",\
-        .value    = stringify(2),\
-    },{\
-        .driver   = "Conroe-" TYPE_X86_CPU,\
-        .property = "level",\
-        .value    = stringify(2),\
-    },{\
-        .driver   = "Penryn-" TYPE_X86_CPU,\
-        .property = "model",\
-        .value    = stringify(2),\
-    },{\
-        .driver   = "Penryn-" TYPE_X86_CPU,\
-        .property = "level",\
-        .value    = stringify(2),\
-    },{\
-        .driver   = "Nehalem-" TYPE_X86_CPU,\
-        .property = "model",\
-        .value    = stringify(2),\
-    },{\
-        .driver   = "Nehalem-" TYPE_X86_CPU,\
-        .property = "level",\
-        .value    = stringify(2),\
-    },{\
         .driver   = "scsi-hd",\
         .property = "discard_granularity",\
         .value    = stringify(0),\
@@ -865,28 +841,8 @@ static QEMUMachine pc_machine_rhel700 = {
         .property = "mq",\
         .value    = "off",\
     },{\
-        .driver   = "e1000",\
-        .property = "autonegotiation",\
-        .value    = "off",\
-    },{\
-        .driver   = "qxl",\
-        .property = "revision",\
-        .value    = stringify(3),\
-    },{\
-        .driver   = "qxl-vga",\
-        .property = "revision",\
-        .value    = stringify(3),\
-    },{\
         .driver   = "VGA",\
         .property = "mmio",\
-        .value    = "off",\
-    },{\
-        .driver   = "virtio-scsi-pci",\
-        .property = "hotplug",\
-        .value    = "off",\
-    },{\
-        .driver   = "virtio-scsi-pci",\
-        .property = "param_change",\
         .value    = "off",\
     },{\
         .driver   = "virtio-blk-pci",\
@@ -910,12 +866,77 @@ static QEMUMachine pc_machine_rhel700 = {
         .value    = stringify(1),\
     }
 
-static void pc_init_rhel630(QEMUMachineInitArgs *args)
+static void pc_init_rhel640(QEMUMachineInitArgs *args)
 {
     has_pvpanic = false;
+    pc_init_rhel700(args);
+}
+
+static QEMUMachine pc_machine_rhel640 = {
+    .name = "rhel6.4.0",
+    .desc = "RHEL 6.4.0 PC",
+    .init = pc_init_rhel640,
+    .max_cpus = 255,
+    .compat_props = (GlobalProperty[]) {
+        PC_RHEL6_4_COMPAT,
+        { /* end of list */ }
+    },
+    DEFAULT_MACHINE_OPTIONS,
+};
+
+#define PC_RHEL6_3_COMPAT \
+    PC_RHEL6_4_COMPAT,\
+    {\
+        .driver   = "Conroe-" TYPE_X86_CPU,\
+        .property = "model",\
+        .value    = stringify(2),\
+    },{\
+        .driver   = "Conroe-" TYPE_X86_CPU,\
+        .property = "level",\
+        .value    = stringify(2),\
+    },{\
+        .driver   = "Penryn-" TYPE_X86_CPU,\
+        .property = "model",\
+        .value    = stringify(2),\
+    },{\
+        .driver   = "Penryn-" TYPE_X86_CPU,\
+        .property = "level",\
+        .value    = stringify(2),\
+    },{\
+        .driver   = "Nehalem-" TYPE_X86_CPU,\
+        .property = "model",\
+        .value    = stringify(2),\
+    },{\
+        .driver   = "Nehalem-" TYPE_X86_CPU,\
+        .property = "level",\
+        .value    = stringify(2),\
+    },{\
+        .driver   = "e1000",\
+        .property = "autonegotiation",\
+        .value    = "off",\
+    },{\
+        .driver   = "qxl",\
+        .property = "revision",\
+        .value    = stringify(3),\
+    },{\
+        .driver   = "qxl-vga",\
+        .property = "revision",\
+        .value    = stringify(3),\
+    },{\
+        .driver   = "virtio-scsi-pci",\
+        .property = "hotplug",\
+        .value    = "off",\
+    },{\
+        .driver   = "virtio-scsi-pci",\
+        .property = "param_change",\
+        .value    = "off",\
+    }
+
+static void pc_init_rhel630(QEMUMachineInitArgs *args)
+{
     disable_kvm_pv_eoi();
     enable_compat_apic_id_mode();
-    pc_init_rhel700(args);
+    pc_init_rhel640(args);
 }
 
 static QEMUMachine pc_machine_rhel630 = {
@@ -1031,6 +1052,7 @@ static QEMUMachine pc_machine_rhel600 = {
 static void rhel_machine_init(void)
 {
     qemu_register_machine(&pc_machine_rhel700);
+    qemu_register_machine(&pc_machine_rhel640);
     qemu_register_machine(&pc_machine_rhel630);
     qemu_register_machine(&pc_machine_rhel620);
     qemu_register_machine(&pc_machine_rhel610);
