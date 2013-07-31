@@ -988,10 +988,6 @@ static QEMUMachine pc_machine_rhel700 = {
         .property = "vapic",\
         .value    = "off",\
     },{\
-        .driver   = TYPE_USB_DEVICE,\
-        .property = "full-path",\
-        .value    = "no",\
-    },{\
         .driver   = "virtio-blk-pci",\
         .property = "event_idx",\
         .value    = "off",\
