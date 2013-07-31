@@ -549,6 +549,20 @@ dobuild --target-list="$buildarch"
     # - the environment file for the systemd service:
     install -D -p -m 0644 %{SOURCE13} \
       $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/qemu-ga
+
+    # - the fsfreeze hook script:
+    install -D --preserve-timestamps \
+      scripts/qemu-guest-agent/fsfreeze-hook \
+      $RPM_BUILD_ROOT%{_sysconfdir}/qemu-ga/fsfreeze-hook
+
+    # - the directory for user scripts:
+    mkdir $RPM_BUILD_ROOT%{_sysconfdir}/qemu-ga/fsfreeze-hook.d
+
+    # - and the fsfreeze script samples:
+    mkdir --parents $RPM_BUILD_ROOT%{_datadir}/%{name}/qemu-ga/fsfreeze-hook.d/
+    install --preserve-timestamps --mode=0644 \
+      scripts/qemu-guest-agent/fsfreeze-hook.d/*.sample \
+      $RPM_BUILD_ROOT%{_datadir}/%{name}/qemu-ga/fsfreeze-hook.d/
 %endif
 
 %if 0%{!?build_only_sub:1}
@@ -647,6 +661,8 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %{_unitdir}/qemu-guest-agent.service
     %{_udevdir}/99-qemu-guest-agent.rules
     %{_sysconfdir}/sysconfig/qemu-ga
+    %{_sysconfdir}/qemu-ga
+    %{_datadir}/%{name}/qemu-ga
 %endif
 
 %if 0%{!?build_only_sub:1}
