@@ -861,7 +861,7 @@ static QEMUMachine pc_machine_rhel700 = {
     .is_default = 1,
 };
 
-#define PC_RHEL6_4_COMPAT \
+#define PC_RHEL6_5_COMPAT \
     {\
         .driver   = "scsi-hd",\
         .property = "discard_granularity",\
@@ -949,9 +949,34 @@ static QEMUMachine pc_machine_rhel700 = {
         .value    = stringify(1),\
     }
 
-static void pc_init_rhel640(QEMUMachineInitArgs *args)
+static void pc_init_rhel650(QEMUMachineInitArgs *args)
 {
     pc_init_rhel700(args);
+}
+
+static QEMUMachine pc_machine_rhel650 = {
+    PC_DEFAULT_MACHINE_OPTIONS,
+    .name = "rhel6.5.0",
+    .desc = "RHEL 6.5.0 PC",
+    .init = pc_init_rhel650,
+    .max_cpus = 255,
+    .compat_props = (GlobalProperty[]) {
+        PC_RHEL6_5_COMPAT,
+        { /* end of list */ }
+    },
+};
+
+#define PC_RHEL6_4_COMPAT \
+    PC_RHEL6_5_COMPAT,\
+    {\
+        .driver   = "virtio-scsi-pci",\
+        .property = "vectors",\
+        .value    = stringify(2),\
+    }
+
+static void pc_init_rhel640(QEMUMachineInitArgs *args)
+{
+    pc_init_rhel650(args);
 }
 
 static QEMUMachine pc_machine_rhel640 = {
@@ -1134,6 +1159,7 @@ static QEMUMachine pc_machine_rhel600 = {
 static void rhel_machine_init(void)
 {
     qemu_register_machine(&pc_machine_rhel700);
+    qemu_register_machine(&pc_machine_rhel650);
     qemu_register_machine(&pc_machine_rhel640);
     qemu_register_machine(&pc_machine_rhel630);
     qemu_register_machine(&pc_machine_rhel620);
