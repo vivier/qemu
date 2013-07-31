@@ -1,0 +1,110 @@
+From d79c72664cce0ca7aa9c25c5f12dc004a1536fa2 Mon Sep 17 00:00:00 2001
+From: Miroslav Rezanina <mrezanin@redhat.com>
+Date: Wed, 31 Jul 2013 09:55:17 +0200
+Subject: vmdk: remove wrong calculation of relative path
+
+Message-id: <1374654509-5535-5-git-send-email-famz@redhat.com>
+Patchwork-id: 52676
+O-Subject: [RHEL-7 qemu-kvm PATCH 4/5] vmdk: remove wrong calculation of relative path
+Bugzilla: 836675
+RH-Acked-by: Stefan Hajnoczi <stefanha@redhat.com>
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Jeffrey Cody <jcody@redhat.com>
+RH-Acked-by: Michal Novotny <minovotn@redhat.com>
+
+When creating image with backing file, the driver tries to calculate the
+relative path from created image file to backing file, but the path
+computation is incorrect. e.g.:
+
+    $ qemu-img create -f vmdk -b vmdk-data-disk.vmdk vmdk-data-snapshot1
+    Formatting 'vmdk-data-snapshot1', fmt=vmdk size=10737418240
+    backing_file='vmdk-data-disk.vmdk' compat6=off zeroed_grain=off
+
+    $ qemu-img info vmdk-data-snapshot1
+    image: vmdk-data-snapshot1
+    file format: vmdk
+    virtual size: 10G (10737418240 bytes)
+    disk size: 12K
+->  backing file: disk.vmdk
+
+The common part in file names, "vmdk-data-", is incorrectly forgotten by
+relative_path(). As the VMDK specification has no restriction on
+parentNameHint to be relative path, we simply remove this by using the
+backing_file option.
+
+Cc: qemu-stable@nongnu.org
+Signed-off-by: Fam Zheng <famz@redhat.com>
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+(cherry picked from commit 8ed610a1c983dd2ed1eed8841036af55751d115f)
+Signed-off-by: Fam Zheng <famz@redhat.com>
+
+diff --git a/block/vmdk.c b/block/vmdk.c
+index 975e1d4..a28fb5e 100644
+--- a/block/vmdk.c
++++ b/block/vmdk.c
+@@ -1487,45 +1487,6 @@ static int filename_decompose(const char *filename, char *path, char *prefix,
+     return VMDK_OK;
+ }
+ 
+-static int relative_path(char *dest, int dest_size,
+-        const char *base, const char *target)
+-{
+-    int i = 0;
+-    int n = 0;
+-    const char *p, *q;
+-#ifdef _WIN32
+-    const char *sep = "\\";
+-#else
+-    const char *sep = "/";
+-#endif
+-
+-    if (!(dest && base && target)) {
+-        return VMDK_ERROR;
+-    }
+-    if (path_is_absolute(target)) {
+-        pstrcpy(dest, dest_size, target);
+-        return VMDK_OK;
+-    }
+-    while (base[i] == target[i]) {
+-        i++;
+-    }
+-    p = &base[i];
+-    q = &target[i];
+-    while (*p) {
+-        if (*p == *sep) {
+-            n++;
+-        }
+-        p++;
+-    }
+-    dest[0] = '\0';
+-    for (; n; n--) {
+-        pstrcat(dest, dest_size, "..");
+-        pstrcat(dest, dest_size, sep);
+-    }
+-    pstrcat(dest, dest_size, q);
+-    return VMDK_OK;
+-}
+-
+ static int vmdk_create(const char *filename, QEMUOptionParameter *options)
+ {
+     int fd, idx = 0;
+@@ -1625,7 +1586,6 @@ static int vmdk_create(const char *filename, QEMUOptionParameter *options)
+         return -ENOTSUP;
+     }
+     if (backing_file) {
+-        char parent_filename[PATH_MAX];
+         BlockDriverState *bs = bdrv_new("");
+         ret = bdrv_open(bs, backing_file, NULL, 0, NULL);
+         if (ret != 0) {
+@@ -1638,10 +1598,8 @@ static int vmdk_create(const char *filename, QEMUOptionParameter *options)
+         }
+         parent_cid = vmdk_read_cid(bs, 0);
+         bdrv_delete(bs);
+-        relative_path(parent_filename, sizeof(parent_filename),
+-                      filename, backing_file);
+         snprintf(parent_desc_line, sizeof(parent_desc_line),
+-                "parentFileNameHint=\"%s\"", parent_filename);
++                "parentFileNameHint=\"%s\"", backing_file);
+     }
+ 
+     /* Create extents */

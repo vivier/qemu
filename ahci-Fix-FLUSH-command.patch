@@ -1,0 +1,105 @@
+From 4d60659fb76df74e76fec41df8fb0c643fdf9994 Mon Sep 17 00:00:00 2001
+From: Miroslav Rezanina <mrezanin@redhat.com>
+Date: Wed, 31 Jul 2013 07:55:35 +0200
+Subject: ahci: Fix FLUSH command
+
+Message-id: <1374542744-25237-1-git-send-email-famz@redhat.com>
+Patchwork-id: 52635
+O-Subject: [RHEL-7 qemu-kvm PATCH] ahci: Fix FLUSH command
+Bugzilla: 981723
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Stefan Hajnoczi <stefanha@redhat.com>
+RH-Acked-by: Jeffrey Cody <jcody@redhat.com>
+
+From: Kevin Wolf <kwolf@redhat.com>
+
+BZ: 981723
+
+AHCI couldn't cope with asynchronous commands that aren't doing DMA, it
+simply wouldn't complete them. Due to the bug fixed in commit f68ec837,
+FLUSH commands would seem to have completed immediately even if they
+were still running on the host. After the commit, they would simply hang
+and never unset the BSY bit, rendering AHCI unusable on any OS sending
+flushes.
+
+This patch adds another callback for the completion of asynchronous
+commands. This is what AHCI really wants to use for its command
+completion logic rather than an DMA completion callback.
+
+Cc: qemu-stable@nongnu.org
+Signed-off-by: Kevin Wolf <kwolf@redhat.com>
+Reviewed-by: Stefan Hajnoczi <stefanha@redhat.com>
+(cherry picked from commit a62eaa26c1d6d48fbdc3ac1d32bd1314f5fdc8c9)
+Signed-off-by: Fam Zheng <famz@redhat.com>
+
+diff --git a/hw/ide/ahci.c b/hw/ide/ahci.c
+index eab6096..ade9f64 100644
+--- a/hw/ide/ahci.c
++++ b/hw/ide/ahci.c
+@@ -1104,9 +1104,14 @@ static int ahci_dma_add_status(IDEDMA *dma, int status)
+ 
+ static int ahci_dma_set_inactive(IDEDMA *dma)
+ {
++    return 0;
++}
++
++static int ahci_async_cmd_done(IDEDMA *dma)
++{
+     AHCIDevice *ad = DO_UPCAST(AHCIDevice, dma, dma);
+ 
+-    DPRINTF(ad->port_no, "dma done\n");
++    DPRINTF(ad->port_no, "async cmd done\n");
+ 
+     /* update d2h status */
+     ahci_write_fis_d2h(ad, NULL);
+@@ -1141,6 +1146,7 @@ static const IDEDMAOps ahci_dma_ops = {
+     .set_unit = ahci_dma_set_unit,
+     .add_status = ahci_dma_add_status,
+     .set_inactive = ahci_dma_set_inactive,
++    .async_cmd_done = ahci_async_cmd_done,
+     .restart_cb = ahci_dma_restart_cb,
+     .reset = ahci_dma_reset,
+ };
+diff --git a/hw/ide/core.c b/hw/ide/core.c
+index 9926d92..8b3dde6 100644
+--- a/hw/ide/core.c
++++ b/hw/ide/core.c
+@@ -568,10 +568,18 @@ static void dma_buf_commit(IDEState *s)
+     qemu_sglist_destroy(&s->sg);
+ }
+ 
++static void ide_async_cmd_done(IDEState *s)
++{
++    if (s->bus->dma->ops->async_cmd_done) {
++        s->bus->dma->ops->async_cmd_done(s->bus->dma);
++    }
++}
++
+ void ide_set_inactive(IDEState *s)
+ {
+     s->bus->dma->aiocb = NULL;
+     s->bus->dma->ops->set_inactive(s->bus->dma);
++    ide_async_cmd_done(s);
+ }
+ 
+ void ide_dma_error(IDEState *s)
+@@ -804,6 +812,7 @@ static void ide_flush_cb(void *opaque, int ret)
+ 
+     bdrv_acct_done(s->bs, &s->acct);
+     s->status = READY_STAT | SEEK_STAT;
++    ide_async_cmd_done(s);
+     ide_set_irq(s->bus);
+ }
+ 
+diff --git a/hw/ide/internal.h b/hw/ide/internal.h
+index 03f1489..048a052 100644
+--- a/hw/ide/internal.h
++++ b/hw/ide/internal.h
+@@ -433,6 +433,7 @@ struct IDEDMAOps {
+     DMAIntFunc *set_unit;
+     DMAIntFunc *add_status;
+     DMAFunc *set_inactive;
++    DMAFunc *async_cmd_done;
+     DMARestartFunc *restart_cb;
+     DMAFunc *reset;
+ };
