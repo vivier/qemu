@@ -1017,7 +1017,7 @@ static void pc_init_rhel600(QEMUMachineInitArgs *args)
 {
     x86_cpu_compat_disable_kvm_features(FEAT_KVM, KVM_FEATURE_PV_EOI);
     enable_compat_apic_id_mode();
-    pc_init1(args, 1, 0);
+    pc_init_rhel700(args);
 }
 
 static QEMUMachine pc_machine_rhel600 = {
