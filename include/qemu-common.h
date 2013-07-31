@@ -288,6 +288,7 @@ struct qemu_work_item {
     void (*func)(void *data);
     void *data;
     int done;
+    bool free;
 };
 
 #ifdef CONFIG_USER_ONLY
