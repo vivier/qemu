@@ -144,6 +144,10 @@ BuildRequires: libseccomp-devel >= 1.0.0
 %endif
 # For network block driver
 BuildRequires: libcurl-devel
+%if 0%{!?build_only_sub:1}
+# For gluster block driver
+BuildRequires: glusterfs-devel
+%endif
 # We need both because the 'stap' binary is probed for by configure
 BuildRequires: systemtap
 BuildRequires: systemtap-sdt-devel
@@ -395,8 +399,8 @@ dobuild() {
 %else
         --disable-guest-agent \
 %endif
-        --disable-glusterfs \
-        --block-drv-rw-whitelist=qcow2,raw,file,host_device,host_cdrom,nbd \
+        --enable-glusterfs \
+        --block-drv-rw-whitelist=qcow2,raw,file,host_device,host_cdrom,nbd,gluster \
         --block-drv-ro-whitelist=vmdk \
         "$@"
 
