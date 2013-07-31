@@ -861,7 +861,7 @@ static QEMUMachine pc_machine_rhel700 = {
     .is_default = 1,
 };
 
-#define PC_RHEL6_0_COMPAT \
+#define PC_RHEL6_1_COMPAT \
     {\
         .driver   = "Conroe-" TYPE_X86_CPU,\
         .property = "model",\
@@ -954,11 +954,11 @@ static QEMUMachine pc_machine_rhel700 = {
     },{\
         .driver   = "qxl",\
         .property = "revision",\
-        .value    = stringify(1),\
+        .value    = stringify(2),\
     },{\
         .driver   = "qxl-vga",\
         .property = "revision",\
-        .value    = stringify(1),\
+        .value    = stringify(2),\
     },{\
         .driver   = "VGA",\
         .property = "mmio",\
@@ -1007,6 +1007,37 @@ static QEMUMachine pc_machine_rhel700 = {
         .driver   = "AC97",\
         .property = "use_broken_id",\
         .value    = stringify(1),\
+    }
+
+static void pc_init_rhel610(QEMUMachineInitArgs *args)
+{
+    x86_cpu_compat_disable_kvm_features(FEAT_KVM, KVM_FEATURE_PV_EOI);
+    enable_compat_apic_id_mode();
+    pc_init_rhel700(args);
+}
+
+static QEMUMachine pc_machine_rhel610 = {
+    PC_DEFAULT_MACHINE_OPTIONS,
+    .name = "rhel6.1.0",
+    .desc = "RHEL 6.1.0 PC",
+    .init = pc_init_rhel610,
+    .max_cpus = 255,
+    .compat_props = (GlobalProperty[]) {
+        PC_RHEL6_1_COMPAT,
+        { /* end of list */ }
+    },
+};
+
+#define PC_RHEL6_0_COMPAT \
+    PC_RHEL6_1_COMPAT,\
+    {\
+        .driver   = "qxl",\
+        .property = "revision",\
+        .value    = stringify(1),\
+    },{\
+        .driver   = "qxl-vga",\
+        .property = "revision",\
+        .value    = stringify(1),\
     },{\
         .driver   = "VGA",\
         .property = "rombar",\
@@ -1015,9 +1046,7 @@ static QEMUMachine pc_machine_rhel700 = {
 
 static void pc_init_rhel600(QEMUMachineInitArgs *args)
 {
-    x86_cpu_compat_disable_kvm_features(FEAT_KVM, KVM_FEATURE_PV_EOI);
-    enable_compat_apic_id_mode();
-    pc_init_rhel700(args);
+    pc_init_rhel610(args);
 }
 
 static QEMUMachine pc_machine_rhel600 = {
@@ -1035,6 +1064,7 @@ static QEMUMachine pc_machine_rhel600 = {
 static void rhel_machine_init(void)
 {
     qemu_register_machine(&pc_machine_rhel700);
+    qemu_register_machine(&pc_machine_rhel610);
     qemu_register_machine(&pc_machine_rhel600);
 }
 
