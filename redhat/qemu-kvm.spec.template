@@ -1,3 +1,12 @@
+# Build time setting
+%define rhev 0
+
+%if %{rhev}
+    %bcond_with     guest_agent     # disabled
+%else
+    %bcond_without  guest_agent     # enabled
+%endif
+
 %global SLOF_gittagdate 20120731
 
 %global have_usbredir 1
@@ -31,17 +40,22 @@
 
 #Versions of various parts:
 
-# Polite request for people who spin their own qemu-kvm rpms:
-# # please modify the "buildid" define in a way that identifies
-# # that the kernel isn't the stock distribution qemu-kvm, for example,
-# # by setting the define to ".local" or ".bz123456"
-#
-# %define pkgname qemu-kvm
-#
-# These values for system_xyz are overridden below for non-kvmonly builds.
-# Instead, these values for kvm_package are overridden below for kvmonly builds.
-# Somewhat confusing, but avoids complicated nested conditionals.
 %define pkgname qemu-kvm
+%define rhel_suffix -rhel
+%define rhev_suffix -rhev
+%if %{rhev}
+    %global pkgsuffix %{rhev_suffix}
+%endif
+
+# Polite request for people who spin their own qemu-kvm rpms:
+# please modify the "buildid" define in a way that identifies
+# that the kernel isn't the stock distribution qemu-kvm, for example,
+# by setting the define to ".local" or ".bz123456".
+#
+# There are two ways how buildid can be modified
+# - following line in specfile
+# - localversion file in repository root - this is preferred way as file 
+# is ignored by git
 %define buildid %{nil}%%BUILDID%%
 
 %define sublevel %%SUBLEVEL%%
@@ -51,7 +65,7 @@
 %define full_release %{pkgrelease}%{?dist}%{?buildid}
 
 Summary: QEMU is a FAST! processor emulator
-Name: %{pkgname}
+Name: %{pkgname}%{?pkgsuffix}
 Version: %{rpmversion}
 Release: %{full_release}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
@@ -59,7 +73,10 @@ Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
 Group: Development/Tools
 URL: http://www.qemu.org/
-# RHEL will build Qemu only on x86_64:
+# RHEV will build Qemu only on x86_64:
+%if %{rhev}
+ExclusiveArch: x86_64
+%endif
 Requires: seabios-bin
 Requires: sgabios-bin
 Requires: seavgabios-bin
@@ -157,7 +174,21 @@ BuildRequires: texinfo
 Requires: qemu-img = %{epoch}:%{version}-%{release}
 %endif
 
-%define qemudocdir %{_docdir}/%{name}
+# RHEV-specific changes:
+# We provide special suffix for qemu-kvm so the conflit is easy
+# In addition, RHEV version should obsolete all RHEL version in case both
+# RHEL and RHEV channels are used
+%if %{rhev}
+Conflicts: %{pkgname}%{rhel_suffix}
+Provides:  %{pkgname} =  %{epoch}:%version}-%{release}
+Obsoletes: %{pkgname} < 15:0-0
+%else
+Conflicts: %{pkgname}%{rhev_suffix}
+Provides:  %{pkgname}%{rhel_suffix} =  %{epoch}:%version}-%{release}
+%endif
+
+
+%define qemudocdir %{_docdir}/%{pkgname}
 
 %description
 QEMU is a generic and open source processor emulator which achieves a good
@@ -196,6 +227,7 @@ emulation speed by using dynamic translation.
 This package provides the common files needed by all QEMU targets
 %endif
 
+%if %{with guest_agent}
 %package -n qemu-guest-agent
 Summary: QEMU guest agent
 Group: System Environment/Daemons
@@ -220,6 +252,8 @@ This package does not need to be installed on the host OS.
 
 %postun -n qemu-guest-agent
 %systemd_postun_with_restart qemu-guest-agent.service
+
+%endif
 
 %if 0%{!?build_only_sub:1}
 %package tools
@@ -321,10 +355,10 @@ dobuild() {
         --sysconfdir=%{_sysconfdir} \
         --interp-prefix=%{_prefix}/qemu-%%M \
         --audio-drv-list=pa,alsa \
-        --with-confsuffix=/%{name} \
+        --with-confsuffix=/%{pkgname} \
         --localstatedir=%{_localstatedir} \
         --libexecdir=%{_libexecdir} \
-        --with-pkgversion=%{name}-%{version}-%{release} \
+        --with-pkgversion=%{pkgname}-%{version}-%{release} \
         --disable-strip \
         --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
         --extra-cflags="%{optflags} -fPIE -DPIE" \
@@ -356,7 +390,11 @@ dobuild() {
         --disable-vnc-jpeg \
         --enable-vnc-ws \
         --enable-uuid \
+%if %{with guest_agent}
         --enable-guest-agent \
+%else
+        --disable-guest-agent \
+%endif
         --disable-glusterfs \
         --block-drv-whitelist=qcow2,raw,file,host_device,host_cdrom,vmdk,nbd \
         "$@"
@@ -370,7 +408,7 @@ dobuild() {
 %else
    ./configure --prefix=%{_prefix} \
                --libdir=%{_libdir} \
-               --with-pkgversion=%{name}-%{version}-%{release} \
+               --with-pkgversion=%{pkgname}-%{version}-%{release} \
                --disable-guest-agent \
                --target-list= --cpu=%{_arch}
 
@@ -419,11 +457,11 @@ dobuild --target-list="$buildarch"
     install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_udevdir}
 
     make DESTDIR=$RPM_BUILD_ROOT \
-        sharedir="%{_datadir}/%{name}" \
-        datadir="%{_datadir}/%{name}" \
+        sharedir="%{_datadir}/%{pkgname}" \
+        datadir="%{_datadir}/%{pkgname}" \
         install
 
-    mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{name}
+    mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{pkgname}
     mkdir -p $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset
 
     install -m 0755 qemu-kvm $RPM_BUILD_ROOT%{_libexecdir}/
@@ -443,34 +481,34 @@ dobuild --target-list="$buildarch"
     install -D -p -m 0644 qemu.sasl $RPM_BUILD_ROOT%{_sysconfdir}/sasl2/qemu-kvm.conf
 
     # Provided by package openbios
-    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-ppc
-    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-sparc32
-    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/openbios-sparc64
+    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/openbios-ppc
+    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/openbios-sparc32
+    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/openbios-sparc64
     # Provided by package SLOF
-    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/slof.bin
+    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/slof.bin
 
     # Remove unpackaged files.
-    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/palcode-clipper
-    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/petalogix*.dtb
-    rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}/bamboo.dtb
-    rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}/ppc_rom.bin
-    rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{name}/spapr-rtas.bin
-    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/s390-zipl.rom
+    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/palcode-clipper
+    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/petalogix*.dtb
+    rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/bamboo.dtb
+    rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/ppc_rom.bin
+    rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/spapr-rtas.bin
+    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/s390-zipl.rom
 
     # Provided by package ipxe
-    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/pxe*rom
+    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/pxe*rom
     # Provided by package vgabios
-    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/vgabios*bin
+    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/vgabios*bin
     # Provided by package seabios
-    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/bios.bin
+    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/bios.bin
     # Provided by package sgabios
-    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{name}/sgabios.bin
+    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/sgabios.bin
 
     # the pxe gpxe images will be symlinks to the images on
     # /usr/share/ipxe, as QEMU doesn't know how to look
     # for other paths, yet.
     pxe_link() {
-        ln -s ../ipxe/$2.rom %{buildroot}%{_datadir}/%{name}/pxe-$1.rom
+        ln -s ../ipxe/$2.rom %{buildroot}%{_datadir}/%{pkgname}/pxe-$1.rom
     }
 
     pxe_link e1000 8086100e
@@ -480,7 +518,7 @@ dobuild --target-list="$buildarch"
     pxe_link virtio 1af41000
 
     rom_link() {
-        ln -s $1 %{buildroot}%{_datadir}/%{name}/$2
+        ln -s $1 %{buildroot}%{_datadir}/%{pkgname}/$2
     }
 
     rom_link ../seavgabios/vgabios-isavga.bin vgabios.bin
@@ -492,16 +530,18 @@ dobuild --target-list="$buildarch"
     rom_link ../sgabios/sgabios.bin sgabios.bin
 %endif
 
-# For the qemu-guest-agent subpackage install the systemd
-# service and udev rules.
-mkdir -p $RPM_BUILD_ROOT%{_unitdir}
-mkdir -p $RPM_BUILD_ROOT%{_udevdir}
-install -m 0644 %{SOURCE10} $RPM_BUILD_ROOT%{_unitdir}
-install -m 0644 %{SOURCE11} $RPM_BUILD_ROOT%{_udevdir}
+%if %{with guest_agent}
+    # For the qemu-guest-agent subpackage install the systemd
+    # service and udev rules.
+    mkdir -p $RPM_BUILD_ROOT%{_unitdir}
+    mkdir -p $RPM_BUILD_ROOT%{_udevdir}
+    install -m 0644 %{SOURCE10} $RPM_BUILD_ROOT%{_unitdir}
+    install -m 0644 %{SOURCE11} $RPM_BUILD_ROOT%{_udevdir}
+%endif
 
 %if 0%{!?build_only_sub:1}
     # Install rules to use the bridge helper with libvirt's virbr0
-    install -m 0644 %{SOURCE12} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}
+    install -m 0644 %{SOURCE12} $RPM_BUILD_ROOT%{_sysconfdir}/%{pkgname}
     chmod u+s $RPM_BUILD_ROOT%{_libexecdir}/qemu-bridge-helper
 %endif
 
@@ -572,61 +612,63 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %doc %{qemudocdir}/COPYING
     %doc %{qemudocdir}/COPYING.LIB
     %doc %{qemudocdir}/LICENSE
-    %dir %{_datadir}/%{name}/
-    %{_datadir}/%{name}/keymaps/
-    %{_mandir}/man1/%{name}.1*
+    %dir %{_datadir}/%{pkgname}/
+    %{_datadir}/%{pkgname}/keymaps/
+    %{_mandir}/man1/%{pkgname}.1*
     %{_libexecdir}/qemu-bridge-helper
-    %config(noreplace) %{_sysconfdir}/sasl2/%{name}.conf
+    %config(noreplace) %{_sysconfdir}/sasl2/%{pkgname}.conf
     %{_libdir}/systemd/system/ksm.service
     %{_libdir}/systemd/ksmctl
     %config(noreplace) %{_sysconfdir}/sysconfig/ksm
     %{_libdir}/systemd/system/ksmtuned.service
     %{_sbindir}/ksmtuned
     %config(noreplace) %{_sysconfdir}/ksmtuned.conf
-    %dir %{_sysconfdir}/%{name}
-    %config(noreplace) %{_sysconfdir}/%{name}/bridge.conf
+    %dir %{_sysconfdir}/%{pkgname}
+    %config(noreplace) %{_sysconfdir}/%{pkgname}/bridge.conf
 %endif
 
+%if %{with guest_agent}
 %files -n qemu-guest-agent
-%defattr(-,root,root,-)
-%doc COPYING README
-%{_bindir}/qemu-ga
-%{_unitdir}/qemu-guest-agent.service
-%{_udevdir}/99-qemu-guest-agent.rules
+    %defattr(-,root,root,-)
+    %doc COPYING README
+    %{_bindir}/qemu-ga
+    %{_unitdir}/qemu-guest-agent.service
+    %{_udevdir}/99-qemu-guest-agent.rules
+%endif
 
 %if 0%{!?build_only_sub:1}
 %files
     %defattr(-,root,root)
-    %{_datadir}/%{name}/acpi-dsdt.aml
-    %{_datadir}/%{name}/q35-acpi-dsdt.aml
-    %{_datadir}/%{name}/bios.bin
-    %{_datadir}/%{name}/bios-256k.bin
-    %{_datadir}/%{name}/sgabios.bin
-    %{_datadir}/%{name}/linuxboot.bin
-    %{_datadir}/%{name}/multiboot.bin
-    %{_datadir}/%{name}/kvmvapic.bin
-    %{_datadir}/%{name}/vgabios.bin
-    %{_datadir}/%{name}/vgabios-cirrus.bin
-    %{_datadir}/%{name}/vgabios-qxl.bin
-    %{_datadir}/%{name}/vgabios-stdvga.bin
-    %{_datadir}/%{name}/vgabios-vmware.bin
-    %{_datadir}/%{name}/pxe-e1000.rom
-    %{_datadir}/%{name}/pxe-virtio.rom
-    %{_datadir}/%{name}/pxe-pcnet.rom
-    %{_datadir}/%{name}/pxe-rtl8139.rom
-    %{_datadir}/%{name}/pxe-ne2k_pci.rom
-    %{_datadir}/%{name}/qemu-icon.bmp
-    %{_datadir}/%{name}/efi-e1000.rom
-    %{_datadir}/%{name}/efi-eepro100.rom
-    %{_datadir}/%{name}/efi-ne2k_pci.rom
-    %{_datadir}/%{name}/efi-pcnet.rom
-    %{_datadir}/%{name}/efi-rtl8139.rom
-    %{_datadir}/%{name}/efi-virtio.rom
-    %{_datadir}/%{name}/s390-ccw.img
-    %{_datadir}/%{name}/QEMU,tcx.bin
-    %{_datadir}/%{name}/QEMU,cgthree.bin
-    %{_datadir}/%{name}/qemu_logo_no_text.svg
-    %config(noreplace) %{_sysconfdir}/%{name}/target-x86_64.conf
+    %{_datadir}/%{pkgname}/acpi-dsdt.aml
+    %{_datadir}/%{pkgname}/q35-acpi-dsdt.aml
+    %{_datadir}/%{pkgname}/bios.bin
+    %{_datadir}/%{pkgname}/bios-256k.bin
+    %{_datadir}/%{pkgname}/sgabios.bin
+    %{_datadir}/%{pkgname}/linuxboot.bin
+    %{_datadir}/%{pkgname}/multiboot.bin
+    %{_datadir}/%{pkgname}/kvmvapic.bin
+    %{_datadir}/%{pkgname}/vgabios.bin
+    %{_datadir}/%{pkgname}/vgabios-cirrus.bin
+    %{_datadir}/%{pkgname}/vgabios-qxl.bin
+    %{_datadir}/%{pkgname}/vgabios-stdvga.bin
+    %{_datadir}/%{pkgname}/vgabios-vmware.bin
+    %{_datadir}/%{pkgname}/pxe-e1000.rom
+    %{_datadir}/%{pkgname}/pxe-virtio.rom
+    %{_datadir}/%{pkgname}/pxe-pcnet.rom
+    %{_datadir}/%{pkgname}/pxe-rtl8139.rom
+    %{_datadir}/%{pkgname}/pxe-ne2k_pci.rom
+    %{_datadir}/%{pkgname}/qemu-icon.bmp
+    %{_datadir}/%{pkgname}/efi-e1000.rom
+    %{_datadir}/%{pkgname}/efi-eepro100.rom
+    %{_datadir}/%{pkgname}/efi-ne2k_pci.rom
+    %{_datadir}/%{pkgname}/efi-pcnet.rom
+    %{_datadir}/%{pkgname}/efi-rtl8139.rom
+    %{_datadir}/%{pkgname}/efi-virtio.rom
+    %{_datadir}/%{pkgname}/s390-ccw.img
+    %{_datadir}/%{pkgname}/QEMU,tcx.bin
+    %{_datadir}/%{pkgname}/QEMU,cgthree.bin
+    %{_datadir}/%{pkgname}/qemu_logo_no_text.svg
+    %config(noreplace) %{_sysconfdir}/%{pkgname}/target-x86_64.conf
     %{?kvm_files:}
     %{?qemu_kvm_files:}
 
