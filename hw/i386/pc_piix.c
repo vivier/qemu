@@ -1081,6 +1081,14 @@ static QEMUMachine pc_machine_rhel620 = {
 #define PC_RHEL6_1_COMPAT \
     PC_RHEL6_2_COMPAT,\
     {\
+        .driver   = "PIIX4_PM",\
+        .property = "disable_s3",\
+        .value    = "0",\
+    },{\
+        .driver   = "PIIX4_PM",\
+        .property = "disable_s4",\
+        .value    = "0",\
+    },{\
         .driver   = "qxl",\
         .property = "revision",\
         .value    = stringify(2),\
