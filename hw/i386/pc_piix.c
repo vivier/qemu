@@ -954,11 +954,11 @@ static QEMUMachine pc_machine_rhel700 = {
     },{\
         .driver   = "qxl",\
         .property = "revision",\
-        .value    = stringify(3),\
+        .value    = stringify(1),\
     },{\
         .driver   = "qxl-vga",\
         .property = "revision",\
-        .value    = stringify(3),\
+        .value    = stringify(1),\
     },{\
         .driver   = "VGA",\
         .property = "mmio",\
