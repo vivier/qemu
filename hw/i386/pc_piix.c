@@ -984,10 +984,6 @@ static QEMUMachine pc_machine_rhel700 = {
         .property = "class",\
         .value    = stringify(PCI_CLASS_MEMORY_RAM),\
     },{\
-        .driver   = "apic",\
-        .property = "vapic",\
-        .value    = "off",\
-    },{\
         .driver   = "virtio-blk-pci",\
         .property = "event_idx",\
         .value    = "off",\
