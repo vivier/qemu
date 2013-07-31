@@ -139,9 +139,9 @@ int qemu_acl_insert(qemu_acl *acl,
 
     if (index <= 0)
         return -1;
-    if (index >= acl->nentries)
+    if (index > acl->nentries) {
         return qemu_acl_append(acl, deny, match);
-
+    }
 
     entry = qemu_malloc(sizeof(*entry));
     entry->match = qemu_strdup(match);
