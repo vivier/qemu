@@ -10,7 +10,7 @@ PREBUILD=$5
 BUILD=$6
 BUILDID=$7
 
-RCMARKER=-$8
+RCMARKER=
 PATCHF="$SOURCES/Patch.include"
 patchf="$SOURCES/patch.include"
 SERIESF="$SOURCES/series"
