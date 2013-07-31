@@ -1004,14 +1004,6 @@ static QEMUMachine pc_machine_rhel700 = {
         .property = "romfile",\
         .value    = "pxe-e1000.rom",\
     },{\
-        .driver   = "ne2k_pci",\
-        .property = "romfile",\
-        .value    = "pxe-ne2k_pci.rom",\
-    },{\
-        .driver   = "pcnet",\
-        .property = "romfile",\
-        .value    = "pxe-pcnet.rom",\
-    },{\
         .driver   = "rtl8139",\
         .property = "romfile",\
         .value    = "pxe-rtl8139.rom",\
@@ -1040,18 +1032,6 @@ static QEMUMachine pc_machine_rhel700 = {
         .property = "autonegotiation",\
         .value    = "off",\
     },{\
-        .driver   = "nec-usb-xhci",\
-        .property = "msi",\
-        .value    = "off",\
-    },{\
-        .driver   = "nec-usb-xhci",\
-        .property = "msix",\
-        .value    = "off",\
-    },{\
-        .driver   = "ivshmem",\
-        .property = "use64",\
-        .value    = "0",\
-    },{\
         .driver   = "qxl",\
         .property = "revision",\
         .value    = stringify(3),\
@@ -1076,10 +1056,6 @@ static QEMUMachine pc_machine_rhel700 = {
         .property = "vgamem_mb",\
         .value    = stringify(8),\
     },{\
-        .driver   = "vmware-svga",\
-        .property = "vgamem_mb",\
-        .value    = stringify(8),\
-    },{\
         .driver   = "qxl-vga",\
         .property = "vgamem_mb",\
         .value    = stringify(8),\
@@ -1091,10 +1067,6 @@ static QEMUMachine pc_machine_rhel700 = {
         .driver   = "virtio-blk-pci",\
         .property = "config-wce",\
         .value    = "off",\
-    },{\
-        .driver   = "pc-sysfw",\
-        .property = "rom_only",\
-        .value    = stringify(1),\
     },{\
         .driver   = TYPE_ISA_FDC,\
         .property = "check_media_rate",\
@@ -1145,10 +1117,6 @@ static QEMUMachine pc_machine_rhel700 = {
         .value    = stringify(0),\
     },{\
         .driver   = "VGA",\
-        .property = "rombar",\
-        .value    = stringify(0),\
-    },{\
-        .driver   = "vmware-svga",\
         .property = "rombar",\
         .value    = stringify(0),\
     }
