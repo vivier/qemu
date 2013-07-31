@@ -861,9 +861,241 @@ static QEMUMachine pc_machine_rhel700 = {
     .is_default = 1,
 };
 
+#define PC_RHEL6_0_COMPAT \
+    {\
+        .driver   = "Conroe-" TYPE_X86_CPU,\
+        .property = "model",\
+        .value    = stringify(2),\
+    },{\
+        .driver   = "Conroe-" TYPE_X86_CPU,\
+        .property = "level",\
+        .value    = stringify(2),\
+    },{\
+        .driver   = "Penryn-" TYPE_X86_CPU,\
+        .property = "model",\
+        .value    = stringify(2),\
+    },{\
+        .driver   = "Penryn-" TYPE_X86_CPU,\
+        .property = "level",\
+        .value    = stringify(2),\
+    },{\
+        .driver   = "Nehalem-" TYPE_X86_CPU,\
+        .property = "model",\
+        .value    = stringify(2),\
+    },{\
+        .driver   = "Nehalem-" TYPE_X86_CPU,\
+        .property = "level",\
+        .value    = stringify(2),\
+    },{\
+        .driver   = "scsi-hd",\
+        .property = "discard_granularity",\
+        .value    = stringify(0),\
+    },{\
+        .driver   = "scsi-cd",\
+        .property = "discard_granularity",\
+        .value    = stringify(0),\
+    },{\
+        .driver   = "scsi-disk",\
+        .property = "discard_granularity",\
+        .value    = stringify(0),\
+    },{\
+        .driver   = "ide-hd",\
+        .property = "discard_granularity",\
+        .value    = stringify(0),\
+    },{\
+        .driver   = "ide-cd",\
+        .property = "discard_granularity",\
+        .value    = stringify(0),\
+    },{\
+        .driver   = "ide-drive",\
+        .property = "discard_granularity",\
+        .value    = stringify(0),\
+    },{\
+        .driver   = "virtio-blk-pci",\
+        .property = "discard_granularity",\
+        .value    = stringify(0),\
+    },{\
+        .driver   = "virtio-serial-pci",\
+        .property = "vectors",\
+        /* DEV_NVECTORS_UNSPECIFIED as a uint32_t string */\
+        .value    = stringify(0xFFFFFFFF),\
+    },{\
+        .driver   = "e1000",\
+        .property = "romfile",\
+        .value    = "pxe-e1000.rom",\
+    },{\
+        .driver   = "ne2k_pci",\
+        .property = "romfile",\
+        .value    = "pxe-ne2k_pci.rom",\
+    },{\
+        .driver   = "pcnet",\
+        .property = "romfile",\
+        .value    = "pxe-pcnet.rom",\
+    },{\
+        .driver   = "rtl8139",\
+        .property = "romfile",\
+        .value    = "pxe-rtl8139.rom",\
+    },{\
+        .driver   = "virtio-net-pci",\
+        .property = "romfile",\
+        .value    = "pxe-virtio.rom",\
+    },{\
+        .driver   = "486-" TYPE_X86_CPU,\
+        .property = "model",\
+        .value    = stringify(0),\
+    },{\
+        .driver   = "usb-tablet",\
+        .property = "usb_version",\
+        .value    = stringify(1),\
+    },{\
+        .driver   = "virtio-net-pci",\
+        .property = "ctrl_mac_addr",\
+        .value    = "off",\
+    },{\
+        .driver   = "virtio-net-pci",\
+        .property = "mq",\
+        .value    = "off",\
+    },{\
+        .driver   = "e1000",\
+        .property = "autonegotiation",\
+        .value    = "off",\
+    },{\
+        .driver   = "nec-usb-xhci",\
+        .property = "msi",\
+        .value    = "off",\
+    },{\
+        .driver   = "nec-usb-xhci",\
+        .property = "msix",\
+        .value    = "off",\
+    },{\
+        .driver   = "ivshmem",\
+        .property = "use64",\
+        .value    = "0",\
+    },{\
+        .driver   = "qxl",\
+        .property = "revision",\
+        .value    = stringify(3),\
+    },{\
+        .driver   = "qxl-vga",\
+        .property = "revision",\
+        .value    = stringify(3),\
+    },{\
+        .driver   = "VGA",\
+        .property = "mmio",\
+        .value    = "off",\
+    },{\
+        .driver   = "virtio-scsi-pci",\
+        .property = "hotplug",\
+        .value    = "off",\
+    },{\
+        .driver   = "virtio-scsi-pci",\
+        .property = "param_change",\
+        .value    = "off",\
+    },{\
+        .driver   = "VGA",\
+        .property = "vgamem_mb",\
+        .value    = stringify(8),\
+    },{\
+        .driver   = "vmware-svga",\
+        .property = "vgamem_mb",\
+        .value    = stringify(8),\
+    },{\
+        .driver   = "qxl-vga",\
+        .property = "vgamem_mb",\
+        .value    = stringify(8),\
+    },{\
+        .driver   = "qxl",\
+        .property = "vgamem_mb",\
+        .value    = stringify(8),\
+    },{\
+        .driver   = "virtio-blk-pci",\
+        .property = "config-wce",\
+        .value    = "off",\
+    },{\
+        .driver   = "pc-sysfw",\
+        .property = "rom_only",\
+        .value    = stringify(1),\
+    },{\
+        .driver   = TYPE_ISA_FDC,\
+        .property = "check_media_rate",\
+        .value    = "off",\
+    },{\
+        .driver   = "virtio-balloon-pci",\
+        .property = "class",\
+        .value    = stringify(PCI_CLASS_MEMORY_RAM),\
+    },{\
+        .driver   = "apic",\
+        .property = "vapic",\
+        .value    = "off",\
+    },{\
+        .driver   = TYPE_USB_DEVICE,\
+        .property = "full-path",\
+        .value    = "no",\
+    },{\
+        .driver   = "virtio-blk-pci",\
+        .property = "event_idx",\
+        .value    = "off",\
+    },{\
+        .driver   = "virtio-serial-pci",\
+        .property = "event_idx",\
+        .value    = "off",\
+    },{\
+        .driver   = "virtio-net-pci",\
+        .property = "event_idx",\
+        .value    = "off",\
+    },{\
+        .driver   = "virtio-balloon-pci",\
+        .property = "event_idx",\
+        .value    = "off",\
+    },{\
+        .driver   = TYPE_PCI_DEVICE,\
+        .property = "command_serr_enable",\
+        .value    = "off",\
+    },{\
+        .driver   = "AC97",\
+        .property = "use_broken_id",\
+        .value    = stringify(1),\
+    },{\
+        .driver   = "virtio-serial-pci",\
+        .property = "max_ports",\
+        .value    = stringify(1),\
+    },{\
+        .driver   = "virtio-serial-pci",\
+        .property = "vectors",\
+        .value    = stringify(0),\
+    },{\
+        .driver   = "VGA",\
+        .property = "rombar",\
+        .value    = stringify(0),\
+    },{\
+        .driver   = "vmware-svga",\
+        .property = "rombar",\
+        .value    = stringify(0),\
+    }
+
+static void pc_init_rhel600(QEMUMachineInitArgs *args)
+{
+    x86_cpu_compat_disable_kvm_features(FEAT_KVM, KVM_FEATURE_PV_EOI);
+    enable_compat_apic_id_mode();
+    pc_init1(args, 1, 0);
+}
+
+static QEMUMachine pc_machine_rhel600 = {
+    PC_DEFAULT_MACHINE_OPTIONS,
+    .name = "rhel6.0.0",
+    .desc = "RHEL 6.0.0 PC",
+    .init = pc_init_rhel600,
+    .max_cpus = 255,
+    .compat_props = (GlobalProperty[]) {
+        PC_RHEL6_0_COMPAT,
+        { /* end of list */ }
+    },
+};
+
 static void rhel_machine_init(void)
 {
     qemu_register_machine(&pc_machine_rhel700);
+    qemu_register_machine(&pc_machine_rhel600);
 }
 
 machine_init(rhel_machine_init);
