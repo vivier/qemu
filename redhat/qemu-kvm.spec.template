@@ -499,6 +499,9 @@ dobuild --target-list="$buildarch"
     rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/spapr-rtas.bin
     rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/s390-zipl.rom
 
+    # Remove efi roms
+    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/efi*.rom
+
     # Provided by package ipxe
     rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/pxe*rom
     # Provided by package vgabios
@@ -662,12 +665,6 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %{_datadir}/%{pkgname}/pxe-rtl8139.rom
     %{_datadir}/%{pkgname}/pxe-ne2k_pci.rom
     %{_datadir}/%{pkgname}/qemu-icon.bmp
-    %{_datadir}/%{pkgname}/efi-e1000.rom
-    %{_datadir}/%{pkgname}/efi-eepro100.rom
-    %{_datadir}/%{pkgname}/efi-ne2k_pci.rom
-    %{_datadir}/%{pkgname}/efi-pcnet.rom
-    %{_datadir}/%{pkgname}/efi-rtl8139.rom
-    %{_datadir}/%{pkgname}/efi-virtio.rom
     %{_datadir}/%{pkgname}/s390-ccw.img
     %{_datadir}/%{pkgname}/QEMU,tcx.bin
     %{_datadir}/%{pkgname}/QEMU,cgthree.bin

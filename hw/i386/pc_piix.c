@@ -896,18 +896,6 @@ static QEMUMachine pc_machine_rhel700 = {
         /* DEV_NVECTORS_UNSPECIFIED as a uint32_t string */\
         .value    = stringify(0xFFFFFFFF),\
     },{\
-        .driver   = "e1000",\
-        .property = "romfile",\
-        .value    = "pxe-e1000.rom",\
-    },{\
-        .driver   = "rtl8139",\
-        .property = "romfile",\
-        .value    = "pxe-rtl8139.rom",\
-    },{\
-        .driver   = "virtio-net-pci",\
-        .property = "romfile",\
-        .value    = "pxe-virtio.rom",\
-    },{\
         .driver   = "486-" TYPE_X86_CPU,\
         .property = "model",\
         .value    = stringify(0),\
