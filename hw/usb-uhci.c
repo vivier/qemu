@@ -169,6 +169,8 @@ typedef struct UHCI_QH {
     uint32_t el_link;
 } UHCI_QH;
 
+static void uhci_resume (void *opaque);
+
 static UHCIAsync *uhci_async_alloc(UHCIState *s)
 {
     UHCIAsync *async = qemu_malloc(sizeof(UHCIAsync));
@@ -458,6 +460,12 @@ static void uhci_ioport_writew(void *opaque, uint32_t addr, uint32_t val)
             return;
         }
         s->cmd = val;
+        if (val & UHCI_CMD_EGSM) {
+            if ((s->ports[0].ctrl & UHCI_PORT_RD) ||
+                (s->ports[1].ctrl & UHCI_PORT_RD)) {
+                uhci_resume(s);
+            }
+        }
         break;
     case 0x02:
         s->status &= ~val;
