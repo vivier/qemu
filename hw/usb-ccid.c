@@ -1162,16 +1162,6 @@ static Answer *ccid_peek_next_answer(USBCCIDState *s)
         : &s->pending_answers[s->pending_answers_start % PENDING_ANSWERS_NUM];
 }
 
-static void ccid_bus_dev_print(Monitor *mon, DeviceState *qdev, int indent)
-{
-    CCIDCardState *card = DO_UPCAST(CCIDCardState, qdev, qdev);
-    CCIDCardInfo *info = DO_UPCAST(CCIDCardInfo, qdev, qdev->info);
-
-    if (info->print) {
-        info->print(mon, card, indent);
-    }
-}
-
 struct CCIDBus {
     BusState qbus;
 };
@@ -1179,7 +1169,6 @@ struct CCIDBus {
 static struct BusInfo ccid_bus_info = {
     .name = "ccid-bus",
     .size = sizeof(CCIDBus),
-    .print_dev = ccid_bus_dev_print,
     .props = (Property[]) {
         DEFINE_PROP_UINT32("slot", struct CCIDCardState, slot, 0),
         DEFINE_PROP_END_OF_LIST(),
