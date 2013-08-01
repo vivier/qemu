@@ -1194,6 +1194,8 @@ static int ccid_handle_data(USBDevice *dev, USBPacket *p)
                         "handle_data: int_in: notify_slot_change %X, "
                         "requested len %d\n",
                         s->bmSlotICCState, len);
+            } else {
+                ret = USB_RET_NAK;
             }
             break;
         default:
