@@ -995,6 +995,7 @@ static void ccid_on_slot_change(USBCCIDState *s, bool full)
         s->bmSlotICCState |= SLOT_0_CHANGED_MASK;
     }
     s->notify_slot_change = true;
+    usb_wakeup(&s->dev);
 }
 
 static void ccid_write_data_block_error(
