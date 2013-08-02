@@ -1105,6 +1105,10 @@ static QEMUMachine pc_machine_rhel640 = {
         .driver   = "virtio-scsi-pci",\
         .property = "param_change",\
         .value    = "off",\
+    },{\
+        .driver = TYPE_X86_CPU,\
+        .property = "pmu",\
+        .value = "on",\
     }
 
 static void pc_init_rhel630(MachineState *machine)
@@ -1127,7 +1131,12 @@ static QEMUMachine pc_machine_rhel630 = {
 };
 
 #define PC_RHEL6_2_COMPAT \
-    PC_RHEL6_3_COMPAT
+    PC_RHEL6_3_COMPAT,\
+    {\
+        .driver = TYPE_X86_CPU,\
+        .property = "pmu",\
+        .value = "off",\
+    }
 
 static void pc_init_rhel620(MachineState *machine)
 {
