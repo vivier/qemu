@@ -211,6 +211,10 @@ int e820_add_entry(uint64_t, uint64_t, uint32_t);
             .driver   = "Nehalem-" TYPE_X86_CPU,\
             .property = "level",\
             .value    = stringify(2),\
+        },{\
+            .driver = TYPE_X86_CPU,\
+            .property = "pmu",\
+            .value = "on",\
         }
 
 #define PC_COMPAT_1_4 \
