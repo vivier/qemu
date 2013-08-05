@@ -1,3 +1,4 @@
+all: rh-help
 include Makefile.common
 include Makefile.test
 
@@ -12,6 +13,7 @@ BUILD_TARGET ?= --scratch $(BUILD_SCRATCH_TARGET)
 #BUILD_TARGET ?= $(BUILD_DEFAULT_TARGET)
 #endif
 
+RHEV_FLAG=0
 RELEASE:=$(shell sed -ne 's/^[^\#]*define release \(.*\)%.*%.*/\1/p' $(REDHAT)/$(SPECFILE).template)
 
 # create an empty localversion file if you don't want a local buildid
@@ -119,7 +121,7 @@ sources-rh: $(TARBALL) $(RC_PATCH) $(GIT_PATCH) $(REDHAT)/create-patches.sh Make
 	@cp $(TARBALL) $(SOURCES)/$(TARFILE)
 	@cp *.patch $(SOURCES)
 	@cp bridge.conf $(SOURCES)
-	@$(REDHAT)/create-patches.sh $(MARKER) $(SOURCES) $(SOURCES)/$(SPECFILE) $(PKGRELEASE) '$(PREBUILD)' $(BUILD) $(BUILDID)
+	@$(REDHAT)/create-patches.sh $(MARKER) $(SOURCES) $(SOURCES)/$(SPECFILE) $(PKGRELEASE) '$(PREBUILD)' $(BUILD) $(BUILDID) $(RHEV_FLAG)
 	@cp $(SOURCES)/$(SPECFILE) $(SOURCES)/../SPECS
 	@cp $(TESTPATCH) $(SOURCES)/$(COMMON_NAME)-test.patch
 	@cp ../sysconfigs/target/target-x86_64.conf $(SOURCES)
@@ -169,11 +171,16 @@ rh-release-commit:
 rh-update-changelog:
 	@$(REDHAT)/scripts/update_changelog.sh $(KVERSION) $(PKG_FULL_VR)
 
-.PHONY: rh-brew rh-koji
+.PHONY: rh-brew rh-koji rh-brew-rhev
 rh-brew : BUILD_FLAGS ?= $(BREW_FLAGS) $(TEST_FLAGS)
 rh-koji : BUILD_FLAGS ?= $(KOJI_FLAGS) $(TEST_FLAGS)
+rh-brew-rhev: BUILD_FLAGS ?= $(BREW_FLAGS) $(TEST_FLAGS)
+rh-brew-rhev: RHEV_FLAG=1
+rh-brew-rhev: PKG_FULL_NVR=$(PKGNAME)-rhev-$(PKG_FULL_VR)
 rh-brew rh-koji: rh-%: rh-srpm
 	$* build $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)
+rh-brew-rhev: rh-srpm
+	brew build $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)
 
 rh-help:
 	@echo  'Cleaning targets:'
@@ -185,6 +192,7 @@ rh-help:
 	@echo  ''
 	@echo  '  rh-srpm	- Create a source RPM and put it into the redhat/rpm/SRPMS/ directory'
 	@echo  '  rh-brew	- Create a $(COMMON_NAME) SRPM and then call brew to build the created SRPM'
+	@echo  '  rh-brew-rhev     - Create rhev version of a $(COMMON_NAME) SRPM and then call brew to build the created SRPM'
 	@echo  '  rh-koji	- Create a $(COMMON_NAME) SRPM and then call koji to build the created SRPM'
 	@echo  '  rh-test	- Pass in brew task number, TASK=1234 make rh-test, to use for an RHTS test'
 	@echo  '		  setup ./tests to use a test from redhat/tests (minus the .xml)'
@@ -195,7 +203,6 @@ rh-help:
 	@echo  '  rh-rpms	- Create the binary RPMS for the $(COMMON_NAME)'
 	@echo  '  rh-$(COMMON_NAME)-<type> - Create  binary RPMS for a particular $(COMMON_NAME) type'
 	@echo  '                   - <type> can be: baseonly, smponly, dbgonly'
-
 	@echo  '  rh-all-rpms	- Create the binary RPMS and the SRPM for the $(COMMON_NAME)'
 	@echo  '  rh-prep	- Setup the redhat/rpm/BUILD/ directory with the $(COMMON_NAME) source'
 	@echo  '  rh-test-patch - Create a diff against HEAD and put it in $(COMMON_NAME)-test.patch.'
