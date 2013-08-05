@@ -9,6 +9,7 @@ PKGRELEASE=$4
 PREBUILD=$5
 BUILD=$6
 BUILDID=$7
+RHEV=$8
 
 PATCHF="$SOURCES/Patch.include"
 patchf="$SOURCES/patch.include"
@@ -319,6 +320,7 @@ test -n "$SPECFILE" &&
 	s/%%SUBLEVEL%%/$SUBLEVEL/
 	s/%%RCREV%%/$RCREV/
 	s/%%GITREV%%/$GITREV/
+        s/%%RHEV_FLAG%%/$RHEV/
 	s/%%RELEASED_KERNEL%%/$RELEASED_KERNEL/" $SPECFILE
 if [ -n "$BUILDID" ]; then
 	sed -i -e "s/# % define buildid .local/%define buildid $BUILDID/" $SPECFILE;
