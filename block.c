@@ -2833,7 +2833,7 @@ static void bdrv_print_dict(QObject *obj, void *opaque)
                             qdict_get_str(qdict, "drv"),
                             qdict_get_bool(qdict, "encrypted"));
 
-#if CONFIG_BLOCK_IO_THROTTLING
+#ifdef CONFIG_BLOCK_IO_THROTTLING
         monitor_printf(mon, " bps=%" PRId64 " bps_rd=%" PRId64
                 " bps_wr=%" PRId64 " iops=%" PRId64
                 " iops_rd=%" PRId64 " iops_wr=%" PRId64,

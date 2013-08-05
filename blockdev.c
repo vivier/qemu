@@ -486,7 +486,7 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
         return NULL;
     }
 
-#if CONFIG_BLOCK_IO_THROTTLING
+#ifdef CONFIG_BLOCK_IO_THROTTLING
     /* disk I/O throttling */
     io_limits.bps[BLOCK_IO_LIMIT_TOTAL]  =
                            qemu_opt_get_number(opts, "bps", 0);
