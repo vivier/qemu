@@ -1634,6 +1634,10 @@ static void rhel_common_init(const char *type1_version,
             .driver   = "virtio-scsi-pci",\
             .property = "vectors",\
             .value    = stringify(2),\
+        },{\
+            .driver   = "virtio-net-pci",\
+            .property = "ctrl_guest_offloads",\
+            .value    = "off",\
         }
 
 #define PC_RHEL6_3_COMPAT \
