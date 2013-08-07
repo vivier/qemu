@@ -1044,6 +1044,7 @@ static QEMUMachine pc_machine_rhel650 = {
 
 static void pc_init_rhel640(MachineState *machine)
 {
+    x86_cpu_compat_set_features(NULL, FEAT_1_EDX, 0, CPUID_SEP);
     pc_init_rhel650(machine);
 }
 
