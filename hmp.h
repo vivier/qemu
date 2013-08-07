@@ -83,6 +83,7 @@ void hmp_getfd(Monitor *mon, const QDict *qdict);
 void hmp_closefd(Monitor *mon, const QDict *qdict);
 void hmp_send_key(Monitor *mon, const QDict *qdict);
 void hmp_screen_dump(Monitor *mon, const QDict *qdict);
+void hmp___com_redhat_qxl_screen_dump(Monitor *mon, const QDict *qdict);
 void hmp_nbd_server_start(Monitor *mon, const QDict *qdict);
 void hmp_nbd_server_add(Monitor *mon, const QDict *qdict);
 void hmp_nbd_server_stop(Monitor *mon, const QDict *qdict);
