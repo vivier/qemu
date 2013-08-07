@@ -1826,6 +1826,12 @@ static void win32_rearm_timer(struct qemu_alarm_timer *t)
 
 #endif /* _WIN32 */
 
+static void quit_timers(void)
+{
+    alarm_timer->stop(alarm_timer);
+    alarm_timer = NULL;
+}
+
 static int init_timer_alarm(void)
 {
     struct qemu_alarm_timer *t = NULL;
@@ -1845,17 +1851,12 @@ static int init_timer_alarm(void)
     }
 
     alarm_timer = t;
+    atexit(&quit_timers);
 
     return 0;
 
 fail:
     return err;
-}
-
-static void quit_timers(void)
-{
-    alarm_timer->stop(alarm_timer);
-    alarm_timer = NULL;
 }
 
 /***********************************************************/
@@ -6103,8 +6104,6 @@ int main(int argc, char **argv, char **envp)
     }
     fips_set_state(true);
     loc_set_none();
-
-    atexit(&quit_timers);
 
     /* If no data_dir is specified then try to find it relative to the
        executable path.  */
