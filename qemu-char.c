@@ -2911,6 +2911,7 @@ CharDriverState *qemu_chr_new_from_opts(QemuOpts *opts,
         }
 
         chr = qemu_chr_find(id);
+        chr->opts = opts;
 
     qapi_out:
         if (!backend->data) {
