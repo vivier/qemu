@@ -3206,8 +3206,11 @@ The main json-object contains the following:
 
 - "status": migration status (json-string)
      - Possible values: "active", "completed", "failed", "cancelled"
-- "ram": only present if "status" is "active", it is a json-object with the
-  following RAM information (in bytes):
+- "total-time": total amount of ms since migration started.  If
+                migration has ended, it returns the total migration
+                time (json-int)
+- "ram": only present if "status" is "active" or "complete", it is a
+         json-object with the following RAM information (in bytes):
          - "transferred": amount transferred (json-int)
          - "remaining": amount remaining (json-int)
          - "total": total (json-int)
@@ -3227,7 +3230,16 @@ Examples:
 2. Migration is done and has succeeded
 
 -> { "execute": "query-migrate" }
-<- { "return": { "status": "completed" } }
+<- {
+      "return":{
+         "status": "completed",
+         "total-time": 1215,
+         "ram":{
+            "transferred":123,
+            "remaining":123,
+            "total":246
+      }
+   }
 
 3. Migration is done and has failed
 
@@ -3240,6 +3252,7 @@ Examples:
 <- {
       "return":{
          "status":"active",
+         "total-time": 1215,
          "ram":{
             "transferred":123,
             "remaining":123,
@@ -3254,6 +3267,7 @@ Examples:
 <- {
       "return":{
          "status":"active",
+         "total-time": 1215,
          "ram":{
             "total":1057024,
             "remaining":1053304,

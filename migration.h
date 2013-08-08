@@ -34,6 +34,8 @@ struct MigrationState
     void (*release)(MigrationState *s);
     int blk;
     int shared;
+
+    int64_t total_time;
 };
 
 typedef struct FdMigrationState FdMigrationState;

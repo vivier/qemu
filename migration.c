@@ -98,6 +98,7 @@ int do_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data)
     int blk = qdict_get_try_bool_or_int(qdict, "blk", 0);
     int inc = qdict_get_try_bool_or_int(qdict, "inc", 0);
     const char *uri = qdict_get_str(qdict, "uri");
+    int64_t start_time ;
 
     if (current_migration &&
         current_migration->get_status(current_migration) == MIG_STATE_ACTIVE) {
@@ -110,6 +111,8 @@ int do_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data)
     }
 
     START_MIGRATION_CLOCK();
+    start_time = qemu_get_clock(rt_clock);
+
     if (strstart(uri, "tcp:", &p)) {
         s = tcp_start_outgoing_migration(mon, p, max_throttle, detach,
                                          blk, inc, &errp);
@@ -144,6 +147,7 @@ int do_migrate(Monitor *mon, const QDict *qdict, QObject **ret_data)
         current_migration->release(current_migration);
     }
 
+    s->total_time = start_time;
     current_migration = s;
     notifier_list_notify(&migration_state_notifiers, NULL);
     return 0;
@@ -226,6 +230,11 @@ void do_info_migrate_print(Monitor *mon, const QObject *data)
     monitor_printf(mon, "Migration status: %s\n",
                    qdict_get_str(qdict, "status"));
 
+    if (qdict_haskey(qdict, "total-time")) {
+        monitor_printf(mon, "total time: %" PRIu64 " milliseconds\n",
+                       qdict_get_int(qdict, "total-time"));
+    }
+
     if (qdict_haskey(qdict, "ram")) {
         migrate_print_status(mon, "ram", qdict);
     }
@@ -257,6 +266,10 @@ void do_info_migrate(Monitor *mon, QObject **ret_data)
             qdict = qdict_new();
             qdict_put(qdict, "status", qstring_from_str("active"));
 
+            qdict_put(qdict, "total-time",
+                      qint_from_int(qemu_get_clock(rt_clock) -
+                                    s->total_time));
+
             migrate_put_status(qdict, "ram", ram_bytes_transferred(),
                                ram_bytes_remaining(), ram_bytes_total());
 
@@ -269,7 +282,17 @@ void do_info_migrate(Monitor *mon, QObject **ret_data)
             *ret_data = QOBJECT(qdict);
             break;
         case MIG_STATE_COMPLETED:
-            *ret_data = qobject_from_jsonf("{ 'status': 'completed' }");
+            qdict = qdict_new();
+            qdict_put(qdict, "status", qstring_from_str("completed"));
+
+            qdict_put(qdict, "total-time",
+                      qint_from_int(s->total_time));
+
+            migrate_put_status(qdict, "ram", ram_bytes_transferred(),
+                               ram_bytes_remaining(),
+                               ram_bytes_total());
+
+            *ret_data = QOBJECT(qdict);
             break;
         case MIG_STATE_ERROR:
             *ret_data = qobject_from_jsonf("{ 'status': 'failed' }");
@@ -427,8 +450,11 @@ void migrate_fd_put_ready(void *opaque)
             s->state = MIG_STATE_ERROR;
         }
         if (s->state == MIG_STATE_ACTIVE) {
+            int64_t end_time = qemu_get_clock(rt_clock);
+
             s->state = MIG_STATE_COMPLETED;
             runstate_set(RUN_STATE_POSTMIGRATE);
+            s->mig_state.total_time = end_time - s->mig_state.total_time;
         }
         notifier_list_notify(&migration_state_notifiers, NULL);
     }
