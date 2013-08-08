@@ -506,6 +506,8 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
                      "cannot be used at the same time");
         return NULL;
     }
+#else
+    memset(&io_limits, '\0', sizeof io_limits);
 #endif
 
     on_write_error = BLOCK_ERR_STOP_ENOSPC;
