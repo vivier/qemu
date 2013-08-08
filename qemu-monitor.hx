@@ -3209,6 +3209,8 @@ The main json-object contains the following:
 - "total-time": total amount of ms since migration started.  If
                 migration has ended, it returns the total migration
                 time (json-int)
+- "downtime": only present when migration has finished correctly
+              total amount in ms for downtime that happened (json-int)
 - "ram": only present if "status" is "active" or "complete", it is a
          json-object with the following RAM information (in bytes):
          - "transferred": amount transferred (json-int)
@@ -3234,6 +3236,7 @@ Examples:
       "return":{
          "status": "completed",
          "total-time": 1215,
+         "downtime":22,
          "ram":{
             "transferred":123,
             "remaining":123,

@@ -235,6 +235,11 @@ void do_info_migrate_print(Monitor *mon, const QObject *data)
                        qdict_get_int(qdict, "total-time"));
     }
 
+    if (qdict_haskey(qdict, "downtime")) {
+        monitor_printf(mon, "downtime: %" PRIu64 " milliseconds\n",
+                       qdict_get_int(qdict, "downtime"));
+    }
+
     if (qdict_haskey(qdict, "ram")) {
         migrate_print_status(mon, "ram", qdict);
     }
@@ -287,6 +292,9 @@ void do_info_migrate(Monitor *mon, QObject **ret_data)
 
             qdict_put(qdict, "total-time",
                       qint_from_int(s->total_time));
+
+            qdict_put(qdict, "downtime",
+                      qint_from_int(s->downtime));
 
             migrate_put_status(qdict, "ram", ram_bytes_transferred(),
                                ram_bytes_remaining(),
@@ -427,6 +435,7 @@ void migrate_fd_put_ready(void *opaque)
         migrate_fd_error(s);
     } else if (ret == 1) {
         int old_vm_running = runstate_is_running();
+        int64_t start_time = qemu_get_clock(rt_clock);
 
         DPRINTF("done iterating\n");
         qemu_system_wakeup_request(QEMU_WAKEUP_REASON_OTHER);
@@ -455,6 +464,7 @@ void migrate_fd_put_ready(void *opaque)
             s->state = MIG_STATE_COMPLETED;
             runstate_set(RUN_STATE_POSTMIGRATE);
             s->mig_state.total_time = end_time - s->mig_state.total_time;
+            s->mig_state.downtime = end_time - start_time;
         }
         notifier_list_notify(&migration_state_notifiers, NULL);
     }

@@ -36,6 +36,7 @@ struct MigrationState
     int shared;
 
     int64_t total_time;
+    int64_t downtime;
 };
 
 typedef struct FdMigrationState FdMigrationState;
