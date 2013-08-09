@@ -1317,6 +1317,9 @@ int do_drive_del(Monitor *mon, const QDict *qdict, QObject **ret_data)
      */
     if (bdrv_get_attached_dev(bs)) {
         bdrv_make_anon(bs);
+
+        /* Further I/O must not pause the guest */
+        bdrv_set_on_error(bs, BLOCK_ERR_REPORT, BLOCK_ERR_REPORT);
     } else {
         drive_uninit(drive_get_by_blockdev(bs));
     }
