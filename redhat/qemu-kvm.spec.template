@@ -698,6 +698,14 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Aug 09 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.2-3
+- query mem info from monitor would cause qemu-kvm hang [RHEL-7] (rhbz #970047)
+- Throttle-down guest to help with live migration convergence (backport to RHEL7.0) (rhbz #985958)
+- disable (for now) EFI-enabled roms (rhbz #962563)
+- qemu-kvm "vPMU passthrough" mode breaks migration, shouldn't be enabled by default (rhbz #853101)
+- Remove pending watches after virtserialport unplug (rhbz #992900)
+- Containment of error when an SR-IOV device encounters an error... (rhbz #984604)
+
 * Wed Jul 31 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.2-2
 - SPEC file prepared for RHEL/RHEV split (rhbz #987165)
 - RHEL guest( sata disk ) can not boot up (rhbz #981723)
