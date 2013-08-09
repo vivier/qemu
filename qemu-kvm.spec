@@ -49,7 +49,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.2
-Release: 2%{?dist}
+Release: 3%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -172,6 +172,25 @@ Patch60: vmdk-Allow-reading-variable-size-descriptor-files.patch
 Patch61: vmdk-refuse-to-open-higher-version-than-supported.patch
 Patch62: vmdk-remove-wrong-calculation-of-relative-path.patch
 Patch63: block-add-block-driver-read-only-whitelist.patch
+
+# query mem info from monitor would cause qemu-kvm hang [RHEL-7] (rhbz #970047)
+Patch64: kvm-char-io_channel_send-don-t-lose-written-bytes.patch
+Patch65: kvm-monitor-maintain-at-most-one-G_IO_OUT-watch.patch
+# Throttle-down guest to help with live migration convergence (backport to RHEL7.0) (rhbz #985958)
+Patch66: kvm-misc-Introduce-async_run_on_cpu.patch
+Patch67: kvm-misc-Add-auto-converge-migration-capability.patch
+Patch68: kvm-misc-Force-auto-convegence-of-live-migration.patch
+# disable (for now) EFI-enabled roms (rhbz #962563)
+Patch69: kvm-misc-Disable-EFI-enabled-roms.patch
+# qemu-kvm "vPMU passthrough" mode breaks migration, shouldn't be enabled by default (rhbz #853101)
+Patch70: kvm-target-i386-Pass-X86CPU-object-to-cpu_x86_find_by_name.patch
+Patch71: kvm-target-i386-Disable-PMU-CPUID-leaf-by-default.patch
+Patch72: kvm-pc-set-compat-pmu-property-for-rhel6-x-machine-types.patch
+# Remove pending watches after virtserialport unplug (rhbz #992900)
+Patch73: kvm-virtio-console-Use-exitfn-for-virtserialport-too.patch
+# Containment of error when an SR-IOV device encounters an error... (rhbz #984604)
+Patch74: kvm-linux-headers-Update-to-v3-10-rc5.patch
+Patch75: kvm-vfio-QEMU-AER-Qemu-changes-to-support-AER-for-VFIO-PCI-devices.patch
 
 BuildRequires: zlib-devel
 BuildRequires: SDL-devel
@@ -421,6 +440,18 @@ CAC emulation development files.
 %patch61 -p1
 %patch62 -p1
 %patch63 -p1
+%patch64 -p1
+%patch65 -p1
+%patch66 -p1
+%patch67 -p1
+%patch68 -p1
+%patch69 -p1
+%patch70 -p1
+%patch71 -p1
+%patch72 -p1
+%patch73 -p1
+%patch74 -p1
+%patch75 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -585,6 +616,9 @@ dobuild --target-list="$buildarch"
     rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/spapr-rtas.bin
     rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/s390-zipl.rom
 
+    # Remove efi roms
+    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/efi*.rom
+
     # Provided by package ipxe
     rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/pxe*rom
     # Provided by package vgabios
@@ -746,12 +780,6 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %{_datadir}/%{pkgname}/pxe-rtl8139.rom
     %{_datadir}/%{pkgname}/pxe-ne2k_pci.rom
     %{_datadir}/%{pkgname}/qemu-icon.bmp
-    %{_datadir}/%{pkgname}/efi-e1000.rom
-    %{_datadir}/%{pkgname}/efi-eepro100.rom
-    %{_datadir}/%{pkgname}/efi-ne2k_pci.rom
-    %{_datadir}/%{pkgname}/efi-pcnet.rom
-    %{_datadir}/%{pkgname}/efi-rtl8139.rom
-    %{_datadir}/%{pkgname}/efi-virtio.rom
     %{_datadir}/%{pkgname}/s390-ccw.img
     %config(noreplace) %{_sysconfdir}/%{pkgname}/target-x86_64.conf
     %{?kvm_files:}
@@ -785,6 +813,14 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Fri Aug 09 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.2-3
+- query mem info from monitor would cause qemu-kvm hang [RHEL-7] (rhbz #970047)
+- Throttle-down guest to help with live migration convergence (backport to RHEL7.0) (rhbz #985958)
+- disable (for now) EFI-enabled roms (rhbz #962563)
+- qemu-kvm "vPMU passthrough" mode breaks migration, shouldn't be enabled by default (rhbz #853101)
+- Remove pending watches after virtserialport unplug (rhbz #992900)
+- Containment of error when an SR-IOV device encounters an error... (rhbz #984604)
+
 * Wed Jul 31 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.2-2
 - SPEC file prepared for RHEL/RHEV split (rhbz #987165)
 - RHEL guest( sata disk ) can not boot up (rhbz #981723)

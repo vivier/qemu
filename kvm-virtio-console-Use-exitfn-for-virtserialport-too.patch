@@ -1,0 +1,46 @@
+From 9e15f92ccbde7ef8c9fbd38aece77bc442503e89 Mon Sep 17 00:00:00 2001
+From: Amit Shah <amit.shah@redhat.com>
+Date: Mon, 5 Aug 2013 07:52:38 +0200
+Subject: virtio-console: Use exitfn for virtserialport, too
+
+RH-Author: Amit Shah <amit.shah@redhat.com>
+Message-id: <ccffc58f1317401eb9806520a6d64230eca5358a.1375686435.git.amit.shah@redhat.com>
+Patchwork-id: 52958
+O-Subject: [RHEL7.0 qemu-kvm PATCH 1/1] virtio-console: Use exitfn for virtserialport, too
+Bugzilla: 992900
+RH-Acked-by: Laszlo Ersek <lersek@redhat.com>
+RH-Acked-by: Gerd Hoffmann <kraxel@redhat.com>
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+
+From: Andreas Färber <afaerber@suse.de>
+
+Bugzilla: 992900
+
+virtconsole and virtserialport are identical in every other aspect
+except for the distinguishing VirtIOSerialPortClass::is_console field.
+
+Additional notes: Commit c3d6b96ebba18d016be26ffa475feea0d81801a2
+introduced the exitfn, which closed watches.  However, it only did this
+for virtconsole (something that got overlooked by Hans as well as me).
+This commit fixes it for virtserialport as well.
+
+Cc: qemu-stable@nongnu.org
+Signed-off-by: Andreas Färber <afaerber@suse.de>
+Signed-off-by: Andreas Färber <afaerber@suse.de>
+Message-id: 1375313326-14966-1-git-send-email-afaerber@suse.de
+Signed-off-by: Anthony Liguori <aliguori@us.ibm.com>
+(cherry picked from commit 203439ce0a832e36b276f10892846bd91ee836eb)
+Signed-off-by: Amit Shah <amit.shah@redhat.com>
+
+diff --git a/hw/char/virtio-console.c b/hw/char/virtio-console.c
+index 6759e51..2e00ad2 100644
+--- a/hw/char/virtio-console.c
++++ b/hw/char/virtio-console.c
+@@ -185,6 +185,7 @@ static void virtserialport_class_init(ObjectClass *klass, void *data)
+     VirtIOSerialPortClass *k = VIRTIO_SERIAL_PORT_CLASS(klass);
+ 
+     k->init = virtconsole_initfn;
++    k->exit = virtconsole_exitfn;
+     k->have_data = flush_buf;
+     k->set_guest_connected = set_guest_connected;
+     dc->props = virtserialport_properties;
