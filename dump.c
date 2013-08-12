@@ -192,7 +192,8 @@ static int write_elf32_header(DumpState *s)
 }
 
 static int write_elf64_load(DumpState *s, MemoryMapping *memory_mapping,
-                            int phdr_index, target_phys_addr_t offset)
+                            int phdr_index, target_phys_addr_t offset,
+                            target_phys_addr_t filesz)
 {
     Elf64_Phdr phdr;
     int ret;
@@ -202,14 +203,11 @@ static int write_elf64_load(DumpState *s, MemoryMapping *memory_mapping,
     phdr.p_type = cpu_convert_to_target32(PT_LOAD, endian);
     phdr.p_offset = cpu_convert_to_target64(offset, endian);
     phdr.p_paddr = cpu_convert_to_target64(memory_mapping->phys_addr, endian);
-    if (offset == -1) {
-        /* When the memory is not stored into vmcore, offset will be -1 */
-        phdr.p_filesz = 0;
-    } else {
-        phdr.p_filesz = cpu_convert_to_target64(memory_mapping->length, endian);
-    }
+    phdr.p_filesz = cpu_convert_to_target64(filesz, endian);
     phdr.p_memsz = cpu_convert_to_target64(memory_mapping->length, endian);
     phdr.p_vaddr = cpu_convert_to_target64(memory_mapping->virt_addr, endian);
+
+    assert(memory_mapping->length >= filesz);
 
     ret = fd_write_vmcore(&phdr, sizeof(Elf64_Phdr), s);
     if (ret < 0) {
@@ -221,7 +219,8 @@ static int write_elf64_load(DumpState *s, MemoryMapping *memory_mapping,
 }
 
 static int write_elf32_load(DumpState *s, MemoryMapping *memory_mapping,
-                            int phdr_index, target_phys_addr_t offset)
+                            int phdr_index, target_phys_addr_t offset,
+                            target_phys_addr_t filesz)
 {
     Elf32_Phdr phdr;
     int ret;
@@ -231,14 +230,11 @@ static int write_elf32_load(DumpState *s, MemoryMapping *memory_mapping,
     phdr.p_type = cpu_convert_to_target32(PT_LOAD, endian);
     phdr.p_offset = cpu_convert_to_target32(offset, endian);
     phdr.p_paddr = cpu_convert_to_target32(memory_mapping->phys_addr, endian);
-    if (offset == -1) {
-        /* When the memory is not stored into vmcore, offset will be -1 */
-        phdr.p_filesz = 0;
-    } else {
-        phdr.p_filesz = cpu_convert_to_target32(memory_mapping->length, endian);
-    }
+    phdr.p_filesz = cpu_convert_to_target32(filesz, endian);
     phdr.p_memsz = cpu_convert_to_target32(memory_mapping->length, endian);
     phdr.p_vaddr = cpu_convert_to_target32(memory_mapping->virt_addr, endian);
+
+    assert(memory_mapping->length >= filesz);
 
     ret = fd_write_vmcore(&phdr, sizeof(Elf32_Phdr), s);
     if (ret < 0) {
@@ -418,17 +414,24 @@ static int write_memory(DumpState *s, RAMBlock *block, ram_addr_t start,
     return 0;
 }
 
-/* get the memory's offset in the vmcore */
-static target_phys_addr_t get_offset(target_phys_addr_t phys_addr,
-                                     DumpState *s)
+/* get the memory's offset and size in the vmcore */
+static void get_offset_range(target_phys_addr_t phys_addr,
+                             ram_addr_t mapping_length,
+                             DumpState *s,
+                             target_phys_addr_t *p_offset,
+                             target_phys_addr_t *p_filesz)
 {
     RAMBlock *block;
     target_phys_addr_t offset = s->memory_offset;
     int64_t size_in_block, start;
 
+    /* When the memory is not stored into vmcore, offset will be -1 */
+    *p_offset = -1;
+    *p_filesz = 0;
+
     if (s->has_filter) {
         if (phys_addr < s->begin || phys_addr >= s->begin + s->length) {
-            return -1;
+            return;
         }
     }
 
@@ -457,18 +460,26 @@ static target_phys_addr_t get_offset(target_phys_addr_t phys_addr,
         }
 
         if (phys_addr >= start && phys_addr < start + size_in_block) {
-            return phys_addr - start + offset;
+            *p_offset = phys_addr - start + offset;
+
+            /* The offset range mapped from the vmcore file must not spill over
+             * the RAMBlock, clamp it. The rest of the mapping will be
+             * zero-filled in memory at load time; see
+             * <http://refspecs.linuxbase.org/elf/gabi4+/ch5.pheader.html>.
+             */
+            *p_filesz = phys_addr + mapping_length <= start + size_in_block ?
+                        mapping_length :
+                        size_in_block - (phys_addr - start);
+            return;
         }
 
         offset += size_in_block;
     }
-
-    return -1;
 }
 
 static int write_elf_loads(DumpState *s)
 {
-    target_phys_addr_t offset;
+    target_phys_addr_t offset, filesz;
     MemoryMapping *memory_mapping;
     uint32_t phdr_index = 1;
     int ret;
@@ -481,11 +492,15 @@ static int write_elf_loads(DumpState *s)
     }
 
     QTAILQ_FOREACH(memory_mapping, &s->list.head, next) {
-        offset = get_offset(memory_mapping->phys_addr, s);
+        get_offset_range(memory_mapping->phys_addr,
+                         memory_mapping->length,
+                         s, &offset, &filesz);
         if (s->dump_info.d_class == ELFCLASS64) {
-            ret = write_elf64_load(s, memory_mapping, phdr_index++, offset);
+            ret = write_elf64_load(s, memory_mapping, phdr_index++, offset,
+                                   filesz);
         } else {
-            ret = write_elf32_load(s, memory_mapping, phdr_index++, offset);
+            ret = write_elf32_load(s, memory_mapping, phdr_index++, offset,
+                                   filesz);
         }
 
         if (ret < 0) {
