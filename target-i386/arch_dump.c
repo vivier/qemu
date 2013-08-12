@@ -15,6 +15,7 @@
 #include "exec/cpu-all.h"
 #include "sysemu/dump.h"
 #include "elf.h"
+#include "sysemu/memory_mapping.h"
 
 #ifdef TARGET_X86_64
 typedef struct {
@@ -388,10 +389,11 @@ int x86_cpu_write_elf32_qemunote(WriteCoreDumpFunction f, CPUState *cs,
     return cpu_write_qemu_note(f, &cpu->env, opaque, 0);
 }
 
-int cpu_get_dump_info(ArchDumpInfo *info)
+int cpu_get_dump_info(ArchDumpInfo *info,
+                      const GuestPhysBlockList *guest_phys_blocks)
 {
     bool lma = false;
-    RAMBlock *block;
+    GuestPhysBlock *block;
 
 #ifdef TARGET_X86_64
     lma = !!(first_cpu->hflags & HF_LMA_MASK);
@@ -409,8 +411,8 @@ int cpu_get_dump_info(ArchDumpInfo *info)
     } else {
         info->d_class = ELFCLASS32;
 
-        QTAILQ_FOREACH(block, &ram_list.blocks, next) {
-            if (block->offset + block->length > UINT_MAX) {
+        QTAILQ_FOREACH(block, &guest_phys_blocks->head, next) {
+            if (block->target_end > UINT_MAX) {
                 /* The memory size is greater than 4G */
                 info->d_class = ELFCLASS64;
                 break;
