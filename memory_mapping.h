@@ -75,16 +75,20 @@ void guest_phys_blocks_append(GuestPhysBlockList *list);
  *   -2: unsupported
  */
 #if defined(CONFIG_HAVE_GET_MEMORY_MAPPING)
-int qemu_get_guest_memory_mapping(MemoryMappingList *list);
+int qemu_get_guest_memory_mapping(MemoryMappingList *list,
+                                  const GuestPhysBlockList *guest_phys_blocks);
 #else
-static inline int qemu_get_guest_memory_mapping(MemoryMappingList *list)
+static inline
+int qemu_get_guest_memory_mapping(MemoryMappingList *list,
+                                  const GuestPhysBlockList *guest_phys_blocks)
 {
     return -2;
 }
 #endif
 
 /* get guest's memory mapping without do paging(virtual address is 0). */
-void qemu_get_guest_simple_memory_mapping(MemoryMappingList *list);
+void qemu_get_guest_simple_memory_mapping(MemoryMappingList *list,
+                                  const GuestPhysBlockList *guest_phys_blocks);
 
 void memory_mapping_filter(MemoryMappingList *list, int64_t begin,
                            int64_t length);
