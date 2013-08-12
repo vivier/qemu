@@ -307,7 +307,7 @@ int drives_reopen(void)
     return 0;
 }
 
-static bool do_check_io_limits(BlockIOLimit *io_limits)
+static bool do_check_io_limits(BlockIOLimit *io_limits, Error **errp)
 {
     bool bps_flag;
     bool iops_flag;
@@ -321,6 +321,8 @@ static bool do_check_io_limits(BlockIOLimit *io_limits)
                  && ((io_limits->iops[BLOCK_IO_LIMIT_READ] != 0)
                  || (io_limits->iops[BLOCK_IO_LIMIT_WRITE] != 0));
     if (bps_flag || iops_flag) {
+        error_setg(errp, "bps(iops) and bps_rd/bps_wr(iops_rd/iops_wr) "
+                         "cannot be used at the same time");
         return false;
     }
 
@@ -350,6 +352,9 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
     BlockIOLimit io_limits;
     int snapshot = 0;
     bool copy_on_read;
+#ifdef CONFIG_BLOCK_IO_THROTTLING
+    Error *error = NULL;
+#endif
 
     translation = BIOS_ATA_TRANSLATION_AUTO;
 
@@ -501,9 +506,9 @@ DriveInfo *drive_init(QemuOpts *opts, int default_to_scsi)
     io_limits.iops[BLOCK_IO_LIMIT_WRITE] =
                            qemu_opt_get_number(opts, "iops_wr", 0);
 
-    if (!do_check_io_limits(&io_limits)) {
-        error_report("bps(iops) and bps_rd/bps_wr(iops_rd/iops_wr) "
-                     "cannot be used at the same time");
+    if (!do_check_io_limits(&io_limits, &error)) {
+        error_report("%s", error_get_pretty(error));
+        error_free(error);
         return NULL;
     }
 #else
@@ -1240,6 +1245,7 @@ int do_block_set_io_throttle(Monitor *mon,
     BlockIOLimit io_limits;
     const char *devname = qdict_get_str(qdict, "device");
     BlockDriverState *bs;
+    Error *error;
 
     io_limits.bps[BLOCK_IO_LIMIT_TOTAL]
                         = qdict_get_try_int(qdict, "bps", -1);
@@ -1271,8 +1277,9 @@ int do_block_set_io_throttle(Monitor *mon,
         return -1;
     }
 
-    if (!do_check_io_limits(&io_limits)) {
+    if (!do_check_io_limits(&io_limits, &error)) {
         qerror_report(QERR_INVALID_PARAMETER_COMBINATION);
+        error_free(error);
         return -1;
     }
 
