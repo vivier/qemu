@@ -24,7 +24,8 @@ void qmp_dump_guest_memory(bool paging, const char *file, bool has_begin,
     error_set(errp, QERR_UNSUPPORTED);
 }
 
-int cpu_get_dump_info(ArchDumpInfo *info)
+int cpu_get_dump_info(ArchDumpInfo *info,
+                      const struct GuestPhysBlockList *guest_phys_blocks)
 {
     return -1;
 }
