@@ -393,7 +393,7 @@ cd qemu-kvm-x86_64-build
             --extra-cflags="$RPM_OPT_FLAGS -fPIE -DPIE" \
             --disable-xen \
             --block-drv-rw-whitelist=qcow2,raw,file,host_device,host_cdrom,qed \
-            --block-drv-ro-whitelist=vmdk \
+            --block-drv-ro-whitelist=vmdk,vhdx \
             --disable-debug-tcg \
             --disable-sparse \
             --enable-werror \
