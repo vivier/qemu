@@ -55,7 +55,7 @@ endif
 
 ######################################################################
 # shared-obj-y has the object that are shared by qemu binary and tools
-shared-obj-y = qemu-error.o $(block-obj-y) $(qobject-obj-y)
+shared-obj-y = qemu-error.o crc32c.o $(block-obj-y) $(qobject-obj-y)
 
 ######################################################################
 # libqemu_common.a: Target independent part of system emulation. The
