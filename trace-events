@@ -306,3 +306,8 @@ disable hbitmap_set(void *hb, uint64_t start, uint64_t count, uint64_t sbit, uin
 
 # migration.c
 disable migrate_set_state(int new_state) "new state %d"
+
+# kvm-all.c
+disable kvm_ioctl(int type, void *arg) "type %d, arg %p"
+disable kvm_vm_ioctl(int type, void *arg) "type %d, arg %p"
+disable kvm_vcpu_ioctl(int cpu_index, int type, void *arg) "cpu_index %d, type %d, arg %p"
