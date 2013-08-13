@@ -93,7 +93,6 @@ static int pvpanic_isa_init(ISADevice *dev)
 static ISADeviceInfo pvpanic_isa_info = {
     .qdev.name     = "pvpanic",
     .qdev.size     = sizeof(PVPanicState),
-    .qdev.no_user  = 1,
     .qdev.props = (Property[]) {
         DEFINE_PROP_UINT16("ioport", PVPanicState, ioport, 0x505),
         DEFINE_PROP_END_OF_LIST()
