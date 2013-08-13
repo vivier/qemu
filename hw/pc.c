@@ -1114,8 +1114,6 @@ static const char *setdef_cpu_model(const char *model_str,
     }
 }
 
-static bool has_pvpanic = true;
-
 /* PC hardware initialisation */
 static void pc_init1(ram_addr_t ram_size,
                      const char *boot_device,
@@ -1444,10 +1442,6 @@ static void pc_init1(ram_addr_t ram_size,
 	extboot_init(info->bdrv, 1);
     }
 
-    if (has_pvpanic) {
-        pvpanic_init();
-    }
-
 #ifdef CONFIG_KVM_DEVICE_ASSIGNMENT
     if (kvm_enabled()) {
         add_assigned_devices(pci_bus, assigned_devices, assigned_devices_index);
@@ -1755,7 +1749,6 @@ static void rhel_common_init(const char *type1_version,
 static void pc_rhel640_compat(void)
 {
     disable_kvm_sep();
-    has_pvpanic = false;
 }
 
 static void pc_rhel630_compat(void)
