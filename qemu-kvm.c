@@ -1030,6 +1030,7 @@ int kvm_run(CPUState *env)
     }
 #endif
     if (1) {
+        trace_kvm_run_exit(env->cpu_index, run->exit_reason);
         switch (run->exit_reason) {
         case KVM_EXIT_UNKNOWN:
             r = handle_unhandled(run->hw.hardware_exit_reason);
