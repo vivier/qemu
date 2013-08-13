@@ -32,13 +32,8 @@
 
 %ifarch i686
 %bcond_with     qemu_kvm              # disabled
-%bcond_with     guest_agent_win32     # disabled - mingw is only available for
-                                      #            x86_64
 %else
 %bcond_without  qemu_kvm              # enabled
-%if %{with guest_agent}
-%bcond_without  guest_agent_win32     # enabled
-%endif # with guest_agent
 %endif
 
 # Package name and path configuration variables:
@@ -163,9 +158,6 @@ Source9: blacklist-kvm.conf
 Source10: qemu-ga.init
 Source11: qemu-ga.sysconfig
 
-# Windows guest agent installation docs
-Source12: README-qemu-ga-win32.txt
-
 %%CONFIGS%%
 
 %%PATCH_LIST%%
@@ -188,12 +180,6 @@ BuildRequires: systemtap-sdt-devel
 
 # 'stap' binary is required by configure detection of systemtap:
 BuildRequires: systemtap
-
-# If we are building the guest agent, we also are building it for
-# windows
-%if %{with guest_agent_win32}
-BuildRequires: mingw32-gcc mingw32-zlib mingw32-glib2
-%endif
 
 Requires(post): /usr/bin/getent
 Requires(post): /usr/sbin/groupadd
@@ -274,17 +260,6 @@ Group: Development/Tools
 %description -n qemu-guest-agent%{?pkgsuffix}
 This package provides a qemu guest agent daemon to be running inside of
 linux guests to provide the guest information.
-
-%if %{with guest_agent_win32}
-%package -n qemu-guest-agent-win32%{?pkgsuffix}
-Summary: QEMU Guest Agent for Windows
-Group: Development/Tools
-%rhel_rhev_conflicts qemu-guest-agent-win32
-
-%description -n qemu-guest-agent-win32%{?pkgsuffix}
-This package provides a qemu guest agent daemon to be running inside of
-Windows guests to provide the guest information.
-%endif # with guest_agent_win32
 
 %endif # guest_agent
 
@@ -377,8 +352,7 @@ mkdir qemu-kvm-x86_64-build
 cd qemu-kvm-x86_64-build
 
 %if %{with qemu_kvm}
-# we are building in a separate build directory, so that we can build for both linux x86_64
-# and windows (for the guest agent).
+# we are building in a separate build directory.
 # sdl outputs to alsa or pulseaudio depending on system config, but it's broken (#495964)
 # alsa works, but causes huge CPU load due to bugs
 # oss works, but is very problematic because it grabs exclusive control of the device causing other apps to go haywire
@@ -427,18 +401,7 @@ echo "==="
 %endif # with qemu_kvm
 
 %if %{with guest_agent}
-# Now configure for the windows guest agent build, using mingw32-
 cd ..
-mkdir qemu-kvm-win32-build
-%if %{with guest_agent_win32}
-cd qemu-kvm-win32-build
-
-../configure --target-list=x86_64-softmmu \
-             --cross-prefix=i686-pc-mingw32- \
-             %{qemu_ga_build_flags}
-
-cd ..
-%endif # with guest_agent_win32
 # Now configure for the Linux guest agent build
 mkdir qemu-kvm-qemu-ga-build
 cd qemu-kvm-qemu-ga-build
@@ -463,11 +426,6 @@ make V=1 QEMU_PROG=%{progname} QEMU_BINDIR="%{_prefix}/libexec" \
 %endif # with qemu_kvm
 
 %if %{with guest_agent}
-%if %{with guest_agent_win32}
-# build the windows guest agent
-cd ../qemu-kvm-win32-build
-make V=1 %{?_smp_mflags} $buildldflags qemu-ga.exe
-%endif # with guest_agent_win32
 # build the linux guest agent
 cd ../qemu-kvm-qemu-ga-build
 make V=1 %{?_smp_mflags} $buildldflags qemu-ga
@@ -569,12 +527,6 @@ ln -s ../vgabios/VGABIOS-lgpl-latest.vmware.bin %{buildroot}/%{_datadir}/%{confn
 ln -s ../seabios/bios.bin %{buildroot}/%{_datadir}/%{confname}/bios.bin
 ln -s ../sgabios/sgabios.bin %{buildroot}/%{_datadir}/%{confname}/sgabios.bin
 %endif # with qemu_kvm
-
-%if %{with guest_agent_win32}
-mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{confname}/qemu-ga-win32/
-install -m 0755 ../qemu-kvm-win32-build/qemu-ga.exe $RPM_BUILD_ROOT%{_datadir}/%{confname}/qemu-ga-win32/
-install -D -p -m 0444 %{SOURCE12} $RPM_BUILD_ROOT%{_datadir}/%{confname}/qemu-ga-win32/README.txt
-%endif # with guest_agent_win32
 
 
 %if %{with qemu_kvm}
@@ -683,14 +635,6 @@ fi
 %{_libexecdir}/qemu-ga
 %{_datadir}/%{confname}/qemu-ga
 %config(noreplace) %{_sysconfdir}/sysconfig/qemu-ga
-
-%if %{with guest_agent_win32}
-%files -n qemu-guest-agent-win32%{?pkgsuffix}
-%defattr(-,root,root,-)
-%{_datadir}/%{confname}/qemu-ga-win32/
-%{_datadir}/%{confname}/qemu-ga-win32/qemu-ga.exe
-%{_datadir}/%{confname}/qemu-ga-win32/README.txt
-%endif # with guest_agent_win32
 %endif # guest_agent
 
 %if %{with qemu_kvm}
