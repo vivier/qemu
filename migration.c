@@ -20,6 +20,7 @@
 #include "qemu_socket.h"
 #include "block-migration.h"
 #include "qemu-objects.h"
+#include "trace.h"
 
 //#define DEBUG_MIGRATION
 
@@ -329,6 +330,7 @@ void migrate_fd_error(FdMigrationState *s)
 {
     DPRINTF("setting error state\n");
     s->state = MIG_STATE_ERROR;
+    trace_migrate_set_state(MIG_STATE_ERROR);
     migrate_fd_cleanup(s);
     notifier_list_notify(&migration_state_notifiers, NULL);
 }
@@ -346,6 +348,7 @@ int migrate_fd_cleanup(FdMigrationState *s)
         if (qemu_fclose(s->file) != 0) {
             ret = -1;
             s->state = MIG_STATE_ERROR;
+            trace_migrate_set_state(MIG_STATE_ERROR);
         }
         s->file = NULL;
     } else {
@@ -448,6 +451,7 @@ void migrate_fd_put_ready(void *opaque)
                 vm_start();
             }
             s->state = MIG_STATE_ERROR;
+            trace_migrate_set_state(MIG_STATE_ERROR);
         }
 	STOP_MIGRATION_CLOCK();
 	DPRINTF("ended after %lu milliseconds\n", stop);
@@ -457,11 +461,13 @@ void migrate_fd_put_ready(void *opaque)
                 vm_start();
             }
             s->state = MIG_STATE_ERROR;
+            trace_migrate_set_state(MIG_STATE_ERROR);
         }
         if (s->state == MIG_STATE_ACTIVE) {
             int64_t end_time = qemu_get_clock(rt_clock);
 
             s->state = MIG_STATE_COMPLETED;
+            trace_migrate_set_state(MIG_STATE_COMPLETED);
             runstate_set(RUN_STATE_POSTMIGRATE);
             s->mig_state.total_time = end_time - s->mig_state.total_time;
             s->mig_state.downtime = end_time - start_time;
@@ -486,6 +492,7 @@ void migrate_fd_cancel(MigrationState *mig_state)
     DPRINTF("cancelling migration\n");
 
     s->state = MIG_STATE_CANCELLED;
+    trace_migrate_set_state(MIG_STATE_CANCELLED);
     qemu_savevm_state_cancel(s->mon, s->file);
     migrate_fd_cleanup(s);
     notifier_list_notify(&migration_state_notifiers, NULL);
@@ -499,6 +506,7 @@ void migrate_fd_release(MigrationState *mig_state)
    
     if (s->state == MIG_STATE_ACTIVE) {
         s->state = MIG_STATE_CANCELLED;
+        trace_migrate_set_state(MIG_STATE_CANCELLED);
         migrate_fd_cleanup(s);
         notifier_list_notify(&migration_state_notifiers, NULL);
     }
