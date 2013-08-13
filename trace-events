@@ -184,6 +184,7 @@ disable scsi_request_sense(int target, int lun, int tag) "target %d lun %d tag %
 
 # vl.c
 disable vm_state_notify(int running, int reason) "running %d reason %d"
+disable runstate_set(int new_state) "new state %d"
 
 # block/qed-l2-cache.c
 disable qed_alloc_l2_cache_entry(void *l2_cache, void *entry) "l2_cache %p entry %p"

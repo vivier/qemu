@@ -474,7 +474,7 @@ void runstate_set(RunState new_state)
            confident enough that we've captured all valid transitions */
         // abort();
     }
-
+    trace_runstate_set(new_state);
     current_run_state = new_state;
 }
 
