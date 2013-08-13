@@ -555,7 +555,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules
 %if %{with guest_agent}
 %post -n qemu-guest-agent%{?pkgsuffix}
 /sbin/chkconfig --add qemu-ga
-/sbin/chkconfig qemu-ga off
+/sbin/chkconfig qemu-ga on
 %endif # guest_agent
 
 %if %{with qemu_kvm}
