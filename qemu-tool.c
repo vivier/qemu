@@ -117,3 +117,11 @@ bool runstate_check(RunState state)
 {
     return state == RUN_STATE_RUNNING;
 }
+
+void qemu_mutex_lock_iothread(void)
+{
+}
+
+void qemu_mutex_unlock_iothread(void)
+{
+}
