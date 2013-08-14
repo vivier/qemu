@@ -284,6 +284,7 @@ zero_malloc=""
 trace_backend="nop"
 fake_machine="no"
 spice=""
+rbd=""
 smartcard=""
 smartcard_nss=""
 live_snapshots="yes"
@@ -723,6 +724,10 @@ for opt do
   ;;
   --enable-glusterfs) glusterfs="yes"
   ;;
+  --disable-rbd) rbd="no"
+  ;;
+  --enable-rbd) rbd="yes"
+  ;;
   *) echo "ERROR: unknown option $opt"; show_help="yes"
   ;;
   esac
@@ -895,6 +900,7 @@ echo "  --disable-fake-machine   disable -fake-machine option"
 echo "  --enable-fake-machine    enable -fake-machine option"
 echo "  --disable-spice          disable spice"
 echo "  --enable-spice           enable spice"
+echo "  --enable-rbd             enable building the rados block device (rbd)"
 echo "  --disable-smartcard      disable smartcard support"
 echo "  --enable-smartcard       enable smartcard support"
 echo "  --disable-smartcard-nss  disable smartcard nss support"
@@ -1735,6 +1741,48 @@ if test "$mingw32" != yes -a "$pthread" = no; then
 fi
 
 ##########################################
+# rbd probe
+if test "$rbd" != "no" ; then
+  cat > $TMPC <<EOF
+#include <stdio.h>
+#include <rados/librados.h>
+int main(void) { rados_initialize(0, NULL); return 0; }
+EOF
+  rbd_libs="-lrados -lcrypto"
+  if compile_prog "" "$rbd_libs" ; then
+    librados_too_old=no
+    cat > $TMPC <<EOF
+#include <stdio.h>
+#include <rados/librados.h>
+#ifndef CEPH_OSD_TMAP_SET
+#error missing CEPH_OSD_TMAP_SET
+#endif
+int main(void) {
+    int (*func)(const rados_pool_t pool, uint64_t *snapid) = rados_selfmanaged_snap_create;
+    rados_initialize(0, NULL);
+    return 0;
+}
+EOF
+    if compile_prog "" "$rbd_libs" ; then
+      rbd=yes
+      libs_tools="$rbd_libs $libs_tools"
+      libs_softmmu="$rbd_libs $libs_softmmu"
+    else
+      rbd=no
+      librados_too_old=yes
+    fi
+  else
+    if test "$rbd" = "yes" ; then
+      feature_not_found "rados block device"
+    fi
+    rbd=no
+  fi
+  if test "$librados_too_old" = "yes" ; then
+    echo "-> Your librados version is too old - upgrade needed to have rbd support"
+  fi
+fi
+
+##########################################
 # linux-aio probe
 
 if test "$linux_aio" != "no" ; then
@@ -2375,6 +2423,7 @@ echo "vhost-net support $vhost_net"
 echo "-fake-machine     $fake_machine"
 echo "Trace backend     $trace_backend"
 echo "spice support     $spice ($spice_protocol_version/$spice_server_version)"
+echo "rbd support       $rbd"
 echo "nss used          $smartcard_nss"
 echo "Live snapshots    $live_snapshots"
 echo "Block streaming   $block_stream"
@@ -2665,6 +2714,9 @@ echo "CONFIG_UNAME_RELEASE=\"$uname_release\"" >> $config_host_mak
 
 if test "$zero_malloc" = "yes" ; then
   echo "CONFIG_ZERO_MALLOC=y" >> $config_host_mak
+fi
+if test "$rbd" = "yes" ; then
+  echo "CONFIG_RBD=y" >> $config_host_mak
 fi
 
 if test "$has_environ" = "yes" ; then
