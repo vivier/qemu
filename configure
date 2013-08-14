@@ -291,6 +291,7 @@ block_stream="yes"
 io_throttling="yes"
 usb_redir=""
 virtio_blk_data_plane=""
+glusterfs=""
 
 # OS specific
 if check_define __linux__ ; then
@@ -718,6 +719,10 @@ for opt do
   ;;
   --enable-virtio-blk-data-plane) virtio_blk_data_plane="yes"
   ;;
+  --disable-glusterfs) glusterfs="no"
+  ;;
+  --enable-glusterfs) glusterfs="yes"
+  ;;
   *) echo "ERROR: unknown option $opt"; show_help="yes"
   ;;
   esac
@@ -904,6 +909,8 @@ echo "  --disable-usb-redir      disable usb network redirection support"
 echo "  --enable-usb-redir       enable usb network redirection support"
 echo "  --disable-rhev-features  disable RHEV-only features"
 echo "  --enable-rhev-features   enable RHEV-only features"
+echo "  --enable-glusterfs       enable GlusterFS backend"
+echo "  --disable-glusterfs      disable GlusterFS backend"
 echo ""
 echo "NOTE: The object files are built at the place where configure is launched"
 exit 1
@@ -1802,6 +1809,29 @@ EOF
   fi
 fi
 
+##########################################
+# glusterfs probe
+if test "$glusterfs" != "no" ; then
+  cat > $TMPC <<EOF
+#include <glusterfs/api/glfs.h>
+int main(void) {
+    (void) glfs_new("volume");
+    return 0;
+}
+EOF
+  glusterfs_libs="-lgfapi -lgfrpc -lgfxdr"
+  if compile_prog "" "$glusterfs_libs" ; then
+    glusterfs=yes
+    libs_tools="$glusterfs_libs $libs_tools"
+    libs_softmmu="$glusterfs_libs $libs_softmmu"
+  else
+    if test "$glusterfs" = "yes" ; then
+      feature_not_found "GlusterFS backend support"
+    fi
+    glusterfs=no
+  fi
+fi
+
 #
 # Check for xxxat() functions when we are building linux-user
 # emulator.  This is done because older glibc versions don't
@@ -2352,6 +2382,7 @@ echo "IO throttling     $io_throttling"
 echo "xfsctl support    $xfs"
 echo "usb net redir     $usb_redir"
 echo "virtio-blk-data-plane $virtio_blk_data_plane"
+echo "GlusterFS support $glusterfs"
 
 if test $sdl_too_old = "yes"; then
 echo "-> Your SDL version is too old - please upgrade to have SDL support"
@@ -2638,6 +2669,10 @@ fi
 
 if test "$has_environ" = "yes" ; then
   echo "CONFIG_HAS_ENVIRON=y" >> $config_host_mak
+fi
+
+if test "$glusterfs" = "yes" ; then
+  echo "CONFIG_GLUSTERFS=y" >> $config_host_mak
 fi
 
 # USB host support
