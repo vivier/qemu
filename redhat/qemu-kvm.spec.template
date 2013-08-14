@@ -171,6 +171,10 @@ BuildRequires: ncurses-devel
 BuildRequires: libaio-devel
 %if %{with qemu_kvm}
 BuildRequires: usbredir-devel >= 0.5
+# For glusterfs support
+BuildRequires: glusterfs-devel glusterfs-api-devel
+# For uuid generation
+BuildRequires: libuuid-devel
 
 # seamless spice migration needs a recent spice server version
 BuildRequires: spice-server-devel >= 0.12.3
@@ -204,6 +208,8 @@ Requires: /usr/share/gpxe/pcnet32.rom
 Requires: /usr/share/gpxe/rtl8139.rom
 Requires: /usr/share/gpxe/virtio-net.rom
 Requires: /usr/share/sgabios/sgabios.bin
+# For glusterfs support
+Requires: glusterfs-api
 %endif
 
 # fix for CVE-2011-2527 requires newer glibc
@@ -391,6 +397,7 @@ cd qemu-kvm-x86_64-build
             --disable-smartcard-nss \
             --enable-usb-redir \
             --enable-mixemu \
+            --enable-glusterfs \
             %{fake_machine_arg} \
             %{disable_rhev_features_arg}
 
