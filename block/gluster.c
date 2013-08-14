@@ -306,6 +306,10 @@ static int qemu_gluster_open(BlockDriverState *bs, const char *filename,
         open_flags |= O_DIRECT;
     }
 
+    if (!(bdrv_flags & BDRV_O_CACHE_WB)) {
+        open_flags |= O_DSYNC;
+    }
+
     s->fd = glfs_open(s->glfs, gconf->image, open_flags);
     if (!s->fd) {
         ret = -errno;
