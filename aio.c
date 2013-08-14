@@ -194,13 +194,13 @@ void qemu_aio_wait(void)
 
         /* if we have any readable fds, dispatch event */
         if (ret > 0) {
-            walking_handlers++;
-
             /* we have to walk very carefully in case
              * qemu_aio_set_fd_handler is called while we're walking */
             node = QLIST_FIRST(&aio_handlers);
             while (node) {
                 AioHandler *tmp;
+
+                walking_handlers++;
 
                 if (!node->deleted &&
                     FD_ISSET(node->fd, &rdfds) &&
@@ -216,13 +216,13 @@ void qemu_aio_wait(void)
                 tmp = node;
                 node = QLIST_NEXT(node, node);
 
-                if (tmp->deleted) {
+                walking_handlers--;
+
+                if (!walking_handlers && tmp->deleted) {
                     QLIST_REMOVE(tmp, node);
                     qemu_free(tmp);
                 }
             }
-
-            walking_handlers--;
         }
     } while (ret == 0);
 }
