@@ -557,6 +557,12 @@ static void qemu_gluster_close(BlockDriverState *bs)
     glfs_fini(s->glfs);
 }
 
+static int qemu_gluster_has_zero_init(BlockDriverState *bs)
+{
+    /* GlusterFS volume could be backed by a block device */
+    return 0;
+}
+
 static QEMUOptionParameter qemu_gluster_create_options[] = {
     {
         .name = BLOCK_OPT_SIZE,
@@ -579,6 +585,7 @@ static BlockDriver bdrv_gluster = {
     .bdrv_aio_readv               = qemu_gluster_aio_readv,
     .bdrv_aio_writev              = qemu_gluster_aio_writev,
     .bdrv_aio_flush               = qemu_gluster_aio_flush,
+    .bdrv_has_zero_init           = qemu_gluster_has_zero_init,
     .create_options               = qemu_gluster_create_options,
 };
 
@@ -595,6 +602,7 @@ static BlockDriver bdrv_gluster_tcp = {
     .bdrv_aio_readv               = qemu_gluster_aio_readv,
     .bdrv_aio_writev              = qemu_gluster_aio_writev,
     .bdrv_aio_flush               = qemu_gluster_aio_flush,
+    .bdrv_has_zero_init           = qemu_gluster_has_zero_init,
     .create_options               = qemu_gluster_create_options,
 };
 
@@ -611,6 +619,7 @@ static BlockDriver bdrv_gluster_unix = {
     .bdrv_aio_readv               = qemu_gluster_aio_readv,
     .bdrv_aio_writev              = qemu_gluster_aio_writev,
     .bdrv_aio_flush               = qemu_gluster_aio_flush,
+    .bdrv_has_zero_init           = qemu_gluster_has_zero_init,
     .create_options               = qemu_gluster_create_options,
 };
 
@@ -627,6 +636,7 @@ static BlockDriver bdrv_gluster_rdma = {
     .bdrv_aio_readv               = qemu_gluster_aio_readv,
     .bdrv_aio_writev              = qemu_gluster_aio_writev,
     .bdrv_aio_flush               = qemu_gluster_aio_flush,
+    .bdrv_has_zero_init           = qemu_gluster_has_zero_init,
     .create_options               = qemu_gluster_create_options,
 };
 
