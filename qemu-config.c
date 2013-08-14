@@ -513,6 +513,18 @@ QemuOptsList qemu_realtime_opts = {
     },
 };
 
+static QemuOptsList qemu_msg_opts = {
+    .name = "msg",
+    .head = QTAILQ_HEAD_INITIALIZER(qemu_msg_opts.head),
+    .desc = {
+        {
+            .name = "timestamp",
+            .type = QEMU_OPT_BOOL,
+        },
+        { /* end of list */ }
+    },
+};
+
 static QemuOptsList *vm_config_groups[] = {
     &qemu_drive_opts,
     &qemu_simple_drive_opts,
@@ -529,6 +541,7 @@ static QemuOptsList *vm_config_groups[] = {
     &qemu_machine_opts,
     &qemu_boot_opts,
     &qemu_realtime_opts,
+    &qemu_msg_opts,
     NULL,
 };
 

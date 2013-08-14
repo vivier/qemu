@@ -2254,3 +2254,13 @@ DEF("fake-machine", 0, QEMU_OPTION_fake_machine,
     "-fake-machine        create a fake machine incapable of running guest code\n"
     "                     mimimal resource use, use for scalability testing")
 #endif
+
+DEF("msg", HAS_ARG, QEMU_OPTION_msg,
+    "-msg timestamp[=on|off]\n"
+    "                change the format of messages\n"
+    "                on|off controls leading timestamps (default:on)\n")
+STEXI
+@item -msg timestamp[=on|off]
+@findex -msg
+prepend a timestamp to each log message.(default:on)
+ETEXI

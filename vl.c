@@ -2496,6 +2496,12 @@ static void configure_realtime(QemuOpts *opts)
     }
 }
 
+
+static void configure_msg(QemuOpts *opts)
+{
+    enable_timestamp_msg = qemu_opt_get_bool(opts, "timestamp", true);
+}
+
 /***********************************************************/
 /* USB devices */
 
@@ -6098,6 +6104,13 @@ int main(int argc, char **argv, char **envp)
                     exit(1);
                 }
                 configure_realtime(opts);
+                break;
+            case QEMU_OPTION_msg:
+                opts = qemu_opts_parse(qemu_find_opts("msg"), optarg, 0);
+                if (!opts) {
+                    exit(1);
+                }
+                configure_msg(opts);
                 break;
             }
         }
