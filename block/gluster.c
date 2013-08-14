@@ -463,6 +463,19 @@ out:
     return NULL;
 }
 
+static int qemu_gluster_truncate(BlockDriverState *bs, int64_t offset)
+{
+    int ret;
+    BDRVGlusterState *s = bs->opaque;
+
+    ret = glfs_ftruncate(s->fd, offset);
+    if (ret < 0) {
+        return -errno;
+    }
+
+    return 0;
+}
+
 static BlockDriverAIOCB *qemu_gluster_aio_readv(BlockDriverState *bs,
         int64_t sector_num, QEMUIOVector *qiov, int nb_sectors,
         BlockDriverCompletionFunc *cb, void *opaque)
@@ -562,6 +575,7 @@ static BlockDriver bdrv_gluster = {
     .bdrv_create                  = qemu_gluster_create,
     .bdrv_getlength               = qemu_gluster_getlength,
     .bdrv_get_allocated_file_size = qemu_gluster_allocated_file_size,
+    .bdrv_truncate                = qemu_gluster_truncate,
     .bdrv_aio_readv               = qemu_gluster_aio_readv,
     .bdrv_aio_writev              = qemu_gluster_aio_writev,
     .bdrv_aio_flush               = qemu_gluster_aio_flush,
@@ -577,6 +591,7 @@ static BlockDriver bdrv_gluster_tcp = {
     .bdrv_create                  = qemu_gluster_create,
     .bdrv_getlength               = qemu_gluster_getlength,
     .bdrv_get_allocated_file_size = qemu_gluster_allocated_file_size,
+    .bdrv_truncate                = qemu_gluster_truncate,
     .bdrv_aio_readv               = qemu_gluster_aio_readv,
     .bdrv_aio_writev              = qemu_gluster_aio_writev,
     .bdrv_aio_flush               = qemu_gluster_aio_flush,
@@ -592,6 +607,7 @@ static BlockDriver bdrv_gluster_unix = {
     .bdrv_create                  = qemu_gluster_create,
     .bdrv_getlength               = qemu_gluster_getlength,
     .bdrv_get_allocated_file_size = qemu_gluster_allocated_file_size,
+    .bdrv_truncate                = qemu_gluster_truncate,
     .bdrv_aio_readv               = qemu_gluster_aio_readv,
     .bdrv_aio_writev              = qemu_gluster_aio_writev,
     .bdrv_aio_flush               = qemu_gluster_aio_flush,
@@ -607,6 +623,7 @@ static BlockDriver bdrv_gluster_rdma = {
     .bdrv_create                  = qemu_gluster_create,
     .bdrv_getlength               = qemu_gluster_getlength,
     .bdrv_get_allocated_file_size = qemu_gluster_allocated_file_size,
+    .bdrv_truncate                = qemu_gluster_truncate,
     .bdrv_aio_readv               = qemu_gluster_aio_readv,
     .bdrv_aio_writev              = qemu_gluster_aio_writev,
     .bdrv_aio_flush               = qemu_gluster_aio_flush,
