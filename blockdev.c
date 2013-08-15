@@ -708,18 +708,23 @@ err:
 
 void do_commit(Monitor *mon, const QDict *qdict)
 {
-    int all_devices;
-    DriveInfo *dinfo;
     const char *device = qdict_get_str(qdict, "device");
+    BlockDriverState *bs;
+    int ret;
 
-    all_devices = !strcmp(device, "all");
-    QTAILQ_FOREACH(dinfo, &drives, next) {
-        int ret;
-
-        if (!all_devices)
-            if (strcmp(bdrv_get_device_name(dinfo->bdrv), device))
-                continue;
-        ret = bdrv_commit(dinfo->bdrv);
+    if (!strcmp(device, "all")) {
+        ret = bdrv_commit_all();
+        if (ret == -EBUSY) {
+            qerror_report(QERR_DEVICE_IN_USE, device);
+            return;
+        }
+    } else {
+        bs = bdrv_find(device);
+        if (!bs) {
+            qerror_report(QERR_DEVICE_NOT_FOUND, device);
+            return;
+        }
+        ret = bdrv_commit(bs);
         if (ret == -EBUSY) {
             qerror_report(QERR_DEVICE_IN_USE, device);
             return;
