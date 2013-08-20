@@ -1,0 +1,48 @@
+From e0124e18fa0045fd248968bfd7f568b04b3fc3ac Mon Sep 17 00:00:00 2001
+From: Stefan Hajnoczi <stefanha@redhat.com>
+Date: Tue, 13 Aug 2013 09:06:37 +0200
+Subject: dataplane: refuse to start if device is already in use
+
+RH-Author: Stefan Hajnoczi <stefanha@redhat.com>
+Message-id: <1376384797-4701-7-git-send-email-stefanha@redhat.com>
+Patchwork-id: 53211
+O-Subject: [PATCH v2 6/6] dataplane: refuse to start if device is already in use
+Bugzilla: 995030
+RH-Acked-by: Laszlo Ersek <lersek@redhat.com>
+RH-Acked-by: Kevin Wolf <kwolf@redhat.com>
+RH-Acked-by: Michael S. Tsirkin <mst@redhat.com>
+
+Dataplane must check whether a block device is in use before launching
+the dataplane thread.  This is necessary since the thread does not
+synchronize with the main loop and I/O requests could cause corruption.
+
+One example is when a drive is added and a block job is started before
+hotplugging the virtio-blk-pci adapter.  In this case we must not use
+dataplane mode.
+
+Cc: qemu-stable@nongnu.org
+Reviewed-by: Kevin Wolf <kwolf@redhat.com>
+Signed-off-by: Stefan Hajnoczi <stefanha@redhat.com>
+(cherry picked from commit b0f2027cde31c645524256763672e09eeb204a9a)
+
+Signed-off-by: Stefan Hajnoczi <stefanha@redhat.com>
+
+diff --git a/hw/block/dataplane/virtio-blk.c b/hw/block/dataplane/virtio-blk.c
+index 63c3ffa..411becc 100644
+--- a/hw/block/dataplane/virtio-blk.c
++++ b/hw/block/dataplane/virtio-blk.c
+@@ -415,6 +415,14 @@ bool virtio_blk_data_plane_create(VirtIODevice *vdev, VirtIOBlkConf *blk,
+         return false;
+     }
+ 
++    /* If dataplane is (re-)enabled while the guest is running there could be
++     * block jobs that can conflict.
++     */
++    if (bdrv_in_use(blk->conf.bs)) {
++        error_report("cannot start dataplane thread while device is in use");
++        return false;
++    }
++
+     fd = raw_get_aio_fd(blk->conf.bs);
+     if (fd < 0) {
+         error_report("drive is incompatible with x-data-plane, "
