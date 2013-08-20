@@ -992,23 +992,11 @@ static QEMUMachine pc_machine_rhel640 = {
     PC_RHEL6_4_COMPAT,\
     {\
         .driver   = "Conroe-" TYPE_X86_CPU,\
-        .property = "model",\
-        .value    = stringify(2),\
-    },{\
-        .driver   = "Conroe-" TYPE_X86_CPU,\
         .property = "level",\
         .value    = stringify(2),\
     },{\
         .driver   = "Penryn-" TYPE_X86_CPU,\
-        .property = "model",\
-        .value    = stringify(2),\
-    },{\
-        .driver   = "Penryn-" TYPE_X86_CPU,\
         .property = "level",\
-        .value    = stringify(2),\
-    },{\
-        .driver   = "Nehalem-" TYPE_X86_CPU,\
-        .property = "model",\
         .value    = stringify(2),\
     },{\
         .driver   = "Nehalem-" TYPE_X86_CPU,\
