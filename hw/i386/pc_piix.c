@@ -958,6 +958,8 @@ static void pc_init_rhel650(QEMUMachineInitArgs *args)
              CPUID_EXT2_CX8 | CPUID_EXT2_MCE | CPUID_EXT2_PAE | CPUID_EXT2_MSR |
              CPUID_EXT2_TSC | CPUID_EXT2_PSE | CPUID_EXT2_DE | CPUID_EXT2_FPU,
              0);
+    x86_cpu_compat_set_features("SandyBridge", FEAT_8000_0001_EDX,
+                                0, CPUID_EXT2_RDTSCP);
     pc_init_rhel700(args);
 }
 
@@ -1043,6 +1045,8 @@ static void pc_init_rhel630(QEMUMachineInitArgs *args)
 {
     x86_cpu_compat_disable_kvm_features(FEAT_KVM, KVM_FEATURE_PV_EOI);
     enable_compat_apic_id_mode();
+    x86_cpu_compat_set_features("SandyBridge", FEAT_1_ECX,
+                                0, CPUID_EXT_TSC_DEADLINE_TIMER);
     pc_init_rhel640(args);
 }
 
