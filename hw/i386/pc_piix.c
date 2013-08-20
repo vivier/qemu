@@ -951,6 +951,7 @@ static void pc_init_rhel650(QEMUMachineInitArgs *args)
     x86_cpu_compat_set_features("Penryn", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
     x86_cpu_compat_set_features("Nehalem", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
     x86_cpu_compat_set_features("Westmere", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
+    x86_cpu_compat_set_features("Westmere", FEAT_1_ECX, 0, CPUID_EXT_PCLMULQDQ);
     x86_cpu_compat_set_features("Westmere", FEAT_8000_0001_EDX,
              CPUID_EXT2_FXSR | CPUID_EXT2_MMX | CPUID_EXT2_PAT |
              CPUID_EXT2_CMOV | CPUID_EXT2_PGE | CPUID_EXT2_APIC |
