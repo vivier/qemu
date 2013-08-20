@@ -935,6 +935,14 @@ static QEMUMachine pc_machine_rhel700 = {
         .driver   = "AC97",\
         .property = "use_broken_id",\
         .value    = stringify(1),\
+    },{\
+        .driver = "qemu32-" TYPE_X86_CPU,\
+        .property = "xlevel",\
+        .value = stringify(0),\
+    },{\
+        .driver = "486-" TYPE_X86_CPU,\
+        .property = "level",\
+        .value = stringify(0),\
     }
 
 static void pc_init_rhel650(QEMUMachineInitArgs *args)
