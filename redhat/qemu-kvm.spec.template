@@ -720,6 +720,16 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Aug 20 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.2-4
+- qemu: guest agent creates files with insecure permissions in deamon mode [rhel-7.0] (rhbz 974444)
+- update qemu-ga config & init script in RHEL7 wrt. fsfreeze hook (rhbz 969942)
+- RHEL7 does not have equivalent functionality for __com.redhat_qxl_screendump (rhbz 903910)
+- SEP flag behavior for CPU models of RHEL6 machine types should be compatible (rhbz 960216)
+- crash command can not read the dump-guest-memory file when paging=false [RHEL-7] (rhbz 981582)
+- RHEL 7 qemu-kvm fails to build on F19 host due to libusb deprecated API (rhbz 996469)
+- Live migration support in virtio-blk-data-plane (rhbz 995030)
+- qemu-img resize can execute successfully even input invalid syntax (rhbz 992935)
+
 * Fri Aug 09 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.2-3
 - query mem info from monitor would cause qemu-kvm hang [RHEL-7] (rhbz #970047)
 - Throttle-down guest to help with live migration convergence (backport to RHEL7.0) (rhbz #985958)
