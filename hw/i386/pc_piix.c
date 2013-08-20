@@ -960,6 +960,8 @@ static void pc_init_rhel650(QEMUMachineInitArgs *args)
              0);
     x86_cpu_compat_set_features("SandyBridge", FEAT_8000_0001_EDX,
                                 0, CPUID_EXT2_RDTSCP);
+    x86_cpu_compat_set_features("Haswell", FEAT_8000_0001_EDX,
+                                0, CPUID_EXT2_RDTSCP);
     pc_init_rhel700(args);
 }
 
