@@ -49,7 +49,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.2
-Release: 3%{?dist}
+Release: 4%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -92,6 +92,7 @@ Source9: ksmtuned.conf
 Source10: qemu-guest-agent.service
 Source11: 99-qemu-guest-agent.rules
 Source12: bridge.conf
+Source13: qemu-ga.sysconfig
 
 # libcacard build fixes (heading upstream)
 Patch1: 0000-libcacard-fix-missing-symbols-in-libcacard.so.patch
@@ -191,6 +192,36 @@ Patch73: kvm-virtio-console-Use-exitfn-for-virtserialport-too.patch
 # Containment of error when an SR-IOV device encounters an error... (rhbz #984604)
 Patch74: kvm-linux-headers-Update-to-v3-10-rc5.patch
 Patch75: kvm-vfio-QEMU-AER-Qemu-changes-to-support-AER-for-VFIO-PCI-devices.patch
+
+# update qemu-ga config & init script in RHEL7 wrt. fsfreeze hook (rhbz 969942)
+Patch76: kvm-misc-qga-fsfreeze-main-hook-adapt-to-RHEL-7-RH-only.patch
+# RHEL7 does not have equivalent functionality for __com.redhat_qxl_screendump (rhbz 903910)
+Patch77: kvm-misc-add-qxl_screendump-monitor-command.patch
+# SEP flag behavior for CPU models of RHEL6 machine types should be compatible (rhbz 960216)
+Patch78: kvm-pc_piix-disable-CPUID_SEP-for-6-4-0-machine-types-and-below.patch
+# crash command can not read the dump-guest-memory file when paging=false [RHEL-7] (rhbz 981582)
+Patch79: kvm-dump-Move-stubs-into-libqemustub-a.patch
+Patch80: kvm-cpu-Turn-cpu_paging_enabled-into-a-CPUState-hook.patch
+Patch81: kvm-memory_mapping-Move-MemoryMappingList-typedef-to-qemu-typedefs-h.patch
+Patch82: kvm-cpu-Turn-cpu_get_memory_mapping-into-a-CPUState-hook.patch
+Patch83: kvm-dump-Abstract-dump_init-with-cpu_synchronize_all_states.patch
+Patch84: kvm-memory_mapping-Improve-qemu_get_guest_memory_mapping-error-reporting.patch
+Patch85: kvm-dump-clamp-guest-provided-mapping-lengths-to-ramblock-sizes.patch
+Patch86: kvm-dump-introduce-GuestPhysBlockList.patch
+Patch87: kvm-dump-populate-guest_phys_blocks.patch
+Patch88: kvm-dump-rebase-from-host-private-RAMBlock-offsets-to-guest-physical-addresses.patch
+# RHEL 7 qemu-kvm fails to build on F19 host due to libusb deprecated API (rhbz 996469)
+Patch89: kvm-usb-host-libusb-Fix-building-with-libusb-git-master-code.patch
+# Live migration support in virtio-blk-data-plane (rhbz 995030)
+Patch90: kvm-dataplane-sync-virtio-c-and-vring-c-virtqueue-state.patch
+Patch91: kvm-virtio-clear-signalled_used_valid-when-switching-from-dataplane.patch
+Patch92: kvm-vhost-clear-signalled_used_valid-on-vhost-stop.patch
+Patch93: kvm-migration-notify-migration-state-before-starting-thread.patch
+Patch94: kvm-dataplane-enable-virtio-blk-x-data-plane-on-live-migration.patch
+Patch95: kvm-dataplane-refuse-to-start-if-device-is-already-in-use.patch
+# qemu-img resize can execute successfully even input invalid syntax (rhbz 992935)
+Patch96: kvm-qemu-img-Error-out-for-excess-arguments.patch
+
 
 BuildRequires: zlib-devel
 BuildRequires: SDL-devel
@@ -453,6 +484,28 @@ CAC emulation development files.
 %patch74 -p1
 %patch75 -p1
 
+%patch76 -p1
+%patch77 -p1
+%patch78 -p1
+%patch79 -p1
+%patch80 -p1
+%patch81 -p1
+%patch82 -p1
+%patch83 -p1
+%patch84 -p1
+%patch85 -p1
+%patch86 -p1
+%patch87 -p1
+%patch88 -p1
+%patch89 -p1
+%patch90 -p1
+%patch91 -p1
+%patch92 -p1
+%patch93 -p1
+%patch94 -p1
+%patch95 -p1
+%patch96 -p1
+
 %build
 buildarch="%{kvm_target}-softmmu"
 
@@ -655,12 +708,30 @@ dobuild --target-list="$buildarch"
 %endif
 
 %if %{with guest_agent}
-    # For the qemu-guest-agent subpackage install the systemd
-    # service and udev rules.
+    # For the qemu-guest-agent subpackage, install:
+    # - the systemd service file and the udev rules:
     mkdir -p $RPM_BUILD_ROOT%{_unitdir}
     mkdir -p $RPM_BUILD_ROOT%{_udevdir}
     install -m 0644 %{SOURCE10} $RPM_BUILD_ROOT%{_unitdir}
     install -m 0644 %{SOURCE11} $RPM_BUILD_ROOT%{_udevdir}
+
+    # - the environment file for the systemd service:
+    install -D -p -m 0644 %{SOURCE13} \
+      $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/qemu-ga
+
+    # - the fsfreeze hook script:
+    install -D --preserve-timestamps \
+      scripts/qemu-guest-agent/fsfreeze-hook \
+      $RPM_BUILD_ROOT%{_sysconfdir}/qemu-ga/fsfreeze-hook
+
+    # - the directory for user scripts:
+    mkdir $RPM_BUILD_ROOT%{_sysconfdir}/qemu-ga/fsfreeze-hook.d
+
+    # - and the fsfreeze script samples:
+    mkdir --parents $RPM_BUILD_ROOT%{_datadir}/%{name}/qemu-ga/fsfreeze-hook.d/
+    install --preserve-timestamps --mode=0644 \
+      scripts/qemu-guest-agent/fsfreeze-hook.d/*.sample \
+      $RPM_BUILD_ROOT%{_datadir}/%{name}/qemu-ga/fsfreeze-hook.d/
 %endif
 
 %if 0%{!?build_only_sub:1}
@@ -757,6 +828,9 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %{_bindir}/qemu-ga
     %{_unitdir}/qemu-guest-agent.service
     %{_udevdir}/99-qemu-guest-agent.rules
+    %{_sysconfdir}/sysconfig/qemu-ga
+    %{_sysconfdir}/qemu-ga
+    %{_datadir}/%{name}/qemu-ga
 %endif
 
 %if 0%{!?build_only_sub:1}
@@ -813,6 +887,16 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Tue Aug 20 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.2-4
+- qemu: guest agent creates files with insecure permissions in deamon mode [rhel-7.0] (rhbz 974444)
+- update qemu-ga config & init script in RHEL7 wrt. fsfreeze hook (rhbz 969942)
+- RHEL7 does not have equivalent functionality for __com.redhat_qxl_screendump (rhbz 903910)
+- SEP flag behavior for CPU models of RHEL6 machine types should be compatible (rhbz 960216)
+- crash command can not read the dump-guest-memory file when paging=false [RHEL-7] (rhbz 981582)
+- RHEL 7 qemu-kvm fails to build on F19 host due to libusb deprecated API (rhbz 996469)
+- Live migration support in virtio-blk-data-plane (rhbz 995030)
+- qemu-img resize can execute successfully even input invalid syntax (rhbz 992935)
+
 * Fri Aug 09 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.2-3
 - query mem info from monitor would cause qemu-kvm hang [RHEL-7] (rhbz #970047)
 - Throttle-down guest to help with live migration convergence (backport to RHEL7.0) (rhbz #985958)
