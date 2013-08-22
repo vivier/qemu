@@ -498,6 +498,7 @@ static int block_load(QEMUFile *f, void *opaque, int version_id)
         addr >>= BDRV_SECTOR_BITS;
 
         if (flags & BLK_MIG_FLAG_DEVICE_BLOCK) {
+            int ret;
             /* get device name */
             len = qemu_get_byte(f);
             qemu_get_buffer(f, (uint8_t *)device_name, len);
@@ -513,9 +514,12 @@ static int block_load(QEMUFile *f, void *opaque, int version_id)
             buf = qemu_malloc(BLOCK_SIZE);
 
             qemu_get_buffer(f, buf, BLOCK_SIZE);
-            bdrv_write(bs, addr, buf, BDRV_SECTORS_PER_DIRTY_CHUNK);
+            ret = bdrv_write(bs, addr, buf, BDRV_SECTORS_PER_DIRTY_CHUNK);
 
             qemu_free(buf);
+            if (ret < 0) {
+                return ret;
+            }
         } else if (flags & BLK_MIG_FLAG_PROGRESS) {
             if (!banner_printed) {
                 printf("Receiving block device images\n");
