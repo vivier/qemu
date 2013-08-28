@@ -48,8 +48,8 @@
 
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
-Version: 1.5.2
-Release: 4%{?dist}
+Version: 1.5.3
+Release: 1%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -146,7 +146,7 @@ Patch39: target-i386-update-model-values-on-conroe-penryn-nehalem-cpu-models.pat
 Patch40: target-i386-set-level-4-on-conroe-penryn-nehalem.patch
 
 # RHEL guest( sata disk ) can not boot up (rhbz #981723)
-Patch41: ahci-Fix-FLUSH-command.patch
+#Patch41: ahci-Fix-FLUSH-command.patch
 # Kill the "use flash device for BIOS unless KVM" misfeature (rhbz #963280)
 Patch42: pc-Disable-the-use-flash-device-for-BIOS-unless-KVM-misfeature.patch
 # Provide RHEL-6 machine types (rhbz #983991)
@@ -171,7 +171,7 @@ Patch59: pc-rhel6-compat-enable-S3-S4-for-6-1-and-lower-machine-types.patch
 # Support Virtual Memory Disk Format in qemu (rhbz #836675)
 Patch60: vmdk-Allow-reading-variable-size-descriptor-files.patch
 Patch61: vmdk-refuse-to-open-higher-version-than-supported.patch
-Patch62: vmdk-remove-wrong-calculation-of-relative-path.patch
+#Patch62: vmdk-remove-wrong-calculation-of-relative-path.patch
 Patch63: block-add-block-driver-read-only-whitelist.patch
 
 # query mem info from monitor would cause qemu-kvm hang [RHEL-7] (rhbz #970047)
@@ -188,7 +188,7 @@ Patch70: kvm-target-i386-Pass-X86CPU-object-to-cpu_x86_find_by_name.patch
 Patch71: kvm-target-i386-Disable-PMU-CPUID-leaf-by-default.patch
 Patch72: kvm-pc-set-compat-pmu-property-for-rhel6-x-machine-types.patch
 # Remove pending watches after virtserialport unplug (rhbz #992900)
-Patch73: kvm-virtio-console-Use-exitfn-for-virtserialport-too.patch
+# Patch73: kvm-virtio-console-Use-exitfn-for-virtserialport-too.patch
 # Containment of error when an SR-IOV device encounters an error... (rhbz #984604)
 Patch74: kvm-linux-headers-Update-to-v3-10-rc5.patch
 Patch75: kvm-vfio-QEMU-AER-Qemu-changes-to-support-AER-for-VFIO-PCI-devices.patch
@@ -213,12 +213,12 @@ Patch88: kvm-dump-rebase-from-host-private-RAMBlock-offsets-to-guest-physical-ad
 # RHEL 7 qemu-kvm fails to build on F19 host due to libusb deprecated API (rhbz 996469)
 Patch89: kvm-usb-host-libusb-Fix-building-with-libusb-git-master-code.patch
 # Live migration support in virtio-blk-data-plane (rhbz 995030)
-Patch90: kvm-dataplane-sync-virtio-c-and-vring-c-virtqueue-state.patch
-Patch91: kvm-virtio-clear-signalled_used_valid-when-switching-from-dataplane.patch
-Patch92: kvm-vhost-clear-signalled_used_valid-on-vhost-stop.patch
+#Patch90: kvm-dataplane-sync-virtio-c-and-vring-c-virtqueue-state.patch
+#Patch91: kvm-virtio-clear-signalled_used_valid-when-switching-from-dataplane.patch
+#Patch92: kvm-vhost-clear-signalled_used_valid-on-vhost-stop.patch
 Patch93: kvm-migration-notify-migration-state-before-starting-thread.patch
 Patch94: kvm-dataplane-enable-virtio-blk-x-data-plane-on-live-migration.patch
-Patch95: kvm-dataplane-refuse-to-start-if-device-is-already-in-use.patch
+#Patch95: kvm-dataplane-refuse-to-start-if-device-is-already-in-use.patch
 # qemu-img resize can execute successfully even input invalid syntax (rhbz 992935)
 Patch96: kvm-qemu-img-Error-out-for-excess-arguments.patch
 
@@ -448,7 +448,7 @@ CAC emulation development files.
 %patch39 -p1
 %patch40 -p1
 
-%patch41 -p1
+#%patch41 -p1
 %patch42 -p1
 %patch43 -p1
 %patch44 -p1
@@ -469,7 +469,7 @@ CAC emulation development files.
 %patch59 -p1
 %patch60 -p1
 %patch61 -p1
-%patch62 -p1
+#%patch62 -p1
 %patch63 -p1
 %patch64 -p1
 %patch65 -p1
@@ -480,7 +480,7 @@ CAC emulation development files.
 %patch70 -p1
 %patch71 -p1
 %patch72 -p1
-%patch73 -p1
+#%patch73 -p1
 %patch74 -p1
 %patch75 -p1
 
@@ -498,12 +498,12 @@ CAC emulation development files.
 %patch87 -p1
 %patch88 -p1
 %patch89 -p1
-%patch90 -p1
-%patch91 -p1
-%patch92 -p1
+#%patch90 -p1
+#%patch91 -p1
+#%patch92 -p1
 %patch93 -p1
 %patch94 -p1
-%patch95 -p1
+#%patch95 -p1
 %patch96 -p1
 
 %build
