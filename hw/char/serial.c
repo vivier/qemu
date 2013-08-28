@@ -27,6 +27,7 @@
 #include "sysemu/char.h"
 #include "qemu/timer.h"
 #include "exec/address-spaces.h"
+#include "qemu/error-report.h"
 
 //#define DEBUG_SERIAL
 
@@ -673,7 +674,7 @@ static void serial_reset(void *opaque)
 void serial_init_core(SerialState *s)
 {
     if (!s->chr) {
-        fprintf(stderr, "Can't create serial device, empty char device\n");
+        error_report("Can't create serial device, empty char device");
 	exit(1);
     }
 
