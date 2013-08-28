@@ -1255,7 +1255,7 @@ int do_block_set_io_throttle(Monitor *mon,
     BlockIOLimit io_limits;
     const char *devname = qdict_get_str(qdict, "device");
     BlockDriverState *bs;
-    Error *error;
+    Error *error = NULL;
 
     io_limits.bps[BLOCK_IO_LIMIT_TOTAL]
                         = qdict_get_try_int(qdict, "bps", -1);
@@ -1288,7 +1288,9 @@ int do_block_set_io_throttle(Monitor *mon,
     }
 
     if (!do_check_io_limits(&io_limits, &error)) {
-        qerror_report(QERR_INVALID_PARAMETER_COMBINATION);
+        if (error_is_set(&error)) {
+            qerror_report(QERR_GENERIC_ERROR, error_get_pretty(error));
+        }
         error_free(error);
         return -1;
     }
