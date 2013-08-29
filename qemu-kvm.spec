@@ -49,7 +49,7 @@
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 1%{?dist}
+Release: 2%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -221,6 +221,62 @@ Patch94: kvm-dataplane-enable-virtio-blk-x-data-plane-on-live-migration.patch
 #Patch95: kvm-dataplane-refuse-to-start-if-device-is-already-in-use.patch
 # qemu-img resize can execute successfully even input invalid syntax (rhbz 992935)
 Patch96: kvm-qemu-img-Error-out-for-excess-arguments.patch
+# For bz#964304 - Windows guest agent service failed to be started
+Patch97: kvm-osdep-add-qemu_get_local_state_pathname.patch
+# For bz#964304 - Windows guest agent service failed to be started
+Patch98: kvm-qga-determine-default-state-dir-and-pidfile-dynamica.patch
+# For bz#964304 - Windows guest agent service failed to be started
+Patch99: kvm-configure-don-t-save-any-fixed-local_statedir-for-wi.patch
+# For bz#964304 - Windows guest agent service failed to be started
+Patch100: kvm-qga-create-state-directory-on-win32.patch
+# For bz#964304 - Windows guest agent service failed to be started
+Patch101: kvm-qga-save-state-directory-in-ga_install_service-RHEL-.patch
+# For bz#964304 - Windows guest agent service failed to be started
+Patch102: kvm-Makefile-create-.-var-run-when-installing-the-POSIX-.patch
+# For bz#980782 - kernel_irqchip defaults to off instead of on without -machine
+Patch103: kvm-qemu-option-Fix-qemu_opts_find-for-null-id-arguments.patch
+# For bz#980782 - kernel_irqchip defaults to off instead of on without -machine
+Patch104: kvm-qemu-option-Fix-qemu_opts_set_defaults-for-corner-ca.patch
+# For bz#980782 - kernel_irqchip defaults to off instead of on without -machine
+Patch105: kvm-vl-New-qemu_get_machine_opts.patch
+# For bz#980782 - kernel_irqchip defaults to off instead of on without -machine
+Patch106: kvm-Fix-machine-options-accel-kernel_irqchip-kvm_shadow_.patch
+# For bz#980782 - kernel_irqchip defaults to off instead of on without -machine
+Patch107: kvm-microblaze-Fix-latent-bug-with-default-DTB-lookup.patch
+# For bz#980782 - kernel_irqchip defaults to off instead of on without -machine
+Patch108: kvm-Simplify-machine-option-queries-with-qemu_get_machin.patch
+# For bz#838170 - Add live migration support for USB [xhci, usb-uas]
+Patch109: kvm-pci-add-VMSTATE_MSIX.patch
+# For bz#838170 - Add live migration support for USB [xhci, usb-uas]
+Patch110: kvm-xhci-add-XHCISlot-addressed.patch
+# For bz#838170 - Add live migration support for USB [xhci, usb-uas]
+Patch111: kvm-xhci-add-xhci_alloc_epctx.patch
+# For bz#838170 - Add live migration support for USB [xhci, usb-uas]
+Patch112: kvm-xhci-add-xhci_init_epctx.patch
+# For bz#838170 - Add live migration support for USB [xhci, usb-uas]
+Patch113: kvm-xhci-add-live-migration-support.patch
+# For bz#918907 - provide backwards-compatible RHEL specific machine types in QEMU - CPU features
+Patch114: kvm-pc-set-level-xlevel-correctly-on-486-qemu32-CPU-mode.patch
+# For bz#918907 - provide backwards-compatible RHEL specific machine types in QEMU - CPU features
+Patch115: kvm-pc-Remove-incorrect-rhel6.x-compat-model-value-for-C.patch
+# For bz#918907 - provide backwards-compatible RHEL specific machine types in QEMU - CPU features
+Patch116: kvm-pc-rhel6.x-has-x2apic-present-on-Conroe-Penryn-Nehal.patch
+# For bz#918907 - provide backwards-compatible RHEL specific machine types in QEMU - CPU features
+Patch117: kvm-pc-set-compat-CPUID-0x80000001-.EDX-bits-on-Westmere.patch
+# For bz#918907 - provide backwards-compatible RHEL specific machine types in QEMU - CPU features
+Patch118: kvm-pc-Remove-PCLMULQDQ-from-Westmere-on-rhel6.x-machine.patch
+# For bz#918907 - provide backwards-compatible RHEL specific machine types in QEMU - CPU features
+Patch119: kvm-pc-SandyBridge-rhel6.x-compat-fixes.patch
+# For bz#918907 - provide backwards-compatible RHEL specific machine types in QEMU - CPU features
+Patch120: kvm-pc-Haswell-doesn-t-have-rdtscp-on-rhel6.x.patch
+# For bz#972433 - "INFO: rcu_sched detected stalls" after RHEL7 kvm vm migrated
+Patch121: kvm-i386-fix-LAPIC-TSC-deadline-timer-save-restore.patch
+# For bz#996258 - boot guest with maxcpu=255 successfully but actually max number of vcpu is 160
+Patch122: kvm-all.c-max_cpus-should-not-exceed-KVM-vcpu-limit.patch
+# For bz#906937 - [Hitachi 7.0 FEAT][QEMU]Add a time stamp to error message (*)
+Patch123: kvm-add-timestamp-to-error_report.patch
+# For bz#906937 - [Hitachi 7.0 FEAT][QEMU]Add a time stamp to error message (*)
+Patch124: kvm-Convert-stderr-message-calling-error_get_pretty-to-e.patch
 
 
 BuildRequires: zlib-devel
@@ -505,6 +561,34 @@ CAC emulation development files.
 %patch94 -p1
 #%patch95 -p1
 %patch96 -p1
+%patch97 -p1
+%patch98 -p1
+%patch99 -p1
+%patch100 -p1
+%patch101 -p1
+%patch102 -p1
+%patch103 -p1
+%patch104 -p1
+%patch105 -p1
+%patch106 -p1
+%patch107 -p1
+%patch108 -p1
+%patch109 -p1
+%patch110 -p1
+%patch111 -p1
+%patch112 -p1
+%patch113 -p1
+%patch114 -p1
+%patch115 -p1
+%patch116 -p1
+%patch117 -p1
+%patch118 -p1
+%patch119 -p1
+%patch120 -p1
+%patch121 -p1
+%patch122 -p1
+%patch123 -p1
+%patch124 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -887,6 +971,53 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Thu Aug 29 2013 Miroslav Rezanina <mrezanin@redhat.com> - qemu-kvm-1.5.3-2.el7
+- kvm-osdep-add-qemu_get_local_state_pathname.patch [bz#964304]
+- kvm-qga-determine-default-state-dir-and-pidfile-dynamica.patch [bz#964304]
+- kvm-configure-don-t-save-any-fixed-local_statedir-for-wi.patch [bz#964304]
+- kvm-qga-create-state-directory-on-win32.patch [bz#964304]
+- kvm-qga-save-state-directory-in-ga_install_service-RHEL-.patch [bz#964304]
+- kvm-Makefile-create-.-var-run-when-installing-the-POSIX-.patch [bz#964304]
+- kvm-qemu-option-Fix-qemu_opts_find-for-null-id-arguments.patch [bz#980782]
+- kvm-qemu-option-Fix-qemu_opts_set_defaults-for-corner-ca.patch [bz#980782]
+- kvm-vl-New-qemu_get_machine_opts.patch [bz#980782]
+- kvm-Fix-machine-options-accel-kernel_irqchip-kvm_shadow_.patch [bz#980782]
+- kvm-microblaze-Fix-latent-bug-with-default-DTB-lookup.patch [bz#980782]
+- kvm-Simplify-machine-option-queries-with-qemu_get_machin.patch [bz#980782]
+- kvm-pci-add-VMSTATE_MSIX.patch [bz#838170]
+- kvm-xhci-add-XHCISlot-addressed.patch [bz#838170]
+- kvm-xhci-add-xhci_alloc_epctx.patch [bz#838170]
+- kvm-xhci-add-xhci_init_epctx.patch [bz#838170]
+- kvm-xhci-add-live-migration-support.patch [bz#838170]
+- kvm-pc-set-level-xlevel-correctly-on-486-qemu32-CPU-mode.patch [bz#918907]
+- kvm-pc-Remove-incorrect-rhel6.x-compat-model-value-for-C.patch [bz#918907]
+- kvm-pc-rhel6.x-has-x2apic-present-on-Conroe-Penryn-Nehal.patch [bz#918907]
+- kvm-pc-set-compat-CPUID-0x80000001-.EDX-bits-on-Westmere.patch [bz#918907]
+- kvm-pc-Remove-PCLMULQDQ-from-Westmere-on-rhel6.x-machine.patch [bz#918907]
+- kvm-pc-SandyBridge-rhel6.x-compat-fixes.patch [bz#918907]
+- kvm-pc-Haswell-doesn-t-have-rdtscp-on-rhel6.x.patch [bz#918907]
+- kvm-i386-fix-LAPIC-TSC-deadline-timer-save-restore.patch [bz#972433]
+- kvm-all.c-max_cpus-should-not-exceed-KVM-vcpu-limit.patch [bz#996258]
+- kvm-add-timestamp-to-error_report.patch [bz#906937]
+- kvm-Convert-stderr-message-calling-error_get_pretty-to-e.patch [bz#906937]
+- Resolves: bz#838170
+  (Add live migration support for USB [xhci, usb-uas])
+- Resolves: bz#906937
+  ([Hitachi 7.0 FEAT][QEMU]Add a time stamp to error message (*))
+- Resolves: bz#918907
+  (provide backwards-compatible RHEL specific machine types in QEMU - CPU features)
+- Resolves: bz#964304
+  (Windows guest agent service failed to be started)
+- Resolves: bz#972433
+  ("INFO: rcu_sched detected stalls" after RHEL7 kvm vm migrated)
+- Resolves: bz#980782
+  (kernel_irqchip defaults to off instead of on without -machine)
+- Resolves: bz#996258
+  (boot guest with maxcpu=255 successfully but actually max number of vcpu is 160)
+
+* Wed Aug 28 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.3-1
+- Rebase to qemu 1.5.3
+
 * Tue Aug 20 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.2-4
 - qemu: guest agent creates files with insecure permissions in deamon mode [rhel-7.0] (rhbz 974444)
 - update qemu-ga config & init script in RHEL7 wrt. fsfreeze hook (rhbz 969942)
