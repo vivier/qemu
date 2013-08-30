@@ -416,6 +416,7 @@ dobuild() {
         --disable-vnc-jpeg \
         --enable-vnc-ws \
         --enable-uuid \
+        --disable-vhost-scsi \
 %if %{with guest_agent}
         --enable-guest-agent \
 %else
