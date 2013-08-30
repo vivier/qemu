@@ -160,7 +160,7 @@ int smp_threads = 1;
 const char *vnc_display;
 #endif
 int acpi_enabled = 1;
-int no_hpet = 0;
+int no_hpet = 1; /* Always disabled for Red Hat Enterprise Linux */
 int fd_bootchk = 1;
 static int no_reboot;
 int no_shutdown = 0;
@@ -3689,9 +3689,11 @@ int main(int argc, char **argv, char **envp)
             case QEMU_OPTION_no_acpi:
                 acpi_enabled = 0;
                 break;
+#if 0 /* Disabled for Red Hat Enterprise Linux */
             case QEMU_OPTION_no_hpet:
                 no_hpet = 1;
                 break;
+#endif
             case QEMU_OPTION_balloon:
                 if (balloon_parse(optarg) < 0) {
                     fprintf(stderr, "Unknown -balloon argument %s\n", optarg);
