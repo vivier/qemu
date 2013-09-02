@@ -1023,6 +1023,10 @@ static QEMUMachine pc_machine_rhel700 = {
         .driver = "486-" TYPE_X86_CPU,\
         .property = "level",\
         .value = stringify(0),\
+    },{\
+        .driver   = "usb-ccid",\
+        .property = "serial",\
+        .value    = "1",\
     }
 
 static void pc_init_rhel650(MachineState *machine)
@@ -1121,6 +1125,14 @@ static QEMUMachine pc_machine_rhel640 = {
         .driver = TYPE_X86_CPU,\
         .property = "pmu",\
         .value = "on",\
+    },{\
+        .driver   = "usb-hub",\
+        .property = "serial",\
+        .value    = "314159",\
+    },{\
+        .driver   = "usb-storage",\
+        .property = "serial",\
+        .value    = "1",\
     }
 
 static void pc_init_rhel630(MachineState *machine)
@@ -1203,6 +1215,18 @@ static QEMUMachine pc_machine_rhel620 = {
         .driver   = "virtio-balloon-pci",\
         .property = "event_idx",\
         .value    = "off",\
+    },{\
+        .driver   = "usb-kbd",\
+        .property = "serial",\
+        .value    = "1",\
+    },{\
+        .driver   = "usb-mouse",\
+        .property = "serial",\
+        .value    = "1",\
+    },{\
+        .driver   = "usb-tablet",\
+        .property = "serial",\
+        .value    = "1",\
     }
 
 static void pc_init_rhel610(MachineState *machine)
