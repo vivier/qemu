@@ -39,6 +39,12 @@ STEXI
 @item info [-f @var{fmt}] @var{filename}
 ETEXI
 
+DEF("map", img_map,
+    "map [-f fmt] [--output=ofmt] filename")
+STEXI
+@item map [-f @var{fmt}] [--output=@var{ofmt}] @var{filename}
+ETEXI
+
 DEF("snapshot", img_snapshot,
     "snapshot [-l | -a snapshot | -c snapshot | -d snapshot] filename")
 STEXI
