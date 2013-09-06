@@ -144,7 +144,7 @@ wait:
         if (ret == 1) {
             /* Allocated in the top, no need to copy.  */
             copy = false;
-        } else {
+        } else if (ret >= 0) {
             /* Copy if allocated in the intermediate images.  Limit to the
              * known-unallocated area [sector_num, sector_num+n).  */
             ret = bdrv_is_allocated_above(bs->backing_hd, base,
@@ -156,6 +156,8 @@ wait:
             }
 
             copy = (ret == 1);
+        } else {
+            copy = false;
         }
         trace_stream_one_iteration(s, sector_num, n, ret);
         if (ret >= 0 && copy) {
