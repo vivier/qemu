@@ -85,7 +85,7 @@ typedef struct BlockDevOps {
 
 #define BDRV_SECTOR_BITS   9
 #define BDRV_SECTOR_SIZE   (1 << BDRV_SECTOR_BITS)
-#define BDRV_SECTOR_MASK   ~(BDRV_SECTOR_SIZE - 1);
+#define BDRV_SECTOR_MASK   ~(BDRV_SECTOR_SIZE - 1)
 
 typedef enum {
     BLOCK_ERR_REPORT, BLOCK_ERR_IGNORE, BLOCK_ERR_STOP_ENOSPC,
