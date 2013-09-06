@@ -188,6 +188,12 @@ static int coroutine_fn cow_co_is_allocated(BlockDriverState *bs,
     return changed;
 }
 
+static int64_t coroutine_fn cow_co_get_block_status(BlockDriverState *bs,
+        int64_t sector_num, int nb_sectors, int *num_same)
+{
+    return cow_co_is_allocated(bs, sector_num, nb_sectors, num_same);
+}
+
 static int cow_update_bitmap(BlockDriverState *bs, int64_t sector_num,
         int nb_sectors)
 {
@@ -376,7 +382,7 @@ static BlockDriver bdrv_cow = {
     .bdrv_close		= cow_close,
     .bdrv_create	= cow_create,
     .bdrv_co_flush      = cow_co_flush,
-    .bdrv_co_is_allocated   = cow_co_is_allocated,
+    .bdrv_co_get_block_status   = cow_co_get_block_status,
 
     .create_options = cow_create_options,
 };

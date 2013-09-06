@@ -454,7 +454,7 @@ static int vdi_reopen_prepare(BDRVReopenState *state,
     return 0;
 }
 
-static int coroutine_fn vdi_co_is_allocated(BlockDriverState *bs,
+static int64_t coroutine_fn vdi_co_get_block_status(BlockDriverState *bs,
         int64_t sector_num, int nb_sectors, int *pnum)
 {
     /* TODO: Check for too large sector_num (in bdrv_is_allocated or here). */
@@ -932,7 +932,7 @@ static BlockDriver bdrv_vdi = {
     .bdrv_reopen_prepare = vdi_reopen_prepare,
     .bdrv_create = vdi_create,
     .bdrv_co_flush = vdi_co_flush,
-    .bdrv_co_is_allocated = vdi_co_is_allocated,
+    .bdrv_co_get_block_status = vdi_co_get_block_status,
     .bdrv_make_empty = vdi_make_empty,
 
     .bdrv_aio_readv = vdi_aio_readv,

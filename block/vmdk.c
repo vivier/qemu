@@ -1033,7 +1033,7 @@ static VmdkExtent *find_extent(BDRVVmdkState *s,
     return NULL;
 }
 
-static int coroutine_fn vmdk_co_is_allocated(BlockDriverState *bs,
+static int64_t coroutine_fn vmdk_co_get_block_status(BlockDriverState *bs,
         int64_t sector_num, int nb_sectors, int *pnum)
 {
     BDRVVmdkState *s = bs->opaque;
@@ -1809,7 +1809,7 @@ static BlockDriver bdrv_vmdk = {
     .bdrv_close     = vmdk_close,
     .bdrv_create    = vmdk_create,
     .bdrv_co_flush  = vmdk_co_flush,
-    .bdrv_co_is_allocated   = vmdk_co_is_allocated,
+    .bdrv_co_get_block_status     = vmdk_co_get_block_status,
     .bdrv_get_allocated_file_size  = vmdk_get_allocated_file_size,
 
     .create_options = vmdk_create_options,

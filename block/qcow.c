@@ -386,7 +386,7 @@ static uint64_t get_cluster_offset(BlockDriverState *bs,
     return cluster_offset;
 }
 
-static int coroutine_fn qcow_co_is_allocated(BlockDriverState *bs,
+static int64_t coroutine_fn qcow_co_get_block_status(BlockDriverState *bs,
         int64_t sector_num, int nb_sectors, int *pnum)
 {
     BDRVQcowState *s = bs->opaque;
@@ -946,7 +946,7 @@ static BlockDriver bdrv_qcow = {
     .bdrv_close		= qcow_close,
     .bdrv_reopen_prepare = qcow_reopen_prepare,
     .bdrv_create	= qcow_create,
-    .bdrv_co_is_allocated = qcow_co_is_allocated,
+    .bdrv_co_get_block_status   = qcow_co_get_block_status,
     .bdrv_set_key	= qcow_set_key,
     .bdrv_make_empty	= qcow_make_empty,
     .bdrv_co_readv      = qcow_co_readv,
