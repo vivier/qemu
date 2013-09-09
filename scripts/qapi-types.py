@@ -16,8 +16,21 @@ import os
 import getopt
 import errno
 
-def generate_fwd_struct(name, members):
+def generate_fwd_struct(name, members, builtin_type=False):
+    if builtin_type:
+        return mcgen('''
+
+typedef struct %(name)sList
+{
+    %(type)s value;
+    struct %(name)sList *next;
+} %(name)sList;
+''',
+                     type=c_type(name),
+                     name=name)
+
     return mcgen('''
+
 typedef struct %(name)s %(name)s;
 
 typedef struct %(name)sList
@@ -183,6 +196,7 @@ void qapi_free_%(type)s(%(c_type)s obj);
 
 def generate_type_cleanup(name):
     ret = mcgen('''
+
 void qapi_free_%(type)s(%(c_type)s obj)
 {
     QapiDeallocVisitor *md;
@@ -203,8 +217,9 @@ void qapi_free_%(type)s(%(c_type)s obj)
 
 
 try:
-    opts, args = getopt.gnu_getopt(sys.argv[1:], "chp:o:",
-                                   ["source", "header", "prefix=", "output-dir="])
+    opts, args = getopt.gnu_getopt(sys.argv[1:], "chbp:o:",
+                                   ["source", "header", "builtins",
+                                    "prefix=", "output-dir="])
 except getopt.GetoptError, err:
     print str(err)
     sys.exit(1)
@@ -216,6 +231,7 @@ h_file = 'qapi-types.h'
 
 do_c = False
 do_h = False
+do_builtins = False
 
 for o, a in opts:
     if o in ("-p", "--prefix"):
@@ -226,6 +242,8 @@ for o, a in opts:
         do_c = True
     elif o in ("-h", "--header"):
         do_h = True
+    elif o in ("-b", "--builtins"):
+        do_builtins = True
 
 if not do_c and not do_h:
     do_c = True
@@ -301,6 +319,11 @@ fdecl.write(mcgen('''
 exprs = parse_schema(sys.stdin)
 exprs = filter(lambda expr: not expr.has_key('gen'), exprs)
 
+fdecl.write(guardstart("QAPI_TYPES_BUILTIN_STRUCT_DECL"))
+for typename in builtin_types:
+    fdecl.write(generate_fwd_struct(typename, None, builtin_type=True))
+fdecl.write(guardend("QAPI_TYPES_BUILTIN_STRUCT_DECL"))
+
 for expr in exprs:
     ret = "\n"
     if expr.has_key('type'):
@@ -316,6 +339,22 @@ for expr in exprs:
     else:
         continue
     fdecl.write(ret)
+
+# to avoid header dependency hell, we always generate declarations
+# for built-in types in our header files and simply guard them
+fdecl.write(guardstart("QAPI_TYPES_BUILTIN_CLEANUP_DECL"))
+for typename in builtin_types:
+    fdecl.write(generate_type_cleanup_decl(typename + "List"))
+fdecl.write(guardend("QAPI_TYPES_BUILTIN_CLEANUP_DECL"))
+
+# ...this doesn't work for cases where we link in multiple objects that
+# have the functions defined, so we use -b option to provide control
+# over these cases
+if do_builtins:
+    fdef.write(guardstart("QAPI_TYPES_BUILTIN_CLEANUP_DEF"))
+    for typename in builtin_types:
+        fdef.write(generate_type_cleanup(typename + "List"))
+    fdef.write(guardend("QAPI_TYPES_BUILTIN_CLEANUP_DEF"))
 
 for expr in exprs:
     ret = "\n"
