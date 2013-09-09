@@ -131,7 +131,12 @@ typedef enum %(name)s
 
     return lookup_decl + enum_decl
 
-def generate_union(name, typeinfo):
+def generate_union(expr):
+
+    name = expr['union']
+    typeinfo = expr['data']
+    base = expr.get('base')
+
     ret = mcgen('''
 struct %(name)s
 {
@@ -150,6 +155,13 @@ struct %(name)s
 
     ret += mcgen('''
     };
+''')
+
+    if base:
+        struct = find_struct(base)
+        ret += generate_struct_fields(struct['data'])
+
+    ret += mcgen('''
 };
 ''')
 
@@ -307,7 +319,7 @@ for expr in exprs:
         ret += generate_type_cleanup_decl(expr['type'])
         fdef.write(generate_type_cleanup(expr['type']) + "\n")
     elif expr.has_key('union'):
-        ret += generate_union(expr['union'], expr['data'])
+        ret += generate_union(expr)
         ret += generate_type_cleanup_decl(expr['union'] + "List")
         fdef.write(generate_type_cleanup(expr['union'] + "List") + "\n")
         ret += generate_type_cleanup_decl(expr['union'])
