@@ -228,3 +228,7 @@ vl.o: QEMU_CFLAGS+=$(SDL_CFLAGS)
 
 all: $(HWLIB)
 QEMU_CFLAGS+=$(GLIB_CFLAGS)
+
+nested-vars += \
+        common-obj-y
+dummy := $(call unnest-vars)
