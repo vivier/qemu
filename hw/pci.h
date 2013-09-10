@@ -2,6 +2,7 @@
 #define QEMU_PCI_H
 
 #include "qemu-common.h"
+#include "hw/qdev-core.h"
 
 #include "qdev.h"
 
@@ -77,6 +78,7 @@ extern target_phys_addr_t pci_mem_base;
 #define PCI_DEVICE_ID_VIRTIO_BALLOON     0x1002
 #define PCI_DEVICE_ID_VIRTIO_CONSOLE     0x1003
 #define PCI_DEVICE_ID_VIRTIO_SCSI        0x1004
+#define PCI_DEVICE_ID_VIRTIO_RNG         0x1005
 
 #define PCI_VENDOR_ID_REDHAT             0x1b36
 #define PCI_DEVICE_ID_REDHAT_SERIAL      0x0002
