@@ -1,5 +1,5 @@
 # Build time setting
-%define rhev 0
+%define rhev 1
 
 %if %{rhev}
     %bcond_with     guest_agent     # disabled
