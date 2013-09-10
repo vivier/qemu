@@ -5227,6 +5227,8 @@ int main(int argc, char **argv, char **envp)
     QLIST_INIT (&vm_change_state_head);
     os_setup_early_signal_handling();
 
+    module_call_init(MODULE_INIT_QOM);
+
     module_call_init(MODULE_INIT_MACHINE);
     machine = find_default_machine();
     cpu_model = NULL;
