@@ -960,6 +960,12 @@ static int virtio_rng_init_pci(PCIDevice *pci_dev)
                                  TYPE_RNG_BACKEND, NULL));
     g_free(path);
 
+    if (proxy->rng.name == NULL) {
+        Object *obj = object_new(TYPE_RNG_RANDOM);
+        proxy->rng.default_backend = RNG_RANDOM(obj);
+        proxy->rng.rng = RNG_BACKEND(obj);
+    }
+
     vdev = virtio_rng_init(&pci_dev->qdev, &proxy->rng);
     if (!vdev) {
         return -1;
