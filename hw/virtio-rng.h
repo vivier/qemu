@@ -20,6 +20,8 @@
 struct VirtIORNGConf {
     char *name;
     RngBackend *rng;
+    uint64_t max_bytes;
+    uint32_t period_ms;
 };
 
 #endif
