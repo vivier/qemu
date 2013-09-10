@@ -177,6 +177,8 @@ int main(int argc, char **argv)
 #include "trace.h"
 
 #include "ui/qemu-spice.h"
+#include "qapi/string-input-visitor.h"
+#include "qom/object.h"
 
 //#define DEBUG_NET
 //#define DEBUG_SLIRP
@@ -5180,6 +5182,53 @@ static const QEMUOption *lookup_opt(int argc, char **argv,
     return popt;
 }
 
+static int object_set_property(const char *name, const char *value, void *opaque)
+{
+    Object *obj = OBJECT(opaque);
+    StringInputVisitor *siv;
+    Error *local_err = NULL;
+
+    if (strcmp(name, "qom-type") == 0 || strcmp(name, "id") == 0) {
+        return 0;
+    }
+
+    siv = string_input_visitor_new(value);
+    object_property_set(obj, string_input_get_visitor(siv), name, &local_err);
+    string_input_visitor_cleanup(siv);
+
+    if (local_err) {
+        qerror_report_err(local_err);
+        error_free(local_err);
+        return -1;
+    }
+
+    return 0;
+}
+
+static int object_create(QemuOpts *opts, void *opaque)
+{
+    const char *type = qemu_opt_get(opts, "qom-type");
+    const char *id = qemu_opts_id(opts);
+    Object *obj;
+
+    g_assert(type != NULL);
+
+    if (id == NULL) {
+        qerror_report(QERR_MISSING_PARAMETER, "id");
+        return -1;
+    }
+
+    obj = object_new(type);
+    if (qemu_opt_foreach(opts, object_set_property, obj, 1) < 0) {
+        return -1;
+    }
+
+    object_property_add_child(container_get(object_get_root(), "/objects"),
+                              id, obj, NULL);
+
+    return 0;
+}
+
 int main(int argc, char **argv, char **envp)
 {
     const char *gdbstub_dev = NULL;
@@ -6114,11 +6163,22 @@ int main(int argc, char **argv, char **envp)
                 }
                 configure_msg(opts);
                 break;
+            case QEMU_OPTION_object:
+                opts = qemu_opts_parse(qemu_find_opts("object"), optarg, 1);
+                if (!opts) {
+                    exit(1);
+                }
+                break;
             }
         }
     }
     fips_set_state(true);
     loc_set_none();
+
+    if (qemu_opts_foreach(qemu_find_opts("object"),
+                          object_create, NULL, 0) != 0) {
+        exit(1);
+    }
 
     /* If no data_dir is specified then try to find it relative to the
        executable path.  */
