@@ -130,6 +130,8 @@ QEMU_CFLAGS+=$(CURL_CFLAGS)
 
 QEMU_CFLAGS+=$(GLIB_CFLAGS)
 
+QEMU_CFLAGS += -I$(SRC_PATH)/include
+
 cocoa.o: cocoa.m
 
 keymaps.o: keymaps.c keymaps.h

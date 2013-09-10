@@ -70,6 +70,7 @@ common-obj-y = $(shared-obj-y)
 common-obj-y += qemu-thread.o
 common-obj-y += blockdev.o
 common-obj-y += $(net-obj-y)
+common-obj-y += qom/
 common-obj-y += readline.o console.o cursor.o
 
 common-obj-y += tcg-runtime.o host-utils.o
