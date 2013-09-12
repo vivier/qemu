@@ -41,15 +41,36 @@
 %define pkgname qemu-kvm
 %define rhel_suffix -rhel
 %define rhev_suffix -rhev
+
+# Setup for RHEL/RHEV package handling
+# We need to define tree suffixes:
+# - pkgsuffix:             used for package name
+# - extra_provides_suffix: used for dependency checking of other packages
+# - conflicts_suffix:      used to prevent installation of both RHEL and RHEV
+
 %if %{rhev}
     %global pkgsuffix %{rhev_suffix}
+    %global extra_provides_suffix %{nil}
+    %global conflicts_suffix %{rhel_suffix}
+    %global obsoletes_version 15:0-0
+%else
+    %global pkgsuffix %{nil}
+    %global extra_provides_suffix %{rhel_suffix}
+    %global conflicts_suffix %{rhev_suffix}
 %endif
 
+# Macro to properly setup RHEL/RHEV conflict handling
+%define rhel_rhev_conflicts()                                         \
+Conflicts: %1%{conflicts_suffix}                                      \
+Provides: %1%{extra_provides_suffix} = %{epoch}:%{version}-%{release} \
+    %if 0%{?obsoletes_ver:1}                                          \
+Obsoletes: %1 < %{obsoletes_ver}                                      \
+    %endif
 
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 2%{?dist}
+Release: 3%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -63,7 +84,7 @@ Requires: seabios-bin
 Requires: sgabios-bin
 Requires: seavgabios-bin
 Requires: ipxe-roms-qemu
-Requires: %{name}-common = %{epoch}:%{version}-%{release}
+Requires: %{pkgname}-common%{?pkgsuffix} = %{epoch}:%{version}-%{release}
         %if 0%{?have_seccomp:1}
 Requires: libseccomp >= 1.0.0
         %endif
@@ -347,14 +368,7 @@ Requires: qemu-img = %{epoch}:%{version}-%{release}
 # We provide special suffix for qemu-kvm so the conflit is easy
 # In addition, RHEV version should obsolete all RHEL version in case both
 # RHEL and RHEV channels are used
-%if %{rhev}
-Conflicts: %{pkgname}%{rhel_suffix}
-Provides:  %{pkgname} =  %{epoch}:%version}-%{release}
-Obsoletes: %{pkgname} < 15:0-0
-%else
-Conflicts: %{pkgname}%{rhev_suffix}
-Provides:  %{pkgname}%{rhel_suffix} =  %{epoch}:%version}-%{release}
-%endif
+%rhel_rhev_conflicts qemu-kvm
 
 
 %define qemudocdir %{_docdir}/%{pkgname}
@@ -371,16 +385,17 @@ emulation speed by using dynamic translation. QEMU has two operating modes:
    for one CPU on another CPU.
 
 As QEMU requires no host kernel patches to run, it is safe and easy to use.
-
+%if !%{rhev}
 %package -n qemu-img
 Summary: QEMU command line tool for manipulating disk images
 Group: Development/Tools
 
 %description -n qemu-img
 This package provides a command line tool for manipulating disk images
+%endif
 
 %if 0%{!?build_only_sub:1}
-%package  common
+%package -n qemu-kvm-common%{?pkgsuffix}
 Summary: QEMU common files needed by all QEMU targets
 Group: Development/Tools
 Requires(post): /usr/bin/getent
@@ -389,11 +404,14 @@ Requires(post): /usr/sbin/useradd
 Requires(post): systemd-units
 Requires(preun): systemd-units
 Requires(postun): systemd-units
-%description common
+
+%description -n qemu-kvm-common%{?pkgsuffix}
 QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
 
 This package provides the common files needed by all QEMU targets
+
+rhel_rhev_conflicts qemu-kvm-common
 %endif
 
 %if %{with guest_agent}
@@ -424,7 +442,8 @@ This package does not need to be installed on the host OS.
 
 %endif
 
-%if 0%{!?build_only_sub:1}
+%if !%{rhev}
+    %if 0%{!?build_only_sub:1}
 %package tools
 Summary: KVM debugging and diagnostics tools
 Group: Development/Tools
@@ -432,7 +451,7 @@ Group: Development/Tools
 %description tools
 This package contains some diagnostics and debugging tools for KVM,
 such as kvm_stat.
-%endif
+    %endif
 
 %package -n libcacard
 Summary:        Common Access Card (CAC) Emulation
@@ -458,6 +477,7 @@ Requires:       libcacard = %{epoch}:%{version}-%{release}
 
 %description -n libcacard-devel
 CAC emulation development files.
+%endif
 
 %prep
 %setup -q -n qemu-%{version}
@@ -824,9 +844,12 @@ dobuild --target-list="$buildarch"
     chmod u+s $RPM_BUILD_ROOT%{_libexecdir}/qemu-bridge-helper
 %endif
 
-make %{?_smp_mflags} $buildldflags DESTDIR=$RPM_BUILD_ROOT install-libcacard
+%if !%{rhev}
+    make %{?_smp_mflags} $buildldflags DESTDIR=$RPM_BUILD_ROOT install-libcacard
+    find $RPM_BUILD_ROOT -name "libcacard.so*" -exec chmod +x \{\} \;
+%endif
 find $RPM_BUILD_ROOT -name '*.la' -or -name '*.a' | xargs rm -f
-find $RPM_BUILD_ROOT -name "libcacard.so*" -exec chmod +x \{\} \;
+
 %if 0%{?build_only_sub}
     mkdir -p $RPM_BUILD_ROOT%{_bindir}
     mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1/*
@@ -842,6 +865,20 @@ find $RPM_BUILD_ROOT -name "libcacard.so*" -exec chmod +x \{\} \;
     chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man8/*
 %endif
 
+%if %{rhev}
+    # Remove files unpackacked for rhev build
+    rm -rf ${RPM_BUILD_ROOT}%{_includedir}/cacard
+    rm -rf ${RPM_BUILD_ROOT}%{_bindir}/qemu-img
+    rm -rf ${RPM_BUILD_ROOT}%{_bindir}/qemu-io
+    rm -rf ${RPM_BUILD_ROOT}%{_bindir}/qemu-nbd
+    rm -rf ${RPM_BUILD_ROOT}%{_mandir}/man1/qemu-img.1*
+    rm -rf ${RPM_BUILD_ROOT}%{_mandir}/man8/qemu-nbd.8*
+    rm -rf ${RPM_BUILD_ROOT}%{_bindir}/vscclient
+    rm -rf ${RPM_BUILD_ROOT}%{_libdir}/libcacard.so*
+    rm -rf ${RPM_BUILD_ROOT}%{_libdir}/pkgconfig/libcacard.pc
+    rm -rf ${RPM_BUILD_ROOT}%{_bindir}/kvm_stat
+%endif
+
 %check
 make check
 
@@ -852,7 +889,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     udevadm trigger --subsystem-match=misc --sysname-match=kvm --action=add || :
 
 %if 0%{!?build_only_sub:1}
-%post common
+%post -n qemu-kvm-common%{?pkgsuffix}
     %systemd_post ksm.service
     %systemd_post ksmtuned.service
 
@@ -862,11 +899,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
        useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
        -c "qemu user" qemu
 
-%preun common
+%preun -n qemu-kvm-common%{?pkgsuffix}
     %systemd_preun ksm.service
     %systemd_preun ksmtuned.service
 
-%postun common
+%postun -n qemu-kvm-common%{?pkgsuffix}
     %systemd_postun_with_restart ksm.service
     %systemd_postun_with_restart ksmtuned.service
 %endif
@@ -879,7 +916,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_datadir}/systemtap/tapset/qemu-kvm.stp
 
 %if 0%{!?build_only_sub:1}
-%files common
+%files -n qemu-kvm-common%{?pkgsuffix}
     %defattr(-,root,root)
     %dir %{qemudocdir}
     %doc %{qemudocdir}/Changelog
@@ -943,34 +980,41 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %{?kvm_files:}
     %{?qemu_kvm_files:}
 
+    %if !%{rhev}
 %files tools
-    %defattr(-,root,root,-)
-    %{_bindir}/kvm_stat
+        %defattr(-,root,root,-)
+        %{_bindir}/kvm_stat
+    %endif
 %endif
 
+%if !%{rhev}
 %files -n qemu-img
-%defattr(-,root,root)
-%{_bindir}/qemu-img
-%{_bindir}/qemu-io
-%{_bindir}/qemu-nbd
-%{_mandir}/man1/qemu-img.1*
-%{_mandir}/man8/qemu-nbd.8*
+    %defattr(-,root,root)
+    %{_bindir}/qemu-img
+    %{_bindir}/qemu-io
+    %{_bindir}/qemu-nbd
+    %{_mandir}/man1/qemu-img.1*
+    %{_mandir}/man8/qemu-nbd.8*
 
 %files -n libcacard
-%defattr(-,root,root,-)
-%{_libdir}/libcacard.so.*
+    %defattr(-,root,root,-)
+    %{_libdir}/libcacard.so.*
 
 %files -n libcacard-tools
-%defattr(-,root,root,-)
-%{_bindir}/vscclient
+    %defattr(-,root,root,-)
+    %{_bindir}/vscclient
 
 %files -n libcacard-devel
-%defattr(-,root,root,-)
-%{_includedir}/cacard
-%{_libdir}/libcacard.so
-%{_libdir}/pkgconfig/libcacard.pc
+    %defattr(-,root,root,-)
+    %{_includedir}/cacard
+    %{_libdir}/libcacard.so
+    %{_libdir}/pkgconfig/libcacard.pc
+%endif
 
 %changelog
+* Thu Aug 29 2013 Miroslav Rezanina <mrezanin@redhat.com> - qemu-kvm-1.5.3-3.el7
+- Fix rhel/rhev split
+
 * Thu Aug 29 2013 Miroslav Rezanina <mrezanin@redhat.com> - qemu-kvm-1.5.3-2.el7
 - kvm-osdep-add-qemu_get_local_state_pathname.patch [bz#964304]
 - kvm-qga-determine-default-state-dir-and-pidfile-dynamica.patch [bz#964304]
