@@ -563,6 +563,7 @@ static int bdrv_open_common(BlockDriverState *bs, const char *filename,
     bs->open_flags = flags;
     /* buffer_alignment defaulted to 512, drivers can change this value */
     bs->buffer_alignment = 512;
+    bs->zero_beyond_eof = true;
 
     open_flags = flags;
     /*
@@ -1052,6 +1053,7 @@ void bdrv_close(BlockDriverState *bs)
         bs->copy_on_read = 0;
         bs->backing_file[0] = '\0';
         bs->backing_format[0] = '\0';
+        bs->zero_beyond_eof = false;
 
         if (bs->file != NULL) {
             bdrv_close(bs->file);
@@ -2181,7 +2183,7 @@ static int coroutine_fn bdrv_co_do_readv(BlockDriverState *bs,
         }
     }
 
-    if (!bs->growable) {
+    if (!(bs->zero_beyond_eof && bs->growable)) {
         ret = drv->bdrv_co_readv(bs, sector_num, nb_sectors, qiov);
     } else {
         /* Read zeros after EOF of growable BDSes */
