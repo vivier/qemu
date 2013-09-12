@@ -32,10 +32,6 @@ static void qxl_blit(PCIQXLDevice *qxl, QXLRect *rect)
     if (is_buffer_shared(qxl->vga.ds->surface)) {
         return;
     }
-    if (!qxl->guest_primary.data) {
-        trace_qxl_render_blit_guest_primary_initialized();
-        qxl->guest_primary.data = qemu_get_ram_ptr(qxl->vga.vram_offset);
-    }
     trace_qxl_render_blit(qxl->guest_primary.qxl_stride,
             rect->left, rect->right, rect->top, rect->bottom);
     src = qxl->guest_primary.data;
@@ -105,7 +101,12 @@ static void qxl_render_update_area_unlocked(PCIQXLDevice *qxl)
 
     if (qxl->guest_primary.resized) {
         qxl->guest_primary.resized = 0;
-        qxl->guest_primary.data = qemu_get_ram_ptr(qxl->vga.vram_offset);
+        qxl->guest_primary.data = qxl_phys2virt(qxl,
+                                                qxl->guest_primary.surface.mem,
+                                                MEMSLOT_GROUP_GUEST);
+        if (!qxl->guest_primary.data) {
+            return;
+        }
         qxl_set_rect_to_surface(qxl, &qxl->dirty[0]);
         qxl->num_dirty_rects = 1;
         trace_qxl_render_guest_primary_resized(
@@ -131,6 +132,10 @@ static void qxl_render_update_area_unlocked(PCIQXLDevice *qxl)
                     qxl->guest_primary.surface.height);
         }
         dpy_resize(vga->ds);
+    }
+
+    if (!qxl->guest_primary.data) {
+        return;
     }
     for (i = 0; i < qxl->num_dirty_rects; i++) {
         if (qemu_spice_rect_is_empty(qxl->dirty+i)) {
