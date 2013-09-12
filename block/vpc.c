@@ -28,6 +28,7 @@
 #if defined(CONFIG_UUID)
 #include <uuid/uuid.h>
 #endif
+#include "migration.h"
 
 /**************************************************************/
 
@@ -131,6 +132,8 @@ typedef struct BDRVVPCState {
 
     uint64_t last_bitmap;
 #endif
+
+    Error *migration_blocker;
 } BDRVVPCState;
 
 static uint32_t vpc_checksum(uint8_t* buf, size_t size)
@@ -267,6 +270,13 @@ static int vpc_open(BlockDriverState *bs, int flags)
     }
 
     qemu_co_mutex_init(&s->lock);
+
+    /* Disable migration when VHD images are used */
+    error_set(&s->migration_blocker,
+              QERR_BLOCK_FORMAT_FEATURE_NOT_SUPPORTED,
+              "vpc", bs->device_name, "live migration");
+    migrate_add_blocker(s->migration_blocker);
+
     return 0;
 
 fail:
@@ -788,6 +798,9 @@ static void vpc_close(BlockDriverState *bs)
 #ifdef CACHE
     g_free(s->pageentry_u8);
 #endif
+
+    migrate_del_blocker(s->migration_blocker);
+    error_free(s->migration_blocker);
 }
 
 static QEMUOptionParameter vpc_create_options[] = {
