@@ -18,6 +18,7 @@
 #include "qemu-common.h"
 #include "notify.h"
 #include "qerror.h"
+#include "error.h"
 
 #define MIG_STATE_ERROR		-1
 #define MIG_STATE_COMPLETED	0
@@ -143,5 +144,19 @@ static inline FdMigrationState *migrate_to_fms(MigrationState *mig_state)
 void add_migration_state_change_notifier(Notifier *notify);
 void remove_migration_state_change_notifier(Notifier *notify);
 int get_migration_state(void);
+
+/**
+ * @migrate_add_blocker - prevent migration from proceeding
+ *
+ * @reason - an error to be returned whenever migration is attempted
+ */
+void migrate_add_blocker(Error *reason);
+
+/**
+ * @migrate_del_blocker - remove a blocking error from migration
+ *
+ * @reason - the error blocking migration
+ */
+void migrate_del_blocker(Error *reason);
 
 #endif
