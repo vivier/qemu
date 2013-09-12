@@ -16,6 +16,7 @@
 #include "qemu-timer.h"
 #include "qemu-log.h"
 #include "sysemu.h"
+#include "migration.h"
 
 #include <sys/time.h>
 
@@ -123,5 +124,13 @@ void qemu_mutex_lock_iothread(void)
 }
 
 void qemu_mutex_unlock_iothread(void)
+{
+}
+
+void migrate_add_blocker(Error *reason)
+{
+}
+
+void migrate_del_blocker(Error *reason)
 {
 }

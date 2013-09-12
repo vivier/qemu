@@ -61,6 +61,9 @@ QError *qobject_to_qerror(const QObject *obj);
 #define QERR_BASE_NOT_REACHABLE \
     "{ 'class': 'GenericError', 'data': { 'base': %s, 'top': %s } }"
 
+#define QERR_BLOCK_FORMAT_FEATURE_NOT_SUPPORTED \
+    "{ 'class': 'BlockFormatFeatureNotSupported', 'data': { 'format': %s, 'name': %s, 'feature': %s } }"
+
 #define QERR_BUS_NOT_FOUND \
     "{ 'class': 'BusNotFound', 'data': { 'bus': %s } }"
 

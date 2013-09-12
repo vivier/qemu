@@ -57,6 +57,10 @@ static const QErrorStringTable qerror_table[] = {
         .desc      = "Base '%(base)' not reachable from top '%(top)'",
     },
     {
+        .error_fmt = QERR_BLOCK_FORMAT_FEATURE_NOT_SUPPORTED,
+        .desc      = "Block format '%(format)' used by device '%(name)' does not support feature '%(feature)'",
+    },
+    {
         .error_fmt = QERR_BUS_NOT_FOUND,
         .desc      = "Bus '%(bus)' not found",
     },

@@ -16,6 +16,8 @@
 #include "qemu-timer.h"
 #include "trace.h"
 #include "qed.h"
+#include "qerror.h"
+#include "migration.h"
 
 static void qed_aio_cancel(BlockDriverAIOCB *blockacb)
 {
@@ -498,6 +500,12 @@ static int bdrv_qed_open(BlockDriverState *bs, int flags)
 
     s->need_check_timer = qemu_new_timer(vm_clock, qed_need_check_timer_cb, s);
 
+    error_set(&s->migration_blocker,
+              QERR_BLOCK_FORMAT_FEATURE_NOT_SUPPORTED,
+              "qed", bs->device_name, "live migration");
+    migrate_add_blocker(s->migration_blocker);
+
+
 out:
     if (ret) {
         qed_free_l2_cache(&s->l2_cache);
@@ -517,6 +525,9 @@ static int bdrv_qed_reopen_prepare(BDRVReopenState *state,
 static void bdrv_qed_close(BlockDriverState *bs)
 {
     BDRVQEDState *s = bs->opaque;
+
+    migrate_del_blocker(s->migration_blocker);
+    error_free(s->migration_blocker);
 
     qed_cancel_need_check_timer(s);
     qemu_free_timer(s->need_check_timer);
