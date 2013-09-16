@@ -24,63 +24,61 @@ set -C -u -e
 set -o pipefail
 
 desc="
-$0 compares the commits in a specified git range, with the corresponding
-upstream commit.  This assumes that you have both the downstream and
-upstream repositories added as remotes in your git repo.
+$0 iterates through a git commit range, and performs the
+following on each commit:
+  - git checkout
+  - make clean
+  - configure
+  - make
 
-Example usage:
-$0 -r qemu-kvm-0.12.1.2-2.370.el6..my_feature_branch v1.5.0
+It will also optionally perform a git-reset and git-clean between
+checkouts, if requested via the '-f' option.
 
-Ouput key:
-[----]   Indicates the patches upstream and downstream are identical
-[####]   Indicates the number of differences (#### is substituted)
-[down]   Indicates the patch only exists downstream"
+The script will exit and report on first error on any of the above steps,
+(except no error checking is performed on 'make clean')
 
-def_upstream="v1.5.0"
-def_diffprog=meld
+NOTE: While executing, the script will checkout out each commit
+      in the range in the current git tree.  On exit, the HEAD
+      at the time the script was called is checked out"
+
+
+# default range is the last commit
 def_range="HEAD^!"
-def_color='y'
-def_pause='y'
-def_sensitivity=0
+def_config_opt="--target-list=x86_64-softmmu"
+# you may want to have make perform multiple jobs, e.g. -j4
+# this is ommitted as the default in case the project makefile
+# is not safe for parallel make processes
+def_make_opt=""
+def_log="output-$$.log"
+def_logdir=""
+force_clean='n'
 
-upstream=`git config backport-diff.upstream || true`
-diffprog=`git config backport-diff.diffprog || true`
-range=`git config backport-diff.range || true`
-color=`git config backport-diff.color || true`
-pause=`git config backport-diff.pause || true`
-sensitivity=`git config backport-diff.sensitivity || true`
+logfile=$def_log
+range=`git config compile-check.range || true`
+config_opt=`git config compile-check.configopt || true`
+make_opt=`git config compile-check.makeopt || true`
+logdir=`git config compile-check.logdir || true`
 
-if [[ -z "$upstream" ]]
-then
-    upstream=$def_upstream
-    git config backport-diff.upstream $upstream || true
-fi
-if [[ -z "$diffprog" ]]
-then
-    diffprog=$def_diffprog
-    git config backport-diff.diffprog $diffprog || true
-fi
 if [[ -z "$range" ]]
 then
     range=$def_range
-    git config backport-diff.range $range || true
+    git config compile-check.range $range || true
 fi
-if [[ -z "$color" ]]
+if [[ -z "$config_opt" ]]
 then
-    color=$def_color
-    git config backport-diff.color $color || true
+    config_opt=$def_config_opt
+    git config compile-check.configopt $config_opt || true
 fi
-if [[ -z "$pause" ]]
+if [[ -z "$make_opt" ]]
 then
-    pause=$def_pause
-    git config backport-diff.pause $pause || true
+    make_opt=$def_make_opt
+    git config compile-check.makeopt $make_opt || true
 fi
-if [[ -z "$sensitivity" ]]
+if [[ -z "$logdir" ]]
 then
-    sensitivity=$def_sensitivity
-    git config backport-diff.sensitivity $sensitivity || true
+    logdir=$def_logdir
+    git config compile-check.logdir $logdir || true
 fi
-
 
 usage() {
     echo ""
@@ -90,52 +88,46 @@ usage() {
     echo "OPTIONS:"
     echo "      -r git range
             optional; default is '$range'
-                    "
-    echo "      -u upstream git tag / branch / id
-            optional; default is '$upstream'
-                    "
-    echo "      -n do not use colors
-                    "
-    echo "      -d diff program to use
-            optional; default is '$diffprog'
-                    "
-    echo "      -p do not pause when viewing diffs
-                    "
-    echo "      -s sensitivity level of diff compares
-          0:  only show functional code differences
-          1:  show (0) + contextual differences
-          2+: offer to compare all patches, regardless of any differences
-                    "
+"
+    echo "      -c configure options
+            optional; default is '$config_opt'
+"
+    echo "      -m make options
+            optional; default is '$make_opt'
+"
+    echo "      -d log dir
+            optional; default is '$logdir'
+"
+    echo "      -l log filename
+            optional; default is output-PROCID, where PROCID is the bash process id
+            note: you may specify a full path for the log filename here, and exclude the
+            -d option.
+"
+    echo "      -f force a git reset and clean
+            this will cause a 'git reset --hard; git clean -fdx' to be run between checkouts.
+            !! WARNING: This may cause data loss in your git tree.
+                        READ the git-clean and git-reset man pages and make
+                        sure you understand the implications of
+                        'git clean -fdx' and 'git reset --hard' before using !!
+            If you specify this option, make sure the logfile falls outside of the tree.
+"
     echo "      -h help"
-    echo ""
-    echo "You can set each of the default options using git-config:"
-    echo "  git config backport-diff.upstream"
-    echo "  git config backport-diff.diffprog"
-    echo "  git config backport-diff.range"
-    echo "  git config backport-diff.color"
-    echo "  git config backport-diff.pause"
 }
 
-while getopts ":r:u:nd:phs:" opt
+while getopts ":r:c:m:l:d:hf" opt
 do
     case $opt in
         r) range=$OPTARG
             ;;
-        u) upstream=$OPTARG
+        c) config_opt=$OPTARG
             ;;
-        n) color='n'
+        m) make_opt=$OPTARG
             ;;
-        d) diffprog=$OPTARG
+        d) logdir=$OPTARG
             ;;
-        p) pause='n'
+        l) logfile=$OPTARG
             ;;
-        s) sensitivity=$OPTARG
-           if ! [[ "$sensitivity" =~ ^[0-9]+$ ]]
-           then
-              echo "Invalid argument for -s" >&2
-              usage
-              exit 1
-           fi
+        f) force_clean='y'
             ;;
         h) usage
            exit
@@ -147,156 +139,77 @@ do
     esac
 done
 
-if [[ $color == 'y' ]]
+# append a '/' to logdir if $logdir was specified without one
+[[ -n "$logdir" ]] && [[ ${logdir:${#logdir}-1} != "/" ]] && logdir="${logdir}/"
+
+logfile="${logdir}${logfile}"
+
+head=`git rev-parse --abbrev-ref=strict HEAD`
+if [ HEAD = "$head" ]
 then
-    bold=$(tput bold)
-    color1=$(tput setaf 1)
-    color2=$(tput setaf 2)
-    color3=$(tput setaf 3)
-    color4=$(tput setaf 4)
-    color5=$(tput setaf 5)
-    color6=$(tput setaf 6)
-    color7=$(tput setaf 7)
-    reset=$(tput sgr0)
-else
-    bold=
-    color1=
-    color2=
-    color3=
-    color4=
-    color5=
-    color6=
-    color7=
-    reset=
+    # we're at a detached head, get hash
+    head=`git rev-parse HEAD`
 fi
 
-trap cleanup EXIT
-
-cleanup() {
-    echo $reset
-}
 
 total=`git rev-list "$range" |wc -l`
 
-# verify the upstream exists
-upstream_valid='n'
-# branch
-if git show-ref --quiet --verify refs/heads/${upstream}
-then
-    upstream_valid='y'
-# tag
-elif git show-ref --quiet --verify refs/tags/${upstream}
-then
-    upstream_valid='y'
-# remote branch
-elif git show-ref --quiet --verify refs/remotes/${upstream}
-then
-    upstream_valid='y'
-# commit id
-elif git rev-list --max-count=1 --quiet $upstream >/dev/null 2>&1
-then
-    upstream_valid='y'
-fi
+echo "log output: $logfile"
 
-numdiff=0
-label=
-subjlist=
-cnt=0
-compare_git()
-{
-    echo "Key:"
-    printf "[----] : patches are identical\n"
-    printf "[${bold}####${reset}] : number of functional differences between upstream/downstream patch\n"
-    printf "[${bold}${color1}down${reset}] : patch is downstream-only\n"
-    printf "The flags [${bold}FC${reset}] indicate (F)unctional and (C)ontextual differences, respectively\n\n"
-    # don't pipe the git job into read, to avoid subshells
-    while read hashsubj
-    do
-        let cnt=$cnt+1;
-        subj=${hashsubj:40}
-        downhash=${hashsubj:0:40}
-        # A little bit hackish, but find the match by looking at upstream
-        # subject lines, and using the last one.  Not all backports contain
-        # the phrase "cherry-pick", so we can't really try and find the
-        # upstream hash from that...
-        uphash=`git log $upstream --pretty=format:"%H" --grep="^$subj"|tail -n1`
-        if [[ -n "$uphash" ]]
-        then
-            numdiff=`diff -u <(git diff $uphash^!   |egrep ^[-+])\
-                             <(git diff $downhash^! |egrep ^[-+])\
-                             | egrep '^[-+]' | egrep -v '^[-+]{3}' |wc -l || true`
-            # for contextual diff checking, we will ignore hashes and line number offsets
-            condiff=`diff -u <(git diff $uphash^\!  |sed -e s/^@@.*@@//g |egrep -v ^index |egrep -v ^diff)\
-                             <(git diff $downhash^\!|sed -e s/^@@.*@@//g |egrep -v ^index |egrep -v ^diff)\
-                             | egrep '^[-+]' | egrep -v '^[-+]{3}'|wc -l || true`
-            f="-"
-            c="-"
-            if [[ $sensitivity -gt 1 ]]
-            then
-                showdiff=1
-            else
-                showdiff=0
-            fi
-            if [[ $condiff -ne 0 ]]
-            then
-                c=${bold}C${reset}
-                if [[ $sensitivity -gt 0 ]]
-                then
-                    showdiff=1
-                fi
-            fi
-            if [[ $numdiff -ne 0 ]]
-            then
-                f=${bold}F${reset}
-                showdiff=1
-                printf "%03d/${total}:[${bold}%04d${reset}] [${f}${c}] ${bold}${color4}'${subj}'${reset}\n" $cnt $numdiff
-            else
-                printf "%03d/$total:[----] [${f}${c}] '$subj'\n" $cnt
-            fi
-            if [[ $showdiff -eq 1 ]]
-            then
-                if [[ diffprog == "meld" ]]
-                then
-                    label="--label=\"#$cnt: $subj ( <-upstream, downstream-> )\""
-                fi
-                subjlist[$cnt]=$subj
-                exe[$cnt]="${label} <(git show $uphash^!) <(git show $downhash^!) 2>/dev/null"
-                shortexe[$cnt]="<(git show ${uphash:0:7}^\!) <(git show ${downhash:0:7}^\!)"
-            fi
-        else
-            printf "%03d/$total:[${bold}${color1}down${reset}] ${bold}${color4}'$subj'${reset}\n" $cnt
-        fi
-    done < <(git log --pretty=tformat:"%H%s" --reverse $range)
+rm -f "$logfile"
+date > "$logfile"
+echo "git compile check for $range." >> "$logfile"
+echo "* configure options='$config_opt'" >> "$logfile"
+echo "* make options='$make_opt'" >> "$logfile"
+echo "Performing a test compile on $total patches" | tee -a "$logfile"
+echo "-------------------------------------------------------------" >> "$logfile"
+echo "" | tee -a "$logfile"
+
+clean_repo() {
+    if [[ $force_clean == 'y' ]]
+    then
+        git reset --hard >> "$logfile" 2>&1 || true
+        git clean -fdx   >> "$logfile" 2>&1 || true
+    fi
 }
 
-if [[ $upstream_valid != 'y' ]]
-then
-    echo "Upstream $upstream is not valid (does not exist)!"
-    echo "Do you need to add the remote upstream repo?"
-    exit 2
-fi >&2
+# we want to cleanup and return the git tree back to the previous head
+trap cleanup EXIT
 
-compare_git
-echo "Do you want to view the diffs using ${bold}${diffprog}${reset}? y/[n]: "
-read -n 1 view
+cleanup() {
+    echo ""
+    echo -n "Cleaning up..."
+    clean_repo
+    git checkout $head > /dev/null 2>&1
+    echo "done."
+}
 
-echo ""
-if [[ "$view" == "y" ]]
-then
-    for idx in ${!exe[*]}
-    do
-        if [[ $pause == 'y' ]]
-        then
-            echo "Press [Enter] to view diff(diff) of ${idx}/${total}: ${bold}${color4}${subjlist[$idx]}${reset}"
-            read
-        else
-            echo "Viewing diff(diff) of ${idx}/${total}: ${bold}${color4}${subjlist[$idx]}${reset}"
-        fi
-        eval ${diffprog} ${exe[$idx]} || true
-    done
-fi
-echo "To view diffs later, you may run:"
-for idx in ${!shortexe[*]}
+cnt=1
+# don't pipe the git job into read, to avoid subshells
+while read hash
 do
-    printf "%03d/$total: '${diffprog} ${shortexe[$idx]}'\n" $idx
-done
+    txt=`git log --pretty=tformat:"%h: %s" $hash^!`
+    echo "${cnt}/${total}: compiling: $txt" | tee -a "$logfile"
+    let cnt=$cnt+1;
+    echo "####################" >> "$logfile"
+    clean_repo
+    make clean > /dev/null 2>&1 || true
+    git checkout $hash          >> "$logfile" 2>&1 && \
+        ./configure $config_opt >> "$logfile" 2>&1 && \
+        make $make_opt          >> "$logfile" 2>&1 ||
+    (
+        S=$?
+        # don't complain for SIGINT, SIGTERM, SIGQUIT
+        if [ $S -ne 130 ] && [ $S -ne 131 ] && [ $S -ne 143 ]
+        then
+            echo "" | tee -a "$logfile"
+            echo "ERROR: commit $hash failed to build!" | tee -a "$logfile"
+            git show --stat $hash | tee -a "$logfile"
+        fi
+        exit 1
+    )
+done < <(git log $range --pretty=tformat:"%H" --reverse)
+
+echo "
+All patches in $range compiled successfully!" | tee -a "$logfile"
+exit 0
