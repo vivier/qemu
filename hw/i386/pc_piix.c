@@ -951,6 +951,10 @@ static QEMUMachine pc_machine_rhel700 = {
 
 static void pc_init_rhel650(QEMUMachineInitArgs *args)
 {
+    x86_cpu_compat_set_features("pentium", FEAT_1_EDX, 0, CPUID_APIC);
+    x86_cpu_compat_set_features("pentium2", FEAT_1_EDX, 0, CPUID_APIC);
+    x86_cpu_compat_set_features("pentium3", FEAT_1_EDX, 0, CPUID_APIC);
+
     x86_cpu_compat_set_features("Conroe", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
     x86_cpu_compat_set_features("Penryn", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
     x86_cpu_compat_set_features("Nehalem", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
