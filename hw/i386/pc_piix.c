@@ -974,6 +974,16 @@ static void pc_init_rhel650(QEMUMachineInitArgs *args)
     x86_cpu_compat_set_features("Opteron_G1", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
     x86_cpu_compat_set_features("Opteron_G2", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
     x86_cpu_compat_set_features("Opteron_G3", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
+
+    x86_cpu_compat_set_features("phenom", FEAT_8000_0001_EDX,
+                                0, CPUID_EXT2_RDTSCP);
+    x86_cpu_compat_set_features("Opteron_G1", FEAT_8000_0001_EDX,
+                                0, CPUID_EXT2_RDTSCP);
+    x86_cpu_compat_set_features("Opteron_G2", FEAT_8000_0001_EDX,
+                                0, CPUID_EXT2_RDTSCP);
+    x86_cpu_compat_set_features("Opteron_G3", FEAT_8000_0001_EDX,
+                                0, CPUID_EXT2_RDTSCP);
+
     pc_init_rhel700(args);
 }
 
