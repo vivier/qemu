@@ -586,6 +586,9 @@ dobuild --target-list="$buildarch"
     install --preserve-timestamps --mode=0644 \
       scripts/qemu-guest-agent/fsfreeze-hook.d/*.sample \
       $RPM_BUILD_ROOT%{_datadir}/%{name}/qemu-ga/fsfreeze-hook.d/
+
+    # - Install dedicated log directory:
+    mkdir -p -v $RPM_BUILD_ROOT%{_localstatedir}/log/qemu-ga/
 %endif
 
 %if 0%{!?build_only_sub:1}
@@ -703,6 +706,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %{_sysconfdir}/sysconfig/qemu-ga
     %{_sysconfdir}/qemu-ga
     %{_datadir}/%{name}/qemu-ga
+    %dir %{_localstatedir}/log/qemu-ga
 %endif
 
 %if 0%{!?build_only_sub:1}
