@@ -493,6 +493,9 @@ install -D -p -m 0755 -v %{qga_src_stem} %{qga_libexec_stem}
 # install fsfreeze script samples
 mkdir -p -v                                         %{qga_samples_stem}.d/
 install -D -p -m 0644 -v %{qga_src_stem}.d/*.sample %{qga_samples_stem}.d/
+
+# install dedicated log directory
+mkdir -p -v $RPM_BUILD_ROOT%{_localstatedir}/log/qemu-ga/
 %endif # guest_agent
 
 rm -rf ${RPM_BUILD_ROOT}%{_bindir}/qemu-nbd
@@ -649,6 +652,7 @@ fi
 %{_libexecdir}/qemu-ga
 %{_datadir}/%{confname}/qemu-ga
 %config(noreplace) %{_sysconfdir}/sysconfig/qemu-ga
+%dir %{_localstatedir}/log/qemu-ga
 %endif # guest_agent
 
 %if %{with qemu_kvm}

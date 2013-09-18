@@ -11,7 +11,7 @@ DEVPATH="/dev/virtio-ports/org.qemu.guest_agent.0"
 
 # If logfile is unset it defaults to stderr but the daemon
 # function of init script redirects stderr to /dev/null
-LOGFILE="/var/log/qemu-ga.log"
+LOGFILE="/var/log/qemu-ga/qemu-ga.log"
 
 # Override pidfile name
 # Default: /var/run/qemu-ga.pid
