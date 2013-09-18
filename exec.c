@@ -679,6 +679,19 @@ typedef struct subpage_t {
 static int subpage_register (subpage_t *mmio, uint32_t start, uint32_t end,
                              uint16_t section);
 static subpage_t *subpage_init(hwaddr base);
+
+static void *(*phys_mem_alloc)(ram_addr_t size) = qemu_anon_ram_alloc;
+
+/*
+ * Set a custom physical guest memory alloator.
+ * Accelerators with unusual needs may need this.  Hopefully, we can
+ * get rid of it eventually.
+ */
+void phys_mem_set_alloc(void *(*alloc)(ram_addr_t))
+{
+    phys_mem_alloc = alloc;
+}
+
 static void destroy_page_desc(uint16_t section_index)
 {
     MemoryRegionSection *section = &phys_sections[section_index];
@@ -1070,12 +1083,7 @@ ram_addr_t qemu_ram_alloc_from_ptr(ram_addr_t size, void *host,
 #endif
         }
         if (!new_block->host) {
-            if (kvm_enabled()) {
-                /* some s390/kvm configurations have special constraints */
-                new_block->host = kvm_ram_alloc(size);
-            } else {
-                new_block->host = qemu_anon_ram_alloc(size);
-            }
+            new_block->host = phys_mem_alloc(size);
             memory_try_enable_merging(new_block->host, size);
         }
     }
