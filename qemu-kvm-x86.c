@@ -1653,6 +1653,10 @@ static int kvm_reset_msrs(CPUState *env)
     for (n = 0; n < kvm_msr_list->nmsrs; n++) {
         if (kvm_msr_list->indices[n] == MSR_IA32_TSC)
             continue;
+        if (kvm_msr_list->indices[n] == MSR_PAT) {
+            set_msr_entry(&msrs[n_msrs++], kvm_msr_list->indices[n], 0x0007040600070406ULL);
+            continue;
+        }
         set_msr_entry(&msrs[n_msrs++], kvm_msr_list->indices[n], 0);
     }
 
