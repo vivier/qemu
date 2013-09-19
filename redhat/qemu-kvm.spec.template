@@ -763,6 +763,53 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Sep 19 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-4.el7
+- kvm-block-package-preparation-code-in-qmp_transaction.patch [bz#1005818]
+- kvm-block-move-input-parsing-code-in-qmp_transaction.patch [bz#1005818]
+- kvm-block-package-committing-code-in-qmp_transaction.patch [bz#1005818]
+- kvm-block-package-rollback-code-in-qmp_transaction.patch [bz#1005818]
+- kvm-block-make-all-steps-in-qmp_transaction-as-callback.patch [bz#1005818]
+- kvm-blockdev-drop-redundant-proto_drv-check.patch [bz#1005818]
+- kvm-block-Don-t-parse-protocol-from-file.filename.patch [bz#1005818]
+- kvm-Revert-block-Disable-driver-specific-options-for-1.5.patch [bz#1005818]
+- kvm-qcow2-Add-refcount-update-reason-to-all-callers.patch [bz#1005818]
+- kvm-qcow2-Options-to-enable-discard-for-freed-clusters.patch [bz#1005818]
+- kvm-qcow2-Batch-discards.patch [bz#1005818]
+- kvm-block-Always-enable-discard-on-the-protocol-level.patch [bz#1005818]
+- kvm-qapi.py-Avoid-code-duplication.patch [bz#1005818]
+- kvm-qapi.py-Allow-top-level-type-reference-for-command-d.patch [bz#1005818]
+- kvm-qapi-schema-Use-BlockdevSnapshot-type-for-blockdev-s.patch [bz#1005818]
+- kvm-qapi-types.py-Implement-base-for-unions.patch [bz#1005818]
+- kvm-qapi-visit.py-Split-off-generate_visit_struct_fields.patch [bz#1005818]
+- kvm-qapi-visit.py-Implement-base-for-unions.patch [bz#1005818]
+- kvm-docs-Document-QAPI-union-types.patch [bz#1005818]
+- kvm-qapi-Add-visitor-for-implicit-structs.patch [bz#1005818]
+- kvm-qapi-Flat-unions-with-arbitrary-discriminator.patch [bz#1005818]
+- kvm-qapi-Add-consume-argument-to-qmp_input_get_object.patch [bz#1005818]
+- kvm-qapi.py-Maintain-a-list-of-union-types.patch [bz#1005818]
+- kvm-qapi-qapi-types.py-native-list-support.patch [bz#1005818]
+- kvm-qapi-Anonymous-unions.patch [bz#1005818]
+- kvm-block-Allow-driver-option-on-the-top-level.patch [bz#1005818]
+- kvm-QemuOpts-Add-qemu_opt_unset.patch [bz#1005818]
+- kvm-blockdev-Rename-I-O-throttling-options-for-QMP.patch [bz#1005818]
+- kvm-qemu-iotests-Update-051-reference-output.patch [bz#1005818]
+- kvm-blockdev-Rename-readonly-option-to-read-only.patch [bz#1005818]
+- kvm-blockdev-Split-up-cache-option.patch [bz#1005818]
+- kvm-qcow2-Use-dashes-instead-of-underscores-in-options.patch [bz#1005818]
+- kvm-qemu-iotests-filter-QEMU-version-in-monitor-banner.patch [bz#1006959]
+- kvm-tests-set-MALLOC_PERTURB_-to-expose-memory-bugs.patch [bz#1006959]
+- kvm-qemu-iotests-Whitespace-cleanup.patch [bz#1006959]
+- kvm-qemu-iotests-Fixed-test-case-026.patch [bz#1006959]
+- kvm-qemu-iotests-Fix-test-038.patch [bz#1006959]
+- kvm-qemu-iotests-Remove-lsi53c895a-tests-from-051.patch [bz#1006959]
+- Resolves: bz#1005818
+  (qcow2: Backport discard command line options)
+- Resolves: bz#1006959
+  (qemu-iotests false positives)
+
+* Thu Aug 29 2013 Miroslav Rezanina <mrezanin@redhat.com> - qemu-kvm-1.5.3-3.el7
+- Fix rhel/rhev split
+
 * Thu Aug 29 2013 Miroslav Rezanina <mrezanin@redhat.com> - qemu-kvm-1.5.3-2.el7
 - kvm-osdep-add-qemu_get_local_state_pathname.patch [bz#964304]
 - kvm-qga-determine-default-state-dir-and-pidfile-dynamica.patch [bz#964304]
