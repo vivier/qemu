@@ -70,7 +70,7 @@ Obsoletes: %1 < %{obsoletes_ver}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 3%{?dist}
+Release: 4%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -298,6 +298,82 @@ Patch122: kvm-all.c-max_cpus-should-not-exceed-KVM-vcpu-limit.patch
 Patch123: kvm-add-timestamp-to-error_report.patch
 # For bz#906937 - [Hitachi 7.0 FEAT][QEMU]Add a time stamp to error message (*)
 Patch124: kvm-Convert-stderr-message-calling-error_get_pretty-to-e.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch125: kvm-block-package-preparation-code-in-qmp_transaction.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch126: kvm-block-move-input-parsing-code-in-qmp_transaction.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch127: kvm-block-package-committing-code-in-qmp_transaction.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch128: kvm-block-package-rollback-code-in-qmp_transaction.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch129: kvm-block-make-all-steps-in-qmp_transaction-as-callback.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch130: kvm-blockdev-drop-redundant-proto_drv-check.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch131: kvm-block-Don-t-parse-protocol-from-file.filename.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch132: kvm-Revert-block-Disable-driver-specific-options-for-1.5.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch133: kvm-qcow2-Add-refcount-update-reason-to-all-callers.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch134: kvm-qcow2-Options-to-enable-discard-for-freed-clusters.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch135: kvm-qcow2-Batch-discards.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch136: kvm-block-Always-enable-discard-on-the-protocol-level.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch137: kvm-qapi.py-Avoid-code-duplication.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch138: kvm-qapi.py-Allow-top-level-type-reference-for-command-d.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch139: kvm-qapi-schema-Use-BlockdevSnapshot-type-for-blockdev-s.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch140: kvm-qapi-types.py-Implement-base-for-unions.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch141: kvm-qapi-visit.py-Split-off-generate_visit_struct_fields.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch142: kvm-qapi-visit.py-Implement-base-for-unions.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch143: kvm-docs-Document-QAPI-union-types.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch144: kvm-qapi-Add-visitor-for-implicit-structs.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch145: kvm-qapi-Flat-unions-with-arbitrary-discriminator.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch146: kvm-qapi-Add-consume-argument-to-qmp_input_get_object.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch147: kvm-qapi.py-Maintain-a-list-of-union-types.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch148: kvm-qapi-qapi-types.py-native-list-support.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch149: kvm-qapi-Anonymous-unions.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch150: kvm-block-Allow-driver-option-on-the-top-level.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch151: kvm-QemuOpts-Add-qemu_opt_unset.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch152: kvm-blockdev-Rename-I-O-throttling-options-for-QMP.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch153: kvm-qemu-iotests-Update-051-reference-output.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch154: kvm-blockdev-Rename-readonly-option-to-read-only.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch155: kvm-blockdev-Split-up-cache-option.patch
+# For bz#1005818 - qcow2: Backport discard command line options
+Patch156: kvm-qcow2-Use-dashes-instead-of-underscores-in-options.patch
+# For bz#1006959 - qemu-iotests false positives
+Patch157: kvm-qemu-iotests-filter-QEMU-version-in-monitor-banner.patch
+# For bz#1006959 - qemu-iotests false positives
+Patch158: kvm-tests-set-MALLOC_PERTURB_-to-expose-memory-bugs.patch
+# For bz#1006959 - qemu-iotests false positives
+Patch159: kvm-qemu-iotests-Whitespace-cleanup.patch
+# For bz#1006959 - qemu-iotests false positives
+Patch160: kvm-qemu-iotests-Fixed-test-case-026.patch
+# For bz#1006959 - qemu-iotests false positives
+Patch161: kvm-qemu-iotests-Fix-test-038.patch
+# For bz#1006959 - qemu-iotests false positives
+Patch162: kvm-qemu-iotests-Remove-lsi53c895a-tests-from-051.patch
 
 
 BuildRequires: zlib-devel
@@ -609,6 +685,44 @@ CAC emulation development files.
 %patch122 -p1
 %patch123 -p1
 %patch124 -p1
+%patch125 -p1
+%patch126 -p1
+%patch127 -p1
+%patch128 -p1
+%patch129 -p1
+%patch130 -p1
+%patch131 -p1
+%patch132 -p1
+%patch133 -p1
+%patch134 -p1
+%patch135 -p1
+%patch136 -p1
+%patch137 -p1
+%patch138 -p1
+%patch139 -p1
+%patch140 -p1
+%patch141 -p1
+%patch142 -p1
+%patch143 -p1
+%patch144 -p1
+%patch145 -p1
+%patch146 -p1
+%patch147 -p1
+%patch148 -p1
+%patch149 -p1
+%patch150 -p1
+%patch151 -p1
+%patch152 -p1
+%patch153 -p1
+%patch154 -p1
+%patch155 -p1
+%patch156 -p1
+%patch157 -p1
+%patch158 -p1
+%patch159 -p1
+%patch160 -p1
+%patch161 -p1
+%patch162 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -1012,6 +1126,50 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Thu Sep 19 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-4.el7
+- kvm-block-package-preparation-code-in-qmp_transaction.patch [bz#1005818]
+- kvm-block-move-input-parsing-code-in-qmp_transaction.patch [bz#1005818]
+- kvm-block-package-committing-code-in-qmp_transaction.patch [bz#1005818]
+- kvm-block-package-rollback-code-in-qmp_transaction.patch [bz#1005818]
+- kvm-block-make-all-steps-in-qmp_transaction-as-callback.patch [bz#1005818]
+- kvm-blockdev-drop-redundant-proto_drv-check.patch [bz#1005818]
+- kvm-block-Don-t-parse-protocol-from-file.filename.patch [bz#1005818]
+- kvm-Revert-block-Disable-driver-specific-options-for-1.5.patch [bz#1005818]
+- kvm-qcow2-Add-refcount-update-reason-to-all-callers.patch [bz#1005818]
+- kvm-qcow2-Options-to-enable-discard-for-freed-clusters.patch [bz#1005818]
+- kvm-qcow2-Batch-discards.patch [bz#1005818]
+- kvm-block-Always-enable-discard-on-the-protocol-level.patch [bz#1005818]
+- kvm-qapi.py-Avoid-code-duplication.patch [bz#1005818]
+- kvm-qapi.py-Allow-top-level-type-reference-for-command-d.patch [bz#1005818]
+- kvm-qapi-schema-Use-BlockdevSnapshot-type-for-blockdev-s.patch [bz#1005818]
+- kvm-qapi-types.py-Implement-base-for-unions.patch [bz#1005818]
+- kvm-qapi-visit.py-Split-off-generate_visit_struct_fields.patch [bz#1005818]
+- kvm-qapi-visit.py-Implement-base-for-unions.patch [bz#1005818]
+- kvm-docs-Document-QAPI-union-types.patch [bz#1005818]
+- kvm-qapi-Add-visitor-for-implicit-structs.patch [bz#1005818]
+- kvm-qapi-Flat-unions-with-arbitrary-discriminator.patch [bz#1005818]
+- kvm-qapi-Add-consume-argument-to-qmp_input_get_object.patch [bz#1005818]
+- kvm-qapi.py-Maintain-a-list-of-union-types.patch [bz#1005818]
+- kvm-qapi-qapi-types.py-native-list-support.patch [bz#1005818]
+- kvm-qapi-Anonymous-unions.patch [bz#1005818]
+- kvm-block-Allow-driver-option-on-the-top-level.patch [bz#1005818]
+- kvm-QemuOpts-Add-qemu_opt_unset.patch [bz#1005818]
+- kvm-blockdev-Rename-I-O-throttling-options-for-QMP.patch [bz#1005818]
+- kvm-qemu-iotests-Update-051-reference-output.patch [bz#1005818]
+- kvm-blockdev-Rename-readonly-option-to-read-only.patch [bz#1005818]
+- kvm-blockdev-Split-up-cache-option.patch [bz#1005818]
+- kvm-qcow2-Use-dashes-instead-of-underscores-in-options.patch [bz#1005818]
+- kvm-qemu-iotests-filter-QEMU-version-in-monitor-banner.patch [bz#1006959]
+- kvm-tests-set-MALLOC_PERTURB_-to-expose-memory-bugs.patch [bz#1006959]
+- kvm-qemu-iotests-Whitespace-cleanup.patch [bz#1006959]
+- kvm-qemu-iotests-Fixed-test-case-026.patch [bz#1006959]
+- kvm-qemu-iotests-Fix-test-038.patch [bz#1006959]
+- kvm-qemu-iotests-Remove-lsi53c895a-tests-from-051.patch [bz#1006959]
+- Resolves: bz#1005818
+  (qcow2: Backport discard command line options)
+- Resolves: bz#1006959
+  (qemu-iotests false positives)
+
 * Thu Aug 29 2013 Miroslav Rezanina <mrezanin@redhat.com> - qemu-kvm-1.5.3-3.el7
 - Fix rhel/rhev split
 
