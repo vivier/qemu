@@ -18,10 +18,10 @@
     %global have_usbredir 0
 %endif
 
-### ifnarch x86_64
+%ifnarch x86_64
     %global build_only_sub 1
     %global debug_package %{nil}
-### endif
+%endif
 
 %ifarch %{ix86}
     %global kvm_target    i386
@@ -70,7 +70,7 @@ Obsoletes: %1 < %{obsoletes_ver}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 5%{?dist}
+Release: 6%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1126,6 +1126,10 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Mon Sep 23 2013 Paolo Bonzini <pbonzini@redhat.com> - qemu-kvm-1.5.3-6.el7
+- re-enable spice
+- Related: #979953
+
 * Mon Sep 23 2013 Paolo Bonzini <pbonzini@redhat.com> - qemu-kvm-1.5.3-5.el7
 - temporarily disable spice until libiscsi rebase is complete
 - Related: #979953
