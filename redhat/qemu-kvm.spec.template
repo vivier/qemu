@@ -458,6 +458,10 @@ mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{confname}
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/modprobe.d
 
+%if 0%{?rhev}
+mkdir -p $RPM_BUILD_ROOT%{_libdir}/qemu
+%endif
+
 install -m 0755 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules/kvm.modules
 install -m 0755 ../kvm/kvm_stat $RPM_BUILD_ROOT%{_bindir}/
 install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
@@ -610,6 +614,9 @@ fi
 %config(noreplace) %{_sysconfdir}/sysconfig/ksm
 %{_initddir}/ksmtuned
 %{_sbindir}/ksmtuned
+%if 0%{?rhev}
+%{_libdir}/qemu
+%endif
 %config(noreplace) %{_sysconfdir}/ksmtuned.conf
 %{_datadir}/%{confname}/bios.bin
 %{_datadir}/%{confname}/sgabios.bin
