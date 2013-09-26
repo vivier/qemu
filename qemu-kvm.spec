@@ -70,7 +70,7 @@ Obsoletes: %1 < %{obsoletes_ver}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 6%{?dist}
+Release: 7%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -374,6 +374,62 @@ Patch160: kvm-qemu-iotests-Fixed-test-case-026.patch
 Patch161: kvm-qemu-iotests-Fix-test-038.patch
 # For bz#1006959 - qemu-iotests false positives
 Patch162: kvm-qemu-iotests-Remove-lsi53c895a-tests-from-051.patch
+# For bz#974887 - the screen of guest fail to display correctly when use spice + qxl driver
+Patch163: kvm-spice-fix-display-initialization.patch
+# For bz#921983 - Disable or remove emulated network devices that we will not support
+Patch164: kvm-Remove-i82550-network-card-emulation.patch
+# For bz#903914 - Disable or remove usb related devices that we will not support
+Patch165: kvm-Remove-usb-wacom-tablet.patch
+# For bz#903914 - Disable or remove usb related devices that we will not support
+Patch166: kvm-Disable-usb-uas.patch
+# For bz#947441 - HPET device must be disabled
+Patch168: kvm-Remove-no-hpet-option.patch
+# For bz#1002286 - Disable or remove device isa-parallel
+Patch169: kvm-Disable-isa-parallel.patch
+# For bz#949514 - fail to passthrough the USB3.0 stick to windows guest with xHCI controller under pc-i440fx-1.4
+Patch170: kvm-xhci-implement-warm-port-reset.patch
+# For bz#953304 - Serial number of some USB devices must be fixed for older RHEL machine types
+Patch171: kvm-usb-add-serial-bus-property.patch
+# For bz#953304 - Serial number of some USB devices must be fixed for older RHEL machine types
+Patch172: kvm-rhel6-compat-usb-serial-numbers.patch
+# For bz#995866 - fix vmdk support to ESX images
+Patch173: kvm-vmdk-fix-comment-for-vmdk_co_write_zeroes.patch
+# For bz#1007226 - Introduce bs->zero_beyond_eof
+Patch174: kvm-gluster-Add-image-resize-support.patch
+# For bz#1007226 - Introduce bs->zero_beyond_eof
+Patch175: kvm-block-Introduce-bs-zero_beyond_eof.patch
+# For bz#1007226 - Introduce bs->zero_beyond_eof
+Patch176: kvm-block-Produce-zeros-when-protocols-reading-beyond-en.patch
+# For bz#1007226 - Introduce bs->zero_beyond_eof
+Patch177: kvm-gluster-Abort-on-AIO-completion-failure.patch
+# For bz#1001131 - Disable or remove device usb-bt-dongle
+Patch178: kvm-Preparation-for-usb-bt-dongle-conditional-build.patch
+# For bz#1001131 - Disable or remove device usb-bt-dongle
+Patch179: kvm-Remove-dev-bluetooth.c-dependency-from-vl.c.patch
+# For bz#1009328 - [RFE] Nicer error report when qemu-kvm can't allocate guest RAM
+Patch180: kvm-exec-Fix-Xen-RAM-allocation-with-unusual-options.patch
+# For bz#1009328 - [RFE] Nicer error report when qemu-kvm can't allocate guest RAM
+Patch181: kvm-exec-Clean-up-fall-back-when-mem-path-allocation-fai.patch
+# For bz#1009328 - [RFE] Nicer error report when qemu-kvm can't allocate guest RAM
+Patch182: kvm-exec-Reduce-ifdeffery-around-mem-path.patch
+# For bz#1009328 - [RFE] Nicer error report when qemu-kvm can't allocate guest RAM
+Patch183: kvm-exec-Simplify-the-guest-physical-memory-allocation-h.patch
+# For bz#1009328 - [RFE] Nicer error report when qemu-kvm can't allocate guest RAM
+Patch184: kvm-exec-Drop-incorrect-dead-S390-code-in-qemu_ram_remap.patch
+# For bz#1009328 - [RFE] Nicer error report when qemu-kvm can't allocate guest RAM
+Patch185: kvm-exec-Clean-up-unnecessary-S390-ifdeffery.patch
+# For bz#1009328 - [RFE] Nicer error report when qemu-kvm can't allocate guest RAM
+Patch186: kvm-exec-Don-t-abort-when-we-can-t-allocate-guest-memory.patch
+# For bz#1009328 - [RFE] Nicer error report when qemu-kvm can't allocate guest RAM
+Patch187: kvm-pc_sysfw-Fix-ISA-BIOS-init-for-ridiculously-big-flas.patch
+# For bz#903918 - Disable or remove emulated SCSI devices we will not support
+Patch188: kvm-virtio-scsi-Make-type-virtio-scsi-common-abstract.patch
+# For bz#1009491 - move qga logfiles to new /var/log/qemu-ga/ directory [RHEL-7]
+Patch189: kvm-qga-move-logfiles-to-new-directory-for-easier-SELinu.patch
+# For bz#918907 - provide backwards-compatible RHEL specific machine types in QEMU - CPU features
+Patch190: kvm-target-i386-add-cpu64-rhel6-CPU-model.patch
+# For bz#903889 - The value of steal time in "top" command always is "0.0% st" after guest migration
+Patch191: kvm-fix-steal-time-MSR-vmsd-callback-to-proper-opaque-ty.patch
 
 
 BuildRequires: zlib-devel
@@ -723,6 +779,34 @@ CAC emulation development files.
 %patch160 -p1
 %patch161 -p1
 %patch162 -p1
+%patch163 -p1
+%patch164 -p1
+%patch165 -p1
+%patch166 -p1
+%patch168 -p1
+%patch169 -p1
+%patch170 -p1
+%patch171 -p1
+%patch172 -p1
+%patch173 -p1
+%patch174 -p1
+%patch175 -p1
+%patch176 -p1
+%patch177 -p1
+%patch178 -p1
+%patch179 -p1
+%patch180 -p1
+%patch181 -p1
+%patch182 -p1
+%patch183 -p1
+%patch184 -p1
+%patch185 -p1
+%patch186 -p1
+%patch187 -p1
+%patch188 -p1
+%patch189 -p1
+%patch190 -p1
+%patch191 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -781,6 +865,7 @@ dobuild() {
         --disable-vnc-jpeg \
         --enable-vnc-ws \
         --enable-uuid \
+        --disable-vhost-scsi \
 %if %{with guest_agent}
         --enable-guest-agent \
 %else
@@ -950,6 +1035,9 @@ dobuild --target-list="$buildarch"
     install --preserve-timestamps --mode=0644 \
       scripts/qemu-guest-agent/fsfreeze-hook.d/*.sample \
       $RPM_BUILD_ROOT%{_datadir}/%{name}/qemu-ga/fsfreeze-hook.d/
+
+    # - Install dedicated log directory:
+    mkdir -p -v $RPM_BUILD_ROOT%{_localstatedir}/log/qemu-ga/
 %endif
 
 %if 0%{!?build_only_sub:1}
@@ -1066,6 +1154,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %{_sysconfdir}/sysconfig/qemu-ga
     %{_sysconfdir}/qemu-ga
     %{_datadir}/%{name}/qemu-ga
+    %dir %{_localstatedir}/log/qemu-ga
 %endif
 
 %if 0%{!?build_only_sub:1}
@@ -1126,6 +1215,69 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Thu Sep 26 2013 Miroslav Rezanina <mrezanin@redhat.com> - qemu-kvm-1.5.3-7.el7
+- kvm-spice-fix-display-initialization.patch [bz#974887]
+- kvm-Remove-i82550-network-card-emulation.patch [bz#921983]
+- kvm-Remove-usb-wacom-tablet.patch [bz#903914]
+- kvm-Disable-usb-uas.patch [bz#903914]
+- kvm-Disable-vhost-scsi.patch [bz#994642]
+- kvm-Remove-no-hpet-option.patch [bz#947441]
+- kvm-Disable-isa-parallel.patch [bz#1002286]
+- kvm-xhci-implement-warm-port-reset.patch [bz#949514]
+- kvm-usb-add-serial-bus-property.patch [bz#953304]
+- kvm-rhel6-compat-usb-serial-numbers.patch [bz#953304]
+- kvm-vmdk-fix-comment-for-vmdk_co_write_zeroes.patch [bz#995866]
+- kvm-gluster-Add-image-resize-support.patch [bz#1007226]
+- kvm-block-Introduce-bs-zero_beyond_eof.patch [bz#1007226]
+- kvm-block-Produce-zeros-when-protocols-reading-beyond-en.patch [bz#1007226]
+- kvm-gluster-Abort-on-AIO-completion-failure.patch [bz#1007226]
+- kvm-Preparation-for-usb-bt-dongle-conditional-build.patch [bz#1001131]
+- kvm-Remove-dev-bluetooth.c-dependency-from-vl.c.patch [bz#1001131]
+- kvm-exec-Fix-Xen-RAM-allocation-with-unusual-options.patch [bz#1009328]
+- kvm-exec-Clean-up-fall-back-when-mem-path-allocation-fai.patch [bz#1009328]
+- kvm-exec-Reduce-ifdeffery-around-mem-path.patch [bz#1009328]
+- kvm-exec-Simplify-the-guest-physical-memory-allocation-h.patch [bz#1009328]
+- kvm-exec-Drop-incorrect-dead-S390-code-in-qemu_ram_remap.patch [bz#1009328]
+- kvm-exec-Clean-up-unnecessary-S390-ifdeffery.patch [bz#1009328]
+- kvm-exec-Don-t-abort-when-we-can-t-allocate-guest-memory.patch [bz#1009328]
+- kvm-pc_sysfw-Fix-ISA-BIOS-init-for-ridiculously-big-flas.patch [bz#1009328]
+- kvm-virtio-scsi-Make-type-virtio-scsi-common-abstract.patch [bz#903918]
+- kvm-qga-move-logfiles-to-new-directory-for-easier-SELinu.patch [bz#1009491]
+- kvm-target-i386-add-cpu64-rhel6-CPU-model.patch [bz#918907]
+- kvm-fix-steal-time-MSR-vmsd-callback-to-proper-opaque-ty.patch [bz#903889]
+- Resolves: bz#1001131
+  (Disable or remove device usb-bt-dongle)
+- Resolves: bz#1002286
+  (Disable or remove device isa-parallel)
+- Resolves: bz#1007226
+  (Introduce bs->zero_beyond_eof)
+- Resolves: bz#1009328
+  ([RFE] Nicer error report when qemu-kvm can't allocate guest RAM)
+- Resolves: bz#1009491
+  (move qga logfiles to new /var/log/qemu-ga/ directory [RHEL-7])
+- Resolves: bz#903889
+  (The value of steal time in "top" command always is "0.0% st" after guest migration)
+- Resolves: bz#903914
+  (Disable or remove usb related devices that we will not support)
+- Resolves: bz#903918
+  (Disable or remove emulated SCSI devices we will not support)
+- Resolves: bz#918907
+  (provide backwards-compatible RHEL specific machine types in QEMU - CPU features)
+- Resolves: bz#921983
+  (Disable or remove emulated network devices that we will not support)
+- Resolves: bz#947441
+  (HPET device must be disabled)
+- Resolves: bz#949514
+  (fail to passthrough the USB3.0 stick to windows guest with xHCI controller under pc-i440fx-1.4)
+- Resolves: bz#953304
+  (Serial number of some USB devices must be fixed for older RHEL machine types)
+- Resolves: bz#974887
+  (the screen of guest fail to display correctly when use spice + qxl driver)
+- Resolves: bz#994642
+  (should disable vhost-scsi)
+- Resolves: bz#995866
+  (fix vmdk support to ESX images)
+
 * Mon Sep 23 2013 Paolo Bonzini <pbonzini@redhat.com> - qemu-kvm-1.5.3-6.el7
 - re-enable spice
 - Related: #979953
