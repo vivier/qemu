@@ -172,19 +172,18 @@ rh-update-changelog:
 	@$(REDHAT)/scripts/update_changelog.sh $(KVERSION) $(PKG_FULL_VR)
 
 .PHONY: rh-brew rh-koji rh-brew-rhev
-rh-brew : BUILD_FLAGS ?= $(BREW_FLAGS) $(TEST_FLAGS)
-rh-koji : BUILD_FLAGS ?= $(KOJI_FLAGS) $(TEST_FLAGS)
-rh-brew-rhev: BUILD_FLAGS ?= $(BREW_FLAGS) $(TEST_FLAGS)
-rh-brew-rhev: RHEV_FLAG=1
-rh-brew-rhev: PKG_FULL_NVR=$(PKGNAME)-rhev-$(PKG_FULL_VR)
+rh-brew rh-brew-rhev rh-brew-rhev-autotest: BUILD_FLAGS ?= $(BREW_FLAGS) $(TEST_FLAGS)
+rh-koji rh-koji-rhev rh-koji-rhev-autotest: BUILD_FLAGS ?= $(KOJI_FLAGS) $(TEST_FLAGS)
+rh-brew-rhev rh-brew-rhev-autotest rh-koji-rhev-autotest: RHEV_FLAG=1
+rh-brew-rhev rh-brew-rhev-autotest rh-koji-rhev-autotest: PKG_FULL_NVR=$(PKGNAME)-rhev-$(PKG_FULL_VR)
 rh-brew rh-koji: rh-%: rh-srpm
 	$* build $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)
-rh-brew-rhev: rh-%-rhev: rh-srpm
+rh-brew-rhev rh-koji-rhev: rh-%-rhev: rh-srpm
 	$* build $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)
 rh-brew-autotest rh-koji-autotest: rh-%-autotest: rh-srpm
 	./schedule-brew-autotest.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)"
-rh-brew-rhev-autotest rh-koji-rhev-autotest: rh-%-rhev-autotest: rh-srpm-rhev
-	./schedule-brew-autotest.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET_RHEV) $(SRPMS)/$(PKG_FULL_NVR_RHEV).src.rpm $(OUTPUT_FILE)"
+rh-brew-rhev-autotest rh-koji-rhev-autotest: rh-%-rhev-autotest: rh-srpm
+	./schedule-brew-autotest.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)"
 
 rh-help:
 	@echo  'Cleaning targets:'
@@ -196,10 +195,12 @@ rh-help:
 	@echo  ''
 	@echo  '  rh-srpm		- Create a source RPM and put it into the redhat/rpm/SRPMS/ directory'
 	@echo  '  rh-brew		- Create a $(COMMON_NAME) SRPM and then call brew to build the created SRPM'
-	@echo  '  rh-brew-autotest 	- Create a $(COMMON_NAME)-rhev RPMs on brew and then send directly to autotest server'
-	@echo  '  rh-brew-rhev     	- Create rhev version of a $(COMMON_NAME) SRPM and then call brew to build the created SRPM'
-	@echo  '  rh-brew-rhev-autotest - Create a $(COMMON_NAME)-rhev RPMs on brew and then send directly to autotest server'
+	@echo  '  rh-brew-autotest 	- Create a $(COMMON_NAME) RPMs on brew and then send directly to autotest server'
+	@echo  '  rh-brew-rhev     	- Create a rhev version of $(COMMON_NAME) SRPM and then call brew to build the created SRPM'
+	@echo  '  rh-brew-rhev-autotest - Create a rhev version of $(COMMON_NAME) RPMs on brew and then send directly to autotest server'
 	@echo  '  rh-koji		- Create a $(COMMON_NAME) SRPM and then call koji to build the created SRPM'
+	@echo  '  rh-koji-rhev          - Create a rhev version of $(COMMON_NAME) SRPM and then call koji to build the created SRPM'
+	@echo  '  rh-koji-rhev-autotest - Create a rhev version of $(COMMON_NAME) RPMs on koji and then send directly to autotest server'
 	@echo  '  rh-test		- Pass in brew task number, TASK=1234 make rh-test, to use for an RHTS test'
 	@echo  '		  	  setup ./tests to use a test from redhat/tests (minus the .xml)'
 	@echo  '		  	  uses a known stable RHEL6 distro as the default'
