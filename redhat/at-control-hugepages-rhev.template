@@ -1,0 +1,54 @@
+import logging, os, sys, fcntl
+virt_test_dir = "/usr/local/autotest/client/tests/virt"
+sys.path.insert(0, virt_test_dir)
+from virttest import cartesian_config
+
+def get_control(params, custom_cfg, kernel_install=True):
+    control = '''
+import sys, os, logging
+os.environ['LANG'] = 'en_US.UTF-8'
+virt_test_dir = os.path.join(os.environ['AUTODIR'],'tests/virt')
+sys.path.insert(0, virt_test_dir)
+from virttest import utils_misc, cartesian_config
+
+kernel_install_params = %s
+custom_cfg = %s
+kernel_install = %s
+
+def step_init():
+    job.next_step([step_test])
+    if kernel_install:
+        utils_misc.install_host_kernel(job, kernel_install_params)
+
+def step_test():
+    parser = cartesian_config.Parser()
+    parser.parse_file(os.path.join(virt_test_dir, "qemu", "cfg", "site-config.cfg"))
+    for line in custom_cfg:
+        parser.parse_string(line)
+    utils_misc.run_tests(parser, job)
+''' % (params, custom_cfg, kernel_install)
+    return control
+
+def run(machine):
+    parser = cartesian_config.Parser()
+    parser.parse_file(os.path.join(virt_test_dir, "qemu", "cfg", "site-config.cfg"))
+    custom_cfg = ['only rhevh70-brew..sanity_hugepages']
+    for line in custom_cfg:
+        parser.parse_string(line)
+    generator = parser.get_dicts()
+    params = generator.next()
+    host = hosts.create_host(machine)
+    profile = params.get('host_install_profile')
+    timeout = int(params.get('host_install_timeout', 3600))
+    if profile:
+        host.machine_install(profile=profile, timeout=timeout)
+    at = autotest_remote.Autotest(host)
+    control = get_control(params, custom_cfg)
+    try:
+        at.run(control)
+    except Exception, details:
+        job.record('FAIL', None, 'host kernel install (server)', str(details))
+        control = get_control(params, custom_cfg, kernel_install=False)
+        at.run(control)
+
+job.parallel_simple(run, machines)
