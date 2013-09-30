@@ -201,7 +201,7 @@ SCSIDevice *scsi_bus_legacy_add_drive(SCSIBus *bus, BlockDriverState *bdrv,
     if (qdev_prop_exists(dev, "removable")) {
         qdev_prop_set_bit(dev, "removable", removable);
     }
-    if (serial) {
+    if (serial && qdev_prop_exists(dev, "serial")) {
         qdev_prop_set_string(dev, "serial", serial);
     }
     if (qdev_prop_set_drive(dev, "drive", bdrv) < 0) {
