@@ -48,6 +48,7 @@
 #if defined(CONFIG_USER_ONLY)
 #include <qemu.h>
 #endif
+#include "trace.h"
 
 //#define DEBUG_TB_INVALIDATE
 //#define DEBUG_FLUSH
@@ -2765,11 +2766,20 @@ ram_addr_t qemu_ram_alloc_from_ptr(DeviceState *dev, const char *name,
                                    MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 #else
             size_t align = getpagesize();
+            void *ptr;
+            int ret;
 #ifdef PREFERRED_RAM_ALIGN
             if (size >= PREFERRED_RAM_ALIGN && !running_on_valgrind)
                 align = PREFERRED_RAM_ALIGN;
 #endif
-            new_block->host = qemu_memalign(align, size);
+            ret = posix_memalign(&ptr, align, size);
+            trace_qemu_memalign(align, size, ptr);
+            if (ret) {
+                fprintf(stderr, "Cannot set up guest memory '%s': %s\n",
+                        new_block->idstr, strerror(ret));
+                exit(1);
+            }
+            new_block->host = ptr;
 #endif
 #ifdef MADV_MERGEABLE
             if (!disable_KSM)
