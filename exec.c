@@ -2764,15 +2764,12 @@ ram_addr_t qemu_ram_alloc_from_ptr(DeviceState *dev, const char *name,
                                    PROT_EXEC|PROT_READ|PROT_WRITE,
                                    MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 #else
+            size_t align = getpagesize();
 #ifdef PREFERRED_RAM_ALIGN
-	    if (size >= PREFERRED_RAM_ALIGN)
-                if (running_on_valgrind)
-		    new_block->host = qemu_vmalloc(size);
-                else
-		    new_block->host = qemu_memalign(PREFERRED_RAM_ALIGN, size);
-	    else
-#endif 
-		    new_block->host = qemu_vmalloc(size);
+            if (size >= PREFERRED_RAM_ALIGN && !running_on_valgrind)
+                align = PREFERRED_RAM_ALIGN;
+#endif
+            new_block->host = qemu_memalign(align, size);
 #endif
 #ifdef MADV_MERGEABLE
             if (!disable_KSM)
