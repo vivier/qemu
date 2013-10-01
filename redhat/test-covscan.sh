@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# This will be list address to send job results to
-rcptlist="minovotn@redhat.com"
+# This address has been requested on Oct 01 2013
+rcptlist="coverity-virt-jobs@redhat.com"
 
 get_official_srpm()
 {
@@ -84,6 +84,7 @@ rm -f $srpmOfficial $srpm
 echo "Coverity scan job submitted"
 
 read -n 1 -p "Would you like to watch task? (y/N) " q
+echo
 if [ "$q" == "y" -o "$q" == "Y" ]; then
 	covscan watch-tasks $coverityid
 fi
