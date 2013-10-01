@@ -32,4 +32,4 @@ fi
 /usr/bin/autotest-rpc-client job create -w $server -B never -a never -s -e $(cat ./at-control.mails) -f ./at-control$var.template -T --timestamp -m "1*$label" -x "only $space..sanity" -x "koji_qemu_kvm_build=$task_id" "RHEL 6 $task sanity"
 /usr/bin/autotest-rpc-client job create -w $server -B never -a never -s -e $(cat ./at-control.mails) -f ./at-control-hugepages$var.template -T --timestamp -m "1*$label" -x "only $space..sanity" -x "koji_qemu_kvm_build=$task_id" "RHEL 6 $task (hugepages) sanity"
 
-echo "Build submitted"
+echo "Autotest jobs submitted"

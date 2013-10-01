@@ -205,9 +205,17 @@ rh-brew rh-koji: rh-%: rh-srpm
 rh-brew-rhev rh-koji-rhev: rh-%-rhev: rh-srpm-rhev
 	$* build $(BUILD_FLAGS) $(BUILD_TARGET_RHEV) $(SRPMS)/$(PKG_FULL_NVR_RHEV).src.rpm $(OUTPUT_FILE)
 rh-brew-autotest rh-koji-autotest: rh-%-autotest: rh-srpm
-	./schedule-brew-autotest.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)"
+	./schedule-tests.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)" "autotest"
 rh-brew-rhev-autotest rh-koji-rhev-autotest: rh-%-rhev-autotest: rh-srpm-rhev
-	./schedule-brew-autotest.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET_RHEV) $(SRPMS)/$(PKG_FULL_NVR_RHEV).src.rpm $(OUTPUT_FILE)"
+	./schedule-tests.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET_RHEV) $(SRPMS)/$(PKG_FULL_NVR_RHEV).src.rpm $(OUTPUT_FILE)" "autotest"
+rh-brew-covscan rh-koji-covscan: rh-%-covscan: rh-srpm
+	./schedule-tests.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)" "coverity"
+rh-brew-rhev-covscan rh-koji-rhev-covscan: rh-%-rhev-covscan: rh-srpm-rhev
+	./schedule-tests.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET_RHEV) $(SRPMS)/$(PKG_FULL_NVR_RHEV).src.rpm $(OUTPUT_FILE)" "coverity"
+rh-brew-at-covscan rh-koji-at-covscan: rh-%-at-covscan: rh-srpm
+	./schedule-tests.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)" "autotest-coverity"
+rh-brew-rhev-at-covscan rh-koji-rhev-at-covscan: rh-%-rhev-at-covscan: rh-srpm-rhev
+	./schedule-tests.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET_RHEV) $(SRPMS)/$(PKG_FULL_NVR_RHEV).src.rpm $(OUTPUT_FILE)" "autotest-coverity"
 
 rh-help:
 	@echo  'Cleaning targets:'
@@ -217,29 +225,33 @@ rh-help:
 	@echo  'Building targets:'
 	@echo  ' All RPM/SRPM files will be put under the redhat/rpm/ directory'
 	@echo  ''
-	@echo  '  rh-srpm		- Create a source RPM and put it into the redhat/rpm/SRPMS/ directory'
-	@echo  '  rh-srpm-rhev		- Create a source RPM for $(COMMON_NAME)-rhev and put it into redhat/rpm/SRPMS/ directory'
-	@echo  '  rh-brew		- Create a $(COMMON_NAME) SRPM and then call brew to build the created SRPM'
-	@echo  '  rh-koji		- Create a $(COMMON_NAME) SRPM and then call koji to build the created SRPM'
-	@echo  '  rh-brew-autotest	- Create a $(COMMON_NAME) RPMs on brew and then send directly to autotest server'
-	@echo  '  rh-brew-rhev  	- Create a $(COMMON_NAME)-rhev SRPM and then call brew to build the created SRPM'
-	@echo  '  rh-brew-rhev-autotest	- Create a $(COMMON_NAME)-rhev RPMs on brew and then send directly to autotest server'
-	@echo  '  rh-koji-rhev  	- Create a $(COMMON_NAME)-rhev SRPM and then call koji to build the created SRPM'
-	@echo  '  rh-test		- Pass in brew task number, TASK=1234 make rh-test, to use for an RHTS test'
-	@echo  '		  	  setup ./tests to use a test from redhat/tests (minus the .xml)'
-	@echo  '		  	  uses a known stable RHEL6 distro as the default'
-	@echo  '		  	  use TASK=None to use a non-scratch build based on RELEASE string'
-	@echo  '		  	  see output for possible override options (USER_ID,DISTRO,FAMILY,..)'
-	@echo  '  rh-local      	- Make a local build of qemu-kvm'
-	@echo  '  rh-brew-test  	- Calls rh-brew and passes the task number into an RHTS test. See rh-test for more'
-	@echo  '  rh-rpms		- Create the binary RPMS for the $(COMMON_NAME)'
-	@echo  '  rh-$(COMMON_NAME)-<type>	- Create  binary RPMS for a particular $(COMMON_NAME) type'
-	@echo  '                   	- <type> can be: baseonly, smponly, dbgonly'
-	@echo  '  rh-all-rpms		- Create the binary RPMS and the SRPM for the $(COMMON_NAME)'
-	@echo  '  rh-prep		- Setup the redhat/rpm/BUILD/ directory with the $(COMMON_NAME) source'
-	@echo  '  rh-test-patch 	- Create a diff against HEAD and put it in $(COMMON_NAME)-test.patch.'
-	@echo  '                  	Then $(COMMON_NAME)-test.patch will be added to the $(COMMON_NAME) build'
-	@echo  '  rh-key		- Generate the required files for compiling with module signing enabled'
+	@echo  '  rh-srpm		  - Create a source RPM and put it into the redhat/rpm/SRPMS/ directory'
+	@echo  '  rh-srpm-rhev		  - Create a source RPM for $(COMMON_NAME)-rhev and put it into redhat/rpm/SRPMS/ directory'
+	@echo  '  rh-brew		  - Create a $(COMMON_NAME) SRPM and then call brew to build the created SRPM'
+	@echo  '  rh-koji		  - Create a $(COMMON_NAME) SRPM and then call koji to build the created SRPM'
+	@echo  '  rh-brew-covscan         - Create a $(COMMON_NAME) RPMs on brew and then send directly to coverity scan testing'
+	@echo  '  rh-brew-autotest	  - Create a $(COMMON_NAME) RPMs on brew and then send directly to autotest server'
+	@echo  '  rh-brew-at-covscan      - Create a $(COMMON_NAME) RPMs on brew and then send directly to autotest and coverity testing'
+	@echo  '  rh-brew-rhev  	  - Create a $(COMMON_NAME)-rhev SRPM and then call brew to build the created SRPM'
+	@echo  '  rh-brew-rhev-covscan    - Create a $(COMMON_NAME)-rhev RPMs on brew and then send directly to coverity scan testing'
+	@echo  '  rh-brew-rhev-autotest   - Create a $(COMMON_NAME)-rhev RPMs on brew and then send directly to autotest server'
+	@echo  '  rh-brew-rhev-at-covscan - Create a $(COMMON_NAME)-rhev RPMs on brew and then send directly to autotest and coverity testing'
+	@echo  '  rh-koji-rhev  	  - Create a $(COMMON_NAME)-rhev SRPM and then call koji to build the created SRPM'
+	@echo  '  rh-test		  - Pass in brew task number, TASK=1234 make rh-test, to use for an RHTS test'
+	@echo  '		  	    setup ./tests to use a test from redhat/tests (minus the .xml)'
+	@echo  '		  	    uses a known stable RHEL6 distro as the default'
+	@echo  '		  	    use TASK=None to use a non-scratch build based on RELEASE string'
+	@echo  '		  	    see output for possible override options (USER_ID,DISTRO,FAMILY,..)'
+	@echo  '  rh-local      	  - Make a local build of qemu-kvm'
+	@echo  '  rh-brew-test  	  - Calls rh-brew and passes the task number into an RHTS test. See rh-test for more'
+	@echo  '  rh-rpms		  - Create the binary RPMS for the $(COMMON_NAME)'
+	@echo  '  rh-$(COMMON_NAME)-<type>	  - Create  binary RPMS for a particular $(COMMON_NAME) type'
+	@echo  '                   	  - <type> can be: baseonly, smponly, dbgonly'
+	@echo  '  rh-all-rpms		  - Create the binary RPMS and the SRPM for the $(COMMON_NAME)'
+	@echo  '  rh-prep		  - Setup the redhat/rpm/BUILD/ directory with the $(COMMON_NAME) source'
+	@echo  '  rh-test-patch 	  - Create a diff against HEAD and put it in $(COMMON_NAME)-test.patch.'
+	@echo  '                  	    Then $(COMMON_NAME)-test.patch will be added to the $(COMMON_NAME) build'
+	@echo  '  rh-key		  - Generate the required files for compiling with module signing enabled'
 	@echo  ''
 	@echo  'Configuration targets:'
 	@echo
