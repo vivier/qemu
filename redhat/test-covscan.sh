@@ -1,6 +1,8 @@
 #!/bin/bash
 
-# This address has been requested on Oct 01 2013
+# Virtualization Packages Coverity Scan List address
+# Subscription URL: https://post-office.corp.redhat.com/mailman/listinfo/coverity-virt-jobs
+# Note: No need to your address as covscan server is automatically sending to task owner
 rcptlist="coverity-virt-jobs@redhat.com"
 
 get_official_srpm()
