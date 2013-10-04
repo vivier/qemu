@@ -848,8 +848,7 @@ static CharDriverState *qemu_chr_open_fd(int fd_in, int fd_out)
     s = g_malloc0(sizeof(FDCharDriver));
     s->fd_in = io_channel_from_fd(fd_in);
     s->fd_out = io_channel_from_fd(fd_out);
-    if (fcntl(fd_out, F_SETFL, O_NONBLOCK) < 0)
-        fprintf(stderr, "chardev: Warning: cannot set fd %d non-blocking", fd_out);
+    fcntl(fd_out, F_SETFL, O_NONBLOCK);
     s->chr = chr;
     chr->opaque = s;
     chr->chr_add_watch = fd_chr_add_watch;
@@ -1355,8 +1354,7 @@ static int tty_serial_ioctl(CharDriverState *chr, int cmd, void *arg)
         {
             int sarg = 0;
             int *targ = (int *)arg;
-            if (ioctl(g_io_channel_unix_get_fd(s->fd_in), TIOCMGET, &sarg) < 0)
-                fprintf(stderr, "chardev: tty_serial_ioctl: CHR_IOCTL_SERIAL_GET_TIOCM failed");
+            ioctl(g_io_channel_unix_get_fd(s->fd_in), TIOCMGET, &sarg);
             *targ = 0;
             if (sarg & TIOCM_CTS)
                 *targ |= CHR_TIOCM_CTS;
@@ -1376,8 +1374,7 @@ static int tty_serial_ioctl(CharDriverState *chr, int cmd, void *arg)
         {
             int sarg = *(int *)arg;
             int targ = 0;
-            if (ioctl(g_io_channel_unix_get_fd(s->fd_in), TIOCMGET, &targ) < 0)
-                fprintf(stderr, "chardev: tty_serial_ioctl: CHR_IOCTL_SERIAL_SET_TIOCM failed on TIOCMGET");
+            ioctl(g_io_channel_unix_get_fd(s->fd_in), TIOCMGET, &targ);
             targ &= ~(CHR_TIOCM_CTS | CHR_TIOCM_CAR | CHR_TIOCM_DSR
                      | CHR_TIOCM_RI | CHR_TIOCM_DTR | CHR_TIOCM_RTS);
             if (sarg & CHR_TIOCM_CTS)
@@ -1392,8 +1389,7 @@ static int tty_serial_ioctl(CharDriverState *chr, int cmd, void *arg)
                 targ |= TIOCM_DTR;
             if (sarg & CHR_TIOCM_RTS)
                 targ |= TIOCM_RTS;
-            if (ioctl(g_io_channel_unix_get_fd(s->fd_in), TIOCMSET, &targ) < 0)
-                fprintf(stderr, "chardev: tty_serial_ioctl: CHR_IOCTL_SERIAL_SET_TIOCM failed on TIOCMSET");
+            ioctl(g_io_channel_unix_get_fd(s->fd_in), TIOCMSET, &targ);
         }
         break;
     default:
