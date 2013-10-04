@@ -78,7 +78,7 @@ srpmOfficial="$taskOfficial.src.rpm"
 srpm="$task.src.rpm"
 
 location=$(covscan version-diff-build --base-srpm=$srpmOfficial --srpm=$srpm --base-config=rhel-6-x86_64 --config=rhel-6-x86_64 --all --nowait --email-to=$rcptlist | awk '{ split($0, a, ": "); print a[2] }')
-coverityid="$(echo http://cov01.lab.eng.brq.redhat.com/covscanhub/task/5627/ | awk ' { num=split($0, a, "/"); print a[num-1]; }')"
+coverityid="$(echo $location | awk ' { num=split($0, a, "/"); print a[num-1]; }')"
 echo "New Coverity test job has been created: $coverityid ($location)"
 
 rm -f $srpmOfficial $srpm
