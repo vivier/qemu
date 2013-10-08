@@ -469,6 +469,7 @@ void pc_cmos_init(PCMachineState *pcms,
     rtc_set_memory(s, 0x5b, val);
     rtc_set_memory(s, 0x5c, val >> 8);
     rtc_set_memory(s, 0x5d, val >> 16);
+    rtc_set_memory(s, 0x5e, val >> 24);
 
     /* set the number of CPU */
     rtc_set_memory(s, 0x5f, smp_cpus - 1);
