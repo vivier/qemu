@@ -743,7 +743,6 @@ static int io_channel_send(GIOChannel *fd, const void *buf, size_t len)
 typedef struct FDCharDriver {
     CharDriverState *chr;
     GIOChannel *fd_in, *fd_out;
-    guint fd_in_tag;
     int max_size;
     QTAILQ_ENTRY(FDCharDriver) node;
 } FDCharDriver;
@@ -775,9 +774,9 @@ static gboolean fd_chr_read(GIOChannel *chan, GIOCondition cond, void *opaque)
     status = g_io_channel_read_chars(chan, (gchar *)buf,
                                      len, &bytes_read, NULL);
     if (status == G_IO_STATUS_EOF) {
-        if (s->fd_in_tag) {
-            io_remove_watch_poll(s->fd_in_tag);
-            s->fd_in_tag = 0;
+        if (chr->fd_in_tag) {
+            io_remove_watch_poll(chr->fd_in_tag);
+            chr->fd_in_tag = 0;
         }
         qemu_chr_be_event(chr, CHR_EVENT_CLOSED);
         return FALSE;
@@ -808,13 +807,14 @@ static void fd_chr_update_read_handler(CharDriverState *chr)
 {
     FDCharDriver *s = chr->opaque;
 
-    if (s->fd_in_tag) {
-        io_remove_watch_poll(s->fd_in_tag);
-        s->fd_in_tag = 0;
+    if (chr->fd_in_tag) {
+        io_remove_watch_poll(chr->fd_in_tag);
+        chr->fd_in_tag = 0;
     }
 
     if (s->fd_in) {
-        s->fd_in_tag = io_add_watch_poll(s->fd_in, fd_chr_read_poll, fd_chr_read, chr);
+        chr->fd_in_tag = io_add_watch_poll(s->fd_in, fd_chr_read_poll,
+                                           fd_chr_read, chr);
     }
 }
 
@@ -822,9 +822,9 @@ static void fd_chr_close(struct CharDriverState *chr)
 {
     FDCharDriver *s = chr->opaque;
 
-    if (s->fd_in_tag) {
-        io_remove_watch_poll(s->fd_in_tag);
-        s->fd_in_tag = 0;
+    if (chr->fd_in_tag) {
+        io_remove_watch_poll(chr->fd_in_tag);
+        chr->fd_in_tag = 0;
     }
 
     if (s->fd_in) {
@@ -1013,7 +1013,6 @@ static void cfmakeraw (struct termios *termios_p)
 
 typedef struct {
     GIOChannel *fd;
-    guint fd_tag;
     int connected;
     int read_bytes;
     guint timer_tag;
@@ -1124,9 +1123,9 @@ static void pty_chr_state(CharDriverState *chr, int connected)
     PtyCharDriver *s = chr->opaque;
 
     if (!connected) {
-        if (s->fd_tag) {
-            io_remove_watch_poll(s->fd_tag);
-            s->fd_tag = 0;
+        if (chr->fd_in_tag) {
+            io_remove_watch_poll(chr->fd_in_tag);
+            chr->fd_in_tag = 0;
         }
         s->connected = 0;
         /* (re-)connect poll interval for idle guests: once per second.
@@ -1141,7 +1140,8 @@ static void pty_chr_state(CharDriverState *chr, int connected)
         if (!s->connected) {
             qemu_chr_generic_open(chr);
             s->connected = 1;
-            s->fd_tag = io_add_watch_poll(s->fd, pty_chr_read_poll, pty_chr_read, chr);
+            chr->fd_in_tag = io_add_watch_poll(s->fd, pty_chr_read_poll,
+                                               pty_chr_read, chr);
         }
     }
 }
@@ -1152,9 +1152,9 @@ static void pty_chr_close(struct CharDriverState *chr)
     PtyCharDriver *s = chr->opaque;
     int fd;
 
-    if (s->fd_tag) {
-        io_remove_watch_poll(s->fd_tag);
-        s->fd_tag = 0;
+    if (chr->fd_in_tag) {
+        io_remove_watch_poll(chr->fd_in_tag);
+        chr->fd_in_tag = 0;
     }
     fd = g_io_channel_unix_get_fd(s->fd);
     g_io_channel_unref(s->fd);
@@ -1968,7 +1968,6 @@ static CharDriverState *qemu_chr_open_win_con(void)
 typedef struct {
     int fd;
     GIOChannel *chan;
-    guint tag;
     uint8_t buf[READ_BUF_LEN];
     int bufcnt;
     int bufptr;
@@ -2024,9 +2023,9 @@ static gboolean udp_chr_read(GIOChannel *chan, GIOCondition cond, void *opaque)
     s->bufcnt = bytes_read;
     s->bufptr = s->bufcnt;
     if (status != G_IO_STATUS_NORMAL) {
-        if (s->tag) {
-            io_remove_watch_poll(s->tag);
-            s->tag = 0;
+        if (chr->fd_in_tag) {
+            io_remove_watch_poll(chr->fd_in_tag);
+            chr->fd_in_tag = 0;
         }
         return FALSE;
     }
@@ -2045,22 +2044,23 @@ static void udp_chr_update_read_handler(CharDriverState *chr)
 {
     NetCharDriver *s = chr->opaque;
 
-    if (s->tag) {
-        io_remove_watch_poll(s->tag);
-        s->tag = 0;
+    if (chr->fd_in_tag) {
+        io_remove_watch_poll(chr->fd_in_tag);
+        chr->fd_in_tag = 0;
     }
 
     if (s->chan) {
-        s->tag = io_add_watch_poll(s->chan, udp_chr_read_poll, udp_chr_read, chr);
+        chr->fd_in_tag = io_add_watch_poll(s->chan, udp_chr_read_poll,
+                                           udp_chr_read, chr);
     }
 }
 
 static void udp_chr_close(CharDriverState *chr)
 {
     NetCharDriver *s = chr->opaque;
-    if (s->tag) {
-        io_remove_watch_poll(s->tag);
-        s->tag = 0;
+    if (chr->fd_in_tag) {
+        io_remove_watch_poll(chr->fd_in_tag);
+        chr->fd_in_tag = 0;
     }
     if (s->chan) {
         g_io_channel_unref(s->chan);
@@ -2109,7 +2109,7 @@ static CharDriverState *qemu_chr_open_udp(QemuOpts *opts)
 typedef struct {
 
     GIOChannel *chan, *listen_chan;
-    guint tag, listen_tag;
+    guint listen_tag;
     int fd, listen_fd;
     int connected;
     int max_size;
@@ -2283,9 +2283,9 @@ static gboolean tcp_chr_read(GIOChannel *chan, GIOCondition cond, void *opaque)
         if (s->listen_chan) {
             s->listen_tag = g_io_add_watch(s->listen_chan, G_IO_IN, tcp_chr_accept, chr);
         }
-        if (s->tag) {
-            io_remove_watch_poll(s->tag);
-            s->tag = 0;
+        if (chr->fd_in_tag) {
+            io_remove_watch_poll(chr->fd_in_tag);
+            chr->fd_in_tag = 0;
         }
         g_io_channel_unref(s->chan);
         s->chan = NULL;
@@ -2309,7 +2309,8 @@ static void tcp_chr_connect(void *opaque)
 
     s->connected = 1;
     if (s->chan) {
-        s->tag = io_add_watch_poll(s->chan, tcp_chr_read_poll, tcp_chr_read, chr);
+        chr->fd_in_tag = io_add_watch_poll(s->chan, tcp_chr_read_poll,
+                                           tcp_chr_read, chr);
     }
     qemu_chr_generic_open(chr);
 }
@@ -2386,9 +2387,9 @@ static void tcp_chr_close(CharDriverState *chr)
 {
     TCPCharDriver *s = chr->opaque;
     if (s->fd >= 0) {
-        if (s->tag) {
-            io_remove_watch_poll(s->tag);
-            s->tag = 0;
+        if (chr->fd_in_tag) {
+            io_remove_watch_poll(chr->fd_in_tag);
+            chr->fd_in_tag = 0;
         }
         if (s->chan) {
             g_io_channel_unref(s->chan);
