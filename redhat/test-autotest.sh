@@ -29,6 +29,7 @@ if [[ "$task" == *rpms/* ]]; then
 	task="official $(cat test.tmp | grep buildArch | awk '{split($0, a, "buildArch"); split(a[2], b, "("); split(b[2], c, ","); gsub(/.src.rpm/, "", c[1]); if (NR == 1) print c[1] }')"
 fi
 
+ping -c1 $server
 /usr/bin/autotest-rpc-client job create -w $server -B never -a never -s -e $(cat ./at-control.mails) -f ./at-control$var.template -T --timestamp -m "1*$label" -x "only $space..sanity" -x "koji_qemu_kvm_build=$task_id" "RHEL 6 $task sanity"
 /usr/bin/autotest-rpc-client job create -w $server -B never -a never -s -e $(cat ./at-control.mails) -f ./at-control-hugepages$var.template -T --timestamp -m "1*$label" -x "only $space..sanity" -x "koji_qemu_kvm_build=$task_id" "RHEL 6 $task (hugepages) sanity"
 
