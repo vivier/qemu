@@ -70,7 +70,7 @@ Obsoletes: %1 < %{obsoletes_ver}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 7%{?dist}
+Release: 8%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -430,6 +430,32 @@ Patch189: kvm-qga-move-logfiles-to-new-directory-for-easier-SELinu.patch
 Patch190: kvm-target-i386-add-cpu64-rhel6-CPU-model.patch
 # For bz#903889 - The value of steal time in "top" command always is "0.0% st" after guest migration
 Patch191: kvm-fix-steal-time-MSR-vmsd-callback-to-proper-opaque-ty.patch
+# For bz#995866 - fix vmdk support to ESX images
+Patch192: kvm-vmdk-Make-VMDK3Header-and-VmdkGrainMarker-QEMU_PACKE.patch
+# For bz#995866 - fix vmdk support to ESX images
+Patch193: kvm-vmdk-use-unsigned-values-for-on-disk-header-fields.patch
+# For bz#995866 - fix vmdk support to ESX images
+Patch194: kvm-qemu-iotests-add-poke_file-utility-function.patch
+# For bz#995866 - fix vmdk support to ESX images
+Patch195: kvm-qemu-iotests-add-empty-test-case-for-vmdk.patch
+# For bz#995866 - fix vmdk support to ESX images
+Patch196: kvm-vmdk-check-granularity-field-in-opening.patch
+# For bz#995866 - fix vmdk support to ESX images
+Patch197: kvm-vmdk-check-l2-table-size-when-opening.patch
+# For bz#995866 - fix vmdk support to ESX images
+Patch198: kvm-vmdk-check-l1-size-before-opening-image.patch
+# For bz#995866 - fix vmdk support to ESX images
+Patch199: kvm-vmdk-use-heap-allocation-for-whole_grain.patch
+# For bz#995866 - fix vmdk support to ESX images
+Patch200: kvm-vmdk-rename-num_gtes_per_gte-to-num_gtes_per_gt.patch
+# For bz#995866 - fix vmdk support to ESX images
+Patch201: kvm-vmdk-Move-l1_size-check-into-vmdk_add_extent.patch
+# For bz#995866 - fix vmdk support to ESX images
+Patch202: kvm-vmdk-fix-L1-and-L2-table-size-in-vmdk3-open.patch
+# For bz#995866 - fix vmdk support to ESX images
+Patch203: kvm-vmdk-support-vmfsSparse-files.patch
+# For bz#995866 - fix vmdk support to ESX images
+Patch204: kvm-vmdk-support-vmfs-files.patch
 
 
 BuildRequires: zlib-devel
@@ -464,6 +490,7 @@ BuildRequires: libseccomp-devel >= 1.0.0
 BuildRequires: libcurl-devel
 %if 0%{!?build_only_sub:1}
 # For gluster block driver
+BuildRequires: glusterfs-api-devel
 BuildRequires: glusterfs-devel
 %endif
 # We need both because the 'stap' binary is probed for by configure
@@ -807,6 +834,19 @@ CAC emulation development files.
 %patch189 -p1
 %patch190 -p1
 %patch191 -p1
+%patch192 -p1
+%patch193 -p1
+%patch194 -p1
+%patch195 -p1
+%patch196 -p1
+%patch197 -p1
+%patch198 -p1
+%patch199 -p1
+%patch200 -p1
+%patch201 -p1
+%patch202 -p1
+%patch203 -p1
+%patch204 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -1081,9 +1121,10 @@ find $RPM_BUILD_ROOT -name '*.la' -or -name '*.a' | xargs rm -f
     rm -rf ${RPM_BUILD_ROOT}%{_bindir}/kvm_stat
 %endif
 
+%if 0%{!?build_only_sub:1}
 %check
-make check
-
+    make check
+%endif
 %post
 # load kvm modules now, so we can make sure no reboot is needed.
 # If there's already a kvm module installed, we don't mess with it
@@ -1215,6 +1256,23 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Wed Oct 09 2013 Miroslav Rezanina <mrezanin@redhat.com> - qemu-kvm-1.5.3-8.el7
+- kvm-vmdk-Make-VMDK3Header-and-VmdkGrainMarker-QEMU_PACKE.patch [bz#995866]
+- kvm-vmdk-use-unsigned-values-for-on-disk-header-fields.patch [bz#995866]
+- kvm-qemu-iotests-add-poke_file-utility-function.patch [bz#995866]
+- kvm-qemu-iotests-add-empty-test-case-for-vmdk.patch [bz#995866]
+- kvm-vmdk-check-granularity-field-in-opening.patch [bz#995866]
+- kvm-vmdk-check-l2-table-size-when-opening.patch [bz#995866]
+- kvm-vmdk-check-l1-size-before-opening-image.patch [bz#995866]
+- kvm-vmdk-use-heap-allocation-for-whole_grain.patch [bz#995866]
+- kvm-vmdk-rename-num_gtes_per_gte-to-num_gtes_per_gt.patch [bz#995866]
+- kvm-vmdk-Move-l1_size-check-into-vmdk_add_extent.patch [bz#995866]
+- kvm-vmdk-fix-L1-and-L2-table-size-in-vmdk3-open.patch [bz#995866]
+- kvm-vmdk-support-vmfsSparse-files.patch [bz#995866]
+- kvm-vmdk-support-vmfs-files.patch [bz#995866]
+- Resolves: bz#995866
+  (fix vmdk support to ESX images)
+
 * Thu Sep 26 2013 Miroslav Rezanina <mrezanin@redhat.com> - qemu-kvm-1.5.3-7.el7
 - kvm-spice-fix-display-initialization.patch [bz#974887]
 - kvm-Remove-i82550-network-card-emulation.patch [bz#921983]
