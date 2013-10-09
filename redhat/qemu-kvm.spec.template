@@ -169,6 +169,7 @@ BuildRequires: libseccomp-devel >= 1.0.0
 BuildRequires: libcurl-devel
 %if 0%{!?build_only_sub:1}
 # For gluster block driver
+BuildRequires: glusterfs-api-devel
 BuildRequires: glusterfs-devel
 %endif
 # We need both because the 'stap' binary is probed for by configure
@@ -632,9 +633,6 @@ find $RPM_BUILD_ROOT -name '*.la' -or -name '*.a' | xargs rm -f
     rm -rf ${RPM_BUILD_ROOT}%{_libdir}/pkgconfig/libcacard.pc
     rm -rf ${RPM_BUILD_ROOT}%{_bindir}/kvm_stat
 %endif
-
-%check
-make check
 
 %post
 # load kvm modules now, so we can make sure no reboot is needed.
