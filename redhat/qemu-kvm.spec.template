@@ -770,6 +770,23 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Oct 09 2013 Miroslav Rezanina <mrezanin@redhat.com> - qemu-kvm-1.5.3-8.el7
+- kvm-vmdk-Make-VMDK3Header-and-VmdkGrainMarker-QEMU_PACKE.patch [bz#995866]
+- kvm-vmdk-use-unsigned-values-for-on-disk-header-fields.patch [bz#995866]
+- kvm-qemu-iotests-add-poke_file-utility-function.patch [bz#995866]
+- kvm-qemu-iotests-add-empty-test-case-for-vmdk.patch [bz#995866]
+- kvm-vmdk-check-granularity-field-in-opening.patch [bz#995866]
+- kvm-vmdk-check-l2-table-size-when-opening.patch [bz#995866]
+- kvm-vmdk-check-l1-size-before-opening-image.patch [bz#995866]
+- kvm-vmdk-use-heap-allocation-for-whole_grain.patch [bz#995866]
+- kvm-vmdk-rename-num_gtes_per_gte-to-num_gtes_per_gt.patch [bz#995866]
+- kvm-vmdk-Move-l1_size-check-into-vmdk_add_extent.patch [bz#995866]
+- kvm-vmdk-fix-L1-and-L2-table-size-in-vmdk3-open.patch [bz#995866]
+- kvm-vmdk-support-vmfsSparse-files.patch [bz#995866]
+- kvm-vmdk-support-vmfs-files.patch [bz#995866]
+- Resolves: bz#995866
+  (fix vmdk support to ESX images)
+
 * Thu Sep 26 2013 Miroslav Rezanina <mrezanin@redhat.com> - qemu-kvm-1.5.3-7.el7
 - kvm-spice-fix-display-initialization.patch [bz#974887]
 - kvm-Remove-i82550-network-card-emulation.patch [bz#921983]
