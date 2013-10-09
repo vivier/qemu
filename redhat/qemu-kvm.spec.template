@@ -634,6 +634,10 @@ find $RPM_BUILD_ROOT -name '*.la' -or -name '*.a' | xargs rm -f
     rm -rf ${RPM_BUILD_ROOT}%{_bindir}/kvm_stat
 %endif
 
+%if 0%{!?build_only_sub:1}
+%check
+    make check
+%endif
 %post
 # load kvm modules now, so we can make sure no reboot is needed.
 # If there's already a kvm module installed, we don't mess with it
