@@ -119,6 +119,8 @@ void migrate_add_blocker(Error *reason);
  */
 void migrate_del_blocker(Error *reason);
 
+bool migrate_zero_blocks(void);
+
 bool migrate_auto_converge(void);
 
 int xbzrle_encode_buffer(uint8_t *old_buf, uint8_t *new_buf, int slen,
