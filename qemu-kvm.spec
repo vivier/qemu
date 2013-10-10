@@ -70,7 +70,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 8%{?dist}
+Release: 9%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -456,6 +456,26 @@ Patch202: kvm-vmdk-fix-L1-and-L2-table-size-in-vmdk3-open.patch
 Patch203: kvm-vmdk-support-vmfsSparse-files.patch
 # For bz#995866 - fix vmdk support to ESX images
 Patch204: kvm-vmdk-support-vmfs-files.patch
+# For bz#1005036 - When using “-vga qxl” together with “-display vnc=:5” or “-display  sdl” qemu displays  pixel garbage
+Patch205: kvm-qxl-fix-local-renderer.patch
+# For bz#1008987 - pvticketlocks: add kvm feature kvm_pv_unhalt
+Patch206: kvm-linux-headers-update-to-kernel-3.10.0-26.el7.patch
+# For bz#1008987 - pvticketlocks: add kvm feature kvm_pv_unhalt
+Patch207: kvm-target-i386-add-feature-kvm_pv_unhalt.patch
+# For bz#1010881 - backport vcpu soft limit warning
+Patch208: kvm-warn-if-num-cpus-is-greater-than-num-recommended.patch
+# For bz#1007222 - QEMU core dumped when do hot-unplug virtio serial port during transfer file between host to guest with virtio serial through TCP socket
+Patch209: kvm-char-move-backends-io-watch-tag-to-CharDriverState.patch
+# For bz#1007222 - QEMU core dumped when do hot-unplug virtio serial port during transfer file between host to guest with virtio serial through TCP socket
+Patch210: kvm-char-use-common-function-to-disable-callbacks-on-cha.patch
+# For bz#1007222 - QEMU core dumped when do hot-unplug virtio serial port during transfer file between host to guest with virtio serial through TCP socket
+Patch211: kvm-char-remove-watch-callback-on-chardev-detach-from-fr.patch
+# For bz#1017049 - qemu-img refuses to open the vmdk format image its created
+Patch212: kvm-block-don-t-lose-data-from-last-incomplete-sector.patch
+# For bz#1017049 - qemu-img refuses to open the vmdk format image its created
+Patch213: kvm-vmdk-fix-cluster-size-check-for-flat-extents.patch
+# For bz#1017049 - qemu-img refuses to open the vmdk format image its created
+Patch214: kvm-qemu-iotests-add-monolithicFlat-creation-test-to-059.patch
 
 BuildRequires: zlib-devel
 BuildRequires: SDL-devel
@@ -846,6 +866,16 @@ CAC emulation development files.
 %patch202 -p1
 %patch203 -p1
 %patch204 -p1
+%patch205 -p1
+%patch206 -p1
+%patch207 -p1
+%patch208 -p1
+%patch209 -p1
+%patch210 -p1
+%patch211 -p1
+%patch212 -p1
+%patch213 -p1
+%patch214 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -911,7 +941,7 @@ dobuild() {
         --disable-guest-agent \
 %endif
         --enable-glusterfs \
-        --block-drv-rw-whitelist=qcow2,raw,file,host_device,host_cdrom,nbd,gluster \
+        --block-drv-rw-whitelist=qcow2,raw,file,host_device,host_cdrom,nbd,iscsi,gluster \
         --block-drv-ro-whitelist=vmdk \
         "$@"
 
@@ -1255,6 +1285,31 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Thu Oct 10 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-9.el7
+- kvm-qxl-fix-local-renderer.patch [bz#1005036]
+- kvm-spec-include-userspace-iSCSI-initiator-in-block-driv.patch [bz#923843]
+- kvm-linux-headers-update-to-kernel-3.10.0-26.el7.patch [bz#1008987]
+- kvm-target-i386-add-feature-kvm_pv_unhalt.patch [bz#1008987]
+- kvm-warn-if-num-cpus-is-greater-than-num-recommended.patch [bz#1010881]
+- kvm-char-move-backends-io-watch-tag-to-CharDriverState.patch [bz#1007222]
+- kvm-char-use-common-function-to-disable-callbacks-on-cha.patch [bz#1007222]
+- kvm-char-remove-watch-callback-on-chardev-detach-from-fr.patch [bz#1007222]
+- kvm-block-don-t-lose-data-from-last-incomplete-sector.patch [bz#1017049]
+- kvm-vmdk-fix-cluster-size-check-for-flat-extents.patch [bz#1017049]
+- kvm-qemu-iotests-add-monolithicFlat-creation-test-to-059.patch [bz#1017049]
+- Resolves: bz#1005036
+  (When using “-vga qxl” together with “-display vnc=:5” or “-display  sdl” qemu displays  pixel garbage)
+- Resolves: bz#1007222
+  (QEMU core dumped when do hot-unplug virtio serial port during transfer file between host to guest with virtio serial through TCP socket)
+- Resolves: bz#1008987
+  (pvticketlocks: add kvm feature kvm_pv_unhalt)
+- Resolves: bz#1010881
+  (backport vcpu soft limit warning)
+- Resolves: bz#1017049
+  (qemu-img refuses to open the vmdk format image its created)
+- Resolves: bz#923843
+  (include userspace iSCSI initiator in block driver whitelist)
+
 * Wed Oct 09 2013 Miroslav Rezanina <mrezanin@redhat.com> - qemu-kvm-1.5.3-8.el7
 - kvm-vmdk-Make-VMDK3Header-and-VmdkGrainMarker-QEMU_PACKE.patch [bz#995866]
 - kvm-vmdk-use-unsigned-values-for-on-disk-header-fields.patch [bz#995866]
