@@ -63,8 +63,8 @@
 %define rhel_rhev_conflicts()                                         \
 Conflicts: %1%{conflicts_suffix}                                      \
 Provides: %1%{extra_provides_suffix} = %{epoch}:%{version}-%{release} \
-    %if 0%{?obsoletes_ver:1}                                          \
-Obsoletes: %1 < %{obsoletes_ver}                                      \
+    %if 0%{?obsoletes_version:1}                                          \
+Obsoletes: %1 < %{obsoletes_version}                                      \
     %endif
 
 
@@ -772,6 +772,231 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Oct 10 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-9.el7
+- kvm-qxl-fix-local-renderer.patch [bz#1005036]
+- kvm-spec-include-userspace-iSCSI-initiator-in-block-driv.patch [bz#923843]
+- kvm-linux-headers-update-to-kernel-3.10.0-26.el7.patch [bz#1008987]
+- kvm-target-i386-add-feature-kvm_pv_unhalt.patch [bz#1008987]
+- kvm-warn-if-num-cpus-is-greater-than-num-recommended.patch [bz#1010881]
+- kvm-char-move-backends-io-watch-tag-to-CharDriverState.patch [bz#1007222]
+- kvm-char-use-common-function-to-disable-callbacks-on-cha.patch [bz#1007222]
+- kvm-char-remove-watch-callback-on-chardev-detach-from-fr.patch [bz#1007222]
+- kvm-block-don-t-lose-data-from-last-incomplete-sector.patch [bz#1017049]
+- kvm-vmdk-fix-cluster-size-check-for-flat-extents.patch [bz#1017049]
+- kvm-qemu-iotests-add-monolithicFlat-creation-test-to-059.patch [bz#1017049]
+- Resolves: bz#1005036
+  (When using “-vga qxl” together with “-display vnc=:5” or “-display  sdl” qemu displays  pixel garbage)
+- Resolves: bz#1007222
+  (QEMU core dumped when do hot-unplug virtio serial port during transfer file between host to guest with virtio serial through TCP socket)
+- Resolves: bz#1008987
+  (pvticketlocks: add kvm feature kvm_pv_unhalt)
+- Resolves: bz#1010881
+  (backport vcpu soft limit warning)
+- Resolves: bz#1017049
+  (qemu-img refuses to open the vmdk format image its created)
+- Resolves: bz#923843
+  (include userspace iSCSI initiator in block driver whitelist)
+
+* Wed Oct 09 2013 Miroslav Rezanina <mrezanin@redhat.com> - qemu-kvm-1.5.3-8.el7
+- kvm-vmdk-Make-VMDK3Header-and-VmdkGrainMarker-QEMU_PACKE.patch [bz#995866]
+- kvm-vmdk-use-unsigned-values-for-on-disk-header-fields.patch [bz#995866]
+- kvm-qemu-iotests-add-poke_file-utility-function.patch [bz#995866]
+- kvm-qemu-iotests-add-empty-test-case-for-vmdk.patch [bz#995866]
+- kvm-vmdk-check-granularity-field-in-opening.patch [bz#995866]
+- kvm-vmdk-check-l2-table-size-when-opening.patch [bz#995866]
+- kvm-vmdk-check-l1-size-before-opening-image.patch [bz#995866]
+- kvm-vmdk-use-heap-allocation-for-whole_grain.patch [bz#995866]
+- kvm-vmdk-rename-num_gtes_per_gte-to-num_gtes_per_gt.patch [bz#995866]
+- kvm-vmdk-Move-l1_size-check-into-vmdk_add_extent.patch [bz#995866]
+- kvm-vmdk-fix-L1-and-L2-table-size-in-vmdk3-open.patch [bz#995866]
+- kvm-vmdk-support-vmfsSparse-files.patch [bz#995866]
+- kvm-vmdk-support-vmfs-files.patch [bz#995866]
+- Resolves: bz#995866
+  (fix vmdk support to ESX images)
+
+* Thu Sep 26 2013 Miroslav Rezanina <mrezanin@redhat.com> - qemu-kvm-1.5.3-7.el7
+- kvm-spice-fix-display-initialization.patch [bz#974887]
+- kvm-Remove-i82550-network-card-emulation.patch [bz#921983]
+- kvm-Remove-usb-wacom-tablet.patch [bz#903914]
+- kvm-Disable-usb-uas.patch [bz#903914]
+- kvm-Disable-vhost-scsi.patch [bz#994642]
+- kvm-Remove-no-hpet-option.patch [bz#947441]
+- kvm-Disable-isa-parallel.patch [bz#1002286]
+- kvm-xhci-implement-warm-port-reset.patch [bz#949514]
+- kvm-usb-add-serial-bus-property.patch [bz#953304]
+- kvm-rhel6-compat-usb-serial-numbers.patch [bz#953304]
+- kvm-vmdk-fix-comment-for-vmdk_co_write_zeroes.patch [bz#995866]
+- kvm-gluster-Add-image-resize-support.patch [bz#1007226]
+- kvm-block-Introduce-bs-zero_beyond_eof.patch [bz#1007226]
+- kvm-block-Produce-zeros-when-protocols-reading-beyond-en.patch [bz#1007226]
+- kvm-gluster-Abort-on-AIO-completion-failure.patch [bz#1007226]
+- kvm-Preparation-for-usb-bt-dongle-conditional-build.patch [bz#1001131]
+- kvm-Remove-dev-bluetooth.c-dependency-from-vl.c.patch [bz#1001131]
+- kvm-exec-Fix-Xen-RAM-allocation-with-unusual-options.patch [bz#1009328]
+- kvm-exec-Clean-up-fall-back-when-mem-path-allocation-fai.patch [bz#1009328]
+- kvm-exec-Reduce-ifdeffery-around-mem-path.patch [bz#1009328]
+- kvm-exec-Simplify-the-guest-physical-memory-allocation-h.patch [bz#1009328]
+- kvm-exec-Drop-incorrect-dead-S390-code-in-qemu_ram_remap.patch [bz#1009328]
+- kvm-exec-Clean-up-unnecessary-S390-ifdeffery.patch [bz#1009328]
+- kvm-exec-Don-t-abort-when-we-can-t-allocate-guest-memory.patch [bz#1009328]
+- kvm-pc_sysfw-Fix-ISA-BIOS-init-for-ridiculously-big-flas.patch [bz#1009328]
+- kvm-virtio-scsi-Make-type-virtio-scsi-common-abstract.patch [bz#903918]
+- kvm-qga-move-logfiles-to-new-directory-for-easier-SELinu.patch [bz#1009491]
+- kvm-target-i386-add-cpu64-rhel6-CPU-model.patch [bz#918907]
+- kvm-fix-steal-time-MSR-vmsd-callback-to-proper-opaque-ty.patch [bz#903889]
+- Resolves: bz#1001131
+  (Disable or remove device usb-bt-dongle)
+- Resolves: bz#1002286
+  (Disable or remove device isa-parallel)
+- Resolves: bz#1007226
+  (Introduce bs->zero_beyond_eof)
+- Resolves: bz#1009328
+  ([RFE] Nicer error report when qemu-kvm can't allocate guest RAM)
+- Resolves: bz#1009491
+  (move qga logfiles to new /var/log/qemu-ga/ directory [RHEL-7])
+- Resolves: bz#903889
+  (The value of steal time in "top" command always is "0.0% st" after guest migration)
+- Resolves: bz#903914
+  (Disable or remove usb related devices that we will not support)
+- Resolves: bz#903918
+  (Disable or remove emulated SCSI devices we will not support)
+- Resolves: bz#918907
+  (provide backwards-compatible RHEL specific machine types in QEMU - CPU features)
+- Resolves: bz#921983
+  (Disable or remove emulated network devices that we will not support)
+- Resolves: bz#947441
+  (HPET device must be disabled)
+- Resolves: bz#949514
+  (fail to passthrough the USB3.0 stick to windows guest with xHCI controller under pc-i440fx-1.4)
+- Resolves: bz#953304
+  (Serial number of some USB devices must be fixed for older RHEL machine types)
+- Resolves: bz#974887
+  (the screen of guest fail to display correctly when use spice + qxl driver)
+- Resolves: bz#994642
+  (should disable vhost-scsi)
+- Resolves: bz#995866
+  (fix vmdk support to ESX images)
+
+* Mon Sep 23 2013 Paolo Bonzini <pbonzini@redhat.com> - qemu-kvm-1.5.3-6.el7
+- re-enable spice
+- Related: #979953
+
+* Mon Sep 23 2013 Paolo Bonzini <pbonzini@redhat.com> - qemu-kvm-1.5.3-5.el7
+- temporarily disable spice until libiscsi rebase is complete
+- Related: #979953
+
+* Thu Sep 19 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-4.el7
+- kvm-block-package-preparation-code-in-qmp_transaction.patch [bz#1005818]
+- kvm-block-move-input-parsing-code-in-qmp_transaction.patch [bz#1005818]
+- kvm-block-package-committing-code-in-qmp_transaction.patch [bz#1005818]
+- kvm-block-package-rollback-code-in-qmp_transaction.patch [bz#1005818]
+- kvm-block-make-all-steps-in-qmp_transaction-as-callback.patch [bz#1005818]
+- kvm-blockdev-drop-redundant-proto_drv-check.patch [bz#1005818]
+- kvm-block-Don-t-parse-protocol-from-file.filename.patch [bz#1005818]
+- kvm-Revert-block-Disable-driver-specific-options-for-1.5.patch [bz#1005818]
+- kvm-qcow2-Add-refcount-update-reason-to-all-callers.patch [bz#1005818]
+- kvm-qcow2-Options-to-enable-discard-for-freed-clusters.patch [bz#1005818]
+- kvm-qcow2-Batch-discards.patch [bz#1005818]
+- kvm-block-Always-enable-discard-on-the-protocol-level.patch [bz#1005818]
+- kvm-qapi.py-Avoid-code-duplication.patch [bz#1005818]
+- kvm-qapi.py-Allow-top-level-type-reference-for-command-d.patch [bz#1005818]
+- kvm-qapi-schema-Use-BlockdevSnapshot-type-for-blockdev-s.patch [bz#1005818]
+- kvm-qapi-types.py-Implement-base-for-unions.patch [bz#1005818]
+- kvm-qapi-visit.py-Split-off-generate_visit_struct_fields.patch [bz#1005818]
+- kvm-qapi-visit.py-Implement-base-for-unions.patch [bz#1005818]
+- kvm-docs-Document-QAPI-union-types.patch [bz#1005818]
+- kvm-qapi-Add-visitor-for-implicit-structs.patch [bz#1005818]
+- kvm-qapi-Flat-unions-with-arbitrary-discriminator.patch [bz#1005818]
+- kvm-qapi-Add-consume-argument-to-qmp_input_get_object.patch [bz#1005818]
+- kvm-qapi.py-Maintain-a-list-of-union-types.patch [bz#1005818]
+- kvm-qapi-qapi-types.py-native-list-support.patch [bz#1005818]
+- kvm-qapi-Anonymous-unions.patch [bz#1005818]
+- kvm-block-Allow-driver-option-on-the-top-level.patch [bz#1005818]
+- kvm-QemuOpts-Add-qemu_opt_unset.patch [bz#1005818]
+- kvm-blockdev-Rename-I-O-throttling-options-for-QMP.patch [bz#1005818]
+- kvm-qemu-iotests-Update-051-reference-output.patch [bz#1005818]
+- kvm-blockdev-Rename-readonly-option-to-read-only.patch [bz#1005818]
+- kvm-blockdev-Split-up-cache-option.patch [bz#1005818]
+- kvm-qcow2-Use-dashes-instead-of-underscores-in-options.patch [bz#1005818]
+- kvm-qemu-iotests-filter-QEMU-version-in-monitor-banner.patch [bz#1006959]
+- kvm-tests-set-MALLOC_PERTURB_-to-expose-memory-bugs.patch [bz#1006959]
+- kvm-qemu-iotests-Whitespace-cleanup.patch [bz#1006959]
+- kvm-qemu-iotests-Fixed-test-case-026.patch [bz#1006959]
+- kvm-qemu-iotests-Fix-test-038.patch [bz#1006959]
+- kvm-qemu-iotests-Remove-lsi53c895a-tests-from-051.patch [bz#1006959]
+- Resolves: bz#1005818
+  (qcow2: Backport discard command line options)
+- Resolves: bz#1006959
+  (qemu-iotests false positives)
+
+* Thu Aug 29 2013 Miroslav Rezanina <mrezanin@redhat.com> - qemu-kvm-1.5.3-3.el7
+- Fix rhel/rhev split
+
+* Thu Aug 29 2013 Miroslav Rezanina <mrezanin@redhat.com> - qemu-kvm-1.5.3-2.el7
+- kvm-osdep-add-qemu_get_local_state_pathname.patch [bz#964304]
+- kvm-qga-determine-default-state-dir-and-pidfile-dynamica.patch [bz#964304]
+- kvm-configure-don-t-save-any-fixed-local_statedir-for-wi.patch [bz#964304]
+- kvm-qga-create-state-directory-on-win32.patch [bz#964304]
+- kvm-qga-save-state-directory-in-ga_install_service-RHEL-.patch [bz#964304]
+- kvm-Makefile-create-.-var-run-when-installing-the-POSIX-.patch [bz#964304]
+- kvm-qemu-option-Fix-qemu_opts_find-for-null-id-arguments.patch [bz#980782]
+- kvm-qemu-option-Fix-qemu_opts_set_defaults-for-corner-ca.patch [bz#980782]
+- kvm-vl-New-qemu_get_machine_opts.patch [bz#980782]
+- kvm-Fix-machine-options-accel-kernel_irqchip-kvm_shadow_.patch [bz#980782]
+- kvm-microblaze-Fix-latent-bug-with-default-DTB-lookup.patch [bz#980782]
+- kvm-Simplify-machine-option-queries-with-qemu_get_machin.patch [bz#980782]
+- kvm-pci-add-VMSTATE_MSIX.patch [bz#838170]
+- kvm-xhci-add-XHCISlot-addressed.patch [bz#838170]
+- kvm-xhci-add-xhci_alloc_epctx.patch [bz#838170]
+- kvm-xhci-add-xhci_init_epctx.patch [bz#838170]
+- kvm-xhci-add-live-migration-support.patch [bz#838170]
+- kvm-pc-set-level-xlevel-correctly-on-486-qemu32-CPU-mode.patch [bz#918907]
+- kvm-pc-Remove-incorrect-rhel6.x-compat-model-value-for-C.patch [bz#918907]
+- kvm-pc-rhel6.x-has-x2apic-present-on-Conroe-Penryn-Nehal.patch [bz#918907]
+- kvm-pc-set-compat-CPUID-0x80000001-.EDX-bits-on-Westmere.patch [bz#918907]
+- kvm-pc-Remove-PCLMULQDQ-from-Westmere-on-rhel6.x-machine.patch [bz#918907]
+- kvm-pc-SandyBridge-rhel6.x-compat-fixes.patch [bz#918907]
+- kvm-pc-Haswell-doesn-t-have-rdtscp-on-rhel6.x.patch [bz#918907]
+- kvm-i386-fix-LAPIC-TSC-deadline-timer-save-restore.patch [bz#972433]
+- kvm-all.c-max_cpus-should-not-exceed-KVM-vcpu-limit.patch [bz#996258]
+- kvm-add-timestamp-to-error_report.patch [bz#906937]
+- kvm-Convert-stderr-message-calling-error_get_pretty-to-e.patch [bz#906937]
+- Resolves: bz#838170
+  (Add live migration support for USB [xhci, usb-uas])
+- Resolves: bz#906937
+  ([Hitachi 7.0 FEAT][QEMU]Add a time stamp to error message (*))
+- Resolves: bz#918907
+  (provide backwards-compatible RHEL specific machine types in QEMU - CPU features)
+- Resolves: bz#964304
+  (Windows guest agent service failed to be started)
+- Resolves: bz#972433
+  ("INFO: rcu_sched detected stalls" after RHEL7 kvm vm migrated)
+- Resolves: bz#980782
+  (kernel_irqchip defaults to off instead of on without -machine)
+- Resolves: bz#996258
+  (boot guest with maxcpu=255 successfully but actually max number of vcpu is 160)
+
+* Wed Aug 28 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.3-1
+- Rebase to qemu 1.5.3
+
+* Tue Aug 20 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.2-4
+- qemu: guest agent creates files with insecure permissions in deamon mode [rhel-7.0] (rhbz 974444)
+- update qemu-ga config & init script in RHEL7 wrt. fsfreeze hook (rhbz 969942)
+- RHEL7 does not have equivalent functionality for __com.redhat_qxl_screendump (rhbz 903910)
+- SEP flag behavior for CPU models of RHEL6 machine types should be compatible (rhbz 960216)
+- crash command can not read the dump-guest-memory file when paging=false [RHEL-7] (rhbz 981582)
+- RHEL 7 qemu-kvm fails to build on F19 host due to libusb deprecated API (rhbz 996469)
+- Live migration support in virtio-blk-data-plane (rhbz 995030)
+- qemu-img resize can execute successfully even input invalid syntax (rhbz 992935)
+
+* Fri Aug 09 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.2-3
+- query mem info from monitor would cause qemu-kvm hang [RHEL-7] (rhbz #970047)
+- Throttle-down guest to help with live migration convergence (backport to RHEL7.0) (rhbz #985958)
+- disable (for now) EFI-enabled roms (rhbz #962563)
+- qemu-kvm "vPMU passthrough" mode breaks migration, shouldn't be enabled by default (rhbz #853101)
+- Remove pending watches after virtserialport unplug (rhbz #992900)
+- Containment of error when an SR-IOV device encounters an error... (rhbz #984604)
+
 * Wed Jul 31 2013 Miroslav Rezanina <mrezanin@redhat.com> - 10:1.5.2-2
 - SPEC file prepared for RHEL/RHEV split (rhbz #987165)
 - RHEL guest( sata disk ) can not boot up (rhbz #981723)
@@ -807,13 +1032,13 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 - Rebase to 1.5.0
 
 * Tue Apr 23 2013 Miroslav Rezanina <mrezanin@redhat.com> - 3:1.4.0-4
-  - Enable build of libcacard subpackage for non-x86_64 archs (bz #873174)
-  - Enable build of qemu-img subpackage for non-x86_64 archs (bz #873174)
-  - Enable build of qemu-guest-agent subpackage for non-x86_64 archs (bz #873174)
+- Enable build of libcacard subpackage for non-x86_64 archs (bz #873174)
+- Enable build of qemu-img subpackage for non-x86_64 archs (bz #873174)
+- Enable build of qemu-guest-agent subpackage for non-x86_64 archs (bz #873174)
 
 * Tue Apr 23 2013 Miroslav Rezanina <mrezanin@redhat.com> - 3:1.4.0-3
-  - Enable/disable features supported by rhel7
-  - Use qemu-kvm instead of qemu in filenames and pathes
+- Enable/disable features supported by rhel7
+- Use qemu-kvm instead of qemu in filenames and pathes
 
 * Fri Apr 19 2013 Daniel Mach <dmach@redhat.com> - 3:1.4.0-2.1
 - Rebuild for cyrus-sasl
@@ -1323,7 +1548,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 * Wed Sep 16 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.92-3
 - Add ksmtuned, also from Dan Kenigsberg
-- Use %_initddir macro
+- Use %%_initddir macro
 
 * Wed Sep 16 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.92-2
 - Add ksm control script from Dan Kenigsberg
@@ -1456,7 +1681,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 - Fix qcow2 image corruption (#496642)
 
 * Sun Apr 19 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10-10
-- Run sysconfig.modules from %post on x86_64 too (#494739)
+- Run sysconfig.modules from %%post on x86_64 too (#494739)
 
 * Sun Apr 19 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10-9
 - Align VGA ROM to 4k boundary - fixes 'qemu-kvm -std vga' (#494376)
