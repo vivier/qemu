@@ -63,8 +63,8 @@
 %define rhel_rhev_conflicts()                                         \
 Conflicts: %1%{conflicts_suffix}                                      \
 Provides: %1%{extra_provides_suffix} = %{epoch}:%{version}-%{release} \
-    %if 0%{?obsoletes_ver:1}                                          \
-Obsoletes: %1 < %{obsoletes_ver}                                      \
+    %if 0%{?obsoletes_version:1}                                          \
+Obsoletes: %1 < %{obsoletes_version}                                      \
     %endif
 
 
@@ -770,6 +770,31 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Oct 10 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-9.el7
+- kvm-qxl-fix-local-renderer.patch [bz#1005036]
+- kvm-spec-include-userspace-iSCSI-initiator-in-block-driv.patch [bz#923843]
+- kvm-linux-headers-update-to-kernel-3.10.0-26.el7.patch [bz#1008987]
+- kvm-target-i386-add-feature-kvm_pv_unhalt.patch [bz#1008987]
+- kvm-warn-if-num-cpus-is-greater-than-num-recommended.patch [bz#1010881]
+- kvm-char-move-backends-io-watch-tag-to-CharDriverState.patch [bz#1007222]
+- kvm-char-use-common-function-to-disable-callbacks-on-cha.patch [bz#1007222]
+- kvm-char-remove-watch-callback-on-chardev-detach-from-fr.patch [bz#1007222]
+- kvm-block-don-t-lose-data-from-last-incomplete-sector.patch [bz#1017049]
+- kvm-vmdk-fix-cluster-size-check-for-flat-extents.patch [bz#1017049]
+- kvm-qemu-iotests-add-monolithicFlat-creation-test-to-059.patch [bz#1017049]
+- Resolves: bz#1005036
+  (When using “-vga qxl” together with “-display vnc=:5” or “-display  sdl” qemu displays  pixel garbage)
+- Resolves: bz#1007222
+  (QEMU core dumped when do hot-unplug virtio serial port during transfer file between host to guest with virtio serial through TCP socket)
+- Resolves: bz#1008987
+  (pvticketlocks: add kvm feature kvm_pv_unhalt)
+- Resolves: bz#1010881
+  (backport vcpu soft limit warning)
+- Resolves: bz#1017049
+  (qemu-img refuses to open the vmdk format image its created)
+- Resolves: bz#923843
+  (include userspace iSCSI initiator in block driver whitelist)
+
 * Wed Oct 09 2013 Miroslav Rezanina <mrezanin@redhat.com> - qemu-kvm-1.5.3-8.el7
 - kvm-vmdk-Make-VMDK3Header-and-VmdkGrainMarker-QEMU_PACKE.patch [bz#995866]
 - kvm-vmdk-use-unsigned-values-for-on-disk-header-fields.patch [bz#995866]
@@ -1005,13 +1030,13 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 - Rebase to 1.5.0
 
 * Tue Apr 23 2013 Miroslav Rezanina <mrezanin@redhat.com> - 3:1.4.0-4
-  - Enable build of libcacard subpackage for non-x86_64 archs (bz #873174)
-  - Enable build of qemu-img subpackage for non-x86_64 archs (bz #873174)
-  - Enable build of qemu-guest-agent subpackage for non-x86_64 archs (bz #873174)
+- Enable build of libcacard subpackage for non-x86_64 archs (bz #873174)
+- Enable build of qemu-img subpackage for non-x86_64 archs (bz #873174)
+- Enable build of qemu-guest-agent subpackage for non-x86_64 archs (bz #873174)
 
 * Tue Apr 23 2013 Miroslav Rezanina <mrezanin@redhat.com> - 3:1.4.0-3
-  - Enable/disable features supported by rhel7
-  - Use qemu-kvm instead of qemu in filenames and pathes
+- Enable/disable features supported by rhel7
+- Use qemu-kvm instead of qemu in filenames and pathes
 
 * Fri Apr 19 2013 Daniel Mach <dmach@redhat.com> - 3:1.4.0-2.1
 - Rebuild for cyrus-sasl
@@ -1521,7 +1546,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 * Wed Sep 16 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.92-3
 - Add ksmtuned, also from Dan Kenigsberg
-- Use %_initddir macro
+- Use %%_initddir macro
 
 * Wed Sep 16 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.92-2
 - Add ksm control script from Dan Kenigsberg
@@ -1654,7 +1679,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 - Fix qcow2 image corruption (#496642)
 
 * Sun Apr 19 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10-10
-- Run sysconfig.modules from %post on x86_64 too (#494739)
+- Run sysconfig.modules from %%post on x86_64 too (#494739)
 
 * Sun Apr 19 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10-9
 - Align VGA ROM to 4k boundary - fixes 'qemu-kvm -std vga' (#494376)
