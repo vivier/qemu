@@ -63,8 +63,8 @@
 %define rhel_rhev_conflicts()                                         \
 Conflicts: %1%{conflicts_suffix}                                      \
 Provides: %1%{extra_provides_suffix} = %{epoch}:%{version}-%{release} \
-    %if 0%{?obsoletes_ver:1}                                          \
-Obsoletes: %1 < %{obsoletes_ver}                                      \
+    %if 0%{?obsoletes_version:1}                                          \
+Obsoletes: %1 < %{obsoletes_version}                                      \
     %endif
 
 Summary: QEMU is a FAST! processor emulator
@@ -457,7 +457,6 @@ Patch203: kvm-vmdk-support-vmfsSparse-files.patch
 # For bz#995866 - fix vmdk support to ESX images
 Patch204: kvm-vmdk-support-vmfs-files.patch
 
-
 BuildRequires: zlib-devel
 BuildRequires: SDL-devel
 BuildRequires: which
@@ -641,33 +640,33 @@ CAC emulation development files.
 %prep
 %setup -q -n qemu-%{version}
 %patch1 -p1
-# %patch2 -p1
-#%patch3 -p1
-# %patch4 -p1
-# %patch5 -p1
-# %patch6 -p1
-# %patch7 -p1
-# %patch8 -p1
-# %patch9 -p1
-# %patch10 -p1
-# %patch11 -p1
-# %patch12 -p1
-# %patch13 -p1
-# %patch14 -p1
-# %patch15 -p1
-# %patch16 -p1
-#%patch17 -p1
-#%patch18 -p1
-#%patch19 -p1
-#%patch20 -p1
-#%patch21 -p1
-# %patch22 -p1
-# %patch23 -p1
-# %patch24 -p1
-# %patch25 -p1
-# %patch26 -p1
-# %patch27 -p1
-# %patch28 -p1
+#%%patch2 -p1
+#%%patch3 -p1
+#%%patch4 -p1
+#%%patch5 -p1
+#%%patch6 -p1
+#%%patch7 -p1
+#%%patch8 -p1
+#%%patch9 -p1
+#%%patch10 -p1
+#%%patch11 -p1
+#%%patch12 -p1
+#%%patch13 -p1
+#%%patch14 -p1
+#%%patch15 -p1
+#%%patch16 -p1
+#%%patch17 -p1
+#%%patch18 -p1
+#%%patch19 -p1
+#%%patch20 -p1
+#%%patch21 -p1
+#%%patch22 -p1
+#%%patch23 -p1
+#%%patch24 -p1
+#%%patch25 -p1
+#%%patch26 -p1
+#%%patch27 -p1
+#%%patch28 -p1
 %patch29 -p1
 %patch30 -p1
 %patch31 -p1
@@ -704,7 +703,7 @@ CAC emulation development files.
 %patch59 -p1
 %patch60 -p1
 %patch61 -p1
-#%patch62 -p1
+#%%patch62 -p1
 %patch63 -p1
 %patch64 -p1
 %patch65 -p1
@@ -715,7 +714,7 @@ CAC emulation development files.
 %patch70 -p1
 %patch71 -p1
 %patch72 -p1
-#%patch73 -p1
+#%%patch73 -p1
 %patch74 -p1
 %patch75 -p1
 
@@ -733,12 +732,12 @@ CAC emulation development files.
 %patch87 -p1
 %patch88 -p1
 %patch89 -p1
-#%patch90 -p1
-#%patch91 -p1
-#%patch92 -p1
+#%%patch90 -p1
+#%%patch91 -p1
+#%%patch92 -p1
 %patch93 -p1
 %patch94 -p1
-#%patch95 -p1
+#%%patch95 -p1
 %patch96 -p1
 %patch97 -p1
 %patch98 -p1
@@ -1491,13 +1490,13 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 - Rebase to 1.5.0
 
 * Tue Apr 23 2013 Miroslav Rezanina <mrezanin@redhat.com> - 3:1.4.0-4
-  - Enable build of libcacard subpackage for non-x86_64 archs (bz #873174)
-  - Enable build of qemu-img subpackage for non-x86_64 archs (bz #873174)
-  - Enable build of qemu-guest-agent subpackage for non-x86_64 archs (bz #873174)
+- Enable build of libcacard subpackage for non-x86_64 archs (bz #873174)
+- Enable build of qemu-img subpackage for non-x86_64 archs (bz #873174)
+- Enable build of qemu-guest-agent subpackage for non-x86_64 archs (bz #873174)
 
 * Tue Apr 23 2013 Miroslav Rezanina <mrezanin@redhat.com> - 3:1.4.0-3
-  - Enable/disable features supported by rhel7
-  - Use qemu-kvm instead of qemu in filenames and pathes
+- Enable/disable features supported by rhel7
+- Use qemu-kvm instead of qemu in filenames and pathes
 
 * Fri Apr 19 2013 Daniel Mach <dmach@redhat.com> - 3:1.4.0-2.1
 - Rebuild for cyrus-sasl
@@ -2007,7 +2006,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 * Wed Sep 16 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.92-3
 - Add ksmtuned, also from Dan Kenigsberg
-- Use %_initddir macro
+- Use %%_initddir macro
 
 * Wed Sep 16 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10.92-2
 - Add ksm control script from Dan Kenigsberg
@@ -2140,7 +2139,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 - Fix qcow2 image corruption (#496642)
 
 * Sun Apr 19 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10-10
-- Run sysconfig.modules from %post on x86_64 too (#494739)
+- Run sysconfig.modules from %%post on x86_64 too (#494739)
 
 * Sun Apr 19 2009 Mark McLoughlin <markmc@redhat.com> - 2:0.10-9
 - Align VGA ROM to 4k boundary - fixes 'qemu-kvm -std vga' (#494376)
