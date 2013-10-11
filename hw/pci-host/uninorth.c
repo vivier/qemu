@@ -153,9 +153,9 @@ static int pci_unin_main_init_device(SysBusDevice *dev)
     h = PCI_HOST_BRIDGE(dev);
 
     memory_region_init_io(&h->conf_mem, OBJECT(h), &pci_host_conf_le_ops,
-                          dev, "pci-conf-idx", 0x1000);
+                          dev, "pci-conf-idx", 4);
     memory_region_init_io(&h->data_mem, OBJECT(h), &unin_data_ops, dev,
-                          "pci-conf-data", 0x1000);
+                          "pci-conf-data", 4);
     sysbus_init_mmio(dev, &h->conf_mem);
     sysbus_init_mmio(dev, &h->data_mem);
 
@@ -171,9 +171,9 @@ static int pci_u3_agp_init_device(SysBusDevice *dev)
     h = PCI_HOST_BRIDGE(dev);
 
     memory_region_init_io(&h->conf_mem, OBJECT(h), &pci_host_conf_le_ops,
-                          dev, "pci-conf-idx", 0x1000);
+                          dev, "pci-conf-idx", 4);
     memory_region_init_io(&h->data_mem, OBJECT(h), &unin_data_ops, dev,
-                          "pci-conf-data", 0x1000);
+                          "pci-conf-data", 4);
     sysbus_init_mmio(dev, &h->conf_mem);
     sysbus_init_mmio(dev, &h->data_mem);
 
@@ -188,9 +188,9 @@ static int pci_unin_agp_init_device(SysBusDevice *dev)
     h = PCI_HOST_BRIDGE(dev);
 
     memory_region_init_io(&h->conf_mem, OBJECT(h), &pci_host_conf_le_ops,
-                          dev, "pci-conf-idx", 0x1000);
+                          dev, "pci-conf-idx", 4);
     memory_region_init_io(&h->data_mem, OBJECT(h), &pci_host_data_le_ops,
-                          dev, "pci-conf-data", 0x1000);
+                          dev, "pci-conf-data", 4);
     sysbus_init_mmio(dev, &h->conf_mem);
     sysbus_init_mmio(dev, &h->data_mem);
     return 0;
@@ -204,9 +204,9 @@ static int pci_unin_internal_init_device(SysBusDevice *dev)
     h = PCI_HOST_BRIDGE(dev);
 
     memory_region_init_io(&h->conf_mem, OBJECT(h), &pci_host_conf_le_ops,
-                          dev, "pci-conf-idx", 0x1000);
+                          dev, "pci-conf-idx", 4);
     memory_region_init_io(&h->data_mem, OBJECT(h), &pci_host_data_le_ops,
-                          dev, "pci-conf-data", 0x1000);
+                          dev, "pci-conf-data", 4);
     sysbus_init_mmio(dev, &h->conf_mem);
     sysbus_init_mmio(dev, &h->data_mem);
     return 0;

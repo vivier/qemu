@@ -105,9 +105,9 @@ static int pci_grackle_init_device(SysBusDevice *dev)
     phb = PCI_HOST_BRIDGE(dev);
 
     memory_region_init_io(&phb->conf_mem, OBJECT(dev), &pci_host_conf_le_ops,
-                          dev, "pci-conf-idx", 0x1000);
+                          dev, "pci-conf-idx", 4);
     memory_region_init_io(&phb->data_mem, OBJECT(dev), &pci_host_data_le_ops,
-                          dev, "pci-data-idx", 0x1000);
+                          dev, "pci-data-idx", 4);
     sysbus_init_mmio(dev, &phb->conf_mem);
     sysbus_init_mmio(dev, &phb->data_mem);
 
