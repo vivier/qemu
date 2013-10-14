@@ -326,6 +326,12 @@ struct VMStateDescription {
     const char *name;
     int unmigratable;
     int version_id;
+    /* Maximum version_id we accept. Note that the existing code
+     * won't skip fields on vmstate_save_state() based on version_id,
+     * so no fields with field->version_id > vmsd->version_id are
+     * allowed.
+     */
+    int max_version_id;
     int minimum_version_id;
     int minimum_version_id_old;
     LoadStateHandler *load_state_old;
