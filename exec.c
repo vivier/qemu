@@ -601,8 +601,8 @@ void cpu_exec_init(CPUState *env)
 #endif
 #if defined(CPU_SAVE_VERSION) && !defined(CONFIG_USER_ONLY)
     vmstate_register(NULL, cpu_index, &vmstate_cpu_common, env);
-    register_savevm(NULL, "cpu", cpu_index, CPU_SAVE_VERSION,
-                    cpu_save, cpu_load, env);
+    register_savevm_max_version(NULL, "cpu", cpu_index, CPU_SAVE_VERSION,
+                                CPU_SAVE_MAX_VERSION, cpu_save, cpu_load, env);
 #endif
 }
 

@@ -530,6 +530,7 @@ static const VMStateDescription vmstate_steal_time_msr = {
 static const VMStateDescription vmstate_cpu = {
     .name = "cpu",
     .version_id = CPU_SAVE_VERSION,
+    .max_version_id = CPU_SAVE_MAX_VERSION,
     .minimum_version_id = 3,
     .minimum_version_id_old = 3,
     .pre_save = cpu_pre_save,
