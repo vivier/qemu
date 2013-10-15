@@ -389,7 +389,6 @@ dobuild() {
         --disable-strip \
         --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
         --extra-cflags="%{optflags} -fPIE -DPIE" \
-        --enable-mixemu \
         --enable-trace-backend=dtrace \
         --enable-werror \
         --disable-xen \
