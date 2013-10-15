@@ -1086,6 +1086,18 @@ static QEMUMachine pc_machine_rhel650 = {
         .driver   = "virtio-scsi-pci",\
         .property = "vectors",\
         .value    = stringify(2),\
+    },{\
+        .driver   = "hda-micro",\
+        .property = "mixer",\
+        .value    = "off",\
+    },{\
+        .driver   = "hda-duplex",\
+        .property = "mixer",\
+        .value    = "off",\
+    },{\
+        .driver   = "hda-output",\
+        .property = "mixer",\
+        .value    = "off",\
     }
 
 static void pc_init_rhel640(MachineState *machine)
