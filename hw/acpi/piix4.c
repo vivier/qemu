@@ -255,7 +255,7 @@ static bool vmstate_test_no_use_acpi_pci_hotplug(void *opaque, int version_id)
 static const VMStateDescription vmstate_acpi = {
     .name = "piix4_pm",
     .version_id = 3,
-    .minimum_version_id = 3,
+    .minimum_version_id = 2,
     .minimum_version_id_old = 1,
     .load_state_old = acpi_load_old,
     .post_load = vmstate_acpi_post_load,
