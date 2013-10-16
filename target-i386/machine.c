@@ -613,6 +613,25 @@ static const VMStateDescription vmstate_msr_hyperv_time = {
     }
 };
 
+static bool vmstate_xsave_needed(void *opaque)
+{
+    /* The xsave state is already on the main "cpu" section */
+    return false;
+}
+
+static const VMStateDescription vmstate_xsave ={
+    .name = "cpu/xsave",
+    .version_id = 1,
+    .minimum_version_id = 1,
+    .minimum_version_id_old = 1,
+    .fields      = (VMStateField []) {
+    VMSTATE_UINT64_V(env.xcr0, X86CPU, 1),
+    VMSTATE_UINT64_V(env.xstate_bv, X86CPU, 1),
+    VMSTATE_YMMH_REGS_VARS(env.ymmh_regs, X86CPU, CPU_NB_REGS, 1),
+    VMSTATE_END_OF_LIST()
+    }
+};
+
 const VMStateDescription vmstate_x86_cpu = {
     .name = "cpu",
     .version_id = 12,
@@ -757,6 +776,9 @@ const VMStateDescription vmstate_x86_cpu = {
             .vmsd = &vmstate_msr_hyperv_time,
             .needed = hyperv_time_enable_needed,
         } , {
+            .vmsd = &vmstate_xsave,
+            .needed = vmstate_xsave_needed,
+        }, {
             /* empty */
         }
     }
