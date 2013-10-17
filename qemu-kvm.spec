@@ -70,7 +70,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 9%{?dist}
+Release: 10%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -476,6 +476,54 @@ Patch212: kvm-block-don-t-lose-data-from-last-incomplete-sector.patch
 Patch213: kvm-vmdk-fix-cluster-size-check-for-flat-extents.patch
 # For bz#1017049 - qemu-img refuses to open the vmdk format image its created
 Patch214: kvm-qemu-iotests-add-monolithicFlat-creation-test-to-059.patch
+# For bz#1001604 - usb hub doesn't work properly (win7 sees downstream port #1 only).
+Patch215: kvm-xhci-fix-endpoint-interval-calculation.patch
+# For bz#1001604 - usb hub doesn't work properly (win7 sees downstream port #1 only).
+Patch216: kvm-xhci-emulate-intr-endpoint-intervals-correctly.patch
+# For bz#1001604 - usb hub doesn't work properly (win7 sees downstream port #1 only).
+Patch217: kvm-xhci-reset-port-when-disabling-slot.patch
+# For bz#1001604 - usb hub doesn't work properly (win7 sees downstream port #1 only).
+Patch218: kvm-Revert-usb-hub-report-status-changes-only-once.patch
+# For bz#1004290 - Use model 6 for qemu64 and intel cpus
+Patch219: kvm-target-i386-Set-model-6-on-qemu64-qemu32-CPU-models.patch
+# For bz#918907 - provide backwards-compatible RHEL specific machine types in QEMU - CPU features
+Patch220: kvm-pc-rhel6-doesn-t-have-APIC-on-pentium-CPU-models.patch
+# For bz#918907 - provide backwards-compatible RHEL specific machine types in QEMU - CPU features
+Patch221: kvm-pc-RHEL-6-had-x2apic-set-on-Opteron_G-123.patch
+# For bz#918907 - provide backwards-compatible RHEL specific machine types in QEMU - CPU features
+Patch222: kvm-pc-RHEL-6-don-t-have-RDTSCP.patch
+# For bz#1009285 - -device usb-storage,serial=... crashes with SCSI generic drive
+Patch223: kvm-scsi-Fix-scsi_bus_legacy_add_drive-scsi-generic-with.patch
+# For bz#1004175 - '-sandbox on'  option  cause  qemu-kvm process hang
+Patch224: kvm-seccomp-fine-tuning-whitelist-by-adding-times.patch
+# For bz#921465 - Migration can not finished even the "remaining ram" is already 0 kb
+Patch225: kvm-block-add-bdrv_write_zeroes.patch
+# For bz#921465 - Migration can not finished even the "remaining ram" is already 0 kb
+Patch226: kvm-block-raw-add-bdrv_co_write_zeroes.patch
+# For bz#921465 - Migration can not finished even the "remaining ram" is already 0 kb
+Patch227: kvm-rdma-export-qemu_fflush.patch
+# For bz#921465 - Migration can not finished even the "remaining ram" is already 0 kb
+Patch228: kvm-block-migration-efficiently-encode-zero-blocks.patch
+# For bz#921465 - Migration can not finished even the "remaining ram" is already 0 kb
+Patch229: kvm-Fix-real-mode-guest-migration.patch
+# For bz#921465 - Migration can not finished even the "remaining ram" is already 0 kb
+Patch230: kvm-Fix-real-mode-guest-segments-dpl-value-in-savevm.patch
+# For bz#921465 - Migration can not finished even the "remaining ram" is already 0 kb
+Patch231: kvm-migration-add-autoconvergence-documentation.patch
+# For bz#921465 - Migration can not finished even the "remaining ram" is already 0 kb
+Patch232: kvm-migration-send-total-time-in-QMP-at-completed-stage.patch
+# For bz#921465 - Migration can not finished even the "remaining ram" is already 0 kb
+Patch233: kvm-migration-don-t-use-uninitialized-variables.patch
+# For bz#921465 - Migration can not finished even the "remaining ram" is already 0 kb
+Patch234: kvm-pc-drop-external-DSDT-loading.patch
+# For bz#954195 - RHEL machines <=6.4 should not use mixemu
+Patch235: kvm-hda-codec-refactor-common-definitions-into-a-header-.patch
+# For bz#954195 - RHEL machines <=6.4 should not use mixemu
+Patch236: kvm-hda-codec-make-mixemu-selectable-at-runtime.patch
+# For bz#954195 - RHEL machines <=6.4 should not use mixemu
+Patch237: kvm-audio-remove-CONFIG_MIXEMU-configure-option.patch
+# For bz#954195 - RHEL machines <=6.4 should not use mixemu
+Patch238: kvm-pc_piix-disable-mixer-for-6.4.0-machine-types-and-be.patch
 
 BuildRequires: zlib-devel
 BuildRequires: SDL-devel
@@ -876,6 +924,30 @@ CAC emulation development files.
 %patch212 -p1
 %patch213 -p1
 %patch214 -p1
+%patch215 -p1
+%patch216 -p1
+%patch217 -p1
+%patch218 -p1
+%patch219 -p1
+%patch220 -p1
+%patch221 -p1
+%patch222 -p1
+%patch223 -p1
+%patch224 -p1
+%patch225 -p1
+%patch226 -p1
+%patch227 -p1
+%patch228 -p1
+%patch229 -p1
+%patch230 -p1
+%patch231 -p1
+%patch232 -p1
+%patch233 -p1
+%patch234 -p1
+%patch235 -p1
+%patch236 -p1
+%patch237 -p1
+%patch238 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -905,7 +977,6 @@ dobuild() {
         --disable-strip \
         --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
         --extra-cflags="%{optflags} -fPIE -DPIE" \
-        --enable-mixemu \
         --enable-trace-backend=dtrace \
         --enable-werror \
         --disable-xen \
@@ -1285,6 +1356,47 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Thu Oct 17 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-10.el7
+- kvm-xhci-fix-endpoint-interval-calculation.patch [bz#1001604]
+- kvm-xhci-emulate-intr-endpoint-intervals-correctly.patch [bz#1001604]
+- kvm-xhci-reset-port-when-disabling-slot.patch [bz#1001604]
+- kvm-Revert-usb-hub-report-status-changes-only-once.patch [bz#1001604]
+- kvm-target-i386-Set-model-6-on-qemu64-qemu32-CPU-models.patch [bz#1004290]
+- kvm-pc-rhel6-doesn-t-have-APIC-on-pentium-CPU-models.patch [bz#918907]
+- kvm-pc-RHEL-6-had-x2apic-set-on-Opteron_G-123.patch [bz#918907]
+- kvm-pc-RHEL-6-don-t-have-RDTSCP.patch [bz#918907]
+- kvm-scsi-Fix-scsi_bus_legacy_add_drive-scsi-generic-with.patch [bz#1009285]
+- kvm-seccomp-fine-tuning-whitelist-by-adding-times.patch [bz#1004175]
+- kvm-block-add-bdrv_write_zeroes.patch [bz#921465]
+- kvm-block-raw-add-bdrv_co_write_zeroes.patch [bz#921465]
+- kvm-rdma-export-qemu_fflush.patch [bz#921465]
+- kvm-block-migration-efficiently-encode-zero-blocks.patch [bz#921465]
+- kvm-Fix-real-mode-guest-migration.patch [bz#921465]
+- kvm-Fix-real-mode-guest-segments-dpl-value-in-savevm.patch [bz#921465]
+- kvm-migration-add-autoconvergence-documentation.patch [bz#921465]
+- kvm-migration-send-total-time-in-QMP-at-completed-stage.patch [bz#921465]
+- kvm-migration-don-t-use-uninitialized-variables.patch [bz#921465]
+- kvm-pc-drop-external-DSDT-loading.patch [bz#921465]
+- kvm-hda-codec-refactor-common-definitions-into-a-header-.patch [bz#954195]
+- kvm-hda-codec-make-mixemu-selectable-at-runtime.patch [bz#954195]
+- kvm-audio-remove-CONFIG_MIXEMU-configure-option.patch [bz#954195]
+- kvm-pc_piix-disable-mixer-for-6.4.0-machine-types-and-be.patch [bz#954195]
+- kvm-spec-mixemu-config-option-is-no-longer-supported-and.patch [bz#954195]
+- Resolves: bz#1001604
+  (usb hub doesn't work properly (win7 sees downstream port #1 only).)
+- Resolves: bz#1004175
+  ('-sandbox on'  option  cause  qemu-kvm process hang)
+- Resolves: bz#1004290
+  (Use model 6 for qemu64 and intel cpus)
+- Resolves: bz#1009285
+  (-device usb-storage,serial=... crashes with SCSI generic drive)
+- Resolves: bz#918907
+  (provide backwards-compatible RHEL specific machine types in QEMU - CPU features)
+- Resolves: bz#921465
+  (Migration can not finished even the "remaining ram" is already 0 kb)
+- Resolves: bz#954195
+  (RHEL machines <=6.4 should not use mixemu)
+
 * Thu Oct 10 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-9.el7
 - kvm-qxl-fix-local-renderer.patch [bz#1005036]
 - kvm-spec-include-userspace-iSCSI-initiator-in-block-driv.patch [bz#923843]
