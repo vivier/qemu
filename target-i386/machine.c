@@ -513,7 +513,7 @@ static bool steal_time_msr_needed(void *opaque)
 {
     CPUState *env = opaque;
 
-    return env->steal_time_msr != 0;
+    return migrate_steal_time_msr && (env->steal_time_msr != 0);
 }
 
 static const VMStateDescription vmstate_steal_time_msr = {
