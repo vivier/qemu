@@ -3,7 +3,7 @@
 MASTER="7.0"
 REPOBASE="/home/patchwork/git/qemu-kvm-rhel"
 BRANCHBASE="rhel"
-REPORT_EMAIL="minovotn@redhat.com"
+REPORT_EMAIL="minovotn@redhat.com mrezanin@redhat.com"
 
 if [ "x$1" == "x" ]; then
 	echo "Syntax: $0 version"
@@ -71,7 +71,7 @@ if [ $failed -gt 0 ]; then
 fi
 
 if [ "$failed" -eq 0 -a "$applied" -gt 0 ]; then
-	make -C redhat rh-brew-at-covscan LOCALVERSION=".automergetest"
+	make -C redhat rh-brew-at-covscan LOCALVERSION="automergetest"
 fi
 
 rm -f $tmpFile
