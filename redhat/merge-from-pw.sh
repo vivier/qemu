@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Activate Kerberos 5 keytab
-./home/patchwork/activate-keytab.sh > /dev/null
+/home/patchwork/activate-keytab.sh > /dev/null
 
 MASTER="6.5"
 REPOBASE="/home/patchwork/git/qemu-kvm-rhel"
