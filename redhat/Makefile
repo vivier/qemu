@@ -181,9 +181,17 @@ rh-brew rh-koji: rh-%: rh-srpm
 rh-brew-rhev rh-koji-rhev: rh-%-rhev: rh-srpm
 	$* build $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)
 rh-brew-autotest rh-koji-autotest: rh-%-autotest: rh-srpm
-	./schedule-brew-autotest.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)"
-rh-brew-rhev-autotest rh-koji-rhev-autotest: rh-%-rhev-autotest: rh-srpm
-	./schedule-brew-autotest.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)"
+	./schedule-tests.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)" "autotest"
+rh-brew-rhev-autotest rh-koji-rhev-autotest: rh-%-rhev-autotest: rh-srpm-rhev
+	./schedule-tests.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET_RHEV) $(SRPMS)/$(PKG_FULL_NVR_RHEV).src.rpm $(OUTPUT_FILE)" "autotest"
+rh-brew-covscan rh-koji-covscan: rh-%-covscan: rh-srpm
+	./schedule-tests.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)" "coverity"
+rh-brew-rhev-covscan rh-koji-rhev-covscan: rh-%-rhev-covscan: rh-srpm-rhev
+	./schedule-tests.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET_RHEV) $(SRPMS)/$(PKG_FULL_NVR_RHEV).src.rpm $(OUTPUT_FILE)" "coverity"
+rh-brew-at-covscan rh-koji-at-covscan: rh-%-at-covscan: rh-srpm
+	./schedule-tests.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)" "autotest-coverity"
+rh-brew-rhev-at-covscan rh-koji-rhev-at-covscan: rh-%-rhev-at-covscan: rh-srpm-rhev
+	./schedule-tests.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET_RHEV) $(SRPMS)/$(PKG_FULL_NVR_RHEV).src.rpm $(OUTPUT_FILE)" "autotest-coverity"
 
 rh-help:
 	@echo  'Cleaning targets:'
@@ -195,9 +203,13 @@ rh-help:
 	@echo  ''
 	@echo  '  rh-srpm		- Create a source RPM and put it into the redhat/rpm/SRPMS/ directory'
 	@echo  '  rh-brew		- Create a $(COMMON_NAME) SRPM and then call brew to build the created SRPM'
-	@echo  '  rh-brew-autotest 	- Create a $(COMMON_NAME) RPMs on brew and then send directly to autotest server'
-	@echo  '  rh-brew-rhev     	- Create a rhev version of $(COMMON_NAME) SRPM and then call brew to build the created SRPM'
-	@echo  '  rh-brew-rhev-autotest - Create a rhev version of $(COMMON_NAME) RPMs on brew and then send directly to autotest server'
+	@echo  '  rh-brew-covscan         - Create a $(COMMON_NAME) RPMs on brew and then send directly to coverity scan testing'
+	@echo  '  rh-brew-autotest        - Create a $(COMMON_NAME) RPMs on brew and then send directly to autotest server'
+	@echo  '  rh-brew-at-covscan      - Create a $(COMMON_NAME) RPMs on brew and then send directly to autotest and coverity testing'
+	@echo  '  rh-brew-rhev            - Create a $(COMMON_NAME)-rhev SRPM and then call brew to build the created SRPM'
+	@echo  '  rh-brew-rhev-covscan    - Create a $(COMMON_NAME)-rhev RPMs on brew and then send directly to coverity scan testing'
+	@echo  '  rh-brew-rhev-autotest   - Create a $(COMMON_NAME)-rhev RPMs on brew and then send directly to autotest server'
+	@echo  '  rh-brew-rhev-at-covscan - Create a $(COMMON_NAME)-rhev RPMs on brew and then send directly to autotest and coverity testing'
 	@echo  '  rh-koji		- Create a $(COMMON_NAME) SRPM and then call koji to build the created SRPM'
 	@echo  '  rh-koji-rhev          - Create a rhev version of $(COMMON_NAME) SRPM and then call koji to build the created SRPM'
 	@echo  '  rh-koji-rhev-autotest - Create a rhev version of $(COMMON_NAME) RPMs on koji and then send directly to autotest server'
