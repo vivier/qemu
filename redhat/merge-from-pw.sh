@@ -4,6 +4,8 @@ MASTER="6.5"
 REPOBASE="/home/patchwork/git/qemu-kvm-rhel"
 BRANCHBASE="rhel"
 REPORT_EMAIL="minovotn@redhat.com mrezanin@redhat.com"
+# Test only:
+# REPORT_EMAIL="minovotn@redhat.com"
 
 if [ "x$1" == "x" ]; then
 	echo "Syntax: $0 version"
@@ -22,7 +24,6 @@ fi
 
 oldPath="$(pwd)"
 tmpFile="$(mktemp)"
-
 rpath="$REPOBASE$rver"
 
 if [ ! -d "$rpath" ]; then
@@ -47,7 +48,9 @@ git checkout -b $branchname/mergetest > /dev/null 2>&1
 
 failed=0
 applied=0
-pwids=$(cat /home/patchwork/public_reports/qemu-kvm-RHEL-$VER/short_report.txt  | grep PATCH | awk '{ split($0, a, " "); if (a[1] != "123456") print a[2] }')
+
+# Do *not* try to apply NACKed patches if they are on queue
+pwids=$(cat /home/patchwork/public_reports/qemu-kvm-RHEL-$VER/short_report.txt  | grep PATCH | awk '{ split($0, a, " "); if (a[1] != "123456") { if (match(a[5], "N") == 0) print a[2] } }')
 for pwid in ${pwids[@]}
 do
 	pjw patch apply $pwid >> $tmpFile 2>&1
@@ -66,12 +69,27 @@ if [ $failed -gt 0 ]; then
 		echo
 		echo "Output of 'pjw patch apply':"
 		cat $tmpFile
-		) | mail -s "[PATCHWORK] Repository test failed: qemu-kvm-rhel$rver" $addr
+		) | mail -s "[PATCHWORK] Automergetest failed: qemu-kvm-rhel$rver" $addr
 	done
 fi
 
+export BUILD_TEST_SCRIPTED=1
+
 if [ "$failed" -eq 0 -a "$applied" -gt 0 ]; then
-	make -C redhat rh-brew-at-covscan LOCALVERSION="automergetest"
+	tmpFileR="$(mktemp)"
+
+	echo "This is automatic test results for automergetest build." > $tmpFileR
+	echo "Relevant identifiers are:" >> $tmpFileR
+	make -C redhat rh-brew-at-covscan LOCALVERSION="automergetest" | egrep 'Task ID seems to be|\(id |New Coverity test job has been created:' | awk '{ if (match($0, "seems") != 0) { split($0, a, "be "); gsub(/\./, "", a[2]); print "Brew ID: "a[2] }; if (match($0, "id") != 0) { split($0, a, "id "); gsub(/)\047/, "", a[2]); print "Autotest job ID: "a[2] }; if (match($0, "Coverity test job has been created:") != 0) { split($0, a, ": "); split(a[2], b, " ."); print "Coverity job ID: "b[1] } }' >> $tmpFileR
+	echo >> $tmpFileR
+	cat /home/patchwork/public_reports/qemu-kvm-RHEL-6.5/short_report.txt  | grep PATCH | awk '{ split($0, a, " "); if (a[1] != "123456") { if (match(a[5], "N") == 0) print $0 } }' >> $tmpFileR
+
+	for addr in ${REPORT_EMAIL[@]}
+	do
+		cat $tmpFileR | mail -s "[PATCHWORK] Automergetest results for qemu-kvm-rhel$rver" $addr
+	done
+
+	rm -f $tmpFileR
 fi
 
 rm -f $tmpFile

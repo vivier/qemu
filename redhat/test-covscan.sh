@@ -85,9 +85,11 @@ rm -f $srpmOfficial $srpm
 
 echo "Coverity scan job submitted"
 
-read -n 1 -p "Would you like to watch task? (y/N) " q
-echo
-if [ "$q" == "y" -o "$q" == "Y" ]; then
-	covscan watch-tasks $coverityid
+if [ "x$BUILD_TEST_SCRIPTED" != "x1" ]; then
+	read -n 1 -p "Would you like to watch task? (y/N) " q
+	echo
+	if [ "$q" == "y" -o "$q" == "Y" ]; then
+		covscan watch-tasks $coverityid
+	fi
 fi
 
