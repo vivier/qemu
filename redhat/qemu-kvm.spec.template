@@ -396,7 +396,6 @@ dobuild() {
         --enable-libusb \
         --enable-spice \
         --enable-seccomp \
-        --disable-rbd \
         --disable-fdt \
         --enable-docs \
         --disable-sdl \
@@ -423,7 +422,7 @@ dobuild() {
         --disable-guest-agent \
 %endif
         --enable-glusterfs \
-        --block-drv-rw-whitelist=qcow2,raw,file,host_device,host_cdrom,nbd,iscsi,gluster \
+        --block-drv-rw-whitelist=qcow2,raw,file,host_device,host_cdrom,nbd,iscsi,gluster,rbd \
         --block-drv-ro-whitelist=vmdk \
         "$@"
 
