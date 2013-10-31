@@ -224,7 +224,6 @@ qom_cast_debug="yes"
 trace_backend="nop"
 trace_file="trace"
 spice=""
-rbd=""
 smartcard_nss=""
 libusb=""
 usb_redir=""
@@ -880,10 +879,6 @@ for opt do
   ;;
   --enable-glx) glx="yes"
   ;;
-  --disable-rbd) rbd="no"
-  ;;
-  --enable-rbd) rbd="yes"
-  ;;
   --disable-xfsctl) xfs="no"
   ;;
   --enable-xfsctl) xfs="yes"
@@ -1181,7 +1176,6 @@ echo "  --with-trace-file=NAME   Full PATH,NAME of file to store traces"
 echo "                           Default:trace-<pid>"
 echo "  --disable-spice          disable spice"
 echo "  --enable-spice           enable spice"
-echo "  --enable-rbd             enable building the rados block device (rbd)"
 echo "  --disable-libiscsi       disable iscsi support"
 echo "  --enable-libiscsi        enable iscsi support"
 echo "  --disable-smartcard-nss  disable smartcard nss support"
@@ -2250,10 +2244,10 @@ if test "$mingw32" = yes; then
 else
     glib_req_ver=2.12
 fi
-if $pkg_config --atleast-version=$glib_req_ver gthread-2.0 > /dev/null 2>&1
+if $pkg_config --atleast-version=$glib_req_ver gthread-2.0 gmodule-2.0 > /dev/null 2>&1
 then
-    glib_cflags=`$pkg_config --cflags gthread-2.0 2>/dev/null`
-    glib_libs=`$pkg_config --libs gthread-2.0 2>/dev/null`
+    glib_cflags=`$pkg_config --cflags gthread-2.0 gmodule-2.0 2>/dev/null`
+    glib_libs=`$pkg_config --libs gthread-2.0 gmodule-2.0 2>/dev/null`
     LIBS="$glib_libs $LIBS"
     libs_qga="$glib_libs $libs_qga"
 else
@@ -2351,31 +2345,6 @@ fi
 if test "$mingw32" != yes -a "$pthread" = no; then
   error_exit "pthread check failed" \
       "Make sure to have the pthread libs and headers installed."
-fi
-
-##########################################
-# rbd probe
-if test "$rbd" != "no" ; then
-  cat > $TMPC <<EOF
-#include <stdio.h>
-#include <rbd/librbd.h>
-int main(void) {
-    rados_t cluster;
-    rados_create(&cluster, NULL);
-    return 0;
-}
-EOF
-  rbd_libs="-lrbd -lrados"
-  if compile_prog "" "$rbd_libs" ; then
-    rbd=yes
-    libs_tools="$rbd_libs $libs_tools"
-    libs_softmmu="$rbd_libs $libs_softmmu"
-  else
-    if test "$rbd" = "yes" ; then
-      feature_not_found "rados block device"
-    fi
-    rbd=no
-  fi
 fi
 
 ##########################################
@@ -3573,7 +3542,6 @@ echo "vhost-scsi support $vhost_scsi"
 echo "Trace backend     $trace_backend"
 echo "Trace output file $trace_file-<pid>"
 echo "spice support     $spice ($spice_protocol_version/$spice_server_version)"
-echo "rbd support       $rbd"
 echo "xfsctl support    $xfs"
 echo "nss used          $smartcard_nss"
 echo "libusb            $libusb"
@@ -3927,9 +3895,6 @@ if test "$zero_malloc" = "yes" ; then
 fi
 if test "$qom_cast_debug" = "yes" ; then
   echo "CONFIG_QOM_CAST_DEBUG=y" >> $config_host_mak
-fi
-if test "$rbd" = "yes" ; then
-  echo "CONFIG_RBD=y" >> $config_host_mak
 fi
 
 echo "CONFIG_COROUTINE_BACKEND=$coroutine" >> $config_host_mak
