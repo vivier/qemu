@@ -70,7 +70,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 10%{?dist}
+Release: 11%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -524,6 +524,42 @@ Patch236: kvm-hda-codec-make-mixemu-selectable-at-runtime.patch
 Patch237: kvm-audio-remove-CONFIG_MIXEMU-configure-option.patch
 # For bz#954195 - RHEL machines <=6.4 should not use mixemu
 Patch238: kvm-pc_piix-disable-mixer-for-6.4.0-machine-types-and-be.patch
+# For bz#994414 - hot-unplug chardev with pty backend caused qemu Segmentation fault
+Patch239: kvm-chardev-fix-pty_chr_timer.patch
+# For bz#922010 - RFE: support hotplugging chardev & serial ports
+Patch240: kvm-qemu-socket-zero-initialize-SocketAddress.patch
+# For bz#922010 - RFE: support hotplugging chardev & serial ports
+Patch241: kvm-qemu-socket-drop-pointless-allocation.patch
+# For bz#922010 - RFE: support hotplugging chardev & serial ports
+Patch242: kvm-qemu-socket-catch-monitor_get_fd-failures.patch
+# For bz#922010 - RFE: support hotplugging chardev & serial ports
+Patch243: kvm-qemu-char-check-optional-fields-using-has_.patch
+# For bz#922010 - RFE: support hotplugging chardev & serial ports
+Patch244: kvm-error-add-error_setg_file_open-helper.patch
+# For bz#922010 - RFE: support hotplugging chardev & serial ports
+Patch245: kvm-qemu-char-use-more-specific-error_setg_-variants.patch
+# For bz#922010 - RFE: support hotplugging chardev & serial ports
+Patch246: kvm-qemu-char-print-notification-to-stderr.patch
+# For bz#922010 - RFE: support hotplugging chardev & serial ports
+Patch247: kvm-qemu-char-fix-documentation-for-telnet-wait-socket-f.patch
+# For bz#922010 - RFE: support hotplugging chardev & serial ports
+Patch248: kvm-qemu-char-don-t-leak-opts-on-error.patch
+# For bz#922010 - RFE: support hotplugging chardev & serial ports
+Patch249: kvm-qemu-char-use-ChardevBackendKind-in-CharDriver.patch
+# For bz#922010 - RFE: support hotplugging chardev & serial ports
+Patch250: kvm-qemu-char-minor-mux-chardev-fixes.patch
+# For bz#922010 - RFE: support hotplugging chardev & serial ports
+Patch251: kvm-qemu-char-add-chardev-mux-support.patch
+# For bz#922010 - RFE: support hotplugging chardev & serial ports
+Patch252: kvm-qemu-char-report-udp-backend-errors.patch
+# For bz#922010 - RFE: support hotplugging chardev & serial ports
+Patch253: kvm-qemu-socket-don-t-leak-opts-on-error.patch
+# For bz#922010 - RFE: support hotplugging chardev & serial ports
+Patch254: kvm-chardev-handle-qmp_chardev_add-KIND_MUX-failure.patch
+# For bz#1019474 - RHEL-7 can't load piix4_pm migration section from RHEL-6.5
+Patch255: kvm-acpi-piix4-Enable-qemu-kvm-compatibility-mode.patch
+# For bz#1004743 - XSAVE migration format not compatible between RHEL6 and RHEL7
+Patch256: kvm-target-i386-support-loading-of-cpu-xsave-subsection.patch
 
 BuildRequires: zlib-devel
 BuildRequires: SDL-devel
@@ -948,6 +984,24 @@ CAC emulation development files.
 %patch236 -p1
 %patch237 -p1
 %patch238 -p1
+%patch239 -p1
+%patch240 -p1
+%patch241 -p1
+%patch242 -p1
+%patch243 -p1
+%patch244 -p1
+%patch245 -p1
+%patch246 -p1
+%patch247 -p1
+%patch248 -p1
+%patch249 -p1
+%patch250 -p1
+%patch251 -p1
+%patch252 -p1
+%patch253 -p1
+%patch254 -p1
+%patch255 -p1
+%patch256 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -1356,6 +1410,34 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Thu Oct 31 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-11.el7
+- kvm-chardev-fix-pty_chr_timer.patch [bz#994414]
+- kvm-qemu-socket-zero-initialize-SocketAddress.patch [bz#922010]
+- kvm-qemu-socket-drop-pointless-allocation.patch [bz#922010]
+- kvm-qemu-socket-catch-monitor_get_fd-failures.patch [bz#922010]
+- kvm-qemu-char-check-optional-fields-using-has_.patch [bz#922010]
+- kvm-error-add-error_setg_file_open-helper.patch [bz#922010]
+- kvm-qemu-char-use-more-specific-error_setg_-variants.patch [bz#922010]
+- kvm-qemu-char-print-notification-to-stderr.patch [bz#922010]
+- kvm-qemu-char-fix-documentation-for-telnet-wait-socket-f.patch [bz#922010]
+- kvm-qemu-char-don-t-leak-opts-on-error.patch [bz#922010]
+- kvm-qemu-char-use-ChardevBackendKind-in-CharDriver.patch [bz#922010]
+- kvm-qemu-char-minor-mux-chardev-fixes.patch [bz#922010]
+- kvm-qemu-char-add-chardev-mux-support.patch [bz#922010]
+- kvm-qemu-char-report-udp-backend-errors.patch [bz#922010]
+- kvm-qemu-socket-don-t-leak-opts-on-error.patch [bz#922010]
+- kvm-chardev-handle-qmp_chardev_add-KIND_MUX-failure.patch [bz#922010]
+- kvm-acpi-piix4-Enable-qemu-kvm-compatibility-mode.patch [bz#1019474]
+- kvm-target-i386-support-loading-of-cpu-xsave-subsection.patch [bz#1004743]
+- Resolves: bz#1004743
+  (XSAVE migration format not compatible between RHEL6 and RHEL7)
+- Resolves: bz#1019474
+  (RHEL-7 can't load piix4_pm migration section from RHEL-6.5)
+- Resolves: bz#922010
+  (RFE: support hotplugging chardev & serial ports)
+- Resolves: bz#994414
+  (hot-unplug chardev with pty backend caused qemu Segmentation fault)
+
 * Thu Oct 17 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-10.el7
 - kvm-xhci-fix-endpoint-interval-calculation.patch [bz#1001604]
 - kvm-xhci-emulate-intr-endpoint-intervals-correctly.patch [bz#1001604]
