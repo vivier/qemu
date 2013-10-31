@@ -1048,7 +1048,7 @@ static int qemu_rbd_load_libs(void)
         return -1;
     }
 
-    librbd_handle = g_module_open("librbd.so.1", 0);
+    librbd_handle = g_module_open("/usr/lib64/qemu/librbd.so.1", 0);
     if (!librbd_handle) {
         error_report("error loading librbd: %s", g_module_error());
         return -1;
