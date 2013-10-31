@@ -769,6 +769,34 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Oct 31 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-11.el7
+- kvm-chardev-fix-pty_chr_timer.patch [bz#994414]
+- kvm-qemu-socket-zero-initialize-SocketAddress.patch [bz#922010]
+- kvm-qemu-socket-drop-pointless-allocation.patch [bz#922010]
+- kvm-qemu-socket-catch-monitor_get_fd-failures.patch [bz#922010]
+- kvm-qemu-char-check-optional-fields-using-has_.patch [bz#922010]
+- kvm-error-add-error_setg_file_open-helper.patch [bz#922010]
+- kvm-qemu-char-use-more-specific-error_setg_-variants.patch [bz#922010]
+- kvm-qemu-char-print-notification-to-stderr.patch [bz#922010]
+- kvm-qemu-char-fix-documentation-for-telnet-wait-socket-f.patch [bz#922010]
+- kvm-qemu-char-don-t-leak-opts-on-error.patch [bz#922010]
+- kvm-qemu-char-use-ChardevBackendKind-in-CharDriver.patch [bz#922010]
+- kvm-qemu-char-minor-mux-chardev-fixes.patch [bz#922010]
+- kvm-qemu-char-add-chardev-mux-support.patch [bz#922010]
+- kvm-qemu-char-report-udp-backend-errors.patch [bz#922010]
+- kvm-qemu-socket-don-t-leak-opts-on-error.patch [bz#922010]
+- kvm-chardev-handle-qmp_chardev_add-KIND_MUX-failure.patch [bz#922010]
+- kvm-acpi-piix4-Enable-qemu-kvm-compatibility-mode.patch [bz#1019474]
+- kvm-target-i386-support-loading-of-cpu-xsave-subsection.patch [bz#1004743]
+- Resolves: bz#1004743
+  (XSAVE migration format not compatible between RHEL6 and RHEL7)
+- Resolves: bz#1019474
+  (RHEL-7 can't load piix4_pm migration section from RHEL-6.5)
+- Resolves: bz#922010
+  (RFE: support hotplugging chardev & serial ports)
+- Resolves: bz#994414
+  (hot-unplug chardev with pty backend caused qemu Segmentation fault)
+
 * Thu Oct 17 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-10.el7
 - kvm-xhci-fix-endpoint-interval-calculation.patch [bz#1001604]
 - kvm-xhci-emulate-intr-endpoint-intervals-correctly.patch [bz#1001604]
