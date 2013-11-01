@@ -1242,7 +1242,7 @@ int do_change_block(Monitor *mon, const char *device,
     if (eject_device(mon, bs, 0) < 0) {
         return -1;
     }
-    bdrv_flags = bdrv_get_type_hint(bs) == BDRV_TYPE_CDROM ? 0 : BDRV_O_RDWR;
+    bdrv_flags = bdrv_is_read_only(bs) ? 0 : BDRV_O_RDWR;
     bdrv_flags |= bdrv_is_snapshot(bs) ? BDRV_O_SNAPSHOT : 0;
     ret = bdrv_open(bs, filename, bdrv_flags, drv);
     if (ret < 0) {
