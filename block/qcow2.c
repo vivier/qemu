@@ -1060,6 +1060,14 @@ static int qcow2_create2(const char *filename, int64_t total_size,
         }
     }
 
+    bdrv_close(bs);
+
+    /* Reopen the image without BDRV_O_NO_FLUSH to flush it before returning */
+    ret = bdrv_open(bs, filename, BDRV_O_RDWR | BDRV_O_CACHE_WB, drv);
+    if (ret < 0) {
+        goto out;
+    }
+
     ret = 0;
 out:
     bdrv_delete(bs);
