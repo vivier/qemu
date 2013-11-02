@@ -268,6 +268,9 @@ void smbios_set_type1_defaults(const char *manufacturer,
     if (!type1.version) {
         type1.version = version;
     }
+    if (!type1.family) {
+        type1.family = "Red Hat Enterprise Linux";
+    }
 }
 
 uint8_t *smbios_get_table(size_t *length)
