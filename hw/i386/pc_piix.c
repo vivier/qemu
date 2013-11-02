@@ -59,14 +59,9 @@ static const int ide_irq[MAX_IDE_BUS] = { 14, 15 };
 static bool has_pvpanic = true;
 
 /* PC hardware initialisation */
-static void pc_init1(MemoryRegion *system_memory,
+static void pc_init1(QEMUMachineInitArgs *args,
+                     MemoryRegion *system_memory,
                      MemoryRegion *system_io,
-                     ram_addr_t ram_size,
-                     const char *boot_device,
-                     const char *kernel_filename,
-                     const char *kernel_cmdline,
-                     const char *initrd_filename,
-                     const char *cpu_model,
                      int pci_enabled,
                      int kvmclock_enabled)
 {
@@ -95,18 +90,18 @@ static void pc_init1(MemoryRegion *system_memory,
     object_property_add_child(qdev_get_machine(), "icc-bridge",
                               OBJECT(icc_bridge), NULL);
 
-    pc_cpus_init(cpu_model, icc_bridge);
+    pc_cpus_init(args->cpu_model, icc_bridge);
 
     if (kvmclock_enabled) {
         kvmclock_create();
     }
 
-    if (ram_size >= QEMU_BELOW_4G_RAM_END ) {
-        above_4g_mem_size = ram_size - QEMU_BELOW_4G_RAM_END;
+    if (args->ram_size >= QEMU_BELOW_4G_RAM_END ) {
+        above_4g_mem_size = args->ram_size - QEMU_BELOW_4G_RAM_END;
         below_4g_mem_size = QEMU_BELOW_4G_RAM_END;
     } else {
         above_4g_mem_size = 0;
-        below_4g_mem_size = ram_size;
+        below_4g_mem_size = args->ram_size;
     }
 
     if (pci_enabled) {
@@ -121,7 +116,8 @@ static void pc_init1(MemoryRegion *system_memory,
     /* allocate ram and load rom/bios */
     if (!xen_enabled()) {
         fw_cfg = pc_memory_init(system_memory,
-                       kernel_filename, kernel_cmdline, initrd_filename,
+                       args->kernel_filename, args->kernel_cmdline,
+                       args->initrd_filename,
                        below_4g_mem_size, above_4g_mem_size,
                        rom_memory, &ram_memory);
     }
@@ -137,7 +133,7 @@ static void pc_init1(MemoryRegion *system_memory,
 
     if (pci_enabled) {
         pci_bus = i440fx_init(&i440fx_state, &piix3_devfn, &isa_bus, gsi,
-                              system_memory, system_io, ram_size,
+                              system_memory, system_io, args->ram_size,
                               below_4g_mem_size,
                               0x100000000ULL - below_4g_mem_size,
                               0x100000000ULL + above_4g_mem_size,
@@ -202,7 +198,7 @@ static void pc_init1(MemoryRegion *system_memory,
         }
     }
 
-    pc_cmos_init(below_4g_mem_size, above_4g_mem_size, boot_device,
+    pc_cmos_init(below_4g_mem_size, above_4g_mem_size, args->boot_device,
                  floppy, idebus[0], idebus[1], rtc_state);
 
     if (pci_enabled && usb_enabled(false)) {
@@ -232,17 +228,7 @@ static void pc_init1(MemoryRegion *system_memory,
 
 static void pc_init_pci(QEMUMachineInitArgs *args)
 {
-    ram_addr_t ram_size = args->ram_size;
-    const char *cpu_model = args->cpu_model;
-    const char *kernel_filename = args->kernel_filename;
-    const char *kernel_cmdline = args->kernel_cmdline;
-    const char *initrd_filename = args->initrd_filename;
-    const char *boot_device = args->boot_device;
-    pc_init1(get_system_memory(),
-             get_system_io(),
-             ram_size, boot_device,
-             kernel_filename, kernel_cmdline,
-             initrd_filename, cpu_model, 1, 1);
+    pc_init1(args, get_system_memory(), get_system_io(), 1, 1);
 }
 
 #if 0 /* Disabled for Red Hat Enterprise Linux */
@@ -283,40 +269,21 @@ static void pc_init_pci_1_0(QEMUMachineInitArgs *args)
 /* PC init function for pc-0.10 to pc-0.13, and reused by xenfv */
 static void pc_init_pci_no_kvmclock(QEMUMachineInitArgs *args)
 {
-    ram_addr_t ram_size = args->ram_size;
-    const char *cpu_model = args->cpu_model;
-    const char *kernel_filename = args->kernel_filename;
-    const char *kernel_cmdline = args->kernel_cmdline;
-    const char *initrd_filename = args->initrd_filename;
-    const char *boot_device = args->boot_device;
     has_pvpanic = false;
     disable_kvm_pv_eoi();
     enable_compat_apic_id_mode();
-    pc_init1(get_system_memory(),
-             get_system_io(),
-             ram_size, boot_device,
-             kernel_filename, kernel_cmdline,
-             initrd_filename, cpu_model, 1, 0);
+    pc_init1(args, get_system_memory(), get_system_io(), 1, 0);
 }
 
 static void pc_init_isa(QEMUMachineInitArgs *args)
 {
-    ram_addr_t ram_size = args->ram_size;
-    const char *cpu_model = args->cpu_model;
-    const char *kernel_filename = args->kernel_filename;
-    const char *kernel_cmdline = args->kernel_cmdline;
-    const char *initrd_filename = args->initrd_filename;
-    const char *boot_device = args->boot_device;
     has_pvpanic = false;
-    if (cpu_model == NULL)
-        cpu_model = "486";
+    if (!args->cpu_model) {
+        args->cpu_model = "486";
+    }
     disable_kvm_pv_eoi();
     enable_compat_apic_id_mode();
-    pc_init1(get_system_memory(),
-             get_system_io(),
-             ram_size, boot_device,
-             kernel_filename, kernel_cmdline,
-             initrd_filename, cpu_model, 0, 1);
+    pc_init1(args, get_system_memory(), get_system_io(), 0, 1);
 }
 
 #ifdef CONFIG_XEN
