@@ -116,7 +116,8 @@ static void pc_init1(QEMUMachineInitArgs *args,
     }
 
     if (smbios_type1_defaults) {
-        smbios_set_type1_defaults("QEMU", args->machine->desc,
+        /* These values are guest ABI, do not change */
+        smbios_set_type1_defaults("QEMU", "Standard PC (i440FX + PIIX, 1996)",
                                   args->machine->name);
     }
 

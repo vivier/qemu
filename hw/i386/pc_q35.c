@@ -102,7 +102,8 @@ static void pc_q35_init(QEMUMachineInitArgs *args)
     }
 
     if (smbios_type1_defaults) {
-        smbios_set_type1_defaults("QEMU", args->machine->desc,
+        /* These values are guest ABI, do not change */
+        smbios_set_type1_defaults("QEMU", "Standard PC (Q35 + ICH9, 2009)",
                                   args->machine->name);
     }
 
