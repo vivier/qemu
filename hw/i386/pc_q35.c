@@ -38,6 +38,7 @@
 #include "hw/pci-host/q35.h"
 #include "exec/address-spaces.h"
 #include "hw/i386/ich9.h"
+#include "hw/i386/smbios.h"
 #include "hw/ide/pci.h"
 #include "hw/ide/ahci.h"
 #include "hw/usb.h"
@@ -47,6 +48,7 @@
 #define MAX_SATA_PORTS     6
 
 static bool has_pvpanic = true;
+static bool smbios_type1_defaults = true;
 
 /* PC hardware initialisation */
 static void pc_q35_init(QEMUMachineInitArgs *args)
@@ -97,6 +99,11 @@ static void pc_q35_init(QEMUMachineInitArgs *args)
     } else {
         pci_memory = NULL;
         rom_memory = get_system_memory();
+    }
+
+    if (smbios_type1_defaults) {
+        smbios_set_type1_defaults("QEMU", args->machine->desc,
+                                  args->machine->name);
     }
 
     /* allocate ram and load rom/bios */

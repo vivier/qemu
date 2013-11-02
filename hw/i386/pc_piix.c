@@ -27,6 +27,7 @@
 #include "hw/hw.h"
 #include "hw/i386/pc.h"
 #include "hw/i386/apic.h"
+#include "hw/i386/smbios.h"
 #include "hw/pci/pci.h"
 #include "hw/pci/pci_ids.h"
 #include "hw/usb.h"
@@ -57,6 +58,7 @@ static const int ide_iobase2[MAX_IDE_BUS] = { 0x3f6, 0x376 };
 static const int ide_irq[MAX_IDE_BUS] = { 14, 15 };
 
 static bool has_pvpanic = true;
+static bool smbios_type1_defaults = true;
 
 /* PC hardware initialisation */
 static void pc_init1(QEMUMachineInitArgs *args,
@@ -111,6 +113,11 @@ static void pc_init1(QEMUMachineInitArgs *args,
     } else {
         pci_memory = NULL;
         rom_memory = system_memory;
+    }
+
+    if (smbios_type1_defaults) {
+        smbios_set_type1_defaults("QEMU", args->machine->desc,
+                                  args->machine->name);
     }
 
     /* allocate ram and load rom/bios */
