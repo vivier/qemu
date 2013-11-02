@@ -103,8 +103,7 @@ static void pc_q35_init(QEMUMachineInitArgs *args)
 
     if (smbios_type1_defaults) {
         /* These values are guest ABI, do not change */
-        smbios_set_type1_defaults("QEMU", "Standard PC (Q35 + ICH9, 2009)",
-                                  args->machine->name);
+        smbios_set_type1_defaults("Red Hat", "KVM", args->machine->desc);
     }
 
     /* allocate ram and load rom/bios */
