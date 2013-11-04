@@ -630,7 +630,7 @@ find $RPM_BUILD_ROOT -name '*.la' -or -name '*.a' | xargs rm -f
     mkdir -p $RPM_BUILD_ROOT%{_bindir}
     mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1/*
     mkdir -p $RPM_BUILD_ROOT%{_mandir}/man8/*
-    install -m 0755 vscclient $RPM_BUILD_ROOT%{_bindir}/vscclient
+    libtool --mode=install install -m 0755 vscclient $RPM_BUILD_ROOT%{_bindir}/vscclient
     install -m 0755 qemu-img $RPM_BUILD_ROOT%{_bindir}/qemu-img
     install -m 0755 qemu-io $RPM_BUILD_ROOT%{_bindir}/qemu-io
     install -m 0755 qemu-nbd $RPM_BUILD_ROOT%{_bindir}/qemu-nbd
