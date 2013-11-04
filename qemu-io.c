@@ -1764,21 +1764,27 @@ static const cmdinfo_t close_cmd = {
 
 static int openfile(char *name, int flags, int growable)
 {
+    Error *local_err = NULL;
+
     if (bs) {
         fprintf(stderr, "file open already, try 'help close'\n");
         return 1;
     }
 
     if (growable) {
-        if (bdrv_file_open(&bs, name, NULL, flags)) {
-            fprintf(stderr, "%s: can't open device %s\n", progname, name);
+        if (bdrv_file_open(&bs, name, NULL, flags, &local_err)) {
+            fprintf(stderr, "%s: can't open device %s: %s\n", progname, name,
+                    error_get_pretty(local_err));
+            error_free(local_err);
             return 1;
         }
     } else {
         bs = bdrv_new("hda");
 
-        if (bdrv_open(bs, name, NULL, flags, NULL) < 0) {
-            fprintf(stderr, "%s: can't open device %s\n", progname, name);
+        if (bdrv_open(bs, name, NULL, flags, NULL, &local_err) < 0) {
+            fprintf(stderr, "%s: can't open device %s: %s\n", progname, name,
+                    error_get_pretty(local_err));
+            error_free(local_err);
             bdrv_delete(bs);
             bs = NULL;
             return 1;
