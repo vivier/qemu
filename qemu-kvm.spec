@@ -70,7 +70,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 11%{?dist}
+Release: 12%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -560,6 +560,32 @@ Patch254: kvm-chardev-handle-qmp_chardev_add-KIND_MUX-failure.patch
 Patch255: kvm-acpi-piix4-Enable-qemu-kvm-compatibility-mode.patch
 # For bz#1004743 - XSAVE migration format not compatible between RHEL6 and RHEL7
 Patch256: kvm-target-i386-support-loading-of-cpu-xsave-subsection.patch
+# For bz#997817 - -boot order and -boot once regressed since RHEL-6
+Patch257: kvm-vl-Clean-up-parsing-of-boot-option-argument.patch
+# For bz#997817 - -boot order and -boot once regressed since RHEL-6
+Patch258: kvm-qemu-option-check_params-is-now-unused-drop-it.patch
+# For bz#997817 - -boot order and -boot once regressed since RHEL-6
+Patch259: kvm-vl-Fix-boot-order-and-once-regressions-and-related-b.patch
+# For bz#997817 - -boot order and -boot once regressed since RHEL-6
+Patch260: kvm-vl-Rename-boot_devices-to-boot_order-for-consistency.patch
+# For bz#997817 - -boot order and -boot once regressed since RHEL-6
+Patch261: kvm-pc-Make-no-fd-bootchk-stick-across-boot-order-change.patch
+# For bz#997817 - -boot order and -boot once regressed since RHEL-6
+Patch262: kvm-doc-Drop-ref-to-Bochs-from-no-fd-bootchk-documentati.patch
+# For bz#997817 - -boot order and -boot once regressed since RHEL-6
+Patch263: kvm-libqtest-Plug-fd-and-memory-leaks-in-qtest_quit.patch
+# For bz#997817 - -boot order and -boot once regressed since RHEL-6
+Patch264: kvm-libqtest-New-qtest_end-to-go-with-qtest_start.patch
+# For bz#997817 - -boot order and -boot once regressed since RHEL-6
+Patch265: kvm-qtest-Don-t-reset-on-qtest-chardev-connect.patch
+# For bz#997817 - -boot order and -boot once regressed since RHEL-6
+Patch266: kvm-boot-order-test-New-covering-just-PC-for-now.patch
+# For bz#1019352 - qemu-guest-agent: "guest-fsfreeze-freeze" deadlocks if the guest have mounted disk images
+Patch267: kvm-qemu-ga-execute-fsfreeze-freeze-in-reverse-order-of-.patch
+# For bz#989608 - [7.0 FEAT] qemu runtime support for librbd backend (ceph)
+Patch268: kvm-rbd-link-and-load-librbd-dynamically.patch
+# For bz#989608 - [7.0 FEAT] qemu runtime support for librbd backend (ceph)
+Patch269: kvm-rbd-Only-look-for-qemu-specific-copy-of-librbd.so.1.patch
 
 BuildRequires: zlib-devel
 BuildRequires: SDL-devel
@@ -1002,6 +1028,19 @@ CAC emulation development files.
 %patch254 -p1
 %patch255 -p1
 %patch256 -p1
+%patch257 -p1
+%patch258 -p1
+%patch259 -p1
+%patch260 -p1
+%patch261 -p1
+%patch262 -p1
+%patch263 -p1
+%patch264 -p1
+%patch265 -p1
+%patch266 -p1
+%patch267 -p1
+%patch268 -p1
+%patch269 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -1039,7 +1078,6 @@ dobuild() {
         --enable-libusb \
         --enable-spice \
         --enable-seccomp \
-        --disable-rbd \
         --disable-fdt \
         --enable-docs \
         --disable-sdl \
@@ -1066,7 +1104,7 @@ dobuild() {
         --disable-guest-agent \
 %endif
         --enable-glusterfs \
-        --block-drv-rw-whitelist=qcow2,raw,file,host_device,host_cdrom,nbd,iscsi,gluster \
+        --block-drv-rw-whitelist=qcow2,raw,file,host_device,host_cdrom,nbd,iscsi,gluster,rbd \
         --block-drv-ro-whitelist=vmdk \
         "$@"
 
@@ -1410,6 +1448,28 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Mon Nov 04 2013 Michal Novotny <minovotn@redhat.com> - 1.5.3-12.el7
+- kvm-vl-Clean-up-parsing-of-boot-option-argument.patch [bz#997817]
+- kvm-qemu-option-check_params-is-now-unused-drop-it.patch [bz#997817]
+- kvm-vl-Fix-boot-order-and-once-regressions-and-related-b.patch [bz#997817]
+- kvm-vl-Rename-boot_devices-to-boot_order-for-consistency.patch [bz#997817]
+- kvm-pc-Make-no-fd-bootchk-stick-across-boot-order-change.patch [bz#997817]
+- kvm-doc-Drop-ref-to-Bochs-from-no-fd-bootchk-documentati.patch [bz#997817]
+- kvm-libqtest-Plug-fd-and-memory-leaks-in-qtest_quit.patch [bz#997817]
+- kvm-libqtest-New-qtest_end-to-go-with-qtest_start.patch [bz#997817]
+- kvm-qtest-Don-t-reset-on-qtest-chardev-connect.patch [bz#997817]
+- kvm-boot-order-test-New-covering-just-PC-for-now.patch [bz#997817]
+- kvm-qemu-ga-execute-fsfreeze-freeze-in-reverse-order-of-.patch [bz#1019352]
+- kvm-rbd-link-and-load-librbd-dynamically.patch [bz#989608]
+- kvm-rbd-Only-look-for-qemu-specific-copy-of-librbd.so.1.patch [bz#989608]
+- kvm-spec-Whitelist-rbd-block-driver.patch [bz#989608]
+- Resolves: bz#1019352
+  (qemu-guest-agent: "guest-fsfreeze-freeze" deadlocks if the guest have mounted disk images)
+- Resolves: bz#989608
+  ([7.0 FEAT] qemu runtime support for librbd backend (ceph))
+- Resolves: bz#997817
+  (-boot order and -boot once regressed since RHEL-6)
+
 * Thu Oct 31 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-11.el7
 - kvm-chardev-fix-pty_chr_timer.patch [bz#994414]
 - kvm-qemu-socket-zero-initialize-SocketAddress.patch [bz#922010]
