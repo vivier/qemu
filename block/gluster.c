@@ -366,7 +366,7 @@ out:
 }
 
 static int qemu_gluster_create(const char *filename,
-        QEMUOptionParameter *options)
+        QEMUOptionParameter *options, Error **errp)
 {
     struct glfs *glfs;
     struct glfs_fd *fd;
