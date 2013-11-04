@@ -265,7 +265,7 @@ if [ $STRIP_REDHAT = 1 ]; then
 	fi
 	for patch in $(find $SOURCES/ -name \*.patch); do
 		filterdiff -x '*redhat/*' -x '*/.gitignore' -x '*/makefile' $patch >$SOURCES/.tmp;
-		mv $SOURCES/.tmp $patch;
+		filterdiff -i '*' $SOURCES/.tmp > $patch;
 		if [ -z "$(lsdiff $patch)" ]; then
 			pnum=`grep -e "^Patch.*: $(basename $patch)$" $PATCHF| sed -e "s/^Patch//" | sed -e "s/:.*//"`
 			grep -v -e "^Patch.*: $(basename $patch)$" $PATCHF >$SOURCES/.tmp;
