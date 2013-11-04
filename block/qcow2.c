@@ -1364,7 +1364,7 @@ static int qcow2_create2(const char *filename, int64_t total_size,
     uint8_t* refcount_table;
     int ret;
 
-    ret = bdrv_create_file(filename, options);
+    ret = bdrv_create_file(filename, options, NULL);
     if (ret < 0) {
         return ret;
     }
