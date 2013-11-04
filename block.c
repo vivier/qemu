@@ -733,7 +733,7 @@ static int bdrv_open_common(BlockDriverState *bs, BlockDriverState *file,
     if (drv->bdrv_file_open) {
         assert(file == NULL);
         assert(drv->bdrv_parse_filename || filename != NULL);
-        ret = drv->bdrv_file_open(bs, options, open_flags);
+        ret = drv->bdrv_file_open(bs, options, open_flags, NULL);
     } else {
         if (file == NULL) {
             qerror_report(ERROR_CLASS_GENERIC_ERROR, "Can't use '%s' as a "
@@ -744,7 +744,7 @@ static int bdrv_open_common(BlockDriverState *bs, BlockDriverState *file,
         }
         assert(file != NULL);
         bs->file = file;
-        ret = drv->bdrv_open(bs, options, open_flags);
+        ret = drv->bdrv_open(bs, options, open_flags, NULL);
     }
 
     if (ret < 0) {

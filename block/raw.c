@@ -3,7 +3,8 @@
 #include "block/block_int.h"
 #include "qemu/module.h"
 
-static int raw_open(BlockDriverState *bs, QDict *options, int flags)
+static int raw_open(BlockDriverState *bs, QDict *options, int flags,
+                    Error **errp)
 {
     bs->sg = bs->file->sg;
     return 0;
