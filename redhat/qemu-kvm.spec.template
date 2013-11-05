@@ -132,6 +132,10 @@ Source10: qemu-guest-agent.service
 Source11: 99-qemu-guest-agent.rules
 Source12: bridge.conf
 Source13: qemu-ga.sysconfig
+Source14: rhel6-virtio.rom
+Source15: rhel6-pcnet.rom
+Source16: rhel6-rtl8139.rom
+Source17: rhel6-ne2k_pci.rom
 
 %%CONFIGS%%
 
@@ -492,6 +496,12 @@ dobuild --target-list="$buildarch"
     mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{pkgname}
     mkdir -p $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset
 
+    # Install compatibility roms
+    install %{SOURCE14} $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/
+    install %{SOURCE15} $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/
+    install %{SOURCE16} $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/
+    install %{SOURCE17} $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/
+
     install -m 0755 qemu-kvm $RPM_BUILD_ROOT%{_libexecdir}/
     install -m 0644 qemu-kvm.stp $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/
 
@@ -731,6 +741,10 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %{_datadir}/%{pkgname}/pxe-ne2k_pci.rom
     %{_datadir}/%{pkgname}/qemu-icon.bmp
     %{_datadir}/%{pkgname}/s390-ccw.img
+    %{_datadir}/%{pkgname}/rhel6-virtio.rom
+    %{_datadir}/%{pkgname}/rhel6-pcnet.rom
+    %{_datadir}/%{pkgname}/rhel6-rtl8139.rom
+    %{_datadir}/%{pkgname}/rhel6-ne2k_pci.rom
     %config(noreplace) %{_sysconfdir}/%{pkgname}/target-x86_64.conf
     %{?kvm_files:}
     %{?qemu_kvm_files:}
