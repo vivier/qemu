@@ -768,6 +768,17 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Nov 05 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-13.el7
+- kvm-seabios-paravirt-allow-more-than-1TB-in-x86-guest.patch [bz#989677]
+- kvm-scsi-prefer-UUID-to-VM-name-for-the-initiator-name.patch [bz#1006468]
+- kvm-Fix-incorrect-rhel_rhev_conflicts-macro-usage.patch [bz#1017693]
+- Resolves: bz#1006468
+  (libiscsi initiator name should use vm UUID)
+- Resolves: bz#1017693
+  (incorrect use of rhel_rhev_conflicts)
+- Resolves: bz#989677
+  ([HP 7.0 FEAT]: Increase KVM guest supported memory to 4TiB)
+
 * Mon Nov 04 2013 Michal Novotny <minovotn@redhat.com> - 1.5.3-12.el7
 - kvm-vl-Clean-up-parsing-of-boot-option-argument.patch [bz#997817]
 - kvm-qemu-option-check_params-is-now-unused-drop-it.patch [bz#997817]
