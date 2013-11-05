@@ -70,7 +70,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 12%{?dist}
+Release: 13%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -586,6 +586,10 @@ Patch267: kvm-qemu-ga-execute-fsfreeze-freeze-in-reverse-order-of-.patch
 Patch268: kvm-rbd-link-and-load-librbd-dynamically.patch
 # For bz#989608 - [7.0 FEAT] qemu runtime support for librbd backend (ceph)
 Patch269: kvm-rbd-Only-look-for-qemu-specific-copy-of-librbd.so.1.patch
+# For bz#989677 - [HP 7.0 FEAT]: Increase KVM guest supported memory to 4TiB
+Patch270: kvm-seabios-paravirt-allow-more-than-1TB-in-x86-guest.patch
+# For bz#1006468 - libiscsi initiator name should use vm UUID
+Patch271: kvm-scsi-prefer-UUID-to-VM-name-for-the-initiator-name.patch
 
 BuildRequires: zlib-devel
 BuildRequires: SDL-devel
@@ -699,7 +703,7 @@ emulation speed by using dynamic translation.
 
 This package provides the common files needed by all QEMU targets
 
-rhel_rhev_conflicts qemu-kvm-common
+%rhel_rhev_conflicts qemu-kvm-common
 %endif
 
 %if %{with guest_agent}
@@ -1041,6 +1045,8 @@ CAC emulation development files.
 %patch267 -p1
 %patch268 -p1
 %patch269 -p1
+%patch270 -p1
+%patch271 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -1448,6 +1454,17 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Tue Nov 05 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-13.el7
+- kvm-seabios-paravirt-allow-more-than-1TB-in-x86-guest.patch [bz#989677]
+- kvm-scsi-prefer-UUID-to-VM-name-for-the-initiator-name.patch [bz#1006468]
+- kvm-Fix-incorrect-rhel_rhev_conflicts-macro-usage.patch [bz#1017693]
+- Resolves: bz#1006468
+  (libiscsi initiator name should use vm UUID)
+- Resolves: bz#1017693
+  (incorrect use of rhel_rhev_conflicts)
+- Resolves: bz#989677
+  ([HP 7.0 FEAT]: Increase KVM guest supported memory to 4TiB)
+
 * Mon Nov 04 2013 Michal Novotny <minovotn@redhat.com> - 1.5.3-12.el7
 - kvm-vl-Clean-up-parsing-of-boot-option-argument.patch [bz#997817]
 - kvm-qemu-option-check_params-is-now-unused-drop-it.patch [bz#997817]
