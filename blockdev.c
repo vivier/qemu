@@ -337,7 +337,6 @@ static DriveInfo *blockdev_init(QDict *bs_opts,
     int ro = 0;
     int bdrv_flags = 0;
     int on_read_error, on_write_error;
-    const char *devaddr;
     DriveInfo *dinfo;
     BlockIOLimit io_limits;
     int snapshot = 0;
@@ -472,20 +471,12 @@ static DriveInfo *blockdev_init(QDict *bs_opts,
         }
     }
 
-    if ((devaddr = qemu_opt_get(opts, "addr")) != NULL) {
-        if (type != IF_VIRTIO) {
-            error_report("addr is not supported by this bus type");
-            return NULL;
-        }
-    }
-
     /* init */
     dinfo = g_malloc0(sizeof(*dinfo));
     dinfo->id = g_strdup(qemu_opts_id(opts));
     dinfo->bdrv = bdrv_new(dinfo->id);
     dinfo->bdrv->open_flags = snapshot ? BDRV_O_SNAPSHOT : 0;
     dinfo->bdrv->read_only = ro;
-    dinfo->devaddr = devaddr;
     dinfo->type = type;
     dinfo->refcount = 1;
     if (serial != NULL) {
@@ -509,22 +500,8 @@ static DriveInfo *blockdev_init(QDict *bs_opts,
     case IF_FLOPPY:
     case IF_PFLASH:
     case IF_MTD:
-        break;
     case IF_VIRTIO:
-    {
-        /* add virtio block device */
-        QemuOpts *devopts;
-        devopts = qemu_opts_create_nofail(qemu_find_opts("device"));
-        if (arch_type == QEMU_ARCH_S390X) {
-            qemu_opt_set(devopts, "driver", "virtio-blk-s390");
-        } else {
-            qemu_opt_set(devopts, "driver", "virtio-blk-pci");
-        }
-        qemu_opt_set(devopts, "drive", dinfo->id);
-        if (devaddr)
-            qemu_opt_set(devopts, "addr", devaddr);
         break;
-    }
     default:
         abort();
     }
@@ -648,6 +625,10 @@ QemuOptsList qemu_legacy_drive_opts = {
             .name = "boot",
             .type = QEMU_OPT_BOOL,
             .help = "(deprecated, ignored)",
+        },{
+            .name = "addr",
+            .type = QEMU_OPT_STRING,
+            .help = "pci address (virtio only)",
         },
         { /* end of list */ }
     },
@@ -663,6 +644,7 @@ DriveInfo *drive_init(QemuOpts *all_opts, BlockInterfaceType block_default_type)
     BlockInterfaceType type;
     int cyls, heads, secs, translation;
     int max_devs, bus_id, unit_id, index;
+    const char *devaddr;
     Error *local_err = NULL;
 
     /* Change legacy command line options into QMP ones */
@@ -852,6 +834,27 @@ DriveInfo *drive_init(QemuOpts *all_opts, BlockInterfaceType block_default_type)
         g_free(new_id);
     }
 
+    /* Add virtio block device */
+    devaddr = qemu_opt_get(legacy_opts, "addr");
+    if (devaddr && type != IF_VIRTIO) {
+        error_report("addr is not supported by this bus type");
+        goto fail;
+    }
+
+    if (type == IF_VIRTIO) {
+        QemuOpts *devopts;
+        devopts = qemu_opts_create_nofail(qemu_find_opts("device"));
+        if (arch_type == QEMU_ARCH_S390X) {
+            qemu_opt_set(devopts, "driver", "virtio-blk-s390");
+        } else {
+            qemu_opt_set(devopts, "driver", "virtio-blk-pci");
+        }
+        qemu_opt_set(devopts, "drive", qdict_get_str(bs_opts, "id"));
+        if (devaddr) {
+            qemu_opt_set(devopts, "addr", devaddr);
+        }
+    }
+
     /* Actual block device init: Functionality shared with blockdev-add */
     dinfo = blockdev_init(bs_opts, type, media);
     if (dinfo == NULL) {
@@ -869,6 +872,7 @@ DriveInfo *drive_init(QemuOpts *all_opts, BlockInterfaceType block_default_type)
 
     dinfo->bus = bus_id;
     dinfo->unit = unit_id;
+    dinfo->devaddr = devaddr;
 
 fail:
     qemu_opts_del(legacy_opts);
@@ -1848,10 +1852,6 @@ QemuOptsList qemu_common_drive_opts = {
             .name = "werror",
             .type = QEMU_OPT_STRING,
             .help = "write error action",
-        },{
-            .name = "addr",
-            .type = QEMU_OPT_STRING,
-            .help = "pci address (virtio only)",
         },{
             .name = "read-only",
             .type = QEMU_OPT_BOOL,
