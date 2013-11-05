@@ -456,12 +456,6 @@ static DriveInfo *blockdev_init(QDict *bs_opts,
         return NULL;
     }
 
-    if (qemu_opt_get(opts, "boot") != NULL) {
-        fprintf(stderr, "qemu-kvm: boot=on|off is deprecated and will be "
-                "ignored. Future versions will reject this parameter. Please "
-                "update your scripts.\n");
-    }
-
     on_write_error = BLOCKDEV_ON_ERROR_ENOSPC;
     if ((buf = qemu_opt_get(opts, "werror")) != NULL) {
         if (type != IF_IDE && type != IF_SCSI && type != IF_VIRTIO && type != IF_NONE) {
@@ -710,6 +704,10 @@ QemuOptsList qemu_legacy_drive_opts = {
             .name = "trans",
             .type = QEMU_OPT_STRING,
             .help = "chs translation (auto, lba, none)",
+        },{
+            .name = "boot",
+            .type = QEMU_OPT_BOOL,
+            .help = "(deprecated, ignored)",
         },
         { /* end of list */ }
     },
@@ -772,6 +770,13 @@ DriveInfo *drive_init(QemuOpts *all_opts, BlockInterfaceType block_default_type)
         qerror_report_err(local_err);
         error_free(local_err);
         goto fail;
+    }
+
+    /* Deprecated option boot=[on|off] */
+    if (qemu_opt_get(legacy_opts, "boot") != NULL) {
+        fprintf(stderr, "qemu-kvm: boot=on|off is deprecated and will be "
+                "ignored. Future versions will reject this parameter. Please "
+                "update your scripts.\n");
     }
 
     /* Media type */
@@ -1890,10 +1895,6 @@ QemuOptsList qemu_common_drive_opts = {
             .name = "copy-on-read",
             .type = QEMU_OPT_BOOL,
             .help = "copy read data from backing file into image file",
-        },{
-            .name = "boot",
-            .type = QEMU_OPT_BOOL,
-            .help = "(deprecated, ignored)",
         },
         { /* end of list */ }
     },
