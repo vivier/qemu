@@ -248,7 +248,7 @@ emulation speed by using dynamic translation.
 
 This package provides the common files needed by all QEMU targets
 
-rhel_rhev_conflicts qemu-kvm-common
+%rhel_rhev_conflicts qemu-kvm-common
 %endif
 
 %if %{with guest_agent}
