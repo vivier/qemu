@@ -867,6 +867,22 @@ static QEMUMachine pc_machine_rhel700 = {
         .driver   = "usb-ccid",\
         .property = "serial",\
         .value    = "1",\
+    },{\
+        .driver   = "ne2k_pci",\
+        .property = "romfile",\
+        .value    = "rhel6-ne2k_pci.rom",\
+    },{\
+        .driver   = "pcnet",\
+        .property = "romfile",\
+        .value    = "rhel6-pcnet.rom",\
+    },{\
+        .driver   = "rtl8139",\
+        .property = "romfile",\
+        .value    = "rhel6-rtl8139.rom",\
+    },{\
+        .driver   = "virtio-net-pci",\
+        .property = "romfile",\
+        .value    = "rhel6-virtio.rom",\
     }
 
 static void pc_init_rhel650(QEMUMachineInitArgs *args)
