@@ -120,7 +120,11 @@ if (!err) {
 ''')
     return ret
 
-def generate_visit_struct(name, members):
+def generate_visit_struct(expr):
+
+    name = expr['type']
+    members = expr['data']
+
     ret = generate_visit_struct_fields(name, "", "", members)
 
     ret += mcgen('''
@@ -448,7 +452,7 @@ exprs = parse_schema(sys.stdin)
 
 for expr in exprs:
     if expr.has_key('type'):
-        ret = generate_visit_struct(expr['type'], expr['data'])
+        ret = generate_visit_struct(expr)
         ret += generate_visit_list(expr['type'], expr['data'])
         fdef.write(ret)
 
