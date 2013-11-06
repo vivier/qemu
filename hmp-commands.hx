@@ -683,6 +683,7 @@ STEXI
 Compute the checksum of a memory region.
 ETEXI
 
+#if 0 /* Disabled for Red Hat Enterprise Linux */
     {
         .name       = "usb_add",
         .args_type  = "devname:s",
@@ -715,6 +716,7 @@ hub. @var{devname} has the syntax @code{bus.addr}. Use the monitor
 command @code{info usb} to see the devices you can remove. This
 command is deprecated, please use @code{device_del} instead.
 ETEXI
+#endif
 
     {
         .name       = "device_add",
