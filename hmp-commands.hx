@@ -639,6 +639,7 @@ STEXI
 Compute the checksum of a memory region.
 ETEXI
 
+#if 0 /* Disabled for Red Hat Enterprise Linux */
     {
         .name       = "usb_add",
         .args_type  = "devname:s",
@@ -669,6 +670,7 @@ Remove the USB device @var{devname} from the QEMU virtual USB
 hub. @var{devname} has the syntax @code{bus.addr}. Use the monitor
 command @code{info usb} to see the devices you can remove.
 ETEXI
+#endif
 
     {
         .name       = "device_add",
