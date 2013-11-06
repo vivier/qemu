@@ -57,7 +57,6 @@ static const int ide_iobase[MAX_IDE_BUS] = { 0x1f0, 0x170 };
 static const int ide_iobase2[MAX_IDE_BUS] = { 0x3f6, 0x376 };
 static const int ide_irq[MAX_IDE_BUS] = { 14, 15 };
 
-static bool has_pvpanic = true;
 static bool smbios_type1_defaults = true;
 
 /* PC hardware initialisation */
@@ -227,10 +226,6 @@ static void pc_init1(QEMUMachineInitArgs *args,
     if (pci_enabled) {
         pc_pci_device_init(pci_bus);
     }
-
-    if (has_pvpanic) {
-        pvpanic_init(isa_bus);
-    }
 }
 
 static void pc_init_pci(QEMUMachineInitArgs *args)
@@ -242,7 +237,6 @@ static void pc_init_pci(QEMUMachineInitArgs *args)
 
 static void pc_init_pci_1_4(QEMUMachineInitArgs *args)
 {
-    has_pvpanic = false;
     x86_cpu_compat_set_features("n270", FEAT_1_ECX, 0, CPUID_EXT_MOVBE);
     x86_cpu_compat_set_features("Westmere", FEAT_1_ECX, 0, CPUID_EXT_PCLMULQDQ);
     pc_init_pci(args);
@@ -251,7 +245,6 @@ static void pc_init_pci_1_4(QEMUMachineInitArgs *args)
 static void pc_init_pci_1_3(QEMUMachineInitArgs *args)
 {
     enable_compat_apic_id_mode();
-    has_pvpanic = false;
     pc_init_pci(args);
 }
 
@@ -260,7 +253,6 @@ static void pc_init_pci_1_2(QEMUMachineInitArgs *args)
 {
     disable_kvm_pv_eoi();
     enable_compat_apic_id_mode();
-    has_pvpanic = false;
     pc_init_pci(args);
 }
 
@@ -269,14 +261,12 @@ static void pc_init_pci_1_0(QEMUMachineInitArgs *args)
 {
     disable_kvm_pv_eoi();
     enable_compat_apic_id_mode();
-    has_pvpanic = false;
     pc_init_pci(args);
 }
 
 /* PC init function for pc-0.10 to pc-0.13, and reused by xenfv */
 static void pc_init_pci_no_kvmclock(QEMUMachineInitArgs *args)
 {
-    has_pvpanic = false;
     disable_kvm_pv_eoi();
     enable_compat_apic_id_mode();
     pc_init1(args, get_system_memory(), get_system_io(), 1, 0);
@@ -284,7 +274,6 @@ static void pc_init_pci_no_kvmclock(QEMUMachineInitArgs *args)
 
 static void pc_init_isa(QEMUMachineInitArgs *args)
 {
-    has_pvpanic = false;
     if (!args->cpu_model) {
         args->cpu_model = "486";
     }
@@ -931,7 +920,6 @@ static QEMUMachine pc_machine_rhel650 = {
 
 static void pc_init_rhel640(QEMUMachineInitArgs *args)
 {
-    has_pvpanic = false;
     x86_cpu_compat_set_features(NULL, FEAT_1_EDX, 0, CPUID_SEP);
     pc_init_rhel650(args);
 }

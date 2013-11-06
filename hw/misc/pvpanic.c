@@ -19,7 +19,6 @@
 #include "qemu/log.h"
 
 #include "hw/nvram/fw_cfg.h"
-#include "hw/i386/pc.h"
 
 /* The bit of supported pv event */
 #define PVPANIC_F_PANICKED      0
@@ -108,11 +107,6 @@ static int pvpanic_isa_initfn(ISADevice *dev)
     return 0;
 }
 
-void pvpanic_init(ISABus *bus)
-{
-    isa_create_simple(bus, TYPE_ISA_PVPANIC_DEVICE);
-}
-
 static Property pvpanic_isa_properties[] = {
     DEFINE_PROP_UINT16("ioport", PVPanicState, ioport, 0x505),
     DEFINE_PROP_END_OF_LIST(),
@@ -125,11 +119,6 @@ static void pvpanic_isa_class_init(ObjectClass *klass, void *data)
 
     ic->init = pvpanic_isa_initfn;
     dc->props = pvpanic_isa_properties;
-    /*
-     * To be dropped in future backport of commit a5d3f64 "hw/misc:
-     * make pvpanic known to user":
-     */
-    dc->cannot_instantiate_with_device_add_yet = true;
 }
 
 static TypeInfo pvpanic_isa_info = {

@@ -47,7 +47,6 @@
 /* ICH9 AHCI has 6 ports */
 #define MAX_SATA_PORTS     6
 
-static bool has_pvpanic = true;
 static bool smbios_type1_defaults = true;
 
 /* PC hardware initialisation */
@@ -205,17 +204,12 @@ static void pc_q35_init(QEMUMachineInitArgs *args)
     if (pci_enabled) {
         pc_pci_device_init(host_bus);
     }
-
-    if (has_pvpanic) {
-        pvpanic_init(isa_bus);
-    }
 }
 
 #if 0 /* Disabled for Red Hat Enterprise Linux */
 
 static void pc_q35_init_1_4(QEMUMachineInitArgs *args)
 {
-    has_pvpanic = false;
     x86_cpu_compat_set_features("n270", FEAT_1_ECX, 0, CPUID_EXT_MOVBE);
     x86_cpu_compat_set_features("Westmere", FEAT_1_ECX, 0, CPUID_EXT_PCLMULQDQ);
     pc_q35_init(args);
