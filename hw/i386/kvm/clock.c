@@ -110,7 +110,7 @@ static void kvmclock_class_init(ObjectClass *klass, void *data)
     SysBusDeviceClass *k = SYS_BUS_DEVICE_CLASS(klass);
 
     k->init = kvmclock_init;
-    dc->no_user = 1;
+    dc->cannot_instantiate_with_device_add_yet = true; /* FIXME explain why */
     dc->vmsd = &kvmclock_vmsd;
 }
 

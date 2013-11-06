@@ -210,7 +210,7 @@ static void cpu_class_init(ObjectClass *klass, void *data)
     k->write_elf64_qemunote = cpu_common_write_elf64_qemunote;
     k->write_elf64_note = cpu_common_write_elf64_note;
     dc->realize = cpu_common_realizefn;
-    dc->no_user = 1;
+    dc->cannot_instantiate_with_device_add_yet = true; /* FIXME explain why */
 }
 
 static const TypeInfo cpu_type_info = {

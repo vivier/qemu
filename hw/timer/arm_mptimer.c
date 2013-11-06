@@ -290,7 +290,7 @@ static void arm_mptimer_class_init(ObjectClass *klass, void *data)
     sbc->init = arm_mptimer_init;
     dc->vmsd = &vmstate_arm_mptimer;
     dc->reset = arm_mptimer_reset;
-    dc->no_user = 1;
+    dc->cannot_instantiate_with_device_add_yet = true; /* FIXME explain why */
     dc->props = arm_mptimer_properties;
 }
 

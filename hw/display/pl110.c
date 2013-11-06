@@ -482,7 +482,7 @@ static void pl110_class_init(ObjectClass *klass, void *data)
 
     k->init = pl110_init;
     set_bit(DEVICE_CATEGORY_DISPLAY, dc->categories);
-    dc->no_user = 1;
+    dc->cannot_instantiate_with_device_add_yet = true; /* FIXME explain why */
     dc->vmsd = &vmstate_pl110;
 }
 
@@ -500,7 +500,7 @@ static void pl110_versatile_class_init(ObjectClass *klass, void *data)
 
     k->init = pl110_versatile_init;
     set_bit(DEVICE_CATEGORY_DISPLAY, dc->categories);
-    dc->no_user = 1;
+    dc->cannot_instantiate_with_device_add_yet = true; /* FIXME explain why */
     dc->vmsd = &vmstate_pl110;
 }
 
@@ -518,7 +518,7 @@ static void pl111_class_init(ObjectClass *klass, void *data)
 
     k->init = pl111_init;
     set_bit(DEVICE_CATEGORY_DISPLAY, dc->categories);
-    dc->no_user = 1;
+    dc->cannot_instantiate_with_device_add_yet = true; /* FIXME explain why */
     dc->vmsd = &vmstate_pl110;
 }
 

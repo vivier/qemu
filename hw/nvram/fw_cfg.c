@@ -559,7 +559,7 @@ static void fw_cfg_class_init(ObjectClass *klass, void *data)
     SysBusDeviceClass *k = SYS_BUS_DEVICE_CLASS(klass);
 
     k->init = fw_cfg_init1;
-    dc->no_user = 1;
+    dc->cannot_instantiate_with_device_add_yet = true; /* FIXME explain why */
     dc->reset = fw_cfg_reset;
     dc->vmsd = &vmstate_fw_cfg;
     dc->props = fw_cfg_properties;
