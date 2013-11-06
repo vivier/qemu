@@ -382,7 +382,6 @@ static void pl080_class_init(ObjectClass *klass, void *data)
     SysBusDeviceClass *k = SYS_BUS_DEVICE_CLASS(klass);
 
     k->init = pl080_init;
-    dc->cannot_instantiate_with_device_add_yet = true; /* FIXME explain why */
     dc->vmsd = &vmstate_pl080;
 }
 
@@ -399,7 +398,6 @@ static void pl081_class_init(ObjectClass *klass, void *data)
     SysBusDeviceClass *k = SYS_BUS_DEVICE_CLASS(klass);
 
     k->init = pl081_init;
-    dc->cannot_instantiate_with_device_add_yet = true; /* FIXME explain why */
     dc->vmsd = &vmstate_pl080;
 }
 

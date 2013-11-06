@@ -636,7 +636,6 @@ static void i440fx_pcihost_class_init(ObjectClass *klass, void *data)
 
     k->init = i440fx_pcihost_initfn;
     dc->fw_name = "pci";
-    dc->cannot_instantiate_with_device_add_yet = true; /* FIXME explain why */
 }
 
 static const TypeInfo i440fx_pcihost_info = {

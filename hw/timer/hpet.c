@@ -739,7 +739,6 @@ static void hpet_device_class_init(ObjectClass *klass, void *data)
     SysBusDeviceClass *k = SYS_BUS_DEVICE_CLASS(klass);
 
     k->init = hpet_init;
-    dc->cannot_instantiate_with_device_add_yet = true; /* FIXME explain why */
     dc->reset = hpet_reset;
     dc->vmsd = &vmstate_hpet;
     dc->props = hpet_device_properties;

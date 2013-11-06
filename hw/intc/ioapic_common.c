@@ -100,7 +100,6 @@ static void ioapic_common_class_init(ObjectClass *klass, void *data)
 
     sc->init = ioapic_init_common;
     dc->vmsd = &vmstate_ioapic_common;
-    dc->cannot_instantiate_with_device_add_yet = true; /* FIXME explain why */
 }
 
 static const TypeInfo ioapic_common_type = {
