@@ -2,9 +2,11 @@
 %define rhev 1
 
 %if %{rhev}
+    %bcond_without  rhev_features   # enabled
     %bcond_with     guest_agent     # disabled
 %else
     %bcond_without  guest_agent     # enabled
+    %bcond_with     rhev_features   # disabled
 %endif
 
 %global SLOF_gittagdate 20120731
@@ -70,7 +72,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 13%{?dist}
+Release: 14%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -114,6 +116,10 @@ Source10: qemu-guest-agent.service
 Source11: 99-qemu-guest-agent.rules
 Source12: bridge.conf
 Source13: qemu-ga.sysconfig
+Source14: rhel6-virtio.rom
+Source15: rhel6-pcnet.rom
+Source16: rhel6-rtl8139.rom
+Source17: rhel6-ne2k_pci.rom
 
 # libcacard build fixes (heading upstream)
 Patch1: 0000-libcacard-fix-missing-symbols-in-libcacard.so.patch
@@ -590,6 +596,59 @@ Patch269: kvm-rbd-Only-look-for-qemu-specific-copy-of-librbd.so.1.patch
 Patch270: kvm-seabios-paravirt-allow-more-than-1TB-in-x86-guest.patch
 # For bz#1006468 - libiscsi initiator name should use vm UUID
 Patch271: kvm-scsi-prefer-UUID-to-VM-name-for-the-initiator-name.patch
+# For bz#928867 - Virtual PMU support during live migration - qemu-kvm
+Patch272: kvm-target-i386-remove-tabs-from-target-i386-cpu.h.patch
+# For bz#928867 - Virtual PMU support during live migration - qemu-kvm
+Patch273: kvm-migrate-vPMU-state.patch
+# For bz#1009993 - RHEL7 guests do not issue fdatasyncs on virtio-blk
+Patch274: kvm-blockdev-do-not-default-cache.no-flush-to-true.patch
+# For bz#1009993 - RHEL7 guests do not issue fdatasyncs on virtio-blk
+Patch275: kvm-virtio-blk-do-not-relay-a-previous-driver-s-WCE-conf.patch
+# For bz#907743 - qemu-ga: empty reason string for OpenFileFailed error
+Patch276: kvm-rng-random-use-error_setg_file_open.patch
+# For bz#907743 - qemu-ga: empty reason string for OpenFileFailed error
+Patch277: kvm-block-mirror_complete-use-error_setg_file_open.patch
+# For bz#907743 - qemu-ga: empty reason string for OpenFileFailed error
+Patch278: kvm-blockdev-use-error_setg_file_open.patch
+# For bz#907743 - qemu-ga: empty reason string for OpenFileFailed error
+Patch279: kvm-cpus-use-error_setg_file_open.patch
+# For bz#907743 - qemu-ga: empty reason string for OpenFileFailed error
+Patch280: kvm-dump-qmp_dump_guest_memory-use-error_setg_file_open.patch
+# For bz#907743 - qemu-ga: empty reason string for OpenFileFailed error
+Patch281: kvm-savevm-qmp_xen_save_devices_state-use-error_setg_fil.patch
+# For bz#907743 - qemu-ga: empty reason string for OpenFileFailed error
+Patch282: kvm-block-bdrv_reopen_prepare-don-t-use-QERR_OPEN_FILE_F.patch
+# For bz#907743 - qemu-ga: empty reason string for OpenFileFailed error
+Patch283: kvm-qerror-drop-QERR_OPEN_FILE_FAILED-macro.patch
+# For bz#787463 - disable ivshmem (was: [Hitachi 7.0 FEAT] Support ivshmem (Inter-VM Shared Memory))
+Patch284: kvm-rhel-Drop-ivshmem-device.patch
+# For bz#1001144 - Disable or remove device usb-host-linux
+Patch285: kvm-usb-remove-old-usb-host-code.patch
+# For bz#997702 - Migration from RHEL6.5 host to RHEL7.0 host is failed with virtio-net device
+Patch286: kvm-Fix-migration-from-rhel6.5-to-rhel7-with-ipxe.patch
+# For bz#994490 - Set per-machine-type SMBIOS strings
+Patch287: kvm-pc-Don-t-prematurely-explode-QEMUMachineInitArgs.patch
+# For bz#994490 - Set per-machine-type SMBIOS strings
+Patch288: kvm-pc-Don-t-explode-QEMUMachineInitArgs-into-local-vari.patch
+# For bz#994490 - Set per-machine-type SMBIOS strings
+Patch289: kvm-smbios-Normalize-smbios_entry_add-s-error-handling-t.patch
+# For bz#994490 - Set per-machine-type SMBIOS strings
+Patch290: kvm-smbios-Convert-to-QemuOpts.patch
+# For bz#994490 - Set per-machine-type SMBIOS strings
+Patch291: kvm-smbios-Improve-diagnostics-for-conflicting-entries.patch
+# For bz#994490 - Set per-machine-type SMBIOS strings
+Patch292: kvm-smbios-Make-multiple-smbios-type-accumulate-sanely.patch
+# For bz#994490 - Set per-machine-type SMBIOS strings
+Patch293: kvm-smbios-Factor-out-smbios_maybe_add_str.patch
+# For bz#994490 - Set per-machine-type SMBIOS strings
+Patch294: kvm-hw-Pass-QEMUMachine-to-its-init-method.patch
+# For bz#994490 - Set per-machine-type SMBIOS strings
+Patch295: kvm-smbios-Set-system-manufacturer-product-version-by-de.patch
+# For bz#994490 - Set per-machine-type SMBIOS strings
+Patch296: kvm-smbios-Decouple-system-product-from-QEMUMachine.patch
+# For bz#994490 - Set per-machine-type SMBIOS strings
+Patch297: kvm-rhel-SMBIOS-type-1-branding.patch
+Patch298: kvm-Add-disable-rhev-features-option-to-configure.patch
 
 BuildRequires: zlib-devel
 BuildRequires: SDL-devel
@@ -1047,7 +1106,33 @@ CAC emulation development files.
 %patch269 -p1
 %patch270 -p1
 %patch271 -p1
-
+%patch272 -p1
+%patch273 -p1
+%patch274 -p1
+%patch275 -p1
+%patch276 -p1
+%patch277 -p1
+%patch278 -p1
+%patch279 -p1
+%patch280 -p1
+%patch281 -p1
+%patch282 -p1
+%patch283 -p1
+%patch284 -p1
+%patch285 -p1
+%patch286 -p1
+%patch287 -p1
+%patch288 -p1
+%patch289 -p1
+%patch290 -p1
+%patch291 -p1
+%patch292 -p1
+%patch293 -p1
+%patch294 -p1
+%patch295 -p1
+%patch296 -p1
+%patch297 -p1
+%patch298 -p1
 %build
 buildarch="%{kvm_target}-softmmu"
 
@@ -1059,6 +1144,12 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
     # drop -g flag to prevent memory exhaustion by linker
     %global optflags %(echo %{optflags} | sed 's/-g//')
     sed -i.debug 's/"-g $CFLAGS"/"$CFLAGS"/g' configure
+%endif
+
+%if %{with rhev_features}
+    %define disable_rhev_features_arg %{nil}
+%else
+    %define disable_rhev_features_arg --disable-rhev-features
 %endif
 
 dobuild() {
@@ -1112,6 +1203,7 @@ dobuild() {
         --enable-glusterfs \
         --block-drv-rw-whitelist=qcow2,raw,file,host_device,host_cdrom,nbd,iscsi,gluster,rbd \
         --block-drv-ro-whitelist=vmdk \
+        %{disable_rhev_features_arg} \
         "$@"
 
     echo "config-host.mak contents:"
@@ -1125,7 +1217,8 @@ dobuild() {
                --libdir=%{_libdir} \
                --with-pkgversion=%{pkgname}-%{version}-%{release} \
                --disable-guest-agent \
-               --target-list= --cpu=%{_arch}
+               --target-list= --cpu=%{_arch} \
+               %{disable_rhev_features_arg}
 
    make libcacard.la %{?_smp_mflags} $buildldflags
    make vscclient %{?_smp_mflags} $buildldflags
@@ -1178,6 +1271,12 @@ dobuild --target-list="$buildarch"
 
     mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{pkgname}
     mkdir -p $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset
+
+    # Install compatibility roms
+    install %{SOURCE14} $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/
+    install %{SOURCE15} $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/
+    install %{SOURCE16} $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/
+    install %{SOURCE17} $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/
 
     install -m 0755 qemu-kvm $RPM_BUILD_ROOT%{_libexecdir}/
     install -m 0644 qemu-kvm.stp $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/
@@ -1418,6 +1517,10 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %{_datadir}/%{pkgname}/pxe-ne2k_pci.rom
     %{_datadir}/%{pkgname}/qemu-icon.bmp
     %{_datadir}/%{pkgname}/s390-ccw.img
+    %{_datadir}/%{pkgname}/rhel6-virtio.rom
+    %{_datadir}/%{pkgname}/rhel6-pcnet.rom
+    %{_datadir}/%{pkgname}/rhel6-rtl8139.rom
+    %{_datadir}/%{pkgname}/rhel6-ne2k_pci.rom
     %config(noreplace) %{_sysconfdir}/%{pkgname}/target-x86_64.conf
     %{?kvm_files:}
     %{?qemu_kvm_files:}
@@ -1454,6 +1557,51 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Wed Nov 06 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-14.el7
+- kvm-target-i386-remove-tabs-from-target-i386-cpu.h.patch [bz#928867]
+- kvm-migrate-vPMU-state.patch [bz#928867]
+- kvm-blockdev-do-not-default-cache.no-flush-to-true.patch [bz#1009993]
+- kvm-virtio-blk-do-not-relay-a-previous-driver-s-WCE-conf.patch [bz#1009993]
+- kvm-rng-random-use-error_setg_file_open.patch [bz#907743]
+- kvm-block-mirror_complete-use-error_setg_file_open.patch [bz#907743]
+- kvm-blockdev-use-error_setg_file_open.patch [bz#907743]
+- kvm-cpus-use-error_setg_file_open.patch [bz#907743]
+- kvm-dump-qmp_dump_guest_memory-use-error_setg_file_open.patch [bz#907743]
+- kvm-savevm-qmp_xen_save_devices_state-use-error_setg_fil.patch [bz#907743]
+- kvm-block-bdrv_reopen_prepare-don-t-use-QERR_OPEN_FILE_F.patch [bz#907743]
+- kvm-qerror-drop-QERR_OPEN_FILE_FAILED-macro.patch [bz#907743]
+- kvm-rhel-Drop-ivshmem-device.patch [bz#787463]
+- kvm-usb-remove-old-usb-host-code.patch [bz#1001144]
+- kvm-Add-rhel6-pxe-roms-files.patch [bz#997702]
+- kvm-Add-rhel6-pxe-rom-to-redhat-rpm.patch [bz#997702]
+- kvm-Fix-migration-from-rhel6.5-to-rhel7-with-ipxe.patch [bz#997702]
+- kvm-pc-Don-t-prematurely-explode-QEMUMachineInitArgs.patch [bz#994490]
+- kvm-pc-Don-t-explode-QEMUMachineInitArgs-into-local-vari.patch [bz#994490]
+- kvm-smbios-Normalize-smbios_entry_add-s-error-handling-t.patch [bz#994490]
+- kvm-smbios-Convert-to-QemuOpts.patch [bz#994490]
+- kvm-smbios-Improve-diagnostics-for-conflicting-entries.patch [bz#994490]
+- kvm-smbios-Make-multiple-smbios-type-accumulate-sanely.patch [bz#994490]
+- kvm-smbios-Factor-out-smbios_maybe_add_str.patch [bz#994490]
+- kvm-hw-Pass-QEMUMachine-to-its-init-method.patch [bz#994490]
+- kvm-smbios-Set-system-manufacturer-product-version-by-de.patch [bz#994490]
+- kvm-smbios-Decouple-system-product-from-QEMUMachine.patch [bz#994490]
+- kvm-rhel-SMBIOS-type-1-branding.patch [bz#994490]
+- kvm-Add-disable-rhev-features-option-to-configure.patch []
+- Resolves: bz#1001144
+  (Disable or remove device usb-host-linux)
+- Resolves: bz#1009993
+  (RHEL7 guests do not issue fdatasyncs on virtio-blk)
+- Resolves: bz#787463
+  (disable ivshmem (was: [Hitachi 7.0 FEAT] Support ivshmem (Inter-VM Shared Memory)))
+- Resolves: bz#907743
+  (qemu-ga: empty reason string for OpenFileFailed error)
+- Resolves: bz#928867
+  (Virtual PMU support during live migration - qemu-kvm)
+- Resolves: bz#994490
+  (Set per-machine-type SMBIOS strings)
+- Resolves: bz#997702
+  (Migration from RHEL6.5 host to RHEL7.0 host is failed with virtio-net device)
+
 * Tue Nov 05 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-13.el7
 - kvm-seabios-paravirt-allow-more-than-1TB-in-x86-guest.patch [bz#989677]
 - kvm-scsi-prefer-UUID-to-VM-name-for-the-initiator-name.patch [bz#1006468]

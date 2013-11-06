@@ -1,0 +1,49 @@
+From 7bfabe57d0b8e2ab9dabda22ee64aad2602dfe00 Mon Sep 17 00:00:00 2001
+From: Miroslav Rezanina <mrezanin@redhat.com>
+Date: Wed, 6 Nov 2013 09:34:10 +0100
+Subject: [PATCH 29/29] Add --disable-rhev-features option to configure
+
+Message-id: <758f641f21f66f22ce2f4cbaadedd193dae8694c.1383667260.git.mrezanin@redhat.com>
+Patchwork-id: 55427
+O-Subject: [RHEL7 qemu-kvm PATCH] Add --disable-rhev-features option to configure
+Bugzilla:
+RH-Acked-by: Paolo Bonzini <pbonzini@redhat.com>
+RH-Acked-by: Vlad Yasevich <vyasevic@redhat.com>
+RH-Acked-by: Amos Kong <akong@redhat.com>
+
+From: Miroslav Rezanina <mrezanin@redhat.com>
+
+As a preparation for future rhel/rhev split add configuration option allowing
+to disable selected features.
+
+Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
+---
+ configure                     |    7 +++++++
+ redhat/qemu-kvm.spec.template |   12 +++++++++++-
+ 2 files changed, 18 insertions(+), 1 deletions(-)
+
+diff --git a/configure b/configure
+index 4830f7e..ecf1df7 100755
+--- a/configure
++++ b/configure
+@@ -927,6 +927,11 @@ for opt do
+   ;;
+   --enable-libssh2) libssh2="yes"
+   ;;
++  --disable-rhev-features)
++  ;;
++  --enable-rhev-features)
++  ;;
++
+   *) echo "ERROR: unknown option $opt"; show_help="yes"
+   ;;
+   esac
+@@ -1195,6 +1200,8 @@ echo "  --gcov=GCOV              use specified gcov [$gcov_tool]"
+ echo "  --enable-tpm             enable TPM support"
+ echo "  --disable-libssh2        disable ssh block device support"
+ echo "  --enable-libssh2         enable ssh block device support"
++echo "  --disable-rhev-features  disable RHEV-only features"
++echo "  --enable-rhev-features   enable RHEV-only features"
+ echo ""
+ echo "NOTE: The object files are built at the place where configure is launched"
+ exit 1
