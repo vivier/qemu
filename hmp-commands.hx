@@ -1338,6 +1338,7 @@ STEXI
 Inject PCIe AER error
 ETEXI
 
+#if 0 /* Disabled for Red Hat Enterprise Linux */
     {
         .name       = "host_net_add",
         .args_type  = "device:s,opts:s?",
@@ -1367,6 +1368,7 @@ STEXI
 @findex host_net_remove
 Remove host VLAN client. Deprecated, please use @code{netdev_del} instead.
 ETEXI
+#endif
 
     {
         .name       = "netdev_add",
