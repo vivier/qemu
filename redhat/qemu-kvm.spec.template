@@ -428,12 +428,18 @@ dobuild() {
 %endif
 %if %{rhev}
         --enable-live-block-ops \
+        --enable-ceph-support \
 %else
         --disable-live-block-ops \
+        --disable-ceph-support \
 %endif
         --disable-live-block-migration \
         --enable-glusterfs \
+%if %{rhev}
         --block-drv-rw-whitelist=qcow2,raw,file,host_device,host_cdrom,nbd,iscsi,gluster,rbd \
+%else
+        --block-drv-rw-whitelist=qcow2,raw,file,host_device,host_cdrom,nbd,iscsi,gluster \
+%endif
         --block-drv-ro-whitelist=vmdk \
         "$@"
 
