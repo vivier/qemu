@@ -89,32 +89,28 @@ static const MemoryRegionOps pvpanic_ops = {
 static int pvpanic_isa_initfn(ISADevice *dev)
 {
     PVPanicState *s = ISA_PVPANIC_DEVICE(dev);
+    FWCfgState *fw_cfg = fw_cfg_find();
+    uint16_t *pvpanic_port;
+
+    if (!fw_cfg) {
+        return -1;
+    }
 
     memory_region_init_io(&s->io, &pvpanic_ops, s, "pvpanic", 1);
+
+    pvpanic_port = g_malloc(sizeof(*pvpanic_port));
+    *pvpanic_port = cpu_to_le16(s->ioport);
+    fw_cfg_add_file(fw_cfg, "etc/pvpanic-port", pvpanic_port,
+                    sizeof(*pvpanic_port));
+
     isa_register_ioport(dev, &s->io, s->ioport);
 
     return 0;
 }
 
-static void pvpanic_fw_cfg(ISADevice *dev, FWCfgState *fw_cfg)
-{
-    PVPanicState *s = ISA_PVPANIC_DEVICE(dev);
-    uint16_t *pvpanic_port = g_malloc(sizeof(*pvpanic_port));
-    *pvpanic_port = cpu_to_le16(s->ioport);
-
-    fw_cfg_add_file(fw_cfg, "etc/pvpanic-port", pvpanic_port,
-                    sizeof(*pvpanic_port));
-}
-
 void pvpanic_init(ISABus *bus)
 {
-    ISADevice *dev;
-    FWCfgState *fw_cfg = fw_cfg_find();
-    if (!fw_cfg) {
-        return;
-    }
-    dev = isa_create_simple (bus, TYPE_ISA_PVPANIC_DEVICE);
-    pvpanic_fw_cfg(dev, fw_cfg);
+    isa_create_simple(bus, TYPE_ISA_PVPANIC_DEVICE);
 }
 
 static Property pvpanic_isa_properties[] = {
