@@ -99,10 +99,11 @@ static int pvpanic_isa_initfn(ISADevice *dev)
 static void pvpanic_fw_cfg(ISADevice *dev, FWCfgState *fw_cfg)
 {
     PVPanicState *s = ISA_PVPANIC_DEVICE(dev);
+    uint16_t *pvpanic_port = g_malloc(sizeof(*pvpanic_port));
+    *pvpanic_port = cpu_to_le16(s->ioport);
 
-    fw_cfg_add_file(fw_cfg, "etc/pvpanic-port",
-                    g_memdup(&s->ioport, sizeof(s->ioport)),
-                    sizeof(s->ioport));
+    fw_cfg_add_file(fw_cfg, "etc/pvpanic-port", pvpanic_port,
+                    sizeof(*pvpanic_port));
 }
 
 void pvpanic_init(ISABus *bus)
