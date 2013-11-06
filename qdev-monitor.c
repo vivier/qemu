@@ -477,12 +477,12 @@ DeviceState *qdev_device_add(QemuOpts *opts)
         }
     }
 
-    if (!obj) {
+    k = DEVICE_CLASS(obj);
+
+    if (!k || k->cannot_instantiate_with_device_add_yet) {
         qerror_report(QERR_INVALID_PARAMETER_VALUE, "driver", "device type");
         return NULL;
     }
-
-    k = DEVICE_CLASS(obj);
 
     /* find bus */
     path = qemu_opt_get(opts, "bus");
