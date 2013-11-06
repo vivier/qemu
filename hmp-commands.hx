@@ -1089,7 +1089,7 @@ STEXI
 Add drive to PCI storage controller.
 ETEXI
 
-#if defined(TARGET_I386)
+#if defined(TARGET_I386) && 0 /* Disabled for Red Hat Enterprise Linux */
     {
         .name       = "pci_add",
         .args_type  = "pci_addr:s,type:s,opts:s?",
