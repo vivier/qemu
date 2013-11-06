@@ -1105,7 +1105,7 @@ STEXI
 Hot-add PCI device.
 ETEXI
 
-#if defined(TARGET_I386)
+#if defined(TARGET_I386) && 0 /* Disabled for Red Hat Enterprise Linux */
     {
         .name       = "pci_del",
         .args_type  = "pci_addr:s",
