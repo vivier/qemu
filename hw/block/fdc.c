@@ -2210,6 +2210,8 @@ static void isabus_fdc_class_init(ObjectClass *klass, void *data)
     dc->vmsd = &vmstate_isa_fdc;
     dc->props = isa_fdc_properties;
     set_bit(DEVICE_CATEGORY_STORAGE, dc->categories);
+    /* Disabled for Red Hat Enterprise Linux: */
+    dc->cannot_instantiate_with_device_add_yet = true;
 }
 
 static const TypeInfo isa_fdc_info = {

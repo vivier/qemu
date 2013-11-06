@@ -515,6 +515,8 @@ static void i8042_class_initfn(ObjectClass *klass, void *data)
     ISADeviceClass *ic = ISA_DEVICE_CLASS(klass);
     ic->init = i8042_initfn;
     dc->vmsd = &vmstate_kbd_isa;
+    /* Disabled for Red Hat Enterprise Linux: */
+    dc->cannot_instantiate_with_device_add_yet = true;
 }
 
 static const TypeInfo i8042_info = {
