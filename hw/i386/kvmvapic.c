@@ -572,7 +572,7 @@ static int patch_hypercalls(VAPICROMState *s)
  * enable write access to the option ROM so that variables can be updated by
  * the guest.
  */
-static void vapic_map_rom_writable(VAPICROMState *s)
+static int vapic_map_rom_writable(VAPICROMState *s)
 {
     hwaddr rom_paddr = s->rom_state_paddr & ROM_BLOCK_MASK;
     MemoryRegionSection section;
@@ -593,6 +593,9 @@ static void vapic_map_rom_writable(VAPICROMState *s)
     /* read ROM size from RAM region */
     ram = memory_region_get_ram_ptr(section.mr);
     rom_size = ram[rom_paddr + 2] * ROM_BLOCK_SIZE;
+    if (rom_size == 0) {
+        return -1;
+    }
     s->rom_size = rom_size;
 
     /* We need to round to avoid creating subpages
@@ -605,11 +608,15 @@ static void vapic_map_rom_writable(VAPICROMState *s)
                              rom_size);
     memory_region_add_subregion_overlap(as, rom_paddr, &s->rom, 1000);
     s->rom_mapped_writable = true;
+
+    return 0;
 }
 
 static int vapic_prepare(VAPICROMState *s)
 {
-    vapic_map_rom_writable(s);
+    if (vapic_map_rom_writable(s) < 0) {
+        return -1;
+    }
 
     if (patch_hypercalls(s) < 0) {
         return -1;
