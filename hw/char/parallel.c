@@ -602,6 +602,7 @@ static void parallel_isa_class_initfn(ObjectClass *klass, void *data)
     ISADeviceClass *ic = ISA_DEVICE_CLASS(klass);
     ic->init = parallel_isa_initfn;
     dc->props = parallel_isa_properties;
+    set_bit(DEVICE_CATEGORY_INPUT, dc->categories);
 }
 
 static const TypeInfo parallel_isa_info = {

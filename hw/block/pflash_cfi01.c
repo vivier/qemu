@@ -715,6 +715,7 @@ static void pflash_cfi01_class_init(ObjectClass *klass, void *data)
     k->init = pflash_cfi01_init;
     dc->props = pflash_cfi01_properties;
     dc->vmsd = &vmstate_pflash;
+    set_bit(DEVICE_CATEGORY_STORAGE, dc->categories);
 }
 
 

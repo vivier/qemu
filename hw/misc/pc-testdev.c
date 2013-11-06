@@ -167,9 +167,11 @@ static int init_test_device(ISADevice *isa)
 
 static void testdev_class_init(ObjectClass *klass, void *data)
 {
+    DeviceClass *dc = DEVICE_CLASS(klass);
     ISADeviceClass *k = ISA_DEVICE_CLASS(klass);
 
     k->init = init_test_device;
+    set_bit(DEVICE_CATEGORY_MISC, dc->categories);
 }
 
 static const TypeInfo testdev_info = {

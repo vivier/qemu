@@ -638,6 +638,7 @@ static void hda_audio_output_class_init(ObjectClass *klass, void *data)
     k->exit = hda_audio_exit;
     k->command = hda_audio_command;
     k->stream = hda_audio_stream;
+    set_bit(DEVICE_CATEGORY_SOUND, dc->categories);
     dc->desc = "HDA Audio Codec, output-only (line-out)";
     dc->vmsd = &vmstate_hda_audio;
     dc->props = hda_audio_properties;
@@ -659,6 +660,7 @@ static void hda_audio_duplex_class_init(ObjectClass *klass, void *data)
     k->exit = hda_audio_exit;
     k->command = hda_audio_command;
     k->stream = hda_audio_stream;
+    set_bit(DEVICE_CATEGORY_SOUND, dc->categories);
     dc->desc = "HDA Audio Codec, duplex (line-out, line-in)";
     dc->vmsd = &vmstate_hda_audio;
     dc->props = hda_audio_properties;
@@ -680,6 +682,7 @@ static void hda_audio_micro_class_init(ObjectClass *klass, void *data)
     k->exit = hda_audio_exit;
     k->command = hda_audio_command;
     k->stream = hda_audio_stream;
+    set_bit(DEVICE_CATEGORY_SOUND, dc->categories);
     dc->desc = "HDA Audio Codec, duplex (speaker, microphone)";
     dc->vmsd = &vmstate_hda_audio;
     dc->props = hda_audio_properties;

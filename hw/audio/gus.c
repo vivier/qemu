@@ -312,6 +312,7 @@ static void gus_class_initfn (ObjectClass *klass, void *data)
     DeviceClass *dc = DEVICE_CLASS (klass);
     ISADeviceClass *ic = ISA_DEVICE_CLASS (klass);
     ic->init = gus_initfn;
+    set_bit(DEVICE_CATEGORY_SOUND, dc->categories);
     dc->desc = "Gravis Ultrasound GF1";
     dc->vmsd = &vmstate_gus;
     dc->props = gus_properties;

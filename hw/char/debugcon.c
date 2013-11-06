@@ -117,6 +117,7 @@ static void debugcon_isa_class_initfn(ObjectClass *klass, void *data)
     ISADeviceClass *ic = ISA_DEVICE_CLASS(klass);
     ic->init = debugcon_isa_initfn;
     dc->props = debugcon_isa_properties;
+    set_bit(DEVICE_CATEGORY_MISC, dc->categories);
 }
 
 static const TypeInfo debugcon_isa_info = {

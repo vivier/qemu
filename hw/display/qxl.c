@@ -2317,6 +2317,7 @@ static void qxl_primary_class_init(ObjectClass *klass, void *data)
     k->vendor_id = REDHAT_PCI_VENDOR_ID;
     k->device_id = QXL_DEVICE_ID_STABLE;
     k->class_id = PCI_CLASS_DISPLAY_VGA;
+    set_bit(DEVICE_CATEGORY_DISPLAY, dc->categories);
     dc->desc = "Spice QXL GPU (primary, vga compatible)";
     dc->reset = qxl_reset_handler;
     dc->vmsd = &qxl_vmstate;
@@ -2339,6 +2340,7 @@ static void qxl_secondary_class_init(ObjectClass *klass, void *data)
     k->vendor_id = REDHAT_PCI_VENDOR_ID;
     k->device_id = QXL_DEVICE_ID_STABLE;
     k->class_id = PCI_CLASS_DISPLAY_OTHER;
+    set_bit(DEVICE_CATEGORY_DISPLAY, dc->categories);
     dc->desc = "Spice QXL GPU (secondary)";
     dc->reset = qxl_reset_handler;
     dc->vmsd = &qxl_vmstate;

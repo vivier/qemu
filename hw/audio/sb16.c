@@ -1406,6 +1406,7 @@ static void sb16_class_initfn (ObjectClass *klass, void *data)
     DeviceClass *dc = DEVICE_CLASS (klass);
     ISADeviceClass *ic = ISA_DEVICE_CLASS (klass);
     ic->init = sb16_initfn;
+    set_bit(DEVICE_CATEGORY_SOUND, dc->categories);
     dc->desc = "Creative Sound Blaster 16";
     dc->vmsd = &vmstate_sb16;
     dc->props = sb16_properties;

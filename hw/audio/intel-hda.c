@@ -1254,6 +1254,7 @@ static void intel_hda_class_init_ich6(ObjectClass *klass, void *data)
     intel_hda_class_init_common(klass);
     k->device_id = 0x2668;
     k->revision = 1;
+    set_bit(DEVICE_CATEGORY_SOUND, dc->categories);
     dc->desc = "Intel HD Audio Controller (ich6)";
 }
 
@@ -1265,6 +1266,7 @@ static void intel_hda_class_init_ich9(ObjectClass *klass, void *data)
     intel_hda_class_init_common(klass);
     k->device_id = 0x293e;
     k->revision = 3;
+    set_bit(DEVICE_CATEGORY_SOUND, dc->categories);
     dc->desc = "Intel HD Audio Controller (ich9)";
 }
 
@@ -1287,6 +1289,7 @@ static void hda_codec_device_class_init(ObjectClass *klass, void *data)
     DeviceClass *k = DEVICE_CLASS(klass);
     k->init = hda_codec_dev_init;
     k->exit = hda_codec_dev_exit;
+    set_bit(DEVICE_CATEGORY_SOUND, k->categories);
     k->bus_type = TYPE_HDA_BUS;
     k->props = hda_props;
 }

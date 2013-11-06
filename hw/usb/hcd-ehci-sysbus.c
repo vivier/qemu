@@ -56,6 +56,7 @@ static void ehci_sysbus_class_init(ObjectClass *klass, void *data)
     k->init = usb_ehci_sysbus_initfn;
     dc->vmsd = &vmstate_ehci_sysbus;
     dc->props = ehci_sysbus_properties;
+    set_bit(DEVICE_CATEGORY_USB, dc->categories);
 }
 
 static const TypeInfo ehci_type_info = {
@@ -70,7 +71,9 @@ static const TypeInfo ehci_type_info = {
 static void ehci_xlnx_class_init(ObjectClass *oc, void *data)
 {
     SysBusEHCIClass *sec = SYS_BUS_EHCI_CLASS(oc);
+    DeviceClass *dc = DEVICE_CLASS(oc);
 
+    set_bit(DEVICE_CATEGORY_USB, dc->categories);
     sec->capsbase = 0x100;
     sec->opregbase = 0x140;
 }
@@ -84,9 +87,11 @@ static const TypeInfo ehci_xlnx_type_info = {
 static void ehci_exynos4210_class_init(ObjectClass *oc, void *data)
 {
     SysBusEHCIClass *sec = SYS_BUS_EHCI_CLASS(oc);
+    DeviceClass *dc = DEVICE_CLASS(oc);
 
     sec->capsbase = 0x0;
     sec->opregbase = 0x10;
+    set_bit(DEVICE_CATEGORY_USB, dc->categories);
 }
 
 static const TypeInfo ehci_exynos4210_type_info = {

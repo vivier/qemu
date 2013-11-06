@@ -58,6 +58,7 @@ static void debug_exit_class_initfn(ObjectClass *klass, void *data)
     ISADeviceClass *ic = ISA_DEVICE_CLASS(klass);
     ic->init = debug_exit_initfn;
     dc->props = debug_exit_properties;
+    set_bit(DEVICE_CATEGORY_MISC, dc->categories);
 }
 
 static const TypeInfo debug_exit_info = {

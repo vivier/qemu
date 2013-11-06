@@ -49,6 +49,7 @@ static void sga_class_initfn(ObjectClass *klass, void *data)
     DeviceClass *dc = DEVICE_CLASS(klass);
     ISADeviceClass *ic = ISA_DEVICE_CLASS(klass);
     ic->init = sga_initfn;
+    set_bit(DEVICE_CATEGORY_DISPLAY, dc->categories);
     dc->desc = "Serial Graphics Adapter";
 }
 
