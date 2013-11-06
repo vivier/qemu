@@ -335,8 +335,8 @@ vhdx=""
 quorum=""
 live_block_ops="yes"
 live_block_migration="no"
+ceph_support="yes"
 numa=""
-
 
 # parse CC options first
 for opt do
@@ -1131,6 +1131,10 @@ for opt do
   ;;
   --enable-live-block-migration) live_block_migration="yes"
   ;;
+  --disable-ceph-support) ceph_support=="no"
+  ;;
+  --enable-ceph-support) ceph_support=="yes"
+  ;;
   *)
       echo "ERROR: unknown option $opt"
       echo "Try '$0 --help' for more information"
@@ -1401,6 +1405,8 @@ Advanced options (experts only):
   --enable-live-block-ops  enable live block operations support
   --disable-live-block-migration disable live block migration
   --enable-live-block-migration  enable live block migration
+  --disable-ceph-support   disable support for rbd block driver support
+  --enable-ceph-support    enable support for rbd block driver support
   --disable-numa           disable libnuma support
   --enable-numa            enable libnuma support
 
@@ -4692,6 +4698,10 @@ fi
 
 if test "$live_block_migration" = "yes" ; then
   echo "CONFIG_LIVE_BLOCK_MIGRATION=y" >> $config_host_mak
+fi
+
+if test "ceph_support" = "yes"; then
+  echo "CONFIG_CEPH_SUPPORT=y" >> $config_host_mak
 fi
 
 # USB host support
