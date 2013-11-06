@@ -188,8 +188,9 @@ static void pcspk_class_initfn(ObjectClass *klass, void *data)
 
     ic->init = pcspk_initfn;
     set_bit(DEVICE_CATEGORY_SOUND, dc->categories);
-    dc->cannot_instantiate_with_device_add_yet = true; /* FIXME explain why */
     dc->props = pcspk_properties;
+    /* Reason: pointer property "pit", realize sets global pcspk_state */
+    dc->cannot_instantiate_with_device_add_yet = true;
 }
 
 static const TypeInfo pcspk_info = {

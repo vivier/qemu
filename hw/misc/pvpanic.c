@@ -125,8 +125,12 @@ static void pvpanic_isa_class_init(ObjectClass *klass, void *data)
     ISADeviceClass *ic = ISA_DEVICE_CLASS(klass);
 
     ic->init = pvpanic_isa_initfn;
-    dc->cannot_instantiate_with_device_add_yet = true; /* FIXME explain why */
     dc->props = pvpanic_isa_properties;
+    /*
+     * To be dropped in future backport of commit a5d3f64 "hw/misc:
+     * make pvpanic known to user":
+     */
+    dc->cannot_instantiate_with_device_add_yet = true;
 }
 
 static TypeInfo pvpanic_isa_info = {

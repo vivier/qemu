@@ -538,9 +538,14 @@ static void port92_class_initfn(ObjectClass *klass, void *data)
     DeviceClass *dc = DEVICE_CLASS(klass);
     ISADeviceClass *ic = ISA_DEVICE_CLASS(klass);
     ic->init = port92_initfn;
-    dc->cannot_instantiate_with_device_add_yet = true; /* FIXME explain why */
     dc->reset = port92_reset;
     dc->vmsd = &vmstate_port92_isa;
+    /*
+     * Reason: unlike ordinary ISA devices, this one needs additional
+     * wiring: its A20 output line needs to be wired up by
+     * port92_init().
+     */
+    dc->cannot_instantiate_with_device_add_yet = true;
 }
 
 static const TypeInfo port92_info = {

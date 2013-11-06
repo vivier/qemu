@@ -156,7 +156,8 @@ static void vmport_class_initfn(ObjectClass *klass, void *data)
     DeviceClass *dc = DEVICE_CLASS(klass);
     ISADeviceClass *ic = ISA_DEVICE_CLASS(klass);
     ic->init = vmport_initfn;
-    dc->cannot_instantiate_with_device_add_yet = true; /* FIXME explain why */
+    /* Reason: realize sets global port_state */
+    dc->cannot_instantiate_with_device_add_yet = true;
 }
 
 static const TypeInfo vmport_info = {

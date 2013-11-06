@@ -291,7 +291,12 @@ static void pit_common_class_init(ObjectClass *klass, void *data)
 
     ic->init = pit_init_common;
     dc->vmsd = &vmstate_pit_common;
-    dc->cannot_instantiate_with_device_add_yet = true; /* FIXME explain why */
+    /*
+     * Reason: unlike ordinary ISA devices, the PIT may need to be
+     * wired to the HPET, and because of that, some wiring is always
+     * done by board code.
+     */
+    dc->cannot_instantiate_with_device_add_yet = true;
 }
 
 static const TypeInfo pit_common_type = {
