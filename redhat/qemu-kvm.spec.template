@@ -792,6 +792,51 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Nov 06 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-14.el7
+- kvm-target-i386-remove-tabs-from-target-i386-cpu.h.patch [bz#928867]
+- kvm-migrate-vPMU-state.patch [bz#928867]
+- kvm-blockdev-do-not-default-cache.no-flush-to-true.patch [bz#1009993]
+- kvm-virtio-blk-do-not-relay-a-previous-driver-s-WCE-conf.patch [bz#1009993]
+- kvm-rng-random-use-error_setg_file_open.patch [bz#907743]
+- kvm-block-mirror_complete-use-error_setg_file_open.patch [bz#907743]
+- kvm-blockdev-use-error_setg_file_open.patch [bz#907743]
+- kvm-cpus-use-error_setg_file_open.patch [bz#907743]
+- kvm-dump-qmp_dump_guest_memory-use-error_setg_file_open.patch [bz#907743]
+- kvm-savevm-qmp_xen_save_devices_state-use-error_setg_fil.patch [bz#907743]
+- kvm-block-bdrv_reopen_prepare-don-t-use-QERR_OPEN_FILE_F.patch [bz#907743]
+- kvm-qerror-drop-QERR_OPEN_FILE_FAILED-macro.patch [bz#907743]
+- kvm-rhel-Drop-ivshmem-device.patch [bz#787463]
+- kvm-usb-remove-old-usb-host-code.patch [bz#1001144]
+- kvm-Add-rhel6-pxe-roms-files.patch [bz#997702]
+- kvm-Add-rhel6-pxe-rom-to-redhat-rpm.patch [bz#997702]
+- kvm-Fix-migration-from-rhel6.5-to-rhel7-with-ipxe.patch [bz#997702]
+- kvm-pc-Don-t-prematurely-explode-QEMUMachineInitArgs.patch [bz#994490]
+- kvm-pc-Don-t-explode-QEMUMachineInitArgs-into-local-vari.patch [bz#994490]
+- kvm-smbios-Normalize-smbios_entry_add-s-error-handling-t.patch [bz#994490]
+- kvm-smbios-Convert-to-QemuOpts.patch [bz#994490]
+- kvm-smbios-Improve-diagnostics-for-conflicting-entries.patch [bz#994490]
+- kvm-smbios-Make-multiple-smbios-type-accumulate-sanely.patch [bz#994490]
+- kvm-smbios-Factor-out-smbios_maybe_add_str.patch [bz#994490]
+- kvm-hw-Pass-QEMUMachine-to-its-init-method.patch [bz#994490]
+- kvm-smbios-Set-system-manufacturer-product-version-by-de.patch [bz#994490]
+- kvm-smbios-Decouple-system-product-from-QEMUMachine.patch [bz#994490]
+- kvm-rhel-SMBIOS-type-1-branding.patch [bz#994490]
+- kvm-Add-disable-rhev-features-option-to-configure.patch []
+- Resolves: bz#1001144
+  (Disable or remove device usb-host-linux)
+- Resolves: bz#1009993
+  (RHEL7 guests do not issue fdatasyncs on virtio-blk)
+- Resolves: bz#787463
+  (disable ivshmem (was: [Hitachi 7.0 FEAT] Support ivshmem (Inter-VM Shared Memory)))
+- Resolves: bz#907743
+  (qemu-ga: empty reason string for OpenFileFailed error)
+- Resolves: bz#928867
+  (Virtual PMU support during live migration - qemu-kvm)
+- Resolves: bz#994490
+  (Set per-machine-type SMBIOS strings)
+- Resolves: bz#997702
+  (Migration from RHEL6.5 host to RHEL7.0 host is failed with virtio-net device)
+
 * Tue Nov 05 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-13.el7
 - kvm-seabios-paravirt-allow-more-than-1TB-in-x86-guest.patch [bz#989677]
 - kvm-scsi-prefer-UUID-to-VM-name-for-the-initiator-name.patch [bz#1006468]
