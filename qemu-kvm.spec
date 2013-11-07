@@ -2,11 +2,9 @@
 %define rhev 0
 
 %if %{rhev}
-    %bcond_without  rhev_features   # enabled
     %bcond_with     guest_agent     # disabled
 %else
     %bcond_without  guest_agent     # enabled
-    %bcond_with     rhev_features   # disabled
 %endif
 
 %global SLOF_gittagdate 20120731
@@ -72,7 +70,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 14%{?dist}
+Release: 15%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -648,7 +646,160 @@ Patch295: kvm-smbios-Set-system-manufacturer-product-version-by-de.patch
 Patch296: kvm-smbios-Decouple-system-product-from-QEMUMachine.patch
 # For bz#994490 - Set per-machine-type SMBIOS strings
 Patch297: kvm-rhel-SMBIOS-type-1-branding.patch
-Patch298: kvm-Add-disable-rhev-features-option-to-configure.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch298: kvm-cow-make-reads-go-at-a-decent-speed.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch299: kvm-cow-make-writes-go-at-a-less-indecent-speed.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch300: kvm-cow-do-not-call-bdrv_co_is_allocated.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch301: kvm-block-keep-bs-total_sectors-up-to-date-even-for-grow.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch302: kvm-block-make-bdrv_co_is_allocated-static.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch303: kvm-block-do-not-use-total_sectors-in-bdrv_co_is_allocat.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch304: kvm-block-remove-bdrv_is_allocated_above-bdrv_co_is_allo.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch305: kvm-block-expect-errors-from-bdrv_co_is_allocated.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch306: kvm-block-Fix-compiler-warning-Werror-uninitialized.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch307: kvm-qemu-img-always-probe-the-input-image-for-allocated-.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch308: kvm-block-make-bdrv_has_zero_init-return-false-for-copy-.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch309: kvm-block-introduce-bdrv_get_block_status-API.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch310: kvm-block-define-get_block_status-return-value.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch311: kvm-block-return-get_block_status-data-and-flags-for-for.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch312: kvm-block-use-bdrv_has_zero_init-to-return-BDRV_BLOCK_ZE.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch313: kvm-block-return-BDRV_BLOCK_ZERO-past-end-of-backing-fil.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch314: kvm-qemu-img-add-a-map-subcommand.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch315: kvm-docs-qapi-document-qemu-img-map.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch316: kvm-raw-posix-return-get_block_status-data-and-flags.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch317: kvm-raw-posix-report-unwritten-extents-as-zero.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch318: kvm-block-add-default-get_block_status-implementation-fo.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch319: kvm-block-look-for-zero-blocks-in-bs-file.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch320: kvm-qemu-img-fix-invalid-JSON.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch321: kvm-block-get_block_status-set-pnum-0-on-error.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch322: kvm-block-get_block_status-avoid-segfault-if-there-is-no.patch
+# For bz#989646 - Support backup vendors in qemu to access qcow disk readonly
+Patch323: kvm-block-get_block_status-avoid-redundant-callouts-on-r.patch
+# For bz#1025740 - Saving VM state on qcow2 images results in VM state corruption
+Patch324: kvm-qcow2-Restore-total_sectors-value-in-save_vmstate.patch
+# For bz#1025740 - Saving VM state on qcow2 images results in VM state corruption
+Patch325: kvm-qcow2-Unset-zero_beyond_eof-in-save_vmstate.patch
+# For bz#1025740 - Saving VM state on qcow2 images results in VM state corruption
+Patch326: kvm-qemu-iotests-Test-for-loading-VM-state-from-qcow2.patch
+# For bz#1001216 - Fix no_user or provide another way make devices unavailable with -device / device_add
+Patch327: kvm-apic-rename-apic-specific-bitopts.patch
+# For bz#1001216 - Fix no_user or provide another way make devices unavailable with -device / device_add
+Patch328: kvm-hw-import-bitmap-operations-in-qdev-core-header.patch
+# For bz#1001216 - Fix no_user or provide another way make devices unavailable with -device / device_add
+Patch329: kvm-qemu-help-Sort-devices-by-logical-functionality.patch
+# For bz#1001216 - Fix no_user or provide another way make devices unavailable with -device / device_add
+Patch330: kvm-devices-Associate-devices-to-their-logical-category.patch
+# For bz#1001216 - Fix no_user or provide another way make devices unavailable with -device / device_add
+Patch331: kvm-Mostly-revert-qemu-help-Sort-devices-by-logical-func.patch
+# For bz#1001216 - Fix no_user or provide another way make devices unavailable with -device / device_add
+Patch332: kvm-qdev-monitor-Group-device_add-help-and-info-qdm-by-c.patch
+# For bz#1001216 - Fix no_user or provide another way make devices unavailable with -device / device_add
+Patch333: kvm-qdev-Replace-no_user-by-cannot_instantiate_with_devi.patch
+# For bz#1001216 - Fix no_user or provide another way make devices unavailable with -device / device_add
+Patch334: kvm-sysbus-Set-cannot_instantiate_with_device_add_yet.patch
+# For bz#1001216 - Fix no_user or provide another way make devices unavailable with -device / device_add
+Patch335: kvm-cpu-Document-why-cannot_instantiate_with_device_add_.patch
+# For bz#1001216 - Fix no_user or provide another way make devices unavailable with -device / device_add
+Patch336: kvm-apic-Document-why-cannot_instantiate_with_device_add.patch
+# For bz#1001216 - Fix no_user or provide another way make devices unavailable with -device / device_add
+Patch337: kvm-pci-host-Consistently-set-cannot_instantiate_with_de.patch
+# For bz#1001216 - Fix no_user or provide another way make devices unavailable with -device / device_add
+Patch338: kvm-ich9-Document-why-cannot_instantiate_with_device_add.patch
+# For bz#1001216 - Fix no_user or provide another way make devices unavailable with -device / device_add
+Patch339: kvm-piix3-piix4-Clean-up-use-of-cannot_instantiate_with_.patch
+# For bz#1001216 - Fix no_user or provide another way make devices unavailable with -device / device_add
+Patch340: kvm-vt82c686-Clean-up-use-of-cannot_instantiate_with_dev.patch
+# For bz#1001216 - Fix no_user or provide another way make devices unavailable with -device / device_add
+Patch341: kvm-isa-Clean-up-use-of-cannot_instantiate_with_device_a.patch
+# For bz#1001216 - Fix no_user or provide another way make devices unavailable with -device / device_add
+Patch342: kvm-qdev-Do-not-let-the-user-try-to-device_add-when-it-c.patch
+# For bz#1001216 - Fix no_user or provide another way make devices unavailable with -device / device_add
+Patch343: kvm-rhel-Revert-unwanted-cannot_instantiate_with_device_.patch
+# For bz#1001076 - Disable or remove other block devices we won't support
+Patch344: kvm-rhel-Revert-downstream-changes-to-unused-default-con.patch
+# For bz#1001076 - Disable or remove other block devices we won't support
+Patch345: kvm-rhel-Drop-cfi.pflash01-and-isa-ide-device.patch
+# For bz#1001088 - Disable or remove display devices we won't support
+Patch346: kvm-rhel-Drop-isa-vga-device.patch
+# For bz#1001088 - Disable or remove display devices we won't support
+Patch347: kvm-rhel-Make-isa-cirrus-vga-device-unavailable.patch
+# For bz#1001123 - Disable or remove device ccid-card-emulated
+Patch348: kvm-rhel-Make-ccid-card-emulated-device-unavailable.patch
+# For bz#1005695 - QEMU should hide CPUID.0Dh values that it does not support
+Patch349: kvm-x86-fix-migration-from-pre-version-12.patch
+# For bz#1005695 - QEMU should hide CPUID.0Dh values that it does not support
+Patch350: kvm-x86-cpuid-reconstruct-leaf-0Dh-data.patch
+# For bz#920021 - qemu-kvm segment fault when reboot guest after hot unplug device with option ROM
+Patch351: kvm-kvmvapic-Catch-invalid-ROM-size.patch
+# For bz#920021 - qemu-kvm segment fault when reboot guest after hot unplug device with option ROM
+Patch352: kvm-kvmvapic-Enter-inactive-state-on-hardware-reset.patch
+# For bz#920021 - qemu-kvm segment fault when reboot guest after hot unplug device with option ROM
+Patch353: kvm-kvmvapic-Clear-also-physical-ROM-address-when-enteri.patch
+# For bz#987582 - Initial Virtualization Differentiation for RHEL7 (Live snapshots)
+Patch354: kvm-block-optionally-disable-live-block-jobs.patch
+# For bz#1022392 - Disable live-storage-migration in qemu-kvm (migrate -b/-i)
+Patch355: kvm-migration-disable-live-block-migration-b-i-for-rhel-.patch
+# For bz#987583 - Initial Virtualization Differentiation for RHEL7 (Ceph enablement)
+Patch356: kvm-Build-ceph-rbd-only-for-rhev.patch
+# For bz#1001180 - Disable or remove devices pci-serial-2x, pci-serial-4x
+Patch357: kvm-rhel-Make-pci-serial-2x-and-pci-serial-4x-device-una.patch
+# For bz#980415 - libusbx: error [_open_sysfs_attr] open /sys/bus/usb/devices/4-1/bConfigurationValue failed ret=-1 errno=2
+Patch358: kvm-usb-host-libusb-Fix-reset-handling.patch
+# For bz#980383 - The usb3.0 stick can't be returned back to host after shutdown guest with usb3.0 pass-through
+Patch359: kvm-usb-host-libusb-Configuration-0-may-be-a-valid-confi.patch
+# For bz#980383 - The usb3.0 stick can't be returned back to host after shutdown guest with usb3.0 pass-through
+Patch360: kvm-usb-host-libusb-Detach-kernel-drivers-earlier.patch
+# For bz#1010858 - Disable unused human monitor commands
+Patch361: kvm-monitor-Remove-pci_add-command-for-Red-Hat-Enterpris.patch
+# For bz#1010858 - Disable unused human monitor commands
+Patch362: kvm-monitor-Remove-pci_del-command-for-Red-Hat-Enterpris.patch
+# For bz#1010858 - Disable unused human monitor commands
+Patch363: kvm-monitor-Remove-usb_add-del-commands-for-Red-Hat-Ente.patch
+# For bz#1010858 - Disable unused human monitor commands
+Patch364: kvm-monitor-Remove-host_net_add-remove-for-Red-Hat-Enter.patch
+# For bz#990601 - pvpanic device triggers guest bugs when present by default
+Patch365: kvm-fw_cfg-add-API-to-find-FW-cfg-object.patch
+# For bz#990601 - pvpanic device triggers guest bugs when present by default
+Patch366: kvm-pvpanic-use-FWCfgState-explicitly.patch
+# For bz#990601 - pvpanic device triggers guest bugs when present by default
+Patch367: kvm-pvpanic-initialization-cleanup.patch
+# For bz#990601 - pvpanic device triggers guest bugs when present by default
+Patch368: kvm-pvpanic-fix-fwcfg-for-big-endian-hosts.patch
+# For bz#990601 - pvpanic device triggers guest bugs when present by default
+Patch369: kvm-hw-misc-make-pvpanic-known-to-user.patch
+# For bz#990601 - pvpanic device triggers guest bugs when present by default
+Patch370: kvm-gdbstub-do-not-restart-crashed-guest.patch
+# For bz#990601 - pvpanic device triggers guest bugs when present by default
+Patch371: kvm-gdbstub-fix-for-commit-87f25c12bfeaaa0c41fb857713bbc.patch
+# For bz#990601 - pvpanic device triggers guest bugs when present by default
+Patch372: kvm-vl-allow-cont-from-panicked-state.patch
+# For bz#990601 - pvpanic device triggers guest bugs when present by default
+Patch373: kvm-hw-misc-don-t-create-pvpanic-device-by-default.patch
+# For bz#1007176 - Add VPC and VHDX file formats as supported in qemu-kvm (read-only)
+Patch374: kvm-block-vhdx-add-migration-blocker.patch
 
 BuildRequires: zlib-devel
 BuildRequires: SDL-devel
@@ -1133,6 +1284,83 @@ CAC emulation development files.
 %patch296 -p1
 %patch297 -p1
 %patch298 -p1
+%patch299 -p1
+%patch300 -p1
+%patch301 -p1
+%patch302 -p1
+%patch303 -p1
+%patch304 -p1
+%patch305 -p1
+%patch306 -p1
+%patch307 -p1
+%patch308 -p1
+%patch309 -p1
+%patch310 -p1
+%patch311 -p1
+%patch312 -p1
+%patch313 -p1
+%patch314 -p1
+%patch315 -p1
+%patch316 -p1
+%patch317 -p1
+%patch318 -p1
+%patch319 -p1
+%patch320 -p1
+%patch321 -p1
+%patch322 -p1
+%patch323 -p1
+%patch324 -p1
+%patch325 -p1
+%patch326 -p1
+%patch327 -p1
+%patch328 -p1
+%patch329 -p1
+%patch330 -p1
+%patch331 -p1
+%patch332 -p1
+%patch333 -p1
+%patch334 -p1
+%patch335 -p1
+%patch336 -p1
+%patch337 -p1
+%patch338 -p1
+%patch339 -p1
+%patch340 -p1
+%patch341 -p1
+%patch342 -p1
+%patch343 -p1
+%patch344 -p1
+%patch345 -p1
+%patch346 -p1
+%patch347 -p1
+%patch348 -p1
+%patch349 -p1
+%patch350 -p1
+%patch351 -p1
+%patch352 -p1
+%patch353 -p1
+%patch354 -p1
+%patch355 -p1
+%patch356 -p1
+%patch357 -p1
+%patch358 -p1
+%patch359 -p1
+%patch360 -p1
+%patch361 -p1
+%patch362 -p1
+%patch363 -p1
+%patch364 -p1
+%patch365 -p1
+%patch366 -p1
+%patch367 -p1
+%patch368 -p1
+%patch369 -p1
+%patch370 -p1
+%patch371 -p1
+%patch372 -p1
+%patch373 -p1
+%patch374 -p1
+
 %build
 buildarch="%{kvm_target}-softmmu"
 
@@ -1144,12 +1372,6 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
     # drop -g flag to prevent memory exhaustion by linker
     %global optflags %(echo %{optflags} | sed 's/-g//')
     sed -i.debug 's/"-g $CFLAGS"/"$CFLAGS"/g' configure
-%endif
-
-%if %{with rhev_features}
-    %define disable_rhev_features_arg %{nil}
-%else
-    %define disable_rhev_features_arg --disable-rhev-features
 %endif
 
 dobuild() {
@@ -1200,10 +1422,21 @@ dobuild() {
 %else
         --disable-guest-agent \
 %endif
+%if %{rhev}
+        --enable-live-block-ops \
+        --enable-ceph-support \
+%else
+        --disable-live-block-ops \
+        --disable-ceph-support \
+%endif
+        --disable-live-block-migration \
         --enable-glusterfs \
-        --block-drv-rw-whitelist=qcow2,raw,file,host_device,host_cdrom,nbd,iscsi,gluster,rbd \
-        --block-drv-ro-whitelist=vmdk \
-        %{disable_rhev_features_arg} \
+%if %{rhev}
+        --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,gluster,rbd \
+%else
+        --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,gluster \
+%endif
+        --block-drv-ro-whitelist=vmdk,vhdx,vpc \
         "$@"
 
     echo "config-host.mak contents:"
@@ -1217,8 +1450,7 @@ dobuild() {
                --libdir=%{_libdir} \
                --with-pkgversion=%{pkgname}-%{version}-%{release} \
                --disable-guest-agent \
-               --target-list= --cpu=%{_arch} \
-               %{disable_rhev_features_arg}
+               --target-list= --cpu=%{_arch}
 
    make libcacard.la %{?_smp_mflags} $buildldflags
    make vscclient %{?_smp_mflags} $buildldflags
@@ -1557,6 +1789,125 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Thu Nov 07 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-15.el7
+- kvm-cow-make-reads-go-at-a-decent-speed.patch [bz#989646]
+- kvm-cow-make-writes-go-at-a-less-indecent-speed.patch [bz#989646]
+- kvm-cow-do-not-call-bdrv_co_is_allocated.patch [bz#989646]
+- kvm-block-keep-bs-total_sectors-up-to-date-even-for-grow.patch [bz#989646]
+- kvm-block-make-bdrv_co_is_allocated-static.patch [bz#989646]
+- kvm-block-do-not-use-total_sectors-in-bdrv_co_is_allocat.patch [bz#989646]
+- kvm-block-remove-bdrv_is_allocated_above-bdrv_co_is_allo.patch [bz#989646]
+- kvm-block-expect-errors-from-bdrv_co_is_allocated.patch [bz#989646]
+- kvm-block-Fix-compiler-warning-Werror-uninitialized.patch [bz#989646]
+- kvm-qemu-img-always-probe-the-input-image-for-allocated-.patch [bz#989646]
+- kvm-block-make-bdrv_has_zero_init-return-false-for-copy-.patch [bz#989646]
+- kvm-block-introduce-bdrv_get_block_status-API.patch [bz#989646]
+- kvm-block-define-get_block_status-return-value.patch [bz#989646]
+- kvm-block-return-get_block_status-data-and-flags-for-for.patch [bz#989646]
+- kvm-block-use-bdrv_has_zero_init-to-return-BDRV_BLOCK_ZE.patch [bz#989646]
+- kvm-block-return-BDRV_BLOCK_ZERO-past-end-of-backing-fil.patch [bz#989646]
+- kvm-qemu-img-add-a-map-subcommand.patch [bz#989646]
+- kvm-docs-qapi-document-qemu-img-map.patch [bz#989646]
+- kvm-raw-posix-return-get_block_status-data-and-flags.patch [bz#989646]
+- kvm-raw-posix-report-unwritten-extents-as-zero.patch [bz#989646]
+- kvm-block-add-default-get_block_status-implementation-fo.patch [bz#989646]
+- kvm-block-look-for-zero-blocks-in-bs-file.patch [bz#989646]
+- kvm-qemu-img-fix-invalid-JSON.patch [bz#989646]
+- kvm-block-get_block_status-set-pnum-0-on-error.patch [bz#989646]
+- kvm-block-get_block_status-avoid-segfault-if-there-is-no.patch [bz#989646]
+- kvm-block-get_block_status-avoid-redundant-callouts-on-r.patch [bz#989646]
+- kvm-qcow2-Restore-total_sectors-value-in-save_vmstate.patch [bz#1025740]
+- kvm-qcow2-Unset-zero_beyond_eof-in-save_vmstate.patch [bz#1025740]
+- kvm-qemu-iotests-Test-for-loading-VM-state-from-qcow2.patch [bz#1025740]
+- kvm-apic-rename-apic-specific-bitopts.patch [bz#1001216]
+- kvm-hw-import-bitmap-operations-in-qdev-core-header.patch [bz#1001216]
+- kvm-qemu-help-Sort-devices-by-logical-functionality.patch [bz#1001216]
+- kvm-devices-Associate-devices-to-their-logical-category.patch [bz#1001216]
+- kvm-Mostly-revert-qemu-help-Sort-devices-by-logical-func.patch [bz#1001216]
+- kvm-qdev-monitor-Group-device_add-help-and-info-qdm-by-c.patch [bz#1001216]
+- kvm-qdev-Replace-no_user-by-cannot_instantiate_with_devi.patch [bz#1001216]
+- kvm-sysbus-Set-cannot_instantiate_with_device_add_yet.patch [bz#1001216]
+- kvm-cpu-Document-why-cannot_instantiate_with_device_add_.patch [bz#1001216]
+- kvm-apic-Document-why-cannot_instantiate_with_device_add.patch [bz#1001216]
+- kvm-pci-host-Consistently-set-cannot_instantiate_with_de.patch [bz#1001216]
+- kvm-ich9-Document-why-cannot_instantiate_with_device_add.patch [bz#1001216]
+- kvm-piix3-piix4-Clean-up-use-of-cannot_instantiate_with_.patch [bz#1001216]
+- kvm-vt82c686-Clean-up-use-of-cannot_instantiate_with_dev.patch [bz#1001216]
+- kvm-isa-Clean-up-use-of-cannot_instantiate_with_device_a.patch [bz#1001216]
+- kvm-qdev-Do-not-let-the-user-try-to-device_add-when-it-c.patch [bz#1001216]
+- kvm-rhel-Revert-unwanted-cannot_instantiate_with_device_.patch [bz#1001216]
+- kvm-rhel-Revert-downstream-changes-to-unused-default-con.patch [bz#1001076]
+- kvm-rhel-Drop-cfi.pflash01-and-isa-ide-device.patch [bz#1001076]
+- kvm-rhel-Drop-isa-vga-device.patch [bz#1001088]
+- kvm-rhel-Make-isa-cirrus-vga-device-unavailable.patch [bz#1001088]
+- kvm-rhel-Make-ccid-card-emulated-device-unavailable.patch [bz#1001123]
+- kvm-x86-fix-migration-from-pre-version-12.patch [bz#1005695]
+- kvm-x86-cpuid-reconstruct-leaf-0Dh-data.patch [bz#1005695]
+- kvm-kvmvapic-Catch-invalid-ROM-size.patch [bz#920021]
+- kvm-kvmvapic-Enter-inactive-state-on-hardware-reset.patch [bz#920021]
+- kvm-kvmvapic-Clear-also-physical-ROM-address-when-enteri.patch [bz#920021]
+- kvm-block-optionally-disable-live-block-jobs.patch [bz#987582]
+- kvm-rpm-spec-template-disable-live-block-ops-for-rhel-en.patch [bz#987582]
+- kvm-migration-disable-live-block-migration-b-i-for-rhel-.patch [bz#1022392]
+- kvm-Build-ceph-rbd-only-for-rhev.patch [bz#987583]
+- kvm-spec-Disable-host-cdrom-RHEL-only.patch [bz#760885]
+- kvm-rhel-Make-pci-serial-2x-and-pci-serial-4x-device-una.patch [bz#1001180]
+- kvm-usb-host-libusb-Fix-reset-handling.patch [bz#980415]
+- kvm-usb-host-libusb-Configuration-0-may-be-a-valid-confi.patch [bz#980383]
+- kvm-usb-host-libusb-Detach-kernel-drivers-earlier.patch [bz#980383]
+- kvm-monitor-Remove-pci_add-command-for-Red-Hat-Enterpris.patch [bz#1010858]
+- kvm-monitor-Remove-pci_del-command-for-Red-Hat-Enterpris.patch [bz#1010858]
+- kvm-monitor-Remove-usb_add-del-commands-for-Red-Hat-Ente.patch [bz#1010858]
+- kvm-monitor-Remove-host_net_add-remove-for-Red-Hat-Enter.patch [bz#1010858]
+- kvm-fw_cfg-add-API-to-find-FW-cfg-object.patch [bz#990601]
+- kvm-pvpanic-use-FWCfgState-explicitly.patch [bz#990601]
+- kvm-pvpanic-initialization-cleanup.patch [bz#990601]
+- kvm-pvpanic-fix-fwcfg-for-big-endian-hosts.patch [bz#990601]
+- kvm-hw-misc-make-pvpanic-known-to-user.patch [bz#990601]
+- kvm-gdbstub-do-not-restart-crashed-guest.patch [bz#990601]
+- kvm-gdbstub-fix-for-commit-87f25c12bfeaaa0c41fb857713bbc.patch [bz#990601]
+- kvm-vl-allow-cont-from-panicked-state.patch [bz#990601]
+- kvm-hw-misc-don-t-create-pvpanic-device-by-default.patch [bz#990601]
+- kvm-block-vhdx-add-migration-blocker.patch [bz#1007176]
+- kvm-qemu-kvm.spec-add-vhdx-to-the-read-only-block-driver.patch [bz#1007176]
+- kvm-qemu-kvm.spec-Add-VPC-VHD-driver-to-the-block-read-o.patch [bz#1007176]
+- Resolves: bz#1001076
+  (Disable or remove other block devices we won't support)
+- Resolves: bz#1001088
+  (Disable or remove display devices we won't support)
+- Resolves: bz#1001123
+  (Disable or remove device ccid-card-emulated)
+- Resolves: bz#1001180
+  (Disable or remove devices pci-serial-2x, pci-serial-4x)
+- Resolves: bz#1001216
+  (Fix no_user or provide another way make devices unavailable with -device / device_add)
+- Resolves: bz#1005695
+  (QEMU should hide CPUID.0Dh values that it does not support)
+- Resolves: bz#1007176
+  (Add VPC and VHDX file formats as supported in qemu-kvm (read-only))
+- Resolves: bz#1010858
+  (Disable unused human monitor commands)
+- Resolves: bz#1022392
+  (Disable live-storage-migration in qemu-kvm (migrate -b/-i))
+- Resolves: bz#1025740
+  (Saving VM state on qcow2 images results in VM state corruption)
+- Resolves: bz#760885
+  (Disable host cdrom passthrough)
+- Resolves: bz#920021
+  (qemu-kvm segment fault when reboot guest after hot unplug device with option ROM)
+- Resolves: bz#980383
+  (The usb3.0 stick can't be returned back to host after shutdown guest with usb3.0 pass-through)
+- Resolves: bz#980415
+  (libusbx: error [_open_sysfs_attr] open /sys/bus/usb/devices/4-1/bConfigurationValue failed ret=-1 errno=2)
+- Resolves: bz#987582
+  (Initial Virtualization Differentiation for RHEL7 (Live snapshots))
+- Resolves: bz#987583
+  (Initial Virtualization Differentiation for RHEL7 (Ceph enablement))
+- Resolves: bz#989646
+  (Support backup vendors in qemu to access qcow disk readonly)
+- Resolves: bz#990601
+  (pvpanic device triggers guest bugs when present by default)
+
 * Wed Nov 06 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-14.el7
 - kvm-target-i386-remove-tabs-from-target-i386-cpu.h.patch [bz#928867]
 - kvm-migrate-vPMU-state.patch [bz#928867]
