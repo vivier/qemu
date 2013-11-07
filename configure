@@ -334,6 +334,7 @@ libssh2=""
 vhdx=""
 quorum=""
 live_block_ops="yes"
+live_block_migration="no"
 numa=""
 
 
@@ -1126,6 +1127,10 @@ for opt do
   ;;
   --enable-numa) numa="yes"
   ;;
+  --disable-live-block-migration) live_block_migration="no"
+  ;;
+  --enable-live-block-migration) live_block_migration="yes"
+  ;;
   *)
       echo "ERROR: unknown option $opt"
       echo "Try '$0 --help' for more information"
@@ -1394,6 +1399,8 @@ Advanced options (experts only):
   --enable-quorum          enable quorum block filter support
   --disable-live-block-ops disable live block operations support
   --enable-live-block-ops  enable live block operations support
+  --disable-live-block-migration disable live block migration
+  --enable-live-block-migration  enable live block migration
   --disable-numa           disable libnuma support
   --enable-numa            enable libnuma support
 
@@ -4238,6 +4245,7 @@ echo "Quorum            $quorum"
 echo "lzo support       $lzo"
 echo "snappy support    $snappy"
 echo "Live block operations $live_block_ops"
+echo "Live block migration $live_block_migration"
 echo "NUMA host support $numa"
 
 if test "$sdl_too_old" = "yes"; then
@@ -4680,6 +4688,10 @@ fi
 
 if test "$live_block_ops" = "yes" ; then
   echo "CONFIG_LIVE_BLOCK_OPS=y" >> $config_host_mak
+fi
+
+if test "$live_block_migration" = "yes" ; then
+  echo "CONFIG_LIVE_BLOCK_MIGRATION=y" >> $config_host_mak
 fi
 
 # USB host support
