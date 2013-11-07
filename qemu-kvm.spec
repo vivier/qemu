@@ -70,7 +70,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 15%{?dist}
+Release: 16%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -800,6 +800,180 @@ Patch372: kvm-vl-allow-cont-from-panicked-state.patch
 Patch373: kvm-hw-misc-don-t-create-pvpanic-device-by-default.patch
 # For bz#1007176 - Add VPC and VHDX file formats as supported in qemu-kvm (read-only)
 Patch374: kvm-block-vhdx-add-migration-blocker.patch
+# For bz#1026524 - Backport block layer error parameter patches
+Patch375: kvm-block-drop-bs_snapshots-global-variable.patch
+# For bz#1026524 - Backport block layer error parameter patches
+Patch376: kvm-block-move-snapshot-code-in-block.c-to-block-snapsho.patch
+# For bz#1026524 - Backport block layer error parameter patches
+Patch377: kvm-block-fix-vvfat-error-path-for-enable_write_target.patch
+# For bz#1026524 - Backport block layer error parameter patches
+Patch378: kvm-block-Bugfix-format-and-snapshot-used-in-drive-optio.patch
+# For bz#1026524 - Backport block layer error parameter patches
+Patch379: kvm-iscsi-use-bdrv_new-instead-of-stack-structure.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch380: kvm-qcow2-Add-corrupt-bit.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch381: kvm-qcow2-Metadata-overlap-checks.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch382: kvm-qcow2-Employ-metadata-overlap-checks.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch383: kvm-qcow2-refcount-Move-OFLAG_COPIED-checks.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch384: kvm-qcow2-refcount-Repair-OFLAG_COPIED-errors.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch385: kvm-qcow2-refcount-Repair-shared-refcount-blocks.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch386: kvm-qcow2_check-Mark-image-consistent.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch387: kvm-qemu-iotests-Overlapping-cluster-allocations.patch
+# For bz#1026524 - Backport block layer error parameter patches
+Patch388: kvm-w32-Fix-access-to-host-devices-regression.patch
+# For bz#1026524 - Backport block layer error parameter patches
+Patch389: kvm-add-qemu-img-convert-n-option-skip-target-volume-cre.patch
+# For bz#1026524 - Backport block layer error parameter patches
+Patch390: kvm-bdrv-Use-Error-for-opening-images.patch
+# For bz#1026524 - Backport block layer error parameter patches
+Patch391: kvm-bdrv-Use-Error-for-creating-images.patch
+# For bz#1026524 - Backport block layer error parameter patches
+Patch392: kvm-block-Error-parameter-for-open-functions.patch
+# For bz#1026524 - Backport block layer error parameter patches
+Patch393: kvm-block-Error-parameter-for-create-functions.patch
+# For bz#1026524 - Backport block layer error parameter patches
+Patch394: kvm-qemu-img-create-Emit-filename-on-error.patch
+# For bz#1026524 - Backport block layer error parameter patches
+Patch395: kvm-qcow2-Use-Error-parameter.patch
+# For bz#1026524 - Backport block layer error parameter patches
+Patch396: kvm-qemu-iotests-Adjustments-due-to-error-propagation.patch
+# For bz#1026524 - Backport block layer error parameter patches
+Patch397: kvm-block-raw-Employ-error-parameter.patch
+# For bz#1026524 - Backport block layer error parameter patches
+Patch398: kvm-block-raw-win32-Employ-error-parameter.patch
+# For bz#1026524 - Backport block layer error parameter patches
+Patch399: kvm-blkdebug-Employ-error-parameter.patch
+# For bz#1026524 - Backport block layer error parameter patches
+Patch400: kvm-blkverify-Employ-error-parameter.patch
+# For bz#1026524 - Backport block layer error parameter patches
+Patch401: kvm-block-raw-posix-Employ-error-parameter.patch
+# For bz#1026524 - Backport block layer error parameter patches
+Patch402: kvm-block-raw-win32-Always-use-errno-in-hdev_open.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch403: kvm-qmp-Documentation-for-BLOCK_IMAGE_CORRUPTED.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch404: kvm-qcow2-Correct-snapshots-size-for-overlap-check.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch405: kvm-qcow2-CHECK_OFLAG_COPIED-is-obsolete.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch406: kvm-qcow2-Correct-endianness-in-overlap-check.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch407: kvm-qcow2-Switch-L1-table-in-a-single-sequence.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch408: kvm-qcow2-Use-pread-for-inactive-L1-in-overlap-check.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch409: kvm-qcow2-Remove-wrong-metadata-overlap-check.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch410: kvm-qcow2-Use-negated-overflow-check-mask.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch411: kvm-qcow2-Make-overlap-check-mask-variable.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch412: kvm-qcow2-Add-overlap-check-options.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch413: kvm-qcow2-Array-assigning-options-to-OL-check-bits.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch414: kvm-qcow2-Add-more-overlap-check-bitmask-macros.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch415: kvm-qcow2-Evaluate-overlap-check-options.patch
+# For bz#978402 - [RFE] Add discard support to qemu-kvm layer
+Patch416: kvm-qapi-types.py-Split-off-generate_struct_fields.patch
+# For bz#978402 - [RFE] Add discard support to qemu-kvm layer
+Patch417: kvm-qapi-types.py-Fix-enum-struct-sizes-on-i686.patch
+# For bz#978402 - [RFE] Add discard support to qemu-kvm layer
+Patch418: kvm-qapi-types-visit.py-Pass-whole-expr-dict-for-structs.patch
+# For bz#978402 - [RFE] Add discard support to qemu-kvm layer
+Patch419: kvm-qapi-types-visit.py-Inheritance-for-structs.patch
+# For bz#978402 - [RFE] Add discard support to qemu-kvm layer
+Patch420: kvm-blockdev-Introduce-DriveInfo.enable_auto_del.patch
+# For bz#978402 - [RFE] Add discard support to qemu-kvm layer
+Patch421: kvm-Implement-qdict_flatten.patch
+# For bz#978402 - [RFE] Add discard support to qemu-kvm layer
+Patch422: kvm-blockdev-blockdev-add-QMP-command.patch
+# For bz#978402 - [RFE] Add discard support to qemu-kvm layer
+Patch423: kvm-blockdev-Separate-ID-generation-from-DriveInfo-creat.patch
+# For bz#978402 - [RFE] Add discard support to qemu-kvm layer
+Patch424: kvm-blockdev-Pass-QDict-to-blockdev_init.patch
+# For bz#978402 - [RFE] Add discard support to qemu-kvm layer
+Patch425: kvm-blockdev-Move-parsing-of-media-option-to-drive_init.patch
+# For bz#978402 - [RFE] Add discard support to qemu-kvm layer
+Patch426: kvm-blockdev-Move-parsing-of-if-option-to-drive_init.patch
+# For bz#978402 - [RFE] Add discard support to qemu-kvm layer
+Patch427: kvm-blockdev-Moving-parsing-of-geometry-options-to-drive.patch
+# For bz#978402 - [RFE] Add discard support to qemu-kvm layer
+Patch428: kvm-blockdev-Move-parsing-of-boot-option-to-drive_init.patch
+# For bz#978402 - [RFE] Add discard support to qemu-kvm layer
+Patch429: kvm-blockdev-Move-bus-unit-index-processing-to-drive_ini.patch
+# For bz#978402 - [RFE] Add discard support to qemu-kvm layer
+Patch430: kvm-blockdev-Move-virtio-blk-device-creation-to-drive_in.patch
+# For bz#978402 - [RFE] Add discard support to qemu-kvm layer
+Patch431: kvm-blockdev-Remove-IF_-check-for-read-only-blockdev_ini.patch
+# For bz#978402 - [RFE] Add discard support to qemu-kvm layer
+Patch432: kvm-qemu-iotests-Check-autodel-behaviour-for-device_del.patch
+# For bz#978402 - [RFE] Add discard support to qemu-kvm layer
+Patch433: kvm-blockdev-Remove-media-parameter-from-blockdev_init.patch
+# For bz#978402 - [RFE] Add discard support to qemu-kvm layer
+Patch434: kvm-blockdev-Don-t-disable-COR-automatically-with-blockd.patch
+# For bz#978402 - [RFE] Add discard support to qemu-kvm layer
+Patch435: kvm-blockdev-blockdev_init-error-conversion.patch
+# For bz#978402 - [RFE] Add discard support to qemu-kvm layer
+Patch436: kvm-sd-Avoid-access-to-NULL-BlockDriverState.patch
+# For bz#978402 - [RFE] Add discard support to qemu-kvm layer
+Patch437: kvm-blockdev-fix-cdrom-read_only-flag.patch
+# For bz#978402 - [RFE] Add discard support to qemu-kvm layer
+Patch438: kvm-block-fix-backing-file-overriding.patch
+# For bz#978402 - [RFE] Add discard support to qemu-kvm layer
+Patch439: kvm-block-Disable-BDRV_O_COPY_ON_READ-for-the-backing-fi.patch
+# For bz#978402 - [RFE] Add discard support to qemu-kvm layer
+Patch440: kvm-block-Don-t-copy-backing-file-name-on-error.patch
+# For bz#980771 - [RFE]  qemu-img should be able to tell the compat version of a qcow2 image
+Patch441: kvm-qemu-iotests-Try-creating-huge-qcow2-image.patch
+# For bz#980771 - [RFE]  qemu-img should be able to tell the compat version of a qcow2 image
+Patch442: kvm-block-move-qmp-and-info-dump-related-code-to-block-q.patch
+# For bz#980771 - [RFE]  qemu-img should be able to tell the compat version of a qcow2 image
+Patch443: kvm-block-dump-snapshot-and-image-info-to-specified-outp.patch
+# For bz#980771 - [RFE]  qemu-img should be able to tell the compat version of a qcow2 image
+Patch444: kvm-block-add-snapshot-info-query-function-bdrv_query_sn.patch
+# For bz#980771 - [RFE]  qemu-img should be able to tell the compat version of a qcow2 image
+Patch445: kvm-block-add-image-info-query-function-bdrv_query_image.patch
+# For bz#980771 - [RFE]  qemu-img should be able to tell the compat version of a qcow2 image
+Patch446: kvm-qmp-add-ImageInfo-in-BlockDeviceInfo-used-by-query-b.patch
+# For bz#980771 - [RFE]  qemu-img should be able to tell the compat version of a qcow2 image
+Patch447: kvm-vmdk-Implement-.bdrv_has_zero_init.patch
+# For bz#980771 - [RFE]  qemu-img should be able to tell the compat version of a qcow2 image
+Patch448: kvm-qemu-iotests-Add-basic-ability-to-use-binary-sample-.patch
+# For bz#980771 - [RFE]  qemu-img should be able to tell the compat version of a qcow2 image
+Patch449: kvm-qemu-iotests-Quote-TEST_IMG-and-TEST_DIR-usage.patch
+# For bz#980771 - [RFE]  qemu-img should be able to tell the compat version of a qcow2 image
+Patch450: kvm-qemu-iotests-fix-test-case-059.patch
+# For bz#980771 - [RFE]  qemu-img should be able to tell the compat version of a qcow2 image
+Patch451: kvm-qapi-Add-ImageInfoSpecific-type.patch
+# For bz#980771 - [RFE]  qemu-img should be able to tell the compat version of a qcow2 image
+Patch452: kvm-block-Add-bdrv_get_specific_info.patch
+# For bz#980771 - [RFE]  qemu-img should be able to tell the compat version of a qcow2 image
+Patch453: kvm-block-qapi-Human-readable-ImageInfoSpecific-dump.patch
+# For bz#980771 - [RFE]  qemu-img should be able to tell the compat version of a qcow2 image
+Patch454: kvm-qcow2-Add-support-for-ImageInfoSpecific.patch
+# For bz#980771 - [RFE]  qemu-img should be able to tell the compat version of a qcow2 image
+Patch455: kvm-qemu-iotests-Discard-specific-info-in-_img_info.patch
+# For bz#980771 - [RFE]  qemu-img should be able to tell the compat version of a qcow2 image
+Patch456: kvm-qemu-iotests-Additional-info-from-qemu-img-info.patch
+# For bz#980771 - [RFE]  qemu-img should be able to tell the compat version of a qcow2 image
+Patch457: kvm-vmdk-convert-error-code-to-use-errp.patch
+# For bz#980771 - [RFE]  qemu-img should be able to tell the compat version of a qcow2 image
+Patch458: kvm-vmdk-refuse-enabling-zeroed-grain-with-flat-images.patch
+# For bz#980771 - [RFE]  qemu-img should be able to tell the compat version of a qcow2 image
+Patch459: kvm-qapi-Add-optional-field-compressed-to-ImageInfo.patch
+# For bz#980771 - [RFE]  qemu-img should be able to tell the compat version of a qcow2 image
+Patch460: kvm-vmdk-Only-read-cid-from-image-file-when-opening.patch
+# For bz#980771 - [RFE]  qemu-img should be able to tell the compat version of a qcow2 image
+Patch461: kvm-vmdk-Implment-bdrv_get_specific_info.patch
 
 BuildRequires: zlib-devel
 BuildRequires: SDL-devel
@@ -1360,6 +1534,93 @@ CAC emulation development files.
 %patch372 -p1
 %patch373 -p1
 %patch374 -p1
+%patch375 -p1
+%patch376 -p1
+%patch377 -p1
+%patch378 -p1
+%patch379 -p1
+%patch380 -p1
+%patch381 -p1
+%patch382 -p1
+%patch383 -p1
+%patch384 -p1
+%patch385 -p1
+%patch386 -p1
+%patch387 -p1
+%patch388 -p1
+%patch389 -p1
+%patch390 -p1
+%patch391 -p1
+%patch392 -p1
+%patch393 -p1
+%patch394 -p1
+%patch395 -p1
+%patch396 -p1
+%patch397 -p1
+%patch398 -p1
+%patch399 -p1
+%patch400 -p1
+%patch401 -p1
+%patch402 -p1
+%patch403 -p1
+%patch404 -p1
+%patch405 -p1
+%patch406 -p1
+%patch407 -p1
+%patch408 -p1
+%patch409 -p1
+%patch410 -p1
+%patch411 -p1
+%patch412 -p1
+%patch413 -p1
+%patch414 -p1
+%patch415 -p1
+%patch416 -p1
+%patch417 -p1
+%patch418 -p1
+%patch419 -p1
+%patch420 -p1
+%patch421 -p1
+%patch422 -p1
+%patch423 -p1
+%patch424 -p1
+%patch425 -p1
+%patch426 -p1
+%patch427 -p1
+%patch428 -p1
+%patch429 -p1
+%patch430 -p1
+%patch431 -p1
+%patch432 -p1
+%patch433 -p1
+%patch434 -p1
+%patch435 -p1
+%patch436 -p1
+%patch437 -p1
+%patch438 -p1
+%patch439 -p1
+%patch440 -p1
+%patch441 -p1
+%patch442 -p1
+%patch443 -p1
+%patch444 -p1
+%patch445 -p1
+%patch446 -p1
+%patch447 -p1
+%patch448 -p1
+%patch449 -p1
+%patch450 -p1
+%patch451 -p1
+%patch452 -p1
+%patch453 -p1
+%patch454 -p1
+%patch455 -p1
+%patch456 -p1
+%patch457 -p1
+%patch458 -p1
+%patch459 -p1
+%patch460 -p1
+%patch461 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -1789,6 +2050,103 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Thu Nov 07 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-16.el7
+- kvm-block-drop-bs_snapshots-global-variable.patch [bz#1026524]
+- kvm-block-move-snapshot-code-in-block.c-to-block-snapsho.patch [bz#1026524]
+- kvm-block-fix-vvfat-error-path-for-enable_write_target.patch [bz#1026524]
+- kvm-block-Bugfix-format-and-snapshot-used-in-drive-optio.patch [bz#1026524]
+- kvm-iscsi-use-bdrv_new-instead-of-stack-structure.patch [bz#1026524]
+- kvm-qcow2-Add-corrupt-bit.patch [bz#1004347]
+- kvm-qcow2-Metadata-overlap-checks.patch [bz#1004347]
+- kvm-qcow2-Employ-metadata-overlap-checks.patch [bz#1004347]
+- kvm-qcow2-refcount-Move-OFLAG_COPIED-checks.patch [bz#1004347]
+- kvm-qcow2-refcount-Repair-OFLAG_COPIED-errors.patch [bz#1004347]
+- kvm-qcow2-refcount-Repair-shared-refcount-blocks.patch [bz#1004347]
+- kvm-qcow2_check-Mark-image-consistent.patch [bz#1004347]
+- kvm-qemu-iotests-Overlapping-cluster-allocations.patch [bz#1004347]
+- kvm-w32-Fix-access-to-host-devices-regression.patch [bz#1026524]
+- kvm-add-qemu-img-convert-n-option-skip-target-volume-cre.patch [bz#1026524]
+- kvm-bdrv-Use-Error-for-opening-images.patch [bz#1026524]
+- kvm-bdrv-Use-Error-for-creating-images.patch [bz#1026524]
+- kvm-block-Error-parameter-for-open-functions.patch [bz#1026524]
+- kvm-block-Error-parameter-for-create-functions.patch [bz#1026524]
+- kvm-qemu-img-create-Emit-filename-on-error.patch [bz#1026524]
+- kvm-qcow2-Use-Error-parameter.patch [bz#1026524]
+- kvm-qemu-iotests-Adjustments-due-to-error-propagation.patch [bz#1026524]
+- kvm-block-raw-Employ-error-parameter.patch [bz#1026524]
+- kvm-block-raw-win32-Employ-error-parameter.patch [bz#1026524]
+- kvm-blkdebug-Employ-error-parameter.patch [bz#1026524]
+- kvm-blkverify-Employ-error-parameter.patch [bz#1026524]
+- kvm-block-raw-posix-Employ-error-parameter.patch [bz#1026524]
+- kvm-block-raw-win32-Always-use-errno-in-hdev_open.patch [bz#1026524]
+- kvm-qmp-Documentation-for-BLOCK_IMAGE_CORRUPTED.patch [bz#1004347]
+- kvm-qcow2-Correct-snapshots-size-for-overlap-check.patch [bz#1004347]
+- kvm-qcow2-CHECK_OFLAG_COPIED-is-obsolete.patch [bz#1004347]
+- kvm-qcow2-Correct-endianness-in-overlap-check.patch [bz#1004347]
+- kvm-qcow2-Switch-L1-table-in-a-single-sequence.patch [bz#1004347]
+- kvm-qcow2-Use-pread-for-inactive-L1-in-overlap-check.patch [bz#1004347]
+- kvm-qcow2-Remove-wrong-metadata-overlap-check.patch [bz#1004347]
+- kvm-qcow2-Use-negated-overflow-check-mask.patch [bz#1004347]
+- kvm-qcow2-Make-overlap-check-mask-variable.patch [bz#1004347]
+- kvm-qcow2-Add-overlap-check-options.patch [bz#1004347]
+- kvm-qcow2-Array-assigning-options-to-OL-check-bits.patch [bz#1004347]
+- kvm-qcow2-Add-more-overlap-check-bitmask-macros.patch [bz#1004347]
+- kvm-qcow2-Evaluate-overlap-check-options.patch [bz#1004347]
+- kvm-qapi-types.py-Split-off-generate_struct_fields.patch [bz#978402]
+- kvm-qapi-types.py-Fix-enum-struct-sizes-on-i686.patch [bz#978402]
+- kvm-qapi-types-visit.py-Pass-whole-expr-dict-for-structs.patch [bz#978402]
+- kvm-qapi-types-visit.py-Inheritance-for-structs.patch [bz#978402]
+- kvm-blockdev-Introduce-DriveInfo.enable_auto_del.patch [bz#978402]
+- kvm-Implement-qdict_flatten.patch [bz#978402]
+- kvm-blockdev-blockdev-add-QMP-command.patch [bz#978402]
+- kvm-blockdev-Separate-ID-generation-from-DriveInfo-creat.patch [bz#978402]
+- kvm-blockdev-Pass-QDict-to-blockdev_init.patch [bz#978402]
+- kvm-blockdev-Move-parsing-of-media-option-to-drive_init.patch [bz#978402]
+- kvm-blockdev-Move-parsing-of-if-option-to-drive_init.patch [bz#978402]
+- kvm-blockdev-Moving-parsing-of-geometry-options-to-drive.patch [bz#978402]
+- kvm-blockdev-Move-parsing-of-boot-option-to-drive_init.patch [bz#978402]
+- kvm-blockdev-Move-bus-unit-index-processing-to-drive_ini.patch [bz#978402]
+- kvm-blockdev-Move-virtio-blk-device-creation-to-drive_in.patch [bz#978402]
+- kvm-blockdev-Remove-IF_-check-for-read-only-blockdev_ini.patch [bz#978402]
+- kvm-qemu-iotests-Check-autodel-behaviour-for-device_del.patch [bz#978402]
+- kvm-blockdev-Remove-media-parameter-from-blockdev_init.patch [bz#978402]
+- kvm-blockdev-Don-t-disable-COR-automatically-with-blockd.patch [bz#978402]
+- kvm-blockdev-blockdev_init-error-conversion.patch [bz#978402]
+- kvm-sd-Avoid-access-to-NULL-BlockDriverState.patch [bz#978402]
+- kvm-blockdev-fix-cdrom-read_only-flag.patch [bz#978402]
+- kvm-block-fix-backing-file-overriding.patch [bz#978402]
+- kvm-block-Disable-BDRV_O_COPY_ON_READ-for-the-backing-fi.patch [bz#978402]
+- kvm-block-Don-t-copy-backing-file-name-on-error.patch [bz#978402]
+- kvm-qemu-iotests-Try-creating-huge-qcow2-image.patch [bz#980771]
+- kvm-block-move-qmp-and-info-dump-related-code-to-block-q.patch [bz#980771]
+- kvm-block-dump-snapshot-and-image-info-to-specified-outp.patch [bz#980771]
+- kvm-block-add-snapshot-info-query-function-bdrv_query_sn.patch [bz#980771]
+- kvm-block-add-image-info-query-function-bdrv_query_image.patch [bz#980771]
+- kvm-qmp-add-ImageInfo-in-BlockDeviceInfo-used-by-query-b.patch [bz#980771]
+- kvm-vmdk-Implement-.bdrv_has_zero_init.patch [bz#980771]
+- kvm-qemu-iotests-Add-basic-ability-to-use-binary-sample-.patch [bz#980771]
+- kvm-qemu-iotests-Quote-TEST_IMG-and-TEST_DIR-usage.patch [bz#980771]
+- kvm-qemu-iotests-fix-test-case-059.patch [bz#980771]
+- kvm-qapi-Add-ImageInfoSpecific-type.patch [bz#980771]
+- kvm-block-Add-bdrv_get_specific_info.patch [bz#980771]
+- kvm-block-qapi-Human-readable-ImageInfoSpecific-dump.patch [bz#980771]
+- kvm-qcow2-Add-support-for-ImageInfoSpecific.patch [bz#980771]
+- kvm-qemu-iotests-Discard-specific-info-in-_img_info.patch [bz#980771]
+- kvm-qemu-iotests-Additional-info-from-qemu-img-info.patch [bz#980771]
+- kvm-vmdk-convert-error-code-to-use-errp.patch [bz#980771]
+- kvm-vmdk-refuse-enabling-zeroed-grain-with-flat-images.patch [bz#980771]
+- kvm-qapi-Add-optional-field-compressed-to-ImageInfo.patch [bz#980771]
+- kvm-vmdk-Only-read-cid-from-image-file-when-opening.patch [bz#980771]
+- kvm-vmdk-Implment-bdrv_get_specific_info.patch [bz#980771]
+- Resolves: bz#1004347
+  (Backport qcow2 corruption prevention patches)
+- Resolves: bz#1026524
+  (Backport block layer error parameter patches)
+- Resolves: bz#978402
+  ([RFE] Add discard support to qemu-kvm layer)
+- Resolves: bz#980771
+  ([RFE]  qemu-img should be able to tell the compat version of a qcow2 image)
+
 * Thu Nov 07 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-15.el7
 - kvm-cow-make-reads-go-at-a-decent-speed.patch [bz#989646]
 - kvm-cow-make-writes-go-at-a-less-indecent-speed.patch [bz#989646]
