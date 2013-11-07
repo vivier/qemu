@@ -782,10 +782,13 @@ static int vmdk_parse_extents(const char *desc, BlockDriverState *bs,
         extent->type = g_strdup(type);
 next_line:
         /* move to next line */
-        while (*p && *p != '\n') {
+        while (*p) {
+            if (*p == '\n') {
+                p++;
+                break;
+            }
             p++;
         }
-        p++;
     }
     return 0;
 }
