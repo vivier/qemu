@@ -927,11 +927,6 @@ for opt do
   ;;
   --enable-libssh2) libssh2="yes"
   ;;
-  --disable-rhev-features)
-  ;;
-  --enable-rhev-features)
-  ;;
-
   *) echo "ERROR: unknown option $opt"; show_help="yes"
   ;;
   esac
@@ -1200,8 +1195,6 @@ echo "  --gcov=GCOV              use specified gcov [$gcov_tool]"
 echo "  --enable-tpm             enable TPM support"
 echo "  --disable-libssh2        disable ssh block device support"
 echo "  --enable-libssh2         enable ssh block device support"
-echo "  --disable-rhev-features  disable RHEV-only features"
-echo "  --enable-rhev-features   enable RHEV-only features"
 echo ""
 echo "NOTE: The object files are built at the place where configure is launched"
 exit 1

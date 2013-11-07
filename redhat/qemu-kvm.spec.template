@@ -2,11 +2,9 @@
 %define rhev %%RHEV_FLAG%%
 
 %if %{rhev}
-    %bcond_without  rhev_features   # enabled
     %bcond_with     guest_agent     # disabled
 %else
     %bcond_without  guest_agent     # enabled
-    %bcond_with     rhev_features   # disabled
 %endif
 
 %global SLOF_gittagdate 20120731
@@ -380,12 +378,6 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
     sed -i.debug 's/"-g $CFLAGS"/"$CFLAGS"/g' configure
 %endif
 
-%if %{with rhev_features}
-    %define disable_rhev_features_arg %{nil}
-%else
-    %define disable_rhev_features_arg --disable-rhev-features
-%endif
-
 dobuild() {
 %if 0%{!?build_only_sub:1}
     ./configure \
@@ -437,7 +429,6 @@ dobuild() {
         --enable-glusterfs \
         --block-drv-rw-whitelist=qcow2,raw,file,host_device,host_cdrom,nbd,iscsi,gluster,rbd \
         --block-drv-ro-whitelist=vmdk \
-        %{disable_rhev_features_arg} \
         "$@"
 
     echo "config-host.mak contents:"
@@ -451,8 +442,7 @@ dobuild() {
                --libdir=%{_libdir} \
                --with-pkgversion=%{pkgname}-%{version}-%{release} \
                --disable-guest-agent \
-               --target-list= --cpu=%{_arch} \
-               %{disable_rhev_features_arg}
+               --target-list= --cpu=%{_arch}
 
    make libcacard.la %{?_smp_mflags} $buildldflags
    make vscclient %{?_smp_mflags} $buildldflags
