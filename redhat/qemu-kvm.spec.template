@@ -440,7 +440,7 @@ dobuild() {
 %else
         --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,gluster \
 %endif
-        --block-drv-ro-whitelist=vmdk \
+        --block-drv-ro-whitelist=vmdk,vhdx \
         "$@"
 
     echo "config-host.mak contents:"
