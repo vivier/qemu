@@ -904,10 +904,6 @@ static QEMUMachine pc_machine_rhel700 = {
         .value    = stringify(1),\
     },{\
         .driver   = "virtio-net-pci",\
-        .property = "ctrl_mac_addr",\
-        .value    = "off",\
-    },{\
-        .driver   = "virtio-net-pci",\
         .property = "mq",\
         .value    = "off",\
     },{\
@@ -1031,6 +1027,10 @@ static QEMUMachine pc_machine_rhel650 = {
     },{\
         .driver   = "hda-output",\
         .property = "mixer",\
+        .value    = "off",\
+    },{\
+        .driver   = "virtio-net-pci",\
+        .property = "ctrl_mac_addr",\
         .value    = "off",\
     }
 
