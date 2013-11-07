@@ -1015,7 +1015,8 @@ Patch480: kvm-vmdk-Fix-vmdk_parse_extents.patch
 # For bz#995866 - fix vmdk support to ESX images
 Patch481: kvm-vmdk-fix-VMFS-extent-parsing.patch
 # For bz#922589 - e1000/rtl8139: qemu mac address can not be changed via set the hardware address in guest
-Patch482: kvm-e1000-rtl8139-update-HMP-NIC-when-every-bit-is-writt.patch
+#Patch482: kvm-e1000-rtl8139-update-HMP-NIC-when-every-bit-is-writt.patch
+# Patch 482 removed as it has to be discussed and should not be applied yet
 # For bz#1005039 - add compat property to disable ctrl_mac_addr feature
 Patch483: kvm-don-t-disable-ctrl_mac_addr-feature-for-6.5-machine-.patch
 
@@ -1685,7 +1686,7 @@ CAC emulation development files.
 %patch479 -p1
 %patch480 -p1
 %patch481 -p1
-%patch482 -p1
+#%patch482 -p1
 %patch483 -p1
 
 %build
