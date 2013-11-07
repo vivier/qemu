@@ -245,6 +245,8 @@ typedef struct {
     BlockDriverState *bs;
 } BDRVPutRefBH;
 
+/* right now, this is only used from block_job_cb() */
+#ifdef CONFIG_LIVE_BLOCK_OPS
 static void bdrv_put_ref_bh(void *opaque)
 {
     BDRVPutRefBH *s = opaque;
@@ -270,6 +272,7 @@ static void bdrv_put_ref_bh_schedule(BlockDriverState *bs)
     s->bs = bs;
     qemu_bh_schedule(s->bh);
 }
+#endif
 
 static int parse_block_error_action(const char *buf, bool is_read, Error **errp)
 {
@@ -964,6 +967,7 @@ void do_commit(Monitor *mon, const QDict *qdict)
     }
 }
 
+#ifdef CONFIG_LIVE_BLOCK_OPS
 static void blockdev_do_action(int kind, void *data, Error **errp)
 {
     TransactionAction action;
@@ -1512,6 +1516,7 @@ exit:
         g_free(state);
     }
 }
+#endif
 
 
 static void eject_device(BlockDriverState *bs, int force, Error **errp)
@@ -1802,6 +1807,7 @@ void qmp_block_resize(bool has_device, const char *device,
     }
 }
 
+#ifdef CONFIG_LIVE_BLOCK_OPS
 static void block_job_cb(void *opaque, int ret)
 {
     BlockDriverState *bs = opaque;
@@ -2182,6 +2188,7 @@ void qmp_drive_mirror(const char *device, const char *target,
         return;
     }
 }
+#endif
 
 static BlockJob *find_block_job(const char *device)
 {
