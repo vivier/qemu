@@ -435,9 +435,9 @@ dobuild() {
         --disable-live-block-migration \
         --enable-glusterfs \
 %if %{rhev}
-        --block-drv-rw-whitelist=qcow2,raw,file,host_device,host_cdrom,nbd,iscsi,gluster,rbd \
+        --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,gluster,rbd \
 %else
-        --block-drv-rw-whitelist=qcow2,raw,file,host_device,host_cdrom,nbd,iscsi,gluster \
+        --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,gluster \
 %endif
         --block-drv-ro-whitelist=vmdk \
         "$@"
