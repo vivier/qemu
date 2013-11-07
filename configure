@@ -324,6 +324,7 @@ libssh2=""
 vhdx=""
 quorum="no"
 live_block_ops="yes"
+live_block_migration="no"
 
 # parse CC options first
 for opt do
@@ -1087,7 +1088,11 @@ for opt do
   ;;
   --enable-live-block-ops) live_block_ops="yes"
   ;;
- *) echo "ERROR: unknown option $opt"; show_help="yes"
+  --disable-live-block-migration) live_block_migration="no"
+  ;;
+  --enable-live-block-migration) live_block_migration="yes"
+  ;;
+*) echo "ERROR: unknown option $opt"; show_help="yes"
   ;;
   esac
 done
@@ -1351,6 +1356,8 @@ Advanced options (experts only):
   --enable-quorum          enable quorum block filter support
   --disable-live-block-ops disable live block operations support
   --enable-live-block-ops  enable live block operations support
+  --disable-live-block-migration disable live block migration
+  --enable-live-block-migration  enable live block migration
 
 NOTE: The object files are built at the place where configure is launched
 EOF
@@ -4158,6 +4165,7 @@ echo "Quorum            $quorum"
 echo "lzo support       $lzo"
 echo "snappy support    $snappy"
 echo "Live block operations $live_block_ops"
+echo "Live block migration $live_block_migration"
 
 if test "$sdl_too_old" = "yes"; then
 echo "-> Your SDL version is too old - please upgrade to have SDL support"
@@ -4596,6 +4604,10 @@ fi
 
 if test "$live_block_ops" = "yes" ; then
   echo "CONFIG_LIVE_BLOCK_OPS=y" >> $config_host_mak
+fi
+
+if test "$live_block_migration" = "yes" ; then
+  echo "CONFIG_LIVE_BLOCK_MIGRATION=y" >> $config_host_mak
 fi
 
 # USB host support

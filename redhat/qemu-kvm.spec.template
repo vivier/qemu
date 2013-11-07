@@ -430,6 +430,7 @@ dobuild() {
 %else
         --disable-live-block-ops \
 %endif
+        --disable-live-block-migration \
         --enable-glusterfs \
         --block-drv-rw-whitelist=qcow2,raw,file,host_device,host_cdrom,nbd,iscsi,gluster,rbd \
         --block-drv-ro-whitelist=vmdk \
