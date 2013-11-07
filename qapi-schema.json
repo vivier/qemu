@@ -1617,6 +1617,7 @@
 ##
 { 'command': 'block_resize', 'data': { 'device': 'str', 'size': 'int' }}
 
+#_rhev-only CONFIG_LIVE_BLOCK_OPS
 ##
 # @NewImageMode
 #
@@ -1697,6 +1698,7 @@
 ##
 { 'command': 'blockdev-snapshot-sync',
   'data': 'BlockdevSnapshot' }
+#_end-rhev-only
 
 ##
 # @human-monitor-command:
@@ -1726,6 +1728,7 @@
   'data': {'command-line': 'str', '*cpu-index': 'int'},
   'returns': 'str' }
 
+#_rhev-only CONFIG_LIVE_BLOCK_OPS
 ##
 # @block-commit
 #
@@ -1811,6 +1814,7 @@
             '*speed': 'int', '*granularity': 'uint32',
             '*buf-size': 'int', '*on-source-error': 'BlockdevOnError',
             '*on-target-error': 'BlockdevOnError' } }
+#_end-rhev-only
 
 ##
 # @migrate_cancel
@@ -2123,6 +2127,7 @@
   'data': { 'device': 'str', 'bps': 'int', 'bps_rd': 'int', 'bps_wr': 'int',
             'iops': 'int', 'iops_rd': 'int', 'iops_wr': 'int' } }
 
+#_rhev-only CONFIG_LIVE_BLOCK_OPS
 ##
 # @block-stream:
 #
@@ -2160,6 +2165,7 @@
 { 'command': 'block-stream',
   'data': { 'device': 'str', '*base': 'str', '*speed': 'int',
             '*on-error': 'BlockdevOnError' } }
+#_end-rhev-only
 
 ##
 # @block-job-set-speed:

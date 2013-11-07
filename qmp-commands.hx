@@ -904,6 +904,7 @@ Example:
 
 EQMP
 
+#ifdef CONFIG_LIVE_BLOCK_OPS
     {
         .name       = "block-stream",
         .args_type  = "device:B,base:s?,speed:o?,on-error:s?",
@@ -915,6 +916,7 @@ EQMP
         .args_type  = "device:B,base:s?,top:s,speed:o?",
         .mhandler.cmd_new = qmp_marshal_input_block_commit,
     },
+#endif
 
     {
         .name       = "block-job-set-speed",
@@ -942,6 +944,7 @@ EQMP
         .args_type  = "device:B",
         .mhandler.cmd_new = qmp_marshal_input_block_job_complete,
     },
+#ifdef CONFIG_LIVE_BLOCK_OPS
     {
         .name       = "transaction",
         .args_type  = "actions:q",
@@ -1085,6 +1088,7 @@ Example:
 <- { "return": {} }
 
 EQMP
+#endif
 
     {
         .name       = "balloon",

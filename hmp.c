@@ -838,6 +838,7 @@ void hmp_block_resize(Monitor *mon, const QDict *qdict)
     hmp_handle_error(mon, &errp);
 }
 
+#ifdef CONFIG_LIVE_BLOCK_OPS
 void hmp_drive_mirror(Monitor *mon, const QDict *qdict)
 {
     const char *device = qdict_get_str(qdict, "device");
@@ -889,6 +890,7 @@ void hmp_snapshot_blkdev(Monitor *mon, const QDict *qdict)
                                true, mode, &errp);
     hmp_handle_error(mon, &errp);
 }
+#endif
 
 void hmp_migrate_cancel(Monitor *mon, const QDict *qdict)
 {
@@ -1030,6 +1032,7 @@ void hmp_block_set_io_throttle(Monitor *mon, const QDict *qdict)
     hmp_handle_error(mon, &err);
 }
 
+#ifdef CONFIG_LIVE_BLOCK_OPS
 void hmp_block_stream(Monitor *mon, const QDict *qdict)
 {
     Error *error = NULL;
@@ -1043,6 +1046,7 @@ void hmp_block_stream(Monitor *mon, const QDict *qdict)
 
     hmp_handle_error(mon, &error);
 }
+#endif
 
 void hmp_block_job_set_speed(Monitor *mon, const QDict *qdict)
 {

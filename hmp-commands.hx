@@ -68,7 +68,7 @@ action to see the updated size.  Resize to a lower size is supported,
 but should be used with extreme caution.  Note that this command only
 resizes image files, it can not resize block devices like LVM volumes.
 ETEXI
-
+#ifdef CONFIG_LIVE_BLOCK_OPS
     {
         .name       = "block_stream",
         .args_type  = "device:B,speed:o?,base:s?",
@@ -76,6 +76,7 @@ ETEXI
         .help       = "copy data from a backing file into a block device",
         .mhandler.cmd = hmp_block_stream,
     },
+#endif
 
 STEXI
 @item block_stream
@@ -1024,6 +1025,7 @@ gdb.
 ETEXI
 #endif
 
+#ifdef CONFIG_LIVE_BLOCK_OPS
     {
         .name       = "snapshot_blkdev",
         .args_type  = "reuse:-n,device:B,snapshot-file:s?,format:s?",
@@ -1066,6 +1068,7 @@ STEXI
 Start mirroring a block device's writes to a new destination,
 using the specified target.
 ETEXI
+#endif
 
     {
         .name       = "drive_add",

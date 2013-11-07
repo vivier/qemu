@@ -237,6 +237,8 @@ typedef struct {
     DriveInfo *dinfo;
 } DrivePutRefBH;
 
+/* right now, this is only used from block_job_cb() */
+#ifdef CONFIG_LIVE_BLOCK_OPS
 static void drive_put_ref_bh(void *opaque)
 {
     DrivePutRefBH *s = opaque;
@@ -262,6 +264,7 @@ static void drive_put_ref_bh_schedule(DriveInfo *dinfo)
     s->dinfo = dinfo;
     qemu_bh_schedule(s->bh);
 }
+#endif
 
 static int parse_block_error_action(const char *buf, bool is_read)
 {
@@ -806,6 +809,7 @@ void do_commit(Monitor *mon, const QDict *qdict)
     }
 }
 
+#ifdef CONFIG_LIVE_BLOCK_OPS
 static void blockdev_do_action(int kind, void *data, Error **errp)
 {
     BlockdevAction action;
@@ -1051,6 +1055,7 @@ exit:
         g_free(states);
     }
 }
+#endif
 
 
 static void eject_device(BlockDriverState *bs, int force, Error **errp)
@@ -1286,6 +1291,7 @@ void qmp_block_resize(const char *device, int64_t size, Error **errp)
     }
 }
 
+#ifdef CONFIG_LIVE_BLOCK_OPS
 static void block_job_cb(void *opaque, int ret)
 {
     BlockDriverState *bs = opaque;
@@ -1547,6 +1553,7 @@ void qmp_drive_mirror(const char *device, const char *target,
      */
     drive_get_ref(drive_get_by_blockdev(bs));
 }
+#endif
 
 static BlockJob *find_block_job(const char *device)
 {
