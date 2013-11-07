@@ -1,0 +1,74 @@
+From 045f64e0d300c370d1339790d3ba3d8df0fad811 Mon Sep 17 00:00:00 2001
+From: Amos Kong <akong@redhat.com>
+Date: Thu, 7 Nov 2013 03:59:52 +0100
+Subject: [PATCH 24/25] e1000/rtl8139: update HMP NIC when every bit is written
+
+RH-Author: Amos Kong <akong@redhat.com>
+Message-id: <1383796792-32547-1-git-send-email-akong@redhat.com>
+Patchwork-id: 55587
+O-Subject: [RHEL-7.0 qemu-kvm PATCH 5/4] e1000/rtl8139: update HMP NIC when every bit is written
+Bugzilla: 922589
+RH-Acked-by: Alex Williamson <alex.williamson@redhat.com>
+RH-Acked-by: Xiao Wang <jasowang@redhat.com>
+RH-Nacked-by: Michael S. Tsirkin <mst@redhat.com>
+
+Bugzilla: 922589
+Brew: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=6539241
+Upstream: reviewed by alex, not merge
+Test: tested by myself
+
+We currently just update the HMP NIC info when the last bit of macaddr
+is written. This assumes that guest driver will write all the macaddr
+from bit 0 to bit 5 when it changes the macaddr, this is the current
+behavior of linux driver (e1000/rtl8139cp), but we can't do this
+assumption.
+
+The macaddr that is used for rx-filter will be updated when every bit
+is changed. This patch updates the e1000/rtl8139 nic to update HMP NIC
+info when every bit is changed. It will be same as virtio-net.
+
+Signed-off-by: Amos Kong <akong@redhat.com>
+Reviewed-by: Alex Williamson <alex.williamson@redhat.com>
+---
+ hw/net/e1000.c   |    2 +-
+ hw/net/rtl8139.c |    5 +----
+ 2 files changed, 2 insertions(+), 5 deletions(-)
+
+Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
+---
+ hw/net/e1000.c   |    2 +-
+ hw/net/rtl8139.c |    5 +----
+ 2 files changed, 2 insertions(+), 5 deletions(-)
+
+diff --git a/hw/net/e1000.c b/hw/net/e1000.c
+index 87a84a7..11983c3 100644
+--- a/hw/net/e1000.c
++++ b/hw/net/e1000.c
+@@ -975,7 +975,7 @@ mac_writereg(E1000State *s, int index, uint32_t val)
+ 
+     s->mac_reg[index] = val;
+ 
+-    if (index == RA + 1) {
++    if (index == RA || index == RA + 1) {
+         macaddr[0] = cpu_to_le32(s->mac_reg[RA]);
+         macaddr[1] = cpu_to_le32(s->mac_reg[RA + 1]);
+         qemu_format_nic_info_str(qemu_get_queue(s->nic), (uint8_t *)macaddr);
+diff --git a/hw/net/rtl8139.c b/hw/net/rtl8139.c
+index d08106b..82bd3a1 100644
+--- a/hw/net/rtl8139.c
++++ b/hw/net/rtl8139.c
+@@ -2722,10 +2722,7 @@ static void rtl8139_io_writeb(void *opaque, uint8_t addr, uint32_t val)
+ 
+     switch (addr)
+     {
+-        case MAC0 ... MAC0+4:
+-            s->phys[addr - MAC0] = val;
+-            break;
+-        case MAC0+5:
++        case MAC0 ... MAC0+5:
+             s->phys[addr - MAC0] = val;
+             qemu_format_nic_info_str(qemu_get_queue(s->nic), s->phys);
+             break;
+-- 
+1.7.1
+
