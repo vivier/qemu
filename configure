@@ -241,6 +241,7 @@ gtkabi="2.0"
 tpm="no"
 libssh2=""
 live_block_ops="yes"
+live_block_migration="no"
 
 # parse CC options first
 for opt do
@@ -932,6 +933,10 @@ for opt do
   ;;
   --enable-live-block-ops) live_block_ops="yes"
   ;;
+  --disable-live-block-migration) live_block_migration="no"
+  ;;
+  --enable-live-block-migration) live_block_migration="yes"
+  ;;
 *) echo "ERROR: unknown option $opt"; show_help="yes"
   ;;
   esac
@@ -1202,6 +1207,8 @@ echo "  --disable-libssh2        disable ssh block device support"
 echo "  --enable-libssh2         enable ssh block device support"
 echo "  --disable-live-block-ops disable live block operations support"
 echo "  --enable-live-block-ops  enable live block operations support"
+echo "  --disable-live-block-migration disable live block migration"
+echo "  --enable-live-block-migration  enable live block migration"
 echo ""
 echo "NOTE: The object files are built at the place where configure is launched"
 exit 1
@@ -3564,6 +3571,7 @@ echo "libssh2 support   $libssh2"
 echo "TPM passthrough   $tpm_passthrough"
 echo "QOM debugging     $qom_cast_debug"
 echo "Live block operations $live_block_ops"
+echo "Live block migration $live_block_migration"
 
 if test "$sdl_too_old" = "yes"; then
 echo "-> Your SDL version is too old - please upgrade to have SDL support"
@@ -3950,6 +3958,10 @@ fi
 
 if test "$live_block_ops" = "yes" ; then
   echo "CONFIG_LIVE_BLOCK_OPS=y" >> $config_host_mak
+fi
+
+if test "$live_block_migration" = "yes" ; then
+  echo "CONFIG_LIVE_BLOCK_MIGRATION=y" >> $config_host_mak
 fi
 
 # USB host support
