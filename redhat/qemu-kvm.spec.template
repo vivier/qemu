@@ -426,6 +426,11 @@ dobuild() {
 %else
         --disable-guest-agent \
 %endif
+%if %{rhev}
+        --enable-live-block-ops \
+%else
+        --disable-live-block-ops \
+%endif
         --enable-glusterfs \
         --block-drv-rw-whitelist=qcow2,raw,file,host_device,host_cdrom,nbd,iscsi,gluster,rbd \
         --block-drv-ro-whitelist=vmdk \
