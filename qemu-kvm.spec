@@ -70,7 +70,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 16%{?dist}
+Release: 18%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -974,6 +974,51 @@ Patch459: kvm-qapi-Add-optional-field-compressed-to-ImageInfo.patch
 Patch460: kvm-vmdk-Only-read-cid-from-image-file-when-opening.patch
 # For bz#980771 - [RFE]  qemu-img should be able to tell the compat version of a qcow2 image
 Patch461: kvm-vmdk-Implment-bdrv_get_specific_info.patch
+# For bz#1025877 - pci-assign lacks MSI affinity support
+Patch462: kvm-pci-assign-Add-MSI-affinity-support.patch
+# For bz#1025877 - pci-assign lacks MSI affinity support
+Patch463: kvm-Fix-potential-resource-leak-missing-fclose.patch
+# For bz#1025877 - pci-assign lacks MSI affinity support
+Patch464: kvm-pci-assign-remove-the-duplicate-function-name-in-deb.patch
+# For bz#922589 - e1000/rtl8139: qemu mac address can not be changed via set the hardware address in guest
+Patch465: kvm-net-update-nic-info-during-device-reset.patch
+# For bz#922589 - e1000/rtl8139: qemu mac address can not be changed via set the hardware address in guest
+Patch466: kvm-net-e1000-update-network-information-when-macaddr-is.patch
+# For bz#922589 - e1000/rtl8139: qemu mac address can not be changed via set the hardware address in guest
+Patch467: kvm-net-rtl8139-update-network-information-when-macaddr-.patch
+# For bz#1026689 - virtio-net: macaddr is reset but network info of monitor isn't updated
+Patch468: kvm-virtio-net-fix-up-HMP-NIC-info-string-on-reset.patch
+# For bz#1025477 - VFIO MSI affinity
+Patch469: kvm-vfio-pci-VGA-quirk-update.patch
+# For bz#1025477 - VFIO MSI affinity
+Patch470: kvm-vfio-pci-Add-support-for-MSI-affinity.patch
+# For bz#1026550 - QEMU VFIO update ROM loading code
+Patch471: kvm-vfio-pci-Test-device-reset-capabilities.patch
+# For bz#1026550 - QEMU VFIO update ROM loading code
+Patch472: kvm-vfio-pci-Lazy-PCI-option-ROM-loading.patch
+# For bz#1026550 - QEMU VFIO update ROM loading code
+Patch473: kvm-vfio-pci-Cleanup-error_reports.patch
+# For bz#1026550 - QEMU VFIO update ROM loading code
+Patch474: kvm-vfio-pci-Add-dummy-PCI-ROM-write-accessor.patch
+# For bz#1026550 - QEMU VFIO update ROM loading code
+Patch475: kvm-vfio-pci-Fix-endian-issues-in-vfio_pci_size_rom.patch
+# For bz#1025472 - Nvidia GPU device assignment - qemu-kvm - bus reset support
+Patch476: kvm-linux-headers-Update-to-include-vfio-pci-hot-reset-s.patch
+# For bz#1025472 - Nvidia GPU device assignment - qemu-kvm - bus reset support
+Patch477: kvm-vfio-pci-Implement-PCI-hot-reset.patch
+# For bz#1025474 - Nvidia GPU device assignment - qemu-kvm - NoSnoop support
+Patch478: kvm-linux-headers-Update-for-KVM-VFIO-device.patch
+# For bz#1025474 - Nvidia GPU device assignment - qemu-kvm - NoSnoop support
+Patch479: kvm-vfio-pci-Make-use-of-new-KVM-VFIO-device.patch
+# For bz#995866 - fix vmdk support to ESX images
+Patch480: kvm-vmdk-Fix-vmdk_parse_extents.patch
+# For bz#995866 - fix vmdk support to ESX images
+Patch481: kvm-vmdk-fix-VMFS-extent-parsing.patch
+# For bz#922589 - e1000/rtl8139: qemu mac address can not be changed via set the hardware address in guest
+#Patch482: kvm-e1000-rtl8139-update-HMP-NIC-when-every-bit-is-writt.patch
+# Patch 482 removed as it has to be discussed and should not be applied yet
+# For bz#1005039 - add compat property to disable ctrl_mac_addr feature
+Patch483: kvm-don-t-disable-ctrl_mac_addr-feature-for-6.5-machine-.patch
 
 BuildRequires: zlib-devel
 BuildRequires: SDL-devel
@@ -1621,6 +1666,28 @@ CAC emulation development files.
 %patch459 -p1
 %patch460 -p1
 %patch461 -p1
+%patch462 -p1
+%patch463 -p1
+%patch464 -p1
+%patch465 -p1
+%patch466 -p1
+%patch467 -p1
+%patch468 -p1
+%patch469 -p1
+%patch470 -p1
+%patch471 -p1
+%patch472 -p1
+%patch473 -p1
+%patch474 -p1
+%patch475 -p1
+%patch476 -p1
+%patch477 -p1
+%patch478 -p1
+%patch479 -p1
+%patch480 -p1
+%patch481 -p1
+#%patch482 -p1
+%patch483 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -1801,6 +1868,7 @@ dobuild --target-list="$buildarch"
     rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/ppc_rom.bin
     rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/spapr-rtas.bin
     rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/s390-zipl.rom
+    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/s390-ccw.img
 
     # Remove efi roms
     rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/efi*.rom
@@ -1886,7 +1954,7 @@ find $RPM_BUILD_ROOT -name '*.la' -or -name '*.a' | xargs rm -f
     mkdir -p $RPM_BUILD_ROOT%{_bindir}
     mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1/*
     mkdir -p $RPM_BUILD_ROOT%{_mandir}/man8/*
-    install -m 0755 vscclient $RPM_BUILD_ROOT%{_bindir}/vscclient
+    libtool --mode=install install -m 0755 vscclient $RPM_BUILD_ROOT%{_bindir}/vscclient
     install -m 0755 qemu-img $RPM_BUILD_ROOT%{_bindir}/qemu-img
     install -m 0755 qemu-io $RPM_BUILD_ROOT%{_bindir}/qemu-io
     install -m 0755 qemu-nbd $RPM_BUILD_ROOT%{_bindir}/qemu-nbd
@@ -1963,7 +2031,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %dir %{_datadir}/%{pkgname}/
     %{_datadir}/%{pkgname}/keymaps/
     %{_mandir}/man1/%{pkgname}.1*
-    %{_libexecdir}/qemu-bridge-helper
+    %attr(4755, -, -) %{_libexecdir}/qemu-bridge-helper
     %config(noreplace) %{_sysconfdir}/sasl2/%{pkgname}.conf
     %{_libdir}/systemd/system/ksm.service
     %{_libdir}/systemd/ksmctl
@@ -2009,7 +2077,6 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %{_datadir}/%{pkgname}/pxe-rtl8139.rom
     %{_datadir}/%{pkgname}/pxe-ne2k_pci.rom
     %{_datadir}/%{pkgname}/qemu-icon.bmp
-    %{_datadir}/%{pkgname}/s390-ccw.img
     %{_datadir}/%{pkgname}/rhel6-virtio.rom
     %{_datadir}/%{pkgname}/rhel6-pcnet.rom
     %{_datadir}/%{pkgname}/rhel6-rtl8139.rom
@@ -2050,6 +2117,60 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Fri Nov 08 2013 Michal Novotny <minovotn@redhat.com> - 1.5.3-18.el7
+- Removing leaked patch kvm-e1000-rtl8139-update-HMP-NIC-when-every-bit-is-writt.patch
+
+* Thu Nov 07 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-17.el7
+- kvm-pci-assign-Add-MSI-affinity-support.patch [bz#1025877]
+- kvm-Fix-potential-resource-leak-missing-fclose.patch [bz#1025877]
+- kvm-pci-assign-remove-the-duplicate-function-name-in-deb.patch [bz#1025877]
+- kvm-Remove-s390-ccw-img-loader.patch [bz#1017682]
+- kvm-Fix-vscclient-installation.patch [bz#1017681]
+- kvm-Change-qemu-bridge-helper-permissions-to-4755.patch [bz#1017689]
+- kvm-net-update-nic-info-during-device-reset.patch [bz#922589]
+- kvm-net-e1000-update-network-information-when-macaddr-is.patch [bz#922589]
+- kvm-net-rtl8139-update-network-information-when-macaddr-.patch [bz#922589]
+- kvm-virtio-net-fix-up-HMP-NIC-info-string-on-reset.patch [bz#1026689]
+- kvm-vfio-pci-VGA-quirk-update.patch [bz#1025477]
+- kvm-vfio-pci-Add-support-for-MSI-affinity.patch [bz#1025477]
+- kvm-vfio-pci-Test-device-reset-capabilities.patch [bz#1026550]
+- kvm-vfio-pci-Lazy-PCI-option-ROM-loading.patch [bz#1026550]
+- kvm-vfio-pci-Cleanup-error_reports.patch [bz#1026550]
+- kvm-vfio-pci-Add-dummy-PCI-ROM-write-accessor.patch [bz#1026550]
+- kvm-vfio-pci-Fix-endian-issues-in-vfio_pci_size_rom.patch [bz#1026550]
+- kvm-linux-headers-Update-to-include-vfio-pci-hot-reset-s.patch [bz#1025472]
+- kvm-vfio-pci-Implement-PCI-hot-reset.patch [bz#1025472]
+- kvm-linux-headers-Update-for-KVM-VFIO-device.patch [bz#1025474]
+- kvm-vfio-pci-Make-use-of-new-KVM-VFIO-device.patch [bz#1025474]
+- kvm-vmdk-Fix-vmdk_parse_extents.patch [bz#995866]
+- kvm-vmdk-fix-VMFS-extent-parsing.patch [bz#995866]
+- kvm-e1000-rtl8139-update-HMP-NIC-when-every-bit-is-writt.patch [bz#922589]
+- kvm-don-t-disable-ctrl_mac_addr-feature-for-6.5-machine-.patch [bz#1005039]
+- Resolves: bz#1005039
+  (add compat property to disable ctrl_mac_addr feature)
+- Resolves: bz#1017681
+  (rpmdiff test "Multilib regressions": vscclient is a libtool script on s390/s390x/ppc/ppc64)
+- Resolves: bz#1017682
+  (/usr/share/qemu-kvm/s390-ccw.img need not be distributed)
+- Resolves: bz#1017689
+  (/usr/libexec/qemu-bridge-helper permissions should be 4755)
+- Resolves: bz#1025472
+  (Nvidia GPU device assignment - qemu-kvm - bus reset support)
+- Resolves: bz#1025474
+  (Nvidia GPU device assignment - qemu-kvm - NoSnoop support)
+- Resolves: bz#1025477
+  (VFIO MSI affinity)
+- Resolves: bz#1025877
+  (pci-assign lacks MSI affinity support)
+- Resolves: bz#1026550
+  (QEMU VFIO update ROM loading code)
+- Resolves: bz#1026689
+  (virtio-net: macaddr is reset but network info of monitor isn't updated)
+- Resolves: bz#922589
+  (e1000/rtl8139: qemu mac address can not be changed via set the hardware address in guest)
+- Resolves: bz#995866
+  (fix vmdk support to ESX images)
+
 * Thu Nov 07 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-16.el7
 - kvm-block-drop-bs_snapshots-global-variable.patch [bz#1026524]
 - kvm-block-move-snapshot-code-in-block.c-to-block-snapsho.patch [bz#1026524]
