@@ -793,6 +793,14 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Mon Nov 11 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-19.el7
+- kvm-qapi-qapi-visit.py-fix-list-handling-for-union-types.patch [bz#848203]
+- kvm-qapi-qapi-visit.py-native-list-support.patch [bz#848203]
+- kvm-qapi-enable-generation-of-native-list-code.patch [bz#848203]
+- kvm-net-add-support-of-mac-programming-over-macvtap-in-Q.patch [bz#848203]
+- Resolves: bz#848203
+  (MAC Programming for virtio over macvtap - qemu-kvm support)
+
 * Thu Nov 07 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-17.el7
 - kvm-pci-assign-Add-MSI-affinity-support.patch [bz#1025877]
 - kvm-Fix-potential-resource-leak-missing-fclose.patch [bz#1025877]
