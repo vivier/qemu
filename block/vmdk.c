@@ -713,6 +713,8 @@ static int vmdk_parse_extents(const char *desc, BlockDriverState *bs,
             if (ret != 5 || flat_offset < 0) {
                 return -EINVAL;
             }
+        } else if (!strcmp(type, "VMFS")) {
+            flat_offset = 0;
         } else if (ret != 4) {
             return -EINVAL;
         }
