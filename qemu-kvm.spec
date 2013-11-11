@@ -70,7 +70,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 18%{?dist}
+Release: 19%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1019,6 +1019,14 @@ Patch481: kvm-vmdk-fix-VMFS-extent-parsing.patch
 # Patch 482 removed as it has to be discussed and should not be applied yet
 # For bz#1005039 - add compat property to disable ctrl_mac_addr feature
 Patch483: kvm-don-t-disable-ctrl_mac_addr-feature-for-6.5-machine-.patch
+# For bz#848203 - MAC Programming for virtio over macvtap - qemu-kvm support
+Patch484: kvm-qapi-qapi-visit.py-fix-list-handling-for-union-types.patch
+# For bz#848203 - MAC Programming for virtio over macvtap - qemu-kvm support
+Patch485: kvm-qapi-qapi-visit.py-native-list-support.patch
+# For bz#848203 - MAC Programming for virtio over macvtap - qemu-kvm support
+Patch486: kvm-qapi-enable-generation-of-native-list-code.patch
+# For bz#848203 - MAC Programming for virtio over macvtap - qemu-kvm support
+Patch487: kvm-net-add-support-of-mac-programming-over-macvtap-in-Q.patch
 
 BuildRequires: zlib-devel
 BuildRequires: SDL-devel
@@ -1688,6 +1696,10 @@ CAC emulation development files.
 %patch481 -p1
 #%patch482 -p1
 %patch483 -p1
+%patch484 -p1
+%patch485 -p1
+%patch486 -p1
+%patch487 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -2117,6 +2129,14 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Mon Nov 11 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-19.el7
+- kvm-qapi-qapi-visit.py-fix-list-handling-for-union-types.patch [bz#848203]
+- kvm-qapi-qapi-visit.py-native-list-support.patch [bz#848203]
+- kvm-qapi-enable-generation-of-native-list-code.patch [bz#848203]
+- kvm-net-add-support-of-mac-programming-over-macvtap-in-Q.patch [bz#848203]
+- Resolves: bz#848203
+  (MAC Programming for virtio over macvtap - qemu-kvm support)
+
 * Fri Nov 08 2013 Michal Novotny <minovotn@redhat.com> - 1.5.3-18.el7
 - Removing leaked patch kvm-e1000-rtl8139-update-HMP-NIC-when-every-bit-is-writt.patch
 
