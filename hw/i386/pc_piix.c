@@ -1030,6 +1030,11 @@ static QEMUMachine pc_machine_rhel620 = {
     DEFAULT_MACHINE_OPTIONS,
 };
 
+/* 
+ * NOTE: We don't have the event_idx compat entry for the
+ * virtio-balloon-pci driver because RHEL6 doesn't disable
+ * it either due to a bug (see RHBZ 1029539 fo more info)
+ */
 #define PC_RHEL6_1_COMPAT \
     PC_RHEL6_2_COMPAT,\
     {\
@@ -1058,10 +1063,6 @@ static QEMUMachine pc_machine_rhel620 = {
         .value    = "off",\
     },{\
         .driver   = "virtio-net-pci",\
-        .property = "event_idx",\
-        .value    = "off",\
-    },{\
-        .driver   = "virtio-balloon-pci",\
         .property = "event_idx",\
         .value    = "off",\
     },{\
