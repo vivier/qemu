@@ -683,7 +683,6 @@ static int do_qmp_capabilities(Monitor *mon, const QDict *params,
     return 0;
 }
 
-static int mon_set_cpu(int cpu_index);
 static void handle_user_command(Monitor *mon, const char *cmdline);
 
 static int do_hmp_passthrough(Monitor *mon, const QDict *params,
@@ -707,7 +706,7 @@ static int do_hmp_passthrough(Monitor *mon, const QDict *params,
     cur_mon = &hmp;
 
     if (qdict_haskey(params, "cpu-index")) {
-        ret = mon_set_cpu(qdict_get_int(params, "cpu-index"));
+        ret = monitor_set_cpu(qdict_get_int(params, "cpu-index"));
         if (ret < 0) {
             cur_mon = old_mon;
             qerror_report(QERR_INVALID_PARAMETER_VALUE, "cpu-index", "a CPU number");
@@ -1042,8 +1041,8 @@ static void do_info_uuid(Monitor *mon, QObject **ret_data)
     *ret_data = qobject_from_jsonf("{ 'UUID': %s }", uuid);
 }
 
-/* get the current CPU defined by the user */
-static int mon_set_cpu(int cpu_index)
+/* set the current CPU defined by the user */
+int monitor_set_cpu(int cpu_index)
 {
     CPUState *env;
 
@@ -1059,7 +1058,7 @@ static int mon_set_cpu(int cpu_index)
 static CPUState *mon_get_cpu(void)
 {
     if (!cur_mon->mon_cpu) {
-        mon_set_cpu(0);
+        monitor_set_cpu(0);
     }
     cpu_synchronize_state(cur_mon->mon_cpu);
     return cur_mon->mon_cpu;
@@ -1171,7 +1170,7 @@ static void do_info_cpus(Monitor *mon, QObject **ret_data)
 static int do_cpu_set(Monitor *mon, const QDict *qdict, QObject **ret_data)
 {
     int index = qdict_get_int(qdict, "index");
-    if (mon_set_cpu(index) < 0) {
+    if (monitor_set_cpu(index) < 0) {
         qerror_report(QERR_INVALID_PARAMETER_VALUE, "index",
                       "a CPU number");
         return -1;

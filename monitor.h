@@ -76,6 +76,7 @@ void monitor_printf(Monitor *mon, const char *fmt, ...)
     __attribute__ ((__format__ (__printf__, 2, 3)));
 void monitor_print_filename(Monitor *mon, const char *filename);
 void monitor_flush(Monitor *mon);
+int monitor_set_cpu(int cpu_index);
 
 typedef void (MonitorCompletion)(void *opaque, QObject *ret_data);
 
