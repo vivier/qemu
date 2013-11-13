@@ -165,6 +165,7 @@ struct Monitor {
     int reset_seen;
     int flags;
     int suspend_cnt;
+    bool skip_flush;
     QString *outbuf;
     guint watch;
     ReadLineState *rs;
@@ -280,7 +281,7 @@ void monitor_flush(Monitor *mon)
     size_t len;
     const char *buf;
 
-    if (!mon) {
+    if (!mon || mon->skip_flush) {
         return;
     }
 
@@ -690,13 +691,10 @@ char *qmp_human_monitor_command(const char *command_line, bool has_cpu_index,
 {
     char *output = NULL;
     Monitor *old_mon, hmp;
-    CharDriverState mchar;
 
     memset(&hmp, 0, sizeof(hmp));
     hmp.outbuf = qstring_new();
-
-    qemu_chr_init_mem(&mchar);
-    hmp.chr = &mchar;
+    hmp.skip_flush = true;
 
     old_mon = cur_mon;
     cur_mon = &hmp;
@@ -714,17 +712,14 @@ char *qmp_human_monitor_command(const char *command_line, bool has_cpu_index,
     handle_user_command(&hmp, command_line);
     cur_mon = old_mon;
 
-    if (qemu_chr_mem_osize(hmp.chr) > 0) {
-        QString *str = qemu_chr_mem_to_qs(hmp.chr);
-        output = g_strdup(qstring_get_str(str));
-        QDECREF(str);
+    if (qstring_get_length(hmp.outbuf) > 0) {
+        output = g_strdup(qstring_get_str(hmp.outbuf));
     } else {
         output = g_strdup("");
     }
 
 out:
     QDECREF(hmp.outbuf);
-    qemu_chr_close_mem(hmp.chr);
     return output;
 }
 
