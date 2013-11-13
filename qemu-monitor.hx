@@ -2141,10 +2141,11 @@ EQMP
     {
         .name       = "human-monitor-command",
         .args_type  = "command-line:s,cpu-index:i?",
-        .params     = "",
-        .help       = "",
+        .params     = "command-line [cpu-index]",
+        .help       = "execute a command on the human monitor",
         .user_print = monitor_user_noop,
-        .mhandler.cmd_new = do_hmp_passthrough,
+        .mhandler.cmd_new = qmp_marshal_input_human_monitor_command,
+        .flags = MONITOR_CMD_QMP_ONLY
     },
 
 SQMP
