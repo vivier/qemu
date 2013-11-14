@@ -119,6 +119,11 @@ extern struct MemoryRegion io_mem_rom;
 extern struct MemoryRegion io_mem_unassigned;
 extern struct MemoryRegion io_mem_notdirty;
 
+typedef void (RAMBlockIterFunc)(void *host_addr,
+    ram_addr_t offset, ram_addr_t length, void *opaque);
+
+void qemu_ram_foreach_block(RAMBlockIterFunc func, void *opaque);
+
 #endif
 
 #endif /* !CPU_COMMON_H */

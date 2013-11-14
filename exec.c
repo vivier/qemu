@@ -2644,3 +2644,12 @@ bool cpu_physical_memory_is_io(hwaddr phys_addr)
              memory_region_is_romd(section->mr));
 }
 #endif
+
+void qemu_ram_foreach_block(RAMBlockIterFunc func, void *opaque)
+{
+    RAMBlock *block;
+
+    QTAILQ_FOREACH(block, &ram_list.blocks, next) {
+        func(block->host, block->offset, block->length, opaque);
+    }
+}
