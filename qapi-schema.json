@@ -664,6 +664,11 @@
 #          This feature allows us to minimize migration traffic for certain work
 #          loads, by sending compressed difference of the pages
 #
+# @x-rdma-pin-all: Controls whether or not the entire VM memory footprint is
+#          mlock()'d on demand or all at once. Refer to docs/rdma.txt for usage.
+#          Disabled by default. Experimental: may (or may not) be renamed after
+#          further testing is complete. (since 1.6)
+#
 # @auto-converge: If enabled, QEMU will automatically throttle down the guest
 #          to speed up convergence of RAM migration. (since 1.6)
 #
@@ -679,7 +684,7 @@
 # Since: 1.2
 ##
 { 'enum': 'MigrationCapability',
-  'data': ['xbzrle', 'auto-converge', 'zero-blocks'] }
+  'data': ['xbzrle', 'x-rdma-pin-all', 'auto-converge', 'zero-blocks'] }
 
 ##
 # @MigrationCapabilityStatus
