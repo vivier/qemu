@@ -18,6 +18,10 @@
     %global have_usbredir 0
 %endif
 
+%ifnarch s390 s390x
+    %global have_librdma 1
+%endif
+
 %ifnarch x86_64
     %global build_only_sub 1
     %global debug_package %{nil}
@@ -200,6 +204,10 @@ BuildRequires: pixman-devel
 # Documentation requirement
 BuildRequires: perl-podlators
 BuildRequires: texinfo
+# For rdma
+%if 0%{?have_librdma:1}
+BuildRequires: librdmacm-devel
+%endif
 
 %if 0%{!?build_only_sub:1}
 Requires: qemu-img = %{epoch}:%{version}-%{release}
