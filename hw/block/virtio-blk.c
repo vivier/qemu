@@ -658,7 +658,7 @@ static void virtio_blk_migration_state_changed(Notifier *notifier, void *data)
                                   migration_state_notifier);
     MigrationState *mig = data;
 
-    if (migration_is_active(mig)) {
+    if (migration_in_setup(mig)) {
         if (!s->dataplane) {
             return;
         }
