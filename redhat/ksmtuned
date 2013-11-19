@@ -73,7 +73,7 @@ committed_memory () {
     pidlist=$(pgrep -d ' ' -- '^qemu(-kvm|:.{1,11})$')
     if [ -n "$pidlist" ]; then
         ps -p "$pidlist" -o rsz=
-    fi | awk '{ sum += $1 }; END { print sum }'
+    fi | awk '{ sum += $1 }; END { print 0+sum }'
 }
 
 free_memory () {
