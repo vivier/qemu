@@ -2050,6 +2050,18 @@ static void bdrv_put_rhel7_reason(QDict *event, int error)
     qdict_put(event, BDRV_REASON_KEY, qstring_from_str(reason));
 }
 
+#define BDRV_DEBUG_KEY  RFQDN_REDHAT "debug_info"
+
+/* RHEL7 vendor extension */
+static void bdrv_put_rhel7_debug_info(QDict *event, int error)
+{
+    QObject *info;
+
+    info = qobject_from_jsonf("{ 'errno': %d, 'message': %s }", error,
+                               strerror(error));
+    qdict_put_obj(event, BDRV_DEBUG_KEY, info);
+}
+
 void bdrv_emit_qmp_error_event(const BlockDriverState *bdrv,
                                enum MonitorEvent ev,
                                BlockErrorAction action,
@@ -2073,11 +2085,18 @@ void bdrv_emit_qmp_error_event(const BlockDriverState *bdrv,
         abort();
     }
 
+    fprintf(stderr, "%s error in device '%s': %s (%d)\n",
+                     ev == QEVENT_BLOCK_IO_ERROR  ? "block I/O" :
+                     ev == QEVENT_BLOCK_JOB_ERROR ? "block job" :
+                     "other block",
+                     bdrv->device_name, strerror(error), error);
+
     data = qobject_from_jsonf("{ 'device': %s, 'action': %s, 'operation': %s }",
                               bdrv->device_name,
                               action_str,
                               is_read ? "read" : "write");
     bdrv_put_rhel7_reason(qobject_to_qdict(data), error);
+    bdrv_put_rhel7_debug_info(qobject_to_qdict(data), error);
     monitor_protocol_event(ev, data);
 
     qobject_decref(data);
