@@ -19,6 +19,9 @@ extern Monitor *default_mon;
 /* flags for monitor commands */
 #define MONITOR_CMD_ASYNC       0x0001
 
+/* Red Hat Monitor's prefix (reversed fully qualified domain) */
+#define RFQDN_REDHAT "__com.redhat_"
+
 int monitor_cur_is_qmp(void);
 
 void monitor_init(CharDriverState *chr, int flags);
