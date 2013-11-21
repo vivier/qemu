@@ -59,6 +59,11 @@ Data:
     "eperm": errno EPERM
     "enospc": errno ENOSPC
     "eother": any other errno (other than EIO, EPERM, ENOSPC)
+- "__com.redhat_debug_info": RHEL7 extension containing debug information for
+                             humans, applications should NOT read any
+                             information from this member (json-object):
+    - "errno": errno value (json-int)
+    - "message": error message returned by strerror() (json-string)
 
 Example:
 
@@ -66,7 +71,10 @@ Example:
     "data": { "device": "ide0-hd1",
               "operation": "write",
               "action": "stop",
-              "__com.redhat_reason": "enospc" },
+              "__com.redhat_reason": "enospc",
+              "__com.redhat_debug_info": {
+                  "message": "No space left on device",
+                  "errno": 28 } }
     "timestamp": { "seconds": 1265044230, "microseconds": 450486 } }
 
 Note: If action is "stop", a STOP event will eventually follow the
@@ -144,6 +152,11 @@ Data:
     "eperm": errno EPERM
     "enospc": errno ENOSPC
     "eother": any other errno (other than EIO, EPERM, ENOSPC)
+- "__com.redhat_debug_info": RHEL7 extension containing debug information for
+                             humans, applications should NOT read any
+                             information from this member (json-object):
+    - "errno": errno value (json-int)
+    - "message": error message returned by strerror() (json-string)
 
 Example:
 
@@ -151,7 +164,10 @@ Example:
     "data": { "device": "ide0-hd1",
               "operation": "write",
               "action": "stop",
-              "__com.redhat_reason": "enospc" },
+              "__com.redhat_reason": "enospc",
+              "__com.redhat_debug_info": {
+                  "message": "No space left on device",
+                  "errno": 28 } }
     "timestamp": { "seconds": 1265044230, "microseconds": 450486 } }
 
 BLOCK_JOB_READY
