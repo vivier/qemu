@@ -1723,9 +1723,36 @@ void bdrv_set_dev_ops(BlockDriverState *bs, const BlockDevOps *ops,
     bs->dev_opaque = opaque;
 }
 
+#define BDRV_REASON_KEY RFQDN_REDHAT "reason"
+
+/* RHEL7 vendor extension */
+static void bdrv_put_rhel7_reason(QDict *event, int error)
+{
+    const char *reason;
+
+    switch (error) {
+    case ENOSPC:
+        reason = "enospc";
+        break;
+    case EPERM:
+        reason = "eperm";
+        break;
+    case EIO:
+        reason = "eio";
+        break;
+    default:
+        reason = "eother";
+        break;
+    }
+
+    qdict_put(event, BDRV_REASON_KEY, qstring_from_str(reason));
+}
+
 void bdrv_emit_qmp_error_event(const BlockDriverState *bdrv,
                                enum MonitorEvent ev,
-                               BlockErrorAction action, bool is_read)
+                               BlockErrorAction action,
+                               int error,
+                               bool is_read)
 {
     QObject *data;
     const char *action_str;
@@ -1748,6 +1775,7 @@ void bdrv_emit_qmp_error_event(const BlockDriverState *bdrv,
                               bdrv->device_name,
                               action_str,
                               is_read ? "read" : "write");
+    bdrv_put_rhel7_reason(qobject_to_qdict(data), error);
     monitor_protocol_event(ev, data);
 
     qobject_decref(data);
@@ -2905,7 +2933,8 @@ void bdrv_error_action(BlockDriverState *bs, BlockErrorAction action,
                        bool is_read, int error)
 {
     assert(error >= 0);
-    bdrv_emit_qmp_error_event(bs, QEVENT_BLOCK_IO_ERROR, action, is_read);
+    bdrv_emit_qmp_error_event(bs, QEVENT_BLOCK_IO_ERROR, action, error,
+                              is_read);
     if (action == BDRV_ACTION_STOP) {
         vm_stop(RUN_STATE_IO_ERROR);
         bdrv_iostatus_set_err(bs, error);

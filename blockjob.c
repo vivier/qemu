@@ -271,7 +271,8 @@ BlockErrorAction block_job_error_action(BlockJob *job, BlockDriverState *bs,
     default:
         abort();
     }
-    bdrv_emit_qmp_error_event(job->bs, QEVENT_BLOCK_JOB_ERROR, action, is_read);
+    bdrv_emit_qmp_error_event(job->bs, QEVENT_BLOCK_JOB_ERROR, action, error,
+                              is_read);
     if (action == BDRV_ACTION_STOP) {
         block_job_pause(job);
         block_job_iostatus_set_err(job, error);
