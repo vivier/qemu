@@ -1598,7 +1598,7 @@ static int qcow2_create(const char *filename, QEMUOptionParameter *options,
     int flags = 0;
     size_t cluster_size = DEFAULT_CLUSTER_SIZE;
     int prealloc = 0;
-    int version = 2;
+    int version = 3;
     Error *local_err = NULL;
     int ret;
 
