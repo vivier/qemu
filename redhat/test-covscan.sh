@@ -63,9 +63,11 @@ fi
 task="$(echo $task | awk '{ gsub(/[[:space:]]*/,"", $0); print }')"
 taskOfficial="$(echo $task | awk '{ num=split($0, a, "."); for (i = 1; i <= num; i++) { if (a[i] == "el6") pos=i } ret=""; for (i = 1; i < pos; i++) ret=ret""a[i]"."; print ret"el6" }')"
 
+mock=0
 if ! get_official_srpm "$taskOfficial"; then
-	echo "ERROR: Cannot get official source RPM for $taskOfficial"
-	exit 1
+	mock=1
+	#echo "ERROR: Cannot get official source RPM for $taskOfficial"
+	#exit 1
 fi
 
 if ! get_srpm_for_taskid "$taskid"; then
@@ -77,7 +79,11 @@ fi
 srpmOfficial="$taskOfficial.src.rpm"
 srpm="$task.src.rpm"
 
-location=$(covscan version-diff-build --base-srpm=$srpmOfficial --srpm=$srpm --base-config=rhel-7-x86_64 --config=rhel-7-x86_64 --all --nowait --email-to=$rcptlist | awk '{ split($0, a, ": "); print a[2] }')
+if [ "$mock" -eq 1 ]; then
+	location=$(covscan mock-build $srpm --config=rhel-7-x86_64 --all --nowait --email-to=$rcptlist | awk '{ split($0, a, ": "); print a[2] }')
+else
+	location=$(covscan version-diff-build --base-srpm=$srpmOfficial --srpm=$srpm --base-config=rhel-7-x86_64 --config=rhel-7-x86_64 --all --nowait --email-to=$rcptlist | awk '{ split($0, a, ": "); print a[2] }')
+fi
 coverityid="$(echo $location | awk ' { num=split($0, a, "/"); print a[num-1]; }')"
 echo "New Coverity test job has been created: $coverityid ($location)"
 
