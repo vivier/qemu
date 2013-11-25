@@ -91,7 +91,7 @@ if [ "$failed" -eq 0 -a "$applied" -gt 0 ]; then
 	echo >> $tmpFileR
 	cat test.tmp >> $tmpFileR
 	echo >> $tmpFileR
-	cat /home/patchwork/public_reports/qemu-kvm-RHEL-6.5/short_report.txt  | grep PATCH | awk '{ split($0, a, " "); if (a[1] != "123456") { if (match(a[5], "N") == 0) print $0 } }' >> $tmpFileR
+	cat /home/patchwork/public_reports/qemu-kvm-RHEL-$VER/short_report.txt  | grep PATCH | awk '{ split($0, a, " "); if (a[1] != "123456") { if (match(a[5], "N") == 0) print $0 } }' >> $tmpFileR
 	echo >> $tmpFileR
 	echo "All patches on queue ($applied) were applied successfully" >> $tmpFileR
 
