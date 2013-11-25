@@ -1,5 +1,8 @@
 #!/bin/bash
 
+source $HOME/.bashrc
+source $HOME/patchwork.virtualenv/bin/activate
+
 # Activate Kerberos 5 keytab
 /home/patchwork/activate-keytab.sh > /dev/null
 
