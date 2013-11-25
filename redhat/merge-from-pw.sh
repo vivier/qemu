@@ -1,5 +1,8 @@
 #!/bin/bash
 
+source $HOME/.bashrc
+source $HOME/patchwork.virtualenv/bin/activate
+
 MASTER="7.0"
 REPOBASE="/home/patchwork/git/qemu-kvm-rhel"
 BRANCHBASE="rhel"
