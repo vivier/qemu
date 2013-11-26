@@ -28,8 +28,8 @@ if [ "$typ" == "autotest" ]; then
 elif [ "$typ" == "coverity" ]; then
 	./test-covscan.sh $task_id
 elif [ "$typ" == "autotest-coverity" ]; then
-	./test-autotest.sh $AT_SERVER $task_id
 	./test-covscan.sh $task_id
+	./test-autotest.sh $AT_SERVER $task_id
 else
 	echo "ERROR: Incorrect type!"
 	exit 1
