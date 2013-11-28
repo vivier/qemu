@@ -794,6 +794,46 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Nov 28 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-20.el7
+- kvm-pc-drop-virtio-balloon-pci-event_idx-compat-property.patch [bz#1029539]
+- kvm-virtio-net-only-delete-bh-that-existed.patch [bz#922463]
+- kvm-virtio-net-broken-RX-filtering-logic-fixed.patch [bz#1029370]
+- kvm-block-Avoid-unecessary-drv-bdrv_getlength-calls.patch [bz#1025138]
+- kvm-block-Round-up-total_sectors.patch [bz#1025138]
+- kvm-doc-fix-hardcoded-helper-path.patch [bz#1016952]
+- kvm-introduce-RFQDN_REDHAT-RHEL-6-7-fwd.patch [bz#971933]
+- kvm-error-reason-in-BLOCK_IO_ERROR-BLOCK_JOB_ERROR-event.patch [bz#971938]
+- kvm-improve-debuggability-of-BLOCK_IO_ERROR-BLOCK_JOB_ER.patch [bz#895041]
+- kvm-vfio-pci-Fix-multifunction-on.patch [bz#1029275]
+- kvm-qcow2-Change-default-for-new-images-to-compat-1.1.patch [bz#1026739]
+- kvm-qcow2-change-default-for-new-images-to-compat-1.1-pa.patch [bz#1026739]
+- kvm-rng-egd-offset-the-point-when-repeatedly-read-from-t.patch [bz#1032862]
+- kvm-Fix-rhel-rhev-conflict-for-qemu-kvm-common.patch [bz#1033463]
+- Resolves: bz#1016952
+  (qemu-kvm man page guide wrong path for qemu-bridge-helper)
+- Resolves: bz#1025138
+  (Read/Randread/Randrw performance regression)
+- Resolves: bz#1026739
+  (qcow2: Switch to compat=1.1 default for new images)
+- Resolves: bz#1029275
+  (Guest only find one 82576 VF(function 0) while use multifunction)
+- Resolves: bz#1029370
+  ([whql][netkvm][wlk] Virtio-net device handles RX multicast filtering improperly)
+- Resolves: bz#1029539
+  (Machine type rhel6.1.0 and  balloon device cause migration fail from RHEL6.5 host to RHEL7.0 host)
+- Resolves: bz#1032862
+  (virtio-rng-egd: repeatedly read same random data-block w/o considering the buffer offset)
+- Resolves: bz#1033463
+  (can not upgrade qemu-kvm-common to qemu-kvm-common-rhev due to conflicts)
+- Resolves: bz#895041
+  (QMP: forward port I/O error debug messages)
+- Resolves: bz#922463
+  (qemu-kvm core dump when virtio-net multi queue guest hot-unpluging vNIC)
+- Resolves: bz#971933
+  (QMP: add RHEL's vendor extension prefix)
+- Resolves: bz#971938
+  (QMP: Add error reason to BLOCK_IO_ERROR event)
+
 * Mon Nov 11 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-19.el7
 - kvm-qapi-qapi-visit.py-fix-list-handling-for-union-types.patch [bz#848203]
 - kvm-qapi-qapi-visit.py-native-list-support.patch [bz#848203]
