@@ -70,7 +70,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 19%{?dist}
+Release: 20%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1027,6 +1027,32 @@ Patch485: kvm-qapi-qapi-visit.py-native-list-support.patch
 Patch486: kvm-qapi-enable-generation-of-native-list-code.patch
 # For bz#848203 - MAC Programming for virtio over macvtap - qemu-kvm support
 Patch487: kvm-net-add-support-of-mac-programming-over-macvtap-in-Q.patch
+# For bz#1029539 - Machine type rhel6.1.0 and  balloon device cause migration fail from RHEL6.5 host to RHEL7.0 host
+Patch488: kvm-pc-drop-virtio-balloon-pci-event_idx-compat-property.patch
+# For bz#922463 - qemu-kvm core dump when virtio-net multi queue guest hot-unpluging vNIC
+Patch489: kvm-virtio-net-only-delete-bh-that-existed.patch
+# For bz#1029370 - [whql][netkvm][wlk] Virtio-net device handles RX multicast filtering improperly
+Patch490: kvm-virtio-net-broken-RX-filtering-logic-fixed.patch
+# For bz#1025138 - Read/Randread/Randrw performance regression
+Patch491: kvm-block-Avoid-unecessary-drv-bdrv_getlength-calls.patch
+# For bz#1025138 - Read/Randread/Randrw performance regression
+Patch492: kvm-block-Round-up-total_sectors.patch
+# For bz#1016952 - qemu-kvm man page guide wrong path for qemu-bridge-helper
+Patch493: kvm-doc-fix-hardcoded-helper-path.patch
+# For bz#971933 - QMP: add RHEL's vendor extension prefix
+Patch494: kvm-introduce-RFQDN_REDHAT-RHEL-6-7-fwd.patch
+# For bz#971938 - QMP: Add error reason to BLOCK_IO_ERROR event
+Patch495: kvm-error-reason-in-BLOCK_IO_ERROR-BLOCK_JOB_ERROR-event.patch
+# For bz#895041 - QMP: forward port I/O error debug messages
+Patch496: kvm-improve-debuggability-of-BLOCK_IO_ERROR-BLOCK_JOB_ER.patch
+# For bz#1029275 - Guest only find one 82576 VF(function 0) while use multifunction
+Patch497: kvm-vfio-pci-Fix-multifunction-on.patch
+# For bz#1026739 - qcow2: Switch to compat=1.1 default for new images
+Patch498: kvm-qcow2-Change-default-for-new-images-to-compat-1.1.patch
+# For bz#1026739 - qcow2: Switch to compat=1.1 default for new images
+Patch499: kvm-qcow2-change-default-for-new-images-to-compat-1.1-pa.patch
+# For bz#1032862 - virtio-rng-egd: repeatedly read same random data-block w/o considering the buffer offset
+Patch500: kvm-rng-egd-offset-the-point-when-repeatedly-read-from-t.patch
 
 BuildRequires: zlib-devel
 BuildRequires: SDL-devel
@@ -1134,13 +1160,14 @@ Requires(post): systemd-units
 Requires(preun): systemd-units
 Requires(postun): systemd-units
 
+%rhel_rhev_conflicts qemu-kvm-common
+
 %description -n qemu-kvm-common%{?pkgsuffix}
 QEMU is a generic and open source processor emulator which achieves a good
 emulation speed by using dynamic translation.
 
 This package provides the common files needed by all QEMU targets
 
-%rhel_rhev_conflicts qemu-kvm-common
 %endif
 
 %if %{with guest_agent}
@@ -1700,6 +1727,19 @@ CAC emulation development files.
 %patch485 -p1
 %patch486 -p1
 %patch487 -p1
+%patch488 -p1
+%patch489 -p1
+%patch490 -p1
+%patch491 -p1
+%patch492 -p1
+%patch493 -p1
+%patch494 -p1
+%patch495 -p1
+%patch496 -p1
+%patch497 -p1
+%patch498 -p1
+%patch499 -p1
+%patch500 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -2129,6 +2169,46 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Thu Nov 28 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-20.el7
+- kvm-pc-drop-virtio-balloon-pci-event_idx-compat-property.patch [bz#1029539]
+- kvm-virtio-net-only-delete-bh-that-existed.patch [bz#922463]
+- kvm-virtio-net-broken-RX-filtering-logic-fixed.patch [bz#1029370]
+- kvm-block-Avoid-unecessary-drv-bdrv_getlength-calls.patch [bz#1025138]
+- kvm-block-Round-up-total_sectors.patch [bz#1025138]
+- kvm-doc-fix-hardcoded-helper-path.patch [bz#1016952]
+- kvm-introduce-RFQDN_REDHAT-RHEL-6-7-fwd.patch [bz#971933]
+- kvm-error-reason-in-BLOCK_IO_ERROR-BLOCK_JOB_ERROR-event.patch [bz#971938]
+- kvm-improve-debuggability-of-BLOCK_IO_ERROR-BLOCK_JOB_ER.patch [bz#895041]
+- kvm-vfio-pci-Fix-multifunction-on.patch [bz#1029275]
+- kvm-qcow2-Change-default-for-new-images-to-compat-1.1.patch [bz#1026739]
+- kvm-qcow2-change-default-for-new-images-to-compat-1.1-pa.patch [bz#1026739]
+- kvm-rng-egd-offset-the-point-when-repeatedly-read-from-t.patch [bz#1032862]
+- kvm-Fix-rhel-rhev-conflict-for-qemu-kvm-common.patch [bz#1033463]
+- Resolves: bz#1016952
+  (qemu-kvm man page guide wrong path for qemu-bridge-helper)
+- Resolves: bz#1025138
+  (Read/Randread/Randrw performance regression)
+- Resolves: bz#1026739
+  (qcow2: Switch to compat=1.1 default for new images)
+- Resolves: bz#1029275
+  (Guest only find one 82576 VF(function 0) while use multifunction)
+- Resolves: bz#1029370
+  ([whql][netkvm][wlk] Virtio-net device handles RX multicast filtering improperly)
+- Resolves: bz#1029539
+  (Machine type rhel6.1.0 and  balloon device cause migration fail from RHEL6.5 host to RHEL7.0 host)
+- Resolves: bz#1032862
+  (virtio-rng-egd: repeatedly read same random data-block w/o considering the buffer offset)
+- Resolves: bz#1033463
+  (can not upgrade qemu-kvm-common to qemu-kvm-common-rhev due to conflicts)
+- Resolves: bz#895041
+  (QMP: forward port I/O error debug messages)
+- Resolves: bz#922463
+  (qemu-kvm core dump when virtio-net multi queue guest hot-unpluging vNIC)
+- Resolves: bz#971933
+  (QMP: add RHEL's vendor extension prefix)
+- Resolves: bz#971938
+  (QMP: Add error reason to BLOCK_IO_ERROR event)
+
 * Mon Nov 11 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-19.el7
 - kvm-qapi-qapi-visit.py-fix-list-handling-for-union-types.patch [bz#848203]
 - kvm-qapi-qapi-visit.py-native-list-support.patch [bz#848203]
