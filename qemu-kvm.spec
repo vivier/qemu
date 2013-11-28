@@ -1993,7 +1993,6 @@ dobuild --target-list="$buildarch"
 %if 0%{!?build_only_sub:1}
     # Install rules to use the bridge helper with libvirt's virbr0
     install -m 0644 %{SOURCE12} $RPM_BUILD_ROOT%{_sysconfdir}/%{pkgname}
-    chmod u+s $RPM_BUILD_ROOT%{_libexecdir}/qemu-bridge-helper
 %endif
 
 %if !%{rhev}
