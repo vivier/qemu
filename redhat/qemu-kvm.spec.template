@@ -216,24 +216,19 @@ Requires: qemu-img = %{epoch}:%{version}-%{release}
 %define qemudocdir %{_docdir}/%{pkgname}
 
 %description
-QEMU is a generic and open source processor emulator which achieves a good
-emulation speed by using dynamic translation. QEMU has two operating modes:
+qemu-kvm is an open source virtualizer that provides hardware emulation for
+the KVM hypervisor. qemu-kvm acts as a virtual machine monitor together with
+the KVM kernel modules, and emulates the hardware for a full system such as
+a PC and its assocated peripherals.
 
- * Full system emulation. In this mode, QEMU emulates a full system (for
-   example a PC), including a processor and various peripherials. It can be
-   used to launch different Operating Systems without rebooting the PC or
-   to debug system code.
- * User mode emulation. In this mode, QEMU can launch Linux processes compiled
-   for one CPU on another CPU.
-
-As QEMU requires no host kernel patches to run, it is safe and easy to use.
+As qemu-kvm requires no host kernel patches to run, it is safe and easy to use.
 %if !%{rhev}
 %package -n qemu-img
 Summary: QEMU command line tool for manipulating disk images
 Group: Development/Tools
 
 %description -n qemu-img
-This package provides a command line tool for manipulating disk images
+This package provides a command line tool for manipulating disk images.
 %endif
 
 %if 0%{!?build_only_sub:1}
@@ -250,10 +245,10 @@ Requires(postun): systemd-units
 %rhel_rhev_conflicts qemu-kvm-common
 
 %description -n qemu-kvm-common%{?pkgsuffix}
-QEMU is a generic and open source processor emulator which achieves a good
-emulation speed by using dynamic translation.
+qemu-kvm is an open source virtualizer that provides hardware emulation for
+the KVM hypervisor. 
 
-This package provides the common files needed by all QEMU targets
+This package provides documentation and auxiliary programs used with qemu-kvm.
 
 %endif
 
@@ -266,8 +261,8 @@ Requires(preun): systemd-units
 Requires(postun): systemd-units
 
 %description -n qemu-guest-agent
-QEMU is a generic and open source processor emulator which achieves a good
-emulation speed by using dynamic translation.
+qemu-kvm is an open source virtualizer that provides hardware emulation for
+the KVM hypervisor. 
 
 This package provides an agent to run inside guests, which communicates
 with the host over a virtio-serial channel named "org.qemu.guest_agent.0"
