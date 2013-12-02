@@ -2723,31 +2723,24 @@ err:
 }
 
 /*
- * Handle a read request in coroutine context
+ * Forwards an already correctly aligned request to the BlockDriver. This
+ * handles copy on read and zeroing after EOF; any other features must be
+ * implemented by the caller.
  */
-static int coroutine_fn bdrv_co_do_readv(BlockDriverState *bs,
-    int64_t sector_num, int nb_sectors, QEMUIOVector *qiov,
-    BdrvRequestFlags flags)
+static int coroutine_fn bdrv_aligned_preadv(BlockDriverState *bs,
+    int64_t offset, unsigned int bytes, QEMUIOVector *qiov, int flags)
 {
     BlockDriver *drv = bs->drv;
     BdrvTrackedRequest req;
     int ret;
 
-    if (!drv) {
-        return -ENOMEDIUM;
-    }
-    if (bdrv_check_request(bs, sector_num, nb_sectors)) {
-        return -EIO;
-    }
+    int64_t sector_num = offset >> BDRV_SECTOR_BITS;
+    unsigned int nb_sectors = bytes >> BDRV_SECTOR_BITS;
 
-    /* throttling disk read I/O */
-    if (bs->io_limits_enabled) {
-        bdrv_io_limits_intercept(bs, false, nb_sectors);
-    }
+    assert((offset & (BDRV_SECTOR_SIZE - 1)) == 0);
+    assert((bytes & (BDRV_SECTOR_SIZE - 1)) == 0);
 
-    if (bs->copy_on_read) {
-        flags |= BDRV_REQ_COPY_ON_READ;
-    }
+    /* Handle Copy on Read and associated serialisation */
     if (flags & BDRV_REQ_COPY_ON_READ) {
         bs->copy_on_read_in_flight++;
     }
@@ -2772,6 +2765,7 @@ static int coroutine_fn bdrv_co_do_readv(BlockDriverState *bs,
         }
     }
 
+    /* Forward the request to the BlockDriver */
     if (!(bs->zero_beyond_eof && bs->growable)) {
         ret = drv->bdrv_co_readv(bs, sector_num, nb_sectors, qiov);
     } else {
@@ -2809,6 +2803,37 @@ out:
         bs->copy_on_read_in_flight--;
     }
 
+    return ret;
+}
+
+/*
+ * Handle a read request in coroutine context
+ */
+static int coroutine_fn bdrv_co_do_readv(BlockDriverState *bs,
+    int64_t sector_num, int nb_sectors, QEMUIOVector *qiov,
+    BdrvRequestFlags flags)
+{
+    BlockDriver *drv = bs->drv;
+    int ret;
+
+    if (!drv) {
+        return -ENOMEDIUM;
+    }
+    if (bdrv_check_request(bs, sector_num, nb_sectors)) {
+        return -EIO;
+    }
+
+    if (bs->copy_on_read) {
+        flags |= BDRV_REQ_COPY_ON_READ;
+    }
+
+    /* throttling disk I/O */
+    if (bs->io_limits_enabled) {
+        bdrv_io_limits_intercept(bs, false, nb_sectors);
+    }
+
+    ret = bdrv_aligned_preadv(bs, sector_num << BDRV_SECTOR_BITS,
+                             nb_sectors << BDRV_SECTOR_BITS, qiov, flags);
     return ret;
 }
 
