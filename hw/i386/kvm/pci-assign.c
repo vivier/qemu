@@ -128,7 +128,11 @@ typedef struct AssignedDevice {
     MemoryRegion mmio;
     char *configfd_name;
     int32_t bootindex;
+    QLIST_ENTRY(AssignedDevice) next;
 } AssignedDevice;
+
+#define MAX_DEV_ASSIGN_CMDLINE 8
+static QLIST_HEAD(, AssignedDevice) devs = QLIST_HEAD_INITIALIZER(devs);
 
 #define TYPE_PCI_ASSIGN "kvm-pci-assign"
 #define PCI_ASSIGN(obj) OBJECT_CHECK(AssignedDevice, (obj), TYPE_PCI_ASSIGN)
@@ -1734,12 +1738,23 @@ static void reset_assigned_device(DeviceState *dev)
 static void assigned_realize(struct PCIDevice *pci_dev, Error **errp)
 {
     AssignedDevice *dev = PCI_ASSIGN(pci_dev);
+    AssignedDevice *adev;
     uint8_t e_intx;
-    int r;
+    int r, i = 0;
     Error *local_err = NULL;
 
     if (!kvm_enabled()) {
         error_setg(&local_err, "pci-assign requires KVM support");
+        goto exit_with_error;
+    }
+
+    QLIST_FOREACH(adev, &devs, next) {
+        i++;
+    }
+
+    if (i >= MAX_DEV_ASSIGN_CMDLINE) {
+        error_setg(&local_err, "pci-assign: Maximum supported assigned devices"
+                     " (%d) already attached\n", MAX_DEV_ASSIGN_CMDLINE);
         goto exit_with_error;
     }
 
@@ -1812,6 +1827,7 @@ static void assigned_realize(struct PCIDevice *pci_dev, Error **errp)
         goto assigned_out;
     }
 
+    QLIST_INSERT_HEAD(&devs, dev, next);
     assigned_dev_load_option_rom(dev);
 
     return;
@@ -1831,6 +1847,7 @@ static void assigned_exitfn(struct PCIDevice *pci_dev)
 {
     AssignedDevice *dev = PCI_ASSIGN(pci_dev);
 
+    QLIST_REMOVE(dev, next);
     deassign_device(dev);
     free_assigned_device(dev);
 }
