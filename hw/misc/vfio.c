@@ -233,6 +233,7 @@ static const VFIORomBlacklistEntry romblacklist[] = {
 };
 
 #define MSIX_CAP_LENGTH 12
+#define MAX_DEV_ASSIGN_CMDLINE 32
 
 static QLIST_HEAD(, VFIOContainer)
     container_list = QLIST_HEAD_INITIALIZER(container_list);
@@ -3737,7 +3738,19 @@ static int vfio_initfn(PCIDevice *pdev)
     ssize_t len;
     struct stat st;
     int groupid;
-    int ret;
+    int ret, i = 0;
+
+    QLIST_FOREACH(group, &group_list, next) {
+        QLIST_FOREACH(pvdev, &group->device_list, next) {
+            i++;
+        }
+    }
+
+    if (i >= MAX_DEV_ASSIGN_CMDLINE) {
+        error_report("vfio: Maximum supported vfio devices (%d) "
+                     "already attached\n", MAX_DEV_ASSIGN_CMDLINE);
+        return -1;
+    }
 
     /* Check that the host device exists */
     snprintf(path, sizeof(path),
