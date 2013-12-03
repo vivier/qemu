@@ -139,7 +139,11 @@ typedef struct AssignedDevice {
     MemoryRegion mmio;
     char *configfd_name;
     int32_t bootindex;
+    QLIST_ENTRY(AssignedDevice) next;
 } AssignedDevice;
+
+#define MAX_DEV_ASSIGN_CMDLINE 8
+static QLIST_HEAD(, AssignedDevice) devs = QLIST_HEAD_INITIALIZER(devs);
 
 static void assigned_dev_update_irq_routing(PCIDevice *dev);
 
@@ -1696,11 +1700,22 @@ static void reset_assigned_device(DeviceState *dev)
 static int assigned_initfn(struct PCIDevice *pci_dev)
 {
     AssignedDevice *dev = DO_UPCAST(AssignedDevice, dev, pci_dev);
+    AssignedDevice *adev;
     uint8_t e_intx;
-    int r;
+    int r, i = 0;
 
     if (!kvm_enabled()) {
         error_report("pci-assign: error: requires KVM support");
+        return -1;
+    }
+
+    QLIST_FOREACH(adev, &devs, next) {
+        i++;
+    }
+
+    if (i >= MAX_DEV_ASSIGN_CMDLINE) {
+        error_report("pci-assign: Maximum supported assigned devices (%d) "
+                     "already attached\n", MAX_DEV_ASSIGN_CMDLINE);
         return -1;
     }
 
@@ -1772,6 +1787,7 @@ static int assigned_initfn(struct PCIDevice *pci_dev)
         goto assigned_out;
     }
 
+    QLIST_INSERT_HEAD(&devs, dev, next);
     assigned_dev_load_option_rom(dev);
 
     add_boot_device_path(dev->bootindex, &pci_dev->qdev, NULL);
@@ -1789,6 +1805,7 @@ static void assigned_exitfn(struct PCIDevice *pci_dev)
 {
     AssignedDevice *dev = DO_UPCAST(AssignedDevice, dev, pci_dev);
 
+    QLIST_REMOVE(dev, next);
     deassign_device(dev);
     free_assigned_device(dev);
 }
