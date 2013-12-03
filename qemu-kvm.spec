@@ -70,7 +70,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 20%{?dist}
+Release: 21%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1053,6 +1053,8 @@ Patch498: kvm-qcow2-Change-default-for-new-images-to-compat-1.1.patch
 Patch499: kvm-qcow2-change-default-for-new-images-to-compat-1.1-pa.patch
 # For bz#1032862 - virtio-rng-egd: repeatedly read same random data-block w/o considering the buffer offset
 Patch500: kvm-rng-egd-offset-the-point-when-repeatedly-read-from-t.patch
+# For bz#1007334 - CVE-2013-4344 qemu-kvm: qemu: buffer overflow in scsi_target_emulate_report_luns [rhel-7.0]
+Patch501: kvm-scsi-Allocate-SCSITargetReq-r-buf-dynamically-CVE-20.patch
 
 BuildRequires: zlib-devel
 BuildRequires: SDL-devel
@@ -1740,6 +1742,7 @@ CAC emulation development files.
 %patch498 -p1
 %patch499 -p1
 %patch500 -p1
+%patch501 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -2168,6 +2171,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Tue Dec 03 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-21.el7
+- kvm-scsi-Allocate-SCSITargetReq-r-buf-dynamically-CVE-20.patch [bz#1007334]
+- Resolves: bz#1007334
+  (CVE-2013-4344 qemu-kvm: qemu: buffer overflow in scsi_target_emulate_report_luns [rhel-7.0])
+
 * Thu Nov 28 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-20.el7
 - kvm-pc-drop-virtio-balloon-pci-event_idx-compat-property.patch [bz#1029539]
 - kvm-virtio-net-only-delete-bh-that-existed.patch [bz#922463]
