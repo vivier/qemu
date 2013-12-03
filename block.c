@@ -2129,7 +2129,7 @@ static bool tracked_request_overlaps(BdrvTrackedRequest *req,
 }
 
 static void coroutine_fn wait_for_overlapping_requests(BlockDriverState *bs,
-        int64_t offset, unsigned int bytes)
+        BdrvTrackedRequest *self, int64_t offset, unsigned int bytes)
 {
     BdrvTrackedRequest *req;
     int64_t cluster_offset;
@@ -2147,6 +2147,9 @@ static void coroutine_fn wait_for_overlapping_requests(BlockDriverState *bs,
     do {
         retry = false;
         QLIST_FOREACH(req, &bs->tracked_requests, list) {
+            if (req == self) {
+                continue;
+            }
             if (tracked_request_overlaps(req, cluster_offset, cluster_bytes)) {
                 /* Hitting this means there was a reentrant request, for
                  * example, a block driver issuing nested requests.  This must
@@ -2744,10 +2747,10 @@ err:
  * implemented by the caller.
  */
 static int coroutine_fn bdrv_aligned_preadv(BlockDriverState *bs,
-    int64_t offset, unsigned int bytes, QEMUIOVector *qiov, int flags)
+    BdrvTrackedRequest *req, int64_t offset, unsigned int bytes,
+    QEMUIOVector *qiov, int flags)
 {
     BlockDriver *drv = bs->drv;
-    BdrvTrackedRequest req;
     int ret;
 
     int64_t sector_num = offset >> BDRV_SECTOR_BITS;
@@ -2762,10 +2765,8 @@ static int coroutine_fn bdrv_aligned_preadv(BlockDriverState *bs,
     }
 
     if (bs->copy_on_read_in_flight) {
-        wait_for_overlapping_requests(bs, offset, bytes);
+        wait_for_overlapping_requests(bs, req, offset, bytes);
     }
-
-    tracked_request_begin(&req, bs, offset, bytes, false);
 
     if (flags & BDRV_REQ_COPY_ON_READ) {
         int pnum;
@@ -2813,8 +2814,6 @@ static int coroutine_fn bdrv_aligned_preadv(BlockDriverState *bs,
     }
 
 out:
-    tracked_request_end(&req);
-
     if (flags & BDRV_REQ_COPY_ON_READ) {
         bs->copy_on_read_in_flight--;
     }
@@ -2830,6 +2829,8 @@ static int coroutine_fn bdrv_co_do_preadv(BlockDriverState *bs,
     BdrvRequestFlags flags)
 {
     BlockDriver *drv = bs->drv;
+    BdrvTrackedRequest req;
+
     /* TODO Lift BDRV_SECTOR_SIZE restriction in BlockDriver interface */
     uint64_t align = MAX(BDRV_SECTOR_SIZE, bs->request_alignment);
     uint8_t *head_buf = NULL;
@@ -2880,9 +2881,11 @@ static int coroutine_fn bdrv_co_do_preadv(BlockDriverState *bs,
         bytes = ROUND_UP(bytes, align);
     }
 
-    ret = bdrv_aligned_preadv(bs, offset, bytes,
+    tracked_request_begin(&req, bs, offset, bytes, false);
+    ret = bdrv_aligned_preadv(bs, &req, offset, bytes,
                               use_local_qiov ? &local_qiov : qiov,
                               flags);
+    tracked_request_end(&req);
 
     if (use_local_qiov) {
         qemu_iovec_destroy(&local_qiov);
@@ -3001,10 +3004,10 @@ static int coroutine_fn bdrv_co_do_write_zeroes(BlockDriverState *bs,
  * Forwards an already correctly aligned write request to the BlockDriver.
  */
 static int coroutine_fn bdrv_aligned_pwritev(BlockDriverState *bs,
-    int64_t offset, unsigned int bytes, QEMUIOVector *qiov, int flags)
+    BdrvTrackedRequest *req, int64_t offset, unsigned int bytes,
+    QEMUIOVector *qiov, int flags)
 {
     BlockDriver *drv = bs->drv;
-    BdrvTrackedRequest req;
     int ret;
 
     int64_t sector_num = offset >> BDRV_SECTOR_BITS;
@@ -3014,10 +3017,8 @@ static int coroutine_fn bdrv_aligned_pwritev(BlockDriverState *bs,
     assert((bytes & (BDRV_SECTOR_SIZE - 1)) == 0);
 
     if (bs->copy_on_read_in_flight) {
-        wait_for_overlapping_requests(bs, offset, bytes);
+        wait_for_overlapping_requests(bs, req, offset, bytes);
     }
-
-    tracked_request_begin(&req, bs, offset, bytes, true);
 
     if (flags & BDRV_REQ_ZERO_WRITE) {
         ret = bdrv_co_do_write_zeroes(bs, sector_num, nb_sectors, flags);
@@ -3040,8 +3041,6 @@ static int coroutine_fn bdrv_aligned_pwritev(BlockDriverState *bs,
         bs->total_sectors = MAX(bs->total_sectors, sector_num + nb_sectors);
     }
 
-    tracked_request_end(&req);
-
     return ret;
 }
 
@@ -3052,6 +3051,7 @@ static int coroutine_fn bdrv_co_do_pwritev(BlockDriverState *bs,
     int64_t offset, unsigned int bytes, QEMUIOVector *qiov,
     BdrvRequestFlags flags)
 {
+    BdrvTrackedRequest req;
     int ret;
 
     if (!bs->drv) {
@@ -3070,7 +3070,9 @@ static int coroutine_fn bdrv_co_do_pwritev(BlockDriverState *bs,
         bdrv_io_limits_intercept(bs, true, bytes >> BDRV_SECTOR_BITS);
     }
 
-    ret = bdrv_aligned_pwritev(bs, offset, bytes, qiov, flags);
+    tracked_request_begin(&req, bs, offset, bytes, true);
+    ret = bdrv_aligned_pwritev(bs, &req, offset, bytes, qiov, flags);
+    tracked_request_end(&req);
 
     return ret;
 }
