@@ -794,6 +794,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Dec 03 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-21.el7
+- kvm-scsi-Allocate-SCSITargetReq-r-buf-dynamically-CVE-20.patch [bz#1007334]
+- Resolves: bz#1007334
+  (CVE-2013-4344 qemu-kvm: qemu: buffer overflow in scsi_target_emulate_report_luns [rhel-7.0])
+
 * Thu Nov 28 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-20.el7
 - kvm-pc-drop-virtio-balloon-pci-event_idx-compat-property.patch [bz#1029539]
 - kvm-virtio-net-only-delete-bh-that-existed.patch [bz#922463]
@@ -842,11 +847,14 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 - Resolves: bz#848203
   (MAC Programming for virtio over macvtap - qemu-kvm support)
 
+* Fri Nov 08 2013 Michal Novotny <minovotn@redhat.com> - 1.5.3-18.el7
+- Removing leaked patch kvm-e1000-rtl8139-update-HMP-NIC-when-every-bit-is-writt.patch
+
 * Thu Nov 07 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-17.el7
 - kvm-pci-assign-Add-MSI-affinity-support.patch [bz#1025877]
 - kvm-Fix-potential-resource-leak-missing-fclose.patch [bz#1025877]
 - kvm-pci-assign-remove-the-duplicate-function-name-in-deb.patch [bz#1025877]
-- kvm-95233a1e8f91ac533e4a9c308085e889c0f14fa5.1383558888..patch [bz#1017682]
+- kvm-Remove-s390-ccw-img-loader.patch [bz#1017682]
 - kvm-Fix-vscclient-installation.patch [bz#1017681]
 - kvm-Change-qemu-bridge-helper-permissions-to-4755.patch [bz#1017689]
 - kvm-net-update-nic-info-during-device-reset.patch [bz#922589]
