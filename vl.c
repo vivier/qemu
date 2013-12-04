@@ -1932,9 +1932,17 @@ static void version(void)
     printf("QEMU emulator version " QEMU_VERSION QEMU_PKGVERSION ", Copyright (c) 2003-2008 Fabrice Bellard\n");
 }
 
+static void print_rh_warning(void)
+{
+    printf("\nWARNING: Direct use of qemu-kvm from the command line is not supported by Red Hat.\n"
+             "WARNING: Use libvirt as the stable management interface.\n"
+             "WARNING: Some command line options listed here may not be available in future releases.\n\n");
+}
+
 static void help(int exitcode)
 {
     version();
+    print_rh_warning();
     printf("usage: %s [options] [disk_image]\n\n"
            "'disk_image' is a raw hard disk image for IDE hard disk 0\n\n",
             error_get_progname());
@@ -1949,6 +1957,7 @@ static void help(int exitcode)
            "\n"
            "When using -nographic, press 'ctrl-a h' to get some help.\n");
 
+    print_rh_warning();
     exit(exitcode);
 }
 
