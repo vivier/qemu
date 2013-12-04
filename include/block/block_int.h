@@ -280,8 +280,8 @@ struct BlockDriverState {
 
     NotifierList close_notifiers;
 
-    /* number of in-flight copy-on-read requests */
-    unsigned int copy_on_read_in_flight;
+    /* number of in-flight serialising requests */
+    unsigned int serialising_in_flight;
 
     /* the time for latest disk I/O */
     int64_t slice_start;
