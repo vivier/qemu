@@ -448,6 +448,7 @@ static int vpc_get_info(BlockDriverState *bs, BlockDriverInfo *bdi)
         bdi->cluster_size = s->block_size;
     }
 
+    bdi->unallocated_blocks_are_zero = true;
     return 0;
 }
 
