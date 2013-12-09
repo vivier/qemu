@@ -811,6 +811,10 @@ static QEMUMachine pc_machine_rhel700 = {
         .property = "use_broken_id",\
         .value    = stringify(1),\
     },{\
+        .driver   = "intel-hda",\
+        .property = "msi",\
+        .value    = stringify(0),\
+    },{\
         .driver = "qemu32-" TYPE_X86_CPU,\
         .property = "xlevel",\
         .value = stringify(0),\
