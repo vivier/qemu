@@ -74,6 +74,7 @@ static BlockDriverAIOCB *bdrv_co_aio_rw_vector(BlockDriverState *bs,
                                                int64_t sector_num,
                                                QEMUIOVector *qiov,
                                                int nb_sectors,
+                                               BdrvRequestFlags flags,
                                                BlockDriverCompletionFunc *cb,
                                                void *opaque,
                                                bool is_write);
@@ -3675,7 +3676,7 @@ BlockDriverAIOCB *bdrv_aio_readv(BlockDriverState *bs, int64_t sector_num,
 {
     trace_bdrv_aio_readv(bs, sector_num, nb_sectors, opaque);
 
-    return bdrv_co_aio_rw_vector(bs, sector_num, qiov, nb_sectors,
+    return bdrv_co_aio_rw_vector(bs, sector_num, qiov, nb_sectors, 0,
                                  cb, opaque, false);
 }
 
@@ -3685,7 +3686,7 @@ BlockDriverAIOCB *bdrv_aio_writev(BlockDriverState *bs, int64_t sector_num,
 {
     trace_bdrv_aio_writev(bs, sector_num, nb_sectors, opaque);
 
-    return bdrv_co_aio_rw_vector(bs, sector_num, qiov, nb_sectors,
+    return bdrv_co_aio_rw_vector(bs, sector_num, qiov, nb_sectors, 0,
                                  cb, opaque, true);
 }
 
@@ -3857,8 +3858,10 @@ int bdrv_aio_multiwrite(BlockDriverState *bs, BlockRequest *reqs, int num_reqs)
     /* Run the aio requests. */
     mcb->num_requests = num_reqs;
     for (i = 0; i < num_reqs; i++) {
-        bdrv_aio_writev(bs, reqs[i].sector, reqs[i].qiov,
-            reqs[i].nb_sectors, multiwrite_cb, mcb);
+        bdrv_co_aio_rw_vector(bs, reqs[i].sector, reqs[i].qiov,
+                              reqs[i].nb_sectors, reqs[i].flags,
+                              multiwrite_cb, mcb,
+                              true);
     }
 
     return 0;
@@ -4163,10 +4166,10 @@ static void coroutine_fn bdrv_co_do_rw(void *opaque)
 
     if (!acb->is_write) {
         acb->req.error = bdrv_co_do_readv(bs, acb->req.sector,
-            acb->req.nb_sectors, acb->req.qiov, 0);
+            acb->req.nb_sectors, acb->req.qiov, acb->req.flags);
     } else {
         acb->req.error = bdrv_co_do_writev(bs, acb->req.sector,
-            acb->req.nb_sectors, acb->req.qiov, 0);
+            acb->req.nb_sectors, acb->req.qiov, acb->req.flags);
     }
 
     acb->bh = qemu_bh_new(bdrv_co_em_bh, acb);
@@ -4177,6 +4180,7 @@ static BlockDriverAIOCB *bdrv_co_aio_rw_vector(BlockDriverState *bs,
                                                int64_t sector_num,
                                                QEMUIOVector *qiov,
                                                int nb_sectors,
+                                               BdrvRequestFlags flags,
                                                BlockDriverCompletionFunc *cb,
                                                void *opaque,
                                                bool is_write)
@@ -4188,6 +4192,7 @@ static BlockDriverAIOCB *bdrv_co_aio_rw_vector(BlockDriverState *bs,
     acb->req.sector = sector_num;
     acb->req.nb_sectors = nb_sectors;
     acb->req.qiov = qiov;
+    acb->req.flags = flags;
     acb->is_write = is_write;
     acb->done = NULL;
 

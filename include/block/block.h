@@ -297,6 +297,7 @@ typedef struct BlockRequest {
     /* Fields to be filled by multiwrite caller */
     int64_t sector;
     int nb_sectors;
+    int flags;
     QEMUIOVector *qiov;
     BlockDriverCompletionFunc *cb;
     void *opaque;
