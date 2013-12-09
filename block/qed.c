@@ -495,6 +495,7 @@ static int bdrv_qed_open(BlockDriverState *bs, QDict *options, int flags,
         }
     }
 
+    bs->bl.write_zeroes_alignment = s->header.cluster_size >> BDRV_SECTOR_BITS;
     s->need_check_timer = qemu_new_timer_ns(vm_clock,
                                             qed_need_check_timer_cb, s);
 
