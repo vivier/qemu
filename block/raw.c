@@ -47,9 +47,10 @@ static int64_t coroutine_fn raw_co_get_block_status(BlockDriverState *bs,
 
 static int coroutine_fn raw_co_write_zeroes(BlockDriverState *bs,
                                             int64_t sector_num,
-                                            int nb_sectors)
+                                            int nb_sectors,
+                                            BdrvRequestFlags flags)
 {
-    return bdrv_co_write_zeroes(bs->file, sector_num, nb_sectors);
+    return bdrv_co_write_zeroes(bs->file, sector_num, nb_sectors, flags);
 }
 
 static int64_t raw_getlength(BlockDriverState *bs)
