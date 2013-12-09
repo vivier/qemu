@@ -7,6 +7,7 @@ static int raw_open(BlockDriverState *bs, QDict *options, int flags,
                     Error **errp)
 {
     bs->sg = bs->file->sg;
+    bs->bl = bs->file->bl;
     return 0;
 }
 
