@@ -72,7 +72,8 @@ typedef struct kvm_dirty_log KVMDirtyLog;
 
 struct KVMState
 {
-    KVMSlot slots[32];
+    KVMSlot *slots;
+    int nr_slots;
     int fd;
     int vmfd;
     int coalesced_mmio;
@@ -122,7 +123,7 @@ static KVMSlot *kvm_alloc_slot(KVMState *s)
 {
     int i;
 
-    for (i = 0; i < ARRAY_SIZE(s->slots); i++) {
+    for (i = 0; i < s->nr_slots; i++) {
         if (s->slots[i].memory_size == 0) {
             return &s->slots[i];
         }
@@ -138,7 +139,7 @@ static KVMSlot *kvm_lookup_matching_slot(KVMState *s,
 {
     int i;
 
-    for (i = 0; i < ARRAY_SIZE(s->slots); i++) {
+    for (i = 0; i < s->nr_slots; i++) {
         KVMSlot *mem = &s->slots[i];
 
         if (start_addr == mem->start_addr &&
@@ -160,7 +161,7 @@ static KVMSlot *kvm_lookup_overlapping_slot(KVMState *s,
     KVMSlot *found = NULL;
     int i;
 
-    for (i = 0; i < ARRAY_SIZE(s->slots); i++) {
+    for (i = 0; i < s->nr_slots; i++) {
         KVMSlot *mem = &s->slots[i];
 
         if (mem->memory_size == 0 ||
@@ -182,7 +183,7 @@ int kvm_physical_memory_addr_from_host(KVMState *s, void *ram,
 {
     int i;
 
-    for (i = 0; i < ARRAY_SIZE(s->slots); i++) {
+    for (i = 0; i < s->nr_slots; i++) {
         KVMSlot *mem = &s->slots[i];
 
         if (ram >= mem->ram && ram < mem->ram + mem->memory_size) {
@@ -342,7 +343,7 @@ static int kvm_set_migration_log(int enable)
 
     s->migration_log = enable;
 
-    for (i = 0; i < ARRAY_SIZE(s->slots); i++) {
+    for (i = 0; i < s->nr_slots; i++) {
         mem = &s->slots[i];
 
         if (!mem->memory_size) {
@@ -1328,9 +1329,6 @@ int kvm_init(void)
 #ifdef KVM_CAP_SET_GUEST_DEBUG
     QTAILQ_INIT(&s->kvm_sw_breakpoints);
 #endif
-    for (i = 0; i < ARRAY_SIZE(s->slots); i++) {
-        s->slots[i].slot = i;
-    }
     s->vmfd = -1;
     s->fd = qemu_open("/dev/kvm", O_RDWR);
     if (s->fd == -1) {
@@ -1352,6 +1350,19 @@ int kvm_init(void)
         ret = -EINVAL;
         fprintf(stderr, "kvm version not supported\n");
         goto err;
+    }
+
+    s->nr_slots = kvm_check_extension(s, KVM_CAP_NR_MEMSLOTS);
+
+    /* If unspecified, use the default value */
+    if (!s->nr_slots) {
+        s->nr_slots = 32;
+    }
+
+    s->slots = g_malloc0(s->nr_slots * sizeof(KVMSlot));
+
+    for (i = 0; i < s->nr_slots; i++) {
+        s->slots[i].slot = i;
     }
 
     /* check the vcpu limits */
@@ -1467,6 +1478,7 @@ err:
     if (s->fd != -1) {
         close(s->fd);
     }
+    g_free(s->slots);
     g_free(s);
 
     return ret;
