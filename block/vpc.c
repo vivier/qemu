@@ -439,6 +439,18 @@ fail:
     return -1;
 }
 
+static int vpc_get_info(BlockDriverState *bs, BlockDriverInfo *bdi)
+{
+    BDRVVPCState *s = (BDRVVPCState *)bs->opaque;
+    struct vhd_footer *footer = (struct vhd_footer *) s->footer_buf;
+
+    if (cpu_to_be32(footer->type) != VHD_FIXED) {
+        bdi->cluster_size = s->block_size;
+    }
+
+    return 0;
+}
+
 static int vpc_read(BlockDriverState *bs, int64_t sector_num,
                     uint8_t *buf, int nb_sectors)
 {
@@ -830,6 +842,7 @@ static BlockDriver bdrv_vpc = {
     .bdrv_write             = vpc_co_write,
 
     .create_options = vpc_create_options,
+    .bdrv_get_info  = vpc_get_info,
 };
 
 static void bdrv_vpc_init(void)

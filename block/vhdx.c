@@ -878,6 +878,15 @@ static void vhdx_block_translate(BDRVVHDXState *s, int64_t sector_num,
 }
 
 
+static int vhdx_get_info(BlockDriverState *bs, BlockDriverInfo *bdi)
+{
+    BDRVVHDXState *s = bs->opaque;
+
+    bdi->cluster_size = s->block_size;
+
+    return 0;
+}
+
 
 static coroutine_fn int vhdx_co_readv(BlockDriverState *bs, int64_t sector_num,
                                       int nb_sectors, QEMUIOVector *qiov)
@@ -973,6 +982,7 @@ static BlockDriver bdrv_vhdx = {
     .bdrv_reopen_prepare    = vhdx_reopen_prepare,
     .bdrv_co_readv          = vhdx_co_readv,
     .bdrv_co_writev         = vhdx_co_writev,
+    .bdrv_get_info          = vhdx_get_info,
 };
 
 static void bdrv_vhdx_init(void)
