@@ -384,7 +384,6 @@ static DriveInfo *blockdev_init(QDict *bs_opts,
         }
     }
 
-    bdrv_flags = 0;
     if (qemu_opt_get_bool(opts, "cache.writeback", true)) {
         bdrv_flags |= BDRV_O_CACHE_WB;
     }
