@@ -3437,7 +3437,7 @@
                                        'spiceport' : 'ChardevSpicePort',
                                        'vc'     : 'ChardevVC',
                                        'ringbuf': 'ChardevRingbuf',
-                                       # next one is just for compatibility
+# next one is just for compatibility
                                        'memory' : 'ChardevRingbuf' } }
 
 ##
