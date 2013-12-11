@@ -1445,23 +1445,6 @@ static int iscsi_open(BlockDriverState *bs, QDict *options, int flags,
                sizeof(struct scsi_inquiry_block_limits));
         scsi_free_scsi_task(task);
         task = NULL;
-
-        if (iscsilun->bl.max_unmap < 0xffffffff) {
-            bs->bl.max_discard = sector_lun2qemu(iscsilun->bl.max_unmap,
-                                                 iscsilun);
-        }
-        bs->bl.discard_alignment = sector_lun2qemu(iscsilun->bl.opt_unmap_gran,
-                                                   iscsilun);
-
-        if (iscsilun->bl.max_ws_len < 0xffffffff) {
-            bs->bl.max_write_zeroes = sector_lun2qemu(iscsilun->bl.max_ws_len,
-                                                      iscsilun);
-        }
-        bs->bl.write_zeroes_alignment = sector_lun2qemu(iscsilun->bl.opt_unmap_gran,
-                                                        iscsilun);
-
-        bs->bl.opt_transfer_length = sector_lun2qemu(iscsilun->bl.opt_xfer_len,
-                                                     iscsilun);
     }
 
 #if defined(LIBISCSI_FEATURE_NOP_COUNTER)
@@ -1504,6 +1487,34 @@ static void iscsi_close(BlockDriverState *bs)
     iscsi_destroy_context(iscsi);
     g_free(iscsilun->zeroblock);
     memset(iscsilun, 0, sizeof(IscsiLun));
+}
+
+static int iscsi_refresh_limits(BlockDriverState *bs)
+{
+    IscsiLun *iscsilun = bs->opaque;
+
+    /* We don't actually refresh here, but just return data queried in
+     * iscsi_open(): iscsi targets don't change their limits. */
+    if (iscsilun->lbp.lbpu || iscsilun->lbp.lbpws) {
+        if (iscsilun->bl.max_unmap < 0xffffffff) {
+            bs->bl.max_discard = sector_lun2qemu(iscsilun->bl.max_unmap,
+                                                 iscsilun);
+        }
+        bs->bl.discard_alignment = sector_lun2qemu(iscsilun->bl.opt_unmap_gran,
+                                                   iscsilun);
+
+        if (iscsilun->bl.max_ws_len < 0xffffffff) {
+            bs->bl.max_write_zeroes = sector_lun2qemu(iscsilun->bl.max_ws_len,
+                                                      iscsilun);
+        }
+        bs->bl.write_zeroes_alignment = sector_lun2qemu(iscsilun->bl.opt_unmap_gran,
+                                                        iscsilun);
+
+        bs->bl.opt_transfer_length = sector_lun2qemu(iscsilun->bl.opt_xfer_len,
+                                                     iscsilun);
+    }
+
+    return 0;
 }
 
 /* We have nothing to do for iSCSI reopen, stub just returns
@@ -1626,6 +1637,7 @@ static BlockDriver bdrv_iscsi = {
     .bdrv_getlength  = iscsi_getlength,
     .bdrv_get_info   = iscsi_get_info,
     .bdrv_truncate   = iscsi_truncate,
+    .bdrv_refresh_limits = iscsi_refresh_limits,
 
     .bdrv_co_get_block_status = iscsi_co_get_block_status,
     .bdrv_co_discard      = iscsi_co_discard,
