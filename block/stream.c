@@ -71,6 +71,8 @@ static void close_unused_images(BlockDriverState *top, BlockDriverState *base,
         bdrv_unref(unused);
     }
     top->backing_hd = base;
+
+    bdrv_refresh_limits(top);
 }
 
 static void coroutine_fn stream_run(void *opaque)
