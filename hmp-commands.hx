@@ -258,6 +258,13 @@ ETEXI
         .help       = "save screen into PPM image 'filename'",
         .mhandler.cmd = hmp_screendump,
     },
+
+STEXI
+@item screendump @var{filename}
+@findex screendump
+Save screen into PPM image @var{filename}.
+ETEXI
+
     {
         .name       = "__com.redhat_qxl_screendump",
         .args_type  = "id:s,filename:F",
@@ -267,9 +274,9 @@ ETEXI
     },
 
 STEXI
-@item screendump @var{filename}
-@findex screendump
-Save screen into PPM image @var{filename}.
+@item __com.redhat_screendump @var{id} @var{filename}
+@findex __com.redhat_screendump
+Save screen from qxl device @var{id} into PPM image @var{filename}.
 ETEXI
 
     {
