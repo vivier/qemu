@@ -178,7 +178,7 @@ static int scsi_qdev_init(DeviceState *qdev)
         d = scsi_device_find(bus, dev->channel, dev->id, dev->lun);
         assert(d);
         if (d->lun == dev->lun && dev != d) {
-            qdev_free(&d->qdev);
+            object_unparent(OBJECT(d));
         }
     }
 
@@ -229,7 +229,7 @@ SCSIDevice *scsi_bus_legacy_add_drive(SCSIBus *bus, BlockDriverState *bdrv,
         qdev_prop_set_string(dev, "serial", serial);
     }
     if (qdev_prop_set_drive(dev, "drive", bdrv) < 0) {
-        qdev_free(dev);
+        object_unparent(OBJECT(dev));
         return NULL;
     }
     if (qdev_init(dev) < 0)

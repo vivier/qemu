@@ -1036,7 +1036,7 @@ static int virtio_ccw_busdev_unplug(DeviceState *dev)
 
     css_generate_sch_crws(sch->cssid, sch->ssid, sch->schid, 1, 0);
 
-    qdev_free(dev);
+    object_unparent(OBJECT(dev));
     return 0;
 }
 
