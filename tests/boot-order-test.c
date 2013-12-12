@@ -32,7 +32,7 @@ static void test_pc_with_args(const char *test_args,
                               uint8_t boot1, uint8_t boot2,
                               uint8_t reboot1, uint8_t reboot2)
 {
-    char *args = g_strdup_printf("-nodefaults -display none %s", test_args);
+    char *args = g_strdup_printf("-nodefaults %s", test_args);
 
     qtest_start(args);
     test_pc_cmos(boot1, boot2);
