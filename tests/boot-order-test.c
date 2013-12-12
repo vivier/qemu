@@ -36,12 +36,12 @@ static void test_pc_with_args(const char *test_args,
 
     qtest_start(args);
     test_pc_cmos(boot1, boot2);
-    qmp("{ 'execute': 'system_reset' }");
+    qmp_discard_response("{ 'execute': 'system_reset' }");
     /*
      * system_reset only requests reset.  We get a RESET event after
      * the actual reset completes.  Need to wait for that.
      */
-    qmp("");                    /* HACK: wait for event */
+    qmp_discard_response("");   /* HACK: wait for event */
     test_pc_cmos(reboot1, reboot2);
     qtest_quit(global_qtest);
     g_free(args);
