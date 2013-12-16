@@ -20,8 +20,6 @@ index d39261d..3a4678a 100644
  #define BUILD_SUFFIX "/pc-bios"
  char *os_find_datadir(const char *argv0)
  {
-diff --git a/redhat/qemu-kvm.spec.template b/redhat/qemu-kvm.spec.template
-index 84088eb..646eb1a 100644
 diff --git a/ui/vnc.c b/ui/vnc.c
 index dfc7459..3726352 100644
 --- a/ui/vnc.c
