@@ -744,6 +744,11 @@ static void hpet_device_class_init(ObjectClass *klass, void *data)
     dc->props = hpet_device_properties;
 }
 
+bool hpet_find(void)
+{
+    return object_resolve_path_type("", "hpet", NULL);
+}
+
 static const TypeInfo hpet_device_info = {
     .name          = "hpet",
     .parent        = TYPE_SYS_BUS_DEVICE,
