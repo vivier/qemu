@@ -38,6 +38,10 @@
  * http://download.intel.com/design/chipsets/datashts/29054901.pdf
  */
 
+#define TYPE_I440FX_PCI_HOST_BRIDGE "i440FX-pcihost"
+#define I440FX_PCI_HOST_BRIDGE(obj) \
+    OBJECT_CHECK(I440FXState, (obj), TYPE_I440FX_PCI_HOST_BRIDGE)
+
 typedef struct I440FXState {
     PCIHostState parent_obj;
 } I440FXState;
@@ -245,7 +249,7 @@ PCIBus *i440fx_init(PCII440FXState **pi440fx_state,
     PCII440FXState *f;
     unsigned i;
 
-    dev = qdev_create(NULL, "i440FX-pcihost");
+    dev = qdev_create(NULL, TYPE_I440FX_PCI_HOST_BRIDGE);
     s = PCI_HOST_BRIDGE(dev);
     b = pci_bus_new(dev, NULL, pci_address_space,
                     address_space_io, 0, TYPE_PCI_BUS);
@@ -627,7 +631,7 @@ static void i440fx_pcihost_class_init(ObjectClass *klass, void *data)
 }
 
 static const TypeInfo i440fx_pcihost_info = {
-    .name          = "i440FX-pcihost",
+    .name          = TYPE_I440FX_PCI_HOST_BRIDGE,
     .parent        = TYPE_PCI_HOST_BRIDGE,
     .instance_size = sizeof(I440FXState),
     .class_init    = i440fx_pcihost_class_init,
