@@ -59,6 +59,7 @@ static const int ide_iobase2[MAX_IDE_BUS] = { 0x3f6, 0x376 };
 static const int ide_irq[MAX_IDE_BUS] = { 14, 15 };
 
 static bool smbios_type1_defaults = true;
+static bool has_pci_info = true;
 
 /* PC hardware initialisation */
 static void pc_init1(QEMUMachineInitArgs *args,
@@ -122,6 +123,7 @@ static void pc_init1(QEMUMachineInitArgs *args,
     }
 
     guest_info = pc_guest_info_init(below_4g_mem_size, above_4g_mem_size);
+    guest_info->has_pci_info = has_pci_info;
 
     /* Set PCI window size the way seabios has always done it. */
     /* Power of 2 so bios can cover it with a single MTRR */
@@ -248,8 +250,15 @@ static void pc_init_pci(QEMUMachineInitArgs *args)
 
 #if 0 /* Disabled for Red Hat Enterprise Linux */
 
+static void pc_init_pci_1_5(QEMUMachineInitArgs *args)
+{
+    has_pci_info = false;
+    pc_init_pci(args);
+}
+
 static void pc_init_pci_1_4(QEMUMachineInitArgs *args)
 {
+    has_pci_info = false;
     x86_cpu_compat_set_features("n270", FEAT_1_ECX, 0, CPUID_EXT_MOVBE);
     x86_cpu_compat_set_features("Westmere", FEAT_1_ECX, 0, CPUID_EXT_PCLMULQDQ);
     pc_init_pci(args);
@@ -257,6 +266,7 @@ static void pc_init_pci_1_4(QEMUMachineInitArgs *args)
 
 static void pc_init_pci_1_3(QEMUMachineInitArgs *args)
 {
+    has_pci_info = false;
     enable_compat_apic_id_mode();
     pc_init_pci(args);
 }
@@ -264,6 +274,7 @@ static void pc_init_pci_1_3(QEMUMachineInitArgs *args)
 /* PC machine init function for pc-1.1 to pc-1.2 */
 static void pc_init_pci_1_2(QEMUMachineInitArgs *args)
 {
+    has_pci_info = false;
     disable_kvm_pv_eoi();
     enable_compat_apic_id_mode();
     pc_init_pci(args);
@@ -272,6 +283,7 @@ static void pc_init_pci_1_2(QEMUMachineInitArgs *args)
 /* PC machine init function for pc-0.14 to pc-1.0 */
 static void pc_init_pci_1_0(QEMUMachineInitArgs *args)
 {
+    has_pci_info = false;
     disable_kvm_pv_eoi();
     enable_compat_apic_id_mode();
     pc_init_pci(args);
@@ -280,6 +292,7 @@ static void pc_init_pci_1_0(QEMUMachineInitArgs *args)
 /* PC init function for pc-0.10 to pc-0.13, and reused by xenfv */
 static void pc_init_pci_no_kvmclock(QEMUMachineInitArgs *args)
 {
+    has_pci_info = false;
     disable_kvm_pv_eoi();
     enable_compat_apic_id_mode();
     pc_init1(args, get_system_memory(), get_system_io(), 1, 0);
@@ -290,6 +303,7 @@ static void pc_init_isa(QEMUMachineInitArgs *args)
     if (!args->cpu_model) {
         args->cpu_model = "486";
     }
+    has_pci_info = false;
     disable_kvm_pv_eoi();
     enable_compat_apic_id_mode();
     pc_init1(args, get_system_memory(), get_system_io(), 0, 1);
@@ -310,7 +324,7 @@ static QEMUMachine pc_i440fx_machine_v1_5 = {
     .name = "pc-i440fx-1.5",
     .alias = "pc",
     .desc = "Standard PC (i440FX + PIIX, 1996)",
-    .init = pc_init_pci,
+    .init = pc_init_pci_1_5,
     .hot_add_cpu = pc_hot_add_cpu,
     .max_cpus = 255,
     .is_default = 1,
