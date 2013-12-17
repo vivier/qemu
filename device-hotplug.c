@@ -29,6 +29,9 @@
 #include "qemu/config-file.h"
 #include "sysemu/sysemu.h"
 #include "monitor/monitor.h"
+#include "qemu/error-report.h"
+#include "qapi/qmp/qerror.h"
+
 
 static DriveInfo *add_init_drive(const char *optstr)
 {
@@ -78,4 +81,70 @@ err:
     if (dinfo) {
         blk_unref(blk_by_legacy_dinfo(dinfo));
     }
+}
+
+static void check_parm(const char *key, QObject *obj, void *opaque)
+{
+    static const char *valid_keys[] = {
+        "id", "cyls", "heads", "secs", "trans", "media", "snapshot",
+        "file", "cache", "aio", "format", "serial", "rerror", "werror",
+        "readonly", "copy-on-read",
+#ifdef CONFIG_BLOCK_IO_THROTTLING
+        "bps", "bps_rd", "bps_wr", "iops", "iops_rd", "iops_wr",
+#endif
+        NULL
+
+    };
+    int *stopped = opaque;
+    const char **p;
+
+    if (*stopped) {
+        return;
+    }
+
+    for (p = valid_keys; *p; p++) {
+        if (!strcmp(key, *p)) {
+            return;
+        }
+    }
+
+    error_report(QERR_INVALID_PARAMETER, key);
+    *stopped = 1;
+}
+
+void simple_drive_add(QDict *qdict, QObject **ret_data, Error **errp)
+{
+    int stopped;
+    Error *local_err = NULL;
+    QemuOpts *opts;
+    DriveInfo *dinfo;
+    MachineClass *mc;
+
+    if (!qdict_haskey(qdict, "id")) {
+        error_setg(errp, QERR_MISSING_PARAMETER, "id");
+        return;
+    }
+
+    stopped = 0;
+    qdict_iter(qdict, check_parm, &stopped);
+    if (stopped) {
+        return;
+    }
+
+    opts = qemu_opts_from_qdict(&qemu_drive_opts, qdict, &local_err);
+    if (!opts) {
+        error_propagate(errp, local_err);
+        return;
+    }
+    qemu_opt_set(opts, "if", "none", &error_abort);
+    mc = MACHINE_GET_CLASS(current_machine);
+    dinfo = drive_new(opts, mc->block_default_type);
+    if (!dinfo) {
+        error_report(QERR_DEVICE_INIT_FAILED,
+                      qemu_opts_id(opts));
+        qemu_opts_del(opts);
+        return;
+    }
+
+    return;
 }
