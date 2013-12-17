@@ -67,4 +67,6 @@ void qmp_change_blockdev(const char *device, const char *filename,
                          const char *format, Error **errp);
 void hmp_commit(Monitor *mon, const QDict *qdict);
 int hmp_drive_del(Monitor *mon, const QDict *qdict, QObject **ret_data);
+
+int simple_drive_add(Monitor *mon, const QDict *qdict, QObject **ret_data);
 #endif
