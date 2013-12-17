@@ -28,6 +28,7 @@
  * THE SOFTWARE.
  */
 #include "hw/hw.h"
+#include "hw/loader.h"
 #include "sysemu/arch_init.h"
 #include "hw/i2c/smbus.h"
 #include "hw/boards.h"
