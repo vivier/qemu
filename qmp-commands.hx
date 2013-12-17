@@ -137,6 +137,12 @@ Arguments:
 - "serial": Drive serial number (json-string, optional)
 - "snapshot": Enable snapshot mode (json-bool, optional)
 - "copy-on-read": Enable copy-on-read mode (json-bool, optional)
+- "bps": total throughput limit in bytes per second is specified
+- "bps_rd": read throughput limit in bytes per second is specified
+- "bps_wr": write throughput limit in bytes per second is specified
+- "iops": total I/O operations per second is specified
+- "iops_rd": read I/O operations per second is specified
+- "iops_wr": write I/O operations per second is specified
 
 Example:
 
