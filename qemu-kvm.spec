@@ -70,7 +70,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 21%{?dist}
+Release: 22%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1055,6 +1055,34 @@ Patch499: kvm-qcow2-change-default-for-new-images-to-compat-1.1-pa.patch
 Patch500: kvm-rng-egd-offset-the-point-when-repeatedly-read-from-t.patch
 # For bz#1007334 - CVE-2013-4344 qemu-kvm: qemu: buffer overflow in scsi_target_emulate_report_luns [rhel-7.0]
 Patch501: kvm-scsi-Allocate-SCSITargetReq-r-buf-dynamically-CVE-20.patch
+# For bz#1033810 - memory leak in using object_get_canonical_path()
+Patch502: kvm-virtio-net-fix-the-memory-leak-in-rxfilter_notify.patch
+# For bz#1033810 - memory leak in using object_get_canonical_path()
+Patch503: kvm-qom-Fix-memory-leak-in-object_property_set_link.patch
+# For bz#1036537 - Cross version migration from RHEL6.5 host to RHEL7.0 host with sound device failed.
+Patch504: kvm-fix-intel-hda-live-migration.patch
+# For bz#1029743 - qemu-kvm core dump after hot plug/unplug 82576 PF about 100 times
+Patch505: kvm-vfio-pci-Release-all-MSI-X-vectors-when-disabled.patch
+# For bz#921490 - qemu-kvm core dumped after hot plugging more than 11 VF through vfio-pci
+Patch506: kvm-Query-KVM-for-available-memory-slots.patch
+# For bz#1039501 - [provisioning] discard=on broken
+Patch507: kvm-block-Dont-ignore-previously-set-bdrv_flags.patch
+# For bz#997832 - Backport trace fixes proactively to avoid confusion and silly conflicts
+Patch508: kvm-cleanup-trace-events.pl-New.patch
+# For bz#997832 - Backport trace fixes proactively to avoid confusion and silly conflicts
+Patch509: kvm-slavio_misc-Fix-slavio_led_mem_readw-_writew-tracepo.patch
+# For bz#997832 - Backport trace fixes proactively to avoid confusion and silly conflicts
+Patch510: kvm-milkymist-minimac2-Fix-minimac2_read-_write-tracepoi.patch
+# For bz#997832 - Backport trace fixes proactively to avoid confusion and silly conflicts
+Patch511: kvm-trace-events-Drop-unused-events.patch
+# For bz#997832 - Backport trace fixes proactively to avoid confusion and silly conflicts
+Patch512: kvm-trace-events-Fix-up-source-file-comments.patch
+# For bz#997832 - Backport trace fixes proactively to avoid confusion and silly conflicts
+Patch513: kvm-trace-events-Clean-up-with-scripts-cleanup-trace-eve.patch
+# For bz#997832 - Backport trace fixes proactively to avoid confusion and silly conflicts
+Patch514: kvm-trace-events-Clean-up-after-removal-of-old-usb-host-.patch
+# For bz#1027571 - [virtio-win]win8.1 guest network can not resume automatically after do "set_link tap1 on"
+Patch515: kvm-net-Update-netdev-peer-on-link-change.patch
 
 BuildRequires: zlib-devel
 BuildRequires: SDL-devel
@@ -1743,6 +1771,20 @@ CAC emulation development files.
 %patch499 -p1
 %patch500 -p1
 %patch501 -p1
+%patch502 -p1
+%patch503 -p1
+%patch504 -p1
+%patch505 -p1
+%patch506 -p1
+%patch507 -p1
+%patch508 -p1
+%patch509 -p1
+%patch510 -p1
+%patch511 -p1
+%patch512 -p1
+%patch513 -p1
+%patch514 -p1
+%patch515 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -2171,6 +2213,42 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Tue Dec 17 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-22.el7
+- Fix ksmtuned with set_process_name=1 [bz#1027420]
+- Fix committed memory when no qemu-kvm running [bz#1027418]
+- kvm-virtio-net-fix-the-memory-leak-in-rxfilter_notify.patch [bz#1033810]
+- kvm-qom-Fix-memory-leak-in-object_property_set_link.patch [bz#1033810]
+- kvm-fix-intel-hda-live-migration.patch [bz#1036537]
+- kvm-vfio-pci-Release-all-MSI-X-vectors-when-disabled.patch [bz#1029743]
+- kvm-Query-KVM-for-available-memory-slots.patch [bz#921490]
+- kvm-block-Dont-ignore-previously-set-bdrv_flags.patch [bz#1039501]
+- kvm-cleanup-trace-events.pl-New.patch [bz#997832]
+- kvm-slavio_misc-Fix-slavio_led_mem_readw-_writew-tracepo.patch [bz#997832]
+- kvm-milkymist-minimac2-Fix-minimac2_read-_write-tracepoi.patch [bz#997832]
+- kvm-trace-events-Drop-unused-events.patch [bz#997832]
+- kvm-trace-events-Fix-up-source-file-comments.patch [bz#997832]
+- kvm-trace-events-Clean-up-with-scripts-cleanup-trace-eve.patch [bz#997832]
+- kvm-trace-events-Clean-up-after-removal-of-old-usb-host-.patch [bz#997832]
+- kvm-net-Update-netdev-peer-on-link-change.patch [bz#1027571]
+- Resolves: bz#1027418
+  (ksmtuned committed_memory() still returns "", not 0, when no qemu running)
+- Resolves: bz#1027420
+  (ksmtuned can’t handle libvirt WITH set_process_name=1)
+- Resolves: bz#1027571
+  ([virtio-win]win8.1 guest network can not resume automatically after do "set_link tap1 on")
+- Resolves: bz#1029743
+  (qemu-kvm core dump after hot plug/unplug 82576 PF about 100 times)
+- Resolves: bz#1033810
+  (memory leak in using object_get_canonical_path())
+- Resolves: bz#1036537
+  (Cross version migration from RHEL6.5 host to RHEL7.0 host with sound device failed.)
+- Resolves: bz#1039501
+  ([provisioning] discard=on broken)
+- Resolves: bz#921490
+  (qemu-kvm core dumped after hot plugging more than 11 VF through vfio-pci)
+- Resolves: bz#997832
+  (Backport trace fixes proactively to avoid confusion and silly conflicts)
+
 * Tue Dec 03 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-21.el7
 - kvm-scsi-Allocate-SCSITargetReq-r-buf-dynamically-CVE-20.patch [bz#1007334]
 - Resolves: bz#1007334
