@@ -1072,6 +1072,7 @@ using the specified target.
 ETEXI
 #endif
 
+#if 0 /* Disabled for Red Hat Enterprise Linux */
     {
         .name       = "drive_add",
         .args_type  = "pci_addr:s,opts:s",
@@ -1084,6 +1085,7 @@ ETEXI
         .help       = "add drive to PCI storage controller",
         .mhandler.cmd = drive_hot_add,
     },
+#endif
 
 STEXI
 @item drive_add
