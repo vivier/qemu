@@ -9,7 +9,6 @@
 #include "net/net.h"
 #include "exec/memory.h"
 #include "hw/i386/ioapic.h"
-#include "hw/nvram/fw_cfg.h"
 
 /* PC-style peripherals (also used by other machines).  */
 
