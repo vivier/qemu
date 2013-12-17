@@ -70,7 +70,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 22%{?dist}
+Release: 23%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1083,6 +1083,22 @@ Patch513: kvm-trace-events-Clean-up-with-scripts-cleanup-trace-eve.patch
 Patch514: kvm-trace-events-Clean-up-after-removal-of-old-usb-host-.patch
 # For bz#1027571 - [virtio-win]win8.1 guest network can not resume automatically after do "set_link tap1 on"
 Patch515: kvm-net-Update-netdev-peer-on-link-change.patch
+# For bz#1003773 - When virtio-blk-pci device with dataplane is failed to be added, the drive cannot be released.
+Patch516: kvm-qdev-monitor-Unref-device-when-device_add-fails.patch
+# For bz#1003773 - When virtio-blk-pci device with dataplane is failed to be added, the drive cannot be released.
+Patch517: kvm-qdev-Drop-misleading-qdev_free-function.patch
+# For bz#1003773 - When virtio-blk-pci device with dataplane is failed to be added, the drive cannot be released.
+Patch518: kvm-blockdev-fix-drive_init-opts-and-bs_opts-leaks.patch
+# For bz#1003773 - When virtio-blk-pci device with dataplane is failed to be added, the drive cannot be released.
+Patch519: kvm-libqtest-rename-qmp-to-qmp_discard_response.patch
+# For bz#1003773 - When virtio-blk-pci device with dataplane is failed to be added, the drive cannot be released.
+Patch520: kvm-libqtest-add-qmp-fmt-.-QDict-function.patch
+# For bz#1003773 - When virtio-blk-pci device with dataplane is failed to be added, the drive cannot be released.
+Patch521: kvm-blockdev-test-add-test-case-for-drive_add-duplicate-.patch
+# For bz#1003773 - When virtio-blk-pci device with dataplane is failed to be added, the drive cannot be released.
+Patch522: kvm-qdev-monitor-test-add-device_add-leak-test-cases.patch
+# For bz#1003773 - When virtio-blk-pci device with dataplane is failed to be added, the drive cannot be released.
+Patch523: kvm-qtest-Use-display-none-by-default.patch
 
 BuildRequires: zlib-devel
 BuildRequires: SDL-devel
@@ -1785,6 +1801,14 @@ CAC emulation development files.
 %patch513 -p1
 %patch514 -p1
 %patch515 -p1
+%patch516 -p1
+%patch517 -p1
+%patch518 -p1
+%patch519 -p1
+%patch520 -p1
+%patch521 -p1
+%patch522 -p1
+%patch523 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -2213,6 +2237,18 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Tue Dec 17 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-23.el7
+- kvm-qdev-monitor-Unref-device-when-device_add-fails.patch [bz#1003773]
+- kvm-qdev-Drop-misleading-qdev_free-function.patch [bz#1003773]
+- kvm-blockdev-fix-drive_init-opts-and-bs_opts-leaks.patch [bz#1003773]
+- kvm-libqtest-rename-qmp-to-qmp_discard_response.patch [bz#1003773]
+- kvm-libqtest-add-qmp-fmt-.-QDict-function.patch [bz#1003773]
+- kvm-blockdev-test-add-test-case-for-drive_add-duplicate-.patch [bz#1003773]
+- kvm-qdev-monitor-test-add-device_add-leak-test-cases.patch [bz#1003773]
+- kvm-qtest-Use-display-none-by-default.patch [bz#1003773]
+- Resolves: bz#1003773
+  (When virtio-blk-pci device with dataplane is failed to be added, the drive cannot be released.)
+
 * Tue Dec 17 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-22.el7
 - Fix ksmtuned with set_process_name=1 [bz#1027420]
 - Fix committed memory when no qemu-kvm running [bz#1027418]
