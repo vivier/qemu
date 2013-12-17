@@ -1091,6 +1091,21 @@ STEXI
 Add drive to PCI storage controller.
 ETEXI
 
+    {
+        .name       = RFQDN_REDHAT "drive_add",
+        .args_type  = "simple-drive:O",
+        .params     = "id=name,[file=file][,format=f][,media=d]...",
+        .help       = "Create a drive similar to -device if=none.",
+	.user_print = monitor_user_noop,
+        .mhandler.cmd_new = simple_drive_add,
+    },
+
+STEXI
+@item __com.redhat_drive_add
+@findex __com.redhat_drive_add
+Create a drive similar to -device if=none.
+ETEXI
+
 #if defined(TARGET_I386) && 0 /* Disabled for Red Hat Enterprise Linux */
     {
         .name       = "pci_add",

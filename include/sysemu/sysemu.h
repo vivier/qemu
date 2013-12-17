@@ -192,6 +192,7 @@ QemuOpts *qemu_get_machine_opts(void);
 bool usb_enabled(bool default_usb);
 
 extern QemuOptsList qemu_drive_opts;
+extern QemuOptsList qemu_simple_drive_opts;
 extern QemuOptsList qemu_chardev_opts;
 extern QemuOptsList qemu_device_opts;
 extern QemuOptsList qemu_netdev_opts;
