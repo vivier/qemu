@@ -70,7 +70,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 23%{?dist}
+Release: 24%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1099,6 +1099,118 @@ Patch521: kvm-blockdev-test-add-test-case-for-drive_add-duplicate-.patch
 Patch522: kvm-qdev-monitor-test-add-device_add-leak-test-cases.patch
 # For bz#1003773 - When virtio-blk-pci device with dataplane is failed to be added, the drive cannot be released.
 Patch523: kvm-qtest-Use-display-none-by-default.patch
+# For bz#1034876 - export acpi tables to guests
+Patch524: kvm-range-add-Range-structure.patch
+# For bz#1034876 - export acpi tables to guests
+Patch525: kvm-range-add-Range-to-typedefs.patch
+# For bz#1034876 - export acpi tables to guests
+Patch526: kvm-range-add-min-max-operations-on-ranges.patch
+# For bz#1034876 - export acpi tables to guests
+Patch527: kvm-qdev-Add-SIZE-type-to-qdev-properties.patch
+# For bz#1034876 - export acpi tables to guests
+Patch528: kvm-qapi-make-visit_type_size-fallback-to-type_int.patch
+# For bz#1034876 - export acpi tables to guests
+Patch529: kvm-pc-move-IO_APIC_DEFAULT_ADDRESS-to-include-hw-i386-i.patch
+# For bz#1034876 - export acpi tables to guests
+Patch530: kvm-pci-add-helper-to-retrieve-the-64-bit-range.patch
+# For bz#1034876 - export acpi tables to guests
+Patch531: kvm-pci-fix-up-w64-size-calculation-helper.patch
+# For bz#1034876 - export acpi tables to guests
+Patch532: kvm-refer-to-FWCfgState-explicitly.patch
+# For bz#1034876 - export acpi tables to guests
+Patch533: kvm-fw_cfg-move-typedef-to-qemu-typedefs.h.patch
+# For bz#1034876 - export acpi tables to guests
+Patch534: kvm-arch_init-align-MR-size-to-target-page-size.patch
+# For bz#1034876 - export acpi tables to guests
+Patch535: kvm-loader-store-FW-CFG-ROM-files-in-RAM.patch
+# For bz#1034876 - export acpi tables to guests
+Patch536: kvm-pci-store-PCI-hole-ranges-in-guestinfo-structure.patch
+# For bz#1034876 - export acpi tables to guests
+Patch537: kvm-pc-pass-PCI-hole-ranges-to-Guests.patch
+# For bz#1034876 - export acpi tables to guests
+Patch538: kvm-pc-replace-i440fx_common_init-with-i440fx_init.patch
+# For bz#1034876 - export acpi tables to guests
+Patch539: kvm-pc-don-t-access-fw-cfg-if-NULL.patch
+# For bz#1034876 - export acpi tables to guests
+Patch540: kvm-pc-add-I440FX-QOM-cast-macro.patch
+# For bz#1034876 - export acpi tables to guests
+Patch541: kvm-pc-limit-64-bit-hole-to-2G-by-default.patch
+# For bz#1034876 - export acpi tables to guests
+Patch542: kvm-q35-make-pci-window-address-size-match-guest-cfg.patch
+# For bz#1034876 - export acpi tables to guests
+Patch543: kvm-q35-use-64-bit-window-programmed-by-guest.patch
+# For bz#1034876 - export acpi tables to guests
+Patch544: kvm-piix-use-64-bit-window-programmed-by-guest.patch
+# For bz#1034876 - export acpi tables to guests
+Patch545: kvm-pc-fix-regression-for-64-bit-PCI-memory.patch
+# For bz#1034876 - export acpi tables to guests
+Patch546: kvm-cleanup-object.h-include-error.h-directly.patch
+# For bz#1034876 - export acpi tables to guests
+Patch547: kvm-qom-cleanup-struct-Error-references.patch
+# For bz#1034876 - export acpi tables to guests
+Patch548: kvm-qom-add-pointer-to-int-property-helpers.patch
+# For bz#1034876 - export acpi tables to guests
+Patch549: kvm-fw_cfg-interface-to-trigger-callback-on-read.patch
+# For bz#1034876 - export acpi tables to guests
+Patch550: kvm-loader-support-for-unmapped-ROM-blobs.patch
+# For bz#1034876 - export acpi tables to guests
+Patch551: kvm-pcie_host-expose-UNMAPPED-macro.patch
+# For bz#1034876 - export acpi tables to guests
+Patch552: kvm-pcie_host-expose-address-format.patch
+# For bz#1034876 - export acpi tables to guests
+Patch553: kvm-q35-use-macro-for-MCFG-property-name.patch
+# For bz#1034876 - export acpi tables to guests
+Patch554: kvm-q35-expose-mmcfg-size-as-a-property.patch
+# For bz#1034876 - export acpi tables to guests
+Patch555: kvm-i386-add-ACPI-table-files-from-seabios.patch
+# For bz#1034876 - export acpi tables to guests
+Patch556: kvm-acpi-add-rules-to-compile-ASL-source.patch
+# For bz#1034876 - export acpi tables to guests
+Patch557: kvm-acpi-pre-compiled-ASL-files.patch
+# For bz#1034876 - export acpi tables to guests
+Patch558: kvm-acpi-ssdt-pcihp-updat-generated-file.patch
+# For bz#1034876 - export acpi tables to guests
+Patch559: kvm-loader-use-file-path-size-from-fw_cfg.h.patch
+# For bz#1034876 - export acpi tables to guests
+Patch560: kvm-i386-add-bios-linker-loader.patch
+# For bz#1034876 - export acpi tables to guests
+Patch561: kvm-loader-allow-adding-ROMs-in-done-callbacks.patch
+# For bz#1034876 - export acpi tables to guests
+Patch562: kvm-i386-define-pc-guest-info.patch
+# For bz#1034876 - export acpi tables to guests
+Patch563: kvm-acpi-piix-add-macros-for-acpi-property-names.patch
+# For bz#1034876 - export acpi tables to guests
+Patch564: kvm-piix-APIs-for-pc-guest-info.patch
+# For bz#1034876 - export acpi tables to guests
+Patch565: kvm-ich9-APIs-for-pc-guest-info.patch
+# For bz#1034876 - export acpi tables to guests
+Patch566: kvm-pvpanic-add-API-to-access-io-port.patch
+# For bz#1034876 - export acpi tables to guests
+Patch567: kvm-hpet-add-API-to-find-it.patch
+# For bz#1034876 - export acpi tables to guests
+Patch568: kvm-hpet-fix-build-with-CONFIG_HPET-off.patch
+# For bz#1034876 - export acpi tables to guests
+Patch569: kvm-acpi-add-interface-to-access-user-installed-tables.patch
+# For bz#1034876 - export acpi tables to guests
+Patch570: kvm-pc-use-new-api-to-add-builtin-tables.patch
+# For bz#1034876 - export acpi tables to guests
+Patch571: kvm-i386-ACPI-table-generation-code-from-seabios.patch
+# For bz#1034876 - export acpi tables to guests
+Patch572: kvm-ssdt-fix-PBLK-length.patch
+# For bz#1034876 - export acpi tables to guests
+Patch573: kvm-ssdt-proc-update-generated-file.patch
+# For bz#1034876 - export acpi tables to guests
+Patch574: kvm-pc-disable-pci-info.patch
+# For bz#1034876 - export acpi tables to guests
+Patch575: kvm-acpi-build-fix-build-on-glib-2.22.patch
+# For bz#1034876 - export acpi tables to guests
+Patch576: kvm-acpi-build-fix-build-on-glib-2.14.patch
+# For bz#1034876 - export acpi tables to guests
+Patch577: kvm-acpi-build-fix-support-for-glib-2.22.patch
+# For bz#1034876 - export acpi tables to guests
+Patch578: kvm-acpi-build-Fix-compiler-warning-missing-gnu_printf-f.patch
+# For bz#1034876 - export acpi tables to guests
+Patch579: kvm-exec-Fix-prototype-of-phys_mem_set_alloc-and-related.patch
 
 BuildRequires: zlib-devel
 BuildRequires: SDL-devel
@@ -1809,6 +1921,62 @@ CAC emulation development files.
 %patch521 -p1
 %patch522 -p1
 %patch523 -p1
+%patch524 -p1
+%patch525 -p1
+%patch526 -p1
+%patch527 -p1
+%patch528 -p1
+%patch529 -p1
+%patch530 -p1
+%patch531 -p1
+%patch532 -p1
+%patch533 -p1
+%patch534 -p1
+%patch535 -p1
+%patch536 -p1
+%patch537 -p1
+%patch538 -p1
+%patch539 -p1
+%patch540 -p1
+%patch541 -p1
+%patch542 -p1
+%patch543 -p1
+%patch544 -p1
+%patch545 -p1
+%patch546 -p1
+%patch547 -p1
+%patch548 -p1
+%patch549 -p1
+%patch550 -p1
+%patch551 -p1
+%patch552 -p1
+%patch553 -p1
+%patch554 -p1
+%patch555 -p1
+%patch556 -p1
+%patch557 -p1
+%patch558 -p1
+%patch559 -p1
+%patch560 -p1
+%patch561 -p1
+%patch562 -p1
+%patch563 -p1
+%patch564 -p1
+%patch565 -p1
+%patch566 -p1
+%patch567 -p1
+%patch568 -p1
+%patch569 -p1
+%patch570 -p1
+%patch571 -p1
+%patch572 -p1
+%patch573 -p1
+%patch574 -p1
+%patch575 -p1
+%patch576 -p1
+%patch577 -p1
+%patch578 -p1
+%patch579 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -2237,6 +2405,66 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Tue Dec 17 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-24.el7
+- kvm-range-add-Range-structure.patch [bz#1034876]
+- kvm-range-add-Range-to-typedefs.patch [bz#1034876]
+- kvm-range-add-min-max-operations-on-ranges.patch [bz#1034876]
+- kvm-qdev-Add-SIZE-type-to-qdev-properties.patch [bz#1034876]
+- kvm-qapi-make-visit_type_size-fallback-to-type_int.patch [bz#1034876]
+- kvm-pc-move-IO_APIC_DEFAULT_ADDRESS-to-include-hw-i386-i.patch [bz#1034876]
+- kvm-pci-add-helper-to-retrieve-the-64-bit-range.patch [bz#1034876]
+- kvm-pci-fix-up-w64-size-calculation-helper.patch [bz#1034876]
+- kvm-refer-to-FWCfgState-explicitly.patch [bz#1034876]
+- kvm-fw_cfg-move-typedef-to-qemu-typedefs.h.patch [bz#1034876]
+- kvm-arch_init-align-MR-size-to-target-page-size.patch [bz#1034876]
+- kvm-loader-store-FW-CFG-ROM-files-in-RAM.patch [bz#1034876]
+- kvm-pci-store-PCI-hole-ranges-in-guestinfo-structure.patch [bz#1034876]
+- kvm-pc-pass-PCI-hole-ranges-to-Guests.patch [bz#1034876]
+- kvm-pc-replace-i440fx_common_init-with-i440fx_init.patch [bz#1034876]
+- kvm-pc-don-t-access-fw-cfg-if-NULL.patch [bz#1034876]
+- kvm-pc-add-I440FX-QOM-cast-macro.patch [bz#1034876]
+- kvm-pc-limit-64-bit-hole-to-2G-by-default.patch [bz#1034876]
+- kvm-q35-make-pci-window-address-size-match-guest-cfg.patch [bz#1034876]
+- kvm-q35-use-64-bit-window-programmed-by-guest.patch [bz#1034876]
+- kvm-piix-use-64-bit-window-programmed-by-guest.patch [bz#1034876]
+- kvm-pc-fix-regression-for-64-bit-PCI-memory.patch [bz#1034876]
+- kvm-cleanup-object.h-include-error.h-directly.patch [bz#1034876]
+- kvm-qom-cleanup-struct-Error-references.patch [bz#1034876]
+- kvm-qom-add-pointer-to-int-property-helpers.patch [bz#1034876]
+- kvm-fw_cfg-interface-to-trigger-callback-on-read.patch [bz#1034876]
+- kvm-loader-support-for-unmapped-ROM-blobs.patch [bz#1034876]
+- kvm-pcie_host-expose-UNMAPPED-macro.patch [bz#1034876]
+- kvm-pcie_host-expose-address-format.patch [bz#1034876]
+- kvm-q35-use-macro-for-MCFG-property-name.patch [bz#1034876]
+- kvm-q35-expose-mmcfg-size-as-a-property.patch [bz#1034876]
+- kvm-i386-add-ACPI-table-files-from-seabios.patch [bz#1034876]
+- kvm-acpi-add-rules-to-compile-ASL-source.patch [bz#1034876]
+- kvm-acpi-pre-compiled-ASL-files.patch [bz#1034876]
+- kvm-acpi-ssdt-pcihp-updat-generated-file.patch [bz#1034876]
+- kvm-loader-use-file-path-size-from-fw_cfg.h.patch [bz#1034876]
+- kvm-i386-add-bios-linker-loader.patch [bz#1034876]
+- kvm-loader-allow-adding-ROMs-in-done-callbacks.patch [bz#1034876]
+- kvm-i386-define-pc-guest-info.patch [bz#1034876]
+- kvm-acpi-piix-add-macros-for-acpi-property-names.patch [bz#1034876]
+- kvm-piix-APIs-for-pc-guest-info.patch [bz#1034876]
+- kvm-ich9-APIs-for-pc-guest-info.patch [bz#1034876]
+- kvm-pvpanic-add-API-to-access-io-port.patch [bz#1034876]
+- kvm-hpet-add-API-to-find-it.patch [bz#1034876]
+- kvm-hpet-fix-build-with-CONFIG_HPET-off.patch [bz#1034876]
+- kvm-acpi-add-interface-to-access-user-installed-tables.patch [bz#1034876]
+- kvm-pc-use-new-api-to-add-builtin-tables.patch [bz#1034876]
+- kvm-i386-ACPI-table-generation-code-from-seabios.patch [bz#1034876]
+- kvm-ssdt-fix-PBLK-length.patch [bz#1034876]
+- kvm-ssdt-proc-update-generated-file.patch [bz#1034876]
+- kvm-pc-disable-pci-info.patch [bz#1034876]
+- kvm-acpi-build-fix-build-on-glib-2.22.patch [bz#1034876]
+- kvm-acpi-build-fix-build-on-glib-2.14.patch [bz#1034876]
+- kvm-acpi-build-fix-support-for-glib-2.22.patch [bz#1034876]
+- kvm-acpi-build-Fix-compiler-warning-missing-gnu_printf-f.patch [bz#1034876]
+- kvm-exec-Fix-prototype-of-phys_mem_set_alloc-and-related.patch [bz#1034876]
+- Resolves: bz#1034876
+  (export acpi tables to guests)
+
 * Tue Dec 17 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-23.el7
 - kvm-qdev-monitor-Unref-device-when-device_add-fails.patch [bz#1003773]
 - kvm-qdev-Drop-misleading-qdev_free-function.patch [bz#1003773]
