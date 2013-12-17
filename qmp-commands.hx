@@ -106,6 +106,51 @@ Example:
 Note: The "force" argument defaults to false.
 
 EQMP
+    {
+        .name       = RFQDN_REDHAT "drive_add",
+        .args_type  = "simple-drive:O",
+        .params     = "id=name,[file=file][,format=f][,media=d]...",
+        .help       = "Create a drive similar to -device if=none.",
+        .mhandler.cmd_new = simple_drive_add,
+    },
+
+SQMP
+__com.redhat_drive_add
+----------------------
+
+Create a drive similar to -device if=none.
+
+Arguments:
+
+- "id": Drive ID, must be unique (json-string)
+- "file": Disk image (json-string, optional)
+- "format": Disk format (json-string, optional)
+- "aio": How to perform asynchronous disk I/O (json-string, optional)
+- "cache": Host cache use policy (json-string, optional)
+- "cyls", "heads", "secs": Disk geometry (json-int, optional)
+- "trans": BIOS translation mode (json-string, optional)
+- "media": Media type (json-string, optional)
+- "readonly": Open image read-only (json-bool, optional)
+- "rerror": What to do on read error (json-string, optional)
+- "werror": What to do on write error (json-string, optional)
+- "serial": Drive serial number (json-string, optional)
+- "snapshot": Enable snapshot mode (json-bool, optional)
+- "copy-on-read": Enable copy-on-read mode (json-bool, optional)
+
+Example:
+
+1. Add a drive without medium:
+
+-> { "execute": "__com.redhat_drive_add", "arguments": { "id": "foo" } }
+<- {"return": {}}
+
+2. Add a drive with medium:
+
+-> { "execute": "__com.redhat_drive_add",
+     "arguments": { "id": "bar", "file": "tmp.qcow2", "format": "qcow2" } }
+<- {"return": {}}
+
+EQMP
 
     {
         .name       = RFQDN_REDHAT "drive_del",
