@@ -1227,6 +1227,26 @@ Add drive to PCI storage controller.
 ETEXI
 
     {
+        .name       = RFQDN_REDHAT "drive_add",
+        .args_type  = "simple-drive:O",
+        .params     = "id=name,[file=file][,format=f][,media=d]...",
+        .help       = "Create a drive similar to -device if=none.",
+        .mhandler.cmd_new = simple_drive_add,
+    },
+
+STEXI
+@item __com.redhat_drive_add
+@findex __com.redhat_drive_add
+Create a drive similar to -device if=none.
+ETEXI
+
+STEXI
+@item pci_del
+@findex pci_del
+Hot remove PCI device.
+ETEXI
+
+    {
         .name       = "pcie_aer_inject_error",
         .args_type  = "advisory_non_fatal:-a,correctable:-c,"
 	              "id:s,error_status:s,"
