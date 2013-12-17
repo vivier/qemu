@@ -87,6 +87,7 @@ static void pc_init1(QEMUMachineInitArgs *args,
     MemoryRegion *rom_memory;
     DeviceState *icc_bridge;
     FWCfgState *fw_cfg = NULL;
+    PcGuestInfo *guest_info;
 
     icc_bridge = qdev_create(NULL, TYPE_ICC_BRIDGE);
     object_property_add_child(qdev_get_machine(), "icc-bridge",
@@ -120,13 +121,24 @@ static void pc_init1(QEMUMachineInitArgs *args,
         smbios_set_type1_defaults("Red Hat", "KVM", args->machine->desc);
     }
 
+    guest_info = pc_guest_info_init(below_4g_mem_size, above_4g_mem_size);
+
+    /* Set PCI window size the way seabios has always done it. */
+    /* Power of 2 so bios can cover it with a single MTRR */
+    if (ram_size <= 0x80000000)
+        guest_info->pci_info.w32.begin = 0x80000000;
+    else if (ram_size <= 0xc0000000)
+        guest_info->pci_info.w32.begin = 0xc0000000;
+    else
+        guest_info->pci_info.w32.begin = 0xe0000000;
+
     /* allocate ram and load rom/bios */
     if (!xen_enabled()) {
         fw_cfg = pc_memory_init(system_memory,
                        args->kernel_filename, args->kernel_cmdline,
                        args->initrd_filename,
                        below_4g_mem_size, above_4g_mem_size,
-                       rom_memory, &ram_memory);
+                       rom_memory, &ram_memory, guest_info);
     }
 
     gsi_state = g_malloc0(sizeof(*gsi_state));

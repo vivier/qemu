@@ -73,6 +73,7 @@ static void pc_q35_init(QEMUMachineInitArgs *args)
     ICH9LPCState *ich9_lpc;
     PCIDevice *ahci;
     DeviceState *icc_bridge;
+    PcGuestInfo *guest_info;
 
     icc_bridge = qdev_create(NULL, TYPE_ICC_BRIDGE);
     object_property_add_child(qdev_get_machine(), "icc-bridge",
@@ -106,13 +107,15 @@ static void pc_q35_init(QEMUMachineInitArgs *args)
         smbios_set_type1_defaults("Red Hat", "KVM", args->machine->desc);
     }
 
+    guest_info = pc_guest_info_init(below_4g_mem_size, above_4g_mem_size);
+
     /* allocate ram and load rom/bios */
     if (!xen_enabled()) {
         pc_memory_init(get_system_memory(),
                        args->kernel_filename, args->kernel_cmdline,
                        args->initrd_filename,
                        below_4g_mem_size, above_4g_mem_size,
-                       rom_memory, &ram_memory);
+                       rom_memory, &ram_memory, guest_info);
     }
 
     /* irq lines */
@@ -134,6 +137,7 @@ static void pc_q35_init(QEMUMachineInitArgs *args)
     q35_host->mch.address_space_io = get_system_io();
     q35_host->mch.below_4g_mem_size = below_4g_mem_size;
     q35_host->mch.above_4g_mem_size = above_4g_mem_size;
+    q35_host->mch.guest_info = guest_info;
     /* pci */
     qdev_init_nofail(DEVICE(q35_host));
     host_bus = q35_host->host.pci.bus;
