@@ -109,8 +109,8 @@ static void q35_host_get_pci_hole64_end(Object *obj, Visitor *v,
 }
 
 static Property mch_props[] = {
-    DEFINE_PROP_UINT64("MCFG", Q35PCIHost, host.base_addr,
-                        MCH_HOST_BRIDGE_PCIEXBAR_DEFAULT),
+    DEFINE_PROP_UINT64(PCIE_HOST_MCFG_BASE, Q35PCIHost, host.base_addr,
+                       MCH_HOST_BRIDGE_PCIEXBAR_DEFAULT),
     DEFINE_PROP_SIZE(PCI_HOST_PROP_PCI_HOLE64_SIZE, Q35PCIHost,
                      mch.pci_hole64_size, DEFAULT_PCI_HOLE64_SIZE),
     DEFINE_PROP_END_OF_LIST(),
