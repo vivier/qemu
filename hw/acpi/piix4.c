@@ -29,6 +29,7 @@
 #include "exec/ioport.h"
 #include "hw/nvram/fw_cfg.h"
 #include "exec/address-spaces.h"
+#include "hw/acpi/piix4.h"
 
 //#define DEBUG
 
@@ -67,6 +68,8 @@ typedef struct PIIX4PMState {
     PCIDevice dev;
 
     MemoryRegion io;
+    uint32_t io_base;
+
     MemoryRegion io_gpe;
     MemoryRegion io_pci;
     MemoryRegion io_cpu;
@@ -143,14 +146,12 @@ static void apm_ctrl_changed(uint32_t val, void *arg)
 
 static void pm_io_space_update(PIIX4PMState *s)
 {
-    uint32_t pm_io_base;
-
-    pm_io_base = le32_to_cpu(*(uint32_t *)(s->dev.config + 0x40));
-    pm_io_base &= 0xffc0;
+    s->io_base = le32_to_cpu(*(uint32_t *)(s->dev.config + 0x40));
+    s->io_base &= 0xffc0;
 
     memory_region_transaction_begin();
     memory_region_set_enabled(&s->io, s->dev.config[0x80] & 1);
-    memory_region_set_address(&s->io, pm_io_base);
+    memory_region_set_address(&s->io, s->io_base);
     memory_region_transaction_commit();
 }
 
@@ -393,6 +394,28 @@ static void piix4_pm_machine_ready(Notifier *n, void *opaque)
 
 }
 
+static void piix4_pm_add_propeties(PIIX4PMState *s)
+{
+    static const uint8_t acpi_enable_cmd = ACPI_ENABLE;
+    static const uint8_t acpi_disable_cmd = ACPI_DISABLE;
+    static const uint32_t gpe0_blk = GPE_BASE;
+    static const uint32_t gpe0_blk_len = GPE_LEN;
+    static const uint16_t sci_int = 9;
+
+    object_property_add_uint8_ptr(OBJECT(s), ACPI_PM_PROP_ACPI_ENABLE_CMD,
+                                  &acpi_enable_cmd, NULL);
+    object_property_add_uint8_ptr(OBJECT(s), ACPI_PM_PROP_ACPI_DISABLE_CMD,
+                                  &acpi_disable_cmd, NULL);
+    object_property_add_uint32_ptr(OBJECT(s), ACPI_PM_PROP_GPE0_BLK,
+                                  &gpe0_blk, NULL);
+    object_property_add_uint32_ptr(OBJECT(s), ACPI_PM_PROP_GPE0_BLK_LEN,
+                                  &gpe0_blk_len, NULL);
+    object_property_add_uint16_ptr(OBJECT(s), ACPI_PM_PROP_SCI_INT,
+                                  &sci_int, NULL);
+    object_property_add_uint32_ptr(OBJECT(s), ACPI_PM_PROP_PM_IO_BASE,
+                                  &s->io_base, NULL);
+}
+
 static int piix4_pm_initfn(PCIDevice *dev)
 {
     PIIX4PMState *s = DO_UPCAST(PIIX4PMState, dev, dev);
@@ -442,7 +465,19 @@ static int piix4_pm_initfn(PCIDevice *dev)
 
     piix4_acpi_system_hot_add_init(pci_address_space_io(dev), dev->bus, s);
 
+    piix4_pm_add_propeties(s);
     return 0;
+}
+
+Object *piix4_pm_find(void)
+{
+    bool ambig;
+    Object *o = object_resolve_path_type("", "PIIX4_PM", &ambig);
+
+    if (ambig || !o) {
+        return NULL;
+    }
+    return o;
 }
 
 i2c_bus *piix4_pm_init(PCIBus *bus, int devfn, uint32_t smb_io_base,
