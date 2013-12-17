@@ -60,6 +60,7 @@ static const int ide_irq[MAX_IDE_BUS] = { 14, 15 };
 
 static bool smbios_type1_defaults = true;
 static bool has_pci_info = true;
+static bool has_acpi_build = true;
 
 /* PC hardware initialisation */
 static void pc_init1(QEMUMachineInitArgs *args,
@@ -123,6 +124,9 @@ static void pc_init1(QEMUMachineInitArgs *args,
     }
 
     guest_info = pc_guest_info_init(below_4g_mem_size, above_4g_mem_size);
+
+    guest_info->has_acpi_build = has_acpi_build;
+
     guest_info->has_pci_info = has_pci_info;
 
     /* allocate ram and load rom/bios */
@@ -899,6 +903,7 @@ static void pc_init_rhel650(QEMUMachineInitArgs *args)
                                 0, CPUID_EXT2_RDTSCP);
 
     rom_file_in_ram = false; 
+    has_acpi_build = false;
     pc_init_rhel700(args);
 }
 
