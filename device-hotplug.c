@@ -79,3 +79,78 @@ err:
         drive_put_ref(dinfo);
     }
 }
+
+static void check_parm(const char *key, QObject *obj, void *opaque)
+{
+    static const char *valid_keys[] = {
+        "id", "cyls", "heads", "secs", "trans", "media", "snapshot",
+        "file", "cache", "aio", "format", "serial", "rerror", "werror",
+        "readonly", "copy-on-read",
+#ifdef CONFIG_BLOCK_IO_THROTTLING
+        "bps", "bps_rd", "bps_wr", "iops", "iops_rd", "iops_wr",
+#endif
+        NULL
+
+    };
+    int *stopped = opaque;
+    const char **p;
+
+    if (*stopped) {
+        return;
+    }
+
+    for (p = valid_keys; *p; p++) {
+        if (!strcmp(key, *p)) {
+            return;
+        }
+    }
+
+    qerror_report(QERR_INVALID_PARAMETER, key);
+    *stopped = 1;
+}
+
+int simple_drive_add(Monitor *mon, const QDict *qdict, QObject **ret_data)
+{
+    int stopped;
+    Error *local_err = NULL;
+    QemuOpts *opts;
+    DriveInfo *dinfo;
+    MachineClass *mc;
+
+    if (!qdict_haskey(qdict, "id")) {
+        qerror_report(QERR_MISSING_PARAMETER, "id");
+        return -1;
+    }
+
+    stopped = 0;
+    qdict_iter(qdict, check_parm, &stopped);
+    if (stopped) {
+        return -1;
+    }
+
+    opts = qemu_opts_from_qdict(&qemu_drive_opts, qdict, &local_err);
+    if (!opts) {
+        qerror_report_err(local_err);
+        error_free(local_err);
+        return -1;
+    }
+    qemu_opt_set(opts, "if", "none");
+    mc = MACHINE_GET_CLASS(current_machine);
+    dinfo = drive_init(opts, mc->qemu_machine->block_default_type);
+    if (!dinfo) {
+        /*
+         * drive_init() reports some errors with qerror_report_err(),
+         * and some with error_report().  The latter vanish without
+         * trace in monitor_vprintf().  See also the rather optimistic
+         * upstream commit 74ee59a.  Emit a generic error here.  If a
+         * prior error from qerror_report_err() is pending, it'll get
+         * ignored.
+         */
+        qerror_report(QERR_DEVICE_INIT_FAILED,
+                      qemu_opts_id(opts));
+        qemu_opts_del(opts);
+        return -1;
+    }
+
+    return 0;
+}
