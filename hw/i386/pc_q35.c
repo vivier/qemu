@@ -49,7 +49,7 @@
 #define MAX_SATA_PORTS     6
 
 static bool smbios_type1_defaults = true;
-static bool has_pci_info = true;
+static bool has_pci_info;
 static bool has_acpi_build = true;
 
 /* PC hardware initialisation */
