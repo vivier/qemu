@@ -74,7 +74,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 29%{?dist}
+Release: 30%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1342,6 +1342,7 @@ Patch649: kvm-HMP-Forward-port-__com.redhat_drive_add-from-RHEL-6.patch
 Patch650: kvm-QMP-Document-throttling-parameters-of-__com.redhat_d.patch
 # For bz#889051 - Commands "__com.redhat_drive_add/del" don' t exist in RHEL7.0
 Patch651: kvm-HMP-Disable-drive_add-for-Red-Hat-Enterprise-Linux.patch
+Patch652: kvm-Revert-HMP-Disable-drive_add-for-Red-Hat-Enterprise-2.patch.patch
 
 
 BuildRequires: zlib-devel
@@ -2180,6 +2181,7 @@ CAC emulation development files.
 %patch649 -p1
 %patch650 -p1
 %patch651 -p1
+%patch652 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -2608,6 +2610,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-30.el7
+- kvm-Revert-HMP-Disable-drive_add-for-Red-Hat-Enterprise-2.patch.patch [bz#889051]
+- Resolves: bz#889051
+  (Commands "__com.redhat_drive_add/del" don' t exist in RHEL7.0)
+
 * Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-29.el7
 - kvm-QMP-Forward-port-__com.redhat_drive_del-from-RHEL-6.patch [bz#889051]
 - kvm-QMP-Forward-port-__com.redhat_drive_add-from-RHEL-6.patch [bz#889051]
