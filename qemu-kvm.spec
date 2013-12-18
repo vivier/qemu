@@ -1211,6 +1211,29 @@ Patch577: kvm-acpi-build-fix-support-for-glib-2.22.patch
 Patch578: kvm-acpi-build-Fix-compiler-warning-missing-gnu_printf-f.patch
 # For bz#1034876 - export acpi tables to guests
 Patch579: kvm-exec-Fix-prototype-of-phys_mem_set_alloc-and-related.patch
+# For bz#1034876 - export acpi tables to guests
+Patch580: kvm-hw-i386-Makefile.obj-use-PYTHON-to-run-.py-scripts-c.patch
+# For bz#1026314
+Patch581: kvm-seccomp-add-kill-to-the-syscall-whitelist.patch
+Patch582: kvm-json-parser-fix-handling-of-large-whole-number-value.patch
+Patch583: kvm-qapi-add-QMP-input-test-for-large-integers.patch
+Patch584: kvm-qapi-fix-visitor-serialization-tests-for-numbers-dou.patch
+Patch585: kvm-qapi-add-native-list-coverage-for-visitor-serializat.patch
+Patch586: kvm-qapi-add-native-list-coverage-for-QMP-output-visitor.patch
+Patch587: kvm-qapi-add-native-list-coverage-for-QMP-input-visitor-.patch
+Patch588: kvm-qapi-lack-of-two-commas-in-dict.patch
+Patch589: kvm-tests-QAPI-schema-parser-tests.patch
+Patch590: kvm-tests-Use-qapi-schema-test.json-as-schema-parser-tes.patch
+Patch591: kvm-qapi.py-Restructure-lexer-and-parser.patch
+Patch592: kvm-qapi.py-Decent-syntax-error-reporting.patch
+Patch593: kvm-qapi.py-Reject-invalid-characters-in-schema-file.patch
+Patch594: kvm-qapi.py-Fix-schema-parser-to-check-syntax-systematic.patch
+Patch595: kvm-qapi.py-Fix-diagnosing-non-objects-at-a-schema-s-top.patch
+Patch596: kvm-qapi.py-Rename-expr_eval-to-expr-in-parse_schema.patch
+Patch597: kvm-qapi.py-Permit-comments-starting-anywhere-on-the-lin.patch
+Patch598: kvm-scripts-qapi.py-Avoid-syntax-not-supported-by-Python.patch
+Patch599: kvm-tests-Fix-schema-parser-test-for-in-tree-build.patch
+
 
 BuildRequires: zlib-devel
 BuildRequires: SDL-devel
@@ -1287,24 +1310,19 @@ Requires: qemu-img = %{epoch}:%{version}-%{release}
 %define qemudocdir %{_docdir}/%{pkgname}
 
 %description
-QEMU is a generic and open source processor emulator which achieves a good
-emulation speed by using dynamic translation. QEMU has two operating modes:
+qemu-kvm is an open source virtualizer that provides hardware emulation for
+the KVM hypervisor. qemu-kvm acts as a virtual machine monitor together with
+the KVM kernel modules, and emulates the hardware for a full system such as
+a PC and its assocated peripherals.
 
- * Full system emulation. In this mode, QEMU emulates a full system (for
-   example a PC), including a processor and various peripherials. It can be
-   used to launch different Operating Systems without rebooting the PC or
-   to debug system code.
- * User mode emulation. In this mode, QEMU can launch Linux processes compiled
-   for one CPU on another CPU.
-
-As QEMU requires no host kernel patches to run, it is safe and easy to use.
+As qemu-kvm requires no host kernel patches to run, it is safe and easy to use.
 %if !%{rhev}
 %package -n qemu-img
 Summary: QEMU command line tool for manipulating disk images
 Group: Development/Tools
 
 %description -n qemu-img
-This package provides a command line tool for manipulating disk images
+This package provides a command line tool for manipulating disk images.
 %endif
 
 %if 0%{!?build_only_sub:1}
@@ -1321,10 +1339,10 @@ Requires(postun): systemd-units
 %rhel_rhev_conflicts qemu-kvm-common
 
 %description -n qemu-kvm-common%{?pkgsuffix}
-QEMU is a generic and open source processor emulator which achieves a good
-emulation speed by using dynamic translation.
+qemu-kvm is an open source virtualizer that provides hardware emulation for
+the KVM hypervisor. 
 
-This package provides the common files needed by all QEMU targets
+This package provides documentation and auxiliary programs used with qemu-kvm.
 
 %endif
 
@@ -1337,8 +1355,8 @@ Requires(preun): systemd-units
 Requires(postun): systemd-units
 
 %description -n qemu-guest-agent
-QEMU is a generic and open source processor emulator which achieves a good
-emulation speed by using dynamic translation.
+qemu-kvm is an open source virtualizer that provides hardware emulation for
+the KVM hypervisor. 
 
 This package provides an agent to run inside guests, which communicates
 with the host over a virtio-serial channel named "org.qemu.guest_agent.0"
@@ -1977,6 +1995,26 @@ CAC emulation development files.
 %patch577 -p1
 %patch578 -p1
 %patch579 -p1
+%patch580 -p1
+%patch581 -p1
+%patch582 -p1
+%patch583 -p1
+%patch584 -p1
+%patch585 -p1
+%patch586 -p1
+%patch587 -p1
+%patch588 -p1
+%patch589 -p1
+%patch590 -p1
+%patch591 -p1
+%patch592 -p1
+%patch593 -p1
+%patch594 -p1
+%patch595 -p1
+%patch596 -p1
+%patch597 -p1
+%patch598 -p1
+%patch599 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -2405,6 +2443,34 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-25.el7
+- kvm-Change-package-description.patch [bz#1017696]
+- kvm-seccomp-add-kill-to-the-syscall-whitelist.patch [bz#1026314]
+- kvm-json-parser-fix-handling-of-large-whole-number-value.patch [bz#997915]
+- kvm-qapi-add-QMP-input-test-for-large-integers.patch [bz#997915]
+- kvm-qapi-fix-visitor-serialization-tests-for-numbers-dou.patch [bz#997915]
+- kvm-qapi-add-native-list-coverage-for-visitor-serializat.patch [bz#997915]
+- kvm-qapi-add-native-list-coverage-for-QMP-output-visitor.patch [bz#997915]
+- kvm-qapi-add-native-list-coverage-for-QMP-input-visitor-.patch [bz#997915]
+- kvm-qapi-lack-of-two-commas-in-dict.patch [bz#997915]
+- kvm-tests-QAPI-schema-parser-tests.patch [bz#997915]
+- kvm-tests-Use-qapi-schema-test.json-as-schema-parser-tes.patch [bz#997915]
+- kvm-qapi.py-Restructure-lexer-and-parser.patch [bz#997915]
+- kvm-qapi.py-Decent-syntax-error-reporting.patch [bz#997915]
+- kvm-qapi.py-Reject-invalid-characters-in-schema-file.patch [bz#997915]
+- kvm-qapi.py-Fix-schema-parser-to-check-syntax-systematic.patch [bz#997915]
+- kvm-qapi.py-Fix-diagnosing-non-objects-at-a-schema-s-top.patch [bz#997915]
+- kvm-qapi.py-Rename-expr_eval-to-expr-in-parse_schema.patch [bz#997915]
+- kvm-qapi.py-Permit-comments-starting-anywhere-on-the-lin.patch [bz#997915]
+- kvm-scripts-qapi.py-Avoid-syntax-not-supported-by-Python.patch [bz#997915]
+- kvm-tests-Fix-schema-parser-test-for-in-tree-build.patch [bz#997915]
+- Resolves: bz#1017696
+  ([branding] remove references to dynamic translation and user-mode emulation)
+- Resolves: bz#1026314
+  (qemu-kvm hang when use '-sandbox on'+'vnc'+'hda')
+- Resolves: bz#997915
+  (Backport new QAPI parser proactively to help developers and avoid silly conflicts)
+    
 * Tue Dec 17 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-24.el7
 - kvm-range-add-Range-structure.patch [bz#1034876]
 - kvm-range-add-Range-to-typedefs.patch [bz#1034876]
