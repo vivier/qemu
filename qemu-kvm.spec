@@ -74,7 +74,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 26%{?dist}
+Release: 27%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1327,6 +1327,9 @@ Patch642: kvm-vfio-cap-number-of-devices-that-can-be-assigned.patch
 Patch643: kvm-Revert-usb-tablet-Don-t-claim-wakeup-capability-for-.patch
 # For bz#1026554 - qemu: mempath: prefault pages manually
 Patch644: kvm-mempath-prefault-pages-manually-v4.patch
+# For bz#1007710 - [RFE] Enable qemu-img to support VMDK version 3
+# For bz#1029852 - qemu-img fails to convert vmdk image with "qemu-img: Could not open 'image.vmdk'"
+Patch645: kvm-vmdk-Allow-read-only-open-of-VMDK-version-3.patch
 
 
 BuildRequires: zlib-devel
@@ -2158,6 +2161,7 @@ CAC emulation development files.
 %patch642 -p1
 %patch643 -p1
 %patch644 -p1
+%patch645 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -2280,11 +2284,11 @@ dobuild --target-list="$buildarch"
 %define _udevdir %(pkg-config --variable=udevdir udev)/rules.d
 
 %if 0%{!?build_only_sub:1}
-    install -D -p -m 0644 %{SOURCE4} $RPM_BUILD_ROOT%{_libdir}/systemd/system/ksm.service
+    install -D -p -m 0644 %{SOURCE4} $RPM_BUILD_ROOT%{_unitdir}/ksm.service
     install -D -p -m 0644 %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/ksm
-    install -D -p -m 0755 ksmctl $RPM_BUILD_ROOT%{_libdir}/systemd/ksmctl
+    install -D -p -m 0755 ksmctl $RPM_BUILD_ROOT%{_libexecdir}/ksmctl
 
-    install -D -p -m 0644 %{SOURCE7} $RPM_BUILD_ROOT%{_libdir}/systemd/system/ksmtuned.service
+    install -D -p -m 0644 %{SOURCE7} $RPM_BUILD_ROOT%{_unitdir}/ksmtuned.service
     install -D -p -m 0755 %{SOURCE8} $RPM_BUILD_ROOT%{_sbindir}/ksmtuned
     install -D -p -m 0644 %{SOURCE9} $RPM_BUILD_ROOT%{_sysconfdir}/ksmtuned.conf
 
@@ -2502,10 +2506,10 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %{_mandir}/man1/%{pkgname}.1*
     %attr(4755, -, -) %{_libexecdir}/qemu-bridge-helper
     %config(noreplace) %{_sysconfdir}/sasl2/%{pkgname}.conf
-    %{_libdir}/systemd/system/ksm.service
-    %{_libdir}/systemd/ksmctl
+    %{_unitdir}/ksm.service
+    %{_libexecdir}/ksmctl
     %config(noreplace) %{_sysconfdir}/sysconfig/ksm
-    %{_libdir}/systemd/system/ksmtuned.service
+    %{_unitdir}/ksmtuned.service
     %{_sbindir}/ksmtuned
     %config(noreplace) %{_sysconfdir}/ksmtuned.conf
     %dir %{_sysconfdir}/%{pkgname}
@@ -2586,6 +2590,16 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-27.el7
+- Change systemd service location [bz#1025217]
+- kvm-vmdk-Allow-read-only-open-of-VMDK-version-3.patch [bz#1007710 bz#1029852]
+- Resolves: bz#1007710
+  ([RFE] Enable qemu-img to support VMDK version 3)
+- Resolves: bz#1025217
+  (systemd can't control ksm.service and ksmtuned.service)
+- Resolves: bz#1029852
+  (qemu-img fails to convert vmdk image with "qemu-img: Could not open 'image.vmdk'")
+
 * Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-26.el7
 - Add BuildRequires to libRDMAcm-devel for RDMA support [bz#1011720]
 - kvm-add-a-header-file-for-atomic-operations.patch [bz#1011720]
@@ -2599,8 +2613,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 - kvm-rdma-introduce-qemu_ram_foreach_block.patch [bz#1011720]
 - kvm-rdma-new-QEMUFileOps-hooks.patch [bz#1011720]
 - kvm-rdma-introduce-capability-x-rdma-pin-all.patch [bz#1011720]
-- kvm-rdma-update-documentation-to-reflect-new-unpin-suppo.patch [bz#1011720]
-- kvm-rdma-bugfix-ram_control_save_page.patch [bz#1011720]
+- kvm-rdma-update-documentation-to-reflect-new-unpin-suppo.patch [bz#1011720]- kvm-rdma-bugfix-ram_control_save_page.patch [bz#1011720]
 - kvm-rdma-introduce-ram_handle_compressed.patch [bz#1011720]
 - kvm-rdma-core-logic.patch [bz#1011720]
 - kvm-rdma-send-pc.ram.patch [bz#1011720]
