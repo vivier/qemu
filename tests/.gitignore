@@ -19,4 +19,3 @@ test-thread-pool
 test-x86-cpuid
 test-xbzrle
 *-test
-qapi-schema/*.test.*
