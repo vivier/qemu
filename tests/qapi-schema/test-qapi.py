@@ -16,8 +16,6 @@ import sys
 
 try:
     exprs = parse_schema(sys.stdin)
-except SystemExit:
-    raise
 except:
     print >>sys.stderr, "Crashed:", sys.exc_info()[0]
     exit(1)
