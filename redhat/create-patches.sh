@@ -194,10 +194,14 @@ BEGIN{TYPE="PATCHJUNK"; count=1; dolog=0; pnum=1000}
 		subj_to_name(SUBJECTLINE);
 		OUTF= SOURCES "/" patchname;
 
-		#output patch commands for specfile
-		print "Patch" pnum": " patchname >> PATCHF;
-		#print "ApplyPatch " patchname >> patchf;
-		print "%patch" pnum  " -p1" >> patchf;
+		if ((pnum!=1647)&&(pnum!=1657)&&(pnum!=1666)&&(pnum!=1667)&&(pnum!=1668)&&(pnum!=1669)&&(pnum!=1670) \
+			&&(pnum!=1671)&&(pnum!=1672)&&(pnum!=1673)&&(pnum!=1674)&&(pnum!=1675) \
+			&&(pnum!=1676)&&(pnum!=1677)&&(pnum!=1678)&&(pnum!=1679)&&(pnum!=1726)) {
+			#output patch commands for specfile
+			print "Patch" pnum": " patchname >> PATCHF;
+			#print "ApplyPatch " patchname >> patchf;
+			print "%patch" pnum  " -p1" >> patchf;
+		}
 		pnum=pnum+1;
 
 		if (SPECFILE == "") { print patchname >> SERIESF; }
