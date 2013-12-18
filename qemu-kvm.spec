@@ -18,6 +18,10 @@
     %global have_usbredir 0
 %endif
 
+%ifnarch s390 s390x
+    %global have_librdma 1
+%endif
+
 %ifnarch x86_64
     %global build_only_sub 1
     %global debug_package %{nil}
@@ -70,7 +74,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 25%{?dist}
+Release: 26%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1233,6 +1237,96 @@ Patch596: kvm-qapi.py-Rename-expr_eval-to-expr-in-parse_schema.patch
 Patch597: kvm-qapi.py-Permit-comments-starting-anywhere-on-the-lin.patch
 Patch598: kvm-scripts-qapi.py-Avoid-syntax-not-supported-by-Python.patch
 Patch599: kvm-tests-Fix-schema-parser-test-for-in-tree-build.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch600: kvm-add-a-header-file-for-atomic-operations.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch601: kvm-savevm-Fix-potential-memory-leak.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch602: kvm-migration-Fail-migration-on-bdrv_flush_all-error.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch603: kvm-rdma-add-documentation.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch604: kvm-rdma-introduce-qemu_update_position.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch605: kvm-rdma-export-yield_until_fd_readable.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch606: kvm-rdma-export-throughput-w-MigrationStats-QMP.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch607: kvm-rdma-introduce-qemu_file_mode_is_not_valid.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch608: kvm-rdma-introduce-qemu_ram_foreach_block.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch609: kvm-rdma-new-QEMUFileOps-hooks.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch610: kvm-rdma-introduce-capability-x-rdma-pin-all.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch611: kvm-rdma-update-documentation-to-reflect-new-unpin-suppo.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch612: kvm-rdma-bugfix-ram_control_save_page.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch613: kvm-rdma-introduce-ram_handle_compressed.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch614: kvm-rdma-core-logic.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch615: kvm-rdma-send-pc.ram.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch616: kvm-rdma-allow-state-transitions-between-other-states-be.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch617: kvm-rdma-introduce-MIG_STATE_NONE-and-change-MIG_STATE_S.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch618: kvm-rdma-account-for-the-time-spent-in-MIG_STATE_SETUP-t.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch619: kvm-rdma-bugfix-make-IPv6-support-work.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch620: kvm-rdma-forgot-to-turn-off-the-debugging-flag.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch621: kvm-rdma-correct-newlines-in-error-statements.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch622: kvm-rdma-don-t-use-negative-index-to-array.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch623: kvm-rdma-qemu_rdma_post_send_control-uses-wrongly-RDMA_W.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch624: kvm-rdma-use-DRMA_WRID_READY.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch625: kvm-rdma-memory-leak-RDMAContext-host.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch626: kvm-rdma-use-resp.len-after-validation-in-qemu_rdma_regi.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch627: kvm-rdma-validate-RDMAControlHeader-len.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch628: kvm-rdma-check-if-RDMAControlHeader-len-match-transferre.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch629: kvm-rdma-proper-getaddrinfo-handling.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch630: kvm-rdma-IPv6-over-Ethernet-RoCE-is-broken-in-linux-work.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch631: kvm-rdma-remaining-documentation-fixes.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch632: kvm-rdma-silly-ipv6-bugfix.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch633: kvm-savevm-fix-wrong-initialization-by-ram_control_load_.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch634: kvm-arch_init-right-return-for-ram_save_iterate.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch635: kvm-rdma-clean-up-of-qemu_rdma_cleanup.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch636: kvm-rdma-constify-ram_chunk_-index-start-end.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch637: kvm-migration-Fix-debug-print-type.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch638: kvm-arch_init-make-is_zero_page-accept-size.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch639: kvm-migration-ram_handle_compressed.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch640: kvm-migration-fix-spice-migration.patch
+# For bz#678368 - RFE: Support more than 8 assigned devices
+Patch641: kvm-pci-assign-cap-number-of-devices-that-can-be-assigne.patch
+# For bz#678368 - RFE: Support more than 8 assigned devices
+Patch642: kvm-vfio-cap-number-of-devices-that-can-be-assigned.patch
+# For bz#1039513 - backport remote wakeup for ehci
+Patch643: kvm-Revert-usb-tablet-Don-t-claim-wakeup-capability-for-.patch
+# For bz#1026554 - qemu: mempath: prefault pages manually
+Patch644: kvm-mempath-prefault-pages-manually-v4.patch
 
 
 BuildRequires: zlib-devel
@@ -1295,6 +1389,10 @@ BuildRequires: pixman-devel
 # Documentation requirement
 BuildRequires: perl-podlators
 BuildRequires: texinfo
+# For rdma
+%if 0%{?have_librdma:1}
+BuildRequires: librdmacm-devel
+%endif
 
 %if 0%{!?build_only_sub:1}
 Requires: qemu-img = %{epoch}:%{version}-%{release}
@@ -2015,6 +2113,51 @@ CAC emulation development files.
 %patch597 -p1
 %patch598 -p1
 %patch599 -p1
+%patch600 -p1
+%patch601 -p1
+%patch602 -p1
+%patch603 -p1
+%patch604 -p1
+%patch605 -p1
+%patch606 -p1
+%patch607 -p1
+%patch608 -p1
+%patch609 -p1
+%patch610 -p1
+%patch611 -p1
+%patch612 -p1
+%patch613 -p1
+%patch614 -p1
+%patch615 -p1
+%patch616 -p1
+%patch617 -p1
+%patch618 -p1
+%patch619 -p1
+%patch620 -p1
+%patch621 -p1
+%patch622 -p1
+%patch623 -p1
+%patch624 -p1
+%patch625 -p1
+%patch626 -p1
+%patch627 -p1
+%patch628 -p1
+%patch629 -p1
+%patch630 -p1
+%patch631 -p1
+%patch632 -p1
+%patch633 -p1
+%patch634 -p1
+%patch635 -p1
+%patch636 -p1
+%patch637 -p1
+%patch638 -p1
+%patch639 -p1
+%patch640 -p1
+%patch641 -p1
+%patch642 -p1
+%patch643 -p1
+%patch644 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -2443,6 +2586,62 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-26.el7
+- Add BuildRequires to libRDMAcm-devel for RDMA support [bz#1011720]
+- kvm-add-a-header-file-for-atomic-operations.patch [bz#1011720]
+- kvm-savevm-Fix-potential-memory-leak.patch [bz#1011720]
+- kvm-migration-Fail-migration-on-bdrv_flush_all-error.patch [bz#1011720]
+- kvm-rdma-add-documentation.patch [bz#1011720]
+- kvm-rdma-introduce-qemu_update_position.patch [bz#1011720]
+- kvm-rdma-export-yield_until_fd_readable.patch [bz#1011720]
+- kvm-rdma-export-throughput-w-MigrationStats-QMP.patch [bz#1011720]
+- kvm-rdma-introduce-qemu_file_mode_is_not_valid.patch [bz#1011720]
+- kvm-rdma-introduce-qemu_ram_foreach_block.patch [bz#1011720]
+- kvm-rdma-new-QEMUFileOps-hooks.patch [bz#1011720]
+- kvm-rdma-introduce-capability-x-rdma-pin-all.patch [bz#1011720]
+- kvm-rdma-update-documentation-to-reflect-new-unpin-suppo.patch [bz#1011720]
+- kvm-rdma-bugfix-ram_control_save_page.patch [bz#1011720]
+- kvm-rdma-introduce-ram_handle_compressed.patch [bz#1011720]
+- kvm-rdma-core-logic.patch [bz#1011720]
+- kvm-rdma-send-pc.ram.patch [bz#1011720]
+- kvm-rdma-allow-state-transitions-between-other-states-be.patch [bz#1011720]
+- kvm-rdma-introduce-MIG_STATE_NONE-and-change-MIG_STATE_S.patch [bz#1011720]
+- kvm-rdma-account-for-the-time-spent-in-MIG_STATE_SETUP-t.patch [bz#1011720]
+- kvm-rdma-bugfix-make-IPv6-support-work.patch [bz#1011720]
+- kvm-rdma-forgot-to-turn-off-the-debugging-flag.patch [bz#1011720]
+- kvm-rdma-correct-newlines-in-error-statements.patch [bz#1011720]
+- kvm-rdma-don-t-use-negative-index-to-array.patch [bz#1011720]
+- kvm-rdma-qemu_rdma_post_send_control-uses-wrongly-RDMA_W.patch [bz#1011720]
+- kvm-rdma-use-DRMA_WRID_READY.patch [bz#1011720]
+- kvm-rdma-memory-leak-RDMAContext-host.patch [bz#1011720]
+- kvm-rdma-use-resp.len-after-validation-in-qemu_rdma_regi.patch [bz#1011720]
+- kvm-rdma-validate-RDMAControlHeader-len.patch [bz#1011720]
+- kvm-rdma-check-if-RDMAControlHeader-len-match-transferre.patch [bz#1011720]
+- kvm-rdma-proper-getaddrinfo-handling.patch [bz#1011720]
+- kvm-rdma-IPv6-over-Ethernet-RoCE-is-broken-in-linux-work.patch [bz#1011720]
+- kvm-rdma-remaining-documentation-fixes.patch [bz#1011720]
+- kvm-rdma-silly-ipv6-bugfix.patch [bz#1011720]
+- kvm-savevm-fix-wrong-initialization-by-ram_control_load_.patch [bz#1011720]
+- kvm-arch_init-right-return-for-ram_save_iterate.patch [bz#1011720]
+- kvm-rdma-clean-up-of-qemu_rdma_cleanup.patch [bz#1011720]
+- kvm-rdma-constify-ram_chunk_-index-start-end.patch [bz#1011720]
+- kvm-migration-Fix-debug-print-type.patch [bz#1011720]
+- kvm-arch_init-make-is_zero_page-accept-size.patch [bz#1011720]
+- kvm-migration-ram_handle_compressed.patch [bz#1011720]
+- kvm-migration-fix-spice-migration.patch [bz#1011720]
+- kvm-pci-assign-cap-number-of-devices-that-can-be-assigne.patch [bz#678368]
+- kvm-vfio-cap-number-of-devices-that-can-be-assigned.patch [bz#678368]
+- kvm-Revert-usb-tablet-Don-t-claim-wakeup-capability-for-.patch [bz#1039513]
+- kvm-mempath-prefault-pages-manually-v4.patch [bz#1026554]
+- Resolves: bz#1011720
+  ([HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM)
+- Resolves: bz#1026554
+  (qemu: mempath: prefault pages manually)
+- Resolves: bz#1039513
+  (backport remote wakeup for ehci)
+- Resolves: bz#678368
+  (RFE: Support more than 8 assigned devices)
+
 * Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-25.el7
 - kvm-Change-package-description.patch [bz#1017696]
 - kvm-seccomp-add-kill-to-the-syscall-whitelist.patch [bz#1026314]
