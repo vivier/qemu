@@ -74,7 +74,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 28%{?dist}
+Release: 29%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1332,6 +1332,16 @@ Patch644: kvm-mempath-prefault-pages-manually-v4.patch
 Patch645: kvm-vmdk-Allow-read-only-open-of-VMDK-version-3.patch
 # For bz#1035132 - fail to boot and call trace with x-data-plane=on specified for rhel6.5 guest
 Patch646: kvm-virtio_pci-fix-level-interrupts-with-irqfd.patch
+# For bz#889051 - Commands "__com.redhat_drive_add/del" don' t exist in RHEL7.0
+Patch647: kvm-QMP-Forward-port-__com.redhat_drive_del-from-RHEL-6.patch
+# For bz#889051 - Commands "__com.redhat_drive_add/del" don' t exist in RHEL7.0
+Patch648: kvm-QMP-Forward-port-__com.redhat_drive_add-from-RHEL-6.patch
+# For bz#889051 - Commands "__com.redhat_drive_add/del" don' t exist in RHEL7.0
+Patch649: kvm-HMP-Forward-port-__com.redhat_drive_add-from-RHEL-6.patch
+# For bz#889051 - Commands "__com.redhat_drive_add/del" don' t exist in RHEL7.0
+Patch650: kvm-QMP-Document-throttling-parameters-of-__com.redhat_d.patch
+# For bz#889051 - Commands "__com.redhat_drive_add/del" don' t exist in RHEL7.0
+Patch651: kvm-HMP-Disable-drive_add-for-Red-Hat-Enterprise-Linux.patch
 
 
 BuildRequires: zlib-devel
@@ -2165,6 +2175,11 @@ CAC emulation development files.
 %patch644 -p1
 %patch645 -p1
 %patch646 -p1
+%patch647 -p1
+%patch648 -p1
+%patch649 -p1
+%patch650 -p1
+%patch651 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -2593,6 +2608,15 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-29.el7
+- kvm-QMP-Forward-port-__com.redhat_drive_del-from-RHEL-6.patch [bz#889051]
+- kvm-QMP-Forward-port-__com.redhat_drive_add-from-RHEL-6.patch [bz#889051]
+- kvm-HMP-Forward-port-__com.redhat_drive_add-from-RHEL-6.patch [bz#889051]
+- kvm-QMP-Document-throttling-parameters-of-__com.redhat_d.patch [bz#889051]
+- kvm-HMP-Disable-drive_add-for-Red-Hat-Enterprise-Linux.patch [bz#889051]
+- Resolves: bz#889051
+  (Commands "__com.redhat_drive_add/del" don' t exist in RHEL7.0)
+
 * Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-28.el7
 - kvm-virtio_pci-fix-level-interrupts-with-irqfd.patch [bz#1035132]
 - Resolves: bz#1035132
