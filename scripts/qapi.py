@@ -64,7 +64,7 @@ class QAPISchema:
         self.accept()
 
         while self.tok != None:
-            self.exprs.append(self.get_expr(False))
+            self.exprs.append(self.get_expr())
 
     def accept(self):
         while True:
@@ -117,7 +117,7 @@ class QAPISchema:
             if self.tok != ':':
                 raise QAPISchemaError(self, 'Expected ":"')
             self.accept()
-            expr[key] = self.get_expr(True)
+            expr[key] = self.get_expr()
             if self.tok == '}':
                 self.accept()
                 return expr
@@ -135,7 +135,7 @@ class QAPISchema:
         if not self.tok in [ '{', '[', "'" ]:
             raise QAPISchemaError(self, 'Expected "{", "[", "]" or string')
         while True:
-            expr.append(self.get_expr(True))
+            expr.append(self.get_expr())
             if self.tok == ']':
                 self.accept()
                 return expr
@@ -143,9 +143,7 @@ class QAPISchema:
                 raise QAPISchemaError(self, 'Expected "," or "]"')
             self.accept()
 
-    def get_expr(self, nested):
-        if self.tok != '{' and not nested:
-            raise QAPISchemaError(self, 'Expected "{"')
+    def get_expr(self):
         if self.tok == '{':
             self.accept()
             expr = self.get_members()
