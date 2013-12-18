@@ -74,7 +74,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 27%{?dist}
+Release: 28%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1330,6 +1330,8 @@ Patch644: kvm-mempath-prefault-pages-manually-v4.patch
 # For bz#1007710 - [RFE] Enable qemu-img to support VMDK version 3
 # For bz#1029852 - qemu-img fails to convert vmdk image with "qemu-img: Could not open 'image.vmdk'"
 Patch645: kvm-vmdk-Allow-read-only-open-of-VMDK-version-3.patch
+# For bz#1035132 - fail to boot and call trace with x-data-plane=on specified for rhel6.5 guest
+Patch646: kvm-virtio_pci-fix-level-interrupts-with-irqfd.patch
 
 
 BuildRequires: zlib-devel
@@ -2162,6 +2164,7 @@ CAC emulation development files.
 %patch643 -p1
 %patch644 -p1
 %patch645 -p1
+%patch646 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -2590,6 +2593,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-28.el7
+- kvm-virtio_pci-fix-level-interrupts-with-irqfd.patch [bz#1035132]
+- Resolves: bz#1035132
+  (fail to boot and call trace with x-data-plane=on specified for rhel6.5 guest)
+
 * Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-27.el7
 - Change systemd service location [bz#1025217]
 - kvm-vmdk-Allow-read-only-open-of-VMDK-version-3.patch [bz#1007710 bz#1029852]
