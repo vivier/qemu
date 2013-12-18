@@ -106,42 +106,24 @@ class QAPISchema:
 
     def get_members(self):
         expr = OrderedDict()
-        if self.tok == '}':
-            self.accept()
-            return expr
-        if self.tok != "'":
-            raise QAPISchemaError(self, 'Expected string or "}"')
-        while True:
+        while self.tok != '}':
             key = self.val
             self.accept()
-            if self.tok != ':':
-                raise QAPISchemaError(self, 'Expected ":"')
-            self.accept()
+            self.accept()        # :
             expr[key] = self.get_expr()
-            if self.tok == '}':
+            if self.tok == ',':
                 self.accept()
-                return expr
-            if self.tok != ',':
-                raise QAPISchemaError(self, 'Expected "," or "}"')
-            self.accept()
-            if self.tok != "'":
-                raise QAPISchemaError(self, 'Expected string')
+        self.accept()
+        return expr
 
     def get_values(self):
         expr = []
-        if self.tok == ']':
-            self.accept()
-            return expr
-        if not self.tok in [ '{', '[', "'" ]:
-            raise QAPISchemaError(self, 'Expected "{", "[", "]" or string')
-        while True:
+        while self.tok != ']':
             expr.append(self.get_expr())
-            if self.tok == ']':
+            if self.tok == ',':
                 self.accept()
-                return expr
-            if self.tok != ',':
-                raise QAPISchemaError(self, 'Expected "," or "]"')
-            self.accept()
+        self.accept()
+        return expr
 
     def get_expr(self):
         if self.tok == '{':
@@ -150,11 +132,9 @@ class QAPISchema:
         elif self.tok == '[':
             self.accept()
             expr = self.get_values()
-        elif self.tok == "'":
+        else:
             expr = self.val
             self.accept()
-        else:
-            raise QAPISchemaError(self, 'Expected "{", "[" or string')
         return expr
 
 def parse_schema(fp):
