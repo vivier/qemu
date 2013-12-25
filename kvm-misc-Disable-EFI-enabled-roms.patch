@@ -113,5 +113,3 @@ index 161ade3..d82f6ff 100644
      k->vendor_id = PCI_VENDOR_ID_REDHAT_QUMRANET;
      k->device_id = PCI_DEVICE_ID_VIRTIO_NET;
      k->revision = VIRTIO_PCI_ABI_VERSION;
-diff --git a/redhat/qemu-kvm.spec.template b/redhat/qemu-kvm.spec.template
-index d1fb86f..95a1660 100644

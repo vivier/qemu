@@ -18,6 +18,10 @@
     %global have_usbredir 0
 %endif
 
+%ifnarch s390 s390x
+    %global have_librdma 1
+%endif
+
 %ifnarch x86_64
     %global build_only_sub 1
     %global debug_package %{nil}
@@ -70,7 +74,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 21%{?dist}
+Release: 30%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1055,6 +1059,291 @@ Patch499: kvm-qcow2-change-default-for-new-images-to-compat-1.1-pa.patch
 Patch500: kvm-rng-egd-offset-the-point-when-repeatedly-read-from-t.patch
 # For bz#1007334 - CVE-2013-4344 qemu-kvm: qemu: buffer overflow in scsi_target_emulate_report_luns [rhel-7.0]
 Patch501: kvm-scsi-Allocate-SCSITargetReq-r-buf-dynamically-CVE-20.patch
+# For bz#1033810 - memory leak in using object_get_canonical_path()
+Patch502: kvm-virtio-net-fix-the-memory-leak-in-rxfilter_notify.patch
+# For bz#1033810 - memory leak in using object_get_canonical_path()
+Patch503: kvm-qom-Fix-memory-leak-in-object_property_set_link.patch
+# For bz#1036537 - Cross version migration from RHEL6.5 host to RHEL7.0 host with sound device failed.
+Patch504: kvm-fix-intel-hda-live-migration.patch
+# For bz#1029743 - qemu-kvm core dump after hot plug/unplug 82576 PF about 100 times
+Patch505: kvm-vfio-pci-Release-all-MSI-X-vectors-when-disabled.patch
+# For bz#921490 - qemu-kvm core dumped after hot plugging more than 11 VF through vfio-pci
+Patch506: kvm-Query-KVM-for-available-memory-slots.patch
+# For bz#1039501 - [provisioning] discard=on broken
+Patch507: kvm-block-Dont-ignore-previously-set-bdrv_flags.patch
+# For bz#997832 - Backport trace fixes proactively to avoid confusion and silly conflicts
+Patch508: kvm-cleanup-trace-events.pl-New.patch
+# For bz#997832 - Backport trace fixes proactively to avoid confusion and silly conflicts
+Patch509: kvm-slavio_misc-Fix-slavio_led_mem_readw-_writew-tracepo.patch
+# For bz#997832 - Backport trace fixes proactively to avoid confusion and silly conflicts
+Patch510: kvm-milkymist-minimac2-Fix-minimac2_read-_write-tracepoi.patch
+# For bz#997832 - Backport trace fixes proactively to avoid confusion and silly conflicts
+Patch511: kvm-trace-events-Drop-unused-events.patch
+# For bz#997832 - Backport trace fixes proactively to avoid confusion and silly conflicts
+Patch512: kvm-trace-events-Fix-up-source-file-comments.patch
+# For bz#997832 - Backport trace fixes proactively to avoid confusion and silly conflicts
+Patch513: kvm-trace-events-Clean-up-with-scripts-cleanup-trace-eve.patch
+# For bz#997832 - Backport trace fixes proactively to avoid confusion and silly conflicts
+Patch514: kvm-trace-events-Clean-up-after-removal-of-old-usb-host-.patch
+# For bz#1027571 - [virtio-win]win8.1 guest network can not resume automatically after do "set_link tap1 on"
+Patch515: kvm-net-Update-netdev-peer-on-link-change.patch
+# For bz#1003773 - When virtio-blk-pci device with dataplane is failed to be added, the drive cannot be released.
+Patch516: kvm-qdev-monitor-Unref-device-when-device_add-fails.patch
+# For bz#1003773 - When virtio-blk-pci device with dataplane is failed to be added, the drive cannot be released.
+Patch517: kvm-qdev-Drop-misleading-qdev_free-function.patch
+# For bz#1003773 - When virtio-blk-pci device with dataplane is failed to be added, the drive cannot be released.
+Patch518: kvm-blockdev-fix-drive_init-opts-and-bs_opts-leaks.patch
+# For bz#1003773 - When virtio-blk-pci device with dataplane is failed to be added, the drive cannot be released.
+Patch519: kvm-libqtest-rename-qmp-to-qmp_discard_response.patch
+# For bz#1003773 - When virtio-blk-pci device with dataplane is failed to be added, the drive cannot be released.
+Patch520: kvm-libqtest-add-qmp-fmt-.-QDict-function.patch
+# For bz#1003773 - When virtio-blk-pci device with dataplane is failed to be added, the drive cannot be released.
+Patch521: kvm-blockdev-test-add-test-case-for-drive_add-duplicate-.patch
+# For bz#1003773 - When virtio-blk-pci device with dataplane is failed to be added, the drive cannot be released.
+Patch522: kvm-qdev-monitor-test-add-device_add-leak-test-cases.patch
+# For bz#1003773 - When virtio-blk-pci device with dataplane is failed to be added, the drive cannot be released.
+Patch523: kvm-qtest-Use-display-none-by-default.patch
+# For bz#1034876 - export acpi tables to guests
+Patch524: kvm-range-add-Range-structure.patch
+# For bz#1034876 - export acpi tables to guests
+Patch525: kvm-range-add-Range-to-typedefs.patch
+# For bz#1034876 - export acpi tables to guests
+Patch526: kvm-range-add-min-max-operations-on-ranges.patch
+# For bz#1034876 - export acpi tables to guests
+Patch527: kvm-qdev-Add-SIZE-type-to-qdev-properties.patch
+# For bz#1034876 - export acpi tables to guests
+Patch528: kvm-qapi-make-visit_type_size-fallback-to-type_int.patch
+# For bz#1034876 - export acpi tables to guests
+Patch529: kvm-pc-move-IO_APIC_DEFAULT_ADDRESS-to-include-hw-i386-i.patch
+# For bz#1034876 - export acpi tables to guests
+Patch530: kvm-pci-add-helper-to-retrieve-the-64-bit-range.patch
+# For bz#1034876 - export acpi tables to guests
+Patch531: kvm-pci-fix-up-w64-size-calculation-helper.patch
+# For bz#1034876 - export acpi tables to guests
+Patch532: kvm-refer-to-FWCfgState-explicitly.patch
+# For bz#1034876 - export acpi tables to guests
+Patch533: kvm-fw_cfg-move-typedef-to-qemu-typedefs.h.patch
+# For bz#1034876 - export acpi tables to guests
+Patch534: kvm-arch_init-align-MR-size-to-target-page-size.patch
+# For bz#1034876 - export acpi tables to guests
+Patch535: kvm-loader-store-FW-CFG-ROM-files-in-RAM.patch
+# For bz#1034876 - export acpi tables to guests
+Patch536: kvm-pci-store-PCI-hole-ranges-in-guestinfo-structure.patch
+# For bz#1034876 - export acpi tables to guests
+Patch537: kvm-pc-pass-PCI-hole-ranges-to-Guests.patch
+# For bz#1034876 - export acpi tables to guests
+Patch538: kvm-pc-replace-i440fx_common_init-with-i440fx_init.patch
+# For bz#1034876 - export acpi tables to guests
+Patch539: kvm-pc-don-t-access-fw-cfg-if-NULL.patch
+# For bz#1034876 - export acpi tables to guests
+Patch540: kvm-pc-add-I440FX-QOM-cast-macro.patch
+# For bz#1034876 - export acpi tables to guests
+Patch541: kvm-pc-limit-64-bit-hole-to-2G-by-default.patch
+# For bz#1034876 - export acpi tables to guests
+Patch542: kvm-q35-make-pci-window-address-size-match-guest-cfg.patch
+# For bz#1034876 - export acpi tables to guests
+Patch543: kvm-q35-use-64-bit-window-programmed-by-guest.patch
+# For bz#1034876 - export acpi tables to guests
+Patch544: kvm-piix-use-64-bit-window-programmed-by-guest.patch
+# For bz#1034876 - export acpi tables to guests
+Patch545: kvm-pc-fix-regression-for-64-bit-PCI-memory.patch
+# For bz#1034876 - export acpi tables to guests
+Patch546: kvm-cleanup-object.h-include-error.h-directly.patch
+# For bz#1034876 - export acpi tables to guests
+Patch547: kvm-qom-cleanup-struct-Error-references.patch
+# For bz#1034876 - export acpi tables to guests
+Patch548: kvm-qom-add-pointer-to-int-property-helpers.patch
+# For bz#1034876 - export acpi tables to guests
+Patch549: kvm-fw_cfg-interface-to-trigger-callback-on-read.patch
+# For bz#1034876 - export acpi tables to guests
+Patch550: kvm-loader-support-for-unmapped-ROM-blobs.patch
+# For bz#1034876 - export acpi tables to guests
+Patch551: kvm-pcie_host-expose-UNMAPPED-macro.patch
+# For bz#1034876 - export acpi tables to guests
+Patch552: kvm-pcie_host-expose-address-format.patch
+# For bz#1034876 - export acpi tables to guests
+Patch553: kvm-q35-use-macro-for-MCFG-property-name.patch
+# For bz#1034876 - export acpi tables to guests
+Patch554: kvm-q35-expose-mmcfg-size-as-a-property.patch
+# For bz#1034876 - export acpi tables to guests
+Patch555: kvm-i386-add-ACPI-table-files-from-seabios.patch
+# For bz#1034876 - export acpi tables to guests
+Patch556: kvm-acpi-add-rules-to-compile-ASL-source.patch
+# For bz#1034876 - export acpi tables to guests
+Patch557: kvm-acpi-pre-compiled-ASL-files.patch
+# For bz#1034876 - export acpi tables to guests
+Patch558: kvm-acpi-ssdt-pcihp-updat-generated-file.patch
+# For bz#1034876 - export acpi tables to guests
+Patch559: kvm-loader-use-file-path-size-from-fw_cfg.h.patch
+# For bz#1034876 - export acpi tables to guests
+Patch560: kvm-i386-add-bios-linker-loader.patch
+# For bz#1034876 - export acpi tables to guests
+Patch561: kvm-loader-allow-adding-ROMs-in-done-callbacks.patch
+# For bz#1034876 - export acpi tables to guests
+Patch562: kvm-i386-define-pc-guest-info.patch
+# For bz#1034876 - export acpi tables to guests
+Patch563: kvm-acpi-piix-add-macros-for-acpi-property-names.patch
+# For bz#1034876 - export acpi tables to guests
+Patch564: kvm-piix-APIs-for-pc-guest-info.patch
+# For bz#1034876 - export acpi tables to guests
+Patch565: kvm-ich9-APIs-for-pc-guest-info.patch
+# For bz#1034876 - export acpi tables to guests
+Patch566: kvm-pvpanic-add-API-to-access-io-port.patch
+# For bz#1034876 - export acpi tables to guests
+Patch567: kvm-hpet-add-API-to-find-it.patch
+# For bz#1034876 - export acpi tables to guests
+Patch568: kvm-hpet-fix-build-with-CONFIG_HPET-off.patch
+# For bz#1034876 - export acpi tables to guests
+Patch569: kvm-acpi-add-interface-to-access-user-installed-tables.patch
+# For bz#1034876 - export acpi tables to guests
+Patch570: kvm-pc-use-new-api-to-add-builtin-tables.patch
+# For bz#1034876 - export acpi tables to guests
+Patch571: kvm-i386-ACPI-table-generation-code-from-seabios.patch
+# For bz#1034876 - export acpi tables to guests
+Patch572: kvm-ssdt-fix-PBLK-length.patch
+# For bz#1034876 - export acpi tables to guests
+Patch573: kvm-ssdt-proc-update-generated-file.patch
+# For bz#1034876 - export acpi tables to guests
+Patch574: kvm-pc-disable-pci-info.patch
+# For bz#1034876 - export acpi tables to guests
+Patch575: kvm-acpi-build-fix-build-on-glib-2.22.patch
+# For bz#1034876 - export acpi tables to guests
+Patch576: kvm-acpi-build-fix-build-on-glib-2.14.patch
+# For bz#1034876 - export acpi tables to guests
+Patch577: kvm-acpi-build-fix-support-for-glib-2.22.patch
+# For bz#1034876 - export acpi tables to guests
+Patch578: kvm-acpi-build-Fix-compiler-warning-missing-gnu_printf-f.patch
+# For bz#1034876 - export acpi tables to guests
+Patch579: kvm-exec-Fix-prototype-of-phys_mem_set_alloc-and-related.patch
+# For bz#1034876 - export acpi tables to guests
+Patch580: kvm-hw-i386-Makefile.obj-use-PYTHON-to-run-.py-scripts-c.patch
+# For bz#1026314
+Patch581: kvm-seccomp-add-kill-to-the-syscall-whitelist.patch
+Patch582: kvm-json-parser-fix-handling-of-large-whole-number-value.patch
+Patch583: kvm-qapi-add-QMP-input-test-for-large-integers.patch
+Patch584: kvm-qapi-fix-visitor-serialization-tests-for-numbers-dou.patch
+Patch585: kvm-qapi-add-native-list-coverage-for-visitor-serializat.patch
+Patch586: kvm-qapi-add-native-list-coverage-for-QMP-output-visitor.patch
+Patch587: kvm-qapi-add-native-list-coverage-for-QMP-input-visitor-.patch
+Patch588: kvm-qapi-lack-of-two-commas-in-dict.patch
+Patch589: kvm-tests-QAPI-schema-parser-tests.patch
+Patch590: kvm-tests-Use-qapi-schema-test.json-as-schema-parser-tes.patch
+Patch591: kvm-qapi.py-Restructure-lexer-and-parser.patch
+Patch592: kvm-qapi.py-Decent-syntax-error-reporting.patch
+Patch593: kvm-qapi.py-Reject-invalid-characters-in-schema-file.patch
+Patch594: kvm-qapi.py-Fix-schema-parser-to-check-syntax-systematic.patch
+Patch595: kvm-qapi.py-Fix-diagnosing-non-objects-at-a-schema-s-top.patch
+Patch596: kvm-qapi.py-Rename-expr_eval-to-expr-in-parse_schema.patch
+Patch597: kvm-qapi.py-Permit-comments-starting-anywhere-on-the-lin.patch
+Patch598: kvm-scripts-qapi.py-Avoid-syntax-not-supported-by-Python.patch
+Patch599: kvm-tests-Fix-schema-parser-test-for-in-tree-build.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch600: kvm-add-a-header-file-for-atomic-operations.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch601: kvm-savevm-Fix-potential-memory-leak.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch602: kvm-migration-Fail-migration-on-bdrv_flush_all-error.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch603: kvm-rdma-add-documentation.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch604: kvm-rdma-introduce-qemu_update_position.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch605: kvm-rdma-export-yield_until_fd_readable.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch606: kvm-rdma-export-throughput-w-MigrationStats-QMP.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch607: kvm-rdma-introduce-qemu_file_mode_is_not_valid.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch608: kvm-rdma-introduce-qemu_ram_foreach_block.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch609: kvm-rdma-new-QEMUFileOps-hooks.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch610: kvm-rdma-introduce-capability-x-rdma-pin-all.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch611: kvm-rdma-update-documentation-to-reflect-new-unpin-suppo.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch612: kvm-rdma-bugfix-ram_control_save_page.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch613: kvm-rdma-introduce-ram_handle_compressed.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch614: kvm-rdma-core-logic.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch615: kvm-rdma-send-pc.ram.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch616: kvm-rdma-allow-state-transitions-between-other-states-be.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch617: kvm-rdma-introduce-MIG_STATE_NONE-and-change-MIG_STATE_S.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch618: kvm-rdma-account-for-the-time-spent-in-MIG_STATE_SETUP-t.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch619: kvm-rdma-bugfix-make-IPv6-support-work.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch620: kvm-rdma-forgot-to-turn-off-the-debugging-flag.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch621: kvm-rdma-correct-newlines-in-error-statements.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch622: kvm-rdma-don-t-use-negative-index-to-array.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch623: kvm-rdma-qemu_rdma_post_send_control-uses-wrongly-RDMA_W.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch624: kvm-rdma-use-DRMA_WRID_READY.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch625: kvm-rdma-memory-leak-RDMAContext-host.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch626: kvm-rdma-use-resp.len-after-validation-in-qemu_rdma_regi.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch627: kvm-rdma-validate-RDMAControlHeader-len.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch628: kvm-rdma-check-if-RDMAControlHeader-len-match-transferre.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch629: kvm-rdma-proper-getaddrinfo-handling.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch630: kvm-rdma-IPv6-over-Ethernet-RoCE-is-broken-in-linux-work.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch631: kvm-rdma-remaining-documentation-fixes.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch632: kvm-rdma-silly-ipv6-bugfix.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch633: kvm-savevm-fix-wrong-initialization-by-ram_control_load_.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch634: kvm-arch_init-right-return-for-ram_save_iterate.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch635: kvm-rdma-clean-up-of-qemu_rdma_cleanup.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch636: kvm-rdma-constify-ram_chunk_-index-start-end.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch637: kvm-migration-Fix-debug-print-type.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch638: kvm-arch_init-make-is_zero_page-accept-size.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch639: kvm-migration-ram_handle_compressed.patch
+# For bz#1011720 - [HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM
+Patch640: kvm-migration-fix-spice-migration.patch
+# For bz#678368 - RFE: Support more than 8 assigned devices
+Patch641: kvm-pci-assign-cap-number-of-devices-that-can-be-assigne.patch
+# For bz#678368 - RFE: Support more than 8 assigned devices
+Patch642: kvm-vfio-cap-number-of-devices-that-can-be-assigned.patch
+# For bz#1039513 - backport remote wakeup for ehci
+Patch643: kvm-Revert-usb-tablet-Don-t-claim-wakeup-capability-for-.patch
+# For bz#1026554 - qemu: mempath: prefault pages manually
+Patch644: kvm-mempath-prefault-pages-manually-v4.patch
+# For bz#1007710 - [RFE] Enable qemu-img to support VMDK version 3
+# For bz#1029852 - qemu-img fails to convert vmdk image with "qemu-img: Could not open 'image.vmdk'"
+Patch645: kvm-vmdk-Allow-read-only-open-of-VMDK-version-3.patch
+# For bz#1035132 - fail to boot and call trace with x-data-plane=on specified for rhel6.5 guest
+Patch646: kvm-virtio_pci-fix-level-interrupts-with-irqfd.patch
+# For bz#889051 - Commands "__com.redhat_drive_add/del" don' t exist in RHEL7.0
+Patch647: kvm-QMP-Forward-port-__com.redhat_drive_del-from-RHEL-6.patch
+# For bz#889051 - Commands "__com.redhat_drive_add/del" don' t exist in RHEL7.0
+Patch648: kvm-QMP-Forward-port-__com.redhat_drive_add-from-RHEL-6.patch
+# For bz#889051 - Commands "__com.redhat_drive_add/del" don' t exist in RHEL7.0
+Patch649: kvm-HMP-Forward-port-__com.redhat_drive_add-from-RHEL-6.patch
+# For bz#889051 - Commands "__com.redhat_drive_add/del" don' t exist in RHEL7.0
+Patch650: kvm-QMP-Document-throttling-parameters-of-__com.redhat_d.patch
+# For bz#889051 - Commands "__com.redhat_drive_add/del" don' t exist in RHEL7.0
+Patch651: kvm-HMP-Disable-drive_add-for-Red-Hat-Enterprise-Linux.patch
+Patch652: kvm-Revert-HMP-Disable-drive_add-for-Red-Hat-Enterprise-2.patch.patch
+
 
 BuildRequires: zlib-devel
 BuildRequires: SDL-devel
@@ -1116,6 +1405,10 @@ BuildRequires: pixman-devel
 # Documentation requirement
 BuildRequires: perl-podlators
 BuildRequires: texinfo
+# For rdma
+%if 0%{?have_librdma:1}
+BuildRequires: librdmacm-devel
+%endif
 
 %if 0%{!?build_only_sub:1}
 Requires: qemu-img = %{epoch}:%{version}-%{release}
@@ -1131,24 +1424,19 @@ Requires: qemu-img = %{epoch}:%{version}-%{release}
 %define qemudocdir %{_docdir}/%{pkgname}
 
 %description
-QEMU is a generic and open source processor emulator which achieves a good
-emulation speed by using dynamic translation. QEMU has two operating modes:
+qemu-kvm is an open source virtualizer that provides hardware emulation for
+the KVM hypervisor. qemu-kvm acts as a virtual machine monitor together with
+the KVM kernel modules, and emulates the hardware for a full system such as
+a PC and its assocated peripherals.
 
- * Full system emulation. In this mode, QEMU emulates a full system (for
-   example a PC), including a processor and various peripherials. It can be
-   used to launch different Operating Systems without rebooting the PC or
-   to debug system code.
- * User mode emulation. In this mode, QEMU can launch Linux processes compiled
-   for one CPU on another CPU.
-
-As QEMU requires no host kernel patches to run, it is safe and easy to use.
+As qemu-kvm requires no host kernel patches to run, it is safe and easy to use.
 %if !%{rhev}
 %package -n qemu-img
 Summary: QEMU command line tool for manipulating disk images
 Group: Development/Tools
 
 %description -n qemu-img
-This package provides a command line tool for manipulating disk images
+This package provides a command line tool for manipulating disk images.
 %endif
 
 %if 0%{!?build_only_sub:1}
@@ -1165,10 +1453,10 @@ Requires(postun): systemd-units
 %rhel_rhev_conflicts qemu-kvm-common
 
 %description -n qemu-kvm-common%{?pkgsuffix}
-QEMU is a generic and open source processor emulator which achieves a good
-emulation speed by using dynamic translation.
+qemu-kvm is an open source virtualizer that provides hardware emulation for
+the KVM hypervisor. 
 
-This package provides the common files needed by all QEMU targets
+This package provides documentation and auxiliary programs used with qemu-kvm.
 
 %endif
 
@@ -1181,8 +1469,8 @@ Requires(preun): systemd-units
 Requires(postun): systemd-units
 
 %description -n qemu-guest-agent
-QEMU is a generic and open source processor emulator which achieves a good
-emulation speed by using dynamic translation.
+qemu-kvm is an open source virtualizer that provides hardware emulation for
+the KVM hypervisor. 
 
 This package provides an agent to run inside guests, which communicates
 with the host over a virtio-serial channel named "org.qemu.guest_agent.0"
@@ -1743,6 +2031,157 @@ CAC emulation development files.
 %patch499 -p1
 %patch500 -p1
 %patch501 -p1
+%patch502 -p1
+%patch503 -p1
+%patch504 -p1
+%patch505 -p1
+%patch506 -p1
+%patch507 -p1
+%patch508 -p1
+%patch509 -p1
+%patch510 -p1
+%patch511 -p1
+%patch512 -p1
+%patch513 -p1
+%patch514 -p1
+%patch515 -p1
+%patch516 -p1
+%patch517 -p1
+%patch518 -p1
+%patch519 -p1
+%patch520 -p1
+%patch521 -p1
+%patch522 -p1
+%patch523 -p1
+%patch524 -p1
+%patch525 -p1
+%patch526 -p1
+%patch527 -p1
+%patch528 -p1
+%patch529 -p1
+%patch530 -p1
+%patch531 -p1
+%patch532 -p1
+%patch533 -p1
+%patch534 -p1
+%patch535 -p1
+%patch536 -p1
+%patch537 -p1
+%patch538 -p1
+%patch539 -p1
+%patch540 -p1
+%patch541 -p1
+%patch542 -p1
+%patch543 -p1
+%patch544 -p1
+%patch545 -p1
+%patch546 -p1
+%patch547 -p1
+%patch548 -p1
+%patch549 -p1
+%patch550 -p1
+%patch551 -p1
+%patch552 -p1
+%patch553 -p1
+%patch554 -p1
+%patch555 -p1
+%patch556 -p1
+%patch557 -p1
+%patch558 -p1
+%patch559 -p1
+%patch560 -p1
+%patch561 -p1
+%patch562 -p1
+%patch563 -p1
+%patch564 -p1
+%patch565 -p1
+%patch566 -p1
+%patch567 -p1
+%patch568 -p1
+%patch569 -p1
+%patch570 -p1
+%patch571 -p1
+%patch572 -p1
+%patch573 -p1
+%patch574 -p1
+%patch575 -p1
+%patch576 -p1
+%patch577 -p1
+%patch578 -p1
+%patch579 -p1
+%patch580 -p1
+%patch581 -p1
+%patch582 -p1
+%patch583 -p1
+%patch584 -p1
+%patch585 -p1
+%patch586 -p1
+%patch587 -p1
+%patch588 -p1
+%patch589 -p1
+%patch590 -p1
+%patch591 -p1
+%patch592 -p1
+%patch593 -p1
+%patch594 -p1
+%patch595 -p1
+%patch596 -p1
+%patch597 -p1
+%patch598 -p1
+%patch599 -p1
+%patch600 -p1
+%patch601 -p1
+%patch602 -p1
+%patch603 -p1
+%patch604 -p1
+%patch605 -p1
+%patch606 -p1
+%patch607 -p1
+%patch608 -p1
+%patch609 -p1
+%patch610 -p1
+%patch611 -p1
+%patch612 -p1
+%patch613 -p1
+%patch614 -p1
+%patch615 -p1
+%patch616 -p1
+%patch617 -p1
+%patch618 -p1
+%patch619 -p1
+%patch620 -p1
+%patch621 -p1
+%patch622 -p1
+%patch623 -p1
+%patch624 -p1
+%patch625 -p1
+%patch626 -p1
+%patch627 -p1
+%patch628 -p1
+%patch629 -p1
+%patch630 -p1
+%patch631 -p1
+%patch632 -p1
+%patch633 -p1
+%patch634 -p1
+%patch635 -p1
+%patch636 -p1
+%patch637 -p1
+%patch638 -p1
+%patch639 -p1
+%patch640 -p1
+%patch641 -p1
+%patch642 -p1
+%patch643 -p1
+%patch644 -p1
+%patch645 -p1
+%patch646 -p1
+%patch647 -p1
+%patch648 -p1
+%patch649 -p1
+%patch650 -p1
+%patch651 -p1
+%patch652 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -1865,11 +2304,11 @@ dobuild --target-list="$buildarch"
 %define _udevdir %(pkg-config --variable=udevdir udev)/rules.d
 
 %if 0%{!?build_only_sub:1}
-    install -D -p -m 0644 %{SOURCE4} $RPM_BUILD_ROOT%{_libdir}/systemd/system/ksm.service
+    install -D -p -m 0644 %{SOURCE4} $RPM_BUILD_ROOT%{_unitdir}/ksm.service
     install -D -p -m 0644 %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/ksm
-    install -D -p -m 0755 ksmctl $RPM_BUILD_ROOT%{_libdir}/systemd/ksmctl
+    install -D -p -m 0755 ksmctl $RPM_BUILD_ROOT%{_libexecdir}/ksmctl
 
-    install -D -p -m 0644 %{SOURCE7} $RPM_BUILD_ROOT%{_libdir}/systemd/system/ksmtuned.service
+    install -D -p -m 0644 %{SOURCE7} $RPM_BUILD_ROOT%{_unitdir}/ksmtuned.service
     install -D -p -m 0755 %{SOURCE8} $RPM_BUILD_ROOT%{_sbindir}/ksmtuned
     install -D -p -m 0644 %{SOURCE9} $RPM_BUILD_ROOT%{_sysconfdir}/ksmtuned.conf
 
@@ -2087,10 +2526,10 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %{_mandir}/man1/%{pkgname}.1*
     %attr(4755, -, -) %{_libexecdir}/qemu-bridge-helper
     %config(noreplace) %{_sysconfdir}/sasl2/%{pkgname}.conf
-    %{_libdir}/systemd/system/ksm.service
-    %{_libdir}/systemd/ksmctl
+    %{_unitdir}/ksm.service
+    %{_libexecdir}/ksmctl
     %config(noreplace) %{_sysconfdir}/sysconfig/ksm
-    %{_libdir}/systemd/system/ksmtuned.service
+    %{_unitdir}/ksmtuned.service
     %{_sbindir}/ksmtuned
     %config(noreplace) %{_sysconfdir}/ksmtuned.conf
     %dir %{_sysconfdir}/%{pkgname}
@@ -2171,6 +2610,226 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-30.el7
+- kvm-Revert-HMP-Disable-drive_add-for-Red-Hat-Enterprise-2.patch.patch [bz#889051]
+- Resolves: bz#889051
+  (Commands "__com.redhat_drive_add/del" don' t exist in RHEL7.0)
+
+* Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-29.el7
+- kvm-QMP-Forward-port-__com.redhat_drive_del-from-RHEL-6.patch [bz#889051]
+- kvm-QMP-Forward-port-__com.redhat_drive_add-from-RHEL-6.patch [bz#889051]
+- kvm-HMP-Forward-port-__com.redhat_drive_add-from-RHEL-6.patch [bz#889051]
+- kvm-QMP-Document-throttling-parameters-of-__com.redhat_d.patch [bz#889051]
+- kvm-HMP-Disable-drive_add-for-Red-Hat-Enterprise-Linux.patch [bz#889051]
+- Resolves: bz#889051
+  (Commands "__com.redhat_drive_add/del" don' t exist in RHEL7.0)
+
+* Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-28.el7
+- kvm-virtio_pci-fix-level-interrupts-with-irqfd.patch [bz#1035132]
+- Resolves: bz#1035132
+  (fail to boot and call trace with x-data-plane=on specified for rhel6.5 guest)
+
+* Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-27.el7
+- Change systemd service location [bz#1025217]
+- kvm-vmdk-Allow-read-only-open-of-VMDK-version-3.patch [bz#1007710 bz#1029852]
+- Resolves: bz#1007710
+  ([RFE] Enable qemu-img to support VMDK version 3)
+- Resolves: bz#1025217
+  (systemd can't control ksm.service and ksmtuned.service)
+- Resolves: bz#1029852
+  (qemu-img fails to convert vmdk image with "qemu-img: Could not open 'image.vmdk'")
+
+* Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-26.el7
+- Add BuildRequires to libRDMAcm-devel for RDMA support [bz#1011720]
+- kvm-add-a-header-file-for-atomic-operations.patch [bz#1011720]
+- kvm-savevm-Fix-potential-memory-leak.patch [bz#1011720]
+- kvm-migration-Fail-migration-on-bdrv_flush_all-error.patch [bz#1011720]
+- kvm-rdma-add-documentation.patch [bz#1011720]
+- kvm-rdma-introduce-qemu_update_position.patch [bz#1011720]
+- kvm-rdma-export-yield_until_fd_readable.patch [bz#1011720]
+- kvm-rdma-export-throughput-w-MigrationStats-QMP.patch [bz#1011720]
+- kvm-rdma-introduce-qemu_file_mode_is_not_valid.patch [bz#1011720]
+- kvm-rdma-introduce-qemu_ram_foreach_block.patch [bz#1011720]
+- kvm-rdma-new-QEMUFileOps-hooks.patch [bz#1011720]
+- kvm-rdma-introduce-capability-x-rdma-pin-all.patch [bz#1011720]
+- kvm-rdma-update-documentation-to-reflect-new-unpin-suppo.patch [bz#1011720]- kvm-rdma-bugfix-ram_control_save_page.patch [bz#1011720]
+- kvm-rdma-introduce-ram_handle_compressed.patch [bz#1011720]
+- kvm-rdma-core-logic.patch [bz#1011720]
+- kvm-rdma-send-pc.ram.patch [bz#1011720]
+- kvm-rdma-allow-state-transitions-between-other-states-be.patch [bz#1011720]
+- kvm-rdma-introduce-MIG_STATE_NONE-and-change-MIG_STATE_S.patch [bz#1011720]
+- kvm-rdma-account-for-the-time-spent-in-MIG_STATE_SETUP-t.patch [bz#1011720]
+- kvm-rdma-bugfix-make-IPv6-support-work.patch [bz#1011720]
+- kvm-rdma-forgot-to-turn-off-the-debugging-flag.patch [bz#1011720]
+- kvm-rdma-correct-newlines-in-error-statements.patch [bz#1011720]
+- kvm-rdma-don-t-use-negative-index-to-array.patch [bz#1011720]
+- kvm-rdma-qemu_rdma_post_send_control-uses-wrongly-RDMA_W.patch [bz#1011720]
+- kvm-rdma-use-DRMA_WRID_READY.patch [bz#1011720]
+- kvm-rdma-memory-leak-RDMAContext-host.patch [bz#1011720]
+- kvm-rdma-use-resp.len-after-validation-in-qemu_rdma_regi.patch [bz#1011720]
+- kvm-rdma-validate-RDMAControlHeader-len.patch [bz#1011720]
+- kvm-rdma-check-if-RDMAControlHeader-len-match-transferre.patch [bz#1011720]
+- kvm-rdma-proper-getaddrinfo-handling.patch [bz#1011720]
+- kvm-rdma-IPv6-over-Ethernet-RoCE-is-broken-in-linux-work.patch [bz#1011720]
+- kvm-rdma-remaining-documentation-fixes.patch [bz#1011720]
+- kvm-rdma-silly-ipv6-bugfix.patch [bz#1011720]
+- kvm-savevm-fix-wrong-initialization-by-ram_control_load_.patch [bz#1011720]
+- kvm-arch_init-right-return-for-ram_save_iterate.patch [bz#1011720]
+- kvm-rdma-clean-up-of-qemu_rdma_cleanup.patch [bz#1011720]
+- kvm-rdma-constify-ram_chunk_-index-start-end.patch [bz#1011720]
+- kvm-migration-Fix-debug-print-type.patch [bz#1011720]
+- kvm-arch_init-make-is_zero_page-accept-size.patch [bz#1011720]
+- kvm-migration-ram_handle_compressed.patch [bz#1011720]
+- kvm-migration-fix-spice-migration.patch [bz#1011720]
+- kvm-pci-assign-cap-number-of-devices-that-can-be-assigne.patch [bz#678368]
+- kvm-vfio-cap-number-of-devices-that-can-be-assigned.patch [bz#678368]
+- kvm-Revert-usb-tablet-Don-t-claim-wakeup-capability-for-.patch [bz#1039513]
+- kvm-mempath-prefault-pages-manually-v4.patch [bz#1026554]
+- Resolves: bz#1011720
+  ([HP 7.0 Feat]: Backport RDMA based live guest migration changes from upstream to RHEL7.0 KVM)
+- Resolves: bz#1026554
+  (qemu: mempath: prefault pages manually)
+- Resolves: bz#1039513
+  (backport remote wakeup for ehci)
+- Resolves: bz#678368
+  (RFE: Support more than 8 assigned devices)
+
+* Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-25.el7
+- kvm-Change-package-description.patch [bz#1017696]
+- kvm-seccomp-add-kill-to-the-syscall-whitelist.patch [bz#1026314]
+- kvm-json-parser-fix-handling-of-large-whole-number-value.patch [bz#997915]
+- kvm-qapi-add-QMP-input-test-for-large-integers.patch [bz#997915]
+- kvm-qapi-fix-visitor-serialization-tests-for-numbers-dou.patch [bz#997915]
+- kvm-qapi-add-native-list-coverage-for-visitor-serializat.patch [bz#997915]
+- kvm-qapi-add-native-list-coverage-for-QMP-output-visitor.patch [bz#997915]
+- kvm-qapi-add-native-list-coverage-for-QMP-input-visitor-.patch [bz#997915]
+- kvm-qapi-lack-of-two-commas-in-dict.patch [bz#997915]
+- kvm-tests-QAPI-schema-parser-tests.patch [bz#997915]
+- kvm-tests-Use-qapi-schema-test.json-as-schema-parser-tes.patch [bz#997915]
+- kvm-qapi.py-Restructure-lexer-and-parser.patch [bz#997915]
+- kvm-qapi.py-Decent-syntax-error-reporting.patch [bz#997915]
+- kvm-qapi.py-Reject-invalid-characters-in-schema-file.patch [bz#997915]
+- kvm-qapi.py-Fix-schema-parser-to-check-syntax-systematic.patch [bz#997915]
+- kvm-qapi.py-Fix-diagnosing-non-objects-at-a-schema-s-top.patch [bz#997915]
+- kvm-qapi.py-Rename-expr_eval-to-expr-in-parse_schema.patch [bz#997915]
+- kvm-qapi.py-Permit-comments-starting-anywhere-on-the-lin.patch [bz#997915]
+- kvm-scripts-qapi.py-Avoid-syntax-not-supported-by-Python.patch [bz#997915]
+- kvm-tests-Fix-schema-parser-test-for-in-tree-build.patch [bz#997915]
+- Resolves: bz#1017696
+  ([branding] remove references to dynamic translation and user-mode emulation)
+- Resolves: bz#1026314
+  (qemu-kvm hang when use '-sandbox on'+'vnc'+'hda')
+- Resolves: bz#997915
+  (Backport new QAPI parser proactively to help developers and avoid silly conflicts)
+    
+* Tue Dec 17 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-24.el7
+- kvm-range-add-Range-structure.patch [bz#1034876]
+- kvm-range-add-Range-to-typedefs.patch [bz#1034876]
+- kvm-range-add-min-max-operations-on-ranges.patch [bz#1034876]
+- kvm-qdev-Add-SIZE-type-to-qdev-properties.patch [bz#1034876]
+- kvm-qapi-make-visit_type_size-fallback-to-type_int.patch [bz#1034876]
+- kvm-pc-move-IO_APIC_DEFAULT_ADDRESS-to-include-hw-i386-i.patch [bz#1034876]
+- kvm-pci-add-helper-to-retrieve-the-64-bit-range.patch [bz#1034876]
+- kvm-pci-fix-up-w64-size-calculation-helper.patch [bz#1034876]
+- kvm-refer-to-FWCfgState-explicitly.patch [bz#1034876]
+- kvm-fw_cfg-move-typedef-to-qemu-typedefs.h.patch [bz#1034876]
+- kvm-arch_init-align-MR-size-to-target-page-size.patch [bz#1034876]
+- kvm-loader-store-FW-CFG-ROM-files-in-RAM.patch [bz#1034876]
+- kvm-pci-store-PCI-hole-ranges-in-guestinfo-structure.patch [bz#1034876]
+- kvm-pc-pass-PCI-hole-ranges-to-Guests.patch [bz#1034876]
+- kvm-pc-replace-i440fx_common_init-with-i440fx_init.patch [bz#1034876]
+- kvm-pc-don-t-access-fw-cfg-if-NULL.patch [bz#1034876]
+- kvm-pc-add-I440FX-QOM-cast-macro.patch [bz#1034876]
+- kvm-pc-limit-64-bit-hole-to-2G-by-default.patch [bz#1034876]
+- kvm-q35-make-pci-window-address-size-match-guest-cfg.patch [bz#1034876]
+- kvm-q35-use-64-bit-window-programmed-by-guest.patch [bz#1034876]
+- kvm-piix-use-64-bit-window-programmed-by-guest.patch [bz#1034876]
+- kvm-pc-fix-regression-for-64-bit-PCI-memory.patch [bz#1034876]
+- kvm-cleanup-object.h-include-error.h-directly.patch [bz#1034876]
+- kvm-qom-cleanup-struct-Error-references.patch [bz#1034876]
+- kvm-qom-add-pointer-to-int-property-helpers.patch [bz#1034876]
+- kvm-fw_cfg-interface-to-trigger-callback-on-read.patch [bz#1034876]
+- kvm-loader-support-for-unmapped-ROM-blobs.patch [bz#1034876]
+- kvm-pcie_host-expose-UNMAPPED-macro.patch [bz#1034876]
+- kvm-pcie_host-expose-address-format.patch [bz#1034876]
+- kvm-q35-use-macro-for-MCFG-property-name.patch [bz#1034876]
+- kvm-q35-expose-mmcfg-size-as-a-property.patch [bz#1034876]
+- kvm-i386-add-ACPI-table-files-from-seabios.patch [bz#1034876]
+- kvm-acpi-add-rules-to-compile-ASL-source.patch [bz#1034876]
+- kvm-acpi-pre-compiled-ASL-files.patch [bz#1034876]
+- kvm-acpi-ssdt-pcihp-updat-generated-file.patch [bz#1034876]
+- kvm-loader-use-file-path-size-from-fw_cfg.h.patch [bz#1034876]
+- kvm-i386-add-bios-linker-loader.patch [bz#1034876]
+- kvm-loader-allow-adding-ROMs-in-done-callbacks.patch [bz#1034876]
+- kvm-i386-define-pc-guest-info.patch [bz#1034876]
+- kvm-acpi-piix-add-macros-for-acpi-property-names.patch [bz#1034876]
+- kvm-piix-APIs-for-pc-guest-info.patch [bz#1034876]
+- kvm-ich9-APIs-for-pc-guest-info.patch [bz#1034876]
+- kvm-pvpanic-add-API-to-access-io-port.patch [bz#1034876]
+- kvm-hpet-add-API-to-find-it.patch [bz#1034876]
+- kvm-hpet-fix-build-with-CONFIG_HPET-off.patch [bz#1034876]
+- kvm-acpi-add-interface-to-access-user-installed-tables.patch [bz#1034876]
+- kvm-pc-use-new-api-to-add-builtin-tables.patch [bz#1034876]
+- kvm-i386-ACPI-table-generation-code-from-seabios.patch [bz#1034876]
+- kvm-ssdt-fix-PBLK-length.patch [bz#1034876]
+- kvm-ssdt-proc-update-generated-file.patch [bz#1034876]
+- kvm-pc-disable-pci-info.patch [bz#1034876]
+- kvm-acpi-build-fix-build-on-glib-2.22.patch [bz#1034876]
+- kvm-acpi-build-fix-build-on-glib-2.14.patch [bz#1034876]
+- kvm-acpi-build-fix-support-for-glib-2.22.patch [bz#1034876]
+- kvm-acpi-build-Fix-compiler-warning-missing-gnu_printf-f.patch [bz#1034876]
+- kvm-exec-Fix-prototype-of-phys_mem_set_alloc-and-related.patch [bz#1034876]
+- Resolves: bz#1034876
+  (export acpi tables to guests)
+
+* Tue Dec 17 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-23.el7
+- kvm-qdev-monitor-Unref-device-when-device_add-fails.patch [bz#1003773]
+- kvm-qdev-Drop-misleading-qdev_free-function.patch [bz#1003773]
+- kvm-blockdev-fix-drive_init-opts-and-bs_opts-leaks.patch [bz#1003773]
+- kvm-libqtest-rename-qmp-to-qmp_discard_response.patch [bz#1003773]
+- kvm-libqtest-add-qmp-fmt-.-QDict-function.patch [bz#1003773]
+- kvm-blockdev-test-add-test-case-for-drive_add-duplicate-.patch [bz#1003773]
+- kvm-qdev-monitor-test-add-device_add-leak-test-cases.patch [bz#1003773]
+- kvm-qtest-Use-display-none-by-default.patch [bz#1003773]
+- Resolves: bz#1003773
+  (When virtio-blk-pci device with dataplane is failed to be added, the drive cannot be released.)
+
+* Tue Dec 17 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-22.el7
+- Fix ksmtuned with set_process_name=1 [bz#1027420]
+- Fix committed memory when no qemu-kvm running [bz#1027418]
+- kvm-virtio-net-fix-the-memory-leak-in-rxfilter_notify.patch [bz#1033810]
+- kvm-qom-Fix-memory-leak-in-object_property_set_link.patch [bz#1033810]
+- kvm-fix-intel-hda-live-migration.patch [bz#1036537]
+- kvm-vfio-pci-Release-all-MSI-X-vectors-when-disabled.patch [bz#1029743]
+- kvm-Query-KVM-for-available-memory-slots.patch [bz#921490]
+- kvm-block-Dont-ignore-previously-set-bdrv_flags.patch [bz#1039501]
+- kvm-cleanup-trace-events.pl-New.patch [bz#997832]
+- kvm-slavio_misc-Fix-slavio_led_mem_readw-_writew-tracepo.patch [bz#997832]
+- kvm-milkymist-minimac2-Fix-minimac2_read-_write-tracepoi.patch [bz#997832]
+- kvm-trace-events-Drop-unused-events.patch [bz#997832]
+- kvm-trace-events-Fix-up-source-file-comments.patch [bz#997832]
+- kvm-trace-events-Clean-up-with-scripts-cleanup-trace-eve.patch [bz#997832]
+- kvm-trace-events-Clean-up-after-removal-of-old-usb-host-.patch [bz#997832]
+- kvm-net-Update-netdev-peer-on-link-change.patch [bz#1027571]
+- Resolves: bz#1027418
+  (ksmtuned committed_memory() still returns "", not 0, when no qemu running)
+- Resolves: bz#1027420
+  (ksmtuned can’t handle libvirt WITH set_process_name=1)
+- Resolves: bz#1027571
+  ([virtio-win]win8.1 guest network can not resume automatically after do "set_link tap1 on")
+- Resolves: bz#1029743
+  (qemu-kvm core dump after hot plug/unplug 82576 PF about 100 times)
+- Resolves: bz#1033810
+  (memory leak in using object_get_canonical_path())
+- Resolves: bz#1036537
+  (Cross version migration from RHEL6.5 host to RHEL7.0 host with sound device failed.)
+- Resolves: bz#1039501
+  ([provisioning] discard=on broken)
+- Resolves: bz#921490
+  (qemu-kvm core dumped after hot plugging more than 11 VF through vfio-pci)
+- Resolves: bz#997832
+  (Backport trace fixes proactively to avoid confusion and silly conflicts)
+
 * Tue Dec 03 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-21.el7
 - kvm-scsi-Allocate-SCSITargetReq-r-buf-dynamically-CVE-20.patch [bz#1007334]
 - Resolves: bz#1007334

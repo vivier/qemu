@@ -1,0 +1,102 @@
+From 1acef1564af5d40517200554d459d3de0d043ee4 Mon Sep 17 00:00:00 2001
+Message-Id: <1acef1564af5d40517200554d459d3de0d043ee4.1387369730.git.minovotn@redhat.com>
+In-Reply-To: <091eecc4fa42754760dfff393dabcc2b444e9693.1387369730.git.minovotn@redhat.com>
+References: <091eecc4fa42754760dfff393dabcc2b444e9693.1387369730.git.minovotn@redhat.com>
+From: Miroslav Rezanina <mrezanin@redhat.com>
+Date: Mon, 2 Dec 2013 07:42:04 +0100
+Subject: [PATCH 02/21] Change package description
+
+RH-Author: Miroslav Rezanina <mrezanin@redhat.com>
+Message-id: <65c3ccf86668a0bc41a247e68cce395cb4e1b3ee.1385970055.git.mrezanin@redhat.com>
+Patchwork-id: 55948
+O-Subject: [RHEL7 qemu-kvm PATCHv2] Change package description
+Bugzilla: 1017696
+RH-Acked-by: Markus Armbruster <armbru@redhat.com>
+RH-Acked-by: Fam Zheng <famz@redhat.com>
+RH-Acked-by: knoel@redhat.com
+
+From: Miroslav Rezanina <mrezanin@redhat.com>
+
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=1017696
+Brew: http://brewweb.devel.redhat.com/brew/taskinfo?taskID=6668069
+
+As rpm spec was shared by Fedora and RHEL release, it describes packages
+as QEMU package. However, different spec file is used for Fedora and RHEL
+now so we need to update description to reflect RHEL usage.
+
+v2:
+ - used text suggested by Paolo
+
+Signed-off-by: Miroslav Rezanina <mrezanin@redhat.com>
+---
+ redhat/qemu-kvm.spec.template | 27 +++++++++++----------------
+ 1 file changed, 11 insertions(+), 16 deletions(-)
+
+Signed-off-by: Michal Novotny <minovotn@redhat.com>
+---
+ redhat/qemu-kvm.spec.template | 27 +++++++++++----------------
+ 1 file changed, 11 insertions(+), 16 deletions(-)
+
+diff --git a/redhat/qemu-kvm.spec.template b/redhat/qemu-kvm.spec.template
+index 51829d7..8b1fc28 100644
+--- a/redhat/qemu-kvm.spec.template
++++ b/redhat/qemu-kvm.spec.template
+@@ -216,24 +216,19 @@ Requires: qemu-img = %{epoch}:%{version}-%{release}
+ %define qemudocdir %{_docdir}/%{pkgname}
+ 
+ %description
+-QEMU is a generic and open source processor emulator which achieves a good
+-emulation speed by using dynamic translation. QEMU has two operating modes:
++qemu-kvm is an open source virtualizer that provides hardware emulation for
++the KVM hypervisor. qemu-kvm acts as a virtual machine monitor together with
++the KVM kernel modules, and emulates the hardware for a full system such as
++a PC and its assocated peripherals.
+ 
+- * Full system emulation. In this mode, QEMU emulates a full system (for
+-   example a PC), including a processor and various peripherials. It can be
+-   used to launch different Operating Systems without rebooting the PC or
+-   to debug system code.
+- * User mode emulation. In this mode, QEMU can launch Linux processes compiled
+-   for one CPU on another CPU.
+-
+-As QEMU requires no host kernel patches to run, it is safe and easy to use.
++As qemu-kvm requires no host kernel patches to run, it is safe and easy to use.
+ %if !%{rhev}
+ %package -n qemu-img
+ Summary: QEMU command line tool for manipulating disk images
+ Group: Development/Tools
+ 
+ %description -n qemu-img
+-This package provides a command line tool for manipulating disk images
++This package provides a command line tool for manipulating disk images.
+ %endif
+ 
+ %if 0%{!?build_only_sub:1}
+@@ -250,10 +245,10 @@ Requires(postun): systemd-units
+ %rhel_rhev_conflicts qemu-kvm-common
+ 
+ %description -n qemu-kvm-common%{?pkgsuffix}
+-QEMU is a generic and open source processor emulator which achieves a good
+-emulation speed by using dynamic translation.
++qemu-kvm is an open source virtualizer that provides hardware emulation for
++the KVM hypervisor. 
+ 
+-This package provides the common files needed by all QEMU targets
++This package provides documentation and auxiliary programs used with qemu-kvm.
+ 
+ %endif
+ 
+@@ -266,8 +261,8 @@ Requires(preun): systemd-units
+ Requires(postun): systemd-units
+ 
+ %description -n qemu-guest-agent
+-QEMU is a generic and open source processor emulator which achieves a good
+-emulation speed by using dynamic translation.
++qemu-kvm is an open source virtualizer that provides hardware emulation for
++the KVM hypervisor. 
+ 
+ This package provides an agent to run inside guests, which communicates
+ with the host over a virtio-serial channel named "org.qemu.guest_agent.0"
+-- 
+1.7.11.7
+
