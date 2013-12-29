@@ -16,6 +16,8 @@
 
 #include "qemu-common.h"
 #include "qemu/main-loop.h"
+#include "qemu/option.h"
+#include "qemu/config-file.h"
 #include "block/block_int.h"
 #include "block/qapi.h"
 #include "cmd.h"
@@ -1771,7 +1773,7 @@ static const cmdinfo_t close_cmd = {
     .oneline    = "close the current open file",
 };
 
-static int openfile(char *name, int flags, int growable)
+static int openfile(char *name, int flags, int growable, QDict *opts)
 {
     Error *local_err = NULL;
 
@@ -1781,7 +1783,7 @@ static int openfile(char *name, int flags, int growable)
     }
 
     if (growable) {
-        if (bdrv_file_open(&bs, name, NULL, flags, &local_err)) {
+        if (bdrv_file_open(&bs, name, opts, flags, &local_err)) {
             fprintf(stderr, "%s: can't open device %s: %s\n", progname, name,
                     error_get_pretty(local_err));
             error_free(local_err);
@@ -1790,7 +1792,7 @@ static int openfile(char *name, int flags, int growable)
     } else {
         bs = bdrv_new("hda");
 
-        if (bdrv_open(bs, name, NULL, flags, NULL, &local_err) < 0) {
+        if (bdrv_open(bs, name, opts, flags, NULL, &local_err) < 0) {
             fprintf(stderr, "%s: can't open device %s: %s\n", progname, name,
                     error_get_pretty(local_err));
             error_free(local_err);
@@ -1816,7 +1818,8 @@ static void open_help(void)
 " -r, -- open file read-only\n"
 " -s, -- use snapshot file\n"
 " -n, -- disable host cache\n"
-" -g, -- allow file to grow (only applies to protocols)"
+" -g, -- allow file to grow (only applies to protocols)\n"
+" -o, -- options to be given to the block driver"
 "\n");
 }
 
@@ -1829,9 +1832,18 @@ static const cmdinfo_t open_cmd = {
     .argmin     = 1,
     .argmax     = -1,
     .flags      = CMD_NOFILE_OK,
-    .args       = "[-Crsn] [path]",
+    .args       = "[-Crsn] [-o options] [path]",
     .oneline    = "open the file specified by path",
     .help       = open_help,
+};
+
+static QemuOptsList empty_opts = {
+    .name = "drive",
+    .head = QTAILQ_HEAD_INITIALIZER(empty_opts.head),
+    .desc = {
+        /* no elements => accept any params */
+        { /* end of list */ }
+    },
 };
 
 static int open_f(int argc, char **argv)
@@ -1840,8 +1852,10 @@ static int open_f(int argc, char **argv)
     int readonly = 0;
     int growable = 0;
     int c;
+    QemuOpts *qopts;
+    QDict *opts = NULL;
 
-    while ((c = getopt(argc, argv, "snrg")) != EOF) {
+    while ((c = getopt(argc, argv, "snrgo:")) != EOF) {
         switch (c) {
         case 's':
             flags |= BDRV_O_SNAPSHOT;
@@ -1854,6 +1868,15 @@ static int open_f(int argc, char **argv)
             break;
         case 'g':
             growable = 1;
+            break;
+        case 'o':
+            qopts = qemu_opts_parse(&empty_opts, optarg, 0);
+            if (qopts == NULL) {
+                printf("could not parse option list -- %s\n", optarg);
+                return 0;
+            }
+            opts = qemu_opts_to_qdict(qopts, opts);
+            qemu_opts_del(qopts);
             break;
         default:
             return command_usage(&open_cmd);
@@ -1868,7 +1891,7 @@ static int open_f(int argc, char **argv)
         return command_usage(&open_cmd);
     }
 
-    return openfile(argv[optind], flags, growable);
+    return openfile(argv[optind], flags, growable, opts);
 }
 
 static int init_args_command(int index)
@@ -2039,7 +2062,7 @@ int main(int argc, char **argv)
     }
 
     if ((argc - optind) == 1) {
-        openfile(argv[optind], flags, growable);
+        openfile(argv[optind], flags, growable, NULL);
     }
     command_loop();
 
