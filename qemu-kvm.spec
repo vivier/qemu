@@ -1343,6 +1343,106 @@ Patch650: kvm-QMP-Document-throttling-parameters-of-__com.redhat_d.patch
 # For bz#889051 - Commands "__com.redhat_drive_add/del" don' t exist in RHEL7.0
 Patch651: kvm-HMP-Disable-drive_add-for-Red-Hat-Enterprise-Linux.patch
 Patch652: kvm-Revert-HMP-Disable-drive_add-for-Red-Hat-Enterprise-2.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch653: kvm-block-change-default-of-.has_zero_init-to-0.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch654: kvm-iscsi-factor-out-sector-conversions.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch655: kvm-iscsi-add-logical-block-provisioning-information-to-.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch656: kvm-iscsi-add-.bdrv_get_block_status.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch657: kvm-iscsi-split-discard-requests-in-multiple-parts.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch658: kvm-block-make-BdrvRequestFlags-public.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch659: kvm-block-add-flags-to-bdrv_-_write_zeroes.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch660: kvm-block-introduce-BDRV_REQ_MAY_UNMAP-request-flag.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch661: kvm-block-add-logical-block-provisioning-info-to-BlockDr.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch662: kvm-block-add-wrappers-for-logical-block-provisioning-in.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch663: kvm-block-iscsi-add-.bdrv_get_info.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch664: kvm-block-add-BlockLimits-structure-to-BlockDriverState.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch665: kvm-block-raw-copy-BlockLimits-on-raw_open.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch666: kvm-block-honour-BlockLimits-in-bdrv_co_do_write_zeroes.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch667: kvm-block-honour-BlockLimits-in-bdrv_co_discard.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch668: kvm-iscsi-set-limits-in-BlockDriverState.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch669: kvm-iscsi-simplify-iscsi_co_discard.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch670: kvm-iscsi-add-bdrv_co_write_zeroes.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch671: kvm-block-introduce-bdrv_make_zero.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch672: kvm-block-get_block_status-fix-BDRV_BLOCK_ZERO-for-unall.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch673: kvm-qemu-img-add-support-for-fully-allocated-images.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch674: kvm-qemu-img-conditionally-zero-out-target-on-convert.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch675: kvm-block-generalize-BlockLimits-handling-to-cover-bdrv_.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch676: kvm-block-add-flags-to-BlockRequest.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch677: kvm-block-add-flags-argument-to-bdrv_co_write_zeroes-tra.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch678: kvm-block-add-bdrv_aio_write_zeroes.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch679: kvm-block-handle-ENOTSUP-from-discard-in-generic-code.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch680: kvm-block-make-bdrv_co_do_write_zeroes-stricter-in-produ.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch681: kvm-vpc-vhdx-add-get_info.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch682: kvm-block-drivers-add-discard-write_zeroes-properties-to.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch683: kvm-block-drivers-expose-requirement-for-write-same-alig.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch684: kvm-block-iscsi-remove-.bdrv_has_zero_init.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch685: kvm-block-iscsi-updated-copyright.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch686: kvm-block-iscsi-check-WRITE-SAME-support-differently-dep.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch687: kvm-scsi-disk-catch-write-protection-errors-in-UNMAP.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch688: kvm-scsi-disk-reject-ANCHOR-1-for-UNMAP-and-WRITE-SAME-c.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch689: kvm-scsi-disk-correctly-implement-WRITE-SAME.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch690: kvm-scsi-disk-fix-WRITE-SAME-with-large-non-zero-payload.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch691: kvm-raw-posix-implement-write_zeroes-with-MAY_UNMAP-for-.patch.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch692: kvm-raw-posix-implement-write_zeroes-with-MAY_UNMAP-for-.patch.patch.patch.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch693: kvm-raw-posix-add-support-for-write_zeroes-on-XFS-and-bl.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch694: kvm-qemu-iotests-033-is-fast.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch695: kvm-qemu-img-add-support-for-skipping-zeroes-in-input-du.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch696: kvm-qemu-img-fix-usage-instruction-for-qemu-img-convert.patch.patch
+# For bz#1007815 - fix WRITE SAME support
+Patch697: kvm-block-iscsi-set-bdi-cluster_size.patch.patch
+# For bz#1039557 - optimize qemu-img for thin provisioned images
+Patch698: kvm-block-add-opt_transfer_length-to-BlockLimits.patch.patch
+# For bz#1039557 - optimize qemu-img for thin provisioned images
+Patch699: kvm-block-iscsi-set-bs-bl.opt_transfer_length.patch.patch
+# For bz#1039557 - optimize qemu-img for thin provisioned images
+Patch700: kvm-qemu-img-dynamically-adjust-iobuffer-size-during-con.patch.patch
+# For bz#1039557 - optimize qemu-img for thin provisioned images
+Patch701: kvm-qemu-img-round-down-request-length-to-an-aligned-sec.patch.patch
+# For bz#1039557 - optimize qemu-img for thin provisioned images
+Patch702: kvm-qemu-img-decrease-progress-update-interval-on-conver.patch.patch
 
 
 BuildRequires: zlib-devel
@@ -2182,6 +2282,56 @@ CAC emulation development files.
 %patch650 -p1
 %patch651 -p1
 %patch652 -p1
+%patch653 -p1
+%patch654 -p1
+%patch655 -p1
+%patch656 -p1
+%patch657 -p1
+%patch658 -p1
+%patch659 -p1
+%patch660 -p1
+%patch661 -p1
+%patch662 -p1
+%patch663 -p1
+%patch664 -p1
+%patch665 -p1
+%patch666 -p1
+%patch667 -p1
+%patch668 -p1
+%patch669 -p1
+%patch670 -p1
+%patch671 -p1
+%patch672 -p1
+%patch673 -p1
+%patch674 -p1
+%patch675 -p1
+%patch676 -p1
+%patch677 -p1
+%patch678 -p1
+%patch679 -p1
+%patch680 -p1
+%patch681 -p1
+%patch682 -p1
+%patch683 -p1
+%patch684 -p1
+%patch685 -p1
+%patch686 -p1
+%patch687 -p1
+%patch688 -p1
+%patch689 -p1
+%patch690 -p1
+%patch691 -p1
+%patch692 -p1
+%patch693 -p1
+%patch694 -p1
+%patch695 -p1
+%patch696 -p1
+%patch697 -p1
+%patch698 -p1
+%patch699 -p1
+%patch700 -p1
+%patch701 -p1
+%patch702 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -2610,6 +2760,62 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Mon Jan 06 2014 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-31.el7
+- kvm-block-change-default-of-.has_zero_init-to-0.patch.patch [bz#1007815]
+- kvm-iscsi-factor-out-sector-conversions.patch.patch [bz#1007815]
+- kvm-iscsi-add-logical-block-provisioning-information-to-.patch.patch [bz#1007815]
+- kvm-iscsi-add-.bdrv_get_block_status.patch.patch.patch [bz#1007815]
+- kvm-iscsi-split-discard-requests-in-multiple-parts.patch.patch.patch [bz#1007815]
+- kvm-block-make-BdrvRequestFlags-public.patch.patch.patch [bz#1007815]
+- kvm-block-add-flags-to-bdrv_-_write_zeroes.patch.patch.patch [bz#1007815]
+- kvm-block-introduce-BDRV_REQ_MAY_UNMAP-request-flag.patch.patch.patch [bz#1007815]
+- kvm-block-add-logical-block-provisioning-info-to-BlockDr.patch.patch.patch [bz#1007815]
+- kvm-block-add-wrappers-for-logical-block-provisioning-in.patch.patch.patch [bz#1007815]
+- kvm-block-iscsi-add-.bdrv_get_info.patch.patch [bz#1007815]
+- kvm-block-add-BlockLimits-structure-to-BlockDriverState.patch.patch.patch [bz#1007815]
+- kvm-block-raw-copy-BlockLimits-on-raw_open.patch.patch.patch [bz#1007815]
+- kvm-block-honour-BlockLimits-in-bdrv_co_do_write_zeroes.patch.patch.patch [bz#1007815]
+- kvm-block-honour-BlockLimits-in-bdrv_co_discard.patch.patch.patch [bz#1007815]
+- kvm-iscsi-set-limits-in-BlockDriverState.patch.patch.patch [bz#1007815]
+- kvm-iscsi-simplify-iscsi_co_discard.patch.patch.patch [bz#1007815]
+- kvm-iscsi-add-bdrv_co_write_zeroes.patch.patch.patch [bz#1007815]
+- kvm-block-introduce-bdrv_make_zero.patch.patch.patch [bz#1007815]
+- kvm-block-get_block_status-fix-BDRV_BLOCK_ZERO-for-unall.patch.patch.patch [bz#1007815]
+- kvm-qemu-img-add-support-for-fully-allocated-images.patch.patch.patch [bz#1007815]
+- kvm-qemu-img-conditionally-zero-out-target-on-convert.patch.patch.patch [bz#1007815]
+- kvm-block-generalize-BlockLimits-handling-to-cover-bdrv_.patch.patch.patch [bz#1007815]
+- kvm-block-add-flags-to-BlockRequest.patch.patch.patch [bz#1007815]
+- kvm-block-add-flags-argument-to-bdrv_co_write_zeroes-tra.patch.patch.patch [bz#1007815]
+- kvm-block-add-bdrv_aio_write_zeroes.patch.patch.patch [bz#1007815]
+- kvm-block-handle-ENOTSUP-from-discard-in-generic-code.patch.patch.patch [bz#1007815]
+- kvm-block-make-bdrv_co_do_write_zeroes-stricter-in-produ.patch.patch.patch [bz#1007815]
+- kvm-vpc-vhdx-add-get_info.patch.patch.patch [bz#1007815]
+- kvm-block-drivers-add-discard-write_zeroes-properties-to.patch.patch.patch [bz#1007815]
+- kvm-block-drivers-expose-requirement-for-write-same-alig.patch.patch.patch [bz#1007815]
+- kvm-block-iscsi-remove-.bdrv_has_zero_init.patch.patch.patch [bz#1007815]
+- kvm-block-iscsi-updated-copyright.patch.patch.patch [bz#1007815]
+- kvm-block-iscsi-check-WRITE-SAME-support-differently-dep.patch.patch.patch [bz#1007815]
+- kvm-scsi-disk-catch-write-protection-errors-in-UNMAP.patch.patch.patch [bz#1007815]
+- kvm-scsi-disk-reject-ANCHOR-1-for-UNMAP-and-WRITE-SAME-c.patch.patch.patch [bz#1007815]
+- kvm-scsi-disk-correctly-implement-WRITE-SAME.patch.patch.patch [bz#1007815]
+- kvm-scsi-disk-fix-WRITE-SAME-with-large-non-zero-payload.patch.patch.patch [bz#1007815]
+- kvm-raw-posix-implement-write_zeroes-with-MAY_UNMAP-for-.patch.patch.patch.patch [bz#1007815]
+- kvm-raw-posix-implement-write_zeroes-with-MAY_UNMAP-for-.patch.patch.patch.patch.patch [bz#1007815]
+- kvm-raw-posix-add-support-for-write_zeroes-on-XFS-and-bl.patch.patch [bz#1007815]
+- kvm-qemu-iotests-033-is-fast.patch.patch [bz#1007815]
+- kvm-qemu-img-add-support-for-skipping-zeroes-in-input-du.patch.patch [bz#1007815]
+- kvm-qemu-img-fix-usage-instruction-for-qemu-img-convert.patch.patch [bz#1007815]
+- kvm-block-iscsi-set-bdi-cluster_size.patch.patch [bz#1007815]
+- kvm-block-add-opt_transfer_length-to-BlockLimits.patch.patch [bz#1039557]
+- kvm-block-iscsi-set-bs-bl.opt_transfer_length.patch.patch [bz#1039557]
+- kvm-qemu-img-dynamically-adjust-iobuffer-size-during-con.patch.patch [bz#1039557]
+- kvm-qemu-img-round-down-request-length-to-an-aligned-sec.patch.patch [bz#1039557]
+- kvm-qemu-img-decrease-progress-update-interval-on-conver.patch.patch [bz#1039557]
+- Resolves: bz#1007815
+  (fix WRITE SAME support)
+- Resolves: bz#1039557
+  (optimize qemu-img for thin provisioned images)
+
 * Fri Dec 27 2013 Daniel Mach <dmach@redhat.com> - 10:1.5.3-31
 - Mass rebuild 2013-12-27
 
