@@ -74,7 +74,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 30%{?dist}
+Release: 31%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -2610,6 +2610,9 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Fri Dec 27 2013 Daniel Mach <dmach@redhat.com> - 10:1.5.3-31
+- Mass rebuild 2013-12-27
+
 * Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-30.el7
 - kvm-Revert-HMP-Disable-drive_add-for-Red-Hat-Enterprise-2.patch.patch [bz#889051]
 - Resolves: bz#889051
