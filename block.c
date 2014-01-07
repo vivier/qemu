@@ -4980,3 +4980,11 @@ AioContext *bdrv_get_aio_context(BlockDriverState *bs)
     /* Currently BlockDriverState always uses the main loop AioContext */
     return qemu_get_aio_context();
 }
+
+int bdrv_amend_options(BlockDriverState *bs, QEMUOptionParameter *options)
+{
+    if (bs->drv->bdrv_amend_options == NULL) {
+        return -ENOTSUP;
+    }
+    return bs->drv->bdrv_amend_options(bs, options);
+}
