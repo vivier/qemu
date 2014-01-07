@@ -1552,6 +1552,7 @@ static int expand_zero_clusters_in_l1(BlockDriverState *bs, uint64_t *l1_table,
             uint64_t l2_entry = be64_to_cpu(l2_table[j]);
             int64_t offset = l2_entry & L2E_OFFSET_MASK, cluster_index;
             int cluster_type = qcow2_get_cluster_type(l2_entry);
+            bool preallocated = offset != 0;
 
             if (cluster_type == QCOW2_CLUSTER_NORMAL) {
                 cluster_index = offset >> s->cluster_bits;
@@ -1577,8 +1578,7 @@ static int expand_zero_clusters_in_l1(BlockDriverState *bs, uint64_t *l1_table,
                 continue;
             }
 
-            if (!offset) {
-                /* not preallocated */
+            if (!preallocated) {
                 if (!bs->backing_hd) {
                     /* not backed; therefore we can simply deallocate the
                      * cluster */
@@ -1596,16 +1596,20 @@ static int expand_zero_clusters_in_l1(BlockDriverState *bs, uint64_t *l1_table,
 
             ret = qcow2_pre_write_overlap_check(bs, 0, offset, s->cluster_size);
             if (ret < 0) {
-                qcow2_free_clusters(bs, offset, s->cluster_size,
-                        QCOW2_DISCARD_ALWAYS);
+                if (!preallocated) {
+                    qcow2_free_clusters(bs, offset, s->cluster_size,
+                                        QCOW2_DISCARD_ALWAYS);
+                }
                 goto fail;
             }
 
             ret = bdrv_write_zeroes(bs->file, offset / BDRV_SECTOR_SIZE,
                                     s->cluster_sectors, 0);
             if (ret < 0) {
-                qcow2_free_clusters(bs, offset, s->cluster_size,
-                        QCOW2_DISCARD_ALWAYS);
+                if (!preallocated) {
+                    qcow2_free_clusters(bs, offset, s->cluster_size,
+                                        QCOW2_DISCARD_ALWAYS);
+                }
                 goto fail;
             }
 
