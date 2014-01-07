@@ -74,7 +74,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 31%{?dist}
+Release: 32%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -2760,7 +2760,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
-* Mon Jan 06 2014 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-31.el7
+* Mon Jan 06 2014 Michal Novotny <minovotn@redhat.com> - 1.5.3-31.el7
 - kvm-block-change-default-of-.has_zero_init-to-0.patch.patch [bz#1007815]
 - kvm-iscsi-factor-out-sector-conversions.patch.patch [bz#1007815]
 - kvm-iscsi-add-logical-block-provisioning-information-to-.patch.patch [bz#1007815]
@@ -2819,12 +2819,12 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 * Fri Dec 27 2013 Daniel Mach <dmach@redhat.com> - 10:1.5.3-31
 - Mass rebuild 2013-12-27
 
-* Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-30.el7
+* Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - 1.5.3-30.el7
 - kvm-Revert-HMP-Disable-drive_add-for-Red-Hat-Enterprise-2.patch.patch [bz#889051]
 - Resolves: bz#889051
   (Commands "__com.redhat_drive_add/del" don' t exist in RHEL7.0)
 
-* Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-29.el7
+* Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - 1.5.3-29.el7
 - kvm-QMP-Forward-port-__com.redhat_drive_del-from-RHEL-6.patch [bz#889051]
 - kvm-QMP-Forward-port-__com.redhat_drive_add-from-RHEL-6.patch [bz#889051]
 - kvm-HMP-Forward-port-__com.redhat_drive_add-from-RHEL-6.patch [bz#889051]
@@ -2833,12 +2833,12 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 - Resolves: bz#889051
   (Commands "__com.redhat_drive_add/del" don' t exist in RHEL7.0)
 
-* Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-28.el7
+* Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - 1.5.3-28.el7
 - kvm-virtio_pci-fix-level-interrupts-with-irqfd.patch [bz#1035132]
 - Resolves: bz#1035132
   (fail to boot and call trace with x-data-plane=on specified for rhel6.5 guest)
 
-* Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-27.el7
+* Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - 1.5.3-27.el7
 - Change systemd service location [bz#1025217]
 - kvm-vmdk-Allow-read-only-open-of-VMDK-version-3.patch [bz#1007710 bz#1029852]
 - Resolves: bz#1007710
@@ -2848,7 +2848,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 - Resolves: bz#1029852
   (qemu-img fails to convert vmdk image with "qemu-img: Could not open 'image.vmdk'")
 
-* Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-26.el7
+* Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - 1.5.3-26.el7
 - Add BuildRequires to libRDMAcm-devel for RDMA support [bz#1011720]
 - kvm-add-a-header-file-for-atomic-operations.patch [bz#1011720]
 - kvm-savevm-Fix-potential-memory-leak.patch [bz#1011720]
@@ -2903,7 +2903,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 - Resolves: bz#678368
   (RFE: Support more than 8 assigned devices)
 
-* Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-25.el7
+* Wed Dec 18 2013 Michal Novotny <minovotn@redhat.com> - 1.5.3-25.el7
 - kvm-Change-package-description.patch [bz#1017696]
 - kvm-seccomp-add-kill-to-the-syscall-whitelist.patch [bz#1026314]
 - kvm-json-parser-fix-handling-of-large-whole-number-value.patch [bz#997915]
@@ -2931,7 +2931,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 - Resolves: bz#997915
   (Backport new QAPI parser proactively to help developers and avoid silly conflicts)
     
-* Tue Dec 17 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-24.el7
+* Tue Dec 17 2013 Michal Novotny <minovotn@redhat.com> - 1.5.3-24.el7
 - kvm-range-add-Range-structure.patch [bz#1034876]
 - kvm-range-add-Range-to-typedefs.patch [bz#1034876]
 - kvm-range-add-min-max-operations-on-ranges.patch [bz#1034876]
@@ -2991,7 +2991,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 - Resolves: bz#1034876
   (export acpi tables to guests)
 
-* Tue Dec 17 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-23.el7
+* Tue Dec 17 2013 Michal Novotny <minovotn@redhat.com> - 1.5.3-23.el7
 - kvm-qdev-monitor-Unref-device-when-device_add-fails.patch [bz#1003773]
 - kvm-qdev-Drop-misleading-qdev_free-function.patch [bz#1003773]
 - kvm-blockdev-fix-drive_init-opts-and-bs_opts-leaks.patch [bz#1003773]
@@ -3003,7 +3003,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 - Resolves: bz#1003773
   (When virtio-blk-pci device with dataplane is failed to be added, the drive cannot be released.)
 
-* Tue Dec 17 2013 Michal Novotny <minovotn@redhat.com> - qemu-kvm-1.5.3-22.el7
+* Tue Dec 17 2013 Michal Novotny <minovotn@redhat.com> - 1.5.3-22.el7
 - Fix ksmtuned with set_process_name=1 [bz#1027420]
 - Fix committed memory when no qemu-kvm running [bz#1027418]
 - kvm-virtio-net-fix-the-memory-leak-in-rxfilter_notify.patch [bz#1033810]
