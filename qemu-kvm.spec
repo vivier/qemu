@@ -2760,7 +2760,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
-* Mon Jan 06 2014 Michal Novotny <minovotn@redhat.com> - 1.5.3-31.el7
+* Mon Jan 06 2014 Michal Novotny <minovotn@redhat.com> - 1.5.3-32.el7
 - kvm-block-change-default-of-.has_zero_init-to-0.patch.patch [bz#1007815]
 - kvm-iscsi-factor-out-sector-conversions.patch.patch [bz#1007815]
 - kvm-iscsi-add-logical-block-provisioning-information-to-.patch.patch [bz#1007815]
