@@ -74,7 +74,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 32%{?dist}
+Release: 33%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1443,6 +1443,56 @@ Patch700: kvm-qemu-img-dynamically-adjust-iobuffer-size-during-con.patch.patch
 Patch701: kvm-qemu-img-round-down-request-length-to-an-aligned-sec.patch.patch
 # For bz#1039557 - optimize qemu-img for thin provisioned images
 Patch702: kvm-qemu-img-decrease-progress-update-interval-on-conver.patch.patch
+# For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
+Patch703: kvm-block-qemu-iotests-for-vhdx-read-sample-dynamic-imag.patch
+# For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
+Patch704: kvm-block-qemu-iotests-add-quotes-to-TEST_IMG-usage-io-p.patch
+# For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
+Patch705: kvm-block-qemu-iotests-fix-_make_test_img-to-work-with-s.patch
+# For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
+Patch706: kvm-block-qemu-iotests-add-quotes-to-TEST_IMG.base-usage.patch
+# For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
+Patch707: kvm-block-qemu-iotests-add-quotes-to-TEST_IMG-usage-in-0.patch
+# For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
+Patch708: kvm-block-qemu-iotests-removes-duplicate-double-quotes-i.patch
+# For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
+Patch709: kvm-block-vhdx-minor-comments-and-typo-correction.patch
+# For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
+Patch710: kvm-block-vhdx-add-header-update-capability.patch
+# For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
+Patch711: kvm-block-vhdx-code-movement-VHDXMetadataEntries-and-BDR.patch
+# For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
+Patch712: kvm-block-vhdx-log-support-struct-and-defines.patch
+# For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
+Patch713: kvm-block-vhdx-break-endian-translation-functions-out.patch
+# For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
+Patch714: kvm-block-vhdx-update-log-guid-in-header-and-first-write.patch
+# For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
+Patch715: kvm-block-vhdx-code-movement-move-vhdx_close-above-vhdx_.patch
+# For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
+Patch716: kvm-block-vhdx-log-parsing-replay-and-flush-support.patch
+# For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
+Patch717: kvm-block-vhdx-add-region-overlap-detection-for-image-fi.patch
+# For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
+Patch718: kvm-block-vhdx-add-log-write-support.patch
+# For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
+Patch719: kvm-block-vhdx-write-support.patch
+# For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
+Patch720: kvm-block-vhdx-remove-BAT-file-offset-bit-shifting.patch
+# For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
+Patch721: kvm-block-vhdx-move-more-endian-translations-to-vhdx-end.patch
+# For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
+Patch722: kvm-block-vhdx-break-out-code-operations-to-functions.patch
+# For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
+Patch723: kvm-block-vhdx-fix-comment-typos-in-header-fix-incorrect.patch
+# For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
+Patch724: kvm-block-vhdx-add-.bdrv_create-support.patch
+# For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
+Patch725: kvm-block-vhdx-update-_make_test_img-to-filter-out-vhdx-.patch
+# For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
+Patch726: kvm-block-qemu-iotests-for-vhdx-add-write-test-support.patch
+# For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
+Patch727: kvm-block-vhdx-qemu-iotest-log-replay-of-data-sector.patch
 
 
 BuildRequires: zlib-devel
@@ -2332,6 +2382,31 @@ CAC emulation development files.
 %patch700 -p1
 %patch701 -p1
 %patch702 -p1
+%patch703 -p1
+%patch704 -p1
+%patch705 -p1
+%patch706 -p1
+%patch707 -p1
+%patch708 -p1
+%patch709 -p1
+%patch710 -p1
+%patch711 -p1
+%patch712 -p1
+%patch713 -p1
+%patch714 -p1
+%patch715 -p1
+%patch716 -p1
+%patch717 -p1
+%patch718 -p1
+%patch719 -p1
+%patch720 -p1
+%patch721 -p1
+%patch722 -p1
+%patch723 -p1
+%patch724 -p1
+%patch725 -p1
+%patch726 -p1
+%patch727 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -2760,6 +2835,35 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Wed Jan 08 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-33.el7
+- kvm-block-qemu-iotests-for-vhdx-read-sample-dynamic-imag.patch [bz#879234]
+- kvm-block-qemu-iotests-add-quotes-to-TEST_IMG-usage-io-p.patch [bz#879234]
+- kvm-block-qemu-iotests-fix-_make_test_img-to-work-with-s.patch [bz#879234]
+- kvm-block-qemu-iotests-add-quotes-to-TEST_IMG.base-usage.patch [bz#879234]
+- kvm-block-qemu-iotests-add-quotes-to-TEST_IMG-usage-in-0.patch [bz#879234]
+- kvm-block-qemu-iotests-removes-duplicate-double-quotes-i.patch [bz#879234]
+- kvm-block-vhdx-minor-comments-and-typo-correction.patch [bz#879234]
+- kvm-block-vhdx-add-header-update-capability.patch [bz#879234]
+- kvm-block-vhdx-code-movement-VHDXMetadataEntries-and-BDR.patch [bz#879234]
+- kvm-block-vhdx-log-support-struct-and-defines.patch [bz#879234]
+- kvm-block-vhdx-break-endian-translation-functions-out.patch [bz#879234]
+- kvm-block-vhdx-update-log-guid-in-header-and-first-write.patch [bz#879234]
+- kvm-block-vhdx-code-movement-move-vhdx_close-above-vhdx_.patch [bz#879234]
+- kvm-block-vhdx-log-parsing-replay-and-flush-support.patch [bz#879234]
+- kvm-block-vhdx-add-region-overlap-detection-for-image-fi.patch [bz#879234]
+- kvm-block-vhdx-add-log-write-support.patch [bz#879234]
+- kvm-block-vhdx-write-support.patch [bz#879234]
+- kvm-block-vhdx-remove-BAT-file-offset-bit-shifting.patch [bz#879234]
+- kvm-block-vhdx-move-more-endian-translations-to-vhdx-end.patch [bz#879234]
+- kvm-block-vhdx-break-out-code-operations-to-functions.patch [bz#879234]
+- kvm-block-vhdx-fix-comment-typos-in-header-fix-incorrect.patch [bz#879234]
+- kvm-block-vhdx-add-.bdrv_create-support.patch [bz#879234]
+- kvm-block-vhdx-update-_make_test_img-to-filter-out-vhdx-.patch [bz#879234]
+- kvm-block-qemu-iotests-for-vhdx-add-write-test-support.patch [bz#879234]
+- kvm-block-vhdx-qemu-iotest-log-replay-of-data-sector.patch [bz#879234]
+- Resolves: bz#879234
+  ([RFE] qemu-img: Add/improve support for VHDX format)
+
 * Mon Jan 06 2014 Michal Novotny <minovotn@redhat.com> - 1.5.3-32.el7
 - kvm-block-change-default-of-.has_zero_init-to-0.patch.patch [bz#1007815]
 - kvm-iscsi-factor-out-sector-conversions.patch.patch [bz#1007815]
