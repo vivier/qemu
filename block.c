@@ -978,8 +978,12 @@ int bdrv_open_backing_file(BlockDriverState *bs, QDict *options, Error **errp)
         error_propagate(errp, local_err);
         return ret;
     }
-    pstrcpy(bs->backing_file, sizeof(bs->backing_file),
-            bs->backing_hd->file->filename);
+
+    if (bs->backing_hd->file) {
+        pstrcpy(bs->backing_file, sizeof(bs->backing_file),
+                bs->backing_hd->file->filename);
+    }
+
     return 0;
 }
 
