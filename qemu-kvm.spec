@@ -74,7 +74,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: 1.5.3
-Release: 33%{?dist}
+Release: 34%{?dist}
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -1493,6 +1493,22 @@ Patch725: kvm-block-vhdx-update-_make_test_img-to-filter-out-vhdx-.patch
 Patch726: kvm-block-qemu-iotests-for-vhdx-add-write-test-support.patch
 # For bz#879234 - [RFE] qemu-img: Add/improve support for VHDX format
 Patch727: kvm-block-vhdx-qemu-iotest-log-replay-of-data-sector.patch
+# For bz#965636 - streaming with no backing file should not do anything
+Patch728: kvm-block-stream-Don-t-stream-unbacked-devices.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch729: kvm-qemu-io-Let-open-pass-options-to-block-driver.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch730: kvm-qcow2.py-Subcommand-for-changing-header-fields.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch731: kvm-qemu-iotests-Remaining-error-propagation-adjustments.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch732: kvm-qemu-iotests-Add-test-for-inactive-L2-overlap.patch
+# For bz#1004347 - Backport qcow2 corruption prevention patches
+Patch733: kvm-qemu-iotests-Adjust-test-result-039.patch
+# For bz#1048671 - virtio-net: mac_table change isn't recovered in error state
+Patch734: kvm-virtio-net-don-t-update-mac_table-in-error-state.patch
+# For bz#1032904 - qemu-img can not create libiscsi qcow2_v3 image
+Patch735: kvm-qcow2-Zero-initialise-first-cluster-for-new-images.patch
 
 
 BuildRequires: zlib-devel
@@ -2407,6 +2423,14 @@ CAC emulation development files.
 %patch725 -p1
 %patch726 -p1
 %patch727 -p1
+%patch728 -p1
+%patch729 -p1
+%patch730 -p1
+%patch731 -p1
+%patch732 -p1
+%patch733 -p1
+%patch734 -p1
+%patch735 -p1
 
 %build
 buildarch="%{kvm_target}-softmmu"
@@ -2835,6 +2859,24 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %changelog
+* Wed Jan 08 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-34.el7
+- kvm-block-stream-Don-t-stream-unbacked-devices.patch [bz#965636]
+- kvm-qemu-io-Let-open-pass-options-to-block-driver.patch [bz#1004347]
+- kvm-qcow2.py-Subcommand-for-changing-header-fields.patch [bz#1004347]
+- kvm-qemu-iotests-Remaining-error-propagation-adjustments.patch [bz#1004347]
+- kvm-qemu-iotests-Add-test-for-inactive-L2-overlap.patch [bz#1004347]
+- kvm-qemu-iotests-Adjust-test-result-039.patch [bz#1004347]
+- kvm-virtio-net-don-t-update-mac_table-in-error-state.patch [bz#1048671]
+- kvm-qcow2-Zero-initialise-first-cluster-for-new-images.patch [bz#1032904]
+- Resolves: bz#1004347
+  (Backport qcow2 corruption prevention patches)
+- Resolves: bz#1032904
+  (qemu-img can not create libiscsi qcow2_v3 image)
+- Resolves: bz#1048671
+  (virtio-net: mac_table change isn't recovered in error state)
+- Resolves: bz#965636
+  (streaming with no backing file should not do anything)
+
 * Wed Jan 08 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-33.el7
 - kvm-block-qemu-iotests-for-vhdx-read-sample-dynamic-imag.patch [bz#879234]
 - kvm-block-qemu-iotests-add-quotes-to-TEST_IMG-usage-io-p.patch [bz#879234]
