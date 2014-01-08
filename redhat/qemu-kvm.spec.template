@@ -797,6 +797,35 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Jan 08 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-33.el7
+- kvm-block-qemu-iotests-for-vhdx-read-sample-dynamic-imag.patch [bz#879234]
+- kvm-block-qemu-iotests-add-quotes-to-TEST_IMG-usage-io-p.patch [bz#879234]
+- kvm-block-qemu-iotests-fix-_make_test_img-to-work-with-s.patch [bz#879234]
+- kvm-block-qemu-iotests-add-quotes-to-TEST_IMG.base-usage.patch [bz#879234]
+- kvm-block-qemu-iotests-add-quotes-to-TEST_IMG-usage-in-0.patch [bz#879234]
+- kvm-block-qemu-iotests-removes-duplicate-double-quotes-i.patch [bz#879234]
+- kvm-block-vhdx-minor-comments-and-typo-correction.patch [bz#879234]
+- kvm-block-vhdx-add-header-update-capability.patch [bz#879234]
+- kvm-block-vhdx-code-movement-VHDXMetadataEntries-and-BDR.patch [bz#879234]
+- kvm-block-vhdx-log-support-struct-and-defines.patch [bz#879234]
+- kvm-block-vhdx-break-endian-translation-functions-out.patch [bz#879234]
+- kvm-block-vhdx-update-log-guid-in-header-and-first-write.patch [bz#879234]
+- kvm-block-vhdx-code-movement-move-vhdx_close-above-vhdx_.patch [bz#879234]
+- kvm-block-vhdx-log-parsing-replay-and-flush-support.patch [bz#879234]
+- kvm-block-vhdx-add-region-overlap-detection-for-image-fi.patch [bz#879234]
+- kvm-block-vhdx-add-log-write-support.patch [bz#879234]
+- kvm-block-vhdx-write-support.patch [bz#879234]
+- kvm-block-vhdx-remove-BAT-file-offset-bit-shifting.patch [bz#879234]
+- kvm-block-vhdx-move-more-endian-translations-to-vhdx-end.patch [bz#879234]
+- kvm-block-vhdx-break-out-code-operations-to-functions.patch [bz#879234]
+- kvm-block-vhdx-fix-comment-typos-in-header-fix-incorrect.patch [bz#879234]
+- kvm-block-vhdx-add-.bdrv_create-support.patch [bz#879234]
+- kvm-block-vhdx-update-_make_test_img-to-filter-out-vhdx-.patch [bz#879234]
+- kvm-block-qemu-iotests-for-vhdx-add-write-test-support.patch [bz#879234]
+- kvm-block-vhdx-qemu-iotest-log-replay-of-data-sector.patch [bz#879234]
+- Resolves: bz#879234
+  ([RFE] qemu-img: Add/improve support for VHDX format)
+
 * Mon Jan 06 2014 Michal Novotny <minovotn@redhat.com> - 1.5.3-32.el7
 - kvm-block-change-default-of-.has_zero_init-to-0.patch.patch [bz#1007815]
 - kvm-iscsi-factor-out-sector-conversions.patch.patch [bz#1007815]
