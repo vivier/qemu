@@ -797,6 +797,24 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Jan 09 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-35.el7
+- kvm-option-Add-assigned-flag-to-QEMUOptionParameter.patch [bz#1033490]
+- kvm-qcow2-refcount-Snapshot-update-for-zero-clusters.patch [bz#1033490]
+- kvm-qemu-iotests-Snapshotting-zero-clusters.patch [bz#1033490]
+- kvm-block-Image-file-option-amendment.patch [bz#1033490]
+- kvm-qcow2-cache-Empty-cache.patch [bz#1033490]
+- kvm-qcow2-cluster-Expand-zero-clusters.patch [bz#1033490]
+- kvm-qcow2-Save-refcount-order-in-BDRVQcowState.patch [bz#1033490]
+- kvm-qcow2-Implement-bdrv_amend_options.patch [bz#1033490]
+- kvm-qcow2-Correct-bitmap-size-in-zero-expansion.patch [bz#1033490]
+- kvm-qcow2-Free-only-newly-allocated-clusters-on-error.patch [bz#1033490]
+- kvm-qcow2-Add-missing-space-in-error-message.patch [bz#1033490]
+- kvm-qemu-iotest-qcow2-image-option-amendment.patch [bz#1033490]
+- kvm-qemu-iotests-New-test-case-in-061.patch [bz#1033490]
+- kvm-qemu-iotests-Preallocated-zero-clusters-in-061.patch [bz#1033490]
+- Resolves: bz#1033490
+  (Cannot upgrade/downgrade qcow2 images)
+
 * Wed Jan 08 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-34.el7
 - kvm-block-stream-Don-t-stream-unbacked-devices.patch [bz#965636]
 - kvm-qemu-io-Let-open-pass-options-to-block-driver.patch [bz#1004347]
