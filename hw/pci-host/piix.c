@@ -337,15 +337,7 @@ PCIBus *i440fx_init(PCII440FXState **pi440fx_state,
     f->ram_memory = ram_memory;
 
     i440fx = I440FX_PCI_HOST_BRIDGE(dev);
-    /* Set PCI window size the way seabios has always done it. */
-    /* Power of 2 so bios can cover it with a single MTRR */
-    if (ram_size <= 0x80000000) {
-        i440fx->pci_info.w32.begin = 0x80000000;
-    } else if (ram_size <= 0xc0000000) {
-        i440fx->pci_info.w32.begin = 0xc0000000;
-    } else {
-        i440fx->pci_info.w32.begin = 0xe0000000;
-    }
+    i440fx->pci_info.w32.begin = pci_hole_start;
 
     memory_region_init_alias(&f->pci_hole, "pci-hole", f->pci_address_space,
                              pci_hole_start, pci_hole_size);
