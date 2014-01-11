@@ -36,7 +36,6 @@
 
 #define BIOS_FILENAME "bios.bin"
 
-#if 0   /* Disabled for Red Hat Enterprise Linux */
 typedef struct PcSysFwDevice {
     SysBusDevice busdev;
     uint8_t rom_only;
@@ -136,7 +135,6 @@ static void pc_system_flash_init(MemoryRegion *rom_memory,
 
     pc_isa_bios_init(rom_memory, flash_mem, size);
 }
-#endif  /* Disabled for Red Hat Enterprise Linux */
 
 static void old_pc_system_rom_init(MemoryRegion *rom_memory)
 {
@@ -193,7 +191,6 @@ static void old_pc_system_rom_init(MemoryRegion *rom_memory)
                                 bios);
 }
 
-#if 0   /* Disabled for Red Hat Enterprise Linux */
 /*
  * Bug-compatible flash vs. ROM selection enabled?
  * A few older machines enable this.
@@ -288,9 +285,3 @@ static void pcsysfw_register (void)
 
 type_init (pcsysfw_register);
 
-#else   /* Disabled for Red Hat Enterprise Linux */
-void pc_system_firmware_init(MemoryRegion *rom_memory)
-{
-    old_pc_system_rom_init(rom_memory);
-}
-#endif
