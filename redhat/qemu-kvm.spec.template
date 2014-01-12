@@ -154,6 +154,7 @@ BuildRequires: cyrus-sasl-devel
 BuildRequires: libtool
 BuildRequires: libaio-devel
 BuildRequires: rsync
+BuildRequires: python
 BuildRequires: pciutils-devel
 BuildRequires: pulseaudio-libs-devel
 BuildRequires: libiscsi-devel
