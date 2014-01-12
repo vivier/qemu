@@ -210,10 +210,11 @@ BuildRequires: texinfo
 %if 0%{?have_librdma:1}
 BuildRequires: librdmacm-devel
 %endif
-# iasl for acpi generation (not a hard requirement as we can use
+# iasl and cpp for acpi generation (not a hard requirement as we can use
 # pre-compiled files, but it's better to use this)
 %ifarch %{ix86} x86_64
 BuildRequires: iasl
+BuildRequires: cpp
 %endif
 
 %if 0%{!?build_only_sub:1}
