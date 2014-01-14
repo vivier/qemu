@@ -167,7 +167,7 @@ static inline void tlb_update_dirty(CPUTLBEntry *tlb_entry)
         p = (void *)(uintptr_t)((tlb_entry->addr_write & TARGET_PAGE_MASK)
             + tlb_entry->addend);
         ram_addr = qemu_ram_addr_from_host_nofail(p);
-        if (!cpu_physical_memory_is_dirty(ram_addr)) {
+        if (cpu_physical_memory_is_clean(ram_addr)) {
             tlb_entry->addr_write |= TLB_NOTDIRTY;
         }
     }
@@ -300,7 +300,7 @@ void tlb_set_page(CPUArchState *env, target_ulong vaddr,
             /* Write access calls the I/O callback.  */
             te->addr_write = address | TLB_MMIO;
         } else if (memory_region_is_ram(section->mr)
-                   && !cpu_physical_memory_is_dirty(
+                   && cpu_physical_memory_is_clean(
                            section->mr->ram_addr
                            + memory_region_section_addr(section, paddr))) {
             te->addr_write = address | TLB_NOTDIRTY;
