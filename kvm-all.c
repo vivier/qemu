@@ -31,6 +31,7 @@
 #include "sysemu/kvm.h"
 #include "qemu/bswap.h"
 #include "exec/memory.h"
+#include "exec/ram_addr.h"
 #include "exec/address-spaces.h"
 #include "qemu/event_notifier.h"
 #include "trace.h"
@@ -367,6 +368,7 @@ static int kvm_get_dirty_pages_log_range(MemoryRegionSection *section,
     unsigned int i, j;
     unsigned long page_number, c;
     hwaddr addr, addr1;
+    ram_addr_t ram_addr;
     unsigned int len = ((section->size / getpagesize()) + HOST_LONG_BITS - 1) / HOST_LONG_BITS;
     unsigned long hpratio = getpagesize() / TARGET_PAGE_SIZE;
 
@@ -383,8 +385,9 @@ static int kvm_get_dirty_pages_log_range(MemoryRegionSection *section,
                 page_number = (i * HOST_LONG_BITS + j) * hpratio;
                 addr1 = page_number * TARGET_PAGE_SIZE;
                 addr = section->offset_within_region + addr1;
-                memory_region_set_dirty(section->mr, addr,
-                                        TARGET_PAGE_SIZE * hpratio);
+                ram_addr = section->mr->ram_addr + addr;
+                cpu_physical_memory_set_dirty_range(ram_addr,
+                                                    TARGET_PAGE_SIZE * hpratio);
             } while (c != 0);
         }
     }
