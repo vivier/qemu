@@ -804,6 +804,50 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Jan 14 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-36.el7
+- kvm-Add-support-statement-to-help-output.patch [bz#972773]
+- kvm-__com.redhat_qxl_screendump-add-docs.patch [bz#903910]
+- kvm-vl-Round-memory-sizes-below-2MiB-up-to-2MiB.patch [bz#999836]
+- kvm-seccomp-exit-if-seccomp_init-fails.patch [bz#1044845]
+- kvm-redhat-qemu-kvm.spec-require-python-for-build.patch [bz#1034876]
+- kvm-redhat-qemu-kvm.spec-require-iasl.patch [bz#1034876]
+- kvm-configure-make-iasl-option-actually-work.patch [bz#1034876]
+- kvm-redhat-qemu-kvm.spec-add-cpp-as-build-dependency.patch [bz#1034876]
+- kvm-acpi-build-disable-with-no-acpi.patch [bz#1045386]
+- kvm-ehci-implement-port-wakeup.patch [bz#1039513]
+- kvm-qdev-monitor-Fix-crash-when-device_add-is-called-wit.patch [bz#1026712 bz#1046007]
+- kvm-block-vhdx-improve-error-message-and-.bdrv_check-imp.patch [bz#1035001]
+- kvm-docs-updated-qemu-img-man-page-and-qemu-doc-to-refle.patch [bz#1017650]
+- kvm-enable-pvticketlocks-by-default.patch [bz#1052340]
+- kvm-fix-boot-strict-regressed-in-commit-6ef4716.patch [bz#997817]
+- kvm-vl-make-boot_strict-variable-static-not-used-outside.patch [bz#997817]
+- Resolves: bz#1017650
+  (need to update qemu-img man pages on "VHDX" format)
+- Resolves: bz#1026712
+  (Qemu core dumpd when boot guest with driver name as "virtio-pci")
+- Resolves: bz#1034876
+  (export acpi tables to guests)
+- Resolves: bz#1035001
+  (VHDX: journal log should not be replayed by default, but rather via qemu-img check -r all)
+- Resolves: bz#1039513
+  (backport remote wakeup for ehci)
+- Resolves: bz#1044845
+  (QEMU seccomp sandbox - exit if seccomp_init() fails)
+- Resolves: bz#1045386
+  (qemu-kvm: hw/i386/acpi-build.c:135: acpi_get_pm_info: Assertion `obj' failed.)
+- Resolves: bz#1046007
+  (qemu-kvm aborted when hot plug PCI device to guest with romfile and rombar=0)
+- Resolves: bz#1052340
+  (pvticketlocks: default on)
+- Resolves: bz#903910
+  (RHEL7 does not have equivalent functionality for __com.redhat_qxl_screendump)
+- Resolves: bz#972773
+  (RHEL7: Clarify support statement in KVM help)
+- Resolves: bz#997817
+  (-boot order and -boot once regressed since RHEL-6)
+- Resolves: bz#999836
+  (-m 1 crashes)
+
 * Thu Jan 09 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-35.el7
 - kvm-option-Add-assigned-flag-to-QEMUOptionParameter.patch [bz#1033490]
 - kvm-qcow2-refcount-Snapshot-update-for-zero-clusters.patch [bz#1033490]
