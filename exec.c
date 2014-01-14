@@ -50,6 +50,7 @@
 #include "translate-all.h"
 
 #include "exec/memory-internal.h"
+#include "exec/ram_addr.h"
 
 //#define DEBUG_UNASSIGNED
 //#define DEBUG_SUBPAGE
