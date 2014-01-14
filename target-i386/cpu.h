@@ -1281,6 +1281,7 @@ void do_smm_enter(CPUX86State *env1);
 void cpu_report_tpr_access(CPUX86State *env, TPRAccess access);
 
 void disable_kvm_pv_eoi(void);
+void disable_kvm_pv_unhalt(void);
 
 void x86_cpu_compat_set_features(const char *cpu_model, FeatureWord w,
                                  uint32_t feat_add, uint32_t feat_remove);
