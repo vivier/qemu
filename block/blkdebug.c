@@ -343,6 +343,11 @@ static QemuOptsList runtime_opts = {
             .type = QEMU_OPT_STRING,
             .help = "[internal use only, will be removed]",
         },
+        {
+            .name = "align",
+            .type = QEMU_OPT_SIZE,
+            .help = "Required alignment in bytes",
+        },
         { /* end of list */ }
     },
 };
@@ -354,6 +359,7 @@ static int blkdebug_open(BlockDriverState *bs, QDict *options, int flags,
     QemuOpts *opts;
     Error *local_err = NULL;
     const char *filename, *config;
+    uint64_t align;
     int ret;
 
     opts = qemu_opts_create_nofail(&runtime_opts);
@@ -388,6 +394,16 @@ static int blkdebug_open(BlockDriverState *bs, QDict *options, int flags,
     ret = bdrv_file_open(&bs->file, filename, NULL, flags, &local_err);
     if (ret < 0) {
         error_propagate(errp, local_err);
+        goto fail;
+    }
+
+    /* Set request alignment */
+    align = qemu_opt_get_size(opts, "align", bs->request_alignment);
+    if (align > 0 && align < INT_MAX && !(align & (align - 1))) {
+        bs->request_alignment = align;
+    } else {
+        error_setg(errp, "Invalid alignment");
+        ret = -EINVAL;
         goto fail;
     }
 
