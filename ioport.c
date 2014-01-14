@@ -25,8 +25,8 @@
  * splitted out ioport related stuffs from vl.c.
  */
 
-#include "exec/ioport.h"
 #include "trace.h"
+#include "exec/ioport.h"
 #include "exec/memory.h"
 
 /***********************************************************/
