@@ -2153,14 +2153,15 @@ static bool tracked_request_overlaps(BdrvTrackedRequest *req,
     return true;
 }
 
-static void coroutine_fn wait_serialising_requests(BdrvTrackedRequest *self)
+static bool coroutine_fn wait_serialising_requests(BdrvTrackedRequest *self)
 {
     BlockDriverState *bs = self->bs;
     BdrvTrackedRequest *req;
     bool retry;
+    bool waited = false;
 
     if (!bs->serialising_in_flight) {
-        return;
+        return false;
     }
 
     do {
@@ -2186,11 +2187,14 @@ static void coroutine_fn wait_serialising_requests(BdrvTrackedRequest *self)
                     qemu_co_queue_wait(&req->wait_queue);
                     self->waiting_for = NULL;
                     retry = true;
+                    waited = true;
                     break;
                 }
             }
         }
     } while (retry);
+
+    return waited;
 }
 
 /*
@@ -3036,6 +3040,7 @@ static int coroutine_fn bdrv_aligned_pwritev(BlockDriverState *bs,
     QEMUIOVector *qiov, int flags)
 {
     BlockDriver *drv = bs->drv;
+    bool waited;
     int ret;
 
     int64_t sector_num = offset >> BDRV_SECTOR_BITS;
@@ -3044,7 +3049,8 @@ static int coroutine_fn bdrv_aligned_pwritev(BlockDriverState *bs,
     assert((offset & (BDRV_SECTOR_SIZE - 1)) == 0);
     assert((bytes & (BDRV_SECTOR_SIZE - 1)) == 0);
 
-    wait_serialising_requests(req);
+    waited = wait_serialising_requests(req);
+    assert(!waited || !req->serialising);
 
     if (flags & BDRV_REQ_ZERO_WRITE) {
         ret = bdrv_co_do_write_zeroes(bs, sector_num, nb_sectors, flags);
@@ -3142,9 +3148,11 @@ static int coroutine_fn bdrv_co_do_pwritev(BlockDriverState *bs,
         QEMUIOVector tail_qiov;
         struct iovec tail_iov;
         size_t tail_bytes;
+        bool waited;
 
         mark_request_serialising(&req, align);
-        wait_serialising_requests(&req);
+        waited = wait_serialising_requests(&req);
+        assert(!waited || !use_local_qiov);
 
         tail_buf = qemu_blockalign(bs, align);
         tail_iov = (struct iovec) {
