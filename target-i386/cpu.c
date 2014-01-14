@@ -368,6 +368,7 @@ static uint32_t kvm_default_features[FEATURE_WORDS] = {
         (1 << KVM_FEATURE_ASYNC_PF) |
         (1 << KVM_FEATURE_STEAL_TIME) |
         (1 << KVM_FEATURE_PV_EOI) |
+        (1 << KVM_FEATURE_PV_UNHALT) |
         (1 << KVM_FEATURE_CLOCKSOURCE_STABLE_BIT),
     [FEAT_1_ECX] = CPUID_EXT_X2APIC,
 };
