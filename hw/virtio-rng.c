@@ -160,6 +160,12 @@ VirtIODevice *virtio_rng_init(DeviceState *dev, VirtIORNGConf *conf)
 
     vrng = DO_UPCAST(VirtIORNG, vdev, vdev);
 
+    if (!conf->period_ms > 0) {
+        qerror_report(QERR_INVALID_PARAMETER_VALUE, "period",
+                      "a positive number");
+        return NULL;
+    }
+
     vrng->rng = conf->rng;
     if (vrng->rng == NULL) {
         qerror_report(QERR_INVALID_PARAMETER_VALUE, "rng", "a valid object");
