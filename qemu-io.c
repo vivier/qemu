@@ -22,6 +22,7 @@
 #include "block/qapi.h"
 #include "cmd.h"
 #include "trace/control.h"
+#include "qemu/timer.h"
 
 #define VERSION	"0.0.1"
 
@@ -1773,6 +1774,46 @@ static const cmdinfo_t close_cmd = {
     .oneline    = "close the current open file",
 };
 
+static void sleep_cb(void *opaque)
+{
+    bool *expired = opaque;
+    *expired = true;
+}
+
+static int sleep_f(int argc, char **argv)
+{
+    char *endptr;
+    long ms;
+    struct QEMUTimer *timer;
+    bool expired = false;
+
+    ms = strtol(argv[1], &endptr, 0);
+    if (ms < 0 || *endptr != '\0') {
+        printf("%s is not a valid number\n", argv[1]);
+        return 0;
+    }
+
+    timer = qemu_new_timer_ns(host_clock, sleep_cb, &expired);
+    qemu_mod_timer(timer, qemu_get_clock_ns(host_clock) + SCALE_MS * ms);
+
+    while (!expired) {
+        main_loop_wait(false);
+    }
+
+    qemu_free_timer(timer);
+
+    return 0;
+}
+
+static const cmdinfo_t sleep_cmd = {
+       .name           = "sleep",
+       .argmin         = 1,
+       .argmax         = 1,
+       .cfunc          = sleep_f,
+       .flags          = CMD_NOFILE_OK,
+       .oneline        = "waits for the given value in milliseconds",
+};
+
 static int openfile(char *name, int flags, int growable, QDict *opts)
 {
     Error *local_err = NULL;
@@ -2052,6 +2093,7 @@ int main(int argc, char **argv)
     add_command(&resume_cmd);
     add_command(&wait_break_cmd);
     add_command(&abort_cmd);
+    add_command(&sleep_cmd);
 
     add_args_command(init_args_command);
     add_check_command(init_check_command);
