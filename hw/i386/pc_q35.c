@@ -51,6 +51,7 @@
 static bool smbios_type1_defaults = true;
 static bool has_pci_info;
 static bool has_acpi_build = true;
+static bool gigabyte_align = true;
 
 /* PC hardware initialisation */
 static void pc_q35_init(QEMUMachineInitArgs *args)
@@ -87,8 +88,9 @@ static void pc_q35_init(QEMUMachineInitArgs *args)
     kvmclock_create();
 
     if (args->ram_size >= 0xb0000000) {
-        above_4g_mem_size = args->ram_size - 0xb0000000;
-        below_4g_mem_size = 0xb0000000;
+        ram_addr_t lowmem = gigabyte_align ? 0x80000000 : 0xb0000000;
+        above_4g_mem_size = args->ram_size - lowmem;
+        below_4g_mem_size = lowmem;
     } else {
         above_4g_mem_size = 0;
         below_4g_mem_size = args->ram_size;
