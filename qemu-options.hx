@@ -1280,10 +1280,8 @@ it if your guest OS complains about ACPI problems (PC target machine
 only).
 ETEXI
 
-#if 0 /* Disabled for Red Hat Enterprise Linux */
 DEF("no-hpet", 0, QEMU_OPTION_no_hpet,
     "-no-hpet        disable HPET\n", QEMU_ARCH_I386)
-#endif
 
 DEF("acpitable", HAS_ARG, QEMU_OPTION_acpitable,
     "-acpitable [sig=str][,rev=n][,oem_id=str][,oem_table_id=str][,oem_rev=n][,asl_compiler_id=str][,asl_compiler_rev=n][,{data|file}=file1[:file2]...]\n"
