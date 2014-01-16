@@ -858,6 +858,7 @@ static QEMUMachine pc_machine_rhel700 = {
     .hot_add_cpu = pc_hot_add_cpu,
     .max_cpus = 255,
     .is_default = 1,
+    .default_machine_opts = "firmware=bios-256k.bin",
 };
 
 #define PC_RHEL6_5_COMPAT \

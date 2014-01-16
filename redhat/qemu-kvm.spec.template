@@ -102,7 +102,7 @@ URL: http://www.qemu.org/
 %if %{rhev}
 ExclusiveArch: x86_64
 %endif
-Requires: seabios-bin
+Requires: seabios-bin >= 1.7.2.2-5
 Requires: sgabios-bin
 Requires: seavgabios-bin
 Requires: ipxe-roms-qemu
@@ -564,7 +564,7 @@ dobuild --target-list="$buildarch"
     # Provided by package vgabios
     rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/vgabios*bin
     # Provided by package seabios
-    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/bios.bin
+    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/bios*.bin
     # Provided by package sgabios
     rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/sgabios.bin
 
@@ -591,6 +591,7 @@ dobuild --target-list="$buildarch"
     rom_link ../seavgabios/vgabios-stdvga.bin vgabios-stdvga.bin
     rom_link ../seavgabios/vgabios-vmware.bin vgabios-vmware.bin
     rom_link ../seabios/bios.bin bios.bin
+    rom_link ../seabios/bios-256k.bin bios-256k.bin
     rom_link ../sgabios/sgabios.bin sgabios.bin
 %endif
 

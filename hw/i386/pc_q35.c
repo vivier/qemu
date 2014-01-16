@@ -384,6 +384,7 @@ static QEMUMachine pc_q35_machine_rhel700 = {
     .init = pc_q35_init_rhel700,
     .hot_add_cpu = pc_hot_add_cpu,
     .max_cpus = 255,
+    .default_machine_opts = "firmware=bios-256k.bin",
 };
 
 static void rhel_pc_q35_machine_init(void)
