@@ -999,8 +999,11 @@ static void pc_init_rhel650(QEMUMachineInitArgs *args)
     x86_cpu_compat_set_features("Opteron_G3", FEAT_8000_0001_EDX,
                                 0, CPUID_EXT2_RDTSCP);
 
-    x86_cpu_compat_disable_kvm_features(FEAT_KVM, KVM_FEATURE_PV_UNHALT);
+    /* RHEL-6 had 3dnow & 3dnowext unconditionally disabled on all models */
+    x86_cpu_compat_set_features(NULL, FEAT_8000_0001_EDX, 0,
+                                CPUID_EXT2_3DNOW | CPUID_EXT2_3DNOWEXT);
 
+    x86_cpu_compat_disable_kvm_features(FEAT_KVM, KVM_FEATURE_PV_UNHALT);
     pc_init_rhel700(args);
 }
 
