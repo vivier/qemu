@@ -902,6 +902,10 @@ static void pc_init_rhel650(QEMUMachineInitArgs *args)
     x86_cpu_compat_set_features("Opteron_G3", FEAT_8000_0001_EDX,
                                 0, CPUID_EXT2_RDTSCP);
 
+    /* RHEL-6 had 3dnow & 3dnowext unconditionally disabled on all models */
+    x86_cpu_compat_set_features(NULL, FEAT_8000_0001_EDX, 0,
+                                CPUID_EXT2_3DNOW | CPUID_EXT2_3DNOWEXT);
+
     disable_kvm_pv_unhalt();
 
     rom_file_in_ram = false; 
