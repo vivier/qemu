@@ -808,6 +808,38 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Jan 17 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-38.el7
+- kvm-intel-hda-fix-position-buffer.patch [bz#947785]
+- kvm-The-calculation-of-bytes_xfer-in-qemu_put_buffer-is-.patch [bz#1003467]
+- kvm-migration-Fix-rate-limit.patch [bz#1003467]
+- kvm-audio-honor-QEMU_AUDIO_TIMER_PERIOD-instead-of-wakin.patch [bz#1017636]
+- kvm-audio-Lower-default-wakeup-rate-to-100-times-second.patch [bz#1017636]
+- kvm-audio-adjust-pulse-to-100Hz-wakeup-rate.patch [bz#1017636]
+- kvm-pc-Fix-rhel6.-3dnow-3dnowext-compat-bits.patch [bz#918907]
+- kvm-add-firmware-to-machine-options.patch [bz#1038603]
+- kvm-switch-rhel7-machine-types-to-big-bios.patch [bz#1038603]
+- kvm-add-bios-256k.bin-from-seabios-bin-1.7.2.2-10.el7.no.patch [bz#1038603]
+- kvm-pci-fix-pci-bridge-fw-path.patch [bz#1034518]
+- kvm-hw-cannot_instantiate_with_device_add_yet-due-to-poi.patch [bz#1031098]
+- kvm-qdev-Document-that-pointer-properties-kill-device_ad.patch [bz#1031098]
+- kvm-Add-back-no-hpet-but-ignore-it.patch [bz#1044742]
+- Resolves: bz#1003467
+  (Backport migration fixes from post qemu 1.6)
+- Resolves: bz#1017636
+  (PATCH: fix qemu using 50% host cpu when audio is playing)
+- Resolves: bz#1031098
+  (Disable device smbus-eeprom)
+- Resolves: bz#1034518
+  (boot order wrong with q35)
+- Resolves: bz#1038603
+  (make seabios 256k for rhel7 machine types)
+- Resolves: bz#1044742
+  (Cannot create guest on remote RHEL7 host using F20 virt-manager, libvirt's qemu -no-hpet detection is broken)
+- Resolves: bz#918907
+  (provide backwards-compatible RHEL specific machine types in QEMU - CPU features)
+- Resolves: bz#947785
+  (In rhel6.4 guest  sound recorder doesn't work when  playing audio)
+
 * Wed Jan 15 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-37.el7
 - kvm-bitmap-use-long-as-index.patch [bz#997559]
 - kvm-memory-cpu_physical_memory_set_dirty_flags-result-is.patch [bz#997559]
