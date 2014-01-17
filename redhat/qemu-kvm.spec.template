@@ -139,6 +139,7 @@ Source14: rhel6-virtio.rom
 Source15: rhel6-pcnet.rom
 Source16: rhel6-rtl8139.rom
 Source17: rhel6-ne2k_pci.rom
+Source18: bios-256k.bin
 
 %%CONFIGS%%
 
@@ -333,6 +334,7 @@ CAC emulation development files.
 
 %prep
 %setup -q -n qemu-%{version}
+cp %{SOURCE18} pc-bios	# keep "make check" happy
 
 # if patch fuzzy patch applying will be forbidden
 %define with_fuzzy_patches 0
