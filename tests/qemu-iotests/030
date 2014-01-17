@@ -421,7 +421,9 @@ class TestStreamStop(ImageStreamingTestCase):
 
     def setUp(self):
         qemu_img('create', backing_img, str(TestStreamStop.image_len))
+        qemu_io('-c', 'write -P 0x1 0 32M', backing_img)
         qemu_img('create', '-f', iotests.imgfmt, '-o', 'backing_file=%s' % backing_img, test_img)
+        qemu_io('-c', 'write -P 0x1 32M 32M', test_img)
         self.vm = iotests.VM().add_drive(test_img)
         self.vm.launch()
 
@@ -447,7 +449,9 @@ class TestSetSpeed(ImageStreamingTestCase):
 
     def setUp(self):
         qemu_img('create', backing_img, str(TestSetSpeed.image_len))
+        qemu_io('-c', 'write -P 0x1 0 32M', backing_img)
         qemu_img('create', '-f', iotests.imgfmt, '-o', 'backing_file=%s' % backing_img, test_img)
+        qemu_io('-c', 'write -P 0x1 32M 32M', test_img)
         self.vm = iotests.VM().add_drive(test_img)
         self.vm.launch()
 
