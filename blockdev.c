@@ -243,34 +243,34 @@ void drive_get_ref(DriveInfo *dinfo)
 
 typedef struct {
     QEMUBH *bh;
-    DriveInfo *dinfo;
-} DrivePutRefBH;
+    BlockDriverState *bs;
+} BDRVPutRefBH;
 
 /* right now, this is only used from block_job_cb() */
 #ifdef CONFIG_LIVE_BLOCK_OPS
-static void drive_put_ref_bh(void *opaque)
+static void bdrv_put_ref_bh(void *opaque)
 {
-    DrivePutRefBH *s = opaque;
+    BDRVPutRefBH *s = opaque;
 
-    drive_put_ref(s->dinfo);
+    bdrv_unref(s->bs);
     qemu_bh_delete(s->bh);
     g_free(s);
 }
 
 /*
- * Release a drive reference in a BH
+ * Release a BDS reference in a BH
  *
- * It is not possible to use drive_put_ref() from a callback function when the
- * callers still need the drive.  In such cases we schedule a BH to release the
- * reference.
+ * It is not safe to use bdrv_unref() from a callback function when the callers
+ * still need the BlockDriverState.  In such cases we schedule a BH to release
+ * the reference.
  */
-static void drive_put_ref_bh_schedule(DriveInfo *dinfo)
+static void bdrv_put_ref_bh_schedule(BlockDriverState *bs)
 {
-    DrivePutRefBH *s;
+    BDRVPutRefBH *s;
 
-    s = g_new(DrivePutRefBH, 1);
-    s->bh = qemu_bh_new(drive_put_ref_bh, s);
-    s->dinfo = dinfo;
+    s = g_new(BDRVPutRefBH, 1);
+    s->bh = qemu_bh_new(bdrv_put_ref_bh, s);
+    s->bs = bs;
     qemu_bh_schedule(s->bh);
 }
 #endif
@@ -1423,7 +1423,7 @@ static void block_job_cb(void *opaque, int ret)
     }
     qobject_decref(obj);
 
-    drive_put_ref_bh_schedule(drive_get_by_blockdev(bs));
+    bdrv_put_ref_bh_schedule(bs);
 }
 
 void qmp_block_stream(const char *device, bool has_base,
@@ -1459,11 +1459,6 @@ void qmp_block_stream(const char *device, bool has_base,
         error_propagate(errp, local_err);
         return;
     }
-
-    /* Grab a reference so hotplug does not delete the BlockDriverState from
-     * underneath us.
-     */
-    drive_get_ref(drive_get_by_blockdev(bs));
 
     trace_qmp_block_stream(bs, bs->job);
 }
@@ -1521,10 +1516,6 @@ void qmp_block_commit(const char *device,
         error_propagate(errp, local_err);
         return;
     }
-    /* Grab a reference so hotplug does not delete the BlockDriverState from
-     * underneath us.
-     */
-    drive_get_ref(drive_get_by_blockdev(bs));
 }
 
 #define DEFAULT_MIRROR_BUF_SIZE   (10 << 20)
@@ -1658,11 +1649,6 @@ void qmp_drive_mirror(const char *device, const char *target,
         error_propagate(errp, local_err);
         return;
     }
-
-    /* Grab a reference so hotplug does not delete the BlockDriverState from
-     * underneath us.
-     */
-    drive_get_ref(drive_get_by_blockdev(bs));
 }
 #endif
 
