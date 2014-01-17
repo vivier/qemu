@@ -204,7 +204,7 @@ static void stream_set_speed(BlockJob *job, int64_t speed, Error **errp)
     ratelimit_set_speed(&s->limit, speed / BDRV_SECTOR_SIZE, SLICE_TIME);
 }
 
-static const BlockJobType stream_job_type = {
+static const BlockJobDriver stream_job_driver = {
     .instance_size = sizeof(StreamBlockJob),
     .job_type      = "stream",
     .set_speed     = stream_set_speed,
@@ -225,7 +225,7 @@ void stream_start(BlockDriverState *bs, BlockDriverState *base,
         return;
     }
 
-    s = block_job_create(&stream_job_type, bs, speed, cb, opaque, errp);
+    s = block_job_create(&stream_job_driver, bs, speed, cb, opaque, errp);
     if (!s) {
         return;
     }
