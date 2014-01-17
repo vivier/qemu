@@ -159,7 +159,7 @@ static int blkverify_open(BlockDriverState *bs, QDict *options, int flags,
     ret = bdrv_open(s->test_file, filename, NULL, flags, NULL, &local_err);
     if (ret < 0) {
         error_propagate(errp, local_err);
-        bdrv_delete(s->test_file);
+        bdrv_unref(s->test_file);
         s->test_file = NULL;
         goto fail;
     }
@@ -173,7 +173,7 @@ static void blkverify_close(BlockDriverState *bs)
 {
     BDRVBlkverifyState *s = bs->opaque;
 
-    bdrv_delete(s->test_file);
+    bdrv_unref(s->test_file);
     s->test_file = NULL;
 }
 

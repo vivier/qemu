@@ -1761,7 +1761,7 @@ static const cmdinfo_t abort_cmd = {
 
 static int close_f(int argc, char **argv)
 {
-    bdrv_delete(bs);
+    bdrv_unref(bs);
     bs = NULL;
     return 0;
 }
@@ -1796,7 +1796,7 @@ static int openfile(char *name, int flags, int growable, QDict *opts)
             fprintf(stderr, "%s: can't open device %s: %s\n", progname, name,
                     error_get_pretty(local_err));
             error_free(local_err);
-            bdrv_delete(bs);
+            bdrv_unref(bs);
             bs = NULL;
             return 1;
         }
@@ -2072,7 +2072,7 @@ int main(int argc, char **argv)
     bdrv_drain_all();
 
     if (bs) {
-        bdrv_delete(bs);
+        bdrv_unref(bs);
     }
     return 0;
 }

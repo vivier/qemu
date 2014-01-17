@@ -1576,7 +1576,7 @@ out:
     }
     g_free(bs->opaque);
     bs->opaque = NULL;
-    bdrv_delete(bs);
+    bdrv_unref(bs);
     return ret;
 }
 

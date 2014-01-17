@@ -806,7 +806,7 @@ static int blk_connect(struct XenDevice *xendev)
                 xen_be_printf(&blkdev->xendev, 0, "error: %s\n",
                               error_get_pretty(local_err));
                 error_free(local_err);
-                bdrv_delete(blkdev->bs);
+                bdrv_unref(blkdev->bs);
                 blkdev->bs = NULL;
             }
         }
@@ -924,7 +924,7 @@ static void blk_disconnect(struct XenDevice *xendev)
             /* close/delete only if we created it ourself */
             bdrv_close(blkdev->bs);
             bdrv_detach_dev(blkdev->bs, blkdev);
-            bdrv_delete(blkdev->bs);
+            bdrv_unref(blkdev->bs);
         }
         blkdev->bs = NULL;
     }

@@ -1847,7 +1847,7 @@ static int vhdx_create(const char *filename, QEMUOptionParameter *options,
 
 
 delete_and_exit:
-    bdrv_delete(bs);
+    bdrv_unref(bs);
 exit:
     g_free(creator);
     return ret;

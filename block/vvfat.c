@@ -2896,7 +2896,7 @@ static int write_target_commit(BlockDriverState *bs, int64_t sector_num,
 
 static void write_target_close(BlockDriverState *bs) {
     BDRVVVFATState* s = *((BDRVVVFATState**) bs->opaque);
-    bdrv_delete(s->qcow);
+    bdrv_unref(s->qcow);
     g_free(s->qcow_filename);
 }
 
@@ -2943,7 +2943,7 @@ static int enable_write_target(BDRVVVFATState *s)
     if (ret < 0) {
         qerror_report_err(local_err);
         error_free(local_err);
-        bdrv_delete(s->qcow);
+        bdrv_unref(s->qcow);
         goto err;
     }
 
