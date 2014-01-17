@@ -477,12 +477,6 @@ DeviceState *qdev_device_add(QemuOpts *opts)
         }
     }
 
-    if (object_class_is_abstract(obj)) {
-        qerror_report(QERR_INVALID_PARAMETER_VALUE, "driver",
-                      "non-abstract device type");
-        return NULL;
-    }
-
     k = DEVICE_CLASS(obj);
 
     if (!k || k->cannot_instantiate_with_device_add_yet) {
