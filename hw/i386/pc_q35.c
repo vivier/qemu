@@ -436,8 +436,13 @@ machine_init(pc_q35_machine_init);
 
 /* Red Hat Enterprise Linux machine types */
 
+static void pc_q35_compat_rhel700(MachineState *machine)
+{
+}
+
 static void pc_q35_init_rhel700(MachineState *machine)
 {
+    pc_q35_compat_rhel700(machine);
     pc_q35_init(machine);
 }
 
