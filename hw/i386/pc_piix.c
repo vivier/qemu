@@ -743,8 +743,13 @@ machine_init(pc_machine_init);
 
 /* Red Hat Enterprise Linux machine types */
 
+static void pc_compat_rhel700(QEMUMachineInitArgs *args)
+{
+}
+
 static void pc_init_rhel700(QEMUMachineInitArgs *args)
 {
+    pc_compat_rhel700(args);
     pc_init_pci(args);
 }
 
@@ -868,8 +873,9 @@ static QEMUMachine pc_machine_rhel700 = {
         .value    = "rhel6-virtio.rom",\
     }
 
-static void pc_init_rhel650(QEMUMachineInitArgs *args)
+static void pc_compat_rhel650(QEMUMachineInitArgs *args)
 {
+    pc_compat_rhel700(args);
     x86_cpu_compat_set_features("pentium", FEAT_1_EDX, 0, CPUID_APIC);
     x86_cpu_compat_set_features("pentium2", FEAT_1_EDX, 0, CPUID_APIC);
     x86_cpu_compat_set_features("pentium3", FEAT_1_EDX, 0, CPUID_APIC);
@@ -911,7 +917,12 @@ static void pc_init_rhel650(QEMUMachineInitArgs *args)
 
     rom_file_in_ram = false; 
     has_acpi_build = false;
-    pc_init_rhel700(args);
+}
+
+static void pc_init_rhel650(QEMUMachineInitArgs *args)
+{
+    pc_compat_rhel650(args);
+    pc_init_pci(args);
 }
 
 static QEMUMachine pc_machine_rhel650 = {
@@ -950,10 +961,16 @@ static QEMUMachine pc_machine_rhel650 = {
         .value    = "off",\
     }
 
+static void pc_compat_rhel640(QEMUMachineInitArgs *args)
+{
+    pc_compat_rhel650(args);
+    x86_cpu_compat_set_features(NULL, FEAT_1_EDX, 0, CPUID_SEP);
+}
+
 static void pc_init_rhel640(QEMUMachineInitArgs *args)
 {
-    x86_cpu_compat_set_features(NULL, FEAT_1_EDX, 0, CPUID_SEP);
-    pc_init_rhel650(args);
+    pc_compat_rhel640(args);
+    pc_init_pci(args);
 }
 
 static QEMUMachine pc_machine_rhel640 = {
@@ -1016,13 +1033,19 @@ static QEMUMachine pc_machine_rhel640 = {
         .value    = "1",\
     }
 
-static void pc_init_rhel630(QEMUMachineInitArgs *args)
+static void pc_compat_rhel630(QEMUMachineInitArgs *args)
 {
+    pc_compat_rhel640(args);
     disable_kvm_pv_eoi();
     enable_compat_apic_id_mode();
     x86_cpu_compat_set_features("SandyBridge", FEAT_1_ECX,
                                 0, CPUID_EXT_TSC_DEADLINE_TIMER);
-    pc_init_rhel640(args);
+}
+
+static void pc_init_rhel630(QEMUMachineInitArgs *args)
+{
+    pc_compat_rhel630(args);
+    pc_init_pci(args);
 }
 
 static QEMUMachine pc_machine_rhel630 = {
@@ -1045,9 +1068,15 @@ static QEMUMachine pc_machine_rhel630 = {
         .value = "off",\
     }
 
+static void pc_compat_rhel620(QEMUMachineInitArgs *args)
+{
+    pc_compat_rhel630(args);
+}
+
 static void pc_init_rhel620(QEMUMachineInitArgs *args)
 {
-    pc_init_rhel630(args);
+    pc_compat_rhel620(args);
+    pc_init_pci(args);
 }
 
 static QEMUMachine pc_machine_rhel620 = {
@@ -1111,9 +1140,15 @@ static QEMUMachine pc_machine_rhel620 = {
         .value    = "1",\
     }
 
+static void pc_compat_rhel610(QEMUMachineInitArgs *args)
+{
+    pc_compat_rhel620(args);
+}
+
 static void pc_init_rhel610(QEMUMachineInitArgs *args)
 {
-    pc_init_rhel620(args);
+    pc_compat_rhel610(args);
+    pc_init_pci(args);
 }
 
 static QEMUMachine pc_machine_rhel610 = {
@@ -1144,9 +1179,15 @@ static QEMUMachine pc_machine_rhel610 = {
         .value    = stringify(0),\
     }
 
+static void pc_compat_rhel600(QEMUMachineInitArgs *args)
+{
+    pc_compat_rhel610(args);
+}
+
 static void pc_init_rhel600(QEMUMachineInitArgs *args)
 {
-    pc_init_rhel610(args);
+    pc_compat_rhel600(args);
+    pc_init_pci(args);
 }
 
 static QEMUMachine pc_machine_rhel600 = {

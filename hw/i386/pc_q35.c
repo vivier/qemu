@@ -268,8 +268,13 @@ machine_init(pc_q35_machine_init);
 
 /* Red Hat Enterprise Linux machine types */
 
+static void pc_q35_compat_rhel700(QEMUMachineInitArgs *args)
+{
+}
+
 static void pc_q35_init_rhel700(QEMUMachineInitArgs *args)
 {
+    pc_q35_compat_rhel700(args);
     pc_q35_init(args);
 }
 
