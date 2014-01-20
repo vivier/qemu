@@ -926,9 +926,15 @@ machine_init(pc_machine_init);
 
 /* Red Hat Enterprise Linux machine types */
 
+static void pc_compat_rhel700(MachineState *machine)
+{
+}
+
 static void pc_init_rhel700(MachineState *machine)
 {
+    pc_compat_rhel700(machine);
     pc_init_pci(machine);
+
 }
 
 static QEMUMachine pc_machine_rhel700 = {
@@ -1047,8 +1053,9 @@ static QEMUMachine pc_machine_rhel700 = {
         .value    = "rhel6-virtio.rom",\
     }
 
-static void pc_init_rhel650(MachineState *machine)
+static void pc_compat_rhel650(MachineState *machine)
 {
+    pc_compat_rhel700(machine);
     x86_cpu_compat_set_features("pentium", FEAT_1_EDX, 0, CPUID_APIC);
     x86_cpu_compat_set_features("pentium2", FEAT_1_EDX, 0, CPUID_APIC);
     x86_cpu_compat_set_features("pentium3", FEAT_1_EDX, 0, CPUID_APIC);
@@ -1087,7 +1094,12 @@ static void pc_init_rhel650(MachineState *machine)
                                 CPUID_EXT2_3DNOW | CPUID_EXT2_3DNOWEXT);
 
     x86_cpu_compat_disable_kvm_features(FEAT_KVM, KVM_FEATURE_PV_UNHALT);
-    pc_init_rhel700(machine);
+}
+
+static void pc_init_rhel650(MachineState *machine)
+{
+    pc_compat_rhel650(machine);
+    pc_init_pci(machine);
 }
 
 static QEMUMachine pc_machine_rhel650 = {
@@ -1126,10 +1138,16 @@ static QEMUMachine pc_machine_rhel650 = {
         .value    = "off",\
     }
 
+static void pc_compat_rhel640(MachineState *machine)
+{
+    pc_compat_rhel650(machine);
+    x86_cpu_compat_set_features(NULL, FEAT_1_EDX, 0, CPUID_SEP);
+}
+
 static void pc_init_rhel640(MachineState *machine)
 {
-    x86_cpu_compat_set_features(NULL, FEAT_1_EDX, 0, CPUID_SEP);
-    pc_init_rhel650(machine);
+    pc_compat_rhel640(machine);
+    pc_init_pci(machine);
 }
 
 static QEMUMachine pc_machine_rhel640 = {
@@ -1192,13 +1210,19 @@ static QEMUMachine pc_machine_rhel640 = {
         .value    = "1",\
     }
 
-static void pc_init_rhel630(MachineState *machine)
+static void pc_compat_rhel630(MachineState *machine)
 {
+    pc_compat_rhel640(machine);
     x86_cpu_compat_disable_kvm_features(FEAT_KVM, KVM_FEATURE_PV_EOI);
     enable_compat_apic_id_mode();
     x86_cpu_compat_set_features("SandyBridge", FEAT_1_ECX,
                                 0, CPUID_EXT_TSC_DEADLINE_TIMER);
-    pc_init_rhel640(machine);
+}
+
+static void pc_init_rhel630(MachineState *machine)
+{
+    pc_compat_rhel630(machine);
+    pc_init_pci(machine);
 }
 
 static QEMUMachine pc_machine_rhel630 = {
@@ -1221,9 +1245,15 @@ static QEMUMachine pc_machine_rhel630 = {
         .value = "off",\
     }
 
+static void pc_compat_rhel620(MachineState *machine)
+{
+    pc_compat_rhel630(machine);
+}
+
 static void pc_init_rhel620(MachineState *machine)
 {
-    pc_init_rhel630(machine);
+    pc_compat_rhel620(machine);
+    pc_init_pci(machine);
 }
 
 static QEMUMachine pc_machine_rhel620 = {
@@ -1287,9 +1317,15 @@ static QEMUMachine pc_machine_rhel620 = {
         .value    = "1",\
     }
 
+static void pc_compat_rhel610(MachineState *machine)
+{
+    pc_compat_rhel620(machine);
+}
+
 static void pc_init_rhel610(MachineState *machine)
 {
-    pc_init_rhel620(machine);
+    pc_compat_rhel610(machine);
+    pc_init_pci(machine);
 }
 
 static QEMUMachine pc_machine_rhel610 = {
@@ -1320,9 +1356,15 @@ static QEMUMachine pc_machine_rhel610 = {
         .value    = stringify(0),\
     }
 
+static void pc_compat_rhel600(MachineState *machine)
+{
+    pc_compat_rhel610(machine);
+}
+
 static void pc_init_rhel600(MachineState *machine)
 {
-    pc_init_rhel610(machine);
+    pc_compat_rhel600(machine);
+    pc_init_pci(machine);
 }
 
 static QEMUMachine pc_machine_rhel600 = {
