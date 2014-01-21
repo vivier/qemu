@@ -808,6 +808,23 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Jan 21 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-39.el7
+- kvm-Revert-qdev-monitor-Fix-crash-when-device_add-is-cal.patch [bz#669524]
+- kvm-Revert-qdev-Do-not-let-the-user-try-to-device_add-wh.patch [bz#669524]
+- kvm-qdev-monitor-Clean-up-qdev_device_add-variable-namin.patch [bz#669524]
+- kvm-qdev-monitor-Fix-crash-when-device_add-is-called.2.patch.patch [bz#669524]
+- kvm-qdev-monitor-Avoid-qdev-as-variable-name.patch [bz#669524]
+- kvm-qdev-monitor-Inline-qdev_init-for-device_add.patch [bz#669524]
+- kvm-qdev-Do-not-let-the-user-try-to-device_add-when-it.2.patch.patch [bz#669524]
+- kvm-qdev-monitor-Avoid-device_add-crashing-on-non-device.patch [bz#669524]
+- kvm-qdev-monitor-Improve-error-message-for-device-nonexi.patch [bz#669524]
+- kvm-exec-change-well-known-physical-sections-to-macros.patch [bz#1003535]
+- kvm-exec-separate-sections-and-nodes-per-address-space.patch [bz#1003535]
+- Resolves: bz#1003535
+  (qemu-kvm core dump when boot vm with more than 32 virtio disks/nics)
+- Resolves: bz#669524
+  (Confusing error message from -device <unknown dev>)
+
 * Fri Jan 17 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-38.el7
 - kvm-intel-hda-fix-position-buffer.patch [bz#947785]
 - kvm-The-calculation-of-bytes_xfer-in-qemu_put_buffer-is-.patch [bz#1003467]
