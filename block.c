@@ -1674,10 +1674,10 @@ static void bdrv_delete(BlockDriverState *bs)
     assert(!bs->in_use);
     assert(!bs->refcnt);
 
+    bdrv_close(bs);
+
     /* remove from list, if necessary */
     bdrv_make_anon(bs);
-
-    bdrv_close(bs);
 
     g_free(bs);
 }
