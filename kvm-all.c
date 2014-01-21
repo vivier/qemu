@@ -1502,6 +1502,9 @@ static int kvm_init(MachineState *ms)
     soft_vcpus_limit = kvm_recommended_vcpus(s);
     hard_vcpus_limit = kvm_max_vcpus(s);
 
+    /* RHEL doesn't support nr_vcpus > soft_vcpus_limit */
+    hard_vcpus_limit = soft_vcpus_limit;
+
     while (nc->name) {
         if (nc->num > soft_vcpus_limit) {
             fprintf(stderr,
