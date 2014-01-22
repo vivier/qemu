@@ -1,11 +1,7 @@
 # Build time setting
 %define rhev %%RHEV_FLAG%%
 
-%if %{rhev}
-    %bcond_with     guest_agent     # disabled
-%else
-    %bcond_without  guest_agent     # enabled
-%endif
+%bcond_without  guest_agent     # enabled
 
 %global SLOF_gittagdate 20120731
 
@@ -238,14 +234,15 @@ the KVM kernel modules, and emulates the hardware for a full system such as
 a PC and its assocated peripherals.
 
 As qemu-kvm requires no host kernel patches to run, it is safe and easy to use.
-%if !%{rhev}
-%package -n qemu-img
+
+%package -n qemu-img%{?pkgsuffix}
 Summary: QEMU command line tool for manipulating disk images
 Group: Development/Tools
 
-%description -n qemu-img
+%rhel_rhev_conflicts qemu-img
+
+%description -n qemu-img%{?pkgsuffix}
 This package provides a command line tool for manipulating disk images.
-%endif
 
 %if 0%{!?build_only_sub:1}
 %package -n qemu-kvm-common%{?pkgsuffix}
@@ -296,42 +293,48 @@ This package does not need to be installed on the host OS.
 
 %endif
 
-%if !%{rhev}
-    %if 0%{!?build_only_sub:1}
-%package tools
+%if 0%{!?build_only_sub:1}
+%package -n qemu-kvm-tools%{?pkgsuffix}
 Summary: KVM debugging and diagnostics tools
 Group: Development/Tools
 
-%description tools
+%rhel_rhev_conflicts qemu-kvm-tools
+
+%description -n qemu-kvm-tools%{?pkgsuffix}
 This package contains some diagnostics and debugging tools for KVM,
 such as kvm_stat.
-    %endif
+%endif
 
-%package -n libcacard
+%package -n libcacard%{?pkgsuffix}
 Summary:        Common Access Card (CAC) Emulation
 Group:          Development/Libraries
 
-%description -n libcacard
+%rhel_rhev_conflicts libcacard
+
+%description -n libcacard%{?pkgsuffix}
 Common Access Card (CAC) emulation library.
 
-%package -n libcacard-tools
+%package -n libcacard-tools%{?pkgsuffix}
 Summary:        CAC Emulation tools
 Group:          Development/Libraries
 Requires:       libcacard = %{epoch}:%{version}-%{release}
 # older qemu-img has vscclient which is now in libcacard-tools
 Requires:       qemu-img >= 3:1.3.0-5
 
-%description -n libcacard-tools
+%rhel_rhev_conflicts libcacard-tools
+
+%description -n libcacard-tools%{?pkgsuffix}
 CAC emulation tools.
 
-%package -n libcacard-devel
+%package -n libcacard-devel%{?pkgsuffix}
 Summary:        CAC Emulation devel
 Group:          Development/Libraries
 Requires:       libcacard = %{epoch}:%{version}-%{release}
 
-%description -n libcacard-devel
+%rhel_rhev_conflicts libcacard-devel
+
+%description -n libcacard-devel%{?pkgsuffix}
 CAC emulation development files.
-%endif
 
 %prep
 %setup -q -n qemu-%{version}
@@ -633,10 +636,9 @@ dobuild --target-list="$buildarch"
     install -m 0644 %{SOURCE12} $RPM_BUILD_ROOT%{_sysconfdir}/%{pkgname}
 %endif
 
-%if !%{rhev}
-    make %{?_smp_mflags} $buildldflags DESTDIR=$RPM_BUILD_ROOT install-libcacard
-    find $RPM_BUILD_ROOT -name "libcacard.so*" -exec chmod +x \{\} \;
-%endif
+make %{?_smp_mflags} $buildldflags DESTDIR=$RPM_BUILD_ROOT install-libcacard
+find $RPM_BUILD_ROOT -name "libcacard.so*" -exec chmod +x \{\} \;
+
 find $RPM_BUILD_ROOT -name '*.la' -or -name '*.a' | xargs rm -f
 
 %if 0%{?build_only_sub}
@@ -654,19 +656,6 @@ find $RPM_BUILD_ROOT -name '*.la' -or -name '*.a' | xargs rm -f
     chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man8/*
 %endif
 
-%if %{rhev}
-    # Remove files unpackacked for rhev build
-    rm -rf ${RPM_BUILD_ROOT}%{_includedir}/cacard
-    rm -rf ${RPM_BUILD_ROOT}%{_bindir}/qemu-img
-    rm -rf ${RPM_BUILD_ROOT}%{_bindir}/qemu-io
-    rm -rf ${RPM_BUILD_ROOT}%{_bindir}/qemu-nbd
-    rm -rf ${RPM_BUILD_ROOT}%{_mandir}/man1/qemu-img.1*
-    rm -rf ${RPM_BUILD_ROOT}%{_mandir}/man8/qemu-nbd.8*
-    rm -rf ${RPM_BUILD_ROOT}%{_bindir}/vscclient
-    rm -rf ${RPM_BUILD_ROOT}%{_libdir}/libcacard.so*
-    rm -rf ${RPM_BUILD_ROOT}%{_libdir}/pkgconfig/libcacard.pc
-    rm -rf ${RPM_BUILD_ROOT}%{_bindir}/kvm_stat
-%endif
 
 %if 0%{!?build_only_sub:1}
 %check
@@ -775,36 +764,32 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %{?kvm_files:}
     %{?qemu_kvm_files:}
 
-    %if !%{rhev}
-%files tools
-        %defattr(-,root,root,-)
-        %{_bindir}/kvm_stat
-    %endif
+%files -n qemu-kvm-tools%{?pkgsuffix}
+    %defattr(-,root,root,-)
+    %{_bindir}/kvm_stat
 %endif
 
-%if !%{rhev}
-%files -n qemu-img
-    %defattr(-,root,root)
-    %{_bindir}/qemu-img
-    %{_bindir}/qemu-io
-    %{_bindir}/qemu-nbd
-    %{_mandir}/man1/qemu-img.1*
-    %{_mandir}/man8/qemu-nbd.8*
+%files -n qemu-img%{?pkgsuffix}
+%defattr(-,root,root)
+%{_bindir}/qemu-img
+%{_bindir}/qemu-io
+%{_bindir}/qemu-nbd
+%{_mandir}/man1/qemu-img.1*
+%{_mandir}/man8/qemu-nbd.8*
 
-%files -n libcacard
-    %defattr(-,root,root,-)
-    %{_libdir}/libcacard.so.*
+%files -n libcacard%{?pkgsuffix}
+%defattr(-,root,root,-)
+%{_libdir}/libcacard.so.*
 
-%files -n libcacard-tools
-    %defattr(-,root,root,-)
-    %{_bindir}/vscclient
+%files -n libcacard-tools%{?pkgsuffix}
+%defattr(-,root,root,-)
+%{_bindir}/vscclient
 
-%files -n libcacard-devel
-    %defattr(-,root,root,-)
-    %{_includedir}/cacard
-    %{_libdir}/libcacard.so
-    %{_libdir}/pkgconfig/libcacard.pc
-%endif
+%files -n libcacard-devel%{?pkgsuffix}
+%defattr(-,root,root,-)
+%{_includedir}/cacard
+%{_libdir}/libcacard.so
+%{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
 %%CHANGELOG%%
