@@ -793,6 +793,56 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Jan 22 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-40.el7
+- kvm-avoid-a-bogus-COMPLETED-CANCELLED-transition.patch [bz#1053699]
+- kvm-introduce-MIG_STATE_CANCELLING-state.patch [bz#1053699]
+- kvm-vvfat-use-bdrv_new-to-allocate-BlockDriverState.patch [bz#1041301]
+- kvm-block-implement-reference-count-for-BlockDriverState.patch [bz#1041301]
+- kvm-block-make-bdrv_delete-static.patch [bz#1041301]
+- kvm-migration-omit-drive-ref-as-we-have-bdrv_ref-now.patch [bz#1041301]
+- kvm-xen_disk-simplify-blk_disconnect-with-refcnt.patch [bz#1041301]
+- kvm-nbd-use-BlockDriverState-refcnt.patch [bz#1041301]
+- kvm-block-use-BDS-ref-for-block-jobs.patch [bz#1041301]
+- kvm-block-Make-BlockJobTypes-const.patch [bz#1041301]
+- kvm-blockjob-rename-BlockJobType-to-BlockJobDriver.patch [bz#1041301]
+- kvm-qapi-Introduce-enum-BlockJobType.patch [bz#1041301]
+- kvm-qapi-make-use-of-new-BlockJobType.patch [bz#1041301]
+- kvm-mirror-Don-t-close-target.patch [bz#1041301]
+- kvm-mirror-Move-base-to-MirrorBlockJob.patch [bz#1041301]
+- kvm-block-Add-commit_active_start.patch [bz#1041301]
+- kvm-commit-Support-commit-active-layer.patch [bz#1041301]
+- kvm-qemu-iotests-prefill-some-data-to-test-image.patch [bz#1041301]
+- kvm-qemu-iotests-Update-test-cases-for-commit-active.patch [bz#1041301]
+- kvm-commit-Remove-unused-check.patch [bz#1041301]
+- kvm-blockdev-use-bdrv_getlength-in-qmp_drive_mirror.patch [bz#921890]
+- kvm-qemu-iotests-make-assert_no_active_block_jobs-common.patch [bz#921890]
+- kvm-block-drive-mirror-Check-for-NULL-backing_hd.patch [bz#921890]
+- kvm-qemu-iotests-Extend-041-for-unbacked-mirroring.patch [bz#921890]
+- kvm-qapi-schema-Update-description-for-NewImageMode.patch [bz#921890]
+- kvm-block-drive-mirror-Reuse-backing-HD-for-sync-none.patch [bz#921890]
+- kvm-qemu-iotests-Fix-test-041.patch [bz#921890]
+- kvm-scsi-bus-fix-transfer-length-and-direction-for-VERIF.patch [bz#1035644]
+- kvm-scsi-disk-fix-VERIFY-emulation.patch [bz#1035644]
+- kvm-block-ensure-bdrv_drain_all-works-during-bdrv_delete.patch [bz#1041301]
+- kvm-use-recommended-max-vcpu-count.patch [bz#998708]
+- kvm-pc-Create-pc_compat_rhel-functions.patch [bz#1049706]
+- kvm-pc-Enable-x2apic-by-default-on-more-recent-CPU-model.patch [bz#1049706]
+- kvm-Build-all-subpackages-for-RHEV.patch [bz#1007204]
+- Resolves: bz#1007204
+  (qemu-img-rhev  qemu-kvm-rhev-tools are not built for qemu-kvm-1.5.3-3.el7)
+- Resolves: bz#1035644
+  (rhel7.0host + windows guest + virtio-win + 'chkdsk' in the guest gives qemu assertion in scsi_dma_complete)
+- Resolves: bz#1041301
+  (live snapshot merge (commit) of the active layer)
+- Resolves: bz#1049706
+  (MIss CPUID_EXT_X2APIC in Westmere cpu model)
+- Resolves: bz#1053699
+  (Backport Cancelled race condition fixes)
+- Resolves: bz#921890
+  (Core dump when block mirror with "sync" is "none" and mode is "absolute-paths")
+- Resolves: bz#998708
+  (qemu-kvm: maximum vcpu should be recommended maximum)
+
 * Tue Jan 21 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-39.el7
 - kvm-Revert-qdev-monitor-Fix-crash-when-device_add-is-cal.patch [bz#669524]
 - kvm-Revert-qdev-Do-not-let-the-user-try-to-device_add-wh.patch [bz#669524]
