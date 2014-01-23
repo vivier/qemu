@@ -96,7 +96,7 @@ static int scsi_hot_add(Monitor *mon, DeviceState *adapter,
             return -1;
         }
         virtio_proxy = VIRTIO_PCI(adapter);
-        adapter = DEVICE(virtio_proxy->bus.vdev);
+        adapter = DEVICE(virtio_bus_get_device(&virtio_proxy->bus));
         scsibus = (SCSIBus *)
                   object_dynamic_cast(OBJECT(QLIST_FIRST(&adapter->child_bus)),
                             TYPE_SCSI_BUS);
