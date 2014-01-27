@@ -998,25 +998,15 @@ static void pc_compat_rhel650(QEMUMachineInitArgs *args)
              CPUID_EXT2_CX8 | CPUID_EXT2_MCE | CPUID_EXT2_PAE | CPUID_EXT2_MSR |
              CPUID_EXT2_TSC | CPUID_EXT2_PSE | CPUID_EXT2_DE | CPUID_EXT2_FPU,
              0);
-    x86_cpu_compat_set_features("SandyBridge", FEAT_8000_0001_EDX,
-                                0, CPUID_EXT2_RDTSCP);
-    x86_cpu_compat_set_features("Haswell", FEAT_8000_0001_EDX,
-                                0, CPUID_EXT2_RDTSCP);
+
+    /* RHEL-6 kernel never supported exposing RDTSCP */
+    x86_cpu_compat_set_features(NULL, FEAT_8000_0001_EDX, 0, CPUID_EXT2_RDTSCP);
 
     x86_cpu_compat_set_features("Opteron_G1", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
     x86_cpu_compat_set_features("Opteron_G2", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
     x86_cpu_compat_set_features("Opteron_G3", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
     x86_cpu_compat_set_features("Opteron_G4", FEAT_1_ECX, 0, CPUID_EXT_X2APIC);
     x86_cpu_compat_set_features("Opteron_G5", FEAT_1_ECX, 0, CPUID_EXT_X2APIC);
-
-    x86_cpu_compat_set_features("phenom", FEAT_8000_0001_EDX,
-                                0, CPUID_EXT2_RDTSCP);
-    x86_cpu_compat_set_features("Opteron_G1", FEAT_8000_0001_EDX,
-                                0, CPUID_EXT2_RDTSCP);
-    x86_cpu_compat_set_features("Opteron_G2", FEAT_8000_0001_EDX,
-                                0, CPUID_EXT2_RDTSCP);
-    x86_cpu_compat_set_features("Opteron_G3", FEAT_8000_0001_EDX,
-                                0, CPUID_EXT2_RDTSCP);
 
     /* RHEL-6 had 3dnow & 3dnowext unconditionally disabled on all models */
     x86_cpu_compat_set_features(NULL, FEAT_8000_0001_EDX, 0,
