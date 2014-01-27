@@ -61,6 +61,7 @@ static const int ide_irq[MAX_IDE_BUS] = { 14, 15 };
 static bool smbios_type1_defaults = true;
 static bool has_pci_info;
 static bool has_acpi_build = true;
+static bool gigabyte_align = true;
 
 /* PC hardware initialisation */
 static void pc_init1(QEMUMachineInitArgs *args,
@@ -101,9 +102,10 @@ static void pc_init1(QEMUMachineInitArgs *args,
         kvmclock_create();
     }
 
-    if (args->ram_size >= QEMU_BELOW_4G_RAM_END ) {
-        above_4g_mem_size = args->ram_size - QEMU_BELOW_4G_RAM_END;
-        below_4g_mem_size = QEMU_BELOW_4G_RAM_END;
+    if (args->ram_size >= 0xe0000000) {
+        ram_addr_t lowmem = gigabyte_align ? 0xc0000000 : 0xe0000000;
+        above_4g_mem_size = args->ram_size - lowmem;
+        below_4g_mem_size = lowmem;
     } else {
         above_4g_mem_size = 0;
         below_4g_mem_size = args->ram_size;
@@ -929,6 +931,7 @@ static void pc_compat_rhel650(QEMUMachineInitArgs *args)
 
     rom_file_in_ram = false; 
     has_acpi_build = false;
+    gigabyte_align = false;
 }
 
 static void pc_init_rhel650(QEMUMachineInitArgs *args)
