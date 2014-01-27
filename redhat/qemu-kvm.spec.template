@@ -797,6 +797,31 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Mon Jan 27 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-43.el7
+- kvm-piix-gigabyte-alignment-for-ram.patch [bz#1026548]
+- kvm-pc_piix-document-gigabyte_align.patch [bz#1026548]
+- kvm-q35-gigabyle-alignment-for-ram.patch [bz#1026548]
+- kvm-virtio-bus-remove-vdev-field.patch [bz#983344]
+- kvm-virtio-pci-remove-vdev-field.patch [bz#983344]
+- kvm-virtio-bus-cleanup-plug-unplug-interface.patch [bz#983344]
+- kvm-virtio-blk-switch-exit-callback-to-VirtioDeviceClass.patch [bz#983344]
+- kvm-virtio-serial-switch-exit-callback-to-VirtioDeviceCl.patch [bz#983344]
+- kvm-virtio-net-switch-exit-callback-to-VirtioDeviceClass.patch [bz#983344]
+- kvm-virtio-scsi-switch-exit-callback-to-VirtioDeviceClas.patch [bz#983344]
+- kvm-virtio-balloon-switch-exit-callback-to-VirtioDeviceC.patch [bz#983344]
+- kvm-virtio-rng-switch-exit-callback-to-VirtioDeviceClass.patch [bz#983344]
+- kvm-virtio-pci-add-device_unplugged-callback.patch [bz#983344]
+- kvm-block-use-correct-filename-for-error-report.patch [bz#1051438]
+- Resolves: bz#1026548
+  (i386: pc: align gpa<->hpa on 1GB boundary)
+- Resolves: bz#1051438
+  (Error message contains garbled characters when unable to open image due to bad permissions (permission denied).)
+- Resolves: bz#983344
+  (QEMU core dump and host will reboot when do hot-unplug a virtio-blk disk which use  the switch behind switch)
+
+* Fri Jan 24 2014 Daniel Mach <dmach@redhat.com> - 10:1.5.3-42
+- Mass rebuild 2014-01-24
+
 * Wed Jan 22 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-41.el7
 - kvm-help-add-id-suboption-to-iscsi.patch [bz#1019221]
 - kvm-scsi-disk-add-UNMAP-limits-to-block-limits-VPD-page.patch [bz#1037503]
