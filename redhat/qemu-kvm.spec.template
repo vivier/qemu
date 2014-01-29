@@ -797,6 +797,42 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Jan 29 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-44.el7
+- kvm-Partially-revert-rhel-Drop-cfi.pflash01-and-isa-ide-.patch [bz#1032346]
+- kvm-Revert-pc-Disable-the-use-flash-device-for-BIOS-unle.patch [bz#1032346]
+- kvm-memory-Replace-open-coded-memory_region_is_romd.patch [bz#1032346]
+- kvm-memory-Rename-readable-flag-to-romd_mode.patch [bz#1032346]
+- kvm-isapc-Fix-non-KVM-qemu-boot-read-write-memory-for-is.patch [bz#1032346]
+- kvm-add-kvm_readonly_mem_enabled.patch [bz#1032346]
+- kvm-support-using-KVM_MEM_READONLY-flag-for-regions.patch [bz#1032346]
+- kvm-pc_sysfw-allow-flash-pflash-memory-to-be-used-with-K.patch [bz#1032346]
+- kvm-fix-double-free-the-memslot-in-kvm_set_phys_mem.patch [bz#1032346]
+- kvm-sysfw-remove-read-only-pc_sysfw_flash_vs_rom_bug_com.patch [bz#1032346]
+- kvm-pc_sysfw-remove-the-rom_only-property.patch [bz#1032346]
+- kvm-pc_sysfw-do-not-make-it-a-device-anymore.patch [bz#1032346]
+- kvm-hw-i386-pc_sysfw-support-two-flash-drives.patch [bz#1032346]
+- kvm-i440fx-test-qtest_start-should-be-paired-with-qtest_.patch [bz#1032346]
+- kvm-i440fx-test-give-each-GTest-case-its-own-qtest.patch [bz#1032346]
+- kvm-i440fx-test-generate-temporary-firmware-blob.patch [bz#1032346]
+- kvm-i440fx-test-verify-firmware-under-4G-and-1M-both-bio.patch [bz#1032346]
+- kvm-piix-fix-32bit-pci-hole.patch [bz#1032346]
+- kvm-qapi-Add-backing-to-BlockStats.patch [bz#1041564]
+- kvm-pc-Disable-RDTSCP-unconditionally-on-rhel6.-machine-.patch [bz#918907]
+- kvm-pc-Disable-RDTSCP-on-AMD-CPU-models.patch [bz#1056428 bz#874400]
+- kvm-block-add-.bdrv_reopen_prepare-stub-for-iscsi.patch [bz#1030301]
+- Resolves: bz#1030301
+  (qemu-img can not merge live snapshot to backing file(r/w backing file via libiscsi))
+- Resolves: bz#1032346
+  (basic OVMF support (non-volatile UEFI variables in flash, and fixup for ACPI tables))
+- Resolves: bz#1041564
+  ([NFR] qemu: Returning the watermark for all the images opened for writing)
+- Resolves: bz#1056428
+  ("rdtscp" flag defined on Opteron_G5 model and cann't be exposed to guest)
+- Resolves: bz#874400
+  ("rdtscp" flag defined on Opteron_G5 model and cann't be exposed to guest)
+- Resolves: bz#918907
+  (provide backwards-compatible RHEL specific machine types in QEMU - CPU features)
+
 * Mon Jan 27 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-43.el7
 - kvm-piix-gigabyte-alignment-for-ram.patch [bz#1026548]
 - kvm-pc_piix-document-gigabyte_align.patch [bz#1026548]
