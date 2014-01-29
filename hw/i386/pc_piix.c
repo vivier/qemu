@@ -141,6 +141,7 @@ static void pc_init1(QEMUMachineInitArgs *args,
     guest_info->has_acpi_build = has_acpi_build;
 
     guest_info->has_pci_info = has_pci_info;
+    guest_info->isapc_ram_fw = !pci_enabled;
 
     /* allocate ram and load rom/bios */
     if (!xen_enabled()) {
@@ -705,11 +706,6 @@ static QEMUMachine isapc_machine = {
     .init = pc_init_isa,
     .max_cpus = 1,
     .compat_props = (GlobalProperty[]) {
-        {
-            .driver   = "pc-sysfw",
-            .property = "isapc_ram_fw",
-            .value    = stringify(1),
-        },
         { /* end of list */ }
     },
     DEFAULT_MACHINE_OPTIONS,

@@ -34,6 +34,7 @@ typedef struct PcPciInfo {
 
 struct PcGuestInfo {
     bool has_pci_info;
+    bool isapc_ram_fw;
     hwaddr ram_size;
     unsigned apic_id_limit;
     bool apic_xrupt_override;
@@ -228,7 +229,8 @@ static inline bool isa_ne2000_init(ISABus *bus, int base, int irq, NICInfo *nd)
 }
 
 /* pc_sysfw.c */
-void pc_system_firmware_init(MemoryRegion *rom_memory);
+void pc_system_firmware_init(MemoryRegion *rom_memory,
+                             bool isapc_ram_fw);
 
 /* pvpanic.c */
 void pvpanic_init(ISABus *bus);
