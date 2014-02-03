@@ -992,6 +992,10 @@ static QEMUMachine pc_machine_rhel700 = {
         .driver   = "virtio-net-pci",\
         .property = "romfile",\
         .value    = "rhel6-virtio.rom",\
+    },{\
+        .driver   = TYPE_USB_DEVICE,\
+        .property = "msos-desc",\
+        .value    = "no",\
     }
 
 static void pc_compat_rhel650(QEMUMachineInitArgs *args)
