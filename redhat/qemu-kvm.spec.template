@@ -797,6 +797,24 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Feb 05 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-45.el7
+- kvm-vfio-pci-Fail-initfn-on-DMA-mapping-errors.patch [bz#1044815]
+- kvm-vfio-Destroy-memory-regions.patch [bz#1052030]
+- kvm-docs-qcow2-compat-1.1-is-now-the-default.patch [bz#1048092]
+- kvm-hda-codec-disable-streams-on-reset.patch [bz#947812]
+- kvm-QEMUBH-make-AioContext-s-bh-re-entrant.patch [bz#1009297]
+- kvm-qxl-replace-pipe-signaling-with-bottom-half.patch [bz#1009297]
+- Resolves: bz#1009297
+  (RHEL7.0 guest gui can not be used in dest host after migration)
+- Resolves: bz#1044815
+  (vfio initfn succeeds even if IOMMU mappings fail)
+- Resolves: bz#1048092
+  (manpage of qemu-img contains error statement about compat option)
+- Resolves: bz#1052030
+  (src qemu-kvm core dump after hotplug/unhotplug GPU device and do local migration)
+- Resolves: bz#947812
+  (There's a shot voice after  'system_reset'  during playing music inside rhel6 guest w/ intel-hda device)
+
 * Wed Jan 29 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-44.el7
 - kvm-Partially-revert-rhel-Drop-cfi.pflash01-and-isa-ide-.patch [bz#1032346]
 - kvm-Revert-pc-Disable-the-use-flash-device-for-BIOS-unle.patch [bz#1032346]
