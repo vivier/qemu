@@ -1235,6 +1235,7 @@ Advanced options (experts only):
   --disable-strip          disable stripping binaries
   --disable-werror         disable compilation abort on warning
   --disable-stack-protector disable compiler-provided stack protection
+  --enable-stack-protector enable compiler-provided stack protection
   --disable-sdl            disable SDL
   --enable-sdl             enable SDL
   --with-sdlabi            select preferred SDL ABI 1.2 or 2.0
