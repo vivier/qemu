@@ -134,6 +134,7 @@ audio_win_int=""
 cc_i386=i386-pc-linux-gnu-gcc
 libs_qga=""
 debug_info="yes"
+stack_protector=""
 
 # Don't accept a target_list environment variable.
 unset target_list
@@ -839,6 +840,10 @@ for opt do
   ;;
   --disable-werror) werror="no"
   ;;
+  --enable-stack-protector) stack_protector="yes"
+  ;;
+  --disable-stack-protector) stack_protector="no"
+  ;;
   --disable-curses) curses="no"
   ;;
   --enable-curses) curses="yes"
@@ -1115,6 +1120,7 @@ echo "  --enable-sparse          enable sparse checker"
 echo "  --disable-sparse         disable sparse checker (default)"
 echo "  --disable-strip          disable stripping binaries"
 echo "  --disable-werror         disable compilation abort on warning"
+echo "  --disable-stack-protector disable compiler-provided stack protection"
 echo "  --disable-sdl            disable SDL"
 echo "  --enable-sdl             enable SDL"
 echo "  --disable-gtk            disable gtk UI"
@@ -1296,9 +1302,15 @@ for flag in $gcc_flags; do
     fi
 done
 
-if compile_prog "-Werror -fstack-protector-all" "" ; then
-    QEMU_CFLAGS="$QEMU_CFLAGS -fstack-protector-all"
-    LIBTOOLFLAGS="$LIBTOOLFLAGS -Wc,-fstack-protector-all"
+if test "$stack_protector" != "no" ; then
+  gcc_flags="-fstack-protector-strong -fstack-protector"
+  for flag in $gcc_flags; do
+    if compile_prog "-Werror $flag" "" ; then
+      QEMU_CFLAGS="$QEMU_CFLAGS $flag"
+      LIBTOOLFLAGS="$LIBTOOLFLAGS -Wc,$flag"
+      break
+    fi
+  done
 fi
 
 # Workaround for http://gcc.gnu.org/PR55489.  Happens with -fPIE/-fPIC and
