@@ -367,7 +367,7 @@ static int blkdebug_open(BlockDriverState *bs, QDict *options, int flags,
     if (error_is_set(&local_err)) {
         error_propagate(errp, local_err);
         ret = -EINVAL;
-        goto fail;
+        goto out;
     }
 
     /* Read rules from config file */
@@ -376,7 +376,7 @@ static int blkdebug_open(BlockDriverState *bs, QDict *options, int flags,
         ret = read_config(s, config);
         if (ret < 0) {
             error_setg_errno(errp, -ret, "Could not read blkdebug config file");
-            goto fail;
+            goto out;
         }
     }
 
@@ -388,13 +388,13 @@ static int blkdebug_open(BlockDriverState *bs, QDict *options, int flags,
     if (filename == NULL) {
         error_setg(errp, "Could not retrieve image file name");
         ret = -EINVAL;
-        goto fail;
+        goto out;
     }
 
     ret = bdrv_file_open(&bs->file, filename, NULL, flags, &local_err);
     if (ret < 0) {
         error_propagate(errp, local_err);
-        goto fail;
+        goto out;
     }
 
     /* Set request alignment */
@@ -404,11 +404,15 @@ static int blkdebug_open(BlockDriverState *bs, QDict *options, int flags,
     } else {
         error_setg(errp, "Invalid alignment");
         ret = -EINVAL;
-        goto fail;
+        goto fail_unref;
     }
 
     ret = 0;
-fail:
+    goto out;
+
+fail_unref:
+    bdrv_unref(bs->file);
+out:
     qemu_opts_del(opts);
     return ret;
 }
