@@ -164,9 +164,6 @@ rh-rpms-rhev: rh-sources
 	cp $(RPM)/SOURCES/$(SPECFILE).tmp $(RPM)/SOURCES/$(SPECFILE)
 	$(RPMBUILD) $(RPMBUILD_DEFS) --define "rhev 1" --target $(MACH) -bb $(RPM)/SOURCES/$(SPECFILE)
 
-rh-rpms-rhev: rh-sources-rhev
-	$(RPMBUILD) $(RPMBUILD_DEFS) --target $(MACH) -bb $(RPM)/SOURCES/$(SPECFILE)
-
 rh-$(COMMON_NAME)-%: rh-sources
 	$(RPMBUILD) $(RPMBUILD_DEFS) --target $(MACH) --with $* --without vdso_install --with firmware -bb $(RPM)/SOURCES/$(SPECFILE)
 
