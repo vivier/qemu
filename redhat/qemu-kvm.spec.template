@@ -411,6 +411,7 @@ dobuild() {
         --libexecdir=%{_libexecdir} \
         --with-pkgversion=%{pkgname}-%{version}-%{release} \
         --disable-strip \
+        --disable-qom-cast-debug \
         --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
         --extra-cflags="%{optflags} -fPIE -DPIE" \
         --enable-trace-backend=dtrace \
