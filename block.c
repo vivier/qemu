@@ -2006,13 +2006,13 @@ int bdrv_commit(BlockDriverState *bs)
             goto ro_cleanup;
         }
         if (ret) {
-            if (bdrv_read(bs, sector, buf, n) != 0) {
-                ret = -EIO;
+            ret = bdrv_read(bs, sector, buf, n);
+            if (ret < 0) {
                 goto ro_cleanup;
             }
 
-            if (bdrv_write(bs->backing_hd, sector, buf, n) != 0) {
-                ret = -EIO;
+            ret = bdrv_write(bs->backing_hd, sector, buf, n);
+            if (ret < 0) {
                 goto ro_cleanup;
             }
         }
@@ -2020,6 +2020,9 @@ int bdrv_commit(BlockDriverState *bs)
 
     if (drv->bdrv_make_empty) {
         ret = drv->bdrv_make_empty(bs);
+        if (ret < 0) {
+            goto ro_cleanup;
+        }
         bdrv_flush(bs);
     }
 
@@ -2027,9 +2030,11 @@ int bdrv_commit(BlockDriverState *bs)
      * Make sure all data we wrote to the backing device is actually
      * stable on disk.
      */
-    if (bs->backing_hd)
+    if (bs->backing_hd) {
         bdrv_flush(bs->backing_hd);
+    }
 
+    ret = 0;
 ro_cleanup:
     g_free(buf);
 
