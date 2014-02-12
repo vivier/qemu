@@ -797,6 +797,47 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Feb 12 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-46.el7
+- kvm-block-fix-backing-file-segfault.patch [bz#748906]
+- kvm-block-Move-initialisation-of-BlockLimits-to-bdrv_ref.patch [bz#748906]
+- kvm-raw-Fix-BlockLimits-passthrough.patch [bz#748906]
+- kvm-block-Inherit-opt_transfer_length.patch [bz#748906]
+- kvm-block-Update-BlockLimits-when-they-might-have-change.patch [bz#748906]
+- kvm-qemu_memalign-Allow-small-alignments.patch [bz#748906]
+- kvm-block-Detect-unaligned-length-in-bdrv_qiov_is_aligne.patch [bz#748906]
+- kvm-block-Don-t-use-guest-sector-size-for-qemu_blockalig.patch [bz#748906]
+- kvm-block-rename-buffer_alignment-to-guest_block_size.patch [bz#748906]
+- kvm-raw-Probe-required-direct-I-O-alignment.patch [bz#748906]
+- kvm-block-Introduce-bdrv_aligned_preadv.patch [bz#748906]
+- kvm-block-Introduce-bdrv_co_do_preadv.patch [bz#748906]
+- kvm-block-Introduce-bdrv_aligned_pwritev.patch [bz#748906]
+- kvm-block-write-Handle-COR-dependency-after-I-O-throttli.patch [bz#748906]
+- kvm-block-Introduce-bdrv_co_do_pwritev.patch [bz#748906]
+- kvm-block-Switch-BdrvTrackedRequest-to-byte-granularity.patch [bz#748906]
+- kvm-block-Allow-waiting-for-overlapping-requests-between.patch [bz#748906]
+- kvm-block-use-DIV_ROUND_UP-in-bdrv_co_do_readv.patch [bz#748906]
+- kvm-block-Make-zero-after-EOF-work-with-larger-alignment.patch [bz#748906]
+- kvm-block-Generalise-and-optimise-COR-serialisation.patch [bz#748906]
+- kvm-block-Make-overlap-range-for-serialisation-dynamic.patch [bz#748906]
+- kvm-block-Fix-32-bit-truncation-in-mark_request_serialis.patch [bz#748906]
+- kvm-block-Allow-wait_serialising_requests-at-any-point.patch [bz#748906]
+- kvm-block-Align-requests-in-bdrv_co_do_pwritev.patch [bz#748906]
+- kvm-lock-Fix-memory-leaks-in-bdrv_co_do_pwritev.patch [bz#748906]
+- kvm-block-Assert-serialisation-assumptions-in-pwritev.patch [bz#748906]
+- kvm-block-Change-coroutine-wrapper-to-byte-granularity.patch [bz#748906]
+- kvm-block-Make-bdrv_pread-a-bdrv_prwv_co-wrapper.patch [bz#748906]
+- kvm-block-Make-bdrv_pwrite-a-bdrv_prwv_co-wrapper.patch [bz#748906]
+- kvm-iscsi-Set-bs-request_alignment.patch [bz#748906]
+- kvm-blkdebug-Make-required-alignment-configurable.patch [bz#748906]
+- kvm-blkdebug-Don-t-leak-bs-file-on-failure.patch [bz#748906]
+- kvm-qemu-io-New-command-sleep.patch [bz#748906]
+- kvm-qemu-iotests-Filter-out-qemu-io-prompt.patch [bz#748906]
+- kvm-qemu-iotests-Test-pwritev-RMW-logic.patch [bz#748906]
+- kvm-block-bdrv_aligned_pwritev-Assert-overlap-range.patch [bz#748906]
+- kvm-block-Don-t-call-ROUND_UP-with-negative-values.patch [bz#748906]
+- Resolves: bz#748906
+  (qemu fails on disk with 4k sectors and cache=off)
+
 * Wed Feb 05 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-45.el7
 - kvm-vfio-pci-Fail-initfn-on-DMA-mapping-errors.patch [bz#1044815]
 - kvm-vfio-Destroy-memory-regions.patch [bz#1052030]
