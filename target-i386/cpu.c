@@ -2579,8 +2579,13 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
 /* XXX: This value must match the one used in the MMU code. */
         if (env->features[FEAT_8000_0001_EDX] & CPUID_EXT2_LM) {
             /* 64 bit processor */
-/* XXX: The physical address space is limited to 42 bits in exec.c. */
             *eax = 0x00003028; /* 48 bits virtual, 40 bits physical */
+            if (kvm_enabled()) {
+                uint32_t _eax;
+                host_cpuid(0x80000000, 0, &_eax, NULL, NULL, NULL);
+                if (_eax >= 0x80000008)
+                    host_cpuid(0x80000008, 0, eax, NULL, NULL, NULL);
+            }
         } else {
             if (env->features[FEAT_1_EDX] & CPUID_PSE36) {
                 *eax = 0x00000024; /* 36 bits physical */
