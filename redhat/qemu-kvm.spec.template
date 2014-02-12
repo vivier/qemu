@@ -797,6 +797,58 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Feb 12 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-47.el7
+- kvm-seccomp-add-mkdir-and-fchmod-to-the-whitelist.patch [bz#1026314]
+- kvm-seccomp-add-some-basic-shared-memory-syscalls-to-the.patch [bz#1026314]
+- kvm-scsi-Support-TEST-UNIT-READY-in-the-dummy-LUN0.patch [bz#1004143]
+- kvm-usb-add-vendor-request-defines.patch [bz#1039530]
+- kvm-usb-move-usb_-hi-lo-helpers-to-header-file.patch [bz#1039530]
+- kvm-usb-add-support-for-microsoft-os-descriptors.patch [bz#1039530]
+- kvm-usb-add-microsoft-os-descriptors-compat-property.patch [bz#1039530]
+- kvm-usb-hid-add-microsoft-os-descriptor-support.patch [bz#1039530]
+- kvm-configure-add-option-to-disable-fstack-protect.patch [bz#1044182]
+- kvm-exec-always-use-MADV_DONTFORK.patch [bz#1004197]
+- kvm-pc-Save-size-of-RAM-below-4GB.patch [bz#1048080]
+- kvm-acpi-Fix-PCI-hole-handling-on-build_srat.patch [bz#1048080]
+- kvm-Add-check-for-cache-size-smaller-than-page-size.patch [bz#1017096]
+- kvm-XBZRLE-cache-size-should-not-be-larger-than-guest-me.patch [bz#1047448]
+- kvm-Don-t-abort-on-out-of-memory-when-creating-page-cach.patch [bz#1047448]
+- kvm-Don-t-abort-on-memory-allocation-error.patch [bz#1047448]
+- kvm-Set-xbzrle-buffers-to-NULL-after-freeing-them-to-avo.patch [bz#1038540]
+- kvm-migration-fix-free-XBZRLE-decoded_buf-wrong.patch [bz#1038540]
+- kvm-block-resize-backing-file-image-during-offline-commi.patch [bz#1047254]
+- kvm-block-resize-backing-image-during-active-layer-commi.patch [bz#1047254]
+- kvm-block-update-block-commit-documentation-regarding-im.patch [bz#1047254]
+- kvm-block-Fix-bdrv_commit-return-value.patch [bz#1047254]
+- kvm-block-remove-QED-.bdrv_make_empty-implementation.patch [bz#1047254]
+- kvm-block-remove-qcow2-.bdrv_make_empty-implementation.patch [bz#1047254]
+- kvm-qemu-progress-Drop-unused-include.patch [bz#997878]
+- kvm-qemu-progress-Fix-progress-printing-on-SIGUSR1.patch [bz#997878]
+- kvm-Documentation-qemu-img-Mention-SIGUSR1-progress-repo.patch [bz#997878]
+- Resolves: bz#1004143
+  ("test unit ready failed" on LUN 0 delays boot when a virtio-scsi target does not have any disk on LUN 0)
+- Resolves: bz#1004197
+  (Cannot hot-plug nic in windows VM when the vmem is larger)
+- Resolves: bz#1017096
+  (Fail to migrate while the size of migrate-compcache less then 4096)
+- Resolves: bz#1026314
+  (qemu-kvm hang when use '-sandbox on'+'vnc'+'hda')
+- Resolves: bz#1038540
+  (qemu-kvm aborted while cancel migration then restart it (with page delta compression))
+- Resolves: bz#1039530
+  (add support for microsoft os descriptors)
+- Resolves: bz#1044182
+  (Relax qemu-kvm stack protection to -fstack-protector-strong)
+- Resolves: bz#1047254
+  (qemu-img failed to commit image)
+- Resolves: bz#1047448
+  (qemu-kvm core  dump in src host when do migration with "migrate_set_capability xbzrle on and migrate_set_cache_size 10000G")
+- Resolves: bz#1048080
+  (Qemu-kvm NUMA emulation failed)
+- Resolves: bz#997878
+  (Kill -SIGUSR1 `pidof qemu-img convert` can not get progress of qemu-img)
+
+Seabios bios-256k.bin updated to version 1.7.2.2-11.el7
 * Wed Feb 12 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-46.el7
 - kvm-block-fix-backing-file-segfault.patch [bz#748906]
 - kvm-block-Move-initialisation-of-BlockLimits-to-bdrv_ref.patch [bz#748906]
