@@ -2635,6 +2635,12 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
              * physical bits.
              */
             *eax = 0x00003000 + cpu->phys_bits;
+            if (kvm_enabled()) {
+                uint32_t _eax;
+                host_cpuid(0x80000000, 0, &_eax, NULL, NULL, NULL);
+                if (_eax >= 0x80000008)
+                    host_cpuid(0x80000008, 0, eax, NULL, NULL, NULL);
+            }
         } else {
             *eax = cpu->phys_bits;
         }
