@@ -798,6 +798,17 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Mon Feb 17 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-48.el7
+- kvm-spec-disable-qom-cast-debug.patch [bz#1063942]
+- kvm-fix-guest-physical-bits-to-match-host-to-go-beyond-1.patch [bz#989677]
+- kvm-monitor-Cleanup-mon-outbuf-on-write-error.patch [bz#1065225]
+- Resolves: bz#1063942
+  (configure qemu-kvm with --disable-qom-cast-debug)
+- Resolves: bz#1065225
+  (QMP socket breaks on unexpected close)
+- Resolves: bz#989677
+  ([HP 7.0 FEAT]: Increase KVM guest supported memory to 4TiB)
+
 * Wed Feb 12 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-47.el7
 - kvm-seccomp-add-mkdir-and-fchmod-to-the-whitelist.patch [bz#1026314]
 - kvm-seccomp-add-some-basic-shared-memory-syscalls-to-the.patch [bz#1026314]
