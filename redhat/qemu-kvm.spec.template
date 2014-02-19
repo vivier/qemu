@@ -798,6 +798,19 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Feb 19 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-49.el7
+- kvm-xhci-add-support-for-suspend-resume.patch [bz#1012365]
+- kvm-qcow2-remove-n_start-and-n_end-of-qcow2_alloc_cluste.patch [bz#1049176]
+- kvm-qcow2-fix-offset-overflow-in-qcow2_alloc_clusters_at.patch [bz#1049176]
+- kvm-qcow2-check-for-NULL-l2meta.patch [bz#1055848]
+- kvm-qemu-iotests-add-test-for-qcow2-preallocation-with-d.patch [bz#1055848]
+- Resolves: bz#1012365
+  (xhci usb storage lost in guest after wakeup from S3)
+- Resolves: bz#1049176
+  (qemu-img core dump when using "-o preallocation=metadata,cluster_size=2048k" to create image of libiscsi lun)
+- Resolves: bz#1055848
+  (qemu-img core dumped when cluster size is larger than the default value with opreallocation=metadata specified)
+
 * Mon Feb 17 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-48.el7
 - kvm-spec-disable-qom-cast-debug.patch [bz#1063942]
 - kvm-fix-guest-physical-bits-to-match-host-to-go-beyond-1.patch [bz#989677]
