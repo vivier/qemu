@@ -1116,6 +1116,9 @@ static int img_convert(int argc, char **argv)
     char *options = NULL;
     int min_sparse = 8; /* Need at least 4k of zeros for sparse detection */
 
+    /* Initialize before goto out */
+    qemu_progress_init(progress, 1.0);
+
     fmt = NULL;
     out_fmt = "raw";
     cache = "unsafe";
@@ -1147,13 +1150,26 @@ static int img_convert(int argc, char **argv)
         case 'e':
             error_report("qemu-img: option -e is deprecated, please use \'-o "
                   "encryption\' instead!");
-            return 1;
+            ret = -1;
+            goto out;
         case '6':
             error_report("qemu-img: option -6 is deprecated, please use \'-o "
                   "compat6\' instead!");
-            return 1;
+            ret = -1;
+            goto out;
         case 'o':
-            options = optarg;
+            if (!is_valid_option_list(optarg)) {
+                error_report("Invalid option list: %s", optarg);
+                ret = -1;
+                goto out;
+            }
+            if (!options) {
+                options = g_strdup(optarg);
+            } else {
+                char *old_options = options;
+                options = g_strdup_printf("%s,%s", options, optarg);
+                g_free(old_options);
+            }
             break;
         case 'S':
         {
@@ -1162,7 +1178,8 @@ static int img_convert(int argc, char **argv)
             sval = strtosz_suffix(optarg, &end, STRTOSZ_DEFSUFFIX_B);
             if (sval < 0 || *end) {
                 error_report("Invalid minimum zero buffer size for sparse output specified");
-                return 1;
+                ret = -1;
+                goto out;
             }
 
             min_sparse = sval / BDRV_SECTOR_SIZE;
@@ -1187,10 +1204,7 @@ static int img_convert(int argc, char **argv)
 
     out_filename = argv[argc - 1];
 
-    /* Initialize before goto out */
-    qemu_progress_init(progress, 1.0);
-
-    if (options && !strcmp(options, "?")) {
+    if (options && has_help_option(options)) {
         ret = print_block_option_help(out_filename, out_fmt);
         goto out;
     }
@@ -1504,6 +1518,7 @@ out:
     free_option_parameters(create_options);
     free_option_parameters(param);
     qemu_vfree(buf);
+    g_free(options);
     if (out_bs) {
         bdrv_delete(out_bs);
     }
