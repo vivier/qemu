@@ -222,16 +222,19 @@ static int print_block_option_help(const char *filename, const char *fmt)
         return 1;
     }
 
-    proto_drv = bdrv_find_protocol(filename);
-    if (!proto_drv) {
-        error_report("Unknown protocol '%s'", filename);
-        return 1;
-    }
-
     create_options = append_option_parameters(create_options,
                                               drv->create_options);
-    create_options = append_option_parameters(create_options,
-                                              proto_drv->create_options);
+
+    if (filename) {
+        proto_drv = bdrv_find_protocol(filename);
+        if (!proto_drv) {
+            error_report("Unknown protocol '%s'", filename);
+            return 1;
+        }
+        create_options = append_option_parameters(create_options,
+                                                  proto_drv->create_options);
+    }
+
     print_option_help(create_options);
     free_option_parameters(create_options);
     return 0;
@@ -360,10 +363,16 @@ static int img_create(int argc, char **argv)
     }
 
     /* Get the filename */
+    filename = (optind < argc) ? argv[optind] : NULL;
+    if (options && has_help_option(options)) {
+        g_free(options);
+        return print_block_option_help(filename, fmt);
+    }
+
     if (optind >= argc) {
         help();
     }
-    filename = argv[optind++];
+    optind++;
 
     /* Get image size, if specified */
     if (optind < argc) {
@@ -381,11 +390,6 @@ static int img_create(int argc, char **argv)
             goto fail;
         }
         img_size = (uint64_t)sval;
-    }
-
-    if (options && has_help_option(options)) {
-        g_free(options);
-        return print_block_option_help(filename, fmt);
     }
 
     bdrv_img_create(filename, fmt, base_filename, base_fmt,
@@ -1198,16 +1202,17 @@ static int img_convert(int argc, char **argv)
     }
 
     bs_n = argc - optind - 1;
-    if (bs_n < 1) {
-        help();
-    }
-
-    out_filename = argv[argc - 1];
+    out_filename = bs_n >= 1 ? argv[argc - 1] : NULL;
 
     if (options && has_help_option(options)) {
         ret = print_block_option_help(out_filename, out_fmt);
         goto out;
     }
+
+    if (bs_n < 1) {
+        help();
+    }
+
 
     if (bs_n > 1 && out_baseimg) {
         error_report("-B makes no sense when concatenating multiple input "
