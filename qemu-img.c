@@ -2617,7 +2617,18 @@ static int img_amend(int argc, char **argv)
                 help();
                 break;
             case 'o':
-                options = optarg;
+                if (!is_valid_option_list(optarg)) {
+                    error_report("Invalid option list: %s", optarg);
+                    ret = -1;
+                    goto out;
+                }
+                if (!options) {
+                    options = g_strdup(optarg);
+                } else {
+                    char *old_options = options;
+                    options = g_strdup_printf("%s,%s", options, optarg);
+                    g_free(old_options);
+                }
                 break;
             case 'f':
                 fmt = optarg;
@@ -2647,7 +2658,7 @@ static int img_amend(int argc, char **argv)
 
     fmt = bs->drv->format_name;
 
-    if (is_help_option(options)) {
+    if (has_help_option(options)) {
         ret = print_block_option_help(filename, fmt);
         goto out;
     }
@@ -2674,6 +2685,8 @@ out:
     }
     free_option_parameters(create_options);
     free_option_parameters(options_param);
+    g_free(options);
+
     if (ret) {
         return 1;
     }
