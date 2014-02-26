@@ -798,6 +798,19 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Feb 26 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-50.el7
+- kvm-mempath-prefault-fix-off-by-one-error.patch [bz#1069039]
+- kvm-qemu-option-has_help_option-and-is_valid_option_list.patch [bz#1065873]
+- kvm-qemu-img-create-Support-multiple-o-options.patch [bz#1065873]
+- kvm-qemu-img-convert-Support-multiple-o-options.patch [bz#1065873]
+- kvm-qemu-img-amend-Support-multiple-o-options.patch [bz#1065873]
+- kvm-qemu-img-Allow-o-help-with-incomplete-argument-list.patch [bz#1065873]
+- kvm-qemu-iotests-Check-qemu-img-command-line-parsing.patch [bz#1065873]
+- Resolves: bz#1065873
+  (qemu-img silently ignores options with multiple -o parameters)
+- Resolves: bz#1069039
+  (-mem-prealloc option behaviour is opposite to expected)
+
 * Wed Feb 19 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-49.el7
 - kvm-xhci-add-support-for-suspend-resume.patch [bz#1012365]
 - kvm-qcow2-remove-n_start-and-n_end-of-qcow2_alloc_cluste.patch [bz#1049176]
