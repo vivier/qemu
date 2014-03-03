@@ -1120,9 +1120,6 @@ static int img_convert(int argc, char **argv)
     char *options = NULL;
     int min_sparse = 8; /* Need at least 4k of zeros for sparse detection */
 
-    /* Initialize before goto out */
-    qemu_progress_init(progress, 1.0);
-
     fmt = NULL;
     out_fmt = "raw";
     cache = "unsafe";
@@ -1155,17 +1152,17 @@ static int img_convert(int argc, char **argv)
             error_report("qemu-img: option -e is deprecated, please use \'-o "
                   "encryption\' instead!");
             ret = -1;
-            goto out;
+            goto fail_getopt;
         case '6':
             error_report("qemu-img: option -6 is deprecated, please use \'-o "
                   "compat6\' instead!");
             ret = -1;
-            goto out;
+            goto fail_getopt;
         case 'o':
             if (!is_valid_option_list(optarg)) {
                 error_report("Invalid option list: %s", optarg);
                 ret = -1;
-                goto out;
+                goto fail_getopt;
             }
             if (!options) {
                 options = g_strdup(optarg);
@@ -1183,7 +1180,7 @@ static int img_convert(int argc, char **argv)
             if (sval < 0 || *end) {
                 error_report("Invalid minimum zero buffer size for sparse output specified");
                 ret = -1;
-                goto out;
+                goto fail_getopt;
             }
 
             min_sparse = sval / BDRV_SECTOR_SIZE;
@@ -1200,6 +1197,9 @@ static int img_convert(int argc, char **argv)
             break;
         }
     }
+
+    /* Initialize before goto out */
+    qemu_progress_init(progress, 1.0);
 
     bs_n = argc - optind - 1;
     out_filename = bs_n >= 1 ? argv[argc - 1] : NULL;
@@ -1523,7 +1523,6 @@ out:
     free_option_parameters(create_options);
     free_option_parameters(param);
     qemu_vfree(buf);
-    g_free(options);
     if (out_bs) {
         bdrv_delete(out_bs);
     }
@@ -1535,6 +1534,9 @@ out:
         }
         qemu_free(bs);
     }
+fail_getopt:
+    g_free(options);
+
     if (ret) {
         return 1;
     }
