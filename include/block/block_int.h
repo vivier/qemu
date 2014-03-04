@@ -269,9 +269,9 @@ struct BlockDriverState {
     const BlockDevOps *dev_ops;
     void *dev_opaque;
 
-    char filename[1024];
-    char backing_file[1024]; /* if non zero, the image is a diff of
-                                this file image */
+    char filename[PATH_MAX];
+    char backing_file[PATH_MAX]; /* if non zero, the image is a diff of
+                                    this file image */
     char backing_format[16]; /* if non-zero and backing_file exists */
     int is_temporary;
 

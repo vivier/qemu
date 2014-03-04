@@ -32,7 +32,7 @@ typedef struct StreamBlockJob {
     RateLimit limit;
     BlockDriverState *base;
     BlockdevOnError on_error;
-    char backing_file_id[1024];
+    char backing_file_id[PATH_MAX];
 } StreamBlockJob;
 
 static int coroutine_fn stream_populate(BlockDriverState *bs,
