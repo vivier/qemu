@@ -166,7 +166,7 @@ void bdrv_query_image_info(BlockDriverState *bs,
 {
     uint64_t total_sectors;
     const char *backing_filename;
-    char backing_filename2[1024];
+    char backing_filename2[PATH_MAX];
     BlockDriverInfo bdi;
     int ret;
     Error *err = NULL;

@@ -315,7 +315,7 @@ static void coroutine_fn mirror_run(void *opaque)
     int64_t sector_num, end, sectors_per_chunk, length;
     uint64_t last_pause_ns;
     BlockDriverInfo bdi;
-    char backing_filename[1024];
+    char backing_filename[PATH_MAX];
     int ret = 0;
     int n;
 
