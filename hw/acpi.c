@@ -1002,6 +1002,24 @@ void qemu_system_cpu_hot_add(int cpu, int state, Monitor *mon)
 }
 #endif
 
+/* Query the ACPI enabled/disabled state of a VCPU, based on the VCPU's APIC
+ * ID. If the information is unavailable, @enabled is indeterminate on output
+ * and -1 is returned. Otherwise, @enabled is set to the VCPU's ACPI state, and
+ * 0 is returned.
+ */
+int acpi_query_processor(bool *enabled, uint32_t apic_id)
+{
+    const struct gpe_regs *g;
+
+    if (!acpi_enabled || apic_id >= sizeof g->cpus_sts * 8) {
+        return -1;
+    }
+
+    g = &pm_state->gpe;
+    *enabled = !!(g->cpus_sts[apic_id / 8] & (1 << (apic_id % 8)));
+    return 0;
+}
+
 static void enable_device(PIIX4PMState *s, int slot)
 {
     s->gpe.sts |= PIIX4_PCI_HOTPLUG_STATUS;
