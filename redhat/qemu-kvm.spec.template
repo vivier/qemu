@@ -798,6 +798,24 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Mar 05 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-52.el7
+- kvm-target-i386-Move-hyperv_-static-globals-to-X86CPU.patch [bz#1004773]
+- kvm-Fix-uninitialized-cpuid_data.patch [bz#1057173]
+- kvm-fix-coexistence-of-KVM-and-Hyper-V-leaves.patch [bz#1004773]
+- kvm-make-availability-of-Hyper-V-enlightenments-depe.patch [bz#1004773]
+- kvm-make-hyperv-hypercall-and-guest-os-id-MSRs-migra.patch [bz#1004773]
+- kvm-make-hyperv-vapic-assist-page-migratable.patch [bz#1004773]
+- kvm-target-i386-Convert-hv_relaxed-to-static-property.patch [bz#1057173]
+- kvm-target-i386-Convert-hv_vapic-to-static-property.patch [bz#1057173]
+- kvm-target-i386-Convert-hv_spinlocks-to-static-property.patch [bz#1057173]
+- kvm-target-i386-Convert-check-and-enforce-to-static-prop.patch [bz#1004773]
+- kvm-target-i386-Cleanup-foo-feature-handling.patch [bz#1057173]
+- kvm-add-support-for-hyper-v-timers.patch [bz#1057173]
+- Resolves: bz#1004773
+  (Hyper-V guest OS id and hypercall MSRs not migrated)
+- Resolves: bz#1057173
+  (KVM Hyper-V Enlightenment - New feature - hv-time (QEMU))
+
 * Wed Mar 05 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-51.el7
 - kvm-qmp-access-the-local-QemuOptsLists-for-drive-option.patch [bz#1026184]
 - kvm-qxl-add-sanity-check.patch [bz#751937]
