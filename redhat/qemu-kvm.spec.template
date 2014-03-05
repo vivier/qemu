@@ -798,6 +798,24 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Mar 05 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-51.el7
+- kvm-qmp-access-the-local-QemuOptsLists-for-drive-option.patch [bz#1026184]
+- kvm-qxl-add-sanity-check.patch [bz#751937]
+- kvm-Fix-two-XBZRLE-corruption-issues.patch [bz#1063417]
+- kvm-qdev-monitor-set-DeviceState-opts-before-calling-rea.patch [bz#1037956]
+- kvm-vfio-blacklist-loading-of-unstable-roms.patch [bz#1037956]
+- kvm-block-Set-block-filename-sizes-to-PATH_MAX-instead-o.patch [bz#1072339]
+- Resolves: bz#1026184
+  (QMP: querying -drive option returns a NULL parameter list)
+- Resolves: bz#1037956
+  (bnx2x: boot one guest to do vfio-pci with all PFs assigned in same group meet QEMU segmentation fault (Broadcom BCM57810 card))
+- Resolves: bz#1063417
+  (google stressapptest vs Migration)
+- Resolves: bz#1072339
+  (RHEV: Cannot start VMs that have more than 23 snapshots.)
+- Resolves: bz#751937
+  (qxl triggers assert during iofuzz test)
+
 * Wed Feb 26 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-50.el7
 - kvm-mempath-prefault-fix-off-by-one-error.patch [bz#1069039]
 - kvm-qemu-option-has_help_option-and-is_valid_option_list.patch [bz#1065873]
