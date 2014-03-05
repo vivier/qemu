@@ -85,13 +85,8 @@ err:
 
 static void check_parm(const char *key, QObject *obj, void *opaque)
 {
-    static const char *valid_keys[] = {
-        "id", "cyls", "heads", "secs", "trans", "media", "snapshot",
-        "file", "cache", "aio", "format", "serial", "rerror", "werror",
-        "readonly", "copy-on-read",
-#ifdef CONFIG_BLOCK_IO_THROTTLING
-        "bps", "bps_rd", "bps_wr", "iops", "iops_rd", "iops_wr",
-#endif
+    static const char *unwanted_keys[] = {
+        "bus", "unit", "index", "if", "boot", "addr",
         NULL
 
     };
@@ -102,14 +97,13 @@ static void check_parm(const char *key, QObject *obj, void *opaque)
         return;
     }
 
-    for (p = valid_keys; *p; p++) {
+    for (p = unwanted_keys; *p; p++) {
         if (!strcmp(key, *p)) {
+            error_report(QERR_INVALID_PARAMETER, key);
+            *stopped = 1;
             return;
         }
     }
-
-    error_report(QERR_INVALID_PARAMETER, key);
-    *stopped = 1;
 }
 
 void simple_drive_add(QDict *qdict, QObject **ret_data, Error **errp)
