@@ -140,6 +140,7 @@ Source15: rhel6-pcnet.rom
 Source16: rhel6-rtl8139.rom
 Source17: rhel6-ne2k_pci.rom
 Source18: bios-256k.bin
+Source19: README.rhel6-gpxe-source
 
 %%CONFIGS%%
 
@@ -541,7 +542,7 @@ dobuild --target-list="$buildarch"
     rm $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/qemu-system-%{kvm_target}.stp
 
     mkdir -p $RPM_BUILD_ROOT%{qemudocdir}
-    install -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} Changelog README COPYING COPYING.LIB LICENSE
+    install -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} Changelog README COPYING COPYING.LIB LICENSE %{SOURCE19}
     mv ${RPM_BUILD_ROOT}%{_docdir}/qemu/qemu-doc.html $RPM_BUILD_ROOT%{qemudocdir}
     mv ${RPM_BUILD_ROOT}%{_docdir}/qemu/qemu-tech.html $RPM_BUILD_ROOT%{qemudocdir}
     mv ${RPM_BUILD_ROOT}%{_docdir}/qemu/qmp-commands.txt $RPM_BUILD_ROOT%{qemudocdir}
@@ -709,6 +710,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %doc %{qemudocdir}/COPYING
     %doc %{qemudocdir}/COPYING.LIB
     %doc %{qemudocdir}/LICENSE
+    %doc %{qemudocdir}/README.rhel6-gpxe-source
     %dir %{_datadir}/%{pkgname}/
     %{_datadir}/%{pkgname}/keymaps/
     %{_mandir}/man1/%{pkgname}.1*
