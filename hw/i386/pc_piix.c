@@ -897,6 +897,10 @@ static QEMUMachine pc_machine_rhel700 = {
         .property = "romfile",\
         .value    = "rhel6-rtl8139.rom",\
     },{\
+        .driver   = "e1000",\
+        .property = "romfile",\
+        .value    = "rhel6-e1000.rom",\
+    },{\
         .driver   = "virtio-net-pci",\
         .property = "romfile",\
         .value    = "rhel6-virtio.rom",\
