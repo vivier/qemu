@@ -141,6 +141,7 @@ Source16: rhel6-rtl8139.rom
 Source17: rhel6-ne2k_pci.rom
 Source18: bios-256k.bin
 Source19: README.rhel6-gpxe-source
+Source20: rhel6-e1000.rom
 
 %%CONFIGS%%
 
@@ -534,6 +535,7 @@ dobuild --target-list="$buildarch"
     install %{SOURCE15} $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/
     install %{SOURCE16} $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/
     install %{SOURCE17} $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/
+    install %{SOURCE20} $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/
 
     install -m 0755 qemu-kvm $RPM_BUILD_ROOT%{_libexecdir}/
     install -m 0644 qemu-kvm.stp $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/
@@ -768,6 +770,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %{_datadir}/%{pkgname}/rhel6-pcnet.rom
     %{_datadir}/%{pkgname}/rhel6-rtl8139.rom
     %{_datadir}/%{pkgname}/rhel6-ne2k_pci.rom
+    %{_datadir}/%{pkgname}/rhel6-e1000.rom
     %config(noreplace) %{_sysconfdir}/%{pkgname}/target-x86_64.conf
     %{?kvm_files:}
     %{?qemu_kvm_files:}
