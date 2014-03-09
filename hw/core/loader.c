@@ -54,6 +54,7 @@
 
 #include <zlib.h>
 
+bool option_rom_has_mr = false;
 bool rom_file_has_mr = true;
 
 static int roms_loaded;
@@ -590,7 +591,8 @@ static void *rom_set_mr(Rom *rom, const char *name)
 }
 
 int rom_add_file(const char *file, const char *fw_dir,
-                 hwaddr addr, int32_t bootindex)
+                 hwaddr addr, int32_t bootindex,
+                 bool option_rom)
 {
     Rom *rom;
     int rc, fd = -1;
@@ -642,7 +644,7 @@ int rom_add_file(const char *file, const char *fw_dir,
                  basename);
         snprintf(devpath, sizeof(devpath), "/rom@%s", fw_file_name);
 
-        if (rom_file_has_mr) {
+        if ((!option_rom || option_rom_has_mr) && rom_file_has_mr) {
             data = rom_set_mr(rom, devpath);
         } else {
             data = rom->data;
@@ -721,12 +723,12 @@ int rom_add_elf_program(const char *name, void *data, size_t datasize,
 
 int rom_add_vga(const char *file)
 {
-    return rom_add_file(file, "vgaroms", 0, -1);
+    return rom_add_file(file, "vgaroms", 0, -1, true);
 }
 
 int rom_add_option(const char *file, int32_t bootindex)
 {
-    return rom_add_file(file, "genroms", 0, bootindex);
+    return rom_add_file(file, "genroms", 0, bootindex, true);
 }
 
 static void rom_reset(void *unused)
