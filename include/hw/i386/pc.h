@@ -274,6 +274,10 @@ int e820_add_entry(uint64_t, uint64_t, uint32_t);
             .driver = TYPE_X86_CPU,\
             .property = "pmu",\
             .value = "on",\
+        },{\
+            .driver   = "virtio-net-pci",\
+            .property = "any_layout",\
+            .value    = "off",\
         }
 
 #define PC_COMPAT_1_4 \

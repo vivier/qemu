@@ -904,6 +904,10 @@ static QEMUMachine pc_machine_rhel700 = {
         .driver   = TYPE_USB_DEVICE,\
         .property = "msos-desc",\
         .value    = "no",\
+    },{\
+        .driver   = "virtio-net-pci",\
+        .property = "any_layout",\
+        .value    = "off",\
     }
 
 static void pc_compat_rhel650(QEMUMachineInitArgs *args)
