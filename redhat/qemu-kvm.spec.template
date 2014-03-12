@@ -803,6 +803,44 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Mar 12 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-53.el7
+- kvm-dataplane-Fix-startup-race.patch [bz#1069541]
+- kvm-QMP-Relax-__com.redhat_drive_add-parameter-checking.patch [bz#1057471]
+- kvm-all-exit-in-case-max-vcpus-exceeded.patch [bz#993429]
+- kvm-block-gluster-code-movements-state-storage-changes.patch [bz#1031526]
+- kvm-block-gluster-add-reopen-support.patch [bz#1031526]
+- kvm-virtio-net-add-feature-bit-for-any-header-s-g.patch [bz#990989]
+- kvm-spec-Add-README.rhel6-gpxe-source.patch [bz#1073774]
+- kvm-pc-Add-RHEL6-e1000-gPXE-image.patch [bz#1073774]
+- kvm-loader-rename-in_ram-has_mr.patch [bz#1064018]
+- kvm-pc-avoid-duplicate-names-for-ROM-MRs.patch [bz#1064018]
+- kvm-qemu-img-convert-Fix-progress-output.patch [bz#1073728]
+- kvm-qemu-iotests-Test-progress-output-for-conversion.patch [bz#1073728]
+- kvm-iscsi-Use-bs-sg-for-everything-else-than-disks.patch [bz#1067784]
+- kvm-block-Fix-bs-request_alignment-assertion-for-bs-sg-1.patch [bz#1067784]
+- kvm-qemu_file-use-fwrite-correctly.patch [bz#1005103]
+- kvm-qemu_file-Fix-mismerge-of-use-fwrite-correctly.patch [bz#1005103]
+- Resolves: bz#1005103
+  (Migration should fail when migrate guest offline to a file which is specified to a readonly directory.)
+- Resolves: bz#1031526
+  (Can not commit snapshot when disk is using glusterfs:native backend)
+- Resolves: bz#1057471
+  (fail to do hot-plug with "discard = on" with "Invalid parameter 'discard'" error)
+- Resolves: bz#1064018
+  (abort from conflicting genroms)
+- Resolves: bz#1067784
+  (qemu-kvm: block.c:850: bdrv_open_common: Assertion `bs->request_alignment != 0' failed. Aborted (core dumped))
+- Resolves: bz#1069541
+  (Segmentation fault when boot guest with dataplane=on)
+- Resolves: bz#1073728
+  (progress bar doesn't display when converting with -p)
+- Resolves: bz#1073774
+  (e1000 ROM cause migrate fail  from RHEL6.5 host to RHEL7.0 host)
+- Resolves: bz#990989
+  (backport inline header virtio-net optimization)
+- Resolves: bz#993429
+  (kvm: test maximum number of vcpus supported (rhel7))
+
 * Wed Mar 05 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-52.el7
 - kvm-target-i386-Move-hyperv_-static-globals-to-X86CPU.patch [bz#1004773]
 - kvm-Fix-uninitialized-cpuid_data.patch [bz#1057173]
