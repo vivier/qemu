@@ -948,7 +948,7 @@ static void pc_compat_rhel650(QEMUMachineInitArgs *args)
 
     disable_kvm_pv_unhalt();
 
-    rom_file_in_ram = false; 
+    rom_file_has_mr = false; 
     has_acpi_build = false;
     gigabyte_align = false;
 }
