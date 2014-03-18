@@ -121,7 +121,7 @@ sources-rh: $(TARBALL) $(RC_PATCH) $(GIT_PATCH) $(REDHAT)/create-patches.sh Make
 	@cp $(TARBALL) $(SOURCES)/$(TARFILE)
 	@cp *.patch $(SOURCES)
 	@cp bridge.conf $(SOURCES)
-	@$(REDHAT)/create-patches.sh $(MARKER) $(SOURCES) $(SOURCES)/$(SPECFILE) $(PKGRELEASE) '$(PREBUILD)' $(BUILD) $(BUILDID) $(RHEV_FLAG)
+	@$(REDHAT)/create-patches.sh $(MARKER) $(SOURCES) $(SOURCES)/$(SPECFILE) $(PKGRELEASE) '$(PREBUILD)' $(BUILD) $(RHEV_FLAG) $(BUILDID) 
 	@cp $(SOURCES)/$(SPECFILE) $(SOURCES)/../SPECS
 	@cp $(TESTPATCH) $(SOURCES)/$(COMMON_NAME)-test.patch
 	@cp ../sysconfigs/target/target-x86_64.conf $(SOURCES)

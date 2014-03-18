@@ -8,8 +8,8 @@ PKGRELEASE=$4
 # BUILD* are legacy variables: please use PKGRELEASE instead
 PREBUILD=$5
 BUILD=$6
-BUILDID=$7
-RHEV=$8
+RHEV=$7
+BUILDID=$8
 
 PATCHF="$SOURCES/Patch.include"
 patchf="$SOURCES/patch.include"
