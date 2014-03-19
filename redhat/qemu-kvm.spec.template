@@ -803,6 +803,18 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Mar 19 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-54.el7
+- kvm-qdev-monitor-Set-properties-after-parent-is-assigned.patch [bz#1046248]
+- kvm-block-Update-image-size-in-bdrv_invalidate_cache.patch [bz#1048575]
+- kvm-qcow2-Keep-option-in-qcow2_invalidate_cache.patch [bz#1048575]
+- kvm-qcow2-Check-bs-drv-in-copy_sectors.patch [bz#1048575]
+- kvm-block-bs-drv-may-be-NULL-in-bdrv_debug_resume.patch [bz#1048575]
+- kvm-iotests-Test-corruption-during-COW-request.patch [bz#1048575]
+- Resolves: bz#1046248
+  (qemu-kvm crash when send "info qtree" after hot plug a device with invalid addr)
+- Resolves: bz#1048575
+  (Segmentation fault occurs after migrate guest(use scsi disk and add stress) to des machine)
+
 * Wed Mar 12 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-53.el7
 - kvm-dataplane-Fix-startup-race.patch [bz#1069541]
 - kvm-QMP-Relax-__com.redhat_drive_add-parameter-checking.patch [bz#1057471]
