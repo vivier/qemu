@@ -803,6 +803,12 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Mar 19 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-55.el7
+- kvm-scsi-Change-scsi-sense-buf-size-to-252.patch [bz#1058173]
+- kvm-scsi-Fix-migration-of-scsi-sense-data.patch [bz#1058173]
+- Resolves: bz#1058173
+  (qemu-kvm core dump booting guest with scsi-generic disk attached when using built-in iscsi driver)
+
 * Wed Mar 19 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-54.el7
 - kvm-qdev-monitor-Set-properties-after-parent-is-assigned.patch [bz#1046248]
 - kvm-block-Update-image-size-in-bdrv_invalidate_cache.patch [bz#1048575]
