@@ -47,8 +47,13 @@ deliberately called abort(), or it was dumped in response to a signal at
 a halfway fortunate point, then its coredump should be in reasonable
 shape and this command should mostly work."""
 
+    TARGET_PAGE_BITS = 12
     TARGET_PAGE_SIZE = 0x1000
     TARGET_PAGE_MASK = 0xFFFFFFFFFFFFF000
+    L1_BITS          = 10
+    L1_SIZE          = 0x400
+    L2_BITS          = 10
+    L2_SIZE          = 0x400
 
     # Various ELF constants
     EM_X86_64   = 62        # AMD x86-64 target machine
@@ -104,10 +109,6 @@ shape and this command should mostly work."""
         self.elf64_ehdr_le = struct.Struct("<%s" % self.ELF64_EHDR)
         self.elf64_phdr_le = struct.Struct("<%s" % self.ELF64_PHDR)
 
-    def int128_get64(self, val):
-        assert (val["hi"] == 0)
-        return val["lo"]
-
     def qtailq_foreach(self, head, field_str):
         var_p = head["tqh_first"]
         while (var_p != 0):
@@ -126,12 +127,6 @@ shape and this command should mostly work."""
         block = self.qemu_get_ram_block(ram_addr)
         return block["host"] + (ram_addr - block["offset"])
 
-    def memory_region_get_ram_ptr(self, mr):
-        if (mr["alias"] != 0):
-            return (self.memory_region_get_ram_ptr(mr["alias"].dereference()) +
-                    mr["alias_offset"])
-        return self.qemu_get_ram_ptr(mr["ram_addr"] & self.TARGET_PAGE_MASK)
-
     def guest_phys_blocks_init(self):
         self.guest_phys_blocks = []
 
@@ -142,54 +137,69 @@ shape and this command should mostly work."""
         print ("---------------- ---------------- ---------------- ------- "
                "-----")
 
-        current_map_p = gdb.parse_and_eval("address_space_memory.current_map")
-        current_map = current_map_p.dereference()
-        for cur in range(current_map["nr"]):
-            flat_range   = (current_map["ranges"] + cur).dereference()
-            mr           = flat_range["mr"].dereference()
+        l0table = gdb.parse_and_eval("(PhysPageDesc ***)l1_phys_map")
+        if (l0table == 0):
+            return
 
-            # we only care about RAM
-            if (not mr["ram"]):
+        for l0 in range(self.L1_SIZE):
+            l1table = (l0table + l0).dereference()
+            if (l1table == 0):
                 continue
 
-            section_size = self.int128_get64(flat_range["addr"]["size"])
-            target_start = self.int128_get64(flat_range["addr"]["start"])
-            target_end   = target_start + section_size
-            host_addr    = (self.memory_region_get_ram_ptr(mr) +
-                            flat_range["offset_in_region"])
-            predecessor = None
+            for l1 in range(self.L1_SIZE):
+                l2table = (l1table + l1).dereference()
+                if (l2table == 0):
+                    continue
 
-            # find continuity in guest physical address space
-            if (len(self.guest_phys_blocks) > 0):
-                predecessor = self.guest_phys_blocks[-1]
-                predecessor_size = (predecessor["target_end"] -
-                                    predecessor["target_start"])
+                for l2 in range (self.L2_SIZE):
+                    phys_page_desc = (l2table + l2).dereference()
+                    ram_addr = phys_page_desc["phys_offset"]
 
-                # the memory API guarantees monotonically increasing
-                # traversal
-                assert (predecessor["target_end"] <= target_start)
+                    # we only care about RAM
+                    if ((ram_addr & ~self.TARGET_PAGE_MASK) != 0):
+                        continue
 
-                # we want continuity in both guest-physical and
-                # host-virtual memory
-                if (predecessor["target_end"] < target_start or
-                    predecessor["host_addr"] + predecessor_size != host_addr):
+                    target_start = long(l0)            << self.L1_BITS
+                    target_start = (target_start + l1) << self.L2_BITS
+                    target_start = (target_start + l2) << self.TARGET_PAGE_BITS
+                    target_end   = target_start + self.TARGET_PAGE_SIZE
+                    host_addr    = self.qemu_get_ram_ptr(ram_addr)
                     predecessor = None
 
-            if (predecessor is None):
-                # isolated mapping, add it to the list
-                self.guest_phys_blocks.append({"target_start": target_start,
-                                               "target_end"  : target_end,
-                                               "host_addr"   : host_addr})
-                message = "added"
-            else:
-                # expand predecessor until @target_end; predecessor's
-                # start doesn't change
-                predecessor["target_end"] = target_end
-                message = "joined"
+                    # find continuity in guest physical address space
+                    if (len(self.guest_phys_blocks) > 0):
+                        predecessor = self.guest_phys_blocks[-1]
+                        predecessor_size = (predecessor["target_end"] -
+                                            predecessor["target_start"])
 
-            print ("%016x %016x %016x %-7s %5u" %
-                   (target_start, target_end, host_addr.cast(self.uintptr_t),
-                    message, len(self.guest_phys_blocks)))
+                        # the memory API guarantees monotonically increasing
+                        # traversal
+                        assert (predecessor["target_end"] <= target_start)
+
+                        # we want continuity in both guest-physical and
+                        # host-virtual memory
+                        if (predecessor["target_end"] < target_start or
+                            (predecessor["host_addr"] + predecessor_size !=
+                             host_addr)):
+                            predecessor = None
+
+                    if (predecessor is None):
+                        # isolated mapping, add it to the list
+                        self.guest_phys_blocks.append(
+                                                 {"target_start": target_start,
+                                                  "target_end"  : target_end,
+                                                  "host_addr"   : host_addr})
+                        message = "added"
+                    else:
+                        # expand predecessor until @target_end; predecessor's
+                        # start doesn't change
+                        predecessor["target_end"] = target_end
+                        message = "joined"
+
+                    print ("%016x %016x %016x %-7s %5u" %
+                           (target_start, target_end,
+                            host_addr.cast(self.uintptr_t), message,
+                            len(self.guest_phys_blocks)))
 
     def cpu_get_dump_info(self):
         # We can't synchronize the registers with KVM post-mortem, and
