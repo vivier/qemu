@@ -465,7 +465,7 @@ static int virtio_net_handle_mac(VirtIONet *n, uint8_t cmd,
         return VIRTIO_NET_ERR;
     }
 
-    if (n->mac_table.in_use + mac_data.entries <= MAC_TABLE_ENTRIES) {
+    if (mac_data.entries <= MAC_TABLE_ENTRIES - n->mac_table.in_use) {
         s = iov_to_buf(iov, iov_cnt,
                        &n->mac_table.macs[n->mac_table.in_use * ETH_ALEN],
                        0, mac_data.entries * ETH_ALEN);
