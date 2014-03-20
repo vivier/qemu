@@ -472,6 +472,8 @@ install -m 0755 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules/kvm.m
 install -m 0755 ../kvm/kvm_stat $RPM_BUILD_ROOT%{_bindir}/
 install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d
 install -m 0644 %{SOURCE9} $RPM_BUILD_ROOT%{_sysconfdir}/modprobe.d/blacklist-kvm.conf
+install -m 0644 ../scripts/dump-guest-memory.py \
+                $RPM_BUILD_ROOT%{_datadir}/%{confname}/
 
 make DESTDIR="${RPM_BUILD_ROOT}" \
      docdir="%{_docdir}/%{name}-%{version}" \
@@ -643,6 +645,7 @@ fi
 %{_datadir}/%{confname}/pxe-rtl8139.bin
 %{_datadir}/%{confname}/pxe-ne2k_pci.bin
 %{_datadir}/%{confname}/extboot.bin
+%{_datadir}/%{confname}/dump-guest-memory.py*
 %{_datadir}/systemtap/tapset/%{progname}.stp
 %{_libexecdir}/%{progname}
 %{_sysconfdir}/sysconfig/modules/kvm.modules
