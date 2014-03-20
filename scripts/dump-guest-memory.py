@@ -153,7 +153,7 @@ shape and this command should mostly work."""
 
                 for l2 in range (self.L2_SIZE):
                     phys_page_desc = (l2table + l2).dereference()
-                    ram_addr = phys_page_desc["phys_offset"]
+                    ram_addr = long(phys_page_desc["phys_offset"])
 
                     # we only care about RAM
                     if ((ram_addr & ~self.TARGET_PAGE_MASK) != 0):
