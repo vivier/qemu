@@ -146,11 +146,9 @@ shape and this command should mostly work."""
             self.cached_ram_blocks.append(blk)
 
     def guest_phys_blocks_append(self):
-        print "guest RAM blocks:"
-        print ("target_start     target_end       host_addr        message "
-               "count")
-        print ("---------------- ---------------- ---------------- ------- "
-               "-----")
+        print "guest RAM blocks (only discontiguous starts logged):"
+        print ("target_start     host_addr        count")
+        print ("---------------- ---------------- -----")
 
         l0table = gdb.parse_and_eval("(PhysPageDesc ***)l1_phys_map")
         if (l0table == 0):
@@ -204,17 +202,13 @@ shape and this command should mostly work."""
                                                  {"target_start": target_start,
                                                   "target_end"  : target_end,
                                                   "host_addr"   : host_addr})
-                        message = "added"
+                        print ("%016x %016x %5u" %
+                               (target_start, host_addr.cast(self.uintptr_t),
+                                len(self.guest_phys_blocks)))
                     else:
                         # expand predecessor until @target_end; predecessor's
                         # start doesn't change
                         predecessor["target_end"] = target_end
-                        message = "joined"
-
-                    print ("%016x %016x %016x %-7s %5u" %
-                           (target_start, target_end,
-                            host_addr.cast(self.uintptr_t), message,
-                            len(self.guest_phys_blocks)))
 
     def cpu_get_dump_info(self):
         # We can't synchronize the registers with KVM post-mortem, and
