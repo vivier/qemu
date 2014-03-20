@@ -952,9 +952,9 @@ for opt do
   ;;
   --enable-live-block-migration) live_block_migration="yes"
   ;;
-  --disable-ceph-support) ceph_support=="no"
+  --disable-ceph-support) ceph_support="no"
   ;;
-  --enable-ceph-support) ceph_support=="yes"
+  --enable-ceph-support) ceph_support="yes"
   ;;
   --enable-vhdx) vhdx="yes"
   ;;
@@ -4039,7 +4039,7 @@ if test "$live_block_migration" = "yes" ; then
   echo "CONFIG_LIVE_BLOCK_MIGRATION=y" >> $config_host_mak
 fi
 
-if test "ceph_support" = "yes"; then
+if test "$ceph_support" = "yes"; then
   echo "CONFIG_CEPH_SUPPORT=y" >> $config_host_mak
 fi
 
