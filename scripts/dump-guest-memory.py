@@ -117,18 +117,33 @@ shape and this command should mostly work."""
             var_p = var[field_str]["le_next"]
 
     def qemu_get_ram_block(self, ram_addr):
-        ram_blocks = gdb.parse_and_eval("ram_list.blocks")
-        for block in self.qlist_foreach(ram_blocks, "next"):
-            if (ram_addr - block["offset"] < block["length"]):
+        for block in self.cached_ram_blocks:
+            if (ram_addr >= block.offset and
+                ram_addr <  block.offset + block.length):
                 return block
         raise gdb.GdbError("Bad ram offset %x" % ram_addr)
 
     def qemu_get_ram_ptr(self, ram_addr):
         block = self.qemu_get_ram_block(ram_addr)
-        return block["host"] + (ram_addr - block["offset"])
+        return block.host + (ram_addr - block.offset)
+
+    class cached_ram_block:
+        def __init__(self):
+            self.offset = None
+            self.length = None
+            self.host   = None
 
     def guest_phys_blocks_init(self):
         self.guest_phys_blocks = []
+
+        self.cached_ram_blocks = []
+        ram_blocks = gdb.parse_and_eval("ram_list.blocks")
+        for block in self.qlist_foreach(ram_blocks, "next"):
+            blk        = self.cached_ram_block()
+            blk.offset = block["offset"]
+            blk.length = block["length"]
+            blk.host   = block["host"]
+            self.cached_ram_blocks.append(blk)
 
     def guest_phys_blocks_append(self):
         print "guest RAM blocks:"
