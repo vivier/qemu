@@ -803,6 +803,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Mar 21 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-56.el7
+- kvm-configure-Fix-bugs-preventing-Ceph-inclusion.patch [bz#1078809]
+- Resolves: bz#1078809
+  (can not boot qemu-kvm-rhev with rbd image)
+
 * Wed Mar 19 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-55.el7
 - kvm-scsi-Change-scsi-sense-buf-size-to-252.patch [bz#1058173]
 - kvm-scsi-Fix-migration-of-scsi-sense-data.patch [bz#1058173]
