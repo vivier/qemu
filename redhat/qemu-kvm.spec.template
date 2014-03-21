@@ -803,6 +803,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Mar 21 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-57.el7
+- kvm-virtio-net-fix-guest-triggerable-buffer-overrun.patch [bz#1078308]
+- Resolves: bz#1078308
+  (EMBARGOED CVE-2014-0150 qemu: virtio-net: fix guest-triggerable buffer overrun [rhel-7.0])
+
 * Fri Mar 21 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-56.el7
 - kvm-configure-Fix-bugs-preventing-Ceph-inclusion.patch [bz#1078809]
 - Resolves: bz#1078809
