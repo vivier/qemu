@@ -19,6 +19,8 @@
 #ifndef CPU_ALL_H
 #define CPU_ALL_H
 
+#include <sys/types.h>
+
 #include "qemu-common.h"
 #include "cpu-common.h"
 #include "memory_mapping.h"
@@ -1137,7 +1139,7 @@ struct GuestPhysBlockList; /* memory_mapping.h */
 int cpu_get_dump_info(ArchDumpInfo *info,
                       const struct GuestPhysBlockList *guest_phys_blocks);
 
-size_t cpu_get_note_size(int class, int machine, int nr_cpus);
+ssize_t cpu_get_note_size(int class, int machine, int nr_cpus);
 #else
 static inline int cpu_write_elf64_note(write_core_dump_function f,
                                        CPUArchState *env, int cpuid,
@@ -1172,7 +1174,7 @@ static inline int cpu_get_dump_info(ArchDumpInfo *info, void *ignore)
     return -1;
 }
 
-static inline int cpu_get_note_size(int class, int machine, int nr_cpus)
+static inline ssize_t cpu_get_note_size(int class, int machine, int nr_cpus)
 {
     return -1;
 }
