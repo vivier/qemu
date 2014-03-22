@@ -271,7 +271,7 @@ static int write_elf64_note(DumpState *s)
     return 0;
 }
 
-static int write_elf64_notes(DumpState *s)
+static int write_elf64_notes(write_core_dump_function f, DumpState *s)
 {
     CPUArchState *env;
     int ret;
@@ -279,7 +279,7 @@ static int write_elf64_notes(DumpState *s)
 
     for (env = first_cpu; env != NULL; env = env->next_cpu) {
         id = cpu_index(env);
-        ret = cpu_write_elf64_note(fd_write_vmcore, env, id, s);
+        ret = cpu_write_elf64_note(f, env, id, s);
         if (ret < 0) {
             dump_error(s, "dump: failed to write elf notes.\n");
             return -1;
@@ -287,7 +287,7 @@ static int write_elf64_notes(DumpState *s)
     }
 
     for (env = first_cpu; env != NULL; env = env->next_cpu) {
-        ret = cpu_write_elf64_qemunote(fd_write_vmcore, env, s);
+        ret = cpu_write_elf64_qemunote(f, env, s);
         if (ret < 0) {
             dump_error(s, "dump: failed to write CPU status.\n");
             return -1;
@@ -321,7 +321,7 @@ static int write_elf32_note(DumpState *s)
     return 0;
 }
 
-static int write_elf32_notes(DumpState *s)
+static int write_elf32_notes(write_core_dump_function f, DumpState *s)
 {
     CPUArchState *env;
     int ret;
@@ -329,7 +329,7 @@ static int write_elf32_notes(DumpState *s)
 
     for (env = first_cpu; env != NULL; env = env->next_cpu) {
         id = cpu_index(env);
-        ret = cpu_write_elf32_note(fd_write_vmcore, env, id, s);
+        ret = cpu_write_elf32_note(f, env, id, s);
         if (ret < 0) {
             dump_error(s, "dump: failed to write elf notes.\n");
             return -1;
@@ -337,7 +337,7 @@ static int write_elf32_notes(DumpState *s)
     }
 
     for (env = first_cpu; env != NULL; env = env->next_cpu) {
-        ret = cpu_write_elf32_qemunote(fd_write_vmcore, env, s);
+        ret = cpu_write_elf32_qemunote(f, env, s);
         if (ret < 0) {
             dump_error(s, "dump: failed to write CPU status.\n");
             return -1;
@@ -574,7 +574,7 @@ static int dump_begin(DumpState *s)
         }
 
         /* write notes to vmcore */
-        if (write_elf64_notes(s) < 0) {
+        if (write_elf64_notes(fd_write_vmcore, s) < 0) {
             return -1;
         }
 
@@ -597,7 +597,7 @@ static int dump_begin(DumpState *s)
         }
 
         /* write notes to vmcore */
-        if (write_elf32_notes(s) < 0) {
+        if (write_elf32_notes(fd_write_vmcore, s) < 0) {
             return -1;
         }
     }
