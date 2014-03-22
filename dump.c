@@ -104,7 +104,7 @@ static void dump_error(DumpState *s, const char *reason)
     dump_cleanup(s);
 }
 
-static int fd_write_vmcore(void *buf, size_t size, void *opaque)
+static int fd_write_vmcore(const void *buf, size_t size, void *opaque)
 {
     DumpState *s = opaque;
     size_t written_size;
