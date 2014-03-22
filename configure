@@ -292,6 +292,8 @@ io_throttling="yes"
 usb_redir=""
 virtio_blk_data_plane=""
 glusterfs=""
+lzo="no"
+snappy="no"
 
 # OS specific
 if check_define __linux__ ; then
@@ -723,6 +725,10 @@ for opt do
   ;;
   --enable-glusterfs) glusterfs="yes"
   ;;
+  --enable-lzo) lzo="yes"
+  ;;
+  --enable-snappy) snappy="yes"
+  ;;
   *) echo "ERROR: unknown option $opt"; show_help="yes"
   ;;
   esac
@@ -911,6 +917,8 @@ echo "  --disable-rhev-features  disable RHEV-only features"
 echo "  --enable-rhev-features   enable RHEV-only features"
 echo "  --enable-glusterfs       enable GlusterFS backend"
 echo "  --disable-glusterfs      disable GlusterFS backend"
+echo "  --enable-lzo             enable the support of lzo compression library"
+echo "  --enable-snappy          enable the support of snappy compression library"
 echo ""
 echo "NOTE: The object files are built at the place where configure is launched"
 exit 1
@@ -1832,6 +1840,40 @@ EOF
   fi
 fi
 
+##########################################
+# lzo check
+
+if test "$lzo" != "no" ; then
+    cat > $TMPC << EOF
+#include <lzo/lzo1x.h>
+int main(void) { lzo_version(); return 0; }
+EOF
+    if compile_prog "" "-llzo2" ; then
+        :
+    else
+        feature_not_found "lzo"
+    fi
+
+    libs_softmmu="$libs_softmmu -llzo2"
+fi
+
+##########################################
+# snappy check
+
+if test "$snappy" != "no" ; then
+    cat > $TMPC << EOF
+#include <snappy-c.h>
+int main(void) { snappy_max_compressed_length(4096); return 0; }
+EOF
+    if compile_prog "" "-lsnappy" ; then
+        :
+    else
+        feature_not_found "snappy"
+    fi
+
+    libs_softmmu="$libs_softmmu -lsnappy"
+fi
+
 #
 # Check for xxxat() functions when we are building linux-user
 # emulator.  This is done because older glibc versions don't
@@ -2383,6 +2425,8 @@ echo "xfsctl support    $xfs"
 echo "usb net redir     $usb_redir"
 echo "virtio-blk-data-plane $virtio_blk_data_plane"
 echo "GlusterFS support $glusterfs"
+echo "lzo support       $lzo"
+echo "snappy support    $snappy"
 
 if test $sdl_too_old = "yes"; then
 echo "-> Your SDL version is too old - please upgrade to have SDL support"
@@ -2673,6 +2717,14 @@ fi
 
 if test "$glusterfs" = "yes" ; then
   echo "CONFIG_GLUSTERFS=y" >> $config_host_mak
+fi
+
+if test "$lzo" = "yes" ; then
+  echo "CONFIG_LZO=y" >> $config_host_mak
+fi
+
+if test "$snappy" = "yes" ; then
+  echo "CONFIG_SNAPPY=y" >> $config_host_mak
 fi
 
 # USB host support
