@@ -173,6 +173,8 @@ BuildRequires: libaio-devel
 BuildRequires: usbredir-devel >= 0.5
 # For glusterfs support
 BuildRequires: glusterfs-devel glusterfs-api-devel
+# For compressed guest memory dumps
+BuildRequires: lzo-devel snappy-devel
 # For uuid generation
 BuildRequires: libuuid-devel
 
@@ -210,6 +212,8 @@ Requires: /usr/share/gpxe/virtio-net.rom
 Requires: /usr/share/sgabios/sgabios.bin
 # For glusterfs support
 Requires: glusterfs-api
+# For compressed guest memory dumps
+Requires: lzo snappy
 %endif
 
 # fix for CVE-2011-2527 requires newer glibc
@@ -398,6 +402,8 @@ cd qemu-kvm-x86_64-build
             --enable-usb-redir \
             --enable-mixemu \
             --enable-glusterfs \
+            --enable-lzo \
+            --enable-snappy \
             %{fake_machine_arg} \
             %{disable_rhev_features_arg}
 
