@@ -1237,6 +1237,28 @@ Notes:
 
 EQMP
 
+    {
+        .name       = "query-dump-guest-memory-capability",
+        .args_type  = "",
+        .user_print = monitor_user_noop,
+    .mhandler.cmd_new = qmp_marshal_input_query_dump_guest_memory_capability,
+        .flags = MONITOR_CMD_QMP_ONLY
+    },
+
+SQMP
+query-dump-guest-memory-capability
+----------
+
+Show available formats for 'dump-guest-memory'
+
+Example:
+
+-> { "execute": "query-dump-guest-memory-capability" }
+<- { "return": { "formats":
+                    ["elf", "kdump-zlib", "kdump-lzo", "kdump-snappy"] }
+
+EQMP
+
 #if defined(CONFIG_HAVE_CORE_DUMP)
     {
         .name       = "dump-guest-memory",
