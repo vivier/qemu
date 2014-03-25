@@ -100,8 +100,14 @@ int qcow2_read_snapshots(BlockDriverState *bs)
         }
         offset += name_size;
         sn->name[name_size] = '\0';
+
+        if (offset - s->snapshots_offset > QCOW_MAX_SNAPSHOTS_SIZE) {
+            ret = -EFBIG;
+            goto fail;
+        }
     }
 
+    assert(offset - s->snapshots_offset <= INT_MAX);
     s->snapshots_size = offset - s->snapshots_offset;
     return 0;
 
@@ -132,7 +138,14 @@ static int qcow2_write_snapshots(BlockDriverState *bs)
         offset += sizeof(h);
         offset += strlen(sn->id_str);
         offset += strlen(sn->name);
+
+        if (offset > QCOW_MAX_SNAPSHOTS_SIZE) {
+            ret = -EFBIG;
+            goto fail;
+        }
     }
+
+    assert(offset <= INT_MAX);
     snapshots_size = offset;
 
     /* Allocate space for the new snapshot list */
