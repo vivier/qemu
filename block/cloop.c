@@ -26,6 +26,9 @@
 #include "module.h"
 #include <zlib.h>
 
+/* Maximum compressed block size */
+#define MAX_BLOCK_SIZE (64 * 1024 * 1024)
+
 typedef struct BDRVCloopState {
     CoMutex lock;
     uint32_t block_size;
@@ -63,6 +66,24 @@ static int cloop_open(BlockDriverState *bs, int flags)
         goto cloop_close;
     }
     s->block_size = be32_to_cpu(s->block_size);
+    if (s->block_size % 512) {
+        qerror_report(QERR_GENERIC_ERROR,
+                      "block_size must be a multiple of 512");
+        return -EINVAL;
+    }
+    if (s->block_size == 0) {
+        qerror_report(QERR_GENERIC_ERROR, "block_size cannot be zero");
+        return -EINVAL;
+    }
+
+    /* cloop's create_compressed_fs.c warns about block sizes beyond 256 KB but
+     * we can accept more.  Prevent ridiculous values like 4 GB - 1 since we
+     * need a buffer this big.
+     */
+    if (s->block_size > MAX_BLOCK_SIZE) {
+        qerror_report(QERR_GENERIC_ERROR, "block_size too large");
+        return -EINVAL;
+    }
 
     if (bdrv_pread(bs->file, 128 + 4, &s->n_blocks, 4) < 4) {
         goto cloop_close;
