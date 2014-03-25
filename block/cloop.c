@@ -91,6 +91,11 @@ static int cloop_open(BlockDriverState *bs, int flags)
     s->n_blocks = be32_to_cpu(s->n_blocks);
 
     /* read offsets */
+    if (s->n_blocks > UINT32_MAX / sizeof(uint64_t)) {
+        /* Prevent integer overflow */
+        qerror_report(QERR_GENERIC_ERROR, "n_blocks too large");
+        return -EINVAL;
+    }
     offsets_size = s->n_blocks * sizeof(uint64_t);
     s->offsets = g_malloc(offsets_size);
     if (bdrv_pread(bs->file, 128 + 4 + 4, s->offsets, offsets_size) <
