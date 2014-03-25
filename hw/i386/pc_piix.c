@@ -917,6 +917,9 @@ static QEMUMachine pc_machine_rhel700 = {
 static void pc_compat_rhel650(QEMUMachineInitArgs *args)
 {
     pc_compat_rhel700(args);
+    if (!args->cpu_model) {
+        args->cpu_model = "cpu64-rhel6";
+    }
     x86_cpu_compat_set_features("pentium", FEAT_1_EDX, 0, CPUID_APIC);
     x86_cpu_compat_set_features("pentium2", FEAT_1_EDX, 0, CPUID_APIC);
     x86_cpu_compat_set_features("pentium3", FEAT_1_EDX, 0, CPUID_APIC);
