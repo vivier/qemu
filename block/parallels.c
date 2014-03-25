@@ -51,7 +51,7 @@ typedef struct BDRVParallelsState {
     uint32_t *catalog_bitmap;
     unsigned int catalog_size;
 
-    int tracks;
+    unsigned int tracks;
 } BDRVParallelsState;
 
 static int parallels_probe(const uint8_t *buf, int buf_size, const char *filename)
@@ -87,6 +87,11 @@ static int parallels_open(BlockDriverState *bs, int flags)
     bs->total_sectors = le32_to_cpu(ph.nb_sectors);
 
     s->tracks = le32_to_cpu(ph.tracks);
+    if (s->tracks == 0) {
+        qerror_report(QERR_GENERIC_ERROR,
+                      "Invalid image: Zero sectors per track");
+        goto fail;
+    }
 
     s->catalog_size = le32_to_cpu(ph.catalog_entries);
     if (s->catalog_size > INT_MAX / 4) {
