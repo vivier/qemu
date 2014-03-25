@@ -196,7 +196,8 @@ static int validate_table_offset(BlockDriverState *bs, uint64_t offset,
 static int qcow2_open(BlockDriverState *bs, int flags)
 {
     BDRVQcowState *s = bs->opaque;
-    int len, i, ret = 0;
+    unsigned int len, i;
+    int ret = 0;
     QCowHeader header;
     uint64_t ext_end;
     bool writethrough;
@@ -370,8 +371,10 @@ static int qcow2_open(BlockDriverState *bs, int flags)
     /* read the backing file name */
     if (header.backing_file_offset != 0) {
         len = header.backing_file_size;
-        if (len > 1023) {
-            len = 1023;
+        if (len > MIN(1023, s->cluster_size - header.backing_file_offset)) {
+            qerror_report(QERR_GENERIC_ERROR, "Backing file name too long");
+            ret = -EINVAL;
+            goto fail;
         }
         ret = bdrv_pread(bs->file, header.backing_file_offset,
                          bs->backing_file, len);
