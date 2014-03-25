@@ -277,6 +277,12 @@ static int qcow2_open(BlockDriverState *bs, int flags)
     QLIST_INIT(&s->cluster_allocs);
 
     /* read qcow2 extensions */
+    if (header.backing_file_offset > s->cluster_size) {
+        qerror_report(QERR_GENERIC_ERROR, "Invalid backing file offset");
+        ret = -EINVAL;
+        goto fail;
+    }
+
     if (header.backing_file_offset) {
         ext_end = header.backing_file_offset;
     } else {
