@@ -53,7 +53,7 @@ touch $PATCHF $patchf
 echo >$clogf
 
 total="$(git log --first-parent --pretty=oneline ${MARKER}${RCMARKER}.. |wc -l)"
-git format-patch --first-parent --no-renames -k --stdout ${MARKER}${RCMARKER}..|tee debug0 | awk '
+git format-patch --first-parent --no-renames --no-binary -k --stdout ${MARKER}${RCMARKER}..|tee debug0 | awk '
 BEGIN{TYPE="PATCHJUNK"; count=1; dolog=0; pnum=1000}
 
 	#convert subject line to a useable filename
