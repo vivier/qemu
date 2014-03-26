@@ -803,6 +803,14 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Mar 26 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-58.el7
+- kvm-pc-Use-cpu64-rhel6-CPU-model-by-default-on-rhel6-mac.patch [bz#1080170]
+- kvm-target-i386-Copy-cpu64-rhel6-definition-into-qemu64.patch [bz#1078607 bz#1080170]
+- Resolves: bz#1080170
+  (intel 82576 VF not work in windows 2008 x86 - Code 12 [TestOnly])
+- Resolves: bz#1080170
+  (Default CPU model for rhel6.* machine-types is different from RHEL-6)
+
 * Fri Mar 21 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-57.el7
 - kvm-virtio-net-fix-guest-triggerable-buffer-overrun.patch [bz#1078308]
 - Resolves: bz#1078308
