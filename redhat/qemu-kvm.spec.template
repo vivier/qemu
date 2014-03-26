@@ -803,6 +803,74 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Mar 26 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-59.el7
+- kvm-qemu-iotests-add-.-check-cloop-support.patch [bz#1066691]
+- kvm-qemu-iotests-add-cloop-input-validation-tests.patch [bz#1066691]
+- kvm-block-cloop-validate-block_size-header-field-CVE-201.patch [bz#1079455]
+- kvm-block-cloop-prevent-offsets_size-integer-overflow-CV.patch [bz#1079320]
+- kvm-block-cloop-refuse-images-with-huge-offsets-arrays-C.patch [bz#1079455]
+- kvm-block-cloop-refuse-images-with-bogus-offsets-CVE-201.patch [bz#1079455]
+- kvm-size-off-by-one.patch [bz#1066691]
+- kvm-qemu-iotests-Support-for-bochs-format.patch [bz#1066691]
+- kvm-bochs-Unify-header-structs-and-make-them-QEMU_PACKED.patch [bz#1066691]
+- kvm-bochs-Use-unsigned-variables-for-offsets-and-sizes-C.patch [bz#1079339]
+- kvm-bochs-Check-catalog_size-header-field-CVE-2014-0143.patch [bz#1079320]
+- kvm-bochs-Check-extent_size-header-field-CVE-2014-0142.patch [bz#1079315]
+- kvm-bochs-Fix-bitmap-offset-calculation.patch [bz#1066691]
+- kvm-vpc-vhd-add-bounds-check-for-max_table_entries-and-b.patch [bz#1079455]
+- kvm-vpc-Validate-block-size-CVE-2014-0142.patch [bz#1079315]
+- kvm-vdi-add-bounds-checks-for-blocks_in_image-and-disk_s.patch [bz#1079455]
+- kvm-vhdx-Bounds-checking-for-block_size-and-logical_sect.patch [bz#1079346]
+- kvm-curl-check-data-size-before-memcpy-to-local-buffer.-.patch [bz#1079455]
+- kvm-qcow2-Check-header_length-CVE-2014-0144.patch [bz#1079455]
+- kvm-qcow2-Check-backing_file_offset-CVE-2014-0144.patch [bz#1079455]
+- kvm-qcow2-Check-refcount-table-size-CVE-2014-0144.patch [bz#1079455]
+- kvm-qcow2-Validate-refcount-table-offset.patch [bz#1066691]
+- kvm-qcow2-Validate-snapshot-table-offset-size-CVE-2014-0.patch [bz#1079455]
+- kvm-qcow2-Validate-active-L1-table-offset-and-size-CVE-2.patch [bz#1079455]
+- kvm-qcow2-Fix-backing-file-name-length-check.patch [bz#1066691]
+- kvm-qcow2-Don-t-rely-on-free_cluster_index-in-alloc_refc.patch [bz#1079339]
+- kvm-qcow2-Avoid-integer-overflow-in-get_refcount-CVE-201.patch [bz#1079320]
+- kvm-qcow2-Check-new-refcount-table-size-on-growth.patch [bz#1066691]
+- kvm-qcow2-Fix-types-in-qcow2_alloc_clusters-and-alloc_cl.patch [bz#1066691]
+- kvm-qcow2-Protect-against-some-integer-overflows-in-bdrv.patch [bz#1066691]
+- kvm-qcow2-Fix-new-L1-table-size-check-CVE-2014-0143.patch [bz#1079320]
+- kvm-dmg-coding-style-and-indentation-cleanup.patch [bz#1066691]
+- kvm-dmg-prevent-out-of-bounds-array-access-on-terminator.patch [bz#1066691]
+- kvm-dmg-drop-broken-bdrv_pread-loop.patch [bz#1066691]
+- kvm-dmg-use-appropriate-types-when-reading-chunks.patch [bz#1066691]
+- kvm-dmg-sanitize-chunk-length-and-sectorcount-CVE-2014-0.patch [bz#1079325]
+- kvm-dmg-use-uint64_t-consistently-for-sectors-and-length.patch [bz#1066691]
+- kvm-dmg-prevent-chunk-buffer-overflow-CVE-2014-0145.patch [bz#1079325]
+- kvm-block-vdi-bounds-check-qemu-io-tests.patch [bz#1066691]
+- kvm-block-Limit-request-size-CVE-2014-0143.patch [bz#1079320]
+- kvm-qcow2-Fix-copy_sectors-with-VM-state.patch [bz#1066691]
+- kvm-qcow2-Fix-NULL-dereference-in-qcow2_open-error-path-.patch [bz#1079333]
+- kvm-qcow2-Fix-L1-allocation-size-in-qcow2_snapshot_load_.patch [bz#1079325]
+- kvm-qcow2-Check-maximum-L1-size-in-qcow2_snapshot_load_t.patch [bz#1079320]
+- kvm-qcow2-Limit-snapshot-table-size.patch [bz#1066691]
+- kvm-parallels-Fix-catalog-size-integer-overflow-CVE-2014.patch [bz#1079320]
+- kvm-parallels-Sanity-check-for-s-tracks-CVE-2014-0142.patch [bz#1079315]
+- kvm-fix-machine-check-propagation.patch [bz#740107]
+- Resolves: bz#1066691
+  (qemu-kvm: include leftover patches from block layer security audit)
+- Resolves: bz#1079315
+  (CVE-2014-0142 qemu-kvm: qemu: crash by possible division by zero [rhel-7.0])
+- Resolves: bz#1079320
+  (CVE-2014-0143 qemu-kvm: Qemu: block: multiple integer overflow flaws [rhel-7.0])
+- Resolves: bz#1079325
+  (CVE-2014-0145 qemu-kvm: Qemu: prevent possible buffer overflows [rhel-7.0])
+- Resolves: bz#1079333
+  (CVE-2014-0146 qemu-kvm: Qemu: qcow2: NULL dereference in qcow2_open() error path [rhel-7.0])
+- Resolves: bz#1079339
+  (CVE-2014-0147 qemu-kvm: Qemu: block: possible crash due signed types or logic error [rhel-7.0])
+- Resolves: bz#1079346
+  (CVE-2014-0148 qemu-kvm: Qemu: vhdx: bounds checking for block_size and logical_sector_size [rhel-7.0])
+- Resolves: bz#1079455
+  (CVE-2014-0144 qemu-kvm: Qemu: block: missing input validation [rhel-7.0])
+- Resolves: bz#740107
+  ([Hitachi 7.0 FEAT]  KVM: MCA Recovery for KVM guest OS memory)
+
 * Wed Mar 26 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-58.el7
 - kvm-pc-Use-cpu64-rhel6-CPU-model-by-default-on-rhel6-mac.patch [bz#1080170]
 - kvm-target-i386-Copy-cpu64-rhel6-definition-into-qemu64.patch [bz#1078607 bz#1080170]
