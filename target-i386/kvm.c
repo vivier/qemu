@@ -357,7 +357,7 @@ int kvm_arch_on_sigbus(int code, void *addr)
 
         /* Hope we are lucky for AO MCE */
         if (qemu_ram_addr_from_host(addr, &ram_addr) ||
-            !kvm_physical_memory_addr_from_host(CPU(first_cpu)->kvm_state,
+            !kvm_physical_memory_addr_from_host(ENV_GET_CPU(first_cpu)->kvm_state,
                                                 addr, &paddr)) {
             fprintf(stderr, "Hardware memory error for memory used by "
                     "QEMU itself instead of guest system!: %p\n", addr);
