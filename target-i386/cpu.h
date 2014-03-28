@@ -347,6 +347,10 @@
 
 #define MSR_VM_HSAVE_PA                 0xc0010117
 
+#define XSTATE_FP                       1
+#define XSTATE_SSE                      2
+#define XSTATE_YMM                      4
+
 /* cpuid_features bits */
 #define CPUID_FP87 (1 << 0)
 #define CPUID_VME  (1 << 1)
