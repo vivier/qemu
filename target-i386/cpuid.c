@@ -81,6 +81,20 @@ static const char *cpuid_7_0_ebx_feature_name[] = {
     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 };
 
+typedef struct ExtSaveArea {
+    bool (*enabled)(const CPUX86State *);
+    uint32_t offset, size;
+} ExtSaveArea;
+
+static bool cpu_has_avx(const CPUX86State *env)
+{
+    return env->cpuid_ext_features & CPUID_EXT_AVX;
+}
+
+static const ExtSaveArea ext_save_areas[] = {
+    [2] = { .enabled = cpu_has_avx, .offset = 0x240, .size = 0x100 },
+};
+
 /* collects per-function cpuid data
  */
 typedef struct model_features_t {
@@ -1369,29 +1383,49 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
             *edx = 0;
         }
         break;
-    case 0xD:
+    case 0xD: {
+        KVMState *s = env->kvm_state;
+        uint64_t kvm_mask;
+        int i;
+
         /* Processor Extended State */
-        if (!(env->cpuid_ext_features & CPUID_EXT_XSAVE)) {
-            *eax = 0;
-            *ebx = 0;
-            *ecx = 0;
-            *edx = 0;
+        *eax = 0;
+        *ebx = 0;
+        *ecx = 0;
+        *edx = 0;
+        if (!(env->cpuid_ext_features & CPUID_EXT_XSAVE) || !kvm_enabled()) {
             break;
         }
-        if (kvm_enabled()) {
-            KVMState *s = env->kvm_state;
+        kvm_mask =
+            kvm_arch_get_supported_cpuid(s, 0xd, 0, R_EAX) |
+            ((uint64_t)kvm_arch_get_supported_cpuid(s, 0xd, 0, R_EDX) << 32);
 
-            *eax = kvm_arch_get_supported_cpuid(s, 0xd, count, R_EAX);
-            *ebx = kvm_arch_get_supported_cpuid(s, 0xd, count, R_EBX);
-            *ecx = kvm_arch_get_supported_cpuid(s, 0xd, count, R_ECX);
-            *edx = kvm_arch_get_supported_cpuid(s, 0xd, count, R_EDX);
-        } else {
-            *eax = 0;
-            *ebx = 0;
-            *ecx = 0;
-            *edx = 0;
+        if (count == 0) {
+            *ecx = 0x240;
+            for (i = 2; i < ARRAY_SIZE(ext_save_areas); i++) {
+                const ExtSaveArea *esa = &ext_save_areas[i];
+                if (esa->enabled(env) && kvm_mask & (1 << i)) {
+                    if (i < 32) {
+                        *eax |= 1 << i;
+                    } else {
+                        *edx |= 1 << (i - 32);
+                    }
+                    *ecx = MAX(*ecx, esa->offset + esa->size);
+                }
+            }
+            *eax |= kvm_mask & (XSTATE_FP | XSTATE_SSE);
+            *ebx = *ecx;
+        } else if (count == 1) {
+            *eax = kvm_arch_get_supported_cpuid(s, 0xd, 1, R_EAX);
+        } else if (count < ARRAY_SIZE(ext_save_areas)) {
+            const ExtSaveArea *esa = &ext_save_areas[count];
+            if (esa->enabled(env) && kvm_mask & (1 << count)) {
+                *eax = esa->size;
+                *ebx = esa->offset;
+            }
         }
         break;
+    }
     case 0x80000000:
         *eax = env->cpuid_xlevel;
         *ebx = env->cpuid_vendor1;
