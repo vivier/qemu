@@ -1628,9 +1628,9 @@ static int qcow2_create2(const char *filename, int64_t total_size,
     }
 
     /* Write a refcount table with one refcount block */
-    refcount_table = g_malloc0(cluster_size);
+    refcount_table = g_malloc0(2 * cluster_size);
     refcount_table[0] = cpu_to_be64(2 * cluster_size);
-    ret = bdrv_pwrite(bs, cluster_size, refcount_table, cluster_size);
+    ret = bdrv_pwrite(bs, cluster_size, refcount_table, 2 * cluster_size);
     g_free(refcount_table);
 
     if (ret < 0) {
