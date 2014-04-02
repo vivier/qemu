@@ -803,6 +803,14 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Apr 02 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-60.el7
+- kvm-qcow2-fix-dangling-refcount-table-entry.patch [bz#1081793]
+- kvm-qcow2-link-all-L2-meta-updates-in-preallocate.patch [bz#1081393]
+- Resolves: bz#1081393
+  (qemu-img will prompt that 'leaked clusters were found' while creating images with '-o preallocation=metadata,cluster_size<=1024')
+- Resolves: bz#1081793
+  (qemu-img core dumped when creating a qcow2 image base on block device(iscsi or libiscsi))
+
 * Wed Mar 26 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-59.el7
 - kvm-qemu-iotests-add-.-check-cloop-support.patch [bz#1066691]
 - kvm-qemu-iotests-add-cloop-input-validation-tests.patch [bz#1066691]
