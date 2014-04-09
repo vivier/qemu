@@ -146,8 +146,13 @@ static int bochs_open(BlockDriverState *bs, int flags)
     s->extent_blocks = 1 + (le32_to_cpu(bochs.extent) - 1) / 512;
 
     s->extent_size = le32_to_cpu(bochs.extent);
-    if (s->extent_size == 0) {
-        qerror_report(QERR_GENERIC_ERROR, "Extent size may not be zero");
+    if (s->extent_size < BDRV_SECTOR_SIZE) {
+        /* bximage actually never creates extents smaller than 4k */
+        qerror_report(QERR_GENERIC_ERROR, "Extent size must be at least 512");
+        ret = -EINVAL;
+        goto fail;
+    } else if (s->extent_size & (s->extent_size - 1)) {
+        qerror_report(QERR_GENERIC_ERROR, "Extent size is not a power of two");
         ret = -EINVAL;
         goto fail;
     } else if (s->extent_size > 0x800000) {
@@ -156,7 +161,9 @@ static int bochs_open(BlockDriverState *bs, int flags)
         goto fail;
     }
 
-    if (s->catalog_size < bs->total_sectors / s->extent_size) {
+    if (s->catalog_size < DIV_ROUND_UP(bs->total_sectors,
+                                       s->extent_size / BDRV_SECTOR_SIZE))
+    {
         qerror_report(QERR_GENERIC_ERROR,
                       "Catalog size is too small for this disk size");
         ret = -EINVAL;
