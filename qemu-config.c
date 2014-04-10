@@ -384,6 +384,9 @@ QemuOptsList qemu_spice_opts = {
             .name = "disable-agent-file-xfer",
             .type = QEMU_OPT_BOOL,
         },{
+            .name = "sasl",
+            .type = QEMU_OPT_BOOL,
+        },{
             .name = "x509-dir",
             .type = QEMU_OPT_STRING,
         },{
