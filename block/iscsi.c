@@ -617,6 +617,16 @@ iscsi_aio_flush(BlockDriverState *bs,
     acb->iscsilun    = iscsilun;
     acb->retries     = ISCSI_CMD_RETRIES;
 
+    if (bs->sg) {
+        acb->canceled = 0;
+        acb->status = 0;
+        acb->bh = NULL;
+        acb->buf = NULL;
+        acb->task = NULL;
+        iscsi_schedule_bh(acb);
+        return &acb->common;
+    }
+
     if (iscsi_aio_flush_acb(acb) != 0) {
         qemu_aio_release(acb);
         return NULL;
