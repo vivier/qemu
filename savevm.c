@@ -52,6 +52,8 @@
 #define ARP_PTYPE_IP 0x0800
 #define ARP_OP_REQUEST_REV 0x3
 
+bool shadow_bios_after_incoming;
+
 static int announce_self_create(uint8_t *buf,
 				uint8_t *mac_addr)
 {
@@ -2195,6 +2197,63 @@ typedef struct LoadStateEntry {
     int version_id;
 } LoadStateEntry;
 
+static void shadow_bios(void)
+{
+    RAMBlock *block, *ram, *oprom, *bios;
+    size_t one_meg, oprom_size, bios_size;
+    uint8_t *cd_seg_host, *ef_seg_host;
+
+    ram = NULL;
+    oprom = NULL;
+    bios = NULL;
+    QTAILQ_FOREACH(block, &ram_list.blocks, next) {
+        if (strcmp("pc.ram", block->idstr) == 0) {
+            assert(ram == NULL);
+            ram = block;
+        } else if (strcmp("pc.rom", block->idstr) == 0) {
+            assert(oprom == NULL);
+            oprom = block;
+        } else if (strcmp("pc.bios", block->idstr) == 0) {
+            assert(bios == NULL);
+            bios = block;
+        }
+    }
+    assert(ram != NULL);
+    assert(oprom != NULL);
+    assert(bios != NULL);
+    assert(memory_region_is_ram(ram->mr));
+    assert(memory_region_is_ram(oprom->mr));
+    assert(memory_region_is_ram(bios->mr));
+    assert(int128_eq(ram->mr->size, int128_make64(ram->length)));
+    assert(int128_eq(oprom->mr->size, int128_make64(oprom->length)));
+    assert(int128_eq(bios->mr->size, int128_make64(bios->length)));
+
+    one_meg = 1024 * 1024;
+    oprom_size = 128 * 1024;
+    bios_size = 128 * 1024;
+    assert(ram->length >= one_meg);
+    assert(oprom->length == oprom_size);
+    assert(bios->length == bios_size);
+
+    ef_seg_host = memory_region_get_ram_ptr(ram->mr) + (one_meg - bios_size);
+    cd_seg_host = ef_seg_host - oprom_size;
+
+    /* This is a crude hack, but we must distinguish a rhel6.x.0 machtype guest
+     * coming in from a RHEL-6 emulator (where shadowing has had no effect on
+     * "pc.ram") from a similar guest coming in from a RHEL-7 emulator (where
+     * shadowing has worked). In the latter case we must not trample the live
+     * SeaBIOS variables in "pc.ram".
+     */
+    if (buffer_is_zero(ef_seg_host, bios_size)) {
+        fprintf(stderr, "copying E and F segments from pc.bios to pc.ram\n");
+        memcpy(ef_seg_host, memory_region_get_ram_ptr(bios->mr), bios_size);
+    }
+    if (buffer_is_zero(cd_seg_host, oprom_size)) {
+        fprintf(stderr, "copying C and D segments from pc.rom to pc.ram\n");
+        memcpy(cd_seg_host, memory_region_get_ram_ptr(oprom->mr), oprom_size);
+    }
+}
+
 int qemu_loadvm_state(QEMUFile *f)
 {
     QLIST_HEAD(, LoadStateEntry) loadvm_handlers =
@@ -2295,6 +2354,13 @@ int qemu_loadvm_state(QEMUFile *f)
             ret = -EINVAL;
             goto out;
         }
+    }
+
+    /* Supplement SeaBIOS's shadowing now, because it was useless when the
+     * incoming VM started on the RHEL-6 emulator.
+     */
+    if (shadow_bios_after_incoming) {
+        shadow_bios();
     }
 
     cpu_synchronize_all_post_init();
