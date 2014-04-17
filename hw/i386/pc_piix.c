@@ -1073,6 +1073,7 @@ static void pc_compat_rhel650(QEMUMachineInitArgs *args)
     rom_file_has_mr = false;
     has_acpi_build = false;
     gigabyte_align = false;
+    shadow_bios_after_incoming = true;
 }
 
 static void pc_init_rhel650(QEMUMachineInitArgs *args)
