@@ -578,4 +578,8 @@ int usb_get_quirks(uint16_t vendor_id, uint16_t product_id,
                    uint8_t interface_class, uint8_t interface_subclass,
                    uint8_t interface_protocol);
 
+
+/* hcd-uhci.c -- RHEL-6 machine type compatibility */
+extern bool ich9_uhci123_irqpin_override;
+
 #endif
