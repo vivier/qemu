@@ -5,26 +5,23 @@
     %bcond_with     guest_agent     # disabled
 %else
     %bcond_without  guest_agent     # enabled
+    %global debug_package %{nil}
 %endif
 
 %global SLOF_gittagdate 20120731
 
 %global have_usbredir 1
+%global have_spice   0
 
 %ifarch %{ix86} x86_64
     %global have_seccomp 1
-    %global have_spice   1
 %else
     %global have_usbredir 0
+    %global have_seccomp 0
 %endif
 
 %ifnarch s390 s390x
     %global have_librdma 1
-%endif
-
-%ifnarch x86_64
-    %global build_only_sub 1
-    %global debug_package %{nil}
 %endif
 
 %ifarch %{ix86}
@@ -32,12 +29,16 @@
 %endif
 %ifarch x86_64
     %global kvm_target    x86_64
+    %global have_spice   1
 %endif
 %ifarch ppc64
     %global kvm_target    ppc64
 %endif
-%ifarch s390x
+%ifarch s390x s390
     %global kvm_target    s390x
+%endif
+%ifarch ppc
+    %global kvm_target    ppc
 %endif
 
 #Versions of various parts:
@@ -107,7 +108,7 @@ Requires: sgabios-bin
 Requires: seavgabios-bin
 Requires: ipxe-roms-qemu
 Requires: %{pkgname}-common%{?pkgsuffix} = %{epoch}:%{version}-%{release}
-        %if 0%{?have_seccomp:1}
+        %if 0%{have_seccomp}
 Requires: libseccomp >= 1.0.0
         %endif
 
@@ -163,22 +164,20 @@ BuildRequires: libiscsi-devel
 BuildRequires: ncurses-devel
 BuildRequires: libattr-devel
 BuildRequires: libusbx-devel
-%if 0%{?have_usbredir:1}
+%if 0%{have_usbredir}
 BuildRequires: usbredir-devel >= 0.6
 %endif
 BuildRequires: texinfo
-%if 0%{!?build_only_sub:1}
-    %if 0%{?have_spice:1}
+%if 0%{have_spice}
 BuildRequires: spice-protocol >= 0.12.2
 BuildRequires: spice-server-devel >= 0.12.0
-    %endif
 %endif
-%if 0%{?have_seccomp:1}
+%if 0%{have_seccomp}
 BuildRequires: libseccomp-devel >= 1.0.0
 %endif
 # For network block driver
 BuildRequires: libcurl-devel
-%if 0%{!?build_only_sub:1}
+%if 0%{rhev}
 # For gluster block driver
 BuildRequires: glusterfs-api-devel
 BuildRequires: glusterfs-devel
@@ -219,10 +218,7 @@ BuildRequires: iasl
 BuildRequires: cpp
 %endif
 
-%if 0%{!?build_only_sub:1}
 Requires: qemu-img = %{epoch}:%{version}-%{release}
-%endif
-
 # RHEV-specific changes:
 # We provide special suffix for qemu-kvm so the conflit is easy
 # In addition, RHEV version should obsolete all RHEL version in case both
@@ -240,6 +236,7 @@ a PC and its assocated peripherals.
 
 As qemu-kvm requires no host kernel patches to run, it is safe and easy to use.
 
+%if %{rhev}
 %package -n qemu-img%{?pkgsuffix}
 Summary: QEMU command line tool for manipulating disk images
 Group: Development/Tools
@@ -249,7 +246,6 @@ Group: Development/Tools
 %description -n qemu-img%{?pkgsuffix}
 This package provides a command line tool for manipulating disk images.
 
-%if 0%{!?build_only_sub:1}
 %package -n qemu-kvm-common%{?pkgsuffix}
 Summary: QEMU common files needed by all QEMU targets
 Group: Development/Tools
@@ -298,7 +294,7 @@ This package does not need to be installed on the host OS.
 
 %endif
 
-%if 0%{!?build_only_sub:1}
+%if %{rhev}
 %package -n qemu-kvm-tools%{?pkgsuffix}
 Summary: KVM debugging and diagnostics tools
 Group: Development/Tools
@@ -308,7 +304,6 @@ Group: Development/Tools
 %description -n qemu-kvm-tools%{?pkgsuffix}
 This package contains some diagnostics and debugging tools for KVM,
 such as kvm_stat.
-%endif
 
 %package -n libcacard%{?pkgsuffix}
 Summary:        Common Access Card (CAC) Emulation
@@ -340,6 +335,7 @@ Requires:       libcacard = %{epoch}:%{version}-%{release}
 
 %description -n libcacard-devel%{?pkgsuffix}
 CAC emulation development files.
+%endif
 
 %prep
 %setup -q -n qemu-%{version}
@@ -398,10 +394,9 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
     %global optflags %(echo %{optflags} | sed 's/-g//')
     sed -i.debug 's/"-g $CFLAGS"/"$CFLAGS"/g' configure
 %endif
-
 dobuild() {
-%if 0%{!?build_only_sub:1}
     ./configure \
+%if %{rhev}
         --prefix=%{_prefix} \
         --libdir=%{_libdir} \
         --sysconfdir=%{_sysconfdir} \
@@ -422,7 +417,11 @@ dobuild() {
         --enable-kvm \
         --enable-libusb \
         --enable-spice \
+%if 0%{have_seccomp}
         --enable-seccomp \
+%else
+        --disable-seccomp \
+%endif
         --disable-fdt \
         --enable-docs \
         --disable-sdl \
@@ -448,20 +447,11 @@ dobuild() {
 %else
         --disable-guest-agent \
 %endif
-%if %{rhev}
         --enable-live-block-ops \
         --enable-ceph-support \
-%else
-        --disable-live-block-ops \
-        --disable-ceph-support \
-%endif
         --disable-live-block-migration \
         --enable-glusterfs \
-%if %{rhev}
         --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,gluster,rbd \
-%else
-        --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,gluster \
-%endif
         --block-drv-ro-whitelist=vmdk,vhdx,vpc \
         "$@"
 
@@ -472,26 +462,19 @@ dobuild() {
 
     make V=1 %{?_smp_mflags} $buildldflags
 %else
-   ./configure --prefix=%{_prefix} \
-               --libdir=%{_libdir} \
-               --with-pkgversion=%{pkgname}-%{version}-%{release} \
-               --disable-guest-agent \
-               --target-list= --cpu=%{_arch}
+        --prefix=%{_prefix} \
+        --libdir=%{_libdir} \
+        --with-pkgversion=%{pkgname}-%{version}-%{release} \
+        --disable-guest-agent \
+        --target-list= --cpu=%{_arch}
 
-   make libcacard.la %{?_smp_mflags} $buildldflags
-   make vscclient %{?_smp_mflags} $buildldflags
-   make qemu-img %{?_smp_mflags} $buildldflags
-   make qemu-io %{?_smp_mflags} $buildldflags
-   make qemu-nbd %{?_smp_mflags} $buildldflags
-   make qemu-img.1 %{?_smp_mflags} $buildldflags
-   make qemu-nbd.8 %{?_smp_mflags} $buildldflags
    make qemu-ga %{?_smp_mflags} $buildldflags
 %endif
 }
 
 dobuild --target-list="$buildarch"
 
-%if 0%{!?build_only_sub:1}
+%if %{rhev}
         # Setup back compat qemu-kvm binary
         ./scripts/tracetool.py --backend dtrace --format stap \
           --binary %{_libexecdir}/qemu-kvm --target-name %{kvm_target} \
@@ -507,7 +490,7 @@ dobuild --target-list="$buildarch"
 %install
 %define _udevdir %(pkg-config --variable=udevdir udev)/rules.d
 
-%if 0%{!?build_only_sub:1}
+%if %{rhev}
     install -D -p -m 0644 %{SOURCE4} $RPM_BUILD_ROOT%{_unitdir}/ksm.service
     install -D -p -m 0644 %{SOURCE5} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/ksm
     install -D -p -m 0755 ksmctl $RPM_BUILD_ROOT%{_libexecdir}/ksmctl
@@ -638,29 +621,19 @@ dobuild --target-list="$buildarch"
     mkdir -p -v $RPM_BUILD_ROOT%{_localstatedir}/log/qemu-ga/
 %endif
 
-%if 0%{!?build_only_sub:1}
+%if %{rhev}
     # Install rules to use the bridge helper with libvirt's virbr0
     install -m 0644 %{SOURCE12} $RPM_BUILD_ROOT%{_sysconfdir}/%{pkgname}
-%endif
 
 make %{?_smp_mflags} $buildldflags DESTDIR=$RPM_BUILD_ROOT install-libcacard
 find $RPM_BUILD_ROOT -name "libcacard.so*" -exec chmod +x \{\} \;
 
 find $RPM_BUILD_ROOT -name '*.la' -or -name '*.a' | xargs rm -f
+%endif
 
-%if 0%{?build_only_sub}
+%if %{with guest_agent}
     mkdir -p $RPM_BUILD_ROOT%{_bindir}
-    mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1/*
-    mkdir -p $RPM_BUILD_ROOT%{_mandir}/man8/*
-    libtool --mode=install install -m 0755 vscclient $RPM_BUILD_ROOT%{_bindir}/vscclient
-    install -m 0755 qemu-img $RPM_BUILD_ROOT%{_bindir}/qemu-img
-    install -m 0755 qemu-io $RPM_BUILD_ROOT%{_bindir}/qemu-io
-    install -m 0755 qemu-nbd $RPM_BUILD_ROOT%{_bindir}/qemu-nbd
-    install -c -m 0644 qemu-img.1 ${RPM_BUILD_ROOT}%{_mandir}/man1/qemu-img.1
-    install -c -m 0644 qemu-nbd.8 ${RPM_BUILD_ROOT}%{_mandir}/man8/qemu-nbd.8
     install -c -m 0755  qemu-ga ${RPM_BUILD_ROOT}%{_bindir}/qemu-ga
-    chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
-    chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man8/*
 %endif
 
 # Disabled as do not work anymore
@@ -670,10 +643,10 @@ find $RPM_BUILD_ROOT -name '*.la' -or -name '*.a' | xargs rm -f
 %post
 # load kvm modules now, so we can make sure no reboot is needed.
 # If there's already a kvm module installed, we don't mess with it
+%if %{rhev}
 sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     udevadm trigger --subsystem-match=misc --sysname-match=kvm --action=add || :
 
-%if 0%{!?build_only_sub:1}
 %post -n qemu-kvm-common%{?pkgsuffix}
     %systemd_post ksm.service
     %systemd_post ksmtuned.service
@@ -700,7 +673,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_libexecdir}/qemu-kvm \
 %{_datadir}/systemtap/tapset/qemu-kvm.stp
 
-%if 0%{!?build_only_sub:1}
+%if %{rhev}
 %files -n qemu-kvm-common%{?pkgsuffix}
     %defattr(-,root,root)
     %dir %{qemudocdir}
@@ -741,7 +714,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %dir %{_localstatedir}/log/qemu-ga
 %endif
 
-%if 0%{!?build_only_sub:1}
+%if %{rhev}
 %files
     %defattr(-,root,root)
     %{_datadir}/%{pkgname}/acpi-dsdt.aml
@@ -778,7 +751,6 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %files -n qemu-kvm-tools%{?pkgsuffix}
     %defattr(-,root,root,-)
     %{_bindir}/kvm_stat
-%endif
 
 %files -n qemu-img%{?pkgsuffix}
 %defattr(-,root,root)
@@ -801,6 +773,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_includedir}/cacard
 %{_libdir}/libcacard.so
 %{_libdir}/pkgconfig/libcacard.pc
+%endif
 
 %changelog
 %%CHANGELOG%%
