@@ -45,35 +45,11 @@ RPMBUILD_DEFS = --define "_sourcedir $(SOURCES)" --define "_builddir $(RPM)/BUIL
 
 default: rh-help
 
-rh-configs:
-	cd $(REDHAT)/configs; $(MAKE) VERSION=$(KVERSION) configs
-
-rh-configs-prep:
-	cd $(REDHAT)/configs; $(MAKE) VERSION=$(KVERSION) O=$(KBUILD_OUTPUT) configs-prep
-
-rh-clean-configs:
-	cd $(REDHAT)/configs; $(MAKE) VERSION=$(KVERSION) clean
-
 rh-clean-sources:
 	@for i in $(SOURCES)/*; do \
 		rm -f $$i; \
 	done;
 
-rh-pull-configs:
-	cd $(REDHAT)/configs; $(MAKE) VERSION=$(KVERSION) pull-configs
-
-rh-key:
-	echo "Creating a new module signing key...";
-	@cd $(KBUILD_OUTPUT); \
-	/sbin/rngd -r /dev/urandom; \
-	gpg --homedir . --batch --gen-key $(REDHAT)/genkey; \
-	if [ -s $(REDHAT)/extrakeys.pub ]; then \
-		gpg --homedir . --no-default-keyring --keyring $(COMMON_NAME).pub --import $(REDHAT)/extrakeys.pub; \
-	fi; \
-	gpg --homedir . --export --keyring $(COMMON_NAME).pub Red > extract.pub; \
-	mkdir -p crypto/signature/ scripts/; \
-	gcc -o scripts/bin2c $(REDHAT)/../scripts/bin2c.c; \
-	scripts/bin2c ksign_def_public_key __initdata < extract.pub >crypto/signature/key.h;
 
 $(TARBALL):
 	@if [ -n "$(TARURL)" ];then \
@@ -171,73 +147,44 @@ rh-release-commit:
 rh-update-changelog:
 	@$(REDHAT)/scripts/update_changelog.sh $(KVERSION) $(PKG_FULL_VR)
 
-.PHONY: rh-brew rh-koji rh-brew-rhev
+.PHONY: rh-brew rh-koji rh-brew-ga
 rh-brew rh-brew-rhev rh-brew-rhev-autotest: BUILD_FLAGS ?= $(BREW_FLAGS) $(TEST_FLAGS)
-rh-koji rh-koji-rhev rh-koji-rhev-autotest: BUILD_FLAGS ?= $(KOJI_FLAGS) $(TEST_FLAGS)
-rh-brew-rhev rh-brew-rhev-autotest rh-koji-rhev-autotest: RHEV_FLAG=1
-rh-brew-rhev rh-brew-rhev-autotest rh-koji-rhev-autotest: PKG_FULL_NVR=$(PKGNAME)-rhev-$(PKG_FULL_VR)
+rh-brew-ga: BUILD_SCRATCH_TARGET = rhel-7.0-candidate
+rh-koji rh-koji-ga rh-koji-autotest: BUILD_FLAGS ?= $(KOJI_FLAGS) $(TEST_FLAGS)
+rh-brew rh-brew-autotest rh-koji-autotest: RHEV_FLAG=1
+rh-brew rh-brew-autotest rh-koji-autotest: PKG_FULL_NVR=$(PKGNAME)-rhev-$(PKG_FULL_VR)
 rh-brew rh-koji: rh-%: rh-srpm
 	$* build $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)
-rh-brew-rhev rh-koji-rhev: rh-%-rhev: rh-srpm
+rh-brew-ga rh-koji-ga: rh-%-ga: rh-srpm
 	$* build $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)
 rh-brew-autotest rh-koji-autotest: rh-%-autotest: rh-srpm
 	./schedule-tests.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)" "autotest"
-rh-brew-rhev-autotest rh-koji-rhev-autotest: rh-%-rhev-autotest: rh-srpm-rhev
-	./schedule-tests.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET_RHEV) $(SRPMS)/$(PKG_FULL_NVR_RHEV).src.rpm $(OUTPUT_FILE)" "autotest"
 rh-brew-covscan rh-koji-covscan: rh-%-covscan: rh-srpm
 	./schedule-tests.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)" "coverity"
-rh-brew-rhev-covscan rh-koji-rhev-covscan: rh-%-rhev-covscan: rh-srpm-rhev
-	./schedule-tests.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET_RHEV) $(SRPMS)/$(PKG_FULL_NVR_RHEV).src.rpm $(OUTPUT_FILE)" "coverity"
 rh-brew-at-covscan rh-koji-at-covscan: rh-%-at-covscan: rh-srpm
 	./schedule-tests.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)" "autotest-coverity"
-rh-brew-rhev-at-covscan rh-koji-rhev-at-covscan: rh-%-rhev-at-covscan: rh-srpm-rhev
-	./schedule-tests.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET_RHEV) $(SRPMS)/$(PKG_FULL_NVR_RHEV).src.rpm $(OUTPUT_FILE)" "autotest-coverity"
 
 rh-help:
 	@echo  'Cleaning targets:'
 	@echo  '  rh-clean-sources    - Clean the redhat/rpm/SOURCES/ directory'
-	@echo  '  rh-clean-configs    - Clean the redhat/configs/ directory'
 	@echo  ''
 	@echo  'Building targets:'
 	@echo  ' All RPM/SRPM files will be put under the redhat/rpm/ directory'
 	@echo  ''
-	@echo  '  rh-srpm		- Create a source RPM and put it into the redhat/rpm/SRPMS/ directory'
-	@echo  '  rh-brew		- Create a $(COMMON_NAME) SRPM and then call brew to build the created SRPM'
-	@echo  '  rh-brew-covscan         - Create a $(COMMON_NAME) RPMs on brew and then send directly to coverity scan testing'
-	@echo  '  rh-brew-autotest        - Create a $(COMMON_NAME) RPMs on brew and then send directly to autotest server'
-	@echo  '  rh-brew-at-covscan      - Create a $(COMMON_NAME) RPMs on brew and then send directly to autotest and coverity testing'
-	@echo  '  rh-brew-rhev            - Create a $(COMMON_NAME)-rhev SRPM and then call brew to build the created SRPM'
-	@echo  '  rh-brew-rhev-covscan    - Create a $(COMMON_NAME)-rhev RPMs on brew and then send directly to coverity scan testing'
-	@echo  '  rh-brew-rhev-autotest   - Create a $(COMMON_NAME)-rhev RPMs on brew and then send directly to autotest server'
-	@echo  '  rh-brew-rhev-at-covscan - Create a $(COMMON_NAME)-rhev RPMs on brew and then send directly to autotest and coverity testing'
-	@echo  '  rh-koji		- Create a $(COMMON_NAME) SRPM and then call koji to build the created SRPM'
-	@echo  '  rh-koji-rhev          - Create a rhev version of $(COMMON_NAME) SRPM and then call koji to build the created SRPM'
-	@echo  '  rh-koji-rhev-autotest - Create a rhev version of $(COMMON_NAME) RPMs on koji and then send directly to autotest server'
-	@echo  '  rh-test		- Pass in brew task number, TASK=1234 make rh-test, to use for an RHTS test'
-	@echo  '		  	  setup ./tests to use a test from redhat/tests (minus the .xml)'
-	@echo  '		  	  uses a known stable RHEL6 distro as the default'
-	@echo  '		  	  use TASK=None to use a non-scratch build based on RELEASE string'
-	@echo  '		  	  see output for possible override options (USER_ID,DISTRO,FAMILY,..)'
-	@echo  '  rh-brew-test  	- Calls rh-brew and passes the task number into an RHTS test. See rh-test for more'
-	@echo  '  rh-rpms		- Create the binary RPMS for the $(COMMON_NAME)'
+	@echo  '  rh-srpm                 - Create a source RPM and put it into the redhat/rpm/SRPMS/ directory'
+	@echo  '  rh-brew                 - Create a $(COMMON_NAME)-rhev SRPM and then call brew to build the created SRPM'
+	@echo  '  rh-brew-covscan         - Create a $(COMMON_NAME)-rhev RPMs on brew and then send directly to coverity scan testing'
+	@echo  '  rh-brew-autotest        - Create a $(COMMON_NAME)-rhev RPMs on brew and then send directly to autotest server'
+	@echo  '  rh-brew-at-covscan      - Create a $(COMMON_NAME)-rhev RPMs on brew and then send directly to autotest and coverity testing'
+	@echo  '  rh-brew-ga              - Build guest-agent rpm using brew'
+	@echo  '  rh-koji                 - Create a $(COMMON_NAME)-rhev SRPM and then call koji to build the created SRPM'
+	@echo  '  rh-brew-covscan         - Create a $(COMMON_NAME)-rhev RPMs on koji and then send directly to coverity scan testing'
+	@echo  '  rh-brew-autotest        - Create a $(COMMON_NAME)-rhev RPMs on koji and then send directly to autotest server'
+	@echo  '  rh-brew-at-covscan      - Create a $(COMMON_NAME)-rhev RPMs on koji and then send directly to autotest and coverity testing'
+	@echo  '  rh-koji-ga              - Build guest-agent rpm using koji'
 	@echo  '  rh-$(COMMON_NAME)-<type> 	- Create  binary RPMS for a particular $(COMMON_NAME) type'
 	@echo  '                   	- <type> can be: baseonly, smponly, dbgonly'
 	@echo  '  rh-all-rpms		- Create the binary RPMS and the SRPM for the $(COMMON_NAME)'
 	@echo  '  rh-prep		- Setup the redhat/rpm/BUILD/ directory with the $(COMMON_NAME) source'
 	@echo  '  rh-test-patch 	- Create a diff against HEAD and put it in $(COMMON_NAME)-test.patch.'
 	@echo  '                  	  Then $(COMMON_NAME)-test.patch will be added to the $(COMMON_NAME) build'
-	@echo  '  rh-key		- Generate the required files for compiling with module signing enabled'
-	@echo  ''
-	@echo  'Configuration targets:'
-	@echo
-	@echo  '  rh-configs-prep   Creates config files for RHEL 6 architectures, cleans them'
-	@echo  '		    by running make nonint_oldconfig, and copies them to'
-	@echo  '		    configs/ directory. This is the target to use for a config!'
-	@echo  '		    Copy the config file you want from the configs/ directory'
-	@echo  '		    to .config'
-	@echo  ''
-	@echo  ' Most developers will NOT use the following config targets.'
-	@echo  ' See the redhat/README file for more info'
-	@echo  '  rh-configs	    Creates config files in the redhat/configs/ directory,'
-	@echo  '		    these will be used by other Makefile targets and are not'
-	@echo  '		    intended for developer use'
