@@ -242,7 +242,10 @@ static const struct QemuSeccompSyscall seccomp_whitelist[] = {
     { SCMP_SYS(fchmod), 240 },
     { SCMP_SYS(shmget), 240 },
     { SCMP_SYS(shmat), 240 },
-    { SCMP_SYS(shmdt), 240 }
+    { SCMP_SYS(shmdt), 240 },
+    { SCMP_SYS(shmctl), 240 },
+    { SCMP_SYS(mlock), 240 },
+    { SCMP_SYS(munlock), 240 }
 };
 
 int seccomp_start(void)
