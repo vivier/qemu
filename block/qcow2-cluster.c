@@ -308,7 +308,8 @@ static int qcow2_read(BlockDriverState *bs, int64_t sector_num,
         }
 
         index_in_cluster = sector_num & (s->cluster_sectors - 1);
-        if (!cluster_offset) {
+        switch (ret) {
+        case QCOW2_CLUSTER_UNALLOCATED:
             if (bs->backing_hd) {
                 /* read from the base image */
                 iov.iov_base = buf;
@@ -325,11 +326,13 @@ static int qcow2_read(BlockDriverState *bs, int64_t sector_num,
             } else {
                 memset(buf, 0, 512 * n);
             }
-        } else if (cluster_offset & QCOW_OFLAG_COMPRESSED) {
+            break;
+        case QCOW2_CLUSTER_COMPRESSED:
             if (qcow2_decompress_cluster(bs, cluster_offset) < 0)
                 return -1;
             memcpy(buf, s->cluster_cache + index_in_cluster * 512, 512 * n);
-        } else {
+            break;
+        case QCOW2_CLUSTER_NORMAL:
             BLKDBG_EVENT(bs->file, BLKDBG_READ);
             ret = bdrv_pread(bs->file, cluster_offset + index_in_cluster * 512, buf, n * 512);
             if (ret != n * 512)
@@ -338,6 +341,9 @@ static int qcow2_read(BlockDriverState *bs, int64_t sector_num,
                 qcow2_encrypt_sectors(s, sector_num, buf, buf, n, 0,
                                 &s->aes_decrypt_key);
             }
+            break;
+        default:
+            abort();
         }
         nb_sectors -= n;
         sector_num += n;
@@ -385,11 +391,9 @@ static int copy_sectors(BlockDriverState *bs, uint64_t start_sect,
  *
  * on exit, *num is the number of contiguous sectors we can read.
  *
- * Return 0, if the offset is found
- * Return -errno, otherwise.
- *
+ * Returns the cluster type (QCOW2_CLUSTER_*) on success, -errno in error
+ * cases.
  */
-
 int qcow2_get_cluster_offset(BlockDriverState *bs, uint64_t offset,
     int *num, uint64_t *cluster_offset)
 {
@@ -425,19 +429,19 @@ int qcow2_get_cluster_offset(BlockDriverState *bs, uint64_t offset,
     /* seek the the l2 offset in the l1 table */
 
     l1_index = offset >> l1_bits;
-    if (l1_index >= s->l1_size)
+    if (l1_index >= s->l1_size) {
+        ret = QCOW2_CLUSTER_UNALLOCATED;
         goto out;
+    }
 
-    l2_offset = s->l1_table[l1_index];
-
-    /* seek the l2 table of the given l2 offset */
-
-    if (!l2_offset)
+    l2_offset = s->l1_table[l1_index] & L1E_OFFSET_MASK;
+    if (!l2_offset) {
+        ret = QCOW2_CLUSTER_UNALLOCATED;
         goto out;
+    }
 
     /* load the l2 table in memory */
 
-    l2_offset &= ~QCOW_OFLAG_COPIED;
     ret = l2_load(bs, l2_offset, &l2_table);
     if (ret < 0) {
         return ret;
@@ -449,26 +453,37 @@ int qcow2_get_cluster_offset(BlockDriverState *bs, uint64_t offset,
     *cluster_offset = be64_to_cpu(l2_table[l2_index]);
     nb_clusters = size_to_clusters(s, nb_needed << 9);
 
-    if (!*cluster_offset) {
+    ret = qcow2_get_cluster_type(*cluster_offset);
+    switch (ret) {
+    case QCOW2_CLUSTER_COMPRESSED:
+        /* Compressed clusters can only be processed one by one */
+        c = 1;
+        *cluster_offset &= L2E_COMPRESSED_OFFSET_SIZE_MASK;
+        break;
+    case QCOW2_CLUSTER_UNALLOCATED:
         /* how many empty clusters ? */
         c = count_contiguous_free_clusters(nb_clusters, &l2_table[l2_index]);
-    } else {
+        *cluster_offset = 0;
+        break;
+    case QCOW2_CLUSTER_NORMAL:
         /* how many allocated clusters ? */
         c = count_contiguous_clusters(nb_clusters, s->cluster_size,
                 &l2_table[l2_index], 0, QCOW_OFLAG_COPIED);
+        *cluster_offset &= L2E_OFFSET_MASK;
+        break;
     }
 
     qcow2_cache_put(bs, s->l2_table_cache, (void**) &l2_table);
 
-   nb_available = (c * s->cluster_sectors);
+    nb_available = (c * s->cluster_sectors);
+
 out:
     if (nb_available > nb_needed)
         nb_available = nb_needed;
 
     *num = nb_available - index_in_cluster;
 
-    *cluster_offset &=~QCOW_OFLAG_COPIED;
-    return 0;
+    return ret;
 }
 
 /*

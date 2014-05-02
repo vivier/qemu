@@ -194,6 +194,16 @@ typedef struct QCowL2Meta
     QLIST_ENTRY(QCowL2Meta) next_in_flight;
 } QCowL2Meta;
 
+enum {
+    QCOW2_CLUSTER_UNALLOCATED,
+    QCOW2_CLUSTER_NORMAL,
+    QCOW2_CLUSTER_COMPRESSED,
+};
+
+#define L1E_OFFSET_MASK 0x00ffffffffffff00ULL
+#define L2E_OFFSET_MASK 0x00ffffffffffff00ULL
+#define L2E_COMPRESSED_OFFSET_SIZE_MASK 0x3fffffffffffffffULL
+
 static inline int size_to_clusters(BDRVQcowState *s, int64_t size)
 {
     return (size + (s->cluster_size - 1)) >> s->cluster_bits;
@@ -214,6 +224,17 @@ static inline int64_t align_offset(int64_t offset, int n)
 static inline uint64_t qcow2_max_refcount_clusters(BDRVQcowState *s)
 {
     return QCOW_MAX_REFTABLE_SIZE >> s->cluster_bits;
+}
+
+static inline int qcow2_get_cluster_type(uint64_t l2_entry)
+{
+    if (l2_entry & QCOW_OFLAG_COMPRESSED) {
+        return QCOW2_CLUSTER_COMPRESSED;
+    } else if (!(l2_entry & L2E_OFFSET_MASK)) {
+        return QCOW2_CLUSTER_UNALLOCATED;
+    } else {
+        return QCOW2_CLUSTER_NORMAL;
+    }
 }
 
 // FIXME Need qcow2_ prefix to global functions
