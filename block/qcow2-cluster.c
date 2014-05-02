@@ -33,6 +33,7 @@ int qcow2_grow_l1_table(BlockDriverState *bs, uint64_t min_size)
     BDRVQcowState *s = bs->opaque;
     int new_l1_size2, ret, i;
     uint64_t *new_l1_table;
+    int64_t old_l1_table_offset, old_l1_size;
     int64_t new_l1_table_offset, new_l1_size;
     uint8_t data[12];
 
@@ -98,10 +99,12 @@ int qcow2_grow_l1_table(BlockDriverState *bs, uint64_t min_size)
         goto fail;
     }
     g_free(s->l1_table);
-    qcow2_free_clusters(bs, s->l1_table_offset, s->l1_size * sizeof(uint64_t));
+    old_l1_table_offset = s->l1_table_offset;
     s->l1_table_offset = new_l1_table_offset;
     s->l1_table = new_l1_table;
+    old_l1_size = s->l1_size;
     s->l1_size = new_l1_size;
+    qcow2_free_clusters(bs, old_l1_table_offset, old_l1_size * sizeof(uint64_t));
     return 0;
  fail:
     g_free(new_l1_table);
