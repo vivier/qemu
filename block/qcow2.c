@@ -399,6 +399,8 @@ static int qcow2_open(BlockDriverState *bs, int flags)
     /* Initialise locks */
     qemu_co_mutex_init(&s->lock);
 
+    s->overlap_check = QCOW2_OL_CACHED;
+
 #ifdef DEBUG_ALLOC
     qcow2_check_refcounts(bs);
 #endif
