@@ -38,7 +38,7 @@
 #include "device-assignment.h"
 #include "loader.h"
 #include "monitor.h"
-/* #include "range.h" */
+#include "range.h"
 #include <pci/header.h>
 #include "sysemu.h"
 

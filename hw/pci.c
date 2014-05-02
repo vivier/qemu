@@ -30,6 +30,7 @@
 #include "qemu-kvm.h"
 #include "hw/pc.h"
 #include "device-assignment.h"
+#include "range.h"
 
 //#define DEBUG_PCI
 #ifdef DEBUG_PCI
