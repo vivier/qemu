@@ -24,7 +24,6 @@
 
 %ifnarch x86_64
     %global build_only_sub 1
-    %global debug_package %{nil}
 %endif
 
 %ifarch %{ix86}
