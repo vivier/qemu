@@ -802,6 +802,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed May 07 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-60.el7.2
+- kvm-pc-add-hot_add_cpu-callback-to-all-machine-types.patch [bz#1094820]
+- Resolves: bz#1094820
+  (Hot plug CPU not working with RHEL6  machine types running on RHEL7 host.)
+
 * Fri May 02 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-60.el7_0.1
 - kvm-iscsi-fix-indentation.patch [bz#1090978]
 - kvm-iscsi-correctly-propagate-errors-in-iscsi_open.patch [bz#1090978]
