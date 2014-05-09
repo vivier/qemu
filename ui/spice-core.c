@@ -521,7 +521,7 @@ void do_info_spice(Monitor *mon, QObject **ret_data)
     qdict_put(server, "enabled", qbool_from_int(true));
     qdict_put(server, "migrated", qbool_from_int(spice_migration_completed));
     qdict_put(server, "auth", qstring_from_str(auth));
-    qdict_put(server, "host", qstring_from_str(addr ? addr : "0.0.0.0"));
+    qdict_put(server, "host", qstring_from_str(addr ? addr : "*"));
     if (port) {
         qdict_put(server, "port", qint_from_int(port));
     }
