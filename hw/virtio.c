@@ -792,7 +792,8 @@ void virtio_save(VirtIODevice *vdev, QEMUFile *f)
 int virtio_load_with_features(VirtIODevice *vdev, QEMUFile *f,
                               uint32_t extra_features)
 {
-    int num, i, ret;
+    int i, ret;
+    uint32_t num;
     uint32_t features;
     uint32_t supported_features;
 
@@ -822,6 +823,11 @@ int virtio_load_with_features(VirtIODevice *vdev, QEMUFile *f,
     qemu_get_buffer(f, vdev->config, vdev->config_len);
 
     num = qemu_get_be32(f);
+
+    if (num > VIRTIO_PCI_QUEUE_MAX) {
+        error_report("Invalid number of PCI queues: 0x%x", num);
+        return -1;
+    }
 
     for (i = 0; i < num; i++) {
         vdev->vq[i].vring.num = qemu_get_be32(f);
