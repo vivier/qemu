@@ -1623,12 +1623,16 @@ static void rhel_common_init(const char *type1_version,
                      strlen(buf) + 1, buf);
 }
 
-#define PC_RHEL6_5_COMPAT
-
+#define PC_RHEL6_5_COMPAT \
+        {\
+            .driver   = "USB",\
+            .property = "msos-desc",\
+            .value    = "off",\
+        }
 
 #define PC_RHEL6_4_COMPAT \
         PC_RHEL6_5_COMPAT \
-        {\
+        ,{\
             .driver   = "virtio-scsi-pci",\
             .property = "vectors",\
             .value    = stringify(2),\
