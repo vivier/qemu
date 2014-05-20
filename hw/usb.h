@@ -158,11 +158,17 @@ typedef struct USBDescIface USBDescIface;
 typedef struct USBDescEndpoint USBDescEndpoint;
 typedef struct USBDescOther USBDescOther;
 typedef struct USBDescString USBDescString;
+typedef struct USBDescMSOS USBDescMSOS;
 
 struct USBDescString {
     uint8_t index;
     char *str;
     QLIST_ENTRY(USBDescString) next;
+};
+
+enum USBDeviceFlags {
+    USB_DEV_FLAG_MSOS_DESC_ENABLE,
+    USB_DEV_FLAG_MSOS_DESC_IN_USE,
 };
 
 /* definition of a USB device */
@@ -173,6 +179,7 @@ struct USBDevice {
     char *port_path;
     uint32_t create_unique_serial;
     void *opaque;
+    uint32_t flags;
 
     /* Actual connected speed */
     int speed;

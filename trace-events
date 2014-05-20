@@ -154,6 +154,7 @@ disable usb_desc_device_qualifier(int addr, int len, int ret) "dev %d query devi
 disable usb_desc_config(int addr, int index, int len, int ret) "dev %d query config %d, len %d, ret %d"
 disable usb_desc_other_speed_config(int addr, int index, int len, int ret) "dev %d query config %d, len %d, ret %d"
 disable usb_desc_string(int addr, int index, int len, int ret) "dev %d query string %d, len %d, ret %d"
+disable usb_desc_msos(int addr, int index, int len, int ret) "dev %d msos, index 0x%x, len %d, ret %d"
 disable usb_set_addr(int addr) "dev %d"
 disable usb_set_config(int addr, int config, int ret) "dev %d, config %d, ret %d"
 disable usb_clear_device_feature(int addr, int feature, int ret) "dev %d, feature %d, ret %d"
