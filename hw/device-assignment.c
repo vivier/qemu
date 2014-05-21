@@ -1773,6 +1773,9 @@ static void msix_mmio_writel(void *opaque,
                 adev->entry[i].u.msi.address_lo = entry->addr_lo;
                 adev->entry[i].u.msi.address_hi = entry->addr_hi;
                 adev->entry[i].u.msi.data = entry->data;
+                if (!memcmp(&adev->entry[i].u.msi, &orig.u.msi, sizeof orig.u.msi)) {
+                    return;
+                }
 
                 ret = kvm_update_routing_entry(kvm_context, &orig,
                                                &adev->entry[i]);
