@@ -1290,8 +1290,8 @@ static int img_convert(int argc, char **argv)
     flags = BDRV_O_RDWR;
     ret = bdrv_parse_cache_flags(cache, &flags);
     if (ret < 0) {
-        error_report("Invalid cache option: %s\n", cache);
-        return -1;
+        error_report("Invalid cache option: %s", cache);
+        goto out;
     }
 
     out_bs = bdrv_new_open(out_filename, out_fmt, flags, true);
