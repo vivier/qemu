@@ -5,13 +5,12 @@
     %bcond_with     guest_agent     # disabled
 %else
     %bcond_without  guest_agent     # enabled
-    %global debug_package %{nil}
 %endif
 
 %global SLOF_gittagdate 20120731
 
 %global have_usbredir 1
-%global have_spice   0
+%global have_spice 0
 
 %ifarch %{ix86} x86_64
     %global have_seccomp 1
@@ -29,7 +28,7 @@
 %endif
 %ifarch x86_64
     %global kvm_target    x86_64
-    %global have_spice   1
+    %global have_spice    1
 %endif
 %ifarch ppc64
     %global kvm_target    ppc64
@@ -118,6 +117,7 @@ Requires: libseccomp >= 1.0.0
 %endif
 
 Source0: http://wiki.qemu.org/download/qemu-%{version}.tar.bz2
+
 Source1: qemu.binfmt
 # Loads kvm kernel modules at boot
 # Not needed anymore - required only for kvm on non i86 archs 
@@ -218,7 +218,8 @@ BuildRequires: iasl
 BuildRequires: cpp
 %endif
 
-Requires: qemu-img = %{epoch}:%{version}-%{release}
+Requires: qemu-img%{?pkgsuffix} = %{epoch}:%{version}-%{release}
+
 # RHEV-specific changes:
 # We provide special suffix for qemu-kvm so the conflit is easy
 # In addition, RHEV version should obsolete all RHEL version in case both
@@ -394,6 +395,7 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
     %global optflags %(echo %{optflags} | sed 's/-g//')
     sed -i.debug 's/"-g $CFLAGS"/"$CFLAGS"/g' configure
 %endif
+
 dobuild() {
     ./configure \
 %if %{rhev}
@@ -778,6 +780,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri May 30 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.0.0-2.el7
+- kvm-pc-add-hot_add_cpu-callback-to-all-machine-types.patch [bz#1093411]
+- Resolves: bz#1093411
+  (Hot unplug CPU not working for RHEL7 host)
+
 * Fri Apr 18 2014 Miroslav Rezanina <mrezanin@redhat.com> - 2.0.0-1.el7ev
 - Rebase to qemu 2.0.0
 
@@ -856,7 +863,6 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
   (CVE-2014-0144 qemu-kvm: Qemu: block: missing input validation [rhel-7.0])
 - Resolves: bz#740107
   ([Hitachi 7.0 FEAT]  KVM: MCA Recovery for KVM guest OS memory)
->>>>>>> 66c08df... Update to qemu-kvm-1.5.3-60.el7
 
 * Wed Mar 26 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-58.el7
 - kvm-pc-Use-cpu64-rhel6-CPU-model-by-default-on-rhel6-mac.patch [bz#1080170]
@@ -865,10 +871,6 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
   (intel 82576 VF not work in windows 2008 x86 - Code 12 [TestOnly])
 - Resolves: bz#1080170
   (Default CPU model for rhel6.* machine-types is different from RHEL-6)
-
-
-* Mon Mar 24 2014 Miroslav Rezanina <mrezanin@redhat.com> - 2.0.0-rc0-2.el7
-- Synchronized with qemu-kvm-1.5.3-57.el7
 
 * Fri Mar 21 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-57.el7
 - kvm-virtio-net-fix-guest-triggerable-buffer-overrun.patch [bz#1078308]
@@ -897,9 +899,6 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
   (qemu-kvm crash when send "info qtree" after hot plug a device with invalid addr)
 - Resolves: bz#1048575
   (Segmentation fault occurs after migrate guest(use scsi disk and add stress) to des machine)
-
-* Tue Mar 18 2014 Miroslav Rezanina <mrezanin@redhat.com> - 2.0.0-rc0-1.el7
-- rebase to 2.0.0-rc0
 
 * Wed Mar 12 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-53.el7
 - kvm-dataplane-Fix-startup-race.patch [bz#1069541]
@@ -1063,7 +1062,6 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 - Resolves: bz#997878
   (Kill -SIGUSR1 `pidof qemu-img convert` can not get progress of qemu-img)
 
-Seabios bios-256k.bin updated to version 1.7.2.2-11.el7
 * Wed Feb 12 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-46.el7
 - kvm-block-fix-backing-file-segfault.patch [bz#748906]
 - kvm-block-Move-initialisation-of-BlockLimits-to-bdrv_ref.patch [bz#748906]
@@ -2197,8 +2195,6 @@ Seabios bios-256k.bin updated to version 1.7.2.2-11.el7
 - Resolves: bz#954195
   (RHEL machines <=6.4 should not use mixemu)
 
->>>>>>> 1cec714... Update to qemu-kvm-2.0.0-2.el7
->>>>>>> 4b4d071... Update to qemu-kvm-1.5.3-60.el7 (qemu-kvm-rhev-2.0.0-rc1-2.el7)
 * Thu Oct 10 2013 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-9.el7
 - kvm-qxl-fix-local-renderer.patch [bz#1005036]
 - kvm-spec-include-userspace-iSCSI-initiator-in-block-driv.patch [bz#923843]
