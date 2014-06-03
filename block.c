@@ -2780,7 +2780,7 @@ static int64_t coroutine_fn bdrv_co_get_block_status(BlockDriverState *bs,
 
     if (!bs->drv->bdrv_co_get_block_status) {
         *pnum = nb_sectors;
-        ret = BDRV_BLOCK_DATA;
+        ret = BDRV_BLOCK_DATA | BDRV_BLOCK_ALLOCATED;
         if (bs->drv->protocol_name) {
             ret |= BDRV_BLOCK_OFFSET_VALID | (sector_num * BDRV_SECTOR_SIZE);
         }
@@ -2791,6 +2791,10 @@ static int64_t coroutine_fn bdrv_co_get_block_status(BlockDriverState *bs,
     if (ret < 0) {
         *pnum = 0;
         return ret;
+    }
+
+    if (ret & (BDRV_BLOCK_DATA | BDRV_BLOCK_ZERO)) {
+        ret |= BDRV_BLOCK_ALLOCATED;
     }
 
     if (!(ret & BDRV_BLOCK_DATA)) {
@@ -2855,9 +2859,7 @@ int coroutine_fn bdrv_is_allocated(BlockDriverState *bs, int64_t sector_num,
     if (ret < 0) {
         return ret;
     }
-    return
-        (ret & BDRV_BLOCK_DATA) ||
-        ((ret & BDRV_BLOCK_ZERO) && !bdrv_has_zero_init(bs));
+    return (ret & BDRV_BLOCK_ALLOCATED);
 }
 
 /*
