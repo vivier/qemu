@@ -94,7 +94,8 @@ static int qcow_probe(const uint8_t *buf, int buf_size, const char *filename)
 static int qcow_open(BlockDriverState *bs, int flags)
 {
     BDRVQcowState *s = bs->opaque;
-    int len, i, shift, ret;
+    unsigned int len, i, shift;
+    int ret;
     QCowHeader header;
 
     ret = bdrv_pread(bs->file, 0, &header, sizeof(header));
@@ -199,7 +200,9 @@ static int qcow_open(BlockDriverState *bs, int flags)
     if (header.backing_file_offset != 0) {
         len = header.backing_file_size;
         if (len > 1023) {
-            len = 1023;
+            qerror_report(QERR_GENERIC_ERROR, "Backing file name too long");
+            ret = -EINVAL;
+            goto fail;
         }
         ret = bdrv_pread(bs->file, header.backing_file_offset,
                    bs->backing_file, len);
