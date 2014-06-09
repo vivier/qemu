@@ -1099,6 +1099,8 @@ static PCIDeviceInfo virtio_info[] = {
         .init      = virtio_scsi_init_pci,
         .exit      = virtio_scsi_exit_pci,
         .qdev.props = (Property[]) {
+            DEFINE_PROP_BIT("ioeventfd", VirtIOPCIProxy, flags,
+                            VIRTIO_PCI_FLAG_USE_IOEVENTFD_BIT, true),
             DEFINE_PROP_UINT32("vectors", VirtIOPCIProxy, nvectors, 4),
             DEFINE_VIRTIO_SCSI_PROPERTIES(VirtIOPCIProxy, host_features, scsi),
             DEFINE_PROP_END_OF_LIST(),
