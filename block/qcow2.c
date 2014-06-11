@@ -477,7 +477,7 @@ static int64_t coroutine_fn qcow2_co_get_block_status(BlockDriverState *bs,
     BDRVQcowState *s = bs->opaque;
     uint64_t cluster_offset;
     int index_in_cluster, ret;
-    int status = 0;
+    int64_t status = 0;
 
     *pnum = nb_sectors;
     qemu_co_mutex_lock(&s->lock);
