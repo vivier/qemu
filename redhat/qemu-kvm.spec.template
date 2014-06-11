@@ -372,6 +372,7 @@ cd qemu-kvm-x86_64-build
             --sysconfdir=%{_sysconfdir} \
             --audio-drv-list=pa,alsa \
             --audio-card-list=ac97,es1370 \
+            --with-pkgversion=%{name}-%{version}-%{release} \
             --disable-strip \
             --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
             --extra-cflags="$RPM_OPT_FLAGS -fPIE -DPIE" \
@@ -422,6 +423,7 @@ cd qemu-kvm-qemu-ga-build
 ../configure --target-list=x86_64-softmmu \
              --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
              --extra-cflags="$RPM_OPT_FLAGS -fPIE -DPIE" \
+             --with-pkgversion=%{name}-%{version}-%{release} \
              %{qemu_ga_build_flags}
 
 cd ../qemu-kvm-x86_64-build
