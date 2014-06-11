@@ -2578,13 +2578,18 @@ static QEMUMachine *machine_parse(const char *name)
     if (machine) {
         return machine;
     }
-    printf("Supported machines are:\n");
-    for (m = first_machine; m != NULL; m = m->next) {
-        if (m->alias) {
-            printf("%-20s %s (alias of %s)\n", m->alias, m->desc, m->name);
+    if (name && !is_help_option(name)) {
+        error_report("Unsupported machine type");
+        error_printf("Use -machine help to list supported machines!\n");
+    } else {
+        printf("Supported machines are:\n");
+        for (m = first_machine; m != NULL; m = m->next) {
+            if (m->alias) {
+                printf("%-20s %s (alias of %s)\n", m->alias, m->desc, m->name);
+            }
+            printf("%-20s %s%s\n", m->name, m->desc,
+                   m->is_default ? " (default)" : "");
         }
-        printf("%-20s %s%s\n", m->name, m->desc,
-               m->is_default ? " (default)" : "");
     }
     exit(!name || !is_help_option(name));
 }
