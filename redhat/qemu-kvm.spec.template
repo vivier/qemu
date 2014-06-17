@@ -802,9 +802,78 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Jun 17 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-63.el7
+- kvm-char-restore-read-callback-on-a-reattached-hotplug-c.patch [bz#1038914]
+- kvm-qcow2-Free-preallocated-zero-clusters.patch [bz#1052093]
+- kvm-qemu-iotests-Discard-preallocated-zero-clusters.patch [bz#1052093]
+- kvm-XBZRLE-Fix-qemu-crash-when-resize-the-xbzrle-cache.patch [bz#1066338]
+- kvm-Provide-init-function-for-ram-migration.patch [bz#1066338]
+- kvm-Init-the-XBZRLE.lock-in-ram_mig_init.patch [bz#1066338]
+- kvm-XBZRLE-Fix-one-XBZRLE-corruption-issues.patch [bz#1066338]
+- kvm-Count-used-RAMBlock-pages-for-migration_dirty_pages.patch [bz#1074913]
+- kvm-virtio-net-fix-buffer-overflow-on-invalid-state-load.patch [bz#1095678]
+- kvm-virtio-net-out-of-bounds-buffer-write-on-invalid-sta.patch [bz#1095690]
+- kvm-virtio-net-out-of-bounds-buffer-write-on-load.patch [bz#1095685]
+- kvm-virtio-out-of-bounds-buffer-write-on-invalid-state-l.patch [bz#1095695]
+- kvm-virtio-avoid-buffer-overrun-on-incoming-migration.patch [bz#1095738]
+- kvm-virtio-scsi-fix-buffer-overrun-on-invalid-state-load.patch [bz#1095742]
+- kvm-virtio-validate-config_len-on-load.patch [bz#1095783]
+- kvm-virtio-validate-num_sg-when-mapping.patch [bz#1095766]
+- kvm-virtio-allow-mapping-up-to-max-queue-size.patch [bz#1095766]
+- kvm-usb-sanity-check-setup_index-setup_len-in-post_load.patch [bz#1095747]
+- kvm-usb-sanity-check-setup_index-setup_len-in-post_l2.patch [bz#1095747]
+- kvm-vmstate-reduce-code-duplication.patch [bz#1095716]
+- kvm-vmstate-add-VMS_MUST_EXIST.patch [bz#1095716]
+- kvm-vmstate-add-VMSTATE_VALIDATE.patch [bz#1095716]
+- kvm-hpet-fix-buffer-overrun-on-invalid-state-load.patch [bz#1095707]
+- kvm-hw-pci-pcie_aer.c-fix-buffer-overruns-on-invalid-sta.patch [bz#1095716]
+- kvm-usb-fix-up-post-load-checks.patch [bz#1096829]
+- kvm-qcow-correctly-propagate-errors.patch [bz#1097230]
+- kvm-qcow1-Make-padding-in-the-header-explicit.patch [bz#1097230]
+- kvm-qcow1-Check-maximum-cluster-size.patch [bz#1097230]
+- kvm-qcow1-Validate-L2-table-size-CVE-2014-0222.patch [bz#1097230]
+- kvm-qcow1-Validate-image-size-CVE-2014-0223.patch [bz#1097237]
+- kvm-qcow1-Stricter-backing-file-length-check.patch [bz#1097237]
+- Resolves: bz#1038914
+  (Guest can't receive any character transmitted from host after hot unplugging virtserialport then hot plugging again)
+- Resolves: bz#1052093
+  (qcow2 corruptions (leaked clusters after installing a rhel7 guest using virtio_scsi))
+- Resolves: bz#1066338
+  (Reduce the migrate cache size during migration causes qemu segment fault)
+- Resolves: bz#1074913
+  (migration can not finish with 1024k 'remaining ram' left after hotunplug 4 nics)
+- Resolves: bz#1095678
+  (CVE-2013-4148 qemu-kvm: qemu: virtio-net: buffer overflow on invalid state load [rhel-7.1])
+- Resolves: bz#1095685
+  (CVE-2013-4149 qemu-kvm: qemu: virtio-net: out-of-bounds buffer write on load [rhel-7.1])
+- Resolves: bz#1095690
+  (CVE-2013-4150 qemu-kvm: qemu: virtio-net: out-of-bounds buffer write on invalid state load [rhel-7.1])
+- Resolves: bz#1095695
+  (CVE-2013-4151 qemu-kvm: qemu: virtio: out-of-bounds buffer write on invalid state load [rhel-7.1])
+- Resolves: bz#1095707
+  (CVE-2013-4527 qemu-kvm: qemu: hpet: buffer overrun on invalid state load [rhel-7.1])
+- Resolves: bz#1095716
+  (CVE-2013-4529 qemu-kvm: qemu: hw/pci/pcie_aer.c: buffer overrun on invalid state load [rhel-7.1])
+- Resolves: bz#1095738
+  (CVE-2013-6399 qemu-kvm: qemu: virtio: buffer overrun on incoming migration [rhel-7.1])
+- Resolves: bz#1095742
+  (CVE-2013-4542 qemu-kvm: qemu: virtio-scsi: buffer overrun on invalid state load [rhel-7.1])
+- Resolves: bz#1095747
+  (CVE-2013-4541 qemu-kvm: qemu: usb: insufficient sanity checking of setup_index+setup_len in post_load [rhel-7.1])
+- Resolves: bz#1095766
+  (CVE-2013-4535 CVE-2013-4536 qemu-kvm: qemu: virtio: insufficient validation of num_sg when mapping [rhel-7.1])
+- Resolves: bz#1095783
+  (CVE-2014-0182 qemu-kvm: qemu: virtio: out-of-bounds buffer write on state load with invalid config_len [rhel-7.1])
+- Resolves: bz#1096829
+  (CVE-2014-3461 qemu-kvm: Qemu: usb: fix up post load checks [rhel-7.1])
+- Resolves: bz#1097230
+  (CVE-2014-0222 qemu-kvm: Qemu: qcow1: validate L2 table size to avoid integer overflows [rhel-7.1])
+- Resolves: bz#1097237
+  (CVE-2014-0223 qemu-kvm: Qemu: qcow1: validate image size to avoid out-of-bounds memory access [rhel-7.1])
+
 * Wed May 07 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-62.el7
-- kvm-pc-add-hot_add_cpu-callback-to-all-machine-types.patch [bz#1094820]
-- Resolves: bz#1094820
+- kvm-pc-add-hot_add_cpu-callback-to-all-machine-types.patch [bz#1094285]
+- Resolves: bz#1094285
   (Hot plug CPU not working with RHEL6  machine types running on RHEL7 host.)
 
 * Fri May 02 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-61.el7
@@ -1103,7 +1172,6 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 - Resolves: bz#997878
   (Kill -SIGUSR1 `pidof qemu-img convert` can not get progress of qemu-img)
 
-Seabios bios-256k.bin updated to version 1.7.2.2-11.el7
 * Wed Feb 12 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-46.el7
 - kvm-block-fix-backing-file-segfault.patch [bz#748906]
 - kvm-block-Move-initialisation-of-BlockLimits-to-bdrv_ref.patch [bz#748906]
