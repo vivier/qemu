@@ -91,7 +91,6 @@ typedef struct DumpState {
     bool has_filter;
     int64_t begin;
     int64_t length;
-    Error **errp;
 
     uint8_t *note_buf;          /* buffer for notes */
     size_t note_buf_offset;     /* the writing place in note_buf */
@@ -1569,7 +1568,6 @@ static int dump_init(DumpState *s, int fd, bool has_format,
         nr_cpus++;
     }
 
-    s->errp = errp;
     s->fd = fd;
     s->has_filter = has_filter;
     s->begin = begin;
@@ -1776,11 +1774,11 @@ void qmp_dump_guest_memory(bool paging, const char *file, bool has_begin,
     }
 
     if (has_format && format != DUMP_GUEST_MEMORY_FORMAT_ELF) {
-        if (create_kdump_vmcore(s) < 0 && !error_is_set(s->errp)) {
+        if (create_kdump_vmcore(s) < 0) {
             error_set(errp, QERR_IO_ERROR);
         }
     } else {
-        if (create_vmcore(s) < 0 && !error_is_set(s->errp)) {
+        if (create_vmcore(s) < 0) {
             error_set(errp, QERR_IO_ERROR);
         }
     }
