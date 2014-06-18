@@ -802,6 +802,12 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Jun 18 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-64.el7
+- kvm-zero-initialize-KVM_SET_GSI_ROUTING-input.patch [bz#1098976]
+- kvm-skip-system-call-when-msi-route-is-unchanged.patch [bz#1098976]
+- Resolves: bz#1098976
+  (2x RHEL 5.10 VM running on RHEL 7 KVM have low TCP_STREAM throughput)
+
 * Tue Jun 17 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-63.el7
 - kvm-char-restore-read-callback-on-a-reattached-hotplug-c.patch [bz#1038914]
 - kvm-qcow2-Free-preallocated-zero-clusters.patch [bz#1052093]
