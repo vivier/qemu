@@ -802,6 +802,12 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Jun 18 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-60.el7_0.4
+- kvm-zero-initialize-KVM_SET_GSI_ROUTING-input.patch [bz#1110693]
+- kvm-skip-system-call-when-msi-route-is-unchanged.patch [bz#1110693]
+- Resolves: bz#1110693
+  (2x RHEL 5.10 VM running on RHEL 7 KVM have low TCP_STREAM throughput)
+
 * Tue Jun 17 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-60.el7_0.3
 - kvm-virtio-net-fix-buffer-overflow-on-invalid-state-load.patch [bz#1095677]
 - kvm-virtio-net-out-of-bounds-buffer-write-on-load.patch [bz#1095684]
