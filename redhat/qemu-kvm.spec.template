@@ -10,7 +10,9 @@
 %global SLOF_gittagdate 20120731
 
 %global have_usbredir 1
-%global have_spice 0
+%global have_spice    1
+%global have_fdt      0
+%global have_gluster  1
 
 %ifarch %{ix86} x86_64
     %global have_seccomp 1
@@ -28,16 +30,20 @@
 %endif
 %ifarch x86_64
     %global kvm_target    x86_64
-    %global have_spice    1
+%else
+    %global have_spice   0
+    %global have_gluster 0
 %endif
 %ifarch ppc64
     %global kvm_target    ppc64
+    %global have_fdt     1
 %endif
 %ifarch s390x s390
     %global kvm_target    s390x
 %endif
 %ifarch ppc
     %global kvm_target    ppc
+    %global have_fdt     1
 %endif
 
 #Versions of various parts:
@@ -177,7 +183,7 @@ BuildRequires: libseccomp-devel >= 1.0.0
 %endif
 # For network block driver
 BuildRequires: libcurl-devel
-%if 0%{rhev}
+%if 0%{have_gluster}
 # For gluster block driver
 BuildRequires: glusterfs-api-devel
 BuildRequires: glusterfs-devel
@@ -418,13 +424,21 @@ dobuild() {
         --disable-virtfs \
         --enable-kvm \
         --enable-libusb \
+%if 0%{have_spice}
         --enable-spice \
+%else
+        --disable-spice \
+%endif
 %if 0%{have_seccomp}
         --enable-seccomp \
 %else
         --disable-seccomp \
 %endif
+%if 0%{have_fdt}
+        --enable-fdt \
+%else
         --disable-fdt \
+%endif
         --enable-docs \
         --disable-sdl \
         --disable-debug-tcg \
@@ -438,7 +452,11 @@ dobuild() {
         --enable-vnc-sasl \
         --enable-linux-aio \
         --enable-smartcard-nss \
+%if 0%{have_usbredir}
         --enable-usb-redir \
+%else
+        --disable-usb-redir \
+%endif
         --enable-vnc-png \
         --disable-vnc-jpeg \
         --enable-vnc-ws \
@@ -452,8 +470,13 @@ dobuild() {
         --enable-live-block-ops \
         --enable-ceph-support \
         --disable-live-block-migration \
+%if 0%{have_gluster}
         --enable-glusterfs \
         --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,gluster,rbd \
+%else
+        --disable-glusterfs \
+        --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,rbd \
+%endif
         --block-drv-ro-whitelist=vmdk,vhdx,vpc \
         "$@"
 
