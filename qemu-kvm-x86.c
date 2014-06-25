@@ -1435,9 +1435,43 @@ unsigned long kvm_arch_vcpu_id(CPUArchState *env)
     return env->cpuid_apic_id;
 }
 
+/*
+ * Find matching entry for function/index on kvm_cpuid2 struct
+ */
+static struct kvm_cpuid_entry2 *cpuid_find_entry(struct kvm_cpuid_entry2 *entries,
+                                                 int nent,
+                                                 uint32_t function,
+                                                 uint32_t index)
+{
+    int i;
+    for (i = 0; i < nent; ++i) {
+        if (entries[i].function == function &&
+            entries[i].index == index) {
+            return &entries[i];
+        }
+    }
+    /* not found: */
+    return NULL;
+}
+
+static Error *invtsc_mig_blocker;
+
+static const VMStateDescription vmstate_cpu_invtsc = {
+    .name = "cpu_invtsc",
+    .version_id = 1,
+    .minimum_version_id = 1,
+    .minimum_version_id_old = 1,
+    .unmigratable = 1,
+    .fields      = (VMStateField []) {
+        VMSTATE_UINT32(halted, CPUState), /* dummy */
+        VMSTATE_END_OF_LIST()
+    }
+};
+
 int kvm_arch_init_vcpu(CPUState *cenv)
 {
     struct kvm_cpuid_entry2 cpuid_ent[100];
+    struct kvm_cpuid_entry2 *c;
 #ifdef KVM_CPUID_SIGNATURE
     struct kvm_cpuid_entry2 *pv_ent;
     uint32_t signature[3];
@@ -1533,6 +1567,17 @@ int kvm_arch_init_vcpu(CPUState *cenv)
 
     for (i = 0x80000000; i <= limit; ++i)
 	do_cpuid_ent(&cpuid_ent[cpuid_nent++], i, 0, &copy);
+
+    c = cpuid_find_entry(cpuid_ent, cpuid_nent, 0x80000007, 0);
+    if (c && (c->edx & 1<<8) && invtsc_mig_blocker == NULL) {
+        /* migration */
+        error_setg(&invtsc_mig_blocker,
+                   "State blocked by non-migratable CPU device"
+                   " (invtsc flag)");
+        migrate_add_blocker(invtsc_mig_blocker);
+        /* savevm */
+        vmstate_register(NULL, 1, &vmstate_cpu_invtsc, cenv);
+    }
 
     kvm_setup_cpuid2(cenv, cpuid_nent, cpuid_ent);
 
