@@ -81,6 +81,17 @@ static const char *cpuid_7_0_ebx_feature_name[] = {
     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 };
 
+static const char *cpuid_apm_edx_feature_name[] = {
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    "invtsc", NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+};
+
 typedef struct ExtSaveArea {
     bool (*enabled)(const CPUX86State *);
     uint32_t offset, size;
@@ -193,7 +204,8 @@ static void add_flagname_to_bitmaps(const char *flagname, uint32_t *features,
                                     uint32_t *ext2_features,
                                     uint32_t *ext3_features,
                                     uint32_t *kvm_features,
-                                    uint32_t *cpuid_7_0_ebx_features)
+                                    uint32_t *cpuid_7_0_ebx_features,
+                                    uint32_t *apm_edx_features)
 {
     if (!lookup_feature(features, flagname, NULL, feature_name) &&
         !lookup_feature(ext_features, flagname, NULL, ext_feature_name) &&
@@ -201,7 +213,9 @@ static void add_flagname_to_bitmaps(const char *flagname, uint32_t *features,
         !lookup_feature(ext3_features, flagname, NULL, ext3_feature_name) &&
         !lookup_feature(kvm_features, flagname, NULL, kvm_feature_name) &&
         !lookup_feature(cpuid_7_0_ebx_features, flagname, NULL,
-                        cpuid_7_0_ebx_feature_name))
+                        cpuid_7_0_ebx_feature_name) &&
+        !lookup_feature(apm_edx_features, flagname, NULL,
+                        cpuid_apm_edx_feature_name))
             fprintf(stderr, "CPU feature %s not found\n", flagname);
 }
 
@@ -214,6 +228,7 @@ typedef struct x86_def_t {
     int model;
     int stepping;
     uint32_t features, ext_features, ext2_features, ext3_features, kvm_features;
+    uint32_t apm_edx_features;
     uint32_t xlevel;
     char model_id[48];
     int vendor_override;
@@ -866,6 +881,8 @@ static void kvm_cpu_fill_host(x86_def_t *x86_cpu_def)
                 kvm_arch_get_supported_cpuid(s, 0x80000001, 0, R_EDX);
     x86_cpu_def->ext3_features =
                 kvm_arch_get_supported_cpuid(s, 0x80000001, 0, R_ECX);
+    x86_cpu_def->apm_edx_features =
+                kvm_arch_get_supported_cpuid(s, 0x80000007, 0, R_EDX);
 
     cpu_x86_fill_model_id(x86_cpu_def->model_id);
     x86_cpu_def->vendor_override = 0;
@@ -902,6 +919,7 @@ static void summary_cpuid_features(CPUX86State *env, x86_def_t *hd)
             {&hd->ext2_features, 0x80000001, R_EDX, 0},
             {&hd->ext3_features, 0x80000001, R_ECX, 0},
             {&hd->cpuid_7_0_ebx_features, 0x7, R_EBX, 0},
+            {&hd->apm_edx_features, 0x80000007, R_EDX, 0},
             {NULL}}, *p;
 
     kvm_cpu_fill_host(hd);
@@ -939,6 +957,9 @@ static int kvm_check_features_against_host(CPUX86State *env, x86_def_t *guest_de
         {&guest_def->cpuid_7_0_ebx_features, &host_def.cpuid_7_0_ebx_features,
             ~0, 0,
             cpuid_7_0_ebx_feature_name, "EAX=7,ECX=0:ebx"},
+        {&guest_def->apm_edx_features, &host_def.apm_edx_features,
+            ~0, 0,
+            cpuid_apm_edx_feature_name, "8000_0007:edx"},
         {NULL}}, *p;
 
     assert(kvm_enabled());
@@ -963,8 +984,10 @@ static int cpu_x86_find_by_name(x86_def_t *x86_cpu_def, const char *cpu_model)
     char *featurestr, *name = strtok(s, ",");
     uint32_t plus_features = 0, plus_ext_features = 0, plus_ext2_features = 0, plus_ext3_features = 0, plus_kvm_features = 0;
     uint32_t plus_7_0_ebx_features = 0;
+    uint32_t plus_apm_edx_features = 0;
     uint32_t minus_features = 0, minus_ext_features = 0, minus_ext2_features = 0, minus_ext3_features = 0, minus_kvm_features = 0;
     uint32_t minus_7_0_ebx_features = 0;
+    uint32_t minus_apm_edx_features = 0;
     uint32_t numvalue;
 
     for (def = x86_defs; def; def = def->next)
@@ -972,6 +995,10 @@ static int cpu_x86_find_by_name(x86_def_t *x86_cpu_def, const char *cpu_model)
             break;
     if (kvm_enabled() && name && strcmp(name, "host") == 0) {
         kvm_cpu_fill_host(x86_cpu_def);
+        /* invtsc enabled only with -cpu host,+invtsc, this emulates
+         * the default migratable=no upstream.
+         */
+        x86_cpu_def->apm_edx_features = 0;
     } else if (!def) {
         fprintf(stderr, "Unknown cpu model: %s\n", name);
         goto error;
@@ -1004,7 +1031,8 @@ static int cpu_x86_find_by_name(x86_def_t *x86_cpu_def, const char *cpu_model)
 
     add_flagname_to_bitmaps("hypervisor", &plus_features,
         &plus_ext_features, &plus_ext2_features, &plus_ext3_features,
-        &plus_kvm_features, &plus_7_0_ebx_features);
+        &plus_kvm_features, &plus_7_0_ebx_features,
+        &plus_apm_edx_features);
 
     featurestr = strtok(NULL, ",");
 
@@ -1014,12 +1042,14 @@ static int cpu_x86_find_by_name(x86_def_t *x86_cpu_def, const char *cpu_model)
             add_flagname_to_bitmaps(featurestr + 1, &plus_features,
                             &plus_ext_features, &plus_ext2_features,
                             &plus_ext3_features, &plus_kvm_features,
-                            &plus_7_0_ebx_features);
+                            &plus_7_0_ebx_features,
+                            &plus_apm_edx_features);
         } else if (featurestr[0] == '-') {
             add_flagname_to_bitmaps(featurestr + 1, &minus_features,
                             &minus_ext_features, &minus_ext2_features,
                             &minus_ext3_features, &minus_kvm_features,
-                            &minus_7_0_ebx_features);
+                            &minus_7_0_ebx_features,
+                            &minus_apm_edx_features);
         } else if ((val = strchr(featurestr, '='))) {
             *val = 0; val++;
             if (!strcmp(featurestr, "family")) {
@@ -1104,12 +1134,14 @@ static int cpu_x86_find_by_name(x86_def_t *x86_cpu_def, const char *cpu_model)
     x86_cpu_def->ext3_features |= plus_ext3_features;
     x86_cpu_def->kvm_features |= plus_kvm_features;
     x86_cpu_def->cpuid_7_0_ebx_features |= plus_7_0_ebx_features;
+    x86_cpu_def->apm_edx_features |= plus_apm_edx_features;
     x86_cpu_def->features &= ~minus_features;
     x86_cpu_def->ext_features &= ~minus_ext_features;
     x86_cpu_def->ext2_features &= ~minus_ext2_features;
     x86_cpu_def->ext3_features &= ~minus_ext3_features;
     x86_cpu_def->kvm_features &= ~minus_kvm_features;
     x86_cpu_def->cpuid_7_0_ebx_features &= ~minus_7_0_ebx_features;
+    x86_cpu_def->apm_edx_features &= ~minus_apm_edx_features;
     if (x86_cpu_def->cpuid_7_0_ebx_features && x86_cpu_def->level < 7) {
         x86_cpu_def->level = 7;
     }
@@ -1207,6 +1239,7 @@ int cpu_x86_register (CPUX86State *env, const char *cpu_model)
     env->cpuid_ext3_features = def->ext3_features;
     env->cpuid_7_0_ebx_features = def->cpuid_7_0_ebx_features;
     env->cpuid_kvm_features = def->kvm_features;
+    env->cpuid_apm_edx_features = def->apm_edx_features;
     env->cpuid_pmu_passthrough = def->pmu_passthrough;
     {
         const char *model_id = def->model_id;
@@ -1536,6 +1569,12 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
         *ebx = 0x42004200;
         *ecx = 0x02008140;
         *edx = 0;
+        break;
+    case 0x80000007:
+        *eax = 0;
+        *ebx = 0;
+        *ecx = 0;
+        *edx = env->cpuid_apm_edx_features;
         break;
     case 0x80000008:
         /* virtual & phys address size in low 2 bytes. */

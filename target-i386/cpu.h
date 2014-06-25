@@ -767,6 +767,7 @@ typedef struct CPUX86State {
     /* Flags from CPUID[EAX=7,ECX=0].EBX */
     uint32_t cpuid_7_0_ebx_features;
     uint32_t cpuid_apic_id;
+    uint32_t cpuid_apm_edx_features;
     /* Enables direct passthrough of PMU CPUID leaf (0xA) from the kernel */
     bool cpuid_pmu_passthrough;
     int cpuid_vendor_override;
