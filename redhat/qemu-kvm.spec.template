@@ -106,7 +106,7 @@ Group: Development/Tools
 URL: http://www.qemu.org/
 # RHEV will build Qemu only on x86_64:
 %if %{rhev}
-ExclusiveArch: x86_64
+ExclusiveArch: x86_64 ppc64
 %endif
 Requires: seabios-bin >= 1.7.2.2-5
 Requires: sgabios-bin
@@ -573,10 +573,21 @@ dobuild --target-list="$buildarch"
     rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/petalogix*.dtb
     rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/bamboo.dtb
     rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/ppc_rom.bin
-    rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/spapr-rtas.bin
-    rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/u-boot.e500
     rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/s390-zipl.rom
     rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/s390-ccw.img
+
+    %ifnarch ppc64
+        rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/spapr-rtas.bin
+        rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/u-boot.e500
+    %endif
+
+    %ifnarch x86_64
+        rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/acpi-dsdt.aml
+        rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/kvmvapic.bin
+        rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/linuxboot.bin
+        rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/multiboot.bin
+        rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/q35-acpi-dsdt.aml
+    %endif
 
     # Remove efi roms
     rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/efi*.rom
@@ -612,8 +623,10 @@ dobuild --target-list="$buildarch"
     rom_link ../seavgabios/vgabios-qxl.bin vgabios-qxl.bin
     rom_link ../seavgabios/vgabios-stdvga.bin vgabios-stdvga.bin
     rom_link ../seavgabios/vgabios-vmware.bin vgabios-vmware.bin
-    rom_link ../seabios/bios.bin bios.bin
-    rom_link ../seabios/bios-256k.bin bios-256k.bin
+    %ifarch x86_64
+      rom_link ../seabios/bios.bin bios.bin
+      rom_link ../seabios/bios-256k.bin bios-256k.bin
+    %endif
     rom_link ../sgabios/sgabios.bin sgabios.bin
 %endif
 
@@ -743,14 +756,16 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %if %{rhev}
 %files
     %defattr(-,root,root)
-    %{_datadir}/%{pkgname}/acpi-dsdt.aml
-    %{_datadir}/%{pkgname}/q35-acpi-dsdt.aml
-    %{_datadir}/%{pkgname}/bios.bin
-    %{_datadir}/%{pkgname}/bios-256k.bin
+    %ifarch x86_64
+        %{_datadir}/%{pkgname}/acpi-dsdt.aml
+        %{_datadir}/%{pkgname}/q35-acpi-dsdt.aml
+        %{_datadir}/%{pkgname}/bios.bin
+        %{_datadir}/%{pkgname}/bios-256k.bin
+        %{_datadir}/%{pkgname}/linuxboot.bin
+        %{_datadir}/%{pkgname}/multiboot.bin
+        %{_datadir}/%{pkgname}/kvmvapic.bin
+    %endif
     %{_datadir}/%{pkgname}/sgabios.bin
-    %{_datadir}/%{pkgname}/linuxboot.bin
-    %{_datadir}/%{pkgname}/multiboot.bin
-    %{_datadir}/%{pkgname}/kvmvapic.bin
     %{_datadir}/%{pkgname}/vgabios.bin
     %{_datadir}/%{pkgname}/vgabios-cirrus.bin
     %{_datadir}/%{pkgname}/vgabios-qxl.bin
@@ -770,6 +785,10 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %{_datadir}/%{pkgname}/rhel6-rtl8139.rom
     %{_datadir}/%{pkgname}/rhel6-ne2k_pci.rom
     %{_datadir}/%{pkgname}/rhel6-e1000.rom
+    %ifarch ppc64
+        %{_datadir}/%{pkgname}/spapr-rtas.bin
+        %{_datadir}/%{pkgname}/u-boot.e500
+    %endif
     %config(noreplace) %{_sysconfdir}/%{pkgname}/target-x86_64.conf
     %{?kvm_files:}
     %{?qemu_kvm_files:}
