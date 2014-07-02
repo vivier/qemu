@@ -97,7 +97,6 @@ static void qxl_render_update_area_unlocked(PCIQXLDevice *qxl)
 {
     VGACommonState *vga = &qxl->vga;
     int i;
-    DisplaySurface *surface = vga->ds->surface;
 
     if (qxl->guest_primary.resized) {
         qxl->guest_primary.resized = 0;
@@ -115,9 +114,6 @@ static void qxl_render_update_area_unlocked(PCIQXLDevice *qxl)
                qxl->guest_primary.qxl_stride,
                qxl->guest_primary.bytes_pp,
                qxl->guest_primary.bits_pp);
-    }
-    if (surface->width != qxl->guest_primary.surface.width ||
-        surface->height != qxl->guest_primary.surface.height) {
         if (qxl->guest_primary.qxl_stride > 0) {
             qemu_free_displaysurface(vga->ds);
             vga->ds->surface = qemu_create_displaysurface_from
