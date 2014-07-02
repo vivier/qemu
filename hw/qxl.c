@@ -1548,20 +1548,13 @@ async_common:
         if (d->ram->update_surface > NUM_SURFACES) {
             qxl_set_guest_bug(d, "QXL_IO_UPDATE_AREA: invalid surface id %d\n",
                               d->ram->update_surface);
-            return;
+            break;
         }
-        if (update.left >= update.right || update.top >= update.bottom) {
+        if (update.left >= update.right || update.top >= update.bottom ||
+            update.left < 0 || update.top < 0) {
             qxl_set_guest_bug(d,
                     "QXL_IO_UPDATE_AREA: invalid area (%ux%u)x(%ux%u)\n",
                     update.left, update.top, update.right, update.bottom);
-            return;
-        }
-
-        if (update.left < 0 || update.top < 0 || update.left >= update.right ||
-            update.top >= update.bottom) {
-            qxl_set_guest_bug(d, "QXL_IO_UPDATE_AREA: "
-                              "invalid area(%d,%d,%d,%d)\n", update.left,
-                              update.right, update.top, update.bottom);
             break;
         }
         if (async == QXL_ASYNC) {
