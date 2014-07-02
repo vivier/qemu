@@ -802,6 +802,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Jul 02 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-65.el7
+- kvm-Allow-mismatched-virtio-config-len.patch [bz#1113009]
+- Resolves: bz#1113009
+  (Migration failed with virtio-blk from RHEL6.5.0 host to RHEL7.0 host)
+
 * Wed Jun 18 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-64.el7
 - kvm-zero-initialize-KVM_SET_GSI_ROUTING-input.patch [bz#1098976]
 - kvm-skip-system-call-when-msi-route-is-unchanged.patch [bz#1098976]
