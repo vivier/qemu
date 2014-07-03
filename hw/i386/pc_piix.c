@@ -984,8 +984,6 @@ static QEMUMachine pc_machine_rhel700 = {
     .alias = "pc",
     .desc = "RHEL 7.0.0 PC (i440FX + PIIX, 1996)",
     .init = pc_init_rhel700,
-    .hot_add_cpu = pc_hot_add_cpu,
-    .max_cpus = 255,
     .is_default = 1,
     .default_machine_opts = "firmware=bios-256k.bin",
     .compat_props = (GlobalProperty[]) {
@@ -1164,8 +1162,6 @@ static QEMUMachine pc_machine_rhel650 = {
     .name = "rhel6.5.0",
     .desc = "RHEL 6.5.0 PC",
     .init = pc_init_rhel650,
-    .hot_add_cpu = pc_hot_add_cpu,
-    .max_cpus = 255,
     .compat_props = (GlobalProperty[]) {
         PC_RHEL6_5_COMPAT,
         { /* end of list */ }
@@ -1213,8 +1209,6 @@ static QEMUMachine pc_machine_rhel640 = {
     .name = "rhel6.4.0",
     .desc = "RHEL 6.4.0 PC",
     .init = pc_init_rhel640,
-    .hot_add_cpu = pc_hot_add_cpu,
-    .max_cpus = 255,
     .compat_props = (GlobalProperty[]) {
         PC_RHEL6_4_COMPAT,
         { /* end of list */ }
@@ -1289,8 +1283,6 @@ static QEMUMachine pc_machine_rhel630 = {
     .name = "rhel6.3.0",
     .desc = "RHEL 6.3.0 PC",
     .init = pc_init_rhel630,
-    .hot_add_cpu = pc_hot_add_cpu,
-    .max_cpus = 255,
     .compat_props = (GlobalProperty[]) {
         PC_RHEL6_3_COMPAT,
         { /* end of list */ }
@@ -1321,8 +1313,6 @@ static QEMUMachine pc_machine_rhel620 = {
     .name = "rhel6.2.0",
     .desc = "RHEL 6.2.0 PC",
     .init = pc_init_rhel620,
-    .hot_add_cpu = pc_hot_add_cpu,
-    .max_cpus = 255,
     .compat_props = (GlobalProperty[]) {
         PC_RHEL6_2_COMPAT,
         { /* end of list */ }
@@ -1394,8 +1384,6 @@ static QEMUMachine pc_machine_rhel610 = {
     .name = "rhel6.1.0",
     .desc = "RHEL 6.1.0 PC",
     .init = pc_init_rhel610,
-    .hot_add_cpu = pc_hot_add_cpu,
-    .max_cpus = 255,
     .compat_props = (GlobalProperty[]) {
         PC_RHEL6_1_COMPAT,
         { /* end of list */ }
@@ -1434,8 +1422,6 @@ static QEMUMachine pc_machine_rhel600 = {
     .name = "rhel6.0.0",
     .desc = "RHEL 6.0.0 PC",
     .init = pc_init_rhel600,
-    .hot_add_cpu = pc_hot_add_cpu,
-    .max_cpus = 255,
     .compat_props = (GlobalProperty[]) {
         PC_RHEL6_0_COMPAT,
         { /* end of list */ }
