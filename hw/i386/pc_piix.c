@@ -872,6 +872,23 @@ static void pc_compat_rhel700(QEMUMachineInitArgs *args)
                                 CPUID_EXT2_RDTSCP);
 }
 
+/*
+ * RHE[LV] This set of items are from include/hw/i386/pc.h where they
+ * are part of the PC_COMPAT_* defs. RHEL7 was QEMU 1.5.3 derived so pick up
+ * the diffs from 1.5 onwards MINUS the things that were already in RHEL7
+ * e.g. msos-desc
+ */
+#define PC_RHEL7_0_COMPAT \
+    {\
+        .driver   = "PIIX4_PM",\
+        .property = "acpi-pci-hotplug-with-bridge-support",\
+        .value    = "off",\
+    },{\
+        .driver   = "e1000",\
+        .property = "mitigation",\
+        .value    = "off",\
+    }
+
 static void pc_init_rhel700(QEMUMachineInitArgs *args)
 {
     pc_compat_rhel700(args);
@@ -888,9 +905,14 @@ static QEMUMachine pc_machine_rhel700 = {
     .max_cpus = 255,
     .is_default = 1,
     .default_machine_opts = "firmware=bios-256k.bin",
+    .compat_props = (GlobalProperty[]) {
+        PC_RHEL7_0_COMPAT,
+        { /* end of list */ }
+    },
 };
 
 #define PC_RHEL6_5_COMPAT \
+    PC_RHEL7_0_COMPAT,\
     {\
         .driver   = "scsi-hd",\
         .property = "discard_granularity",\
@@ -1000,6 +1022,10 @@ static QEMUMachine pc_machine_rhel700 = {
         .driver   = TYPE_USB_DEVICE,\
         .property = "msos-desc",\
         .value    = "no",\
+    },{\
+        .driver   = "virtio-net-pci",\
+        .property = "any_layout",\
+        .value    = "off",\
     }
 
 static void pc_compat_rhel650(QEMUMachineInitArgs *args)
@@ -1038,6 +1064,10 @@ static void pc_compat_rhel650(QEMUMachineInitArgs *args)
                                 CPUID_EXT2_3DNOW | CPUID_EXT2_3DNOWEXT);
 
     x86_cpu_compat_disable_kvm_features(FEAT_KVM, KVM_FEATURE_PV_UNHALT);
+
+    rom_file_has_mr = false;
+    has_acpi_build = false;
+    gigabyte_align = false;
 }
 
 static void pc_init_rhel650(QEMUMachineInitArgs *args)
