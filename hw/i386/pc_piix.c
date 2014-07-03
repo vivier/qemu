@@ -1075,6 +1075,10 @@ static QEMUMachine pc_machine_rhel700 = {
         .property = "level",\
         .value = stringify(0),\
     },{\
+        .driver   = "qemu32-" TYPE_X86_CPU,\
+        .property = "model",\
+        .value    = stringify(3),\
+    },{\
         .driver   = "usb-ccid",\
         .property = "serial",\
         .value    = "1",\
