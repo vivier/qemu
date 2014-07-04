@@ -167,6 +167,20 @@ Example:
 EQMP
 
     {
+        .name       = "__com.redhat_qxl_screendump",
+        .args_type  = "id:s,filename:F",
+        .mhandler.cmd_new = qmp_marshal___com_redhat_qxl_screendump,
+    },
+
+SQMP
+__com.redhat_qxl_screendump
+---------------------------
+
+Save screen from qxl device @var{id} into PPM image @var{filename}.
+
+EQMP
+
+    {
         .name       = "stop",
         .args_type  = "",
         .mhandler.cmd_new = qmp_marshal_stop,
