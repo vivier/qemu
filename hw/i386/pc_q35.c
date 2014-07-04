@@ -278,6 +278,7 @@ static void pc_q35_init(MachineState *machine)
     }
 }
 
+#if 0 /* Disabled for Red Hat Enterprise Linux */
 static void pc_compat_2_0(MachineState *machine)
 {
     smbios_legacy_mode = true;
@@ -430,3 +431,28 @@ static void pc_q35_machine_init(void)
 }
 
 machine_init(pc_q35_machine_init);
+
+#endif  /* Disabled for Red Hat Enterprise Linux */
+
+/* Red Hat Enterprise Linux machine types */
+
+static void pc_q35_init_rhel700(MachineState *machine)
+{
+    pc_q35_init(machine);
+}
+
+static QEMUMachine pc_q35_machine_rhel700 = {
+    PC_DEFAULT_MACHINE_OPTIONS,
+    .name = "pc-q35-rhel7.0.0",
+    .alias = "q35",
+    .desc = "RHEL-7.0.0 PC (Q35 + ICH9, 2009)",
+    .init = pc_q35_init_rhel700,
+    .default_machine_opts = "firmware=bios-256k.bin",
+};
+
+static void rhel_pc_q35_machine_init(void)
+{
+    qemu_register_pc_machine(&pc_q35_machine_rhel700);
+}
+
+machine_init(rhel_pc_q35_machine_init);

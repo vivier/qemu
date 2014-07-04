@@ -297,6 +297,7 @@ static void pc_init_pci(MachineState *machine)
     pc_init1(machine, 1, 1);
 }
 
+#if 0 /* Disabled for Red Hat Enterprise Linux */
 static void pc_compat_2_0(MachineState *machine)
 {
     /* This value depends on the actual DSDT and SSDT compiled into
@@ -919,3 +920,29 @@ static void pc_machine_init(void)
 }
 
 machine_init(pc_machine_init);
+
+#endif  /* Disabled for Red Hat Enterprise Linux */
+
+/* Red Hat Enterprise Linux machine types */
+
+static void pc_init_rhel700(MachineState *machine)
+{
+    pc_init_pci(machine);
+}
+
+static QEMUMachine pc_machine_rhel700 = {
+    PC_DEFAULT_MACHINE_OPTIONS,
+    .name = "pc-i440fx-rhel7.0.0",
+    .alias = "pc",
+    .desc = "RHEL 7.0.0 PC (i440FX + PIIX, 1996)",
+    .init = pc_init_rhel700,
+    .is_default = 1,
+    .default_machine_opts = "firmware=bios-256k.bin",
+};
+
+static void rhel_machine_init(void)
+{
+    qemu_register_pc_machine(&pc_machine_rhel700);
+}
+
+machine_init(rhel_machine_init);
