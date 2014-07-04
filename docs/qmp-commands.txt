@@ -125,6 +125,17 @@ Example:
 -> { "execute": "screendump", "arguments": { "filename": "/tmp/image" } }
 <- { "return": {} }
 
+__com.redhat_qxl_screendump
+---------------------------
+
+Save screen from qxl device @var{id} into PPM image @var{filename}.
+
+Example:
+
+-> { "execute": "__com.redhat_qxl_screendump",
+     "arguments": { "id": video1", "filename": "v1.ppm" } }
+<- { "return": {} }
+
 stop
 ----
 
