@@ -3014,6 +3014,21 @@
 { 'command': 'screendump', 'data': {'filename': 'str'} }
 
 ##
+# @__com.redhat_qxl_screendump:
+#
+# Write a PPM of secondary qxl devices to a file.
+#
+# @id: qxl device id
+# @filename: the path of a new PPM file to store the image
+#
+# Returns: Nothing on success
+#
+# Since: never (rhel-only, not upstream)
+##
+{ 'command': '__com.redhat_qxl_screendump', 'data': { 'id' : 'str',
+                                                      'filename': 'str' } }
+
+##
 # @ChardevFile:
 #
 # Configuration info for file chardevs.
