@@ -2,6 +2,11 @@
 
 # Always point to the root of the build tree (needs GNU make).
 BUILD_DIR=$(CURDIR)
+# useful for passing ' ' and ',' into Makefile functional calls,
+# as these characters cannot be passed otherwise
+_empty :=  
+_space := $(_empty) $(_empty)
+_comma := ,
 
 # All following code might depend on configuration variables
 ifneq ($(wildcard config-host.mak),)
@@ -291,6 +296,7 @@ clean:
 	rm -f trace/generated-tracers-dtrace.h*
 	rm -f $(foreach f,$(GENERATED_HEADERS),$(f) $(f)-timestamp)
 	rm -f $(foreach f,$(GENERATED_SOURCES),$(f) $(f)-timestamp)
+	rm -f $(foreach f,$(GENERATED_JSON_FILES),$(f) $(f)-timestamp)
 	rm -rf qapi-generated
 	rm -rf qga/qapi-generated
 	for d in $(ALL_SUBDIRS); do \

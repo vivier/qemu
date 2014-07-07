@@ -20,9 +20,11 @@ block-obj-$(CONFIG_GLUSTERFS) += gluster.o
 block-obj-$(CONFIG_LIBSSH2) += ssh.o
 endif
 
+ifeq ($(CONFIG_LIVE_BLOCK_OPS),y)
 common-obj-y += stream.o
 common-obj-y += commit.o
 common-obj-y += mirror.o
+endif
 common-obj-y += backup.o
 
 iscsi.o-cflags     := $(LIBISCSI_CFLAGS)
