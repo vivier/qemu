@@ -123,11 +123,16 @@ static void virtio_rng_save(QEMUFile *f, void *opaque)
 static int virtio_rng_load(QEMUFile *f, void *opaque, int version_id)
 {
     VirtIORNG *vrng = opaque;
+    int ret;
 
     if (version_id != 1) {
         return -EINVAL;
     }
-    virtio_load(&vrng->vdev, f);
+
+    ret = virtio_load(&vrng->vdev, f);
+    if (ret) {
+        return ret;
+    }
 
     /* We may have an element ready but couldn't process it due to a quota
      * limit.  Make sure to try again after live migration when the quota may
