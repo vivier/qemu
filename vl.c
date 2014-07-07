@@ -3330,6 +3330,7 @@ int main(int argc, char **argv, char **envp)
                 }
 
                 sz = QEMU_ALIGN_UP(sz, 8192);
+                sz = MAX(sz, 2 * 1024 * 1024);
                 ram_size = sz;
                 if (ram_size != sz) {
                     error_report("ram size too large");
