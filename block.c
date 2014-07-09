@@ -3611,6 +3611,13 @@ static RHEL7BlockErrorReason get_rhel7_error_reason(int error)
     }
 }
 
+static void get_rhel7_error_debug_info(RHEL7BlockErrorDebugInfo *info,
+                                       int error)
+{
+    info->q_errno = error;
+    info->message = strerror(error);
+}
+
 /* This is done by device models because, while the block layer knows
  * about the error, it does not know whether an operation comes from
  * the device or the block layer (from a job, for example).
@@ -3619,9 +3626,14 @@ void bdrv_error_action(BlockDriverState *bs, BlockErrorAction action,
                        bool is_read, int error)
 {
     RHEL7BlockErrorReason res;
+    RHEL7BlockErrorDebugInfo info;
 
     assert(error >= 0);
     res = get_rhel7_error_reason(error);
+    get_rhel7_error_debug_info(&info, error);
+
+    fprintf(stderr, "block I/O error in device '%s': %s (%d)\n",
+                    bdrv_get_device_name(bs), info.message, (int) info.q_errno);
 
     if (action == BLOCK_ERROR_ACTION_STOP) {
         /* First set the iostatus, so that "info block" returns an iostatus
@@ -3642,13 +3654,13 @@ void bdrv_error_action(BlockDriverState *bs, BlockErrorAction action,
         qapi_event_send_block_io_error(bdrv_get_device_name(bs),
                                        is_read ? IO_OPERATION_TYPE_READ :
                                        IO_OPERATION_TYPE_WRITE,
-                                       action, res, &error_abort);
+                                       action, res, &info, &error_abort);
         qemu_system_vmstop_request(RUN_STATE_IO_ERROR);
     } else {
         qapi_event_send_block_io_error(bdrv_get_device_name(bs),
                                        is_read ? IO_OPERATION_TYPE_READ :
                                        IO_OPERATION_TYPE_WRITE,
-                                       action, res, &error_abort);
+                                       action, res, &info, &error_abort);
     }
 }
 

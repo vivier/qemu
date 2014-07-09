@@ -1505,6 +1505,17 @@
   'data': [ 'enospc', 'eperm', 'eio', 'eother' ] }
 
 ##
+# @RHEL7BlockErrorDebugInfo
+#
+# Debug information for a block I/O error
+#
+# @message: error message returned by strerror()
+# @errno: errno value
+##
+{ 'type': 'RHEL7BlockErrorDebugInfo',
+  'data': { 'message': 'str', 'errno': 'int' } }
+
+##
 # @BLOCK_IMAGE_CORRUPTED
 #
 # Emitted when a disk image is being marked corrupt
@@ -1542,6 +1553,10 @@
 #
 # @__com.redhat_reason: error reason (RHEL7 vendor extension)
 #
+# @__com.redhat_debug_info: debug information for humans, applications
+#                           should NOT read any information from this
+#                           member (RHEL7 vendor extension)
+#
 # Note: If action is "stop", a STOP event will eventually follow the
 # BLOCK_IO_ERROR event
 #
@@ -1550,7 +1565,8 @@
 { 'event': 'BLOCK_IO_ERROR',
   'data': { 'device': 'str', 'operation': 'IoOperationType',
             'action': 'BlockErrorAction',
-            '__com.redhat_reason': 'RHEL7BlockErrorReason' } }
+            '__com.redhat_reason': 'RHEL7BlockErrorReason',
+            '__com.redhat_debug_info': 'RHEL7BlockErrorDebugInfo' } }
 
 ##
 # @BLOCK_JOB_COMPLETED
