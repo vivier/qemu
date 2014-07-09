@@ -434,6 +434,10 @@ def c_var(name, protect=True):
 def c_fun(name, protect=True):
     return c_var(name, protect).replace('.', '_')
 
+# Should be used where vendor extensions are supported
+def c_arg(name):
+	return c_var(name).replace('.', '_')
+
 def c_list_type(name):
     return '%sList' % name
 
