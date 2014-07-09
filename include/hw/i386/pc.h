@@ -15,6 +15,8 @@
 #include "sysemu/sysemu.h"
 #include "hw/pci/pci.h"
 
+#define RHEL_MAX_CPUS 160
+
 /* PC-style peripherals (also used by other machines).  */
 
 typedef struct PcPciInfo {
