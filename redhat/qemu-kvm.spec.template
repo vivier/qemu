@@ -822,6 +822,19 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Jul 09 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.0.0-3.el7
+- kvm-Remove-CONFIG_NE2000_ISA-from-all-config-files.patch []
+- kvm-Fix-conditional-rpmbuild.patch []
+- kvm-RHEL7-RHEV7.1-2.0-migration-compatibility.patch [bz#1085950]
+- kvm-remove-superfluous-.hot_add_cpu-and-.max_cpus-initia.patch [bz#1085950]
+- kvm-set-model-in-PC_RHEL6_5_COMPAT-for-qemu32-VCPU-RHEV-.patch [bz#1085950]
+- kvm-Undo-Enable-x2apic-by-default-for-compatibility.patch [bz#1085950]
+- kvm-qemu_loadvm_state-shadow-SeaBIOS-for-VM-incoming-fro.patch [bz#1103579]
+- Resolves: bz#1085950
+  (Migration/virtio-net: 7.0->vp-2.0-rc2: Mix of migration issues)
+- Resolves: bz#1103579
+  (fail to reboot guest after migration from RHEL6.5 host to RHEL7.0 host)
+
 * Fri May 30 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.0.0-2.el7
 - kvm-pc-add-hot_add_cpu-callback-to-all-machine-types.patch [bz#1093411]
 - Resolves: bz#1093411
