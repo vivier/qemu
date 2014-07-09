@@ -802,6 +802,45 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Jul 09 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-66.el7
+- kvm-xhci-fix-overflow-in-usb_xhci_post_load.patch [bz#1074219]
+- kvm-migration-qmp_migrate-keep-working-after-syntax-erro.patch [bz#1086598]
+- kvm-seccomp-add-shmctl-mlock-and-munlock-to-the-syscall-.patch [bz#1026314]
+- kvm-exit-when-no-kvm-and-vcpu-count-160.patch [bz#1076326]
+- kvm-Disallow-outward-migration-while-awaiting-incoming-m.patch [bz#1086987]
+- kvm-block-Ignore-duplicate-or-NULL-format_name-in-bdrv_i.patch [bz#1088695 bz#1093983]
+- kvm-block-vhdx-account-for-identical-header-sections.patch [bz#1097020]
+- kvm-aio-Fix-use-after-free-in-cancellation-path.patch [bz#1095877]
+- kvm-scsi-disk-Improve-error-messager-if-can-t-get-versio.patch [bz#1021788]
+- kvm-scsi-Improve-error-messages-more.patch [bz#1021788]
+- kvm-memory-Don-t-call-memory_region_update_coalesced_ran.patch [bz#1096645]
+- kvm-kvmclock-Ensure-time-in-migration-never-goes-backwar.patch [bz#1098602]
+- kvm-kvmclock-Ensure-proper-env-tsc-value-for-kvmclock_cu.patch [bz#1098602]
+- Resolves: bz#1021788
+  (the error message "scsi generic interface too old" is wrong more often than not)
+- Resolves: bz#1026314
+  (qemu-kvm hang when use '-sandbox on'+'vnc'+'hda')
+- Resolves: bz#1074219
+  (qemu core dump when install a RHEL.7 guest(xhci) with migration)
+- Resolves: bz#1076326
+  (qemu-kvm does not quit when booting guest w/ 161 vcpus and "-no-kvm")
+- Resolves: bz#1086598
+  (migrate_cancel wont take effect on previouly wrong migrate -d cmd)
+- Resolves: bz#1086987
+  (src qemu crashed when starting migration in inmigrate mode)
+- Resolves: bz#1088695
+  (there are four "gluster" in qemu-img supported format list)
+- Resolves: bz#1093983
+  (there are three "nbd" in qemu-img supported format list)
+- Resolves: bz#1095877
+  (segmentation fault in qemu-kvm due to use-after-free of a SCSIGenericReq (host device pass-through))
+- Resolves: bz#1096645
+  ([FJ7.0 Bug] RHEL7.0 guest attaching 150 or more virtio-blk disks fails to start up)
+- Resolves: bz#1097020
+  ([RFE] qemu-img: Add/improve Disk2VHD tools creating VHDX images)
+- Resolves: bz#1098602
+  (kvmclock: Ensure time in migration never goes backward (backport))
+
 * Wed Jul 02 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-65.el7
 - kvm-Allow-mismatched-virtio-config-len.patch [bz#1113009]
 - Resolves: bz#1113009
