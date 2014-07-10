@@ -394,6 +394,8 @@ typedef struct BDRVVHDXState {
 
     Error *migration_blocker;
 
+    bool log_replayed_on_open;
+
     QLIST_HEAD(VHDXRegionHead, VHDXRegionEntry) regions;
 } BDRVVHDXState;
 
