@@ -1120,6 +1120,8 @@ static void pc_compat_rhel650(MachineState *machine)
     if (!machine->cpu_model) {
         machine->cpu_model = "cpu64-rhel6";
     }
+    smbios_legacy_mode = true;
+
     x86_cpu_compat_set_features("pentium", FEAT_1_EDX, 0, CPUID_APIC);
     x86_cpu_compat_set_features("pentium2", FEAT_1_EDX, 0, CPUID_APIC);
     x86_cpu_compat_set_features("pentium3", FEAT_1_EDX, 0, CPUID_APIC);
