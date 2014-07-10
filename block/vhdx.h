@@ -41,8 +41,9 @@
 #define VHDX_HEADER1_OFFSET         (VHDX_HEADER_BLOCK_SIZE * 1)
 #define VHDX_HEADER2_OFFSET         (VHDX_HEADER_BLOCK_SIZE * 2)
 #define VHDX_REGION_TABLE_OFFSET    (VHDX_HEADER_BLOCK_SIZE * 3)
+#define VHDX_REGION_TABLE2_OFFSET   (VHDX_HEADER_BLOCK_SIZE * 4)
 
-
+#define VHDX_HEADER_SECTION_END     (1 * MiB)
 /*
  * A note on the use of MS-GUID fields.  For more details on the GUID,
  * please see: https://en.wikipedia.org/wiki/Globally_unique_identifier.
@@ -60,6 +61,7 @@
 /* These structures are ones that are defined in the VHDX specification
  * document */
 
+#define VHDX_FILE_SIGNATURE 0x656C696678646876  /* "vhdxfile" in ASCII */
 typedef struct VHDXFileIdentifier {
     uint64_t    signature;              /* "vhdxfile" in ASCII */
     uint16_t    creator[256];           /* optional; utf-16 string to identify
@@ -90,6 +92,7 @@ typedef struct QEMU_PACKED MSGUID {
 /* The full header is 4KB, although the actual header data is much smaller.
  * But for the checksum calculation, it is over the entire 4KB structure,
  * not just the defined portion of it */
+#define VHDX_HEADER_SIGNATURE 0x64616568
 typedef struct QEMU_PACKED VHDXHeader {
     uint32_t    signature;              /* "head" in ASCII */
     uint32_t    checksum;               /* CRC-32C hash of the whole header */
@@ -130,6 +133,7 @@ typedef struct QEMU_PACKED VHDXHeader {
 } VHDXHeader;
 
 /* Header for the region table block */
+#define VHDX_REGION_SIGNATURE  0x69676572  /* "regi" in ASCII */
 typedef struct QEMU_PACKED VHDXRegionTableHeader {
     uint32_t    signature;              /* "regi" in ASCII */
     uint32_t    checksum;               /* CRC-32C hash of the 64KB table */
@@ -243,6 +247,7 @@ typedef uint64_t VHDXBatEntry;
 #define VHDX_METADATA_MAX_ENTRIES 2047  /* not including the header */
 #define VHDX_METADATA_TABLE_MAX_SIZE \
     (VHDX_METADATA_ENTRY_SIZE * (VHDX_METADATA_MAX_ENTRIES+1))
+#define VHDX_METADATA_SIGNATURE 0x617461646174656D  /* "metadata" in ASCII */
 typedef struct QEMU_PACKED VHDXMetadataTableHeader {
     uint64_t    signature;              /* "metadata" in ASCII */
     uint16_t    reserved;
@@ -281,6 +286,7 @@ typedef struct QEMU_PACKED VHDXFileParameters {
                                            the rest are reserved (see above) */
 } VHDXFileParameters;
 
+#define VHDX_MAX_IMAGE_SIZE  ((uint64_t) 64 * TiB)
 typedef struct QEMU_PACKED VHDXVirtualDiskSize {
     uint64_t    virtual_disk_size;      /* Size of the virtual disk, in bytes.
                                            Must be multiple of the sector size,
