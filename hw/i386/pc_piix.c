@@ -1158,6 +1158,7 @@ static void pc_compat_rhel650(MachineState *machine)
     has_acpi_build = false;
     gigabyte_align = false;
     shadow_bios_after_incoming = true;
+    ich9_uhci123_irqpin_override = true;
 }
 
 static void pc_init_rhel650(MachineState *machine)
