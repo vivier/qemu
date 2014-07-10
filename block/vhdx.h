@@ -235,6 +235,7 @@ typedef struct QEMU_PACKED VHDXLogDataSector {
    other bits are reserved */
 #define VHDX_BAT_STATE_BIT_MASK 0x07
 #define VHDX_BAT_FILE_OFF_BITS (64 - 44)
+#define VHDX_BAT_FILE_OFF_MASK  0xFFFFFFFFFFF00000 /* upper 44 bits */
 typedef uint64_t VHDXBatEntry;
 
 /* ---- METADATA REGION STRUCTURES ---- */
@@ -341,6 +342,12 @@ typedef struct VHDXLogEntries {
     uint32_t tail;
 } VHDXLogEntries;
 
+typedef struct VHDXRegionEntry {
+    uint64_t start;
+    uint64_t end;
+    QLIST_ENTRY(VHDXRegionEntry) entries;
+} VHDXRegionEntry;
+
 typedef struct BDRVVHDXState {
     CoMutex lock;
 
@@ -381,6 +388,8 @@ typedef struct BDRVVHDXState {
     VHDXParentLocatorEntry *parent_entries;
 
     Error *migration_blocker;
+
+    QLIST_HEAD(VHDXRegionHead, VHDXRegionEntry) regions;
 } BDRVVHDXState;
 
 void vhdx_guid_generate(MSGUID *guid);
