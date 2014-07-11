@@ -336,6 +336,9 @@ Create a VMDK version 6 image (instead of version 4)
 @item vpc
 VirtualPC compatible image format (VHD).
 
+@item vhdx
+Hyper-V compatible image format (VHDX).
+
 @item cloop
 Linux Compressed Loop image, useful only to reuse directly compressed
 CD-ROM images present for example in the Knoppix CD-ROMs.
