@@ -1755,9 +1755,11 @@ static void rhel_common_init(const char *type1_version,
         }
 
 bool migrate_steal_time_msr = true;
+bool migrate_pmu = true;
 
 static void pc_rhel650_compat(void)
 {
+    migrate_pmu = false;
 }
 
 static void pc_rhel640_compat(void)

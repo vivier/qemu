@@ -532,6 +532,9 @@ static bool pmu_enable_needed(void *opaque)
     CPUState *env = opaque;
     int i;
 
+    if (!migrate_pmu) {
+        return false;
+    }
     if (env->msr_fixed_ctr_ctrl || env->msr_global_ctrl ||
         env->msr_global_status || env->msr_global_ovf_ctrl) {
         return true;
