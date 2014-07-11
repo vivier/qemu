@@ -288,6 +288,8 @@
 #define MSR_IA32_APICBASE_BASE          (0xfffff<<12)
 #define MSR_IA32_TSCDEADLINE            0x6e0
 
+#define MSR_P6_PERFCTR0                 0xc1
+
 #define MSR_MTRRcap                     0xfe
 #define MSR_MTRRcap_VCNT                8
 #define MSR_MTRRcap_FIXRANGE_SUPPORT    (1 << 8)
@@ -300,6 +302,8 @@
 #define MSR_MCG_CAP                     0x179
 #define MSR_MCG_STATUS                  0x17a
 #define MSR_MCG_CTL                     0x17b
+
+#define MSR_P6_EVNTSEL0                 0x186
 
 #define MSR_IA32_PERF_STATUS            0x198
 
@@ -321,6 +325,14 @@
 #define MSR_PAT                         0x277
 
 #define MSR_MTRRdefType                 0x2ff
+
+#define MSR_CORE_PERF_FIXED_CTR0        0x309
+#define MSR_CORE_PERF_FIXED_CTR1        0x30a
+#define MSR_CORE_PERF_FIXED_CTR2        0x30b
+#define MSR_CORE_PERF_FIXED_CTR_CTRL    0x38d
+#define MSR_CORE_PERF_GLOBAL_STATUS     0x38e
+#define MSR_CORE_PERF_GLOBAL_CTRL       0x38f
+#define MSR_CORE_PERF_GLOBAL_OVF_CTRL   0x390
 
 #define MSR_MC0_CTL                     0x400
 #define MSR_MC0_STATUS                  0x401
@@ -653,6 +665,9 @@ typedef struct {
 #define CPU_NB_REGS CPU_NB_REGS32
 #endif
 
+#define MAX_FIXED_COUNTERS 3
+#define MAX_GP_COUNTERS    (MSR_IA32_PERF_STATUS - MSR_P6_EVNTSEL0)
+
 #define NB_MMU_MODES 2
 
 typedef struct CPUX86State {
@@ -737,6 +752,14 @@ typedef struct CPUX86State {
     uint64_t tsc_deadline;
 
     uint64_t pat;
+
+    uint64_t msr_fixed_ctr_ctrl;
+    uint64_t msr_global_ctrl;
+    uint64_t msr_global_status;
+    uint64_t msr_global_ovf_ctrl;
+    uint64_t msr_fixed_counters[MAX_FIXED_COUNTERS];
+    uint64_t msr_gp_counters[MAX_GP_COUNTERS];
+    uint64_t msr_gp_evtsel[MAX_GP_COUNTERS];
 
     /* exception/interrupt handling */
     int error_code;
