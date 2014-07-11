@@ -650,6 +650,7 @@ fi
 %{_datadir}/%{confname}/extboot.bin
 %{_datadir}/%{confname}/dump-guest-memory.py*
 %{_datadir}/systemtap/tapset/%{progname}.stp
+%{_datadir}/systemtap/tapset/%{progname}-simpletrace.stp
 %{_libexecdir}/%{progname}
 %{_sysconfdir}/sysconfig/modules/kvm.modules
 %{_sysconfdir}/udev/rules.d/80-kvm.rules
