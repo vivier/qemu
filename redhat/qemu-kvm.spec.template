@@ -651,6 +651,8 @@ fi
 %{_datadir}/%{confname}/dump-guest-memory.py*
 %{_datadir}/%{confname}/trace-events
 %{_datadir}/%{confname}/simpletrace.py*
+%{_datadir}/%{confname}/systemtap/script.d/qemu_kvm.stp
+%{_datadir}/%{confname}/systemtap/conf.d/qemu_kvm.conf
 %{_datadir}/systemtap/tapset/%{progname}.stp
 %{_datadir}/systemtap/tapset/%{progname}-simpletrace.stp
 %{_libexecdir}/%{progname}

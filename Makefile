@@ -411,6 +411,10 @@ endif
 		$(INSTALL_DATA) $(SRC_PATH)/pc-bios/keymaps/$$x "$(DESTDIR)$(datadir)/keymaps"; \
 	done
 	$(INSTALL_DATA) $(SRC_PATH)/trace-events "$(DESTDIR)$(datadir)"
+	$(INSTALL_DIR) "$(DESTDIR)$(datadir)/systemtap/script.d"
+	$(INSTALL_DATA) $(SRC_PATH)/scripts/systemtap/script.d/qemu_kvm.stp "$(DESTDIR)$(datadir)/systemtap/script.d/"
+	$(INSTALL_DIR) "$(DESTDIR)$(datadir)/systemtap/conf.d"
+	$(INSTALL_DATA) $(SRC_PATH)/scripts/systemtap/conf.d/qemu_kvm.conf "$(DESTDIR)$(datadir)/systemtap/conf.d/"
 	$(INSTALL_PROG) $(SRC_PATH)/scripts/simpletrace.py "$(DESTDIR)$(datadir)"
 	for d in $(TARGET_DIRS); do \
 	$(MAKE) -C $$d $@ || exit 1 ; \
