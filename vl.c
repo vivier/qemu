@@ -5268,6 +5268,7 @@ int main(int argc, char **argv, char **envp)
     int show_vnc_port = 0;
     int defconfig = 1;
     int defconfig_verbose = 0;
+    FILE *vmstate_dump_file = NULL;
 
     atexit(qemu_run_exit_notifiers);
     error_set_progname(argv[0]);
@@ -6174,6 +6175,13 @@ int main(int argc, char **argv, char **envp)
                     exit(1);
                 }
                 break;
+            case QEMU_OPTION_dump_vmstate:
+                vmstate_dump_file = fopen(optarg, "w");
+                if (vmstate_dump_file == NULL) {
+                    fprintf(stderr, "open %s: %s\n", optarg, strerror(errno));
+                    exit(1);
+                }
+                break;
             }
         }
     }
@@ -6617,6 +6625,12 @@ int main(int argc, char **argv, char **envp)
         if (load_vmstate(loadvm) < 0) {
             autostart = 0;
         }
+    }
+
+    if (vmstate_dump_file) {
+        /* dump and exit */
+        dump_vmstate_json_to_file(vmstate_dump_file, current_machine->name);
+        return 0;
     }
 
     if (incoming) {
