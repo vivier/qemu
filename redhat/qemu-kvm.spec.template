@@ -650,6 +650,7 @@ fi
 %{_datadir}/%{confname}/extboot.bin
 %{_datadir}/%{confname}/dump-guest-memory.py*
 %{_datadir}/%{confname}/trace-events
+%{_datadir}/%{confname}/simpletrace.py*
 %{_datadir}/systemtap/tapset/%{progname}.stp
 %{_datadir}/systemtap/tapset/%{progname}-simpletrace.stp
 %{_libexecdir}/%{progname}
