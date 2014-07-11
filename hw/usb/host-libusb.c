@@ -1384,7 +1384,7 @@ static void usb_host_auto_check(void *unused)
 {
     struct USBHostDevice *s;
     struct USBAutoFilter *f;
-    libusb_device **devs;
+    libusb_device **devs = NULL;
     struct libusb_device_descriptor ddesc;
     int unconnected = 0;
     int i, n;
@@ -1485,7 +1485,7 @@ static void usb_host_auto_check(void *unused)
 
 void usb_host_info(Monitor *mon, const QDict *qdict)
 {
-    libusb_device **devs;
+    libusb_device **devs = NULL;
     struct libusb_device_descriptor ddesc;
     char port[16];
     int i, n;
