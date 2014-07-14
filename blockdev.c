@@ -414,7 +414,7 @@ static DriveInfo *blockdev_init(QDict *bs_opts,
             goto early_err;
         }
 
-        drv = bdrv_find_whitelisted_format(buf, ro);
+        drv = bdrv_find_format(buf);
         if (!drv) {
             error_setg(errp, "'%s' invalid format", buf);
             goto early_err;
