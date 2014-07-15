@@ -612,9 +612,7 @@ static void vm_change_state_handler(void *opaque, int running,
 #if SPICE_SERVER_VERSION >= 0x000b02 /* 0.11.2 */
     if (running) {
         qemu_spice_display_start();
-        spice_server_vm_start(spice_server);
     } else {
-        spice_server_vm_stop(spice_server);
         qemu_spice_display_stop();
     }
 #endif
@@ -876,10 +874,12 @@ int qemu_spice_set_pw_expire(time_t expires)
 void qemu_spice_display_start(void)
 {
     spice_display_is_running = true;
+    spice_server_vm_start(spice_server);
 }
 
 void qemu_spice_display_stop(void)
 {
+    spice_server_vm_stop(spice_server);
     spice_display_is_running = false;
 }
 
