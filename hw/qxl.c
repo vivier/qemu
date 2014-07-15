@@ -1173,7 +1173,13 @@ static void qxl_soft_reset(PCIQXLDevice *d)
 
 static void qxl_hard_reset(PCIQXLDevice *d, int loadvm)
 {
+    bool startstop = qemu_spice_display_is_running(&d->ssd);
+
     trace_qxl_hard_reset(d->id, loadvm);
+
+    if (startstop) {
+        qemu_spice_display_stop();
+    }
 
     qxl_spice_reset_cursor(d);
     qxl_spice_reset_image_cache(d);
@@ -1188,6 +1194,10 @@ static void qxl_hard_reset(PCIQXLDevice *d, int loadvm)
     }
     qemu_spice_create_host_memslot(&d->ssd);
     qxl_soft_reset(d);
+
+    if (startstop) {
+        qemu_spice_display_start();
+    }
 }
 
 static void qxl_reset_handler(DeviceState *dev)
