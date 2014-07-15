@@ -1662,6 +1662,10 @@ static int vmdk_create(const char *filename, QEMUOptionParameter *options)
         /* not supporting backing file for flat image */
         return -ENOTSUP;
     }
+    if (flat && zeroed_grain) {
+        fprintf(stderr, "Flat image can't enable zeroed grain\n");
+        return -ENOTSUP;
+    }
     if (backing_file) {
         BlockDriverState *bs = bdrv_new("");
         ret = bdrv_open(bs, backing_file, 0, NULL);
