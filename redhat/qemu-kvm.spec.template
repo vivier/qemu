@@ -108,8 +108,10 @@ URL: http://www.qemu.org/
 %if %{rhev}
 ExclusiveArch: x86_64 ppc64
 %endif
+%ifarch %{ix86} x86_64
 Requires: seabios-bin >= 1.7.2.2-5
 Requires: sgabios-bin
+%endif
 Requires: seavgabios-bin
 Requires: ipxe-roms-qemu
 Requires: %{pkgname}-common%{?pkgsuffix} = %{epoch}:%{version}-%{release}
