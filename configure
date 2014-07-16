@@ -2333,6 +2333,7 @@ if $pkg_config --atleast-version=$glib_req_ver gthread-2.0 gmodule-2.0 > /dev/nu
 then
     glib_cflags=`$pkg_config --cflags gthread-2.0 gmodule-2.0 2>/dev/null`
     glib_libs=`$pkg_config --libs gthread-2.0 gmodule-2.0 2>/dev/null`
+    CFLAGS="$glib_cflags $CFLAGS"
     LIBS="$glib_libs $LIBS"
     libs_qga="$glib_libs $libs_qga"
 else
