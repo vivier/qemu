@@ -2884,7 +2884,7 @@ int coroutine_fn bdrv_is_allocated(BlockDriverState *bs, int64_t sector_num,
     if (ret < 0) {
         return ret;
     }
-    return (ret & BDRV_BLOCK_ALLOCATED);
+    return !!(ret & BDRV_BLOCK_ALLOCATED);
 }
 
 /*
