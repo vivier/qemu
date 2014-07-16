@@ -2726,6 +2726,7 @@ int main(int argc, char **argv)
 #endif
 
     error_set_progname(argv[0]);
+    qemu_init_exec_dir(argv[0]);
 
     qemu_init_main_loop();
     bdrv_init();
