@@ -1039,10 +1039,10 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
             goto delete_and_fail;
         }
 
+        bdrv_get_geometry(states->old_bs, &size);
+        size *= 512;
         if (full && mode != NEW_IMAGE_MODE_EXISTING) {
             assert(format && drv);
-            bdrv_get_geometry(states->old_bs, &size);
-            size *= 512;
             bdrv_img_create(new_image_file, format,
                             NULL, NULL, NULL, size, flags, &local_err);
         } else {
@@ -1054,7 +1054,7 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
                 bdrv_img_create(new_image_file, format,
                                 source->filename,
                                 source->drv->format_name,
-                                NULL, -1, flags, &local_err);
+                                NULL, size, flags, &local_err);
                 break;
             default:
                 error_setg(&local_err, "%s: invalid NewImageMode %u",
