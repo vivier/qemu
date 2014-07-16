@@ -2290,8 +2290,6 @@ EOF
   curl_libs=`$curlconfig --libs 2>/dev/null`
   if compile_prog "$curl_cflags" "$curl_libs" ; then
     curl=yes
-    libs_tools="$curl_libs $libs_tools"
-    libs_softmmu="$curl_libs $libs_softmmu"
   else
     if test "$curl" = "yes" ; then
       feature_not_found "curl"
@@ -2442,9 +2440,6 @@ if test "$libssh2" != "no" ; then
     libssh2_cflags=`$pkg_config libssh2 --cflags`
     libssh2_libs=`$pkg_config libssh2 --libs`
     libssh2=yes
-    libs_tools="$libssh2_libs $libs_tools"
-    libs_softmmu="$libssh2_libs $libs_softmmu"
-    QEMU_CFLAGS="$QEMU_CFLAGS $libssh2_cflags"
   else
     if test "$libssh2" = "yes" ; then
       error_exit "libssh2 >= $min_libssh2_version required for --enable-libssh2"
@@ -2490,8 +2485,6 @@ int main(void) { io_setup(0, NULL); io_set_eventfd(NULL, 0); eventfd(0, 0); retu
 EOF
   if compile_prog "" "-laio" ; then
     linux_aio=yes
-    libs_softmmu="$libs_softmmu -laio"
-    libs_tools="$libs_tools -laio"
   else
     if test "$linux_aio" = "yes" ; then
       feature_not_found "linux AIO"
@@ -2644,8 +2637,6 @@ EOF
   glusterfs_libs="-lgfapi -lgfrpc -lgfxdr"
   if compile_prog "" "$glusterfs_libs" ; then
     glusterfs=yes
-    libs_tools="$glusterfs_libs $libs_tools"
-    libs_softmmu="$glusterfs_libs $libs_softmmu"
   else
     if test "$glusterfs" = "yes" ; then
       feature_not_found "GlusterFS backend support"
@@ -3002,11 +2993,9 @@ EOF
     libiscsi="yes"
     libiscsi_cflags=$($pkg_config --cflags libiscsi 2>/dev/null)
     libiscsi_libs=$($pkg_config --libs libiscsi 2>/dev/null)
-    CFLAGS="$CFLAGS $libiscsi_cflags"
-    LIBS="$LIBS $libiscsi_libs"
   elif compile_prog "" "-liscsi" ; then
     libiscsi="yes"
-    LIBS="$LIBS -liscsi"
+    libiscsi_libs="-liscsi"
   else
     if test "$libiscsi" = "yes" ; then
       feature_not_found "libiscsi"
@@ -3877,6 +3866,7 @@ fi
 if test "$curl" = "yes" ; then
   echo "CONFIG_CURL=y" >> $config_host_mak
   echo "CURL_CFLAGS=$curl_cflags" >> $config_host_mak
+  echo "CURL_LIBS=$curl_libs" >> $config_host_mak
 fi
 if test "$brlapi" = "yes" ; then
   echo "CONFIG_BRLAPI=y" >> $config_host_mak
@@ -3966,6 +3956,8 @@ fi
 
 if test "$libiscsi" = "yes" ; then
   echo "CONFIG_LIBISCSI=y" >> $config_host_mak
+  echo "LIBISCSI_CFLAGS=$libiscsi_cflags" >> $config_host_mak
+  echo "LIBISCSI_LIBS=$libiscsi_libs" >> $config_host_mak
 fi
 
 if test "$seccomp" = "yes"; then
@@ -4022,10 +4014,14 @@ fi
 
 if test "$glusterfs" = "yes" ; then
   echo "CONFIG_GLUSTERFS=y" >> $config_host_mak
+  echo "GLUSTERFS_CFLAGS=$glusterfs_cflags" >> $config_host_mak
+  echo "GLUSTERFS_LIBS=$glusterfs_libs" >> $config_host_mak
 fi
 
 if test "$libssh2" = "yes" ; then
   echo "CONFIG_LIBSSH2=y" >> $config_host_mak
+  echo "LIBSSH2_CFLAGS=$libssh2_cflags" >> $config_host_mak
+  echo "LIBSSH2_LIBS=$libssh2_libs" >> $config_host_mak
 fi
 
 if test "$virtio_blk_data_plane" = "yes" ; then
