@@ -492,6 +492,7 @@ dobuild() {
 %else
         --prefix=%{_prefix} \
         --libdir=%{_libdir} \
+        --localstatedir=%{_localstatedir} \
         --with-pkgversion=%{pkgname}-%{version}-%{release} \
         --disable-guest-agent \
         --target-list= --cpu=%{_arch}
