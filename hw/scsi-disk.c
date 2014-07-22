@@ -1492,6 +1492,9 @@ static int32_t scsi_send_command(SCSIRequest *req, uint8_t *buf)
     case READ_16:
         len = r->req.cmd.xfer / s->qdev.blocksize;
         DPRINTF("Read (sector %" PRId64 ", count %d)\n", r->req.cmd.lba, len);
+        if (r->req.cmd.buf[1] & 0xe0) {
+            goto illegal_request;
+        }
         if (r->req.cmd.lba > s->qdev.max_lba) {
             goto illegal_lba;
         }
@@ -1517,6 +1520,9 @@ static int32_t scsi_send_command(SCSIRequest *req, uint8_t *buf)
         DPRINTF("Write %s(sector %" PRId64 ", count %d)\n",
                 (command & 0xe) == 0xe ? "And Verify " : "",
                 r->req.cmd.lba, len);
+        if (r->req.cmd.buf[1] & 0xe0) {
+            goto illegal_request;
+        }
         if (r->req.cmd.lba > s->qdev.max_lba) {
             goto illegal_lba;
         }
@@ -1576,6 +1582,7 @@ static int32_t scsi_send_command(SCSIRequest *req, uint8_t *buf)
         scsi_check_condition(r, SENSE_CODE(INVALID_OPCODE));
         return 0;
     fail:
+    illegal_request:
         scsi_check_condition(r, SENSE_CODE(INVALID_FIELD));
         return 0;
     illegal_lba:
