@@ -1495,7 +1495,8 @@ static int32_t scsi_send_command(SCSIRequest *req, uint8_t *buf)
         if (r->req.cmd.buf[1] & 0xe0) {
             goto illegal_request;
         }
-        if (r->req.cmd.lba > s->qdev.max_lba) {
+        if (r->req.cmd.lba > r->req.cmd.lba + len ||
+            r->req.cmd.lba + len - 1 > s->qdev.max_lba) {
             goto illegal_lba;
         }
         r->sector = r->req.cmd.lba * (s->qdev.blocksize / 512);
@@ -1523,7 +1524,8 @@ static int32_t scsi_send_command(SCSIRequest *req, uint8_t *buf)
         if (r->req.cmd.buf[1] & 0xe0) {
             goto illegal_request;
         }
-        if (r->req.cmd.lba > s->qdev.max_lba) {
+        if (r->req.cmd.lba > r->req.cmd.lba + len ||
+            r->req.cmd.lba + len - 1 > s->qdev.max_lba) {
             goto illegal_lba;
         }
         r->sector = r->req.cmd.lba * (s->qdev.blocksize / 512);
