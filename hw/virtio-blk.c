@@ -312,6 +312,18 @@ static void virtio_blk_handle_flush(BlockRequest *blkreq, int *num_writes,
     }
 }
 
+static bool virtio_blk_sect_range_ok(VirtIOBlock *dev,
+                                     uint64_t sector, size_t size)
+{
+    if (sector & dev->sector_mask) {
+        return false;
+    }
+    if (size % dev->conf->logical_block_size) {
+        return false;
+    }
+    return true;
+}
+
 static void virtio_blk_handle_write(BlockRequest *blkreq, int *num_writes,
     VirtIOBlockReq *req, BlockDriverState **old_bs)
 {
@@ -319,11 +331,7 @@ static void virtio_blk_handle_write(BlockRequest *blkreq, int *num_writes,
 
     bdrv_acct_start(req->dev->bs, &req->acct, req->qiov.size, BDRV_ACCT_WRITE);
 
-    if (req->out->sector & req->dev->sector_mask) {
-        virtio_blk_rw_complete(req, -EIO);
-        return;
-    }
-    if (req->qiov.size % req->dev->conf->logical_block_size) {
+    if (!virtio_blk_sect_range_ok(req->dev, req->out->sector, req->qiov.size)) {
         virtio_blk_rw_complete(req, -EIO);
         return;
     }
@@ -352,11 +360,7 @@ static void virtio_blk_handle_read(VirtIOBlockReq *req)
 
     bdrv_acct_start(req->dev->bs, &req->acct, req->qiov.size, BDRV_ACCT_READ);
 
-    if (req->out->sector & req->dev->sector_mask) {
-        virtio_blk_rw_complete(req, -EIO);
-        return;
-    }
-    if (req->qiov.size % req->dev->conf->logical_block_size) {
+    if (!virtio_blk_sect_range_ok(req->dev, req->out->sector, req->qiov.size)) {
         virtio_blk_rw_complete(req, -EIO);
         return;
     }
