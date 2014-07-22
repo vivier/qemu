@@ -1207,6 +1207,18 @@ static int scsi_disk_emulate_start_stop(SCSIDiskReq *r)
     return 0;
 }
 
+static inline bool check_lba_range(SCSIDiskState *s,
+                                   uint64_t sector_num, uint32_t nb_sectors)
+{
+    /*
+     * The first line tests that no overflow happens when computing the last
+     * sector.  The second line tests that the last accessed sector is in
+     * range.
+     */
+    return (sector_num <= sector_num + nb_sectors &&
+            sector_num + nb_sectors - 1 <= s->qdev.max_lba);
+}
+
 static int scsi_disk_emulate_command(SCSIDiskReq *r)
 {
     SCSIRequest *req = &r->req;
@@ -1495,8 +1507,7 @@ static int32_t scsi_send_command(SCSIRequest *req, uint8_t *buf)
         if (r->req.cmd.buf[1] & 0xe0) {
             goto illegal_request;
         }
-        if (r->req.cmd.lba > r->req.cmd.lba + len ||
-            r->req.cmd.lba + len - 1 > s->qdev.max_lba) {
+        if (!check_lba_range(s, r->req.cmd.lba, len)) {
             goto illegal_lba;
         }
         r->sector = r->req.cmd.lba * (s->qdev.blocksize / 512);
@@ -1524,8 +1535,7 @@ static int32_t scsi_send_command(SCSIRequest *req, uint8_t *buf)
         if (r->req.cmd.buf[1] & 0xe0) {
             goto illegal_request;
         }
-        if (r->req.cmd.lba > r->req.cmd.lba + len ||
-            r->req.cmd.lba + len - 1 > s->qdev.max_lba) {
+        if (!check_lba_range(s, r->req.cmd.lba, len)) {
             goto illegal_lba;
         }
         r->sector = r->req.cmd.lba * (s->qdev.blocksize / 512);
@@ -1563,8 +1573,7 @@ static int32_t scsi_send_command(SCSIRequest *req, uint8_t *buf)
             scsi_check_condition(r, SENSE_CODE(WRITE_PROTECTED));
             return 0;
         }
-        if (r->req.cmd.lba > r->req.cmd.lba + len ||
-            r->req.cmd.lba + len - 1 > s->qdev.max_lba) {
+        if (!check_lba_range(s, r->req.cmd.lba, len)) {
             goto illegal_lba;
         }
 
