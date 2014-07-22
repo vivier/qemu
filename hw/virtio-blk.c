@@ -329,12 +329,13 @@ static void virtio_blk_handle_write(BlockRequest *blkreq, int *num_writes,
 {
     trace_virtio_blk_handle_write(req, req->out->sector, req->qiov.size / 512);
 
-    bdrv_acct_start(req->dev->bs, &req->acct, req->qiov.size, BDRV_ACCT_WRITE);
-
     if (!virtio_blk_sect_range_ok(req->dev, req->out->sector, req->qiov.size)) {
-        virtio_blk_rw_complete(req, -EIO);
+        virtio_blk_req_complete(req, VIRTIO_BLK_S_IOERR);
+        qemu_free(req);
         return;
     }
+
+    bdrv_acct_start(req->dev->bs, &req->acct, req->qiov.size, BDRV_ACCT_WRITE);
 
     if (req->dev->bs != *old_bs || *num_writes == 32) {
         if (*old_bs != NULL) {
@@ -358,12 +359,13 @@ static void virtio_blk_handle_read(VirtIOBlockReq *req)
 {
     BlockDriverAIOCB *acb;
 
-    bdrv_acct_start(req->dev->bs, &req->acct, req->qiov.size, BDRV_ACCT_READ);
-
     if (!virtio_blk_sect_range_ok(req->dev, req->out->sector, req->qiov.size)) {
-        virtio_blk_rw_complete(req, -EIO);
+        virtio_blk_req_complete(req, VIRTIO_BLK_S_IOERR);
+        qemu_free(req);
         return;
     }
+
+    bdrv_acct_start(req->dev->bs, &req->acct, req->qiov.size, BDRV_ACCT_READ);
 
     acb = bdrv_aio_readv(req->dev->bs, req->out->sector, &req->qiov,
                          req->qiov.size / 512, virtio_blk_rw_complete, req);
