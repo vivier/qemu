@@ -1559,6 +1559,10 @@ static int32_t scsi_send_command(SCSIRequest *req, uint8_t *buf)
         DPRINTF("WRITE SAME(16) (sector %" PRId64 ", count %d)\n",
                 r->req.cmd.lba, len);
 
+        if (bdrv_is_read_only(s->qdev.conf.bs)) {
+            scsi_check_condition(r, SENSE_CODE(WRITE_PROTECTED));
+            return 0;
+        }
         if (r->req.cmd.lba > s->qdev.max_lba) {
             goto illegal_lba;
         }
