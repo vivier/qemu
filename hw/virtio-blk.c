@@ -323,6 +323,10 @@ static void virtio_blk_handle_write(BlockRequest *blkreq, int *num_writes,
         virtio_blk_rw_complete(req, -EIO);
         return;
     }
+    if (req->qiov.size % req->dev->conf->logical_block_size) {
+        virtio_blk_rw_complete(req, -EIO);
+        return;
+    }
 
     if (req->dev->bs != *old_bs || *num_writes == 32) {
         if (*old_bs != NULL) {
@@ -330,10 +334,6 @@ static void virtio_blk_handle_write(BlockRequest *blkreq, int *num_writes,
         }
         *num_writes = 0;
         *old_bs = req->dev->bs;
-    }
-    if (req->qiov.size % req->dev->conf->logical_block_size) {
-        virtio_blk_rw_complete(req, -EIO);
-        return;
     }
 
     blkreq[*num_writes].sector = req->out->sector;
