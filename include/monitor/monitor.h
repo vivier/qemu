@@ -52,6 +52,7 @@ typedef enum MonitorEvent {
     QEVENT_SPICE_MIGRATE_COMPLETED,
     QEVENT_GUEST_PANICKED,
     QEVENT_BLOCK_IMAGE_CORRUPTED,
+    QEVENT_VSERPORT_CHANGE,
 
     /* Add to 'monitor_event_names' array in monitor.c when
      * defining new events here */

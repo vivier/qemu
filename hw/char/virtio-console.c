@@ -14,6 +14,8 @@
 #include "qemu/error-report.h"
 #include "trace.h"
 #include "hw/virtio/virtio-serial.h"
+#include "monitor/monitor.h"
+#include "qapi/qmp/qjson.h"
 
 typedef struct VirtConsole {
     VirtIOSerialPort port;
@@ -76,11 +78,20 @@ static ssize_t flush_buf(VirtIOSerialPort *port,
 static void set_guest_connected(VirtIOSerialPort *port, int guest_connected)
 {
     VirtConsole *vcon = DO_UPCAST(VirtConsole, port, port);
+    DeviceState *dev = DEVICE(port);
 
-    if (!vcon->chr) {
-        return;
+    if (vcon->chr) {
+        qemu_chr_fe_set_open(vcon->chr, guest_connected);
     }
-    qemu_chr_fe_set_open(vcon->chr, guest_connected);
+
+    if (dev->id) {
+        QObject *data;
+
+        data = qobject_from_jsonf("{ 'id': %s, 'open': %i }",
+                                  dev->id, guest_connected);
+        monitor_protocol_event(QEVENT_VSERPORT_CHANGE, data);
+        qobject_decref(data);
+     }
 }
 
 /* Readiness of the guest to accept data on a port */
