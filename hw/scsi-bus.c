@@ -133,7 +133,9 @@ static int scsi_qdev_init(DeviceState *qdev, DeviceInfo *base)
         d = scsi_device_find(bus, dev->channel, dev->id, dev->lun);
         assert(d);
         if (d->lun == dev->lun && dev != d) {
-            qdev_free(&d->qdev);
+            error_report("lun already used by '%s'", d->qdev.id);
+            goto err;
+
         }
     }
 
