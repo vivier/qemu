@@ -589,6 +589,10 @@ dobuild --target-list="$buildarch"
         rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/q35-acpi-dsdt.aml
     %endif
 
+    # Remove sparc files
+    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/QEMU,tcx.bin
+    rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/QEMU,cgthree.bin
+
     # Remove efi roms
     rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/efi*.rom
 
@@ -777,8 +781,6 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %{_datadir}/%{pkgname}/pxe-rtl8139.rom
     %{_datadir}/%{pkgname}/pxe-ne2k_pci.rom
     %{_datadir}/%{pkgname}/qemu-icon.bmp
-    %{_datadir}/%{pkgname}/QEMU,tcx.bin
-    %{_datadir}/%{pkgname}/QEMU,cgthree.bin
     %{_datadir}/%{pkgname}/qemu_logo_no_text.svg
     %{_datadir}/%{pkgname}/rhel6-virtio.rom
     %{_datadir}/%{pkgname}/rhel6-pcnet.rom
