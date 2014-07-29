@@ -45,6 +45,10 @@
     %global kvm_target    ppc
     %global have_fdt     1
 %endif
+%ifarch aarch64
+    %global kvm_target    aarch64
+    %global have_fdt     1
+%endif
 
 #Versions of various parts:
 
@@ -106,7 +110,7 @@ Group: Development/Tools
 URL: http://www.qemu.org/
 # RHEV will build Qemu only on x86_64:
 %if %{rhev}
-ExclusiveArch: x86_64 ppc64
+ExclusiveArch: x86_64 ppc64 aarch64
 %endif
 %ifarch %{ix86} x86_64
 Requires: seabios-bin >= 1.7.2.2-5
