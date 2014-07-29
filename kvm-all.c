@@ -618,14 +618,14 @@ static void kvm_set_phys_mem(MemoryRegionSection *section, bool add)
 
     /* kvm works in page size chunks, but the function may be called
        with sub-page size and unaligned start address. */
-    delta = TARGET_PAGE_ALIGN(size) - size;
+    delta = HOST_PAGE_ALIGN(start_addr) - start_addr;
     if (delta > size) {
         return;
     }
     start_addr += delta;
     size -= delta;
-    size &= TARGET_PAGE_MASK;
-    if (!size || (start_addr & ~TARGET_PAGE_MASK)) {
+    size &= qemu_host_page_mask;
+    if (!size || (start_addr & ~qemu_host_page_mask)) {
         return;
     }
 
