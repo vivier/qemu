@@ -1966,6 +1966,19 @@ static SCSIRequest *scsi_block_new_request(SCSIDevice *d, uint32_t tag,
                               hba_private);
     }
 }
+
+static int scsi_block_parse_cdb(SCSIDevice *d, SCSICommand *cmd,
+                                  uint8_t *buf, void *hba_private)
+{
+    SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, d);
+
+    if (scsi_block_is_passthrough(s, buf)) {
+        return scsi_bus_parse_cdb(&s->qdev, cmd, buf, hba_private);
+    } else {
+        return scsi_req_parse_cdb(&s->qdev, cmd, buf);
+    }
+}
+
 #endif
 
 #define DEFINE_SCSI_DISK_PROPERTIES()                           \
@@ -2034,6 +2047,7 @@ static SCSIDeviceInfo scsi_disk_info[] = {
         .init         = scsi_block_initfn,
         .destroy      = scsi_destroy,
         .alloc_req    = scsi_block_new_request,
+        .parse_cdb    = scsi_block_parse_cdb,
         .qdev.props   = (Property[]) {
             DEFINE_PROP_DRIVE("drive", SCSIDiskState, qdev.conf.bs),
             DEFINE_PROP_INT32("bootindex", SCSIDiskState, qdev.conf.bootindex, -1),
