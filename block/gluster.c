@@ -50,11 +50,13 @@ typedef struct GlusterConf {
 
 static void qemu_gluster_gconf_free(GlusterConf *gconf)
 {
-    g_free(gconf->server);
-    g_free(gconf->volname);
-    g_free(gconf->image);
-    g_free(gconf->transport);
-    g_free(gconf);
+    if (gconf) {
+        g_free(gconf->server);
+        g_free(gconf->volname);
+        g_free(gconf->image);
+        g_free(gconf->transport);
+        g_free(gconf);
+    }
 }
 
 static int parse_volume_options(GlusterConf *gconf, char *path)
@@ -282,11 +284,28 @@ static int qemu_gluster_aio_flush_cb(void *opaque)
     return (s->qemu_aio_count > 0);
 }
 
+static void qemu_gluster_parse_flags(int bdrv_flags, int *open_flags)
+{
+    assert(open_flags != NULL);
+
+    *open_flags |= O_BINARY;
+
+    if (bdrv_flags & BDRV_O_RDWR) {
+        *open_flags |= O_RDWR;
+    } else {
+        *open_flags |= O_RDONLY;
+    }
+
+    if ((bdrv_flags & BDRV_O_NOCACHE)) {
+        *open_flags |= O_DIRECT;
+    }
+}
+
 static int qemu_gluster_open(BlockDriverState *bs, const char *filename,
     int bdrv_flags)
 {
     BDRVGlusterState *s = bs->opaque;
-    int open_flags = O_BINARY;
+    int open_flags = 0;
     int ret = 0;
     GlusterConf *gconf = g_malloc0(sizeof(GlusterConf));
 
@@ -296,15 +315,7 @@ static int qemu_gluster_open(BlockDriverState *bs, const char *filename,
         goto out;
     }
 
-    if (bdrv_flags & BDRV_O_RDWR) {
-        open_flags |= O_RDWR;
-    } else {
-        open_flags |= O_RDONLY;
-    }
-
-    if ((bdrv_flags & BDRV_O_NOCACHE)) {
-        open_flags |= O_DIRECT;
-    }
+    qemu_gluster_parse_flags(bdrv_flags, &open_flags);
 
     if (!(bdrv_flags & BDRV_O_CACHE_WB)) {
         open_flags |= O_DSYNC;
