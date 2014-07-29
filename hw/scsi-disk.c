@@ -1903,12 +1903,8 @@ static int scsi_block_initfn(SCSIDevice *dev)
     return scsi_initfn(&s->qdev);
 }
 
-static SCSIRequest *scsi_block_new_request(SCSIDevice *d, uint32_t tag,
-                                           uint32_t lun, uint8_t *buf,
-                                           void *hba_private)
+static bool scsi_block_is_passthrough(SCSIDiskState *s, uint8_t *buf)
 {
-    SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, d);
-
     switch (buf[0]) {
     case READ_6:
     case READ_10:
@@ -1944,13 +1940,31 @@ static SCSIRequest *scsi_block_new_request(SCSIDevice *d, uint32_t tag,
          * just make scsi-block operate the same as scsi-generic for them.
          */
         if (s->qdev.type != TYPE_ROM) {
-            return scsi_req_alloc(&scsi_disk_reqops, &s->qdev, tag, lun,
-                                  hba_private);
+            return false;
         }
+        break;
+
+    default:
+        break;
     }
 
-    return scsi_req_alloc(&scsi_generic_req_ops, &s->qdev, tag, lun,
-                          hba_private);
+    return true;
+}
+
+
+static SCSIRequest *scsi_block_new_request(SCSIDevice *d, uint32_t tag,
+                                           uint32_t lun, uint8_t *buf,
+                                           void *hba_private)
+{
+    SCSIDiskState *s = DO_UPCAST(SCSIDiskState, qdev, d);
+
+    if (scsi_block_is_passthrough(s, buf)) {
+        return scsi_req_alloc(&scsi_generic_req_ops, &s->qdev, tag, lun,
+                              hba_private);
+    } else {
+        return scsi_req_alloc(&scsi_disk_reqops, &s->qdev, tag, lun,
+                              hba_private);
+    }
 }
 #endif
 
