@@ -1060,6 +1060,7 @@ static PCIDeviceInfo virtio_info[] = {
             DEFINE_VIRTIO_SCSI_PROPERTIES(VirtIOPCIProxy, host_features, scsi),
             DEFINE_PROP_END_OF_LIST(),
         },
+        .qdev.reset = virtio_pci_reset,
     }, {
         /* end of list */
     }
