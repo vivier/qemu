@@ -61,7 +61,6 @@ io_pattern write 524288 $CLUSTER_SIZE $CLUSTER_SIZE 4 45
 # Compare identical images
 cp "$TEST_IMG" "${TEST_IMG2}"
 _compare
-_compare -q
 
 # Compare images with different size
 $QEMU_IMG resize "$TEST_IMG" +512M

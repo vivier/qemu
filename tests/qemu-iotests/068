@@ -43,7 +43,6 @@ _supported_fmt qcow2
 _supported_proto generic
 _supported_os Linux
 
-IMGOPTS="compat=1.1"
 IMG_SIZE=128K
 
 echo
