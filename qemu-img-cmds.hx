@@ -27,6 +27,12 @@ STEXI
 @item commit [-f @var{fmt}] [-t @var{cache}] @var{filename}
 ETEXI
 
+DEF("compare", img_compare,
+    "compare [-f fmt] [-F fmt] [-p] [-s] filename1 filename2")
+STEXI
+@item compare [-f @var{fmt}] [-F @var{fmt}] [-p] [-s] @var{filename1} @var{filename2}
+ETEXI
+
 DEF("convert", img_convert,
     "convert [-c] [-p] [-f fmt] [-t cache] [-O output_fmt] [-o options] [-S sparse_size] filename [filename2 [...]] output_filename")
 STEXI
