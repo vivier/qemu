@@ -81,18 +81,6 @@ _make_test_img 64M
 _check_test_img
 
 
-echo
-echo "qcow2_snapshot_load_tmp() should take the L1 size from the snapshot"
-echo
-
-CLUSTER_SIZE=512
-_make_test_img 64M
-{ $QEMU_IMG snapshot -c foo $TEST_IMG; } 2>&1 | _filter_qemu_io | _filter_testdir
-poke_file "$TEST_IMG" "$offset_size" "\x00\x00\x00\x00\x00\x00\x02\x00"
-poke_file "$TEST_IMG" "$offset_l1_size" "\x00\x00\x00\x01"
-{ $QEMU_IMG convert -s foo $TEST_IMG $TEST_IMG.snap; } 2>&1 | _filter_qemu_io | _filter_testdir
-
-
 # success, all done
 echo "*** done"
 rm -f $seq.full
