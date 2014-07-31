@@ -2925,7 +2925,9 @@ int bdrv_is_allocated_above(BlockDriverState *top,
          *
          * [sector_num+x, nr_sectors] allocated.
          */
-        if (n > pnum_inter) {
+        if (n > pnum_inter &&
+            (intermediate == top ||
+             sector_num + pnum_inter < intermediate->total_sectors)) {
             n = pnum_inter;
         }
 
