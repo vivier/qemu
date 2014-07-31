@@ -39,7 +39,7 @@ _supported_os Linux
 function do_run_qemu()
 {
     echo Testing: "$@"
-    $QEMU -nographic -qmp stdio -serial none "$@"
+    (sleep 1; cat) | $QEMU -nographic -qmp stdio -serial none "$@"
     echo
 }
 
@@ -82,41 +82,13 @@ run_qemu -drive file=$TEST_IMG,format=$IMGFMT,if=none,id=disk <<EOF
 EOF
 
 echo
-echo === drive_add/device_add and device_del ===
+echo === __com.redhat_drive_add/device_add and device_del ===
 echo
 
 run_qemu <<EOF
 { "execute": "qmp_capabilities" }
-{ "execute": "human-monitor-command",
-  "arguments": { "command-line": "drive_add 0 file=$TEST_IMG,format=$IMGFMT,if=none,id=disk" } }
-{ "execute": "query-block" }
-{ "execute": "device_add",
-   "arguments": { "driver": "virtio-blk-pci", "drive": "disk",
-                  "id": "virtio0" } }
-{ "execute": "device_del", "arguments": { "id": "virtio0" } }
-{ "execute": "system_reset" }
-{ "execute": "query-block" }
-{ "execute": "quit" }
-EOF
-
-echo
-echo === blockdev_add/device_add and device_del ===
-echo
-
-run_qemu <<EOF
-{ "execute": "qmp_capabilities" }
-{ "execute": "blockdev-add",
-  "arguments": {
-      "options": {
-        "driver": "$IMGFMT",
-        "id": "disk",
-        "file": {
-            "driver": "file",
-            "filename": "$TEST_IMG"
-        }
-      }
-    }
-  }
+{ "execute": "__com.redhat_drive_add",
+  "arguments": { "file": "$TEST_IMG", "format": "$IMGFMT", "id": "disk" } }
 { "execute": "query-block" }
 { "execute": "device_add",
    "arguments": { "driver": "virtio-blk-pci", "drive": "disk",
