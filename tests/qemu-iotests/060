@@ -49,9 +49,12 @@ l1_offset=196608 # 0x30000 (XXX: just an assumption)
 l2_offset=262144 # 0x40000 (XXX: just an assumption)
 l2_offset_after_snapshot=524288 # 0x80000 (XXX: just an assumption)
 
-IMGOPTS="compat=1.1"
+# RHEL 6 doesn't have qcow2 v3 support
+#IMGOPTS="compat=1.1"
 
-OPEN_RW="open -o overlap-check=all $TEST_IMG"
+#OPEN_RW="open -o overlap-check=all $TEST_IMG"
+OPEN_RW="open $TEST_IMG"
+
 # Overlap checks are done before write operations only, therefore opening an
 # image read-only makes the overlap-check option irrelevant
 OPEN_RO="open -r $TEST_IMG"
@@ -112,57 +115,6 @@ $PYTHON qcow2.py "$TEST_IMG" dump-header | grep incompatible_features
 # Look if it's really really fixed
 $QEMU_IO -c "$OPEN_RW" -c "write -P 0x2a 0 512" | _filter_qemu_io
 $PYTHON qcow2.py "$TEST_IMG" dump-header | grep incompatible_features
-
-echo
-echo "=== Testing cluster data reference into inactive L2 table ==="
-echo
-_make_test_img 64M
-$QEMU_IO -c "$OPEN_RW" -c "write -P 1 0 512" | _filter_qemu_io
-$QEMU_IMG snapshot -c foo "$TEST_IMG"
-$QEMU_IO -c "$OPEN_RW" -c "write -P 2 0 512" | _filter_qemu_io
-# The inactive L2 table remains at its old offset
-poke_file "$TEST_IMG" "$l2_offset_after_snapshot" \
-                      "\x80\x00\x00\x00\x00\x04\x00\x00"
-_check_test_img
-$PYTHON qcow2.py "$TEST_IMG" dump-header | grep incompatible_features
-$QEMU_IO -c "$OPEN_RW" -c "write -P 3 0 512" | _filter_qemu_io
-$PYTHON qcow2.py "$TEST_IMG" dump-header | grep incompatible_features
-_check_test_img -r all
-$PYTHON qcow2.py "$TEST_IMG" dump-header | grep incompatible_features
-$QEMU_IO -c "$OPEN_RW" -c "write -P 4 0 512" | _filter_qemu_io
-$PYTHON qcow2.py "$TEST_IMG" dump-header | grep incompatible_features
-
-# Check data
-$QEMU_IO -c "$OPEN_RO" -c "read -P 4 0 512" | _filter_qemu_io
-$QEMU_IMG snapshot -a foo "$TEST_IMG"
-_check_test_img
-$QEMU_IO -c "$OPEN_RO" -c "read -P 1 0 512" | _filter_qemu_io
-
-echo
-echo "=== Testing overlap while COW is in flight ==="
-echo
-# compat=0.10 is required in order to make the following discard actually
-# unallocate the sector rather than make it a zero sector - we want COW, after
-# all.
-IMGOPTS='compat=0.10' _make_test_img 1G
-# Write two clusters, the second one enforces creation of an L2 table after
-# the first data cluster.
-$QEMU_IO -c 'write 0k 64k' -c 'write 512M 64k' "$TEST_IMG" | _filter_qemu_io
-# Discard the first cluster. This cluster will soon enough be reallocated and
-# used for COW.
-$QEMU_IO -c 'discard 0k 64k' "$TEST_IMG" | _filter_qemu_io
-# Now, corrupt the image by marking the second L2 table cluster as free.
-poke_file "$TEST_IMG" '131084' "\x00\x00" # 0x2000c
-# Start a write operation requiring COW on the image stopping it right before
-# doing the read; then, trigger the corruption prevention by writing anything to
-# any unallocated cluster, leading to an attempt to overwrite the second L2
-# table. Finally, resume the COW write and see it fail (but not crash).
-echo "open -o file.driver=blkdebug $TEST_IMG
-break cow_read 0
-aio_write 0k 1k
-wait_break 0
-write 64k 64k
-resume 0" | $QEMU_IO | _filter_qemu_io
 
 # success, all done
 echo "*** done"
