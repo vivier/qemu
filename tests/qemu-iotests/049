@@ -90,14 +90,6 @@ for s in $sizes; do
     test_qemu_img create -f $IMGFMT -o cluster_size=$s "$TEST_IMG" 64M
 done
 
-echo "== Check compat level option =="
-echo
-test_qemu_img create -f $IMGFMT -o compat=0.10 "$TEST_IMG" 64M
-test_qemu_img create -f $IMGFMT -o compat=1.1 "$TEST_IMG" 64M
-
-test_qemu_img create -f $IMGFMT -o compat=0.42 "$TEST_IMG" 64M
-test_qemu_img create -f $IMGFMT -o compat=foobar "$TEST_IMG" 64M
-
 echo "== Check preallocation option =="
 echo
 test_qemu_img create -f $IMGFMT -o preallocation=off "$TEST_IMG" 64M
@@ -108,14 +100,6 @@ echo "== Check encryption option =="
 echo
 test_qemu_img create -f $IMGFMT -o encryption=off "$TEST_IMG" 64M
 test_qemu_img create -f $IMGFMT -o encryption=on "$TEST_IMG" 64M
-
-echo "== Check lazy_refcounts option (only with v3) =="
-echo
-test_qemu_img create -f $IMGFMT -o compat=1.1,lazy_refcounts=off "$TEST_IMG" 64M
-test_qemu_img create -f $IMGFMT -o compat=1.1,lazy_refcounts=on "$TEST_IMG" 64M
-
-test_qemu_img create -f $IMGFMT -o compat=0.10,lazy_refcounts=off "$TEST_IMG" 64M
-test_qemu_img create -f $IMGFMT -o compat=0.10,lazy_refcounts=on "$TEST_IMG" 64M
 
 # success, all done
 echo "*** done"
