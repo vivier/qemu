@@ -75,6 +75,11 @@ echo
 echo "=== Testing monolithicFlat with zeroed_grain ==="
 IMGOPTS="subformat=monolithicFlat,zeroed_grain=on" _make_test_img 2G
 
+echo
+echo "=== Testing big twoGbMaxExtentFlat ==="
+IMGOPTS="subformat=twoGbMaxExtentFlat" _make_test_img 1000G
+$QEMU_IMG info $TEST_IMG | _filter_testdir | sed -e 's/cid: [0-9]*/cid: XXXXXXXX/'
+
 # success, all done
 echo "*** done"
 rm -f $seq.full
