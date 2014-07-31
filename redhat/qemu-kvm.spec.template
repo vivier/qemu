@@ -116,7 +116,9 @@ ExclusiveArch: x86_64 ppc64 aarch64
 Requires: seabios-bin >= 1.7.2.2-5
 Requires: sgabios-bin
 %endif
+%ifnarch aarch64
 Requires: seavgabios-bin
+%endif
 %ifarch ppc64
 Requires: SLOF = 20140630
 %endif
@@ -633,11 +635,13 @@ dobuild --target-list="$buildarch"
         ln -s $1 %{buildroot}%{_datadir}/%{pkgname}/$2
     }
 
-    rom_link ../seavgabios/vgabios-isavga.bin vgabios.bin
-    rom_link ../seavgabios/vgabios-cirrus.bin vgabios-cirrus.bin
-    rom_link ../seavgabios/vgabios-qxl.bin vgabios-qxl.bin
-    rom_link ../seavgabios/vgabios-stdvga.bin vgabios-stdvga.bin
-    rom_link ../seavgabios/vgabios-vmware.bin vgabios-vmware.bin
+    %ifnarch aarch64
+      rom_link ../seavgabios/vgabios-isavga.bin vgabios.bin
+      rom_link ../seavgabios/vgabios-cirrus.bin vgabios-cirrus.bin
+      rom_link ../seavgabios/vgabios-qxl.bin vgabios-qxl.bin
+      rom_link ../seavgabios/vgabios-stdvga.bin vgabios-stdvga.bin
+      rom_link ../seavgabios/vgabios-vmware.bin vgabios-vmware.bin
+    %endif
     %ifarch x86_64
       rom_link ../seabios/bios.bin bios.bin
       rom_link ../seabios/bios-256k.bin bios-256k.bin
@@ -781,11 +785,13 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
         %{_datadir}/%{pkgname}/kvmvapic.bin
     %endif
     %{_datadir}/%{pkgname}/sgabios.bin
-    %{_datadir}/%{pkgname}/vgabios.bin
-    %{_datadir}/%{pkgname}/vgabios-cirrus.bin
-    %{_datadir}/%{pkgname}/vgabios-qxl.bin
-    %{_datadir}/%{pkgname}/vgabios-stdvga.bin
-    %{_datadir}/%{pkgname}/vgabios-vmware.bin
+    %ifnarch aarch64
+        %{_datadir}/%{pkgname}/vgabios.bin
+        %{_datadir}/%{pkgname}/vgabios-cirrus.bin
+        %{_datadir}/%{pkgname}/vgabios-qxl.bin
+        %{_datadir}/%{pkgname}/vgabios-stdvga.bin
+        %{_datadir}/%{pkgname}/vgabios-vmware.bin
+    %endif
     %{_datadir}/%{pkgname}/pxe-e1000.rom
     %{_datadir}/%{pkgname}/pxe-virtio.rom
     %{_datadir}/%{pkgname}/pxe-pcnet.rom
