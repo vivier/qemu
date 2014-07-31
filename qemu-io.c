@@ -1540,6 +1540,7 @@ static void usage(const char *name)
 "  -g, --growable       allow file to grow (only applies to protocols)\n"
 "  -m, --misalign       misalign allocations for O_DIRECT\n"
 "  -k, --native-aio     use kernel AIO implementation (on Linux only)\n"
+"  -t, --cache=MODE     use the given cache mode for the image\n"
 "  -h, --help           display this help and exit\n"
 "  -V, --version        output version information and exit\n"
 "\n",
@@ -1551,7 +1552,7 @@ int main(int argc, char **argv)
 {
     int readonly = 0;
     int growable = 0;
-    const char *sopt = "hVc:Crsnmgk";
+    const char *sopt = "hVc:Crsnmgkt:";
     struct option lopt[] = {
         { "help", 0, NULL, 'h' },
         { "version", 0, NULL, 'V' },
@@ -1564,6 +1565,7 @@ int main(int argc, char **argv)
         { "misalign", 0, NULL, 'm' },
         { "growable", 0, NULL, 'g' },
         { "native-aio", 0, NULL, 'k' },
+        { "cache", 1, NULL, 't' },
         { NULL, 0, NULL, 0 }
     };
     int c;
@@ -1597,6 +1599,12 @@ int main(int argc, char **argv)
             break;
         case 'k':
             flags |= BDRV_O_NATIVE_AIO;
+            break;
+        case 't':
+            if (bdrv_parse_cache_flags(optarg, &flags) < 0) {
+                error_report("Invalid cache option: %s", optarg);
+                exit(1);
+            }
             break;
         case 'V':
             printf("%s version %s\n", progname, VERSION);
