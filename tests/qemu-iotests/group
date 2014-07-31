@@ -65,26 +65,26 @@
 056 rw auto backing
 057 rw auto
 058 rw auto quick
-059 rw auto quick
+# 059 rw auto quick -- requires sample images
 060 rw auto quick
 061 rw auto quick
 062 rw auto quick
 063 rw auto quick
-064 rw auto quick
+# 064 rw auto quick -- requires sample images
 065 rw auto quick
 066 rw auto quick
 067 rw auto quick
 068 rw auto quick
 069 rw auto quick
-070 rw auto quick
+# 070 rw auto quick -- requires sample images
 071 rw auto quick
 072 rw auto quick
 073 rw auto quick
 074 rw auto quick
-075 rw auto quick
-076 auto
+# 075 rw auto quick -- requires sample images
+# 076 auto -- requires sample images
 077 rw auto quick
-078 rw auto quick
+# 078 rw auto quick -- requires sample images
 079 rw auto
 080 rw auto
 081 rw auto quick
