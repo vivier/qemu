@@ -48,10 +48,10 @@ CLUSTER_SIZE=65536
 
 # qcow2.py output depends on the exact options used, so override the command
 # line here as an exception
-for IMGOPTS in "compat=0.10" "compat=1.1"; do
+for x in "compat=0.10"; do
 
     echo
-    echo ===== Testing with -o $IMGOPTS =====
+    echo ===== Testing with -o $x =====
     echo
     echo === Create image with unknown header extension ===
     echo
