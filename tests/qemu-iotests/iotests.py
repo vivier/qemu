@@ -21,7 +21,7 @@ import re
 import subprocess
 import string
 import unittest
-import sys; sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'scripts', 'qmp'))
+import sys; sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'QMP'))
 import qmp
 import struct
 
@@ -83,9 +83,7 @@ class VM(object):
         self._qemu_log_path = os.path.join(test_dir, 'qemu-log.%d' % os.getpid())
         self._args = qemu_args + ['-chardev',
                      'socket,id=mon,path=' + self._monitor_path,
-                     '-mon', 'chardev=mon,mode=control',
-                     '-qtest', 'stdio', '-machine', 'accel=qtest',
-                     '-display', 'none', '-vga', 'none']
+                     '-mon', 'chardev=mon,mode=control', '-nographic']
         self._num_drives = 0
 
     # This can be used to add an unused monitor instance.
@@ -239,7 +237,9 @@ class QMPTestCase(unittest.TestCase):
 
     def cancel_and_wait(self, drive='drive0', force=False, resume=False):
         '''Cancel a block job and wait for it to finish, returning the event'''
-        result = self.vm.qmp('block-job-cancel', device=drive, force=force)
+        # RHEL 6 doesn't support the force option
+        assert force == False
+        result = self.vm.qmp('block-job-cancel', device=drive)
         self.assert_qmp(result, 'return', {})
 
         if resume:

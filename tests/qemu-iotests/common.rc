@@ -89,9 +89,11 @@ _optstr_add()
 
 _set_default_imgopts()
 {
-    if [ "$IMGFMT" == "qcow2" ] && ! (echo "$IMGOPTS" | grep "compat=" > /dev/null); then
-        IMGOPTS=$(_optstr_add "$IMGOPTS" "compat=1.1")
-    fi
+    # RHEL 6 doesn't support qcow2 v3
+    # if [ "$IMGFMT" == "qcow2" ] && ! (echo "$IMGOPTS" | grep "compat=" > /dev/null); then
+    # IMGOPTS=$(_optstr_add "$IMGOPTS" "compat=1.1")
+    # fi
+    true
 }
 
 _use_sample_img()
@@ -217,7 +219,7 @@ _check_test_img()
 {
     $QEMU_IMG check "$@" -f $IMGFMT "$TEST_IMG" 2>&1 | _filter_testdir | \
         sed -e '/allocated.*fragmented.*compressed clusters/d' \
-            -e 's/qemu-img: This image format does not support checks/No errors were found on the image./' \
+            -e 's/This image format does not support checks/No errors were found on the image./' \
             -e '/Image end offset: [0-9]\+/d'
 }
 
