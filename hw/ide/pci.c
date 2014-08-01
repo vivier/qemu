@@ -63,6 +63,7 @@ void bmdma_cmd_writeb(void *opaque, uint32_t addr, uint32_t val)
                     printf("ide_dma_cancel: BM_STATUS_DMAING still pending\n");
             }
         } else {
+            bm->cur_addr = bm->addr;
             if (!(bm->status & BM_STATUS_DMAING)) {
                 bm->status |= BM_STATUS_DMAING;
                 /* start dma transfer if possible */
@@ -95,7 +96,6 @@ void bmdma_addr_writeb(void *opaque, uint32_t addr, uint32_t val)
 #endif
     bm->addr &= ~(0xFF << shift);
     bm->addr |= ((val & 0xFF) << shift) & ~3;
-    bm->cur_addr = bm->addr;
 }
 
 uint32_t bmdma_addr_readw(void *opaque, uint32_t addr)
@@ -118,7 +118,6 @@ void bmdma_addr_writew(void *opaque, uint32_t addr, uint32_t val)
 #endif
     bm->addr &= ~(0xFFFF << shift);
     bm->addr |= ((val & 0xFFFF) << shift) & ~3;
-    bm->cur_addr = bm->addr;
 }
 
 uint32_t bmdma_addr_readl(void *opaque, uint32_t addr)
@@ -139,7 +138,6 @@ void bmdma_addr_writel(void *opaque, uint32_t addr, uint32_t val)
     printf("%s: 0x%08x\n", __func__, val);
 #endif
     bm->addr = val & ~3;
-    bm->cur_addr = bm->addr;
 }
 
 static bool ide_bmdma_current_needed(void *opaque)
