@@ -62,6 +62,7 @@ void bmdma_cmd_writeb(void *opaque, uint32_t addr, uint32_t val)
                 if (bm->status & BM_STATUS_DMAING)
                     printf("ide_dma_cancel: BM_STATUS_DMAING still pending\n");
             }
+            bm->status &= ~BM_STATUS_DMAING;
         } else {
             bm->cur_addr = bm->addr;
             if (!(bm->status & BM_STATUS_DMAING)) {
