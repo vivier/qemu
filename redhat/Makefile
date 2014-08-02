@@ -4,8 +4,8 @@ include Makefile.test
 
 LOCVERFILE:=../localversion
 LANG=C
-BUILD_DEFAULT_TARGET = rhevh-rhel-7.0-candidate
-BUILD_SCRATCH_TARGET = rhevh-rhel-7.0-candidate
+BUILD_DEFAULT_TARGET = rhevh-rhel-7.1-candidate
+BUILD_SCRATCH_TARGET = rhevh-rhel-7.1-candidate
 
 #ifeq ($(shell git diff --quiet HEAD && git describe --exact-match 2>/dev/null && echo ok),)
 BUILD_TARGET ?= --scratch $(BUILD_SCRATCH_TARGET)
@@ -149,7 +149,7 @@ rh-update-changelog:
 
 .PHONY: rh-brew rh-koji rh-brew-ga rh-brew-ppc rh-brew-aarch64
 rh-brew rh-brew-ppc rh-brew-aarch64 rh-brew-rhev rh-brew-rhev-autotest: BUILD_FLAGS ?= $(BREW_FLAGS) $(TEST_FLAGS)
-rh-brew-ppc: BUILD_SCRATCH_TARGET = rhel-7.1-candidate
+rh-brew-ppc: BUILD_SCRATCH_TARGET = rhel-7.1-ppc64le-candidate
 rh-brew-ga: BUILD_SCRATCH_TARGET = rhel-7.1-candidate
 rh-brew-aarch64: BUILD_SCRATCH_TARGET = rhel-7.0-aarch64-candidate
 rh-koji rh-koji-ga rh-koji-autotest: BUILD_FLAGS ?= $(KOJI_FLAGS) $(TEST_FLAGS)
@@ -181,6 +181,8 @@ rh-help:
 	@echo  '  rh-brew-autotest        - Create a $(COMMON_NAME)-rhev RPMs on brew and then send directly to autotest server'
 	@echo  '  rh-brew-at-covscan      - Create a $(COMMON_NAME)-rhev RPMs on brew and then send directly to autotest and coverity testing'
 	@echo  '  rh-brew-ga              - Build guest-agent rpm using brew'
+	@echo  '  rh-brew-ppc             - Build qemu-kvm-rhev for ppc64le'
+	@echo  '  rh-brew-aarch64         - Build qemu-kvm-rhev for aarch64'
 	@echo  '  rh-koji                 - Create a $(COMMON_NAME)-rhev SRPM and then call koji to build the created SRPM'
 	@echo  '  rh-brew-covscan         - Create a $(COMMON_NAME)-rhev RPMs on koji and then send directly to coverity scan testing'
 	@echo  '  rh-brew-autotest        - Create a $(COMMON_NAME)-rhev RPMs on koji and then send directly to autotest server'

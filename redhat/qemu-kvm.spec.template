@@ -34,7 +34,7 @@
     %global have_spice   0
     %global have_gluster 0
 %endif
-%ifarch ppc64
+%ifarch %{power64}
     %global kvm_target    ppc64
     %global have_fdt     1
 %endif
@@ -110,7 +110,7 @@ Group: Development/Tools
 URL: http://www.qemu.org/
 # RHEV will build Qemu only on x86_64:
 %if %{rhev}
-ExclusiveArch: x86_64 ppc64 aarch64
+ExclusiveArch: x86_64 %{power64} aarch64
 %endif
 %ifarch %{ix86} x86_64
 Requires: seabios-bin >= 1.7.2.2-5
@@ -119,7 +119,7 @@ Requires: sgabios-bin
 %ifnarch aarch64
 Requires: seavgabios-bin
 %endif
-%ifarch ppc64
+%ifarch %{power64}
 Requires: SLOF = 20140630
 %endif
 Requires: ipxe-roms-qemu
@@ -589,7 +589,7 @@ dobuild --target-list="$buildarch"
     rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/s390-zipl.rom
     rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/s390-ccw.img
 
-    %ifnarch ppc64
+    %ifnarch %{power64}
         rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/spapr-rtas.bin
         rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/u-boot.e500
     %endif
@@ -804,7 +804,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %{_datadir}/%{pkgname}/rhel6-rtl8139.rom
     %{_datadir}/%{pkgname}/rhel6-ne2k_pci.rom
     %{_datadir}/%{pkgname}/rhel6-e1000.rom
-    %ifarch ppc64
+    %ifarch %{power64}
         %{_datadir}/%{pkgname}/spapr-rtas.bin
         %{_datadir}/%{pkgname}/u-boot.e500
     %endif
@@ -841,6 +841,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Sat Aug 02 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.0-1.el7
+- Rebase to 2.1.0 [bz#1121609]
+- Resolves: bz#1121609
+ (Rebase qemu-kvm-rhev to qemu 2.1)
+
 * Wed Jul 09 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.0.0-3.el7
 - kvm-Remove-CONFIG_NE2000_ISA-from-all-config-files.patch []
 - kvm-Fix-conditional-rpmbuild.patch []
