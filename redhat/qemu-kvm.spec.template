@@ -467,6 +467,7 @@ dobuild() {
 %else
         --disable-guest-agent \
 %endif
+        --disable-tpm \
         --enable-live-block-ops \
         --enable-ceph-support \
         --disable-live-block-migration \
