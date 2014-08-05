@@ -168,20 +168,20 @@ VirtIODevice *virtio_rng_init(DeviceState *dev, VirtIORNGConf *conf)
     if (!conf->period_ms > 0) {
         qerror_report(QERR_INVALID_PARAMETER_VALUE, "period",
                       "a positive number");
-        return NULL;
+        goto err;
     }
 
     vrng->rng = conf->rng;
     if (vrng->rng == NULL) {
         qerror_report(QERR_INVALID_PARAMETER_VALUE, "rng", "a valid object");
-        return NULL;
+        goto err;
     }
 
     rng_backend_open(vrng->rng, &local_err);
     if (local_err) {
         qerror_report_err(local_err);
         error_free(local_err);
-        return NULL;
+        goto err;
     }
 
     vrng->vq = virtio_add_queue(vdev, 8, handle_input);
@@ -197,7 +197,7 @@ VirtIODevice *virtio_rng_init(DeviceState *dev, VirtIORNGConf *conf)
     if (vrng->conf->max_bytes > INT64_MAX) {
         qerror_report(QERR_INVALID_PARAMETER_VALUE, "max-bytes",
                       "a non-negative integer below 2^63");
-        return NULL;
+        goto err;
     }
 
     vrng->rate_limit_timer = qemu_new_timer(vm_clock,
@@ -210,6 +210,9 @@ VirtIODevice *virtio_rng_init(DeviceState *dev, VirtIORNGConf *conf)
                     virtio_rng_load, vrng);
 
     return vdev;
+ err:
+    virtio_cleanup(vdev);
+    return NULL;
 }
 
 void virtio_rng_exit(VirtIODevice *vdev)
