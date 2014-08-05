@@ -192,7 +192,13 @@ VirtIODevice *virtio_rng_init(DeviceState *dev, VirtIORNGConf *conf)
 
     vrng->quota_remaining = vrng->conf->max_bytes;
 
-    g_assert_cmpint(vrng->conf->max_bytes, <=, INT64_MAX);
+    /* Workaround: Property parsing does not enforce unsigned integers,
+     * So this is a hack to reject such numbers. */
+    if (vrng->conf->max_bytes > INT64_MAX) {
+        qerror_report(QERR_INVALID_PARAMETER_VALUE, "max-bytes",
+                      "a non-negative integer below 2^63");
+        return NULL;
+    }
 
     vrng->rate_limit_timer = qemu_new_timer(vm_clock,
                                                check_rate_limit, vrng);
