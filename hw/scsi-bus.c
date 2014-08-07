@@ -763,22 +763,18 @@ static int scsi_req_length(SCSICommand *cmd, SCSIDevice *dev, uint8_t *buf)
     switch (buf[0] >> 5) {
     case 0:
         cmd->xfer = (uint64_t) buf[4];
-        cmd->len = 6;
         break;
     case 1:
     case 2:
         cmd->xfer = (uint64_t) buf[8] | ((uint64_t) buf[7] << 8);
-        cmd->len = 10;
         break;
     case 4:
         cmd->xfer = (uint64_t) buf[13] | ((uint64_t) buf[12] << 8) |
 		    ((uint64_t) buf[11] << 16) | ((uint64_t) buf[10] << 24);
-        cmd->len = 16;
         break;
     case 5:
         cmd->xfer = (uint64_t) buf[9] | ((uint64_t) buf[8] << 8) |
 		    ((uint64_t) buf[7] << 16) | ((uint64_t) buf[6] << 24);
-        cmd->len = 12;
         break;
     default:
         return -1;
@@ -917,7 +913,6 @@ static int scsi_req_stream_length(SCSICommand *cmd, SCSIDevice *dev, uint8_t *bu
     case READ_REVERSE:
     case RECOVER_BUFFERED_DATA:
     case WRITE_6:
-        cmd->len = 6;
         cmd->xfer = buf[4] | (buf[3] << 8) | (buf[2] << 16);
         if (buf[1] & 0x01) { /* fixed */
             cmd->xfer *= dev->blocksize;
@@ -925,7 +920,6 @@ static int scsi_req_stream_length(SCSICommand *cmd, SCSIDevice *dev, uint8_t *bu
         break;
     case REWIND:
     case START_STOP:
-        cmd->len = 6;
         cmd->xfer = 0;
         break;
     case SPACE_16:
@@ -1031,6 +1025,24 @@ int scsi_req_parse_cdb(SCSIDevice *dev, SCSICommand *cmd, uint8_t *buf)
     int rc;
 
     cmd->lba = -1;
+    switch (buf[0] >> 5) {
+    case 0:
+        cmd->len = 6;
+        break;
+    case 1:
+    case 2:
+        cmd->len = 10;
+        break;
+    case 4:
+        cmd->len = 16;
+        break;
+    case 5:
+        cmd->len = 12;
+        break;
+    default:
+        return -1;
+    }
+
     if (dev->type == TYPE_TAPE) {
         rc = scsi_req_stream_length(cmd, dev, buf);
     } else {
