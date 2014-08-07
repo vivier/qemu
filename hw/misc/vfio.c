@@ -131,7 +131,6 @@ typedef struct VFIOMSIVector {
     EventNotifier interrupt;
     EventNotifier kvm_interrupt;
     struct VFIODevice *vdev; /* back pointer to device */
-    MSIMessage msg; /* cache the MSI message so we know when it changes */
     int virq;
     bool use;
 } VFIOMSIVector;
@@ -725,7 +724,6 @@ static void vfio_add_kvm_msi_virq(VFIOMSIVector *vector, MSIMessage *msg,
         return;
     }
 
-    vector->msg = *msg;
     vector->virq = virq;
 }
 
@@ -741,7 +739,6 @@ static void vfio_remove_kvm_msi_virq(VFIOMSIVector *vector)
 static void vfio_update_kvm_msi_virq(VFIOMSIVector *vector, MSIMessage msg)
 {
     kvm_irqchip_update_msi_route(kvm_state, vector->virq, msg);
-    vector->msg = msg;
 }
 
 static int vfio_msix_vector_do_use(PCIDevice *pdev, unsigned int nr,
@@ -920,6 +917,7 @@ retry:
 
     for (i = 0; i < vdev->nr_vectors; i++) {
         VFIOMSIVector *vector = &vdev->msi_vectors[i];
+        MSIMessage msg = msi_get_message(&vdev->pdev, i);
 
         vector->vdev = vdev;
         vector->virq = -1;
@@ -932,13 +930,11 @@ retry:
         qemu_set_fd_handler(event_notifier_get_fd(&vector->interrupt),
                             vfio_msi_interrupt, NULL, vector);
 
-        vector->msg = msi_get_message(&vdev->pdev, i);
-
         /*
          * Attempt to enable route through KVM irqchip,
          * default to userspace handling if unavailable.
          */
-        vfio_add_kvm_msi_virq(vector, &vector->msg, false);
+        vfio_add_kvm_msi_virq(vector, &msg, false);
     }
 
     /* Set interrupt type prior to possible interrupts */
