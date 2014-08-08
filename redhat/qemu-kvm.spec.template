@@ -802,6 +802,55 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Aug 07 2014 Jeff E. Nelson <jen@redhat.com> - 1.5.3-67.el7
+- kvm-vl.c-Output-error-on-invalid-machine-type.patch [bz#990724]
+- kvm-migration-dump-vmstate-info-as-a-json-file-for-stati.patch [bz#1118707]
+- kvm-vmstate-static-checker-script-to-validate-vmstate-ch.patch [bz#1118707]
+- kvm-tests-vmstate-static-checker-add-dump1-and-dump2-fil.patch [bz#1118707]
+- kvm-tests-vmstate-static-checker-incompat-machine-types.patch [bz#1118707]
+- kvm-tests-vmstate-static-checker-add-version-error-in-ma.patch [bz#1118707]
+- kvm-tests-vmstate-static-checker-version-mismatch-inside.patch [bz#1118707]
+- kvm-tests-vmstate-static-checker-minimum_version_id-chec.patch [bz#1118707]
+- kvm-tests-vmstate-static-checker-remove-a-section.patch [bz#1118707]
+- kvm-tests-vmstate-static-checker-remove-a-field.patch [bz#1118707]
+- kvm-tests-vmstate-static-checker-remove-last-field-in-a-.patch [bz#1118707]
+- kvm-tests-vmstate-static-checker-change-description-name.patch [bz#1118707]
+- kvm-tests-vmstate-static-checker-remove-Fields.patch [bz#1118707]
+- kvm-tests-vmstate-static-checker-remove-Description.patch [bz#1118707]
+- kvm-tests-vmstate-static-checker-remove-Description-insi.patch [bz#1118707]
+- kvm-tests-vmstate-static-checker-remove-a-subsection.patch [bz#1118707]
+- kvm-tests-vmstate-static-checker-remove-Subsections.patch [bz#1118707]
+- kvm-tests-vmstate-static-checker-add-substructure-for-us.patch [bz#1118707]
+- kvm-tests-vmstate-static-checker-add-size-mismatch-insid.patch [bz#1118707]
+- kvm-aio-fix-qemu_bh_schedule-bh-ctx-race-condition.patch [bz#1116728]
+- kvm-block-Improve-driver-whitelist-checks.patch [bz#999789]
+- kvm-vmdk-Fix-format-specific-information-create-type-for.patch [bz#1029271]
+- kvm-virtio-pci-Report-an-error-when-msix-vectors-init-fa.patch [bz#1095645]
+- kvm-scsi-Report-error-when-lun-number-is-in-use.patch [bz#1096576]
+- kvm-util-Split-out-exec_dir-from-os_find_datadir.patch [bz#1017685]
+- kvm-rules.mak-fix-obj-to-a-real-relative-path.patch [bz#1017685]
+- kvm-rules.mak-allow-per-object-cflags-and-libs.patch [bz#1017685]
+- kvm-block-use-per-object-cflags-and-libs.patch [bz#1017685]
+- kvm-vmdk-Fix-creating-big-description-file.patch [bz#1039791]
+- Resolves: bz#1017685
+  (Gluster etc. should not be a dependency of vscclient and libcacard)
+- Resolves: bz#1029271
+  (Format specific information (create type) was wrong when create it specified subformat='streamOptimized')
+- Resolves: bz#1039791
+  (qemu-img creates truncated VMDK image with subformat=twoGbMaxExtentFlat)
+- Resolves: bz#1095645
+  (vectors of virtio-scsi-pci will be 0 when set vectors>=129)
+- Resolves: bz#1096576
+  (QEMU core dumped when boot up two scsi-hd disk on the same virtio-scsi-pci controller in Intel host)
+- Resolves: bz#1116728
+  (Backport qemu_bh_schedule() race condition fix)
+- Resolves: bz#1118707
+  (VMstate static checker: backport -dump-vmstate feature to export json-encoded vmstate info)
+- Resolves: bz#990724
+  (qemu-kvm failing when invalid machine type is provided)
+- Resolves: bz#999789
+  (qemu should give a more friendly prompt when didn't specify read-only for VMDK format disk)
+
 * Wed Jul 09 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-66.el7
 - kvm-xhci-fix-overflow-in-usb_xhci_post_load.patch [bz#1074219]
 - kvm-migration-qmp_migrate-keep-working-after-syntax-erro.patch [bz#1086598]
