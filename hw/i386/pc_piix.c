@@ -955,6 +955,7 @@ static void pc_compat_rhel700(MachineState *machine)
     x86_cpu_compat_set_features("Opteron_G5", FEAT_8000_0001_EDX, 0,
                                 CPUID_EXT2_RDTSCP);
 
+    legacy_acpi_table_size = 6418; /* see pc_compat_2_0() */
     smbios_legacy_mode = true;
     has_reserved_memory = false;
 }
