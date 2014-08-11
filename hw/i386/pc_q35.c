@@ -462,6 +462,8 @@ static void pc_q35_compat_rhel700(MachineState *machine)
                                 CPUID_EXT2_RDTSCP);
     x86_cpu_compat_set_features("Opteron_G5", FEAT_8000_0001_EDX, 0,
                                 CPUID_EXT2_RDTSCP);
+
+    smbios_legacy_mode = true;
 }
 
 static void pc_q35_init_rhel700(MachineState *machine)
