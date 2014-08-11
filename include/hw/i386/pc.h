@@ -551,6 +551,10 @@ bool e820_get_entry(int, uint32_t, uint64_t *, uint64_t *);
             .property = "guest_announce",\
             .value    = "off",\
         },{\
+            .driver   = "ICH9-LPC",\
+            .property = "memory-hotplug-support",\
+            .value    = "off",\
+        },{\
             .driver   = "PIIX4_PM",\
             .property = "acpi-pci-hotplug-with-bridge-support",\
             .value    = "off",\
