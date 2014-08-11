@@ -464,6 +464,7 @@ static void pc_q35_compat_rhel700(MachineState *machine)
                                 CPUID_EXT2_RDTSCP);
 
     smbios_legacy_mode = true;
+    has_reserved_memory = false;
 }
 
 static void pc_q35_init_rhel700(MachineState *machine)
