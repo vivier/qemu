@@ -541,6 +541,10 @@ bool e820_get_entry(int, uint32_t, uint64_t *, uint64_t *);
             .property = "superspeed-ports-first",\
             .value    = "off",\
         },{\
+            .driver   = "pci-serial",\
+            .property = "prog_if",\
+            .value    = stringify(0),\
+        },{\
             .driver   = "PIIX4_PM",\
             .property = "acpi-pci-hotplug-with-bridge-support",\
             .value    = "off",\
