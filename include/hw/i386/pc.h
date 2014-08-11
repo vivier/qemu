@@ -537,6 +537,10 @@ bool e820_get_entry(int, uint32_t, uint64_t *, uint64_t *);
             .property = "version",\
             .value    = stringify(0x11),\
         },{\
+            .driver   = "nec-usb-xhci",\
+            .property = "superspeed-ports-first",\
+            .value    = "off",\
+        },{\
             .driver   = "PIIX4_PM",\
             .property = "acpi-pci-hotplug-with-bridge-support",\
             .value    = "off",\
