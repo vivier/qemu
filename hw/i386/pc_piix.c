@@ -959,23 +959,6 @@ static void pc_compat_rhel700(MachineState *machine)
     has_reserved_memory = false;
 }
 
-/*
- * RHE[LV] This set of items are from include/hw/i386/pc.h where they
- * are part of the PC_COMPAT_* defs. RHEL7 was QEMU 1.5.3 derived so pick up
- * the diffs from 1.5 onwards MINUS the things that were already in RHEL7
- * e.g. msos-desc
- */
-#define PC_RHEL7_0_COMPAT \
-    {\
-        .driver   = "PIIX4_PM",\
-        .property = "acpi-pci-hotplug-with-bridge-support",\
-        .value    = "off",\
-    },{\
-        .driver   = "e1000",\
-        .property = "mitigation",\
-        .value    = "off",\
-    }
-
 static void pc_init_rhel700(MachineState *machine)
 {
     pc_compat_rhel700(machine);
