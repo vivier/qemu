@@ -508,6 +508,6 @@ bool e820_get_entry(int, uint32_t, uint64_t *, uint64_t *);
 #define PC_DEFAULT_MACHINE_OPTIONS \
     PC_COMMON_MACHINE_OPTIONS, \
     .hot_add_cpu = pc_hot_add_cpu, \
-    .max_cpus = 255
+    .max_cpus = 160
 
 #endif
