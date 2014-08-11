@@ -555,6 +555,14 @@ bool e820_get_entry(int, uint32_t, uint64_t *, uint64_t *);
             .property = "memory-hotplug-support",\
             .value    = "off",\
         },{\
+            .driver   = "xio3130-downstream",\
+            .property = COMPAT_PROP_PCP,\
+            .value    = "off",\
+        },{\
+            .driver   = "ioh3420",\
+            .property = COMPAT_PROP_PCP,\
+            .value    = "off",\
+        },{\
             .driver   = "PIIX4_PM",\
             .property = "acpi-pci-hotplug-with-bridge-support",\
             .value    = "off",\
