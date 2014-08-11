@@ -570,6 +570,10 @@ bool e820_get_entry(int, uint32_t, uint64_t *, uint64_t *);
             .driver   = "e1000",\
             .property = "mitigation",\
             .value    = "off",\
+        },{ \
+            .driver   = "virtio-net-pci", \
+            .property = "ctrl_guest_offloads", \
+            .value    = "off", \
         }
 
 #endif
