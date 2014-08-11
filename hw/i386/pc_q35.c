@@ -480,6 +480,10 @@ static QEMUMachine pc_q35_machine_rhel700 = {
     .desc = "RHEL-7.0.0 PC (Q35 + ICH9, 2009)",
     .init = pc_q35_init_rhel700,
     .default_machine_opts = "firmware=bios-256k.bin",
+    .compat_props = (GlobalProperty[]) {
+        PC_RHEL7_0_COMPAT,
+        { /* end of list */ }
+    },
 };
 
 static void rhel_pc_q35_machine_init(void)
