@@ -527,6 +527,10 @@ bool e820_get_entry(int, uint32_t, uint64_t *, uint64_t *);
  */
 #define PC_RHEL7_0_COMPAT \
         {\
+            .driver   = "virtio-scsi-pci",\
+            .property = "any_layout",\
+            .value    = "off",\
+        },{\
             .driver   = "PIIX4_PM",\
             .property = "acpi-pci-hotplug-with-bridge-support",\
             .value    = "off",\
