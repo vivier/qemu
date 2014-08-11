@@ -530,6 +530,10 @@ bool e820_get_entry(int, uint32_t, uint64_t *, uint64_t *);
             .value    = "off",\
         },{\
             .driver   = "PIIX4_PM",\
+            .property = "memory-hotplug-support",\
+            .value    = "off",\
+        },{\
+            .driver   = "PIIX4_PM",\
             .property = "acpi-pci-hotplug-with-bridge-support",\
             .value    = "off",\
         },{\
