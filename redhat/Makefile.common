@@ -5,20 +5,23 @@ MACH :=  $(shell uname -m)
 # just used to define the other name variables
 UPSTREAM_NAME=qemu
 COMMON_NAME=qemu-kvm
-
+GANAME=$(UPSTREAM_NAME)-guest-agent
 
 KVERSION:=2.1.0
 # marker is git tag
 MARKER:=$(UPSTREAM_NAME)-$(KVERSION)
 SPECFILE:=$(COMMON_NAME).spec
+GASPECFILE:=$(GANAME).spec
 REDHAT:=$(shell pwd)
 RPM:=$(REDHAT)/rpm
 SRPMS:=$(RPM)/SRPMS
 SOURCES:=$(RPM)/SOURCES
 BUILD:=1
+GABUILD:=1
 PREBUILD=
 DIST=.el7
 PKGNAME=$(COMMON_NAME)
+GAPKGNAME=$(GANAME)
 RCMARKER=
 
 #TARFILE:=$(subst _,.,$(MARKER)).tar.bz2

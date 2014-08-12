@@ -151,6 +151,9 @@ rh-update-changelog:
 rh-brew rh-brew-ppc rh-brew-aarch64 rh-brew-rhev rh-brew-rhev-autotest: BUILD_FLAGS ?= $(BREW_FLAGS) $(TEST_FLAGS)
 rh-brew-ppc: BUILD_SCRATCH_TARGET = rhel-7.1-ppc64le-candidate
 rh-brew-ga: BUILD_SCRATCH_TARGET = rhel-7.1-candidate
+rh-brew-ga: SPECFILE = $(GASPECFILE)
+rh-brew-ga: PKGNAME = $(GAPKGNAME)
+rh-brew-ga: BUILD = $(GABUILD)
 rh-brew-aarch64: BUILD_SCRATCH_TARGET = rhel-7.0-aarch64-candidate
 rh-koji rh-koji-ga rh-koji-autotest: BUILD_FLAGS ?= $(KOJI_FLAGS) $(TEST_FLAGS)
 rh-brew rh-brew-ppc rh-brew-aarch64 rh-brew-autotest rh-koji-autotest: RHEV_FLAG=1
