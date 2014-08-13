@@ -106,4 +106,5 @@ pc-bios/s390-ccw/s390-ccw.img
 cscope.*
 tags
 TAGS
+localversion
 *~
