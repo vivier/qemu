@@ -8,8 +8,9 @@ PKGRELEASE=$4
 # BUILD* are legacy variables: please use PKGRELEASE instead
 PREBUILD=$5
 BUILD=$6
-RHEV=$7
-BUILDID=$8
+ZRELEASE=$7
+RHEV=$8
+BUILDID=$9
 
 PATCHF="$SOURCES/Patch.include"
 patchf="$SOURCES/patch.include"
@@ -328,6 +329,7 @@ test -n "$SPECFILE" &&
 	s/%%RCREV%%/$RCREV/
 	s/%%GITREV%%/$GITREV/
         s/%%RHEV_FLAG%%/$RHEV/
+        s/%%ZRELEASE%%/$ZRELEASE/
 	s/%%RELEASED_KERNEL%%/$RELEASED_KERNEL/" $SPECFILE
 if [ -n "$BUILDID" ]; then
 	sed -i -e "s/# % define buildid .local/%define buildid $BUILDID/" $SPECFILE;

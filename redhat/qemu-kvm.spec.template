@@ -80,8 +80,11 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 # - following line in specfile
 # - localversion file in repository root - this is preferred way as file 
 # is ignored by git
-%define buildid %{nil}%%BUILDID%%
-
+%if %{rhev}
+    %define buildid _0.%%ZRELEASE%%%%BUILDID%%
+%else
+    %define buildid .%%ZRELEASE%%%%BUILDID%%
+%endif
 %define sublevel %%SUBLEVEL%%
 %define pkgrelease %%PKGRELEASE%%
 
@@ -802,6 +805,26 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Aug 15 2014 Miroslav Rezanina <> - 1.5.3-60.el7_0.6
+- kvm-vmstate-reduce-code-duplication.patch [bz#1095706]
+- kvm-vfio-pci-Add-debug-config-options-to-disable-MSI-X-K.patch [bz#1110693 bz#1110695]
+- kvm-vfio-correct-debug-macro-typo.patch [bz#1110693 bz#1110695]
+- kvm-vfio-pci-Fix-MSI-X-debug-code.patch [bz#1110693 bz#1110695]
+- kvm-vfio-pci-Fix-MSI-X-masking-performance.patch [bz#1110693 bz#1110695]
+- kvm-vfio-Fix-MSI-X-vector-expansion.patch [bz#1110693 bz#1110695]
+- kvm-vfio-Don-t-cache-MSIMessage.patch [bz#1110693 bz#1110695]
+- kvm-virtio-net-Do-not-filter-VLANs-without-F_CTRL_VLAN.patch [bz#1130149]
+- kvm-virtio-net-add-vlan-receive-state-to-RxFilterInfo.patch [bz#1130149]
+- kvm-memory-Don-t-call-memory_region_update_coalesced_ran.patch [bz#1124660]
+- Resolves: bz#1110693
+  (2x RHEL 5.10 VM running on RHEL 7 KVM have low TCP_STREAM throughput)
+- Resolves: bz#1110695
+  (2x RHEL 5.10 VM running on RHEL 7 KVM have low TCP_STREAM throughput)
+- Resolves: bz#1124660
+  ([FJ7.0 Bug] RHEL7.0 guest attaching 150 or more virtio-blk disks fails to start up)
+- Resolves: bz#1130149
+  (rx filter incorrect when guest disables VLAN filtering)
+
 * Wed Jul 02 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-60.el7_0.5
 - kvm-Allow-mismatched-virtio-config-len.patch [bz#1095782]
 - Resolves: bz#1095782

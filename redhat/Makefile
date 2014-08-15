@@ -38,10 +38,13 @@ endif
 endif
 
 PKGRELEASE=$(PREBUILD)$(BUILD)
-PKG_FULL_VR = $(STAMP_VERSION)-$(PKGRELEASE)$(DIST)$(BUILDID)
+
+PKG_FULL_VR = $(STAMP_VERSION)-$(PKGRELEASE)$(DIST).$(ZRELEASE)$(BUILDID)
 PKG_FULL_NVR = $(PKGNAME)-$(PKG_FULL_VR)
 
-RPMBUILD_DEFS = --define "_sourcedir $(SOURCES)" --define "_builddir $(RPM)/BUILD" --define "_srcrpmdir $(RPM)/SRPMS" --define "_rpmdir $(RPM)/RPMS" --define "_specdir $(RPM)/SPECS" --define "dist $(DIST)"
+RPMBUILD_DEFS = --define "_sourcedir $(SOURCES)" --define "_builddir $(RPM)/BUILD" --define "_srcrpmdir $(RPM)/SRPMS" --define "_rpmdir $(RPM)/RPMS" --define "_specdir $(RPM)/SPECS"
+
+DIST_DEF= --define "dist .el7_0"
 
 default: rh-help
 
@@ -121,7 +124,7 @@ sources-rh: $(TARBALL) $(RC_PATCH) $(GIT_PATCH) $(REDHAT)/create-patches.sh Make
 	@cp $(TARBALL) $(SOURCES)/$(TARFILE)
 	@cp *.patch $(SOURCES)
 	@cp bridge.conf $(SOURCES)
-	@$(REDHAT)/create-patches.sh $(MARKER) $(SOURCES) $(SOURCES)/$(SPECFILE) $(PKGRELEASE) '$(PREBUILD)' $(BUILD) $(RHEV_FLAG) $(BUILDID) 
+	@$(REDHAT)/create-patches.sh $(MARKER) $(SOURCES) $(SOURCES)/$(SPECFILE) $(PKGRELEASE) '$(PREBUILD)' $(BUILD) $(ZRELEASE) $(RHEV_FLAG) $(BUILDID) 
 	@cp $(SOURCES)/$(SPECFILE) $(SOURCES)/../SPECS
 	@cp $(TESTPATCH) $(SOURCES)/$(COMMON_NAME)-test.patch
 	@cp ../sysconfigs/target/target-x86_64.conf $(SOURCES)
@@ -136,19 +139,19 @@ rh-test-patch:
 	mv $(TESTPATCH).tmp $(TESTPATCH);
 
 rh-all-rpms: rh-sources
-	$(RPMBUILD) $(RPMBUILD_DEFS) --target $(MACH) -ba $(RPM)/SOURCES/$(SPECFILE)
+	$(RPMBUILD) $(RPMBUILD_DEFS) $(DIST_DEF) --target $(MACH) -ba $(RPM)/SOURCES/$(SPECFILE)
 
 rh-srpm: rh-sources
-	$(RPMBUILD) $(RPMBUILD_DEFS) --nodeps -bs $(RPM)/SOURCES/$(SPECFILE)
+	$(RPMBUILD) $(RPMBUILD_DEFS) $(DIST_DEF) --nodeps -bs $(RPM)/SOURCES/$(SPECFILE)
 
 rh-rpms: rh-sources
-	$(RPMBUILD) $(RPMBUILD_DEFS) --target $(MACH) -bb $(RPM)/SOURCES/$(SPECFILE)
+	$(RPMBUILD) $(RPMBUILD_DEFS) $(DIST_DEF) --target $(MACH) -bb $(RPM)/SOURCES/$(SPECFILE)
 
 rh-$(COMMON_NAME)-%: rh-sources
-	$(RPMBUILD) $(RPMBUILD_DEFS) --target $(MACH) --with $* --without vdso_install --with firmware -bb $(RPM)/SOURCES/$(SPECFILE)
+	$(RPMBUILD) $(RPMBUILD_DEFS) $(DIST_DEF) --target $(MACH) --with $* --without vdso_install --with firmware -bb $(RPM)/SOURCES/$(SPECFILE)
 
 rh-prep: rh-sources
-	$(RPMBUILD) $(RPMBUILD_DEFS) --nodeps --target $(MACH) -bp $(RPM)/SOURCES/$(SPECFILE)
+	$(RPMBUILD) $(RPMBUILD_DEFS) $(DIST_DEF) --nodeps --target $(MACH) -bp $(RPM)/SOURCES/$(SPECFILE)
 
 # we could just print the version number to stderr, but make dumps too much junk
 # to stdout to make it usable, so a 'verrel' file is created
@@ -176,6 +179,7 @@ rh-brew rh-brew-rhev rh-brew-rhev-autotest: BUILD_FLAGS ?= $(BREW_FLAGS) $(TEST_
 rh-koji rh-koji-rhev rh-koji-rhev-autotest: BUILD_FLAGS ?= $(KOJI_FLAGS) $(TEST_FLAGS)
 rh-brew-rhev rh-brew-rhev-autotest rh-koji-rhev-autotest: RHEV_FLAG=1
 rh-brew-rhev rh-brew-rhev-autotest rh-koji-rhev-autotest: PKG_FULL_NVR=$(PKGNAME)-rhev-$(PKG_FULL_VR)
+rh-brew-rhev rh-brew-rhev-autotest rh-koji-rhev-autotest: DIST_DEF= --define "dist .el7"
 rh-brew rh-koji: rh-%: rh-srpm
 	$* build $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)
 rh-brew-rhev rh-koji-rhev: rh-%-rhev: rh-srpm
