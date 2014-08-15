@@ -802,6 +802,18 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Aug 15 2014 Miroslav Rezanina <> - 1.5.3-68.el7
+- kvm-virtio-net-Do-not-filter-VLANs-without-F_CTRL_VLAN.patch [bz#1065724]
+- kvm-virtio-net-add-vlan-receive-state-to-RxFilterInfo.patch [bz#1065724]
+- kvm-virtio-rng-check-return-value-of-virtio_load.patch [bz#1116941]
+- kvm-qapi-treat-all-negative-return-of-strtosz_suffix-as-.patch [bz#1074403]
+- Resolves: bz#1065724
+  (rx filter incorrect when guest disables VLAN filtering)
+- Resolves: bz#1074403
+  (qemu-kvm can not give any warning hint when set sndbuf with negative value)
+- Resolves: bz#1116941
+  (Return value of virtio_load not checked in virtio_rng_load)
+
 * Thu Aug 07 2014 Jeff E. Nelson <jen@redhat.com> - 1.5.3-67.el7
 - kvm-vl.c-Output-error-on-invalid-machine-type.patch [bz#990724]
 - kvm-migration-dump-vmstate-info-as-a-json-file-for-stati.patch [bz#1118707]
