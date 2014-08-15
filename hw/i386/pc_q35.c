@@ -438,6 +438,9 @@ machine_init(pc_q35_machine_init);
 
 static void pc_q35_compat_rhel700(MachineState *machine)
 {
+    /* Upstream enables it for everyone, we're a little more selective */
+    x86_cpu_compat_disable_kvm_features(FEAT_1_ECX, CPUID_EXT_X2APIC);
+
     x86_cpu_compat_set_features("Conroe", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
     x86_cpu_compat_set_features("Penryn", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
     x86_cpu_compat_set_features("Nehalem", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
