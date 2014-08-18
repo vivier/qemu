@@ -347,7 +347,7 @@ CAC emulation tools.
 %package -n libcacard-devel%{?pkgsuffix}
 Summary:        CAC Emulation devel
 Group:          Development/Libraries
-Requires:       libcacard = %{epoch}:%{version}-%{release}
+Requires:       libcacard%{?pkgsuffix} = %{epoch}:%{version}-%{release}
 
 %rhel_rhev_conflicts libcacard-devel
 
@@ -841,6 +841,28 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Mon Aug 18 2014 Miroslav Rezanina <> - rhev-2.1.0-2.el7
+- kvm-exit-when-no-kvm-and-vcpu-count-160.patch [bz#1076326 bz#1118665]
+- kvm-Revert-Use-legacy-SMBIOS-for-rhel-machine-types.patch [bz#1118665]
+- kvm-rhel-Use-SMBIOS-legacy-mode-for-machine-types-7.0.patch [bz#1118665]
+- kvm-rhel-Suppress-hotplug-memory-address-space-for-machi.patch [bz#1118665]
+- kvm-rhel-Fix-ACPI-table-size-for-machine-types-7.0.patch [bz#1118665]
+- kvm-rhel-Fix-missing-pc-q35-rhel7.0.0-compatibility-prop.patch [bz#1118665]
+- kvm-rhel-virtio-scsi-pci.any_layout-off-for-machine-type.patch [bz#1118665]
+- kvm-rhel-PIIX4_PM.memory-hotplug-support-off-for-machine.patch [bz#1118665]
+- kvm-rhel-apic.version-0x11-for-machine-types-7.0.patch [bz#1118665]
+- kvm-rhel-nec-usb-xhci.superspeed-ports-first-off-for-mac.patch [bz#1118665]
+- kvm-rhel-pci-serial.prog_if-0-for-machine-types-7.0.patch [bz#1118665]
+- kvm-rhel-virtio-net-pci.guest_announce-off-for-machine-t.patch [bz#1118665]
+- kvm-rhel-ICH9-LPC.memory-hotplug-support-off-for-machine.patch [bz#1118665]
+- kvm-rhel-.power_controller_present-off-for-machine-types.patch [bz#1118665]
+- kvm-rhel-virtio-net-pci.ctrl_guest_offloads-off-for-mach.patch [bz#1118665]
+- kvm-pc-q35-rhel7.0.0-Disable-x2apic-default.patch [bz#1118665]
+- Resolves: bz#1076326
+  (qemu-kvm does not quit when booting guest w/ 161 vcpus and "-no-kvm")
+- Resolves: bz#1118665
+  (Migration: rhel7.0->rhev7.1)
+
 * Sat Aug 02 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.0-1.el7
 - Rebase to 2.1.0 [bz#1121609]
 - Resolves: bz#1121609
