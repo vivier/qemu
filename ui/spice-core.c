@@ -47,6 +47,7 @@ static char *auth_passwd;
 static time_t auth_expires = TIME_MAX;
 static int spice_migration_completed;
 static int spice_display_is_running;
+static int spice_have_target_host;
 int using_spice = 0;
 
 static pthread_t me;
@@ -539,6 +540,10 @@ void do_info_spice(Monitor *mon, QObject **ret_data)
 static void migration_state_notifier(Notifier *notifier, void *data)
 {
     int state = get_migration_state();
+
+    if (!spice_have_target_host) {
+        return;
+    }
     if (state == MIG_STATE_ACTIVE) {
 #ifdef SPICE_INTERFACE_MIGRATION
         spice_server_migrate_start(spice_server);
@@ -548,10 +553,13 @@ static void migration_state_notifier(Notifier *notifier, void *data)
         spice_server_migrate_switch(spice_server);
         monitor_protocol_event(QEVENT_SPICE_MIGRATE_COMPLETED, NULL);
         spice_migration_completed = true;
+        spice_have_target_host = false;
 #else
         spice_server_migrate_end(spice_server, true);
+        spice_have_target_host = false;
     } else if (state == MIG_STATE_CANCELLED || state == MIG_STATE_ERROR) {
         spice_server_migrate_end(spice_server, false);
+        spice_have_target_host = false;
 #endif
     }
 }
@@ -571,6 +579,7 @@ int qemu_spice_migrate_info(const char *hostname, int port, int tls_port,
                                     port, tls_port, subject);
     cb(opaque, NULL);
 #endif
+    spice_have_target_host = true;
     return ret;
 }
 
