@@ -383,7 +383,10 @@ void qdev_free(DeviceState *dev)
         }
     }
 
-    monitor_protocol_event(QEVENT_DEVICE_DELETED, event_data);
+    if (dev->state == DEV_STATE_INITIALIZED) {
+        monitor_protocol_event(QEVENT_DEVICE_DELETED, event_data);
+    }
+
     qobject_decref(event_data);
     qemu_free(dev);
 }
