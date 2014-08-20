@@ -1005,7 +1005,7 @@ EQMP
 
     {
         .name       = "block-commit",
-        .args_type  = "device:B,base:s?,top:s,speed:o?",
+        .args_type  = "device:B,base:s?,top:s?,speed:o?",
         .mhandler.cmd_new = qmp_marshal_input_block_commit,
     },
 
@@ -1023,7 +1023,8 @@ Arguments:
           If not specified, this is the deepest backing image
           (json-string, optional)
 - "top":  The file name of the backing image within the image chain,
-          which contains the topmost data to be committed down.
+          which contains the topmost data to be committed down. If
+          not specified, this is the active layer. (json-string, optional)
 
           If top == base, that is an error.
           If top == active, the job will not be completed by itself,
