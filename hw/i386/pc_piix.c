@@ -935,6 +935,10 @@ static void pc_compat_rhel650(QEMUMachineInitArgs *args)
              CPUID_EXT2_CX8 | CPUID_EXT2_MCE | CPUID_EXT2_PAE | CPUID_EXT2_MSR |
              CPUID_EXT2_TSC | CPUID_EXT2_PSE | CPUID_EXT2_DE | CPUID_EXT2_FPU,
              0);
+    x86_cpu_compat_set_features("Broadwell", FEAT_8000_0001_EDX,
+                                0, CPUID_EXT2_RDTSCP);
+    x86_cpu_compat_set_features("Broadwell", FEAT_7_0_EBX,
+                                0, CPUID_7_0_EBX_SMAP);
 
     /* RHEL-6 kernel never supported exposing RDTSCP */
     x86_cpu_compat_set_features(NULL, FEAT_8000_0001_EDX, 0, CPUID_EXT2_RDTSCP);
