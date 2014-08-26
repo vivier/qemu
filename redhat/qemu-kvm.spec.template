@@ -1,11 +1,7 @@
 # Build time setting
 %define rhev %%RHEV_FLAG%%
 
-%if %{rhev}
-    %bcond_with     guest_agent     # disabled
-%else
-    %bcond_without  guest_agent     # enabled
-%endif
+%bcond_with     guest_agent     # disabled
 
 %global SLOF_gittagdate 20120731
 
@@ -485,7 +481,9 @@ dobuild() {
    make qemu-nbd %{?_smp_mflags} $buildldflags
    make qemu-img.1 %{?_smp_mflags} $buildldflags
    make qemu-nbd.8 %{?_smp_mflags} $buildldflags
-   make qemu-ga %{?_smp_mflags} $buildldflags
+   %if %{with guest_agent}
+      make qemu-ga %{?_smp_mflags} $buildldflags
+   %endif
 %endif
 }
 
@@ -658,7 +656,9 @@ find $RPM_BUILD_ROOT -name '*.la' -or -name '*.a' | xargs rm -f
     install -m 0755 qemu-nbd $RPM_BUILD_ROOT%{_bindir}/qemu-nbd
     install -c -m 0644 qemu-img.1 ${RPM_BUILD_ROOT}%{_mandir}/man1/qemu-img.1
     install -c -m 0644 qemu-nbd.8 ${RPM_BUILD_ROOT}%{_mandir}/man8/qemu-nbd.8
-    install -c -m 0755  qemu-ga ${RPM_BUILD_ROOT}%{_bindir}/qemu-ga
+    %if %{with guest_agent}
+        install -c -m 0755  qemu-ga ${RPM_BUILD_ROOT}%{_bindir}/qemu-ga
+    %endif
     chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
     chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man8/*
 %endif
@@ -802,6 +802,27 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Aug 26 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-69.el7
+- kvm-rdma-bug-fixes.patch [bz#1107821]
+- kvm-virtio-serial-report-frontend-connection-state-via-m.patch [bz#1122151]
+- kvm-char-report-frontend-open-closed-state-in-query-char.patch [bz#1122151]
+- kvm-acpi-fix-tables-for-no-hpet-configuration.patch [bz#1129552]
+- kvm-mirror-Fix-resource-leak-when-bdrv_getlength-fails.patch [bz#1130603]
+- kvm-blockjob-Add-block_job_yield.patch [bz#1130603]
+- kvm-mirror-Go-through-ready-complete-process-for-0-len-i.patch [bz#1130603]
+- kvm-qemu-iotests-Test-BLOCK_JOB_READY-event-for-0Kb-imag.patch [bz#1130603]
+- kvm-block-make-top-argument-to-block-commit-optional.patch [bz#1130603]
+- kvm-qemu-iotests-Test-0-length-image-for-mirror.patch [bz#1130603]
+- kvm-mirror-Fix-qiov-size-for-short-requests.patch [bz#1130603]
+- Resolves: bz#1107821
+  (rdma migration: seg if destination isn't listening)
+- Resolves: bz#1122151
+  (Pass close from qemu-ga)
+- Resolves: bz#1129552
+  (backport "acpi: fix tables for no-hpet configuration")
+- Resolves: bz#1130603
+  (advertise active commit to libvirt)
+
 * Fri Aug 15 2014 Miroslav Rezanina <> - 1.5.3-68.el7
 - kvm-virtio-net-Do-not-filter-VLANs-without-F_CTRL_VLAN.patch [bz#1065724]
 - kvm-virtio-net-add-vlan-receive-state-to-RxFilterInfo.patch [bz#1065724]
