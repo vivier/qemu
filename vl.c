@@ -254,7 +254,7 @@ unsigned int kvm_shadow_memory = 0;
 const char *mem_path = NULL;
 int disable_KSM;
 #ifdef MAP_POPULATE
-int mem_prealloc = 1;	/* force preallocation of physical target memory */
+int mem_prealloc = 0; /* force preallocation of physical target memory */
 #endif
 #ifdef TARGET_ARM
 int old_param = 0;
@@ -6027,8 +6027,8 @@ int main(int argc, char **argv, char **envp)
                 break;
 #ifdef MAP_POPULATE
             case QEMU_OPTION_mem_prealloc:
-		mem_prealloc = !mem_prealloc;
-		break;
+                mem_prealloc = 1;
+                break;
 #endif
             case QEMU_OPTION_name:
                 qemu_name = qemu_strdup(optarg);
