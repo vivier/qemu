@@ -805,6 +805,17 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Aug 26 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-60.el7_0.7
+- kvm-mirror-Fix-resource-leak-when-bdrv_getlength-fails.patch [bz#1132806]
+- kvm-blockjob-Add-block_job_yield.patch [bz#1132806]
+- kvm-mirror-Go-through-ready-complete-process-for-0-len-i.patch [bz#1132806]
+- kvm-qemu-iotests-Test-BLOCK_JOB_READY-event-for-0Kb-imag.patch [bz#1132806]
+- kvm-block-make-top-argument-to-block-commit-optional.patch [bz#1132806]
+- kvm-qemu-iotests-Test-0-length-image-for-mirror.patch [bz#1132806]
+- kvm-mirror-Fix-qiov-size-for-short-requests.patch [bz#1132806]
+- Resolves: bz#1132806
+  (advertise active commit to libvirt)
+
 * Fri Aug 15 2014 Miroslav Rezanina <> - 1.5.3-60.el7_0.6
 - kvm-vmstate-reduce-code-duplication.patch [bz#1095706]
 - kvm-vfio-pci-Add-debug-config-options-to-disable-MSI-X-K.patch [bz#1110693 bz#1110695]
