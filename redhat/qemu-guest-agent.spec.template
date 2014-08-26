@@ -311,7 +311,7 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
 %endif
         --block-drv-ro-whitelist=vmdk,vhdx,vpc \
 	--target-list= \
-        --cpu=%{_arch} \
+        --cpu=%{kvm_target} \
         "$@"
 
 echo "config-host.mak contents:"

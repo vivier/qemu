@@ -149,11 +149,11 @@ rh-update-changelog:
 
 .PHONY: rh-brew rh-koji rh-brew-ga rh-brew-ppc rh-brew-aarch64
 rh-brew rh-brew-ppc rh-brew-aarch64 rh-brew-rhev rh-brew-rhev-autotest: BUILD_FLAGS ?= $(BREW_FLAGS) $(TEST_FLAGS)
-rh-brew-ppc: BUILD_SCRATCH_TARGET = rhel-7.1-ppc64le-candidate
+rh-brew-ppc rh-brew-ga-ppc: BUILD_SCRATCH_TARGET = rhel-7.1-ppc64le-candidate
 rh-brew-ga: BUILD_SCRATCH_TARGET = rhel-7.1-candidate
-rh-brew-ga: SPECFILE = $(GASPECFILE)
-rh-brew-ga: PKGNAME = $(GAPKGNAME)
-rh-brew-ga: BUILD = $(GABUILD)
+rh-brew-ga rh-brew-ga-ppc: SPECFILE = $(GASPECFILE)
+rh-brew-ga rh-brew-ga-ppc: PKGNAME = $(GAPKGNAME)
+rh-brew-ga rh-brew-ga-ppc: BUILD = $(GABUILD)
 rh-brew-aarch64: BUILD_SCRATCH_TARGET = rhel-7.0-aarch64-candidate
 rh-koji rh-koji-ga rh-koji-autotest: BUILD_FLAGS ?= $(KOJI_FLAGS) $(TEST_FLAGS)
 rh-brew rh-brew-ppc rh-brew-aarch64 rh-brew-autotest rh-koji-autotest: RHEV_FLAG=1
@@ -164,6 +164,8 @@ rh-brew rh-koji: rh-%: rh-srpm
 	$* build $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)
 rh-brew-ga rh-koji-ga: rh-%-ga: rh-srpm
 	$* build $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)
+rh-brew-ga-ppc: rh-srpm
+	brew build $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)
 rh-brew-autotest rh-koji-autotest: rh-%-autotest: rh-srpm
 	./schedule-tests.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)" "autotest"
 rh-brew-covscan rh-koji-covscan: rh-%-covscan: rh-srpm
@@ -184,8 +186,9 @@ rh-help:
 	@echo  '  rh-brew-autotest        - Create a $(COMMON_NAME)-rhev RPMs on brew and then send directly to autotest server'
 	@echo  '  rh-brew-at-covscan      - Create a $(COMMON_NAME)-rhev RPMs on brew and then send directly to autotest and coverity testing'
 	@echo  '  rh-brew-ga              - Build guest-agent rpm using brew'
-	@echo  '  rh-brew-ppc             - Build qemu-kvm-rhev for ppc64le'
-	@echo  '  rh-brew-aarch64         - Build qemu-kvm-rhev for aarch64'
+	@echo  '  rh-brew-ga-ppc          - Build guest-agent rpm for ppc64le using brew
+	@echo  '  rh-brew-ppc             - Build qemu-kvm-rhev for ppc64le using brew'
+	@echo  '  rh-brew-aarch64         - Build qemu-kvm-rhev for aarch64 using brew'
 	@echo  '  rh-koji                 - Create a $(COMMON_NAME)-rhev SRPM and then call koji to build the created SRPM'
 	@echo  '  rh-brew-covscan         - Create a $(COMMON_NAME)-rhev RPMs on koji and then send directly to coverity scan testing'
 	@echo  '  rh-brew-autotest        - Create a $(COMMON_NAME)-rhev RPMs on koji and then send directly to autotest server'
