@@ -15,7 +15,8 @@
 #include "sysemu/sysemu.h"
 #include "hw/pci/pci.h"
 
-#define RHEL_MAX_CPUS 160
+/* KVM can't exceed KVM_SOFT_MAX_VCPUS (arch/x86/include/asm/kvm_host.h) */
+#define RHEL_MAX_CPUS 240
 
 /* PC-style peripherals (also used by other machines).  */
 
