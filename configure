@@ -1303,14 +1303,21 @@ for flag in $gcc_flags; do
 done
 
 if test "$stack_protector" != "no" ; then
-  gcc_flags="-fstack-protector-strong -fstack-protector"
+  gcc_flags="-fstack-protector-strong -fstack-protector-all"
+  sp_on=0
   for flag in $gcc_flags; do
     if compile_prog "-Werror $flag" "" ; then
       QEMU_CFLAGS="$QEMU_CFLAGS $flag"
       LIBTOOLFLAGS="$LIBTOOLFLAGS -Wc,$flag"
+      sp_on=1
       break
     fi
   done
+  if test "$stack_protector" = yes; then
+    if test $sp_on = 0; then
+      error_exit "Stack protector not supported"
+    fi
+  fi
 fi
 
 # Workaround for http://gcc.gnu.org/PR55489.  Happens with -fPIE/-fPIC and
