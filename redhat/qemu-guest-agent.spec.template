@@ -30,7 +30,10 @@
     %global kvm_target    ppc64
     %global have_fdt     1
 %endif
-%ifarch s390x s390
+%ifarch s390
+    %global kvm_target    s390
+%endif
+%ifarch s390x
     %global kvm_target    s390x
 %endif
 %ifarch ppc
@@ -370,6 +373,12 @@ install -c -m 0755  qemu-ga ${RPM_BUILD_ROOT}%{_bindir}/qemu-ga
 
 %changelog
 %%CHANGELOG%%
+* Thu Aug 28 2014 Miroslav Rezanina <mrezanin@redhat.com> - 2.1.0-3.el7
+- Allow building qemu-guest-agent on ppc64le
+- Synchronize with qemu-kvm-rhev-2.1.0-3.el7
+- Resolves: bz#1132718
+  (qemu-guest-agent fails to build for ppc64le)
+
 * Sat Aug 02 2014 Miroslav Rezanina <mrezanin@redhat.com> - 2.1.0-2.el7
 - Create separate qemu-guest-agent package based on qemu-kvm-rhev-2.1.0-1.el7 [bz#1117096]
 - Resolves: #bz1117096
