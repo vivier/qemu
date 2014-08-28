@@ -424,7 +424,7 @@ dobuild() {
         --with-confsuffix=/%{pkgname} \
         --localstatedir=%{_localstatedir} \
         --libexecdir=%{_libexecdir} \
-        --with-pkgversion=%{pkgname}-%{version}-%{release} \
+        --with-pkgversion=%{name}-%{version}-%{release} \
         --disable-strip \
         --disable-qom-cast-debug \
         --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
@@ -502,7 +502,7 @@ dobuild() {
         --prefix=%{_prefix} \
         --libdir=%{_libdir} \
         --localstatedir=%{_localstatedir} \
-        --with-pkgversion=%{pkgname}-%{version}-%{release} \
+        --with-pkgversion=%{name}-%{version}-%{release} \
         --disable-guest-agent \
         --target-list= --cpu=%{_arch}
 
