@@ -127,6 +127,9 @@ Requires: %{pkgname}-common%{?pkgsuffix} = %{epoch}:%{version}-%{release}
         %if 0%{have_seccomp}
 Requires: libseccomp >= 1.0.0
         %endif
+# For compressed guest memory dumps
+Requires: lzo snappy
+
 
 # OOM killer breaks builds with parallel make on s390(x)
 %ifarch s390 s390x
@@ -234,6 +237,9 @@ BuildRequires: librdmacm-devel
 BuildRequires: iasl
 BuildRequires: cpp
 %endif
+# For compressed guest memory dumps
+BuildRequires: lzo-devel snappy-devel
+
 
 Requires: qemu-img%{?pkgsuffix} = %{epoch}:%{version}-%{release}
 
@@ -463,6 +469,8 @@ dobuild() {
         --enable-vnc-sasl \
         --enable-linux-aio \
         --enable-smartcard-nss \
+        --enable-lzo \
+        --enable-snappy \
 %if 0%{have_usbredir}
         --enable-usb-redir \
 %else
