@@ -849,6 +849,21 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Aug 28 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.0-3.el7
+- kvm-Fix-pkgversion-value.patch [bz#1064742]
+- kvm-virtio-serial-create-a-linked-list-of-all-active-dev.patch [bz#1003432]
+- kvm-virtio-serial-search-for-duplicate-port-names-before.patch [bz#1003432]
+- kvm-pc-RHEL-6-CPUID-compat-code-for-Broadwell-CPU-model.patch [bz#1111351]
+- kvm-rpm-spec-build-qemu-kvm-with-lzo-and-snappy-enabled.patch [bz#1126933]
+- Resolves: bz#1003432
+  (qemu-kvm should not allow different virtio serial port use the same name)
+- Resolves: bz#1064742
+  (QMP: "query-version" doesn't include the -rhev prefix from the qemu-kvm-rhev package)
+- Resolves: bz#1111351
+  (RHEL-6.6 migration compatibility: CPU models)
+- Resolves: bz#1126933
+  ([FEAT RHEV7.1]: qemu: Support compression for dump-guest-memory command)
+
 * Mon Aug 18 2014 Miroslav Rezanina <> - rhev-2.1.0-2.el7
 - kvm-exit-when-no-kvm-and-vcpu-count-160.patch [bz#1076326 bz#1118665]
 - kvm-Revert-Use-legacy-SMBIOS-for-rhel-machine-types.patch [bz#1118665]
