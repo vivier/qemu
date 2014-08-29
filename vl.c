@@ -161,7 +161,7 @@ int smp_threads = 1;
 const char *vnc_display;
 #endif
 int acpi_enabled = 1;
-int no_hpet = 0;
+int no_hpet = 1; /* Always disabled */
 int fd_bootchk = 1;
 static int no_reboot;
 int no_shutdown = 0;
