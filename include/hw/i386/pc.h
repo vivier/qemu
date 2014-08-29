@@ -508,4 +508,69 @@ bool e820_get_entry(int, uint32_t, uint64_t *, uint64_t *);
     .hot_add_cpu = pc_hot_add_cpu, \
     .max_cpus = 255
 
+/*
+ * The PC_RHEL_*_COMPAT serve the same purpose for RHEL-7 machine
+ * types as the PC_COMPAT_* do for upstream types.
+ * PC_RHEL_7_*_COMPAT apply both to i440fx and q35 types.
+ */
+
+/*
+ * RHEL-7 is based on QEMU 1.5.3, so this needs the PC_COMPAT_*
+ * between our base and 1.5, less stuff backported to RHEL-7.0
+ * (usb-device.msos-desc), less stuff for devices we changed
+ * (qemu64-x86_64-cpu) or don't support (hpet, pci-serial-2x,
+ * pci-serial-4x) in 7.0.
+ */
+
+#define PC_RHEL7_0_COMPAT \
+        {\
+            .driver   = "virtio-scsi-pci",\
+            .property = "any_layout",\
+            .value    = "off",\
+        },{\
+            .driver   = "PIIX4_PM",\
+            .property = "memory-hotplug-support",\
+            .value    = "off",\
+        },{\
+            .driver   = "apic",\
+            .property = "version",\
+            .value    = stringify(0x11),\
+        },{\
+            .driver   = "nec-usb-xhci",\
+            .property = "superspeed-ports-first",\
+            .value    = "off",\
+        },{\
+            .driver   = "pci-serial",\
+            .property = "prog_if",\
+            .value    = stringify(0),\
+        },{\
+            .driver   = "virtio-net-pci",\
+            .property = "guest_announce",\
+            .value    = "off",\
+        },{\
+            .driver   = "ICH9-LPC",\
+            .property = "memory-hotplug-support",\
+            .value    = "off",\
+        },{\
+            .driver   = "xio3130-downstream",\
+            .property = COMPAT_PROP_PCP,\
+            .value    = "off",\
+        },{\
+            .driver   = "ioh3420",\
+            .property = COMPAT_PROP_PCP,\
+            .value    = "off",\
+        },{\
+            .driver   = "PIIX4_PM",\
+            .property = "acpi-pci-hotplug-with-bridge-support",\
+            .value    = "off",\
+        },{\
+            .driver   = "e1000",\
+            .property = "mitigation",\
+            .value    = "off",\
+        },{ \
+            .driver   = "virtio-net-pci", \
+            .property = "ctrl_guest_offloads", \
+            .value    = "off", \
+        }
+
 #endif

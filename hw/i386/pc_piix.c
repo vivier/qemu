@@ -924,9 +924,45 @@ machine_init(pc_machine_init);
 #endif  /* Disabled for Red Hat Enterprise Linux */
 
 /* Red Hat Enterprise Linux machine types */
+static void pc_compat_rhel700(MachineState *machine)
+{
+    /* Upstream enables it for everyone, we're a little more selective */
+    x86_cpu_compat_disable_kvm_features(FEAT_1_ECX, CPUID_EXT_X2APIC);
+
+    x86_cpu_compat_set_features("Conroe", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
+    x86_cpu_compat_set_features("Penryn", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
+    x86_cpu_compat_set_features("Nehalem", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
+    x86_cpu_compat_set_features("Westmere", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
+    /* SandyBridge and Haswell already have x2apic enabled */
+    x86_cpu_compat_set_features("Opteron_G1", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
+    x86_cpu_compat_set_features("Opteron_G2", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
+    x86_cpu_compat_set_features("Opteron_G3", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
+    x86_cpu_compat_set_features("Opteron_G4", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
+    x86_cpu_compat_set_features("Opteron_G5", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
+
+    /* KVM can't expose RDTSCP on AMD CPUs, so there's no point in enabling it
+     * on AMD CPU models.
+     */
+    x86_cpu_compat_set_features("phenom", FEAT_8000_0001_EDX, 0,
+                                CPUID_EXT2_RDTSCP);
+    x86_cpu_compat_set_features("Opteron_G2", FEAT_8000_0001_EDX, 0,
+                                CPUID_EXT2_RDTSCP);
+    x86_cpu_compat_set_features("Opteron_G3", FEAT_8000_0001_EDX, 0,
+                                CPUID_EXT2_RDTSCP);
+    x86_cpu_compat_set_features("Opteron_G4", FEAT_8000_0001_EDX, 0,
+                                CPUID_EXT2_RDTSCP);
+    x86_cpu_compat_set_features("Opteron_G5", FEAT_8000_0001_EDX, 0,
+                                CPUID_EXT2_RDTSCP);
+
+    legacy_acpi_table_size = 6418; /* see pc_compat_2_0() */
+    smbios_legacy_mode = true;
+    has_reserved_memory = false;
+
+}
 
 static void pc_init_rhel700(MachineState *machine)
 {
+    pc_compat_rhel700(machine);
     pc_init_pci(machine);
 }
 
@@ -938,6 +974,10 @@ static QEMUMachine pc_machine_rhel700 = {
     .init = pc_init_rhel700,
     .is_default = 1,
     .default_machine_opts = "firmware=bios-256k.bin",
+    .compat_props = (GlobalProperty[]) {
+        PC_RHEL7_0_COMPAT,
+        { /* end of list */ }
+    },
 };
 
 static void rhel_machine_init(void)
