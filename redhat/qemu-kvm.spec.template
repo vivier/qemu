@@ -483,7 +483,7 @@ getent passwd qemu >/dev/null || \
 %doc %{qemudocdir}/LICENSE
 %dir %{_datadir}/%{pkgname}/
 %{_datadir}/%{pkgname}/keymaps/
-%{_mandir}/man1/qemu.1*
+%{_mandir}/man1/qemu-kvm.1*
 %attr(4755, -, -) %{_libexecdir}/qemu-bridge-helper
 %config(noreplace) %{_sysconfdir}/sasl2/%{pkgname}.conf
 %{_unitdir}/ksm.service
