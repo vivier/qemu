@@ -420,6 +420,8 @@ typedef struct XHCIEvent {
     uint32_t flags;
     uint8_t slotid;
     uint8_t epid;
+    uint8_t cve_2014_5263_a;
+    uint8_t cve_2014_5263_b;
 } XHCIEvent;
 
 typedef struct XHCIInterrupter {
@@ -3515,17 +3517,28 @@ static const VMStateDescription vmstate_xhci_slot = {
     }
 };
 
+static void xhci_event_pre_save(void *opaque)
+{
+    XHCIEvent *s = opaque;
+
+    s->cve_2014_5263_a = ((uint8_t *)&s->type)[0];
+    s->cve_2014_5263_b = ((uint8_t *)&s->type)[1];
+}
+
 static const VMStateDescription vmstate_xhci_event = {
     .name = "xhci-event",
     .version_id = 1,
+    .pre_save = xhci_event_pre_save,
     .fields = (VMStateField[]) {
-        VMSTATE_UINT32(type,   XHCIEvent),
-        VMSTATE_UINT32(ccode,  XHCIEvent),
-        VMSTATE_UINT64(ptr,    XHCIEvent),
-        VMSTATE_UINT32(length, XHCIEvent),
-        VMSTATE_UINT32(flags,  XHCIEvent),
-        VMSTATE_UINT8(slotid,  XHCIEvent),
-        VMSTATE_UINT8(epid,    XHCIEvent),
+        VMSTATE_UINT32(type,           XHCIEvent),
+        VMSTATE_UINT32(ccode,          XHCIEvent),
+        VMSTATE_UINT64(ptr,            XHCIEvent),
+        VMSTATE_UINT32(length,         XHCIEvent),
+        VMSTATE_UINT32(flags,          XHCIEvent),
+        VMSTATE_UINT8(slotid,          XHCIEvent),
+        VMSTATE_UINT8(epid,            XHCIEvent),
+        VMSTATE_UINT8(cve_2014_5263_a, XHCIEvent),
+        VMSTATE_UINT8(cve_2014_5263_b, XHCIEvent),
         VMSTATE_END_OF_LIST()
     }
 };
