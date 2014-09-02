@@ -238,6 +238,7 @@ libiscsi=""
 coroutine=""
 seccomp=""
 glusterfs=""
+glusterfs_discard="no"
 virtio_blk_data_plane=""
 gtk=""
 gtkabi="2.0"
@@ -2644,6 +2645,9 @@ EOF
   glusterfs_libs="-lgfapi -lgfrpc -lgfxdr"
   if compile_prog "" "$glusterfs_libs" ; then
     glusterfs=yes
+    if $pkg_config --atleast-version=5 glusterfs-api >/dev/null 2>&1; then
+      glusterfs_discard="yes"
+    fi
   else
     if test "$glusterfs" = "yes" ; then
       feature_not_found "GlusterFS backend support"
@@ -4023,6 +4027,10 @@ if test "$glusterfs" = "yes" ; then
   echo "CONFIG_GLUSTERFS=y" >> $config_host_mak
   echo "GLUSTERFS_CFLAGS=$glusterfs_cflags" >> $config_host_mak
   echo "GLUSTERFS_LIBS=$glusterfs_libs" >> $config_host_mak
+fi
+
+if test "$glusterfs_discard" = "yes" ; then
+  echo "CONFIG_GLUSTERFS_DISCARD=y" >> $config_host_mak
 fi
 
 if test "$libssh2" = "yes" ; then
