@@ -982,6 +982,7 @@ static void pc_compat_rhel700(MachineState *machine)
     legacy_acpi_table_size = 6418; /* see pc_compat_2_0() */
     smbios_legacy_mode = true;
     has_reserved_memory = false;
+    migrate_cve_2014_5263_xhci_fields = true;
 }
 
 static void pc_init_rhel700(MachineState *machine)
