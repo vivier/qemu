@@ -490,6 +490,7 @@ static void pc_q35_compat_rhel700(MachineState *machine)
 
     smbios_legacy_mode = true;
     has_reserved_memory = false;
+    migrate_cve_2014_5263_xhci_fields = true;
 }
 
 static void pc_q35_init_rhel700(MachineState *machine)
