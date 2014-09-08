@@ -924,8 +924,46 @@ machine_init(pc_machine_init);
 
 /* Red Hat Enterprise Linux machine types */
 
+static void pc_compat_rhel710(MachineState *machine)
+{
+    /* KVM can't expose RDTSCP on AMD CPUs, so there's no point in enabling it
+     * on AMD CPU models.
+     */
+    x86_cpu_compat_set_features("phenom", FEAT_8000_0001_EDX, 0,
+                                CPUID_EXT2_RDTSCP);
+    x86_cpu_compat_set_features("Opteron_G2", FEAT_8000_0001_EDX, 0,
+                                CPUID_EXT2_RDTSCP);
+    x86_cpu_compat_set_features("Opteron_G3", FEAT_8000_0001_EDX, 0,
+                                CPUID_EXT2_RDTSCP);
+    x86_cpu_compat_set_features("Opteron_G4", FEAT_8000_0001_EDX, 0,
+                                CPUID_EXT2_RDTSCP);
+    x86_cpu_compat_set_features("Opteron_G5", FEAT_8000_0001_EDX, 0,
+                                CPUID_EXT2_RDTSCP);
+}
+
+static void pc_init_rhel710(MachineState *machine)
+{
+    pc_compat_rhel710(machine);
+    pc_init_pci(machine);
+}
+
+static QEMUMachine pc_machine_rhel710 = {
+    PC_DEFAULT_MACHINE_OPTIONS,
+    .name = "pc-i440fx-rhel7.1.0",
+    .alias = "pc",
+    .desc = "RHEL 7.1.0 PC (i440FX + PIIX, 1996)",
+    .init = pc_init_rhel710,
+    .is_default = 1,
+    .default_machine_opts = "firmware=bios-256k.bin",
+    .compat_props = (GlobalProperty[]) {
+        { /* end of list */ }
+    },
+};
+
 static void pc_compat_rhel700(MachineState *machine)
 {
+    pc_compat_rhel710(machine);
+
     /* Upstream enables it for everyone, we're a little more selective */
     x86_cpu_compat_disable_kvm_features(FEAT_1_ECX, CPUID_EXT_X2APIC);
 
@@ -940,20 +978,6 @@ static void pc_compat_rhel700(MachineState *machine)
     x86_cpu_compat_set_features("Opteron_G4", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
     x86_cpu_compat_set_features("Opteron_G5", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
 
-    /* KVM can't expose RDTSCP on AMD CPUs, so there's no point in enabling it
-     * on AMD CPU models.
-     */
-    x86_cpu_compat_set_features("phenom", FEAT_8000_0001_EDX, 0,
-                                CPUID_EXT2_RDTSCP);
-    x86_cpu_compat_set_features("Opteron_G2", FEAT_8000_0001_EDX, 0,
-                                CPUID_EXT2_RDTSCP);
-    x86_cpu_compat_set_features("Opteron_G3", FEAT_8000_0001_EDX, 0,
-                                CPUID_EXT2_RDTSCP);
-    x86_cpu_compat_set_features("Opteron_G4", FEAT_8000_0001_EDX, 0,
-                                CPUID_EXT2_RDTSCP);
-    x86_cpu_compat_set_features("Opteron_G5", FEAT_8000_0001_EDX, 0,
-                                CPUID_EXT2_RDTSCP);
-
     legacy_acpi_table_size = 6418; /* see pc_compat_2_0() */
     smbios_legacy_mode = true;
     has_reserved_memory = false;
@@ -963,16 +987,13 @@ static void pc_init_rhel700(MachineState *machine)
 {
     pc_compat_rhel700(machine);
     pc_init_pci(machine);
-
 }
 
 static QEMUMachine pc_machine_rhel700 = {
     PC_DEFAULT_MACHINE_OPTIONS,
     .name = "pc-i440fx-rhel7.0.0",
-    .alias = "pc",
     .desc = "RHEL 7.0.0 PC (i440FX + PIIX, 1996)",
     .init = pc_init_rhel700,
-    .is_default = 1,
     .default_machine_opts = "firmware=bios-256k.bin",
     .compat_props = (GlobalProperty[]) {
         PC_RHEL7_0_COMPAT,
@@ -1428,6 +1449,7 @@ static QEMUMachine pc_machine_rhel600 = {
 
 static void rhel_machine_init(void)
 {
+    qemu_register_pc_machine(&pc_machine_rhel710);
     qemu_register_pc_machine(&pc_machine_rhel700);
     qemu_register_pc_machine(&pc_machine_rhel650);
     qemu_register_pc_machine(&pc_machine_rhel640);

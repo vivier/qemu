@@ -435,8 +435,45 @@ machine_init(pc_q35_machine_init);
 
 /* Red Hat Enterprise Linux machine types */
 
+static void pc_q35_compat_rhel710(MachineState *machine)
+{
+    /* KVM can't expose RDTSCP on AMD CPUs, so there's no point in enabling it
+     * on AMD CPU models.
+     */
+    x86_cpu_compat_set_features("phenom", FEAT_8000_0001_EDX, 0,
+                                CPUID_EXT2_RDTSCP);
+    x86_cpu_compat_set_features("Opteron_G2", FEAT_8000_0001_EDX, 0,
+                                CPUID_EXT2_RDTSCP);
+    x86_cpu_compat_set_features("Opteron_G3", FEAT_8000_0001_EDX, 0,
+                                CPUID_EXT2_RDTSCP);
+    x86_cpu_compat_set_features("Opteron_G4", FEAT_8000_0001_EDX, 0,
+                                CPUID_EXT2_RDTSCP);
+    x86_cpu_compat_set_features("Opteron_G5", FEAT_8000_0001_EDX, 0,
+                                CPUID_EXT2_RDTSCP);
+}
+
+static void pc_q35_init_rhel710(MachineState *machine)
+{
+    pc_q35_compat_rhel710(machine);
+    pc_q35_init(machine);
+}
+
+static QEMUMachine pc_q35_machine_rhel710 = {
+    PC_DEFAULT_MACHINE_OPTIONS,
+    .name = "pc-q35-rhel7.1.0",
+    .alias = "q35",
+    .desc = "RHEL-7.1.0 PC (Q35 + ICH9, 2009)",
+    .init = pc_q35_init_rhel710,
+    .default_machine_opts = "firmware=bios-256k.bin",
+    .compat_props = (GlobalProperty[]) {
+        { /* end of list */ }
+    },
+};
+
 static void pc_q35_compat_rhel700(MachineState *machine)
 {
+    pc_q35_compat_rhel710(machine);
+
     /* Upstream enables it for everyone, we're a little more selective */
     x86_cpu_compat_disable_kvm_features(FEAT_1_ECX, CPUID_EXT_X2APIC);
 
@@ -451,20 +488,6 @@ static void pc_q35_compat_rhel700(MachineState *machine)
     x86_cpu_compat_set_features("Opteron_G4", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
     x86_cpu_compat_set_features("Opteron_G5", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
 
-    /* KVM can't expose RDTSCP on AMD CPUs, so there's no point in enabling it
-     * on AMD CPU models.
-     */
-    x86_cpu_compat_set_features("phenom", FEAT_8000_0001_EDX, 0,
-                                CPUID_EXT2_RDTSCP);
-    x86_cpu_compat_set_features("Opteron_G2", FEAT_8000_0001_EDX, 0,
-                                CPUID_EXT2_RDTSCP);
-    x86_cpu_compat_set_features("Opteron_G3", FEAT_8000_0001_EDX, 0,
-                                CPUID_EXT2_RDTSCP);
-    x86_cpu_compat_set_features("Opteron_G4", FEAT_8000_0001_EDX, 0,
-                                CPUID_EXT2_RDTSCP);
-    x86_cpu_compat_set_features("Opteron_G5", FEAT_8000_0001_EDX, 0,
-                                CPUID_EXT2_RDTSCP);
-
     smbios_legacy_mode = true;
     has_reserved_memory = false;
 }
@@ -478,7 +501,6 @@ static void pc_q35_init_rhel700(MachineState *machine)
 static QEMUMachine pc_q35_machine_rhel700 = {
     PC_DEFAULT_MACHINE_OPTIONS,
     .name = "pc-q35-rhel7.0.0",
-    .alias = "q35",
     .desc = "RHEL-7.0.0 PC (Q35 + ICH9, 2009)",
     .init = pc_q35_init_rhel700,
     .default_machine_opts = "firmware=bios-256k.bin",
@@ -490,6 +512,7 @@ static QEMUMachine pc_q35_machine_rhel700 = {
 
 static void rhel_pc_q35_machine_init(void)
 {
+    qemu_register_pc_machine(&pc_q35_machine_rhel710);
     qemu_register_pc_machine(&pc_q35_machine_rhel700);
 }
 
