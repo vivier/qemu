@@ -517,7 +517,7 @@ rm -f $RPM_BUILD_ROOT%{_bindir}/qemu-ga
 
 %if %{with qemu_kvm}
 chmod -x ${RPM_BUILD_ROOT}%{_mandir}/man1/*
-install -D -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} ../Changelog ../README ../TODO ../COPYING ../COPYING.LIB ../LICENSE
+install -D -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} ../Changelog ../README ../TODO ../COPYING ../COPYING.LIB ../LICENSE ../README.systemtap
 
 install -D -p -m 0644 ../qemu.sasl $RPM_BUILD_ROOT%{_sysconfdir}/sasl2/qemu-kvm.conf
 
@@ -620,6 +620,7 @@ fi
 %doc %{qemudocdir}/COPYING
 %doc %{qemudocdir}/COPYING.LIB
 %doc %{qemudocdir}/LICENSE
+%doc %{qemudocdir}/README.systemtap
 %dir %{_datadir}/%{confname}/
 %{_datadir}/%{confname}/keymaps/
 %{_mandir}/man1/%{progname}.1*
