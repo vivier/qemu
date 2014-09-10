@@ -489,6 +489,19 @@ static void test_flush(void)
     ide_test_quit();
 }
 
+static void test_flush_nodev(void)
+{
+    ide_test_start("");
+
+    /* FLUSH CACHE command on device 0*/
+    outb(IDE_BASE + reg_device, 0);
+    outb(IDE_BASE + reg_command, CMD_FLUSH_CACHE);
+
+    /* Just testing that qemu doesn't crash... */
+
+    ide_test_quit();
+}
+
 int main(int argc, char **argv)
 {
     const char *arch = qtest_get_arch();
@@ -521,6 +534,7 @@ int main(int argc, char **argv)
     qtest_add_func("/ide/bmdma/teardown", test_bmdma_teardown);
 
     qtest_add_func("/ide/flush", test_flush);
+    qtest_add_func("/ide/flush_nodev", test_flush_nodev);
 
     ret = g_test_run();
 
