@@ -802,6 +802,26 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Sep 12 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-70.el7
+- kvm-Enforce-stack-protector-usage.patch [bz#1064260]
+- kvm-pc-increase-maximal-VCPU-count-to-240.patch [bz#1134408]
+- kvm-gluster-Add-discard-support-for-GlusterFS-block-driv.patch [bz#1136534]
+- kvm-gluster-default-scheme-to-gluster-and-host-to-localh.patch [bz#1088150]
+- kvm-qdev-properties-system.c-Allow-vlan-or-netdev-for-de.patch [bz#996011]
+- kvm-vl-process-object-after-other-backend-options.patch [bz#1128095]
+- Resolves: bz#1064260
+  (Handle properly --enable-fstack-protector option)
+- Resolves: bz#1088150
+  (qemu-img coredumpd when try to create a gluster format image)
+- Resolves: bz#1128095
+  (chardev 'chr0' isn't initialized when we try to open rng backend)
+- Resolves: bz#1134408
+  ([HP 7.1 FEAT] Increase qemu-kvm's VCPU limit to 240)
+- Resolves: bz#1136534
+  (glusterfs backend does not support discard)
+- Resolves: bz#996011
+  (vlan and queues options cause core dumped when qemu-kvm process quit(or ctrl+c))
+
 * Tue Aug 26 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-69.el7
 - kvm-rdma-bug-fixes.patch [bz#1107821]
 - kvm-virtio-serial-report-frontend-connection-state-via-m.patch [bz#1122151]
