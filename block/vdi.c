@@ -120,11 +120,10 @@ typedef unsigned char uuid_t[16];
 
 #define VDI_IS_ALLOCATED(X) ((X) < VDI_DISCARDED)
 
-#define VDI_BLOCK_SIZE           (1 * MiB)
 /* max blocks in image is (0xffffffff / 4) */
 #define VDI_BLOCKS_IN_IMAGE_MAX  0x3fffffff
 #define VDI_DISK_SIZE_MAX        ((uint64_t)VDI_BLOCKS_IN_IMAGE_MAX * \
-                                  (uint64_t)VDI_BLOCK_SIZE)
+                                  (uint64_t)DEFAULT_CLUSTER_SIZE)
 
 #if !defined(CONFIG_UUID)
 static inline void uuid_generate(uuid_t out)
@@ -392,7 +391,10 @@ static int vdi_open(BlockDriverState *bs, QDict *options, int flags,
 #endif
 
     if (header.disk_size > VDI_DISK_SIZE_MAX) {
-        ret = -EINVAL;
+        error_setg(errp, "Unsupported VDI image size (size is 0x%" PRIx64
+                         ", max supported is 0x%" PRIx64 ")",
+                          header.disk_size, VDI_DISK_SIZE_MAX);
+        ret = -ENOTSUP;
         goto fail;
     }
 
@@ -428,7 +430,7 @@ static int vdi_open(BlockDriverState *bs, QDict *options, int flags,
         logout("unsupported sector size %u B\n", header.sector_size);
         ret = -ENOTSUP;
         goto fail;
-    } else if (header.block_size != VDI_BLOCK_SIZE) {
+    } else if (header.block_size != DEFAULT_CLUSTER_SIZE) {
         logout("unsupported block size %u B\n", header.block_size);
         ret = -ENOTSUP;
         goto fail;
@@ -698,7 +700,10 @@ static int vdi_create(const char *filename, QEMUOptionParameter *options,
     }
 
     if (bytes > VDI_DISK_SIZE_MAX) {
-        result = -EINVAL;
+        result = -ENOTSUP;
+        error_setg(errp, "Unsupported VDI image size (size is 0x%" PRIx64
+                         ", max supported is 0x%" PRIx64 ")",
+                          bytes, VDI_DISK_SIZE_MAX);
         goto exit;
     }
 
