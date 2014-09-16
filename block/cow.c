@@ -83,7 +83,7 @@ static int cow_open(BlockDriverState *bs, QDict *options, int flags,
         char version[64];
         snprintf(version, sizeof(version),
                "COW version %d", cow_header.version);
-        qerror_report(QERR_UNKNOWN_BLOCK_FORMAT_FEATURE,
+        error_set(errp, QERR_UNKNOWN_BLOCK_FORMAT_FEATURE,
             bs->device_name, "cow", version);
         ret = -ENOTSUP;
         goto fail;
@@ -319,15 +319,13 @@ static int cow_create(const char *filename, QEMUOptionParameter *options,
 
     ret = bdrv_create_file(filename, options, &local_err);
     if (ret < 0) {
-        qerror_report_err(local_err);
-        error_free(local_err);
+        error_propagate(errp, local_err);
         return ret;
     }
 
     ret = bdrv_file_open(&cow_bs, filename, NULL, BDRV_O_RDWR, &local_err);
     if (ret < 0) {
-        qerror_report_err(local_err);
-        error_free(local_err);
+        error_propagate(errp, local_err);
         return ret;
     }
 
