@@ -464,6 +464,7 @@ void migrate_fd_put_ready(void *opaque)
 
         bdrv_drain_all();
         bdrv_flush_all();
+        qemu_file_set_rate_limit(s->file, SIZE_MAX);
         if ((qemu_savevm_state_complete(s->mon, s->file)) < 0) {
             if (old_vm_running) {
                 vm_start();
