@@ -152,7 +152,7 @@ static int buffered_put_buffer(void *opaque, const uint8_t *buf, int64_t pos, in
         s->bytes_xfer += ret;
     }
 
-    if (offset >= 0) {
+    if (offset >= 0 && size - offset > 0) {
         DPRINTF("buffering %d bytes\n", size - offset);
         buffered_append(s, buf + offset, size - offset);
         offset = size;
