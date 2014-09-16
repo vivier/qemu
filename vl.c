@@ -2948,6 +2948,20 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
         uint64_t expected_time;
         double bwidth = 0;
 
+        /*
+         * If it is smaller than 10ms, we don't trust the measurement.
+         *
+         * Sometimes as the amount of time is very small and that
+         * makes the bandwidth really, really high.  But if
+         * networking is very flaky, we also want to finish migration
+         * when the amount of memory pending is small enough. (10MB
+         * on this case).
+         */
+
+        if ((ram_bytes_remaining() > 10 * 1024 * 1024) && (t0 < 10000000)) {
+            return 0;
+        }
+
         bwidth = ((double)bytes_transferred - bytes_transferred_last) / t0;
 
         /*
