@@ -673,7 +673,6 @@ static int vdi_co_write(BlockDriverState *bs,
 static int vdi_create(const char *filename, QEMUOptionParameter *options,
                       Error **errp)
 {
-    int fd;
     int result = 0;
     uint64_t bytes = 0;
     uint32_t blocks;
@@ -682,6 +681,10 @@ static int vdi_create(const char *filename, QEMUOptionParameter *options,
     VdiHeader header;
     size_t i;
     size_t bmap_size;
+    int64_t offset = 0;
+    Error *local_err = NULL;
+    BlockDriverState *bs = NULL;
+    uint32_t *bmap = NULL;
 
     logout("\n");
 
@@ -714,11 +717,14 @@ static int vdi_create(const char *filename, QEMUOptionParameter *options,
         goto exit;
     }
 
-    fd = qemu_open(filename,
-                   O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_LARGEFILE,
-                   0644);
-    if (fd < 0) {
-        result = -errno;
+    result = bdrv_create_file(filename, options, &local_err);
+    if (result < 0) {
+        error_propagate(errp, local_err);
+        goto exit;
+    }
+    result = bdrv_file_open(&bs, filename, NULL, BDRV_O_RDWR, &local_err);
+    if (result < 0) {
+        error_propagate(errp, local_err);
         goto exit;
     }
 
@@ -751,13 +757,15 @@ static int vdi_create(const char *filename, QEMUOptionParameter *options,
     vdi_header_print(&header);
 #endif
     vdi_header_to_le(&header);
-    if (write(fd, &header, sizeof(header)) < 0) {
-        result = -errno;
-        goto close_and_exit;
+    result = bdrv_pwrite_sync(bs, offset, &header, sizeof(header));
+    if (result < 0) {
+        error_setg(errp, "Error writing header to %s", filename);
+        goto exit;
     }
+    offset += sizeof(header);
 
     if (bmap_size > 0) {
-        uint32_t *bmap = g_malloc0(bmap_size);
+        bmap = g_malloc0(bmap_size);
         for (i = 0; i < blocks; i++) {
             if (image_type == VDI_TYPE_STATIC) {
                 bmap[i] = i;
@@ -765,27 +773,25 @@ static int vdi_create(const char *filename, QEMUOptionParameter *options,
                 bmap[i] = VDI_UNALLOCATED;
             }
         }
-        if (write(fd, bmap, bmap_size) < 0) {
-            result = -errno;
-            g_free(bmap);
-            goto close_and_exit;
+        result = bdrv_pwrite_sync(bs, offset, bmap, bmap_size);
+        if (result < 0) {
+            error_setg(errp, "Error writing bmap to %s", filename);
+            goto exit;
         }
-        g_free(bmap);
+        offset += bmap_size;
     }
 
     if (image_type == VDI_TYPE_STATIC) {
-        if (ftruncate(fd, sizeof(header) + bmap_size + blocks * block_size)) {
-            result = -errno;
-            goto close_and_exit;
+        result = bdrv_truncate(bs, offset + blocks * block_size);
+        if (result < 0) {
+            error_setg(errp, "Failed to statically allocate %s", filename);
+            goto exit;
         }
     }
 
-close_and_exit:
-    if ((close(fd) < 0) && !result) {
-        result = -errno;
-    }
-
 exit:
+    bdrv_unref(bs);
+    g_free(bmap);
     return result;
 }
 
