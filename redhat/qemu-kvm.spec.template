@@ -849,6 +849,41 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Sep 17 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.0-4.el7
+- kvm-virtio-rng-add-some-trace-events.patch [bz#1129259]
+- kvm-block-vhdx-add-error-check.patch [bz#1126976]
+- kvm-block-VHDX-endian-fixes.patch [bz#1126976]
+- kvm-qdev-monitor-include-QOM-properties-in-device-FOO-he.patch [bz#1133736]
+- kvm-block-acquire-AioContext-in-qmp_block_resize.patch [bz#1136752]
+- kvm-virtio-blk-allow-block_resize-with-dataplane.patch [bz#1136752]
+- kvm-block-acquire-AioContext-in-do_drive_del.patch [bz#1136752]
+- kvm-virtio-blk-allow-drive_del-with-dataplane.patch [bz#1136752]
+- kvm-rhel-Add-rhel7.1.0-machine-types.patch [bz#1093023]
+- kvm-vmstate_xhci_event-bug-compat-for-rhel7.0.0-machine-.patch [bz#1136512]
+- kvm-pflash_cfi01-fixup-stale-DPRINTF-calls.patch [bz#1139706]
+- kvm-pflash_cfi01-write-flash-contents-to-bdrv-on-incomin.patch [bz#1139706]
+- kvm-ide-Fix-segfault-when-flushing-a-device-that-doesn-t.patch [bz#1140145]
+- kvm-xhci-PCIe-endpoint-migration-compatibility-fix.patch [bz#1138579]
+- kvm-rh-machine-types-xhci-PCIe-endpoint-migration-compat.patch [bz#1138579]
+- Resolves: bz#1093023
+  (provide RHEL-specific machine types in QEMU)
+- Resolves: bz#1126976
+  (VHDX image format does not work on PPC64 (Endian issues))
+- Resolves: bz#1129259
+  (Add traces to virtio-rng device)
+- Resolves: bz#1133736
+  (qemu should provide iothread and x-data-plane properties for /usr/libexec/qemu-kvm -device virtio-blk-pci,?)
+- Resolves: bz#1136512
+  (rhel7.0.0 machtype compat after CVE-2014-5263 vmstate_xhci_event: fix unterminated field list)
+- Resolves: bz#1136752
+  (virtio-blk dataplane support for block_resize and hot unplug)
+- Resolves: bz#1138579
+  (Migration failed with nec-usb-xhci from RHEL7. 0 to RHEL7.1)
+- Resolves: bz#1139706
+  (pflash (UEFI varstore) migration shortcut for libvirt [RHEV])
+- Resolves: bz#1140145
+  (qemu-kvm crashed when doing iofuzz testing)
+
 * Thu Aug 28 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.0-3.el7
 - kvm-Fix-pkgversion-value.patch [bz#1064742]
 - kvm-virtio-serial-create-a-linked-list-of-all-active-dev.patch [bz#1003432]
