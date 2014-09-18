@@ -802,6 +802,32 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Sep 18 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-71.el7
+- kvm-spice-move-qemu_spice_display_-from-spice-graphics-t.patch [bz#1054077]
+- kvm-spice-move-spice_server_vm_-start-stop-calls-into-qe.patch [bz#1054077]
+- kvm-spice-stop-server-for-qxl-hard-reset.patch [bz#1054077]
+- kvm-qemu-Adjust-qemu-wakeup.patch [bz#1064156]
+- kvm-vmstate_xhci_event-fix-unterminated-field-list.patch [bz#1122147]
+- kvm-vmstate_xhci_event-bug-compat-with-RHEL-7.0-RHEL-onl.patch [bz#1122147]
+- kvm-pflash_cfi01-write-flash-contents-to-bdrv-on-incomin.patch [bz#1139702]
+- kvm-ide-test-Add-enum-value-for-DEV.patch [bz#1123372]
+- kvm-ide-test-Add-FLUSH-CACHE-test-case.patch [bz#1123372]
+- kvm-ide-Fix-segfault-when-flushing-a-device-that-doesn-t.patch [bz#1123372]
+- kvm-IDE-Fill-the-IDENTIFY-request-consistently.patch [bz#852348]
+- kvm-ide-Add-resize-callback-to-ide-core.patch [bz#852348]
+- Resolves: bz#1054077
+  (qemu crash when reboot win7 guest with spice display)
+- Resolves: bz#1064156
+  ([qxl] The guest show black screen while resumed guest which managedsaved in pmsuspended status.)
+- Resolves: bz#1122147
+  (CVE-2014-5263 vmstate_xhci_event: fix unterminated field list)
+- Resolves: bz#1123372
+  (qemu-kvm crashed when doing iofuzz testing)
+- Resolves: bz#1139702
+  (pflash (UEFI varstore) migration shortcut for libvirt [RHEL])
+- Resolves: bz#852348
+  (fail to block_resize local data disk with IDE/AHCI disk_interface)
+
 * Fri Sep 12 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-70.el7
 - kvm-Enforce-stack-protector-usage.patch [bz#1064260]
 - kvm-pc-increase-maximal-VCPU-count-to-240.patch [bz#1134408]
