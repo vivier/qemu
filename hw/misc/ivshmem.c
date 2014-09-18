@@ -120,6 +120,7 @@ static inline bool is_power_of_two(uint64_t x) {
     return (x & (x - 1)) == 0;
 }
 
+#if 0
 /* accessing registers - based on rtl8139 */
 static void ivshmem_update_irq(IVShmemState *s, int val)
 {
@@ -174,14 +175,17 @@ static uint32_t ivshmem_IntrStatus_read(IVShmemState *s)
 
     return ret;
 }
+#endif
 
 static void ivshmem_io_write(void *opaque, hwaddr addr,
                              uint64_t val, unsigned size)
 {
+#if 0
     IVShmemState *s = opaque;
 
     uint16_t dest = val >> 16;
     uint16_t vector = val & 0xff;
+#endif
 
 #if 1 /* Ignore writes for Red Hat Enterprise Linux */
     static bool complained = false;
@@ -190,7 +194,7 @@ static void ivshmem_io_write(void *opaque, hwaddr addr,
         complained = true;
     }
     return;
-#endif
+#else
 
     addr &= 0xfc;
 
@@ -221,14 +225,17 @@ static void ivshmem_io_write(void *opaque, hwaddr addr,
         default:
             IVSHMEM_DPRINTF("Invalid VM Doorbell VM %d\n", dest);
     }
+#endif
 }
 
 static uint64_t ivshmem_io_read(void *opaque, hwaddr addr,
                                 unsigned size)
 {
 
+#if 0
     IVShmemState *s = opaque;
     uint32_t ret;
+#endif
 
 #if 1 /* Always read zero for Red Hat Enterprise Linux */
     static bool complained = false;
@@ -237,7 +244,7 @@ static uint64_t ivshmem_io_read(void *opaque, hwaddr addr,
         complained = true;
     }
     return 0;
-#endif
+#else
 
     switch (addr)
     {
@@ -264,6 +271,7 @@ static uint64_t ivshmem_io_read(void *opaque, hwaddr addr,
     }
 
     return ret;
+#endif
 }
 
 static const MemoryRegionOps ivshmem_mmio_ops = {
@@ -276,6 +284,7 @@ static const MemoryRegionOps ivshmem_mmio_ops = {
     },
 };
 
+#if 0
 static void ivshmem_receive(void *opaque, const uint8_t *buf, int size)
 {
     IVShmemState *s = opaque;
@@ -335,6 +344,7 @@ static CharDriverState* create_eventfd_chr_device(void * opaque, EventNotifier *
     return chr;
 
 }
+#endif
 
 static int check_shm_size(IVShmemState *s, int fd) {
     /* check that the guest isn't going to try and map more memory than the
@@ -373,6 +383,7 @@ static void create_shared_memory_BAR(IVShmemState *s, int fd) {
     pci_register_bar(PCI_DEVICE(s), 2, s->ivshmem_attr, &s->bar);
 }
 
+#if 0
 static void ivshmem_add_eventfd(IVShmemState *s, int posn, int i)
 {
     memory_region_add_eventfd(&s->ivshmem_mmio,
@@ -540,6 +551,7 @@ static void ivshmem_read(void *opaque, const uint8_t * buf, int flags)
         ivshmem_add_eventfd(s, incoming_posn, guest_max_eventfd);
     }
 }
+#endif
 
 /* Select the MSI-X vectors used by device.
  * ivshmem maps events to vectors statically, so
@@ -593,6 +605,7 @@ static uint64_t ivshmem_get_size(IVShmemState * s) {
     return value;
 }
 
+#if 0
 static void ivshmem_setup_msi(IVShmemState * s)
 {
     if (msix_init_exclusive_bar(PCI_DEVICE(s), s->vectors, 1)) {
@@ -607,6 +620,7 @@ static void ivshmem_setup_msi(IVShmemState * s)
 
     ivshmem_use_msix(s);
 }
+#endif
 
 static void ivshmem_save(QEMUFile* f, void *opaque)
 {
@@ -630,8 +644,10 @@ static int ivshmem_load(QEMUFile* f, void *opaque, int version_id)
     IVSHMEM_DPRINTF("ivshmem_load\n");
 
     IVShmemState *proxy = opaque;
+#if 0
     PCIDevice *pci_dev = PCI_DEVICE(proxy);
     int ret;
+#endif
 
     if (version_id > 0) {
         return -EINVAL;
@@ -642,6 +658,7 @@ static int ivshmem_load(QEMUFile* f, void *opaque, int version_id)
         return -EINVAL;
     }
 
+#if 0
     ret = pci_device_load(pci_dev, f);
     if (ret) {
         return ret;
@@ -655,6 +672,7 @@ static int ivshmem_load(QEMUFile* f, void *opaque, int version_id)
         proxy->intrmask = qemu_get_be32(f);
     }
 
+#endif
     return 0;
 }
 
@@ -679,12 +697,14 @@ static int pci_ivshmem_init(PCIDevice *dev)
     register_savevm(DEVICE(dev), "ivshmem", 0, 0, ivshmem_save, ivshmem_load,
                                                                         dev);
 
+#if 0
     /* IRQFD requires MSI */
     if (ivshmem_has_feature(s, IVSHMEM_IOEVENTFD) &&
         !ivshmem_has_feature(s, IVSHMEM_MSI)) {
         error_report("ioeventfd/irqfd requires MSI");
         exit(1);
     }
+#endif
 
     /* check that role is reasonable */
     if (s->role) {
@@ -734,6 +754,7 @@ static int pci_ivshmem_init(PCIDevice *dev)
         s->ivshmem_attr |= PCI_BASE_ADDRESS_MEM_TYPE_64;
     }
 
+#if 0
     if ((s->server_chr != NULL) &&
                         (strncmp(s->server_chr->filename, "unix:", 5) == 0)) {
         /* if we get a UNIX socket as the parameter we will talk
@@ -765,6 +786,8 @@ static int pci_ivshmem_init(PCIDevice *dev)
         qemu_chr_add_handlers(s->server_chr, ivshmem_can_receive, ivshmem_read,
                      ivshmem_event, s);
     } else {
+#endif
+    {
         /* just map the file immediately, we're not using a server */
         int fd;
 
