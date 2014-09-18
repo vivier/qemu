@@ -20,8 +20,7 @@ common-obj-$(CONFIG_PUV3) += puv3_pm.o
 common-obj-$(CONFIG_MACIO) += macio/
 
 ifeq ($(CONFIG_PCI), y)
-# Disabled for Red Hat Enterprise Linux:
-# obj-$(CONFIG_KVM) += ivshmem.o
+obj-$(CONFIG_KVM) += ivshmem.o
 obj-$(CONFIG_LINUX) += vfio.o
 endif
 
