@@ -183,6 +183,15 @@ static void ivshmem_io_write(void *opaque, hwaddr addr,
     uint16_t dest = val >> 16;
     uint16_t vector = val & 0xff;
 
+#if 1 /* Ignore writes for Red Hat Enterprise Linux */
+    static bool complained = false;
+    if (!complained) {
+        error_report("Red Hat: %s: ivshmem interrupts are disabled", __func__);
+        complained = true;
+    }
+    return;
+#endif
+
     addr &= 0xfc;
 
     IVSHMEM_DPRINTF("writing to addr " TARGET_FMT_plx "\n", addr);
@@ -220,6 +229,15 @@ static uint64_t ivshmem_io_read(void *opaque, hwaddr addr,
 
     IVShmemState *s = opaque;
     uint32_t ret;
+
+#if 1 /* Always read zero for Red Hat Enterprise Linux */
+    static bool complained = false;
+    if (!complained) {
+        error_report("Red Hat: %s: ivshmem interrupts are disabled", __func__);
+        complained = true;
+    }
+    return 0;
+#endif
 
     switch (addr)
     {
@@ -672,6 +690,7 @@ static int pci_ivshmem_init(PCIDevice *dev)
     if (s->role) {
         if (strncmp(s->role, "peer", 5) == 0) {
             s->role_val = IVSHMEM_PEER;
+#if 0 /* Red Hat Enterprise Linux requires role=peer */
         } else if (strncmp(s->role, "master", 7) == 0) {
             s->role_val = IVSHMEM_MASTER;
         } else {
@@ -680,6 +699,12 @@ static int pci_ivshmem_init(PCIDevice *dev)
         }
     } else {
         s->role_val = IVSHMEM_MASTER; /* default */
+#else
+        } else {
+            error_report("Red Hat: 'role' must be specified, and set to 'peer'");
+            exit(1);
+        }
+#endif
     }
 
     if (s->role_val == IVSHMEM_PEER) {
@@ -744,7 +769,11 @@ static int pci_ivshmem_init(PCIDevice *dev)
         int fd;
 
         if (s->shmobj == NULL) {
+#if 0 /* Red Hat Enterprise Linux doesn't support 'chardev' */
             error_report("Must specify 'chardev' or 'shm' to ivshmem");
+#else
+            error_report("Red Hat: 'shm' must be specified");
+#endif
             exit(1);
         }
 
@@ -797,11 +826,15 @@ static void pci_ivshmem_uninit(PCIDevice *dev)
 }
 
 static Property ivshmem_properties[] = {
+#if 0 /* Disabled for Red Hat Enterprise Linux */
     DEFINE_PROP_CHR("chardev", IVShmemState, server_chr),
+#endif
     DEFINE_PROP_STRING("size", IVShmemState, sizearg),
+#if 0 /* Disabled for Red Hat Enterprise Linux */
     DEFINE_PROP_UINT32("vectors", IVShmemState, vectors, 1),
     DEFINE_PROP_BIT("ioeventfd", IVShmemState, features, IVSHMEM_IOEVENTFD, false),
     DEFINE_PROP_BIT("msi", IVShmemState, features, IVSHMEM_MSI, true),
+#endif
     DEFINE_PROP_STRING("shm", IVShmemState, shmobj),
     DEFINE_PROP_STRING("role", IVShmemState, role),
     DEFINE_PROP_UINT32("use64", IVShmemState, ivshmem_64bit, 1),
