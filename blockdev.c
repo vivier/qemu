@@ -1782,6 +1782,14 @@ void qmp_block_job_complete(const char *device, Error **errp)
     block_job_complete(job, errp);
 }
 
+void qmp___com_redhat_change_backing_file(const char *device,
+                                          const char *image_node_name,
+                                          const char *backing_file,
+                                          Error **errp)
+{
+    error_set(errp, QERR_UNSUPPORTED);
+}
+
 void qmp_blockdev_add(BlockdevOptions *options, Error **errp)
 {
     QmpOutputVisitor *ov = qmp_output_visitor_new();

@@ -1832,6 +1832,22 @@
   'data': {'command-line': 'str', '*cpu-index': 'int'},
   'returns': 'str' }
 
+##
+# @__com.redhat_change-backing-file
+#
+# This is a placeholder function, that exists as a witness for libvirt
+# that the ability to specify backing files in block-commit and block-stream
+# exists in this version of QEMU.
+#
+# It has the same argument requirements as the upstream 'change-backing-file',
+# but performs no action.
+#
+# Returns: NotSupported
+##
+{ 'command': '__com.redhat_change-backing-file',
+  'data': { 'device': 'str', 'image-node-name': 'str',
+            'backing-file': 'str' } }
+
 #_rhev-only CONFIG_LIVE_BLOCK_OPS
 ##
 # @block-commit
