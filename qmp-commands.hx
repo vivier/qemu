@@ -1241,6 +1241,28 @@ EQMP
 #endif
 
     {
+        .name       = RFQDN_REDHAT "change-backing-file",
+        .args_type  = "device:s,image-node-name:s,backing-file:s",
+        .mhandler.cmd_new = qmp_marshal_input___com_redhat_change_backing_file,
+    },
+
+SQMP
+@__com.redhat_change-backing-file
+-------------------
+@__com.redhat_change-backing-file
+
+This is a placeholder function, that exists as a witness for libvirt
+that the ability to specify backing files block-commit and block-stream
+exists in this version of QEMU.
+
+It has the same argument requirements as the upstream 'change-backing-file',
+but performs no action.
+
+Returns: NotSupported
+
+EQMP
+
+    {
         .name       = "balloon",
         .args_type  = "value:M",
         .mhandler.cmd_new = qmp_marshal_input_balloon,
