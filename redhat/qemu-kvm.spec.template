@@ -802,6 +802,14 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Mon Sep 22 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-72.el7
+- kvm-vbe-make-bochs-dispi-interface-return-the-correct-me.patch [bz#1139118]
+- kvm-vbe-rework-sanity-checks.patch [bz#1139118]
+- kvm-spice-display-add-display-channel-id-to-the-debug-me.patch [bz#1139118]
+- kvm-spice-make-sure-we-don-t-overflow-ssd-buf.patch [bz#1139118]
+- Resolves: bz#1139118
+  (CVE-2014-3615 qemu-kvm: Qemu: crash when guest sets high resolution [rhel-7.1])
+
 * Thu Sep 18 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-71.el7
 - kvm-spice-move-qemu_spice_display_-from-spice-graphics-t.patch [bz#1054077]
 - kvm-spice-move-spice_server_vm_-start-stop-calls-into-qe.patch [bz#1054077]
