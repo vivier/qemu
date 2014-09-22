@@ -805,6 +805,18 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Mon Sep 22 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-60.el7_0.8
+- kvm-vmstate_xhci_event-fix-unterminated-field-list.patch [bz#1145055]
+- kvm-vmstate_xhci_event-bug-compat-with-RHEL-7.0-RHEL-onl.patch [bz#1145055]
+- kvm-vbe-make-bochs-dispi-interface-return-the-correct-me.patch [bz#1139117]
+- kvm-vbe-rework-sanity-checks.patch [bz#1139117]
+- kvm-spice-display-add-display-channel-id-to-the-debug-me.patch [bz#1139117]
+- kvm-spice-make-sure-we-don-t-overflow-ssd-buf.patch [bz#1139117]
+- Resolves: bz#1139117
+  (CVE-2014-3615 qemu-kvm: Qemu: crash when guest sets high resolution [rhel-7.0.z])
+- Resolves: bz#1145055
+  (vmstate_xhci_event: fix unterminated field list [rhel-7.0.z])
+
 * Tue Aug 26 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-60.el7_0.7
 - kvm-mirror-Fix-resource-leak-when-bdrv_getlength-fails.patch [bz#1132806]
 - kvm-blockjob-Add-block_job_yield.patch [bz#1132806]
