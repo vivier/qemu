@@ -802,6 +802,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Sep 23 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-73.el7
+- kvm-scsi-disk-fix-bug-in-scsi_block_new_request-introduc.patch [bz#1105880]
+- Resolves: bz#1105880
+  (bug in scsi_block_new_request() function introduced by upstream commit 137745c5c60f083ec982fe9e861e8c16ebca1ba8)
+
 * Mon Sep 22 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-72.el7
 - kvm-vbe-make-bochs-dispi-interface-return-the-correct-me.patch [bz#1139118]
 - kvm-vbe-rework-sanity-checks.patch [bz#1139118]
