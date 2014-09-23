@@ -197,6 +197,7 @@ BuildRequires: libseccomp-devel >= 1.0.0
 %endif
 # For network block driver
 BuildRequires: libcurl-devel
+BuildRequires: libssh2-devel
 %if 0%{have_gluster}
 # For gluster block driver
 BuildRequires: glusterfs-api-devel
@@ -497,7 +498,7 @@ dobuild() {
         --disable-glusterfs \
         --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,rbd \
 %endif
-        --block-drv-ro-whitelist=vmdk,vhdx,vpc \
+        --block-drv-ro-whitelist=vmdk,vhdx,vpc,ssh \
         "$@"
 
     echo "config-host.mak contents:"
