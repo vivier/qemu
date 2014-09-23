@@ -805,6 +805,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Sep 23 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-60.el7_0.9
+- kvm-scsi-disk-fix-bug-in-scsi_block_new_request-introduc.patch [bz#1141189]
+- Resolves: bz#1141189
+  (bug in scsi_block_new_request() function introduced by upstream commit 137745c5c60f083ec982fe9e861e8c16ebca1ba8)
+
 * Mon Sep 22 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-60.el7_0.8
 - kvm-vmstate_xhci_event-fix-unterminated-field-list.patch [bz#1145055]
 - kvm-vmstate_xhci_event-bug-compat-with-RHEL-7.0-RHEL-onl.patch [bz#1145055]
