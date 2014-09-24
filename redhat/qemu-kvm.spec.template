@@ -342,7 +342,7 @@ Common Access Card (CAC) emulation library.
 %package -n libcacard-tools%{?pkgsuffix}
 Summary:        CAC Emulation tools
 Group:          Development/Libraries
-Requires:       libcacard = %{epoch}:%{version}-%{release}
+Requires:       libcacard%{?pkgsuffix} = %{epoch}:%{version}-%{release}
 # older qemu-img has vscclient which is now in libcacard-tools
 Requires:       qemu-img >= 3:1.3.0-5
 
@@ -850,6 +850,34 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Sep 24 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.0-5.el7
+- kvm-target-i386-Reject-invalid-CPU-feature-names-on-the-.patch [bz#1055532]
+- kvm-target-ppc-virtex-ml507-machine-type-should-depend-o.patch [bz#1113998]
+- kvm-RHEL-only-Disable-tests-that-don-t-work-with-RHEL-bu.patch [bz#1113998]
+- kvm-RHEL-onlyy-Disable-unused-ppc-machine-types.patch [bz#1113998]
+- kvm-RHEL-only-Remove-unneeded-devices-from-ppc64-qemu-kv.patch []
+- kvm-RHEL-only-Replace-upstream-pseries-machine-types-wit.patch []
+- kvm-scsi-bus-prepare-scsi_req_new-for-introduction-of-pa.patch [bz#1123349]
+- kvm-scsi-bus-introduce-parse_cdb-in-SCSIDeviceClass-and-.patch [bz#1123349]
+- kvm-scsi-block-extract-scsi_block_is_passthrough.patch [bz#1123349]
+- kvm-scsi-block-scsi-generic-implement-parse_cdb.patch [bz#1123349]
+- kvm-virtio-scsi-implement-parse_cdb.patch [bz#1123349]
+- kvm-exec-file_ram_alloc-print-error-when-prealloc-fails.patch [bz#1135893]
+- kvm-pc-increase-maximal-VCPU-count-to-240.patch [bz#1144089]
+- kvm-ssh-Enable-ssh-driver-in-qemu-kvm-rhev-RHBZ-1138359.patch [bz#1138359]
+- Resolves: bz#1055532
+  (QEMU should abort when invalid CPU flag name is used)
+- Resolves: bz#1113998
+  (RHEL Power/KVM (qemu-kvm-rhev))
+- Resolves: bz#1123349
+  ([FJ7.0 Bug] SCSI command issued from KVM guest doesn't reach target device)
+- Resolves: bz#1135893
+  (qemu-kvm should report an error message when host's freehugepage memory < domain's memory)
+- Resolves: bz#1138359
+  (RFE: Enable ssh driver in qemu-kvm-rhev)
+- Resolves: bz#1144089
+  ([HP 7.1 FEAT] Increase qemu-kvm-rhev's VCPU limit to 240)
+
 * Wed Sep 17 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.0-4.el7
 - kvm-virtio-rng-add-some-trace-events.patch [bz#1129259]
 - kvm-block-vhdx-add-error-check.patch [bz#1126976]
