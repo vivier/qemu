@@ -104,10 +104,8 @@ static void buffered_flush(QEMUFileBuffered *s)
     }
 
     DPRINTF("flushed %zu of %zu byte(s)\n", offset, s->buffer_size);
-    if ((offset > 0) && ((s->buffer_size - offset) > 0)) {
-        memmove(s->buffer, s->buffer + offset, s->buffer_size - offset);
-        s->buffer_size -= offset;
-    }
+    memmove(s->buffer, s->buffer + offset, s->buffer_size - offset);
+    s->buffer_size -= offset;
 }
 
 static int buffered_put_buffer(void *opaque, const uint8_t *buf, int64_t pos, int size)
