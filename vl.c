@@ -2859,6 +2859,7 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
     ram_addr_t addr;
     uint64_t bytes_transferred_last;
     uint64_t t0;
+    double bwidth = 0;
     int i;
     int ret;
 
@@ -2930,6 +2931,12 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
     }
 
     t0 = get_clock() - t0;
+    bwidth = ((double)bytes_transferred - bytes_transferred_last) / t0;
+
+    /* if we haven't transferred anything this round, force expected_time to a
+     * a very high value, but without crashing */
+    if (bwidth == 0)
+        bwidth = 0.000001;
 
     /* try transferring iterative blocks of memory */
     if (stage == 3) {
@@ -2946,16 +2953,6 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
 
     if (stage == 2) {
         uint64_t expected_time;
-        double bwidth = 0;
-
-        bwidth = ((double)bytes_transferred - bytes_transferred_last) / t0;
-
-        /*
-         * if we haven't transferred anything this round, force expected_time to a
-         * a very high value, but without crashing
-         */
-        if (bwidth == 0)
-            bwidth = 0.000001;
 
         expected_time = ram_bytes_remaining() / bwidth;
         return expected_time <= migrate_max_downtime();
