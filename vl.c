@@ -2833,9 +2833,14 @@ static int ram_save_block(QEMUFile *f)
 
 static uint64_t bytes_transferred;
 
+static ram_addr_t ram_save_remaining(void)
+{
+    return ram_list.dirty_pages;
+}
+
 uint64_t ram_bytes_remaining(void)
 {
-    return ram_list.dirty_pages * TARGET_PAGE_SIZE;
+    return ram_save_remaining() * TARGET_PAGE_SIZE;
 }
 
 uint64_t ram_bytes_transferred(void)
@@ -2954,7 +2959,7 @@ static int ram_save_live(Monitor *mon, QEMUFile *f, int stage, void *opaque)
     if (stage == 2) {
         uint64_t expected_time;
 
-        expected_time = ram_bytes_remaining() / bwidth;
+        expected_time = ram_save_remaining() * TARGET_PAGE_SIZE / bwidth;
         return expected_time <= migrate_max_downtime();
     }
     return 0;
