@@ -232,6 +232,9 @@ BuildRequires: texinfo
 %if 0%{?have_librdma:1}
 BuildRequires: librdmacm-devel
 %endif
+%if 0%{have_fdt}
+BuildRequires: libfdt-devel
+%endif
 # iasl and cpp for acpi generation (not a hard requirement as we can use
 # pre-compiled files, but it's better to use this)
 %ifarch %{ix86} x86_64
@@ -850,6 +853,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Sep 26 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-1.el7
+- Rebase to qemu 2.1.2 [bz#1121609]
+- Resolves: bz#1121609
+  Rebase qemu-kvm-rhev to qemu 2.1.2
+
 * Wed Sep 24 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.0-5.el7
 - kvm-target-i386-Reject-invalid-CPU-feature-names-on-the-.patch [bz#1055532]
 - kvm-target-ppc-virtex-ml507-machine-type-should-depend-o.patch [bz#1113998]
