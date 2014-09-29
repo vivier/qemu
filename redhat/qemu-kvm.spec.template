@@ -802,6 +802,34 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Mon Sep 29 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-74.el7
+- kvm-ide-Add-wwn-support-to-IDE-ATAPI-drive.patch [bz#1131316]
+- kvm-vmdk-Allow-vmdk_create-to-work-with-protocol.patch [bz#1098086]
+- kvm-block-make-vdi-bounds-check-match-upstream.patch [bz#1098086]
+- kvm-vdi-say-why-an-image-is-bad.patch [bz#1098086]
+- kvm-block-do-not-abuse-EMEDIUMTYPE.patch [bz#1098086]
+- kvm-cow-correctly-propagate-errors.patch [bz#1098086]
+- kvm-block-Use-correct-width-in-format-strings.patch [bz#1098086]
+- kvm-vdi-remove-double-conversion.patch [bz#1098086]
+- kvm-block-vdi-Error-out-immediately-in-vdi_create.patch [bz#1098086]
+- kvm-vpc-Implement-.bdrv_has_zero_init.patch [bz#1098086]
+- kvm-block-vpc-use-QEMU_PACKED-for-on-disk-structures.patch [bz#1098086]
+- kvm-block-allow-bdrv_unref-to-be-passed-NULL-pointers.patch [bz#1098086]
+- kvm-block-vdi-use-block-layer-ops-in-vdi_create-instead-.patch [bz#1098086]
+- kvm-block-use-the-standard-ret-instead-of-result.patch [bz#1098086]
+- kvm-block-vpc-use-block-layer-ops-in-vpc_create-instead-.patch [bz#1098086]
+- kvm-block-iotest-update-084-to-test-static-VDI-image-cre.patch [bz#1098086]
+- kvm-block-add-helper-function-to-determine-if-a-BDS-is-i.patch [bz#1122925]
+- kvm-block-extend-block-commit-to-accept-a-string-for-the.patch [bz#1122925]
+- kvm-block-add-backing-file-option-to-block-stream.patch [bz#1122925]
+- kvm-block-add-__com.redhat_change-backing-file-qmp-comma.patch [bz#1122925]
+- Resolves: bz#1098086
+  (RFE: Supporting creating vmdk/vdi/vpc format disk with protocols (glusterfs))
+- Resolves: bz#1122925
+  (Maintain relative path to backing file image during live merge (block-commit))
+- Resolves: bz#1131316
+  (fail to specify wwn for virtual IDE CD-ROM)
+
 * Tue Sep 23 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-73.el7
 - kvm-scsi-disk-fix-bug-in-scsi_block_new_request-introduc.patch [bz#1105880]
 - Resolves: bz#1105880
