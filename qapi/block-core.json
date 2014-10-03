@@ -1557,6 +1557,10 @@
 #           io-status is present, please see query-block documentation
 #           for more information (since: 2.2)
 #
+# @reason: human readable string describing the error cause.
+#          (This field is a debugging aid for humans, it should not
+#           be parsed by applications) (since: 2.2)
+#
 # @__com.redhat_reason: error reason (RHEL7 vendor extension)
 #
 # @__com.redhat_debug_info: debug information for humans, applications
@@ -1571,6 +1575,7 @@
 { 'event': 'BLOCK_IO_ERROR',
   'data': { 'device': 'str', 'operation': 'IoOperationType',
             'action': 'BlockErrorAction', '*nospace': 'bool',
+            'reason': 'str',
             '__com.redhat_reason': 'RHEL7BlockErrorReason',
             '__com.redhat_debug_info': 'RHEL7BlockErrorDebugInfo' } }
 
