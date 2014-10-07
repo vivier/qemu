@@ -64,6 +64,7 @@ uint8_t trace_buf[TRACE_BUF_LEN];
 static volatile gint trace_idx;
 static unsigned int writeout_idx;
 static volatile gint dropped_events;
+static uint32_t trace_pid;
 static FILE *trace_fp;
 static char *trace_file_name;
 
@@ -72,7 +73,7 @@ typedef struct {
     uint64_t event; /*   TraceEventID */
     uint64_t timestamp_ns;
     uint32_t length;   /*    in bytes */
-    uint32_t reserved; /*    unused */
+    uint32_t pid;
     uint64_t arguments[];
 } TraceRecord;
 
@@ -180,7 +181,7 @@ static gpointer writeout_thread(gpointer opaque)
             dropped.rec.event = DROPPED_EVENT_ID,
             dropped.rec.timestamp_ns = get_clock();
             dropped.rec.length = sizeof(TraceRecord) + sizeof(uint64_t),
-            dropped.rec.reserved = 0;
+            dropped.rec.pid = trace_pid;
             do {
                 dropped_count = g_atomic_int_get(&dropped_events);
             } while (!g_atomic_int_compare_and_exchange(&dropped_events,
@@ -239,6 +240,7 @@ int trace_record_start(TraceBufferRecord *rec, TraceEventID event, size_t datasi
     rec_off = write_to_buffer(rec_off, &event_u64, sizeof(event_u64));
     rec_off = write_to_buffer(rec_off, &timestamp_ns, sizeof(timestamp_ns));
     rec_off = write_to_buffer(rec_off, &rec_len, sizeof(rec_len));
+    rec_off = write_to_buffer(rec_off, &trace_pid, sizeof(trace_pid));
 
     rec->tbuf_idx = idx;
     rec->rec_off  = (idx + sizeof(TraceRecord)) % TRACE_BUF_LEN;
@@ -412,6 +414,8 @@ bool trace_backend_init(const char *events, const char *file)
         exit(1);
 #endif
     }
+
+    trace_pid = getpid();
 
 #if !GLIB_CHECK_VERSION(2, 31, 0)
     trace_available_cond = g_cond_new();
