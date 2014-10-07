@@ -35,7 +35,7 @@ config-target.h: config-target.h-timestamp
 config-target.h-timestamp: config-target.mak
 
 ifdef CONFIG_TRACE_SYSTEMTAP
-stap: $(QEMU_PROG).stp
+stap: $(QEMU_PROG).stp $(QEMU_PROG)-simpletrace.stp
 
 ifdef CONFIG_USER_ONLY
 TARGET_TYPE=user
@@ -51,6 +51,14 @@ $(QEMU_PROG).stp: $(SRC_PATH)/trace-events
 		--target-arch=$(TARGET_ARCH) \
 		--target-type=$(TARGET_TYPE) \
 		< $< > $@,"  GEN   $(TARGET_DIR)$(QEMU_PROG).stp")
+
+$(QEMU_PROG)-simpletrace.stp: $(SRC_PATH)/trace-events
+	$(call quiet-command,$(TRACETOOL) \
+		--format=simpletrace-stap \
+		--backend=$(TRACE_BACKEND) \
+		--probe-prefix=qemu.$(TARGET_TYPE).$(TARGET_ARCH) \
+		< $< > $@,"  GEN   $(TARGET_DIR)$(QEMU_PROG)-simpletrace.stp")
+
 else
 stap:
 endif
@@ -194,6 +202,7 @@ endif
 ifdef CONFIG_TRACE_SYSTEMTAP
 	$(INSTALL_DIR) "$(DESTDIR)$(qemu_datadir)/../systemtap/tapset"
 	$(INSTALL_DATA) $(QEMU_PROG).stp "$(DESTDIR)$(qemu_datadir)/../systemtap/tapset"
+	$(INSTALL_DATA) $(QEMU_PROG)-simpletrace.stp "$(DESTDIR)$(qemu_datadir)/../systemtap/tapset/$(QEMU_PROG)-simpletrace.stp"
 endif
 
 GENERATED_HEADERS += config-target.h
