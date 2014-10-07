@@ -558,7 +558,7 @@ dobuild --target-list="$buildarch"
     install -m 0644 -t $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/tracetool/format scripts/tracetool/format/*.py
 
     mkdir -p $RPM_BUILD_ROOT%{qemudocdir}
-    install -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} Changelog README COPYING COPYING.LIB LICENSE %{SOURCE19}
+    install -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} Changelog README README.systemtap COPYING COPYING.LIB LICENSE %{SOURCE19}
     mv ${RPM_BUILD_ROOT}%{_docdir}/qemu/qemu-doc.html $RPM_BUILD_ROOT%{qemudocdir}
     mv ${RPM_BUILD_ROOT}%{_docdir}/qemu/qemu-tech.html $RPM_BUILD_ROOT%{qemudocdir}
     mv ${RPM_BUILD_ROOT}%{_docdir}/qemu/qmp-commands.txt $RPM_BUILD_ROOT%{qemudocdir}
@@ -734,6 +734,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %doc %{qemudocdir}/COPYING.LIB
     %doc %{qemudocdir}/LICENSE
     %doc %{qemudocdir}/README.rhel6-gpxe-source
+    %doc %{qemudocdir}/README.systemtap
     %dir %{_datadir}/%{pkgname}/
     %{_datadir}/%{pkgname}/keymaps/
     %{_mandir}/man1/%{pkgname}.1*
