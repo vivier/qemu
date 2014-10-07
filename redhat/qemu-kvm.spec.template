@@ -707,7 +707,8 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %global qemu_kvm_files \
 %{_libexecdir}/qemu-kvm \
 %{_datadir}/systemtap/tapset/qemu-kvm.stp \
-%{_datadir}/systemtap/tapset/qemu-kvm-simpletrace.stp
+%{_datadir}/systemtap/tapset/qemu-kvm-simpletrace.stp \
+%{_datadir}/%{pkgname}/trace-events
 
 %if 0%{!?build_only_sub:1}
 %files -n qemu-kvm-common%{?pkgsuffix}
