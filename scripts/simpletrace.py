@@ -18,6 +18,7 @@ from tracetool.backend.simple import is_string
 header_event_id = 0xffffffffffffffff
 header_magic    = 0xf2b177cb0aa429b4
 dropped_event_id = 0xfffffffffffffffe
+red_hat_version = 0x00001af400000000
 
 log_header_fmt = '=QQQ'
 rec_header_fmt = '=QQII'
@@ -65,13 +66,13 @@ def read_trace_file(edict, fobj):
        header[0] != header_event_id or \
        header[1] != header_magic:
         raise ValueError('Not a valid trace file!')
-    if header[2] != 0 and \
-       header[2] != 2:
-        raise ValueError('Unknown version of tracelog format!')
 
     log_version = header[2]
-    if log_version == 0:
-        raise ValueError('Older log format, not supported with this QEMU release!')
+    if log_version not in [0, 2, 3, red_hat_version]:
+        raise ValueError('Unknown version of tracelog format!')
+    if log_version != red_hat_version:
+        raise ValueError('Log format %d not supported with this QEMU release!'
+                         % log_version)
 
     while True:
         rec = read_record(edict, fobj)
