@@ -14,6 +14,7 @@ __email__      = "stefanha@linux.vnet.ibm.com"
 
 
 from tracetool import out
+from tracetool.backend.simple import is_string
 
 
 PUBLIC = True
@@ -108,6 +109,52 @@ def stap(events):
                 name = stap_escape(name)
                 out('  %s = $arg%d;' % (name, i))
                 i += 1
+
+        out('}')
+
+    out()
+
+
+def simpletrace_stap(events):
+    for event_id, e in enumerate(events):
+        out('probe %(probeprefix)s.simpletrace.%(name)s = %(probeprefix)s.%(name)s ?',
+            '{',
+            probeprefix=_probeprefix(),
+            name=e.name)
+
+        # Calculate record size
+        sizes = ['24'] # sizeof(TraceRecord)
+        for type_, name in e.args:
+            name = stap_escape(name)
+            if is_string(type_):
+                out('    try {',
+                    '        arg%(name)s_str = %(name)s ? user_string_n(%(name)s, 512) : "<null>"',
+                    '    } catch {}',
+                    '    arg%(name)s_len = strlen(arg%(name)s_str)',
+                    name=name)
+                sizes.append('4 + arg%s_len' % name)
+            else:
+                sizes.append('8')
+        sizestr = ' + '.join(sizes)
+
+        # Generate format string and value pairs for record header and arguments
+        fields = [('8b', str(event_id)),
+                  ('8b', 'gettimeofday_ns()'),
+                  ('4b', sizestr),
+                  ('4b', 'pid()')]
+        for type_, name in e.args:
+            name = stap_escape(name)
+            if is_string(type_):
+                fields.extend([('4b', 'arg%s_len' % name),
+                               ('.*s', 'arg%s_len, arg%s_str' % (name, name))])
+            else:
+                fields.append(('8b', name))
+
+        # Emit the entire record in a single SystemTap printf()
+        fmt_str = '%'.join(fmt for fmt, _ in fields)
+        arg_str = ', '.join(arg for _, arg in fields)
+        out('    printf("%%%(fmt_str)s", %(arg_str)s)',
+            fmt_str=fmt_str, arg_str=arg_str)
 
         out('}')
 
