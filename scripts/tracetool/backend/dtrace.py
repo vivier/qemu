@@ -35,6 +35,13 @@ def _binary():
     return BINARY
 
 
+def stap_escape(identifier):
+    # Append underscore to reserved keywords
+    if identifier in RESERVED_WORDS:
+        return identifier + '_'
+    return identifier
+
+
 def c(events):
     pass
 
@@ -98,9 +105,7 @@ def stap(events):
         i = 1
         if len(e.args) > 0:
             for name in e.args.names():
-                # Append underscore to reserved keywords
-                if name in RESERVED_WORDS:
-                    name += '_'
+                name = stap_escape(name)
                 out('  %s = $arg%d;' % (name, i))
                 i += 1
 
