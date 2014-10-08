@@ -802,6 +802,15 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Oct 08 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-75.el7
+- kvm-target-i386-Broadwell-CPU-model.patch [bz#1116117]
+- kvm-pc-Add-Broadwell-CPUID-compatibility-bits.patch [bz#1116117]
+- kvm-virtio-balloon-fix-integer-overflow-in-memory-stats-.patch [bz#1142290]
+- Resolves: bz#1116117
+  ([Intel 7.1 FEAT] Broadwell new instructions support for KVM - qemu-kvm)
+- Resolves: bz#1142290
+  (guest is stuck when setting balloon memory with large guest-stats-polling-interval)
+
 * Mon Sep 29 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-74.el7
 - kvm-ide-Add-wwn-support-to-IDE-ATAPI-drive.patch [bz#1131316]
 - kvm-vmdk-Allow-vmdk_create-to-work-with-protocol.patch [bz#1098086]
