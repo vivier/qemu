@@ -365,7 +365,7 @@ install -c -m 0755  qemu-ga ${RPM_BUILD_ROOT}%{_bindir}/qemu-ga
     %{_bindir}/qemu-ga
     %{_unitdir}/qemu-guest-agent.service
     %{_udevdir}/99-qemu-guest-agent.rules
-    %{_sysconfdir}/sysconfig/qemu-ga
+    %config(noreplace) %{_sysconfdir}/sysconfig/qemu-ga
     %{_sysconfdir}/qemu-ga
     %{_datadir}/%{pkgname}/qemu-ga
     %dir %{_localstatedir}/log/qemu-ga
