@@ -369,7 +369,10 @@ CAC emulation development files.
 
 %prep
 %setup -q -n qemu-%{version}
-cp %{SOURCE18} pc-bios	# keep "make check" happy
+
+# Copy bios files to allow 'make check' pass
+cp %{SOURCE18} pc-bios	
+cp %{SOURCE20} pc-bios
 
 # if patch fuzzy patch applying will be forbidden
 %define with_fuzzy_patches 0
@@ -709,9 +712,8 @@ find $RPM_BUILD_ROOT -name '*.la' -or -name '*.a' | xargs rm -f
     install -c -m 0755  qemu-ga ${RPM_BUILD_ROOT}%{_bindir}/qemu-ga
 %endif
 
-# Disabled as do not work anymore
-# %check
-# make check
+%check
+make check
 
 %post
 # load kvm modules now, so we can make sure no reboot is needed.
