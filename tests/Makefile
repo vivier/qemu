@@ -71,8 +71,6 @@ check-block-$(CONFIG_POSIX) += tests/qemu-iotests-quick.sh
 # really in libqtest, not in the testcases themselves.
 
 gcov-files-ipack-y += hw/ipack/ipack.c
-check-qtest-ipack-y += tests/ipoctal232-test$(EXESUF)
-gcov-files-ipack-y += hw/char/ipoctal232.c
 
 check-qtest-virtioserial-y += tests/virtio-console-test$(EXESUF)
 gcov-files-virtioserial-y += hw/char/virtio-console.c
@@ -102,23 +100,10 @@ check-qtest-pci-y += tests/e1000-test$(EXESUF)
 gcov-files-pci-y += hw/net/e1000.c
 check-qtest-pci-y += tests/rtl8139-test$(EXESUF)
 gcov-files-pci-y += hw/net/rtl8139.c
-check-qtest-pci-y += tests/pcnet-test$(EXESUF)
-gcov-files-pci-y += hw/net/pcnet.c
-gcov-files-pci-y += hw/net/pcnet-pci.c
-check-qtest-pci-y += tests/eepro100-test$(EXESUF)
-gcov-files-pci-y += hw/net/eepro100.c
-check-qtest-pci-y += tests/ne2000-test$(EXESUF)
-gcov-files-pci-y += hw/net/ne2000.c
-check-qtest-pci-y += tests/nvme-test$(EXESUF)
-gcov-files-pci-y += hw/block/nvme.c
 check-qtest-pci-y += tests/ac97-test$(EXESUF)
 gcov-files-pci-y += hw/audio/ac97.c
-check-qtest-pci-y += tests/es1370-test$(EXESUF)
-gcov-files-pci-y += hw/audio/es1370.c
 check-qtest-pci-y += $(check-qtest-virtio-y)
 gcov-files-pci-y += $(gcov-files-virtio-y) hw/virtio/virtio-pci.c
-check-qtest-pci-y += tests/tpci200-test$(EXESUF)
-gcov-files-pci-y += hw/ipack/tpci200.c
 check-qtest-pci-y += $(check-qtest-ipack-y)
 gcov-files-pci-y += $(gcov-files-ipack-y)
 check-qtest-pci-y += tests/display-vga-test$(EXESUF)
@@ -145,8 +130,6 @@ check-qtest-i386-y += tests/wdt_ib700-test$(EXESUF)
 gcov-files-i386-y += hw/watchdog/watchdog.c hw/watchdog/wdt_ib700.c
 check-qtest-i386-y += $(check-qtest-pci-y)
 gcov-files-i386-y += $(gcov-files-pci-y)
-check-qtest-i386-y += tests/vmxnet3-test$(EXESUF)
-gcov-files-i386-y += hw/net/vmxnet3.c
 gcov-files-i386-y += hw/net/vmxnet_rx_pkt.c
 gcov-files-i386-y += hw/net/vmxnet_tx_pkt.c
 check-qtest-i386-y += tests/pvpanic-test$(EXESUF)
@@ -328,11 +311,9 @@ tests/ipoctal232-test$(EXESUF): tests/ipoctal232-test.o
 tests/qom-test$(EXESUF): tests/qom-test.o
 tests/blockdev-test$(EXESUF): tests/blockdev-test.o $(libqos-pc-obj-y)
 tests/qdev-monitor-test$(EXESUF): tests/qdev-monitor-test.o $(libqos-pc-obj-y)
-tests/nvme-test$(EXESUF): tests/nvme-test.o
 tests/pvpanic-test$(EXESUF): tests/pvpanic-test.o
 tests/i82801b11-test$(EXESUF): tests/i82801b11-test.o
 tests/ac97-test$(EXESUF): tests/ac97-test.o
-tests/es1370-test$(EXESUF): tests/es1370-test.o
 tests/intel-hda-test$(EXESUF): tests/intel-hda-test.o
 tests/ioh3420-test$(EXESUF): tests/ioh3420-test.o
 tests/usb-hcd-ehci-test$(EXESUF): tests/usb-hcd-ehci-test.o $(libqos-pc-obj-y)
