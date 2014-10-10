@@ -243,6 +243,8 @@ BuildRequires: cpp
 %endif
 # For compressed guest memory dumps
 BuildRequires: lzo-devel snappy-devel
+# For NUMA memory binding
+BuildRequires: numactl-devel
 
 
 Requires: qemu-img%{?pkgsuffix} = %{epoch}:%{version}-%{release}
@@ -502,6 +504,7 @@ dobuild() {
         --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,rbd \
 %endif
         --block-drv-ro-whitelist=vmdk,vhdx,vpc,ssh \
+        --enable-numa \
         "$@"
 
     echo "config-host.mak contents:"
