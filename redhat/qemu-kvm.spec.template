@@ -470,7 +470,6 @@ dobuild() {
         --disable-bluez \
         --disable-vde \
         --disable-curses \
-        --disable-curl \
         --enable-vnc-tls \
         --enable-vnc-sasl \
         --enable-linux-aio \
@@ -503,7 +502,7 @@ dobuild() {
         --disable-glusterfs \
         --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,rbd \
 %endif
-        --block-drv-ro-whitelist=vmdk,vhdx,vpc,ssh \
+        --block-drv-ro-whitelist=vmdk,vhdx,vpc,https,ssh \
         --enable-numa \
         "$@"
 
