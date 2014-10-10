@@ -446,6 +446,7 @@ dobuild() {
         --disable-xen \
         --disable-virtfs \
         --enable-kvm \
+        --enable-curl \
         --enable-libusb \
 %if 0%{have_spice}
         --enable-spice \
