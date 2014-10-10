@@ -858,6 +858,15 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Oct 10 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-3.el7
+- kvm-Disable-tests-for-removed-features.patch [bz#1108040]
+- kvm-Disable-arm-board-types-using-lsi53c895a.patch [bz#1108040]
+- kvm-libqtest-launch-QEMU-with-QEMU_AUDIO_DRV-none.patch [bz#1108040]
+- kvm-Whitelist-blkdebug-driver.patch [bz#1108040]
+- kvm-Turn-make-check-on.patch [bz#1108040]
+- Resolves: bz#1108040
+  (Enable make check for qemu-kvm-rhev 2.0 and newer)
+
 * Fri Oct 10 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-2.el7
 - kvm-RPM-spec-Add-enable-numa-to-configure-command-line.patch [bz#1076990]
 - kvm-block.curl-adding-timeout-option.patch [bz#1132569]
