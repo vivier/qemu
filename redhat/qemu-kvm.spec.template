@@ -855,6 +855,33 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Oct 10 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-2.el7
+- kvm-RPM-spec-Add-enable-numa-to-configure-command-line.patch [bz#1076990]
+- kvm-block.curl-adding-timeout-option.patch [bz#1132569]
+- kvm-curl-Allow-a-cookie-or-cookies-to-be-sent-with-http-.patch [bz#1132569]
+- kvm-curl-Don-t-deref-NULL-pointer-in-call-to-aio_poll.patch [bz#1132569]
+- kvm-curl-Add-timeout-and-cookie-options-and-misc.-fix-RH.patch [bz#1132569]
+- kvm-Introduce-cpu_clean_all_dirty.patch [bz#1143054]
+- kvm-kvmclock-Ensure-proper-env-tsc-value-for-kvmclock_cu.patch [bz#1143054]
+- kvm-kvmclock-Ensure-time-in-migration-never-goes-backwar.patch [bz#1143054]
+- kvm-IDE-Fill-the-IDENTIFY-request-consistently.patch [bz#852348]
+- kvm-ide-Add-resize-callback-to-ide-core.patch [bz#852348]
+- kvm-virtio-balloon-fix-integer-overflow-in-memory-stats-.patch [bz#1140997]
+- kvm-block-extend-BLOCK_IO_ERROR-event-with-nospace-indic.patch [bz#1117445]
+- kvm-block-extend-BLOCK_IO_ERROR-with-reason-string.patch [bz#1117445]
+- Resolves: bz#1076990
+  (Enable complex memory requirements for virtual machines)
+- Resolves: bz#1117445
+  (QMP: extend block events with error information)
+- Resolves: bz#1132569
+  (RFE: Enable curl driver in qemu-kvm-rhev: https only)
+- Resolves: bz#1140997
+  (guest is stuck when setting balloon memory with large guest-stats-polling-interval)
+- Resolves: bz#1143054
+  (kvmclock: Ensure time in migration never goes backward (backport))
+- Resolves: bz#852348
+  (fail to block_resize local data disk with IDE/AHCI disk_interface)
+
 * Fri Sep 26 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-1.el7
 - Rebase to qemu 2.1.2 [bz#1121609]
 - Resolves: bz#1121609
