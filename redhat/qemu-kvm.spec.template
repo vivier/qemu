@@ -498,10 +498,10 @@ dobuild() {
         --disable-live-block-migration \
 %if 0%{have_gluster}
         --enable-glusterfs \
-        --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,gluster,rbd \
+        --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,gluster,rbd,blkdebug \
 %else
         --disable-glusterfs \
-        --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,rbd \
+        --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,rbd,blkdebug \
 %endif
         --block-drv-ro-whitelist=vmdk,vhdx,vpc,https,ssh \
         --enable-numa \
