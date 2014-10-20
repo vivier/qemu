@@ -858,6 +858,18 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Mon Oct 20 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-4.el7
+- kvm-seccomp-add-semctl-to-the-syscall-whitelist.patch [bz#1126704]
+- kvm-dataplane-fix-virtio_blk_data_plane_create-op-blocke.patch [bz#1140001]
+- kvm-block-fix-overlapping-multiwrite-requests.patch [bz#1123908]
+- kvm-qemu-iotests-add-multiwrite-test-cases.patch [bz#1123908]
+- Resolves: bz#1123908
+  (block.c: multiwrite_merge() truncates overlapping requests)
+- Resolves: bz#1126704
+  (BUG: When use '-sandbox on'+'vnc'+'hda' and quit, qemu-kvm hang)
+- Resolves: bz#1140001
+  (data-plane hotplug should be refused to start if device is already in use (drive-mirror job))
+
 * Fri Oct 10 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-3.el7
 - kvm-Disable-tests-for-removed-features.patch [bz#1108040]
 - kvm-Disable-arm-board-types-using-lsi53c895a.patch [bz#1108040]
