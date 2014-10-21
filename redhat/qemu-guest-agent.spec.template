@@ -123,6 +123,7 @@ BuildRequires: libseccomp-devel >= 1.0.0
 %endif
 # For network block driver
 BuildRequires: libcurl-devel
+BuildRequires: libssh2-devel
 %if 0%{have_gluster}
 # For gluster block driver
 BuildRequires: glusterfs-api-devel
@@ -312,7 +313,7 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
         --disable-glusterfs \
         --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,rbd \
 %endif
-        --block-drv-ro-whitelist=vmdk,vhdx,vpc \
+        --block-drv-ro-whitelist=vmdk,vhdx,vpc,ssh \
 	--target-list= \
         --cpu=%{kvm_target} \
         "$@"
@@ -373,6 +374,11 @@ install -c -m 0755  qemu-ga ${RPM_BUILD_ROOT}%{_bindir}/qemu-ga
 
 %changelog
 %%CHANGELOG%%
+* Tue Oct 21 2014 Miroslav Rezanina <mrezanin@redhat.com> - 2.1.0-4.el7
+- kvm-Mark-etc-sysconfig-qemu-ga-as-config-noreplace.patch [bz#1150924]
+- Resolves: bz#1150924
+  (/etc/sysconfig/qemu-ga is replaced when updated)
+
 * Thu Aug 28 2014 Miroslav Rezanina <mrezanin@redhat.com> - 2.1.0-3.el7
 - Allow building qemu-guest-agent on ppc64le
 - Synchronize with qemu-kvm-rhev-2.1.0-3.el7
