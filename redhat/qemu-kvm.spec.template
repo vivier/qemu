@@ -589,6 +589,15 @@ dobuild --target-list="$buildarch"
     rm $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/qemu-system-%{kvm_target}.stp
     rm $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/qemu-system-%{kvm_target}-simpletrace.stp
 
+    # Install simpletrace
+    install -m 0755 scripts/simpletrace.py $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/simpletrace.py
+    mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/tracetool
+    install -m 0644 -t $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/tracetool scripts/tracetool/*.py
+    mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/tracetool/backend
+    install -m 0644 -t $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/tracetool/backend scripts/tracetool/backend/*.py
+    mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/tracetool/format
+    install -m 0644 -t $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/tracetool/format scripts/tracetool/format/*.py
+
     mkdir -p $RPM_BUILD_ROOT%{qemudocdir}
     install -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} Changelog README COPYING COPYING.LIB LICENSE %{SOURCE19}
     mv ${RPM_BUILD_ROOT}%{_docdir}/qemu/qemu-doc.html $RPM_BUILD_ROOT%{qemudocdir}
@@ -785,6 +794,10 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %config(noreplace) %{_sysconfdir}/ksmtuned.conf
     %dir %{_sysconfdir}/%{pkgname}
     %config(noreplace) %{_sysconfdir}/%{pkgname}/bridge.conf
+    %{_datadir}/%{pkgname}/simpletrace.py*
+    %{_datadir}/%{pkgname}/tracetool/*.py*
+    %{_datadir}/%{pkgname}/tracetool/backend/*.py*
+    %{_datadir}/%{pkgname}/tracetool/format/*.py*
 %endif
 
 %if %{with guest_agent}
