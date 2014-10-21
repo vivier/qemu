@@ -827,6 +827,73 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Oct 21 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-76.el7
+- kvm-usb-hcd-xhci-QOM-Upcast-Sweep.patch [bz#980747]
+- kvm-usb-hcd-xhci-QOM-parent-field-cleanup.patch [bz#980747]
+- kvm-uhci-egsm-fix.patch [bz#1046873]
+- kvm-usb-redir-fix-use-after-free.patch [bz#1046574 bz#1088116]
+- kvm-xhci-remove-leftover-debug-printf.patch [bz#980833]
+- kvm-xhci-add-tracepoint-for-endpoint-state-changes.patch [bz#980833]
+- kvm-xhci-add-port-to-slot_address-tracepoint.patch [bz#980833]
+- kvm-usb-parallelize-usb3-streams.patch [bz#1075846]
+- kvm-xhci-Init-a-transfers-xhci-slotid-and-epid-member-on.patch [bz#1075846]
+- kvm-xhci-Add-xhci_epid_to_usbep-helper-function.patch [bz#980833]
+- kvm-xhci-Fix-memory-leak-on-xhci_disable_ep.patch [bz#980833]
+- kvm-usb-Also-reset-max_packet_size-on-ep_reset.patch [bz#1075846]
+- kvm-usb-Fix-iovec-memleak-on-combined-packet-free.patch [bz#1075846]
+- kvm-usb-hcd-xhci-Remove-unused-sstreamsm-member-from-XHC.patch [bz#980747]
+- kvm-usb-hcd-xhci-Remove-unused-cancelled-member-from-XHC.patch [bz#980747]
+- kvm-usb-hcd-xhci-Report-completion-of-active-transfer-wi.patch [bz#980747]
+- kvm-usb-hcd-xhci-Update-endpoint-context-dequeue-pointer.patch [bz#980747]
+- kvm-xhci-Add-a-few-missing-checks-for-disconnected-devic.patch [bz#980833]
+- kvm-usb-Add-max_streams-attribute-to-endpoint-info.patch [bz#1111450]
+- kvm-usb-Add-usb_device_alloc-free_streams.patch [bz#1111450]
+- kvm-xhci-Call-usb_device_alloc-free_streams.patch [bz#980833]
+- kvm-uhci-invalidate-queue-on-device-address-changes.patch [bz#1111450]
+- kvm-xhci-iso-fix-time-calculation.patch [bz#949385]
+- kvm-xhci-iso-allow-for-some-latency.patch [bz#949385]
+- kvm-xhci-switch-debug-printf-to-tracepoint.patch [bz#980747]
+- kvm-xhci-use-DPRINTF-instead-of-fprintf-stderr.patch [bz#980833]
+- kvm-xhci-child-detach-fix.patch [bz#980833]
+- kvm-usb-add-usb_pick_speed.patch [bz#1075846]
+- kvm-xhci-make-port-reset-trace-point-more-verbose.patch [bz#980833]
+- kvm-usb-initialize-libusb_device-to-avoid-crash.patch [bz#1111450]
+- kvm-target-i386-get-CPL-from-SS.DPL.patch [bz#1097363]
+- kvm-trace-use-unique-Red-Hat-version-number-in-simpletra.patch [bz#1088112]
+- kvm-trace-add-pid-field-to-simpletrace-record.patch [bz#1088112]
+- kvm-simpletrace-add-support-for-trace-record-pid-field.patch [bz#1088112]
+- kvm-simpletrace-add-simpletrace.py-no-header-option.patch [bz#1088112]
+- kvm-trace-extract-stap_escape-function-for-reuse.patch [bz#1088112]
+- kvm-trace-add-tracetool-simpletrace_stap-format.patch [bz#1088112]
+- kvm-trace-install-simpletrace-SystemTap-tapset.patch [bz#1088112]
+- kvm-trace-install-trace-events-file.patch [bz#1088112]
+- kvm-trace-add-SystemTap-init-scripts-for-simpletrace-bri.patch [bz#1088112]
+- kvm-simpletrace-install-simpletrace.py.patch [bz#1088112]
+- kvm-trace-add-systemtap-initscript-README-file-to-RPM.patch [bz#1088112]
+- kvm-rdma-Fix-block-during-rdma-migration.patch [bz#1152969]
+- Resolves: bz#1046574
+  (fail to passthrough the USB speaker redirected from usb-redir with xhci controller)
+- Resolves: bz#1046873
+  (fail to be recognized the hotpluging usb-storage device with xhci controller in win2012R2 guest)
+- Resolves: bz#1075846
+  (qemu-kvm core dumped when hotplug/unhotplug USB3.0 device multi times)
+- Resolves: bz#1088112
+  ([Fujitsu 7.1 FEAT]:QEMU: capturing trace data all the time using ftrace-based tracing)
+- Resolves: bz#1088116
+  (qemu crash when device_del usb-redir)
+- Resolves: bz#1097363
+  (qemu ' KVM internal error. Suberror: 1'  when  query cpu frequently during pxe boot in Intel "Q95xx" host)
+- Resolves: bz#1111450
+  (Guest crash when hotplug usb while disable virt_use_usb)
+- Resolves: bz#1152969
+  (Qemu-kvm got stuck when migrate to wrong RDMA ip)
+- Resolves: bz#949385
+  (passthrough USB speaker to win2012 guest fail to work well)
+- Resolves: bz#980747
+  (flood with 'xhci: wrote doorbell while xHC stopped or paused' when redirected USB Webcam from usb-host with xHCI controller)
+- Resolves: bz#980833
+  (xhci: FIXME: endpoint stopped w/ xfers running, data might be lost)
+
 * Wed Oct 08 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-75.el7
 - kvm-target-i386-Broadwell-CPU-model.patch [bz#1116117]
 - kvm-pc-Add-Broadwell-CPUID-compatibility-bits.patch [bz#1116117]
