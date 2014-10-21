@@ -537,6 +537,11 @@ dobuild --target-list="$buildarch"
           --target-type system --probe-prefix \
           qemu.kvm < ./trace-events > qemu-kvm.stp
 
+        ./scripts/tracetool.py --backend dtrace --format simpletrace-stap \
+          --binary %{_libexecdir}/qemu-kvm --target-name %{kvm_target} \
+          --target-type system --probe-prefix \
+          qemu.kvm < ./trace-events > qemu-kvm-simpletrace.stp
+
         cp -a %{kvm_target}-softmmu/qemu-system-%{kvm_target} qemu-kvm
 
 
@@ -578,9 +583,11 @@ dobuild --target-list="$buildarch"
 
     install -m 0755 qemu-kvm $RPM_BUILD_ROOT%{_libexecdir}/
     install -m 0644 qemu-kvm.stp $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/
+    install -m 0644 qemu-kvm-simpletrace.stp $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/
 
     rm $RPM_BUILD_ROOT%{_bindir}/qemu-system-%{kvm_target}
     rm $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/qemu-system-%{kvm_target}.stp
+    rm $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/qemu-system-%{kvm_target}-simpletrace.stp
 
     mkdir -p $RPM_BUILD_ROOT%{qemudocdir}
     install -p -m 0644 -t ${RPM_BUILD_ROOT}%{qemudocdir} Changelog README COPYING COPYING.LIB LICENSE %{SOURCE19}
@@ -746,7 +753,8 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %global qemu_kvm_files \
 %{_libexecdir}/qemu-kvm \
-%{_datadir}/systemtap/tapset/qemu-kvm.stp
+%{_datadir}/systemtap/tapset/qemu-kvm.stp \
+%{_datadir}/systemtap/tapset/qemu-kvm-simpletrace.stp
 
 %if %{rhev}
 %files -n qemu-kvm-common%{?pkgsuffix}
