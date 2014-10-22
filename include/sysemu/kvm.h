@@ -274,6 +274,7 @@ int kvm_physical_memory_addr_from_host(KVMState *s, void *ram_addr,
 
 void kvm_cpu_synchronize_post_reset(CPUState *cpu);
 void kvm_cpu_synchronize_post_init(CPUState *cpu);
+void kvm_cpu_clean_state(CPUState *cpu);
 
 static inline void cpu_synchronize_post_reset(CPUState *cpu)
 {
@@ -286,6 +287,13 @@ static inline void cpu_synchronize_post_init(CPUState *cpu)
 {
     if (kvm_enabled()) {
         kvm_cpu_synchronize_post_init(cpu);
+    }
+}
+
+static inline void cpu_clean_state(CPUState *cpu)
+{
+    if (kvm_enabled()) {
+        kvm_cpu_clean_state(cpu);
     }
 }
 

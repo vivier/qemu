@@ -437,6 +437,15 @@ bool cpu_is_stopped(CPUState *cpu)
     return !runstate_is_running() || cpu->stopped;
 }
 
+void cpu_clean_all_dirty(void)
+{
+    CPUArchState *cpu;
+
+    for (cpu = first_cpu; cpu; cpu = cpu->next_cpu) {
+        cpu_clean_state(ENV_GET_CPU(cpu));
+    }
+}
+
 static int do_vm_stop(RunState state)
 {
     int ret = 0;
