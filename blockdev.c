@@ -1793,6 +1793,7 @@ void qmp___com_redhat_change_backing_file(const char *device,
 void qmp_blockdev_add(BlockdevOptions *options, Error **errp)
 {
     QmpOutputVisitor *ov = qmp_output_visitor_new();
+    DriveInfo *dinfo;
     QObject *obj;
     QDict *qdict;
     Error *local_err = NULL;
@@ -1828,9 +1829,15 @@ void qmp_blockdev_add(BlockdevOptions *options, Error **errp)
 
     qdict_flatten(qdict);
 
-    blockdev_init(qdict, IF_NONE, &local_err);
+    dinfo = blockdev_init(qdict, IF_NONE, &local_err);
     if (error_is_set(&local_err)) {
         error_propagate(errp, local_err);
+        goto fail;
+    }
+
+    if (bdrv_key_required(dinfo->bdrv)) {
+        drive_uninit(dinfo);
+        error_setg(errp, "blockdev-add doesn't support encrypted devices");
         goto fail;
     }
 
