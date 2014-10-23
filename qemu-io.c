@@ -1831,7 +1831,7 @@ static int openfile(char *name, int flags, int growable, QDict *opts)
             return 1;
         }
     } else {
-        bs = bdrv_new("hda");
+        bs = bdrv_new("hda", &error_abort);
 
         if (bdrv_open(bs, name, opts, flags, NULL, &local_err) < 0) {
             fprintf(stderr, "%s: can't open device %s: %s\n", progname, name,

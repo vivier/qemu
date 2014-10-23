@@ -2935,7 +2935,7 @@ static int enable_write_target(BDRVVVFATState *s)
         goto err;
     }
 
-    s->qcow = bdrv_new("");
+    s->qcow = bdrv_new("", &error_abort);
 
     ret = bdrv_open(s->qcow, s->qcow_filename, NULL,
             BDRV_O_RDWR | BDRV_O_CACHE_WB | BDRV_O_NO_FLUSH, bdrv_qcow,
@@ -2951,7 +2951,7 @@ static int enable_write_target(BDRVVVFATState *s)
     unlink(s->qcow_filename);
 #endif
 
-    s->bs->backing_hd = bdrv_new("");
+    s->bs->backing_hd = bdrv_new("", &error_abort);
     s->bs->backing_hd->drv = &vvfat_write_target;
     s->bs->backing_hd->opaque = g_malloc(sizeof(void*));
     *(void**)s->bs->backing_hd->opaque = s;

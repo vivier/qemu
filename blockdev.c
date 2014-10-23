@@ -471,7 +471,11 @@ static DriveInfo *blockdev_init(QDict *bs_opts,
     /* init */
     dinfo = g_malloc0(sizeof(*dinfo));
     dinfo->id = g_strdup(qemu_opts_id(opts));
-    dinfo->bdrv = bdrv_new(dinfo->id);
+    dinfo->bdrv = bdrv_new(dinfo->id, &error);
+    if (error) {
+        error_propagate(errp, error);
+        goto bdrv_new_err;
+    }
     dinfo->bdrv->open_flags = snapshot ? BDRV_O_SNAPSHOT : 0;
     dinfo->bdrv->read_only = ro;
     dinfo->type = type;
@@ -531,8 +535,9 @@ static DriveInfo *blockdev_init(QDict *bs_opts,
 
 err:
     bdrv_unref(dinfo->bdrv);
-    g_free(dinfo->id);
     QTAILQ_REMOVE(&drives, dinfo, next);
+bdrv_new_err:
+    g_free(dinfo->id);
     g_free(dinfo);
 early_err:
     QDECREF(bs_opts);
@@ -1056,7 +1061,7 @@ static void external_snapshot_prepare(BlkTransactionStates *common,
     }
 
     /* We will manually add the backing_hd field to the bs later */
-    states->new_bs = bdrv_new("");
+    states->new_bs = bdrv_new("", &error_abort);
     /* TODO Inherit bs->options or only take explicit options with an
      * extended QMP command? */
     ret = bdrv_open(states->new_bs, new_image_file, NULL,
@@ -1678,7 +1683,7 @@ void qmp_drive_mirror(const char *device, const char *target,
     /* Mirroring takes care of copy-on-write using the source's backing
      * file.
      */
-    target_bs = bdrv_new("");
+    target_bs = bdrv_new("", &error_abort);
     ret = bdrv_open(target_bs, target, NULL, flags | BDRV_O_NO_BACKING, drv,
                     &local_err);
     if (ret < 0) {

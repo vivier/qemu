@@ -300,7 +300,7 @@ void bdrv_register(BlockDriver *bdrv)
 }
 
 /* create a new block device (by default it is empty) */
-BlockDriverState *bdrv_new(const char *device_name)
+BlockDriverState *bdrv_new(const char *device_name, Error **errp)
 {
     BlockDriverState *bs;
 
@@ -892,7 +892,7 @@ int bdrv_file_open(BlockDriverState **pbs, const char *filename,
         options = qdict_new();
     }
 
-    bs = bdrv_new("");
+    bs = bdrv_new("", &error_abort);
     bs->options = options;
     options = qdict_clone_shallow(options);
 
@@ -1014,7 +1014,7 @@ int bdrv_open_backing_file(BlockDriverState *bs, QDict *options, Error **errp)
                                        sizeof(backing_filename));
     }
 
-    bs->backing_hd = bdrv_new("");
+    bs->backing_hd = bdrv_new("", &error_abort);
 
     if (bs->backing_format[0] != '\0') {
         back_drv = bdrv_find_format(bs->backing_format);
@@ -1111,7 +1111,7 @@ int bdrv_open(BlockDriverState *bs, const char *filename, QDict *options,
            instead of opening 'filename' directly */
 
         /* if there is a backing file, use it */
-        bs1 = bdrv_new("");
+        bs1 = bdrv_new("", &error_abort);
         ret = bdrv_open(bs1, filename, NULL, 0, drv, &local_err);
         if (ret < 0) {
             bdrv_unref(bs1);
@@ -5273,7 +5273,7 @@ void bdrv_img_create(const char *filename, const char *fmt,
             back_flags =
                 flags & ~(BDRV_O_RDWR | BDRV_O_SNAPSHOT | BDRV_O_NO_BACKING);
 
-            bs = bdrv_new("");
+            bs = bdrv_new("", &error_abort);
 
             ret = bdrv_open(bs, backing_file->value.s, NULL, back_flags,
                             backing_drv, &local_err);

@@ -155,7 +155,7 @@ static int blkverify_open(BlockDriverState *bs, QDict *options, int flags,
         goto fail;
     }
 
-    s->test_file = bdrv_new("");
+    s->test_file = bdrv_new("", &error_abort);
     ret = bdrv_open(s->test_file, filename, NULL, flags, NULL, &local_err);
     if (ret < 0) {
         error_propagate(errp, local_err);
