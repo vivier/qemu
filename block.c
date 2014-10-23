@@ -304,6 +304,12 @@ BlockDriverState *bdrv_new(const char *device_name, Error **errp)
 {
     BlockDriverState *bs;
 
+    if (bdrv_find(device_name)) {
+        error_setg(errp, "Device with id '%s' already exists",
+                   device_name);
+        return NULL;
+    }
+
     bs = g_malloc0(sizeof(BlockDriverState));
     pstrcpy(bs->device_name, sizeof(bs->device_name), device_name);
     if (device_name[0] != '\0') {
