@@ -883,6 +883,35 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Oct 24 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-5.el7
+- kvm-blockdev-Orphaned-drive-search.patch [bz#946993]
+- kvm-blockdev-Allow-overriding-if_max_dev-property.patch [bz#946993]
+- kvm-pc-vl-Add-units-per-default-bus-property.patch [bz#946993]
+- kvm-ide-Update-ide_drive_get-to-be-HBA-agnostic.patch [bz#946993]
+- kvm-qtest-bios-tables-Correct-Q35-command-line.patch [bz#946993]
+- kvm-q35-ahci-Pick-up-cdrom-and-hda-options.patch [bz#946993]
+- kvm-trace-events-drop-orphan-virtio_blk_data_plane_compl.patch [bz#1144325]
+- kvm-trace-events-drop-orphan-usb_mtp_data_out.patch [bz#1144325]
+- kvm-trace-events-drop-orphan-iscsi-trace-events.patch [bz#1144325]
+- kvm-cleanup-trace-events.pl-Tighten-search-for-trace-eve.patch [bz#1144325]
+- kvm-trace-events-Drop-unused-megasas-trace-event.patch [bz#1144325]
+- kvm-trace-events-Drop-orphaned-monitor-trace-event.patch [bz#1144325]
+- kvm-trace-events-Fix-comments-pointing-to-source-files.patch [bz#1144325]
+- kvm-simpletrace-add-simpletrace.py-no-header-option.patch [bz#1155015]
+- kvm-trace-extract-stap_escape-function-for-reuse.patch [bz#1155015]
+- kvm-trace-add-tracetool-simpletrace_stap-format.patch [bz#1155015]
+- kvm-trace-install-simpletrace-SystemTap-tapset.patch [bz#1155015]
+- kvm-trace-install-trace-events-file.patch [bz#1155015]
+- kvm-trace-add-SystemTap-init-scripts-for-simpletrace-bri.patch [bz#1155015]
+- kvm-simpletrace-install-simpletrace.py.patch [bz#1155015]
+- kvm-trace-add-systemtap-initscript-README-file-to-RPM.patch [bz#1155015]
+- Resolves: bz#1144325
+  (Can not probe  "qemu.kvm.virtio_blk_data_plane_complete_request")
+- Resolves: bz#1155015
+  ([Fujitsu 7.1 FEAT]:QEMU: capturing trace data all the time using ftrace-based tracing)
+- Resolves: bz#946993
+  (Q35 does not honor -drive if=ide,... and its sugared forms -cdrom, -hda, ...)
+
 * Mon Oct 20 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-4.el7
 - kvm-seccomp-add-semctl-to-the-syscall-whitelist.patch [bz#1126704]
 - kvm-dataplane-fix-virtio_blk_data_plane_create-op-blocke.patch [bz#1140001]
