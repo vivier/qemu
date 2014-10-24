@@ -2659,12 +2659,14 @@ static int img_amend(int argc, char **argv)
     int c, ret = 0;
     char *options = NULL;
     QEMUOptionParameter *create_options = NULL, *options_param = NULL;
-    const char *fmt = NULL, *filename;
+    const char *fmt = NULL, *filename, *cache;
+    int flags;
     bool quiet = false;
     BlockDriverState *bs = NULL;
 
+    cache = BDRV_DEFAULT_CACHE;
     for (;;) {
-        c = getopt(argc, argv, "hqf:o:");
+        c = getopt(argc, argv, "ho:f:t:q");
         if (c == -1) {
             break;
         }
@@ -2691,6 +2693,9 @@ static int img_amend(int argc, char **argv)
             case 'f':
                 fmt = optarg;
                 break;
+            case 't':
+                cache = optarg;
+                break;
             case 'q':
                 quiet = true;
                 break;
@@ -2713,8 +2718,14 @@ static int img_amend(int argc, char **argv)
         help();
     }
 
-    bs = bdrv_new_open("image", filename, fmt,
-                       BDRV_O_FLAGS | BDRV_O_RDWR, true, quiet);
+    flags = BDRV_O_FLAGS | BDRV_O_RDWR;
+    ret = bdrv_parse_cache_flags(cache, &flags);
+    if (ret < 0) {
+        error_report("Invalid cache option: %s", cache);
+        goto out;
+    }
+
+    bs = bdrv_new_open("image", filename, fmt, flags, true, quiet);
     if (!bs) {
         error_report("Could not open image '%s'", filename);
         ret = -1;
