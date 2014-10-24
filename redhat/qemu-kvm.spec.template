@@ -827,6 +827,20 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Oct 24 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-77.el7
+- kvm-seccomp-add-semctl-to-the-syscall-whitelist.patch [bz#1026314]
+- kvm-Revert-kvmclock-Ensure-proper-env-tsc-value-for-kvmc.patch [bz#1098602 bz#1130428]
+- kvm-Revert-kvmclock-Ensure-time-in-migration-never-goes-.patch [bz#1098602 bz#1130428]
+- kvm-Introduce-cpu_clean_all_dirty.patch [bz#1098602 bz#1130428]
+- kvm-kvmclock-Ensure-proper-env-tsc-value-for-kvmclock.v2.patch [bz#1098602 bz#1130428]
+- kvm-kvmclock-Ensure-time-in-migration-never-goes-back.v2.patch [bz#1098602 bz#1130428]
+- Resolves: bz#1026314
+  (BUG: qemu-kvm hang when use '-sandbox on'+'vnc'+'hda')
+- Resolves: bz#1098602
+  (kvmclock: Ensure time in migration never goes backward (backport))
+- Resolves: bz#1130428
+  (After migration of RHEL7.1 guest with "-vga qxl", GUI console is hang)
+
 * Tue Oct 21 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-76.el7
 - kvm-usb-hcd-xhci-QOM-Upcast-Sweep.patch [bz#980747]
 - kvm-usb-hcd-xhci-QOM-parent-field-cleanup.patch [bz#980747]
