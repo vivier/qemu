@@ -784,6 +784,23 @@ static void pci_config_free(PCIDevice *pci_dev)
     g_free(pci_dev->used);
 }
 
+static void do_pci_unregister_device(PCIDevice *pci_dev)
+{
+    if (pci_dev->irq) {
+        qemu_free_irqs(pci_dev->irq);
+    }
+
+    pci_dev->bus->devices[pci_dev->devfn] = NULL;
+    pci_config_free(pci_dev);
+
+    if (!pci_dev->bus->dma_context_fn) {
+        address_space_destroy(&pci_dev->bus_master_as);
+        memory_region_destroy(&pci_dev->bus_master_enable_region);
+        g_free(pci_dev->dma);
+        pci_dev->dma = NULL;
+    }
+}
+
 /* -1 for devfn means auto assign */
 static PCIDevice *do_pci_register_device(PCIDevice *pci_dev, PCIBus *bus,
                                          const char *name, int devfn)
@@ -852,7 +869,7 @@ static PCIDevice *do_pci_register_device(PCIDevice *pci_dev, PCIBus *bus,
         pci_init_mask_bridge(pci_dev);
     }
     if (pci_init_multifunction(bus, pci_dev)) {
-        pci_config_free(pci_dev);
+        do_pci_unregister_device(pci_dev);
         return NULL;
     }
 
@@ -866,20 +883,6 @@ static PCIDevice *do_pci_register_device(PCIDevice *pci_dev, PCIBus *bus,
     pci_dev->irq = qemu_allocate_irqs(pci_set_irq, pci_dev, PCI_NUM_PINS);
     pci_dev->version_id = 2; /* Current pci device vmstate version */
     return pci_dev;
-}
-
-static void do_pci_unregister_device(PCIDevice *pci_dev)
-{
-    qemu_free_irqs(pci_dev->irq);
-    pci_dev->bus->devices[pci_dev->devfn] = NULL;
-    pci_config_free(pci_dev);
-
-    if (!pci_dev->bus->dma_context_fn) {
-        address_space_destroy(&pci_dev->bus_master_as);
-        memory_region_destroy(&pci_dev->bus_master_enable_region);
-        g_free(pci_dev->dma);
-        pci_dev->dma = NULL;
-    }
 }
 
 static void pci_unregister_io_regions(PCIDevice *pci_dev)
