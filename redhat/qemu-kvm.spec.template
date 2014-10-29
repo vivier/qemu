@@ -105,7 +105,9 @@ Requires: %{pkgname}-common%{?pkgsuffix} = %{epoch}:%{version}-%{release}
         %if 0%{?have_seccomp:1}
 Requires: libseccomp >= 1.0.0
         %endif
-
+%if 0%{!?build_only_sub:1}
+Requires: glusterfs-api >= 3.6.0
+%endif
 # OOM killer breaks builds with parallel make on s390(x)
 %ifarch s390 s390x
     %define _smp_mflags %{nil}
@@ -176,7 +178,7 @@ BuildRequires: libseccomp-devel >= 1.0.0
 BuildRequires: libcurl-devel
 %if 0%{!?build_only_sub:1}
 # For gluster block driver
-BuildRequires: glusterfs-api-devel
+BuildRequires: glusterfs-api-devel >= 3.6.0
 BuildRequires: glusterfs-devel
 %endif
 # We need both because the 'stap' binary is probed for by configure
