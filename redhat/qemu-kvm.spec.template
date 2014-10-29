@@ -129,6 +129,9 @@ Requires: libseccomp >= 1.0.0
         %endif
 # For compressed guest memory dumps
 Requires: lzo snappy
+%if 0%{have_gluster}
+Requires: glusterfs-api >= 3.6.0
+%endif
 
 
 # OOM killer breaks builds with parallel make on s390(x)
@@ -200,7 +203,7 @@ BuildRequires: libcurl-devel
 BuildRequires: libssh2-devel
 %if 0%{have_gluster}
 # For gluster block driver
-BuildRequires: glusterfs-api-devel
+BuildRequires: glusterfs-api-devel >= 3.6.0
 BuildRequires: glusterfs-devel
 %endif
 # We need both because the 'stap' binary is probed for by configure
