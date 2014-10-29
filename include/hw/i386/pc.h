@@ -583,6 +583,14 @@ bool e820_get_entry(int, uint32_t, uint64_t *, uint64_t *);
             .driver   = "virtio-net-pci", \
             .property = "ctrl_guest_offloads", \
             .value    = "off", \
+        },{\
+            .driver   = "VGA",\
+            .property = "qemu-extended-regs",\
+            .value    = "off",\
+        },{\
+            .driver   = "secondary-vga",\
+            .property = "qemu-extended-regs",\
+            .value    = "off",\
         }
 
 #endif
