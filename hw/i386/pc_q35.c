@@ -218,8 +218,6 @@ static void pc_q35_init(QEMUMachineInitArgs *args)
     }
 }
 
-#if 0 /* Disabled for Red Hat Enterprise Linux */
-
 static void pc_q35_init_1_5(QEMUMachineInitArgs *args)
 {
     has_pci_info = false;
@@ -266,59 +264,3 @@ static void pc_q35_machine_init(void)
 }
 
 machine_init(pc_q35_machine_init);
-
-#endif  /* Disabled for Red Hat Enterprise Linux */
-
-/* Red Hat Enterprise Linux machine types */
-
-static void pc_q35_compat_rhel700(QEMUMachineInitArgs *args)
-{
-    x86_cpu_compat_set_features("Conroe", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
-    x86_cpu_compat_set_features("Penryn", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
-    x86_cpu_compat_set_features("Nehalem", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
-    x86_cpu_compat_set_features("Westmere", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
-    /* SandyBridge and Haswell already have x2apic enabled */
-    x86_cpu_compat_set_features("Opteron_G1", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
-    x86_cpu_compat_set_features("Opteron_G2", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
-    x86_cpu_compat_set_features("Opteron_G3", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
-    x86_cpu_compat_set_features("Opteron_G4", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
-    x86_cpu_compat_set_features("Opteron_G5", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
-
-    /* KVM can't expose RDTSCP on AMD CPUs, so there's no point in enabling it
-     * on AMD CPU models.
-     */
-    x86_cpu_compat_set_features("phenom", FEAT_8000_0001_EDX, 0,
-                                CPUID_EXT2_RDTSCP);
-    x86_cpu_compat_set_features("Opteron_G2", FEAT_8000_0001_EDX, 0,
-                                CPUID_EXT2_RDTSCP);
-    x86_cpu_compat_set_features("Opteron_G3", FEAT_8000_0001_EDX, 0,
-                                CPUID_EXT2_RDTSCP);
-    x86_cpu_compat_set_features("Opteron_G4", FEAT_8000_0001_EDX, 0,
-                                CPUID_EXT2_RDTSCP);
-    x86_cpu_compat_set_features("Opteron_G5", FEAT_8000_0001_EDX, 0,
-                                CPUID_EXT2_RDTSCP);
-}
-
-static void pc_q35_init_rhel700(QEMUMachineInitArgs *args)
-{
-    pc_q35_compat_rhel700(args);
-    pc_q35_init(args);
-}
-
-static QEMUMachine pc_q35_machine_rhel700 = {
-    .name = "pc-q35-rhel7.0.0",
-    .alias = "q35",
-    .desc = "RHEL-7.0.0 PC (Q35 + ICH9, 2009)",
-    .init = pc_q35_init_rhel700,
-    .hot_add_cpu = pc_hot_add_cpu,
-    .max_cpus = RHEL_MAX_CPUS,
-    .default_machine_opts = "firmware=bios-256k.bin",
-    DEFAULT_MACHINE_OPTIONS,
-};
-
-static void rhel_pc_q35_machine_init(void)
-{
-    qemu_register_machine(&pc_q35_machine_rhel700);
-}
-
-machine_init(rhel_pc_q35_machine_init);
