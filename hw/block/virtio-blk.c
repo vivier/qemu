@@ -300,14 +300,15 @@ static void virtio_blk_handle_write(VirtIOBlockReq *req, MultiReqBuffer *mrb)
 
     sector = ldq_p(&req->out->sector);
 
-    bdrv_acct_start(req->dev->bs, &req->acct, req->qiov.size, BDRV_ACCT_WRITE);
-
     trace_virtio_blk_handle_write(req, sector, req->qiov.size / 512);
 
     if (!virtio_blk_sect_range_ok(req->dev, sector, req->qiov.size)) {
-        virtio_blk_rw_complete(req, -EIO);
+        virtio_blk_req_complete(req, VIRTIO_BLK_S_IOERR);
+        g_free(req);
         return;
     }
+
+    bdrv_acct_start(req->dev->bs, &req->acct, req->qiov.size, BDRV_ACCT_WRITE);
 
     if (mrb->num_writes == 32) {
         virtio_submit_multiwrite(req->dev->bs, mrb);
@@ -330,14 +331,15 @@ static void virtio_blk_handle_read(VirtIOBlockReq *req)
 
     sector = ldq_p(&req->out->sector);
 
-    bdrv_acct_start(req->dev->bs, &req->acct, req->qiov.size, BDRV_ACCT_READ);
-
     trace_virtio_blk_handle_read(req, sector, req->qiov.size / 512);
 
     if (!virtio_blk_sect_range_ok(req->dev, sector, req->qiov.size)) {
-        virtio_blk_rw_complete(req, -EIO);
+        virtio_blk_req_complete(req, VIRTIO_BLK_S_IOERR);
+        g_free(req);
         return;
     }
+
+    bdrv_acct_start(req->dev->bs, &req->acct, req->qiov.size, BDRV_ACCT_READ);
     bdrv_aio_readv(req->dev->bs, sector, &req->qiov,
                    req->qiov.size / BDRV_SECTOR_SIZE,
                    virtio_blk_rw_complete, req);
