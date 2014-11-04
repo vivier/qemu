@@ -53,6 +53,7 @@ static bool has_pci_info;
 static bool has_acpi_build = true;
 static bool smbios_defaults = true;
 static bool smbios_legacy_mode;
+static bool smbios_uuid_encoded = true;
 /* Make sure that guest addresses aligned at 1Gbyte boundaries get mapped to
  * host addresses aligned at 1Gbyte boundaries.  This way we can use 1GByte
  * pages in the host.
@@ -164,7 +165,8 @@ static void pc_q35_init(MachineState *machine)
     if (smbios_defaults) {
         MachineClass *mc = MACHINE_GET_CLASS(machine);
         /* These values are guest ABI, do not change */
-        smbios_set_defaults("Red Hat", "KVM", mc->desc, smbios_legacy_mode);
+        smbios_set_defaults("Red Hat", "KVM", mc->desc, smbios_legacy_mode,
+                            smbios_uuid_encoded);
     }
 
     /* allocate ram and load rom/bios */
