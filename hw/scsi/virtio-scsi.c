@@ -609,6 +609,7 @@ int virtio_scsi_common_init(VirtIOSCSICommon *s)
         error_report("Invalid number of queues (= %" PRId32 "), "
                          "must be a positive integer less than %d.",
                      s->conf.num_queues, VIRTIO_PCI_QUEUE_MAX);
+        virtio_cleanup(vdev);
         return -1;
     }
     s->cmd_vqs = g_malloc0(s->conf.num_queues * sizeof(VirtQueue *));
