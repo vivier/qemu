@@ -13,6 +13,10 @@ BUILD_TARGET ?= --scratch $(BUILD_SCRATCH_TARGET)
 #BUILD_TARGET ?= $(BUILD_DEFAULT_TARGET)
 #endif
 
+ifeq ($(NOWAIT),1)
+  NOWAITFLAG=--nowait
+endif
+
 RHEV_FLAG=0
 RELEASE:=$(shell sed -ne 's/^[^\#]*define release \(.*\)%.*%.*/\1/p' $(REDHAT)/$(SPECFILE).template)
 
@@ -159,13 +163,13 @@ rh-koji rh-koji-ga rh-koji-autotest: BUILD_FLAGS ?= $(KOJI_FLAGS) $(TEST_FLAGS)
 rh-brew rh-brew-ppc rh-brew-aarch64 rh-brew-autotest rh-koji-autotest: RHEV_FLAG=1
 rh-brew rh-brew-ppc rh-brew-aarch64 rh-brew-autotest rh-koji-autotest: PKG_FULL_NVR=$(PKGNAME)-rhev-$(PKG_FULL_VR)
 rh-brew-ppc rh-brew-aarch64: rh-srpm
-	brew build $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)
+	brew build $(BUILD_FLAGS) $(BUILD_TARGET) $(NOWAITFLAG) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)
 rh-brew rh-koji: rh-%: rh-srpm
-	$* build $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)
+	$* build $(BUILD_FLAGS) $(BUILD_TARGET) $(NOWAITFLAG) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)
 rh-brew-ga rh-koji-ga: rh-%-ga: rh-srpm
-	$* build $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)
+	$* build $(BUILD_FLAGS) $(BUILD_TARGET) $(NOWAITFLAG) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)
 rh-brew-ga-ppc: rh-srpm
-	brew build $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)
+	brew build $(BUILD_FLAGS) $(BUILD_TARGET) $(NOWAITFLAG) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)
 rh-brew-autotest rh-koji-autotest: rh-%-autotest: rh-srpm
 	./schedule-tests.sh "$* build --nowait $(BUILD_FLAGS) $(BUILD_TARGET) $(SRPMS)/$(PKG_FULL_NVR).src.rpm $(OUTPUT_FILE)" "autotest"
 rh-brew-covscan rh-koji-covscan: rh-%-covscan: rh-srpm
