@@ -605,10 +605,11 @@ int virtio_scsi_common_init(VirtIOSCSICommon *s)
     virtio_init(VIRTIO_DEVICE(s), "virtio-scsi", VIRTIO_ID_SCSI,
                 sizeof(VirtIOSCSIConfig));
 
-    if (s->conf.num_queues <= 0 || s->conf.num_queues > VIRTIO_PCI_QUEUE_MAX) {
-        error_report("Invalid number of queues (= %" PRId32 "), "
+    if (s->conf.num_queues == 0 ||
+            s->conf.num_queues > VIRTIO_PCI_QUEUE_MAX - 2) {
+        error_report("Invalid number of queues (= %" PRIu32 "), "
                          "must be a positive integer less than %d.",
-                     s->conf.num_queues, VIRTIO_PCI_QUEUE_MAX);
+                     s->conf.num_queues, VIRTIO_PCI_QUEUE_MAX - 2);
         virtio_cleanup(vdev);
         return -1;
     }
