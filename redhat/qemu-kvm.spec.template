@@ -883,6 +883,28 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Nov 04 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-6.el7
+- kvm-ivshmem-use-error_report.patch [bz#1104063]
+- kvm-ivshmem-RHEL-only-remove-unsupported-code.patch [bz#1104063]
+- kvm-ivshmem-RHEL-only-explicitly-remove-dead-code.patch [bz#1104063]
+- kvm-Revert-rhel-Drop-ivshmem-device.patch [bz#1104063]
+- kvm-serial-reset-state-at-startup.patch [bz#1135844]
+- kvm-spice-call-qemu_spice_set_passwd-during-init.patch [bz#1140975]
+- kvm-input-fix-send-key-monitor-command-release-event-ord.patch [bz#1145028 bz#1146801]
+- kvm-virtio-scsi-sense-in-virtio_scsi_command_complete.patch [bz#1152830]
+- Resolves: bz#1104063
+  ([RHEL7.1 Feat] Enable qemu-kvm Inter VM Shared Memory (IVSHM) feature)
+- Resolves: bz#1135844
+  ([virtio-win]communication ports were marked with a  yellow exclamation after hotplug pci-serial,pci-serial-2x,pci-serial-4x)
+- Resolves: bz#1140975
+  (fail to login spice session with password + expire time)
+- Resolves: bz#1145028
+  (send-key does not crash windows guest even when it should)
+- Resolves: bz#1146801
+  (sendkey: releasing order of combined keys was wrongly converse)
+- Resolves: bz#1152830
+  (Fix sense buffer in virtio-scsi LUN passthrough)
+
 * Fri Oct 24 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-5.el7
 - kvm-blockdev-Orphaned-drive-search.patch [bz#946993]
 - kvm-blockdev-Allow-overriding-if_max_dev-property.patch [bz#946993]
