@@ -1,0 +1,7 @@
+[gitpublishprofile "default"]
+base = rhev7/master-2.1.2
+prefix = RHEV-7.1 qemu-kvm-rhev PATCH
+to = rhvirt-patches@redhat.com
+suppresscc = all
+message = True
+
