@@ -1,6 +1,14 @@
 # Default configuration for ppc64-softmmu
 
-include pci.mak
+# PCI configuration - cut down from the defaults in pci.mak
+CONFIG_PCI=y
+CONFIG_VIRTIO_PCI=y
+CONFIG_VIRTIO=y
+CONFIG_USB_EHCI=y
+CONFIG_USB_XHCI=y
+CONFIG_WDT_IB6300ESB=y
+CONFIG_PCI_TESTDEV=y
+
 include sound.mak
 include usb.mak
 CONFIG_ISA_MMIO=y
