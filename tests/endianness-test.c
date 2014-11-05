@@ -46,8 +46,10 @@ static const TestCase test_cases[] = {
     { "ppc", "bamboo", 0xe8000000, .bswap = true, .superio = "i82378" },
     { "ppc64", "mac99", 0xf2000000, .bswap = true, .superio = "i82378" },
 #endif /* Disabled for RHEL, since CONFIG_MAC is not enabled */
+#if 0 /* Disabled for RHEL, since ISA is not enabled */
     { "ppc64", "pseries", 0x10080000000ULL,
       .bswap = true, .superio = "i82378" },
+#endif /* Disabled for RHEL, since ISA is not enabled */
     { "sh4", "r2d", 0xfe240000, .superio = "i82378" },
     { "sh4eb", "r2d", 0xfe240000, .bswap = true, .superio = "i82378" },
     { "sparc64", "sun4u", 0x1fe02000000LL, .bswap = true },
