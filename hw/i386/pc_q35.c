@@ -469,6 +469,7 @@ static void pc_q35_init_rhel710(MachineState *machine)
 
 static QEMUMachine pc_q35_machine_rhel710 = {
     PC_DEFAULT_MACHINE_OPTIONS,
+    .family = "pc_q35_Z",
     .name = "pc-q35-rhel7.1.0",
     .alias = "q35",
     .desc = "RHEL-7.1.0 PC (Q35 + ICH9, 2009)",
@@ -510,6 +511,7 @@ static void pc_q35_init_rhel700(MachineState *machine)
 
 static QEMUMachine pc_q35_machine_rhel700 = {
     PC_DEFAULT_MACHINE_OPTIONS,
+    .family = "pc_q35_Z",
     .name = "pc-q35-rhel7.0.0",
     .desc = "RHEL-7.0.0 PC (Q35 + ICH9, 2009)",
     .init = pc_q35_init_rhel700,

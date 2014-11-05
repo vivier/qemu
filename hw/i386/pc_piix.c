@@ -953,6 +953,7 @@ static void pc_init_rhel710(MachineState *machine)
 
 static QEMUMachine pc_machine_rhel710 = {
     PC_DEFAULT_MACHINE_OPTIONS,
+    .family = "pc_piix_Y",
     .name = "pc-i440fx-rhel7.1.0",
     .alias = "pc",
     .desc = "RHEL 7.1.0 PC (i440FX + PIIX, 1996)",
@@ -996,6 +997,7 @@ static void pc_init_rhel700(MachineState *machine)
 
 static QEMUMachine pc_machine_rhel700 = {
     PC_DEFAULT_MACHINE_OPTIONS,
+    .family = "pc_piix_Y",
     .name = "pc-i440fx-rhel7.0.0",
     .desc = "RHEL 7.0.0 PC (i440FX + PIIX, 1996)",
     .init = pc_init_rhel700,
@@ -1183,6 +1185,7 @@ static void pc_init_rhel650(MachineState *machine)
 
 static QEMUMachine pc_machine_rhel650 = {
     PC_DEFAULT_MACHINE_OPTIONS,
+    .family = "pc_piix_Z",
     .name = "rhel6.5.0",
     .desc = "RHEL 6.5.0 PC",
     .init = pc_init_rhel650,
@@ -1230,6 +1233,7 @@ static void pc_init_rhel640(MachineState *machine)
 
 static QEMUMachine pc_machine_rhel640 = {
     PC_DEFAULT_MACHINE_OPTIONS,
+    .family = "pc_piix_Z",
     .name = "rhel6.4.0",
     .desc = "RHEL 6.4.0 PC",
     .init = pc_init_rhel640,
@@ -1304,6 +1308,7 @@ static void pc_init_rhel630(MachineState *machine)
 
 static QEMUMachine pc_machine_rhel630 = {
     PC_DEFAULT_MACHINE_OPTIONS,
+    .family = "pc_piix_Z",
     .name = "rhel6.3.0",
     .desc = "RHEL 6.3.0 PC",
     .init = pc_init_rhel630,
@@ -1334,6 +1339,7 @@ static void pc_init_rhel620(MachineState *machine)
 
 static QEMUMachine pc_machine_rhel620 = {
     PC_DEFAULT_MACHINE_OPTIONS,
+    .family = "pc_piix_Z",
     .name = "rhel6.2.0",
     .desc = "RHEL 6.2.0 PC",
     .init = pc_init_rhel620,
@@ -1405,6 +1411,7 @@ static void pc_init_rhel610(MachineState *machine)
 
 static QEMUMachine pc_machine_rhel610 = {
     PC_DEFAULT_MACHINE_OPTIONS,
+    .family = "pc_piix_Z",
     .name = "rhel6.1.0",
     .desc = "RHEL 6.1.0 PC",
     .init = pc_init_rhel610,
@@ -1443,6 +1450,7 @@ static void pc_init_rhel600(MachineState *machine)
 
 static QEMUMachine pc_machine_rhel600 = {
     PC_DEFAULT_MACHINE_OPTIONS,
+    .family = "pc_piix_Z",
     .name = "rhel6.0.0",
     .desc = "RHEL 6.0.0 PC",
     .init = pc_init_rhel600,
