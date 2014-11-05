@@ -25,6 +25,8 @@
     %global have_librdma 1
 %endif
 
+%global need_kvm_modfile 0
+
 %ifarch %{ix86}
     %global kvm_target    i386
 %endif
@@ -37,6 +39,7 @@
 %ifarch %{power64}
     %global kvm_target    ppc64
     %global have_fdt     1
+    %global need_kvm_modfile 1
 %endif
 %ifarch s390x s390
     %global kvm_target    s390x
@@ -143,9 +146,7 @@ Source0: http://wiki.qemu.org/download/qemu-%{version}.tar.bz2
 
 Source1: qemu.binfmt
 # Loads kvm kernel modules at boot
-# Not needed anymore - required only for kvm on non i86 archs 
-# where we do not ubuild kvm
-# Source2: kvm.modules
+Source2: kvm.modules
 # Creates /dev/kvm
 Source3: 80-kvm.rules
 # KSM control scripts
@@ -563,6 +564,11 @@ dobuild --target-list="$buildarch"
     install -D -p -m 0755 %{SOURCE8} $RPM_BUILD_ROOT%{_sbindir}/ksmtuned
     install -D -p -m 0644 %{SOURCE9} $RPM_BUILD_ROOT%{_sysconfdir}/ksmtuned.conf
 
+    %if 0%{?need_kvm_modfile}
+	mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules
+	install -m 0755 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/modules/kvm.modules
+    %endif
+
     mkdir -p $RPM_BUILD_ROOT%{_bindir}/
     mkdir -p $RPM_BUILD_ROOT%{_udevdir}
 
@@ -761,6 +767,9 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %endif
 
 %global kvm_files \
+%if 0%{?need_kvm_modfile} \
+%{_sysconfdir}/sysconfig/modules/kvm.modules \
+%endif \
 %{_udevdir}/80-kvm.rules
 
 %global qemu_kvm_files \

@@ -5,7 +5,8 @@ case $(uname -m) in
         grep OPAL  /proc/cpuinfo >/dev/null 2>&1 && opal=1
 
         if [ "$opal" ]; then
-            modprobe -b kvm >/dev/null 2>&1 && kvm=1
+            modprobe -b kvm >/dev/null 2>&1
+            modprobe -b kvm-hv >/dev/null 2>&1 && kvm=1
         fi
         ;;
     s390x)
