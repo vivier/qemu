@@ -895,6 +895,41 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Nov 06 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-7.el7
+- kvm-ac97-register-reset-via-qom.patch [bz#1141666]
+- kvm-specfile-Require-glusterfs-api-3.6.patch [bz#1157329]
+- kvm-smbios-Fix-assertion-on-socket-count-calculation.patch [bz#1146573]
+- kvm-smbios-Encode-UUID-according-to-SMBIOS-specification.patch [bz#1152922]
+- kvm-virtio-scsi-Report-error-if-num_queues-is-0-or-too-l.patch [bz#1146826]
+- kvm-virtio-scsi-Fix-memory-leak-when-realize-failed.patch [bz#1146826]
+- kvm-virtio-scsi-Fix-num_queue-input-validation.patch [bz#1146826]
+- kvm-util-Improve-os_mem_prealloc-error-message.patch [bz#1153590]
+- kvm-Downstream-only-Add-script-to-autoload-KVM-modules-o.patch [bz#1158250]
+- kvm-Downstream-only-remove-uneeded-PCI-devices-for-POWER.patch [bz#1160120]
+- kvm-Downstream-only-Remove-assorted-unneeded-devices-for.patch [bz#1160120]
+- kvm-Downstream-only-Remove-ISA-bus-and-device-support-fo.patch [bz#1160120]
+- kvm-well-defined-listing-order-for-machine-types.patch [bz#1145042]
+- kvm-i386-pc-add-piix-and-q35-machtypes-to-sorting-famili.patch [bz#1145042]
+- kvm-i386-pc-add-RHEL-machtypes-to-sorting-families-for-M.patch [bz#1145042]
+- Resolves: bz#1141666
+  (Qemu crashed if reboot guest after hot remove AC97 sound device)
+- Resolves: bz#1145042
+  (The output of "/usr/libexec/qemu-kvm -M ?" should be ordered.)
+- Resolves: bz#1146573
+  (qemu core dump when boot guest with smp(num)<cores(num))
+- Resolves: bz#1146826
+  (QEMU will not reject invalid number of queues (num_queues = 0) specified for virtio-scsi)
+- Resolves: bz#1152922
+  (smbios uuid mismatched)
+- Resolves: bz#1153590
+  (Improve error message on huge page preallocation)
+- Resolves: bz#1157329
+  (qemu-kvm: undefined symbol: glfs_discard_async)
+- Resolves: bz#1158250
+  (KVM modules are not autoloaded on POWER hosts)
+- Resolves: bz#1160120
+  (qemu-kvm-rhev shouldn't include non supported devices for POWER)
+
 * Tue Nov 04 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-6.el7
 - kvm-ivshmem-use-error_report.patch [bz#1104063]
 - kvm-ivshmem-RHEL-only-remove-unsupported-code.patch [bz#1104063]
