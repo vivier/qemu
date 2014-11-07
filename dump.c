@@ -271,7 +271,7 @@ static inline int cpu_index(CPUState *cpu)
     return cpu->cpu_index + 1;
 }
 
-static int write_elf64_notes(DumpState *s)
+static int write_elf64_notes(WriteCoreDumpFunction f, DumpState *s)
 {
     CPUArchState *env;
     CPUState *cpu;
@@ -281,7 +281,7 @@ static int write_elf64_notes(DumpState *s)
     for (env = first_cpu; env != NULL; env = env->next_cpu) {
         cpu = ENV_GET_CPU(env);
         id = cpu_index(cpu);
-        ret = cpu_write_elf64_note(fd_write_vmcore, cpu, id, s);
+        ret = cpu_write_elf64_note(f, cpu, id, s);
         if (ret < 0) {
             dump_error(s, "dump: failed to write elf notes.\n");
             return -1;
@@ -290,7 +290,7 @@ static int write_elf64_notes(DumpState *s)
 
     for (env = first_cpu; env != NULL; env = env->next_cpu) {
         cpu = ENV_GET_CPU(env);
-        ret = cpu_write_elf64_qemunote(fd_write_vmcore, cpu, s);
+        ret = cpu_write_elf64_qemunote(f, cpu, s);
         if (ret < 0) {
             dump_error(s, "dump: failed to write CPU status.\n");
             return -1;
@@ -324,7 +324,7 @@ static int write_elf32_note(DumpState *s)
     return 0;
 }
 
-static int write_elf32_notes(DumpState *s)
+static int write_elf32_notes(WriteCoreDumpFunction f, DumpState *s)
 {
     CPUArchState *env;
     CPUState *cpu;
@@ -334,7 +334,7 @@ static int write_elf32_notes(DumpState *s)
     for (env = first_cpu; env != NULL; env = env->next_cpu) {
         cpu = ENV_GET_CPU(env);
         id = cpu_index(cpu);
-        ret = cpu_write_elf32_note(fd_write_vmcore, cpu, id, s);
+        ret = cpu_write_elf32_note(f, cpu, id, s);
         if (ret < 0) {
             dump_error(s, "dump: failed to write elf notes.\n");
             return -1;
@@ -343,7 +343,7 @@ static int write_elf32_notes(DumpState *s)
 
     for (env = first_cpu; env != NULL; env = env->next_cpu) {
         cpu = ENV_GET_CPU(env);
-        ret = cpu_write_elf32_qemunote(fd_write_vmcore, cpu, s);
+        ret = cpu_write_elf32_qemunote(f, cpu, s);
         if (ret < 0) {
             dump_error(s, "dump: failed to write CPU status.\n");
             return -1;
@@ -580,7 +580,7 @@ static int dump_begin(DumpState *s)
         }
 
         /* write notes to vmcore */
-        if (write_elf64_notes(s) < 0) {
+        if (write_elf64_notes(fd_write_vmcore, s) < 0) {
             return -1;
         }
 
@@ -603,7 +603,7 @@ static int dump_begin(DumpState *s)
         }
 
         /* write notes to vmcore */
-        if (write_elf32_notes(s) < 0) {
+        if (write_elf32_notes(fd_write_vmcore, s) < 0) {
             return -1;
         }
     }
