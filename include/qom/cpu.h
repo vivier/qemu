@@ -25,7 +25,8 @@
 #include "qemu/thread.h"
 #include "qemu/typedefs.h"
 
-typedef int (*WriteCoreDumpFunction)(void *buf, size_t size, void *opaque);
+typedef int (*WriteCoreDumpFunction)(const void *buf, size_t size,
+                                     void *opaque);
 
 /**
  * SECTION:cpu
