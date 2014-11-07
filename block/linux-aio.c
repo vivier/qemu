@@ -11,8 +11,8 @@
 #include "block/aio.h"
 #include "qemu/queue.h"
 #include "block/raw-aio.h"
-#include "qemu/event_notifier.h"
 
+#include <sys/eventfd.h>
 #include <libaio.h>
 
 /*
@@ -38,7 +38,7 @@ struct qemu_laiocb {
 
 struct qemu_laio_state {
     io_context_t ctx;
-    EventNotifier e;
+    int efd;
     int count;
 };
 
@@ -77,17 +77,29 @@ static void qemu_laio_process_completion(struct qemu_laio_state *s,
     qemu_aio_release(laiocb);
 }
 
-static void qemu_laio_completion_cb(EventNotifier *e)
+static void qemu_laio_completion_cb(void *opaque)
 {
-    struct qemu_laio_state *s = container_of(e, struct qemu_laio_state, e);
+    struct qemu_laio_state *s = opaque;
 
-    while (event_notifier_test_and_clear(&s->e)) {
+    while (1) {
         struct io_event events[MAX_EVENTS];
+        uint64_t val;
+        ssize_t ret;
         struct timespec ts = { 0 };
         int nevents, i;
 
         do {
-            nevents = io_getevents(s->ctx, MAX_EVENTS, MAX_EVENTS, events, &ts);
+            ret = read(s->efd, &val, sizeof(val));
+        } while (ret == -1 && errno == EINTR);
+
+        if (ret == -1 && errno == EAGAIN)
+            break;
+
+        if (ret != 8)
+            break;
+
+        do {
+            nevents = io_getevents(s->ctx, val, MAX_EVENTS, events, &ts);
         } while (nevents == -EINTR);
 
         for (i = 0; i < nevents; i++) {
@@ -101,9 +113,9 @@ static void qemu_laio_completion_cb(EventNotifier *e)
     }
 }
 
-static int qemu_laio_flush_cb(EventNotifier *e)
+static int qemu_laio_flush_cb(void *opaque)
 {
-    struct qemu_laio_state *s = container_of(e, struct qemu_laio_state, e);
+    struct qemu_laio_state *s = opaque;
 
     return (s->count > 0) ? 1 : 0;
 }
@@ -135,9 +147,8 @@ static void laio_cancel(BlockDriverAIOCB *blockacb)
      * We might be able to do this slightly more optimal by removing the
      * O_NONBLOCK flag.
      */
-    while (laiocb->ret == -EINPROGRESS) {
-        qemu_laio_completion_cb(&laiocb->ctx->e);
-    }
+    while (laiocb->ret == -EINPROGRESS)
+        qemu_laio_completion_cb(laiocb->ctx);
 }
 
 static const AIOCBInfo laio_aiocb_info = {
@@ -176,7 +187,7 @@ BlockDriverAIOCB *laio_submit(BlockDriverState *bs, void *aio_ctx, int fd,
                         __func__, type);
         goto out_free_aiocb;
     }
-    io_set_eventfd(&laiocb->iocb, event_notifier_get_fd(&s->e));
+    io_set_eventfd(&laiocb->iocb, s->efd);
     s->count++;
 
     if (io_submit(s->ctx, 1, &iocbs) < 0)
@@ -195,21 +206,21 @@ void *laio_init(void)
     struct qemu_laio_state *s;
 
     s = g_malloc0(sizeof(*s));
-    if (event_notifier_init(&s->e, false) < 0) {
+    s->efd = eventfd(0, 0);
+    if (s->efd == -1)
         goto out_free_state;
-    }
+    fcntl(s->efd, F_SETFL, O_NONBLOCK);
 
-    if (io_setup(MAX_EVENTS, &s->ctx) != 0) {
+    if (io_setup(MAX_EVENTS, &s->ctx) != 0)
         goto out_close_efd;
-    }
 
-    qemu_aio_set_event_notifier(&s->e, qemu_laio_completion_cb,
-                                qemu_laio_flush_cb);
+    qemu_aio_set_fd_handler(s->efd, qemu_laio_completion_cb, NULL,
+        qemu_laio_flush_cb, s);
 
     return s;
 
 out_close_efd:
-    event_notifier_cleanup(&s->e);
+    close(s->efd);
 out_free_state:
     g_free(s);
     return NULL;
