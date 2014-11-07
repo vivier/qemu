@@ -216,6 +216,11 @@ BuildRequires: librdmacm-devel
 BuildRequires: iasl
 BuildRequires: cpp
 %endif
+%if 0%{!?build_only_sub:1}
+# For compressed guest memory dumps
+BuildRequires: lzo-devel snappy-devel
+%endif
+
 
 %if 0%{!?build_only_sub:1}
 Requires: qemu-img = %{epoch}:%{version}-%{release}
@@ -435,6 +440,8 @@ dobuild() {
         --enable-vnc-sasl \
         --enable-linux-aio \
         --enable-smartcard-nss \
+        --enable-lzo \
+        --enable-snappy \
         --enable-usb-redir \
         --enable-vnc-png \
         --disable-vnc-jpeg \
