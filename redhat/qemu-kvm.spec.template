@@ -829,6 +829,31 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Mon Nov 10 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-78.el7
+- kvm-slirp-udp-fix-NULL-pointer-dereference-because-of-un.patch [bz#1144820]
+- kvm-hw-pci-fix-error-flow-in-pci-multifunction-init.patch [bz#1049734]
+- kvm-rhel-Drop-machine-type-pc-q35-rhel7.0.0.patch [bz#1111107]
+- kvm-virtio-scsi-Plug-memory-leak-on-virtio_scsi_push_eve.patch [bz#1088822]
+- kvm-virtio-scsi-Report-error-if-num_queues-is-0-or-too-l.patch [bz#1089606]
+- kvm-virtio-scsi-Fix-memory-leak-when-realize-failed.patch [bz#1089606]
+- kvm-virtio-scsi-Fix-num_queue-input-validation.patch [bz#1089606]
+- kvm-Revert-linux-aio-use-event-notifiers.patch [bz#1104748]
+- kvm-specfile-Require-glusterfs-api-3.6.patch [bz#1155518]
+- Resolves: bz#1049734
+  (PCI: QEMU crash on illegal operation: attaching a function to a non multi-function device)
+- Resolves: bz#1088822
+  (hot-plug a virtio-scsi disk via 'blockdev-add' always cause QEMU quit)
+- Resolves: bz#1089606
+  (QEMU will not reject invalid number of queues (num_queues = 0) specified for virtio-scsi)
+- Resolves: bz#1104748
+  (48% reduction in IO performance for KVM guest, io=native)
+- Resolves: bz#1111107
+  (Remove Q35 machine type from qemu-kvm)
+- Resolves: bz#1144820
+  (CVE-2014-3640 qemu-kvm: qemu: slirp: NULL pointer deref in sosendto() [rhel-7.1])
+- Resolves: bz#1155518
+  (qemu-kvm: undefined symbol: glfs_discard_async)
+
 * Fri Oct 24 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-77.el7
 - kvm-seccomp-add-semctl-to-the-syscall-whitelist.patch [bz#1026314]
 - kvm-Revert-kvmclock-Ensure-proper-env-tsc-value-for-kvmc.patch [bz#1098602 bz#1130428]
