@@ -30,6 +30,7 @@
 #include "block/thread-pool.h"
 #include "qemu/iov.h"
 #include "raw-aio.h"
+#include "qapi/util.h"
 
 #if defined(__APPLE__) && (__MACH__)
 #include <paths.h>
@@ -1230,11 +1231,23 @@ static int raw_create(const char *filename, QEMUOptionParameter *options,
     int fd;
     int result = 0;
     int64_t total_size = 0;
+    PreallocMode prealloc = PREALLOC_MODE_OFF;
+    char *buf = NULL;
+    Error *local_err = NULL;
 
     /* Read out options */
     while (options && options->name) {
         if (!strcmp(options->name, BLOCK_OPT_SIZE)) {
             total_size = options->value.n / BDRV_SECTOR_SIZE;
+        } else if (!strcmp(options->name, BLOCK_OPT_PREALLOC)) {
+            prealloc = qapi_enum_parse(PreallocMode_lookup, options->value.s,
+                                       PREALLOC_MODE_MAX, PREALLOC_MODE_OFF,
+                                       &local_err);
+            if (local_err) {
+                error_propagate(errp, local_err);
+                result = -EINVAL;
+                goto out;
+            }
         }
         options++;
     }
@@ -1244,16 +1257,51 @@ static int raw_create(const char *filename, QEMUOptionParameter *options,
     if (fd < 0) {
         result = -errno;
         error_setg_errno(errp, -result, "Could not create file");
-    } else {
-        if (ftruncate(fd, total_size * BDRV_SECTOR_SIZE) != 0) {
-            result = -errno;
-            error_setg_errno(errp, -result, "Could not resize file");
-        }
-        if (qemu_close(fd) != 0) {
-            result = -errno;
-            error_setg_errno(errp, -result, "Could not close the new file");
-        }
+        goto out;
     }
+
+    if (ftruncate(fd, total_size * BDRV_SECTOR_SIZE) != 0) {
+        result = -errno;
+        error_setg_errno(errp, -result, "Could not resize file");
+        goto out_close;
+    }
+
+    if (prealloc == PREALLOC_MODE_FALLOC) {
+        /* posix_fallocate() doesn't set errno. */
+        result = -posix_fallocate(fd, 0, total_size * BDRV_SECTOR_SIZE);
+        if (result != 0) {
+            error_setg_errno(errp, -result,
+                             "Could not preallocate data for the new file");
+        }
+    } else if (prealloc == PREALLOC_MODE_FULL) {
+        buf = g_malloc0(65536);
+        int64_t num = 0, left = total_size * BDRV_SECTOR_SIZE;
+
+        while (left > 0) {
+            num = MIN(left, 65536);
+            result = write(fd, buf, num);
+            if (result < 0) {
+                result = -errno;
+                error_setg_errno(errp, -result,
+                                 "Could not write to the new file");
+                break;
+            }
+            left -= num;
+        }
+        fsync(fd);
+        g_free(buf);
+    } else if (prealloc != PREALLOC_MODE_OFF) {
+        result = -EINVAL;
+        error_setg(errp, "Unsupported preallocation mode: %s",
+                   PreallocMode_lookup[prealloc]);
+    }
+
+out_close:
+    if (qemu_close(fd) != 0 && result == 0) {
+        result = -errno;
+        error_setg_errno(errp, -result, "Could not close the new file");
+    }
+out:
     return result;
 }
 
@@ -1403,6 +1451,11 @@ static QEMUOptionParameter raw_create_options[] = {
         .name = BLOCK_OPT_SIZE,
         .type = OPT_SIZE,
         .help = "Virtual disk size"
+    },
+    {
+        .name = BLOCK_OPT_PREALLOC,
+        .type = OPT_STRING,
+        .help = "Preallocation mode (allowed values: off, falloc, full)"
     },
     { NULL }
 };
