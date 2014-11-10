@@ -30,6 +30,7 @@
 #include "qemu/error-report.h"
 #include "qapi/qmp/qerror.h"
 #include "qapi/qmp/qbool.h"
+#include "qapi/util.h"
 #include "trace.h"
 
 /*
@@ -1555,7 +1556,7 @@ static int preallocate(BlockDriverState *bs)
 
 static int qcow2_create2(const char *filename, int64_t total_size,
                          const char *backing_file, const char *backing_format,
-                         int flags, size_t cluster_size, int prealloc,
+                         int flags, size_t cluster_size, PreallocMode prealloc,
                          QEMUOptionParameter *options, int version,
                          Error **errp)
 {
@@ -1690,7 +1691,7 @@ static int qcow2_create2(const char *filename, int64_t total_size,
     }
 
     /* And if we're supposed to preallocate metadata, do that now */
-    if (prealloc) {
+    if (prealloc == PREALLOC_MODE_METADATA) {
         BDRVQcowState *s = bs->opaque;
         qemu_co_mutex_lock(&s->lock);
         ret = preallocate(bs);
@@ -1715,7 +1716,7 @@ static int qcow2_create(const char *filename, QEMUOptionParameter *options,
     uint64_t sectors = 0;
     int flags = 0;
     size_t cluster_size = DEFAULT_CLUSTER_SIZE;
-    int prealloc = 0;
+    PreallocMode prealloc = PREALLOC_MODE_OFF;
     int version = 3;
     Error *local_err = NULL;
     int ret;
@@ -1735,13 +1736,11 @@ static int qcow2_create(const char *filename, QEMUOptionParameter *options,
                 cluster_size = options->value.n;
             }
         } else if (!strcmp(options->name, BLOCK_OPT_PREALLOC)) {
-            if (!options->value.s || !strcmp(options->value.s, "off")) {
-                prealloc = 0;
-            } else if (!strcmp(options->value.s, "metadata")) {
-                prealloc = 1;
-            } else {
-                error_setg(errp, "Invalid preallocation mode: '%s'",
-                           options->value.s);
+            prealloc = qapi_enum_parse(PreallocMode_lookup, options->value.s,
+                                       PREALLOC_MODE_MAX, PREALLOC_MODE_OFF,
+                                       &local_err);
+            if (local_err) {
+                error_propagate(errp, local_err);
                 return -EINVAL;
             }
         } else if (!strcmp(options->name, BLOCK_OPT_COMPAT_LEVEL)) {
@@ -1762,7 +1761,14 @@ static int qcow2_create(const char *filename, QEMUOptionParameter *options,
         options++;
     }
 
-    if (backing_file && prealloc) {
+    if (prealloc != PREALLOC_MODE_OFF &&
+        prealloc != PREALLOC_MODE_METADATA) {
+        error_setg(errp, "Unsupported preallocate mode: %s",
+                   PreallocMode_lookup[prealloc]);
+        return -EINVAL;
+    }
+
+    if (backing_file && prealloc != PREALLOC_MODE_OFF) {
         error_setg(errp, "Backing file and preallocation cannot be used at "
                    "the same time");
         return -EINVAL;
