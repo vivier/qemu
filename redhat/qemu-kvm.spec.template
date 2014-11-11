@@ -13,6 +13,7 @@
 %global have_spice    1
 %global have_fdt      0
 %global have_gluster  1
+%global have_kvm_setup 0
 
 %ifarch %{ix86} x86_64
     %global have_seccomp 1
@@ -37,6 +38,7 @@
 %ifarch %{power64}
     %global kvm_target    ppc64
     %global have_fdt     1
+    %global have_kvm_setup 1
 %endif
 %ifarch s390x s390
     %global kvm_target    s390x
@@ -132,7 +134,12 @@ Requires: lzo snappy
 %if 0%{have_gluster}
 Requires: glusterfs-api >= 3.6.0
 %endif
-
+%if 0%{have_kvm_setup}
+Requires(post): systemd-units
+    %ifarch %{power64}
+Requires: powerpc-utils
+    %endif
+%endif
 
 # OOM killer breaks builds with parallel make on s390(x)
 %ifarch s390 s390x
@@ -166,6 +173,9 @@ Source17: rhel6-ne2k_pci.rom
 Source18: bios-256k.bin
 Source19: README.rhel6-gpxe-source
 Source20: rhel6-e1000.rom
+Source21: kvm-setup
+Source22: kvm-setup.service
+Source23: 85-kvm.preset
 
 %%CONFIGS%%
 
@@ -684,6 +694,12 @@ dobuild --target-list="$buildarch"
       rom_link ../seabios/bios-256k.bin bios-256k.bin
     %endif
     rom_link ../sgabios/sgabios.bin sgabios.bin
+
+    %if 0%{have_kvm_setup}
+        install -D -p -m 755 %{SOURCE21} $RPM_BUILD_ROOT%{_prefix}/lib/systemd/kvm-setup
+	install -D -p -m 644 %{SOURCE22} $RPM_BUILD_ROOT%{_unitdir}/kvm-setup.service
+	install -D -p -m 644 %{SOURCE23} $RPM_BUILD_ROOT%{_presetdir}/85-kvm.preset
+    %endif
 %endif
 
 %if %{with guest_agent}
@@ -740,6 +756,13 @@ make check
 %if %{rhev}
 sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     udevadm trigger --subsystem-match=misc --sysname-match=kvm --action=add || :
+%if 0%{have_kvm_setup}
+    %systemd_post kvm-setup.service
+    systemctl daemon-reload # Or it might not see the new unitfile
+    if systemctl is-enabled kvm-setup.service > /dev/null; then
+        systemctl start kvm-setup.service
+    fi
+%endif
 
 %post -n qemu-kvm-common%{?pkgsuffix}
     %systemd_post ksm.service
@@ -856,6 +879,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %config(noreplace) %{_sysconfdir}/%{pkgname}/target-x86_64.conf
     %{?kvm_files:}
     %{?qemu_kvm_files:}
+    %if 0%{have_kvm_setup}
+        %{_prefix}/lib/systemd/kvm-setup
+	%{_unitdir}/kvm-setup.service
+	%{_presetdir}/85-kvm.preset
+    %endif
 
 %files -n qemu-kvm-tools%{?pkgsuffix}
     %defattr(-,root,root,-)

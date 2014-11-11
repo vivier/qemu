@@ -1,0 +1,12 @@
+[Unit]
+Description=Perform system configuration to prepare system to run KVM guests
+# Offlining CPUs can cause irqbalance to throw warnings if it's running
+Before=irqbalance.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/sysconfig/kvm
+ExecStart=/usr/lib/systemd/kvm-setup
+
+[Install]
+WantedBy=multi-user.target
