@@ -829,6 +829,35 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Nov 12 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-79.el7
+- kvm-libcacard-link-against-qemu-error.o-for-error_report.patch [bz#1088176]
+- kvm-error-Add-error_abort.patch [bz#1088176]
+- kvm-blockdev-Fail-blockdev-add-with-encrypted-images.patch [bz#1088176]
+- kvm-blockdev-Fix-NULL-pointer-dereference-in-blockdev-ad.patch [bz#1088176]
+- kvm-qemu-iotests-Test-a-few-blockdev-add-error-cases.patch [bz#1088176]
+- kvm-block-Add-errp-to-bdrv_new.patch [bz#1088176]
+- kvm-qemu-img-Avoid-duplicate-block-device-IDs.patch [bz#1088176]
+- kvm-block-Catch-duplicate-IDs-in-bdrv_new.patch [bz#1088176]
+- kvm-qemu-img-Allow-source-cache-mode-specification.patch [bz#1138691]
+- kvm-qemu-img-Allow-cache-mode-specification-for-amend.patch [bz#1138691]
+- kvm-qemu-img-clarify-src_cache-option-documentation.patch [bz#1138691]
+- kvm-qemu-img-fix-rebase-src_cache-option-documentation.patch [bz#1138691]
+- kvm-qemu-img-fix-img_compare-flags-error-path.patch [bz#1138691]
+- kvm-ac97-register-reset-via-qom.patch [bz#1141667]
+- kvm-virtio-blk-Factor-common-checks-out-of-virtio_blk_ha.patch [bz#1085232]
+- kvm-virtio-blk-Bypass-error-action-and-I-O-accounting-on.patch [bz#1085232]
+- kvm-virtio-blk-Treat-read-write-beyond-end-as-invalid.patch [bz#1085232]
+- kvm-ide-Treat-read-write-beyond-end-as-invalid.patch [bz#1085232]
+- kvm-ide-only-constrain-read-write-requests-to-drive-size.patch [bz#1085232]
+- Resolves: bz#1085232
+  (Ilegal guest requests on block devices pause the VM)
+- Resolves: bz#1088176
+  (QEMU fail to check whether duplicate ID for block device drive using 'blockdev-add' to hotplug)
+- Resolves: bz#1138691
+  (Allow qemu-img to bypass the host cache (check, compare, convert, rebase, amend))
+- Resolves: bz#1141667
+  (Qemu crashed if reboot guest after hot remove AC97 sound device)
+
 * Mon Nov 10 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-78.el7
 - kvm-slirp-udp-fix-NULL-pointer-dereference-because-of-un.patch [bz#1144820]
 - kvm-hw-pci-fix-error-flow-in-pci-multifunction-init.patch [bz#1049734]
