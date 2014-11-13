@@ -510,7 +510,6 @@ dobuild() {
 %endif
         --disable-tpm \
         --enable-live-block-ops \
-        --enable-ceph-support \
         --disable-live-block-migration \
 %if 0%{have_gluster}
         --enable-glusterfs \
