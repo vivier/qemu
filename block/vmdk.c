@@ -836,6 +836,7 @@ static int vmdk_parse_extents(const char *desc, BlockDriverState *bs,
             ret = vmdk_add_extent(bs, extent_file, true, sectors,
                             0, 0, 0, 0, 0, &extent, errp);
             if (ret < 0) {
+                bdrv_unref(extent_file);
                 return ret;
             }
             extent->flat_start_offset = flat_offset << 9;
@@ -855,6 +856,7 @@ static int vmdk_parse_extents(const char *desc, BlockDriverState *bs,
             extent = &s->extents[s->num_extents - 1];
         } else {
             error_setg(errp, "Unsupported extent type '%s'", type);
+            bdrv_unref(extent_file);
             return -ENOTSUP;
         }
         extent->type = g_strdup(type);
