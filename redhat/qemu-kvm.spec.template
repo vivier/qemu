@@ -895,6 +895,21 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Nov 13 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-8.el7
+- kvm-ide-Add-wwn-support-to-IDE-ATAPI-drive.patch [bz#1150820]
+- kvm-exec-report-error-when-memory-hpagesize.patch [bz#1147354]
+- kvm-exec-add-parameter-errp-to-gethugepagesize.patch [bz#1147354]
+- kvm-block-curl-Improve-type-safety-of-s-timeout.patch [bz#1152901]
+- kvm-virtio-serial-avoid-crash-when-port-has-no-name.patch [bz#1151947]
+- Resolves: bz#1147354
+  (Qemu core dump when boot up a guest on a non-existent hugepage path)
+- Resolves: bz#1150820
+  (fail to specify wwn for virtual IDE CD-ROM)
+- Resolves: bz#1151947
+  (virtconsole causes qemu-kvm core dump)
+- Resolves: bz#1152901
+  (block/curl: Fix type safety of s->timeout)
+
 * Thu Nov 06 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-7.el7
 - kvm-ac97-register-reset-via-qom.patch [bz#1141666]
 - kvm-specfile-Require-glusterfs-api-3.6.patch [bz#1157329]
