@@ -1104,13 +1104,10 @@ static int ahci_dma_set_unit(IDEDMA *dma, int unit)
 
 static int ahci_dma_add_status(IDEDMA *dma, int status)
 {
+#ifdef AHCI_DEBUG
     AHCIDevice *ad = DO_UPCAST(AHCIDevice, dma, dma);
     DPRINTF(ad->port_no, "set status: %x\n", status);
-
-    if (status & BM_STATUS_INT) {
-        ahci_trigger_irq(ad->hba, ad, PORT_IRQ_STAT_DSS);
-    }
-
+#endif
     return 0;
 }
 
