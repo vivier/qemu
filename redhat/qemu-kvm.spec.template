@@ -895,6 +895,20 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Nov 19 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-9.el7
+- kvm-aarch64-raise-max_cpus-to-8.patch [bz#1160325]
+- kvm-hw-arm-virt-add-linux-stdout-path-to-chosen-DT-node.patch [bz#1160325]
+- kvm-hw-arm-virt-Provide-flash-devices-for-boot-ROMs.patch [bz#1160325]
+- kvm-hw-arm-boot-load-DTB-as-a-ROM-image.patch [bz#1160325]
+- kvm-hw-arm-boot-pass-an-address-limit-to-and-return-size.patch [bz#1160325]
+- kvm-hw-arm-boot-load-device-tree-to-base-of-DRAM-if-no-k.patch [bz#1160325]
+- kvm-hw-arm-boot-enable-DTB-support-when-booting-ELF-imag.patch [bz#1160325]
+- kvm-hw-arm-virt-mark-timer-in-fdt-as-v8-compatible.patch [bz#1160325]
+- kvm-hw-arm-boot-register-cpu-reset-handlers-if-using-bio.patch [bz#1160325]
+- kvm-Downstream-only-Declare-ARM-kernel-support-read-only.patch [bz#1160325]
+- Resolves: bz#1160325
+  (arm64: support aavmf)
+
 * Thu Nov 13 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-8.el7
 - kvm-ide-Add-wwn-support-to-IDE-ATAPI-drive.patch [bz#1150820]
 - kvm-exec-report-error-when-memory-hpagesize.patch [bz#1147354]
