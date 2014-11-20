@@ -303,7 +303,6 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
         --enable-guest-agent \
         --disable-tpm \
         --enable-live-block-ops \
-        --enable-ceph-support \
         --disable-live-block-migration \
 %if 0%{have_gluster}
         --enable-glusterfs \

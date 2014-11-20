@@ -920,6 +920,80 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Nov 20 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-10.el7
+- kvm-pc-dimm-Don-t-check-dimm-node-when-there-is-non-NUMA.patch [bz#1150510 bz#1163735]
+- kvm-vga-Start-cutting-out-non-32bpp-conversion-support.patch [bz#1146809]
+- kvm-vga-Remove-remainder-of-old-conversion-cruft.patch [bz#1146809]
+- kvm-vga-Separate-LE-and-BE-conversion-functions.patch [bz#1146809]
+- kvm-vga-Remove-rgb_to_pixel-indirection.patch [bz#1146809]
+- kvm-vga-Simplify-vga_draw_blank-a-bit.patch [bz#1146809]
+- kvm-cirrus-Remove-non-32bpp-cursor-drawing.patch [bz#1146809]
+- kvm-vga-Remove-some-should-be-done-in-BIOS-comments.patch [bz#1146809]
+- kvm-vga-Rename-vga_template.h-to-vga-helpers.h.patch [bz#1146809]
+- kvm-vga-Make-fb-endian-a-common-state-variable.patch [bz#1146809]
+- kvm-vga-Add-endian-to-vmstate.patch [bz#1146809]
+- kvm-vga-pci-add-qext-region-to-mmio.patch [bz#1146809]
+- kvm-virtio-scsi-work-around-bug-in-old-BIOSes.patch [bz#1123812]
+- kvm-Revert-Downstream-only-Add-script-to-autoload-KVM-mo.patch [bz#1158250 bz#1159706]
+- kvm-Downstream-only-add-script-on-powerpc-to-configure-C.patch [bz#1158250 bz#1158251 bz#1159706]
+- kvm-block-New-bdrv_nb_sectors.patch [bz#1132385]
+- kvm-vmdk-Optimize-cluster-allocation.patch [bz#1132385]
+- kvm-vmdk-Handle-failure-for-potentially-large-allocation.patch [bz#1132385]
+- kvm-vmdk-Use-bdrv_nb_sectors-where-sectors-not-bytes-are.patch [bz#1132385]
+- kvm-vmdk-fix-vmdk_parse_extents-extent_file-leaks.patch [bz#1132385]
+- kvm-vmdk-fix-buf-leak-in-vmdk_parse_extents.patch [bz#1132385]
+- kvm-vmdk-Fix-integer-overflow-in-offset-calculation.patch [bz#1132385]
+- kvm-Revert-Build-ceph-rbd-only-for-rhev.patch [bz#1140744]
+- kvm-Revert-rbd-Only-look-for-qemu-specific-copy-of-librb.patch [bz#1140744]
+- kvm-Revert-rbd-link-and-load-librbd-dynamically.patch [bz#1140744]
+- kvm-spec-Enable-rbd-driver-add-dependency.patch [bz#1140744]
+- kvm-Use-qemu-kvm-in-documentation-instead-of-qemu-system.patch [bz#1140620]
+- kvm-ide-stash-aiocb-for-flushes.patch [bz#1024599]
+- kvm-ide-simplify-reset-callbacks.patch [bz#1024599]
+- kvm-ide-simplify-set_inactive-callbacks.patch [bz#1024599]
+- kvm-ide-simplify-async_cmd_done-callbacks.patch [bz#1024599]
+- kvm-ide-simplify-start_transfer-callbacks.patch [bz#1024599]
+- kvm-ide-wrap-start_dma-callback.patch [bz#1024599]
+- kvm-ide-remove-wrong-setting-of-BM_STATUS_INT.patch [bz#1024599]
+- kvm-ide-fold-add_status-callback-into-set_inactive.patch [bz#1024599]
+- kvm-ide-move-BM_STATUS-bits-to-pci.-ch.patch [bz#1024599]
+- kvm-ide-move-retry-constants-out-of-BM_STATUS_-namespace.patch [bz#1024599]
+- kvm-ahci-remove-duplicate-PORT_IRQ_-constants.patch [bz#1024599]
+- kvm-ide-stop-PIO-transfer-on-errors.patch [bz#1024599]
+- kvm-ide-make-all-commands-go-through-cmd_done.patch [bz#1024599]
+- kvm-ide-atapi-Mark-non-data-commands-as-complete.patch [bz#1024599]
+- kvm-ahci-construct-PIO-Setup-FIS-for-PIO-commands.patch [bz#1024599]
+- kvm-ahci-properly-shadow-the-TFD-register.patch [bz#1024599]
+- kvm-ahci-Correct-PIO-D2H-FIS-responses.patch [bz#1024599]
+- kvm-ahci-Update-byte-count-after-DMA-completion.patch [bz#1024599]
+- kvm-ahci-Fix-byte-count-regression-for-ATAPI-PIO.patch [bz#1024599]
+- kvm-ahci-Fix-SDB-FIS-Construction.patch [bz#1024599]
+- kvm-vhost-user-fix-mmap-offset-calculation.patch [bz#1159710]
+- Resolves: bz#1024599
+  (Windows7 x86 guest with ahci backend hit BSOD when do "hibernate")
+- Resolves: bz#1123812
+  (Reboot guest and guest's virtio-scsi disk will be lost after forwards migration (from RHEL6.6 host to RHEL7.1 host))
+- Resolves: bz#1132385
+  (qemu-img convert rate about 100k/second from qcow2/raw to vmdk format on nfs system file)
+- Resolves: bz#1140620
+  (Should replace "qemu-system-i386" by "/usr/libexec/qemu-kvm" in manpage of qemu-kvm for our official qemu-kvm build)
+- Resolves: bz#1140744
+  (Enable native support for Ceph)
+- Resolves: bz#1146809
+  (Incorrect colours on virtual VGA with ppc64le guest under ppc64 host)
+- Resolves: bz#1150510
+  (kernel ignores ACPI memory devices (PNP0C80) present at boot time)
+- Resolves: bz#1158250
+  (KVM modules are not autoloaded on POWER hosts)
+- Resolves: bz#1158251
+  (POWER KVM host starts by default with threads enabled, which prevents running guests)
+- Resolves: bz#1159706
+  (Need means to configure subcore mode for RHEL POWER8 hosts)
+- Resolves: bz#1159710
+  (vhost-user:Bad ram offset)
+- Resolves: bz#1163735
+  (-device pc-dimm fails to initialize on non-NUMA configs)
+
 * Wed Nov 19 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-9.el7
 - kvm-aarch64-raise-max_cpus-to-8.patch [bz#1160325]
 - kvm-hw-arm-virt-add-linux-stdout-path-to-chosen-DT-node.patch [bz#1160325]
