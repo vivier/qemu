@@ -2,6 +2,7 @@
 Description=QEMU Guest Agent
 BindsTo=dev-virtio\x2dports-org.qemu.guest_agent.0.device
 After=dev-virtio\x2dports-org.qemu.guest_agent.0.device
+IgnoreOnIsolate=True
 
 [Service]
 UMask=0077
@@ -16,3 +17,5 @@ Restart=always
 RestartSec=0
 
 [Install]
+WantedBy=dev-virtio\x2dports-org.qemu.guest_agent.0.device
+
