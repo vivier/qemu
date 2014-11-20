@@ -176,6 +176,10 @@ BuildRequires: libseccomp-devel >= 1.0.0
 %endif
 # For network block driver
 BuildRequires: libcurl-devel
+%ifarch x86_64
+BuildRequires: librados2-devel
+BuildRequires: librbd1-devel
+%endif
 %if 0%{!?build_only_sub:1}
 # For gluster block driver
 BuildRequires: glusterfs-api-devel >= 3.6.0
@@ -459,6 +463,9 @@ dobuild() {
         --disable-live-block-ops \
 %endif
         --disable-live-block-migration \
+%ifarch x86_64
+        --enable-rbd \
+%endif
         --enable-glusterfs \
         --block-drv-rw-whitelist=qcow2,raw,file,host_device,blkdebug,nbd,iscsi,gluster,rbd \
         --block-drv-ro-whitelist=vmdk,vhdx,vpc \
