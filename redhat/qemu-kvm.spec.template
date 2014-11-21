@@ -836,6 +836,19 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Nov 21 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-81.el7
+- kvm-migration-static-variables-will-not-be-reset-at-seco.patch [bz#1071776]
+- kvm-vfio-pci-Add-debug-config-options-to-disable-MSI-X-K.patch [bz#1098976]
+- kvm-vfio-correct-debug-macro-typo.patch [bz#1098976]
+- kvm-vfio-pci-Fix-MSI-X-debug-code.patch [bz#1098976]
+- kvm-vfio-pci-Fix-MSI-X-masking-performance.patch [bz#1098976]
+- kvm-vfio-Fix-MSI-X-vector-expansion.patch [bz#1098976]
+- kvm-vfio-Don-t-cache-MSIMessage.patch [bz#1098976]
+- Resolves: bz#1071776
+  (Migration "expected downtime" does not refresh after reset to a new value)
+- Resolves: bz#1098976
+  (2x RHEL 5.10 VM running on RHEL 7 KVM have low TCP_STREAM throughput)
+
 * Fri Nov 21 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-80.el7
 - kvm-dump-RHEL-specific-fix-for-CPUState-bug-introduced-b.patch [bz#1161563]
 - kvm-dump-guest-memory-Check-for-the-correct-return-value.patch [bz#1157798]
