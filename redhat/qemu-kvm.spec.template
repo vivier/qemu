@@ -920,6 +920,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Nov 21 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-12.el7
+- kvm-migration-static-variables-will-not-be-reset-at-seco.patch [bz#1166501]
+- Resolves: bz#1166501
+  (Migration "expected downtime" does not refresh after reset to a new value)
+
 * Fri Nov 21 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-11.el7
 - kvm-iscsi-Refuse-to-open-as-writable-if-the-LUN-is-write.patch [bz#1160102]
 - kvm-vnc-sanitize-bits_per_pixel-from-the-client.patch [bz#1157646]
