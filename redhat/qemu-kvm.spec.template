@@ -920,6 +920,12 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Nov 25 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-13.el7
+- kvm-hw-pci-fixed-error-flow-in-pci_qdev_init.patch [bz#1166067]
+- kvm-hw-pci-fixed-hotplug-crash-when-using-rombar-0-with-.patch [bz#1166067]
+- Resolves: bz#1166067
+  (qemu-kvm aborted when hot plug PCI device to guest with romfile and rombar=0)
+
 * Fri Nov 21 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-12.el7
 - kvm-migration-static-variables-will-not-be-reset-at-seco.patch [bz#1166501]
 - Resolves: bz#1166501
