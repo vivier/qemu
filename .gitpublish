@@ -1,0 +1,7 @@
+[gitpublishprofile "default"]
+base = rhel7/master-1.5.3
+prefix = RHEL-7.1 qemu-kvm PATCH
+to = rhvirt-patches@redhat.com
+suppresscc = all
+message = True
+
