@@ -95,7 +95,7 @@ Group: Development/Tools
 URL: http://www.qemu.org/
 # RHEV will build Qemu only on x86_64:
 %if %{rhev}
-ExclusiveArch: x86_64
+ExclusiveArch: %{power64} x86_64
 %endif
 Requires: seabios-bin >= 1.7.2.2-5
 Requires: sgabios-bin
@@ -836,6 +836,12 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Nov 25 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-82.el7
+- kvm-hw-pci-fixed-error-flow-in-pci_qdev_init.patch [bz#1046007]
+- kvm-hw-pci-fixed-hotplug-crash-when-using-rombar-0-with-.patch [bz#1046007]
+- Resolves: bz#1046007
+  (qemu-kvm aborted when hot plug PCI device to guest with romfile and rombar=0)
+
 * Fri Nov 21 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-81.el7
 - kvm-migration-static-variables-will-not-be-reset-at-seco.patch [bz#1071776]
 - kvm-vfio-pci-Add-debug-config-options-to-disable-MSI-X-K.patch [bz#1098976]
@@ -1160,7 +1166,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 - Resolves: bz#1130603
   (advertise active commit to libvirt)
 
-* Fri Aug 15 2014 Miroslav Rezanina <> - 1.5.3-68.el7
+* Fri Aug 15 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-68.el7
 - kvm-virtio-net-Do-not-filter-VLANs-without-F_CTRL_VLAN.patch [bz#1065724]
 - kvm-virtio-net-add-vlan-receive-state-to-RxFilterInfo.patch [bz#1065724]
 - kvm-virtio-rng-check-return-value-of-virtio_load.patch [bz#1116941]
