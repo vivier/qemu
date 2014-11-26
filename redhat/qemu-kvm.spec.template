@@ -763,8 +763,8 @@ make check
 sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     udevadm trigger --subsystem-match=misc --sysname-match=kvm --action=add || :
 %if 0%{have_kvm_setup}
+    systemctl daemon-reload # Make sure it sees the new presets and unitfile
     %systemd_post kvm-setup.service
-    systemctl daemon-reload # Or it might not see the new unitfile
     if systemctl is-enabled kvm-setup.service > /dev/null; then
         systemctl start kvm-setup.service
     fi
