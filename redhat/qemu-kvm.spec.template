@@ -920,6 +920,18 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Nov 27 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-14.el7
+- kvm-xhci-add-sanity-checks-to-xhci_lookup_uport.patch [bz#1161397]
+- kvm-qemu-img-Allow-source-cache-mode-specification.patch [bz#1166481]
+- kvm-qemu-img-Allow-cache-mode-specification-for-amend.patch [bz#1166481]
+- kvm-qemu-img-fix-img_compare-flags-error-path.patch [bz#1166481]
+- kvm-qemu-img-clarify-src_cache-option-documentation.patch [bz#1166481]
+- kvm-qemu-img-fix-rebase-src_cache-option-documentation.patch [bz#1166481]
+- Resolves: bz#1161397
+  (qemu core dump when install a RHEL.7 guest(xhci) with migration)
+- Resolves: bz#1166481
+  (Allow qemu-img to bypass the host cache (check, compare, convert, rebase, amend))
+
 * Tue Nov 25 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-13.el7
 - kvm-hw-pci-fixed-error-flow-in-pci_qdev_init.patch [bz#1166067]
 - kvm-hw-pci-fixed-hotplug-crash-when-using-rombar-0-with-.patch [bz#1166067]
