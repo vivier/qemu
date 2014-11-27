@@ -837,6 +837,17 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Nov 27 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-83.el7
+- kvm-xhci-add-sanity-checks-to-xhci_lookup_uport.patch [bz#1074219]
+- kvm-Revert-Build-ceph-rbd-only-for-rhev.patch [bz#1140742]
+- kvm-Revert-rbd-Only-look-for-qemu-specific-copy-of-librb.patch [bz#1140742]
+- kvm-Revert-rbd-link-and-load-librbd-dynamically.patch [bz#1140742]
+- kvm-spec-Enable-rbd-driver-add-dependency.patch [bz#1140742]
+- Resolves: bz#1074219
+  (qemu core dump when install a RHEL.7 guest(xhci) with migration)
+- Resolves: bz#1140742
+  (Enable native support for Ceph)
+
 * Tue Nov 25 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-82.el7
 - kvm-hw-pci-fixed-error-flow-in-pci_qdev_init.patch [bz#1046007]
 - kvm-hw-pci-fixed-hotplug-crash-when-using-rombar-0-with-.patch [bz#1046007]
