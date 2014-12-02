@@ -920,6 +920,16 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Dec 02 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-15.el7
+- kvm-scsi-Optimize-scsi_req_alloc.patch [bz#1141656]
+- kvm-virtio-scsi-Optimize-virtio_scsi_init_req.patch [bz#1141656]
+- kvm-virtio-scsi-Fix-comment-for-VirtIOSCSIReq.patch [bz#1141656]
+- kvm-Downstream-only-Move-daemon-reload-to-make-sure-new-.patch [bz#1168085]
+- Resolves: bz#1141656
+  (Virtio-scsi: performance degradation from 1.5.3 to 2.1.0)
+- Resolves: bz#1168085
+  (qemu-kvm-rhev install scripts sometimes don't recognize newly installed systemd presets)
+
 * Thu Nov 27 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-14.el7
 - kvm-xhci-add-sanity-checks-to-xhci_lookup_uport.patch [bz#1161397]
 - kvm-qemu-img-Allow-source-cache-mode-specification.patch [bz#1166481]
