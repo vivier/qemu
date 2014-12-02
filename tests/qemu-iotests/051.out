@@ -142,6 +142,7 @@ QEMU X.Y.Z monitor - type 'help' for more information
 (qemu) QEMU_PROG: -device ide-hd,drive=disk: Device needs media, but drive is empty
 QEMU_PROG: -device ide-hd,drive=disk: Device initialization failed.
 
+
 === Read-only ===
 
 Testing: -drive file=TEST_DIR/t.qcow2,if=floppy,readonly=on
@@ -174,6 +175,7 @@ Testing: -drive file=TEST_DIR/t.qcow2,if=none,id=disk,readonly=on -device ide-hd
 QEMU X.Y.Z monitor - type 'help' for more information
 (qemu) QEMU_PROG: -device ide-hd,drive=disk: Can't use a read-only drive
 QEMU_PROG: -device ide-hd,drive=disk: Device initialization failed.
+
 
 === Cache modes ===
 
