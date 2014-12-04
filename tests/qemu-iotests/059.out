@@ -2037,4 +2037,9 @@ Format specific information:
             virtual size: 2147483648
             filename: TEST_DIR/t-f500.vmdk
             format: FLAT
+
+=== Testing version 3 ===
+image: TEST_DIR/iotest-version3.IMGFMT
+file format: IMGFMT
+virtual size: 1.0G (1073741824 bytes)
 *** done
