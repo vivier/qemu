@@ -78,7 +78,7 @@ void set_floatx80_rounding_precision(int val STATUS_PARAM)
 | Returns the fraction bits of the half-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-INLINE uint32_t extractFloat16Frac(float16 a)
+static inline uint32_t extractFloat16Frac(float16 a)
 {
     return float16_val(a) & 0x3ff;
 }
@@ -87,7 +87,7 @@ INLINE uint32_t extractFloat16Frac(float16 a)
 | Returns the exponent bits of the half-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-INLINE int_fast16_t extractFloat16Exp(float16 a)
+static inline int_fast16_t extractFloat16Exp(float16 a)
 {
     return (float16_val(a) >> 10) & 0x1f;
 }
@@ -96,7 +96,7 @@ INLINE int_fast16_t extractFloat16Exp(float16 a)
 | Returns the sign bit of the single-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-INLINE flag extractFloat16Sign(float16 a)
+static inline flag extractFloat16Sign(float16 a)
 {
     return float16_val(a)>>15;
 }
@@ -207,7 +207,7 @@ static int64 roundAndPackInt64( flag zSign, uint64_t absZ0, uint64_t absZ1 STATU
 | Returns the fraction bits of the single-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-INLINE uint32_t extractFloat32Frac( float32 a )
+static inline uint32_t extractFloat32Frac( float32 a )
 {
 
     return float32_val(a) & 0x007FFFFF;
@@ -218,7 +218,7 @@ INLINE uint32_t extractFloat32Frac( float32 a )
 | Returns the exponent bits of the single-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-INLINE int_fast16_t extractFloat32Exp(float32 a)
+static inline int_fast16_t extractFloat32Exp(float32 a)
 {
 
     return ( float32_val(a)>>23 ) & 0xFF;
@@ -229,7 +229,7 @@ INLINE int_fast16_t extractFloat32Exp(float32 a)
 | Returns the sign bit of the single-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-INLINE flag extractFloat32Sign( float32 a )
+static inline flag extractFloat32Sign( float32 a )
 {
 
     return float32_val(a)>>31;
@@ -280,7 +280,7 @@ static void
 | significand.
 *----------------------------------------------------------------------------*/
 
-INLINE float32 packFloat32(flag zSign, int_fast16_t zExp, uint32_t zSig)
+static inline float32 packFloat32(flag zSign, int_fast16_t zExp, uint32_t zSig)
 {
 
     return make_float32(
@@ -389,7 +389,7 @@ static float32
 | Returns the fraction bits of the double-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-INLINE uint64_t extractFloat64Frac( float64 a )
+static inline uint64_t extractFloat64Frac( float64 a )
 {
 
     return float64_val(a) & LIT64( 0x000FFFFFFFFFFFFF );
@@ -400,7 +400,7 @@ INLINE uint64_t extractFloat64Frac( float64 a )
 | Returns the exponent bits of the double-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-INLINE int_fast16_t extractFloat64Exp(float64 a)
+static inline int_fast16_t extractFloat64Exp(float64 a)
 {
 
     return ( float64_val(a)>>52 ) & 0x7FF;
@@ -411,7 +411,7 @@ INLINE int_fast16_t extractFloat64Exp(float64 a)
 | Returns the sign bit of the double-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-INLINE flag extractFloat64Sign( float64 a )
+static inline flag extractFloat64Sign( float64 a )
 {
 
     return float64_val(a)>>63;
@@ -462,7 +462,7 @@ static void
 | significand.
 *----------------------------------------------------------------------------*/
 
-INLINE float64 packFloat64(flag zSign, int_fast16_t zExp, uint64_t zSig)
+static inline float64 packFloat64(flag zSign, int_fast16_t zExp, uint64_t zSig)
 {
 
     return make_float64(
@@ -572,7 +572,7 @@ static float64
 | value `a'.
 *----------------------------------------------------------------------------*/
 
-INLINE uint64_t extractFloatx80Frac( floatx80 a )
+static inline uint64_t extractFloatx80Frac( floatx80 a )
 {
 
     return a.low;
@@ -584,7 +584,7 @@ INLINE uint64_t extractFloatx80Frac( floatx80 a )
 | value `a'.
 *----------------------------------------------------------------------------*/
 
-INLINE int32 extractFloatx80Exp( floatx80 a )
+static inline int32 extractFloatx80Exp( floatx80 a )
 {
 
     return a.high & 0x7FFF;
@@ -596,7 +596,7 @@ INLINE int32 extractFloatx80Exp( floatx80 a )
 | `a'.
 *----------------------------------------------------------------------------*/
 
-INLINE flag extractFloatx80Sign( floatx80 a )
+static inline flag extractFloatx80Sign( floatx80 a )
 {
 
     return a.high>>15;
@@ -626,7 +626,7 @@ static void
 | extended double-precision floating-point value, returning the result.
 *----------------------------------------------------------------------------*/
 
-INLINE floatx80 packFloatx80( flag zSign, int32 zExp, uint64_t zSig )
+static inline floatx80 packFloatx80( flag zSign, int32 zExp, uint64_t zSig )
 {
     floatx80 z;
 
@@ -857,7 +857,7 @@ static floatx80
 | floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-INLINE uint64_t extractFloat128Frac1( float128 a )
+static inline uint64_t extractFloat128Frac1( float128 a )
 {
 
     return a.low;
@@ -869,7 +869,7 @@ INLINE uint64_t extractFloat128Frac1( float128 a )
 | floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-INLINE uint64_t extractFloat128Frac0( float128 a )
+static inline uint64_t extractFloat128Frac0( float128 a )
 {
 
     return a.high & LIT64( 0x0000FFFFFFFFFFFF );
@@ -881,7 +881,7 @@ INLINE uint64_t extractFloat128Frac0( float128 a )
 | `a'.
 *----------------------------------------------------------------------------*/
 
-INLINE int32 extractFloat128Exp( float128 a )
+static inline int32 extractFloat128Exp( float128 a )
 {
 
     return ( a.high>>48 ) & 0x7FFF;
@@ -892,7 +892,7 @@ INLINE int32 extractFloat128Exp( float128 a )
 | Returns the sign bit of the quadruple-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-INLINE flag extractFloat128Sign( float128 a )
+static inline flag extractFloat128Sign( float128 a )
 {
 
     return a.high>>63;
@@ -953,7 +953,7 @@ static void
 | significand.
 *----------------------------------------------------------------------------*/
 
-INLINE float128
+static inline float128
  packFloat128( flag zSign, int32 zExp, uint64_t zSig0, uint64_t zSig1 )
 {
     float128 z;
@@ -6560,7 +6560,7 @@ uint64_t float64_to_uint64_round_to_zero (float64 a STATUS_PARAM)
 }
 
 #define COMPARE(s, nan_exp)                                                  \
-INLINE int float ## s ## _compare_internal( float ## s a, float ## s b,      \
+static inline int float ## s ## _compare_internal( float ## s a, float ## s b,      \
                                       int is_quiet STATUS_PARAM )            \
 {                                                                            \
     flag aSign, bSign;                                                       \
@@ -6612,7 +6612,7 @@ int float ## s ## _compare_quiet( float ## s a, float ## s b STATUS_PARAM )  \
 COMPARE(32, 0xff)
 COMPARE(64, 0x7ff)
 
-INLINE int floatx80_compare_internal( floatx80 a, floatx80 b,
+static inline int floatx80_compare_internal( floatx80 a, floatx80 b,
                                       int is_quiet STATUS_PARAM )
 {
     flag aSign, bSign;
@@ -6658,7 +6658,7 @@ int floatx80_compare_quiet( floatx80 a, floatx80 b STATUS_PARAM )
     return floatx80_compare_internal(a, b, 1 STATUS_VAR);
 }
 
-INLINE int float128_compare_internal( float128 a, float128 b,
+static inline int float128_compare_internal( float128 a, float128 b,
                                       int is_quiet STATUS_PARAM )
 {
     flag aSign, bSign;
@@ -6707,7 +6707,7 @@ int float128_compare_quiet( float128 a, float128 b STATUS_PARAM )
  * NaNs and +0 vs -0.
  */
 #define MINMAX(s, nan_exp)                                              \
-INLINE float ## s float ## s ## _minmax(float ## s a, float ## s b,     \
+static inline  float ## s float ## s ## _minmax(float ## s a, float ## s b,     \
                                         int ismin STATUS_PARAM )        \
 {                                                                       \
     flag aSign, bSign;                                                  \
