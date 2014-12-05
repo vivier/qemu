@@ -1,0 +1,15 @@
+# The rhel profile must be kept identical to the default profile.
+[gitpublishprofile "rhel"]
+base = rhel7/master-1.5.3
+prefix = RHEV-7.1 qemu-kvm PATCH
+to = rhvirt-patches@redhat.com
+suppresscc = all
+message = True
+
+# The default profile must be kept identical to the rhel profile.
+[gitpublishprofile "default"]
+base = rhel7/master-1.5.3
+prefix = RHEV-7.1 qemu-kvm PATCH
+to = rhvirt-patches@redhat.com
+suppresscc = all
+message = True
