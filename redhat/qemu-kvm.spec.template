@@ -920,6 +920,17 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Dec 05 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-16.el7
+- kvm-qemu-iotests-Fix-broken-test-cases.patch [bz#1169589]
+- kvm-Fix-for-crash-after-migration-in-virtio-rng-on-bi-en.patch [bz#1165087]
+- kvm-Downstream-only-remove-unsupported-machines-from-AAr.patch [bz#1169847]
+- Resolves: bz#1165087
+  (QEMU core dumped for the destination guest when do migating guest to file)
+- Resolves: bz#1169589
+  (test case 051 071 and 087 of qemu-iotests fail for qcow2 with qemu-kvm-rhev-2.1.2-14.el7)
+- Resolves: bz#1169847
+  (only support mach-virt)
+
 * Tue Dec 02 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-15.el7
 - kvm-scsi-Optimize-scsi_req_alloc.patch [bz#1141656]
 - kvm-virtio-scsi-Optimize-virtio_scsi_init_req.patch [bz#1141656]
