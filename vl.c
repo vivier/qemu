@@ -2974,7 +2974,7 @@ static inline void *host_from_stream_offset(QEMUFile *f,
     uint8_t len;
 
     if (flags & RAM_SAVE_FLAG_CONTINUE) {
-        if (!block) {
+        if (!block || block->length <= offset) {
             fprintf(stderr, "Ack, bad migration stream!\n");
             return NULL;
         }
@@ -2987,8 +2987,9 @@ static inline void *host_from_stream_offset(QEMUFile *f,
     id[len] = 0;
 
     QLIST_FOREACH(block, &ram_list.blocks, next) {
-        if (!strncmp(id, block->idstr, sizeof(id)))
+        if (!strncmp(id, block->idstr, sizeof(id)) && block->length > offset) {
             return block->host + offset;
+        }
     }
 
     fprintf(stderr, "Can't find block %s!\n", id);
