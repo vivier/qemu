@@ -933,6 +933,12 @@ NBDExport *nbd_export_new(BlockDriverState *bs, off_t dev_offset,
     exp->size = size == -1 ? bdrv_getlength(bs) : size;
     exp->close = close;
     bdrv_ref(bs);
+    /*
+     * NBD exports are used for non-shared storage migration.  Make sure
+     * that BDRV_O_INCOMING is cleared and the image is ready for write
+     * access since the export could be available before migration handover.
+     */
+    bdrv_invalidate_cache(bs, NULL);
     return exp;
 }
 
