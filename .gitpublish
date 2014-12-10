@@ -1,7 +1,17 @@
-[gitpublishprofile "default"]
+# The rhel profile for qemu-kvm
+[gitpublishprofile "rhel"]
 base = rhel70/master
 prefix = RHEL-7.0.z qemu-kvm PATCH
+to = rhvirt-patches@redhat.com
+supresscc = all
+message = True
+
+# The rhev profile for qemu-kvm-rhev
+[gitpublishprofile "rhev"]
+base = rhel70/master
+prefix = RHEV-7.0.z qemu-kvm-rhev PATCH
 to = rhvirt-patches@redhat.com
 suppresscc = all
 message = True
 
+# There is no sane default, so don't provide one
