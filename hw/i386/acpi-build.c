@@ -1780,7 +1780,7 @@ void acpi_build(PcGuestInfo *guest_info, AcpiBuildTables *tables)
          */
         int legacy_aml_len =
             guest_info->legacy_acpi_table_size +
-            ACPI_BUILD_LEGACY_CPU_AML_SIZE * max_cpus;
+            ACPI_BUILD_LEGACY_CPU_AML_SIZE * guest_info->apic_id_limit;
         int legacy_table_size =
             ROUND_UP(tables_blob->len - aml_len + legacy_aml_len,
                      ACPI_BUILD_ALIGN_SIZE);
