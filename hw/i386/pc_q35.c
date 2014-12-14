@@ -163,7 +163,7 @@ static void pc_q35_init(MachineState *machine)
     if (smbios_defaults) {
         MachineClass *mc = MACHINE_GET_CLASS(machine);
         /* These values are guest ABI, do not change */
-        smbios_set_defaults("QEMU", "Standard PC (Q35 + ICH9, 2009)",
+        smbios_set_defaults("Red Hat", "KVM",
                             mc->name, smbios_legacy_mode, smbios_uuid_encoded);
     }
 
@@ -287,6 +287,7 @@ static void pc_q35_init(MachineState *machine)
     }
 }
 
+#if 0 /* Disabled for Red Hat Enterprise Linux */
 static void pc_compat_2_1(MachineState *machine)
 {
     PCMachineState *pcms = PC_MACHINE(machine);
@@ -475,3 +476,93 @@ static void pc_q35_machine_init(void)
 }
 
 machine_init(pc_q35_machine_init);
+
+#endif  /* Disabled for Red Hat Enterprise Linux */
+
+/* Red Hat Enterprise Linux machine types */
+
+static void pc_q35_compat_rhel710(MachineState *machine)
+{
+    /* KVM can't expose RDTSCP on AMD CPUs, so there's no point in enabling it
+     * on AMD CPU models.
+     */
+    x86_cpu_compat_set_features("phenom", FEAT_8000_0001_EDX, 0,
+                                CPUID_EXT2_RDTSCP);
+    x86_cpu_compat_set_features("Opteron_G2", FEAT_8000_0001_EDX, 0,
+                                CPUID_EXT2_RDTSCP);
+    x86_cpu_compat_set_features("Opteron_G3", FEAT_8000_0001_EDX, 0,
+                                CPUID_EXT2_RDTSCP);
+    x86_cpu_compat_set_features("Opteron_G4", FEAT_8000_0001_EDX, 0,
+                                CPUID_EXT2_RDTSCP);
+    x86_cpu_compat_set_features("Opteron_G5", FEAT_8000_0001_EDX, 0,
+                                CPUID_EXT2_RDTSCP);
+}
+
+static void pc_q35_init_rhel710(MachineState *machine)
+{
+    pc_q35_compat_rhel710(machine);
+    pc_q35_init(machine);
+}
+
+static QEMUMachine pc_q35_machine_rhel710 = {
+    PC_DEFAULT_MACHINE_OPTIONS,
+    .family = "pc_q35_Z",
+    .name = "pc-q35-rhel7.1.0",
+    .alias = "q35",
+    .desc = "RHEL-7.1.0 PC (Q35 + ICH9, 2009)",
+    .init = pc_q35_init_rhel710,
+    .default_machine_opts = "firmware=bios-256k.bin",
+    .compat_props = (GlobalProperty[]) {
+        { /* end of list */ }
+    },
+};
+
+static void pc_q35_compat_rhel700(MachineState *machine)
+{
+    pc_q35_compat_rhel710(machine);
+
+    /* Upstream enables it for everyone, we're a little more selective */
+    x86_cpu_compat_kvm_no_autoenable(FEAT_1_ECX, CPUID_EXT_X2APIC);
+
+    x86_cpu_compat_set_features("Conroe", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
+    x86_cpu_compat_set_features("Penryn", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
+    x86_cpu_compat_set_features("Nehalem", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
+    x86_cpu_compat_set_features("Westmere", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
+    /* SandyBridge and Haswell already have x2apic enabled */
+    x86_cpu_compat_set_features("Opteron_G1", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
+    x86_cpu_compat_set_features("Opteron_G2", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
+    x86_cpu_compat_set_features("Opteron_G3", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
+    x86_cpu_compat_set_features("Opteron_G4", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
+    x86_cpu_compat_set_features("Opteron_G5", FEAT_1_ECX, CPUID_EXT_X2APIC, 0);
+
+    smbios_legacy_mode = true;
+    has_reserved_memory = false;
+    migrate_cve_2014_5263_xhci_fields = true;
+}
+
+static void pc_q35_init_rhel700(MachineState *machine)
+{
+    pc_q35_compat_rhel700(machine);
+    pc_q35_init(machine);
+}
+
+static QEMUMachine pc_q35_machine_rhel700 = {
+    PC_DEFAULT_MACHINE_OPTIONS,
+    .family = "pc_q35_Z",
+    .name = "pc-q35-rhel7.0.0",
+    .desc = "RHEL-7.0.0 PC (Q35 + ICH9, 2009)",
+    .init = pc_q35_init_rhel700,
+    .default_machine_opts = "firmware=bios-256k.bin",
+    .compat_props = (GlobalProperty[]) {
+        PC_RHEL7_0_COMPAT,
+        { /* end of list */ }
+    },
+};
+
+static void rhel_pc_q35_machine_init(void)
+{
+    qemu_register_pc_machine(&pc_q35_machine_rhel710);
+    qemu_register_pc_machine(&pc_q35_machine_rhel700);
+}
+
+machine_init(rhel_pc_q35_machine_init);

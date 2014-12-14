@@ -1707,6 +1707,7 @@ static const TypeInfo spapr_machine_info = {
     },
 };
 
+#if 0 /* Disabled for Red Hat Enterprise Linux */
 static void spapr_machine_2_1_class_init(ObjectClass *oc, void *data)
 {
     MachineClass *mc = MACHINE_CLASS(oc);
@@ -1741,12 +1742,29 @@ static const TypeInfo spapr_machine_2_2_info = {
     .parent        = TYPE_SPAPR_MACHINE,
     .class_init    = spapr_machine_2_2_class_init,
 };
+#endif
+static void spapr_machine_rhel710_class_init(ObjectClass *oc, void *data)
+{
+    MachineClass *mc = MACHINE_CLASS(oc);
 
+    mc->name = "pseries-rhel7.1.0";
+    mc->desc = "RHEL 7.1.0 pSeries Logical Partition (PAPR compliant)";
+    mc->is_default = 1;
+}
+
+static const TypeInfo spapr_machine_rhel710_info = {
+    .name          = TYPE_SPAPR_MACHINE "RHEL7.1.0",
+    .parent        = TYPE_SPAPR_MACHINE,
+    .class_init    = spapr_machine_rhel710_class_init,
+};
 static void spapr_machine_register_types(void)
 {
     type_register_static(&spapr_machine_info);
+/*
     type_register_static(&spapr_machine_2_1_info);
     type_register_static(&spapr_machine_2_2_info);
+*/
+    type_register_static(&spapr_machine_rhel710_info);
 }
 
 type_init(spapr_machine_register_types)
