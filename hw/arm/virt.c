@@ -839,6 +839,7 @@ static void machvirt_init(MachineState *machine)
     arm_load_kernel(ARM_CPU(first_cpu), &vbi->bootinfo);
 }
 
+#if 0 /* Disabled for RHELSA */
 static bool virt_get_secure(Object *obj, Error **errp)
 {
     VirtMachineState *vms = VIRT_MACHINE(obj);
@@ -866,7 +867,6 @@ static void virt_instance_init(Object *obj)
                                     "Security Extensions (TrustZone)",
                                     NULL);
 }
-
 static void virt_class_init(ObjectClass *oc, void *data)
 {
     MachineClass *mc = MACHINE_CLASS(oc);
@@ -892,3 +892,24 @@ static void machvirt_machine_init(void)
 }
 
 machine_init(machvirt_machine_init);
+#endif /* disabled for RHELSA */
+
+static QEMUMachine aarch64_machine_rhelsa710 = {
+    .family = "virt-rhelsa-Z",
+    .name = "virt-rhelsa7.1",
+    .alias = "virt",
+    .desc = "RHELSA 7.1 ARM Virtual Machine",
+    .init = machvirt_init,
+    .is_default = 1,
+    .max_cpus = 8,
+    .compat_props = (GlobalProperty[]) {
+        { /* end of list */ }
+    },
+};
+
+static void rhelsa_machine_init(void)
+{
+    qemu_register_machine(&aarch64_machine_rhelsa710);
+}
+
+machine_init(rhelsa_machine_init);
