@@ -1815,6 +1815,16 @@ static void pci_e1000_realize(PCIDevice *pci_dev, Error **errp)
 
     pci_conf = pci_dev->config;
 
+    if (!(d->compat_flags & E1000_FLAG_AUTONEG)) {
+        /*
+         * We have no capabilities, so capability list bit should normally be 0.
+         * Keep it on for compat machine types to avoid breaking migration.
+         * HACK: abuse E1000_FLAG_AUTONEG, which is off exactly for
+         * the machine types that need this.
+         */
+        pci_set_word(pci_conf + PCI_STATUS, PCI_STATUS_CAP_LIST);
+    }
+
     /* TODO: RST# value should be 0, PCI spec 6.2.4 */
     pci_conf[PCI_CACHE_LINE_SIZE] = 0x10;
 
@@ -1880,7 +1890,7 @@ static void e1000_class_init(ObjectClass *klass, void *data)
 
     k->realize = pci_e1000_realize;
     k->exit = pci_e1000_uninit;
-    k->romfile = "efi-e1000.rom";
+    k->romfile = "pxe-e1000.rom";
     k->vendor_id = PCI_VENDOR_ID_INTEL;
     k->device_id = info->device_id;
     k->revision = info->revision;

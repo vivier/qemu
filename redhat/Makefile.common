@@ -12,7 +12,7 @@ TARFILE:=qemu-$(VERSION).tar.bz2
 TARURL:=http://wiki.qemu-project.org/download/$(TARFILE)
 TARSHA1:=ed6c02a267f9edf98058743f0f76a25743a0dfe7
 MARKER:=a8c40fa2d667e585382080db36ac44e216b37a1c
-SOURCES_FILELIST:= ksmtuned.conf ksmtuned ksm.sysconfig 80-kvm.rules kvm.modules 99-qemu-guest-agent.rules qemu-guest-agent.service ksmtuned.service  ksmctl.c ksm.service qemu.binfmt qemu-ga.sysconfig rhel6-virtio.rom rhel6-pcnet.rom rhel6-rtl8139.rom rhel6-ne2k_pci.rom bios-256k.bin README.rhel6-gpxe-source kvm-setup kvm-setup.service 85-kvm.preset build_configure.sh kvm-unit-tests.git-4ea7633.tar.bz2 vhost.conf bridge.conf
+SOURCES_FILELIST:= ksmtuned.conf ksmtuned ksm.sysconfig 80-kvm.rules kvm.modules 99-qemu-guest-agent.rules qemu-guest-agent.service ksmtuned.service  ksmctl.c ksm.service qemu.binfmt qemu-ga.sysconfig rhel6-virtio.rom rhel6-pcnet.rom rhel6-rtl8139.rom rhel6-ne2k_pci.rom bios-256k.bin README.rhel6-gpxe-source kvm-setup kvm-setup.service 85-kvm.preset build_configure.sh kvm-unit-tests.git-4ea7633.tar.bz2 vhost.conf bridge.conf rhel6-e1000.rom
 
 SPECFILE:=$(NAME).spec
 DIST:=.el7

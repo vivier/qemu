@@ -2298,6 +2298,7 @@ static const TypeInfo spapr_machine_info = {
     },
 };
 
+#if 0 /* Disabled for Red Hat Enterprise Linux */
 #define SPAPR_COMPAT_2_4 \
         HW_COMPAT_2_4
 
@@ -2431,6 +2432,23 @@ static const TypeInfo spapr_machine_2_4_info = {
     .parent        = TYPE_SPAPR_MACHINE,
     .class_init    = spapr_machine_2_4_class_init,
 };
+#endif
+static void spapr_machine_rhel720_class_init(ObjectClass *oc, void *data)
+{
+    MachineClass *mc = MACHINE_CLASS(oc);
+
+    mc->name = "pseries-rhel7.2.0";
+    mc->desc = "RHEL 7.2.0 pSeries Logical Partition (PAPR compliant)";
+    mc->alias = "pseries";
+    mc->is_default = 1;
+}
+
+
+static const TypeInfo spapr_machine_rhel720_info = {
+    .name          = MACHINE_TYPE_NAME("RHEL7.2.0"),
+    .parent        = TYPE_SPAPR_MACHINE,
+    .class_init    = spapr_machine_rhel720_class_init,
+};
 
 static void spapr_machine_2_5_class_init(ObjectClass *oc, void *data)
 {
@@ -2453,11 +2471,14 @@ static const TypeInfo spapr_machine_2_5_info = {
 static void spapr_machine_register_types(void)
 {
     type_register_static(&spapr_machine_info);
+/*
     type_register_static(&spapr_machine_2_1_info);
     type_register_static(&spapr_machine_2_2_info);
     type_register_static(&spapr_machine_2_3_info);
     type_register_static(&spapr_machine_2_4_info);
     type_register_static(&spapr_machine_2_5_info);
+*/
+    type_register_static(&spapr_machine_rhel720_info);
 }
 
 type_init(spapr_machine_register_types)

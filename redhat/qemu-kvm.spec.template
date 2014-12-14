@@ -156,6 +156,7 @@ Source16: rhel6-rtl8139.rom
 Source17: rhel6-ne2k_pci.rom
 Source18: bios-256k.bin
 Source19: README.rhel6-gpxe-source
+Source20: rhel6-e1000.rom
 Source21: kvm-setup
 Source22: kvm-setup.service
 Source23: 85-kvm.preset
@@ -529,6 +530,7 @@ install %{SOURCE14} $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/
 install %{SOURCE15} $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/
 install %{SOURCE16} $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/
 install %{SOURCE17} $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/
+install %{SOURCE20} $RPM_BUILD_ROOT%{_datadir}/%{pkgname}/
 
 install -m 0755 qemu-kvm $RPM_BUILD_ROOT%{_libexecdir}/
 install -m 0644 qemu-kvm.stp $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset/
@@ -578,6 +580,9 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/u-boot.e500
 # Remove sparc files
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/QEMU,tcx.bin
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/QEMU,cgthree.bin
+
+# Remove efi roms
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/efi*.rom
 
 # Provided by package ipxe
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/pxe*rom
@@ -732,17 +737,12 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %{_datadir}/%{pkgname}/pxe-rtl8139.rom
 %{_datadir}/%{pkgname}/pxe-ne2k_pci.rom
 %{_datadir}/%{pkgname}/qemu-icon.bmp
-%{_datadir}/%{pkgname}/efi-e1000.rom
-%{_datadir}/%{pkgname}/efi-eepro100.rom
-%{_datadir}/%{pkgname}/efi-ne2k_pci.rom
-%{_datadir}/%{pkgname}/efi-pcnet.rom
-%{_datadir}/%{pkgname}/efi-rtl8139.rom
-%{_datadir}/%{pkgname}/efi-virtio.rom
 %{_datadir}/%{pkgname}/qemu_logo_no_text.svg
 %{_datadir}/%{pkgname}/rhel6-virtio.rom
 %{_datadir}/%{pkgname}/rhel6-pcnet.rom
 %{_datadir}/%{pkgname}/rhel6-rtl8139.rom
 %{_datadir}/%{pkgname}/rhel6-ne2k_pci.rom
+%{_datadir}/%{pkgname}/rhel6-e1000.rom
 %ifarch x86_64
     %{_datadir}/%{pkgname}/dump-guest-memory.py*
 %endif

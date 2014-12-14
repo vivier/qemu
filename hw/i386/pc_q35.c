@@ -156,8 +156,8 @@ static void pc_q35_init(MachineState *machine)
 
     if (smbios_defaults) {
         /* These values are guest ABI, do not change */
-        smbios_set_defaults("QEMU", "Standard PC (Q35 + ICH9, 2009)",
-                            mc->name, smbios_legacy_mode, smbios_uuid_encoded,
+        smbios_set_defaults("Red Hat", "KVM",
+                            mc->desc, smbios_legacy_mode, smbios_uuid_encoded,
                             SMBIOS_ENTRY_POINT_21);
     }
 
@@ -284,6 +284,7 @@ static void pc_q35_init(MachineState *machine)
  * HW_COMPAT_*, PC_COMPAT_*, or * pc_*_machine_options().
  */
 
+#if 0 /* Disabled for Red Hat Enterprise Linux */
 static void pc_compat_2_3(MachineState *machine)
 {
     PCMachineState *pcms = PC_MACHINE(machine);
@@ -485,3 +486,103 @@ static void pc_q35_1_4_machine_options(MachineClass *m)
 
 DEFINE_Q35_MACHINE(v1_4, "pc-q35-1.4", pc_compat_1_4,
                    pc_q35_1_4_machine_options);
+machine_init(pc_q35_machine_init);
+
+#endif  /* Disabled for Red Hat Enterprise Linux */
+
+/* Red Hat Enterprise Linux machine types */
+
+static void pc_q35_compat_rhel720(MachineState *machine)
+{
+
+}
+
+static void pc_q35_init_rhel720(MachineState *machine)
+{
+    pc_q35_compat_rhel720(machine);
+    pc_q35_init(machine);
+}
+
+static void pc_q35_machine_rhel720_options(MachineClass *m)
+{
+    m->family = "pc_q35_Z";
+    m->desc = "RHEL-7.2.0 PC (Q35 + ICH9, 2009)";
+    m->alias = "q35";
+    m->default_machine_opts = "firmware=bios-256k.bin";
+    m->default_display = "std";
+    m->no_floppy = 1;
+    SET_MACHINE_COMPAT(m, PC_RHEL7_2_COMPAT);
+}
+
+DEFINE_PC_MACHINE(q35_rhel720, "pc-q35-rhel7.2.0", pc_q35_init_rhel720,
+                  pc_q35_machine_rhel720_options);
+
+static void pc_q35_compat_rhel710(MachineState *machine)
+{
+    PCMachineState *pcms = PC_MACHINE(machine);
+    PCMachineClass *pcmc = PC_MACHINE_GET_CLASS(pcms);
+
+    /* 7.1.0 is based on 2.1.2, 7.2.0 is based on 2.3 */
+    pc_q35_compat_rhel720(machine);
+
+    /* From pc_compat_2_2 */
+    rsdp_in_ram = false;
+    machine->suppress_vmdesc = true;
+
+    /* From pc_compat_2_1 */
+    pcms->enforce_aligned_dimm = false;
+    smbios_uuid_encoded = false;
+    x86_cpu_change_kvm_default("svm", NULL);
+
+    /* From pc_q35_2_4_machine_options */
+    pcmc->broken_reserved_end = true;
+}
+
+
+static void pc_q35_init_rhel710(MachineState *machine)
+{
+    pc_q35_compat_rhel710(machine);
+    pc_q35_init(machine);
+}
+
+static void pc_q35_machine_rhel710_options(MachineClass *m)
+{
+    m->family = "pc_q35_Z";
+    m->desc = "RHEL-7.1.0 PC (Q35 + ICH9, 2009)";
+    m->default_machine_opts = "firmware=bios-256k.bin";
+    SET_MACHINE_COMPAT(m, PC_RHEL7_1_COMPAT);
+}
+
+DEFINE_PC_MACHINE(q35_rhel710, "pc-q35-rhel7.1.0", pc_q35_init_rhel710,
+                  pc_q35_machine_rhel710_options);
+
+static void pc_q35_compat_rhel700(MachineState *machine)
+{
+    pc_q35_compat_rhel710(machine);
+
+    /* Upstream enables it for everyone, we're a little more selective */
+    x86_cpu_change_kvm_default("x2apic", NULL);
+
+    smbios_legacy_mode = true;
+    has_reserved_memory = false;
+    migrate_cve_2014_5263_xhci_fields = true;
+    global_state_set_optional();
+}
+
+static void pc_q35_init_rhel700(MachineState *machine)
+{
+    pc_q35_compat_rhel700(machine);
+    pc_q35_init(machine);
+}
+
+static void pc_q35_machine_rhel700_options(MachineClass *m)
+{
+    m->family = "pc_q35_Z";
+    m->desc = "RHEL-7.0.0 PC (Q35 + ICH9, 2009)";
+    m->default_machine_opts = "firmware=bios-256k.bin";
+    SET_MACHINE_COMPAT(m, PC_RHEL7_0_COMPAT);
+}
+
+DEFINE_PC_MACHINE(q35_rhel700, "pc-q35-rhel7.0.0", pc_q35_init_rhel700,
+                  pc_q35_machine_rhel700_options);
+

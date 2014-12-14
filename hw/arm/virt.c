@@ -85,7 +85,12 @@ typedef struct {
     int32_t gic_version;
 } VirtMachineState;
 
+#if 0
 #define TYPE_VIRT_MACHINE   MACHINE_TYPE_NAME("virt")
+#endif /* disabled for RHELSA */
+
+#define TYPE_VIRT_MACHINE   MACHINE_TYPE_NAME("virt-rhelsa7.2")
+
 #define VIRT_MACHINE(obj) \
     OBJECT_CHECK(VirtMachineState, (obj), TYPE_VIRT_MACHINE)
 #define VIRT_MACHINE_GET_CLASS(obj) \
@@ -1079,6 +1084,7 @@ static void machvirt_init(MachineState *machine)
     create_platform_bus(vbi, pic);
 }
 
+#if 0 /* Disabled for RHELSA */
 static bool virt_get_secure(Object *obj, Error **errp)
 {
     VirtMachineState *vms = VIRT_MACHINE(obj);
@@ -1164,7 +1170,6 @@ static void virt_instance_init(Object *obj)
                                     "Set GIC version. "
                                     "Valid values are 2, 3 and host", NULL);
 }
-
 static void virt_class_init(ObjectClass *oc, void *data)
 {
     MachineClass *mc = MACHINE_CLASS(oc);
@@ -1197,3 +1202,49 @@ static void machvirt_machine_init(void)
 }
 
 machine_init(machvirt_machine_init);
+#endif /* disabled for RHELSA */
+
+static void rhelsa720_virt_instance_init(Object *obj)
+{
+    VirtMachineState *vms = VIRT_MACHINE(obj);
+
+    /* EL3 is disabled on RHELSA 7.2 virt */
+    vms->secure = false;
+    /* High memory is disabled on RHELSA 7.2 virt */
+    vms->highmem = false;
+    /* Default GIC type is v2 on RHELSA 7.2 virt */
+    vms->gic_version = 2;
+}
+
+static void rhelsa720_virt_class_init(ObjectClass *oc, void *data)
+{
+    MachineClass *mc = MACHINE_CLASS(oc);
+    static GlobalProperty rhelsa720_compat_props[] = {
+      { /* end of list */ }
+    };
+
+    mc->family = "virt-rhelsa-Z";
+    mc->name = TYPE_VIRT_MACHINE;
+    mc->desc = "RHELSA 7.2 ARM Virtual Machine";
+    mc->alias = "virt";
+    mc->init = machvirt_init;
+    mc->max_cpus = 8;
+    mc->is_default = 1;
+    mc->compat_props = rhelsa720_compat_props;
+}
+
+static const TypeInfo rhelsa720_machvirt_info = {
+    .name = TYPE_VIRT_MACHINE,
+    .parent = TYPE_MACHINE,
+    .instance_size = sizeof(VirtMachineState),
+    .instance_init = rhelsa720_virt_instance_init,
+    .class_size = sizeof(VirtMachineClass),
+    .class_init = rhelsa720_virt_class_init,
+};
+
+static void rhelsa720_machvirt_init(void)
+{
+    type_register_static(&rhelsa720_machvirt_info);
+}
+
+machine_init(rhelsa720_machvirt_init);
