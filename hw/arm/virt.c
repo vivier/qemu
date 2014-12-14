@@ -95,7 +95,12 @@ typedef struct {
     int32_t gic_version;
 } VirtMachineState;
 
+#if 0
 #define TYPE_VIRT_MACHINE   MACHINE_TYPE_NAME("virt")
+#endif /* disabled for RHEL */
+
+#define TYPE_VIRT_MACHINE   MACHINE_TYPE_NAME("virt-rhel")
+
 #define VIRT_MACHINE(obj) \
     OBJECT_CHECK(VirtMachineState, (obj), TYPE_VIRT_MACHINE)
 #define VIRT_MACHINE_GET_CLASS(obj) \
@@ -1440,6 +1445,7 @@ static void machvirt_init(MachineState *machine)
     create_platform_bus(vbi, pic);
 }
 
+#if 0 /* Disabled for RHEL */
 static bool virt_get_secure(Object *obj, Error **errp)
 {
     VirtMachineState *vms = VIRT_MACHINE(obj);
@@ -1453,6 +1459,7 @@ static void virt_set_secure(Object *obj, bool value, Error **errp)
 
     vms->secure = value;
 }
+#endif /* disabled for RHEL */
 
 static bool virt_get_highmem(Object *obj, Error **errp)
 {
@@ -1492,6 +1499,7 @@ static void virt_set_gic_version(Object *obj, const char *value, Error **errp)
     }
 }
 
+#if 0 /* disabled for RHEL */
 static void virt_machine_class_init(ObjectClass *oc, void *data)
 {
     MachineClass *mc = MACHINE_CLASS(oc);
@@ -1603,3 +1611,79 @@ static void virt_machine_2_6_options(MachineClass *mc)
     vmc->no_pmu = true;
 }
 DEFINE_VIRT_MACHINE(2, 6)
+
+type_init(machvirt_machine_init);
+#endif /* disabled for RHEL */
+
+static void rhel_machine_class_init(ObjectClass *oc, void *data)
+{
+    MachineClass *mc = MACHINE_CLASS(oc);
+
+    mc->family = "virt-rhel-Z";
+    mc->init = machvirt_init;
+    /* Start max_cpus at the maximum QEMU supports. We'll further restrict
+     * it later in machvirt_init, where we have more information about the
+     * configuration of the particular instance.
+     */
+    mc->max_cpus = MAX_CPUMASK_BITS;
+    mc->has_dynamic_sysbus = false;
+    mc->block_default_type = IF_VIRTIO;
+    mc->no_cdrom = 1;
+    mc->pci_allow_0_address = true;
+}
+
+static const TypeInfo rhel_machine_info = {
+    .name          = TYPE_VIRT_MACHINE,
+    .parent        = TYPE_MACHINE,
+    .abstract      = true,
+    .instance_size = sizeof(VirtMachineState),
+    .class_size    = sizeof(VirtMachineClass),
+    .class_init    = rhel_machine_class_init,
+};
+
+static void rhel730_virt_instance_init(Object *obj)
+{
+    VirtMachineState *vms = VIRT_MACHINE(obj);
+
+    /* EL3 is disabled by default and non-configurable on RHEL 7.3.0 */
+    vms->secure = false;
+    /* High memory is enabled by default on RHEL 7.3.0 */
+    vms->highmem = true;
+    object_property_add_bool(obj, "highmem", virt_get_highmem,
+                             virt_set_highmem, NULL);
+    object_property_set_description(obj, "highmem",
+                                    "Set on/off to enable/disable using "
+                                    "physical address space above 32 bits",
+                                    NULL);
+    /* Default GIC type is still v2, but becomes configurable on RHEL 7.3.0 */
+    vms->gic_version = 2;
+    object_property_add_str(obj, "gic-version", virt_get_gic_version,
+                        virt_set_gic_version, NULL);
+    object_property_set_description(obj, "gic-version",
+                                    "Set GIC version. "
+                                    "Valid values are 2, 3 and host", NULL);
+}
+
+static void rhel730_virt_class_init(ObjectClass *oc, void *data)
+{
+    MachineClass *mc = MACHINE_CLASS(oc);
+
+    mc->desc = "RHEL 7.3.0 ARM Virtual Machine";
+    mc->alias = "virt";
+    mc->is_default = 1;
+}
+
+static const TypeInfo rhel730_machvirt_info = {
+    .name = MACHINE_TYPE_NAME("virt-rhel7.3.0"),
+    .parent = TYPE_VIRT_MACHINE,
+    .instance_init = rhel730_virt_instance_init,
+    .class_init = rhel730_virt_class_init,
+};
+
+static void rhel_machine_register_types(void)
+{
+    type_register_static(&rhel_machine_info);
+    type_register_static(&rhel730_machvirt_info);
+}
+
+type_init(rhel_machine_register_types);
