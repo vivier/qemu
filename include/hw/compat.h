@@ -109,4 +109,64 @@
         .value    = "on",\
     },
 
+/* Mostly like HW_COMPAT_2_1 but:
+ *    we don't need virtio-scsi-pci since 7.0 already had that on
+ */
+#define HW_COMPAT_RHEL7_1 \
+        {\
+            .driver   = "intel-hda",\
+            .property = "old_msi_addr",\
+            .value    = "on",\
+        },{\
+            .driver   = "VGA",\
+            .property = "qemu-extended-regs",\
+            .value    = "off",\
+        },{\
+            .driver   = "secondary-vga",\
+            .property = "qemu-extended-regs",\
+            .value    = "off",\
+        },{\
+            .driver   = "usb-mouse",\
+            .property = "usb_version",\
+            .value    = stringify(1),\
+        },{\
+            .driver   = "usb-kbd",\
+            .property = "usb_version",\
+            .value    = stringify(1),\
+        },{\
+            .driver   = "virtio-pci",\
+            .property = "virtio-pci-bus-master-bug-migration",\
+            .value    = "on",\
+        },
+
+/* Mostly like HW_COMPAT_2_4 + 2_3 but:
+ *  we don't need "any_layout" as it has been backported to 7.2
+ */
+
+#define HW_COMPAT_RHEL7_2 \
+        {\
+            .driver   = "virtio-blk-device",\
+            .property = "scsi",\
+            .value    = "true",\
+        },{\
+            .driver   = "intel-hda-generic",\
+            .property = "old_msi_addr",\
+            .value    = "on",\
+        },{\
+            .driver   = "VGA",\
+            .property = "qemu-extended-regs",\
+            .value    = "off",\
+        },{\
+            .driver   = "e1000",\
+            .property = "extra_mac_registers",\
+            .value    = "off",\
+        },{\
+            .driver   = "virtio-pci",\
+            .property = "x-disable-pcie",\
+            .value    = "on",\
+        },{\
+            .driver   = "virtio-pci",\
+            .property = "migrate-extra",\
+            .value    = "off",\
+        },
 #endif /* HW_COMPAT_H */
