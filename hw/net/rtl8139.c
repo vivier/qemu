@@ -3174,7 +3174,7 @@ static int rtl8139_pre_save(void *opaque)
 
 static const VMStateDescription vmstate_rtl8139 = {
     .name = "rtl8139",
-    .version_id = 5,
+    .version_id = 4,
     .minimum_version_id = 3,
     .post_load = rtl8139_post_load,
     .pre_save  = rtl8139_pre_save,
@@ -3255,7 +3255,9 @@ static const VMStateDescription vmstate_rtl8139 = {
         VMSTATE_UINT32(tally_counters.TxMCol, RTL8139State),
         VMSTATE_UINT64(tally_counters.RxOkPhy, RTL8139State),
         VMSTATE_UINT64(tally_counters.RxOkBrd, RTL8139State),
+#if 0 /* Disabled for Red Hat Enterprise Linux bz 1420195 */
         VMSTATE_UINT32_V(tally_counters.RxOkMul, RTL8139State, 5),
+#endif
         VMSTATE_UINT16(tally_counters.TxAbt, RTL8139State),
         VMSTATE_UINT16(tally_counters.TxUndrn, RTL8139State),
 
@@ -3425,7 +3427,7 @@ static void rtl8139_class_init(ObjectClass *klass, void *data)
 
     k->realize = pci_rtl8139_realize;
     k->exit = pci_rtl8139_uninit;
-    k->romfile = "efi-rtl8139.rom";
+    k->romfile = "pxe-rtl8139.rom";
     k->vendor_id = PCI_VENDOR_ID_REALTEK;
     k->device_id = PCI_DEVICE_ID_REALTEK_8139;
     k->revision = RTL8139_PCI_REVID; /* >=0x20 is for 8139C+ */

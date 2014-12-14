@@ -30,6 +30,7 @@
 #include "qemu/timer.h"
 #include "exec/address-spaces.h"
 #include "qemu/error-report.h"
+#include "migration/migration.h"
 
 //#define DEBUG_SERIAL
 
@@ -691,6 +692,9 @@ static int serial_post_load(void *opaque, int version_id)
 static bool serial_thr_ipending_needed(void *opaque)
 {
     SerialState *s = opaque;
+    if (migrate_pre_2_2) {
+        return false;
+    }
 
     if (s->ier & UART_IER_THRI) {
         bool expected_value = ((s->iir & UART_IIR_ID) == UART_IIR_THRI);
@@ -718,6 +722,10 @@ static const VMStateDescription vmstate_serial_thr_ipending = {
 static bool serial_tsr_needed(void *opaque)
 {
     SerialState *s = (SerialState *)opaque;
+    if (migrate_pre_2_2) {
+        return false;
+    }
+
     return s->tsr_retry != 0;
 }
 
@@ -737,6 +745,10 @@ static const VMStateDescription vmstate_serial_tsr = {
 static bool serial_recv_fifo_needed(void *opaque)
 {
     SerialState *s = (SerialState *)opaque;
+    if (migrate_pre_2_2) {
+        return false;
+    }
+
     return !fifo8_is_empty(&s->recv_fifo);
 
 }
@@ -755,6 +767,10 @@ static const VMStateDescription vmstate_serial_recv_fifo = {
 static bool serial_xmit_fifo_needed(void *opaque)
 {
     SerialState *s = (SerialState *)opaque;
+    if (migrate_pre_2_2) {
+        return false;
+    }
+
     return !fifo8_is_empty(&s->xmit_fifo);
 }
 
@@ -772,6 +788,10 @@ static const VMStateDescription vmstate_serial_xmit_fifo = {
 static bool serial_fifo_timeout_timer_needed(void *opaque)
 {
     SerialState *s = (SerialState *)opaque;
+    if (migrate_pre_2_2) {
+        return false;
+    }
+
     return timer_pending(s->fifo_timeout_timer);
 }
 
@@ -789,6 +809,10 @@ static const VMStateDescription vmstate_serial_fifo_timeout_timer = {
 static bool serial_timeout_ipending_needed(void *opaque)
 {
     SerialState *s = (SerialState *)opaque;
+    if (migrate_pre_2_2) {
+        return false;
+    }
+
     return s->timeout_ipending != 0;
 }
 
@@ -806,6 +830,10 @@ static const VMStateDescription vmstate_serial_timeout_ipending = {
 static bool serial_poll_needed(void *opaque)
 {
     SerialState *s = (SerialState *)opaque;
+    if (migrate_pre_2_2) {
+        return false;
+    }
+
     return s->poll_msl >= 0;
 }
 
