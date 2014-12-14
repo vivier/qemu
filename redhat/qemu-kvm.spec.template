@@ -601,6 +601,9 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/QEMU,cgthree.bin
 rm -rf ${RPM_BUILD_ROOT}%{_bindir}/ivshmem-client
 rm -rf ${RPM_BUILD_ROOT}%{_bindir}/ivshmem-server
 
+# Remove efi roms
+rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/efi*.rom
+
 # Provided by package ipxe
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/pxe*rom
 # Provided by package vgabios
@@ -780,14 +783,6 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
     %{_datadir}/%{pkgname}/pxe-ne2k_pci.rom
 %endif
 %{_datadir}/%{pkgname}/qemu-icon.bmp
-%{_datadir}/%{pkgname}/efi-e1000.rom
-%{_datadir}/%{pkgname}/efi-eepro100.rom
-%{_datadir}/%{pkgname}/efi-e1000e.rom
-%{_datadir}/%{pkgname}/efi-vmxnet3.rom
-%{_datadir}/%{pkgname}/efi-ne2k_pci.rom
-%{_datadir}/%{pkgname}/efi-pcnet.rom
-%{_datadir}/%{pkgname}/efi-rtl8139.rom
-%{_datadir}/%{pkgname}/efi-virtio.rom
 %{_datadir}/%{pkgname}/qemu_logo_no_text.svg
 %{_datadir}/%{pkgname}/rhel6-virtio.rom
 %{_datadir}/%{pkgname}/rhel6-pcnet.rom

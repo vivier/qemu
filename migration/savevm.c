@@ -42,6 +42,7 @@
 #include "postcopy-ram.h"
 #include "qapi/qmp/qerror.h"
 #include "qemu/error-report.h"
+#include "qemu/rcu_queue.h"
 #include "sysemu/cpus.h"
 #include "exec/memory.h"
 #include "exec/target_page.h"
@@ -80,6 +81,7 @@ enum qemu_vm_cmd {
     MIG_CMD_PACKAGED,          /* Send a wrapped stream within this stream */
     MIG_CMD_MAX
 };
+bool shadow_bios_after_incoming;
 
 #define MAX_VM_CMD_PACKAGED_SIZE (1ul << 24)
 static struct mig_cmd_args {
@@ -2079,6 +2081,13 @@ int qemu_loadvm_state(QEMUFile *f)
     }
 
     qemu_loadvm_state_cleanup();
+    /* Supplement SeaBIOS's shadowing now, because it was useless when the
+     * incoming VM started on the RHEL-6 emulator.
+     */
+    if (shadow_bios_after_incoming) {
+        shadow_bios();
+    }
+
     cpu_synchronize_all_post_init();
 
     return ret;
