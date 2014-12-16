@@ -837,6 +837,51 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Dec 16 2014 Jeff E. Nelson <jen@redhat.com> - 1.5.3-84.el7
+- kvm-qemu-iotests-Test-case-for-backing-file-deletion.patch [bz#1002493]
+- kvm-qemu-iotests-Add-sample-image-and-test-for-VMDK-vers.patch [bz#1134237]
+- kvm-vmdk-Check-VMFS-extent-line-field-number.patch [bz#1134237]
+- kvm-qemu-iotests-Introduce-_unsupported_imgopts.patch [bz#1002493]
+- kvm-qemu-iotests-Add-_unsupported_imgopts-for-vmdk-subfo.patch [bz#1002493]
+- kvm-vmdk-Fix-big-flat-extent-IO.patch [bz#1134241]
+- kvm-vmdk-Check-for-overhead-when-opening.patch [bz#1134251]
+- kvm-block-vmdk-add-basic-.bdrv_check-support.patch [bz#1134251]
+- kvm-qemu-iotest-Make-077-raw-only.patch [bz#1134237]
+- kvm-qemu-iotests-Don-t-run-005-on-vmdk-split-formats.patch [bz#1002493]
+- kvm-vmdk-extract-vmdk_read_desc.patch [bz#1134251]
+- kvm-vmdk-push-vmdk_read_desc-up-to-caller.patch [bz#1134251]
+- kvm-vmdk-do-not-try-opening-a-file-as-both-image-and-des.patch [bz#1134251]
+- kvm-vmdk-correctly-propagate-errors.patch [bz#1134251]
+- kvm-block-vmdk-do-not-report-file-offset-for-compressed-.patch [bz#1134251]
+- kvm-vmdk-Fix-d-and-lld-to-PRI-in-format-strings.patch [bz#1134251]
+- kvm-vmdk-Fix-x-to-PRIx32-in-format-strings-for-cid.patch [bz#1134251]
+- kvm-qemu-img-Convert-by-cluster-size-if-target-is-compre.patch [bz#1134283]
+- kvm-vmdk-Implement-.bdrv_write_compressed.patch [bz#1134283]
+- kvm-vmdk-Implement-.bdrv_get_info.patch [bz#1134283]
+- kvm-qemu-iotests-Test-converting-to-streamOptimized-from.patch [bz#1134283]
+- kvm-vmdk-Fix-local_err-in-vmdk_create.patch [bz#1134283]
+- kvm-fpu-softfloat-drop-INLINE-macro.patch [bz#1002493]
+- kvm-block-New-bdrv_nb_sectors.patch [bz#1002493]
+- kvm-vmdk-Optimize-cluster-allocation.patch [bz#1002493]
+- kvm-vmdk-Handle-failure-for-potentially-large-allocation.patch [bz#1002493]
+- kvm-vmdk-Use-bdrv_nb_sectors-where-sectors-not-bytes-are.patch [bz#1002493]
+- kvm-vmdk-fix-vmdk_parse_extents-extent_file-leaks.patch [bz#1002493]
+- kvm-vmdk-fix-buf-leak-in-vmdk_parse_extents.patch [bz#1002493]
+- kvm-vmdk-Fix-integer-overflow-in-offset-calculation.patch [bz#1002493]
+- kvm-migration-fix-parameter-validation-on-ram-load-CVE-2.patch [bz#1163078]
+- Resolves: bz#1002493
+  (qemu-img convert rate about 100k/second from qcow2/raw to vmdk format on nfs system file)
+- Resolves: bz#1134237
+  (Opening malformed VMDK description file should fail)
+- Resolves: bz#1134241
+  (QEMU fails to correctly read/write on VMDK with big flat extent)
+- Resolves: bz#1134251
+  (Opening an obviously truncated VMDK image should fail)
+- Resolves: bz#1134283
+  (qemu-img convert from ISO to streamOptimized fails)
+- Resolves: bz#1163078
+  (CVE-2014-7840 qemu-kvm: qemu: insufficient parameter validation during ram load [rhel-7.1])
+
 * Thu Nov 27 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-83.el7
 - kvm-xhci-add-sanity-checks-to-xhci_lookup_uport.patch [bz#1074219]
 - kvm-Revert-Build-ceph-rbd-only-for-rhev.patch [bz#1140742]
