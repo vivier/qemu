@@ -99,7 +99,12 @@ typedef struct {
     bool secure;
 } VirtMachineState;
 
+#if 0
 #define TYPE_VIRT_MACHINE   "virt"
+#endif /* disabled for RHELSA */
+
+#define TYPE_VIRT_MACHINE   "virt-rhelsa7.2"
+
 #define VIRT_MACHINE(obj) \
     OBJECT_CHECK(VirtMachineState, (obj), TYPE_VIRT_MACHINE)
 #define VIRT_MACHINE_GET_CLASS(obj) \
@@ -894,22 +899,43 @@ static void machvirt_machine_init(void)
 machine_init(machvirt_machine_init);
 #endif /* disabled for RHELSA */
 
-static QEMUMachine aarch64_machine_rhelsa710 = {
-    .family = "virt-rhelsa-Z",
-    .name = "virt-rhelsa7.1",
-    .alias = "virt",
-    .desc = "RHELSA 7.1 ARM Virtual Machine",
-    .init = machvirt_init,
-    .is_default = 1,
-    .max_cpus = 8,
-    .compat_props = (GlobalProperty[]) {
-        { /* end of list */ }
-    },
-};
-
-static void rhelsa_machine_init(void)
+static void rhelsa720_virt_instance_init(Object *obj)
 {
-    qemu_register_machine(&aarch64_machine_rhelsa710);
+    VirtMachineState *vms = VIRT_MACHINE(obj);
+
+    /* EL3 is disabled by default on RHELSA virt */
+    vms->secure = false;
 }
 
-machine_init(rhelsa_machine_init);
+static void rhelsa720_virt_class_init(ObjectClass *oc, void *data)
+{
+    MachineClass *mc = MACHINE_CLASS(oc);
+    static GlobalProperty rhelsa720_compat_props[] = {
+      { /* end of list */ }
+    };
+
+    mc->family = "virt-rhelsa-Z";
+    mc->name = TYPE_VIRT_MACHINE;
+    mc->desc = "RHELSA 7.2 ARM Virtual Machine";
+    mc->alias = "virt";
+    mc->init = machvirt_init;
+    mc->max_cpus = 8;
+    mc->is_default = 1;
+    mc->compat_props = rhelsa720_compat_props;
+}
+
+static const TypeInfo rhelsa720_machvirt_info = {
+    .name = TYPE_VIRT_MACHINE,
+    .parent = TYPE_MACHINE,
+    .instance_size = sizeof(VirtMachineState),
+    .instance_init = rhelsa720_virt_instance_init,
+    .class_size = sizeof(VirtMachineClass),
+    .class_init = rhelsa720_virt_class_init,
+};
+
+static void rhelsa720_machvirt_init(void)
+{
+    type_register_static(&rhelsa720_machvirt_info);
+}
+
+machine_init(rhelsa720_machvirt_init);
