@@ -920,6 +920,32 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Dec 16 2014 Jeff E. Nelson <jen@redhat.com> - rhev-2.1.2-17.el7
+- kvm-numa-Don-t-allow-memdev-on-RHEL-6-machine-types.patch [bz#1170093]
+- kvm-block-allow-bdrv_unref-to-be-passed-NULL-pointers.patch [bz#1136381]
+- kvm-block-vdi-use-block-layer-ops-in-vdi_create-instead-.patch [bz#1136381]
+- kvm-block-use-the-standard-ret-instead-of-result.patch [bz#1136381]
+- kvm-block-vpc-use-block-layer-ops-in-vpc_create-instead-.patch [bz#1136381]
+- kvm-block-iotest-update-084-to-test-static-VDI-image-cre.patch [bz#1136381]
+- kvm-block-remove-BLOCK_OPT_NOCOW-from-vdi_create_opts.patch [bz#1136381]
+- kvm-block-remove-BLOCK_OPT_NOCOW-from-vpc_create_opts.patch [bz#1136381]
+- kvm-migration-fix-parameter-validation-on-ram-load-CVE-2.patch [bz#1163079]
+- kvm-qdev-monitor-fix-segmentation-fault-on-qdev_device_h.patch [bz#1169280]
+- kvm-block-migration-Disable-cache-invalidate-for-incomin.patch [bz#1171552]
+- kvm-acpi-Use-apic_id_limit-when-calculating-legacy-ACPI-.patch [bz#1173167]
+- Resolves: bz#1136381
+  (RFE: Supporting creating vdi/vpc format disk with protocols (glusterfs) for qemu-kvm-rhev-2.1.x)
+- Resolves: bz#1163079
+  (CVE-2014-7840 qemu-kvm-rhev: qemu: insufficient parameter validation during ram load [rhel-7.1])
+- Resolves: bz#1169280
+  (Segfault while query device properties (ics, icp))
+- Resolves: bz#1170093
+  (guest NUMA failed to migrate when machine is rhel6.5.0)
+- Resolves: bz#1171552
+  (Storage vm migration failed when running BurnInTes)
+- Resolves: bz#1173167
+  (Corrupted ACPI tables in some configurations using pc-i440fx-rhel7.0.0)
+
 * Fri Dec 05 2014 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-16.el7
 - kvm-qemu-iotests-Fix-broken-test-cases.patch [bz#1169589]
 - kvm-Fix-for-crash-after-migration-in-virtio-rng-on-bi-en.patch [bz#1165087]
