@@ -826,6 +826,7 @@
 #       'file', 'file', 'ftp', 'ftps', 'host_cdrom', 'host_device',
 #       'host_floppy', 'http', 'https', 'nbd', 'parallels', 'qcow',
 #       'qcow2', 'raw', 'tftp', 'vdi', 'vmdk', 'vpc', 'vvfat'
+#       2.2: 'cow' dropped
 #
 # @backing_file: #optional the name of the backing file (for copy-on-write)
 #
@@ -4076,7 +4077,6 @@
 
       'bochs':      'BlockdevOptionsGenericFormat',
       'cloop':      'BlockdevOptionsGenericFormat',
-      'cow':        'BlockdevOptionsGenericCOWFormat',
       'dmg':        'BlockdevOptionsGenericFormat',
       'parallels':  'BlockdevOptionsGenericFormat',
       'qcow':       'BlockdevOptionsGenericCOWFormat',
