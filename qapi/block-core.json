@@ -194,6 +194,7 @@
 #       'file', 'file', 'ftp', 'ftps', 'host_cdrom', 'host_device',
 #       'host_floppy', 'http', 'https', 'nbd', 'parallels', 'qcow',
 #       'qcow2', 'raw', 'tftp', 'vdi', 'vmdk', 'vpc', 'vvfat'
+#       2.2: 'cow' dropped
 #
 # @backing_file: #optional the name of the backing file (for copy-on-write)
 #
@@ -1146,7 +1147,7 @@
 { 'enum': 'BlockdevDriver',
   'data': [ 'file', 'host_device', 'host_cdrom', 'host_floppy',
             'http', 'https', 'ftp', 'ftps', 'tftp', 'vvfat', 'blkdebug',
-            'blkverify', 'bochs', 'cloop', 'cow', 'dmg', 'parallels', 'qcow',
+            'blkverify', 'bochs', 'cloop', 'dmg', 'parallels', 'qcow',
             'qcow2', 'qed', 'raw', 'vdi', 'vhdx', 'vmdk', 'vpc', 'quorum' ] }
 
 ##
@@ -1438,7 +1439,6 @@
       'blkverify':  'BlockdevOptionsBlkverify',
       'bochs':      'BlockdevOptionsGenericFormat',
       'cloop':      'BlockdevOptionsGenericFormat',
-      'cow':        'BlockdevOptionsGenericCOWFormat',
       'dmg':        'BlockdevOptionsGenericFormat',
       'parallels':  'BlockdevOptionsGenericFormat',
       'qcow':       'BlockdevOptionsGenericCOWFormat',
