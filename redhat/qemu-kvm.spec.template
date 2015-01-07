@@ -837,6 +837,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Jan 07 2015 Jeff E. Nelson <jen@redhat.com> - 1.5.3-85.el7
+- kvm-block-delete-cow-block-driver.patch [bz#1175325]
+- Resolves: bz#1175325
+  (Delete cow block driver)
+
 * Tue Dec 16 2014 Jeff E. Nelson <jen@redhat.com> - 1.5.3-84.el7
 - kvm-qemu-iotests-Test-case-for-backing-file-deletion.patch [bz#1002493]
 - kvm-qemu-iotests-Add-sample-image-and-test-for-VMDK-vers.patch [bz#1134237]
