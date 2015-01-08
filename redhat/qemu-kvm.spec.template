@@ -920,6 +920,14 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Jan 08 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-18.el7
+- kvm-vl-Adjust-the-place-of-calling-mlockall-to-speedup-V.patch [bz#1173394]
+- kvm-block-delete-cow-block-driver.patch [bz#1175841]
+- Resolves: bz#1173394
+  (numa_smaps doesn't respect bind policy with huge page)
+- Resolves: bz#1175841
+  (Delete cow block driver)
+
 * Tue Dec 16 2014 Jeff E. Nelson <jen@redhat.com> - rhev-2.1.2-17.el7
 - kvm-numa-Don-t-allow-memdev-on-RHEL-6-machine-types.patch [bz#1170093]
 - kvm-block-allow-bdrv_unref-to-be-passed-NULL-pointers.patch [bz#1136381]
