@@ -1,4 +1,4 @@
-# The rhev profile must be first, because it is the default
+# The first profile is the default
 [gitpublishprofile "rhev"]
 base = rhev7/master-2.1.2
 prefix = RHEV-7.1 qemu-kvm-rhev PATCH
@@ -9,7 +9,7 @@ message = True
 # Special project, Acadia, for aarm64 architecture.
 [gitpublishprofile "acadia"]
 base = rhev7/master-2.1.2
-prefix = RHELSA qemu-kvm-rhev PATCH
+prefix = DEPRECATED, DO NOT USE -- Acadia work is now being done in rhev7/master-2.2.0
 to = rhvirt-patches@redhat.com
 cc = virt-arm@redhat.com
 suppresscc = all
