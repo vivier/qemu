@@ -2716,16 +2716,19 @@ static void vfio_listener_release(VFIOContainer *container)
  */
 static void vfio_disable_interrupts(VFIODevice *vdev)
 {
-    switch (vdev->interrupt) {
-    case VFIO_INT_INTx:
-        vfio_disable_intx(vdev);
-        break;
-    case VFIO_INT_MSI:
-        vfio_disable_msi(vdev);
-        break;
-    case VFIO_INT_MSIX:
+    /*
+     * More complicated than it looks.  Disabling MSI/X transitions the
+     * device to INTx mode (if supported).  Therefore we need to first
+     * disable MSI/X and then cleanup by disabling INTx.
+     */
+    if (vdev->interrupt == VFIO_INT_MSIX) {
         vfio_disable_msix(vdev);
-        break;
+    } else if (vdev->interrupt == VFIO_INT_MSI) {
+        vfio_disable_msi(vdev);
+    }
+
+    if (vdev->interrupt == VFIO_INT_INTx) {
+        vfio_disable_intx(vdev);
     }
 }
 
