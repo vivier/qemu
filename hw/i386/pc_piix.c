@@ -1168,7 +1168,7 @@ static void pc_compat_rhel650(MachineState *machine)
     x86_cpu_compat_set_features(NULL, FEAT_8000_0001_EDX, 0,
                                 CPUID_EXT2_3DNOW | CPUID_EXT2_3DNOWEXT);
 
-    x86_cpu_compat_disable_kvm_features(FEAT_KVM, KVM_FEATURE_PV_UNHALT);
+    x86_cpu_compat_disable_kvm_features(FEAT_KVM, (1 << KVM_FEATURE_PV_UNHALT));
 
     rom_file_has_mr = false;
     has_acpi_build = false;
@@ -1294,7 +1294,7 @@ static QEMUMachine pc_machine_rhel640 = {
 static void pc_compat_rhel630(MachineState *machine)
 {
     pc_compat_rhel640(machine);
-    x86_cpu_compat_disable_kvm_features(FEAT_KVM, KVM_FEATURE_PV_EOI);
+    x86_cpu_compat_disable_kvm_features(FEAT_KVM, (1 << KVM_FEATURE_PV_EOI));
     enable_compat_apic_id_mode();
     x86_cpu_compat_set_features("SandyBridge", FEAT_1_ECX,
                                 0, CPUID_EXT_TSC_DEADLINE_TIMER);
