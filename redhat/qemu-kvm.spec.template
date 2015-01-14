@@ -923,6 +923,26 @@ make check V=1
 
 %changelog
 %%CHANGELOG%%
+* Wed Jan 14 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.2.0-2.el7.next.candidate
+- kvm-Update-to-qemu-kvm-rhev-2.1.2-19.el7.patch []
+- kvm-fw_cfg-remove-superfluous-blank-line.patch [bz#1169869]
+- kvm-hw-arm-boot-fix-uninitialized-scalar-variable-warnin.patch [bz#1169869]
+- kvm-Sort-include-qemu-typedefs.h.patch [bz#1169869]
+- kvm-fw_cfg-hard-separation-between-the-MMIO-and-I-O-port.patch [bz#1169869]
+- kvm-fw_cfg-move-boards-to-fw_cfg_init_io-fw_cfg_init_mem.patch [bz#1169869]
+- kvm-fw_cfg_mem-max-access-size-and-region-size-are-the-s.patch [bz#1169869]
+- kvm-fw_cfg_mem-flip-ctl_mem_ops-and-data_mem_ops-to-DEVI.patch [bz#1169869]
+- kvm-exec-allows-8-byte-accesses-in-subpage_ops.patch [bz#1169869]
+- kvm-fw_cfg_mem-introduce-the-data_width-property.patch [bz#1169869]
+- kvm-fw_cfg_mem-expose-the-data_width-property-with-fw_cf.patch [bz#1169869]
+- kvm-arm-add-fw_cfg-to-virt-board.patch [bz#1169869]
+- kvm-hw-loader-split-out-load_image_gzipped_buffer.patch [bz#1169869]
+- kvm-hw-arm-pass-pristine-kernel-image-to-guest-firmware-.patch [bz#1169869]
+- kvm-hw-arm-virt-enable-passing-of-EFI-stubbed-kernel-to-.patch [bz#1169869]
+- kvm-fw_cfg-fix-endianness-in-fw_cfg_data_mem_read-_write.patch [bz#1169869]
+- Resolves: bz#1169869
+  (add fw_cfg to mach-virt)
+
 * Tue Jan 13 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-19.el7
 - kvm-smbios-Fix-dimm-size-calculation-when-RAM-is-multipl.patch [bz#1179165]
 - kvm-smbios-Don-t-report-unknown-CPU-speed-fix-SVVP-regre.patch [bz#1177127]
