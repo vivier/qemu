@@ -920,6 +920,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Jan 15 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-20.el7
+- kvm-pc-fix-usage-of-x86_cpu_compat_disable_kvm_features.patch [bz#1182233]
+- Resolves: bz#1182233
+  (Machine type rhel6.5.0 does not use kvmclock due to typo)
+
 * Tue Jan 13 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-19.el7
 - kvm-smbios-Fix-dimm-size-calculation-when-RAM-is-multipl.patch [bz#1179165]
 - kvm-smbios-Don-t-report-unknown-CPU-speed-fix-SVVP-regre.patch [bz#1177127]
