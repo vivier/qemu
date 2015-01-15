@@ -1749,6 +1749,7 @@ static void spapr_machine_rhel710_class_init(ObjectClass *oc, void *data)
 
     mc->name = "pseries-rhel7.1.0";
     mc->desc = "RHEL 7.1.0 pSeries Logical Partition (PAPR compliant)";
+    mc->alias = "pseries";
     mc->is_default = 1;
 }
 
