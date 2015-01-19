@@ -678,7 +678,9 @@ static int raw_create(const char *filename, QEMUOptionParameter *options)
             }
             left -= result;
         }
-        fsync(fd);
+        if (result >= 0) {
+            fsync(fd);
+        }
         g_free(buf);
     } else if (prealloc != PREALLOC_MODE_OFF) {
         result = -EINVAL;
