@@ -938,15 +938,7 @@ static int qcow2_change_backing_file(BlockDriverState *bs,
     return qcow2_update_header(bs);
 }
 
-enum prealloc_mode {
-    PREALLOC_OFF = 0,
-    PREALLOC_METADATA,
-    PREALLOC_FULL,
-};
-
-#define IO_BUF_SIZE (2 * 1024 * 1024)
-
-static int preallocate(BlockDriverState *bs, enum prealloc_mode mode)
+static int preallocate(BlockDriverState *bs)
 {
     uint64_t nb_sectors;
     uint64_t offset;
@@ -954,14 +946,11 @@ static int preallocate(BlockDriverState *bs, enum prealloc_mode mode)
     int ret;
     QCowL2Meta meta;
 
-    assert(mode != PREALLOC_OFF);
-
     nb_sectors = bdrv_getlength(bs) >> 9;
     offset = 0;
     qemu_co_queue_init(&meta.dependent_requests);
     meta.cluster_offset = 0;
 
-    /* First allocate metadata in _really_ big chunks */
     while (nb_sectors) {
         num = MIN(nb_sectors, INT_MAX >> 9);
         ret = qcow2_alloc_cluster_offset(bs, offset, 0, num, &num, &meta);
@@ -983,28 +972,6 @@ static int preallocate(BlockDriverState *bs, enum prealloc_mode mode)
 
         nb_sectors -= num;
         offset += num << 9;
-    }
-
-    /* Then write zeros to the cluster data, if requested */
-    if (mode == PREALLOC_FULL) {
-        void *buf = g_malloc0(IO_BUF_SIZE);
-
-        nb_sectors = bdrv_getlength(bs) >> BDRV_SECTOR_BITS;
-        offset = 0;
-
-        while (nb_sectors) {
-            num = MIN(nb_sectors, IO_BUF_SIZE / BDRV_SECTOR_SIZE);
-            ret = bdrv_write(bs, offset >> BDRV_SECTOR_BITS, buf, num);
-            if (ret < 0) {
-                g_free(buf);
-                return ret;
-            }
-
-            nb_sectors -= num;
-            offset += num << 9;
-        }
-
-        g_free(buf);
     }
 
     /*
@@ -1178,7 +1145,7 @@ static int qcow2_create2(const char *filename, int64_t total_size,
 
     /* And if we're supposed to preallocate metadata, do that now */
     if (prealloc) {
-        ret = preallocate(bs, prealloc);
+        ret = preallocate(bs);
         if (ret < 0) {
             goto out;
         }
@@ -1223,11 +1190,9 @@ static int qcow2_create(const char *filename, QEMUOptionParameter *options)
             }
         } else if (!strcmp(options->name, BLOCK_OPT_PREALLOC)) {
             if (!options->value.s || !strcmp(options->value.s, "off")) {
-                prealloc = PREALLOC_OFF;
+                prealloc = 0;
             } else if (!strcmp(options->value.s, "metadata")) {
-                prealloc = PREALLOC_METADATA;
-            } else if (!strcmp(options->value.s, "full")) {
-                prealloc = PREALLOC_FULL;
+                prealloc = 1;
             } else {
                 fprintf(stderr, "Invalid preallocation mode: '%s'\n",
                     options->value.s);
@@ -1489,7 +1454,7 @@ static QEMUOptionParameter qcow2_create_options[] = {
     {
         .name = BLOCK_OPT_PREALLOC,
         .type = OPT_STRING,
-        .help = "Preallocation mode (allowed values: off, metadata, full)"
+        .help = "Preallocation mode (allowed values: off, metadata)"
     },
     { NULL }
 };
