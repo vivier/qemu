@@ -676,7 +676,7 @@ static int raw_create(const char *filename, QEMUOptionParameter *options)
                              strerror(-result));
                 break;
             }
-            left -= num;
+            left -= result;
         }
         fsync(fd);
         g_free(buf);
