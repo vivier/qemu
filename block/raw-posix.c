@@ -679,7 +679,12 @@ static int raw_create(const char *filename, QEMUOptionParameter *options)
             left -= result;
         }
         if (result >= 0) {
-            fsync(fd);
+            result = fsync(fd);
+            if (result < 0) {
+                result = -errno;
+                error_report("Could not flush new file to disk: %s",
+                             strerror(-result));
+            }
         }
         g_free(buf);
     } else if (prealloc != PREALLOC_MODE_OFF) {
