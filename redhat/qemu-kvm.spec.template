@@ -923,6 +923,11 @@ make check V=1
 
 %changelog
 %%CHANGELOG%%
+* Thu Jan 22 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.2.0-3.el7
+- kvm-Downstream-only-arm-define-a-new-machine-type-for-RH.patch [bz#1176838]
+- Resolves: bz#1176838
+  (create rhelsa machine type)
+
 * Wed Jan 14 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.2.0-2.el7.next.candidate
 - kvm-Update-to-qemu-kvm-rhev-2.1.2-19.el7.patch []
 - kvm-fw_cfg-remove-superfluous-blank-line.patch [bz#1169869]
