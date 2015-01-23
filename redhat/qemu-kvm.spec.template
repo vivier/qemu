@@ -920,6 +920,18 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Jan 23 2015 Jeff E. Nelson <jen@redhat.com> - rhev-2.1.2-21.el7
+- kvm-seccomp-add-mlockall-to-whitelist.patch [bz#1182494]
+- kvm-seccomp-add-mbind-to-the-syscall-whitelist.patch [bz#1172473]
+- kvm-ich9-add-disable_s3-disable_s4-s4_val-properties.patch [bz#1170533]
+- kvm-q35-disable-s3-s4-by-default.patch [bz#1170533]
+- Resolves: bz#1170533
+  (Should disalbe S3/S4 in default  under Q35 machine type in rhel7)
+- Resolves: bz#1172473
+  (BUG: seccomp filter failure with "-object memory-backend-ram")
+- Resolves: bz#1182494
+  (BUG: qemu-kvm hang when enabled both sandbox and mlock)
+
 * Thu Jan 15 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-20.el7
 - kvm-pc-fix-usage-of-x86_cpu_compat_disable_kvm_features.patch [bz#1182233]
 - Resolves: bz#1182233
