@@ -837,6 +837,15 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Sun Jan 25 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-86.el7
+- kvm-vfio-pci-Fix-interrupt-disabling.patch [bz#1180942]
+- kvm-cirrus-fix-blit-region-check.patch [bz#1169456]
+- kvm-cirrus-don-t-overflow-CirrusVGAState-cirrus_bltbuf.patch [bz#1169456]
+- Resolves: bz#1169456
+  (CVE-2014-8106 qemu-kvm: qemu: cirrus: insufficient blit region checks [rhel-7.1])
+- Resolves: bz#1180942
+  (qemu core dumped when unhotplug gpu card assigned to guest)
+
 * Wed Jan 07 2015 Jeff E. Nelson <jen@redhat.com> - 1.5.3-85.el7
 - kvm-block-delete-cow-block-driver.patch [bz#1175325]
 - Resolves: bz#1175325
