@@ -920,6 +920,15 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Mon Jan 26 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-22.el7
+- kvm-vfio-pci-Fix-interrupt-disabling.patch [bz#1170871]
+- kvm-cirrus-fix-blit-region-check.patch [bz#1169457]
+- kvm-cirrus-don-t-overflow-CirrusVGAState-cirrus_bltbuf.patch [bz#1169457]
+- Resolves: bz#1169457
+  (CVE-2014-8106 qemu-kvm-rhev: qemu: cirrus: insufficient blit region checks [rhel-7.1])
+- Resolves: bz#1170871
+  (qemu core dumped when unhotplug gpu card assigned to guest)
+
 * Fri Jan 23 2015 Jeff E. Nelson <jen@redhat.com> - rhev-2.1.2-21.el7
 - kvm-seccomp-add-mlockall-to-whitelist.patch [bz#1182494]
 - kvm-seccomp-add-mbind-to-the-syscall-whitelist.patch [bz#1172473]
