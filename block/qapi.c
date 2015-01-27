@@ -167,7 +167,6 @@ void bdrv_query_image_info(BlockDriverState *bs,
 {
     uint64_t total_sectors;
     const char *backing_filename;
-    char backing_filename2[1024];
     BlockDriverInfo bdi;
     int ret;
     Error *err = NULL;
@@ -197,10 +196,10 @@ void bdrv_query_image_info(BlockDriverState *bs,
 
     backing_filename = bs->backing_file;
     if (backing_filename[0] != '\0') {
+        char *backing_filename2 = g_malloc0(1024);
         info->backing_filename = g_strdup(backing_filename);
         info->has_backing_filename = true;
-        bdrv_get_full_backing_filename(bs, backing_filename2,
-                                       sizeof(backing_filename2));
+        bdrv_get_full_backing_filename(bs, backing_filename2, 1024);
 
         if (strcmp(backing_filename, backing_filename2) != 0) {
             info->full_backing_filename =
@@ -212,6 +211,7 @@ void bdrv_query_image_info(BlockDriverState *bs,
             info->backing_filename_format = g_strdup(bs->backing_format);
             info->has_backing_filename_format = true;
         }
+        g_free(backing_filename2);
     }
 
     ret = bdrv_query_snapshot_info_list(bs, &info->snapshots, &err);
