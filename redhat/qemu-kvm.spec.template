@@ -920,6 +920,14 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Jan 27 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-23.el7
+- kvm-block-qapi-move-string-allocation-from-stack-to-the-.patch [bz#1117170]
+- kvm-block-remove-unused-variable-in-bdrv_commit.patch [bz#1117170]
+- kvm-block-mirror-change-string-allocation-to-2-bytes.patch [bz#1117170]
+- kvm-block-update-string-sizes-for-filename-backing_file-.patch [bz#1117170]
+- Resolves: bz#1117170
+  (RHEV: Cannot start VMs that have more than 23 snapshots.)
+
 * Mon Jan 26 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-22.el7
 - kvm-vfio-pci-Fix-interrupt-disabling.patch [bz#1170871]
 - kvm-cirrus-fix-blit-region-check.patch [bz#1169457]
