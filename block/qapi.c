@@ -196,10 +196,10 @@ void bdrv_query_image_info(BlockDriverState *bs,
 
     backing_filename = bs->backing_file;
     if (backing_filename[0] != '\0') {
-        char *backing_filename2 = g_malloc0(1024);
+        char *backing_filename2 = g_malloc0(PATH_MAX);
         info->backing_filename = g_strdup(backing_filename);
         info->has_backing_filename = true;
-        bdrv_get_full_backing_filename(bs, backing_filename2, 1024);
+        bdrv_get_full_backing_filename(bs, backing_filename2, PATH_MAX);
 
         if (strcmp(backing_filename, backing_filename2) != 0) {
             info->full_backing_filename =

@@ -2425,7 +2425,7 @@ static int img_rebase(int argc, char **argv)
         bs_old_backing = NULL;
         bs_new_backing = NULL;
     } else {
-        char backing_name[1024];
+        char backing_name[PATH_MAX];
 
         bs_old_backing = bdrv_new("old_backing", &error_abort);
         bdrv_get_backing_filename(bs, backing_name, sizeof(backing_name));
