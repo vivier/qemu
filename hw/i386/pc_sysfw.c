@@ -191,6 +191,11 @@ static void old_pc_system_rom_init(MemoryRegion *rom_memory, bool isapc_ram_fw)
         (bios_size % 65536) != 0) {
         goto bios_error;
     }
+    if (shadow_bios_after_incoming && bios_size != 128 * 1024) {
+        error_report("machine %s only supports a 128KB BIOS image",
+                     current_machine->name);
+        exit(1);
+    }
     bios = g_malloc(sizeof(*bios));
     memory_region_init_ram(bios, "pc.bios", bios_size);
     vmstate_register_ram_global(bios);
@@ -239,6 +244,12 @@ void pc_system_firmware_init(MemoryRegion *rom_memory, bool isapc_ram_fw)
         /* When a pflash drive is not found, use rom-mode */
         old_pc_system_rom_init(rom_memory, isapc_ram_fw);
         return;
+    }
+
+    if (shadow_bios_after_incoming) {
+        error_report("flash-based firmware is not supported by machine %s",
+                     current_machine->name);
+        exit(1);
     }
 
     if (kvm_enabled() && !kvm_readonly_mem_enabled()) {
