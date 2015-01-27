@@ -4252,6 +4252,9 @@ int main(int argc, char **argv, char **envp)
                                  .kernel_cmdline = kernel_cmdline,
                                  .initrd_filename = initrd_filename,
                                  .cpu_model = cpu_model };
+
+    current_machine = machine;
+
     machine->init(&args);
 
     audio_init();
@@ -4259,8 +4262,6 @@ int main(int argc, char **argv, char **envp)
     cpu_synchronize_all_post_init();
 
     set_numa_modes();
-
-    current_machine = machine;
 
     /* init USB devices */
     if (usb_enabled(false)) {
