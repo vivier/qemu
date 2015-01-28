@@ -3968,6 +3968,7 @@ static void glib_select_fill(int *max_fd, fd_set *rfds, fd_set *wfds,
     for (i = 0; i < n_poll_fds; i++) {
         GPollFD *p = &poll_fds[i];
 
+        assert(p->fd < FD_SETSIZE);
         if ((p->events & G_IO_IN)) {
             FD_SET(p->fd, rfds);
             *max_fd = MAX(*max_fd, p->fd);
@@ -4038,6 +4039,7 @@ void main_loop_wait(int timeout)
     QLIST_FOREACH(ioh, &io_handlers, next) {
         if (ioh->deleted)
             continue;
+        assert(ioh->fd < FD_SETSIZE);
         if (ioh->fd_read &&
             (!ioh->fd_read_poll ||
              ioh->fd_read_poll(ioh->opaque) != 0)) {
