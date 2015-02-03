@@ -246,6 +246,7 @@ def ppc_init():
             'SET_FILTER' : 0x80002406 | (ctypes.sizeof(ctypes.c_char_p) << 16),
             'ENABLE'     : 0x20002400,
             'DISABLE'    : 0x20002401,
+            'RESET'      : 0x20002403,
         }
     })
 
