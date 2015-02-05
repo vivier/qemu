@@ -12,6 +12,7 @@
 
 #include <glib.h>
 #include <math.h>
+#include "qemu-common.h"
 #include "block/aio.h"
 #include "qemu/throttle.h"
 #include "qemu/error-report.h"
@@ -496,6 +497,10 @@ int main(int argc, char **argv)
     Error *local_error = NULL;
 
     init_clocks();
+
+#ifdef HOST_AARCH64
+    sigaction(SIGIO, &(struct sigaction){ .sa_handler = SIG_IGN }, NULL);
+#endif
 
     ctx = aio_context_new(&local_error);
     if (!ctx) {
