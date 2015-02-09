@@ -923,6 +923,21 @@ make check V=1
 
 %changelog
 %%CHANGELOG%%
+* Mon Feb 09 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.2.0-4.el7
+- kvm-Downstream-only-Restore-pseries-machine-alias.patch [bz#1170934]
+- kvm-PPC-Fix-crash-on-spapr_tce_table_finalize.patch [bz#1170934]
+- kvm-virtio_serial-Don-t-use-vser-config.max_nr_ports-int.patch [bz#1169230]
+- kvm-virtio-serial-Don-t-keep-a-persistent-copy-of-config.patch [bz#1169230]
+- kvm-spapr-Fix-stale-HTAB-during-live-migration-KVM.patch [bz#1168446]
+- kvm-spapr-Fix-integer-overflow-during-migration-TCG.patch [bz#1168446]
+- kvm-spapr-Fix-stale-HTAB-during-live-migration-TCG.patch [bz#1168446]
+- Resolves: bz#1168446
+  (Stale hash PTEs may be transferred during live migration of PAPR guests)
+- Resolves: bz#1169230
+  (QEMU core dumped when do ping-pong migration to file for LE guest)
+- Resolves: bz#1170934
+  (Segfault at spapr_tce_table_finalize(): QLIST_REMOVE(tcet, list))
+
 * Thu Jan 22 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.2.0-3.el7
 - kvm-Downstream-only-arm-define-a-new-machine-type-for-RH.patch [bz#1176838]
 - Resolves: bz#1176838
