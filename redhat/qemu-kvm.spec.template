@@ -923,6 +923,17 @@ make check V=1
 
 %changelog
 %%CHANGELOG%%
+* Wed Feb 11 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.2.0-5.el7
+- kvm-kvm_stat-Add-aarch64-support.patch [bz#1184603]
+- kvm-kvm_stat-Update-exit-reasons-to-the-latest-defintion.patch [bz#1184603]
+- kvm-kvm_stat-Add-RESET-support-for-perf-event-ioctl.patch [bz#1184603]
+- kvm-ignore-SIGIO-in-tests-that-use-AIO-context-aarch64-h.patch [bz#1184405]
+- kvm-aio_notify-force-main-loop-wakeup-with-SIGIO-aarch64.patch [bz#1184405]
+- Resolves: bz#1184405
+  (lost block IO completion notification (for virtio-scsi disk) hangs main loop)
+- Resolves: bz#1184603
+  (enable kvm_stat support for aarch64)
+
 * Mon Feb 09 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.2.0-4.el7
 - kvm-Downstream-only-Restore-pseries-machine-alias.patch [bz#1170934]
 - kvm-PPC-Fix-crash-on-spapr_tce_table_finalize.patch [bz#1170934]
