@@ -125,7 +125,7 @@ void bdrv_io_limits_disable(BlockDriverState *bs)
 {
     bs->io_limits_enabled = false;
 
-    while (qemu_co_queue_next(&bs->throttled_reqs));
+    do {} while (qemu_co_enter_next(&bs->throttled_reqs));
 
     if (bs->block_timer) {
         qemu_del_timer(bs->block_timer);
@@ -141,7 +141,7 @@ static void bdrv_block_timer(void *opaque)
 {
     BlockDriverState *bs = opaque;
 
-    qemu_co_queue_next(&bs->throttled_reqs);
+    qemu_co_enter_next(&bs->throttled_reqs);
 }
 
 void bdrv_io_limits_enable(BlockDriverState *bs)
@@ -1135,8 +1135,7 @@ void bdrv_drain_all(void)
          * a busy wait.
          */
         QTAILQ_FOREACH(bs, &bdrv_states, list) {
-            if (!qemu_co_queue_empty(&bs->throttled_reqs)) {
-                qemu_co_queue_restart_all(&bs->throttled_reqs);
+            while (qemu_co_enter_next(&bs->throttled_reqs)) {
                 busy = true;
             }
         }
