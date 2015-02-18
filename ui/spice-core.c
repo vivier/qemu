@@ -735,6 +735,7 @@ void qemu_spice_init(void)
             fprintf(stderr, "spice: failed to enable sasl\n");
             exit(1);
         }
+        auth = "sasl";
 #else
         fprintf(stderr, "spice: sasl is not available (spice >= 0.9 required)\n");
         exit(1);
@@ -874,6 +875,10 @@ static int qemu_spice_set_ticket(bool fail_if_conn, bool disconnect_if_conn)
 int qemu_spice_set_passwd(const char *passwd,
                           bool fail_if_conn, bool disconnect_if_conn)
 {
+    if (strcmp(auth, "spice") != 0) {
+        return -1;
+    }
+
     free(auth_passwd);
     auth_passwd = strdup(passwd);
     return qemu_spice_set_ticket(fail_if_conn, disconnect_if_conn);
