@@ -20,6 +20,7 @@
 
 #include <netdb.h>
 #include <pthread.h>
+#include "sysemu.h"
 
 #include "qemu-common.h"
 #include "qemu-spice.h"
@@ -799,6 +800,10 @@ void qemu_spice_init(void)
 #if SPICE_SERVER_VERSION >= 0x000b02 /* 0.11.2 */
     seamless_migration = qemu_opt_get_bool(opts, "seamless-migration", 0);
     spice_server_set_seamless_migration(spice_server, seamless_migration);
+#endif
+#if SPICE_SERVER_VERSION >= 0x000a02 /* 0.10.2 */
+    spice_server_set_name(spice_server, qemu_name);
+    spice_server_set_uuid(spice_server, qemu_uuid);
 #endif
 
     if (0 != spice_server_init(spice_server, &core_interface)) {
