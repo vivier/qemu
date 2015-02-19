@@ -1038,7 +1038,7 @@ static QEMUMachine pc_machine_rhel700 = {
     },
 };
 
-#define PC_RHEL6_5_COMPAT \
+#define PC_RHEL6_6_COMPAT \
     PC_RHEL7_0_COMPAT,\
     {\
         .driver   = "scsi-hd",\
@@ -1150,16 +1150,12 @@ static QEMUMachine pc_machine_rhel700 = {
         .property = "romfile",\
         .value    = "rhel6-virtio.rom",\
     },{\
-        .driver   = TYPE_USB_DEVICE,\
-        .property = "msos-desc",\
-        .value    = "no",\
-    },{\
         .driver   = "virtio-net-pci",\
         .property = "any_layout",\
         .value    = "off",\
     }
 
-static void pc_compat_rhel650(MachineState *machine)
+static void pc_compat_rhel660(MachineState *machine)
 {
     pc_compat_rhel700(machine);
     if (!machine->cpu_model) {
@@ -1205,6 +1201,37 @@ static void pc_compat_rhel650(MachineState *machine)
     gigabyte_align = false;
     shadow_bios_after_incoming = true;
     ich9_uhci123_irqpin_override = true;
+}
+
+static void pc_init_rhel660(MachineState *machine)
+{
+    pc_compat_rhel660(machine);
+    pc_init_pci(machine);
+}
+
+static QEMUMachine pc_machine_rhel660 = {
+    PC_DEFAULT_MACHINE_OPTIONS,
+    .family = "pc_piix_Z",
+    .name = "rhel6.6.0",
+    .desc = "RHEL 6.6.0 PC",
+    .init = pc_init_rhel660,
+    .compat_props = (GlobalProperty[]) {
+        PC_RHEL6_6_COMPAT,
+        { /* end of list */ }
+    },
+};
+
+#define PC_RHEL6_5_COMPAT \
+    PC_RHEL6_6_COMPAT,\
+    {\
+        .driver   = TYPE_USB_DEVICE,\
+        .property = "msos-desc",\
+        .value    = "no",\
+    }
+
+static void pc_compat_rhel650(MachineState *machine)
+{
+    pc_compat_rhel660(machine);
 }
 
 static void pc_init_rhel650(MachineState *machine)
@@ -1494,6 +1521,7 @@ static void rhel_machine_init(void)
 {
     qemu_register_pc_machine(&pc_machine_rhel710);
     qemu_register_pc_machine(&pc_machine_rhel700);
+    qemu_register_pc_machine(&pc_machine_rhel660);
     qemu_register_pc_machine(&pc_machine_rhel650);
     qemu_register_pc_machine(&pc_machine_rhel640);
     qemu_register_pc_machine(&pc_machine_rhel630);
