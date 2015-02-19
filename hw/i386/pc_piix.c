@@ -794,7 +794,7 @@ static QEMUMachine pc_machine_rhel700 = {
     DEFAULT_MACHINE_OPTIONS,
 };
 
-#define PC_RHEL6_5_COMPAT \
+#define PC_RHEL6_6_COMPAT \
     {\
         .driver   = "scsi-hd",\
         .property = "discard_granularity",\
@@ -905,16 +905,12 @@ static QEMUMachine pc_machine_rhel700 = {
         .property = "romfile",\
         .value    = "rhel6-virtio.rom",\
     },{\
-        .driver   = TYPE_USB_DEVICE,\
-        .property = "msos-desc",\
-        .value    = "no",\
-    },{\
         .driver   = "virtio-net-pci",\
         .property = "any_layout",\
         .value    = "off",\
     }
 
-static void pc_compat_rhel650(QEMUMachineInitArgs *args)
+static void pc_compat_rhel660(QEMUMachineInitArgs *args)
 {
     pc_compat_rhel700(args);
     if (!args->cpu_model) {
@@ -960,6 +956,38 @@ static void pc_compat_rhel650(QEMUMachineInitArgs *args)
     gigabyte_align = false;
     shadow_bios_after_incoming = true;
     ich9_uhci123_irqpin_override = true;
+}
+
+static void pc_init_rhel660(QEMUMachineInitArgs *args)
+{
+    pc_compat_rhel660(args);
+    pc_init_pci(args);
+}
+
+static QEMUMachine pc_machine_rhel660 = {
+    .name = "rhel6.6.0",
+    .desc = "RHEL 6.6.0 PC",
+    .init = pc_init_rhel660,
+    .hot_add_cpu = pc_hot_add_cpu,
+    .max_cpus = RHEL_MAX_CPUS,
+    .compat_props = (GlobalProperty[]) {
+        PC_RHEL6_6_COMPAT,
+        { /* end of list */ }
+    },
+    DEFAULT_MACHINE_OPTIONS,
+};
+
+#define PC_RHEL6_5_COMPAT \
+    PC_RHEL6_6_COMPAT,\
+    {\
+        .driver   = TYPE_USB_DEVICE,\
+        .property = "msos-desc",\
+        .value    = "no",\
+    }
+
+static void pc_compat_rhel650(QEMUMachineInitArgs *args)
+{
+    pc_compat_rhel660(args);
 }
 
 static void pc_init_rhel650(QEMUMachineInitArgs *args)
@@ -1254,6 +1282,7 @@ static QEMUMachine pc_machine_rhel600 = {
 static void rhel_machine_init(void)
 {
     qemu_register_machine(&pc_machine_rhel700);
+    qemu_register_machine(&pc_machine_rhel660);
     qemu_register_machine(&pc_machine_rhel650);
     qemu_register_machine(&pc_machine_rhel640);
     qemu_register_machine(&pc_machine_rhel630);
