@@ -805,6 +805,14 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Feb 19 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-60.el7_0.12
+- kvm-xhci-add-sanity-checks-to-xhci_lookup_uport.patch [bz#1180410]
+- kvm-pc-acpi-mark-all-possible-CPUs-as-enabled-in-SRAT.patch [bz#1191384]
+- Resolves: bz#1180410
+  (qemu core dump when install a RHEL.7 guest(xhci) with migration)
+- Resolves: bz#1191384
+  ("-numa node" option cause windows guest can not online hot-added CPUs)
+
 * Mon Nov 24 2014 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-60.el7_0.11
 - kvm-block-raw-posix-Try-both-FIEMAP-and-SEEK_HOLE.patch [bz#1166605]
 - kvm-block-raw-posix-Fix-disk-corruption-in-try_fiemap.patch [bz#1166605]
