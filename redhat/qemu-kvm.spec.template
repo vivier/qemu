@@ -99,7 +99,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 %define pkgrelease %%PKGRELEASE%%
 
 %define rpmversion %{sublevel}
-%define full_release %{pkgrelease}%{?dist}%{?buildid}
+%define full_release %{pkgrelease}%{?dist}_1.%%ZRELEASE%%%{?buildid}
 
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
@@ -920,6 +920,14 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Feb 20 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-23.el7_1.1
+- kvm-pc-acpi-mark-all-possible-CPUs-as-enabled-in-SRAT.patch [bz#1191385]
+- kvm-pc-add-rhel6.6.0-machine-type.patch [bz#1194552]
+- Resolves: bz#1191385
+  ("-numa node" option cause windows guest can not online hot-added CPUs)
+- Resolves: bz#1194552
+  (Add rhel-6.6.0 machine type to RHEL 7.1.z to support RHEL 6.6 to RHEL 7.1 live migration)
+
 * Tue Jan 27 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-23.el7
 - kvm-block-qapi-move-string-allocation-from-stack-to-the-.patch [bz#1117170]
 - kvm-block-remove-unused-variable-in-bdrv_commit.patch [bz#1117170]
