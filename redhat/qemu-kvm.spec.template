@@ -588,12 +588,17 @@ dobuild --target-list="$buildarch"
     install -m 0755 scripts/kvm/kvm_stat $RPM_BUILD_ROOT%{_bindir}/
     install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_udevdir}
 
+    mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{pkgname}
+    %ifarch x86_64
+        install -m 0644 scripts/dump-guest-memory.py \
+                        $RPM_BUILD_ROOT%{_datadir}/%{pkgname}
+    %endif
+
     make DESTDIR=$RPM_BUILD_ROOT \
         sharedir="%{_datadir}/%{pkgname}" \
         datadir="%{_datadir}/%{pkgname}" \
         install
 
-    mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{pkgname}
     mkdir -p $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset
 
     # Install compatibility roms
@@ -881,6 +886,9 @@ make check V=1
     %{_datadir}/%{pkgname}/rhel6-rtl8139.rom
     %{_datadir}/%{pkgname}/rhel6-ne2k_pci.rom
     %{_datadir}/%{pkgname}/rhel6-e1000.rom
+    %ifarch x86_64
+        %{_datadir}/%{pkgname}/dump-guest-memory.py*
+    %endif
     %ifarch %{power64}
         %{_datadir}/%{pkgname}/spapr-rtas.bin
         %{_datadir}/%{pkgname}/u-boot.e500
