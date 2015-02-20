@@ -531,16 +531,18 @@ dobuild --target-list="$buildarch"
 
     mkdir -p $RPM_BUILD_ROOT%{_bindir}/
     mkdir -p $RPM_BUILD_ROOT%{_udevdir}
+    mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{pkgname}
 
     install -m 0755 scripts/kvm/kvm_stat $RPM_BUILD_ROOT%{_bindir}/
     install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_udevdir}
+    install -m 0644 scripts/dump-guest-memory.py \
+                    $RPM_BUILD_ROOT%{_datadir}/%{pkgname}
 
     make DESTDIR=$RPM_BUILD_ROOT \
         sharedir="%{_datadir}/%{pkgname}" \
         datadir="%{_datadir}/%{pkgname}" \
         install
 
-    mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{pkgname}
     mkdir -p $RPM_BUILD_ROOT%{_datadir}/systemtap/tapset
 
     # Install compatibility roms
@@ -804,6 +806,7 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
     %{_datadir}/%{pkgname}/rhel6-rtl8139.rom
     %{_datadir}/%{pkgname}/rhel6-ne2k_pci.rom
     %{_datadir}/%{pkgname}/rhel6-e1000.rom
+    %{_datadir}/%{pkgname}/dump-guest-memory.py*
     %config(noreplace) %{_sysconfdir}/%{pkgname}/target-x86_64.conf
     %{?kvm_files:}
     %{?qemu_kvm_files:}
