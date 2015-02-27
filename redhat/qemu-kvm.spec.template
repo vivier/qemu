@@ -173,6 +173,12 @@ BuildRequires: libaio-devel
 BuildRequires: usbredir-devel >= 0.5
 # For glusterfs support
 BuildRequires: glusterfs-devel glusterfs-api-devel
+# For rbd/Ceph support
+%if %{with rhev_features}
+BuildRequires: librados2-devel
+BuildRequires: librbd1-devel
+%endif
+
 # For compressed guest memory dumps
 BuildRequires: lzo-devel snappy-devel
 # For uuid generation
@@ -330,9 +336,9 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
 %endif
 
 %if %{with rhev_features}
-%define disable_rhev_features_arg %{nil}
+%define rhev_features_arg --enable-rbd
 %else
-%define disable_rhev_features_arg --disable-rhev-features
+%define rhev_features_arg --disable-rhev-features
 %endif
 
 %define qemu_ga_build_flags --prefix=%{_prefix} \\\
@@ -407,7 +413,7 @@ cd qemu-kvm-x86_64-build
             --enable-snappy \
             --enable-vhdx \
             %{fake_machine_arg} \
-            %{disable_rhev_features_arg}
+            %{rhev_features_arg}
 
 echo "config-host.mak contents:"
 echo "==="
