@@ -1,6 +1,8 @@
 # Default configuration for aarch64-softmmu
-
-# We support all the 32 bit boards so need all their config
-include arm-softmmu.mak
-
-# Currently no 64-bit specific config requirements
+CONFIG_VIRTIO=y
+CONFIG_STELLARIS=y
+CONFIG_ARM_GIC=y
+CONFIG_ARM_GIC_KVM=$(CONFIG_KVM)
+CONFIG_PL011=y
+CONFIG_PL031=y
+CONFIG_PFLASH_CFI01=y
