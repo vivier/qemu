@@ -923,6 +923,13 @@ make check V=1
 
 %changelog
 %%CHANGELOG%%
+* Mon Mar 02 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.2.0-6.el7
+- kvm-AArch64-Prune-the-devices-available-for-AArch64-gues.patch [bz#1170734]
+- kvm-Give-ivshmem-its-own-config-option.patch [bz#1170734]
+- kvm-aarch64-Prune-unsupported-CPU-types-for-aarch64.patch [bz#1170734]
+- Resolves: bz#1170734
+  (Trim qemu-kvm devices for aarch64)
+
 * Wed Feb 11 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.2.0-5.el7
 - kvm-kvm_stat-Add-aarch64-support.patch [bz#1184603]
 - kvm-kvm_stat-Update-exit-reasons-to-the-latest-defintion.patch [bz#1184603]
