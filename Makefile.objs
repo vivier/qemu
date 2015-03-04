@@ -28,6 +28,7 @@ block-nested-$(CONFIG_VHDX) += vhdx.o vhdx-endian.o vhdx-log.o
 block-nested-y += qed-check.o
 block-nested-y += parallels.o nbd.o blkdebug.o
 block-nested-y += stream.o mirror.o commit.o
+block-nested-y += null.o
 block-nested-$(CONFIG_WIN32) += raw-win32.o
 block-nested-$(CONFIG_POSIX) += raw-posix.o
 block-nested-$(CONFIG_CURL) += curl.o
