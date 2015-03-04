@@ -450,6 +450,20 @@ static void info_spice_iter(QObject *obj, void *opaque)
 {
     QDict *client;
     Monitor *mon = opaque;
+    int channel_type;
+    const char *channel_name = "unknown";
+    const char * const channel_names[] = {
+        [SPICE_CHANNEL_MAIN] = "main",
+        [SPICE_CHANNEL_DISPLAY] = "display",
+        [SPICE_CHANNEL_INPUTS] = "inputs",
+        [SPICE_CHANNEL_CURSOR] = "cursor",
+        [SPICE_CHANNEL_PLAYBACK] = "playback",
+        [SPICE_CHANNEL_RECORD] = "record",
+        [SPICE_CHANNEL_TUNNEL] = "tunnel",
+        [SPICE_CHANNEL_SMARTCARD] = "smartcard",
+        [SPICE_CHANNEL_USBREDIR] = "usbredir",
+        [SPICE_CHANNEL_PORT] = "port",
+    };
 
     client = qobject_to_qdict(obj);
     monitor_printf(mon, "Channel:\n");
@@ -462,6 +476,14 @@ static void info_spice_iter(QObject *obj, void *opaque)
     monitor_printf(mon, "     channel: %d:%d\n",
                    (int)qdict_get_int(client, "channel-type"),
                    (int)qdict_get_int(client, "channel-id"));
+
+    channel_type = (int)qdict_get_int(client, "channel-type");
+    if (channel_type > 0 &&
+        channel_type < ARRAY_SIZE(channel_names) &&
+        channel_names[channel_type]) {
+        channel_name = channel_names[channel_type];
+    }
+    monitor_printf(mon, "     channel name: %s\n", channel_name);
 }
 
 void do_info_spice_print(Monitor *mon, const QObject *data)
