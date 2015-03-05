@@ -76,7 +76,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 # - following line in specfile
 # - localversion file in repository root - this is preferred way as file 
 # is ignored by git
-%define buildid %{nil}%%BUILDID%%
+%define buildid .%%ZRELEASE%%%%BUILDID%%
 
 %define sublevel %%SUBLEVEL%%
 %define pkgrelease %%PKGRELEASE%%
@@ -837,6 +837,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Mar 05 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-86.el7_1.1
+- kvm-pc-add-rhel6.6.0-machine-type.patch [bz#1198958]
+- Resolves: bz#1198958
+  (Add rhel-6.6.0 machine type to RHEL 7.1.z to support RHEL 6.6 to RHEL 7.1 live migration)
+
 * Sun Jan 25 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-86.el7
 - kvm-vfio-pci-Fix-interrupt-disabling.patch [bz#1180942]
 - kvm-cirrus-fix-blit-region-check.patch [bz#1169456]
