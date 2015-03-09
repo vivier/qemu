@@ -1,4 +1,6 @@
 # Default configuration for aarch64-softmmu
+CONFIG_PCI=y
+CONFIG_VIRTIO_PCI=y
 CONFIG_VIRTIO=y
 CONFIG_STELLARIS=y
 CONFIG_ARM_GIC=y
