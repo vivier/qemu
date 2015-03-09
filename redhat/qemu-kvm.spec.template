@@ -324,6 +324,18 @@ ApplyOptionalPatch()
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
+MakeIOtestsExecutable()
+{
+  if [ -d $RPM_BUILD_DIR/qemu-kvm-%{version}/tests/qemu-iotests ]
+  then
+    for f in $RPM_BUILD_DIR/qemu-kvm-%{version}/tests/qemu-iotests/* ; do
+      file "$f" | grep 'shell script' > /dev/null && chmod 755 "$f" || :
+    done
+  fi
+}
+
+MakeIOtestsExecutable
+
 %build
 # --build-id option is used fedora 8 onwards for giving info to the debug packages.
 extraldflags="-Wl,--build-id";
