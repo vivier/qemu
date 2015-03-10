@@ -28,13 +28,16 @@
 %ifarch x86_64
     %global kvm_target    x86_64
 %endif
-%ifarch ppc64
+%ifarch %{power64}
     %global kvm_target    ppc64
 %endif
-%ifarch s390x
+%ifarch s390x s390
     %global kvm_target    s390x
 %endif
+%ifarch ppc
+    %global kvm_target    ppc
 
+%endif
 #Versions of various parts:
 
 %define pkgname qemu-kvm
@@ -482,7 +485,7 @@ dobuild() {
                --libdir=%{_libdir} \
                --with-pkgversion=%{pkgname}-%{version}-%{release} \
                --disable-guest-agent \
-               --target-list= --cpu=%{_arch}
+               "$@"
 
    make libcacard.la %{?_smp_mflags} $buildldflags
    make vscclient %{?_smp_mflags} $buildldflags
