@@ -923,6 +923,12 @@ make check V=1
 
 %changelog
 %%CHANGELOG%%
+* Tue Mar 10 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.2.0-7.el7
+- kvm-aarch64-Add-PCI-and-VIRTIO_PCI-devices-for-AArch64.patch [bz#1200090]
+- kvm-Add-specific-config-options-for-PCI-E-bridges.patch [bz#1200090]
+- Resolves: bz#1200090
+  (qemu-kvm-rhev (2.2.0-6) breaks ISO installation)
+
 * Mon Mar 02 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.2.0-6.el7
 - kvm-AArch64-Prune-the-devices-available-for-AArch64-gues.patch [bz#1170734]
 - kvm-Give-ivshmem-its-own-config-option.patch [bz#1170734]
