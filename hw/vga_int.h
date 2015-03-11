@@ -115,6 +115,7 @@ typedef struct VGACommonState {
     uint32_t lfb_vram_mapped; /* whether 0xa0000 is mapped as ram */
     uint32_t bios_offset;
     uint32_t bios_size;
+    uint32_t vbe_size;
     uint32_t latch;
     uint8_t sr_index;
     uint8_t sr[256];

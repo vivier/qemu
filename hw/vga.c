@@ -544,7 +544,7 @@ static uint32_t vbe_ioport_read_data(void *opaque, uint32_t addr)
             val = s->vbe_regs[s->vbe_index];
         }
     } else if (s->vbe_index == VBE_DISPI_INDEX_VIDEO_MEMORY_64K) {
-        val = s->vram_size / (64 * 1024);
+        val = s->vbe_size / (64 * 1024);
     } else {
         val = 0;
     }
@@ -675,7 +675,7 @@ static void vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
                     line_offset = w >> 1;
                 else
                     line_offset = w * ((s->vbe_regs[VBE_DISPI_INDEX_BPP] + 7) >> 3);
-                h = s->vram_size / line_offset;
+                h = s->vbe_size / line_offset;
                 /* XXX: support weird bochs semantics ? */
                 if (h < s->vbe_regs[VBE_DISPI_INDEX_YRES])
                     return;
@@ -2297,6 +2297,9 @@ void vga_common_init(VGACommonState *s)
         s->vram_size <<= 1;
     }
     s->vram_size_mb = s->vram_size >> 20;
+    if (!s->vbe_size) {
+        s->vbe_size = s->vram_size;
+    }
 
 #ifdef CONFIG_BOCHS_VBE
     s->is_vbe_vmstate = 1;

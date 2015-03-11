@@ -2074,6 +2074,7 @@ static int qxl_init_primary(PCIDevice *dev)
     qxl->id = 0;
 
     qxl_init_ramsize(qxl);
+    vga->vbe_size = qxl->vgamem_size;
     vga_common_init(vga);
     vga_init(vga);
     register_ioport_write(0x3c0, 16, 1, qxl_vga_ioport_write, vga);
