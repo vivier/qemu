@@ -152,12 +152,54 @@ static VirtIOBlockReq *virtio_blk_get_request(VirtIOBlock *s)
 }
 
 #ifdef __linux__
+
+typedef struct {
+    VirtIOBlockReq *req;
+    struct sg_io_hdr hdr;
+} VirtIOBlockIoctlReq;
+
+static void virtio_blk_ioctl_complete(void *opaque, int status)
+{
+    VirtIOBlockIoctlReq *ioctl_req = opaque;
+    VirtIOBlockReq *req = ioctl_req->req;
+    struct sg_io_hdr *hdr;
+
+    if (status) {
+        status = VIRTIO_BLK_S_UNSUPP;
+        req->scsi->errors = 255;
+        goto out;
+    }
+
+    hdr = &ioctl_req->hdr;
+    /*
+     * From SCSI-Generic-HOWTO: "Some lower level drivers (e.g. ide-scsi)
+     * clear the masked_status field [hence status gets cleared too, see
+     * block/scsi_ioctl.c] even when a CHECK_CONDITION or COMMAND_TERMINATED
+     * status has occurred.  However they do set DRIVER_SENSE in driver_status
+     * field. Also a (sb_len_wr > 0) indicates there is a sense buffer.
+     */
+    if (hdr->status == 0 && hdr->sb_len_wr > 0) {
+        hdr->status = CHECK_CONDITION;
+    }
+
+    req->scsi->errors = hdr->status | (hdr->msg_status << 8) |
+                 (hdr->host_status << 16) | (hdr->driver_status << 24);
+    req->scsi->residual = hdr->resid;
+    req->scsi->sense_len = hdr->sb_len_wr;
+    req->scsi->data_len = hdr->dxfer_len;
+
+out:
+    virtio_blk_req_complete(req, status);
+    qemu_free(req);
+    g_free(ioctl_req);
+}
+
 static void virtio_blk_handle_scsi(VirtIOBlockReq *req)
 {
-    struct sg_io_hdr hdr;
-    int ret, size = 0;
-    int status;
+    int size = 0;
     int i;
+    VirtIOBlockIoctlReq *ioctl_req;
+    VirtQueueElement *elem = &req->elem;
 
     if ((req->dev->vdev.guest_features & (1 << VIRTIO_BLK_F_SCSI)) == 0) {
         virtio_blk_req_complete(req, VIRTIO_BLK_S_UNSUPP);
@@ -194,78 +236,50 @@ static void virtio_blk_handle_scsi(VirtIOBlockReq *req)
     req->scsi = (void *)req->elem.in_sg[req->elem.in_num - 2].iov_base;
     size = sizeof(*req->in) + sizeof(*req->scsi);
 
-    memset(&hdr, 0, sizeof(struct sg_io_hdr));
-    hdr.interface_id = 'S';
-    hdr.cmd_len = req->elem.out_sg[1].iov_len;
-    hdr.cmdp = req->elem.out_sg[1].iov_base;
-    hdr.dxfer_len = 0;
+    ioctl_req = g_new0(VirtIOBlockIoctlReq, 1);
+    ioctl_req->req = req;
+    ioctl_req->hdr.interface_id = 'S';
+    ioctl_req->hdr.cmd_len = elem->out_sg[1].iov_len;
+    ioctl_req->hdr.cmdp = elem->out_sg[1].iov_base;
+    ioctl_req->hdr.dxfer_len = 0;
 
     if (req->elem.out_num > 2) {
         /*
          * If there are more than the minimally required 2 output segments
          * there is write payload starting from the third iovec.
          */
-        hdr.dxfer_direction = SG_DXFER_TO_DEV;
-        hdr.iovec_count = req->elem.out_num - 2;
+        ioctl_req->hdr.dxfer_direction = SG_DXFER_TO_DEV;
+        ioctl_req->hdr.iovec_count = req->elem.out_num - 2;
 
-        for (i = 0; i < hdr.iovec_count; i++)
-            hdr.dxfer_len += req->elem.out_sg[i + 2].iov_len;
+        for (i = 0; i < ioctl_req->hdr.iovec_count; i++)
+            ioctl_req->hdr.dxfer_len += req->elem.out_sg[i + 2].iov_len;
 
-        hdr.dxferp = req->elem.out_sg + 2;
+        ioctl_req->hdr.dxferp = req->elem.out_sg + 2;
 
     } else if (req->elem.in_num > 3) {
         /*
          * If we have more than 3 input segments the guest wants to actually
          * read data.
          */
-        hdr.dxfer_direction = SG_DXFER_FROM_DEV;
-        hdr.iovec_count = req->elem.in_num - 3;
-        for (i = 0; i < hdr.iovec_count; i++)
-            hdr.dxfer_len += req->elem.in_sg[i].iov_len;
+        ioctl_req->hdr.dxfer_direction = SG_DXFER_FROM_DEV;
+        ioctl_req->hdr.iovec_count = req->elem.in_num - 3;
+        for (i = 0; i < ioctl_req->hdr.iovec_count; i++)
+            ioctl_req->hdr.dxfer_len += req->elem.in_sg[i].iov_len;
 
-        hdr.dxferp = req->elem.in_sg;
-        size += hdr.dxfer_len;
+        ioctl_req->hdr.dxferp = req->elem.in_sg;
+        size += ioctl_req->hdr.dxfer_len;
     } else {
         /*
          * Some SCSI commands don't actually transfer any data.
          */
-        hdr.dxfer_direction = SG_DXFER_NONE;
+        ioctl_req->hdr.dxfer_direction = SG_DXFER_NONE;
     }
 
-    hdr.sbp = req->elem.in_sg[req->elem.in_num - 3].iov_base;
-    hdr.mx_sb_len = req->elem.in_sg[req->elem.in_num - 3].iov_len;
-    size += hdr.mx_sb_len;
+    ioctl_req->hdr.sbp = req->elem.in_sg[req->elem.in_num - 3].iov_base;
+    ioctl_req->hdr.mx_sb_len = req->elem.in_sg[req->elem.in_num - 3].iov_len;
 
-    ret = bdrv_ioctl(req->dev->bs, SG_IO, &hdr);
-    if (ret) {
-        status = VIRTIO_BLK_S_UNSUPP;
-        hdr.status = ret;
-        hdr.resid = hdr.dxfer_len;
-    } else if (hdr.status) {
-        status = VIRTIO_BLK_S_IOERR;
-    } else {
-        status = VIRTIO_BLK_S_OK;
-    }
-
-    /*
-     * From SCSI-Generic-HOWTO: "Some lower level drivers (e.g. ide-scsi)
-     * clear the masked_status field [hence status gets cleared too, see
-     * block/scsi_ioctl.c] even when a CHECK_CONDITION or COMMAND_TERMINATED
-     * status has occurred.  However they do set DRIVER_SENSE in driver_status
-     * field. Also a (sb_len_wr > 0) indicates there is a sense buffer.
-     */
-    if (hdr.status == 0 && hdr.sb_len_wr > 0) {
-        hdr.status = CHECK_CONDITION;
-    }
-
-    req->scsi->errors = hdr.status | (hdr.msg_status << 8) |
-        (hdr.host_status << 16) | (hdr.driver_status << 24);
-    req->scsi->residual = hdr.resid;
-    req->scsi->sense_len = hdr.sb_len_wr;
-    req->scsi->data_len = hdr.dxfer_len;
-
-    virtio_blk_req_complete(req, status);
-    qemu_free(req);
+    bdrv_aio_ioctl(req->dev->bs, SG_IO, &ioctl_req->hdr,
+                   virtio_blk_ioctl_complete, ioctl_req);
 }
 #else
 static void virtio_blk_handle_scsi(VirtIOBlockReq *req)
