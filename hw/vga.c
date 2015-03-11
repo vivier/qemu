@@ -2263,7 +2263,7 @@ const VMStateDescription vmstate_vga_common = {
     }
 };
 
-void vga_common_init(VGACommonState *s, int vga_ram_size)
+void vga_common_init(VGACommonState *s)
 {
     int i, j, v, b;
 
@@ -2290,14 +2290,21 @@ void vga_common_init(VGACommonState *s, int vga_ram_size)
         expand4to8[i] = v;
     }
 
+    /* valid range: 1 MB -> 256 MB */
+    s->vram_size = 1024 * 1024;
+    while (s->vram_size < (s->vram_size_mb << 20) &&
+           s->vram_size < (256 << 20)) {
+        s->vram_size <<= 1;
+    }
+    s->vram_size_mb = s->vram_size >> 20;
+
 #ifdef CONFIG_BOCHS_VBE
     s->is_vbe_vmstate = 1;
 #else
     s->is_vbe_vmstate = 0;
 #endif
-    s->vram_offset = qemu_ram_alloc(NULL, "vga.vram", vga_ram_size);
+    s->vram_offset = qemu_ram_alloc(NULL, "vga.vram", s->vram_size);
     s->vram_ptr = qemu_get_ram_ptr(s->vram_offset);
-    s->vram_size = vga_ram_size;
     s->get_bpp = vga_get_bpp;
     s->get_offsets = vga_get_offsets;
     s->get_resolution = vga_get_resolution;
@@ -2364,7 +2371,7 @@ void vga_init_vbe(VGACommonState *s)
 #ifdef CONFIG_BOCHS_VBE
     /* XXX: use optimized standard vga accesses */
     cpu_register_physical_memory(VBE_DISPI_LFB_PHYSICAL_ADDRESS,
-                                 VGA_RAM_SIZE, s->vram_offset);
+                                 s->vram_size, s->vram_offset);
     s->vbe_mapped = 1;
 #endif 
 }

@@ -35,6 +35,8 @@
 #define QXL_IO_MONITORS_CONFIG_ASYNC (QXL_IO_FLUSH_RELEASE + 1)
 #endif
 
+#define VGA_RAM_SIZE (16 * 1024 * 1024)
+
 /*
  * NOTE: SPICE_RING_PROD_ITEM accesses memory on the pci bar and as
  * such can be changed by the guest, so to avoid a guest trigerrable
@@ -2046,7 +2048,8 @@ static int qxl_init_primary(PCIDevice *dev)
     if (ram_size < 32 * 1024 * 1024) {
         ram_size = 32 * 1024 * 1024;
     }
-    vga_common_init(vga, ram_size);
+    vga->vram_size_mb = qxl->vga.vram_size >> 20;
+    vga_common_init(vga);
     vga_init(vga);
     register_ioport_write(0x3c0, 16, 1, qxl_vga_ioport_write, vga);
     register_ioport_write(0x3b4,  2, 1, qxl_vga_ioport_write, vga);

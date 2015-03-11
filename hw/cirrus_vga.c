@@ -45,6 +45,8 @@
 //#define DEBUG_CIRRUS
 //#define DEBUG_BITBLT
 
+#define VGA_RAM_SIZE (16 * 1024 * 1024)
+
 /***************************************
  *
  *  definitions
@@ -3135,7 +3137,8 @@ void isa_cirrus_vga_init(void)
 
     s = qemu_mallocz(sizeof(CirrusVGAState));
 
-    vga_common_init(&s->vga, VGA_RAM_SIZE);
+    s->vga.vram_size_mb = VGA_RAM_SIZE >> 20;
+    vga_common_init(&s->vga);
     cirrus_init_common(s, CIRRUS_ID_CLGD5430, 0);
     s->vga.ds = graphic_console_init(s->vga.update, s->vga.invalidate,
                                      s->vga.screen_dump, s->vga.text_update,
@@ -3207,7 +3210,8 @@ static int pci_cirrus_vga_initfn(PCIDevice *dev)
      int device_id = CIRRUS_ID_CLGD5446;
 
      /* setup VGA */
-     vga_common_init(&s->vga, VGA_RAM_SIZE);
+     s->vga.vram_size_mb = VGA_RAM_SIZE >> 20;
+     vga_common_init(&s->vga);
      cirrus_init_common(s, device_id, 1);
      s->vga.ds = graphic_console_init(s->vga.update, s->vga.invalidate,
                                       s->vga.screen_dump, s->vga.text_update,
