@@ -35,8 +35,6 @@
 #define QXL_IO_MONITORS_CONFIG_ASYNC (QXL_IO_FLUSH_RELEASE + 1)
 #endif
 
-#define VGA_RAM_SIZE (16 * 1024 * 1024)
-
 /*
  * NOTE: SPICE_RING_PROD_ITEM accesses memory on the pci bar and as
  * such can be changed by the guest, so to avoid a guest trigerrable
@@ -122,7 +120,6 @@ static QXLMode qxl_modes[] = {
     QXL_MODE_EX(1600, 1200),
     QXL_MODE_EX(1680, 1050),
     QXL_MODE_EX(1920, 1080),
-#if VGA_RAM_SIZE >= (16 * 1024 * 1024)
     /* these modes need more than 8 MB video memory */
     QXL_MODE_EX(1920, 1200),
     QXL_MODE_EX(1920, 1440),
@@ -130,13 +127,10 @@ static QXLMode qxl_modes[] = {
     QXL_MODE_EX(2048, 1536),
     QXL_MODE_EX(2560, 1440),
     QXL_MODE_EX(2560, 1600),
-#endif
-#if VGA_RAM_SIZE >= (32 * 1024 * 1024)
     /* these modes need more than 16 MB video memory */
     QXL_MODE_EX(2560, 2048),
     QXL_MODE_EX(2800, 2100),
     QXL_MODE_EX(3200, 2400),
-#endif
 };
 
 static PCIQXLDevice *qxl0;
@@ -343,8 +337,8 @@ static void init_qxl_rom(PCIQXLDevice *d)
     uint32_t ram_header_size;
     uint32_t surface0_area_size;
     uint32_t num_pages;
-    uint32_t fb, maxfb = 0;
-    int i;
+    uint32_t fb;
+    int i, n;
 
     memset(rom, 0, d->rom_size);
 
@@ -359,26 +353,25 @@ static void init_qxl_rom(PCIQXLDevice *d)
     rom->slots_end     = NUM_MEMSLOTS - 1;
     rom->n_surfaces    = cpu_to_le32(NUM_SURFACES);
 
-    modes->n_modes     = cpu_to_le32(ARRAY_SIZE(qxl_modes));
-    for (i = 0; i < modes->n_modes; i++) {
+    for (i = 0, n = 0; i < ARRAY_SIZE(qxl_modes); i++) {
         fb = qxl_modes[i].y_res * qxl_modes[i].stride;
-        if (maxfb < fb) {
-            maxfb = fb;
+        if (fb > d->vgamem_size) {
+            continue;
         }
-        modes->modes[i].id          = cpu_to_le32(i);
-        modes->modes[i].x_res       = cpu_to_le32(qxl_modes[i].x_res);
-        modes->modes[i].y_res       = cpu_to_le32(qxl_modes[i].y_res);
-        modes->modes[i].bits        = cpu_to_le32(qxl_modes[i].bits);
-        modes->modes[i].stride      = cpu_to_le32(qxl_modes[i].stride);
-        modes->modes[i].x_mili      = cpu_to_le32(qxl_modes[i].x_mili);
-        modes->modes[i].y_mili      = cpu_to_le32(qxl_modes[i].y_mili);
-        modes->modes[i].orientation = cpu_to_le32(qxl_modes[i].orientation);
+        modes->modes[n].id          = cpu_to_le32(i);
+        modes->modes[n].x_res       = cpu_to_le32(qxl_modes[i].x_res);
+        modes->modes[n].y_res       = cpu_to_le32(qxl_modes[i].y_res);
+        modes->modes[n].bits        = cpu_to_le32(qxl_modes[i].bits);
+        modes->modes[n].stride      = cpu_to_le32(qxl_modes[i].stride);
+        modes->modes[n].x_mili      = cpu_to_le32(qxl_modes[i].x_mili);
+        modes->modes[n].y_mili      = cpu_to_le32(qxl_modes[i].y_mili);
+        modes->modes[n].orientation = cpu_to_le32(qxl_modes[i].orientation);
+        n++;
     }
-    if (maxfb < VGA_RAM_SIZE && d->id == 0)
-        maxfb = VGA_RAM_SIZE;
+    modes->n_modes     = cpu_to_le32(n);
 
     ram_header_size    = ALIGN(sizeof(QXLRam), 4096);
-    surface0_area_size = ALIGN(maxfb, 4096);
+    surface0_area_size = ALIGN(d->vgamem_size, 4096);
     num_pages          = d->vga.vram_size;
     num_pages         -= ram_header_size;
     num_pages         -= surface0_area_size;
@@ -1375,6 +1368,16 @@ static void qxl_create_guest_primary(PCIQXLDevice *qxl, int loadvm,
 {
     QXLDevSurfaceCreate surface;
     QXLSurfaceCreate *sc = &qxl->guest_primary.surface;
+    int size;
+    int requested_height = le32_to_cpu(sc->height);
+    int requested_stride = le32_to_cpu(sc->stride);
+
+    size = abs(requested_stride) * requested_height;
+    if (size > qxl->vgamem_size) {
+        qxl_set_guest_bug(qxl, "%s: requested primary larger then framebuffer"
+                               " size", __func__);
+        return;
+    }
 
     if (qxl->mode == QXL_MODE_NATIVE) {
         qxl_set_guest_bug(qxl, "%s: nop since already in QXL_MODE_NATIVE",
@@ -1949,6 +1952,24 @@ static DisplayChangeListener display_listener = {
     .dpy_refresh = display_refresh,
 };
 
+static void qxl_init_ramsize(PCIQXLDevice *qxl)
+{
+    /* vga mode framebuffer / primary surface (bar 0, first part) */
+    if (qxl->vgamem_size_mb < 16) {
+        qxl->vgamem_size_mb = 16;
+    }
+    qxl->vgamem_size = qxl->vgamem_size_mb * 1024 * 1024;
+
+    /* vga ram (bar 0, total) */
+    if (qxl->vga.vram_size < qxl->vgamem_size * 2) {
+        qxl->vga.vram_size = qxl->vgamem_size * 2;
+    }
+
+    qxl->vgamem_size = msb_mask(qxl->vgamem_size * 2 - 1);
+    qxl->vga.vram_size = msb_mask(qxl->vga.vram_size * 2 - 1);
+    qxl->vga.vram_size_mb = qxl->vga.vram_size >> 20;
+}
+
 static int qxl_init_common(PCIQXLDevice *qxl)
 {
     uint8_t* config = qxl->pci.config;
@@ -2041,14 +2062,10 @@ static int qxl_init_primary(PCIDevice *dev)
 {
     PCIQXLDevice *qxl = DO_UPCAST(PCIQXLDevice, pci, dev);
     VGACommonState *vga = &qxl->vga;
-    ram_addr_t ram_size = msb_mask(qxl->vga.vram_size * 2 - 1);
 
     qxl->id = 0;
 
-    if (ram_size < 32 * 1024 * 1024) {
-        ram_size = 32 * 1024 * 1024;
-    }
-    vga->vram_size_mb = qxl->vga.vram_size >> 20;
+    qxl_init_ramsize(qxl);
     vga_common_init(vga);
     vga_init(vga);
     register_ioport_write(0x3c0, 16, 1, qxl_vga_ioport_write, vga);
@@ -2072,14 +2089,10 @@ static int qxl_init_secondary(PCIDevice *dev)
 {
     static int device_id = 1;
     PCIQXLDevice *qxl = DO_UPCAST(PCIQXLDevice, pci, dev);
-    ram_addr_t ram_size = msb_mask(qxl->vga.vram_size * 2 - 1);
 
     qxl->id = device_id++;
 
-    if (ram_size < 16 * 1024 * 1024) {
-        ram_size = 16 * 1024 * 1024;
-    }
-    qxl->vga.vram_size = ram_size;
+    qxl_init_ramsize(qxl);
     qxl->vga.vram_offset = qemu_ram_alloc(&qxl->pci.qdev, "qxl.vgavram",
                                           qxl->vga.vram_size);
     qxl->vga.vram_ptr = qemu_get_ram_ptr(qxl->vga.vram_offset);
@@ -2294,6 +2307,7 @@ static PCIDeviceInfo qxl_info_primary = {
         DEFINE_PROP_UINT32("debug", PCIQXLDevice, debug, 0),
         DEFINE_PROP_UINT32("guestdebug", PCIQXLDevice, guestdebug, 0),
         DEFINE_PROP_UINT32("cmdlog", PCIQXLDevice, cmdlog, 0),
+        DEFINE_PROP_UINT32("vgamem_mb", PCIQXLDevice, vgamem_size_mb, 16),
         DEFINE_PROP_END_OF_LIST(),
     }
 };
@@ -2315,6 +2329,7 @@ static PCIDeviceInfo qxl_info_secondary = {
         DEFINE_PROP_UINT32("debug", PCIQXLDevice, debug, 0),
         DEFINE_PROP_UINT32("guestdebug", PCIQXLDevice, guestdebug, 0),
         DEFINE_PROP_UINT32("cmdlog", PCIQXLDevice, cmdlog, 0),
+        DEFINE_PROP_UINT32("vgamem_mb", PCIQXLDevice, vgamem_size_mb, 16),
         DEFINE_PROP_END_OF_LIST(),
     }
 };
