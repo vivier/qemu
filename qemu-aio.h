@@ -43,6 +43,8 @@ typedef struct AioHandler AioHandler;
 typedef void IOHandler(void *opaque);
 
 typedef struct AioContext {
+    GSource source;
+
     /* The list of registered AIO handlers */
     QLIST_HEAD(, AioHandler) aio_handlers;
 
@@ -77,6 +79,22 @@ typedef int (AioProcessQueue)(void *opaque);
  * as soon as possible.
  */
 AioContext *aio_context_new(void);
+
+/**
+ * aio_context_ref:
+ * @ctx: The AioContext to operate on.
+ *
+ * Add a reference to an AioContext.
+ */
+void aio_context_ref(AioContext *ctx);
+
+/**
+ * aio_context_unref:
+ * @ctx: The AioContext to operate on.
+ *
+ * Drop a reference to an AioContext.
+ */
+void aio_context_unref(AioContext *ctx);
 
 /**
  * aio_bh_new: Allocate a new bottom half structure.
@@ -174,6 +192,11 @@ void aio_set_fd_handler(AioContext *ctx,
                         IOHandler *io_write,
                         AioFlushHandler *io_flush,
                         void *opaque);
+
+/* Return a GSource that lets the main loop poll the file descriptors attached
+ * to this AioContext.
+ */
+GSource *aio_get_g_source(AioContext *ctx);
 
 /* Functions to operate on the main QEMU AioContext.  */
 
