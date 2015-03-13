@@ -61,6 +61,9 @@ typedef struct AioContext {
      * no callbacks are removed while we're walking and dispatching callbacks.
      */
     int walking_bh;
+
+    /* GPollFDs for aio_poll() */
+    GArray *pollfds;
 } AioContext;
 
 /* Returns 1 if there are still outstanding AIO requests; 0 otherwise */

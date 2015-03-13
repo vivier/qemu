@@ -177,11 +177,19 @@ aio_ctx_dispatch(GSource     *source,
     return true;
 }
 
+static void
+aio_ctx_finalize(GSource *source)
+{
+    AioContext *ctx = (AioContext *) source;
+
+    g_array_free(ctx->pollfds, TRUE);
+}
+
 static GSourceFuncs aio_source_funcs = {
     aio_ctx_prepare,
     aio_ctx_check,
     aio_ctx_dispatch,
-    NULL
+    aio_ctx_finalize,
 };
 
 GSource *aio_get_g_source(AioContext *ctx)
@@ -192,7 +200,10 @@ GSource *aio_get_g_source(AioContext *ctx)
 
 AioContext *aio_context_new(void)
 {
-    return (AioContext *) g_source_new(&aio_source_funcs, sizeof(AioContext));
+    AioContext *ctx;
+    ctx = (AioContext *) g_source_new(&aio_source_funcs, sizeof(AioContext));
+    ctx->pollfds = g_array_new(FALSE, FALSE, sizeof(GPollFD));
+    return ctx;
 }
 
 void aio_context_ref(AioContext *ctx)
