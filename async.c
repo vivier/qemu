@@ -116,7 +116,7 @@ void qemu_bh_delete(QEMUBH *bh)
     bh->deleted = 1;
 }
 
-void aio_bh_update_timeout(AioContext *ctx, uint32_t *timeout)
+gboolean aio_bh_update_timeout(AioContext *ctx, uint32_t *timeout)
 {
     QEMUBH *bh;
 
@@ -130,10 +130,12 @@ void aio_bh_update_timeout(AioContext *ctx, uint32_t *timeout)
                 /* non-idle bottom halves will be executed
                  * immediately */
                 *timeout = 0;
-                break;
+                return true;
             }
         }
     }
+
+    return false;
 }
 
 static gboolean
@@ -141,14 +143,12 @@ aio_ctx_prepare(GSource *source, gint    *timeout)
 {
     AioContext *ctx = (AioContext *) source;
     uint32_t wait = -1;
-    aio_bh_update_timeout(ctx, &wait);
+    gboolean run = aio_bh_update_timeout(ctx, &wait);
 
-    if (wait != -1) {
+    if (wait != -1)
         *timeout = MIN(*timeout, wait);
-        return wait == 0;
-    }
 
-    return false;
+    return run;
 }
 
 static gboolean

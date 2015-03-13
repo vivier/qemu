@@ -114,7 +114,7 @@ QEMUBH *aio_bh_new(AioContext *ctx, QEMUBHFunc *cb, void *opaque);
  * These are internal functions used by the QEMU main loop.
  */
 int aio_bh_poll(AioContext *ctx);
-void aio_bh_update_timeout(AioContext *ctx, uint32_t *timeout);
+gboolean aio_bh_update_timeout(AioContext *ctx, uint32_t *timeout);
 
 /**
  * qemu_bh_schedule: Schedule a bottom half.
