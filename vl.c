@@ -4081,7 +4081,7 @@ void main_loop_wait(int timeout)
         }
     }
 
-    slirp_select_fill(&nfds, &rfds, &wfds, &xfds);
+    slirp_pollfds_fill(gpollfds);
 
     glib_pollfds_fill(&timeout);
     os_host_main_loop_wait(&timeout);
@@ -4118,7 +4118,7 @@ void main_loop_wait(int timeout)
         }
     }
 
-    slirp_select_poll(&rfds, &wfds, &xfds, (ret < 0));
+    slirp_pollfds_poll(gpollfds, (ret < 0));
     glib_pollfds_poll();
 
     /* rearm timer, if not periodic */
