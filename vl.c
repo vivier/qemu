@@ -4016,67 +4016,9 @@ void vm_stop(RunState reason)
 #endif
 
 
-static fd_set rfds, wfds, xfds;
-static int nfds;
 static int glib_pollfds_idx;
 static int glib_n_poll_fds;
 static int max_priority;
-
-/* Load rfds/wfds/xfds into gpollfds.  Will be removed a few commits later. */
-static void gpollfds_from_select(void)
-{
-    int fd;
-    for (fd = 0; fd <= nfds; fd++) {
-        int events = 0;
-        if (FD_ISSET(fd, &rfds)) {
-            events |= G_IO_IN | G_IO_HUP | G_IO_ERR;
-        }
-        if (FD_ISSET(fd, &wfds)) {
-            events |= G_IO_OUT | G_IO_ERR;
-        }
-        if (FD_ISSET(fd, &xfds)) {
-            events |= G_IO_PRI;
-        }
-        if (events) {
-            GPollFD pfd = {
-                .fd = fd,
-                .events = events,
-            };
-            g_array_append_val(gpollfds, pfd);
-        }
-    }
-}
-
-/* Store gpollfds revents into rfds/wfds/xfds.  Will be removed a few commits
- * later.
- */
-static void gpollfds_to_select(int ret)
-{
-    int i;
-
-    FD_ZERO(&rfds);
-    FD_ZERO(&wfds);
-    FD_ZERO(&xfds);
-
-    if (ret <= 0) {
-        return;
-    }
-
-    for (i = 0; i < gpollfds->len; i++) {
-        int fd = g_array_index(gpollfds, GPollFD, i).fd;
-        int revents = g_array_index(gpollfds, GPollFD, i).revents;
-
-        if (revents & (G_IO_IN | G_IO_HUP | G_IO_ERR)) {
-            FD_SET(fd, &rfds);
-        }
-        if (revents & (G_IO_OUT | G_IO_ERR)) {
-            FD_SET(fd, &wfds);
-        }
-        if (revents & G_IO_PRI) {
-            FD_SET(fd, &xfds);
-        }
-    }
-}
 
 static void glib_pollfds_fill(int *cur_timeout)
 {
@@ -4121,28 +4063,18 @@ void main_loop_wait(int timeout)
     /* poll any events */
     g_array_set_size(gpollfds, 0); /* reset for new iteration */
     /* XXX: separate device handlers from system ones */
-    nfds = -1;
-    FD_ZERO(&rfds);
-    FD_ZERO(&wfds);
-    FD_ZERO(&xfds);
 
     qemu_iohandler_fill(gpollfds);
     slirp_pollfds_fill(gpollfds);
-
     glib_pollfds_fill(&timeout);
-    os_host_main_loop_wait(&timeout);
 
-    /* We'll eventually drop fd_set completely.  But for now we still have
-     * *_fill() and *_poll() functions that use rfds/wfds/xfds.
-     */
-    gpollfds_from_select();
+    os_host_main_loop_wait(&timeout);
 
     qemu_mutex_unlock_iothread();
     ret = g_poll((GPollFD *)gpollfds->data, gpollfds->len, timeout);
     qemu_mutex_lock_iothread();
-    gpollfds_to_select(ret);
-    qemu_iohandler_poll(gpollfds, ret);
 
+    qemu_iohandler_poll(gpollfds, ret);
     slirp_pollfds_poll(gpollfds, (ret < 0));
     glib_pollfds_poll();
 
