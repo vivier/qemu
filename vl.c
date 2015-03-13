@@ -4025,7 +4025,7 @@ void main_loop_wait(int timeout)
     int ret, nfds;
     struct timeval tv;
 
-    qemu_bh_update_timeout(&timeout);
+    qemu_bh_update_timeout((uint32_t *)&timeout);
 
     os_host_main_loop_wait(&timeout);
 

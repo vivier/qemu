@@ -30,6 +30,8 @@
 #include "qemu-coroutine.h"
 #include "qemu-timer.h"
 #include "qemu/throttle.h"
+#include "qemu-aio.h"
+#include "qemu-config.h"
 #include "hbitmap.h"
 
 #define BLOCK_FLAG_ENCRYPT	1
@@ -47,12 +49,6 @@
 #define BLOCK_OPT_ADAPTER_TYPE  "adapter_type"
 
 typedef struct BdrvTrackedRequest BdrvTrackedRequest;
-
-typedef struct AIOPool {
-    void (*cancel)(BlockDriverAIOCB *acb);
-    int aiocb_size;
-    BlockDriverAIOCB *free_aiocb;
-} AIOPool;
 
 typedef void BlockJobCancelFunc(void *opaque);
 typedef struct BlockJob BlockJob;
@@ -310,19 +306,7 @@ struct BlockDriverState {
 
 };
 
-struct BlockDriverAIOCB {
-    AIOPool *pool;
-    BlockDriverState *bs;
-    BlockDriverCompletionFunc *cb;
-    void *opaque;
-    BlockDriverAIOCB *next;
-};
-
 int get_tmp_filename(char *filename, int size);
-
-void *qemu_aio_get(AIOPool *pool, BlockDriverState *bs,
-                   BlockDriverCompletionFunc *cb, void *opaque);
-void qemu_aio_release(void *p);
 
 void *qemu_blockalign(BlockDriverState *bs, size_t size);
 void bdrv_set_io_limits(BlockDriverState *bs,
