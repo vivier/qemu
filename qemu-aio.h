@@ -16,6 +16,7 @@
 
 #include "qemu-common.h"
 #include "qerror.h"
+#include "qemu-queue.h"
 
 typedef struct BlockDriverAIOCB BlockDriverAIOCB;
 typedef void BlockDriverCompletionFunc(void *opaque, int ret);
@@ -42,6 +43,15 @@ typedef struct AioHandler AioHandler;
 typedef void IOHandler(void *opaque);
 
 typedef struct AioContext {
+    /* The list of registered AIO handlers */
+    QLIST_HEAD(, AioHandler) aio_handlers;
+
+    /* This is a simple lock used to protect the aio_handlers list.
+     * Specifically, it's used to ensure that no callbacks are removed while
+     * we're walking and dispatching callbacks.
+     */
+    int walking_handlers;
+
     /* Anchor of the list of Bottom Halves belonging to the context */
     struct QEMUBH *first_bh;
 
@@ -125,15 +135,16 @@ void qemu_bh_delete(QEMUBH *bh);
 
 /* Flush any pending AIO operation. This function will block until all
  * outstanding AIO operations have been completed or cancelled. */
-void qemu_aio_flush(void);
+void aio_flush(AioContext *ctx);
 
 /* Wait for a single AIO completion to occur.  This function will wait
  * until a single AIO event has completed and it will ensure something
  * has moved before returning. This can issue new pending aio as
  * result of executing I/O completion or bh callbacks.
  *
- * Return whether there is still any pending AIO operation.  */
-bool qemu_aio_wait(void);
+ * Return whether there is still any pending AIO operation.
+ */
+bool aio_wait(AioContext *ctx);
 
 /* Register a file descriptor and associated callbacks.  Behaves very similarly
  * to qemu_set_fd_handler2.  Unlike qemu_set_fd_handler2, these callbacks will
@@ -142,10 +153,21 @@ bool qemu_aio_wait(void);
  * Code that invokes AIO completion functions should rely on this function
  * instead of qemu_set_fd_handler[2].
  */
-int qemu_aio_set_fd_handler(int fd,
-                            IOHandler *io_read,
-                            IOHandler *io_write,
-                            AioFlushHandler *io_flush,
-                            void *opaque);
+void aio_set_fd_handler(AioContext *ctx,
+                        int fd,
+                        IOHandler *io_read,
+                        IOHandler *io_write,
+                        AioFlushHandler *io_flush,
+                        void *opaque);
 
+/* Functions to operate on the main QEMU AioContext.  */
+
+void qemu_aio_flush(void);
+bool qemu_aio_wait(void);
+
+void qemu_aio_set_fd_handler(int fd,
+                             IOHandler *io_read,
+                             IOHandler *io_write,
+                             AioFlushHandler *io_flush,
+                             void *opaque);
 #endif

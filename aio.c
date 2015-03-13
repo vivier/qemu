@@ -16,15 +16,6 @@
 #include "qemu-queue.h"
 #include "qemu_socket.h"
 
-/* The list of registered AIO handlers */
-static QLIST_HEAD(, AioHandler) aio_handlers;
-
-/* This is a simple lock used to protect the aio_handlers list.  Specifically,
- * it's used to ensure that no callbacks are removed while we're walking and
- * dispatching callbacks.
- */
-static int walking_handlers;
-
 struct AioHandler
 {
     int fd;
@@ -36,11 +27,11 @@ struct AioHandler
     QLIST_ENTRY(AioHandler) node;
 };
 
-static AioHandler *find_aio_handler(int fd)
+static AioHandler *find_aio_handler(AioContext *ctx, int fd)
 {
     AioHandler *node;
 
-    QLIST_FOREACH(node, &aio_handlers, node) {
+    QLIST_FOREACH(node, &ctx->aio_handlers, node) {
         if (node->fd == fd)
             if (!node->deleted)
                 return node;
@@ -49,21 +40,22 @@ static AioHandler *find_aio_handler(int fd)
     return NULL;
 }
 
-int qemu_aio_set_fd_handler(int fd,
-                            IOHandler *io_read,
-                            IOHandler *io_write,
-                            AioFlushHandler *io_flush,
-                            void *opaque)
+void aio_set_fd_handler(AioContext *ctx,
+                        int fd,
+                        IOHandler *io_read,
+                        IOHandler *io_write,
+                        AioFlushHandler *io_flush,
+                        void *opaque)
 {
     AioHandler *node;
 
-    node = find_aio_handler(fd);
+    node = find_aio_handler(ctx, fd);
 
     /* Are we deleting the fd handler? */
     if (!io_read && !io_write) {
         if (node) {
             /* If the lock is held, just mark the node as deleted */
-            if (walking_handlers)
+            if (ctx->walking_handlers)
                 node->deleted = 1;
             else {
                 /* Otherwise, delete it for real.  We can't just mark it as
@@ -79,7 +71,7 @@ int qemu_aio_set_fd_handler(int fd,
             /* Alloc and insert if it's not already there */
             node = qemu_mallocz(sizeof(AioHandler));
             node->fd = fd;
-            QLIST_INSERT_HEAD(&aio_handlers, node, node);
+            QLIST_INSERT_HEAD(&ctx->aio_handlers, node, node);
         }
         /* Update handler with latest information */
         node->io_read = io_read;
@@ -87,18 +79,10 @@ int qemu_aio_set_fd_handler(int fd,
         node->io_flush = io_flush;
         node->opaque = opaque;
     }
-
-    qemu_set_fd_handler2(fd, NULL, io_read, io_write, opaque);
-
-    return 0;
 }
 
-void qemu_aio_flush(void)
-{
-    while (qemu_aio_wait());
-}
 
-bool qemu_aio_wait(void)
+bool aio_wait(AioContext *ctx)
 {
     AioHandler *node;
     fd_set rdfds, wrfds;
@@ -111,18 +95,18 @@ bool qemu_aio_wait(void)
      * Do not call select in this case, because it is possible that the caller
      * does not need a complete flush (as is the case for qemu_aio_wait loops).
      */
-    if (qemu_bh_poll()) {
+    if (aio_bh_poll(ctx)) {
         return true;
     }
 
-    walking_handlers++;
+    ctx->walking_handlers++;
 
     FD_ZERO(&rdfds);
     FD_ZERO(&wrfds);
 
     /* fill fd sets */
     busy = false;
-    QLIST_FOREACH(node, &aio_handlers, node) {
+    QLIST_FOREACH(node, &ctx->aio_handlers, node) {
         /* If there aren't pending AIO operations, don't invoke callbacks.
          * Otherwise, if there are no AIO requests, qemu_aio_wait() would
          * wait indefinitely.
@@ -143,7 +127,7 @@ bool qemu_aio_wait(void)
         }
     }
 
-    walking_handlers--;
+    ctx->walking_handlers--;
 
     /* No AIO operations?  Get us out of here */
     if (!busy) {
@@ -157,11 +141,11 @@ bool qemu_aio_wait(void)
     if (ret > 0) {
         /* we have to walk very carefully in case
          * qemu_aio_set_fd_handler is called while we're walking */
-        node = QLIST_FIRST(&aio_handlers);
+        node = QLIST_FIRST(&ctx->aio_handlers);
         while (node) {
             AioHandler *tmp;
 
-            walking_handlers++;
+            ctx->walking_handlers++;
 
             if (!node->deleted &&
                 FD_ISSET(node->fd, &rdfds) &&
@@ -177,9 +161,9 @@ bool qemu_aio_wait(void)
             tmp = node;
             node = QLIST_NEXT(node, node);
 
-            walking_handlers--;
+            ctx->walking_handlers--;
 
-            if (!walking_handlers && tmp->deleted) {
+            if (!ctx->walking_handlers && tmp->deleted) {
                 QLIST_REMOVE(tmp, node);
                 g_free(tmp);
             }

@@ -24,6 +24,7 @@
 
 #include "qemu-common.h"
 #include "qemu-aio.h"
+#include "qemu-char.h"
 
 /***********************************************************/
 /* bottom halves (can be seen as timers which expire ASAP) */
@@ -135,9 +136,15 @@ void aio_bh_update_timeout(AioContext *ctx, uint32_t *timeout)
     }
 }
 
+
 AioContext *aio_context_new(void)
 {
     return g_new0(AioContext, 1);
+}
+
+void aio_flush(AioContext *ctx)
+{
+    while (aio_wait(ctx));
 }
 
 /*
@@ -166,4 +173,27 @@ int qemu_bh_poll(void)
 void qemu_bh_update_timeout(uint32_t *timeout)
 {
     aio_bh_update_timeout(qemu_aio_context(), timeout);
+}
+
+
+void qemu_aio_flush(void)
+{
+    aio_flush(qemu_aio_context());
+}
+
+bool qemu_aio_wait(void)
+{
+    return aio_wait(qemu_aio_context());
+}
+
+void qemu_aio_set_fd_handler(int fd,
+                             IOHandler *io_read,
+                             IOHandler *io_write,
+                             AioFlushHandler *io_flush,
+                             void *opaque)
+{
+    aio_set_fd_handler(qemu_aio_context(), fd, io_read, io_write, io_flush,
+                       opaque);
+
+    qemu_set_fd_handler2(fd, NULL, io_read, io_write, opaque);
 }
