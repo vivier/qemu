@@ -334,7 +334,7 @@ static int qemu_gluster_open(BlockDriverState *bs, const char *filename,
     }
     fcntl(s->fds[GLUSTER_FD_READ], F_SETFL, O_NONBLOCK);
     qemu_aio_set_fd_handler(s->fds[GLUSTER_FD_READ],
-        qemu_gluster_aio_event_reader, NULL, qemu_gluster_aio_flush_cb, NULL, s);
+        qemu_gluster_aio_event_reader, NULL, qemu_gluster_aio_flush_cb, s);
 
 out:
     qemu_gluster_gconf_free(gconf);
@@ -640,7 +640,7 @@ static void qemu_gluster_close(BlockDriverState *bs)
 
     close(s->fds[GLUSTER_FD_READ]);
     close(s->fds[GLUSTER_FD_WRITE]);
-    qemu_aio_set_fd_handler(s->fds[GLUSTER_FD_READ], NULL, NULL, NULL, NULL, NULL);
+    qemu_aio_set_fd_handler(s->fds[GLUSTER_FD_READ], NULL, NULL, NULL, NULL);
 
     if (s->fd) {
         glfs_close(s->fd);
