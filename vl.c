@@ -2672,6 +2672,7 @@ static void dumb_display_init(void)
 
 typedef struct IOHandlerRecord {
     int fd;
+    int pollfds_idx;
     IOCanReadHandler *fd_read_poll;
     IOHandler *fd_read;
     IOHandler *fd_write;
@@ -2716,6 +2717,7 @@ int qemu_set_fd_handler2(int fd,
         ioh->fd_read = fd_read;
         ioh->fd_write = fd_write;
         ioh->opaque = opaque;
+        ioh->pollfds_idx = -1;
         ioh->deleted = 0;
     }
     qemu_notify_event();
@@ -2728,6 +2730,68 @@ int qemu_set_fd_handler(int fd,
                         void *opaque)
 {
     return qemu_set_fd_handler2(fd, NULL, fd_read, fd_write, opaque);
+}
+
+static void qemu_iohandler_fill(GArray *pollfds)
+{
+    IOHandlerRecord *ioh;
+
+    QLIST_FOREACH(ioh, &io_handlers, next) {
+        int events = 0;
+
+        if (ioh->deleted)
+            continue;
+        if (ioh->fd_read &&
+            (!ioh->fd_read_poll ||
+             ioh->fd_read_poll(ioh->opaque) != 0)) {
+            events |= G_IO_IN | G_IO_HUP | G_IO_ERR;
+        }
+        if (ioh->fd_write) {
+            events |= G_IO_OUT | G_IO_ERR;
+        }
+        if (events) {
+            GPollFD pfd = {
+                .fd = ioh->fd,
+                .events = events,
+            };
+            ioh->pollfds_idx = pollfds->len;
+            g_array_append_val(pollfds, pfd);
+        } else {
+            ioh->pollfds_idx = -1;
+        }
+    }
+}
+
+static void qemu_iohandler_poll(GArray *pollfds, int ret)
+{
+    if (ret > 0) {
+        IOHandlerRecord *pioh, *ioh;
+
+        QLIST_FOREACH_SAFE(ioh, &io_handlers, next, pioh) {
+            int revents = 0;
+
+            if (!ioh->deleted && ioh->pollfds_idx != -1) {
+                GPollFD *pfd = &g_array_index(pollfds, GPollFD,
+                                              ioh->pollfds_idx);
+                revents = pfd->revents;
+            }
+
+            if (!ioh->deleted && ioh->fd_read &&
+                (revents & (G_IO_IN | G_IO_HUP | G_IO_ERR))) {
+                ioh->fd_read(ioh->opaque);
+            }
+            if (!ioh->deleted && ioh->fd_write &&
+                (revents & (G_IO_OUT | G_IO_ERR))) {
+                ioh->fd_write(ioh->opaque);
+            }
+
+            /* Do this last in case read/write handlers marked it for deletion */
+            if (ioh->deleted) {
+                QLIST_REMOVE(ioh, next);
+                g_free(ioh);
+            }
+        }
+    }
 }
 
 
@@ -4050,7 +4114,6 @@ static void glib_pollfds_poll(void)
 
 void main_loop_wait(int timeout)
 {
-    IOHandlerRecord *ioh;
     int ret;
 
     qemu_bh_update_timeout((uint32_t *)&timeout);
@@ -4063,24 +4126,7 @@ void main_loop_wait(int timeout)
     FD_ZERO(&wfds);
     FD_ZERO(&xfds);
 
-    QLIST_FOREACH(ioh, &io_handlers, next) {
-        if (ioh->deleted)
-            continue;
-        assert(ioh->fd < FD_SETSIZE);
-        if (ioh->fd_read &&
-            (!ioh->fd_read_poll ||
-             ioh->fd_read_poll(ioh->opaque) != 0)) {
-            FD_SET(ioh->fd, &rfds);
-            if (ioh->fd > nfds)
-                nfds = ioh->fd;
-        }
-        if (ioh->fd_write) {
-            FD_SET(ioh->fd, &wfds);
-            if (ioh->fd > nfds)
-                nfds = ioh->fd;
-        }
-    }
-
+    qemu_iohandler_fill(gpollfds);
     slirp_pollfds_fill(gpollfds);
 
     glib_pollfds_fill(&timeout);
@@ -4095,28 +4141,7 @@ void main_loop_wait(int timeout)
     ret = g_poll((GPollFD *)gpollfds->data, gpollfds->len, timeout);
     qemu_mutex_lock_iothread();
     gpollfds_to_select(ret);
-    if (ret > 0) {
-        IOHandlerRecord *pioh;
-
-        QLIST_FOREACH(ioh, &io_handlers, next) {
-            if (!ioh->deleted && ioh->fd_read && FD_ISSET(ioh->fd, &rfds)) {
-                ioh->fd_read(ioh->opaque);
-                if (!(ioh->fd_read_poll && ioh->fd_read_poll(ioh->opaque)))
-                    FD_CLR(ioh->fd, &rfds);
-            }
-            if (!ioh->deleted && ioh->fd_write && FD_ISSET(ioh->fd, &wfds)) {
-                ioh->fd_write(ioh->opaque);
-            }
-        }
-
-	/* remove deleted IO handlers */
-        QLIST_FOREACH_SAFE(ioh, &io_handlers, next, pioh) {
-            if (ioh->deleted) {
-                QLIST_REMOVE(ioh, next);
-                qemu_free(ioh);
-            }
-        }
-    }
+    qemu_iohandler_poll(gpollfds, ret);
 
     slirp_pollfds_poll(gpollfds, (ret < 0));
     glib_pollfds_poll();
