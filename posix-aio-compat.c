@@ -473,53 +473,6 @@ static int qemu_paio_error(struct qemu_paiocb *aiocb)
     return ret;
 }
 
-static int posix_aio_process_queue(void *opaque)
-{
-    PosixAioState *s = opaque;
-    struct qemu_paiocb *acb, **pacb;
-    int ret;
-    int result = 0;
-
-    for(;;) {
-        pacb = &s->first_aio;
-        for(;;) {
-            acb = *pacb;
-            if (!acb)
-                return result;
-
-            ret = qemu_paio_error(acb);
-            if (ret == ECANCELED) {
-                /* remove the request */
-                *pacb = acb->next;
-                qemu_aio_release(acb);
-                result = 1;
-            } else if (ret != EINPROGRESS) {
-                /* end of aio */
-                if (ret == 0) {
-                    ret = qemu_paio_return(acb);
-                    if (ret == acb->aio_nbytes)
-                        ret = 0;
-                    else
-                        ret = -EINVAL;
-                } else {
-                    ret = -ret;
-                }
-                /* remove the request */
-                *pacb = acb->next;
-                /* call the callback */
-                acb->common.cb(acb->common.opaque, ret);
-                qemu_aio_release(acb);
-                result = 1;
-                break;
-            } else {
-                pacb = &acb->next;
-            }
-        }
-    }
-
-    return result;
-}
-
 static void posix_aio_read(void *opaque)
 {
     PosixAioState *s = opaque;
@@ -527,6 +480,8 @@ static void posix_aio_read(void *opaque)
         struct qemu_signalfd_siginfo siginfo;
         char buf[128];
     } sig;
+    struct qemu_paiocb *acb, **pacb;
+    int ret;
     size_t offset;
 
     /* try to read from signalfd, don't freak out if we can't read anything */
@@ -548,7 +503,40 @@ static void posix_aio_read(void *opaque)
         offset += len;
     }
 
-    posix_aio_process_queue(s);
+    for(;;) {
+        pacb = &s->first_aio;
+        for(;;) {
+            acb = *pacb;
+            if (!acb)
+                return;
+
+            ret = qemu_paio_error(acb);
+            if (ret == ECANCELED) {
+                /* remove the request */
+                *pacb = acb->next;
+                qemu_aio_release(acb);
+            } else if (ret != EINPROGRESS) {
+                /* end of aio */
+                if (ret == 0) {
+                    ret = qemu_paio_return(acb);
+                    if (ret == acb->aio_nbytes)
+                        ret = 0;
+                    else
+                        ret = -EINVAL;
+                } else {
+                    ret = -ret;
+                }
+                /* remove the request */
+                *pacb = acb->next;
+                /* call the callback */
+                acb->common.cb(acb->common.opaque, ret);
+                qemu_aio_release(acb);
+                break;
+            } else {
+                pacb = &acb->next;
+            }
+        }
+    }
 }
 
 static int posix_aio_flush(void *opaque)
@@ -685,7 +673,7 @@ int paio_init(void)
     fcntl(s->fd, F_SETFL, O_NONBLOCK);
 
     qemu_aio_set_fd_handler(s->fd, posix_aio_read, NULL, posix_aio_flush,
-        posix_aio_process_queue, s);
+        NULL, s);
 
     ret = pthread_attr_init(&attr);
     if (ret)
