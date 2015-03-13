@@ -117,7 +117,7 @@ bool qemu_aio_wait(void)
         return true;
     }
 
-    walking_handlers = 1;
+    walking_handlers++;
 
     FD_ZERO(&rdfds);
     FD_ZERO(&wrfds);
@@ -145,7 +145,7 @@ bool qemu_aio_wait(void)
         }
     }
 
-    walking_handlers = 0;
+    walking_handlers--;
 
     /* No AIO operations?  Get us out of here */
     if (!busy) {
@@ -157,7 +157,7 @@ bool qemu_aio_wait(void)
 
     /* if we have any readable fds, dispatch event */
     if (ret > 0) {
-        walking_handlers = 1;
+        walking_handlers++;
 
         /* we have to walk very carefully in case
          * qemu_aio_set_fd_handler is called while we're walking */
@@ -185,7 +185,7 @@ bool qemu_aio_wait(void)
             }
         }
 
-        walking_handlers = 0;
+        walking_handlers--;
     }
 
     return true;
