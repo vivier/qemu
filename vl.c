@@ -3555,9 +3555,12 @@ static int cpu_can_run(CPUState *env)
     return 1;
 }
 
+static GArray *gpollfds;
+
 #ifndef CONFIG_IOTHREAD
 static int qemu_init_main_loop(void)
 {
+    gpollfds = g_array_new(FALSE, FALSE, sizeof(GPollFD));
     return qemu_event_init();
 }
 
@@ -3656,6 +3659,7 @@ static int qemu_init_main_loop(void)
     if (ret)
         return ret;
 
+    gpollfds = g_array_new(FALSE, FALSE, sizeof(GPollFD));
     qemu_cond_init(&qemu_pause_cond);
     qemu_mutex_init(&qemu_fair_mutex);
     qemu_mutex_init(&qemu_global_mutex);
@@ -3948,9 +3952,67 @@ void vm_stop(RunState reason)
 #endif
 
 
+static fd_set rfds, wfds, xfds;
+static int nfds;
 static GPollFD poll_fds[1024 * 2]; /* this is probably overkill */
 static int n_poll_fds;
 static int max_priority;
+
+/* Load rfds/wfds/xfds into gpollfds.  Will be removed a few commits later. */
+static void gpollfds_from_select(void)
+{
+    int fd;
+    for (fd = 0; fd <= nfds; fd++) {
+        int events = 0;
+        if (FD_ISSET(fd, &rfds)) {
+            events |= G_IO_IN | G_IO_HUP | G_IO_ERR;
+        }
+        if (FD_ISSET(fd, &wfds)) {
+            events |= G_IO_OUT | G_IO_ERR;
+        }
+        if (FD_ISSET(fd, &xfds)) {
+            events |= G_IO_PRI;
+        }
+        if (events) {
+            GPollFD pfd = {
+                .fd = fd,
+                .events = events,
+            };
+            g_array_append_val(gpollfds, pfd);
+        }
+    }
+}
+
+/* Store gpollfds revents into rfds/wfds/xfds.  Will be removed a few commits
+ * later.
+ */
+static void gpollfds_to_select(int ret)
+{
+    int i;
+
+    FD_ZERO(&rfds);
+    FD_ZERO(&wfds);
+    FD_ZERO(&xfds);
+
+    if (ret <= 0) {
+        return;
+    }
+
+    for (i = 0; i < gpollfds->len; i++) {
+        int fd = g_array_index(gpollfds, GPollFD, i).fd;
+        int revents = g_array_index(gpollfds, GPollFD, i).revents;
+
+        if (revents & (G_IO_IN | G_IO_HUP | G_IO_ERR)) {
+            FD_SET(fd, &rfds);
+        }
+        if (revents & (G_IO_OUT | G_IO_ERR)) {
+            FD_SET(fd, &wfds);
+        }
+        if (revents & G_IO_PRI) {
+            FD_SET(fd, &xfds);
+        }
+    }
+}
 
 static void glib_select_fill(int *max_fd, fd_set *rfds, fd_set *wfds,
                              fd_set *xfds, int *cur_timeout)
@@ -4019,13 +4081,12 @@ static void glib_select_poll(fd_set *rfds, fd_set *wfds, fd_set *xfds,
 void main_loop_wait(int timeout)
 {
     IOHandlerRecord *ioh;
-    fd_set rfds, wfds, xfds;
-    int ret, nfds;
-    struct timeval tv;
+    int ret;
 
     qemu_bh_update_timeout((uint32_t *)&timeout);
 
     /* poll any events */
+    g_array_set_size(gpollfds, 0); /* reset for new iteration */
     /* XXX: separate device handlers from system ones */
     nfds = -1;
     FD_ZERO(&rfds);
@@ -4055,12 +4116,15 @@ void main_loop_wait(int timeout)
     glib_select_fill(&nfds, &rfds, &wfds, &xfds, &timeout);
     os_host_main_loop_wait(&timeout);
 
-    tv.tv_sec = timeout / 1000;
-    tv.tv_usec = (timeout % 1000) * 1000;
+    /* We'll eventually drop fd_set completely.  But for now we still have
+     * *_fill() and *_poll() functions that use rfds/wfds/xfds.
+     */
+    gpollfds_from_select();
 
     qemu_mutex_unlock_iothread();
-    ret = select(nfds + 1, &rfds, &wfds, &xfds, &tv);
+    ret = g_poll((GPollFD *)gpollfds->data, gpollfds->len, timeout);
     qemu_mutex_lock_iothread();
+    gpollfds_to_select(ret);
     if (ret > 0) {
         IOHandlerRecord *pioh;
 
