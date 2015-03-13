@@ -144,7 +144,7 @@ AioContext *aio_context_new(void)
 
 void aio_flush(AioContext *ctx)
 {
-    while (aio_wait(ctx));
+    while (aio_poll(ctx, true));
 }
 
 /*
@@ -183,7 +183,7 @@ void qemu_aio_flush(void)
 
 bool qemu_aio_wait(void)
 {
-    return aio_wait(qemu_aio_context());
+    return aio_poll(qemu_aio_context(), true);
 }
 
 void qemu_aio_set_fd_handler(int fd,
