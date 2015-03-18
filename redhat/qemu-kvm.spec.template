@@ -843,6 +843,42 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Mar 17 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-87.el7
+- kvm-trace-add-qemu_system_powerdown_request-and-qemu_sys.patch [bz#1155671]
+- kvm-virtio-net-drop-assert-on-vm-stop.patch [bz#1139562]
+- kvm-socket-shutdown.patch [bz#1086168]
+- kvm-Handle-bi-directional-communication-for-fd-migration.patch [bz#1086168]
+- kvm-migration_cancel-shutdown-migration-socket.patch [bz#1086168]
+- kvm-iscsi-Refuse-to-open-as-writable-if-the-LUN-is-write.patch [bz#1032412]
+- kvm-main-set-current_machine-before-calling-machine-init.patch [bz#1176283]
+- kvm-pc_sysfw-prevent-pflash-and-or-mis-sized-firmware-fo.patch [bz#1176283]
+- kvm-Restore-atapi_dma-flag-across-migration.patch [bz#892258]
+- kvm-atapi-migration-Throw-recoverable-error-to-avoid-rec.patch [bz#892258]
+- kvm-build-reenable-local-builds-to-pass-enable-debug-RHE.patch []
+- kvm-raw-posix-Fail-gracefully-if-no-working-alignment-is.patch [bz#1184363]
+- kvm-block-Add-Error-argument-to-bdrv_refresh_limits.patch [bz#1184363]
+- kvm-Python-lang-gdb-script-to-extract-x86_64-guest-vmcor.patch [bz#828493]
+- kvm-RPM-spec-install-dump-guest-memory.py-RHEL-only.patch [bz#828493]
+- kvm-spec-Enable-build-of-qemu-img-and-libcacard-for-ppc6.patch [bz#1190086]
+- Resolves: bz#1032412
+  (opening read-only iscsi lun as read-write should fail)
+- Resolves: bz#1086168
+  (qemu-kvm can not cancel migration in src host when network of dst host failed)
+- Resolves: bz#1139562
+  (qemu-kvm with vhost=off and sndbuf=100 crashed when stop it during pktgen test from guest to host)
+- Resolves: bz#1155671
+  ([Fujitsu 7.2 FEAT]: QEMU: Add tracepoints in system shutdown)
+- Resolves: bz#1176283
+  ([migration]migration failed when configure guest with OVMF bios + machine type=rhel6.5.0)
+- Resolves: bz#1184363
+  (Qemu process fails to start with a multipath device with all paths failed)
+- Resolves: bz#1190086
+  (build qemu-img/libcacard on ppc64le for 7.2)
+- Resolves: bz#828493
+  ([Hitachi 7.2 FEAT] Extract guest memory dump from qemu-kvm core)
+- Resolves: bz#892258
+  (ide CDROM io/data errors after migration)
+
 * Sun Jan 25 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-86.el7
 - kvm-vfio-pci-Fix-interrupt-disabling.patch [bz#1180942]
 - kvm-cirrus-fix-blit-region-check.patch [bz#1169456]
