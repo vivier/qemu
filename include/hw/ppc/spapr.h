@@ -481,5 +481,6 @@ int spapr_dma_dt(void *fdt, int node_off, const char *propname,
 int spapr_tcet_dma_dt(void *fdt, int node_off, const char *propname,
                       sPAPRTCETable *tcet);
 void spapr_pci_switch_vga(bool big_endian);
+void spapr_rtc_init(void);
 
 #endif /* !defined (__HW_SPAPR_H__) */
