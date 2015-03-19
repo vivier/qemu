@@ -55,8 +55,6 @@
 /* indicate that the cluster is compressed (they never have the copied flag) */
 #define QCOW_OFLAG_COMPRESSED (1LL << 62)
 
-#define REFCOUNT_SHIFT 1 /* refcount size is 2 bytes */
-
 #define MIN_CLUSTER_BITS 9
 #define MAX_CLUSTER_BITS 21
 
