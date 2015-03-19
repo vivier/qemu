@@ -32,10 +32,12 @@
 
 %ifarch i686
 %global have_gluster     1
+%global have_spice       0
 %endif
 
 %ifarch x86_64
 %global have_gluster     1
+%global have_spice       1
 %endif
 
 %ifarch i686
@@ -194,9 +196,11 @@ BuildRequires: lzo-devel snappy-devel
 # For uuid generation
 BuildRequires: libuuid-devel
 
+%if 0%{have_spice}
 # seamless spice migration needs a recent spice server version
 BuildRequires: spice-server-devel >= 0.12.3
 %endif
+%endif # with qemu_kvm
 
 BuildRequires: systemtap-sdt-devel
 
@@ -373,6 +377,12 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
 %define blk_drv_qcow2_gluster %{nil}
 %endif
 
+%if 0%{have_spice}
+%define config_spice          --enable-spice
+%else
+%define config_spice          --disable-spice
+%endif
+
 %define qemu_ga_build_flags --prefix=%{_prefix} \\\
              --localstatedir=%{_localstatedir} \\\
              --sysconfdir=%{_sysconfdir} \\\
@@ -432,7 +442,7 @@ cd qemu-kvm-x86_64-build
             --disable-vde \
             --enable-linux-aio \
             --enable-kvm \
-            --enable-spice \
+            %{config_spice} \
             --enable-kvm-cap-pit \
             --enable-kvm-cap-device-assignment \
             --trace-backend=dtrace \
