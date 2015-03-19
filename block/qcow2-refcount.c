@@ -933,8 +933,8 @@ fail:
  */
 static int inc_refcounts(BlockDriverState *bs,
                          BdrvCheckResult *res,
-                         uint16_t *refcount_table,
-                         int64_t refcount_table_size,
+                         uint16_t **refcount_table,
+                         int64_t *refcount_table_size,
                          int64_t offset, int64_t size)
 {
     BDRVQcowState *s = bs->opaque;
@@ -949,17 +949,30 @@ static int inc_refcounts(BlockDriverState *bs,
     for(cluster_offset = start; cluster_offset <= last;
         cluster_offset += s->cluster_size) {
         k = cluster_offset >> s->cluster_bits;
-        if (k >= refcount_table_size) {
-            fprintf(stderr, "Warning: cluster offset=0x%" PRIx64 " is after "
-                "the end of the image file, can't properly check refcounts.\n",
-                cluster_offset);
-            res->check_errors++;
-        } else {
-            if (++refcount_table[k] == 0) {
-                fprintf(stderr, "ERROR: overflow cluster offset=0x%" PRIx64
-                    "\n", cluster_offset);
-                res->corruptions++;
+        if (k >= *refcount_table_size) {
+            int64_t old_refcount_table_size = *refcount_table_size;
+            uint16_t *new_refcount_table;
+
+            *refcount_table_size = k + 1;
+            new_refcount_table = g_try_realloc(*refcount_table,
+                                               *refcount_table_size *
+                                               sizeof(**refcount_table));
+            if (!new_refcount_table) {
+                *refcount_table_size = old_refcount_table_size;
+                res->check_errors++;
+                return -ENOMEM;
             }
+            *refcount_table = new_refcount_table;
+
+            memset(*refcount_table + old_refcount_table_size, 0,
+                   (*refcount_table_size - old_refcount_table_size) *
+                   sizeof(**refcount_table));
+        }
+
+        if (++(*refcount_table)[k] == 0) {
+            fprintf(stderr, "ERROR: overflow cluster offset=0x%" PRIx64
+                    "\n", cluster_offset);
+            res->corruptions++;
         }
     }
 
@@ -975,7 +988,7 @@ static int inc_refcounts(BlockDriverState *bs,
  * error occurred.
  */
 static int check_refcounts_l2(BlockDriverState *bs, BdrvCheckResult *res,
-    uint16_t *refcount_table, int64_t refcount_table_size, int64_t l2_offset)
+    uint16_t **refcount_table, int64_t *refcount_table_size, int64_t l2_offset)
 {
     BDRVQcowState *s = bs->opaque;
     uint64_t *l2_table, l2_entry;
@@ -1065,8 +1078,8 @@ fail:
  */
 static int check_refcounts_l1(BlockDriverState *bs,
                               BdrvCheckResult *res,
-                              uint16_t *refcount_table,
-                              int64_t refcount_table_size,
+                              uint16_t **refcount_table,
+                              int64_t *refcount_table_size,
                               int64_t l1_table_offset, int l1_size)
 {
     BDRVQcowState *s = bs->opaque;
@@ -1401,7 +1414,7 @@ static int check_refblocks(BlockDriverState *bs, BdrvCheckResult *res,
         }
 
         if (offset != 0) {
-            ret = inc_refcounts(bs, res, *refcount_table, *nb_clusters,
+            ret = inc_refcounts(bs, res, refcount_table, nb_clusters,
                                 offset, s->cluster_size);
             if (ret < 0) {
                 return ret;
@@ -1434,7 +1447,7 @@ static int check_refblocks(BlockDriverState *bs, BdrvCheckResult *res,
                                sizeof(**refcount_table));
                     }
                     (*refcount_table)[cluster]--;
-                    ret = inc_refcounts(bs, res, *refcount_table, *nb_clusters,
+                    ret = inc_refcounts(bs, res, refcount_table, nb_clusters,
                                         new_offset, s->cluster_size);
                     if (ret < 0) {
                         return ret;
@@ -1470,14 +1483,14 @@ static int calculate_refcounts(BlockDriverState *bs, BdrvCheckResult *res,
     }
 
     /* header */
-    ret = inc_refcounts(bs, res, *refcount_table, *nb_clusters,
+    ret = inc_refcounts(bs, res, refcount_table, nb_clusters,
                         0, s->cluster_size);
     if (ret < 0) {
         return ret;
     }
 
     /* current L1 table */
-    ret = check_refcounts_l1(bs, res, *refcount_table, *nb_clusters,
+    ret = check_refcounts_l1(bs, res, refcount_table, nb_clusters,
                              s->l1_table_offset, s->l1_size);
     if (ret < 0) {
         return ret;
@@ -1486,20 +1499,20 @@ static int calculate_refcounts(BlockDriverState *bs, BdrvCheckResult *res,
     /* snapshots */
     for (i = 0; i < s->nb_snapshots; i++) {
         sn = s->snapshots + i;
-        ret = check_refcounts_l1(bs, res, *refcount_table, *nb_clusters,
+        ret = check_refcounts_l1(bs, res, refcount_table, nb_clusters,
                                  sn->l1_table_offset, sn->l1_size);
         if (ret < 0) {
             return ret;
         }
     }
-    ret = inc_refcounts(bs, res, *refcount_table, *nb_clusters,
+    ret = inc_refcounts(bs, res, refcount_table, nb_clusters,
                         s->snapshots_offset, s->snapshots_size);
     if (ret < 0) {
         return ret;
     }
 
     /* refcount data */
-    ret = inc_refcounts(bs, res, *refcount_table, *nb_clusters,
+    ret = inc_refcounts(bs, res, refcount_table, nb_clusters,
                         s->refcount_table_offset,
                         s->refcount_table_size * sizeof(uint64_t));
     if (ret < 0) {
