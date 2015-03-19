@@ -1648,8 +1648,8 @@ int qcow2_pre_write_overlap_check(BlockDriverState *bs, int ign, int64_t offset,
         message = g_strdup_printf("Prevented %s overwrite",
                 metadata_ol_names[metadata_ol_bitnr]);
         data = qobject_from_jsonf("{ 'device': %s, 'msg': %s, 'offset': %"
-                PRId64 ", 'size': %" PRId64 " }", bs->device_name, message,
-                offset, size);
+                PRId64 ", 'size': %" PRId64 ", 'fatal': true }",
+                bs->device_name, message, offset, size);
         monitor_protocol_event(QEVENT_BLOCK_IMAGE_CORRUPTED, data);
         g_free(message);
         qobject_decref(data);
