@@ -4,8 +4,8 @@ include Makefile.test
 
 LOCVERFILE:=../localversion
 LANG=C
-BUILD_DEFAULT_TARGET = rhevh-rhel-7.1-candidate
-BUILD_SCRATCH_TARGET = rhevh-rhel-7.1-candidate
+BUILD_DEFAULT_TARGET = rhevh-rhel-7.2-candidate
+BUILD_SCRATCH_TARGET = rhevh-rhel-7.2-candidate
 
 #ifeq ($(shell git diff --quiet HEAD && git describe --exact-match 2>/dev/null && echo ok),)
 BUILD_TARGET ?= --scratch $(BUILD_SCRATCH_TARGET)
@@ -153,12 +153,12 @@ rh-update-changelog:
 
 .PHONY: rh-brew rh-koji rh-brew-ga rh-brew-ppc rh-brew-aarch64
 rh-brew rh-brew-ppc rh-brew-aarch64 rh-brew-rhev rh-brew-rhev-autotest: BUILD_FLAGS ?= $(BREW_FLAGS) $(TEST_FLAGS)
-rh-brew-ppc rh-brew-ga-ppc: BUILD_SCRATCH_TARGET = rhel-7.1-ppc64le-candidate
-rh-brew-ga: BUILD_SCRATCH_TARGET = rhel-7.1-candidate
+rh-brew-ppc rh-brew-ga-ppc: BUILD_SCRATCH_TARGET = rhel-7.2-ppc64le-candidate
+rh-brew-ga: BUILD_SCRATCH_TARGET = rhel-7.2-candidate
 rh-brew-ga rh-brew-ga-ppc: SPECFILE = $(GASPECFILE)
 rh-brew-ga rh-brew-ga-ppc: PKGNAME = $(GAPKGNAME)
 rh-brew-ga rh-brew-ga-ppc: BUILD = $(GABUILD)
-rh-brew-aarch64: BUILD_SCRATCH_TARGET = rhel-7.1-aarch64-candidate
+rh-brew-aarch64: BUILD_SCRATCH_TARGET = rhel-7.2-aarch64-candidate
 rh-koji rh-koji-ga rh-koji-autotest: BUILD_FLAGS ?= $(KOJI_FLAGS) $(TEST_FLAGS)
 rh-brew rh-brew-ppc rh-brew-aarch64 rh-brew-autotest rh-koji-autotest: RHEV_FLAG=1
 rh-brew rh-brew-ppc rh-brew-aarch64 rh-brew-autotest rh-koji-autotest: PKG_FULL_NVR=$(PKGNAME)-rhev-$(PKG_FULL_VR)
