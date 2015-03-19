@@ -260,6 +260,10 @@ static int qcow2_open(BlockDriverState *bs, int flags)
     s->cluster_sectors = 1 << (s->cluster_bits - 9);
     s->l2_bits = s->cluster_bits - 3; /* L2 is always one cluster */
     s->l2_size = 1 << s->l2_bits;
+    /* 2^(refcount_order - 3) is the refcount width in bytes
+     * (and refcount_order == 4) */
+    s->refcount_block_bits = s->cluster_bits - (4 - 3);
+    s->refcount_block_size = 1 << s->refcount_block_bits;
     bs->total_sectors = header.size / 512;
     s->csize_shift = (62 - (s->cluster_bits - 8));
     s->csize_mask = (1 << (s->cluster_bits - 8)) - 1;
