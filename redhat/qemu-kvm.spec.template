@@ -931,6 +931,37 @@ make check V=1
 
 %changelog
 %%CHANGELOG%%
+* Thu Mar 19 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.2.0-8.el7
+- kvm-pc_sysfw-prevent-pflash-and-or-mis-sized-firmware-fo.patch [bz#1175099]
+- kvm-build-reenable-local-builds-to-pass-enable-debug-dow.patch []
+- kvm-RPM-spec-install-dump-guest-memory.py-downstream-onl.patch [bz#1194304]
+- kvm-vga-Expose-framebuffer-byteorder-as-a-QOM-property.patch [bz#1146809]
+- kvm-pseries-Switch-VGA-endian-on-H_SET_MODE.patch [bz#1146809]
+- kvm-Generalize-QOM-publishing-of-date-and-time-from-mc14.patch [bz#1172583]
+- kvm-Add-more-VMSTATE_-_TEST-variants-for-integers.patch [bz#1171700]
+- kvm-pseries-Move-sPAPR-RTC-code-into-its-own-file.patch [bz#1170132 bz#1171700 bz#1172583]
+- kvm-pseries-Add-more-parameter-validation-in-RTAS-time-o.patch [bz#1170132 bz#1171700 bz#1172583]
+- kvm-pseries-Add-spapr_rtc_read-helper-function.patch [bz#1170132 bz#1171700 bz#1172583]
+- kvm-pseries-Make-RTAS-time-of-day-functions-respect-rtc-.patch [bz#1170132]
+- kvm-pseries-Make-the-PAPR-RTC-a-qdev-device.patch [bz#1170132 bz#1171700 bz#1172583]
+- kvm-pseries-Move-rtc_offset-into-RTC-device-s-state-stru.patch [bz#1171700]
+- kvm-pseries-Export-RTC-time-via-QOM.patch [bz#1172583]
+- kvm-pseries-Limit-PCI-host-bridge-index-value.patch [bz#1181409]
+- Resolves: bz#1146809
+  (Incorrect colours on virtual VGA with ppc64le guest under ppc64 host)
+- Resolves: bz#1170132
+  (Guest time could change with host time even specify the guest clock as "-rtc base=utc,clock=vm,...")
+- Resolves: bz#1171700
+  ('hwclock' in destination guest returns to base '2006-06-06' after migration)
+- Resolves: bz#1172583
+  ([Power KVM] Qemu monitor command don't support {"execute":"qom-get","arguments":{"path":"/machine","property":"rtc-time"}})
+- Resolves: bz#1175099
+  ([migration]migration failed when configure guest with OVMF bios + machine type=rhel6.5.0)
+- Resolves: bz#1181409
+  (PCI pass-through device works improperly due to the PHB's index being set to a big value)
+- Resolves: bz#1194304
+  ([Hitachi 7.2 FEAT] Extract guest memory dump from qemu-kvm-rhev core)
+
 * Tue Mar 10 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.2.0-7.el7
 - kvm-aarch64-Add-PCI-and-VIRTIO_PCI-devices-for-AArch64.patch [bz#1200090]
 - kvm-Add-specific-config-options-for-PCI-E-bridges.patch [bz#1200090]
