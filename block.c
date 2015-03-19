@@ -4360,6 +4360,19 @@ void *qemu_blockalign(BlockDriverState *bs, size_t size)
     return qemu_memalign((bs && bs->buffer_alignment) ? bs->buffer_alignment : 512, size);
 }
 
+void *qemu_try_blockalign(BlockDriverState *bs, size_t size)
+{
+    size_t align = (bs && bs->buffer_alignment) ? bs->buffer_alignment : 512;
+
+    /* Ensure that NULL is never returned on success */
+    assert(align > 0);
+    if (size == 0) {
+        size = align;
+    }
+
+    return qemu_try_memalign(align, size);
+}
+
 /*
  * Check if all memory in this vector is sector aligned.
  */
