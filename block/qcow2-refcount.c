@@ -976,14 +976,18 @@ static int check_refcounts_l2(BlockDriverState *bs, BdrvCheckResult *res,
 {
     BDRVQcowState *s = bs->opaque;
     uint64_t *l2_table, l2_entry;
-    int i, l2_size, nb_csectors;
+    int i, l2_size, nb_csectors, ret;
 
     /* Read L2 table from disk */
     l2_size = s->l2_size * sizeof(uint64_t);
     l2_table = g_malloc(l2_size);
 
-    if (bdrv_pread(bs->file, l2_offset, l2_table, l2_size) != l2_size)
+    ret = bdrv_pread(bs->file, l2_offset, l2_table, l2_size);
+    if (ret < 0) {
+        fprintf(stderr, "ERROR: I/O error in check_refcounts_l2\n");
+        res->check_errors++;
         goto fail;
+    }
 
     /* Do the actual checks */
     for(i = 0; i < s->l2_size; i++) {
@@ -1038,9 +1042,8 @@ static int check_refcounts_l2(BlockDriverState *bs, BdrvCheckResult *res,
     return 0;
 
 fail:
-    fprintf(stderr, "ERROR: I/O error in check_refcounts_l2\n");
     g_free(l2_table);
-    return -EIO;
+    return ret;
 }
 
 /*
@@ -1071,10 +1074,18 @@ static int check_refcounts_l1(BlockDriverState *bs,
     if (l1_size2 == 0) {
         l1_table = NULL;
     } else {
-        l1_table = g_malloc(l1_size2);
-        if (bdrv_pread(bs->file, l1_table_offset,
-                       l1_table, l1_size2) != l1_size2)
+        l1_table = g_try_malloc(l1_size2);
+        if (l1_table == NULL) {
+            ret = -ENOMEM;
+            res->check_errors++;
             goto fail;
+        }
+        ret = bdrv_pread(bs->file, l1_table_offset, l1_table, l1_size2);
+        if (ret < 0) {
+            fprintf(stderr, "ERROR: I/O error in check_refcounts_l1\n");
+            res->check_errors++;
+            goto fail;
+        }
         for(i = 0;i < l1_size; i++)
             be64_to_cpus(&l1_table[i]);
     }
@@ -1107,10 +1118,8 @@ static int check_refcounts_l1(BlockDriverState *bs,
     return 0;
 
 fail:
-    fprintf(stderr, "ERROR: I/O error in check_refcounts_l1\n");
-    res->check_errors++;
     g_free(l1_table);
-    return -EIO;
+    return ret;
 }
 
 /*
