@@ -826,6 +826,12 @@ int bdrv_open(BlockDriverState *bs, const char *filename, int flags,
 
         if (bs->backing_format[0] != '\0') {
             back_drv = bdrv_find_format(bs->backing_format);
+            if (!back_drv) {
+                error_report("Invalid backing file format '%s'",
+                             bs->backing_format);
+                bdrv_close(bs);
+                return -EINVAL;
+            }
         }
 
         /* backing files always opened read-only */
