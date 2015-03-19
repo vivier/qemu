@@ -25,7 +25,7 @@
 %endif
 
 %if %{with guest_agent}
-%define build_arches i686 x86_64
+%define build_arches i686 x86_64 ppc64
 %else
 %define build_arches x86_64
 %endif
@@ -42,6 +42,13 @@
 %global have_gluster     1
 %global have_spice       1
 %global kvm_target       x86_64
+%endif
+
+%ifarch ppc64
+%global build_qemu_kvm   0
+%global have_gluster     0
+%global have_spice       0
+%global kvm_target       ppc64
 %endif
 
 %if 0%{build_qemu_kvm}
@@ -362,15 +369,15 @@ extraldflags="-Wl,--build-id";
 buildldflags="VL_LDFLAGS=-Wl,--build-id"
 
 %if %{enable_fake_machine}
-%define fake_machine_arg --enable-fake-machine
+%define config_fake_machine --enable-fake-machine
 %else
-%define fake_machine_arg %{nil}
+%define config_fake_machine --disable-fake-machine
 %endif
 
 %if %{with rhev_features}
-%define rhev_features_arg --enable-rbd
+%define config_rhev_features --enable-rbd
 %else
-%define rhev_features_arg --disable-rhev-features
+%define config_rhev_features --disable-rhev-features
 %endif
 
 %if 0%{have_gluster}
@@ -458,8 +465,8 @@ cd qemu-kvm-x86_64-build
             --enable-lzo \
             --enable-snappy \
             --enable-vhdx \
-            %{fake_machine_arg} \
-            %{rhev_features_arg}
+            %{config_fake_machine} \
+            %{config_rhev_features}
 
 echo "config-host.mak contents:"
 echo "==="
