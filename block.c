@@ -4363,6 +4363,11 @@ void *qemu_blockalign(BlockDriverState *bs, size_t size)
     return qemu_memalign((bs && bs->buffer_alignment) ? bs->buffer_alignment : 512, size);
 }
 
+void *qemu_blockalign0(BlockDriverState *bs, size_t size)
+{
+    return memset(qemu_blockalign(bs, size), 0, size);
+}
+
 void *qemu_try_blockalign(BlockDriverState *bs, size_t size)
 {
     size_t align = (bs && bs->buffer_alignment) ? bs->buffer_alignment : 512;
@@ -4374,6 +4379,17 @@ void *qemu_try_blockalign(BlockDriverState *bs, size_t size)
     }
 
     return qemu_try_memalign(align, size);
+}
+
+void *qemu_try_blockalign0(BlockDriverState *bs, size_t size)
+{
+    void *mem = qemu_try_blockalign(bs, size);
+
+    if (mem) {
+        memset(mem, 0, size);
+    }
+
+    return mem;
 }
 
 /*

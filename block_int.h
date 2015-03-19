@@ -309,7 +309,9 @@ struct BlockDriverState {
 int get_tmp_filename(char *filename, int size);
 
 void *qemu_blockalign(BlockDriverState *bs, size_t size);
+void *qemu_blockalign0(BlockDriverState *bs, size_t size);
 void *qemu_try_blockalign(BlockDriverState *bs, size_t size);
+void *qemu_try_blockalign0(BlockDriverState *bs, size_t size);
 void bdrv_set_io_limits(BlockDriverState *bs,
                         ThrottleConfig *cfg);
 
