@@ -31,19 +31,21 @@
 %endif
 
 %ifarch i686
+%global build_qemu_kvm   0
 %global have_gluster     1
 %global have_spice       0
 %endif
 
 %ifarch x86_64
+%global build_qemu_kvm   1
 %global have_gluster     1
 %global have_spice       1
 %endif
 
-%ifarch i686
-%bcond_with     qemu_kvm              # disabled
-%else
+%if 0%{build_qemu_kvm}
 %bcond_without  qemu_kvm              # enabled
+%else
+%bcond_with     qemu_kvm              # disabled
 %endif
 
 # Package name and path configuration variables:
