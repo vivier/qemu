@@ -34,12 +34,14 @@
 %global build_qemu_kvm   0
 %global have_gluster     1
 %global have_spice       0
+%global kvm_target       x86_64
 %endif
 
 %ifarch x86_64
 %global build_qemu_kvm   1
 %global have_gluster     1
 %global have_spice       1
+%global kvm_target       x86_64
 %endif
 
 %if 0%{build_qemu_kvm}
@@ -416,7 +418,7 @@ cd qemu-kvm-x86_64-build
 # sdl outputs to alsa or pulseaudio depending on system config, but it's broken (#495964)
 # alsa works, but causes huge CPU load due to bugs
 # oss works, but is very problematic because it grabs exclusive control of the device causing other apps to go haywire
-../configure --target-list=x86_64-softmmu \
+../configure --target-list=%{kvm_target}-softmmu \
             --prefix=%{_prefix} \
             --localstatedir=%{_localstatedir} \
             --sysconfdir=%{_sysconfdir} \
@@ -471,7 +473,7 @@ cd ..
 mkdir qemu-kvm-qemu-ga-build
 cd qemu-kvm-qemu-ga-build
 
-../configure --target-list=x86_64-softmmu \
+../configure --target-list=%{kvm_target}-softmmu \
              --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
              --extra-cflags="$RPM_OPT_FLAGS -fPIE -DPIE" \
              --with-pkgversion=%{name}-%{version}-%{release} \
@@ -482,10 +484,10 @@ cd ../qemu-kvm-x86_64-build
 
 %if %{with qemu_kvm}
 # generate the default config:
-make x86_64-softmmu/config-devices.mak
+make %{kvm_target}-softmmu/config-devices.mak
 
 # disable vmware_vga on the config:
-sed -i -e '/CONFIG_VMWARE_VGA=y/d' x86_64-softmmu/config-devices.mak
+sed -i -e '/CONFIG_VMWARE_VGA=y/d' %{kvm_target}-softmmu/config-devices.mak
 
 make V=1 QEMU_PROG=%{progname} QEMU_BINDIR="%{_prefix}/libexec" \
      %{?_smp_mflags} $buildldflags
