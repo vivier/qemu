@@ -165,6 +165,7 @@ typedef struct BDRVQcowState {
     QCowSnapshot *snapshots;
 
     int overlap_check; /* bitmask of Qcow2MetadataOverlap values */
+    bool signaled_corruption, signaled_fatal_corruption;
 
     QLIST_HEAD(, Qcow2UnknownHeaderExtension) unknown_header_ext;
 } BDRVQcowState;
@@ -296,6 +297,10 @@ static inline int qcow2_get_cluster_type(uint64_t l2_entry)
 int qcow2_backing_read1(BlockDriverState *bs, QEMUIOVector *qiov,
                   int64_t sector_num, int nb_sectors);
 int qcow2_update_header(BlockDriverState *bs);
+
+void qcow2_signal_corruption(BlockDriverState *bs, bool fatal, int64_t offset,
+                             int64_t size, const char *message_format, ...)
+                             GCC_FMT_ATTR(5, 6);
 
 /* qcow2-refcount.c functions */
 int qcow2_refcount_init(BlockDriverState *bs);
