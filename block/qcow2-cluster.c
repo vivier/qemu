@@ -481,6 +481,13 @@ int qcow2_get_cluster_offset(BlockDriverState *bs, uint64_t offset,
         goto out;
     }
 
+    if (offset_into_cluster(s, l2_offset)) {
+        qcow2_signal_corruption(bs, true, -1, -1, "L2 table offset %#" PRIx64
+                                " unaligned (L1 index: %#" PRIx64 ")",
+                                l2_offset, l1_index);
+        return -EIO;
+    }
+
     /* load the l2 table in memory */
 
     ret = l2_load(bs, l2_offset, &l2_table);
@@ -511,6 +518,14 @@ int qcow2_get_cluster_offset(BlockDriverState *bs, uint64_t offset,
         c = count_contiguous_clusters(nb_clusters, s->cluster_size,
                 &l2_table[l2_index], 0, QCOW_OFLAG_COMPRESSED);
         *cluster_offset &= L2E_OFFSET_MASK;
+        if (offset_into_cluster(s, *cluster_offset)) {
+            qcow2_signal_corruption(bs, true, -1, -1, "Data cluster offset %#"
+                                    PRIx64 " unaligned (L2 offset: %#" PRIx64
+                                    ", L2 index: %#x)", *cluster_offset,
+                                    l2_offset, l2_index);
+            ret = -EIO;
+            goto fail;
+        }
         break;
     }
 
@@ -524,6 +539,10 @@ out:
 
     *num = nb_available - index_in_cluster;
 
+    return ret;
+
+fail:
+    qcow2_cache_put(bs, s->l2_table_cache, (void **)&l2_table);
     return ret;
 }
 
@@ -561,6 +580,12 @@ static int get_cluster_table(BlockDriverState *bs, uint64_t offset,
 
     assert(l1_index < s->l1_size);
     l2_offset = s->l1_table[l1_index] & L1E_OFFSET_MASK;
+    if (offset_into_cluster(s, l2_offset)) {
+        qcow2_signal_corruption(bs, true, -1, -1, "L2 table offset %#" PRIx64
+                                " unaligned (L1 index: %#" PRIx64 ")",
+                                l2_offset, l1_index);
+        return -EIO;
+    }
 
     /* seek the l2 table of the given l2 offset */
 
@@ -816,6 +841,17 @@ again:
     nb_clusters = MIN(nb_clusters, s->l2_size - l2_index);
 
     cluster_offset = be64_to_cpu(l2_table[l2_index]);
+
+    if (!(cluster_offset & QCOW_OFLAG_COMPRESSED) &&
+        offset_into_cluster(s, cluster_offset & L2E_OFFSET_MASK))
+    {
+        qcow2_signal_corruption(bs, true, -1, -1, "Data cluster offset %#llx "
+                                "unaligned (guest offset: %#" PRIx64 ")",
+                                cluster_offset & L2E_OFFSET_MASK, offset);
+
+        qcow2_cache_put(bs, s->l2_table_cache, (void **)&l2_table);
+        return -EIO;
+    }
 
     /* We keep all QCOW_OFLAG_COPIED clusters */
 
