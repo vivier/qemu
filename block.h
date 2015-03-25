@@ -158,7 +158,8 @@ void bdrv_io_limits_disable(BlockDriverState *bs);
 
 void bdrv_init(void);
 void bdrv_init_with_whitelist(void);
-BlockDriver *bdrv_find_protocol(const char *filename);
+BlockDriver *bdrv_find_protocol(const char *filename,
+                                Error **errp);
 BlockDriver *bdrv_find_format(const char *format_name);
 BlockDriver *bdrv_find_whitelisted_format(const char *format_name,
                                           bool readonly);

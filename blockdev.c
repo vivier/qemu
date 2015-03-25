@@ -796,7 +796,7 @@ void qmp___com_redhat_drive_reopen(const char *device, const char *new_image_fil
         drv = NULL;
     }
 
-    proto_drv = bdrv_find_protocol(new_image_file);
+    proto_drv = bdrv_find_protocol(new_image_file, NULL);
     if (!proto_drv) {
         error_set(errp, QERR_INVALID_BLOCK_FORMAT, format);
         return;
@@ -1024,7 +1024,7 @@ void qmp_transaction(BlockdevActionList *dev_list, Error **errp)
         }
         flags = states->old_bs->open_flags;
 
-        proto_drv = bdrv_find_protocol(new_image_file);
+        proto_drv = bdrv_find_protocol(new_image_file, NULL);
         if (!proto_drv) {
             error_set(errp, QERR_INVALID_BLOCK_FORMAT, format);
             goto delete_and_fail;

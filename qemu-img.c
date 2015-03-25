@@ -214,6 +214,7 @@ static int print_block_option_help(const char *filename, const char *fmt)
 {
     BlockDriver *drv, *proto_drv;
     QEMUOptionParameter *create_options = NULL;
+    Error *local_err = NULL;
 
     /* Find driver and parse its options */
     drv = bdrv_find_format(fmt);
@@ -226,9 +227,10 @@ static int print_block_option_help(const char *filename, const char *fmt)
                                               drv->create_options);
 
     if (filename) {
-        proto_drv = bdrv_find_protocol(filename);
+        proto_drv = bdrv_find_protocol(filename, &local_err);
         if (!proto_drv) {
-            error_report("Unknown protocol '%s'", filename);
+            qerror_report_err(local_err);
+            error_free(local_err);
             return 1;
         }
         create_options = append_option_parameters(create_options,
@@ -1119,6 +1121,7 @@ static int img_convert(int argc, char **argv)
     QEMUOptionParameter *out_baseimg_param;
     char *options = NULL;
     int min_sparse = 8; /* Need at least 4k of zeros for sparse detection */
+    Error *local_err = NULL;
 
     fmt = NULL;
     out_fmt = "raw";
@@ -1252,9 +1255,10 @@ static int img_convert(int argc, char **argv)
         goto out;
     }
 
-    proto_drv = bdrv_find_protocol(out_filename);
+    proto_drv = bdrv_find_protocol(out_filename, &local_err);
     if (!proto_drv) {
-        error_report("Unknown protocol '%s'", out_filename);
+        qerror_report_err(local_err);
+        error_free(local_err);
         ret = -1;
         goto out;
     }

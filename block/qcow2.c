@@ -1112,7 +1112,7 @@ static int qcow2_create2(const char *filename, int64_t total_size,
         nreftablee = align_offset(nreftablee, cluster_size / sizeof(uint64_t));
         meta_size += nreftablee * sizeof(uint64_t);
 
-        file_drv = bdrv_find_protocol(filename);
+        file_drv = bdrv_find_protocol(filename, NULL);
         if (file_drv == NULL) {
             error_report("Could not find protocol for file '%s'", filename);
             return -ENOENT;

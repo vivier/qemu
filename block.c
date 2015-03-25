@@ -391,7 +391,7 @@ int bdrv_create_file(const char* filename, QEMUOptionParameter *options)
 {
     BlockDriver *drv;
 
-    drv = bdrv_find_protocol(filename);
+    drv = bdrv_find_protocol(filename, NULL);
     if (drv == NULL) {
         drv = bdrv_find_format("file");
     }
@@ -452,7 +452,8 @@ static BlockDriver *find_hdev_driver(const char *filename)
     return drv;
 }
 
-BlockDriver *bdrv_find_protocol(const char *filename)
+BlockDriver *bdrv_find_protocol(const char *filename,
+                                Error **errp)
 {
     BlockDriver *drv1;
     char protocol[128];
@@ -489,6 +490,8 @@ BlockDriver *bdrv_find_protocol(const char *filename)
             return drv1;
         }
     }
+
+    error_setg(errp, "Unknown protocol '%s'", protocol);
     return NULL;
 }
 
@@ -705,10 +708,13 @@ int bdrv_file_open(BlockDriverState **pbs, const char *filename, int flags)
 {
     BlockDriverState *bs;
     BlockDriver *drv;
+    Error *local_err = NULL;
     int ret;
 
-    drv = bdrv_find_protocol(filename);
+    drv = bdrv_find_protocol(filename, &local_err);
     if (!drv) {
+        qerror_report_err(local_err);
+        error_free(local_err);
         return -ENOENT;
     }
 
@@ -4509,9 +4515,8 @@ void bdrv_img_create(const char *filename, const char *fmt,
         return;
     }
 
-    proto_drv = bdrv_find_protocol(filename);
+    proto_drv = bdrv_find_protocol(filename, errp);
     if (!proto_drv) {
-        error_setg(errp, "Unknown protocol '%s'", filename);
         return;
     }
 
