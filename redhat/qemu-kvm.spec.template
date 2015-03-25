@@ -51,7 +51,7 @@
 %global kvm_target       ppc64
 %endif
 
-%if 0%{build_qemu_kvm}
+%if 0%{?build_qemu_kvm}
 %bcond_without  qemu_kvm              # enabled
 %else
 %bcond_with     qemu_kvm              # disabled
@@ -192,7 +192,7 @@ BuildRequires: ncurses-devel
 BuildRequires: libaio-devel
 %if %{with qemu_kvm}
 BuildRequires: usbredir-devel >= 0.5
-%if 0%{have_gluster}
+%if 0%{?have_gluster}
 # For glusterfs support
 BuildRequires: glusterfs-devel glusterfs-api-devel
 %endif
@@ -207,7 +207,7 @@ BuildRequires: lzo-devel snappy-devel
 # For uuid generation
 BuildRequires: libuuid-devel
 
-%if 0%{have_spice}
+%if 0%{?have_spice}
 # seamless spice migration needs a recent spice server version
 BuildRequires: spice-server-devel >= 0.12.3
 %endif
@@ -241,7 +241,7 @@ Requires: /usr/share/gpxe/pcnet32.rom
 Requires: /usr/share/gpxe/rtl8139.rom
 Requires: /usr/share/gpxe/virtio-net.rom
 Requires: /usr/share/sgabios/sgabios.bin
-%if 0%{have_gluster}
+%if 0%{?have_gluster}
 # For glusterfs support
 Requires: glusterfs-api
 %endif
@@ -380,7 +380,7 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
 %define config_rhev_features --disable-rhev-features
 %endif
 
-%if 0%{have_gluster}
+%if 0%{?have_gluster}
 %define config_gluster        --enable-glusterfs
 %define blk_drv_qcow2_gluster gluster,
 %else
@@ -388,7 +388,7 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
 %define blk_drv_qcow2_gluster %{nil}
 %endif
 
-%if 0%{have_spice}
+%if 0%{?have_spice}
 %define config_spice          --enable-spice
 %else
 %define config_spice          --disable-spice
