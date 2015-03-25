@@ -31,6 +31,14 @@
 %endif
 
 %ifarch i686
+%global have_gluster     1
+%endif
+
+%ifarch x86_64
+%global have_gluster     1
+%endif
+
+%ifarch i686
 %bcond_with     qemu_kvm              # disabled
 %else
 %bcond_without  qemu_kvm              # enabled
@@ -171,8 +179,10 @@ BuildRequires: ncurses-devel
 BuildRequires: libaio-devel
 %if %{with qemu_kvm}
 BuildRequires: usbredir-devel >= 0.5
+%if 0%{have_gluster}
 # For glusterfs support
 BuildRequires: glusterfs-devel glusterfs-api-devel
+%endif
 # For rbd/Ceph support
 %if %{with rhev_features}
 BuildRequires: librados2-devel
@@ -216,8 +226,10 @@ Requires: /usr/share/gpxe/pcnet32.rom
 Requires: /usr/share/gpxe/rtl8139.rom
 Requires: /usr/share/gpxe/virtio-net.rom
 Requires: /usr/share/sgabios/sgabios.bin
+%if 0%{have_gluster}
 # For glusterfs support
 Requires: glusterfs-api
+%endif
 # For compressed guest memory dumps
 Requires: lzo snappy
 %endif
@@ -353,12 +365,20 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
 %define rhev_features_arg --disable-rhev-features
 %endif
 
+%if 0%{have_gluster}
+%define config_gluster        --enable-glusterfs
+%define blk_drv_qcow2_gluster gluster,
+%else
+%define config_gluster        --disable-glusterfs
+%define blk_drv_qcow2_gluster %{nil}
+%endif
+
 %define qemu_ga_build_flags --prefix=%{_prefix} \\\
              --localstatedir=%{_localstatedir} \\\
              --sysconfdir=%{_sysconfdir} \\\
              --disable-strip \\\
              --disable-xen \\\
-             --block-drv-rw-whitelist=qcow2,raw,file,host_device,host_cdrom,qed,gluster,rbd \\\
+             --block-drv-rw-whitelist=qcow2,raw,file,host_device,host_cdrom,qed,%{blk_drv_qcow2_gluster}rbd \\\
              --block-drv-ro-whitelist=vmdk,vpc \\\
              --disable-debug-tcg \\\
              --disable-sparse \\\
@@ -395,7 +415,7 @@ cd qemu-kvm-x86_64-build
             --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
             --extra-cflags="$RPM_OPT_FLAGS -fPIE -DPIE" \
             --disable-xen \
-            --block-drv-rw-whitelist=qcow2,raw,file,host_device,host_cdrom,qed,gluster,rbd,null \
+            --block-drv-rw-whitelist=qcow2,raw,file,host_device,host_cdrom,qed,%{blk_drv_qcow2_gluster}rbd,null \
             --block-drv-ro-whitelist=vmdk,vhdx,vpc \
             --disable-debug-tcg \
             --disable-sparse \
@@ -420,7 +440,7 @@ cd qemu-kvm-x86_64-build
             --disable-smartcard-nss \
             --enable-usb-redir \
             --enable-mixemu \
-            --enable-glusterfs \
+            %{config_gluster} \
             --enable-lzo \
             --enable-snappy \
             --enable-vhdx \
