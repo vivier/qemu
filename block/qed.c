@@ -1400,6 +1400,7 @@ static BlockDriverAIOCB *bdrv_qed_aio_flush(BlockDriverState *bs,
     return bdrv_aio_flush(bs->file, cb, opaque);
 }
 
+#if 0
 typedef struct {
     Coroutine *co;
     int ret;
@@ -1446,6 +1447,7 @@ static int coroutine_fn bdrv_qed_co_write_zeroes(BlockDriverState *bs,
     assert(cb.done);
     return cb.ret;
 }
+#endif
 
 static int bdrv_qed_truncate(BlockDriverState *bs, int64_t offset)
 {
@@ -1605,7 +1607,10 @@ static BlockDriver bdrv_qed = {
     .bdrv_aio_readv           = bdrv_qed_aio_readv,
     .bdrv_aio_writev          = bdrv_qed_aio_writev,
     .bdrv_aio_flush           = bdrv_qed_aio_flush,
+#if 0
+    /* Disabled because of corruption issue; check qemu-iotests 034 */
     .bdrv_co_write_zeroes     = bdrv_qed_co_write_zeroes,
+#endif
     .bdrv_truncate            = bdrv_qed_truncate,
     .bdrv_getlength           = bdrv_qed_getlength,
     .bdrv_get_info            = bdrv_qed_get_info,
