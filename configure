@@ -227,7 +227,6 @@ kvm_version() {
 # is impossible without a --enable-foo that exits if a feature is not found.
 
 bluez=""
-brlapi=""
 curl=""
 curses=""
 docs=""
@@ -565,10 +564,6 @@ for opt do
   ;;
   --enable-xen) xen="yes"
   ;;
-  --disable-brlapi) brlapi="no"
-  ;;
-  --enable-brlapi) brlapi="yes"
-  ;;
   --disable-bluez) bluez="no"
   ;;
   --enable-bluez) bluez="yes"
@@ -844,8 +839,6 @@ echo "                           (affects only QEMU, not qemu-img)"
 echo "  --enable-mixemu          enable mixer emulation"
 echo "  --disable-xen            disable xen backend driver support"
 echo "  --enable-xen             enable xen backend driver support"
-echo "  --disable-brlapi         disable BrlAPI"
-echo "  --enable-brlapi          enable BrlAPI"
 echo "  --disable-vnc-tls        disable TLS encryption for VNC server"
 echo "  --enable-vnc-tls         enable TLS encryption for VNC server"
 echo "  --disable-vnc-sasl       disable SASL encryption for VNC server"
@@ -1446,26 +1439,6 @@ for drv in $audio_drv_list; do
     ;;
     esac
 done
-
-##########################################
-# BrlAPI probe
-
-if test "$brlapi" != "no" ; then
-  brlapi_libs="-lbrlapi"
-  cat > $TMPC << EOF
-#include <brlapi.h>
-int main( void ) { return brlapi__openConnection (NULL, NULL, NULL); }
-EOF
-  if compile_prog "" "$brlapi_libs" ; then
-    brlapi=yes
-    libs_softmmu="$brlapi_libs $libs_softmmu"
-  else
-    if test "$brlapi" = "yes" ; then
-      feature_not_found "brlapi"
-    fi
-    brlapi=no
-  fi
-fi
 
 ##########################################
 # curses probe
@@ -2424,7 +2397,6 @@ if test -n "$sparc_cpu"; then
 fi
 echo "xen support       $xen"
 echo "CPU emulation     $cpu_emulation"
-echo "brlapi support    $brlapi"
 echo "bluez  support    $bluez"
 echo "Documentation     $docs"
 [ ! -z "$uname_release" ] && \
@@ -2644,9 +2616,6 @@ fi
 if test "$curl" = "yes" ; then
   echo "CONFIG_CURL=y" >> $config_host_mak
   echo "CURL_CFLAGS=$curl_cflags" >> $config_host_mak
-fi
-if test "$brlapi" = "yes" ; then
-  echo "CONFIG_BRLAPI=y" >> $config_host_mak
 fi
 if test "$bluez" = "yes" ; then
   echo "CONFIG_BLUEZ=y" >> $config_host_mak

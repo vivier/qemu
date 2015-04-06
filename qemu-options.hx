@@ -454,10 +454,6 @@ Pass through the host device identified by @var{vendor_id}:@var{product_id}
 Serial converter to host character device @var{dev}, see @code{-serial} for the
 available devices.
 
-@item braille
-Braille device.  This will use BrlAPI to display the braille output on a real
-or fake device.
-
 @item net:@var{options}
 Network adapter that supports CDC ethernet and RNDIS protocols.
 
@@ -1337,9 +1333,6 @@ DEF("chardev", HAS_ARG, QEMU_OPTION_chardev,
     "-chardev pty,id=id\n"
     "-chardev stdio,id=id\n"
 #endif
-#ifdef CONFIG_BRLAPI
-    "-chardev braille,id=id\n"
-#endif
 #if defined(__linux__) || defined(__sun__) || defined(__FreeBSD__) \
         || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
     "-chardev serial,id=id,path=path\n"
@@ -1522,10 +1515,6 @@ not take any options.
 Connect to standard input and standard output of the qemu process.
 @option{stdio} does not take any options. @option{stdio} is not available on
 Windows hosts.
-
-@item -chardev braille ,id=@var{id}
-
-Connect to a local BrlAPI server. @option{braille} does not take any options.
 
 @item -chardev tty ,id=@var{id} ,path=@var{path}
 
@@ -1797,10 +1786,6 @@ listening on port 4444 would be:
 @table @code
 @item -serial mon:telnet::4444,server,nowait
 @end table
-
-@item braille
-Braille device.  This will use BrlAPI to display the braille output on a real
-or fake device.
 
 @item msmouse
 Three button serial mouse. Configure the guest to use Microsoft protocol.

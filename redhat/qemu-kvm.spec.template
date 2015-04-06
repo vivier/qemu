@@ -401,7 +401,6 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
              --disable-curses \\\
              --disable-curl \\\
              --disable-check-utests \\\
-             --disable-brlapi \\\
              --disable-bluez \\\
              --enable-docs \\\
              --disable-vde \\\
@@ -441,7 +440,6 @@ cd qemu-kvm-x86_64-build
             --disable-check-utests \
             --enable-vnc-tls \
             --enable-vnc-sasl \
-            --disable-brlapi \
             --disable-bluez \
             --enable-docs \
             --disable-vde \
