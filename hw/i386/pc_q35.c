@@ -523,7 +523,7 @@ machine_init(pc_q35_machine_init);
 
 /* Red Hat Enterprise Linux machine types */
 
-static void pc_q35_compat_rhel710(MachineState *machine)
+static void pc_q35_compat_rhel720(MachineState *machine)
 {
     /* KVM can't expose RDTSCP on AMD CPUs, so there's no point in enabling it
      * on AMD CPU models.
@@ -540,6 +540,63 @@ static void pc_q35_compat_rhel710(MachineState *machine)
                                 CPUID_EXT2_RDTSCP);
 }
 
+static void pc_q35_init_rhel720(MachineState *machine)
+{
+    pc_q35_compat_rhel720(machine);
+    pc_q35_init(machine);
+}
+
+static QEMUMachine pc_q35_machine_rhel720 = {
+    PC_DEFAULT_MACHINE_OPTIONS,
+    .family = "pc_q35_Z",
+    .name = "pc-q35-rhel7.2.0",
+    .alias = "q35",
+    .desc = "RHEL-7.2.0 PC (Q35 + ICH9, 2009)",
+    .init = pc_q35_init_rhel720,
+    .default_machine_opts = "firmware=bios-256k.bin",
+    .default_display = "std",
+    .compat_props = (GlobalProperty[]) {
+        { /* end of list */ }
+    },
+};
+
+static void pc_q35_compat_rhel710(MachineState *machine)
+{
+    PCMachineState *pcms = PC_MACHINE(machine);
+
+    /* 7.1.0 is based on 2.1.2, 7.2.0 is based on 2.3 */
+    pc_q35_compat_rhel720(machine);
+
+    /* From pc_compat_2_2 */
+    rsdp_in_ram = false;
+    x86_cpu_compat_set_features("kvm64", FEAT_1_EDX, 0, CPUID_VME);
+    x86_cpu_compat_set_features("kvm32", FEAT_1_EDX, 0, CPUID_VME);
+    x86_cpu_compat_set_features("Conroe", FEAT_1_EDX, 0, CPUID_VME);
+    x86_cpu_compat_set_features("Penryn", FEAT_1_EDX, 0, CPUID_VME);
+    x86_cpu_compat_set_features("Nehalem", FEAT_1_EDX, 0, CPUID_VME);
+    x86_cpu_compat_set_features("Westmere", FEAT_1_EDX, 0, CPUID_VME);
+    x86_cpu_compat_set_features("SandyBridge", FEAT_1_EDX, 0, CPUID_VME);
+    x86_cpu_compat_set_features("Haswell", FEAT_1_EDX, 0, CPUID_VME);
+    x86_cpu_compat_set_features("Broadwell", FEAT_1_EDX, 0, CPUID_VME);
+    x86_cpu_compat_set_features("Opteron_G1", FEAT_1_EDX, 0, CPUID_VME);
+    x86_cpu_compat_set_features("Opteron_G2", FEAT_1_EDX, 0, CPUID_VME);
+    x86_cpu_compat_set_features("Opteron_G3", FEAT_1_EDX, 0, CPUID_VME);
+    x86_cpu_compat_set_features("Opteron_G4", FEAT_1_EDX, 0, CPUID_VME);
+    x86_cpu_compat_set_features("Opteron_G5", FEAT_1_EDX, 0, CPUID_VME);
+    x86_cpu_compat_set_features("Haswell", FEAT_1_ECX, 0, CPUID_EXT_F16C);
+    x86_cpu_compat_set_features("Haswell", FEAT_1_ECX, 0, CPUID_EXT_RDRAND);
+    x86_cpu_compat_set_features("Broadwell", FEAT_1_ECX, 0, CPUID_EXT_F16C);
+    x86_cpu_compat_set_features("Broadwell", FEAT_1_ECX, 0, CPUID_EXT_RDRAND);
+    machine->suppress_vmdesc = true;
+
+    /* From pc_compat_2_1 */
+    pcms->enforce_aligned_dimm = false;
+    smbios_uuid_encoded = false;
+    x86_cpu_compat_set_features("coreduo", FEAT_1_ECX, CPUID_EXT_VMX, 0);
+    x86_cpu_compat_set_features("core2duo", FEAT_1_ECX, CPUID_EXT_VMX, 0);
+    x86_cpu_compat_kvm_no_autodisable(FEAT_8000_0001_ECX, CPUID_EXT3_SVM);
+}
+
 static void pc_q35_init_rhel710(MachineState *machine)
 {
     pc_q35_compat_rhel710(machine);
@@ -550,11 +607,11 @@ static QEMUMachine pc_q35_machine_rhel710 = {
     PC_DEFAULT_MACHINE_OPTIONS,
     .family = "pc_q35_Z",
     .name = "pc-q35-rhel7.1.0",
-    .alias = "q35",
     .desc = "RHEL-7.1.0 PC (Q35 + ICH9, 2009)",
     .init = pc_q35_init_rhel710,
     .default_machine_opts = "firmware=bios-256k.bin",
     .compat_props = (GlobalProperty[]) {
+        HW_COMPAT_RHEL7_1,
         { /* end of list */ }
     },
 };
@@ -603,6 +660,7 @@ static QEMUMachine pc_q35_machine_rhel700 = {
 
 static void rhel_pc_q35_machine_init(void)
 {
+    qemu_register_pc_machine(&pc_q35_machine_rhel720);
     qemu_register_pc_machine(&pc_q35_machine_rhel710);
     qemu_register_pc_machine(&pc_q35_machine_rhel700);
 }
