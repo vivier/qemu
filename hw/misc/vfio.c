@@ -195,14 +195,18 @@ typedef struct VFIODevice {
     QLIST_ENTRY(VFIODevice) next;
     struct VFIOGroup *group;
     EventNotifier err_notifier;
+    EventNotifier req_notifier;
     uint32_t features;
 #define VFIO_FEATURE_ENABLE_VGA_BIT 0
 #define VFIO_FEATURE_ENABLE_VGA (1 << VFIO_FEATURE_ENABLE_VGA_BIT)
+#define VFIO_FEATURE_ENABLE_REQ_BIT 1
+#define VFIO_FEATURE_ENABLE_REQ (1 << VFIO_FEATURE_ENABLE_REQ_BIT)
     int32_t bootindex;
     uint8_t pm_cap;
     bool reset_works;
     bool has_vga;
     bool pci_aer;
+    bool req_enabled;
     bool has_flr;
     bool has_pm_reset;
     bool needs_reset;
@@ -3595,6 +3599,7 @@ static int vfio_get_device(VFIOGroup *group, const char *name, VFIODevice *vdev)
 
         vdev->has_vga = true;
     }
+
     irq_info.index = VFIO_PCI_ERR_IRQ_INDEX;
 
     ret = ioctl(vdev->fd, VFIO_DEVICE_GET_IRQ_INFO, &irq_info);
@@ -3735,6 +3740,97 @@ static void vfio_unregister_err_notifier(VFIODevice *vdev)
     qemu_set_fd_handler(event_notifier_get_fd(&vdev->err_notifier),
                         NULL, NULL, vdev);
     event_notifier_cleanup(&vdev->err_notifier);
+}
+
+static void vfio_req_notifier_handler(void *opaque)
+{
+    VFIODevice *vdev = opaque;
+
+    if (!event_notifier_test_and_clear(&vdev->req_notifier)) {
+        return;
+    }
+
+    qdev_unplug(&vdev->pdev.qdev, NULL);
+}
+
+static void vfio_register_req_notifier(VFIODevice *vdev)
+{
+    struct vfio_irq_info irq_info = { .argsz = sizeof(irq_info),
+                                      .index = VFIO_PCI_REQ_IRQ_INDEX };
+    int argsz;
+    struct vfio_irq_set *irq_set;
+    int32_t *pfd;
+
+    if (!(vdev->features & VFIO_FEATURE_ENABLE_REQ)) {
+        return;
+    }
+
+    if (ioctl(vdev->fd,
+              VFIO_DEVICE_GET_IRQ_INFO, &irq_info) < 0 || irq_info.count < 1) {
+        return;
+    }
+
+    if (event_notifier_init(&vdev->req_notifier, 0)) {
+        error_report("vfio: Unable to init event notifier for device request");
+        return;
+    }
+
+    argsz = sizeof(*irq_set) + sizeof(*pfd);
+
+    irq_set = g_malloc0(argsz);
+    irq_set->argsz = argsz;
+    irq_set->flags = VFIO_IRQ_SET_DATA_EVENTFD |
+                     VFIO_IRQ_SET_ACTION_TRIGGER;
+    irq_set->index = VFIO_PCI_REQ_IRQ_INDEX;
+    irq_set->start = 0;
+    irq_set->count = 1;
+    pfd = (int32_t *)&irq_set->data;
+
+    *pfd = event_notifier_get_fd(&vdev->req_notifier);
+    qemu_set_fd_handler(*pfd, vfio_req_notifier_handler, NULL, vdev);
+
+    if (ioctl(vdev->fd, VFIO_DEVICE_SET_IRQS, irq_set)) {
+        error_report("vfio: Failed to set up device request notification");
+        qemu_set_fd_handler(*pfd, NULL, NULL, vdev);
+        event_notifier_cleanup(&vdev->req_notifier);
+    } else {
+        vdev->req_enabled = true;
+    }
+
+    g_free(irq_set);
+}
+
+static void vfio_unregister_req_notifier(VFIODevice *vdev)
+{
+    int argsz;
+    struct vfio_irq_set *irq_set;
+    int32_t *pfd;
+
+    if (!vdev->req_enabled) {
+        return;
+    }
+
+    argsz = sizeof(*irq_set) + sizeof(*pfd);
+
+    irq_set = g_malloc0(argsz);
+    irq_set->argsz = argsz;
+    irq_set->flags = VFIO_IRQ_SET_DATA_EVENTFD |
+                     VFIO_IRQ_SET_ACTION_TRIGGER;
+    irq_set->index = VFIO_PCI_REQ_IRQ_INDEX;
+    irq_set->start = 0;
+    irq_set->count = 1;
+    pfd = (int32_t *)&irq_set->data;
+    *pfd = -1;
+
+    if (ioctl(vdev->fd, VFIO_DEVICE_SET_IRQS, irq_set)) {
+        error_report("vfio: Failed to de-assign device request fd: %m");
+    }
+    g_free(irq_set);
+    qemu_set_fd_handler(event_notifier_get_fd(&vdev->req_notifier),
+                        NULL, NULL, vdev);
+    event_notifier_cleanup(&vdev->req_notifier);
+
+    vdev->req_enabled = false;
 }
 
 static int vfio_initfn(PCIDevice *pdev)
@@ -3889,6 +3985,7 @@ static int vfio_initfn(PCIDevice *pdev)
 
     add_boot_device_path(vdev->bootindex, &pdev->qdev, NULL);
     vfio_register_err_notifier(vdev);
+    vfio_register_req_notifier(vdev);
 
     return 0;
 
@@ -3908,6 +4005,7 @@ static void vfio_exitfn(PCIDevice *pdev)
     VFIODevice *vdev = DO_UPCAST(VFIODevice, pdev, pdev);
     VFIOGroup *group = vdev->group;
 
+    vfio_unregister_req_notifier(vdev);
     vfio_unregister_err_notifier(vdev);
     pci_device_set_intx_routing_notifier(&vdev->pdev, NULL);
     vfio_disable_interrupts(vdev);
@@ -3962,6 +4060,8 @@ static Property vfio_pci_dev_properties[] = {
                        intx.mmap_timeout, 1100),
     DEFINE_PROP_BIT("x-vga", VFIODevice, features,
                     VFIO_FEATURE_ENABLE_VGA_BIT, false),
+    DEFINE_PROP_BIT("x-req", VFIODevice, features,
+                    VFIO_FEATURE_ENABLE_REQ_BIT, true),
     DEFINE_PROP_INT32("bootindex", VFIODevice, bootindex, -1),
     /*
      * TODO - support passed fds... is this necessary?
