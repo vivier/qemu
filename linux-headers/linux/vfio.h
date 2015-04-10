@@ -22,6 +22,7 @@
 /* Extensions */
 
 #define VFIO_TYPE1_IOMMU		1
+#define VFIO_TYPE1v2_IOMMU		3
 
 /*
  * The IOCTL interface is designed for extensibility by embedding the
