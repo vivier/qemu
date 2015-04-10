@@ -522,6 +522,10 @@ bool e820_get_entry(int, uint32_t, uint64_t *, uint64_t *);
  * in pc_piix.c.
  */
 
+/* See include/hw/compat.h for shared compatibility lists */
+#define PC_RHEL7_1_COMPAT \
+        HW_COMPAT_RHEL7_1
+
 /*
  * RHEL-7 is based on QEMU 1.5.3, so this needs the PC_COMPAT_*
  * between our base and 1.5, less stuff backported to RHEL-7.0
@@ -530,6 +534,7 @@ bool e820_get_entry(int, uint32_t, uint64_t *, uint64_t *);
  * pci-serial-4x) in 7.0.
  */
 #define PC_RHEL7_0_COMPAT \
+        PC_RHEL7_1_COMPAT,\
         {\
             .driver   = "virtio-scsi-pci",\
             .property = "any_layout",\
