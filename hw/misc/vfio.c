@@ -206,6 +206,7 @@ typedef struct VFIODevice {
     bool has_flr;
     bool has_pm_reset;
     bool needs_reset;
+    bool rom_read_failed;
 } VFIODevice;
 
 typedef struct VFIOGroup {
@@ -1197,6 +1198,7 @@ static void vfio_pci_load_rom(VFIODevice *vdev)
     vdev->rom_offset = reg_info.offset;
 
     if (!vdev->rom_size) {
+        vdev->rom_read_failed = true;
         error_report("vfio-pci: Cannot read device rom at "
                     "%04x:%02x:%02x.%x\n",
                     vdev->host.domain, vdev->host.bus, vdev->host.slot,
@@ -1235,6 +1237,9 @@ static uint64_t vfio_rom_read(void *opaque, hwaddr addr, unsigned size)
     /* Load the ROM lazily when the guest tries to read it */
     if (unlikely(!vdev->rom)) {
         vfio_pci_load_rom(vdev);
+        if (unlikely(!vdev->rom && !vdev->rom_read_failed)) {
+            vfio_pci_load_rom(vdev);
+        }
     }
 
     memcpy(&val, vdev->rom + addr,
@@ -1352,6 +1357,7 @@ static void vfio_pci_size_rom(VFIODevice *vdev)
                      PCI_BASE_ADDRESS_SPACE_MEMORY, &vdev->pdev.rom);
 
     vdev->pdev.has_rom = true;
+    vdev->rom_read_failed = false;
 }
 
 static void vfio_vga_write(void *opaque, hwaddr addr,
