@@ -3075,15 +3075,17 @@ void bdrv_info(Monitor *mon, QObject **ret_data)
 #ifdef CONFIG_BLOCK_IO_THROTTLING
             ThrottleConfig cfg;
             throttle_get_config(&bs->throttle_state, &cfg);
-            int64_t bps, bps_rd, bps_wr;
-            int64_t iops, iops_rd, iops_wr;
+            int64_t bps = 0, bps_rd = 0, bps_wr = 0;
+            int64_t iops = 0, iops_rd = 0, iops_wr = 0;
 
-            bps = cfg.buckets[THROTTLE_BPS_TOTAL].avg;
-            bps_rd = cfg.buckets[THROTTLE_BPS_READ].avg;
-            bps_wr = cfg.buckets[THROTTLE_BPS_WRITE].avg;
-            iops = cfg.buckets[THROTTLE_OPS_TOTAL].avg;
-            iops_rd = cfg.buckets[THROTTLE_OPS_READ].avg;
-            iops_wr = cfg.buckets[THROTTLE_OPS_WRITE].avg;
+            if (bs->io_limits_enabled) {
+                bps = cfg.buckets[THROTTLE_BPS_TOTAL].avg;
+                bps_rd = cfg.buckets[THROTTLE_BPS_READ].avg;
+                bps_wr = cfg.buckets[THROTTLE_BPS_WRITE].avg;
+                iops = cfg.buckets[THROTTLE_OPS_TOTAL].avg;
+                iops_rd = cfg.buckets[THROTTLE_OPS_READ].avg;
+                iops_wr = cfg.buckets[THROTTLE_OPS_WRITE].avg;
+            }
 
             obj = qobject_from_jsonf("{ 'file': %s, 'ro': %i, 'drv': %s, "
                                      "'encrypted': %i, "
