@@ -153,6 +153,7 @@ Source20: rhel6-e1000.rom
 Source21: kvm-setup
 Source22: kvm-setup.service
 Source23: 85-kvm.preset
+Source24: build_configure.sh
 
 %%CONFIGS%%
 
@@ -393,97 +394,59 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
     sed -i.debug 's/"-g $CFLAGS"/"$CFLAGS"/g' configure
 %endif
 
-dobuild() {
-    ./configure \
-        --prefix=%{_prefix} \
-        --libdir=%{_libdir} \
-        --sysconfdir=%{_sysconfdir} \
-        --interp-prefix=%{_prefix}/qemu-%%M \
-        --audio-drv-list=pa,alsa \
-        --with-confsuffix=/%{pkgname} \
-        --localstatedir=%{_localstatedir} \
-        --libexecdir=%{_libexecdir} \
-        --with-pkgversion=%{name}-%{version}-%{release} \
-        --disable-strip \
-        --disable-qom-cast-debug \
-        --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
-        --extra-cflags="%{optflags} -fPIE -DPIE" \
-        --enable-trace-backend=dtrace \
-        --enable-werror \
-        --disable-xen \
-        --disable-virtfs \
-        --enable-kvm \
-        --enable-curl \
-        --enable-libusb \
-%if %{have_spice}
-        --enable-spice \
+cp %{SOURCE24} build_configure.sh
+
+./build_configure.sh  \
+  "%{_prefix}" \
+  "%{_libdir}" \
+  "%{_sysconfdir}" \
+  "%{_localstatedir}" \
+  "%{_libexecdir}" \
+  "%{pkgname}" \
+  "%{kvm_target}" \
+  "%{name}-%{version}-%{release}" \
+  "%{optflags}" \
+%if 0%{have_fdt}
+  enable \
 %else
-        --disable-spice \
+  disable \
 %endif
-%if %{have_seccomp}
-        --enable-seccomp \
+%if 0%{have_gluster}
+  enable \
 %else
-        --disable-seccomp \
+  disable \
 %endif
-%if %{have_fdt}
-        --enable-fdt \
-%else
-        --disable-fdt \
-%endif
-        --enable-docs \
-        --disable-sdl \
-        --disable-debug-tcg \
-        --disable-sparse \
-        --disable-brlapi \
-        --disable-bluez \
-        --disable-vde \
-        --disable-curses \
-        --enable-vnc-tls \
-        --enable-vnc-sasl \
-        --enable-linux-aio \
-        --enable-smartcard-nss \
-        --enable-lzo \
-        --enable-snappy \
-%if %{have_usbredir}
-        --enable-usb-redir \
-%else
-        --disable-usb-redir \
-%endif
-        --enable-vnc-png \
-        --disable-vnc-jpeg \
-        --enable-vnc-ws \
-        --enable-uuid \
-        --disable-vhost-scsi \
-%if %{with guest_agent}
-        --enable-guest-agent \
-%else
-        --disable-guest-agent \
-%endif
-        --disable-tpm \
-        --disable-live-block-migration \
+  disable \
+  enable \
 %ifarch x86_64
-        --enable-rbd \
-%endif
-%if %{have_gluster}
-        --enable-glusterfs \
-        --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,gluster,rbd,blkdebug \
+  enable \
 %else
-        --disable-glusterfs \
-        --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,rbd,blkdebug \
+  disable \
 %endif
-        --block-drv-ro-whitelist=vmdk,vhdx,vpc,https,ssh \
-        --enable-numa \
-        "$@"
+  enable \
+%if 0%{have_seccomp}
+  enable \
+%else
+  disable \
+%endif
+%if 0%{have_spice}
+  enable \
+%else
+  disable \
+%endif
+%if 0%{have_usbredir}
+  enable \
+%else
+  disable \
+%endif
+  --target-list="$buildarch"
 
-    echo "config-host.mak contents:"
-    echo "==="
-    cat config-host.mak
-    echo "==="
+echo "config-host.mak contents:"
+echo "==="
+cat config-host.mak
+echo "==="
 
-    make V=1 %{?_smp_mflags} $buildldflags
-}
-
-dobuild --target-list="$buildarch"
+make V=1 %{?_smp_mflags} $buildldflags
 
 # Setup back compat qemu-kvm binary
 ./scripts/tracetool.py --backend dtrace --format stap \

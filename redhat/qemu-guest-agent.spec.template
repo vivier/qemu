@@ -5,6 +5,8 @@
 %global have_spice    1
 %global have_fdt      0
 %global have_gluster  1
+%global have_numa 1
+%global have_librdma 1
 
 %ifarch %{ix86} x86_64
     %global have_seccomp 1
@@ -13,8 +15,9 @@
     %global have_seccomp 0
 %endif
 
-%ifnarch s390 s390x
-    %global have_librdma 1
+%ifarch s390 s390x
+    %global have_librdma 0
+    %global have_numa 0
 %endif
 
 %ifarch %{ix86}
@@ -89,6 +92,7 @@ Source0: http://wiki.qemu.org/download/qemu-%{version}.tar.bz2
 Source1: qemu-guest-agent.service
 Source2: 99-qemu-guest-agent.rules
 Source3: qemu-ga.sysconfig
+Source4: build_configure.sh
 
 %%CONFIGS%%
 
@@ -159,7 +163,7 @@ BuildRequires: pixman-devel
 BuildRequires: perl-podlators
 BuildRequires: texinfo
 # For rdma
-%if 0%{?have_librdma:1}
+%if 0%{have_librdma}
 BuildRequires: librdmacm-devel
 %endif
 # iasl and cpp for acpi generation (not a hard requirement as we can use
@@ -168,7 +172,12 @@ BuildRequires: librdmacm-devel
 BuildRequires: iasl
 BuildRequires: cpp
 %endif
-
+# For compressed guest memory dumps
+BuildRequires: lzo-devel snappy-devel
+# For NUMA memory binding
+%if 0%{have_numa}
+BuildRequires: numactl-devel
+%endif
 
 %define qemudocdir %{_docdir}/%{pkgname}
 
@@ -247,81 +256,60 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
     sed -i.debug 's/"-g $CFLAGS"/"$CFLAGS"/g' configure
 %endif
 
-./configure \
-        --prefix=%{_prefix} \
-        --libdir=%{_libdir} \
-        --sysconfdir=%{_sysconfdir} \
-        --interp-prefix=%{_prefix}/qemu-%%M \
-        --audio-drv-list=pa,alsa \
-        --with-confsuffix=/%{pkgname} \
-        --localstatedir=%{_localstatedir} \
-        --libexecdir=%{_libexecdir} \
-        --with-pkgversion=%{pkgname}-%{version}-%{release} \
-        --disable-strip \
-        --disable-qom-cast-debug \
-        --extra-ldflags="$extraldflags -pie -Wl,-z,relro -Wl,-z,now" \
-        --extra-cflags="%{optflags} -fPIE -DPIE" \
-        --enable-trace-backend=dtrace \
-        --enable-werror \
-        --disable-xen \
-        --disable-virtfs \
-        --enable-kvm \
-        --enable-libusb \
-%if 0%{have_spice}
-        --enable-spice \
-%else
-        --disable-spice \
-%endif
-%if 0%{have_seccomp}
-        --enable-seccomp \
-%else
-        --disable-seccomp \
-%endif
+cp %{SOURCE4} build_configure.sh
+./build_configure.sh  \
+  "%{_prefix}" \
+  "%{_libdir}" \
+  "%{_sysconfdir}" \
+  "%{_localstatedir}" \
+  "%{_libexecdir}" \
+  "%{pkgname}" \
+  "%{kvm_target}" \
+  "%{name}-%{version}-%{release}" \
+  "%{optflags}" \
 %if 0%{have_fdt}
-        --enable-fdt \
+  enable \
 %else
-        --disable-fdt \
-%endif
-        --enable-docs \
-        --disable-sdl \
-        --disable-debug-tcg \
-        --disable-sparse \
-        --disable-brlapi \
-        --disable-bluez \
-        --disable-vde \
-        --disable-curses \
-        --enable-curl \
-        --enable-vnc-tls \
-        --enable-vnc-sasl \
-        --enable-linux-aio \
-        --enable-smartcard-nss \
-%if 0%{have_usbredir}
-        --enable-usb-redir \
-%else
-        --disable-usb-redir \
-%endif
-        --enable-vnc-png \
-        --disable-vnc-jpeg \
-        --enable-vnc-ws \
-        --enable-uuid \
-        --disable-vhost-scsi \
-        --enable-guest-agent \
-        --disable-tpm \
-        --disable-live-block-migration \
-%ifarch x86_64
-        --enable-rbd \
+  disable \
 %endif
 %if 0%{have_gluster}
-        --enable-glusterfs \
-        --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,gluster,rbd \
+  enable \
 %else
-        --disable-glusterfs \
-        --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,rbd \
+  disable \
 %endif
-        --block-drv-ro-whitelist=vmdk,vhdx,vpc,ssh \
-	--target-list= \
-        --cpu=%{kvm_target} \
-        "$@"
+  enable \
+%if 0%{have_numa}
+  enable \
+%else
+  disable \
+%endif
+%ifarch x86_64
+  enable \
+%else
+  disable \
+%endif
+%if 0%{have_librdma}
+  enable \
+%else
+  disable \
+%endif
+%if 0%{have_seccomp} 
+  enable \
+%else
+  disable \
+%endif
+%if 0%{have_spice}
+  enable \
+%else
+  disable \
+%endif
+%if 0%{have_usbredir}
+  enable \
+%else
+  disable \
+%endif
+  --target-list= \
+  --cpu="%{kvm_target}"
 
 echo "config-host.mak contents:"
 echo "==="
