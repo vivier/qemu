@@ -56,18 +56,31 @@ fi
     --extra-cflags="${optflags} -fPIE -DPIE" \
     --with-pkgversion=${nvr} \
     --with-confsuffix=/${pkgname} \
+    --with-coroutine=ucontext \
+    --with-system-pixman \
+    --disable-archipelago \
     --disable-bluez \
     --disable-brlapi \
+    --disable-cap-ng \
+    --enable-coroutine-pool \
     --enable-curl \
     --disable-curses \
     --disable-debug-tcg \
     --enable-docs \
+    --disable-gtk \
     --enable-kvm \
+    --enable-libiscsi \
+    --disable-libnfs \
+    --enable-libssh2 \
     --enable-libusb \
+    --disable-bzip2 \
     --enable-linux-aio \
     --disable-live-block-migration \
     --enable-lzo \
+    --enable-opengl \
+    --enable-pie \
     --disable-qom-cast-debug \
+    --enable-quorum \
     --disable-sdl \
     --enable-smartcard-nss \
     --enable-snappy \
@@ -77,6 +90,7 @@ fi
     --enable-trace-backend=dtrace \
     --enable-uuid \
     --disable-vde \
+    --enable-vhdx \
     --disable-vhost-scsi \
     --disable-virtfs \
     --disable-vnc-jpeg \
@@ -84,13 +98,16 @@ fi
     --enable-vnc-sasl \
     --enable-vnc-tls \
     --enable-vnc-ws \
+    --disable-vte \
     --enable-werror \
     --disable-xen \
+    --disable-xfsctl \
     --${have_fdt}-fdt \
     --${have_gluster}-glusterfs \
     --${have_guest_agent}-guest-agent \
     --${have_numa}-numa \
     --${have_rbd}-rbd \
+    --${have_rdma}-rdma \
     --${have_seccomp}-seccomp \
     --${have_spice}-spice \
     --${have_usbredir}-usb-redir \
