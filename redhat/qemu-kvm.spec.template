@@ -920,6 +920,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Apr 21 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-23.el7_1_1.2
+- kvm-block-Fix-max-nb_sectors-in-bdrv_make_zero.patch [bz#1203543]
+- Resolves: bz#1203543
+  (bdrv_make_zero() passes a too large nb_sectors value to bdrv_write_zeroes())
+
 * Fri Feb 20 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-23.el7_1.1
 - kvm-pc-acpi-mark-all-possible-CPUs-as-enabled-in-SRAT.patch [bz#1191385]
 - kvm-pc-add-rhel6.6.0-machine-type.patch [bz#1194552]
