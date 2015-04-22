@@ -202,6 +202,7 @@ static void virtio_blk_handle_scsi(VirtIOBlockReq *req)
     int status = VIRTIO_BLK_S_OK;
     int i;
     VirtIOBlockIoctlReq *ioctl_req;
+    BlockDriverAIOCB *acb;
     VirtQueueElement *elem = &req->elem;
 
 
@@ -280,8 +281,13 @@ static void virtio_blk_handle_scsi(VirtIOBlockReq *req)
     ioctl_req->hdr.sbp = elem->in_sg[elem->in_num - 3].iov_base;
     ioctl_req->hdr.mx_sb_len = elem->in_sg[elem->in_num - 3].iov_len;
 
-    bdrv_aio_ioctl(req->dev->bs, SG_IO, &ioctl_req->hdr,
-                   virtio_blk_ioctl_complete, ioctl_req);
+    acb = bdrv_aio_ioctl(req->dev->bs, SG_IO, &ioctl_req->hdr,
+                         virtio_blk_ioctl_complete, ioctl_req);
+    if (!acb) {
+        g_free(ioctl_req);
+        status = VIRTIO_BLK_S_UNSUPP;
+        goto fail;
+    }
     return;
 fail:
     /* Just put anything nonzero so that the ioctl fails in the guest.  */
