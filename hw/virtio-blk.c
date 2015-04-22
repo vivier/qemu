@@ -256,6 +256,7 @@ static void virtio_blk_handle_scsi(VirtIOBlockReq *req)
 
     virtio_blk_req_complete(req, status);
     qemu_free(req);
+    return;
 #else
     abort();
 #endif
