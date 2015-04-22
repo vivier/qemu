@@ -190,7 +190,7 @@ rh-help:
 	@echo  '  rh-brew-autotest        - Create a $(COMMON_NAME)-rhev RPMs on brew and then send directly to autotest server'
 	@echo  '  rh-brew-at-covscan      - Create a $(COMMON_NAME)-rhev RPMs on brew and then send directly to autotest and coverity testing'
 	@echo  '  rh-brew-ga              - Build guest-agent rpm using brew'
-	@echo  '  rh-brew-ga-ppc          - Build guest-agent rpm for ppc64le using brew
+	@echo  '  rh-brew-ga-ppc          - Build guest-agent rpm for ppc64le using brew'
 	@echo  '  rh-brew-ppc             - Build qemu-kvm-rhev for ppc64le using brew'
 	@echo  '  rh-brew-aarch64         - Build qemu-kvm-rhev for aarch64 using brew'
 	@echo  '  rh-koji                 - Create a $(COMMON_NAME)-rhev SRPM and then call koji to build the created SRPM'
