@@ -155,7 +155,7 @@ static VirtIOBlockReq *virtio_blk_get_request(VirtIOBlock *s)
 static void virtio_blk_handle_scsi(VirtIOBlockReq *req)
 {
     struct sg_io_hdr hdr;
-    int ret, size = 0;
+    int ret;
     int status;
     int i;
 
@@ -192,7 +192,6 @@ static void virtio_blk_handle_scsi(VirtIOBlockReq *req)
      * before the regular inhdr.
      */
     req->scsi = (void *)req->elem.in_sg[req->elem.in_num - 2].iov_base;
-    size = sizeof(*req->in) + sizeof(*req->scsi);
 
     memset(&hdr, 0, sizeof(struct sg_io_hdr));
     hdr.interface_id = 'S';
@@ -224,7 +223,6 @@ static void virtio_blk_handle_scsi(VirtIOBlockReq *req)
             hdr.dxfer_len += req->elem.in_sg[i].iov_len;
 
         hdr.dxferp = req->elem.in_sg;
-        size += hdr.dxfer_len;
     } else {
         /*
          * Some SCSI commands don't actually transfer any data.
@@ -234,7 +232,6 @@ static void virtio_blk_handle_scsi(VirtIOBlockReq *req)
 
     hdr.sbp = req->elem.in_sg[req->elem.in_num - 3].iov_base;
     hdr.mx_sb_len = req->elem.in_sg[req->elem.in_num - 3].iov_len;
-    size += hdr.mx_sb_len;
 
     ret = bdrv_ioctl(req->dev->bs, SG_IO, &hdr);
     if (ret) {
