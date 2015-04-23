@@ -931,6 +931,11 @@ make check V=1
 
 %changelog
 %%CHANGELOG%%
+* Thu Apr 23 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.2.0-9.el7
+- kvm-fix-ioeventfd-endianness-on-bi-endian-architectu.patch [bz#1210188]
+- Resolves: bz#1210188
+  (ppc64le: irqfd breaks network with LE guest and LE host)
+
 * Thu Mar 19 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.2.0-8.el7
 - kvm-pc_sysfw-prevent-pflash-and-or-mis-sized-firmware-fo.patch [bz#1175099]
 - kvm-build-reenable-local-builds-to-pass-enable-debug-dow.patch []
