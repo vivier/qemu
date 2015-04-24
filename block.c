@@ -3829,19 +3829,15 @@ fail:
 
 void bdrv_aio_cancel(BlockDriverAIOCB *acb)
 {
-    if (acb->aiocb_info->cancel) {
-        acb->aiocb_info->cancel(acb);
-    } else {
-        BlockDriverState *bs = acb->bs;
-        qemu_aio_ref(acb);
-        bdrv_aio_cancel_async(acb);
-        while (acb->refcnt > 1) {
-            qemu_co_queue_restart_all(&bs->throttled_reqs[0]);
-            qemu_co_queue_restart_all(&bs->throttled_reqs[1]);
-            qemu_aio_wait();
-        }
-        qemu_aio_release(acb);
+    BlockDriverState *bs = acb->bs;
+    qemu_aio_ref(acb);
+    bdrv_aio_cancel_async(acb);
+    while (acb->refcnt > 1) {
+        qemu_co_queue_restart_all(&bs->throttled_reqs[0]);
+        qemu_co_queue_restart_all(&bs->throttled_reqs[1]);
+        qemu_aio_wait();
     }
+    qemu_aio_release(acb);
 }
 
 /* Async version of aio cancel. The caller is not blocked if the acb implements
