@@ -1476,6 +1476,16 @@ void scsi_req_complete(SCSIRequest *req, int status)
     scsi_req_unref(req);
 }
 
+/* Called by the devices when the request is canceled. */
+void scsi_req_cancel_complete(SCSIRequest *req)
+{
+    assert(req->io_canceled);
+    if (req->bus->info->cancel) {
+        req->bus->info->cancel(req);
+    }
+    scsi_req_unref(req);
+}
+
 void scsi_req_cancel(SCSIRequest *req)
 {
     if (!req->enqueued) {
@@ -1487,10 +1497,6 @@ void scsi_req_cancel(SCSIRequest *req)
     if (req->aiocb) {
         bdrv_aio_cancel(req->aiocb);
     }
-    if (req->bus->info->cancel) {
-        req->bus->info->cancel(req);
-    }
-    scsi_req_unref(req);
 }
 
 static int scsi_ua_precedence(SCSISense sense)

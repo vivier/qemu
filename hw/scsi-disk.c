@@ -157,6 +157,10 @@ static void scsi_flush_complete(void * opaque, int ret)
     assert(r->req.aiocb != NULL);
     r->req.aiocb = NULL;
     bdrv_acct_done(s->qdev.conf.bs, &r->acct);
+    if (r->req.io_canceled) {
+        scsi_req_cancel_complete(&r->req);
+        goto done;
+    }
 
     if (ret < 0) {
         if (scsi_handle_rw_error(r, -ret)) {
@@ -218,6 +222,10 @@ static void scsi_dma_complete(void *opaque, int ret)
     assert (r->req.aiocb != NULL);
     r->req.aiocb = NULL;
     bdrv_acct_done(s->qdev.conf.bs, &r->acct);
+    if (r->req.io_canceled) {
+        scsi_req_cancel_complete(&r->req);
+        goto done;
+    }
 
     if (ret < 0) {
         if (scsi_handle_rw_error(r, -ret)) {
@@ -247,6 +255,10 @@ static void scsi_read_complete(void * opaque, int ret)
     assert (r->req.aiocb != NULL);
     r->req.aiocb = NULL;
     bdrv_acct_done(s->qdev.conf.bs, &r->acct);
+    if (r->req.io_canceled) {
+        scsi_req_cancel_complete(&r->req);
+        goto done;
+    }
 
     if (ret < 0) {
         if (scsi_handle_rw_error(r, -ret)) {
@@ -371,6 +383,10 @@ static void scsi_write_complete(void * opaque, int ret)
     if (r->req.aiocb != NULL) {
         r->req.aiocb = NULL;
         bdrv_acct_done(s->qdev.conf.bs, &r->acct);
+    }
+    if (r->req.io_canceled) {
+        scsi_req_cancel_complete(&r->req);
+        goto done;
     }
 
     if (ret < 0) {
