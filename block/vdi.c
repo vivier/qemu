@@ -494,20 +494,8 @@ static int64_t coroutine_fn vdi_co_get_block_status(BlockDriverState *bs,
     return BDRV_BLOCK_DATA | BDRV_BLOCK_OFFSET_VALID | offset;
 }
 
-static void vdi_aio_cancel(BlockDriverAIOCB *blockacb)
-{
-    /* TODO: This code is untested. How can I get it executed? */
-    VdiAIOCB *acb = container_of(blockacb, VdiAIOCB, common);
-    logout("\n");
-    if (acb->hd_aiocb) {
-        bdrv_aio_cancel(acb->hd_aiocb);
-    }
-    qemu_aio_release(acb);
-}
-
 static AIOCBInfo vdi_aiocb_info = {
     .aiocb_size = sizeof(VdiAIOCB),
-    .cancel = vdi_aio_cancel,
 };
 
 static VdiAIOCB *vdi_aio_setup(BlockDriverState *bs, int64_t sector_num,
