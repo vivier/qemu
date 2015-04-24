@@ -413,6 +413,9 @@ static void ide_sector_read_cb(void *opaque, int ret)
     s->pio_aiocb = NULL;
     s->status &= ~BUSY_STAT;
 
+    if (ret == -ECANCELED) {
+        return;
+    }
     bdrv_acct_done(s->bs, &s->acct);
     if (ret != 0) {
         if (ide_handle_rw_error(s, -ret, BM_STATUS_PIO_RETRY |
@@ -623,6 +626,9 @@ static void ide_read_dma_cb(void *opaque, int ret)
     int n;
     int64_t sector_num;
 
+    if (ret == -ECANCELED) {
+        return;
+    }
     if (ret < 0) {
         if (ide_handle_rw_error(s, -ret,
             BM_STATUS_DMA_RETRY | BM_STATUS_RETRY_READ))
@@ -694,6 +700,9 @@ static void ide_sector_write_cb(void *opaque, int ret)
     IDEState *s = opaque;
     int n;
 
+    if (ret == -ECANCELED) {
+        return;
+    }
     bdrv_acct_done(s->bs, &s->acct);
 
     s->pio_aiocb = NULL;
@@ -825,6 +834,9 @@ static void ide_write_dma_cb(void *opaque, int ret)
     int n;
     int64_t sector_num;
 
+    if (ret == -ECANCELED) {
+        return;
+    }
     if (ret < 0) {
         if (ide_handle_rw_error(s, -ret,  BM_STATUS_DMA_RETRY))
             return;
@@ -884,6 +896,9 @@ static void ide_flush_cb(void *opaque, int ret)
 {
     IDEState *s = opaque;
 
+    if (ret == -ECANCELED) {
+        return;
+    }
     if (ret < 0) {
         /* XXX: What sector number to set here? */
         if (ide_handle_rw_error(s, -ret, BM_STATUS_RETRY_FLUSH)) {
