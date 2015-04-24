@@ -1521,6 +1521,8 @@ void scsi_req_cancel(SCSIRequest *req)
     req->io_canceled = true;
     if (req->aiocb) {
         bdrv_aio_cancel(req->aiocb);
+    } else {
+        scsi_req_cancel_complete(req);
     }
 }
 
