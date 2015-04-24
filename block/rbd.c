@@ -635,7 +635,7 @@ static void rbd_aio_bh_cb(void *opaque)
     qemu_bh_delete(acb->bh);
     acb->bh = NULL;
     acb->status = 0;
-    qemu_aio_release(acb);
+    qemu_aio_unref(acb);
 }
 
 static BlockDriverAIOCB *rbd_start_aio(BlockDriverState *bs,
@@ -719,7 +719,7 @@ static BlockDriverAIOCB *rbd_start_aio(BlockDriverState *bs,
 failed:
     g_free(rcb);
     s->qemu_aio_count--;
-    qemu_aio_release(acb);
+    qemu_aio_unref(acb);
     return NULL;
 }
 

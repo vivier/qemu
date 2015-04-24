@@ -629,7 +629,7 @@ done:
         qemu_vfree(acb->orig_buf);
     }
     acb->common.cb(acb->common.opaque, ret);
-    qemu_aio_release(acb);
+    qemu_aio_unref(acb);
 }
 
 static BlockDriverAIOCB *vdi_aio_readv(BlockDriverState *bs,
@@ -784,7 +784,7 @@ done:
         qemu_vfree(acb->orig_buf);
     }
     acb->common.cb(acb->common.opaque, ret);
-    qemu_aio_release(acb);
+    qemu_aio_unref(acb);
 }
 
 static BlockDriverAIOCB *vdi_aio_writev(BlockDriverState *bs,

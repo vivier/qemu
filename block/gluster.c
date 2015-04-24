@@ -250,7 +250,7 @@ static void qemu_gluster_complete_aio(GlusterAIOCB *acb, BDRVGlusterState *s)
     }
 
     s->qemu_aio_count--;
-    qemu_aio_release(acb);
+    qemu_aio_unref(acb);
     cb(opaque, ret);
     if (finished) {
         *finished = true;
@@ -539,7 +539,7 @@ static BlockDriverAIOCB *qemu_gluster_aio_rw(BlockDriverState *bs,
 
 out:
     s->qemu_aio_count--;
-    qemu_aio_release(acb);
+    qemu_aio_unref(acb);
     return NULL;
 }
 
@@ -591,7 +591,7 @@ static BlockDriverAIOCB *qemu_gluster_aio_flush(BlockDriverState *bs,
 
 out:
     s->qemu_aio_count--;
-    qemu_aio_release(acb);
+    qemu_aio_unref(acb);
     return NULL;
 }
 

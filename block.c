@@ -3837,7 +3837,7 @@ void bdrv_aio_cancel(BlockDriverAIOCB *acb)
         qemu_co_queue_restart_all(&bs->throttled_reqs[1]);
         qemu_aio_wait();
     }
-    qemu_aio_release(acb);
+    qemu_aio_unref(acb);
 }
 
 /* Async version of aio cancel. The caller is not blocked if the acb implements
@@ -3877,7 +3877,7 @@ static void bdrv_aio_bh_cb(void *opaque)
     acb->common.cb(acb->common.opaque, acb->ret);
     qemu_bh_delete(acb->bh);
     acb->bh = NULL;
-    qemu_aio_release(acb);
+    qemu_aio_unref(acb);
 }
 
 static BlockDriverAIOCB *bdrv_aio_rw_vector(BlockDriverState *bs,
@@ -3944,7 +3944,7 @@ static void bdrv_co_em_bh(void *opaque)
     acb->common.cb(acb->common.opaque, acb->req.error);
 
     qemu_bh_delete(acb->bh);
-    qemu_aio_release(acb);
+    qemu_aio_unref(acb);
 }
 
 /* Invoke bdrv_co_do_readv/bdrv_co_do_writev */
@@ -4073,7 +4073,7 @@ void qemu_aio_ref(void *p)
     acb->refcnt++;
 }
 
-void qemu_aio_release(void *p)
+void qemu_aio_unref(void *p)
 {
     BlockDriverAIOCB *acb = p;
     assert(acb->refcnt > 0);

@@ -514,7 +514,7 @@ static void posix_aio_read(void *opaque)
             if (ret == ECANCELED) {
                 /* remove the request */
                 *pacb = acb->next;
-                qemu_aio_release(acb);
+                qemu_aio_unref(acb);
             } else if (ret != EINPROGRESS) {
                 /* end of aio */
                 if (ret == 0) {
@@ -530,7 +530,7 @@ static void posix_aio_read(void *opaque)
                 *pacb = acb->next;
                 /* call the callback */
                 acb->common.cb(acb->common.opaque, ret);
-                qemu_aio_release(acb);
+                qemu_aio_unref(acb);
                 break;
             } else {
                 pacb = &acb->next;

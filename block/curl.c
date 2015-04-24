@@ -142,7 +142,7 @@ static size_t curl_read_cb(void *ptr, size_t size, size_t nmemb, void *opaque)
             qemu_iovec_from_buffer(acb->qiov, s->orig_buf + acb->start,
                                    acb->end - acb->start);
             acb->common.cb(acb->common.opaque, 0);
-            qemu_aio_release(acb);
+            qemu_aio_unref(acb);
             s->acb[i] = NULL;
         }
     }
@@ -424,7 +424,7 @@ static BlockDriverAIOCB *curl_aio_readv(BlockDriverState *bs,
 
     switch (curl_find_buf(s, start, nb_sectors * SECTOR_SIZE, acb)) {
         case FIND_RET_OK:
-            qemu_aio_release(acb);
+            qemu_aio_unref(acb);
             // fall through
         case FIND_RET_WAIT:
             return &acb->common;
