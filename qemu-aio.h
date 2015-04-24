@@ -31,11 +31,13 @@ struct BlockDriverAIOCB {
     BlockDriverState *bs;
     BlockDriverCompletionFunc *cb;
     void *opaque;
+    int refcnt;
 };
 
 void *qemu_aio_get(const AIOCBInfo *pool, BlockDriverState *bs,
                    BlockDriverCompletionFunc *cb, void *opaque);
 void qemu_aio_release(void *p);
+void qemu_aio_ref(void *p);
 
 typedef struct AioHandler AioHandler;
 typedef void IOHandler(void *opaque);
