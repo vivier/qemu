@@ -482,20 +482,8 @@ out:
     return ret;
 }
 
-static void qemu_gluster_aio_cancel(BlockDriverAIOCB *blockacb)
-{
-    GlusterAIOCB *acb = (GlusterAIOCB *)blockacb;
-    bool finished = false;
-
-    acb->finished = &finished;
-    while (!finished) {
-        qemu_aio_wait();
-    }
-}
-
 static const AIOCBInfo gluster_aiocb_info = {
     .aiocb_size = sizeof(GlusterAIOCB),
-    .cancel = qemu_gluster_aio_cancel,
 };
 
 static void gluster_finish_aiocb(struct glfs_fd *fd, ssize_t ret, void *arg)
