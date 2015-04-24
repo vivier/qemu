@@ -95,6 +95,9 @@ static void scsi_command_complete(void *opaque, int ret)
     SCSIGenericReq *r = (SCSIGenericReq *)opaque;
 
     r->req.aiocb = NULL;
+    if (r->req.io_canceled) {
+        goto done;
+    }
     if (r->io_header.driver_status & SG_ERR_DRIVER_SENSE) {
         r->req.sense_len = r->io_header.sb_len_wr;
     }
@@ -135,6 +138,7 @@ static void scsi_command_complete(void *opaque, int ret)
             r, r->req.tag, status);
 
     scsi_req_complete(&r->req, status);
+done:
     if (!r->req.io_canceled) {
         scsi_req_unref(&r->req);
     }
@@ -189,8 +193,7 @@ static void scsi_read_complete(void * opaque, int ret)
     int len;
 
     r->req.aiocb = NULL;
-    if (ret) {
-        DPRINTF("IO error ret %d\n", ret);
+    if (ret || r->req.io_canceled) {
         scsi_command_complete(r, ret);
         return;
     }
@@ -256,8 +259,7 @@ static void scsi_write_complete(void * opaque, int ret)
 
     DPRINTF("scsi_write_complete() ret = %d\n", ret);
     r->req.aiocb = NULL;
-    if (ret) {
-        DPRINTF("IO error\n");
+    if (ret || r->req.io_canceled) {
         scsi_command_complete(r, ret);
         return;
     }
