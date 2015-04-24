@@ -3944,28 +3944,11 @@ typedef struct BlockDriverAIOCBCoroutine {
     BlockDriverAIOCB common;
     BlockRequest req;
     bool is_write;
-    bool *done;
     QEMUBH* bh;
 } BlockDriverAIOCBCoroutine;
 
-static void bdrv_aio_co_cancel_em(BlockDriverAIOCB *blockacb)
-{
-    BlockDriverAIOCBCoroutine *acb =
-        container_of(blockacb, BlockDriverAIOCBCoroutine, common);
-    BlockDriverState *bs = blockacb->bs;
-    bool done = false;
-
-    acb->done = &done;
-    while (!done) {
-        qemu_co_queue_restart_all(&bs->throttled_reqs[0]);
-        qemu_co_queue_restart_all(&bs->throttled_reqs[1]);
-        qemu_aio_wait();
-    }
-}
-
 static const AIOCBInfo bdrv_em_co_aiocb_info = {
     .aiocb_size         = sizeof(BlockDriverAIOCBCoroutine),
-    .cancel             = bdrv_aio_co_cancel_em,
 };
 
 static void bdrv_co_em_bh(void *opaque)
@@ -3973,10 +3956,6 @@ static void bdrv_co_em_bh(void *opaque)
     BlockDriverAIOCBCoroutine *acb = opaque;
 
     acb->common.cb(acb->common.opaque, acb->req.error);
-
-    if (acb->done) {
-        *acb->done = true;
-    }
 
     qemu_bh_delete(acb->bh);
     qemu_aio_release(acb);
@@ -4016,7 +3995,6 @@ static BlockDriverAIOCB *bdrv_co_aio_rw_vector(BlockDriverState *bs,
     acb->req.nb_sectors = nb_sectors;
     acb->req.qiov = qiov;
     acb->is_write = is_write;
-    acb->done = NULL;
 
     co = qemu_coroutine_create(bdrv_co_do_rw);
     qemu_coroutine_enter(co, acb);
@@ -4043,7 +4021,7 @@ BlockDriverAIOCB *bdrv_aio_flush(BlockDriverState *bs,
     BlockDriverAIOCBCoroutine *acb;
 
     acb = qemu_aio_get(&bdrv_em_co_aiocb_info, bs, cb, opaque);
-    acb->done = NULL;
+
     co = qemu_coroutine_create(bdrv_aio_flush_co_entry);
     qemu_coroutine_enter(co, acb);
 
@@ -4072,7 +4050,6 @@ BlockDriverAIOCB *bdrv_aio_discard(BlockDriverState *bs,
     acb = qemu_aio_get(&bdrv_em_co_aiocb_info, bs, cb, opaque);
     acb->req.sector = sector_num;
     acb->req.nb_sectors = nb_sectors;
-    acb->done = NULL;
     co = qemu_coroutine_create(bdrv_aio_discard_co_entry);
     qemu_coroutine_enter(co, acb);
 
