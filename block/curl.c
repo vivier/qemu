@@ -404,7 +404,7 @@ static void curl_aio_cancel(BlockDriverAIOCB *blockacb)
     // Do we have to implement canceling? Seems to work without...
 }
 
-static AIOPool curl_aio_pool = {
+static const AIOCBInfo curl_aiocb_info = {
     .aiocb_size         = sizeof(CURLAIOCB),
     .cancel             = curl_aio_cancel,
 };
@@ -419,7 +419,7 @@ static BlockDriverAIOCB *curl_aio_readv(BlockDriverState *bs,
     size_t end;
     CURLState *state;
 
-    acb = qemu_aio_get(&curl_aio_pool, bs, cb, opaque);
+    acb = qemu_aio_get(&curl_aiocb_info, bs, cb, opaque);
     if (!acb)
         return NULL;
 

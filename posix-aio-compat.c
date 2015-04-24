@@ -590,7 +590,7 @@ static void paio_cancel(BlockDriverAIOCB *blockacb)
     paio_remove(acb);
 }
 
-static AIOPool raw_aio_pool = {
+static AIOCBInfo raw_aiocb_info = {
     .aiocb_size         = sizeof(struct qemu_paiocb),
     .cancel             = paio_cancel,
 };
@@ -601,9 +601,7 @@ BlockDriverAIOCB *paio_submit(BlockDriverState *bs, int fd,
 {
     struct qemu_paiocb *acb;
 
-    acb = qemu_aio_get(&raw_aio_pool, bs, cb, opaque);
-    if (!acb)
-        return NULL;
+    acb = qemu_aio_get(&raw_aiocb_info, bs, cb, opaque);
     acb->aio_type = type;
     acb->aio_fildes = fd;
     acb->ev_signo = SIGUSR2;
@@ -629,7 +627,7 @@ BlockDriverAIOCB *paio_ioctl(BlockDriverState *bs, int fd,
 {
     struct qemu_paiocb *acb;
 
-    acb = qemu_aio_get(&raw_aio_pool, bs, cb, opaque);
+    acb = qemu_aio_get(&raw_aiocb_info, bs, cb, opaque);
     if (!acb)
         return NULL;
     acb->aio_type = QEMU_AIO_IOCTL;

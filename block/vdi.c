@@ -505,7 +505,7 @@ static void vdi_aio_cancel(BlockDriverAIOCB *blockacb)
     qemu_aio_release(acb);
 }
 
-static AIOPool vdi_aio_pool = {
+static AIOCBInfo vdi_aiocb_info = {
     .aiocb_size = sizeof(VdiAIOCB),
     .cancel = vdi_aio_cancel,
 };
@@ -519,7 +519,7 @@ static VdiAIOCB *vdi_aio_setup(BlockDriverState *bs, int64_t sector_num,
     logout("%p, %" PRId64 ", %p, %d, %p, %p, %d\n",
            bs, sector_num, qiov, nb_sectors, cb, opaque, is_write);
 
-    acb = qemu_aio_get(&vdi_aio_pool, bs, cb, opaque);
+    acb = qemu_aio_get(&vdi_aiocb_info, bs, cb, opaque);
     if (acb) {
         acb->hd_aiocb = NULL;
         acb->sector_num = sector_num;

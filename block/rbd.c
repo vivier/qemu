@@ -583,7 +583,7 @@ static void qemu_rbd_aio_cancel(BlockDriverAIOCB *blockacb)
     qemu_aio_release(acb);
 }
 
-static AIOPool rbd_aiocb_info = {
+static const AIOCBInfo rbd_aiocb_info = {
     .aiocb_size = sizeof(RBDAIOCB),
     .cancel = qemu_rbd_aio_cancel,
 };

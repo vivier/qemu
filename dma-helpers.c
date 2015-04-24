@@ -161,7 +161,7 @@ static void dma_aio_cancel(BlockDriverAIOCB *acb)
     dma_complete(dbs, 0);
 }
 
-static AIOPool dma_aio_pool = {
+static const AIOCBInfo dma_aiocb_info = {
     .aiocb_size         = sizeof(DMAAIOCB),
     .cancel             = dma_aio_cancel,
 };
@@ -171,7 +171,7 @@ static BlockDriverAIOCB *dma_bdrv_io(
     BlockDriverCompletionFunc *cb, void *opaque,
     bool to_dev)
 {
-    DMAAIOCB *dbs =  qemu_aio_get(&dma_aio_pool, bs, cb, opaque);
+    DMAAIOCB *dbs = qemu_aio_get(&dma_aiocb_info, bs, cb, opaque);
 
     dbs->acb = NULL;
     dbs->bs = bs;
