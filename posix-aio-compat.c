@@ -547,52 +547,8 @@ static int posix_aio_flush(void *opaque)
 
 static PosixAioState *posix_aio_state;
 
-static void paio_remove(struct qemu_paiocb *acb)
-{
-    struct qemu_paiocb **pacb;
-
-    /* remove the callback from the queue */
-    pacb = &posix_aio_state->first_aio;
-    for(;;) {
-        if (*pacb == NULL) {
-            fprintf(stderr, "paio_remove: aio request not found!\n");
-            break;
-        } else if (*pacb == acb) {
-            *pacb = acb->next;
-            qemu_aio_release(acb);
-            break;
-        }
-        pacb = &(*pacb)->next;
-    }
-}
-
-static void paio_cancel(BlockDriverAIOCB *blockacb)
-{
-    struct qemu_paiocb *acb = (struct qemu_paiocb *)blockacb;
-    int active = 0;
-
-    mutex_lock(&lock);
-    if (!acb->active) {
-        QTAILQ_REMOVE(&request_list, acb, node);
-        acb->ret = -ECANCELED;
-    } else if (acb->ret == -EINPROGRESS) {
-        active = 1;
-    }
-    mutex_unlock(&lock);
-
-    if (active) {
-        /* fail safe: if the aio could not be canceled, we wait for
-           it */
-        while (qemu_paio_error(acb) == EINPROGRESS)
-            ;
-    }
-
-    paio_remove(acb);
-}
-
 static AIOCBInfo raw_aiocb_info = {
     .aiocb_size         = sizeof(struct qemu_paiocb),
-    .cancel             = paio_cancel,
 };
 
 BlockDriverAIOCB *paio_submit(BlockDriverState *bs, int fd,
