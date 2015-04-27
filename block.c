@@ -3833,9 +3833,29 @@ void bdrv_aio_cancel(BlockDriverAIOCB *acb)
     qemu_aio_ref(acb);
     bdrv_aio_cancel_async(acb);
     while (acb->refcnt > 1) {
-        qemu_co_queue_restart_all(&bs->throttled_reqs[0]);
-        qemu_co_queue_restart_all(&bs->throttled_reqs[1]);
-        qemu_aio_wait();
+        int i;
+        /*
+         * RHEL note: qemu_aio_wait doesn't fire timers that throttled reqs
+         * wait for.  If there aren't any requests in flight, qemu_aio_wait
+         * could block infinitely. Workaround this problem by only calling
+         * qemu_aio_wait when we are waiting for some IO. Also take care of
+         * resuming the throttled reqs.
+         */
+        for (i = 0; i < 2; i++) {
+            int64_t now, next_timestamp;
+            if (qemu_co_queue_empty(&bs->throttled_reqs[i])) {
+                continue;
+            }
+            now = qemu_get_clock(vm_clock);
+            if (throttle_compute_timer(&bs->throttle_state,
+                                       i, now, &next_timestamp)) {
+                usleep((next_timestamp - now) / 1000);
+            }
+            qemu_co_queue_next(&bs->throttled_reqs[i]);
+        }
+        if (!QLIST_EMPTY(&bs->tracked_requests)) {
+            qemu_aio_wait();
+        }
     }
     qemu_aio_unref(acb);
 }
