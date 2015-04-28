@@ -931,6 +931,15 @@ make check V=1
 
 %changelog
 %%CHANGELOG%%
+* Tue Apr 28 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-1.el7
+- Rebase to 2.3.0 [bz#1194151]
+- kvm-misc-Add-pc-i440fx-rhel7-2-0-machine-type.patch [bz#1210050]
+- kvm-misc-Add-pc-q35-rhel7-2-0-machine-type.patch [bz#1210050]
+- Resolves: bz#1194151
+  (Rebase to qemu 2.3)
+- Resolves: bz#1210050
+  (Add pc-i440fx-rhel7.2.0 machine type)
+
 * Thu Mar 19 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.2.0-8.el7
 - kvm-pc_sysfw-prevent-pflash-and-or-mis-sized-firmware-fo.patch [bz#1175099]
 - kvm-build-reenable-local-builds-to-pass-enable-debug-dow.patch []
