@@ -379,6 +379,11 @@ install -c -m 0755  qemu-ga ${RPM_BUILD_ROOT}%{_bindir}/qemu-ga
 
 %changelog
 %%CHANGELOG%%
+* Tue Apr 28 2015 Miroslav Rezanina <mrezanin@redhat.com> - 2.3.0-1.el7
+- Rebase to 2.3.0 [bz#1194152]
+- Resolves: bz#1194152
+  (Rebase to 2.3.0)
+
 * Tue Oct 21 2014 Miroslav Rezanina <mrezanin@redhat.com> - 2.1.0-4.el7
 - kvm-Mark-etc-sysconfig-qemu-ga-as-config-noreplace.patch [bz#1150924]
 - Resolves: bz#1150924
