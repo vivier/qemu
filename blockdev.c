@@ -295,6 +295,13 @@ int drives_reopen(void)
     QTAILQ_FOREACH(dinfo, &drives, next) {
         if (dinfo->opened && !bdrv_is_read_only(dinfo->bdrv)) {
             int res;
+            ThrottleConfig cfg;
+            bool io_limits_enabled = dinfo->bdrv->io_limits_enabled;
+
+            if (io_limits_enabled) {
+                throttle_get_config(&dinfo->bdrv->throttle_state, &cfg);
+            }
+
             bdrv_close(dinfo->bdrv);
             res = drive_open(dinfo);
             if (res) {
@@ -302,6 +309,11 @@ int drives_reopen(void)
 			    dinfo->file, res);
 		    return res;
 	    }
+
+            if (io_limits_enabled) {
+                bdrv_io_limits_enable(dinfo->bdrv);
+                bdrv_set_io_limits(dinfo->bdrv, &cfg);
+            }
         }
     }
     return 0;
