@@ -2634,7 +2634,7 @@ static void vfio_map_bar(VFIODevice *vdev, int nr)
     if (vdev->msix && vdev->msix->table_bar == nr) {
         uint64_t start;
 
-        start = TARGET_PAGE_ALIGN(vdev->msix->table_offset +
+        start = TARGET_PAGE_ALIGN((uint64_t)vdev->msix->table_offset +
                                   (vdev->msix->entries * PCI_MSIX_ENTRY_SIZE));
 
         size = start < bar->size ? bar->size - start : 0;
