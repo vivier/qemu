@@ -623,9 +623,6 @@ static inline void powerpc_excp(PowerPCCPU *cpu, int excp_model, int excp)
 
     if (env->spr[SPR_LPCR] & LPCR_AIL) {
         new_msr |= (1 << MSR_IR) | (1 << MSR_DR);
-    } else if (msr & ((1 << MSR_IR) | (1 << MSR_DR))) {
-        /* If we disactivated any translation, flush TLBs */
-        tlb_flush(cs, 1);
     }
 
 #ifdef TARGET_PPC64
