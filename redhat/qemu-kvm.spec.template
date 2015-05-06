@@ -845,6 +845,38 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed May 06 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-88.el7
+- kvm-vfio-warn-if-host-device-rom-can-t-be-read.patch [bz#1210503]
+- kvm-vfio-Do-not-reattempt-a-failed-rom-read.patch [bz#1210503]
+- kvm-vfio-Correction-in-vfio_rom_read-when-attempting-rom.patch [bz#1210503]
+- kvm-vfio-Fix-overrun-after-readlink-fills-buffer-complet.patch [bz#1210504]
+- kvm-vfio-use-correct-runstate.patch [bz#1210505]
+- kvm-vfio-pci-Fix-BAR-size-overflow.patch [bz#1181267]
+- kvm-vfio-Use-vfio-type1-v2-IOMMU-interface.patch [bz#1210508]
+- kvm-vfio-pci-Enable-device-request-notification-support.patch [bz#1210509]
+- kvm-vfio-pci-Further-fix-BAR-size-overflow.patch [bz#1181267]
+- kvm-vfio-pci-Fix-error-path-sign.patch [bz#1210504]
+- kvm-x86-Use-common-variable-range-MTRR-counts.patch [bz#1210510]
+- kvm-x86-kvm-Add-MTRR-support-for-kvm_get-put_msrs.patch [bz#1210510]
+- kvm-x86-Clear-MTRRs-on-vCPU-reset.patch [bz#1210510]
+- kvm-spec-Exclude-aarch64.patch [bz#1217850]
+- Resolves: bz#1181267
+  (vfio-pci: Fix BAR size overflow)
+- Resolves: bz#1210503
+  (vfio improve PCI ROM loading error handling)
+- Resolves: bz#1210504
+  (vfio: Fix overrun after readlink() fills buffer completely)
+- Resolves: bz#1210505
+  (vfio: use correct runstate)
+- Resolves: bz#1210508
+  (vfio: Use vfio type1 v2 IOMMU interface)
+- Resolves: bz#1210509
+  (vfio-pci: Enable device request notification support)
+- Resolves: bz#1210510
+  (Sync MTRRs with KVM and disable on reset)
+- Resolves: bz#1217850
+  (qemu-kvm: ExcludeArch: aarch64)
+
 * Tue Mar 17 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-87.el7
 - kvm-trace-add-qemu_system_powerdown_request-and-qemu_sys.patch [bz#1155671]
 - kvm-virtio-net-drop-assert-on-vm-stop.patch [bz#1139562]
