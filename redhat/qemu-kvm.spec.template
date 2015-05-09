@@ -920,6 +920,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri May 08 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-23.el7_1.3
+- kvm-fdc-force-the-fifo-access-to-be-in-bounds-of-the-all.patch [bz#1219271]
+- Resolves: bz#1219271
+  (CVE-2015-3456 qemu-kvm-rhev: qemu: floppy disk controller flaw [rhel-7.1.z])
+
 * Tue Apr 21 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-23.el7_1_1.2
 - kvm-block-Fix-max-nb_sectors-in-bdrv_make_zero.patch [bz#1203543]
 - Resolves: bz#1203543
