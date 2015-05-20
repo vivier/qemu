@@ -3857,13 +3857,12 @@ void bdrv_aio_cancel(BlockDriverAIOCB *acb)
             now = qemu_get_clock(vm_clock);
             if (throttle_compute_timer(&bs->throttle_state,
                                        i, now, &next_timestamp)) {
+                qemu_del_timer(bs->throttle_state.timers[i]);
                 usleep((next_timestamp - now) / 1000);
             }
             qemu_co_queue_next(&bs->throttled_reqs[i]);
         }
-        if (!QLIST_EMPTY(&bs->tracked_requests)) {
-            qemu_aio_wait();
-        }
+        qemu_aio_wait();
     }
     qemu_aio_unref(acb);
 }
