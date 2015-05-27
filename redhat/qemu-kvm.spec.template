@@ -767,6 +767,22 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Wed May 27 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-2.el7
+- kvm-balloon-improve-error-msg-when-adding-second-device.patch [bz#1165534]
+- kvm-qmp-add-error-reason-to-the-BLOCK_IO_ERROR-event.patch [bz#1199174]
+- kvm-spec-Remove-obsolete-differentiation-code.patch [bz#1122778]
+- kvm-spec-Use-external-configuration-script.patch [bz#1122778]
+- kvm-spec-Use-configure-options-to-prevent-default-resolu.patch [bz#1122778]
+- kvm-fdc-force-the-fifo-access-to-be-in-bounds-of-the-all.patch [bz#1219272]
+- Resolves: bz#1122778
+  (miss  "vhdx" and "iscsi" in qemu-img supported format list)
+- Resolves: bz#1165534
+  (balloon: improve error message when adding second device)
+- Resolves: bz#1199174
+  (QMP: forward port rhel-only error reason to BLOCK_IO_ERROR event)
+- Resolves: bz#1219272
+  (CVE-2015-3456 qemu-kvm-rhev: qemu: floppy disk controller flaw [rhel-7.2])
+
 * Tue Apr 28 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-1.el7
 - Rebase to 2.3.0 [bz#1194151]
 - kvm-misc-Add-pc-i440fx-rhel7-2-0-machine-type.patch [bz#1210050]
