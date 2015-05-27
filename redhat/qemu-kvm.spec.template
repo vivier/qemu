@@ -845,6 +845,20 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed May 27 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-89.el7
+- kvm-CVE-2015-1779-incrementally-decode-websocket-frames.patch [bz#1206497]
+- kvm-CVE-2015-1779-limit-size-of-HTTP-headers-from-websoc.patch [bz#1206497]
+- kvm-qemu-iotests-Test-unaligned-4k-zero-write.patch [bz#1200295]
+- kvm-block-Fix-NULL-deference-for-unaligned-write-if-qiov.patch [bz#1200295]
+- kvm-qemu-iotests-Test-unaligned-sub-block-zero-write.patch [bz#1200295]
+- kvm-fdc-force-the-fifo-access-to-be-in-bounds-of-the-all.patch [bz#1219270]
+- Resolves: bz#1200295
+  (QEMU segfault when doing unaligned zero write to non-512 disk)
+- Resolves: bz#1206497
+  (CVE-2015-1779 qemu-kvm: qemu: vnc: insufficient resource limiting in VNC websockets decoder [rhel-7.2])
+- Resolves: bz#1219270
+  (CVE-2015-3456 qemu-kvm: qemu: floppy disk controller flaw [rhel-7.2])
+
 * Wed May 06 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-88.el7
 - kvm-vfio-warn-if-host-device-rom-can-t-be-read.patch [bz#1210503]
 - kvm-vfio-Do-not-reattempt-a-failed-rom-read.patch [bz#1210503]
