@@ -417,6 +417,11 @@ static inline int64_t align_offset(int64_t offset, int n)
     return offset;
 }
 
+static inline int64_t qcow2_vm_state_offset(BDRVQcowState *s)
+{
+    return (int64_t)s->l1_vm_state_index << (s->cluster_bits + s->l2_bits);
+}
+
 static inline uint64_t qcow2_max_refcount_clusters(BDRVQcowState *s)
 {
     return QCOW_MAX_REFTABLE_SIZE >> s->cluster_bits;
