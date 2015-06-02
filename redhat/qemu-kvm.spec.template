@@ -230,6 +230,7 @@ BuildRequires: cpp
 # For compressed guest memory dumps
 BuildRequires: lzo-devel snappy-devel
 %endif
+BuildRequires: libssh2-devel
 
 
 %if 0%{!?build_only_sub:1}
@@ -446,6 +447,7 @@ dobuild() {
         --disable-vde \
         --disable-curses \
         --disable-curl \
+        --enable-libssh2 \
         --enable-vnc-tls \
         --enable-vnc-sasl \
         --enable-linux-aio \
@@ -474,7 +476,7 @@ dobuild() {
 %endif
         --enable-glusterfs \
         --block-drv-rw-whitelist=qcow2,raw,file,host_device,blkdebug,nbd,iscsi,gluster,rbd \
-        --block-drv-ro-whitelist=vmdk,vhdx,vpc \
+        --block-drv-ro-whitelist=vmdk,vhdx,vpc,ssh \
         "$@"
 
     echo "config-host.mak contents:"
