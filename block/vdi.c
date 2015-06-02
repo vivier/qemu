@@ -514,6 +514,7 @@ static VdiAIOCB *vdi_aio_setup(BlockDriverState *bs, int64_t sector_num,
         acb->sector_num = sector_num;
         acb->qiov = qiov;
         acb->is_write = is_write;
+        acb->bh = NULL;
 
         if (qiov->niov > 1) {
             acb->buf = qemu_blockalign(bs, qiov->size);
