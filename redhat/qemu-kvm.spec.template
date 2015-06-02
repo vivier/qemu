@@ -231,6 +231,7 @@ BuildRequires: cpp
 BuildRequires: lzo-devel snappy-devel
 %endif
 BuildRequires: libssh2-devel
+BuildRequires: libcurl-devel
 
 
 %if 0%{!?build_only_sub:1}
@@ -446,7 +447,7 @@ dobuild() {
         --disable-bluez \
         --disable-vde \
         --disable-curses \
-        --disable-curl \
+        --enable-curl \
         --enable-libssh2 \
         --enable-vnc-tls \
         --enable-vnc-sasl \
@@ -476,7 +477,7 @@ dobuild() {
 %endif
         --enable-glusterfs \
         --block-drv-rw-whitelist=qcow2,raw,file,host_device,blkdebug,nbd,iscsi,gluster,rbd \
-        --block-drv-ro-whitelist=vmdk,vhdx,vpc,ssh \
+        --block-drv-ro-whitelist=vmdk,vhdx,vpc,ssh,https \
         "$@"
 
     echo "config-host.mak contents:"
