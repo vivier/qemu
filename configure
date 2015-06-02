@@ -2650,7 +2650,7 @@ fi
 fdt_required=no
 for target in $target_list; do
   case $target in
-    arm*-softmmu|ppc*-softmmu|microblaze*-softmmu)
+    aarch64*-softmmu|arm*-softmmu|ppc*-softmmu|microblaze*-softmmu)
       fdt_required=yes
     ;;
   esac
@@ -4382,6 +4382,11 @@ case "$target_arch2" in
     bflt="yes"
     target_nptl="yes"
     gdb_xml_files="arm-core.xml arm-vfp.xml arm-vfp3.xml arm-neon.xml"
+  ;;
+  aarch64)
+    TARGET_BASE_ARCH=arm
+    bflt="yes"
+    gdb_xml_files="aarch64-core.xml"
   ;;
   cris)
     target_nptl="yes"
