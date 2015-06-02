@@ -1085,6 +1085,33 @@ static void extract_subqdict(QDict *src, QDict **dst, const char *start)
     }
 }
 
+static QDict *parse_json_filename(const char *filename, Error **errp)
+{
+    QObject *options_obj;
+    QDict *options;
+    int ret;
+
+    ret = strstart(filename, "json:", &filename);
+    assert(ret);
+
+    options_obj = qobject_from_json(filename);
+    if (!options_obj) {
+        error_setg(errp, "Could not parse the JSON options");
+        return NULL;
+    }
+
+    if (qobject_type(options_obj) != QTYPE_QDICT) {
+        qobject_decref(options_obj);
+        error_setg(errp, "Invalid JSON object given");
+        return NULL;
+    }
+
+    options = qobject_to_qdict(options_obj);
+    qdict_flatten(options);
+
+    return options;
+}
+
 /*
  * Opens a disk image (raw, qcow2, vmdk, ...)
  *
@@ -1107,6 +1134,20 @@ int bdrv_open(BlockDriverState *bs, const char *filename, QDict *options,
     /* NULL means an empty set of options */
     if (options == NULL) {
         options = qdict_new();
+    }
+
+    if (filename && g_str_has_prefix(filename, "json:")) {
+        QDict *json_options = parse_json_filename(filename, &local_err);
+        if (local_err) {
+            ret = -EINVAL;
+            goto fail;
+        }
+
+        /* Options given in the filename have lower priority than options
+         * specified directly */
+        qdict_join(options, json_options, false);
+        QDECREF(json_options);
+        filename = NULL;
     }
 
     bs->options = options;
