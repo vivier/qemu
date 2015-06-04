@@ -848,6 +848,22 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Jun 04 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-90.el7
+- kvm-qcow2-Pass-discard-type-to-qcow2_discard_clusters.patch [bz#1208808]
+- kvm-qcow2-Discard-VM-state-in-active-L1-after-creating-s.patch [bz#1208808]
+- kvm-configure-Require-libfdt-for-arm-ppc-microblaze-soft.patch [bz#1217850]
+- kvm-configure-Add-handling-code-for-AArch64-targets.patch [bz#1217850]
+- kvm-configure-permit-compilation-on-arm-aarch64.patch [bz#1217850]
+- kvm-spec-Allow-build-on-aarch64.patch [bz#1217850]
+- kvm-Remove-redhat-extensions-from-qmp-events.txt.patch [bz#1222833]
+- kvm-spec-Add-misssing-QMP-documentation-files.patch [bz#1222833]
+- Resolves: bz#1208808
+  (creating second and further snapshot takes ages)
+- Resolves: bz#1217850
+  (qemu-kvm: Enable build on aarch64)
+- Resolves: bz#1222833
+  (We ship incomplete QMP documentation)
+
 * Wed May 27 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-89.el7
 - kvm-CVE-2015-1779-incrementally-decode-websocket-frames.patch [bz#1206497]
 - kvm-CVE-2015-1779-limit-size-of-HTTP-headers-from-websoc.patch [bz#1206497]
