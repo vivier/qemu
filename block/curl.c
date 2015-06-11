@@ -614,8 +614,7 @@ static void curl_readv_bh_cb(void *p)
     acb->end = (acb->nb_sectors * SECTOR_SIZE);
 
     state->buf_off = 0;
-    if (state->orig_buf)
-        g_free(state->orig_buf);
+    g_free(state->orig_buf);
     state->buf_start = start;
     state->buf_len = acb->end + s->readahead_size;
     end = MIN(start + state->buf_len, s->len) - 1;
