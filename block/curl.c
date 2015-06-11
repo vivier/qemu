@@ -243,7 +243,8 @@ static void curl_multi_do(void *arg)
             case CURLMSG_DONE:
             {
                 CURLState *state = NULL;
-                curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, (char**)&state);
+                curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE,
+                                  (char **)&state);
 
                 /* ACBs for successful messages get completed in curl_read_cb */
                 if (msg->data.result != CURLE_OK) {
