@@ -1010,7 +1010,6 @@ int bdrv_open_backing_file(BlockDriverState *bs, QDict *options, Error **errp)
 {
     char backing_filename[PATH_MAX];
     int back_flags, ret;
-    BlockDriver *back_drv = NULL;
     Error *local_err = NULL;
 
     if (bs->backing_hd != NULL) {
@@ -1036,8 +1035,8 @@ int bdrv_open_backing_file(BlockDriverState *bs, QDict *options, Error **errp)
 
     bs->backing_hd = bdrv_new("", &error_abort);
 
-    if (bs->backing_format[0] != '\0') {
-        back_drv = bdrv_find_format(bs->backing_format);
+    if (bs->backing_format[0] != '\0' && !qdict_haskey(options, "driver")) {
+        qdict_put(options, "driver", qstring_from_str(bs->backing_format));
     }
 
     /* backing files always opened read-only */
@@ -1046,7 +1045,7 @@ int bdrv_open_backing_file(BlockDriverState *bs, QDict *options, Error **errp)
 
     ret = bdrv_open(bs->backing_hd,
                     *backing_filename ? backing_filename : NULL, options,
-                    back_flags, back_drv, &local_err);
+                    back_flags, NULL, &local_err);
     if (ret < 0) {
         bdrv_unref(bs->backing_hd);
         bs->backing_hd = NULL;
@@ -1244,6 +1243,11 @@ int bdrv_open(BlockDriverState *bs, const char *filename, QDict *options,
     if (drvname) {
         drv = bdrv_find_format(drvname);
         qdict_del(options, "driver");
+        if (!drv) {
+            error_setg(errp, "Unknown driver '%s'", drvname);
+            ret = -EINVAL;
+            goto unlink_and_fail;
+        }
     }
 
     if (!drv) {
