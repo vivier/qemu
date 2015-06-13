@@ -1631,10 +1631,12 @@ static int calculate_refcounts(BlockDriverState *bs, BdrvCheckResult *res,
     QCowSnapshot *sn;
     int ret;
 
-    *refcount_table = g_try_new0(uint16_t, *nb_clusters);
-    if (*nb_clusters && *refcount_table == NULL) {
-        res->check_errors++;
-        return -ENOMEM;
+    if (!*refcount_table) {
+        *refcount_table = g_try_new0(uint16_t, *nb_clusters);
+        if (*nb_clusters && *refcount_table == NULL) {
+            res->check_errors++;
+            return -ENOMEM;
+        }
     }
 
     /* header */
@@ -1750,7 +1752,7 @@ int qcow2_check_refcounts(BlockDriverState *bs, BdrvCheckResult *res,
 {
     BDRVQcowState *s = bs->opaque;
     int64_t size, highest_cluster, nb_clusters;
-    uint16_t *refcount_table;
+    uint16_t *refcount_table = NULL;
     int ret;
 
     size = bdrv_getlength(bs->file);
