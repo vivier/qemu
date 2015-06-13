@@ -31,6 +31,8 @@
 #include "qapi/qmp/qerror.h"
 #include "qapi/qmp/qbool.h"
 #include "qapi/util.h"
+#include "qapi/qmp/types.h"
+#include "monitor/monitor.h"
 #include "trace.h"
 
 /*
@@ -2327,6 +2329,66 @@ static int qcow2_amend_options(BlockDriverState *bs,
     }
 
     return 0;
+}
+
+/*
+ * If offset or size are negative, respectively, they will not be included in
+ * the BLOCK_IMAGE_CORRUPTED event emitted.
+ * fatal will be ignored for read-only BDS; corruptions found there will always
+ * be considered non-fatal.
+ */
+void qcow2_signal_corruption(BlockDriverState *bs, bool fatal, int64_t offset,
+                             int64_t size, const char *message_format, ...)
+{
+    BDRVQcowState *s = bs->opaque;
+    char *message;
+    QObject *data;
+    va_list ap;
+
+    fatal = fatal && !bs->read_only;
+
+    if (s->signaled_corruption &&
+        (!fatal || (s->incompatible_features & QCOW2_INCOMPAT_CORRUPT)))
+    {
+        return;
+    }
+
+    va_start(ap, message_format);
+    message = g_strdup_vprintf(message_format, ap);
+    va_end(ap);
+
+    if (fatal) {
+        fprintf(stderr, "qcow2: Marking image as corrupt: %s; further "
+                "corruption events will be suppressed\n", message);
+    } else {
+        fprintf(stderr, "qcow2: Image is corrupt: %s; further non-fatal "
+                "corruption events will be suppressed\n", message);
+    }
+
+    assert((offset >= 0) == (size >= 0));
+
+    if (offset >= 0) {
+        data = qobject_from_jsonf("{ 'device': %s, 'msg': %s, 'offset': %"
+                                  PRId64 ", 'size': %" PRId64 ", 'fatal': %s }",
+                                  bdrv_get_device_name(bs), message,
+                                  offset, size, fatal ? "true" : "false");
+    } else {
+        data = qobject_from_jsonf("{ 'device': %s, 'msg': %s, 'fatal': %s }",
+                                  bdrv_get_device_name(bs), message,
+                                  fatal ? "true" : "false");
+    }
+
+    monitor_protocol_event(QEVENT_BLOCK_IMAGE_CORRUPTED, data);
+    qobject_decref(data);
+
+    g_free(message);
+
+    if (fatal) {
+        qcow2_mark_corrupt(bs);
+        bs->drv = NULL; /* make BDS unusable */
+    }
+
+    s->signaled_corruption = true;
 }
 
 static QEMUOptionParameter qcow2_create_options[] = {
