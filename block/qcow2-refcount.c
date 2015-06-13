@@ -1056,7 +1056,7 @@ fail:
 static void inc_refcounts(BlockDriverState *bs,
                           BdrvCheckResult *res,
                           uint16_t *refcount_table,
-                          int refcount_table_size,
+                          int64_t refcount_table_size,
                           int64_t offset, int64_t size)
 {
     BDRVQcowState *s = bs->opaque;
@@ -1099,7 +1099,7 @@ enum {
  * error occurred.
  */
 static int check_refcounts_l2(BlockDriverState *bs, BdrvCheckResult *res,
-    uint16_t *refcount_table, int refcount_table_size, int64_t l2_offset,
+    uint16_t *refcount_table, int64_t refcount_table_size, int64_t l2_offset,
     int flags)
 {
     BDRVQcowState *s = bs->opaque;
@@ -1209,7 +1209,7 @@ fail:
 static int check_refcounts_l1(BlockDriverState *bs,
                               BdrvCheckResult *res,
                               uint16_t *refcount_table,
-                              int refcount_table_size,
+                              int64_t refcount_table_size,
                               int64_t l1_table_offset, int l1_size,
                               int flags)
 {
