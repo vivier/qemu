@@ -94,7 +94,7 @@ static int get_refcount(BlockDriverState *bs, int64_t cluster_index)
     uint16_t *refcount_block;
     uint16_t refcount;
 
-    refcount_table_index = cluster_index >> (s->cluster_bits - REFCOUNT_SHIFT);
+    refcount_table_index = cluster_index >> s->refcount_block_bits;
     if (refcount_table_index >= s->refcount_table_size)
         return 0;
     refcount_block_offset = s->refcount_table[refcount_table_index];
@@ -114,8 +114,7 @@ static int get_refcount(BlockDriverState *bs, int64_t cluster_index)
         return ret;
     }
 
-    block_index = cluster_index &
-        ((1 << (s->cluster_bits - REFCOUNT_SHIFT)) - 1);
+    block_index = cluster_index & (s->refcount_block_size - 1);
     refcount = be16_to_cpu(refcount_block[block_index]);
 
     ret = qcow2_cache_put(bs, s->refcount_block_cache,
@@ -150,8 +149,8 @@ static unsigned int next_refcount_table_size(BDRVQcowState *s,
 static int in_same_refcount_block(BDRVQcowState *s, uint64_t offset_a,
     uint64_t offset_b)
 {
-    uint64_t block_a = offset_a >> (2 * s->cluster_bits - REFCOUNT_SHIFT);
-    uint64_t block_b = offset_b >> (2 * s->cluster_bits - REFCOUNT_SHIFT);
+    uint64_t block_a = offset_a >> (s->cluster_bits + s->refcount_block_bits);
+    uint64_t block_b = offset_b >> (s->cluster_bits + s->refcount_block_bits);
 
     return (block_a == block_b);
 }
@@ -172,7 +171,7 @@ static int alloc_refcount_block(BlockDriverState *bs,
     BLKDBG_EVENT(bs->file, BLKDBG_REFBLOCK_ALLOC);
 
     /* Find the refcount block for the given cluster */
-    refcount_table_index = cluster_index >> (s->cluster_bits - REFCOUNT_SHIFT);
+    refcount_table_index = cluster_index >> s->refcount_block_bits;
 
     if (refcount_table_index < s->refcount_table_size) {
 
@@ -249,7 +248,7 @@ static int alloc_refcount_block(BlockDriverState *bs,
 
         /* The block describes itself, need to update the cache */
         int block_index = (new_block >> s->cluster_bits) &
-            ((1 << (s->cluster_bits - REFCOUNT_SHIFT)) - 1);
+            (s->refcount_block_size - 1);
         (*refcount_block)[block_index] = cpu_to_be16(1);
     } else {
         /* Described somewhere else. This can recurse at most twice before we
@@ -321,8 +320,7 @@ static int alloc_refcount_block(BlockDriverState *bs,
     BLKDBG_EVENT(bs->file, BLKDBG_REFTABLE_GROW);
 
     /* Calculate the number of refcount blocks needed so far */
-    uint64_t refcount_block_clusters = 1 << (s->cluster_bits - REFCOUNT_SHIFT);
-    uint64_t blocks_used = DIV_ROUND_UP(cluster_index, refcount_block_clusters);
+    uint64_t blocks_used = DIV_ROUND_UP(cluster_index, s->refcount_block_size);
 
     if (blocks_used > QCOW_MAX_REFTABLE_SIZE / sizeof(uint64_t)) {
         return -EFBIG;
@@ -336,14 +334,14 @@ static int alloc_refcount_block(BlockDriverState *bs,
         uint64_t table_clusters =
             size_to_clusters(s, table_size * sizeof(uint64_t));
         blocks_clusters = 1 +
-            ((table_clusters + refcount_block_clusters - 1)
-            / refcount_block_clusters);
+            ((table_clusters + s->refcount_block_size - 1)
+            / s->refcount_block_size);
         uint64_t meta_clusters = table_clusters + blocks_clusters;
 
         last_table_size = table_size;
         table_size = next_refcount_table_size(s, blocks_used +
-            ((meta_clusters + refcount_block_clusters - 1)
-            / refcount_block_clusters));
+            ((meta_clusters + s->refcount_block_size - 1)
+            / s->refcount_block_size));
 
     } while (last_table_size != table_size);
 
@@ -353,7 +351,7 @@ static int alloc_refcount_block(BlockDriverState *bs,
 #endif
 
     /* Create the new refcount table and blocks */
-    uint64_t meta_offset = (blocks_used * refcount_block_clusters) *
+    uint64_t meta_offset = (blocks_used * s->refcount_block_size) *
         s->cluster_size;
     uint64_t table_offset = meta_offset + blocks_clusters * s->cluster_size;
     uint16_t *new_blocks = g_malloc0(blocks_clusters * s->cluster_size);
@@ -545,8 +543,7 @@ static int QEMU_WARN_UNUSED_RESULT update_refcount(BlockDriverState *bs,
     {
         int block_index, refcount;
         int64_t cluster_index = cluster_offset >> s->cluster_bits;
-        int64_t table_index =
-            cluster_index >> (s->cluster_bits - REFCOUNT_SHIFT);
+        int64_t table_index = cluster_index >> s->refcount_block_bits;
 
         /* Load the refcount block and allocate it if needed */
         if (table_index != old_table_index) {
@@ -568,8 +565,7 @@ static int QEMU_WARN_UNUSED_RESULT update_refcount(BlockDriverState *bs,
         qcow2_cache_entry_mark_dirty(s->refcount_block_cache, refcount_block);
 
         /* we can update the count and save it */
-        block_index = cluster_index &
-            ((1 << (s->cluster_bits - REFCOUNT_SHIFT)) - 1);
+        block_index = cluster_index & (s->refcount_block_size - 1);
 
         refcount = be16_to_cpu(refcount_block[block_index]);
         refcount += addend;
