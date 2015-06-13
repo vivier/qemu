@@ -139,6 +139,7 @@ static int qcow2_read_extensions(BlockDriverState *bs, uint64_t start_offset,
                 return 3;
             }
             bs->backing_format[ext.len] = '\0';
+            s->image_backing_format = g_strdup(bs->backing_format);
 #ifdef DEBUG_EXT
             printf("Qcow2: Got format extension %s\n", bs->backing_format);
 #endif
@@ -734,6 +735,7 @@ static int qcow2_open(BlockDriverState *bs, QDict *options, int flags,
             goto fail;
         }
         bs->backing_file[len] = '\0';
+        s->image_backing_file = g_strdup(bs->backing_file);
     }
 
     /* Internal snapshots */
@@ -1249,6 +1251,9 @@ static void qcow2_close(BlockDriverState *bs)
     g_free(s->unknown_header_fields);
     cleanup_unknown_header_ext(bs);
 
+    g_free(s->image_backing_file);
+    g_free(s->image_backing_format);
+
     g_free(s->cluster_cache);
     qemu_vfree(s->cluster_data);
     qcow2_refcount_close(bs);
@@ -1399,9 +1404,10 @@ int qcow2_update_header(BlockDriverState *bs)
     }
 
     /* Backing file format header extension */
-    if (*bs->backing_format) {
+    if (s->image_backing_format) {
         ret = header_ext_add(buf, QCOW2_EXT_MAGIC_BACKING_FORMAT,
-                             bs->backing_format, strlen(bs->backing_format),
+                             s->image_backing_format,
+                             strlen(s->image_backing_format),
                              buflen);
         if (ret < 0) {
             goto fail;
@@ -1459,8 +1465,8 @@ int qcow2_update_header(BlockDriverState *bs)
     buflen -= ret;
 
     /* Backing file name */
-    if (*bs->backing_file) {
-        size_t backing_file_len = strlen(bs->backing_file);
+    if (s->image_backing_file) {
+        size_t backing_file_len = strlen(s->image_backing_file);
 
         if (buflen < backing_file_len) {
             ret = -ENOSPC;
@@ -1468,7 +1474,7 @@ int qcow2_update_header(BlockDriverState *bs)
         }
 
         /* Using strncpy is ok here, since buf is not NUL-terminated. */
-        strncpy(buf, bs->backing_file, buflen);
+        strncpy(buf, s->image_backing_file, buflen);
 
         header->backing_file_offset = cpu_to_be64(buf - ((char*) header));
         header->backing_file_size   = cpu_to_be32(backing_file_len);
@@ -1489,8 +1495,16 @@ fail:
 static int qcow2_change_backing_file(BlockDriverState *bs,
     const char *backing_file, const char *backing_fmt)
 {
+    BDRVQcowState *s = bs->opaque;
+
     pstrcpy(bs->backing_file, sizeof(bs->backing_file), backing_file ?: "");
     pstrcpy(bs->backing_format, sizeof(bs->backing_format), backing_fmt ?: "");
+
+    g_free(s->image_backing_file);
+    g_free(s->image_backing_format);
+
+    s->image_backing_file = backing_file ? g_strdup(bs->backing_file) : NULL;
+    s->image_backing_format = backing_fmt ? g_strdup(bs->backing_format) : NULL;
 
     return qcow2_update_header(bs);
 }
@@ -2286,8 +2300,9 @@ static int qcow2_amend_options(BlockDriverState *bs,
     }
 
     if (backing_file || backing_format) {
-        ret = qcow2_change_backing_file(bs, backing_file ?: bs->backing_file,
-                                        backing_format ?: bs->backing_format);
+        ret = qcow2_change_backing_file(bs,
+                    backing_file ?: s->image_backing_file,
+                    backing_format ?: s->image_backing_format);
         if (ret < 0) {
             return ret;
         }
