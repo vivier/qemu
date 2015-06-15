@@ -851,6 +851,44 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Mon Jun 15 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-91.el7
+- kvm-vmdk-Fix-overflow-if-l1_size-is-0x20000000.patch [bz#1217351]
+- kvm-block-ssh-Drop-superfluous-libssh2_session_last_errn.patch [bz#1226683]
+- kvm-block-ssh-Propagate-errors-through-check_host_key.patch [bz#1226683]
+- kvm-block-ssh-Propagate-errors-through-authenticate.patch [bz#1226683]
+- kvm-block-ssh-Propagate-errors-through-connect_to_ssh.patch [bz#1226683]
+- kvm-block-ssh-Propagate-errors-to-open-and-create-method.patch [bz#1226683]
+- kvm-ssh-Don-t-crash-if-either-host-or-path-is-not-specif.patch [bz#1226683]
+- kvm-curl-Replaced-old-error-handling-with-error-reportin.patch [bz#1226684]
+- kvm-curl-Fix-long-line.patch [bz#1226684]
+- kvm-curl-Remove-unnecessary-use-of-goto.patch [bz#1226684]
+- kvm-curl-Fix-return-from-curl_read_cb-with-invalid-state.patch [bz#1226684]
+- kvm-curl-Remove-erroneous-sleep-waiting-for-curl-complet.patch [bz#1226684]
+- kvm-curl-Whitespace-only-changes.patch [bz#1226684]
+- kvm-block-curl-Implement-the-libcurl-timer-callback-inte.patch [bz#1226684]
+- kvm-curl-Remove-unnecessary-explicit-calls-to-internal-e.patch [bz#1226684]
+- kvm-curl-Eliminate-unnecessary-use-of-curl_multi_socket_.patch [bz#1226684]
+- kvm-curl-Ensure-all-informationals-are-checked-for-compl.patch [bz#1226684]
+- kvm-curl-Fix-hang-reading-from-slow-connections.patch [bz#1226684]
+- kvm-curl-Fix-build-when-curl_multi_socket_action-isn-t-a.patch [bz#1226684]
+- kvm-curl-Remove-broken-parsing-of-options-from-url.patch [bz#1226684]
+- kvm-curl-refuse-to-open-URL-from-HTTP-server-without-ran.patch [bz#1226684]
+- kvm-curl-Add-sslverify-option.patch [bz#1226684]
+- kvm-block-Drop-superfluous-conditionals-around-g_free.patch [bz#1226684]
+- kvm-curl-Handle-failure-for-potentially-large-allocation.patch [bz#1226684]
+- kvm-block.curl-adding-timeout-option.patch [bz#1226684]
+- kvm-curl-Allow-a-cookie-or-cookies-to-be-sent-with-http-.patch [bz#1226684]
+- kvm-curl-The-macro-that-you-have-to-uncomment-to-get-deb.patch [bz#1226684]
+- kvm-block-curl-Improve-type-safety-of-s-timeout.patch [bz#1226684]
+- kvm-Enable-ssh-driver-read-only.patch [bz#1226683]
+- kvm-Enable-curl-driver-read-only.patch [bz#1226684]
+- Resolves: bz#1217351
+  (Overflow in malloc size calculation in VMDK driver)
+- Resolves: bz#1226683
+  ([virt-v2v] Backport upstream ssh driver to qemu-kvm)
+- Resolves: bz#1226684
+  ([virt-v2v] Enable curl driver + upstream features + fixes in qemu-kvm and enable https)
+
 * Thu Jun 04 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-90.el7
 - kvm-qcow2-Pass-discard-type-to-qcow2_discard_clusters.patch [bz#1208808]
 - kvm-qcow2-Discard-VM-state-in-active-L1-after-creating-s.patch [bz#1208808]
