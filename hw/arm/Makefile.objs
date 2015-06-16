@@ -1,1 +1,2 @@
 obj-y += boot.o virt.o
+obj-$(CONFIG_ACPI) += virt-acpi-build.o
