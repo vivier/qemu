@@ -851,6 +851,18 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Jun 16 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-92.el7
+- kvm-seccomp-add-timerfd_create-and-timerfd_settime-to-th.patch [bz#1185737]
+- kvm-qdict-Add-qdict_join.patch [bz#1226697]
+- kvm-block-Allow-JSON-filenames.patch [bz#1226697]
+- kvm-spice-display-fix-segfault-in-qemu_spice_create_upda.patch [bz#1230808]
+- Resolves: bz#1185737
+  (qemu-kvm hang when boot with usb-host and sandbox was enabled)
+- Resolves: bz#1226697
+  ([virt-v2v] Allow json: filenames in qemu-img)
+- Resolves: bz#1230808
+  ([abrt] qemu-system-x86: __memcmp_sse4_1(): qemu-system-x86_64 killed by SIGSEGV)
+
 * Mon Jun 15 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-91.el7
 - kvm-vmdk-Fix-overflow-if-l1_size-is-0x20000000.patch [bz#1217351]
 - kvm-block-ssh-Drop-superfluous-libssh2_session_last_errn.patch [bz#1226683]
