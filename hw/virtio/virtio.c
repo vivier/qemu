@@ -1328,7 +1328,12 @@ static void virtio_device_realize(DeviceState *dev, Error **errp)
             return;
         }
     }
-    virtio_bus_device_plugged(vdev);
+
+    virtio_bus_device_plugged(vdev, &err);
+    if (err != NULL) {
+        error_propagate(errp, err);
+        return;
+    }
 }
 
 static void virtio_device_unrealize(DeviceState *dev, Error **errp)

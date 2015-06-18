@@ -345,7 +345,7 @@ static void virtio_mmio_reset(DeviceState *d)
 /* virtio-mmio device */
 
 /* This is called by virtio-bus just after the device is plugged. */
-static void virtio_mmio_device_plugged(DeviceState *opaque)
+static void virtio_mmio_device_plugged(DeviceState *opaque, Error **errp)
 {
     VirtIOMMIOProxy *proxy = VIRTIO_MMIO(opaque);
 
