@@ -237,7 +237,7 @@ static void virtio_mmio_write(void *opaque, hwaddr offset, uint64_t value,
                 proxy->guest_page_shift);
         break;
     case VIRTIO_MMIO_QUEUESEL:
-        if (value < VIRTIO_PCI_QUEUE_MAX) {
+        if (value < VIRTIO_QUEUE_MAX) {
             vdev->queue_sel = value;
         }
         break;
@@ -257,7 +257,7 @@ static void virtio_mmio_write(void *opaque, hwaddr offset, uint64_t value,
         }
         break;
     case VIRTIO_MMIO_QUEUENOTIFY:
-        if (value < VIRTIO_PCI_QUEUE_MAX) {
+        if (value < VIRTIO_QUEUE_MAX) {
             virtio_queue_notify(vdev, value);
         }
         break;
