@@ -506,6 +506,19 @@ static unsigned virtio_s390_get_features(DeviceState *d)
     return dev->host_features;
 }
 
+static void virtio_s390_device_plugged(DeviceState *d, Error **errp)
+{
+    VirtIOS390Device *dev = to_virtio_s390_device(d);
+    VirtIODevice *vdev = virtio_bus_get_device(&dev->bus);
+    int n = virtio_get_num_queues(vdev);
+
+    if (n > VIRTIO_S390_QUEUE_MAX) {
+        error_setg(errp, "The nubmer of virtqueues %d "
+                   "exceeds s390 limit %d", n,
+                   VIRTIO_S390_QUEUE_MAX);
+    }
+}
+
 /**************** S390 Virtio Bus Device Descriptions *******************/
 
 static Property s390_virtio_net_properties[] = {
@@ -717,6 +730,7 @@ static void virtio_s390_bus_class_init(ObjectClass *klass, void *data)
     bus_class->max_dev = 1;
     k->notify = virtio_s390_notify;
     k->get_features = virtio_s390_get_features;
+    k->device_plugged = virtio_s390_device_plugged;
 }
 
 static const TypeInfo virtio_s390_bus_info = {
