@@ -769,6 +769,31 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Fri Jun 19 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-3.el7
+- kvm-vmdk-Fix-overflow-if-l1_size-is-0x20000000.patch [bz#1226809]
+- kvm-Downstream-only-Add-rhel7.2.0-machine-type.patch [bz#1228574]
+- kvm-spice-display-fix-segfault-in-qemu_spice_create_upda.patch [bz#1230550]
+- kvm-pc-dimm-don-t-assert-if-pc-dimm-alignment-hotpluggab.patch [bz#1221425]
+- kvm-Strip-brackets-from-vnc-host.patch [bz#1229073]
+- kvm-qcow2-Set-MIN_L2_CACHE_SIZE-to-2.patch [bz#1226996]
+- kvm-iotests-qcow2-COW-with-minimal-L2-cache-size.patch [bz#1226996]
+- kvm-qcow2-Add-DEFAULT_L2_CACHE_CLUSTERS.patch [bz#1226996]
+- kvm-spec-Ship-complete-QMP-documentation-files.patch [bz#1222834]
+- Resolves: bz#1221425
+  (qemu crash when hot-plug a memory device)
+- Resolves: bz#1222834
+  (We ship incomplete QMP documentation)
+- Resolves: bz#1226809
+  (Overflow in malloc size calculation in VMDK driver)
+- Resolves: bz#1226996
+  (qcow2: Fix minimum L2 cache size)
+- Resolves: bz#1228574
+  (Add RHEL7.2 machine type in QEMU for PPC64LE)
+- Resolves: bz#1229073
+  ([graphical framebuffer]Start guest failed when VNC listen on IPV6 address)
+- Resolves: bz#1230550
+  ([abrt] qemu-system-x86: __memcmp_sse4_1(): qemu-system-x86_64 killed by SIGSEGV)
+
 * Wed May 27 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-2.el7
 - kvm-balloon-improve-error-msg-when-adding-second-device.patch [bz#1165534]
 - kvm-qmp-add-error-reason-to-the-BLOCK_IO_ERROR-event.patch [bz#1199174]
