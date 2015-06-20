@@ -43,7 +43,6 @@ struct qemu_paiocb {
     int aio_niov;
     size_t aio_nbytes;
 #define aio_ioctl_cmd   aio_nbytes /* for QEMU_AIO_IOCTL */
-    int ev_signo;
     off_t aio_offset;
 
     QTAILQ_ENTRY(qemu_paiocb) node;
@@ -382,7 +381,7 @@ static void *aio_thread(void *unused)
         idle_threads++;
         mutex_unlock(&lock);
 
-        if (kill(pid, aiocb->ev_signo)) die("kill failed");
+        if (kill(pid, SIGUSR2)) die("kill failed");
     }
 
     idle_threads--;
@@ -560,7 +559,6 @@ BlockDriverAIOCB *paio_submit(BlockDriverState *bs, int fd,
     acb = qemu_aio_get(&raw_aiocb_info, bs, cb, opaque);
     acb->aio_type = type;
     acb->aio_fildes = fd;
-    acb->ev_signo = SIGUSR2;
 
     if (qiov) {
         acb->aio_iov = qiov->iov;
@@ -588,7 +586,6 @@ BlockDriverAIOCB *paio_ioctl(BlockDriverState *bs, int fd,
         return NULL;
     acb->aio_type = QEMU_AIO_IOCTL;
     acb->aio_fildes = fd;
-    acb->ev_signo = SIGUSR2;
     acb->aio_offset = 0;
     acb->aio_ioctl_buf = buf;
     acb->aio_ioctl_cmd = req;
