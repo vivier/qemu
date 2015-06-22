@@ -769,6 +769,30 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Mon Jun 22 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-4.el7
+- kvm-virtio-ccw-using-VIRTIO_NO_VECTOR-instead-of-0-for-i.patch [bz#1231610]
+- kvm-virtio-ccw-sort-into-categories.patch [bz#1231610]
+- kvm-virtio-ccw-change-realization-sequence.patch [bz#1231610]
+- kvm-virtio-ccw-implement-device_plugged.patch [bz#1231610]
+- kvm-virtio-net-fix-the-upper-bound-when-trying-to-delete.patch [bz#1231610]
+- kvm-monitor-replace-the-magic-number-255-with-MAX_QUEUE_.patch [bz#1231610]
+- kvm-monitor-check-return-value-of-qemu_find_net_clients_.patch [bz#1231610]
+- kvm-virtio-introduce-vector-to-virtqueues-mapping.patch [bz#1231610]
+- kvm-virtio-pci-speedup-MSI-X-masking-and-unmasking.patch [bz#1231610]
+- kvm-pci-remove-hard-coded-bar-size-in-msix_init_exclusiv.patch [bz#1231610]
+- kvm-virtio-net-adding-all-queues-in-.realize.patch [bz#1231610]
+- kvm-virtio-device_plugged-can-fail.patch [bz#1231610]
+- kvm-virtio-introduce-virtio_get_num_queues.patch [bz#1231610]
+- kvm-virtio-ccw-introduce-ccw-specific-queue-limit.patch [bz#1231610]
+- kvm-virtio-ccw-validate-the-number-of-queues-against-bus.patch [bz#1231610]
+- kvm-virtio-s390-introduce-virito-s390-queue-limit.patch [bz#1231610]
+- kvm-virtio-s390-introduce-virtio_s390_device_plugged.patch [bz#1231610]
+- kvm-virtio-rename-VIRTIO_PCI_QUEUE_MAX-to-VIRTIO_QUEUE_M.patch [bz#1231610]
+- kvm-virtio-increase-the-queue-limit-to-1024.patch [bz#1231610]
+- kvm-virtio-pci-don-t-try-to-mask-or-unmask-vqs-without-n.patch [bz#1231610]
+- Resolves: bz#1231610
+  (Support more virtio queues)
+
 * Fri Jun 19 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-3.el7
 - kvm-vmdk-Fix-overflow-if-l1_size-is-0x20000000.patch [bz#1226809]
 - kvm-Downstream-only-Add-rhel7.2.0-machine-type.patch [bz#1228574]
