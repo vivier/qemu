@@ -49,6 +49,7 @@
 #include "hw/acpi/acpi.h"
 #include "cpu.h"
 #include "qemu/error-report.h"
+#include "migration/migration.h"
 #ifdef CONFIG_XEN
 #  include <xen/hvm/hvm_info_table.h>
 #endif
@@ -1074,6 +1075,9 @@ static void pc_compat_rhel710(MachineState *machine)
     x86_cpu_compat_set_features("core2duo", FEAT_1_ECX, CPUID_EXT_VMX, 0);
     x86_cpu_compat_kvm_no_autodisable(FEAT_8000_0001_ECX, CPUID_EXT3_SVM);
     pcms->enforce_aligned_dimm = false;
+
+    /* Disable all the extra subsections that were added in 2.2 */
+    migrate_pre_2_2 = true;
 }
 
 static void pc_init_rhel710(MachineState *machine)
