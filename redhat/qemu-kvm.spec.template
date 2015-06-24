@@ -769,6 +769,14 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Wed Jun 24 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-5.el7
+- kvm-atomics-add-explicit-compiler-fence-in-__atomic-memo.patch [bz#1231335]
+- kvm-pc-acpi-fix-pvpanic-for-buggy-guests.patch [bz#1221943]
+- Resolves: bz#1221943
+  (On_crash events didn't work when using guest's pvpanic device)
+- Resolves: bz#1231335
+  ([abrt] qemu-kvm: bdrv_error_action(): qemu-kvm killed by SIGABRT)
+
 * Mon Jun 22 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-4.el7
 - kvm-virtio-ccw-using-VIRTIO_NO_VECTOR-instead-of-0-for-i.patch [bz#1231610]
 - kvm-virtio-ccw-sort-into-categories.patch [bz#1231610]
