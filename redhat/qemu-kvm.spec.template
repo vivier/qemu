@@ -851,6 +851,15 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Jun 24 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-93.el7
+- kvm-atomics-add-explicit-compiler-fence-in-__atomic-memo.patch [bz#1142857 bz#1142857 (aka bz#8*bz#10^bz#6/bz#7)]
+- Resolves: bz#1142857
+  ([abrt] qemu-kvm: bdrv_error_action(): qemu-kvm killed by SIGABRT)
+- Resolves: bz#8*10^6/7)
+  (XFree86 apparently sets xhost to ill inital values)
+- Resolves: bz#(aka
+  ()
+
 * Tue Jun 16 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-92.el7
 - kvm-seccomp-add-timerfd_create-and-timerfd_settime-to-th.patch [bz#1185737]
 - kvm-qdict-Add-qdict_join.patch [bz#1226697]
