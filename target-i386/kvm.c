@@ -1155,6 +1155,9 @@ static int kvm_put_msrs(X86CPU *cpu, int level)
         kvm_msr_entry_set(&msrs[n++], MSR_IA32_MISC_ENABLE,
                           env->msr_ia32_misc_enable);
     }
+    if (has_msr_bndcfgs) {
+        kvm_msr_entry_set(&msrs[n++], MSR_IA32_BNDCFGS, env->msr_bndcfgs);
+    }
 #ifdef TARGET_X86_64
     if (lm_capable_kernel) {
         kvm_msr_entry_set(&msrs[n++], MSR_CSTAR, env->cstar);
@@ -1265,9 +1268,6 @@ static int kvm_put_msrs(X86CPU *cpu, int level)
                 kvm_msr_entry_set(&msrs[n++],
                                   MSR_MTRRphysMask(i), env->mtrr_var[i].mask);
             }
-        }
-        if (has_msr_bndcfgs) {
-            kvm_msr_entry_set(&msrs[n++], MSR_IA32_BNDCFGS, env->msr_bndcfgs);
         }
     }
     if (env->mcg_cap) {
