@@ -769,6 +769,19 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Fri Jun 26 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-6.el7
+- kvm-vfio-pci-Fix-error-path-sign.patch [bz#1219090]
+- kvm-vfio-pci-Further-fix-BAR-size-overflow.patch [bz#1219090]
+- kvm-Add-flag-for-pre-2.2-migration-compatibility.patch [bz#1215087]
+- kvm-Serial-Migration-compatibility-pre-2.2-7.2.patch [bz#1215087]
+- kvm-Migration-compat-for-mc146818rtc-irq_reinject_on_ack.patch [bz#1215088]
+- Resolves: bz#1215087
+  (migration: 7.2->earlier;  serial compatibility)
+- Resolves: bz#1215088
+  (migration: 7.2->earlier; mc146818rtc compatibility)
+- Resolves: bz#1219090
+  (vfio-pci - post QEMU2.3 fixes, error sign + BAR overflow)
+
 * Wed Jun 24 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-5.el7
 - kvm-atomics-add-explicit-compiler-fence-in-__atomic-memo.patch [bz#1231335]
 - kvm-pc-acpi-fix-pvpanic-for-buggy-guests.patch [bz#1221943]
