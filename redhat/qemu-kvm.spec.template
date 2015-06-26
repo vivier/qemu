@@ -851,6 +851,52 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Jun 26 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-94.el7
+- kvm-qcow2-Put-cache-reference-in-error-case.patch [bz#1129893]
+- kvm-qcow2-Catch-bdrv_getlength-error.patch [bz#1129893]
+- kvm-block-Introduce-qemu_try_blockalign.patch [bz#1129893]
+- kvm-qcow2-Catch-host_offset-for-data-allocation.patch [bz#1129893]
+- kvm-iotests-Add-test-for-image-header-overlap.patch [bz#1129893]
+- kvm-block-Catch-bs-drv-in-bdrv_check.patch [bz#1129893]
+- kvm-qapi-block-Add-fatal-to-BLOCK_IMAGE_CORRUPTED.patch [bz#1129893]
+- kvm-qcow2-Add-qcow2_signal_corruption.patch [bz#1129893]
+- kvm-qcow2-Use-qcow2_signal_corruption-for-overlaps.patch [bz#1129893]
+- kvm-qcow2-Check-L1-L2-reftable-entries-for-alignment.patch [bz#1129893]
+- kvm-iotests-Add-more-tests-for-qcow2-corruption.patch [bz#1129893]
+- kvm-qcow2-fix-leak-of-Qcow2DiscardRegion-in-update_refco.patch [bz#1129893]
+- kvm-qcow2-Do-not-overflow-when-writing-an-L1-sector.patch [bz#1129893]
+- kvm-iotests-Add-test-for-qcow2-L1-table-update.patch [bz#1129893]
+- kvm-block-Add-qemu_-try_-blockalign0.patch [bz#1129893]
+- kvm-qcow2-Calculate-refcount-block-entry-count.patch [bz#1129893]
+- kvm-qcow2-Fix-leaks-in-dirty-images.patch [bz#1129893]
+- kvm-qcow2-Split-qcow2_check_refcounts.patch [bz#1129893]
+- kvm-qcow2-Use-sizeof-refcount_table.patch [bz#1129893]
+- kvm-qcow2-Pull-check_refblocks-up.patch [bz#1129893]
+- kvm-qcow2-Use-int64_t-for-in-memory-reftable-size.patch [bz#1129893]
+- kvm-qcow2-Split-fail-code-in-L1-and-L2-checks.patch [bz#1129893]
+- kvm-qcow2-Let-inc_refcounts-return-errno.patch [bz#1129893]
+- kvm-qcow2-Let-inc_refcounts-resize-the-reftable.patch [bz#1129893]
+- kvm-qcow2-Reuse-refcount-table-in-calculate_refcounts.patch [bz#1129893]
+- kvm-qcow2-Fix-refcount-blocks-beyond-image-end.patch [bz#1129893]
+- kvm-qcow2-Do-not-perform-potentially-damaging-repairs.patch [bz#1129893]
+- kvm-qcow2-Rebuild-refcount-structure-during-check.patch [bz#1129893]
+- kvm-qcow2-Clean-up-after-refcount-rebuild.patch [bz#1129893]
+- kvm-iotests-Fix-test-outputs.patch [bz#1129893]
+- kvm-iotests-Add-test-for-potentially-damaging-repairs.patch [bz#1129893]
+- kvm-qcow2-Drop-REFCOUNT_SHIFT.patch [bz#1129893]
+- kvm-block-Respect-underlying-file-s-EOF.patch [bz#1129893]
+- kvm-qcow2-Fix-header-extension-size-check.patch [bz#1129893]
+- kvm-qcow2.py-Add-required-padding-for-header-extensions.patch [bz#1129893]
+- kvm-block-Don-t-probe-for-unknown-backing-file-format.patch [bz#1129893]
+- kvm-qcow2-Add-two-more-unalignment-checks.patch [bz#1129893]
+- kvm-iotests-Add-tests-for-more-corruption-cases.patch [bz#1129893]
+- kvm-qcow2-Respect-new_block-in-alloc_refcount_block.patch [bz#1129893]
+- kvm-iotests-Add-tests-for-refcount-table-growth.patch [bz#1129893]
+- kvm-qcow2-Fix-header-update-with-overridden-backing-file.patch [bz#1129893]
+- kvm-qcow2-Flush-pending-discards-before-allocating-clust.patch [bz#1129893]
+- Resolves: bz#1129893
+  (Backport additional qcow2 corruption prevention and image repair patches)
+
 * Wed Jun 24 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-93.el7
 - kvm-atomics-add-explicit-compiler-fence-in-__atomic-memo.patch [bz#1142857 bz#1142857 (aka bz#8*bz#10^bz#6/bz#7)]
 - Resolves: bz#1142857
