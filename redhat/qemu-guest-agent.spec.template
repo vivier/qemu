@@ -8,6 +8,7 @@
 %global have_numa 1
 %global have_librdma 1
 %global have_seccomp 1
+%global have_tcmalloc 1
 
 %ifnarch %{ix86} x86_64 aarch64
     %global have_seccomp 0
@@ -20,6 +21,7 @@
 %ifarch s390 s390x
     %global have_librdma 0
     %global have_numa 0
+    %global have_tcmalloc 0
 %endif
 
 %ifarch %{ix86}
@@ -168,6 +170,9 @@ BuildRequires: texinfo
 %if 0%{have_librdma}
 BuildRequires: librdmacm-devel
 %endif
+%if 0%{have_tcmalloc}
+BuildRequires: gperftools-devel
+%endif
 # iasl and cpp for acpi generation (not a hard requirement as we can use
 # pre-compiled files, but it's better to use this)
 %ifarch %{ix86} x86_64
@@ -252,6 +257,9 @@ buildarch="%{kvm_target}-softmmu"
 extraldflags="-Wl,--build-id";
 buildldflags="VL_LDFLAGS=-Wl,--build-id"
 
+# QEMU already knows how to set _FORTIFY_SOURCE
+%global optflags %(echo %{optflags} | sed 's/-Wp,-D_FORTIFY_SOURCE=2//')
+
 %ifarch s390
     # drop -g flag to prevent memory exhaustion by linker
     %global optflags %(echo %{optflags} | sed 's/-g//')
@@ -306,6 +314,11 @@ cp %{SOURCE4} build_configure.sh
   disable \
 %endif
 %if 0%{have_usbredir}
+  enable \
+%else
+  disable \
+%endif
+%if 0%{have_tcmalloc}
   enable \
 %else
   disable \

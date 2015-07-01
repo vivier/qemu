@@ -36,6 +36,8 @@ have_spice=$1
 shift
 have_usbredir=$1
 shift
+have_tcmalloc=$1
+shift
 
 if [ "$have_rbd" == "enable" ]; then
   rbd_driver=rbd,
@@ -111,6 +113,7 @@ fi
     --${have_seccomp}-seccomp \
     --${have_spice}-spice \
     --${have_usbredir}-usb-redir \
+    --${have_tcmalloc}-tcmalloc \
     --audio-drv-list=pa,alsa \
     --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,${gluster_driver}${rbd_driver}blkdebug \
     --block-drv-ro-whitelist=vmdk,vhdx,vpc,https,ssh \
