@@ -769,6 +769,64 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Thu Jul 02 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-7.el7
+- kvm-docs-update-documentation-for-memory-hot-unplug.patch [bz#1120706]
+- kvm-acpi-mem-hotplug-add-acpi_memory_slot_status-to-get-.patch [bz#1120706]
+- kvm-acpi-mem-hotplug-add-unplug-request-cb-for-memory-de.patch [bz#1120706]
+- kvm-acpi-mem-hotplug-add-unplug-cb-for-memory-device.patch [bz#1120706]
+- kvm-acpi-extend-aml_field-to-support-UpdateRule.patch [bz#1120706]
+- kvm-acpi-fix-Memory-device-control-fields-register.patch [bz#1120706]
+- kvm-acpi-add-hardware-implementation-for-memory-hot-unpl.patch [bz#1120706]
+- kvm-qmp-event-add-event-notification-for-memory-hot-unpl.patch [bz#1120706]
+- kvm-hw-acpi-aml-build-Fix-memory-leak.patch [bz#1120706]
+- kvm-memory-add-memory_region_ram_resize.patch [bz#1231719]
+- kvm-acpi-build-remove-dependency-from-ram_addr.h.patch [bz#1231719]
+- kvm-hw-i386-Move-ACPI-header-definitions-in-an-arch-inde.patch [bz#1231719]
+- kvm-hw-i386-acpi-build-move-generic-acpi-building-helper.patch [bz#1231719]
+- kvm-hw-acpi-aml-build-Make-enum-values-to-be-upper-case-.patch [bz#1231719]
+- kvm-hw-arm-virt-Move-common-definitions-to-virt.h.patch [bz#1231719]
+- kvm-hw-arm-virt-Record-PCIe-ranges-in-MemMapEntry-array.patch [bz#1231719]
+- kvm-hw-arm-virt-acpi-build-Basic-framework-for-building-.patch [bz#1231719]
+- kvm-hw-acpi-aml-build-Add-aml_memory32_fixed-term.patch [bz#1231719]
+- kvm-hw-acpi-aml-build-Add-aml_interrupt-term.patch [bz#1231719]
+- kvm-hw-arm-virt-acpi-build-Generation-of-DSDT-table-for-.patch [bz#1231719]
+- kvm-hw-arm-virt-acpi-build-Generate-FADT-table-and-updat.patch [bz#1231719]
+- kvm-hw-arm-virt-acpi-build-Generate-MADT-table.patch [bz#1231719]
+- kvm-hw-arm-virt-acpi-build-Generate-GTDT-table.patch [bz#1231719]
+- kvm-hw-arm-virt-acpi-build-Generate-RSDT-table.patch [bz#1231719]
+- kvm-hw-arm-virt-acpi-build-Generate-RSDP-table.patch [bz#1231719]
+- kvm-hw-arm-virt-acpi-build-Generate-MCFG-table.patch [bz#1231719]
+- kvm-hw-acpi-aml-build-Make-aml_buffer-definition-consist.patch [bz#1231719]
+- kvm-hw-acpi-aml-build-Add-ToUUID-macro.patch [bz#1231719]
+- kvm-hw-acpi-aml-build-Add-aml_or-term.patch [bz#1231719]
+- kvm-hw-acpi-aml-build-Add-aml_lnot-term.patch [bz#1231719]
+- kvm-hw-acpi-aml-build-Add-aml_else-term.patch [bz#1231719]
+- kvm-hw-acpi-aml-build-Add-aml_create_dword_field-term.patch [bz#1231719]
+- kvm-hw-acpi-aml-build-Add-aml_dword_io-term.patch [bz#1231719]
+- kvm-hw-acpi-aml-build-Add-Unicode-macro.patch [bz#1231719]
+- kvm-hw-arm-virt-acpi-build-Add-PCIe-controller-in-ACPI-D.patch [bz#1231719]
+- kvm-ACPI-split-CONFIG_ACPI-into-4-pieces.patch [bz#1231719]
+- kvm-hw-arm-virt-Enable-dynamic-generation-of-ACPI-v5.1-t.patch [bz#1231719]
+- kvm-ACPI-Add-definitions-for-the-SPCR-table.patch [bz#1231719]
+- kvm-hw-arm-virt-acpi-build-Add-SPCR-table.patch [bz#1231719]
+- kvm-AArch64-Enable-ACPI.patch [bz#1231719]
+- kvm-i8254-fix-out-of-bounds-memory-access-in-pit_ioport_.patch [bz#1229647]
+- kvm-hw-q35-fix-floppy-controller-definition-in-ich9.patch [bz#894956]
+- kvm-Migration-compat-for-pckbd.patch [bz#1215092]
+- kvm-Migration-compat-for-fdc.patch [bz#1215091]
+- Resolves: bz#1120706
+  (Support dynamic virtual Memory deallocation - qemu-kvm)
+- Resolves: bz#1215091
+  (migration: 7.2->earlier; floppy compatibility)
+- Resolves: bz#1215092
+  (migration: 7.2->earlier: pckbd compatibility)
+- Resolves: bz#1229647
+  (CVE-2015-3214 qemu-kvm-rhev: qemu: i8254: out-of-bounds memory access in pit_ioport_read function [rhel-7.2])
+- Resolves: bz#1231719
+  (AArch64: backport ACPI support)
+- Resolves: bz#894956
+  (floppy can not be recognized by Windows guest (q35))
+
 * Fri Jun 26 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-6.el7
 - kvm-vfio-pci-Fix-error-path-sign.patch [bz#1219090]
 - kvm-vfio-pci-Further-fix-BAR-size-overflow.patch [bz#1219090]
