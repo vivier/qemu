@@ -37,7 +37,7 @@
  */
 #define HW_COMPAT_RHEL7_1 \
         {\
-            .driver   = "intel-hda",\
+            .driver   = "intel-hda-generic",\
             .property = "old_msi_addr",\
             .value    = "on",\
         },{\
