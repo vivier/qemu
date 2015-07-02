@@ -7,12 +7,14 @@
 %global have_gluster  1
 %global have_numa 1
 %global have_librdma 1
+%global have_seccomp 1
 
-%ifarch %{ix86} x86_64
-    %global have_seccomp 1
-%else
-    %global have_usbredir 0
+%ifnarch %{ix86} x86_64 aarch64
     %global have_seccomp 0
+%endif
+
+%ifnarch %{ix86} x86_64
+    %global have_usbredir 0
 %endif
 
 %ifarch s390 s390x
