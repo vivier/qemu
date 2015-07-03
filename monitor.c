@@ -2659,7 +2659,7 @@ static mon_cmd_t info_cmds[] = {
         .help       = "show the command line history",
         .mhandler.cmd = hmp_info_history,
     },
-#if defined(TARGET_I386) || defined(TARGET_PPC) || defined(TARGET_MIPS) || \
+#if defined(TARGET_I386) || defined(TARGET_MIPS) || \
     defined(TARGET_LM32) || (defined(TARGET_SPARC) && !defined(TARGET_SPARC64))
     {
         .name       = "irq",
