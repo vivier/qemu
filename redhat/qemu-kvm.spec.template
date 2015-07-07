@@ -861,6 +861,24 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Jul 07 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-95.el7
+- kvm-i8254-fix-out-of-bounds-memory-access-in-pit_ioport_.patch [bz#1229646]
+- kvm-target-i386-fix-cpuid-leaf-0x0d.patch [bz#1233350]
+- kvm-target-i386-Intel-MPX.patch [bz#1233350]
+- kvm-always-update-the-MPX-model-specific-register.patch [bz#1233350]
+- kvm-target-i386-bugfix-of-Intel-MPX.patch [bz#1233350]
+- kvm-target-i386-fix-set-of-registers-zeroed-on-reset.patch [bz#1233350]
+- kvm-target-i386-Add-mpx-CPU-feature-name.patch [bz#1233350]
+- kvm-target-i386-Avoid-shifting-left-into-sign-bit.patch [bz#1233350]
+- kvm-target-i386-add-Intel-AVX-512-support.patch [bz#1233350]
+- kvm-configure-Add-support-for-tcmalloc.patch [bz#1213881]
+- Resolves: bz#1213881
+  (enable using tcmalloc for memory allocation in qemu-kvm)
+- Resolves: bz#1229646
+  (CVE-2015-3214 qemu-kvm: qemu: i8254: out-of-bounds memory access in pit_ioport_read function [rhel-7.2])
+- Resolves: bz#1233350
+  ([Intel 7.2 FEAT] Expose MPX feature to guest - qemu-kvm)
+
 * Fri Jun 26 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-94.el7
 - kvm-qcow2-Put-cache-reference-in-error-case.patch [bz#1129893]
 - kvm-qcow2-Catch-bdrv_getlength-error.patch [bz#1129893]
