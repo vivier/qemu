@@ -1421,8 +1421,6 @@ static void virtio_ccw_device_plugged(DeviceState *d, Error **errp)
 
     sch->id.cu_model = virtio_bus_get_vdev_id(&dev->bus);
 
-    virtio_add_feature(&vdev->host_features, VIRTIO_F_NOTIFY_ON_EMPTY);
-
     css_generate_sch_crws(sch->cssid, sch->ssid, sch->schid,
                           d->hotplugged, 1);
 }
