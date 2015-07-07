@@ -543,18 +543,12 @@ static void virtio_s390_device_plugged(DeviceState *d, Error **errp)
 
 /**************** S390 Virtio Bus Device Descriptions *******************/
 
-static Property s390_virtio_net_properties[] = {
-    DEFINE_VIRTIO_COMMON_FEATURES(VirtIOS390Device, host_features),
-    DEFINE_PROP_END_OF_LIST(),
-};
-
 static void s390_virtio_net_class_init(ObjectClass *klass, void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
     VirtIOS390DeviceClass *k = VIRTIO_S390_DEVICE_CLASS(klass);
 
     k->realize = s390_virtio_net_realize;
-    dc->props = s390_virtio_net_properties;
     set_bit(DEVICE_CATEGORY_NETWORK, dc->categories);
 }
 
@@ -605,18 +599,12 @@ static const TypeInfo s390_virtio_serial = {
     .class_init    = s390_virtio_serial_class_init,
 };
 
-static Property s390_virtio_rng_properties[] = {
-    DEFINE_VIRTIO_COMMON_FEATURES(VirtIOS390Device, host_features),
-    DEFINE_PROP_END_OF_LIST(),
-};
-
 static void s390_virtio_rng_class_init(ObjectClass *klass, void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
     VirtIOS390DeviceClass *k = VIRTIO_S390_DEVICE_CLASS(klass);
 
     k->realize = s390_virtio_rng_realize;
-    dc->props = s390_virtio_rng_properties;
     set_bit(DEVICE_CATEGORY_MISC, dc->categories);
 }
 
@@ -645,10 +633,16 @@ static void s390_virtio_busdev_reset(DeviceState *dev)
     virtio_reset(_dev->vdev);
 }
 
+static Property virtio_s390_properties[] = {
+    DEFINE_VIRTIO_COMMON_FEATURES(VirtIOS390Device, host_features),
+    DEFINE_PROP_END_OF_LIST(),
+};
+
 static void virtio_s390_device_class_init(ObjectClass *klass, void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
 
+    dc->props = virtio_s390_properties;
     dc->realize = s390_virtio_busdev_realize;
     dc->bus_type = TYPE_S390_VIRTIO_BUS;
     dc->reset = s390_virtio_busdev_reset;
@@ -663,18 +657,12 @@ static const TypeInfo virtio_s390_device_info = {
     .abstract = true,
 };
 
-static Property s390_virtio_scsi_properties[] = {
-    DEFINE_VIRTIO_COMMON_FEATURES(VirtIOS390Device, host_features),
-    DEFINE_PROP_END_OF_LIST(),
-};
-
 static void s390_virtio_scsi_class_init(ObjectClass *klass, void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
     VirtIOS390DeviceClass *k = VIRTIO_S390_DEVICE_CLASS(klass);
 
     k->realize = s390_virtio_scsi_realize;
-    dc->props = s390_virtio_scsi_properties;
     set_bit(DEVICE_CATEGORY_STORAGE, dc->categories);
 }
 
@@ -687,18 +675,12 @@ static const TypeInfo s390_virtio_scsi = {
 };
 
 #ifdef CONFIG_VHOST_SCSI
-static Property s390_vhost_scsi_properties[] = {
-    DEFINE_VIRTIO_COMMON_FEATURES(VirtIOS390Device, host_features),
-    DEFINE_PROP_END_OF_LIST(),
-};
-
 static void s390_vhost_scsi_class_init(ObjectClass *klass, void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
     VirtIOS390DeviceClass *k = VIRTIO_S390_DEVICE_CLASS(klass);
 
     k->realize = s390_vhost_scsi_realize;
-    dc->props = s390_vhost_scsi_properties;
     set_bit(DEVICE_CATEGORY_STORAGE, dc->categories);
 }
 
