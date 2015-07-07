@@ -273,7 +273,7 @@ cp %{SOURCE4} build_configure.sh
   "%{_sysconfdir}" \
   "%{_localstatedir}" \
   "%{_libexecdir}" \
-  "%{pkgname}" \
+  "qemu-ga" \
   "%{kvm_target}" \
   "%{name}-%{version}-%{release}" \
   "%{optflags}" \
