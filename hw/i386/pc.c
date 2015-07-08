@@ -1416,6 +1416,7 @@ static const MemoryRegionOps ioportF0_io_ops = {
 
 void pc_basic_device_init(ISABus *isa_bus, qemu_irq *gsi,
                           ISADevice **rtc_state,
+                          bool create_fdctrl,
                           ISADevice **floppy,
                           bool no_vmport,
                           uint32 hpet_irqs)
@@ -1512,7 +1513,7 @@ void pc_basic_device_init(ISABus *isa_bus, qemu_irq *gsi,
     for(i = 0; i < MAX_FD; i++) {
         fd[i] = drive_get(IF_FLOPPY, 0, i);
     }
-    *floppy = fdctrl_init_isa(isa_bus, fd);
+    *floppy = create_fdctrl ? fdctrl_init_isa(isa_bus, fd) : NULL;
 }
 
 void pc_nic_init(ISABus *isa_bus, PCIBus *pci_bus)
