@@ -555,6 +555,7 @@ static QEMUMachine pc_q35_machine_rhel720 = {
     .init = pc_q35_init_rhel720,
     .default_machine_opts = "firmware=bios-256k.bin",
     .default_display = "std",
+    .no_floppy = 1,
     .compat_props = (GlobalProperty[]) {
         { /* end of list */ }
     },
