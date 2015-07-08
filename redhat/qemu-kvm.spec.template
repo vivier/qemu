@@ -771,6 +771,126 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Wed Jul 08 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-8.el7
+- kvm-block-Fix-NULL-deference-for-unaligned-write-if-qiov.patch [bz#1207034]
+- kvm-qemu-iotests-Test-unaligned-sub-block-zero-write.patch [bz#1207034]
+- kvm-spapr_drc-initial-implementation-of-sPAPRDRConnector.patch [bz#1172478]
+- kvm-spapr_rtas-add-get-set-power-level-RTAS-interfaces.patch [bz#1172478]
+- kvm-spapr_rtas-add-set-indicator-RTAS-interface.patch [bz#1172478]
+- kvm-spapr_rtas-add-get-sensor-state-RTAS-interface.patch [bz#1172478]
+- kvm-spapr-add-rtas_st_buffer_direct-helper.patch [bz#1172478]
+- kvm-spapr_rtas-add-ibm-configure-connector-RTAS-interfac.patch [bz#1172478]
+- kvm-spapr_events-re-use-EPOW-event-infrastructure-for-ho.patch [bz#1172478]
+- kvm-spapr_events-event-scan-RTAS-interface.patch [bz#1172478]
+- kvm-spapr_drc-add-spapr_drc_populate_dt.patch [bz#1172478]
+- kvm-spapr_pci-add-dynamic-reconfiguration-option-for-spa.patch [bz#1172478]
+- kvm-spapr_pci-create-DRConnectors-for-each-PCI-slot-duri.patch [bz#1172478]
+- kvm-pci-make-pci_bar-useable-outside-pci.c.patch [bz#1172478]
+- kvm-spapr_pci-enable-basic-hotplug-operations.patch [bz#1172478]
+- kvm-spapr_pci-emit-hotplug-add-remove-events-during-hotp.patch [bz#1172478]
+- kvm-Print-error-when-failing-to-load-PCI-config-data.patch [bz#1209793]
+- kvm-Fix-ich9-intel-hda-compatibility.patch [bz#1209793]
+- kvm-pseries-Enable-in-kernel-H_LOGICAL_CI_-LOAD-STORE-im.patch [bz#1217277]
+- kvm-Split-serial-isa-into-its-own-config-option.patch [bz#1191845]
+- kvm-rhel-Disable-info-irq-and-info-pic-for-Power.patch [bz#1191845]
+- kvm-RHEL-Disable-remaining-unsupported-devices-for-ppc.patch [bz#1191845]
+- kvm-linux-headers-sync-vhost.h.patch [bz#1225715]
+- kvm-virtio-introduce-virtio_legacy_is_cross_endian.patch [bz#1225715]
+- kvm-vhost-set-vring-endianness-for-legacy-virtio.patch [bz#1225715]
+- kvm-tap-add-VNET_LE-VNET_BE-operations.patch [bz#1225715]
+- kvm-tap-fix-non-linux-build.patch [bz#1225715]
+- kvm-vhost-net-tell-tap-backend-about-the-vnet-endianness.patch [bz#1225715]
+- kvm-vhost_net-re-enable-when-cross-endian.patch [bz#1225715]
+- kvm-linux-headers-update.patch [bz#1227343]
+- kvm-virtio-input-add-linux-input.h.patch [bz#1227343]
+- kvm-virtio-input-core-code-base-class-device.patch [bz#1227343]
+- kvm-virtio-input-emulated-devices-device.patch [bz#1227343]
+- kvm-virtio-net-Move-DEFINE_VIRTIO_NET_FEATURES-to-virtio.patch [bz#1227343]
+- kvm-virtio-scsi-Move-DEFINE_VIRTIO_SCSI_FEATURES-to-virt.patch [bz#1227343]
+- kvm-memory-Define-API-for-MemoryRegionOps-to-take-attrs-.patch [bz#1227343]
+- kvm-memory-Replace-io_mem_read-write-with-memory_region_.patch [bz#1227343]
+- kvm-Make-CPU-iotlb-a-structure-rather-than-a-plain-hwadd.patch [bz#1227343]
+- kvm-Add-MemTxAttrs-to-the-IOTLB.patch [bz#1227343]
+- kvm-exec.c-Convert-subpage-memory-ops-to-_with_attrs.patch [bz#1227343]
+- kvm-exec.c-Make-address_space_rw-take-transaction-attrib.patch [bz#1227343]
+- kvm-exec.c-Add-new-address_space_ld-st-functions.patch [bz#1227343]
+- kvm-Switch-non-CPU-callers-from-ld-st-_phys-to-address_s.patch [bz#1227343]
+- kvm-s390-virtio-sort-into-categories.patch [bz#1227343]
+- kvm-s390-virtio-use-common-features.patch [bz#1227343]
+- kvm-virtio-move-host_features.patch [bz#1227343]
+- kvm-virtio-ccw-Don-t-advertise-VIRTIO_F_BAD_FEATURE.patch [bz#1227343]
+- kvm-virtio-move-VIRTIO_F_NOTIFY_ON_EMPTY-into-core.patch [bz#1227343]
+- kvm-qdev-add-64bit-properties.patch [bz#1227343]
+- kvm-virtio-make-features-64bit-wide.patch [bz#1227343]
+- kvm-virtio-input-const_le16-and-const_le32-not-build-tim.patch [bz#1227343]
+- kvm-virtio-input-make-virtio-devices-follow-usual-naming.patch [bz#1227343]
+- kvm-virtio-64bit-features-fixups.patch [bz#1227343]
+- kvm-virtio-endianness-checks-for-virtio-1.0-devices.patch [bz#1227343]
+- kvm-virtio-allow-virtio-1-queue-layout.patch [bz#1227343]
+- kvm-virtio-disallow-late-feature-changes-for-virtio-1.patch [bz#1227343]
+- kvm-virtio-allow-to-fail-setting-status.patch [bz#1227343]
+- kvm-virtio-net-no-writeable-mac-for-virtio-1.patch [bz#1227343]
+- kvm-virtio-net-support-longer-header.patch [bz#1227343]
+- kvm-virtio-net-enable-virtio-1.0.patch [bz#1227343]
+- kvm-vhost_net-add-version_1-feature.patch [bz#1227343]
+- kvm-vhost-64-bit-features.patch [bz#1227343]
+- kvm-linux-headers-add-virtio_pci.patch [bz#1227343]
+- kvm-virtio-pci-initial-virtio-1.0-support.patch [bz#1227343]
+- kvm-virtio-generation-counter-support.patch [bz#1227343]
+- kvm-virtio-add-modern-config-accessors.patch [bz#1227343]
+- kvm-virtio-pci-switch-to-modern-accessors-for-1.0.patch [bz#1227343]
+- kvm-virtio-pci-add-flags-to-enable-disable-legacy-modern.patch [bz#1227343]
+- kvm-virtio-pci-make-QEMU_VIRTIO_PCI_QUEUE_MEM_MULT-small.patch [bz#1227343]
+- kvm-virtio-pci-change-document-virtio-pci-bar-layout.patch [bz#1227343]
+- kvm-virtio-pci-make-modern-bar-64bit-prefetchable.patch [bz#1227343]
+- kvm-virtio-pci-correctly-set-host-notifiers-for-modern-b.patch [bz#1227343]
+- kvm-virtio_balloon-header-update.patch [bz#1227343]
+- kvm-virtio-balloon-switch-to-virtio_add_feature.patch [bz#1227343]
+- kvm-virtio-pci-add-struct-VirtIOPCIRegion-for-virtio-1-r.patch [bz#1227343]
+- kvm-virtio-pci-add-virtio_pci_modern_regions_init.patch [bz#1227343]
+- kvm-virtio-pci-add-virtio_pci_modern_region_map.patch [bz#1227343]
+- kvm-virtio-pci-move-virtio_pci_add_mem_cap-call-to-virti.patch [bz#1227343]
+- kvm-virtio-pci-move-cap-type-to-VirtIOPCIRegion.patch [bz#1227343]
+- kvm-virtio-pci-drop-identical-virtio_pci_cap.patch [bz#1227343]
+- kvm-virtio-pci-fill-VirtIOPCIRegions-early.patch [bz#1227343]
+- kvm-pci-add-PCI_CLASS_INPUT_.patch [bz#1227343]
+- kvm-virtio-input-core-code-base-class-pci.patch [bz#1227343]
+- kvm-virtio-input-emulated-devices-pci.patch [bz#1227343]
+- kvm-virtio-net-move-qdev-properties-into-virtio-net.c.patch [bz#1227343]
+- kvm-virtio-net.h-Remove-unsed-DEFINE_VIRTIO_NET_PROPERTI.patch [bz#1227343]
+- kvm-virtio-scsi-move-qdev-properties-into-virtio-scsi.c.patch [bz#1227343]
+- kvm-virtio-rng-move-qdev-properties-into-virtio-rng.c.patch [bz#1227343]
+- kvm-virtio-serial-bus-move-qdev-properties-into-virtio-s.patch [bz#1227343]
+- kvm-virtio-9p-device-move-qdev-properties-into-virtio-9p.patch [bz#1227343]
+- kvm-vhost-scsi-move-qdev-properties-into-vhost-scsi.c.patch [bz#1227343]
+- kvm-virito-pci-fix-OVERRUN-problem.patch [bz#1227343]
+- kvm-virtio-input-move-properties-use-virtio_instance_ini.patch [bz#1227343]
+- kvm-virtio-input-evdev-passthrough.patch [bz#1227343]
+- kvm-Add-MAINTAINERS-entry-for-virtio-input.patch [bz#1227343]
+- kvm-virtio-input-add-input-routing-support.patch [bz#1227343]
+- kvm-dataplane-fix-cross-endian-issues.patch [bz#1227343]
+- kvm-aarch64-allow-enable-seccomp.patch [bz#1174861]
+- kvm-aarch64-redhat-spec-enable-seccomp.patch [bz#1174861]
+- kvm-rhel-Update-package-version-for-SLOF-dependency.patch [bz#1236447]
+- Resolves: bz#1172478
+  (add support for PCI hotplugging)
+- Resolves: bz#1174861
+  (use seccomp)
+- Resolves: bz#1191845
+  ([PowerKVM] There are some unsupported x86 devices under the output of cmds 'man qemu-kvm' and '/usr/libexec/qemu-kvm -device help')
+- Resolves: bz#1207034
+  (QEMU segfault when doing unaligned zero write to non-512 disk)
+- Resolves: bz#1209793
+  (migration: 7.1->7.2 error while loading state for instance 0x0 of device '0000:00:04.0/intel-hda')
+- Resolves: bz#1217277
+  (Enable KVM implementation of H_LOGICAL_CI_{LOAD,STORE})
+- Resolves: bz#1225715
+  (Enable cross-endian vhost devices)
+- Resolves: bz#1227343
+  ([virtio-1] QEMU Virtio-1 Support)
+- Resolves: bz#1236447
+  (Update qemu-kvm-rhev package for new SLOF)
+
 * Thu Jul 02 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-7.el7
 - kvm-docs-update-documentation-for-memory-hot-unplug.patch [bz#1120706]
 - kvm-acpi-mem-hotplug-add-acpi_memory_slot_status-to-get-.patch [bz#1120706]
