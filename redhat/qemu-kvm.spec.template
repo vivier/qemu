@@ -786,6 +786,45 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Thu Jul 09 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-9.el7
+- kvm-acpi-add-a-missing-backslash-to-the-_SB-scope.patch [bz#1103313]
+- kvm-range-remove-useless-inclusions.patch [bz#1103313]
+- kvm-acpi-Simplify-printing-to-dynamic-string.patch [bz#1103313]
+- kvm-acpi-add-aml_add-term.patch [bz#1103313]
+- kvm-acpi-add-aml_lless-term.patch [bz#1103313]
+- kvm-acpi-add-aml_index-term.patch [bz#1103313]
+- kvm-acpi-add-aml_shiftleft-term.patch [bz#1103313]
+- kvm-acpi-add-aml_shiftright-term.patch [bz#1103313]
+- kvm-acpi-add-aml_increment-term.patch [bz#1103313]
+- kvm-acpi-add-aml_while-term.patch [bz#1103313]
+- kvm-acpi-add-implementation-of-aml_while-term.patch [bz#1103313]
+- kvm-hw-pci-made-pci_bus_is_root-a-PCIBusClass-method.patch [bz#1103313]
+- kvm-hw-pci-made-pci_bus_num-a-PCIBusClass-method.patch [bz#1103313]
+- kvm-hw-i386-query-only-for-q35-pc-when-looking-for-pci-h.patch [bz#1103313]
+- kvm-hw-pci-extend-PCI-config-access-to-support-devices-b.patch [bz#1103313]
+- kvm-hw-acpi-add-support-for-i440fx-snooping-root-busses.patch [bz#1103313]
+- kvm-hw-apci-add-_PRT-method-for-extra-PCI-root-busses.patch [bz#1103313]
+- kvm-hw-acpi-add-_CRS-method-for-extra-root-busses.patch [bz#1103313]
+- kvm-hw-acpi-remove-from-root-bus-0-the-crs-resources-use.patch [bz#1103313]
+- kvm-hw-pci-removed-rootbus-nr-is-0-assumption-from-qmp_p.patch [bz#1103313]
+- kvm-hw-pci-introduce-PCI-Expander-Bridge-PXB.patch [bz#1103313]
+- kvm-hw-pci-inform-bios-if-the-system-has-extra-pci-root-.patch [bz#1103313]
+- kvm-hw-pxb-add-map_irq-func.patch [bz#1103313]
+- kvm-hw-pci-add-support-for-NUMA-nodes.patch [bz#1103313]
+- kvm-hw-pxb-add-numa_node-parameter.patch [bz#1103313]
+- kvm-apci-fix-PXB-behaviour-if-used-with-unsupported-BIOS.patch [bz#1103313]
+- kvm-docs-Add-PXB-documentation.patch [bz#1103313]
+- kvm-sPAPR-Don-t-enable-EEH-on-emulated-PCI-devices.patch [bz#1213681]
+- kvm-sPAPR-Reenable-EEH-functionality-on-reboot.patch [bz#1213681]
+- kvm-sPAPR-Clear-stale-MSIx-table-during-EEH-reset.patch [bz#1213681]
+- kvm-configure-Add-support-for-tcmalloc.patch [bz#1213882]
+- Resolves: bz#1103313
+  (RFE: configure guest NUMA node locality for guest PCI devices)
+- Resolves: bz#1213681
+  (PAPR PCI-e EEH (Enhanced Error Handling) for KVM/Power guests with VFIO devices (qemu))
+- Resolves: bz#1213882
+  (enable using tcmalloc for memory allocation in qemu-kvm-rhev)
+
 * Wed Jul 08 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-8.el7
 - kvm-block-Fix-NULL-deference-for-unaligned-write-if-qiov.patch [bz#1207034]
 - kvm-qemu-iotests-Test-unaligned-sub-block-zero-write.patch [bz#1207034]
