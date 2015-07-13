@@ -382,6 +382,15 @@ install -c -m 0755  qemu-ga ${RPM_BUILD_ROOT}%{_bindir}/qemu-ga
 
 %changelog
 %%CHANGELOG%%
+* Mon Jul 13 2015 Miroslav Rezanina <mrezanin@redhat.com> - 2.3.0-2.el7
+- synchronized with qemu-kvm-rhev-2.3.0-9.el7
+- qemuga-Change-fsreeze-hook-default-location.patch [bz#1210707]
+- qemuga-qga-commands-posix-Fix-bug-in-guest-fstrim.patch [bz#1211973]
+- Resolves: bz#1210707
+  (The default path '/etc/qemu/fsfreeze-hook' for 'fsfreeze-hook' script doesn't exist)
+- Resolves: bz#1211973
+  ('guest-fstrim' failed for guest with os on spapr-vscsi disk)
+
 * Tue Apr 28 2015 Miroslav Rezanina <mrezanin@redhat.com> - 2.3.0-1.el7
 - Rebase to 2.3.0 [bz#1194152]
 - Resolves: bz#1194152
