@@ -99,8 +99,6 @@ static QLIST_HEAD(, BlockDriver) bdrv_drivers =
 
 static void bdrv_set_dirty(BlockDriverState *bs, int64_t cur_sector,
                            int nr_sectors);
-static void bdrv_reset_dirty(BlockDriverState *bs, int64_t cur_sector,
-                             int nr_sectors);
 /* If non-zero, use only whitelisted block drivers */
 static int use_bdrv_whitelist;
 
@@ -5669,15 +5667,6 @@ static void bdrv_set_dirty(BlockDriverState *bs, int64_t cur_sector,
     BdrvDirtyBitmap *bitmap;
     QLIST_FOREACH(bitmap, &bs->dirty_bitmaps, list) {
         hbitmap_set(bitmap->bitmap, cur_sector, nr_sectors);
-    }
-}
-
-static void bdrv_reset_dirty(BlockDriverState *bs, int64_t cur_sector,
-                             int nr_sectors)
-{
-    BdrvDirtyBitmap *bitmap;
-    QLIST_FOREACH(bitmap, &bs->dirty_bitmaps, list) {
-        hbitmap_reset(bitmap->bitmap, cur_sector, nr_sectors);
     }
 }
 
