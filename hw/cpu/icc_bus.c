@@ -96,6 +96,7 @@ static void icc_bridge_class_init(ObjectClass *oc, void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(oc);
 
+    dc->cannot_instantiate_with_device_add_yet = true; /* RH state preserve */
     set_bit(DEVICE_CATEGORY_BRIDGE, dc->categories);
 }
 

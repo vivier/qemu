@@ -2390,6 +2390,7 @@ static void sysbus_fdc_class_init(ObjectClass *klass, void *data)
     DeviceClass *dc = DEVICE_CLASS(klass);
 
     dc->props = sysbus_fdc_properties;
+    dc->cannot_instantiate_with_device_add_yet = true; /* RH state preserve */
     set_bit(DEVICE_CATEGORY_STORAGE, dc->categories);
 }
 
@@ -2410,6 +2411,7 @@ static void sun4m_fdc_class_init(ObjectClass *klass, void *data)
     DeviceClass *dc = DEVICE_CLASS(klass);
 
     dc->props = sun4m_fdc_properties;
+    dc->cannot_instantiate_with_device_add_yet = true; /* RH state preserve */
     set_bit(DEVICE_CATEGORY_STORAGE, dc->categories);
 }
 

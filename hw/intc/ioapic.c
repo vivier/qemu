@@ -244,6 +244,7 @@ static void ioapic_class_init(ObjectClass *klass, void *data)
 
     k->realize = ioapic_realize;
     dc->reset = ioapic_reset_common;
+    dc->cannot_instantiate_with_device_add_yet = true; /* RH state preserve */
 }
 
 static const TypeInfo ioapic_info = {
