@@ -786,6 +786,23 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Tue Jul 14 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-10.el7
+- kvm-Disable-Educational-device.patch [bz#1194151]
+- kvm-Disable-sdhci-device.patch [bz#1194151]
+- kvm-Mark-onboard-devices-as-cannot_instantiate_with_devi.patch [bz#1194151]
+- kvm-target-arm-Add-GIC-phandle-to-VirtBoardInfo.patch [bz#1231929]
+- kvm-arm_gicv2m-Add-GICv2m-widget-to-support-MSIs.patch [bz#1231929]
+- kvm-target-arm-Extend-the-gic-node-properties.patch [bz#1231929]
+- kvm-target-arm-Add-the-GICv2m-to-the-virt-board.patch [bz#1231929]
+- kvm-introduce-kvm_arch_msi_data_to_gsi.patch [bz#1231929]
+- kvm-arm_gicv2m-set-kvm_gsi_direct_mapping-and-kvm_msi_vi.patch [bz#1231929]
+- kvm-hw-arm-virt-acpi-build-Fix-table-revision-and-some-c.patch [bz#1231929]
+- kvm-hw-arm-virt-acpi-build-Add-GICv2m-description-in-ACP.patch [bz#1231929]
+- Resolves: bz#1194151
+  (Rebase to qemu 2.3)
+- Resolves: bz#1231929
+  (AArch64: backport MSI support (gicv2m))
+
 * Thu Jul 09 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-9.el7
 - kvm-acpi-add-a-missing-backslash-to-the-_SB-scope.patch [bz#1103313]
 - kvm-range-remove-useless-inclusions.patch [bz#1103313]
