@@ -1857,8 +1857,10 @@ void ide_data_writew(void *opaque, uint32_t addr, uint32_t val)
     *(uint16_t *)p = le16_to_cpu(val);
     p += 2;
     s->data_ptr = p;
-    if (p >= s->data_end)
+    if (p >= s->data_end) {
+        s->status &= ~DRQ_STAT;
         s->end_transfer_func(s);
+    }
 }
 
 uint32_t ide_data_readw(void *opaque, uint32_t addr)
@@ -1882,8 +1884,10 @@ uint32_t ide_data_readw(void *opaque, uint32_t addr)
     ret = cpu_to_le16(*(uint16_t *)p);
     p += 2;
     s->data_ptr = p;
-    if (p >= s->data_end)
+    if (p >= s->data_end) {
+        s->status &= ~DRQ_STAT;
         s->end_transfer_func(s);
+    }
     return ret;
 }
 
@@ -1907,8 +1911,10 @@ void ide_data_writel(void *opaque, uint32_t addr, uint32_t val)
     *(uint32_t *)p = le32_to_cpu(val);
     p += 4;
     s->data_ptr = p;
-    if (p >= s->data_end)
+    if (p >= s->data_end) {
+        s->status &= ~DRQ_STAT;
         s->end_transfer_func(s);
+    }
 }
 
 uint32_t ide_data_readl(void *opaque, uint32_t addr)
@@ -1932,8 +1938,10 @@ uint32_t ide_data_readl(void *opaque, uint32_t addr)
     ret = cpu_to_le32(*(uint32_t *)p);
     p += 4;
     s->data_ptr = p;
-    if (p >= s->data_end)
+    if (p >= s->data_end) {
+        s->status &= ~DRQ_STAT;
         s->end_transfer_func(s);
+    }
     return ret;
 }
 
