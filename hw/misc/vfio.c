@@ -2466,6 +2466,33 @@ static int vfio_early_setup_msix(VFIODevice *vdev)
             vdev->host.function, pos, vdev->msix->table_bar,
             vdev->msix->table_offset, vdev->msix->entries);
 
+    /*
+     * Test the size of the pba_offset variable and catch if it extends outside
+     * of the specified BAR. If it is the case, we need to apply a hardware
+     * specific quirk if the device is known or we have a broken configuration.
+     */
+    if (vdev->msix->pba_offset >=
+        vdev->bars[vdev->msix->pba_bar].size) {
+
+        PCIDevice *pdev = &vdev->pdev;
+        uint16_t vendor = pci_get_word(pdev->config + PCI_VENDOR_ID);
+        uint16_t device = pci_get_word(pdev->config + PCI_DEVICE_ID);
+
+        /*
+         * Chelsio T5 Virtual Function devices are encoded as 0x58xx for T5
+         * adapters. The T5 hardware returns an incorrect value of 0x8000 for
+         * the VF PBA offset while the BAR itself is only 8k. The correct value
+         * is 0x1000, so we hard code that here.
+         */
+        if (vendor == PCI_VENDOR_ID_CHELSIO && (device & 0xff00) == 0x5800) {
+            vdev->msix->pba_offset = 0x1000;
+        } else {
+            error_report("vfio: Hardware reports invalid configuration, "
+                         "MSIX PBA outside of specified BAR");
+            return -EINVAL;
+        }
+    }
+
     return 0;
 }
 
