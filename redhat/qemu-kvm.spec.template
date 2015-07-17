@@ -786,6 +786,13 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Fri Jul 17 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-12.el7
+- kvm-ide-Check-array-bounds-before-writing-to-io_buffer-C.patch [bz#1243692]
+- kvm-ide-atapi-Fix-START-STOP-UNIT-command-completion.patch [bz#1243692]
+- kvm-ide-Clear-DRQ-after-handling-all-expected-accesses.patch [bz#1243692]
+- Resolves: bz#1243692
+  ()
+
 * Fri Jul 17 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-11.el7
 - kvm-hw-acpi-acpi_pm1_cnt_init-take-disable_s3-and-disabl.patch [bz#1204696]
 - kvm-hw-acpi-move-etc-system-states-fw_cfg-file-from-PIIX.patch [bz#1204696]
