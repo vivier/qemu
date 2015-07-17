@@ -165,7 +165,7 @@ static void pc_q35_init(MachineState *machine)
     if (smbios_defaults) {
         /* These values are guest ABI, do not change */
         smbios_set_defaults("Red Hat", "KVM",
-                            mc->name, smbios_legacy_mode, smbios_uuid_encoded);
+                            mc->desc, smbios_legacy_mode, smbios_uuid_encoded);
     }
 
     /* allocate ram and load rom/bios */

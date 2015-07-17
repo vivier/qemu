@@ -174,7 +174,7 @@ static void pc_init1(MachineState *machine,
         MachineClass *mc = MACHINE_GET_CLASS(machine);
         /* These values are guest ABI, do not change */
         smbios_set_defaults("Red Hat", "KVM",
-                            mc->name, smbios_legacy_mode, smbios_uuid_encoded);
+                            mc->desc, smbios_legacy_mode, smbios_uuid_encoded);
     }
 
     /* allocate ram and load rom/bios */
