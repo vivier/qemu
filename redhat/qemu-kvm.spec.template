@@ -786,6 +786,39 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Fri Jul 17 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-11.el7
+- kvm-hw-acpi-acpi_pm1_cnt_init-take-disable_s3-and-disabl.patch [bz#1204696]
+- kvm-hw-acpi-move-etc-system-states-fw_cfg-file-from-PIIX.patch [bz#1204696]
+- kvm-hw-acpi-piix4_pm_init-take-fw_cfg-object-no-more.patch [bz#1204696]
+- kvm-i386-pc-pc_basic_device_init-delegate-FDC-creation-r.patch [bz#1227282]
+- kvm-i386-pc-drive-if-floppy-should-imply-a-board-default.patch [bz#1227282]
+- kvm-i386-pc_q35-don-t-insist-on-board-FDC-if-there-s-no-.patch [bz#1227282]
+- kvm-i386-drop-FDC-in-pc-q35-rhel7.2.0-if-neither-it-nor-.patch [bz#1227282]
+- kvm-hw-i386-pc-factor-out-pc_cmos_init_floppy.patch [bz#1227282]
+- kvm-hw-i386-pc-reflect-any-FDC-ioport-0x3f0-in-the-CMOS.patch [bz#1227282]
+- kvm-hw-i386-pc-don-t-carry-FDC-from-pc_basic_device_init.patch [bz#1227282]
+- kvm-Fix-reported-machine-type.patch [bz#1241331]
+- kvm-i386-acpi-build-more-traditional-_UID-and-_HID-for-P.patch [bz#1242479]
+- kvm-i386-acpi-build-fix-PXB-workarounds-for-unsupported-.patch [bz#1242479]
+- kvm-hw-core-rebase-sysbus_get_fw_dev_path-to-g_strdup_pr.patch [bz#1242479]
+- kvm-migration-introduce-VMSTATE_BUFFER_UNSAFE_INFO_TEST.patch [bz#1242479]
+- kvm-hw-pci-bridge-expose-_test-parameter-in-SHPC_VMSTATE.patch [bz#1242479]
+- kvm-hw-pci-bridge-add-macro-for-chassis_nr-property.patch [bz#1242479]
+- kvm-hw-pci-bridge-add-macro-for-msi-property.patch [bz#1242479]
+- kvm-hw-pci-introduce-shpc_present-helper-function.patch [bz#1242479]
+- kvm-hw-pci-bridge-introduce-shpc-property.patch [bz#1242479]
+- kvm-hw-pci-bridge-disable-SHPC-in-PXB.patch [bz#1242479]
+- kvm-hw-core-explicit-OFW-unit-address-callback-for-SysBu.patch [bz#1242479]
+- kvm-hw-pci-bridge-format-special-OFW-unit-address-for-PX.patch [bz#1242479]
+- Resolves: bz#1204696
+  (Expose PM system states in fw_cfg file on Q35)
+- Resolves: bz#1227282
+  (tighten conditions for board-implied FDC in pc-q35-rhel7.2.0+)
+- Resolves: bz#1241331
+  (Machine type reported by guest is different with that in RHEL.7.1 GA version)
+- Resolves: bz#1242479
+  (backport QEMU changes needed for supporting multiple PCI root buses with OVMF)
+
 * Tue Jul 14 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-10.el7
 - kvm-Disable-Educational-device.patch [bz#1194151]
 - kvm-Disable-sdhci-device.patch [bz#1194151]
