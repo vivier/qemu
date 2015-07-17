@@ -861,6 +861,12 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Jul 16 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-96.el7
+- kvm-ahci.c-mask-unused-flags-when-reading-size-PRDT-DBC.patch [bz#1205100]
+- kvm-ide-Correct-handling-of-malformed-short-PRDTs.patch [bz#1205100]
+- Resolves: bz#1205100
+  (qemu-kvm: Qemu: PRDT overflow from guest to host [rhel-7.2])
+
 * Tue Jul 07 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-95.el7
 - kvm-i8254-fix-out-of-bounds-memory-access-in-pit_ioport_.patch [bz#1229646]
 - kvm-target-i386-fix-cpuid-leaf-0x0d.patch [bz#1233350]
