@@ -861,6 +861,13 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Jul 17 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-97.el7
+- kvm-ide-Check-array-bounds-before-writing-to-io_buffer-C.patch [bz#1243690]
+- kvm-ide-atapi-Fix-START-STOP-UNIT-command-completion.patch [bz#1243690]
+- kvm-ide-Clear-DRQ-after-handling-all-expected-accesses.patch [bz#1243690]
+- Resolves: bz#1243690
+  (EMBARGOED CVE-2015-5154 qemu-kvm: qemu: ide: atapi: heap overflow during I/O buffer memory access [rhel-7.2])
+
 * Thu Jul 16 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-96.el7
 - kvm-ahci.c-mask-unused-flags-when-reading-size-PRDT-DBC.patch [bz#1205100]
 - kvm-ide-Correct-handling-of-malformed-short-PRDTs.patch [bz#1205100]
