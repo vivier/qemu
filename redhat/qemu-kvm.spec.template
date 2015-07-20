@@ -920,6 +920,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Mon Jul 20 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-23.el7_1_1.6
+- kvm-i8254-fix-out-of-bounds-memory-access-in-pit_ioport_.patch [bz#1243727]
+- Resolves: bz#1243727
+  (CVE-2015-3214 qemu-kvm-rhev: qemu/kvm: i8254: out-of-bounds memory access in pit_ioport_read function [rhel-7.1.z])
+
 * Fri Jul 17 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-23.el7_1.5
 - kvm-ide-Check-array-bounds-before-writing-to-io_buffer-C.patch [bz#1243691]
 - kvm-ide-atapi-Fix-START-STOP-UNIT-command-completion.patch [bz#1243691]
