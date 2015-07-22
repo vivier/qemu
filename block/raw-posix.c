@@ -388,7 +388,6 @@ static int raw_open_common(BlockDriverState *bs, QDict *options,
         if (ret == -EROFS) {
             ret = -EACCES;
         }
-        error_setg_errno(errp, -ret, "Could not open file");
         goto fail;
     }
     s->fd = fd;
