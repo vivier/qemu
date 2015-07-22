@@ -5489,11 +5489,6 @@ void bdrv_img_create(const char *filename, const char *fmt,
             ret = bdrv_open(bs, backing_file->value.s, NULL, back_flags,
                             backing_drv, &local_err);
             if (ret < 0) {
-                error_setg_errno(errp, -ret, "Could not open '%s': %s",
-                                 backing_file->value.s,
-                                 error_get_pretty(local_err));
-                error_free(local_err);
-                local_err = NULL;
                 goto out;
             }
             bdrv_get_geometry(bs, &size);
