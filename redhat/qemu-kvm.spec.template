@@ -160,6 +160,7 @@ Source21: kvm-setup
 Source22: kvm-setup.service
 Source23: 85-kvm.preset
 Source24: build_configure.sh
+Source25: kvm-unit-tests.git-4ea7633.tar.bz2
 
 %%CONFIGS%%
 
@@ -250,6 +251,11 @@ BuildRequires: lzo-devel snappy-devel
 # For NUMA memory binding
 BuildRequires: numactl-devel
 
+# For kvm-unit-tests
+%ifarch x86_64
+BuildRequires: binutils
+BuildRequires: kernel-devel
+%endif
 
 Requires: qemu-img%{?pkgsuffix} = %{epoch}:%{version}-%{release}
 
@@ -390,6 +396,11 @@ ApplyOptionalPatch()
 
 ApplyOptionalPatch qemu-kvm-test.patch
 
+# for tscdeadline_latency.flat
+%ifarch x86_64
+  tar -xf %{SOURCE25}
+%endif
+
 %build
 buildarch="%{kvm_target}-softmmu"
 
@@ -481,6 +492,12 @@ cp -a %{kvm_target}-softmmu/qemu-system-%{kvm_target} qemu-kvm
 
 gcc %{SOURCE6} -O2 -g -o ksmctl
 
+# build tscdeadline_latency.flat
+%ifarch x86_64
+  (cd  kvm-unit-tests && ./configure)
+  make -C kvm-unit-tests
+%endif
+
 %install
 %define _udevdir %(pkg-config --variable=udevdir udev)/rules.d
 
@@ -501,6 +518,8 @@ install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_udevdir}
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{pkgname}
 %ifarch x86_64
     install -m 0644 scripts/dump-guest-memory.py \
+                    $RPM_BUILD_ROOT%{_datadir}/%{pkgname}
+    install -m 0644 kvm-unit-tests/x86/tscdeadline_latency.flat \
                     $RPM_BUILD_ROOT%{_datadir}/%{pkgname}
 %endif
 
@@ -761,6 +780,9 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %files -n qemu-kvm-tools%{?pkgsuffix}
 %defattr(-,root,root,-)
 %{_bindir}/kvm_stat
+%ifarch x86_64
+%{_datadir}/%{pkgname}/tscdeadline_latency.flat
+%endif
 
 %files -n qemu-img%{?pkgsuffix}
 %defattr(-,root,root)
