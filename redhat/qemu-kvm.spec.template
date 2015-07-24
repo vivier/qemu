@@ -861,6 +861,19 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Jul 24 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-98.el7
+- kvm-block-curl-Don-t-lose-original-error-when-a-connecti.patch [bz#1235812]
+- kvm-vfio-pci-Add-pba_offset-PCI-quirk-for-Chelsio-T5-dev.patch [bz#1244347]
+- kvm-block-Print-its-file-name-if-backing-file-opening-fa.patch [bz#1238639]
+- kvm-block-Propagate-error-in-bdrv_img_create.patch [bz#1238639]
+- kvm-iotests-Add-test-for-non-existing-backing-file.patch [bz#1238639]
+- Resolves: bz#1235812
+  (block/curl: Fix generic "Input/output error" on failure)
+- Resolves: bz#1238639
+  (qemu-img shows error message for backing file twice)
+- Resolves: bz#1244347
+  (Quirk for Chelsio T5 MSI-X PBA)
+
 * Fri Jul 17 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-97.el7
 - kvm-ide-Check-array-bounds-before-writing-to-io_buffer-C.patch [bz#1243690]
 - kvm-ide-atapi-Fix-START-STOP-UNIT-command-completion.patch [bz#1243690]
