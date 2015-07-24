@@ -58,7 +58,7 @@
         }                                                          \
     } while (0)
 
-static sPAPRPHBState *find_phb(sPAPREnvironment *spapr, uint64_t buid)
+sPAPRPHBState *spapr_pci_find_phb(sPAPREnvironment *spapr, uint64_t buid)
 {
     sPAPRPHBState *sphb;
 
@@ -72,10 +72,10 @@ static sPAPRPHBState *find_phb(sPAPREnvironment *spapr, uint64_t buid)
     return NULL;
 }
 
-static PCIDevice *find_dev(sPAPREnvironment *spapr, uint64_t buid,
-                           uint32_t config_addr)
+PCIDevice *spapr_pci_find_dev(sPAPREnvironment *spapr, uint64_t buid,
+                              uint32_t config_addr)
 {
-    sPAPRPHBState *sphb = find_phb(spapr, buid);
+    sPAPRPHBState *sphb = spapr_pci_find_phb(spapr, buid);
     PCIHostState *phb = PCI_HOST_BRIDGE(sphb);
     int bus_num = (config_addr >> 16) & 0xFF;
     int devfn = (config_addr >> 8) & 0xFF;
@@ -106,7 +106,7 @@ static void finish_read_pci_config(sPAPREnvironment *spapr, uint64_t buid,
         return;
     }
 
-    pci_dev = find_dev(spapr, buid, addr);
+    pci_dev = spapr_pci_find_dev(spapr, buid, addr);
     addr = rtas_pci_cfgaddr(addr);
 
     if (!pci_dev || (addr % size) || (addr >= pci_config_size(pci_dev))) {
@@ -173,7 +173,7 @@ static void finish_write_pci_config(sPAPREnvironment *spapr, uint64_t buid,
         return;
     }
 
-    pci_dev = find_dev(spapr, buid, addr);
+    pci_dev = spapr_pci_find_dev(spapr, buid, addr);
     addr = rtas_pci_cfgaddr(addr);
 
     if (!pci_dev || (addr % size) || (addr >= pci_config_size(pci_dev))) {
@@ -291,9 +291,9 @@ static void rtas_ibm_change_msi(PowerPCCPU *cpu, sPAPREnvironment *spapr,
     }
 
     /* Fins sPAPRPHBState */
-    phb = find_phb(spapr, buid);
+    phb = spapr_pci_find_phb(spapr, buid);
     if (phb) {
-        pdev = find_dev(spapr, buid, config_addr);
+        pdev = spapr_pci_find_dev(spapr, buid, config_addr);
     }
     if (!phb || !pdev) {
         rtas_st(rets, 0, RTAS_OUT_PARAM_ERROR);
@@ -392,9 +392,9 @@ static void rtas_ibm_query_interrupt_source_number(PowerPCCPU *cpu,
     spapr_pci_msi *msi;
 
     /* Find sPAPRPHBState */
-    phb = find_phb(spapr, buid);
+    phb = spapr_pci_find_phb(spapr, buid);
     if (phb) {
-        pdev = find_dev(spapr, buid, config_addr);
+        pdev = spapr_pci_find_dev(spapr, buid, config_addr);
     }
     if (!phb || !pdev) {
         rtas_st(rets, 0, RTAS_OUT_PARAM_ERROR);
@@ -438,7 +438,7 @@ static void rtas_ibm_set_eeh_option(PowerPCCPU *cpu,
     addr = rtas_ld(args, 0);
     option = rtas_ld(args, 3);
 
-    sphb = find_phb(spapr, buid);
+    sphb = spapr_pci_find_phb(spapr, buid);
     if (!sphb) {
         goto param_error_exit;
     }
@@ -479,7 +479,7 @@ static void rtas_ibm_get_config_addr_info2(PowerPCCPU *cpu,
     }
 
     buid = ((uint64_t)rtas_ld(args, 1) << 32) | rtas_ld(args, 2);
-    sphb = find_phb(spapr, buid);
+    sphb = spapr_pci_find_phb(spapr, buid);
     if (!sphb) {
         goto param_error_exit;
     }
@@ -497,7 +497,7 @@ static void rtas_ibm_get_config_addr_info2(PowerPCCPU *cpu,
     switch (option) {
     case RTAS_GET_PE_ADDR:
         addr = rtas_ld(args, 0);
-        pdev = find_dev(spapr, buid, addr);
+        pdev = spapr_pci_find_dev(spapr, buid, addr);
         if (!pdev) {
             goto param_error_exit;
         }
@@ -534,7 +534,7 @@ static void rtas_ibm_read_slot_reset_state2(PowerPCCPU *cpu,
     }
 
     buid = ((uint64_t)rtas_ld(args, 1) << 32) | rtas_ld(args, 2);
-    sphb = find_phb(spapr, buid);
+    sphb = spapr_pci_find_phb(spapr, buid);
     if (!sphb) {
         goto param_error_exit;
     }
@@ -580,7 +580,7 @@ static void rtas_ibm_set_slot_reset(PowerPCCPU *cpu,
 
     buid = ((uint64_t)rtas_ld(args, 1) << 32) | rtas_ld(args, 2);
     option = rtas_ld(args, 3);
-    sphb = find_phb(spapr, buid);
+    sphb = spapr_pci_find_phb(spapr, buid);
     if (!sphb) {
         goto param_error_exit;
     }
@@ -614,7 +614,7 @@ static void rtas_ibm_configure_pe(PowerPCCPU *cpu,
     }
 
     buid = ((uint64_t)rtas_ld(args, 1) << 32) | rtas_ld(args, 2);
-    sphb = find_phb(spapr, buid);
+    sphb = spapr_pci_find_phb(spapr, buid);
     if (!sphb) {
         goto param_error_exit;
     }
@@ -649,7 +649,7 @@ static void rtas_ibm_slot_error_detail(PowerPCCPU *cpu,
     }
 
     buid = ((uint64_t)rtas_ld(args, 1) << 32) | rtas_ld(args, 2);
-    sphb = find_phb(spapr, buid);
+    sphb = spapr_pci_find_phb(spapr, buid);
     if (!sphb) {
         goto param_error_exit;
     }
@@ -1172,7 +1172,7 @@ static void spapr_phb_realize(DeviceState *dev, Error **errp)
         return;
     }
 
-    if (find_phb(spapr, sphb->buid)) {
+    if (spapr_pci_find_phb(spapr, sphb->buid)) {
         error_setg(errp, "PCI host bridges must have unique BUIDs");
         return;
     }
