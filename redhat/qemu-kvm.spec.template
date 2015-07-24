@@ -786,6 +786,80 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Fri Jul 24 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-13.el7
+- kvm-block-Add-bdrv_get_block_status_above.patch [bz#1242316]
+- kvm-qmp-Add-optional-bool-unmap-to-drive-mirror.patch [bz#1242316]
+- kvm-mirror-Do-zero-write-on-target-if-sectors-not-alloca.patch [bz#1242316]
+- kvm-block-Fix-dirty-bitmap-in-bdrv_co_discard.patch [bz#1242316]
+- kvm-block-Remove-bdrv_reset_dirty.patch [bz#1242316]
+- kvm-iotests-add-QMP-event-waiting-queue.patch [bz#1242316]
+- kvm-qemu-iotests-Make-block-job-methods-common.patch [bz#1242316]
+- kvm-qemu-iotests-Add-test-case-for-mirror-with-unmap.patch [bz#1242316]
+- kvm-iotests-Use-event_wait-in-wait_ready.patch [bz#1242316]
+- kvm-rdma-fix-memory-leak.patch [bz#1210715]
+- kvm-Only-try-and-read-a-VMDescription-if-it-should-be-th.patch [bz#1210715]
+- kvm-qemu_ram_foreach_block-pass-up-error-value-and-down-.patch [bz#1210715]
+- kvm-rdma-Fix-qemu-crash-when-IPv6-address-is-used-for-mi.patch [bz#1210715]
+- kvm-Rename-RDMA-structures-to-make-destination-clear.patch [bz#1210715]
+- kvm-Remove-unneeded-memset.patch [bz#1210715]
+- kvm-rdma-typos.patch [bz#1210715]
+- kvm-Store-block-name-in-local-blocks-structure.patch [bz#1210715]
+- kvm-Translate-offsets-to-destination-address-space.patch [bz#1210715]
+- kvm-Rework-ram_control_load_hook-to-hook-during-block-lo.patch [bz#1210715]
+- kvm-Allow-rdma_delete_block-to-work-without-the-hash.patch [bz#1210715]
+- kvm-Rework-ram-block-hash.patch [bz#1210715]
+- kvm-Sort-destination-RAMBlocks-to-be-the-same-as-the-sou.patch [bz#1210715]
+- kvm-Sanity-check-RDMA-remote-data.patch [bz#1210715]
+- kvm-Fail-more-cleanly-in-mismatched-RAM-cases.patch [bz#1210715]
+- kvm-migration-Use-cmpxchg-correctly.patch [bz#1210715]
+- kvm-RDMA-Fix-error-exits-for-2.4.patch [bz#1210715]
+- kvm-block-mirror-Sleep-periodically-during-bitmap-scanni.patch [bz#1233826]
+- kvm-block-curl-Don-t-lose-original-error-when-a-connecti.patch [bz#1235813]
+- kvm-vfio-pci-Add-pba_offset-PCI-quirk-for-Chelsio-T5-dev.patch [bz#1244348]
+- kvm-hostmem-Fix-qemu_opt_get_bool-crash-in-host_memory_b.patch [bz#1237220]
+- kvm-pc-pc-dimm-Extract-hotplug-related-fields-in-PCMachi.patch [bz#1211117]
+- kvm-pc-pc-dimm-Factor-out-reusable-parts-in-pc_dimm_plug.patch [bz#1211117]
+- kvm-pc-Abort-if-HotplugHandlerClass-plug-fails.patch [bz#1211117]
+- kvm-numa-pc-dimm-Store-pc-dimm-memory-information-in-num.patch [bz#1211117]
+- kvm-numa-Store-boot-memory-address-range-in-node_info.patch [bz#1211117]
+- kvm-numa-API-to-lookup-NUMA-node-by-address.patch [bz#1211117]
+- kvm-docs-add-sPAPR-hotplug-dynamic-reconfiguration-docum.patch [bz#1211117]
+- kvm-machine-add-default_ram_size-to-machine-class.patch [bz#1211117]
+- kvm-spapr-override-default-ram-size-to-512MB.patch [bz#1211117]
+- kvm-spapr_pci-Make-find_phb-find_dev-public.patch [bz#1211117]
+- kvm-spapr-Merge-sPAPREnvironment-into-sPAPRMachineState.patch [bz#1211117]
+- kvm-spapr-Remove-obsolete-ram_limit-field-from-sPAPRMach.patch [bz#1211117]
+- kvm-spapr-Remove-obsolete-entry_point-field-from-sPAPRMa.patch [bz#1211117]
+- kvm-spapr-Add-sPAPRMachineClass.patch [bz#1211117]
+- kvm-spapr-ensure-we-have-at-least-one-XICS-server.patch [bz#1211117]
+- kvm-spapr-Consider-max_cpus-during-xics-initialization.patch [bz#1211117]
+- kvm-spapr-Support-ibm-lrdr-capacity-device-tree-property.patch [bz#1211117]
+- kvm-cpus-Add-a-macro-to-walk-CPUs-in-reverse.patch [bz#1211117]
+- kvm-spapr-Reorganize-CPU-dt-generation-code.patch [bz#1211117]
+- kvm-spapr-Consolidate-cpu-init-code-into-a-routine.patch [bz#1211117]
+- kvm-ppc-Update-cpu_model-in-MachineState.patch [bz#1211117]
+- kvm-xics_kvm-Don-t-enable-KVM_CAP_IRQ_XICS-if-already-en.patch [bz#1211117]
+- kvm-spapr-Initialize-hotplug-memory-address-space.patch [bz#1211117]
+- kvm-spapr-Add-LMB-DR-connectors.patch [bz#1211117]
+- kvm-spapr-Support-ibm-dynamic-reconfiguration-memory.patch [bz#1211117]
+- kvm-spapr-Make-hash-table-size-a-factor-of-maxram_size.patch [bz#1211117]
+- kvm-spapr-Memory-hotplug-support.patch [bz#1211117]
+- kvm-spapr-Don-t-allow-memory-hotplug-to-memory-less-node.patch [bz#1211117]
+- Resolves: bz#1210715
+  (migration/rdma: 7.1->7.2: RDMA ERROR: ram blocks mismatch #3!)
+- Resolves: bz#1211117
+  (add support for memory hotplug on Power)
+- Resolves: bz#1233826
+  (issueing drive-mirror command causes monitor unresponsive)
+- Resolves: bz#1235813
+  (block/curl: Fix generic "Input/output error" on failure)
+- Resolves: bz#1237220
+  (Fail to create NUMA guest with <nosharepages/>)
+- Resolves: bz#1242316
+  (Add "unmap" support for drive-mirror)
+- Resolves: bz#1244348
+  (Quirk for Chelsio T5 MSI-X PBA)
+
 * Fri Jul 17 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-12.el7
 - kvm-ide-Check-array-bounds-before-writing-to-io_buffer-C.patch [bz#1243692]
 - kvm-ide-atapi-Fix-START-STOP-UNIT-command-completion.patch [bz#1243692]
