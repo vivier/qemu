@@ -400,6 +400,7 @@ static const VMStateDescription vmstate_steal_time_msr = {
     .name = "cpu/steal_time_msr",
     .version_id = 1,
     .minimum_version_id = 1,
+    .needed = steal_time_msr_needed,
     .fields = (VMStateField[]) {
         VMSTATE_UINT64(env.steal_time_msr, X86CPU),
         VMSTATE_END_OF_LIST()
@@ -410,6 +411,7 @@ static const VMStateDescription vmstate_async_pf_msr = {
     .name = "cpu/async_pf_msr",
     .version_id = 1,
     .minimum_version_id = 1,
+    .needed = async_pf_msr_needed,
     .fields = (VMStateField[]) {
         VMSTATE_UINT64(env.async_pf_en_msr, X86CPU),
         VMSTATE_END_OF_LIST()
@@ -420,6 +422,7 @@ static const VMStateDescription vmstate_pv_eoi_msr = {
     .name = "cpu/async_pv_eoi_msr",
     .version_id = 1,
     .minimum_version_id = 1,
+    .needed = pv_eoi_msr_needed,
     .fields = (VMStateField[]) {
         VMSTATE_UINT64(env.pv_eoi_en_msr, X86CPU),
         VMSTATE_END_OF_LIST()
@@ -438,6 +441,7 @@ static const VMStateDescription vmstate_fpop_ip_dp = {
     .name = "cpu/fpop_ip_dp",
     .version_id = 1,
     .minimum_version_id = 1,
+    .needed = fpop_ip_dp_needed,
     .fields = (VMStateField[]) {
         VMSTATE_UINT16(env.fpop, X86CPU),
         VMSTATE_UINT64(env.fpip, X86CPU),
@@ -458,6 +462,7 @@ static const VMStateDescription vmstate_msr_tsc_adjust = {
     .name = "cpu/msr_tsc_adjust",
     .version_id = 1,
     .minimum_version_id = 1,
+    .needed = tsc_adjust_needed,
     .fields = (VMStateField[]) {
         VMSTATE_UINT64(env.tsc_adjust, X86CPU),
         VMSTATE_END_OF_LIST()
@@ -476,6 +481,7 @@ static const VMStateDescription vmstate_msr_tscdeadline = {
     .name = "cpu/msr_tscdeadline",
     .version_id = 1,
     .minimum_version_id = 1,
+    .needed = tscdeadline_needed,
     .fields = (VMStateField[]) {
         VMSTATE_UINT64(env.tsc_deadline, X86CPU),
         VMSTATE_END_OF_LIST()
@@ -502,6 +508,7 @@ static const VMStateDescription vmstate_msr_ia32_misc_enable = {
     .name = "cpu/msr_ia32_misc_enable",
     .version_id = 1,
     .minimum_version_id = 1,
+    .needed = misc_enable_needed,
     .fields = (VMStateField[]) {
         VMSTATE_UINT64(env.msr_ia32_misc_enable, X86CPU),
         VMSTATE_END_OF_LIST()
@@ -512,6 +519,7 @@ static const VMStateDescription vmstate_msr_ia32_feature_control = {
     .name = "cpu/msr_ia32_feature_control",
     .version_id = 1,
     .minimum_version_id = 1,
+    .needed = feature_control_needed,
     .fields = (VMStateField[]) {
         VMSTATE_UINT64(env.msr_ia32_feature_control, X86CPU),
         VMSTATE_END_OF_LIST()
@@ -546,6 +554,7 @@ static const VMStateDescription vmstate_msr_architectural_pmu = {
     .name = "cpu/msr_architectural_pmu",
     .version_id = 1,
     .minimum_version_id = 1,
+    .needed = pmu_enable_needed,
     .fields = (VMStateField[]) {
         VMSTATE_UINT64(env.msr_fixed_ctr_ctrl, X86CPU),
         VMSTATE_UINT64(env.msr_global_ctrl, X86CPU),
@@ -581,6 +590,7 @@ static const VMStateDescription vmstate_mpx = {
     .name = "cpu/mpx",
     .version_id = 1,
     .minimum_version_id = 1,
+    .needed = mpx_needed,
     .fields = (VMStateField[]) {
         VMSTATE_BND_REGS(env.bnd_regs, X86CPU, 4),
         VMSTATE_UINT64(env.bndcs_regs.cfgu, X86CPU),
@@ -602,6 +612,7 @@ static const VMStateDescription vmstate_msr_hypercall_hypercall = {
     .name = "cpu/msr_hyperv_hypercall",
     .version_id = 1,
     .minimum_version_id = 1,
+    .needed = hyperv_hypercall_enable_needed,
     .fields = (VMStateField[]) {
         VMSTATE_UINT64(env.msr_hv_guest_os_id, X86CPU),
         VMSTATE_UINT64(env.msr_hv_hypercall, X86CPU),
@@ -621,6 +632,7 @@ static const VMStateDescription vmstate_msr_hyperv_vapic = {
     .name = "cpu/msr_hyperv_vapic",
     .version_id = 1,
     .minimum_version_id = 1,
+    .needed = hyperv_vapic_enable_needed,
     .fields = (VMStateField[]) {
         VMSTATE_UINT64(env.msr_hv_vapic, X86CPU),
         VMSTATE_END_OF_LIST()
@@ -639,6 +651,7 @@ static const VMStateDescription vmstate_msr_hyperv_time = {
     .name = "cpu/msr_hyperv_time",
     .version_id = 1,
     .minimum_version_id = 1,
+    .needed = hyperv_time_enable_needed,
     .fields = (VMStateField[]) {
         VMSTATE_UINT64(env.msr_hv_tsc, X86CPU),
         VMSTATE_END_OF_LIST()
@@ -680,6 +693,7 @@ static const VMStateDescription vmstate_avx512 = {
     .name = "cpu/avx512",
     .version_id = 1,
     .minimum_version_id = 1,
+    .needed = avx512_needed,
     .fields = (VMStateField[]) {
         VMSTATE_UINT64_ARRAY(env.opmask_regs, X86CPU, NB_OPMASK_REGS),
         VMSTATE_ZMMH_REGS_VARS(env.xmm_regs, X86CPU, 0),
@@ -702,6 +716,7 @@ static const VMStateDescription vmstate_xss = {
     .name = "cpu/xss",
     .version_id = 1,
     .minimum_version_id = 1,
+    .needed = xss_needed,
     .fields = (VMStateField[]) {
         VMSTATE_UINT64(env.xss, X86CPU),
         VMSTATE_END_OF_LIST()
@@ -719,6 +734,7 @@ static const VMStateDescription vmstate_xsave ={
     .version_id = 1,
     .minimum_version_id = 1,
     .minimum_version_id_old = 1,
+    .needed = vmstate_xsave_needed,
     .fields      = (VMStateField []) {
     VMSTATE_UINT64_V(env.xcr0, X86CPU, 1),
     VMSTATE_UINT64_V(env.xstate_bv, X86CPU, 1),
@@ -829,57 +845,23 @@ VMStateDescription vmstate_x86_cpu = {
         VMSTATE_END_OF_LIST()
         /* The above list is not sorted /wrt version numbers, watch out! */
     },
-    .subsections = (VMStateSubsection []) {
-        {
-            .vmsd = &vmstate_async_pf_msr,
-            .needed = async_pf_msr_needed,
-        } , {
-            .vmsd = &vmstate_pv_eoi_msr,
-            .needed = pv_eoi_msr_needed,
-        } , {
-            .vmsd = &vmstate_steal_time_msr,
-            .needed = steal_time_msr_needed,
-        } , {
-            .vmsd = &vmstate_fpop_ip_dp,
-            .needed = fpop_ip_dp_needed,
-        }, {
-            .vmsd = &vmstate_msr_tsc_adjust,
-            .needed = tsc_adjust_needed,
-        }, {
-            .vmsd = &vmstate_msr_tscdeadline,
-            .needed = tscdeadline_needed,
-        }, {
-            .vmsd = &vmstate_msr_ia32_misc_enable,
-            .needed = misc_enable_needed,
-        }, {
-            .vmsd = &vmstate_msr_ia32_feature_control,
-            .needed = feature_control_needed,
-        }, {
-            .vmsd = &vmstate_msr_architectural_pmu,
-            .needed = pmu_enable_needed,
-        } , {
-            .vmsd = &vmstate_mpx,
-            .needed = mpx_needed,
-        }, {
-            .vmsd = &vmstate_msr_hypercall_hypercall,
-            .needed = hyperv_hypercall_enable_needed,
-        }, {
-            .vmsd = &vmstate_msr_hyperv_vapic,
-            .needed = hyperv_vapic_enable_needed,
-        }, {
-            .vmsd = &vmstate_msr_hyperv_time,
-            .needed = hyperv_time_enable_needed,
-        }, {
-            .vmsd = &vmstate_avx512,
-            .needed = avx512_needed,
-         }, {
-            .vmsd = &vmstate_xss,
-            .needed = xss_needed,
-        } , {
-            .vmsd = &vmstate_xsave,
-            .needed = vmstate_xsave_needed,
-        }, {
-            /* empty */
-        }
+    .subsections = (const VMStateDescription*[]) {
+        &vmstate_async_pf_msr,
+        &vmstate_pv_eoi_msr,
+        &vmstate_steal_time_msr,
+        &vmstate_fpop_ip_dp,
+        &vmstate_msr_tsc_adjust,
+        &vmstate_msr_tscdeadline,
+        &vmstate_msr_ia32_misc_enable,
+        &vmstate_msr_ia32_feature_control,
+        &vmstate_msr_architectural_pmu,
+        &vmstate_mpx,
+        &vmstate_msr_hypercall_hypercall,
+        &vmstate_msr_hyperv_vapic,
+        &vmstate_msr_hyperv_time,
+        &vmstate_avx512,
+        &vmstate_xss,
+        &vmstate_xsave,
+        NULL
     }
 };
