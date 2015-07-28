@@ -45,6 +45,7 @@
 #include "hw/usb.h"
 #include "hw/cpu/icc_bus.h"
 #include "qemu/error-report.h"
+#include "migration/migration.h"
 
 /* ICH9 AHCI has 6 ports */
 #define MAX_SATA_PORTS     6
@@ -637,6 +638,7 @@ static void pc_q35_compat_rhel700(MachineState *machine)
     smbios_legacy_mode = true;
     has_reserved_memory = false;
     migrate_cve_2014_5263_xhci_fields = true;
+    global_state_set_optional();
 }
 
 static void pc_q35_init_rhel700(MachineState *machine)

@@ -178,4 +178,5 @@ void register_global_state(void);
  * migration compatibility.
  */
 extern bool migrate_pre_2_2;
+void global_state_set_optional(void);
 #endif
