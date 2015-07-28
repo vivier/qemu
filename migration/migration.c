@@ -177,7 +177,6 @@ static void migrate_generate_event(int new_state)
 {
     if (migrate_use_events()) {
         qapi_event_send_migration(new_state, &error_abort);
-        trace_migrate_set_state(new_state);
     }
 }
 
@@ -425,6 +424,7 @@ void qmp_migrate_set_capabilities(MigrationCapabilityStatusList *params,
 static void migrate_set_state(MigrationState *s, int old_state, int new_state)
 {
     if (atomic_cmpxchg(&s->state, old_state, new_state) == old_state) {
+        trace_migrate_set_state(new_state);
         migrate_generate_event(new_state);
     }
 }
