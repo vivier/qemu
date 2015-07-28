@@ -985,7 +985,6 @@ S: Maintained
 F: include/migration/
 F: migration/
 F: savevm.c
-F: arch_init.c
 F: scripts/vmstate-static-checker.py
 F: tests/vmstate-static-checker-data/
 

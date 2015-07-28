@@ -170,6 +170,7 @@ size_t ram_control_save_page(QEMUFile *f, ram_addr_t block_offset,
                              ram_addr_t offset, size_t size,
                              uint64_t *bytes_sent);
 
+void ram_mig_init(void);
 
 /*
  * Disables a load of subsections that were added in 2.2/rh7.2 for backwards
