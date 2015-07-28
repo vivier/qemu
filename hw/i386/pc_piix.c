@@ -1077,6 +1077,7 @@ static void pc_compat_rhel710(MachineState *machine)
     /* Disable all the extra subsections that were added in 2.2 */
     migrate_pre_2_2 = true;
     global_state_set_optional();
+    savevm_skip_configuration();
 }
 
 static void pc_init_rhel710(MachineState *machine)
