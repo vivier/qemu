@@ -552,3 +552,21 @@ uint64_t qemu_get_be64(QEMUFile *f)
     v |= qemu_get_be32(f);
     return v;
 }
+
+/*
+ * Get a string whose length is determined by a single preceding byte
+ * A preallocated 256 byte buffer must be passed in.
+ * Returns: len on success and a 0 terminated string in the buffer
+ *          else 0
+ *          (Note a 0 length string will return 0 either way)
+ */
+size_t qemu_get_counted_string(QEMUFile *f, char buf[256])
+{
+    size_t len = qemu_get_byte(f);
+    size_t res = qemu_get_buffer(f, (uint8_t *)buf, len);
+
+    buf[res] = 0;
+
+    return res == len ? res : 0;
+}
+
