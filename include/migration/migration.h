@@ -183,4 +183,5 @@ void register_global_state(void);
 extern bool migrate_pre_2_2;
 void global_state_set_optional(void);
 void savevm_skip_configuration(void);
+int global_state_store(void);
 #endif
