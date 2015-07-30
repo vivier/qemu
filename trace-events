@@ -1250,6 +1250,9 @@ migrate_fd_cancel(void) ""
 migrate_pending(uint64_t size, uint64_t max) "pending size %" PRIu64 " max %" PRIu64
 migrate_transferred(uint64_t tranferred, uint64_t time_spent, double bandwidth, uint64_t size) "transferred %" PRIu64 " time_spent %" PRIu64 " bandwidth %g max_size %" PRId64
 
+# migration-rdma.c
+rdma_add_block(const char *block_name, int block, uint64_t addr, uint64_t offset, uint64_t len, uint64_t end, uint64_t bits, int chunks) "Added Block: '%s':%d, addr: %" PRIu64 ", offset: %" PRIu64 " length: %" PRIu64 " end: %" PRIu64 " bits %" PRIu64 " chunks %d"
+
 # kvm-all.c
 kvm_ioctl(int type, void *arg) "type 0x%x, arg %p"
 kvm_vm_ioctl(int type, void *arg) "type 0x%x, arg %p"
