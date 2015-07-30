@@ -3388,6 +3388,7 @@ static int qemu_rdma_registration_stop(QEMUFile *f, void *opaque,
                         "Your QEMU command line parameters are probably "
                         "not identical on both the source and destination.",
                         local->nb_blocks, nb_dest_blocks);
+            rdma->error_state = -EINVAL;
             return -EINVAL;
         }
 
@@ -3403,6 +3404,7 @@ static int qemu_rdma_registration_stop(QEMUFile *f, void *opaque,
                             "vs %" PRIu64, local->block[i].block_name, i,
                             local->block[i].length,
                             rdma->dest_blocks[i].length);
+                rdma->error_state = -EINVAL;
                 return -EINVAL;
             }
             local->block[i].remote_host_addr =
