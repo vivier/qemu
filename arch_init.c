@@ -1087,6 +1087,8 @@ static int ram_load(QEMUFile *f, void *opaque, int version_id)
                                          block->length);
                             ret =  -EINVAL;
                         }
+                        ram_control_load_hook(f, RAM_CONTROL_BLOCK_REG,
+                                              block->idstr);
                         break;
                     }
                 }
@@ -1141,7 +1143,7 @@ static int ram_load(QEMUFile *f, void *opaque, int version_id)
                 break;
             }
         } else if (flags & RAM_SAVE_FLAG_HOOK) {
-            ram_control_load_hook(f, flags);
+            ram_control_load_hook(f, RAM_CONTROL_HOOK, NULL);
         } else if (flags & RAM_SAVE_FLAG_EOS) {
             /* normal exit */
             break;
