@@ -786,6 +786,17 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Fri Jul 31 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-14.el7
+- kvm-rtl8139-avoid-nested-ifs-in-IP-header-parsing-CVE-20.patch [bz#1248768]
+- kvm-rtl8139-drop-tautologous-if-ip-.-statement-CVE-2015-.patch [bz#1248768]
+- kvm-rtl8139-skip-offload-on-short-Ethernet-IP-header-CVE.patch [bz#1248768]
+- kvm-rtl8139-check-IP-Header-Length-field-CVE-2015-5165.patch [bz#1248768]
+- kvm-rtl8139-check-IP-Total-Length-field-CVE-2015-5165.patch [bz#1248768]
+- kvm-rtl8139-skip-offload-on-short-TCP-header-CVE-2015-51.patch [bz#1248768]
+- kvm-rtl8139-check-TCP-Data-Offset-field-CVE-2015-5165.patch [bz#1248768]
+- Resolves: bz#1248768
+  (EMBARGOED CVE-2015-5165 qemu-kvm-rhev: Qemu: rtl8139 uninitialized heap memory information leakage to guest [rhel-7.2])
+
 * Fri Jul 24 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-13.el7
 - kvm-block-Add-bdrv_get_block_status_above.patch [bz#1242316]
 - kvm-qmp-Add-optional-bool-unmap-to-drive-mirror.patch [bz#1242316]
