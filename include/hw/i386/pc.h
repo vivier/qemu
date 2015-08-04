@@ -520,7 +520,76 @@ bool e820_get_entry(int, uint32_t, uint64_t *, uint64_t *);
 
 /* See include/hw/compat.h for shared compatibility lists */
 #define PC_RHEL7_1_COMPAT \
-        HW_COMPAT_RHEL7_1
+        HW_COMPAT_RHEL7_1, \
+        {\
+            .driver   = "qemu64" "-" TYPE_X86_CPU,\
+            .property = "level",\
+            .value    = stringify(4),\
+        },{\
+            .driver   = "kvm64" "-" TYPE_X86_CPU,\
+            .property = "level",\
+            .value    = stringify(5),\
+        },{\
+            .driver   = "pentium3" "-" TYPE_X86_CPU,\
+            .property = "level",\
+            .value    = stringify(2),\
+        },{\
+            .driver   = "n270" "-" TYPE_X86_CPU,\
+            .property = "level",\
+            .value    = stringify(5),\
+        },{\
+            .driver   = "Conroe" "-" TYPE_X86_CPU,\
+            .property = "level",\
+            .value    = stringify(4),\
+        },{\
+            .driver   = "Penryn" "-" TYPE_X86_CPU,\
+            .property = "level",\
+            .value    = stringify(4),\
+        },{\
+            .driver   = "Nehalem" "-" TYPE_X86_CPU,\
+            .property = "level",\
+            .value    = stringify(4),\
+        },{\
+            .driver   = "n270" "-" TYPE_X86_CPU,\
+            .property = "xlevel",\
+            .value    = stringify(0x8000000a),\
+        },{\
+            .driver   = "Penryn" "-" TYPE_X86_CPU,\
+            .property = "xlevel",\
+            .value    = stringify(0x8000000a),\
+        },{\
+            .driver   = "Conroe" "-" TYPE_X86_CPU,\
+            .property = "xlevel",\
+            .value    = stringify(0x8000000a),\
+        },{\
+            .driver   = "Nehalem" "-" TYPE_X86_CPU,\
+            .property = "xlevel",\
+            .value    = stringify(0x8000000a),\
+        },{\
+            .driver   = "Westmere" "-" TYPE_X86_CPU,\
+            .property = "xlevel",\
+            .value    = stringify(0x8000000a),\
+        },{\
+            .driver   = "SandyBridge" "-" TYPE_X86_CPU,\
+            .property = "xlevel",\
+            .value    = stringify(0x8000000a),\
+        },{\
+            .driver   = "Haswell" "-" TYPE_X86_CPU,\
+            .property = "xlevel",\
+            .value    = stringify(0x8000000a),\
+        },{\
+            .driver   = "Haswell-noTSX" "-" TYPE_X86_CPU,\
+            .property = "xlevel",\
+            .value    = stringify(0x8000000a),\
+        },{\
+            .driver   = "Broadwell" "-" TYPE_X86_CPU,\
+            .property = "xlevel",\
+            .value    = stringify(0x8000000a),\
+        },{\
+            .driver   = "Broadwell-noTSX" "-" TYPE_X86_CPU,\
+            .property = "xlevel",\
+            .value    = stringify(0x8000000a),\
+        }
 
 /*
  * RHEL-7 is based on QEMU 1.5.3, so this needs the PC_COMPAT_*
