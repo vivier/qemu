@@ -808,6 +808,21 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Wed Aug 05 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-15.el7
+- kvm-usb-ccid-add-missing-wakeup-calls.patch [bz#1211970]
+- kvm-vfio-pci-Fix-bootindex.patch [bz#1245127]
+- kvm-acpi-fix-pvpanic-device-is-not-shown-in-ui.patch [bz#1238141]
+- kvm-redhat-add-kvm-unit-tests-tarball-to-environment.patch [bz#1225980]
+- kvm-spec-Build-tscdeadline_latency.flat-from-kvm-unit-te.patch [bz#1225980]
+- Resolves: bz#1211970
+  (smart card emulation doesn't work with USB3 (nec-xhci) controller)
+- Resolves: bz#1225980
+  (Package tscdeadline_latency.flat with qemu-kvm-rhev)
+- Resolves: bz#1238141
+  ([virtio-win][pvpanic]win10-32 guest can not detect pvpanic device in device manager)
+- Resolves: bz#1245127
+  (bootindex doesn't work for vfio-pci)
+
 * Fri Jul 31 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-14.el7
 - kvm-rtl8139-avoid-nested-ifs-in-IP-header-parsing-CVE-20.patch [bz#1248768]
 - kvm-rtl8139-drop-tautologous-if-ip-.-statement-CVE-2015-.patch [bz#1248768]
