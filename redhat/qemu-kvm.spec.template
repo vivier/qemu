@@ -861,6 +861,29 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Aug 06 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-99.el7
+- kvm-usb-ccid-add-missing-wakeup-calls.patch [bz#1243731]
+- kvm-vpc-Handle-failure-for-potentially-large-allocations.patch [bz#1217349]
+- kvm-block-vpc-prevent-overflow-if-max_table_entries-0x40.patch [bz#1217349]
+- kvm-block-qemu-iotests-add-check-for-multiplication-over.patch [bz#1217349]
+- kvm-virtio-scsi-use-virtqueue_map_sg-when-loading-reques.patch [bz#1249718]
+- kvm-scsi-disk-fix-cmd.mode-field-typo.patch [bz#1249718]
+- kvm-rtl8139-avoid-nested-ifs-in-IP-header-parsing-CVE-20.patch [bz#1248766]
+- kvm-rtl8139-drop-tautologous-if-ip-.-statement-CVE-2015-.patch [bz#1248766]
+- kvm-rtl8139-skip-offload-on-short-Ethernet-IP-header-CVE.patch [bz#1248766]
+- kvm-rtl8139-check-IP-Header-Length-field-CVE-2015-5165.patch [bz#1248766]
+- kvm-rtl8139-check-IP-Total-Length-field-CVE-2015-5165.patch [bz#1248766]
+- kvm-rtl8139-skip-offload-on-short-TCP-header-CVE-2015-51.patch [bz#1248766]
+- kvm-rtl8139-check-TCP-Data-Offset-field-CVE-2015-5165.patch [bz#1248766]
+- Resolves: bz#1217349
+  (qemu-img vpc driver segfault)
+- Resolves: bz#1243731
+  (smart card emulation doesn't work with USB3 (nec-xhci) controller)
+- Resolves: bz#1248766
+  (CVE-2015-5165 qemu-kvm: Qemu: rtl8139 uninitialized heap memory information leakage to guest [rhel-7.2])
+- Resolves: bz#1249718
+  (Segfault occurred at Dst VM while completed migration upon ENOSPC)
+
 * Fri Jul 24 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-98.el7
 - kvm-block-curl-Don-t-lose-original-error-when-a-connecti.patch [bz#1235812]
 - kvm-vfio-pci-Add-pba_offset-PCI-quirk-for-Chelsio-T5-dev.patch [bz#1244347]
