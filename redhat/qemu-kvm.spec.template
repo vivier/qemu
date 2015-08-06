@@ -920,6 +920,23 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Aug 06 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-23.el7_1.8
+- kvm-qemu_ram_foreach_block-pass-up-error-value-and-down-.patch [bz#1248382]
+- kvm-rdma-Fix-qemu-crash-when-IPv6-address-is-used-for-mi.patch [bz#1248382]
+- kvm-Rename-RDMA-structures-to-make-destination-clear.patch [bz#1248382]
+- kvm-Remove-unneeded-memset.patch [bz#1248382]
+- kvm-Store-block-name-in-local-blocks-structure.patch [bz#1248382]
+- kvm-Translate-offsets-to-destination-address-space.patch [bz#1248382]
+- kvm-Rework-ram_control_load_hook-to-hook-during-block-lo.patch [bz#1248382]
+- kvm-Allow-rdma_delete_block-to-work-without-the-hash.patch [bz#1248382]
+- kvm-Rework-ram-block-hash.patch [bz#1248382]
+- kvm-Sort-destination-RAMBlocks-to-be-the-same-as-the-sou.patch [bz#1248382]
+- kvm-Sanity-check-RDMA-remote-data.patch [bz#1248382]
+- kvm-Fail-more-cleanly-in-mismatched-RAM-cases.patch [bz#1248382]
+- kvm-RDMA-Fix-error-exits.patch [bz#1248382]
+- Resolves: bz#1248382
+  (migration/rdma: 7.1->7.2: RDMA ERROR: ram blocks mismatch #3!)
+
 * Mon Aug 03 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-23.el7_1.7
 - kvm-rtl8139-avoid-nested-ifs-in-IP-header-parsing-CVE-20.patch [bz#1248767 bz#1248768]
 - kvm-rtl8139-drop-tautologous-if-ip-.-statement-CVE-2015-.patch [bz#1248767 bz#1248768]
