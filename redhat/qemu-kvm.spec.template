@@ -840,6 +840,17 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Aug 06 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-86.el7_1.6
+- kvm-rtl8139-avoid-nested-ifs-in-IP-header-parsing-CVE-20.patch [bz#1248764]
+- kvm-rtl8139-drop-tautologous-if-ip-.-statement-CVE-2015-.patch [bz#1248764]
+- kvm-rtl8139-skip-offload-on-short-Ethernet-IP-header-CVE.patch [bz#1248764]
+- kvm-rtl8139-check-IP-Header-Length-field-CVE-2015-5165.patch [bz#1248764]
+- kvm-rtl8139-check-IP-Total-Length-field-CVE-2015-5165.patch [bz#1248764]
+- kvm-rtl8139-skip-offload-on-short-TCP-header-CVE-2015-51.patch [bz#1248764]
+- kvm-rtl8139-check-TCP-Data-Offset-field-CVE-2015-5165.patch [bz#1248764]
+- Resolves: bz#1248764
+  (CVE-2015-5165 qemu-kvm: Qemu: rtl8139 uninitialized heap memory information leakage to guest [rhel-7.1.z])
+
 * Mon Jul 20 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-86.el7_1.5
 - kvm-i8254-fix-out-of-bounds-memory-access-in-pit_ioport_.patch [bz#1243726]
 - Resolves: bz#1243726
