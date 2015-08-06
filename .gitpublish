@@ -1,7 +1,7 @@
 # The first profile is the default
 [gitpublishprofile "rhel"]
 base = rhel6/master
-prefix = RHEL-6.7 qemu-kvm PATCH
+prefix = RHEL-6.7.z qemu-kvm PATCH
 to = rhvirt-patches@redhat.com
 supresscc = all
 message = True
