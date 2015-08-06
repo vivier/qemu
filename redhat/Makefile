@@ -5,10 +5,10 @@ include Makefile.test
 LOCVERFILE:=../localversion
 LANG=C
 BUILD_DEFAULT_TARGET = RHEL-6-test
-BUILD_SCRATCH_TARGET = rhel-6.7-candidate
+BUILD_SCRATCH_TARGET = rhel-6.8-candidate
 
 BUILD_DEFAULT_TARGET_RHEV = RHEL-6-test
-BUILD_SCRATCH_TARGET_RHEV = rhevh-rhel-6.7-candidate
+BUILD_SCRATCH_TARGET_RHEV = rhevh-rhel-6.8-candidate
 
 #ifeq ($(shell git diff --quiet HEAD && git describe --exact-match 2>/dev/null && echo ok),)
 BUILD_TARGET ?= --scratch $(BUILD_SCRATCH_TARGET)
