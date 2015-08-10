@@ -861,6 +861,14 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Mon Aug 10 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-100.el7
+- kvm-block-update-test-070-for-vhdx.patch [bz#1171576]
+- kvm-block-coverity-fix-check-return-value-for-fcntl-in-g.patch [bz#1219217]
+- Resolves: bz#1171576
+  (test case 064 and 070 of qemu-iotests fail for vhdx with qemu-kvm-1.5.3-83.el7)
+- Resolves: bz#1219217
+  (Coverity-detected defect: call to fcntl without checking return value)
+
 * Thu Aug 06 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-99.el7
 - kvm-usb-ccid-add-missing-wakeup-calls.patch [bz#1243731]
 - kvm-vpc-Handle-failure-for-potentially-large-allocations.patch [bz#1217349]
