@@ -2,6 +2,8 @@
 Description=Perform system configuration to prepare system to run KVM guests
 # Offlining CPUs can cause irqbalance to throw warnings if it's running
 Before=irqbalance.service
+# libvirtd reads CPU topology at startup, so change it before
+Before=libvirtd.service
 
 [Service]
 Type=oneshot
