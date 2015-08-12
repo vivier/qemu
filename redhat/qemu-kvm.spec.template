@@ -807,6 +807,42 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Wed Aug 12 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-17.el7
+- kvm-migration-avoid-divide-by-zero-in-xbzrle-cache-miss-.patch [bz#580006]
+- kvm-migration-move-ram-stuff-to-migration-ram.patch [bz#580006]
+- kvm-migration-move-savevm.c-inside-migration.patch [bz#580006]
+- kvm-migration-Add-myself-to-the-copyright-list-of-both-f.patch [bz#580006]
+- kvm-migration-reduce-include-files.patch [bz#580006]
+- kvm-migration-Remove-duplicated-assignment-of-SETUP-stat.patch [bz#580006]
+- kvm-migration-create-savevm_state.patch [bz#580006]
+- kvm-migration-Use-normal-VMStateDescriptions-for-Subsect.patch [bz#580006]
+- kvm-Add-qemu_get_counted_string-to-read-a-string-prefixe.patch [bz#580006]
+- kvm-runstate-Add-runstate-store.patch [bz#580006]
+- kvm-runstate-migration-allows-more-transitions-now.patch [bz#580006]
+- kvm-migration-create-new-section-to-store-global-state.patch [bz#580006]
+- kvm-global_state-Make-section-optional.patch [bz#580006]
+- kvm-vmstate-Create-optional-sections.patch [bz#580006]
+- kvm-migration-Add-configuration-section.patch [bz#580006]
+- kvm-migration-ensure-we-start-in-NONE-state.patch [bz#580006]
+- kvm-migration-Use-always-helper-to-set-state.patch [bz#580006]
+- kvm-migration-No-need-to-call-trace_migrate_set_state.patch [bz#580006]
+- kvm-migration-create-migration-event.patch [bz#580006]
+- kvm-migration-Make-events-a-capability.patch [bz#580006]
+- kvm-migration-Add-migration-events-on-target-side.patch [bz#580006]
+- kvm-migration-Only-change-state-after-migration-has-fini.patch [bz#580006]
+- kvm-migration-Trace-event-and-migration-event-are-differ.patch [bz#580006]
+- kvm-migration-Write-documetation-for-events-capabilites.patch [bz#580006]
+- kvm-migration-Register-global-state-section-before-loadv.patch [bz#580006]
+- kvm-migration-We-also-want-to-store-the-global-state-for.patch [bz#580006]
+- kvm-block-mirror-limit-qiov-to-IOV_MAX-elements.patch [bz#1238585]
+- kvm-i6300esb-fix-timer-overflow.patch [bz#1247893]
+- Resolves: bz#1238585
+  (drive-mirror has spurious failures with low 'granularity' values)
+- Resolves: bz#1247893
+  (qemu's i6300esb watchdog does not fire on time with large heartbeat like 2046)
+- Resolves: bz#580006
+  (QMP: A QMP event notification when migration finish.)
+
 * Fri Aug 07 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-16.el7
 - kvm-virtio-scsi-use-virtqueue_map_sg-when-loading-reques.patch [bz#1160169]
 - kvm-scsi-disk-fix-cmd.mode-field-typo.patch [bz#1160169]
