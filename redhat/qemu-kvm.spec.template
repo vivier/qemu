@@ -807,6 +807,30 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Fri Aug 14 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-18.el7
+- kvm-vhost-correctly-pass-error-to-caller-in-vhost_dev_en.patch [bz#1248312]
+- kvm-Revert-virtio-net-enable-virtio-1.0.patch [bz#1248312]
+- kvm-virtio-net-unbreak-any-layout.patch [bz#1248312]
+- kvm-virtio-hide-legacy-features-from-modern-guests.patch [bz#1248312]
+- kvm-virtio-serial-fix-ANY_LAYOUT.patch [bz#1248312]
+- kvm-virtio-9p-fix-any_layout.patch [bz#1248312]
+- kvm-virtio-set-any_layout-in-virtio-core.patch [bz#1248312]
+- kvm-virtio-pci-fix-memory-MR-cleanup-for-modern.patch [bz#1248312]
+- kvm-virtio-get_features-can-fail.patch [bz#1248312]
+- kvm-virtio-blk-fail-get_features-when-both-scsi-and-1.0-.patch [bz#1248312]
+- kvm-virtio-minor-cleanup.patch [bz#1248312]
+- kvm-memory-do-not-add-a-reference-to-the-owner-of-aliase.patch [bz#1248312]
+- kvm-virtio-net-remove-virtio-queues-if-the-guest-doesn-t.patch [bz#1248312]
+- kvm-virtio-fix-1.0-virtqueue-migration.patch [bz#1248312]
+- kvm-Downstream-only-Start-kvm-setup-service-before-libvi.patch [bz#1251962]
+- kvm-qcow2-Flush-pending-discards-before-allocating-clust.patch [bz#1226297]
+- Resolves: bz#1226297
+  (qcow2 crash during discard operation)
+- Resolves: bz#1248312
+  ("fdisk -l"can not output anything and the process status is D+ after migrating RHEL7.2 guest with virtio-1 virtio-scsi disk)
+- Resolves: bz#1251962
+  (kvm-setup.service should include Before=libvirtd.service)
+
 * Wed Aug 12 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-17.el7
 - kvm-migration-avoid-divide-by-zero-in-xbzrle-cache-miss-.patch [bz#580006]
 - kvm-migration-move-ram-stuff-to-migration-ram.patch [bz#580006]
