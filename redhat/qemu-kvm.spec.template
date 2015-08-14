@@ -861,6 +861,14 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Aug 14 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-101.el7
+- kvm-serial-reset-state-at-startup.patch [bz#922014]
+- kvm-ide-Check-validity-of-logical-block-size.patch [bz#1134670]
+- Resolves: bz#1134670
+  (fail to specify the physical_block_size/logical_block_size value not 512 for IDE disk)
+- Resolves: bz#922014
+  (RFE: support hotplugging chardev & serial ports (Windows guests))
+
 * Mon Aug 10 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-100.el7
 - kvm-block-update-test-070-for-vhdx.patch [bz#1171576]
 - kvm-block-coverity-fix-check-return-value-for-fcntl-in-g.patch [bz#1219217]
