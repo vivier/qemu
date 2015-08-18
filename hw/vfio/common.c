@@ -566,6 +566,14 @@ static void vfio_kvm_device_add_group(VFIOGroup *group)
         };
 
         if (kvm_vm_ioctl(kvm_state, KVM_CREATE_DEVICE, &cd)) {
+#if defined(TARGET_PPC) || defined(TARGET_PPC64)
+            /* RHEL: powerpc doesn't currently need or implement the
+             * KVM VFIO device.  We plan to enable it eventually but
+             * for now suppress the scary error message if we fail to
+             * initialize the pseudo-device */
+            if (errno == ENODEV)
+                return;
+#endif
             error_report("Failed to create KVM VFIO device: %m");
             return;
         }
