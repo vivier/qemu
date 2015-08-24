@@ -807,6 +807,17 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Mon Aug 24 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-19.el7
+- kvm-ppc-add-helpful-message-when-KVM-fails-to-start-VCPU.patch [bz#1215618]
+- kvm-pci-allow-0-address-for-PCI-IO-MEM-regions.patch [bz#1241886]
+- kvm-RHEL-Suppress-scary-but-unimportant-errors-for-KVM-V.patch [bz#1237034]
+- Resolves: bz#1215618
+  (Unhelpful error message on Power when SMT is enabled)
+- Resolves: bz#1237034
+  (Error prompt while booting with vfio-pci device)
+- Resolves: bz#1241886
+  (hot plugged pci devices won't appear unless reboot)
+
 * Fri Aug 14 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-18.el7
 - kvm-vhost-correctly-pass-error-to-caller-in-vhost_dev_en.patch [bz#1248312]
 - kvm-Revert-virtio-net-enable-virtio-1.0.patch [bz#1248312]
