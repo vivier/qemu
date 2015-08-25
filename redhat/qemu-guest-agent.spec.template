@@ -382,6 +382,11 @@ install -c -m 0755  qemu-ga ${RPM_BUILD_ROOT}%{_bindir}/qemu-ga
 
 %changelog
 %%CHANGELOG%%
+* Tue Aug 25 2015 Miroslav Rezanina <mrezanin@redhat.com> - 2.3.0-3.el7
+- qemuga-Do-not-stop-qemu-guest-agent-service-on-target-switc.patch [bz#1160930]
+- Resolves: bz#1160930
+  (The guest agent service in rhel7 guest will be stopped after run the init command)
+
 * Mon Jul 13 2015 Miroslav Rezanina <mrezanin@redhat.com> - 2.3.0-2.el7
 - synchronized with qemu-kvm-rhev-2.3.0-9.el7
 - qemuga-Change-fsreeze-hook-default-location.patch [bz#1210707]
