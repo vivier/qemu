@@ -807,6 +807,14 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Thu Aug 27 2015 Yash Mankad <ymankad@redhat.com> - rhev-2.3.0-20.el7 
+- kvm-pseries-define-coldplugged-devices-as-configured.patch [bz#1243721]
+- kvm-spice-fix-spice_chr_add_watch-pre-condition.patch [bz#1128992]
+- Resolves: bz#1128992
+  (Spiceport character device is not reliable caused domain shutoff)
+- Resolves: bz#1243721
+  (After hotunpug virtio device, the device still exist in pci info)
+
 * Mon Aug 24 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-19.el7
 - kvm-ppc-add-helpful-message-when-KVM-fails-to-start-VCPU.patch [bz#1215618]
 - kvm-pci-allow-0-address-for-PCI-IO-MEM-regions.patch [bz#1241886]
