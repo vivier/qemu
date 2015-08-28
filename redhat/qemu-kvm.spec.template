@@ -920,6 +920,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Aug 28 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-23.el7_1.9
+- kvm-vnc-fix-memory-corruption-CVE-2015-5225.patch [bz#1255897]
+- Resolves: bz#1255897
+  (CVE-2015-5225 qemu-kvm-rhev: Qemu: ui: vnc: heap memory corruption in vnc_refresh_server_surface [rhel-7.1.z])
+
 * Thu Aug 06 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-23.el7_1.8
 - kvm-qemu_ram_foreach_block-pass-up-error-value-and-down-.patch [bz#1248382]
 - kvm-rdma-Fix-qemu-crash-when-IPv6-address-is-used-for-mi.patch [bz#1248382]
