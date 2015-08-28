@@ -807,6 +807,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Fri Aug 28 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-21.el7
+- kvm-vnc-fix-memory-corruption-CVE-2015-5225.patch [bz#1255898]
+- Resolves: bz#1255898
+  (CVE-2015-5225 qemu-kvm-rhev: Qemu: ui: vnc: heap memory corruption in vnc_refresh_server_surface [rhel-7.2])
+
 * Thu Aug 27 2015 Yash Mankad <ymankad@redhat.com> - rhev-2.3.0-20.el7 
 - kvm-pseries-define-coldplugged-devices-as-configured.patch [bz#1243721]
 - kvm-spice-fix-spice_chr_add_watch-pre-condition.patch [bz#1128992]
