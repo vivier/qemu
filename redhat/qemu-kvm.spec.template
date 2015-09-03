@@ -861,6 +861,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Sep 03 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-102.el7
+- kvm-mc146818rtc-add-rtc-reset-reinjection-QMP-command.patch [bz#1191226]
+- Resolves: bz#1191226
+  (libvirt requires rtc-reset-reinjection command, backport it to RHEL7.1)
+
 * Fri Aug 14 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-101.el7
 - kvm-serial-reset-state-at-startup.patch [bz#922014]
 - kvm-ide-Check-validity-of-logical-block-size.patch [bz#1134670]
