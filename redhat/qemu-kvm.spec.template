@@ -161,6 +161,7 @@ Source22: kvm-setup.service
 Source23: 85-kvm.preset
 Source24: build_configure.sh
 Source25: kvm-unit-tests.git-4ea7633.tar.bz2
+Source26: vhost.conf
 
 %%CONFIGS%%
 
@@ -508,6 +509,7 @@ install -D -p -m 0755 ksmctl $RPM_BUILD_ROOT%{_libexecdir}/ksmctl
 install -D -p -m 0644 %{SOURCE7} $RPM_BUILD_ROOT%{_unitdir}/ksmtuned.service
 install -D -p -m 0755 %{SOURCE8} $RPM_BUILD_ROOT%{_sbindir}/ksmtuned
 install -D -p -m 0644 %{SOURCE9} $RPM_BUILD_ROOT%{_sysconfdir}/ksmtuned.conf
+install -D -p -m 0644 %{SOURCE26} $RPM_BUILD_ROOT%{_sysconfdir}/modprobe.d/vhost.conf
 
 mkdir -p $RPM_BUILD_ROOT%{_bindir}/
 mkdir -p $RPM_BUILD_ROOT%{_udevdir}
@@ -725,6 +727,7 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %config(noreplace) %{_sysconfdir}/ksmtuned.conf
 %dir %{_sysconfdir}/%{pkgname}
 %config(noreplace) %{_sysconfdir}/%{pkgname}/bridge.conf
+%config(noreplace) %{_sysconfdir}/modprobe.d/vhost.conf
 %{_datadir}/%{pkgname}/simpletrace.py*
 %{_datadir}/%{pkgname}/tracetool/*.py*
 %{_datadir}/%{pkgname}/tracetool/backend/*.py*
