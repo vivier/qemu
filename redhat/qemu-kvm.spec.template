@@ -861,6 +861,17 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Sep 10 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-103.el7
+- kvm-Drop-superfluous-conditionals-around-g_strdup.patch [bz#1218919]
+- kvm-util-Drop-superfluous-conditionals-around-g_free.patch [bz#1218919]
+- kvm-util-Fuse-g_malloc-memset-into-g_new0.patch [bz#1218919]
+- kvm-util-uri-uri_new-can-t-fail-drop-dead-error-handling.patch [bz#1218919]
+- kvm-util-uri-realloc2n-can-t-fail-drop-dead-error-handli.patch [bz#1218919]
+- kvm-util-uri-URI-member-path-can-be-null-compare-more-ca.patch [bz#1218919]
+- kvm-util-uri-Add-overflow-check-to-rfc3986_parse_port.patch [bz#1218919]
+- Resolves: bz#1218919
+  (Coverity-detected defect: buffer overrun at uri.c:2035)
+
 * Thu Sep 03 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-102.el7
 - kvm-mc146818rtc-add-rtc-reset-reinjection-QMP-command.patch [bz#1191226]
 - Resolves: bz#1191226
