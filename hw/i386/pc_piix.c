@@ -1041,6 +1041,7 @@ static QEMUMachine pc_machine_rhel720 = {
 static void pc_compat_rhel710(MachineState *machine)
 {
     PCMachineState *pcms = PC_MACHINE(machine);
+    PCMachineClass *pcmc = PC_MACHINE_GET_CLASS(pcms);
 
     /* 7.1.0 is based on 2.1.2, 7.2.0 is based on 2.3 */
     pc_compat_rhel720(machine);
@@ -1078,6 +1079,9 @@ static void pc_compat_rhel710(MachineState *machine)
     migrate_pre_2_2 = true;
     global_state_set_optional();
     savevm_skip_configuration();
+
+    /* From pc_i440fx_2_4_machine_options */
+    pcmc->broken_reserved_end = true;
 }
 
 static void pc_init_rhel710(MachineState *machine)

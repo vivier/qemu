@@ -564,6 +564,7 @@ static QEMUMachine pc_q35_machine_rhel720 = {
 static void pc_q35_compat_rhel710(MachineState *machine)
 {
     PCMachineState *pcms = PC_MACHINE(machine);
+    PCMachineClass *pcmc = PC_MACHINE_GET_CLASS(pcms);
 
     /* 7.1.0 is based on 2.1.2, 7.2.0 is based on 2.3 */
     pc_q35_compat_rhel720(machine);
@@ -596,6 +597,9 @@ static void pc_q35_compat_rhel710(MachineState *machine)
     x86_cpu_compat_set_features("coreduo", FEAT_1_ECX, CPUID_EXT_VMX, 0);
     x86_cpu_compat_set_features("core2duo", FEAT_1_ECX, CPUID_EXT_VMX, 0);
     x86_cpu_compat_kvm_no_autodisable(FEAT_8000_0001_ECX, CPUID_EXT3_SVM);
+
+    /* From pc_q35_2_4_machine_options */
+    pcmc->broken_reserved_end = true;
 }
 
 static void pc_q35_init_rhel710(MachineState *machine)
