@@ -810,6 +810,30 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Tue Sep 15 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-23.el7
+- kvm-scsi-disk-Fix-assertion-failure-on-WRITE-SAME.patch [bz#1247042]
+- kvm-mirror-Speed-up-bitmap-initial-scanning.patch [bz#1259229]
+- kvm-qemu-iotests-Disable-099-requires-blkverify.patch [bz#1257059]
+- kvm-spapr-Reduce-advertised-max-LUNs-for-spapr_vscsi.patch [bz#1260464]
+- kvm-vnc-Don-t-assert-if-opening-unix-socket-fails.patch [bz#1261263]
+- kvm-qcow2-Handle-EAGAIN-returned-from-update_refcount.patch [bz#1254927]
+- kvm-pc-memhotplug-fix-incorrectly-set-reserved-memory-en.patch [bz#1261846]
+- kvm-pc-memhotplug-keep-reserved-memory-end-broken-on-rhe.patch [bz#1261846]
+- Resolves: bz#1247042
+  (qemu quit when using sg_write_same command inside RHEL7.2 guest)
+- Resolves: bz#1254927
+  (qemu-img shows Input/output error when compressing guest image)
+- Resolves: bz#1257059
+  (qemu-iotests 099 failed for vmdk)
+- Resolves: bz#1259229
+  (drive-mirror blocks QEMU due to lseek64() on raw image files)
+- Resolves: bz#1260464
+  (The spapr vscsi disks for lun id '9-31' and channel id '4-7' could not be recognized inside a power pc guest)
+- Resolves: bz#1261263
+  (qemu crash while start a guest with invalid vnc socket path)
+- Resolves: bz#1261846
+  (qemu-kvm-rhev: 64-bit PCI bars may overlap hotplugged memory and vice verse)
+
 * Thu Sep 03 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-22.el7
 - kvm-mirror-Fix-coroutine-reentrance.patch [bz#1251487]
 - kvm-RHEL-Set-vcpus-hard-limit-to-240-for-Power.patch [bz#1257781]
