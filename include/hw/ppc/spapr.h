@@ -573,6 +573,7 @@ struct sPAPREventLogEntry {
     QTAILQ_ENTRY(sPAPREventLogEntry) next;
 };
 
+sPAPRTCETable *spapr_tce_find_by_liobn(uint32_t liobn);
 void spapr_events_init(sPAPRMachineState *sm);
 void spapr_events_fdt_skel(void *fdt, uint32_t epow_irq);
 int spapr_h_cas_compose_response(sPAPRMachineState *sm,
