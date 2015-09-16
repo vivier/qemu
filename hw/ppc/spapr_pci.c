@@ -1484,29 +1484,6 @@ PCIHostState *spapr_create_phb(sPAPRMachineState *spapr, int index)
     return PCI_HOST_BRIDGE(dev);
 }
 
-typedef struct sPAPRTCEDT {
-    void *fdt;
-    int node_off;
-} sPAPRTCEDT;
-
-static int spapr_phb_children_dt(Object *child, void *opaque)
-{
-    sPAPRTCEDT *p = opaque;
-    sPAPRTCETable *tcet;
-
-    tcet = (sPAPRTCETable *) object_dynamic_cast(child, TYPE_SPAPR_TCE_TABLE);
-    if (!tcet || SPAPR_PCI_DMA_WINDOW_NUM(tcet->liobn)) {
-        return 0;
-    }
-
-    spapr_dma_dt(p->fdt, p->node_off, "ibm,dma-window",
-                 tcet->liobn, tcet->bus_offset,
-                 tcet->nb_table << tcet->page_shift);
-    /* Stop after the first window */
-
-    return 1;
-}
-
 int spapr_populate_pci_dt(sPAPRPHBState *phb,
                           uint32_t xics_phandle,
                           void *fdt)
@@ -1545,6 +1522,7 @@ int spapr_populate_pci_dt(sPAPRPHBState *phb,
     uint32_t interrupt_map_mask[] = {
         cpu_to_be32(b_ddddd(-1)|b_fff(0)), 0x0, 0x0, cpu_to_be32(-1)};
     uint32_t interrupt_map[PCI_SLOT_MAX * PCI_NUM_PINS][7];
+    sPAPRTCETable *tcet;
 
     /* Start populating the FDT */
     sprintf(nodename, "pci@%" PRIx64, phb->buid);
@@ -1589,8 +1567,10 @@ int spapr_populate_pci_dt(sPAPRPHBState *phb,
     _FDT(fdt_setprop(fdt, bus_off, "interrupt-map", &interrupt_map,
                      sizeof(interrupt_map)));
 
-    object_child_foreach(OBJECT(phb), spapr_phb_children_dt,
-                         &((sPAPRTCEDT){ .fdt = fdt, .node_off = bus_off }));
+    tcet = spapr_tce_find_by_liobn(SPAPR_PCI_LIOBN(phb->index, 0));
+    spapr_dma_dt(fdt, bus_off, "ibm,dma-window",
+                 tcet->liobn, tcet->bus_offset,
+                 tcet->nb_table << tcet->page_shift);
 
     ret = spapr_drc_populate_dt(fdt, bus_off, OBJECT(phb),
                                 SPAPR_DR_CONNECTOR_TYPE_PCI);
