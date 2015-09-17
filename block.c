@@ -6364,3 +6364,8 @@ BlockAcctStats *bdrv_get_stats(BlockDriverState *bs)
 {
     return &bs->stats;
 }
+
+bool bdrv_aio_poll(AioContext *ctx, bool blocking)
+{
+    return aio_poll(ctx, blocking);
+}

@@ -573,4 +573,6 @@ void bdrv_flush_io_queue(BlockDriverState *bs);
 
 BlockAcctStats *bdrv_get_stats(BlockDriverState *bs);
 
+bool bdrv_aio_poll(AioContext *ctx, bool blocking);
+
 #endif
