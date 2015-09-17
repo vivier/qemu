@@ -28,6 +28,7 @@ struct AioHandler {
     GPollFD pfd;
     int deleted;
     void *opaque;
+    int type;
     QLIST_ENTRY(AioHandler) node;
 };
 
@@ -87,6 +88,7 @@ void aio_set_fd_handler(AioContext *ctx,
         node->opaque = opaque;
         node->io_read = io_read;
         node->io_write = io_write;
+        node->type = type;
 
         event = event_notifier_get_handle(&ctx->notifier);
         WSAEventSelect(node->pfd.fd, event,
@@ -135,6 +137,7 @@ void aio_set_event_notifier(AioContext *ctx,
             node->e = e;
             node->pfd.fd = (uintptr_t)event_notifier_get_handle(e);
             node->pfd.events = G_IO_IN;
+            node->type = type;
             QLIST_INSERT_HEAD(&ctx->aio_handlers, node, node);
 
             g_source_add_poll(&ctx->source, &node->pfd);

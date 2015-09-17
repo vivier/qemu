@@ -25,6 +25,7 @@ struct AioHandler
     IOHandler *io_write;
     int deleted;
     void *opaque;
+    int type;
     QLIST_ENTRY(AioHandler) node;
 };
 
@@ -83,6 +84,7 @@ void aio_set_fd_handler(AioContext *ctx,
         node->io_read = io_read;
         node->io_write = io_write;
         node->opaque = opaque;
+        node->type = type;
 
         node->pfd.events = (io_read ? G_IO_IN | G_IO_HUP | G_IO_ERR : 0);
         node->pfd.events |= (io_write ? G_IO_OUT | G_IO_ERR : 0);
