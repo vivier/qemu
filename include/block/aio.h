@@ -227,6 +227,7 @@ bool aio_dispatch(AioContext *ctx);
 #define AIO_CLIENT_UNSPECIFIED    (1 << 0)
 #define AIO_CLIENT_PROTOCOL       (1 << 1)
 #define AIO_CLIENT_NBD_SERVER     (1 << 2)
+#define AIO_CLIENT_CONTEXT        (1 << 3)
 #define AIO_CLIENT_MASK_ALL       -1
 
 /* Progress in completing AIO work to occur.  This can issue new pending

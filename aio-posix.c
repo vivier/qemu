@@ -249,6 +249,9 @@ bool aio_poll_clients(AioContext *ctx, bool blocking, int client_mask)
     int64_t timeout;
 
     was_dispatching = ctx->dispatching;
+    /* Blocking poll must handle waking up. */
+    assert(!blocking || (client_mask & AIO_CLIENT_CONTEXT));
+
     progress = false;
 
     /* aio_notify can avoid the expensive event_notifier_set if
