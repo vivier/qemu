@@ -224,6 +224,9 @@ bool aio_pending(AioContext *ctx);
  */
 bool aio_dispatch(AioContext *ctx);
 
+#define AIO_CLIENT_UNSPECIFIED    (1 << 0)
+#define AIO_CLIENT_MASK_ALL       -1
+
 /* Progress in completing AIO work to occur.  This can issue new pending
  * aio as a result of executing I/O completion or bh callbacks.
  *
@@ -248,6 +251,7 @@ bool aio_poll(AioContext *ctx, bool blocking);
  */
 void aio_set_fd_handler(AioContext *ctx,
                         int fd,
+                        int type,
                         IOHandler *io_read,
                         IOHandler *io_write,
                         void *opaque);
@@ -261,6 +265,7 @@ void aio_set_fd_handler(AioContext *ctx,
  */
 void aio_set_event_notifier(AioContext *ctx,
                             EventNotifier *notifier,
+                            int type,
                             EventNotifierHandler *io_read);
 
 /* Return a GSource that lets the main loop poll the file descriptors attached

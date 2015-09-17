@@ -226,7 +226,7 @@ aio_ctx_finalize(GSource     *source)
     AioContext *ctx = (AioContext *) source;
 
     thread_pool_free(ctx->thread_pool);
-    aio_set_event_notifier(ctx, &ctx->notifier, NULL);
+    aio_set_event_notifier(ctx, &ctx->notifier, AIO_CLIENT_UNSPECIFIED, NULL);
     event_notifier_cleanup(&ctx->notifier);
     rfifolock_destroy(&ctx->lock);
     qemu_mutex_destroy(&ctx->bh_lock);
@@ -302,6 +302,7 @@ AioContext *aio_context_new(Error **errp)
     }
     g_source_set_can_recurse(&ctx->source, true);
     aio_set_event_notifier(ctx, &ctx->notifier,
+                           AIO_CLIENT_UNSPECIFIED,
                            (EventNotifierHandler *)
                            event_notifier_test_and_clear);
     ctx->thread_pool = NULL;

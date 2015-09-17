@@ -60,11 +60,10 @@ static void nfs_set_events(NFSClient *client)
 {
     int ev = nfs_which_events(client->context);
     if (ev != client->events) {
-        aio_set_fd_handler(client->aio_context,
-                           nfs_get_fd(client->context),
+        aio_set_fd_handler(client->aio_context, nfs_get_fd(client->context),
+                           AIO_CLIENT_UNSPECIFIED,
                            (ev & POLLIN) ? nfs_process_read : NULL,
-                           (ev & POLLOUT) ? nfs_process_write : NULL,
-                           client);
+                           (ev & POLLOUT) ? nfs_process_write : NULL, client);
 
     }
     client->events = ev;
@@ -239,9 +238,8 @@ static void nfs_detach_aio_context(BlockDriverState *bs)
 {
     NFSClient *client = bs->opaque;
 
-    aio_set_fd_handler(client->aio_context,
-                       nfs_get_fd(client->context),
-                       NULL, NULL, NULL);
+    aio_set_fd_handler(client->aio_context, nfs_get_fd(client->context),
+                       AIO_CLIENT_UNSPECIFIED, NULL, NULL, NULL);
     client->events = 0;
 }
 
@@ -260,9 +258,8 @@ static void nfs_client_close(NFSClient *client)
         if (client->fh) {
             nfs_close(client->context, client->fh);
         }
-        aio_set_fd_handler(client->aio_context,
-                           nfs_get_fd(client->context),
-                           NULL, NULL, NULL);
+        aio_set_fd_handler(client->aio_context, nfs_get_fd(client->context),
+                           AIO_CLIENT_UNSPECIFIED, NULL, NULL, NULL);
         nfs_destroy_context(client->context);
     }
     memset(client, 0, sizeof(NFSClient));

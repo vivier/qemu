@@ -1380,6 +1380,7 @@ static void nbd_set_handlers(NBDClient *client)
 {
     if (client->exp && client->exp->ctx) {
         aio_set_fd_handler(client->exp->ctx, client->sock,
+                           AIO_CLIENT_UNSPECIFIED,
                            client->can_read ? nbd_read : NULL,
                            client->send_coroutine ? nbd_restart_write : NULL,
                            client);
@@ -1389,7 +1390,8 @@ static void nbd_set_handlers(NBDClient *client)
 static void nbd_unset_handlers(NBDClient *client)
 {
     if (client->exp && client->exp->ctx) {
-        aio_set_fd_handler(client->exp->ctx, client->sock, NULL, NULL, NULL);
+        aio_set_fd_handler(client->exp->ctx, client->sock,
+                           AIO_CLIENT_UNSPECIFIED, NULL, NULL, NULL);
     }
 }
 

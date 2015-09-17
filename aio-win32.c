@@ -33,6 +33,7 @@ struct AioHandler {
 
 void aio_set_fd_handler(AioContext *ctx,
                         int fd,
+                        int type,
                         IOHandler *io_read,
                         IOHandler *io_write,
                         void *opaque)
@@ -98,6 +99,7 @@ void aio_set_fd_handler(AioContext *ctx,
 
 void aio_set_event_notifier(AioContext *ctx,
                             EventNotifier *e,
+                            int type,
                             EventNotifierHandler *io_notify)
 {
     AioHandler *node;

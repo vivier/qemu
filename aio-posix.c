@@ -43,6 +43,7 @@ static AioHandler *find_aio_handler(AioContext *ctx, int fd)
 
 void aio_set_fd_handler(AioContext *ctx,
                         int fd,
+                        int type,
                         IOHandler *io_read,
                         IOHandler *io_write,
                         void *opaque)
@@ -92,10 +93,11 @@ void aio_set_fd_handler(AioContext *ctx,
 
 void aio_set_event_notifier(AioContext *ctx,
                             EventNotifier *notifier,
+                            int type,
                             EventNotifierHandler *io_read)
 {
     aio_set_fd_handler(ctx, event_notifier_get_fd(notifier),
-                       (IOHandler *)io_read, NULL, notifier);
+                       type, (IOHandler *)io_read, NULL, notifier);
 }
 
 bool aio_prepare(AioContext *ctx)
