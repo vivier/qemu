@@ -126,7 +126,7 @@ bool aio_pending(AioContext *ctx)
     return false;
 }
 
-bool aio_dispatch(AioContext *ctx)
+static bool aio_dispatch_clients(AioContext *ctx, int client_mask)
 {
     AioHandler *node;
     bool progress = false;
@@ -148,13 +148,14 @@ bool aio_dispatch(AioContext *ctx)
     while (node) {
         AioHandler *tmp;
         int revents;
+        int dispatch = (node->type & client_mask) == node->type;
 
         ctx->walking_handlers++;
 
         revents = node->pfd.revents & node->pfd.events;
         node->pfd.revents = 0;
 
-        if (!node->deleted &&
+        if (dispatch && !node->deleted &&
             (revents & (G_IO_IN | G_IO_HUP | G_IO_ERR)) &&
             node->io_read) {
             node->io_read(node->opaque);
@@ -164,7 +165,7 @@ bool aio_dispatch(AioContext *ctx)
                 progress = true;
             }
         }
-        if (!node->deleted &&
+        if (dispatch && !node->deleted &&
             (revents & (G_IO_OUT | G_IO_ERR)) &&
             node->io_write) {
             node->io_write(node->opaque);
@@ -186,6 +187,11 @@ bool aio_dispatch(AioContext *ctx)
     progress |= timerlistgroup_run_timers(&ctx->tlg);
 
     return progress;
+}
+
+bool aio_dispatch(AioContext *ctx)
+{
+    return aio_dispatch_clients(ctx, AIO_CLIENT_MASK_ALL);
 }
 
 /* These thread-local variables are used only in a small part of aio_poll
@@ -234,7 +240,7 @@ static void add_pollfd(AioHandler *node)
     npfd++;
 }
 
-bool aio_poll(AioContext *ctx, bool blocking)
+bool aio_poll_clients(AioContext *ctx, bool blocking, int client_mask)
 {
     AioHandler *node;
     bool was_dispatching;
@@ -263,6 +269,9 @@ bool aio_poll(AioContext *ctx, bool blocking)
 
     /* fill pollfds */
     QLIST_FOREACH(node, &ctx->aio_handlers, node) {
+        if ((node->type & client_mask) != node->type) {
+            continue;
+        }
         if (!node->deleted && node->pfd.events) {
             add_pollfd(node);
         }
@@ -285,7 +294,7 @@ bool aio_poll(AioContext *ctx, bool blocking)
 
     /* Run dispatch even if there were no readable fds to run timers */
     aio_set_dispatching(ctx, true);
-    if (aio_dispatch(ctx)) {
+    if (aio_dispatch_clients(ctx, client_mask)) {
         progress = true;
     }
 

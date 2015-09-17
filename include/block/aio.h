@@ -234,13 +234,22 @@ bool aio_dispatch(AioContext *ctx);
  * handlers.  If @blocking == true, this should always be true except
  * if someone called aio_notify.
  *
+ * client_mask is a bit mask for AIO_CLIENT types, otherwise only the types
+ * corresponding to the set bits will be polled.
+ *
  * If there are no pending bottom halves, but there are pending AIO
  * operations, it may not be possible to make any progress without
  * blocking.  If @blocking is true, this function will wait until one
  * or more AIO events have completed, to ensure something has moved
  * before returning.
  */
-bool aio_poll(AioContext *ctx, bool blocking);
+bool aio_poll_clients(AioContext *ctx, bool blocking, int client_mask);
+
+/* Poll all types of clients. */
+static inline bool aio_poll(AioContext *ctx, bool blocking)
+{
+    return aio_poll_clients(ctx, blocking, AIO_CLIENT_MASK_ALL);
+}
 
 /* Register a file descriptor and associated callbacks.  Behaves very similarly
  * to qemu_set_fd_handler2.  Unlike qemu_set_fd_handler2, these callbacks will
