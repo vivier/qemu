@@ -793,7 +793,7 @@ static int iscsi_ioctl(BlockDriverState *bs, unsigned long int req, void *buf)
         iscsi_aio_ioctl(bs, req, buf, ioctl_cb, &status);
 
         while (status == -EINPROGRESS) {
-            aio_poll(iscsilun->aio_context, true);
+            bdrv_aio_poll(iscsilun->aio_context, true);
         }
 
         return 0;

@@ -482,7 +482,7 @@ int bdrv_create(BlockDriver *drv, const char* filename,
         co = qemu_coroutine_create(bdrv_create_co_entry);
         qemu_coroutine_enter(co, &cco);
         while (cco.ret == NOT_DONE) {
-            aio_poll(qemu_get_aio_context(), true);
+            bdrv_aio_poll(qemu_get_aio_context(), true);
         }
     }
 
@@ -1992,7 +1992,7 @@ static bool bdrv_drain_one(BlockDriverState *bs)
     bdrv_flush_io_queue(bs);
     bdrv_start_throttled_reqs(bs);
     bs_busy = bdrv_requests_pending(bs);
-    bs_busy |= aio_poll(bdrv_get_aio_context(bs), bs_busy);
+    bs_busy |= bdrv_aio_poll(bdrv_get_aio_context(bs), bs_busy);
     return bs_busy;
 }
 
@@ -2770,7 +2770,7 @@ static int bdrv_prwv_co(BlockDriverState *bs, int64_t offset,
         co = qemu_coroutine_create(bdrv_rw_co_entry);
         qemu_coroutine_enter(co, &rwco);
         while (rwco.ret == NOT_DONE) {
-            aio_poll(aio_context, true);
+            bdrv_aio_poll(aio_context, true);
         }
     }
     return rwco.ret;
@@ -4315,7 +4315,7 @@ int64_t bdrv_get_block_status_above(BlockDriverState *bs,
         co = qemu_coroutine_create(bdrv_get_block_status_above_co_entry);
         qemu_coroutine_enter(co, &data);
         while (!data.done) {
-            aio_poll(aio_context, true);
+            bdrv_aio_poll(aio_context, true);
         }
     }
     return data.ret;
@@ -4865,9 +4865,9 @@ void bdrv_aio_cancel(BlockAIOCB *acb)
     bdrv_aio_cancel_async(acb);
     while (acb->refcnt > 1) {
         if (acb->aiocb_info->get_aio_context) {
-            aio_poll(acb->aiocb_info->get_aio_context(acb), true);
+            bdrv_aio_poll(acb->aiocb_info->get_aio_context(acb), true);
         } else if (acb->bs) {
-            aio_poll(bdrv_get_aio_context(acb->bs), true);
+            bdrv_aio_poll(bdrv_get_aio_context(acb->bs), true);
         } else {
             abort();
         }
@@ -5313,7 +5313,7 @@ int bdrv_flush(BlockDriverState *bs)
         co = qemu_coroutine_create(bdrv_flush_co_entry);
         qemu_coroutine_enter(co, &rwco);
         while (rwco.ret == NOT_DONE) {
-            aio_poll(aio_context, true);
+            bdrv_aio_poll(aio_context, true);
         }
     }
 
@@ -5426,7 +5426,7 @@ int bdrv_discard(BlockDriverState *bs, int64_t sector_num, int nb_sectors)
         co = qemu_coroutine_create(bdrv_discard_co_entry);
         qemu_coroutine_enter(co, &rwco);
         while (rwco.ret == NOT_DONE) {
-            aio_poll(aio_context, true);
+            bdrv_aio_poll(aio_context, true);
         }
     }
 

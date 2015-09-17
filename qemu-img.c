@@ -744,7 +744,7 @@ static void run_block_job(BlockJob *job, Error **errp)
     AioContext *aio_context = bdrv_get_aio_context(job->bs);
 
     do {
-        aio_poll(aio_context, true);
+        bdrv_aio_poll(aio_context, true);
         qemu_progress_print((float)job->offset / job->len * 100.f, 0);
     } while (!job->ready);
 

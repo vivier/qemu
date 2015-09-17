@@ -462,7 +462,7 @@ static int64_t nfs_get_allocated_file_size(BlockDriverState *bs)
 
     while (!task.complete) {
         nfs_set_events(client);
-        aio_poll(client->aio_context, true);
+        bdrv_aio_poll(client->aio_context, true);
     }
 
     return (task.ret < 0 ? task.ret : st.st_blocks * st.st_blksize);

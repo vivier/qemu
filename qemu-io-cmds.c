@@ -477,7 +477,7 @@ static int do_co_write_zeroes(BlockBackend *blk, int64_t offset, int count,
     co = qemu_coroutine_create(co_write_zeroes_entry);
     qemu_coroutine_enter(co, &data);
     while (!data.done) {
-        aio_poll(blk_get_aio_context(blk), true);
+        bdrv_aio_poll(blk_get_aio_context(blk), true);
     }
     if (data.ret < 0) {
         return data.ret;
@@ -2045,7 +2045,7 @@ static const cmdinfo_t resume_cmd = {
 static int wait_break_f(BlockBackend *blk, int argc, char **argv)
 {
     while (!bdrv_debug_is_suspended(blk_bs(blk), argv[1])) {
-        aio_poll(blk_get_aio_context(blk), true);
+        bdrv_aio_poll(blk_get_aio_context(blk), true);
     }
 
     return 0;

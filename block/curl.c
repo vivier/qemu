@@ -391,7 +391,7 @@ static CURLState *curl_init_state(BlockDriverState *bs, BDRVCURLState *s)
             break;
         }
         if (!state) {
-            aio_poll(bdrv_get_aio_context(bs), true);
+            bdrv_aio_poll(bdrv_get_aio_context(bs), true);
         }
     } while(!state);
 

@@ -196,7 +196,7 @@ static int block_job_finish_sync(BlockJob *job,
         return -EBUSY;
     }
     while (data.ret == -EINPROGRESS) {
-        aio_poll(bdrv_get_aio_context(bs), true);
+        bdrv_aio_poll(bdrv_get_aio_context(bs), true);
     }
     return (data.cancelled && data.ret == 0) ? -ECANCELED : data.ret;
 }

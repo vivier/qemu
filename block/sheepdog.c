@@ -691,7 +691,7 @@ static int do_req(int sockfd, AioContext *aio_context, SheepdogReq *hdr,
         co = qemu_coroutine_create(do_co_req);
         qemu_coroutine_enter(co, &srco);
         while (!srco.finished) {
-            aio_poll(aio_context, true);
+            bdrv_aio_poll(aio_context, true);
         }
     }
 
