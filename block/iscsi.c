@@ -262,7 +262,7 @@ iscsi_set_events(IscsiLun *iscsilun)
 
     if (ev != iscsilun->events) {
         aio_set_fd_handler(iscsilun->aio_context, iscsi_get_fd(iscsi),
-                           AIO_CLIENT_UNSPECIFIED,
+                           AIO_CLIENT_PROTOCOL,
                            (ev & POLLIN) ? iscsi_process_read : NULL,
                            (ev & POLLOUT) ? iscsi_process_write : NULL,
                            iscsilun);
@@ -1216,7 +1216,7 @@ static void iscsi_detach_aio_context(BlockDriverState *bs)
     IscsiLun *iscsilun = bs->opaque;
 
     aio_set_fd_handler(iscsilun->aio_context, iscsi_get_fd(iscsilun->iscsi),
-                       AIO_CLIENT_UNSPECIFIED, NULL, NULL, NULL);
+                       AIO_CLIENT_PROTOCOL, NULL, NULL, NULL);
     iscsilun->events = 0;
 
     if (iscsilun->nop_timer) {

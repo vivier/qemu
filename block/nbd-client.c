@@ -124,7 +124,7 @@ static int nbd_co_send_request(BlockDriverState *bs,
     s->send_coroutine = qemu_coroutine_self();
     aio_context = bdrv_get_aio_context(bs);
 
-    aio_set_fd_handler(aio_context, s->sock, AIO_CLIENT_UNSPECIFIED,
+    aio_set_fd_handler(aio_context, s->sock, AIO_CLIENT_PROTOCOL,
                        nbd_reply_ready, nbd_restart_write, bs);
     if (qiov) {
         if (!s->is_unix) {
@@ -144,7 +144,7 @@ static int nbd_co_send_request(BlockDriverState *bs,
     } else {
         rc = nbd_send_request(s->sock, request);
     }
-    aio_set_fd_handler(aio_context, s->sock, AIO_CLIENT_UNSPECIFIED,
+    aio_set_fd_handler(aio_context, s->sock, AIO_CLIENT_PROTOCOL,
                        nbd_reply_ready, NULL, bs);
     s->send_coroutine = NULL;
     qemu_co_mutex_unlock(&s->send_mutex);
@@ -350,14 +350,14 @@ void nbd_client_detach_aio_context(BlockDriverState *bs)
 {
     aio_set_fd_handler(bdrv_get_aio_context(bs),
                        nbd_get_client_session(bs)->sock,
-                       AIO_CLIENT_UNSPECIFIED, NULL, NULL, NULL);
+                       AIO_CLIENT_PROTOCOL, NULL, NULL, NULL);
 }
 
 void nbd_client_attach_aio_context(BlockDriverState *bs,
                                    AioContext *new_context)
 {
     aio_set_fd_handler(new_context, nbd_get_client_session(bs)->sock,
-                       AIO_CLIENT_UNSPECIFIED, nbd_reply_ready, NULL, bs);
+                       AIO_CLIENT_PROTOCOL, nbd_reply_ready, NULL, bs);
 }
 
 void nbd_client_close(BlockDriverState *bs)
