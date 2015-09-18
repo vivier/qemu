@@ -810,6 +810,42 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Fri Sep 18 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-24.el7
+- kvm-spapr-Don-t-use-QOM-syntax-for-DR-connectors.patch [bz#1262143]
+- kvm-virtio-mmio-ioeventfd-support.patch [bz#1185480]
+- kvm-scsi-fix-buffer-overflow-in-scsi_req_parse_cdb-CVE-2.patch [bz#1244334]
+- kvm-spapr-Populate-ibm-associativity-lookup-arrays-corre.patch [bz#1262670]
+- kvm-ppc-spapr-Fix-buffer-overflow-in-spapr_populate_drco.patch [bz#1262670]
+- kvm-spapr_pci-Introduce-a-liobn-number-generating-macros.patch [bz#1263795]
+- kvm-spapr_iommu-Make-spapr_tce_find_by_liobn-public.patch [bz#1263795]
+- kvm-spapr_pci-Rework-device-tree-rendering.patch [bz#1263795]
+- kvm-spapr_pci-enumerate-and-add-PCI-device-tree.patch [bz#1263795]
+- kvm-spapr_pci-populate-ibm-loc-code.patch [bz#1263795]
+- kvm-tests-remove-irrelevant-assertions-from-test-aio.patch [bz#1211689]
+- kvm-aio-posix-move-pollfds-to-thread-local-storage.patch [bz#1211689]
+- kvm-aio-Introduce-type-in-aio_set_fd_handler-and-aio_set.patch [bz#1211689]
+- kvm-aio-Save-type-to-AioHandler.patch [bz#1211689]
+- kvm-aio-posix-Introduce-aio_poll_clients.patch [bz#1211689]
+- kvm-block-Mark-fd-handlers-as-protocol.patch [bz#1211689]
+- kvm-nbd-Mark-fd-handlers-client-type-as-nbd-server.patch [bz#1211689]
+- kvm-aio-Mark-ctx-notifier-s-client-type-as-context.patch [bz#1211689]
+- kvm-dataplane-Mark-host-notifiers-client-type-as-datapla.patch [bz#1211689]
+- kvm-block-Introduce-bdrv_aio_poll.patch [bz#1211689]
+- kvm-block-Replace-nested-aio_poll-with-bdrv_aio_poll.patch [bz#1211689]
+- kvm-block-Only-poll-block-layer-fds-in-bdrv_aio_poll.patch [bz#1211689]
+- Resolves: bz#1185480
+  (backport ioeventfd support for virtio-mmio)
+- Resolves: bz#1211689
+  (atomic live snapshots are not atomic with dataplane-backed devices)
+- Resolves: bz#1244334
+  (qemu-kvm-rhev: Qemu: scsi stack buffer overflow [rhel-7.2])
+- Resolves: bz#1262143
+  (VM startup is very slow with large amounts of hotpluggable memory)
+- Resolves: bz#1262670
+  ([PowerKVM]SIGSEGV when boot up guest with -numa node and set up the cpus in one node to the boundary)
+- Resolves: bz#1263795
+  (vfio device can't be hot unplugged on powerpc guest)
+
 * Tue Sep 15 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-23.el7
 - kvm-scsi-disk-Fix-assertion-failure-on-WRITE-SAME.patch [bz#1247042]
 - kvm-mirror-Speed-up-bitmap-initial-scanning.patch [bz#1259229]
