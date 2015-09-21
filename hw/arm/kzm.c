@@ -103,7 +103,7 @@ static void kzm_init(MachineState *machine)
     memory_region_init_alias(ram_alias, NULL, "ram.alias", ram, 0, ram_size);
     memory_region_add_subregion(address_space_mem, 0x88000000, ram_alias);
 
-    memory_region_init_ram(sram, NULL, "kzm.sram", 0x4000, &error_abort);
+    memory_region_init_ram(sram, NULL, "kzm.sram", 0x4000, &error_fatal);
     memory_region_add_subregion(address_space_mem, 0x1FFFC000, sram);
 
     dev = sysbus_create_varargs("imx_avic", 0x68000000,

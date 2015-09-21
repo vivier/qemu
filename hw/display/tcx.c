@@ -942,7 +942,7 @@ static void tcx_initfn(Object *obj)
     TCXState *s = TCX(obj);
 
     memory_region_init_ram(&s->rom, NULL, "tcx.prom", FCODE_MAX_ROM_SIZE,
-                           &error_abort);
+                           &error_fatal);
     memory_region_set_readonly(&s->rom, true);
     sysbus_init_mmio(sbd, &s->rom);
 
@@ -1004,7 +1004,7 @@ static void tcx_realizefn(DeviceState *dev, Error **errp)
     char *fcode_filename;
 
     memory_region_init_ram(&s->vram_mem, OBJECT(s), "tcx.vram",
-                           s->vram_size * (1 + 4 + 4), &error_abort);
+                           s->vram_size * (1 + 4 + 4), &error_fatal);
     vmstate_register_ram_global(&s->vram_mem);
     vram_base = memory_region_get_ram_ptr(&s->vram_mem);
 

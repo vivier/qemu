@@ -241,7 +241,8 @@ static void assign_storage(SCCB *sccb)
                 this_subregion_size = mhd->standby_subregion_size;
             }
 
-            memory_region_init_ram(standby_ram, NULL, id, this_subregion_size, &error_abort);
+            memory_region_init_ram(standby_ram, NULL, id, this_subregion_size,
+                                   &error_fatal);
             vmstate_register_ram_global(standby_ram);
             memory_region_add_subregion(sysmem, offset, standby_ram);
         }
