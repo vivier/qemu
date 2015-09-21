@@ -2,9 +2,11 @@
  * QEMU Error Objects
  *
  * Copyright IBM, Corp. 2011
+ * Copyright (C) 2011-2015 Red Hat, Inc.
  *
  * Authors:
  *  Anthony Liguori   <aliguori@us.ibm.com>
+ *  Markus Armbruster <armbru@redhat.com>,
  *
  * This work is licensed under the terms of the GNU LGPL, version 2.  See
  * the COPYING.LIB file in the top-level directory.
@@ -21,6 +23,19 @@ struct Error
 };
 
 Error *error_abort;
+Error *error_fatal;
+
+static void error_handle_fatal(Error **errp, Error *err)
+{
+    if (errp == &error_abort) {
+        error_report_err(err);
+        abort();
+    }
+    if (errp == &error_fatal) {
+        error_report_err(err);
+        exit(1);
+    }
+}
 
 void error_set(Error **errp, ErrorClass err_class, const char *fmt, ...)
 {
@@ -40,11 +55,7 @@ void error_set(Error **errp, ErrorClass err_class, const char *fmt, ...)
     va_end(ap);
     err->err_class = err_class;
 
-    if (errp == &error_abort) {
-        error_report_err(err);
-        abort();
-    }
-
+    error_handle_fatal(errp, err);
     *errp = err;
 
     errno = saved_errno;
@@ -168,12 +179,13 @@ void error_free(Error *err)
 
 void error_propagate(Error **dst_errp, Error *local_err)
 {
-    if (local_err && dst_errp == &error_abort) {
-        error_report_err(local_err);
-        abort();
-    } else if (dst_errp && !*dst_errp) {
+    if (!local_err) {
+        return;
+    }
+    error_handle_fatal(dst_errp, local_err);
+    if (dst_errp && !*dst_errp) {
         *dst_errp = local_err;
-    } else if (local_err) {
+    } else {
         error_free(local_err);
     }
 }

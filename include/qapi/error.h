@@ -105,4 +105,9 @@ void error_free(Error *err);
 
 extern Error *error_abort;
 
+/*
+ * Pass to error_setg() & friends to exit(1) on error.
+ */
+extern Error *error_fatal;
+
 #endif
