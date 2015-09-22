@@ -157,12 +157,12 @@ rh-update-changelog:
 
 .PHONY: rh-brew rh-koji rh-brew-ga rh-brew-ppc rh-brew-aarch64
 rh-brew rh-brew-ppc rh-brew-aarch64 rh-brew-rhev rh-brew-rhev-autotest: BUILD_FLAGS ?= $(BREW_FLAGS) $(TEST_FLAGS)
-rh-brew-ppc rh-brew-ga-ppc: BUILD_SCRATCH_TARGET = rhel-7.2-ppc64le-candidate
 rh-brew-ga: BUILD_SCRATCH_TARGET = rhel-7.2-candidate
 rh-brew-ga rh-brew-ga-ppc: SPECFILE = $(GASPECFILE)
 rh-brew-ga rh-brew-ga-ppc: PKGNAME = $(GAPKGNAME)
 rh-brew-ga rh-brew-ga-ppc: BUILD = $(GABUILD)
-rh-brew-aarch64: BUILD_SCRATCH_TARGET = rhel-7.2-aarch64-candidate
+rh-brew-aarch64: BREW_FLAGS += --arch-override=aarch64
+rh-brew-ppc rh-brew-ga-ppc: BREW_FLAGS += --arch-override=ppc64le
 rh-koji rh-koji-ga rh-koji-autotest: BUILD_FLAGS ?= $(KOJI_FLAGS) $(TEST_FLAGS)
 rh-brew rh-brew-ppc rh-brew-aarch64 rh-brew-autotest rh-koji-autotest: RHEV_FLAG=1
 rh-brew rh-brew-ppc rh-brew-aarch64 rh-brew-autotest rh-koji-autotest: PKG_FULL_NVR=$(PKGNAME)-rhev-$(PKG_FULL_VR)
