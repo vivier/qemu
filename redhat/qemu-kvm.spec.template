@@ -861,6 +861,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Sep 23 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-104.el7
+- kvm-qemu-iotests-Filter-qemu-io-output-in-025.patch [bz#1170974]
+- Resolves: bz#1170974
+  (test case 025 of qemu-iotests fail for raw with qemu-kvm-1.5.3-83.el7.x86_64)
+
 * Thu Sep 10 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-103.el7
 - kvm-Drop-superfluous-conditionals-around-g_strdup.patch [bz#1218919]
 - kvm-util-Drop-superfluous-conditionals-around-g_free.patch [bz#1218919]
