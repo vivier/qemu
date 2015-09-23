@@ -811,6 +811,28 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Wed Sep 23 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-25.el7
+- kvm-block-backend-Expose-bdrv_write_zeroes.patch [bz#1256541]
+- kvm-qemu-img-convert-Rewrite-copying-logic.patch [bz#1256541]
+- kvm-main-loop-fix-qemu_notify_event-for-aio_notify-optim.patch [bz#1256541]
+- kvm-error-New-error_fatal.patch [bz#1232308]
+- kvm-Fix-bad-error-handling-after-memory_region_init_ram.patch [bz#1232308]
+- kvm-loader-Fix-memory_region_init_resizeable_ram-error-h.patch [bz#1232308]
+- kvm-memory-Fix-bad-error-handling-in-memory_region_init_.patch [bz#1232308]
+- kvm-spapr_pci-encode-class-code-including-Prog-IF-regist.patch [bz#1264845]
+- kvm-scripts-dump-guest-memory.py-fix-after-RAMBlock-chan.patch [bz#1234802]
+- kvm-spec-Require-proper-version-of-SLOF.patch [bz#1263795]
+- Resolves: bz#1232308
+  ([abrt] qemu-system-x86: qemu_ram_alloc(): qemu-system-x86_64 killed by SIGABRT)
+- Resolves: bz#1234802
+  ([RHEL7.2] dump-guest-memory failed because of Python Exception <class 'gdb.error'> There is no member named length.)
+- Resolves: bz#1256541
+  (qemu-img hangs forever in aio_poll when used to convert some images)
+- Resolves: bz#1263795
+  (vfio device can't be hot unplugged on powerpc guest)
+- Resolves: bz#1264845
+  ([regression] Guest usb mouse/keyboard could not be used on qemu-kvm-rhev-2.3.0-24.el7.ppc64le)
+
 * Fri Sep 18 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-24.el7
 - kvm-spapr-Don-t-use-QOM-syntax-for-DR-connectors.patch [bz#1262143]
 - kvm-virtio-mmio-ioeventfd-support.patch [bz#1185480]
