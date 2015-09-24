@@ -811,6 +811,12 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Thu Sep 24 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-26.el7
+- kvm-qcow2-Make-size_to_clusters-return-uint64_t.patch [bz#1260365]
+- kvm-iotests-Add-test-for-checking-large-image-files.patch [bz#1260365]
+- Resolves: bz#1260365
+  (Guest image created coredump after installation.)
+
 * Wed Sep 23 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-25.el7
 - kvm-block-backend-Expose-bdrv_write_zeroes.patch [bz#1256541]
 - kvm-qemu-img-convert-Rewrite-copying-logic.patch [bz#1256541]
