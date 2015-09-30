@@ -657,7 +657,6 @@ static int net_init_tap_one(const NetdevTapOptions *tap, NetClientState *peer,
 
         options.backend_type = VHOST_BACKEND_TYPE_KERNEL;
         options.net_backend = &s->nc;
-        options.force = tap->has_vhostforce && tap->vhostforce;
 
         if (tap->has_vhostfd || tap->has_vhostfds) {
             vhostfd = monitor_fd_param(cur_mon, vhostfdname, &err);
