@@ -1082,6 +1082,7 @@ static void pc_compat_rhel710(MachineState *machine)
 
     /* From pc_i440fx_2_4_machine_options */
     pcmc->broken_reserved_end = true;
+    pcmc->inter_dimm_gap = false;
 }
 
 static void pc_init_rhel710(MachineState *machine)
