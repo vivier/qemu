@@ -404,6 +404,10 @@ static int peer_attach(VirtIONet *n, int index)
         return 0;
     }
 
+    if (nc->peer->info->type == NET_CLIENT_OPTIONS_KIND_VHOST_USER) {
+        vhost_set_vring_enable(nc->peer, 1);
+    }
+
     if (nc->peer->info->type != NET_CLIENT_OPTIONS_KIND_TAP) {
         return 0;
     }
@@ -417,6 +421,10 @@ static int peer_detach(VirtIONet *n, int index)
 
     if (!nc->peer) {
         return 0;
+    }
+
+    if (nc->peer->info->type == NET_CLIENT_OPTIONS_KIND_VHOST_USER) {
+        vhost_set_vring_enable(nc->peer, 0);
     }
 
     if (nc->peer->info->type !=  NET_CLIENT_OPTIONS_KIND_TAP) {
