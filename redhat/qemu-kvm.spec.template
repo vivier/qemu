@@ -811,6 +811,21 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Mon Oct 05 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-28.el7
+- kvm-rhel-Revert-unwanted-cannot_instantiate_with_device_.patch [bz#1224542]
+- kvm-Disable-additional-e1000-models.patch [bz#1224542 bz#1265161]
+- kvm-Remove-intel-iommu-device.patch [bz#1224542]
+- kvm-virtio-net-unbreak-self-announcement-and-guest-offlo.patch [bz#1262232]
+- kvm-block-mirror-fix-full-sync-mode-when-target-does-not.patch [bz#1136382]
+- Resolves: bz#1136382
+  (block: Mirroring to raw block device doesn't zero out unused blocks)
+- Resolves: bz#1224542
+  (unsupported devices need to be disabled in qemu-kvm-rhev after rebasing to 2.3.0)
+- Resolves: bz#1262232
+  (self announcement and ctrl offloads does not work after migration)
+- Resolves: bz#1265161
+  (Support various e1000 variants)
+
 * Wed Sep 30 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-27.el7
 - kvm-sdl2-Fix-RGB555.patch [bz#1247479]
 - kvm-spice-surface-switch-fast-path-requires-same-format-.patch [bz#1247479]
