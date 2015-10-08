@@ -811,6 +811,20 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Thu Oct 08 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-29.el7
+- kvm-vfio-Remove-unneeded-union-from-VFIOContainer.patch [bz#1259556]
+- kvm-vfio-Generalize-vfio_listener_region_add-failure-pat.patch [bz#1259556]
+- kvm-vfio-Check-guest-IOVA-ranges-against-host-IOMMU-capa.patch [bz#1259556]
+- kvm-vfio-Record-host-IOMMU-s-available-IO-page-sizes.patch [bz#1259556]
+- kvm-memory-Allow-replay-of-IOMMU-mapping-notifications.patch [bz#1259556]
+- kvm-vfio-Allow-hotplug-of-containers-onto-existing-guest.patch [bz#1259556]
+- kvm-spapr_pci-Allow-PCI-host-bridge-DMA-window-to-be-con.patch [bz#1259556]
+- kvm-spapr_iommu-Rename-vfio_accel-parameter.patch [bz#1259556]
+- kvm-spapr_iommu-Provide-a-function-to-switch-a-TCE-table.patch [bz#1259556]
+- kvm-spapr_pci-Allow-VFIO-devices-to-work-on-the-normal-P.patch [bz#1259556]
+- Resolves: bz#1259556
+  (Allow VFIO devices on the same guest PHB as emulated devices)
+
 * Mon Oct 05 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-28.el7
 - kvm-rhel-Revert-unwanted-cannot_instantiate_with_device_.patch [bz#1224542]
 - kvm-Disable-additional-e1000-models.patch [bz#1224542 bz#1265161]
