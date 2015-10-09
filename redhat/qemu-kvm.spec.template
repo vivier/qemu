@@ -840,6 +840,12 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Oct 09 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-86.el7_1.7
+- kvm-CVE-2015-1779-incrementally-decode-websocket-frames.patch [bz#1205050]
+- kvm-CVE-2015-1779-limit-size-of-HTTP-headers-from-websoc.patch [bz#1205050]
+- Resolves: bz#1205050
+  (CVE-2015-1779 qemu-kvm: qemu: vnc: insufficient resource limiting in VNC websockets decoder [rhel-7.1.z])
+
 * Thu Aug 06 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-86.el7_1.6
 - kvm-rtl8139-avoid-nested-ifs-in-IP-header-parsing-CVE-20.patch [bz#1248764]
 - kvm-rtl8139-drop-tautologous-if-ip-.-statement-CVE-2015-.patch [bz#1248764]
