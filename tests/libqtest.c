@@ -449,6 +449,34 @@ void qtest_qmp_discard_response(QTestState *s, const char *fmt, ...)
     QDECREF(response);
 }
 
+char *qtest_hmpv(QTestState *s, const char *fmt, va_list ap)
+{
+    char *cmd;
+    QDict *resp;
+    char *ret;
+
+    cmd = g_strdup_vprintf(fmt, ap);
+    resp = qtest_qmp(s, "{'execute': 'human-monitor-command',"
+                     " 'arguments': {'command-line': %s}}",
+                     cmd);
+    ret = g_strdup(qdict_get_try_str(resp, "return"));
+    g_assert(ret);
+    QDECREF(resp);
+    g_free(cmd);
+    return ret;
+}
+
+char *qtest_hmp(QTestState *s, const char *fmt, ...)
+{
+    va_list ap;
+    char *ret;
+
+    va_start(ap, fmt);
+    ret = qtest_hmpv(s, fmt, ap);
+    va_end(ap);
+    return ret;
+}
+
 const char *qtest_get_arch(void)
 {
     const char *qemu = getenv("QTEST_QEMU_BINARY");
@@ -701,6 +729,16 @@ void qmp_discard_response(const char *fmt, ...)
     va_start(ap, fmt);
     qtest_qmpv_discard_response(global_qtest, fmt, ap);
     va_end(ap);
+}
+char *hmp(const char *fmt, ...)
+{
+    va_list ap;
+    char *ret;
+
+    va_start(ap, fmt);
+    ret = qtest_hmpv(global_qtest, fmt, ap);
+    va_end(ap);
+    return ret;
 }
 
 bool qtest_big_endian(void)

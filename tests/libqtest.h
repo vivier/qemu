@@ -92,6 +92,29 @@ QDict *qtest_qmpv(QTestState *s, const char *fmt, va_list ap);
 QDict *qtest_qmp_receive(QTestState *s);
 
 /**
+ * qtest_hmpv:
+ * @s: #QTestState instance to operate on.
+ * @fmt...: HMP command to send to QEMU
+ *
+ * Send HMP command to QEMU via QMP's human-monitor-command.
+ *
+ * Returns: the command's output.  The caller should g_free() it.
+ */
+char *qtest_hmp(QTestState *s, const char *fmt, ...);
+
+/**
+ * qtest_hmpv:
+ * @s: #QTestState instance to operate on.
+ * @fmt: HMP command to send to QEMU
+ * @ap: HMP command arguments
+ *
+ * Send HMP command to QEMU via QMP's human-monitor-command.
+ *
+ * Returns: the command's output.  The caller should g_free() it.
+ */
+char *qtest_hmpv(QTestState *s, const char *fmt, va_list ap);
+
+/**
  * qtest_get_irq:
  * @s: #QTestState instance to operate on.
  * @num: Interrupt to observe.
@@ -427,6 +450,16 @@ static inline QDict *qmp_receive(void)
 {
     return qtest_qmp_receive(global_qtest);
 }
+
+/**
+ * hmp:
+ * @fmt...: HMP command to send to QEMU
+ *
+ * Send HMP command to QEMU via QMP's human-monitor-command.
+ *
+ * Returns: the command's output.  The caller should g_free() it.
+ */
+char *hmp(const char *fmt, ...);
 
 /**
  * get_irq:
