@@ -920,6 +920,12 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Oct 09 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-23.el7_1.10
+- kvm-CVE-2015-1779-incrementally-decode-websocket-frames.patch [bz#1206498]
+- kvm-CVE-2015-1779-limit-size-of-HTTP-headers-from-websoc.patch [bz#1206498]
+- Resolves: bz#1206498
+  (CVE-2015-1779 qemu-kvm-rhev: qemu: vnc: insufficient resource limiting in VNC websockets decoder [rhel-7.1.z])
+
 * Fri Aug 28 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-23.el7_1.9
 - kvm-vnc-fix-memory-corruption-CVE-2015-5225.patch [bz#1255897]
 - Resolves: bz#1255897
