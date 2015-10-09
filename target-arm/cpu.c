@@ -1228,6 +1228,17 @@ static void arm_cpu_class_init(ObjectClass *oc, void *data)
     cc->gdb_core_xml_file = "arm-core.xml";
     cc->gdb_stop_before_watchpoint = true;
     cc->debug_excp_handler = arm_debug_excp_handler;
+
+    /*
+     * Reason: arm_cpu_initfn() calls cpu_exec_init(), which saves
+     * the object in cpus -> dangling pointer after final
+     * object_unref().
+     *
+     * Once this is fixed, the devices that create ARM CPUs should be
+     * updated not to set cannot_destroy_with_object_finalize_yet,
+     * unless they still screw up something else.
+     */
+    dc->cannot_destroy_with_object_finalize_yet = true;
 }
 
 static void cpu_register(const ARMCPUInfo *info)

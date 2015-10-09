@@ -183,6 +183,12 @@ static void mb_cpu_class_init(ObjectClass *oc, void *data)
     dc->vmsd = &vmstate_mb_cpu;
     dc->props = mb_properties;
     cc->gdb_num_core_regs = 32 + 5;
+
+    /*
+     * Reason: mb_cpu_initfn() calls cpu_exec_init(), which saves the
+     * object in cpus -> dangling pointer after final object_unref().
+     */
+    dc->cannot_destroy_with_object_finalize_yet = true;
 }
 
 static const TypeInfo mb_cpu_type_info = {
