@@ -811,6 +811,23 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Mon Oct 12 2015 Jeff E. Nelson <jen@redhat.com> - rhev-2.3.0-30.el7
+- kvm-memhp-extend-address-auto-assignment-to-support-gaps.patch [bz#1267533]
+- kvm-pc-memhp-force-gaps-between-DIMM-s-GPA.patch [bz#1267533]
+- kvm-memory-allow-destroying-a-non-empty-MemoryRegion.patch [bz#1264347]
+- kvm-hw-do-not-pass-NULL-to-memory_region_init-from-insta.patch [bz#1264347]
+- kvm-tests-Fix-how-qom-test-is-run.patch [bz#1264347]
+- kvm-libqtest-Clean-up-unused-QTestState-member-sigact_ol.patch [bz#1264347]
+- kvm-libqtest-New-hmp-friends.patch [bz#1264347]
+- kvm-device-introspect-test-New-covering-device-introspec.patch [bz#1264347]
+- kvm-qmp-Fix-device-list-properties-not-to-crash-for-abst.patch [bz#1264347]
+- kvm-qdev-Protect-device-list-properties-against-broken-d.patch [bz#1264347]
+- kvm-Revert-qdev-Use-qdev_get_device_class-for-device-typ.patch [bz#1264347]
+- Resolves: bz#1264347
+  (QMP device-list-properties crashes for CPU devices)
+- Resolves: bz#1267533
+  (qemu quit when rebooting guest which hotplug memory >=13 times)
+
 * Thu Oct 08 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-29.el7
 - kvm-vfio-Remove-unneeded-union-from-VFIOContainer.patch [bz#1259556]
 - kvm-vfio-Generalize-vfio_listener_region_add-failure-pat.patch [bz#1259556]
