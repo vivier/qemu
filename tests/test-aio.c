@@ -11,6 +11,7 @@
  */
 
 #include "qemu/osdep.h"
+#include "qemu-common.h"
 #include "block/aio.h"
 #include "qapi/error.h"
 #include "qemu/timer.h"
@@ -830,6 +831,10 @@ int main(int argc, char **argv)
     GSource *src;
 
     init_clocks();
+
+#ifdef HOST_AARCH64
+    sigaction(SIGIO, &(struct sigaction){ .sa_handler = SIG_IGN }, NULL);
+#endif
 
     ctx = aio_context_new(&local_error);
     if (!ctx) {
