@@ -234,12 +234,12 @@ static void process_incoming_migration_co(void *opaque)
         error_report("load of migration failed: %s", strerror(-ret));
         exit(EXIT_FAILURE);
     }
-    migrate_generate_event(MIGRATION_STATUS_COMPLETED);
     qemu_announce_self();
 
     /* Make sure all file formats flush their mutable metadata */
     bdrv_invalidate_cache_all(&local_err);
     if (local_err) {
+        migrate_generate_event(MIGRATION_STATUS_FAILED);
         error_report_err(local_err);
         exit(EXIT_FAILURE);
     }
@@ -258,6 +258,12 @@ static void process_incoming_migration_co(void *opaque)
     } else {
         runstate_set(global_state_get_runstate());
     }
+    /*
+     * This must happen after any state changes since as soon as an external
+     * observer sees this event they might start to prod at the VM assuming
+     * it's ready to use.
+     */
+    migrate_generate_event(MIGRATION_STATUS_COMPLETED);
 }
 
 void process_incoming_migration(QEMUFile *f)
