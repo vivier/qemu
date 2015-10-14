@@ -811,6 +811,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Wed Oct 14 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7
+- kvm-Migration-Generate-the-completed-event-only-when-we-.patch [bz#1271145]
+- Resolves: bz#1271145
+  (Guest OS paused after migration.)
+
 * Mon Oct 12 2015 Jeff E. Nelson <jen@redhat.com> - rhev-2.3.0-30.el7
 - kvm-memhp-extend-address-auto-assignment-to-support-gaps.patch [bz#1267533]
 - kvm-pc-memhp-force-gaps-between-DIMM-s-GPA.patch [bz#1267533]
