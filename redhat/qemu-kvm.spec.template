@@ -861,6 +861,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Oct 16 2015 Jeff E. Nelson <jen@redhat.com> - 1.5.3-105.el7
+- kvm-qtest-ide-test-disable-flush-test.patch [bz#1270341]
+- Resolves: bz#1270341
+  (qemu-kvm build failure race condition in tests/ide-test)
+
 * Wed Sep 23 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-104.el7
 - kvm-qemu-iotests-Filter-qemu-io-output-in-025.patch [bz#1170974]
 - Resolves: bz#1170974
