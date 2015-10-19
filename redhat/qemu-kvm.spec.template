@@ -840,6 +840,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Mon Oct 19 2015 Jeff E. Nelson <jen@redhat.com> - 1.5.3-86.el7_1.8
+- kvm-qtest-ide-test-disable-flush-test.patch [bz#1273098]
+- Resolves: bz#1273098
+  (qemu-kvm build failure race condition in tests/ide-test)
+
 * Fri Oct 09 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-86.el7_1.7
 - kvm-CVE-2015-1779-incrementally-decode-websocket-frames.patch [bz#1205050]
 - kvm-CVE-2015-1779-limit-size-of-HTTP-headers-from-websoc.patch [bz#1205050]
