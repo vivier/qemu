@@ -1,0 +1,37 @@
+UNAME:=qemu
+NAME:=qemu-guest-agent
+RHEV:=0
+VERSION:=2.12.0
+DATE:=
+COMMIT:=
+RELEASE:=1
+ZRELEASE:=
+RELEASE_SEPARATOR:=-
+
+TARFILE:=qemu-$(VERSION).tar.xz
+TARURL:=https://download.qemu.org/$(TARFILE)
+#TARURL:=http://batcave.lab.eng.brq.redhat.com/www/qemu-2.12.0/rc3/$(TARFILE)
+TARSHA256:=e69301f361ff65bf5dabd8a19196aeaa5613c1b5ae1678f0823bdf50e7d5c6fc
+MARKER:=4743c23509a51bd4ee85cc272287a41917d1be35
+
+SPECFILE:=$(NAME).spec
+DIST:=.el7
+BUILD_TARGET:=rhel-7.6-candidate
+
+ifeq ($(RHEV),1)
+  NAME_SUFFIX:=-rhev
+endif
+
+ifneq ($(VERSION),)
+  BUILD_DIR:=$(UNAME)-$(VERSION)
+  SRPM_NAME:=$(NAME)$(NAME_SUFFIX)-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST)
+else
+  BUILD_DIR:=$(UNAME)-$(GITCOMMIT).tar.bz2
+  SRPM_NAME:=$(NAME)$(NAME_SUFFIX)-$(DATE)-$(RELEASE).git$(COMMIT)$(DIST)
+endif
+
+ifneq ($(ZRELEASE),)
+  SRPM_NAME:=$(SRPM_NAME).$(ZRELEASE)
+endif
+
+SOURCES_FILELIST:=qemu-guest-agent.service 99-qemu-guest-agent.rules qemu-ga.sysconfig build_configure.sh
