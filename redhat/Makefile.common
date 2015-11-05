@@ -1,0 +1,37 @@
+UNAME:=qemu
+NAME:=qemu-kvm
+RHEV:=1
+VERSION:=2.7.0
+DATE:=
+COMMIT:=
+RELEASE:=0
+ZRELEASE:=
+RELEASE_SEPARATOR:=-
+
+TARFILE:=qemu-$(VERSION).tar.bz2
+TARURL:=http://wiki.qemu-project.org/download/$(TARFILE)
+TARSHA:=96737d31a2fb74553dacbd0ddaa93014858dc986
+MARKER:=1dc33ed90bf1fe1c2014dffa0d9e863c520d953a
+
+SPECFILE:=$(NAME).spec
+DIST:=.el7
+BUILD_TARGET:=rhevh-rhel-7.3-candidate
+
+ifeq ($(RHEV),1)
+  NAME_SUFFIX=-rhev
+endif
+
+ifneq ($(VERSION),)
+  BUILD_DIR=$(UNAME)-$(VERSION)
+  SRPM_NAME=$(NAME)$(NAME_SUFFIX)-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST)
+else
+  BUILD_DIR=$(UNAME)-$(GITCOMMIT)
+  SRPM_NAME=$(NAME)$(NAME_SUFFIX)-$(DATE)-$(RELEASE).git$(COMMIT)$(DIST)
+endif
+
+ifneq ($(ZRELEASE),)
+  SRPM_NAME=$(SRPM_NAME).$(ZRELEASE)
+endif
+
+SOURCES_FILELIST:= ksmtuned.conf ksmtuned ksm.sysconfig 80-kvm.rules kvm.modules 99-qemu-guest-agent.rules qemu-guest-agent.service ksmtuned.service  ksmctl.c ksm.service qemu.binfmt qemu-ga.sysconfig rhel6-virtio.rom rhel6-pcnet.rom rhel6-rtl8139.rom rhel6-ne2k_pci.rom bios-256k.bin README.rhel6-gpxe-source kvm-setup kvm-setup.service 85-kvm.preset build_configure.sh kvm-unit-tests.git-4ea7633.tar.bz2 vhost.conf bridge.conf kvm.conf 95-kvm-memlock.conf
+
