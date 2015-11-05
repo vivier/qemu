@@ -1,0 +1,35 @@
+UNAME:=qemu
+NAME:=qemu-guest-agent
+RHEV:=0
+VERSION:=2.5.0
+DATE:=
+COMMIT:=
+RELEASE:=1
+ZRELEASE:=
+RELEASE_SEPARATOR:=-
+
+TARFILE:=qemu-$(VERSION).tar.bz2
+TARURL:=http://wiki.qemu-project.org/download/$(TARFILE)
+TARSHA1:=ed6c02a267f9edf98058743f0f76a25743a0dfe7
+MARKER:=a8c40fa2d667e585382080db36ac44e216b37a1c
+SOURCES_FILELIST:=qemu-guest-agent.service 99-qemu-guest-agent.rules qemu-ga.sysconfig build_configure.sh
+
+SPECFILE:=$(NAME).spec
+DIST:=.el7
+BUILD_TARGET:=rhel-7.3-candidate
+
+ifeq ($(RHEV),1)
+  NAME_SUFFIX=-rhev
+endif
+
+ifneq ($(VERSION),)
+  BUILD_DIR=$(UNAME)-$(VERSION)
+  SRPM_NAME=$(NAME)$(NAME_SUFFIX)-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST)
+else
+  BUILD_DIR=$(UNAME)-$(GITCOMMIT).tar.bz2
+  SRPM_NAME=$(NAME)$(NAME_SUFFIX)-$(DATE)-$(RELEASE).git$(COMMIT)$(DIST)
+endif
+
+ifneq ($(ZRELEASE),)
+  SRPM_NAME=$(SRPM_NAME).$(ZRELEASE)
+endif
