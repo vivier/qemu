@@ -1,0 +1,8 @@
+# The default profile, rhev
+[gitpublishprofile "ga"]
+base = rhevl/ga/master-2.5.0
+prefix = RHEL-7.3 qemu-guest-agent PATCH
+to = rhvirt-patches@redhat.com
+suppresscc = all
+message = True
+
