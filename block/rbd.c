@@ -235,7 +235,8 @@ static char *qemu_rbd_parse_clientname(const char *conf, char *clientname)
     return NULL;
 }
 
-static int qemu_rbd_set_conf(rados_t cluster, const char *conf)
+static int qemu_rbd_set_conf(rados_t cluster, const char *conf,
+                             bool only_read_conf_file)
 {
     char *p, *buf;
     char name[RBD_MAX_CONF_NAME_SIZE];
@@ -267,14 +268,18 @@ static int qemu_rbd_set_conf(rados_t cluster, const char *conf)
         qemu_rbd_unescape(value);
 
         if (strcmp(name, "conf") == 0) {
-            ret = rados_conf_read_file(cluster, value);
-            if (ret < 0) {
-                error_report("error reading conf file %s", value);
-                break;
+            /* read the conf file alone, so it doesn't override more
+               specific settings for a particular device */
+            if (only_read_conf_file) {
+                ret = rados_conf_read_file(cluster, value);
+                if (ret < 0) {
+                    error_report("error reading conf file %s", value);
+                    break;
+                }
             }
         } else if (strcmp(name, "id") == 0) {
             /* ignore, this is parsed by qemu_rbd_parse_clientname() */
-        } else {
+        } else if (!only_read_conf_file) {
             ret = rados_conf_set(cluster, name, value);
             if (ret < 0) {
                 error_report("invalid conf option %s", name);
@@ -341,12 +346,17 @@ static int qemu_rbd_create(const char *filename, QEMUOptionParameter *options,
     if (strstr(conf, "conf=") == NULL) {
         /* try default location, but ignore failure */
         rados_conf_read_file(cluster, NULL);
+    } else if (conf[0] != '\0' &&
+               qemu_rbd_set_conf(cluster, conf, true) < 0) {
+        rados_shutdown(cluster);
+        error_report("error setting config options");
+        return -EIO;
     }
 
     if (conf[0] != '\0' &&
-        qemu_rbd_set_conf(cluster, conf) < 0) {
-        error_report("error setting config options");
+        qemu_rbd_set_conf(cluster, conf, false) < 0) {
         rados_shutdown(cluster);
+        error_report("error setting config options");
         return -EIO;
     }
 
@@ -504,10 +514,16 @@ static int qemu_rbd_open(BlockDriverState *bs, QDict *options, int flags,
     if (strstr(conf, "conf=") == NULL) {
         /* try default location, but ignore failure */
         rados_conf_read_file(s->cluster, NULL);
+    } else if (conf[0] != '\0') {
+        r = qemu_rbd_set_conf(s->cluster, conf, true);
+        if (r < 0) {
+            error_report("error setting config options");
+            goto failed_shutdown;
+        }
     }
 
     if (conf[0] != '\0') {
-        r = qemu_rbd_set_conf(s->cluster, conf);
+        r = qemu_rbd_set_conf(s->cluster, conf, false);
         if (r < 0) {
             error_report("error setting config options");
             goto failed_shutdown;
