@@ -1,0 +1,35 @@
+UNAME:=qemu
+NAME:=qemu-kvm
+RHEV:=1
+VERSION:=2.5.0
+DATE:=
+COMMIT:=
+RELEASE:=0
+ZRELEASE:=
+RELEASE_SEPARATOR:=-
+
+TARFILE:=qemu-$(VERSION).tar.bz2
+TARURL:=http://wiki.qemu-project.org/download/$(TARFILE)
+TARSHA1:=ed6c02a267f9edf98058743f0f76a25743a0dfe7
+MARKER:=a8c40fa2d667e585382080db36ac44e216b37a1c
+SOURCES_FILELIST:= ksmtuned.conf ksmtuned ksm.sysconfig 80-kvm.rules kvm.modules 99-qemu-guest-agent.rules qemu-guest-agent.service ksmtuned.service  ksmctl.c ksm.service qemu.binfmt qemu-ga.sysconfig rhel6-virtio.rom rhel6-pcnet.rom rhel6-rtl8139.rom rhel6-ne2k_pci.rom bios-256k.bin README.rhel6-gpxe-source kvm-setup kvm-setup.service 85-kvm.preset build_configure.sh kvm-unit-tests.git-4ea7633.tar.bz2 vhost.conf bridge.conf
+
+SPECFILE:=$(NAME).spec
+DIST:=.el7
+BUILD_TARGET:=rhel-7.3-candidate
+
+ifeq ($(RHEV),1)
+  NAME_SUFFIX=-rhev
+endif
+
+ifneq ($(VERSION),)
+  BUILD_DIR=$(UNAME)-$(VERSION)
+  SRPM_NAME=$(NAME)$(NAME_SUFFIX)-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST)
+else
+  BUILD_DIR=$(UNAME)-$(GITCOMMIT).tar.bz2
+  SRPM_NAME=$(NAME)$(NAME_SUFFIX)-$(DATE)-$(RELEASE).git$(COMMIT)$(DIST)
+endif
+
+ifneq ($(ZRELEASE),)
+  SRPM_NAME=$(SRPM_NAME).$(ZRELEASE)
+endif
