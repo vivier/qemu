@@ -501,19 +501,6 @@ static int qemu_rbd_open(BlockDriverState *bs, QDict *options, int flags,
         s->snap = g_strdup(snap_buf);
     }
 
-    /*
-     * Fallback to more conservative semantics if setting cache
-     * options fails. Ignore errors from setting rbd_cache because the
-     * only possible error is that the option does not exist, and
-     * librbd defaults to no caching. If write through caching cannot
-     * be set up, fall back to no caching.
-     */
-    if (flags & BDRV_O_NOCACHE) {
-        rados_conf_set(s->cluster, "rbd_cache", "false");
-    } else {
-        rados_conf_set(s->cluster, "rbd_cache", "true");
-    }
-
     if (strstr(conf, "conf=") == NULL) {
         /* try default location, but ignore failure */
         rados_conf_read_file(s->cluster, NULL);
@@ -525,6 +512,19 @@ static int qemu_rbd_open(BlockDriverState *bs, QDict *options, int flags,
             error_report("error setting config options");
             goto failed_shutdown;
         }
+    }
+
+    /*
+     * Fallback to more conservative semantics if setting cache
+     * options fails. Ignore errors from setting rbd_cache because the
+     * only possible error is that the option does not exist, and
+     * librbd defaults to no caching. If write through caching cannot
+     * be set up, fall back to no caching.
+     */
+    if (flags & BDRV_O_NOCACHE) {
+        rados_conf_set(s->cluster, "rbd_cache", "false");
+    } else {
+        rados_conf_set(s->cluster, "rbd_cache", "true");
     }
 
     r = rados_connect(s->cluster);
