@@ -600,7 +600,6 @@ static void pc_q35_compat_rhel710(MachineState *machine)
 
     /* From pc_q35_2_4_machine_options */
     pcmc->broken_reserved_end = true;
-    pcmc->inter_dimm_gap = false;
 }
 
 static void pc_q35_init_rhel710(MachineState *machine)
