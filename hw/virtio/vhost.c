@@ -832,9 +832,8 @@ static void vhost_eventfd_del(MemoryListener *listener,
 static int vhost_virtqueue_init(struct vhost_dev *dev,
                                 struct vhost_virtqueue *vq, int n)
 {
-    int vhost_vq_index = dev->vhost_ops->vhost_backend_get_vq_index(dev, n);
     struct vhost_vring_file file = {
-        .index = vhost_vq_index,
+        .index = n,
     };
     int r = event_notifier_init(&vq->masked_notifier, 0);
     if (r < 0) {
@@ -885,7 +884,7 @@ int vhost_dev_init(struct vhost_dev *hdev, void *opaque,
     }
 
     for (i = 0; i < hdev->nvqs; ++i) {
-        r = vhost_virtqueue_init(hdev, hdev->vqs + i, hdev->vq_index + i);
+        r = vhost_virtqueue_init(hdev, hdev->vqs + i, i);
         if (r < 0) {
             goto fail_vq;
         }
