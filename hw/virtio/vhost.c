@@ -859,7 +859,7 @@ static void vhost_virtqueue_cleanup(struct vhost_virtqueue *vq)
 }
 
 int vhost_dev_init(struct vhost_dev *hdev, void *opaque,
-                   VhostBackendType backend_type)
+                   VhostBackendType backend_type, bool force)
 {
     uint64_t features;
     int i, r;
@@ -922,6 +922,7 @@ int vhost_dev_init(struct vhost_dev *hdev, void *opaque,
     hdev->started = false;
     hdev->memory_changed = false;
     memory_listener_register(&hdev->memory_listener, &address_space_memory);
+    hdev->force = force;
     return 0;
 fail_vq:
     while (--i >= 0) {
@@ -947,6 +948,17 @@ void vhost_dev_cleanup(struct vhost_dev *hdev)
     g_free(hdev->mem);
     g_free(hdev->mem_sections);
     hdev->vhost_ops->vhost_backend_cleanup(hdev);
+}
+
+bool vhost_dev_query(struct vhost_dev *hdev, VirtIODevice *vdev)
+{
+    BusState *qbus = BUS(qdev_get_parent_bus(DEVICE(vdev)));
+    VirtioBusState *vbus = VIRTIO_BUS(qbus);
+    VirtioBusClass *k = VIRTIO_BUS_GET_CLASS(vbus);
+
+    return !k->query_guest_notifiers ||
+           k->query_guest_notifiers(qbus->parent) ||
+           hdev->force;
 }
 
 /* Stop processing guest IO notifications in qemu.

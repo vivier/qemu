@@ -128,6 +128,10 @@ static void virtio_net_vhost_status(VirtIONet *n, uint8_t status)
     if (!n->vhost_started) {
         int r, i;
 
+        if (!vhost_net_query(get_vhost_net(nc->peer), vdev)) {
+            return;
+        }
+
         /* Any packets outstanding? Purge them to avoid touching rings
          * when vhost is running.
          */

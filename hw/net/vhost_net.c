@@ -162,7 +162,7 @@ struct vhost_net *vhost_net_init(VhostNetOptions *options)
     net->dev.vqs = net->vqs;
 
     r = vhost_dev_init(&net->dev, options->opaque,
-                       options->backend_type);
+                       options->backend_type, options->force);
     if (r < 0) {
         goto fail;
     }
@@ -185,6 +185,11 @@ struct vhost_net *vhost_net_init(VhostNetOptions *options)
 fail:
     g_free(net);
     return NULL;
+}
+
+bool vhost_net_query(VHostNetState *net, VirtIODevice *dev)
+{
+    return vhost_dev_query(&net->dev, dev);
 }
 
 static void vhost_net_set_vq_index(struct vhost_net *net, int vq_index)
@@ -409,6 +414,11 @@ struct vhost_net *vhost_net_init(VhostNetOptions *options)
 {
     error_report("vhost-net support is not compiled in");
     return NULL;
+}
+
+bool vhost_net_query(VHostNetState *net, VirtIODevice *dev)
+{
+    return false;
 }
 
 int vhost_net_start(VirtIODevice *dev,

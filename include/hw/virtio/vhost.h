@@ -46,6 +46,7 @@ struct vhost_dev {
     vhost_log_chunk_t *log;
     unsigned long long log_size;
     Error *migration_blocker;
+    bool force;
     bool memory_changed;
     hwaddr mem_changed_start_addr;
     hwaddr mem_changed_end_addr;
@@ -54,7 +55,7 @@ struct vhost_dev {
 };
 
 int vhost_dev_init(struct vhost_dev *hdev, void *opaque,
-                   VhostBackendType backend_type);
+                   VhostBackendType backend_type, bool force);
 void vhost_dev_cleanup(struct vhost_dev *hdev);
 bool vhost_dev_query(struct vhost_dev *hdev, VirtIODevice *vdev);
 int vhost_dev_start(struct vhost_dev *hdev, VirtIODevice *vdev);
