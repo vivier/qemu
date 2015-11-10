@@ -25,9 +25,7 @@
 
 #define VHOST_MEMORY_MAX_NREGIONS    8
 #define VHOST_USER_F_PROTOCOL_FEATURES 30
-#define VHOST_USER_PROTOCOL_FEATURE_MASK 0x1ULL
-
-#define VHOST_USER_PROTOCOL_F_MQ    0
+#define VHOST_USER_PROTOCOL_FEATURE_MASK 0x0ULL
 
 typedef enum VhostUserRequest {
     VHOST_USER_NONE = 0,
@@ -47,7 +45,6 @@ typedef enum VhostUserRequest {
     VHOST_USER_SET_VRING_ERR = 14,
     VHOST_USER_GET_PROTOCOL_FEATURES = 15,
     VHOST_USER_SET_PROTOCOL_FEATURES = 16,
-    VHOST_USER_GET_QUEUE_NUM = 17,
     VHOST_USER_MAX
 } VhostUserRequest;
 
@@ -214,7 +211,6 @@ static int vhost_user_call(struct vhost_dev *dev, unsigned long int request,
     switch (msg_request) {
     case VHOST_USER_GET_FEATURES:
     case VHOST_USER_GET_PROTOCOL_FEATURES:
-    case VHOST_USER_GET_QUEUE_NUM:
         need_reply = 1;
         break;
 
@@ -319,7 +315,6 @@ static int vhost_user_call(struct vhost_dev *dev, unsigned long int request,
         switch (msg_request) {
         case VHOST_USER_GET_FEATURES:
         case VHOST_USER_GET_PROTOCOL_FEATURES:
-        case VHOST_USER_GET_QUEUE_NUM:
             if (msg.size != sizeof(m.u64)) {
                 error_report("Received bad msg size.\n");
                 return -1;
@@ -370,14 +365,6 @@ static int vhost_user_init(struct vhost_dev *dev, void *opaque)
                               &dev->protocol_features);
         if (err < 0) {
             return err;
-        }
-
-        /* query the max queues we support if backend supports Multiple Queue */
-        if (dev->protocol_features & (1ULL << VHOST_USER_PROTOCOL_F_MQ)) {
-            err = vhost_user_call(dev, VHOST_USER_GET_QUEUE_NUM, &dev->max_queues);
-            if (err < 0) {
-                return err;
-            }
         }
     }
 

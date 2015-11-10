@@ -122,11 +122,6 @@ void vhost_net_ack_features(struct vhost_net *net, uint64_t features)
     vhost_ack_features(&net->dev, vhost_net_get_feature_bits(net), features);
 }
 
-uint64_t vhost_net_get_max_queues(VHostNetState *net)
-{
-    return net->dev.max_queues;
-}
-
 static int vhost_net_get_fd(NetClientState *backend)
 {
     switch (backend->info->type) {
@@ -148,8 +143,6 @@ struct vhost_net *vhost_net_init(VhostNetOptions *options)
         fprintf(stderr, "vhost-net requires net backend to be setup\n");
         goto fail;
     }
-
-    net->dev.max_queues = 1;
 
     if (backend_kernel) {
         r = vhost_net_get_fd(options->net_backend);
@@ -421,11 +414,6 @@ VHostNetState *get_vhost_net(NetClientState *nc)
     return vhost_net;
 }
 #else
-uint64_t vhost_net_get_max_queues(VHostNetState *net)
-{
-    return 1;
-}
-
 struct vhost_net *vhost_net_init(VhostNetOptions *options)
 {
     error_report("vhost-net support is not compiled in");
