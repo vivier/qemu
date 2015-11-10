@@ -28,6 +28,4 @@ bool vhost_net_virtqueue_pending(VHostNetState *net, int n);
 void vhost_net_virtqueue_mask(VHostNetState *net, VirtIODevice *dev,
                               int idx, bool mask);
 VHostNetState *get_vhost_net(NetClientState *nc);
-
-int vhost_set_vring_enable(NetClientState * nc, int enable);
 #endif
