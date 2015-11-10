@@ -89,7 +89,7 @@ Obsoletes: %1 < %{obsoletes_version}
 %define pkgrelease %%PKGRELEASE%%
 
 %define rpmversion %{sublevel}
-%define full_release %{pkgrelease}%{?dist}%{?buildid}
+%define full_release %{pkgrelease}%{?dist}_2.%%ZRELEASE%%%{?buildid}
 
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
@@ -811,6 +811,23 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Tue Nov 10 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.1
+- kvm-virtio-blk-only-clear-VIRTIO_F_ANY_LAYOUT-for-legacy.patch [bz#1276100]
+- kvm-vhost-enable-vhost-without-without-MSI-X.patch [bz#1276100]
+- kvm-virtio-avoid-leading-underscores-for-helpers.patch [bz#1276100]
+- kvm-vhost-user-use-VHOST_USER_XXX-macro-for-switch-state.patch [bz#1276100]
+- kvm-vhost-user-add-protocol-feature-negotiation.patch [bz#1276100]
+- kvm-vhost-user-add-VHOST_USER_GET_QUEUE_NUM-message.patch [bz#1276100]
+- kvm-vhost-introduce-vhost_backend_get_vq_index-method.patch [bz#1276100]
+- kvm-vhost-user-add-multiple-queue-support.patch [bz#1276100]
+- kvm-vhost-user-add-a-new-message-to-disable-enable-a-spe.patch [bz#1276100]
+- kvm-Revert-pc-memhp-force-gaps-between-DIMM-s-GPA.patch [bz#1278282]
+- kvm-Revert-memhp-extend-address-auto-assignment-to-suppo.patch [bz#1278282]
+- Resolves: bz#1276100
+  ([6wind 7.2 FEAT]: vhost-user does not support multique)
+- Resolves: bz#1278282
+  (memory unplug triggers BUG_ON: kernel BUG at mm/memory_hotplug.c:703!)
+
 * Wed Oct 14 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7
 - kvm-Migration-Generate-the-completed-event-only-when-we-.patch [bz#1271145]
 - Resolves: bz#1271145

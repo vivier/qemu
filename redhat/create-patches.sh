@@ -8,10 +8,11 @@ PKGRELEASE=$4
 # BUILD* are legacy variables: please use PKGRELEASE instead
 PREBUILD=$5
 BUILD=$6
-RHEV=$7
-BUILDID=$8
+ZRELEASE=$7
+RHEV=$8
+BUILDID=$9
 
-RCMARKER=$9
+RCMARKER=
 
 PATCHF="$SOURCES/Patch.include"
 patchf="$SOURCES/patch.include"
@@ -326,6 +327,7 @@ test -n "$SPECFILE" &&
 	s/%%BUILD%%/$BUILD/
 	s/%%BUILDID%%/$BUILDID/
 	s/%%PKGRELEASE%%/$PKGRELEASE/
+        s/%%ZRELEASE%%/$ZRELEASE/
 	s/%%SUBLEVEL%%/$SUBLEVEL/
 	s/%%RCREV%%/$RCREV/
 	s/%%GITREV%%/$GITREV/

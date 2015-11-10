@@ -46,7 +46,7 @@ endif
 endif
 
 PKGRELEASE=$(PREBUILD)$(BUILD)
-PKG_FULL_VR = $(STAMP_VERSION)-$(PKGRELEASE)$(DIST)$(BUILDID)
+PKG_FULL_VR = $(STAMP_VERSION)-$(PKGRELEASE)$(DIST)_2.$(ZRELEASE)$(BUILDID)
 PKG_FULL_NVR = $(PKGNAME)-$(PKG_FULL_VR)
 
 RPMBUILD_DEFS = --define "_sourcedir $(SOURCES)" --define "_builddir $(RPM)/BUILD" --define "_srcrpmdir $(RPM)/SRPMS" --define "_rpmdir $(RPM)/RPMS" --define "_specdir $(RPM)/SPECS" --define "dist $(DIST)"
@@ -105,7 +105,7 @@ sources-rh: $(TARBALL) $(RC_PATCH) $(GIT_PATCH) $(REDHAT)/create-patches.sh Make
 	@cp $(TARBALL) $(SOURCES)/$(TARFILE)
 	@cp *.patch $(SOURCES)
 	@cp bridge.conf $(SOURCES)
-	@$(REDHAT)/create-patches.sh $(MARKER) $(SOURCES) $(SOURCES)/$(SPECFILE) $(PKGRELEASE) '$(PREBUILD)' $(BUILD) $(RHEV_FLAG) $(BUILDID) $(RCMARKER)
+	@$(REDHAT)/create-patches.sh $(MARKER) $(SOURCES) $(SOURCES)/$(SPECFILE) $(PKGRELEASE) '$(PREBUILD)' $(BUILD) '$(ZRELEASE)' $(RHEV_FLAG) $(BUILDID) $(RCMARKER)
 	@cp $(SOURCES)/$(SPECFILE) $(SOURCES)/../SPECS
 	@cp $(TESTPATCH) $(SOURCES)/$(COMMON_NAME)-test.patch
 	@cp ../sysconfigs/target/target-x86_64.conf $(SOURCES)
