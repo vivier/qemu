@@ -42,19 +42,11 @@ static int vhost_kernel_cleanup(struct vhost_dev *dev)
     return close(fd);
 }
 
-static int vhost_kernel_get_vq_index(struct vhost_dev *dev, int idx)
-{
-    assert(idx >= dev->vq_index && idx < dev->vq_index + dev->nvqs);
-
-    return idx - dev->vq_index;
-}
-
 static const VhostOps kernel_ops = {
         .backend_type = VHOST_BACKEND_TYPE_KERNEL,
         .vhost_call = vhost_kernel_call,
         .vhost_backend_init = vhost_kernel_init,
-        .vhost_backend_cleanup = vhost_kernel_cleanup,
-        .vhost_backend_get_vq_index = vhost_kernel_get_vq_index,
+        .vhost_backend_cleanup = vhost_kernel_cleanup
 };
 
 int vhost_set_backend_type(struct vhost_dev *dev, VhostBackendType backend_type)
