@@ -11,7 +11,7 @@
 #include "hw/virtio/vhost.h"
 #include "hw/virtio/vhost-backend.h"
 #include "qemu/error-report.h"
-
+#include <linux/vhost.h>
 #include <sys/ioctl.h>
 
 static int vhost_kernel_call(struct vhost_dev *dev, unsigned long int request,
@@ -49,12 +49,18 @@ static int vhost_kernel_get_vq_index(struct vhost_dev *dev, int idx)
     return idx - dev->vq_index;
 }
 
+static int vhost_set_log_base(struct vhost_dev *dev, uint64_t base)
+{
+    return vhost_kernel_call(dev, VHOST_SET_LOG_BASE, &base);
+}
+
 static const VhostOps kernel_ops = {
         .backend_type = VHOST_BACKEND_TYPE_KERNEL,
         .vhost_call = vhost_kernel_call,
         .vhost_backend_init = vhost_kernel_init,
         .vhost_backend_cleanup = vhost_kernel_cleanup,
         .vhost_backend_get_vq_index = vhost_kernel_get_vq_index,
+        .vhost_set_log_base = vhost_set_log_base,
 };
 
 int vhost_set_backend_type(struct vhost_dev *dev, VhostBackendType backend_type)
