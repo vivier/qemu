@@ -201,12 +201,9 @@ static GThread *_thread_new(const gchar *name, GThreadFunc func, gpointer data)
     return thread;
 }
 
-static void read_guest_mem(void)
+static void wait_for_fds(void)
 {
-    uint32_t *guest_mem;
     gint64 end_time;
-    int i, j;
-    size_t size;
 
     g_mutex_lock(data_mutex);
 
@@ -222,6 +219,19 @@ static void read_guest_mem(void)
     /* check for sanity */
     g_assert_cmpint(fds_num, >, 0);
     g_assert_cmpint(fds_num, ==, memory.nregions);
+
+    g_mutex_unlock(&data_mutex);
+}
+
+static void read_guest_mem(void)
+{
+    uint32_t *guest_mem;
+    int i, j;
+    size_t size;
+
+    wait_for_fds();
+
+    g_mutex_lock(&data_mutex);
 
     /* iterate all regions */
     for (i = 0; i < fds_num; i++) {
