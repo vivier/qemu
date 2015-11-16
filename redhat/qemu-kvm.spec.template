@@ -920,6 +920,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Mon Nov 16 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-23.el7_1.11
+- kvm-spice-fix-spice_chr_add_watch-pre-condition.patch [bz#1281814]
+- Resolves: bz#1281814
+  (Spiceport character device is not reliable caused domain shutoff)
+
 * Fri Oct 09 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-23.el7_1.10
 - kvm-CVE-2015-1779-incrementally-decode-websocket-frames.patch [bz#1206498]
 - kvm-CVE-2015-1779-limit-size-of-HTTP-headers-from-websoc.patch [bz#1206498]
