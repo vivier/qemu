@@ -471,10 +471,7 @@ static int vhost_user_init(struct vhost_dev *dev, void *opaque)
 
 static int vhost_user_set_vring_enable(struct vhost_dev *dev, int enable)
 {
-    struct vhost_vring_state state = {
-        .index = dev->vq_index,
-        .num   = enable,
-    };
+    int i;
 
     assert(dev->vhost_ops->backend_type == VHOST_BACKEND_TYPE_USER);
 
@@ -482,7 +479,16 @@ static int vhost_user_set_vring_enable(struct vhost_dev *dev, int enable)
         return -1;
     }
 
-    return vhost_user_call(dev, VHOST_USER_SET_VRING_ENABLE, &state);
+    for (i = 0; i < dev->nvqs; ++i) {
+        struct vhost_vring_state state = {
+            .index = dev->vq_index + i,
+            .num   = enable,
+        };
+
+        vhost_user_call(dev, VHOST_USER_SET_VRING_ENABLE, &state);
+    }
+
+    return 0;
 }
 
 static int vhost_user_cleanup(struct vhost_dev *dev)
