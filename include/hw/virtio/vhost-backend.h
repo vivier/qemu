@@ -11,6 +11,8 @@
 #ifndef VHOST_BACKEND_H_
 #define VHOST_BACKEND_H_
 
+#include <stdbool.h>
+
 typedef enum VhostBackendType {
     VHOST_BACKEND_TYPE_NONE = 0,
     VHOST_BACKEND_TYPE_KERNEL = 1,
@@ -28,6 +30,7 @@ typedef int (*vhost_backend_get_vq_index)(struct vhost_dev *dev, int idx);
 typedef int (*vhost_backend_set_vring_enable)(struct vhost_dev *dev, int enable);
 
 typedef int (*vhost_set_log_base_op)(struct vhost_dev *dev, uint64_t base);
+typedef bool (*vhost_requires_shm_log_op)(struct vhost_dev *dev);
 
 typedef struct VhostOps {
     VhostBackendType backend_type;
@@ -37,6 +40,7 @@ typedef struct VhostOps {
     vhost_backend_get_vq_index vhost_backend_get_vq_index;
     vhost_backend_set_vring_enable vhost_backend_set_vring_enable;
     vhost_set_log_base_op vhost_set_log_base;
+    vhost_requires_shm_log_op vhost_requires_shm_log;
 } VhostOps;
 
 extern const VhostOps user_ops;

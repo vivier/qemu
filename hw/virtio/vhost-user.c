@@ -25,9 +25,10 @@
 
 #define VHOST_MEMORY_MAX_NREGIONS    8
 #define VHOST_USER_F_PROTOCOL_FEATURES 30
-#define VHOST_USER_PROTOCOL_FEATURE_MASK 0x1ULL
 
-#define VHOST_USER_PROTOCOL_F_MQ    0
+#define VHOST_USER_PROTOCOL_FEATURE_MASK 0x3ULL
+#define VHOST_USER_PROTOCOL_F_MQ         0
+#define VHOST_USER_PROTOCOL_F_LOG_SHMFD  1
 
 typedef enum VhostUserRequest {
     VHOST_USER_NONE = 0,
@@ -453,6 +454,14 @@ static int vhost_user_get_vq_index(struct vhost_dev *dev, int idx)
     return idx;
 }
 
+static bool vhost_user_requires_shm_log(struct vhost_dev *dev)
+{
+    assert(dev->vhost_ops->backend_type == VHOST_BACKEND_TYPE_USER);
+
+    return virtio_has_feature(dev->protocol_features,
+                              VHOST_USER_PROTOCOL_F_LOG_SHMFD);
+}
+
 const VhostOps user_ops = {
         .backend_type = VHOST_BACKEND_TYPE_USER,
         .vhost_call = vhost_user_call,
@@ -461,4 +470,5 @@ const VhostOps user_ops = {
         .vhost_backend_get_vq_index = vhost_user_get_vq_index,
         .vhost_backend_set_vring_enable = vhost_user_set_vring_enable,
         .vhost_set_log_base = vhost_set_log_base,
+        .vhost_requires_shm_log = vhost_user_requires_shm_log,
 };
