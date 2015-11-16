@@ -49,7 +49,8 @@ static int vhost_kernel_get_vq_index(struct vhost_dev *dev, int idx)
     return idx - dev->vq_index;
 }
 
-static int vhost_set_log_base(struct vhost_dev *dev, uint64_t base)
+static int vhost_set_log_base(struct vhost_dev *dev, uint64_t base,
+                              struct vhost_log *log)
 {
     return vhost_kernel_call(dev, VHOST_SET_LOG_BASE, &base);
 }

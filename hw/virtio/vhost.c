@@ -372,7 +372,7 @@ static inline void vhost_dev_log_resize(struct vhost_dev *dev, uint64_t size)
 
     /* inform backend of log switching, this must be done before
        releasing the current log, to ensure no logging is lost */
-    r = dev->vhost_ops->vhost_set_log_base(dev, log_base);
+    r = dev->vhost_ops->vhost_set_log_base(dev, log_base, log);
     assert(r >= 0);
     vhost_log_put(dev, true);
     dev->log = log;
@@ -1175,7 +1175,8 @@ int vhost_dev_start(struct vhost_dev *hdev, VirtIODevice *vdev)
                                   vhost_dev_log_is_shared(hdev));
         log_base = (uintptr_t)hdev->log->log;
         r = hdev->vhost_ops->vhost_set_log_base(hdev,
-                                                hdev->log_size ? log_base : 0);
+                                                hdev->log_size ? log_base : 0,
+                                                hdev->log);
         if (r < 0) {
             r = -errno;
             goto fail_log;
