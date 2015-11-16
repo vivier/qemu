@@ -478,7 +478,7 @@ static int vhost_user_set_vring_enable(struct vhost_dev *dev, int enable)
 
     assert(dev->vhost_ops->backend_type == VHOST_BACKEND_TYPE_USER);
 
-    if (!(dev->protocol_features & (1ULL << VHOST_USER_PROTOCOL_F_MQ))) {
+    if (!virtio_has_feature(dev->features, VHOST_USER_F_PROTOCOL_FEATURES)) {
         return -1;
     }
 
