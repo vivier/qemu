@@ -1604,3 +1604,6 @@ cpu_unhalt(int cpu_index) "unhalting cpu %d"
 
 # hw/arm/virt-acpi-build.c
 virt_acpi_setup(void) "No fw cfg or ACPI disabled. Bailing out."
+
+# net/vhost-user.c
+vhost_user_event(const char *chr, int event) "chr: %s got event: %d"
