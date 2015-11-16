@@ -115,6 +115,15 @@ char *qtest_hmp(QTestState *s, const char *fmt, ...);
 char *qtest_hmpv(QTestState *s, const char *fmt, va_list ap);
 
 /**
+ * qtest_qmp_eventwait:
+ * @s: #QTestState instance to operate on.
+ * @s: #event event to wait for.
+ *
+ * Continuosly polls for QMP responses until it receives the desired event.
+ */
+void qtest_qmp_eventwait(QTestState *s, const char *event);
+
+/**
  * qtest_get_irq:
  * @s: #QTestState instance to operate on.
  * @num: Interrupt to observe.
@@ -460,6 +469,17 @@ static inline QDict *qmp_receive(void)
  * Returns: the command's output.  The caller should g_free() it.
  */
 char *hmp(const char *fmt, ...);
+
+/**
+ * qmp_eventwait:
+ * @s: #event event to wait for.
+ *
+ * Continuosly polls for QMP responses until it receives the desired event.
+ */
+static inline void qmp_eventwait(const char *event)
+{
+    return qtest_qmp_eventwait(global_qtest, event);
+}
 
 /**
  * get_irq:
