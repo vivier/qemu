@@ -89,7 +89,7 @@ Obsoletes: %1 < %{obsoletes_version}                                      \
 %define pkgrelease %%PKGRELEASE%%
 
 %define rpmversion %{sublevel}
-%define full_release %{pkgrelease}%{?dist}%{?buildid}
+%define full_release %{pkgrelease}%{?dist}.%%ZRELEASE%%%{?buildid}
 
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
@@ -861,6 +861,12 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Nov 17 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.1
+- kvm-rbd-make-qemu-s-cache-setting-override-any-ceph-sett.patch [bz#1279389]
+- kvm-rbd-fix-ceph-settings-precedence.patch [bz#1279389]
+- Resolves: bz#1279389
+  (ceph.conf properties override qemu's command-line properties)
+
 * Fri Oct 16 2015 Jeff E. Nelson <jen@redhat.com> - 1.5.3-105.el7
 - kvm-qtest-ide-test-disable-flush-test.patch [bz#1270341]
 - Resolves: bz#1270341
