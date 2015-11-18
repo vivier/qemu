@@ -392,7 +392,7 @@ static int vhost_set_log_base(struct vhost_dev *dev, uint64_t base,
     VhostUserMsg msg = {
         .request = VHOST_USER_SET_LOG_BASE,
         .flags = VHOST_USER_VERSION,
-        .log.mmap_size = log->size,
+        .log.mmap_size = log->size * sizeof(*(log->log)),
         .log.mmap_offset = 0,
         .size = sizeof(msg.log),
     };
