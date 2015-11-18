@@ -811,6 +811,64 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Wed Nov 18 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.2
+- kvm-target-ppc-fix-hugepage-support-when-using-memory-ba.patch [bz#1279387]
+- kvm-spapr-Enable-in-kernel-H_SET_MODE-handling.patch [bz#1283073]
+- kvm-rbd-make-qemu-s-cache-setting-override-any-ceph-sett.patch [bz#1279391]
+- kvm-rbd-fix-ceph-settings-precedence.patch [bz#1279391]
+- kvm-file_ram_alloc-propagate-error-to-caller-instead-of-.patch [bz#1283079]
+- kvm-acpi-add-acpi_send_gpe_event-to-rise-sci-for-hotplug.patch [bz#1283072]
+- kvm-pc-memhp-do-not-emit-inserting-event-for-coldplugged.patch [bz#1283072]
+- kvm-libqtest-add-qmp_eventwait.patch [bz#1279388]
+- kvm-configure-probe-for-memfd.patch [bz#1279388]
+- kvm-linux-headers-add-unistd.h.patch [bz#1279388]
+- kvm-build-sys-split-util-obj-on-multi-lines.patch [bz#1279388]
+- kvm-util-add-linux-only-memfd-fallback.patch [bz#1279388]
+- kvm-util-add-memfd-helpers.patch [bz#1279388]
+- kvm-util-add-fallback-for-qemu_memfd_alloc.patch [bz#1279388]
+- kvm-vhost-logs-sharing.patch [bz#1279388]
+- kvm-vhost-document-log-resizing.patch [bz#1279388]
+- kvm-vhost-add-vhost_set_log_base-op.patch [bz#1279388]
+- kvm-vhost-user-add-vhost_user_requires_shm_log.patch [bz#1279388]
+- kvm-vhost-alloc-shareable-log.patch [bz#1279388]
+- kvm-vhost-user-send-log-shm-fd-along-with-log_base.patch [bz#1279388]
+- kvm-vhost-user-add-a-migration-blocker.patch [bz#1279388]
+- kvm-vhost-user-document-migration-log.patch [bz#1279388]
+- kvm-net-add-trace_vhost_user_event.patch [bz#1279388]
+- kvm-vhost-user-add-support-of-live-migration.patch [bz#1279388]
+- kvm-vhost-user-add-rarp-sending-after-live-migration-for.patch [bz#1279388]
+- kvm-vhost-user-use-an-enum-helper-for-features-mask.patch [bz#1279388]
+- kvm-vhost-add-migration-block-if-memfd-failed.patch [bz#1279388]
+- kvm-vhost-user-test-move-wait_for_fds-out.patch [bz#1279388]
+- kvm-vhost-user-test-do-not-reinvent-glib-compat.h.patch [bz#1279388]
+- kvm-vhost-user-unit-test-for-new-messages.patch [bz#1279388]
+- kvm-vhost-user-test-use-tmpfs-by-default.patch [bz#1279388]
+- kvm-vhost-user-test-fix-predictable-filename-on-tmpfs.patch [bz#1279388]
+- kvm-vhost-user-test-remove-useless-static-check.patch [bz#1279388]
+- kvm-vhost-user-test-wrap-server-in-TestServer-struct.patch [bz#1279388]
+- kvm-vhost-user-test-learn-to-tweak-various-qemu-argument.patch [bz#1279388]
+- kvm-vhost-user-test-add-live-migration-test.patch [bz#1279388]
+- kvm-vhost-user-test-check-ownership-during-migration.patch [bz#1279388]
+- kvm-vhost-send-SET_VRING_ENABLE-at-start-stop.patch [bz#1279388]
+- kvm-vhost-user-modify-SET_LOG_BASE-to-pass-mmap-size-and.patch [bz#1279388]
+- kvm-vhost-let-SET_VRING_ENABLE-message-depends-on-protoc.patch [bz#1279388]
+- kvm-vhost-user-test-don-t-rely-on-RESET_OWNER.patch [bz#1279388]
+- kvm-vhost-user-remove-superfluous-n-around-error_report.patch [bz#1279388]
+- kvm-vhost-user-print-original-request-on-error.patch [bz#1279388]
+- kvm-vhost-user-start-stop-all-rings.patch [bz#1279388]
+- Resolves: bz#1279387
+  (hugepage could not be used inside guest if start the guest with NUMA supported huge pages)
+- Resolves: bz#1279388
+  ([6wind 7.3 Feat]: vhost user support of livemigration)
+- Resolves: bz#1279391
+  (ceph.conf properties override qemu's command-line properties)
+- Resolves: bz#1283072
+  (cold-plugged DIMM can't be unplugged on the first unplug request)
+- Resolves: bz#1283073
+  (gdb skips hardware watchpoints)
+- Resolves: bz#1283079
+  (qemu process exit after hot-plug a memory device which guest use 1G hugepages)
+
 * Tue Nov 10 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.1
 - kvm-virtio-blk-only-clear-VIRTIO_F_ANY_LAYOUT-for-legacy.patch [bz#1276100]
 - kvm-vhost-enable-vhost-without-without-MSI-X.patch [bz#1276100]
