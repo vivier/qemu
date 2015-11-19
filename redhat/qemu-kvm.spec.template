@@ -811,6 +811,12 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Thu Nov 19 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.3
+- kvm-vhost-user-ignore-qemu-only-features.patch [bz#1279388]
+- kvm-vhost-user-fix-log-size.patch [bz#1279388]
+- Resolves: bz#1279388
+  ([6wind 7.3 Feat]: vhost user support of livemigration)
+
 * Wed Nov 18 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.2
 - kvm-target-ppc-fix-hugepage-support-when-using-memory-ba.patch [bz#1279387]
 - kvm-spapr-Enable-in-kernel-H_SET_MODE-handling.patch [bz#1283073]
