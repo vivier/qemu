@@ -124,7 +124,14 @@ static char **breakline(char *input, int *count)
 static int64_t cvtnum(const char *s)
 {
     char *end;
-    return strtosz_suffix(s, &end, STRTOSZ_DEFSUFFIX_B);
+    int64_t ret;
+
+    ret = strtosz_suffix(s, &end, STRTOSZ_DEFSUFFIX_B);
+    if (*end != '\0') {
+        /* Detritus at the end of the string */
+        return -EINVAL;
+    }
+    return ret;
 }
 
 #define EXABYTES(x)     ((long long)(x) << 60)
