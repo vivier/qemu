@@ -87,8 +87,9 @@ static void help(void)
            "  'src_cache' is the cache mode used to read input disk images, the valid\n"
            "    options are the same as for the 'cache' option\n"
            "  'size' is the disk image size in bytes. Optional suffixes\n"
-           "    'k' or 'K' (kilobyte, 1024), 'M' (megabyte, 1024k), 'G' (gigabyte, 1024M)\n"
-           "    and T (terabyte, 1024G) are supported. 'b' is ignored.\n"
+           "    'k' or 'K' (kilobyte, 1024), 'M' (megabyte, 1024k), 'G' (gigabyte, 1024M),\n"
+           "    'T' (terabyte, 1024G), 'P' (petabyte, 1024T) and 'E' (exabyte, 1024P)  are\n"
+           "    supported. 'b' is ignored.\n"
            "  'output_filename' is the destination disk image filename\n"
            "  'output_fmt' is the destination format\n"
            "  'options' is a comma separated list of format specific options in a\n"
@@ -417,8 +418,9 @@ static int img_create(int argc, char **argv)
                 error_report("Image size must be less than 8 EiB!");
             } else {
                 error_report("Invalid image size specified! You may use k, M, "
-                      "G or T suffixes for ");
-                error_report("kilobytes, megabytes, gigabytes and terabytes.");
+                      "G, T, P or E suffixes for ");
+                error_report("kilobytes, megabytes, gigabytes, terabytes, "
+                             "petabytes and exabytes.");
             }
             goto fail;
         }
