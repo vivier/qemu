@@ -1935,15 +1935,6 @@ static int open_f(int argc, char **argv)
     return openfile(argv[optind], flags, growable, opts);
 }
 
-static int init_args_command(int index)
-{
-    /* only one device allowed so far */
-    if (index >= 1) {
-        return 0;
-    }
-    return ++index;
-}
-
 static int init_check_command(const cmdinfo_t *ct)
 {
     if (ct->flags & CMD_FLAG_GLOBAL) {
@@ -2096,7 +2087,6 @@ int main(int argc, char **argv)
     add_command(&abort_cmd);
     add_command(&sleep_cmd);
 
-    add_args_command(init_args_command);
     add_check_command(init_check_command);
 
     /* open the device */
