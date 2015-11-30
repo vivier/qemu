@@ -71,7 +71,7 @@
 %define pkgrelease %%PKGRELEASE%%
 
 %define rpmversion %{sublevel}
-%define full_release %{pkgrelease}%{?dist}%{?buildid}
+%define full_release %{pkgrelease}%{?dist}_2.%%ZRELEASE%%%{?buildid}
 
 Summary: QEMU guest agent
 Name: qemu-guest-agent
