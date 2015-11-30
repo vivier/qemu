@@ -811,6 +811,17 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Mon Nov 30 2015 Jeff E. Nelson <jen@redhat.com> - rhev-2.3.0-31.el7_2.4
+- kvm-virtio-blk-Fix-double-completion-for-werror-stop.patch [bz#1283987]
+- kvm-virtio-blk-Move-resetting-of-req-mr_next-to-virtio_b.patch [bz#1283987]
+- kvm-spapr-Allocate-HTAB-from-machine-init.patch [bz#1285337]
+- kvm-spapr-Abort-when-HTAB-of-requested-size-isn-t-alloca.patch [bz#1285337]
+- kvm-redhat-enable-z-stream-builds-for-qemu-guest-agent.patch []
+- Resolves: bz#1283987
+  (Aborted (core dumped) for "qemu-kvm: block.c:3332: bdrv_aligned_pwritev: Assertion `!qiov || bytes == qiov->size' failed." after 'lvextend' the guest primary image and 'cont' the installing guest for the 2nd time)
+- Resolves: bz#1285337
+  ([PPC64LE] Guest freezes if qemu allocates smaller page table than requested)
+
 * Thu Nov 19 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.3
 - kvm-vhost-user-ignore-qemu-only-features.patch [bz#1279388]
 - kvm-vhost-user-fix-log-size.patch [bz#1279388]
