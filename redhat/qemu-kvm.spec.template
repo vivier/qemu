@@ -811,6 +811,19 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Thu Dec 10 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2_2.5
+- kvm-virtio-introduce-virtio_map.patch [bz#1288096]
+- kvm-virtio-switch-to-virtio_map.patch [bz#1288096]
+- kvm-virtio-blk-convert-to-virtqueue_map.patch [bz#1288096]
+- kvm-virtio-serial-convert-to-virtio_map.patch [bz#1288096]
+- kvm-virtio-scsi-convert-to-virtqueue_map.patch [bz#1288096]
+- kvm-virtio-drop-virtqueue_map_sg.patch [bz#1288096]
+- kvm-dataplane-simplify-indirect-descriptor-read.patch [bz#1288096]
+- kvm-virtio-dataplane-adapt-dataplane-for-virtio-Version-.patch [bz#1288096]
+- kvm-dataplane-support-non-contigious-s-g.patch [bz#1288096]
+- Resolves: bz#1288096
+  (qemu quit when rebooting guest which hotplug memory >=13 times)
+
 * Mon Nov 30 2015 Jeff E. Nelson <jen@redhat.com> - rhev-2.3.0-31.el7_2.4
 - kvm-virtio-blk-Fix-double-completion-for-werror-stop.patch [bz#1283987]
 - kvm-virtio-blk-Move-resetting-of-req-mr_next-to-virtio_b.patch [bz#1283987]
