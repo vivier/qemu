@@ -3,5 +3,5 @@
 base = rhel6/master
 prefix = RHEL-6.8 qemu-kvm PATCH
 to = rhvirt-patches@redhat.com
-supresscc = all
+suppresscc = all
 message = True
