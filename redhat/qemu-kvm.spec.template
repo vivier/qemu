@@ -390,7 +390,8 @@ buildldflags="VL_LDFLAGS=-Wl,--build-id"
 
 %define qemu_ga_build_flags --prefix=%{_prefix} \\\
              --localstatedir=%{_localstatedir} \\\
-             --sysconfdir=%{_sysconfdir} \\\
+             --sysconfdir=%{_libexecdir} \\\
+             --with-confsuffix=qemu-ga \\\
              --disable-strip \\\
              --disable-xen \\\
              --block-drv-rw-whitelist=qcow2,raw,file,host_device,host_cdrom,qed,%{blk_drv_qcow2_gluster}rbd \\\
