@@ -4,7 +4,7 @@ RHEV:=1
 VERSION:=2.5.0
 DATE:=
 COMMIT:=
-RELEASE:=0
+RELEASE:=1
 ZRELEASE:=
 RELEASE_SEPARATOR:=-
 
@@ -16,7 +16,7 @@ SOURCES_FILELIST:= ksmtuned.conf ksmtuned ksm.sysconfig 80-kvm.rules kvm.modules
 
 SPECFILE:=$(NAME).spec
 DIST:=.el7
-BUILD_TARGET:=rhel-7.3-candidate
+BUILD_TARGET:=rhevh-rhel-7.3-candidate
 
 ifeq ($(RHEV),1)
   NAME_SUFFIX=-rhev
