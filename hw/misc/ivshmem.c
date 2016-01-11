@@ -122,6 +122,7 @@ static inline uint32_t ivshmem_has_feature(IVShmemState *ivs,
     return (ivs->features & (1 << feature));
 }
 
+
 /* accessing registers - based on rtl8139 */
 static void ivshmem_update_irq(IVShmemState *s)
 {
@@ -827,6 +828,7 @@ static void ivshmem_disable_irqfd(IVShmemState *s)
     }
 
     msix_unset_vector_notifiers(pdev);
+    return;
 }
 
 static void ivshmem_write_config(PCIDevice *pdev, uint32_t address,

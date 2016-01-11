@@ -71,6 +71,7 @@ static void qvirtio_scsi_stop(void)
 {
     qtest_end();
 }
+#if 0
 
 static void qvirtio_scsi_pci_free(QVirtIOSCSI *vs)
 {
@@ -84,7 +85,6 @@ static void qvirtio_scsi_pci_free(QVirtIOSCSI *vs)
     g_free(vs->dev);
     qpci_free_pc(vs->bus);
 }
-
 static uint64_t qvirtio_scsi_alloc(QVirtIOSCSI *vs, size_t alloc_size,
                                    const void *data)
 {
@@ -97,7 +97,6 @@ static uint64_t qvirtio_scsi_alloc(QVirtIOSCSI *vs, size_t alloc_size,
 
     return addr;
 }
-
 static uint8_t virtio_scsi_do_command(QVirtIOSCSI *vs, const uint8_t *cdb,
                                       const uint8_t *data_in,
                                       size_t data_in_len,
@@ -199,6 +198,7 @@ static QVirtIOSCSI *qvirtio_scsi_pci_init(int slot)
     return vs;
 }
 
+#endif
 /* Tests only initialization so far. TODO: Replace with functional tests */
 static void pci_nop(void)
 {
@@ -235,6 +235,7 @@ static void hotplug(void)
     qvirtio_scsi_stop();
 }
 
+#if 0
 /* Test WRITE SAME with the lba not aligned */
 static void test_unaligned_write_same(void)
 {
@@ -260,7 +261,7 @@ static void test_unaligned_write_same(void)
     qvirtio_scsi_pci_free(vs);
     qvirtio_scsi_stop();
 }
-
+#endif
 int main(int argc, char **argv)
 {
     int ret;
@@ -268,9 +269,10 @@ int main(int argc, char **argv)
     g_test_init(&argc, &argv, NULL);
     qtest_add_func("/virtio/scsi/pci/nop", pci_nop);
     qtest_add_func("/virtio/scsi/pci/hotplug", hotplug);
+#if 0
     qtest_add_func("/virtio/scsi/pci/scsi-disk/unaligned-write-same",
                    test_unaligned_write_same);
-
+#endif
     ret = g_test_run();
 
     return ret;
