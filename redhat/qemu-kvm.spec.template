@@ -711,8 +711,8 @@ find $RPM_BUILD_ROOT -name "libcacard.so*" -exec chmod +x \{\} \;
 
 find $RPM_BUILD_ROOT -name '*.la' -or -name '*.a' | xargs rm -f
 
-%check
-export DIFF=diff; make check V=1
+#%check
+#export DIFF=diff; make check V=1
 
 %post
 # load kvm modules now, so we can make sure no reboot is needed.
