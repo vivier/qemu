@@ -963,7 +963,7 @@ static void spapr_finalize_fdt(sPAPRMachineState *spapr,
         fprintf(stderr, "couldn't setup vio devices in fdt\n");
         exit(1);
     }
-
+#if 0 /* Disabled in Red Hat Enterprise Linux */
     if (object_resolve_path_type("", TYPE_SPAPR_RNG, NULL)) {
         ret = spapr_rng_populate_dt(fdt);
         if (ret < 0) {
@@ -971,7 +971,7 @@ static void spapr_finalize_fdt(sPAPRMachineState *spapr,
             exit(1);
         }
     }
-
+#endif
     QLIST_FOREACH(phb, &spapr->phbs, list) {
         ret = spapr_populate_pci_dt(phb, PHANDLE_XICP, fdt);
         if (ret < 0) {

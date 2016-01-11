@@ -172,7 +172,7 @@ STEXI
 Show the command line history.
 ETEXI
 
-#if defined(TARGET_I386) || defined(TARGET_PPC) || defined(TARGET_MIPS) || \
+#if defined(TARGET_I386) || defined(TARGET_MIPS) || \
     defined(TARGET_LM32) || (defined(TARGET_SPARC) && !defined(TARGET_SPARC64))
     {
         .name       = "irq",

@@ -985,6 +985,7 @@ static void fw_cfg_class_init(ObjectClass *klass, void *data)
 
     dc->reset = fw_cfg_reset;
     dc->vmsd = &vmstate_fw_cfg;
+    dc->cannot_instantiate_with_device_add_yet = true; /* RH state preserve */
 }
 
 static const TypeInfo fw_cfg_info = {
@@ -1030,6 +1031,7 @@ static void fw_cfg_io_class_init(ObjectClass *klass, void *data)
 
     dc->realize = fw_cfg_io_realize;
     dc->props = fw_cfg_io_properties;
+    dc->cannot_instantiate_with_device_add_yet = true; /* RH state preserve */
 }
 
 static const TypeInfo fw_cfg_io_info = {
@@ -1087,6 +1089,7 @@ static void fw_cfg_mem_class_init(ObjectClass *klass, void *data)
 
     dc->realize = fw_cfg_mem_realize;
     dc->props = fw_cfg_mem_properties;
+    dc->cannot_instantiate_with_device_add_yet = true; /* RH state preserve */
 }
 
 static const TypeInfo fw_cfg_mem_info = {

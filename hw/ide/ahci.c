@@ -1705,6 +1705,7 @@ static void sysbus_ahci_class_init(ObjectClass *klass, void *data)
     dc->vmsd = &vmstate_sysbus_ahci;
     dc->props = sysbus_ahci_properties;
     dc->reset = sysbus_ahci_reset;
+    dc->cannot_instantiate_with_device_add_yet = true; /* RH state preserve */
     set_bit(DEVICE_CATEGORY_STORAGE, dc->categories);
 }
 
@@ -1813,7 +1814,9 @@ static const TypeInfo allwinner_ahci_info = {
 static void sysbus_ahci_register_types(void)
 {
     type_register_static(&sysbus_ahci_info);
+#if 0  /* Disabled in Red Hat Enterprise Linux */
     type_register_static(&allwinner_ahci_info);
+#endif
 }
 
 type_init(sysbus_ahci_register_types)
