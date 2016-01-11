@@ -264,6 +264,7 @@ err:
 }
 
 static const char *spapr_core_models[] = {
+#if 0  /* Disabled for Red Hat Enterprise Linux */
     /* 970 */
     "970_v2.2",
 
@@ -276,6 +277,8 @@ static const char *spapr_core_models[] = {
     /* POWER5+ */
     "POWER5+_v2.1",
 
+    { .name = "POWER5+_v2.1", .initfn = spapr_cpu_core_POWER5plus_initfn },
+#endif
     /* POWER7 */
     "POWER7_v2.3",
 
@@ -290,7 +293,6 @@ static const char *spapr_core_models[] = {
 
     /* POWER8NVL */
     "POWER8NVL_v1.0",
-
     /* POWER9 */
     "POWER9_v1.0",
 };

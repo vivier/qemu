@@ -448,6 +448,7 @@ static void virtio_mmio_class_init(ObjectClass *klass, void *data)
 
     dc->realize = virtio_mmio_realizefn;
     dc->reset = virtio_mmio_reset;
+    dc->user_creatable = false; /* RH state preserve */
     set_bit(DEVICE_CATEGORY_MISC, dc->categories);
     dc->props = virtio_mmio_properties;
 }

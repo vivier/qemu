@@ -989,6 +989,8 @@ static void virtio_ccw_rng_realize(VirtioCcwDevice *ccw_dev, Error **errp)
                              NULL);
 }
 
+#if 0  /* Disabled in Red Hat Enterprise Linux */
+
 static void virtio_ccw_crypto_realize(VirtioCcwDevice *ccw_dev, Error **errp)
 {
     VirtIOCryptoCcw *dev = VIRTIO_CRYPTO_CCW(ccw_dev);
@@ -1006,6 +1008,8 @@ static void virtio_ccw_crypto_realize(VirtioCcwDevice *ccw_dev, Error **errp)
                              OBJECT(dev->vdev.conf.cryptodev), "cryptodev",
                              NULL);
 }
+
+#endif
 
 /* DeviceState to VirtioCcwDevice. Note: used on datapath,
  * be careful and test performance if you change this.
@@ -1578,6 +1582,8 @@ static const TypeInfo virtio_ccw_rng = {
     .class_init    = virtio_ccw_rng_class_init,
 };
 
+#if 0  /* Disabled in Red Hat Enterprise Linux */
+
 static Property virtio_ccw_crypto_properties[] = {
     DEFINE_PROP_BIT("ioeventfd", VirtioCcwDevice, flags,
                     VIRTIO_CCW_FLAG_USE_IOEVENTFD_BIT, true),
@@ -1615,6 +1621,8 @@ static const TypeInfo virtio_ccw_crypto = {
     .instance_init = virtio_ccw_crypto_instance_init,
     .class_init    = virtio_ccw_crypto_class_init,
 };
+
+#endif
 
 static void virtio_ccw_busdev_realize(DeviceState *dev, Error **errp)
 {
@@ -1814,7 +1822,9 @@ static void virtio_ccw_register(void)
 #ifdef CONFIG_VHOST_VSOCK
     type_register_static(&vhost_vsock_ccw_info);
 #endif
+#if 0  /* Disabled in Red Hat Enterprise Linux */
     type_register_static(&virtio_ccw_crypto);
+#endif
 }
 
 type_init(virtio_ccw_register)

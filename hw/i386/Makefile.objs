@@ -4,7 +4,8 @@ obj-y += pc.o pc_piix.o pc_q35.o
 obj-y += pc_sysfw.o
 obj-y += x86-iommu.o
 obj-$(CONFIG_VTD) += intel_iommu.o
-obj-y += amd_iommu.o
+# Disabled in Red Hat Enterprise Linux
+# obj-y += amd_iommu.o
 obj-$(CONFIG_XEN) += ../xenpv/ xen/
 
 obj-y += kvmvapic.o

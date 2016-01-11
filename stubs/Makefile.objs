@@ -41,3 +41,4 @@ stub-obj-y += vmgenid.o
 stub-obj-y += xen-common.o
 stub-obj-y += xen-hvm.o
 stub-obj-y += shadow-bios.o
+stub-obj-y += ide-isa.o

@@ -221,6 +221,7 @@ static void isabus_bridge_class_init(ObjectClass *klass, void *data)
 
     set_bit(DEVICE_CATEGORY_BRIDGE, dc->categories);
     dc->fw_name = "isa";
+    dc->user_creatable = false; /* RH state preserve */
 }
 
 static const TypeInfo isabus_bridge_info = {
