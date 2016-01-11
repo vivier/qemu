@@ -172,7 +172,7 @@ unsigned int max_cpus;
 int smp_cores = 1;
 int smp_threads = 1;
 int acpi_enabled = 1;
-int no_hpet = 0;
+int no_hpet = 1; /* Always disabled for Red Hat Enterprise Linux */
 int fd_bootchk = 1;
 static int no_reboot;
 int no_shutdown = 0;
@@ -937,6 +937,7 @@ static void configure_rtc(QemuOpts *opts)
     }
 }
 
+#if 0 // Disabled for Red Hat Enterprise Linux
 /***********************************************************/
 /* Bluetooth support */
 static int nb_hcis;
@@ -1058,6 +1059,7 @@ static int bt_parse(const char *opt)
     error_report("bad bluetooth parameter '%s'", opt);
     return 1;
 }
+#endif
 
 static int parse_name(void *opaque, QemuOpts *opts, Error **errp)
 {
@@ -3273,6 +3275,7 @@ int main(int argc, char **argv, char **envp)
                 }
                 break;
 #endif
+#if 0 /* Disabled for Red Hat Enterprise Linux */
             case QEMU_OPTION_bt:
                 warn_report("The bluetooth subsystem is deprecated and will "
                             "be removed soon. If the bluetooth subsystem is "
@@ -3280,6 +3283,7 @@ int main(int argc, char **argv, char **envp)
                             "qemu-devel@nongnu.org with your usecase.");
                 add_device_config(DEV_BT, optarg);
                 break;
+#endif
             case QEMU_OPTION_audio_help:
                 AUD_help ();
                 exit (0);
@@ -4417,9 +4421,11 @@ int main(int argc, char **argv, char **envp)
 
     tpm_init();
 
+#if 0 // Disabled for Red Hat Enterprise Linux
     /* init the bluetooth world */
     if (foreach_device_config(DEV_BT, bt_parse))
         exit(1);
+#endif
 
     if (!xen_enabled()) {
         /* On 32-bit hosts, QEMU is limited by virtual address space */
