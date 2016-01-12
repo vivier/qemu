@@ -820,6 +820,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Jan 12 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.5.0-1.el7
+- Rebase to qemu 2.5.0 [bz#1289417]
+- Resolves: bz#1289417
+  (Rebase to QEMU 2.5)
+
 * Wed Oct 14 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7
 - kvm-Migration-Generate-the-completed-event-only-when-we-.patch [bz#1271145]
 - Resolves: bz#1271145
