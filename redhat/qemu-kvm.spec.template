@@ -861,6 +861,22 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Jan 13 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-106.el7
+- kvm-ehci-clear-suspend-bit-on-detach.patch [bz#1268879]
+- kvm-rbd-make-qemu-s-cache-setting-override-any-ceph-sett.patch [bz#1277248]
+- kvm-rbd-fix-ceph-settings-precedence.patch [bz#1277248]
+- kvm-target-i386-get-put-MSR_TSC_AUX-across-reset-and-mig.patch [bz#1265427]
+- kvm-rtl8139-Fix-receive-buffer-overflow-check.patch [bz#1252757]
+- kvm-rtl8139-Do-not-consume-the-packet-during-overflow-in.patch [bz#1252757]
+- Resolves: bz#1252757
+  ([RHEL-7.2-qmu-kvm] Package is 100% lost when ping from host to Win2012r2 guest with 64000 size)
+- Resolves: bz#1265427
+  (contents of MSR_TSC_AUX are not migrated)
+- Resolves: bz#1268879
+  (Camera stops work after remote-viewer re-connection [qemu-kvm])
+- Resolves: bz#1277248
+  (ceph.conf properties override qemu's command-line properties)
+
 * Fri Oct 16 2015 Jeff E. Nelson <jen@redhat.com> - 1.5.3-105.el7
 - kvm-qtest-ide-test-disable-flush-test.patch [bz#1270341]
 - Resolves: bz#1270341
