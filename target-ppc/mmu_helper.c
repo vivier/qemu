@@ -1297,7 +1297,7 @@ void dump_mmu(FILE *f, fprintf_function cpu_fprintf, CPUPPCState *env)
     case POWERPC_MMU_2_06a:
     case POWERPC_MMU_2_07:
     case POWERPC_MMU_2_07a:
-        dump_slb(f, cpu_fprintf, env);
+        dump_slb(f, cpu_fprintf, ppc_env_get_cpu(env));
         break;
 #endif
     default:
@@ -1439,12 +1439,12 @@ hwaddr ppc_cpu_get_phys_page_debug(CPUState *cs, vaddr addr)
     case POWERPC_MMU_2_06a:
     case POWERPC_MMU_2_07:
     case POWERPC_MMU_2_07a:
-        return ppc_hash64_get_phys_page_debug(env, addr);
+        return ppc_hash64_get_phys_page_debug(cpu, addr);
 #endif
 
     case POWERPC_MMU_32B:
     case POWERPC_MMU_601:
-        return ppc_hash32_get_phys_page_debug(env, addr);
+        return ppc_hash32_get_phys_page_debug(cpu, addr);
 
     default:
         ;
@@ -1510,6 +1510,7 @@ static int cpu_ppc_handle_mmu_fault(CPUPPCState *env, target_ulong address,
                                     int rw, int mmu_idx)
 {
     CPUState *cs = CPU(ppc_env_get_cpu(env));
+    PowerPCCPU *cpu = POWERPC_CPU(cs);
     mmu_ctx_t ctx;
     int access_type;
     int ret = 0;
@@ -1611,9 +1612,9 @@ static int cpu_ppc_handle_mmu_fault(CPUPPCState *env, target_ulong address,
                 tlb_miss:
                     env->error_code |= ctx.key << 19;
                     env->spr[SPR_HASH1] = env->htab_base +
-                        get_pteg_offset32(env, ctx.hash[0]);
+                        get_pteg_offset32(cpu, ctx.hash[0]);
                     env->spr[SPR_HASH2] = env->htab_base +
-                        get_pteg_offset32(env, ctx.hash[1]);
+                        get_pteg_offset32(cpu, ctx.hash[1]);
                     break;
                 case POWERPC_MMU_SOFT_74xx:
                     if (rw == 1) {
@@ -2101,7 +2102,7 @@ void helper_store_sr(CPUPPCState *env, target_ulong srnum, target_ulong value)
         /* flags = flags */
         rs |= ((value >> 27) & 0xf) << 8;
 
-        ppc_store_slb(env, rb, rs);
+        ppc_store_slb(cpu, rb, rs);
     } else
 #endif
     if (env->sr[srnum] != value) {
