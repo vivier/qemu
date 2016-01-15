@@ -1971,24 +1971,9 @@ void ppc_tlb_invalidate_one(CPUPPCState *env, target_ulong addr)
             ppc6xx_tlb_invalidate_virt(env, addr, 1);
         }
         break;
-    case POWERPC_MMU_SOFT_4xx:
-    case POWERPC_MMU_SOFT_4xx_Z:
-        ppc4xx_tlb_invalidate_virt(env, addr, env->spr[SPR_40x_PID]);
-        break;
-    case POWERPC_MMU_REAL:
-        cpu_abort(CPU(cpu), "No TLB for PowerPC 4xx in real mode\n");
-        break;
-    case POWERPC_MMU_MPC8xx:
-        /* XXX: TODO */
-        cpu_abort(CPU(cpu), "MPC8xx MMU model is not implemented\n");
-        break;
     case POWERPC_MMU_BOOKE:
         /* XXX: TODO */
         cpu_abort(CPU(cpu), "BookE MMU model is not implemented\n");
-        break;
-    case POWERPC_MMU_BOOKE206:
-        /* XXX: TODO */
-        cpu_abort(CPU(cpu), "BookE 2.06 MMU model is not implemented\n");
         break;
     case POWERPC_MMU_32B:
     case POWERPC_MMU_601:
@@ -2031,9 +2016,8 @@ void ppc_tlb_invalidate_one(CPUPPCState *env, target_ulong addr)
         break;
 #endif /* defined(TARGET_PPC64) */
     default:
-        /* XXX: TODO */
-        cpu_abort(CPU(cpu), "Unknown MMU model\n");
-        break;
+        /* Should never reach here with other MMU models */
+        assert(0);
     }
 #else
     ppc_tlb_invalidate_all(env);
