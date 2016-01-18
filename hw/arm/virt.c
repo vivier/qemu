@@ -1098,6 +1098,7 @@ static void virt_set_secure(Object *obj, bool value, Error **errp)
 
     vms->secure = value;
 }
+#endif /* disabled for RHELSA */
 
 static bool virt_get_highmem(Object *obj, Error **errp)
 {
@@ -1138,6 +1139,7 @@ static void virt_set_gic_version(Object *obj, const char *value, Error **errp)
     }
 }
 
+#if 0 /* disabled for RHELSA */
 static void virt_instance_init(Object *obj)
 {
     VirtMachineState *vms = VIRT_MACHINE(obj);
@@ -1250,8 +1252,6 @@ static void rhelsa720_virt_class_init(ObjectClass *oc, void *data)
     };
 
     mc->desc = "RHELSA 7.2 ARM Virtual Machine";
-    mc->alias = "virt";
-    mc->is_default = 1;
     mc->compat_props = rhelsa720_compat_props;
 
     /* override the base class init configuration */
@@ -1268,10 +1268,54 @@ static const TypeInfo rhelsa720_machvirt_info = {
     .class_init = rhelsa720_virt_class_init,
 };
 
+static void rhel730_virt_instance_init(Object *obj)
+{
+    VirtMachineState *vms = VIRT_MACHINE(obj);
+
+    /* EL3 is disabled by default and non-configurable on RHEL 7.3.0 */
+    vms->secure = false;
+    /* High memory is enabled by default on RHEL 7.3.0 */
+    vms->highmem = true;
+    object_property_add_bool(obj, "highmem", virt_get_highmem,
+                             virt_set_highmem, NULL);
+    object_property_set_description(obj, "highmem",
+                                    "Set on/off to enable/disable using "
+                                    "physical address space above 32 bits",
+                                    NULL);
+    /* Default GIC type is still v2, but becomes configurable on RHEL 7.3.0 */
+    vms->gic_version = 2;
+    object_property_add_str(obj, "gic-version", virt_get_gic_version,
+                        virt_set_gic_version, NULL);
+    object_property_set_description(obj, "gic-version",
+                                    "Set GIC version. "
+                                    "Valid values are 2, 3 and host", NULL);
+}
+
+static void rhel730_virt_class_init(ObjectClass *oc, void *data)
+{
+    MachineClass *mc = MACHINE_CLASS(oc);
+    static GlobalProperty rhel730_compat_props[] = {
+      { /* end of list */ }
+    };
+
+    mc->desc = "RHEL 7.3.0 ARM Virtual Machine";
+    mc->alias = "virt";
+    mc->is_default = 1;
+    mc->compat_props = rhel730_compat_props;
+}
+
+static const TypeInfo rhel730_machvirt_info = {
+    .name = MACHINE_TYPE_NAME("virt-rhel7.3.0"),
+    .parent = TYPE_VIRT_MACHINE,
+    .instance_init = rhel730_virt_instance_init,
+    .class_init = rhel730_virt_class_init,
+};
+
 static void rhel_machine_register_types(void)
 {
     type_register_static(&rhel_machine_info);
     type_register_static(&rhelsa720_machvirt_info);
+    type_register_static(&rhel730_machvirt_info);
 }
 
 machine_init(rhel_machine_register_types);
