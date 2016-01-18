@@ -811,6 +811,15 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Mon Jan 18 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.6
+- kvm-ohci-delay-first-SOF-interrupt.patch [bz#1298971]
+- kvm-ohci-clear-pending-SOF-on-suspend.patch [bz#1298971]
+- kvm-raw-posix-Fix-.bdrv_co_get_block_status-for-unaligne.patch [bz#1299345]
+- Resolves: bz#1298971
+  (OHCI can cause irq jam in guest [rhel-7.2.z])
+- Resolves: bz#1299345
+  ([abrt] qemu-img: get_block_status(): qemu-img killed by SIGABRT)
+
 * Thu Dec 10 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2_2.5
 - kvm-virtio-introduce-virtio_map.patch [bz#1288096]
 - kvm-virtio-switch-to-virtio_map.patch [bz#1288096]
