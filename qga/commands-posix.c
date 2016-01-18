@@ -569,7 +569,7 @@ struct GuestFileSeek *qmp_guest_file_seek(int64_t handle, int64_t offset,
             gfh->state = RW_STATE_NEW;
         }
     } else {
-        seek_data = g_malloc0(sizeof(GuestFileRead));
+        seek_data = g_new0(GuestFileSeek, 1);
         seek_data->position = ftell(fh);
         seek_data->eof = feof(fh);
         gfh->state = RW_STATE_NEW;
