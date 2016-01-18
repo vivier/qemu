@@ -41,6 +41,7 @@ struct PCMachineState {
     OnOffAuto smm;
     bool enforce_aligned_dimm;
     ram_addr_t below_4g_mem_size, above_4g_mem_size;
+    PCIBus *bus;
 };
 
 #define PC_MACHINE_ACPI_DEVICE_PROP "acpi-device"
