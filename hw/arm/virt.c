@@ -89,7 +89,7 @@ typedef struct {
 #define TYPE_VIRT_MACHINE   MACHINE_TYPE_NAME("virt")
 #endif /* disabled for RHELSA */
 
-#define TYPE_VIRT_MACHINE   MACHINE_TYPE_NAME("virt-rhelsa7.2")
+#define TYPE_VIRT_MACHINE   MACHINE_TYPE_NAME("virt-rhel")
 
 #define VIRT_MACHINE(obj) \
     OBJECT_CHECK(VirtMachineState, (obj), TYPE_VIRT_MACHINE)
@@ -1204,6 +1204,32 @@ static void machvirt_machine_init(void)
 machine_init(machvirt_machine_init);
 #endif /* disabled for RHELSA */
 
+static void rhel_machine_class_init(ObjectClass *oc, void *data)
+{
+    MachineClass *mc = MACHINE_CLASS(oc);
+
+    mc->family = "virt-rhel-Z";
+    mc->init = machvirt_init;
+    /* Start max_cpus at the maximum QEMU supports. We'll further restrict
+     * it later in machvirt_init, where we have more information about the
+     * configuration of the particular instance.
+     */
+    mc->max_cpus = MAX_CPUMASK_BITS;
+    mc->has_dynamic_sysbus = false;
+    mc->block_default_type = IF_VIRTIO;
+    mc->no_cdrom = 1;
+    mc->pci_allow_0_address = true;
+}
+
+static const TypeInfo rhel_machine_info = {
+    .name          = TYPE_VIRT_MACHINE,
+    .parent        = TYPE_MACHINE,
+    .abstract      = true,
+    .instance_size = sizeof(VirtMachineState),
+    .class_size    = sizeof(VirtMachineClass),
+    .class_init    = rhel_machine_class_init,
+};
+
 static void rhelsa720_virt_instance_init(Object *obj)
 {
     VirtMachineState *vms = VIRT_MACHINE(obj);
@@ -1223,28 +1249,29 @@ static void rhelsa720_virt_class_init(ObjectClass *oc, void *data)
       { /* end of list */ }
     };
 
-    mc->family = "virt-rhelsa-Z";
-    mc->name = TYPE_VIRT_MACHINE;
     mc->desc = "RHELSA 7.2 ARM Virtual Machine";
     mc->alias = "virt";
-    mc->init = machvirt_init;
-    mc->max_cpus = 8;
     mc->is_default = 1;
     mc->compat_props = rhelsa720_compat_props;
+
+    /* override the base class init configuration */
+    mc->max_cpus = 8;
+    mc->block_default_type = IF_IDE; /* IF_IDE = 0 */
+    mc->no_cdrom = 0;
+    mc->pci_allow_0_address = false;
 }
 
 static const TypeInfo rhelsa720_machvirt_info = {
-    .name = TYPE_VIRT_MACHINE,
-    .parent = TYPE_MACHINE,
-    .instance_size = sizeof(VirtMachineState),
+    .name = MACHINE_TYPE_NAME("virt-rhelsa7.2"),
+    .parent = TYPE_VIRT_MACHINE,
     .instance_init = rhelsa720_virt_instance_init,
-    .class_size = sizeof(VirtMachineClass),
     .class_init = rhelsa720_virt_class_init,
 };
 
-static void rhelsa720_machvirt_init(void)
+static void rhel_machine_register_types(void)
 {
+    type_register_static(&rhel_machine_info);
     type_register_static(&rhelsa720_machvirt_info);
 }
 
-machine_init(rhelsa720_machvirt_init);
+machine_init(rhel_machine_register_types);
