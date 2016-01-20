@@ -861,6 +861,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Jan 20 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.2
+- kvm-raw-posix-Fix-.bdrv_co_get_block_status-for-unaligne.patch [bz#1298828]
+- Resolves: bz#1298828
+  ([abrt] qemu-img: get_block_status(): qemu-img killed by SIGABRT)
+
 * Tue Nov 17 2015 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.1
 - kvm-rbd-make-qemu-s-cache-setting-override-any-ceph-sett.patch [bz#1279389]
 - kvm-rbd-fix-ceph-settings-precedence.patch [bz#1279389]
