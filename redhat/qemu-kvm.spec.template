@@ -861,6 +861,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Jan 21 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.3
+- kvm-fw_cfg-add-check-to-validate-current-entry-value-CVE.patch [bz#1298047]
+- Resolves: bz#1298047
+  (CVE-2016-1714 qemu-kvm: Qemu: nvram: OOB r/w access in processing firmware configurations [rhel-7.2.z])
+
 * Wed Jan 20 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.2
 - kvm-raw-posix-Fix-.bdrv_co_get_block_status-for-unaligne.patch [bz#1298828]
 - Resolves: bz#1298828
