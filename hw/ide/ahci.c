@@ -986,6 +986,7 @@ static void process_ncq_command(AHCIState *s, int port, uint8_t *cmd_fis,
                         "error: tried to process non-NCQ command as NCQ\n");
             }
             qemu_sglist_destroy(&ncq_tfs->sglist);
+            ncq_tfs->used = 0;
     }
 }
 
