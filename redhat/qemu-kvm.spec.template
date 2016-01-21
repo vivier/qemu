@@ -811,6 +811,14 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Thu Jan 21 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.7
+- kvm-fw_cfg-add-check-to-validate-current-entry-value-CVE.patch [bz#1298435]
+- kvm-ahci-clean-up-ncq_tfs-used-on-error.patch [bz#1297292]
+- Resolves: bz#1297292
+  (CVE-2016-1568 qemu-kvm-rhev: Qemu: ide: ahci use-after-free vulnerability in aio port commands [rhel-7.2.z])
+- Resolves: bz#1298435
+  (CVE-2016-1714 qemu-kvm-rhev: Qemu: nvram: OOB r/w access in processing firmware configurations [rhel-7.2.z])
+
 * Mon Jan 18 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.6
 - kvm-ohci-delay-first-SOF-interrupt.patch [bz#1298971]
 - kvm-ohci-clear-pending-SOF-on-suspend.patch [bz#1298971]
