@@ -861,6 +861,14 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Mon Feb 08 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-108.el7
+- kvm-net-Make-qmp_query_rx_filter-with-name-argument-more.patch [bz#1269738]
+- kvm-fw_cfg-add-check-to-validate-current-entry-value-CVE.patch [bz#1298048]
+- Resolves: bz#1269738
+  (Vlan table display repeat four times in qmp when queues=4)
+- Resolves: bz#1298048
+  (CVE-2016-1714 qemu-kvm: Qemu: nvram: OOB r/w access in processing firmware configurations [rhel-7.3])
+
 * Wed Jan 20 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-107.el7
 - kvm-raw-posix-Fix-.bdrv_co_get_block_status-for-unaligne.patch [bz#1283116]
 - Resolves: bz#1283116
