@@ -647,6 +647,7 @@ static int vmdk_open_vmdk4(BlockDriverState *bs,
             bs->file->total_sectors * 512 - 1536,
             &footer, sizeof(footer));
         if (ret < 0) {
+            error_setg_errno(errp, -ret, "Failed to read footer");
             return ret;
         }
 
@@ -658,6 +659,7 @@ static int vmdk_open_vmdk4(BlockDriverState *bs,
             le32_to_cpu(footer.eos_marker.size) != 0  ||
             le32_to_cpu(footer.eos_marker.type) != MARKER_END_OF_STREAM)
         {
+            error_setg(errp, "Invalid footer");
             return -EINVAL;
         }
 
@@ -688,6 +690,7 @@ static int vmdk_open_vmdk4(BlockDriverState *bs,
     l1_entry_sectors = le32_to_cpu(header.num_gtes_per_gt)
                         * le64_to_cpu(header.granularity);
     if (l1_entry_sectors == 0) {
+        error_setg(errp, "L1 entry size is invalid");
         return -EINVAL;
     }
     l1_size = (le64_to_cpu(header.capacity) + l1_entry_sectors - 1)
