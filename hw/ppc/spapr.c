@@ -2451,21 +2451,57 @@ static const TypeInfo spapr_machine_2_5_info = {
     .class_init    = spapr_machine_2_5_class_init,
 };
 #endif
+/* Should be like SPAPR_COMPAT_2_4 + 2_3, but "dynamic-reconfiguration"
+ * has been backported to RHEL7_2 so we don't need it here.
+ */
+
+#define SPAPR_COMPAT_RHEL7_2 \
+        HW_COMPAT_RHEL7_2
+
+static void spapr_compat_rhel720(Object *obj)
+{
+    savevm_skip_section_footers();
+    global_state_set_optional();
+}
+
+static void spapr_machine_rhel720_instance_init(Object *obj)
+{
+    spapr_compat_rhel720(obj);
+    spapr_machine_initfn(obj);
+}
+
 static void spapr_machine_rhel720_class_init(ObjectClass *oc, void *data)
 {
     MachineClass *mc = MACHINE_CLASS(oc);
 
     mc->name = "pseries-rhel7.2.0";
     mc->desc = "RHEL 7.2.0 pSeries Logical Partition (PAPR compliant)";
-    mc->alias = "pseries";
-    mc->is_default = 1;
+    SET_MACHINE_COMPAT(mc, SPAPR_COMPAT_RHEL7_2);
 }
-
 
 static const TypeInfo spapr_machine_rhel720_info = {
     .name          = MACHINE_TYPE_NAME("RHEL7.2.0"),
     .parent        = TYPE_SPAPR_MACHINE,
     .class_init    = spapr_machine_rhel720_class_init,
+    .instance_init = spapr_machine_rhel720_instance_init,
+};
+
+static void spapr_machine_rhel730_class_init(ObjectClass *oc, void *data)
+{
+    MachineClass *mc = MACHINE_CLASS(oc);
+    sPAPRMachineClass *smc = SPAPR_MACHINE_CLASS(oc);
+
+    mc->name = "pseries-rhel7.3.0";
+    mc->desc = "RHEL 7.3.0 pSeries Logical Partition (PAPR compliant)";
+    mc->alias = "pseries";
+    mc->is_default = 1;
+    smc->dr_lmb_enabled = true;
+}
+
+static const TypeInfo spapr_machine_rhel730_info = {
+    .name          = MACHINE_TYPE_NAME("RHEL7.3.0"),
+    .parent        = TYPE_SPAPR_MACHINE,
+    .class_init    = spapr_machine_rhel730_class_init,
 };
 
 static void spapr_machine_register_types(void)
@@ -2479,6 +2515,7 @@ static void spapr_machine_register_types(void)
     type_register_static(&spapr_machine_2_5_info);
 */
     type_register_static(&spapr_machine_rhel720_info);
+    type_register_static(&spapr_machine_rhel730_info);
 }
 
 type_init(spapr_machine_register_types)
