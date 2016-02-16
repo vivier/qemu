@@ -107,4 +107,26 @@
             .value    = "on",\
         },
 
+/* Mostly like HW_COMPAT_2_4 + 2_3 but:
+ *  we don't need "any_layout" as it has been backported to 7.2
+ */
+
+#define HW_COMPAT_RHEL7_2 \
+        {\
+            .driver   = "virtio-blk-device",\
+            .property = "scsi",\
+            .value    = "true",\
+        },{\
+            .driver   = "e1000",\
+            .property = "extra_mac_registers",\
+            .value    = "off",\
+        },{\
+            .driver   = "virtio-pci",\
+            .property = "x-disable-pcie",\
+            .value    = "on",\
+        },{\
+            .driver   = "virtio-pci",\
+            .property = "migrate-extra",\
+            .value    = "off",\
+        },
 #endif /* HW_COMPAT_H */
