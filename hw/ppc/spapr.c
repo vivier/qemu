@@ -2432,23 +2432,6 @@ static const TypeInfo spapr_machine_2_4_info = {
     .parent        = TYPE_SPAPR_MACHINE,
     .class_init    = spapr_machine_2_4_class_init,
 };
-#endif
-static void spapr_machine_rhel720_class_init(ObjectClass *oc, void *data)
-{
-    MachineClass *mc = MACHINE_CLASS(oc);
-
-    mc->name = "pseries-rhel7.2.0";
-    mc->desc = "RHEL 7.2.0 pSeries Logical Partition (PAPR compliant)";
-    mc->alias = "pseries";
-    mc->is_default = 1;
-}
-
-
-static const TypeInfo spapr_machine_rhel720_info = {
-    .name          = MACHINE_TYPE_NAME("RHEL7.2.0"),
-    .parent        = TYPE_SPAPR_MACHINE,
-    .class_init    = spapr_machine_rhel720_class_init,
-};
 
 static void spapr_machine_2_5_class_init(ObjectClass *oc, void *data)
 {
@@ -2466,6 +2449,23 @@ static const TypeInfo spapr_machine_2_5_info = {
     .name          = MACHINE_TYPE_NAME("pseries-2.5"),
     .parent        = TYPE_SPAPR_MACHINE,
     .class_init    = spapr_machine_2_5_class_init,
+};
+#endif
+static void spapr_machine_rhel720_class_init(ObjectClass *oc, void *data)
+{
+    MachineClass *mc = MACHINE_CLASS(oc);
+
+    mc->name = "pseries-rhel7.2.0";
+    mc->desc = "RHEL 7.2.0 pSeries Logical Partition (PAPR compliant)";
+    mc->alias = "pseries";
+    mc->is_default = 1;
+}
+
+
+static const TypeInfo spapr_machine_rhel720_info = {
+    .name          = MACHINE_TYPE_NAME("RHEL7.2.0"),
+    .parent        = TYPE_SPAPR_MACHINE,
+    .class_init    = spapr_machine_rhel720_class_init,
 };
 
 static void spapr_machine_register_types(void)
