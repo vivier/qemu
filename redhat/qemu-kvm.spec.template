@@ -811,6 +811,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Wed Feb 24 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-32.el7_2.8
+- kvm-spapr_rtas-Prevent-QEMU-crash-during-hotplug-without.patch [bz#1306343]
+- Resolves: bz#1306343
+  (drmgr with invalid value in guest crashes qemu)
+
 * Thu Jan 21 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.7
 - kvm-fw_cfg-add-check-to-validate-current-entry-value-CVE.patch [bz#1298435]
 - kvm-ahci-clean-up-ncq_tfs-used-on-error.patch [bz#1297292]
