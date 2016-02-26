@@ -19,6 +19,7 @@
 #include "qga/guest-agent-core.h"
 #include "qga-qmp-commands.h"
 #include "qerror.h"
+#include "qemu/base64.h"
 
 #ifndef SHTDN_REASON_FLAG_PLANNED
 #define SHTDN_REASON_FLAG_PLANNED 0x80000000
@@ -422,7 +423,10 @@ void qmp_guest_set_user_password(const char *username,
         return;
     }
 
-    rawpasswddata = (char *)g_base64_decode(password, &rawpasswdlen);
+    rawpasswddata = (char *)qbase64_decode(password, -1, &rawpasswdlen, errp);
+    if (!rawpasswddata) {
+        return;
+    }
     rawpasswddata = g_renew(char, rawpasswddata, rawpasswdlen + 1);
     rawpasswddata[rawpasswdlen] = '\0';
 

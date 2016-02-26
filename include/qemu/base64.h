@@ -22,6 +22,7 @@
 #define QEMU_BASE64_H__
 
 #include "qemu-common.h"
+#include "error.h"
 
 
 /**

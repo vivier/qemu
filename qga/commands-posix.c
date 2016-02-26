@@ -44,6 +44,7 @@
 #include "qerror.h"
 #include "qemu-queue.h"
 #include "host-utils.h"
+#include "qemu/base64.h"
 
 #ifndef CONFIG_HAS_ENVIRON
 #ifdef __APPLE__
@@ -521,7 +522,10 @@ GuestFileWrite *qmp_guest_file_write(int64_t handle, const char *buf_b64,
         gfh->state = RW_STATE_NEW;
     }
 
-    buf = g_base64_decode(buf_b64, &buf_len);
+    buf = qbase64_decode(buf_b64, -1, &buf_len, err);
+    if (!buf) {
+        return NULL;
+    }
 
     if (!has_count) {
         count = buf_len;
@@ -1460,7 +1464,10 @@ void qmp_guest_set_user_password(const char *username,
     char *chpasswddata = NULL;
     size_t chpasswdlen;
 
-    rawpasswddata = (char *)g_base64_decode(password, &rawpasswdlen);
+    rawpasswddata = (char *)qbase64_decode(password, -1, &rawpasswdlen, errp);
+    if (!rawpasswddata) {
+        return;
+    }
     rawpasswddata = g_renew(char, rawpasswddata, rawpasswdlen + 1);
     rawpasswddata[rawpasswdlen] = '\0';
 
