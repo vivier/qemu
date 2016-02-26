@@ -90,6 +90,7 @@ typedef struct VFIOContainer {
 typedef struct VFIOGuestIOMMU {
     VFIOContainer *container;
     MemoryRegion *iommu;
+    hwaddr offset_within_address_space;
     Notifier n;
     QLIST_ENTRY(VFIOGuestIOMMU) giommu_next;
 } VFIOGuestIOMMU;
