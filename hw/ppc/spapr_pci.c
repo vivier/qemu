@@ -1521,9 +1521,8 @@ static int spapr_phb_children_reset(Object *child, void *opaque)
     return 0;
 }
 
-static void spapr_phb_reset(DeviceState *qdev)
+void spapr_phb_dma_reset(sPAPRPHBState *sphb)
 {
-    sPAPRPHBState *sphb = SPAPR_PCI_HOST_BRIDGE(qdev);
     sPAPRTCETable *tcet = spapr_tce_find_by_liobn(sphb->dma_liobn);
     Error *local_err = NULL;
 
@@ -1538,6 +1537,13 @@ static void spapr_phb_reset(DeviceState *qdev)
     if (local_err) {
         error_report_err(local_err);
     }
+}
+
+static void spapr_phb_reset(DeviceState *qdev)
+{
+    sPAPRPHBState *sphb = SPAPR_PCI_HOST_BRIDGE(qdev);
+
+    spapr_phb_dma_reset(sphb);
 
     /* Reset the IOMMU state */
     object_child_foreach(OBJECT(qdev), spapr_phb_children_reset, NULL);
