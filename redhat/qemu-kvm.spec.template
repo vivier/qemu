@@ -73,24 +73,6 @@ Conflicts: %1%{conflicts_suffix}                                      \
 Provides: %1%{extra_provides_suffix} = %{epoch}:%{version}-%{release} \
 Obsoletes: %1 < %{obsoletes_version}
 
-
-# Polite request for people who spin their own qemu-kvm rpms:
-# please modify the "buildid" define in a way that identifies
-# that the kernel isn't the stock distribution qemu-kvm, for example,
-# by setting the define to ".local" or ".bz123456".
-#
-# There are two ways how buildid can be modified
-# - following line in specfile
-# - localversion file in repository root - this is preferred way as file
-# is ignored by git
-%define buildid %{nil}%%BUILDID%%
-
-%define sublevel %%SUBLEVEL%%
-%define pkgrelease %%PKGRELEASE%%
-
-%define rpmversion %{sublevel}
-%define full_release %{pkgrelease}%{?dist}%{?buildid}
-
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: %%VERSION%%
@@ -820,10 +802,27 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed Mar 09 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.5.0-2.el7
+- kvm-ide-ahci-reset-ncq-object-to-unused-on-error.patch [bz#1297293]
+- kvm-arm-virt-Add-an-abstract-RHEL-ARM-virt-machine-type.patch [bz#1298353]
+- kvm-arm-virt-Add-RHEL-7.3.0-virt-machine-type.patch [bz#1298353]
+- kvm-arm-virt-Consolidate-the-naming-of-RHEL-virt-machine.patch [bz#1298353]
+- kvm-Define-HW_COMPAT_RHEL7_2.patch [bz#1287889 bz#1287896]
+- kvm-spapr-move-pseries-2.5-machine-to-RHEL-disabled-mach.patch [bz#1287889 bz#1287896]
+- kvm-Move-SET_MACHINE_COMPAT-macro-to-boards.h.patch [bz#1287889 bz#1287896]
+- kvm-spapr-add-RHEL-7.3-machine-type.patch [bz#1287889 bz#1287896]
+- Resolves: bz#1287889
+  (Live migration of VMs from RHEL 7.2 <--> 7.3 with pseries-rhel7.2.0 machine type)
+- Resolves: bz#1287896
+  (New pseries-rhel7.3.0 machine type)
+- Resolves: bz#1297293
+  (CVE-2016-1568 qemu-kvm-rhev: Qemu: ide: ahci use-after-free vulnerability in aio port commands [rhel-7.3])
+- Resolves: bz#1298353
+  (Create a new machine type for RHELSA 7.3 QEMU)
+
 * Tue Jan 12 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.5.0-1.el7
 - Rebase to qemu 2.5.0 [bz#1289417]
 - Resolves: bz#1289417
-  (Rebase to QEMU 2.5)
 
 * Wed Oct 14 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7
 - kvm-Migration-Generate-the-completed-event-only-when-we-.patch [bz#1271145]
