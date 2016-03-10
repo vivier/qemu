@@ -1232,8 +1232,7 @@ static void nbd_restart_write(void *opaque)
     qemu_coroutine_enter(client->send_coroutine, NULL);
 }
 
-NBDClient *nbd_client_new(NBDExport *exp, int csock,
-                          void (*close)(NBDClient *))
+void nbd_client_new(NBDExport *exp, int csock, void (*close_fn)(NBDClient *))
 {
     NBDClient *client;
     client = g_malloc0(sizeof(NBDClient));
@@ -1241,10 +1240,11 @@ NBDClient *nbd_client_new(NBDExport *exp, int csock,
     client->exp = exp;
     client->sock = csock;
     if (nbd_send_negotiate(client) < 0) {
-        g_free(client);
-        return NULL;
+        shutdown(client->sock, 2);
+        close_fn(client);
+        return;
     }
-    client->close = close;
+    client->close = close_fn;
     qemu_co_mutex_init(&client->send_lock);
     qemu_set_fd_handler2(csock, nbd_can_read, nbd_read, NULL, client);
 
@@ -1252,5 +1252,4 @@ NBDClient *nbd_client_new(NBDExport *exp, int csock,
         QTAILQ_INSERT_TAIL(&exp->clients, client, next);
         nbd_export_get(exp);
     }
-    return client;
 }

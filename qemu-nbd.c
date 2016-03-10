@@ -297,9 +297,9 @@ static void nbd_accept(void *opaque)
         close(fd);
         return;
     }
-
-    if (fd >= 0 && nbd_client_new(exp, fd, nbd_client_closed)) {
+    if (fd >= 0) {
         nb_fds++;
+        nbd_client_new(exp, fd, nbd_client_closed);
     }
 }
 
