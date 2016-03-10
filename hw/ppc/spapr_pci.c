@@ -826,9 +826,6 @@ static void spapr_phb_dma_window_enable(sPAPRPHBState *sphb,
     }
 
     spapr_tce_table_enable(tcet, page_shift, window_addr, nb_table);
-
-    memory_region_add_subregion(&sphb->iommu_root, tcet->bus_offset,
-                                spapr_tce_get_iommu(tcet));
 }
 
 /* Macros to operate with address in OF binding to PCI */
@@ -1494,6 +1491,9 @@ static void spapr_phb_realize(DeviceState *dev, Error **errp)
         error_report("No default TCE table for %s", sphb->dtbusname);
         return;
     }
+
+    memory_region_add_subregion_overlap(&sphb->iommu_root, 0,
+                                        spapr_tce_get_iommu(tcet), 0);
 
     /* Register default 32bit DMA window */
     spapr_phb_dma_window_enable(sphb, sphb->dma_liobn, SPAPR_TCE_PAGE_SHIFT,
