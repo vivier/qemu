@@ -1282,8 +1282,7 @@ static coroutine_fn void nbd_co_client_start(void *opaque)
         nbd_export_get(exp);
     }
     if (nbd_negotiate(data)) {
-        shutdown(client->sock, 2);
-        client->close(client);
+        nbd_client_close(client);
         goto out;
     }
     qemu_co_mutex_init(&client->send_lock);
