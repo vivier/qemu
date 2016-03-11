@@ -811,6 +811,15 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Fri Mar 11 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.9
+- kvm-virtio-coding-style-tweak.patch [bz#1315198]
+- kvm-vhost-user-interrupt-management-fixes.patch [bz#1315198]
+- kvm-vhost-user-don-t-merge-regions-with-different-fds.patch [bz#1315197]
+- Resolves: bz#1315197
+  (vhost-user interface cannot get ip if host is a numa machine)
+- Resolves: bz#1315198
+  (vhost-user: qemu stops processing packets under high load of traffic)
+
 * Wed Feb 24 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-32.el7_2.8
 - kvm-spapr_rtas-Prevent-QEMU-crash-during-hotplug-without.patch [bz#1306343]
 - Resolves: bz#1306343
