@@ -811,6 +811,15 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Mon Mar 14 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.10
+- kvm-Revert-vhost-send-SET_VRING_ENABLE-at-start-stop.patch [bz#1310543 bz#1316156]
+- kvm-tests-vhost-user-disable-unless-CONFIG_VHOST_NET.patch [bz#1316156]
+- kvm-tests-re-enable-vhost-user-test.patch [bz#1316156]
+- Resolves: bz#1310543
+  ([6wind] vhost-user with multi-queue is not working properly after stop-resume)
+- Resolves: bz#1316156
+  ([6wind] vhost-user with multi-queue is not working properly after stop-resume)
+
 * Fri Mar 11 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.9
 - kvm-virtio-coding-style-tweak.patch [bz#1315198]
 - kvm-vhost-user-interrupt-management-fixes.patch [bz#1315198]
