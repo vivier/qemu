@@ -158,7 +158,9 @@ gcov-files-i386-y += hw/usb/dev-storage.c
 check-qtest-i386-y += tests/usb-hcd-xhci-test$(EXESUF)
 gcov-files-i386-y += hw/usb/hcd-xhci.c
 check-qtest-i386-y += tests/pc-cpu-test$(EXESUF)
+ifeq ($(CONFIG_VHOST_NET),y)
 check-qtest-i386-$(CONFIG_LINUX) += tests/vhost-user-test$(EXESUF)
+endif
 check-qtest-x86_64-y = $(check-qtest-i386-y)
 gcov-files-i386-y += i386-softmmu/hw/timer/mc146818rtc.c
 gcov-files-x86_64-y = $(subst i386-softmmu/,x86_64-softmmu/,$(gcov-files-i386-y))
