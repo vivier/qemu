@@ -817,6 +817,19 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Mon Mar 14 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-109.el7
+- kvm-e1000-eliminate-infinite-loops-on-out-of-bounds-tran.patch [bz#1296044]
+- kvm-nbd-Always-call-close_fn-in-nbd_client_new.patch [bz#1285453]
+- kvm-nbd-server-Coroutine-based-negotiation.patch [bz#1285453]
+- kvm-nbd-client_close-on-error-in-nbd_co_client_start.patch [bz#1285453]
+- kvm-Remove-libcacard-build.patch [bz#1314153]
+- Resolves: bz#1285453
+  (An NBD client can cause QEMU main loop to block when connecting to built-in NBD server)
+- Resolves: bz#1296044
+  (qemu-kvm: insufficient loop termination conditions in start_xmit() and e1000_receive() [rhel-7.3])
+- Resolves: bz#1314153
+  (Disable building of libcacard)
+
 * Mon Feb 08 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-108.el7
 - kvm-net-Make-qmp_query_rx_filter-with-name-argument-more.patch [bz#1269738]
 - kvm-fw_cfg-add-check-to-validate-current-entry-value-CVE.patch [bz#1298048]
