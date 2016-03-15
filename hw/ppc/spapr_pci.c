@@ -828,6 +828,19 @@ static void spapr_phb_dma_window_enable(sPAPRPHBState *sphb,
     spapr_tce_table_enable(tcet, page_shift, window_addr, nb_table);
 }
 
+static int spapr_phb_dma_window_disable(sPAPRPHBState *sphb, uint32_t liobn)
+{
+    sPAPRTCETable *tcet = spapr_tce_find_by_liobn(liobn);
+
+    if (!tcet) {
+        return -1;
+    }
+
+    spapr_tce_table_disable(tcet);
+
+    return 0;
+}
+
 /* Macros to operate with address in OF binding to PCI */
 #define b_x(x, p, l)    (((x) & ((1<<(l))-1)) << (p))
 #define b_n(x)          b_x((x), 31, 1) /* 0 if relocatable */
@@ -1332,7 +1345,6 @@ static void spapr_phb_realize(DeviceState *dev, Error **errp)
     int i;
     PCIBus *bus;
     uint64_t msi_window_size = 4096;
-    Error *local_err = NULL;
     sPAPRTCETable *tcet;
 
     if (sphb->index != (uint32_t)-1) {
@@ -1495,14 +1507,6 @@ static void spapr_phb_realize(DeviceState *dev, Error **errp)
     memory_region_add_subregion_overlap(&sphb->iommu_root, 0,
                                         spapr_tce_get_iommu(tcet), 0);
 
-    /* Register default 32bit DMA window */
-    spapr_phb_dma_window_enable(sphb, sphb->dma_liobn, SPAPR_TCE_PAGE_SHIFT,
-                                sphb->dma_win_addr, sphb->dma_win_size,
-                                &local_err);
-    if (local_err) {
-        error_propagate(errp, local_err);
-    }
-
     sphb->msi = g_hash_table_new_full(g_int_hash, g_int_equal, g_free, g_free);
 }
 
@@ -1519,6 +1523,22 @@ static int spapr_phb_children_reset(Object *child, void *opaque)
 
 static void spapr_phb_reset(DeviceState *qdev)
 {
+    sPAPRPHBState *sphb = SPAPR_PCI_HOST_BRIDGE(qdev);
+    sPAPRTCETable *tcet = spapr_tce_find_by_liobn(sphb->dma_liobn);
+    Error *local_err = NULL;
+
+    if (tcet && tcet->enabled) {
+        spapr_phb_dma_window_disable(sphb, sphb->dma_liobn);
+    }
+
+    /* Register default 32bit DMA window */
+    spapr_phb_dma_window_enable(sphb, sphb->dma_liobn, SPAPR_TCE_PAGE_SHIFT,
+                                sphb->dma_win_addr, sphb->dma_win_size,
+                                &local_err);
+    if (local_err) {
+        error_report_err(local_err);
+    }
+
     /* Reset the IOMMU state */
     object_child_foreach(OBJECT(qdev), spapr_phb_children_reset, NULL);
 
