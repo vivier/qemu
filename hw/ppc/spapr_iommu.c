@@ -180,7 +180,7 @@ static int spapr_tce_table_post_load(void *opaque, int version_id)
 
 static const VMStateDescription vmstate_spapr_tce_table = {
     .name = "spapr_iommu",
-    .version_id = 2,
+    .version_id = 3,
     .minimum_version_id = 2,
     .pre_save = spapr_tce_table_pre_save,
     .post_load = spapr_tce_table_post_load,
@@ -189,6 +189,9 @@ static const VMStateDescription vmstate_spapr_tce_table = {
         VMSTATE_UINT32_EQUAL(liobn, sPAPRTCETable),
 
         /* IOMMU state */
+        VMSTATE_BOOL_V(enabled, sPAPRTCETable, 3),
+        VMSTATE_UINT64_V(bus_offset, sPAPRTCETable, 3),
+        VMSTATE_UINT32_V(page_shift, sPAPRTCETable, 3),
         VMSTATE_UINT32(mig_nb_table, sPAPRTCETable),
         VMSTATE_BOOL(bypass, sPAPRTCETable),
         VMSTATE_VARRAY_UINT32_ALLOC(mig_table, sPAPRTCETable, nb_table, 0,
