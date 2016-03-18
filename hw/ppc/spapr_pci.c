@@ -818,13 +818,14 @@ static void spapr_phb_dma_window_enable(sPAPRPHBState *sphb,
         return;
     }
 
-    tcet = spapr_tce_new_table(DEVICE(sphb), liobn, window_addr,
-                               page_shift, nb_table, false);
+    tcet = spapr_tce_find_by_liobn(liobn);
     if (!tcet) {
         error_setg(errp, "Unable to create TCE table liobn %x for %s",
                    liobn, sphb->dtbusname);
         return;
     }
+
+    spapr_tce_table_enable(tcet, page_shift, window_addr, nb_table);
 
     memory_region_add_subregion(&sphb->iommu_root, tcet->bus_offset,
                                 spapr_tce_get_iommu(tcet));
@@ -1335,6 +1336,7 @@ static void spapr_phb_realize(DeviceState *dev, Error **errp)
     PCIBus *bus;
     uint64_t msi_window_size = 4096;
     Error *local_err = NULL;
+    sPAPRTCETable *tcet;
 
     if (sphb->index != (uint32_t)-1) {
         hwaddr windows_base;
@@ -1484,6 +1486,13 @@ static void spapr_phb_realize(DeviceState *dev, Error **errp)
                                    SPAPR_DR_CONNECTOR_TYPE_PCI,
                                    (sphb->index << 16) | i);
         }
+    }
+
+    /* DMA setup */
+    tcet = spapr_tce_new_table(DEVICE(sphb), sphb->dma_liobn);
+    if (!tcet) {
+        error_report("No default TCE table for %s", sphb->dtbusname);
+        return;
     }
 
     /* Register default 32bit DMA window */
