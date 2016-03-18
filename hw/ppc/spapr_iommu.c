@@ -137,12 +137,42 @@ static IOMMUTLBEntry spapr_tce_translate_iommu(MemoryRegion *iommu, hwaddr addr,
     return ret;
 }
 
+static void spapr_tce_table_pre_save(void *opaque)
+{
+    sPAPRTCETable *tcet = SPAPR_TCE_TABLE(opaque);
+
+    tcet->mig_table = tcet->table;
+}
+
+static void spapr_tce_table_do_enable(sPAPRTCETable *tcet);
+static void spapr_tce_table_do_disable(sPAPRTCETable *tcet);
+
 static int spapr_tce_table_post_load(void *opaque, int version_id)
 {
     sPAPRTCETable *tcet = SPAPR_TCE_TABLE(opaque);
 
     if (tcet->vdev) {
         spapr_vio_set_bypass(tcet->vdev, tcet->bypass);
+    }
+
+    if (tcet->enabled) {
+        if (tcet->nb_table != tcet->mig_nb_table) {
+            if (tcet->nb_table) {
+                spapr_tce_table_do_disable(tcet);
+            }
+            tcet->nb_table = tcet->mig_nb_table;
+            spapr_tce_table_do_enable(tcet);
+        }
+
+        memcpy(tcet->table, tcet->mig_table,
+               tcet->nb_table * sizeof(tcet->table[0]));
+
+        free(tcet->mig_table);
+        tcet->mig_table = NULL;
+
+    } else if (tcet->table) {
+        /* Destination guest has a default table but source does not -> free */
+        spapr_tce_table_do_disable(tcet);
     }
 
     return 0;
@@ -152,15 +182,17 @@ static const VMStateDescription vmstate_spapr_tce_table = {
     .name = "spapr_iommu",
     .version_id = 2,
     .minimum_version_id = 2,
+    .pre_save = spapr_tce_table_pre_save,
     .post_load = spapr_tce_table_post_load,
     .fields      = (VMStateField []) {
         /* Sanity check */
         VMSTATE_UINT32_EQUAL(liobn, sPAPRTCETable),
-        VMSTATE_UINT32_EQUAL(nb_table, sPAPRTCETable),
 
         /* IOMMU state */
+        VMSTATE_UINT32(mig_nb_table, sPAPRTCETable),
         VMSTATE_BOOL(bypass, sPAPRTCETable),
-        VMSTATE_VARRAY_UINT32(table, sPAPRTCETable, nb_table, 0, vmstate_info_uint64, uint64_t),
+        VMSTATE_VARRAY_UINT32_ALLOC(mig_table, sPAPRTCETable, nb_table, 0,
+                                    vmstate_info_uint64, uint64_t),
 
         VMSTATE_END_OF_LIST()
     },
