@@ -71,6 +71,11 @@ struct sPAPRPHBState {
     spapr_pci_msi_mig *msi_devs;
 
     QLIST_ENTRY(sPAPRPHBState) list;
+
+    bool ddw_enabled;
+    uint32_t windows_supported;
+    uint64_t page_size_mask;
+    uint64_t dma64_window_addr;
 };
 
 #define SPAPR_PCI_MAX_INDEX          255
@@ -88,6 +93,8 @@ struct sPAPRPHBState {
 #define SPAPR_PCI_IO_WIN_SIZE        0x10000
 
 #define SPAPR_PCI_MSI_WINDOW         0x40000000000ULL
+
+#define SPAPR_PCI_DMA_MAX_WINDOWS    2
 
 static inline qemu_irq spapr_phb_lsi_qirq(struct sPAPRPHBState *phb, int pin)
 {
@@ -148,5 +155,11 @@ static inline void spapr_phb_vfio_reset(DeviceState *qdev)
 #endif
 
 void spapr_phb_dma_reset(sPAPRPHBState *sphb);
+void spapr_phb_dma_window_enable(sPAPRPHBState *sphb,
+                                uint32_t liobn, uint32_t page_shift,
+                                uint64_t window_addr,
+                                uint64_t window_size,
+                                 Error **errp);
+int spapr_phb_dma_window_disable(sPAPRPHBState *sphb, uint32_t liobn);
 
 #endif /* __HW_SPAPR_PCI_H__ */

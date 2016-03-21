@@ -994,11 +994,6 @@ static int vfio_connect_container(VFIOGroup *group, AddressSpace *as)
             }
         }
 
-        /*
-         * This only considers the host IOMMU's 32-bit window.  At
-         * some point we need to add support for the optional 64-bit
-         * window and dynamic windows
-         */
         info.argsz = sizeof(info);
         ret = ioctl(fd, VFIO_IOMMU_SPAPR_TCE_GET_INFO, &info);
         if (ret) {

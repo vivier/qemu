@@ -803,12 +803,12 @@ static char *spapr_phb_get_loc_code(sPAPRPHBState *sphb, PCIDevice *pdev)
     return buf;
 }
 
-static void spapr_phb_dma_window_enable(sPAPRPHBState *sphb,
-                                       uint32_t liobn,
-                                       uint32_t page_shift,
-                                       uint64_t window_addr,
-                                       uint64_t window_size,
-                                       Error **errp)
+void spapr_phb_dma_window_enable(sPAPRPHBState *sphb,
+                                 uint32_t liobn,
+                                 uint32_t page_shift,
+                                 uint64_t window_addr,
+                                 uint64_t window_size,
+                                 Error **errp)
 {
     sPAPRTCETable *tcet;
     uint32_t nb_table = window_size >> page_shift;
@@ -825,10 +825,16 @@ static void spapr_phb_dma_window_enable(sPAPRPHBState *sphb,
         return;
     }
 
+    if (SPAPR_PCI_DMA_WINDOW_NUM(liobn) && !sphb->ddw_enabled) {
+        error_setg(errp,
+                   "Attempt to use second window when DDW is disabled on PHB");
+        return;
+    }
+
     spapr_tce_table_enable(tcet, page_shift, window_addr, nb_table);
 }
 
-static int spapr_phb_dma_window_disable(sPAPRPHBState *sphb, uint32_t liobn)
+int spapr_phb_dma_window_disable(sPAPRPHBState *sphb, uint32_t liobn)
 {
     sPAPRTCETable *tcet = spapr_tce_find_by_liobn(liobn);
 
@@ -1492,14 +1498,18 @@ static void spapr_phb_realize(DeviceState *dev, Error **errp)
     }
 
     /* DMA setup */
-    tcet = spapr_tce_new_table(DEVICE(sphb), sphb->dma_liobn);
-    if (!tcet) {
-        error_report("No default TCE table for %s", sphb->dtbusname);
-        return;
-    }
 
-    memory_region_add_subregion_overlap(&sphb->iommu_root, 0,
-                                        spapr_tce_get_iommu(tcet), 0);
+    for (i = 0; i < SPAPR_PCI_DMA_MAX_WINDOWS; ++i) {
+        tcet = spapr_tce_new_table(DEVICE(sphb),
+                                   SPAPR_PCI_LIOBN(sphb->index, i));
+        if (!tcet) {
+            error_setg(errp, "Creating window#%d failed for %s",
+                       i, sphb->dtbusname);
+            return;
+        }
+        memory_region_add_subregion_overlap(&sphb->iommu_root, 0,
+                                            spapr_tce_get_iommu(tcet), 0);
+    }
 
     sphb->msi = g_hash_table_new_full(g_int_hash, g_int_equal, g_free, g_free);
 }
@@ -1517,11 +1527,16 @@ static int spapr_phb_children_reset(Object *child, void *opaque)
 
 void spapr_phb_dma_reset(sPAPRPHBState *sphb)
 {
-    sPAPRTCETable *tcet = spapr_tce_find_by_liobn(sphb->dma_liobn);
     Error *local_err = NULL;
+    int i;
 
-    if (tcet && tcet->enabled) {
-        spapr_phb_dma_window_disable(sphb, sphb->dma_liobn);
+    for (i = 0; i < SPAPR_PCI_DMA_MAX_WINDOWS; ++i) {
+        uint32_t liobn = SPAPR_PCI_LIOBN(sphb->index, i);
+        sPAPRTCETable *tcet = spapr_tce_find_by_liobn(liobn);
+
+        if (tcet && tcet->enabled) {
+            spapr_phb_dma_window_disable(sphb, liobn);
+        }
     }
 
     /* Register default 32bit DMA window */
@@ -1562,6 +1577,13 @@ static Property spapr_phb_properties[] = {
     /* Default DMA window is 0..1GB */
     DEFINE_PROP_UINT64("dma_win_addr", sPAPRPHBState, dma_win_addr, 0),
     DEFINE_PROP_UINT64("dma_win_size", sPAPRPHBState, dma_win_size, 0x40000000),
+    DEFINE_PROP_UINT64("dma64_win_addr", sPAPRPHBState, dma64_window_addr,
+                       0x800000000000000ULL),
+    DEFINE_PROP_BOOL("ddw", sPAPRPHBState, ddw_enabled, true),
+    DEFINE_PROP_UINT32("windows", sPAPRPHBState, windows_supported,
+                       SPAPR_PCI_DMA_MAX_WINDOWS),
+    DEFINE_PROP_UINT64("pgsz", sPAPRPHBState, page_size_mask,
+                       (1ULL << 12) | (1ULL << 16) | (1ULL << 24)),
     DEFINE_PROP_END_OF_LIST(),
 };
 
@@ -1815,6 +1837,15 @@ int spapr_populate_pci_dt(sPAPRPHBState *phb,
     uint32_t interrupt_map_mask[] = {
         cpu_to_be32(b_ddddd(-1)|b_fff(0)), 0x0, 0x0, cpu_to_be32(-1)};
     uint32_t interrupt_map[PCI_SLOT_MAX * PCI_NUM_PINS][7];
+    uint32_t ddw_applicable[] = {
+        cpu_to_be32(RTAS_IBM_QUERY_PE_DMA_WINDOW),
+        cpu_to_be32(RTAS_IBM_CREATE_PE_DMA_WINDOW),
+        cpu_to_be32(RTAS_IBM_REMOVE_PE_DMA_WINDOW)
+    };
+    uint32_t ddw_extensions[] = {
+        cpu_to_be32(1),
+        cpu_to_be32(RTAS_IBM_RESET_PE_DMA_WINDOW)
+    };
     sPAPRTCETable *tcet;
     PCIBus *bus = PCI_HOST_BRIDGE(phb)->bus;
     sPAPRFDT s_fdt;
@@ -1838,6 +1869,14 @@ int spapr_populate_pci_dt(sPAPRPHBState *phb,
     _FDT(fdt_setprop(fdt, bus_off, "reg", &bus_reg, sizeof(bus_reg)));
     _FDT(fdt_setprop_cell(fdt, bus_off, "ibm,pci-config-space-type", 0x1));
     _FDT(fdt_setprop_cell(fdt, bus_off, "ibm,pe-total-#msi", XICS_IRQS));
+
+    /* Dynamic DMA window */
+    if (phb->ddw_enabled) {
+        _FDT(fdt_setprop(fdt, bus_off, "ibm,ddw-applicable", &ddw_applicable,
+                         sizeof(ddw_applicable)));
+        _FDT(fdt_setprop(fdt, bus_off, "ibm,ddw-extensions",
+                         &ddw_extensions, sizeof(ddw_extensions)));
+    }
 
     /* Build the interrupt-map, this must matches what is done
      * in pci_spapr_map_irq
