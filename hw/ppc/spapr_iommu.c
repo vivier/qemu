@@ -151,6 +151,16 @@ static uint64_t spapr_tce_get_page_sizes(MemoryRegion *iommu)
     return 1ULL << tcet->page_shift;
 }
 
+static void spapr_tce_vfio_start(MemoryRegion *iommu)
+{
+    spapr_tce_set_need_vfio(container_of(iommu, sPAPRTCETable, iommu), true);
+}
+
+static void spapr_tce_vfio_stop(MemoryRegion *iommu)
+{
+    spapr_tce_set_need_vfio(container_of(iommu, sPAPRTCETable, iommu), false);
+}
+
 static void spapr_tce_table_do_enable(sPAPRTCETable *tcet);
 static void spapr_tce_table_do_disable(sPAPRTCETable *tcet);
 
@@ -211,6 +221,8 @@ static const VMStateDescription vmstate_spapr_tce_table = {
 static MemoryRegionIOMMUOps spapr_iommu_ops = {
     .translate = spapr_tce_translate_iommu,
     .get_page_sizes = spapr_tce_get_page_sizes,
+    .vfio_start = spapr_tce_vfio_start,
+    .vfio_stop = spapr_tce_vfio_stop,
 };
 
 static int spapr_tce_table_realize(DeviceState *dev)
