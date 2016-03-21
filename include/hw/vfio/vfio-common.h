@@ -82,9 +82,8 @@ typedef struct VFIOContainer {
      * contiguous IOVA window.  We may need to generalize that in
      * future
      */
-    hwaddr min_iova, max_iova;
-    uint64_t iova_pgsizes;
     QLIST_HEAD(, VFIOGuestIOMMU) giommu_list;
+    QLIST_HEAD(, VFIOHostIOMMU) hiommu_list;
     QLIST_HEAD(, VFIOGroup) group_list;
     QLIST_ENTRY(VFIOContainer) next;
 } VFIOContainer;
@@ -96,6 +95,12 @@ typedef struct VFIOGuestIOMMU {
     Notifier n;
     QLIST_ENTRY(VFIOGuestIOMMU) giommu_next;
 } VFIOGuestIOMMU;
+
+typedef struct VFIOHostIOMMU {
+    hwaddr min_iova, max_iova;
+    uint64_t iova_pgsizes;
+    QLIST_ENTRY(VFIOHostIOMMU) hiommu_next;
+} VFIOHostIOMMU;
 
 typedef struct VFIODeviceOps VFIODeviceOps;
 
