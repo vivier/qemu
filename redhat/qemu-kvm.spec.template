@@ -802,6 +802,13 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed Mar 23 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.5.0-3.el7
+- kvm-hw-acpi-merge-pxb-adjacent-memory-IO-ranges.patch [bz#1272939]
+- kvm-hw-pxb-introduce-pxb-pcie-expander-for-PCIe-machines.patch [bz#1272939]
+- kvm-hw-i386-extend-pxb-query-for-all-PC-machines.patch [bz#1272939]
+- Resolves: bz#1272939
+  ([PCIe] Add multi-root support for Q35)
+
 * Wed Mar 09 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.5.0-2.el7
 - kvm-ide-ahci-reset-ncq-object-to-unused-on-error.patch [bz#1297293]
 - kvm-arm-virt-Add-an-abstract-RHEL-ARM-virt-machine-type.patch [bz#1298353]
