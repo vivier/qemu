@@ -1323,67 +1323,67 @@ DEFINE_PC_MACHINE(rhel700, "pc-i440fx-rhel7.0.0", pc_init_rhel700,
         },\
         {\
             .driver = "Westmere" "-" TYPE_X86_CPU,\
-            .property = "fxsr ",\
+            .property = "fxsr",\
             .value = "on",\
         },\
         {\
             .driver = "Westmere" "-" TYPE_X86_CPU,\
-            .property = "mmx ",\
+            .property = "mmx",\
             .value = "on",\
         },\
         {\
             .driver = "Westmere" "-" TYPE_X86_CPU,\
-            .property = "pat ",\
+            .property = "pat",\
             .value = "on",\
         },\
         {\
             .driver = "Westmere" "-" TYPE_X86_CPU,\
-            .property = "cmov ",\
+            .property = "cmov",\
             .value = "on",\
         },\
         {\
             .driver = "Westmere" "-" TYPE_X86_CPU,\
-            .property = "pge ",\
+            .property = "pge",\
             .value = "on",\
         },\
         {\
             .driver = "Westmere" "-" TYPE_X86_CPU,\
-            .property = "apic ",\
+            .property = "apic",\
             .value = "on",\
         },\
         {\
             .driver = "Westmere" "-" TYPE_X86_CPU,\
-            .property = "cx8 ",\
+            .property = "cx8",\
             .value = "on",\
         },\
         {\
             .driver = "Westmere" "-" TYPE_X86_CPU,\
-            .property = "mce ",\
+            .property = "mce",\
             .value = "on",\
         },\
         {\
             .driver = "Westmere" "-" TYPE_X86_CPU,\
-            .property = "pae ",\
+            .property = "pae",\
             .value = "on",\
         },\
         {\
             .driver = "Westmere" "-" TYPE_X86_CPU,\
-            .property = "msr ",\
+            .property = "msr",\
             .value = "on",\
         },\
         {\
             .driver = "Westmere" "-" TYPE_X86_CPU,\
-            .property = "tsc ",\
+            .property = "tsc",\
             .value = "on",\
         },\
         {\
             .driver = "Westmere" "-" TYPE_X86_CPU,\
-            .property = "pse ",\
+            .property = "pse",\
             .value = "on",\
         },\
         {\
             .driver = "Westmere" "-" TYPE_X86_CPU,\
-            .property = "de ",\
+            .property = "de",\
             .value = "on",\
         },\
         {\
