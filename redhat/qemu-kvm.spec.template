@@ -802,6 +802,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Apr 01 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.5.0-4.el7
+- kvm-pc-Fix-property-names-on-CPU-compat-code.patch [bz#1319673]
+- Resolves: bz#1319673
+  (qemu-kvm core dump with "-M rhel6.6.0" and "-cpu Westmere")
+
 * Wed Mar 23 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.5.0-3.el7
 - kvm-hw-acpi-merge-pxb-adjacent-memory-IO-ranges.patch [bz#1272939]
 - kvm-hw-pxb-introduce-pxb-pcie-expander-for-PCIe-machines.patch [bz#1272939]
