@@ -811,6 +811,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Wed Apr 06 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.11
+- kvm-exec-Stop-using-memory-after-free-BZ-1315195.patch [bz#1315195]
+- Resolves: bz#1315195
+  (qemu 2.1-2.4 crashes with segfault in phys_section_destroy)
+
 * Mon Mar 14 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.10
 - kvm-Revert-vhost-send-SET_VRING_ENABLE-at-start-stop.patch [bz#1310543 bz#1316156]
 - kvm-tests-vhost-user-disable-unless-CONFIG_VHOST_NET.patch [bz#1316156]
