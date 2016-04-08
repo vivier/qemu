@@ -137,6 +137,26 @@
             .driver   = "virtio-pci",\
             .property = "virtio-pci-bus-master-bug-migration",\
             .value    = "on",\
+        },{\
+            .driver   = "virtio-blk-pci",\
+            .property = "any_layout",\
+            .value    = "off",\
+        },{\
+            .driver   = "virtio-balloon-pci",\
+            .property = "any_layout",\
+            .value    = "off",\
+        },{\
+            .driver   = "virtio-serial-pci",\
+            .property = "any_layout",\
+            .value    = "off",\
+        },{\
+            .driver   = "virtio-9p-pci",\
+            .property = "any_layout",\
+            .value    = "off",\
+        },{\
+            .driver   = "virtio-rng-pci",\
+            .property = "any_layout",\
+            .value    = "off",\
         },
 
 /* Mostly like HW_COMPAT_2_4 + 2_3 but:
