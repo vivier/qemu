@@ -863,7 +863,7 @@ extern void igd_passthrough_isa_bridge_create(PCIBus *bus, uint16_t gpu_dev_id);
 
 /* See include/hw/compat.h for shared compatibility lists */
 #define PC_RHEL7_2_COMPAT \
-        HW_COMPAT_RHEL7_1 \
+        HW_COMPAT_RHEL7_2 \
 	{\
 		.driver = "phenom" "-" TYPE_X86_CPU,\
 		.property = "rdtscp",\
@@ -892,6 +892,7 @@ extern void igd_passthrough_isa_bridge_create(PCIBus *bus, uint16_t gpu_dev_id);
 
 #define PC_RHEL7_1_COMPAT \
         PC_RHEL7_2_COMPAT \
+        HW_COMPAT_RHEL7_1 \
 	{\
 		.driver = "kvm64" "-" TYPE_X86_CPU,\
 		.property = "vme",\
