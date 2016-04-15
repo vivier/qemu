@@ -46,7 +46,7 @@ endif
 endif
 
 PKGRELEASE=$(PREBUILD)$(BUILD)
-PKG_FULL_VR = $(STAMP_VERSION)-$(PKGRELEASE)$(DIST)_2.$(ZRELEASE)$(BUILDID)
+PKG_FULL_VR = $(STAMP_VERSION)-$(PKGRELEASE)$(DIST).$(ZRELEASE)$(BUILDID)
 PKG_FULL_NVR = $(PKGNAME)-$(PKG_FULL_VR)
 
 RPMBUILD_DEFS = --define "_sourcedir $(SOURCES)" --define "_builddir $(RPM)/BUILD" --define "_srcrpmdir $(RPM)/SRPMS" --define "_rpmdir $(RPM)/RPMS" --define "_specdir $(RPM)/SPECS" --define "dist $(DIST)"
