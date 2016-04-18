@@ -2031,6 +2031,16 @@ void bdrv_drain_all(void)
     bool busy = true;
     BlockDriverState *bs;
 
+    QTAILQ_FOREACH(bs, &bdrv_states, device_list) {
+        AioContext *aio_context = bdrv_get_aio_context(bs);
+
+        aio_context_acquire(aio_context);
+        if (bs->job) {
+            block_job_pause(bs->job);
+        }
+        aio_context_release(aio_context);
+    }
+
     while (busy) {
         busy = false;
 
@@ -2041,6 +2051,16 @@ void bdrv_drain_all(void)
             busy |= bdrv_drain_one(bs);
             aio_context_release(aio_context);
         }
+    }
+
+    QTAILQ_FOREACH(bs, &bdrv_states, device_list) {
+        AioContext *aio_context = bdrv_get_aio_context(bs);
+
+        aio_context_acquire(aio_context);
+        if (bs->job) {
+            block_job_resume(bs->job);
+        }
+        aio_context_release(aio_context);
     }
 }
 
