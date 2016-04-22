@@ -249,6 +249,7 @@ static const struct QemuSeccompSyscall seccomp_whitelist[] = {
     { SCMP_SYS(munlock), 240 },
     { SCMP_SYS(semctl), 240 },
     { SCMP_SYS(timerfd_create), 240 },
+    { SCMP_SYS(sysinfo), 240 },
 };
 
 int seccomp_start(void)
