@@ -726,6 +726,7 @@ static void vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
         case VBE_DISPI_INDEX_Y_OFFSET:
             s->vbe_regs[s->vbe_index] = val;
             vbe_fixup_regs(s);
+            vbe_update_vgaregs(s);
             break;
         case VBE_DISPI_INDEX_BANK:
             val &= s->vbe_bank_mask;
