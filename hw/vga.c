@@ -151,8 +151,11 @@ static uint16_t expand2[256];
 static uint8_t expand4to8[16];
 
 static void vga_screen_dump(void *opaque, const char *filename);
-static const char *screen_dump_filename;
-static DisplayChangeListener *screen_dump_dcl;
+
+static inline bool vbe_enabled(VGACommonState *s)
+{
+    return s->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED;
+}
 
 static void vga_dumb_update_retrace_info(VGACommonState *s)
 {
@@ -529,7 +532,7 @@ static void vbe_fixup_regs(VGACommonState *s)
     uint16_t *r = s->vbe_regs;
     uint32_t bits, linelength, maxy, offset;
 
-    if (!(r[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED)) {
+    if (!vbe_enabled(s)) {
         /* vbe is turned off -- nothing to do */
         return;
     }
@@ -712,7 +715,7 @@ static void vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
                 /* width */
                 s->cr[VGA_CRTC_H_DISP] =
                     (s->vbe_regs[VBE_DISPI_INDEX_XRES] >> 3) - 1;
-                /* height (only meaningful if < 1024) */
+                 /* height (only meaningful if < 1024) */
                 h = s->vbe_regs[VBE_DISPI_INDEX_YRES] - 1;
                 s->cr[VGA_CRTC_V_DISP_END] = h;
                 s->cr[VGA_CRTC_OVERFLOW] = (s->cr[VGA_CRTC_OVERFLOW] & ~0x42) |
@@ -1165,7 +1168,7 @@ static void vga_get_offsets(VGACommonState *s,
 {
     uint32_t start_addr, line_offset, line_compare;
 #ifdef CONFIG_BOCHS_VBE
-    if (s->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED) {
+    if (vbe_enabled(s)) {
         line_offset = s->vbe_line_offset;
         start_addr = s->vbe_start_addr;
         line_compare = 65535;
@@ -1601,7 +1604,7 @@ static int vga_get_bpp(VGACommonState *s)
 {
     int ret;
 #ifdef CONFIG_BOCHS_VBE
-    if (s->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED) {
+    if (vbe_enabled(s)) {
         ret = s->vbe_regs[VBE_DISPI_INDEX_BPP];
     } else
 #endif
@@ -1616,7 +1619,7 @@ static void vga_get_resolution(VGACommonState *s, int *pwidth, int *pheight)
     int width, height;
 
 #ifdef CONFIG_BOCHS_VBE
-    if (s->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED) {
+    if (vbe_enabled(s)) {
         width = s->vbe_regs[VBE_DISPI_INDEX_XRES];
         height = s->vbe_regs[VBE_DISPI_INDEX_YRES];
     } else
