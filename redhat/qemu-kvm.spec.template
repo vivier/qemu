@@ -811,6 +811,15 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Tue May 03 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.13
+- kvm-vga-fix-banked-access-bounds-checking-CVE-2016-3710.patch [bz#1331414]
+- kvm-vga-add-vbe_enabled-helper.patch [bz#1331414]
+- kvm-vga-factor-out-vga-register-setup.patch [bz#1331414]
+- kvm-vga-update-vga-register-setup-on-vbe-changes.patch [bz#1331414]
+- kvm-vga-make-sure-vga-register-setup-for-vbe-stays-intac.patch [bz#1331414]
+- Resolves: bz#1331414
+  (EMBARGOED CVE-2016-3710 qemu-kvm-rhev: qemu: incorrect banked access bounds checking in vga module [rhel-7.2.z])
+
 * Thu Apr 14 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.12
 - kvm-memory-exit-when-hugepage-allocation-fails-if-mem-pr.patch [bz#1324523]
 - Resolves: bz#1324523
