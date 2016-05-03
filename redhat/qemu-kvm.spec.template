@@ -860,6 +860,16 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Tue May 03 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.4
+- kvm-vga-Remove-some-should-be-done-in-BIOS-comments.patch [bz#1331412]
+- kvm-vga-fix-banked-access-bounds-checking-CVE-2016-3710.patch [bz#1331412]
+- kvm-vga-add-vbe_enabled-helper.patch [bz#1331412]
+- kvm-vga-factor-out-vga-register-setup.patch [bz#1331412]
+- kvm-vga-update-vga-register-setup-on-vbe-changes.patch [bz#1331412]
+- kvm-vga-make-sure-vga-register-setup-for-vbe-stays-intac.patch [bz#1331412]
+- Resolves: bz#1331412
+  (EMBARGOED CVE-2016-3710 qemu-kvm: qemu: incorrect banked access bounds checking in vga module [rhel-7.2.z])
+
 %%CHANGELOG%%
 * Thu Jan 21 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.3
 - kvm-fw_cfg-add-check-to-validate-current-entry-value-CVE.patch [bz#1298047]
