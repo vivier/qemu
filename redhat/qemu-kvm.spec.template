@@ -817,6 +817,39 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed May 04 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-110.el7
+- kvm-qemu-io-Remove-unused-args_command.patch [bz#1272523]
+- kvm-cutils-Support-P-and-E-suffixes-in-strtosz.patch [bz#1272523]
+- kvm-qemu-io-Make-cvtnum-a-wrapper-around-strtosz_suffix.patch [bz#1272523]
+- kvm-qemu-io-Handle-cvtnum-errors-in-alloc.patch [bz#1272523]
+- kvm-qemu-io-Don-t-use-global-bs-in-command-implementatio.patch [bz#1272523]
+- kvm-qemu-io-Split-off-commands-to-qemu-io-cmds.c.patch [bz#1272523]
+- kvm-qemu-io-Factor-out-qemuio_command.patch [bz#1272523]
+- kvm-qemu-io-Move-help-function.patch [bz#1272523]
+- kvm-qemu-io-Move-quit-function.patch [bz#1272523]
+- kvm-qemu-io-Move-qemu_strsep-to-cutils.c.patch [bz#1272523]
+- kvm-qemu-io-Move-functions-for-registering-and-running-c.patch [bz#1272523]
+- kvm-qemu-io-Move-command_loop-and-friends.patch [bz#1272523]
+- kvm-qemu-io-Move-remaining-helpers-from-cmd.c.patch [bz#1272523]
+- kvm-qemu-io-Interface-cleanup.patch [bz#1272523]
+- kvm-qemu-io-Use-the-qemu-version-for-V.patch [bz#1272523]
+- kvm-Make-qemu-io-commands-available-in-HMP.patch [bz#1272523]
+- kvm-blkdebug-Add-BLKDBG_FLUSH_TO_OS-DISK-events.patch [bz#1272523]
+- kvm-qemu-io-fix-cvtnum-lval-types.patch [bz#1272523]
+- kvm-qemu-io-Check-for-trailing-chars.patch [bz#1272523]
+- kvm-qemu-io-Correct-error-messages.patch [bz#1272523]
+- kvm-ide-test-fix-failure-for-test_flush.patch [bz#1272523]
+- kvm-vga-Remove-some-should-be-done-in-BIOS-comments.patch [bz#1331413]
+- kvm-vga-fix-banked-access-bounds-checking-CVE-2016-xxxx.patch [bz#1331413]
+- kvm-vga-add-vbe_enabled-helper.patch [bz#1331413]
+- kvm-vga-factor-out-vga-register-setup.patch [bz#1331413]
+- kvm-vga-update-vga-register-setup-on-vbe-changes.patch [bz#1331413]
+- kvm-vga-make-sure-vga-register-setup-for-vbe-stays-intac.patch [bz#1331413]
+- Resolves: bz#1272523
+  (qemu-kvm build failure race condition in tests/ide-test)
+- Resolves: bz#1331413
+  (EMBARGOED CVE-2016-3710 qemu-kvm: qemu: incorrect banked access bounds checking in vga module [rhel-7.3])
+
 * Mon Mar 14 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-109.el7
 - kvm-e1000-eliminate-infinite-loops-on-out-of-bounds-tran.patch [bz#1296044]
 - kvm-nbd-Always-call-close_fn-in-nbd_client_new.patch [bz#1285453]
