@@ -817,6 +817,30 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu May 05 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-111.el7
+- kvm-vmdk-Leave-bdi-intact-if-ENOTSUP-in-vmdk_get_info.patch [bz#1299250]
+- kvm-vmdk-Use-g_random_int-to-generate-CID.patch [bz#1299250]
+- kvm-vmdk-Fix-comment-to-match-code-of-extent-lines.patch [bz#1299250]
+- kvm-vmdk-Clean-up-descriptor-file-reading.patch [bz#1299250]
+- kvm-vmdk-Check-descriptor-file-length-when-reading-it.patch [bz#1299250]
+- kvm-vmdk-Remove-unnecessary-initialization.patch [bz#1299250]
+- kvm-vmdk-Set-errp-on-failures-in-vmdk_open_vmdk4.patch [bz#1299250]
+- kvm-block-vmdk-make-ret-variable-usage-clear.patch [bz#1299250]
+- kvm-block-vmdk-move-string-allocations-from-stack-to-the.patch [bz#1299250]
+- kvm-block-vmdk-fixed-sizeof-error.patch [bz#1299250]
+- kvm-vmdk-Widen-before-shifting-32-bit-header-field.patch [bz#1299250]
+- kvm-vmdk-Fix-next_cluster_sector-for-compressed-write.patch [bz#1299250]
+- kvm-vmdk-Fix-index_in_cluster-calculation-in-vmdk_co_get.patch [bz#1299250]
+- kvm-vmdk-Use-vmdk_find_index_in_cluster-everywhere.patch [bz#1299250]
+- kvm-vmdk-Fix-next_cluster_sector-for-compressed-write2.patch [bz#1299250]
+- kvm-vmdk-Create-streamOptimized-as-version-3.patch [bz#1299116]
+- kvm-vmdk-Fix-converting-to-streamOptimized.patch [bz#1299116]
+- kvm-vmdk-Fix-calculation-of-block-status-s-offset.patch [bz#1299116]
+- Resolves: bz#1299116
+  (qemu-img created VMDK images lead to "Not a supported disk format (sparse VMDK version too old)")
+- Resolves: bz#1299250
+  (qemu-img created VMDK images are unbootable)
+
 * Wed May 04 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-110.el7
 - kvm-qemu-io-Remove-unused-args_command.patch [bz#1272523]
 - kvm-cutils-Support-P-and-E-suffixes-in-strtosz.patch [bz#1272523]
