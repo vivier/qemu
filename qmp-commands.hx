@@ -1089,8 +1089,6 @@ Example:
 
 EQMP
 
-#endif
-
     {
         .name       = "block-job-set-speed",
         .args_type  = "device:B,speed:o",
@@ -1117,7 +1115,6 @@ EQMP
         .args_type  = "device:B",
         .mhandler.cmd_new = qmp_marshal_input_block_job_complete,
     },
-#ifdef CONFIG_LIVE_BLOCK_OPS
     {
         .name       = "transaction",
         .args_type  = "actions:q",

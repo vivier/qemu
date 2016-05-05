@@ -1053,7 +1053,6 @@ void hmp_block_stream(Monitor *mon, const QDict *qdict)
 
     hmp_handle_error(mon, &error);
 }
-#endif
 
 void hmp_block_job_set_speed(Monitor *mon, const QDict *qdict)
 {
@@ -1106,6 +1105,7 @@ void hmp_block_job_complete(Monitor *mon, const QDict *qdict)
 
     hmp_handle_error(mon, &error);
 }
+#endif
 
 typedef struct MigrationStatus
 {

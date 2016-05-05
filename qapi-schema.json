@@ -2326,7 +2326,6 @@
 { 'command': 'block-stream',
   'data': { 'device': 'str', '*base': 'str', '*backing-file': 'str',
             '*speed': 'int', '*on-error': 'BlockdevOnError' } }
-#_end-rhev-only
 
 ##
 # @block-job-set-speed:
@@ -2448,6 +2447,7 @@
 # Since: 1.3
 ##
 { 'command': 'block-job-complete', 'data': { 'device': 'str' } }
+#_end-rhev-only
 
 ##
 # @ObjectTypeInfo:

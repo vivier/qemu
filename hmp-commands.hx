@@ -81,7 +81,6 @@ ETEXI
         .help       = "copy data from a backing file into a block device",
         .mhandler.cmd = hmp_block_stream,
     },
-#endif
 
 STEXI
 @item block_stream
@@ -160,6 +159,7 @@ STEXI
 @findex block_job_resume
 Resume a paused block streaming operation.
 ETEXI
+#endif
 
     {
         .name       = "eject",

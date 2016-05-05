@@ -1701,7 +1701,6 @@ void qmp_drive_mirror(const char *device, const char *target,
         return;
     }
 }
-#endif
 
 static BlockJob *find_block_job(const char *device)
 {
@@ -1786,6 +1785,7 @@ void qmp_block_job_complete(const char *device, Error **errp)
     trace_qmp_block_job_complete(job);
     block_job_complete(job, errp);
 }
+#endif
 
 void qmp___com_redhat_change_backing_file(const char *device,
                                           const char *image_node_name,
