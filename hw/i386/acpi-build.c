@@ -244,12 +244,17 @@ static void acpi_get_pci_info(PcPciInfo *info)
 static void
 build_header(GArray *linker, GArray *table_data,
              AcpiTableHeader *h, const char *sig, int len, uint8_t rev,
-             const char *oem_table_id)
+             const char *oem_id, const char *oem_table_id)
 {
     memcpy(&h->signature, sig, 4);
     h->length = cpu_to_le32(len);
     h->revision = rev;
-    memcpy(h->oem_id, ACPI_BUILD_APPNAME6, 6);
+
+    if (oem_id) {
+        strncpy((char *)h->oem_id, oem_id, sizeof h->oem_id);
+    } else {
+        memcpy(h->oem_id, ACPI_BUILD_APPNAME6, 6);
+    }
 
     if (oem_table_id) {
         strncpy((char *)h->oem_table_id, oem_table_id, sizeof(h->oem_table_id));
@@ -527,7 +532,7 @@ build_fadt(GArray *table_data, GArray *linker, AcpiPmInfo *pm,
     fadt_setup(fadt, pm);
 
     build_header(linker, table_data,
-                 (void *)fadt, "FACP", sizeof(*fadt), 1, NULL);
+                 (void *)fadt, "FACP", sizeof(*fadt), 1, NULL, NULL);
 }
 
 static void
@@ -597,7 +602,7 @@ build_madt(GArray *table_data, GArray *linker, AcpiCpuInfo *cpu,
 
     build_header(linker, table_data,
                  (void *)(table_data->data + madt_start), "APIC",
-                 table_data->len - madt_start, 1, NULL);
+                 table_data->len - madt_start, 1, NULL, NULL);
 }
 
 /* Encode a hex value */
@@ -789,7 +794,7 @@ build_ssdt(GArray *table_data, GArray *linker,
 
     build_header(linker, table_data,
                  (void *)(table_data->data + ssdt_start),
-                 "SSDT", table_data->len - ssdt_start, 1, NULL);
+                 "SSDT", table_data->len - ssdt_start, 1, NULL, NULL);
 }
 
 static void
@@ -804,7 +809,7 @@ build_hpet(GArray *table_data, GArray *linker)
     hpet->timer_block_id = cpu_to_le32(0x8086a201);
     hpet->addr.address = cpu_to_le64(HPET_BASE);
     build_header(linker, table_data,
-                 (void *)hpet, "HPET", sizeof(*hpet), 1, NULL);
+                 (void *)hpet, "HPET", sizeof(*hpet), 1, NULL, NULL);
 }
 
 static void
@@ -897,7 +902,7 @@ build_srat(GArray *table_data, GArray *linker,
     build_header(linker, table_data,
                  (void *)(table_data->data + srat_start),
                  "SRAT",
-                 table_data->len - srat_start, 1, NULL);
+                 table_data->len - srat_start, 1, NULL, NULL);
 }
 
 static void
@@ -926,7 +931,7 @@ build_mcfg_q35(GArray *table_data, GArray *linker, AcpiMcfgInfo *info)
     } else {
         sig = "MCFG";
     }
-    build_header(linker, table_data, (void *)mcfg, sig, len, 1, NULL);
+    build_header(linker, table_data, (void *)mcfg, sig, len, 1, NULL, NULL);
 }
 
 static void
@@ -941,7 +946,7 @@ build_dsdt(GArray *table_data, GArray *linker, AcpiMiscInfo *misc)
 
     memset(dsdt, 0, sizeof *dsdt);
     build_header(linker, table_data, dsdt, "DSDT",
-                 misc->dsdt_size, 1, NULL);
+                 misc->dsdt_size, 1, NULL, NULL);
 }
 
 /* Build final rsdt table */
@@ -965,7 +970,7 @@ build_rsdt(GArray *table_data, GArray *linker, GArray *table_offsets)
                                        sizeof(uint32_t));
     }
     build_header(linker, table_data,
-                 (void *)rsdt, "RSDT", rsdt_len, 1, NULL);
+                 (void *)rsdt, "RSDT", rsdt_len, 1, NULL, NULL);
 }
 
 static GArray *
