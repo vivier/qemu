@@ -951,7 +951,8 @@ build_dsdt(GArray *table_data, GArray *linker, AcpiMiscInfo *misc)
 
 /* Build final rsdt table */
 static void
-build_rsdt(GArray *table_data, GArray *linker, GArray *table_offsets)
+build_rsdt(GArray *table_data, GArray *linker, GArray *table_offsets,
+           const char *oem_id, const char *oem_table_id)
 {
     AcpiRsdtDescriptorRev1 *rsdt;
     size_t rsdt_len;
@@ -970,7 +971,7 @@ build_rsdt(GArray *table_data, GArray *linker, GArray *table_offsets)
                                        sizeof(uint32_t));
     }
     build_header(linker, table_data,
-                 (void *)rsdt, "RSDT", rsdt_len, 1, NULL, NULL);
+                 (void *)rsdt, "RSDT", rsdt_len, 1, oem_id, oem_table_id);
 }
 
 static GArray *
@@ -1126,7 +1127,7 @@ void acpi_build(PcGuestInfo *guest_info, AcpiBuildTables *tables)
 
     /* RSDT is pointed to by RSDP */
     rsdt = tables->table_data->len;
-    build_rsdt(tables->table_data, tables->linker, table_offsets);
+    build_rsdt(tables->table_data, tables->linker, table_offsets, NULL, NULL);
 
     /* RSDP is in FSEG memory, so allocate it separately */
     build_rsdp(tables->rsdp, tables->linker, rsdt);
