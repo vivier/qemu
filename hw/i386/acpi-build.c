@@ -511,7 +511,8 @@ static void fadt_setup(AcpiFadtDescriptorRev1 *fadt, AcpiPmInfo *pm)
 /* FADT */
 static void
 build_fadt(GArray *table_data, GArray *linker, AcpiPmInfo *pm,
-           unsigned facs, unsigned dsdt)
+           unsigned facs, unsigned dsdt,
+           const char *oem_id, const char *oem_table_id)
 {
     AcpiFadtDescriptorRev1 *fadt = acpi_data_push(table_data, sizeof(*fadt));
 
@@ -532,7 +533,7 @@ build_fadt(GArray *table_data, GArray *linker, AcpiPmInfo *pm,
     fadt_setup(fadt, pm);
 
     build_header(linker, table_data,
-                 (void *)fadt, "FACP", sizeof(*fadt), 1, NULL, NULL);
+                 (void *)fadt, "FACP", sizeof(*fadt), 1, oem_id, oem_table_id);
 }
 
 static void
@@ -1065,6 +1066,7 @@ void acpi_build(PcGuestInfo *guest_info, AcpiBuildTables *tables)
     AcpiMcfgInfo mcfg;
     PcPciInfo pci;
     uint8_t *u;
+    AcpiSlicOem slic_oem = { .id = NULL, .table_id = NULL };
 
     acpi_get_cpu_info(&cpu);
     acpi_get_pm_info(&pm);
@@ -1072,6 +1074,7 @@ void acpi_build(PcGuestInfo *guest_info, AcpiBuildTables *tables)
     acpi_get_hotplug_info(&misc);
     acpi_get_misc_info(&misc);
     acpi_get_pci_info(&pci);
+    acpi_get_slic_oem(&slic_oem);
 
     table_offsets = g_array_new(false, true /* clear */,
                                         sizeof(uint32_t));
@@ -1095,7 +1098,8 @@ void acpi_build(PcGuestInfo *guest_info, AcpiBuildTables *tables)
 
     /* ACPI tables pointed to by RSDT */
     acpi_add_table(table_offsets, tables->table_data);
-    build_fadt(tables->table_data, tables->linker, &pm, facs, dsdt);
+    build_fadt(tables->table_data, tables->linker, &pm, facs, dsdt,
+               slic_oem.id, slic_oem.table_id);
 
     acpi_add_table(table_offsets, tables->table_data);
     build_ssdt(tables->table_data, tables->linker, &cpu, &pm, &misc, &pci,
@@ -1127,7 +1131,8 @@ void acpi_build(PcGuestInfo *guest_info, AcpiBuildTables *tables)
 
     /* RSDT is pointed to by RSDP */
     rsdt = tables->table_data->len;
-    build_rsdt(tables->table_data, tables->linker, table_offsets, NULL, NULL);
+    build_rsdt(tables->table_data, tables->linker, table_offsets,
+               slic_oem.id, slic_oem.table_id);
 
     /* RSDP is in FSEG memory, so allocate it separately */
     build_rsdp(tables->rsdp, tables->linker, rsdt);
