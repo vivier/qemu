@@ -2518,7 +2518,10 @@ static void spapr_machine_rhel720_instance_options(MachineState *machine)
 
 static void spapr_machine_rhel720_class_options(MachineClass *mc)
 {
+    sPAPRMachineClass *smc = SPAPR_MACHINE_CLASS(mc);
+
     spapr_machine_rhel730_class_options(mc);
+    smc->use_ohci_by_default = true;
     SET_MACHINE_COMPAT(mc, SPAPR_COMPAT_RHEL7_2);
 }
 
