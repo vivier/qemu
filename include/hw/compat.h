@@ -169,14 +169,6 @@
             .property = "scsi",\
             .value    = "true",\
         },{\
-            .driver   = "intel-hda-generic",\
-            .property = "old_msi_addr",\
-            .value    = "on",\
-        },{\
-            .driver   = "VGA",\
-            .property = "qemu-extended-regs",\
-            .value    = "off",\
-        },{\
             .driver   = "e1000",\
             .property = "extra_mac_registers",\
             .value    = "off",\
