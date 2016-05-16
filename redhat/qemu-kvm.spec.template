@@ -817,6 +817,26 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Mon May 16 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-112.el7
+- kvm-virtio-scsi-Prevent-assertion-on-missed-events.patch [bz#1312289]
+- kvm-seccomp-adding-sysinfo-system-call-to-whitelist.patch [bz#1177318]
+- kvm-acpi-strip-compiler-info-in-built-in-DSDT.patch [bz#1330969]
+- kvm-acpi-fix-endian-ness-for-table-ids.patch [bz#1330969]
+- kvm-acpi-support-specified-oem-table-id-for-build_header.patch [bz#1330969]
+- kvm-acpi-take-oem_id-in-build_header-optionally.patch [bz#1330969]
+- kvm-acpi-expose-oem_id-and-oem_table_id-in-build_rsdt.patch [bz#1330969]
+- kvm-acpi-add-function-to-extract-oem_id-and-oem_table_id.patch [bz#1330969]
+- kvm-pc-set-the-OEM-fields-in-the-RSDT-and-the-FADT-from-.patch [bz#1330969]
+- kvm-block-jobs-qemu-kvm-rhel-differentiation.patch [bz#1156635]
+- Resolves: bz#1156635
+  (Libvirt is confused that qemu-kvm exposes 'block-job-cancel' but not 'block-stream')
+- Resolves: bz#1177318
+  (Guest using rbd based image as disk failed to start when sandbox was enabled)
+- Resolves: bz#1312289
+  ("qemu-kvm: /builddir/build/BUILD/qemu-1.5.3/hw/scsi/virtio-scsi.c:533: virtio_scsi_push_event: Assertion `event == 0' failed" after hotplug 20 virtio-scsi disks then hotunplug them)
+- Resolves: bz#1330969
+  (match the OEM ID and OEM Table ID fields of the FADT and the RSDT to those of the SLIC)
+
 * Thu May 05 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-111.el7
 - kvm-vmdk-Leave-bdi-intact-if-ENOTSUP-in-vmdk_get_info.patch [bz#1299250]
 - kvm-vmdk-Use-g_random_int-to-generate-CID.patch [bz#1299250]
