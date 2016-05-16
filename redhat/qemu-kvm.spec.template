@@ -811,6 +811,17 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Mon May 16 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.14
+- kvm-blockjob-Allow-nested-pause.patch [bz#1329543]
+- kvm-block-Pause-block-jobs-in-bdrv_drain_all.patch [bz#1329543]
+- kvm-qemu-iotests-Test-that-stop-doesn-t-drain-block-jobs.patch [bz#1329543]
+- kvm-blockjob-Update-function-name-in-comments.patch [bz#1329543]
+- kvm-virtio-blk-use-blk_io_plug-unplug-for-Linux-AIO-batc.patch [bz#1327613]
+- Resolves: bz#1327613
+  (AIO is processing only 1 request,  even if >1 requests in virtio)
+- Resolves: bz#1329543
+  (live merge - qemu-kvm hangs in aio_bh_poll)
+
 * Tue May 03 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.13
 - kvm-vga-fix-banked-access-bounds-checking-CVE-2016-3710.patch [bz#1331414]
 - kvm-vga-add-vbe_enabled-helper.patch [bz#1331414]
