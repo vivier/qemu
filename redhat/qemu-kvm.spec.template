@@ -92,7 +92,7 @@ Requires: sgabios-bin
 Requires: seavgabios-bin
 %endif
 %ifarch %{power64}
-Requires: SLOF >= %{SLOF_gittagdate}-5.git%{SLOF_gittagcommit}
+Requires: SLOF >= %{SLOF_gittagdate}-1.git%{SLOF_gittagcommit}
 %endif
 Requires: ipxe-roms-qemu
 Requires: %{pkgname}-common%{?pkgsuffix} = %{epoch}:%{version}-%{release}
