@@ -801,6 +801,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue May 17 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-2.el7
+- kvm-Fix-SLOF-dependency.patch [bz#1336296]
+- Resolves: bz#1336296
+  (failed dependencies on SLOF)
+
 * Thu May 12 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-1.el7
 - Rebase to QEMU 2.6.0 [bz#1289417]
 - Resolves: bz#1289417
