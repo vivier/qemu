@@ -920,6 +920,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed May 18 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-23.el7_1.12
+- kvm-aio-strengthen-memory-barriers-for-bottom-half-sched.patch [bz#1337058]
+- Resolves: bz#1337058
+  (virtio_blk I/O requests stalled in KVM guest - suspected bug in qemu AIO worker thread code (upstream commit e8d3b1a25f284cdf9705b7cf0412281cc9ee3a36))
+
 * Mon Nov 16 2015 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.1.2-23.el7_1.11
 - kvm-spice-fix-spice_chr_add_watch-pre-condition.patch [bz#1281814]
 - Resolves: bz#1281814
