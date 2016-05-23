@@ -803,6 +803,14 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Mon May 23 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-3.el7
+- kvm-qmp-Report-drive_add-error-to-monitor.patch [bz#1337100]
+- kvm-spec-Remove-dependency-to-ipxe-roms-qemu-for-aarch64.patch [bz#1337496]
+- Resolves: bz#1337100
+  (redhat_drive_add should report error to qmp if it fails to initialize)
+- Resolves: bz#1337496
+  (qemu-kvm-rhev should not depend on ipxe-roms-qemu on aarch64)
+
 * Tue May 17 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-2.el7
 - kvm-Fix-SLOF-dependency.patch [bz#1336296]
 - Resolves: bz#1336296
