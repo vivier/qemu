@@ -626,8 +626,8 @@ rom_link() {
 %ifarch x86_64
   rom_link ../seabios/bios.bin bios.bin
   rom_link ../seabios/bios-256k.bin bios-256k.bin
+  rom_link ../sgabios/sgabios.bin sgabios.bin
 %endif
-rom_link ../sgabios/sgabios.bin sgabios.bin
 
 %if 0%{have_kvm_setup}
     install -D -p -m 755 %{SOURCE21} $RPM_BUILD_ROOT%{_prefix}/lib/systemd/kvm-setup
@@ -734,8 +734,8 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
     %{_datadir}/%{pkgname}/linuxboot.bin
     %{_datadir}/%{pkgname}/multiboot.bin
     %{_datadir}/%{pkgname}/kvmvapic.bin
+    %{_datadir}/%{pkgname}/sgabios.bin
 %endif
-%{_datadir}/%{pkgname}/sgabios.bin
 %ifnarch aarch64
     %{_datadir}/%{pkgname}/vgabios.bin
     %{_datadir}/%{pkgname}/vgabios-cirrus.bin
