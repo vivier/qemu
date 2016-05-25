@@ -803,6 +803,18 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed May 25 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-4.el7
+- kvm-pc-Use-right-HW_COMPAT_-macros-at-PC_RHEL7-compat-ma.patch [bz#1318386]
+- kvm-compat-Add-missing-any_layout-in-HW_COMPAT_RHEL7_1.patch [bz#1318386]
+- kvm-RHEL-Disable-unsupported-PowerPC-CPU-models.patch [bz#1317977]
+- kvm-spec-Use-correct-upstream-QEMU-version.patch [bz#1335705]
+- Resolves: bz#1317977
+  (qemu-kvm-rhev supports a lot of CPU models)
+- Resolves: bz#1318386
+  (pc-rhel7.2.0 machine type definition needs some fixes)
+- Resolves: bz#1335705
+  ('QEMU 2.5.94 monitor' is used for qemu-kvm-rhev-2.6.0-1.el7.x86_64)
+
 * Mon May 23 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-3.el7
 - kvm-qmp-Report-drive_add-error-to-monitor.patch [bz#1337100]
 - kvm-spec-Remove-dependency-to-ipxe-roms-qemu-for-aarch64.patch [bz#1337496]
