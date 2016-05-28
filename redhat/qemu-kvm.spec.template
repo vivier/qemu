@@ -817,6 +817,15 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Sat May 28 2016 Jeff E. Nelson <jen@redhat.com> - Failed to get module name from Git url or pushurl
+- kvm-qxl-allow-to-specify-head-limit-to-qxl-driver.patch [bz#1283198]
+- kvm-qxl-Fix-new-function-name-for-spice-server-library.patch [bz#1283198]
+- kvm-block-raw-posix-Open-file-descriptor-O_RDWR-to-work-.patch [bz#1268345]
+- Resolves: bz#1268345
+  (posix_fallocate emulation on NFS fails with Bad file descriptor if fd is opened O_WRONLY)
+- Resolves: bz#1283198
+  (RFE: backport max monitor limitation from Qemu upstream)
+
 * Mon May 16 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-112.el7
 - kvm-virtio-scsi-Prevent-assertion-on-missed-events.patch [bz#1312289]
 - kvm-seccomp-adding-sysinfo-system-call-to-whitelist.patch [bz#1177318]
