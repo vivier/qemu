@@ -180,5 +180,13 @@
             .driver   = "virtio-pci",\
             .property = "migrate-extra",\
             .value    = "off",\
+        },{ /* HW_COMPAT_RHEL7_2 */ \
+            .driver   = "fw_cfg_mem",\
+            .property = "dma_enabled",\
+            .value    = "off",\
+        },{ /* HW_COMPAT_RHEL7_2 */ \
+            .driver   = "fw_cfg_io",\
+            .property = "dma_enabled",\
+            .value    = "off",\
         },
 #endif /* HW_COMPAT_H */
