@@ -321,8 +321,33 @@ DEFINE_Q35_MACHINE(v2_4, "pc-q35-2.4", NULL,
 
 /* Red Hat Enterprise Linux machine types */
 
+static void pc_q35_compat_rhel730(MachineState *machine)
+{
+}
+
+static void pc_q35_init_rhel730(MachineState *machine)
+{
+    pc_q35_compat_rhel730(machine);
+    pc_q35_init(machine);
+}
+
+static void pc_q35_machine_rhel730_options(MachineClass *m)
+{
+    m->family = "pc_q35_Z";
+    m->desc = "RHEL-7.3.0 PC (Q35 + ICH9, 2009)";
+    m->alias = "q35";
+    m->default_machine_opts = "firmware=bios-256k.bin";
+    m->default_display = "std";
+    m->no_floppy = 1;
+}
+
+DEFINE_PC_MACHINE(q35_rhel730, "pc-q35-rhel7.3.0", pc_q35_init_rhel730,
+                  pc_q35_machine_rhel730_options);
+
 static void pc_q35_compat_rhel720(MachineState *machine)
 {
+    pc_q35_compat_rhel730(machine);
+
     savevm_skip_section_footers();
     global_state_set_optional();
 }
@@ -335,12 +360,10 @@ static void pc_q35_init_rhel720(MachineState *machine)
 
 static void pc_q35_machine_rhel720_options(MachineClass *m)
 {
-    m->family = "pc_q35_Z";
+    pc_q35_machine_rhel730_options(m);
+    m->is_default = 0;
+    m->alias = NULL;
     m->desc = "RHEL-7.2.0 PC (Q35 + ICH9, 2009)";
-    m->alias = "q35";
-    m->default_machine_opts = "firmware=bios-256k.bin";
-    m->default_display = "std";
-    m->no_floppy = 1;
     SET_MACHINE_COMPAT(m, PC_RHEL7_2_COMPAT);
 }
 
