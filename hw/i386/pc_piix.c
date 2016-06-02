@@ -1067,6 +1067,27 @@ machine_init(pc_machine_init);
 #endif  /* Disabled for Red Hat Enterprise Linux */
 
 /* Red Hat Enterprise Linux machine types */
+
+static void pc_init_rhel730(MachineState *machine)
+{
+    pc_init1(machine, TYPE_I440FX_PCI_HOST_BRIDGE, \
+             TYPE_I440FX_PCI_DEVICE);
+}
+
+static void pc_machine_rhel730_options(MachineClass *m)
+{
+    m->family = "pc_piix_Y";
+    m->alias = "pc";
+    m->desc = "RHEL 7.3.0 PC (i440FX + PIIX, 1996)";
+    m->is_default = 1;
+    m->default_machine_opts = "firmware=bios-256k.bin";
+    m->default_display = "std";
+}
+
+DEFINE_PC_MACHINE(rhel730, "pc-i440fx-rhel7.3.0", pc_init_rhel730,
+                  pc_machine_rhel730_options);
+
+
 static void pc_compat_rhel720(MachineState *machine)
 {
 }
@@ -1080,12 +1101,10 @@ static void pc_init_rhel720(MachineState *machine)
 
 static void pc_machine_rhel720_options(MachineClass *m)
 {
-    m->family = "pc_piix_Y";
-    m->alias = "pc";
+    pc_machine_rhel730_options(m);
+    m->is_default = 0;
+    m->alias = NULL;
     m->desc = "RHEL 7.2.0 PC (i440FX + PIIX, 1996)";
-    m->is_default = 1;
-    m->default_machine_opts = "firmware=bios-256k.bin";
-    m->default_display = "std";
     SET_MACHINE_COMPAT(m, PC_RHEL7_2_COMPAT);
 }
 
