@@ -323,7 +323,8 @@ DEFINE_Q35_MACHINE(v2_4, "pc-q35-2.4", NULL,
 
 static void pc_q35_compat_rhel720(MachineState *machine)
 {
-
+    savevm_skip_section_footers();
+    global_state_set_optional();
 }
 
 static void pc_q35_init_rhel720(MachineState *machine)

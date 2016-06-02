@@ -1090,6 +1090,8 @@ DEFINE_PC_MACHINE(rhel730, "pc-i440fx-rhel7.3.0", pc_init_rhel730,
 
 static void pc_compat_rhel720(MachineState *machine)
 {
+    savevm_skip_section_footers();
+    global_state_set_optional();
 }
 
 static void pc_init_rhel720(MachineState *machine)
