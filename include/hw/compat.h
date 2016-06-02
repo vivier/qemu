@@ -113,8 +113,8 @@
  *    we don't need virtio-scsi-pci since 7.0 already had that on
  */
 #define HW_COMPAT_RHEL7_1 \
-        {\
-            .driver   = "intel-hda",\
+        { /* COMPAT_RHEL7.1 */ \
+            .driver   = "intel-hda-generic",\
             .property = "old_msi_addr",\
             .value    = "on",\
         },{\
