@@ -803,6 +803,50 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Mon Jun 06 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-5.el7
+- kvm-spapr-update-RHEL-7.2-machine-type.patch [bz#1316303]
+- kvm-migration-fix-HW_COMPAT_RHEL7_2.patch [bz#1316303]
+- kvm-target-i386-add-a-generic-x86-nmi-handler.patch [bz#1335720]
+- kvm-nmi-remove-x86-specific-nmi-handling.patch [bz#1335720]
+- kvm-cpus-call-the-core-nmi-injection-function.patch [bz#1335720]
+- kvm-spec-link-sgabios.bin-only-for-x86_64.patch [bz#1337917]
+- kvm-Add-PCIe-bridge-devices-for-AArch64.patch [bz#1326420]
+- kvm-Remove-unsupported-VFIO-devices-from-QEMU.patch [bz#1326420]
+- kvm-hw-net-spapr_llan-Delay-flushing-of-the-RX-queue-whi.patch [bz#1210221]
+- kvm-hw-net-spapr_llan-Provide-counter-with-dropped-rx-fr.patch [bz#1210221]
+- kvm-iscsi-pass-SCSI-status-back-for-SG_IO.patch [bz#1338043]
+- kvm-dma-helpers-change-BlockBackend-to-opaque-value-in-D.patch [bz#1338043]
+- kvm-scsi-disk-introduce-a-common-base-class.patch [bz#1338043]
+- kvm-scsi-disk-introduce-dma_readv-and-dma_writev.patch [bz#1338043]
+- kvm-scsi-disk-add-need_fua_emulation-to-SCSIDiskClass.patch [bz#1338043]
+- kvm-scsi-disk-introduce-scsi_disk_req_check_error.patch [bz#1338043]
+- kvm-scsi-block-always-use-SG_IO.patch [bz#1338043]
+- kvm-tools-kvm_stat-Powerpc-related-fixes.patch [bz#1337033]
+- kvm-pc-New-default-pc-i440fx-rhel7.3.0-machine-type.patch [bz#1305121]
+- kvm-7.3-mismerge-fix-Fix-ich9-intel-hda-compatibility.patch [bz#1342015]
+- kvm-PC-migration-compat-Section-footers-global-state.patch [bz#1342015]
+- kvm-fw_cfg-for-7.2-compatibility.patch [bz#1342015]
+- kvm-pc-Create-new-pc-q35-rhel7.3.0-machine-type.patch [bz#1342015]
+- kvm-q35-Remove-7.0-7.1-7.2-machine-types.patch [bz#1342015]
+- Resolves: bz#1210221
+  (Netperf UDP_STREAM Lost most of the packets on spapr-vlan device)
+- Resolves: bz#1305121
+  (rhel7.3.0 machine-types)
+- Resolves: bz#1316303
+  (Live migration of VMs from RHEL 7.2 <--> 7.3 with pseries-rhel7.2.0 machine type (qemu 2.6))
+- Resolves: bz#1326420
+  (AArch64: clean and add devices to fully support aarch64 vm)
+- Resolves: bz#1335720
+  (watchdog action 'inject-nmi' takes no effect)
+- Resolves: bz#1337033
+  (kvm_stat AttributeError: 'ArchPPC' object has no attribute 'exit_reasons')
+- Resolves: bz#1337917
+  (qemu-kvm-rhev: Only ship /usr/share/qemu-kvm/sgabios.bin on x86)
+- Resolves: bz#1338043
+  (scsi-block fix - receive the right SCSI status on reads and writes)
+- Resolves: bz#1342015
+  (Migration: Fixup machine types and HW_COMPAT (stage 1b))
+
 * Wed May 25 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-4.el7
 - kvm-pc-Use-right-HW_COMPAT_-macros-at-PC_RHEL7-compat-ma.patch [bz#1318386]
 - kvm-compat-Add-missing-any_layout-in-HW_COMPAT_RHEL7_1.patch [bz#1318386]
