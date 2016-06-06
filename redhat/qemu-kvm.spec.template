@@ -811,6 +811,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Mon Jun 06 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.15
+- kvm-qcow2-Prevent-backing-file-names-longer-than-1023.patch [bz#1340045]
+- Resolves: bz#1340045
+  (Throw error if qemu-img rebasing backing file is too long or provide way to fix a "too long" backing file.)
+
 * Mon May 16 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.14
 - kvm-blockjob-Allow-nested-pause.patch [bz#1329543]
 - kvm-block-Pause-block-jobs-in-bdrv_drain_all.patch [bz#1329543]
