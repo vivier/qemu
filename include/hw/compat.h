@@ -188,5 +188,9 @@
             .driver   = "fw_cfg_io",\
             .property = "dma_enabled",\
             .value    = "off",\
+        },{ /* HW_COMPAT_RHEL7_2 */ \
+            .driver   = "isa-fdc",\
+            .property = "fallback",\
+            .value    = "144",\
         },
 #endif /* HW_COMPAT_H */

@@ -1120,10 +1120,15 @@ static void pc_init_rhel720(MachineState *machine)
 
 static void pc_machine_rhel720_options(MachineClass *m)
 {
+    PCMachineClass *pcmc = PC_MACHINE_CLASS(m);
     pc_machine_rhel730_options(m);
     m->is_default = 0;
     m->alias = NULL;
     m->desc = "RHEL 7.2.0 PC (i440FX + PIIX, 1996)";
+    /* From pc_i440fx_2_5_machine_options */
+    pcmc->save_tsc_khz = false;
+    m->legacy_fw_cfg_order = 1;
+    /* Note: broken_reserved_end was already in 7.2 */
     SET_MACHINE_COMPAT(m, PC_RHEL7_2_COMPAT);
 }
 
