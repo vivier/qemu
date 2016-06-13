@@ -588,6 +588,10 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/QEMU,cgthree.bin
 # Remove efi roms
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/efi*.rom
 
+# Remove ivshmem example programs
+rm -rf ${RPM_BUILD_ROOT}%{_bindir}/ivshmem-client
+rm -rf ${RPM_BUILD_ROOT}%{_bindir}/ivshmem-server
+
 # Provided by package ipxe
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/pxe*rom
 # Provided by package vgabios
@@ -773,8 +777,6 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %files -n qemu-kvm-tools%{?pkgsuffix}
 %defattr(-,root,root,-)
 %{_bindir}/kvm_stat
-%{_bindir}/ivshmem-client
-%{_bindir}/ivshmem-server
 %ifarch x86_64
 %{_datadir}/%{pkgname}/tscdeadline_latency.flat
 %endif
