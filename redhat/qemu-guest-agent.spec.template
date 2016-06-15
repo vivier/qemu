@@ -363,6 +363,11 @@ install -c -m 0755  qemu-ga ${RPM_BUILD_ROOT}%{_bindir}/qemu-ga
 
 
 %changelog
+* Wed Jun 15 2016 Miroslav Rezanina <mrezanin@redhat.com> - 2.5.0-2.el7
+- qemuga-redhat-blacklist-guest-exec-commands.patch [bz#1340346]
+- Resolves: bz#1340346
+  (blacklist guest-exec in newer version of qemu-guest-agent)
+
 * Tue Jan 12 2016 Miroslav Rezanina <mrezanin@redhat.com> - 2.5.0-1.el7
 - Rebase to QEMU 2.5.0 [bz#1297673]
 - Resolves: bz#1297673
