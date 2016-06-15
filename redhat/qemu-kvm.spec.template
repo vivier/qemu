@@ -818,7 +818,18 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
-* Sat May 28 2016 Jeff E. Nelson <jen@redhat.com> - Failed to get module name from Git url or pushurl
+* Wed Jun 15 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-114.el7
+- kvm-hw-input-hid.c-Fix-capslock-hid-code.patch [bz#1256741]
+- kvm-target-i386-fix-pcmpxstrx-equal-ordered-strstr-mode.patch [bz#1340971]
+- kvm-spec-Update-rules-before-triggering-for-kvm-device.patch [bz#1333159]
+- Resolves: bz#1256741
+  ("CapsLock" will work as "\" when boot a guest with usb-kbd)
+- Resolves: bz#1333159
+  (qemu-kvm doesn't reload udev rules before triggering for kvm device)
+- Resolves: bz#1340971
+  (qemu: accel=tcg does not implement SSE 4 properly)
+
+* Sat May 28 2016 Jeff E. Nelson <jen@redhat.com> - 1.5.3-113.el7
 - kvm-qxl-allow-to-specify-head-limit-to-qxl-driver.patch [bz#1283198]
 - kvm-qxl-Fix-new-function-name-for-spice-server-library.patch [bz#1283198]
 - kvm-block-raw-posix-Open-file-descriptor-O_RDWR-to-work-.patch [bz#1268345]
