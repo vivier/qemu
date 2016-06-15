@@ -806,6 +806,24 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed Jun 15 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-6.el7
+- kvm-throttle-refuse-iops-size-without-iops-total-read-wr.patch [bz#1342330]
+- kvm-scsi-mark-TYPE_SCSI_DISK_BASE-as-abstract.patch [bz#1338043]
+- kvm-scsi-disk-add-missing-break.patch [bz#1338043]
+- kvm-Disable-spapr-rng.patch [bz#1343891]
+- kvm-spec-Update-rules-before-triggering-for-kvm-device.patch [bz#1338755]
+- kvm-spec-Do-not-package-ivshmem-server-and-ivshmem-clien.patch [bz#1320476]
+- Resolves: bz#1320476
+  (Failed to upgrade qemu-kvm-tools-rhev from 2.3.0 to 2.5.0)
+- Resolves: bz#1338043
+  (scsi-block fix - receive the right SCSI status on reads and writes)
+- Resolves: bz#1338755
+  (qemu-kvm-rhev doesn't reload udev rules before triggering for kvm device)
+- Resolves: bz#1342330
+  (There is no error prompt when set the io throttling parameters iops_size without iops)
+- Resolves: bz#1343891
+  (Disable spapr-rng device in downstream qemu 2.6)
+
 * Mon Jun 06 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-5.el7
 - kvm-spapr-update-RHEL-7.2-machine-type.patch [bz#1316303]
 - kvm-migration-fix-HW_COMPAT_RHEL7_2.patch [bz#1316303]
