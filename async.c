@@ -291,9 +291,6 @@ void aio_notify(AioContext *ctx)
     if (ctx->notify_me) {
         event_notifier_set(&ctx->notifier);
         atomic_mb_set(&ctx->notified, true);
-#ifdef HOST_AARCH64
-        kill(getpid(), SIGIO);
-#endif
     }
 }
 
