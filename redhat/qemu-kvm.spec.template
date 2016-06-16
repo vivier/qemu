@@ -806,6 +806,18 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Thu Jun 16 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-7.el7
+- kvm-pc-allow-raising-low-memory-via-max-ram-below-4g-opt.patch [bz#1176144]
+- kvm-vga-add-sr_vbe-register-set.patch [bz#1331415 bz#1346976]
+- Resolves: bz#1176144
+  ([Nokia RHEL 7.3 Feature]: 32-bit operating systems get very little memory space with new Qemu's)
+- Resolves: bz#1331415
+  (CVE-2016-3710 qemu-kvm-rhev: qemu: incorrect banked access bounds checking in vga module [rhel-7.3])
+- Resolves: bz#1346976
+  (Regression from CVE-2016-3712: windows installer fails to start)
+- Resolves: bz#1339467
+  (User can not create windows 7 virtual machine in rhevm3.6.5.)
+
 * Wed Jun 15 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-6.el7
 - kvm-throttle-refuse-iops-size-without-iops-total-read-wr.patch [bz#1342330]
 - kvm-scsi-mark-TYPE_SCSI_DISK_BASE-as-abstract.patch [bz#1338043]
