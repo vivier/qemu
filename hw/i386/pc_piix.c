@@ -1165,6 +1165,7 @@ static void pc_init_rhel710(MachineState *machine)
 
 static void pc_machine_rhel710_options(MachineClass *m)
 {
+    pc_machine_rhel720_options(m);
     m->family = "pc_piix_Y";
     m->desc = "RHEL 7.1.0 PC (i440FX + PIIX, 1996)";
     m->default_machine_opts = "firmware=bios-256k.bin";
@@ -1199,6 +1200,7 @@ static void pc_init_rhel700(MachineState *machine)
 
 static void pc_machine_rhel700_options(MachineClass *m)
 {
+    pc_machine_rhel710_options(m);
     m->family = "pc_piix_Y";
     m->desc = "RHEL 7.0.0 PC (i440FX + PIIX, 1996)";
     m->default_machine_opts = "firmware=bios-256k.bin";
@@ -1511,6 +1513,7 @@ static void pc_init_rhel660(MachineState *machine)
 
 static void pc_machine_rhel660_options(MachineClass *m)
 {
+    pc_machine_rhel700_options(m);
     m->family = "pc_piix_Z";
     m->desc = "RHEL 6.6.0 PC";
     m->rom_file_has_mr = false;
@@ -1541,6 +1544,7 @@ static void pc_init_rhel650(MachineState *machine)
 
 static void pc_machine_rhel650_options(MachineClass *m)
 {
+    pc_machine_rhel660_options(m);
     m->family = "pc_piix_Z";
     m->desc = "RHEL 6.5.0 PC";
     SET_MACHINE_COMPAT(m, PC_RHEL6_5_COMPAT);
@@ -1591,6 +1595,7 @@ static void pc_init_rhel640(MachineState *machine)
 
 static void pc_machine_rhel640_options(MachineClass *m)
 {
+    pc_machine_rhel650_options(m);
     m->family = "pc_piix_Z";
     m->desc = "RHEL 6.4.0 PC";
     SET_MACHINE_COMPAT(m, PC_RHEL6_4_COMPAT);
@@ -1667,6 +1672,7 @@ static void pc_init_rhel630(MachineState *machine)
 
 static void pc_machine_rhel630_options(MachineClass *m)
 {
+    pc_machine_rhel640_options(m);
     m->family = "pc_piix_Z";
     m->desc = "RHEL 6.3.0 PC";
     SET_MACHINE_COMPAT(m, PC_RHEL6_6_COMPAT);
@@ -1697,6 +1703,7 @@ static void pc_init_rhel620(MachineState *machine)
 
 static void pc_machine_rhel620_options(MachineClass *m)
 {
+    pc_machine_rhel630_options(m);
     m->family = "pc_piix_Z";
     m->desc = "RHEL 6.2.0 PC";
     SET_MACHINE_COMPAT(m, PC_RHEL6_2_COMPAT);
@@ -1767,6 +1774,7 @@ static void pc_init_rhel610(MachineState *machine)
 
 static void pc_machine_rhel610_options(MachineClass *m)
 {
+    pc_machine_rhel620_options(m);
     m->family = "pc_piix_Z";
     m->desc = "RHEL 6.1.0 PC";
     SET_MACHINE_COMPAT(m, PC_RHEL6_1_COMPAT);
@@ -1804,6 +1812,7 @@ static void pc_init_rhel600(MachineState *machine)
 
 static void pc_machine_rhel600_options(MachineClass *m)
 {
+    pc_machine_rhel610_options(m);
     m->family = "pc_piix_Z";
     m->desc = "RHEL 6.0.0 PC";
     SET_MACHINE_COMPAT(m, PC_RHEL6_0_COMPAT);
