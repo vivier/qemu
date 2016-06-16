@@ -1168,7 +1168,6 @@ static void pc_machine_rhel710_options(MachineClass *m)
     pc_machine_rhel720_options(m);
     m->family = "pc_piix_Y";
     m->desc = "RHEL 7.1.0 PC (i440FX + PIIX, 1996)";
-    m->default_machine_opts = "firmware=bios-256k.bin";
     SET_MACHINE_COMPAT(m, PC_RHEL7_1_COMPAT);
 }
 
@@ -1203,7 +1202,6 @@ static void pc_machine_rhel700_options(MachineClass *m)
     pc_machine_rhel710_options(m);
     m->family = "pc_piix_Y";
     m->desc = "RHEL 7.0.0 PC (i440FX + PIIX, 1996)";
-    m->default_machine_opts = "firmware=bios-256k.bin";
     SET_MACHINE_COMPAT(m, PC_RHEL7_0_COMPAT);
 }
 
@@ -1517,6 +1515,7 @@ static void pc_machine_rhel660_options(MachineClass *m)
     m->family = "pc_piix_Z";
     m->desc = "RHEL 6.6.0 PC";
     m->rom_file_has_mr = false;
+    m->default_machine_opts = "firmware=bios.bin";
     SET_MACHINE_COMPAT(m, PC_RHEL6_6_COMPAT);
 }
 
