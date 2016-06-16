@@ -1168,6 +1168,7 @@ static void pc_machine_rhel710_options(MachineClass *m)
     pc_machine_rhel720_options(m);
     m->family = "pc_piix_Y";
     m->desc = "RHEL 7.1.0 PC (i440FX + PIIX, 1996)";
+    m->default_display = "cirrus";
     SET_MACHINE_COMPAT(m, PC_RHEL7_1_COMPAT);
 }
 
