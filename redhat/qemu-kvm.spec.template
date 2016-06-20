@@ -818,6 +818,14 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Mon Jun 20 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-115.el7
+- kvm-spice-do-not-require-TCP-ports.patch [bz#1336491]
+- kvm-vga-add-sr_vbe-register-set.patch [bz#1346982]
+- Resolves: bz#1336491
+  (Ship FD connection patches qemu-kvm part)
+- Resolves: bz#1346982
+  (Regression from CVE-2016-3712: windows installer fails to start)
+
 * Wed Jun 15 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-114.el7
 - kvm-hw-input-hid.c-Fix-capslock-hid-code.patch [bz#1256741]
 - kvm-target-i386-fix-pcmpxstrx-equal-ordered-strstr-mode.patch [bz#1340971]
