@@ -91,7 +91,7 @@ Requires: seabios-bin >= 1.7.5-1
 Requires: sgabios-bin
 %endif
 %ifnarch aarch64
-Requires: seavgabios-bin
+Requires: seavgabios-bin >= 1.9.1-4
 Requires: ipxe-roms-qemu
 %endif
 %ifarch %{power64}
@@ -631,6 +631,7 @@ rom_link() {
   rom_link ../seavgabios/vgabios-qxl.bin vgabios-qxl.bin
   rom_link ../seavgabios/vgabios-stdvga.bin vgabios-stdvga.bin
   rom_link ../seavgabios/vgabios-vmware.bin vgabios-vmware.bin
+  rom_link ../seavgabios/vgabios-virtio.bin vgabios-virtio.bin
 %endif
 %ifarch x86_64
   rom_link ../seabios/bios.bin bios.bin
@@ -757,6 +758,7 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
     %{_datadir}/%{pkgname}/vgabios-qxl.bin
     %{_datadir}/%{pkgname}/vgabios-stdvga.bin
     %{_datadir}/%{pkgname}/vgabios-vmware.bin
+    %{_datadir}/%{pkgname}/vgabios-virtio.bin
     %{_datadir}/%{pkgname}/pxe-e1000.rom
     %{_datadir}/%{pkgname}/pxe-virtio.rom
     %{_datadir}/%{pkgname}/pxe-pcnet.rom
