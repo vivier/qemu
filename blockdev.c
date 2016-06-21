@@ -3795,6 +3795,7 @@ void qmp_block_job_resume(const char *device, Error **errp)
 
     job->user_paused = false;
     trace_qmp_block_job_resume(job);
+    block_job_iostatus_reset(job);
     block_job_resume(job);
     aio_context_release(aio_context);
 }
