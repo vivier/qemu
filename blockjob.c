@@ -241,6 +241,32 @@ static bool block_job_should_pause(BlockJob *job)
     return job->pause_count > 0;
 }
 
+void coroutine_fn block_job_pause_point(BlockJob *job)
+{
+    if (!block_job_should_pause(job)) {
+        return;
+    }
+    if (block_job_is_cancelled(job)) {
+        return;
+    }
+
+    if (job->driver->pause) {
+        job->driver->pause(job);
+    }
+
+    if (block_job_should_pause(job) && !block_job_is_cancelled(job)) {
+        job->paused = true;
+        job->busy = false;
+        qemu_coroutine_yield(); /* wait for block_job_resume() */
+        job->busy = true;
+        job->paused = false;
+    }
+
+    if (job->driver->resume) {
+        job->driver->resume(job);
+    }
+}
+
 void block_job_resume(BlockJob *job)
 {
     assert(job->pause_count > 0);
@@ -336,11 +362,9 @@ void block_job_sleep_ns(BlockJob *job, QEMUClockType type, int64_t ns)
     if (!block_job_should_pause(job)) {
         co_aio_sleep_ns(bdrv_get_aio_context(job->bs), type, ns);
     }
-    /* The job can be paused while sleeping, so check this again */
-    if (block_job_should_pause(job)) {
-        qemu_coroutine_yield();
-    }
     job->busy = true;
+
+    block_job_pause_point(job);
 }
 
 void block_job_yield(BlockJob *job)
@@ -353,8 +377,12 @@ void block_job_yield(BlockJob *job)
     }
 
     job->busy = false;
-    qemu_coroutine_yield();
+    if (!block_job_should_pause(job)) {
+        qemu_coroutine_yield();
+    }
     job->busy = true;
+
+    block_job_pause_point(job);
 }
 
 BlockJobInfo *block_job_query(BlockJob *job)
