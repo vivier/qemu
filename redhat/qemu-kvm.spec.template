@@ -806,6 +806,33 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Jun 21 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-8.el7
+- kvm-Disable-Windows-enlightnements.patch [bz#1336517]
+- kvm-ppc-spapr-Refactor-h_client_architecture_support-CPU.patch [bz#1341492]
+- kvm-ppc-Split-pcr_mask-settings-into-supported-bits-and-.patch [bz#1341492]
+- kvm-ppc-Provide-function-to-get-CPU-class-of-the-host-CP.patch [bz#1341492]
+- kvm-ppc-Improve-PCR-bit-selection-in-ppc_set_compat.patch [bz#1341492]
+- kvm-ppc-Add-PowerISA-2.07-compatibility-mode.patch [bz#1341492]
+- kvm-machine-types-fix-pc_machine_-_options-chain.patch [bz#1344320]
+- kvm-Fix-rhel6-rom-file.patch [bz#1344320]
+- kvm-fix-vga-type-for-older-machines.patch [bz#1344320]
+- kvm-Revert-aio_notify-force-main-loop-wakeup-with-SIGIO-.patch [bz#1188656]
+- kvm-Make-avx2-configure-test-work-with-O2.patch [bz#1323294]
+- kvm-avx2-configure-Use-primitives-in-test.patch [bz#1323294]
+- kvm-vfio-Fix-broken-EEH.patch [bz#1346627]
+- Resolves: bz#1188656
+  (lost block IO completion notification (for virtio-scsi disk) hangs main loop)
+- Resolves: bz#1323294
+  (AVX-2 migration optimisation)
+- Resolves: bz#1336517
+  (Disable hv-vpindex, hv-runtime, hv-reset, hv-synic & hv-stimer enlightenment for Windows)
+- Resolves: bz#1341492
+  (QEMU on POWER does not support the PowerISA 2.07 compatibility mode)
+- Resolves: bz#1344320
+  (migration: fix pc_i440fx_*_options chaining)
+- Resolves: bz#1346627
+  (qemu discards EEH ioctl results)
+
 * Thu Jun 16 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-7.el7
 - kvm-pc-allow-raising-low-memory-via-max-ram-below-4g-opt.patch [bz#1176144]
 - kvm-vga-add-sr_vbe-register-set.patch [bz#1331415 bz#1346976]
