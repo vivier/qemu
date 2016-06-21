@@ -236,7 +236,7 @@ void block_job_pause(BlockJob *job)
     job->pause_count++;
 }
 
-bool block_job_is_paused(BlockJob *job)
+static bool block_job_should_pause(BlockJob *job)
 {
     return job->pause_count > 0;
 }
@@ -333,11 +333,11 @@ void block_job_sleep_ns(BlockJob *job, QEMUClockType type, int64_t ns)
     }
 
     job->busy = false;
-    if (!block_job_is_paused(job)) {
+    if (!block_job_should_pause(job)) {
         co_aio_sleep_ns(bdrv_get_aio_context(job->bs), type, ns);
     }
     /* The job can be paused while sleeping, so check this again */
-    if (block_job_is_paused(job)) {
+    if (block_job_should_pause(job)) {
         qemu_coroutine_yield();
     }
     job->busy = true;
