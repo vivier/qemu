@@ -1812,7 +1812,9 @@ static const TypeInfo allwinner_ahci_info = {
 static void sysbus_ahci_register_types(void)
 {
     type_register_static(&sysbus_ahci_info);
+#if 0  /* Disabled in Red Hat Enterprise Linux */
     type_register_static(&allwinner_ahci_info);
+#endif
 }
 
 type_init(sysbus_ahci_register_types)
