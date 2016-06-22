@@ -3375,7 +3375,7 @@ void do_blockdev_backup(const char *device, const char *target,
                          BlockdevOnError on_target_error,
                          BlockJobTxn *txn, Error **errp)
 {
-    BlockBackend *blk, *target_blk;
+    BlockBackend *blk;
     BlockDriverState *bs;
     BlockDriverState *target_bs;
     Error *local_err = NULL;
@@ -3406,17 +3406,10 @@ void do_blockdev_backup(const char *device, const char *target,
     }
     bs = blk_bs(blk);
 
-    target_blk = blk_by_name(target);
-    if (!target_blk) {
-        error_setg(errp, "Device '%s' not found", target);
+    target_bs = bdrv_lookup_bs(target, target, errp);
+    if (!target_bs) {
         goto out;
     }
-
-    if (!blk_is_available(target_blk)) {
-        error_setg(errp, "Device '%s' has no medium", target);
-        goto out;
-    }
-    target_bs = blk_bs(target_blk);
 
     bdrv_ref(target_bs);
     bdrv_set_aio_context(target_bs, aio_context);
