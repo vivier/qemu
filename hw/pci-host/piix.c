@@ -879,7 +879,9 @@ static const TypeInfo i440fx_pcihost_info = {
 static void i440fx_register_types(void)
 {
     type_register_static(&i440fx_info);
+#if 0 /*  Disabled in Red Hat Enterprise Linux */
     type_register_static(&igd_passthrough_i440fx_info);
+#endif
     type_register_static(&piix3_pci_type_info);
     type_register_static(&piix3_info);
     type_register_static(&piix3_xen_info);
