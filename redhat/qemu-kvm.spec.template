@@ -806,6 +806,45 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Thu Jun 23 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-9.el7
+- kvm-7.2-machine-type-compatibility.patch [bz#1344269]
+- kvm-vhost-user-add-ability-to-know-vhost-user-backend-di.patch [bz#1322087]
+- kvm-tests-vhost-user-bridge-add-client-mode.patch [bz#1322087]
+- kvm-tests-vhost-user-bridge-workaround-stale-vring-base.patch [bz#1322087]
+- kvm-qemu-char-add-qemu_chr_disconnect-to-close-a-fd-acce.patch [bz#1322087]
+- kvm-vhost-user-disconnect-on-start-failure.patch [bz#1322087]
+- kvm-vhost-net-do-not-crash-if-backend-is-not-present.patch [bz#1322087]
+- kvm-vhost-net-save-restore-vhost-user-acked-features.patch [bz#1322087]
+- kvm-vhost-net-save-restore-vring-enable-state.patch [bz#1322087]
+- kvm-tests-append-i386-tests.patch [bz#1322087]
+- kvm-test-start-vhost-user-reconnect-test.patch [bz#1322087]
+- kvm-block-Prevent-sleeping-jobs-from-resuming-if-they-ha.patch [bz#1265179]
+- kvm-blockjob-move-iostatus-reset-out-of-block_job_enter.patch [bz#1265179]
+- kvm-blockjob-rename-block_job_is_paused.patch [bz#1265179]
+- kvm-blockjob-add-pause-points.patch [bz#1265179]
+- kvm-blockjob-add-block_job_get_aio_context.patch [bz#1265179]
+- kvm-block-use-safe-iteration-over-AioContext-notifiers.patch [bz#1265179]
+- kvm-blockjob-add-AioContext-attached-callback.patch [bz#1265179]
+- kvm-mirror-follow-AioContext-change-gracefully.patch [bz#1265179]
+- kvm-backup-follow-AioContext-change-gracefully.patch [bz#1265179]
+- kvm-block-Fix-snapshot-on-with-aio-native.patch [bz#1336649]
+- kvm-block-iscsi-avoid-potential-overflow-of-acb-task-cdb.patch [bz#1340930]
+- kvm-block-fixed-BdrvTrackedRequest-filling-in-bdrv_co_di.patch [bz#1348763]
+- kvm-block-fix-race-in-bdrv_co_discard-with-drive-mirror.patch [bz#1348763]
+- kvm-block-process-before_write_notifiers-in-bdrv_co_disc.patch [bz#1348763]
+- Resolves: bz#1265179
+  (With dataplane, when migrate to  remote NBD disk after drive-mirror, qemu core dump ( both src host and des host))
+- Resolves: bz#1322087
+  (No recovery after vhost-user process restart)
+- Resolves: bz#1336649
+  ([RHEL.7.3] Guest will not boot up when specify aio=native and snapshot=on together)
+- Resolves: bz#1340930
+  (CVE-2016-5126 qemu-kvm-rhev: Qemu: block: iscsi: buffer overflow in iscsi_aio_ioctl [rhel-7.3])
+- Resolves: bz#1344269
+  (Migration: Fixup machine types and HW_COMPAT (stage 2a))
+- Resolves: bz#1348763
+  (Fix dirty marking with block discard requests)
+
 * Tue Jun 21 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-8.el7
 - kvm-Disable-Windows-enlightnements.patch [bz#1336517]
 - kvm-ppc-spapr-Refactor-h_client_architecture_support-CPU.patch [bz#1341492]
