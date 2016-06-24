@@ -355,6 +355,7 @@ Aml *aml_unicode(const char *str);
 Aml *aml_derefof(Aml *arg);
 Aml *aml_sizeof(Aml *arg);
 Aml *aml_concatenate(Aml *source1, Aml *source2, Aml *target);
+Aml *aml_object_type(Aml *object);
 
 void
 build_header(BIOSLinker *linker, GArray *table_data,
