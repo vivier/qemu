@@ -811,6 +811,26 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Tue Jun 28 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.17
+- kvm-vhost-user-set-link-down-when-the-char-device-is-clo.patch [bz#1348593]
+- kvm-vhost-user-fix-use-after-free.patch [bz#1348593]
+- kvm-vhost-user-test-fix-up-rhel6-build.patch [bz#1348593]
+- kvm-vhost-user-test-fix-migration-overlap-test.patch [bz#1348593]
+- kvm-vhost-user-test-fix-chardriver-race.patch [bz#1348593]
+- kvm-vhost-user-test-use-unix-port-for-migration.patch [bz#1348593]
+- kvm-vhost-user-test-fix-crash-with-glib-2.36.patch [bz#1348593]
+- kvm-vhost-user-test-use-correct-ROM-to-speed-up-and-avoi.patch [bz#1348593]
+- kvm-tests-append-i386-tests.patch [bz#1348593]
+- kvm-vhost-user-add-ability-to-know-vhost-user-backend-di.patch [bz#1348593]
+- kvm-qemu-char-add-qemu_chr_disconnect-to-close-a-fd-acce.patch [bz#1348593]
+- kvm-vhost-user-disconnect-on-start-failure.patch [bz#1348593]
+- kvm-vhost-net-do-not-crash-if-backend-is-not-present.patch [bz#1348593]
+- kvm-vhost-net-save-restore-vhost-user-acked-features.patch [bz#1348593]
+- kvm-vhost-net-save-restore-vring-enable-state.patch [bz#1348593]
+- kvm-test-start-vhost-user-reconnect-test.patch [bz#1348593]
+- Resolves: bz#1348593
+  (No recovery after vhost-user process restart)
+
 * Thu Jun 16 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.16
 - kvm-vga-add-sr_vbe-register-set.patch [bz#1347185]
 - Resolves: bz#1347185
