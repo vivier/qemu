@@ -809,6 +809,24 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Jun 28 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-10.el7
+- kvm-block-clarify-error-message-for-qmp-eject.patch [bz#961589]
+- kvm-blockdev-clean-up-error-handling-in-do_open_tray.patch [bz#961589]
+- kvm-blockdev-clarify-error-on-attempt-to-open-locked-tra.patch [bz#961589]
+- kvm-blockdev-backup-Use-bdrv_lookup_bs-on-target.patch [bz#1336310 bz#1339498]
+- kvm-blockdev-backup-Don-t-move-target-AioContext-if-it-s.patch [bz#1336310 bz#1339498]
+- kvm-virtio-blk-Remove-op-blocker-for-dataplane.patch [bz#1336310 bz#1339498]
+- kvm-virtio-scsi-Remove-op-blocker-for-dataplane.patch [bz#1336310 bz#1339498]
+- kvm-spec-add-a-sample-kvm.conf-to-enable-Nested-Virtuali.patch [bz#1290150]
+- Resolves: bz#1290150
+  (Include example kvm.conf with nested options commented out)
+- Resolves: bz#1336310
+  (virtio-scsi data-plane does not support block management QMP commands)
+- Resolves: bz#1339498
+  (Core dump when do 'block-job-complete' after 'drive-mirror')
+- Resolves: bz#961589
+  (rhel7 guest sometimes didnt unlock the cdrom when qemu-kvm trying to eject)
+
 * Thu Jun 23 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-9.el7
 - kvm-7.2-machine-type-compatibility.patch [bz#1344269]
 - kvm-vhost-user-add-ability-to-know-vhost-user-backend-di.patch [bz#1322087]
