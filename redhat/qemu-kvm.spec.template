@@ -818,6 +818,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Jun 28 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-116.el7
+- kvm-block-iscsi-avoid-potential-overflow-of-acb-task-cdb.patch [bz#1340929]
+- Resolves: bz#1340929
+  (CVE-2016-5126 qemu-kvm: Qemu: block: iscsi: buffer overflow in iscsi_aio_ioctl [rhel-7.3])
+
 * Mon Jun 20 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-115.el7
 - kvm-spice-do-not-require-TCP-ports.patch [bz#1336491]
 - kvm-vga-add-sr_vbe-register-set.patch [bz#1346982]
