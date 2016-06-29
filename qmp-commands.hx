@@ -157,7 +157,7 @@ EQMP
         .args_type  = "id:s",
         .params     = "device",
         .help       = "remove host block device",
-        .mhandler.cmd = hmp_drive_del,
+        .mhandler.cmd_new = qmp_drive_del,
     },
 
 SQMP
