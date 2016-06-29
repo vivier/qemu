@@ -7,6 +7,7 @@
 %global have_gluster  1
 %global have_kvm_setup 0
 %global have_seccomp 1
+%global have_memlock_limits 0
 
 %ifnarch %{ix86} x86_64 aarch64
     %global have_seccomp 0
@@ -37,6 +38,7 @@
     %global kvm_target    ppc64
     %global have_fdt     1
     %global have_kvm_setup 1
+    %global have_memlock_limits 1
 %endif
 %ifarch s390x s390
     %global kvm_target    s390x
@@ -146,6 +148,7 @@ Source24: build_configure.sh
 Source25: kvm-unit-tests.git-4ea7633.tar.bz2
 Source26: vhost.conf
 Source27: kvm.conf
+Source28: 95-kvm-memlock.conf
 
 
 %%PATCHLIST%%
@@ -641,6 +644,10 @@ rom_link() {
 	install -D -p -m 644 %{SOURCE23} $RPM_BUILD_ROOT%{_presetdir}/85-kvm.preset
 %endif
 
+%if 0%{have_memlock_limits}
+    install -D -p -m 644 %{SOURCE28} $RPM_BUILD_ROOT%{_sysconfdir}/security/limits.d/95-kvm-memlock.conf
+%endif
+
 # Install rules to use the bridge helper with libvirt's virbr0
 install -D -m 0644 %{SOURCE12} $RPM_BUILD_ROOT%{_sysconfdir}/%{pkgname}/bridge.conf
 
@@ -775,6 +782,9 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
     %{_prefix}/lib/systemd/kvm-setup
     %{_unitdir}/kvm-setup.service
     %{_presetdir}/85-kvm.preset
+%endif
+%if 0%{have_memlock_limits}
+    %{_sysconfdir}/security/limits.d/95-kvm-memlock.conf
 %endif
 
 %files -n qemu-kvm-tools%{?pkgsuffix}
