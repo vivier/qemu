@@ -1,7 +1,7 @@
 # The default profile, rhev
 [gitpublishprofile "rhev"]
 base = rhev7/master-2.3.0
-prefix = RHEV-7.2 qemu-kvm-rhev PATCH
+prefix = RHEV-7.2.z qemu-kvm-rhev PATCH
 to = rhvirt-patches@redhat.com
 suppresscc = all
 message = True
