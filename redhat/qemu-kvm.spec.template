@@ -819,6 +819,55 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Jul 01 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-11.el7
+- kvm-Postcopy-Avoid-0-length-discards.patch [bz#1347256]
+- kvm-Migration-Split-out-ram-part-of-qmp_query_migrate.patch [bz#1347256]
+- kvm-Postcopy-Add-stats-on-page-requests.patch [bz#1347256]
+- kvm-test-Postcopy.patch [bz#1347256]
+- kvm-tests-fix-libqtest-socket-timeouts.patch [bz#1347256]
+- kvm-Postcopy-Check-for-support-when-setting-the-capabili.patch [bz#1347256]
+- kvm-rbd-change-error_setg-to-error_setg_errno.patch [bz#1329641]
+- kvm-ppc-Disable-huge-page-support-if-it-is-not-available.patch [bz#1347498]
+- kvm-acpi-do-not-use-TARGET_PAGE_SIZE.patch [bz#1270345]
+- kvm-acpi-convert-linker-from-GArray-to-BIOSLinker-struct.patch [bz#1270345]
+- kvm-acpi-simplify-bios_linker-API-by-removing-redundant-.patch [bz#1270345]
+- kvm-acpi-cleanup-bios_linker_loader_cleanup.patch [bz#1270345]
+- kvm-tpm-apci-cleanup-TCPA-table-initialization.patch [bz#1270345]
+- kvm-acpi-make-bios_linker_loader_add_pointer-API-offset-.patch [bz#1270345]
+- kvm-acpi-make-bios_linker_loader_add_checksum-API-offset.patch [bz#1270345]
+- kvm-pc-dimm-get-memory-region-from-get_memory_region.patch [bz#1270345]
+- kvm-pc-dimm-introduce-realize-callback.patch [bz#1270345]
+- kvm-pc-dimm-introduce-get_vmstate_memory_region-callback.patch [bz#1270345]
+- kvm-nvdimm-support-nvdimm-label.patch [bz#1270345]
+- kvm-acpi-add-aml_object_type.patch [bz#1270345]
+- kvm-acpi-add-aml_call5.patch [bz#1270345]
+- kvm-nvdimm-acpi-set-HDLE-properly.patch [bz#1270345]
+- kvm-nvdimm-acpi-save-arg3-of-_DSM-method.patch [bz#1270345]
+- kvm-nvdimm-acpi-check-UUID.patch [bz#1270345]
+- kvm-nvdimm-acpi-abstract-the-operations-for-root-nvdimm-.patch [bz#1270345]
+- kvm-nvdimm-acpi-check-revision.patch [bz#1270345]
+- kvm-nvdimm-acpi-support-Get-Namespace-Label-Size-functio.patch [bz#1270345]
+- kvm-nvdimm-acpi-support-Get-Namespace-Label-Data-functio.patch [bz#1270345]
+- kvm-nvdimm-acpi-support-Set-Namespace-Label-Data-functio.patch [bz#1270345]
+- kvm-docs-add-NVDIMM-ACPI-documentation.patch [bz#1270345]
+- kvm-Fix-qemu-kvm-does-not-quit-when-booting-guest-w-241-.patch [bz#1126666]
+- kvm-Adjust-locked-memory-limits-to-allow-unprivileged-VM.patch [bz#1350735]
+- kvm-dma-helpers-dma_blk_io-cancel-support.patch [bz#1346237]
+- Resolves: bz#1126666
+  (qemu-kvm does not quit when booting guest w/ 161 vcpus and "-no-kvm")
+- Resolves: bz#1270345
+  ([Intel 7.3 FEAT] Virtualization support for NVDIMM - qemu support)
+- Resolves: bz#1329641
+  ([RFE]Ceph/RBD block driver for qemu-kvm : change error_setg() to error_setg_errno())
+- Resolves: bz#1346237
+  (win 10.x86_64 guest coredump when execute avocado test case: win_virtio_update.install_driver)
+- Resolves: bz#1347256
+  (Backport 2.7 postcopy fix, test and stats)
+- Resolves: bz#1347498
+  ([ppc64le] Guest can't boot up with hugepage memdev)
+- Resolves: bz#1350735
+  (memory locking limit for regular users is too low to launch guests through libvirt)
+
 * Tue Jun 28 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-10.el7
 - kvm-block-clarify-error-message-for-qmp-eject.patch [bz#961589]
 - kvm-blockdev-clean-up-error-handling-in-do_open_tray.patch [bz#961589]
