@@ -860,6 +860,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Fri Jul 01 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.5
+- kvm-vga-add-sr_vbe-register-set.patch [bz#1347527]
+- Resolves: bz#1347527
+  (Regression from CVE-2016-3712: windows installer fails to start)
+
 * Tue May 03 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.4
 - kvm-vga-Remove-some-should-be-done-in-BIOS-comments.patch [bz#1331412]
 - kvm-vga-fix-banked-access-bounds-checking-CVE-2016-3710.patch [bz#1331412]
