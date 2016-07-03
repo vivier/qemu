@@ -898,6 +898,46 @@ extern void igd_passthrough_isa_bridge_create(PCIBus *bus, uint16_t gpu_dev_id);
             .driver   = "qemu64" "-" TYPE_X86_CPU,\
             .property = "abm",\
             .value    = "on",\
+        },\
+        { /* PC_RHEL7_2_COMPAT */ \
+            .driver   = "Haswell-" TYPE_X86_CPU,\
+            .property = "abm",\
+            .value    = "off",\
+        },\
+        { /* PC_RHEL7_2_COMPAT */ \
+            .driver   = "Haswell-noTSX-" TYPE_X86_CPU,\
+            .property = "abm",\
+            .value    = "off",\
+        },\
+        { /* PC_RHEL7_2_COMPAT */ \
+            .driver   = "Broadwell-" TYPE_X86_CPU,\
+            .property = "abm",\
+            .value    = "off",\
+        },\
+        { /* PC_RHEL7_2_COMPAT */ \
+            .driver   = "Broadwell-noTSX-" TYPE_X86_CPU,\
+            .property = "abm",\
+            .value    = "off",\
+        },\
+        { /* PC_RHEL7_2_COMPAT */ \
+            .driver   = "host" "-" TYPE_X86_CPU,\
+            .property = "host-cache-info",\
+            .value    = "on",\
+        },\
+        { /* PC_RHEL7_2_COMPAT */ \
+            .driver   = TYPE_X86_CPU,\
+            .property = "check",\
+            .value    = "off",\
+        },\
+        { /* PC_RHEL7_2_COMPAT */ \
+            .driver   = "qemu32" "-" TYPE_X86_CPU,\
+            .property = "popcnt",\
+            .value    = "on",\
+        },\
+        { /* PC_RHEL7_2_COMPAT */ \
+            .driver   = TYPE_X86_CPU,\
+            .property = "arat",\
+            .value    = "off",\
         },
 
 
