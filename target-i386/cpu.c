@@ -708,7 +708,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
              CPUID_EXT2_PGE | CPUID_EXT2_SYSCALL | CPUID_EXT2_APIC |
              CPUID_EXT2_CX8 | CPUID_EXT2_MCE | CPUID_EXT2_PAE | CPUID_EXT2_MSR | CPUID_EXT2_TSC |
              CPUID_EXT2_PSE | CPUID_EXT2_DE | CPUID_EXT2_FPU,
-        .features[FEAT_8000_0001_ECX] = CPUID_EXT3_SSE4A | CPUID_EXT3_ABM |
+        .features[FEAT_8000_0001_ECX] = CPUID_EXT3_ABM |
              CPUID_EXT3_SVM | CPUID_EXT3_LAHF_LM,
         .xlevel = 0x8000000A,
     },
