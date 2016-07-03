@@ -893,7 +893,13 @@ extern void igd_passthrough_isa_bridge_create(PCIBus *bus, uint16_t gpu_dev_id);
             .driver   = "qemu64" "-" TYPE_X86_CPU,\
             .property = "sse4a",\
             .value    = "on",\
+        },\
+        { /* PC_RHEL7_2_COMPAT */ \
+            .driver   = "qemu64" "-" TYPE_X86_CPU,\
+            .property = "abm",\
+            .value    = "on",\
         },
+
 
 
 #define PC_RHEL7_1_COMPAT \
