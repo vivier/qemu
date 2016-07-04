@@ -980,6 +980,24 @@ int socket_listen(SocketAddress *addr, Error **errp)
     return fd;
 }
 
+void socket_listen_cleanup(int fd, Error **errp)
+{
+    SocketAddress *addr;
+
+    addr = socket_local_address(fd, errp);
+
+    if (addr->kind == SOCKET_ADDRESS_KIND_UNIX
+        && addr->q_unix->path) {
+        if (unlink(addr->q_unix->path) < 0 && errno != ENOENT) {
+            error_setg_errno(errp, errno,
+                             "Failed to unlink socket %s",
+                             addr->q_unix->path);
+        }
+    }
+
+    g_free(addr);
+}
+
 int socket_dgram(SocketAddress *remote, SocketAddress *local, Error **errp)
 {
     QemuOpts *opts;

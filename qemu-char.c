@@ -3042,6 +3042,7 @@ static void tcp_chr_close(CharDriverState *chr)
         if (s->listen_chan) {
             g_io_channel_unref(s->listen_chan);
         }
+        socket_listen_cleanup(s->listen_fd, NULL);
         closesocket(s->listen_fd);
     }
     if (s->read_msgfds_num) {
