@@ -1510,6 +1510,10 @@ bool memory_region_is_logging(MemoryRegion *mr, uint8_t client)
 
 void memory_region_register_iommu_notifier(MemoryRegion *mr, Notifier *n)
 {
+    if (mr->iommu_ops->notify_started &&
+        QLIST_EMPTY(&mr->iommu_notify.notifiers)) {
+        mr->iommu_ops->notify_started(mr);
+    }
     notifier_list_add(&mr->iommu_notify, n);
 }
 
@@ -1533,9 +1537,13 @@ void memory_region_iommu_replay(MemoryRegion *mr, Notifier *n,
     }
 }
 
-void memory_region_unregister_iommu_notifier(Notifier *n)
+void memory_region_unregister_iommu_notifier(MemoryRegion *mr, Notifier *n)
 {
     notifier_remove(n);
+    if (mr->iommu_ops->notify_stopped &&
+        QLIST_EMPTY(&mr->iommu_notify.notifiers)) {
+        mr->iommu_ops->notify_stopped(mr);
+    }
 }
 
 void memory_region_notify_iommu(MemoryRegion *mr,
