@@ -169,7 +169,7 @@
             .property = "scsi",\
             .value    = "true",\
         },{\
-            .driver   = "e1000",\
+            .driver   = "e1000-82540em",\
             .property = "extra_mac_registers",\
             .value    = "off",\
         },{\
