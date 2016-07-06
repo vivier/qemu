@@ -150,6 +150,17 @@ static const char *cpuid_7_0_ebx_feature_name[] = {
     NULL, NULL, "avx512pf", "avx512er", "avx512cd", NULL, NULL, NULL,
 };
 
+static const char *cpuid_xsave_feature_name[] = {
+    "xsaveopt", "xsavec", "xgetbv1", NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+};
+
 typedef struct FeatureWordInfo {
     const char **feat_names;
     uint32_t cpuid_eax;   /* Input EAX for CPUID */
@@ -192,6 +203,12 @@ static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
         .cpuid_eax = 7,
         .cpuid_needs_ecx = true, .cpuid_ecx = 0,
         .cpuid_reg = R_EBX,
+    },
+    [FEAT_XSAVE] = {
+        .feat_names = cpuid_xsave_feature_name,
+        .cpuid_eax = 0xd,
+        .cpuid_needs_ecx = true, .cpuid_ecx = 1,
+        .cpuid_reg = R_EAX,
     },
 };
 
@@ -833,6 +850,8 @@ static x86_def_t builtin_x86_defs[] = {
              CPUID_EXT2_SYSCALL,
         .features[FEAT_8000_0001_ECX] =
             CPUID_EXT3_LAHF_LM,
+        .features[FEAT_XSAVE] =
+            CPUID_XSAVE_XSAVEOPT,
         .xlevel = 0x8000000A,
         .model_id = "Intel Xeon E312xx (Sandy Bridge)",
     },
@@ -866,6 +885,8 @@ static x86_def_t builtin_x86_defs[] = {
             CPUID_7_0_EBX_HLE | CPUID_7_0_EBX_AVX2 | CPUID_7_0_EBX_SMEP |
             CPUID_7_0_EBX_BMI2 | CPUID_7_0_EBX_ERMS | CPUID_7_0_EBX_INVPCID |
             CPUID_7_0_EBX_RTM,
+        .features[FEAT_XSAVE] =
+            CPUID_XSAVE_XSAVEOPT,
         .xlevel = 0x8000000A,
         .model_id = "Intel Core Processor (Haswell)",
     },
@@ -900,6 +921,8 @@ static x86_def_t builtin_x86_defs[] = {
             CPUID_7_0_EBX_BMI2 | CPUID_7_0_EBX_ERMS | CPUID_7_0_EBX_INVPCID |
             CPUID_7_0_EBX_RTM | CPUID_7_0_EBX_RDSEED | CPUID_7_0_EBX_ADX |
             CPUID_7_0_EBX_SMAP,
+        .features[FEAT_XSAVE] =
+            CPUID_XSAVE_XSAVEOPT,
         .xlevel = 0x8000000A,
         .model_id = "Intel Core Processor (Broadwell)",
     },
@@ -1017,6 +1040,7 @@ static x86_def_t builtin_x86_defs[] = {
              CPUID_EXT3_3DNOWPREFETCH | CPUID_EXT3_MISALIGNSSE |
              CPUID_EXT3_SSE4A | CPUID_EXT3_ABM | CPUID_EXT3_SVM |
              CPUID_EXT3_LAHF_LM,
+        /* no xsaveopt! */
         .xlevel = 0x8000001A,
         .model_id = "AMD Opteron 62xx class CPU",
     },
@@ -1051,6 +1075,7 @@ static x86_def_t builtin_x86_defs[] = {
              CPUID_EXT3_3DNOWPREFETCH | CPUID_EXT3_MISALIGNSSE |
              CPUID_EXT3_SSE4A | CPUID_EXT3_ABM | CPUID_EXT3_SVM |
              CPUID_EXT3_LAHF_LM,
+        /* no xsaveopt! */
         .xlevel = 0x8000001A,
         .model_id = "AMD Opteron 63xx class CPU",
     },
@@ -2196,7 +2221,7 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
             *eax |= kvm_mask & (XSTATE_FP | XSTATE_SSE);
             *ebx = *ecx;
         } else if (count == 1) {
-            *eax = kvm_arch_get_supported_cpuid(s, 0xd, 1, R_EAX);
+            *eax = env->features[FEAT_XSAVE];
         } else if (count < ARRAY_SIZE(ext_save_areas)) {
             const ExtSaveArea *esa = &ext_save_areas[count];
             if ((env->features[esa->feature] & esa->bits) == esa->bits &&
@@ -2540,6 +2565,7 @@ static void x86_cpu_realizefn(DeviceState *dev, Error **errp)
             );
         env->features[FEAT_8000_0001_ECX] &= TCG_EXT3_FEATURES;
         env->features[FEAT_SVM] &= TCG_SVM_FEATURES;
+        env->features[FEAT_XSAVE] = 0;
     } else {
         if ((cpu->check_cpuid || cpu->enforce_cpuid)
             && kvm_check_features_against_host(cpu) && cpu->enforce_cpuid) {
