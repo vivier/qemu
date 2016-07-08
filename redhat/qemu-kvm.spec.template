@@ -811,6 +811,15 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Fri Jul 08 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.18
+- kvm-vhost-user-disable-chardev-handlers-on-close.patch [bz#1351892]
+- kvm-char-clean-up-remaining-chardevs-when-leaving.patch [bz#1351892]
+- kvm-sockets-add-helpers-for-creating-SocketAddress-from-.patch [bz#1351892]
+- kvm-socket-unlink-unix-socket-on-remove.patch [bz#1351892]
+- kvm-char-do-not-use-atexit-cleanup-handler.patch [bz#1351892]
+- Resolves: bz#1351892
+  (vhost-user: A socket file is not deleted after VM's port is detached.)
+
 * Tue Jun 28 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.17
 - kvm-vhost-user-set-link-down-when-the-char-device-is-clo.patch [bz#1348593]
 - kvm-vhost-user-fix-use-after-free.patch [bz#1348593]
