@@ -819,6 +819,40 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Jul 08 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-12.el7
+- kvm-Fix-crash-with-__com.redhat_drive_del.patch [bz#1341531]
+- kvm-hw-arm-virt-fix-limit-of-64-bit-ACPI-ECAM-PCI-MMIO-r.patch [bz#1349337]
+- kvm-Increase-locked-memory-limit-for-all-users-not-just-.patch [bz#1350735]
+- kvm-target-i386-Remove-SSE4a-from-qemu64-CPU-model.patch [bz#1318386 bz#1321139 bz#1321139]
+- kvm-target-i386-Remove-ABM-from-qemu64-CPU-model.patch [bz#1318386 bz#1321139 bz#1321139]
+- kvm-pc-Recover-PC_RHEL7_1_COMPAT-from-RHEL-7.2-code.patch [bz#1318386 bz#1318386 bz#1321139]
+- kvm-pc-Include-missing-PC_COMPAT_2_3-entries-in-PC_RHEL7.patch [bz#1318386 bz#1318386 bz#1321139]
+- kvm-vhost-user-disable-chardev-handlers-on-close.patch [bz#1347077]
+- kvm-char-clean-up-remaining-chardevs-when-leaving.patch [bz#1347077]
+- kvm-socket-add-listen-feature.patch [bz#1347077]
+- kvm-socket-unlink-unix-socket-on-remove.patch [bz#1347077]
+- kvm-char-do-not-use-atexit-cleanup-handler.patch [bz#1347077]
+- kvm-vfio-add-pcie-extended-capability-support.patch [bz#1346688]
+- kvm-vfio-pci-Hide-SR-IOV-capability.patch [bz#1346688]
+- kvm-memory-Add-MemoryRegionIOMMUOps.notify_started-stopp.patch [bz#1346920]
+- kvm-intel_iommu-Throw-hw_error-on-notify_started.patch [bz#1346920]
+- Resolves: bz#1318386
+  (pc-rhel7.2.0 machine type definition needs some fixes)
+- Resolves: bz#1321139
+  (qemu-kvm-rhev prints warnings in the default CPU+machine-type configuration.)
+- Resolves: bz#1341531
+  (qemu gets SIGSEGV when hot-plug a scsi hostdev device with duplicate target address)
+- Resolves: bz#1346688
+  ([Q35] vfio read-only SR-IOV capability confuses OVMF)
+- Resolves: bz#1346920
+  (vIOMMU: prevent unsupported configurations with vfio)
+- Resolves: bz#1347077
+  (vhost-user: A socket file is not deleted after VM's port is detached.)
+- Resolves: bz#1349337
+  (hw/arm/virt: fix limit of 64-bit ACPI/ECAM PCI MMIO range)
+- Resolves: bz#1350735
+  (memory locking limit for regular users is too low to launch guests through libvirt)
+
 * Fri Jul 01 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-11.el7
 - kvm-Postcopy-Avoid-0-length-discards.patch [bz#1347256]
 - kvm-Migration-Split-out-ram-part-of-qmp_query_migrate.patch [bz#1347256]
