@@ -165,4 +165,10 @@ int vfio_get_region_info(VFIODevice *vbasedev, int index,
 #endif
 extern const MemoryListener vfio_prereg_listener;
 
+int vfio_spapr_create_window(VFIOContainer *container,
+                             MemoryRegionSection *section,
+                             hwaddr *pgsize);
+int vfio_spapr_remove_window(VFIOContainer *container,
+                             hwaddr offset_within_address_space);
+
 #endif /* !HW_VFIO_VFIO_COMMON_H */
