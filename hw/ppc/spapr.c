@@ -2503,6 +2503,11 @@ DEFINE_SPAPR_MACHINE(rhel730, "rhel7.3.0", true);
         .driver   = "spapr-vlan", \
         .property = "use-rx-buffer-pools", \
         .value    = "off", \
+    }, \
+    { \
+        .driver   = TYPE_SPAPR_PCI_HOST_BRIDGE,\
+        .property = "ddw",\
+        .value    = stringify(off),\
     },
 
 static void spapr_machine_rhel720_instance_options(MachineState *machine)
