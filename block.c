@@ -3656,6 +3656,11 @@ int bdrv_get_flags(BlockDriverState *bs)
     return bs->open_flags;
 }
 
+int bdrv_get_max_transfer_length(BlockDriverState *bs)
+{
+    return bs->bl.max_transfer_length;
+}
+
 int bdrv_flush_all(void)
 {
     BlockDriverState *bs;
