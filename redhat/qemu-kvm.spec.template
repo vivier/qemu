@@ -819,6 +819,29 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Jul 12 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-13.el7
+- kvm-block-gluster-add-support-for-selecting-debug-loggin.patch [bz#1320714]
+- kvm-Revert-static-checker-e1000-82540em-got-aliased-to-e.patch [bz#1353070]
+- kvm-Revert-e1000-use-alias-for-default-model.patch [bz#1353070]
+- kvm-7.x-compat-e1000-82540em.patch [bz#1353070]
+- kvm-target-i386-add-Skylake-Client-cpu-model.patch [bz#1327589]
+- kvm-scsi-generic-Merge-block-max-xfer-len-in-INQUIRY-res.patch [bz#1353816]
+- kvm-raw-posix-Fetch-max-sectors-for-host-block-device.patch [bz#1353816]
+- kvm-scsi-Advertise-limits-by-blocksize-not-512.patch [bz#1353816]
+- kvm-mirror-clarify-mirror_do_read-return-code.patch [bz#1336705]
+- kvm-mirror-limit-niov-to-IOV_MAX-elements-again.patch [bz#1336705]
+- kvm-iotests-add-small-granularity-mirror-test.patch [bz#1336705]
+- Resolves: bz#1320714
+  ([RFE] Allow the libgfapi logging level to be controlled.)
+- Resolves: bz#1327589
+  (Add Skylake CPU model)
+- Resolves: bz#1336705
+  (Drive mirror with option granularity fail)
+- Resolves: bz#1353070
+  (Migration is failed from host RHEL7.2.z to host RHEL7.3 with "-M rhel6.6.0 -device e1000-82540em")
+- Resolves: bz#1353816
+  (expose host BLKSECTGET limit in scsi-block (qemu-kvm-rhev))
+
 * Fri Jul 08 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-12.el7
 - kvm-Fix-crash-with-__com.redhat_drive_del.patch [bz#1341531]
 - kvm-hw-arm-virt-fix-limit-of-64-bit-ACPI-ECAM-PCI-MMIO-r.patch [bz#1349337]
