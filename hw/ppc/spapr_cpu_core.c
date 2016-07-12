@@ -325,7 +325,6 @@ static void spapr_cpu_core_class_init(ObjectClass *oc, void *data)
 
 /*
  * instance_init routines from different flavours of sPAPR CPU cores.
- * TODO: Add support for 'host' core type.
  */
 #define SPAPR_CPU_CORE_INITFN(_type, _fname) \
 static void glue(glue(spapr_cpu_core_, _fname), _initfn(Object *obj)) \
@@ -338,6 +337,10 @@ static void glue(glue(spapr_cpu_core_, _fname), _initfn(Object *obj)) \
     core->cpu_class = oc; \
 }
 
+#if 0 /* Disabled for Red Hat Enterprise Linux */
+SPAPR_CPU_CORE_INITFN(970_v2.2, 970);
+SPAPR_CPU_CORE_INITFN(POWER5+_v2.1, POWER5plus);
+#endif
 SPAPR_CPU_CORE_INITFN(POWER7_v2.3, POWER7);
 SPAPR_CPU_CORE_INITFN(POWER7+_v2.1, POWER7plus);
 SPAPR_CPU_CORE_INITFN(POWER8_v2.0, POWER8);
@@ -349,6 +352,14 @@ typedef struct SPAPRCoreInfo {
 } SPAPRCoreInfo;
 
 static const SPAPRCoreInfo spapr_cores[] = {
+#if 0 /* Disabled for Red Hat Enterprise Linux */
+    /* 970 */
+    { .name = "970", .initfn = spapr_cpu_core_970_initfn },
+
+    /* POWER5 */
+    { .name = "POWER5+", .initfn = spapr_cpu_core_POWER5plus_initfn },
+#endif
+
     /* POWER7 and aliases */
     { .name = "POWER7_v2.3", .initfn = spapr_cpu_core_POWER7_initfn },
     { .name = "POWER7", .initfn = spapr_cpu_core_POWER7_initfn },
