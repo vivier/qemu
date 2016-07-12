@@ -818,6 +818,12 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Jul 12 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-117.el7
+- kvm-target-i386-add-feature-flags-for-CPUID-EAX-0xd-ECX-.patch [bz#1327599]
+- kvm-target-i386-add-Skylake-Client-cpu-model.patch [bz#1327599]
+- Resolves: bz#1327599
+  (Add Skylake CPU model)
+
 * Tue Jun 28 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-116.el7
 - kvm-block-iscsi-avoid-potential-overflow-of-acb-task-cdb.patch [bz#1340929]
 - Resolves: bz#1340929
