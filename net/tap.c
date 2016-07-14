@@ -57,6 +57,7 @@ typedef struct TAPState {
     bool enabled;
     VHostNetState *vhost_net;
     unsigned host_vnet_hdr_len;
+    Notifier exit;
 } TAPState;
 
 static int launch_script(const char *setup_script, const char *ifname, int fd);
@@ -299,6 +300,15 @@ static void tap_set_offload(NetClientState *nc, int csum, int tso4,
     tap_fd_set_offload(s->fd, csum, tso4, tso6, ecn, ufo);
 }
 
+static void tap_exit_notify(Notifier *notifier, void *data)
+{
+    TAPState *s = container_of(notifier, TAPState, exit);
+
+    if (s->down_script[0]) {
+        launch_script(s->down_script, s->down_script_arg, s->fd);
+    }
+}
+
 static void tap_cleanup(NetClientState *nc)
 {
     TAPState *s = DO_UPCAST(TAPState, nc, nc);
@@ -310,8 +320,8 @@ static void tap_cleanup(NetClientState *nc)
 
     qemu_purge_queued_packets(nc);
 
-    if (s->down_script[0])
-        launch_script(s->down_script, s->down_script_arg, s->fd);
+    tap_exit_notify(&s->exit, NULL);
+    qemu_remove_exit_notifier(&s->exit);
 
     tap_read_poll(s, false);
     tap_write_poll(s, false);
@@ -381,6 +391,10 @@ static TAPState *net_tap_fd_init(NetClientState *peer,
     }
     tap_read_poll(s, true);
     s->vhost_net = NULL;
+
+    s->exit.notify = tap_exit_notify;
+    qemu_add_exit_notifier(&s->exit);
+
     return s;
 }
 
