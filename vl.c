@@ -4411,9 +4411,6 @@ int main(int argc, char **argv, char **envp)
         qemu_opts_del(icount_opts);
     }
 
-    /* clean up network at qemu process termination */
-    atexit(&net_cleanup);
-
     if (net_init_clients() < 0) {
         exit(1);
     }
@@ -4673,6 +4670,8 @@ int main(int argc, char **argv, char **envp)
 #ifdef CONFIG_TPM
     tpm_cleanup();
 #endif
+    net_cleanup();
+
     qemu_chr_cleanup();
 
     return 0;
