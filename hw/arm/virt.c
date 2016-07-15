@@ -1469,43 +1469,6 @@ static const TypeInfo rhel_machine_info = {
     .class_init    = rhel_machine_class_init,
 };
 
-static void rhel720_virt_instance_init(Object *obj)
-{
-    VirtMachineState *vms = VIRT_MACHINE(obj);
-
-    /* EL3 is disabled on RHEL 7.2.0 virt */
-    vms->secure = false;
-    /* High memory is disabled on RHEL 7.2.0 virt */
-    vms->highmem = false;
-    /* Default GIC type is v2 on RHEL 7.2.0 virt */
-    vms->gic_version = 2;
-}
-
-static void rhel720_virt_class_init(ObjectClass *oc, void *data)
-{
-    MachineClass *mc = MACHINE_CLASS(oc);
-    static GlobalProperty rhel720_compat_props[] = {
-      { /* end of list */ }
-    };
-
-    mc->desc = "RHEL 7.2.0 ARM Virtual Machine";
-    mc->alias = "virt-rhelsa7.2";
-    mc->compat_props = rhel720_compat_props;
-
-    /* override the base class init configuration */
-    mc->max_cpus = 8;
-    mc->block_default_type = IF_IDE; /* IF_IDE = 0 */
-    mc->no_cdrom = 0;
-    mc->pci_allow_0_address = false;
-}
-
-static const TypeInfo rhel720_machvirt_info = {
-    .name = MACHINE_TYPE_NAME("virt-rhel7.2.0"),
-    .parent = TYPE_VIRT_MACHINE,
-    .instance_init = rhel720_virt_instance_init,
-    .class_init = rhel720_virt_class_init,
-};
-
 static void rhel730_virt_instance_init(Object *obj)
 {
     VirtMachineState *vms = VIRT_MACHINE(obj);
@@ -1552,7 +1515,6 @@ static const TypeInfo rhel730_machvirt_info = {
 static void rhel_machine_register_types(void)
 {
     type_register_static(&rhel_machine_info);
-    type_register_static(&rhel720_machvirt_info);
     type_register_static(&rhel730_machvirt_info);
 }
 
