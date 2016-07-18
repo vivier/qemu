@@ -115,6 +115,7 @@ Requires: libseccomp >= 1.0.0
 %if 0%{!?build_only_sub:1}
 Requires: glusterfs-api >= 3.6.0
 %endif
+Requires: libusbx >= 1.0.19
 # OOM killer breaks builds with parallel make on s390(x)
 %ifarch s390 s390x
     %define _smp_mflags %{nil}
