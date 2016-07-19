@@ -818,6 +818,17 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Jul 19 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-118.el7
+- kvm-util-introduce-MIN_NON_ZERO.patch [bz#1318199]
+- kvm-BlockLimits-introduce-max_transfer_length.patch [bz#1318199]
+- kvm-block-backend-expose-bs-bl.max_transfer_length.patch [bz#1318199]
+- kvm-scsi-generic-Merge-block-max-xfer-len-in-INQUIRY-res.patch [bz#1318199]
+- kvm-raw-posix-Fetch-max-sectors-for-host-block-device.patch [bz#1318199]
+- kvm-scsi-Advertise-limits-by-blocksize-not-512.patch [bz#1318199]
+- kvm-util-Fix-MIN_NON_ZERO.patch [bz#1318199]
+- Resolves: bz#1318199
+  (expose host BLKSECTGET limit in scsi-block (qemu-kvm))
+
 * Tue Jul 12 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-117.el7
 - kvm-target-i386-add-feature-flags-for-CPUID-EAX-0xd-ECX-.patch [bz#1327599]
 - kvm-target-i386-add-Skylake-Client-cpu-model.patch [bz#1327599]
