@@ -821,6 +821,24 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Jul 19 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-14.el7
+- kvm-add-vgabios-virtio.bin-symlink.patch [bz#1347402]
+- kvm-usb-enable-streams-support.patch [bz#1033733]
+- kvm-hw-arm-virt-kill-7.2-machine-type.patch [bz#1356814]
+- kvm-blockdev-Fix-regression-with-the-default-naming-of-t.patch [bz#1353801]
+- kvm-qemu-iotests-Test-naming-of-throttling-groups.patch [bz#1353801]
+- kvm-target-i386-Show-host-and-VM-TSC-frequencies-on-mism.patch [bz#1351442]
+- Resolves: bz#1033733
+  (RFE: add support for USB-3 bulk streams - qemu-kvm)
+- Resolves: bz#1347402
+  (vgabios-virtio.bin should be symlinked in qemu-kvm-rhev)
+- Resolves: bz#1351442
+  ("TSC frequency mismatch" warning message after migration)
+- Resolves: bz#1353801
+  (The default io throttling group name is null, which makes all throttled disks with a default group name in the same group)
+- Resolves: bz#1356814
+  (AArch64: remove non-released 7.2 machine type)
+
 * Tue Jul 12 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-13.el7
 - kvm-block-gluster-add-support-for-selecting-debug-loggin.patch [bz#1320714]
 - kvm-Revert-static-checker-e1000-82540em-got-aliased-to-e.patch [bz#1353070]
