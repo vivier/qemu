@@ -811,6 +811,14 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Wed Jul 20 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.19
+- kvm-qemu-sockets-use-qapi_free_SocketAddress-in-cleanup.patch [bz#1354090]
+- kvm-tap-use-an-exit-notifier-to-call-down_script.patch [bz#1354090]
+- kvm-slirp-use-exit-notifier-for-slirp_smb_cleanup.patch [bz#1354090]
+- kvm-net-do-not-use-atexit-for-cleanup.patch [bz#1354090]
+- Resolves: bz#1354090
+  (Boot guest with vhostuser server mode, QEMU prompt 'Segmentation fault' after executing '(qemu)system_powerdown')
+
 * Fri Jul 08 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.18
 - kvm-vhost-user-disable-chardev-handlers-on-close.patch [bz#1351892]
 - kvm-char-clean-up-remaining-chardevs-when-leaving.patch [bz#1351892]
