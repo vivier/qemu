@@ -112,6 +112,8 @@ Requires(post): systemd-units
 Requires: powerpc-utils
     %endif
 %endif
+Requires: libusbx >= 1.0.19
+Requires: usbredir >= 0.7.1
 
 # OOM killer breaks builds with parallel make on s390(x)
 %ifarch s390 s390x
