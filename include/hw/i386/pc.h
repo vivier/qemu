@@ -938,6 +938,11 @@ extern void igd_passthrough_isa_bridge_create(PCIBus *bus, uint16_t gpu_dev_id);
             .driver   = TYPE_X86_CPU,\
             .property = "arat",\
             .value    = "off",\
+        },\
+        { /* PC_RHEL7_2_COMPAT */ \
+            .driver   = "usb-redir",\
+            .property = "streams",\
+            .value    = "off",\
         },
 
 
