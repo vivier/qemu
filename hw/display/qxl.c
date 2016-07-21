@@ -1243,6 +1243,7 @@ static int qxl_add_memslot(PCIQXLDevice *d, uint32_t slot_id, uint64_t delta,
     int pci_region;
     pcibus_t pci_start;
     pcibus_t pci_end;
+    MemoryRegion *mr;
     intptr_t virt_start;
     QXLDevMemSlot memslot;
     int i;
@@ -1289,11 +1290,11 @@ static int qxl_add_memslot(PCIQXLDevice *d, uint32_t slot_id, uint64_t delta,
 
     switch (pci_region) {
     case QXL_RAM_RANGE_INDEX:
-        virt_start = (intptr_t)memory_region_get_ram_ptr(&d->vga.vram);
+        mr = &d->vga.vram;
         break;
     case QXL_VRAM_RANGE_INDEX:
     case 4 /* vram 64bit */:
-        virt_start = (intptr_t)memory_region_get_ram_ptr(&d->vram_bar);
+        mr = &d->vram_bar;
         break;
     default:
         /* should not happen */
@@ -1301,6 +1302,7 @@ static int qxl_add_memslot(PCIQXLDevice *d, uint32_t slot_id, uint64_t delta,
         return 1;
     }
 
+    virt_start = (intptr_t)memory_region_get_ram_ptr(mr);
     memslot.slot_id = slot_id;
     memslot.slot_group_id = MEMSLOT_GROUP_GUEST; /* guest group */
     memslot.virt_start = virt_start + (guest_start - pci_start);
@@ -1310,7 +1312,8 @@ static int qxl_add_memslot(PCIQXLDevice *d, uint32_t slot_id, uint64_t delta,
     qxl_rom_set_dirty(d);
 
     qemu_spice_add_memslot(&d->ssd, &memslot, async);
-    d->guest_slots[slot_id].ptr = (void*)memslot.virt_start;
+    d->guest_slots[slot_id].mr = mr;
+    d->guest_slots[slot_id].offset = memslot.virt_start - virt_start;
     d->guest_slots[slot_id].size = memslot.virt_end - memslot.virt_start;
     d->guest_slots[slot_id].delta = delta;
     d->guest_slots[slot_id].active = 1;
@@ -1377,6 +1380,7 @@ void *qxl_phys2virt(PCIQXLDevice *qxl, QXLPHYSICAL pqxl, int group_id)
 {
     uint64_t offset;
     uint32_t slot;
+    void *ptr;
 
     switch (group_id) {
     case MEMSLOT_GROUP_HOST:
@@ -1386,7 +1390,10 @@ void *qxl_phys2virt(PCIQXLDevice *qxl, QXLPHYSICAL pqxl, int group_id)
         if (!qxl_get_check_slot_offset(qxl, pqxl, &slot, &offset)) {
             return NULL;
         }
-        return qxl->guest_slots[slot].ptr + offset;
+        ptr = memory_region_get_ram_ptr(qxl->guest_slots[slot].mr);
+        ptr += qxl->guest_slots[slot].offset;
+        ptr += offset;
+        return ptr;
     }
     return NULL;
 }
