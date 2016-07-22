@@ -823,6 +823,47 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Jul 22 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-15.el7
+- kvm-spapr_pci-Use-correct-DMA-LIOBN-when-composing-the-d.patch [bz#1213667]
+- kvm-spapr_iommu-Finish-renaming-vfio_accel-to-need_vfio.patch [bz#1213667]
+- kvm-spapr_iommu-Move-table-allocation-to-helpers.patch [bz#1213667]
+- kvm-vmstate-Define-VARRAY-with-VMS_ALLOC.patch [bz#1213667]
+- kvm-spapr_iommu-Introduce-enabled-state-for-TCE-table.patch [bz#1213667]
+- kvm-spapr_iommu-Migrate-full-state.patch [bz#1213667]
+- kvm-spapr_iommu-Add-root-memory-region.patch [bz#1213667]
+- kvm-spapr_pci-Reset-DMA-config-on-PHB-reset.patch [bz#1213667]
+- kvm-spapr_pci-Add-and-export-DMA-resetting-helper.patch [bz#1213667]
+- kvm-memory-Add-reporting-of-supported-page-sizes.patch [bz#1213667]
+- kvm-spapr-ensure-device-trees-are-always-associated-with.patch [bz#1213667]
+- kvm-spapr_iommu-Realloc-guest-visible-TCE-table-when-sta.patch [bz#1213667]
+- kvm-vfio-spapr-Add-DMA-memory-preregistering-SPAPR-IOMMU.patch [bz#1213667]
+- kvm-vfio-Add-host-side-DMA-window-capabilities.patch [bz#1213667]
+- kvm-vfio-spapr-Create-DMA-window-dynamically-SPAPR-IOMMU.patch [bz#1213667]
+- kvm-spapr_pci-spapr_pci_vfio-Support-Dynamic-DMA-Windows.patch [bz#1213667]
+- kvm-qemu-sockets-use-qapi_free_SocketAddress-in-cleanup.patch [bz#1354090]
+- kvm-tap-use-an-exit-notifier-to-call-down_script.patch [bz#1354090]
+- kvm-slirp-use-exit-notifier-for-slirp_smb_cleanup.patch [bz#1354090]
+- kvm-net-do-not-use-atexit-for-cleanup.patch [bz#1354090]
+- kvm-virtio-mmio-format-transport-base-address-in-BusClas.patch [bz#1356815]
+- kvm-vfio-pci-Hide-ARI-capability.patch [bz#1356376]
+- kvm-qxl-factor-out-qxl_get_check_slot_offset.patch [bz#1235732]
+- kvm-qxl-store-memory-region-and-offset-instead-of-pointe.patch [bz#1235732]
+- kvm-qxl-fix-surface-migration.patch [bz#1235732]
+- kvm-qxl-fix-qxl_set_dirty-call-in-qxl_dirty_one_surface.patch [bz#1235732]
+- kvm-Add-install-dependency-required-for-usb-streams.patch [bz#1354443]
+- Resolves: bz#1213667
+  (Dynamic DMA Windows for VFIO on Power (qemu component))
+- Resolves: bz#1235732
+  (spice-gtk shows outdated screen state after migration [qemu-kvm-rhev])
+- Resolves: bz#1354090
+  (Boot guest with vhostuser server mode, QEMU prompt 'Segmentation fault' after executing '(qemu)system_powerdown')
+- Resolves: bz#1354443
+  (/usr/libexec/qemu-kvm: undefined symbol: libusb_free_ss_endpoint_companion_descriptor)
+- Resolves: bz#1356376
+  ([Q35] Nic which passthrough from host didn't be found in guest when enable multifunction)
+- Resolves: bz#1356815
+  (AArch64: backport virtio-mmio dev pathname fix)
+
 * Tue Jul 19 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-14.el7
 - kvm-add-vgabios-virtio.bin-symlink.patch [bz#1347402]
 - kvm-usb-enable-streams-support.patch [bz#1033733]
