@@ -282,6 +282,7 @@ static void pc_q35_machine_options(MachineClass *m)
     m->default_machine_opts = "firmware=bios-256k.bin";
     m->default_display = "std";
     m->no_floppy = 1;
+    m->has_dynamic_sysbus = true;
 }
 
 static void pc_q35_2_6_machine_options(MachineClass *m)
