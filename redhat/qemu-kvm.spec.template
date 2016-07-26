@@ -818,6 +818,14 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Jul 26 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-119.el7
+- kvm-qxl-factor-out-qxl_get_check_slot_offset.patch [bz#1355730]
+- kvm-qxl-store-memory-region-and-offset-instead-of-pointe.patch [bz#1355730]
+- kvm-qxl-fix-surface-migration.patch [bz#1355730]
+- kvm-qxl-fix-qxl_set_dirty-call-in-qxl_dirty_one_surface.patch [bz#1355730]
+- Resolves: bz#1355730
+  (spice-gtk shows outdated screen state after migration [qemu-kvm])
+
 * Tue Jul 19 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-118.el7
 - kvm-util-introduce-MIN_NON_ZERO.patch [bz#1318199]
 - kvm-BlockLimits-introduce-max_transfer_length.patch [bz#1318199]
