@@ -823,6 +823,54 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Jul 26 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-16.el7
+- kvm-exec-Remove-cpu-from-cpus-list-during-cpu_exec_exit.patch [bz#1172917]
+- kvm-exec-Do-vmstate-unregistration-from-cpu_exec_exit.patch [bz#1172917]
+- kvm-cpu-Reclaim-vCPU-objects.patch [bz#1172917]
+- kvm-cpu-Add-a-sync-version-of-cpu_remove.patch [bz#1172917]
+- kvm-qdev-hotplug-Introduce-HotplugHandler.pre_plug-callb.patch [bz#1172917]
+- kvm-cpu-Abstract-CPU-core-type.patch [bz#1172917]
+- kvm-xics-xics_kvm-Handle-CPU-unplug-correctly.patch [bz#1172917]
+- kvm-spapr_drc-Prevent-detach-racing-against-attach-for-C.patch [bz#1172917]
+- kvm-qom-API-to-get-instance_size-of-a-type.patch [bz#1172917]
+- kvm-spapr-Abstract-CPU-core-device-and-type-specific-cor.patch [bz#1172917]
+- kvm-spapr-Move-spapr_cpu_init-to-spapr_cpu_core.c.patch [bz#1172917]
+- kvm-spapr-convert-boot-CPUs-into-CPU-core-devices.patch [bz#1172917]
+- kvm-spapr-CPU-hotplug-support.patch [bz#1172917]
+- kvm-spapr-CPU-hot-unplug-support.patch [bz#1172917]
+- kvm-QMP-Add-query-hotpluggable-cpus.patch [bz#1172917]
+- kvm-hmp-Add-info-hotpluggable-cpus-HMP-command.patch [bz#1172917]
+- kvm-spapr-implement-query-hotpluggable-cpus-callback.patch [bz#1172917]
+- kvm-qapi-Report-support-for-device-cpu-hotplug-in-query-.patch [bz#1172917]
+- kvm-qapi-keep-names-in-CpuInstanceProperties-in-sync-wit.patch [bz#1172917]
+- kvm-spapr-fix-write-past-end-of-array-error-in-cpu-core-.patch [bz#1172917]
+- kvm-spapr-Restore-support-for-older-PowerPC-CPU-cores.patch [bz#1172917]
+- kvm-spapr-Restore-support-for-970MP-and-POWER8NVL-CPU-co.patch [bz#1172917]
+- kvm-spapr-drop-reference-on-child-object-during-core-rea.patch [bz#1172917]
+- kvm-spapr-do-proper-error-propagation-in-spapr_cpu_core_.patch [bz#1172917]
+- kvm-spapr-drop-duplicate-variable-in-spapr_core_release.patch [bz#1172917]
+- kvm-spapr-Ensure-thread0-of-CPU-core-is-always-realized-.patch [bz#1172917]
+- kvm-spapr-fix-core-unplug-crash.patch [bz#1172917]
+- kvm-usbredir-add-streams-property.patch [bz#1353180]
+- kvm-usbredir-turn-off-streams-for-rhel7.2-older.patch [bz#1353180]
+- kvm-net-fix-qemu_announce_self-not-emitting-packets.patch [bz#1343433]
+- kvm-Fix-crash-bug-in-rebase-of__com.redhat_drive_add.patch [bz#1352865]
+- kvm-ppc-Yet-another-fix-for-the-huge-page-support-detect.patch [bz#1347498]
+- kvm-ppc-Huge-page-detection-mechanism-fixes-Episode-III.patch [bz#1347498]
+- kvm-hw-ppc-spapr-Make-sure-to-close-the-htab_fd-when-mig.patch [bz#1354341]
+- Resolves: bz#1172917
+  (add support for CPU hotplugging (qemu-kvm-rhev))
+- Resolves: bz#1343433
+  (migration: announce_self fix)
+- Resolves: bz#1347498
+  ([ppc64le] Guest can't boot up with hugepage memdev)
+- Resolves: bz#1352865
+  (Boot guest with two virtio-scsi-pci devices and spice, QEMU core dump after executing '(qemu)__com.redhat_drive_add')
+- Resolves: bz#1353180
+  (7.3->7.2 migration: qemu-kvm: usbredirparser: error unserialize caps mismatch)
+- Resolves: bz#1354341
+  (guest hang after cancel migration then migrate again)
+
 * Fri Jul 22 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-15.el7
 - kvm-spapr_pci-Use-correct-DMA-LIOBN-when-composing-the-d.patch [bz#1213667]
 - kvm-spapr_iommu-Finish-renaming-vfio_accel-to-need_vfio.patch [bz#1213667]
