@@ -860,6 +860,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Wed Jul 27 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.6
+- kvm-virtio-error-out-if-guest-exceeds-virtqueue-size.patch [bz#1359728]
+- Resolves: bz#1359728
+  (EMBARGOED CVE-2016-5403 qemu-kvm: Qemu: virtio: unbounded memory allocation on host via guest leading to DoS [rhel-7.2.z])
+
 * Fri Jul 01 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.5
 - kvm-vga-add-sr_vbe-register-set.patch [bz#1347527]
 - Resolves: bz#1347527
