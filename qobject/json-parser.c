@@ -64,19 +64,6 @@ static JSONTokenType token_get_type(QObject *obj)
     return qdict_get_int(qobject_to_qdict(obj), "type");
 }
 
-static int token_is_operator(QObject *obj, char op)
-{
-    const char *val;
-
-    if (token_get_type(obj) != JSON_OPERATOR) {
-        return 0;
-    }
-
-    val = token_get_value(obj);
-
-    return (val[0] == op) && (val[1] == 0);
-}
-
 static int token_is_keyword(QObject *obj, const char *value)
 {
     if (token_get_type(obj) != JSON_KEYWORD) {
@@ -385,7 +372,7 @@ static int parse_pair(JSONParserContext *ctxt, QDict *dict, va_list *ap)
         goto out;
     }
 
-    if (!token_is_operator(token, ':')) {
+    if (token_get_type(token) != JSON_COLON) {
         parse_error(ctxt, token, "missing : in object pair");
         goto out;
     }
@@ -420,7 +407,7 @@ static QObject *parse_object(JSONParserContext *ctxt, va_list *ap)
         goto out;
     }
 
-    if (!token_is_operator(token, '{')) {
+    if (token_get_type(token) != JSON_LCURLY) {
         goto out;
     }
 
@@ -432,7 +419,7 @@ static QObject *parse_object(JSONParserContext *ctxt, va_list *ap)
         goto out;
     }
 
-    if (!token_is_operator(peek, '}')) {
+    if (token_get_type(peek) != JSON_RCURLY) {
         if (parse_pair(ctxt, dict, ap) == -1) {
             goto out;
         }
@@ -443,8 +430,8 @@ static QObject *parse_object(JSONParserContext *ctxt, va_list *ap)
             goto out;
         }
 
-        while (!token_is_operator(token, '}')) {
-            if (!token_is_operator(token, ',')) {
+        while (token_get_type(token) != JSON_RCURLY) {
+            if (token_get_type(token) != JSON_COMMA) {
                 parse_error(ctxt, token, "expected separator in dict");
                 goto out;
             }
@@ -482,7 +469,7 @@ static QObject *parse_array(JSONParserContext *ctxt, va_list *ap)
         goto out;
     }
 
-    if (!token_is_operator(token, '[')) {
+    if (token_get_type(token) != JSON_LSQUARE) {
         goto out;
     }
 
@@ -494,7 +481,7 @@ static QObject *parse_array(JSONParserContext *ctxt, va_list *ap)
         goto out;
     }
 
-    if (!token_is_operator(peek, ']')) {
+    if (token_get_type(peek) != JSON_RSQUARE) {
         QObject *obj;
 
         obj = parse_value(ctxt, ap);
@@ -511,8 +498,8 @@ static QObject *parse_array(JSONParserContext *ctxt, va_list *ap)
             goto out;
         }
 
-        while (!token_is_operator(token, ']')) {
-            if (!token_is_operator(token, ',')) {
+        while (token_get_type(token) != JSON_RSQUARE) {
+            if (token_get_type(token) != JSON_COMMA) {
                 parse_error(ctxt, token, "expected separator in list");
                 goto out;
             }
