@@ -4514,7 +4514,7 @@ static void qmp_call_cmd(Monitor *mon, const mon_cmd_t *cmd,
     qobject_decref(data);
 }
 
-static void handle_qmp_command(JSONMessageParser *parser, QList *tokens)
+static void handle_qmp_command(JSONMessageParser *parser, GQueue *tokens)
 {
     int err;
     QObject *obj;
