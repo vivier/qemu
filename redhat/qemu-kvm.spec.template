@@ -811,6 +811,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Wed Jul 27 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.20
+- kvm-virtio-error-out-if-guest-exceeds-virtqueue-size.patch [bz#1359731]
+- Resolves: bz#1359731
+  (EMBARGOED CVE-2016-5403 qemu-kvm-rhev: Qemu: virtio: unbounded memory allocation on host via guest leading to DoS [rhel-7.2.z])
+
 * Wed Jul 20 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.19
 - kvm-qemu-sockets-use-qapi_free_SocketAddress-in-cleanup.patch [bz#1354090]
 - kvm-tap-use-an-exit-notifier-to-call-down_script.patch [bz#1354090]
