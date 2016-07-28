@@ -142,7 +142,6 @@ static inline bool ivshmem_is_master(IVShmemState *s)
     return s->master == ON_OFF_AUTO_ON;
 }
 
-
 static void ivshmem_update_irq(IVShmemState *s)
 {
     PCIDevice *d = PCI_DEVICE(s);
@@ -818,7 +817,6 @@ static void ivshmem_disable_irqfd(IVShmemState *s)
     }
 
     msix_unset_vector_notifiers(pdev);
-    return;
 }
 
 static void ivshmem_write_config(PCIDevice *pdev, uint32_t address,
