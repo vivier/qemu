@@ -1659,6 +1659,8 @@ static int kvm_put_msrs(X86CPU *cpu, int level)
             }
         }
         if (has_msr_mtrr) {
+            uint64_t phys_mask = MAKE_64BIT_MASK(0, cpu->phys_bits);
+
             kvm_msr_entry_set(&msrs[n++], MSR_MTRRdefType, env->mtrr_deftype);
             kvm_msr_entry_set(&msrs[n++],
                               MSR_MTRRfix64K_00000, env->mtrr_fixed[0]);
@@ -1683,10 +1685,16 @@ static int kvm_put_msrs(X86CPU *cpu, int level)
             kvm_msr_entry_set(&msrs[n++],
                               MSR_MTRRfix4K_F8000, env->mtrr_fixed[10]);
             for (i = 0; i < MSR_MTRRcap_VCNT; i++) {
+                /* The CPU GPs if we write to a bit above the physical limit of
+                 * the host CPU (and KVM emulates that)
+                 */
+                uint64_t mask = env->mtrr_var[i].mask;
+                mask &= phys_mask;
+
                 kvm_msr_entry_set(&msrs[n++],
                                   MSR_MTRRphysBase(i), env->mtrr_var[i].base);
                 kvm_msr_entry_set(&msrs[n++],
-                                  MSR_MTRRphysMask(i), env->mtrr_var[i].mask);
+                                  MSR_MTRRphysMask(i), mask);
             }
         }
 
