@@ -113,6 +113,8 @@ typedef struct X86CPU {
 
     /* if true fill the top bits of the MTRR_PHYSMASKn variable range */
     bool fill_mtrr_mask;
+    /* if true override the phys_bits value with a value read from the host */
+    bool host_phys_bits;
 
     /* Enable PMU CPUID bits. This can't be enabled by default yet because
      * it doesn't have ABI stability guarantees, as it passes all PMU CPUID
