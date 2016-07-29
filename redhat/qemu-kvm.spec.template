@@ -821,6 +821,42 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Jul 29 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-17.el7
+- kvm-Disable-mptsas1068-device.patch [bz#1333282]
+- kvm-Disable-sd-card.patch [bz#1333282]
+- kvm-Disable-rocker-device.patch [bz#1333282]
+- kvm-Disable-new-ipmi-devices.patch [bz#1333282]
+- kvm-Disable-hyperv-testdev.patch [bz#1333282]
+- kvm-Disable-allwiner_ahci-device.patch [bz#1333282]
+- kvm-Disable-igd-passthrough-i440FX.patch [bz#1333282]
+- kvm-Disable-vfio-platform-device.patch [bz#1333282]
+- kvm-tap-vhost-busy-polling-support.patch [bz#1345715 bz#1353791]
+- kvm-vl-change-runstate-only-if-new-state-is-different-fr.patch [bz#1355982]
+- kvm-virtio-error-out-if-guest-exceeds-virtqueue-size.patch [bz#1359733]
+- kvm-migration-set-state-to-post-migrate-on-failure.patch [bz#1355683]
+- kvm-block-drop-support-for-using-qcow-2-encryption-with-.patch [bz#1336659]
+- kvm-json-streamer-Don-t-leak-tokens-on-incomplete-parse.patch [bz#1360612]
+- kvm-json-streamer-fix-double-free-on-exiting-during-a-pa.patch [bz#1360612]
+- kvm-Add-dump-guest-memory.py-to-all-archs.patch [bz#1360225]
+- Resolves: bz#1333282
+  (Disable new devices in QEMU 2.6)
+- Resolves: bz#1336659
+  (Core dump when re-launch guest with encrypted block device)
+- Resolves: bz#1345715
+  (Busy polling support for vhost net in qemu)
+- Resolves: bz#1353791
+  (Busy polling support for vhost)
+- Resolves: bz#1355683
+  (qemu core dump when do postcopy migration again after canceling a migration in postcopy phase)
+- Resolves: bz#1355982
+  (qemu will abort after type two"system_reset" after the guest poweroff)
+- Resolves: bz#1359733
+  (CVE-2016-5403 qemu-kvm-rhev: Qemu: virtio: unbounded memory allocation on host via guest leading to DoS [rhel-7.3])
+- Resolves: bz#1360225
+  (Can't extract guest memory dump from qemu core)
+- Resolves: bz#1360612
+  (Memory leak on incomplete JSON parse)
+
 * Tue Jul 26 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-16.el7
 - kvm-exec-Remove-cpu-from-cpus-list-during-cpu_exec_exit.patch [bz#1172917]
 - kvm-exec-Do-vmstate-unregistration-from-cpu_exec_exit.patch [bz#1172917]
