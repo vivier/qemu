@@ -1939,6 +1939,7 @@ static int kvm_get_msrs(X86CPU *cpu)
     } msr_data;
     struct kvm_msr_entry *msrs = msr_data.entries;
     int ret, i, n;
+    uint64_t mtrr_top_bits;
 
     n = 0;
     msrs[n++].index = MSR_IA32_SYSENTER_CS;
@@ -2091,6 +2092,30 @@ static int kvm_get_msrs(X86CPU *cpu)
     }
 
     assert(ret == n);
+    /*
+     * MTRR masks: Each mask consists of 5 parts
+     * a  10..0: must be zero
+     * b  11   : valid bit
+     * c n-1.12: actual mask bits
+     * d  51..n: reserved must be zero
+     * e  63.52: reserved must be zero
+     *
+     * 'n' is the number of physical bits supported by the CPU and is
+     * apparently always <= 52.   We know our 'n' but don't know what
+     * the destinations 'n' is; it might be smaller, in which case
+     * it masks (c) on loading. It might be larger, in which case
+     * we fill 'd' so that d..c is consistent irrespetive of the 'n'
+     * we're migrating to.
+     */
+
+    if (cpu->fill_mtrr_mask) {
+        QEMU_BUILD_BUG_ON(TARGET_PHYS_ADDR_SPACE_BITS > 52);
+        assert(cpu->phys_bits <= TARGET_PHYS_ADDR_SPACE_BITS);
+        mtrr_top_bits = MAKE_64BIT_MASK(cpu->phys_bits, 52 - cpu->phys_bits);
+    } else {
+        mtrr_top_bits = 0;
+    }
+
     for (i = 0; i < ret; i++) {
         uint32_t index = msrs[i].index;
         switch (index) {
@@ -2286,7 +2311,8 @@ static int kvm_get_msrs(X86CPU *cpu)
             break;
         case MSR_MTRRphysBase(0) ... MSR_MTRRphysMask(MSR_MTRRcap_VCNT - 1):
             if (index & 1) {
-                env->mtrr_var[MSR_MTRRphysIndex(index)].mask = msrs[i].data;
+                env->mtrr_var[MSR_MTRRphysIndex(index)].mask = msrs[i].data |
+                                                               mtrr_top_bits;
             } else {
                 env->mtrr_var[MSR_MTRRphysIndex(index)].base = msrs[i].data;
             }

@@ -111,6 +111,9 @@ typedef struct X86CPU {
     /* Number of physical address bits supported */
     uint32_t phys_bits;
 
+    /* if true fill the top bits of the MTRR_PHYSMASKn variable range */
+    bool fill_mtrr_mask;
+
     /* Enable PMU CPUID bits. This can't be enabled by default yet because
      * it doesn't have ABI stability guarantees, as it passes all PMU CPUID
      * bits returned by GET_SUPPORTED_CPUID (that depend on host CPU and kernel
