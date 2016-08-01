@@ -615,6 +615,9 @@ static void piix4_ospm_status(AcpiDeviceIf *adev, ACPIOSTInfoList ***list)
     PIIX4PMState *s = PIIX4_PM(adev);
 
     acpi_memory_ospm_status(&s->acpi_memory_hotplug, list);
+    if (!s->cpu_hotplug_legacy) {
+        acpi_cpu_ospm_status(&s->cpuhp_state, list);
+    }
 }
 
 static void piix4_send_gpe(AcpiDeviceIf *adev, AcpiEventStatusBits ev)
