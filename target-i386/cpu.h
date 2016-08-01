@@ -1136,7 +1136,6 @@ void x86_cpu_exec_exit(CPUState *cpu);
 
 X86CPU *cpu_x86_init(const char *cpu_model);
 X86CPU *cpu_x86_create(const char *cpu_model, Error **errp);
-int cpu_x86_exec(CPUState *cpu);
 void x86_cpu_list(FILE *f, fprintf_function cpu_fprintf);
 void x86_cpudef_setup(void);
 int cpu_x86_support_mca_broadcast(CPUX86State *env);
@@ -1315,7 +1314,6 @@ uint64_t cpu_get_tsc(CPUX86State *env);
 
 #define cpu_init(cpu_model) CPU(cpu_x86_init(cpu_model))
 
-#define cpu_exec cpu_x86_exec
 #define cpu_signal_handler cpu_x86_signal_handler
 #define cpu_list x86_cpu_list
 #define cpudef_setup x86_cpudef_setup
