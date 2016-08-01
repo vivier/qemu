@@ -1094,6 +1094,10 @@ struct X86CPU {
     struct DeviceState *apic_state;
     struct MemoryRegion *cpu_as_root, *cpu_as_mem, *smram;
     Notifier machine_done;
+
+    int32_t socket_id;
+    int32_t core_id;
+    int32_t thread_id;
 };
 
 static inline X86CPU *x86_env_get_cpu(CPUX86State *env)
