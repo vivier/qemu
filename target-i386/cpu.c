@@ -2921,7 +2921,7 @@ static void x86_cpu_realizefn(DeviceState *dev, Error **errp)
         goto out;
     }
 
-    if (cpu->apic_id < 0) {
+    if (cpu->apic_id == UNASSIGNED_APIC_ID) {
         error_setg(errp, "apic-id property was not initialized properly");
         return;
     }
@@ -3255,7 +3255,7 @@ static void x86_cpu_initfn(Object *obj)
 
 #ifndef CONFIG_USER_ONLY
     /* Any code creating new X86CPU objects have to set apic-id explicitly */
-    cpu->apic_id = -1;
+    cpu->apic_id = UNASSIGNED_APIC_ID;
 #endif
 
     for (w = 0; w < FEATURE_WORDS; w++) {
