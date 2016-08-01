@@ -1681,7 +1681,7 @@ static void pc_machine_rhel630_options(MachineClass *m)
     pc_machine_rhel640_options(m);
     m->family = "pc_piix_Z";
     m->desc = "RHEL 6.3.0 PC";
-    SET_MACHINE_COMPAT(m, PC_RHEL6_6_COMPAT);
+    SET_MACHINE_COMPAT(m, PC_RHEL6_3_COMPAT);
 }
 
 DEFINE_PC_MACHINE(rhel630, "rhel6.3.0", pc_init_rhel630,
