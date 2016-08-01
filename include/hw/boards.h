@@ -118,7 +118,7 @@ struct MachineClass {
     const char *default_machine_opts;
     const char *default_boot_order;
     const char *default_display;
-    GlobalProperty *compat_props;
+    GArray *compat_props;
     const char *hw_version;
     ram_addr_t default_ram_size;
     bool option_rom_has_mr;
@@ -190,20 +190,17 @@ struct MachineState {
 
 #define SET_MACHINE_COMPAT(m, COMPAT) \
     do {                              \
+        int i;                        \
         static GlobalProperty props[] = {       \
             COMPAT                              \
             { /* end of list */ }               \
         };                                      \
-        (m)->compat_props = props;              \
+        if (!m->compat_props) { \
+            m->compat_props = g_array_new(false, false, sizeof(void *)); \
+        } \
+        for (i = 0; props[i].driver != NULL; i++) {    \
+            GlobalProperty *prop = &props[i];          \
+            g_array_append_val(m->compat_props, prop); \
+        }                                              \
     } while (0)
-
-#define SET_MACHINE_COMPAT(m, COMPAT) \
-    do {                              \
-        static GlobalProperty props[] = {       \
-            COMPAT                              \
-            { /* end of list */ }               \
-        };                                      \
-        (m)->compat_props = props;              \
-    } while (0)
-
 #endif

@@ -1418,13 +1418,9 @@ static void virt_2_6_instance_init(Object *obj)
 static void virt_2_6_class_init(ObjectClass *oc, void *data)
 {
     MachineClass *mc = MACHINE_CLASS(oc);
-    static GlobalProperty compat_props[] = {
-        { /* end of list */ }
-    };
 
     mc->desc = "QEMU 2.6 ARM Virtual Machine";
     mc->alias = "virt";
-    mc->compat_props = compat_props;
 }
 
 static const TypeInfo machvirt_info = {
@@ -1495,14 +1491,10 @@ static void rhel730_virt_instance_init(Object *obj)
 static void rhel730_virt_class_init(ObjectClass *oc, void *data)
 {
     MachineClass *mc = MACHINE_CLASS(oc);
-    static GlobalProperty rhel730_compat_props[] = {
-      { /* end of list */ }
-    };
 
     mc->desc = "RHEL 7.3.0 ARM Virtual Machine";
     mc->alias = "virt";
     mc->is_default = 1;
-    mc->compat_props = rhel730_compat_props;
 }
 
 static const TypeInfo rhel730_machvirt_info = {
