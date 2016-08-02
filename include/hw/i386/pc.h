@@ -862,7 +862,20 @@ bool e820_get_entry(int, uint32_t, uint64_t *, uint64_t *);
 extern void igd_passthrough_isa_bridge_create(PCIBus *bus, uint16_t gpu_dev_id);
 
 /* See include/hw/compat.h for shared compatibility lists */
+
+/* This macro is for changes to properties that are RHEL specific,
+ * different to the current upstream and to be applied to the latest
+ * machine type.
+ */
+#define PC_RHEL_COMPAT \
+        { /* PC_RHEL_COMPAT */ \
+            .driver = TYPE_X86_CPU,\
+            .property = "host-phys-bits",\
+            .value = "on",\
+        },
+
 #define PC_RHEL7_2_COMPAT \
+        PC_RHEL_COMPAT \
         HW_COMPAT_RHEL7_2 \
 	{\
 		.driver = "phenom" "-" TYPE_X86_CPU,\

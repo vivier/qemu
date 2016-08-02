@@ -1099,6 +1099,7 @@ static void pc_machine_rhel730_options(MachineClass *m)
     m->is_default = 1;
     m->default_machine_opts = "firmware=bios-256k.bin";
     m->default_display = "std";
+    SET_MACHINE_COMPAT(m, PC_RHEL_COMPAT);
 }
 
 DEFINE_PC_MACHINE(rhel730, "pc-i440fx-rhel7.3.0", pc_init_rhel730,

@@ -340,6 +340,7 @@ static void pc_q35_machine_rhel730_options(MachineClass *m)
     m->default_display = "std";
     m->no_floppy = 1;
     m->has_dynamic_sysbus = true;
+    SET_MACHINE_COMPAT(m, PC_RHEL_COMPAT);
 }
 
 DEFINE_PC_MACHINE(q35_rhel730, "pc-q35-rhel7.3.0", pc_q35_init_rhel730,

@@ -2663,24 +2663,11 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
         break;
     case 0x80000008:
         /* virtual & phys address size in low 2 bytes. */
-#if 1
-        /* ! This block gets removed later in the patch series ! */
-        if (env->features[FEAT_8000_0001_EDX] & CPUID_EXT2_LM) {
-            /* 64 bit processor */
-            *eax = 0x00003028; /* 48 bits virtual, 40 bits physical */
-            if (kvm_enabled()) {
-                uint32_t _eax;
-                host_cpuid(0x80000000, 0, &_eax, NULL, NULL, NULL);
-                if (_eax >= 0x80000008)
-                    host_cpuid(0x80000008, 0, eax, NULL, NULL, NULL);
-            }
-#else
         if (env->features[FEAT_8000_0001_EDX] & CPUID_EXT2_LM) {
             /* 64 bit processor, 48 bits virtual, configurable
              * physical bits.
              */
             *eax = 0x00003000 + cpu->phys_bits;
-#endif
         } else {
             *eax = cpu->phys_bits;
         }
