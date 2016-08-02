@@ -860,6 +860,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Tue Aug 02 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.7
+- kvm-block-iscsi-avoid-potential-overflow-of-acb-task-cdb.patch [bz#1358996]
+- Resolves: bz#1358996
+  (CVE-2016-5126 qemu-kvm: Qemu: block: iscsi: buffer overflow in iscsi_aio_ioctl [rhel-7.2.z])
+
 * Wed Jul 27 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.6
 - kvm-virtio-error-out-if-guest-exceeds-virtqueue-size.patch [bz#1359728]
 - Resolves: bz#1359728
