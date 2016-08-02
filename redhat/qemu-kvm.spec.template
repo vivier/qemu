@@ -819,6 +819,28 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Aug 02 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-121.el7
+- kvm-json-parser-drop-superfluous-assignment-for-token-va.patch [bz#1276036]
+- kvm-qjson-Apply-nesting-limit-more-sanely.patch [bz#1276036]
+- kvm-qjson-Don-t-crash-when-input-exceeds-nesting-limit.patch [bz#1276036]
+- kvm-check-qjson-Add-test-for-JSON-nesting-depth-limit.patch [bz#1276036]
+- kvm-qjson-Spell-out-some-silent-assumptions.patch [bz#1276036]
+- kvm-qjson-Give-each-of-the-six-structural-chars-its-own-.patch [bz#1276036]
+- kvm-qjson-Inline-token_is_keyword-and-simplify.patch [bz#1276036]
+- kvm-qjson-Inline-token_is_escape-and-simplify.patch [bz#1276036]
+- kvm-qjson-replace-QString-in-JSONLexer-with-GString.patch [bz#1276036]
+- kvm-qjson-Convert-to-parser-to-recursive-descent.patch [bz#1276036]
+- kvm-qjson-store-tokens-in-a-GQueue.patch [bz#1276036]
+- kvm-qjson-surprise-allocating-6-QObjects-per-token-is-ex.patch [bz#1276036]
+- kvm-qjson-Limit-number-of-tokens-in-addition-to-total-si.patch [bz#1276036]
+- kvm-json-streamer-Don-t-leak-tokens-on-incomplete-parse.patch [bz#1276036]
+- kvm-json-streamer-fix-double-free-on-exiting-during-a-pa.patch [bz#1276036]
+- kvm-trace-remove-malloc-tracing.patch [bz#1360137]
+- Resolves: bz#1276036
+  (Crash on QMP input exceeding limits)
+- Resolves: bz#1360137
+  (GLib-WARNING **: gmem.c:482: custom memory allocation vtable not supported)
+
 * Fri Jul 29 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-120.el7
 - kvm-Add-install-dependency-to-newer-libusbx-version.patch [bz#1351106]
 - kvm-virtio-error-out-if-guest-exceeds-virtqueue-size.patch [bz#1359729]
