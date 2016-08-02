@@ -821,6 +821,57 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Aug 02 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-18.el7
+- kvm-pci-fix-unaligned-access-in-pci_xxx_quad.patch [bz#1343092]
+- kvm-msix-make-msix_clr_pending-visible-for-clients.patch [bz#1343092]
+- kvm-pci-Introduce-define-for-PM-capability-version-1.1.patch [bz#1343092]
+- kvm-pcie-Add-support-for-PCIe-CAP-v1.patch [bz#1343092]
+- kvm-pcie-Introduce-function-for-DSN-capability-creation.patch [bz#1343092]
+- kvm-vmxnet3-Use-generic-function-for-DSN-capability-defi.patch [bz#1343092]
+- kvm-net-Introduce-Toeplitz-hash-calculator.patch [bz#1343092]
+- kvm-net-Add-macros-for-MAC-address-tracing.patch [bz#1343092]
+- kvm-vmxnet3-Use-common-MAC-address-tracing-macros.patch [bz#1343092]
+- kvm-net_pkt-Name-vmxnet3-packet-abstractions-more-generi.patch [bz#1343092]
+- kvm-rtl8139-Move-more-TCP-definitions-to-common-header.patch [bz#1343092]
+- kvm-net_pkt-Extend-packet-abstraction-as-required-by-e10.patch [bz#1343092]
+- kvm-vmxnet3-Use-pci_dma_-API-instead-of-cpu_physical_mem.patch [bz#1343092]
+- kvm-e1000_regs-Add-definitions-for-Intel-82574-specific-.patch [bz#1343092]
+- kvm-e1000-Move-out-code-that-will-be-reused-in-e1000e.patch [bz#1343092]
+- kvm-net-Introduce-e1000e-device-emulation.patch [bz#1343092]
+- kvm-e1000e-Fix-build-with-gcc-4.6.3-and-ust-tracing.patch [bz#1343092]
+- kvm-pci-fix-pci_requester_id.patch [bz#1350196]
+- kvm-hw-pci-delay-bus_master_enable_region-initialization.patch [bz#1350196]
+- kvm-q35-allow-dynamic-sysbus.patch [bz#1350196]
+- kvm-q35-rhel-allow-dynamic-sysbus.patch [bz#1350196]
+- kvm-hw-iommu-enable-iommu-with-device.patch [bz#1350196]
+- kvm-machine-remove-iommu-property.patch [bz#1350196]
+- kvm-rhel-Revert-unwanted-inconsequential-changes-to-ivsh.patch [bz#1333318]
+- kvm-rhel-Disable-ivshmem-plain-migration-ivshmem-doorbel.patch [bz#1333318]
+- kvm-nvdimm-fix-memory-leak-in-error-code-path.patch [bz#1361205]
+- kvm-i8257-Set-no-user-flag.patch [bz#1337457]
+- kvm-bitops-Add-MAKE_64BIT_MASK-macro.patch [bz#1339196]
+- kvm-target-i386-Provide-TCG_PHYS_ADDR_BITS.patch [bz#1339196]
+- kvm-target-i386-Allow-physical-address-bits-to-be-set.patch [bz#1339196]
+- kvm-target-i386-Mask-mtrr-mask-based-on-CPU-physical-add.patch [bz#1339196]
+- kvm-target-i386-Fill-high-bits-of-mtrr-mask.patch [bz#1339196]
+- kvm-target-i386-Set-physical-address-bits-based-on-host.patch [bz#1339196]
+- kvm-target-i386-Enable-host-phys-bits-on-RHEL.patch [bz#1339196]
+- kvm-pc-Fix-rhel6.3.0-compat_props-setting.patch [bz#1362264]
+- Resolves: bz#1333318
+  (ivshmem-plain support in RHEL 7.3)
+- Resolves: bz#1337457
+  (enable i8257 device)
+- Resolves: bz#1339196
+  (qemu-kvm (on target host) killed by SIGABRT when migrating a guest from AMD host to Intel host.)
+- Resolves: bz#1343092
+  (RFE: Integrate e1000e implementation in downstream QEMU)
+- Resolves: bz#1350196
+  (Enable IOMMU device with -device intel-iommu)
+- Resolves: bz#1361205
+  (nvdimm: fix memory leak in error code path)
+- Resolves: bz#1362264
+  (rhel6.3.0 machine-type using wrong compat_props list)
+
 * Fri Jul 29 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-17.el7
 - kvm-Disable-mptsas1068-device.patch [bz#1333282]
 - kvm-Disable-sd-card.patch [bz#1333282]
