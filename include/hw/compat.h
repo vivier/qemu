@@ -192,5 +192,13 @@
             .driver   = "isa-fdc",\
             .property = "fallback",\
             .value    = "144",\
+        },{ /* HW_COMPAT_RHEL7_2 */ \
+            .driver   = "virtio-pci",\
+            .property = "disable-modern",\
+            .value    = "on",\
+        },{ /* HW_COMPAT_RHEL7_2 */ \
+            .driver   = "virtio-pci",\
+            .property = "disable-legacy",\
+            .value    = "off",\
         },
 #endif /* HW_COMPAT_H */
