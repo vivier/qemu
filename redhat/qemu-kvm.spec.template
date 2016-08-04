@@ -92,7 +92,7 @@ Requires: sgabios-bin
 %endif
 %ifnarch aarch64
 Requires: seavgabios-bin >= 1.9.1-4
-Requires: ipxe-roms-qemu
+Requires: ipxe-roms-qemu >= 20160127-4
 %endif
 %ifarch %{power64}
 Requires: SLOF >= %{SLOF_gittagdate}-1.git%{SLOF_gittagcommit}
@@ -621,6 +621,7 @@ pxe_link ne2k_pci 10ec8029
 pxe_link pcnet 10222000
 pxe_link rtl8139 10ec8139
 pxe_link virtio 1af41000
+pxe_link e1000e 808610d3
 %endif
 
 rom_link() {
@@ -762,6 +763,7 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
     %{_datadir}/%{pkgname}/vgabios-vmware.bin
     %{_datadir}/%{pkgname}/vgabios-virtio.bin
     %{_datadir}/%{pkgname}/pxe-e1000.rom
+    %{_datadir}/%{pkgname}/pxe-e1000e.rom
     %{_datadir}/%{pkgname}/pxe-virtio.rom
     %{_datadir}/%{pkgname}/pxe-pcnet.rom
     %{_datadir}/%{pkgname}/pxe-rtl8139.rom
