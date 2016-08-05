@@ -1130,6 +1130,8 @@ static void pc_machine_rhel720_options(MachineClass *m)
     pcmc->save_tsc_khz = false;
     m->legacy_fw_cfg_order = 1;
     /* Note: broken_reserved_end was already in 7.2 */
+    /* From pc_i440fx_2_6_machine_options */
+    pcmc->legacy_cpu_hotplug = true;
     SET_MACHINE_COMPAT(m, PC_RHEL7_2_COMPAT);
 }
 
