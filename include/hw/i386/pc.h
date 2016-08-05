@@ -960,7 +960,7 @@ extern void igd_passthrough_isa_bridge_create(PCIBus *bus, uint16_t gpu_dev_id);
             .value = "off",\
         },\
         { /* PC_RHEL7_2_COMPAT */ \
-            .driver   = "apic",\
+            .driver   = "apic-common",\
             .property = "legacy-instance-id",\
             .value    = "on",\
         },
