@@ -823,6 +823,127 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Aug 05 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-19.el7
+- kvm-hw-pcie-root-port-Fix-PCIe-root-port-initialization.patch [bz#1323976]
+- kvm-hw-pxb-declare-pxb-devices-as-not-hot-pluggable.patch [bz#1323976]
+- kvm-hw-acpi-fix-a-DSDT-table-issue-when-a-pxb-is-present.patch [bz#1323976]
+- kvm-acpi-refactor-pxb-crs-computation.patch [bz#1323976]
+- kvm-hw-apci-handle-64-bit-MMIO-regions-correctly.patch [bz#1323976]
+- kvm-target-i386-Move-TCG-initialization-check-to-tcg_x86.patch [bz#1087672]
+- kvm-target-i386-Move-TCG-initialization-to-realize-time.patch [bz#1087672]
+- kvm-target-i386-Call-cpu_exec_init-on-realize.patch [bz#1087672]
+- kvm-tests-acpi-report-names-of-expected-files-in-verbose.patch [bz#1087672]
+- kvm-acpi-add-aml_debug.patch [bz#1087672]
+- kvm-acpi-add-aml_refof.patch [bz#1087672]
+- kvm-pc-acpi-remove-AML-for-empty-not-used-GPE-handlers.patch [bz#1087672]
+- kvm-pc-acpi-consolidate-CPU-hotplug-AML.patch [bz#1087672]
+- kvm-pc-acpi-consolidate-GPE._E02-with-the-rest-of-CPU-ho.patch [bz#1087672]
+- kvm-pc-acpi-cpu-hotplug-make-AML-CPU_foo-defines-local-t.patch [bz#1087672]
+- kvm-pc-acpi-mark-current-CPU-hotplug-functions-as-legacy.patch [bz#1087672]
+- kvm-pc-acpi-consolidate-legacy-CPU-hotplug-in-one-file.patch [bz#1087672]
+- kvm-pc-acpi-simplify-build_legacy_cpu_hotplug_aml-signat.patch [bz#1087672]
+- kvm-pc-acpi-cpuhp-legacy-switch-ProcessorID-to-possible_.patch [bz#1087672]
+- kvm-acpi-extend-ACPI-interface-to-provide-send_event-hoo.patch [bz#1087672]
+- kvm-pc-use-AcpiDeviceIfClass.send_event-to-issue-GPE-eve.patch [bz#1087672]
+- kvm-target-i386-Remove-xlevel-hv-spinlocks-option-fixups.patch [bz#1087672]
+- kvm-target-i386-Move-features-logic-that-requires-CPUSta.patch [bz#1087672]
+- kvm-target-i386-Remove-assert-kvm_enabled-from-host_x86_.patch [bz#1087672]
+- kvm-target-i386-Move-xcc-kvm_required-check-to-realize-t.patch [bz#1087672]
+- kvm-target-i386-Use-cpu_generic_init-in-cpu_x86_init.patch [bz#1087672]
+- kvm-target-i386-Consolidate-calls-of-object_property_par.patch [bz#1087672]
+- kvm-docs-update-ACPI-CPU-hotplug-spec-with-new-protocol.patch [bz#1087672]
+- kvm-pc-piix4-ich9-add-cpu-hotplug-legacy-property.patch [bz#1087672]
+- kvm-acpi-cpuhp-add-CPU-devices-AML-with-_STA-method.patch [bz#1087672]
+- kvm-pc-acpi-introduce-AcpiDeviceIfClass.madt_cpu-hook.patch [bz#1087672]
+- kvm-acpi-cpuhp-implement-hot-add-parts-of-CPU-hotplug-in.patch [bz#1087672]
+- kvm-acpi-cpuhp-implement-hot-remove-parts-of-CPU-hotplug.patch [bz#1087672]
+- kvm-acpi-cpuhp-add-cpu._OST-handling.patch [bz#1087672]
+- kvm-pc-use-new-CPU-hotplug-interface-since-2.7-machine-t.patch [bz#1087672]
+- kvm-pc-acpi-drop-intermediate-PCMachineState.node_cpu.patch [bz#1087672]
+- kvm-qmp-fix-spapr-example-of-query-hotpluggable-cpus.patch [bz#1087672]
+- kvm-qdev-Don-t-stop-applying-globals-on-first-error.patch [bz#1087672]
+- kvm-qdev-Eliminate-qemu_add_globals-function.patch [bz#1087672]
+- kvm-qdev-Use-GList-for-global-properties.patch [bz#1087672]
+- kvm-qdev-GlobalProperty.errp-field.patch [bz#1087672]
+- kvm-vl-Simplify-global-property-registration.patch [bz#1087672]
+- kvm-machine-add-properties-to-compat_props-incrementaly.patch [bz#1087672]
+- kvm-machine-Add-machine_register_compat_props-function.patch [bz#1087672]
+- kvm-vl-Set-errp-to-error_abort-on-machine-compat_props.patch [bz#1087672]
+- kvm-target-sparc-Use-sparc_cpu_parse_features-directly.patch [bz#1087672]
+- kvm-target-i386-Avoid-using-locals-outside-their-scope.patch [bz#1087672]
+- kvm-cpu-Use-CPUClass-parse_features-as-convertor-to-glob.patch [bz#1087672]
+- kvm-arm-virt-Parse-cpu_model-only-once.patch [bz#1087672]
+- kvm-cpu-make-cpu-qom.h-only-include-able-from-cpu.h.patch [bz#1087672]
+- kvm-target-i386-make-cpu-qom.h-not-target-specific.patch [bz#1087672]
+- kvm-target-Don-t-redefine-cpu_exec.patch [bz#1087672]
+- kvm-pc-Parse-CPU-features-only-once.patch [bz#1087672]
+- kvm-target-i386-Use-uint32_t-for-X86CPU.apic_id.patch [bz#1087672]
+- kvm-pc-Add-x86_topo_ids_from_apicid.patch [bz#1087672]
+- kvm-pc-Extract-CPU-lookup-into-a-separate-function.patch [bz#1087672]
+- kvm-pc-cpu-Consolidate-apic-id-validity-checks-in-pc_cpu.patch [bz#1087672]
+- kvm-target-i386-Replace-custom-apic-id-setter-getter-wit.patch [bz#1087672]
+- kvm-target-i386-Add-socket-core-thread-properties-to-X86.patch [bz#1087672]
+- kvm-target-i386-cpu-Do-not-ignore-error-and-fix-apic-par.patch [bz#1087672]
+- kvm-target-i386-Fix-apic-object-leak-when-CPU-is-deleted.patch [bz#1087672]
+- kvm-pc-Set-APIC-ID-based-on-socket-core-thread-ids-if-it.patch [bz#1087672]
+- kvm-pc-Delay-setting-number-of-boot-CPUs-to-machine_done.patch [bz#1087672]
+- kvm-pc-Register-created-initial-and-hotpluged-CPUs-in-on.patch [bz#1087672]
+- kvm-pc-Forbid-BSP-removal.patch [bz#1087672]
+- kvm-pc-Enforce-adding-CPUs-contiguously-and-removing-the.patch [bz#1087672]
+- kvm-pc-cpu-Allow-device_add-to-be-used-with-x86-cpu.patch [bz#1087672]
+- kvm-pc-Implement-query-hotpluggable-cpus-callback.patch [bz#1087672]
+- kvm-apic-move-MAX_APICS-check-to-apic-class.patch [bz#1087672]
+- kvm-apic-Drop-APICCommonState.idx-and-use-APIC-ID-as-ind.patch [bz#1087672]
+- kvm-apic-kvm-apic-Fix-crash-due-to-access-to-freed-memor.patch [bz#1087672]
+- kvm-apic-Add-unrealize-callbacks.patch [bz#1087672]
+- kvm-apic-Use-apic_id-as-apic-s-migration-instance_id.patch [bz#1087672]
+- kvm-target-i386-Add-x86_cpu_unrealizefn.patch [bz#1087672]
+- kvm-pc-Make-device_del-CPU-work-for-x86-CPUs.patch [bz#1087672]
+- kvm-exec-Reduce-CONFIG_USER_ONLY-ifdeffenery.patch [bz#1087672]
+- kvm-exec-Don-t-use-cpu_index-to-detect-if-cpu_exec_init-.patch [bz#1087672]
+- kvm-exec-Set-cpu_index-only-if-it-s-not-been-explictly-s.patch [bz#1087672]
+- kvm-qdev-Fix-object-reference-leak-in-case-device.realiz.patch [bz#1087672]
+- kvm-pc-Init-CPUState-cpu_index-with-index-in-possible_cp.patch [bz#1087672]
+- kvm-Revert-pc-Enforce-adding-CPUs-contiguously-and-remov.patch [bz#1087672]
+- kvm-qdev-ignore-GlobalProperty.errp-for-hotplugged-devic.patch [bz#1087672]
+- kvm-vl-exit-if-a-bad-property-value-is-passed-to-global.patch [bz#1087672]
+- kvm-apic-fix-broken-migration-for-kvm-apic.patch [bz#1087672]
+- kvm-RHEL-only-hw-char-pl011-fix-SBSA-reset.patch [bz#1266048]
+- kvm-migration-regain-control-of-images-when-migration-fa.patch [bz#1361539]
+- kvm-migration-Promote-improved-autoconverge-commands-out.patch [bz#1358141]
+- kvm-spapr-Ensure-CPU-cores-are-added-contiguously-and-re.patch [bz#1361443]
+- kvm-spapr-disintricate-core-id-from-DT-semantics.patch [bz#1361443]
+- kvm-spapr-init-CPUState-cpu_index-with-index-relative-to.patch [bz#1361443]
+- kvm-Revert-spapr-Ensure-CPU-cores-are-added-contiguously.patch [bz#1361443]
+- kvm-spapr-Prevent-boot-CPU-core-removal.patch [bz#1361443]
+- kvm-virtio-vga-propagate-on-gpu-realized-error.patch [bz#1360664]
+- kvm-hw-virtio-pci-fix-virtio-behaviour.patch [bz#1360664]
+- kvm-q35-disable-s3-s4-by-default.patch [bz#1357202]
+- kvm-pcie-fix-link-active-status-bit-migration.patch [bz#1352860]
+- kvm-pc-rhel-7.2-pcie-fix-link-active-status-bit-migratio.patch [bz#1352860]
+- kvm-add-e1000e-ipxe-rom-symlink.patch [bz#1343092]
+- kvm-e1000e-add-boot-rom.patch [bz#1343092]
+- Resolves: bz#1087672
+  ([Fujitsu 7.2 FEAT]: qemu vcpu hot-remove support)
+- Resolves: bz#1266048
+  (login prompt does not work inside KVM guest when keys are pressed while the kernel is booting)
+- Resolves: bz#1323976
+  (PCI: Add 64-bit MMIO support to PXB devices)
+- Resolves: bz#1343092
+  (RFE: Integrate e1000e implementation in downstream QEMU)
+- Resolves: bz#1352860
+  (Migration is failed from host RHEL7.2.z to host RHEL7.3 with "-M pc-i440fx-rhel7.0.0 -device nec-usb-xhci")
+- Resolves: bz#1357202
+  ([Q35] S3 should be disabled by default for the pc-q35-rhel7.3.0 machine type)
+- Resolves: bz#1358141
+  (Removal of the "x-" prefix for dynamic cpu throttling)
+- Resolves: bz#1360664
+  ([virtio] Update default virtio-1 behavior for virtio devices)
+- Resolves: bz#1361443
+  (ppc64le: Introduce stable cpu_index for cpu hotplugging)
+- Resolves: bz#1361539
+  (block/io.c:1342: bdrv_co_do_pwritev: Assertion `!(bs->open_flags & 0x0800)' failed on failed migrate)
+
 * Tue Aug 02 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-18.el7
 - kvm-pci-fix-unaligned-access-in-pci_xxx_quad.patch [bz#1343092]
 - kvm-msix-make-msix_clr_pending-visible-for-clients.patch [bz#1343092]
