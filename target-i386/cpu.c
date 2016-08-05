@@ -3077,6 +3077,8 @@ static void x86_cpu_realizefn(DeviceState *dev, Error **errp)
         }
     }
 
+    cpu_exec_init(cs, &error_abort);
+
     if (tcg_enabled()) {
         tcg_x86_init();
     }
@@ -3269,7 +3271,6 @@ static void x86_cpu_initfn(Object *obj)
     FeatureWord w;
 
     cs->env_ptr = env;
-    cpu_exec_init(cs, &error_abort);
 
     object_property_add(obj, "family", "int",
                         x86_cpuid_version_get_family,
