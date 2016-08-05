@@ -204,5 +204,9 @@
             .driver   = "virtio-pci",\
             .property = "disable-legacy",\
             .value    = "off",\
+        },{ /* HW_COMPAT_RHEL7_2 */ \
+            .driver   = TYPE_PCI_DEVICE,\
+            .property = "x-pcie-lnksta-dllla",\
+            .value    = "off",\
         },
 #endif /* HW_COMPAT_H */
