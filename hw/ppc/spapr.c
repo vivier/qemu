@@ -916,6 +916,7 @@ static void spapr_finalize_fdt(sPAPRMachineState *spapr,
                                hwaddr rtas_size)
 {
     MachineState *machine = MACHINE(qdev_get_machine());
+    MachineClass *mc = MACHINE_GET_CLASS(machine);
     sPAPRMachineClass *smc = SPAPR_MACHINE_GET_CLASS(machine);
     const char *boot_device = machine->boot_order;
     int ret, i;
@@ -998,7 +999,7 @@ static void spapr_finalize_fdt(sPAPRMachineState *spapr,
         _FDT(spapr_drc_populate_dt(fdt, 0, NULL, SPAPR_DR_CONNECTOR_TYPE_LMB));
     }
 
-    if (smc->dr_cpu_enabled) {
+    if (mc->query_hotpluggable_cpus) {
         int offset = fdt_path_offset(fdt, "/cpus");
         ret = spapr_drc_populate_dt(fdt, offset, NULL,
                                     SPAPR_DR_CONNECTOR_TYPE_CPU);
@@ -1690,6 +1691,7 @@ static void spapr_validate_node_memory(MachineState *machine, Error **errp)
 static void ppc_spapr_init(MachineState *machine)
 {
     sPAPRMachineState *spapr = SPAPR_MACHINE(machine);
+    MachineClass *mc = MACHINE_GET_CLASS(machine);
     sPAPRMachineClass *smc = SPAPR_MACHINE_GET_CLASS(machine);
     const char *kernel_filename = machine->kernel_filename;
     const char *kernel_cmdline = machine->kernel_cmdline;
@@ -1711,7 +1713,7 @@ static void ppc_spapr_init(MachineState *machine)
     int spapr_cores = smp_cpus / smp_threads;
     int spapr_max_cores = max_cpus / smp_threads;
 
-    if (smc->dr_cpu_enabled) {
+    if (mc->query_hotpluggable_cpus) {
         if (smp_cpus % smp_threads) {
             error_report("smp_cpus (%u) must be multiple of threads (%u)",
                          smp_cpus, smp_threads);
@@ -1781,7 +1783,7 @@ static void ppc_spapr_init(MachineState *machine)
         machine->cpu_model = kvm_enabled() ? "host" : "POWER7";
     }
 
-    if (smc->dr_cpu_enabled) {
+    if (mc->query_hotpluggable_cpus) {
         char *type = spapr_get_cpu_core_type(machine->cpu_model);
 
         spapr->cores = g_new0(Object *, spapr_max_cores);
@@ -2290,12 +2292,12 @@ static void spapr_machine_device_plug(HotplugHandler *hotplug_dev,
 static void spapr_machine_device_unplug(HotplugHandler *hotplug_dev,
                                       DeviceState *dev, Error **errp)
 {
-    sPAPRMachineClass *smc = SPAPR_MACHINE_GET_CLASS(qdev_get_machine());
+    MachineClass *mc = MACHINE_GET_CLASS(qdev_get_machine());
 
     if (object_dynamic_cast(OBJECT(dev), TYPE_PC_DIMM)) {
         error_setg(errp, "Memory hot unplug not supported by sPAPR");
     } else if (object_dynamic_cast(OBJECT(dev), TYPE_SPAPR_CPU_CORE)) {
-        if (!smc->dr_cpu_enabled) {
+        if (!mc->query_hotpluggable_cpus) {
             error_setg(errp, "CPU hot unplug not supported on this machine");
             return;
         }
@@ -2333,10 +2335,7 @@ static HotpluggableCPUList *spapr_query_hotpluggable_cpus(MachineState *machine)
     int i;
     HotpluggableCPUList *head = NULL;
     sPAPRMachineState *spapr = SPAPR_MACHINE(machine);
-    sPAPRMachineClass *smc = SPAPR_MACHINE_GET_CLASS(machine);
     int spapr_max_cores = max_cpus / smp_threads;
-
-    g_assert(smc->dr_cpu_enabled);
 
     for (i = 0; i < spapr_max_cores; i++) {
         HotpluggableCPUList *list_item = g_new0(typeof(*list_item), 1);
@@ -2392,12 +2391,9 @@ static void spapr_machine_class_init(ObjectClass *oc, void *data)
     hc->plug = spapr_machine_device_plug;
     hc->unplug = spapr_machine_device_unplug;
     mc->cpu_index_to_socket_id = spapr_cpu_index_to_socket_id;
-    if (smc->dr_cpu_enabled) {
-        mc->query_hotpluggable_cpus = spapr_query_hotpluggable_cpus;
-    }
 
     smc->dr_lmb_enabled = true;
-    smc->dr_cpu_enabled = true;
+    mc->query_hotpluggable_cpus = spapr_query_hotpluggable_cpus;
     fwc->get_dev_path = spapr_get_fw_dev_path;
     nc->nmi_monitor_handler = spapr_nmi;
 }
@@ -2628,7 +2624,7 @@ static void spapr_machine_rhel720_class_options(MachineClass *mc)
 
     spapr_machine_rhel730_class_options(mc);
     smc->use_ohci_by_default = true;
-    smc->dr_cpu_enabled = false;
+    mc->query_hotpluggable_cpus = NULL;
     SET_MACHINE_COMPAT(mc, SPAPR_COMPAT_RHEL7_2);
 }
 
