@@ -823,6 +823,24 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed Aug 10 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-20.el7
+- kvm-block-gluster-rename-server-volname-image-host-volum.patch [bz#1247933]
+- kvm-block-gluster-code-cleanup.patch [bz#1247933]
+- kvm-block-gluster-deprecate-rdma-support.patch [bz#1247933]
+- kvm-block-gluster-using-new-qapi-schema.patch [bz#1247933]
+- kvm-block-gluster-add-support-for-multiple-gluster-serve.patch [bz#1247933]
+- kvm-block-gluster-fix-doc-in-the-qapi-schema-and-member-.patch [bz#1247933]
+- kvm-throttle-Don-t-allow-burst-limits-to-be-lower-than-t.patch [bz#1355665]
+- kvm-throttle-Test-burst-limits-lower-than-the-normal-lim.patch [bz#1355665]
+- kvm-spapr-Error-out-when-CPU-hotplug-is-attempted-on-old.patch [bz#1362019]
+- kvm-spapr-Correctly-set-query_hotpluggable_cpus-hook-bas.patch [bz#1362019]
+- Resolves: bz#1247933
+  (RFE: qemu-kvm-rhev: support multiple volume hosts for gluster volumes)
+- Resolves: bz#1355665
+  (Suggest to limit the burst value to be not less than the throttle value)
+- Resolves: bz#1362019
+  (Crashes when using query-hotpluggable-cpus with pseries-rhel7.2.0 machine type)
+
 * Fri Aug 05 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-19.el7
 - kvm-hw-pcie-root-port-Fix-PCIe-root-port-initialization.patch [bz#1323976]
 - kvm-hw-pxb-declare-pxb-devices-as-not-hot-pluggable.patch [bz#1323976]
