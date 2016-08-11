@@ -215,12 +215,14 @@ static int vhost_user_set_log_base(struct vhost_dev *dev, uint64_t base,
         fds[fd_num++] = log->fd;
     }
 
-    vhost_user_write(dev, &msg, fds, fd_num);
+    if (vhost_user_write(dev, &msg, fds, fd_num) < 0) {
+        return -1;
+    }
 
     if (shmfd) {
         msg.size = 0;
         if (vhost_user_read(dev, &msg) < 0) {
-            return 0;
+            return -1;
         }
 
         if (msg.request != VHOST_USER_SET_LOG_BASE) {
@@ -276,7 +278,9 @@ static int vhost_user_set_mem_table(struct vhost_dev *dev,
     msg.size += sizeof(msg.payload.memory.padding);
     msg.size += fd_num * sizeof(VhostUserMemoryRegion);
 
-    vhost_user_write(dev, &msg, fds, fd_num);
+    if (vhost_user_write(dev, &msg, fds, fd_num) < 0) {
+        return -1;
+    }
 
     return 0;
 }
@@ -291,7 +295,9 @@ static int vhost_user_set_vring_addr(struct vhost_dev *dev,
         .size = sizeof(msg.payload.addr),
     };
 
-    vhost_user_write(dev, &msg, NULL, 0);
+    if (vhost_user_write(dev, &msg, NULL, 0) < 0) {
+        return -1;
+    }
 
     return 0;
 }
@@ -314,7 +320,9 @@ static int vhost_set_vring(struct vhost_dev *dev,
         .size = sizeof(msg.payload.state),
     };
 
-    vhost_user_write(dev, &msg, NULL, 0);
+    if (vhost_user_write(dev, &msg, NULL, 0) < 0) {
+        return -1;
+    }
 
     return 0;
 }
@@ -361,10 +369,12 @@ static int vhost_user_get_vring_base(struct vhost_dev *dev,
         .size = sizeof(msg.payload.state),
     };
 
-    vhost_user_write(dev, &msg, NULL, 0);
+    if (vhost_user_write(dev, &msg, NULL, 0) < 0) {
+        return -1;
+    }
 
     if (vhost_user_read(dev, &msg) < 0) {
-        return 0;
+        return -1;
     }
 
     if (msg.request != VHOST_USER_GET_VRING_BASE) {
@@ -402,7 +412,9 @@ static int vhost_set_vring_file(struct vhost_dev *dev,
         msg.payload.u64 |= VHOST_USER_VRING_NOFD_MASK;
     }
 
-    vhost_user_write(dev, &msg, fds, fd_num);
+    if (vhost_user_write(dev, &msg, fds, fd_num) < 0) {
+        return -1;
+    }
 
     return 0;
 }
@@ -428,7 +440,9 @@ static int vhost_user_set_u64(struct vhost_dev *dev, int request, uint64_t u64)
         .size = sizeof(msg.payload.u64),
     };
 
-    vhost_user_write(dev, &msg, NULL, 0);
+    if (vhost_user_write(dev, &msg, NULL, 0) < 0) {
+        return -1;
+    }
 
     return 0;
 }
@@ -456,10 +470,12 @@ static int vhost_user_get_u64(struct vhost_dev *dev, int request, uint64_t *u64)
         return 0;
     }
 
-    vhost_user_write(dev, &msg, NULL, 0);
+    if (vhost_user_write(dev, &msg, NULL, 0) < 0) {
+        return -1;
+    }
 
     if (vhost_user_read(dev, &msg) < 0) {
-        return 0;
+        return -1;
     }
 
     if (msg.request != request) {
@@ -490,7 +506,9 @@ static int vhost_user_set_owner(struct vhost_dev *dev)
         .flags = VHOST_USER_VERSION,
     };
 
-    vhost_user_write(dev, &msg, NULL, 0);
+    if (vhost_user_write(dev, &msg, NULL, 0) < 0) {
+        return -1;
+    }
 
     return 0;
 }
@@ -502,7 +520,9 @@ static int vhost_user_reset_device(struct vhost_dev *dev)
         .flags = VHOST_USER_VERSION,
     };
 
-    vhost_user_write(dev, &msg, NULL, 0);
+    if (vhost_user_write(dev, &msg, NULL, 0) < 0) {
+        return -1;
+    }
 
     return 0;
 }
@@ -589,7 +609,6 @@ static bool vhost_user_requires_shm_log(struct vhost_dev *dev)
 static int vhost_user_migration_done(struct vhost_dev *dev, char* mac_addr)
 {
     VhostUserMsg msg = { 0 };
-    int err;
 
     assert(dev->vhost_ops->backend_type == VHOST_BACKEND_TYPE_USER);
 
@@ -606,8 +625,7 @@ static int vhost_user_migration_done(struct vhost_dev *dev, char* mac_addr)
         memcpy((char *)&msg.payload.u64, mac_addr, 6);
         msg.size = sizeof(msg.payload.u64);
 
-        err = vhost_user_write(dev, &msg, NULL, 0);
-        return err;
+        return vhost_user_write(dev, &msg, NULL, 0);
     }
     return -1;
 }
