@@ -823,6 +823,43 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Aug 16 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-21.el7
+- kvm-fix-qemu-exit-on-memory-hotplug-when-allocation-fail.patch [bz#1351409]
+- kvm-spapr-remove-extra-type-variable.patch [bz#1363812]
+- kvm-ppc-Introduce-a-function-to-look-up-CPU-alias-string.patch [bz#1363812]
+- kvm-hw-ppc-spapr-Look-up-CPU-alias-names-instead-of-hard.patch [bz#1363812]
+- kvm-ppc-kvm-Do-not-mess-up-the-generic-CPU-family-regist.patch [bz#1363812]
+- kvm-ppc-kvm-Register-also-a-generic-spapr-CPU-core-famil.patch [bz#1363812]
+- kvm-ppc64-fix-compressed-dump-with-pseries-kernel.patch [bz#1240497]
+- kvm-monitor-fix-crash-when-leaving-qemu-with-spice-audio.patch [bz#1355704]
+- kvm-audio-clean-up-before-monitor-clean-up.patch [bz#1355704]
+- kvm-vnc-don-t-crash-getting-server-info-if-lsock-is-NULL.patch [bz#1359655]
+- kvm-vnc-fix-crash-when-vnc_server_info_get-has-an-error.patch [bz#1359655]
+- kvm-vnc-ensure-connection-sharing-limits-is-always-confi.patch [bz#1359655]
+- kvm-vnc-make-sure-we-finish-disconnect.patch [bz#1352799]
+- kvm-virtio-net-allow-increasing-rx-queue-size.patch [bz#1358962]
+- kvm-input-add-trace-events-for-full-queues.patch [bz#1366471]
+- kvm-virtio-set-low-features-early-on-load.patch [bz#1365747]
+- kvm-Revert-virtio-net-unbreak-self-announcement-and-gues.patch [bz#1365747]
+- Resolves: bz#1240497
+  (qemu-kvm-rhev: dump-guest-memory creates invalid header with format kdump-{zlib,lzo,snappy} on ppc64)
+- Resolves: bz#1351409
+  (When hotplug memory, guest will shutdown as Insufficient free host memory pages available to allocate)
+- Resolves: bz#1352799
+  (Client information from hmp doesn't vanish after client disconnect when using vnc display)
+- Resolves: bz#1355704
+  (spice: core dump when 'quit')
+- Resolves: bz#1358962
+  (Increase the queue size to the max allowed, 1024.)
+- Resolves: bz#1359655
+  (Qemu crashes when connecting to a guest started with "-vnc none" by virt-viewer)
+- Resolves: bz#1363812
+  (qemu-kvm-rhev: -cpu POWER8 no longer works)
+- Resolves: bz#1365747
+  (Migrate guest(win10) after hot plug/unplug memory balloon device [Missing section footer for 0000:00:07.0/virtio-net])
+- Resolves: bz#1366471
+  (QEMU prints "usb-kbd: warning: key event queue full" when pressing keys during SLOF boot)
+
 * Wed Aug 10 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-20.el7
 - kvm-block-gluster-rename-server-volname-image-host-volum.patch [bz#1247933]
 - kvm-block-gluster-code-cleanup.patch [bz#1247933]
