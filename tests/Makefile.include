@@ -276,6 +276,7 @@ check-qtest-ppc64-y += tests/usb-hcd-uhci-test$(EXESUF)
 gcov-files-ppc64-y += hw/usb/hcd-uhci.c
 check-qtest-ppc64-y += tests/usb-hcd-xhci-test$(EXESUF)
 gcov-files-ppc64-y += hw/usb/hcd-xhci.c
+check-qtest-ppc64-y += tests/display-vga-test$(EXESUF)
 
 check-qtest-sh4-y = tests/endianness-test$(EXESUF)
 
