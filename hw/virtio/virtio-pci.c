@@ -872,6 +872,7 @@ static int virtio_pci_vq_vector_unmask(VirtIOPCIProxy *proxy,
             if (ret < 0) {
                 return ret;
             }
+            kvm_irqchip_commit_routes(kvm_state);
         }
     }
 
