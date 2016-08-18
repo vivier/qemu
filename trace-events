@@ -2156,3 +2156,6 @@ hid_kbd_queue_full(void) "queue full"
 
 # hw/input/virtio
 virtio_input_queue_full(void) "queue full"
+
+# target-i386/kvm.c
+kvm_x86_fixup_msi_error(uint32_t gsi) "VT-d failed to remap interrupt for GSI %" PRIu32
