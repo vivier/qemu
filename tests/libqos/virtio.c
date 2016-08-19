@@ -62,6 +62,8 @@ void qvirtqueue_cleanup(const QVirtioBus *bus, QVirtQueue *vq,
 
 void qvirtio_reset(const QVirtioBus *bus, QVirtioDevice *d)
 {
+    d->device_endian = qtest_big_endian() ? QVIRTIO_DEVICE_ENDIAN_BIG :
+                                            QVIRTIO_DEVICE_ENDIAN_LITTLE;
     bus->set_status(d, 0);
     g_assert_cmphex(bus->get_status(d), ==, 0);
 }

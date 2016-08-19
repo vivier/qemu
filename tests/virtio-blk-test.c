@@ -117,7 +117,7 @@ static QVirtioPCIDevice *virtio_blk_pci_init(QPCIBus *bus, int slot)
     return dev;
 }
 
-static inline void virtio_blk_fix_request(QVirtioBlkReq *req)
+static inline void virtio_blk_fix_request(QVirtioDevice *dev, QVirtioBlkReq *req)
 {
 #ifdef HOST_WORDS_BIGENDIAN
     bool host_endian = true;
@@ -125,15 +125,15 @@ static inline void virtio_blk_fix_request(QVirtioBlkReq *req)
     bool host_endian = false;
 #endif
 
-    if (qtest_big_endian() != host_endian) {
+    if (qvirtio_is_big_endian(dev) != host_endian) {
         req->type = bswap32(req->type);
         req->ioprio = bswap32(req->ioprio);
         req->sector = bswap64(req->sector);
     }
 }
 
-static uint64_t virtio_blk_request(QGuestAllocator *alloc, QVirtioBlkReq *req,
-                                                            uint64_t data_size)
+static uint64_t virtio_blk_request(QGuestAllocator *alloc, QVirtioDevice *dev,
+                                   QVirtioBlkReq *req, uint64_t data_size)
 {
     uint64_t addr;
     uint8_t status = 0xFF;
@@ -141,7 +141,7 @@ static uint64_t virtio_blk_request(QGuestAllocator *alloc, QVirtioBlkReq *req,
     g_assert_cmpuint(data_size % 512, ==, 0);
     addr = guest_alloc(alloc, sizeof(*req) + data_size);
 
-    virtio_blk_fix_request(req);
+    virtio_blk_fix_request(dev, req);
 
     memwrite(addr, req, 16);
     memwrite(addr + 16, req->data, data_size);
@@ -182,7 +182,7 @@ static void test_basic(const QVirtioBus *bus, QVirtioDevice *dev,
     req.data = g_malloc0(512);
     strcpy(req.data, "TEST");
 
-    req_addr = virtio_blk_request(alloc, &req, 512);
+    req_addr = virtio_blk_request(alloc, dev, &req, 512);
 
     g_free(req.data);
 
@@ -204,7 +204,7 @@ static void test_basic(const QVirtioBus *bus, QVirtioDevice *dev,
     req.sector = 0;
     req.data = g_malloc0(512);
 
-    req_addr = virtio_blk_request(alloc, &req, 512);
+    req_addr = virtio_blk_request(alloc, dev, &req, 512);
 
     g_free(req.data);
 
@@ -234,7 +234,7 @@ static void test_basic(const QVirtioBus *bus, QVirtioDevice *dev,
         req.data = g_malloc0(512);
         strcpy(req.data, "TEST");
 
-        req_addr = virtio_blk_request(alloc, &req, 512);
+        req_addr = virtio_blk_request(alloc, dev, &req, 512);
 
         g_free(req.data);
 
@@ -254,7 +254,7 @@ static void test_basic(const QVirtioBus *bus, QVirtioDevice *dev,
         req.sector = 1;
         req.data = g_malloc0(512);
 
-        req_addr = virtio_blk_request(alloc, &req, 512);
+        req_addr = virtio_blk_request(alloc, dev, &req, 512);
 
         g_free(req.data);
 
@@ -352,7 +352,7 @@ static void pci_indirect(void)
     req.data = g_malloc0(512);
     strcpy(req.data, "TEST");
 
-    req_addr = virtio_blk_request(alloc, &req, 512);
+    req_addr = virtio_blk_request(alloc, &dev->vdev, &req, 512);
 
     g_free(req.data);
 
@@ -377,7 +377,7 @@ static void pci_indirect(void)
     req.data = g_malloc0(512);
     strcpy(req.data, "TEST");
 
-    req_addr = virtio_blk_request(alloc, &req, 512);
+    req_addr = virtio_blk_request(alloc, &dev->vdev, &req, 512);
 
     g_free(req.data);
 
@@ -504,7 +504,7 @@ static void pci_msix(void)
     req.data = g_malloc0(512);
     strcpy(req.data, "TEST");
 
-    req_addr = virtio_blk_request(alloc, &req, 512);
+    req_addr = virtio_blk_request(alloc, &dev->vdev, &req, 512);
 
     g_free(req.data);
 
@@ -527,7 +527,7 @@ static void pci_msix(void)
     req.sector = 0;
     req.data = g_malloc0(512);
 
-    req_addr = virtio_blk_request(alloc, &req, 512);
+    req_addr = virtio_blk_request(alloc, &dev->vdev, &req, 512);
 
     g_free(req.data);
 
@@ -611,7 +611,7 @@ static void pci_idx(void)
     req.data = g_malloc0(512);
     strcpy(req.data, "TEST");
 
-    req_addr = virtio_blk_request(alloc, &req, 512);
+    req_addr = virtio_blk_request(alloc, &dev->vdev, &req, 512);
 
     g_free(req.data);
 
@@ -630,7 +630,7 @@ static void pci_idx(void)
     req.data = g_malloc0(512);
     strcpy(req.data, "TEST");
 
-    req_addr = virtio_blk_request(alloc, &req, 512);
+    req_addr = virtio_blk_request(alloc, &dev->vdev, &req, 512);
 
     g_free(req.data);
 
@@ -655,7 +655,7 @@ static void pci_idx(void)
     req.sector = 1;
     req.data = g_malloc0(512);
 
-    req_addr = virtio_blk_request(alloc, &req, 512);
+    req_addr = virtio_blk_request(alloc, &dev->vdev, &req, 512);
 
     g_free(req.data);
 

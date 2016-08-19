@@ -15,9 +15,16 @@
 
 #define QVIRTIO_F_BAD_FEATURE           0x40000000
 
+enum qvirtio_device_endian {
+    QVIRTIO_DEVICE_ENDIAN_UNKNOWN,
+    QVIRTIO_DEVICE_ENDIAN_LITTLE,
+    QVIRTIO_DEVICE_ENDIAN_BIG,
+};
+
 typedef struct QVirtioDevice {
     /* Device type */
     uint16_t device_type;
+    uint8_t device_endian;
 } QVirtioDevice;
 
 typedef struct QVirtQueue {
@@ -91,6 +98,14 @@ static inline uint32_t qvring_size(uint32_t num, uint32_t align)
     return ((sizeof(struct vring_desc) * num + sizeof(uint16_t) * (3 + num)
         + align - 1) & ~(align - 1))
         + sizeof(uint16_t) * 3 + sizeof(struct vring_used_elem) * num;
+}
+
+static inline bool qvirtio_is_big_endian(QVirtioDevice *d)
+{
+    g_assert(d->device_endian != QVIRTIO_DEVICE_ENDIAN_UNKNOWN);
+
+    /* FIXME VIRTIO 1.0 and later are always LE */
+    return d->device_endian == QVIRTIO_DEVICE_ENDIAN_BIG;
 }
 
 uint8_t qvirtio_config_readb(const QVirtioBus *bus, QVirtioDevice *d,
