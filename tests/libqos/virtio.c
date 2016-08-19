@@ -8,10 +8,17 @@
  */
 
 #include "qemu/osdep.h"
+#include "qemu/bswap.h"
 #include "libqtest.h"
 #include "libqos/virtio.h"
 #include "standard-headers/linux/virtio_config.h"
 #include "standard-headers/linux/virtio_ring.h"
+
+#ifdef HOST_WORDS_BIGENDIAN
+static const bool host_big_endian = true;
+#else
+static const bool host_big_endian = false;
+#endif
 
 uint8_t qvirtio_config_readb(const QVirtioBus *bus, QVirtioDevice *d,
                                                                 uint64_t addr)
@@ -22,19 +29,34 @@ uint8_t qvirtio_config_readb(const QVirtioBus *bus, QVirtioDevice *d,
 uint16_t qvirtio_config_readw(const QVirtioBus *bus, QVirtioDevice *d,
                                                                 uint64_t addr)
 {
-    return bus->config_readw(d, addr);
+    uint16_t v;
+    v = bus->config_readw(d, addr);
+    if (qvirtio_is_big_endian(d) && !host_big_endian) {
+        v = bswap16(v);
+    }
+    return v;
 }
 
 uint32_t qvirtio_config_readl(const QVirtioBus *bus, QVirtioDevice *d,
                                                                 uint64_t addr)
 {
-    return bus->config_readl(d, addr);
+    uint32_t v;
+    v = bus->config_readl(d, addr);
+    if (qvirtio_is_big_endian(d) && !host_big_endian) {
+        v = bswap32(v);
+    }
+    return v;
 }
 
 uint64_t qvirtio_config_readq(const QVirtioBus *bus, QVirtioDevice *d,
                                                                 uint64_t addr)
 {
-    return bus->config_readq(d, addr);
+    uint64_t v;
+    v = bus->config_readq(d, addr);
+    if (qvirtio_is_big_endian(d) && !host_big_endian) {
+        v = bswap64(v);
+    }
+    return v;
 }
 
 uint32_t qvirtio_get_features(const QVirtioBus *bus, QVirtioDevice *d)
