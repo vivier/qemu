@@ -823,6 +823,53 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Mon Aug 22 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-22.el7
+- kvm-target-i386-kvm-Report-kvm_pv_unhalt-as-unsupported-.patch [bz#1363679]
+- kvm-ioapic-keep-RO-bits-for-IOAPIC-entry.patch [bz#1358653]
+- kvm-ioapic-clear-remote-irr-bit-for-edge-triggered-inter.patch [bz#1358653]
+- kvm-x86-iommu-introduce-parent-class.patch [bz#1358653]
+- kvm-intel_iommu-rename-VTD_PCI_DEVFN_MAX-to-x86-iommu.patch [bz#1358653]
+- kvm-x86-iommu-provide-x86_iommu_get_default.patch [bz#1358653]
+- kvm-x86-iommu-introduce-intremap-property.patch [bz#1358653]
+- kvm-acpi-enable-INTR-for-DMAR-report-structure.patch [bz#1358653]
+- kvm-intel_iommu-allow-queued-invalidation-for-IR.patch [bz#1358653]
+- kvm-intel_iommu-set-IR-bit-for-ECAP-register.patch [bz#1358653]
+- kvm-acpi-add-DMAR-scope-definition-for-root-IOAPIC.patch [bz#1358653]
+- kvm-intel_iommu-define-interrupt-remap-table-addr-regist.patch [bz#1358653]
+- kvm-intel_iommu-handle-interrupt-remap-enable.patch [bz#1358653]
+- kvm-intel_iommu-define-several-structs-for-IOMMU-IR.patch [bz#1358653]
+- kvm-intel_iommu-add-IR-translation-faults-defines.patch [bz#1358653]
+- kvm-intel_iommu-Add-support-for-PCI-MSI-remap.patch [bz#1358653]
+- kvm-intel_iommu-get-rid-of-0-initializers.patch [bz#1358653]
+- kvm-q35-ioapic-add-support-for-emulated-IOAPIC-IR.patch [bz#1358653]
+- kvm-ioapic-introduce-ioapic_entry_parse-helper.patch [bz#1358653]
+- kvm-intel_iommu-add-support-for-split-irqchip.patch [bz#1358653]
+- kvm-x86-iommu-introduce-IEC-notifiers.patch [bz#1358653]
+- kvm-ioapic-register-IOMMU-IEC-notifier-for-ioapic.patch [bz#1358653]
+- kvm-intel_iommu-Add-support-for-Extended-Interrupt-Mode.patch [bz#1358653]
+- kvm-intel_iommu-add-SID-validation-for-IR.patch [bz#1358653]
+- kvm-irqchip-simplify-kvm_irqchip_add_msi_route.patch [bz#1358653]
+- kvm-irqchip-i386-add-hook-for-add-remove-virq.patch [bz#1358653]
+- kvm-irqchip-x86-add-msi-route-notify-fn.patch [bz#1358653]
+- kvm-irqchip-do-explicit-commit-when-update-irq.patch [bz#1358653]
+- kvm-intel_iommu-support-all-masks-in-interrupt-entry-cac.patch [bz#1358653]
+- kvm-all-add-trace-events-for-kvm-irqchip-ops.patch [bz#1358653]
+- kvm-intel_iommu-disallow-kernel-irqchip-on-with-IR.patch [bz#1358653]
+- kvm-intel_iommu-avoid-unnamed-fields.patch [bz#1358653]
+- kvm-irqchip-only-commit-route-when-irqchip-is-used.patch [bz#1358653]
+- kvm-x86-ioapic-ignore-level-irq-during-processing.patch [bz#1358653]
+- kvm-x86-ioapic-add-support-for-explicit-EOI.patch [bz#1358653]
+- kvm-memory-Fix-IOMMU-replay-base-address.patch [bz#1364035]
+- kvm-Add-luks-to-block-driver-whitelist.patch [bz#1301019]
+- Resolves: bz#1301019
+  (RFE: add support for LUKS disk encryption format driver w/ RBD, iSCSI, and qcow2)
+- Resolves: bz#1358653
+  ([RFE] Interrupt remapping support for Intel vIOMMUs)
+- Resolves: bz#1363679
+  (RHEL guest hangs with kernel-irqchip=off and smp>1)
+- Resolves: bz#1364035
+  ([ppc64le][VFIO]Qemu complains:vfio_dma_map(0x10033d3a980, 0x1f34f0000, 0x10000, 0x3fff9a6d0000) = -6 (No such device or address))
+
 * Tue Aug 16 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-21.el7
 - kvm-fix-qemu-exit-on-memory-hotplug-when-allocation-fail.patch [bz#1351409]
 - kvm-spapr-remove-extra-type-variable.patch [bz#1363812]
