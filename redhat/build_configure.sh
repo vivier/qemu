@@ -113,6 +113,6 @@ fi
     --${have_usbredir}-usb-redir \
     --${have_tcmalloc}-tcmalloc \
     --audio-drv-list=pa,alsa \
-    --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,${gluster_driver}${rbd_driver}blkdebug \
+    --block-drv-rw-whitelist=qcow2,raw,file,host_device,nbd,iscsi,${gluster_driver}${rbd_driver}blkdebug,luks \
     --block-drv-ro-whitelist=vmdk,vhdx,vpc,https,ssh \
     "$@"
