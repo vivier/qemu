@@ -314,6 +314,7 @@ cat config-host.mak
 echo "==="
 
 make qemu-ga %{?_smp_mflags} $buildldflags
+make qemu-ga.8
 
 %install
 %define _udevdir %(pkg-config --variable=udevdir udev)/rules.d
@@ -350,6 +351,9 @@ mkdir -p -v $RPM_BUILD_ROOT%{_localstatedir}/log/qemu-ga/
 mkdir -p $RPM_BUILD_ROOT%{_bindir}
 install -c -m 0755  qemu-ga ${RPM_BUILD_ROOT}%{_bindir}/qemu-ga
 
+mkdir -p $RPM_BUILD_ROOT%{_mandir}/man8
+install -m 0644  qemu-ga.8 ${RPM_BUILD_ROOT}%{_mandir}/man8/
+
 %files
     %defattr(-,root,root,-)
     %doc COPYING README
@@ -359,6 +363,7 @@ install -c -m 0755  qemu-ga ${RPM_BUILD_ROOT}%{_bindir}/qemu-ga
     %config(noreplace) %{_sysconfdir}/sysconfig/qemu-ga
     %{_sysconfdir}/qemu-ga
     %{_datadir}/%{pkgname}/qemu-ga
+    %{_mandir}/man8/qemu-ga.8*
     %dir %{_localstatedir}/log/qemu-ga
 
 
