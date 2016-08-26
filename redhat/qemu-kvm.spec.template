@@ -819,6 +819,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Aug 26 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-122.el7
+- kvm-virtio-validate-the-existence-of-handle_output-befor.patch [bz#1367040]
+- Resolves: bz#1367040
+  (QEMU crash when guest notifies non-existent virtqueue)
+
 * Tue Aug 02 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-121.el7
 - kvm-json-parser-drop-superfluous-assignment-for-token-va.patch [bz#1276036]
 - kvm-qjson-Apply-nesting-limit-more-sanely.patch [bz#1276036]
