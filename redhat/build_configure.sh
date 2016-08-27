@@ -101,7 +101,9 @@ fi
     --enable-werror \
     --disable-xen \
     --disable-xfsctl \
-    --enable-gcrypt \
+    --enable-gnutls \
+    --disable-gcrypt \
+    --enable-nettle \
     --${have_fdt}-fdt \
     --${have_gluster}-glusterfs \
     --${have_guest_agent}-guest-agent \
