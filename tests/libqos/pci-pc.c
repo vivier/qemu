@@ -36,6 +36,40 @@ typedef struct QPCIBusPC
     uint16_t pci_iohole_alloc;
 } QPCIBusPC;
 
+static void qpci_msix_set_message(QPCIDevice *dev, int entry,
+                                  struct MSIMessage msg)
+{
+    void *addr = dev->msix_table + (entry * 16);
+    uint32_t control;
+
+    qpci_io_writel(dev, addr + PCI_MSIX_ENTRY_LOWER_ADDR, msg.address & ~0UL);
+    qpci_io_writel(dev, addr + PCI_MSIX_ENTRY_UPPER_ADDR,
+                   (msg.address >> 32) & ~0UL);
+    qpci_io_writel(dev, addr + PCI_MSIX_ENTRY_DATA, msg.data);
+
+    control = qpci_io_readl(dev, addr + PCI_MSIX_ENTRY_VECTOR_CTRL);
+    qpci_io_writel(dev, addr + PCI_MSIX_ENTRY_VECTOR_CTRL,
+                   control & ~PCI_MSIX_ENTRY_CTRL_MASKBIT);
+}
+
+static void qpci_pc_alloc_irqs(QPCIDevice *dev, QGuestAllocator *alloc,
+                               int num_irqs)
+{
+    uint64_t msix_addr;
+    int i;
+
+    g_assert(dev->msix_enabled);
+
+    msix_addr = guest_alloc(alloc, 4 * num_irqs);
+
+    for (i = 0; i < num_irqs; i++) {
+        dev->msg[i].data = 0x12345678;
+        dev->msg[i].address = msix_addr + i * 4;
+
+        qpci_msix_set_message(dev, i, dev->msg[i]);
+    }
+}
+
 static uint8_t qpci_pc_io_readb(QPCIBus *bus, void *addr)
 {
     uintptr_t port = (uintptr_t)addr;
@@ -217,6 +251,8 @@ QPCIBus *qpci_init_pc(QGuestAllocator *alloc)
     QPCIBusPC *ret;
 
     ret = g_malloc(sizeof(*ret));
+
+    ret->bus.alloc_irqs = qpci_pc_alloc_irqs;
 
     ret->bus.io_readb = qpci_pc_io_readb;
     ret->bus.io_readw = qpci_pc_io_readw;
