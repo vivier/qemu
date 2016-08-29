@@ -344,43 +344,10 @@ void qvirtio_pci_device_disable(QVirtioPCIDevice *d)
     qpci_iounmap(d->pdev, d->bar);
 }
 
-static void qvirtio_pci_msix_set_message(QVirtioPCIDevice *d, int entry,
-                                         struct MSIMessage msg)
-{
-    uint64_t off = d->pdev->msix_table_off + (entry * 16);
-    uint32_t control;
-
-    qpci_io_writel(d->pdev, d->pdev->msix_table_bar,
-                   off + PCI_MSIX_ENTRY_LOWER_ADDR, msg.address & ~0UL);
-    qpci_io_writel(d->pdev, d->pdev->msix_table_bar,
-                   off + PCI_MSIX_ENTRY_UPPER_ADDR,
-                   (msg.address >> 32) & ~0UL);
-    qpci_io_writel(d->pdev, d->pdev->msix_table_bar,
-                   off + PCI_MSIX_ENTRY_DATA, msg.data);
-
-    control = qpci_io_readl(d->pdev, d->pdev->msix_table_bar,
-                            off + PCI_MSIX_ENTRY_VECTOR_CTRL);
-    qpci_io_writel(d->pdev, d->pdev->msix_table_bar,
-                   off + PCI_MSIX_ENTRY_VECTOR_CTRL,
-                   control & ~PCI_MSIX_ENTRY_CTRL_MASKBIT);
-}
-
 void qvirtqueue_pci_msix_alloc_irqs(QVirtioPCIDevice *d,
                                     QGuestAllocator *alloc, int num_irqs)
 {
-    uint64_t msix_addr;
-    int i;
-
-    g_assert(d->pdev->msix_enabled);
-
-    msix_addr = guest_alloc(alloc, 4 * num_irqs);
-
-    for (i = 0; i < num_irqs; i++) {
-        d->pdev->msg[i].data = 0x12345678;
-        d->pdev->msg[i].address = msix_addr + i * 4;
-
-        qvirtio_pci_msix_set_message(d, i, d->pdev->msg[i]);
-    }
+    qpci_msix_alloc_irqs(d->pdev, alloc, num_irqs);
 }
 
 void qvirtqueue_pci_msix_setup(QVirtioPCIDevice *d, QVirtQueuePCI *vqpci,

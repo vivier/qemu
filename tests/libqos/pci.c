@@ -195,6 +195,11 @@ uint16_t qpci_msix_table_size(QPCIDevice *dev)
     return (control & PCI_MSIX_FLAGS_QSIZE) + 1;
 }
 
+void qpci_msix_alloc_irqs(QPCIDevice *dev, QGuestAllocator *alloc, int num_irqs)
+{
+    dev->bus->alloc_irqs(dev, alloc, num_irqs);
+}
+
 uint8_t qpci_config_readb(QPCIDevice *dev, uint8_t offset)
 {
     return dev->bus->config_readb(dev->bus, dev->devfn, offset);
