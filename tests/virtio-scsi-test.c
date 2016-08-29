@@ -19,7 +19,7 @@
 #include "standard-headers/linux/virtio_pci.h"
 #include "standard-headers/linux/virtio_scsi.h"
 
-#define PCI_SLOT                0x02
+#define PCI_SLOT_CP             0x02
 #define PCI_FN                  0x00
 #define QVIRTIO_SCSI_TIMEOUT_US (1 * 1000 * 1000)
 
@@ -220,7 +220,7 @@ static void test_unaligned_write_same(void)
         0x41, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x33, 0x00, 0x00
     };
 
-    vs = qvirtio_scsi_pci_init(PCI_SLOT);
+    vs = qvirtio_scsi_pci_init(PCI_SLOT_CP);
 
     g_assert_cmphex(0, ==,
         virtio_scsi_do_command(vs, write_same_cdb_1, NULL, 0, buf1, 512, NULL));
