@@ -860,7 +860,7 @@ static void driver_init(QVirtioDevice *dev)
     qvirtio_set_driver_ok(dev);
 }
 
-#define PCI_SLOT                0x04
+#define PCI_SLOT_CP             0x04
 
 static void test_multiqueue(void)
 {
@@ -885,7 +885,7 @@ static void test_multiqueue(void)
     g_free(cmd);
 
     bus = qpci_init_pc(NULL);
-    dev = virtio_net_pci_init(bus, PCI_SLOT);
+    dev = virtio_net_pci_init(bus, PCI_SLOT_CP);
 
     alloc = pc_alloc_init();
     for (i = 0; i < queues * 2; i++) {
