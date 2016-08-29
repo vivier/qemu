@@ -12,4 +12,11 @@ uint32_t qrtas_ibm_read_pci_config(QGuestAllocator *alloc, uint64_t buid,
                                    uint32_t addr, uint32_t size);
 int qrtas_ibm_write_pci_config(QGuestAllocator *alloc, uint64_t buid,
                                uint32_t addr, uint32_t size, uint32_t val);
+int qrtas_ibm_change_msi(QGuestAllocator *alloc, uint64_t buid,
+                         uint32_t addr, uint32_t func, uint32_t req_num,
+                         uint32_t *intr_type);
+uint32_t qrtas_ibm_query_interrupt_source_number(QGuestAllocator *alloc,
+                                                 uint64_t buid, uint32_t addr,
+                                                 uint32_t ioa_intr_num);
+
 #endif /* LIBQOS_RTAS_H */

@@ -15,6 +15,15 @@
 #include "qemu-common.h"
 #include "qemu/host-utils.h"
 
+/* Copied from hw/ppc/spapr_pci.c */
+
+#define RTAS_QUERY_FN           0
+#define RTAS_CHANGE_FN          1
+#define     RTAS_TYPE_MSI  1
+#define     RTAS_TYPE_MSIX 2
+#define RTAS_RESET_FN           2
+#define RTAS_CHANGE_MSI_FN      3
+#define RTAS_CHANGE_MSIX_FN     4
 
 /* From include/hw/pci-host/spapr.h */
 
@@ -29,6 +38,8 @@
                                      SPAPR_PCI_MEM_WIN_BUS_OFFSET)
 #define SPAPR_PCI_IO_WIN_OFF         0x80000000
 #define SPAPR_PCI_IO_WIN_SIZE        0x10000
+
+#define SPAPR_PCI_MSI_WINDOW         0x40000000000ULL
 
 /* index is the phb index */
 
@@ -50,6 +61,29 @@ typedef struct QPCIBusSPAPR {
     uint32_t pci_iohole_size;
     uint32_t pci_iohole_alloc;
 } QPCIBusSPAPR;
+
+static void qpci_spapr_alloc_irqs(QPCIDevice *dev, QGuestAllocator *alloc,
+                                  int num_irqs)
+{
+    int ret;
+    uint32_t config_addr = (dev->devfn << 8);
+    uint32_t intr_type;
+    int i;
+
+    ret = qrtas_ibm_change_msi(alloc, BUIDBASE(0), config_addr,
+                               RTAS_CHANGE_MSIX_FN, num_irqs, &intr_type);
+    g_assert(ret == num_irqs);
+    g_assert(intr_type == RTAS_TYPE_MSIX);
+
+    for (i = 0; i < ret; i++) {
+        dev->msg[i].address = SPAPR_PCI_MSI_WINDOW;
+        dev->msg[i].data = cpu_to_be32(
+                           qrtas_ibm_query_interrupt_source_number(alloc,
+                                                                   BUIDBASE(0),
+                                                                   config_addr,
+                                                                   i));
+    }
+}
 
 static uint8_t qpci_spapr_io_readb(QPCIBus *bus, void *addr)
 {
@@ -241,6 +275,8 @@ QPCIBus *qpci_init_spapr(QGuestAllocator *alloc)
     ret = g_malloc(sizeof(*ret));
 
     ret->alloc = alloc;
+
+    ret->bus.alloc_irqs = qpci_spapr_alloc_irqs;
 
     ret->bus.io_readb = qpci_spapr_io_readb;
     ret->bus.io_readw = qpci_spapr_io_readw;
