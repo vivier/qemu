@@ -18,6 +18,7 @@
 #include "standard-headers/linux/virtio_ring.h"
 #include "standard-headers/linux/virtio_pci.h"
 
+#include "hw/pci/msi.h"
 #include "hw/pci/pci.h"
 #include "hw/pci/pci_regs.h"
 
@@ -346,34 +347,44 @@ void qvirtio_pci_device_disable(QVirtioPCIDevice *d)
     qpci_iounmap(d->pdev, d->bar);
 }
 
-void qvirtqueue_pci_msix_setup(QVirtioPCIDevice *d, QVirtQueuePCI *vqpci,
-                                        QGuestAllocator *alloc, uint16_t entry)
+static void qvirtio_pci_msix_set_message(QVirtioPCIDevice *d, int entry,
+                                         struct MSIMessage msg)
 {
-    uint16_t vector;
+    uint64_t off = d->pdev->msix_table_off + (entry * 16);
     uint32_t control;
-    uint64_t off;
 
-    g_assert(d->pdev->msix_enabled);
-    off = d->pdev->msix_table_off + (entry * 16);
-
-    g_assert_cmpint(entry, >=, 0);
-    g_assert_cmpint(entry, <, qpci_msix_table_size(d->pdev));
-    vqpci->msix_entry = entry;
-
-    vqpci->msix_addr = guest_alloc(alloc, 4);
     qpci_io_writel(d->pdev, d->pdev->msix_table_bar,
-                   off + PCI_MSIX_ENTRY_LOWER_ADDR, vqpci->msix_addr & ~0UL);
+                   off + PCI_MSIX_ENTRY_LOWER_ADDR, msg.address & ~0UL);
     qpci_io_writel(d->pdev, d->pdev->msix_table_bar,
                    off + PCI_MSIX_ENTRY_UPPER_ADDR,
-                   (vqpci->msix_addr >> 32) & ~0UL);
+                   (msg.address >> 32) & ~0UL);
     qpci_io_writel(d->pdev, d->pdev->msix_table_bar,
-                   off + PCI_MSIX_ENTRY_DATA, vqpci->msix_data);
+                   off + PCI_MSIX_ENTRY_DATA, msg.data);
 
     control = qpci_io_readl(d->pdev, d->pdev->msix_table_bar,
                             off + PCI_MSIX_ENTRY_VECTOR_CTRL);
     qpci_io_writel(d->pdev, d->pdev->msix_table_bar,
                    off + PCI_MSIX_ENTRY_VECTOR_CTRL,
                    control & ~PCI_MSIX_ENTRY_CTRL_MASKBIT);
+}
+
+void qvirtqueue_pci_msix_setup(QVirtioPCIDevice *d, QVirtQueuePCI *vqpci,
+                                        QGuestAllocator *alloc, uint16_t entry)
+{
+    uint16_t vector;
+    struct MSIMessage msg;
+
+    g_assert(d->pdev->msix_enabled);
+
+    g_assert_cmpint(entry, >=, 0);
+    g_assert_cmpint(entry, <, qpci_msix_table_size(d->pdev));
+    vqpci->msix_entry = entry;
+
+    vqpci->msix_addr = guest_alloc(alloc, 4);
+
+    msg.address = vqpci->msix_addr;
+    msg.data = vqpci->msix_data;
+    qvirtio_pci_msix_set_message(d, entry, msg);
 
     qvirtio_pci_queue_select(&d->vdev, vqpci->vq.index);
     qpci_io_writew(d->pdev, d->bar, VIRTIO_MSI_QUEUE_VECTOR, entry);
@@ -385,11 +396,9 @@ void qvirtio_pci_set_msix_configuration_vector(QVirtioPCIDevice *d,
                                         QGuestAllocator *alloc, uint16_t entry)
 {
     uint16_t vector;
-    uint32_t control;
-    uint64_t off;
+    struct MSIMessage msg;
 
     g_assert(d->pdev->msix_enabled);
-    off = d->pdev->msix_table_off + (entry * 16);
 
     g_assert_cmpint(entry, >=, 0);
     g_assert_cmpint(entry, <, qpci_msix_table_size(d->pdev));
@@ -398,19 +407,9 @@ void qvirtio_pci_set_msix_configuration_vector(QVirtioPCIDevice *d,
     d->config_msix_data = 0x12345678;
     d->config_msix_addr = guest_alloc(alloc, 4);
 
-    qpci_io_writel(d->pdev, d->pdev->msix_table_bar,
-                   off + PCI_MSIX_ENTRY_LOWER_ADDR, d->config_msix_addr & ~0UL);
-    qpci_io_writel(d->pdev, d->pdev->msix_table_bar,
-                   off + PCI_MSIX_ENTRY_UPPER_ADDR,
-                   (d->config_msix_addr >> 32) & ~0UL);
-    qpci_io_writel(d->pdev, d->pdev->msix_table_bar,
-                   off + PCI_MSIX_ENTRY_DATA, d->config_msix_data);
-
-    control = qpci_io_readl(d->pdev, d->pdev->msix_table_bar,
-                            off + PCI_MSIX_ENTRY_VECTOR_CTRL);
-    qpci_io_writel(d->pdev, d->pdev->msix_table_bar,
-                   off + PCI_MSIX_ENTRY_VECTOR_CTRL,
-                   control & ~PCI_MSIX_ENTRY_CTRL_MASKBIT);
+    msg.address = d->config_msix_addr;
+    msg.data = d->config_msix_data;
+    qvirtio_pci_msix_set_message(d, entry, msg);
 
     qpci_io_writew(d->pdev, d->bar, VIRTIO_MSI_CONFIG_VECTOR, entry);
     vector = qpci_io_readw(d->pdev, d->bar, VIRTIO_MSI_CONFIG_VECTOR);
