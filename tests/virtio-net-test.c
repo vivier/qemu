@@ -22,7 +22,7 @@
 #include "standard-headers/linux/virtio_ring.h"
 
 #define PCI_SLOT_HP             0x06
-#define PCI_SLOT                0x04
+#define PCI_SLOT_CP             0x04
 #define PCI_FN                  0x00
 
 #define QVIRTIO_NET_TIMEOUT_US (30 * 1000 * 1000)
@@ -221,7 +221,7 @@ static void pci_basic(gconstpointer data)
 
     qs = pci_test_start(sv[1]);
     g_assert(qs);
-    dev = virtio_net_pci_init(qs->pcibus, PCI_SLOT);
+    dev = virtio_net_pci_init(qs->pcibus, PCI_SLOT_CP);
 
     rx = (QVirtQueuePCI *)qvirtqueue_setup(&qvirtio_pci, &dev->vdev,
                                            qs->alloc, 0);
