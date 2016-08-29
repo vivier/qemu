@@ -18,11 +18,14 @@
 
 #define QPCI_DEVFN(dev, fn) (((dev) << 3) | (fn))
 
+typedef struct QGuestAllocator QGuestAllocator;
 typedef struct QPCIDevice QPCIDevice;
 typedef struct QPCIBus QPCIBus;
 
 struct QPCIBus
 {
+    void (*alloc_irqs)(QPCIDevice *dev, QGuestAllocator *alloc, int num_irqs);
+
     uint8_t (*io_readb)(QPCIBus *bus, void *addr);
     uint16_t (*io_readw)(QPCIBus *bus, void *addr);
     uint32_t (*io_readl)(QPCIBus *bus, void *addr);
@@ -69,6 +72,9 @@ void qpci_msix_disable(QPCIDevice *dev);
 bool qpci_msix_pending(QPCIDevice *dev, uint16_t entry);
 bool qpci_msix_masked(QPCIDevice *dev, uint16_t entry);
 uint16_t qpci_msix_table_size(QPCIDevice *dev);
+
+void qpci_msix_alloc_irqs(QPCIDevice *dev, QGuestAllocator *alloc,
+                          int num_irqs);
 
 uint8_t qpci_config_readb(QPCIDevice *dev, uint8_t offset);
 uint16_t qpci_config_readw(QPCIDevice *dev, uint8_t offset);
