@@ -7,6 +7,10 @@
 #include "libqtest.h"
 #include "libqos/rtas.h"
 
+#define RTAS_BUSY               -2
+#define RTAS_EXTENDED_DELAY_MIN 9900
+#define RTAS_EXTENDED_DELAY_MAX 9905
+
 static void qrtas_copy_args(QTestState *qts, uint64_t target_args,
                             uint32_t nargs, uint32_t *args)
 {
@@ -46,6 +50,36 @@ static uint64_t qrtas_call(QTestState *qts, QGuestAllocator *alloc,
     guest_free(alloc, target_args);
 
     return res;
+}
+
+static unsigned int qrtas_busy_delay_time(int status)
+{
+    int order;
+    unsigned int ms = 0;
+
+    if (status == RTAS_BUSY) {
+        ms = 1;
+    } else if (status >= RTAS_EXTENDED_DELAY_MIN &&
+               status <= RTAS_EXTENDED_DELAY_MAX) {
+        order = status - RTAS_EXTENDED_DELAY_MIN;
+        for (ms = 1; order > 0; order--) {
+            ms *= 10;
+        }
+    }
+
+    return ms;
+}
+
+static unsigned int qrtas_busy_delay(int status)
+{
+    unsigned int ms;
+
+    ms = qrtas_busy_delay_time(status);
+    if (ms) {
+        usleep(ms * 1000);
+    }
+
+    return ms;
 }
 
 int qrtas_get_time_of_day(QTestState *qts, QGuestAllocator *alloc,
@@ -117,4 +151,72 @@ int qrtas_ibm_write_pci_config(QTestState *qts, QGuestAllocator *alloc,
     }
 
     return 0;
+}
+
+int qrtas_ibm_change_msi(QTestState *qts,  QGuestAllocator *alloc,
+                         uint64_t buid,
+                         uint32_t addr, uint32_t func, uint32_t req_num,
+                         uint32_t *intr_type)
+{
+    int res;
+    uint32_t args[6], ret[4];
+
+    args[0] = addr;
+    args[1] = buid >> 32;
+    args[2] = buid & 0xffffffff;
+    args[3] = func;
+    args[4] = req_num;
+    args[5] = 1; /* sequence number, first call */
+
+    do {
+        res = qrtas_call(qts, alloc, "ibm,change-msi", 6, args,
+                         intr_type ? 4 : 3, ret);
+        if (res != 0) {
+            return -1;
+        }
+        args[5] = ret[2]; /* sequence number, next calls */
+    } while (qrtas_busy_delay(ret[1]));
+
+    res = ret[0];
+    if (ret[0] != 0) {
+        return -1;
+    }
+
+    if (intr_type) {
+        *intr_type = ret[3];
+    }
+
+    return ret[1];
+}
+
+uint32_t qrtas_ibm_query_interrupt_source_number(QTestState *qts,
+                                                 QGuestAllocator *alloc,
+                                                 uint64_t buid, uint32_t addr,
+                                                 uint32_t ioa_intr_num)
+{
+    int res;
+    uint32_t args[4], ret[3];
+
+    args[0] = addr;
+    args[1] = buid >> 32;
+    args[2] = buid & 0xffffffff;
+    args[3] = ioa_intr_num;
+
+    do {
+        res = qrtas_call(qts, alloc, "ibm,query-interrupt-source-number", 4,
+                         args, 3, ret);
+        if (res < 0) {
+            return -1;
+        }
+    } while (qrtas_busy_delay(ret[0]));
+
+    if (res != 0) {
+        return -1;
+    }
+
+    if (ret[0] != 0) {
+        return -1;
+    }
+
+    return ret[1];
 }
