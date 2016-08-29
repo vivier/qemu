@@ -15,6 +15,15 @@
 #include "qemu-common.h"
 #include "qemu/host-utils.h"
 
+/* Copied from hw/ppc/spapr_pci.c */
+
+#define RTAS_QUERY_FN           0
+#define RTAS_CHANGE_FN          1
+#define     RTAS_TYPE_MSI  1
+#define     RTAS_TYPE_MSIX 2
+#define RTAS_RESET_FN           2
+#define RTAS_CHANGE_MSI_FN      3
+#define RTAS_CHANGE_MSIX_FN     4
 
 /* From include/hw/pci-host/spapr.h */
 
@@ -22,6 +31,8 @@ typedef struct QPCIWindow {
     uint64_t pci_base;    /* window address in PCI space */
     uint64_t size;        /* window size */
 } QPCIWindow;
+
+#define SPAPR_PCI_MSI_WINDOW         0x40000000000ULL
 
 typedef struct QPCIBusSPAPR {
     QPCIBus bus;
@@ -49,6 +60,30 @@ typedef struct QPCIBusSPAPR {
  * SPAPR by default is big-endian
  * so PCI accessors need to swap data endianness
  */
+
+static void qpci_spapr_alloc_irqs(QPCIDevice *dev, QGuestAllocator *alloc,
+                                  int num_irqs)
+{
+    QPCIBusSPAPR *s = container_of(dev->bus, QPCIBusSPAPR, bus);
+    int ret;
+    uint32_t config_addr = (dev->devfn << 8);
+    uint32_t intr_type;
+    int i;
+
+    ret = qrtas_ibm_change_msi(alloc, s->buid, config_addr,
+                               RTAS_CHANGE_MSIX_FN, num_irqs, &intr_type);
+    g_assert(ret == num_irqs);
+    g_assert(intr_type == RTAS_TYPE_MSIX);
+
+    for (i = 0; i < ret; i++) {
+        dev->msg[i].address = SPAPR_PCI_MSI_WINDOW;
+        dev->msg[i].data = bswap32(
+                           qrtas_ibm_query_interrupt_source_number(alloc,
+                                                                   s->buid,
+                                                                   config_addr,
+                                                                   i));
+    }
+}
 
 static uint8_t qpci_spapr_io_readb(QPCIBus *bus, void *addr)
 {
@@ -247,6 +282,8 @@ QPCIBus *qpci_init_spapr(QGuestAllocator *alloc)
     ret = g_malloc(sizeof(*ret));
 
     ret->alloc = alloc;
+
+    ret->bus.alloc_irqs = qpci_spapr_alloc_irqs;
 
     ret->bus.io_readb = qpci_spapr_io_readb;
     ret->bus.io_readw = qpci_spapr_io_readw;
