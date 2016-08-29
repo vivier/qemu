@@ -26,7 +26,7 @@
 #define TEST_IMAGE_SIZE         (64 * 1024 * 1024)
 #define QVIRTIO_BLK_TIMEOUT_US  (30 * 1000 * 1000)
 #define PCI_SLOT_HP             0x06
-#define PCI_SLOT                0x04
+#define PCI_SLOT_CP             0x04
 #define PCI_FN                  0x00
 
 #define MMIO_PAGE_SIZE          4096
@@ -70,9 +70,9 @@ static QOSState *pci_test_start(void)
     tmp_path = drive_create();
 
     if (strcmp(arch, "i386") == 0 || strcmp(arch, "x86_64") == 0) {
-        qs = qtest_pc_boot(cmd, tmp_path, PCI_SLOT, PCI_FN);
+        qs = qtest_pc_boot(cmd, tmp_path, PCI_SLOT_CP, PCI_FN);
     } else if (strcmp(arch, "ppc64") == 0) {
-        qs = qtest_spapr_boot(cmd, tmp_path, PCI_SLOT, PCI_FN);
+        qs = qtest_spapr_boot(cmd, tmp_path, PCI_SLOT_CP, PCI_FN);
     } else {
         g_printerr("virtio-blk tests are only available on x86 or ppc64\n");
         exit(EXIT_FAILURE);
@@ -287,7 +287,7 @@ static void pci_basic(void)
     QVirtQueuePCI *vqpci;
 
     qs = pci_test_start();
-    dev = virtio_blk_pci_init(qs->pcibus, PCI_SLOT);
+    dev = virtio_blk_pci_init(qs->pcibus, PCI_SLOT_CP);
 
     vqpci = (QVirtQueuePCI *)qvirtqueue_setup(&dev->vdev, qs->alloc, 0);
 
@@ -316,7 +316,7 @@ static void pci_indirect(void)
 
     qs = pci_test_start();
 
-    dev = virtio_blk_pci_init(qs->pcibus, PCI_SLOT);
+    dev = virtio_blk_pci_init(qs->pcibus, PCI_SLOT_CP);
 
     capacity = qvirtio_config_readq(&dev->vdev, 0);
     g_assert_cmpint(capacity, ==, TEST_IMAGE_SIZE / 512);
@@ -402,7 +402,7 @@ static void pci_config(void)
 
     qs = pci_test_start();
 
-    dev = virtio_blk_pci_init(qs->pcibus, PCI_SLOT);
+    dev = virtio_blk_pci_init(qs->pcibus, PCI_SLOT_CP);
 
     capacity = qvirtio_config_readq(&dev->vdev, 0);
     g_assert_cmpint(capacity, ==, TEST_IMAGE_SIZE / 512);
@@ -439,10 +439,11 @@ static void pci_msix(void)
 
     qs = pci_test_start();
 
-    dev = virtio_blk_pci_init(qs->pcibus, PCI_SLOT);
+    dev = virtio_blk_pci_init(qs->pcibus, PCI_SLOT_CP);
     qpci_msix_enable(dev->pdev);
 
-    qvirtio_pci_set_msix_configuration_vector(dev, qs->alloc, 0);
+    qvirtqueue_pci_msix_alloc_irqs(dev, qs->alloc, 2);
+    qvirtio_pci_set_msix_configuration_vector(dev, 0);
 
     capacity = qvirtio_config_readq(&dev->vdev, 0);
     g_assert_cmpint(capacity, ==, TEST_IMAGE_SIZE / 512);
@@ -455,7 +456,7 @@ static void pci_msix(void)
     qvirtio_set_features(&dev->vdev, features);
 
     vqpci = (QVirtQueuePCI *)qvirtqueue_setup(&dev->vdev, qs->alloc, 0);
-    qvirtqueue_pci_msix_setup(dev, vqpci, qs->alloc, 1);
+    qvirtqueue_pci_msix_setup(dev, vqpci, 1);
 
     qvirtio_set_driver_ok(&dev->vdev);
 
@@ -547,10 +548,11 @@ static void pci_idx(void)
 
     qs = pci_test_start();
 
-    dev = virtio_blk_pci_init(qs->pcibus, PCI_SLOT);
+    dev = virtio_blk_pci_init(qs->pcibus, PCI_SLOT_CP);
     qpci_msix_enable(dev->pdev);
 
-    qvirtio_pci_set_msix_configuration_vector(dev, qs->alloc, 0);
+    qvirtqueue_pci_msix_alloc_irqs(dev, qs->alloc, 2);
+    qvirtio_pci_set_msix_configuration_vector(dev, 0);
 
     capacity = qvirtio_config_readq(&dev->vdev, 0);
     g_assert_cmpint(capacity, ==, TEST_IMAGE_SIZE / 512);
@@ -563,7 +565,7 @@ static void pci_idx(void)
     qvirtio_set_features(&dev->vdev, features);
 
     vqpci = (QVirtQueuePCI *)qvirtqueue_setup(&dev->vdev, qs->alloc, 0);
-    qvirtqueue_pci_msix_setup(dev, vqpci, qs->alloc, 1);
+    qvirtqueue_pci_msix_setup(dev, vqpci, 1);
 
     qvirtio_set_driver_ok(&dev->vdev);
 
