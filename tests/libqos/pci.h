@@ -13,6 +13,7 @@
 #ifndef LIBQOS_PCI_H
 #define LIBQOS_PCI_H
 
+#include "hw/pci/msi.h"
 #include "libqtest.h"
 
 #define QPCI_PIO_LIMIT    0x10000
@@ -57,6 +58,8 @@ struct QPCIBar {
     uint64_t addr;
 };
 
+#define MSIX_MAX_IRQS  2048
+
 struct QPCIDevice
 {
     QPCIBus *bus;
@@ -64,6 +67,7 @@ struct QPCIDevice
     bool msix_enabled;
     QPCIBar msix_table_bar, msix_pba_bar;
     uint64_t msix_table_off, msix_pba_off;
+    struct MSIMessage msg[MSIX_MAX_IRQS];
 };
 
 void qpci_device_foreach(QPCIBus *bus, int vendor_id, int device_id,
