@@ -744,20 +744,28 @@ static PCIINTxRoute spapr_route_intx_pin_to_irq(void *opaque, int pin)
  * The handler handles both MSI and MSIX.
  * The vector number is encoded in least bits in data.
  */
+
+static uint64_t spapr_msi_read(void *opaque, hwaddr addr, unsigned size)
+{
+    sPAPRMachineState *spapr = SPAPR_MACHINE(qdev_get_machine());
+
+    return spapr->msix_data;
+}
+
 static void spapr_msi_write(void *opaque, hwaddr addr,
                             uint64_t data, unsigned size)
 {
     sPAPRMachineState *spapr = SPAPR_MACHINE(qdev_get_machine());
     uint32_t irq = data;
 
-    trace_spapr_pci_msi_write(addr, data, irq);
+    spapr->msix_data = data;
 
+    trace_spapr_pci_msi_write(addr, data, irq);
     qemu_irq_pulse(spapr_qirq(spapr, irq));
 }
 
 static const MemoryRegionOps spapr_msi_ops = {
-    /* There is no .read as the read result is undefined by PCI spec */
-    .read = NULL,
+    .read = spapr_msi_read,
     .write = spapr_msi_write,
     .endianness = DEVICE_LITTLE_ENDIAN
 };
@@ -1692,8 +1700,12 @@ static void spapr_phb_realize(DeviceState *dev, Error **errp)
     }
 #endif
 
-    memory_region_init_io(&sphb->msiwindow, OBJECT(sphb), &spapr_msi_ops, spapr,
+    memory_region_init_io(&sphb->msispace, OBJECT(sphb), &spapr_msi_ops, spapr,
                           "msi", msi_window_size);
+    memory_region_init_alias(&sphb->msiwindow, OBJECT(sphb), "msi.alias",
+                             &sphb->msispace, 0, msi_window_size);
+    memory_region_add_subregion(get_system_memory(), SPAPR_PCI_MSI_WINDOW,
+                                &sphb->msispace);
     memory_region_add_subregion(&sphb->iommu_root, SPAPR_PCI_MSI_WINDOW,
                                 &sphb->msiwindow);
 
