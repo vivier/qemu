@@ -82,6 +82,7 @@ struct sPAPRMachineState {
     QTAILQ_HEAD(, sPAPREventLogEntry) pending_events;
     bool use_hotplug_event_source;
     sPAPREventSource *event_sources;
+    uint32_t msix_data;
 
     /* Migration state */
     int htab_save_index;
