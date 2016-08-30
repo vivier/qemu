@@ -74,6 +74,7 @@ struct sPAPRMachineState {
     uint32_t check_exception_irq;
     Notifier epow_notifier;
     QTAILQ_HEAD(, sPAPREventLogEntry) pending_events;
+    uint32_t msix_data;
 
     /* Migration state */
     int htab_save_index;
