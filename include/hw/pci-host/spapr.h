@@ -52,7 +52,7 @@ struct sPAPRPHBState {
     char *dtbusname;
     bool dr_enabled;
 
-    MemoryRegion memspace, iospace;
+    MemoryRegion memspace, iospace, msispace;
     hwaddr mem_win_addr, mem_win_size, mem64_win_addr, mem64_win_size;
     uint64_t mem64_win_pciaddr;
     hwaddr io_win_addr, io_win_size;
