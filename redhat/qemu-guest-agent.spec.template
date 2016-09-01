@@ -368,6 +368,11 @@ install -m 0644  qemu-ga.8 ${RPM_BUILD_ROOT}%{_mandir}/man8/
 
 
 %changelog
+* Thu Sep 01 2016 Miroslav Rezanina <mrezanin@redhat.com> - 2.5.0-3.el7
+- qemuga-spec-add-qemu-ga-man-page.patch [bz#1101556]
+- Resolves: bz#1101556
+  ([RFE] qemu-ga should have a config file)
+
 * Wed Jun 15 2016 Miroslav Rezanina <mrezanin@redhat.com> - 2.5.0-2.el7
 - qemuga-redhat-blacklist-guest-exec-commands.patch [bz#1340346]
 - Resolves: bz#1340346
