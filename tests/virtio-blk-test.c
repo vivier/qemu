@@ -754,10 +754,8 @@ int main(int argc, char **argv)
         qtest_add_func("/virtio/blk/pci/indirect", pci_indirect);
         qtest_add_func("/virtio/blk/pci/config", pci_config);
         qtest_add_func("/virtio/blk/pci/nxvirtq", test_nonexistent_virtqueue);
-        if (strcmp(arch, "i386") == 0 || strcmp(arch, "x86_64") == 0) {
-            qtest_add_func("/virtio/blk/pci/msix", pci_msix);
-            qtest_add_func("/virtio/blk/pci/idx", pci_idx);
-        }
+        qtest_add_func("/virtio/blk/pci/msix", pci_msix);
+        qtest_add_func("/virtio/blk/pci/idx", pci_idx);
         qtest_add_func("/virtio/blk/pci/hotplug", pci_hotplug);
     } else if (strcmp(arch, "arm") == 0) {
         qtest_add_func("/virtio/blk/mmio/basic", mmio_basic);
