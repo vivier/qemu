@@ -1281,6 +1281,7 @@ static coroutine_fn void nbd_co_client_start(void *opaque)
     if (exp) {
         nbd_export_get(exp);
     }
+    qemu_set_nonblock(client->sock);
     if (nbd_negotiate(data)) {
         nbd_client_close(client);
         goto out;
