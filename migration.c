@@ -365,8 +365,6 @@ int migrate_fd_cleanup(FdMigrationState *s)
         DPRINTF("closing file\n");
         if (qemu_fclose(s->file) != 0) {
             ret = -1;
-            s->state = MIG_STATE_ERROR;
-            trace_migrate_set_state(MIG_STATE_ERROR);
         }
         s->file = NULL;
     } else {
