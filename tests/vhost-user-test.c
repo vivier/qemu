@@ -16,9 +16,13 @@
 #include "qemu/range.h"
 #include "sysemu/char.h"
 #include "sysemu/sysemu.h"
+#include "libqos/libqos.h"
+#include "libqos/pci-pc.h"
+#include "libqos/virtio-pci.h"
 
 #include <linux/vhost.h>
-#include <sys/mman.h>
+#include <linux/virtio_ids.h>
+#include <linux/virtio_net.h>
 #include <sys/vfs.h>
 #include <qemu/sockets.h>
 
@@ -31,14 +35,13 @@
 #define HAVE_MONOTONIC_TIME
 #endif
 
-#define QEMU_CMD_ACCEL  " -machine accel=tcg"
 #define QEMU_CMD_MEM    " -m %d -object memory-backend-file,id=mem,size=%dM,"\
                         "mem-path=%s,share=on -numa node,memdev=mem"
 #define QEMU_CMD_CHR    " -chardev socket,id=%s,path=%s%s"
 #define QEMU_CMD_NETDEV " -netdev vhost-user,id=net0,chardev=%s,vhostforce"
-#define QEMU_CMD_NET    " -device virtio-net-pci,netdev=net0,romfile=./pc-bios/pxe-virtio.rom"
+#define QEMU_CMD_NET    " -device virtio-net-pci,netdev=net0"
 
-#define QEMU_CMD        QEMU_CMD_ACCEL QEMU_CMD_MEM QEMU_CMD_CHR \
+#define QEMU_CMD        QEMU_CMD_MEM QEMU_CMD_CHR \
                         QEMU_CMD_NETDEV QEMU_CMD_NET
 
 #define HUGETLBFS_MAGIC       0x958458f6
@@ -150,6 +153,30 @@ static gboolean g_cond_wait_until(CompatGCond cond, CompatGMutex mutex,
 
 static const char *tmpfs;
 static const char *root;
+
+static void init_virtio_dev(TestServer *s)
+{
+    QPCIBus *bus;
+    QVirtioPCIDevice *dev;
+    uint32_t features;
+
+    bus = qpci_init_pc();
+    g_assert_nonnull(bus);
+
+    dev = qvirtio_pci_device_find(bus, VIRTIO_ID_NET);
+    g_assert_nonnull(dev);
+
+    qvirtio_pci_device_enable(dev);
+    qvirtio_reset(&qvirtio_pci, &dev->vdev);
+    qvirtio_set_acknowledge(&qvirtio_pci, &dev->vdev);
+    qvirtio_set_driver(&qvirtio_pci, &dev->vdev);
+
+    features = qvirtio_get_features(&qvirtio_pci, &dev->vdev);
+    features = features & VIRTIO_NET_F_MAC;
+    qvirtio_set_features(&qvirtio_pci, &dev->vdev, features);
+
+    qvirtio_set_driver_ok(&qvirtio_pci, &dev->vdev);
+}
 
 static void wait_for_fds(TestServer *s)
 {
@@ -563,6 +590,7 @@ static void test_migrate(void)
     from = qtest_start(cmd);
     g_free(cmd);
 
+    init_virtio_dev(s);
     wait_for_fds(s);
     size = get_log_size(s);
     g_assert_cmpint(size, ==, (2 * 1024 * 1024) / (VHOST_LOG_PAGE * 8));
@@ -677,6 +705,7 @@ static void test_reconnect_subprocess(void)
     qtest_start(cmd);
     g_free(cmd);
 
+    init_virtio_dev(s);
     wait_for_fds(s);
     wait_for_rings_started(s, 2);
 
@@ -742,6 +771,7 @@ int main(int argc, char **argv)
 
     s = qtest_start(qemu_cmd);
     g_free(qemu_cmd);
+    init_virtio_dev(server);
 
     qtest_add_data_func("/vhost-user/read-guest-mem", server, read_guest_mem);
     qtest_add_func("/vhost-user/migrate", test_migrate);
