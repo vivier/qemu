@@ -1201,6 +1201,8 @@ static void kvm_cpu_fill_host(x86_def_t *x86_cpu_def)
     } else {
         x86_cpu_def->features[FEAT_7_0_EBX] = 0;
     }
+    x86_cpu_def->features[FEAT_XSAVE] =
+                kvm_arch_get_supported_cpuid(s, 0xd, 1, R_EAX);
 
     x86_cpu_def->xlevel = kvm_arch_get_supported_cpuid(s, 0x80000000, 0, R_EAX);
     x86_cpu_def->features[FEAT_8000_0001_EDX] =
@@ -1281,6 +1283,9 @@ static int kvm_check_features_against_host(X86CPU *cpu)
         {&env->features[FEAT_7_0_EBX],
             &host_def.features[FEAT_7_0_EBX],
             FEAT_7_0_EBX },
+        {&env->features[FEAT_XSAVE],
+            &host_def.features[FEAT_XSAVE],
+            FEAT_XSAVE },
         {&env->features[FEAT_SVM],
             &host_def.features[FEAT_SVM],
             FEAT_SVM },
@@ -1819,6 +1824,7 @@ static void cpu_x86_parse_featurestr(X86CPU *cpu, char *features, Error **errp)
     env->features[FEAT_KVM] |= plus_features[FEAT_KVM];
     env->features[FEAT_SVM] |= plus_features[FEAT_SVM];
     env->features[FEAT_7_0_EBX] |= plus_features[FEAT_7_0_EBX];
+    env->features[FEAT_XSAVE] |= plus_features[FEAT_XSAVE];
     env->features[FEAT_1_EDX] &= ~minus_features[FEAT_1_EDX];
     env->features[FEAT_1_ECX] &= ~minus_features[FEAT_1_ECX];
     env->features[FEAT_8000_0001_EDX] &= ~minus_features[FEAT_8000_0001_EDX];
@@ -1827,6 +1833,7 @@ static void cpu_x86_parse_featurestr(X86CPU *cpu, char *features, Error **errp)
     env->features[FEAT_KVM] &= ~minus_features[FEAT_KVM];
     env->features[FEAT_SVM] &= ~minus_features[FEAT_SVM];
     env->features[FEAT_7_0_EBX] &= ~minus_features[FEAT_7_0_EBX];
+    env->features[FEAT_XSAVE] &= ~minus_features[FEAT_XSAVE];
 
 out:
     return;
@@ -1962,6 +1969,7 @@ static void cpu_x86_register(X86CPU *cpu, const char *name, Error **errp)
     env->features[FEAT_SVM] = def->features[FEAT_SVM];
     env->features[FEAT_C000_0001_EDX] = def->features[FEAT_C000_0001_EDX];
     env->features[FEAT_7_0_EBX] = def->features[FEAT_7_0_EBX];
+    env->features[FEAT_XSAVE] = def->features[FEAT_XSAVE];
     env->cpuid_xlevel2 = def->xlevel2;
 
     object_property_set_str(OBJECT(cpu), def->model_id, "model-id", errp);
