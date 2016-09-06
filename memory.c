@@ -18,12 +18,14 @@
 #include "exec/ioport.h"
 #include "qapi/visitor.h"
 #include "qemu/bitops.h"
+#include "qemu/error-report.h"
 #include "qom/object.h"
 #include "trace.h"
 #include <assert.h>
 
 #include "exec/memory-internal.h"
 #include "exec/ram_addr.h"
+#include "sysemu/kvm.h"
 #include "sysemu/sysemu.h"
 
 //#define DEBUG_UNASSIGNED
@@ -1144,6 +1146,32 @@ MemTxResult memory_region_dispatch_read(MemoryRegion *mr,
     return r;
 }
 
+/* Return true if an eventfd was signalled */
+static bool memory_region_dispatch_write_eventfds(MemoryRegion *mr,
+                                                    hwaddr addr,
+                                                    uint64_t data,
+                                                    unsigned size,
+                                                    MemTxAttrs attrs)
+{
+    MemoryRegionIoeventfd ioeventfd = {
+        .addr = addrrange_make(int128_make64(addr), int128_make64(size)),
+        .data = data,
+    };
+    unsigned i;
+
+    for (i = 0; i < mr->ioeventfd_nb; i++) {
+        ioeventfd.match_data = mr->ioeventfds[i].match_data;
+        ioeventfd.e = mr->ioeventfds[i].e;
+
+        if (memory_region_ioeventfd_equal(ioeventfd, mr->ioeventfds[i])) {
+            event_notifier_set(ioeventfd.e);
+            return true;
+        }
+    }
+
+    return false;
+}
+
 MemTxResult memory_region_dispatch_write(MemoryRegion *mr,
                                          hwaddr addr,
                                          uint64_t data,
@@ -1156,6 +1184,11 @@ MemTxResult memory_region_dispatch_write(MemoryRegion *mr,
     }
 
     adjust_endianness(mr, &data, size);
+
+    if ((!kvm_eventfds_enabled()) &&
+        memory_region_dispatch_write_eventfds(mr, addr, data, size, attrs)) {
+        return MEMTX_OK;
+    }
 
     if (mr->ops->write) {
         return access_with_adjusted_size(addr, &data, size,
@@ -1655,6 +1688,8 @@ void memory_region_clear_flush_coalesced(MemoryRegion *mr)
     }
 }
 
+static bool userspace_eventfd_warning;
+
 void memory_region_add_eventfd(MemoryRegion *mr,
                                hwaddr addr,
                                unsigned size,
@@ -1670,6 +1705,13 @@ void memory_region_add_eventfd(MemoryRegion *mr,
         .e = e,
     };
     unsigned i;
+
+    if (kvm_enabled() && (!(kvm_eventfds_enabled() ||
+                            userspace_eventfd_warning))) {
+        userspace_eventfd_warning = true;
+        error_report("Using eventfd without MMIO binding in KVM. "
+                     "Suboptimal performance expected");
+    }
 
     adjust_endianness(mr, &mrfd.data, size);
     memory_region_transaction_begin();

@@ -1655,6 +1655,12 @@ static int kvm_init(MachineState *ms)
     }
 
     kvm_state = s;
+
+    if (!kvm_eventfds_allowed) {
+        kvm_memory_listener.eventfd_add = NULL;
+        kvm_memory_listener.eventfd_del = NULL;
+    }
+
     memory_listener_register(&kvm_memory_listener, &address_space_memory);
     memory_listener_register(&kvm_io_listener, &address_space_io);
 
