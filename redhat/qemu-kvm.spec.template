@@ -823,6 +823,44 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Sep 06 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-23.el7
+- kvm-vhost-user-disconnect-on-HUP.patch [bz#1355902]
+- kvm-vhost-don-t-assume-opaque-is-a-fd-use-backend-cleanu.patch [bz#1355902]
+- kvm-vhost-make-vhost_log_put-idempotent.patch [bz#1355902]
+- kvm-vhost-assert-the-log-was-cleaned-up.patch [bz#1355902]
+- kvm-vhost-fix-cleanup-on-not-fully-initialized-device.patch [bz#1355902]
+- kvm-vhost-make-vhost_dev_cleanup-idempotent.patch [bz#1355902]
+- kvm-vhost-net-always-call-vhost_dev_cleanup-on-failure.patch [bz#1355902]
+- kvm-vhost-fix-calling-vhost_dev_cleanup-after-vhost_dev_.patch [bz#1355902]
+- kvm-vhost-do-not-assert-on-vhost_ops-failure.patch [bz#1355902]
+- kvm-vhost-add-missing-VHOST_OPS_DEBUG.patch [bz#1355902]
+- kvm-vhost-use-error_report-instead-of-fprintf-stderr.patch [bz#1355902]
+- kvm-qemu-char-fix-qemu_chr_fe_set_msgfds-crash-when-disc.patch [bz#1355902]
+- kvm-vhost-user-call-set_msgfds-unconditionally.patch [bz#1355902]
+- kvm-vhost-user-check-qemu_chr_fe_set_msgfds-return-value.patch [bz#1355902]
+- kvm-vhost-user-check-vhost_user_-read-write-return-value.patch [bz#1355902]
+- kvm-vhost-user-keep-vhost_net-after-a-disconnection.patch [bz#1355902]
+- kvm-vhost-user-add-get_vhost_net-assertions.patch [bz#1355902]
+- kvm-Revert-vhost-net-do-not-crash-if-backend-is-not-pres.patch [bz#1355902]
+- kvm-vhost-net-vhost_migration_done-is-vhost-user-specifi.patch [bz#1355902]
+- kvm-vhost-add-assert-to-check-runtime-behaviour.patch [bz#1355902]
+- kvm-char-add-chr_wait_connected-callback.patch [bz#1355902]
+- kvm-char-add-and-use-tcp_chr_wait_connected.patch [bz#1355902]
+- kvm-vhost-user-wait-until-backend-init-is-completed.patch [bz#1355902]
+- kvm-vhost-user-add-error-report-in-vhost_user_write.patch [bz#1355902]
+- kvm-vhost-add-vhost_net_set_backend.patch [bz#1355902]
+- kvm-vhost-do-not-update-last-avail-idx-on-get_vring_base.patch [bz#1355902]
+- kvm-vhost-check-for-vhost_ops-before-using.patch [bz#1355902]
+- kvm-vhost-user-Introduce-a-new-protocol-feature-REPLY_AC.patch [bz#1355902]
+- kvm-linux-aio-Handle-io_submit-failure-gracefully.patch [bz#1285928]
+- kvm-Revert-acpi-pc-add-fw_cfg-device-node-to-dsdt.patch [bz#1368153]
+- Resolves: bz#1285928
+  (linux-aio aborts on io_submit() failure)
+- Resolves: bz#1355902
+  (vhost-user reconnect misc fixes and improvements)
+- Resolves: bz#1368153
+  (Please hide fw_cfg device in windows guest in order to make svvp test pass)
+
 * Mon Aug 22 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-22.el7
 - kvm-target-i386-kvm-Report-kvm_pv_unhalt-as-unsupported-.patch [bz#1363679]
 - kvm-ioapic-keep-RO-bits-for-IOAPIC-entry.patch [bz#1358653]
