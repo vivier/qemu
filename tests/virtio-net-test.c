@@ -13,6 +13,7 @@
 #include "qemu/sockets.h"
 #include "qemu/iov.h"
 #include "libqos/libqos-pc.h"
+#include "libqos/libqos-spapr.h"
 #include "libqos/virtio.h"
 #include "libqos/virtio-pci.h"
 #include "qemu/bswap.h"
@@ -52,8 +53,17 @@ static QVirtioPCIDevice *virtio_net_pci_init(QPCIBus *bus, int slot)
 
 static QOSState *pci_test_start(int socket)
 {
-    return qtest_pc_boot("-netdev socket,fd=%d,id=hs0 -device "
-                         "virtio-net-pci,netdev=hs0", socket);
+    const char *arch = qtest_get_arch();
+    const char *cmd = "-netdev socket,fd=%d,id=hs0 -device "
+                      "virtio-net-pci,netdev=hs0";
+
+    if (strcmp(arch, "i386") == 0 || strcmp(arch, "x86_64") == 0) {
+        return qtest_pc_boot(cmd, socket);
+    }
+    if (strcmp(arch, "ppc64") == 0) {
+        return qtest_spapr_boot(cmd, socket);
+    }
+    return NULL;
 }
 
 static void driver_init(const QVirtioBus *bus, QVirtioDevice *dev)
@@ -210,6 +220,7 @@ static void pci_basic(gconstpointer data)
     g_assert_cmpint(ret, !=, -1);
 
     qs = pci_test_start(sv[1]);
+    g_assert(qs);
     dev = virtio_net_pci_init(qs->pcibus, PCI_SLOT);
 
     rx = (QVirtQueuePCI *)qvirtqueue_setup(&qvirtio_pci, &dev->vdev,
@@ -227,7 +238,7 @@ static void pci_basic(gconstpointer data)
     qvirtio_pci_device_disable(dev);
     g_free(dev->pdev);
     g_free(dev);
-    qtest_pc_shutdown(qs);
+    qtest_shutdown(qs);
 }
 #endif
 

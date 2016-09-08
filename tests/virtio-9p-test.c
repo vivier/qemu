@@ -11,6 +11,7 @@
 #include "libqtest.h"
 #include "qemu-common.h"
 #include "libqos/libqos-pc.h"
+#include "libqos/libqos-spapr.h"
 #include "libqos/virtio.h"
 #include "libqos/virtio-pci.h"
 #include "standard-headers/linux/virtio_ids.h"
@@ -22,12 +23,20 @@ static char *test_share;
 
 static QOSState *qvirtio_9p_start(void)
 {
+    const char *arch = qtest_get_arch();
+    QOSState *qs = NULL;
     test_share = g_strdup("/tmp/qtest.XXXXXX");
     g_assert_nonnull(mkdtemp(test_share));
+    const char *cmd = "-fsdev local,id=fsdev0,security_model=none,path=%s "
+                      "-device virtio-9p-pci,fsdev=fsdev0,mount_tag=%s";
 
-    return qtest_pc_boot("-fsdev local,id=fsdev0,security_model=none,path=%s "
-                         "-device virtio-9p-pci,fsdev=fsdev0,mount_tag=%s",
-                         test_share, mount_tag);
+    if (strcmp(arch, "i386") == 0 || strcmp(arch, "x86_64") == 0) {
+        qs = qtest_pc_boot(cmd, test_share, mount_tag);
+    } else if (strcmp(arch, "ppc64") == 0) {
+        qs = qtest_spapr_boot(cmd, test_share, mount_tag);
+    }
+
+    return qs;
 }
 
 static void qvirtio_9p_stop(QOSState *qs)
@@ -42,6 +51,7 @@ static void pci_nop(void)
     QOSState *qs;
 
     qs = qvirtio_9p_start();
+    g_assert(qs);
     qvirtio_9p_stop(qs);
 }
 
@@ -91,6 +101,7 @@ static void pci_basic_config(void)
     QOSState *qs;
 
     qs = qvirtio_9p_start();
+    g_assert(qs);
     v9p = qvirtio_9p_pci_init(qs);
 
     addr = ((QVirtioPCIDevice *) v9p->dev)->addr + VIRTIO_PCI_CONFIG_OFF(false);

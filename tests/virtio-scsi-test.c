@@ -12,6 +12,7 @@
 #include "libqtest.h"
 #include "block/scsi.h"
 #include "libqos/libqos-pc.h"
+#include "libqos/libqos-spapr.h"
 #include "libqos/virtio.h"
 #include "libqos/virtio-pci.h"
 #include "standard-headers/linux/virtio_ids.h"
@@ -33,15 +34,23 @@ typedef struct {
 
 static QOSState *qvirtio_scsi_start(const char *extra_opts)
 {
-    return qtest_pc_boot("-drive id=drv0,if=none,file=/dev/null,format=raw "
-                         "-device virtio-scsi-pci,id=vs0 "
-                         "-device scsi-hd,bus=vs0.0,drive=drv0 %s",
-                         extra_opts ? : "");
+    const char *arch = qtest_get_arch();
+    const char *cmd = "-drive id=drv0,if=none,file=/dev/null,format=raw "
+                      "-device virtio-scsi-pci,id=vs0 "
+                      "-device scsi-hd,bus=vs0.0,drive=drv0 %s";
+
+    if (strcmp(arch, "i386") == 0 || strcmp(arch, "x86_64") == 0) {
+        return qtest_pc_boot(cmd, extra_opts ? : "");
+    }
+    if (strcmp(arch, "ppc64") == 0) {
+        return qtest_spapr_boot(cmd, extra_opts ? : "");
+    }
+    return NULL;
 }
 
 static void qvirtio_scsi_stop(QOSState *qs)
 {
-    qtest_pc_shutdown(qs);
+    qtest_shutdown(qs);
 }
 
 static void qvirtio_scsi_pci_free(QVirtIOSCSI *vs)
@@ -138,6 +147,7 @@ static QVirtIOSCSI *qvirtio_scsi_pci_init(int slot)
     vs->qs = qvirtio_scsi_start("-drive file=blkdebug::null-co://,"
                                 "if=none,id=dr1,format=raw,file.align=4k "
                                 "-device scsi-disk,drive=dr1,lun=0,scsi-id=1");
+    g_assert(vs->qs);
     dev = qvirtio_pci_device_find(vs->qs->pcibus, VIRTIO_ID_SCSI);
     vs->dev = (QVirtioDevice *)dev;
     g_assert(dev != NULL);
@@ -177,6 +187,7 @@ static void pci_nop(void)
     QOSState *qs;
 
     qs = qvirtio_scsi_start(NULL);
+    g_assert(qs);
     qvirtio_scsi_stop(qs);
 }
 
@@ -186,6 +197,7 @@ static void hotplug(void)
     QOSState *qs;
 
     qs = qvirtio_scsi_start("-drive id=drv1,if=none,file=/dev/null,format=raw");
+    g_assert(qs);
     response = qmp("{\"execute\": \"device_add\","
                    " \"arguments\": {"
                    "   \"driver\": \"scsi-hd\","

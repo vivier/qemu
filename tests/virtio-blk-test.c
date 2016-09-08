@@ -11,6 +11,7 @@
 #include "qemu/osdep.h"
 #include "libqtest.h"
 #include "libqos/libqos-pc.h"
+#include "libqos/libqos-spapr.h"
 #include "libqos/virtio.h"
 #include "libqos/virtio-pci.h"
 #include "libqos/virtio-mmio.h"
@@ -58,16 +59,21 @@ static char *drive_create(void)
 
 static QOSState *pci_test_start(void)
 {
-    QOSState *qs;
+    const char *arch = qtest_get_arch();
+    QOSState *qs = NULL;
     char *tmp_path;
+    const char *cmd = "-drive if=none,id=drive0,file=%s,format=raw "
+                      "-drive if=none,id=drive1,file=/dev/null,format=raw "
+                      "-device virtio-blk-pci,id=drv0,drive=drive0,"
+                      "addr=%x.%x";
 
     tmp_path = drive_create();
     
-    qs = qtest_pc_boot("-drive if=none,id=drive0,file=%s,format=raw "
-                       "-drive if=none,id=drive1,file=/dev/null,format=raw "
-                       "-device virtio-blk-pci,id=drv0,drive=drive0,"
-                       "addr=%x.%x",
-                       tmp_path, PCI_SLOT, PCI_FN);
+    if (strcmp(arch, "i386") == 0 || strcmp(arch, "x86_64") == 0) {
+        qs = qtest_pc_boot(cmd, tmp_path, PCI_SLOT, PCI_FN);
+    } else if (strcmp(arch, "ppc64") == 0) {
+        qs = qtest_spapr_boot(cmd, tmp_path, PCI_SLOT, PCI_FN);
+    }
     unlink(tmp_path);
     g_free(tmp_path);
     return qs;
@@ -279,6 +285,7 @@ static void pci_basic(void)
     void *addr;
 
     qs = pci_test_start();
+    g_assert(qs);
     dev = virtio_blk_pci_init(qs->pcibus, PCI_SLOT);
 
     vqpci = (QVirtQueuePCI *)qvirtqueue_setup(&qvirtio_pci, &dev->vdev,
@@ -294,7 +301,7 @@ static void pci_basic(void)
     qvirtqueue_cleanup(&qvirtio_pci, &vqpci->vq, qs->alloc);
     qvirtio_pci_device_disable(dev);
     g_free(dev);
-    qtest_pc_shutdown(qs);
+    qtest_shutdown(qs);
 }
 
 static void pci_indirect(void)
@@ -313,6 +320,7 @@ static void pci_indirect(void)
     char *data;
 
     qs = pci_test_start();
+    g_assert(qs);
 
     dev = virtio_blk_pci_init(qs->pcibus, PCI_SLOT);
 
@@ -393,7 +401,7 @@ static void pci_indirect(void)
     qvirtqueue_cleanup(&qvirtio_pci, &vqpci->vq, qs->alloc);
     qvirtio_pci_device_disable(dev);
     g_free(dev);
-    qtest_pc_shutdown(qs);
+    qtest_shutdown(qs);
 }
 
 static void pci_config(void)
@@ -405,6 +413,7 @@ static void pci_config(void)
     uint64_t capacity;
 
     qs = pci_test_start();
+    g_assert(qs);
 
     dev = virtio_blk_pci_init(qs->pcibus, PCI_SLOT);
 
@@ -428,7 +437,7 @@ static void pci_config(void)
     qvirtio_pci_device_disable(dev);
     g_free(dev);
 
-    qtest_pc_shutdown(qs);
+    qtest_shutdown(qs);
 }
 
 static void pci_msix(void)
@@ -447,6 +456,7 @@ static void pci_msix(void)
     char *data;
 
     qs = pci_test_start();
+    g_assert(qs);
 
     dev = virtio_blk_pci_init(qs->pcibus, PCI_SLOT);
     qpci_msix_enable(dev->pdev);
@@ -541,7 +551,7 @@ static void pci_msix(void)
     qpci_msix_disable(dev->pdev);
     qvirtio_pci_device_disable(dev);
     g_free(dev);
-    qtest_pc_shutdown(qs);
+    qtest_shutdown(qs);
 }
 
 static void pci_idx(void)
@@ -559,6 +569,7 @@ static void pci_idx(void)
     char *data;
 
     qs = pci_test_start();
+    g_assert(qs);
 
     dev = virtio_blk_pci_init(qs->pcibus, PCI_SLOT);
     qpci_msix_enable(dev->pdev);
@@ -664,7 +675,7 @@ static void pci_idx(void)
     qpci_msix_disable(dev->pdev);
     qvirtio_pci_device_disable(dev);
     g_free(dev);
-    qtest_pc_shutdown(qs);
+    qtest_shutdown(qs);
 }
 
 static void pci_hotplug(void)
@@ -674,6 +685,7 @@ static void pci_hotplug(void)
     const char *arch = qtest_get_arch();
 
     qs = pci_test_start();
+    g_assert(qs);
 
     /* plug secondary disk */
     qpci_plug_device_test("virtio-blk-pci", "drv1", PCI_SLOT_HP,
@@ -688,7 +700,7 @@ static void pci_hotplug(void)
     if (strcmp(arch, "i386") == 0 || strcmp(arch, "x86_64") == 0) {
         qpci_unplug_acpi_device_test("drv1", PCI_SLOT_HP);
     }
-    qtest_pc_shutdown(qs);
+    qtest_shutdown(qs);
 }
 
 static void mmio_basic(void)
