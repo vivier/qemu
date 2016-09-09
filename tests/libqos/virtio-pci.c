@@ -68,16 +68,34 @@ static uint8_t qvirtio_pci_config_readb(QVirtioDevice *d, uint64_t addr)
     return qpci_io_readb(dev->pdev, (void *)(uintptr_t)addr);
 }
 
+/* PCI is always read in little-endian order
+ * but virtio ( < 1.0) is in guest order
+ * so with a big-endian guest the order has been reversed
+ * reverse it again
+ */
+
 static uint16_t qvirtio_pci_config_readw(QVirtioDevice *d, uint64_t addr)
 {
     QVirtioPCIDevice *dev = (QVirtioPCIDevice *)d;
-    return qpci_io_readw(dev->pdev, (void *)(uintptr_t)addr);
+    uint16_t value;
+
+    value = qpci_io_readw(dev->pdev, (void *)(uintptr_t)addr);
+    if (target_big_endian()) {
+        value = bswap16(value);
+    }
+    return value;
 }
 
 static uint32_t qvirtio_pci_config_readl(QVirtioDevice *d, uint64_t addr)
 {
     QVirtioPCIDevice *dev = (QVirtioPCIDevice *)d;
-    return qpci_io_readl(dev->pdev, (void *)(uintptr_t)addr);
+    uint32_t value;
+
+    value = qpci_io_readl(dev->pdev, (void *)(uintptr_t)addr);
+    if (target_big_endian()) {
+        value = bswap32(value);
+    }
+    return value;
 }
 
 static uint64_t qvirtio_pci_config_readq(QVirtioDevice *d, uint64_t addr)
