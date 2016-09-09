@@ -819,6 +819,14 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Sep 09 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-123.el7
+- kvm-Fix-backport-of-target-i386-add-feature-flags-for-CP.patch [bz#1371619]
+- kvm-Add-skip_dump-flag-to-ignore-memory-region-during-du.patch [bz#1373088]
+- Resolves: bz#1371619
+  (Flags xsaveopt xsavec xgetbv1 are missing on qemu-kvm)
+- Resolves: bz#1373088
+  ([FJ7.3 Bug]: virsh dump with both --memory-only and --format option fails)
+
 * Fri Aug 26 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-122.el7
 - kvm-virtio-validate-the-existence-of-handle_output-befor.patch [bz#1367040]
 - Resolves: bz#1367040
