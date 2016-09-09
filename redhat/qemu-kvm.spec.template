@@ -823,6 +823,22 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Sep 09 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-24.el7
+- kvm-Fix-configure-test-for-PBKDF2-in-nettle.patch [bz#1301019]
+- kvm-redhat-switch-from-gcrypt-to-nettle-for-crypto.patch [bz#1301019]
+- kvm-crypto-assert-that-qcrypto_hash_digest_len-is-in-ran.patch [bz#1301019]
+- kvm-crypto-fix-handling-of-iv-generator-hash-defaults.patch [bz#1301019]
+- kvm-crypto-ensure-XTS-is-only-used-with-ciphers-with-16-.patch [bz#1301019]
+- kvm-vhost-user-test-Use-libqos-instead-of-pxe-virtio.rom.patch [bz#1371211]
+- kvm-vl-Delay-initialization-of-memory-backends.patch [bz#1371211]
+- kvm-spapr-implement-H_CHANGE_LOGICAL_LAN_MAC-h_call.patch [bz#1371419]
+- Resolves: bz#1301019
+  (RFE: add support for LUKS disk encryption format driver w/ RBD, iSCSI, and qcow2)
+- Resolves: bz#1371211
+  (Qemu 2.6 won't boot guest with 2 meg hugepages)
+- Resolves: bz#1371419
+  ([ppc64le] Can't modify mac address for spapr-vlan device in rhel6.8 guest)
+
 * Tue Sep 06 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-23.el7
 - kvm-vhost-user-disconnect-on-HUP.patch [bz#1355902]
 - kvm-vhost-don-t-assume-opaque-is-a-fd-use-backend-cleanu.patch [bz#1355902]
