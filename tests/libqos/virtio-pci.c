@@ -68,19 +68,38 @@ static uint8_t qvirtio_pci_config_readb(QVirtioDevice *d, uint64_t off)
     uint64_t base = VIRTIO_PCI_CONFIG_OFF(dev->pdev->msix_enabled);
     return qpci_io_readb(dev->pdev, dev->bar, base + off);
 }
+/* PCI is always read in little-endian order
+ * but virtio ( < 1.0) is in guest order
+ * so with a big-endian guest the order has been reversed,
+ * reverse it again
+ * virtio-1.0 is always little-endian, like PCI, but this
+ * case will be managed inside qvirtio_is_big_endian()
+ */
+
 
 static uint16_t qvirtio_pci_config_readw(QVirtioDevice *d, uint64_t off)
 {
     QVirtioPCIDevice *dev = (QVirtioPCIDevice *)d;
+    uint16_t value;
     uint64_t base = VIRTIO_PCI_CONFIG_OFF(dev->pdev->msix_enabled);
-    return qpci_io_readw(dev->pdev, dev->bar, base + off);
+    value = qpci_io_readw(dev->pdev, dev->bar, base + off);
+    if (qvirtio_is_big_endian(d)) {
+        value = bswap16(value);
+    }
+    return value;
 }
 
 static uint32_t qvirtio_pci_config_readl(QVirtioDevice *d, uint64_t off)
 {
     QVirtioPCIDevice *dev = (QVirtioPCIDevice *)d;
+    uint32_t value;
     uint64_t base = VIRTIO_PCI_CONFIG_OFF(dev->pdev->msix_enabled);
-    return qpci_io_readl(dev->pdev, dev->bar, base + off);
+
+    value = qpci_io_readl(dev->pdev, dev->bar, base + off);
+    if (qvirtio_is_big_endian(d)) {
+        value = bswap32(value);
+    }
+    return value;
 }
 
 static uint64_t qvirtio_pci_config_readq(QVirtioDevice *d, uint64_t off)
