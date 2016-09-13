@@ -823,6 +823,18 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Sep 13 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-25.el7
+- kvm-virtio-recalculate-vq-inuse-after-migration.patch [bz#1372763]
+- kvm-virtio-decrement-vq-inuse-in-virtqueue_discard.patch [bz#1372763]
+- kvm-virtio-balloon-discard-virtqueue-element-on-reset.patch [bz#1370703]
+- kvm-virtio-zero-vq-inuse-in-virtio_reset.patch [bz#1370703 bz#1374623]
+- Resolves: bz#1370703
+  ([Balloon] Whql Job "Commom scenario stress with IO" failed on 2008-32/64)
+- Resolves: bz#1372763
+  (RHSA-2016-1756 breaks migration of instances)
+- Resolves: bz#1374623
+  (RHSA-2016-1756 breaks migration of instances)
+
 * Fri Sep 09 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-24.el7
 - kvm-Fix-configure-test-for-PBKDF2-in-nettle.patch [bz#1301019]
 - kvm-redhat-switch-from-gcrypt-to-nettle-for-crypto.patch [bz#1301019]
