@@ -819,6 +819,12 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Sep 13 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-124.el7
+- kvm-target-i386-Add-support-for-FEAT_7_0_ECX.patch [bz#1372459]
+- kvm-target-i386-Add-more-Intel-AVX-512-instructions-supp.patch [bz#1372459]
+- Resolves: bz#1372459
+  ([Intel 7.3 Bug] SKL-SP Guest cpu doesn't support avx512 instruction sets(avx512bw, avx512dq and avx512vl) (qemu-kvm))
+
 * Fri Sep 09 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-123.el7
 - kvm-Fix-backport-of-target-i386-add-feature-flags-for-CP.patch [bz#1371619]
 - kvm-Add-skip_dump-flag-to-ignore-memory-region-during-du.patch [bz#1373088]
