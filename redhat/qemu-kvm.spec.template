@@ -811,6 +811,15 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Wed Sep 14 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.22
+- kvm-memory-emulate-ioeventfd.patch [bz#1374623]
+- kvm-virtio-recalculate-vq-inuse-after-migration.patch [bz#1374623]
+- kvm-virtio-net-allow-increasing-rx-queue-size.patch [bz#1375642]
+- Resolves: bz#1374623
+  (RHSA-2016-1756 breaks migration of instances)
+- Resolves: bz#1375642
+  (Increase the queue size to the max allowed, 1024.)
+
 * Tue Aug 02 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.21
 - kvm-block-iscsi-avoid-potential-overflow-of-acb-task-cdb.patch [bz#1358997]
 - Resolves: bz#1358997
