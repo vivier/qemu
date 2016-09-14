@@ -208,5 +208,10 @@
             .driver   = TYPE_PCI_DEVICE,\
             .property = "x-pcie-lnksta-dllla",\
             .value    = "off",\
+        },{ /* HW_COMPAT_RHEL7_2 */ \
+        .driver   = "virtio-pci",\
+        .property = "page-per-vq",\
+        .value    = "on",\
         },
+
 #endif /* HW_COMPAT_H */
