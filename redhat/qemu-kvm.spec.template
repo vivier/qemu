@@ -819,6 +819,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Thu Sep 15 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-125.el7
+- kvm-nbd-server-Set-O_NONBLOCK-on-client-fd.patch [bz#1285453]
+- Resolves: bz#1285453
+  (An NBD client can cause QEMU main loop to block when connecting to built-in NBD server)
+
 * Tue Sep 13 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-124.el7
 - kvm-target-i386-Add-support-for-FEAT_7_0_ECX.patch [bz#1372459]
 - kvm-target-i386-Add-more-Intel-AVX-512-instructions-supp.patch [bz#1372459]
