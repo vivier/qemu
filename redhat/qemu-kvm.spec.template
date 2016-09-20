@@ -819,6 +819,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Tue Sep 20 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-126.el7
+- kvm-virtio-recalculate-vq-inuse-after-migration.patch [bz#1376542]
+- Resolves: bz#1376542
+  (RHSA-2016-1756 breaks migration of instances)
+
 * Thu Sep 15 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-125.el7
 - kvm-nbd-server-Set-O_NONBLOCK-on-client-fd.patch [bz#1285453]
 - Resolves: bz#1285453
