@@ -823,6 +823,50 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Sep 20 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-26.el7
+- kvm-target-i386-Add-more-Intel-AVX-512-instructions-supp.patch [bz#1372455]
+- kvm-iothread-Stop-threads-before-main-quits.patch [bz#1343021]
+- kvm-virtio-pci-error-out-when-both-legacy-and-modern-mod.patch [bz#1370005]
+- kvm-virtio-bus-Plug-devices-after-features-are-negotiate.patch [bz#1370005]
+- kvm-virtio-pci-reduce-modern_mem_bar-size.patch [bz#1365613]
+- kvm-virtio-vga-adapt-to-page-per-vq-off.patch [bz#1365613]
+- kvm-virtio-gpu-pci-tag-as-not-hotpluggable.patch [bz#1368032]
+- kvm-scsi-disk-Cleaning-up-around-tray-open-state.patch [bz#1374251]
+- kvm-virtio-scsi-Don-t-abort-when-media-is-ejected.patch [bz#1374251]
+- kvm-io-remove-mistaken-call-to-object_ref-on-QTask.patch [bz#1375677]
+- kvm-block-Invalidate-all-children.patch [bz#1355927]
+- kvm-block-Drop-superfluous-invalidating-bs-file-from-dri.patch [bz#1355927]
+- kvm-block-Inactivate-all-children.patch [bz#1355927]
+- kvm-vfio-pci-Fix-regression-in-MSI-routing-configuration.patch [bz#1373802]
+- kvm-x86-lapic-Load-LAPIC-state-at-post_load.patch [bz#1363998]
+- kvm-blockdev-ignore-cache-options-for-empty-CDROM-drives.patch [bz#1342999]
+- kvm-block-reintroduce-bdrv_flush_all.patch [bz#1338638]
+- kvm-qemu-use-bdrv_flush_all-for-vm_stop-et-al.patch [bz#1338638]
+- Resolves: bz#1338638
+  (Migration fails after ejecting the cdrom in the guest)
+- Resolves: bz#1342999
+  ('cache=x' cannot work with empty cdrom)
+- Resolves: bz#1343021
+  (Core dump when quit from HMP after migration finished)
+- Resolves: bz#1355927
+  (qemu SIGABRT when doing inactive blockcommit with external system checkpoint snapshot)
+- Resolves: bz#1363998
+  (Live  migration via a compressed file  causes the guest desktop to freeze)
+- Resolves: bz#1365613
+  ([PCI] The default MMIO range reserved by firmware for PCI bridges is not enough to hotplug virtio-1 devices)
+- Resolves: bz#1368032
+  (kernel crash after hot remove virtio-gpu device)
+- Resolves: bz#1370005
+  (Fail to get network device info(eth0) in guest with virtio-net-pci/vhostforce)
+- Resolves: bz#1372455
+  ([Intel 7.3 Bug] SKL-SP Guest cpu doesn't support avx512 instruction sets(avx512bw, avx512dq and avx512vl)(qemu-kvm-rhev))
+- Resolves: bz#1373802
+  (Network can't recover when trigger EEH  one time)
+- Resolves: bz#1374251
+  (qemu-kvm-rhev core dumped when enabling virtio-scsi "data plane" and executing "eject")
+- Resolves: bz#1375677
+  (Crash when performing VNC websockets handshake)
+
 * Tue Sep 13 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-25.el7
 - kvm-virtio-recalculate-vq-inuse-after-migration.patch [bz#1372763]
 - kvm-virtio-decrement-vq-inuse-in-virtqueue_discard.patch [bz#1372763]
