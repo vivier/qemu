@@ -297,6 +297,7 @@ static void ide_atapi_cmd_read_dma_cb(void *opaque, int ret)
     int data_offset, n;
 
     if (ret < 0) {
+        bm->aiocb = NULL;
         ide_atapi_io_error(s, ret);
         goto eot;
     }
