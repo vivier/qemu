@@ -633,6 +633,7 @@ static void ide_read_dma_cb(void *opaque, int ret)
         if (ide_handle_rw_error(s, -ret,
             BM_STATUS_DMA_RETRY | BM_STATUS_RETRY_READ))
         {
+            bm->aiocb = NULL;
             return;
         }
     }
@@ -838,8 +839,10 @@ static void ide_write_dma_cb(void *opaque, int ret)
         return;
     }
     if (ret < 0) {
-        if (ide_handle_rw_error(s, -ret,  BM_STATUS_DMA_RETRY))
+        if (ide_handle_rw_error(s, -ret,  BM_STATUS_DMA_RETRY)) {
+            bm->aiocb = NULL;
             return;
+        }
     }
 
     n = s->io_buffer_size >> 9;
