@@ -225,10 +225,8 @@ BuildRequires: texinfo
 %if 0%{?have_librdma:1}
 BuildRequires: librdmacm-devel
 %endif
-# iasl and cpp for acpi generation (not a hard requirement as we can use
-# pre-compiled files, but it's better to use this)
+# cpp for preprocessing option ROM assembly files
 %ifarch %{ix86} x86_64
-BuildRequires: iasl
 BuildRequires: cpp
 %endif
 %if 0%{!?build_only_sub:1}
@@ -458,6 +456,7 @@ dobuild() {
 %endif
         --block-drv-rw-whitelist=qcow2,raw,file,host_device,blkdebug,nbd,iscsi,gluster,rbd \
         --block-drv-ro-whitelist=vmdk,vhdx,vpc,ssh,https \
+        --iasl=/bin/false \
         "$@"
 
     echo "config-host.mak contents:"
