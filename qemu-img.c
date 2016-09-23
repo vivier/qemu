@@ -99,7 +99,6 @@ static void help(void)
            "       conversion. If the number of bytes is 0, the source will not be scanned for\n"
            "       unallocated or zero sectors, and the destination image will always be\n"
            "       fully allocated\n"
-           "       images will always be fully allocated\n"
            "  '--output' takes the format in which the output must be done (human or json)\n"
            "\n"
            "Parameters to check subcommand:\n"
