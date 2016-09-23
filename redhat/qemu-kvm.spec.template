@@ -823,6 +823,15 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Sep 23 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-27.el7
+- kvm-char-fix-waiting-for-TLS-and-telnet-connection.patch [bz#1300773]
+- kvm-target-i386-introduce-kvm_put_one_msr.patch [bz#1377920]
+- kvm-apic-set-APIC-base-as-part-of-kvm_apic_put.patch [bz#1377920]
+- Resolves: bz#1300773
+  (RFE: add support for native TLS encryption on chardev  TCP transports)
+- Resolves: bz#1377920
+  (Guest fails reboot and causes kernel-panic)
+
 * Tue Sep 20 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-26.el7
 - kvm-target-i386-Add-more-Intel-AVX-512-instructions-supp.patch [bz#1372455]
 - kvm-iothread-Stop-threads-before-main-quits.patch [bz#1343021]
