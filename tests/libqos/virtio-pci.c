@@ -8,6 +8,7 @@
  */
 
 #include "qemu/osdep.h"
+#include "qemu/bswap.h"
 #include "libqtest.h"
 #include "libqos/virtio.h"
 #include "libqos/virtio-pci.h"
@@ -20,6 +21,12 @@
 
 #include "hw/pci/pci.h"
 #include "hw/pci/pci_regs.h"
+
+#ifdef HOST_WORDS_BIGENDIAN
+static const bool host_big_endian = true;
+#else
+static const bool host_big_endian = false;
+#endif
 
 typedef struct QVirtioPCIForeachData {
     void (*func)(QVirtioDevice *d, void *data);
@@ -96,20 +103,33 @@ static uint64_t qvirtio_pci_config_readq(QVirtioDevice *d, uint64_t addr)
 
 static uint32_t qvirtio_pci_get_features(QVirtioDevice *d)
 {
+    uint32_t feat;
     QVirtioPCIDevice *dev = (QVirtioPCIDevice *)d;
-    return qpci_io_readl(dev->pdev, dev->addr + VIRTIO_PCI_HOST_FEATURES);
+    feat = qpci_io_readl(dev->pdev, dev->addr + VIRTIO_PCI_HOST_FEATURES);
+    if (qvirtio_is_big_endian(d) && host_big_endian) {
+        feat = bswap32(feat);
+    }
+    return feat;
 }
 
 static void qvirtio_pci_set_features(QVirtioDevice *d, uint32_t features)
 {
     QVirtioPCIDevice *dev = (QVirtioPCIDevice *)d;
+    if (qvirtio_is_big_endian(d) && host_big_endian) {
+        features = bswap32(features);
+    }
     qpci_io_writel(dev->pdev, dev->addr + VIRTIO_PCI_GUEST_FEATURES, features);
 }
 
 static uint32_t qvirtio_pci_get_guest_features(QVirtioDevice *d)
 {
+    uint32_t feat;
     QVirtioPCIDevice *dev = (QVirtioPCIDevice *)d;
-    return qpci_io_readl(dev->pdev, dev->addr + VIRTIO_PCI_GUEST_FEATURES);
+    feat = qpci_io_readl(dev->pdev, dev->addr + VIRTIO_PCI_GUEST_FEATURES);
+    if (qvirtio_is_big_endian(d) && host_big_endian) {
+        feat = bswap32(feat);
+    }
+    return feat;
 }
 
 static uint8_t qvirtio_pci_get_status(QVirtioDevice *d)
@@ -181,13 +201,21 @@ static void qvirtio_pci_queue_select(QVirtioDevice *d, uint16_t index)
 
 static uint16_t qvirtio_pci_get_queue_size(QVirtioDevice *d)
 {
+    uint16_t size;
     QVirtioPCIDevice *dev = (QVirtioPCIDevice *)d;
-    return qpci_io_readw(dev->pdev, dev->addr + VIRTIO_PCI_QUEUE_NUM);
+    size = qpci_io_readw(dev->pdev, dev->addr + VIRTIO_PCI_QUEUE_NUM);
+    if (qvirtio_is_big_endian(d) && host_big_endian) {
+        size = bswap16(size);
+    }
+    return size;
 }
 
 static void qvirtio_pci_set_queue_address(QVirtioDevice *d, uint32_t pfn)
 {
     QVirtioPCIDevice *dev = (QVirtioPCIDevice *)d;
+    if (qvirtio_is_big_endian(d) && host_big_endian) {
+        pfn = bswap32(pfn);
+    }
     qpci_io_writel(dev->pdev, dev->addr + VIRTIO_PCI_QUEUE_PFN, pfn);
 }
 
@@ -237,8 +265,13 @@ static void qvirtio_pci_virtqueue_cleanup(QVirtQueue *vq,
 
 static void qvirtio_pci_virtqueue_kick(QVirtioDevice *d, QVirtQueue *vq)
 {
+    uint16_t index;
     QVirtioPCIDevice *dev = (QVirtioPCIDevice *)d;
-    qpci_io_writew(dev->pdev, dev->addr + VIRTIO_PCI_QUEUE_NOTIFY, vq->index);
+    index = vq->index;
+    if (qvirtio_is_big_endian(d) && host_big_endian) {
+        index = bswap16(index);
+    }
+    qpci_io_writew(dev->pdev, dev->addr + VIRTIO_PCI_QUEUE_NOTIFY, index);
 }
 
 const QVirtioBus qvirtio_pci = {
@@ -312,8 +345,14 @@ void qvirtqueue_pci_msix_setup(QVirtioPCIDevice *d, QVirtQueuePCI *vqpci,
     vqpci->msix_entry = entry;
 
     qvirtio_pci_queue_select(&d->vdev, vqpci->vq.index);
+    if (qvirtio_is_big_endian(&d->vdev) && host_big_endian) {
+        entry = bswap16(entry);
+    }
     qpci_io_writew(d->pdev, d->addr + VIRTIO_MSI_QUEUE_VECTOR, entry);
     vector = qpci_io_readw(d->pdev, d->addr + VIRTIO_MSI_QUEUE_VECTOR);
+    if (qvirtio_is_big_endian(&d->vdev) && host_big_endian) {
+        vector = bswap16(vector);
+    }
     g_assert_cmphex(vector, !=, VIRTIO_MSI_NO_VECTOR);
 }
 
@@ -329,7 +368,13 @@ void qvirtio_pci_set_msix_configuration_vector(QVirtioPCIDevice *d,
 
     d->config_msix_entry = entry;
 
+    if (qvirtio_is_big_endian(&d->vdev) && host_big_endian) {
+        entry = bswap16(entry);
+    }
     qpci_io_writew(d->pdev, d->addr + VIRTIO_MSI_CONFIG_VECTOR, entry);
     vector = qpci_io_readw(d->pdev, d->addr + VIRTIO_MSI_CONFIG_VECTOR);
+    if (qvirtio_is_big_endian(&d->vdev) && host_big_endian) {
+        vector = bswap16(vector);
+    }
     g_assert_cmphex(vector, !=, VIRTIO_MSI_NO_VECTOR);
 }
