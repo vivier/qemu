@@ -25,9 +25,6 @@ uint16_t qvirtio_config_readw(const QVirtioBus *bus, QVirtioDevice *d,
 {
     uint16_t v;
     v = bus->config_readw(d, addr);
-    if (qvirtio_is_big_endian(d)) {
-        v = bswap16(v);
-    }
     return v;
 }
 
@@ -36,9 +33,6 @@ uint32_t qvirtio_config_readl(const QVirtioBus *bus, QVirtioDevice *d,
 {
     uint32_t v;
     v = bus->config_readl(d, addr);
-    if (qvirtio_is_big_endian(d)) {
-        v = bswap32(v);
-    }
     return v;
 }
 
