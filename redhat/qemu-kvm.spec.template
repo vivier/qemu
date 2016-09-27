@@ -823,6 +823,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Sep 27 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7
+- kvm-ARM-ACPI-fix-the-AML-ID-format-for-CPU-devices.patch [bz#1373733]
+- Resolves: bz#1373733
+  (failed to run a guest VM with >= 12 vcpu under ACPI mode)
+
 * Fri Sep 23 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-27.el7
 - kvm-char-fix-waiting-for-TLS-and-telnet-connection.patch [bz#1300773]
 - kvm-target-i386-introduce-kvm_put_one_msr.patch [bz#1377920]
