@@ -359,7 +359,7 @@ build_fadt(GArray *table_data, GArray *linker, AcpiPmInfo *pm,
     fadt_setup(fadt, pm);
 
     build_header(linker, table_data,
-                 (void *)fadt, "FACP", sizeof(*fadt), 1, NULL);
+                 (void *)fadt, "FACP", sizeof(*fadt), 1, NULL, NULL);
 }
 
 static void
@@ -429,7 +429,7 @@ build_madt(GArray *table_data, GArray *linker, AcpiCpuInfo *cpu,
 
     build_header(linker, table_data,
                  (void *)(table_data->data + madt_start), "APIC",
-                 table_data->len - madt_start, 1, NULL);
+                 table_data->len - madt_start, 1, NULL, NULL);
 }
 
 #include "hw/i386/ssdt-tpm.hex"
@@ -1335,7 +1335,7 @@ build_ssdt(GArray *table_data, GArray *linker,
     g_array_append_vals(table_data, ssdt->buf->data, ssdt->buf->len);
     build_header(linker, table_data,
         (void *)(table_data->data + table_data->len - ssdt->buf->len),
-        "SSDT", ssdt->buf->len, 1, NULL);
+        "SSDT", ssdt->buf->len, 1, NULL, NULL);
     free_aml_allocator();
 }
 
@@ -1351,7 +1351,7 @@ build_hpet(GArray *table_data, GArray *linker)
     hpet->timer_block_id = cpu_to_le32(0x8086a201);
     hpet->addr.address = cpu_to_le64(HPET_BASE);
     build_header(linker, table_data,
-                 (void *)hpet, "HPET", sizeof(*hpet), 1, NULL);
+                 (void *)hpet, "HPET", sizeof(*hpet), 1, NULL, NULL);
 }
 
 static void
@@ -1374,7 +1374,7 @@ build_tpm_tcpa(GArray *table_data, GArray *linker, GArray *tcpalog)
                                    sizeof(tcpa->log_area_start_address));
 
     build_header(linker, table_data,
-                 (void *)tcpa, "TCPA", sizeof(*tcpa), 2, NULL);
+                 (void *)tcpa, "TCPA", sizeof(*tcpa), 2, NULL, NULL);
 
     acpi_data_push(tcpalog, TPM_LOG_AREA_MINIMUM_SIZE);
 }
@@ -1499,7 +1499,7 @@ build_srat(GArray *table_data, GArray *linker, PcGuestInfo *guest_info)
     build_header(linker, table_data,
                  (void *)(table_data->data + srat_start),
                  "SRAT",
-                 table_data->len - srat_start, 1, NULL);
+                 table_data->len - srat_start, 1, NULL, NULL);
 }
 
 static void
@@ -1528,7 +1528,7 @@ build_mcfg_q35(GArray *table_data, GArray *linker, AcpiMcfgInfo *info)
     } else {
         sig = "MCFG";
     }
-    build_header(linker, table_data, (void *)mcfg, sig, len, 1, NULL);
+    build_header(linker, table_data, (void *)mcfg, sig, len, 1, NULL, NULL);
 }
 
 static void
@@ -1552,7 +1552,7 @@ build_dmar_q35(GArray *table_data, GArray *linker)
     drhd->address = cpu_to_le64(Q35_HOST_BRIDGE_IOMMU_ADDR);
 
     build_header(linker, table_data, (void *)(table_data->data + dmar_start),
-                 "DMAR", table_data->len - dmar_start, 1, NULL);
+                 "DMAR", table_data->len - dmar_start, 1, NULL, NULL);
 }
 
 static void
@@ -1567,7 +1567,7 @@ build_dsdt(GArray *table_data, GArray *linker, AcpiMiscInfo *misc)
 
     memset(dsdt, 0, sizeof *dsdt);
     build_header(linker, table_data, dsdt, "DSDT",
-                 misc->dsdt_size, 1, NULL);
+                 misc->dsdt_size, 1, NULL, NULL);
 }
 
 static GArray *

@@ -1138,12 +1138,17 @@ Aml *aml_unicode(const char *str)
 void
 build_header(GArray *linker, GArray *table_data,
              AcpiTableHeader *h, const char *sig, int len, uint8_t rev,
-             const char *oem_table_id)
+             const char *oem_id, const char *oem_table_id)
 {
     memcpy(&h->signature, sig, 4);
     h->length = cpu_to_le32(len);
     h->revision = rev;
-    memcpy(h->oem_id, ACPI_BUILD_APPNAME6, 6);
+
+    if (oem_id) {
+        strncpy((char *)h->oem_id, oem_id, sizeof h->oem_id);
+    } else {
+        memcpy(h->oem_id, ACPI_BUILD_APPNAME6, 6);
+    }
 
     if (oem_table_id) {
         strncpy((char *)h->oem_table_id, oem_table_id, sizeof(h->oem_table_id));
@@ -1220,5 +1225,5 @@ build_rsdt(GArray *table_data, GArray *linker, GArray *table_offsets)
                                        sizeof(uint32_t));
     }
     build_header(linker, table_data,
-                 (void *)rsdt, "RSDT", rsdt_len, 1, NULL);
+                 (void *)rsdt, "RSDT", rsdt_len, 1, NULL, NULL);
 }
