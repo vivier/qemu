@@ -860,6 +860,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Fri Sep 30 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.9
+- kvm-virtio-recalculate-vq-inuse-after-migration.patch [bz#1380306]
+- Resolves: bz#1380306
+  (RHSA-2016-1756 breaks migration of instances)
+
 * Tue Aug 16 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.8
 - kvm-target-i386-fix-pcmpxstrx-equal-ordered-strstr-mode.patch [bz#1366535]
 - Resolves: bz#1366535
