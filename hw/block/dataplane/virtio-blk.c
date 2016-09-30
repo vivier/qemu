@@ -314,7 +314,6 @@ void virtio_blk_data_plane_stop(VirtIOBlockDataPlane *s)
         return;
     }
     s->stopping = true;
-    vblk->complete_request = s->saved_complete_request;
     trace_virtio_blk_data_plane_stop(s);
 
     aio_context_acquire(s->ctx);
@@ -323,7 +322,11 @@ void virtio_blk_data_plane_stop(VirtIOBlockDataPlane *s)
     aio_set_event_notifier(s->ctx, &s->host_notifier, AIO_CLIENT_DATAPLANE,
                            NULL);
 
-    /* Drain and switch bs back to the QEMU main loop */
+    /* Restore completion callback after draining requests */
+    blk_drain_all();
+    vblk->complete_request = s->saved_complete_request;
+
+    /* Switch bs back to the QEMU main loop */
     blk_set_aio_context(s->conf->conf.blk, qemu_get_aio_context());
 
     aio_context_release(s->ctx);
