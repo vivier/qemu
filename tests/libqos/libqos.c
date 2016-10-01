@@ -10,6 +10,7 @@
 /**
  * Launch QEMU with the given command line,
  * and then set up interrupts and our guest malloc interface.
+ * Never return NULL as the application is terminated if g_malloc() fails.
  */
 QOSState *qtest_vboot(QOSOps *ops, const char *cmdline_fmt, va_list ap)
 {
