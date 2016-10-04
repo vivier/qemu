@@ -887,4 +887,75 @@ void qmp_fd_send(int fd, const char *fmt, ...);
 QDict *qmp_fdv(int fd, const char *fmt, va_list ap);
 QDict *qmp_fd(int fd, const char *fmt, ...);
 
+/*
+ * BE/LE read/write accessors
+ */
+uint16_t qtest_readw_be(QTestState *s, uint64_t addr);
+uint32_t qtest_readl_be(QTestState *s, uint64_t addr);
+uint64_t qtest_readq_be(QTestState *s, uint64_t addr);
+
+static inline uint16_t readw_be(uint64_t addr)
+{
+    return qtest_readw_be(global_qtest, addr);
+}
+static inline uint32_t readl_be(uint64_t addr)
+{
+    return qtest_readl_be(global_qtest, addr);
+}
+static inline uint64_t readq_be(uint64_t addr)
+{
+    return qtest_readq_be(global_qtest, addr);
+}
+
+void qtest_writew_be(QTestState *s, uint64_t addr, uint16_t value);
+void qtest_writel_be(QTestState *s, uint64_t addr, uint32_t value);
+void qtest_writeq_be(QTestState *s, uint64_t addr, uint64_t value);
+
+static inline void writew_be(uint64_t addr, uint16_t value)
+{
+    qtest_writew_be(global_qtest, addr, value);
+}
+static inline void writel_be(uint64_t addr, uint32_t value)
+{
+    qtest_writel_be(global_qtest, addr, value);
+}
+static inline void writeq_be(uint64_t addr, uint64_t value)
+{
+    qtest_writeq_be(global_qtest, addr, value);
+}
+
+uint16_t qtest_readw_le(QTestState *s, uint64_t addr);
+uint32_t qtest_readl_le(QTestState *s, uint64_t addr);
+uint64_t qtest_readq_le(QTestState *s, uint64_t addr);
+
+static inline uint16_t readw_le(uint64_t addr)
+{
+    return qtest_readw_le(global_qtest, addr);
+}
+static inline uint32_t readl_le(uint64_t addr)
+{
+    return qtest_readl_le(global_qtest, addr);
+}
+static inline uint64_t readq_le(uint64_t addr)
+{
+    return qtest_readq_le(global_qtest, addr);
+}
+
+void qtest_writew_le(QTestState *s, uint64_t addr, uint16_t value);
+void qtest_writel_le(QTestState *s, uint64_t addr, uint32_t value);
+void qtest_writeq_le(QTestState *s, uint64_t addr, uint64_t value);
+
+static inline void writew_le(uint64_t addr, uint16_t value)
+{
+    qtest_writew_le(global_qtest, addr, value);
+}
+static inline void writel_le(uint64_t addr, uint32_t value)
+{
+    qtest_writel_le(global_qtest, addr, value);
+}
+static inline void writeq_le(uint64_t addr, uint64_t value)
+{
+    qtest_writeq_le(global_qtest, addr, value);
+}
+
 #endif

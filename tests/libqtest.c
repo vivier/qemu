@@ -15,6 +15,7 @@
  *
  */
 #include "qemu/osdep.h"
+#include "qemu/bswap.h"
 #include "libqtest.h"
 
 #include <sys/socket.h>
@@ -688,6 +689,42 @@ void qtest_writeq(QTestState *s, uint64_t addr, uint64_t value)
     qtest_write(s, "writeq", addr, value);
 }
 
+void qtest_writew_be(QTestState *s, uint64_t addr, uint16_t value)
+{
+    value = cpu_to_be16(value);
+    qtest_memread(s, addr, &value, sizeof(value));
+}
+
+void qtest_writel_be(QTestState *s, uint64_t addr, uint32_t value)
+{
+    value = cpu_to_be32(value);
+    qtest_memread(s, addr, &value, sizeof(value));
+}
+
+void qtest_writeq_be(QTestState *s, uint64_t addr, uint64_t value)
+{
+    value = cpu_to_be64(value);
+    qtest_memread(s, addr, &value, sizeof(value));
+}
+
+void qtest_writew_le(QTestState *s, uint64_t addr, uint16_t value)
+{
+    value = cpu_to_le16(value);
+    qtest_memread(s, addr, &value, sizeof(value));
+}
+
+void qtest_writel_le(QTestState *s, uint64_t addr, uint32_t value)
+{
+    value = cpu_to_le32(value);
+    qtest_memread(s, addr, &value, sizeof(value));
+}
+
+void qtest_writeq_le(QTestState *s, uint64_t addr, uint64_t value)
+{
+    value = cpu_to_le64(value);
+    qtest_memread(s, addr, &value, sizeof(value));
+}
+
 static uint64_t qtest_read(QTestState *s, const char *cmd, uint64_t addr)
 {
     gchar **args;
@@ -719,6 +756,60 @@ uint32_t qtest_readl(QTestState *s, uint64_t addr)
 uint64_t qtest_readq(QTestState *s, uint64_t addr)
 {
     return qtest_read(s, "readq", addr);
+}
+
+uint16_t qtest_readw_be(QTestState *s, uint64_t addr)
+{
+    uint16_t value;
+
+    qtest_memread(s, addr, &value, sizeof(value));
+
+    return be16_to_cpu(value);
+}
+
+uint32_t qtest_readl_be(QTestState *s, uint64_t addr)
+{
+    uint32_t value;
+
+    qtest_memread(s, addr, &value, sizeof(value));
+
+    return be32_to_cpu(value);
+}
+
+uint64_t qtest_readq_be(QTestState *s, uint64_t addr)
+{
+    uint64_t value;
+
+    qtest_memread(s, addr, &value, sizeof(value));
+
+    return be64_to_cpu(value);
+}
+
+uint16_t qtest_readw_le(QTestState *s, uint64_t addr)
+{
+    uint16_t value;
+
+    qtest_memread(s, addr, &value, sizeof(value));
+
+    return le16_to_cpu(value);
+}
+
+uint32_t qtest_readl_le(QTestState *s, uint64_t addr)
+{
+    uint32_t value;
+
+    qtest_memread(s, addr, &value, sizeof(value));
+
+    return le32_to_cpu(value);
+}
+
+uint64_t qtest_readq_le(QTestState *s, uint64_t addr)
+{
+    uint64_t value;
+
+    qtest_memread(s, addr, &value, sizeof(value));
+
+    return le64_to_cpu(value);
 }
 
 static int hex2nib(char ch)
