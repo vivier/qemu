@@ -90,7 +90,7 @@ static uint64_t qvirtio_pci_config_readq(QVirtioDevice *d, uint64_t off)
     uint64_t u64 = 0;
     uint64_t base = VIRTIO_PCI_CONFIG_OFF(dev->pdev->msix_enabled) + off;
 
-    if (target_big_endian()) {
+    if (qvirtio_is_big_endian(d)) {
         for (i = 0; i < 8; ++i) {
             u64 |= (uint64_t)qpci_io_readb(dev->pdev, dev->bar,
                                            base + i) << (7 - i) * 8;
