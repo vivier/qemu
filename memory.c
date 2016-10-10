@@ -957,6 +957,11 @@ void memory_region_init_ram_ptr(MemoryRegion *mr,
     mr->ram_addr = qemu_ram_alloc_from_ptr(size, ptr, mr);
 }
 
+void memory_region_set_skip_dump(MemoryRegion *mr)
+{
+    mr->skip_dump = true;
+}
+
 void memory_region_init_alias(MemoryRegion *mr,
                               const char *name,
                               MemoryRegion *orig,
@@ -1045,6 +1050,11 @@ const char *memory_region_name(MemoryRegion *mr)
 bool memory_region_is_ram(MemoryRegion *mr)
 {
     return mr->ram;
+}
+
+bool memory_region_is_skip_dump(MemoryRegion *mr)
+{
+    return mr->skip_dump;
 }
 
 bool memory_region_is_logging(MemoryRegion *mr)
