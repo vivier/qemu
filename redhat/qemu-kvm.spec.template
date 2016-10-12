@@ -860,6 +860,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Wed Oct 12 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.10
+- kvm-Add-skip_dump-flag-to-ignore-memory-region-during-du.patch [bz#1382645]
+- Resolves: bz#1382645
+  ([FJ7.3 Bug]: virsh dump with both --memory-only and --format option fails)
+
 * Fri Sep 30 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.9
 - kvm-virtio-recalculate-vq-inuse-after-migration.patch [bz#1380306]
 - Resolves: bz#1380306
