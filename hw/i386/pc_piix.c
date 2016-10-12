@@ -1478,6 +1478,11 @@ DEFINE_PC_MACHINE(rhel700, "pc-i440fx-rhel7.0.0", pc_init_rhel700,
             .driver = TYPE_X86_CPU,\
             .property = "3dnowext",\
             .value = "off",\
+        },\
+        {\
+            .driver = "virtio-net-pci",\
+            .property = "__com.redhat_rhel6_ctrl_guest_workaround", \
+            .value = "on",\
         },
 
 static void pc_compat_rhel660(MachineState *machine)
@@ -1571,6 +1576,11 @@ DEFINE_PC_MACHINE(rhel650, "rhel6.5.0", pc_init_rhel650,
         {\
             .driver = TYPE_X86_CPU,\
             .property = "sep",\
+            .value = "off",\
+        },\
+        {\
+            .driver = "virtio-net-pci",\
+            .property = "__com.redhat_rhel6_ctrl_guest_workaround", \
             .value = "off",\
         },
 
