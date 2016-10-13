@@ -1047,9 +1047,27 @@ int cpu_is_bsp(CPUState *env)
     return env->cpuid_apic_id == 0;
 }
 
+static bool x86_cpu_is_intel(CPUState *env)
+{
+    uint32_t eax, ebx, ecx, edx;
+
+    /* Instead of relying env->cpuid_vendorX, check target cpuid function 0
+     * for accurate CPU vendor info.
+     */
+    cpu_x86_cpuid(env, 0, 0, &eax, &ebx, &ecx, &edx);
+
+    if (ebx == CPUID_VENDOR_INTEL_1 && edx == CPUID_VENDOR_INTEL_2 &&
+        ecx == CPUID_VENDOR_INTEL_3) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 CPUState *pc_new_cpu(const char *cpu_model)
 {
     CPUState *env;
+    static bool ht_warned;
 
     if (runstate_is_running()) {
         pause_all_vcpus();
@@ -1074,6 +1092,20 @@ CPUState *pc_new_cpu(const char *cpu_model)
      * it can access invalid state and crash.
      */
     qemu_init_vcpu(env);
+
+    /* Only Intel CPUs support hyperthreading. Even though QEMU fixes this
+     * issue by adjusting CPUID_0000_0001_EBX and CPUID_8000_0008_ECX
+     * based on inputs (sockets,cores,threads), it is still better to gives
+     * users a warning.
+     *
+     * NOTE: the following code has to follow qemu_init_vcpu(). Otherwise
+     * cs->nr_threads hasn't be populated yet and the checking is incorrect.
+     */
+    if (!x86_cpu_is_intel(env) && env->nr_threads > 1 && !ht_warned) {
+        error_report("AMD CPU doesn't support hyperthreading. Please configure"
+                     " -smp options properly.");
+        ht_warned = true;
+    }
 
     if (runstate_is_running()) {
         resume_all_vcpus();
