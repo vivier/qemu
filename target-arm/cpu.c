@@ -33,6 +33,8 @@
 #include "sysemu/kvm.h"
 #include "kvm_arm.h"
 
+#define MP_AFFINITY_INVALID (~ARM64_AFFINITY_MASK)
+
 static void arm_cpu_set_pc(CPUState *cs, vaddr value)
 {
     ARMCPU *cpu = ARM_CPU(cs);
@@ -441,21 +443,10 @@ static void arm_cpu_initfn(Object *obj)
     CPUState *cs = CPU(obj);
     ARMCPU *cpu = ARM_CPU(obj);
     static bool inited;
-    uint32_t Aff1, Aff0;
 
     cs->env_ptr = &cpu->env;
-    cpu_exec_init(cs, &error_abort);
     cpu->cp_regs = g_hash_table_new_full(g_int_hash, g_int_equal,
                                          g_free, g_free);
-
-    /* This cpu-id-to-MPIDR affinity is used only for TCG; KVM will override it.
-     * We don't support setting cluster ID ([16..23]) (known as Aff2
-     * in later ARM ARM versions), or any of the higher affinity level fields,
-     * so these bits always RAZ.
-     */
-    Aff1 = cs->cpu_index / ARM_CPUS_PER_CLUSTER;
-    Aff0 = cs->cpu_index % ARM_CPUS_PER_CLUSTER;
-    cpu->mp_affinity = (Aff1 << ARM_AFF1_SHIFT) | Aff0;
 
 #ifndef CONFIG_USER_ONLY
     /* Our inbound IRQ and FIQ lines */
@@ -576,6 +567,14 @@ static void arm_cpu_realizefn(DeviceState *dev, Error **errp)
     ARMCPU *cpu = ARM_CPU(dev);
     ARMCPUClass *acc = ARM_CPU_GET_CLASS(dev);
     CPUARMState *env = &cpu->env;
+    Error *local_err = NULL;
+    uint32_t Aff1, Aff0;
+
+    cpu_exec_realizefn(cs, &local_err);
+    if (local_err != NULL) {
+        error_propagate(errp, local_err);
+        return;
+    }
 
     /* Some features automatically imply others: */
     if (arm_feature(env, ARM_FEATURE_V8)) {
@@ -629,6 +628,17 @@ static void arm_cpu_realizefn(DeviceState *dev, Error **errp)
     if (arm_feature(env, ARM_FEATURE_THUMB2) &&
         !arm_feature(env, ARM_FEATURE_M)) {
         set_feature(env, ARM_FEATURE_THUMB_DSP);
+    }
+
+    /* This cpu-id-to-MPIDR affinity is used only for TCG; KVM will override it.
+     * We don't support setting cluster ID ([16..23]) (known as Aff2
+     * in later ARM ARM versions), or any of the higher affinity level fields,
+     * so these bits always RAZ.
+     */
+    if (cpu->mp_affinity == MP_AFFINITY_INVALID) {
+        Aff1 = cs->cpu_index / ARM_CPUS_PER_CLUSTER;
+        Aff0 = cs->cpu_index % ARM_CPUS_PER_CLUSTER;
+        cpu->mp_affinity = (Aff1 << ARM_AFF1_SHIFT) | Aff0;
     }
 
     if (cpu->reset_hivecs) {
@@ -1461,7 +1471,7 @@ static Property arm_cpu_properties[] = {
     DEFINE_PROP_BOOL("start-powered-off", ARMCPU, start_powered_off, false),
     DEFINE_PROP_UINT32("psci-conduit", ARMCPU, psci_conduit, 0),
     DEFINE_PROP_UINT32("midr", ARMCPU, midr, 0),
-    DEFINE_PROP_UINT64("mp-affinity", ARMCPU, mp_affinity, 0),
+    DEFINE_PROP_UINT64("mp-affinity", ARMCPU, mp_affinity, MP_AFFINITY_INVALID),
     DEFINE_PROP_END_OF_LIST()
 };
 
@@ -1533,17 +1543,6 @@ static void arm_cpu_class_init(ObjectClass *oc, void *data)
     cc->debug_check_watchpoint = arm_debug_check_watchpoint;
 
     cc->disas_set_info = arm_disas_set_info;
-
-    /*
-     * Reason: arm_cpu_initfn() calls cpu_exec_init(), which saves
-     * the object in cpus -> dangling pointer after final
-     * object_unref().
-     *
-     * Once this is fixed, the devices that create ARM CPUs should be
-     * updated not to set cannot_destroy_with_object_finalize_yet,
-     * unless they still screw up something else.
-     */
-    dc->cannot_destroy_with_object_finalize_yet = true;
 }
 
 static void cpu_register(const ARMCPUInfo *info)
