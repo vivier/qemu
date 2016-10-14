@@ -811,6 +811,18 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Fri Oct 14 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.23
+- kvm-acpi-support-specified-oem-table-id-for-build_header.patch [bz#1380310]
+- kvm-acpi-take-oem_id-in-build_header-optionally.patch [bz#1380310]
+- kvm-acpi-expose-oem_id-and-oem_table_id-in-build_rsdt.patch [bz#1380310]
+- kvm-acpi-add-function-to-extract-oem_id-and-oem_table_id.patch [bz#1380310]
+- kvm-pc-set-the-OEM-fields-in-the-RSDT-and-the-FADT-from-.patch [bz#1380310]
+- kvm-dataplane-fix-virtio-blk-complete_request-race-condi.patch [bz#1380320]
+- Resolves: bz#1380310
+  (match the OEM ID and OEM Table ID fields of the FADT and the RSDT to those of the SLIC [7.2.z])
+- Resolves: bz#1380320
+  (Race condition during virtio-blk dataplane stop triggers "Virtqueue size exceeded")
+
 * Wed Sep 14 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.22
 - kvm-memory-emulate-ioeventfd.patch [bz#1374623]
 - kvm-virtio-recalculate-vq-inuse-after-migration.patch [bz#1374623]
