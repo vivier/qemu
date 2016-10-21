@@ -80,6 +80,7 @@ QPCIDevice *qpci_device_find(QPCIBus *bus, int devfn);
 
 void qpci_device_enable(QPCIDevice *dev);
 uint8_t qpci_find_capability(QPCIDevice *dev, uint8_t id);
+void qpci_msix_set_message(QPCIDevice *dev, int entry, struct MSIMessage msg);
 void qpci_msix_enable(QPCIDevice *dev);
 void qpci_msix_disable(QPCIDevice *dev);
 bool qpci_msix_pending(QPCIDevice *dev, uint16_t entry);
