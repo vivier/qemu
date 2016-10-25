@@ -530,6 +530,8 @@ static void virtio_blk_dma_restart_cb(void *opaque, int running, RunState state)
 
 static void virtio_blk_reset(VirtIODevice *vdev)
 {
+    VirtIOBlockReq *req;
+
 #ifdef CONFIG_VIRTIO_BLK_DATA_PLANE
     VirtIOBlock *s = to_virtio_blk(vdev);
 
@@ -543,6 +545,14 @@ static void virtio_blk_reset(VirtIODevice *vdev)
      * are per-device request lists.
      */
     bdrv_drain_all();
+
+    /* We drop queued requests after bdrv_drain_all() because bdrv_drain_all()
+     * itself can produce them. */
+    while (s->rq) {
+        req = s->rq;
+        s->rq = req->next;
+        qemu_free(req);
+    }
 }
 
 /* coalesce internal state, copy to pci i/o region 0
