@@ -818,6 +818,15 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Fri Nov 11 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-126.el7_3.1
+- kvm-ide-fix-halted-IO-segfault-at-reset.patch [bz#1393042]
+- kvm-hw-i386-regenerate-checked-in-AML-payload-RHEL-only.patch [bz#1392027]
+- kvm-SPEC-file-flip-the-build-from-IASL-to-checked-in-AML.patch [bz#1392027]
+- Resolves: bz#1392027
+  (shutdown rhel 5.11 guest failed and stop at "system halted")
+- Resolves: bz#1393042
+  (system_reset should clear pending request for error (IDE))
+
 * Tue Sep 20 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-126.el7
 - kvm-virtio-recalculate-vq-inuse-after-migration.patch [bz#1376542]
 - Resolves: bz#1376542
