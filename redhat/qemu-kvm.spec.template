@@ -818,6 +818,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Nov 16 2016 Danilo de Paula <ddepaula@redhat.com> - 1.5.3-127.el7
+- kvm-hw-i386-regenerate-checked-in-AML-payload-RHEL-only.patch [bz#1377087]
+- kvm-ide-fix-halted-IO-segfault-at-reset.patch [bz#1377087]
+- Resolves: bz#1377087
+  (shutdown rhel 5.11 guest failed and stop at "system halted")
 * Tue Sep 20 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-126.el7
 - kvm-virtio-recalculate-vq-inuse-after-migration.patch [bz#1376542]
 - Resolves: bz#1376542
