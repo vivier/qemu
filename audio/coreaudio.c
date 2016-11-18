@@ -35,17 +35,14 @@
 struct {
     int buffer_frames;
     int nbuffers;
-    int isAtexit;
 } conf = {
     .buffer_frames = 512,
     .nbuffers = 4,
-    .isAtexit = 0
 };
 
 typedef struct coreaudioVoiceOut {
     HWVoiceOut hw;
     pthread_mutex_t mutex;
-    int isAtexit;
     AudioDeviceID outputDeviceID;
     UInt32 audioDevicePropertyBufferFrameSize;
     AudioStreamBasicDescription outputStreamBasicDescription;
@@ -157,11 +154,6 @@ static inline UInt32 isPlaying (AudioDeviceID outputDeviceID)
                          "Could not determine whether Device is playing\n");
     }
     return result;
-}
-
-static void coreaudio_atexit (void)
-{
-    conf.isAtexit = 1;
 }
 
 static int coreaudio_lock (coreaudioVoiceOut *core, const char *fn_name)
@@ -443,7 +435,7 @@ static void coreaudio_fini_out (HWVoiceOut *hw)
     int err;
     coreaudioVoiceOut *core = (coreaudioVoiceOut *) hw;
 
-    if (!conf.isAtexit) {
+    if (!audio_is_cleaning_up()) {
         /* stop playback */
         if (isPlaying(core->outputDeviceID)) {
             status = AudioDeviceStop(core->outputDeviceID, audioDeviceIOProc);
@@ -486,7 +478,7 @@ static int coreaudio_ctl_out (HWVoiceOut *hw, int cmd, ...)
 
     case VOICE_DISABLE:
         /* stop playback */
-        if (!conf.isAtexit) {
+        if (!audio_is_cleaning_up()) {
             if (isPlaying(core->outputDeviceID)) {
                 status = AudioDeviceStop(core->outputDeviceID, audioDeviceIOProc);
                 if (status != kAudioHardwareNoError) {
@@ -501,7 +493,6 @@ static int coreaudio_ctl_out (HWVoiceOut *hw, int cmd, ...)
 
 static void *coreaudio_audio_init (void)
 {
-    atexit(coreaudio_atexit);
     return &coreaudio_audio_init;
 }
 
