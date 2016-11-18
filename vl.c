@@ -4396,7 +4396,7 @@ int main(int argc, char **argv, char **envp)
     tpm_cleanup();
 #endif
     net_cleanup();
-
+    monitor_cleanup();
     qemu_chr_cleanup();
 
     return 0;
