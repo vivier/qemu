@@ -817,6 +817,18 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Thu Nov 24 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-126.el7_3.2
+- kvm-virtio-introduce-virtqueue_unmap_sg.patch [bz#1393484]
+- kvm-virtio-introduce-virtqueue_discard.patch [bz#1393484]
+- kvm-virtio-decrement-vq-inuse-in-virtqueue_discard.patch [bz#1393484]
+- kvm-balloon-fix-segfault-and-harden-the-stats-queue.patch [bz#1393484]
+- kvm-virtio-balloon-discard-virtqueue-element-on-reset.patch [bz#1393484]
+- kvm-virtio-zero-vq-inuse-in-virtio_reset.patch [bz#1393484]
+- kvm-virtio-add-virtqueue_rewind.patch [bz#1393484]
+- kvm-virtio-balloon-fix-stats-vq-migration.patch [bz#1393484]
+- Resolves: bz#1393484
+  ([RHEL7.3] KVM guest shuts itself down after 128th reboot)
+
 %%CHANGELOG%%
 * Fri Nov 11 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-126.el7_3.1
 - kvm-ide-fix-halted-IO-segfault-at-reset.patch [bz#1393042]
