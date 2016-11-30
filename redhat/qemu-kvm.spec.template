@@ -78,7 +78,7 @@ Obsoletes: %1 < %{obsoletes_version}
 Summary: QEMU is a FAST! processor emulator
 Name: %{pkgname}%{?pkgsuffix}
 Version: %%VERSION%%
-Release: %%RELEASE%%%{?dist}%%LOCALVERSION%%
+Release: %%RELEASE%%%{?dist}.%%ZRELEASE%%%%LOCALVERSION%%
 # Epoch because we pushed a qemu-1.0 package. AIUI this can't ever be dropped
 Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
@@ -823,6 +823,24 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed Nov 30 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7_3.1
+- kvm-ide-fix-halted-IO-segfault-at-reset.patch [bz#1393043]
+- kvm-atapi-fix-halted-DMA-reset.patch [bz#1393043]
+- kvm-ahci-clear-aiocb-in-ncq_cb.patch [bz#1393736]
+- kvm-Workaround-rhel6-ctrl_guest_offloads-machine-type-mi.patch [bz#1392876]
+- kvm-Postcopy-vs-xbzrle-Don-t-send-xbzrle-pages-once-in-p.patch [bz#1395360]
+- kvm-ui-fix-refresh-of-VNC-server-surface.patch [bz#1392881]
+- Resolves: bz#1392876
+  (windows guests migration from rhel6.8-z to rhel7.3 with virtio-net-pci fail)
+- Resolves: bz#1392881
+  (Graphic can't be showed out quickly if guest graphic mode is vnc)
+- Resolves: bz#1393043
+  (system_reset should clear pending request for error (IDE))
+- Resolves: bz#1393736
+  (qemu core dump when there is an I/O error on AHCI)
+- Resolves: bz#1395360
+  (Post-copy migration fails with XBZRLE compression)
+
 * Tue Sep 27 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7
 - kvm-ARM-ACPI-fix-the-AML-ID-format-for-CPU-devices.patch [bz#1373733]
 - Resolves: bz#1373733

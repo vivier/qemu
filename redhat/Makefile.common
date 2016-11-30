@@ -5,7 +5,7 @@ VERSION:=2.6.0
 DATE:=
 COMMIT:=
 RELEASE:=28
-ZRELEASE:=
+ZRELEASE:=1
 RELEASE_SEPARATOR:=-
 
 TARFILE:=qemu-$(VERSION).tar.bz2
@@ -14,23 +14,23 @@ TARSHA1:=d558a11d681dd095b1d7cb03c5b723c9d3045020
 MARKER:=bfc766d38e1fae5767d43845c15c79ac8fa6d6af
 
 SPECFILE:=$(NAME).spec
-DIST:=.el7
+DIST:=.el7_3
 BUILD_TARGET:=rhevh-rhel-7.3-candidate
 
 ifeq ($(RHEV),1)
-  NAME_SUFFIX=-rhev
+  NAME_SUFFIX:=-rhev
 endif
 
 ifneq ($(VERSION),)
-  BUILD_DIR=$(UNAME)-$(VERSION)
-  SRPM_NAME=$(NAME)$(NAME_SUFFIX)-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST)
+  BUILD_DIR:=$(UNAME)-$(VERSION)
+  SRPM_NAME:=$(NAME)$(NAME_SUFFIX)-$(VERSION)$(RELEASE_SEPARATOR)$(RELEASE)$(DIST)
 else
-  BUILD_DIR=$(UNAME)-$(GITCOMMIT)
-  SRPM_NAME=$(NAME)$(NAME_SUFFIX)-$(DATE)-$(RELEASE).git$(COMMIT)$(DIST)
+  BUILD_DIR:=$(UNAME)-$(GITCOMMIT)
+  SRPM_NAME:=$(NAME)$(NAME_SUFFIX)-$(DATE)-$(RELEASE).git$(COMMIT)$(DIST)
 endif
 
 ifneq ($(ZRELEASE),)
-  SRPM_NAME=$(SRPM_NAME).$(ZRELEASE)
+  SRPM_NAME:=$(SRPM_NAME).$(ZRELEASE)
 endif
 
 SOURCES_FILELIST:= ksmtuned.conf ksmtuned ksm.sysconfig 80-kvm.rules kvm.modules 99-qemu-guest-agent.rules qemu-guest-agent.service ksmtuned.service  ksmctl.c ksm.service qemu.binfmt qemu-ga.sysconfig rhel6-virtio.rom rhel6-pcnet.rom rhel6-rtl8139.rom rhel6-ne2k_pci.rom bios-256k.bin README.rhel6-gpxe-source kvm-setup kvm-setup.service 85-kvm.preset build_configure.sh kvm-unit-tests.git-4ea7633.tar.bz2 vhost.conf bridge.conf rhel6-e1000.rom kvm.conf 95-kvm-memlock.conf

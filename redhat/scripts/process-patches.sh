@@ -23,6 +23,8 @@ shift
 LOCALVERSION=$1
 shift
 RHEV=$1
+shift
+ZRELEASE=$1
 
 SOURCES=rpmbuild/SOURCES
 SRPMDIR=rpmbuild/SRPM
@@ -58,6 +60,7 @@ sed -i -e "/%%PATCHLIST%%/r psection
            /%%PATCHAPPLY%%/d          
            s/%%VERSION%%/${VERSION}/
            s/%%RELEASE%%/${RELEASE}/
+	   s/%%ZRELEASE%%/${ZRELEASE}/
            s/%%DATE%%/${DATE}/
            s/%%COMMIT%%/${COMMIT}/
            s/%%LOCALVERSION%%/${LOCALVERSION}/
