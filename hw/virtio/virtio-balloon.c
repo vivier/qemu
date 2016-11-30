@@ -98,13 +98,14 @@ static void balloon_stats_poll_cb(void *opaque)
     VirtIOBalloon *s = opaque;
     VirtIODevice *vdev = VIRTIO_DEVICE(s);
 
-    if (!balloon_stats_supported(s)) {
+    if (!s->stats_vq_elem_pending || !balloon_stats_supported(s)) {
         /* re-schedule */
         balloon_stats_change_timer(s, s->stats_poll_interval);
         return;
     }
 
     virtqueue_push(s->svq, &s->stats_vq_elem, s->stats_vq_offset);
+    s->stats_vq_elem_pending = false;
     virtio_notify(vdev, s->svq);
 }
 
@@ -241,14 +242,22 @@ static void virtio_balloon_handle_output(VirtIODevice *vdev, VirtQueue *vq)
 static void virtio_balloon_receive_stats(VirtIODevice *vdev, VirtQueue *vq)
 {
     VirtIOBalloon *s = VIRTIO_BALLOON(vdev);
-    VirtQueueElement *elem = &s->stats_vq_elem;
+    VirtQueueElement elem;
     VirtIOBalloonStat stat;
     size_t offset = 0;
     qemu_timeval tv;
 
-    if (!virtqueue_pop(vq, elem)) {
+    if (!virtqueue_pop(vq, &elem)) {
         goto out;
     }
+    if (s->stats_vq_elem_pending) {
+        /* This should never happen if the driver follows the spec. */
+        virtqueue_push(vq, &s->stats_vq_elem, 0);
+        virtio_notify(vdev, vq);
+    }
+
+    s->stats_vq_elem = elem;
+    s->stats_vq_elem_pending = true;
 
     /* Initialize the stats to get rid of any stale values.  This is only
      * needed to handle the case where a guest supports fewer stats than it
@@ -256,7 +265,7 @@ static void virtio_balloon_receive_stats(VirtIODevice *vdev, VirtQueue *vq)
      */
     reset_stats(s);
 
-    while (iov_to_buf(elem->out_sg, elem->out_num, offset, &stat, sizeof(stat))
+    while (iov_to_buf(elem.out_sg, elem.out_num, offset, &stat, sizeof(stat))
            == sizeof(stat)) {
         uint16_t tag = virtio_tswap16(vdev, stat.tag);
         uint64_t val = virtio_tswap64(vdev, stat.val);
@@ -418,6 +427,15 @@ static void virtio_balloon_device_unrealize(DeviceState *dev, Error **errp)
     virtio_cleanup(vdev);
 }
 
+static void virtio_balloon_device_reset(VirtIODevice *vdev)
+{
+    VirtIOBalloon *s = VIRTIO_BALLOON(vdev);
+
+    if (s->stats_vq_elem_pending) {
+        s->stats_vq_elem_pending = false;
+    }
+}
+
 static Property virtio_balloon_properties[] = {
     DEFINE_PROP_END_OF_LIST(),
 };
@@ -431,6 +449,7 @@ static void virtio_balloon_class_init(ObjectClass *klass, void *data)
     set_bit(DEVICE_CATEGORY_MISC, dc->categories);
     vdc->realize = virtio_balloon_device_realize;
     vdc->unrealize = virtio_balloon_device_unrealize;
+    vdc->reset = virtio_balloon_device_reset;
     vdc->get_config = virtio_balloon_get_config;
     vdc->set_config = virtio_balloon_set_config;
     vdc->get_features = virtio_balloon_get_features;
