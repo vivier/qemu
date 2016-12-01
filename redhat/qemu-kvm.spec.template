@@ -811,6 +811,12 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Thu Dec 01 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.24
+- kvm-monitor-fix-crash-when-leaving-qemu-with-spice-audio.patch [bz#1372192]
+- kvm-audio-clean-up-before-monitor-clean-up.patch [bz#1372192]
+- Resolves: bz#1372192
+  (spice: dead-lock when 'quit')
+
 * Fri Oct 14 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.23
 - kvm-acpi-support-specified-oem-table-id-for-build_header.patch [bz#1380310]
 - kvm-acpi-take-oem_id-in-build_header-optionally.patch [bz#1380310]
