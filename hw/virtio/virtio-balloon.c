@@ -398,6 +398,7 @@ static void virtio_balloon_device_reset(VirtIODevice *vdev)
     VirtIOBalloon *s = VIRTIO_BALLOON(vdev);
 
     if (s->stats_vq_elem_pending) {
+        virtqueue_discard(s->svq, &s->stats_vq_elem, 0);
         s->stats_vq_elem_pending = false;
     }
 }
