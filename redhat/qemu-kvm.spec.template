@@ -811,6 +811,18 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %changelog
 %%CHANGELOG%%
+* Fri Dec 09 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.25
+- kvm-virtio-introduce-virtqueue_unmap_sg.patch [bz#1400551]
+- kvm-virtio-introduce-virtqueue_discard.patch [bz#1400551]
+- kvm-virtio-decrement-vq-inuse-in-virtqueue_discard.patch [bz#1400551]
+- kvm-balloon-fix-segfault-and-harden-the-stats-queue.patch [bz#1400551]
+- kvm-virtio-balloon-discard-virtqueue-element-on-reset.patch [bz#1400551]
+- kvm-virtio-zero-vq-inuse-in-virtio_reset.patch [bz#1400551]
+- kvm-virtio-add-virtqueue_rewind.patch [bz#1400551]
+- kvm-virtio-balloon-fix-stats-vq-migration.patch [bz#1400551]
+- Resolves: bz#1400551
+  (migration failed with: VQ 2 size 0x80 < last_avail_idx 0x1 - used_idx 0x2)
+
 * Thu Dec 01 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.3.0-31.el7_2.24
 - kvm-monitor-fix-crash-when-leaving-qemu-with-spice-audio.patch [bz#1372192]
 - kvm-audio-clean-up-before-monitor-clean-up.patch [bz#1372192]
