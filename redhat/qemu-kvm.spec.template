@@ -860,6 +860,18 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Fri Dec 09 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.11
+- kvm-virtio-introduce-virtqueue_unmap_sg.patch [bz#1397885]
+- kvm-virtio-introduce-virtqueue_discard.patch [bz#1397885]
+- kvm-virtio-decrement-vq-inuse-in-virtqueue_discard.patch [bz#1397885]
+- kvm-balloon-fix-segfault-and-harden-the-stats-queue.patch [bz#1397885]
+- kvm-virtio-balloon-discard-virtqueue-element-on-reset.patch [bz#1397885]
+- kvm-virtio-zero-vq-inuse-in-virtio_reset.patch [bz#1397885]
+- kvm-virtio-add-virtqueue_rewind.patch [bz#1397885]
+- kvm-virtio-balloon-fix-stats-vq-migration.patch [bz#1397885]
+- Resolves: bz#1397885
+  ([RHEL7.3] KVM guest shuts itself down after 128th reboot)
+
 * Wed Oct 12 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.10
 - kvm-Add-skip_dump-flag-to-ignore-memory-region-during-du.patch [bz#1382645]
 - Resolves: bz#1382645
