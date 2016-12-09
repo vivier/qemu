@@ -823,6 +823,26 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Dec 09 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7_3.2
+- kvm-numa-do-not-leak-NumaOptions.patch [bz#1397745]
+- kvm-char-free-the-tcp-connection-data-when-closing.patch [bz#1397745]
+- kvm-char-free-MuxDriver-when-closing.patch [bz#1397745]
+- kvm-ahci-free-irqs-array.patch [bz#1397745]
+- kvm-virtio-input-free-config-list.patch [bz#1397745]
+- kvm-usb-free-USBDevice.strings.patch [bz#1397745]
+- kvm-usb-free-leaking-path.patch [bz#1397745]
+- kvm-ahci-fix-sglist-leak-on-retry.patch [bz#1397745]
+- kvm-virtio-add-virtqueue_rewind.patch [bz#1402509]
+- kvm-virtio-balloon-fix-stats-vq-migration.patch [bz#1402509]
+- kvm-virtio-blk-Release-s-rq-queue-at-system_reset.patch [bz#1393041]
+- kvm-virtio-blk-Remove-stale-comment-about-draining.patch [bz#1393041]
+- Resolves: bz#1393041
+  (system_reset should clear pending request for error (virtio-blk))
+- Resolves: bz#1397745
+  (Backport memory leak fixes from QEMU 2.7)
+- Resolves: bz#1402509
+  (virtio-balloon stats virtqueue does not migrate properly)
+
 * Wed Nov 30 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7_3.1
 - kvm-ide-fix-halted-IO-segfault-at-reset.patch [bz#1393043]
 - kvm-atapi-fix-halted-DMA-reset.patch [bz#1393043]
