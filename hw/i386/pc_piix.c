@@ -1461,7 +1461,7 @@ DEFINE_PC_MACHINE(rhel700, "pc-i440fx-rhel7.0.0", pc_init_rhel700,
         },\
         {\
             .driver = "Opteron_G4" "-" TYPE_X86_CPU,\
-            .property = "x1apic",\
+            .property = "x2apic",\
             .value = "off",\
         },\
         {\
