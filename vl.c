@@ -1393,8 +1393,14 @@ static void smp_parse(const char *optarg)
         if (cores == 0) {
             threads = threads > 0 ? threads : 1;
             cores = smp / (sockets * threads);
-        } else {
+        } else if (threads == 0) {
             threads = smp / (cores * sockets);
+        } else if (sockets * cores * threads < smp) {
+            fprintf(stderr, "cpu topology: error: "
+                    "sockets (%u) * cores (%u) * threads (%u) < "
+                    "smp_cpus (%u)\n",
+                    sockets, cores, threads, smp);
+            exit(1);
         }
     }
     smp_cpus = smp;
