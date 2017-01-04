@@ -823,6 +823,14 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed Jan 04 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7_3.3
+- kvm-pc_piix-fix-compat-props-typo-for-RHEL6-machine-type.patch [bz#1408122]
+- kvm-net-don-t-poke-at-chardev-internal-QemuOpts.patch [bz#1410200]
+- Resolves: bz#1408122
+  (Opteron_G4 CPU model broken in QEMU 2.6 with RHEL 6 machine type)
+- Resolves: bz#1410200
+  (qemu gets SIGSEGV when hot-plug a vhostuser network)
+
 * Fri Dec 09 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7_3.2
 - kvm-numa-do-not-leak-NumaOptions.patch [bz#1397745]
 - kvm-char-free-the-tcp-connection-data-when-closing.patch [bz#1397745]
