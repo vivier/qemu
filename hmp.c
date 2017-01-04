@@ -1901,6 +1901,7 @@ void hmp_chardev_add(Monitor *mon, const QDict *qdict)
         error_setg(&err, "Parsing chardev args failed");
     } else {
         qemu_chr_new_from_opts(opts, NULL, &err);
+        qemu_opts_del(opts);
     }
     hmp_handle_error(mon, &err);
 }
