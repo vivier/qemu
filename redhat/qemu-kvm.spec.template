@@ -817,6 +817,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Wed Jan 04 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-126.el7_3.3
+- kvm-net-check-packet-payload-length.patch [bz#1398217]
+- Resolves: bz#1398217
+  (CVE-2016-2857 qemu-kvm: Qemu: net: out of bounds read in net_checksum_calculate() [rhel-7.3.z])
+
 * Thu Nov 24 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-126.el7_3.2
 - kvm-virtio-introduce-virtqueue_unmap_sg.patch [bz#1393484]
 - kvm-virtio-introduce-virtqueue_discard.patch [bz#1393484]
