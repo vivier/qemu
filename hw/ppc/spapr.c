@@ -2785,6 +2785,7 @@ DEFINE_SPAPR_MACHINE(2_8, "2.8", true);
         .property = "pre-2.8-migration",            \
         .value    = "on",                           \
     },
+#endif
 
 static void phb_placement_2_7(sPAPRMachineState *spapr, uint32_t index,
                               uint64_t *buid, hwaddr *pio,
@@ -2835,6 +2836,7 @@ static void phb_placement_2_7(sPAPRMachineState *spapr, uint32_t index,
      */
 }
 
+#if 0 /* Disabled for Red Hat Enterprise Linux */
 static void spapr_machine_2_7_instance_options(MachineState *machine)
 {
     sPAPRMachineState *spapr = SPAPR_MACHINE(machine);
@@ -3001,18 +3003,65 @@ DEFINE_SPAPR_MACHINE(2_1, "2.1", false);
 #endif
 
 /*
- * pseries-rhel7.3.0
+ * pseries-rhel7.4.0
  */
-static void spapr_machine_rhel730_instance_options(MachineState *machine)
+static void spapr_machine_rhel740_instance_options(MachineState *machine)
 {
 }
 
-static void spapr_machine_rhel730_class_options(MachineClass *mc)
+static void spapr_machine_rhel740_class_options(MachineClass *mc)
 {
     /* Defaults for the latest behaviour inherited from the base class */
 }
 
-DEFINE_SPAPR_MACHINE(rhel730, "rhel7.3.0", true);
+DEFINE_SPAPR_MACHINE(rhel740, "rhel7.4.0", true);
+
+/*
+ * pseries-rhel7.3.0
+ * like SPAPR_COMPAT_2_6 and _2_7 but "ddw" has been backported to RHEL7_3
+ */
+#define SPAPR_COMPAT_RHEL7_3 \
+    HW_COMPAT_RHEL7_3                               \
+    {                                               \
+        .driver   = TYPE_SPAPR_PCI_HOST_BRIDGE,     \
+        .property = "mem_win_size",                 \
+        .value    = stringify(SPAPR_PCI_2_7_MMIO_WIN_SIZE),\
+    },                                              \
+    {                                               \
+        .driver   = TYPE_SPAPR_PCI_HOST_BRIDGE,     \
+        .property = "mem64_win_size",               \
+        .value    = "0",                            \
+    },                                              \
+    {                                               \
+        .driver = TYPE_POWERPC_CPU,                 \
+        .property = "pre-2.8-migration",            \
+        .value    = "on",                           \
+    },                                              \
+    {                                               \
+        .driver = TYPE_SPAPR_PCI_HOST_BRIDGE,       \
+        .property = "pre-2.8-migration",            \
+        .value    = "on",                           \
+    },
+
+static void spapr_machine_rhel730_instance_options(MachineState *machine)
+{
+    sPAPRMachineState *spapr = SPAPR_MACHINE(machine);
+
+    spapr_machine_rhel740_instance_options(machine);
+    spapr->use_hotplug_event_source = false;
+}
+
+static void spapr_machine_rhel730_class_options(MachineClass *mc)
+{
+    sPAPRMachineClass *smc = SPAPR_MACHINE_CLASS(mc);
+
+    spapr_machine_rhel740_class_options(mc);
+    smc->tcg_default_cpu = "POWER7";
+    SET_MACHINE_COMPAT(mc, SPAPR_COMPAT_RHEL7_3);
+    smc->phb_placement = phb_placement_2_7;
+}
+
+DEFINE_SPAPR_MACHINE(rhel730, "rhel7.3.0", false);
 
 /*
  * pseries-rhel7.2.0
