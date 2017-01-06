@@ -1720,6 +1720,7 @@ static const TypeInfo sysbus_ahci_info = {
     .class_init    = sysbus_ahci_class_init,
 };
 
+#if 0  /* Disabled in Red Hat Enterprise Linux */
 #define ALLWINNER_AHCI_BISTAFR    ((0xa0 - ALLWINNER_AHCI_MMIO_OFF) / 4)
 #define ALLWINNER_AHCI_BISTCR     ((0xa4 - ALLWINNER_AHCI_MMIO_OFF) / 4)
 #define ALLWINNER_AHCI_BISTFCTR   ((0xa8 - ALLWINNER_AHCI_MMIO_OFF) / 4)
@@ -1813,6 +1814,7 @@ static const TypeInfo allwinner_ahci_info = {
     .instance_init = allwinner_ahci_init,
     .class_init    = allwinner_ahci_class_init,
 };
+#endif
 
 static void sysbus_ahci_register_types(void)
 {
