@@ -822,6 +822,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Jan 10 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.8.0-1.el7
+- Rebase to QEMU 2.8.0 [bz#1387600]
+- Resolves: bz#1387600
+  (Rebase qemu-kvm-rhev to 2.8.0)
+
 * Tue Sep 27 2016 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7
 - kvm-ARM-ACPI-fix-the-AML-ID-format-for-CPU-devices.patch [bz#1373733]
 - Resolves: bz#1373733
