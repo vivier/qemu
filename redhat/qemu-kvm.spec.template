@@ -9,7 +9,7 @@
 %global have_seccomp 1
 %global have_memlock_limits 0
 
-%ifnarch %{ix86} x86_64 aarch64
+%ifarch s390 s390x
     %global have_seccomp 0
 %endif
 
