@@ -91,6 +91,9 @@ HELPERS-$(CONFIG_LINUX) = qemu-bridge-helper$(EXESUF)
 
 ifdef BUILD_DOCS
 DOCS=qemu-doc.html qemu.1 qemu-img.1 qemu-nbd.8 qemu-ga.8
+ifdef CONFIG_LINUX
+DOCS+=kvm_stat.1
+endif
 ifdef CONFIG_VIRTFS
 DOCS+=fsdev/virtfs-proxy-helper.1
 endif
@@ -596,6 +599,12 @@ dvi: qemu-doc.dvi
 html: qemu-doc.html
 info: qemu-doc.info
 pdf: qemu-doc.pdf
+kvm_stat.1: scripts/kvm/kvm_stat.texi
+	$(call quiet-command, \
+	  perl -Ww -- $(SRC_PATH)/scripts/texi2pod.pl $< kvm_stat.pod && \
+	  $(POD2MAN) --section=1 --center=" " --release=" " kvm_stat.pod > $@, \
+	  "  GEN   $@")
+
 
 qemu-doc.dvi qemu-doc.html qemu-doc.info qemu-doc.pdf: \
 	qemu-img.texi qemu-nbd.texi qemu-options.texi qemu-option-trace.texi \
