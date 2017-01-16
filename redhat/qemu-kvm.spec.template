@@ -824,6 +824,23 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Mon Jan 16 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.8.0-2.el7
+- kvm-Revert-kvm_stat-Remove.patch [bz#1389238]
+- kvm-Include-kvm_stat-in-qemu-kvm.spec.patch [bz#1389238]
+- kvm-tools-kvm_stat-Powerpc-related-fixes.patch [bz#1389238]
+- kvm-compat-define-HW_COMPAT_RHEL7_3.patch [bz#1390734]
+- kvm-spapr-define-pseries-rhel7.4.0-machine-type.patch [bz#1390734]
+- kvm-config-Remove-EHCI-from-ppc64-builds.patch [bz#1410674]
+- kvm-Fix-unuseds-Fedora-build.patch [bz#1410758]
+- Resolves: bz#1389238
+  (Re-enable kvm_stat script)
+- Resolves: bz#1390734
+  (ppc64: pseries-rhel7.4.0 machine type)
+- Resolves: bz#1410674
+  (qemu: Remove unnecessary EHCI implementation for Power)
+- Resolves: bz#1410758
+  (Make 7.4 qemu-kvm-rhev build on fedora25)
+
 * Tue Jan 10 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.8.0-1.el7
 - Rebase to QEMU 2.8.0 [bz#1387600]
 - Resolves: bz#1387600
