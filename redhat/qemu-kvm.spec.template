@@ -350,7 +350,7 @@ Group: Development/Tools
 %rhel_rhev_conflicts qemu-kvm-tools
 
 %description -n qemu-kvm-tools%{?pkgsuffix}
-This package contains some diagnostics and debugging tools for KVM.
+This package contains some diagnostics and debugging tools for KVM, such as kvm_stat.
 
 %prep
 %setup -q -n qemu-%{version}
@@ -559,6 +559,9 @@ install -D -p -m 0644 %{SOURCE26} $RPM_BUILD_ROOT%{_sysconfdir}/modprobe.d/vhost
 mkdir -p $RPM_BUILD_ROOT%{_bindir}/
 mkdir -p $RPM_BUILD_ROOT%{_udevdir}
 
+install -m 0755 scripts/kvm/kvm_stat $RPM_BUILD_ROOT%{_bindir}/
+mkdir -p ${RPM_BUILD_ROOT}%{_mandir}/man1/
+install -m 0644 kvm_stat.1 ${RPM_BUILD_ROOT}%{_mandir}/man1/
 install -m 0644 %{SOURCE3} $RPM_BUILD_ROOT%{_udevdir}
 
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/%{pkgname}
@@ -846,6 +849,8 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 
 %files -n qemu-kvm-tools%{?pkgsuffix}
 %defattr(-,root,root,-)
+%{_bindir}/kvm_stat
+%{_mandir}/man1/kvm_stat.1*
 %ifarch x86_64
 %{_datadir}/%{pkgname}/tscdeadline_latency.flat
 %endif
