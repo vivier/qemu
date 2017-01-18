@@ -816,6 +816,20 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 
 %changelog
 %%CHANGELOG%%
+* Wed Jan 18 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-129.el7
+- kvm-Update-qemu-kvm-package-Summary-and-Description.patch [bz#1378541]
+- kvm-vl-Don-t-silently-change-topology-when-all-smp-optio.patch [bz#1375507]
+- kvm-net-check-packet-payload-length.patch [bz#1398218]
+- kvm-qxl-Only-emit-QXL_INTERRUPT_CLIENT_MONITORS_CONFIG-o.patch [bz#1342489]
+- Resolves: bz#1342489
+  (Flickering Fedora 24 Login Screen on RHEL 7)
+- Resolves: bz#1375507
+  ("threads" option is overwritten if both "sockets" and "cores" is set on -smp)
+- Resolves: bz#1378541
+  (QEMU: update package summary and description)
+- Resolves: bz#1398218
+  (CVE-2016-2857 qemu-kvm: Qemu: net: out of bounds read in net_checksum_calculate() [rhel-7.4])
+
 * Thu Nov 24 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-128.el7
 - kvm-virtio-introduce-virtqueue_unmap_sg.patch [bz#1377968]
 - kvm-virtio-introduce-virtqueue_discard.patch [bz#1377968]
