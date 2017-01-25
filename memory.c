@@ -381,6 +381,33 @@ static const MemoryRegionPortio *find_portio(MemoryRegion *mr, uint64_t offset,
     return NULL;
 }
 
+static int memory_access_size(MemoryRegion *mr, unsigned l, hwaddr addr)
+{
+  unsigned access_size_max = mr->ops->valid.max_access_size;
+
+  /* Regions are assumed to support 1-4 byte accesses unless
+     otherwise specified.  */
+  if (access_size_max == 0) {
+    access_size_max = 4;
+  }
+
+  /* Bound the maximum access by the alignment of the address.  */
+  if (!mr->ops->impl.unaligned) {
+    unsigned align_size_max = addr & -addr;
+    if (align_size_max != 0 && align_size_max < access_size_max) {
+        access_size_max = align_size_max;
+    }
+  }
+
+  /* Don't attempt accesses larger than the maximum.  */
+  if (l > access_size_max) {
+    l = access_size_max;
+  }
+  l = pow2floor(l);
+
+  return l;
+}
+
 static void memory_region_iorange_read(IORange *iorange,
                                        uint64_t offset,
                                        unsigned width,
@@ -389,6 +416,7 @@ static void memory_region_iorange_read(IORange *iorange,
     MemoryRegionIORange *mrio
         = container_of(iorange, MemoryRegionIORange, iorange);
     MemoryRegion *mr = mrio->mr;
+    unsigned l;
 
     offset += mrio->offset;
     if (mr->ops->old_portio) {
@@ -407,7 +435,8 @@ static void memory_region_iorange_read(IORange *iorange,
         return;
     }
     *data = 0;
-    access_with_adjusted_size(offset, data, width,
+    l = memory_access_size(mr, width, offset);
+    access_with_adjusted_size(offset, data, l,
                               mr->ops->impl.min_access_size,
                               mr->ops->impl.max_access_size,
                               memory_region_read_accessor, mr);
@@ -421,6 +450,7 @@ static void memory_region_iorange_write(IORange *iorange,
     MemoryRegionIORange *mrio
         = container_of(iorange, MemoryRegionIORange, iorange);
     MemoryRegion *mr = mrio->mr;
+    unsigned l;
 
     offset += mrio->offset;
     if (mr->ops->old_portio) {
@@ -437,7 +467,8 @@ static void memory_region_iorange_write(IORange *iorange,
         }
         return;
     }
-    access_with_adjusted_size(offset, &data, width,
+    l = memory_access_size(mr, width, offset);
+    access_with_adjusted_size(offset, &data, l,
                               mr->ops->impl.min_access_size,
                               mr->ops->impl.max_access_size,
                               memory_region_write_accessor, mr);
@@ -850,6 +881,7 @@ static uint64_t memory_region_dispatch_read1(MemoryRegion *mr,
                                              unsigned size)
 {
     uint64_t data = 0;
+    unsigned l;
 
     if (!memory_region_access_valid(mr, addr, size, false)) {
         return -1U; /* FIXME: better signalling */
@@ -859,8 +891,9 @@ static uint64_t memory_region_dispatch_read1(MemoryRegion *mr,
         return mr->ops->old_mmio.read[ctz32(size)](mr->opaque, addr);
     }
 
+    l = memory_access_size(mr, size, addr);
     /* FIXME: support unaligned access */
-    access_with_adjusted_size(addr, &data, size,
+    access_with_adjusted_size(addr, &data, l,
                               mr->ops->impl.min_access_size,
                               mr->ops->impl.max_access_size,
                               memory_region_read_accessor, mr);
@@ -902,6 +935,8 @@ static void memory_region_dispatch_write(MemoryRegion *mr,
                                          uint64_t data,
                                          unsigned size)
 {
+    unsigned l;
+
     if (!memory_region_access_valid(mr, addr, size, true)) {
         return; /* FIXME: better signalling */
     }
@@ -913,8 +948,9 @@ static void memory_region_dispatch_write(MemoryRegion *mr,
         return;
     }
 
+    l = memory_access_size(mr, size, addr);
     /* FIXME: support unaligned access */
-    access_with_adjusted_size(addr, &data, size,
+    access_with_adjusted_size(addr, &data, l,
                               mr->ops->impl.min_access_size,
                               mr->ops->impl.max_access_size,
                               memory_region_write_accessor, mr);
