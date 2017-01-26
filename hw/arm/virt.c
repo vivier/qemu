@@ -1680,7 +1680,7 @@ static void rhel_machine_init(void)
 }
 type_init(rhel_machine_init);
 
-static void rhel730_virt_instance_init(Object *obj)
+static void rhel740_virt_instance_init(Object *obj)
 {
     VirtMachineState *vms = VIRT_MACHINE(obj);
 
@@ -1703,10 +1703,25 @@ static void rhel730_virt_instance_init(Object *obj)
                                     "Valid values are 2, 3 and host", NULL);
 }
 
+static void rhel740_virt_options(MachineClass *mc)
+{
+}
+DEFINE_RHEL_MACHINE_AS_LATEST(7, 4, 0)
+
+#define ARM_COMPAT_RHEL7_3                      \
+    HW_COMPAT_RHEL7_3
+
+static void rhel730_virt_instance_init(Object *obj)
+{
+    rhel740_virt_instance_init(obj);
+}
+
 static void rhel730_virt_options(MachineClass *mc)
 {
     VirtMachineClass *vmc = VIRT_MACHINE_CLASS(OBJECT_CLASS(mc));
 
+    rhel740_virt_options(mc);
+    SET_MACHINE_COMPAT(mc, ARM_COMPAT_RHEL7_3);
     /* the following options need to be re-configured because they weren't
      * present in RHEL 7.3.
      */
@@ -1715,4 +1730,4 @@ static void rhel730_virt_options(MachineClass *mc)
     vmc->no_pmu = true;
     mc->minimum_page_bits = 0;
 }
-DEFINE_RHEL_MACHINE_AS_LATEST(7, 3, 0)
+DEFINE_RHEL_MACHINE(7, 3, 0)
