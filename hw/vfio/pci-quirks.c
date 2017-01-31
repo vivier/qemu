@@ -1187,6 +1187,8 @@ static void vfio_pci_igd_lpc_bridge_class_init(ObjectClass *klass, void *data)
 
     dc->desc = "VFIO dummy ISA/LPC bridge for IGD assignment";
     dc->hotpluggable = false;
+    /* Disabled in Red Hat Enterprise Linux */
+    dc->cannot_instantiate_with_device_add_yet = true;
     k->realize = vfio_pci_igd_lpc_bridge_realize;
     k->class_id = PCI_CLASS_BRIDGE_ISA;
 }
@@ -1364,6 +1366,9 @@ static void vfio_probe_igd_bar4_quirk(VFIOPCIDevice *vdev, int nr)
     uint32_t gmch;
     uint16_t cmd_orig, cmd;
     Error *err = NULL;
+
+    /* Disabled in Red Hat Enterprise Linux */
+    return;
 
     /*
      * This must be an Intel VGA device at address 00:02.0 for us to even
