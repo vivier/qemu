@@ -965,6 +965,49 @@ extern void igd_passthrough_isa_bridge_create(PCIBus *bus, uint16_t gpu_dev_id);
             .value = "on",\
         },
 
+#define PC_RHEL7_3_COMPAT \
+        HW_COMPAT_RHEL7_3 \
+        { /* PC_RHEL7_3_COMPAT from PC_COMPAT_2_7 */ \
+            .driver   = TYPE_X86_CPU,\
+            .property = "l3-cache",\
+            .value    = "off",\
+        },\
+        { /* PC_RHEL7_3_COMPAT from PC_COMPAT_2_7 */ \
+            .driver   = TYPE_X86_CPU,\
+            .property = "full-cpuid-auto-level",\
+            .value    = "off",\
+        },\
+        { /* PC_RHEL7_3_COMPAT from PC_COMPAT_2_7 */ \
+            .driver   = "Opteron_G3" "-" TYPE_X86_CPU,\
+            .property = "family",\
+            .value    = "15",\
+        },\
+        { /* PC_RHEL7_3_COMPAT from PC_COMPAT_2_7 */ \
+            .driver   = "Opteron_G3" "-" TYPE_X86_CPU,\
+            .property = "model",\
+            .value    = "6",\
+        },\
+        { /* PC_RHEL7_3_COMPAT from PC_COMPAT_2_7 */ \
+            .driver   = "Opteron_G3" "-" TYPE_X86_CPU,\
+            .property = "stepping",\
+            .value    = "1",\
+        },\
+        { /* PC_RHEL7_3_COMPAT from PC_COMPAT_2_7 */ \
+            .driver   = "isa-pcspk",\
+            .property = "migrate",\
+            .value    = "off",\
+        },\
+        { /* PC_RHEL7_3_COMPAT from PC_COMPAT_2_6 */ \
+            .driver   = "fw_cfg_io",\
+            .property = "dma_enabled",\
+            .value    = "off",\
+        },\
+        { /* PC_RHEL7_3_COMPAT from PC_COMPAT_2_6 */ \
+            .driver   = TYPE_X86_CPU,\
+            .property = "cpuid-0xb",\
+            .value    = "off",\
+        },
+
 #define PC_RHEL7_2_COMPAT \
         HW_COMPAT_RHEL7_2 \
 	{\
