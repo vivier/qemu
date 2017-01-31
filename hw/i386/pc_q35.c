@@ -366,20 +366,31 @@ static void pc_q35_machine_rhel7_options(MachineClass *m)
     SET_MACHINE_COMPAT(m, PC_RHEL_COMPAT);
 }
 
-static void pc_q35_compat_rhel730(MachineState *machine)
+static void pc_q35_init_rhel740(MachineState *machine)
 {
+    pc_q35_init(machine);
 }
+
+static void pc_q35_machine_rhel740_options(MachineClass *m)
+{
+    pc_q35_machine_rhel7_options(m);
+    m->desc = "RHEL-7.4.0 PC (Q35 + ICH9, 2009)";
+}
+
+DEFINE_PC_MACHINE(q35_rhel740, "pc-q35-rhel7.4.0", pc_q35_init_rhel740,
+                  pc_q35_machine_rhel740_options);
 
 static void pc_q35_init_rhel730(MachineState *machine)
 {
-    pc_q35_compat_rhel730(machine);
     pc_q35_init(machine);
 }
 
 static void pc_q35_machine_rhel730_options(MachineClass *m)
 {
-    pc_q35_machine_rhel7_options(m);
+    pc_q35_machine_rhel740_options(m);
+    m->alias = NULL;
     m->desc = "RHEL-7.3.0 PC (Q35 + ICH9, 2009)";
+    SET_MACHINE_COMPAT(m, PC_RHEL7_3_COMPAT);
 }
 
 DEFINE_PC_MACHINE(q35_rhel730, "pc-q35-rhel7.3.0", pc_q35_init_rhel730,
