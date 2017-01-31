@@ -966,7 +966,6 @@ extern void igd_passthrough_isa_bridge_create(PCIBus *bus, uint16_t gpu_dev_id);
         },
 
 #define PC_RHEL7_2_COMPAT \
-        PC_RHEL_COMPAT \
         HW_COMPAT_RHEL7_2 \
 	{\
 		.driver = "phenom" "-" TYPE_X86_CPU,\

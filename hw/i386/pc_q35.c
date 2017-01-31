@@ -354,6 +354,18 @@ DEFINE_Q35_MACHINE(v2_4, "pc-q35-2.4", NULL,
 
 /* Red Hat Enterprise Linux machine types */
 
+/* Options for the latest rhel7 q35 machine type */
+static void pc_q35_machine_rhel7_options(MachineClass *m)
+{
+    m->family = "pc_q35_Z";
+    m->default_machine_opts = "firmware=bios-256k.bin";
+    m->default_display = "std";
+    m->no_floppy = 1;
+    m->has_dynamic_sysbus = true;
+    m->alias = "q35";
+    SET_MACHINE_COMPAT(m, PC_RHEL_COMPAT);
+}
+
 static void pc_q35_compat_rhel730(MachineState *machine)
 {
 }
@@ -366,13 +378,8 @@ static void pc_q35_init_rhel730(MachineState *machine)
 
 static void pc_q35_machine_rhel730_options(MachineClass *m)
 {
-    m->family = "pc_q35_Z";
+    pc_q35_machine_rhel7_options(m);
     m->desc = "RHEL-7.3.0 PC (Q35 + ICH9, 2009)";
-    m->alias = "q35";
-    m->default_machine_opts = "firmware=bios-256k.bin";
-    m->default_display = "std";
-    m->no_floppy = 1;
-    m->has_dynamic_sysbus = true;
 }
 
 DEFINE_PC_MACHINE(q35_rhel730, "pc-q35-rhel7.3.0", pc_q35_init_rhel730,
