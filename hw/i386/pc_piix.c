@@ -1122,6 +1122,21 @@ static void pc_machine_rhel7_options(MachineClass *m)
     m->is_default = 1;
 }
 
+static void pc_init_rhel740(MachineState *machine)
+{
+    pc_init1(machine, TYPE_I440FX_PCI_HOST_BRIDGE, \
+             TYPE_I440FX_PCI_DEVICE);
+}
+
+static void pc_machine_rhel740_options(MachineClass *m)
+{
+    pc_machine_rhel7_options(m);
+    m->desc = "RHEL 7.4.0 PC (i440FX + PIIX, 1996)";
+}
+
+DEFINE_PC_MACHINE(rhel740, "pc-i440fx-rhel7.4.0", pc_init_rhel740,
+                  pc_machine_rhel740_options);
+
 static void pc_init_rhel730(MachineState *machine)
 {
     pc_init1(machine, TYPE_I440FX_PCI_HOST_BRIDGE, \
@@ -1130,8 +1145,11 @@ static void pc_init_rhel730(MachineState *machine)
 
 static void pc_machine_rhel730_options(MachineClass *m)
 {
-    pc_machine_rhel7_options(m);
+    pc_machine_rhel740_options(m);
+    m->alias = NULL;
+    m->is_default = 0;
     m->desc = "RHEL 7.3.0 PC (i440FX + PIIX, 1996)";
+    SET_MACHINE_COMPAT(m, PC_RHEL7_3_COMPAT);
 }
 
 DEFINE_PC_MACHINE(rhel730, "pc-i440fx-rhel7.3.0", pc_init_rhel730,
@@ -1140,6 +1158,7 @@ DEFINE_PC_MACHINE(rhel730, "pc-i440fx-rhel7.3.0", pc_init_rhel730,
 
 static void pc_compat_rhel720(MachineState *machine)
 {
+    /* 7.2 was based on qemu 2.3 */
     savevm_skip_section_footers();
     global_state_set_optional();
 }
@@ -1155,8 +1174,6 @@ static void pc_machine_rhel720_options(MachineClass *m)
 {
     PCMachineClass *pcmc = PC_MACHINE_CLASS(m);
     pc_machine_rhel730_options(m);
-    m->is_default = 0;
-    m->alias = NULL;
     m->desc = "RHEL 7.2.0 PC (i440FX + PIIX, 1996)";
     /* From pc_i440fx_2_5_machine_options */
     pcmc->save_tsc_khz = false;
