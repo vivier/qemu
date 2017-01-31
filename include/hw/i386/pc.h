@@ -1015,26 +1015,6 @@ extern void igd_passthrough_isa_bridge_create(PCIBus *bus, uint16_t gpu_dev_id);
 		.property = "rdtscp",\
 		.value = "off",\
 	},\
-	{\
-		.driver = "Opteron_G2" "-" TYPE_X86_CPU,\
-		.property = "rdtscp",\
-		.value = "off",\
-	},\
-	{\
-		.driver = "Opteron_G3" "-" TYPE_X86_CPU,\
-		.property = "rdtscp",\
-		.value = "off",\
-	},\
-	{\
-		.driver = "Opteron_G4" "-" TYPE_X86_CPU,\
-		.property = "rdtscp",\
-		.value = "off",\
-	},\
-	{\
-		.driver = "Opteron_G5" "-" TYPE_X86_CPU,\
-		.property = "rdtscp",\
-		.value = "off",\
-	},\
         { /* PC_RHEL7_2_COMPAT */ \
             .driver   = "qemu64" "-" TYPE_X86_CPU,\
             .property = "sse4a",\
