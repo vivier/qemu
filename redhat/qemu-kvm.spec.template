@@ -815,6 +815,13 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Wed Feb 01 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-130.el7
+- kvm-gluster-correctly-propagate-errors.patch [bz#1151859]
+- kvm-gluster-Correctly-propagate-errors-when-volume-isn-t.patch [bz#1151859]
+- kvm-block-gluster-add-support-for-selecting-debug-loggin.patch [bz#1151859]
+- Resolves: bz#1151859
+  ([RFE] Allow the libgfapi logging level to be controlled.)
+
 %%CHANGELOG%%
 * Wed Jan 18 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-129.el7
 - kvm-Update-qemu-kvm-package-Summary-and-Description.patch [bz#1378541]
