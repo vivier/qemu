@@ -1559,7 +1559,6 @@ static void pc_compat_rhel660(MachineState *machine)
 
     x86_cpu_change_kvm_default("kvm-pv-unhalt", NULL);
 
-    pcmc->has_acpi_build = false;
     pcmc->gigabyte_align = false;
     shadow_bios_after_incoming = true;
     ich9_uhci123_irqpin_override = true;
@@ -1573,11 +1572,13 @@ static void pc_init_rhel660(MachineState *machine)
 
 static void pc_machine_rhel660_options(MachineClass *m)
 {
+    PCMachineClass *pcmc = PC_MACHINE_CLASS(m);
     pc_machine_rhel700_options(m);
     m->family = "pc_piix_Z";
     m->desc = "RHEL 6.6.0 PC";
     m->rom_file_has_mr = false;
     m->default_machine_opts = "firmware=bios.bin";
+    pcmc->has_acpi_build = false;
     SET_MACHINE_COMPAT(m, PC_RHEL6_6_COMPAT);
 }
 
