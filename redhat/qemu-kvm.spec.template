@@ -113,7 +113,9 @@ Requires: powerpc-utils
     %endif
 %endif
 Requires: libusbx >= 1.0.19
+%if %{have_usbredir}
 Requires: usbredir >= 0.7.1
+%endif
 
 
 # OOM killer breaks builds with parallel make on s390(x)
@@ -180,6 +182,9 @@ BuildRequires: texinfo
 %if %{have_spice}
 BuildRequires: spice-protocol >= 0.12.2
 BuildRequires: spice-server-devel >= 0.12.0
+BuildRequires: libcacard-devel
+# For smartcard NSS support
+BuildRequires: nss-devel
 %endif
 %if %{have_seccomp}
 BuildRequires: libseccomp-devel >= 1.0.0
@@ -199,8 +204,6 @@ BuildRequires: glusterfs-devel
 # We need both because the 'stap' binary is probed for by configure
 BuildRequires: systemtap
 BuildRequires: systemtap-sdt-devel
-# For smartcard NSS support
-BuildRequires: nss-devel
 # For XFS discard support in raw-posix.c
 # For VNC JPEG support
 BuildRequires: libjpeg-devel
@@ -249,7 +252,6 @@ BuildRequires: binutils
 BuildRequires: kernel-devel
 %endif
 
-BuildRequires: libcacard-devel
 BuildRequires: diffutils
 
 Requires: qemu-img%{?pkgsuffix} = %{epoch}:%{version}-%{release}

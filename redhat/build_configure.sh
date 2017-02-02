@@ -83,7 +83,6 @@ fi
     --enable-pie \
     --disable-qom-cast-debug \
     --disable-sdl \
-    --enable-smartcard \
     --enable-snappy \
     --disable-sparse \
     --disable-strip \
@@ -112,6 +111,7 @@ fi
     --${have_rdma}-rdma \
     --${have_seccomp}-seccomp \
     --${have_spice}-spice \
+    --${have_spice}-smartcard \
     --${have_usbredir}-usb-redir \
     --${have_tcmalloc}-tcmalloc \
     --audio-drv-list=pa,alsa \
