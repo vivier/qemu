@@ -822,6 +822,34 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Feb 03 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.8.0-3.el7
+- kvm-hw-arm-virt-remove-aarch64-rhel-machine-type.patch [bz#1390964]
+- kvm-hw-arm-virt-create-virt-rhel7.3.0-machine-type.patch [bz#1390964]
+- kvm-hw-arm-virt-create-virt-rhel7.4.0-machine-type.patch [bz#1390964]
+- kvm-tools-kvm_stat-Introduce-pid-monitoring.patch [bz#1397697]
+- kvm-tools-kvm_stat-Add-comments.patch [bz#1397697]
+- kvm-x86-Split-out-options-for-the-head-rhel7-machine-typ.patch [bz#1390737]
+- kvm-x86-Create-PC_RHEL7_3_COMPAT-definition.patch [bz#1390737]
+- kvm-x86-Define-pc-i440fx-rhel7.4.0.patch [bz#1390737]
+- kvm-x86-Define-pc-q35-rhel7.4.0.patch [bz#1390737]
+- kvm-x86-Remove-downstream-opteron-rdtscp-override.patch [bz#1390737]
+- kvm-pci-mark-ROMs-read-only.patch [bz#1404673]
+- kvm-vhost-skip-ROM-sections.patch [bz#1404673]
+- kvm-Enable-seccomp-for-ppc64-ppc64le-architecture.patch [bz#1385537]
+- kvm-Update-qemu-kvm-package-Summary-and-Description.patch [bz#1378538]
+- Resolves: bz#1378538
+  (QEMU: update package summary and description)
+- Resolves: bz#1385537
+  ([V4.1 FEAT] Enable seccomp support in QEMU)
+- Resolves: bz#1390737
+  (RHEL-7.4 new qemu-kvm-rhev machine type (x86))
+- Resolves: bz#1390964
+  (RHEL-7.4 new QEMU machine type (AArch64))
+- Resolves: bz#1397697
+  (Backport remaining kvm_stat patches from the kernel to QEMU)
+- Resolves: bz#1404673
+  ([ppc64le]qemu-kvm-rhev-2.8  upstream package, reset vm when do migration, HMP in src host promp "tcmalloc: large alloc 1073872896 bytes...")
+
 * Mon Jan 16 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.8.0-2.el7
 - kvm-Revert-kvm_stat-Remove.patch [bz#1389238]
 - kvm-Include-kvm_stat-in-qemu-kvm.spec.patch [bz#1389238]
