@@ -60,6 +60,7 @@ fi
     --with-confsuffix=/${pkgname} \
     --with-coroutine=ucontext \
     --with-system-pixman \
+    --tls-priority=NORMAL \
     --disable-archipelago \
     --disable-bluez \
     --disable-brlapi \
@@ -88,9 +89,7 @@ fi
     --disable-strip \
     --disable-tpm \
     --enable-trace-backend=dtrace \
-    --enable-uuid \
     --disable-vde \
-    --enable-vhdx \
     --disable-vhost-scsi \
     --disable-virtfs \
     --disable-vnc-jpeg \
@@ -103,6 +102,24 @@ fi
     --enable-gnutls \
     --disable-gcrypt \
     --enable-nettle \
+    --enable-attr \
+    --disable-bsd-user \
+    --disable-cocoa \
+    --enable-colo \
+    --enable-debug-info \
+    --disable-guest-agent-msi \
+    --disable-jemalloc \
+    --disable-linux-user \
+    --disable-modules \
+    --disable-netmap \
+    --enable-replication \
+    --enable-system \
+    --disable-user \
+    --enable-vhost-net \
+    --enable-vhost-vsock \
+    --enable-vnc \
+    --disable-virglrenderer \
+    --disable-xen-pci-passthrough \
     --${have_fdt}-fdt \
     --${have_gluster}-glusterfs \
     --${have_guest_agent}-guest-agent \
