@@ -1253,7 +1253,7 @@ Add drive to PCI storage controller.
 ETEXI
 
     {
-        .name       = RFQDN_REDHAT "drive_add",
+        .name       = "__com.redhat_drive_add",
         .args_type  = "simple-drive:O",
         .params     = "id=name,[file=file][,format=f][,media=d]...",
         .help       = "Create a drive similar to -device if=none.",
