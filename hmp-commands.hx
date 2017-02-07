@@ -1266,12 +1266,6 @@ STEXI
 Create a drive similar to -device if=none.
 ETEXI
 
-STEXI
-@item pci_del
-@findex pci_del
-Hot remove PCI device.
-ETEXI
-
     {
         .name       = "pcie_aer_inject_error",
         .args_type  = "advisory_non_fatal:-a,correctable:-c,"
