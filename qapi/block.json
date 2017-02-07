@@ -170,6 +170,16 @@
 
 
 ##
+# @__com.redhat_drive_del
+#
+# Remove host block device.
+#
+# @id: the device's ID
+##
+{ 'command': '__com.redhat_drive_del',
+  'data': { 'id': 'str' } }
+
+##
 # @nbd-server-start:
 #
 # Start an NBD server listening on the given host and port.  Block

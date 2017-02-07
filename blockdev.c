@@ -2816,9 +2816,8 @@ void qmp_block_dirty_bitmap_clear(const char *node, const char *name,
     aio_context_release(aio_context);
 }
 
-void qmp_drive_del(QDict *qdict, QObject **ret_data, Error **errp)
+void qmp___com_redhat_drive_del(const char *id, Error **errp)
 {
-    const char *id = qdict_get_str(qdict, "id");
     BlockBackend *blk;
     BlockDriverState *bs;
     AioContext *aio_context;
@@ -2875,7 +2874,7 @@ void hmp_drive_del(Monitor *mon, const QDict *qdict)
 {
     Error *local_err = NULL;
 
-    qmp_drive_del((QDict *)qdict, NULL, &local_err);
+    qmp___com_redhat_drive_del(qdict_get_str(qdict, "id"), &local_err);
     if (local_err) {
         error_report_err(local_err);
     }
