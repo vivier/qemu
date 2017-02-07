@@ -1105,7 +1105,7 @@ ETEXI
         .name       = RFQDN_REDHAT "drive_add",
         .args_type  = "simple-drive:O",
         .params     = "id=name,[file=file][,format=f][,media=d]...",
-        .help       = "Create a drive similar to -device if=none.",
+        .help       = "Create a drive similar to -drive if=none.",
 	.user_print = monitor_user_noop,
         .mhandler.cmd_new = simple_drive_add,
     },
@@ -1113,7 +1113,7 @@ ETEXI
 STEXI
 @item __com.redhat_drive_add
 @findex __com.redhat_drive_add
-Create a drive similar to -device if=none.
+Create a drive similar to -drive if=none.
 ETEXI
 
 #if defined(TARGET_I386) && 0 /* Disabled for Red Hat Enterprise Linux */
