@@ -264,8 +264,8 @@ ETEXI
     },
 
 STEXI
-@item __com.redhat_screendump @var{id} @var{filename}
-@findex __com.redhat_screendump
+@item __com.redhat_qxl_screendump @var{id} @var{filename}
+@findex __com.redhat_qxl_screendump
 Save screen from qxl device @var{id} into PPM image @var{filename}.
 ETEXI
 
