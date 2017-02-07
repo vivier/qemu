@@ -474,6 +474,7 @@ static void virtio_blk_dma_restart_cb(void *opaque, int running,
 static void virtio_blk_reset(VirtIODevice *vdev)
 {
     VirtIOBlock *s = VIRTIO_BLK(vdev);
+    VirtIOBlockReq *req;
 
 #ifdef CONFIG_VIRTIO_BLK_DATA_PLANE
     if (s->dataplane) {
@@ -487,6 +488,13 @@ static void virtio_blk_reset(VirtIODevice *vdev)
      */
     bdrv_drain_all();
     bdrv_set_enable_write_cache(s->bs, s->original_wce);
+    /* We drop queued requests after bdrv_drain_all() because bdrv_drain_all()
+     * itself can produce them. */
+    while (s->rq) {
+        req = s->rq;
+        s->rq = req->next;
+        g_free(req);
+    }
 }
 
 /* coalesce internal state, copy to pci i/o region 0
