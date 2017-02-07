@@ -145,6 +145,31 @@
             '*force': 'bool' } }
 
 ##
+# @_com.redhat_drive_add
+#
+# Create a drive similar to -drive if=none.
+#
+# @id: Drive ID, must be unique
+# @file: #optional Disk image
+# @format: #optional Disk format
+# @aio: #optional How to perform asynchronous disk I/O
+# @cache: #optional Host cache use policy
+# @cyls, "heads", "secs": #optional Disk geometry
+# @trans: #optional BIOS translation mode
+# @media: #optional Media type
+# @readonly: #optional Open image read-only
+# @rerror: #optional What to do on read error
+# @werror: #optional What to do on write error
+# @serial: #optional Drive serial number
+# @snapshot: #optional Enable snapshot mode
+# @copy-on-read: #optional Enable copy-on-read mode
+##
+{ 'command': '__com.redhat_drive_add',
+  'data': { 'id': 'str' },      # note: additional optional arguments
+  'gen': false }                # just to minimize porting churn
+
+
+##
 # @nbd-server-start:
 #
 # Start an NBD server listening on the given host and port.  Block

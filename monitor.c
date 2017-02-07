@@ -1002,6 +1002,8 @@ static void qmp_init_marshal(void)
                          QCO_NO_OPTIONS);
     qmp_register_command("netdev_add", qmp_netdev_add,
                          QCO_NO_OPTIONS);
+    qmp_register_command("__com.redhat_drive_add", qmp_simple_drive_add,
+                         QCO_NO_OPTIONS);
 
     /* call it after the rest of qapi_init() */
     register_module_init(qmp_unregister_commands_hack, MODULE_INIT_QAPI);
