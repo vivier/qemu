@@ -824,6 +824,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed Feb 08 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7_3.4
+- kvm-Disable-usbredir-and-libcacard-for-unsupported-archi.patch [bz#1420428]
+- Resolves: bz#1420428
+  (Remove dependencies required by spice on ppc64le)
+
 * Wed Jan 04 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7_3.3
 - kvm-pc_piix-fix-compat-props-typo-for-RHEL6-machine-type.patch [bz#1408122]
 - kvm-net-don-t-poke-at-chardev-internal-QemuOpts.patch [bz#1410200]
