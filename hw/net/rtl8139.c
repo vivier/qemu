@@ -512,6 +512,8 @@ typedef struct RTL8139State {
 
     /* Support migration to/from old versions */
     int rtl8139_mmio_io_addr_dummy;
+
+    bool redhat_send_rxokmul;
 } RTL8139State;
 
 /* Writes tally counters to memory via DMA */
@@ -3196,9 +3198,14 @@ static void rtl8139_pre_save(void *opaque)
     s->rtl8139_mmio_io_addr_dummy = 0;
 }
 
+static bool do_send_rxokmul(void *opaque, int version_id)
+{
+    return ((RTL8139State *)opaque)->redhat_send_rxokmul;
+}
+
 static const VMStateDescription vmstate_rtl8139 = {
     .name = "rtl8139",
-    .version_id = 5,
+    .version_id = 4,
     .minimum_version_id = 3,
     .post_load = rtl8139_post_load,
     .pre_save  = rtl8139_pre_save,
@@ -3279,7 +3286,8 @@ static const VMStateDescription vmstate_rtl8139 = {
         VMSTATE_UINT32(tally_counters.TxMCol, RTL8139State),
         VMSTATE_UINT64(tally_counters.RxOkPhy, RTL8139State),
         VMSTATE_UINT64(tally_counters.RxOkBrd, RTL8139State),
-        VMSTATE_UINT32_V(tally_counters.RxOkMul, RTL8139State, 5),
+        VMSTATE_UINT32_TEST(tally_counters.RxOkMul, RTL8139State,
+                            do_send_rxokmul),
         VMSTATE_UINT16(tally_counters.TxAbt, RTL8139State),
         VMSTATE_UINT16(tally_counters.TxUndrn, RTL8139State),
 
@@ -3454,6 +3462,8 @@ static void rtl8139_instance_init(Object *obj)
 
 static Property rtl8139_properties[] = {
     DEFINE_NIC_PROPERTIES(RTL8139State, conf),
+    DEFINE_PROP_BOOL("__redhat_send_rxokmul", RTL8139State, redhat_send_rxokmul,
+                     true),
     DEFINE_PROP_END_OF_LIST(),
 };
 

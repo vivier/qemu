@@ -281,6 +281,10 @@
         .driver   = "e1000e",\
         .property = "__redhat_e1000e_7_3_intr_state",\
         .value    = "on",\
+    },{ /* HW_COMPAT_RHEL7_3 */ \
+        .driver   = "rtl8139",\
+        .property = "__redhat_send_rxokmul",\
+        .value    = "off",\
     },
 
 #endif /* HW_COMPAT_H */
