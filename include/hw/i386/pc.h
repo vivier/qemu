@@ -372,6 +372,11 @@ bool e820_get_entry(int, uint32_t, uint64_t *, uint64_t *);
 #define PC_COMPAT_2_7 \
     HW_COMPAT_2_7 \
     {\
+        .driver   = "kvmclock",\
+        .property = "x-mach-use-reliable-get-clock",\
+        .value    = "off",\
+    },\
+    {\
         .driver   = TYPE_X86_CPU,\
         .property = "l3-cache",\
         .value    = "off",\
@@ -967,6 +972,11 @@ extern void igd_passthrough_isa_bridge_create(PCIBus *bus, uint16_t gpu_dev_id);
 
 #define PC_RHEL7_3_COMPAT \
         HW_COMPAT_RHEL7_3 \
+        { /* PC_RHEL7_3_COMPAT from PC_COMPAT_2_7 */ \
+             .driver   = "kvmclock",\
+             .property = "x-mach-use-reliable-get-clock",\
+             .value    = "off",\
+        },\
         { /* PC_RHEL7_3_COMPAT from PC_COMPAT_2_7 */ \
             .driver   = TYPE_X86_CPU,\
             .property = "l3-cache",\
