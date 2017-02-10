@@ -824,6 +824,21 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Feb 10 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7_3.5
+- kvm-memory-Provide-memory_region_init_rom.patch [bz#1420456]
+- kvm-pci-mark-ROMs-read-only.patch [bz#1420456]
+- kvm-vhost-skip-ROM-sections.patch [bz#1420456]
+- kvm-display-cirrus-check-vga-bits-per-pixel-bpp-value.patch [bz#1418234]
+- kvm-display-cirrus-ignore-source-pitch-value-as-needed-i.patch [bz#1418234]
+- kvm-cirrus-handle-negative-pitch-in-cirrus_invalidate_re.patch [bz#1418234]
+- kvm-cirrus-allow-zero-source-pitch-in-pattern-fill-rops.patch [bz#1418234]
+- kvm-cirrus-fix-blit-address-mask-handling.patch [bz#1418234]
+- kvm-cirrus-fix-oob-access-issue-CVE-2017-2615.patch [bz#1418234]
+- Resolves: bz#1418234
+  (CVE-2017-2615 qemu-kvm-rhev: Qemu: display: cirrus: oob access while doing bitblt copy backward mode [rhel-7.3.z])
+- Resolves: bz#1420456
+  ([ppc64le]reset vm when do migration, HMP in src host promp "tcmalloc: large alloc 1073872896 bytes...")
+
 * Wed Feb 08 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7_3.4
 - kvm-Disable-usbredir-and-libcacard-for-unsupported-archi.patch [bz#1420428]
 - Resolves: bz#1420428
