@@ -824,6 +824,51 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Feb 10 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.8.0-4.el7
+- kvm-fix-abort-in-acpi_setup-since-2.8-with-rhel6-machine.patch [bz#1410826]
+- kvm-spapr-clock-should-count-only-if-vm-is-running.patch [bz#1264258]
+- kvm-display-cirrus-ignore-source-pitch-value-as-needed-i.patch [bz#1418236]
+- kvm-cirrus-handle-negative-pitch-in-cirrus_invalidate_re.patch [bz#1418236]
+- kvm-cirrus-allow-zero-source-pitch-in-pattern-fill-rops.patch [bz#1418236]
+- kvm-cirrus-fix-blit-address-mask-handling.patch [bz#1418236]
+- kvm-cirrus-fix-oob-access-issue-CVE-2017-2615.patch [bz#1418236]
+- kvm-QMP-Fix-forward-port-of-__com.redhat_drive_add.patch [bz#1418575]
+- kvm-QMP-Fix-forward-port-of-__com.redhat_drive_del.patch [bz#1418575]
+- kvm-Drop-macro-RFQDN_REDHAT.patch [bz#1418575]
+- kvm-HMP-Clean-up-botched-conflict-resolution-in-user-man.patch [bz#1418575]
+- kvm-HMP-Fix-user-manual-typo-of-__com.redhat_qxl_screend.patch [bz#1419899]
+- kvm-HMP-Fix-documentation-of-__com.redhat.drive_add.patch [bz#1419899]
+- kvm-aio-add-flag-to-skip-fds-to-aio_dispatch.patch [bz#1404303]
+- kvm-aio-add-AioPollFn-and-io_poll-interface.patch [bz#1404303]
+- kvm-aio-add-polling-mode-to-AioContext.patch [bz#1404303]
+- kvm-virtio-poll-virtqueues-for-new-buffers.patch [bz#1404303]
+- kvm-linux-aio-poll-ring-for-completions.patch [bz#1404303]
+- kvm-iothread-add-polling-parameters.patch [bz#1404303]
+- kvm-virtio-blk-suppress-virtqueue-kick-during-processing.patch [bz#1404303]
+- kvm-virtio-scsi-suppress-virtqueue-kick-during-processin.patch [bz#1404303]
+- kvm-aio-add-.io_poll_begin-end-callbacks.patch [bz#1404303]
+- kvm-virtio-disable-virtqueue-notifications-during-pollin.patch [bz#1404303]
+- kvm-aio-self-tune-polling-time.patch [bz#1404303]
+- kvm-iothread-add-poll-grow-and-poll-shrink-parameters.patch [bz#1404303]
+- kvm-virtio-disable-notifications-again-after-poll-succee.patch [bz#1404303]
+- kvm-aio-posix-honor-is_external-in-AioContext-polling.patch [bz#1404303]
+- kvm-iothread-enable-AioContext-polling-by-default.patch [bz#1404303]
+- kvm-Disable-usbredir-and-libcacard-for-unsupported-archi.patch [bz#1418166]
+- Resolves: bz#1264258
+  (Guest's time stops with option clock=vm when guest is paused)
+- Resolves: bz#1404303
+  (RFE: virtio-blk/scsi polling mode (QEMU))
+- Resolves: bz#1410826
+  (rhel6 machine types assert; acpi-build.c:2985: acpi_setup: Assertion `build_state->table_mr != ((void *)0)' failed)
+- Resolves: bz#1418166
+  (Remove dependencies required by spice on ppc64le)
+- Resolves: bz#1418236
+  (CVE-2017-2615 qemu-kvm-rhev: Qemu: display: cirrus: oob access while doing bitblt copy backward mode [rhel-7.4])
+- Resolves: bz#1418575
+  (Forward port of downstream-only QMP commands is incorrect)
+- Resolves: bz#1419899
+  (Documentation inaccurate for __com.redhat_qxl_screendump and __com.redhat_drive_add)
+
 * Fri Feb 03 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.8.0-3.el7
 - kvm-hw-arm-virt-remove-aarch64-rhel-machine-type.patch [bz#1390964]
 - kvm-hw-arm-virt-create-virt-rhel7.3.0-machine-type.patch [bz#1390964]
