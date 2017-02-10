@@ -817,6 +817,20 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Fri Feb 10 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-126.el7_3.4
+- kvm-virtio-blk-Release-s-rq-queue-at-system_reset.patch [bz#1420049]
+- kvm-cirrus_vga-fix-off-by-one-in-blit_region_is_unsafe.patch [bz#1418232]
+- kvm-display-cirrus-check-vga-bits-per-pixel-bpp-value.patch [bz#1418232]
+- kvm-display-cirrus-ignore-source-pitch-value-as-needed-i.patch [bz#1418232]
+- kvm-cirrus-handle-negative-pitch-in-cirrus_invalidate_re.patch [bz#1418232]
+- kvm-cirrus-allow-zero-source-pitch-in-pattern-fill-rops.patch [bz#1418232]
+- kvm-cirrus-fix-blit-address-mask-handling.patch [bz#1418232]
+- kvm-cirrus-fix-oob-access-issue-CVE-2017-2615.patch [bz#1418232]
+- Resolves: bz#1418232
+  (CVE-2017-2615 qemu-kvm: Qemu: display: cirrus: oob access while doing bitblt copy backward mode [rhel-7.3.z])
+- Resolves: bz#1420049
+  (system_reset should clear pending request for error (virtio-blk))
+
 * Wed Jan 04 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-126.el7_3.3
 - kvm-net-check-packet-payload-length.patch [bz#1398217]
 - Resolves: bz#1398217
