@@ -815,6 +815,27 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Fri Feb 10 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-131.el7
+- kvm-memory-Allow-access-only-upto-the-maximum-alignment-.patch [bz#1342768]
+- kvm-virtio-blk-Release-s-rq-queue-at-system_reset.patch [bz#1361488]
+- kvm-cirrus_vga-fix-off-by-one-in-blit_region_is_unsafe.patch [bz#1418233]
+- kvm-display-cirrus-check-vga-bits-per-pixel-bpp-value.patch [bz#1418233]
+- kvm-display-cirrus-ignore-source-pitch-value-as-needed-i.patch [bz#1418233]
+- kvm-cirrus-handle-negative-pitch-in-cirrus_invalidate_re.patch [bz#1418233]
+- kvm-cirrus-allow-zero-source-pitch-in-pattern-fill-rops.patch [bz#1418233]
+- kvm-cirrus-fix-blit-address-mask-handling.patch [bz#1418233]
+- kvm-cirrus-fix-oob-access-issue-CVE-2017-2615.patch [bz#1418233]
+- kvm-HMP-Fix-user-manual-typo-of-__com.redhat_qxl_screend.patch [bz#1419898]
+- kvm-HMP-Fix-documentation-of-__com.redhat.drive_add.patch [bz#1419898]
+- Resolves: bz#1342768
+  ([Intel 7.4 Bug] qemu-kvm crashes with Linux kernel 4.6.0 or above)
+- Resolves: bz#1361488
+  (system_reset should clear pending request for error (virtio-blk))
+- Resolves: bz#1418233
+  (CVE-2017-2615 qemu-kvm: Qemu: display: cirrus: oob access while doing bitblt copy backward mode [rhel-7.4])
+- Resolves: bz#1419898
+  (Documentation inaccurate for __com.redhat_qxl_screendump and __com.redhat_drive_add)
+
 * Wed Feb 01 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-130.el7
 - kvm-gluster-correctly-propagate-errors.patch [bz#1151859]
 - kvm-gluster-Correctly-propagate-errors-when-volume-isn-t.patch [bz#1151859]
