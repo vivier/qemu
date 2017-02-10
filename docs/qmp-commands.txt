@@ -87,7 +87,7 @@ Note: The "force" argument defaults to false.
 __com.redhat_drive_add
 ----------------------
 
-Create a drive similar to -device if=none.
+Create a drive similar to -drive if=none.
 
 Arguments:
 
