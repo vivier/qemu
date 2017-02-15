@@ -1705,6 +1705,7 @@ static void rhel740_virt_instance_init(Object *obj)
 
 static void rhel740_virt_options(MachineClass *mc)
 {
+    SET_MACHINE_COMPAT(mc, ARM_RHEL_COMPAT);
 }
 DEFINE_RHEL_MACHINE_AS_LATEST(7, 4, 0)
 

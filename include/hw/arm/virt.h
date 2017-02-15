@@ -74,5 +74,15 @@ typedef struct MemMapEntry {
     hwaddr size;
 } MemMapEntry;
 
+/* This macro is for changes to properties that are RHEL specific,
+ * different to the current upstream and to be applied to the latest
+ * machine type.
+ */
+#define ARM_RHEL_COMPAT \
+    {\
+        .driver   = "virtio-net-pci",\
+        .property = "romfile",\
+        .value    = "",\
+    },
 
 #endif
