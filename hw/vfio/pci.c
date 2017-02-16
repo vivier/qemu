@@ -2610,8 +2610,8 @@ static void vfio_realize(PCIDevice *pdev, Error **errp)
     }
 
     if (i >= MAX_DEV_ASSIGN_CMDLINE) {
-        error_report("vfio: Maximum supported vfio devices (%d) "
-                     "already attached\n", MAX_DEV_ASSIGN_CMDLINE);
+        error_setg(errp, "Maximum supported vfio devices (%d) "
+                     "already attached", MAX_DEV_ASSIGN_CMDLINE);
         return;
     }
 
