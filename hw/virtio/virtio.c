@@ -97,7 +97,7 @@ struct VirtQueue
 
     uint16_t vector;
     VirtIOHandleOutput handle_output;
-    VirtIOHandleOutput handle_aio_output;
+    VirtIOHandleAIOOutput handle_aio_output;
     VirtIODevice *vdev;
     EventNotifier guest_notifier;
     EventNotifier host_notifier;
@@ -1235,14 +1235,16 @@ void virtio_queue_set_align(VirtIODevice *vdev, int n, int align)
     virtio_queue_update_rings(vdev, n);
 }
 
-static void virtio_queue_notify_aio_vq(VirtQueue *vq)
+static bool virtio_queue_notify_aio_vq(VirtQueue *vq)
 {
     if (vq->vring.desc && vq->handle_aio_output) {
         VirtIODevice *vdev = vq->vdev;
 
         trace_virtio_queue_notify(vdev, vq - vdev->vq, vq);
-        vq->handle_aio_output(vdev, vq);
+        return vq->handle_aio_output(vdev, vq);
     }
+
+    return false;
 }
 
 static void virtio_queue_notify_vq(VirtQueue *vq)
@@ -2076,16 +2078,17 @@ static bool virtio_queue_host_notifier_aio_poll(void *opaque)
 {
     EventNotifier *n = opaque;
     VirtQueue *vq = container_of(n, VirtQueue, host_notifier);
+    bool progress;
 
     if (virtio_queue_empty(vq)) {
         return false;
     }
 
-    virtio_queue_notify_aio_vq(vq);
+    progress = virtio_queue_notify_aio_vq(vq);
 
     /* In case the handler function re-enabled notifications */
     virtio_queue_set_notification(vq, 0);
-    return true;
+    return progress;
 }
 
 static void virtio_queue_host_notifier_aio_poll_end(EventNotifier *n)
@@ -2097,7 +2100,7 @@ static void virtio_queue_host_notifier_aio_poll_end(EventNotifier *n)
 }
 
 void virtio_queue_aio_set_host_notifier_handler(VirtQueue *vq, AioContext *ctx,
-                                                VirtIOHandleOutput handle_output)
+                                                VirtIOHandleAIOOutput handle_output)
 {
     if (handle_output) {
         vq->handle_aio_output = handle_output;
