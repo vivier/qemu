@@ -1339,7 +1339,7 @@ DEFINE_PC_MACHINE(rhel700, "pc-i440fx-rhel7.0.0", pc_init_rhel700,
         },{\
             .driver   = "intel-hda",\
             .property = "msi",\
-            .value    = stringify(0),\
+            .value    = "off",\
         },{\
             .driver = "qemu32-" TYPE_X86_CPU,\
             .property = "xlevel",\
