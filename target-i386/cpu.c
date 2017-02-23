@@ -165,6 +165,17 @@ static const char *cpuid_7_0_ecx_feature_name[] = {
     NULL, NULL, NULL, NULL,
 };
 
+static const char *cpuid_7_0_edx_feature_name[] = {
+    NULL, NULL, "avx512-4vnniw", "avx512-4fmaps",
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+};
+
 static const char *cpuid_xsave_feature_name[] = {
     "xsaveopt", "xsavec", "xgetbv1", NULL,
     NULL, NULL, NULL, NULL,
@@ -224,6 +235,12 @@ static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
         .cpuid_eax = 7,
         .cpuid_needs_ecx = true, .cpuid_ecx = 0,
         .cpuid_reg = R_ECX,
+    },
+    [FEAT_7_0_EDX] = {
+        .feat_names = cpuid_7_0_edx_feature_name,
+        .cpuid_eax = 7,
+        .cpuid_needs_ecx = true, .cpuid_ecx = 0,
+        .cpuid_reg = R_EDX,
     },
     [FEAT_XSAVE] = {
         .feat_names = cpuid_xsave_feature_name,
@@ -484,6 +501,7 @@ typedef struct x86_def_t {
           CPUID_7_0_EBX_ERMS, CPUID_7_0_EBX_INVPCID, CPUID_7_0_EBX_RTM,
           CPUID_7_0_EBX_RDSEED */
 #define TCG_7_0_ECX_FEATURES 0
+#define TCG_7_0_EDX_FEATURES 0
 
 /* built-in CPU model definitions
  */
@@ -1254,9 +1272,12 @@ static void kvm_cpu_fill_host(x86_def_t *x86_cpu_def)
                     kvm_arch_get_supported_cpuid(s, 0x7, 0, R_EBX);
         x86_cpu_def->features[FEAT_7_0_ECX] =
                     kvm_arch_get_supported_cpuid(s, 0x7, 0, R_ECX);
+        x86_cpu_def->features[FEAT_7_0_EDX] =
+                    kvm_arch_get_supported_cpuid(s, 0x7, 0, R_EDX);
     } else {
         x86_cpu_def->features[FEAT_7_0_EBX] = 0;
         x86_cpu_def->features[FEAT_7_0_ECX] = 0;
+        x86_cpu_def->features[FEAT_7_0_EDX] = 0;
     }
     x86_cpu_def->features[FEAT_XSAVE] =
                 kvm_arch_get_supported_cpuid(s, 0xd, 1, R_EAX);
@@ -1343,6 +1364,9 @@ static int kvm_check_features_against_host(X86CPU *cpu)
         {&env->features[FEAT_7_0_ECX],
             &host_def.features[FEAT_7_0_ECX],
             FEAT_7_0_ECX },
+        {&env->features[FEAT_7_0_EDX],
+            &host_def.features[FEAT_7_0_EDX],
+            FEAT_7_0_EDX },
         {&env->features[FEAT_XSAVE],
             &host_def.features[FEAT_XSAVE],
             FEAT_XSAVE },
@@ -1885,6 +1909,7 @@ static void cpu_x86_parse_featurestr(X86CPU *cpu, char *features, Error **errp)
     env->features[FEAT_SVM] |= plus_features[FEAT_SVM];
     env->features[FEAT_7_0_EBX] |= plus_features[FEAT_7_0_EBX];
     env->features[FEAT_7_0_ECX] |= plus_features[FEAT_7_0_ECX];
+    env->features[FEAT_7_0_EDX] |= plus_features[FEAT_7_0_EDX];
     env->features[FEAT_XSAVE] |= plus_features[FEAT_XSAVE];
     env->features[FEAT_1_EDX] &= ~minus_features[FEAT_1_EDX];
     env->features[FEAT_1_ECX] &= ~minus_features[FEAT_1_ECX];
@@ -1895,6 +1920,7 @@ static void cpu_x86_parse_featurestr(X86CPU *cpu, char *features, Error **errp)
     env->features[FEAT_SVM] &= ~minus_features[FEAT_SVM];
     env->features[FEAT_7_0_EBX] &= ~minus_features[FEAT_7_0_EBX];
     env->features[FEAT_7_0_ECX] &= ~minus_features[FEAT_7_0_ECX];
+    env->features[FEAT_7_0_EDX] &= ~minus_features[FEAT_7_0_EDX];
     env->features[FEAT_XSAVE] &= ~minus_features[FEAT_XSAVE];
 
 out:
@@ -2032,6 +2058,7 @@ static void cpu_x86_register(X86CPU *cpu, const char *name, Error **errp)
     env->features[FEAT_C000_0001_EDX] = def->features[FEAT_C000_0001_EDX];
     env->features[FEAT_7_0_EBX] = def->features[FEAT_7_0_EBX];
     env->features[FEAT_7_0_ECX] = def->features[FEAT_7_0_ECX];
+    env->features[FEAT_7_0_EDX] = def->features[FEAT_7_0_EDX];
     env->features[FEAT_XSAVE] = def->features[FEAT_XSAVE];
     env->cpuid_xlevel2 = def->xlevel2;
 
@@ -2270,7 +2297,7 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
             *eax = 0; /* Maximum ECX value for sub-leaves */
             *ebx = env->features[FEAT_7_0_EBX]; /* Feature flags */
             *ecx = env->features[FEAT_7_0_ECX]; /* Feature flags */
-            *edx = 0; /* Reserved */
+            *edx = env->features[FEAT_7_0_EDX]; /* Feature flags */
         } else {
             *eax = 0;
             *ebx = 0;
@@ -2680,6 +2707,8 @@ static void x86_cpu_realizefn(DeviceState *dev, Error **errp)
         env->features[FEAT_8000_0001_ECX] &= TCG_EXT3_FEATURES;
         env->features[FEAT_SVM] &= TCG_SVM_FEATURES;
         env->features[FEAT_XSAVE] = 0;
+        env->features[FEAT_7_0_ECX] &= TCG_7_0_ECX_FEATURES;
+        env->features[FEAT_7_0_EDX] &= TCG_7_0_EDX_FEATURES;
     } else {
         if ((cpu->check_cpuid || cpu->enforce_cpuid)
             && kvm_check_features_against_host(cpu) && cpu->enforce_cpuid) {
