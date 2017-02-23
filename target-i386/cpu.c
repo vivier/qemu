@@ -1267,18 +1267,12 @@ static void kvm_cpu_fill_host(x86_def_t *x86_cpu_def)
     x86_cpu_def->features[FEAT_1_ECX] =
         kvm_arch_get_supported_cpuid(s, 0x1, 0, R_ECX);
 
-    if (x86_cpu_def->level >= 7) {
-        x86_cpu_def->features[FEAT_7_0_EBX] =
-                    kvm_arch_get_supported_cpuid(s, 0x7, 0, R_EBX);
-        x86_cpu_def->features[FEAT_7_0_ECX] =
-                    kvm_arch_get_supported_cpuid(s, 0x7, 0, R_ECX);
-        x86_cpu_def->features[FEAT_7_0_EDX] =
-                    kvm_arch_get_supported_cpuid(s, 0x7, 0, R_EDX);
-    } else {
-        x86_cpu_def->features[FEAT_7_0_EBX] = 0;
-        x86_cpu_def->features[FEAT_7_0_ECX] = 0;
-        x86_cpu_def->features[FEAT_7_0_EDX] = 0;
-    }
+    x86_cpu_def->features[FEAT_7_0_EBX] =
+                kvm_arch_get_supported_cpuid(s, 0x7, 0, R_EBX);
+    x86_cpu_def->features[FEAT_7_0_ECX] =
+                kvm_arch_get_supported_cpuid(s, 0x7, 0, R_ECX);
+    x86_cpu_def->features[FEAT_7_0_EDX] =
+                kvm_arch_get_supported_cpuid(s, 0x7, 0, R_EDX);
     x86_cpu_def->features[FEAT_XSAVE] =
                 kvm_arch_get_supported_cpuid(s, 0xd, 1, R_EAX);
 
