@@ -1755,6 +1755,7 @@ static inline void feat2prop(char *s)
 static void cpu_x86_parse_featurestr(X86CPU *cpu, char *features, Error **errp)
 {
     char *featurestr; /* Single 'key=value" string being parsed */
+    FeatureWord w;
     /* Features to be added */
     FeatureWordArray plus_features = { 0 };
     /* Features to be removed */
@@ -1844,28 +1845,11 @@ static void cpu_x86_parse_featurestr(X86CPU *cpu, char *features, Error **errp)
         }
         featurestr = strtok(NULL, ",");
     }
-    env->features[FEAT_1_EDX] |= plus_features[FEAT_1_EDX];
-    env->features[FEAT_1_ECX] |= plus_features[FEAT_1_ECX];
-    env->features[FEAT_8000_0001_EDX] |= plus_features[FEAT_8000_0001_EDX];
-    env->features[FEAT_8000_0001_ECX] |= plus_features[FEAT_8000_0001_ECX];
-    env->features[FEAT_C000_0001_EDX] |= plus_features[FEAT_C000_0001_EDX];
-    env->features[FEAT_KVM] |= plus_features[FEAT_KVM];
-    env->features[FEAT_SVM] |= plus_features[FEAT_SVM];
-    env->features[FEAT_7_0_EBX] |= plus_features[FEAT_7_0_EBX];
-    env->features[FEAT_7_0_ECX] |= plus_features[FEAT_7_0_ECX];
-    env->features[FEAT_7_0_EDX] |= plus_features[FEAT_7_0_EDX];
-    env->features[FEAT_XSAVE] |= plus_features[FEAT_XSAVE];
-    env->features[FEAT_1_EDX] &= ~minus_features[FEAT_1_EDX];
-    env->features[FEAT_1_ECX] &= ~minus_features[FEAT_1_ECX];
-    env->features[FEAT_8000_0001_EDX] &= ~minus_features[FEAT_8000_0001_EDX];
-    env->features[FEAT_8000_0001_ECX] &= ~minus_features[FEAT_8000_0001_ECX];
-    env->features[FEAT_C000_0001_EDX] &= ~minus_features[FEAT_C000_0001_EDX];
-    env->features[FEAT_KVM] &= ~minus_features[FEAT_KVM];
-    env->features[FEAT_SVM] &= ~minus_features[FEAT_SVM];
-    env->features[FEAT_7_0_EBX] &= ~minus_features[FEAT_7_0_EBX];
-    env->features[FEAT_7_0_ECX] &= ~minus_features[FEAT_7_0_ECX];
-    env->features[FEAT_7_0_EDX] &= ~minus_features[FEAT_7_0_EDX];
-    env->features[FEAT_XSAVE] &= ~minus_features[FEAT_XSAVE];
+
+    for (w = 0; w < FEATURE_WORDS; w++) {
+        env->features[w] |= plus_features[w];
+        env->features[w] &= ~minus_features[w];
+    }
 
 out:
     return;
@@ -1974,6 +1958,7 @@ static void cpu_x86_register(X86CPU *cpu, const char *name, Error **errp)
 {
     CPUX86State *env = &cpu->env;
     x86_def_t def1, *def = &def1;
+    FeatureWord w;
 
     memset(def, 0, sizeof(*def));
 
@@ -1992,21 +1977,12 @@ static void cpu_x86_register(X86CPU *cpu, const char *name, Error **errp)
     object_property_set_int(OBJECT(cpu), def->family, "family", errp);
     object_property_set_int(OBJECT(cpu), def->model, "model", errp);
     object_property_set_int(OBJECT(cpu), def->stepping, "stepping", errp);
-    env->features[FEAT_1_EDX] = def->features[FEAT_1_EDX];
-    env->features[FEAT_1_ECX] = def->features[FEAT_1_ECX];
-    env->features[FEAT_8000_0001_EDX] = def->features[FEAT_8000_0001_EDX];
-    env->features[FEAT_8000_0001_ECX] = def->features[FEAT_8000_0001_ECX];
     object_property_set_int(OBJECT(cpu), def->xlevel, "xlevel", errp);
-    env->features[FEAT_KVM] = def->features[FEAT_KVM];
-    env->features[FEAT_SVM] = def->features[FEAT_SVM];
-    env->features[FEAT_C000_0001_EDX] = def->features[FEAT_C000_0001_EDX];
-    env->features[FEAT_7_0_EBX] = def->features[FEAT_7_0_EBX];
-    env->features[FEAT_7_0_ECX] = def->features[FEAT_7_0_ECX];
-    env->features[FEAT_7_0_EDX] = def->features[FEAT_7_0_EDX];
-    env->features[FEAT_XSAVE] = def->features[FEAT_XSAVE];
     env->cpuid_xlevel2 = def->xlevel2;
-
     object_property_set_str(OBJECT(cpu), def->model_id, "model-id", errp);
+    for (w = 0; w < FEATURE_WORDS; w++) {
+        env->features[w] = def->features[w];
+    }
 }
 
 X86CPU *cpu_x86_create(const char *cpu_model, DeviceState *icc_bridge,
