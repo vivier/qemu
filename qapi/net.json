@@ -176,6 +176,12 @@
 #
 # @tftp-server-name: RFC2132 "TFTP server name" string (Since 3.1)
 #
+# @proxy-server: address of the SOCKS5 proxy server to use (since 3.1)
+#
+# @proxy-user: username to use with the proxy server (since 3.1)
+#
+# @proxy-secretid: secret id to use for the proxy server password (since 3.1)
+#
 # Since: 1.2
 ##
 { 'struct': 'NetdevUserOptions',
@@ -201,7 +207,10 @@
     '*smbserver': 'str',
     '*hostfwd':   ['String'],
     '*guestfwd':  ['String'],
-    '*tftp-server-name': 'str' } }
+    '*tftp-server-name': 'str',
+    '*proxy-server': 'str',
+    '*proxy-user':   'str',
+    '*proxy-secretid': 'str' } }
 
 ##
 # @NetdevTapOptions:

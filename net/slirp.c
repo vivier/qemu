@@ -43,6 +43,7 @@
 #include "qemu/cutils.h"
 #include "qapi/error.h"
 #include "qapi/qmp/qdict.h"
+#include "crypto/secret.h"
 
 static int get_str_sep(char *buf, int buf_size, const char **pp, int sep)
 {
@@ -133,6 +134,33 @@ static void net_slirp_cleanup(NetClientState *nc)
     QTAILQ_REMOVE(&slirp_stacks, s, entry);
 }
 
+static int net_slirp_add_proxy(SlirpState *s, const char *proxy_server,
+                               const char *proxy_user,
+                               const char *proxy_secretid)
+{
+    InetSocketAddress *addr = g_new(InetSocketAddress, 1);
+    char *password = NULL;
+    int ret = -1;
+
+    if (proxy_server == NULL) {
+        return 0;
+    }
+
+    if (proxy_secretid) {
+        password = qcrypto_secret_lookup_as_utf8(proxy_secretid, &error_fatal);
+    }
+
+    if (!inet_parse(addr, proxy_server, &error_fatal)) {
+        ret = slirp_add_proxy(s->slirp, addr->host, atoi(addr->port),
+                              proxy_user, password);
+    }
+
+    qapi_free_InetSocketAddress(addr);
+    g_free(password);
+
+    return ret;
+}
+
 static NetClientInfo net_slirp_info = {
     .type = NET_CLIENT_DRIVER_USER,
     .size = sizeof(SlirpState),
@@ -151,7 +179,8 @@ static int net_slirp_init(NetClientState *peer, const char *model,
                           const char *smb_export, const char *vsmbserver,
                           const char **dnssearch, const char *vdomainname,
                           const char *tftp_server_name,
-                          Error **errp)
+                          const char *proxy_server, const char *proxy_user,
+                          const char *proxy_secretid, Error **errp)
 {
     /* default settings according to historic slirp */
     struct in_addr net  = { .s_addr = htonl(0x0a000200) }; /* 10.0.2.0 */
@@ -399,6 +428,11 @@ static int net_slirp_init(NetClientState *peer, const char *model,
         }
     }
 #endif
+
+    if (net_slirp_add_proxy(s, proxy_server,
+                            proxy_user, proxy_secretid) < 0) {
+        goto error;
+    }
 
     s->exit_notifier.notify = slirp_smb_exit;
     qemu_add_exit_notifier(&s->exit_notifier);
@@ -915,7 +949,8 @@ int net_init_slirp(const Netdev *netdev, const char *name,
                          user->bootfile, user->dhcpstart,
                          user->dns, user->ipv6_dns, user->smb,
                          user->smbserver, dnssearch, user->domainname,
-                         user->tftp_server_name, errp);
+                         user->tftp_server_name, user->proxy_server,
+                         user->proxy_user, user->proxy_secretid, errp);
 
     while (slirp_configs) {
         config = slirp_configs;
