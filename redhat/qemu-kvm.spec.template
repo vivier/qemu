@@ -827,6 +827,14 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed Mar 08 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.8.0-6.el7
+- kvm-virtio-Report-real-progress-in-VQ-aio-poll-handler.patch [bz#1425700]
+- kvm-intel-hda-fix-rhel6-compat-property.patch [bz#1425765]
+- Resolves: bz#1425700
+  (virtio-scsi data plane takes 100% host CPU with polling)
+- Resolves: bz#1425765
+  (The guest failed to start with ich6 sound when machine type is rhel6.*.0)
+
 * Mon Feb 20 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.8.0-5.el7
 - kvm-Disable-qemu-register-device.patch [bz#1392328]
 - kvm-Disable-vfio-pci-igd-lpc-bridge-device.patch [bz#1392328]
