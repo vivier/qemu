@@ -815,6 +815,31 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Thu Mar 09 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-133.el7
+- kvm-target-i386-add-Ivy-Bridge-CPU-model.patch [bz#1368375]
+- kvm-x86-add-AVX512_4VNNIW-and-AVX512_4FMAPS-features.patch [bz#1382122]
+- kvm-target-i386-kvm_cpu_fill_host-Kill-unused-code.patch [bz#1382122]
+- kvm-target-i386-kvm_cpu_fill_host-No-need-to-check-level.patch [bz#1382122]
+- kvm-target-i386-kvm_cpu_fill_host-No-need-to-check-CPU-v.patch [bz#1382122]
+- kvm-target-i386-kvm_cpu_fill_host-No-need-to-check-xleve.patch [bz#1382122]
+- kvm-target-i386-kvm_cpu_fill_host-Set-all-feature-words-.patch [bz#1382122]
+- kvm-target-i386-kvm_cpu_fill_host-Fill-feature-words-in-.patch [bz#1382122]
+- kvm-target-i386-kvm_check_features_against_host-Kill-fea.patch [bz#1382122]
+- kvm-target-i386-Make-TCG-feature-filtering-more-readable.patch [bz#1382122]
+- kvm-target-i386-Filter-FEAT_7_0_EBX-TCG-features-too.patch [bz#1382122]
+- kvm-target-i386-Filter-KVM-and-0xC0000001-features-on-TC.patch [bz#1382122]
+- kvm-target-i386-Define-TCG_-_FEATURES-earlier-in-cpu.c.patch [bz#1382122]
+- kvm-target-i386-Loop-based-copying-and-setting-unsetting.patch [bz#1382122]
+- kvm-target-i386-Loop-based-feature-word-filtering-in-TCG.patch [bz#1382122]
+- kvm-spice-remove-spice-experimental.h-include.patch [bz#1430606]
+- kvm-spice-replace-use-of-deprecated-API.patch [bz#1430606]
+- Resolves: bz#1368375
+  ([Intel 7.4 Bug] qemu-kvm does not support “-cpu IvyBridge”)
+- Resolves: bz#1382122
+  ([Intel 7.4 FEAT] KVM Enable the avx512_4vnniw, avx512_4fmaps instructions in qemu)
+- Resolves: bz#1430606
+  (Can't build qemu-kvm with newer spice packages)
+
 * Tue Feb 21 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-132.el7
 - kvm-cirrus-fix-patterncopy-checks.patch [bz#1420492]
 - kvm-Revert-cirrus-allow-zero-source-pitch-in-pattern-fil.patch [bz#1420492]
