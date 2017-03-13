@@ -36,7 +36,7 @@
 027 rw auto quick
 028 rw backing auto
 029 rw auto quick
-030 rw auto backing
+# 030 rw auto backing -- requires blkdebug and block jobs
 031 rw auto quick
 032 rw auto
 033 rw auto quick
@@ -46,8 +46,8 @@
 037 rw auto backing
 038 rw auto backing
 039 rw auto
-040 rw auto
-041 rw auto backing
+# 040 rw auto -- requires block jobs
+# 041 rw auto backing -- requires blkdebug and block jobs
 042 rw auto quick
 043 rw auto backing
 044 rw auto
