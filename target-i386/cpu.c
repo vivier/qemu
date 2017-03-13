@@ -158,7 +158,7 @@ static const char *cpuid_7_0_ecx_feature_name[] = {
     NULL, "avx512vbmi", NULL, NULL,
     NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,
-    NULL, NULL, NULL, NULL,
+    NULL, NULL, "avx512-vpopcntdq", NULL,
     NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,
