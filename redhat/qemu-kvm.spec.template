@@ -824,6 +824,16 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Wed Mar 15 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7_3.7
+- kvm-block-check-full-backing-filename-when-searching-pro.patch [bz#1425125]
+- kvm-qemu-iotests-Don-t-create-fifos-pidfiles-with-protoc.patch [bz#1425125]
+- kvm-qemu-iotest-test-to-lookup-protocol-based-image-with.patch [bz#1425125]
+- kvm-target-i386-Don-t-use-cpu-migratable-when-filtering-.patch [bz#1413897]
+- Resolves: bz#1413897
+  (cpu flag nonstop_tsc is not present in guest with host-passthrough and feature policy require invtsc)
+- Resolves: bz#1425125
+  (qemu fails to recognize gluster URIs in backing chain for block-commit operation)
+
 * Mon Feb 13 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7_3.6
 - kvm-cirrus-fix-patterncopy-checks.patch [bz#1420493]
 - kvm-Revert-cirrus-allow-zero-source-pitch-in-pattern-fil.patch [bz#1420493]
