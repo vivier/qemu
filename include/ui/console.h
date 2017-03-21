@@ -159,9 +159,6 @@ typedef struct DisplayChangeListenerOps {
                            int x, int y, int w, int h);
     void (*dpy_gfx_switch)(DisplayChangeListener *dcl,
                            struct DisplaySurface *new_surface);
-    void (*dpy_gfx_copy)(DisplayChangeListener *dcl,
-                         int src_x, int src_y,
-                         int dst_x, int dst_y, int w, int h);
 
     void (*dpy_text_cursor)(DisplayChangeListener *dcl,
                             int x, int y);
@@ -216,8 +213,6 @@ void unregister_displaychangelistener(DisplayChangeListener *dcl);
 void dpy_gfx_update(QemuConsole *con, int x, int y, int w, int h);
 void dpy_gfx_replace_surface(QemuConsole *con,
                              DisplaySurface *surface);
-void dpy_gfx_copy(QemuConsole *con, int src_x, int src_y,
-                  int dst_x, int dst_y, int w, int h);
 void dpy_text_cursor(QemuConsole *con, int x, int y);
 void dpy_text_update(QemuConsole *con, int x, int y, int w, int h);
 void dpy_text_resize(QemuConsole *con, int w, int h);
@@ -295,8 +290,6 @@ void text_consoles_set_display(DisplayState *ds);
 void console_select(unsigned int index);
 void console_color_init(DisplayState *ds);
 void qemu_console_resize(QemuConsole *con, int width, int height);
-void qemu_console_copy(QemuConsole *con, int src_x, int src_y,
-                       int dst_x, int dst_y, int w, int h);
 DisplaySurface *qemu_console_surface(QemuConsole *con);
 DisplayState *qemu_console_displaystate(QemuConsole *console);
 
