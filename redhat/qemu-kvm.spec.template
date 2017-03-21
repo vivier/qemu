@@ -824,6 +824,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue Mar 21 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7_3.8
+- kvm-target-i386-present-virtual-L3-cache-info-for-vcpus.patch [bz#1430802]
+- Resolves: bz#1430802
+  (Enhance qemu to present virtual L3 cache info for vcpus)
+
 * Wed Mar 15 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7_3.7
 - kvm-block-check-full-backing-filename-when-searching-pro.patch [bz#1425125]
 - kvm-qemu-iotests-Don-t-create-fifos-pidfiles-with-protoc.patch [bz#1425125]
