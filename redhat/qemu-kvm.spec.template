@@ -223,7 +223,7 @@ BuildRequires: perl-podlators
 BuildRequires: texinfo
 # For rdma
 %if 0%{?have_librdma:1}
-BuildRequires: librdmacm-devel
+BuildRequires: rdma-core-devel
 %endif
 # cpp for preprocessing option ROM assembly files
 %ifarch %{ix86} x86_64
