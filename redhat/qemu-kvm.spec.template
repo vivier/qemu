@@ -815,6 +815,44 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Tue Mar 21 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-134.el7
+- kvm-ui-vnc-introduce-VNC_DIRTY_PIXELS_PER_BIT-macro.patch [bz#1377977]
+- kvm-ui-vnc-derive-cmp_bytes-from-VNC_DIRTY_PIXELS_PER_BI.patch [bz#1377977]
+- kvm-ui-vnc-optimize-dirty-bitmap-tracking.patch [bz#1377977]
+- kvm-ui-vnc-optimize-setting-in-vnc_dpy_update.patch [bz#1377977]
+- kvm-ui-vnc-fix-vmware-VGA-incompatiblities.patch [bz#1377977]
+- kvm-ui-vnc-fix-potential-memory-corruption-issues.patch [bz#1377977]
+- kvm-vnc-fix-memory-corruption-CVE-2015-5225.patch [bz#1377977]
+- kvm-vnc-fix-overflow-in-vnc_update_stats.patch [bz#1377977]
+- kvm-i386-kvmvapic-initialise-imm32-variable.patch [bz#1335751]
+- kvm-qemu-iotests-Filter-out-actual-image-size-in-067.patch [bz#1427176]
+- vm-qcow2-Don-t-rely-on-free_cluster_index-in-alloc_ref2.patch [bz#1427176]
+- kvm-qemu-iotests-Fix-core-dump-suppression-in-test-039.patch [bz#1427176]
+- kvm-qemu-io-Add-sigraise-command.patch [bz#1427176]
+- kvm-iotests-Filter-for-Killed-in-qemu-io-output.patch [bz#1427176]
+- kvm-iotests-Fix-test-039.patch [bz#1427176]
+- kvm-blkdebug-Add-bdrv_truncate.patch [bz#1427176]
+- kvm-vhdx-Fix-zero-fill-iov-length.patch [bz#1427176]
+- kvm-qemu-iotests-Disable-030-040-041.patch [bz#1427176]
+- kvm-x86-add-AVX512_VPOPCNTDQ-features.patch [bz#1415830]
+- kvm-usb-ccid-check-ccid-apdu-length.patch [bz#1419818]
+- kvm-usb-ccid-better-bulk_out-error-handling.patch [bz#1419818]
+- kvm-usb-ccid-move-header-size-check.patch [bz#1419818]
+- kvm-usb-ccid-add-check-message-size-checks.patch [bz#1419818]
+- kvm-spec-Update-rdma-build-dependency.patch [bz#1433920]
+- Resolves: bz#1335751
+  (CVE-2016-4020 qemu-kvm: Qemu: i386: leakage of stack memory to guest in kvmvapic.c [rhel-7.4])
+- Resolves: bz#1377977
+  (qemu-kvm coredump in vnc_raw_send_framebuffer_update [rhel-7.4])
+- Resolves: bz#1415830
+  ([Intel 7.4 FEAT] Enable vpopcntdq for KNM - qemu/kvm)
+- Resolves: bz#1419818
+  (CVE-2017-5898 qemu-kvm: Qemu: usb: integer overflow in emulated_apdu_from_guest [rhel-7.4])
+- Resolves: bz#1427176
+  (test cases of qemu-iotests failed)
+- Resolves: bz#1433920
+  (Switch from librdmacm-devel to rdma-core-devel)
+
 * Thu Mar 09 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-133.el7
 - kvm-target-i386-add-Ivy-Bridge-CPU-model.patch [bz#1368375]
 - kvm-x86-add-AVX512_4VNNIW-and-AVX512_4FMAPS-features.patch [bz#1382122]
