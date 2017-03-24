@@ -817,6 +817,17 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Fri Mar 24 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-126.el7_3.6
+- kvm-fix-cirrus_vga-fix-OOB-read-case-qemu-Segmentation-f.patch [bz#1430059]
+- kvm-cirrus-vnc-zap-bitblit-support-from-console-code.patch [bz#1430059]
+- kvm-cirrus-add-option-to-disable-blitter.patch [bz#1430059]
+- kvm-cirrus-fix-cirrus_invalidate_region.patch [bz#1430059]
+- kvm-cirrus-stop-passing-around-dst-pointers-in-the-blitt.patch [bz#1430059]
+- kvm-cirrus-stop-passing-around-src-pointers-in-the-blitt.patch [bz#1430059]
+- kvm-cirrus-fix-off-by-one-in-cirrus_bitblt_rop_bkwd_tran.patch [bz#1430059]
+- Resolves: bz#1430059
+  (CVE-2016-9603 qemu-kvm: Qemu: cirrus: heap buffer overflow via vnc connection [rhel-7.3.z])
+
 * Mon Feb 13 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-126.el7_3.5
 - kvm-cirrus-fix-patterncopy-checks.patch [bz#1420490]
 - kvm-Revert-cirrus-allow-zero-source-pitch-in-pattern-fil.patch [bz#1420490]
