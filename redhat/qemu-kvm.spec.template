@@ -824,6 +824,26 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Mar 24 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7_3.9
+- kvm-block-gluster-memory-usage-use-one-glfs-instance-per.patch [bz#1413044]
+- kvm-gluster-Fix-use-after-free-in-glfs_clear_preopened.patch [bz#1413044]
+- kvm-fix-cirrus_vga-fix-OOB-read-case-qemu-Segmentation-f.patch [bz#1430061]
+- kvm-cirrus-vnc-zap-bitblit-support-from-console-code.patch [bz#1430061]
+- kvm-cirrus-add-option-to-disable-blitter.patch [bz#1430061]
+- kvm-cirrus-fix-cirrus_invalidate_region.patch [bz#1430061]
+- kvm-cirrus-stop-passing-around-dst-pointers-in-the-blitt.patch [bz#1430061]
+- kvm-cirrus-stop-passing-around-src-pointers-in-the-blitt.patch [bz#1430061]
+- kvm-cirrus-fix-off-by-one-in-cirrus_bitblt_rop_bkwd_tran.patch [bz#1430061]
+- kvm-file-posix-Consider-max_segments-for-BlockLimits.max.patch [bz#1431149]
+- kvm-file-posix-clean-up-max_segments-buffer-termination.patch [bz#1431149]
+- kvm-file-posix-Don-t-leak-fd-in-hdev_get_max_segments.patch [bz#1431149]
+- Resolves: bz#1413044
+  (block-gluster: use one glfs instance per volume)
+- Resolves: bz#1430061
+  (CVE-2016-9603 qemu-kvm-rhev: Qemu: cirrus: heap buffer overflow via vnc connection [rhel-7.3.z])
+- Resolves: bz#1431149
+  (VMs pause when writing to Virtio-SCSI direct lun with scsi passthrough enabled via an Emulex HBA)
+
 * Tue Mar 21 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7_3.8
 - kvm-target-i386-present-virtual-L3-cache-info-for-vcpus.patch [bz#1430802]
 - Resolves: bz#1430802
