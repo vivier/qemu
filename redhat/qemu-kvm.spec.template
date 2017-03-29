@@ -145,6 +145,7 @@ Source17: rhel6-ne2k_pci.rom
 Source18: bios-256k.bin
 Source19: README.rhel6-gpxe-source
 Source20: rhel6-e1000.rom
+Source21: sample_images.tar
 
 %%CONFIGS%%
 
@@ -325,6 +326,7 @@ such as kvm_stat.
 %prep
 %setup -q -n qemu-%{version}
 cp %{SOURCE18} pc-bios	# keep "make check" happy
+tar -xf %{SOURCE21}
 
 # if patch fuzzy patch applying will be forbidden
 %define with_fuzzy_patches 0
