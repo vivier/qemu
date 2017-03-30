@@ -815,6 +815,17 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Thu Mar 30 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-135.el7
+- kvm-fix-cirrus_vga-fix-OOB-read-case-qemu-Segmentation-f.patch [bz#1430060]
+- kvm-cirrus-vnc-zap-bitblit-support-from-console-code.patch [bz#1430060]
+- kvm-cirrus-add-option-to-disable-blitter.patch [bz#1430060]
+- kvm-cirrus-fix-cirrus_invalidate_region.patch [bz#1430060]
+- kvm-cirrus-stop-passing-around-dst-pointers-in-the-blitt.patch [bz#1430060]
+- kvm-cirrus-stop-passing-around-src-pointers-in-the-blitt.patch [bz#1430060]
+- kvm-cirrus-fix-off-by-one-in-cirrus_bitblt_rop_bkwd_tran.patch [bz#1430060]
+- Resolves: bz#1430060
+  (CVE-2016-9603 qemu-kvm: Qemu: cirrus: heap buffer overflow via vnc connection [rhel-7.4])
+
 * Tue Mar 21 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-134.el7
 - kvm-ui-vnc-introduce-VNC_DIRTY_PIXELS_PER_BIT-macro.patch [bz#1377977]
 - kvm-ui-vnc-derive-cmp_bytes-from-VNC_DIRTY_PIXELS_PER_BI.patch [bz#1377977]
