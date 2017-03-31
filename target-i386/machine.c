@@ -704,6 +704,24 @@ static const VMStateDescription vmstate_avx512 = {
     }
 };
 
+static bool xss_needed(void *opaque)
+{
+    X86CPU *cpu = opaque;
+    CPUX86State *env = &cpu->env;
+
+    return env->xss != 0;
+}
+
+static const VMStateDescription vmstate_xss = {
+    .name = "cpu/xss",
+    .version_id = 1,
+    .minimum_version_id = 1,
+    .fields = (VMStateField[]) {
+        VMSTATE_UINT64(env.xss, X86CPU),
+        VMSTATE_END_OF_LIST()
+    }
+};
+
 const VMStateDescription vmstate_x86_cpu = {
     .name = "cpu",
     .version_id = 12,
@@ -850,6 +868,9 @@ const VMStateDescription vmstate_x86_cpu = {
         }, {
             .vmsd = &vmstate_avx512,
             .needed = avx512_needed,
+         }, {
+            .vmsd = &vmstate_xss,
+            .needed = xss_needed,
         } , {
             /* empty */
         }

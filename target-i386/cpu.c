@@ -177,7 +177,7 @@ static const char *cpuid_7_0_edx_feature_name[] = {
 };
 
 static const char *cpuid_xsave_feature_name[] = {
-    "xsaveopt", "xsavec", "xgetbv1", NULL,
+    "xsaveopt", "xsavec", "xgetbv1", "xsaves",
     NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL,
