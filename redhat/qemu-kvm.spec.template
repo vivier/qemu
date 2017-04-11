@@ -156,7 +156,6 @@ Source20: rhel6-e1000.rom
 BuildRequires: zlib-devel
 BuildRequires: SDL-devel
 BuildRequires: which
-BuildRequires: texi2html
 BuildRequires: gnutls-devel
 BuildRequires: cyrus-sasl-devel
 BuildRequires: libtool
