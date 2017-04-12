@@ -84,7 +84,7 @@ Epoch: 10
 License: GPLv2+ and LGPLv2+ and BSD
 Group: Development/Tools
 URL: http://www.qemu.org/
-ExclusiveArch: x86_64 %{power64} aarch64
+ExclusiveArch: x86_64 %{power64} aarch64 s390x
 %ifarch %{ix86} x86_64
 Requires: seabios-bin >= 1.10.2-1
 Requires: sgabios-bin
@@ -242,7 +242,9 @@ BuildRequires: cpp
 # For compressed guest memory dumps
 BuildRequires: lzo-devel snappy-devel
 # For NUMA memory binding
+%ifnarch s390x
 BuildRequires: numactl-devel
+%endif
 BuildRequires: libgcrypt-devel
 
 # For kvm-unit-tests
@@ -404,13 +406,21 @@ cp %{SOURCE24} build_configure.sh
   disable \
 %endif
   disable \
+%ifnarch s390x
   enable \
+%else
+  disable \
+%endif
 %ifarch x86_64
   enable \
 %else
   disable \
 %endif
+%if 0%{have_librdma}
   enable \
+%else
+  disable \
+%endif
 %if 0%{have_seccomp}
   enable \
 %else
@@ -540,10 +550,12 @@ rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/palcode-clipper
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/petalogix*.dtb
 rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/bamboo.dtb
 rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/ppc_rom.bin
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/s390-zipl.rom
-rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/s390-ccw.img
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/u-boot.e500
 rm -rf ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/skiboot.lid
+
+%ifnarch s390x
+    rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/s390-ccw.img
+%endif
 
 %ifnarch %{power64}
     rm -f ${RPM_BUILD_ROOT}%{_datadir}/%{pkgname}/spapr-rtas.bin
@@ -724,6 +736,9 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
     %{_datadir}/%{pkgname}/multiboot.bin
     %{_datadir}/%{pkgname}/kvmvapic.bin
     %{_datadir}/%{pkgname}/sgabios.bin
+%endif
+%ifarch s390x
+    %{_datadir}/%{pkgname}/s390-ccw.img
 %endif
 %ifnarch aarch64
     %{_datadir}/%{pkgname}/vgabios.bin
