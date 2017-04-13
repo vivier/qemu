@@ -392,6 +392,8 @@ static void pci_vpb_init(Object *obj)
     h->bus = &s->pci_bus;
 
     object_initialize(&s->pci_dev, sizeof(s->pci_dev), TYPE_VERSATILE_PCI_HOST);
+    object_property_add_child(OBJECT(&s->pci_bus), "versatile_pci_host",
+                              OBJECT(&s->pci_dev), NULL);
     qdev_set_parent_bus(DEVICE(&s->pci_dev), BUS(&s->pci_bus));
 
     /* Window sizes for VersatilePB; realview_pci's init will override */
@@ -503,8 +505,6 @@ static void pci_vpb_class_init(ObjectClass *klass, void *data)
     dc->reset = pci_vpb_reset;
     dc->vmsd = &pci_vpb_vmstate;
     dc->props = pci_vpb_properties;
-    /* Reason: object_unref() hangs */
-    dc->cannot_destroy_with_object_finalize_yet = true;
 }
 
 static const TypeInfo pci_vpb_info = {
@@ -528,10 +528,6 @@ static void pci_realview_init(Object *obj)
 
 static void pci_realview_class_init(ObjectClass *class, void *data)
 {
-    DeviceClass *dc = DEVICE_CLASS(class);
-
-    /* Reason: object_unref() hangs */
-    dc->cannot_destroy_with_object_finalize_yet = true;
 }
 
 static const TypeInfo pci_realview_info = {
