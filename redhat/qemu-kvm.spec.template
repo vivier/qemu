@@ -813,6 +813,20 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Tue Apr 18 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-136.el7
+- kvm-target-i386-get-set-migrate-XSAVES-state.patch [bz#1327593]
+- kvm-Removing-texi2html-from-build-requirements.patch [bz#1440987]
+- kvm-Disable-build-of-32bit-packages.patch [bz#1441778]
+- kvm-Add-sample-images-to-srpm.patch [bz#1436280]
+- Resolves: bz#1327593
+  ([Intel 7.4 FEAT] KVM Enable the XSAVEC, XSAVES and XRSTORS instructions)
+- Resolves: bz#1436280
+  (sample images  for qemu-iotests are missing in the SRPM)
+- Resolves: bz#1440987
+  (Remove texi2html build dependancy from RPM)
+- Resolves: bz#1441778
+  (Stop building qemu-img for 32bit architectures.)
+
 * Thu Mar 30 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-135.el7
 - kvm-fix-cirrus_vga-fix-OOB-read-case-qemu-Segmentation-f.patch [bz#1430060]
 - kvm-cirrus-vnc-zap-bitblit-support-from-console-code.patch [bz#1430060]
