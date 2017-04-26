@@ -1311,7 +1311,12 @@ static void ppc_spapr_reset(void)
     first_ppc_cpu->env.gpr[3] = fdt_addr;
     first_ppc_cpu->env.gpr[5] = 0;
     first_cpu->halted = 0;
-    first_ppc_cpu->env.nip = SPAPR_ENTRY_POINT;
+
+    if (machine->kernel_filename) {
+        first_ppc_cpu->env.nip = KERNEL_LOAD_ADDR;
+    } else {
+        first_ppc_cpu->env.nip = SPAPR_ENTRY_POINT;
+    }
 
     spapr->cas_reboot = false;
 }
@@ -2251,22 +2256,22 @@ static void ppc_spapr_init(MachineState *machine)
                 exit(1);
             }
         }
+    } else {
+        if (bios_name == NULL) {
+            bios_name = FW_FILE_NAME;
+        }
+        filename = qemu_find_file(QEMU_FILE_TYPE_BIOS, bios_name);
+        if (!filename) {
+            error_report("Could not find LPAR firmware '%s'", bios_name);
+            exit(1);
+        }
+        fw_size = load_image_targphys(filename, 0, FW_MAX_SIZE);
+        if (fw_size <= 0) {
+            error_report("Could not load LPAR firmware '%s'", filename);
+            exit(1);
+        }
+        g_free(filename);
     }
-
-    if (bios_name == NULL) {
-        bios_name = FW_FILE_NAME;
-    }
-    filename = qemu_find_file(QEMU_FILE_TYPE_BIOS, bios_name);
-    if (!filename) {
-        error_report("Could not find LPAR firmware '%s'", bios_name);
-        exit(1);
-    }
-    fw_size = load_image_targphys(filename, 0, FW_MAX_SIZE);
-    if (fw_size <= 0) {
-        error_report("Could not load LPAR firmware '%s'", filename);
-        exit(1);
-    }
-    g_free(filename);
 
     /* FIXME: Should register things through the MachineState's qdev
      * interface, this is a legacy from the sPAPREnvironment structure
