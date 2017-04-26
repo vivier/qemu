@@ -658,6 +658,7 @@ void ide_dma_cb(void *opaque, int ret)
             op |= BM_STATUS_RETRY_TRIM;
 
         if (ide_handle_rw_error(s, -ret, op)) {
+            s->bus->dma->aiocb = NULL;
             return;
         }
     }
