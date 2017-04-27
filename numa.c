@@ -294,6 +294,42 @@ static void validate_numa_cpus(void)
     g_free(seen_cpus);
 }
 
+void numa_legacy_auto_assign_ram(MachineClass *mc, uint64_t *nodes,
+                                 int nb_nodes, ram_addr_t size)
+{
+    int i;
+    uint64_t usedmem = 0;
+
+    /* Align each node according to the alignment
+     * requirements of the machine class
+     */
+
+    for (i = 0; i < nb_nodes - 1; i++) {
+        nodes[i] = (size / nb_nodes) &
+                            ~((1 << mc->numa_mem_align_shift) - 1);
+        usedmem += nodes[i];
+    }
+    nodes[i] = size - usedmem;
+}
+
+void numa_default_auto_assign_ram(MachineClass *mc, uint64_t *nodes,
+                                  int nb_nodes, ram_addr_t size)
+{
+    int i;
+    uint64_t usedmem = 0, node_mem;
+    uint64_t granularity = size / nb_nodes;
+    uint64_t propagate = 0;
+
+    for (i = 0; i < nb_nodes - 1; i++) {
+        node_mem = (granularity + propagate) &
+                   ~((1 << mc->numa_mem_align_shift) - 1);
+        propagate = granularity + propagate - node_mem;
+        nodes[i] = node_mem;
+        usedmem += node_mem;
+    }
+    nodes[i] = ram_size - usedmem;
+}
+
 void parse_numa_opts(MachineClass *mc)
 {
     int i;
@@ -336,17 +372,16 @@ void parse_numa_opts(MachineClass *mc)
             }
         }
         if (i == nb_numa_nodes) {
-            uint64_t usedmem = 0;
+            uint64_t *node_mem = g_new(uint64_t, nb_numa_nodes);
 
-            /* Align each node according to the alignment
-             * requirements of the machine class
-             */
-            for (i = 0; i < nb_numa_nodes - 1; i++) {
-                numa_info[i].node_mem = (ram_size / nb_numa_nodes) &
-                                        ~((1 << mc->numa_mem_align_shift) - 1);
-                usedmem += numa_info[i].node_mem;
+            assert(mc->numa_auto_assign_ram);
+            mc->numa_auto_assign_ram(mc, node_mem, nb_numa_nodes, ram_size);
+
+            for (i = 0; i < nb_numa_nodes; i++) {
+                numa_info[i].node_mem = node_mem[i];
             }
-            numa_info[i].node_mem = ram_size - usedmem;
+
+            g_free(node_mem);
         }
 
         numa_total = 0;
