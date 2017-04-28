@@ -813,6 +813,11 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_mandir}/man8/qemu-nbd.8*
 
 %changelog
+* Fri Apr 28 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-137.el7
+- kvm-ide-fix-halted-IO-segfault-at-reset.patch [bz#1299875]
+- Resolves: bz#1299875
+  (system_reset should clear pending request for error (IDE))
+
 * Tue Apr 18 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-136.el7
 - kvm-target-i386-get-set-migrate-XSAVES-state.patch [bz#1327593]
 - kvm-Removing-texi2html-from-build-requirements.patch [bz#1440987]
