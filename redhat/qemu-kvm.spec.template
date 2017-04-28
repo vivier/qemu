@@ -809,6 +809,43 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri Apr 28 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-2.el7
+- kvm-Disable-unimplemented-device.patch [bz#1443029]
+- kvm-Disable-serial-isa-for-ppc64.patch [bz#1443029]
+- kvm-Disable-rs6000-mc-device.patch [bz#1443029]
+- kvm-ppc64le-Remove-isabus-bridge-device.patch [bz#1443029]
+- kvm-hmp-gpa2hva-and-gpa2hpa-hostaddr-command.patch [bz#1432295]
+- kvm-memory-add-section-range-info-for-IOMMU-notifier.patch [bz#1335808]
+- kvm-memory-provide-IOMMU_NOTIFIER_FOREACH-macro.patch [bz#1335808]
+- kvm-memory-provide-iommu_replay_all.patch [bz#1335808]
+- kvm-memory-introduce-memory_region_notify_one.patch [bz#1335808]
+- kvm-memory-add-MemoryRegionIOMMUOps.replay-callback.patch [bz#1335808]
+- kvm-intel_iommu-use-the-correct-memory-region-for-device.patch [bz#1335808]
+- kvm-intel_iommu-provide-its-own-replay-callback.patch [bz#1335808]
+- kvm-intel_iommu-allow-dynamic-switch-of-IOMMU-region.patch [bz#1335808]
+- kvm-intel_iommu-enable-remote-IOTLB.patch [bz#1335808]
+- kvm-virtio-rng-stop-virtqueue-while-the-CPU-is-stopped.patch [bz#1435521]
+- kvm-target-ppc-kvm-make-use-of-KVM_CREATE_SPAPR_TCE_64.patch [bz#1440619]
+- kvm-spapr-Add-ibm-processor-radix-AP-encodings-to-the-de.patch [bz#1368786]
+- kvm-target-ppc-support-KVM_CAP_PPC_MMU_RADIX-KVM_CAP_PPC.patch [bz#1368786]
+- kvm-target-ppc-Add-new-H-CALL-shells-for-in-memory-table.patch [bz#1368786]
+- kvm-target-ppc-Implement-H_REGISTER_PROCESS_TABLE-H_CALL.patch [bz#1368786]
+- kvm-spapr-move-spapr_populate_pa_features.patch [bz#1368786]
+- kvm-spapr-Enable-ISA-3.0-MMU-mode-selection-via-CAS.patch [bz#1368786]
+- kvm-spapr-Workaround-for-broken-radix-guests.patch [bz#1368786]
+- Resolves: bz#1335808
+  ([RFE] [vIOMMU] Add Support for VFIO devices with vIOMMU present)
+- Resolves: bz#1368786
+  ([Pegas1.0 FEAT] POWER9 guest - qemu - base enablement)
+- Resolves: bz#1432295
+  (Add gpa2hpa command to qemu hmp)
+- Resolves: bz#1435521
+  (Migration failed with postcopy enabled from rhel7.3.z host to rhel7.4 host "error while loading state for instance 0x0 of device 'pci)
+- Resolves: bz#1440619
+  (Reboot guest will induce error message - KVM: Failed to create TCE table for liobn 0x80000001)
+- Resolves: bz#1443029
+  (Disable new devices in qemu 2.9)
+
 * Fri Apr 21 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-1.el7
 - Rebase to QEMU 2.9.0
 
