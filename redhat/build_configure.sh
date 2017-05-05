@@ -113,7 +113,7 @@ fi
     --disable-linux-user \
     --disable-modules \
     --disable-netmap \
-    --enable-replication \
+    --disable-replication \
     --enable-system \
     --disable-user \
     --enable-vhost-net \
