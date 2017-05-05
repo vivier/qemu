@@ -809,6 +809,25 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri May 05 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-3.el7
+- kvm-x86-machine-compat-2.9-stragglers.patch [bz#1435756]
+- kvm-block-add-bdrv_set_read_only-helper-function.patch [bz#1189998]
+- kvm-block-do-not-set-BDS-read_only-if-copy_on_read-enabl.patch [bz#1189998]
+- kvm-block-honor-BDRV_O_ALLOW_RDWR-when-clearing-bs-read_.patch [bz#1189998]
+- kvm-block-code-movement.patch [bz#1189998]
+- kvm-block-introduce-bdrv_can_set_read_only.patch [bz#1189998]
+- kvm-block-use-bdrv_can_set_read_only-during-reopen.patch [bz#1189998]
+- kvm-block-rbd-update-variable-names-to-more-apt-names.patch [bz#1189998]
+- kvm-block-rbd-Add-support-for-reopen.patch [bz#1189998]
+- kvm-replication-Make-disable-replication-compile-again.patch [bz#1422846]
+- kvm-Disable-replication-feature.patch [bz#1422846]
+- Resolves: bz#1189998
+  (Active commit does not support on rbd based disk)
+- Resolves: bz#1422846
+  (Disable replication feature)
+- Resolves: bz#1435756
+  (Backport device/machtype compat settings from v2.8.0..v2.9.0 final)
+
 * Fri Apr 28 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-2.el7
 - kvm-Disable-unimplemented-device.patch [bz#1443029]
 - kvm-Disable-serial-isa-for-ppc64.patch [bz#1443029]
