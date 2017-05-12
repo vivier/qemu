@@ -816,6 +816,23 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Fri May 12 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-4.el7
+- kvm-Reenable-Educational-device.patch [bz#1414694]
+- kvm-usb-xhci-Fix-PCI-capability-order.patch [bz#1447874]
+- kvm-block-vxhs.c-Add-support-for-a-new-block-device-type.patch [bz#1265869]
+- kvm-block-vxhs.c-Add-qemu-iotests-for-new-block-device-t.patch [bz#1265869]
+- kvm-qemu-iotests-exclude-vxhs-from-image-creation-via-pr.patch [bz#1265869]
+- kvm-block-vxhs-modularize-VXHS-via-g_module.patch [bz#1265869]
+- kvm-Remove-the-dependencies-to-seavgabios-bin-and-ipxe-r.patch [bz#1449939]
+- Resolves: bz#1265869
+  (RFE: Veritas HyperScale VxHS block device support (qemu-kvm-rhev))
+- Resolves: bz#1414694
+  (Reenable edu device for kvm-unit-tests support)
+- Resolves: bz#1447874
+  (Migration failed from rhel7.2.z->rhel7.4 with "-M rhel7.0.0" and "-device nec-usb-xhci")
+- Resolves: bz#1449939
+  (Remove dependency on seavgabios-bin and ipxe-roms-qemu for qemu-kvm-rhev on s390x)
+
 * Fri May 05 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-3.el7
 - kvm-x86-machine-compat-2.9-stragglers.patch [bz#1435756]
 - kvm-block-add-bdrv_set_read_only-helper-function.patch [bz#1189998]
