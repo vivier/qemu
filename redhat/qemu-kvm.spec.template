@@ -91,7 +91,7 @@ ExclusiveArch: x86_64 %{power64} aarch64 s390x
 Requires: seabios-bin >= 1.10.2-1
 Requires: sgabios-bin
 %endif
-%ifnarch aarch64
+%ifnarch aarch64 s390x
 Requires: seavgabios-bin >= 1.10.2-1
 Requires: ipxe-roms-qemu >= 20170123-1
 %endif
@@ -601,7 +601,7 @@ pxe_link() {
     ln -s ../ipxe/$2.rom %{buildroot}%{_datadir}/%{pkgname}/pxe-$1.rom
 }
 
-%ifnarch aarch64
+%ifnarch aarch64 s390x
 pxe_link e1000 8086100e
 pxe_link ne2k_pci 10ec8029
 pxe_link pcnet 10222000
@@ -614,7 +614,7 @@ rom_link() {
     ln -s $1 %{buildroot}%{_datadir}/%{pkgname}/$2
 }
 
-%ifnarch aarch64
+%ifnarch aarch64 s390x
   rom_link ../seavgabios/vgabios-isavga.bin vgabios.bin
   rom_link ../seavgabios/vgabios-cirrus.bin vgabios-cirrus.bin
   rom_link ../seavgabios/vgabios-qxl.bin vgabios-qxl.bin
@@ -746,7 +746,7 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %ifarch s390x
     %{_datadir}/%{pkgname}/s390-ccw.img
 %endif
-%ifnarch aarch64
+%ifnarch aarch64 s390x
     %{_datadir}/%{pkgname}/vgabios.bin
     %{_datadir}/%{pkgname}/vgabios-cirrus.bin
     %{_datadir}/%{pkgname}/vgabios-qxl.bin
