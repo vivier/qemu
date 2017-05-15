@@ -13,12 +13,21 @@ kvm_setup_powerpc () {
 	    return
 	fi
 
-	# Step 2. Configure subcore mode
-	# FIXME: Should we check for POWER8 first?
-	/usr/sbin/ppc64_cpu --subcores-per-core=$SUBCORES
+	# On POWER8 a host core can only run threads of a single
+	# guest, meaning that SMT must be disabled on the host in
+	# order to run KVM guests. (Also applieds to POWER7, but we
+	# don't support that).
+	#
+	# POWER9 doesn't have this limitation (though it will for hash
+	# guests on radix host when that's implemented).  So, only set
+	# up subcores and disable SMT for POWER*.
+	if grep '^cpu[[:space:]]*:[[:space:]]*POWER8' /proc/cpuinfo > /dev/null; then
+	    # Step 2. Configure subcore mode
+	    /usr/sbin/ppc64_cpu --subcores-per-core=$SUBCORES
 
-	# Step 3. Disable SMT (multithreading)
-	/usr/sbin/ppc64_cpu --smt=off
+	    # Step 3. Disable SMT (multithreading)
+	    /usr/sbin/ppc64_cpu --smt=off
+	fi
     fi
 }
 
