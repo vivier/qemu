@@ -84,89 +84,15 @@ Source4: build_configure.sh
 %%PATCHLIST%%
 
 BuildRequires: zlib-devel
-BuildRequires: SDL-devel
-BuildRequires: which
-BuildRequires: texi2html
-BuildRequires: gnutls-devel
-BuildRequires: cyrus-sasl-devel
-BuildRequires: libtool
-BuildRequires: libaio-devel
-BuildRequires: rsync
+BuildRequires: glib2-devel
+BuildRequires: systemd
 BuildRequires: python
-BuildRequires: pciutils-devel
-BuildRequires: pulseaudio-libs-devel
-BuildRequires: libiscsi-devel
-BuildRequires: ncurses-devel
-BuildRequires: libattr-devel
-BuildRequires: libusbx-devel
-%if 0%{have_usbredir}
-BuildRequires: usbredir-devel >= 0.6
-%endif
-BuildRequires: texinfo
-%if 0%{have_spice}
-BuildRequires: spice-protocol >= 0.12.2
-BuildRequires: spice-server-devel >= 0.12.0
-%endif
-%if 0%{have_seccomp}
-BuildRequires: libseccomp-devel >= 1.0.0
-%endif
-# For network block driver
-BuildRequires: libcurl-devel
-BuildRequires: libssh2-devel
-%ifarch x86_64
-BuildRequires: librados2-devel
-BuildRequires: librbd1-devel
-%endif
-%if 0%{have_gluster}
-# For gluster block driver
-BuildRequires: glusterfs-api-devel
-BuildRequires: glusterfs-devel
-%endif
-# We need both because the 'stap' binary is probed for by configure
-BuildRequires: systemtap
 BuildRequires: systemtap-sdt-devel
-# For smartcard NSS support
-BuildRequires: nss-devel
-# For XFS discard support in raw-posix.c
-# For VNC JPEG support
-BuildRequires: libjpeg-devel
-# For VNC PNG support
-BuildRequires: libpng-devel
-# For uuid generation
-BuildRequires: libuuid-devel
-# For BlueZ device support
-BuildRequires: bluez-libs-devel
-# For Braille device support
-BuildRequires: brlapi-devel
-# For test suite
-BuildRequires: check-devel
-# For virtfs
-BuildRequires: libcap-devel
-# Hard requirement for version >= 1.3
-BuildRequires: pixman-devel
-# Documentation requirement
 BuildRequires: perl-podlators
 BuildRequires: texinfo
-# For rdma
-%if 0%{have_librdma}
-BuildRequires: librdmacm-devel
-%endif
 %if 0%{have_tcmalloc}
 BuildRequires: gperftools-devel
 %endif
-# iasl and cpp for acpi generation (not a hard requirement as we can use
-# pre-compiled files, but it's better to use this)
-%ifarch %{ix86} x86_64
-BuildRequires: iasl
-BuildRequires: cpp
-%endif
-# For compressed guest memory dumps
-BuildRequires: lzo-devel snappy-devel
-# For NUMA memory binding
-%if 0%{have_numa}
-BuildRequires: numactl-devel
-%endif
-BuildRequires: libcacard-devel
 
 %define qemudocdir %{_docdir}/%{pkgname}
 
@@ -260,42 +186,6 @@ cp %{SOURCE4} build_configure.sh
   "%{name}-%{version}-%{release}" \
   "%{optflags}" \
 %if 0%{have_fdt}
-  enable \
-%else
-  disable \
-%endif
-%if 0%{have_gluster}
-  enable \
-%else
-  disable \
-%endif
-  enable \
-%if 0%{have_numa}
-  enable \
-%else
-  disable \
-%endif
-%ifarch x86_64
-  enable \
-%else
-  disable \
-%endif
-%if 0%{have_librdma}
-  enable \
-%else
-  disable \
-%endif
-%if 0%{have_seccomp} 
-  enable \
-%else
-  disable \
-%endif
-%if 0%{have_spice}
-  enable \
-%else
-  disable \
-%endif
-%if 0%{have_usbredir}
   enable \
 %else
   disable \
