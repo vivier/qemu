@@ -115,12 +115,14 @@ fi
     --disable-cocoa \
     --enable-debug-info \
     --disable-guest-agent-msi \
+    --disable-hax \
     --disable-jemalloc \
     --disable-linux-user \
     --disable-modules \
     --disable-netmap \
     --disable-replication \
     --enable-system \
+    --enable-tools \
     --disable-user \
     --enable-vhost-net \
     --enable-vhost-vsock \
