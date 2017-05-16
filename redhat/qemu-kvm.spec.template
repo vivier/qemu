@@ -816,6 +816,23 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Tue May 16 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-5.el7
+- kvm-blockdev-ignore-aio-native-for-empty-drives.patch [bz#1402645]
+- kvm-dump-Acquire-BQL-around-vm_start-in-dump-thread.patch [bz#1445174]
+- kvm-Downstream-Don-t-disable-SMT-on-POWER9-hosts.patch [bz#1450724]
+- kvm-aio-add-missing-aio_notify-to-aio_enable_external.patch [bz#1446498]
+- kvm-Update-configuration-for-qemu-2.9.patch [bz#1400962]
+- Resolves: bz#1400962
+  (Verify configuration coverage for rebased qemu-kvm-rhev)
+- Resolves: bz#1402645
+  (Required cache.direct=on when set aio=native)
+- Resolves: bz#1445174
+  ([RHEV7.4] [guest memory dump]dump-guest-memory QMP command with "detach" param makes qemu-kvm process aborted)
+- Resolves: bz#1446498
+  (Guest freeze after live snapshot with data-plane)
+- Resolves: bz#1450724
+  ([Pegas 1.0] qemu package scripts should not disable host multi-threading for POWER9)
+
 * Fri May 12 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.9.0-4.el7
 - kvm-Reenable-Educational-device.patch [bz#1414694]
 - kvm-usb-xhci-Fix-PCI-capability-order.patch [bz#1447874]
