@@ -225,7 +225,7 @@ static gboolean serial_xmit(GIOChannel *chan, GIOCondition cond, void *opaque)
 
     do {
         assert(!(s->lsr & UART_LSR_TEMT));
-        if (s->tsr_retry <= 0) {
+        if (s->tsr_retry == 0) {
             assert(!(s->lsr & UART_LSR_THRE));
 
             if (s->fcr & UART_FCR_FE) {
@@ -248,7 +248,7 @@ static gboolean serial_xmit(GIOChannel *chan, GIOCondition cond, void *opaque)
             /* in loopback mode, say that we just received a char */
             serial_receive1(s, &s->tsr, 1);
         } else if (qemu_chr_fe_write(s->chr, &s->tsr, 1) != 1) {
-            if (s->tsr_retry >= 0 && s->tsr_retry < MAX_XMIT_RETRY &&
+            if (s->tsr_retry < MAX_XMIT_RETRY &&
                 qemu_chr_fe_add_watch(s->chr, G_IO_OUT|G_IO_HUP,
                                       serial_xmit, s) > 0) {
                 s->tsr_retry++;
@@ -296,7 +296,7 @@ static void serial_ioport_write(void *opaque, hwaddr addr, uint64_t val,
             s->lsr &= ~UART_LSR_THRE;
             s->lsr &= ~UART_LSR_TEMT;
             serial_update_irq(s);
-            if (s->tsr_retry <= 0) {
+            if (s->tsr_retry == 0) {
                 serial_xmit(NULL, G_IO_OUT, s);
             }
         }
@@ -619,6 +619,10 @@ static int serial_post_load(void *opaque, int version_id)
     if (version_id < 3) {
         s->fcr_vmstate = 0;
     }
+    if (s->tsr_retry > MAX_XMIT_RETRY) {
+        s->tsr_retry = MAX_XMIT_RETRY;
+    }
+
     /* Initialize fcr via setter to perform essential side-effects */
     serial_ioport_write(s, 0x02, s->fcr_vmstate, 1);
     serial_update_parameters(s);
