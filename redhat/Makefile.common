@@ -4,7 +4,7 @@ RHEV:=0
 VERSION:=2.8.0
 DATE:=
 COMMIT:=
-RELEASE:=1
+RELEASE:=2
 ZRELEASE:=
 RELEASE_SEPARATOR:=-
 
@@ -15,7 +15,7 @@ MARKER:=0737f32daf35f3730ed2461ddfaaf034c2ec7ff0
 
 SPECFILE:=$(NAME).spec
 DIST:=.el7
-BUILD_TARGET:=rhel-7.3-candidate
+BUILD_TARGET:=rhel-7.4-candidate
 
 ifeq ($(RHEV),1)
   NAME_SUFFIX:=-rhev

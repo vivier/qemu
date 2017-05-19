@@ -258,6 +258,16 @@ install -m 0644  qemu-ga.8 ${RPM_BUILD_ROOT}%{_mandir}/man8/
 
 
 %changelog
+* Fri May 19 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.8.0-2.el7
+- qemuga-Remove-unnecessary-dependencies.patch [bz#1441999]
+- Resolves: bz#1441999
+  (Clean qemu-ga dependencies)
+
+* Tue Feb 07 2017 Miroslav Rezanina <mrezanin@redhat.com> - 2.8.0-1.el7
+- Rebase to 2.8.0 base [bz#1414676]
+- Resolves: bz#1414676
+  (Rebase qemu-guest-agent to 2.8.0 base)
+
 * Thu Sep 01 2016 Miroslav Rezanina <mrezanin@redhat.com> - 2.5.0-3.el7
 - qemuga-spec-add-qemu-ga-man-page.patch [bz#1101556]
 - Resolves: bz#1101556
