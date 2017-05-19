@@ -161,7 +161,7 @@ Source29: pxe-e1000e.rom
 %%PATCHLIST%%
 
 BuildRequires: zlib-devel
-BuildRequires: SDL-devel
+BuildRequires: glib2-devel
 BuildRequires: which
 BuildRequires: gnutls-devel
 BuildRequires: cyrus-sasl-devel
@@ -170,7 +170,6 @@ BuildRequires: libaio-devel
 BuildRequires: rsync
 BuildRequires: python
 BuildRequires: pciutils-devel
-BuildRequires: pulseaudio-libs-devel
 BuildRequires: libiscsi-devel
 BuildRequires: ncurses-devel
 BuildRequires: libattr-devel
