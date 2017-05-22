@@ -2632,6 +2632,7 @@ out:
 static void spapr_memory_pre_plug(HotplugHandler *hotplug_dev, DeviceState *dev,
                                   Error **errp)
 {
+    sPAPRMachineState *ms = SPAPR_MACHINE(hotplug_dev);
     PCDIMMDevice *dimm = PC_DIMM(dev);
     PCDIMMDeviceClass *ddc = PC_DIMM_GET_CLASS(dimm);
     MemoryRegion *mr = ddc->get_memory_region(dimm);
@@ -2649,6 +2650,14 @@ static void spapr_memory_pre_plug(HotplugHandler *hotplug_dev, DeviceState *dev,
         error_setg(errp, "Memory backend has bad page size. "
                    "Use 'memory-backend-file' with correct mem-path.");
         return;
+    }
+    if (dev->hotplugged) {
+        if (!runstate_check(RUN_STATE_PRELAUNCH) &&
+            !runstate_check(RUN_STATE_INMIGRATE) &&
+            !ms->os_name) {
+            error_setg(errp, "Memory hotplug not supported without OS");
+            return;
+        }
     }
 }
 
@@ -2948,6 +2957,7 @@ static void spapr_core_pre_plug(HotplugHandler *hotplug_dev, DeviceState *dev,
                                 Error **errp)
 {
     MachineState *machine = MACHINE(OBJECT(hotplug_dev));
+    sPAPRMachineState *ms = SPAPR_MACHINE(machine);
     MachineClass *mc = MACHINE_GET_CLASS(hotplug_dev);
     Error *local_err = NULL;
     CPUCore *cc = CPU_CORE(dev);
@@ -2956,9 +2966,18 @@ static void spapr_core_pre_plug(HotplugHandler *hotplug_dev, DeviceState *dev,
     CPUArchId *core_slot;
     int index;
 
-    if (dev->hotplugged && !mc->has_hotpluggable_cpus) {
-        error_setg(&local_err, "CPU hotplug not supported for this machine");
-        goto out;
+    if (dev->hotplugged) {
+        if (!mc->has_hotpluggable_cpus) {
+            error_setg(&local_err,
+                       "CPU hotplug not supported for this machine");
+            goto out;
+        }
+        if (!runstate_check(RUN_STATE_PRELAUNCH) &&
+            !runstate_check(RUN_STATE_INMIGRATE) &&
+            !ms->os_name) {
+            error_setg(&local_err, "CPU hotplug not supported without OS");
+            goto out;
+        }
     }
 
     if (strcmp(base_core_type, type)) {
