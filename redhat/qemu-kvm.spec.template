@@ -860,6 +860,28 @@ sh %{_sysconfdir}/sysconfig/modules/kvm.modules &> /dev/null || :
 %{_libdir}/pkgconfig/libcacard.pc
 
 %changelog
+* Mon May 22 2017 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.12
+- kvm-char-serial-cosmetic-fixes.patch [bz#1452331]
+- kvm-char-serial-Use-generic-Fifo8.patch [bz#1452331]
+- kvm-char-serial-serial_ioport_write-Factor-out-common-co.patch [bz#1452331]
+- kvm-char-serial-fix-copy-paste-error-fifo8_is_full-vs-em.patch [bz#1452331]
+- kvm-char-serial-Fix-emptyness-check.patch [bz#1452331]
+- kvm-char-serial-Fix-emptyness-handling.patch [bz#1452331]
+- kvm-serial-poll-the-serial-console-with-G_IO_HUP.patch [bz#1452331]
+- kvm-serial-change-retry-logic-to-avoid-concurrency.patch [bz#1452331]
+- kvm-qemu-char-ignore-flow-control-if-a-PTY-s-slave-is-no.patch [bz#1452331]
+- kvm-serial-check-if-backed-by-a-physical-serial-port-at-.patch [bz#1452331]
+- kvm-serial-reset-thri_pending-on-IER-writes-with-THRI-0.patch [bz#1452331]
+- kvm-serial-clean-up-THRE-TEMT-handling.patch [bz#1452331]
+- kvm-serial-update-LSR-on-enabling-disabling-FIFOs.patch [bz#1452331]
+- kvm-serial-only-resample-THR-interrupt-on-rising-edge-of.patch [bz#1452331]
+- kvm-serial-make-tsr_retry-unsigned.patch [bz#1452331]
+- kvm-serial-simplify-tsr_retry-reset.patch [bz#1452331]
+- kvm-serial-separate-serial_xmit-and-serial_watch_cb.patch [bz#1452331]
+- kvm-serial-remove-watch-on-reset.patch [bz#1452331]
+- Resolves: bz#1452331
+  (RHEL 7.2 based VM (Virtual Machine) hung for several hours apparently waiting for lock held by main_loop)
+
 * Fri Dec 09 2016 Miroslav Rezanina <mrezanin@redhat.com> - 1.5.3-105.el7_2.11
 - kvm-virtio-introduce-virtqueue_unmap_sg.patch [bz#1397885]
 - kvm-virtio-introduce-virtqueue_discard.patch [bz#1397885]
