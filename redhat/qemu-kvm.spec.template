@@ -824,6 +824,11 @@ useradd -r -u 107 -g qemu -G kvm -d / -s /sbin/nologin \
 %endif
 
 %changelog
+* Mon May 22 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7_3.10
+- kvm-virtio-rng-stop-virtqueue-while-the-CPU-is-stopped.patch [bz#1450375]
+- Resolves: bz#1450375
+  (Migration failed with postcopy enabled from rhel7.3.z host to rhel7.4 host "error while loading state for instance 0x0 of device 'pci)
+
 * Fri Mar 24 2017 Miroslav Rezanina <mrezanin@redhat.com> - rhev-2.6.0-28.el7_3.9
 - kvm-block-gluster-memory-usage-use-one-glfs-instance-per.patch [bz#1413044]
 - kvm-gluster-Fix-use-after-free-in-glfs_clear_preopened.patch [bz#1413044]
