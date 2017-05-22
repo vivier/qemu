@@ -1343,7 +1343,7 @@ static void ppc_spapr_reset(void)
      * negotiated options and start from scratch */
     if (!spapr->cas_reboot) {
         spapr_ovec_cleanup(spapr->ov5_cas);
-        spapr->ov5_cas = spapr_ovec_new();
+        spapr->ov5_cas = NULL;
     }
 
     fdt = spapr_build_fdt(spapr, rtas_addr, spapr->rtas_size);
@@ -1456,6 +1456,10 @@ static bool spapr_ov5_cas_needed(void *opaque)
     sPAPROptionVector *ov5_legacy = spapr_ovec_new();
     sPAPROptionVector *ov5_removed = spapr_ovec_new();
     bool cas_needed;
+
+    if (spapr->ov5_cas == NULL) {
+        return false;
+    }
 
     /* Prior to the introduction of sPAPROptionVector, we had two option
      * vectors we dealt with: OV5_FORM1_AFFINITY, and OV5_DRCONF_MEMORY.
@@ -2105,7 +2109,7 @@ static void ppc_spapr_init(MachineState *machine)
 
     /* Set up containers for ibm,client-set-architecture negotiated options */
     spapr->ov5 = spapr_ovec_new();
-    spapr->ov5_cas = spapr_ovec_new();
+    spapr->ov5_cas = NULL;
 
     if (smc->dr_lmb_enabled) {
         spapr_ovec_set(spapr->ov5, OV5_DRCONF_MEMORY);
@@ -2604,6 +2608,7 @@ out:
 static void spapr_memory_pre_plug(HotplugHandler *hotplug_dev, DeviceState *dev,
                                   Error **errp)
 {
+    sPAPRMachineState *ms = SPAPR_MACHINE(hotplug_dev);
     PCDIMMDevice *dimm = PC_DIMM(dev);
     PCDIMMDeviceClass *ddc = PC_DIMM_GET_CLASS(dimm);
     MemoryRegion *mr = ddc->get_memory_region(dimm);
@@ -2614,6 +2619,15 @@ static void spapr_memory_pre_plug(HotplugHandler *hotplug_dev, DeviceState *dev,
         error_setg(errp, "Hotplugged memory size must be a multiple of "
                       "%lld MB", SPAPR_MEMORY_BLOCK_SIZE / M_BYTE);
         return;
+    }
+
+    if (dev->hotplugged) {
+        if (!runstate_check(RUN_STATE_PRELAUNCH) &&
+            !runstate_check(RUN_STATE_INMIGRATE) &&
+            ms->ov5_cas == NULL) {
+            error_setg(errp, "Memory hotplug not supported without OS");
+            return;
+        }
     }
 
     mem_dev = object_property_get_str(OBJECT(dimm), PC_DIMM_MEMDEV_PROP, NULL);
@@ -2919,6 +2933,7 @@ static void spapr_core_pre_plug(HotplugHandler *hotplug_dev, DeviceState *dev,
                                 Error **errp)
 {
     MachineState *machine = MACHINE(OBJECT(hotplug_dev));
+    sPAPRMachineState *ms = SPAPR_MACHINE(machine);
     MachineClass *mc = MACHINE_GET_CLASS(hotplug_dev);
     Error *local_err = NULL;
     CPUCore *cc = CPU_CORE(dev);
@@ -2927,9 +2942,18 @@ static void spapr_core_pre_plug(HotplugHandler *hotplug_dev, DeviceState *dev,
     CPUArchId *core_slot;
     int index;
 
-    if (dev->hotplugged && !mc->has_hotpluggable_cpus) {
-        error_setg(&local_err, "CPU hotplug not supported for this machine");
-        goto out;
+    if (dev->hotplugged) {
+        if (!mc->has_hotpluggable_cpus) {
+            error_setg(&local_err,
+                       "CPU hotplug not supported for this machine");
+            goto out;
+        }
+        if (!runstate_check(RUN_STATE_PRELAUNCH) &&
+            !runstate_check(RUN_STATE_INMIGRATE) &&
+            ms->ov5_cas == NULL) {
+            error_setg(&local_err, "CPU hotplug not supported without OS");
+            goto out;
+        }
     }
 
     if (strcmp(base_core_type, type)) {

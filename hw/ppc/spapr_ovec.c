@@ -128,8 +128,11 @@ void spapr_ovec_clear(sPAPROptionVector *ov, long bitnr)
 
 bool spapr_ovec_test(sPAPROptionVector *ov, long bitnr)
 {
-    g_assert(ov);
     g_assert_cmpint(bitnr, <, OV_MAXBITS);
+
+    if (ov == NULL) {
+        return false;
+    }
 
     return test_bit(bitnr, ov->bitmap) ? true : false;
 }
@@ -217,7 +220,10 @@ int spapr_ovec_populate_dt(void *fdt, int fdt_offset,
     unsigned long lastbit;
     int i;
 
-    g_assert(ov);
+    if (ov == NULL) {
+        vec[0] = 0;
+        return fdt_setprop(fdt, fdt_offset, name, vec, 2);
+    }
 
     lastbit = find_last_bit(ov->bitmap, OV_MAXBITS);
     /* if no bits are set, include at least 1 byte of the vector so we can

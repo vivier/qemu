@@ -1133,6 +1133,10 @@ static target_ulong h_client_architecture_support(PowerPCCPU *cpu,
     guest_radix = spapr_ovec_test(ov5_guest, OV5_MMU_RADIX_300);
     spapr_ovec_clear(ov5_guest, OV5_MMU_RADIX_300);
 
+    if (spapr->ov5_cas == NULL) {
+        spapr->ov5_cas = spapr_ovec_new();
+    }
+
     /* NOTE: there are actually a number of ov5 bits where input from the
      * guest is always zero, and the platform/QEMU enables them independently
      * of guest input. To model these properly we'd want some sort of mask,
